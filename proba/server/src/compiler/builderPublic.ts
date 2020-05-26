@@ -1,3 +1,11 @@
+import * as qpc from './corePublic';
+import * as qc from './core';
+import * as qp from './path';
+import * as qt from './types';
+import * as qu from './utilities';
+import { Debug } from './debug';
+import { Diagnostics } from './diagnostics';
+
 export type AffectedFileResult<T> = { result: T; affected: SourceFile | Program } | undefined;
 
 export interface BuilderProgramHost {

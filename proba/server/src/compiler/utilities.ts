@@ -1,8 +1,10 @@
 import * as qpc from './corePublic';
-import * as qpu from './utilitiesPublic';
 import * as qc from './core';
+import * as qp from './path';
 import * as qt from './types';
+import * as qu from './utilities';
 import { Debug } from './debug';
+import { Diagnostics } from './diagnostics';
 
 export const resolvingEmptyArray: never[] = [] as never[];
 export const emptyMap = qc.createMap<never>() as qpc.ReadonlyMap<never> & qt.ReadonlyPragmaMap;
@@ -682,7 +684,7 @@ export function getNonAugmentationDeclaration(symbol: qt.Symbol) {
 }
 
 export function isEffectiveExternalModule(node: qt.SourceFile, compilerOptions: qt.CompilerOptions) {
-  return isExternalModule(node) || compilerOptions.isolatedModules || (getEmitModuleKind(compilerOptions) === ModuleKind.CommonJS && !!node.commonJsModuleIndicator);
+  return isExternalModule(node) || compilerOptions.isolatedModules || (getEmitModuleKind(compilerOptions) === qt.ModuleKind.CommonJS && !!node.commonJsModuleIndicator);
 }
 
 /**
@@ -713,7 +715,7 @@ export function isEffectiveStrictModeSourceFile(node: qt.SourceFile, compilerOpt
   }
   if (isExternalModule(node) || compilerOptions.isolatedModules) {
     // ECMAScript Modules are always strict.
-    if (getEmitModuleKind(compilerOptions) >= ModuleKind.ES2015) {
+    if (getEmitModuleKind(compilerOptions) >= qt.ModuleKind.ES2015) {
       return true;
     }
     // Other modules are strict unless otherwise specified.
@@ -1362,18 +1364,18 @@ export function getPropertyAssignment(objectLiteral: ObjectLiteralExpression, ke
   });
 }
 
-export function getTsConfigObjectLiteralExpression(tsConfigSourceFile: TsConfigSourceFile | undefined): ObjectLiteralExpression | undefined {
+export function getTsConfigObjectLiteralExpression(tsConfigSourceFile: qt.TsConfigSourceFile | undefined): ObjectLiteralExpression | undefined {
   if (tsConfigSourceFile && tsConfigSourceFile.statements.length) {
     const expression = tsConfigSourceFile.statements[0].expression;
     return tryCast(expression, isObjectLiteralExpression);
   }
 }
 
-export function getTsConfigPropArrayElementValue(tsConfigSourceFile: TsConfigSourceFile | undefined, propKey: string, elementValue: string): StringLiteral | undefined {
+export function getTsConfigPropArrayElementValue(tsConfigSourceFile: qt.TsConfigSourceFile | undefined, propKey: string, elementValue: string): StringLiteral | undefined {
   return firstDefined(getTsConfigPropArray(tsConfigSourceFile, propKey), (property) => (isArrayLiteralExpression(property.initializer) ? find(property.initializer.elements, (element): element is StringLiteral => isStringLiteral(element) && element.text === elementValue) : undefined));
 }
 
-export function getTsConfigPropArray(tsConfigSourceFile: TsConfigSourceFile | undefined, propKey: string): readonly PropertyAssignment[] {
+export function getTsConfigPropArray(tsConfigSourceFile: qt.TsConfigSourceFile | undefined, propKey: string): readonly PropertyAssignment[] {
   const jsonObjectLiteral = getTsConfigObjectLiteralExpression(tsConfigSourceFile);
   return jsonObjectLiteral ? getPropertyAssignment(jsonObjectLiteral, propKey) : emptyArray;
 }
@@ -3557,7 +3559,7 @@ export function hostUsesCaseSensitiveFileNames(host: { useCaseSensitiveFileNames
 }
 
 export function hostGetCanonicalFileName(host: { useCaseSensitiveFileNames?(): boolean }): qc.GetCanonicalFileName {
-  return createGetCanonicalFileName(hostUsesCaseSensitiveFileNames(host));
+  return qc.createGetCanonicalFileName(hostUsesCaseSensitiveFileNames(host));
 }
 
 export interface ResolveModuleNameResolutionHost {
@@ -3634,7 +3636,7 @@ export function getSourceFilesToEmit(host: EmitHost, targetSourceFile?: qt.Sourc
   const options = host.getCompilerOptions();
   if (options.outFile || options.out) {
     const moduleKind = getEmitModuleKind(options);
-    const moduleEmitEnabled = options.emitDeclarationOnly || moduleKind === ModuleKind.AMD || moduleKind === ModuleKind.System;
+    const moduleEmitEnabled = options.emitDeclarationOnly || moduleKind === qt.ModuleKind.AMD || moduleKind === qt.ModuleKind.System;
     // Can emit only sources that are not declaration file and are either non module code or module with --module or --target es6 specified
     return filter(host.getSourceFiles(), (sourceFile) => (moduleEmitEnabled || !isExternalModule(sourceFile)) && sourceFileMayBeEmitted(sourceFile, host, forceDtsEmit));
   } else {
@@ -4443,9 +4445,9 @@ const carriageReturnLineFeed = '\r\n';
 const lineFeed = '\n';
 export function getNewLineCharacter(options: qt.CompilerOptions | PrinterOptions, getNewLine?: () => string): string {
   switch (options.newLine) {
-    case NewLineKind.CarriageReturnLineFeed:
+    case qt.NewLineKind.CarriageReturnLineFeed:
       return carriageReturnLineFeed;
-    case NewLineKind.LineFeed:
+    case qt.NewLineKind.LineFeed:
       return lineFeed;
   }
   return getNewLine ? getNewLine() : sys ? sys.newLine : carriageReturnLineFeed;
@@ -5183,24 +5185,24 @@ export function getEmitScriptTarget(compilerOptions: qt.CompilerOptions) {
 }
 
 export function getEmitModuleKind(compilerOptions: { module?: qt.CompilerOptions['module']; target?: qt.CompilerOptions['target'] }) {
-  return typeof compilerOptions.module === 'number' ? compilerOptions.module : getEmitScriptTarget(compilerOptions) >= qt.ScriptTarget.ES2015 ? ModuleKind.ES2015 : ModuleKind.CommonJS;
+  return typeof compilerOptions.module === 'number' ? compilerOptions.module : getEmitScriptTarget(compilerOptions) >= qt.ScriptTarget.ES2015 ? qt.ModuleKind.ES2015 : qt.ModuleKind.CommonJS;
 }
 
 export function getEmitModuleResolutionKind(compilerOptions: qt.CompilerOptions) {
   let moduleResolution = compilerOptions.moduleResolution;
   if (moduleResolution === undefined) {
-    moduleResolution = getEmitModuleKind(compilerOptions) === ModuleKind.CommonJS ? ModuleResolutionKind.NodeJs : ModuleResolutionKind.Classic;
+    moduleResolution = getEmitModuleKind(compilerOptions) === qt.ModuleKind.CommonJS ? qt.ModuleResolutionKind.NodeJs : qt.ModuleResolutionKind.Classic;
   }
   return moduleResolution;
 }
 
 export function hasJsonModuleEmitEnabled(options: qt.CompilerOptions) {
   switch (getEmitModuleKind(options)) {
-    case ModuleKind.CommonJS:
-    case ModuleKind.AMD:
-    case ModuleKind.ES2015:
-    case ModuleKind.ES2020:
-    case ModuleKind.ESNext:
+    case qt.ModuleKind.CommonJS:
+    case qt.ModuleKind.AMD:
+    case qt.ModuleKind.ES2015:
+    case qt.ModuleKind.ES2020:
+    case qt.ModuleKind.ESNext:
       return true;
     default:
       return false;
@@ -5221,7 +5223,7 @@ export function getAreDeclarationMapsEnabled(options: qt.CompilerOptions) {
 
 export function getAllowSyntheticDefaultImports(compilerOptions: qt.CompilerOptions) {
   const moduleKind = getEmitModuleKind(compilerOptions);
-  return compilerOptions.allowSyntheticDefaultImports !== undefined ? compilerOptions.allowSyntheticDefaultImports : compilerOptions.esModuleInterop || moduleKind === ModuleKind.System;
+  return compilerOptions.allowSyntheticDefaultImports !== undefined ? compilerOptions.allowSyntheticDefaultImports : compilerOptions.esModuleInterop || moduleKind === qt.ModuleKind.System;
 }
 
 export function getEmitDeclarations(compilerOptions: qt.CompilerOptions): boolean {
@@ -5246,7 +5248,7 @@ export function compilerOptionsAffectEmit(newOptions: qt.CompilerOptions, oldOpt
   return oldOptions !== newOptions && affectsEmitOptionDeclarations.some((option) => !isJsonEqual(getCompilerOptionValue(oldOptions, option), getCompilerOptionValue(newOptions, option)));
 }
 
-export function getCompilerOptionValue(options: qt.CompilerOptions, option: CommandLineOption): unknown {
+export function getCompilerOptionValue(options: qt.CompilerOptions, option: qt.CommandLineOption): unknown {
   return option.strictFlag ? getStrictOptionValue(options, option.name as StrictOptionName) : options[option.name];
 }
 
@@ -5517,7 +5519,7 @@ export function matchFiles(path: string, extensions: readonly string[] | undefin
   // If there are no "includes", then just put everything in results[0].
   const results: string[][] = includeFileRegexes ? includeFileRegexes.map(() => []) : [[]];
   const visited = qc.createMap<true>();
-  const toCanonical = createGetCanonicalFileName(useCaseSensitiveFileNames);
+  const toCanonical = qc.createGetCanonicalFileName(useCaseSensitiveFileNames);
   for (const basePath of patterns.basePaths) {
     visitDirectory(basePath, combinePaths(currentDirectory, basePath), depth);
   }

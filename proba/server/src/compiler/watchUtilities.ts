@@ -1,3 +1,11 @@
+import * as qpc from './corePublic';
+import * as qc from './core';
+import * as qp from './path';
+import * as qt from './types';
+import * as qu from './utilities';
+import { Debug } from './debug';
+import { Diagnostics } from './diagnostics';
+
 /**
  * Partial interface of the System thats needed to support the caching of directory structure
  */
@@ -43,7 +51,7 @@ export function createCachedDirectoryStructureHost(host: DirectoryStructureHost,
   }
 
   const cachedReadDirectoryResult = qc.createMap<MutableFileSystemEntries>();
-  const getCanonicalFileName = createGetCanonicalFileName(useCaseSensitiveFileNames);
+  const getCanonicalFileName = qc.createGetCanonicalFileName(useCaseSensitiveFileNames);
   return {
     useCaseSensitiveFileNames,
     fileExists,
@@ -321,15 +329,15 @@ export enum WatchLogLevel {
 }
 
 export interface WatchFileHost {
-  watchFile(path: string, callback: FileWatcherCallback, pollingInterval?: number, options?: WatchOptions): FileWatcher;
+  watchFile(path: string, callback: FileWatcherCallback, pollingInterval?: number, options?: qt.WatchOptions): FileWatcher;
 }
 export interface WatchDirectoryHost {
-  watchDirectory(path: string, callback: DirectoryWatcherCallback, recursive?: boolean, options?: WatchOptions): FileWatcher;
+  watchDirectory(path: string, callback: DirectoryWatcherCallback, recursive?: boolean, options?: qt.WatchOptions): FileWatcher;
 }
-export type WatchFile<X, Y> = (host: WatchFileHost, file: string, callback: FileWatcherCallback, pollingInterval: PollingInterval, options: WatchOptions | undefined, detailInfo1: X, detailInfo2?: Y) => FileWatcher;
+export type WatchFile<X, Y> = (host: WatchFileHost, file: string, callback: FileWatcherCallback, pollingInterval: PollingInterval, options: qt.WatchOptions | undefined, detailInfo1: X, detailInfo2?: Y) => FileWatcher;
 export type FilePathWatcherCallback = (fileName: string, eventKind: FileWatcherEventKind, filePath: Path) => void;
-export type WatchFilePath<X, Y> = (host: WatchFileHost, file: string, callback: FilePathWatcherCallback, pollingInterval: PollingInterval, options: WatchOptions | undefined, path: Path, detailInfo1: X, detailInfo2?: Y) => FileWatcher;
-export type WatchDirectory<X, Y> = (host: WatchDirectoryHost, directory: string, callback: DirectoryWatcherCallback, flags: WatchDirectoryFlags, options: WatchOptions | undefined, detailInfo1: X, detailInfo2?: Y) => FileWatcher;
+export type WatchFilePath<X, Y> = (host: WatchFileHost, file: string, callback: FilePathWatcherCallback, pollingInterval: PollingInterval, options: qt.WatchOptions | undefined, path: Path, detailInfo1: X, detailInfo2?: Y) => FileWatcher;
+export type WatchDirectory<X, Y> = (host: WatchDirectoryHost, directory: string, callback: DirectoryWatcherCallback, flags: WatchDirectoryFlags, options: qt.WatchOptions | undefined, detailInfo1: X, detailInfo2?: Y) => FileWatcher;
 
 export interface WatchFactory<X, Y> {
   watchFile: WatchFile<X, Y>;
@@ -345,8 +353,8 @@ function getWatchFactoryWith<X, Y = undefined>(
   watchLogLevel: WatchLogLevel,
   log: (s: string) => void,
   getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined,
-  watchFile: (host: WatchFileHost, file: string, callback: FileWatcherCallback, watchPriority: PollingInterval, options: WatchOptions | undefined) => FileWatcher,
-  watchDirectory: (host: WatchDirectoryHost, directory: string, callback: DirectoryWatcherCallback, flags: WatchDirectoryFlags, options: WatchOptions | undefined) => FileWatcher
+  watchFile: (host: WatchFileHost, file: string, callback: FileWatcherCallback, watchPriority: PollingInterval, options: qt.WatchOptions | undefined) => FileWatcher,
+  watchDirectory: (host: WatchDirectoryHost, directory: string, callback: DirectoryWatcherCallback, flags: WatchDirectoryFlags, options: qt.WatchOptions | undefined) => FileWatcher
 ): WatchFactory<X, Y> {
   const createFileWatcher: CreateFileWatcher<WatchFileHost, PollingInterval, FileWatcherEventKind, never, X, Y> = getCreateFileWatcher(watchLogLevel, watchFile);
   const createFilePathWatcher: CreateFileWatcher<WatchFileHost, PollingInterval, FileWatcherEventKind, Path, X, Y> = watchLogLevel === WatchLogLevel.None ? watchFilePath : createFileWatcher;
@@ -361,23 +369,23 @@ function getWatchFactoryWith<X, Y = undefined>(
   };
 }
 
-function watchFile(host: WatchFileHost, file: string, callback: FileWatcherCallback, pollingInterval: PollingInterval, options: WatchOptions | undefined): FileWatcher {
+function watchFile(host: WatchFileHost, file: string, callback: FileWatcherCallback, pollingInterval: PollingInterval, options: qt.WatchOptions | undefined): FileWatcher {
   return host.watchFile(file, callback, pollingInterval, options);
 }
 
-function watchFilePath(host: WatchFileHost, file: string, callback: FilePathWatcherCallback, pollingInterval: PollingInterval, options: WatchOptions | undefined, path: Path): FileWatcher {
+function watchFilePath(host: WatchFileHost, file: string, callback: FilePathWatcherCallback, pollingInterval: PollingInterval, options: qt.WatchOptions | undefined, path: Path): FileWatcher {
   return watchFile(host, file, (fileName, eventKind) => callback(fileName, eventKind, path), pollingInterval, options);
 }
 
-function watchDirectory(host: WatchDirectoryHost, directory: string, callback: DirectoryWatcherCallback, flags: WatchDirectoryFlags, options: WatchOptions | undefined): FileWatcher {
+function watchDirectory(host: WatchDirectoryHost, directory: string, callback: DirectoryWatcherCallback, flags: WatchDirectoryFlags, options: qt.WatchOptions | undefined): FileWatcher {
   return host.watchDirectory(directory, callback, (flags & WatchDirectoryFlags.Recursive) !== 0, options);
 }
 
 type WatchCallback<T, U> = (fileName: string, cbOptional?: T, passThrough?: U) => void;
-type AddWatch<H, T, U, V> = (host: H, file: string, cb: WatchCallback<U, V>, flags: T, options: WatchOptions | undefined, passThrough?: V, detailInfo1?: undefined, detailInfo2?: undefined) => FileWatcher;
+type AddWatch<H, T, U, V> = (host: H, file: string, cb: WatchCallback<U, V>, flags: T, options: qt.WatchOptions | undefined, passThrough?: V, detailInfo1?: undefined, detailInfo2?: undefined) => FileWatcher;
 export type GetDetailWatchInfo<X, Y> = (detailInfo1: X, detailInfo2: Y | undefined) => string;
 
-type CreateFileWatcher<H, T, U, V, X, Y> = (host: H, file: string, cb: WatchCallback<U, V>, flags: T, options: WatchOptions | undefined, passThrough: V | undefined, detailInfo1: X | undefined, detailInfo2: Y | undefined, addWatch: AddWatch<H, T, U, V>, log: (s: string) => void, watchCaption: string, getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined) => FileWatcher;
+type CreateFileWatcher<H, T, U, V, X, Y> = (host: H, file: string, cb: WatchCallback<U, V>, flags: T, options: qt.WatchOptions | undefined, passThrough: V | undefined, detailInfo1: X | undefined, detailInfo2: Y | undefined, addWatch: AddWatch<H, T, U, V>, log: (s: string) => void, watchCaption: string, getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined) => FileWatcher;
 function getCreateFileWatcher<H, T, U, V, X, Y>(watchLogLevel: WatchLogLevel, addWatch: AddWatch<H, T, U, V>): CreateFileWatcher<H, T, U, V, X, Y> {
   switch (watchLogLevel) {
     case WatchLogLevel.None:
@@ -389,7 +397,7 @@ function getCreateFileWatcher<H, T, U, V, X, Y>(watchLogLevel: WatchLogLevel, ad
   }
 }
 
-function createFileWatcherWithLogging<H, T, U, V, X, Y>(host: H, file: string, cb: WatchCallback<U, V>, flags: T, options: WatchOptions | undefined, passThrough: V | undefined, detailInfo1: X | undefined, detailInfo2: Y | undefined, addWatch: AddWatch<H, T, U, V>, log: (s: string) => void, watchCaption: string, getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined): FileWatcher {
+function createFileWatcherWithLogging<H, T, U, V, X, Y>(host: H, file: string, cb: WatchCallback<U, V>, flags: T, options: qt.WatchOptions | undefined, passThrough: V | undefined, detailInfo1: X | undefined, detailInfo2: Y | undefined, addWatch: AddWatch<H, T, U, V>, log: (s: string) => void, watchCaption: string, getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined): FileWatcher {
   log(`${watchCaption}:: Added:: ${getWatchInfo(file, flags, options, detailInfo1, detailInfo2, getDetailWatchInfo)}`);
   const watcher = createFileWatcherWithTriggerLogging(host, file, cb, flags, options, passThrough, detailInfo1, detailInfo2, addWatch, log, watchCaption, getDetailWatchInfo);
   return {
@@ -400,7 +408,7 @@ function createFileWatcherWithLogging<H, T, U, V, X, Y>(host: H, file: string, c
   };
 }
 
-function createDirectoryWatcherWithLogging<H, T, U, V, X, Y>(host: H, file: string, cb: WatchCallback<U, V>, flags: T, options: WatchOptions | undefined, passThrough: V | undefined, detailInfo1: X | undefined, detailInfo2: Y | undefined, addWatch: AddWatch<H, T, U, V>, log: (s: string) => void, watchCaption: string, getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined): FileWatcher {
+function createDirectoryWatcherWithLogging<H, T, U, V, X, Y>(host: H, file: string, cb: WatchCallback<U, V>, flags: T, options: qt.WatchOptions | undefined, passThrough: V | undefined, detailInfo1: X | undefined, detailInfo2: Y | undefined, addWatch: AddWatch<H, T, U, V>, log: (s: string) => void, watchCaption: string, getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined): FileWatcher {
   const watchInfo = `${watchCaption}:: Added:: ${getWatchInfo(file, flags, options, detailInfo1, detailInfo2, getDetailWatchInfo)}`;
   log(watchInfo);
   const start = timestamp();
@@ -419,7 +427,7 @@ function createDirectoryWatcherWithLogging<H, T, U, V, X, Y>(host: H, file: stri
   };
 }
 
-function createFileWatcherWithTriggerLogging<H, T, U, V, X, Y>(host: H, file: string, cb: WatchCallback<U, V>, flags: T, options: WatchOptions | undefined, passThrough: V | undefined, detailInfo1: X | undefined, detailInfo2: Y | undefined, addWatch: AddWatch<H, T, U, V>, log: (s: string) => void, watchCaption: string, getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined): FileWatcher {
+function createFileWatcherWithTriggerLogging<H, T, U, V, X, Y>(host: H, file: string, cb: WatchCallback<U, V>, flags: T, options: qt.WatchOptions | undefined, passThrough: V | undefined, detailInfo1: X | undefined, detailInfo2: Y | undefined, addWatch: AddWatch<H, T, U, V>, log: (s: string) => void, watchCaption: string, getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined): FileWatcher {
   return addWatch(
     host,
     file,
@@ -436,14 +444,14 @@ function createFileWatcherWithTriggerLogging<H, T, U, V, X, Y>(host: H, file: st
   );
 }
 
-export function getFallbackOptions(options: WatchOptions | undefined): WatchOptions {
+export function getFallbackOptions(options: qt.WatchOptions | undefined): qt.WatchOptions {
   const fallbackPolling = options?.fallbackPolling;
   return {
     watchFile: fallbackPolling !== undefined ? ((fallbackPolling as unknown) as WatchFileKind) : WatchFileKind.PriorityPollingInterval,
   };
 }
 
-function getWatchInfo<T, X, Y>(file: string, flags: T, options: WatchOptions | undefined, detailInfo1: X, detailInfo2: Y | undefined, getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined) {
+function getWatchInfo<T, X, Y>(file: string, flags: T, options: qt.WatchOptions | undefined, detailInfo1: X, detailInfo2: Y | undefined, getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined) {
   return `WatchInfo: ${file} ${flags} ${JSON.stringify(options)} ${getDetailWatchInfo ? getDetailWatchInfo(detailInfo1, detailInfo2) : detailInfo2 === undefined ? detailInfo1 : `${detailInfo1} ${detailInfo2}`}`;
 }
 

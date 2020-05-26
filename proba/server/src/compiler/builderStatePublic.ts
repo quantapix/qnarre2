@@ -1,8 +1,10 @@
+import * as qt from './types';
+
 export interface EmitOutput {
   outputFiles: OutputFile[];
   emitSkipped: boolean;
-  diagnostics: readonly Diagnostic[];
-  exportedModulesFromDeclarationEmit?: ExportedModulesFromDeclarationEmit;
+  diagnostics: readonly qt.Diagnostic[];
+  exportedModulesFromDeclarationEmit?: qt.ExportedModulesFromDeclarationEmit;
 }
 
 export interface OutputFile {

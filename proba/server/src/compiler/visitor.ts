@@ -1,8 +1,10 @@
 import * as qpc from './corePublic';
-import * as qpu from './utilitiesPublic';
 import * as qc from './core';
+import * as qp from './path';
 import * as qt from './types';
+import * as qu from './utilities';
 import { Debug } from './debug';
+import { Diagnostics } from './diagnostics';
 
 function reduceNode<T>(node: qt.Node | undefined, f: (memo: T, node: qt.Node) => T, initial: T) {
   return node ? f(initial, node) : initial;

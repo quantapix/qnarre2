@@ -1,3 +1,11 @@
+import * as qpc from './corePublic';
+import * as qc from './core';
+import * as qp from './path';
+import * as qt from './types';
+import * as qu from './utilities';
+import { Debug } from './debug';
+import { Diagnostics } from './diagnostics';
+
 // https://semver.org/#spec-item-2
 // > A normal version number MUST take the form X.Y.Z where X, Y, and Z are non-negative
 // > integers, and MUST NOT contain leading zeroes. X is the major version, Y is the minor

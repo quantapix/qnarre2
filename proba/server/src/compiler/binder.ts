@@ -1,3 +1,11 @@
+import * as qpc from './corePublic';
+import * as qc from './core';
+import * as qp from './path';
+import * as qt from './types';
+import * as qu from './utilities';
+import { Debug } from './debug';
+import { Diagnostics } from './diagnostics';
+
 export const enum ModuleInstanceState {
   NonInstantiated = 0,
   Instantiated = 1,
@@ -161,7 +169,7 @@ const enum ContainerFlags {
   IsObjectLiteralOrClassExpressionMethod = 1 << 7,
 }
 
-function initFlowNode<T extends FlowNode>(node: T) {
+function initFlowNode<T extends qt.FlowNode>(node: T) {
   Debug.attachFlowNodeDebugInfo(node);
   return node;
 }
@@ -190,14 +198,14 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
   let seenThisKeyword: boolean;
 
   // state used by control flow analysis
-  let currentFlow: FlowNode;
+  let currentFlow: qt.FlowNode;
   let currentBreakTarget: FlowLabel | undefined;
   let currentContinueTarget: FlowLabel | undefined;
   let currentReturnTarget: FlowLabel | undefined;
   let currentTrueTarget: FlowLabel | undefined;
   let currentFalseTarget: FlowLabel | undefined;
   let currentExceptionTarget: FlowLabel | undefined;
-  let preSwitchCaseFlow: FlowNode | undefined;
+  let preSwitchCaseFlow: qt.FlowNode | undefined;
   let activeLabelList: ActiveLabel | undefined;
   let hasExplicitReturn: boolean;
 
@@ -215,8 +223,8 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
   let Symbol: new (flags: SymbolFlags, name: qt.__String) => symbol;
   let classifiableNames: qt.UnderscoreEscapedMap<true>;
 
-  const unreachableFlow: FlowNode = { flags: FlowFlags.Unreachable };
-  const reportedUnreachableFlow: FlowNode = { flags: FlowFlags.Unreachable };
+  const unreachableFlow: qt.FlowNode = { flags: FlowFlags.Unreachable };
+  const reportedUnreachableFlow: qt.FlowNode = { flags: FlowFlags.Unreachable };
 
   // state used to aggregate transform flags during bind.
   let subtreeTransformFlags: TransformFlags = TransformFlags.None;
@@ -916,23 +924,23 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     return initFlowNode({ flags: FlowFlags.LoopLabel, antecedents: undefined });
   }
 
-  function createReduceLabel(target: FlowLabel, antecedents: FlowNode[], antecedent: FlowNode): FlowReduceLabel {
+  function createReduceLabel(target: FlowLabel, antecedents: qt.FlowNode[], antecedent: qt.FlowNode): FlowReduceLabel {
     return initFlowNode({ flags: FlowFlags.ReduceLabel, target, antecedents, antecedent });
   }
 
-  function setFlowNodeReferenced(flow: FlowNode) {
+  function setFlowNodeReferenced(flow: qt.FlowNode) {
     // On first reference we set the Referenced flag, thereafter we set the Shared flag
     flow.flags |= flow.flags & FlowFlags.Referenced ? FlowFlags.Shared : FlowFlags.Referenced;
   }
 
-  function addAntecedent(label: FlowLabel, antecedent: FlowNode): void {
+  function addAntecedent(label: FlowLabel, antecedent: qt.FlowNode): void {
     if (!(antecedent.flags & FlowFlags.Unreachable) && !contains(label.antecedents, antecedent)) {
       (label.antecedents || (label.antecedents = [])).push(antecedent);
       setFlowNodeReferenced(antecedent);
     }
   }
 
-  function createFlowCondition(flags: FlowFlags, antecedent: FlowNode, expression: qt.Expression | undefined): FlowNode {
+  function createFlowCondition(flags: FlowFlags, antecedent: qt.FlowNode, expression: qt.Expression | undefined): qt.FlowNode {
     if (antecedent.flags & FlowFlags.Unreachable) {
       return antecedent;
     }
@@ -949,12 +957,12 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     return initFlowNode({ flags, antecedent, node: expression });
   }
 
-  function createFlowSwitchClause(antecedent: FlowNode, switchStatement: SwitchStatement, clauseStart: number, clauseEnd: number): FlowNode {
+  function createFlowSwitchClause(antecedent: qt.FlowNode, switchStatement: SwitchStatement, clauseStart: number, clauseEnd: number): qt.FlowNode {
     setFlowNodeReferenced(antecedent);
     return initFlowNode({ flags: FlowFlags.SwitchClause, antecedent, switchStatement, clauseStart, clauseEnd });
   }
 
-  function createFlowMutation(flags: FlowFlags, antecedent: FlowNode, node: qt.Expression | qt.VariableDeclaration | ArrayBindingElement): FlowNode {
+  function createFlowMutation(flags: FlowFlags, antecedent: qt.FlowNode, node: qt.Expression | qt.VariableDeclaration | ArrayBindingElement): qt.FlowNode {
     setFlowNodeReferenced(antecedent);
     const result = initFlowNode({ flags, antecedent, node });
     if (currentExceptionTarget) {
@@ -963,12 +971,12 @@ function createBinder(): (file: SourceFile, options: qt.CompilerOptions) => void
     return result;
   }
 
-  function createFlowCall(antecedent: FlowNode, node: CallExpression): FlowNode {
+  function createFlowCall(antecedent: qt.FlowNode, node: CallExpression): qt.FlowNode {
     setFlowNodeReferenced(antecedent);
     return initFlowNode({ flags: FlowFlags.Call, antecedent, node });
   }
 
-  function finishFlowLabel(flow: FlowLabel): FlowNode {
+  function finishFlowLabel(flow: FlowLabel): qt.FlowNode {
     const antecedents = flow.antecedents;
     if (!antecedents) {
       return unreachableFlow;

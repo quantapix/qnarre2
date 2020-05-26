@@ -1,8 +1,16 @@
+import * as qpc from './corePublic';
+import * as qc from './core';
+import * as qp from './path';
+import * as qt from './types';
+import * as qu from './utilities';
+import { Debug } from './debug';
+import { Diagnostics } from './diagnostics';
+
 const sysFormatDiagnosticsHost: FormatDiagnosticsHost = sys
   ? {
       getCurrentDirectory: () => sys.getCurrentDirectory(),
       getNewLine: () => sys.newLine,
-      getCanonicalFileName: createGetCanonicalFileName(sys.useCaseSensitiveFileNames),
+      getCanonicalFileName: qc.createGetCanonicalFileName(sys.useCaseSensitiveFileNames),
     }
   : undefined!; // TODO: GH#18217
 
@@ -16,7 +24,7 @@ export function createDiagnosticReporter(system: System, pretty?: boolean): Diag
       : {
           getCurrentDirectory: () => system.getCurrentDirectory(),
           getNewLine: () => system.newLine,
-          getCanonicalFileName: createGetCanonicalFileName(system.useCaseSensitiveFileNames),
+          getCanonicalFileName: qc.createGetCanonicalFileName(system.useCaseSensitiveFileNames),
         };
   if (!pretty) {
     return (diagnostic) => system.write(formatDiagnostic(diagnostic, host));
@@ -81,7 +89,7 @@ export function createWatchStatusReporter(system: System, pretty?: boolean): Wat
 }
 
 /** Parses config file using System interface */
-export function parseConfigFileWithSystem(configFileName: string, optionsToExtend: qt.CompilerOptions, watchOptionsToExtend: WatchOptions | undefined, system: System, reportDiagnostic: DiagnosticReporter) {
+export function parseConfigFileWithSystem(configFileName: string, optionsToExtend: qt.CompilerOptions, watchOptionsToExtend: qt.WatchOptions | undefined, system: System, reportDiagnostic: DiagnosticReporter) {
   const host: ParseConfigFileHost = <any>system;
   host.onUnRecoverableConfigFileDiagnostic = (diagnostic) => reportUnrecoverableDiagnostic(system, reportDiagnostic, diagnostic);
   const result = getParsedCommandLineOfConfigFile(configFileName, optionsToExtend, host, /*extendedConfigCache*/ undefined, watchOptionsToExtend);
@@ -261,7 +269,7 @@ export function createCompilerHostFromProgramHost(host: ProgramHost<any>, getCom
     writeFile,
     getCurrentDirectory: memoize(() => host.getCurrentDirectory()),
     useCaseSensitiveFileNames: () => useCaseSensitiveFileNames,
-    getCanonicalFileName: createGetCanonicalFileName(useCaseSensitiveFileNames),
+    getCanonicalFileName: qc.createGetCanonicalFileName(useCaseSensitiveFileNames),
     getNewLine: () => getNewLineCharacter(getCompilerOptions(), hostGetNewLine),
     fileExists: (f) => host.fileExists(f),
     readFile: (f) => host.readFile(f),
@@ -372,7 +380,7 @@ export interface CreateWatchCompilerHostInput<T extends BuilderProgram> {
 export interface CreateWatchCompilerHostOfConfigFileInput<T extends BuilderProgram> extends CreateWatchCompilerHostInput<T> {
   configFileName: string;
   optionsToExtend?: qt.CompilerOptions;
-  watchOptionsToExtend?: WatchOptions;
+  watchOptionsToExtend?: qt.WatchOptions;
   extraFileExtensions?: readonly FileExtensionInfo[];
 }
 /**
@@ -392,7 +400,7 @@ export function createWatchCompilerHostOfConfigFile<T extends BuilderProgram = E
 export interface CreateWatchCompilerHostOfFilesAndCompilerOptionsInput<T extends BuilderProgram> extends CreateWatchCompilerHostInput<T> {
   rootFiles: string[];
   options: qt.CompilerOptions;
-  watchOptions: WatchOptions | undefined;
+  watchOptions: qt.WatchOptions | undefined;
   projectReferences?: readonly qt.ProjectReference[];
 }
 /**

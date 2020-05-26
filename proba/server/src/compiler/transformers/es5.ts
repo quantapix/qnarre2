@@ -9,7 +9,7 @@ export function transformES5(context: TransformationContext) {
   // enable emit notification only if using --jsx preserve or react-native
   let previousOnEmitNode: (hint: EmitHint, node: qt.Node, emitCallback: (hint: EmitHint, node: qt.Node) => void) => void;
   let noSubstitution: boolean[];
-  if (compilerOptions.jsx === JsxEmit.Preserve || compilerOptions.jsx === JsxEmit.ReactNative) {
+  if (compilerOptions.jsx === qt.JsxEmit.Preserve || compilerOptions.jsx === qt.JsxEmit.ReactNative) {
     previousOnEmitNode = context.onEmitNode;
     context.onEmitNode = onEmitNode;
     context.enableEmitNotification(SyntaxKind.JsxOpeningElement);

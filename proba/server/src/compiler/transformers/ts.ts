@@ -543,7 +543,7 @@ export function transformTypeScript(context: TransformationContext) {
   }
 
   function visitSourceFile(node: SourceFile) {
-    const alwaysStrict = getStrictOptionValue(compilerOptions, 'alwaysStrict') && !(isExternalModule(node) && moduleKind >= ModuleKind.ES2015) && !isJsonSourceFile(node);
+    const alwaysStrict = getStrictOptionValue(compilerOptions, 'alwaysStrict') && !(isExternalModule(node) && moduleKind >= qt.ModuleKind.ES2015) && !isJsonSourceFile(node);
 
     return updateSourceFileNode(node, visitLexicalEnvironment(node.statements, sourceElementVisitor, context, /*start*/ 0, alwaysStrict));
   }
@@ -2060,7 +2060,7 @@ export function transformTypeScript(context: TransformationContext) {
     const varAdded = addVarForEnumOrModuleDeclaration(statements, node);
     if (varAdded) {
       // We should still emit the comments if we are emitting a system module.
-      if (moduleKind !== ModuleKind.System || currentLexicalScope !== currentSourceFile) {
+      if (moduleKind !== qt.ModuleKind.System || currentLexicalScope !== currentSourceFile) {
         emitFlags |= qt.EmitFlags.NoLeadingComments;
       }
     }
@@ -2181,7 +2181,7 @@ export function transformTypeScript(context: TransformationContext) {
    * or `exports.x`).
    */
   function hasNamespaceQualifiedExportName(node: qt.Node) {
-    return isExportOfNamespace(node) || (isExternalModuleExport(node) && moduleKind !== ModuleKind.ES2015 && moduleKind !== ModuleKind.ES2020 && moduleKind !== ModuleKind.ESNext && moduleKind !== ModuleKind.System);
+    return isExportOfNamespace(node) || (isExternalModuleExport(node) && moduleKind !== qt.ModuleKind.ES2015 && moduleKind !== qt.ModuleKind.ES2020 && moduleKind !== qt.ModuleKind.ESNext && moduleKind !== qt.ModuleKind.System);
   }
 
   /**
@@ -2297,7 +2297,7 @@ export function transformTypeScript(context: TransformationContext) {
     const varAdded = addVarForEnumOrModuleDeclaration(statements, node);
     if (varAdded) {
       // We should still emit the comments if we are emitting a system module.
-      if (moduleKind !== ModuleKind.System || currentLexicalScope !== currentSourceFile) {
+      if (moduleKind !== qt.ModuleKind.System || currentLexicalScope !== currentSourceFile) {
         emitFlags |= qt.EmitFlags.NoLeadingComments;
       }
     }
@@ -2441,7 +2441,7 @@ export function transformTypeScript(context: TransformationContext) {
 
     // Elide the declaration if the import clause was elided.
     const importClause = visitNode(node.importClause, visitImportClause, isImportClause);
-    return importClause || compilerOptions.importsNotUsedAsValues === ImportsNotUsedAsValues.Preserve || compilerOptions.importsNotUsedAsValues === ImportsNotUsedAsValues.Error ? updateImportDeclaration(node, /*decorators*/ undefined, /*modifiers*/ undefined, importClause, node.moduleSpecifier) : undefined;
+    return importClause || compilerOptions.importsNotUsedAsValues === qt.ImportsNotUsedAsValues.Preserve || compilerOptions.importsNotUsedAsValues === qt.ImportsNotUsedAsValues.Error ? updateImportDeclaration(node, /*decorators*/ undefined, /*modifiers*/ undefined, importClause, node.moduleSpecifier) : undefined;
   }
 
   /**
@@ -2575,7 +2575,7 @@ export function transformTypeScript(context: TransformationContext) {
     if (isExternalModuleImportEqualsDeclaration(node)) {
       const isReferenced = resolver.isReferencedAliasDeclaration(node);
       // If the alias is unreferenced but we want to keep the import, replace with 'import "mod"'.
-      if (!isReferenced && compilerOptions.importsNotUsedAsValues === ImportsNotUsedAsValues.Preserve) {
+      if (!isReferenced && compilerOptions.importsNotUsedAsValues === qt.ImportsNotUsedAsValues.Preserve) {
         return setOriginalNode(setTextRange(createImportDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, /*importClause*/ undefined, node.moduleReference.expression), node), node);
       }
 

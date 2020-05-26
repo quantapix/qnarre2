@@ -1,3 +1,11 @@
+import * as qpc from './corePublic';
+import * as qc from './core';
+import * as qp from './path';
+import * as qt from './types';
+import * as qu from './utilities';
+import { Debug } from './debug';
+import { Diagnostics } from './diagnostics';
+
 const minimumDate = new Date(-8640000000000000);
 const maximumDate = new Date(8640000000000000);
 
@@ -201,7 +209,7 @@ export function createSolutionBuilder<T extends BuilderProgram>(host: SolutionBu
   return createSolutionBuilderWorker(/*watch*/ false, host, rootNames, defaultOptions);
 }
 
-export function createSolutionBuilderWithWatch<T extends BuilderProgram>(host: SolutionBuilderWithWatchHost<T>, rootNames: readonly string[], defaultOptions: BuildOptions, baseWatchOptions?: WatchOptions): SolutionBuilder<T> {
+export function createSolutionBuilderWithWatch<T extends BuilderProgram>(host: SolutionBuilderWithWatchHost<T>, rootNames: readonly string[], defaultOptions: BuildOptions, baseWatchOptions?: qt.WatchOptions): SolutionBuilder<T> {
   return createSolutionBuilderWorker(/*watch*/ true, host, rootNames, defaultOptions, baseWatchOptions);
 }
 
@@ -228,7 +236,7 @@ interface SolutionBuilderState<T extends BuilderProgram = BuilderProgram> {
   readonly options: BuildOptions;
   readonly baseCompilerOptions: qt.CompilerOptions;
   readonly rootNames: readonly string[];
-  readonly baseWatchOptions: WatchOptions | undefined;
+  readonly baseWatchOptions: qt.WatchOptions | undefined;
 
   readonly resolvedConfigFilePaths: Map<ResolvedConfigFilePath>;
   readonly configFileCache: ConfigFileMap<ConfigFileCacheEntry>;
@@ -269,11 +277,11 @@ interface SolutionBuilderState<T extends BuilderProgram = BuilderProgram> {
   writeLog: (s: string) => void;
 }
 
-function createSolutionBuilderState<T extends BuilderProgram>(watch: boolean, hostOrHostWithWatch: SolutionBuilderHost<T> | SolutionBuilderWithWatchHost<T>, rootNames: readonly string[], options: BuildOptions, baseWatchOptions: WatchOptions | undefined): SolutionBuilderState<T> {
+function createSolutionBuilderState<T extends BuilderProgram>(watch: boolean, hostOrHostWithWatch: SolutionBuilderHost<T> | SolutionBuilderWithWatchHost<T>, rootNames: readonly string[], options: BuildOptions, baseWatchOptions: qt.WatchOptions | undefined): SolutionBuilderState<T> {
   const host = hostOrHostWithWatch as SolutionBuilderHost<T>;
   const hostWithWatch = hostOrHostWithWatch as SolutionBuilderWithWatchHost<T>;
   const currentDirectory = host.getCurrentDirectory();
-  const getCanonicalFileName = createGetCanonicalFileName(host.useCaseSensitiveFileNames());
+  const getCanonicalFileName = qc.createGetCanonicalFileName(host.useCaseSensitiveFileNames());
 
   // State of the solution
   const baseCompilerOptions = getCompilerOptionsOfBuildOptions(options);
@@ -1639,8 +1647,8 @@ function stopWatching(state: SolutionBuilderState) {
  * can dynamically add/remove other projects based on changes on the rootNames' references
  */
 function createSolutionBuilderWorker<T extends BuilderProgram>(watch: false, host: SolutionBuilderHost<T>, rootNames: readonly string[], defaultOptions: BuildOptions): SolutionBuilder<T>;
-function createSolutionBuilderWorker<T extends BuilderProgram>(watch: true, host: SolutionBuilderWithWatchHost<T>, rootNames: readonly string[], defaultOptions: BuildOptions, baseWatchOptions?: WatchOptions): SolutionBuilder<T>;
-function createSolutionBuilderWorker<T extends BuilderProgram>(watch: boolean, hostOrHostWithWatch: SolutionBuilderHost<T> | SolutionBuilderWithWatchHost<T>, rootNames: readonly string[], options: BuildOptions, baseWatchOptions?: WatchOptions): SolutionBuilder<T> {
+function createSolutionBuilderWorker<T extends BuilderProgram>(watch: true, host: SolutionBuilderWithWatchHost<T>, rootNames: readonly string[], defaultOptions: BuildOptions, baseWatchOptions?: qt.WatchOptions): SolutionBuilder<T>;
+function createSolutionBuilderWorker<T extends BuilderProgram>(watch: boolean, hostOrHostWithWatch: SolutionBuilderHost<T> | SolutionBuilderWithWatchHost<T>, rootNames: readonly string[], options: BuildOptions, baseWatchOptions?: qt.WatchOptions): SolutionBuilder<T> {
   const state = createSolutionBuilderState(watch, hostOrHostWithWatch, rootNames, options, baseWatchOptions);
   return {
     build: (project, cancellationToken) => build(state, project, cancellationToken),

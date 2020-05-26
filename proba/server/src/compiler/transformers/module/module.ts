@@ -5,11 +5,11 @@ export function transformModule(context: TransformationContext) {
     importAliasNames: ParameterDeclaration[];
   }
 
-  function getTransformModuleDelegate(moduleKind: ModuleKind): (node: SourceFile) => SourceFile {
+  function getTransformModuleDelegate(moduleKind: qt.ModuleKind): (node: SourceFile) => SourceFile {
     switch (moduleKind) {
-      case ModuleKind.AMD:
+      case qt.ModuleKind.AMD:
         return transformAMDModule;
-      case ModuleKind.UMD:
+      case qt.ModuleKind.UMD:
         return transformUMDModule;
       default:
         return transformCommonJSModule;
@@ -335,7 +335,7 @@ export function transformModule(context: TransformationContext) {
 
     // Visit each statement of the module body.
     append(statements, visitNode(currentModuleInfo.externalHelpersImportDeclaration, sourceElementVisitor, isStatement));
-    if (moduleKind === ModuleKind.AMD) {
+    if (moduleKind === qt.ModuleKind.AMD) {
       addRange(statements, mapDefined(currentModuleInfo.externalImports, getAMDImportExpressionForImport));
     }
     addRange(statements, visitNodes(node.statements, sourceElementVisitor, isStatement, statementOffset));
@@ -496,11 +496,11 @@ export function transformModule(context: TransformationContext) {
     const argument = visitNode(firstOrUndefined(node.arguments), moduleExpressionElementVisitor);
     const containsLexicalThis = !!(node.transformFlags & TransformFlags.ContainsLexicalThis);
     switch (compilerOptions.module) {
-      case ModuleKind.AMD:
+      case qt.ModuleKind.AMD:
         return createImportCallExpressionAMD(argument, containsLexicalThis);
-      case ModuleKind.UMD:
+      case qt.ModuleKind.UMD:
         return createImportCallExpressionUMD(argument, containsLexicalThis);
-      case ModuleKind.CommonJS:
+      case qt.ModuleKind.CommonJS:
       default:
         return createImportCallExpressionCommonJS(argument, containsLexicalThis);
     }
@@ -628,7 +628,7 @@ export function transformModule(context: TransformationContext) {
   function visitImportDeclaration(node: ImportDeclaration): VisitResult<Statement> {
     let statements: qt.Statement[] | undefined;
     const namespaceDeclaration = getNamespaceDeclarationNode(node);
-    if (moduleKind !== ModuleKind.AMD) {
+    if (moduleKind !== qt.ModuleKind.AMD) {
       if (!node.importClause) {
         // import "mod";
         return setOriginalNode(setTextRange(createExpressionStatement(createRequireCall(node)), node), node);
@@ -691,7 +691,7 @@ export function transformModule(context: TransformationContext) {
     Debug.assert(isExternalModuleImportEqualsDeclaration(node), 'import= for internal module references should be handled in an earlier transformer.');
 
     let statements: qt.Statement[] | undefined;
-    if (moduleKind !== ModuleKind.AMD) {
+    if (moduleKind !== qt.ModuleKind.AMD) {
       if (hasSyntacticModifier(node, qt.ModifierFlags.Export)) {
         statements = append(statements, setOriginalNode(setTextRange(createExpressionStatement(createExportExpression(node.name, createRequireCall(node))), node), node));
       } else {
@@ -731,7 +731,7 @@ export function transformModule(context: TransformationContext) {
     if (node.exportClause && isNamedExports(node.exportClause)) {
       const statements: qt.Statement[] = [];
       // export { x, y } from "mod";
-      if (moduleKind !== ModuleKind.AMD) {
+      if (moduleKind !== qt.ModuleKind.AMD) {
         statements.push(setOriginalNode(setTextRange(createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([createVariableDeclaration(generatedName, /*type*/ undefined, createRequireCall(node))])), /*location*/ node), /* original */ node));
       }
       for (const specifier of node.exportClause.elements) {
@@ -747,12 +747,12 @@ export function transformModule(context: TransformationContext) {
     } else if (node.exportClause) {
       const statements: qt.Statement[] = [];
       // export * as ns from "mod";
-      statements.push(setOriginalNode(setTextRange(createExpressionStatement(createExportExpression(getSynthesizedClone(node.exportClause.name), moduleKind !== ModuleKind.AMD ? getHelperExpressionForExport(node, createRequireCall(node)) : createIdentifier(idText(node.exportClause.name)))), node), node));
+      statements.push(setOriginalNode(setTextRange(createExpressionStatement(createExportExpression(getSynthesizedClone(node.exportClause.name), moduleKind !== qt.ModuleKind.AMD ? getHelperExpressionForExport(node, createRequireCall(node)) : createIdentifier(idText(node.exportClause.name)))), node), node));
 
       return singleOrMany(statements);
     } else {
       // export * from "mod";
-      return setOriginalNode(setTextRange(createExpressionStatement(createExportStarHelper(context, moduleKind !== ModuleKind.AMD ? createRequireCall(node) : generatedName)), node), node);
+      return setOriginalNode(setTextRange(createExpressionStatement(createExportStarHelper(context, moduleKind !== qt.ModuleKind.AMD ? createRequireCall(node) : generatedName)), node), node);
     }
   }
 

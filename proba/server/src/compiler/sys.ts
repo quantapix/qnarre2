@@ -2,9 +2,11 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import * as qpc from './corePublic';
 import * as qc from './core';
-
+import * as qp from './path';
 import * as qt from './types';
+import * as qu from './utilities';
 import { Debug } from './debug';
+import { Diagnostics } from './diagnostics';
 
 declare function setTimeout(handler: (...args: any[]) => void, timeout: number): any;
 declare function clearTimeout(handle: any): void;
@@ -55,9 +57,9 @@ export enum PollingInterval {
   Low = 250,
 }
 
-export type HostWatchFile = (fileName: string, callback: FileWatcherCallback, pollingInterval: PollingInterval, options: WatchOptions | undefined) => FileWatcher;
+export type HostWatchFile = (fileName: string, callback: FileWatcherCallback, pollingInterval: PollingInterval, options: qt.WatchOptions | undefined) => FileWatcher;
 
-export type HostWatchDirectory = (fileName: string, callback: DirectoryWatcherCallback, recursive: boolean, options: WatchOptions | undefined) => FileWatcher;
+export type HostWatchDirectory = (fileName: string, callback: DirectoryWatcherCallback, recursive: boolean, options: qt.WatchOptions | undefined) => FileWatcher;
 
 export const missingFileModifiedTime = new Date(0); // Any subsequent modification will occur after this time
 
@@ -303,10 +305,10 @@ function createUseFsEventsOnParentDirectoryWatchFile(fsWatch: FsWatch, useCaseSe
   // One file can have multiple watchers
   const fileWatcherCallbacks = qc.createMultiMap<FileWatcherCallback>();
   const dirWatchers = qc.createMap<DirectoryWatcher>();
-  const toCanonicalName = createGetCanonicalFileName(useCaseSensitiveFileNames);
+  const toCanonicalName = qc.createGetCanonicalFileName(useCaseSensitiveFileNames);
   return nonPollingWatchFile;
 
-  function nonPollingWatchFile(fileName: string, callback: FileWatcherCallback, _pollingInterval: PollingInterval, fallbackOptions: WatchOptions | undefined): FileWatcher {
+  function nonPollingWatchFile(fileName: string, callback: FileWatcherCallback, _pollingInterval: PollingInterval, fallbackOptions: qt.WatchOptions | undefined): FileWatcher {
     const filePath = toCanonicalName(fileName);
     fileWatcherCallbacks.add(filePath, callback);
     const dirPath = qp.getDirectoryPath(filePath) || '.';
@@ -325,7 +327,7 @@ function createUseFsEventsOnParentDirectoryWatchFile(fsWatch: FsWatch, useCaseSe
     };
   }
 
-  function createDirectoryWatcher(dirName: string, dirPath: string, fallbackOptions: WatchOptions | undefined) {
+  function createDirectoryWatcher(dirName: string, dirPath: string, fallbackOptions: qt.WatchOptions | undefined) {
     const watcher = fsWatch(
       dirName,
       FileSystemEntryKind.Directory,
@@ -360,7 +362,7 @@ export function createSingleFileWatcherPerName(watchFile: HostWatchFile, useCase
   }
   const cache = qc.createMap<SingleFileWatcher>();
   const callbacksCache = qc.createMultiMap<FileWatcherCallback>();
-  const toCanonicalFileName = createGetCanonicalFileName(useCaseSensitiveFileNames);
+  const toCanonicalFileName = qc.createGetCanonicalFileName(useCaseSensitiveFileNames);
 
   return (fileName, callback, pollingInterval, options) => {
     const path = toCanonicalFileName(fileName);
@@ -443,18 +445,18 @@ export function createDirectoryWatcherSupportingRecursive(host: RecursiveDirecto
 
   const cache = qc.createMap<HostDirectoryWatcher>();
   const callbackCache = qc.createMultiMap<{ dirName: string; callback: DirectoryWatcherCallback }>();
-  const cacheToUpdateChildWatches = qc.createMap<{ dirName: string; options: WatchOptions | undefined }>();
+  const cacheToUpdateChildWatches = qc.createMap<{ dirName: string; options: qt.WatchOptions | undefined }>();
   let timerToUpdateChildWatches: any;
 
   const filePathComparer = qc.getStringComparer(!host.useCaseSensitiveFileNames);
-  const toCanonicalFilePath = createGetCanonicalFileName(host.useCaseSensitiveFileNames);
+  const toCanonicalFilePath = qc.createGetCanonicalFileName(host.useCaseSensitiveFileNames);
 
   return (dirName, callback, recursive, options) => (recursive ? createDirectoryWatcher(dirName, options, callback) : host.watchDirectory(dirName, callback, recursive, options));
 
   /**
    * Create the directory watcher for the dirPath.
    */
-  function createDirectoryWatcher(dirName: string, options: WatchOptions | undefined, callback?: DirectoryWatcherCallback): ChildDirectoryWatcher {
+  function createDirectoryWatcher(dirName: string, options: qt.WatchOptions | undefined, callback?: DirectoryWatcherCallback): ChildDirectoryWatcher {
     const dirPath = toCanonicalFilePath(dirName);
     let directoryWatcher = cache.get(dirPath);
     if (directoryWatcher) {
@@ -528,7 +530,7 @@ export function createDirectoryWatcherSupportingRecursive(host: RecursiveDirecto
     });
   }
 
-  function nonSyncUpdateChildWatches(dirName: string, dirPath: Path, fileName: string, options: WatchOptions | undefined) {
+  function nonSyncUpdateChildWatches(dirName: string, dirPath: Path, fileName: string, options: qt.WatchOptions | undefined) {
     // Iterate through existing children and update the watches if needed
     const parentWatcher = cache.get(dirPath);
     if (parentWatcher && host.directoryExists(dirName)) {
@@ -542,7 +544,7 @@ export function createDirectoryWatcherSupportingRecursive(host: RecursiveDirecto
     removeChildWatches(parentWatcher);
   }
 
-  function scheduleUpdateChildWatches(dirName: string, dirPath: Path, options: WatchOptions | undefined) {
+  function scheduleUpdateChildWatches(dirName: string, dirPath: Path, options: qt.WatchOptions | undefined) {
     if (!cacheToUpdateChildWatches.has(dirPath)) {
       cacheToUpdateChildWatches.set(dirPath, { dirName, options });
     }
@@ -593,7 +595,7 @@ export function createDirectoryWatcherSupportingRecursive(host: RecursiveDirecto
     }
   }
 
-  function updateChildWatches(dirName: string, dirPath: Path, options: WatchOptions | undefined) {
+  function updateChildWatches(dirName: string, dirPath: Path, options: qt.WatchOptions | undefined) {
     // Iterate through existing children and update the watches if needed
     const parentWatcher = cache.get(dirPath);
     if (parentWatcher) {
@@ -604,7 +606,7 @@ export function createDirectoryWatcherSupportingRecursive(host: RecursiveDirecto
   /**
    * Watch the directories in the parentDir
    */
-  function watchChildDirectories(parentDir: string, existingChildWatches: ChildWatches, options: WatchOptions | undefined): ChildWatches {
+  function watchChildDirectories(parentDir: string, existingChildWatches: ChildWatches, options: qt.WatchOptions | undefined): ChildWatches {
     let newChildWatches: ChildDirectoryWatcher[] | undefined;
     enumerateInsertsAndDeletes<string, ChildDirectoryWatcher>(
       host.directoryExists(parentDir)
@@ -652,7 +654,7 @@ export function createDirectoryWatcherSupportingRecursive(host: RecursiveDirecto
 }
 
 export type FsWatchCallback = (eventName: 'rename' | 'change', relativeFileName: string | undefined) => void;
-export type FsWatch = (fileOrDirectory: string, entryKind: FileSystemEntryKind, callback: FsWatchCallback, recursive: boolean, fallbackPollingInterval: PollingInterval, fallbackOptions: WatchOptions | undefined) => FileWatcher;
+export type FsWatch = (fileOrDirectory: string, entryKind: FileSystemEntryKind, callback: FsWatchCallback, recursive: boolean, fallbackPollingInterval: PollingInterval, fallbackOptions: qt.WatchOptions | undefined) => FileWatcher;
 
 export const enum FileSystemEntryKind {
   File,
@@ -716,7 +718,7 @@ export function createSystemWatchFunctions({ pollingWatchFile, getModifiedTime, 
     watchDirectory,
   };
 
-  function watchFile(fileName: string, callback: FileWatcherCallback, pollingInterval: PollingInterval, options: WatchOptions | undefined): FileWatcher {
+  function watchFile(fileName: string, callback: FileWatcherCallback, pollingInterval: PollingInterval, options: qt.WatchOptions | undefined): FileWatcher {
     options = updateOptionsForWatchFile(options, useNonPollingWatchers);
     const watchFileKind = Debug.checkDefined(options.watchFile);
     switch (watchFileKind) {
@@ -742,7 +744,7 @@ export function createSystemWatchFunctions({ pollingWatchFile, getModifiedTime, 
     return dynamicPollingWatchFile || (dynamicPollingWatchFile = createDynamicPriorityPollingWatchFile({ getModifiedTime, setTimeout }));
   }
 
-  function updateOptionsForWatchFile(options: WatchOptions | undefined, useNonPollingWatchers?: boolean): WatchOptions {
+  function updateOptionsForWatchFile(options: qt.WatchOptions | undefined, useNonPollingWatchers?: boolean): qt.WatchOptions {
     if (options && options.watchFile !== undefined) return options;
     switch (tscWatchFile) {
       case 'PriorityPollingInterval':
@@ -769,7 +771,7 @@ export function createSystemWatchFunctions({ pollingWatchFile, getModifiedTime, 
     }
   }
 
-  function generateWatchFileOptions(watchFile: WatchFileKind, fallbackPolling: PollingWatchKind, options: WatchOptions | undefined): WatchOptions {
+  function generateWatchFileOptions(watchFile: WatchFileKind, fallbackPolling: PollingWatchKind, options: qt.WatchOptions | undefined): qt.WatchOptions {
     const defaultFallbackPolling = options?.fallbackPolling;
     return {
       watchFile,
@@ -777,7 +779,7 @@ export function createSystemWatchFunctions({ pollingWatchFile, getModifiedTime, 
     };
   }
 
-  function watchDirectory(directoryName: string, callback: DirectoryWatcherCallback, recursive: boolean, options: WatchOptions | undefined): FileWatcher {
+  function watchDirectory(directoryName: string, callback: DirectoryWatcherCallback, recursive: boolean, options: qt.WatchOptions | undefined): FileWatcher {
     if (fsSupportsRecursiveFsWatch) {
       return fsWatch(directoryName, FileSystemEntryKind.Directory, createFsWatchCallbackForDirectoryWatcherCallback(directoryName, callback), recursive, PollingInterval.Medium, getFallbackOptions(options));
     }
@@ -796,7 +798,7 @@ export function createSystemWatchFunctions({ pollingWatchFile, getModifiedTime, 
     return hostRecursiveDirectoryWatcher(directoryName, callback, recursive, options);
   }
 
-  function nonRecursiveWatchDirectory(directoryName: string, callback: DirectoryWatcherCallback, recursive: boolean, options: WatchOptions | undefined): FileWatcher {
+  function nonRecursiveWatchDirectory(directoryName: string, callback: DirectoryWatcherCallback, recursive: boolean, options: qt.WatchOptions | undefined): FileWatcher {
     Debug.assert(!recursive);
     options = updateOptionsForWatchDirectory(options);
     const watchDirectoryKind = Debug.checkDefined(options.watchDirectory);
@@ -812,7 +814,7 @@ export function createSystemWatchFunctions({ pollingWatchFile, getModifiedTime, 
     }
   }
 
-  function updateOptionsForWatchDirectory(options: WatchOptions | undefined): WatchOptions {
+  function updateOptionsForWatchDirectory(options: qt.WatchOptions | undefined): qt.WatchOptions {
     if (options && options.watchDirectory !== undefined) return options;
     switch (tscWatchDirectory) {
       case 'RecursiveDirectoryUsingFsWatchFile':
@@ -936,8 +938,8 @@ export interface System {
    * @pollingInterval - this parameter is used in polling-based watchers and ignored in watchers that
    * use native OS file watching
    */
-  watchFile?(path: string, callback: FileWatcherCallback, pollingInterval?: number, options?: WatchOptions): FileWatcher;
-  watchDirectory?(path: string, callback: DirectoryWatcherCallback, recursive?: boolean, options?: WatchOptions): FileWatcher;
+  watchFile?(path: string, callback: FileWatcherCallback, pollingInterval?: number, options?: qt.WatchOptions): FileWatcher;
+  watchDirectory?(path: string, callback: DirectoryWatcherCallback, recursive?: boolean, options?: qt.WatchOptions): FileWatcher;
   resolvePath(path: string): string;
   fileExists(path: string): boolean;
   directoryExists(path: string): boolean;
@@ -1200,7 +1202,7 @@ export let sys: System = (() => {
         if (node.callFrame.url) {
           const url = normalizeSlashes(node.callFrame.url);
           if (containsPath(fileUrlRoot, url, useCaseSensitiveFileNames)) {
-            node.callFrame.url = getRelativePathToDirectoryOrUrl(fileUrlRoot, url, fileUrlRoot, createGetCanonicalFileName(useCaseSensitiveFileNames), /*isAbsolutePathAnUrl*/ true);
+            node.callFrame.url = getRelativePathToDirectoryOrUrl(fileUrlRoot, url, fileUrlRoot, qc.createGetCanonicalFileName(useCaseSensitiveFileNames), /*isAbsolutePathAnUrl*/ true);
           } else if (!nativePattern.test(url)) {
             node.callFrame.url = (remappedPaths.has(url) ? remappedPaths : remappedPaths.set(url, `external${externalFileCounter}.js`)).get(url)!;
             externalFileCounter++;
@@ -1294,7 +1296,7 @@ export let sys: System = (() => {
       }
     }
 
-    function fsWatch(fileOrDirectory: string, entryKind: FileSystemEntryKind, callback: FsWatchCallback, recursive: boolean, fallbackPollingInterval: PollingInterval, fallbackOptions: WatchOptions | undefined): FileWatcher {
+    function fsWatch(fileOrDirectory: string, entryKind: FileSystemEntryKind, callback: FsWatchCallback, recursive: boolean, fallbackPollingInterval: PollingInterval, fallbackOptions: qt.WatchOptions | undefined): FileWatcher {
       let options: any;
       let lastDirectoryPartWithDirectorySeparator: string | undefined;
       let lastDirectoryPart: string | undefined;

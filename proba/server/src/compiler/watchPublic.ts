@@ -1,3 +1,11 @@
+import * as qpc from './corePublic';
+import * as qc from './core';
+import * as qp from './path';
+import * as qt from './types';
+import * as qu from './utilities';
+import { Debug } from './debug';
+import { Diagnostics } from './diagnostics';
+
 export interface ReadBuildProgramHost {
   useCaseSensitiveFileNames(): boolean;
   getCurrentDirectory(): string;
@@ -127,7 +135,7 @@ export interface WatchCompilerHostOfFilesAndCompilerOptions<T extends BuilderPro
   /** Compiler options */
   options: qt.CompilerOptions;
 
-  watchOptions?: WatchOptions;
+  watchOptions?: qt.WatchOptions;
 
   /** Project References */
   projectReferences?: readonly qt.ProjectReference[];
@@ -143,7 +151,7 @@ export interface WatchCompilerHostOfConfigFile<T extends BuilderProgram> extends
   /** Options to extend */
   optionsToExtend?: qt.CompilerOptions;
 
-  watchOptionsToExtend?: WatchOptions;
+  watchOptionsToExtend?: qt.WatchOptions;
 
   extraFileExtensions?: readonly FileExtensionInfo[];
 
@@ -186,8 +194,8 @@ export interface WatchOfFilesAndCompilerOptions<T> extends Watch<T> {
 /**
  * Create the watch compiler host for either configFile or fileNames and its options
  */
-export function createWatchCompilerHost<T extends BuilderProgram>(configFileName: string, optionsToExtend: qt.CompilerOptions | undefined, system: System, createProgram?: CreateProgram<T>, reportDiagnostic?: DiagnosticReporter, reportWatchStatus?: WatchStatusReporter, watchOptionsToExtend?: WatchOptions, extraFileExtensions?: readonly FileExtensionInfo[]): WatchCompilerHostOfConfigFile<T>;
-export function createWatchCompilerHost<T extends BuilderProgram>(rootFiles: string[], options: qt.CompilerOptions, system: System, createProgram?: CreateProgram<T>, reportDiagnostic?: DiagnosticReporter, reportWatchStatus?: WatchStatusReporter, projectReferences?: readonly qt.ProjectReference[], watchOptions?: WatchOptions): WatchCompilerHostOfFilesAndCompilerOptions<T>;
+export function createWatchCompilerHost<T extends BuilderProgram>(configFileName: string, optionsToExtend: qt.CompilerOptions | undefined, system: System, createProgram?: CreateProgram<T>, reportDiagnostic?: DiagnosticReporter, reportWatchStatus?: WatchStatusReporter, watchOptionsToExtend?: qt.WatchOptions, extraFileExtensions?: readonly FileExtensionInfo[]): WatchCompilerHostOfConfigFile<T>;
+export function createWatchCompilerHost<T extends BuilderProgram>(rootFiles: string[], options: qt.CompilerOptions, system: System, createProgram?: CreateProgram<T>, reportDiagnostic?: DiagnosticReporter, reportWatchStatus?: WatchStatusReporter, projectReferences?: readonly qt.ProjectReference[], watchOptions?: qt.WatchOptions): WatchCompilerHostOfFilesAndCompilerOptions<T>;
 export function createWatchCompilerHost<T extends BuilderProgram>(
   rootFilesOrConfigFileName: string | string[],
   options: qt.CompilerOptions | undefined,
@@ -195,14 +203,14 @@ export function createWatchCompilerHost<T extends BuilderProgram>(
   createProgram?: CreateProgram<T>,
   reportDiagnostic?: DiagnosticReporter,
   reportWatchStatus?: WatchStatusReporter,
-  projectReferencesOrWatchOptionsToExtend?: readonly qt.ProjectReference[] | WatchOptions,
-  watchOptionsOrExtraFileExtensions?: WatchOptions | readonly FileExtensionInfo[]
+  projectReferencesOrWatchOptionsToExtend?: readonly qt.ProjectReference[] | qt.WatchOptions,
+  watchOptionsOrExtraFileExtensions?: qt.WatchOptions | readonly FileExtensionInfo[]
 ): WatchCompilerHostOfFilesAndCompilerOptions<T> | WatchCompilerHostOfConfigFile<T> {
   if (isArray(rootFilesOrConfigFileName)) {
     return createWatchCompilerHostOfFilesAndCompilerOptions({
       rootFiles: rootFilesOrConfigFileName,
       options: options,
-      watchOptions: watchOptionsOrExtraFileExtensions as WatchOptions,
+      watchOptions: watchOptionsOrExtraFileExtensions as qt.WatchOptions,
       projectReferences: projectReferencesOrWatchOptionsToExtend as readonly qt.ProjectReference[],
       system,
       createProgram,
@@ -213,7 +221,7 @@ export function createWatchCompilerHost<T extends BuilderProgram>(
     return createWatchCompilerHostOfConfigFile({
       configFileName: rootFilesOrConfigFileName,
       optionsToExtend: options,
-      watchOptionsToExtend: projectReferencesOrWatchOptionsToExtend as WatchOptions,
+      watchOptionsToExtend: projectReferencesOrWatchOptionsToExtend as qt.WatchOptions,
       extraFileExtensions: watchOptionsOrExtraFileExtensions as readonly FileExtensionInfo[],
       system,
       createProgram,
@@ -284,7 +292,7 @@ export function createWatchProgram<T extends BuilderProgram>(host: WatchCompiler
   }
 
   const { watchFile, watchFilePath, watchDirectory, writeLog } = createWatchFactory<string>(host, compilerOptions);
-  const getCanonicalFileName = createGetCanonicalFileName(useCaseSensitiveFileNames);
+  const getCanonicalFileName = qc.createGetCanonicalFileName(useCaseSensitiveFileNames);
 
   writeLog(`Current directory: ${currentDirectory} CaseSensitiveFileNames: ${useCaseSensitiveFileNames}`);
   let configFileWatcher: FileWatcher | undefined;

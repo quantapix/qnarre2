@@ -1,3 +1,11 @@
+import * as qpc from './corePublic';
+import * as qc from './core';
+import * as qp from './path';
+import * as qt from './types';
+import * as qu from './utilities';
+import { Debug } from './debug';
+import { Diagnostics } from './diagnostics';
+
 const isTypeNodeOrTypeParameterDeclaration = or(isTypeNode, isTypeParameterDeclaration);
 
 /**
@@ -41,7 +49,7 @@ export function visitNode<T extends Node>(node: T | undefined, visitor: Visitor 
   }
 
   Debug.assertNode(visitedNode, test);
-  aggregateTransformFlags(visitedNode!);
+  aggregateTransformFlags(visitedNode);
   return <T>visitedNode;
 }
 

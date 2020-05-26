@@ -1,6 +1,10 @@
 import * as qpc from './corePublic';
 import * as qc from './core';
+import * as qp from './path';
 import * as qt from './types';
+import * as qu from './utilities';
+import { Debug } from './debug';
+import { Diagnostics } from './diagnostics';
 
 const ambientModuleSymbolRegex = /^".+"$/;
 const anon = '(anonymous)' as qt.__String & string;
@@ -876,7 +880,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   let sharedFlowCount = 0;
   let flowAnalysisDisabled = false;
   let flowInvocationCount = 0;
-  let lastFlowNode: FlowNode | undefined;
+  let lastFlowNode: qt. FlowNode | undefined;
   let lastFlowNodeReachable: boolean;
   let flowTypeCache: Type[] | undefined;
 
@@ -894,10 +898,10 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   const symbolLinks: SymbolLinks[] = [];
   const nodeLinks: NodeLinks[] = [];
   const flowLoopCaches: Map<Type>[] = [];
-  const flowLoopNodes: FlowNode[] = [];
+  const flowLoopNodes: qt. FlowNode[] = [];
   const flowLoopKeys: string[] = [];
   const flowLoopTypes: Type[][] = [];
-  const sharedFlowNodes: FlowNode[] = [];
+  const sharedFlowNodes: qt. FlowNode[] = [];
   const sharedFlowTypes: FlowType[] = [];
   const flowNodeReachable: (boolean | undefined)[] = [];
   const flowNodePostSuper: (boolean | undefined)[] = [];
@@ -2327,7 +2331,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       const hasSyntheticDefault = canHaveSyntheticDefault(file, moduleSymbol, dontResolveAlias);
       if (!exportDefaultSymbol && !hasSyntheticDefault) {
         if (hasExportAssignmentSymbol(moduleSymbol)) {
-          const compilerOptionName = moduleKind >= ModuleKind.ES2015 ? 'allowSyntheticDefaultImports' : 'esModuleInterop';
+          const compilerOptionName = moduleKind >= qt. ModuleKind.ES2015 ? 'allowSyntheticDefaultImports' : 'esModuleInterop';
           const exportEqualsSymbol = moduleSymbol.exports!.get(InternalSymbolName.ExportEquals);
           const exportAssignment = exportEqualsSymbol.valueDeclaration;
           const err = error(node.name, Diagnostics.Module_0_can_only_be_default_imported_using_the_1_flag, symbolToString(moduleSymbol), compilerOptionName);
@@ -2503,7 +2507,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   }
 
   function reportInvalidImportEqualsExportMember(node: ImportDeclaration | ExportDeclaration, name: Identifier, declarationName: string, moduleName: string) {
-    if (moduleKind >= ModuleKind.ES2015) {
+    if (moduleKind >= qt. ModuleKind.ES2015) {
       const message = compilerOptions.esModuleInterop ? Diagnostics._0_can_only_be_imported_by_using_a_default_import : Diagnostics._0_can_only_be_imported_by_turning_on_the_esModuleInterop_flag_and_using_a_default_import;
       error(name, message, declarationName);
     } else {
@@ -2974,7 +2978,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         if (tsExtension) {
           const diag = Diagnostics.An_import_path_cannot_end_with_a_0_extension_Consider_importing_1_instead;
           error(errorNode, diag, tsExtension, removeExtension(moduleReference, tsExtension));
-        } else if (!compilerOptions.resolveJsonModule && fileExtensionIs(moduleReference, Extension.Json) && getEmitModuleResolutionKind(compilerOptions) === ModuleResolutionKind.NodeJs && hasJsonModuleEmitEnabled(compilerOptions)) {
+        } else if (!compilerOptions.resolveJsonModule && fileExtensionIs(moduleReference, Extension.Json) && getEmitModuleResolutionKind(compilerOptions) === qt.ModuleResolutionKind.NodeJs && hasJsonModuleEmitEnabled(compilerOptions)) {
           error(errorNode, Diagnostics.Cannot_find_module_0_Consider_using_resolveJsonModule_to_import_module_with_json_extension, moduleReference);
         } else {
           error(errorNode, moduleNotFoundError, moduleReference);
@@ -3037,7 +3041,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
     if (!dontResolveAlias && symbol) {
       if (!suppressInteropError && !(symbol.flags & (SymbolFlags.Module | SymbolFlags.Variable)) && !getDeclarationOfKind(symbol, qt.SyntaxKind.SourceFile)) {
-        const compilerOptionName = moduleKind >= ModuleKind.ES2015 ? 'allowSyntheticDefaultImports' : 'esModuleInterop';
+        const compilerOptionName = moduleKind >= qt. ModuleKind.ES2015 ? 'allowSyntheticDefaultImports' : 'esModuleInterop';
 
         error(referencingLocation, Diagnostics.This_module_can_only_be_referenced_with_ECMAScript_imports_Slashexports_by_turning_on_the_0_flag_and_referencing_its_default_export, compilerOptionName);
 
@@ -4904,7 +4908,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         const nonRootParts = chain.length > 1 ? createAccessFromSymbolChain(chain, chain.length - 1, 1) : undefined;
         const typeParameterNodes = overrideTypeArguments || lookupTypeParameterNodes(chain, 0, context);
         const specifier = getSpecifierForModuleSymbol(chain[0], context);
-        if (!(context.flags & NodeBuilderFlags.AllowNodeModulesRelativePaths) && getEmitModuleResolutionKind(compilerOptions) === ModuleResolutionKind.NodeJs && specifier.indexOf('/node_modules/') >= 0) {
+        if (!(context.flags & NodeBuilderFlags.AllowNodeModulesRelativePaths) && getEmitModuleResolutionKind(compilerOptions) === qt.ModuleResolutionKind.NodeJs && specifier.indexOf('/node_modules/') >= 0) {
           // If ultimately we can only name the symbol with a reference that dives into a `node_modules` folder, we should error
           // since declaration files with these kinds of references are liable to fail when published :(
           context.encounteredError = true;
@@ -5336,7 +5340,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
             if (context.tracker && context.tracker.moduleResolverHost) {
               const targetFile = getExternalModuleFileFromDeclaration(parent);
               if (targetFile) {
-                const getCanonicalFileName = createGetCanonicalFileName(!!host.useCaseSensitiveFileNames);
+                const getCanonicalFileName = qc.createGetCanonicalFileName(!!host.useCaseSensitiveFileNames);
                 const resolverHost = {
                   getCanonicalFileName,
                   getCurrentDirectory: () => context.tracker.moduleResolverHost!.getCurrentDirectory(),
@@ -18204,7 +18208,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     return false;
   }
 
-  function getFlowNodeId(flow: FlowNode): number {
+  function getFlowNodeId(flow: qt. FlowNode): number {
     if (!flow.id || flow.id < 0) {
       flow.id = nextFlowId;
       nextFlowId++;
@@ -18748,7 +18752,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     diagnostics.add(createFileDiagnostic(sourceFile, span.start, span.length, Diagnostics.The_containing_function_or_module_body_is_too_large_for_control_flow_analysis));
   }
 
-  function isReachableFlowNode(flow: FlowNode) {
+  function isReachableFlowNode(flow: qt. FlowNode) {
     const result = isReachableFlowNodeWorker(flow, /*noCacheCheck*/ false);
     lastFlowNode = flow;
     lastFlowNodeReachable = result;
@@ -18760,7 +18764,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     return node.kind === qt.SyntaxKind.FalseKeyword || (node.kind === qt.SyntaxKind.BinaryExpression && ((node.operatorToken.kind === qt.SyntaxKind.AmpersandAmpersandToken && (isFalseExpression(node.left) || isFalseExpression(node.right))) || (node.operatorToken.kind === qt.SyntaxKind.BarBarToken && isFalseExpression(node.left) && isFalseExpression(node.right))));
   }
 
-  function isReachableFlowNodeWorker(flow: FlowNode, noCacheCheck: boolean): boolean {
+  function isReachableFlowNodeWorker(flow: qt. FlowNode, noCacheCheck: boolean): boolean {
     while (true) {
       if (flow === lastFlowNode) {
         return lastFlowNodeReachable;
@@ -18821,7 +18825,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
   // Return true if the given flow node is preceded by a 'super(...)' call in every possible code path
   // leading to the node.
-  function isPostSuperFlowNode(flow: FlowNode, noCacheCheck: boolean): boolean {
+  function isPostSuperFlowNode(flow: qt. FlowNode, noCacheCheck: boolean): boolean {
     while (true) {
       const flags = flow.flags;
       if (flags & FlowFlags.Shared) {
@@ -18891,7 +18895,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
       return (key = getFlowCacheKey(reference, declaredType, initialType, flowContainer));
     }
 
-    function getTypeAtFlowNode(flow: FlowNode): FlowType {
+    function getTypeAtFlowNode(flow: qt. FlowNode): FlowType {
       if (flowDepth === 2000) {
         // We have made 2000 recursive invocations. To avoid overflowing the call stack we report an error
         // and disable further control flow analysis in the containing function or module body.
@@ -21897,7 +21901,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   function checkJsxFragment(node: JsxFragment): Type {
     checkJsxOpeningLikeElementOrOpeningFragment(node.openingFragment);
 
-    if (compilerOptions.jsx === JsxEmit.React && (compilerOptions.jsxFactory || getSourceFileOfNode(node).pragmas.has('jsx'))) {
+    if (compilerOptions.jsx === qt.JsxEmit.React && (compilerOptions.jsxFactory || getSourceFileOfNode(node).pragmas.has('jsx'))) {
       error(node, compilerOptions.jsxFactory ? Diagnostics.JSX_fragment_is_not_supported_when_using_jsxFactory : Diagnostics.JSX_fragment_is_not_supported_when_using_an_inline_JSX_factory_pragma);
     }
 
@@ -22322,7 +22326,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
   function checkJsxPreconditions(errorNode: Node) {
     // Preconditions for using JSX
-    if ((compilerOptions.jsx || JsxEmit.None) === JsxEmit.None) {
+    if ((compilerOptions.jsx || qt.JsxEmit.None) === qt.JsxEmit.None) {
       error(errorNode, Diagnostics.Cannot_use_JSX_unless_the_jsx_flag_is_provided);
     }
 
@@ -22342,7 +22346,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     checkJsxPreconditions(node);
     // The reactNamespace/jsxFactory's root symbol should be marked as 'used' so we don't incorrectly elide its import.
     // And if there is no reactNamespace/jsxFactory's symbol in scope when targeting React emit, we should issue an error.
-    const reactRefErr = diagnostics && compilerOptions.jsx === JsxEmit.React ? Diagnostics.Cannot_find_name_0 : undefined;
+    const reactRefErr = diagnostics && compilerOptions.jsx === qt.JsxEmit.React ? Diagnostics.Cannot_find_name_0 : undefined;
     const reactNamespace = getJsxNamespace(node);
     const reactLocation = isNodeOpeningLikeElement ? (<JsxOpeningLikeElement>node).tagName : node;
     const reactSym = resolveName(reactLocation, reactNamespace, SymbolFlags.Value, reactRefErr, reactNamespace, /*isUse*/ true);
@@ -25162,7 +25166,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   }
 
   function checkImportMetaProperty(node: MetaProperty) {
-    if (moduleKind !== ModuleKind.ESNext && moduleKind !== ModuleKind.System) {
+    if (moduleKind !== qt. ModuleKind.ESNext && moduleKind !== qt. ModuleKind.System) {
       error(node, Diagnostics.The_import_meta_meta_property_is_only_allowed_when_the_module_option_is_esnext_or_system);
     }
     const file = getSourceFileOfNode(node);
@@ -26052,7 +26056,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
               const diagnostic = createFileDiagnostic(sourceFile, span.start, span.length, Diagnostics.await_expressions_are_only_allowed_at_the_top_level_of_a_file_when_that_file_is_a_module_but_this_file_has_no_imports_or_exports_Consider_adding_an_empty_export_to_make_this_file_a_module);
               diagnostics.add(diagnostic);
             }
-            if ((moduleKind !== ModuleKind.ESNext && moduleKind !== ModuleKind.System) || languageVersion < qt.ScriptTarget.ES2017) {
+            if ((moduleKind !== qt. ModuleKind.ESNext && moduleKind !== qt. ModuleKind.System) || languageVersion < qt.ScriptTarget.ES2017) {
               span = getSpanOfTokenAtPosition(sourceFile, node.pos);
               const diagnostic = createFileDiagnostic(sourceFile, span.start, span.length, Diagnostics.Top_level_await_expressions_are_only_allowed_when_the_module_option_is_set_to_esnext_or_system_and_the_target_option_is_set_to_es2017_or_higher);
               diagnostics.add(diagnostic);
@@ -29680,7 +29684,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
   function checkCollisionWithRequireExportsInGeneratedCode(node: qt.Node, name: Identifier) {
     // No need to check for require or exports for ES6 modules and later
-    if (moduleKind >= ModuleKind.ES2015 || compilerOptions.noEmit) {
+    if (moduleKind >= qt. ModuleKind.ES2015 || compilerOptions.noEmit) {
       return;
     }
 
@@ -31147,8 +31151,8 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
    * The name cannot be used as 'Object' of user defined types with special target.
    */
   function checkClassNameCollisionWithObject(name: Identifier): void {
-    if (languageVersion === qt.ScriptTarget.ES5 && name.escapedText === 'Object' && moduleKind < ModuleKind.ES2015) {
-      error(name, Diagnostics.Class_name_cannot_be_Object_when_targeting_ES5_with_module_0, ModuleKind[moduleKind]); // https://github.com/Microsoft/TypeScript/issues/17494
+    if (languageVersion === qt.ScriptTarget.ES5 && name.escapedText === 'Object' && moduleKind < qt. ModuleKind.ES2015) {
+      error(name, Diagnostics.Class_name_cannot_be_Object_when_targeting_ES5_with_module_0, qt. ModuleKind[moduleKind]); // https://github.com/Microsoft/TypeScript/issues/17494
     }
   }
 
@@ -32250,7 +32254,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
           }
         }
       } else {
-        if (moduleKind >= ModuleKind.ES2015 && !(node.flags & NodeFlags.Ambient)) {
+        if (moduleKind >= qt. ModuleKind.ES2015 && !(node.flags & NodeFlags.Ambient)) {
           // Import equals declaration is deprecated in es6 or above
           grammarErrorOnNode(node, Diagnostics.Import_assignment_cannot_be_used_when_targeting_ECMAScript_modules_Consider_using_import_Asterisk_as_ns_from_mod_import_a_from_mod_import_d_from_mod_or_another_module_format_instead);
         }
@@ -32291,7 +32295,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         } else if (node.exportClause) {
           checkAliasSymbol(node.exportClause);
         }
-        if (moduleKind !== ModuleKind.System && moduleKind < ModuleKind.ES2015) {
+        if (moduleKind !== qt. ModuleKind.System && moduleKind < qt. ModuleKind.ES2015) {
           checkExternalEmitHelpers(node, ExternalEmitHelpers.ExportStar);
         }
       }
@@ -32402,10 +32406,10 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
     }
 
     if (node.isExportEquals && !(node.flags & NodeFlags.Ambient)) {
-      if (moduleKind >= ModuleKind.ES2015) {
+      if (moduleKind >= qt. ModuleKind.ES2015) {
         // export assignment is not supported in es6 modules
         grammarErrorOnNode(node, Diagnostics.Export_assignment_cannot_be_used_when_targeting_ECMAScript_modules_Consider_using_export_default_or_another_module_format_instead);
-      } else if (moduleKind === ModuleKind.System) {
+      } else if (moduleKind === qt. ModuleKind.System) {
         // system modules does not support export assignment
         grammarErrorOnNode(node, Diagnostics.Export_assignment_is_not_supported_when_module_flag_is_system);
       }
@@ -32836,7 +32840,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
         });
       }
 
-      if (compilerOptions.importsNotUsedAsValues === ImportsNotUsedAsValues.Error && !node.isDeclarationFile && isExternalModule(node)) {
+      if (compilerOptions.importsNotUsedAsValues === qt.ImportsNotUsedAsValues.Error && !node.isDeclarationFile && isExternalModule(node)) {
         checkImportsForTypeOnlyConversion(node);
       }
 
@@ -35477,7 +35481,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
 
     const moduleKind = getEmitModuleKind(compilerOptions);
 
-    if (moduleKind < ModuleKind.ES2015 && moduleKind !== ModuleKind.System && !compilerOptions.noEmit && !(node.parent.parent.flags & NodeFlags.Ambient) && qu.hasSyntacticModifier(node.parent.parent, qt.ModifierFlags.Export)) {
+    if (moduleKind < qt. ModuleKind.ES2015 && moduleKind !== qt. ModuleKind.System && !compilerOptions.noEmit && !(node.parent.parent.flags & NodeFlags.Ambient) && qu.hasSyntacticModifier(node.parent.parent, qt.ModifierFlags.Export)) {
       checkESModuleMarker(node.name);
     }
 
@@ -35814,7 +35818,7 @@ export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boo
   }
 
   function checkGrammarImportCallExpression(node: ImportCall): boolean {
-    if (moduleKind === ModuleKind.ES2015) {
+    if (moduleKind === qt. ModuleKind.ES2015) {
       return grammarErrorOnNode(node, Diagnostics.Dynamic_imports_are_only_supported_when_the_module_flag_is_set_to_es2020_esnext_commonjs_amd_system_or_umd);
     }
 

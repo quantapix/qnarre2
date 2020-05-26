@@ -1,3 +1,11 @@
+import * as qpc from './corePublic';
+import * as qc from './core';
+import * as qp from './path';
+import * as qt from './types';
+import * as qu from './utilities';
+import { Debug } from './debug';
+import { Diagnostics } from './diagnostics';
+
 export interface ReusableDiagnostic extends ReusableDiagnosticRelatedInformation {
   /** May store more in future. For now, this will simply be `true` to indicate when a diagnostic is an unused-identifier diagnostic. */
   reportsUnnecessary?: {};
@@ -730,7 +738,7 @@ function convertToReusableCompilerOptions(options: qt.CompilerOptions, relativeT
   return result;
 }
 
-function convertToReusableCompilerOptionValue(option: CommandLineOption | undefined, value: qt.CompilerOptionsValue, relativeToBuildInfo: (path: string) => string) {
+function convertToReusableCompilerOptionValue(option: qt.CommandLineOption | undefined, value: qt.CompilerOptionsValue, relativeToBuildInfo: (path: string) => string) {
   if (option) {
     if (option.type === 'list') {
       const values = value as readonly (string | number)[];
@@ -820,7 +828,7 @@ export function createBuilderProgram(kind: BuilderProgramKind, { newProgram, hos
   /**
    * Create the canonical file name for qc.identity
    */
-  const getCanonicalFileName = createGetCanonicalFileName(host.useCaseSensitiveFileNames());
+  const getCanonicalFileName = qc.createGetCanonicalFileName(host.useCaseSensitiveFileNames());
   /**
    * Computing hash to for signature verification
    */
@@ -1050,7 +1058,7 @@ function getMapOfReferencedSet(mapLike: qpc.MapLike<readonly string[]> | undefin
 
 export function createBuildProgramUsingProgramBuildInfo(program: ProgramBuildInfo, buildInfoPath: string, host: ReadBuildProgramHost): EmitAndSemanticDiagnosticsBuilderProgram {
   const buildInfoDirectory = qp.getDirectoryPath(getNormalizedAbsolutePath(buildInfoPath, host.getCurrentDirectory()));
-  const getCanonicalFileName = createGetCanonicalFileName(host.useCaseSensitiveFileNames());
+  const getCanonicalFileName = qc.createGetCanonicalFileName(host.useCaseSensitiveFileNames());
 
   const fileInfos = qc.createMap<BuilderState.FileInfo>();
   for (const key in program.fileInfos) {

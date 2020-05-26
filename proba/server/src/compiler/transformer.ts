@@ -1,10 +1,18 @@
-function getModuleTransformer(moduleKind: ModuleKind): TransformerFactory<SourceFile | Bundle> {
+import * as qpc from './corePublic';
+import * as qc from './core';
+import * as qp from './path';
+import * as qt from './types';
+import * as qu from './utilities';
+import { Debug } from './debug';
+import { Diagnostics } from './diagnostics';
+
+function getModuleTransformer(moduleKind: qt. ModuleKind): TransformerFactory<SourceFile | Bundle> {
   switch (moduleKind) {
-    case ModuleKind.ESNext:
-    case ModuleKind.ES2020:
-    case ModuleKind.ES2015:
+    case qt. ModuleKind.ESNext:
+    case qt. ModuleKind.ES2020:
+    case qt. ModuleKind.ES2015:
       return transformECMAScriptModule;
-    case ModuleKind.System:
+    case qt. ModuleKind.System:
       return transformSystemModule;
     default:
       return transformModule;
@@ -45,7 +53,7 @@ function getScriptTransformers(compilerOptions: qt.CompilerOptions, customTransf
   transformers.push(transformTypeScript);
   transformers.push(transformClassFields);
 
-  if (jsx === JsxEmit.React) {
+  if (jsx === qt.JsxEmit.React) {
     transformers.push(transformJsx);
   }
 

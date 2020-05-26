@@ -1,3 +1,11 @@
+import * as qpc from './corePublic';
+import * as qc from './core';
+import * as qp from './path';
+import * as qt from './types';
+import * as qu from './utilities';
+import { Debug } from './debug';
+import { Diagnostics } from './diagnostics';
+
 export function findConfigFile(searchPath: string, fileExists: (fileName: string) => boolean, configName = 'tsconfig.json'): string | undefined {
   return forEachAncestorDirectory(searchPath, (ancestor) => {
     const fileName = combinePaths(ancestor, configName);
@@ -70,7 +78,7 @@ export function createCompilerHost(options: qt.CompilerOptions, setParentNodes?:
 // TODO(shkamat): update this after reworking ts build API
 export function createCompilerHostWorker(options: qt.CompilerOptions, setParentNodes?: boolean, system = sys): CompilerHost {
   const existingDirectories = qc.createMap<boolean>();
-  const getCanonicalFileName = createGetCanonicalFileName(system.useCaseSensitiveFileNames);
+  const getCanonicalFileName = qc.createGetCanonicalFileName(system.useCaseSensitiveFileNames);
   function getSourceFile(fileName: string, languageVersion: qt.ScriptTarget, onError?: (message: string) => void): SourceFile | undefined {
     let text: string | undefined;
     try {
@@ -804,7 +812,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
           if (!parsedRef) continue;
           const out = parsedRef.commandLine.options.outFile || parsedRef.commandLine.options.out;
           if (useSourceOfProjectReferenceRedirect) {
-            if (out || getEmitModuleKind(parsedRef.commandLine.options) === ModuleKind.None) {
+            if (out || getEmitModuleKind(parsedRef.commandLine.options) === qt.ModuleKind.None) {
               for (const fileName of parsedRef.commandLine.fileNames) {
                 processSourceFile(fileName, /*isDefaultLib*/ false, /*ignoreNoDefaultLib*/ false, /*packageId*/ undefined);
               }
@@ -812,7 +820,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
           } else {
             if (out) {
               processSourceFile(changeExtension(out, '.d.ts'), /*isDefaultLib*/ false, /*ignoreNoDefaultLib*/ false, /*packageId*/ undefined);
-            } else if (getEmitModuleKind(parsedRef.commandLine.options) === ModuleKind.None) {
+            } else if (getEmitModuleKind(parsedRef.commandLine.options) === qt.ModuleKind.None) {
               for (const fileName of parsedRef.commandLine.fileNames) {
                 if (!fileExtensionIs(fileName, Extension.Dts) && !fileExtensionIs(fileName, Extension.Json)) {
                   processSourceFile(getOutputDeclarationFileName(fileName, parsedRef.commandLine, !host.useCaseSensitiveFileNames()), /*isDefaultLib*/ false, /*ignoreNoDefaultLib*/ false, /*packageId*/ undefined);
@@ -2906,7 +2914,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
 
     const firstNonAmbientExternalModuleSourceFile = find(files, (f) => isExternalModule(f) && !f.isDeclarationFile);
     if (options.isolatedModules) {
-      if (options.module === ModuleKind.None && languageVersion < qt.ScriptTarget.ES2015) {
+      if (options.module === qt.ModuleKind.None && languageVersion < qt.ScriptTarget.ES2015) {
         createDiagnosticForOptionName(Diagnostics.Option_isolatedModules_can_only_be_used_when_either_option_module_is_provided_or_option_target_is_ES2015_or_higher, 'isolatedModules', 'target');
       }
 
@@ -2915,7 +2923,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
         const span = getErrorSpanForNode(firstNonExternalModuleSourceFile, firstNonExternalModuleSourceFile);
         programDiagnostics.add(createFileDiagnostic(firstNonExternalModuleSourceFile, span.start, span.length, Diagnostics.All_files_must_be_modules_when_the_isolatedModules_flag_is_provided));
       }
-    } else if (firstNonAmbientExternalModuleSourceFile && languageVersion < qt.ScriptTarget.ES2015 && options.module === ModuleKind.None) {
+    } else if (firstNonAmbientExternalModuleSourceFile && languageVersion < qt.ScriptTarget.ES2015 && options.module === qt.ModuleKind.None) {
       // We cannot use createDiagnosticFromNode because nodes do not have parents yet
       const span = getErrorSpanForNode(firstNonAmbientExternalModuleSourceFile, firstNonAmbientExternalModuleSourceFile.externalModuleIndicator!);
       programDiagnostics.add(createFileDiagnostic(firstNonAmbientExternalModuleSourceFile, span.start, span.length, Diagnostics.Cannot_use_imports_exports_or_module_augmentations_when_module_is_none));
@@ -2923,7 +2931,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
 
     // Cannot specify module gen that isn't amd or system with --out
     if (outFile && !options.emitDeclarationOnly) {
-      if (options.module && !(options.module === ModuleKind.AMD || options.module === ModuleKind.System)) {
+      if (options.module && !(options.module === qt.ModuleKind.AMD || options.module === qt.ModuleKind.System)) {
         createDiagnosticForOptionName(Diagnostics.Only_amd_and_system_modules_are_supported_alongside_0, options.out ? 'out' : 'outFile', 'module');
       } else if (options.module === undefined && firstNonAmbientExternalModuleSourceFile) {
         const span = getErrorSpanForNode(firstNonAmbientExternalModuleSourceFile, firstNonAmbientExternalModuleSourceFile.externalModuleIndicator!);
@@ -2932,7 +2940,7 @@ export function createProgram(rootNamesOrOptions: readonly string[] | CreateProg
     }
 
     if (options.resolveJsonModule) {
-      if (getEmitModuleResolutionKind(options) !== ModuleResolutionKind.NodeJs) {
+      if (getEmitModuleResolutionKind(options) !== qt.ModuleResolutionKind.NodeJs) {
         createDiagnosticForOptionName(Diagnostics.Option_resolveJsonModule_cannot_be_specified_without_node_module_resolution_strategy, 'resolveJsonModule');
       }
       // Any emit other than common js, amd, es2015 or esnext is error

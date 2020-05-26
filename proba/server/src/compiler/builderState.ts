@@ -1,3 +1,11 @@
+import * as qpc from './corePublic';
+import * as qc from './core';
+import * as qp from './path';
+import * as qt from './types';
+import * as qu from './utilities';
+import { Debug } from './debug';
+import { Diagnostics } from './diagnostics';
+
 export function getFileEmitOutput(program: Program, sourceFile: SourceFile, emitOnlyDtsFiles: boolean, cancellationToken?: CancellationToken, customTransformers?: CustomTransformers, forceDtsEmit?: boolean): EmitOutput {
   const outputFiles: OutputFile[] = [];
   const { emitSkipped, diagnostics, exportedModulesFromDeclarationEmit } = program.emit(sourceFile, writeFile, cancellationToken, emitOnlyDtsFiles, customTransformers, forceDtsEmit);
@@ -204,7 +212,7 @@ export namespace BuilderState {
    */
   export function create(newProgram: Program, getCanonicalFileName: qc.GetCanonicalFileName, oldState?: Readonly<ReusableBuilderState>): BuilderState {
     const fileInfos = qc.createMap<FileInfo>();
-    const referencedMap = newProgram.getCompilerOptions().module !== ModuleKind.None ? qc.createMap<ReferencedSet>() : undefined;
+    const referencedMap = newProgram.getCompilerOptions().module !== qt.ModuleKind.None ? qc.createMap<ReferencedSet>() : undefined;
     const exportedModulesMap = referencedMap ? qc.createMap<ReferencedSet>() : undefined;
     const hasCalledUpdateShapeSignature = qc.createMap<true>();
     const useOldState = canReuseOldState(referencedMap, oldState);

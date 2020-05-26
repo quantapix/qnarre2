@@ -1,3 +1,11 @@
+import * as qpc from './corePublic';
+import * as qc from './core';
+import * as qp from './path';
+import * as qt from './types';
+import * as qu from './utilities';
+import { Debug } from './debug';
+import { Diagnostics } from './diagnostics';
+
 // Used by importFixes, getEditsForFileRename, and declaration emit to synthesize import module specifiers.
 
 const enum RelativePreference {
@@ -32,7 +40,7 @@ function getPreferences({ importModuleSpecifierPreference, importModuleSpecifier
       case 'js':
         return Ending.JsExtension;
       default:
-        return usesJsExtensionOnImports(importingSourceFile) ? Ending.JsExtension : getEmitModuleResolutionKind(compilerOptions) !== ModuleResolutionKind.NodeJs ? Ending.Index : Ending.Minimal;
+        return usesJsExtensionOnImports(importingSourceFile) ? Ending.JsExtension : getEmitModuleResolutionKind(compilerOptions) !== qt.ModuleResolutionKind.NodeJs ? Ending.Index : Ending.Minimal;
     }
   }
 }
@@ -40,7 +48,7 @@ function getPreferences({ importModuleSpecifierPreference, importModuleSpecifier
 function getPreferencesForUpdate(compilerOptions: qt.CompilerOptions, oldImportSpecifier: string): Preferences {
   return {
     relativePreference: isExternalModuleNameRelative(oldImportSpecifier) ? RelativePreference.Relative : RelativePreference.NonRelative,
-    ending: hasJSFileExtension(oldImportSpecifier) ? Ending.JsExtension : getEmitModuleResolutionKind(compilerOptions) !== ModuleResolutionKind.NodeJs || qc.endsWith(oldImportSpecifier, 'index') ? Ending.Index : Ending.Minimal,
+    ending: hasJSFileExtension(oldImportSpecifier) ? Ending.JsExtension : getEmitModuleResolutionKind(compilerOptions) !== qt.ModuleResolutionKind.NodeJs || qc.endsWith(oldImportSpecifier, 'index') ? Ending.Index : Ending.Minimal,
   };
 }
 
@@ -87,7 +95,7 @@ interface Info {
 }
 // importingSourceFileName is separate because getEditsForFileRename may need to specify an updated path
 function getInfo(importingSourceFileName: Path, host: ModuleSpecifierResolutionHost): Info {
-  const getCanonicalFileName = createGetCanonicalFileName(host.useCaseSensitiveFileNames ? host.useCaseSensitiveFileNames() : true);
+  const getCanonicalFileName = qc.createGetCanonicalFileName(host.useCaseSensitiveFileNames ? host.useCaseSensitiveFileNames() : true);
   const sourceDirectory = qp.getDirectoryPath(importingSourceFileName);
   return { getCanonicalFileName, sourceDirectory };
 }
@@ -253,7 +261,7 @@ function tryGetModuleNameFromRootDirs(rootDirs: readonly string[], moduleFileNam
 
   const normalizedSourcePath = getPathRelativeToRootDirs(sourceDirectory, rootDirs, getCanonicalFileName);
   const relativePath = normalizedSourcePath !== undefined ? ensurePathIsNonModuleName(getRelativePathFromDirectory(normalizedSourcePath, normalizedTargetPath, getCanonicalFileName)) : normalizedTargetPath;
-  return getEmitModuleResolutionKind(compilerOptions) === ModuleResolutionKind.NodeJs ? removeExtensionAndIndexPostFix(relativePath, ending, compilerOptions) : removeFileExtension(relativePath);
+  return getEmitModuleResolutionKind(compilerOptions) === qt.ModuleResolutionKind.NodeJs ? removeExtensionAndIndexPostFix(relativePath, ending, compilerOptions) : removeFileExtension(relativePath);
 }
 
 function tryGetModuleNameAsNodeModule(moduleFileName: string, { getCanonicalFileName, sourceDirectory }: Info, host: ModuleSpecifierResolutionHost, options: qt.CompilerOptions, packageNameOnly?: boolean): string | undefined {
@@ -301,7 +309,7 @@ function tryGetModuleNameAsNodeModule(moduleFileName: string, { getCanonicalFile
   const nodeModulesDirectoryName = moduleSpecifier.substring(parts.topLevelPackageNameIndex + 1);
   const packageName = getPackageNameFromTypesPackageName(nodeModulesDirectoryName);
   // For classic resolution, only allow importing from node_modules/@types, not other node_modules
-  return getEmitModuleResolutionKind(options) !== ModuleResolutionKind.NodeJs && packageName === nodeModulesDirectoryName ? undefined : packageName;
+  return getEmitModuleResolutionKind(options) !== qt.ModuleResolutionKind.NodeJs && packageName === nodeModulesDirectoryName ? undefined : packageName;
 
   function tryDirectoryWithPackageJson(packageRootIndex: number) {
     const packageRootPath = moduleFileName.substring(0, packageRootIndex);
@@ -450,7 +458,7 @@ function getJSExtensionForFile(fileName: string, options: qt.CompilerOptions): E
     case Extension.Dts:
       return Extension.Js;
     case Extension.Tsx:
-      return options.jsx === JsxEmit.Preserve ? Extension.Jsx : Extension.Js;
+      return options.jsx === qt.JsxEmit.Preserve ? Extension.Jsx : Extension.Js;
     case Extension.Js:
     case Extension.Jsx:
     case Extension.Json:

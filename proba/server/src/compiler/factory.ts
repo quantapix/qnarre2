@@ -1,25 +1,33 @@
+import * as qpc from './corePublic';
+import * as qc from './core';
+import * as qp from './path';
+import * as qt from './types';
+import * as qu from './utilities';
+import { Debug } from './debug';
+import { Diagnostics } from './diagnostics';
+
 export const nullTransformationContext: TransformationContext = {
-  enableEmitNotification: noop,
-  enableSubstitution: noop,
+  enableEmitNotification: qc.noop,
+  enableSubstitution: qc.noop,
   endLexicalEnvironment: returnUndefined,
   getCompilerOptions: () => ({}),
   getEmitHost: notImplemented,
   getEmitResolver: notImplemented,
-  setLexicalEnvironmentFlags: noop,
+  setLexicalEnvironmentFlags: qc.noop,
   getLexicalEnvironmentFlags: () => 0,
-  hoistFunctionDeclaration: noop,
-  hoistVariableDeclaration: noop,
-  addInitializationStatement: noop,
+  hoistFunctionDeclaration: qc.noop,
+  hoistVariableDeclaration: qc.noop,
+  addInitializationStatement: qc.noop,
   isEmitNotificationEnabled: notImplemented,
   isSubstitutionEnabled: notImplemented,
-  onEmitNode: noop,
+  onEmitNode: qc.noop,
   onSubstituteNode: notImplemented,
   readEmitHelpers: notImplemented,
-  requestEmitHelper: noop,
-  resumeLexicalEnvironment: noop,
-  startLexicalEnvironment: noop,
-  suspendLexicalEnvironment: noop,
-  addDiagnostic: noop,
+  requestEmitHelper: qc.noop,
+  resumeLexicalEnvironment: qc.noop,
+  startLexicalEnvironment: qc.noop,
+  suspendLexicalEnvironment: qc.noop,
+  addDiagnostic: qc.noop,
 };
 
 // Compound nodes
@@ -1220,7 +1228,7 @@ export function createExternalHelpersImportDeclarationIfNeeded(sourceFile: Sourc
   if (compilerOptions.importHelpers && isEffectiveExternalModule(sourceFile, compilerOptions)) {
     let namedBindings: NamedImportBindings | undefined;
     const moduleKind = getEmitModuleKind(compilerOptions);
-    if (moduleKind >= ModuleKind.ES2015 && moduleKind <= ModuleKind.ESNext) {
+    if (moduleKind >= qt. ModuleKind.ES2015 && moduleKind <= qt. ModuleKind.ESNext) {
       // use named imports
       const helpers = getEmitHelpers(sourceFile);
       if (helpers) {
@@ -1266,7 +1274,7 @@ export function getOrCreateExternalHelpersModuleNameIfNeeded(node: SourceFile, c
     }
 
     const moduleKind = getEmitModuleKind(compilerOptions);
-    let create = (hasExportStarsToExportValues || (compilerOptions.esModuleInterop && hasImportStarOrImportDefault)) && moduleKind !== ModuleKind.System && moduleKind < ModuleKind.ES2015;
+    let create = (hasExportStarsToExportValues || (compilerOptions.esModuleInterop && hasImportStarOrImportDefault)) && moduleKind !== qt. ModuleKind.System && moduleKind < qt. ModuleKind.ES2015;
     if (!create) {
       const helpers = getEmitHelpers(node);
       if (helpers) {

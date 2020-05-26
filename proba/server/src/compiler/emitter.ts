@@ -1,3 +1,11 @@
+import * as qpc from './corePublic';
+import * as qc from './core';
+import * as qp from './path';
+import * as qt from './types';
+import * as qu from './utilities';
+import { Debug } from './debug';
+import { Diagnostics } from './diagnostics';
+
 const brackets = createBracketsMap();
 const syntheticParent: qt.TextRange = { pos: -1, end: -1 };
 
@@ -90,15 +98,15 @@ function getSourceMapFilePath(jsFilePath: string, options: qt.CompilerOptions) {
 }
 
 // JavaScript files are always LanguageVariant.JSX, as JSX syntax is allowed in .js files also.
-// So for JavaScript files, '.jsx' is only emitted if the input was '.jsx', and JsxEmit.Preserve.
-// For TypeScript, the only time to emit with a '.jsx' extension, is on JSX input, and JsxEmit.Preserve
+// So for JavaScript files, '.jsx' is only emitted if the input was '.jsx', and qt.JsxEmit.Preserve.
+// For TypeScript, the only time to emit with a '.jsx' extension, is on JSX input, and qt.JsxEmit.Preserve
 
 export function getOutputExtension(sourceFile: SourceFile, options: qt.CompilerOptions): Extension {
   if (isJsonSourceFile(sourceFile)) {
     return Extension.Json;
   }
 
-  if (options.jsx === JsxEmit.Preserve) {
+  if (options.jsx === qt.JsxEmit.Preserve) {
     if (isSourceFileJS(sourceFile)) {
       if (fileExtensionIs(sourceFile.fileName, Extension.Jsx)) {
         return Extension.Jsx;
@@ -127,7 +135,7 @@ export function getOutputDeclarationFileName(inputFileName: string, configFile: 
 function getOutputJSFileName(inputFileName: string, configFile: ParsedCommandLine, ignoreCase: boolean) {
   if (configFile.options.emitDeclarationOnly) return undefined;
   const isJsonFile = fileExtensionIs(inputFileName, Extension.Json);
-  const outputFileName = changeExtension(getOutputPathWithoutChangingExt(inputFileName, configFile, ignoreCase, configFile.options.outDir), isJsonFile ? Extension.Json : fileExtensionIs(inputFileName, Extension.Tsx) && configFile.options.jsx === JsxEmit.Preserve ? Extension.Jsx : Extension.Js);
+  const outputFileName = changeExtension(getOutputPathWithoutChangingExt(inputFileName, configFile, ignoreCase, configFile.options.outDir), isJsonFile ? Extension.Json : fileExtensionIs(inputFileName, Extension.Tsx) && configFile.options.jsx === qt.JsxEmit.Preserve ? Extension.Jsx : Extension.Js);
   return !isJsonFile || comparePaths(inputFileName, outputFileName, Debug.checkDefined(configFile.options.configFilePath), ignoreCase) !== qpc.Comparison.EqualTo ? outputFileName : undefined;
 }
 
@@ -1556,7 +1564,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
 
   function getHelpersFromBundledSourceFiles(bundle: Bundle): string[] | undefined {
     let result: string[] | undefined;
-    if (moduleKind === ModuleKind.None || printerOptions.noEmitHelpers) {
+    if (moduleKind === qt.ModuleKind.None || printerOptions.noEmitHelpers) {
       return undefined;
     }
     const bundledHelpers = qc.createMap<boolean>();
@@ -1578,7 +1586,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   function emitHelpers(node: qt.Node) {
     let helpersEmitted = false;
     const bundle = node.kind === qt.SyntaxKind.Bundle ? node : undefined;
-    if (bundle && moduleKind === ModuleKind.None) {
+    if (bundle && moduleKind === qt.ModuleKind.None) {
       return;
     }
     const numPrepends = bundle ? bundle.prepends.length : 0;

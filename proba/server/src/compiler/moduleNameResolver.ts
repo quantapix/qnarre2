@@ -1,3 +1,11 @@
+import * as qpc from './corePublic';
+import * as qc from './core';
+import * as qp from './path';
+import * as qt from './types';
+import * as qu from './utilities';
+import { Debug } from './debug';
+import { Diagnostics } from './diagnostics';
+
 export function trace(host: ModuleResolutionHost, message: qt.DiagnosticMessage, ...args: any[]): void;
 export function trace(host: ModuleResolutionHost): void {
   host.trace!(formatMessage.apply(undefined, arguments));
@@ -628,22 +636,22 @@ export function resolveModuleName(moduleName: string, containingFile: string, co
   } else {
     let moduleResolution = compilerOptions.moduleResolution;
     if (moduleResolution === undefined) {
-      moduleResolution = getEmitModuleKind(compilerOptions) === ModuleKind.CommonJS ? ModuleResolutionKind.NodeJs : ModuleResolutionKind.Classic;
+      moduleResolution = getEmitModuleKind(compilerOptions) === qt.ModuleKind.CommonJS ? qt.ModuleResolutionKind.NodeJs : qt.ModuleResolutionKind.Classic;
       if (traceEnabled) {
-        trace(host, Diagnostics.Module_resolution_kind_is_not_specified_using_0, ModuleResolutionKind[moduleResolution]);
+        trace(host, Diagnostics.Module_resolution_kind_is_not_specified_using_0, qt.ModuleResolutionKind[moduleResolution]);
       }
     } else {
       if (traceEnabled) {
-        trace(host, Diagnostics.Explicitly_specified_module_resolution_kind_Colon_0, ModuleResolutionKind[moduleResolution]);
+        trace(host, Diagnostics.Explicitly_specified_module_resolution_kind_Colon_0, qt.ModuleResolutionKind[moduleResolution]);
       }
     }
 
-    perfLogger.logStartResolveModule(moduleName /* , containingFile, ModuleResolutionKind[moduleResolution]*/);
+    perfLogger.logStartResolveModule(moduleName /* , containingFile, qt.ModuleResolutionKind[moduleResolution]*/);
     switch (moduleResolution) {
-      case ModuleResolutionKind.NodeJs:
+      case qt.ModuleResolutionKind.NodeJs:
         result = nodeModuleNameResolver(moduleName, containingFile, compilerOptions, host, cache, redirectedReference);
         break;
-      case ModuleResolutionKind.Classic:
+      case qt.ModuleResolutionKind.Classic:
         result = classicNameResolver(moduleName, containingFile, compilerOptions, host, cache, redirectedReference);
         break;
       default:
@@ -880,7 +888,7 @@ const tsExtensions = [Extensions.TypeScript, Extensions.JavaScript];
 const tsPlusJsonExtensions = [...tsExtensions, Extensions.Json];
 const tsconfigExtensions = [Extensions.TSConfig];
 function tryResolveJSModuleWorker(moduleName: string, initialDir: string, host: ModuleResolutionHost): ResolvedModuleWithFailedLookupLocations {
-  return nodeModuleNameResolverWorker(moduleName, initialDir, { moduleResolution: ModuleResolutionKind.NodeJs, allowJs: true }, host, /*cache*/ undefined, jsOnlyExtensions, /*redirectedReferences*/ undefined);
+  return nodeModuleNameResolverWorker(moduleName, initialDir, { moduleResolution: qt.ModuleResolutionKind.NodeJs, allowJs: true }, host, /*cache*/ undefined, jsOnlyExtensions, /*redirectedReferences*/ undefined);
 }
 
 export function nodeModuleNameResolver(moduleName: string, containingFile: string, compilerOptions: qt.CompilerOptions, host: ModuleResolutionHost, cache?: ModuleResolutionCache, redirectedReference?: ResolvedProjectReference): ResolvedModuleWithFailedLookupLocations;

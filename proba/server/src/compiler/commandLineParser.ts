@@ -1,4 +1,12 @@
-export const compileOnSaveCommandLineOption: CommandLineOption = { name: 'compileOnSave', type: 'boolean' };
+import * as qpc from './corePublic';
+import * as qc from './core';
+import * as qp from './path';
+import * as qt from './types';
+import * as qu from './utilities';
+import { Debug } from './debug';
+import { qt.Diagnostics } from './diagnostics';
+
+export const compileOnSaveCommandLineOption: qt.CommandLineOption = { name: 'compileOnSave', type: 'boolean' };
 
 // NOTE: The order here is important to default lib ordering as entries will have the same
 //       order in the generated program (see `getDefaultLibPriority` in program.ts). This
@@ -78,7 +86,7 @@ export const libMap = qc.createMapFromEntries(libEntries);
 
 // Watch related options
 
-export const optionsForWatch: CommandLineOption[] = [
+export const optionsForWatch: qt.CommandLineOption[] = [
   {
     name: 'watchFile',
     type: qc.createMapFromTemplate({
@@ -119,7 +127,7 @@ export const optionsForWatch: CommandLineOption[] = [
   },
 ];
 
-export const commonOptionsWithBuild: CommandLineOption[] = [
+export const commonOptionsWithBuild: qt.CommandLineOption[] = [
   {
     name: 'help',
     shortName: 'h',
@@ -218,7 +226,7 @@ export const commonOptionsWithBuild: CommandLineOption[] = [
   },
 ];
 
-export const optionDeclarations: CommandLineOption[] = [
+export const optionDeclarations: qt.CommandLineOption[] = [
   // CommandLine only options
   ...commonOptionsWithBuild,
   {
@@ -306,15 +314,15 @@ export const optionDeclarations: CommandLineOption[] = [
     name: 'module',
     shortName: 'm',
     type: qc.createMapFromTemplate({
-      none: ModuleKind.None,
-      commonjs: ModuleKind.CommonJS,
-      amd: ModuleKind.AMD,
-      system: ModuleKind.System,
-      umd: ModuleKind.UMD,
-      es6: ModuleKind.ES2015,
-      es2015: ModuleKind.ES2015,
-      es2020: ModuleKind.ES2020,
-      esnext: ModuleKind.ESNext,
+      none: qt.ModuleKind.None,
+      commonjs: qt.ModuleKind.CommonJS,
+      amd: qt.ModuleKind.AMD,
+      system: qt.ModuleKind.System,
+      umd: qt.ModuleKind.UMD,
+      es6: qt.ModuleKind.ES2015,
+      es2015: qt.ModuleKind.ES2015,
+      es2020: qt.ModuleKind.ES2020,
+      esnext: qt.ModuleKind.ESNext,
     }),
     affectsModuleResolution: true,
     affectsEmit: true,
@@ -353,9 +361,9 @@ export const optionDeclarations: CommandLineOption[] = [
   {
     name: 'jsx',
     type: qc.createMapFromTemplate({
-      preserve: JsxEmit.Preserve,
-      'react-native': JsxEmit.ReactNative,
-      react: JsxEmit.React,
+      preserve: qt.JsxEmit.Preserve,
+      'react-native': qt.JsxEmit.ReactNative,
+      react: qt.JsxEmit.React,
     }),
     affectsSourceFile: true,
     paramType: Diagnostics.KIND,
@@ -474,9 +482,9 @@ export const optionDeclarations: CommandLineOption[] = [
   {
     name: 'importsNotUsedAsValues',
     type: qc.createMapFromTemplate({
-      remove: ImportsNotUsedAsValues.Remove,
-      preserve: ImportsNotUsedAsValues.Preserve,
-      error: ImportsNotUsedAsValues.Error,
+      remove: qt.ImportsNotUsedAsValues.Remove,
+      preserve: qt.ImportsNotUsedAsValues.Preserve,
+      error: qt.ImportsNotUsedAsValues.Error,
     }),
     affectsEmit: true,
     affectsSemanticDiagnostics: true,
@@ -608,8 +616,8 @@ export const optionDeclarations: CommandLineOption[] = [
   {
     name: 'moduleResolution',
     type: qc.createMapFromTemplate({
-      node: ModuleResolutionKind.NodeJs,
-      classic: ModuleResolutionKind.Classic,
+      node: qt.ModuleResolutionKind.NodeJs,
+      classic: qt.ModuleResolutionKind.Classic,
     }),
     affectsModuleResolution: true,
     paramType: Diagnostics.STRATEGY,
@@ -810,8 +818,8 @@ export const optionDeclarations: CommandLineOption[] = [
   {
     name: 'newLine',
     type: qc.createMapFromTemplate({
-      crlf: NewLineKind.CarriageReturnLineFeed,
-      lf: NewLineKind.LineFeed,
+      crlf: qt.NewLineKind.CarriageReturnLineFeed,
+      lf: qt.NewLineKind.LineFeed,
     }),
     affectsEmit: true,
     paramType: Diagnostics.NEWLINE,
@@ -996,17 +1004,17 @@ export const optionDeclarations: CommandLineOption[] = [
   },
 ];
 
-export const semanticDiagnosticsOptionDeclarations: readonly CommandLineOption[] = optionDeclarations.filter((option) => !!option.affectsSemanticDiagnostics);
+export const semanticDiagnosticsOptionDeclarations: readonly qt.CommandLineOption[] = optionDeclarations.filter((option) => !!option.affectsSemanticDiagnostics);
 
-export const affectsEmitOptionDeclarations: readonly CommandLineOption[] = optionDeclarations.filter((option) => !!option.affectsEmit);
+export const affectsEmitOptionDeclarations: readonly qt.CommandLineOption[] = optionDeclarations.filter((option) => !!option.affectsEmit);
 
-export const moduleResolutionOptionDeclarations: readonly CommandLineOption[] = optionDeclarations.filter((option) => !!option.affectsModuleResolution);
+export const moduleResolutionOptionDeclarations: readonly qt.CommandLineOption[] = optionDeclarations.filter((option) => !!option.affectsModuleResolution);
 
-export const sourceFileAffectingCompilerOptions: readonly CommandLineOption[] = optionDeclarations.filter((option) => !!option.affectsSourceFile || !!option.affectsModuleResolution || !!option.affectsBindDiagnostics);
+export const sourceFileAffectingCompilerOptions: readonly qt.CommandLineOption[] = optionDeclarations.filter((option) => !!option.affectsSourceFile || !!option.affectsModuleResolution || !!option.affectsBindDiagnostics);
 
-export const transpileOptionValueCompilerOptions: readonly CommandLineOption[] = optionDeclarations.filter((option) => hasProperty(option, 'transpileOptionValue'));
+export const transpileOptionValueCompilerOptions: readonly qt.CommandLineOption[] = optionDeclarations.filter((option) => hasProperty(option, 'transpileOptionValue'));
 
-export const buildOpts: CommandLineOption[] = [
+export const buildOpts: qt.CommandLineOption[] = [
   ...commonOptionsWithBuild,
   {
     name: 'verbose',
@@ -1037,7 +1045,7 @@ export const buildOpts: CommandLineOption[] = [
   },
 ];
 
-export const typeAcquisitionDeclarations: CommandLineOption[] = [
+export const typeAcquisitionDeclarations: qt.CommandLineOption[] = [
   {
     /* @deprecated typingOptions.enableAutoDiscovery
      * Use typeAcquisition.enable instead.
@@ -1068,14 +1076,14 @@ export const typeAcquisitionDeclarations: CommandLineOption[] = [
 ];
 
 export interface OptionsNameMap {
-  optionsNameMap: Map<CommandLineOption>;
-  shortOptionNames: Map<string>;
+  optionsNameMap: qpc.Map<qt.CommandLineOption>;
+  shortOptionNames: qpc.Map<string>;
 }
 
-export function createOptionNameMap(optionDeclarations: readonly CommandLineOption[]): OptionsNameMap {
-  const optionsNameMap = qc.createMap<CommandLineOption>();
+export function createOptionNameMap(optionDeclarations: readonly qt.CommandLineOption[]): OptionsNameMap {
+  const optionsNameMap = qc.createMap<qt.CommandLineOption>();
   const shortOptionNames = qc.createMap<string>();
-  forEach(optionDeclarations, (option) => {
+  qc.forEach(optionDeclarations, (option) => {
     optionsNameMap.set(option.name.toLowerCase(), option);
     if (option.shortName) {
       shortOptionNames.set(option.shortName, option.name);
@@ -1092,7 +1100,7 @@ export function getOptionsNameMap(): OptionsNameMap {
 }
 
 export const defaultInitCompilerOptions: qt.CompilerOptions = {
-  module: ModuleKind.CommonJS,
+  module: qt.ModuleKind.CommonJS,
   target: qt.ScriptTarget.ES5,
   strict: true,
   esModuleInterop: true,
@@ -1100,7 +1108,7 @@ export const defaultInitCompilerOptions: qt.CompilerOptions = {
   skipLibCheck: true,
 };
 
-export function convertEnableAutoDiscoveryToEnable(typeAcquisition: TypeAcquisition): TypeAcquisition {
+export function convertEnableAutoDiscoveryToEnable(typeAcquisition: qt.TypeAcquisition): qt.TypeAcquisition {
   // Convert deprecated typingOptions.enableAutoDiscovery to typeAcquisition.enable
   if (typeAcquisition && typeAcquisition.enableAutoDiscovery !== undefined && typeAcquisition.enable === undefined) {
     return {
@@ -1112,11 +1120,11 @@ export function convertEnableAutoDiscoveryToEnable(typeAcquisition: TypeAcquisit
   return typeAcquisition;
 }
 
-export function qu.createCompilerDiagnosticForInvalidCustomType(opt: CommandLineOptionOfCustomType): Diagnostic {
+export function createCompilerDiagnosticForInvalidCustomType(opt: qt.CommandLineOptionOfCustomType): qt.Diagnostic {
   return createDiagnosticForInvalidCustomType(opt, qu.createCompilerDiagnostic);
 }
 
-function createDiagnosticForInvalidCustomType(opt: CommandLineOptionOfCustomType, createDiagnostic: (message: qt.DiagnosticMessage, arg0: string, arg1: string) => Diagnostic): Diagnostic {
+function createDiagnosticForInvalidCustomType(opt: qt.CommandLineOptionOfCustomType, createDiagnostic: (message: qt.DiagnosticMessage, arg0: string, arg1: string) => qt.Diagnostic): qt.Diagnostic {
   const namesOfType = qc
     .arrayFrom(opt.type.keys())
     .map((key) => `'${key}'`)
@@ -1124,11 +1132,11 @@ function createDiagnosticForInvalidCustomType(opt: CommandLineOptionOfCustomType
   return createDiagnostic(Diagnostics.Argument_for_0_option_must_be_Colon_1, `--${opt.name}`, namesOfType);
 }
 
-export function parseCustomTypeOption(opt: CommandLineOptionOfCustomType, value: string, errors: qpc.Push<Diagnostic>) {
+export function parseCustomTypeOption(opt: qt.CommandLineOptionOfCustomType, value: string, errors: qpc.Push<qt.Diagnostic>) {
   return convertJsonOptionOfCustomType(opt, trimString(value || ''), errors);
 }
 
-export function parseListTypeOption(opt: CommandLineOptionOfListType, value = '', errors: qpc.Push<Diagnostic>): (string | number)[] | undefined {
+export function parseListTypeOption(opt: qt.CommandLineOptionOfListType, value = '', errors: qpc.Push<qt.Diagnostic>): (string | number)[] | undefined {
   value = trimString(value);
   if (qc.startsWith(value, '-')) {
     return undefined;
@@ -1139,37 +1147,37 @@ export function parseListTypeOption(opt: CommandLineOptionOfListType, value = ''
   const values = value.split(',');
   switch (opt.element.type) {
     case 'number':
-      return map(values, parseInt);
+      return qc.map(values, parseInt);
     case 'string':
-      return map(values, (v) => v || '');
+      return qc.map(values, (v) => v || '');
     default:
-      return mapDefined(values, (v) => parseCustomTypeOption(opt.element, v, errors));
+      return qc.mapDefined(values, (v) => parseCustomTypeOption(opt.element, v, errors));
   }
 }
 
 export interface OptionsBase {
-  [option: string]: qt.CompilerOptionsValue | TsConfigSourceFile | undefined;
+  [option: string]: qt.CompilerOptionsValue | qt.TsConfigSourceFile | undefined;
 }
 
-export interface ParseCommandLineWorkerDiagnostics extends DidYouMeanOptionsDiagnostics {
+export interface ParseCommandLineWorkerDiagnostics extends qt.DidYouMeanOptionsDiagnostics {
   getOptionsNameMap: () => OptionsNameMap;
   optionTypeMismatchDiagnostic: qt.DiagnosticMessage;
 }
 
-function getOptionName(option: CommandLineOption) {
+function getOptionName(option: qt.CommandLineOption) {
   return option.name;
 }
 
-function createUnknownOptionError(unknownOption: string, diagnostics: DidYouMeanOptionsDiagnostics, createDiagnostics: (message: qt.DiagnosticMessage, arg0: string, arg1?: string) => Diagnostic, unknownOptionErrorText?: string) {
+function createUnknownOptionError(unknownOption: string, diagnostics: qt.DidYouMeanOptionsDiagnostics, createDiagnostics: (message: qt.DiagnosticMessage, arg0: string, arg1?: string) => qt.Diagnostic, unknownOptionErrorText?: string) {
   const possibleOption = getSpellingSuggestion(unknownOption, diagnostics.optionDeclarations, getOptionName);
   return possibleOption ? createDiagnostics(diagnostics.unknownDidYouMeanDiagnostic, unknownOptionErrorText || unknownOption, possibleOption.name) : createDiagnostics(diagnostics.unknownOptionDiagnostic, unknownOptionErrorText || unknownOption);
 }
 
 export function parseCommandLineWorker(diagnostics: ParseCommandLineWorkerDiagnostics, commandLine: readonly string[], readFile?: (path: string) => string | undefined) {
   const options = {} as OptionsBase;
-  let watchOptions: WatchOptions | undefined;
+  let watchOptions: qt.WatchOptions | undefined;
   const fileNames: string[] = [];
-  const errors: Diagnostic[] = [];
+  const errors: qt.Diagnostic[] = [];
 
   parseStrings(commandLine);
   return {
@@ -1225,7 +1233,7 @@ export function parseCommandLineWorker(diagnostics: ParseCommandLineWorkerDiagno
           args.push(text.substring(start + 1, pos));
           pos++;
         } else {
-          errors.push(createCompilerDiagnostic(Diagnostics.Unterminated_quoted_string_in_response_file_0, fileName));
+          errors.push(qu.createCompilerDiagnostic(Diagnostics.Unterminated_quoted_string_in_response_file_0, fileName));
         }
       } else {
         while (text.charCodeAt(pos) > qt.CharacterCodes.space) pos++;
@@ -1236,7 +1244,7 @@ export function parseCommandLineWorker(diagnostics: ParseCommandLineWorkerDiagno
   }
 }
 
-function parseOptionValue(args: readonly string[], i: number, diagnostics: ParseCommandLineWorkerDiagnostics, opt: CommandLineOption, options: OptionsBase, errors: Diagnostic[]) {
+function parseOptionValue(args: readonly string[], i: number, diagnostics: ParseCommandLineWorkerDiagnostics, opt: qt.CommandLineOption, options: OptionsBase, errors: qt.Diagnostic[]) {
   if (opt.isTSConfigOnly) {
     const optValue = args[i];
     if (optValue === 'null') {
@@ -1248,16 +1256,16 @@ function parseOptionValue(args: readonly string[], i: number, diagnostics: Parse
         i++;
       } else {
         if (optValue === 'true') i++;
-        errors.push(createCompilerDiagnostic(Diagnostics.Option_0_can_only_be_specified_in_tsconfig_json_file_or_set_to_false_or_null_on_command_line, opt.name));
+        errors.push(qu.createCompilerDiagnostic(Diagnostics.Option_0_can_only_be_specified_in_tsconfig_json_file_or_set_to_false_or_null_on_command_line, opt.name));
       }
     } else {
-      errors.push(createCompilerDiagnostic(Diagnostics.Option_0_can_only_be_specified_in_tsconfig_json_file_or_set_to_null_on_command_line, opt.name));
+      errors.push(qu.createCompilerDiagnostic(Diagnostics.Option_0_can_only_be_specified_in_tsconfig_json_file_or_set_to_null_on_command_line, opt.name));
       if (optValue && !qc.startsWith(optValue, '-')) i++;
     }
   } else {
     // Check to see if no argument was provided (e.g. "--locale" is the last command-line argument).
     if (!args[i] && opt.type !== 'boolean') {
-      errors.push(createCompilerDiagnostic(diagnostics.optionTypeMismatchDiagnostic, opt.name, getCompilerOptionValueTypeString(opt)));
+      errors.push(qu.createCompilerDiagnostic(diagnostics.optionTypeMismatchDiagnostic, opt.name, getCompilerOptionValueTypeString(opt)));
     }
 
     if (args[i] !== 'null') {
@@ -1311,11 +1319,11 @@ export function parseCommandLine(commandLine: readonly string[], readFile?: (pat
   return parseCommandLineWorker(compilerOptionsDidYouMeanDiagnostics, commandLine, readFile);
 }
 
-export function getOptionFromName(optionName: string, allowShort?: boolean): CommandLineOption | undefined {
+export function getOptionFromName(optionName: string, allowShort?: boolean): qt.CommandLineOption | undefined {
   return getOptionDeclarationFromName(getOptionsNameMap, optionName, allowShort);
 }
 
-function getOptionDeclarationFromName(getOptionNameMap: () => OptionsNameMap, optionName: string, allowShort = false): CommandLineOption | undefined {
+function getOptionDeclarationFromName(getOptionNameMap: () => OptionsNameMap, optionName: string, allowShort = false): qt.CommandLineOption | undefined {
   optionName = optionName.toLowerCase();
   const { optionsNameMap, shortOptionNames } = getOptionNameMap();
   // Try to translate short option names to their full equivalents.
@@ -1330,9 +1338,9 @@ function getOptionDeclarationFromName(getOptionNameMap: () => OptionsNameMap, op
 
 export interface ParsedBuildCommand {
   buildOptions: BuildOptions;
-  watchOptions: WatchOptions | undefined;
+  watchOptions: qt.WatchOptions | undefined;
   projects: string[];
-  errors: Diagnostic[];
+  errors: qt.Diagnostic[];
 }
 
 let buildOptionsNameMapCache: OptionsNameMap;
@@ -1359,16 +1367,16 @@ export function parseBuildCommand(args: readonly string[]): ParsedBuildCommand {
 
   // Nonsensical combinations
   if (buildOptions.clean && buildOptions.force) {
-    errors.push(createCompilerDiagnostic(Diagnostics.Options_0_and_1_cannot_be_combined, 'clean', 'force'));
+    errors.push(qu.createCompilerDiagnostic(Diagnostics.Options_0_and_1_cannot_be_combined, 'clean', 'force'));
   }
   if (buildOptions.clean && buildOptions.verbose) {
-    errors.push(createCompilerDiagnostic(Diagnostics.Options_0_and_1_cannot_be_combined, 'clean', 'verbose'));
+    errors.push(qu.createCompilerDiagnostic(Diagnostics.Options_0_and_1_cannot_be_combined, 'clean', 'verbose'));
   }
   if (buildOptions.clean && buildOptions.watch) {
-    errors.push(createCompilerDiagnostic(Diagnostics.Options_0_and_1_cannot_be_combined, 'clean', 'watch'));
+    errors.push(qu.createCompilerDiagnostic(Diagnostics.Options_0_and_1_cannot_be_combined, 'clean', 'watch'));
   }
   if (buildOptions.watch && buildOptions.dry) {
-    errors.push(createCompilerDiagnostic(Diagnostics.Options_0_and_1_cannot_be_combined, 'watch', 'dry'));
+    errors.push(qu.createCompilerDiagnostic(Diagnostics.Options_0_and_1_cannot_be_combined, 'watch', 'dry'));
   }
 
   return { buildOptions, watchOptions, projects, errors };
@@ -1379,7 +1387,7 @@ export function getDiagnosticText(_message: qt.DiagnosticMessage, ..._args: any[
   return <string>diagnostic.messageText;
 }
 
-export type DiagnosticReporter = (diagnostic: Diagnostic) => void;
+export type qt.DiagnosticReporter = (diagnostic: qt.Diagnostic) => void;
 /**
  * Reports config file diagnostics
  */
@@ -1387,20 +1395,20 @@ export interface ConfigFileDiagnosticsReporter {
   /**
    * Reports unrecoverable error when parsing config file
    */
-  onUnRecoverableConfigFileDiagnostic: DiagnosticReporter;
+  onUnRecoverableConfigFileDiagnostic: qt.DiagnosticReporter;
 }
 
 /**
- * Interface extending ParseConfigHost to support ParseConfigFile that reads config file and reports errors
+ * Interface extending qt.ParseConfigHost to support ParseConfigFile that reads config file and reports errors
  */
-export interface ParseConfigFileHost extends ParseConfigHost, ConfigFileDiagnosticsReporter {
+export interface ParseConfigFileHost extends qt.ParseConfigHost, ConfigFileDiagnosticsReporter {
   getCurrentDirectory(): string;
 }
 
 /**
  * Reads the config file, reports errors if any and exits if the config file cannot be found
  */
-export function getParsedCommandLineOfConfigFile(configFileName: string, optionsToExtend: qt.CompilerOptions, host: ParseConfigFileHost, extendedConfigCache?: Map<ExtendedConfigCacheEntry>, watchOptionsToExtend?: WatchOptions, extraFileExtensions?: readonly FileExtensionInfo[]): ParsedCommandLine | undefined {
+export function getParsedCommandLineOfConfigFile(configFileName: string, optionsToExtend: qt.CompilerOptions, host: ParseConfigFileHost, extendedConfigCache?: qpc.Map<ExtendedConfigCacheEntry>, watchOptionsToExtend?: qt.WatchOptions, extraFileExtensions?: readonly FileExtensionInfo[]): ParsedCommandLine | undefined {
   const configFileText = tryReadFile(configFileName, (fileName) => host.readFile(fileName));
   if (!isString(configFileText)) {
     host.onUnRecoverableConfigFileDiagnostic(configFileText);
@@ -1409,7 +1417,7 @@ export function getParsedCommandLineOfConfigFile(configFileName: string, options
 
   const result = parseJsonText(configFileName, configFileText);
   const cwd = host.getCurrentDirectory();
-  result.path = toPath(configFileName, cwd, createGetCanonicalFileName(host.useCaseSensitiveFileNames));
+  result.path = toPath(configFileName, cwd, qc.createGetCanonicalFileName(host.useCaseSensitiveFileNames));
   result.resolvedPath = result.path;
   result.originalFileName = result.fileName;
   return parseJsonSourceFileConfigFileContent(result, host, getNormalizedAbsolutePath(qp.getDirectoryPath(configFileName), cwd), optionsToExtend, getNormalizedAbsolutePath(configFileName, cwd), /*resolutionStack*/ undefined, extraFileExtensions, extendedConfigCache, watchOptionsToExtend);
@@ -1419,7 +1427,7 @@ export function getParsedCommandLineOfConfigFile(configFileName: string, options
  * Read tsconfig.json file
  * @param fileName The path to the config file
  */
-export function readConfigFile(fileName: string, readFile: (path: string) => string | undefined): { config?: any; error?: Diagnostic } {
+export function readConfigFile(fileName: string, readFile: (path: string) => string | undefined): { config?: any; error?: qt.Diagnostic } {
   const textOrDiagnostic = tryReadFile(fileName, readFile);
   return isString(textOrDiagnostic) ? parseConfigFileTextToJson(fileName, textOrDiagnostic) : { config: {}, error: textOrDiagnostic };
 }
@@ -1429,7 +1437,7 @@ export function readConfigFile(fileName: string, readFile: (path: string) => str
  * @param fileName The path to the config file
  * @param jsonText The text of the config file
  */
-export function parseConfigFileTextToJson(fileName: string, jsonText: string): { config?: any; error?: Diagnostic } {
+export function parseConfigFileTextToJson(fileName: string, jsonText: string): { config?: any; error?: qt.Diagnostic } {
   const jsonSourceFile = parseJsonText(fileName, jsonText);
   return {
     config: convertToObject(jsonSourceFile, jsonSourceFile.parseDiagnostics),
@@ -1441,12 +1449,12 @@ export function parseConfigFileTextToJson(fileName: string, jsonText: string): {
  * Read tsconfig.json file
  * @param fileName The path to the config file
  */
-export function readJsonConfigFile(fileName: string, readFile: (path: string) => string | undefined): TsConfigSourceFile {
+export function readJsonConfigFile(fileName: string, readFile: (path: string) => string | undefined): qt.TsConfigSourceFile {
   const textOrDiagnostic = tryReadFile(fileName, readFile);
   return isString(textOrDiagnostic) ? parseJsonText(fileName, textOrDiagnostic) : <TsConfigSourceFile>{ parseDiagnostics: [textOrDiagnostic] };
 }
 
-export function tryReadFile(fileName: string, readFile: (path: string) => string | undefined): string | Diagnostic {
+export function tryReadFile(fileName: string, readFile: (path: string) => string | undefined): string | qt.Diagnostic {
   let text: string | undefined;
   try {
     text = readFile(fileName);
@@ -1456,11 +1464,11 @@ export function tryReadFile(fileName: string, readFile: (path: string) => string
   return text === undefined ? qu.createCompilerDiagnostic(Diagnostics.Cannot_read_file_0, fileName) : text;
 }
 
-function commandLineOptionsToMap(options: readonly CommandLineOption[]) {
+function commandLineOptionsToMap(options: readonly qt.CommandLineOption[]) {
   return arrayToMap(options, getOptionName);
 }
 
-const typeAcquisitionDidYouMeanDiagnostics: DidYouMeanOptionsDiagnostics = {
+const typeAcquisitionDidYouMeanDiagnostics: qt.DidYouMeanOptionsDiagnostics = {
   optionDeclarations: typeAcquisitionDeclarations,
   unknownOptionDiagnostic: Diagnostics.Unknown_type_acquisition_option_0,
   unknownDidYouMeanDiagnostic: Diagnostics.Unknown_type_acquisition_option_0_Did_you_mean_1,
@@ -1478,20 +1486,20 @@ const watchOptionsDidYouMeanDiagnostics: ParseCommandLineWorkerDiagnostics = {
   optionTypeMismatchDiagnostic: Diagnostics.Watch_option_0_requires_a_value_of_type_1,
 };
 
-let commandLineCompilerOptionsMapCache: Map<CommandLineOption>;
+let commandLineCompilerOptionsMapCache: qpc.Map<qt.CommandLineOption>;
 function getCommandLineCompilerOptionsMap() {
   return commandLineCompilerOptionsMapCache || (commandLineCompilerOptionsMapCache = commandLineOptionsToMap(optionDeclarations));
 }
-let commandLineWatchOptionsMapCache: Map<CommandLineOption>;
+let commandLineWatchOptionsMapCache: qpc.Map<qt.CommandLineOption>;
 function getCommandLineWatchOptionsMap() {
   return commandLineWatchOptionsMapCache || (commandLineWatchOptionsMapCache = commandLineOptionsToMap(optionsForWatch));
 }
-let commandLineTypeAcquisitionMapCache: Map<CommandLineOption>;
+let commandLineTypeAcquisitionMapCache: qpc.Map<qt.CommandLineOption>;
 function getCommandLineTypeAcquisitionMap() {
   return commandLineTypeAcquisitionMapCache || (commandLineTypeAcquisitionMapCache = commandLineOptionsToMap(typeAcquisitionDeclarations));
 }
 
-let _tsconfigRootOptions: TsConfigOnlyOption;
+let _tsconfigRootOptions: qt.TsConfigOnlyOption;
 function getTsconfigRootOptionsMap() {
   if (_tsconfigRootOptions === undefined) {
     _tsconfigRootOptions = {
@@ -1574,7 +1582,7 @@ interface JsonConversionNotifier {
    * @param option option declaration which is being set with the value
    * @param value value of the option
    */
-  onSetValidOptionKeyValueInParent(parentOption: string, option: CommandLineOption, value: qt.CompilerOptionsValue): void;
+  onSetValidOptionKeyValueInParent(parentOption: string, option: qt.CommandLineOption, value: qt.CompilerOptionsValue): void;
   /**
    * Notify when valid root key value option is being set
    * @param key option key
@@ -1582,7 +1590,7 @@ interface JsonConversionNotifier {
    * @param value computed value of the key
    * @param ValueNode node corresponding to value in the source file
    */
-  onSetValidOptionKeyValueInRoot(key: string, keyNode: PropertyName, value: qt.CompilerOptionsValue, valueNode: qt.Expression): void;
+  onSetValidOptionKeyValueInRoot(key: string, keyNode: qt.PropertyName, value: qt.CompilerOptionsValue, valueNode: qt.Expression): void;
   /**
    * Notify when unknown root key value option is being set
    * @param key option key
@@ -1590,13 +1598,13 @@ interface JsonConversionNotifier {
    * @param value computed value of the key
    * @param ValueNode node corresponding to value in the source file
    */
-  onSetUnknownOptionKeyValueInRoot(key: string, keyNode: PropertyName, value: qt.CompilerOptionsValue, valueNode: qt.Expression): void;
+  onSetUnknownOptionKeyValueInRoot(key: string, keyNode: qt.PropertyName, value: qt.CompilerOptionsValue, valueNode: qt.Expression): void;
 }
 
 /**
  * Convert the json syntax tree into the json value
  */
-export function convertToObject(sourceFile: JsonSourceFile, errors: qpc.Push<Diagnostic>): any {
+export function convertToObject(sourceFile: JsonSourceFile, errors: qpc.Push<qt.Diagnostic>): any {
   return convertToObjectWorker(sourceFile, errors, /*returnValue*/ true, /*knownRootOptions*/ undefined, /*jsonConversionNotifier*/ undefined);
 }
 
@@ -1605,18 +1613,18 @@ export function convertToObject(sourceFile: JsonSourceFile, errors: qpc.Push<Dia
  * This returns the json value (apart from checking errors) only if returnValue provided is true.
  * Otherwise it just checks the errors and returns undefined
  */
-export function convertToObjectWorker(sourceFile: JsonSourceFile, errors: qpc.Push<Diagnostic>, returnValue: boolean, knownRootOptions: CommandLineOption | undefined, jsonConversionNotifier: JsonConversionNotifier | undefined): any {
+export function convertToObjectWorker(sourceFile: JsonSourceFile, errors: qpc.Push<qt.Diagnostic>, returnValue: boolean, knownRootOptions: qt.CommandLineOption | undefined, jsonConversionNotifier: JsonConversionNotifier | undefined): any {
   if (!sourceFile.statements.length) {
     return returnValue ? {} : undefined;
   }
 
   return convertPropertyValueToJson(sourceFile.statements[0].expression, knownRootOptions);
 
-  function isRootOptionMap(knownOptions: Map<CommandLineOption> | undefined) {
-    return knownRootOptions && (knownRootOptions as TsConfigOnlyOption).elementOptions === knownOptions;
+  function isRootOptionMap(knownOptions: qpc.Map<qt.CommandLineOption> | undefined) {
+    return knownRootOptions && (knownRootOptions as qt.TsConfigOnlyOption).elementOptions === knownOptions;
   }
 
-  function convertObjectLiteralExpressionToJson(node: ObjectLiteralExpression, knownOptions: Map<CommandLineOption> | undefined, extraKeyDiagnostics: DidYouMeanOptionsDiagnostics | undefined, parentOption: string | undefined): any {
+  function convertObjectLiteralExpressionToJson(node: ObjectLiteralExpression, knownOptions: qpc.Map<qt.CommandLineOption> | undefined, extraKeyDiagnostics: qt.DidYouMeanOptionsDiagnostics | undefined, parentOption: string | undefined): any {
     const result: any = returnValue ? {} : undefined;
     for (const element of node.properties) {
       if (element.kind !== qt.SyntaxKind.PropertyAssignment) {
@@ -1673,7 +1681,7 @@ export function convertToObjectWorker(sourceFile: JsonSourceFile, errors: qpc.Pu
     return result;
   }
 
-  function convertArrayLiteralExpressionToJson(elements: qt.NodeArray<Expression>, elementOption: CommandLineOption | undefined): any[] | void {
+  function convertArrayLiteralExpressionToJson(elements: qt.NodeArray<Expression>, elementOption: qt.CommandLineOption | undefined): any[] | void {
     if (!returnValue) {
       return elements.forEach((element) => convertPropertyValueToJson(element, elementOption));
     }
@@ -1685,7 +1693,7 @@ export function convertToObjectWorker(sourceFile: JsonSourceFile, errors: qpc.Pu
     );
   }
 
-  function convertPropertyValueToJson(valueExpression: qt.Expression, option: CommandLineOption | undefined): any {
+  function convertPropertyValueToJson(valueExpression: qt.Expression, option: qt.CommandLineOption | undefined): any {
     switch (valueExpression.kind) {
       case qt.SyntaxKind.TrueKeyword:
         reportInvalidOptionValue(option && option.type !== 'boolean');
@@ -1736,7 +1744,7 @@ export function convertToObjectWorker(sourceFile: JsonSourceFile, errors: qpc.Pu
         // vs what we set in the json
         // If need arises, we can modify this interface and callbacks as needed
         if (option) {
-          const { elementOptions, extraKeyDiagnostics, name: optionName } = <TsConfigOnlyOption>option;
+          const { elementOptions, extraKeyDiagnostics, name: optionName } = <qt.TsConfigOnlyOption>option;
           return convertObjectLiteralExpressionToJson(objectLiteralExpression, elementOptions, extraKeyDiagnostics, optionName);
         } else {
           return convertObjectLiteralExpressionToJson(objectLiteralExpression, /* knownOptions*/ undefined, /*extraKeyDiagnosticMessage */ undefined, /*parentOption*/ undefined);
@@ -1768,11 +1776,11 @@ export function convertToObjectWorker(sourceFile: JsonSourceFile, errors: qpc.Pu
   }
 }
 
-function getCompilerOptionValueTypeString(option: CommandLineOption) {
+function getCompilerOptionValueTypeString(option: qt.CommandLineOption) {
   return option.type === 'list' ? 'Array' : isString(option.type) ? option.type : 'string';
 }
 
-function isCompilerOptionsValue(option: CommandLineOption | undefined, value: any): value is qt.CompilerOptionsValue {
+function isCompilerOptionsValue(option: qt.CommandLineOption | undefined, value: any): value is qt.CompilerOptionsValue {
   if (option) {
     if (isNullOrUndefined(value)) return true; // All options are undefinable/nullable
     if (option.type === 'list') {
@@ -1806,7 +1814,7 @@ export interface ConvertToTSConfigHost {
  */
 
 export function convertToTSConfig(configParseResult: ParsedCommandLine, configFileName: string, host: ConvertToTSConfigHost): TSConfig {
-  const getCanonicalFileName = createGetCanonicalFileName(host.useCaseSensitiveFileNames);
+  const getCanonicalFileName = qc.createGetCanonicalFileName(host.useCaseSensitiveFileNames);
   const files = map(filter(configParseResult.fileNames, !configParseResult.configFileSpecs || !configParseResult.configFileSpecs.validatedIncludeSpecs ? (_) => true : matchesSpecs(configFileName, configParseResult.configFileSpecs.validatedIncludeSpecs, configParseResult.configFileSpecs.validatedExcludeSpecs, host)), (f) =>
     getRelativePathFromFile(getNormalizedAbsolutePath(configFileName, host.getCurrentDirectory()), getNormalizedAbsolutePath(f, host.getCurrentDirectory()), getCanonicalFileName)
   );
@@ -1843,7 +1851,7 @@ export function convertToTSConfig(configParseResult: ParsedCommandLine, configFi
   return config;
 }
 
-function optionMapToObject(optionMap: Map<CompilerOptionsValue>): object {
+function optionMapToObject(optionMap: qpc.Map<qt.CompilerOptionsValue>): object {
   return {
     ...arrayFrom(optionMap.entries()).reduce((prev, cur) => ({ ...prev, [cur[0]]: cur[1] }), {}),
   };
@@ -1873,9 +1881,9 @@ function matchesSpecs(path: string, includeSpecs: readonly string[] | undefined,
   return (_) => true;
 }
 
-function getCustomTypeMapOfCommandLineOption(optionDefinition: CommandLineOption): Map<string | number> | undefined {
+function getCustomTypeMapOfCommandLineOption(optionDefinition: qt.CommandLineOption): qpc.Map<string | number> | undefined {
   if (optionDefinition.type === 'string' || optionDefinition.type === 'number' || optionDefinition.type === 'boolean' || optionDefinition.type === 'object') {
-    // this is of a type CommandLineOptionOfPrimitiveType
+    // this is of a type qt. CommandLineOptionOfPrimitiveType
     return undefined;
   } else if (optionDefinition.type === 'list') {
     return getCustomTypeMapOfCommandLineOption(optionDefinition.element);
@@ -1884,7 +1892,7 @@ function getCustomTypeMapOfCommandLineOption(optionDefinition: CommandLineOption
   }
 }
 
-function getNameOfCompilerOptionValue(value: qt.CompilerOptionsValue, customTypeMap: Map<string | number>): string | undefined {
+function getNameOfCompilerOptionValue(value: qt.CompilerOptionsValue, customTypeMap: qpc.Map<string | number>): string | undefined {
   // There is a typeMap associated with this command-line option so use it to map value back to its name
   return forEachEntry(customTypeMap, (mapValue, key) => {
     if (mapValue === value) {
@@ -1893,17 +1901,17 @@ function getNameOfCompilerOptionValue(value: qt.CompilerOptionsValue, customType
   });
 }
 
-function serializeCompilerOptions(options: qt.CompilerOptions, pathOptions?: { configFilePath: string; useCaseSensitiveFileNames: boolean }): Map<CompilerOptionsValue> {
+function serializeCompilerOptions(options: qt.CompilerOptions, pathOptions?: { configFilePath: string; useCaseSensitiveFileNames: boolean }): qpc.Map<qt.CompilerOptionsValue> {
   return serializeOptionBaseObject(options, getOptionsNameMap(), pathOptions);
 }
 
-function serializeWatchOptions(options: WatchOptions) {
+function serializeWatchOptions(options: qt.WatchOptions) {
   return serializeOptionBaseObject(options, getWatchOptionsNameMap());
 }
 
-function serializeOptionBaseObject(options: OptionsBase, { optionsNameMap }: OptionsNameMap, pathOptions?: { configFilePath: string; useCaseSensitiveFileNames: boolean }): Map<CompilerOptionsValue> {
-  const result = qc.createMap<CompilerOptionsValue>();
-  const getCanonicalFileName = pathOptions && createGetCanonicalFileName(pathOptions.useCaseSensitiveFileNames);
+function serializeOptionBaseObject(options: OptionsBase, { optionsNameMap }: OptionsNameMap, pathOptions?: { configFilePath: string; useCaseSensitiveFileNames: boolean }): qpc.Map<qt.CompilerOptionsValue> {
+  const result = qc.createMap<qt.CompilerOptionsValue>();
+  const getCanonicalFileName = pathOptions && qc.createGetCanonicalFileName(pathOptions.useCaseSensitiveFileNames);
 
   for (const name in options) {
     if (hasProperty(options, name)) {
@@ -1912,7 +1920,7 @@ function serializeOptionBaseObject(options: OptionsBase, { optionsNameMap }: Opt
       if (optionsNameMap.has(name) && optionsNameMap.get(name)!.category === Diagnostics.Command_line_Options) {
         continue;
       }
-      const value = <CompilerOptionsValue>options[name];
+      const value = <qt.CompilerOptionsValue>options[name];
       const optionDefinition = optionsNameMap.get(name.toLowerCase());
       if (optionDefinition) {
         const customTypeMap = getCustomTypeMapOfCommandLineOption(optionDefinition);
@@ -1952,7 +1960,7 @@ export function generateTSConfig(options: qt.CompilerOptions, fileNames: readonl
   const compilerOptionsMap = serializeCompilerOptions(compilerOptions);
   return writeConfigurations();
 
-  function getDefaultValueForOption(option: CommandLineOption) {
+  function getDefaultValueForOption(option: qt.CommandLineOption) {
     switch (option.type) {
       case 'number':
         return 1;
@@ -1975,7 +1983,7 @@ export function generateTSConfig(options: qt.CompilerOptions, fileNames: readonl
     return Array(paddingLength + 1).join(' ');
   }
 
-  function isAllowedOption({ category, name }: CommandLineOption): boolean {
+  function isAllowedOption({ category, name }: qt.CommandLineOption): boolean {
     // Skip options which do not have a category or have category `Command_line_Options`
     // Exclude all possible `Advanced_Options` in tsconfig.json which were NOT defined in command line
     return category !== undefined && category !== Diagnostics.Command_line_Options && (category !== Diagnostics.Advanced_Options || compilerOptionsMap.has(name));
@@ -1983,7 +1991,7 @@ export function generateTSConfig(options: qt.CompilerOptions, fileNames: readonl
 
   function writeConfigurations() {
     // Filter applicable options to place in the file
-    const categorizedOptions = qc.createMultiMap<CommandLineOption>();
+    const categorizedOptions = qc.createMultiMap<qt.CommandLineOption>();
     for (const option of optionDeclarations) {
       const { category } = option;
 
@@ -2059,7 +2067,7 @@ export function convertToOptionsWithAbsolutePaths(options: qt.CompilerOptions, t
   return result;
 }
 
-function convertToOptionValueWithAbsolutePaths(option: CommandLineOption | undefined, value: qt.CompilerOptionsValue, toAbsolutePath: (path: string) => string) {
+function convertToOptionValueWithAbsolutePaths(option: qt.CommandLineOption | undefined, value: qt.CompilerOptionsValue, toAbsolutePath: (path: string) => string) {
   if (option && !isNullOrUndefined(value)) {
     if (option.type === 'list') {
       const values = value as readonly (string | number)[];
@@ -2076,26 +2084,26 @@ function convertToOptionValueWithAbsolutePaths(option: CommandLineOption | undef
 /**
  * Parse the contents of a config file (tsconfig.json).
  * @param json The contents of the config file to parse
- * @param host Instance of ParseConfigHost used to enumerate files in folder.
+ * @param host Instance of qt.ParseConfigHost used to enumerate files in folder.
  * @param basePath A root directory to resolve relative path entries in the config
  *    file to. e.g. outDir
  */
-export function parseJsonConfigFileContent(json: any, host: ParseConfigHost, basePath: string, existingOptions?: qt.CompilerOptions, configFileName?: string, resolutionStack?: Path[], extraFileExtensions?: readonly FileExtensionInfo[], extendedConfigCache?: Map<ExtendedConfigCacheEntry>, existingWatchOptions?: WatchOptions): ParsedCommandLine {
+export function parseJsonConfigFileContent(json: any, host: qt.ParseConfigHost, basePath: string, existingOptions?: qt.CompilerOptions, configFileName?: string, resolutionStack?: Path[], extraFileExtensions?: readonly FileExtensionInfo[], extendedConfigCache?: qpc.Map<ExtendedConfigCacheEntry>, existingWatchOptions?: qt.WatchOptions): ParsedCommandLine {
   return parseJsonConfigFileContentWorker(json, /*sourceFile*/ undefined, host, basePath, existingOptions, existingWatchOptions, configFileName, resolutionStack, extraFileExtensions, extendedConfigCache);
 }
 
 /**
  * Parse the contents of a config file (tsconfig.json).
  * @param jsonNode The contents of the config file to parse
- * @param host Instance of ParseConfigHost used to enumerate files in folder.
+ * @param host Instance of qt.ParseConfigHost used to enumerate files in folder.
  * @param basePath A root directory to resolve relative path entries in the config
  *    file to. e.g. outDir
  */
-export function parseJsonSourceFileConfigFileContent(sourceFile: TsConfigSourceFile, host: ParseConfigHost, basePath: string, existingOptions?: qt.CompilerOptions, configFileName?: string, resolutionStack?: Path[], extraFileExtensions?: readonly FileExtensionInfo[], extendedConfigCache?: Map<ExtendedConfigCacheEntry>, existingWatchOptions?: WatchOptions): ParsedCommandLine {
+export function parseJsonSourceFileConfigFileContent(sourceFile: qt.TsConfigSourceFile, host: qt.ParseConfigHost, basePath: string, existingOptions?: qt.CompilerOptions, configFileName?: string, resolutionStack?: Path[], extraFileExtensions?: readonly FileExtensionInfo[], extendedConfigCache?: qpc.Map<ExtendedConfigCacheEntry>, existingWatchOptions?: qt.WatchOptions): ParsedCommandLine {
   return parseJsonConfigFileContentWorker(/*json*/ undefined, sourceFile, host, basePath, existingOptions, existingWatchOptions, configFileName, resolutionStack, extraFileExtensions, extendedConfigCache);
 }
 
-export function setConfigFileInOptions(options: qt.CompilerOptions, configFile: TsConfigSourceFile | undefined) {
+export function setConfigFileInOptions(options: qt.CompilerOptions, configFile: qt.TsConfigSourceFile | undefined) {
   if (configFile) {
     Object.defineProperty(options, 'configFile', { enumerable: false, writable: false, value: configFile });
   }
@@ -2115,14 +2123,14 @@ function directoryOfCombinedPath(fileName: string, basePath: string) {
  * Parse the contents of a config file from json or json source file (tsconfig.json).
  * @param json The contents of the config file to parse
  * @param sourceFile sourceFile corresponding to the Json
- * @param host Instance of ParseConfigHost used to enumerate files in folder.
+ * @param host Instance of qt.ParseConfigHost used to enumerate files in folder.
  * @param basePath A root directory to resolve relative path entries in the config
  *    file to. e.g. outDir
  * @param resolutionStack Only present for backwards-compatibility. Should be empty.
  */
-function parseJsonConfigFileContentWorker(json: any, sourceFile: TsConfigSourceFile | undefined, host: ParseConfigHost, basePath: string, existingOptions: qt.CompilerOptions = {}, existingWatchOptions: WatchOptions | undefined, configFileName?: string, resolutionStack: Path[] = [], extraFileExtensions: readonly FileExtensionInfo[] = [], extendedConfigCache?: Map<ExtendedConfigCacheEntry>): ParsedCommandLine {
+function parseJsonConfigFileContentWorker(json: any, sourceFile: qt.TsConfigSourceFile | undefined, host: qt.ParseConfigHost, basePath: string, existingOptions: qt.CompilerOptions = {}, existingWatchOptions: qt.WatchOptions | undefined, configFileName?: string, resolutionStack: Path[] = [], extraFileExtensions: readonly FileExtensionInfo[] = [], extendedConfigCache?: qpc.Map<ExtendedConfigCacheEntry>): ParsedCommandLine {
   Debug.assert((json === undefined && sourceFile !== undefined) || (json !== undefined && sourceFile === undefined));
-  const errors: Diagnostic[] = [];
+  const errors: qt.Diagnostic[] = [];
 
   const parsedConfig = parseConfig(json, sourceFile, host, basePath, configFileName, resolutionStack, errors, extendedConfigCache);
   const { raw } = parsedConfig;
@@ -2162,11 +2170,11 @@ function parseJsonConfigFileContentWorker(json: any, sourceFile: TsConfigSourceF
             const error = nodeValue ? createDiagnosticForNodeInSourceFile(sourceFile, nodeValue, diagnosticMessage, fileName) : qu.createCompilerDiagnostic(diagnosticMessage, fileName);
             errors.push(error);
           } else {
-            qu.createCompilerDiagnosticOnlyIfJson(Diagnostics.The_files_list_in_config_file_0_is_empty, configFileName || 'tsconfig.json');
+            createCompilerDiagnosticOnlyIfJson(Diagnostics.The_files_list_in_config_file_0_is_empty, configFileName || 'tsconfig.json');
           }
         }
       } else {
-        qu.createCompilerDiagnosticOnlyIfJson(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'files', 'Array');
+        createCompilerDiagnosticOnlyIfJson(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'files', 'Array');
       }
     }
 
@@ -2175,7 +2183,7 @@ function parseJsonConfigFileContentWorker(json: any, sourceFile: TsConfigSourceF
       if (isArray(raw.include)) {
         includeSpecs = <readonly string[]>raw.include;
       } else {
-        qu.createCompilerDiagnosticOnlyIfJson(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'include', 'Array');
+        createCompilerDiagnosticOnlyIfJson(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'include', 'Array');
       }
     }
 
@@ -2184,7 +2192,7 @@ function parseJsonConfigFileContentWorker(json: any, sourceFile: TsConfigSourceF
       if (isArray(raw.exclude)) {
         excludeSpecs = <readonly string[]>raw.exclude;
       } else {
-        qu.createCompilerDiagnosticOnlyIfJson(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'exclude', 'Array');
+        createCompilerDiagnosticOnlyIfJson(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'exclude', 'Array');
       }
     } else if (raw.compilerOptions) {
       const outDir = raw.compilerOptions.outDir;
@@ -2208,7 +2216,7 @@ function parseJsonConfigFileContentWorker(json: any, sourceFile: TsConfigSourceF
       if (isArray(raw.references)) {
         for (const ref of raw.references) {
           if (typeof ref.path !== 'string') {
-            qu.createCompilerDiagnosticOnlyIfJson(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'reference.path', 'string');
+            createCompilerDiagnosticOnlyIfJson(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'reference.path', 'string');
           } else {
             (projectReferences || (projectReferences = [])).push({
               path: getNormalizedAbsolutePath(ref.path, basePath),
@@ -2219,21 +2227,21 @@ function parseJsonConfigFileContentWorker(json: any, sourceFile: TsConfigSourceF
           }
         }
       } else {
-        qu.createCompilerDiagnosticOnlyIfJson(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'references', 'Array');
+        createCompilerDiagnosticOnlyIfJson(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'references', 'Array');
       }
     }
 
     return result;
   }
 
-  function qu.createCompilerDiagnosticOnlyIfJson(message: qt.DiagnosticMessage, arg0?: string, arg1?: string) {
+  function createCompilerDiagnosticOnlyIfJson(message: qt.DiagnosticMessage, arg0?: string, arg1?: string) {
     if (!sourceFile) {
-      errors.push(createCompilerDiagnostic(message, arg0, arg1));
+      errors.push(qu.createCompilerDiagnostic(message, arg0, arg1));
     }
   }
 }
 
-function isErrorNoInputFiles(error: Diagnostic) {
+function isErrorNoInputFiles(error: qt.Diagnostic) {
   return error.code === Diagnostics.No_inputs_were_found_in_config_file_0_Specified_include_paths_were_1_and_exclude_paths_were_2.code;
 }
 
@@ -2249,7 +2257,7 @@ export function canJsonReportNoInutFiles(raw: any) {
   return !hasProperty(raw, 'files') && !hasProperty(raw, 'references');
 }
 
-export function updateErrorForNoInputFiles(result: ExpandResult, configFileName: string, configFileSpecs: ConfigFileSpecs, configParseDiagnostics: Diagnostic[], canJsonReportNoInutFiles: boolean) {
+export function updateErrorForNoInputFiles(result: ExpandResult, configFileName: string, configFileSpecs: ConfigFileSpecs, configParseDiagnostics: qt.Diagnostic[], canJsonReportNoInutFiles: boolean) {
   const existingErrors = configParseDiagnostics.length;
   if (shouldReportNoInputFiles(result, canJsonReportNoInutFiles)) {
     configParseDiagnostics.push(getErrorForNoInputFiles(configFileSpecs, configFileName));
@@ -2262,8 +2270,8 @@ export function updateErrorForNoInputFiles(result: ExpandResult, configFileName:
 export interface ParsedTsconfig {
   raw: any;
   options?: qt.CompilerOptions;
-  watchOptions?: WatchOptions;
-  typeAcquisition?: TypeAcquisition;
+  watchOptions?: qt.WatchOptions;
+  typeAcquisition?: qt.TypeAcquisition;
   /**
    * Note that the case of the config path has not yet been normalized, as no files have been imported into the project yet
    */
@@ -2278,12 +2286,12 @@ function isSuccessfulParsedTsconfig(value: ParsedTsconfig) {
  * This *just* extracts options/include/exclude/files out of a config file.
  * It does *not* resolve the included files.
  */
-function parseConfig(json: any, sourceFile: TsConfigSourceFile | undefined, host: ParseConfigHost, basePath: string, configFileName: string | undefined, resolutionStack: string[], errors: qpc.Push<Diagnostic>, extendedConfigCache?: Map<ExtendedConfigCacheEntry>): ParsedTsconfig {
+function parseConfig(json: any, sourceFile: qt.TsConfigSourceFile | undefined, host: qt.ParseConfigHost, basePath: string, configFileName: string | undefined, resolutionStack: string[], errors: qpc.Push<qt.Diagnostic>, extendedConfigCache?: qpc.Map<ExtendedConfigCacheEntry>): ParsedTsconfig {
   basePath = normalizeSlashes(basePath);
   const resolvedPath = getNormalizedAbsolutePath(configFileName || '', basePath);
 
   if (resolutionStack.indexOf(resolvedPath) >= 0) {
-    errors.push(createCompilerDiagnostic(Diagnostics.Circularity_detected_while_resolving_configuration_Colon_0, [...resolutionStack, resolvedPath].join(' -> ')));
+    errors.push(qu.createCompilerDiagnostic(Diagnostics.Circularity_detected_while_resolving_configuration_Colon_0, [...resolutionStack, resolvedPath].join(' -> ')));
     return { raw: json || convertToObject(sourceFile, errors) };
   }
 
@@ -2317,9 +2325,9 @@ function parseConfig(json: any, sourceFile: TsConfigSourceFile | undefined, host
   return ownConfig;
 }
 
-function parseOwnConfigOfJson(json: any, host: ParseConfigHost, basePath: string, configFileName: string | undefined, errors: qpc.Push<Diagnostic>): ParsedTsconfig {
+function parseOwnConfigOfJson(json: any, host: qt.ParseConfigHost, basePath: string, configFileName: string | undefined, errors: qpc.Push<qt.Diagnostic>): ParsedTsconfig {
   if (hasProperty(json, 'excludes')) {
-    errors.push(createCompilerDiagnostic(Diagnostics.Unknown_option_excludes_Did_you_mean_exclude));
+    errors.push(qu.createCompilerDiagnostic(Diagnostics.Unknown_option_excludes_Did_you_mean_exclude));
   }
 
   const options = convertCompilerOptionsFromJsonWorker(json.compilerOptions, basePath, errors, configFileName);
@@ -2332,7 +2340,7 @@ function parseOwnConfigOfJson(json: any, host: ParseConfigHost, basePath: string
 
   if (json.extends) {
     if (!isString(json.extends)) {
-      errors.push(createCompilerDiagnostic(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'extends', 'string'));
+      errors.push(qu.createCompilerDiagnostic(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'extends', 'string'));
     } else {
       const newBase = configFileName ? directoryOfCombinedPath(configFileName, basePath) : basePath;
       extendedConfigPath = getExtendsConfigPath(json.extends, host, newBase, errors, qu.createCompilerDiagnostic);
@@ -2341,14 +2349,14 @@ function parseOwnConfigOfJson(json: any, host: ParseConfigHost, basePath: string
   return { raw: json, options, watchOptions, typeAcquisition, extendedConfigPath };
 }
 
-function parseOwnConfigOfJsonSourceFile(sourceFile: TsConfigSourceFile, host: ParseConfigHost, basePath: string, configFileName: string | undefined, errors: qpc.Push<Diagnostic>): ParsedTsconfig {
+function parseOwnConfigOfJsonSourceFile(sourceFile: qt.TsConfigSourceFile, host: qt.ParseConfigHost, basePath: string, configFileName: string | undefined, errors: qpc.Push<qt.Diagnostic>): ParsedTsconfig {
   const options = getDefaultCompilerOptions(configFileName);
-  let typeAcquisition: TypeAcquisition | undefined, typingOptionstypeAcquisition: TypeAcquisition | undefined;
-  let watchOptions: WatchOptions | undefined;
+  let typeAcquisition: qt.TypeAcquisition | undefined, typingOptionstypeAcquisition: qt.TypeAcquisition | undefined;
+  let watchOptions: qt.WatchOptions | undefined;
   let extendedConfigPath: string | undefined;
 
   const optionsIterator: JsonConversionNotifier = {
-    onSetValidOptionKeyValueInParent(parentOption: string, option: CommandLineOption, value: qt.CompilerOptionsValue) {
+    onSetValidOptionKeyValueInParent(parentOption: string, option: qt.CommandLineOption, value: qt.CompilerOptionsValue) {
       let currentOption;
       switch (parentOption) {
         case 'compilerOptions':
@@ -2369,7 +2377,7 @@ function parseOwnConfigOfJsonSourceFile(sourceFile: TsConfigSourceFile, host: Pa
 
       currentOption[option.name] = normalizeOptionValue(option, basePath, value);
     },
-    onSetValidOptionKeyValueInRoot(key: string, _keyNode: PropertyName, value: qt.CompilerOptionsValue, valueNode: qt.Expression) {
+    onSetValidOptionKeyValueInRoot(key: string, _keyNode: qt.PropertyName, value: qt.CompilerOptionsValue, valueNode: qt.Expression) {
       switch (key) {
         case 'extends':
           const newBase = configFileName ? directoryOfCombinedPath(configFileName, basePath) : basePath;
@@ -2377,7 +2385,7 @@ function parseOwnConfigOfJsonSourceFile(sourceFile: TsConfigSourceFile, host: Pa
           return;
       }
     },
-    onSetUnknownOptionKeyValueInRoot(key: string, keyNode: PropertyName, _value: qt.CompilerOptionsValue, _valueNode: qt.Expression) {
+    onSetUnknownOptionKeyValueInRoot(key: string, keyNode: qt.PropertyName, _value: qt.CompilerOptionsValue, _valueNode: qt.Expression) {
       if (key === 'excludes') {
         errors.push(createDiagnosticForNodeInSourceFile(sourceFile, keyNode, Diagnostics.Unknown_option_excludes_Did_you_mean_exclude));
       }
@@ -2403,7 +2411,7 @@ function parseOwnConfigOfJsonSourceFile(sourceFile: TsConfigSourceFile, host: Pa
   return { raw: json, options, watchOptions, typeAcquisition, extendedConfigPath };
 }
 
-function getExtendsConfigPath(extendedConfig: string, host: ParseConfigHost, basePath: string, errors: qpc.Push<Diagnostic>, createDiagnostic: (message: qt.DiagnosticMessage, arg1?: string) => Diagnostic) {
+function getExtendsConfigPath(extendedConfig: string, host: qt.ParseConfigHost, basePath: string, errors: qpc.Push<qt.Diagnostic>, createDiagnostic: (message: qt.DiagnosticMessage, arg1?: string) => qt.Diagnostic) {
   extendedConfig = normalizeSlashes(extendedConfig);
   if (isRootedDiskPath(extendedConfig) || qc.startsWith(extendedConfig, './') || qc.startsWith(extendedConfig, '../')) {
     let extendedConfigPath = getNormalizedAbsolutePath(extendedConfig, basePath);
@@ -2417,7 +2425,7 @@ function getExtendsConfigPath(extendedConfig: string, host: ParseConfigHost, bas
     return extendedConfigPath;
   }
   // If the path isn't a rooted or relative path, resolve like a module
-  const resolved = nodeModuleNameResolver(extendedConfig, combinePaths(basePath, 'tsconfig.json'), { moduleResolution: ModuleResolutionKind.NodeJs }, host, /*cache*/ undefined, /*projectRefs*/ undefined, /*lookupConfig*/ true);
+  const resolved = nodeModuleNameResolver(extendedConfig, combinePaths(basePath, 'tsconfig.json'), { moduleResolution: qt.ModuleResolutionKind.NodeJs }, host, /*cache*/ undefined, /*projectRefs*/ undefined, /*lookupConfig*/ true);
   if (resolved.resolvedModule) {
     return resolved.resolvedModule.resolvedFileName;
   }
@@ -2426,14 +2434,14 @@ function getExtendsConfigPath(extendedConfig: string, host: ParseConfigHost, bas
 }
 
 export interface ExtendedConfigCacheEntry {
-  extendedResult: TsConfigSourceFile;
+  extendedResult: qt.TsConfigSourceFile;
   extendedConfig: ParsedTsconfig | undefined;
 }
 
-function getExtendedConfig(sourceFile: TsConfigSourceFile | undefined, extendedConfigPath: string, host: ParseConfigHost, basePath: string, resolutionStack: string[], errors: qpc.Push<Diagnostic>, extendedConfigCache?: Map<ExtendedConfigCacheEntry>): ParsedTsconfig | undefined {
+function getExtendedConfig(sourceFile: qt.TsConfigSourceFile | undefined, extendedConfigPath: string, host: qt.ParseConfigHost, basePath: string, resolutionStack: string[], errors: qpc.Push<qt.Diagnostic>, extendedConfigCache?: qpc.Map<ExtendedConfigCacheEntry>): ParsedTsconfig | undefined {
   const path = host.useCaseSensitiveFileNames ? extendedConfigPath : toFileNameLowerCase(extendedConfigPath);
   let value: ExtendedConfigCacheEntry | undefined;
-  let extendedResult: TsConfigSourceFile;
+  let extendedResult: qt.TsConfigSourceFile;
   let extendedConfig: ParsedTsconfig | undefined;
   if (extendedConfigCache && (value = extendedConfigCache.get(path))) {
     ({ extendedResult, extendedConfig } = value);
@@ -2476,7 +2484,7 @@ function getExtendedConfig(sourceFile: TsConfigSourceFile | undefined, extendedC
   return extendedConfig!;
 }
 
-function convertCompileOnSaveOptionFromJson(jsonOption: any, basePath: string, errors: qpc.Push<Diagnostic>): boolean {
+function convertCompileOnSaveOptionFromJson(jsonOption: any, basePath: string, errors: qpc.Push<qt.Diagnostic>): boolean {
   if (!hasProperty(jsonOption, compileOnSaveCommandLineOption.name)) {
     return false;
   }
@@ -2484,14 +2492,14 @@ function convertCompileOnSaveOptionFromJson(jsonOption: any, basePath: string, e
   return typeof result === 'boolean' && result;
 }
 
-export function convertCompilerOptionsFromJson(jsonOptions: any, basePath: string, configFileName?: string): { options: qt.CompilerOptions; errors: Diagnostic[] } {
-  const errors: Diagnostic[] = [];
+export function convertCompilerOptionsFromJson(jsonOptions: any, basePath: string, configFileName?: string): { options: qt.CompilerOptions; errors: qt.Diagnostic[] } {
+  const errors: qt.Diagnostic[] = [];
   const options = convertCompilerOptionsFromJsonWorker(jsonOptions, basePath, errors, configFileName);
   return { options, errors };
 }
 
-export function convertTypeAcquisitionFromJson(jsonOptions: any, basePath: string, configFileName?: string): { options: TypeAcquisition; errors: Diagnostic[] } {
-  const errors: Diagnostic[] = [];
+export function convertTypeAcquisitionFromJson(jsonOptions: any, basePath: string, configFileName?: string): { options: qt.TypeAcquisition; errors: qt.Diagnostic[] } {
+  const errors: qt.Diagnostic[] = [];
   const options = convertTypeAcquisitionFromJsonWorker(jsonOptions, basePath, errors, configFileName);
   return { options, errors };
 }
@@ -2501,7 +2509,7 @@ function getDefaultCompilerOptions(configFileName?: string) {
   return options;
 }
 
-function convertCompilerOptionsFromJsonWorker(jsonOptions: any, basePath: string, errors: qpc.Push<Diagnostic>, configFileName?: string): qt.CompilerOptions {
+function convertCompilerOptionsFromJsonWorker(jsonOptions: any, basePath: string, errors: qpc.Push<qt.Diagnostic>, configFileName?: string): qt.CompilerOptions {
   const options = getDefaultCompilerOptions(configFileName);
   convertOptionsFromJson(getCommandLineCompilerOptionsMap(), jsonOptions, basePath, options, compilerOptionsDidYouMeanDiagnostics, errors);
   if (configFileName) {
@@ -2510,11 +2518,11 @@ function convertCompilerOptionsFromJsonWorker(jsonOptions: any, basePath: string
   return options;
 }
 
-function getDefaultTypeAcquisition(configFileName?: string): TypeAcquisition {
+function getDefaultTypeAcquisition(configFileName?: string): qt.TypeAcquisition {
   return { enable: !!configFileName && getBaseFileName(configFileName) === 'jsconfig.json', include: [], exclude: [] };
 }
 
-function convertTypeAcquisitionFromJsonWorker(jsonOptions: any, basePath: string, errors: qpc.Push<Diagnostic>, configFileName?: string): TypeAcquisition {
+function convertTypeAcquisitionFromJsonWorker(jsonOptions: any, basePath: string, errors: qpc.Push<qt.Diagnostic>, configFileName?: string): qt.TypeAcquisition {
   const options = getDefaultTypeAcquisition(configFileName);
   const typeAcquisition = convertEnableAutoDiscoveryToEnable(jsonOptions);
 
@@ -2522,13 +2530,13 @@ function convertTypeAcquisitionFromJsonWorker(jsonOptions: any, basePath: string
   return options;
 }
 
-function convertWatchOptionsFromJsonWorker(jsonOptions: any, basePath: string, errors: qpc.Push<Diagnostic>): WatchOptions | undefined {
+function convertWatchOptionsFromJsonWorker(jsonOptions: any, basePath: string, errors: qpc.Push<qt.Diagnostic>): qt.WatchOptions | undefined {
   return convertOptionsFromJson(getCommandLineWatchOptionsMap(), jsonOptions, basePath, /*defaultOptions*/ undefined, watchOptionsDidYouMeanDiagnostics, errors);
 }
 
-function convertOptionsFromJson(optionsNameMap: Map<CommandLineOption>, jsonOptions: any, basePath: string, defaultOptions: undefined, diagnostics: DidYouMeanOptionsDiagnostics, errors: qpc.Push<Diagnostic>): WatchOptions | undefined;
-function convertOptionsFromJson(optionsNameMap: Map<CommandLineOption>, jsonOptions: any, basePath: string, defaultOptions: qt.CompilerOptions | TypeAcquisition, diagnostics: DidYouMeanOptionsDiagnostics, errors: qpc.Push<Diagnostic>): qt.CompilerOptions | TypeAcquisition;
-function convertOptionsFromJson(optionsNameMap: Map<CommandLineOption>, jsonOptions: any, basePath: string, defaultOptions: qt.CompilerOptions | TypeAcquisition | WatchOptions | undefined, diagnostics: DidYouMeanOptionsDiagnostics, errors: qpc.Push<Diagnostic>) {
+function convertOptionsFromJson(optionsNameMap: qpc.Map<qt.CommandLineOption>, jsonOptions: any, basePath: string, defaultOptions: undefined, diagnostics: qt.DidYouMeanOptionsDiagnostics, errors: qpc.Push<qt.Diagnostic>): qt.WatchOptions | undefined;
+function convertOptionsFromJson(optionsNameMap: qpc.Map<qt.CommandLineOption>, jsonOptions: any, basePath: string, defaultOptions: qt.CompilerOptions | qt.TypeAcquisition, diagnostics: qt.DidYouMeanOptionsDiagnostics, errors: qpc.Push<qt.Diagnostic>): qt.CompilerOptions | qt.TypeAcquisition;
+function convertOptionsFromJson(optionsNameMap: qpc.Map<qt.CommandLineOption>, jsonOptions: any, basePath: string, defaultOptions: qt.CompilerOptions | qt.TypeAcquisition | qt.WatchOptions | undefined, diagnostics: qt.DidYouMeanOptionsDiagnostics, errors: qpc.Push<qt.Diagnostic>) {
   if (!jsonOptions) {
     return;
   }
@@ -2544,7 +2552,7 @@ function convertOptionsFromJson(optionsNameMap: Map<CommandLineOption>, jsonOpti
   return defaultOptions;
 }
 
-function convertJsonOption(opt: CommandLineOption, value: any, basePath: string, errors: qpc.Push<Diagnostic>): qt.CompilerOptionsValue {
+function convertJsonOption(opt: qt.CommandLineOption, value: any, basePath: string, errors: qpc.Push<qt.Diagnostic>): qt.CompilerOptionsValue {
   if (isCompilerOptionsValue(opt, value)) {
     const optType = opt.type;
     if (optType === 'list' && isArray(value)) {
@@ -2554,11 +2562,11 @@ function convertJsonOption(opt: CommandLineOption, value: any, basePath: string,
     }
     return normalizeNonListOptionValue(opt, basePath, value);
   } else {
-    errors.push(createCompilerDiagnostic(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, opt.name, getCompilerOptionValueTypeString(opt)));
+    errors.push(qu.createCompilerDiagnostic(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, opt.name, getCompilerOptionValueTypeString(opt)));
   }
 }
 
-function normalizeOptionValue(option: CommandLineOption, basePath: string, value: any): qt.CompilerOptionsValue {
+function normalizeOptionValue(option: qt.CommandLineOption, basePath: string, value: any): qt.CompilerOptionsValue {
   if (isNullOrUndefined(value)) return undefined;
   if (option.type === 'list') {
     const listOption = option;
@@ -2575,7 +2583,7 @@ function normalizeOptionValue(option: CommandLineOption, basePath: string, value
   return normalizeNonListOptionValue(option, basePath, value);
 }
 
-function normalizeNonListOptionValue(option: CommandLineOption, basePath: string, value: any): qt.CompilerOptionsValue {
+function normalizeNonListOptionValue(option: qt.CommandLineOption, basePath: string, value: any): qt.CompilerOptionsValue {
   if (option.isFilePath) {
     value = getNormalizedAbsolutePath(value, basePath);
     if (value === '') {
@@ -2585,7 +2593,7 @@ function normalizeNonListOptionValue(option: CommandLineOption, basePath: string
   return value;
 }
 
-function convertJsonOptionOfCustomType(opt: CommandLineOptionOfCustomType, value: string, errors: qpc.Push<Diagnostic>) {
+function convertJsonOptionOfCustomType(opt: qt.CommandLineOptionOfCustomType, value: string, errors: qpc.Push<qt.Diagnostic>) {
   if (isNullOrUndefined(value)) return undefined;
   const key = value.toLowerCase();
   const val = opt.type.get(key);
@@ -2594,9 +2602,10 @@ function convertJsonOptionOfCustomType(opt: CommandLineOptionOfCustomType, value
   } else {
     errors.push(createCompilerDiagnosticForInvalidCustomType(opt));
   }
+  return;
 }
 
-function convertJsonOptionOfListType(option: CommandLineOptionOfListType, values: readonly any[], basePath: string, errors: qpc.Push<Diagnostic>): any[] {
+function convertJsonOptionOfListType(option: qt.CommandLineOptionOfListType, values: readonly any[], basePath: string, errors: qpc.Push<qt.Diagnostic>): any[] {
   return filter(
     map(values, (v) => convertJsonOption(option.element, v, basePath, errors)),
     (v) => !!v
@@ -2675,7 +2684,7 @@ const wildcardDirectoryPattern = /^[^*?]*(?=\/[^/]*[*?])/;
  * @param host The host used to resolve files and directories.
  * @param errors An array for diagnostic reporting.
  */
-function matchFileNames(filesSpecs: readonly string[] | undefined, includeSpecs: readonly string[] | undefined, excludeSpecs: readonly string[] | undefined, basePath: string, options: qt.CompilerOptions, host: ParseConfigHost, errors: qpc.Push<Diagnostic>, extraFileExtensions: readonly FileExtensionInfo[], jsonSourceFile: TsConfigSourceFile | undefined): ExpandResult {
+function matchFileNames(filesSpecs: readonly string[] | undefined, includeSpecs: readonly string[] | undefined, excludeSpecs: readonly string[] | undefined, basePath: string, options: qt.CompilerOptions, host: qt.ParseConfigHost, errors: qpc.Push<qt.Diagnostic>, extraFileExtensions: readonly FileExtensionInfo[], jsonSourceFile: qt.TsConfigSourceFile | undefined): ExpandResult {
   basePath = normalizePath(basePath);
   let validatedIncludeSpecs: readonly string[] | undefined, validatedExcludeSpecs: readonly string[] | undefined;
 
@@ -2711,10 +2720,10 @@ function matchFileNames(filesSpecs: readonly string[] | undefined, includeSpecs:
  * @param extraFileExtensions optionaly file extra file extension information from host
  */
 
-export function getFileNamesFromConfigSpecs(spec: ConfigFileSpecs, basePath: string, options: qt.CompilerOptions, host: ParseConfigHost, extraFileExtensions: readonly FileExtensionInfo[] = []): ExpandResult {
+export function getFileNamesFromConfigSpecs(spec: ConfigFileSpecs, basePath: string, options: qt.CompilerOptions, host: qt.ParseConfigHost, extraFileExtensions: readonly FileExtensionInfo[] = []): ExpandResult {
   basePath = normalizePath(basePath);
 
-  const keyMapper = createGetCanonicalFileName(host.useCaseSensitiveFileNames);
+  const keyMapper = qc.createGetCanonicalFileName(host.useCaseSensitiveFileNames);
 
   // Literal file names (provided via the "files" array in tsconfig.json) are stored in a
   // file map with a possibly case insensitive key. We use this map later when when including
@@ -2798,7 +2807,7 @@ export function getFileNamesFromConfigSpecs(spec: ConfigFileSpecs, basePath: str
   };
 }
 
-function validateSpecs(specs: readonly string[], errors: qpc.Push<Diagnostic>, allowTrailingRecursion: boolean, jsonSourceFile: TsConfigSourceFile | undefined, specKey: string): readonly string[] {
+function validateSpecs(specs: readonly string[], errors: qpc.Push<qt.Diagnostic>, allowTrailingRecursion: boolean, jsonSourceFile: qt.TsConfigSourceFile | undefined, specKey: string): readonly string[] {
   return specs.filter((spec) => {
     const diag = specToDiagnostic(spec, allowTrailingRecursion);
     if (diag !== undefined) {
@@ -2807,7 +2816,7 @@ function validateSpecs(specs: readonly string[], errors: qpc.Push<Diagnostic>, a
     return diag === undefined;
   });
 
-  function createDiagnostic(message: qt.DiagnosticMessage, spec: string): Diagnostic {
+  function createDiagnostic(message: qt.DiagnosticMessage, spec: string): qt.Diagnostic {
     const element = getTsConfigPropArrayElementValue(jsonSourceFile, specKey, spec);
     return element ? createDiagnosticForNodeInSourceFile(jsonSourceFile, element, message, spec) : qu.createCompilerDiagnostic(message, spec);
   }
@@ -2898,7 +2907,7 @@ function getWildcardDirectoryFromSpec(spec: string, useCaseSensitiveFileNames: b
  * @param extensionPriority The priority of the extension.
  * @param context The expansion context.
  */
-function hasFileWithHigherPriorityExtension(file: string, literalFiles: Map<string>, wildcardFiles: Map<string>, extensions: readonly string[], keyMapper: (value: string) => string) {
+function hasFileWithHigherPriorityExtension(file: string, literalFiles: qpc.Map<string>, wildcardFiles: qpc.Map<string>, extensions: readonly string[], keyMapper: (value: string) => string) {
   const extensionPriority = getExtensionPriority(file, extensions);
   const adjustedExtensionPriority = adjustExtensionPriority(extensionPriority, extensions);
   for (let i = ExtensionPriority.Highest; i < adjustedExtensionPriority; i++) {
@@ -2920,7 +2929,7 @@ function hasFileWithHigherPriorityExtension(file: string, literalFiles: Map<stri
  * @param extensionPriority The priority of the extension.
  * @param context The expansion context.
  */
-function removeWildcardFilesWithLowerPriorityExtension(file: string, wildcardFiles: Map<string>, extensions: readonly string[], keyMapper: (value: string) => string) {
+function removeWildcardFilesWithLowerPriorityExtension(file: string, wildcardFiles: qpc.Map<string>, extensions: readonly string[], keyMapper: (value: string) => string) {
   const extensionPriority = getExtensionPriority(file, extensions);
   const nextExtensionPriority = getNextLowestExtensionPriority(extensionPriority, extensions);
   for (let i = nextExtensionPriority; i < extensions.length; i++) {
@@ -2949,7 +2958,7 @@ export function convertCompilerOptionsForTelemetry(opts: qt.CompilerOptions): qt
   return out;
 }
 
-function getOptionValueWithEmptyStrings(value: any, option: CommandLineOption): {} {
+function getOptionValueWithEmptyStrings(value: any, option: qt.CommandLineOption): {} {
   switch (option.type) {
     case 'object': // "paths". Can't get any useful information from the value since we blank out strings, so just return "".
       return '';

@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 import * as qpc from './corePublic';
-import * as qpu from './utilitiesPublic';
 import * as qc from './core';
+import * as qp from './path';
 import * as qt from './types';
+import * as qu from './utilities';
 import { Debug } from './debug';
+import { Diagnostics } from './diagnostics';
 
 export interface SourceMapGeneratorOptions {
   extendedDiagnostics?: boolean;
@@ -689,7 +691,7 @@ export function createDocumentPositionMapper(host: DocumentPositionMapperHost, m
   }
 }
 
-export const qc.identitySourceMapConsumer: DocumentPositionMapper = {
+export const identitySourceMapConsumer: DocumentPositionMapper = {
   getSourcePosition: qc.identity,
   getGeneratedPosition: qc.identity,
 };

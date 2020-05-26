@@ -62,7 +62,7 @@ export function transformECMAScriptModule(context: TransformationContext) {
 
   function visitExportDeclaration(node: ExportDeclaration) {
     // `export * as ns` only needs to be transformed in ES2015
-    if (compilerOptions.module !== undefined && compilerOptions.module > ModuleKind.ES2015) {
+    if (compilerOptions.module !== undefined && compilerOptions.module > qt.ModuleKind.ES2015) {
       return node;
     }
 

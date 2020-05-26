@@ -1,4 +1,12 @@
 /** This is the cache of module/typedirectives resolution that can be retained across program */
+import * as qpc from './corePublic';
+import * as qc from './core';
+import * as qp from './path';
+import * as qt from './types';
+import * as qu from './utilities';
+import { Debug } from './debug';
+import { Diagnostics } from './diagnostics';
+
 export interface ResolutionCache {
   startRecordingFilesWithChangedResolutions(): void;
   finishRecordingFilesWithChangedResolutions(): Path[] | undefined;
