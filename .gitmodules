@@ -1,18 +1,9 @@
-[submodule "dev-libs/nx-console"]
-	path = dev-libs/nx-console
-	url = https://github.com/nrwl/nx-console.git
 [submodule "dev-libs/rxjs"]
 	path = dev-libs/rxjs
 	url = https://github.com/ReactiveX/rxjs.git
-[submodule "dev-libs/TypeScript"]
-	path = dev-libs/TypeScript
-	url = https://github.com/microsoft/TypeScript.git
 [submodule "dev-libs/spaCy"]
 	path = dev-libs/spaCy
 	url = https://github.com/explosion/spaCy.git
-[submodule "dev-libs/angular"]
-	path = dev-libs/angular
-	url = https://github.com/angular/angular.git
 [submodule "dev-libs/tfjs"]
 	path = dev-libs/tfjs
 	url = https://github.com/tensorflow/tfjs.git
@@ -28,6 +19,3 @@
 [submodule "dev-libs/tokenizers"]
 	path = dev-libs/tokenizers
 	url = https://github.com/huggingface/tokenizers.git
-[submodule "dev-libs/pyright"]
-	path = dev-libs/pyright
-	url = https://github.com/microsoft/pyright.git
