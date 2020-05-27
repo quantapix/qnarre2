@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "outDir": "../out/server",
+    "rootDir": "src",
+    "types": ["node"],
+    "experimentalDecorators": true
+  },
+	"include": ["src"],
+	"exclude": ["node_modules"]
+}

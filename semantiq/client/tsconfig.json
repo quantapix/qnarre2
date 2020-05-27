@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "outDir": "../out/client",
+    "rootDir": "src",
+    "experimentalDecorators": true
+  },
+	"include": ["src"],
+	"exclude": ["node_modules"]
+}

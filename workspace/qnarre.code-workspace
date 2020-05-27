@@ -17,6 +17,9 @@
     },
     {
       "path": "../vscode-extension-samples"
+    },
+    {
+      "path": "../semantiq"
     }
   ],
   "settings": {

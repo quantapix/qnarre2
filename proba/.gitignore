@@ -1,7 +1,0 @@
-out
-node_modules
-.vscode-test
-*.vsix
-
-.pytest_cache
-.mypy_cache

@@ -1,14 +1,17 @@
+out
 node_modules
+.vscode-test
+*.vsix
+
+.pytest_cache
+.mypy_cache
+
 py_venv
 qnarre-new
 qnarre-old
 llvm-build
 
 yarn.lock
-
-mypy
-cpython
-vscode-extension-samples
 
 *.tsbuildinfo
 
