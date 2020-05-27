@@ -19,3 +19,9 @@
 [submodule "dev-libs/tokenizers"]
 	path = dev-libs/tokenizers
 	url = https://github.com/huggingface/tokenizers.git
+[submodule "semantiq/typescript"]
+	path = semantiq/typescript
+	url = https://github.com/microsoft/TypeScript.git
+[submodule "semantiq/pyright"]
+	path = semantiq/pyright
+	url = https://github.com/microsoft/pyright.git
