@@ -1350,7 +1350,6 @@ namespace qnr {
     return parseCommandLineWorker(compilerOptionsDidYouMeanDiagnostics, commandLine, readFile);
   }
 
-  /** @internal */
   export function getOptionFromName(optionName: string, allowShort?: boolean): CommandLineOption | undefined {
     return getOptionDeclarationFromName(getOptionsNameMap, optionName, allowShort);
   }
@@ -1897,7 +1896,6 @@ namespace qnr {
     return false;
   }
 
-  /** @internal */
   export interface TSConfig {
     compilerOptions: CompilerOptions;
     compileOnSave: boolean | undefined;
@@ -1907,7 +1905,6 @@ namespace qnr {
     references: readonly ProjectReference[] | undefined;
   }
 
-  /** @internal */
   export interface ConvertToTSConfigHost {
     getCurrentDirectory(): string;
     useCaseSensitiveFileNames: boolean;
@@ -1919,7 +1916,7 @@ namespace qnr {
    * @param configFileName name of the parsed config file - output paths will be generated relative to this
    * @param host provides current directory and case sensitivity services
    */
-  /** @internal */
+
   export function convertToTSConfig(configParseResult: ParsedCommandLine, configFileName: string, host: ConvertToTSConfigHost): TSConfig {
     const getCanonicalFileName = createGetCanonicalFileName(host.useCaseSensitiveFileNames);
     const files = map(

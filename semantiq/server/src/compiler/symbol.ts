@@ -1,4 +1,3 @@
-/** @internal */
 namespace qnr {
   export function createGetSymbolWalker(
     getRestTypeOfSignature: (sig: Signature) => Type,

@@ -406,7 +406,7 @@ namespace qnr {
     let constraintDepth = 0;
     let currentNode: Node | undefined;
 
-    const emptySymbols = createSymbolTable();
+    const emptySymbols = new SymbolTable();
     const arrayVariances = [VarianceFlags.Covariant];
 
     const compilerOptions = host.getCompilerOptions();
@@ -425,7 +425,7 @@ namespace qnr {
     const emitResolver = createResolver();
     const nodeBuilder = createNodeBuilder();
 
-    const globals = createSymbolTable();
+    const globals = new SymbolTable();
     const undefinedSymbol = createSymbol(SymbolFlags.Property, 'undefined' as __String);
     undefinedSymbol.declarations = [];
 
@@ -855,7 +855,7 @@ namespace qnr {
     emptyJsxObjectType.objectFlags |= ObjectFlags.JsxAttributes;
 
     const emptyTypeLiteralSymbol = createSymbol(SymbolFlags.TypeLiteral, InternalSymbolName.Type);
-    emptyTypeLiteralSymbol.members = createSymbolTable();
+    emptyTypeLiteralSymbol.members = new SymbolTable();
     const emptyTypeLiteralType = createAnonymousType(emptyTypeLiteralSymbol, emptySymbols, emptyArray, emptyArray, undefined, undefined);
 
     const emptyGenericType = <GenericType>(<ObjectType>createAnonymousType(undefined, emptySymbols, emptyArray, emptyArray, undefined, undefined));
@@ -1092,7 +1092,7 @@ namespace qnr {
     const identityRelation = createMap<RelationComparisonResult>();
     const enumRelation = createMap<RelationComparisonResult>();
 
-    const builtinGlobals = createSymbolTable();
+    const builtinGlobals = new SymbolTable();
     builtinGlobals.set(undefinedSymbol.escapedName, undefinedSymbol);
 
     initializeTypeChecker();
@@ -1272,10 +1272,6 @@ namespace qnr {
       return result;
     }
 
-    /**
-     * Note: if target is transient, then it is mutable, and mergeSymbol with both mutate and return it.
-     * If target is not transient, mergeSymbol will produce a transient clone, mutate that and return it.
-     */
     function mergeSymbol(target: Symbol, source: Symbol, unidirectional = false): Symbol {
       if (!(target.flags & getExcludedSymbolFlags(source.flags)) || (source.flags | target.flags) & SymbolFlags.Assignment) {
         if (source === target) {
@@ -1306,12 +1302,12 @@ namespace qnr {
         }
         addRange(target.declarations, source.declarations);
         if (source.members) {
-          if (!target.members) target.members = createSymbolTable();
-          mergeSymbolTable(target.members, source.members, unidirectional);
+          if (!target.members) target.members = new SymbolTable();
+          target.members.merge(source.members, unidirectional);
         }
         if (source.exports) {
-          if (!target.exports) target.exports = createSymbolTable();
-          mergeSymbolTable(target.exports, source.exports, unidirectional);
+          if (!target.exports) target.exports = new SymbolTable();
+          target.exports.merge(source.exports, unidirectional);
         }
         if (!unidirectional) {
           recordMergedSymbol(target, source);
@@ -1404,22 +1400,6 @@ namespace qnr {
       }
     }
 
-    function combineSymbolTables(first: SymbolTable | undefined, second: SymbolTable | undefined): SymbolTable | undefined {
-      if (!hasEntries(first)) return second;
-      if (!hasEntries(second)) return first;
-      const combined = createSymbolTable();
-      mergeSymbolTable(combined, first);
-      mergeSymbolTable(combined, second);
-      return combined;
-    }
-
-    function mergeSymbolTable(target: SymbolTable, source: SymbolTable, unidirectional = false) {
-      source.forEach((sourceSymbol, id) => {
-        const targetSymbol = target.get(id);
-        target.set(id, targetSymbol ? mergeSymbol(targetSymbol, sourceSymbol, unidirectional) : sourceSymbol);
-      });
-    }
-
     function mergeModuleAugmentation(moduleName: StringLiteral | Identifier): void {
       const moduleAugmentation = <ModuleDeclaration>moduleName.parent;
       if (moduleAugmentation.symbol.declarations[0] !== moduleAugmentation) {
@@ -1431,7 +1411,7 @@ namespace qnr {
       }
 
       if (isGlobalScopeAugmentation(moduleAugmentation)) {
-        mergeSymbolTable(globals, moduleAugmentation.symbol.exports!);
+        globals.merge(moduleAugmentation.symbol.exports!);
       } else {
         // find a module that about to be augmented
         // do not validate names of augmentations that are defined in ambient context
@@ -1473,22 +1453,6 @@ namespace qnr {
           // moduleName will be a StringLiteral since this is not `declare global`.
           error(moduleName, Diagnostics.Cannot_augment_module_0_because_it_resolves_to_a_non_module_entity, (moduleName as StringLiteral).text);
         }
-      }
-    }
-
-    function addToSymbolTable(target: SymbolTable, source: SymbolTable, message: DiagnosticMessage) {
-      source.forEach((sourceSymbol, id) => {
-        const targetSymbol = target.get(id);
-        if (targetSymbol) {
-          // Error on redeclarations
-          forEach(targetSymbol.declarations, addDeclarationDiagnostic(unescapeLeadingUnderscores(id), message));
-        } else {
-          target.set(id, sourceSymbol);
-        }
-      });
-
-      function addDeclarationDiagnostic(id: string, message: DiagnosticMessage) {
-        return (declaration: Declaration) => diagnostics.add(createDiagnosticForNode(declaration, message, id));
       }
     }
 
@@ -3677,7 +3641,7 @@ namespace qnr {
       const merged = exported.flags & SymbolFlags.Transient ? exported : cloneSymbol(exported);
       merged.flags = merged.flags | SymbolFlags.ValueModule;
       if (merged.exports === undefined) {
-        merged.exports = createSymbolTable();
+        merged.exports = new SymbolTable();
       }
       moduleSymbol.exports!.forEach((s, name) => {
         if (name === InternalSymbolName.ExportEquals) return;
@@ -3864,7 +3828,7 @@ namespace qnr {
         // All export * declarations are collected in an __export symbol by the binder
         const exportStars = symbol.exports.get(InternalSymbolName.ExportStar);
         if (exportStars) {
-          const nestedSymbols = createSymbolTable();
+          const nestedSymbols = new SymbolTable();
           const lookupTable = createMap<ExportCollisionTracker>() as ExportCollisionTrackerTable;
           for (const node of exportStars.declarations) {
             const resolvedModule = resolveExternalModuleName(node, (node as ExportDeclaration).moduleSpecifier!);
@@ -4193,7 +4157,7 @@ namespace qnr {
             // TODO: Should this filtered table be cached in some way?
             (getSymbolOfNode(location as ClassLikeDeclaration | InterfaceDeclaration).members || emptySymbols).forEach((memberSymbol, key) => {
               if (memberSymbol.flags & (SymbolFlags.Type & ~SymbolFlags.Assignment)) {
-                (table || (table = createSymbolTable())).set(key, memberSymbol);
+                (table || (table = new SymbolTable())).set(key, memberSymbol);
               }
             });
             if (table && (result = callback(table))) {
@@ -6653,7 +6617,7 @@ namespace qnr {
         let addingDeclare = !bundled;
         const exportEquals = symbolTable.get(InternalSymbolName.ExportEquals);
         if (exportEquals && symbolTable.size > 1 && exportEquals.flags & SymbolFlags.Alias) {
-          symbolTable = createSymbolTable();
+          symbolTable = new SymbolTable();
           // Remove extraneous elements from root symbol table (they'll be mixed back in when the target of the `export=` is looked up)
           symbolTable.set(InternalSymbolName.ExportEquals, exportEquals);
         }
@@ -7343,7 +7307,7 @@ namespace qnr {
             );
             fakespace.flags ^= NodeFlags.Synthesized; // unset synthesized so it is usable as an enclosing declaration
             fakespace.parent = enclosingDeclaration as SourceFile | NamespaceDeclaration;
-            fakespace.locals = createSymbolTable(props);
+            fakespace.locals = new SymbolTable(props);
             fakespace.symbol = props[0].parent!;
             const oldResults = results;
             results = [];
@@ -7353,7 +7317,7 @@ namespace qnr {
             const oldContext = context;
             context = subcontext;
             // TODO: implement handling for the localVsRemoteMap.get("remote") - should be difficult to trigger (see comment above), as only interesting cross-file js merges should make this possible
-            visitSymbolTable(createSymbolTable(localProps), suppressNewPrivateContext, /*propertyAsAlias*/ true);
+            visitSymbolTable(new SymbolTable(localProps), suppressNewPrivateContext, /*propertyAsAlias*/ true);
             context = oldContext;
             addingDeclare = oldAddingDeclare;
             const declarations = results;
@@ -8569,7 +8533,7 @@ namespace qnr {
         }
         return getTypeAliasInstantiation(omitTypeAlias, [source, omitKeyType]);
       }
-      const members = createSymbolTable();
+      const members = new SymbolTable();
       for (const prop of getPropertiesOfType(source)) {
         if (
           !isTypeAssignableTo(getLiteralTypeFromProperty(prop, TypeFlags.StringOrNumberLiteralOrUnique), omitKeyType) &&
@@ -9039,17 +9003,17 @@ namespace qnr {
       if (!isInJSFile(decl) || !init || !isObjectLiteralExpression(init) || init.properties.length) {
         return;
       }
-      const exports = createSymbolTable();
+      const exports = new SymbolTable();
       while (isBinaryExpression(decl) || isPropertyAccessExpression(decl)) {
         const s = getSymbolOfNode(decl);
         if (s && hasEntries(s.exports)) {
-          mergeSymbolTable(exports, s.exports);
+          exports.merge(s.exports);
         }
         decl = isBinaryExpression(decl) ? decl.parent : decl.parent.parent;
       }
       const s = getSymbolOfNode(decl);
       if (s && hasEntries(s.exports)) {
-        mergeSymbolTable(exports, s.exports);
+        exports.merge(s.exports);
       }
       const type = createAnonymousType(symbol, exports, emptyArray, emptyArray, undefined, undefined);
       type.objectFlags |= ObjectFlags.JSLiteral;
@@ -9123,10 +9087,10 @@ namespace qnr {
         symbol.escapedName === InternalSymbolName.ExportEquals
       ) {
         const exportedType = resolveStructuredTypeMembers(type as ObjectType);
-        const members = createSymbolTable();
+        const members = new SymbolTable();
         copyEntries(exportedType.members, members);
         if (resolvedSymbol && !resolvedSymbol.exports) {
-          resolvedSymbol.exports = createSymbolTable();
+          resolvedSymbol.exports = new SymbolTable();
         }
         (resolvedSymbol || symbol).exports!.forEach((s, name) => {
           const exportedMember = members.get(name)!;
@@ -9240,7 +9204,7 @@ namespace qnr {
 
     // Return the type implied by an object binding pattern
     function getTypeFromObjectBindingPattern(pattern: ObjectBindingPattern, includePatternInType: boolean, reportErrors: boolean): Type {
-      const members = createSymbolTable();
+      const members = new SymbolTable();
       let stringIndexInfo: IndexInfo | undefined;
       let objectFlags = ObjectFlags.ObjectLiteral | ObjectFlags.ContainsObjectOrArrayLiteral;
       forEach(pattern.elements, (e) => {
@@ -9395,7 +9359,7 @@ namespace qnr {
       }
       if (symbol.flags & SymbolFlags.ModuleExports) {
         const fileSymbol = getSymbolOfNode(getSourceFileOfNode(symbol.valueDeclaration));
-        const members = createSymbolTable();
+        const members = new SymbolTable();
         members.set('exports' as __String, fileSymbol);
         return createAnonymousType(symbol, members, emptyArray, emptyArray, undefined, undefined);
       }
@@ -10485,7 +10449,7 @@ namespace qnr {
     // The mappingThisOnly flag indicates that the only type parameter being mapped is "this". When the flag is true,
     // we check symbols to see if we can quickly conclude they are free of "this" references, thus needing no instantiation.
     function createInstantiatedSymbolTable(symbols: Symbol[], mapper: TypeMapper, mappingThisOnly: boolean): SymbolTable {
-      const result = createSymbolTable();
+      const result = new SymbolTable();
       for (const symbol of symbols) {
         result.set(symbol.escapedName, mappingThisOnly && isThisless(symbol) ? symbol : instantiateSymbol(symbol, mapper));
       }
@@ -10698,14 +10662,8 @@ namespace qnr {
       if (!links[resolutionKind]) {
         const isStatic = resolutionKind === MembersOrExportsResolutionKind.resolvedExports;
         const earlySymbols = !isStatic ? symbol.members : symbol.flags & SymbolFlags.Module ? getExportsOfModuleWorker(symbol) : symbol.exports;
-
-        // In the event we recursively resolve the members/exports of the symbol, we
-        // set the initial value of resolvedMembers/resolvedExports to the early-bound
-        // members/exports of the symbol.
         links[resolutionKind] = earlySymbols || emptySymbols;
-
-        // fill in any as-yet-unresolved late-bound members.
-        const lateSymbols = createSymbolTable() as UnderscoreEscapedMap<TransientSymbol>;
+        const lateSymbols = new SymbolTable<TransientSymbol>();
         for (const decl of symbol.declarations) {
           const members = getMembersOfDeclaration(decl);
           if (members) {
@@ -10731,30 +10689,17 @@ namespace qnr {
             }
           }
         }
-
-        links[resolutionKind] = combineSymbolTables(earlySymbols, lateSymbols) || emptySymbols;
+        links[resolutionKind] = earlySymbols?.combine(lateSymbols) || emptySymbols;
       }
-
       return links[resolutionKind]!;
     }
 
-    /**
-     * Gets a SymbolTable containing both the early- and late-bound members of a symbol.
-     *
-     * For a description of late-binding, see `lateBindMember`.
-     */
     function getMembersOfSymbol(symbol: Symbol) {
       return symbol.flags & SymbolFlags.LateBindingContainer
         ? getResolvedMembersOrExportsOfSymbol(symbol, MembersOrExportsResolutionKind.resolvedMembers)
         : symbol.members || emptySymbols;
     }
 
-    /**
-     * If a symbol is the dynamic name of the member of an object type, get the late-bound
-     * symbol of the member.
-     *
-     * For a description of late-binding, see `lateBindMember`.
-     */
     function getLateBoundSymbol(symbol: Symbol): Symbol {
       if (symbol.flags & SymbolFlags.ClassMember && symbol.escapedName === InternalSymbolName.Computed) {
         const links = getSymbolLinks(symbol);
@@ -10799,7 +10744,7 @@ namespace qnr {
       let stringIndexInfo: IndexInfo | undefined;
       let numberIndexInfo: IndexInfo | undefined;
       if (rangeEquals(typeParameters, typeArguments, 0, typeParameters.length)) {
-        members = source.symbol ? getMembersOfSymbol(source.symbol) : createSymbolTable(source.declaredProperties);
+        members = source.symbol ? getMembersOfSymbol(source.symbol) : new SymbolTable(source.declaredProperties);
         callSignatures = source.declaredCallSignatures;
         constructSignatures = source.declaredConstructSignatures;
         stringIndexInfo = source.declaredStringIndexInfo;
@@ -10815,7 +10760,7 @@ namespace qnr {
       const baseTypes = getBaseTypes(source);
       if (baseTypes.length) {
         if (source.symbol && members === getMembersOfSymbol(source.symbol)) {
-          members = createSymbolTable(source.declaredProperties);
+          members = new SymbolTable(source.declaredProperties);
         }
         setStructuredTypeMembers(type, members, callSignatures, constructSignatures, stringIndexInfo, numberIndexInfo);
         const thisArgument = lastOrUndefined(typeArguments);
@@ -11319,7 +11264,7 @@ namespace qnr {
         if (symbol.exports) {
           members = getExportsOfSymbol(symbol);
           if (symbol === globalThisSymbol) {
-            const varsOnly = createMap<Symbol>() as SymbolTable;
+            const varsOnly = new SymbolTable();
             members.forEach((p) => {
               if (!(p.flags & SymbolFlags.BlockScoped)) {
                 varsOnly.set(p.escapedName, p);
@@ -11333,7 +11278,7 @@ namespace qnr {
           const classType = getDeclaredTypeOfClassOrInterface(symbol);
           const baseConstructorType = getBaseConstructorTypeOfClass(classType);
           if (baseConstructorType.flags & (TypeFlags.Object | TypeFlags.Intersection | TypeFlags.TypeVariable)) {
-            members = createSymbolTable(getNamedMembers(members));
+            members = new SymbolTable(getNamedMembers(members));
             addInheritedMembers(members, getPropertiesOfType(baseConstructorType));
           } else if (baseConstructorType === anyType) {
             stringIndexInfo = createIndexInfo(anyType, /*isReadonly*/ false);
@@ -11392,7 +11337,7 @@ namespace qnr {
       const stringIndexInfo =
         indexInfo &&
         createIndexInfo(inferReverseMappedType(indexInfo.type, type.mappedType, type.constraintType), readonlyMask && indexInfo.isReadonly);
-      const members = createSymbolTable();
+      const members = new SymbolTable();
       for (const prop of getPropertiesOfType(type.source)) {
         const checkFlags = CheckFlags.ReverseMapped | (readonlyMask && isReadonlySymbol(prop) ? CheckFlags.Readonly : 0);
         const inferredProp = createSymbol(SymbolFlags.Property | (prop.flags & optionalMask), prop.escapedName, checkFlags) as ReverseMappedSymbol;
@@ -11440,7 +11385,7 @@ namespace qnr {
 
     /** Resolve the members of a mapped type { [P in K]: T } */
     function resolveMappedTypeMembers(type: MappedType) {
-      const members: SymbolTable = createSymbolTable();
+      const members = new SymbolTable();
       let stringIndexInfo: IndexInfo | undefined;
       let numberIndexInfo: IndexInfo | undefined;
       // Resolve upfront such that recursive references see an empty object type.
@@ -11685,7 +11630,7 @@ namespace qnr {
 
     function getPropertiesOfUnionOrIntersectionType(type: UnionOrIntersectionType): Symbol[] {
       if (!type.resolvedProperties) {
-        const members = createSymbolTable();
+        const members = new SymbolTable();
         for (const current of type.types) {
           for (const prop of getPropertiesOfType(current)) {
             if (!members.has(prop.escapedName)) {
@@ -11727,7 +11672,7 @@ namespace qnr {
         return getAugmentedPropertiesOfType(unionType);
       }
 
-      const props = createSymbolTable();
+      const props = new SymbolTable();
       for (const memberType of types) {
         for (const { escapedName } of getAugmentedPropertiesOfType(memberType)) {
           if (!props.has(escapedName)) {
@@ -12211,7 +12156,7 @@ namespace qnr {
     // these partial properties when identifying discriminant properties, but otherwise they are filtered out
     // and do not appear to be present in the union type.
     function getUnionOrIntersectionProperty(type: UnionOrIntersectionType, name: __String): Symbol | undefined {
-      const properties = type.propertyCache || (type.propertyCache = createSymbolTable());
+      const properties = type.propertyCache || (type.propertyCache = new SymbolTable());
       let property = properties.get(name);
       if (!property) {
         property = createUnionOrIntersectionProperty(type, name);
@@ -15516,7 +15461,7 @@ namespace qnr {
 
       function getAnonymousPartialType(type: Type) {
         // gets the type as if it had been spread, but where everything in the spread is made optional
-        const members = createSymbolTable();
+        const members = new SymbolTable();
         for (const prop of getPropertiesOfType(type)) {
           if (getDeclarationModifierFlagsFromSymbol(prop) & (ModifierFlags.Private | ModifierFlags.Protected)) {
             // do nothing, skip privates
@@ -15608,7 +15553,7 @@ namespace qnr {
         return getIntersectionType([left, right]);
       }
 
-      const members = createSymbolTable();
+      const members = new SymbolTable();
       const skippedPrivateMembers = createUnderscoreEscapedMap<boolean>();
       let stringIndexInfo: IndexInfo | undefined;
       let numberIndexInfo: IndexInfo | undefined;
@@ -20761,7 +20706,7 @@ namespace qnr {
     }
 
     function transformTypeOfMembers(type: Type, f: (propertyType: Type) => Type) {
-      const members = createSymbolTable();
+      const members = new SymbolTable();
       for (const property of getPropertiesOfObjectType(type)) {
         const original = getTypeOfSymbol(property);
         const updated = f(original);
@@ -20865,7 +20810,7 @@ namespace qnr {
     }
 
     function getWidenedTypeOfObjectLiteral(type: Type, context: WideningContext | undefined): Type {
-      const members = createSymbolTable();
+      const members = new SymbolTable();
       for (const prop of getPropertiesOfObjectType(type)) {
         members.set(prop.escapedName, getWidenedProperty(prop, context));
       }
@@ -21271,7 +21216,7 @@ namespace qnr {
 
     /** Create an object with properties named in the string literal type. Every property has type `any` */
     function createEmptyObjectTypeFromStringLiteral(type: Type) {
-      const members = createSymbolTable();
+      const members = new SymbolTable();
       forEachType(type, (t) => {
         if (!(t.flags & TypeFlags.StringLiteral)) {
           return;
@@ -26413,8 +26358,8 @@ namespace qnr {
       // Grammar checking
       checkGrammarObjectLiteralExpression(node, inDestructuringPattern);
 
-      const allPropertiesTable = strictNullChecks ? createSymbolTable() : undefined;
-      let propertiesTable = createSymbolTable();
+      const allPropertiesTable = strictNullChecks ? new SymbolTable() : undefined;
+      let propertiesTable = new SymbolTable();
       let propertiesArray: Symbol[] = [];
       let spread: Type = emptyObjectType;
 
@@ -26521,7 +26466,7 @@ namespace qnr {
           if (propertiesArray.length > 0) {
             spread = getSpreadType(spread, createObjectLiteralType(), node.symbol, objectFlags, inConstContext);
             propertiesArray = [];
-            propertiesTable = createSymbolTable();
+            propertiesTable = new SymbolTable();
             hasComputedStringProperty = false;
             hasComputedNumberProperty = false;
           }
@@ -26586,7 +26531,7 @@ namespace qnr {
         if (propertiesArray.length > 0) {
           spread = getSpreadType(spread, createObjectLiteralType(), node.symbol, objectFlags, inConstContext);
           propertiesArray = [];
-          propertiesTable = createSymbolTable();
+          propertiesTable = new SymbolTable();
           hasComputedStringProperty = false;
           hasComputedNumberProperty = false;
         }
@@ -26704,8 +26649,8 @@ namespace qnr {
      */
     function createJsxAttributesTypeFromAttributesProperty(openingLikeElement: JsxOpeningLikeElement, checkMode: CheckMode | undefined) {
       const attributes = openingLikeElement.attributes;
-      const allAttributesTable = strictNullChecks ? createSymbolTable() : undefined;
-      let attributesTable = createSymbolTable();
+      const allAttributesTable = strictNullChecks ? new SymbolTable() : undefined;
+      let attributesTable = new SymbolTable();
       let spread: Type = emptyJsxObjectType;
       let hasSpreadAnyType = false;
       let typeToIntersect: Type | undefined;
@@ -26736,7 +26681,7 @@ namespace qnr {
           Debug.assert(attributeDecl.kind === SyntaxKind.JsxSpreadAttribute);
           if (attributesTable.size > 0) {
             spread = getSpreadType(spread, createJsxAttributesType(), attributes.symbol, objectFlags, /*readonly*/ false);
-            attributesTable = createSymbolTable();
+            attributesTable = new SymbolTable();
           }
           const exprType = getReducedType(checkExpressionCached(attributeDecl.expression, checkMode));
           if (isTypeAny(exprType)) {
@@ -26796,7 +26741,7 @@ namespace qnr {
           );
           childrenPropSymbol.valueDeclaration.parent = attributes;
           childrenPropSymbol.valueDeclaration.symbol = childrenPropSymbol;
-          const childPropMap = createSymbolTable();
+          const childPropMap = new SymbolTable();
           childPropMap.set(jsxChildrenPropertyName, childrenPropSymbol);
           spread = getSpreadType(
             spread,
@@ -30319,14 +30264,14 @@ namespace qnr {
         const links = getSymbolLinks(source);
         if (!links.inferredClassSymbol || !links.inferredClassSymbol.has('' + getSymbolId(target))) {
           const inferred = isTransientSymbol(target) ? target : (cloneSymbol(target) as TransientSymbol);
-          inferred.exports = inferred.exports || createSymbolTable();
-          inferred.members = inferred.members || createSymbolTable();
+          inferred.exports = inferred.exports || new SymbolTable();
+          inferred.members = inferred.members || new SymbolTable();
           inferred.flags |= source.flags & SymbolFlags.Class;
           if (hasEntries(source.exports)) {
-            mergeSymbolTable(inferred.exports, source.exports);
+            inferred.exports.merge(source.exports);
           }
           if (hasEntries(source.members)) {
-            mergeSymbolTable(inferred.members, source.members);
+            inferred.members.merge(source.members);
           }
           (links.inferredClassSymbol || (links.inferredClassSymbol = createMap<TransientSymbol>())).set('' + getSymbolId(inferred), inferred);
           return inferred;
@@ -30500,7 +30445,7 @@ namespace qnr {
           const file = find(originalSymbol.declarations, isSourceFile);
           const hasSyntheticDefault = canHaveSyntheticDefault(file, originalSymbol, /*dontResolveAlias*/ false);
           if (hasSyntheticDefault) {
-            const memberTable = createSymbolTable();
+            const memberTable = new SymbolTable();
             const newSymbol = createSymbol(SymbolFlags.Alias, InternalSymbolName.Default);
             newSymbol.nameType = getLiteralType('default');
             newSymbol.target = resolveSymbol(symbol);
@@ -35611,7 +35556,7 @@ namespace qnr {
       );
     }
 
-    function addToGroup<K, V>(map: Map<[K, V[]]>, key: K, value: V, getKey: (key: K) => number | string): void {
+    function addToGroup<K, V>(map: Map<string, [K, V[]]>, key: K, value: V, getKey: (key: K) => number | string): void {
       const keyString = String(getKey(key));
       const group = map.get(keyString);
       if (group) {
@@ -39550,100 +39495,60 @@ namespace qnr {
       }
     }
 
-    // Language service support
-
     function getSymbolsInScope(location: Node, meaning: SymbolFlags): Symbol[] {
-      if (location.flags & NodeFlags.InWithStatement) {
-        // We cannot answer semantic questions within a with block, do not proceed any further
-        return [];
-      }
-
-      const symbols = createSymbolTable();
+      if (location.flags & NodeFlags.InWithStatement) return [];
+      const symbols = new SymbolTable();
       let isStatic = false;
-
       populateSymbols();
-
       symbols.delete(InternalSymbolName.This); // Not a symbol, a keyword
       return symbolsToArray(symbols);
 
       function populateSymbols() {
         while (location) {
           if (location.locals && !isGlobalSourceFile(location)) {
-            copySymbols(location.locals, meaning);
+            location.locals.copy(symbols, meaning);
           }
-
           switch (location.kind) {
             case SyntaxKind.SourceFile:
               if (!isExternalOrCommonJsModule(<SourceFile>location)) break;
             // falls through
             case SyntaxKind.ModuleDeclaration:
-              copySymbols(getSymbolOfNode(location as ModuleDeclaration | SourceFile).exports!, meaning & SymbolFlags.ModuleMember);
+              getSymbolOfNode(location as ModuleDeclaration | SourceFile).exports!.copy(symbols, meaning & SymbolFlags.ModuleMember);
               break;
             case SyntaxKind.EnumDeclaration:
-              copySymbols(getSymbolOfNode(location as EnumDeclaration).exports!, meaning & SymbolFlags.EnumMember);
+              getSymbolOfNode(location as EnumDeclaration).exports!.copy(symbols, meaning & SymbolFlags.EnumMember);
               break;
             case SyntaxKind.ClassExpression:
               const className = (location as ClassExpression).name;
               if (className) {
-                copySymbol(location.symbol, meaning);
+                copySymbol(location.symbol, symbols, meaning);
               }
-
-            // this fall-through is necessary because we would like to handle
-            // type parameter inside class expression similar to how we handle it in classDeclaration and interface Declaration.
-            // falls through
             case SyntaxKind.ClassDeclaration:
             case SyntaxKind.InterfaceDeclaration:
-              // If we didn't come from static member of class or interface,
-              // add the type parameters into the symbol table
-              // (type parameters of classDeclaration/classExpression and interface are in member property of the symbol.
-              // Note: that the memberFlags come from previous iteration.
               if (!isStatic) {
-                copySymbols(getMembersOfSymbol(getSymbolOfNode(location as ClassDeclaration | InterfaceDeclaration)), meaning & SymbolFlags.Type);
+                getMembersOfSymbol(getSymbolOfNode(location as ClassDeclaration | InterfaceDeclaration)).copy(symbols, meaning & SymbolFlags.Type);
               }
               break;
             case SyntaxKind.FunctionExpression:
               const funcName = (location as FunctionExpression).name;
               if (funcName) {
-                copySymbol(location.symbol, meaning);
+                copySymbol(location.symbol, symbols, meaning);
               }
               break;
           }
-
           if (introducesArgumentsExoticObject(location)) {
-            copySymbol(argumentsSymbol, meaning);
+            copySymbol(argumentsSymbol, symbols, meaning);
           }
-
           isStatic = hasSyntacticModifier(location, ModifierFlags.Static);
           location = location.parent;
         }
-
-        copySymbols(globals, meaning);
+        globals.copy(symbols, meaning);
       }
 
-      /**
-       * Copy the given symbol into symbol tables if the symbol has the given meaning
-       * and it doesn't already existed in the symbol table
-       * @param key a key for storing in symbol table; if undefined, use symbol.name
-       * @param symbol the symbol to be added into symbol table
-       * @param meaning meaning of symbol to filter by before adding to symbol table
-       */
-      function copySymbol(symbol: Symbol, meaning: SymbolFlags): void {
+      function copySymbol(symbol: Symbol, to: SymbolTable, meaning: SymbolFlags) {
         if (getCombinedLocalAndExportSymbolFlags(symbol) & meaning) {
           const id = symbol.escapedName;
-          // We will copy all symbol regardless of its reserved name because
-          // symbolsToArray will check whether the key is a reserved name and
-          // it will not copy symbol with reserved name to the array
-          if (!symbols.has(id)) {
-            symbols.set(id, symbol);
-          }
-        }
-      }
-
-      function copySymbols(source: SymbolTable, meaning: SymbolFlags): void {
-        if (meaning) {
-          source.forEach((symbol) => {
-            copySymbol(symbol, meaning);
-          });
+          if (!to.has(id)) to.set(id, symbol);
         }
       }
     }
@@ -40174,7 +40079,7 @@ namespace qnr {
     // if the type has call or construct signatures
     function getAugmentedPropertiesOfType(type: Type): Symbol[] {
       type = getApparentType(type);
-      const propsByName = createSymbolTable(getPropertiesOfType(type));
+      const propsByName = new SymbolTable(getPropertiesOfType(type));
       const functionType = getSignaturesOfType(type, SignatureKind.Call).length
         ? globalCallableFunctionType
         : getSignaturesOfType(type, SignatureKind.Construct).length
@@ -41039,10 +40944,10 @@ namespace qnr {
               );
             }
           }
-          mergeSymbolTable(globals, file.locals!);
+          globals.merge(file.locals!);
         }
         if (file.jsGlobalAugmentations) {
-          mergeSymbolTable(globals, file.jsGlobalAugmentations);
+          globals.merge(file.jsGlobalAugmentations);
         }
         if (file.patternAmbientModules && file.patternAmbientModules.length) {
           patternAmbientModules = concatenate(patternAmbientModules, file.patternAmbientModules);
@@ -41078,8 +40983,7 @@ namespace qnr {
         }
       }
 
-      // Setup global builtins
-      addToSymbolTable(globals, builtinGlobals, Diagnostics.Declaration_name_conflicts_with_built_in_global_identifier_0);
+      globals.add(builtinGlobals, Diagnostics.Declaration_name_conflicts_with_built_in_global_identifier_0);
 
       getSymbolLinks(undefinedSymbol).type = undefinedWideningType;
       getSymbolLinks(argumentsSymbol).type = getGlobalType('IArguments' as __String, /*arity*/ 0, /*reportErrors*/ true);

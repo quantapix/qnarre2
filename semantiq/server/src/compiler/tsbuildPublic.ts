@@ -19,10 +19,10 @@ namespace qnr {
     assumeChangesOnlyAffectDirectDependencies?: boolean;
 
     traceResolution?: boolean;
-    /* @internal */ diagnostics?: boolean;
-    /* @internal */ extendedDiagnostics?: boolean;
-    /* @internal */ locale?: string;
-    /* @internal */ generateCpuProfile?: string;
+    diagnostics?: boolean;
+    extendedDiagnostics?: boolean;
+    locale?: string;
+    generateCpuProfile?: string;
 
     [option: string]: CompilerOptionsValue | undefined;
   }

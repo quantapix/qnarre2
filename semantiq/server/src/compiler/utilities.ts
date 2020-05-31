@@ -30,16 +30,6 @@ namespace qnr {
     return !!map && !!map.size;
   }
 
-  export function createSymbolTable(symbols?: readonly Symbol[]): SymbolTable {
-    const result = createMap<Symbol>() as SymbolTable;
-    if (symbols) {
-      for (const symbol of symbols) {
-        result.set(symbol.escapedName, symbol);
-      }
-    }
-    return result;
-  }
-
   export function isTransientSymbol(symbol: Symbol): symbol is TransientSymbol {
     return (symbol.flags & SymbolFlags.Transient) !== 0;
   }
@@ -3590,7 +3580,6 @@ namespace qnr {
     return str.replace(templateSubstitutionRegExp, '\\${');
   }
 
-  /** @internal */
   export function hasInvalidEscape(template: TemplateLiteral): boolean {
     return (
       template &&
@@ -5823,7 +5812,7 @@ namespace qnr {
     files: readonly SourceFile[],
     getCanonicalFileName: GetCanonicalFileName,
     cwd: string
-  ): ReadonlyMap<string> {
+  ): QReadonlyMap<string> {
     const result = createMap<string>();
     const symlinks = flatten<readonly [string, string]>(
       mapDefined(

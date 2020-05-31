@@ -525,7 +525,6 @@ namespace qnr {
     return name && isIdentifier(name) ? name : undefined;
   }
 
-  /** @internal */
   export function nodeHasName(statement: Node, name: Identifier) {
     if (isNamedDeclaration(statement) && isIdentifier(statement.name) && idText(statement.name as Identifier) === idText(name)) {
       return true;
@@ -540,12 +539,10 @@ namespace qnr {
     return declaration.name || nameForNamelessJSDocTypedef(declaration);
   }
 
-  /** @internal */
   export function isNamedDeclaration(node: Node): node is NamedDeclaration & { name: DeclarationName } {
     return !!(node as NamedDeclaration).name; // A 'name' property should always be a DeclarationName.
   }
 
-  /** @internal */
   export function getNonAssignedNameOfDeclaration(declaration: Declaration | Expression): DeclarationName | undefined {
     switch (declaration.kind) {
       case SyntaxKind.Identifier:

@@ -14,7 +14,7 @@ namespace qnr {
     return updated;
   }
 
-  /* @internal */ export function createNodeArray<T extends Node>(elements?: T[], hasTrailingComma?: boolean): MutableNodeArray<T>;
+  export function createNodeArray<T extends Node>(elements?: T[], hasTrailingComma?: boolean): MutableNodeArray<T>;
   export function createNodeArray<T extends Node>(elements?: readonly T[], hasTrailingComma?: boolean): NodeArray<T>;
   /**
    * Make `elements` into a `NodeArray<T>`. If `elements` is `undefined`, returns an empty `NodeArray<T>`.
@@ -62,11 +62,11 @@ namespace qnr {
 
   // Literals
 
-  /* @internal */ export function createLiteral(
+  export function createLiteral(
     value: string | StringLiteral | NoSubstitutionTemplateLiteral | NumericLiteral | Identifier,
     isSingleQuote: boolean
   ): StringLiteral; // eslint-disable-line @typescript-eslint/unified-signatures
-  /* @internal */ export function createLiteral(value: string | number, isSingleQuote: boolean): StringLiteral | NumericLiteral;
+  export function createLiteral(value: string | number, isSingleQuote: boolean): StringLiteral | NumericLiteral;
   /** If a node is passed, creates a string literal whose source text is read from a source node during emit. */
   export function createLiteral(value: string | StringLiteral | NoSubstitutionTemplateLiteral | NumericLiteral | Identifier): StringLiteral;
   export function createLiteral(value: number | PseudoBigInt): NumericLiteral;
@@ -152,7 +152,7 @@ namespace qnr {
 
   /** Create a unique temporary variable. */
   export function createTempVariable(recordTempVariable: ((node: Identifier) => void) | undefined): Identifier;
-  /* @internal */ export function createTempVariable(
+  export function createTempVariable(
     recordTempVariable: ((node: Identifier) => void) | undefined,
     reservedInNestedScopes: boolean
   ): GeneratedIdentifier;
@@ -191,7 +191,7 @@ namespace qnr {
     return name;
   }
 
-  /* @internal */ export function createOptimisticUniqueName(text: string): GeneratedIdentifier;
+  export function createOptimisticUniqueName(text: string): GeneratedIdentifier;
   /** Create a unique name based on the supplied text. */
   export function createOptimisticUniqueName(text: string): Identifier;
   export function createOptimisticUniqueName(text: string): GeneratedIdentifier {
@@ -211,7 +211,7 @@ namespace qnr {
 
   /** Create a unique name generated for a node. */
   export function getGeneratedNameForNode(node: Node | undefined): Identifier;
-  /* @internal */ export function getGeneratedNameForNode(node: Node | undefined, flags: GeneratedIdentifierFlags): Identifier; // eslint-disable-line @typescript-eslint/unified-signatures
+  export function getGeneratedNameForNode(node: Node | undefined, flags: GeneratedIdentifierFlags): Identifier; // eslint-disable-line @typescript-eslint/unified-signatures
   export function getGeneratedNameForNode(node: Node | undefined, flags?: GeneratedIdentifierFlags): Identifier {
     const name = createIdentifier(node && isIdentifier(node) ? idText(node) : '');
     name.autoGenerateFlags = GeneratedIdentifierFlags.Node | flags!;
@@ -1362,7 +1362,7 @@ namespace qnr {
     typeArguments: readonly TypeNode[] | undefined,
     template: TemplateLiteral
   ): TaggedTemplateExpression;
-  /** @internal */
+
   export function createTaggedTemplate(
     tag: Expression,
     typeArgumentsOrTemplate: readonly TypeNode[] | TemplateLiteral | undefined,
@@ -4052,7 +4052,6 @@ namespace qnr {
     return node;
   }
 
-  /** @internal */
   export function ignoreSourceNewlines<T extends Node>(node: T): T {
     getOrCreateEmitNode(node).flags |= EmitFlags.IgnoreSourceNewlines;
     return node;

@@ -367,7 +367,6 @@ namespace qnr {
     return errorMessage;
   }
 
-  /** @internal */
   export enum ForegroundColorEscapeSequences {
     Grey = '\u001b[90m',
     Red = '\u001b[91m',
@@ -394,7 +393,6 @@ namespace qnr {
     }
   }
 
-  /** @internal */
   export function formatColorAndReset(text: string, formatStyle: string) {
     return formatStyle + text + resetEscapeSequence;
   }
@@ -748,7 +746,7 @@ namespace qnr {
     let processingDefaultLibFiles: SourceFile[] | undefined;
     let processingOtherFiles: SourceFile[] | undefined;
     let files: SourceFile[];
-    let symlinks: ReadonlyMap<string> | undefined;
+    let symlinks: QReadonlyMap<string> | undefined;
     let commonSourceDirectory: string;
     let diagnosticsProducingTypeChecker: TypeChecker;
     let noDiagnosticsTypeChecker: TypeChecker;
@@ -3787,7 +3785,7 @@ namespace qnr {
       return comparePaths(file1, file2, currentDirectory, !host.useCaseSensitiveFileNames()) === Comparison.EqualTo;
     }
 
-    function getProbableSymlinks(): ReadonlyMap<string> {
+    function getProbableSymlinks(): QReadonlyMap<string> {
       if (host.getSymlinks) {
         return host.getSymlinks();
       }

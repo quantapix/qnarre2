@@ -308,7 +308,7 @@ namespace qnr {
     return false;
   }
 
-  /* @internal */ export function isUnicodeIdentifierStart(code: number, languageVersion: ScriptTarget | undefined) {
+  export function isUnicodeIdentifierStart(code: number, languageVersion: ScriptTarget | undefined) {
     return languageVersion! >= ScriptTarget.ES2015
       ? lookupInUnicodeMap(code, unicodeESNextIdentifierStart)
       : languageVersion === ScriptTarget.ES5
@@ -445,7 +445,6 @@ namespace qnr {
     return lineNumber;
   }
 
-  /** @internal */
   export function getLinesBetweenPositions(sourceFile: SourceFileLike, pos1: number, pos2: number) {
     if (pos1 === pos2) return 0;
     const lineStarts = getLineStarts(sourceFile);

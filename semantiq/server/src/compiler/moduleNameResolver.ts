@@ -1050,7 +1050,7 @@ namespace qnr {
     cache?: ModuleResolutionCache,
     redirectedReference?: ResolvedProjectReference
   ): ResolvedModuleWithFailedLookupLocations;
-  /* @internal */ export function nodeModuleNameResolver(
+  export function nodeModuleNameResolver(
     moduleName: string,
     containingFile: string,
     compilerOptions: CompilerOptions,

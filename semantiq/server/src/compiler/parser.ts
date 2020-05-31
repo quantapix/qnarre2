@@ -601,7 +601,6 @@ namespace qnr {
     return;
   }
 
-  /** @internal */
   /**
    * Invokes a callback for each child of the given node. The 'cbNode' callback is invoked for all child nodes
    * stored in properties. If a 'cbNodes' callback is specified, it is invoked for embedded arrays; additionally,
@@ -8668,7 +8667,6 @@ namespace qnr {
     }
   }
 
-  /** @internal */
   export function isDeclarationFileName(fileName: string): boolean {
     return fileExtensionIs(fileName, Extension.Dts);
   }
@@ -8878,7 +8876,6 @@ namespace qnr {
     return argMap;
   }
 
-  /** @internal */
   export function tagNamesAreEquivalent(lhs: JsxTagNameExpression, rhs: JsxTagNameExpression): boolean {
     if (lhs.kind !== rhs.kind) {
       return false;

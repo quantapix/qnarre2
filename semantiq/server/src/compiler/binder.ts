@@ -306,11 +306,11 @@ namespace qnr {
       symbol.declarations = appendIfUnique(symbol.declarations, node);
 
       if (symbolFlags & (SymbolFlags.Class | SymbolFlags.Enum | SymbolFlags.Module | SymbolFlags.Variable) && !symbol.exports) {
-        symbol.exports = createSymbolTable();
+        symbol.exports = new SymbolTable();
       }
 
       if (symbolFlags & (SymbolFlags.Class | SymbolFlags.Interface | SymbolFlags.TypeLiteral | SymbolFlags.ObjectLiteral) && !symbol.members) {
-        symbol.members = createSymbolTable();
+        symbol.members = new SymbolTable();
       }
 
       // On merge of const enum module with class or function, reset const enum only flag (namespaces will already recalculate)
@@ -643,7 +643,7 @@ namespace qnr {
         }
         container = blockScopeContainer = node;
         if (containerFlags & ContainerFlags.HasLocals) {
-          container.locals = createSymbolTable();
+          container.locals = new SymbolTable();
         }
         addToContainerChain(container);
       } else if (containerFlags & ContainerFlags.IsBlockScopedContainer) {
@@ -2042,7 +2042,7 @@ namespace qnr {
 
       const typeLiteralSymbol = createSymbol(SymbolFlags.TypeLiteral, InternalSymbolName.Type);
       addDeclarationToSymbol(typeLiteralSymbol, node, SymbolFlags.TypeLiteral);
-      typeLiteralSymbol.members = createSymbolTable();
+      typeLiteralSymbol.members = new SymbolTable();
       typeLiteralSymbol.members.set(symbol.escapedName, symbol);
     }
 
@@ -2130,7 +2130,7 @@ namespace qnr {
         // falls through
         default:
           if (!blockScopeContainer.locals) {
-            blockScopeContainer.locals = createSymbolTable();
+            blockScopeContainer.locals = new SymbolTable();
             addToContainerChain(blockScopeContainer);
           }
           declareSymbol(blockScopeContainer.locals, /*parent*/ undefined, node, symbolFlags, symbolExcludes);
@@ -2811,7 +2811,7 @@ namespace qnr {
       if (diag) {
         file.bindDiagnostics.push(createDiagnosticForNode(node, diag));
       } else {
-        file.symbol.globalExports = file.symbol.globalExports || createSymbolTable();
+        file.symbol.globalExports = file.symbol.globalExports || new SymbolTable();
         declareSymbol(file.symbol.globalExports, file.symbol, node, SymbolFlags.Alias, SymbolFlags.AliasExcludes);
       }
     }
@@ -2929,7 +2929,7 @@ namespace qnr {
 
           if (constructorSymbol && constructorSymbol.valueDeclaration) {
             // Declare a 'member' if the container is an ES5 class or ES6 constructor
-            constructorSymbol.members = constructorSymbol.members || createSymbolTable();
+            constructorSymbol.members = constructorSymbol.members || new SymbolTable();
             // It's acceptable for multiple 'this' assignments of the same identifier to occur
             if (hasDynamicName(node)) {
               bindDynamicallyNamedThisPropertyAssignment(node, constructorSymbol);
@@ -3119,7 +3119,7 @@ namespace qnr {
             addDeclarationToSymbol(symbol, id, flags);
             return symbol;
           } else {
-            const table = parent ? parent.exports! : file.jsGlobalAugmentations || (file.jsGlobalAugmentations = createSymbolTable());
+            const table = parent ? parent.exports! : file.jsGlobalAugmentations || (file.jsGlobalAugmentations = new SymbolTable());
             return declareSymbol(table, parent, id, flags, excludeFlags);
           }
         });
@@ -3141,8 +3141,8 @@ namespace qnr {
 
       // Set up the members collection if it doesn't exist already
       const symbolTable = isPrototypeProperty
-        ? namespaceSymbol.members || (namespaceSymbol.members = createSymbolTable())
-        : namespaceSymbol.exports || (namespaceSymbol.exports = createSymbolTable());
+        ? namespaceSymbol.members || (namespaceSymbol.members = new SymbolTable())
+        : namespaceSymbol.exports || (namespaceSymbol.exports = new SymbolTable());
 
       let includes = SymbolFlags.None;
       let excludes = SymbolFlags.None;
@@ -3448,7 +3448,7 @@ namespace qnr {
         const container = find((node.parent.parent as JSDoc).tags!, isJSDocTypeAlias) || getHostSignatureFromJSDoc(node.parent); // TODO: GH#18217
         if (container) {
           if (!container.locals) {
-            container.locals = createSymbolTable();
+            container.locals = new SymbolTable();
           }
           declareSymbol(container.locals, /*parent*/ undefined, node, SymbolFlags.TypeParameter, SymbolFlags.TypeParameterExcludes);
         } else {
@@ -3458,7 +3458,7 @@ namespace qnr {
         const container = getInferTypeContainer(node.parent);
         if (container) {
           if (!container.locals) {
-            container.locals = createSymbolTable();
+            container.locals = new SymbolTable();
           }
           declareSymbol(container.locals, /*parent*/ undefined, node, SymbolFlags.TypeParameter, SymbolFlags.TypeParameterExcludes);
         } else {

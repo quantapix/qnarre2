@@ -1341,7 +1341,7 @@ namespace qnr {
             );
             fakespace.flags ^= NodeFlags.Synthesized; // unset synthesized so it is usable as an enclosing declaration
             fakespace.parent = enclosingDeclaration as SourceFile | NamespaceDeclaration;
-            fakespace.locals = createSymbolTable(props);
+            fakespace.locals = new SymbolTable(props);
             fakespace.symbol = props[0].parent!;
             const declarations = mapDefined(props, (p) => {
               if (!isPropertyAccessExpression(p.valueDeclaration)) {

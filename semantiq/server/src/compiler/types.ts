@@ -534,8 +534,8 @@ namespace qnr {
     LastJSDocNode = JSDocPropertyTag,
     FirstJSDocTagNode = JSDocTag,
     LastJSDocTagNode = JSDocPropertyTag,
-    /* @internal */ FirstContextualKeyword = AbstractKeyword,
-    /* @internal */ LastContextualKeyword = OfKeyword,
+    FirstContextualKeyword = AbstractKeyword,
+    LastContextualKeyword = OfKeyword,
   }
 
   export const enum NodeFlags {
@@ -570,14 +570,14 @@ namespace qnr {
     // removal, it is likely that users will add the import anyway.
     // The advantage of this approach is its simplicity. For the case of batch compilation,
     // we guarantee that users won't have to pay the price of walking the tree if a dynamic import isn't used.
-    /* @internal */ PossiblyContainsDynamicImport = 1 << 20,
-    /* @internal */ PossiblyContainsImportMeta = 1 << 21,
+    PossiblyContainsDynamicImport = 1 << 20,
+    PossiblyContainsImportMeta = 1 << 21,
 
     JSDoc = 1 << 22, // If node was parsed inside jsdoc
-    /* @internal */ Ambient = 1 << 23, // If node was inside an ambient context -- a declaration file, or inside something with the `declare` modifier.
-    /* @internal */ InWithStatement = 1 << 24, // If any ancestor of node was the `statement` of a WithStatement (not the `expression`)
+    Ambient = 1 << 23, // If node was inside an ambient context -- a declaration file, or inside something with the `declare` modifier.
+    InWithStatement = 1 << 24, // If any ancestor of node was the `statement` of a WithStatement (not the `expression`)
     JsonFile = 1 << 25, // If node was parsed in a Json
-    /* @internal */ TypeCached = 1 << 26, // If a type was cached for node at any point
+    TypeCached = 1 << 26, // If a type was cached for node at any point
 
     BlockScoped = Let | Const,
 
@@ -593,7 +593,7 @@ namespace qnr {
     // Represents all flags that are potentially set once and
     // never cleared on SourceFiles which get re-used in between incremental parses.
     // See the comment above on `PossiblyContainsDynamicImport` and `PossiblyContainsImportMeta`.
-    /* @internal */ PermanentlySetIncrementalFlags = PossiblyContainsDynamicImport | PossiblyContainsImportMeta,
+    PermanentlySetIncrementalFlags = PossiblyContainsDynamicImport | PossiblyContainsImportMeta,
   }
 
   export const enum ModifierFlags {
@@ -645,26 +645,26 @@ namespace qnr {
   export interface Node extends TextRange {
     kind: SyntaxKind;
     flags: NodeFlags;
-    /* @internal */ modifierFlagsCache: ModifierFlags;
-    /* @internal */ transformFlags: TransformFlags; // Flags for transforms, possibly undefined
+    modifierFlagsCache: ModifierFlags;
+    transformFlags: TransformFlags; // Flags for transforms, possibly undefined
     decorators?: NodeArray<Decorator>; // Array of decorators (in document order)
     modifiers?: ModifiersArray; // Array of modifiers
-    /* @internal */ id?: number; // Unique id (used to look up NodeLinks)
+    id?: number; // Unique id (used to look up NodeLinks)
     parent: Node; // Parent node (initialized by binding)
-    /* @internal */ original?: Node; // The original node if this is an updated node.
-    /* @internal */ symbol: Symbol; // Symbol declared by node (initialized by binding)
-    /* @internal */ locals?: SymbolTable; // Locals associated with node (initialized by binding)
-    /* @internal */ nextContainer?: Node; // Next container in declaration order (initialized by binding)
-    /* @internal */ localSymbol?: Symbol; // Local symbol declared by node (initialized by binding only for exported nodes)
-    /* @internal */ flowNode?: FlowNode; // Associated FlowNode (initialized by binding)
-    /* @internal */ emitNode?: EmitNode; // Associated EmitNode (initialized by transforms)
-    /* @internal */ contextualType?: Type; // Used to temporarily assign a contextual type during overload resolution
-    /* @internal */ inferenceContext?: InferenceContext; // Inference context for contextual type
+    original?: Node; // The original node if this is an updated node.
+    symbol: Symbol; // Symbol declared by node (initialized by binding)
+    locals?: SymbolTable; // Locals associated with node (initialized by binding)
+    nextContainer?: Node; // Next container in declaration order (initialized by binding)
+    localSymbol?: Symbol; // Local symbol declared by node (initialized by binding only for exported nodes)
+    flowNode?: FlowNode; // Associated FlowNode (initialized by binding)
+    emitNode?: EmitNode; // Associated EmitNode (initialized by transforms)
+    contextualType?: Type; // Used to temporarily assign a contextual type during overload resolution
+    inferenceContext?: InferenceContext; // Inference context for contextual type
   }
 
   export interface JSDocContainer {
-    /* @internal */ jsDoc?: JSDoc[]; // JSDoc that directly precedes this node
-    /* @internal */ jsDocCache?: readonly JSDocTag[]; // Cache for getJSDocTags
+    jsDoc?: JSDoc[]; // JSDoc that directly precedes this node
+    jsDocCache?: readonly JSDocTag[]; // Cache for getJSDocTags
   }
 
   export type HasJSDoc =
@@ -737,7 +737,7 @@ namespace qnr {
 
   export interface NodeArray<T extends Node> extends ReadonlyArray<T>, TextRange {
     hasTrailingComma?: boolean;
-    /* @internal */ transformFlags: TransformFlags; // Flags for transforms, possibly undefined
+    transformFlags: TransformFlags; // Flags for transforms, possibly undefined
   }
 
   export interface Token<TKind extends SyntaxKind> extends Node {
@@ -910,7 +910,7 @@ namespace qnr {
     typeParameters?: NodeArray<TypeParameterDeclaration>;
     parameters: NodeArray<ParameterDeclaration>;
     type?: TypeNode;
-    /* @internal */ typeArguments?: NodeArray<TypeNode>; // Used for quick info, replaces typeParameters for instantiated signatures
+    typeArguments?: NodeArray<TypeNode>; // Used for quick info, replaces typeParameters for instantiated signatures
   }
 
   export type SignatureDeclaration =
@@ -1083,8 +1083,8 @@ namespace qnr {
     questionToken?: QuestionToken;
     exclamationToken?: ExclamationToken;
     body?: Block | Expression;
-    /* @internal */ endFlowNode?: FlowNode;
-    /* @internal */ returnFlowNode?: FlowNode;
+    endFlowNode?: FlowNode;
+    returnFlowNode?: FlowNode;
   }
 
   export type FunctionLikeDeclaration =
@@ -1331,9 +1331,9 @@ namespace qnr {
 
   export interface StringLiteral extends LiteralExpression, Declaration {
     kind: SyntaxKind.StringLiteral;
-    /* @internal */ textSourceNode?: Identifier | StringLiteralLike | NumericLiteral; // Allows a StringLiteral to get its text from another node (used by transforms).
+    textSourceNode?: Identifier | StringLiteralLike | NumericLiteral; // Allows a StringLiteral to get its text from another node (used by transforms).
     /** Note: this is only set when synthesizing a node, not during parsing. */
-    /* @internal */ singleQuote?: boolean;
+    singleQuote?: boolean;
   }
 
   export type StringLiteralLike = StringLiteral | NoSubstitutionTemplateLiteral;
@@ -1837,39 +1837,38 @@ namespace qnr {
 
   export type OptionalChainRoot = PropertyAccessChainRoot | ElementAccessChainRoot | CallChainRoot;
 
-  /** @internal */
   export interface WellKnownSymbolExpression extends PropertyAccessExpression {
     expression: Identifier & { escapedText: 'Symbol' };
     name: Identifier;
   }
-  /** @internal */
+
   export type BindableObjectDefinePropertyCall = CallExpression & {
     arguments: { 0: BindableStaticNameExpression; 1: StringLiteralLike | NumericLiteral; 2: ObjectLiteralExpression };
   };
-  /** @internal */
+
   export type BindableStaticNameExpression = EntityNameExpression | BindableStaticElementAccessExpression;
-  /** @internal */
+
   export type LiteralLikeElementAccessExpression = ElementAccessExpression &
     Declaration & {
       argumentExpression: StringLiteralLike | NumericLiteral | WellKnownSymbolExpression;
     };
-  /** @internal */
+
   export type BindableStaticElementAccessExpression = LiteralLikeElementAccessExpression & {
     expression: BindableStaticNameExpression;
   };
-  /** @internal */
+
   export type BindableElementAccessExpression = ElementAccessExpression & {
     expression: BindableStaticNameExpression;
   };
-  /** @internal */
+
   export type BindableStaticAccessExpression = PropertyAccessEntityNameExpression | BindableStaticElementAccessExpression;
-  /** @internal */
+
   export type BindableAccessExpression = PropertyAccessEntityNameExpression | BindableElementAccessExpression;
-  /** @internal */
+
   export interface BindableStaticPropertyAssignmentExpression extends BinaryExpression {
     left: BindableStaticAccessExpression;
   }
-  /** @internal */
+
   export interface BindablePropertyAssignmentExpression extends BinaryExpression {
     left: BindableAccessExpression;
   }
@@ -2197,14 +2196,14 @@ namespace qnr {
     parent: CaseBlock;
     expression: Expression;
     statements: NodeArray<Statement>;
-    /* @internal */ fallthroughFlowNode?: FlowNode;
+    fallthroughFlowNode?: FlowNode;
   }
 
   export interface DefaultClause extends Node {
     kind: SyntaxKind.DefaultClause;
     parent: CaseBlock;
     statements: NodeArray<Statement>;
-    /* @internal */ fallthroughFlowNode?: FlowNode;
+    fallthroughFlowNode?: FlowNode;
   }
 
   export type CaseOrDefaultClause = CaseClause | DefaultClause;
@@ -2796,27 +2795,27 @@ namespace qnr {
     endOfFileToken: Token<SyntaxKind.EndOfFileToken>;
 
     fileName: string;
-    /* @internal */ path: Path;
+    path: Path;
     text: string;
     /** Resolved path can be different from path property,
      * when file is included through project reference is mapped to its output instead of source
      * in that case resolvedPath = path to output file
      * path = input file's path
      */
-    /* @internal */ resolvedPath: Path;
+    resolvedPath: Path;
     /** Original file name that can be different from fileName,
      * when file is included through project reference is mapped to its output instead of source
      * in that case originalFileName = name of input file
      * fileName = output file's name
      */
-    /* @internal */ originalFileName: string;
+    originalFileName: string;
 
     /**
      * If two source files are for the same version of the same package, one will redirect to the other.
      * (See `createRedirectSourceFile` in program.ts.)
      * The redirect will have this set. The redirected-to source file will be in `redirectTargetsMap`.
      */
-    /* @internal */ redirectInfo?: RedirectInfo;
+    redirectInfo?: RedirectInfo;
 
     amdDependencies: readonly AmdDependency[];
     moduleName?: string;
@@ -2827,7 +2826,7 @@ namespace qnr {
     isDeclarationFile: boolean;
 
     // this map is used by transpiler to supply alternative names for dependencies (i.e. in case of bundling)
-    renamedDependencies?: ReadonlyMap<string>;
+    renamedDependencies?: QReadonlyMap<string>;
 
     /**
      * lib.d.ts should have a reference comment like
@@ -2840,59 +2839,59 @@ namespace qnr {
     hasNoDefaultLib: boolean;
 
     languageVersion: ScriptTarget;
-    /* @internal */ scriptKind: ScriptKind;
+    scriptKind: ScriptKind;
 
     /**
      * The first "most obvious" node that makes a file an external module.
      * This is intended to be the first top-level import/export,
      * but could be arbitrarily nested (e.g. `import.meta`).
      */
-    /* @internal */ externalModuleIndicator?: Node;
+    externalModuleIndicator?: Node;
     // The first node that causes this file to be a CommonJS module
-    /* @internal */ commonJsModuleIndicator?: Node;
+    commonJsModuleIndicator?: Node;
     // JS identifier-declarations that are intended to merge with globals
-    /* @internal */ jsGlobalAugmentations?: SymbolTable;
+    jsGlobalAugmentations?: SymbolTable;
 
-    /* @internal */ identifiers: Map<string>; // Map from a string to an interned string
-    /* @internal */ nodeCount: number;
-    /* @internal */ identifierCount: number;
-    /* @internal */ symbolCount: number;
+    identifiers: QMap<string>; // Map from a string to an interned string
+    nodeCount: number;
+    identifierCount: number;
+    symbolCount: number;
 
     // File-level diagnostics reported by the parser (includes diagnostics about /// references
     // as well as code diagnostics).
-    /* @internal */ parseDiagnostics: DiagnosticWithLocation[];
+    parseDiagnostics: DiagnosticWithLocation[];
 
     // File-level diagnostics reported by the binder.
-    /* @internal */ bindDiagnostics: DiagnosticWithLocation[];
-    /* @internal */ bindSuggestionDiagnostics?: DiagnosticWithLocation[];
+    bindDiagnostics: DiagnosticWithLocation[];
+    bindSuggestionDiagnostics?: DiagnosticWithLocation[];
 
     // File-level JSDoc diagnostics reported by the JSDoc parser
-    /* @internal */ jsDocDiagnostics?: DiagnosticWithLocation[];
+    jsDocDiagnostics?: DiagnosticWithLocation[];
 
     // Stores additional file-level diagnostics reported by the program
-    /* @internal */ additionalSyntacticDiagnostics?: readonly DiagnosticWithLocation[];
+    additionalSyntacticDiagnostics?: readonly DiagnosticWithLocation[];
 
     // Stores a line map for the file.
     // This field should never be used directly to obtain line map, use getLineMap function instead.
-    /* @internal */ lineMap: readonly number[];
-    /* @internal */ classifiableNames?: ReadonlyUnderscoreEscapedMap<true>;
+    lineMap: readonly number[];
+    classifiableNames?: ReadonlyUnderscoreEscapedMap<true>;
     // Comments containing @ts-* directives, in order.
-    /* @internal */ commentDirectives?: CommentDirective[];
+    commentDirectives?: CommentDirective[];
     // Stores a mapping 'external module reference text' -> 'resolved file name' | undefined
     // It is used to resolve module names in the checker.
     // Content of this field should never be used directly - use getResolvedModuleFileName/setResolvedModuleFileName functions instead
-    /* @internal */ resolvedModules?: Map<ResolvedModuleFull | undefined>;
-    /* @internal */ resolvedTypeReferenceDirectiveNames: Map<ResolvedTypeReferenceDirective | undefined>;
-    /* @internal */ imports: readonly StringLiteralLike[];
+    resolvedModules?: QMap<ResolvedModuleFull | undefined>;
+    resolvedTypeReferenceDirectiveNames: QMap<ResolvedTypeReferenceDirective | undefined>;
+    imports: readonly StringLiteralLike[];
     // Identifier only if `declare global`
-    /* @internal */ moduleAugmentations: readonly (StringLiteral | Identifier)[];
-    /* @internal */ patternAmbientModules?: PatternAmbientModule[];
-    /* @internal */ ambientModuleNames: readonly string[];
-    /* @internal */ checkJsDirective?: CheckJsDirective;
-    /* @internal */ version: string;
-    /* @internal */ pragmas: ReadonlyPragmaMap;
-    /* @internal */ localJsxNamespace?: __String;
-    /* @internal */ localJsxFactory?: EntityName;
+    moduleAugmentations: readonly (StringLiteral | Identifier)[];
+    patternAmbientModules?: PatternAmbientModule[];
+    ambientModuleNames: readonly string[];
+    checkJsDirective?: CheckJsDirective;
+    version: string;
+    pragmas: ReadonlyPragmaMap;
+    localJsxNamespace?: __String;
+    localJsxFactory?: EntityName;
 
     exportedModulesFromDeclarationEmit?: ExportedModulesFromDeclarationEmit;
   }
@@ -2913,10 +2912,10 @@ namespace qnr {
     kind: SyntaxKind.Bundle;
     prepends: readonly (InputFiles | UnparsedSource)[];
     sourceFiles: readonly SourceFile[];
-    /* @internal */ syntheticFileReferences?: readonly FileReference[];
-    /* @internal */ syntheticTypeReferences?: readonly FileReference[];
-    /* @internal */ syntheticLibReferences?: readonly FileReference[];
-    /* @internal */ hasNoDefaultLib?: boolean;
+    syntheticFileReferences?: readonly FileReference[];
+    syntheticTypeReferences?: readonly FileReference[];
+    syntheticLibReferences?: readonly FileReference[];
+    hasNoDefaultLib?: boolean;
   }
 
   export interface InputFiles extends Node {
@@ -3099,7 +3098,7 @@ namespace qnr {
      */
     getMissingFilePaths(): readonly Path[];
     getRefFileMap(): MultiMap<RefFile> | undefined;
-    getFilesByNameMap(): Map<SourceFile | false | undefined>;
+    getFilesByNameMap(): QMap<SourceFile | false | undefined>;
 
     /**
      * Emits the JavaScript and declaration files.  If targetSourceFile is not specified, then
@@ -3135,24 +3134,24 @@ namespace qnr {
     getSemanticDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
     getDeclarationDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly DiagnosticWithLocation[];
     getConfigFileParsingDiagnostics(): readonly Diagnostic[];
-    /* @internal */ getSuggestionDiagnostics(sourceFile: SourceFile, cancellationToken?: CancellationToken): readonly DiagnosticWithLocation[];
+    getSuggestionDiagnostics(sourceFile: SourceFile, cancellationToken?: CancellationToken): readonly DiagnosticWithLocation[];
 
-    /* @internal */ getBindAndCheckDiagnostics(sourceFile: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
-    /* @internal */ getProgramDiagnostics(sourceFile: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
+    getBindAndCheckDiagnostics(sourceFile: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
+    getProgramDiagnostics(sourceFile: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
 
     /**
      * Gets a type checker that can be used to semantically analyze source files in the program.
      */
     getTypeChecker(): TypeChecker;
 
-    /* @internal */ getCommonSourceDirectory(): string;
+    getCommonSourceDirectory(): string;
 
     // For testing purposes only.  Should not be used by any other consumers (including the
     // language service).
-    /* @internal */ getDiagnosticsProducingTypeChecker(): TypeChecker;
-    /* @internal */ dropDiagnosticsProducingTypeChecker(): void;
+    getDiagnosticsProducingTypeChecker(): TypeChecker;
+    dropDiagnosticsProducingTypeChecker(): void;
 
-    /* @internal */ getClassifiableNames(): UnderscoreEscapedMap<true>;
+    getClassifiableNames(): UnderscoreEscapedMap<true>;
 
     getNodeCount(): number;
     getIdentifierCount(): number;
@@ -3161,25 +3160,25 @@ namespace qnr {
     getInstantiationCount(): number;
     getRelationCacheSizes(): { assignable: number; identity: number; subtype: number; strictSubtype: number };
 
-    /* @internal */ getFileProcessingDiagnostics(): DiagnosticCollection;
-    /* @internal */ getResolvedTypeReferenceDirectives(): Map<ResolvedTypeReferenceDirective | undefined>;
+    getFileProcessingDiagnostics(): DiagnosticCollection;
+    getResolvedTypeReferenceDirectives(): QMap<ResolvedTypeReferenceDirective | undefined>;
     isSourceFileFromExternalLibrary(file: SourceFile): boolean;
     isSourceFileDefaultLibrary(file: SourceFile): boolean;
 
     // For testing purposes only.
-    /* @internal */ structureIsReused?: StructureIsReused;
+    structureIsReused?: StructureIsReused;
 
-    /* @internal */ getSourceFileFromReference(referencingFile: SourceFile | UnparsedSource, ref: FileReference): SourceFile | undefined;
-    /* @internal */ getLibFileFromReference(ref: FileReference): SourceFile | undefined;
+    getSourceFileFromReference(referencingFile: SourceFile | UnparsedSource, ref: FileReference): SourceFile | undefined;
+    getLibFileFromReference(ref: FileReference): SourceFile | undefined;
 
     /** Given a source file, get the name of the package it was imported from. */
-    /* @internal */ sourceFileToPackageName: Map<string>;
+    sourceFileToPackageName: QMap<string, string>;
     /** Set of all source files that some other source file redirects to. */
-    /* @internal */ redirectTargetsMap: MultiMap<string>;
+    redirectTargetsMap: MultiMap<string>;
     /** Is the file emitted file */
-    /* @internal */ isEmittedFile(file: string): boolean;
+    isEmittedFile(file: string): boolean;
 
-    /* @internal */ getResolvedModuleWithFailedLookupLocationsFromCache(
+    getResolvedModuleWithFailedLookupLocationsFromCache(
       moduleName: string,
       containingFile: string
     ): ResolvedModuleWithFailedLookupLocations | undefined;
@@ -3195,7 +3194,7 @@ namespace qnr {
     isSourceOfProjectReferenceRedirect(fileName: string): boolean;
     getProgramBuildInfo?(): ProgramBuildInfo | undefined;
     emitBuildInfo(writeFile?: WriteFileCallback, cancellationToken?: CancellationToken): EmitResult;
-    getProbableSymlinks(): ReadonlyMap<string>;
+    getProbableSymlinks(): QReadonlyMap<string>;
     /**
      * This implementation handles file exists to be true if file is source of project reference redirect when program is created using useSourceOfProjectReferenceRedirect
      */
@@ -3204,7 +3203,7 @@ namespace qnr {
 
   export interface Program extends TypeCheckerHost, ModuleSpecifierResolutionHost {}
 
-  export type RedirectTargetsMap = ReadonlyMap<readonly string[]>;
+  export type RedirectTargetsMap = QReadonlyMap<readonly string[]>;
 
   export interface ResolvedProjectReference {
     commandLine: ParsedCommandLine;
@@ -3287,8 +3286,8 @@ namespace qnr {
     /** Contains declaration emit diagnostics */
     diagnostics: readonly Diagnostic[];
     emittedFiles?: string[]; // Array of files the compiler wrote to disk
-    /* @internal */ sourceMaps?: SourceMapEmitResult[]; // Array of sourceMapData if compiler emitted sourcemaps
-    /* @internal */ exportedModulesFromDeclarationEmit?: ExportedModulesFromDeclarationEmit;
+    sourceMaps?: SourceMapEmitResult[]; // Array of sourceMapData if compiler emitted sourcemaps
+    exportedModulesFromDeclarationEmit?: ExportedModulesFromDeclarationEmit;
   }
 
   export interface TypeCheckerHost extends ModuleSpecifierResolutionHost {
@@ -3296,7 +3295,7 @@ namespace qnr {
 
     getSourceFiles(): readonly SourceFile[];
     getSourceFile(fileName: string): SourceFile | undefined;
-    getResolvedTypeReferenceDirectives(): ReadonlyMap<ResolvedTypeReferenceDirective | undefined>;
+    getResolvedTypeReferenceDirectives(): QReadonlyMap<ResolvedTypeReferenceDirective | undefined>;
     getProjectReferenceRedirect(fileName: string): string | undefined;
     isSourceOfProjectReferenceRedirect(fileName: string): boolean;
 
@@ -3309,7 +3308,7 @@ namespace qnr {
     getPropertiesOfType(type: Type): Symbol[];
     getPropertyOfType(type: Type, propertyName: string): Symbol | undefined;
     getPrivateIdentifierPropertyOfType(leftType: Type, name: string, location: Node): Symbol | undefined;
-    /* @internal */ getTypeOfPropertyOfType(type: Type, propertyName: string): Type | undefined;
+    getTypeOfPropertyOfType(type: Type, propertyName: string): Type | undefined;
     getIndexInfoOfType(type: Type, kind: IndexKind): IndexInfo | undefined;
     getSignaturesOfType(type: Type, kind: SignatureKind): readonly Signature[];
     getIndexTypeOfType(type: Type, kind: IndexKind): Type | undefined;
@@ -3323,17 +3322,17 @@ namespace qnr {
      * Gets the type of a parameter at a given position in a signature.
      * Returns `any` if the index is not valid.
      */
-    /* @internal */ getParameterType(signature: Signature, parameterIndex: number): Type;
+    getParameterType(signature: Signature, parameterIndex: number): Type;
     getNullableType(type: Type, flags: TypeFlags): Type;
     getNonNullableType(type: Type): Type;
-    /* @internal */ getNonOptionalType(type: Type): Type;
-    /* @internal */ isNullableType(type: Type): boolean;
+    getNonOptionalType(type: Type): Type;
+    isNullableType(type: Type): boolean;
     getTypeArguments(type: TypeReference): readonly Type[];
 
     // TODO: GH#18217 `xToDeclaration` calls are frequently asserted as defined.
     /** Note that the resulting nodes cannot be checked. */
     typeToTypeNode(type: Type, enclosingDeclaration: Node | undefined, flags: NodeBuilderFlags | undefined): TypeNode | undefined;
-    /* @internal */ typeToTypeNode(
+    typeToTypeNode(
       type: Type,
       enclosingDeclaration: Node | undefined,
       flags: NodeBuilderFlags | undefined,
@@ -3346,7 +3345,7 @@ namespace qnr {
       enclosingDeclaration: Node | undefined,
       flags: NodeBuilderFlags | undefined
     ): (SignatureDeclaration & { typeArguments?: NodeArray<TypeNode> }) | undefined;
-    /* @internal */ signatureToSignatureDeclaration(
+    signatureToSignatureDeclaration(
       signature: Signature,
       kind: SyntaxKind,
       enclosingDeclaration: Node | undefined,
@@ -3360,7 +3359,7 @@ namespace qnr {
       enclosingDeclaration: Node | undefined,
       flags: NodeBuilderFlags | undefined
     ): IndexSignatureDeclaration | undefined;
-    /* @internal */ indexInfoToIndexSignatureDeclaration(
+    indexInfoToIndexSignatureDeclaration(
       indexInfo: IndexInfo,
       kind: IndexKind,
       enclosingDeclaration: Node | undefined,
@@ -3428,38 +3427,21 @@ namespace qnr {
     symbolToString(symbol: Symbol, enclosingDeclaration?: Node, meaning?: SymbolFlags, flags?: SymbolFormatFlags): string;
     typePredicateToString(predicate: TypePredicate, enclosingDeclaration?: Node, flags?: TypeFormatFlags): string;
 
-    /* @internal */ writeSignature(
-      signature: Signature,
-      enclosingDeclaration?: Node,
-      flags?: TypeFormatFlags,
-      kind?: SignatureKind,
-      writer?: EmitTextWriter
-    ): string;
-    /* @internal */ writeType(type: Type, enclosingDeclaration?: Node, flags?: TypeFormatFlags, writer?: EmitTextWriter): string;
-    /* @internal */ writeSymbol(
-      symbol: Symbol,
-      enclosingDeclaration?: Node,
-      meaning?: SymbolFlags,
-      flags?: SymbolFormatFlags,
-      writer?: EmitTextWriter
-    ): string;
-    /* @internal */ writeTypePredicate(
-      predicate: TypePredicate,
-      enclosingDeclaration?: Node,
-      flags?: TypeFormatFlags,
-      writer?: EmitTextWriter
-    ): string;
+    writeSignature(signature: Signature, enclosingDeclaration?: Node, flags?: TypeFormatFlags, kind?: SignatureKind, writer?: EmitTextWriter): string;
+    writeType(type: Type, enclosingDeclaration?: Node, flags?: TypeFormatFlags, writer?: EmitTextWriter): string;
+    writeSymbol(symbol: Symbol, enclosingDeclaration?: Node, meaning?: SymbolFlags, flags?: SymbolFormatFlags, writer?: EmitTextWriter): string;
+    writeTypePredicate(predicate: TypePredicate, enclosingDeclaration?: Node, flags?: TypeFormatFlags, writer?: EmitTextWriter): string;
 
     getFullyQualifiedName(symbol: Symbol): string;
     getAugmentedPropertiesOfType(type: Type): Symbol[];
 
     getRootSymbols(symbol: Symbol): readonly Symbol[];
     getContextualType(node: Expression): Type | undefined;
-    /* @internal */ getContextualType(node: Expression, contextFlags?: ContextFlags): Type | undefined; // eslint-disable-line @typescript-eslint/unified-signatures
-    /* @internal */ getContextualTypeForObjectLiteralElement(element: ObjectLiteralElementLike): Type | undefined;
-    /* @internal */ getContextualTypeForArgumentAtIndex(call: CallLikeExpression, argIndex: number): Type | undefined;
-    /* @internal */ getContextualTypeForJsxAttribute(attribute: JsxAttribute | JsxSpreadAttribute): Type | undefined;
-    /* @internal */ isContextSensitive(node: Expression | MethodDeclaration | ObjectLiteralElementLike | JsxAttributeLike): boolean;
+    getContextualType(node: Expression, contextFlags?: ContextFlags): Type | undefined; // eslint-disable-line @typescript-eslint/unified-signatures
+    getContextualTypeForObjectLiteralElement(element: ObjectLiteralElementLike): Type | undefined;
+    getContextualTypeForArgumentAtIndex(call: CallLikeExpression, argIndex: number): Type | undefined;
+    getContextualTypeForJsxAttribute(attribute: JsxAttribute | JsxSpreadAttribute): Type | undefined;
+    isContextSensitive(node: Expression | MethodDeclaration | ObjectLiteralElementLike | JsxAttributeLike): boolean;
 
     /**
      * returns unknownSignature in the case of an error.
@@ -3467,35 +3449,27 @@ namespace qnr {
      * @param argumentCount Apparent number of arguments, passed in case of a possibly incomplete call. This should come from an ArgumentListInfo. See `signatureHelp.ts`.
      */
     getResolvedSignature(node: CallLikeExpression, candidatesOutArray?: Signature[], argumentCount?: number): Signature | undefined;
-    /* @internal */ getResolvedSignatureForSignatureHelp(
-      node: CallLikeExpression,
-      candidatesOutArray?: Signature[],
-      argumentCount?: number
-    ): Signature | undefined;
-    /* @internal */ getExpandedParameters(sig: Signature): readonly (readonly Symbol[])[];
-    /* @internal */ hasEffectiveRestParameter(sig: Signature): boolean;
+    getResolvedSignatureForSignatureHelp(node: CallLikeExpression, candidatesOutArray?: Signature[], argumentCount?: number): Signature | undefined;
+    getExpandedParameters(sig: Signature): readonly (readonly Symbol[])[];
+    hasEffectiveRestParameter(sig: Signature): boolean;
     getSignatureFromDeclaration(declaration: SignatureDeclaration): Signature | undefined;
     isImplementationOfOverload(node: SignatureDeclaration): boolean | undefined;
     isUndefinedSymbol(symbol: Symbol): boolean;
     isArgumentsSymbol(symbol: Symbol): boolean;
     isUnknownSymbol(symbol: Symbol): boolean;
-    /* @internal */ getMergedSymbol(symbol: Symbol): Symbol;
+    getMergedSymbol(symbol: Symbol): Symbol;
 
     getConstantValue(node: EnumMember | PropertyAccessExpression | ElementAccessExpression): string | number | undefined;
     isValidPropertyAccess(node: PropertyAccessExpression | QualifiedName | ImportTypeNode, propertyName: string): boolean;
     /** Exclude accesses to private properties or methods with a `this` parameter that `type` doesn't satisfy. */
-    /* @internal */ isValidPropertyAccessForCompletions(
-      node: PropertyAccessExpression | ImportTypeNode | QualifiedName,
-      type: Type,
-      property: Symbol
-    ): boolean;
+    isValidPropertyAccessForCompletions(node: PropertyAccessExpression | ImportTypeNode | QualifiedName, type: Type, property: Symbol): boolean;
     /** Follow all aliases to get the original symbol. */
     getAliasedSymbol(symbol: Symbol): Symbol;
     /** Follow a *single* alias to get the immediately aliased symbol. */
-    /* @internal */ getImmediateAliasedSymbol(symbol: Symbol): Symbol | undefined;
+    getImmediateAliasedSymbol(symbol: Symbol): Symbol | undefined;
     getExportsOfModule(moduleSymbol: Symbol): Symbol[];
     /** Unlike `getExportsOfModule`, this includes properties of an `export =` value. */
-    /* @internal */ getExportsAndPropertiesOfModule(moduleSymbol: Symbol): Symbol[];
+    getExportsAndPropertiesOfModule(moduleSymbol: Symbol): Symbol[];
     getJsxIntrinsicTagNamesAt(location: Node): Symbol[];
     isOptionalParameter(node: ParameterDeclaration): boolean;
     getAmbientModules(): Symbol[];
@@ -3505,36 +3479,36 @@ namespace qnr {
      * Unlike `tryGetMemberInModuleExports`, this includes properties of an `export =` value.
      * Does *not* return properties of primitive types.
      */
-    /* @internal */ tryGetMemberInModuleExportsAndProperties(memberName: string, moduleSymbol: Symbol): Symbol | undefined;
+    tryGetMemberInModuleExportsAndProperties(memberName: string, moduleSymbol: Symbol): Symbol | undefined;
     getApparentType(type: Type): Type;
-    /* @internal */ getSuggestedSymbolForNonexistentProperty(name: Identifier | PrivateIdentifier | string, containingType: Type): Symbol | undefined;
-    /* @internal */ getSuggestionForNonexistentProperty(name: Identifier | PrivateIdentifier | string, containingType: Type): string | undefined;
-    /* @internal */ getSuggestedSymbolForNonexistentSymbol(location: Node, name: string, meaning: SymbolFlags): Symbol | undefined;
-    /* @internal */ getSuggestionForNonexistentSymbol(location: Node, name: string, meaning: SymbolFlags): string | undefined;
-    /* @internal */ getSuggestedSymbolForNonexistentModule(node: Identifier, target: Symbol): Symbol | undefined;
-    /* @internal */ getSuggestionForNonexistentExport(node: Identifier, target: Symbol): string | undefined;
+    getSuggestedSymbolForNonexistentProperty(name: Identifier | PrivateIdentifier | string, containingType: Type): Symbol | undefined;
+    getSuggestionForNonexistentProperty(name: Identifier | PrivateIdentifier | string, containingType: Type): string | undefined;
+    getSuggestedSymbolForNonexistentSymbol(location: Node, name: string, meaning: SymbolFlags): Symbol | undefined;
+    getSuggestionForNonexistentSymbol(location: Node, name: string, meaning: SymbolFlags): string | undefined;
+    getSuggestedSymbolForNonexistentModule(node: Identifier, target: Symbol): Symbol | undefined;
+    getSuggestionForNonexistentExport(node: Identifier, target: Symbol): string | undefined;
     getBaseConstraintOfType(type: Type): Type | undefined;
     getDefaultFromTypeParameter(type: Type): Type | undefined;
 
-    /* @internal */ getAnyType(): Type;
-    /* @internal */ getStringType(): Type;
-    /* @internal */ getNumberType(): Type;
-    /* @internal */ getBooleanType(): Type;
-    /* @internal */ getFalseType(fresh?: boolean): Type;
-    /* @internal */ getTrueType(fresh?: boolean): Type;
-    /* @internal */ getVoidType(): Type;
-    /* @internal */ getUndefinedType(): Type;
-    /* @internal */ getNullType(): Type;
-    /* @internal */ getESSymbolType(): Type;
-    /* @internal */ getNeverType(): Type;
-    /* @internal */ getOptionalType(): Type;
-    /* @internal */ getUnionType(types: Type[], subtypeReduction?: UnionReduction): Type;
-    /* @internal */ createArrayType(elementType: Type): Type;
-    /* @internal */ getElementTypeOfArrayType(arrayType: Type): Type | undefined;
-    /* @internal */ createPromiseType(type: Type): Type;
+    getAnyType(): Type;
+    getStringType(): Type;
+    getNumberType(): Type;
+    getBooleanType(): Type;
+    getFalseType(fresh?: boolean): Type;
+    getTrueType(fresh?: boolean): Type;
+    getVoidType(): Type;
+    getUndefinedType(): Type;
+    getNullType(): Type;
+    getESSymbolType(): Type;
+    getNeverType(): Type;
+    getOptionalType(): Type;
+    getUnionType(types: Type[], subtypeReduction?: UnionReduction): Type;
+    createArrayType(elementType: Type): Type;
+    getElementTypeOfArrayType(arrayType: Type): Type | undefined;
+    createPromiseType(type: Type): Type;
 
-    /* @internal */ isTypeAssignableTo(source: Type, target: Type): boolean;
-    /* @internal */ createAnonymousType(
+    isTypeAssignableTo(source: Type, target: Type): boolean;
+    createAnonymousType(
       symbol: Symbol | undefined,
       members: SymbolTable,
       callSignatures: Signature[],
@@ -3542,7 +3516,7 @@ namespace qnr {
       stringIndexInfo: IndexInfo | undefined,
       numberIndexInfo: IndexInfo | undefined
     ): Type;
-    /* @internal */ createSignature(
+    createSignature(
       declaration: SignatureDeclaration,
       typeParameters: TypeParameter[] | undefined,
       thisParameter: Symbol | undefined,
@@ -3552,47 +3526,47 @@ namespace qnr {
       minArgumentCount: number,
       flags: SignatureFlags
     ): Signature;
-    /* @internal */ createSymbol(flags: SymbolFlags, name: __String): TransientSymbol;
-    /* @internal */ createIndexInfo(type: Type, isReadonly: boolean, declaration?: SignatureDeclaration): IndexInfo;
-    /* @internal */ isSymbolAccessible(
+    createSymbol(flags: SymbolFlags, name: __String): TransientSymbol;
+    createIndexInfo(type: Type, isReadonly: boolean, declaration?: SignatureDeclaration): IndexInfo;
+    isSymbolAccessible(
       symbol: Symbol,
       enclosingDeclaration: Node | undefined,
       meaning: SymbolFlags,
       shouldComputeAliasToMarkVisible: boolean
     ): SymbolAccessibilityResult;
-    /* @internal */ tryFindAmbientModuleWithoutAugmentations(moduleName: string): Symbol | undefined;
+    tryFindAmbientModuleWithoutAugmentations(moduleName: string): Symbol | undefined;
 
-    /* @internal */ getSymbolWalker(accept?: (symbol: Symbol) => boolean): SymbolWalker;
+    getSymbolWalker(accept?: (symbol: Symbol) => boolean): SymbolWalker;
 
     // Should not be called directly.  Should only be accessed through the Program instance.
-    /* @internal */ getDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): Diagnostic[];
-    /* @internal */ getGlobalDiagnostics(): Diagnostic[];
-    /* @internal */ getEmitResolver(sourceFile?: SourceFile, cancellationToken?: CancellationToken): EmitResolver;
+    getDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): Diagnostic[];
+    getGlobalDiagnostics(): Diagnostic[];
+    getEmitResolver(sourceFile?: SourceFile, cancellationToken?: CancellationToken): EmitResolver;
 
-    /* @internal */ getNodeCount(): number;
-    /* @internal */ getIdentifierCount(): number;
-    /* @internal */ getSymbolCount(): number;
-    /* @internal */ getTypeCount(): number;
-    /* @internal */ getInstantiationCount(): number;
-    /* @internal */ getRelationCacheSizes(): { assignable: number; identity: number; subtype: number; strictSubtype: number };
+    getNodeCount(): number;
+    getIdentifierCount(): number;
+    getSymbolCount(): number;
+    getTypeCount(): number;
+    getInstantiationCount(): number;
+    getRelationCacheSizes(): { assignable: number; identity: number; subtype: number; strictSubtype: number };
 
-    /* @internal */ isArrayType(type: Type): boolean;
-    /* @internal */ isTupleType(type: Type): boolean;
-    /* @internal */ isArrayLikeType(type: Type): boolean;
+    isArrayType(type: Type): boolean;
+    isTupleType(type: Type): boolean;
+    isArrayLikeType(type: Type): boolean;
 
     /**
      * True if `contextualType` should not be considered for completions because
      * e.g. it specifies `kind: "a"` and obj has `kind: "b"`.
      */
-    /* @internal */ isTypeInvalidDueToUnionDiscriminant(contextualType: Type, obj: ObjectLiteralExpression | JsxAttributes): boolean;
+    isTypeInvalidDueToUnionDiscriminant(contextualType: Type, obj: ObjectLiteralExpression | JsxAttributes): boolean;
     /**
      * For a union, will include a property if it's defined in *any* of the member types.
      * So for `{ a } | { b }`, this will include both `a` and `b`.
      * Does not include properties of primitive types.
      */
-    /* @internal */ getAllPossiblePropertiesOfTypes(type: readonly Type[]): Symbol[];
-    /* @internal */ resolveName(name: string, location: Node | undefined, meaning: SymbolFlags, excludeGlobals: boolean): Symbol | undefined;
-    /* @internal */ getJsxNamespace(location?: Node): string;
+    getAllPossiblePropertiesOfTypes(type: readonly Type[]): Symbol[];
+    resolveName(name: string, location: Node | undefined, meaning: SymbolFlags, excludeGlobals: boolean): Symbol | undefined;
+    getJsxNamespace(location?: Node): string;
 
     /**
      * Note that this will return undefined in the following case:
@@ -3603,28 +3577,28 @@ namespace qnr {
      * Where `C` is the symbol we're looking for.
      * This should be called in a loop climbing parents of the symbol, so we'll get `N`.
      */
-    /* @internal */ getAccessibleSymbolChain(
+    getAccessibleSymbolChain(
       symbol: Symbol,
       enclosingDeclaration: Node | undefined,
       meaning: SymbolFlags,
       useOnlyExternalAliasing: boolean
     ): Symbol[] | undefined;
-    /* @internal */ getTypePredicateOfSignature(signature: Signature): TypePredicate | undefined;
-    /* @internal */ resolveExternalModuleName(moduleSpecifier: Expression): Symbol | undefined;
+    getTypePredicateOfSignature(signature: Signature): TypePredicate | undefined;
+    resolveExternalModuleName(moduleSpecifier: Expression): Symbol | undefined;
     /**
      * An external module with an 'export =' declaration resolves to the target of the 'export =' declaration,
      * and an external module with no 'export =' declaration resolves to the module itself.
      */
-    /* @internal */ resolveExternalModuleSymbol(symbol: Symbol): Symbol;
+    resolveExternalModuleSymbol(symbol: Symbol): Symbol;
     /** @param node A location where we might consider accessing `this`. Not necessarily a ThisExpression. */
-    /* @internal */ tryGetThisTypeAt(node: Node, includeGlobalThis?: boolean): Type | undefined;
-    /* @internal */ getTypeArgumentConstraint(node: TypeNode): Type | undefined;
+    tryGetThisTypeAt(node: Node, includeGlobalThis?: boolean): Type | undefined;
+    getTypeArgumentConstraint(node: TypeNode): Type | undefined;
 
     /**
      * Does *not* get *all* suggestion diagnostics, just the ones that were convenient to report in the checker.
      * Others are added in computeSuggestionDiagnostics.
      */
-    /* @internal */ getSuggestionDiagnostics(file: SourceFile, cancellationToken?: CancellationToken): readonly DiagnosticWithLocation[];
+    getSuggestionDiagnostics(file: SourceFile, cancellationToken?: CancellationToken): readonly DiagnosticWithLocation[];
 
     /**
      * Depending on the operation performed, it may be appropriate to throw away the checker
@@ -3633,8 +3607,8 @@ namespace qnr {
      */
     runWithCancellationToken<T>(token: CancellationToken, cb: (checker: TypeChecker) => T): T;
 
-    /* @internal */ getLocalTypeParametersOfClassOrInterfaceOrTypeAlias(symbol: Symbol): readonly TypeParameter[] | undefined;
-    /* @internal */ isDeclarationVisible(node: Declaration | AnyImportSyntax): boolean;
+    getLocalTypeParametersOfClassOrInterfaceOrTypeAlias(symbol: Symbol): readonly TypeParameter[] | undefined;
+    isDeclarationVisible(node: Declaration | AnyImportSyntax): boolean;
   }
 
   export const enum UnionReduction {
@@ -3683,7 +3657,7 @@ namespace qnr {
 
     // Errors (cont.)
     AllowNodeModulesRelativePaths = 1 << 26,
-    /* @internal */ DoNotIncludeSymbolChain = 1 << 27, // Skip looking up and printing an accessible symbol chain
+    DoNotIncludeSymbolChain = 1 << 27, // Skip looking up and printing an accessible symbol chain
 
     IgnoreErrors = AllowThisInObjectLiteral |
       AllowQualifedNameInPlaceOfIdentifier |
@@ -3775,7 +3749,7 @@ namespace qnr {
     UseAliasDefinedOutsideCurrentScope = 0x00000008,
 
     // Skip building an accessible symbol chain
-    /* @internal */ DoNotIncludeSymbolChain = 0x00000010,
+    DoNotIncludeSymbolChain = 0x00000010,
   }
 
   export interface SymbolWalker {
@@ -4136,15 +4110,15 @@ namespace qnr {
     members?: SymbolTable; // Class, interface or object literal instance members
     exports?: SymbolTable; // Module exports
     globalExports?: SymbolTable; // Conditional global UMD exports
-    /* @internal */ id?: number; // Unique id (used to look up SymbolLinks)
-    /* @internal */ mergeId?: number; // Merge id (used to look up merged symbol)
-    /* @internal */ parent?: Symbol; // Parent symbol
-    /* @internal */ exportSymbol?: Symbol; // Exported symbol associated with this symbol
-    /* @internal */ constEnumOnlyModule?: boolean; // True if module contains only const enums or other modules with only const enums
-    /* @internal */ isReferenced?: SymbolFlags; // True if the symbol is referenced elsewhere. Keeps track of the meaning of a reference in case a symbol is both a type parameter and parameter.
-    /* @internal */ isReplaceableByMethod?: boolean; // Can this Javascript class property be replaced by a method symbol?
-    /* @internal */ isAssigned?: boolean; // True if the symbol is a parameter with assignments
-    /* @internal */ assignmentDeclarationMembers?: Map<Declaration>; // detected late-bound assignment declarations associated with the symbol
+    id?: number; // Unique id (used to look up SymbolLinks)
+    mergeId?: number; // Merge id (used to look up merged symbol)
+    parent?: Symbol; // Parent symbol
+    exportSymbol?: Symbol; // Exported symbol associated with this symbol
+    constEnumOnlyModule?: boolean; // True if module contains only const enums or other modules with only const enums
+    isReferenced?: SymbolFlags; // True if the symbol is referenced elsewhere. Keeps track of the meaning of a reference in case a symbol is both a type parameter and parameter.
+    isReplaceableByMethod?: boolean; // Can this Javascript class property be replaced by a method symbol?
+    isAssigned?: boolean; // True if the symbol is a parameter with assignments
+    assignmentDeclarationMembers?: QMap<Declaration>; // detected late-bound assignment declarations associated with the symbol
   }
 
   export interface SymbolLinks {
@@ -4156,8 +4130,8 @@ namespace qnr {
     declaredType?: Type; // Type of class, interface, enum, type alias, or type parameter
     typeParameters?: TypeParameter[]; // Type parameters of type alias (undefined if non-generic)
     outerTypeParameters?: TypeParameter[]; // Outer type parameters of anonymous object type
-    instantiations?: Map<Type>; // Instantiations of generic type alias (undefined if non-generic)
-    inferredClassSymbol?: Map<TransientSymbol>; // Symbol of an inferred ES5 constructor function
+    instantiations?: QMap<Type>; // Instantiations of generic type alias (undefined if non-generic)
+    inferredClassSymbol?: QMap<TransientSymbol>; // Symbol of an inferred ES5 constructor function
     mapper?: TypeMapper; // Type mapper for instantiation alias
     referenced?: boolean; // True if alias symbol has been referenced as a value that can be emitted
     constEnumReferenced?: boolean; // True if alias symbol resolves to a const enum and is referenced as a value ('referenced' will be false)
@@ -4176,9 +4150,9 @@ namespace qnr {
     enumKind?: EnumKind; // Enum declaration classification
     originatingImport?: ImportDeclaration | ImportCall; // Import declaration which produced the symbol, present if the symbol is marked as uncallable but had call signatures in `resolveESModuleSymbol`
     lateSymbol?: Symbol; // Late-bound symbol for a computed property
-    specifierCache?: Map<string>; // For symbols corresponding to external modules, a cache of incoming path -> module specifier name mappings
+    specifierCache?: QMap<string>; // For symbols corresponding to external modules, a cache of incoming path -> module specifier name mappings
     extendedContainers?: Symbol[]; // Containers (other than the parent) which this symbol is aliased in
-    extendedContainersByFile?: Map<Symbol[]>; // Containers (other than the parent) which this symbol is aliased in
+    extendedContainersByFile?: QMap<Symbol[]>; // Containers (other than the parent) which this symbol is aliased in
     variances?: VarianceFlags[]; // Alias symbol type argument variance cache
     deferralConstituents?: Type[]; // Calculated list of constituents for a deferred type
     deferralParent?: Type; // Source union/intersection of a deferred type
@@ -4249,41 +4223,62 @@ namespace qnr {
     Function = '__function', // Unnamed function expression
     Computed = '__computed', // Computed property name declaration with dynamic name
     Resolving = '__resolving__', // Indicator symbol used to mark partially resolved type aliases
-    ExportEquals = 'export=', // Export assignment symbol
     Default = 'default', // Default export symbol (technically not wholly internal, but included here for usability)
+    ExportEquals = 'export=', // Export assignment symbol
     This = 'this',
   }
 
-  /**
-   * This represents a string whose leading underscore have been escaped by adding extra leading underscores.
-   * The shape of this brand is rather unique compared to others we've used.
-   * Instead of just an intersection of a string and an object, it is that union-ed
-   * with an intersection of void and an object. This makes it wholly incompatible
-   * with a normal string (which is good, it cannot be misused on assignment or on usage),
-   * while still being comparable with a normal string via === (also good) and castable from a string.
-   */
   export type __String = (string & { __escapedIdentifier: void }) | (void & { __escapedIdentifier: void }) | InternalSymbolName;
 
-  /** ReadonlyMap where keys are `__String`s. */
-  export interface ReadonlyUnderscoreEscapedMap<T> {
-    get(key: __String): T | undefined;
-    has(key: __String): boolean;
-    forEach(action: (value: T, key: __String) => void): void;
-    readonly size: number;
-    keys(): Iterator<__String>;
-    values(): Iterator<T>;
-    entries(): Iterator<[__String, T]>;
-  }
+  export type UnderscoreEscapedMap<T> = Map<__String, T>;
+  export type ReadonlyUnderscoreEscapedMap<T> = ReadonlyMap<__String, T>;
 
-  /** Map where keys are `__String`s. */
-  export interface UnderscoreEscapedMap<T> extends ReadonlyUnderscoreEscapedMap<T> {
-    set(key: __String, value: T): this;
-    delete(key: __String): boolean;
-    clear(): void;
-  }
+  export class SymbolTable<S extends Symbol = Symbol> extends Map<__String, S> implements UnderscoreEscapedMap<S> {
+    constructor(ss?: readonly S[]) {
+      super();
+      if (ss) {
+        for (const s of ss) {
+          this.set(s.escapedName, s);
+        }
+      }
+    }
 
-  /** SymbolTable based on ES6 Map interface. */
-  export type SymbolTable = UnderscoreEscapedMap<Symbol>;
+    add(ss: SymbolTable<S>, m: DiagnosticMessage) {
+      ss.forEach((s, id) => {
+        const t = this.get(id);
+        if (t) forEach(t.declarations, addDeclarationDiagnostic(unescapeLeadingUnderscores(id), m));
+        else this.set(id, s);
+      });
+
+      function addDeclarationDiagnostic(id: string, m: DiagnosticMessage) {
+        return (d: Declaration) => diagnostics.add(createDiagnosticForNode(d, m, id));
+      }
+    }
+
+    merge(ss: SymbolTable<S>, unidirectional = false) {
+      ss.forEach((s, id) => {
+        const t = this.get(id);
+        this.set(id, t ? mergeSymbol(t, s, unidirectional) : s);
+      });
+    }
+
+    combine(ss: SymbolTable<S> | undefined): SymbolTable<S> | undefined {
+      if (!hasEntries(this)) return ss;
+      if (!hasEntries(ss)) return this;
+      const t = new SymbolTable<S>();
+      t.merge(this);
+      t.merge(ss);
+      return t;
+    }
+
+    copy(to: SymbolTable<S>, meaning: SymbolFlags) {
+      if (meaning) {
+        this.forEach((s) => {
+          copySymbol(s, to, meaning);
+        });
+      }
+    }
+  }
 
   /** Used to track a `declare module "foo*"`-like declaration. */
   export interface PatternAmbientModule {
@@ -4336,10 +4331,10 @@ namespace qnr {
     switchTypes?: Type[]; // Cached array of switch case expression types
     jsxNamespace?: Symbol | false; // Resolved jsx namespace symbol for this node
     contextFreeType?: Type; // Cached context-free type used by the first pass of inference; used when a function's return is partially contextually sensitive
-    deferredNodes?: Map<Node>; // Set of nodes whose checking has been deferred
+    deferredNodes?: QMap<Node>; // Set of nodes whose checking has been deferred
     capturedBlockScopeBindings?: Symbol[]; // Block-scoped bindings captured beneath this part of an IterationStatement
     outerTypeParameters?: TypeParameter[]; // Outer type parameters of anonymous object type
-    instantiations?: Map<Type>; // Instantiations of generic type alias (undefined if non-generic)
+    instantiations?: QMap<Type>; // Instantiations of generic type alias (undefined if non-generic)
     isExhaustive?: boolean; // Is node an exhaustive switch statement
     skipDirectInference?: true; // Flag set by the API `getContextualType` call on a node when `Completions` is passed to force the checker to skip making inferences to a node's type
     declarationRequiresScopeChange?: boolean; // Set by `useOuterVariableScopeInParameter` in checker when downlevel emit would change the name resolution scope inside of a parameter.
@@ -4430,13 +4425,13 @@ namespace qnr {
   // Properties common to all types
   export interface Type {
     flags: TypeFlags; // Flags
-    /* @internal */ id: number; // Unique ID
-    /* @internal */ checker: TypeChecker;
+    id: number; // Unique ID
+    checker: TypeChecker;
     symbol: Symbol; // Symbol associated with type (if any)
     pattern?: DestructuringPattern; // Destructuring pattern represented by type (if any)
     aliasSymbol?: Symbol; // Alias associated with type
     aliasTypeArguments?: readonly Type[]; // Alias type arguments (if any)
-    /* @internal */ aliasTypeArgumentsContainsMarker?: boolean; // Alias type arguments (if any)
+    aliasTypeArgumentsContainsMarker?: boolean; // Alias type arguments (if any)
     permissiveInstantiation?: Type; // Instantiation with type parameters mapped to wildcard type
     restrictiveInstantiation?: Type; // Instantiation with type parameters mapped to unconstrained form
     immediateBaseConstraint?: Type; // Immediate base constraint cache
@@ -4532,12 +4527,12 @@ namespace qnr {
   // Object types (TypeFlags.ObjectType)
   export interface ObjectType extends Type {
     objectFlags: ObjectFlags;
-    /* @internal */ members?: SymbolTable; // Properties by name
-    /* @internal */ properties?: Symbol[]; // Properties
-    /* @internal */ callSignatures?: readonly Signature[]; // Call signatures of type
-    /* @internal */ constructSignatures?: readonly Signature[]; // Construct signatures of type
-    /* @internal */ stringIndexInfo?: IndexInfo; // String indexing info
-    /* @internal */ numberIndexInfo?: IndexInfo; // Numeric indexing info
+    members?: SymbolTable; // Properties by name
+    properties?: Symbol[]; // Properties
+    callSignatures?: readonly Signature[]; // Call signatures of type
+    constructSignatures?: readonly Signature[]; // Construct signatures of type
+    stringIndexInfo?: IndexInfo; // String indexing info
+    numberIndexInfo?: IndexInfo; // Numeric indexing info
   }
 
   /** Class and interface types (ObjectFlags.Class and ObjectFlags.Interface). */
@@ -4598,7 +4593,7 @@ namespace qnr {
 
   // Generic class and interface types
   export interface GenericType extends InterfaceType, TypeReference {
-    instantiations: Map<TypeReference>; // Generic instantiation cache
+    instantiations: QMap<TypeReference>; // Generic instantiation cache
     variances?: VarianceFlags[]; // Variance of each type parameter
   }
 
@@ -4746,7 +4741,7 @@ namespace qnr {
     isDistributive: boolean;
     inferTypeParameters?: TypeParameter[];
     outerTypeParameters?: TypeParameter[];
-    instantiations?: Map<Type>;
+    instantiations?: QMap<Type>;
     aliasSymbol?: Symbol;
     aliasTypeArguments?: Type[];
   }
@@ -4803,8 +4798,8 @@ namespace qnr {
   }
 
   export interface Signature {
-    /* @internal */ flags: SignatureFlags;
-    /* @internal */ checker?: TypeChecker;
+    flags: SignatureFlags;
+    checker?: TypeChecker;
     declaration?: SignatureDeclaration | JSDocSignature; // Originating declaration
     typeParameters?: readonly TypeParameter[]; // Type parameters (undefined if non-generic)
     parameters: readonly Symbol[]; // Parameters
@@ -4823,7 +4818,7 @@ namespace qnr {
     canonicalSignatureCache?: Signature; // Canonical version of signature (deferred)
     optionalCallSignatureCache?: { inner?: Signature; outer?: Signature }; // Optional chained call version of signature (deferred)
     isolatedSignatureType?: ObjectType; // A manufactured type that just contains the signature for purposes of signature comparison
-    instantiations?: Map<Signature>; // Generic signature instantiation cache
+    instantiations?: QMap<Signature>; // Generic signature instantiation cache
   }
 
   export const enum IndexKind {
@@ -5073,15 +5068,15 @@ namespace qnr {
     build?: boolean;
     charset?: string;
     checkJs?: boolean;
-    /* @internal */ configFilePath?: string;
+    configFilePath?: string;
     /** configFile is set as non enumerable property so as to avoid checking of json source files */
-    /* @internal */ readonly configFile?: TsConfigSourceFile;
+    readonly configFile?: TsConfigSourceFile;
     declaration?: boolean;
     declarationMap?: boolean;
     emitDeclarationOnly?: boolean;
     declarationDir?: string;
-    /* @internal */ diagnostics?: boolean;
-    /* @internal */ extendedDiagnostics?: boolean;
+    diagnostics?: boolean;
+    extendedDiagnostics?: boolean;
     disableSizeLimit?: boolean;
     disableSourceOfProjectReferenceRedirect?: boolean;
     disableSolutionSearching?: boolean;
@@ -5133,9 +5128,9 @@ namespace qnr {
     plugins?: PluginImport[];
     preserveConstEnums?: boolean;
     preserveSymlinks?: boolean;
-    /* @internal */ preserveWatchOutput?: boolean;
+    preserveWatchOutput?: boolean;
     project?: string;
-    /* @internal */ pretty?: boolean;
+    pretty?: boolean;
     reactNamespace?: string;
     jsxFactory?: string;
     composite?: boolean;
@@ -5156,7 +5151,7 @@ namespace qnr {
     stripInternal?: boolean;
     suppressExcessPropertyErrors?: boolean;
     suppressImplicitAnyIndexErrors?: boolean;
-    /* @internal */ suppressOutputPathCheck?: boolean;
+    suppressOutputPathCheck?: boolean;
     target?: ScriptTarget; // TODO: GH#18217 frequently asserted as defined
     traceResolution?: boolean;
     resolveJsonModule?: boolean;
@@ -5166,7 +5161,7 @@ namespace qnr {
     version?: boolean;
     watch?: boolean;
     esModuleInterop?: boolean;
-    /* @internal */ showConfig?: boolean;
+    showConfig?: boolean;
     useDefineForClassFields?: boolean;
 
     [option: string]: CompilerOptionsValue | TsConfigSourceFile | undefined;
@@ -5280,7 +5275,7 @@ namespace qnr {
     errors: Diagnostic[];
     wildcardDirectories?: MapLike<WatchDirectoryFlags>;
     compileOnSave?: boolean;
-    /* @internal */ configFileSpecs?: ConfigFileSpecs;
+    configFileSpecs?: ConfigFileSpecs;
   }
 
   export const enum WatchDirectoryFlags {
@@ -5306,7 +5301,7 @@ namespace qnr {
   export interface ExpandResult {
     fileNames: string[];
     wildcardDirectories: MapLike<WatchDirectoryFlags>;
-    /* @internal */ spec: ConfigFileSpecs;
+    spec: ConfigFileSpecs;
   }
 
   export type RequireResult<T = {}> =
@@ -5324,7 +5319,7 @@ namespace qnr {
 
   export interface CommandLineOptionBase {
     name: string;
-    type: 'string' | 'number' | 'boolean' | 'object' | 'list' | Map<number | string>; // a value of a primitive type, or an object literal mapping named values to actual values
+    type: 'string' | 'number' | 'boolean' | 'object' | 'list' | QMap<number | string>; // a value of a primitive type, or an object literal mapping named values to actual values
     isFilePath?: boolean; // True if option value is a path or fileName
     shortName?: string; // A short mnemonic for convenience - for instance, 'h' can be used in place of 'help'
     description?: DiagnosticMessage; // The message describing what the command line switch does
@@ -5347,7 +5342,7 @@ namespace qnr {
   }
 
   export interface CommandLineOptionOfCustomType extends CommandLineOptionBase {
-    type: Map<number | string>; // an object literal mapping named values to actual values
+    type: QMap<number | string>; // an object literal mapping named values to actual values
   }
 
   export interface DidYouMeanOptionsDiagnostics {
@@ -5358,7 +5353,7 @@ namespace qnr {
 
   export interface TsConfigOnlyOption extends CommandLineOptionBase {
     type: 'object';
-    elementOptions?: Map<CommandLineOption>;
+    elementOptions?: QMap<CommandLineOption>;
     extraKeyDiagnostics?: DidYouMeanOptionsDiagnostics;
   }
 
@@ -5658,16 +5653,16 @@ namespace qnr {
       options: CompilerOptions
     ): (ResolvedTypeReferenceDirective | undefined)[];
     getEnvironmentVariable?(name: string): string | undefined;
-    /* @internal */ onReleaseOldSourceFile?(oldSourceFile: SourceFile, oldOptions: CompilerOptions, hasSourceFileByPath: boolean): void;
-    /* @internal */ hasInvalidatedResolution?: HasInvalidatedResolution;
-    /* @internal */ hasChangedAutomaticTypeDirectiveNames?: boolean;
+    onReleaseOldSourceFile?(oldSourceFile: SourceFile, oldOptions: CompilerOptions, hasSourceFileByPath: boolean): void;
+    hasInvalidatedResolution?: HasInvalidatedResolution;
+    hasChangedAutomaticTypeDirectiveNames?: boolean;
     createHash?(data: string): string;
     getParsedCommandLine?(fileName: string): ParsedCommandLine | undefined;
-    /* @internal */ useSourceOfProjectReferenceRedirect?(): boolean;
+    useSourceOfProjectReferenceRedirect?(): boolean;
 
     // TODO: later handle this in better way in builder host instead once the api for tsbuild finalizes and doesn't use compilerHost as base
     createDirectory?(directory: string): void;
-    getSymlinks?(): ReadonlyMap<string>;
+    getSymlinks?(): QReadonlyMap<string>;
   }
 
   /** true if --out otherwise source file name */
@@ -5801,7 +5796,7 @@ namespace qnr {
   export interface SourceMapSource {
     fileName: string;
     text: string;
-    /* @internal */ lineMap: readonly number[];
+    lineMap: readonly number[];
     skipTrivia?: (pos: number) => number;
   }
 
@@ -5981,8 +5976,8 @@ namespace qnr {
     /** Starts a new lexical environment. */
     startLexicalEnvironment(): void;
 
-    /* @internal */ setLexicalEnvironmentFlags(flags: LexicalEnvironmentFlags, value: boolean): void;
-    /* @internal */ getLexicalEnvironmentFlags(): LexicalEnvironmentFlags;
+    setLexicalEnvironmentFlags(flags: LexicalEnvironmentFlags, value: boolean): void;
+    getLexicalEnvironmentFlags(): LexicalEnvironmentFlags;
 
     /** Suspends the current lexical environment, usually after visiting a parameter list. */
     suspendLexicalEnvironment(): void;
@@ -6044,7 +6039,7 @@ namespace qnr {
      */
     onEmitNode: (hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void) => void;
 
-    /* @internal */ addDiagnostic(diag: DiagnosticWithLocation): void;
+    addDiagnostic(diag: DiagnosticWithLocation): void;
   }
 
   export interface TransformationResult<T extends Node> {
@@ -6424,7 +6419,7 @@ namespace qnr {
     fileExists(path: string): boolean;
     getCurrentDirectory(): string;
     readFile?(path: string): string | undefined;
-    getProbableSymlinks?(files: readonly SourceFile[]): ReadonlyMap<string>;
+    getProbableSymlinks?(files: readonly SourceFile[]): QReadonlyMap<string>;
     getGlobalTypingsCacheLocation?(): string | undefined;
 
     getSourceFiles(): readonly SourceFile[];
@@ -6672,7 +6667,7 @@ namespace qnr {
 
   export type PragmaPseudoMapEntry = { [K in keyof PragmaPseudoMap]: { name: K; args: PragmaPseudoMap[K] } }[keyof PragmaPseudoMap];
 
-  export interface ReadonlyPragmaMap extends ReadonlyMap<PragmaPseudoMap[keyof PragmaPseudoMap] | PragmaPseudoMap[keyof PragmaPseudoMap][]> {
+  export interface ReadonlyPragmaMap extends QReadonlyMap<PragmaPseudoMap[keyof PragmaPseudoMap] | PragmaPseudoMap[keyof PragmaPseudoMap][]> {
     get<TKey extends keyof PragmaPseudoMap>(key: TKey): PragmaPseudoMap[TKey] | PragmaPseudoMap[TKey][];
     forEach(action: <TKey extends keyof PragmaPseudoMap>(value: PragmaPseudoMap[TKey] | PragmaPseudoMap[TKey][], key: TKey) => void): void;
   }
@@ -6682,7 +6677,9 @@ namespace qnr {
    * value (if only one was found), or an array of multiple argument values if the pragma is present
    * in multiple places
    */
-  export interface PragmaMap extends Map<PragmaPseudoMap[keyof PragmaPseudoMap] | PragmaPseudoMap[keyof PragmaPseudoMap][]>, ReadonlyPragmaMap {
+  export interface PragmaMap
+    extends QMap<string, PragmaPseudoMap[keyof PragmaPseudoMap] | PragmaPseudoMap[keyof PragmaPseudoMap][]>,
+      ReadonlyPragmaMap {
     set<TKey extends keyof PragmaPseudoMap>(key: TKey, value: PragmaPseudoMap[TKey] | PragmaPseudoMap[TKey][]): this;
     get<TKey extends keyof PragmaPseudoMap>(key: TKey): PragmaPseudoMap[TKey] | PragmaPseudoMap[TKey][];
     forEach(action: <TKey extends keyof PragmaPseudoMap>(value: PragmaPseudoMap[TKey] | PragmaPseudoMap[TKey][], key: TKey) => void): void;

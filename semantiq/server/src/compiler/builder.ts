@@ -38,7 +38,7 @@ namespace qnr {
      * Map of file signatures, with key being file path, calculated while getting current changed file's affected files
      * These will be committed whenever the iteration through affected files of current changed file is complete
      */
-    currentAffectedFilesSignatures?: ReadonlyMap<string> | undefined;
+    currentAffectedFilesSignatures?: QReadonlyMap<string> | undefined;
     /**
      * Newly computed visible to outside referencedSet
      */

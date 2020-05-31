@@ -2,8 +2,8 @@ namespace qnr {
   export interface EmitOutput {
     outputFiles: OutputFile[];
     emitSkipped: boolean;
-    /* @internal */ diagnostics: readonly Diagnostic[];
-    /* @internal */ exportedModulesFromDeclarationEmit?: ExportedModulesFromDeclarationEmit;
+    diagnostics: readonly Diagnostic[];
+    exportedModulesFromDeclarationEmit?: ExportedModulesFromDeclarationEmit;
   }
 
   export interface OutputFile {
