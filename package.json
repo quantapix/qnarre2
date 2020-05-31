@@ -23,5 +23,7 @@
     "webpack": "",
     "webpack-cli": ""
   },
-  "dependencies": {}
+  "dependencies": {
+    "gulp": "^4.0.2"
+  }
 }
