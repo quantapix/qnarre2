@@ -598,6 +598,7 @@ namespace qnr {
       case SyntaxKind.PartiallyEmittedExpression:
         return visitNode(cbNode, (<PartiallyEmittedExpression>node).expression);
     }
+    return;
   }
 
   /** @internal */
@@ -669,6 +670,7 @@ namespace qnr {
           }
         }
       }
+      return;
     }
   }
 
@@ -1432,7 +1434,7 @@ namespace qnr {
       if (token() === t) {
         return parseTokenNode();
       }
-      return undefined;
+      return;
     }
 
     function parseOptionalTokenJSDoc<TKind extends JSDocSyntaxKind>(t: TKind): Token<TKind>;
@@ -1440,7 +1442,7 @@ namespace qnr {
       if (token() === t) {
         return parseTokenNodeJSDoc();
       }
-      return undefined;
+      return;
     }
 
     function parseExpectedToken<TKind extends SyntaxKind>(t: TKind, diagnosticMessage?: DiagnosticMessage, arg0?: any): Token<TKind>;
@@ -2046,7 +2048,7 @@ namespace qnr {
       // on it (or its leftmost child) as having the error.  For now though, being conservative
       // is nice and likely won't ever affect perf.
       if (!syntaxCursor || !isReusableParsingContext(parsingContext) || parseErrorBeforeNextFinishedNode) {
-        return undefined;
+        return;
       }
 
       const node = syntaxCursor.currentNode(scanner.getStartPos());
@@ -2056,7 +2058,7 @@ namespace qnr {
       // Can't reuse a node that contains a parse error.  This is necessary so that we
       // produce the same set of errors again.
       if (nodeIsMissing(node) || node.intersectsChange || containsParseError(node)) {
-        return undefined;
+        return;
       }
 
       // We can only reuse a node if it was parsed under the same strict mode that we're
@@ -2072,13 +2074,13 @@ namespace qnr {
       // This also applies to all our other context flags as well.
       const nodeContextFlags = node.flags & NodeFlags.ContextFlags;
       if (nodeContextFlags !== contextFlags) {
-        return undefined;
+        return;
       }
 
       // Ok, we have a node that looks like it could be reused.  Now verify that it is valid
       // in the current list parsing context that we're currently at.
       if (!canReuseNode(node, parsingContext)) {
-        return undefined;
+        return;
       }
 
       if ((node as JSDocContainer).jsDocCache) {
@@ -2831,6 +2833,7 @@ namespace qnr {
       if (token() === SyntaxKind.LessThanToken) {
         return parseBracketedList(ParsingContext.TypeParameters, parseTypeParameter, SyntaxKind.LessThanToken, SyntaxKind.GreaterThanToken);
       }
+      return;
     }
 
     function parseParameterType(): TypeNode | undefined {
@@ -2838,7 +2841,7 @@ namespace qnr {
         return parseType();
       }
 
-      return undefined;
+      return;
     }
 
     function isStartOfParameter(isJSDocParameter: boolean): boolean {
@@ -3616,6 +3619,7 @@ namespace qnr {
         nextToken();
         return id;
       }
+      return;
     }
 
     function parseAssertsTypePredicate(): TypeNode {
@@ -3904,7 +3908,7 @@ namespace qnr {
       const triState = isParenthesizedArrowFunctionExpression();
       if (triState === Tristate.False) {
         // It's definitely not a parenthesized arrow function expression.
-        return undefined;
+        return;
       }
 
       // If we definitely have an arrow function, then we can just parse one, not requiring a
@@ -3918,7 +3922,7 @@ namespace qnr {
 
       if (!arrowFunction) {
         // Didn't appear to actually be a parenthesized arrow function.  Just bail out.
-        return undefined;
+        return;
       }
 
       const isAsync = hasModifierOfKind(arrowFunction, SyntaxKind.AsyncKeyword);
@@ -4084,7 +4088,7 @@ namespace qnr {
     function parsePossibleParenthesizedArrowFunctionExpressionHead(): ArrowFunction | undefined {
       const tokenPos = scanner.getTokenPos();
       if (notParenthesizedArrow && notParenthesizedArrow.has(tokenPos.toString())) {
-        return undefined;
+        return;
       }
 
       const result = parseParenthesizedArrowFunctionExpressionHead(/*allowAmbiguity*/ false);
@@ -4104,7 +4108,7 @@ namespace qnr {
           return parseSimpleArrowFunctionExpression(<Identifier>expr, asyncModifier);
         }
       }
-      return undefined;
+      return;
     }
 
     function isUnParenthesizedAsyncArrowFunctionWorker(): Tristate {
@@ -4140,7 +4144,7 @@ namespace qnr {
       // And think that "(b =>" was actually a parenthesized arrow function with a missing
       // close paren.
       if (!fillSignature(SyntaxKind.ColonToken, isAsync, node) && !allowAmbiguity) {
-        return undefined;
+        return;
       }
 
       // Parsing a signature isn't enough.
@@ -4155,7 +4159,7 @@ namespace qnr {
       const hasJSDocFunctionType = node.type && isJSDocFunctionType(node.type);
       if (!allowAmbiguity && token() !== SyntaxKind.EqualsGreaterThanToken && (hasJSDocFunctionType || token() !== SyntaxKind.OpenBraceToken)) {
         // Returning undefined here will cause our caller to rewind to where we started from.
-        return undefined;
+        return;
       }
 
       return node;
@@ -4755,10 +4759,10 @@ namespace qnr {
               getTextOfNodeFromSourceText(sourceText, openingTag.tagName)
             );
           }
-          return undefined;
+          return;
         case SyntaxKind.LessThanSlashToken:
         case SyntaxKind.ConflictMarkerTrivia:
-          return undefined;
+          return;
         case SyntaxKind.JsxText:
         case SyntaxKind.JsxTextAllWhiteSpaces:
           return parseJsxText();
@@ -4858,7 +4862,7 @@ namespace qnr {
       const node = <JsxExpression>createNode(SyntaxKind.JsxExpression);
 
       if (!parseExpected(SyntaxKind.OpenBraceToken)) {
-        return undefined;
+        return;
       }
 
       if (token() !== SyntaxKind.CloseBraceToken) {
@@ -5142,14 +5146,14 @@ namespace qnr {
 
     function parseTypeArgumentsInExpression() {
       if (reScanLessThanToken() !== SyntaxKind.LessThanToken) {
-        return undefined;
+        return;
       }
       nextToken();
 
       const typeArguments = parseDelimitedList(ParsingContext.TypeArguments, parseType);
       if (!parseExpected(SyntaxKind.GreaterThanToken)) {
         // If it doesn't have the closing `>` then it's definitely not an type argument list.
-        return undefined;
+        return;
       }
 
       // If we have a '<', then only parse this as a argument list if the type arguments
@@ -6026,6 +6030,7 @@ namespace qnr {
         if (node) {
           return consumeNode(node) as Statement;
         }
+        return;
       });
     }
 
@@ -6264,6 +6269,7 @@ namespace qnr {
           node.body = parseFunctionBlockOrSemicolon(SignatureFlags.None, Diagnostics.or_expected);
           return finishNode(node);
         }
+        return;
       });
     }
 
@@ -6548,7 +6554,7 @@ namespace qnr {
         return parseList(ParsingContext.HeritageClauses, parseHeritageClause);
       }
 
-      return undefined;
+      return;
     }
 
     function parseHeritageClause(): HeritageClause {
@@ -7100,7 +7106,7 @@ namespace qnr {
 
         // Check for /** (JSDoc opening part)
         if (!isJSDocLikeText(content, start)) {
-          return undefined;
+          return;
         }
 
         let tags: JSDocTag[];
@@ -7557,6 +7563,7 @@ namespace qnr {
               return finishNode(typeLiteralExpression);
             }
           }
+          return;
         }
 
         function parseReturnTag(start: number, tagName: Identifier): JSDocReturnTag {
@@ -7642,6 +7649,7 @@ namespace qnr {
           if (seenLessThan && seenGreaterThan) {
             return comments.length === 0 ? undefined : comments.join('');
           }
+          return;
         }
 
         function parseImplementsTag(start: number, tagName: Identifier): JSDocImplementsTag {
@@ -7770,7 +7778,7 @@ namespace qnr {
         function parseJSDocTypeNameWithNamespace(nested?: boolean) {
           const pos = scanner.getTokenPos();
           if (!tokenIsIdentifierOrKeyword(token())) {
-            return undefined;
+            return;
           }
           const typeNameOrNamespaceName = parseJSDocIdentifierName();
           if (parseOptional(SyntaxKind.DotToken)) {
@@ -7810,6 +7818,7 @@ namespace qnr {
                 return tag as JSDocReturnTag;
               }
             }
+            return;
           });
           if (returnTag) {
             jsdocSignature.type = returnTag;
@@ -7822,17 +7831,18 @@ namespace qnr {
           if (fullName) {
             let rightNode = fullName;
             while (true) {
-              if (ts.isIdentifier(rightNode) || !rightNode.body) {
+              if (qnr.isIdentifier(rightNode) || !rightNode.body) {
                 return qnr.isIdentifier(rightNode) ? rightNode : rightNode.name;
               }
               rightNode = rightNode.body;
             }
           }
+          return;
         }
 
         function escapedTextsEqual(a: EntityName, b: EntityName): boolean {
-          while (!ts.isIdentifier(a) || !ts.isIdentifier(b)) {
-            if (!ts.isIdentifier(a) && !ts.isIdentifier(b) && a.right.escapedText === b.right.escapedText) {
+          while (!qnr.isIdentifier(a) || !qnr.isIdentifier(b)) {
+            if (!qnr.isIdentifier(a) && !qnr.isIdentifier(b) && a.right.escapedText === b.right.escapedText) {
               a = a.left;
               b = b.left;
             } else {
@@ -7863,7 +7873,7 @@ namespace qnr {
                     (child.kind === SyntaxKind.JSDocParameterTag || child.kind === SyntaxKind.JSDocPropertyTag) &&
                     target !== PropertyLikeParse.CallbackParameter &&
                     name &&
-                    (ts.isIdentifier(child.name) || !escapedTextsEqual(name, child.name.left))
+                    (qnr.isIdentifier(child.name) || !escapedTextsEqual(name, child.name.left))
                   ) {
                     return false;
                   }
@@ -8510,6 +8520,7 @@ namespace qnr {
           // so just skip them by returning 'true' here.
           return true;
         }
+        return;
       }
     }
 

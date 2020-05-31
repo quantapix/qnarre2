@@ -1145,7 +1145,7 @@ namespace qnr {
   export function parseListTypeOption(opt: CommandLineOptionOfListType, value = '', errors: Push<Diagnostic>): (string | number)[] | undefined {
     value = trimString(value);
     if (startsWith(value, '-')) {
-      return undefined;
+      return;
     }
     if (value === '') {
       return [];
@@ -1455,7 +1455,7 @@ namespace qnr {
     const configFileText = tryReadFile(configFileName, (fileName) => host.readFile(fileName));
     if (!isString(configFileText)) {
       host.onUnRecoverableConfigFileDiagnostic(configFileText);
-      return undefined;
+      return;
     }
 
     const result = parseJsonText(configFileName, configFileText);
@@ -1859,7 +1859,7 @@ namespace qnr {
         );
       }
 
-      return undefined;
+      return;
 
       function reportInvalidOptionValue(isError: boolean | undefined) {
         if (isError) {
@@ -1981,9 +1981,9 @@ namespace qnr {
   }
 
   function filterSameAsDefaultInclude(specs: readonly string[] | undefined) {
-    if (!length(specs)) return undefined;
+    if (!length(specs)) return;
     if (length(specs) !== 1) return specs;
-    if (specs![0] === '**/*') return undefined;
+    if (specs![0] === '**/*') return;
     return specs;
   }
 
@@ -2017,7 +2017,7 @@ namespace qnr {
       optionDefinition.type === 'object'
     ) {
       // this is of a type CommandLineOptionOfPrimitiveType
-      return undefined;
+      return;
     } else if (optionDefinition.type === 'list') {
       return getCustomTypeMapOfCommandLineOption(optionDefinition.element);
     } else {
@@ -2709,7 +2709,7 @@ namespace qnr {
         extendedConfigPath = `${extendedConfigPath}.json`;
         if (!host.fileExists(extendedConfigPath)) {
           errors.push(createDiagnostic(Diagnostics.File_0_not_found, extendedConfig));
-          return undefined;
+          return;
         }
       }
       return extendedConfigPath;
@@ -2728,7 +2728,7 @@ namespace qnr {
       return resolved.resolvedModule.resolvedFileName;
     }
     errors.push(createDiagnostic(Diagnostics.File_0_not_found, extendedConfig));
-    return undefined;
+    return;
   }
 
   export interface ExtendedConfigCacheEntry {
@@ -2794,7 +2794,7 @@ namespace qnr {
     }
     if (extendedResult.parseDiagnostics.length) {
       errors.push(...extendedResult.parseDiagnostics);
-      return undefined;
+      return;
     }
     return extendedConfig!;
   }
@@ -2933,7 +2933,7 @@ namespace qnr {
   }
 
   function normalizeOptionValue(option: CommandLineOption, basePath: string, value: any): CompilerOptionsValue {
-    if (isNullOrUndefined(value)) return undefined;
+    if (isNullOrUndefined(value)) return;
     if (option.type === 'list') {
       const listOption = option;
       if (listOption.element.isFilePath || !isString(listOption.element.type)) {
@@ -2960,7 +2960,7 @@ namespace qnr {
   }
 
   function convertJsonOptionOfCustomType(opt: CommandLineOptionOfCustomType, value: string, errors: Push<Diagnostic>) {
-    if (isNullOrUndefined(value)) return undefined;
+    if (isNullOrUndefined(value)) return;
     const key = value.toLowerCase();
     const val = opt.type.get(key);
     if (val !== undefined) {
@@ -3300,7 +3300,7 @@ namespace qnr {
     if (isImplicitGlob(spec)) {
       return { key: spec, flags: WatchDirectoryFlags.Recursive };
     }
-    return undefined;
+    return;
   }
 
   /**

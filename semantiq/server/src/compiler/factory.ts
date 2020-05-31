@@ -517,7 +517,7 @@ namespace qnr {
       return aggregateTransformFlags(expression);
     }
 
-    return undefined;
+    return;
   }
 
   function createExpressionForPropertyAssignment(property: PropertyAssignment, receiver: Expression) {
@@ -839,7 +839,7 @@ namespace qnr {
         break;
       }
     }
-    return undefined;
+    return;
   }
 
   export function startsWithUseStrict(statements: readonly Statement[]) {
@@ -1514,7 +1514,7 @@ namespace qnr {
     if (node.kind === SyntaxKind.ExportDeclaration && node.moduleSpecifier) {
       return getGeneratedNameForNode(node);
     }
-    return undefined;
+    return;
   }
 
   /**
@@ -1541,7 +1541,7 @@ namespace qnr {
       );
     }
 
-    return undefined;
+    return;
   }
 
   /**
@@ -1562,7 +1562,7 @@ namespace qnr {
    */
   export function tryGetModuleNameFromFile(file: SourceFile | undefined, host: EmitHost, options: CompilerOptions): StringLiteral | undefined {
     if (!file) {
-      return undefined;
+      return;
     }
     if (file.moduleName) {
       return createLiteral(file.moduleName);
@@ -1570,7 +1570,7 @@ namespace qnr {
     if (!file.isDeclarationFile && (options.out || options.outFile)) {
       return createLiteral(getExternalModuleNameFromPath(host, file.fileName));
     }
-    return undefined;
+    return;
   }
 
   function tryGetModuleNameFromDeclaration(
@@ -1673,7 +1673,7 @@ namespace qnr {
       }
 
       // no target
-      return undefined;
+      return;
     }
 
     if (isAssignmentExpression(bindingElement, /*excludeCompoundAssignment*/ true)) {
@@ -1716,7 +1716,7 @@ namespace qnr {
         return bindingElement;
     }
 
-    return undefined;
+    return;
   }
 
   /**

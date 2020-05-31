@@ -439,7 +439,7 @@ namespace qnr {
       return node;
     }
 
-    return undefined;
+    return;
   }
 
   /** Add an extra underscore to identifiers that start with two underscores to avoid issues with magic names like '__proto__' */
@@ -480,7 +480,7 @@ namespace qnr {
   function nameForNamelessJSDocTypedef(declaration: JSDocTypedefTag | JSDocEnumTag): Identifier | PrivateIdentifier | undefined {
     const hostNode = declaration.parent.parent;
     if (!hostNode) {
-      return undefined;
+      return;
     }
     // Covers classes, functions - any named declaration host node
     if (isDeclaration(hostNode)) {
@@ -572,7 +572,7 @@ namespace qnr {
           case AssignmentDeclarationKind.ObjectDefinePrototypeProperty:
             return (expr as BindableObjectDefinePropertyCall).arguments[1];
           default:
-            return undefined;
+            return;
         }
       }
       case SyntaxKind.JSDocTypedefTag:
@@ -593,7 +593,7 @@ namespace qnr {
   }
 
   export function getNameOfDeclaration(declaration: Declaration | Expression): DeclarationName | undefined {
-    if (declaration === undefined) return undefined;
+    if (declaration === undefined) return;
     return (
       getNonAssignedNameOfDeclaration(declaration) ||
       (isFunctionExpression(declaration) || isClassExpression(declaration) ? getAssignedName(declaration) : undefined)
@@ -602,7 +602,7 @@ namespace qnr {
 
   function getAssignedName(node: Node): DeclarationName | undefined {
     if (!node.parent) {
-      return undefined;
+      return;
     } else if (isPropertyAssignment(node.parent) || isBindingElement(node.parent)) {
       return node.parent.name;
     } else if (isBinaryExpression(node.parent) && node === node.parent.right) {
@@ -770,7 +770,7 @@ namespace qnr {
     if (tag && tag.typeExpression && tag.typeExpression.type) {
       return tag;
     }
-    return undefined;
+    return;
   }
 
   /**

@@ -45,7 +45,7 @@ namespace qnr {
       switch (node.kind) {
         case SyntaxKind.ImportEqualsDeclaration:
           // Elide `import=` as it is not legal with --module ES6
-          return undefined;
+          return;
         case SyntaxKind.ExportAssignment:
           return visitExportAssignment(<ExportAssignment>node);
         case SyntaxKind.ExportDeclaration:

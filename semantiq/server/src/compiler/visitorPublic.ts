@@ -49,7 +49,7 @@ namespace qnr {
 
     let visitedNode: Node | undefined;
     if (visited === undefined) {
-      return undefined;
+      return;
     } else if (isArray(visited)) {
       visitedNode = (lift || extractSingleNode)(visited);
     } else {
@@ -400,7 +400,7 @@ namespace qnr {
     tokenVisitor?: Visitor
   ): Node | undefined {
     if (node === undefined) {
-      return undefined;
+      return;
     }
 
     const kind = node.kind;

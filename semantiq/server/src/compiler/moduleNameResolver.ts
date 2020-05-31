@@ -76,7 +76,7 @@ namespace qnr {
   /** Used with `Extensions.DtsOnly` to extract the path from TypeScript results. */
   function resolvedTypeScriptOnly(resolved: Resolved | undefined): PathAndPackageId | undefined {
     if (!resolved) {
-      return undefined;
+      return;
     }
     Debug.assert(extensionIsTS(resolved.extension));
     return { fileName: resolved.path, packageId: resolved.packageId };
@@ -311,7 +311,7 @@ namespace qnr {
       if (host.directoryExists!(atTypes)) {
         (typeRoots || (typeRoots = [])).push(atTypes);
       }
-      return undefined;
+      return;
     });
     return typeRoots;
   }
@@ -696,11 +696,11 @@ namespace qnr {
         }
         const rootLength = getRootLength(directory);
         if (i < rootLength) {
-          return undefined;
+          return;
         }
         const sep = directory.lastIndexOf(directorySeparator, i - 1);
         if (sep === -1) {
-          return undefined;
+          return;
         }
         return directory.substr(0, Math.max(sep, rootLength));
       }
@@ -916,7 +916,7 @@ namespace qnr {
     state: ModuleResolutionState
   ): Resolved | undefined {
     if (!state.compilerOptions.rootDirs) {
-      return undefined;
+      return;
     }
 
     if (state.traceEnabled) {
@@ -985,7 +985,7 @@ namespace qnr {
         trace(state.host, Diagnostics.Module_resolution_using_rootDirs_has_failed);
       }
     }
-    return undefined;
+    return;
   }
 
   function tryLoadModuleUsingBaseUrl(
@@ -996,7 +996,7 @@ namespace qnr {
   ): Resolved | undefined {
     const { baseUrl } = state.compilerOptions;
     if (!baseUrl) {
-      return undefined;
+      return;
     }
     if (state.traceEnabled) {
       trace(state.host, Diagnostics.baseUrl_option_is_set_to_0_using_this_value_to_resolve_non_relative_module_name_1, baseUrl, moduleName);
@@ -1114,7 +1114,7 @@ namespace qnr {
           trace(host, Diagnostics.Loading_module_0_from_node_modules_folder_target_file_type_1, moduleName, Extensions[extensions]);
         }
         const resolved = loadModuleFromNearestNodeModulesDirectory(extensions, moduleName, containingDirectory, state, cache, redirectedReference);
-        if (!resolved) return undefined;
+        if (!resolved) return;
 
         let resolvedValue = resolved.value;
         if (!compilerOptions.preserveSymlinks && resolvedValue && !resolvedValue.originalPath) {
@@ -1210,7 +1210,7 @@ namespace qnr {
     const path = normalizePath(resolved.path);
     const idx = path.lastIndexOf(nodeModulesPathPart);
     if (idx === -1) {
-      return undefined;
+      return;
     }
 
     const indexAfterNodeModules = idx + nodeModulesPathPart.length;
@@ -1318,7 +1318,7 @@ namespace qnr {
       }
     }
     state.failedLookupLocations.push(fileName);
-    return undefined;
+    return;
   }
 
   function loadNodeModuleFromDirectory(

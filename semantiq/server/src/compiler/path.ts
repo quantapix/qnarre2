@@ -329,6 +329,7 @@ namespace qnr {
         return pathExtension;
       }
     }
+    return;
   }
 
   function getAnyExtensionFromPathWorker(
@@ -852,9 +853,9 @@ namespace qnr {
   /**
    * Calls `callback` on `directory` and every ancestor directory it has, returning the first defined result.
    */
-  export function forEachAncestorDirectory<T>(directory: Path, callback: (directory: Path) => T | undefined): T | undefined;
-  export function forEachAncestorDirectory<T>(directory: string, callback: (directory: string) => T | undefined): T | undefined;
-  export function forEachAncestorDirectory<T>(directory: Path, callback: (directory: Path) => T | undefined): T | undefined {
+  export function forEachAncestorDirectory<T>(directory: Path, callback: (_: Path) => T | undefined): T | undefined;
+  export function forEachAncestorDirectory<T>(directory: string, callback: (_: string) => T | undefined): T | undefined;
+  export function forEachAncestorDirectory<T>(directory: Path, callback: (_: Path) => T | undefined): T | undefined {
     while (true) {
       const result = callback(directory);
       if (result !== undefined) {
@@ -863,7 +864,7 @@ namespace qnr {
 
       const parentPath = getDirectoryPath(directory);
       if (parentPath === directory) {
-        return undefined;
+        return;
       }
 
       directory = parentPath;

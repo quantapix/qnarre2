@@ -5,14 +5,14 @@ namespace qnr {
     readFile(fileName: string): string | undefined;
   }
   export function readBuilderProgram(compilerOptions: CompilerOptions, host: ReadBuildProgramHost) {
-    if (compilerOptions.out || compilerOptions.outFile) return undefined;
+    if (compilerOptions.out || compilerOptions.outFile) return;
     const buildInfoPath = getTsBuildInfoEmitOutputFilePath(compilerOptions);
-    if (!buildInfoPath) return undefined;
+    if (!buildInfoPath) return;
     const content = host.readFile(buildInfoPath);
-    if (!content) return undefined;
+    if (!content) return;
     const buildInfo = getBuildInfo(content);
-    if (buildInfo.version !== version) return undefined;
-    if (!buildInfo.program) return undefined;
+    if (buildInfo.version !== version) return;
+    if (!buildInfo.program) return;
     return createBuildProgramUsingProgramBuildInfo(buildInfo.program, buildInfoPath, host);
   }
 
@@ -553,7 +553,7 @@ namespace qnr {
       const hostSourceFile = sourceFilesCache.get(path);
       // No source file on the host
       if (isFileMissingOnHost(hostSourceFile)) {
-        return undefined;
+        return;
       }
 
       // Create new source file if requested or the versions dont match

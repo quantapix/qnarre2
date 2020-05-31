@@ -119,7 +119,7 @@ namespace qnr {
 
     function visitorNoAsyncModifier(node: Node): VisitResult<Node> {
       if (node.kind === SyntaxKind.AsyncKeyword) {
-        return undefined;
+        return;
       }
       return node;
     }

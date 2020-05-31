@@ -396,14 +396,14 @@ namespace qnr {
             if (isImportEqualsDeclaration(importStatement) && isExternalModuleReference(importStatement.moduleReference)) {
               const expr = importStatement.moduleReference.expression;
               if (isStringLiteralLike(expr) && expr.text === typeName) {
-                return undefined;
+                return;
               }
             } else if (
               isImportDeclaration(importStatement) &&
               isStringLiteral(importStatement.moduleSpecifier) &&
               importStatement.moduleSpecifier.text === typeName
             ) {
-              return undefined;
+              return;
             }
           }
         }
@@ -541,7 +541,7 @@ namespace qnr {
       if (shouldPrintWithInitializer(node)) {
         return resolver.createLiteralConstValue(getParseTreeNode(node) as CanHaveLiteralInitializer, symbolTracker); // TODO: Make safe
       }
-      return undefined;
+      return;
     }
 
     type HasInferredType =
@@ -1345,7 +1345,7 @@ namespace qnr {
             fakespace.symbol = props[0].parent!;
             const declarations = mapDefined(props, (p) => {
               if (!isPropertyAccessExpression(p.valueDeclaration)) {
-                return undefined; // TODO GH#33569: Handle element access expressions that created late bound names (rather than silently omitting them)
+                return; // TODO GH#33569: Handle element access expressions that created late bound names (rather than silently omitting them)
               }
               getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(p.valueDeclaration);
               const type = resolver.createTypeOfDeclaration(p.valueDeclaration, fakespace, declarationEmitNodeBuilderFlags, symbolTracker);

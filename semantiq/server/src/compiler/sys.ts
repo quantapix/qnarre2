@@ -1081,15 +1081,15 @@ namespace qnr {
 
   export function getNodeMajorVersion(): number | undefined {
     if (typeof process === 'undefined') {
-      return undefined;
+      return;
     }
     const version: string = process.version;
     if (!version) {
-      return undefined;
+      return;
     }
     const dot = version.indexOf('.');
     if (dot === -1) {
-      return undefined;
+      return;
     }
     return parseInt(version.substring(1, dot));
   }
@@ -1510,7 +1510,7 @@ namespace qnr {
         try {
           buffer = _fs.readFileSync(fileName);
         } catch (e) {
-          return undefined;
+          return;
         }
         let len = buffer.length;
         if (len >= 2 && buffer[0] === 0xfe && buffer[1] === 0xff) {
@@ -1665,7 +1665,7 @@ namespace qnr {
         try {
           return _fs.statSync(path).mtime;
         } catch (e) {
-          return undefined;
+          return;
         }
       }
 

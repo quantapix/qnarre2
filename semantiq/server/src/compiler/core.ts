@@ -48,7 +48,7 @@ namespace qnr {
         }
       }
     }
-    return undefined;
+    return;
   }
 
   /**
@@ -63,13 +63,13 @@ namespace qnr {
         }
       }
     }
-    return undefined;
+    return;
   }
 
   /** Like `forEach`, but suitable for use with numbers and strings (which may be falsy). */
   export function firstDefined<T, U>(array: readonly T[] | undefined, callback: (element: T, index: number) => U | undefined): U | undefined {
     if (array === undefined) {
-      return undefined;
+      return;
     }
 
     for (let i = 0; i < array.length; i++) {
@@ -78,14 +78,14 @@ namespace qnr {
         return result;
       }
     }
-    return undefined;
+    return;
   }
 
   export function firstDefinedIterator<T, U>(iter: Iterator<T>, callback: (element: T) => U | undefined): U | undefined {
     while (true) {
       const iterResult = iter.next();
       if (iterResult.done) {
-        return undefined;
+        return;
       }
       const result = callback(iterResult.value);
       if (result !== undefined) {
@@ -169,7 +169,7 @@ namespace qnr {
         return value;
       }
     }
-    return undefined;
+    return;
   }
 
   export function findLast<T, U extends T>(array: readonly T[], predicate: (element: T, index: number) => element is U): U | undefined;
@@ -181,7 +181,7 @@ namespace qnr {
         return value;
       }
     }
-    return undefined;
+    return;
   }
 
   /** Works like Array.prototype.findIndex, returning `-1` if no element satisfying the predicate is found. */
@@ -469,7 +469,7 @@ namespace qnr {
     for (let i = 0; i < array.length; i++) {
       const mapped = mapFn(array[i], i);
       if (mapped === undefined) {
-        return undefined;
+        return;
       }
       result.push(mapped);
     }
@@ -598,7 +598,7 @@ namespace qnr {
   export function mapEntries<T, U>(map: ReadonlyMap<T> | undefined, f: (key: string, value: T) => [string, U]): Map<U> | undefined;
   export function mapEntries<T, U>(map: ReadonlyMap<T> | undefined, f: (key: string, value: T) => [string, U]): Map<U> | undefined {
     if (!map) {
-      return undefined;
+      return;
     }
 
     const result = createMap<U>();
@@ -645,7 +645,7 @@ namespace qnr {
   export function concatenate<T>(array1: readonly T[], array2: readonly T[]): readonly T[];
   export function concatenate<T>(array1: T[] | undefined, array2: T[] | undefined): T[];
   export function concatenate<T>(array1: readonly T[] | undefined, array2: readonly T[] | undefined): readonly T[];
-  export function concatenate<T>(array1: T[], array2: T[]): T[] {
+  export function concatenate<T>(array1: T[] | readonly T[] | undefined, array2: T[] | readonly T[] | undefined): T[] | readonly T[] | undefined {
     if (!some(array2)) return array1;
     if (!some(array1)) return array2;
     return [...array1, ...array2];
@@ -783,7 +783,7 @@ namespace qnr {
   // ESLint thinks these can be combined with the above - they cannot; they'd produce higher-priority inferences and prevent the falsey types from being stripped
   export function compact<T>(array: T[]): T[]; // eslint-disable-line @typescript-eslint/unified-signatures
   export function compact<T>(array: readonly T[]): readonly T[]; // eslint-disable-line @typescript-eslint/unified-signatures
-  export function compact<T>(array: T[]): T[] {
+  export function compact<T>(array: T[] | readonly T[]): T[] | readonly T[] {
     let result: T[] | undefined;
     if (array) {
       for (let i = 0; i < array.length; i++) {
@@ -1024,7 +1024,7 @@ namespace qnr {
         return array[offset];
       }
     }
-    return undefined;
+    return;
   }
 
   /**
@@ -1488,7 +1488,7 @@ namespace qnr {
 
   /** Do nothing and return undefined */
   export function returnUndefined(): undefined {
-    return undefined;
+    return;
   }
 
   /** Returns its argument. */
@@ -1909,7 +1909,7 @@ namespace qnr {
       }
       if (colMin > max) {
         // Give up -- everything in this column is > max and it can't get better in future columns.
-        return undefined;
+        return;
       }
 
       const temp = previous;

@@ -44,7 +44,7 @@ namespace qnr {
     useCaseSensitiveFileNames: boolean
   ): CachedDirectoryStructureHost | undefined {
     if (!host.getDirectories || !host.readDirectory) {
-      return undefined;
+      return;
     }
 
     const cachedReadDirectoryResult = createMap<MutableFileSystemEntries>();
@@ -107,7 +107,7 @@ namespace qnr {
       } catch (_e) {
         // If there is exception to read directories, dont cache the result and direct the calls to host
         Debug.assert(!cachedReadDirectoryResult.has(ensureTrailingDirectorySeparator(rootDirPath)));
-        return undefined;
+        return;
       }
     }
 
@@ -211,12 +211,12 @@ namespace qnr {
         // Just clear the cache for now
         // For now just clear the cache, since this could mean that multiple level entries might need to be re-evaluated
         clearCache();
-        return undefined;
+        return;
       }
 
       const parentResult = getCachedFileSystemEntriesForBaseDir(fileOrDirectoryPath);
       if (!parentResult) {
-        return undefined;
+        return;
       }
 
       // This was earlier a file (hence not in cached directory contents)
@@ -225,7 +225,7 @@ namespace qnr {
       if (!host.directoryExists) {
         // Since host doesnt support directory exists, clear the cache as otherwise it might not be same
         clearCache();
-        return undefined;
+        return;
       }
 
       const baseName = getBaseNameOfFileName(fileOrDirectory);

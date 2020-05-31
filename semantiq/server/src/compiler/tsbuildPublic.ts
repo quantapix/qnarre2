@@ -533,7 +533,7 @@ namespace qnr {
     if (resolvedProject) {
       const projectPath = toResolvedConfigFilePath(state, resolvedProject);
       const projectIndex = findIndex(buildOrderFromState, (configFileName) => toResolvedConfigFilePath(state, configFileName) === projectPath);
-      if (projectIndex === -1) return undefined;
+      if (projectIndex === -1) return;
     }
     const buildOrder = resolvedProject ? (createBuildOrder(state, [resolvedProject]) as BuildOrder) : buildOrderFromState;
     Debug.assert(!isCircularBuildOrder(buildOrder));
@@ -793,7 +793,7 @@ namespace qnr {
               );
             }
             executeSteps(Step.SemanticDiagnostics, cancellationToken);
-            if (step !== Step.Emit) return undefined;
+            if (step !== Step.Emit) return;
             return emit(writeFile, cancellationToken, customTransformers);
           },
           done,
@@ -1012,7 +1012,7 @@ namespace qnr {
         reportStatus(state, Diagnostics.A_non_dry_build_would_update_output_of_project_0, project);
         buildResult = BuildResultFlags.Success;
         step = Step.QueueReferencingProjects;
-        return undefined;
+        return;
       }
 
       if (state.options.verbose) reportStatus(state, Diagnostics.Updating_output_of_project_0, project);
@@ -1123,8 +1123,8 @@ namespace qnr {
     buildOrder: AnyBuildOrder,
     reportQueue: boolean
   ): InvalidatedProject<T> | undefined {
-    if (!state.projectPendingBuild.size) return undefined;
-    if (isCircularBuildOrder(buildOrder)) return undefined;
+    if (!state.projectPendingBuild.size) return;
+    if (isCircularBuildOrder(buildOrder)) return;
     if (state.currentInvalidatedProject) {
       // Only if same buildOrder the currentInvalidated project can be sent again
       return arrayIsEqualTo(state.currentInvalidatedProject.buildOrder, buildOrder) ? state.currentInvalidatedProject : undefined;
@@ -1215,7 +1215,7 @@ namespace qnr {
       );
     }
 
-    return undefined;
+    return;
   }
 
   function listEmittedFile({ writeFileName }: SolutionBuilderState, proj: ParsedCommandLine, file: string) {
@@ -1229,7 +1229,7 @@ namespace qnr {
     proj: ResolvedConfigFilePath,
     parsed: ParsedCommandLine
   ) {
-    if (options.force) return undefined;
+    if (options.force) return;
     const value = builderPrograms.get(proj);
     if (value) return value;
     return (readBuilderProgram(parsed.options, compilerHost) as any) as T;

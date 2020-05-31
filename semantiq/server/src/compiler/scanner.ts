@@ -2169,7 +2169,7 @@ namespace qnr {
     function getDirectiveFromComment(text: string, commentDirectiveRegEx: RegExp) {
       const match = commentDirectiveRegEx.exec(text);
       if (!match) {
-        return undefined;
+        return;
       }
 
       switch (match[1]) {
@@ -2180,7 +2180,7 @@ namespace qnr {
           return CommentDirectiveType.Ignore;
       }
 
-      return undefined;
+      return;
     }
 
     /**

@@ -113,7 +113,7 @@ namespace qnr {
       if (token !== undefined && token >= SyntaxKind.FirstReservedWord && token <= SyntaxKind.LastReservedWord) {
         return setTextRange(createLiteral(name), name);
       }
-      return undefined;
+      return;
     }
   }
 }

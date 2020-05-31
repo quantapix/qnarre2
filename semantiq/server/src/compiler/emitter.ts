@@ -54,14 +54,14 @@ namespace qnr {
 
   export function getTsBuildInfoEmitOutputFilePath(options: CompilerOptions) {
     const configFile = options.configFilePath;
-    if (!isIncrementalCompilation(options)) return undefined;
+    if (!isIncrementalCompilation(options)) return;
     if (options.tsBuildInfoFile) return options.tsBuildInfoFile;
     const outPath = options.outFile || options.out;
     let buildInfoExtensionLess: string;
     if (outPath) {
       buildInfoExtensionLess = removeFileExtension(outPath);
     } else {
-      if (!configFile) return undefined;
+      if (!configFile) return;
       const configFileExtensionLess = removeFileExtension(configFile);
       buildInfoExtensionLess = options.outDir
         ? options.rootDir
@@ -144,7 +144,7 @@ namespace qnr {
   }
 
   function getOutputJSFileName(inputFileName: string, configFile: ParsedCommandLine, ignoreCase: boolean) {
-    if (configFile.options.emitDeclarationOnly) return undefined;
+    if (configFile.options.emitDeclarationOnly) return;
     const isJsonFile = fileExtensionIs(inputFileName, Extension.Json);
     const outputFileName = changeExtension(
       getOutputPathWithoutChangingExt(inputFileName, configFile, ignoreCase, configFile.options.outDir),
@@ -1007,7 +1007,7 @@ namespace qnr {
         sourceFileTextKind = BundleFileSectionKind.Internal;
         return prevSourceFileTextKind;
       }
-      return undefined;
+      return;
     }
 
     function recordBundleFileInternalSectionEnd(prevSourceFileTextKind: ReturnType<typeof recordBundleFileInternalSectionStart>) {
@@ -1703,7 +1703,7 @@ namespace qnr {
     function getHelpersFromBundledSourceFiles(bundle: Bundle): string[] | undefined {
       let result: string[] | undefined;
       if (moduleKind === ModuleKind.None || printerOptions.noEmitHelpers) {
-        return undefined;
+        return;
       }
       const bundledHelpers = createMap<boolean>();
       for (const sourceFile of bundle.sourceFiles) {

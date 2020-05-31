@@ -467,7 +467,7 @@ namespace qnr {
         // Function declarations in a generator function body are hoisted
         // to the top of the lexical scope and elided from the current statement.
         hoistFunctionDeclaration(node);
-        return undefined;
+        return;
       } else {
         return node;
       }
@@ -609,7 +609,7 @@ namespace qnr {
     function visitVariableStatement(node: VariableStatement): Statement | undefined {
       if (node.transformFlags & TransformFlags.ContainsYield) {
         transformAndEmitVariableDeclarationList(node.declarationList);
-        return undefined;
+        return;
       } else {
         // Do not hoist custom prologues.
         if (getEmitFlags(node) & EmitFlags.CustomPrologue) {
@@ -622,7 +622,7 @@ namespace qnr {
 
         const variables = getInitializedVariables(node.declarationList);
         if (variables.length === 0) {
-          return undefined;
+          return;
         }
 
         return setSourceMapRange(createExpressionStatement(inlineExpressions(map(variables, transformInitializedVariable))), node);
@@ -1206,7 +1206,7 @@ namespace qnr {
         }
       }
 
-      return undefined;
+      return;
     }
 
     function transformInitializedVariable(node: VariableDeclaration) {

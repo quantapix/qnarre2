@@ -357,7 +357,7 @@ namespace qnr {
           const containingClass = getContainingClass(node);
           if (!containingClass) {
             // we can get here in cases where there is already a parse error.
-            return undefined;
+            return;
           }
           const containingClassSymbol = containingClass.symbol;
           return getSymbolNameForPrivateIdentifier(containingClassSymbol, name.escapedText);
@@ -1227,7 +1227,7 @@ namespace qnr {
           return label;
         }
       }
-      return undefined;
+      return;
     }
 
     function bindBreakOrContinueFlow(node: BreakOrContinueStatement, breakTarget: FlowLabel | undefined, continueTarget: FlowLabel | undefined) {

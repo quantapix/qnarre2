@@ -103,7 +103,7 @@ namespace qnr {
       switch (node.kind) {
         case SyntaxKind.AsyncKeyword:
           // ES2017 async modifier should be elided for targets < ES2017
-          return undefined;
+          return;
 
         case SyntaxKind.AwaitExpression:
           return visitAwaitExpression(<AwaitExpression>node);
@@ -371,7 +371,7 @@ namespace qnr {
         if (hasReceiver) {
           return visitNode(convertToAssignmentElementTarget(node.declarations[0].name), visitor, isExpression);
         }
-        return undefined;
+        return;
       }
 
       return inlineExpressions(map(variables, transformInitializedVariable));
@@ -533,7 +533,7 @@ namespace qnr {
         }
       }
 
-      return undefined;
+      return;
     }
 
     function enableSubstitutionForAsyncMethodsWithSuper() {

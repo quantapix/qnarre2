@@ -284,7 +284,7 @@ namespace qnr {
           (<ImportEqualsDeclaration>node).moduleReference.kind === SyntaxKind.ExternalModuleReference)
       ) {
         // do not emit ES6 imports and exports since they are illegal inside a namespace
-        return undefined;
+        return;
       } else if (node.transformFlags & TransformFlags.ContainsTypeScript || hasSyntacticModifier(node, ModifierFlags.Export)) {
         return visitTypeScript(node);
       }
@@ -332,9 +332,9 @@ namespace qnr {
 
     function modifierVisitor(node: Node): VisitResult<Node> {
       if (modifierToFlag(node.kind) & ModifierFlags.TypeScriptModifier) {
-        return undefined;
+        return;
       } else if (currentNamespace && node.kind === SyntaxKind.ExportKeyword) {
-        return undefined;
+        return;
       }
 
       return node;
@@ -408,7 +408,7 @@ namespace qnr {
 
         case SyntaxKind.TypeAliasDeclaration:
           // TypeScript type-only declarations are elided.
-          return undefined;
+          return;
 
         case SyntaxKind.PropertyDeclaration:
           // TypeScript property declarations are elided. However their names are still visited, and can potentially be retained if they could have sideeffects
@@ -416,7 +416,7 @@ namespace qnr {
 
         case SyntaxKind.NamespaceExportDeclaration:
           // TypeScript namespace export declarations are elided.
-          return undefined;
+          return;
 
         case SyntaxKind.Constructor:
           return visitConstructor(<ConstructorDeclaration>node);
@@ -1006,7 +1006,7 @@ namespace qnr {
       const decorators = node.decorators;
       const parameters = getDecoratorsOfParameters(getFirstConstructorWithBody(node));
       if (!decorators && !parameters) {
-        return undefined;
+        return;
       }
 
       return {
@@ -1034,7 +1034,7 @@ namespace qnr {
           return getAllDecoratorsOfProperty(<PropertyDeclaration>member);
 
         default:
-          return undefined;
+          return;
       }
     }
 
@@ -1046,7 +1046,7 @@ namespace qnr {
      */
     function getAllDecoratorsOfAccessors(node: ClassExpression | ClassDeclaration, accessor: AccessorDeclaration): AllDecorators | undefined {
       if (!accessor.body) {
-        return undefined;
+        return;
       }
 
       const { firstAccessor, secondAccessor, setAccessor } = getAllAccessorDeclarations(node.members, accessor);
@@ -1056,13 +1056,13 @@ namespace qnr {
         ? secondAccessor
         : undefined;
       if (!firstAccessorWithDecorators || accessor !== firstAccessorWithDecorators) {
-        return undefined;
+        return;
       }
 
       const decorators = firstAccessorWithDecorators.decorators;
       const parameters = getDecoratorsOfParameters(setAccessor);
       if (!decorators && !parameters) {
-        return undefined;
+        return;
       }
 
       return { decorators, parameters };
@@ -1075,13 +1075,13 @@ namespace qnr {
      */
     function getAllDecoratorsOfMethod(method: MethodDeclaration): AllDecorators | undefined {
       if (!method.body) {
-        return undefined;
+        return;
       }
 
       const decorators = method.decorators;
       const parameters = getDecoratorsOfParameters(method);
       if (!decorators && !parameters) {
-        return undefined;
+        return;
       }
 
       return { decorators, parameters };
@@ -1095,7 +1095,7 @@ namespace qnr {
     function getAllDecoratorsOfProperty(property: PropertyDeclaration): AllDecorators | undefined {
       const decorators = property.decorators;
       if (!decorators) {
-        return undefined;
+        return;
       }
 
       return { decorators };
@@ -1109,7 +1109,7 @@ namespace qnr {
      */
     function transformAllDecoratorsOfDeclaration(node: Declaration, container: ClassLikeDeclaration, allDecorators: AllDecorators | undefined) {
       if (!allDecorators) {
-        return undefined;
+        return;
       }
 
       const decoratorExpressions: Expression[] = [];
@@ -1165,7 +1165,7 @@ namespace qnr {
       const allDecorators = getAllDecoratorsOfClassElement(node, member);
       const decoratorExpressions = transformAllDecoratorsOfDeclaration(member, node, allDecorators);
       if (!decoratorExpressions) {
-        return undefined;
+        return;
       }
 
       // Emit the call to __decorate. Given the following:
@@ -1239,7 +1239,7 @@ namespace qnr {
       const allDecorators = getAllDecoratorsOfConstructor(node);
       const decoratorExpressions = transformAllDecoratorsOfDeclaration(node, node, allDecorators);
       if (!decoratorExpressions) {
-        return undefined;
+        return;
       }
 
       const classAlias = classAliases && classAliases[getOriginalNodeId(node)];
@@ -1860,7 +1860,7 @@ namespace qnr {
     function visitHeritageClause(node: HeritageClause): HeritageClause | undefined {
       if (node.token === SyntaxKind.ImplementsKeyword) {
         // implements clauses are elided
-        return undefined;
+        return;
       }
       return visitEachChild(node, visitor, context);
     }
@@ -1889,7 +1889,7 @@ namespace qnr {
 
     function visitPropertyDeclaration(node: PropertyDeclaration) {
       if (node.flags & NodeFlags.Ambient) {
-        return undefined;
+        return;
       }
       const updated = updateProperty(
         node,
@@ -1911,7 +1911,7 @@ namespace qnr {
 
     function visitConstructor(node: ConstructorDeclaration) {
       if (!shouldEmitFunctionLikeDeclaration(node)) {
-        return undefined;
+        return;
       }
 
       return updateConstructor(
@@ -1969,7 +1969,7 @@ namespace qnr {
     function transformParameterWithPropertyAssignment(node: ParameterPropertyDeclaration) {
       const name = node.name;
       if (!isIdentifier(name)) {
-        return undefined;
+        return;
       }
 
       const propertyName = getMutableClone(name);
@@ -1993,7 +1993,7 @@ namespace qnr {
 
     function visitMethodDeclaration(node: MethodDeclaration) {
       if (!shouldEmitFunctionLikeDeclaration(node)) {
-        return undefined;
+        return;
       }
       const updated = updateMethod(
         node,
@@ -2028,7 +2028,7 @@ namespace qnr {
 
     function visitGetAccessor(node: GetAccessorDeclaration) {
       if (!shouldEmitAccessorDeclaration(node)) {
-        return undefined;
+        return;
       }
       const updated = updateGetAccessor(
         node,
@@ -2050,7 +2050,7 @@ namespace qnr {
 
     function visitSetAccessor(node: SetAccessorDeclaration) {
       if (!shouldEmitAccessorDeclaration(node)) {
-        return undefined;
+        return;
       }
       const updated = updateSetAccessor(
         node,
@@ -2124,7 +2124,7 @@ namespace qnr {
 
     function visitParameter(node: ParameterDeclaration) {
       if (parameterIsThisKeyword(node)) {
-        return undefined;
+        return;
       }
 
       const updated = updateParameter(
@@ -2153,7 +2153,7 @@ namespace qnr {
         const variables = getInitializedVariables(node.declarationList);
         if (variables.length === 0) {
           // elide statement if there are no initialized variables.
-          return undefined;
+          return;
         }
 
         return setTextRange(createExpressionStatement(inlineExpressions(map(variables, transformInitializedVariable))), node);
@@ -2729,7 +2729,7 @@ namespace qnr {
       }
       if (node.importClause.isTypeOnly) {
         // Always elide type-only imports
-        return undefined;
+        return;
       }
 
       // Elide the declaration if the import clause was elided.
@@ -2748,7 +2748,7 @@ namespace qnr {
      */
     function visitImportClause(node: ImportClause): VisitResult<ImportClause> {
       if (node.isTypeOnly) {
-        return undefined;
+        return;
       }
       // Elide the import clause if we elide both its name and its named bindings.
       const name = resolver.isReferencedAliasDeclaration(node) ? node.name : undefined;
@@ -2801,7 +2801,7 @@ namespace qnr {
      */
     function visitExportDeclaration(node: ExportDeclaration): VisitResult<Statement> {
       if (node.isTypeOnly) {
-        return undefined;
+        return;
       }
 
       if (!node.exportClause || isNamespaceExport(node.exportClause)) {
@@ -2813,7 +2813,7 @@ namespace qnr {
 
       if (!resolver.isValueAliasDeclaration(node)) {
         // Elide the export declaration if it does not export a value.
-        return undefined;
+        return;
       }
 
       // Elide the export declaration if all of its named exports are elided.
@@ -2891,7 +2891,7 @@ namespace qnr {
       }
 
       if (!shouldEmitImportEqualsDeclaration(node)) {
-        return undefined;
+        return;
       }
 
       const moduleReference = createExpressionFromEntityName(<EntityName>node.moduleReference);
@@ -3174,7 +3174,7 @@ namespace qnr {
         }
       }
 
-      return undefined;
+      return;
     }
 
     function trySubstituteNamespaceExportedName(node: Identifier): Expression | undefined {
@@ -3193,7 +3193,7 @@ namespace qnr {
         }
       }
 
-      return undefined;
+      return;
     }
 
     function substitutePropertyAccessExpression(node: PropertyAccessExpression) {
@@ -3228,7 +3228,7 @@ namespace qnr {
 
     function tryGetConstEnumValue(node: Node): string | number | undefined {
       if (compilerOptions.isolatedModules) {
-        return undefined;
+        return;
       }
 
       return isPropertyAccessExpression(node) || isElementAccessExpression(node) ? resolver.getConstantValue(node) : undefined;

@@ -374,12 +374,12 @@ namespace qnr {
         isExportDeclaration(node) ||
         !getExternalModuleNameLiteral(node, currentSourceFile, host, resolver, compilerOptions)
       ) {
-        return undefined;
+        return;
       }
       const name = getLocalNameForExternalImport(node, currentSourceFile)!; // TODO: GH#18217
       const expr = getHelperExpressionForImport(node, name);
       if (expr === name) {
-        return undefined;
+        return;
       }
       return createExpressionStatement(createAssignment(name, expr));
     }
@@ -944,7 +944,7 @@ namespace qnr {
       if (!node.moduleSpecifier) {
         // Elide export declarations with no module specifier as they are handled
         // elsewhere.
-        return undefined;
+        return;
       }
 
       const generatedName = getGeneratedNameForNode(node);
@@ -1041,7 +1041,7 @@ namespace qnr {
      */
     function visitExportAssignment(node: ExportAssignment): VisitResult<Statement> {
       if (node.isExportEquals) {
-        return undefined;
+        return;
       }
 
       let statements: Statement[] | undefined;
@@ -1558,7 +1558,7 @@ namespace qnr {
       switch (node.kind) {
         case SyntaxKind.ExportKeyword:
         case SyntaxKind.DefaultKeyword:
-          return undefined;
+          return;
       }
 
       return node;

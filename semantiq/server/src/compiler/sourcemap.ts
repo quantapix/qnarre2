@@ -356,7 +356,7 @@ namespace qnr {
       // empty
     }
 
-    return undefined;
+    return;
   }
 
   export interface MappingsDecoder extends Iterator<Mapping> {

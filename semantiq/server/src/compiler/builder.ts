@@ -415,7 +415,7 @@ namespace qnr {
       const nextKey = state.changedFilesSet.keys().next();
       if (nextKey.done) {
         // Done
-        return undefined;
+        return;
       }
 
       // With --out or --outFile all outputs go into single file
@@ -471,7 +471,7 @@ namespace qnr {
       state.affectedFilesPendingEmitKind = undefined;
       state.affectedFilesPendingEmitIndex = undefined;
     }
-    return undefined;
+    return;
   }
 
   /**
@@ -807,7 +807,7 @@ namespace qnr {
     state: Readonly<ReusableBuilderProgramState>,
     getCanonicalFileName: GetCanonicalFileName
   ): ProgramBuildInfo | undefined {
-    if (state.compilerOptions.outFile || state.compilerOptions.out) return undefined;
+    if (state.compilerOptions.outFile || state.compilerOptions.out) return;
     const currentDirectory = Debug.checkDefined(state.program).getCurrentDirectory();
     const buildInfoDirectory = getDirectoryPath(
       getNormalizedAbsolutePath(getTsBuildInfoEmitOutputFilePath(state.compilerOptions)!, currentDirectory)
@@ -1079,7 +1079,7 @@ namespace qnr {
           const pendingAffectedFile = getNextAffectedFilePendingEmit(state);
           if (!pendingAffectedFile) {
             if (state.emittedBuildInfo) {
-              return undefined;
+              return;
             }
 
             const affected = Debug.checkDefined(state.program);
@@ -1098,7 +1098,7 @@ namespace qnr {
           isPendingEmitFile = true;
         } else {
           const program = Debug.checkDefined(state.program);
-          if (state.programEmitComplete) return undefined;
+          if (state.programEmitComplete) return;
           affected = program;
         }
       }
@@ -1185,7 +1185,7 @@ namespace qnr {
         const affected = getNextAffectedFile(state, cancellationToken, computeHash);
         if (!affected) {
           // Done
-          return undefined;
+          return;
         } else if (affected === state.program) {
           // When whole program is affected, get all semantic diagnostics (eg when --out or --outFile is specified)
           return toAffectedFileResult(state, state.program.getSemanticDiagnostics(/*targetSourceFile*/ undefined, cancellationToken), affected);
@@ -1262,7 +1262,7 @@ namespace qnr {
     mapLike: MapLike<readonly string[]> | undefined,
     toPath: (path: string) => Path
   ): ReadonlyMap<BuilderState.ReferencedSet> | undefined {
-    if (!mapLike) return undefined;
+    if (!mapLike) return;
     const map = createMap<BuilderState.ReferencedSet>();
     // Copies keys/values from template. Note that for..in will not throw if
     // template is undefined, and instead will just exit the loop.

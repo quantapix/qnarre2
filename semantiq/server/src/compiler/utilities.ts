@@ -18,7 +18,7 @@ namespace qnr {
       }
     }
 
-    return undefined;
+    return;
   }
 
   /** Create a new escaped identifier map. */
@@ -105,21 +105,21 @@ namespace qnr {
     while (node) {
       const result = callback(node);
       if (result === 'quit') {
-        return undefined;
+        return;
       } else if (result) {
         return node;
       }
       node = node.parent;
     }
-    return undefined;
+    return;
   }
 
   export function forEachAncestor<T>(node: Node, callback: (n: Node) => T | undefined | 'quit'): T | undefined {
     while (true) {
       const res = callback(node);
-      if (res === 'quit') return undefined;
+      if (res === 'quit') return;
       if (res !== undefined) return res;
-      if (isSourceFile(node)) return undefined;
+      if (isSourceFile(node)) return;
       node = node.parent;
     }
   }
@@ -142,7 +142,7 @@ namespace qnr {
         return result;
       }
     }
-    return undefined;
+    return;
   }
 
   /** `forEachEntry` for just keys. */
@@ -159,7 +159,7 @@ namespace qnr {
         return result;
       }
     }
-    return undefined;
+    return;
   }
 
   /** Copy entries from `source` to `target`. */
@@ -1354,7 +1354,7 @@ namespace qnr {
     } else if (node && node.kind === SyntaxKind.TypeReference) {
       return singleOrUndefined((<TypeReferenceNode>node).typeArguments);
     } else {
-      return undefined;
+      return;
     }
   }
 
@@ -1570,7 +1570,7 @@ namespace qnr {
       }
     }
 
-    return undefined;
+    return;
   }
 
   /**
@@ -1678,7 +1678,7 @@ namespace qnr {
         return <EntityName>(<Node>node);
     }
 
-    return undefined;
+    return;
   }
 
   export function getInvokedExpression(node: CallLikeExpression): Expression {
@@ -1999,13 +1999,13 @@ namespace qnr {
 
   export function getDeclarationOfExpando(node: Node): Node | undefined {
     if (!node.parent) {
-      return undefined;
+      return;
     }
     let name: Expression | BindingName | undefined;
     let decl: Node | undefined;
     if (isVariableDeclaration(node.parent) && node.parent.initializer === node) {
       if (!isInJSFile(node) && !isVarConst(node.parent)) {
-        return undefined;
+        return;
       }
       name = node.parent.name;
       decl = node.parent;
@@ -2029,13 +2029,13 @@ namespace qnr {
         }
 
         if (!name || !isBindableStaticNameExpression(name) || !isSameEntityName(name, parentNode.left)) {
-          return undefined;
+          return;
         }
       }
     }
 
     if (!name || !getExpandoInitializer(node, isPrototypeAccess(name))) {
-      return undefined;
+      return;
     }
     return decl;
   }
@@ -2351,7 +2351,7 @@ namespace qnr {
     if (isElementAccessExpression(node) && isWellKnownSymbolSyntactically(node.argumentExpression)) {
       return getPropertyNameForKnownSymbolName(idText((<PropertyAccessExpression>node.argumentExpression).name));
     }
-    return undefined;
+    return;
   }
 
   export function getAssignmentDeclarationPropertyAccessKind(lhs: AccessExpression): AssignmentDeclarationKind {
@@ -2450,7 +2450,7 @@ namespace qnr {
         Debug.assert(isStringLiteral(node));
         return tryCast(node.parent.parent, isImportTypeNode) as ValidImportTypeNode | undefined;
       default:
-        return undefined;
+        return;
     }
   }
 
@@ -2636,12 +2636,12 @@ namespace qnr {
       return node.symbol;
     }
     if (!isIdentifier(node.name)) {
-      return undefined;
+      return;
     }
     const name = node.name.escapedText;
     const decl = getHostSignatureFromJSDoc(node);
     if (!decl) {
-      return undefined;
+      return;
     }
     const parameter = find(decl.parameters, (p) => p.name.kind === SyntaxKind.Identifier && p.name.escapedText === name);
     return parameter && parameter.symbol;
@@ -2884,7 +2884,7 @@ namespace qnr {
       case SyntaxKind.PrivateIdentifier:
         return isDeclaration(parent) && parent.name === name ? parent : undefined;
       default:
-        return undefined;
+        return;
     }
   }
 
@@ -3050,7 +3050,7 @@ namespace qnr {
       }
     }
 
-    return undefined;
+    return;
   }
 
   export function getAncestor(node: Node | undefined, kind: SyntaxKind): Node | undefined {
@@ -3060,7 +3060,7 @@ namespace qnr {
       }
       node = node.parent;
     }
-    return undefined;
+    return;
   }
 
   export function isKeyword(token: SyntaxKind): boolean {
@@ -3221,7 +3221,7 @@ namespace qnr {
           }
           return nameExpression.operand.text as __String;
         }
-        return undefined;
+        return;
       default:
         return Debug.assertNever(name);
     }
@@ -3533,13 +3533,13 @@ namespace qnr {
         diagnostics = nonFileDiagnostics;
       }
       if (!diagnostics) {
-        return undefined;
+        return;
       }
       const result = binarySearch(diagnostics, diagnostic, identity, compareDiagnosticsSkipRelatedInformation);
       if (result >= 0) {
         return diagnostics[result];
       }
-      return undefined;
+      return;
     }
 
     function add(diagnostic: Diagnostic): void {
@@ -3944,7 +3944,7 @@ namespace qnr {
   ): string | undefined {
     const file = resolver.getExternalModuleFileFromDeclaration(declaration);
     if (!file || file.isDeclarationFile) {
-      return undefined;
+      return;
     }
     return getResolvedExternalModuleName(host, file);
   }
@@ -4214,7 +4214,7 @@ namespace qnr {
    * functions only the JSDoc case.
    */
   export function getEffectiveTypeAnnotationNode(node: Node): TypeNode | undefined {
-    if (!isInJSFile(node) && isFunctionDeclaration(node)) return undefined;
+    if (!isInJSFile(node) && isFunctionDeclaration(node)) return;
     const type = (node as HasType).type;
     if (type || !isInJSFile(node)) return type;
     return isJSDocPropertyLikeTag(node) ? node.typeExpression && node.typeExpression.type : getJSDocType(node);
@@ -4721,7 +4721,7 @@ namespace qnr {
     } else if (isIdentifier(expr)) {
       return unescapeLeadingUnderscores(expr.escapedText);
     }
-    return undefined;
+    return;
   }
 
   export function isPrototypeAccess(node: Node): node is BindableStaticAccessExpression {
@@ -5945,7 +5945,7 @@ namespace qnr {
   ): string | undefined {
     const patterns = getRegularExpressionsForWildcards(specs, basePath, usage);
     if (!patterns || !patterns.length) {
-      return undefined;
+      return;
     }
 
     const pattern = patterns.map((pattern) => `(${pattern})`).join('|');
@@ -5960,7 +5960,7 @@ namespace qnr {
     usage: 'files' | 'directories' | 'exclude'
   ): readonly string[] | undefined {
     if (specs === undefined || specs.length === 0) {
-      return undefined;
+      return;
     }
 
     return flatMap(specs, (spec) => spec && getSubPatternFromSpec(spec, basePath, usage, wildcardMatchers[usage]));
@@ -5985,7 +5985,7 @@ namespace qnr {
     const components = getNormalizedPathComponents(spec, basePath);
     const lastComponent = last(components);
     if (usage !== 'exclude' && lastComponent === '**') {
-      return undefined;
+      return;
     }
 
     // getNormalizedPathComponents includes the separator for the root component.

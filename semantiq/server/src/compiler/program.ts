@@ -2408,7 +2408,7 @@ namespace qnr {
               );
             }
           }
-          return undefined;
+          return;
         }
 
         const sourceFile = getSourceFile(fileName);
@@ -2431,7 +2431,7 @@ namespace qnr {
 
         if (fail && options.allowNonTsExtensions) {
           fail(Diagnostics.File_0_not_found, fileName);
-          return undefined;
+          return;
         }
 
         const sourceFileWithAddedExtension = forEach(supportedExtensions, (extension) => getSourceFile(fileName + extension));
@@ -2596,7 +2596,7 @@ namespace qnr {
         if (redirectProject) {
           if (redirectProject.commandLine.options.outFile || redirectProject.commandLine.options.out) {
             // Shouldnt create many to 1 mapping file in --out scenario
-            return undefined;
+            return;
           }
           const redirect = getProjectReferenceOutputName(redirectProject, fileName);
           fileName = redirect;
@@ -2712,7 +2712,7 @@ namespace qnr {
         fileExtensionIs(fileName, Extension.Dts) ||
         fileExtensionIs(fileName, Extension.Json)
       ) {
-        return undefined;
+        return;
       }
 
       // If this file is produced by a referenced project, we need to rewrite it to
@@ -2756,7 +2756,7 @@ namespace qnr {
     }
 
     function getSourceOfProjectReferenceRedirect(file: string) {
-      if (!isDeclarationFileName(file)) return undefined;
+      if (!isDeclarationFileName(file)) return;
       if (mapFromToProjectReferenceRedirectSource === undefined) {
         mapFromToProjectReferenceRedirectSource = createMap();
         forEachResolvedProjectReference((resolvedRef) => {
@@ -2820,7 +2820,7 @@ namespace qnr {
         return forEach(resolvedProjectReferences, (resolvedRef, index) => {
           if (contains(seenResolvedRefs, resolvedRef)) {
             // ignore recursives
-            return undefined;
+            return;
           }
 
           const result = cbResolvedRef(resolvedRef, index, parent);
@@ -2828,7 +2828,7 @@ namespace qnr {
             return result;
           }
 
-          if (!resolvedRef) return undefined;
+          if (!resolvedRef) return;
 
           (seenResolvedRefs || (seenResolvedRefs = [])).push(resolvedRef);
           return worker(resolvedRef.commandLine.projectReferences, resolvedRef.references, resolvedRef, cbResolvedRef, cbRef);
@@ -2838,7 +2838,7 @@ namespace qnr {
 
     function getResolvedProjectReferenceByPath(projectReferencePath: Path): ResolvedProjectReference | undefined {
       if (!projectReferenceRedirects) {
-        return undefined;
+        return;
       }
 
       return projectReferenceRedirects.get(projectReferencePath) || undefined;
@@ -3116,7 +3116,7 @@ namespace qnr {
         if (!commandLine) {
           addFileToFilesByName(/*sourceFile*/ undefined, sourceFilePath, /*redirectedPath*/ undefined);
           projectReferenceRedirects.set(sourceFilePath, false);
-          return undefined;
+          return;
         }
         sourceFile = Debug.checkDefined(commandLine.options.configFile);
         Debug.assert(!sourceFile.path || sourceFile.path === sourceFilePath);
@@ -3128,7 +3128,7 @@ namespace qnr {
         addFileToFilesByName(sourceFile, sourceFilePath, /*redirectedPath*/ undefined);
         if (sourceFile === undefined) {
           projectReferenceRedirects.set(sourceFilePath, false);
-          return undefined;
+          return;
         }
         commandLine = parseJsonSourceFileConfigFileContent(sourceFile, configParsingHost, basePath, /*existingOptions*/ undefined, refPath);
       }
@@ -3652,7 +3652,7 @@ namespace qnr {
       if (compilerOptionsObjectLiteralSyntax) {
         return getPropertyAssignment(compilerOptionsObjectLiteralSyntax, name);
       }
-      return undefined;
+      return;
     }
 
     function getOptionPathsSyntax(): PropertyAssignment[] {
@@ -3951,7 +3951,7 @@ namespace qnr {
       // If it contains node_modules check if its one of the symlinked path we know of
       return (
         firstDefinedIterator(symlinkedDirectories.entries(), ([directoryPath, symlinkedDirectory]) => {
-          if (!symlinkedDirectory || !startsWith(fileOrDirectoryPath, directoryPath)) return undefined;
+          if (!symlinkedDirectory || !startsWith(fileOrDirectoryPath, directoryPath)) return;
           const result = fileOrDirectoryExistsUsingSource(fileOrDirectoryPath.replace(directoryPath, symlinkedDirectory.realPath));
           if (isFile && result) {
             if (!symlinkedFiles) symlinkedFiles = createMap();
@@ -3978,7 +3978,7 @@ namespace qnr {
     // If the noEmitOnError flag is set, then check if we have any errors so far.  If so,
     // immediately bail out.  Note that we pass 'undefined' for 'sourceFile' so that we
     // get any preEmit diagnostics, not just the ones
-    if (!options.noEmitOnError) return undefined;
+    if (!options.noEmitOnError) return;
     let diagnostics: readonly Diagnostic[] = [
       ...program.getOptionsDiagnostics(cancellationToken),
       ...program.getSyntacticDiagnostics(sourceFile, cancellationToken),
@@ -4087,7 +4087,7 @@ namespace qnr {
       case Extension.Ts:
       case Extension.Dts:
         // These are always allowed.
-        return undefined;
+        return;
       case Extension.Tsx:
         return needJsx();
       case Extension.Jsx:

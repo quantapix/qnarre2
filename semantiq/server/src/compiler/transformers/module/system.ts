@@ -552,7 +552,7 @@ namespace qnr {
 
     function visitExportDeclaration(node: ExportDeclaration): VisitResult<Statement> {
       Debug.assertIsDefined(node);
-      return undefined;
+      return;
     }
 
     /**
@@ -588,7 +588,7 @@ namespace qnr {
     function visitExportAssignment(node: ExportAssignment): VisitResult<Statement> {
       if (node.isExportEquals) {
         // Elide `export=` as it is illegal in a SystemJS module.
-        return undefined;
+        return;
       }
 
       const expression = visitNode(node.expression, destructuringAndImportCallVisitor, isExpression);
@@ -635,7 +635,7 @@ namespace qnr {
         hoistedStatements = appendExportsOfHoistedDeclaration(hoistedStatements, node);
       }
 
-      return undefined;
+      return;
     }
 
     /**
@@ -1488,7 +1488,7 @@ namespace qnr {
       switch (node.kind) {
         case SyntaxKind.ExportKeyword:
         case SyntaxKind.DefaultKeyword:
-          return undefined;
+          return;
       }
       return node;
     }

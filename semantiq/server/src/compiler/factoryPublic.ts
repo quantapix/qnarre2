@@ -3615,7 +3615,7 @@ namespace qnr {
     if (!isString(javascriptTextOrReadFileText)) {
       const cache = createMap<string | false>();
       const textGetter = (path: string | undefined) => {
-        if (path === undefined) return undefined;
+        if (path === undefined) return;
         let value = cache.get(path);
         if (value === undefined) {
           value = javascriptTextOrReadFileText(path);

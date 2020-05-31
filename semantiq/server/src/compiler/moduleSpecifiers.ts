@@ -75,7 +75,7 @@ namespace qnr.moduleSpecifiers {
       host,
       getPreferencesForUpdate(compilerOptions, oldImportSpecifier)
     );
-    if (res === oldImportSpecifier) return undefined;
+    if (res === oldImportSpecifier) return;
     return res;
   }
 
@@ -242,11 +242,11 @@ namespace qnr.moduleSpecifiers {
       !host.useCaseSensitiveFileNames || host.useCaseSensitiveFileNames() ? compareStringsCaseSensitive : compareStringsCaseInsensitive;
     const result = forEachEntry(links, (resolved, path) => {
       if (startsWithDirectory(importingFileName, resolved, getCanonicalFileName)) {
-        return undefined; // Don't want to a package to globally import from itself
+        return; // Don't want to a package to globally import from itself
       }
 
       const target = find(targets, (t) => compareStrings(t.slice(0, resolved.length + 1), resolved + '/') === Comparison.EqualTo);
-      if (target === undefined) return undefined;
+      if (target === undefined) return;
 
       const relative = getRelativePathFromDirectory(resolved, target, getCanonicalFileName);
       const option = resolvePath(path, relative);
@@ -353,7 +353,7 @@ namespace qnr.moduleSpecifiers {
   ): string | undefined {
     const normalizedTargetPath = getPathRelativeToRootDirs(moduleFileName, rootDirs, getCanonicalFileName);
     if (normalizedTargetPath === undefined) {
-      return undefined;
+      return;
     }
 
     const normalizedSourcePath = getPathRelativeToRootDirs(sourceDirectory, rootDirs, getCanonicalFileName);
@@ -374,11 +374,11 @@ namespace qnr.moduleSpecifiers {
     packageNameOnly?: boolean
   ): string | undefined {
     if (!host.fileExists || !host.readFile) {
-      return undefined;
+      return;
     }
     const parts: NodeModulePathParts = getNodeModulePathParts(moduleFileName)!;
     if (!parts) {
-      return undefined;
+      return;
     }
 
     // Simplify the full file path to something that can be resolved by Node.
@@ -415,7 +415,7 @@ namespace qnr.moduleSpecifiers {
         (globalTypingsCacheLocation && startsWith(getCanonicalFileName(globalTypingsCacheLocation), pathToTopLevelNodeModules))
       )
     ) {
-      return undefined;
+      return;
     }
 
     // If the module was found in @types, get the actual Node package name

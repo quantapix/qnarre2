@@ -361,7 +361,7 @@ namespace qnr {
     function visitJavaScript(node: Node): VisitResult<Node> {
       switch (node.kind) {
         case SyntaxKind.StaticKeyword:
-          return undefined; // elide static keyword
+          return; // elide static keyword
 
         case SyntaxKind.ClassDeclaration:
           return visitClassDeclaration(<ClassDeclaration>node);
@@ -1128,7 +1128,7 @@ namespace qnr {
     function visitParameter(node: ParameterDeclaration): ParameterDeclaration | undefined {
       if (node.dotDotDotToken) {
         // rest parameters are elided
-        return undefined;
+        return;
       } else if (isBindingPattern(node.name)) {
         // Binding patterns are converted into a generated name and are
         // evaluated inside the function body.

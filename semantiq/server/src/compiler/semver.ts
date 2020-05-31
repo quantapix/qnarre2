@@ -59,7 +59,7 @@ namespace qnr {
 
     static tryParse(text: string) {
       const result = tryParseComponents(text);
-      if (!result) return undefined;
+      if (!result) return;
 
       const { major, minor, patch, prerelease, build } = result;
       return new Version(major, minor, patch, prerelease, build);
@@ -111,11 +111,11 @@ namespace qnr {
 
   function tryParseComponents(text: string) {
     const match = versionRegExp.exec(text);
-    if (!match) return undefined;
+    if (!match) return;
 
     const [, major, minor = '0', patch = '0', prerelease = '', build = ''] = match;
-    if (prerelease && !prereleaseRegExp.test(prerelease)) return undefined;
-    if (build && !buildRegExp.test(build)) return undefined;
+    if (prerelease && !prereleaseRegExp.test(prerelease)) return;
+    if (build && !buildRegExp.test(build)) return;
     return {
       major: parseInt(major, 10),
       minor: parseInt(minor, 10),
@@ -185,7 +185,7 @@ namespace qnr {
         range._alternatives = sets;
         return range;
       }
-      return undefined;
+      return;
     }
 
     test(version: Version | string) {
@@ -243,11 +243,11 @@ namespace qnr {
       const comparators: Comparator[] = [];
       const match = hyphenRegExp.exec(range);
       if (match) {
-        if (!parseHyphen(match[1], match[2], comparators)) return undefined;
+        if (!parseHyphen(match[1], match[2], comparators)) return;
       } else {
         for (const simple of range.split(whitespaceRegExp)) {
           const match = rangeRegExp.exec(simple);
-          if (!match || !parseComparator(match[1], match[2], comparators)) return undefined;
+          if (!match || !parseComparator(match[1], match[2], comparators)) return;
         }
       }
       alternatives.push(comparators);
@@ -257,7 +257,7 @@ namespace qnr {
 
   function parsePartial(text: string) {
     const match = partialRegExp.exec(text);
-    if (!match) return undefined;
+    if (!match) return;
 
     const [, major, minor = '*', patch = '*', prerelease, build] = match;
     const version = new Version(

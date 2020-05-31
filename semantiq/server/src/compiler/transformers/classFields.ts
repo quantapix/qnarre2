@@ -138,7 +138,7 @@ namespace qnr {
         case SyntaxKind.Constructor:
           // Constructors for classes using class fields are transformed in
           // `visitClassDeclaration` or `visitClassExpression`.
-          return undefined;
+          return;
 
         case SyntaxKind.GetAccessor:
         case SyntaxKind.SetAccessor:
@@ -203,7 +203,7 @@ namespace qnr {
       if (expr && !isSimpleInlineableExpression(expr)) {
         (pendingExpressions || (pendingExpressions = [])).push(expr);
       }
-      return undefined;
+      return;
     }
 
     function createPrivateIdentifierAccess(info: PrivateIdentifierInfo, receiver: Expression): Expression {
@@ -573,7 +573,7 @@ namespace qnr {
       const parameters = visitParameterList(constructor ? constructor.parameters : undefined, visitor, context);
       const body = transformConstructorBody(node, constructor, isDerivedClass);
       if (!body) {
-        return undefined;
+        return;
       }
       return startOnNewLine(
         setOriginalNode(
@@ -738,11 +738,11 @@ namespace qnr {
         }
       }
       if (isPrivateIdentifier(propertyName) && !property.initializer) {
-        return undefined;
+        return;
       }
 
       if (isPrivateIdentifier(propertyName) && !property.initializer) {
-        return undefined;
+        return;
       }
 
       const propertyOriginalNode = getOriginalNode(property);
@@ -827,7 +827,7 @@ namespace qnr {
         }
       }
 
-      return undefined;
+      return;
     }
 
     /**
@@ -890,7 +890,7 @@ namespace qnr {
           return info;
         }
       }
-      return undefined;
+      return;
     }
 
     function wrapPrivateIdentifierForDestructuringTarget(node: PrivateIdentifierPropertyAccessExpression) {
