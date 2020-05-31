@@ -1,10 +1,5 @@
 {
-  "extends": "../tsconfig.json",
-  "compilerOptions": {
-    "composite": false,
-    "module": "commonjs",
-    "outDir": "out"
-  },
   "files": [],
+  "include": [],
   "references": [{ "path": "./client" }, { "path": "./server" }]
 }

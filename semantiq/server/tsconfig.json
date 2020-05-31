@@ -1,12 +1,10 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig-noncomposite-base",
   "compilerOptions": {
-    "module": "commonjs",
-    "outDir": "../out/server",
+    "outFile": "../out/server/main.js",
     "rootDir": "src",
-    "types": ["node"],
-    "experimentalDecorators": true
+    "types": ["node"]
   },
-	"include": ["src"],
-	"exclude": ["node_modules"]
+  "files": ["src/main.ts"],
+  "references": [{ "path": "./src/compiler", "prepend": true }]
 }
