@@ -770,13 +770,13 @@ namespace qnr {
     let currentToken: SyntaxKind;
     let sourceText: string;
     let nodeCount: number;
-    let identifiers: Map<string>;
-    let privateIdentifiers: Map<string>;
+    let identifiers: QMap<string>;
+    let privateIdentifiers: QMap<string>;
     let identifierCount: number;
 
     let parsingContext: ParsingContext;
 
-    let notParenthesizedArrow: Map<true> | undefined;
+    let notParenthesizedArrow: QMap<true> | undefined;
 
     // Flags that dictate what parsing context we're in.  For example:
     // Whether or not we are in strict parsing mode.  All that changes in strict parsing mode is

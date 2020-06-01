@@ -1663,17 +1663,14 @@ namespace qnr {
         rawTextScanner.setText('}' + rawText + '`');
         break;
     }
-
     let token = rawTextScanner.scan();
     if (token === SyntaxKind.CloseBracketToken) {
       token = rawTextScanner.reScanTemplateToken(/* isTaggedTemplate */ false);
     }
-
     if (rawTextScanner.isUnterminated()) {
       rawTextScanner.setText(undefined);
       return invalidValueSentinel;
     }
-
     let tokenValue: string | undefined;
     switch (token) {
       case SyntaxKind.NoSubstitutionTemplateLiteral:
@@ -1683,12 +1680,10 @@ namespace qnr {
         tokenValue = rawTextScanner.getTokenValue();
         break;
     }
-
     if (rawTextScanner.scan() !== SyntaxKind.EndOfFileToken) {
       rawTextScanner.setText(undefined);
       return invalidValueSentinel;
     }
-
     rawTextScanner.setText(undefined);
     return tokenValue;
   }
