@@ -227,7 +227,7 @@ namespace qnr {
     EmptyObjectFacts = All,
   }
 
-  const typeofEQFacts: ReadonlyMap<TypeFacts> = createMapFromTemplate({
+  const typeofEQFacts: ReadonlyMap<TypeFacts> = createMap({
     string: TypeFacts.TypeofEQString,
     number: TypeFacts.TypeofEQNumber,
     bigint: TypeFacts.TypeofEQBigInt,
@@ -238,7 +238,7 @@ namespace qnr {
     function: TypeFacts.TypeofEQFunction,
   });
 
-  const typeofNEFacts: ReadonlyMap<TypeFacts> = createMapFromTemplate({
+  const typeofNEFacts: ReadonlyMap<TypeFacts> = createMap({
     string: TypeFacts.TypeofNEString,
     number: TypeFacts.TypeofNENumber,
     bigint: TypeFacts.TypeofNEBigInt,
@@ -1071,7 +1071,7 @@ namespace qnr {
     const diagnostics = createDiagnosticCollection();
     const suggestionDiagnostics = createDiagnosticCollection();
 
-    const typeofTypesByName: ReadonlyMap<Type> = createMapFromTemplate<Type>({
+    const typeofTypesByName: ReadonlyMap<Type> = createMap<Type>({
       string: stringType,
       number: numberType,
       bigint: bigintType,

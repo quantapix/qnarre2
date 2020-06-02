@@ -650,9 +650,7 @@ namespace qnr {
     const generatedAbsoluteFilePath = getNormalizedAbsolutePath(map.file, mapDirectory);
     const generatedFile = host.getSourceFileLike(generatedAbsoluteFilePath);
     const sourceFileAbsolutePaths = map.sources.map((source) => getNormalizedAbsolutePath(source, sourceRoot));
-    const sourceToSourceIndexMap = createMapFromEntries(
-      sourceFileAbsolutePaths.map((source, i) => [host.getCanonicalFileName(source), i] as [string, number])
-    );
+    const sourceToSourceIndexMap = createMap(sourceFileAbsolutePaths.map((source, i) => [host.getCanonicalFileName(source), i] as [string, number]));
     let decodedMappings: readonly MappedPosition[] | undefined;
     let generatedMappings: SortedReadonlyArray<MappedPosition> | undefined;
     let sourceMappings: readonly SortedReadonlyArray<SourceMappedPosition>[] | undefined;

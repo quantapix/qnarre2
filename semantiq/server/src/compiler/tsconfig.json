@@ -8,7 +8,6 @@
   "references": [{ "path": "../shims" }],
 
   "files": [
-    "corePublic.ts",
     "core.ts",
     "debug.ts",
     "performanceTimestamp.ts",

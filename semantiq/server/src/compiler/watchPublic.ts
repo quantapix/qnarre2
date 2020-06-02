@@ -793,7 +793,7 @@ namespace qnr {
       if (configFileSpecs) {
         updateWatchingWildcardDirectories(
           watchedWildcardDirectories || (watchedWildcardDirectories = createMap()),
-          createMapFromTemplate(configFileSpecs.wildcardDirectories),
+          createMap(configFileSpecs.wildcardDirectories),
           watchWildcardDirectory
         );
       } else if (watchedWildcardDirectories) {

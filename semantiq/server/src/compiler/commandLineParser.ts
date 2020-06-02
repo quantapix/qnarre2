@@ -73,13 +73,13 @@ namespace qnr {
    * A map of lib names to lib files. This map is used both for parsing the "lib" command line
    * option as well as for resolving lib reference directives.
    */
-  export const libMap = createMapFromEntries(libEntries);
+  export const libMap = createMap(libEntries);
 
   // Watch related options
   export const optionsForWatch: CommandLineOption[] = [
     {
       name: 'watchFile',
-      type: createMapFromTemplate({
+      type: createMap({
         fixedpollinginterval: WatchFileKind.FixedPollingInterval,
         prioritypollinginterval: WatchFileKind.PriorityPollingInterval,
         dynamicprioritypolling: WatchFileKind.DynamicPriorityPolling,
@@ -92,7 +92,7 @@ namespace qnr {
     },
     {
       name: 'watchDirectory',
-      type: createMapFromTemplate({
+      type: createMap({
         usefsevents: WatchDirectoryKind.UseFsEvents,
         fixedpollinginterval: WatchDirectoryKind.FixedPollingInterval,
         dynamicprioritypolling: WatchDirectoryKind.DynamicPriorityPolling,
@@ -103,7 +103,7 @@ namespace qnr {
     },
     {
       name: 'fallbackPolling',
-      type: createMapFromTemplate({
+      type: createMap({
         fixedinterval: PollingWatchKind.FixedInterval,
         priorityinterval: PollingWatchKind.PriorityInterval,
         dynamicpriority: PollingWatchKind.DynamicPriority,
@@ -285,7 +285,7 @@ namespace qnr {
     {
       name: 'target',
       shortName: 't',
-      type: createMapFromTemplate({
+      type: createMap({
         es3: ScriptTarget.ES3,
         es5: ScriptTarget.ES5,
         es6: ScriptTarget.ES2015,
@@ -308,7 +308,7 @@ namespace qnr {
     {
       name: 'module',
       shortName: 'm',
-      type: createMapFromTemplate({
+      type: createMap({
         none: ModuleKind.None,
         commonjs: ModuleKind.CommonJS,
         amd: ModuleKind.AMD,
@@ -355,7 +355,7 @@ namespace qnr {
     },
     {
       name: 'jsx',
-      type: createMapFromTemplate({
+      type: createMap({
         preserve: JsxEmit.Preserve,
         'react-native': JsxEmit.ReactNative,
         react: JsxEmit.React,
@@ -476,7 +476,7 @@ namespace qnr {
     },
     {
       name: 'importsNotUsedAsValues',
-      type: createMapFromTemplate({
+      type: createMap({
         remove: ImportsNotUsedAsValues.Remove,
         preserve: ImportsNotUsedAsValues.Preserve,
         error: ImportsNotUsedAsValues.Error,
@@ -610,7 +610,7 @@ namespace qnr {
     // Module Resolution
     {
       name: 'moduleResolution',
-      type: createMapFromTemplate({
+      type: createMap({
         node: ModuleResolutionKind.NodeJs,
         classic: ModuleResolutionKind.Classic,
       }),
@@ -813,7 +813,7 @@ namespace qnr {
     },
     {
       name: 'newLine',
-      type: createMapFromTemplate({
+      type: createMap({
         crlf: NewLineKind.CarriageReturnLineFeed,
         lf: NewLineKind.LineFeed,
       }),

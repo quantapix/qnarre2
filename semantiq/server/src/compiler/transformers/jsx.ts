@@ -302,7 +302,7 @@ namespace qnr {
     }
   }
 
-  const entities = createMapFromTemplate<number>({
+  const entities = createMap<number>({
     quot: 0x0022,
     amp: 0x0026,
     apos: 0x0027,

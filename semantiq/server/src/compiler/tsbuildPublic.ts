@@ -1840,7 +1840,7 @@ namespace qnr {
     if (!state.watch) return;
     updateWatchingWildcardDirectories(
       getOrCreateValueMapFromConfigFileMap(state.allWatchedWildcardDirectories, resolvedPath),
-      createMapFromTemplate(parsed.configFileSpecs!.wildcardDirectories),
+      createMap(parsed.configFileSpecs!.wildcardDirectories),
       (dir, flags) =>
         state.watchDirectory(
           state.hostWithWatch,
