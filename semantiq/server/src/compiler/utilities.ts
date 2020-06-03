@@ -447,11 +447,7 @@ namespace qnr {
   export function isRecognizedTripleSlashComment(text: string, commentPos: number, commentEnd: number) {
     // Verify this is /// comment, but do the regexp match only when we first can find /// in the comment text
     // so that we don't end up computing comment string and doing match for all // comments
-    if (
-      text.charCodeAt(commentPos + 1) === CharacterCodes.slash &&
-      commentPos + 2 < commentEnd &&
-      text.charCodeAt(commentPos + 2) === CharacterCodes.slash
-    ) {
+    if (text.charCodeAt(commentPos + 1) === CharCodes.slash && commentPos + 2 < commentEnd && text.charCodeAt(commentPos + 2) === CharCodes.slash) {
       const textSubStr = text.substring(commentPos, commentEnd);
       return textSubStr.match(fullTripleSlashReferencePathRegEx) ||
         textSubStr.match(fullTripleSlashAMDReferencePathRegEx) ||
@@ -464,7 +460,7 @@ namespace qnr {
   }
 
   export function isPinnedComment(text: string, start: number) {
-    return text.charCodeAt(start + 1) === CharacterCodes.asterisk && text.charCodeAt(start + 2) === CharacterCodes.exclamation;
+    return text.charCodeAt(start + 1) === CharCodes.asterisk && text.charCodeAt(start + 2) === CharCodes.exclamation;
   }
 
   export function createCommentDirectivesMap(sourceFile: SourceFile, commentDirectives: CommentDirective[]): CommentDirectivesMap {
@@ -594,9 +590,9 @@ namespace qnr {
           ? escapeString
           : escapeNonAsciiString;
         if ((<StringLiteral>node).singleQuote) {
-          return "'" + escapeText(node.text, CharacterCodes.singleQuote) + "'";
+          return "'" + escapeText(node.text, CharCodes.singleQuote) + "'";
         } else {
-          return '"' + escapeText(node.text, CharacterCodes.doubleQuote) + '"';
+          return '"' + escapeText(node.text, CharCodes.doubleQuote) + '"';
         }
       }
       case SyntaxKind.NoSubstitutionTemplateLiteral:
@@ -607,7 +603,7 @@ namespace qnr {
         // had to include a backslash: `not \${a} substitution`.
         const escapeText = neverAsciiEscape || getEmitFlags(node) & EmitFlags.NoAsciiEscaping ? escapeString : escapeNonAsciiString;
 
-        const rawText = (<TemplateLiteralLikeNode>node).rawText || escapeTemplateSubstitution(escapeText(node.text, CharacterCodes.backtick));
+        const rawText = (<TemplateLiteralLikeNode>node).rawText || escapeTemplateSubstitution(escapeText(node.text, CharCodes.backtick));
         switch (node.kind) {
           case SyntaxKind.NoSubstitutionTemplateLiteral:
             return '`' + rawText + '`';
@@ -1147,9 +1143,9 @@ namespace qnr {
     return filter(
       commentRanges,
       (comment) =>
-        text.charCodeAt(comment.pos + 1) === CharacterCodes.asterisk &&
-        text.charCodeAt(comment.pos + 2) === CharacterCodes.asterisk &&
-        text.charCodeAt(comment.pos + 3) !== CharacterCodes.slash
+        text.charCodeAt(comment.pos + 1) === CharCodes.asterisk &&
+        text.charCodeAt(comment.pos + 2) === CharCodes.asterisk &&
+        text.charCodeAt(comment.pos + 3) !== CharCodes.slash
     );
   }
 
@@ -1979,12 +1975,12 @@ namespace qnr {
     );
   }
 
-  export function isSingleOrDoubleQuote(charCode: number) {
-    return charCode === CharacterCodes.singleQuote || charCode === CharacterCodes.doubleQuote;
+  export function isSingleOrDoubleQuote(cc: number) {
+    return cc === CharCodes.singleQuote || cc === CharCodes.doubleQuote;
   }
 
   export function isStringDoubleQuoted(str: StringLiteralLike, sourceFile: SourceFile): boolean {
-    return getSourceTextOfNodeFromSourceFile(sourceFile, str).charCodeAt(0) === CharacterCodes.doubleQuote;
+    return getSourceTextOfNodeFromSourceFile(sourceFile, str).charCodeAt(0) === CharCodes.doubleQuote;
   }
 
   export function getDeclarationOfExpando(node: Node): Node | undefined {
@@ -3614,16 +3610,16 @@ namespace qnr {
     '\u0085': '\\u0085', // nextLine
   });
 
-  function encodeUtf16EscapeSequence(charCode: number): string {
-    const hexCharCode = charCode.toString(16).toUpperCase();
+  function encodeUtf16EscapeSequence(cc: number): string {
+    const hexCharCode = cc.toString(16).toUpperCase();
     const paddedHexCode = ('0000' + hexCharCode).slice(-4);
     return '\\u' + paddedHexCode;
   }
 
   function getReplacement(c: string, offset: number, input: string) {
-    if (c.charCodeAt(0) === CharacterCodes.nullCharacter) {
+    if (c.charCodeAt(0) === CharCodes.nullCharacter) {
       const lookAhead = input.charCodeAt(offset + c.length);
-      if (lookAhead >= CharacterCodes._0 && lookAhead <= CharacterCodes._9) {
+      if (lookAhead >= CharCodes._0 && lookAhead <= CharCodes._9) {
         // If the null character is followed by digits, print as a hex escape to prevent the result from parsing as an octal (which is forbidden in strict mode)
         return '\\x00';
       }
@@ -3638,21 +3634,18 @@ namespace qnr {
    * but augmented for a few select characters (e.g. lineSeparator, paragraphSeparator, nextLine)
    * Note that this doesn't actually wrap the input in double quotes.
    */
-  export function escapeString(s: string, quoteChar?: CharacterCodes.doubleQuote | CharacterCodes.singleQuote | CharacterCodes.backtick): string {
+  export function escapeString(s: string, quoteChar?: CharCodes.doubleQuote | CharCodes.singleQuote | CharCodes.backtick): string {
     const escapedCharsRegExp =
-      quoteChar === CharacterCodes.backtick
+      quoteChar === CharCodes.backtick
         ? backtickQuoteEscapedCharsRegExp
-        : quoteChar === CharacterCodes.singleQuote
+        : quoteChar === CharCodes.singleQuote
         ? singleQuoteEscapedCharsRegExp
         : doubleQuoteEscapedCharsRegExp;
     return s.replace(escapedCharsRegExp, getReplacement);
   }
 
   const nonAsciiCharacters = /[^\u0000-\u007F]/g;
-  export function escapeNonAsciiString(
-    s: string,
-    quoteChar?: CharacterCodes.doubleQuote | CharacterCodes.singleQuote | CharacterCodes.backtick
-  ): string {
+  export function escapeNonAsciiString(s: string, quoteChar?: CharCodes.doubleQuote | CharCodes.singleQuote | CharCodes.backtick): string {
     s = escapeString(s, quoteChar);
     // Replace non-ASCII characters with '\uNNNN' escapes if any exist.
     // Otherwise just return the original string.
@@ -3670,20 +3663,20 @@ namespace qnr {
     "'": '&apos;',
   });
 
-  function encodeJsxCharacterEntity(charCode: number): string {
-    const hexCharCode = charCode.toString(16).toUpperCase();
+  function encodeJsxCharacterEntity(cc: number): string {
+    const hexCharCode = cc.toString(16).toUpperCase();
     return '&#x' + hexCharCode + ';';
   }
 
   function getJsxAttributeStringReplacement(c: string) {
-    if (c.charCodeAt(0) === CharacterCodes.nullCharacter) {
+    if (c.charCodeAt(0) === CharCodes.nullCharacter) {
       return '&#0;';
     }
     return jsxEscapedCharsMap.get(c) || encodeJsxCharacterEntity(c.charCodeAt(0));
   }
 
-  export function escapeJsxAttributeString(s: string, quoteChar?: CharacterCodes.doubleQuote | CharacterCodes.singleQuote) {
-    const escapedCharsRegExp = quoteChar === CharacterCodes.singleQuote ? jsxSingleQuoteEscapedCharsRegExp : jsxDoubleQuoteEscapedCharsRegExp;
+  export function escapeJsxAttributeString(s: string, quoteChar?: CharCodes.doubleQuote | CharCodes.singleQuote) {
+    const escapedCharsRegExp = quoteChar === CharCodes.singleQuote ? jsxSingleQuoteEscapedCharsRegExp : jsxDoubleQuoteEscapedCharsRegExp;
     return s.replace(escapedCharsRegExp, getJsxAttributeStringReplacement);
   }
 
@@ -3700,13 +3693,13 @@ namespace qnr {
     return name;
   }
 
-  function isQuoteOrBacktick(charCode: number) {
-    return charCode === CharacterCodes.singleQuote || charCode === CharacterCodes.doubleQuote || charCode === CharacterCodes.backtick;
+  function isQuoteOrBacktick(cc: number) {
+    return cc === CharCodes.singleQuote || cc === CharCodes.doubleQuote || cc === CharCodes.backtick;
   }
 
   export function isIntrinsicJsxName(name: __String | string) {
     const ch = (name as string).charCodeAt(0);
-    return (ch >= CharacterCodes.a && ch <= CharacterCodes.z) || stringContains(name as string, '-');
+    return (ch >= CharCodes.a && ch <= CharCodes.z) || stringContains(name as string, '-');
   }
 
   const indentStrings: string[] = ['', '    '];
@@ -4390,7 +4383,7 @@ namespace qnr {
     commentEnd: number,
     newLine: string
   ) {
-    if (text.charCodeAt(commentPos + 1) === CharacterCodes.asterisk) {
+    if (text.charCodeAt(commentPos + 1) === CharCodes.asterisk) {
       const firstCommentLineAndCharacter = computeLineAndCharacterOfPosition(lineMap, commentPos);
       const lineCount = lineMap.length;
       let firstCommentLineIndent: number | undefined;
@@ -4468,7 +4461,7 @@ namespace qnr {
   function calculateIndent(text: string, pos: number, end: number) {
     let currentLineIndent = 0;
     for (; pos < end && isWhiteSpaceSingleLine(text.charCodeAt(pos)); pos++) {
-      if (text.charCodeAt(pos) === CharacterCodes.tab) {
+      if (text.charCodeAt(pos) === CharCodes.tab) {
         // Tabs = TabSize = indent size and go to next tabStop
         currentLineIndent += getIndentSize() - (currentLineIndent % getIndentSize());
       } else {
@@ -4753,23 +4746,23 @@ namespace qnr {
     const length = input.length;
 
     for (let i = 0; i < length; i++) {
-      const charCode = input.charCodeAt(i);
+      const cc = input.charCodeAt(i);
 
       // handle utf8
-      if (charCode < 0x80) {
-        output.push(charCode);
-      } else if (charCode < 0x800) {
-        output.push((charCode >> 6) | 0b11000000);
-        output.push((charCode & 0b00111111) | 0b10000000);
-      } else if (charCode < 0x10000) {
-        output.push((charCode >> 12) | 0b11100000);
-        output.push(((charCode >> 6) & 0b00111111) | 0b10000000);
-        output.push((charCode & 0b00111111) | 0b10000000);
-      } else if (charCode < 0x20000) {
-        output.push((charCode >> 18) | 0b11110000);
-        output.push(((charCode >> 12) & 0b00111111) | 0b10000000);
-        output.push(((charCode >> 6) & 0b00111111) | 0b10000000);
-        output.push((charCode & 0b00111111) | 0b10000000);
+      if (cc < 0x80) {
+        output.push(cc);
+      } else if (cc < 0x800) {
+        output.push((cc >> 6) | 0b11000000);
+        output.push((cc & 0b00111111) | 0b10000000);
+      } else if (cc < 0x10000) {
+        output.push((cc >> 12) | 0b11100000);
+        output.push(((cc >> 6) & 0b00111111) | 0b10000000);
+        output.push((cc & 0b00111111) | 0b10000000);
+      } else if (cc < 0x20000) {
+        output.push((cc >> 18) | 0b11110000);
+        output.push(((cc >> 12) & 0b00111111) | 0b10000000);
+        output.push(((cc >> 6) & 0b00111111) | 0b10000000);
+        output.push((cc & 0b00111111) | 0b10000000);
       } else {
         Debug.assert(false, 'Unexpected code point');
       }
@@ -4785,18 +4778,18 @@ namespace qnr {
    */
   export function convertToBase64(input: string): string {
     let result = '';
-    const charCodes = getExpandedCharCodes(input);
+    const ccs = getExpandedCharCodes(input);
     let i = 0;
-    const length = charCodes.length;
+    const length = ccs.length;
     let byte1: number, byte2: number, byte3: number, byte4: number;
 
     while (i < length) {
       // Convert every 6-bits in the input 3 character points
       // into a base64 digit
-      byte1 = charCodes[i] >> 2;
-      byte2 = ((charCodes[i] & 0b00000011) << 4) | (charCodes[i + 1] >> 4);
-      byte3 = ((charCodes[i + 1] & 0b00001111) << 2) | (charCodes[i + 2] >> 6);
-      byte4 = charCodes[i + 2] & 0b00111111;
+      byte1 = ccs[i] >> 2;
+      byte2 = ((ccs[i] & 0b00000011) << 4) | (ccs[i + 1] >> 4);
+      byte3 = ((ccs[i + 1] & 0b00001111) << 2) | (ccs[i + 2] >> 6);
+      byte4 = ccs[i + 2] & 0b00111111;
 
       // We are out of characters in the input, set the extra
       // digits to 64 (padding character).
@@ -4820,13 +4813,13 @@ namespace qnr {
     let i = 0;
     const length = codes.length;
     while (i < length) {
-      const charCode = codes[i];
+      const cc = codes[i];
 
-      if (charCode < 0x80) {
-        output += String.fromCharCode(charCode);
+      if (cc < 0x80) {
+        output += String.fromCharCode(cc);
         i++;
-      } else if ((charCode & 0b11000000) === 0b11000000) {
-        let value = charCode & 0b00111111;
+      } else if ((cc & 0b11000000) === 0b11000000) {
+        let value = cc & 0b00111111;
         i++;
         let nextCode: number = codes[i];
         while ((nextCode & 0b11000000) === 0b10000000) {
@@ -4839,7 +4832,7 @@ namespace qnr {
       } else {
         // We don't want to kill the process when decoding fails (due to a following char byte not
         // following a leading char), so we just print the (bad) value
-        output += String.fromCharCode(charCode);
+        output += String.fromCharCode(cc);
         i++;
       }
     }
@@ -5796,7 +5789,7 @@ namespace qnr {
   export function hasZeroOrOneAsteriskCharacter(str: string): boolean {
     let seenAsterisk = false;
     for (let i = 0; i < str.length; i++) {
-      if (str.charCodeAt(i) === CharacterCodes.asterisk) {
+      if (str.charCodeAt(i) === CharCodes.asterisk) {
         if (!seenAsterisk) {
           seenAsterisk = true;
         } else {
@@ -5877,7 +5870,7 @@ namespace qnr {
     return '\\' + match;
   }
 
-  const wildcardCharCodes = [CharacterCodes.asterisk, CharacterCodes.question];
+  const wildcardCharCodes = [CharCodes.asterisk, CharCodes.question];
 
   export const commonPackageFolders: readonly string[] = ['node_modules', 'bower_components', 'jspm_packages'];
 
@@ -6004,10 +5997,10 @@ namespace qnr {
           // The * and ? wildcards should not match directories or files that start with . if they
           // appear first in a component. Dotted directories and files can be included explicitly
           // like so: **/.*/.*
-          if (component.charCodeAt(0) === CharacterCodes.asterisk) {
+          if (component.charCodeAt(0) === CharCodes.asterisk) {
             componentPattern += '([^./]' + singleAsteriskRegexFragment + ')?';
             component = component.substr(1);
-          } else if (component.charCodeAt(0) === CharacterCodes.question) {
+          } else if (component.charCodeAt(0) === CharCodes.question) {
             componentPattern += '[^./]';
             component = component.substr(1);
           }
@@ -6597,16 +6590,16 @@ namespace qnr {
     switch (
       stringValue.charCodeAt(1) // "x" in "0x123"
     ) {
-      case CharacterCodes.b:
-      case CharacterCodes.B: // 0b or 0B
+      case CharCodes.b:
+      case CharCodes.B: // 0b or 0B
         log2Base = 1;
         break;
-      case CharacterCodes.o:
-      case CharacterCodes.O: // 0o or 0O
+      case CharCodes.o:
+      case CharCodes.O: // 0o or 0O
         log2Base = 3;
         break;
-      case CharacterCodes.x:
-      case CharacterCodes.X: // 0x or 0X
+      case CharCodes.x:
+      case CharCodes.X: // 0x or 0X
         log2Base = 4;
         break;
       default:
@@ -6614,7 +6607,7 @@ namespace qnr {
         const nIndex = stringValue.length - 1;
         // Skip leading 0s
         let nonZeroStart = 0;
-        while (stringValue.charCodeAt(nonZeroStart) === CharacterCodes._0) {
+        while (stringValue.charCodeAt(nonZeroStart) === CharCodes._0) {
           nonZeroStart++;
         }
         return stringValue.slice(nonZeroStart, nIndex) || '0';
@@ -6632,10 +6625,7 @@ namespace qnr {
       const segment = bitOffset >>> 4;
       const digitChar = stringValue.charCodeAt(i);
       // Find character range: 0-9 < A-F < a-f
-      const digit =
-        digitChar <= CharacterCodes._9
-          ? digitChar - CharacterCodes._0
-          : 10 + digitChar - (digitChar <= CharacterCodes.F ? CharacterCodes.A : CharacterCodes.a);
+      const digit = digitChar <= CharCodes._9 ? digitChar - CharCodes._0 : 10 + digitChar - (digitChar <= CharCodes.F ? CharCodes.A : CharCodes.a);
       const shiftedDigit = digit << (bitOffset & 15);
       segments[segment] |= shiftedDigit;
       const residual = shiftedDigit >>> 16;

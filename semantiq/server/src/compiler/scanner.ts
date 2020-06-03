@@ -89,7 +89,7 @@ namespace qnr {
   };
   const textToKeyword = createMap(_keywords);
   const textToToken = createMap<SyntaxKind>({
-    ...textToKeywordObj,
+    ..._keywords,
     '{': SyntaxKind.OpenBraceToken,
     '}': SyntaxKind.CloseBraceToken,
     '(': SyntaxKind.OpenParenToken,
@@ -221,17 +221,17 @@ namespace qnr {
       const ch = text.charCodeAt(pos);
       pos++;
       switch (ch) {
-        case CharacterCodes.carriageReturn:
-          if (text.charCodeAt(pos) === CharacterCodes.lineFeed) {
+        case CharCodes.carriageReturn:
+          if (text.charCodeAt(pos) === CharCodes.lineFeed) {
             pos++;
           }
         // falls through
-        case CharacterCodes.lineFeed:
+        case CharCodes.lineFeed:
           result.push(lineStart);
           lineStart = pos;
           break;
         default:
-          if (ch > CharacterCodes.maxAsciiCharacter && isLineBreak(ch)) {
+          if (ch > CharCodes.maxAsciiCharacter && isLineBreak(ch)) {
             result.push(lineStart);
             lineStart = pos;
           }
@@ -327,36 +327,31 @@ namespace qnr {
 
   export function isWhiteSpaceSingleLine(ch: number): boolean {
     return (
-      ch === CharacterCodes.space ||
-      ch === CharacterCodes.tab ||
-      ch === CharacterCodes.verticalTab ||
-      ch === CharacterCodes.formFeed ||
-      ch === CharacterCodes.nonBreakingSpace ||
-      ch === CharacterCodes.nextLine ||
-      ch === CharacterCodes.ogham ||
-      (ch >= CharacterCodes.enQuad && ch <= CharacterCodes.zeroWidthSpace) ||
-      ch === CharacterCodes.narrowNoBreakSpace ||
-      ch === CharacterCodes.mathematicalSpace ||
-      ch === CharacterCodes.ideographicSpace ||
-      ch === CharacterCodes.byteOrderMark
+      ch === CharCodes.space ||
+      ch === CharCodes.tab ||
+      ch === CharCodes.verticalTab ||
+      ch === CharCodes.formFeed ||
+      ch === CharCodes.nonBreakingSpace ||
+      ch === CharCodes.nextLine ||
+      ch === CharCodes.ogham ||
+      (ch >= CharCodes.enQuad && ch <= CharCodes.zeroWidthSpace) ||
+      ch === CharCodes.narrowNoBreakSpace ||
+      ch === CharCodes.mathematicalSpace ||
+      ch === CharCodes.ideographicSpace ||
+      ch === CharCodes.byteOrderMark
     );
   }
 
   export function isLineBreak(ch: number): boolean {
-    return (
-      ch === CharacterCodes.lineFeed ||
-      ch === CharacterCodes.carriageReturn ||
-      ch === CharacterCodes.lineSeparator ||
-      ch === CharacterCodes.paragraphSeparator
-    );
+    return ch === CharCodes.lineFeed || ch === CharCodes.carriageReturn || ch === CharCodes.lineSeparator || ch === CharCodes.paragraphSeparator;
   }
 
   function isDigit(ch: number): boolean {
-    return ch >= CharacterCodes._0 && ch <= CharacterCodes._9;
+    return ch >= CharCodes._0 && ch <= CharCodes._9;
   }
 
   function isHexDigit(ch: number): boolean {
-    return isDigit(ch) || (ch >= CharacterCodes.A && ch <= CharacterCodes.F) || (ch >= CharacterCodes.a && ch <= CharacterCodes.f);
+    return isDigit(ch) || (ch >= CharCodes.A && ch <= CharCodes.F) || (ch >= CharCodes.a && ch <= CharCodes.f);
   }
 
   function isCodePoint(code: number): boolean {
@@ -364,29 +359,29 @@ namespace qnr {
   }
 
   export function isOctalDigit(ch: number): boolean {
-    return ch >= CharacterCodes._0 && ch <= CharacterCodes._7;
+    return ch >= CharCodes._0 && ch <= CharCodes._7;
   }
 
   export function couldStartTrivia(text: string, pos: number): boolean {
     const ch = text.charCodeAt(pos);
     switch (ch) {
-      case CharacterCodes.carriageReturn:
-      case CharacterCodes.lineFeed:
-      case CharacterCodes.tab:
-      case CharacterCodes.verticalTab:
-      case CharacterCodes.formFeed:
-      case CharacterCodes.space:
-      case CharacterCodes.slash:
+      case CharCodes.carriageReturn:
+      case CharCodes.lineFeed:
+      case CharCodes.tab:
+      case CharCodes.verticalTab:
+      case CharCodes.formFeed:
+      case CharCodes.space:
+      case CharCodes.slash:
       // falls through
-      case CharacterCodes.lessThan:
-      case CharacterCodes.bar:
-      case CharacterCodes.equals:
-      case CharacterCodes.greaterThan:
+      case CharCodes.lessThan:
+      case CharCodes.bar:
+      case CharCodes.equals:
+      case CharCodes.greaterThan:
         return true;
-      case CharacterCodes.hash:
+      case CharCodes.hash:
         return pos === 0;
       default:
-        return ch > CharacterCodes.maxAsciiCharacter;
+        return ch > CharCodes.maxAsciiCharacter;
     }
   }
 
@@ -397,28 +392,28 @@ namespace qnr {
     while (true) {
       const ch = text.charCodeAt(pos);
       switch (ch) {
-        case CharacterCodes.carriageReturn:
-          if (text.charCodeAt(pos + 1) === CharacterCodes.lineFeed) {
+        case CharCodes.carriageReturn:
+          if (text.charCodeAt(pos + 1) === CharCodes.lineFeed) {
             pos++;
           }
         // falls through
-        case CharacterCodes.lineFeed:
+        case CharCodes.lineFeed:
           pos++;
           if (stopAfterLineBreak) {
             return pos;
           }
           continue;
-        case CharacterCodes.tab:
-        case CharacterCodes.verticalTab:
-        case CharacterCodes.formFeed:
-        case CharacterCodes.space:
+        case CharCodes.tab:
+        case CharCodes.verticalTab:
+        case CharCodes.formFeed:
+        case CharCodes.space:
           pos++;
           continue;
-        case CharacterCodes.slash:
+        case CharCodes.slash:
           if (stopAtComments) {
             break;
           }
-          if (text.charCodeAt(pos + 1) === CharacterCodes.slash) {
+          if (text.charCodeAt(pos + 1) === CharCodes.slash) {
             pos += 2;
             while (pos < text.length) {
               if (isLineBreak(text.charCodeAt(pos))) {
@@ -428,10 +423,10 @@ namespace qnr {
             }
             continue;
           }
-          if (text.charCodeAt(pos + 1) === CharacterCodes.asterisk) {
+          if (text.charCodeAt(pos + 1) === CharCodes.asterisk) {
             pos += 2;
             while (pos < text.length) {
-              if (text.charCodeAt(pos) === CharacterCodes.asterisk && text.charCodeAt(pos + 1) === CharacterCodes.slash) {
+              if (text.charCodeAt(pos) === CharCodes.asterisk && text.charCodeAt(pos + 1) === CharCodes.slash) {
                 pos += 2;
                 break;
               }
@@ -440,23 +435,23 @@ namespace qnr {
             continue;
           }
           break;
-        case CharacterCodes.lessThan:
-        case CharacterCodes.bar:
-        case CharacterCodes.equals:
-        case CharacterCodes.greaterThan:
+        case CharCodes.lessThan:
+        case CharCodes.bar:
+        case CharCodes.equals:
+        case CharCodes.greaterThan:
           if (isConflictMarkerTrivia(text, pos)) {
             pos = scanConflictMarkerTrivia(text, pos);
             continue;
           }
           break;
-        case CharacterCodes.hash:
+        case CharCodes.hash:
           if (pos === 0 && isShebangTrivia(text, pos)) {
             pos = scanShebangTrivia(text, pos);
             continue;
           }
           break;
         default:
-          if (ch > CharacterCodes.maxAsciiCharacter && isWhiteSpaceLike(ch)) {
+          if (ch > CharCodes.maxAsciiCharacter && isWhiteSpaceLike(ch)) {
             pos++;
             continue;
           }
@@ -478,7 +473,7 @@ namespace qnr {
             return false;
           }
         }
-        return ch === CharacterCodes.equals || text.charCodeAt(pos + mergeConflictMarkerLength) === CharacterCodes.space;
+        return ch === CharCodes.equals || text.charCodeAt(pos + mergeConflictMarkerLength) === CharCodes.space;
       }
     }
     return false;
@@ -490,19 +485,15 @@ namespace qnr {
     }
     const ch = text.charCodeAt(pos);
     const len = text.length;
-    if (ch === CharacterCodes.lessThan || ch === CharacterCodes.greaterThan) {
+    if (ch === CharCodes.lessThan || ch === CharCodes.greaterThan) {
       while (pos < len && !isLineBreak(text.charCodeAt(pos))) {
         pos++;
       }
     } else {
-      Debug.assert(ch === CharacterCodes.bar || ch === CharacterCodes.equals);
+      Debug.assert(ch === CharCodes.bar || ch === CharCodes.equals);
       while (pos < len) {
         const currentChar = text.charCodeAt(pos);
-        if (
-          (currentChar === CharacterCodes.equals || currentChar === CharacterCodes.greaterThan) &&
-          currentChar !== ch &&
-          isConflictMarkerTrivia(text, pos)
-        ) {
+        if ((currentChar === CharCodes.equals || currentChar === CharCodes.greaterThan) && currentChar !== ch && isConflictMarkerTrivia(text, pos)) {
           break;
         }
         pos++;
@@ -550,29 +541,29 @@ namespace qnr {
     scan: while (pos >= 0 && pos < text.length) {
       const ch = text.charCodeAt(pos);
       switch (ch) {
-        case CharacterCodes.carriageReturn:
-          if (text.charCodeAt(pos + 1) === CharacterCodes.lineFeed) pos++;
+        case CharCodes.carriageReturn:
+          if (text.charCodeAt(pos + 1) === CharCodes.lineFeed) pos++;
         // falls through
-        case CharacterCodes.lineFeed:
+        case CharCodes.lineFeed:
           pos++;
           if (trailing) break scan;
           collecting = true;
           if (hasPendingCommentRange) pendingHasTrailingNewLine = true;
           continue;
-        case CharacterCodes.tab:
-        case CharacterCodes.verticalTab:
-        case CharacterCodes.formFeed:
-        case CharacterCodes.space:
+        case CharCodes.tab:
+        case CharCodes.verticalTab:
+        case CharCodes.formFeed:
+        case CharCodes.space:
           pos++;
           continue;
-        case CharacterCodes.slash:
+        case CharCodes.slash:
           const nextChar = text.charCodeAt(pos + 1);
           let hasTrailingNewLine = false;
-          if (nextChar === CharacterCodes.slash || nextChar === CharacterCodes.asterisk) {
-            const kind = nextChar === CharacterCodes.slash ? SyntaxKind.SingleLineCommentTrivia : SyntaxKind.MultiLineCommentTrivia;
+          if (nextChar === CharCodes.slash || nextChar === CharCodes.asterisk) {
+            const kind = nextChar === CharCodes.slash ? SyntaxKind.SingleLineCommentTrivia : SyntaxKind.MultiLineCommentTrivia;
             const startPos = pos;
             pos += 2;
-            if (nextChar === CharacterCodes.slash) {
+            if (nextChar === CharCodes.slash) {
               while (pos < text.length) {
                 if (isLineBreak(text.charCodeAt(pos))) {
                   hasTrailingNewLine = true;
@@ -582,7 +573,7 @@ namespace qnr {
               }
             } else {
               while (pos < text.length) {
-                if (text.charCodeAt(pos) === CharacterCodes.asterisk && text.charCodeAt(pos + 1) === CharacterCodes.slash) {
+                if (text.charCodeAt(pos) === CharCodes.asterisk && text.charCodeAt(pos + 1) === CharCodes.slash) {
                   pos += 2;
                   break;
                 }
@@ -607,7 +598,7 @@ namespace qnr {
           }
           break scan;
         default:
-          if (ch > CharacterCodes.maxAsciiCharacter && isWhiteSpaceLike(ch)) {
+          if (ch > CharCodes.maxAsciiCharacter && isWhiteSpaceLike(ch)) {
             if (hasPendingCommentRange && isLineBreak(ch)) {
               pendingHasTrailingNewLine = true;
             }
@@ -705,23 +696,23 @@ namespace qnr {
 
   export function isIdentifierStart(ch: number, t: ScriptTarget | undefined) {
     return (
-      (ch >= CharacterCodes.A && ch <= CharacterCodes.Z) ||
-      (ch >= CharacterCodes.a && ch <= CharacterCodes.z) ||
-      ch === CharacterCodes.$ ||
-      ch === CharacterCodes._ ||
-      (ch > CharacterCodes.maxAsciiCharacter && isUnicodeIdentifierStart(ch, t))
+      (ch >= CharCodes.A && ch <= CharCodes.Z) ||
+      (ch >= CharCodes.a && ch <= CharCodes.z) ||
+      ch === CharCodes.$ ||
+      ch === CharCodes._ ||
+      (ch > CharCodes.maxAsciiCharacter && isUnicodeIdentifierStart(ch, t))
     );
   }
 
   export function isIdentifierPart(ch: number, t: ScriptTarget | undefined, identifierVariant?: LanguageVariant) {
     return (
-      (ch >= CharacterCodes.A && ch <= CharacterCodes.Z) ||
-      (ch >= CharacterCodes.a && ch <= CharacterCodes.z) ||
-      (ch >= CharacterCodes._0 && ch <= CharacterCodes._9) ||
-      ch === CharacterCodes.$ ||
-      ch === CharacterCodes._ ||
-      (identifierVariant === LanguageVariant.JSX ? ch === CharacterCodes.minus || ch === CharacterCodes.colon : false) ||
-      (ch > CharacterCodes.maxAsciiCharacter && isUnicodeIdentifierPart(ch, t))
+      (ch >= CharCodes.A && ch <= CharCodes.Z) ||
+      (ch >= CharCodes.a && ch <= CharCodes.z) ||
+      (ch >= CharCodes._0 && ch <= CharCodes._9) ||
+      ch === CharCodes.$ ||
+      ch === CharCodes._ ||
+      (identifierVariant === LanguageVariant.JSX ? ch === CharCodes.minus || ch === CharCodes.colon : false) ||
+      (ch > CharCodes.maxAsciiCharacter && isUnicodeIdentifierPart(ch, t))
     );
   }
 
@@ -763,6 +754,7 @@ namespace qnr {
     scanJsxToken(): JsxTokenSyntaxKind;
     scanJsDocToken(): JSDocSyntaxKind;
     scan(): SyntaxKind;
+    tryScan<T>(callback: () => T): T;
     setScriptTarget(scriptTarget: ScriptTarget): void;
     setLanguageVariant(variant: LanguageVariant): void;
     setOnError(onError: ErrorCallback | undefined): void;
@@ -772,7 +764,6 @@ namespace qnr {
     clearCommentDirectives(): void;
     lookAhead<T>(callback: () => T): T;
     scanRange<T>(start: number, length: number, callback: () => T): T;
-    tryScan<T>(callback: () => T): T;
   }
 
   export function createScanner(
@@ -831,14 +822,14 @@ namespace qnr {
       scanJsxToken,
       scanJsDocToken,
       scan,
-      clearCommentDirectives,
-      setText,
+      tryScan,
       setScriptTarget,
       setLanguageVariant,
       setOnError,
+      setText,
       setTextPos,
       setInJSDocType,
-      tryScan,
+      clearCommentDirectives,
       lookAhead,
       scanRange,
     };
@@ -872,7 +863,7 @@ namespace qnr {
       let result = '';
       while (true) {
         const ch = text.charCodeAt(pos);
-        if (ch === CharacterCodes._) {
+        if (ch === CharCodes._) {
           tokenFlags |= TokenFlags.ContainsSeparator;
           if (allowSeparator) {
             allowSeparator = false;
@@ -895,7 +886,7 @@ namespace qnr {
         }
         break;
       }
-      if (text.charCodeAt(pos - 1) === CharacterCodes._) {
+      if (text.charCodeAt(pos - 1) === CharCodes._) {
         error(Diagnostics.Numeric_separators_are_not_allowed_here, pos - 1, 1);
       }
       return result + text.substring(start, pos);
@@ -906,15 +897,15 @@ namespace qnr {
       const mainFragment = scanNumberFragment();
       let decimalFragment: string | undefined;
       let scientificFragment: string | undefined;
-      if (text.charCodeAt(pos) === CharacterCodes.dot) {
+      if (text.charCodeAt(pos) === CharCodes.dot) {
         pos++;
         decimalFragment = scanNumberFragment();
       }
       let end = pos;
-      if (text.charCodeAt(pos) === CharacterCodes.E || text.charCodeAt(pos) === CharacterCodes.e) {
+      if (text.charCodeAt(pos) === CharCodes.E || text.charCodeAt(pos) === CharCodes.e) {
         pos++;
         tokenFlags |= TokenFlags.Scientific;
-        if (text.charCodeAt(pos) === CharacterCodes.plus || text.charCodeAt(pos) === CharacterCodes.minus) pos++;
+        if (text.charCodeAt(pos) === CharCodes.plus || text.charCodeAt(pos) === CharCodes.minus) pos++;
         const preNumericPart = pos;
         const finalFragment = scanNumberFragment();
         if (!finalFragment) {
@@ -979,19 +970,11 @@ namespace qnr {
       return +text.substring(start, pos);
     }
 
-    /**
-     * Scans the given number of hexadecimal digits in the text,
-     * returning -1 if the given number is unavailable.
-     */
     function scanExactNumberOfHexDigits(count: number, canHaveSeparators: boolean): number {
       const valueString = scanHexDigits(/*minCount*/ count, /*scanAsManyAsPossible*/ false, canHaveSeparators);
       return valueString ? parseInt(valueString, 16) : -1;
     }
 
-    /**
-     * Scans as many hexadecimal digits as are available in the text,
-     * returning "" if the given number of digits was unavailable.
-     */
     function scanMinimumNumberOfHexDigits(count: number, canHaveSeparators: boolean): string {
       return scanHexDigits(/*minCount*/ count, /*scanAsManyAsPossible*/ true, canHaveSeparators);
     }
@@ -1002,7 +985,7 @@ namespace qnr {
       let isPreviousTokenSeparator = false;
       while (valueChars.length < minCount || scanAsManyAsPossible) {
         let ch = text.charCodeAt(pos);
-        if (canHaveSeparators && ch === CharacterCodes._) {
+        if (canHaveSeparators && ch === CharCodes._) {
           tokenFlags |= TokenFlags.ContainsSeparator;
           if (allowSeparator) {
             allowSeparator = false;
@@ -1016,9 +999,9 @@ namespace qnr {
           continue;
         }
         allowSeparator = canHaveSeparators;
-        if (ch >= CharacterCodes.A && ch <= CharacterCodes.F) {
-          ch += CharacterCodes.a - CharacterCodes.A; // standardize hex literals to lowercase
-        } else if (!((ch >= CharacterCodes._0 && ch <= CharacterCodes._9) || (ch >= CharacterCodes.a && ch <= CharacterCodes.f))) {
+        if (ch >= CharCodes.A && ch <= CharCodes.F) {
+          ch += CharCodes.a - CharCodes.A; // standardize hex literals to lowercase
+        } else if (!((ch >= CharCodes._0 && ch <= CharCodes._9) || (ch >= CharCodes.a && ch <= CharCodes.f))) {
           break;
         }
         valueChars.push(ch);
@@ -1028,7 +1011,7 @@ namespace qnr {
       if (valueChars.length < minCount) {
         valueChars = [];
       }
-      if (text.charCodeAt(pos - 1) === CharacterCodes._) {
+      if (text.charCodeAt(pos - 1) === CharCodes._) {
         error(Diagnostics.Numeric_separators_are_not_allowed_here, pos - 1, 1);
       }
       return String.fromCharCode(...valueChars);
@@ -1052,7 +1035,7 @@ namespace qnr {
           pos++;
           break;
         }
-        if (ch === CharacterCodes.backslash && !jsxAttributeString) {
+        if (ch === CharCodes.backslash && !jsxAttributeString) {
           result += text.substring(start, pos);
           result += scanEscapeSequence();
           start = pos;
@@ -1069,18 +1052,12 @@ namespace qnr {
       return result;
     }
 
-    /**
-     * Sets the current 'tokenValue' and returns a NoSubstitutionTemplateLiteral or
-     * a literal component of a TemplateExpression.
-     */
     function scanTemplateAndSetTokenValue(isTaggedTemplate: boolean): SyntaxKind {
-      const startedWithBacktick = text.charCodeAt(pos) === CharacterCodes.backtick;
-
+      const startedWithBacktick = text.charCodeAt(pos) === CharCodes.backtick;
       pos++;
       let start = pos;
       let contents = '';
       let resultingToken: SyntaxKind;
-
       while (true) {
         if (pos >= end) {
           contents += text.substring(start, pos);
@@ -1089,53 +1066,43 @@ namespace qnr {
           resultingToken = startedWithBacktick ? SyntaxKind.NoSubstitutionTemplateLiteral : SyntaxKind.TemplateTail;
           break;
         }
-
         const currChar = text.charCodeAt(pos);
-
         // '`'
-        if (currChar === CharacterCodes.backtick) {
+        if (currChar === CharCodes.backtick) {
           contents += text.substring(start, pos);
           pos++;
           resultingToken = startedWithBacktick ? SyntaxKind.NoSubstitutionTemplateLiteral : SyntaxKind.TemplateTail;
           break;
         }
-
         // '${'
-        if (currChar === CharacterCodes.$ && pos + 1 < end && text.charCodeAt(pos + 1) === CharacterCodes.openBrace) {
+        if (currChar === CharCodes.$ && pos + 1 < end && text.charCodeAt(pos + 1) === CharCodes.openBrace) {
           contents += text.substring(start, pos);
           pos += 2;
           resultingToken = startedWithBacktick ? SyntaxKind.TemplateHead : SyntaxKind.TemplateMiddle;
           break;
         }
-
         // Escape character
-        if (currChar === CharacterCodes.backslash) {
+        if (currChar === CharCodes.backslash) {
           contents += text.substring(start, pos);
           contents += scanEscapeSequence(isTaggedTemplate);
           start = pos;
           continue;
         }
-
         // Speculated ECMAScript 6 Spec 11.8.6.1:
         // <CR><LF> and <CR> LineTerminatorSequences are normalized to <LF> for Template Values
-        if (currChar === CharacterCodes.carriageReturn) {
+        if (currChar === CharCodes.carriageReturn) {
           contents += text.substring(start, pos);
           pos++;
-
-          if (pos < end && text.charCodeAt(pos) === CharacterCodes.lineFeed) {
+          if (pos < end && text.charCodeAt(pos) === CharCodes.lineFeed) {
             pos++;
           }
-
           contents += '\n';
           start = pos;
           continue;
         }
-
         pos++;
       }
-
       Debug.assert(resultingToken !== undefined);
-
       tokenValue = contents;
       return resultingToken;
     }
@@ -1150,7 +1117,7 @@ namespace qnr {
       const ch = text.charCodeAt(pos);
       pos++;
       switch (ch) {
-        case CharacterCodes._0:
+        case CharCodes._0:
           // '\01'
           if (isTaggedTemplate && pos < end && isDigit(text.charCodeAt(pos))) {
             pos++;
@@ -1158,27 +1125,27 @@ namespace qnr {
             return text.substring(start, pos);
           }
           return '\0';
-        case CharacterCodes.b:
+        case CharCodes.b:
           return '\b';
-        case CharacterCodes.t:
+        case CharCodes.t:
           return '\t';
-        case CharacterCodes.n:
+        case CharCodes.n:
           return '\n';
-        case CharacterCodes.v:
+        case CharCodes.v:
           return '\v';
-        case CharacterCodes.f:
+        case CharCodes.f:
           return '\f';
-        case CharacterCodes.r:
+        case CharCodes.r:
           return '\r';
-        case CharacterCodes.singleQuote:
+        case CharCodes.singleQuote:
           return "'";
-        case CharacterCodes.doubleQuote:
+        case CharCodes.doubleQuote:
           return '"';
-        case CharacterCodes.u:
+        case CharCodes.u:
           if (isTaggedTemplate) {
             // '\u' or '\u0' or '\u00' or '\u000'
             for (let escapePos = pos; escapePos < pos + 4; escapePos++) {
-              if (escapePos < end && !isHexDigit(text.charCodeAt(escapePos)) && text.charCodeAt(escapePos) !== CharacterCodes.openBrace) {
+              if (escapePos < end && !isHexDigit(text.charCodeAt(escapePos)) && text.charCodeAt(escapePos) !== CharCodes.openBrace) {
                 pos = escapePos;
                 tokenFlags |= TokenFlags.ContainsInvalidEscape;
                 return text.substring(start, pos);
@@ -1186,7 +1153,7 @@ namespace qnr {
             }
           }
           // '\u{DDDDDDDD}'
-          if (pos < end && text.charCodeAt(pos) === CharacterCodes.openBrace) {
+          if (pos < end && text.charCodeAt(pos) === CharCodes.openBrace) {
             pos++;
 
             // '\u{'
@@ -1201,7 +1168,7 @@ namespace qnr {
               const escapedValue = escapedValueString ? parseInt(escapedValueString, 16) : -1;
 
               // '\u{Not Code Point' or '\u{CodePoint'
-              if (!isCodePoint(escapedValue) || text.charCodeAt(pos) !== CharacterCodes.closeBrace) {
+              if (!isCodePoint(escapedValue) || text.charCodeAt(pos) !== CharCodes.closeBrace) {
                 tokenFlags |= TokenFlags.ContainsInvalidEscape;
                 return text.substring(start, pos);
               } else {
@@ -1216,7 +1183,7 @@ namespace qnr {
           // '\uDDDD'
           return scanHexadecimalEscape(/*numDigits*/ 4);
 
-        case CharacterCodes.x:
+        case CharCodes.x:
           if (isTaggedTemplate) {
             if (!isHexDigit(text.charCodeAt(pos))) {
               tokenFlags |= TokenFlags.ContainsInvalidEscape;
@@ -1232,14 +1199,14 @@ namespace qnr {
 
         // when encountering a LineContinuation (i.e. a backslash and a line terminator sequence),
         // the line terminator is interpreted to be "the empty code unit sequence".
-        case CharacterCodes.carriageReturn:
-          if (pos < end && text.charCodeAt(pos) === CharacterCodes.lineFeed) {
+        case CharCodes.carriageReturn:
+          if (pos < end && text.charCodeAt(pos) === CharCodes.lineFeed) {
             pos++;
           }
         // falls through
-        case CharacterCodes.lineFeed:
-        case CharacterCodes.lineSeparator:
-        case CharacterCodes.paragraphSeparator:
+        case CharCodes.lineFeed:
+        case CharCodes.lineSeparator:
+        case CharCodes.paragraphSeparator:
           return '';
         default:
           return String.fromCharCode(ch);
@@ -1274,7 +1241,7 @@ namespace qnr {
       if (pos >= end) {
         error(Diagnostics.Unexpected_end_of_text);
         isInvalidExtendedEscape = true;
-      } else if (text.charCodeAt(pos) === CharacterCodes.closeBrace) {
+      } else if (text.charCodeAt(pos) === CharCodes.closeBrace) {
         // Only swallow the following character up if it's a '}'.
         pos++;
       } else {
@@ -1292,7 +1259,7 @@ namespace qnr {
     // Current character is known to be a backslash. Check for Unicode escape of the form '\uXXXX'
     // and return code point value if valid Unicode escape is found. Otherwise return -1.
     function peekUnicodeEscape(): number {
-      if (pos + 5 < end && text.charCodeAt(pos + 1) === CharacterCodes.u) {
+      if (pos + 5 < end && text.charCodeAt(pos + 1) === CharCodes.u) {
         const start = pos;
         pos += 2;
         const value = scanExactNumberOfHexDigits(4, /*canHaveSeparators*/ false);
@@ -1305,8 +1272,8 @@ namespace qnr {
     function peekExtendedUnicodeEscape(): number {
       if (
         languageVersion >= ScriptTarget.ES2015 &&
-        codePointAt(text, pos + 1) === CharacterCodes.u &&
-        codePointAt(text, pos + 2) === CharacterCodes.openBrace
+        codePointAt(text, pos + 1) === CharCodes.u &&
+        codePointAt(text, pos + 2) === CharCodes.openBrace
       ) {
         const start = pos;
         pos += 3;
@@ -1325,7 +1292,7 @@ namespace qnr {
         let ch = codePointAt(text, pos);
         if (isIdentifierPart(ch, languageVersion)) {
           pos += charSize(ch);
-        } else if (ch === CharacterCodes.backslash) {
+        } else if (ch === CharCodes.backslash) {
           ch = peekExtendedUnicodeEscape();
           if (ch >= 0 && isIdentifierPart(ch, languageVersion)) {
             pos += 3;
@@ -1357,7 +1324,7 @@ namespace qnr {
       const len = tokenValue.length;
       if (len >= 2 && len <= 11) {
         const ch = tokenValue.charCodeAt(0);
-        if (ch >= CharacterCodes.a && ch <= CharacterCodes.z) {
+        if (ch >= CharCodes.a && ch <= CharCodes.z) {
           const keyword = textToKeyword.get(tokenValue);
           if (keyword !== undefined) {
             return (token = keyword);
@@ -1376,7 +1343,7 @@ namespace qnr {
       while (true) {
         const ch = text.charCodeAt(pos);
         // Numeric separators are allowed anywhere within a numeric literal, except not at the beginning, or following another separator
-        if (ch === CharacterCodes._) {
+        if (ch === CharCodes._) {
           tokenFlags |= TokenFlags.ContainsSeparator;
           if (separatorAllowed) {
             separatorAllowed = false;
@@ -1390,14 +1357,14 @@ namespace qnr {
           continue;
         }
         separatorAllowed = true;
-        if (!isDigit(ch) || ch - CharacterCodes._0 >= base) {
+        if (!isDigit(ch) || ch - CharCodes._0 >= base) {
           break;
         }
         value += text[pos];
         pos++;
         isPreviousTokenSeparator = false;
       }
-      if (text.charCodeAt(pos - 1) === CharacterCodes._) {
+      if (text.charCodeAt(pos - 1) === CharCodes._) {
         // Literal ends with underscore - not allowed
         error(Diagnostics.Numeric_separators_are_not_allowed_here, pos - 1, 1);
       }
@@ -1405,7 +1372,7 @@ namespace qnr {
     }
 
     function checkBigIntSuffix(): SyntaxKind {
-      if (text.charCodeAt(pos) === CharacterCodes.n) {
+      if (text.charCodeAt(pos) === CharCodes.n) {
         tokenValue += 'n';
         // Use base 10 instead of base 2 or base 8 for shorter literals
         if (tokenFlags & TokenFlags.BinaryOrOctalSpecifier) {
@@ -1433,59 +1400,50 @@ namespace qnr {
       let asteriskSeen = false;
       while (true) {
         tokenPos = pos;
-        if (pos >= end) {
-          return (token = SyntaxKind.EndOfFileToken);
-        }
+        if (pos >= end) return (token = SyntaxKind.EndOfFileToken);
         let ch = codePointAt(text, pos);
-
-        // Special handling for shebang
-        if (ch === CharacterCodes.hash && pos === 0 && isShebangTrivia(text, pos)) {
+        if (ch === CharCodes.hash && pos === 0 && isShebangTrivia(text, pos)) {
           pos = scanShebangTrivia(text, pos);
-          if (skipTrivia) {
-            continue;
-          } else {
-            return (token = SyntaxKind.ShebangTrivia);
-          }
+          if (skipTrivia) continue;
+          else return (token = SyntaxKind.ShebangTrivia);
         }
-
         switch (ch) {
-          case CharacterCodes.lineFeed:
-          case CharacterCodes.carriageReturn:
+          case CharCodes.lineFeed:
+          case CharCodes.carriageReturn:
             tokenFlags |= TokenFlags.PrecedingLineBreak;
             if (skipTrivia) {
               pos++;
               continue;
             } else {
-              if (ch === CharacterCodes.carriageReturn && pos + 1 < end && text.charCodeAt(pos + 1) === CharacterCodes.lineFeed) {
-                // consume both CR and LF
+              if (ch === CharCodes.carriageReturn && pos + 1 < end && text.charCodeAt(pos + 1) === CharCodes.lineFeed) {
                 pos += 2;
               } else {
                 pos++;
               }
               return (token = SyntaxKind.NewLineTrivia);
             }
-          case CharacterCodes.tab:
-          case CharacterCodes.verticalTab:
-          case CharacterCodes.formFeed:
-          case CharacterCodes.space:
-          case CharacterCodes.nonBreakingSpace:
-          case CharacterCodes.ogham:
-          case CharacterCodes.enQuad:
-          case CharacterCodes.emQuad:
-          case CharacterCodes.enSpace:
-          case CharacterCodes.emSpace:
-          case CharacterCodes.threePerEmSpace:
-          case CharacterCodes.fourPerEmSpace:
-          case CharacterCodes.sixPerEmSpace:
-          case CharacterCodes.figureSpace:
-          case CharacterCodes.punctuationSpace:
-          case CharacterCodes.thinSpace:
-          case CharacterCodes.hairSpace:
-          case CharacterCodes.zeroWidthSpace:
-          case CharacterCodes.narrowNoBreakSpace:
-          case CharacterCodes.mathematicalSpace:
-          case CharacterCodes.ideographicSpace:
-          case CharacterCodes.byteOrderMark:
+          case CharCodes.tab:
+          case CharCodes.verticalTab:
+          case CharCodes.formFeed:
+          case CharCodes.space:
+          case CharCodes.nonBreakingSpace:
+          case CharCodes.ogham:
+          case CharCodes.enQuad:
+          case CharCodes.emQuad:
+          case CharCodes.enSpace:
+          case CharCodes.emSpace:
+          case CharCodes.threePerEmSpace:
+          case CharCodes.fourPerEmSpace:
+          case CharCodes.sixPerEmSpace:
+          case CharCodes.figureSpace:
+          case CharCodes.punctuationSpace:
+          case CharCodes.thinSpace:
+          case CharCodes.hairSpace:
+          case CharCodes.zeroWidthSpace:
+          case CharCodes.narrowNoBreakSpace:
+          case CharCodes.mathematicalSpace:
+          case CharCodes.ideographicSpace:
+          case CharCodes.byteOrderMark:
             if (skipTrivia) {
               pos++;
               continue;
@@ -1495,166 +1453,120 @@ namespace qnr {
               }
               return (token = SyntaxKind.WhitespaceTrivia);
             }
-          case CharacterCodes.exclamation:
-            if (text.charCodeAt(pos + 1) === CharacterCodes.equals) {
-              if (text.charCodeAt(pos + 2) === CharacterCodes.equals) {
-                return (pos += 3), (token = SyntaxKind.ExclamationEqualsEqualsToken);
-              }
+          case CharCodes.exclamation:
+            if (text.charCodeAt(pos + 1) === CharCodes.equals) {
+              if (text.charCodeAt(pos + 2) === CharCodes.equals) return (pos += 3), (token = SyntaxKind.ExclamationEqualsEqualsToken);
               return (pos += 2), (token = SyntaxKind.ExclamationEqualsToken);
             }
             pos++;
             return (token = SyntaxKind.ExclamationToken);
-          case CharacterCodes.doubleQuote:
-          case CharacterCodes.singleQuote:
+          case CharCodes.doubleQuote:
+          case CharCodes.singleQuote:
             tokenValue = scanString();
             return (token = SyntaxKind.StringLiteral);
-          case CharacterCodes.backtick:
+          case CharCodes.backtick:
             return (token = scanTemplateAndSetTokenValue(/* isTaggedTemplate */ false));
-          case CharacterCodes.percent:
-            if (text.charCodeAt(pos + 1) === CharacterCodes.equals) {
-              return (pos += 2), (token = SyntaxKind.PercentEqualsToken);
-            }
+          case CharCodes.percent:
+            if (text.charCodeAt(pos + 1) === CharCodes.equals) return (pos += 2), (token = SyntaxKind.PercentEqualsToken);
             pos++;
             return (token = SyntaxKind.PercentToken);
-          case CharacterCodes.ampersand:
-            if (text.charCodeAt(pos + 1) === CharacterCodes.ampersand) {
-              return (pos += 2), (token = SyntaxKind.AmpersandAmpersandToken);
-            }
-            if (text.charCodeAt(pos + 1) === CharacterCodes.equals) {
-              return (pos += 2), (token = SyntaxKind.AmpersandEqualsToken);
-            }
+          case CharCodes.ampersand:
+            if (text.charCodeAt(pos + 1) === CharCodes.ampersand) return (pos += 2), (token = SyntaxKind.AmpersandAmpersandToken);
+            if (text.charCodeAt(pos + 1) === CharCodes.equals) return (pos += 2), (token = SyntaxKind.AmpersandEqualsToken);
             pos++;
             return (token = SyntaxKind.AmpersandToken);
-          case CharacterCodes.openParen:
+          case CharCodes.openParen:
             pos++;
             return (token = SyntaxKind.OpenParenToken);
-          case CharacterCodes.closeParen:
+          case CharCodes.closeParen:
             pos++;
             return (token = SyntaxKind.CloseParenToken);
-          case CharacterCodes.asterisk:
-            if (text.charCodeAt(pos + 1) === CharacterCodes.equals) {
-              return (pos += 2), (token = SyntaxKind.AsteriskEqualsToken);
-            }
-            if (text.charCodeAt(pos + 1) === CharacterCodes.asterisk) {
-              if (text.charCodeAt(pos + 2) === CharacterCodes.equals) {
-                return (pos += 3), (token = SyntaxKind.AsteriskAsteriskEqualsToken);
-              }
+          case CharCodes.asterisk:
+            if (text.charCodeAt(pos + 1) === CharCodes.equals) return (pos += 2), (token = SyntaxKind.AsteriskEqualsToken);
+            if (text.charCodeAt(pos + 1) === CharCodes.asterisk) {
+              if (text.charCodeAt(pos + 2) === CharCodes.equals) return (pos += 3), (token = SyntaxKind.AsteriskAsteriskEqualsToken);
               return (pos += 2), (token = SyntaxKind.AsteriskAsteriskToken);
             }
             pos++;
             if (inJSDocType && !asteriskSeen && tokenFlags & TokenFlags.PrecedingLineBreak) {
-              // decoration at the start of a JSDoc comment line
               asteriskSeen = true;
               continue;
             }
             return (token = SyntaxKind.AsteriskToken);
-          case CharacterCodes.plus:
-            if (text.charCodeAt(pos + 1) === CharacterCodes.plus) {
-              return (pos += 2), (token = SyntaxKind.PlusPlusToken);
-            }
-            if (text.charCodeAt(pos + 1) === CharacterCodes.equals) {
-              return (pos += 2), (token = SyntaxKind.PlusEqualsToken);
-            }
+          case CharCodes.plus:
+            if (text.charCodeAt(pos + 1) === CharCodes.plus) return (pos += 2), (token = SyntaxKind.PlusPlusToken);
+            if (text.charCodeAt(pos + 1) === CharCodes.equals) return (pos += 2), (token = SyntaxKind.PlusEqualsToken);
             pos++;
             return (token = SyntaxKind.PlusToken);
-          case CharacterCodes.comma:
+          case CharCodes.comma:
             pos++;
             return (token = SyntaxKind.CommaToken);
-          case CharacterCodes.minus:
-            if (text.charCodeAt(pos + 1) === CharacterCodes.minus) {
-              return (pos += 2), (token = SyntaxKind.MinusMinusToken);
-            }
-            if (text.charCodeAt(pos + 1) === CharacterCodes.equals) {
-              return (pos += 2), (token = SyntaxKind.MinusEqualsToken);
-            }
+          case CharCodes.minus:
+            if (text.charCodeAt(pos + 1) === CharCodes.minus) return (pos += 2), (token = SyntaxKind.MinusMinusToken);
+            if (text.charCodeAt(pos + 1) === CharCodes.equals) return (pos += 2), (token = SyntaxKind.MinusEqualsToken);
             pos++;
             return (token = SyntaxKind.MinusToken);
-          case CharacterCodes.dot:
+          case CharCodes.dot:
             if (isDigit(text.charCodeAt(pos + 1))) {
               tokenValue = scanNumber().value;
               return (token = SyntaxKind.NumericLiteral);
             }
-            if (text.charCodeAt(pos + 1) === CharacterCodes.dot && text.charCodeAt(pos + 2) === CharacterCodes.dot) {
+            if (text.charCodeAt(pos + 1) === CharCodes.dot && text.charCodeAt(pos + 2) === CharCodes.dot) {
               return (pos += 3), (token = SyntaxKind.DotDotDotToken);
             }
             pos++;
             return (token = SyntaxKind.DotToken);
-          case CharacterCodes.slash:
+          case CharCodes.slash:
             // Single-line comment
-            if (text.charCodeAt(pos + 1) === CharacterCodes.slash) {
+            if (text.charCodeAt(pos + 1) === CharCodes.slash) {
               pos += 2;
-
               while (pos < end) {
-                if (isLineBreak(text.charCodeAt(pos))) {
-                  break;
-                }
+                if (isLineBreak(text.charCodeAt(pos))) break;
                 pos++;
               }
-
               commentDirectives = appendIfCommentDirective(commentDirectives, text.slice(tokenPos, pos), commentDirectiveRegExSingleLine, tokenPos);
-
-              if (skipTrivia) {
-                continue;
-              } else {
-                return (token = SyntaxKind.SingleLineCommentTrivia);
-              }
+              if (skipTrivia) continue;
+              else return (token = SyntaxKind.SingleLineCommentTrivia);
             }
             // Multi-line comment
-            if (text.charCodeAt(pos + 1) === CharacterCodes.asterisk) {
+            if (text.charCodeAt(pos + 1) === CharCodes.asterisk) {
               pos += 2;
-              if (text.charCodeAt(pos) === CharacterCodes.asterisk && text.charCodeAt(pos + 1) !== CharacterCodes.slash) {
+              if (text.charCodeAt(pos) === CharCodes.asterisk && text.charCodeAt(pos + 1) !== CharCodes.slash) {
                 tokenFlags |= TokenFlags.PrecedingJSDocComment;
               }
-
               let commentClosed = false;
               let lastLineStart = tokenPos;
               while (pos < end) {
                 const ch = text.charCodeAt(pos);
-
-                if (ch === CharacterCodes.asterisk && text.charCodeAt(pos + 1) === CharacterCodes.slash) {
+                if (ch === CharCodes.asterisk && text.charCodeAt(pos + 1) === CharCodes.slash) {
                   pos += 2;
                   commentClosed = true;
                   break;
                 }
-
                 pos++;
-
                 if (isLineBreak(ch)) {
                   lastLineStart = pos;
                   tokenFlags |= TokenFlags.PrecedingLineBreak;
                 }
               }
-
               commentDirectives = appendIfCommentDirective(
                 commentDirectives,
                 text.slice(lastLineStart, pos),
                 commentDirectiveRegExMultiLine,
                 lastLineStart
               );
-
-              if (!commentClosed) {
-                error(Diagnostics.Asterisk_Slash_expected);
-              }
-
-              if (skipTrivia) {
-                continue;
-              } else {
-                if (!commentClosed) {
-                  tokenFlags |= TokenFlags.Unterminated;
-                }
+              if (!commentClosed) error(Diagnostics.Asterisk_Slash_expected);
+              if (skipTrivia) continue;
+              else {
+                if (!commentClosed) tokenFlags |= TokenFlags.Unterminated;
                 return (token = SyntaxKind.MultiLineCommentTrivia);
               }
             }
-
-            if (text.charCodeAt(pos + 1) === CharacterCodes.equals) {
-              return (pos += 2), (token = SyntaxKind.SlashEqualsToken);
-            }
-
+            if (text.charCodeAt(pos + 1) === CharCodes.equals) return (pos += 2), (token = SyntaxKind.SlashEqualsToken);
             pos++;
             return (token = SyntaxKind.SlashToken);
-
-          case CharacterCodes._0:
-            if (pos + 2 < end && (text.charCodeAt(pos + 1) === CharacterCodes.X || text.charCodeAt(pos + 1) === CharacterCodes.x)) {
+          case CharCodes._0:
+            if (pos + 2 < end && (text.charCodeAt(pos + 1) === CharCodes.X || text.charCodeAt(pos + 1) === CharCodes.x)) {
               pos += 2;
               tokenValue = scanMinimumNumberOfHexDigits(1, /*canHaveSeparators*/ true);
               if (!tokenValue) {
@@ -1664,7 +1576,7 @@ namespace qnr {
               tokenValue = '0x' + tokenValue;
               tokenFlags |= TokenFlags.HexSpecifier;
               return (token = checkBigIntSuffix());
-            } else if (pos + 2 < end && (text.charCodeAt(pos + 1) === CharacterCodes.B || text.charCodeAt(pos + 1) === CharacterCodes.b)) {
+            } else if (pos + 2 < end && (text.charCodeAt(pos + 1) === CharCodes.B || text.charCodeAt(pos + 1) === CharCodes.b)) {
               pos += 2;
               tokenValue = scanBinaryOrOctalDigits(/* base */ 2);
               if (!tokenValue) {
@@ -1674,7 +1586,7 @@ namespace qnr {
               tokenValue = '0b' + tokenValue;
               tokenFlags |= TokenFlags.BinarySpecifier;
               return (token = checkBigIntSuffix());
-            } else if (pos + 2 < end && (text.charCodeAt(pos + 1) === CharacterCodes.O || text.charCodeAt(pos + 1) === CharacterCodes.o)) {
+            } else if (pos + 2 < end && (text.charCodeAt(pos + 1) === CharCodes.O || text.charCodeAt(pos + 1) === CharCodes.o)) {
               pos += 2;
               tokenValue = scanBinaryOrOctalDigits(/* base */ 8);
               if (!tokenValue) {
@@ -1685,148 +1597,114 @@ namespace qnr {
               tokenFlags |= TokenFlags.OctalSpecifier;
               return (token = checkBigIntSuffix());
             }
-            // Try to parse as an octal
             if (pos + 1 < end && isOctalDigit(text.charCodeAt(pos + 1))) {
               tokenValue = '' + scanOctalDigits();
               tokenFlags |= TokenFlags.Octal;
               return (token = SyntaxKind.NumericLiteral);
             }
-          // This fall-through is a deviation from the EcmaScript grammar. The grammar says that a leading zero
-          // can only be followed by an octal digit, a dot, or the end of the number literal. However, we are being
-          // permissive and allowing decimal digits of the form 08* and 09* (which many browsers also do).
           // falls through
-          case CharacterCodes._1:
-          case CharacterCodes._2:
-          case CharacterCodes._3:
-          case CharacterCodes._4:
-          case CharacterCodes._5:
-          case CharacterCodes._6:
-          case CharacterCodes._7:
-          case CharacterCodes._8:
-          case CharacterCodes._9:
+          case CharCodes._1:
+          case CharCodes._2:
+          case CharCodes._3:
+          case CharCodes._4:
+          case CharCodes._5:
+          case CharCodes._6:
+          case CharCodes._7:
+          case CharCodes._8:
+          case CharCodes._9:
             ({ type: token, value: tokenValue } = scanNumber());
             return token;
-          case CharacterCodes.colon:
+          case CharCodes.colon:
             pos++;
             return (token = SyntaxKind.ColonToken);
-          case CharacterCodes.semicolon:
+          case CharCodes.semicolon:
             pos++;
             return (token = SyntaxKind.SemicolonToken);
-          case CharacterCodes.lessThan:
+          case CharCodes.lessThan:
             if (isConflictMarkerTrivia(text, pos)) {
               pos = scanConflictMarkerTrivia(text, pos, error);
-              if (skipTrivia) {
-                continue;
-              } else {
-                return (token = SyntaxKind.ConflictMarkerTrivia);
-              }
+              if (skipTrivia) continue;
+              else return (token = SyntaxKind.ConflictMarkerTrivia);
             }
-
-            if (text.charCodeAt(pos + 1) === CharacterCodes.lessThan) {
-              if (text.charCodeAt(pos + 2) === CharacterCodes.equals) {
-                return (pos += 3), (token = SyntaxKind.LessThanLessThanEqualsToken);
-              }
+            if (text.charCodeAt(pos + 1) === CharCodes.lessThan) {
+              if (text.charCodeAt(pos + 2) === CharCodes.equals) return (pos += 3), (token = SyntaxKind.LessThanLessThanEqualsToken);
               return (pos += 2), (token = SyntaxKind.LessThanLessThanToken);
             }
-            if (text.charCodeAt(pos + 1) === CharacterCodes.equals) {
-              return (pos += 2), (token = SyntaxKind.LessThanEqualsToken);
-            }
+            if (text.charCodeAt(pos + 1) === CharCodes.equals) return (pos += 2), (token = SyntaxKind.LessThanEqualsToken);
             if (
               languageVariant === LanguageVariant.JSX &&
-              text.charCodeAt(pos + 1) === CharacterCodes.slash &&
-              text.charCodeAt(pos + 2) !== CharacterCodes.asterisk
+              text.charCodeAt(pos + 1) === CharCodes.slash &&
+              text.charCodeAt(pos + 2) !== CharCodes.asterisk
             ) {
               return (pos += 2), (token = SyntaxKind.LessThanSlashToken);
             }
             pos++;
             return (token = SyntaxKind.LessThanToken);
-          case CharacterCodes.equals:
+          case CharCodes.equals:
             if (isConflictMarkerTrivia(text, pos)) {
               pos = scanConflictMarkerTrivia(text, pos, error);
-              if (skipTrivia) {
-                continue;
-              } else {
-                return (token = SyntaxKind.ConflictMarkerTrivia);
-              }
+              if (skipTrivia) continue;
+              else return (token = SyntaxKind.ConflictMarkerTrivia);
             }
-
-            if (text.charCodeAt(pos + 1) === CharacterCodes.equals) {
-              if (text.charCodeAt(pos + 2) === CharacterCodes.equals) {
-                return (pos += 3), (token = SyntaxKind.EqualsEqualsEqualsToken);
-              }
+            if (text.charCodeAt(pos + 1) === CharCodes.equals) {
+              if (text.charCodeAt(pos + 2) === CharCodes.equals) return (pos += 3), (token = SyntaxKind.EqualsEqualsEqualsToken);
               return (pos += 2), (token = SyntaxKind.EqualsEqualsToken);
             }
-            if (text.charCodeAt(pos + 1) === CharacterCodes.greaterThan) {
-              return (pos += 2), (token = SyntaxKind.EqualsGreaterThanToken);
-            }
+            if (text.charCodeAt(pos + 1) === CharCodes.greaterThan) return (pos += 2), (token = SyntaxKind.EqualsGreaterThanToken);
             pos++;
             return (token = SyntaxKind.EqualsToken);
-          case CharacterCodes.greaterThan:
+          case CharCodes.greaterThan:
             if (isConflictMarkerTrivia(text, pos)) {
               pos = scanConflictMarkerTrivia(text, pos, error);
-              if (skipTrivia) {
-                continue;
-              } else {
-                return (token = SyntaxKind.ConflictMarkerTrivia);
-              }
+              if (skipTrivia) continue;
+              else return (token = SyntaxKind.ConflictMarkerTrivia);
             }
-
             pos++;
             return (token = SyntaxKind.GreaterThanToken);
-          case CharacterCodes.question:
+          case CharCodes.question:
             pos++;
-            if (text.charCodeAt(pos) === CharacterCodes.dot && !isDigit(text.charCodeAt(pos + 1))) {
+            if (text.charCodeAt(pos) === CharCodes.dot && !isDigit(text.charCodeAt(pos + 1))) {
               pos++;
               return (token = SyntaxKind.QuestionDotToken);
             }
-            if (text.charCodeAt(pos) === CharacterCodes.question) {
+            if (text.charCodeAt(pos) === CharCodes.question) {
               pos++;
               return (token = SyntaxKind.QuestionQuestionToken);
             }
             return (token = SyntaxKind.QuestionToken);
-          case CharacterCodes.openBracket:
+          case CharCodes.openBracket:
             pos++;
             return (token = SyntaxKind.OpenBracketToken);
-          case CharacterCodes.closeBracket:
+          case CharCodes.closeBracket:
             pos++;
             return (token = SyntaxKind.CloseBracketToken);
-          case CharacterCodes.caret:
-            if (text.charCodeAt(pos + 1) === CharacterCodes.equals) {
-              return (pos += 2), (token = SyntaxKind.CaretEqualsToken);
-            }
+          case CharCodes.caret:
+            if (text.charCodeAt(pos + 1) === CharCodes.equals) return (pos += 2), (token = SyntaxKind.CaretEqualsToken);
             pos++;
             return (token = SyntaxKind.CaretToken);
-          case CharacterCodes.openBrace:
+          case CharCodes.openBrace:
             pos++;
             return (token = SyntaxKind.OpenBraceToken);
-          case CharacterCodes.bar:
+          case CharCodes.bar:
             if (isConflictMarkerTrivia(text, pos)) {
               pos = scanConflictMarkerTrivia(text, pos, error);
-              if (skipTrivia) {
-                continue;
-              } else {
-                return (token = SyntaxKind.ConflictMarkerTrivia);
-              }
+              if (skipTrivia) continue;
+              else return (token = SyntaxKind.ConflictMarkerTrivia);
             }
-
-            if (text.charCodeAt(pos + 1) === CharacterCodes.bar) {
-              return (pos += 2), (token = SyntaxKind.BarBarToken);
-            }
-            if (text.charCodeAt(pos + 1) === CharacterCodes.equals) {
-              return (pos += 2), (token = SyntaxKind.BarEqualsToken);
-            }
+            if (text.charCodeAt(pos + 1) === CharCodes.bar) return (pos += 2), (token = SyntaxKind.BarBarToken);
+            if (text.charCodeAt(pos + 1) === CharCodes.equals) return (pos += 2), (token = SyntaxKind.BarEqualsToken);
             pos++;
             return (token = SyntaxKind.BarToken);
-          case CharacterCodes.closeBrace:
+          case CharCodes.closeBrace:
             pos++;
             return (token = SyntaxKind.CloseBraceToken);
-          case CharacterCodes.tilde:
+          case CharCodes.tilde:
             pos++;
             return (token = SyntaxKind.TildeToken);
-          case CharacterCodes.at:
+          case CharCodes.at:
             pos++;
             return (token = SyntaxKind.AtToken);
-          case CharacterCodes.backslash:
+          case CharCodes.backslash:
             const extendedCookedChar = peekExtendedUnicodeEscape();
             if (extendedCookedChar >= 0 && isIdentifierStart(extendedCookedChar, languageVersion)) {
               pos += 3;
@@ -1834,7 +1712,6 @@ namespace qnr {
               tokenValue = scanExtendedUnicodeEscape() + scanIdentifierParts();
               return (token = getIdentifierToken());
             }
-
             const cookedChar = peekUnicodeEscape();
             if (cookedChar >= 0 && isIdentifierStart(cookedChar, languageVersion)) {
               pos += 6;
@@ -1842,11 +1719,10 @@ namespace qnr {
               tokenValue = String.fromCharCode(cookedChar) + scanIdentifierParts();
               return (token = getIdentifierToken());
             }
-
             error(Diagnostics.Invalid_character);
             pos++;
             return (token = SyntaxKind.Unknown);
-          case CharacterCodes.hash:
+          case CharCodes.hash:
             if (pos !== 0 && text[pos + 1] === '!') {
               error(Diagnostics.can_only_be_used_at_the_start_of_a_file);
               pos++;
@@ -1857,9 +1733,7 @@ namespace qnr {
               pos++;
               while (pos < end && isIdentifierPart((ch = text.charCodeAt(pos)), languageVersion)) pos++;
               tokenValue = text.substring(tokenPos, pos);
-              if (ch === CharacterCodes.backslash) {
-                tokenValue += scanIdentifierParts();
-              }
+              if (ch === CharCodes.backslash) tokenValue += scanIdentifierParts();
             } else {
               tokenValue = '#';
               error(Diagnostics.Invalid_character);
@@ -1870,9 +1744,7 @@ namespace qnr {
               pos += charSize(ch);
               while (pos < end && isIdentifierPart((ch = codePointAt(text, pos)), languageVersion)) pos += charSize(ch);
               tokenValue = text.substring(tokenPos, pos);
-              if (ch === CharacterCodes.backslash) {
-                tokenValue += scanIdentifierParts();
-              }
+              if (ch === CharCodes.backslash) tokenValue += scanIdentifierParts();
               return (token = getIdentifierToken());
             } else if (isWhiteSpaceSingleLine(ch)) {
               pos += charSize(ch);
@@ -1891,20 +1763,20 @@ namespace qnr {
 
     function reScanGreaterToken(): SyntaxKind {
       if (token === SyntaxKind.GreaterThanToken) {
-        if (text.charCodeAt(pos) === CharacterCodes.greaterThan) {
-          if (text.charCodeAt(pos + 1) === CharacterCodes.greaterThan) {
-            if (text.charCodeAt(pos + 2) === CharacterCodes.equals) {
+        if (text.charCodeAt(pos) === CharCodes.greaterThan) {
+          if (text.charCodeAt(pos + 1) === CharCodes.greaterThan) {
+            if (text.charCodeAt(pos + 2) === CharCodes.equals) {
               return (pos += 3), (token = SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken);
             }
             return (pos += 2), (token = SyntaxKind.GreaterThanGreaterThanGreaterThanToken);
           }
-          if (text.charCodeAt(pos + 1) === CharacterCodes.equals) {
+          if (text.charCodeAt(pos + 1) === CharCodes.equals) {
             return (pos += 2), (token = SyntaxKind.GreaterThanGreaterThanEqualsToken);
           }
           pos++;
           return (token = SyntaxKind.GreaterThanGreaterThanToken);
         }
-        if (text.charCodeAt(pos) === CharacterCodes.equals) {
+        if (text.charCodeAt(pos) === CharCodes.equals) {
           pos++;
           return (token = SyntaxKind.GreaterThanEqualsToken);
         }
@@ -1937,16 +1809,16 @@ namespace qnr {
             // Parsing an escape character;
             // reset the flag and just advance to the next char.
             inEscape = false;
-          } else if (ch === CharacterCodes.slash && !inCharacterClass) {
+          } else if (ch === CharCodes.slash && !inCharacterClass) {
             // A slash within a character class is permissible,
             // but in general it signals the end of the regexp literal.
             p++;
             break;
-          } else if (ch === CharacterCodes.openBracket) {
+          } else if (ch === CharCodes.openBracket) {
             inCharacterClass = true;
-          } else if (ch === CharacterCodes.backslash) {
+          } else if (ch === CharCodes.backslash) {
             inEscape = true;
-          } else if (ch === CharacterCodes.closeBracket) {
+          } else if (ch === CharCodes.closeBracket) {
             inCharacterClass = false;
           }
           p++;
@@ -2037,8 +1909,8 @@ namespace qnr {
       }
 
       let char = text.charCodeAt(pos);
-      if (char === CharacterCodes.lessThan) {
-        if (text.charCodeAt(pos + 1) === CharacterCodes.slash) {
+      if (char === CharCodes.lessThan) {
+        if (text.charCodeAt(pos + 1) === CharCodes.slash) {
           pos += 2;
           return (token = SyntaxKind.LessThanSlashToken);
         }
@@ -2046,7 +1918,7 @@ namespace qnr {
         return (token = SyntaxKind.LessThanToken);
       }
 
-      if (char === CharacterCodes.openBrace) {
+      if (char === CharCodes.openBrace) {
         pos++;
         return (token = SyntaxKind.OpenBraceToken);
       }
@@ -2066,20 +1938,20 @@ namespace qnr {
         }
 
         char = text.charCodeAt(pos);
-        if (char === CharacterCodes.openBrace) {
+        if (char === CharCodes.openBrace) {
           break;
         }
-        if (char === CharacterCodes.lessThan) {
+        if (char === CharCodes.lessThan) {
           if (isConflictMarkerTrivia(text, pos)) {
             pos = scanConflictMarkerTrivia(text, pos, error);
             return (token = SyntaxKind.ConflictMarkerTrivia);
           }
           break;
         }
-        if (char === CharacterCodes.greaterThan) {
+        if (char === CharCodes.greaterThan) {
           error(Diagnostics.Unexpected_token_Did_you_mean_or_gt, pos, 1);
         }
-        if (char === CharacterCodes.closeBrace) {
+        if (char === CharCodes.closeBrace) {
           error(Diagnostics.Unexpected_token_Did_you_mean_or_rbrace, pos, 1);
         }
 
@@ -2115,7 +1987,7 @@ namespace qnr {
         // Any caller should be expecting this behavior and should only read the pos or token value after calling it.
         while (pos < end) {
           const ch = text.charCodeAt(pos);
-          if (ch === CharacterCodes.minus) {
+          if (ch === CharCodes.minus) {
             tokenValue += '-';
             pos++;
             continue;
@@ -2134,8 +2006,8 @@ namespace qnr {
       startPos = pos;
 
       switch (text.charCodeAt(pos)) {
-        case CharacterCodes.doubleQuote:
-        case CharacterCodes.singleQuote:
+        case CharCodes.doubleQuote:
+        case CharCodes.singleQuote:
           tokenValue = scanString(/*jsxAttributeString*/ true);
           return (token = SyntaxKind.StringLiteral);
         default:
@@ -2159,43 +2031,43 @@ namespace qnr {
       const ch = codePointAt(text, pos);
       pos += charSize(ch);
       switch (ch) {
-        case CharacterCodes.tab:
-        case CharacterCodes.verticalTab:
-        case CharacterCodes.formFeed:
-        case CharacterCodes.space:
+        case CharCodes.tab:
+        case CharCodes.verticalTab:
+        case CharCodes.formFeed:
+        case CharCodes.space:
           while (pos < end && isWhiteSpaceSingleLine(text.charCodeAt(pos))) {
             pos++;
           }
           return (token = SyntaxKind.WhitespaceTrivia);
-        case CharacterCodes.at:
+        case CharCodes.at:
           return (token = SyntaxKind.AtToken);
-        case CharacterCodes.lineFeed:
-        case CharacterCodes.carriageReturn:
+        case CharCodes.lineFeed:
+        case CharCodes.carriageReturn:
           tokenFlags |= TokenFlags.PrecedingLineBreak;
           return (token = SyntaxKind.NewLineTrivia);
-        case CharacterCodes.asterisk:
+        case CharCodes.asterisk:
           return (token = SyntaxKind.AsteriskToken);
-        case CharacterCodes.openBrace:
+        case CharCodes.openBrace:
           return (token = SyntaxKind.OpenBraceToken);
-        case CharacterCodes.closeBrace:
+        case CharCodes.closeBrace:
           return (token = SyntaxKind.CloseBraceToken);
-        case CharacterCodes.openBracket:
+        case CharCodes.openBracket:
           return (token = SyntaxKind.OpenBracketToken);
-        case CharacterCodes.closeBracket:
+        case CharCodes.closeBracket:
           return (token = SyntaxKind.CloseBracketToken);
-        case CharacterCodes.lessThan:
+        case CharCodes.lessThan:
           return (token = SyntaxKind.LessThanToken);
-        case CharacterCodes.greaterThan:
+        case CharCodes.greaterThan:
           return (token = SyntaxKind.GreaterThanToken);
-        case CharacterCodes.equals:
+        case CharCodes.equals:
           return (token = SyntaxKind.EqualsToken);
-        case CharacterCodes.comma:
+        case CharCodes.comma:
           return (token = SyntaxKind.CommaToken);
-        case CharacterCodes.dot:
+        case CharCodes.dot:
           return (token = SyntaxKind.DotToken);
-        case CharacterCodes.backtick:
+        case CharCodes.backtick:
           return (token = SyntaxKind.BacktickToken);
-        case CharacterCodes.backslash:
+        case CharCodes.backslash:
           pos--;
           const extendedCookedChar = peekExtendedUnicodeEscape();
           if (extendedCookedChar >= 0 && isIdentifierStart(extendedCookedChar, languageVersion)) {
@@ -2218,10 +2090,10 @@ namespace qnr {
 
       if (isIdentifierStart(ch, languageVersion)) {
         let char = ch;
-        while ((pos < end && isIdentifierPart((char = codePointAt(text, pos)), languageVersion)) || text.charCodeAt(pos) === CharacterCodes.minus)
+        while ((pos < end && isIdentifierPart((char = codePointAt(text, pos)), languageVersion)) || text.charCodeAt(pos) === CharCodes.minus)
           pos += charSize(char);
         tokenValue = text.substring(tokenPos, pos);
-        if (char === CharacterCodes.backslash) {
+        if (char === CharCodes.backslash) {
           tokenValue += scanIdentifierParts();
         }
         return (token = getIdentifierToken());

@@ -115,7 +115,7 @@ namespace qnr {
     }
 
     let pathPartForUserCheck = dirPath.substring(rootLength, nextDirectorySeparator + 1);
-    const isNonDirectorySeparatorRoot = rootLength > 1 || dirPath.charCodeAt(0) !== CharacterCodes.slash;
+    const isNonDirectorySeparatorRoot = rootLength > 1 || dirPath.charCodeAt(0) !== CharCodes.slash;
     if (
       isNonDirectorySeparatorRoot &&
       dirPath.search(/[a-zA-Z]:/) !== 0 && // Non dos style paths

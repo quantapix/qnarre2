@@ -4753,7 +4753,7 @@ namespace qnr {
         tempFlags++;
         // Skip over 'i' and 'n'
         if (count !== 8 && count !== 13) {
-          const name = count < 26 ? '_' + String.fromCharCode(CharacterCodes.a + count) : '_' + (count - 26);
+          const name = count < 26 ? '_' + String.fromCharCode(CharCodes.a + count) : '_' + (count - 26);
           if (isUniqueName(name)) {
             if (reservedInNestedScopes) {
               reserveNameInNestedScopes(name);
@@ -4783,7 +4783,7 @@ namespace qnr {
         }
       }
       // Find the first unique 'name_n', where n is a positive number
-      if (baseName.charCodeAt(baseName.length - 1) !== CharacterCodes._) {
+      if (baseName.charCodeAt(baseName.length - 1) !== CharCodes._) {
         baseName += '_';
       }
       let i = 1;

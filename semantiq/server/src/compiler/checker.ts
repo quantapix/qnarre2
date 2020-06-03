@@ -4066,11 +4066,11 @@ namespace qnr {
     // Symbol instance and the # character indicates that the name is a PrivateIdentifier.
     function isReservedMemberName(name: __String) {
       return (
-        (name as string).charCodeAt(0) === CharacterCodes._ &&
-        (name as string).charCodeAt(1) === CharacterCodes._ &&
-        (name as string).charCodeAt(2) !== CharacterCodes._ &&
-        (name as string).charCodeAt(2) !== CharacterCodes.at &&
-        (name as string).charCodeAt(2) !== CharacterCodes.hash
+        (name as string).charCodeAt(0) === CharCodes._ &&
+        (name as string).charCodeAt(1) === CharCodes._ &&
+        (name as string).charCodeAt(2) !== CharCodes._ &&
+        (name as string).charCodeAt(2) !== CharCodes.at &&
+        (name as string).charCodeAt(2) !== CharCodes.hash
       );
     }
 
@@ -6167,7 +6167,7 @@ namespace qnr {
             return createLiteral(getSpecifierForModuleSymbol(symbol, context));
           }
           const canUsePropertyAccess =
-            firstChar === CharacterCodes.hash
+            firstChar === CharCodes.hash
               ? symbolName.length > 1 && isIdentifierStart(symbolName.charCodeAt(1), languageVersion)
               : isIdentifierStart(firstChar, languageVersion);
           if (index === 0 || canUsePropertyAccess) {
@@ -6176,14 +6176,14 @@ namespace qnr {
 
             return index > 0 ? createPropertyAccess(createExpressionFromSymbolChain(chain, index - 1), identifier) : identifier;
           } else {
-            if (firstChar === CharacterCodes.openBracket) {
+            if (firstChar === CharCodes.openBracket) {
               symbolName = symbolName.substring(1, symbolName.length - 1);
               firstChar = symbolName.charCodeAt(0);
             }
             let expression: Expression | undefined;
             if (isSingleOrDoubleQuote(firstChar)) {
               expression = createLiteral(symbolName.substring(1, symbolName.length - 1).replace(/\\./g, (s) => s.substring(1)));
-              (expression as StringLiteral).singleQuote = firstChar === CharacterCodes.singleQuote;
+              (expression as StringLiteral).singleQuote = firstChar === CharCodes.singleQuote;
             } else if ('' + +symbolName === symbolName) {
               expression = createLiteral(+symbolName);
             }
@@ -8150,7 +8150,7 @@ namespace qnr {
         if (nameType.flags & TypeFlags.StringOrNumberLiteral) {
           const name = '' + (<StringLiteralType | NumberLiteralType>nameType).value;
           if (!isIdentifierText(name, compilerOptions.target) && !isNumericLiteralName(name)) {
-            return `"${escapeString(name, CharacterCodes.doubleQuote)}"`;
+            return `"${escapeString(name, CharCodes.doubleQuote)}"`;
           }
           if (isNumericLiteralName(name) && startsWith(name, '-')) {
             return `[${name}]`;
@@ -10517,9 +10517,9 @@ namespace qnr {
 
     function isLateBoundName(name: __String): boolean {
       return (
-        (name as string).charCodeAt(0) === CharacterCodes._ &&
-        (name as string).charCodeAt(1) === CharacterCodes._ &&
-        (name as string).charCodeAt(2) === CharacterCodes.at
+        (name as string).charCodeAt(0) === CharCodes._ &&
+        (name as string).charCodeAt(1) === CharCodes._ &&
+        (name as string).charCodeAt(2) === CharCodes.at
       );
     }
 
@@ -33056,8 +33056,7 @@ namespace qnr {
 
     function getUniqueTypeParameterName(typeParameters: readonly TypeParameter[], baseName: __String) {
       let len = (<string>baseName).length;
-      while (len > 1 && (<string>baseName).charCodeAt(len - 1) >= CharacterCodes._0 && (<string>baseName).charCodeAt(len - 1) <= CharacterCodes._9)
-        len--;
+      while (len > 1 && (<string>baseName).charCodeAt(len - 1) >= CharCodes._0 && (<string>baseName).charCodeAt(len - 1) <= CharCodes._9) len--;
       const s = (<string>baseName).slice(0, len);
       for (let index = 1; true; index++) {
         const augmentedName = <__String>(s + index);
@@ -35445,7 +35444,7 @@ namespace qnr {
     }
 
     function isIdentifierThatStartsWithUnderscore(node: Node) {
-      return isIdentifier(node) && idText(node).charCodeAt(0) === CharacterCodes._;
+      return isIdentifier(node) && idText(node).charCodeAt(0) === CharCodes._;
     }
 
     function checkUnusedClassMembers(node: ClassDeclaration | ClassExpression, addDiagnostic: AddUnusedDiagnostic): void {

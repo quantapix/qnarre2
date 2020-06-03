@@ -197,7 +197,7 @@ namespace qnr.moduleSpecifiers {
   export function countPathComponents(path: string): number {
     let count = 0;
     for (let i = startsWith(path, './') ? 2 : 0; i < path.length; i++) {
-      if (path.charCodeAt(i) === CharacterCodes.slash) count++;
+      if (path.charCodeAt(i) === CharCodes.slash) count++;
     }
     return count;
   }

@@ -52,9 +52,9 @@ namespace qnr {
 
   export function isJSDocLikeText(text: string, start: number) {
     return (
-      text.charCodeAt(start + 1) === CharacterCodes.asterisk &&
-      text.charCodeAt(start + 2) === CharacterCodes.asterisk &&
-      text.charCodeAt(start + 3) !== CharacterCodes.slash
+      text.charCodeAt(start + 1) === CharCodes.asterisk &&
+      text.charCodeAt(start + 2) === CharCodes.asterisk &&
+      text.charCodeAt(start + 3) !== CharCodes.slash
     );
   }
 

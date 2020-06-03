@@ -504,7 +504,7 @@ namespace qnr {
                 const baseFileName = getBaseFileName(normalized);
 
                 // At this stage, skip results with leading dot.
-                if (baseFileName.charCodeAt(0) !== CharacterCodes.dot) {
+                if (baseFileName.charCodeAt(0) !== CharCodes.dot) {
                   // Return just the type directive names
                   result.push(baseFileName);
                 }
@@ -1215,7 +1215,7 @@ namespace qnr {
 
     const indexAfterNodeModules = idx + nodeModulesPathPart.length;
     let indexAfterPackageName = moveToNextDirectorySeparatorIfAvailable(path, indexAfterNodeModules);
-    if (path.charCodeAt(indexAfterNodeModules) === CharacterCodes.at) {
+    if (path.charCodeAt(indexAfterNodeModules) === CharCodes.at) {
       indexAfterPackageName = moveToNextDirectorySeparatorIfAvailable(path, indexAfterPackageName);
     }
     return path.slice(0, indexAfterPackageName);

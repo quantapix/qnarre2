@@ -404,7 +404,7 @@ namespace qnr {
       next() {
         while (!done && pos < mappings.length) {
           const ch = mappings.charCodeAt(pos);
-          if (ch === CharacterCodes.semicolon) {
+          if (ch === CharCodes.semicolon) {
             // new line
             generatedLine++;
             generatedCharacter = 0;
@@ -412,7 +412,7 @@ namespace qnr {
             continue;
           }
 
-          if (ch === CharacterCodes.comma) {
+          if (ch === CharCodes.comma) {
             // Next entry is on same line - no action needed
             pos++;
             continue;
@@ -493,7 +493,7 @@ namespace qnr {
     }
 
     function isSourceMappingSegmentEnd() {
-      return pos === mappings.length || mappings.charCodeAt(pos) === CharacterCodes.comma || mappings.charCodeAt(pos) === CharacterCodes.semicolon;
+      return pos === mappings.length || mappings.charCodeAt(pos) === CharCodes.comma || mappings.charCodeAt(pos) === CharCodes.semicolon;
     }
 
     function base64VLQFormatDecode(): number {
@@ -548,28 +548,28 @@ namespace qnr {
 
   function base64FormatEncode(value: number) {
     return value >= 0 && value < 26
-      ? CharacterCodes.A + value
+      ? CharCodes.A + value
       : value >= 26 && value < 52
-      ? CharacterCodes.a + value - 26
+      ? CharCodes.a + value - 26
       : value >= 52 && value < 62
-      ? CharacterCodes._0 + value - 52
+      ? CharCodes._0 + value - 52
       : value === 62
-      ? CharacterCodes.plus
+      ? CharCodes.plus
       : value === 63
-      ? CharacterCodes.slash
+      ? CharCodes.slash
       : Debug.fail(`${value}: not a base64 value`);
   }
 
   function base64FormatDecode(ch: number) {
-    return ch >= CharacterCodes.A && ch <= CharacterCodes.Z
-      ? ch - CharacterCodes.A
-      : ch >= CharacterCodes.a && ch <= CharacterCodes.z
-      ? ch - CharacterCodes.a + 26
-      : ch >= CharacterCodes._0 && ch <= CharacterCodes._9
-      ? ch - CharacterCodes._0 + 52
-      : ch === CharacterCodes.plus
+    return ch >= CharCodes.A && ch <= CharCodes.Z
+      ? ch - CharCodes.A
+      : ch >= CharCodes.a && ch <= CharCodes.z
+      ? ch - CharCodes.a + 26
+      : ch >= CharCodes._0 && ch <= CharCodes._9
+      ? ch - CharCodes._0 + 52
+      : ch === CharCodes.plus
       ? 62
-      : ch === CharacterCodes.slash
+      : ch === CharCodes.slash
       ? 63
       : -1;
   }
