@@ -3467,7 +3467,7 @@ namespace qnr {
             options.jsxFactory
           );
         }
-      } else if (options.reactNamespace && !isIdentifierText(options.reactNamespace, languageVersion)) {
+      } else if (options.reactNamespace && !isIdentifierText(options.reactNamespace)) {
         createOptionValueDiagnostic(
           'reactNamespace',
           Diagnostics.Invalid_value_for_reactNamespace_0_is_not_a_valid_identifier,
@@ -3488,7 +3488,7 @@ namespace qnr {
       }
 
       // Verify that all the emit files are unique and don't overwrite input files
-      function verifyEmitFilePath(emitFileName: string | undefined, emitFilesSeen: Map<true>) {
+      function verifyEmitFilePath(emitFileName: string | undefined, emitFilesSeen: QMap<true>) {
         if (emitFileName) {
           const emitFilePath = toPath(emitFileName);
           // Report error if the output overwrites input file

@@ -6167,9 +6167,7 @@ namespace qnr {
             return createLiteral(getSpecifierForModuleSymbol(symbol, context));
           }
           const canUsePropertyAccess =
-            firstChar === CharCodes.hash
-              ? symbolName.length > 1 && isIdentifierStart(symbolName.charCodeAt(1), languageVersion)
-              : isIdentifierStart(firstChar, languageVersion);
+            firstChar === CharCodes.hash ? symbolName.length > 1 && isIdentifierStart(symbolName.charCodeAt(1)) : isIdentifierStart(firstChar);
           if (index === 0 || canUsePropertyAccess) {
             const identifier = setEmitFlags(createIdentifier(symbolName, typeParameterNodes), EmitFlags.NoAsciiEscaping);
             identifier.symbol = symbol;
@@ -6227,7 +6225,7 @@ namespace qnr {
         if (nameType) {
           if (nameType.flags & TypeFlags.StringOrNumberLiteral) {
             const name = '' + (<StringLiteralType | NumberLiteralType>nameType).value;
-            if (!isIdentifierText(name, compilerOptions.target) && !isNumericLiteralName(name)) {
+            if (!isIdentifierText(name) && !isNumericLiteralName(name)) {
               return createLiteral(name, !!singleQuote);
             }
             if (isNumericLiteralName(name) && startsWith(name, '-')) {
@@ -6242,7 +6240,7 @@ namespace qnr {
       }
 
       function createPropertyNameNodeForIdentifierOrLiteral(name: string, singleQuote?: boolean) {
-        return isIdentifierText(name, compilerOptions.target)
+        return isIdentifierText(name)
           ? createIdentifier(name)
           : createLiteral(isNumericLiteralName(name) && +name >= 0 ? +name : name, !!singleQuote);
       }
@@ -7697,7 +7695,7 @@ namespace qnr {
             !(typeToSerialize.symbol && some(typeToSerialize.symbol.declarations, (d) => getSourceFileOfNode(d) !== ctxSrc)) &&
             !some(getPropertiesOfType(typeToSerialize), (p) => isLateBoundName(p.escapedName)) &&
             !some(getPropertiesOfType(typeToSerialize), (p) => some(p.declarations, (d) => getSourceFileOfNode(d) !== ctxSrc)) &&
-            every(getPropertiesOfType(typeToSerialize), (p) => isIdentifierText(symbolName(p), languageVersion) && !isStringAKeyword(symbolName(p)))
+            every(getPropertiesOfType(typeToSerialize), (p) => isIdentifierText(symbolName(p)) && !isStringAKeyword(symbolName(p)))
           );
         }
 
@@ -8020,9 +8018,7 @@ namespace qnr {
             localName = '_exports';
           }
           localName =
-            isIdentifierText(localName, languageVersion) && !isStringANonContextualKeyword(localName)
-              ? localName
-              : '_' + localName.replace(/[^a-zA-Z0-9]/g, '_');
+            isIdentifierText(localName) && !isStringANonContextualKeyword(localName) ? localName : '_' + localName.replace(/[^a-zA-Z0-9]/g, '_');
           return localName;
         }
 
@@ -8149,7 +8145,7 @@ namespace qnr {
       if (nameType) {
         if (nameType.flags & TypeFlags.StringOrNumberLiteral) {
           const name = '' + (<StringLiteralType | NumberLiteralType>nameType).value;
-          if (!isIdentifierText(name, compilerOptions.target) && !isNumericLiteralName(name)) {
+          if (!isIdentifierText(name) && !isNumericLiteralName(name)) {
             return `"${escapeString(name, CharCodes.doubleQuote)}"`;
           }
           if (isNumericLiteralName(name) && startsWith(name, '-')) {
@@ -17798,7 +17794,7 @@ namespace qnr {
                 path = `${str}`;
               }
               // Otherwise write a dotted name if possible
-              else if (isIdentifierText(str, compilerOptions.target)) {
+              else if (isIdentifierText(str)) {
                 path = `${path}.${str}`;
               }
               // Failing that, check if the name is already a computed name
