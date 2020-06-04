@@ -5222,11 +5222,7 @@ namespace qnr {
   }
 
   export interface LineAndCharacter {
-    /** 0-based. */
     line: number;
-    /*
-     * 0-based. This value denotes the character position in line and is different from the 'column' because of tab characters.
-     */
     character: number;
   }
 
