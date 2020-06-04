@@ -47,7 +47,7 @@ namespace qnr {
 
   const charSize = (c: number) => (c >= 0x10000 ? 2 : 1);
 
-  function isInMap(c: number, cs: readonly number[]) {
+  function isOneOf(c: number, cs: readonly number[]) {
     if (c < cs[0]) return false;
     let lo = 0;
     let hi = map.length;
@@ -68,7 +68,7 @@ namespace qnr {
       (c >= CharCodes.a && c <= CharCodes.z) ||
       c === CharCodes.$ ||
       c === CharCodes._ ||
-      (c > CharCodes.maxAsciiCharacter && isInMap(c, identifierStart))
+      (c > CharCodes.maxAsciiCharacter && isOneOf(c, identifierStart))
     );
   }
 
@@ -80,7 +80,7 @@ namespace qnr {
       c === CharCodes.$ ||
       c === CharCodes._ ||
       (v === LanguageVariant.JSX ? c === CharCodes.minus || c === CharCodes.colon : false) ||
-      (c > CharCodes.maxAsciiCharacter && isInMap(c, identifierPart))
+      (c > CharCodes.maxAsciiCharacter && isOneOf(c, identifierPart))
     );
   }
 
@@ -403,112 +403,90 @@ namespace qnr {
   const commentDirectiveRegExSingleLine = /^\s*\/\/\/?\s*@(ts-expect-error|ts-ignore)/;
   const commentDirectiveRegExMultiLine = /^\s*(?:\/|\*)*\s*@(ts-expect-error|ts-ignore)/;
 
-  export function computeLineStarts(text: string): number[] {
-    const result: number[] = new Array();
+  export function computeLineStarts(t: string): number[] {
+    const ss: number[] = new Array();
+    let s = 0;
     let pos = 0;
-    let lineStart = 0;
-    while (pos < text.length) {
-      const ch = text.charCodeAt(pos);
+    while (pos < t.length) {
+      const c = t.charCodeAt(pos);
       pos++;
-      switch (ch) {
+      switch (c) {
         case CharCodes.carriageReturn:
-          if (text.charCodeAt(pos) === CharCodes.lineFeed) {
-            pos++;
-          }
+          if (t.charCodeAt(pos) === CharCodes.lineFeed) pos++;
         // falls through
         case CharCodes.lineFeed:
-          result.push(lineStart);
-          lineStart = pos;
+          ss.push(s);
+          s = pos;
           break;
         default:
-          if (ch > CharCodes.maxAsciiCharacter && isLineBreak(ch)) {
-            result.push(lineStart);
-            lineStart = pos;
+          if (c > CharCodes.maxAsciiCharacter && isLineBreak(c)) {
+            ss.push(s);
+            s = pos;
           }
           break;
       }
     }
-    result.push(lineStart);
-    return result;
+    ss.push(s);
+    return ss;
   }
 
-  export function getPositionOfLineAndCharacter(sourceFile: SourceFileLike, line: number, character: number): number;
-  export function getPositionOfLineAndCharacter(sourceFile: SourceFileLike, line: number, character: number, allowEdits?: true): number; // eslint-disable-line @typescript-eslint/unified-signatures
-  export function getPositionOfLineAndCharacter(sourceFile: SourceFileLike, line: number, character: number, allowEdits?: true): number {
-    return sourceFile.getPositionOfLineAndCharacter
-      ? sourceFile.getPositionOfLineAndCharacter(line, character, allowEdits)
-      : computePositionOfLineAndCharacter(getLineStarts(sourceFile), line, character, sourceFile.text, allowEdits);
-  }
-
-  export function computePositionOfLineAndCharacter(
-    lineStarts: readonly number[],
-    line: number,
-    character: number,
-    debugText?: string,
-    allowEdits?: true
-  ): number {
-    if (line < 0 || line >= lineStarts.length) {
-      if (allowEdits) {
-        // Clamp line to nearest allowable value
-        line = line < 0 ? 0 : line >= lineStarts.length ? lineStarts.length - 1 : line;
-      } else {
+  function computePositionOfLineAndCharacter(starts: readonly number[], line: number, char: number, debug?: string, edits?: true): number {
+    if (line < 0 || line >= starts.length) {
+      if (edits) line = line < 0 ? 0 : line >= starts.length ? starts.length - 1 : line;
+      else {
         Debug.fail(
-          `Bad line number. Line: ${line}, lineStarts.length: ${lineStarts.length} , line map is correct? ${
-            debugText !== undefined ? arraysEqual(lineStarts, computeLineStarts(debugText)) : 'unknown'
+          `Bad line number. Line: ${line}, starts.length: ${starts.length} , line map is correct? ${
+            debug !== undefined ? arraysEqual(starts, computeLineStarts(debug)) : 'unknown'
           }`
         );
       }
     }
+    const r = starts[line] + char;
+    if (edits) return r > starts[line + 1] ? starts[line + 1] : typeof debug === 'string' && r > debug.length ? debug.length : r;
+    if (line < starts.length - 1) Debug.assert(r < starts[line + 1]);
+    else if (debug !== undefined) Debug.assert(r <= debug.length);
+    return r;
+  }
 
-    const res = lineStarts[line] + character;
-    if (allowEdits) {
-      // Clamp to nearest allowable values to allow the underlying to be edited without crashing (accuracy is lost, instead)
-      // TODO: Somehow track edits between file as it was during the creation of sourcemap we have and the current file and
-      // apply them to the computed position to improve accuracy
-      return res > lineStarts[line + 1] ? lineStarts[line + 1] : typeof debugText === 'string' && res > debugText.length ? debugText.length : res;
+  export function getPositionOfLineAndCharacter(s: SourceFileLike, line: number, char: number): number;
+  export function getPositionOfLineAndCharacter(s: SourceFileLike, line: number, char: number, edits?: true): number;
+  export function getPositionOfLineAndCharacter(s: SourceFileLike, line: number, char: number, edits?: true): number {
+    return s.getPositionOfLineAndCharacter
+      ? s.getPositionOfLineAndCharacter(line, char, edits)
+      : computePositionOfLineAndCharacter(getLineStarts(s), line, char, s.text, edits);
+  }
+
+  export function getLineStarts(s: SourceFileLike): readonly number[] {
+    return s.lineMap || (s.lineMap = computeLineStarts(s.text));
+  }
+
+  export function computeLineAndCharacterOfPosition(starts: readonly number[], pos: number): LineAndCharacter {
+    const line = computeLineOfPosition(starts, pos);
+    return { line, char: pos - starts[line] };
+  }
+
+  export function computeLineOfPosition(starts: readonly number[], pos: number, lowerBound?: number) {
+    let line = binarySearch(starts, pos, identity, compareValues, lowerBound);
+    if (line < 0) {
+      line = ~line - 1;
+      Debug.assert(line !== -1, 'position before beginning of file');
     }
-    if (line < lineStarts.length - 1) {
-      Debug.assert(res < lineStarts[line + 1]);
-    } else if (debugText !== undefined) {
-      Debug.assert(res <= debugText.length); // Allow single character overflow for trailing newline
-    }
-    return res;
+    return line;
   }
 
-  export function getLineStarts(sourceFile: SourceFileLike): readonly number[] {
-    return sourceFile.lineMap || (sourceFile.lineMap = computeLineStarts(sourceFile.text));
-  }
-
-  export function computeLineAndCharacterOfPosition(lineStarts: readonly number[], position: number): LineAndCharacter {
-    const lineNumber = computeLineOfPosition(lineStarts, position);
-    return {
-      line: lineNumber,
-      character: position - lineStarts[lineNumber],
-    };
-  }
-
-  export function computeLineOfPosition(lineStarts: readonly number[], position: number, lowerBound?: number) {
-    let lineNumber = binarySearch(lineStarts, position, identity, compareValues, lowerBound);
-    if (lineNumber < 0) {
-      lineNumber = ~lineNumber - 1;
-      Debug.assert(lineNumber !== -1, 'position cannot precede the beginning of the file');
-    }
-    return lineNumber;
-  }
-
-  export function getLinesBetweenPositions(sourceFile: SourceFileLike, pos1: number, pos2: number) {
+  export function getLinesBetweenPositions(s: SourceFileLike, pos1: number, pos2: number) {
     if (pos1 === pos2) return 0;
-    const lineStarts = getLineStarts(sourceFile);
-    const lower = Math.min(pos1, pos2);
-    const isNegative = lower === pos2;
-    const upper = isNegative ? pos1 : pos2;
-    const lowerLine = computeLineOfPosition(lineStarts, lower);
-    const upperLine = computeLineOfPosition(lineStarts, upper, lowerLine);
-    return isNegative ? lowerLine - upperLine : upperLine - lowerLine;
+    const ss = getLineStarts(s);
+    const min = Math.min(pos1, pos2);
+    const isNegative = min === pos2;
+    const max = isNegative ? pos1 : pos2;
+    const lower = computeLineOfPosition(ss, min);
+    const upper = computeLineOfPosition(ss, max, lower);
+    return isNegative ? lower - upper : upper - lower;
   }
 
-  export function getLineAndCharacterOfPosition(sourceFile: SourceFileLike, position: number): LineAndCharacter {
-    return computeLineAndCharacterOfPosition(getLineStarts(sourceFile), position);
+  export function getLineAndCharacterOfPosition(s: SourceFileLike, pos: number) {
+    return computeLineAndCharacterOfPosition(getLineStarts(s), pos);
   }
 
   function iterateCommentRanges<T, U>(
@@ -1217,8 +1195,6 @@ namespace qnr {
       return utf16EncodeAsString(escapedValue);
     }
 
-    // Current character is known to be a backslash. Check for Unicode escape of the form '\uXXXX'
-    // and return code point value if valid Unicode escape is found. Otherwise return -1.
     function peekUnicodeEscape(): number {
       if (pos + 5 < end && text.charCodeAt(pos + 1) === CharCodes.u) {
         const start = pos;
@@ -1231,7 +1207,7 @@ namespace qnr {
     }
 
     function peekExtendedUnicodeEscape(): number {
-      if (languageVersion >= ScriptTarget.ES2015 && text.codePointAt(pos + 1) === CharCodes.u && text.codePointAt(pos + 2) === CharCodes.openBrace) {
+      if (text.codePointAt(pos + 1) === CharCodes.u && text.codePointAt(pos + 2) === CharCodes.openBrace) {
         const start = pos;
         pos += 3;
         const escapedValueString = scanMinimumNumberOfHexDigits(1, /*canHaveSeparators*/ false);
@@ -1358,13 +1334,13 @@ namespace qnr {
       while (true) {
         tokenPos = pos;
         if (pos >= end) return (token = SyntaxKind.EndOfFileToken);
-        let ch = codePointAt(text, pos);
-        if (ch === CharCodes.hash && pos === 0 && isShebangTrivia(text, pos)) {
+        let c = text.codePointAt(pos)!;
+        if (c === CharCodes.hash && pos === 0 && isShebangTrivia(text, pos)) {
           pos = scanShebangTrivia(text, pos);
           if (skipTrivia) continue;
           else return (token = SyntaxKind.ShebangTrivia);
         }
-        switch (ch) {
+        switch (c) {
           case CharCodes.lineFeed:
           case CharCodes.carriageReturn:
             tokenFlags |= TokenFlags.PrecedingLineBreak;
@@ -1372,11 +1348,8 @@ namespace qnr {
               pos++;
               continue;
             } else {
-              if (ch === CharCodes.carriageReturn && pos + 1 < end && text.charCodeAt(pos + 1) === CharCodes.lineFeed) {
-                pos += 2;
-              } else {
-                pos++;
-              }
+              if (c === CharCodes.carriageReturn && pos + 1 < end && text.charCodeAt(pos + 1) === CharCodes.lineFeed) pos += 2;
+              else pos++;
               return (token = SyntaxKind.NewLineTrivia);
             }
           case CharCodes.tab:
@@ -1474,7 +1447,6 @@ namespace qnr {
             pos++;
             return (token = SyntaxKind.DotToken);
           case CharCodes.slash:
-            // Single-line comment
             if (text.charCodeAt(pos + 1) === CharCodes.slash) {
               pos += 2;
               while (pos < end) {
@@ -1485,23 +1457,22 @@ namespace qnr {
               if (skipTrivia) continue;
               else return (token = SyntaxKind.SingleLineCommentTrivia);
             }
-            // Multi-line comment
             if (text.charCodeAt(pos + 1) === CharCodes.asterisk) {
               pos += 2;
               if (text.charCodeAt(pos) === CharCodes.asterisk && text.charCodeAt(pos + 1) !== CharCodes.slash) {
                 tokenFlags |= TokenFlags.PrecedingJSDocComment;
               }
-              let commentClosed = false;
+              let closed = false;
               let lastLineStart = tokenPos;
               while (pos < end) {
-                const ch = text.charCodeAt(pos);
-                if (ch === CharCodes.asterisk && text.charCodeAt(pos + 1) === CharCodes.slash) {
+                const c2 = text.charCodeAt(pos);
+                if (c2 === CharCodes.asterisk && text.charCodeAt(pos + 1) === CharCodes.slash) {
                   pos += 2;
-                  commentClosed = true;
+                  closed = true;
                   break;
                 }
                 pos++;
-                if (isLineBreak(ch)) {
+                if (isLineBreak(c2)) {
                   lastLineStart = pos;
                   tokenFlags |= TokenFlags.PrecedingLineBreak;
                 }
@@ -1512,10 +1483,10 @@ namespace qnr {
                 commentDirectiveRegExMultiLine,
                 lastLineStart
               );
-              if (!commentClosed) error(Diagnostics.Asterisk_Slash_expected);
+              if (!closed) error(Diagnostics.Asterisk_Slash_expected);
               if (skipTrivia) continue;
               else {
-                if (!commentClosed) tokenFlags |= TokenFlags.Unterminated;
+                if (!closed) tokenFlags |= TokenFlags.Unterminated;
                 return (token = SyntaxKind.MultiLineCommentTrivia);
               }
             }
@@ -1662,18 +1633,18 @@ namespace qnr {
             pos++;
             return (token = SyntaxKind.AtToken);
           case CharCodes.backslash:
-            const extendedCookedChar = peekExtendedUnicodeEscape();
-            if (extendedCookedChar >= 0 && isIdentifierStart(extendedCookedChar)) {
+            const c2 = peekExtendedUnicodeEscape();
+            if (c2 >= 0 && isIdentifierStart(c2)) {
               pos += 3;
               tokenFlags |= TokenFlags.ExtendedUnicodeEscape;
               tokenValue = scanExtendedUnicodeEscape() + scanIdentifierParts();
               return (token = getIdentifierToken());
             }
-            const cookedChar = peekUnicodeEscape();
-            if (cookedChar >= 0 && isIdentifierStart(cookedChar)) {
+            const c3 = peekUnicodeEscape();
+            if (c3 >= 0 && isIdentifierStart(c3)) {
               pos += 6;
               tokenFlags |= TokenFlags.UnicodeEscape;
-              tokenValue = String.fromCharCode(cookedChar) + scanIdentifierParts();
+              tokenValue = String.fromCharCode(c3) + scanIdentifierParts();
               return (token = getIdentifierToken());
             }
             error(Diagnostics.Invalid_character);
@@ -1686,33 +1657,33 @@ namespace qnr {
               return (token = SyntaxKind.Unknown);
             }
             pos++;
-            if (isIdentifierStart((ch = text.charCodeAt(pos)))) {
+            if (isIdentifierStart((c = text.charCodeAt(pos)))) {
               pos++;
-              while (pos < end && isIdentifierPart((ch = text.charCodeAt(pos)))) pos++;
+              while (pos < end && isIdentifierPart((c = text.charCodeAt(pos)))) pos++;
               tokenValue = text.substring(tokenPos, pos);
-              if (ch === CharCodes.backslash) tokenValue += scanIdentifierParts();
+              if (c === CharCodes.backslash) tokenValue += scanIdentifierParts();
             } else {
               tokenValue = '#';
               error(Diagnostics.Invalid_character);
             }
             return (token = SyntaxKind.PrivateIdentifier);
           default:
-            if (isIdentifierStart(ch)) {
-              pos += charSize(ch);
-              while (pos < end && isIdentifierPart((ch = text.codePointAt(pos)!))) pos += charSize(ch);
+            if (isIdentifierStart(c)) {
+              pos += charSize(c);
+              while (pos < end && isIdentifierPart((c = text.codePointAt(pos)!))) pos += charSize(c);
               tokenValue = text.substring(tokenPos, pos);
-              if (ch === CharCodes.backslash) tokenValue += scanIdentifierParts();
+              if (c === CharCodes.backslash) tokenValue += scanIdentifierParts();
               return (token = getIdentifierToken());
-            } else if (isWhiteSpaceSingleLine(ch)) {
-              pos += charSize(ch);
+            } else if (isWhiteSpaceSingleLine(c)) {
+              pos += charSize(c);
               continue;
-            } else if (isLineBreak(ch)) {
+            } else if (isLineBreak(c)) {
               tokenFlags |= TokenFlags.PrecedingLineBreak;
-              pos += charSize(ch);
+              pos += charSize(c);
               continue;
             }
             error(Diagnostics.Invalid_character);
-            pos += charSize(ch);
+            pos += charSize(c);
             return (token = SyntaxKind.Unknown);
         }
       }

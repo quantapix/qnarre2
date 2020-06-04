@@ -5221,7 +5221,7 @@ namespace qnr {
 
   export interface LineAndCharacter {
     line: number;
-    character: number;
+    char: number;
   }
 
   export const enum ScriptKind {
