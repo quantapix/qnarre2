@@ -72,23 +72,23 @@ namespace qnr {
     );
   }
 
-  function isIdentifierPart(c: number, v?: LanguageVariant) {
+  function isIdentifierPart(c: number, l?: LanguageVariant) {
     return (
       (c >= CharCodes.A && c <= CharCodes.Z) ||
       (c >= CharCodes.a && c <= CharCodes.z) ||
       (c >= CharCodes._0 && c <= CharCodes._9) ||
       c === CharCodes.$ ||
       c === CharCodes._ ||
-      (v === LanguageVariant.JSX ? c === CharCodes.minus || c === CharCodes.colon : false) ||
+      (l === LanguageVariant.TX ? c === CharCodes.minus || c === CharCodes.colon : false) ||
       (c > CharCodes.maxAsciiCharacter && isOneOf(c, identifierPart))
     );
   }
 
-  export function isIdentifierText(t: string, v?: LanguageVariant) {
+  export function isIdentifierText(t: string, l?: LanguageVariant) {
     let c = t.codePointAt(0)!;
     if (!isIdentifierStart(c)) return false;
     for (let i = charSize(c); i < t.length; i += charSize(c)) {
-      if (!isIdentifierPart((c = t.codePointAt(i)!), v)) return false;
+      if (!isIdentifierPart((c = t.codePointAt(i)!), l)) return false;
     }
     return true;
   }
@@ -665,7 +665,7 @@ namespace qnr {
   export type ErrorCallback = (m: DiagnosticMessage, length: number) => void;
 
   export interface Scanner {
-    setLanguageVariant(v: LanguageVariant): void;
+    setLanguageVariant(l: LanguageVariant): void;
     setOnError(cb?: ErrorCallback): void;
     getText(): string;
     setText(t?: string, start?: number, length?: number): void;
@@ -706,7 +706,7 @@ namespace qnr {
 
   export function createScanner(
     skipTrivia: boolean,
-    variant = LanguageVariant.Standard,
+    lang = LanguageVariant.TS,
     text: string = '',
     onError?: ErrorCallback,
     s?: number,
@@ -771,8 +771,8 @@ namespace qnr {
     }
     return scanner;
 
-    function setLanguageVariant(v: LanguageVariant) {
-      variant = v;
+    function setLanguageVariant(l: LanguageVariant) {
+      lang = l;
     }
 
     function getText() {
@@ -1502,7 +1502,7 @@ namespace qnr {
               return (pos += 2), (token = SyntaxKind.LessThan2Token);
             }
             if (text.charCodeAt(pos + 1) === CharCodes.equals) return (pos += 2), (token = SyntaxKind.LessThanEqualsToken);
-            if (variant === LanguageVariant.JSX && text.charCodeAt(pos + 1) === CharCodes.slash && text.charCodeAt(pos + 2) !== CharCodes.asterisk) {
+            if (lang === LanguageVariant.TX && text.charCodeAt(pos + 1) === CharCodes.slash && text.charCodeAt(pos + 2) !== CharCodes.asterisk) {
               return (pos += 2), (token = SyntaxKind.LessThanSlashToken);
             }
             pos++;

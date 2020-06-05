@@ -905,13 +905,13 @@ namespace qnr {
     export function parseJsonText(
       fileName: string,
       sourceText: string,
-      languageVersion: ScriptTarget = ScriptTarget.ES2015,
+      languageVersion: ScriptTarget = ScriptTarget.ES2020,
       syntaxCursor?: IncrementalParser.SyntaxCursor,
       setParentNodes?: boolean
     ): JsonSourceFile {
       initializeState(sourceText, languageVersion, syntaxCursor, ScriptKind.JSON);
       // Set source file so that errors will be reported with this file name
-      sourceFile = createSourceFile(fileName, ScriptTarget.ES2015, ScriptKind.JSON, /*isDeclaration*/ false);
+      sourceFile = createSourceFile(fileName, ScriptTarget.ES2020, ScriptKind.JSON, /*isDeclaration*/ false);
       sourceFile.flags = contextFlags;
 
       // Prime the scanner.
@@ -971,8 +971,8 @@ namespace qnr {
     function getLanguageVariant(scriptKind: ScriptKind) {
       // .tsx and .jsx files are treated as jsx language variant.
       return scriptKind === ScriptKind.TSX || scriptKind === ScriptKind.JSX || scriptKind === ScriptKind.JS || scriptKind === ScriptKind.JSON
-        ? LanguageVariant.JSX
-        : LanguageVariant.Standard;
+        ? LanguageVariant.TX
+        : LanguageVariant.TS;
     }
 
     function initializeState(
@@ -1020,7 +1020,7 @@ namespace qnr {
 
     function clearState() {
       // Clear out the text the scanner is pointing at, so it doesn't keep anything alive unnecessarily.
-      scanner.clearCommentDirectives();
+      scanner.clearDirectives();
       scanner.setText('');
       scanner.setOnError(undefined);
 
@@ -6258,6 +6258,7 @@ namespace qnr {
           return literalNode.text === 'constructor' ? literalNode : undefined;
         });
       }
+      return;
     }
 
     function tryParseConstructorDeclaration(node: ConstructorDeclaration): ConstructorDeclaration | undefined {
@@ -7019,8 +7020,8 @@ namespace qnr {
         start: number | undefined,
         length: number | undefined
       ): { jsDocTypeExpression: JSDocTypeExpression; diagnostics: Diagnostic[] } | undefined {
-        initializeState(content, ScriptTarget.Latest, /*_syntaxCursor:*/ undefined, ScriptKind.JS);
-        sourceFile = createSourceFile('file.js', ScriptTarget.Latest, ScriptKind.JS, /*isDeclarationFile*/ false);
+        initializeState(content, ScriptTarget.ESNext, /*_syntaxCursor:*/ undefined, ScriptKind.JS);
+        sourceFile = createSourceFile('file.js', ScriptTarget.ESNext, ScriptKind.JS, /*isDeclarationFile*/ false);
         scanner.setText(content, start, length);
         currentToken = scanner.scan();
         const jsDocTypeExpression = parseJSDocTypeExpression();
@@ -7049,8 +7050,8 @@ namespace qnr {
         start: number | undefined,
         length: number | undefined
       ): { jsDoc: JSDoc; diagnostics: Diagnostic[] } | undefined {
-        initializeState(content, ScriptTarget.Latest, /*_syntaxCursor:*/ undefined, ScriptKind.JS);
-        sourceFile = <SourceFile>{ languageVariant: LanguageVariant.Standard, text: content };
+        initializeState(content, ScriptTarget.ESNext, /*_syntaxCursor:*/ undefined, ScriptKind.JS);
+        sourceFile = <SourceFile>{ languageVariant: LanguageVariant.TS, text: content };
         const jsDoc = doInsideOfContext(NodeFlags.JSDoc, () => parseJSDocCommentWorker(start, length));
         const diagnostics = parseDiagnostics;
         clearState();

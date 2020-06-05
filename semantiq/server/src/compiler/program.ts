@@ -3331,19 +3331,11 @@ namespace qnr {
         createDiagnosticForOptionName(Diagnostics.Option_0_cannot_be_specified_with_option_1, 'noImplicitUseStrict', 'alwaysStrict');
       }
 
-      const languageVersion = options.target || ScriptTarget.ES3;
+      const languageVersion = options.target || ScriptTarget.ES2020;
       const outFile = options.outFile || options.out;
 
       const firstNonAmbientExternalModuleSourceFile = find(files, (f) => isExternalModule(f) && !f.isDeclarationFile);
       if (options.isolatedModules) {
-        if (options.module === ModuleKind.None && languageVersion < ScriptTarget.ES2015) {
-          createDiagnosticForOptionName(
-            Diagnostics.Option_isolatedModules_can_only_be_used_when_either_option_module_is_provided_or_option_target_is_ES2015_or_higher,
-            'isolatedModules',
-            'target'
-          );
-        }
-
         const firstNonExternalModuleSourceFile = find(
           files,
           (f) => !isExternalModule(f) && !isSourceFileJS(f) && !f.isDeclarationFile && f.scriptKind !== ScriptKind.JSON
@@ -3359,19 +3351,7 @@ namespace qnr {
             )
           );
         }
-      } else if (firstNonAmbientExternalModuleSourceFile && languageVersion < ScriptTarget.ES2015 && options.module === ModuleKind.None) {
-        // We cannot use createDiagnosticFromNode because nodes do not have parents yet
-        const span = getErrorSpanForNode(firstNonAmbientExternalModuleSourceFile, firstNonAmbientExternalModuleSourceFile.externalModuleIndicator!);
-        programDiagnostics.add(
-          createFileDiagnostic(
-            firstNonAmbientExternalModuleSourceFile,
-            span.start,
-            span.length,
-            Diagnostics.Cannot_use_imports_exports_or_module_augmentations_when_module_is_none
-          )
-        );
       }
-
       // Cannot specify module gen that isn't amd or system with --out
       if (outFile && !options.emitDeclarationOnly) {
         if (options.module && !(options.module === ModuleKind.AMD || options.module === ModuleKind.System)) {
@@ -3423,10 +3403,6 @@ namespace qnr {
         if (options.outDir && dir === '' && files.some((file) => getRootLength(file.fileName) > 1)) {
           createDiagnosticForOptionName(Diagnostics.Cannot_find_the_common_subdirectory_path_for_the_input_files, 'outDir');
         }
-      }
-
-      if (options.useDefineForClassFields && languageVersion === ScriptTarget.ES3) {
-        createDiagnosticForOptionName(Diagnostics.Option_0_cannot_be_specified_when_option_target_is_ES3, 'useDefineForClassFields');
       }
 
       if (options.checkJs && !options.allowJs) {

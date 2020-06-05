@@ -286,16 +286,7 @@ namespace qnr {
       name: 'target',
       shortName: 't',
       type: createMap({
-        es3: ScriptTarget.ES3,
-        es5: ScriptTarget.ES5,
-        es6: ScriptTarget.ES2015,
-        es2015: ScriptTarget.ES2015,
-        es2016: ScriptTarget.ES2016,
-        es2017: ScriptTarget.ES2017,
-        es2018: ScriptTarget.ES2018,
-        es2019: ScriptTarget.ES2019,
         es2020: ScriptTarget.ES2020,
-        esnext: ScriptTarget.ESNext,
       }),
       affectsSourceFile: true,
       affectsModuleResolution: true,
@@ -1080,8 +1071,8 @@ namespace qnr {
   ];
 
   export interface OptionsNameMap {
-    optionsNameMap: Map<CommandLineOption>;
-    shortOptionNames: Map<string>;
+    optionsNameMap: QMap<CommandLineOption>;
+    shortOptionNames: QMap<string>;
   }
 
   export function createOptionNameMap(optionDeclarations: readonly CommandLineOption[]): OptionsNameMap {
@@ -1105,7 +1096,7 @@ namespace qnr {
 
   export const defaultInitCompilerOptions: CompilerOptions = {
     module: ModuleKind.CommonJS,
-    target: ScriptTarget.ES5,
+    target: ScriptTarget.ES2020,
     strict: true,
     esModuleInterop: true,
     forceConsistentCasingInFileNames: true,
@@ -1417,37 +1408,26 @@ namespace qnr {
     return { buildOptions, watchOptions, projects, errors };
   }
 
-  export function getDiagnosticText(_message: DiagnosticMessage, ..._args: any[]): string {
-    const diagnostic = createCompilerDiagnostic.apply(undefined, arguments);
+  export function getDiagnosticText(_message: DiagnosticMessage, ...args: any[]): string {
+    const diagnostic = createCompilerDiagnostic.apply(undefined, args);
     return <string>diagnostic.messageText;
   }
 
   export type DiagnosticReporter = (diagnostic: Diagnostic) => void;
-  /**
-   * Reports config file diagnostics
-   */
+
   export interface ConfigFileDiagnosticsReporter {
-    /**
-     * Reports unrecoverable error when parsing config file
-     */
     onUnRecoverableConfigFileDiagnostic: DiagnosticReporter;
   }
 
-  /**
-   * Interface extending ParseConfigHost to support ParseConfigFile that reads config file and reports errors
-   */
   export interface ParseConfigFileHost extends ParseConfigHost, ConfigFileDiagnosticsReporter {
     getCurrentDirectory(): string;
   }
 
-  /**
-   * Reads the config file, reports errors if any and exits if the config file cannot be found
-   */
   export function getParsedCommandLineOfConfigFile(
     configFileName: string,
     optionsToExtend: CompilerOptions,
     host: ParseConfigFileHost,
-    extendedConfigCache?: Map<ExtendedConfigCacheEntry>,
+    extendedConfigCache?: QMap<ExtendedConfigCacheEntry>,
     watchOptionsToExtend?: WatchOptions,
     extraFileExtensions?: readonly FileExtensionInfo[]
   ): ParsedCommandLine | undefined {
@@ -1538,15 +1518,15 @@ namespace qnr {
     optionTypeMismatchDiagnostic: Diagnostics.Watch_option_0_requires_a_value_of_type_1,
   };
 
-  let commandLineCompilerOptionsMapCache: Map<CommandLineOption>;
+  let commandLineCompilerOptionsMapCache: QMap<CommandLineOption>;
   function getCommandLineCompilerOptionsMap() {
     return commandLineCompilerOptionsMapCache || (commandLineCompilerOptionsMapCache = commandLineOptionsToMap(optionDeclarations));
   }
-  let commandLineWatchOptionsMapCache: Map<CommandLineOption>;
+  let commandLineWatchOptionsMapCache: QMap<CommandLineOption>;
   function getCommandLineWatchOptionsMap() {
     return commandLineWatchOptionsMapCache || (commandLineWatchOptionsMapCache = commandLineOptionsToMap(optionsForWatch));
   }
-  let commandLineTypeAcquisitionMapCache: Map<CommandLineOption>;
+  let commandLineTypeAcquisitionMapCache: QMap<CommandLineOption>;
   function getCommandLineTypeAcquisitionMap() {
     return commandLineTypeAcquisitionMapCache || (commandLineTypeAcquisitionMapCache = commandLineOptionsToMap(typeAcquisitionDeclarations));
   }
@@ -1679,13 +1659,13 @@ namespace qnr {
 
     return convertPropertyValueToJson(sourceFile.statements[0].expression, knownRootOptions);
 
-    function isRootOptionMap(knownOptions: Map<CommandLineOption> | undefined) {
+    function isRootOptionMap(knownOptions: QMap<CommandLineOption> | undefined) {
       return knownRootOptions && (knownRootOptions as TsConfigOnlyOption).elementOptions === knownOptions;
     }
 
     function convertObjectLiteralExpressionToJson(
       node: ObjectLiteralExpression,
-      knownOptions: Map<CommandLineOption> | undefined,
+      knownOptions: QMap<CommandLineOption> | undefined,
       extraKeyDiagnostics: DidYouMeanOptionsDiagnostics | undefined,
       parentOption: string | undefined
     ): any {
@@ -1971,7 +1951,7 @@ namespace qnr {
     return config;
   }
 
-  function optionMapToObject(optionMap: Map<CompilerOptionsValue>): object {
+  function optionMapToObject(optionMap: QMap<CompilerOptionsValue>): object {
     return {
       ...arrayFrom(optionMap.entries()).reduce((prev, cur) => ({ ...prev, [cur[0]]: cur[1] }), {}),
     };
@@ -2006,7 +1986,7 @@ namespace qnr {
     return (_) => true;
   }
 
-  function getCustomTypeMapOfCommandLineOption(optionDefinition: CommandLineOption): Map<string | number> | undefined {
+  function getCustomTypeMapOfCommandLineOption(optionDefinition: CommandLineOption): QMap<string | number> | undefined {
     if (
       optionDefinition.type === 'string' ||
       optionDefinition.type === 'number' ||
@@ -2022,19 +2002,20 @@ namespace qnr {
     }
   }
 
-  function getNameOfCompilerOptionValue(value: CompilerOptionsValue, customTypeMap: Map<string | number>): string | undefined {
+  function getNameOfCompilerOptionValue(value: CompilerOptionsValue, customTypeMap: QMap<string | number>): string | undefined {
     // There is a typeMap associated with this command-line option so use it to map value back to its name
     return forEachEntry(customTypeMap, (mapValue, key) => {
       if (mapValue === value) {
         return key;
       }
+      return;
     });
   }
 
   function serializeCompilerOptions(
     options: CompilerOptions,
     pathOptions?: { configFilePath: string; useCaseSensitiveFileNames: boolean }
-  ): Map<CompilerOptionsValue> {
+  ): QMap<CompilerOptionsValue> {
     return serializeOptionBaseObject(options, getOptionsNameMap(), pathOptions);
   }
 
@@ -2046,7 +2027,7 @@ namespace qnr {
     options: OptionsBase,
     { optionsNameMap }: OptionsNameMap,
     pathOptions?: { configFilePath: string; useCaseSensitiveFileNames: boolean }
-  ): Map<CompilerOptionsValue> {
+  ): QMap<CompilerOptionsValue> {
     const result = createMap<CompilerOptionsValue>();
     const getCanonicalFileName = pathOptions && createGetCanonicalFileName(pathOptions.useCaseSensitiveFileNames);
 
@@ -2242,13 +2223,6 @@ namespace qnr {
     return value;
   }
 
-  /**
-   * Parse the contents of a config file (tsconfig.json).
-   * @param json The contents of the config file to parse
-   * @param host Instance of ParseConfigHost used to enumerate files in folder.
-   * @param basePath A root directory to resolve relative path entries in the config
-   *    file to. e.g. outDir
-   */
   export function parseJsonConfigFileContent(
     json: any,
     host: ParseConfigHost,
@@ -2257,7 +2231,7 @@ namespace qnr {
     configFileName?: string,
     resolutionStack?: Path[],
     extraFileExtensions?: readonly FileExtensionInfo[],
-    extendedConfigCache?: Map<ExtendedConfigCacheEntry>,
+    extendedConfigCache?: QMap<ExtendedConfigCacheEntry>,
     existingWatchOptions?: WatchOptions
   ): ParsedCommandLine {
     return parseJsonConfigFileContentWorker(
@@ -2274,13 +2248,6 @@ namespace qnr {
     );
   }
 
-  /**
-   * Parse the contents of a config file (tsconfig.json).
-   * @param jsonNode The contents of the config file to parse
-   * @param host Instance of ParseConfigHost used to enumerate files in folder.
-   * @param basePath A root directory to resolve relative path entries in the config
-   *    file to. e.g. outDir
-   */
   export function parseJsonSourceFileConfigFileContent(
     sourceFile: TsConfigSourceFile,
     host: ParseConfigHost,
@@ -2289,7 +2256,7 @@ namespace qnr {
     configFileName?: string,
     resolutionStack?: Path[],
     extraFileExtensions?: readonly FileExtensionInfo[],
-    extendedConfigCache?: Map<ExtendedConfigCacheEntry>,
+    extendedConfigCache?: QMap<ExtendedConfigCacheEntry>,
     existingWatchOptions?: WatchOptions
   ): ParsedCommandLine {
     return parseJsonConfigFileContentWorker(
@@ -2341,7 +2308,7 @@ namespace qnr {
     configFileName?: string,
     resolutionStack: Path[] = [],
     extraFileExtensions: readonly FileExtensionInfo[] = [],
-    extendedConfigCache?: Map<ExtendedConfigCacheEntry>
+    extendedConfigCache?: QMap<ExtendedConfigCacheEntry>
   ): ParsedCommandLine {
     Debug.assert((json === undefined && sourceFile !== undefined) || (json !== undefined && sourceFile === undefined));
     const errors: Diagnostic[] = [];
@@ -2534,7 +2501,7 @@ namespace qnr {
     configFileName: string | undefined,
     resolutionStack: string[],
     errors: Push<Diagnostic>,
-    extendedConfigCache?: Map<ExtendedConfigCacheEntry>
+    extendedConfigCache?: QMap<ExtendedConfigCacheEntry>
   ): ParsedTsconfig {
     basePath = normalizeSlashes(basePath);
     const resolvedPath = getNormalizedAbsolutePath(configFileName || '', basePath);
@@ -2740,7 +2707,7 @@ namespace qnr {
     basePath: string,
     resolutionStack: string[],
     errors: Push<Diagnostic>,
-    extendedConfigCache?: Map<ExtendedConfigCacheEntry>
+    extendedConfigCache?: QMap<ExtendedConfigCacheEntry>
   ): ParsedTsconfig | undefined {
     const path = host.useCaseSensitiveFileNames ? extendedConfigPath : toFileNameLowerCase(extendedConfigPath);
     let value: ExtendedConfigCacheEntry | undefined;
@@ -2875,7 +2842,7 @@ namespace qnr {
   }
 
   function convertOptionsFromJson(
-    optionsNameMap: Map<CommandLineOption>,
+    optionsNameMap: QMap<CommandLineOption>,
     jsonOptions: any,
     basePath: string,
     defaultOptions: undefined,
@@ -2883,7 +2850,7 @@ namespace qnr {
     errors: Push<Diagnostic>
   ): WatchOptions | undefined;
   function convertOptionsFromJson(
-    optionsNameMap: Map<CommandLineOption>,
+    optionsNameMap: QMap<CommandLineOption>,
     jsonOptions: any,
     basePath: string,
     defaultOptions: CompilerOptions | TypeAcquisition,
@@ -2891,7 +2858,7 @@ namespace qnr {
     errors: Push<Diagnostic>
   ): CompilerOptions | TypeAcquisition;
   function convertOptionsFromJson(
-    optionsNameMap: Map<CommandLineOption>,
+    optionsNameMap: QMap<CommandLineOption>,
     jsonOptions: any,
     basePath: string,
     defaultOptions: CompilerOptions | TypeAcquisition | WatchOptions | undefined,
@@ -2927,6 +2894,7 @@ namespace qnr {
         createCompilerDiagnostic(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, opt.name, getCompilerOptionValueTypeString(opt))
       );
     }
+    return;
   }
 
   function normalizeOptionValue(option: CommandLineOption, basePath: string, value: any): CompilerOptionsValue {
@@ -2965,6 +2933,7 @@ namespace qnr {
     } else {
       errors.push(createCompilerDiagnosticForInvalidCustomType(opt));
     }
+    return;
   }
 
   function convertJsonOptionOfListType(
@@ -3040,17 +3009,6 @@ namespace qnr {
    */
   const wildcardDirectoryPattern = /^[^*?]*(?=\/[^/]*[*?])/;
 
-  /**
-   * Expands an array of file specifications.
-   *
-   * @param filesSpecs The literal file names to include.
-   * @param includeSpecs The wildcard file specifications to include.
-   * @param excludeSpecs The wildcard file specifications to exclude.
-   * @param basePath The base path for any relative file specifications.
-   * @param options Compiler options.
-   * @param host The host used to resolve files and directories.
-   * @param errors An array for diagnostic reporting.
-   */
   function matchFileNames(
     filesSpecs: readonly string[] | undefined,
     includeSpecs: readonly string[] | undefined,
@@ -3087,15 +3045,6 @@ namespace qnr {
     return getFileNamesFromConfigSpecs(spec, basePath, options, host, extraFileExtensions);
   }
 
-  /**
-   * Gets the file names from the provided config file specs that contain, files, include, exclude and
-   * other properties needed to resolve the file names
-   * @param spec The config file specs extracted with file names to include, wildcards to include/exclude and other details
-   * @param basePath The base path for any relative file specifications.
-   * @param options Compiler options.
-   * @param host The host used to resolve files and directories.
-   * @param extraFileExtensions optionaly file extra file extension information from host
-   */
   export function getFileNamesFromConfigSpecs(
     spec: ConfigFileSpecs,
     basePath: string,
@@ -3224,29 +3173,15 @@ namespace qnr {
     } else if (invalidDotDotAfterRecursiveWildcardPattern.test(spec)) {
       return Diagnostics.File_specification_cannot_contain_a_parent_directory_that_appears_after_a_recursive_directory_wildcard_Asterisk_Asterisk_Colon_0;
     }
+    return;
   }
 
-  /**
-   * Gets directories in a set of include patterns that should be watched for changes.
-   */
   function getWildcardDirectories(
     include: readonly string[] | undefined,
     exclude: readonly string[] | undefined,
     path: string,
     useCaseSensitiveFileNames: boolean
   ): MapLike<WatchDirectoryFlags> {
-    // We watch a directory recursively if it contains a wildcard anywhere in a directory segment
-    // of the pattern:
-    //
-    //  /a/b/**/d   - Watch /a/b recursively to catch changes to any d in any subfolder recursively
-    //  /a/b/*/d    - Watch /a/b recursively to catch any d in any immediate subfolder, even if a new subfolder is added
-    //  /a/b        - Watch /a/b recursively to catch changes to anything in any recursive subfoler
-    //
-    // We watch a directory without recursion if it contains a wildcard in the file segment of
-    // the pattern:
-    //
-    //  /a/b/*      - Watch /a/b directly to catch any new file
-    //  /a/b/a?z    - Watch /a/b directly to catch any new file matching a?z
     const rawExcludeRegex = getRegularExpressionForWildcard(exclude, path, 'exclude');
     const excludeRegex = rawExcludeRegex && new RegExp(rawExcludeRegex, useCaseSensitiveFileNames ? '' : 'i');
     const wildcardDirectories: MapLike<WatchDirectoryFlags> = {};
@@ -3300,18 +3235,10 @@ namespace qnr {
     return;
   }
 
-  /**
-   * Determines whether a literal or wildcard file has already been included that has a higher
-   * extension priority.
-   *
-   * @param file The path to the file.
-   * @param extensionPriority The priority of the extension.
-   * @param context The expansion context.
-   */
   function hasFileWithHigherPriorityExtension(
     file: string,
-    literalFiles: Map<string>,
-    wildcardFiles: Map<string>,
+    literalFiles: QMap<string>,
+    wildcardFiles: QMap<string>,
     extensions: readonly string[],
     keyMapper: (value: string) => string
   ) {
@@ -3328,17 +3255,9 @@ namespace qnr {
     return false;
   }
 
-  /**
-   * Removes files included via wildcard expansion with a lower extension priority that have
-   * already been included.
-   *
-   * @param file The path to the file.
-   * @param extensionPriority The priority of the extension.
-   * @param context The expansion context.
-   */
   function removeWildcardFilesWithLowerPriorityExtension(
     file: string,
-    wildcardFiles: Map<string>,
+    wildcardFiles: QMap<string>,
     extensions: readonly string[],
     keyMapper: (value: string) => string
   ) {
@@ -3351,10 +3270,6 @@ namespace qnr {
     }
   }
 
-  /**
-   * Produces a cleaned version of compiler options with personally identifying info (aka, paths) removed.
-   * Also converts enum values back to strings.
-   */
   export function convertCompilerOptionsForTelemetry(opts: CompilerOptions): CompilerOptions {
     const out: CompilerOptions = {};
     for (const key in opts) {
@@ -3387,6 +3302,7 @@ namespace qnr {
           if (optionEnumValue === value) {
             return optionStringValue;
           }
+          return;
         })!; // TODO: GH#18217
     }
   }

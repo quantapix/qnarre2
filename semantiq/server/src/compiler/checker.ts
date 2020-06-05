@@ -1721,13 +1721,11 @@ namespace qnr {
         // - optional chaining pre-es2020
         // - nullish coalesce pre-es2020
         // - spread assignment in binding pattern pre-es2017
-        if (target >= ScriptTarget.ES2015) {
-          const links = getNodeLinks(functionLocation);
-          if (links.declarationRequiresScopeChange === undefined) {
-            links.declarationRequiresScopeChange = forEach(functionLocation.parameters, requiresScopeChange) || false;
-          }
-          return !links.declarationRequiresScopeChange;
+        const links = getNodeLinks(functionLocation);
+        if (links.declarationRequiresScopeChange === undefined) {
+          links.declarationRequiresScopeChange = forEach(functionLocation.parameters, requiresScopeChange) || false;
         }
+        return !links.declarationRequiresScopeChange;
       }
       return false;
 
@@ -1757,10 +1755,10 @@ namespace qnr {
           default:
             // null coalesce and optional chain pre-es2020 produce temporary variables
             if (isNullishCoalesce(node) || isOptionalChain(node)) {
-              return target < ScriptTarget.ES2020;
+              return false;
             }
             if (isBindingElement(node) && node.dotDotDotToken && isObjectBindingPattern(node.parent)) {
-              return target < ScriptTarget.ES2017;
+              return false;
             }
             if (isTypeNode(node)) return false;
             return forEachChild(node, requiresScopeChangeWorker) || false;
@@ -2010,7 +2008,7 @@ namespace qnr {
           case SyntaxKind.ArrowFunction:
             // when targeting ES6 or higher there is no 'arguments' in an arrow function
             // for lower compile targets the resolved symbol is used to emit an error
-            if (compilerOptions.target! >= ScriptTarget.ES2015) {
+            if (true) {
               break;
             }
           // falls through
@@ -9238,7 +9236,7 @@ namespace qnr {
       const lastElement = lastOrUndefined(elements);
       const hasRestElement = !!(lastElement && lastElement.kind === SyntaxKind.BindingElement && lastElement.dotDotDotToken);
       if (elements.length === 0 || (elements.length === 1 && hasRestElement)) {
-        return languageVersion >= ScriptTarget.ES2015 ? createIterableType(anyType) : anyArrayType;
+        return createIterableType(anyType);
       }
       const elementTypes = map(elements, (e) =>
         isOmittedExpression(e) ? anyType : getTypeFromBindingElement(e, includePatternInType, reportErrors)
@@ -12002,11 +12000,11 @@ namespace qnr {
         : t.flags & TypeFlags.NumberLike
         ? globalNumberType
         : t.flags & TypeFlags.BigIntLike
-        ? getGlobalBigIntType(/*reportErrors*/ languageVersion >= ScriptTarget.ES2020)
+        ? getGlobalBigIntType(/*reportErrors*/ true)
         : t.flags & TypeFlags.BooleanLike
         ? globalBooleanType
         : t.flags & TypeFlags.ESSymbolLike
-        ? getGlobalESSymbolType(/*reportErrors*/ languageVersion >= ScriptTarget.ES2015)
+        ? getGlobalESSymbolType(/*reportErrors*/ true)
         : t.flags & TypeFlags.NonPrimitive
         ? emptyObjectType
         : t.flags & TypeFlags.Index
@@ -12026,7 +12024,7 @@ namespace qnr {
 
     function createUnionOrIntersectionProperty(containingType: UnionOrIntersectionType, name: __String): Symbol | undefined {
       let singleProp: Symbol | undefined;
-      let propSet: Map<Symbol> | undefined;
+      let propSet: QMap<Symbol> | undefined;
       let indexTypes: Type[] | undefined;
       const isUnion = containingType.flags & TypeFlags.Union;
       // Flags we want to propagate to the result if they exist in all source symbols
@@ -24368,20 +24366,6 @@ namespace qnr {
       // can explicitly bound arguments objects
       if (symbol === argumentsSymbol) {
         const container = getContainingFunction(node)!;
-        if (languageVersion < ScriptTarget.ES2015) {
-          if (container.kind === SyntaxKind.ArrowFunction) {
-            error(
-              node,
-              Diagnostics.The_arguments_object_cannot_be_referenced_in_an_arrow_function_in_ES3_and_ES5_Consider_using_a_standard_function_expression
-            );
-          } else if (hasSyntacticModifier(container, ModifierFlags.Async)) {
-            error(
-              node,
-              Diagnostics.The_arguments_object_cannot_be_referenced_in_an_async_function_or_method_in_ES3_and_ES5_Consider_using_a_standard_function_or_method
-            );
-          }
-        }
-
         getNodeLinks(container).flags |= NodeCheckFlags.CaptureArguments;
         return getTypeOfSymbol(symbol);
       }
@@ -24553,75 +24537,7 @@ namespace qnr {
     }
 
     function checkNestedBlockScopedBinding(node: Identifier, symbol: Symbol): void {
-      if (
-        languageVersion >= ScriptTarget.ES2015 ||
-        (symbol.flags & (SymbolFlags.BlockScopedVariable | SymbolFlags.Class)) === 0 ||
-        isSourceFile(symbol.valueDeclaration) ||
-        symbol.valueDeclaration.parent.kind === SyntaxKind.CatchClause
-      ) {
-        return;
-      }
-
-      // 1. walk from the use site up to the declaration and check
-      // if there is anything function like between declaration and use-site (is binding/class is captured in function).
-      // 2. walk from the declaration up to the boundary of lexical environment and check
-      // if there is an iteration statement in between declaration and boundary (is binding/class declared inside iteration statement)
-
-      const container = getEnclosingBlockScopeContainer(symbol.valueDeclaration);
-      const usedInFunction = isInsideFunction(node.parent, container);
-      let current = container;
-
-      let containedInIterationStatement = false;
-      while (current && !nodeStartsNewLexicalEnvironment(current)) {
-        if (isIterationStatement(current, /*lookInLabeledStatements*/ false)) {
-          containedInIterationStatement = true;
-          break;
-        }
-        current = current.parent;
-      }
-
-      if (containedInIterationStatement) {
-        if (usedInFunction) {
-          // mark iteration statement as containing block-scoped binding captured in some function
-          let capturesBlockScopeBindingInLoopBody = true;
-          if (isForStatement(container)) {
-            const varDeclList = getAncestor(symbol.valueDeclaration, SyntaxKind.VariableDeclarationList);
-            if (varDeclList && varDeclList.parent === container) {
-              const part = getPartOfForStatementContainingNode(node.parent, container);
-              if (part) {
-                const links = getNodeLinks(part);
-                links.flags |= NodeCheckFlags.ContainsCapturedBlockScopeBinding;
-
-                const capturedBindings = links.capturedBlockScopeBindings || (links.capturedBlockScopeBindings = []);
-                pushIfUnique(capturedBindings, symbol);
-
-                if (part === container.initializer) {
-                  capturesBlockScopeBindingInLoopBody = false; // Initializer is outside of loop body
-                }
-              }
-            }
-          }
-          if (capturesBlockScopeBindingInLoopBody) {
-            getNodeLinks(current).flags |= NodeCheckFlags.LoopWithCapturedBlockScopedBinding;
-          }
-        }
-
-        // mark variables that are declared in loop initializer and reassigned inside the body of ForStatement.
-        // if body of ForStatement will be converted to function then we'll need a extra machinery to propagate reassigned values back.
-        if (isForStatement(container)) {
-          const varDeclList = getAncestor(symbol.valueDeclaration, SyntaxKind.VariableDeclarationList);
-          if (varDeclList && varDeclList.parent === container && isAssignedInBodyOfForStatement(node, container)) {
-            getNodeLinks(symbol.valueDeclaration).flags |= NodeCheckFlags.NeedsLoopOutParameter;
-          }
-        }
-
-        // set 'declared inside loop' bit on the block-scoped binding
-        getNodeLinks(symbol.valueDeclaration).flags |= NodeCheckFlags.BlockScopedBindingInLoop;
-      }
-
-      if (usedInFunction) {
-        getNodeLinks(symbol.valueDeclaration).flags |= NodeCheckFlags.CapturedBlockScopedBinding;
-      }
+      return;
     }
 
     function isBindingCapturedByNode(node: Node, decl: VariableDeclaration | BindingElement) {
@@ -24739,12 +24655,6 @@ namespace qnr {
           error(node, Diagnostics.this_cannot_be_referenced_in_a_computed_property_name);
           break;
       }
-
-      // When targeting es6, mark that we'll need to capture `this` in its lexically bound scope.
-      if (capturedByArrowFunction && languageVersion < ScriptTarget.ES2015) {
-        captureLexicalThis(node, container);
-      }
-
       const type = tryGetThisTypeAt(node, /*includeGlobalThis*/ true, container);
       if (noImplicitThis) {
         const globalThisType = getTypeOfSymbol(globalThisSymbol);
@@ -24941,7 +24851,7 @@ namespace qnr {
       if (!isCallExpression) {
         while (container && container.kind === SyntaxKind.ArrowFunction) {
           container = getSuperContainer(container, /*stopOnFunctions*/ true);
-          needToCaptureLexicalThis = languageVersion < ScriptTarget.ES2015;
+          needToCaptureLexicalThis = false;
         }
       }
 
@@ -25062,13 +24972,7 @@ namespace qnr {
       }
 
       if (container.parent.kind === SyntaxKind.ObjectLiteralExpression) {
-        if (languageVersion < ScriptTarget.ES2015) {
-          error(node, Diagnostics.super_is_only_allowed_in_members_of_object_literal_expressions_when_option_target_is_ES2015_or_higher);
-          return errorType;
-        } else {
-          // for object literal assume that type of 'super' is 'any'
-          return anyType;
-        }
+        return anyType;
       }
 
       // at this point the only legal case for parent is ClassLikeDeclaration
@@ -26129,10 +26033,6 @@ namespace qnr {
     }
 
     function checkSpreadExpression(node: SpreadElement, checkMode?: CheckMode): Type {
-      if (languageVersion < ScriptTarget.ES2015) {
-        checkExternalEmitHelpers(node, compilerOptions.downlevelIteration ? ExternalEmitHelpers.SpreadIncludes : ExternalEmitHelpers.SpreadArrays);
-      }
-
       const arrayOrIterableType = checkExpression(node.expression, checkMode);
       return checkIteratedTypeOrElementType(IterationUse.Spread, arrayOrIterableType, undefinedType, node.expression);
     }
@@ -26456,9 +26356,6 @@ namespace qnr {
           member = prop;
           allPropertiesTable?.set(prop.escapedName, prop);
         } else if (memberDecl.kind === SyntaxKind.SpreadAssignment) {
-          if (languageVersion < ScriptTarget.ES2015) {
-            checkExternalEmitHelpers(memberDecl, ExternalEmitHelpers.Assign);
-          }
           if (propertiesArray.length > 0) {
             spread = getSpreadType(spread, createObjectLiteralType(), node.symbol, objectFlags, inConstContext);
             propertiesArray = [];
@@ -27270,12 +27167,6 @@ namespace qnr {
         // - In a static member function or static member accessor
         //   where this references the constructor function object of a derived class,
         //   a super property access is permitted and must specify a public static member function of the base class.
-        if (languageVersion < ScriptTarget.ES2015) {
-          if (symbolHasNonMethodDeclaration(prop)) {
-            error(errorNode, Diagnostics.Only_public_and_protected_methods_of_the_base_class_are_accessible_via_the_super_keyword);
-            return false;
-          }
-        }
         if (flags & ModifierFlags.Abstract) {
           // A method cannot be accessed in a super property access if the method is abstract.
           // This error could mask a private property access error. But, a member
@@ -28940,7 +28831,7 @@ namespace qnr {
           // A method or accessor declaration decorator will have two or three arguments (see
           // `PropertyDecorator` and `MethodDecorator` in core.d.ts). If we are emitting decorators
           // for ES3, we will only pass two arguments.
-          const hasPropDesc = parent.kind !== SyntaxKind.PropertyDeclaration && languageVersion !== ScriptTarget.ES3;
+          const hasPropDesc = parent.kind !== SyntaxKind.PropertyDeclaration;
           return [
             createSyntheticExpression(expr, getParentTypeOfClassElement(<ClassElement>parent)),
             createSyntheticExpression(expr, getClassElementPropertyKeyType(<ClassElement>parent)),
@@ -28964,7 +28855,7 @@ namespace qnr {
         case SyntaxKind.GetAccessor:
         case SyntaxKind.SetAccessor:
           // For ES3 or decorators with only two parameters we supply only two arguments
-          return languageVersion === ScriptTarget.ES3 || signature.parameters.length <= 2 ? 2 : 3;
+          return signature.parameters.length <= 2 ? 2 : 3;
         case SyntaxKind.Parameter:
           return 3;
         default:
@@ -29741,13 +29632,6 @@ namespace qnr {
     }
 
     function resolveNewExpression(node: NewExpression, candidatesOutArray: Signature[] | undefined, checkMode: CheckMode): Signature {
-      if (node.arguments && languageVersion < ScriptTarget.ES5) {
-        const spreadIndex = getSpreadArgumentIndex(node.arguments);
-        if (spreadIndex >= 0) {
-          error(node.arguments[spreadIndex], Diagnostics.Spread_operator_in_new_expressions_is_only_available_when_targeting_ECMAScript_5_and_higher);
-        }
-      }
-
       let expressionType = checkNonNullExpression(node.expression);
       if (expressionType === silentNeverType) {
         return silentNeverSignature;
@@ -30507,9 +30391,6 @@ namespace qnr {
 
     function checkTaggedTemplateExpression(node: TaggedTemplateExpression): Type {
       if (!checkGrammarTaggedTemplateChain(node)) checkGrammarTypeArguments(node, node.typeArguments);
-      if (languageVersion < ScriptTarget.ES2015) {
-        checkExternalEmitHelpers(node, ExternalEmitHelpers.MakeTemplateObject);
-      }
       return getReturnTypeOfSignature(getResolvedSignature(node));
     }
 
@@ -31610,7 +31491,7 @@ namespace qnr {
                 );
                 diagnostics.add(diagnostic);
               }
-              if ((moduleKind !== ModuleKind.ESNext && moduleKind !== ModuleKind.System) || languageVersion < ScriptTarget.ES2017) {
+              if (moduleKind !== ModuleKind.ESNext && moduleKind !== ModuleKind.System) {
                 span = getSpanOfTokenAtPosition(sourceFile, node.pos);
                 const diagnostic = createFileDiagnostic(
                   sourceFile,
@@ -31917,9 +31798,6 @@ namespace qnr {
 
     function checkArrayLiteralAssignment(node: ArrayLiteralExpression, sourceType: Type, checkMode?: CheckMode): Type {
       const elements = node.elements;
-      if (languageVersion < ScriptTarget.ES2015 && compilerOptions.downlevelIteration) {
-        checkExternalEmitHelpers(node, ExternalEmitHelpers.Read);
-      }
       // This elementType will be used if the specific property corresponding to this index is not
       // present (aka the tuple element property). This call also checks that the parentType is in
       // fact an iterable or array (depending on target language).
@@ -32323,12 +32201,6 @@ namespace qnr {
                   break;
                 case SyntaxKind.Asterisk2Token:
                 case SyntaxKind.Asterisk2EqualsToken:
-                  if (languageVersion < ScriptTarget.ES2016) {
-                    error(
-                      errorNode,
-                      Diagnostics.Exponentiation_cannot_be_performed_on_bigint_values_unless_the_target_option_is_set_to_es2016_or_later
-                    );
-                  }
               }
               resultType = bigintType;
             }
@@ -32669,11 +32541,6 @@ namespace qnr {
         // and __asyncValues helpers
         if (isAsync && languageVersion < ScriptTarget.ESNext) {
           checkExternalEmitHelpers(node, ExternalEmitHelpers.AsyncDelegatorIncludes);
-        }
-
-        // Generator functions prior to ES2015 require the __values helper
-        if (!isAsync && languageVersion < ScriptTarget.ES2015 && compilerOptions.downlevelIteration) {
-          checkExternalEmitHelpers(node, ExternalEmitHelpers.Values);
         }
       }
 
@@ -33503,17 +33370,6 @@ namespace qnr {
         // Async generators prior to ESNext require the __await and __asyncGenerator helpers
         if ((functionFlags & FunctionFlags.AsyncGenerator) === FunctionFlags.AsyncGenerator && languageVersion < ScriptTarget.ESNext) {
           checkExternalEmitHelpers(node, ExternalEmitHelpers.AsyncGeneratorIncludes);
-        }
-
-        // Async functions prior to ES2017 require the __awaiter helper
-        if ((functionFlags & FunctionFlags.AsyncGenerator) === FunctionFlags.Async && languageVersion < ScriptTarget.ES2017) {
-          checkExternalEmitHelpers(node, ExternalEmitHelpers.Awaiter);
-        }
-
-        // Generator functions, Async functions, and Async Generator functions prior to
-        // ES2015 require the __generator helper
-        if ((functionFlags & FunctionFlags.AsyncGenerator) !== FunctionFlags.Normal && languageVersion < ScriptTarget.ES2015) {
-          checkExternalEmitHelpers(node, ExternalEmitHelpers.Generator);
         }
       }
 
@@ -34823,97 +34679,19 @@ namespace qnr {
       //  }
       //
       const returnType = getTypeFromTypeNode(returnTypeNode);
-
-      if (languageVersion >= ScriptTarget.ES2015) {
-        if (returnType === errorType) {
-          return;
-        }
-        const globalPromiseType = getGlobalPromiseType(/*reportErrors*/ true);
-        if (globalPromiseType !== emptyGenericType && !isReferenceToType(returnType, globalPromiseType)) {
-          // The promise type was not a valid type reference to the global promise type, so we
-          // report an error and return the unknown type.
-          error(
-            returnTypeNode,
-            Diagnostics.The_return_type_of_an_async_function_or_method_must_be_the_global_Promise_T_type_Did_you_mean_to_write_Promise_0,
-            typeToString(getAwaitedType(returnType) || voidType)
-          );
-          return;
-        }
-      } else {
-        // Always mark the type node as referenced if it points to a value
-        markTypeNodeAsReferenced(returnTypeNode);
-
-        if (returnType === errorType) {
-          return;
-        }
-
-        const promiseConstructorName = getEntityNameFromTypeNode(returnTypeNode);
-        if (promiseConstructorName === undefined) {
-          error(
-            returnTypeNode,
-            Diagnostics.Type_0_is_not_a_valid_async_function_return_type_in_ES5_SlashES3_because_it_does_not_refer_to_a_Promise_compatible_constructor_value,
-            typeToString(returnType)
-          );
-          return;
-        }
-
-        const promiseConstructorSymbol = resolveEntityName(promiseConstructorName, SymbolFlags.Value, /*ignoreErrors*/ true);
-        const promiseConstructorType = promiseConstructorSymbol ? getTypeOfSymbol(promiseConstructorSymbol) : errorType;
-        if (promiseConstructorType === errorType) {
-          if (
-            promiseConstructorName.kind === SyntaxKind.Identifier &&
-            promiseConstructorName.escapedText === 'Promise' &&
-            getTargetType(returnType) === getGlobalPromiseType(/*reportErrors*/ false)
-          ) {
-            error(
-              returnTypeNode,
-              Diagnostics.An_async_function_or_method_in_ES5_SlashES3_requires_the_Promise_constructor_Make_sure_you_have_a_declaration_for_the_Promise_constructor_or_include_ES2015_in_your_lib_option
-            );
-          } else {
-            error(
-              returnTypeNode,
-              Diagnostics.Type_0_is_not_a_valid_async_function_return_type_in_ES5_SlashES3_because_it_does_not_refer_to_a_Promise_compatible_constructor_value,
-              entityNameToString(promiseConstructorName)
-            );
-          }
-          return;
-        }
-
-        const globalPromiseConstructorLikeType = getGlobalPromiseConstructorLikeType(/*reportErrors*/ true);
-        if (globalPromiseConstructorLikeType === emptyObjectType) {
-          // If we couldn't resolve the global PromiseConstructorLike type we cannot verify
-          // compatibility with __awaiter.
-          error(
-            returnTypeNode,
-            Diagnostics.Type_0_is_not_a_valid_async_function_return_type_in_ES5_SlashES3_because_it_does_not_refer_to_a_Promise_compatible_constructor_value,
-            entityNameToString(promiseConstructorName)
-          );
-          return;
-        }
-
-        if (
-          !checkTypeAssignableTo(
-            promiseConstructorType,
-            globalPromiseConstructorLikeType,
-            returnTypeNode,
-            Diagnostics.Type_0_is_not_a_valid_async_function_return_type_in_ES5_SlashES3_because_it_does_not_refer_to_a_Promise_compatible_constructor_value
-          )
-        ) {
-          return;
-        }
-
-        // Verify there is no local declaration that could collide with the promise constructor.
-        const rootName = promiseConstructorName && getFirstIdentifier(promiseConstructorName);
-        const collidingSymbol = getSymbol(node.locals!, rootName.escapedText, SymbolFlags.Value);
-        if (collidingSymbol) {
-          error(
-            collidingSymbol.valueDeclaration,
-            Diagnostics.Duplicate_identifier_0_Compiler_uses_declaration_1_to_support_async_functions,
-            idText(rootName),
-            entityNameToString(promiseConstructorName)
-          );
-          return;
-        }
+      if (returnType === errorType) {
+        return;
+      }
+      const globalPromiseType = getGlobalPromiseType(/*reportErrors*/ true);
+      if (globalPromiseType !== emptyGenericType && !isReferenceToType(returnType, globalPromiseType)) {
+        // The promise type was not a valid type reference to the global promise type, so we
+        // report an error and return the unknown type.
+        error(
+          returnTypeNode,
+          Diagnostics.The_return_type_of_an_async_function_or_method_must_be_the_global_Promise_T_type_Did_you_mean_to_write_Promise_0,
+          typeToString(getAwaitedType(returnType) || voidType)
+        );
+        return;
       }
       checkAwaitedType(
         returnType,
@@ -35746,22 +35524,7 @@ namespace qnr {
     }
 
     function checkCollisionWithArgumentsInGeneratedCode(node: SignatureDeclaration) {
-      // no rest parameters \ declaration context \ overload - no codegen impact
-      if (
-        languageVersion >= ScriptTarget.ES2015 ||
-        compilerOptions.noEmit ||
-        !hasRestParameter(node) ||
-        node.flags & NodeFlags.Ambient ||
-        nodeIsMissing((<FunctionLikeDeclaration>node).body)
-      ) {
-        return;
-      }
-
-      forEach(node.parameters, (p) => {
-        if (p.name && !isBindingPattern(p.name) && p.name.escapedText === argumentsSymbol.escapedName) {
-          error(p, Diagnostics.Duplicate_identifier_arguments_Compiler_uses_arguments_to_initialize_rest_parameters);
-        }
-      });
+      return;
     }
 
     function needCollisionCheckForIdentifier(node: Node, identifier: Identifier | undefined, name: string): boolean {
@@ -35871,26 +35634,7 @@ namespace qnr {
     }
 
     function checkCollisionWithGlobalPromiseInGeneratedCode(node: Node, name: Identifier): void {
-      if (languageVersion >= ScriptTarget.ES2017 || compilerOptions.noEmit || !needCollisionCheckForIdentifier(node, name, 'Promise')) {
-        return;
-      }
-
-      // Uninstantiated modules shouldnt do this check
-      if (isModuleDeclaration(node) && getModuleInstanceState(node) !== ModuleInstanceState.Instantiated) {
-        return;
-      }
-
-      // In case of variable declaration, node.parent is variable statement so look at the variable statement's parent
-      const parent = getDeclarationContainer(node);
-      if (parent.kind === SyntaxKind.SourceFile && isExternalOrCommonJsModule(<SourceFile>parent) && parent.flags & NodeFlags.HasAsyncFunctions) {
-        // If the declaration happens to be in external module, report error that Promise is a reserved identifier.
-        error(
-          name,
-          Diagnostics.Duplicate_identifier_0_Compiler_reserves_name_1_in_top_level_scope_of_a_module_containing_async_functions,
-          declarationNameToString(name),
-          declarationNameToString(name)
-        );
-      }
+      return;
     }
 
     function checkVarDeclaredNamesNotShadowed(node: VariableDeclaration | BindingElement) {
@@ -36026,10 +35770,6 @@ namespace qnr {
 
       // For a binding pattern, check contained binding elements
       if (isBindingPattern(node.name)) {
-        if (node.name.kind === SyntaxKind.ArrayBindingPattern && languageVersion < ScriptTarget.ES2015 && compilerOptions.downlevelIteration) {
-          checkExternalEmitHelpers(node, ExternalEmitHelpers.Read);
-        }
-
         forEach(node.name.elements, checkSourceElement);
       }
       // For a parameter declaration with an initializer, error and exit if the containing function doesn't have a body
@@ -36339,9 +36079,6 @@ namespace qnr {
           // for..await..of in an async function or async generator function prior to ESNext requires the __asyncValues helper
           checkExternalEmitHelpers(node, ExternalEmitHelpers.ForAwaitOfIncludes);
         }
-      } else if (compilerOptions.downlevelIteration && languageVersion < ScriptTarget.ES2015) {
-        // for..of prior to ES2015 requires the __values helper when downlevelIteration is enabled
-        checkExternalEmitHelpers(node, ExternalEmitHelpers.ForOfIncludes);
       }
 
       // Check the LHS and RHS
@@ -36477,7 +36214,7 @@ namespace qnr {
         return;
       }
 
-      const uplevelIteration = languageVersion >= ScriptTarget.ES2015;
+      const uplevelIteration = true;
       const downlevelIteration = !uplevelIteration && compilerOptions.downlevelIteration;
 
       // Get the iterated type of an `Iterable<T>` or `IterableIterator<T>` only in ES2015
@@ -36530,13 +36267,6 @@ namespace qnr {
 
         hasStringConstituent = arrayType !== inputType;
         if (hasStringConstituent) {
-          if (languageVersion < ScriptTarget.ES5) {
-            if (errorNode) {
-              error(errorNode, Diagnostics.Using_a_string_in_a_for_of_statement_is_only_supported_in_ECMAScript_5_and_higher);
-              reportedError = true;
-            }
-          }
-
           // Now that we've removed all the StringLike types, if no constituents remain, then the entire
           // arrayOrStringType was a string.
           if (arrayType.flags & TypeFlags.Never) {
@@ -37504,11 +37234,7 @@ namespace qnr {
     /**
      * The name cannot be used as 'Object' of user defined types with special target.
      */
-    function checkClassNameCollisionWithObject(name: Identifier): void {
-      if (languageVersion === ScriptTarget.ES5 && name.escapedText === 'Object' && moduleKind < ModuleKind.ES2015) {
-        error(name, Diagnostics.Class_name_cannot_be_Object_when_targeting_ES5_with_module_0, ModuleKind[moduleKind]); // https://github.com/Microsoft/TypeScript/issues/17494
-      }
-    }
+    function checkClassNameCollisionWithObject(name: Identifier): void {}
 
     /**
      * Check each type parameter and check that type parameters have no duplicate type parameter declarations
@@ -37675,9 +37401,6 @@ namespace qnr {
       const baseTypeNode = getEffectiveBaseTypeNode(node);
       if (baseTypeNode) {
         forEach(baseTypeNode.typeArguments, checkSourceElement);
-        if (languageVersion < ScriptTarget.ES2015) {
-          checkExternalEmitHelpers(baseTypeNode.parent, ExternalEmitHelpers.Extends);
-        }
         // check both @extends and extends if both are specified.
         const extendsNode = getClassExtendsHeritageElement(node);
         if (extendsNode && extendsNode !== baseTypeNode) {
@@ -38795,16 +38518,6 @@ namespace qnr {
 
       if (!checkGrammarDecoratorsAndModifiers(node) && hasEffectiveModifiers(node)) {
         grammarErrorOnFirstToken(node, Diagnostics.An_export_declaration_cannot_have_modifiers);
-      }
-
-      if (
-        node.moduleSpecifier &&
-        node.exportClause &&
-        isNamedExports(node.exportClause) &&
-        length(node.exportClause.elements) &&
-        languageVersion === ScriptTarget.ES3
-      ) {
-        checkExternalEmitHelpers(node, ExternalEmitHelpers.CreateBinding);
       }
 
       checkGrammarExportDeclaration(node);
@@ -41495,28 +41208,27 @@ namespace qnr {
     }
 
     function checkGrammarForUseStrictSimpleParameterList(node: FunctionLikeDeclaration): boolean {
-      if (languageVersion >= ScriptTarget.ES2016) {
-        const useStrictDirective = node.body && isBlock(node.body) && findUseStrictPrologue(node.body.statements);
-        if (useStrictDirective) {
-          const nonSimpleParameters = getNonSimpleParameters(node.parameters);
-          if (length(nonSimpleParameters)) {
-            forEach(nonSimpleParameters, (parameter) => {
-              addRelatedInfo(
-                error(parameter, Diagnostics.This_parameter_is_not_allowed_with_use_strict_directive),
-                createDiagnosticForNode(useStrictDirective, Diagnostics.use_strict_directive_used_here)
-              );
-            });
+      const useStrictDirective = node.body && isBlock(node.body) && findUseStrictPrologue(node.body.statements);
+      if (useStrictDirective) {
+        const nonSimpleParameters = getNonSimpleParameters(node.parameters);
+        if (length(nonSimpleParameters)) {
+          forEach(nonSimpleParameters, (parameter) => {
+            addRelatedInfo(
+              error(parameter, Diagnostics.This_parameter_is_not_allowed_with_use_strict_directive),
+              createDiagnosticForNode(useStrictDirective, Diagnostics.use_strict_directive_used_here)
+            );
+          });
 
-            const diagnostics = nonSimpleParameters.map((parameter, index) =>
-              index === 0
-                ? createDiagnosticForNode(parameter, Diagnostics.Non_simple_parameter_declared_here)
-                : createDiagnosticForNode(parameter, Diagnostics.and_here)
-            ) as [DiagnosticWithLocation, ...DiagnosticWithLocation[]];
-            addRelatedInfo(error(useStrictDirective, Diagnostics.use_strict_directive_cannot_be_used_with_non_simple_parameter_list), ...diagnostics);
-            return true;
-          }
+          const diagnostics = nonSimpleParameters.map((parameter, index) =>
+            index === 0
+              ? createDiagnosticForNode(parameter, Diagnostics.Non_simple_parameter_declared_here)
+              : createDiagnosticForNode(parameter, Diagnostics.and_here)
+          ) as [DiagnosticWithLocation, ...DiagnosticWithLocation[]];
+          addRelatedInfo(error(useStrictDirective, Diagnostics.use_strict_directive_cannot_be_used_with_non_simple_parameter_list), ...diagnostics);
+          return true;
         }
       }
+
       return false;
     }
 
@@ -41960,9 +41672,6 @@ namespace qnr {
 
     function checkGrammarAccessor(accessor: AccessorDeclaration): boolean {
       if (!(accessor.flags & NodeFlags.Ambient)) {
-        if (languageVersion < ScriptTarget.ES5) {
-          return grammarErrorOnNode(accessor.name, Diagnostics.Accessors_are_only_available_when_targeting_ECMAScript_5_and_higher);
-        }
         if (accessor.body === undefined && !hasSyntacticModifier(accessor, ModifierFlags.Abstract)) {
           return grammarErrorAtPos(accessor, accessor.end - 1, ';'.length, Diagnostics._0_expected, '{');
         }
@@ -42487,9 +42196,6 @@ namespace qnr {
         ) {
           return true;
         }
-        if (languageVersion < ScriptTarget.ES2015 && isPrivateIdentifier(node.name)) {
-          return grammarErrorOnNode(node.name, Diagnostics.Private_identifiers_are_only_available_when_targeting_ECMAScript_2015_and_higher);
-        }
       } else if (node.parent.kind === SyntaxKind.InterfaceDeclaration) {
         if (
           checkGrammarForInvalidDynamicName(
@@ -42614,19 +42320,10 @@ namespace qnr {
     function checkGrammarNumericLiteral(node: NumericLiteral): boolean {
       // Grammar checking
       if (node.numericLiteralFlags & TokenFlags.Octal) {
-        let diagnosticMessage: DiagnosticMessage | undefined;
-        if (languageVersion >= ScriptTarget.ES5) {
-          diagnosticMessage = Diagnostics.Octal_literals_are_not_available_when_targeting_ECMAScript_5_and_higher_Use_the_syntax_0;
-        } else if (isChildOfNodeWithKind(node, SyntaxKind.LiteralType)) {
-          diagnosticMessage = Diagnostics.Octal_literal_types_must_use_ES2015_syntax_Use_the_syntax_0;
-        } else if (isChildOfNodeWithKind(node, SyntaxKind.EnumMember)) {
-          diagnosticMessage = Diagnostics.Octal_literals_are_not_allowed_in_enums_members_initializer_Use_the_syntax_0;
-        }
-        if (diagnosticMessage) {
-          const withMinus = isPrefixUnaryExpression(node.parent) && node.parent.operator === SyntaxKind.MinusToken;
-          const literal = (withMinus ? '-' : '') + '0o' + node.text;
-          return grammarErrorOnNode(withMinus ? node.parent : node, diagnosticMessage, literal);
-        }
+        const diagnosticMessage = Diagnostics.Octal_literals_are_not_available_when_targeting_ECMAScript_5_and_higher_Use_the_syntax_0;
+        const withMinus = isPrefixUnaryExpression(node.parent) && node.parent.operator === SyntaxKind.MinusToken;
+        const literal = (withMinus ? '-' : '') + '0o' + node.text;
+        return grammarErrorOnNode(withMinus ? node.parent : node, diagnosticMessage, literal);
       }
 
       // Realism (size) checking
@@ -42663,13 +42360,6 @@ namespace qnr {
 
     function checkGrammarBigIntLiteral(node: BigIntLiteral): boolean {
       const literalType = isLiteralTypeNode(node.parent) || (isPrefixUnaryExpression(node.parent) && isLiteralTypeNode(node.parent.parent));
-      if (!literalType) {
-        if (languageVersion < ScriptTarget.ES2020) {
-          if (grammarErrorOnNode(node, Diagnostics.BigInt_literals_are_not_available_when_targeting_lower_than_ES2020)) {
-            return true;
-          }
-        }
-      }
       return false;
     }
 

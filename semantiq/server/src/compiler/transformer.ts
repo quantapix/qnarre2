@@ -62,34 +62,7 @@ namespace qnr {
       transformers.push(transformES2020);
     }
 
-    if (languageVersion < ScriptTarget.ES2019) {
-      transformers.push(transformES2019);
-    }
-
-    if (languageVersion < ScriptTarget.ES2018) {
-      transformers.push(transformES2018);
-    }
-
-    if (languageVersion < ScriptTarget.ES2017) {
-      transformers.push(transformES2017);
-    }
-
-    if (languageVersion < ScriptTarget.ES2016) {
-      transformers.push(transformES2016);
-    }
-
-    if (languageVersion < ScriptTarget.ES2015) {
-      transformers.push(transformES2015);
-      transformers.push(transformGenerators);
-    }
-
     transformers.push(getModuleTransformer(moduleKind));
-
-    // The ES5 transformer is last so that it can substitute expressions like `exports.default`
-    // for ES3.
-    if (languageVersion < ScriptTarget.ES5) {
-      transformers.push(transformES5);
-    }
 
     addRange(transformers, customTransformers && map(customTransformers.after, wrapScriptTransformerFactory));
     return transformers;

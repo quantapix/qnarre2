@@ -1647,7 +1647,7 @@ namespace qnr {
 
   function getCookedText(kind: TemplateLiteralToken['kind'], rawText: string) {
     if (!rawTextScanner) {
-      rawTextScanner = createScanner(/*skipTrivia*/ false, LanguageVariant.Standard);
+      rawTextScanner = createScanner(/*skipTrivia*/ false, LanguageVariant.TS);
     }
     switch (kind) {
       case SyntaxKind.NoSubstitutionTemplateLiteral:

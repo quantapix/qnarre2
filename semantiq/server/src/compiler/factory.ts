@@ -347,7 +347,7 @@ namespace qnr {
   export function createCallBinding(
     expression: Expression,
     recordTempVariable: (temp: Identifier) => void,
-    languageVersion?: ScriptTarget,
+    _?: ScriptTarget,
     cacheIdentifiers = false
   ): CallBinding {
     const callee = skipOuterExpressions(expression, OuterExpressionKinds.All);
@@ -358,7 +358,7 @@ namespace qnr {
       target = callee;
     } else if (callee.kind === SyntaxKind.SuperKeyword) {
       thisArg = createThis();
-      target = languageVersion! < ScriptTarget.ES2015 ? setTextRange(createIdentifier('_super'), callee) : <PrimaryExpression>callee;
+      target = <PrimaryExpression>callee;
     } else if (getEmitFlags(callee) & EmitFlags.HelperName) {
       thisArg = createVoidZero();
       target = parenthesizeForAccess(callee);
@@ -459,6 +459,7 @@ namespace qnr {
       case SyntaxKind.MethodDeclaration:
         return createExpressionForMethodDeclaration(property, receiver);
     }
+    return;
   }
 
   function createExpressionForAccessorDeclaration(
@@ -1225,6 +1226,7 @@ namespace qnr {
 
       return createNodeArray(params);
     }
+    return;
   }
 
   export function getLeftmostExpression(node: Expression, stopAtCallExpressions: boolean) {
@@ -1457,6 +1459,7 @@ namespace qnr {
         return externalHelpersImportDeclaration;
       }
     }
+    return;
   }
 
   export function getOrCreateExternalHelpersModuleNameIfNeeded(
@@ -1494,6 +1497,7 @@ namespace qnr {
         return emitNode.externalHelpersModuleName || (emitNode.externalHelpersModuleName = createUniqueName(externalHelpersModuleNameText));
       }
     }
+    return;
   }
 
   /**
@@ -1621,6 +1625,7 @@ namespace qnr {
       // Recovery consistent with existing emit.
       return getInitializerOfBindingOrAssignmentElement(<BindingOrAssignmentElement>bindingElement.expression);
     }
+    return;
   }
 
   /**
@@ -1776,6 +1781,7 @@ namespace qnr {
     if (target && isPropertyName(target)) {
       return target;
     }
+    return;
   }
 
   function isStringOrNumericLiteral(node: Node): node is StringLiteral | NumericLiteral {

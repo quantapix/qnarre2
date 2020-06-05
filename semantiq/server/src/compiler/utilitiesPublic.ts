@@ -16,16 +16,6 @@ namespace qnr {
         return 'lib.esnext.full.d.ts';
       case ScriptTarget.ES2020:
         return 'lib.es2020.full.d.ts';
-      case ScriptTarget.ES2019:
-        return 'lib.es2019.full.d.ts';
-      case ScriptTarget.ES2018:
-        return 'lib.es2018.full.d.ts';
-      case ScriptTarget.ES2017:
-        return 'lib.es2017.full.d.ts';
-      case ScriptTarget.ES2016:
-        return 'lib.es2016.full.d.ts';
-      case ScriptTarget.ES2015:
-        return 'lib.es6.d.ts'; // We don't use lib.es2015.full.d.ts due to breaking change.
       default:
         return 'lib.d.ts';
     }

@@ -976,13 +976,7 @@ namespace qnr {
   }
 
   export function getSpanOfTokenAtPosition(sourceFile: SourceFile, pos: number): TextSpan {
-    const scanner = createScanner(
-      /*skipTrivia*/ true,
-      sourceFile.languageVariant,
-      sourceFile.text,
-      /*onError:*/ undefined,
-      pos
-    );
+    const scanner = createScanner(/*skipTrivia*/ true, sourceFile.languageVariant, sourceFile.text, /*onError:*/ undefined, pos);
     scanner.scan();
     const start = scanner.getTokenPos();
     return createTextSpanFromBounds(start, scanner.getTextPos());
@@ -5688,15 +5682,11 @@ namespace qnr {
   }
 
   export function getEmitScriptTarget(compilerOptions: CompilerOptions) {
-    return compilerOptions.target || ScriptTarget.ES3;
+    return compilerOptions.target || ScriptTarget.ES2020;
   }
 
   export function getEmitModuleKind(compilerOptions: { module?: CompilerOptions['module']; target?: CompilerOptions['target'] }) {
-    return typeof compilerOptions.module === 'number'
-      ? compilerOptions.module
-      : getEmitScriptTarget(compilerOptions) >= ScriptTarget.ES2015
-      ? ModuleKind.ES2015
-      : ModuleKind.CommonJS;
+    return typeof compilerOptions.module === 'number' ? compilerOptions.module : ModuleKind.ES2015;
   }
 
   export function getEmitModuleResolutionKind(compilerOptions: CompilerOptions) {
