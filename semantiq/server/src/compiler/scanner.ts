@@ -707,12 +707,11 @@ namespace qnr {
   export function createScanner(
     skipTrivia: boolean,
     variant = LanguageVariant.Standard,
-    t?: string,
+    text: string = '',
     onError?: ErrorCallback,
     s?: number,
     l?: number
   ): Scanner {
-    let text = t!;
     let startPos: number; // Start position of whitespace before current token
     let pos: number; // Current position (end position of text of current token)
     let end: number; // end of text
@@ -783,7 +782,7 @@ namespace qnr {
     function setText(t?: string, start?: number, length?: number) {
       text = t ?? '';
       end = length === undefined ? text.length : start! + length;
-      setTextPos(start || 0);
+      setTextPos(start ?? 0);
     }
 
     function setTextPos(p: number) {
@@ -802,7 +801,7 @@ namespace qnr {
       if (onError) {
         const p = pos;
         pos = errPos;
-        onError(m, length || 0);
+        onError(m, length ?? 0);
         pos = p;
       }
     }
