@@ -279,18 +279,18 @@ namespace qnr {
         return SyntaxKind.MinusToken;
       case SyntaxKind.AsteriskEqualsToken:
         return SyntaxKind.AsteriskToken;
-      case SyntaxKind.AsteriskAsteriskEqualsToken:
-        return SyntaxKind.AsteriskAsteriskToken;
+      case SyntaxKind.Asterisk2EqualsToken:
+        return SyntaxKind.Asterisk2Token;
       case SyntaxKind.SlashEqualsToken:
         return SyntaxKind.SlashToken;
       case SyntaxKind.PercentEqualsToken:
         return SyntaxKind.PercentToken;
-      case SyntaxKind.LessThanLessThanEqualsToken:
-        return SyntaxKind.LessThanLessThanToken;
-      case SyntaxKind.GreaterThanGreaterThanEqualsToken:
-        return SyntaxKind.GreaterThanGreaterThanToken;
-      case SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken:
-        return SyntaxKind.GreaterThanGreaterThanGreaterThanToken;
+      case SyntaxKind.LessThan2EqualsToken:
+        return SyntaxKind.LessThan2Token;
+      case SyntaxKind.GreaterThan2EqualsToken:
+        return SyntaxKind.GreaterThan2Token;
+      case SyntaxKind.GreaterThan3EqualsToken:
+        return SyntaxKind.GreaterThan3Token;
       case SyntaxKind.AmpersandEqualsToken:
         return SyntaxKind.AmpersandToken;
       case SyntaxKind.BarEqualsToken:

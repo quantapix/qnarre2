@@ -790,7 +790,7 @@ namespace qnr {
       const resultLocal = declareLocal();
 
       emitAssignment(resultLocal, visitNode(node.left, visitor, isExpression), /*location*/ node.left);
-      if (node.operatorToken.kind === SyntaxKind.AmpersandAmpersandToken) {
+      if (node.operatorToken.kind === SyntaxKind.Ampersand2Token) {
         // Logical `&&` shortcuts when the left-hand operand is falsey.
         emitBreakWhenFalse(resultLabel, resultLocal, /*location*/ node.left);
       } else {

@@ -26,9 +26,9 @@ namespace qnr {
 
     function visitBinaryExpression(node: BinaryExpression): Expression {
       switch (node.operatorToken.kind) {
-        case SyntaxKind.AsteriskAsteriskEqualsToken:
+        case SyntaxKind.Asterisk2EqualsToken:
           return visitExponentiationAssignmentExpression(node);
-        case SyntaxKind.AsteriskAsteriskToken:
+        case SyntaxKind.Asterisk2Token:
           return visitExponentiationExpression(node);
         default:
           return visitEachChild(node, visitor, context);

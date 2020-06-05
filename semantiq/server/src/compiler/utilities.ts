@@ -977,7 +977,6 @@ namespace qnr {
 
   export function getSpanOfTokenAtPosition(sourceFile: SourceFile, pos: number): TextSpan {
     const scanner = createScanner(
-      sourceFile.languageVersion,
       /*skipTrivia*/ true,
       sourceFile.languageVariant,
       sourceFile.text,
@@ -2001,7 +2000,7 @@ namespace qnr {
       if (parentNodeOperator === SyntaxKind.EqualsToken && parentNode.right === node) {
         name = parentNode.left;
         decl = name;
-      } else if (parentNodeOperator === SyntaxKind.BarBarToken || parentNodeOperator === SyntaxKind.QuestionQuestionToken) {
+      } else if (parentNodeOperator === SyntaxKind.Bar2Token || parentNodeOperator === SyntaxKind.Question2Token) {
         if (isVariableDeclaration(parentNode.parent) && parentNode.parent.initializer === parentNode) {
           name = parentNode.parent.name;
           decl = parentNode.parent;
@@ -2036,7 +2035,7 @@ namespace qnr {
       isInJSFile(node) &&
       node.initializer &&
       isBinaryExpression(node.initializer) &&
-      (node.initializer.operatorToken.kind === SyntaxKind.BarBarToken || node.initializer.operatorToken.kind === SyntaxKind.QuestionQuestionToken) &&
+      (node.initializer.operatorToken.kind === SyntaxKind.Bar2Token || node.initializer.operatorToken.kind === SyntaxKind.Question2Token) &&
       node.name &&
       isEntityNameExpression(node.name) &&
       isSameEntityName(node.name, node.initializer.left)
@@ -2122,7 +2121,7 @@ namespace qnr {
   function getDefaultedExpandoInitializer(name: Expression, initializer: Expression, isPrototypeAssignment: boolean) {
     const e =
       isBinaryExpression(initializer) &&
-      (initializer.operatorToken.kind === SyntaxKind.BarBarToken || initializer.operatorToken.kind === SyntaxKind.QuestionQuestionToken) &&
+      (initializer.operatorToken.kind === SyntaxKind.Bar2Token || initializer.operatorToken.kind === SyntaxKind.Question2Token) &&
       getExpandoInitializer(initializer.right, isPrototypeAssignment);
     if (e && isSameEntityName(name, (initializer as BinaryExpression).left)) {
       return e;
@@ -2142,7 +2141,7 @@ namespace qnr {
   export function getNameOfExpando(node: Declaration): DeclarationName | undefined {
     if (isBinaryExpression(node.parent)) {
       const parent =
-        (node.parent.operatorToken.kind === SyntaxKind.BarBarToken || node.parent.operatorToken.kind === SyntaxKind.QuestionQuestionToken) &&
+        (node.parent.operatorToken.kind === SyntaxKind.Bar2Token || node.parent.operatorToken.kind === SyntaxKind.Question2Token) &&
         isBinaryExpression(node.parent.parent)
           ? node.parent.parent
           : node.parent;
@@ -2529,8 +2528,7 @@ namespace qnr {
       isBinaryExpression(node.expression) &&
       getAssignmentDeclarationKind(node.expression) !== AssignmentDeclarationKind.None &&
       isBinaryExpression(node.expression.right) &&
-      (node.expression.right.operatorToken.kind === SyntaxKind.BarBarToken ||
-        node.expression.right.operatorToken.kind === SyntaxKind.QuestionQuestionToken)
+      (node.expression.right.operatorToken.kind === SyntaxKind.Bar2Token || node.expression.right.operatorToken.kind === SyntaxKind.Question2Token)
       ? node.expression.right.right
       : undefined;
   }
@@ -2695,9 +2693,7 @@ namespace qnr {
         case SyntaxKind.PrefixUnaryExpression:
         case SyntaxKind.PostfixUnaryExpression:
           const unaryOperator = (<PrefixUnaryExpression | PostfixUnaryExpression>parent).operator;
-          return unaryOperator === SyntaxKind.PlusPlusToken || unaryOperator === SyntaxKind.MinusMinusToken
-            ? AssignmentKind.Compound
-            : AssignmentKind.None;
+          return unaryOperator === SyntaxKind.Plus2Token || unaryOperator === SyntaxKind.Minus2Token ? AssignmentKind.Compound : AssignmentKind.None;
         case SyntaxKind.ForInStatement:
         case SyntaxKind.ForOfStatement:
           return (<ForInOrOfStatement>parent).initializer === node ? AssignmentKind.Definite : AssignmentKind.None;
@@ -3322,17 +3318,17 @@ namespace qnr {
 
       case SyntaxKind.BinaryExpression:
         switch (operator) {
-          case SyntaxKind.AsteriskAsteriskToken:
+          case SyntaxKind.Asterisk2Token:
           case SyntaxKind.EqualsToken:
           case SyntaxKind.PlusEqualsToken:
           case SyntaxKind.MinusEqualsToken:
-          case SyntaxKind.AsteriskAsteriskEqualsToken:
+          case SyntaxKind.Asterisk2EqualsToken:
           case SyntaxKind.AsteriskEqualsToken:
           case SyntaxKind.SlashEqualsToken:
           case SyntaxKind.PercentEqualsToken:
-          case SyntaxKind.LessThanLessThanEqualsToken:
-          case SyntaxKind.GreaterThanGreaterThanEqualsToken:
-          case SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken:
+          case SyntaxKind.LessThan2EqualsToken:
+          case SyntaxKind.GreaterThan2EqualsToken:
+          case SyntaxKind.GreaterThan3EqualsToken:
           case SyntaxKind.AmpersandEqualsToken:
           case SyntaxKind.CaretEqualsToken:
           case SyntaxKind.BarEqualsToken:
@@ -3380,13 +3376,13 @@ namespace qnr {
           case SyntaxKind.EqualsToken:
           case SyntaxKind.PlusEqualsToken:
           case SyntaxKind.MinusEqualsToken:
-          case SyntaxKind.AsteriskAsteriskEqualsToken:
+          case SyntaxKind.Asterisk2EqualsToken:
           case SyntaxKind.AsteriskEqualsToken:
           case SyntaxKind.SlashEqualsToken:
           case SyntaxKind.PercentEqualsToken:
-          case SyntaxKind.LessThanLessThanEqualsToken:
-          case SyntaxKind.GreaterThanGreaterThanEqualsToken:
-          case SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken:
+          case SyntaxKind.LessThan2EqualsToken:
+          case SyntaxKind.GreaterThan2EqualsToken:
+          case SyntaxKind.GreaterThan3EqualsToken:
           case SyntaxKind.AmpersandEqualsToken:
           case SyntaxKind.CaretEqualsToken:
           case SyntaxKind.BarEqualsToken:
@@ -3448,11 +3444,11 @@ namespace qnr {
 
   export function getBinaryOperatorPrecedence(kind: SyntaxKind): number {
     switch (kind) {
-      case SyntaxKind.QuestionQuestionToken:
+      case SyntaxKind.Question2Token:
         return 4;
-      case SyntaxKind.BarBarToken:
+      case SyntaxKind.Bar2Token:
         return 5;
-      case SyntaxKind.AmpersandAmpersandToken:
+      case SyntaxKind.Ampersand2Token:
         return 6;
       case SyntaxKind.BarToken:
         return 7;
@@ -3460,10 +3456,10 @@ namespace qnr {
         return 8;
       case SyntaxKind.AmpersandToken:
         return 9;
-      case SyntaxKind.EqualsEqualsToken:
+      case SyntaxKind.Equals2Token:
       case SyntaxKind.ExclamationEqualsToken:
-      case SyntaxKind.EqualsEqualsEqualsToken:
-      case SyntaxKind.ExclamationEqualsEqualsToken:
+      case SyntaxKind.Equals3Token:
+      case SyntaxKind.ExclamationEquals2Token:
         return 10;
       case SyntaxKind.LessThanToken:
       case SyntaxKind.GreaterThanToken:
@@ -3473,9 +3469,9 @@ namespace qnr {
       case SyntaxKind.InKeyword:
       case SyntaxKind.AsKeyword:
         return 11;
-      case SyntaxKind.LessThanLessThanToken:
-      case SyntaxKind.GreaterThanGreaterThanToken:
-      case SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
+      case SyntaxKind.LessThan2Token:
+      case SyntaxKind.GreaterThan2Token:
+      case SyntaxKind.GreaterThan3Token:
         return 12;
       case SyntaxKind.PlusToken:
       case SyntaxKind.MinusToken:
@@ -3484,7 +3480,7 @@ namespace qnr {
       case SyntaxKind.SlashToken:
       case SyntaxKind.PercentToken:
         return 14;
-      case SyntaxKind.AsteriskAsteriskToken:
+      case SyntaxKind.Asterisk2Token:
         return 15;
     }
 
@@ -4611,7 +4607,7 @@ namespace qnr {
   }
 
   export function isLogicalOperator(token: SyntaxKind): boolean {
-    return token === SyntaxKind.BarBarToken || token === SyntaxKind.AmpersandAmpersandToken || token === SyntaxKind.ExclamationToken;
+    return token === SyntaxKind.Bar2Token || token === SyntaxKind.Ampersand2Token || token === SyntaxKind.ExclamationToken;
   }
 
   export function isAssignmentOperator(token: SyntaxKind): boolean {
@@ -5151,7 +5147,7 @@ namespace qnr {
       case SyntaxKind.PostfixUnaryExpression:
       case SyntaxKind.PrefixUnaryExpression:
         const { operator } = parent as PrefixUnaryExpression | PostfixUnaryExpression;
-        return operator === SyntaxKind.PlusPlusToken || operator === SyntaxKind.MinusMinusToken ? writeOrReadWrite() : AccessKind.Read;
+        return operator === SyntaxKind.Plus2Token || operator === SyntaxKind.Minus2Token ? writeOrReadWrite() : AccessKind.Read;
       case SyntaxKind.BinaryExpression:
         const { left, operatorToken } = parent as BinaryExpression;
         return left === node && isAssignmentOperator(operatorToken.kind)

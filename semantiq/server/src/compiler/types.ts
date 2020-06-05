@@ -149,7 +149,7 @@ namespace qnr {
     OpenBracketToken,
     CloseBracketToken,
     DotToken,
-    DotDotDotToken,
+    Dot3Token,
     SemicolonToken,
     CommaToken,
     QuestionDotToken,
@@ -158,33 +158,33 @@ namespace qnr {
     GreaterThanToken,
     LessThanEqualsToken,
     GreaterThanEqualsToken,
-    EqualsEqualsToken,
+    Equals2Token,
     ExclamationEqualsToken,
-    EqualsEqualsEqualsToken,
-    ExclamationEqualsEqualsToken,
+    Equals3Token,
+    ExclamationEquals2Token,
     EqualsGreaterThanToken,
     PlusToken,
     MinusToken,
     AsteriskToken,
-    AsteriskAsteriskToken,
+    Asterisk2Token,
     SlashToken,
     PercentToken,
-    PlusPlusToken,
-    MinusMinusToken,
-    LessThanLessThanToken,
-    GreaterThanGreaterThanToken,
-    GreaterThanGreaterThanGreaterThanToken,
+    Plus2Token,
+    Minus2Token,
+    LessThan2Token,
+    GreaterThan2Token,
+    GreaterThan3Token,
     AmpersandToken,
     BarToken,
     CaretToken,
     ExclamationToken,
     TildeToken,
-    AmpersandAmpersandToken,
-    BarBarToken,
+    Ampersand2Token,
+    Bar2Token,
     QuestionToken,
     ColonToken,
     AtToken,
-    QuestionQuestionToken,
+    Question2Token,
     /** Only the JSDoc scanner produces BacktickToken. The normal scanner produces NoSubstitutionTemplateLiteral and related kinds. */
     BacktickToken,
     // Assignments
@@ -192,12 +192,12 @@ namespace qnr {
     PlusEqualsToken,
     MinusEqualsToken,
     AsteriskEqualsToken,
-    AsteriskAsteriskEqualsToken,
+    Asterisk2EqualsToken,
     SlashEqualsToken,
     PercentEqualsToken,
-    LessThanLessThanEqualsToken,
-    GreaterThanGreaterThanEqualsToken,
-    GreaterThanGreaterThanGreaterThanEqualsToken,
+    LessThan2EqualsToken,
+    GreaterThan2EqualsToken,
+    GreaterThan3EqualsToken,
     AmpersandEqualsToken,
     BarEqualsToken,
     CaretEqualsToken,
@@ -743,7 +743,7 @@ namespace qnr {
   }
 
   export type DotToken = Token<SyntaxKind.DotToken>;
-  export type DotDotDotToken = Token<SyntaxKind.DotDotDotToken>;
+  export type Dot3Token = Token<SyntaxKind.Dot3Token>;
   export type QuestionToken = Token<SyntaxKind.QuestionToken>;
   export type QuestionDotToken = Token<SyntaxKind.QuestionDotToken>;
   export type ExclamationToken = Token<SyntaxKind.ExclamationToken>;
@@ -954,7 +954,7 @@ namespace qnr {
   export interface ParameterDeclaration extends NamedDeclaration, JSDocContainer {
     kind: SyntaxKind.Parameter;
     parent: SignatureDeclaration;
-    dotDotDotToken?: DotDotDotToken; // Present on rest parameter
+    dotDotDotToken?: Dot3Token; // Present on rest parameter
     name: BindingName; // Declared parameter name.
     questionToken?: QuestionToken; // Present on optional parameter
     type?: TypeNode; // Optional type annotation
@@ -965,7 +965,7 @@ namespace qnr {
     kind: SyntaxKind.BindingElement;
     parent: BindingPattern;
     propertyName?: PropertyName; // Binding property name (in object binding pattern)
-    dotDotDotToken?: DotDotDotToken; // Present on rest element (in object binding pattern)
+    dotDotDotToken?: Dot3Token; // Present on rest element (in object binding pattern)
     name: BindingName; // Declared binding element name
     initializer?: Expression; // Optional initializer
   }
@@ -1252,7 +1252,7 @@ namespace qnr {
 
   export interface NamedTupleMember extends TypeNode, JSDocContainer, Declaration {
     kind: SyntaxKind.NamedTupleMember;
-    dotDotDotToken?: Token<SyntaxKind.DotDotDotToken>;
+    dotDotDotToken?: Token<SyntaxKind.Dot3Token>;
     name: Identifier;
     questionToken?: Token<SyntaxKind.QuestionToken>;
     type: TypeNode;
@@ -1371,8 +1371,8 @@ namespace qnr {
   // see: https://tc39.github.io/ecma262/#prod-UpdateExpression
   // see: https://tc39.github.io/ecma262/#prod-UnaryExpression
   export type PrefixUnaryOperator =
-    | SyntaxKind.PlusPlusToken
-    | SyntaxKind.MinusMinusToken
+    | SyntaxKind.Plus2Token
+    | SyntaxKind.Minus2Token
     | SyntaxKind.PlusToken
     | SyntaxKind.MinusToken
     | SyntaxKind.TildeToken
@@ -1385,7 +1385,7 @@ namespace qnr {
   }
 
   // see: https://tc39.github.io/ecma262/#prod-UpdateExpression
-  export type PostfixUnaryOperator = SyntaxKind.PlusPlusToken | SyntaxKind.MinusMinusToken;
+  export type PostfixUnaryOperator = SyntaxKind.Plus2Token | SyntaxKind.Minus2Token;
 
   export interface PostfixUnaryExpression extends UpdateExpression {
     kind: SyntaxKind.PostfixUnaryExpression;
@@ -1459,7 +1459,7 @@ namespace qnr {
   }
 
   // see: https://tc39.github.io/ecma262/#prod-ExponentiationExpression
-  export type ExponentiationOperator = SyntaxKind.AsteriskAsteriskToken;
+  export type ExponentiationOperator = SyntaxKind.Asterisk2Token;
 
   // see: https://tc39.github.io/ecma262/#prod-MultiplicativeOperator
   export type MultiplicativeOperator = SyntaxKind.AsteriskToken | SyntaxKind.SlashToken | SyntaxKind.PercentToken;
@@ -1474,10 +1474,7 @@ namespace qnr {
   export type AdditiveOperatorOrHigher = MultiplicativeOperatorOrHigher | AdditiveOperator;
 
   // see: https://tc39.github.io/ecma262/#prod-ShiftExpression
-  export type ShiftOperator =
-    | SyntaxKind.LessThanLessThanToken
-    | SyntaxKind.GreaterThanGreaterThanToken
-    | SyntaxKind.GreaterThanGreaterThanGreaterThanToken;
+  export type ShiftOperator = SyntaxKind.LessThan2Token | SyntaxKind.GreaterThan2Token | SyntaxKind.GreaterThan3Token;
 
   // see: https://tc39.github.io/ecma262/#prod-ShiftExpression
   export type ShiftOperatorOrHigher = AdditiveOperatorOrHigher | ShiftOperator;
@@ -1496,9 +1493,9 @@ namespace qnr {
 
   // see: https://tc39.github.io/ecma262/#prod-EqualityExpression
   export type EqualityOperator =
-    | SyntaxKind.EqualsEqualsToken
-    | SyntaxKind.EqualsEqualsEqualsToken
-    | SyntaxKind.ExclamationEqualsEqualsToken
+    | SyntaxKind.Equals2Token
+    | SyntaxKind.Equals3Token
+    | SyntaxKind.ExclamationEquals2Token
     | SyntaxKind.ExclamationEqualsToken;
 
   // see: https://tc39.github.io/ecma262/#prod-EqualityExpression
@@ -1516,7 +1513,7 @@ namespace qnr {
 
   // see: https://tc39.github.io/ecma262/#prod-LogicalANDExpression
   // see: https://tc39.github.io/ecma262/#prod-LogicalORExpression
-  export type LogicalOperator = SyntaxKind.AmpersandAmpersandToken | SyntaxKind.BarBarToken;
+  export type LogicalOperator = SyntaxKind.Ampersand2Token | SyntaxKind.Bar2Token;
 
   // see: https://tc39.github.io/ecma262/#prod-LogicalANDExpression
   // see: https://tc39.github.io/ecma262/#prod-LogicalORExpression
@@ -1526,22 +1523,22 @@ namespace qnr {
   export type CompoundAssignmentOperator =
     | SyntaxKind.PlusEqualsToken
     | SyntaxKind.MinusEqualsToken
-    | SyntaxKind.AsteriskAsteriskEqualsToken
+    | SyntaxKind.Asterisk2EqualsToken
     | SyntaxKind.AsteriskEqualsToken
     | SyntaxKind.SlashEqualsToken
     | SyntaxKind.PercentEqualsToken
     | SyntaxKind.AmpersandEqualsToken
     | SyntaxKind.BarEqualsToken
     | SyntaxKind.CaretEqualsToken
-    | SyntaxKind.LessThanLessThanEqualsToken
-    | SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken
-    | SyntaxKind.GreaterThanGreaterThanEqualsToken;
+    | SyntaxKind.LessThan2EqualsToken
+    | SyntaxKind.GreaterThan3EqualsToken
+    | SyntaxKind.GreaterThan2EqualsToken;
 
   // see: https://tc39.github.io/ecma262/#prod-AssignmentExpression
   export type AssignmentOperator = SyntaxKind.EqualsToken | CompoundAssignmentOperator;
 
   // see: https://tc39.github.io/ecma262/#prod-AssignmentExpression
-  export type AssignmentOperatorOrHigher = SyntaxKind.QuestionQuestionToken | LogicalOperatorOrHigher | AssignmentOperator;
+  export type AssignmentOperatorOrHigher = SyntaxKind.Question2Token | LogicalOperatorOrHigher | AssignmentOperator;
 
   // see: https://tc39.github.io/ecma262/#prod-Expression
   export type BinaryOperator = AssignmentOperatorOrHigher | SyntaxKind.CommaToken;
@@ -1589,7 +1586,7 @@ namespace qnr {
     | ElementAccessExpression; // DestructuringAssignmentTarget
 
   export type BindingOrAssignmentElementRestIndicator =
-    | DotDotDotToken // from BindingElement
+    | Dot3Token // from BindingElement
     | SpreadElement // AssignmentRestElement
     | SpreadAssignment; // AssignmentRestProperty
 
@@ -2023,7 +2020,7 @@ namespace qnr {
   export interface JsxExpression extends Expression {
     kind: SyntaxKind.JsxExpression;
     parent: JsxElement | JsxAttributeLike;
-    dotDotDotToken?: Token<SyntaxKind.DotDotDotToken>;
+    dotDotDotToken?: Token<SyntaxKind.Dot3Token>;
     expression?: Expression;
   }
 
@@ -3170,7 +3167,7 @@ namespace qnr {
     getLibFileFromReference(ref: FileReference): SourceFile | undefined;
 
     /** Given a source file, get the name of the package it was imported from. */
-    sourceFileToPackageName: QMap<string, string>;
+    sourceFileToPackageName: QMap<string>;
     /** Set of all source files that some other source file redirects to. */
     redirectTargetsMap: MultiMap<string>;
     /** Is the file emitted file */
@@ -6666,14 +6663,7 @@ namespace qnr {
     forEach(action: <TKey extends keyof PragmaPseudoMap>(value: PragmaPseudoMap[TKey] | PragmaPseudoMap[TKey][], key: TKey) => void): void;
   }
 
-  /**
-   * A strongly-typed es6 map of pragma entries, the values of which are either a single argument
-   * value (if only one was found), or an array of multiple argument values if the pragma is present
-   * in multiple places
-   */
-  export interface PragmaMap
-    extends QMap<string, PragmaPseudoMap[keyof PragmaPseudoMap] | PragmaPseudoMap[keyof PragmaPseudoMap][]>,
-      ReadonlyPragmaMap {
+  export interface PragmaMap extends QMap<PragmaPseudoMap[keyof PragmaPseudoMap] | PragmaPseudoMap[keyof PragmaPseudoMap][]>, ReadonlyPragmaMap {
     set<TKey extends keyof PragmaPseudoMap>(key: TKey, value: PragmaPseudoMap[TKey] | PragmaPseudoMap[TKey][]): this;
     get<TKey extends keyof PragmaPseudoMap>(key: TKey): PragmaPseudoMap[TKey] | PragmaPseudoMap[TKey][];
     forEach(action: <TKey extends keyof PragmaPseudoMap>(value: PragmaPseudoMap[TKey] | PragmaPseudoMap[TKey][], key: TKey) => void): void;

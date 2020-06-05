@@ -1719,7 +1719,7 @@ namespace qnr {
       //   namespace due to how they are transformed in TypeScript.
       // - We only substitute identifiers that are exported at the top level.
       if (
-        (node.operator === SyntaxKind.PlusPlusToken || node.operator === SyntaxKind.MinusMinusToken) &&
+        (node.operator === SyntaxKind.Plus2Token || node.operator === SyntaxKind.Minus2Token) &&
         isIdentifier(node.operand) &&
         !isGeneratedIdentifier(node.operand) &&
         !isLocalName(node.operand) &&
@@ -1736,7 +1736,7 @@ namespace qnr {
 
           if (node.kind === SyntaxKind.PostfixUnaryExpression) {
             expression =
-              node.operator === SyntaxKind.PlusPlusToken
+              node.operator === SyntaxKind.Plus2Token
                 ? createSubtract(preventSubstitution(expression), createLiteral(1))
                 : createAdd(preventSubstitution(expression), createLiteral(1));
           }

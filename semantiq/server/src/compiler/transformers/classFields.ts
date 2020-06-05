@@ -229,9 +229,9 @@ namespace qnr {
     function visitPrefixUnaryExpression(node: PrefixUnaryExpression) {
       if (shouldTransformPrivateFields && isPrivateIdentifierPropertyAccessExpression(node.operand)) {
         const operator =
-          node.operator === SyntaxKind.PlusPlusToken
+          node.operator === SyntaxKind.Plus2Token
             ? SyntaxKind.PlusToken
-            : node.operator === SyntaxKind.MinusMinusToken
+            : node.operator === SyntaxKind.Minus2Token
             ? SyntaxKind.MinusToken
             : undefined;
         let info: PrivateIdentifierInfo | undefined;
@@ -258,9 +258,9 @@ namespace qnr {
     function visitPostfixUnaryExpression(node: PostfixUnaryExpression, valueIsDiscarded: boolean) {
       if (shouldTransformPrivateFields && isPrivateIdentifierPropertyAccessExpression(node.operand)) {
         const operator =
-          node.operator === SyntaxKind.PlusPlusToken
+          node.operator === SyntaxKind.Plus2Token
             ? SyntaxKind.PlusToken
-            : node.operator === SyntaxKind.MinusMinusToken
+            : node.operator === SyntaxKind.Minus2Token
             ? SyntaxKind.MinusToken
             : undefined;
         let info: PrivateIdentifierInfo | undefined;

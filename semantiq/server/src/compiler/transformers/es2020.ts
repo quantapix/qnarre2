@@ -27,7 +27,7 @@ namespace qnr {
           }
           return visitEachChild(node, visitor, context);
         case SyntaxKind.BinaryExpression:
-          if ((<BinaryExpression>node).operatorToken.kind === SyntaxKind.QuestionQuestionToken) {
+          if ((<BinaryExpression>node).operatorToken.kind === SyntaxKind.Question2Token) {
             return transformNullishCoalescingExpression(<BinaryExpression>node);
           }
           return visitEachChild(node, visitor, context);
@@ -163,9 +163,9 @@ namespace qnr {
 
     function createNotNullCondition(left: Expression, right: Expression, invert?: boolean) {
       return createBinary(
-        createBinary(left, createToken(invert ? SyntaxKind.EqualsEqualsEqualsToken : SyntaxKind.ExclamationEqualsEqualsToken), createNull()),
-        createToken(invert ? SyntaxKind.BarBarToken : SyntaxKind.AmpersandAmpersandToken),
-        createBinary(right, createToken(invert ? SyntaxKind.EqualsEqualsEqualsToken : SyntaxKind.ExclamationEqualsEqualsToken), createVoidZero())
+        createBinary(left, createToken(invert ? SyntaxKind.Equals3Token : SyntaxKind.ExclamationEquals2Token), createNull()),
+        createToken(invert ? SyntaxKind.Bar2Token : SyntaxKind.Ampersand2Token),
+        createBinary(right, createToken(invert ? SyntaxKind.Equals3Token : SyntaxKind.ExclamationEquals2Token), createVoidZero())
       );
     }
 

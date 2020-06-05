@@ -5188,7 +5188,7 @@ namespace qnr {
                     const isRest = isOptionalOrRest && hasRestElement && i === arity - 1;
                     const isOptional = isOptionalOrRest && !isRest;
                     tupleConstituentNodes[i] = createNamedTupleMember(
-                      isRest ? createToken(SyntaxKind.DotDotDotToken) : undefined,
+                      isRest ? createToken(SyntaxKind.Dot3Token) : undefined,
                       createIdentifier(unescapeLeadingUnderscores(getTupleElementLabel((type.target as TupleType).labeledElementDeclarations![i]))),
                       isOptional ? createToken(SyntaxKind.QuestionToken) : undefined,
                       isRest ? createArrayTypeNode(tupleConstituentNodes[i]) : tupleConstituentNodes[i]
@@ -5670,7 +5670,7 @@ namespace qnr {
             ? parameterDeclaration.modifiers.map(getSynthesizedClone)
             : undefined;
         const isRest = (parameterDeclaration && isRestParameter(parameterDeclaration)) || getCheckFlags(parameterSymbol) & CheckFlags.RestParameter;
-        const dotDotDotToken = isRest ? createToken(SyntaxKind.DotDotDotToken) : undefined;
+        const dotDotDotToken = isRest ? createToken(SyntaxKind.Dot3Token) : undefined;
         const name = parameterDeclaration
           ? parameterDeclaration.name
             ? parameterDeclaration.name.kind === SyntaxKind.Identifier
@@ -6529,7 +6529,7 @@ namespace qnr {
           return visitEachChild(node, visitExistingNodeTreeSymbols, nullTransformationContext);
 
           function getEffectiveDotDotDotForParameter(p: ParameterDeclaration) {
-            return p.dotDotDotToken || (p.type && isJSDocVariadicType(p.type) ? createToken(SyntaxKind.DotDotDotToken) : undefined);
+            return p.dotDotDotToken || (p.type && isJSDocVariadicType(p.type) ? createToken(SyntaxKind.Dot3Token) : undefined);
           }
 
           function rewriteModuleSpecifier(parent: ImportTypeNode, lit: StringLiteral) {
@@ -16432,8 +16432,8 @@ namespace qnr {
           return isContextSensitive((<ConditionalExpression>node).whenTrue) || isContextSensitive((<ConditionalExpression>node).whenFalse);
         case SyntaxKind.BinaryExpression:
           return (
-            ((<BinaryExpression>node).operatorToken.kind === SyntaxKind.BarBarToken ||
-              (<BinaryExpression>node).operatorToken.kind === SyntaxKind.QuestionQuestionToken) &&
+            ((<BinaryExpression>node).operatorToken.kind === SyntaxKind.Bar2Token ||
+              (<BinaryExpression>node).operatorToken.kind === SyntaxKind.Question2Token) &&
             (isContextSensitive((<BinaryExpression>node).left) || isContextSensitive((<BinaryExpression>node).right))
           );
         case SyntaxKind.PropertyAssignment:
@@ -22267,7 +22267,7 @@ namespace qnr {
       return (
         isMatchingReference(source, target) ||
         (target.kind === SyntaxKind.BinaryExpression &&
-          (<BinaryExpression>target).operatorToken.kind === SyntaxKind.AmpersandAmpersandToken &&
+          (<BinaryExpression>target).operatorToken.kind === SyntaxKind.Ampersand2Token &&
           (containsTruthyCheck(source, (<BinaryExpression>target).left) || containsTruthyCheck(source, (<BinaryExpression>target).right)))
       );
     }
@@ -23030,9 +23030,9 @@ namespace qnr {
       return (
         node.kind === SyntaxKind.FalseKeyword ||
         (node.kind === SyntaxKind.BinaryExpression &&
-          (((<BinaryExpression>node).operatorToken.kind === SyntaxKind.AmpersandAmpersandToken &&
+          (((<BinaryExpression>node).operatorToken.kind === SyntaxKind.Ampersand2Token &&
             (isFalseExpression((<BinaryExpression>node).left) || isFalseExpression((<BinaryExpression>node).right))) ||
-            ((<BinaryExpression>node).operatorToken.kind === SyntaxKind.BarBarToken &&
+            ((<BinaryExpression>node).operatorToken.kind === SyntaxKind.Bar2Token &&
               isFalseExpression((<BinaryExpression>node).left) &&
               isFalseExpression((<BinaryExpression>node).right))))
       );
@@ -23344,10 +23344,10 @@ namespace qnr {
           return unreachableNeverType;
         }
         if (node.kind === SyntaxKind.BinaryExpression) {
-          if ((<BinaryExpression>node).operatorToken.kind === SyntaxKind.AmpersandAmpersandToken) {
+          if ((<BinaryExpression>node).operatorToken.kind === SyntaxKind.Ampersand2Token) {
             return narrowTypeByAssertion(narrowTypeByAssertion(type, (<BinaryExpression>node).left), (<BinaryExpression>node).right);
           }
-          if ((<BinaryExpression>node).operatorToken.kind === SyntaxKind.BarBarToken) {
+          if ((<BinaryExpression>node).operatorToken.kind === SyntaxKind.Bar2Token) {
             return getUnionType([
               narrowTypeByAssertion(type, (<BinaryExpression>node).left),
               narrowTypeByAssertion(type, (<BinaryExpression>node).right),
@@ -23682,10 +23682,10 @@ namespace qnr {
         switch (expr.operatorToken.kind) {
           case SyntaxKind.EqualsToken:
             return narrowTypeByTruthiness(narrowType(type, expr.right, assumeTrue), expr.left, assumeTrue);
-          case SyntaxKind.EqualsEqualsToken:
+          case SyntaxKind.Equals2Token:
           case SyntaxKind.ExclamationEqualsToken:
-          case SyntaxKind.EqualsEqualsEqualsToken:
-          case SyntaxKind.ExclamationEqualsEqualsToken:
+          case SyntaxKind.Equals3Token:
+          case SyntaxKind.ExclamationEquals2Token:
             const operator = expr.operatorToken.kind;
             const left = getReferenceCandidate(expr.left);
             const right = getReferenceCandidate(expr.right);
@@ -23745,9 +23745,9 @@ namespace qnr {
         // When operator is !== and type of value is undefined, null and undefined is removed from type of obj in true branch.
         // When operator is == and type of value is null or undefined, null and undefined is removed from type of obj in false branch.
         // When operator is != and type of value is null or undefined, null and undefined is removed from type of obj in true branch.
-        const equalsOperator = operator === SyntaxKind.EqualsEqualsToken || operator === SyntaxKind.EqualsEqualsEqualsToken;
+        const equalsOperator = operator === SyntaxKind.Equals2Token || operator === SyntaxKind.Equals3Token;
         const nullableFlags =
-          operator === SyntaxKind.EqualsEqualsToken || operator === SyntaxKind.ExclamationEqualsToken ? TypeFlags.Nullable : TypeFlags.Undefined;
+          operator === SyntaxKind.Equals2Token || operator === SyntaxKind.ExclamationEqualsToken ? TypeFlags.Nullable : TypeFlags.Undefined;
         const valueType = getTypeOfExpression(value);
         // Note that we include any and unknown in the exclusion test because their domain includes null and undefined.
         const removeNullable =
@@ -23760,14 +23760,14 @@ namespace qnr {
         if (type.flags & TypeFlags.Any) {
           return type;
         }
-        if (operator === SyntaxKind.ExclamationEqualsToken || operator === SyntaxKind.ExclamationEqualsEqualsToken) {
+        if (operator === SyntaxKind.ExclamationEqualsToken || operator === SyntaxKind.ExclamationEquals2Token) {
           assumeTrue = !assumeTrue;
         }
         const valueType = getTypeOfExpression(value);
         if (
           type.flags & TypeFlags.Unknown &&
           assumeTrue &&
-          (operator === SyntaxKind.EqualsEqualsEqualsToken || operator === SyntaxKind.ExclamationEqualsEqualsToken)
+          (operator === SyntaxKind.Equals3Token || operator === SyntaxKind.ExclamationEquals2Token)
         ) {
           if (valueType.flags & (TypeFlags.Primitive | TypeFlags.NonPrimitive)) {
             return valueType;
@@ -23781,7 +23781,7 @@ namespace qnr {
           if (!strictNullChecks) {
             return type;
           }
-          const doubleEquals = operator === SyntaxKind.EqualsEqualsToken || operator === SyntaxKind.ExclamationEqualsToken;
+          const doubleEquals = operator === SyntaxKind.Equals2Token || operator === SyntaxKind.ExclamationEqualsToken;
           const facts = doubleEquals
             ? assumeTrue
               ? TypeFacts.EQUndefinedOrNull
@@ -23800,7 +23800,7 @@ namespace qnr {
         }
         if (assumeTrue) {
           const filterFn: (t: Type) => boolean =
-            operator === SyntaxKind.EqualsEqualsToken
+            operator === SyntaxKind.Equals2Token
               ? (t) => areTypesComparable(t, valueType) || isCoercibleUnderDoubleEquals(t, valueType)
               : (t) => areTypesComparable(t, valueType);
           const narrowedType = filterType(type, filterFn);
@@ -23821,7 +23821,7 @@ namespace qnr {
         assumeTrue: boolean
       ): Type {
         // We have '==', '!=', '===', or !==' operator with 'typeof xxx' and string literal operands
-        if (operator === SyntaxKind.ExclamationEqualsToken || operator === SyntaxKind.ExclamationEqualsEqualsToken) {
+        if (operator === SyntaxKind.ExclamationEqualsToken || operator === SyntaxKind.ExclamationEquals2Token) {
           assumeTrue = !assumeTrue;
         }
         const target = getReferenceCandidate(typeOfExpr.expression);
@@ -23840,7 +23840,7 @@ namespace qnr {
           if (typeOfExpr.parent.parent.kind === SyntaxKind.BinaryExpression) {
             const expr = <BinaryExpression>typeOfExpr.parent.parent;
             if (
-              expr.operatorToken.kind === SyntaxKind.AmpersandAmpersandToken &&
+              expr.operatorToken.kind === SyntaxKind.Ampersand2Token &&
               expr.right === typeOfExpr.parent &&
               containsTruthyCheck(reference, expr.left)
             ) {
@@ -24022,8 +24022,8 @@ namespace qnr {
         // Do not narrow when checking inequality.
         if (
           assumeTrue
-            ? operator !== SyntaxKind.EqualsEqualsToken && operator !== SyntaxKind.EqualsEqualsEqualsToken
-            : operator !== SyntaxKind.ExclamationEqualsToken && operator !== SyntaxKind.ExclamationEqualsEqualsToken
+            ? operator !== SyntaxKind.Equals2Token && operator !== SyntaxKind.Equals3Token
+            : operator !== SyntaxKind.ExclamationEqualsToken && operator !== SyntaxKind.ExclamationEquals2Token
         ) {
           return type;
         }
@@ -24181,7 +24181,7 @@ namespace qnr {
         // for `a?.b`, we emulate a synthetic `a !== null && a !== undefined` condition for `a`
         if (
           isExpressionOfOptionalChainRoot(expr) ||
-          (isBinaryExpression(expr.parent) && expr.parent.operatorToken.kind === SyntaxKind.QuestionQuestionToken && expr.parent.left === expr)
+          (isBinaryExpression(expr.parent) && expr.parent.operatorToken.kind === SyntaxKind.Question2Token && expr.parent.left === expr)
         ) {
           return narrowTypeByOptionality(type, expr, assumeTrue);
         }
@@ -24642,7 +24642,7 @@ namespace qnr {
         isAssigned = true;
       } else if (current.parent.kind === SyntaxKind.PrefixUnaryExpression || current.parent.kind === SyntaxKind.PostfixUnaryExpression) {
         const expr = <PrefixUnaryExpression | PostfixUnaryExpression>current.parent;
-        isAssigned = expr.operator === SyntaxKind.PlusPlusToken || expr.operator === SyntaxKind.MinusMinusToken;
+        isAssigned = expr.operator === SyntaxKind.Plus2Token || expr.operator === SyntaxKind.Minus2Token;
       }
 
       if (!isAssigned) {
@@ -25435,8 +25435,8 @@ namespace qnr {
             return;
           }
           return contextSensitive === true ? getTypeOfExpression(left) : contextSensitive;
-        case SyntaxKind.BarBarToken:
-        case SyntaxKind.QuestionQuestionToken:
+        case SyntaxKind.Bar2Token:
+        case SyntaxKind.Question2Token:
           // When an || expression has a contextual type, the operands are contextually typed by that type, except
           // when that type originates in a binding pattern, the right operand is contextually typed by the type of
           // the left operand. When an || expression has no contextual type, the right operand is contextually typed
@@ -25446,7 +25446,7 @@ namespace qnr {
           return node === right && ((type && type.pattern) || (!type && !isDefaultedExpandoInitializer(binaryExpression)))
             ? getTypeOfExpression(left)
             : type;
-        case SyntaxKind.AmpersandAmpersandToken:
+        case SyntaxKind.Ampersand2Token:
         case SyntaxKind.CommaToken:
           return node === right ? getContextualType(binaryExpression, contextFlags) : undefined;
         default:
@@ -31707,8 +31707,8 @@ namespace qnr {
           checkTruthinessExpression(node.operand);
           const facts = getTypeFacts(operandType) & (TypeFacts.Truthy | TypeFacts.Falsy);
           return facts === TypeFacts.Truthy ? falseType : facts === TypeFacts.Falsy ? trueType : booleanType;
-        case SyntaxKind.PlusPlusToken:
-        case SyntaxKind.MinusMinusToken:
+        case SyntaxKind.Plus2Token:
+        case SyntaxKind.Minus2Token:
           const ok = checkArithmeticOperandType(
             node.operand,
             checkNonNullType(operandType, node.operand),
@@ -32143,11 +32143,7 @@ namespace qnr {
             const leftType = lastResult!;
             workStacks.leftType[stackIndex] = leftType;
             const operator = node.operatorToken.kind;
-            if (
-              operator === SyntaxKind.AmpersandAmpersandToken ||
-              operator === SyntaxKind.BarBarToken ||
-              operator === SyntaxKind.QuestionQuestionToken
-            ) {
+            if (operator === SyntaxKind.Ampersand2Token || operator === SyntaxKind.Bar2Token || operator === SyntaxKind.Question2Token) {
               checkTruthinessOfType(leftType, node.left);
             }
             advanceState(CheckBinaryExpressionState.FinishCheck);
@@ -32194,10 +32190,10 @@ namespace qnr {
 
     function checkGrammarNullishCoalesceWithLogicalExpression(node: BinaryExpression) {
       const { left, operatorToken, right } = node;
-      if (operatorToken.kind === SyntaxKind.QuestionQuestionToken) {
+      if (operatorToken.kind === SyntaxKind.Question2Token) {
         if (
           isBinaryExpression(left) &&
-          (left.operatorToken.kind === SyntaxKind.BarBarToken || left.operatorToken.kind === SyntaxKind.AmpersandAmpersandToken)
+          (left.operatorToken.kind === SyntaxKind.Bar2Token || left.operatorToken.kind === SyntaxKind.Ampersand2Token)
         ) {
           grammarErrorOnNode(
             left,
@@ -32208,7 +32204,7 @@ namespace qnr {
         }
         if (
           isBinaryExpression(right) &&
-          (right.operatorToken.kind === SyntaxKind.BarBarToken || right.operatorToken.kind === SyntaxKind.AmpersandAmpersandToken)
+          (right.operatorToken.kind === SyntaxKind.Bar2Token || right.operatorToken.kind === SyntaxKind.Ampersand2Token)
         ) {
           grammarErrorOnNode(
             right,
@@ -32231,7 +32227,7 @@ namespace qnr {
         return checkDestructuringAssignment(left, checkExpression(right, checkMode), checkMode, right.kind === SyntaxKind.ThisKeyword);
       }
       let leftType: Type;
-      if (operator === SyntaxKind.AmpersandAmpersandToken || operator === SyntaxKind.BarBarToken || operator === SyntaxKind.QuestionQuestionToken) {
+      if (operator === SyntaxKind.Ampersand2Token || operator === SyntaxKind.Bar2Token || operator === SyntaxKind.Question2Token) {
         leftType = checkTruthinessExpression(left, checkMode);
       } else {
         leftType = checkExpression(left, checkMode);
@@ -32252,21 +32248,21 @@ namespace qnr {
       const operator = operatorToken.kind;
       switch (operator) {
         case SyntaxKind.AsteriskToken:
-        case SyntaxKind.AsteriskAsteriskToken:
+        case SyntaxKind.Asterisk2Token:
         case SyntaxKind.AsteriskEqualsToken:
-        case SyntaxKind.AsteriskAsteriskEqualsToken:
+        case SyntaxKind.Asterisk2EqualsToken:
         case SyntaxKind.SlashToken:
         case SyntaxKind.SlashEqualsToken:
         case SyntaxKind.PercentToken:
         case SyntaxKind.PercentEqualsToken:
         case SyntaxKind.MinusToken:
         case SyntaxKind.MinusEqualsToken:
-        case SyntaxKind.LessThanLessThanToken:
-        case SyntaxKind.LessThanLessThanEqualsToken:
-        case SyntaxKind.GreaterThanGreaterThanToken:
-        case SyntaxKind.GreaterThanGreaterThanEqualsToken:
-        case SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
-        case SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken:
+        case SyntaxKind.LessThan2Token:
+        case SyntaxKind.LessThan2EqualsToken:
+        case SyntaxKind.GreaterThan2Token:
+        case SyntaxKind.GreaterThan2EqualsToken:
+        case SyntaxKind.GreaterThan3Token:
+        case SyntaxKind.GreaterThan3EqualsToken:
         case SyntaxKind.BarToken:
         case SyntaxKind.BarEqualsToken:
         case SyntaxKind.CaretToken:
@@ -32321,12 +32317,12 @@ namespace qnr {
             // At least one is assignable to bigint, so check that both are
             else if (bothAreBigIntLike(leftType, rightType)) {
               switch (operator) {
-                case SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
-                case SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken:
+                case SyntaxKind.GreaterThan3Token:
+                case SyntaxKind.GreaterThan3EqualsToken:
                   reportOperatorError();
                   break;
-                case SyntaxKind.AsteriskAsteriskToken:
-                case SyntaxKind.AsteriskAsteriskEqualsToken:
+                case SyntaxKind.Asterisk2Token:
+                case SyntaxKind.Asterisk2EqualsToken:
                   if (languageVersion < ScriptTarget.ES2016) {
                     error(
                       errorNode,
@@ -32417,10 +32413,10 @@ namespace qnr {
             );
           }
           return booleanType;
-        case SyntaxKind.EqualsEqualsToken:
+        case SyntaxKind.Equals2Token:
         case SyntaxKind.ExclamationEqualsToken:
-        case SyntaxKind.EqualsEqualsEqualsToken:
-        case SyntaxKind.ExclamationEqualsEqualsToken:
+        case SyntaxKind.Equals3Token:
+        case SyntaxKind.ExclamationEquals2Token:
           reportOperatorErrorUnless((left, right) => isTypeEqualityComparableTo(left, right) || isTypeEqualityComparableTo(right, left));
           return booleanType;
 
@@ -32428,15 +32424,15 @@ namespace qnr {
           return checkInstanceOfExpression(left, right, leftType, rightType);
         case SyntaxKind.InKeyword:
           return checkInExpression(left, right, leftType, rightType);
-        case SyntaxKind.AmpersandAmpersandToken:
+        case SyntaxKind.Ampersand2Token:
           return getTypeFacts(leftType) & TypeFacts.Truthy
             ? getUnionType([extractDefinitelyFalsyTypes(strictNullChecks ? leftType : getBaseTypeOfLiteralType(rightType)), rightType])
             : leftType;
-        case SyntaxKind.BarBarToken:
+        case SyntaxKind.Bar2Token:
           return getTypeFacts(leftType) & TypeFacts.Falsy
             ? getUnionType([removeDefinitelyFalsyTypes(leftType), rightType], UnionReduction.Subtype)
             : leftType;
-        case SyntaxKind.QuestionQuestionToken:
+        case SyntaxKind.Question2Token:
           return getTypeFacts(leftType) & TypeFacts.EQUndefinedOrNull
             ? getUnionType([getNonNullableType(leftType), rightType], UnionReduction.Subtype)
             : leftType;
@@ -32514,13 +32510,13 @@ namespace qnr {
         switch (operator) {
           case SyntaxKind.BarToken:
           case SyntaxKind.BarEqualsToken:
-            return SyntaxKind.BarBarToken;
+            return SyntaxKind.Bar2Token;
           case SyntaxKind.CaretToken:
           case SyntaxKind.CaretEqualsToken:
-            return SyntaxKind.ExclamationEqualsEqualsToken;
+            return SyntaxKind.ExclamationEquals2Token;
           case SyntaxKind.AmpersandToken:
           case SyntaxKind.AmpersandEqualsToken:
-            return SyntaxKind.AmpersandAmpersandToken;
+            return SyntaxKind.Ampersand2Token;
           default:
             return;
         }
@@ -32610,11 +32606,11 @@ namespace qnr {
       function tryGiveBetterPrimaryError(errNode: Node, maybeMissingAwait: boolean, leftStr: string, rightStr: string) {
         let typeName: string | undefined;
         switch (operatorToken.kind) {
-          case SyntaxKind.EqualsEqualsEqualsToken:
-          case SyntaxKind.EqualsEqualsToken:
+          case SyntaxKind.Equals3Token:
+          case SyntaxKind.Equals2Token:
             typeName = 'false';
             break;
-          case SyntaxKind.ExclamationEqualsEqualsToken:
+          case SyntaxKind.ExclamationEquals2Token:
           case SyntaxKind.ExclamationEqualsToken:
             typeName = 'true';
         }
@@ -38282,11 +38278,11 @@ namespace qnr {
                   return left | right;
                 case SyntaxKind.AmpersandToken:
                   return left & right;
-                case SyntaxKind.GreaterThanGreaterThanToken:
+                case SyntaxKind.GreaterThan2Token:
                   return left >> right;
-                case SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
+                case SyntaxKind.GreaterThan3Token:
                   return left >>> right;
-                case SyntaxKind.LessThanLessThanToken:
+                case SyntaxKind.LessThan2Token:
                   return left << right;
                 case SyntaxKind.CaretToken:
                   return left ^ right;
@@ -38300,7 +38296,7 @@ namespace qnr {
                   return left - right;
                 case SyntaxKind.PercentToken:
                   return left % right;
-                case SyntaxKind.AsteriskAsteriskToken:
+                case SyntaxKind.Asterisk2Token:
                   return left ** right;
               }
             } else if (

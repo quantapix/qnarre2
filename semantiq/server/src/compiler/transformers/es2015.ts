@@ -3118,13 +3118,11 @@ namespace qnr {
           } else {
             returnStatement = createReturn(createPropertyAccess(loopResultName, 'value'));
           }
-          statements.push(
-            createIf(createBinary(createTypeOf(loopResultName), SyntaxKind.EqualsEqualsEqualsToken, createLiteral('object')), returnStatement)
-          );
+          statements.push(createIf(createBinary(createTypeOf(loopResultName), SyntaxKind.Equals3Token, createLiteral('object')), returnStatement));
         }
 
         if (state.nonLocalJumps! & Jump.Break) {
-          statements.push(createIf(createBinary(loopResultName, SyntaxKind.EqualsEqualsEqualsToken, createLiteral('break')), createBreak()));
+          statements.push(createIf(createBinary(loopResultName, SyntaxKind.Equals3Token, createLiteral('break')), createBreak()));
         }
 
         if (state.labeledNonLocalBreaks || state.labeledNonLocalContinues) {

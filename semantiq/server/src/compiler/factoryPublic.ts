@@ -354,7 +354,7 @@ namespace qnr {
   export function createParameter(
     decorators: readonly Decorator[] | undefined,
     modifiers: readonly Modifier[] | undefined,
-    dotDotDotToken: DotDotDotToken | undefined,
+    dotDotDotToken: Dot3Token | undefined,
     name: string | BindingName,
     questionToken?: QuestionToken,
     type?: TypeNode,
@@ -375,7 +375,7 @@ namespace qnr {
     node: ParameterDeclaration,
     decorators: readonly Decorator[] | undefined,
     modifiers: readonly Modifier[] | undefined,
-    dotDotDotToken: DotDotDotToken | undefined,
+    dotDotDotToken: Dot3Token | undefined,
     name: string | BindingName,
     questionToken: QuestionToken | undefined,
     type: TypeNode | undefined,
@@ -1021,7 +1021,7 @@ namespace qnr {
   }
 
   export function createNamedTupleMember(
-    dotDotDotToken: Token<SyntaxKind.DotDotDotToken> | undefined,
+    dotDotDotToken: Token<SyntaxKind.Dot3Token> | undefined,
     name: Identifier,
     questionToken: Token<SyntaxKind.QuestionToken> | undefined,
     type: TypeNode
@@ -1036,7 +1036,7 @@ namespace qnr {
 
   export function updateNamedTupleMember(
     node: NamedTupleMember,
-    dotDotDotToken: Token<SyntaxKind.DotDotDotToken> | undefined,
+    dotDotDotToken: Token<SyntaxKind.Dot3Token> | undefined,
     name: Identifier,
     questionToken: Token<SyntaxKind.QuestionToken> | undefined,
     type: TypeNode
@@ -1141,7 +1141,7 @@ namespace qnr {
   }
 
   export function createBindingElement(
-    dotDotDotToken: DotDotDotToken | undefined,
+    dotDotDotToken: Dot3Token | undefined,
     propertyName: string | PropertyName | undefined,
     name: string | BindingName,
     initializer?: Expression
@@ -1156,7 +1156,7 @@ namespace qnr {
 
   export function updateBindingElement(
     node: BindingElement,
-    dotDotDotToken: DotDotDotToken | undefined,
+    dotDotDotToken: Dot3Token | undefined,
     propertyName: PropertyName | undefined,
     name: BindingName,
     initializer: Expression | undefined
@@ -1647,7 +1647,7 @@ namespace qnr {
 
   function getCookedText(kind: TemplateLiteralToken['kind'], rawText: string) {
     if (!rawTextScanner) {
-      rawTextScanner = createScanner(ScriptTarget.Latest, /*skipTrivia*/ false, LanguageVariant.Standard);
+      rawTextScanner = createScanner(/*skipTrivia*/ false, LanguageVariant.Standard);
     }
     switch (kind) {
       case SyntaxKind.NoSubstitutionTemplateLiteral:
@@ -3047,7 +3047,7 @@ namespace qnr {
     return node.expression !== expression ? updateNode(createJsxSpreadAttribute(expression), node) : node;
   }
 
-  export function createJsxExpression(dotDotDotToken: DotDotDotToken | undefined, expression: Expression | undefined) {
+  export function createJsxExpression(dotDotDotToken: Dot3Token | undefined, expression: Expression | undefined) {
     const node = <JsxExpression>createSynthesizedNode(SyntaxKind.JsxExpression);
     node.dotDotDotToken = dotDotDotToken;
     node.expression = expression;
@@ -3749,11 +3749,11 @@ namespace qnr {
   }
 
   export function createStrictEquality(left: Expression, right: Expression) {
-    return createBinary(left, SyntaxKind.EqualsEqualsEqualsToken, right);
+    return createBinary(left, SyntaxKind.Equals3Token, right);
   }
 
   export function createStrictInequality(left: Expression, right: Expression) {
-    return createBinary(left, SyntaxKind.ExclamationEqualsEqualsToken, right);
+    return createBinary(left, SyntaxKind.ExclamationEquals2Token, right);
   }
 
   export function createAdd(left: Expression, right: Expression) {
@@ -3765,19 +3765,19 @@ namespace qnr {
   }
 
   export function createPostfixIncrement(operand: Expression) {
-    return createPostfix(operand, SyntaxKind.PlusPlusToken);
+    return createPostfix(operand, SyntaxKind.Plus2Token);
   }
 
   export function createLogicalAnd(left: Expression, right: Expression) {
-    return createBinary(left, SyntaxKind.AmpersandAmpersandToken, right);
+    return createBinary(left, SyntaxKind.Ampersand2Token, right);
   }
 
   export function createLogicalOr(left: Expression, right: Expression) {
-    return createBinary(left, SyntaxKind.BarBarToken, right);
+    return createBinary(left, SyntaxKind.Bar2Token, right);
   }
 
   export function createNullishCoalesce(left: Expression, right: Expression) {
-    return createBinary(left, SyntaxKind.QuestionQuestionToken, right);
+    return createBinary(left, SyntaxKind.Question2Token, right);
   }
 
   export function createLogicalNot(operand: Expression) {

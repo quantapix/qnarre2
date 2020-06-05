@@ -753,7 +753,7 @@ namespace qnr {
   namespace Parser {
     // Share a single scanner across all calls to parse a source file.  This helps speed things
     // up by avoiding the cost of creating/compiling scanners over and over again.
-    const scanner = createScanner(ScriptTarget.Latest, /*skipTrivia*/ true);
+    const scanner = createScanner(/*skipTrivia*/ true);
     const disallowInAndDecoratorContext = NodeFlags.DisallowInContext | NodeFlags.DecoratorContext;
 
     // capture constructors in 'initializeState' to avoid null checks
@@ -1054,7 +1054,7 @@ namespace qnr {
 
       setExternalModuleIndicator(sourceFile);
 
-      sourceFile.commentDirectives = scanner.getCommentDirectives();
+      sourceFile.commentDirectives = scanner.getDirectives();
       sourceFile.nodeCount = nodeCount;
       sourceFile.identifierCount = identifierCount;
       sourceFile.identifiers = identifiers;
@@ -1739,7 +1739,7 @@ namespace qnr {
         token() === SyntaxKind.OpenBracketToken ||
         token() === SyntaxKind.OpenBraceToken ||
         token() === SyntaxKind.AsteriskToken ||
-        token() === SyntaxKind.DotDotDotToken ||
+        token() === SyntaxKind.Dot3Token ||
         isLiteralPropertyName()
       );
     }
@@ -1791,7 +1791,7 @@ namespace qnr {
           switch (token()) {
             case SyntaxKind.OpenBracketToken:
             case SyntaxKind.AsteriskToken:
-            case SyntaxKind.DotDotDotToken:
+            case SyntaxKind.Dot3Token:
             case SyntaxKind.DotToken: // Not an object literal member, but don't want to close the object (see `tests/cases/fourslash/completionsDotInObjectLiteral.ts`)
               return true;
             default:
@@ -1800,7 +1800,7 @@ namespace qnr {
         case ParsingContext.RestProperties:
           return isLiteralPropertyName();
         case ParsingContext.ObjectBindingElements:
-          return token() === SyntaxKind.OpenBracketToken || token() === SyntaxKind.DotDotDotToken || isLiteralPropertyName();
+          return token() === SyntaxKind.OpenBracketToken || token() === SyntaxKind.Dot3Token || isLiteralPropertyName();
         case ParsingContext.HeritageClauseElement:
           // If we see `{ ... }` then only consume it as an expression if it is followed by `,` or `{`
           // That way we won't consume the body of a class in its heritage clause.
@@ -1819,7 +1819,7 @@ namespace qnr {
         case ParsingContext.VariableDeclarations:
           return isIdentifierOrPrivateIdentifierOrPattern();
         case ParsingContext.ArrayBindingElements:
-          return token() === SyntaxKind.CommaToken || token() === SyntaxKind.DotDotDotToken || isIdentifierOrPrivateIdentifierOrPattern();
+          return token() === SyntaxKind.CommaToken || token() === SyntaxKind.Dot3Token || isIdentifierOrPrivateIdentifierOrPattern();
         case ParsingContext.TypeParameters:
           return isIdentifier();
         case ParsingContext.ArrayLiteralMembers:
@@ -1830,7 +1830,7 @@ namespace qnr {
           }
         // falls through
         case ParsingContext.ArgumentExpressions:
-          return token() === SyntaxKind.DotDotDotToken || isStartOfExpression();
+          return token() === SyntaxKind.Dot3Token || isStartOfExpression();
         case ParsingContext.Parameters:
           return isStartOfParameter(/*isJSDocParameter*/ false);
         case ParsingContext.JSDocParameters:
@@ -2778,7 +2778,7 @@ namespace qnr {
         return finishNode(moduleTag);
       }
 
-      const dotdotdot = parseOptionalToken(SyntaxKind.DotDotDotToken);
+      const dotdotdot = parseOptionalToken(SyntaxKind.Dot3Token);
       let type = parseTypeOrTypePredicate();
       scanner.setInJSDocType(false);
       if (dotdotdot) {
@@ -2845,7 +2845,7 @@ namespace qnr {
 
     function isStartOfParameter(isJSDocParameter: boolean): boolean {
       return (
-        token() === SyntaxKind.DotDotDotToken ||
+        token() === SyntaxKind.Dot3Token ||
         isIdentifierOrPrivateIdentifierOrPattern() ||
         isModifierKind(token()) ||
         token() === SyntaxKind.AtToken ||
@@ -2863,7 +2863,7 @@ namespace qnr {
 
       node.decorators = parseDecorators();
       node.modifiers = parseModifiers();
-      node.dotDotDotToken = parseOptionalToken(SyntaxKind.DotDotDotToken);
+      node.dotDotDotToken = parseOptionalToken(SyntaxKind.Dot3Token);
 
       // FormalParameter [Yield,Await]:
       //      BindingElement[?Yield,?Await]
@@ -3004,7 +3004,7 @@ namespace qnr {
       //   []
       //
       nextToken();
-      if (token() === SyntaxKind.DotDotDotToken || token() === SyntaxKind.CloseBracketToken) {
+      if (token() === SyntaxKind.Dot3Token || token() === SyntaxKind.CloseBracketToken) {
         return true;
       }
 
@@ -3201,7 +3201,7 @@ namespace qnr {
 
     function parseTupleElementType() {
       const pos = getNodePos();
-      if (parseOptional(SyntaxKind.DotDotDotToken)) {
+      if (parseOptional(SyntaxKind.Dot3Token)) {
         const node = <RestTypeNode>createNode(SyntaxKind.RestType, pos);
         node.type = parseType();
         return finishNode(node);
@@ -3218,7 +3218,7 @@ namespace qnr {
     }
 
     function isTupleElementName() {
-      if (token() === SyntaxKind.DotDotDotToken) {
+      if (token() === SyntaxKind.Dot3Token) {
         return tokenIsIdentifierOrKeyword(nextToken()) && isNextTokenColonOrQuestionColon();
       }
       return tokenIsIdentifierOrKeyword(token()) && isNextTokenColonOrQuestionColon();
@@ -3227,7 +3227,7 @@ namespace qnr {
     function parseTupleElementNameOrTupleElementType() {
       if (lookAhead(isTupleElementName)) {
         const node = <NamedTupleMember>createNode(SyntaxKind.NamedTupleMember);
-        node.dotDotDotToken = parseOptionalToken(SyntaxKind.DotDotDotToken);
+        node.dotDotDotToken = parseOptionalToken(SyntaxKind.Dot3Token);
         node.name = parseIdentifierName();
         node.questionToken = parseOptionalToken(SyntaxKind.QuestionToken);
         parseExpected(SyntaxKind.ColonToken);
@@ -3337,7 +3337,7 @@ namespace qnr {
           return parseJSDocAllType(/*postfixEquals*/ false);
         case SyntaxKind.AsteriskEqualsToken:
           return parseJSDocAllType(/*postfixEquals*/ true);
-        case SyntaxKind.QuestionQuestionToken:
+        case SyntaxKind.Question2Token:
           // If there is '??', consider that is prefix '?' in JSDoc type.
           scanner.reScanQuestionToken();
         // falls through
@@ -3416,7 +3416,7 @@ namespace qnr {
         case SyntaxKind.AsteriskToken:
         case SyntaxKind.QuestionToken:
         case SyntaxKind.ExclamationToken:
-        case SyntaxKind.DotDotDotToken:
+        case SyntaxKind.Dot3Token:
         case SyntaxKind.InferKeyword:
         case SyntaxKind.ImportKeyword:
         case SyntaxKind.AssertsKeyword:
@@ -3567,7 +3567,7 @@ namespace qnr {
 
     function isUnambiguouslyStartOfFunctionType() {
       nextToken();
-      if (token() === SyntaxKind.CloseParenToken || token() === SyntaxKind.DotDotDotToken) {
+      if (token() === SyntaxKind.CloseParenToken || token() === SyntaxKind.Dot3Token) {
         // ( )
         // ( ...
         return true;
@@ -3701,8 +3701,8 @@ namespace qnr {
         case SyntaxKind.DeleteKeyword:
         case SyntaxKind.TypeOfKeyword:
         case SyntaxKind.VoidKeyword:
-        case SyntaxKind.PlusPlusToken:
-        case SyntaxKind.MinusMinusToken:
+        case SyntaxKind.Plus2Token:
+        case SyntaxKind.Minus2Token:
         case SyntaxKind.LessThanToken:
         case SyntaxKind.AwaitKeyword:
         case SyntaxKind.YieldKeyword:
@@ -4000,7 +4000,7 @@ namespace qnr {
 
         // Simple case: "(..."
         // This is an arrow function with a rest parameter.
-        if (second === SyntaxKind.DotDotDotToken) {
+        if (second === SyntaxKind.Dot3Token) {
           return Tristate.True;
         }
 
@@ -4254,7 +4254,7 @@ namespace qnr {
         //            ^^token; leftOperand = b. Return b ** c to the caller as a rightOperand
         //      a ** b - c
         //             ^token; leftOperand = b. Return b to the caller as a rightOperand
-        const consumeCurrentOperator = token() === SyntaxKind.AsteriskAsteriskToken ? newPrecedence >= precedence : newPrecedence > precedence;
+        const consumeCurrentOperator = token() === SyntaxKind.Asterisk2Token ? newPrecedence >= precedence : newPrecedence > precedence;
 
         if (!consumeCurrentOperator) {
           break;
@@ -4376,7 +4376,7 @@ namespace qnr {
        */
       if (isUpdateExpression()) {
         const updateExpression = parseUpdateExpression();
-        return token() === SyntaxKind.AsteriskAsteriskToken
+        return token() === SyntaxKind.Asterisk2Token
           ? <BinaryExpression>parseBinaryExpressionRest(getBinaryOperatorPrecedence(token()), updateExpression)
           : updateExpression;
       }
@@ -4394,7 +4394,7 @@ namespace qnr {
        */
       const unaryOperator = token();
       const simpleUnaryExpression = parseSimpleUnaryExpression();
-      if (token() === SyntaxKind.AsteriskAsteriskToken) {
+      if (token() === SyntaxKind.Asterisk2Token) {
         const pos = skipTrivia(sourceText, simpleUnaryExpression.pos);
         const { end } = simpleUnaryExpression;
         if (simpleUnaryExpression.kind === SyntaxKind.TypeAssertionExpression) {
@@ -4504,7 +4504,7 @@ namespace qnr {
      * In TypeScript (2), (3) are parsed as PostfixUnaryExpression. (4), (5) are parsed as PrefixUnaryExpression
      */
     function parseUpdateExpression(): UpdateExpression {
-      if (token() === SyntaxKind.PlusPlusToken || token() === SyntaxKind.MinusMinusToken) {
+      if (token() === SyntaxKind.Plus2Token || token() === SyntaxKind.Minus2Token) {
         const node = <PrefixUnaryExpression>createNode(SyntaxKind.PrefixUnaryExpression);
         node.operator = <PrefixUnaryOperator>token();
         nextToken();
@@ -4522,7 +4522,7 @@ namespace qnr {
       const expression = parseLeftHandSideExpressionOrHigher();
 
       Debug.assert(isLeftHandSideExpression(expression));
-      if ((token() === SyntaxKind.PlusPlusToken || token() === SyntaxKind.MinusMinusToken) && !scanner.hasPrecedingLineBreak()) {
+      if ((token() === SyntaxKind.Plus2Token || token() === SyntaxKind.Minus2Token) && !scanner.hasPrecedingLineBreak()) {
         const node = <PostfixUnaryExpression>createNode(SyntaxKind.PostfixUnaryExpression, expression.pos);
         node.operand = expression;
         node.operator = <PostfixUnaryOperator>token();
@@ -4865,7 +4865,7 @@ namespace qnr {
       }
 
       if (token() !== SyntaxKind.CloseBraceToken) {
-        node.dotDotDotToken = parseOptionalToken(SyntaxKind.DotDotDotToken);
+        node.dotDotDotToken = parseOptionalToken(SyntaxKind.Dot3Token);
         // Only an AssignmentExpression is valid here per the JSX spec,
         // but we can unambiguously parse a comma sequence and provide
         // a better error message in grammar checking.
@@ -4906,7 +4906,7 @@ namespace qnr {
     function parseJsxSpreadAttribute(): JsxSpreadAttribute {
       const node = <JsxSpreadAttribute>createNode(SyntaxKind.JsxSpreadAttribute);
       parseExpected(SyntaxKind.OpenBraceToken);
-      parseExpected(SyntaxKind.DotDotDotToken);
+      parseExpected(SyntaxKind.Dot3Token);
       node.expression = parseExpression();
       parseExpected(SyntaxKind.CloseBraceToken);
       return finishNode(node);
@@ -5088,7 +5088,7 @@ namespace qnr {
         const questionDotToken = parseOptionalToken(SyntaxKind.QuestionDotToken);
 
         // handle 'foo<<T>()'
-        if (token() === SyntaxKind.LessThanToken || token() === SyntaxKind.LessThanLessThanToken) {
+        if (token() === SyntaxKind.LessThanToken || token() === SyntaxKind.LessThan2Token) {
           // See if this is the start of a generic invocation.  If so, consume it and
           // keep checking for postfix expressions.  Otherwise, it's just a '<' that's
           // part of an arithmetic expression.  Break out so we consume it higher in the
@@ -5174,13 +5174,13 @@ namespace qnr {
         case SyntaxKind.ColonToken: // foo<x>:
         case SyntaxKind.SemicolonToken: // foo<x>;
         case SyntaxKind.QuestionToken: // foo<x>?
-        case SyntaxKind.EqualsEqualsToken: // foo<x> ==
-        case SyntaxKind.EqualsEqualsEqualsToken: // foo<x> ===
+        case SyntaxKind.Equals2Token: // foo<x> ==
+        case SyntaxKind.Equals3Token: // foo<x> ===
         case SyntaxKind.ExclamationEqualsToken: // foo<x> !=
-        case SyntaxKind.ExclamationEqualsEqualsToken: // foo<x> !==
-        case SyntaxKind.AmpersandAmpersandToken: // foo<x> &&
-        case SyntaxKind.BarBarToken: // foo<x> ||
-        case SyntaxKind.QuestionQuestionToken: // foo<x> ??
+        case SyntaxKind.ExclamationEquals2Token: // foo<x> !==
+        case SyntaxKind.Ampersand2Token: // foo<x> &&
+        case SyntaxKind.Bar2Token: // foo<x> ||
+        case SyntaxKind.Question2Token: // foo<x> ??
         case SyntaxKind.CaretToken: // foo<x> ^
         case SyntaxKind.AmpersandToken: // foo<x> &
         case SyntaxKind.BarToken: // foo<x> |
@@ -5260,13 +5260,13 @@ namespace qnr {
 
     function parseSpreadElement(): Expression {
       const node = <SpreadElement>createNode(SyntaxKind.SpreadElement);
-      parseExpected(SyntaxKind.DotDotDotToken);
+      parseExpected(SyntaxKind.Dot3Token);
       node.expression = parseAssignmentExpressionOrHigher();
       return finishNode(node);
     }
 
     function parseArgumentOrArrayLiteralElement(): Expression {
-      return token() === SyntaxKind.DotDotDotToken
+      return token() === SyntaxKind.Dot3Token
         ? parseSpreadElement()
         : token() === SyntaxKind.CommaToken
         ? <Expression>createNode(SyntaxKind.OmittedExpression)
@@ -5291,7 +5291,7 @@ namespace qnr {
     function parseObjectLiteralElement(): ObjectLiteralElementLike {
       const node = <ObjectLiteralElementLike>createNodeWithJSDoc(SyntaxKind.Unknown);
 
-      if (parseOptionalToken(SyntaxKind.DotDotDotToken)) {
+      if (parseOptionalToken(SyntaxKind.Dot3Token)) {
         node.kind = SyntaxKind.SpreadAssignment;
         (<SpreadAssignment>node).expression = parseAssignmentExpressionOrHigher();
         return finishNode(node);
@@ -6105,7 +6105,7 @@ namespace qnr {
         return <OmittedExpression>createNode(SyntaxKind.OmittedExpression);
       }
       const node = <BindingElement>createNode(SyntaxKind.BindingElement);
-      node.dotDotDotToken = parseOptionalToken(SyntaxKind.DotDotDotToken);
+      node.dotDotDotToken = parseOptionalToken(SyntaxKind.Dot3Token);
       node.name = parseIdentifierOrPattern();
       node.initializer = parseInitializer();
       return finishNode(node);
@@ -6113,7 +6113,7 @@ namespace qnr {
 
     function parseObjectBindingElement(): BindingElement {
       const node = <BindingElement>createNode(SyntaxKind.BindingElement);
-      node.dotDotDotToken = parseOptionalToken(SyntaxKind.DotDotDotToken);
+      node.dotDotDotToken = parseOptionalToken(SyntaxKind.Dot3Token);
       const tokenIsIdentifier = isIdentifier();
       const propertyName = parsePropertyName();
       if (tokenIsIdentifier && token() !== SyntaxKind.ColonToken) {

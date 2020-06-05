@@ -1179,7 +1179,7 @@ namespace qnr {
   }
 
   export function isNullishCoalesce(node: Node) {
-    return node.kind === SyntaxKind.BinaryExpression && (<BinaryExpression>node).operatorToken.kind === SyntaxKind.QuestionQuestionToken;
+    return node.kind === SyntaxKind.BinaryExpression && (<BinaryExpression>node).operatorToken.kind === SyntaxKind.Question2Token;
   }
 
   export function isNewExpression(node: Node): node is NewExpression {
@@ -2163,9 +2163,7 @@ namespace qnr {
       case SyntaxKind.PostfixUnaryExpression:
         return true;
       case SyntaxKind.PrefixUnaryExpression:
-        return (
-          (<PrefixUnaryExpression>expr).operator === SyntaxKind.PlusPlusToken || (<PrefixUnaryExpression>expr).operator === SyntaxKind.MinusMinusToken
-        );
+        return (<PrefixUnaryExpression>expr).operator === SyntaxKind.Plus2Token || (<PrefixUnaryExpression>expr).operator === SyntaxKind.Minus2Token;
       default:
         return false;
     }

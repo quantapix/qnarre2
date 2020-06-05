@@ -2484,10 +2484,10 @@ namespace qnr {
         operand.kind === SyntaxKind.PrefixUnaryExpression &&
         ((node.operator === SyntaxKind.PlusToken &&
           ((<PrefixUnaryExpression>operand).operator === SyntaxKind.PlusToken ||
-            (<PrefixUnaryExpression>operand).operator === SyntaxKind.PlusPlusToken)) ||
+            (<PrefixUnaryExpression>operand).operator === SyntaxKind.Plus2Token)) ||
           (node.operator === SyntaxKind.MinusToken &&
             ((<PrefixUnaryExpression>operand).operator === SyntaxKind.MinusToken ||
-              (<PrefixUnaryExpression>operand).operator === SyntaxKind.MinusMinusToken)))
+              (<PrefixUnaryExpression>operand).operator === SyntaxKind.Minus2Token)))
       );
     }
 
@@ -2608,7 +2608,7 @@ namespace qnr {
     }
 
     function emitSpreadExpression(node: SpreadElement) {
-      emitTokenWithComment(SyntaxKind.DotDotDotToken, node.pos, writePunctuation, node);
+      emitTokenWithComment(SyntaxKind.Dot3Token, node.pos, writePunctuation, node);
       emitExpression(node.expression);
     }
 
@@ -3476,7 +3476,7 @@ namespace qnr {
 
     function emitSpreadAssignment(node: SpreadAssignment) {
       if (node.expression) {
-        emitTokenWithComment(SyntaxKind.DotDotDotToken, node.pos, writePunctuation, node);
+        emitTokenWithComment(SyntaxKind.Dot3Token, node.pos, writePunctuation, node);
         emitExpression(node.expression);
       }
     }

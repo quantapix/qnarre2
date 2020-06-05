@@ -946,10 +946,10 @@ namespace qnr {
       switch (expr.operatorToken.kind) {
         case SyntaxKind.EqualsToken:
           return containsNarrowableReference(expr.left);
-        case SyntaxKind.EqualsEqualsToken:
+        case SyntaxKind.Equals2Token:
         case SyntaxKind.ExclamationEqualsToken:
-        case SyntaxKind.EqualsEqualsEqualsToken:
-        case SyntaxKind.ExclamationEqualsEqualsToken:
+        case SyntaxKind.Equals3Token:
+        case SyntaxKind.ExclamationEquals2Token:
           return (
             isNarrowableOperand(expr.left) ||
             isNarrowableOperand(expr.right) ||
@@ -1080,9 +1080,9 @@ namespace qnr {
         } else {
           return (
             node.kind === SyntaxKind.BinaryExpression &&
-            ((<BinaryExpression>node).operatorToken.kind === SyntaxKind.AmpersandAmpersandToken ||
-              (<BinaryExpression>node).operatorToken.kind === SyntaxKind.BarBarToken ||
-              (<BinaryExpression>node).operatorToken.kind === SyntaxKind.QuestionQuestionToken)
+            ((<BinaryExpression>node).operatorToken.kind === SyntaxKind.Ampersand2Token ||
+              (<BinaryExpression>node).operatorToken.kind === SyntaxKind.Bar2Token ||
+              (<BinaryExpression>node).operatorToken.kind === SyntaxKind.Question2Token)
           );
         }
       }
@@ -1447,7 +1447,7 @@ namespace qnr {
 
     function bindLogicalExpression(node: BinaryExpression, trueTarget: FlowLabel, falseTarget: FlowLabel) {
       const preRightLabel = createBranchLabel();
-      if (node.operatorToken.kind === SyntaxKind.AmpersandAmpersandToken) {
+      if (node.operatorToken.kind === SyntaxKind.Ampersand2Token) {
         bindCondition(node.left, preRightLabel, falseTarget);
       } else {
         bindCondition(node.left, trueTarget, preRightLabel);
@@ -1467,7 +1467,7 @@ namespace qnr {
         currentTrueTarget = saveTrueTarget;
       } else {
         bindEachChild(node);
-        if (node.operator === SyntaxKind.PlusPlusToken || node.operator === SyntaxKind.MinusMinusToken) {
+        if (node.operator === SyntaxKind.Plus2Token || node.operator === SyntaxKind.Minus2Token) {
           bindAssignmentTargetFlow(node.operand);
         }
       }
@@ -1475,7 +1475,7 @@ namespace qnr {
 
     function bindPostfixUnaryExpressionFlow(node: PostfixUnaryExpression) {
       bindEachChild(node);
-      if (node.operator === SyntaxKind.PlusPlusToken || node.operator === SyntaxKind.MinusMinusToken) {
+      if (node.operator === SyntaxKind.Plus2Token || node.operator === SyntaxKind.Minus2Token) {
         bindAssignmentTargetFlow(node.operand);
       }
     }
@@ -1537,11 +1537,7 @@ namespace qnr {
             // TODO: bindLogicalExpression is recursive - if we want to handle deeply nested `&&` expressions
             // we'll need to handle the `bindLogicalExpression` scenarios in this state machine, too
             // For now, though, since the common cases are chained `+`, leaving it recursive is fine
-            if (
-              operator === SyntaxKind.AmpersandAmpersandToken ||
-              operator === SyntaxKind.BarBarToken ||
-              operator === SyntaxKind.QuestionQuestionToken
-            ) {
+            if (operator === SyntaxKind.Ampersand2Token || operator === SyntaxKind.Bar2Token || operator === SyntaxKind.Question2Token) {
               if (isTopLevelLogicalExpression(node)) {
                 const postExpressionLabel = createBranchLabel();
                 bindLogicalExpression(node, postExpressionLabel, postExpressionLabel);
@@ -2371,7 +2367,7 @@ namespace qnr {
     function checkStrictModePrefixUnaryExpression(node: PrefixUnaryExpression) {
       // Grammar checking
       if (inStrictMode) {
-        if (node.operator === SyntaxKind.PlusPlusToken || node.operator === SyntaxKind.MinusMinusToken) {
+        if (node.operator === SyntaxKind.Plus2Token || node.operator === SyntaxKind.Minus2Token) {
           checkStrictModeEvalOrArguments(node, <Identifier>node.operand);
         }
       }
@@ -3238,8 +3234,7 @@ namespace qnr {
       if (init) {
         const isPrototypeAssignment = isPrototypeAccess(isVariableDeclaration(node) ? node.name : isBinaryExpression(node) ? node.left : node);
         return !!getExpandoInitializer(
-          isBinaryExpression(init) &&
-            (init.operatorToken.kind === SyntaxKind.BarBarToken || init.operatorToken.kind === SyntaxKind.QuestionQuestionToken)
+          isBinaryExpression(init) && (init.operatorToken.kind === SyntaxKind.Bar2Token || init.operatorToken.kind === SyntaxKind.Question2Token)
             ? init.right
             : init,
           isPrototypeAssignment
@@ -3747,7 +3742,7 @@ namespace qnr {
     const operatorTokenKind = node.operatorToken.kind;
     const leftKind = node.left.kind;
 
-    if (operatorTokenKind === SyntaxKind.QuestionQuestionToken) {
+    if (operatorTokenKind === SyntaxKind.Question2Token) {
       transformFlags |= TransformFlags.AssertES2020;
     } else if (operatorTokenKind === SyntaxKind.EqualsToken && leftKind === SyntaxKind.ObjectLiteralExpression) {
       // Destructuring object assignments with are ES2015 syntax
@@ -3756,7 +3751,7 @@ namespace qnr {
     } else if (operatorTokenKind === SyntaxKind.EqualsToken && leftKind === SyntaxKind.ArrayLiteralExpression) {
       // Destructuring assignments are ES2015 syntax.
       transformFlags |= TransformFlags.AssertES2015 | TransformFlags.AssertDestructuringAssignment;
-    } else if (operatorTokenKind === SyntaxKind.AsteriskAsteriskToken || operatorTokenKind === SyntaxKind.AsteriskAsteriskEqualsToken) {
+    } else if (operatorTokenKind === SyntaxKind.Asterisk2Token || operatorTokenKind === SyntaxKind.Asterisk2EqualsToken) {
       // Exponentiation is ES2016 syntax.
       transformFlags |= TransformFlags.AssertES2016;
     }
