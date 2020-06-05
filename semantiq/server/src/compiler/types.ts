@@ -5246,7 +5246,7 @@ namespace qnr {
     TS,
     TX,
     PY,
-    JL
+    JL,
   }
 
   /** Either a parsed command line or a parsed tsconfig.json */

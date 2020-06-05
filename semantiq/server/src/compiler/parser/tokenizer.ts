@@ -1,15 +1,3 @@
-/*
- * tokenizer.ts
- * Copyright (c) Microsoft Corporation.
- * Licensed under the MIT license.
- * Author: Eric Traut
- *
- * Based on code from vscode-python repository:
- *  https://github.com/Microsoft/vscode-python
- *
- * Converts a Python program text stream into a stream of tokens.
- */
-
 import Char from 'typescript-char';
 
 import { TextRange } from '../common/textRange';
@@ -32,46 +20,46 @@ import {
   StringToken,
   StringTokenFlags,
   Token,
-  TokenType,
+  SyntaxKind,
 } from './tokenizerTypes';
 
 const _keywords: { [key: string]: KeywordType } = {
   and: KeywordType.And,
-  as: KeywordType.As,
-  assert: KeywordType.Assert,
-  async: KeywordType.Async,
-  await: KeywordType.Await,
-  break: KeywordType.Break,
-  class: KeywordType.Class,
-  continue: KeywordType.Continue,
+  as: SyntaxKind.AsKeyword,
+  assert: SyntaxKind.AsKeywordsert,
+  async: SyntaxKind.AsyncKeyword,
+  await: SyntaxKind.AwaitKeyword,
+  break: SyntaxKind.BreakKeyword,
+  class: SyntaxKind.ClassKeyword,
+  continue: SyntaxKind.ContinueKeyword,
   __debug__: KeywordType.Debug,
   def: KeywordType.Def,
   del: KeywordType.Del,
   elif: KeywordType.Elif,
-  else: KeywordType.Else,
+  else: SyntaxKind.ElseKeyword,
   except: KeywordType.Except,
-  finally: KeywordType.Finally,
-  for: KeywordType.For,
+  finally: SyntaxKind.FinallyKeyword,
+  for: SyntaxKind.ForKeyword,
   from: KeywordType.From,
   global: KeywordType.Global,
-  if: KeywordType.If,
-  import: KeywordType.Import,
-  in: KeywordType.In,
-  is: KeywordType.Is,
+  if: SyntaxKind.IfKeyword,
+  import: SyntaxKind.ImportKeyword,
+  in: SyntaxKind.InKeyword,
+  is: SyntaxKind.IsKeyword,
   lambda: KeywordType.Lambda,
   nonlocal: KeywordType.Nonlocal,
   not: KeywordType.Not,
   or: KeywordType.Or,
   pass: KeywordType.Pass,
   raise: KeywordType.Raise,
-  return: KeywordType.Return,
-  try: KeywordType.Try,
-  while: KeywordType.While,
-  with: KeywordType.With,
-  yield: KeywordType.Yield,
-  False: KeywordType.False,
+  return: SyntaxKind.ReturnKeyword,
+  try: SyntaxKind.TryKeyword,
+  while: SyntaxKind.WhileKeyword,
+  with: SyntaxKind.WithKeyword,
+  yield: SyntaxKind.YieldKeyword,
+  False: SyntaxKind.FalseKeyword,
   None: KeywordType.None,
-  True: KeywordType.True,
+  True: SyntaxKind.TrueKeyword,
 };
 
 const _operatorInfo: { [key: number]: OperatorFlags } = {
@@ -87,15 +75,15 @@ const _operatorInfo: { [key: number]: OperatorFlags } = {
   [OperatorType.BitwiseXorEqual]: OperatorFlags.Assignment,
   [OperatorType.Divide]: OperatorFlags.Binary,
   [OperatorType.DivideEqual]: OperatorFlags.Assignment,
-  [OperatorType.Equals]: OperatorFlags.Binary | OperatorFlags.Comparison,
+  [SyntaxKind.EqualsToken]: OperatorFlags.Binary | OperatorFlags.Comparison,
   [OperatorType.FloorDivide]: OperatorFlags.Binary,
   [OperatorType.FloorDivideEqual]: OperatorFlags.Assignment,
-  [OperatorType.GreaterThan]: OperatorFlags.Binary | OperatorFlags.Comparison,
-  [OperatorType.GreaterThanOrEqual]: OperatorFlags.Binary | OperatorFlags.Comparison,
+  [SyntaxKind.GreaterThanToken]: OperatorFlags.Binary | OperatorFlags.Comparison,
+  [SyntaxKind.GreaterThanEqualsToken]: OperatorFlags.Binary | OperatorFlags.Comparison,
   [OperatorType.LeftShift]: OperatorFlags.Binary,
   [OperatorType.LeftShiftEqual]: OperatorFlags.Assignment,
-  [OperatorType.LessThan]: OperatorFlags.Binary | OperatorFlags.Comparison,
-  [OperatorType.LessThanOrEqual]: OperatorFlags.Binary | OperatorFlags.Comparison,
+  [SyntaxKind.LessThanToken]: OperatorFlags.Binary | OperatorFlags.Comparison,
+  [SyntaxKind.LessThanTokenOrEqual]: OperatorFlags.Binary | OperatorFlags.Comparison,
   [OperatorType.MatrixMultiply]: OperatorFlags.Binary,
   [OperatorType.MatrixMultiplyEqual]: OperatorFlags.Assignment,
   [OperatorType.Mod]: OperatorFlags.Binary,
@@ -223,7 +211,7 @@ export class Tokenizer {
     }
 
     // Insert an implied new line to make parsing easier.
-    if (this._tokens.length === 0 || this._tokens[this._tokens.length - 1].type !== TokenType.NewLine) {
+    if (this._tokens.length === 0 || this._tokens[this._tokens.length - 1].type !== SyntaxKind.NewLineTrivia) {
       this._tokens.push(NewLineToken.create(this._cs.position, 0, NewLineType.Implied, this._getComments()));
     }
 
@@ -231,7 +219,7 @@ export class Tokenizer {
     this._setIndent(0, 0, true, false);
 
     // Add a final end-of-stream token to make parsing easier.
-    this._tokens.push(Token.create(TokenType.EndOfStream, this._cs.position, 0, this._getComments()));
+    this._tokens.push(Token.create(SyntaxKind.EndOfFileToken, this._cs.position, 0, this._getComments()));
 
     // Add the final line range.
     this._addLineRange();
@@ -370,7 +358,7 @@ export class Tokenizer {
 
       case Char.OpenParenthesis: {
         this._parenDepth++;
-        this._tokens.push(Token.create(TokenType.OpenParenthesis, this._cs.position, 1, this._getComments()));
+        this._tokens.push(Token.create(SyntaxKind.OpenParenToken, this._cs.position, 1, this._getComments()));
         break;
       }
 
@@ -378,13 +366,13 @@ export class Tokenizer {
         if (this._parenDepth > 0) {
           this._parenDepth--;
         }
-        this._tokens.push(Token.create(TokenType.CloseParenthesis, this._cs.position, 1, this._getComments()));
+        this._tokens.push(Token.create(SyntaxKind.CloseParenToken, this._cs.position, 1, this._getComments()));
         break;
       }
 
       case Char.OpenBracket: {
         this._parenDepth++;
-        this._tokens.push(Token.create(TokenType.OpenBracket, this._cs.position, 1, this._getComments()));
+        this._tokens.push(Token.create(SyntaxKind.OpenBracketToken, this._cs.position, 1, this._getComments()));
         break;
       }
 
@@ -392,13 +380,13 @@ export class Tokenizer {
         if (this._parenDepth > 0) {
           this._parenDepth--;
         }
-        this._tokens.push(Token.create(TokenType.CloseBracket, this._cs.position, 1, this._getComments()));
+        this._tokens.push(Token.create(SyntaxKind.CloseBracketToken, this._cs.position, 1, this._getComments()));
         break;
       }
 
       case Char.OpenBrace: {
         this._parenDepth++;
-        this._tokens.push(Token.create(TokenType.OpenCurlyBrace, this._cs.position, 1, this._getComments()));
+        this._tokens.push(Token.create(SyntaxKind.OpenBraceToken, this._cs.position, 1, this._getComments()));
         break;
       }
 
@@ -406,22 +394,22 @@ export class Tokenizer {
         if (this._parenDepth > 0) {
           this._parenDepth--;
         }
-        this._tokens.push(Token.create(TokenType.CloseCurlyBrace, this._cs.position, 1, this._getComments()));
+        this._tokens.push(Token.create(SyntaxKind.CloseBraceToken, this._cs.position, 1, this._getComments()));
         break;
       }
 
       case Char.Comma: {
-        this._tokens.push(Token.create(TokenType.Comma, this._cs.position, 1, this._getComments()));
+        this._tokens.push(Token.create(SyntaxKind.CommaToken, this._cs.position, 1, this._getComments()));
         break;
       }
 
       case Char.Backtick: {
-        this._tokens.push(Token.create(TokenType.Backtick, this._cs.position, 1, this._getComments()));
+        this._tokens.push(Token.create(SyntaxKind.BacktickToken, this._cs.position, 1, this._getComments()));
         break;
       }
 
       case Char.Semicolon: {
-        this._tokens.push(Token.create(TokenType.Semicolon, this._cs.position, 1, this._getComments()));
+        this._tokens.push(Token.create(SyntaxKind.SemicolonToken, this._cs.position, 1, this._getComments()));
         break;
       }
 
@@ -431,7 +419,7 @@ export class Tokenizer {
           this._cs.advance(1);
           break;
         }
-        this._tokens.push(Token.create(TokenType.Colon, this._cs.position, 1, this._getComments()));
+        this._tokens.push(Token.create(SyntaxKind.ColonToken, this._cs.position, 1, this._getComments()));
         break;
       }
 
@@ -444,11 +432,11 @@ export class Tokenizer {
 
         if (this._cs.currentChar === Char.Period) {
           if (this._cs.nextChar === Char.Period && this._cs.lookAhead(2) === Char.Period) {
-            this._tokens.push(Token.create(TokenType.Ellipsis, this._cs.position, 3, this._getComments()));
+            this._tokens.push(Token.create(SyntaxKind.Dot3Token, this._cs.position, 3, this._getComments()));
             this._cs.advance(3);
             return true;
           }
-          this._tokens.push(Token.create(TokenType.Dot, this._cs.position, 1, this._getComments()));
+          this._tokens.push(Token.create(SyntaxKind.DotToken, this._cs.position, 1, this._getComments()));
           break;
         }
 
@@ -477,7 +465,7 @@ export class Tokenizer {
     if (this._parenDepth === 0 && newLineType !== NewLineType.Implied) {
       // New lines are ignored within parentheses.
       // We'll also avoid adding multiple newlines in a row to simplify parsing.
-      if (this._tokens.length === 0 || this._tokens[this._tokens.length - 1].type !== TokenType.NewLine) {
+      if (this._tokens.length === 0 || this._tokens[this._tokens.length - 1].type !== SyntaxKind.NewLineTrivia) {
         this._tokens.push(NewLineToken.create(this._cs.position, length, newLineType, this._getComments()));
       }
     }
@@ -777,7 +765,7 @@ export class Tokenizer {
 
       case Char.Equal:
         length = nextChar === Char.Equal ? 2 : 1;
-        operatorType = length === 2 ? OperatorType.Equals : OperatorType.Assign;
+        operatorType = length === 2 ? SyntaxKind.EqualsToken : OperatorType.Assign;
         break;
 
       case Char.ExclamationMark:
@@ -800,7 +788,7 @@ export class Tokenizer {
 
       case Char.Hyphen:
         if (nextChar === Char.Greater) {
-          this._tokens.push(Token.create(TokenType.Arrow, this._cs.position, 2, this._getComments()));
+          this._tokens.push(Token.create(SyntaxKind.Arrow, this._cs.position, 2, this._getComments()));
           this._cs.advance(2);
           return true;
         }
@@ -835,7 +823,7 @@ export class Tokenizer {
           operatorType = length === 3 ? OperatorType.LeftShiftEqual : OperatorType.LeftShift;
         } else {
           length = nextChar === Char.Equal ? 2 : 1;
-          operatorType = length === 2 ? OperatorType.LessThanOrEqual : OperatorType.LessThan;
+          operatorType = length === 2 ? SyntaxKind.LessThanTokenOrEqual : SyntaxKind.LessThanToken;
         }
         break;
 
@@ -845,7 +833,7 @@ export class Tokenizer {
           operatorType = length === 3 ? OperatorType.RightShiftEqual : OperatorType.RightShift;
         } else {
           length = nextChar === Char.Equal ? 2 : 1;
-          operatorType = length === 2 ? OperatorType.GreaterThanOrEqual : OperatorType.GreaterThan;
+          operatorType = length === 2 ? SyntaxKind.GreaterThanEqualsToken : SyntaxKind.GreaterThanToken;
         }
         break;
 
@@ -867,7 +855,7 @@ export class Tokenizer {
     this._cs.skipToWhitespace();
     const length = this._cs.position - start;
     if (length > 0) {
-      this._tokens.push(Token.create(TokenType.Invalid, start, length, this._getComments()));
+      this._tokens.push(Token.create(SyntaxKind.Invalid, start, length, this._getComments()));
       return true;
     }
     return false;
@@ -888,7 +876,7 @@ export class Tokenizer {
     const comment = Comment.create(start, length, value);
 
     if (value.match(/^\s*type:\s*ignore(\s|$)/)) {
-      if (this._tokens.findIndex((t) => t.type !== TokenType.NewLine && t && t.type !== TokenType.Indent) < 0) {
+      if (this._tokens.findIndex((t) => t.type !== SyntaxKind.NewLineTrivia && t && t.type !== SyntaxKind.Indent) < 0) {
         this._typeIgnoreAll = true;
       } else {
         this._typeIgnoreLines[this._lineRanges.length] = true;
