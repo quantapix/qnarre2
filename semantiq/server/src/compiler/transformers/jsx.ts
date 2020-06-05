@@ -252,13 +252,13 @@ namespace qnr {
     function decodeEntities(text: string): string {
       return text.replace(/&((#((\d+)|x([\da-fA-F]+)))|(\w+));/g, (match, _all, _number, _digits, decimal, hex, word) => {
         if (decimal) {
-          return utf16EncodeAsString(parseInt(decimal, 10));
+          return String.fromCodePoint(parseInt(decimal, 10));
         } else if (hex) {
-          return utf16EncodeAsString(parseInt(hex, 16));
+          return String.fromCodePoint(parseInt(hex, 16));
         } else {
           const ch = entities.get(word);
           // If this is not a valid entity, then just use `match` (replace it with itself, i.e. don't replace)
-          return ch ? utf16EncodeAsString(ch) : match;
+          return ch ? String.fromCodePoint(ch) : match;
         }
       });
     }
