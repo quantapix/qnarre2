@@ -1200,10 +1200,10 @@ namespace qnr {
       while (i < args.length) {
         const s = args[i];
         i++;
-        if (s.charCodeAt(0) === CharCodes.at) {
+        if (s.charCodeAt(0) === Codes.at) {
           parseResponseFile(s.slice(1));
-        } else if (s.charCodeAt(0) === CharCodes.minus) {
-          const inputOptionName = s.slice(s.charCodeAt(1) === CharCodes.minus ? 2 : 1);
+        } else if (s.charCodeAt(0) === Codes.minus) {
+          const inputOptionName = s.slice(s.charCodeAt(1) === Codes.minus ? 2 : 1);
           const opt = getOptionDeclarationFromName(diagnostics.getOptionsNameMap, inputOptionName, /*allowShort*/ true);
           if (opt) {
             i = parseOptionValue(args, i, diagnostics, opt, options, errors);
@@ -1231,12 +1231,12 @@ namespace qnr {
       const args: string[] = [];
       let pos = 0;
       while (true) {
-        while (pos < text.length && text.charCodeAt(pos) <= CharCodes.space) pos++;
+        while (pos < text.length && text.charCodeAt(pos) <= Codes.space) pos++;
         if (pos >= text.length) break;
         const start = pos;
-        if (text.charCodeAt(start) === CharCodes.doubleQuote) {
+        if (text.charCodeAt(start) === Codes.doubleQuote) {
           pos++;
-          while (pos < text.length && text.charCodeAt(pos) !== CharCodes.doubleQuote) pos++;
+          while (pos < text.length && text.charCodeAt(pos) !== Codes.doubleQuote) pos++;
           if (pos < text.length) {
             args.push(text.substring(start + 1, pos));
             pos++;
@@ -1244,7 +1244,7 @@ namespace qnr {
             errors.push(createCompilerDiagnostic(Diagnostics.Unterminated_quoted_string_in_response_file_0, fileName));
           }
         } else {
-          while (text.charCodeAt(pos) > CharCodes.space) pos++;
+          while (text.charCodeAt(pos) > Codes.space) pos++;
           args.push(text.substring(start, pos));
         }
       }

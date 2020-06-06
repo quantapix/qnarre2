@@ -434,7 +434,7 @@ namespace qnr {
 
   /** Add an extra underscore to identifiers that start with two underscores to avoid issues with magic names like '__proto__' */
   export function escapeLeadingUnderscores(identifier: string): __String {
-    return (identifier.length >= 2 && identifier.charCodeAt(0) === CharCodes._ && identifier.charCodeAt(1) === CharCodes._
+    return (identifier.length >= 2 && identifier.charCodeAt(0) === Codes._ && identifier.charCodeAt(1) === Codes._
       ? '_' + identifier
       : identifier) as __String;
   }
@@ -447,9 +447,7 @@ namespace qnr {
    */
   export function unescapeLeadingUnderscores(identifier: __String): string {
     const id = identifier as string;
-    return id.length >= 3 && id.charCodeAt(0) === CharCodes._ && id.charCodeAt(1) === CharCodes._ && id.charCodeAt(2) === CharCodes._
-      ? id.substr(1)
-      : id;
+    return id.length >= 3 && id.charCodeAt(0) === Codes._ && id.charCodeAt(1) === Codes._ && id.charCodeAt(2) === Codes._ ? id.substr(1) : id;
   }
 
   export function idText(identifierOrPrivateName: Identifier | PrivateIdentifier): string {

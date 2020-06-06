@@ -5,7 +5,7 @@ namespace qnr {
   const backslashRegExp = /\\/g;
 
   export function isAnyDirectorySeparator(charCode: number): boolean {
-    return charCode === CharCodes.slash || charCode === CharCodes.backslash;
+    return charCode === Codes.slash || charCode === Codes.backslash;
   }
 
   export function isUrl(path: string) {
@@ -51,15 +51,15 @@ namespace qnr {
   }
 
   function isVolumeCharacter(charCode: number) {
-    return (charCode >= CharCodes.a && charCode <= CharCodes.z) || (charCode >= CharCodes.A && charCode <= CharCodes.Z);
+    return (charCode >= Codes.a && charCode <= Codes.z) || (charCode >= Codes.A && charCode <= Codes.Z);
   }
 
   function getFileUrlVolumeSeparatorEnd(url: string, start: number) {
     const ch0 = url.charCodeAt(start);
-    if (ch0 === CharCodes.colon) return start + 1;
-    if (ch0 === CharCodes.percent && url.charCodeAt(start + 1) === CharCodes._3) {
+    if (ch0 === Codes.colon) return start + 1;
+    if (ch0 === Codes.percent && url.charCodeAt(start + 1) === Codes._3) {
       const ch2 = url.charCodeAt(start + 2);
-      if (ch2 === CharCodes.a || ch2 === CharCodes.A) return start + 3;
+      if (ch2 === Codes.a || ch2 === Codes.A) return start + 3;
     }
     return -1;
   }
@@ -67,15 +67,15 @@ namespace qnr {
   function getEncodedRootLength(path: string): number {
     if (!path) return 0;
     const ch0 = path.charCodeAt(0);
-    if (ch0 === CharCodes.slash || ch0 === CharCodes.backslash) {
+    if (ch0 === Codes.slash || ch0 === Codes.backslash) {
       if (path.charCodeAt(1) !== ch0) return 1; // POSIX: "/" (or non-normalized "\")
-      const p1 = path.indexOf(ch0 === CharCodes.slash ? directorySeparator : altDirectorySeparator, 2);
+      const p1 = path.indexOf(ch0 === Codes.slash ? directorySeparator : altDirectorySeparator, 2);
       if (p1 < 0) return path.length;
       return p1 + 1;
     }
-    if (isVolumeCharacter(ch0) && path.charCodeAt(1) === CharCodes.colon) {
+    if (isVolumeCharacter(ch0) && path.charCodeAt(1) === Codes.colon) {
       const ch2 = path.charCodeAt(2);
-      if (ch2 === CharCodes.slash || ch2 === CharCodes.backslash) return 3; // DOS: "c:/" or "c:\"
+      if (ch2 === Codes.slash || ch2 === Codes.backslash) return 3; // DOS: "c:/" or "c:\"
       if (path.length === 2) return 2;
     }
     const schemeEnd = path.indexOf(urlSchemeSeparator);
@@ -88,7 +88,7 @@ namespace qnr {
         if (scheme === 'file' && (authority === '' || authority === 'localhost') && isVolumeCharacter(path.charCodeAt(authorityEnd + 1))) {
           const volumeSeparatorEnd = getFileUrlVolumeSeparatorEnd(path, authorityEnd + 2);
           if (volumeSeparatorEnd !== -1) {
-            if (path.charCodeAt(volumeSeparatorEnd) === CharCodes.slash) {
+            if (path.charCodeAt(volumeSeparatorEnd) === Codes.slash) {
               return ~(volumeSeparatorEnd + 1);
             }
             if (volumeSeparatorEnd === path.length) {
@@ -137,7 +137,7 @@ namespace qnr {
 
   function tryGetExtensionFromPath(path: string, extension: string, stringEqualityComparer: (a: string, b: string) => boolean) {
     if (!startsWith(extension, '.')) extension = '.' + extension;
-    if (path.length >= extension.length && path.charCodeAt(path.length - extension.length) === CharCodes.dot) {
+    if (path.length >= extension.length && path.charCodeAt(path.length - extension.length) === Codes.dot) {
       const pathExtension = path.slice(path.length - extension.length);
       if (stringEqualityComparer(pathExtension, extension)) {
         return pathExtension;

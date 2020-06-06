@@ -404,7 +404,7 @@ namespace qnr {
       next() {
         while (!done && pos < mappings.length) {
           const ch = mappings.charCodeAt(pos);
-          if (ch === CharCodes.semicolon) {
+          if (ch === Codes.semicolon) {
             // new line
             generatedLine++;
             generatedCharacter = 0;
@@ -412,7 +412,7 @@ namespace qnr {
             continue;
           }
 
-          if (ch === CharCodes.comma) {
+          if (ch === Codes.comma) {
             // Next entry is on same line - no action needed
             pos++;
             continue;
@@ -493,7 +493,7 @@ namespace qnr {
     }
 
     function isSourceMappingSegmentEnd() {
-      return pos === mappings.length || mappings.charCodeAt(pos) === CharCodes.comma || mappings.charCodeAt(pos) === CharCodes.semicolon;
+      return pos === mappings.length || mappings.charCodeAt(pos) === Codes.comma || mappings.charCodeAt(pos) === Codes.semicolon;
     }
 
     function base64VLQFormatDecode(): number {
@@ -548,28 +548,28 @@ namespace qnr {
 
   function base64FormatEncode(value: number) {
     return value >= 0 && value < 26
-      ? CharCodes.A + value
+      ? Codes.A + value
       : value >= 26 && value < 52
-      ? CharCodes.a + value - 26
+      ? Codes.a + value - 26
       : value >= 52 && value < 62
-      ? CharCodes._0 + value - 52
+      ? Codes._0 + value - 52
       : value === 62
-      ? CharCodes.plus
+      ? Codes.plus
       : value === 63
-      ? CharCodes.slash
+      ? Codes.slash
       : Debug.fail(`${value}: not a base64 value`);
   }
 
   function base64FormatDecode(ch: number) {
-    return ch >= CharCodes.A && ch <= CharCodes.Z
-      ? ch - CharCodes.A
-      : ch >= CharCodes.a && ch <= CharCodes.z
-      ? ch - CharCodes.a + 26
-      : ch >= CharCodes._0 && ch <= CharCodes._9
-      ? ch - CharCodes._0 + 52
-      : ch === CharCodes.plus
+    return ch >= Codes.A && ch <= Codes.Z
+      ? ch - Codes.A
+      : ch >= Codes.a && ch <= Codes.z
+      ? ch - Codes.a + 26
+      : ch >= Codes._0 && ch <= Codes._9
+      ? ch - Codes._0 + 52
+      : ch === Codes.plus
       ? 62
-      : ch === CharCodes.slash
+      : ch === Codes.slash
       ? 63
       : -1;
   }

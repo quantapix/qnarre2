@@ -5349,7 +5349,7 @@ namespace qnr {
 
   export type CommandLineOption = CommandLineOptionOfCustomType | CommandLineOptionOfPrimitiveType | TsConfigOnlyOption | CommandLineOptionOfListType;
 
-  export const enum CharCodes {
+  export const enum Codes {
     nullCharacter = 0,
     maxAsciiCharacter = 0x7f,
 

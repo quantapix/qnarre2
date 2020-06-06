@@ -212,9 +212,9 @@ namespace qnr {
     return a.length === b.length && a.every((x, i) => eq(x, b[i]));
   }
 
-  export function indexOfAnyCharCode(text: string, charCodes: readonly number[], start?: number): number {
+  export function indexOfAnyCharCode(text: string, cs: readonly number[], start?: number): number {
     for (let i = start || 0; i < text.length; i++) {
-      if (contains(charCodes, text.charCodeAt(i))) {
+      if (contains(cs, text.charCodeAt(i))) {
         return i;
       }
     }
