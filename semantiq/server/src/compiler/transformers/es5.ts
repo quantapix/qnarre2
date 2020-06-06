@@ -109,7 +109,7 @@ namespace qnr {
      * @param name An Identifier
      */
     function trySubstituteReservedName(name: Identifier) {
-      const token = name.originalKeywordKind || (nodeIsSynthesized(name) ? stringToToken(idText(name)) : undefined);
+      const token = name.originalKeywordKind || (isSynthesized(name) ? stringToToken(idText(name)) : undefined);
       if (token !== undefined && token >= SyntaxKind.FirstReservedWord && token <= SyntaxKind.LastReservedWord) {
         return setTextRange(createLiteral(name), name);
       }

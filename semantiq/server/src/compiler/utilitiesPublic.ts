@@ -21,217 +21,6 @@ namespace qnr {
     }
   }
 
-  export function textSpanEnd(span: TextSpan) {
-    return span.start + span.length;
-  }
-
-  export function textSpanIsEmpty(span: TextSpan) {
-    return span.length === 0;
-  }
-
-  export function textSpanContainsPosition(span: TextSpan, position: number) {
-    return position >= span.start && position < textSpanEnd(span);
-  }
-
-  export function textRangeContainsPositionInclusive(span: TextRange, position: number): boolean {
-    return position >= span.pos && position <= span.end;
-  }
-
-  // Returns true if 'span' contains 'other'.
-  export function textSpanContainsTextSpan(span: TextSpan, other: TextSpan) {
-    return other.start >= span.start && textSpanEnd(other) <= textSpanEnd(span);
-  }
-
-  export function textSpanOverlapsWith(span: TextSpan, other: TextSpan) {
-    return textSpanOverlap(span, other) !== undefined;
-  }
-
-  export function textSpanOverlap(span1: TextSpan, span2: TextSpan): TextSpan | undefined {
-    const overlap = textSpanIntersection(span1, span2);
-    return overlap && overlap.length === 0 ? undefined : overlap;
-  }
-
-  export function textSpanIntersectsWithTextSpan(span: TextSpan, other: TextSpan) {
-    return decodedTextSpanIntersectsWith(span.start, span.length, other.start, other.length);
-  }
-
-  export function textSpanIntersectsWith(span: TextSpan, start: number, length: number) {
-    return decodedTextSpanIntersectsWith(span.start, span.length, start, length);
-  }
-
-  export function decodedTextSpanIntersectsWith(start1: number, length1: number, start2: number, length2: number) {
-    const end1 = start1 + length1;
-    const end2 = start2 + length2;
-    return start2 <= end1 && end2 >= start1;
-  }
-
-  export function textSpanIntersectsWithPosition(span: TextSpan, position: number) {
-    return position <= textSpanEnd(span) && position >= span.start;
-  }
-
-  export function textSpanIntersection(span1: TextSpan, span2: TextSpan): TextSpan | undefined {
-    const start = Math.max(span1.start, span2.start);
-    const end = Math.min(textSpanEnd(span1), textSpanEnd(span2));
-    return start <= end ? createTextSpanFromBounds(start, end) : undefined;
-  }
-
-  export function createTextSpan(start: number, length: number): TextSpan {
-    if (start < 0) {
-      throw new Error('start < 0');
-    }
-    if (length < 0) {
-      throw new Error('length < 0');
-    }
-
-    return { start, length };
-  }
-
-  export function createTextSpanFromBounds(start: number, end: number) {
-    return createTextSpan(start, end - start);
-  }
-
-  export function textChangeRangeNewSpan(range: TextChangeRange) {
-    return createTextSpan(range.span.start, range.newLength);
-  }
-
-  export function textChangeRangeIsUnchanged(range: TextChangeRange) {
-    return textSpanIsEmpty(range.span) && range.newLength === 0;
-  }
-
-  export function createTextChangeRange(span: TextSpan, newLength: number): TextChangeRange {
-    if (newLength < 0) {
-      throw new Error('newLength < 0');
-    }
-
-    return { span, newLength };
-  }
-
-  export let unchangedTextChangeRange = createTextChangeRange(createTextSpan(0, 0), 0); // eslint-disable-line prefer-const
-
-  /**
-   * Called to merge all the changes that occurred across several versions of a script snapshot
-   * into a single change.  i.e. if a user keeps making successive edits to a script we will
-   * have a text change from V1 to V2, V2 to V3, ..., Vn.
-   *
-   * This function will then merge those changes into a single change range valid between V1 and
-   * Vn.
-   */
-  export function collapseTextChangeRangesAcrossMultipleVersions(changes: readonly TextChangeRange[]): TextChangeRange {
-    if (changes.length === 0) {
-      return unchangedTextChangeRange;
-    }
-
-    if (changes.length === 1) {
-      return changes[0];
-    }
-
-    // We change from talking about { { oldStart, oldLength }, newLength } to { oldStart, oldEnd, newEnd }
-    // as it makes things much easier to reason about.
-    const change0 = changes[0];
-
-    let oldStartN = change0.span.start;
-    let oldEndN = textSpanEnd(change0.span);
-    let newEndN = oldStartN + change0.newLength;
-
-    for (let i = 1; i < changes.length; i++) {
-      const nextChange = changes[i];
-
-      // Consider the following case:
-      // i.e. two edits.  The first represents the text change range { { 10, 50 }, 30 }.  i.e. The span starting
-      // at 10, with length 50 is reduced to length 30.  The second represents the text change range { { 30, 30 }, 40 }.
-      // i.e. the span starting at 30 with length 30 is increased to length 40.
-      //
-      //      0         10        20        30        40        50        60        70        80        90        100
-      //      -------------------------------------------------------------------------------------------------------
-      //                |                                                 /
-      //                |                                            /----
-      //  T1            |                                       /----
-      //                |                                  /----
-      //                |                             /----
-      //      -------------------------------------------------------------------------------------------------------
-      //                                     |                            \
-      //                                     |                               \
-      //   T2                                |                                 \
-      //                                     |                                   \
-      //                                     |                                      \
-      //      -------------------------------------------------------------------------------------------------------
-      //
-      // Merging these turns out to not be too difficult.  First, determining the new start of the change is trivial
-      // it's just the min of the old and new starts.  i.e.:
-      //
-      //      0         10        20        30        40        50        60        70        80        90        100
-      //      ------------------------------------------------------------*------------------------------------------
-      //                |                                                 /
-      //                |                                            /----
-      //  T1            |                                       /----
-      //                |                                  /----
-      //                |                             /----
-      //      ----------------------------------------$-------------------$------------------------------------------
-      //                .                    |                            \
-      //                .                    |                               \
-      //   T2           .                    |                                 \
-      //                .                    |                                   \
-      //                .                    |                                      \
-      //      ----------------------------------------------------------------------*--------------------------------
-      //
-      // (Note the dots represent the newly inferred start.
-      // Determining the new and old end is also pretty simple.  Basically it boils down to paying attention to the
-      // absolute positions at the asterisks, and the relative change between the dollar signs. Basically, we see
-      // which if the two $'s precedes the other, and we move that one forward until they line up.  in this case that
-      // means:
-      //
-      //      0         10        20        30        40        50        60        70        80        90        100
-      //      --------------------------------------------------------------------------------*----------------------
-      //                |                                                                     /
-      //                |                                                                /----
-      //  T1            |                                                           /----
-      //                |                                                      /----
-      //                |                                                 /----
-      //      ------------------------------------------------------------$------------------------------------------
-      //                .                    |                            \
-      //                .                    |                               \
-      //   T2           .                    |                                 \
-      //                .                    |                                   \
-      //                .                    |                                      \
-      //      ----------------------------------------------------------------------*--------------------------------
-      //
-      // In other words (in this case), we're recognizing that the second edit happened after where the first edit
-      // ended with a delta of 20 characters (60 - 40).  Thus, if we go back in time to where the first edit started
-      // that's the same as if we started at char 80 instead of 60.
-      //
-      // As it so happens, the same logic applies if the second edit precedes the first edit.  In that case rather
-      // than pushing the first edit forward to match the second, we'll push the second edit forward to match the
-      // first.
-      //
-      // In this case that means we have { oldStart: 10, oldEnd: 80, newEnd: 70 } or, in TextChangeRange
-      // semantics: { { start: 10, length: 70 }, newLength: 60 }
-      //
-      // The math then works out as follows.
-      // If we have { oldStart1, oldEnd1, newEnd1 } and { oldStart2, oldEnd2, newEnd2 } then we can compute the
-      // final result like so:
-      //
-      // {
-      //      oldStart3: Min(oldStart1, oldStart2),
-      //      oldEnd3: Max(oldEnd1, oldEnd1 + (oldEnd2 - newEnd1)),
-      //      newEnd3: Max(newEnd2, newEnd2 + (newEnd1 - oldEnd2))
-      // }
-
-      const oldStart1 = oldStartN;
-      const oldEnd1 = oldEndN;
-      const newEnd1 = newEndN;
-
-      const oldStart2 = nextChange.span.start;
-      const oldEnd2 = textSpanEnd(nextChange.span);
-      const newEnd2 = oldStart2 + nextChange.newLength;
-
-      oldStartN = Math.min(oldStart1, oldStart2);
-      oldEndN = Math.max(oldEnd1, oldEnd1 + (oldEnd2 - newEnd1));
-      newEndN = Math.max(newEnd2, newEnd2 + (newEnd1 - oldEnd2));
-    }
-
-    return createTextChangeRange(createTextSpanFromBounds(oldStartN, oldEndN), /*newLength*/ newEndN - oldStartN);
-  }
-
   export function getTypeParameterOwner(d: Declaration): Declaration | undefined {
     if (d && d.kind === SyntaxKind.TypeParameter) {
       for (let current: Node = d; current; current = current.parent) {
@@ -393,30 +182,12 @@ namespace qnr {
     return !nodeTest || nodeTest(node) ? node : undefined;
   }
 
-  /**
-   * Gets a value indicating whether a node originated in the parse tree.
-   *
-   * @param node The node to test.
-   */
   export function isParseTreeNode(node: Node): boolean {
     return (node.flags & NodeFlags.Synthesized) === 0;
   }
 
-  /**
-   * Gets the original parse tree node for a node.
-   *
-   * @param node The original node.
-   * @returns The original parse tree node if found; otherwise, undefined.
-   */
   export function getParseTreeNode(node: Node): Node;
 
-  /**
-   * Gets the original parse tree node for a node.
-   *
-   * @param node The original node.
-   * @param nodeTest A callback used to ensure the correct type of parse tree node is returned.
-   * @returns The original parse tree node if found; otherwise, undefined.
-   */
   export function getParseTreeNode<T extends Node>(node: Node | undefined, nodeTest?: (node: Node) => node is T): T | undefined;
   export function getParseTreeNode(node: Node | undefined, nodeTest?: (node: Node) => boolean): Node | undefined {
     if (node === undefined || isParseTreeNode(node)) {
@@ -432,19 +203,12 @@ namespace qnr {
     return;
   }
 
-  /** Add an extra underscore to identifiers that start with two underscores to avoid issues with magic names like '__proto__' */
   export function escapeLeadingUnderscores(identifier: string): __String {
     return (identifier.length >= 2 && identifier.charCodeAt(0) === Codes._ && identifier.charCodeAt(1) === Codes._
       ? '_' + identifier
       : identifier) as __String;
   }
 
-  /**
-   * Remove extra underscore from escaped identifier text content.
-   *
-   * @param identifier The escaped identifier text.
-   * @returns The unescaped identifier text.
-   */
   export function unescapeLeadingUnderscores(identifier: __String): string {
     const id = identifier as string;
     return id.length >= 3 && id.charCodeAt(0) === Codes._ && id.charCodeAt(1) === Codes._ && id.charCodeAt(2) === Codes._ ? id.substr(1) : id;
@@ -460,11 +224,6 @@ namespace qnr {
     return unescapeLeadingUnderscores(symbol.escapedName);
   }
 
-  /**
-   * A JSDocTypedef tag has an _optional_ name field - if a name is not directly present, we should
-   * attempt to draw the name from the node the declaration is on (as that declaration is what its' symbol
-   * will be merged with)
-   */
   function nameForNamelessJSDocTypedef(declaration: JSDocTypedefTag | JSDocEnumTag): Identifier | PrivateIdentifier | undefined {
     const hostNode = declaration.parent.parent;
     if (!hostNode) {
@@ -622,18 +381,6 @@ namespace qnr {
     return emptyArray;
   }
 
-  /**
-   * Gets the JSDoc parameter tags for the node if present.
-   *
-   * @remarks Returns any JSDoc param tag whose name matches the provided
-   * parameter, whether a param tag on a containing function
-   * expression, or a param tag on a variable declaration whose
-   * initializer is the containing function. The tags closest to the
-   * node are returned first, so in the previous example, the param
-   * tag on the containing function expression would be first.
-   *
-   * For binding patterns, parameter tags are matched by position.
-   */
   export function getJSDocParameterTags(param: ParameterDeclaration): readonly JSDocParameterTag[] {
     return getJSDocParameterTagsWorker(param, /*noCache*/ false);
   }
@@ -649,16 +396,6 @@ namespace qnr {
     );
   }
 
-  /**
-   * Gets the JSDoc type parameter tags for the node if present.
-   *
-   * @remarks Returns any JSDoc template tag whose names match the provided
-   * parameter, whether a template tag on a containing function
-   * expression, or a template tag on a variable declaration whose
-   * initializer is the containing function. The tags closest to the
-   * node are returned first, so in the previous example, the template
-   * tag on the containing function expression would be first.
-   */
   export function getJSDocTypeParameterTags(param: TypeParameterDeclaration): readonly JSDocTemplateTag[] {
     return getJSDocTypeParameterTagsWorker(param, /*noCache*/ false);
   }
@@ -667,12 +404,6 @@ namespace qnr {
     return getJSDocTypeParameterTagsWorker(param, /*noCache*/ true);
   }
 
-  /**
-   * Return true if the node has JSDoc parameter tags.
-   *
-   * @remarks Includes parameter tags that are not directly on the node,
-   * for example on a variable declaration whose initializer is a function expression.
-   */
   export function hasJSDocParameterTags(node: FunctionLikeDeclaration | SignatureDeclaration): boolean {
     return !!getFirstJSDocTag(node, isJSDocParameterTag);
   }
@@ -758,17 +489,6 @@ namespace qnr {
     return;
   }
 
-  /**
-   * Gets the type node for the node if provided via JSDoc.
-   *
-   * @remarks The search includes any JSDoc param tag that relates
-   * to the provided parameter, for example a type tag on the
-   * parameter itself, or a param tag on a containing function
-   * expression, or a param tag on a variable declaration whose
-   * initializer is the containing function. The tags closest to the
-   * node are examined first, so in the previous example, the type
-   * tag directly on the node would be returned.
-   */
   export function getJSDocType(node: Node): TypeNode | undefined {
     let tag: JSDocTypeTag | JSDocParameterTag | undefined = getFirstJSDocTag(node, isJSDocTypeTag);
     if (!tag && isParameter(node)) {
@@ -778,12 +498,6 @@ namespace qnr {
     return tag && tag.typeExpression && tag.typeExpression.type;
   }
 
-  /**
-   * Gets the return type node for the node if provided via JSDoc return tag or type tag.
-   *
-   * @remarks `getJSDocReturnTag` just gets the whole JSDoc tag. This function
-   * gets the type from inside the braces, after the fat arrow, etc.
-   */
   export function getJSDocReturnType(node: Node): TypeNode | undefined {
     const returnTag = getJSDocReturnTag(node);
     if (returnTag && returnTag.typeExpression) {

@@ -703,7 +703,7 @@ namespace qnr {
     allowComments?: boolean,
     allowSourceMaps?: boolean
   ): PropertyAccessExpression {
-    const qualifiedName = createPropertyAccess(ns, nodeIsSynthesized(name) ? name : getSynthesizedClone(name));
+    const qualifiedName = createPropertyAccess(ns, isSynthesized(name) ? name : getSynthesizedClone(name));
     setTextRange(qualifiedName, name);
     let emitFlags: EmitFlags = 0;
     if (!allowSourceMaps) emitFlags |= EmitFlags.NoSourceMap;
@@ -1362,9 +1362,9 @@ namespace qnr {
   function isIgnorableParen(node: Expression) {
     return (
       node.kind === SyntaxKind.ParenthesizedExpression &&
-      nodeIsSynthesized(node) &&
-      nodeIsSynthesized(getSourceMapRange(node)) &&
-      nodeIsSynthesized(getCommentRange(node)) &&
+      isSynthesized(node) &&
+      isSynthesized(getSourceMapRange(node)) &&
+      isSynthesized(getCommentRange(node)) &&
       !some(getSyntheticLeadingComments(node)) &&
       !some(getSyntheticTrailingComments(node))
     );

@@ -3294,7 +3294,7 @@ namespace qnr {
   }
 
   function flattenCommaElements(node: Expression): Expression | readonly Expression[] {
-    if (nodeIsSynthesized(node) && !isParseTreeNode(node) && !node.original && !node.emitNode && !node.id) {
+    if (isSynthesized(node) && !isParseTreeNode(node) && !node.original && !node.emitNode && !node.id) {
       if (node.kind === SyntaxKind.CommaListExpression) {
         return (<CommaListExpression>node).elements;
       }

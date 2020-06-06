@@ -2691,7 +2691,7 @@ namespace qnr {
       emitExpression(node.expression);
       // Emit semicolon in non json files
       // or if json file that created synthesized expression(eg.define expression statement when --out and amd code generation)
-      if (!isJsonSourceFile(currentSourceFile!) || nodeIsSynthesized(node.expression)) {
+      if (!isJsonSourceFile(currentSourceFile!) || isSynthesized(node.expression)) {
         writeTrailingSemicolon();
       }
     }
@@ -2979,7 +2979,7 @@ namespace qnr {
         return false;
       }
 
-      if (!nodeIsSynthesized(body) && !rangeIsOnSingleLine(body, currentSourceFile!)) {
+      if (!isSynthesized(body) && !rangeIsOnSingleLine(body, currentSourceFile!)) {
         return false;
       }
 
@@ -3404,8 +3404,8 @@ namespace qnr {
       const emitAsSingleStatement =
         statements.length === 1 &&
         // treat synthesized nodes as located on the same line for emit purposes
-        (nodeIsSynthesized(parentNode) ||
-          nodeIsSynthesized(statements[0]) ||
+        (isSynthesized(parentNode) ||
+          isSynthesized(statements[0]) ||
           rangeStartPositionsAreOnSameLine(parentNode, statements[0], currentSourceFile!));
 
       let format = ListFormat.CaseOrDefaultClauseStatements;
@@ -3643,7 +3643,7 @@ namespace qnr {
       if (emitBodyWithDetachedComments) {
         // Emit detached comment if there are no prologue directives or if the first node is synthesized.
         // The synthesized node will have no leading comment so some comments may be missed.
-        const shouldEmitDetachedComment = statements.length === 0 || !isPrologueDirective(statements[0]) || nodeIsSynthesized(statements[0]);
+        const shouldEmitDetachedComment = statements.length === 0 || !isPrologueDirective(statements[0]) || isSynthesized(statements[0]);
         if (shouldEmitDetachedComment) {
           emitBodyWithDetachedComments(node, statements, emitSourceFileWorker);
           return;
@@ -4344,7 +4344,7 @@ namespace qnr {
           // JsxText will be written with its leading whitespace, so don't add more manually.
           return 0;
         }
-        if (!positionIsSynthesized(parentNode.pos) && !nodeIsSynthesized(firstChild) && (!firstChild.parent || firstChild.parent === parentNode)) {
+        if (!isSynthesized(parentNode.pos) && !isSynthesized(firstChild) && (!firstChild.parent || firstChild.parent === parentNode)) {
           if (preserveSourceNewlines) {
             return getEffectiveLines((includeComments) =>
               getLinesBetweenPositionAndPrecedingNonWhitespaceCharacter(firstChild.pos, parentNode.pos, currentSourceFile!, includeComments)
@@ -4367,7 +4367,7 @@ namespace qnr {
         if (nextNode.kind === SyntaxKind.JsxText) {
           // JsxText will be written with its leading whitespace, so don't add more manually.
           return 0;
-        } else if (!nodeIsSynthesized(previousNode) && !nodeIsSynthesized(nextNode) && previousNode.parent === nextNode.parent) {
+        } else if (!isSynthesized(previousNode) && !isSynthesized(nextNode) && previousNode.parent === nextNode.parent) {
           if (preserveSourceNewlines) {
             return getEffectiveLines((includeComments) =>
               getLinesBetweenRangeEndAndRangeStart(previousNode, nextNode, currentSourceFile!, includeComments)
@@ -4393,7 +4393,7 @@ namespace qnr {
         if (lastChild === undefined) {
           return rangeIsOnSingleLine(parentNode, currentSourceFile!) ? 0 : 1;
         }
-        if (!positionIsSynthesized(parentNode.pos) && !nodeIsSynthesized(lastChild) && (!lastChild.parent || lastChild.parent === parentNode)) {
+        if (!isSynthesized(parentNode.pos) && !isSynthesized(lastChild) && (!lastChild.parent || lastChild.parent === parentNode)) {
           if (preserveSourceNewlines) {
             return getEffectiveLines((includeComments) =>
               getLinesBetweenPositionAndNextNonWhitespaceCharacter(lastChild.end, parentNode.end, currentSourceFile!, includeComments)
@@ -4451,7 +4451,7 @@ namespace qnr {
     }
 
     function synthesizedNodeStartsOnNewLine(node: Node, format: ListFormat) {
-      if (nodeIsSynthesized(node)) {
+      if (isSynthesized(node)) {
         const startsOnNewLine = getStartsOnNewLine(node);
         if (startsOnNewLine === undefined) {
           return (format & ListFormat.PreferNewLine) !== 0;
@@ -4477,7 +4477,7 @@ namespace qnr {
         return 1;
       }
 
-      if (!nodeIsSynthesized(parent) && !nodeIsSynthesized(node1) && !nodeIsSynthesized(node2)) {
+      if (!isSynthesized(parent) && !isSynthesized(node1) && !isSynthesized(node2)) {
         if (preserveSourceNewlines) {
           return getEffectiveLines((includeComments) => getLinesBetweenRangeEndAndRangeStart(node1, node2, currentSourceFile!, includeComments));
         }
@@ -4492,7 +4492,7 @@ namespace qnr {
     }
 
     function skipSynthesizedParentheses(node: Node) {
-      while (node.kind === SyntaxKind.ParenthesizedExpression && nodeIsSynthesized(node)) {
+      while (node.kind === SyntaxKind.ParenthesizedExpression && isSynthesized(node)) {
         node = (<ParenthesizedExpression>node).expression;
       }
 
@@ -4504,7 +4504,7 @@ namespace qnr {
         return generateName(node);
       } else if (
         (isIdentifier(node) || isPrivateIdentifier(node)) &&
-        (nodeIsSynthesized(node) ||
+        (isSynthesized(node) ||
           !node.parent ||
           !currentSourceFile ||
           (node.parent && currentSourceFile && getSourceFileOfNode(node) !== getOriginalNode(currentSourceFile)))
@@ -4512,7 +4512,7 @@ namespace qnr {
         return idText(node);
       } else if (node.kind === SyntaxKind.StringLiteral && (<StringLiteral>node).textSourceNode) {
         return getTextOfNode((<StringLiteral>node).textSourceNode!, includeTrivia);
-      } else if (isLiteralExpression(node) && (nodeIsSynthesized(node) || !node.parent)) {
+      } else if (isLiteralExpression(node) && (isSynthesized(node) || !node.parent)) {
         return node.text;
       }
 
@@ -5296,7 +5296,7 @@ namespace qnr {
      * @param pos The position.
      */
     function emitPos(pos: number) {
-      if (sourceMapsDisabled || positionIsSynthesized(pos) || isJsonSourceMapSource(sourceMapSource)) {
+      if (sourceMapsDisabled || isSynthesized(pos) || isJsonSourceMapSource(sourceMapSource)) {
         return;
       }
 

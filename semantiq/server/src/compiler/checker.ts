@@ -3320,11 +3320,11 @@ namespace qnr {
       let symbol: Symbol | undefined;
       if (name.kind === SyntaxKind.Identifier) {
         const message =
-          meaning === namespaceMeaning || nodeIsSynthesized(name)
+          meaning === namespaceMeaning || isSynthesized(name)
             ? Diagnostics.Cannot_find_namespace_0
             : getCannotFindNameDiagnosticForName(getFirstIdentifier(name));
         const symbolFromJSPrototype =
-          isInJSFile(name) && !nodeIsSynthesized(name) ? resolveEntityNameFromAssignmentDeclaration(name, meaning) : undefined;
+          isInJSFile(name) && !isSynthesized(name) ? resolveEntityNameFromAssignmentDeclaration(name, meaning) : undefined;
         symbol = getMergedSymbol(
           resolveName(location || name, name.escapedText, meaning, ignoreErrors || symbolFromJSPrototype ? undefined : message, name, /*isUse*/ true)
         );
@@ -3368,7 +3368,7 @@ namespace qnr {
         throw Debug.assertNever(name, 'Unknown entity name kind.');
       }
       Debug.assert((getCheckFlags(symbol) & CheckFlags.Instantiated) === 0, 'Should never get an instantiated symbol here.');
-      if (!nodeIsSynthesized(name) && isEntityName(name) && (symbol.flags & SymbolFlags.Alias || name.parent.kind === SyntaxKind.ExportAssignment)) {
+      if (!isSynthesized(name) && isEntityName(name) && (symbol.flags & SymbolFlags.Alias || name.parent.kind === SyntaxKind.ExportAssignment)) {
         markSymbolOfAliasDeclarationIfTypeOnly(getAliasDeclarationFromName(name), symbol, /*finalTarget*/ undefined, /*overwriteEmpty*/ true);
       }
       return symbol.flags & meaning || dontResolveAlias ? symbol : resolveAlias(symbol);
@@ -3883,7 +3883,7 @@ namespace qnr {
       if (containingFile && containingFile.imports) {
         // Try to make an import using an import already in the enclosing file, if possible
         for (const importRef of containingFile.imports) {
-          if (nodeIsSynthesized(importRef)) continue; // Synthetic names can't be resolved by `resolveExternalModuleName` - they'll cause a debug assert if they error
+          if (isSynthesized(importRef)) continue; // Synthetic names can't be resolved by `resolveExternalModuleName` - they'll cause a debug assert if they error
           const resolvedModule = resolveExternalModuleName(enclosingDeclaration, importRef, /*ignoreErrors*/ true);
           if (!resolvedModule) continue;
           const ref = getAliasForSymbolInContainer(resolvedModule, symbol);
@@ -5706,7 +5706,7 @@ namespace qnr {
               /*nodesVisitor*/ undefined,
               elideInitializerAndSetEmitFlags
             )!;
-            const clone = nodeIsSynthesized(visited) ? visited : getSynthesizedClone(visited);
+            const clone = isSynthesized(visited) ? visited : getSynthesizedClone(visited);
             if (clone.kind === SyntaxKind.BindingElement) {
               (<BindingElement>clone).initializer = undefined;
             }
@@ -6197,7 +6197,7 @@ namespace qnr {
         if (
           name &&
           isStringLiteral(name) &&
-          (name.singleQuote || (!nodeIsSynthesized(name) && startsWith(getTextOfNode(name, /*includeTrivia*/ false), "'")))
+          (name.singleQuote || (!isSynthesized(name) && startsWith(getTextOfNode(name, /*includeTrivia*/ false), "'")))
         ) {
           return true;
         }

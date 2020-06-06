@@ -335,7 +335,7 @@ namespace qnr {
   }
 
   export function skipTrivia(t: string, pos: number, stopAfterLineBreak?: boolean, stopAtComments = false) {
-    if (positionIsSynthesized(pos)) return pos;
+    if (isSynthesized(pos)) return pos;
     while (true) {
       const c = t.charCodeAt(pos);
       switch (c) {

@@ -82,7 +82,7 @@ namespace qnr {
         // The source map location for the assignment should point to the entire binary
         // expression.
         value = ensureIdentifier(flattenContext, value, /*reuseIdentifierExpressions*/ true, location);
-      } else if (nodeIsSynthesized(node)) {
+      } else if (isSynthesized(node)) {
         // Generally, the source map location for a destructuring assignment is the root
         // expression.
         //

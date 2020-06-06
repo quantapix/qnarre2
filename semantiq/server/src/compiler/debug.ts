@@ -33,12 +33,6 @@ namespace qnr {
       return currentAssertionLevel >= level;
     }
 
-    /**
-     * Tests whether an assertion function should be executed. If it shouldn't, it is cached and replaced with `ts.noop`.
-     * Replaced assertion functions are restored when `Debug.setAssertionLevel` is set to a high enough level.
-     * @param level The minimum assertion level required.
-     * @param name The name of the current assertion function.
-     */
     function shouldAssertFunction<K extends AssertionKeys>(level: AssertionLevel, name: K): boolean {
       if (!shouldAssert(level)) {
         assertionCache[name] = { level, assertion: Debug[name] };
@@ -514,7 +508,7 @@ namespace qnr {
             },
             __debugGetText: {
               value(this: Node, includeTrivia?: boolean) {
-                if (nodeIsSynthesized(this)) return '';
+                if (isSynthesized(this)) return '';
                 const parseNode = getParseTreeNode(this);
                 const sourceFile = parseNode && getSourceFileOfNode(parseNode);
                 return sourceFile ? getSourceTextOfNodeFromSourceFile(sourceFile, parseNode, includeTrivia) : '';

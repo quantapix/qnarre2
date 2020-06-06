@@ -9,6 +9,7 @@
 
   "files": [
     "core.ts",
+    "utils.ts",
     "debug.ts",
     "performanceTimestamp.ts",
     "performance.ts",

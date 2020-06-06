@@ -573,7 +573,7 @@ namespace qnr {
     // If we don't need to downlevel and we can reach the original source text using
     // the node's parent reference, then simply get the text as it was originally written.
     if (
-      !nodeIsSynthesized(node) &&
+      !isSynthesized(node) &&
       node.parent &&
       !((isNumericLiteral(node) && node.numericLiteralFlags & TokenFlags.ContainsSeparator) || isBigIntLiteral(node))
     ) {
@@ -3277,10 +3277,6 @@ namespace qnr {
     );
   }
 
-  export function nodeIsSynthesized(range: TextRange): boolean {
-    return positionIsSynthesized(range.pos) || positionIsSynthesized(range.end);
-  }
-
   export function getOriginalSourceFile(sourceFile: SourceFile) {
     return getParseTreeNode(sourceFile, isSourceFile) || sourceFile;
   }
@@ -4904,94 +4900,6 @@ namespace qnr {
     return getNewLine ? getNewLine() : sys ? sys.newLine : carriageReturnLineFeed;
   }
 
-  /**
-   * Creates a new TextRange from the provided pos and end.
-   *
-   * @param pos The start position.
-   * @param end The end position.
-   */
-  export function createRange(pos: number, end: number = pos): TextRange {
-    Debug.assert(end >= pos || end === -1);
-    return { pos, end };
-  }
-
-  /**
-   * Creates a new TextRange from a provided range with a new end position.
-   *
-   * @param range A TextRange.
-   * @param end The new end position.
-   */
-  export function moveRangeEnd(range: TextRange, end: number): TextRange {
-    return createRange(range.pos, end);
-  }
-
-  /**
-   * Creates a new TextRange from a provided range with a new start position.
-   *
-   * @param range A TextRange.
-   * @param pos The new Start position.
-   */
-  export function moveRangePos(range: TextRange, pos: number): TextRange {
-    return createRange(pos, range.end);
-  }
-
-  /**
-   * Moves the start position of a range past any decorators.
-   */
-  export function moveRangePastDecorators(node: Node): TextRange {
-    return node.decorators && node.decorators.length > 0 ? moveRangePos(node, node.decorators.end) : node;
-  }
-
-  /**
-   * Moves the start position of a range past any decorators or modifiers.
-   */
-  export function moveRangePastModifiers(node: Node): TextRange {
-    return node.modifiers && node.modifiers.length > 0 ? moveRangePos(node, node.modifiers.end) : moveRangePastDecorators(node);
-  }
-
-  /**
-   * Determines whether a TextRange has the same start and end positions.
-   *
-   * @param range A TextRange.
-   */
-  export function isCollapsedRange(range: TextRange) {
-    return range.pos === range.end;
-  }
-
-  /**
-   * Creates a new TextRange for a token at the provides start position.
-   *
-   * @param pos The start position.
-   * @param token The token.
-   */
-  export function createTokenRange(pos: number, token: SyntaxKind): TextRange {
-    return createRange(pos, pos + tokenToString(token)!.length);
-  }
-
-  export function rangeIsOnSingleLine(range: TextRange, sourceFile: SourceFile) {
-    return rangeStartIsOnSameLineAsRangeEnd(range, range, sourceFile);
-  }
-
-  export function rangeStartPositionsAreOnSameLine(range1: TextRange, range2: TextRange, sourceFile: SourceFile) {
-    return positionsAreOnSameLine(
-      getStartPositionOfRange(range1, sourceFile, /*includeComments*/ false),
-      getStartPositionOfRange(range2, sourceFile, /*includeComments*/ false),
-      sourceFile
-    );
-  }
-
-  export function rangeEndPositionsAreOnSameLine(range1: TextRange, range2: TextRange, sourceFile: SourceFile) {
-    return positionsAreOnSameLine(range1.end, range2.end, sourceFile);
-  }
-
-  export function rangeStartIsOnSameLineAsRangeEnd(range1: TextRange, range2: TextRange, sourceFile: SourceFile) {
-    return positionsAreOnSameLine(getStartPositionOfRange(range1, sourceFile, /*includeComments*/ false), range2.end, sourceFile);
-  }
-
-  export function rangeEndIsOnSameLineAsRangeStart(range1: TextRange, range2: TextRange, sourceFile: SourceFile) {
-    return positionsAreOnSameLine(range1.end, getStartPositionOfRange(range2, sourceFile, /*includeComments*/ false), sourceFile);
-  }
-
   export function getLinesBetweenRangeEndAndRangeStart(
     range1: TextRange,
     range2: TextRange,
@@ -5008,14 +4916,6 @@ namespace qnr {
 
   export function isNodeArrayMultiLine(list: NodeArray<Node>, sourceFile: SourceFile): boolean {
     return !positionsAreOnSameLine(list.pos, list.end, sourceFile);
-  }
-
-  export function positionsAreOnSameLine(pos1: number, pos2: number, sourceFile: SourceFile) {
-    return getLinesBetweenPositions(sourceFile, pos1, pos2) === 0;
-  }
-
-  export function getStartPositionOfRange(range: TextRange, sourceFile: SourceFile, includeComments: boolean) {
-    return positionIsSynthesized(range.pos) ? -1 : skipTrivia(sourceFile.text, range.pos, /*stopAfterLineBreak*/ false, includeComments);
   }
 
   export function getLinesBetweenPositionAndPrecedingNonWhitespaceCharacter(
@@ -6363,12 +6263,6 @@ namespace qnr {
         };
   }
 
-  export function positionIsSynthesized(pos: number): boolean {
-    // This is a fast way of testing the following conditions:
-    //  pos === undefined || pos === null || isNaN(pos) || pos < 0;
-    return !(pos >= 0);
-  }
-
   /** True if an extension is one of the supported TypeScript extensions. */
   export function extensionIsTS(ext: Extension): boolean {
     return ext === Extension.Ts || ext === Extension.Tsx || ext === Extension.Dts;
@@ -6519,15 +6413,6 @@ namespace qnr {
     forEach(cb: (value: TValue, node: TNode) => void): void {
       this.map.forEach(({ node, value }) => cb(value, node));
     }
-  }
-
-  export function rangeOfNode(node: Node): TextRange {
-    return { pos: getTokenPosOfNode(node), end: node.end };
-  }
-
-  export function rangeOfTypeParameters(typeParameters: NodeArray<TypeParameterDeclaration>): TextRange {
-    // Include the `<>`
-    return { pos: typeParameters.pos - 1, end: typeParameters.end + 1 };
   }
 
   export interface HostWithIsSourceOfProjectReferenceRedirect {

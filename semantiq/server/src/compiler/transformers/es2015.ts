@@ -1836,7 +1836,7 @@ namespace qnr {
         statementsLocation = moveRangeEnd(body, -1);
 
         const equalsGreaterThanToken = node.equalsGreaterThanToken;
-        if (!nodeIsSynthesized(equalsGreaterThanToken) && !nodeIsSynthesized(body)) {
+        if (!isSynthesized(equalsGreaterThanToken) && !isSynthesized(body)) {
           if (rangeEndIsOnSameLineAsRangeStart(equalsGreaterThanToken, body, currentSourceFile)) {
             singleLine = true;
           } else {
@@ -3855,7 +3855,7 @@ namespace qnr {
       // rather than
       //    "abc" + (1 << 2) + ""
       const expression = reduceLeft(expressions, createAdd)!;
-      if (nodeIsSynthesized(expression)) {
+      if (isSynthesized(expression)) {
         expression.pos = node.pos;
         expression.end = node.end;
       }
@@ -4130,22 +4130,22 @@ namespace qnr {
       }
 
       const statement = firstOrUndefined(constructor.body!.statements);
-      if (!statement || !nodeIsSynthesized(statement) || statement.kind !== SyntaxKind.ExpressionStatement) {
+      if (!statement || !isSynthesized(statement) || statement.kind !== SyntaxKind.ExpressionStatement) {
         return false;
       }
 
       const statementExpression = (<ExpressionStatement>statement).expression;
-      if (!nodeIsSynthesized(statementExpression) || statementExpression.kind !== SyntaxKind.CallExpression) {
+      if (!isSynthesized(statementExpression) || statementExpression.kind !== SyntaxKind.CallExpression) {
         return false;
       }
 
       const callTarget = (<CallExpression>statementExpression).expression;
-      if (!nodeIsSynthesized(callTarget) || callTarget.kind !== SyntaxKind.SuperKeyword) {
+      if (!isSynthesized(callTarget) || callTarget.kind !== SyntaxKind.SuperKeyword) {
         return false;
       }
 
       const callArgument = singleOrUndefined((<CallExpression>statementExpression).arguments);
-      if (!callArgument || !nodeIsSynthesized(callArgument) || callArgument.kind !== SyntaxKind.SpreadElement) {
+      if (!callArgument || !isSynthesized(callArgument) || callArgument.kind !== SyntaxKind.SpreadElement) {
         return false;
       }
 

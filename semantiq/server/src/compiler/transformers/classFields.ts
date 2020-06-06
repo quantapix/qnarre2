@@ -210,7 +210,7 @@ namespace qnr {
       receiver = visitNode(receiver, visitor, isExpression);
       switch (info.placement) {
         case PrivateIdentifierPlacement.InstanceField:
-          return createClassPrivateFieldGetHelper(context, nodeIsSynthesized(receiver) ? receiver : getSynthesizedClone(receiver), info.weakMapName);
+          return createClassPrivateFieldGetHelper(context, isSynthesized(receiver) ? receiver : getSynthesizedClone(receiver), info.weakMapName);
         default:
           return Debug.fail('Unexpected private identifier placement');
       }
@@ -313,7 +313,7 @@ namespace qnr {
     }
 
     function createCopiableReceiverExpr(receiver: Expression): { readExpression: Expression; initializeExpression: Expression | undefined } {
-      const clone = nodeIsSynthesized(receiver) ? receiver : getSynthesizedClone(receiver);
+      const clone = isSynthesized(receiver) ? receiver : getSynthesizedClone(receiver);
       if (isSimpleInlineableExpression(receiver)) {
         return { readExpression: clone, initializeExpression: undefined };
       }
