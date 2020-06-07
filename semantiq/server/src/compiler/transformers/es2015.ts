@@ -1540,7 +1540,7 @@ namespace qnr {
         const name = isComputedPropertyName(propertyName)
           ? propertyName.expression
           : isIdentifier(propertyName)
-          ? createStringLiteral(unescapeLeadingUnderscores(propertyName.escapedText))
+          ? StringLiteral.create(unescapeLeadingUnderscores(propertyName.escapedText))
           : propertyName;
         e = createObjectDefinePropertyCall(
           receiver,
@@ -3821,7 +3821,7 @@ namespace qnr {
      */
     function visitNumericLiteral(node: NumericLiteral) {
       if (node.numericLiteralFlags & TokenFlags.BinaryOrOctalSpecifier) {
-        return setTextRange(createNumericLiteral(node.text), node);
+        return setTextRange(NumericLiteral.create(node.text), node);
       }
       return node;
     }

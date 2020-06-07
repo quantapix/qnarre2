@@ -6196,7 +6196,7 @@ namespace qnr {
         const name = getNameOfDeclaration(d);
         if (
           name &&
-          isStringLiteral(name) &&
+          StringLiteral.kind(name) &&
           (name.singleQuote || (!isSynthesized(name) && startsWith(getTextOfNode(name, /*includeTrivia*/ false), "'")))
         ) {
           return true;
@@ -6697,7 +6697,7 @@ namespace qnr {
             (d) => isExportDeclaration(d) && !!d.moduleSpecifier && !!d.exportClause && isNamedExports(d.exportClause)
           ) as ExportDeclaration[];
           if (length(reexports) > 1) {
-            const groups = group(reexports, (decl) => (isStringLiteral(decl.moduleSpecifier!) ? '>' + decl.moduleSpecifier.text : '>'));
+            const groups = group(reexports, (decl) => (StringLiteral.kind(decl.moduleSpecifier!) ? '>' + decl.moduleSpecifier.text : '>'));
             if (groups.length !== reexports.length) {
               for (const group of groups) {
                 if (group.length > 1) {
@@ -9391,7 +9391,7 @@ namespace qnr {
         isElementAccessExpression(declaration) ||
         isIdentifier(declaration) ||
         isStringLiteralLike(declaration) ||
-        isNumericLiteral(declaration) ||
+        NumericLiteral.kind(declaration) ||
         isClassDeclaration(declaration) ||
         isFunctionDeclaration(declaration) ||
         (isMethodDeclaration(declaration) && !isObjectLiteralMethod(declaration)) ||
@@ -26147,6 +26147,7 @@ namespace qnr {
       if (readonly || (contextualType && forEachType(contextualType, isTupleLikeType))) {
         return createTupleType(elementTypes, elementCount - (hasRestElement ? 1 : 0), hasRestElement, readonly);
       }
+      return;
     }
 
     function isNumericName(name: DeclarationName): boolean {
@@ -38363,7 +38364,7 @@ namespace qnr {
         // Should be a parse error.
         return false;
       }
-      if (!isStringLiteral(moduleName)) {
+      if (!StringLiteral.kind(moduleName)) {
         error(moduleName, Diagnostics.String_literal_expected);
         return false;
       }
@@ -42177,7 +42178,7 @@ namespace qnr {
 
     function checkGrammarProperty(node: PropertyDeclaration | PropertySignature) {
       if (isClassLike(node.parent)) {
-        if (isStringLiteral(node.name) && node.name.text === 'constructor') {
+        if (StringLiteral.kind(node.name) && node.name.text === 'constructor') {
           return grammarErrorOnNode(node.name, Diagnostics.Classes_may_not_have_a_field_named_constructor);
         }
         if (

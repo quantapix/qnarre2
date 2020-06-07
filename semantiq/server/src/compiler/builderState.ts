@@ -172,7 +172,7 @@ namespace qnr {
       if (sourceFile.moduleAugmentations.length) {
         const checker = program.getTypeChecker();
         for (const moduleName of sourceFile.moduleAugmentations) {
-          if (!isStringLiteral(moduleName)) {
+          if (!StringLiteral.kind(moduleName)) {
             continue;
           }
           const symbol = checker.getSymbolAtLocation(moduleName);

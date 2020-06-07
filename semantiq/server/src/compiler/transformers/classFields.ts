@@ -760,7 +760,7 @@ namespace qnr {
         const name = isComputedPropertyName(propertyName)
           ? propertyName.expression
           : isIdentifier(propertyName)
-          ? createStringLiteral(unescapeLeadingUnderscores(propertyName.escapedText))
+          ? StringLiteral.create(unescapeLeadingUnderscores(propertyName.escapedText))
           : propertyName;
         const descriptor = createPropertyDescriptor({ value: initializer, configurable: true, writable: true, enumerable: true });
         return createObjectDefinePropertyCall(receiver, name, descriptor);

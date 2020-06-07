@@ -1,10 +1,4 @@
 namespace qnr {
-  function createSynthesizedNode(kind: SyntaxKind): Node {
-    const node = createNode(kind, -1, -1);
-    node.flags |= NodeFlags.Synthesized;
-    return node;
-  }
-
   export function updateNode<T extends Node>(updated: T, original: T): T {
     if (updated !== original) {
       setOriginalNode(updated, original);
@@ -77,51 +71,26 @@ namespace qnr {
     isSingleQuote?: boolean
   ): PrimaryExpression {
     if (typeof value === 'number') {
-      return createNumericLiteral(value + '');
+      return NumericLiteral.create(value + '');
     }
     // eslint-disable-next-line no-in-operator
     if (typeof value === 'object' && 'base10Value' in value) {
       // PseudoBigInt
-      return createBigIntLiteral(pseudoBigIntToString(value) + 'n');
+      return BigIntLiteral.create(pseudoBigIntToString(value) + 'n');
     }
     if (typeof value === 'boolean') {
       return value ? createTrue() : createFalse();
     }
     if (isString(value)) {
-      const res = createStringLiteral(value);
+      const res = StringLiteral.create(value);
       if (isSingleQuote) res.singleQuote = true;
       return res;
     }
     return createLiteralFromNode(value);
   }
 
-  export function createNumericLiteral(value: string, numericLiteralFlags: TokenFlags = TokenFlags.None): NumericLiteral {
-    const node = <NumericLiteral>createSynthesizedNode(SyntaxKind.NumericLiteral);
-    node.text = value;
-    node.numericLiteralFlags = numericLiteralFlags;
-    return node;
-  }
-
-  export function createBigIntLiteral(value: string): BigIntLiteral {
-    const node = <BigIntLiteral>createSynthesizedNode(SyntaxKind.BigIntLiteral);
-    node.text = value;
-    return node;
-  }
-
-  export function createStringLiteral(text: string): StringLiteral {
-    const node = <StringLiteral>createSynthesizedNode(SyntaxKind.StringLiteral);
-    node.text = text;
-    return node;
-  }
-
-  export function createRegularExpressionLiteral(text: string): RegularExpressionLiteral {
-    const node = <RegularExpressionLiteral>createSynthesizedNode(SyntaxKind.RegularExpressionLiteral);
-    node.text = text;
-    return node;
-  }
-
   function createLiteralFromNode(sourceNode: Exclude<PropertyNameLiteral, PrivateIdentifier>): StringLiteral {
-    const node = createStringLiteral(getTextOfIdentifierOrLiteral(sourceNode));
+    const node = StringLiteral.create(getTextOfIdentifierOrLiteral(sourceNode));
     node.textSourceNode = sourceNode;
     return node;
   }
@@ -3808,9 +3777,9 @@ namespace qnr {
 
   function asExpression<T extends Expression | undefined>(value: string | number | boolean | T): T | StringLiteral | NumericLiteral | BooleanLiteral {
     return typeof value === 'string'
-      ? createStringLiteral(value)
+      ? StringLiteral.create(value)
       : typeof value === 'number'
-      ? createNumericLiteral('' + value)
+      ? NumericLiteral.create('' + value)
       : typeof value === 'boolean'
       ? value
         ? createTrue()

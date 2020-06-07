@@ -400,7 +400,7 @@ namespace qnr {
               }
             } else if (
               isImportDeclaration(importStatement) &&
-              isStringLiteral(importStatement.moduleSpecifier) &&
+              StringLiteral.kind(importStatement.moduleSpecifier) &&
               importStatement.moduleSpecifier.text === typeName
             ) {
               return;

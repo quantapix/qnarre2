@@ -737,7 +737,7 @@ namespace qnr {
   }
 
   function isUseStrictPrologue(node: ExpressionStatement): boolean {
-    return isStringLiteral(node.expression) && node.expression.text === 'use strict';
+    return StringLiteral.kind(node.expression) && node.expression.text === 'use strict';
   }
 
   /**

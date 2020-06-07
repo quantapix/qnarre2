@@ -616,7 +616,7 @@ namespace qnr {
       if (isSimpleCopiableExpression(arg)) {
         const argClone = isGeneratedIdentifier(arg)
           ? arg
-          : isStringLiteral(arg)
+          : StringLiteral.kind(arg)
           ? createLiteral(arg)
           : setEmitFlags(setTextRange(getSynthesizedClone(arg), arg), EmitFlags.NoComments);
         return createConditional(

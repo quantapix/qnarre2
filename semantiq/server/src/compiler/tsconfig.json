@@ -21,6 +21,7 @@
     "path.ts",
     "diagnosticInformationMap.generated.ts",
     "scanner.ts",
+    "node.ts",
     "utilitiesPublic.ts",
     "utilities.ts",
     "parser.ts",

@@ -412,7 +412,6 @@ namespace qnr {
     // Module references
     ExternalModuleReference,
 
-    // JSX
     JsxElement,
     JsxSelfClosingElement,
     JsxOpeningElement,
@@ -1327,8 +1326,7 @@ namespace qnr {
 
   export interface StringLiteral extends LiteralExpression, Declaration {
     kind: SyntaxKind.StringLiteral;
-    textSourceNode?: Identifier | StringLiteralLike | NumericLiteral; // Allows a StringLiteral to get its text from another node (used by transforms).
-    /** Note: this is only set when synthesizing a node, not during parsing. */
+    textSourceNode?: Identifier | StringLiteralLike | NumericLiteral;
     singleQuote?: boolean;
   }
 
@@ -1591,9 +1589,6 @@ namespace qnr {
     name: never;
   }
 
-  // The text property of a LiteralExpression stores the interpreted value of the literal in text form. For a StringLiteral,
-  // or any literal of a template, this means quotes have been removed and escapes have been converted to actual characters.
-  // For a NumericLiteral, the stored value is the toString() representation of the number. For example 1, 1.00, and 1e0 are all stored as just "1".
   export interface LiteralLikeNode extends Node {
     text: string;
     isUnterminated?: boolean;
@@ -1604,15 +1599,8 @@ namespace qnr {
     rawText?: string;
   }
 
-  // The text property of a LiteralExpression stores the interpreted value of the literal in text form. For a StringLiteral,
-  // or any literal of a template, this means quotes have been removed and escapes have been converted to actual characters.
-  // For a NumericLiteral, the stored value is the toString() representation of the number. For example 1, 1.00, and 1e0 are all stored as just "1".
   export interface LiteralExpression extends LiteralLikeNode, PrimaryExpression {
     _literalExpressionBrand: any;
-  }
-
-  export interface RegularExpressionLiteral extends LiteralExpression {
-    kind: SyntaxKind.RegularExpressionLiteral;
   }
 
   export interface NoSubstitutionTemplateLiteral extends LiteralExpression, TemplateLiteralLikeNode, Declaration {
@@ -1636,15 +1624,6 @@ namespace qnr {
     ContainsInvalidEscape = 1 << 11, // e.g. `\uhello`
     BinaryOrOctalSpecifier = BinarySpecifier | OctalSpecifier,
     NumericLiteralFlags = Scientific | Octal | HexSpecifier | BinaryOrOctalSpecifier | ContainsSeparator,
-  }
-
-  export interface NumericLiteral extends LiteralExpression, Declaration {
-    kind: SyntaxKind.NumericLiteral;
-    numericLiteralFlags: TokenFlags;
-  }
-
-  export interface BigIntLiteral extends LiteralExpression {
-    kind: SyntaxKind.BigIntLiteral;
   }
 
   export interface TemplateHead extends TemplateLiteralLikeNode {
@@ -1882,8 +1861,6 @@ namespace qnr {
     _optionalChainBrand: any;
   }
 
-  // NOTE: MetaProperty is really a MemberExpression, but we consider it a PrimaryExpression
-  //       for the same reasons we treat NewExpression as a PrimaryExpression.
   export interface MetaProperty extends PrimaryExpression {
     kind: SyntaxKind.MetaProperty;
     keywordToken: SyntaxKind.NewKeyword | SyntaxKind.ImportKeyword;
@@ -1895,7 +1872,6 @@ namespace qnr {
     name: Identifier & { escapedText: __String & 'meta' };
   }
 
-  /// A JSX expression of the form <TagName attrs>...</TagName>
   export interface JsxElement extends PrimaryExpression {
     kind: SyntaxKind.JsxElement;
     openingElement: JsxOpeningElement;
@@ -1903,11 +1879,8 @@ namespace qnr {
     closingElement: JsxClosingElement;
   }
 
-  /// Either the opening tag in a <Tag>...</Tag> pair or the lone <Tag /> in a self-closing form
   export type JsxOpeningLikeElement = JsxSelfClosingElement | JsxOpeningElement;
-
   export type JsxAttributeLike = JsxAttribute | JsxSpreadAttribute;
-
   export type JsxTagNameExpression = Identifier | ThisExpression | JsxTagNamePropertyAccess;
 
   export interface JsxTagNamePropertyAccess extends PropertyAccessExpression {
@@ -1919,7 +1892,6 @@ namespace qnr {
     parent: JsxOpeningLikeElement;
   }
 
-  /// The opening element of a <Tag>...</Tag> JsxElement
   export interface JsxOpeningElement extends Expression {
     kind: SyntaxKind.JsxOpeningElement;
     parent: JsxElement;
@@ -1928,7 +1900,6 @@ namespace qnr {
     attributes: JsxAttributes;
   }
 
-  /// A JSX expression of the form <TagName attrs />
   export interface JsxSelfClosingElement extends PrimaryExpression {
     kind: SyntaxKind.JsxSelfClosingElement;
     tagName: JsxTagNameExpression;
@@ -1936,7 +1907,6 @@ namespace qnr {
     attributes: JsxAttributes;
   }
 
-  /// A JSX expression of the form <>...</>
   export interface JsxFragment extends PrimaryExpression {
     kind: SyntaxKind.JsxFragment;
     openingFragment: JsxOpeningFragment;
@@ -1944,13 +1914,11 @@ namespace qnr {
     closingFragment: JsxClosingFragment;
   }
 
-  /// The opening element of a <>...</> JsxFragment
   export interface JsxOpeningFragment extends Expression {
     kind: SyntaxKind.JsxOpeningFragment;
     parent: JsxFragment;
   }
 
-  /// The closing element of a <>...</> JsxFragment
   export interface JsxClosingFragment extends Expression {
     kind: SyntaxKind.JsxClosingFragment;
     parent: JsxFragment;
@@ -1960,7 +1928,6 @@ namespace qnr {
     kind: SyntaxKind.JsxAttribute;
     parent: JsxAttributes;
     name: Identifier;
-    /// JSX attribute initializers are optional; <X y /> is sugar for <X y={true} />
     initializer?: StringLiteral | JsxExpression;
   }
 
@@ -1981,12 +1948,6 @@ namespace qnr {
     parent: JsxElement | JsxAttributeLike;
     dotDotDotToken?: Token<SyntaxKind.Dot3Token>;
     expression?: Expression;
-  }
-
-  export interface JsxText extends LiteralLikeNode {
-    kind: SyntaxKind.JsxText;
-    containsOnlyTriviaWhiteSpaces: boolean;
-    parent: JsxElement;
   }
 
   export type JsxChild = JsxText | JsxExpression | JsxElement | JsxSelfClosingElement | JsxFragment;

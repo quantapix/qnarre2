@@ -442,7 +442,7 @@ namespace qnr {
     if (
       !isSynthesized(node) &&
       node.parent &&
-      !((isNumericLiteral(node) && node.numericLiteralFlags & TokenFlags.ContainsSeparator) || isBigIntLiteral(node))
+      !((NumericLiteral.kind(node) && node.numericLiteralFlags & TokenFlags.ContainsSeparator) || BigIntLiteral.kind(node))
     ) {
       return getSourceTextOfNodeFromSourceFile(sourceFile, node);
     }
@@ -512,7 +512,7 @@ namespace qnr {
   }
 
   export function isNonGlobalAmbientModule(node: Node): node is ModuleDeclaration & { name: StringLiteral } {
-    return isModuleDeclaration(node) && isStringLiteral(node.name);
+    return isModuleDeclaration(node) && StringLiteral.kind(node.name);
   }
 
   export function isEffectiveModuleDeclaration(node: Node) {
@@ -903,7 +903,7 @@ namespace qnr {
   }
 
   export function isLiteralImportTypeNode(n: Node): n is LiteralImportTypeNode {
-    return isImportTypeNode(n) && isLiteralTypeNode(n.argument) && isStringLiteral(n.argument.literal);
+    return isImportTypeNode(n) && isLiteralTypeNode(n.argument) && StringLiteral.kind(n.argument.literal);
   }
 
   export function isPrologueDirective(node: Node): node is PrologueDirective {
@@ -1236,7 +1236,7 @@ namespace qnr {
   ): StringLiteral | undefined {
     return firstDefined(getTsConfigPropArray(tsConfigSourceFile, propKey), (property) =>
       isArrayLiteralExpression(property.initializer)
-        ? find(property.initializer.elements, (element): element is StringLiteral => isStringLiteral(element) && element.text === elementValue)
+        ? find(property.initializer.elements, (element): element is StringLiteral => StringLiteral.kind(element) && element.text === elementValue)
         : undefined
     );
   }
@@ -2001,7 +2001,7 @@ namespace qnr {
       return node.name;
     }
     const arg = skipParentheses(node.argumentExpression);
-    if (isNumericLiteral(arg) || isStringLiteralLike(arg)) {
+    if (NumericLiteral.kind(arg) || isStringLiteralLike(arg)) {
       return arg;
     }
     return node;
@@ -2015,7 +2015,7 @@ namespace qnr {
       if (isIdentifier(name)) {
         return name.escapedText;
       }
-      if (isStringLiteralLike(name) || isNumericLiteral(name)) {
+      if (isStringLiteralLike(name) || NumericLiteral.kind(name)) {
         return escapeLeadingUnderscores(name.text);
       }
     }
@@ -2118,7 +2118,7 @@ namespace qnr {
       case SyntaxKind.CallExpression:
         return isImportCall(node.parent) || isRequireCall(node.parent, /*checkArg*/ false) ? (node.parent as RequireOrImportCall) : undefined;
       case SyntaxKind.LiteralType:
-        assert(isStringLiteral(node));
+        assert(StringLiteral.kind(node));
         return tryCast(node.parent.parent, isImportTypeNode) as ValidImportTypeNode | undefined;
       default:
         return;
@@ -2825,14 +2825,14 @@ namespace qnr {
   }
 
   export function isStringOrNumericLiteralLike(node: Node): node is StringLiteralLike | NumericLiteral {
-    return isStringLiteralLike(node) || isNumericLiteral(node);
+    return isStringLiteralLike(node) || NumericLiteral.kind(node);
   }
 
   export function isSignedNumericLiteral(node: Node): node is PrefixUnaryExpression & { operand: NumericLiteral } {
     return (
       isPrefixUnaryExpression(node) &&
       (node.operator === SyntaxKind.PlusToken || node.operator === SyntaxKind.MinusToken) &&
-      isNumericLiteral(node.operand)
+      NumericLiteral.kind(node.operand)
     );
   }
 
@@ -4846,7 +4846,7 @@ namespace qnr {
   }
 
   export function showModuleSpecifier({ moduleSpecifier }: ImportDeclaration): string {
-    return isStringLiteral(moduleSpecifier) ? moduleSpecifier.text : getTextOfNode(moduleSpecifier);
+    return StringLiteral.kind(moduleSpecifier) ? moduleSpecifier.text : getTextOfNode(moduleSpecifier);
   }
 
   export function getLastChild(node: Node): Node | undefined {

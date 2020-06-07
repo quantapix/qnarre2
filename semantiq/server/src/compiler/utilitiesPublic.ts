@@ -487,24 +487,8 @@ namespace qnr {
     return n.constraint ? n.constraint : isJSDocTemplateTag(n.parent) && n === n.parent.typeParameters[0] ? n.parent.constraint : undefined;
   }
 
-  export function isNumericLiteral(n: Node): n is NumericLiteral {
-    return n.kind === SyntaxKind.NumericLiteral;
-  }
-
-  export function isBigIntLiteral(n: Node): n is BigIntLiteral {
-    return n.kind === SyntaxKind.BigIntLiteral;
-  }
-
-  export function isStringLiteral(n: Node): n is StringLiteral {
-    return n.kind === SyntaxKind.StringLiteral;
-  }
-
   export function isJsxText(n: Node): n is JsxText {
     return n.kind === SyntaxKind.JsxText;
-  }
-
-  export function isRegularExpressionLiteral(n: Node): n is RegularExpressionLiteral {
-    return n.kind === SyntaxKind.RegularExpressionLiteral;
   }
 
   export function isNoSubstitutionTemplateLiteral(n: Node): n is NoSubstitutionTemplateLiteral {

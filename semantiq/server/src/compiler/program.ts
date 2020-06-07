@@ -2293,7 +2293,7 @@ namespace qnr {
           // only through top - level external module names. Relative external module names are not permitted.
           if (
             moduleNameExpr &&
-            isStringLiteral(moduleNameExpr) &&
+            StringLiteral.kind(moduleNameExpr) &&
             moduleNameExpr.text &&
             (!inAmbientModule || !isExternalModuleNameRelative(moduleNameExpr.text))
           ) {
