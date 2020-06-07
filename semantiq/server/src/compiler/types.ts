@@ -2764,26 +2764,17 @@ namespace qnr {
     name?: string;
   }
 
-  /**
-   * Subset of properties from SourceFile that are used in multiple utility functions
-   */
   export interface SourceFileLike {
     readonly text: string;
     lineMap?: readonly number[];
-    getPositionOfLineAndCharacter?(line: number, character: number, allowEdits?: true): number;
+    getPosOf?(line: number, character: number, allowEdits?: true): number;
   }
 
   export interface RedirectInfo {
-    /** Source file this redirects to. */
     readonly redirectTarget: SourceFile;
-    /**
-     * Source file for the duplicate package. This will not be used by the Program,
-     * but we need to keep this around so we can watch for changes in underlying.
-     */
     readonly unredirected: SourceFile;
   }
 
-  // Source files are declarations when they are external modules.
   export interface SourceFile extends Declaration {
     kind: SyntaxKind.SourceFile;
     statements: NodeArray<Statement>;
@@ -2949,7 +2940,7 @@ namespace qnr {
     parsedSourceMap?: RawSourceMap | false | undefined;
     // Adding this to satisfy services, fix later
 
-    getLineAndCharacterOfPosition(pos: number): LineAndCharacter;
+    getLineAndCharOf(pos: number): LineAndCharacter;
   }
 
   export type UnparsedSourceText = UnparsedPrepend | UnparsedTextLike;

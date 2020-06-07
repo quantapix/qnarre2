@@ -87,11 +87,17 @@ namespace qnr {
     }
   }
 
-  export namespace SourceFile {
-    export function positionsAreOnSameLine(pos1: number, pos2: number, sourceFile: SourceFile) {
-      return getLinesBetweenPositions(sourceFile, pos1, pos2) === 0;
-    }
+  export interface SourceFileLike {
+    readonly text: string;
+    lineMap?: readonly number[];
+    getPosOf?(line: number, character: number, allowEdits?: true): number;
   }
+
+  export interface SourceFile {
+    text: string;
+  }
+
+  export namespace SourceFile {}
 
   export class TextRange implements Range {
     constructor(public pos = 0, public end = 0) {

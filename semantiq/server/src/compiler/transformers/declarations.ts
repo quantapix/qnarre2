@@ -1159,10 +1159,7 @@ namespace qnr {
         }
       }
 
-      if (
-        isTupleTypeNode(input) &&
-        getLineAndCharacterOfPosition(currentSourceFile, input.pos).line === getLineAndCharacterOfPosition(currentSourceFile, input.end).line
-      ) {
+      if (isTupleTypeNode(input) && getLineAndCharOf(currentSourceFile, input.pos).line === getLineAndCharOf(currentSourceFile, input.end).line) {
         setEmitFlags(input, EmitFlags.SingleLine);
       }
 

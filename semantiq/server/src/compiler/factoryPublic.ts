@@ -3375,7 +3375,7 @@ namespace qnr {
     node.prologues = emptyArray;
     node.referencedFiles = emptyArray;
     node.libReferenceDirectives = emptyArray;
-    node.getLineAndCharacterOfPosition = (pos) => getLineAndCharacterOfPosition(node, pos);
+    node.getLineAndCharOf = (pos) => getLineAndCharOf(node, pos);
     return node;
   }
 

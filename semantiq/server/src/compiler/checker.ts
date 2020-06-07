@@ -6516,11 +6516,7 @@ namespace qnr {
             }
           }
 
-          if (
-            file &&
-            isTupleTypeNode(node) &&
-            getLineAndCharacterOfPosition(file, node.pos).line === getLineAndCharacterOfPosition(file, node.end).line
-          ) {
+          if (file && isTupleTypeNode(node) && getLineAndCharOf(file, node.pos).line === getLineAndCharOf(file, node.end).line) {
             setEmitFlags(node, EmitFlags.SingleLine);
           }
 
@@ -41251,8 +41247,8 @@ namespace qnr {
       }
 
       const { equalsGreaterThanToken } = node;
-      const startLine = getLineAndCharacterOfPosition(file, equalsGreaterThanToken.pos).line;
-      const endLine = getLineAndCharacterOfPosition(file, equalsGreaterThanToken.end).line;
+      const startLine = getLineAndCharOf(file, equalsGreaterThanToken.pos).line;
+      const endLine = getLineAndCharOf(file, equalsGreaterThanToken.end).line;
       return startLine !== endLine && grammarErrorOnNode(equalsGreaterThanToken, Diagnostics.Line_terminator_not_permitted_before_arrow);
     }
 

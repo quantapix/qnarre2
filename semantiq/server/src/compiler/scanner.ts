@@ -400,7 +400,7 @@ namespace qnr {
     }
   }
 
-  export function computeLineStarts(t: string) {
+  export function calcLineStarts(t: string) {
     const ss = [] as number[];
     let s = 0;
     let pos = 0;
@@ -427,35 +427,13 @@ namespace qnr {
     return ss;
   }
 
-  export function getLineStarts(s: SourceFileLike): readonly number[] {
-    return s.lineMap || (s.lineMap = computeLineStarts(s.text));
-  }
-
-  export function computeLineOfPosition(starts: readonly number[], pos: number, lowerBound?: number) {
-    let line = binarySearch(starts, pos, identity, compareValues, lowerBound);
-    if (line < 0) {
-      line = ~line - 1;
-      Debug.assert(line !== -1, 'position before beginning of file');
-    }
-    return line;
-  }
-
-  export function computeLineAndCharacterOfPosition(starts: readonly number[], pos: number): LineAndCharacter {
-    const line = computeLineOfPosition(starts, pos);
-    return { line, char: pos - starts[line] };
-  }
-
-  export function getLineAndCharacterOfPosition(s: SourceFileLike, pos: number) {
-    return computeLineAndCharacterOfPosition(getLineStarts(s), pos);
-  }
-
-  function computePositionOfLineAndCharacter(starts: readonly number[], line: number, char: number, debug?: string, edits?: true) {
+  function calcPosOf(starts: readonly number[], line: number, char: number, debug?: string, edits?: true) {
     if (line < 0 || line >= starts.length) {
       if (edits) line = line < 0 ? 0 : line >= starts.length ? starts.length - 1 : line;
       else {
         Debug.fail(
           `Bad line number. Line: ${line}, starts.length: ${starts.length} , line map is correct? ${
-            debug !== undefined ? arraysEqual(starts, computeLineStarts(debug)) : 'unknown'
+            debug !== undefined ? arraysEqual(starts, calcLineStarts(debug)) : 'unknown'
           }`
         );
       }
@@ -467,23 +445,74 @@ namespace qnr {
     return p;
   }
 
-  export function getPositionOfLineAndCharacter(s: SourceFileLike, line: number, char: number): number;
-  export function getPositionOfLineAndCharacter(s: SourceFileLike, line: number, char: number, edits?: true): number;
-  export function getPositionOfLineAndCharacter(s: SourceFileLike, line: number, char: number, edits?: true): number {
-    return s.getPositionOfLineAndCharacter
-      ? s.getPositionOfLineAndCharacter(line, char, edits)
-      : computePositionOfLineAndCharacter(getLineStarts(s), line, char, s.text, edits);
+  export function calcLineOf(starts: readonly number[], pos: number, lowerBound?: number) {
+    let line = binarySearch(starts, pos, identity, compareValues, lowerBound);
+    if (line < 0) {
+      line = ~line - 1;
+      Debug.assert(line !== -1, 'position before beginning of file');
+    }
+    return line;
   }
 
-  export function getLinesBetweenPositions(s: SourceFileLike, pos1: number, pos2: number) {
-    if (pos1 === pos2) return 0;
-    const ss = getLineStarts(s);
-    const min = Math.min(pos1, pos2);
-    const isNegative = min === pos2;
-    const max = isNegative ? pos1 : pos2;
-    const lower = computeLineOfPosition(ss, min);
-    const upper = computeLineOfPosition(ss, max, lower);
-    return isNegative ? lower - upper : upper - lower;
+  export function calcLineAndCharOf(starts: readonly number[], pos: number): LineAndCharacter {
+    const line = calcLineOf(starts, pos);
+    return { line, char: pos - starts[line] };
+  }
+
+  export namespace SourceFile {
+    export function getLineStarts(s: SourceFileLike): readonly number[] {
+      return s.lineMap || (s.lineMap = calcLineStarts(s.text));
+    }
+    export function getLineAndCharOf(s: SourceFileLike, pos: number) {
+      return calcLineAndCharOf(getLineStarts(s), pos);
+    }
+    export function getPosOf(s: SourceFileLike, line: number, char: number): number;
+    export function getPosOf(s: SourceFileLike, line: number, char: number, edits?: true): number;
+    export function getPosOf(s: SourceFileLike, line: number, char: number, edits?: true): number {
+      return s.getPosOf ? s.getPosOf(line, char, edits) : calcPosOf(getLineStarts(s), line, char, s.text, edits);
+    }
+    export function getLinesBetween(s: SourceFileLike, p1: number, p2: number) {
+      if (p1 === p2) return 0;
+      const ss = getLineStarts(s);
+      const min = Math.min(p1, p2);
+      const isNegative = min === p2;
+      const max = isNegative ? p1 : p2;
+      const lower = calcLineOf(ss, min);
+      const upper = calcLineOf(ss, max, lower);
+      return isNegative ? lower - upper : upper - lower;
+    }
+    export function positionsAreOnSameLine(s: SourceFile, p1: number, p2: number) {
+      return getLinesBetween(s, p1, p2) === 0;
+    }
+    export function getLinesBetweenRangeEndAndRangeStart(r1: TextRange, r2: TextRange, s: SourceFile, includeSecondRangeComments: boolean) {
+      const range2Start = getStartPositionOfRange(r2, s, includeSecondRangeComments);
+      return getLinesBetween(s, r1.end, range2Start);
+    }
+    export function getLinesBetweenRangeEndPositions(r1: TextRange, r2: TextRange, s: SourceFile) {
+      return getLinesBetween(s, r1.end, r2.end);
+    }
+    export function isNodeArrayMultiLine(list: NodeArray<Node>, s: SourceFile) {
+      return !positionsAreOnSameLine(list.pos, list.end, s);
+    }
+    export function getLinesBetweenPositionAndPrecedingNonWhitespaceCharacter(
+      pos: number,
+      stopPos: number,
+      s: SourceFile,
+      includeComments?: boolean
+    ) {
+      const startPos = skipTrivia(s.text, pos, /*stopAfterLineBreak*/ false, includeComments);
+      const prevPos = getPreviousNonWhitespacePosition(startPos, stopPos, s);
+      return getLinesBetween(s, prevPos ?? stopPos, startPos);
+    }
+    export function getLinesBetweenPositionAndNextNonWhitespaceCharacter(pos: number, stopPos: number, s: SourceFile, includeComments?: boolean) {
+      const nextPos = skipTrivia(s.text, pos, /*stopAfterLineBreak*/ false, includeComments);
+      return getLinesBetween(s, pos, Math.min(stopPos, nextPos));
+    }
+    function getPreviousNonWhitespacePosition(pos: number, stopPos = 0, s: SourceFile) {
+      while (pos-- > stopPos) {
+        if (!isWhiteSpaceLike(s.text.charCodeAt(pos))) return pos;
+      }
+    }
   }
 
   function iterateCommentRanges<T, U>(

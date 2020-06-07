@@ -5016,7 +5016,7 @@ namespace qnr {
 
     function writeSynthesizedComment(comment: SynthesizedComment) {
       const text = formatSynthesizedComment(comment);
-      const lineMap = comment.kind === SyntaxKind.MultiLineCommentTrivia ? computeLineStarts(text) : undefined;
+      const lineMap = comment.kind === SyntaxKind.MultiLineCommentTrivia ? calcLineStarts(text) : undefined;
       writeCommentRange(text, lineMap!, writer, 0, text.length, newLine);
     }
 
@@ -5253,8 +5253,8 @@ namespace qnr {
             writer.getColumn(),
             parsed,
             node.parent.sourceMapPath!,
-            node.parent.getLineAndCharacterOfPosition(node.pos),
-            node.parent.getLineAndCharacterOfPosition(node.end)
+            node.parent.getLineAndCharOf(node.pos),
+            node.parent.getLineAndCharOf(node.end)
           );
         }
         pipelinePhase(hint, node);
@@ -5300,7 +5300,7 @@ namespace qnr {
         return;
       }
 
-      const { line: sourceLine, character: sourceCharacter } = getLineAndCharacterOfPosition(sourceMapSource, pos);
+      const { line: sourceLine, character: sourceCharacter } = getLineAndCharOf(sourceMapSource, pos);
       sourceMapGenerator!.addMapping(
         writer.getLine(),
         writer.getColumn(),

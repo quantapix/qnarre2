@@ -358,7 +358,7 @@ namespace qnr {
     )}${host.getNewLine()}`;
 
     if (diagnostic.file) {
-      const { line, character } = getLineAndCharacterOfPosition(diagnostic.file, diagnostic.start!); // TODO: GH#18217
+      const { line, character } = getLineAndCharOf(diagnostic.file, diagnostic.start!); // TODO: GH#18217
       const fileName = diagnostic.file.fileName;
       const relativeFileName = convertToRelativePath(fileName, host.getCurrentDirectory(), (fileName) => host.getCanonicalFileName(fileName));
       return `${relativeFileName}(${line + 1},${character + 1}): ` + errorMessage;
@@ -405,9 +405,9 @@ namespace qnr {
     squiggleColor: ForegroundColorEscapeSequences,
     host: FormatDiagnosticsHost
   ) {
-    const { line: firstLine, character: firstLineChar } = getLineAndCharacterOfPosition(file, start);
-    const { line: lastLine, character: lastLineChar } = getLineAndCharacterOfPosition(file, start + length);
-    const lastLineInFile = getLineAndCharacterOfPosition(file, file.text.length).line;
+    const { line: firstLine, character: firstLineChar } = getLineAndCharOf(file, start);
+    const { line: lastLine, character: lastLineChar } = getLineAndCharOf(file, start + length);
+    const lastLineInFile = getLineAndCharOf(file, file.text.length).line;
 
     const hasMoreThanFiveLines = lastLine - firstLine >= 4;
     let gutterWidth = (lastLine + 1 + '').length;
@@ -425,8 +425,8 @@ namespace qnr {
         i = lastLine - 1;
       }
 
-      const lineStart = getPositionOfLineAndCharacter(file, i, 0);
-      const lineEnd = i < lastLineInFile ? getPositionOfLineAndCharacter(file, i + 1, 0) : file.text.length;
+      const lineStart = getPosOf(file, i, 0);
+      const lineEnd = i < lastLineInFile ? getPosOf(file, i + 1, 0) : file.text.length;
       let lineContent = file.text.slice(lineStart, lineEnd);
       lineContent = lineContent.replace(/\s+$/g, ''); // trim from end
       lineContent = lineContent.replace('\t', ' '); // convert tabs to single spaces
@@ -457,7 +457,7 @@ namespace qnr {
   }
 
   export function formatLocation(file: SourceFile, start: number, host: FormatDiagnosticsHost, color = formatColorAndReset) {
-    const { line: firstLine, character: firstLineChar } = getLineAndCharacterOfPosition(file, start); // TODO: GH#18217
+    const { line: firstLine, character: firstLineChar } = getLineAndCharOf(file, start); // TODO: GH#18217
     const relativeFileName = host
       ? convertToRelativePath(file.fileName, host.getCurrentDirectory(), (fileName) => host.getCanonicalFileName(fileName))
       : file.fileName;
@@ -1912,7 +1912,7 @@ namespace qnr {
 
       // Start out with the line just before the text
       const lineStarts = getLineStarts(file);
-      let line = computeLineAndCharacterOfPosition(lineStarts, start!).line - 1; // TODO: GH#18217
+      let line = calcLineAndCharOf(lineStarts, start!).line - 1; // TODO: GH#18217
       while (line >= 0) {
         // As soon as that line is known to have a comment directive, use that
         if (directives.markUsed(line)) {

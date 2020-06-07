@@ -321,7 +321,7 @@ namespace qnr {
   // This is a useful function for debugging purposes.
   export function nodePosToString(node: Node): string {
     const file = getSourceFileOfNode(node);
-    const loc = getLineAndCharacterOfPosition(file, node.pos);
+    const loc = getLineAndCharOf(file, node.pos);
     return `${file.fileName}(${loc.line + 1},${loc.character + 1})`;
   }
 
@@ -465,7 +465,7 @@ namespace qnr {
 
   export function createCommentDirectivesMap(sourceFile: SourceFile, commentDirectives: CommentDirective[]): CommentDirectivesMap {
     const directivesByLine = createMap(
-      commentDirectives.map((commentDirective) => [`${getLineAndCharacterOfPosition(sourceFile, commentDirective.range.end).line}`, commentDirective])
+      commentDirectives.map((commentDirective) => [`${getLineAndCharOf(sourceFile, commentDirective.range.end).line}`, commentDirective])
     );
 
     const usedLines = createMap<boolean>();
@@ -985,8 +985,8 @@ namespace qnr {
   function getErrorSpanForArrowFunction(sourceFile: SourceFile, node: ArrowFunction): TextSpan {
     const pos = skipTrivia(sourceFile.text, node.pos);
     if (node.body && node.body.kind === SyntaxKind.Block) {
-      const { line: startLine } = getLineAndCharacterOfPosition(sourceFile, node.body.pos);
-      const { line: endLine } = getLineAndCharacterOfPosition(sourceFile, node.body.end);
+      const { line: startLine } = getLineAndCharOf(sourceFile, node.body.pos);
+      const { line: endLine } = getLineAndCharOf(sourceFile, node.body.end);
       if (startLine < endLine) {
         // The arrow function spans multiple lines,
         // make the error span be the first line, inclusive.
@@ -3709,7 +3709,7 @@ namespace qnr {
     let hasTrailingComment = false;
 
     function updateLineCountAndPosFor(s: string) {
-      const lineStartsOfS = computeLineStarts(s);
+      const lineStartsOfS = calcLineStarts(s);
       if (lineStartsOfS.length > 1) {
         lineCount = lineCount + lineStartsOfS.length - 1;
         linePos = output.length - s.length + last(lineStartsOfS);
@@ -4081,11 +4081,11 @@ namespace qnr {
 
   export function getLineOfLocalPosition(sourceFile: SourceFile, pos: number) {
     const lineStarts = getLineStarts(sourceFile);
-    return computeLineOfPosition(lineStarts, pos);
+    return calcLineOf(lineStarts, pos);
   }
 
   export function getLineOfLocalPositionFromLineMap(lineMap: readonly number[], pos: number) {
-    return computeLineOfPosition(lineMap, pos);
+    return calcLineOf(lineMap, pos);
   }
 
   export function getFirstConstructorWithBody(node: ClassLikeDeclaration): (ConstructorDeclaration & { body: FunctionBody }) | undefined {
@@ -4370,7 +4370,7 @@ namespace qnr {
     newLine: string
   ) {
     if (text.charCodeAt(commentPos + 1) === Codes.asterisk) {
-      const firstCommentLineAndCharacter = computeLineAndCharacterOfPosition(lineMap, commentPos);
+      const firstCommentLineAndCharacter = calcLineAndCharOf(lineMap, commentPos);
       const lineCount = lineMap.length;
       let firstCommentLineIndent: number | undefined;
       for (let pos = commentPos, currentLine = firstCommentLineAndCharacter.line; pos < commentEnd; currentLine++) {
@@ -4890,6 +4890,7 @@ namespace qnr {
 
   const carriageReturnLineFeed = '\r\n';
   const lineFeed = '\n';
+
   export function getNewLineCharacter(options: CompilerOptions | PrinterOptions, getNewLine?: () => string): string {
     switch (options.newLine) {
       case NewLineKind.CarriageReturnLineFeed:
@@ -4898,53 +4899,6 @@ namespace qnr {
         return lineFeed;
     }
     return getNewLine ? getNewLine() : sys ? sys.newLine : carriageReturnLineFeed;
-  }
-
-  export function getLinesBetweenRangeEndAndRangeStart(
-    range1: TextRange,
-    range2: TextRange,
-    sourceFile: SourceFile,
-    includeSecondRangeComments: boolean
-  ) {
-    const range2Start = getStartPositionOfRange(range2, sourceFile, includeSecondRangeComments);
-    return getLinesBetweenPositions(sourceFile, range1.end, range2Start);
-  }
-
-  export function getLinesBetweenRangeEndPositions(range1: TextRange, range2: TextRange, sourceFile: SourceFile) {
-    return getLinesBetweenPositions(sourceFile, range1.end, range2.end);
-  }
-
-  export function isNodeArrayMultiLine(list: NodeArray<Node>, sourceFile: SourceFile): boolean {
-    return !positionsAreOnSameLine(list.pos, list.end, sourceFile);
-  }
-
-  export function getLinesBetweenPositionAndPrecedingNonWhitespaceCharacter(
-    pos: number,
-    stopPos: number,
-    sourceFile: SourceFile,
-    includeComments?: boolean
-  ) {
-    const startPos = skipTrivia(sourceFile.text, pos, /*stopAfterLineBreak*/ false, includeComments);
-    const prevPos = getPreviousNonWhitespacePosition(startPos, stopPos, sourceFile);
-    return getLinesBetweenPositions(sourceFile, prevPos ?? stopPos, startPos);
-  }
-
-  export function getLinesBetweenPositionAndNextNonWhitespaceCharacter(
-    pos: number,
-    stopPos: number,
-    sourceFile: SourceFile,
-    includeComments?: boolean
-  ) {
-    const nextPos = skipTrivia(sourceFile.text, pos, /*stopAfterLineBreak*/ false, includeComments);
-    return getLinesBetweenPositions(sourceFile, pos, Math.min(stopPos, nextPos));
-  }
-
-  function getPreviousNonWhitespacePosition(pos: number, stopPos = 0, sourceFile: SourceFile) {
-    while (pos-- > stopPos) {
-      if (!isWhiteSpaceLike(sourceFile.text.charCodeAt(pos))) {
-        return pos;
-      }
-    }
   }
 
   /**

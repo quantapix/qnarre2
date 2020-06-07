@@ -662,16 +662,13 @@ namespace qnr {
 
     function processMapping(mapping: Mapping): MappedPosition {
       const generatedPosition =
-        generatedFile !== undefined
-          ? getPositionOfLineAndCharacter(generatedFile, mapping.generatedLine, mapping.generatedCharacter, /*allowEdits*/ true)
-          : -1;
+        generatedFile !== undefined ? getPosOf(generatedFile, mapping.generatedLine, mapping.generatedCharacter, /*allowEdits*/ true) : -1;
       let source: string | undefined;
       let sourcePosition: number | undefined;
       if (isSourceMapping(mapping)) {
         const sourceFile = host.getSourceFileLike(sourceFileAbsolutePaths[mapping.sourceIndex]);
         source = map.sources[mapping.sourceIndex];
-        sourcePosition =
-          sourceFile !== undefined ? getPositionOfLineAndCharacter(sourceFile, mapping.sourceLine, mapping.sourceCharacter, /*allowEdits*/ true) : -1;
+        sourcePosition = sourceFile !== undefined ? getPosOf(sourceFile, mapping.sourceLine, mapping.sourceCharacter, /*allowEdits*/ true) : -1;
       }
       return {
         generatedPosition,
