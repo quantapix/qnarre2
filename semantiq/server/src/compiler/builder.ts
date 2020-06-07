@@ -195,14 +195,14 @@ namespace qnr {
       // Verify the sanity of old state
       if (!oldState!.currentChangedFilePath) {
         const affectedSignatures = oldState!.currentAffectedFilesSignatures;
-        Debug.assert(
+        assert(
           !oldState!.affectedFiles && (!affectedSignatures || !affectedSignatures.size),
           'Cannot reuse if only few affected files of currentChangedFile were iterated'
         );
       }
       const changedFilesSet = oldState!.changedFilesSet;
       if (canCopySemanticDiagnostics) {
-        Debug.assert(
+        assert(
           !changedFilesSet || !forEachKey(changedFilesSet, (path) => oldState!.semanticDiagnosticsPerFile!.has(path)),
           'Semantic diagnostics shouldnt be available for changed files'
         );
@@ -282,7 +282,7 @@ namespace qnr {
     } else if (oldCompilerOptions && compilerOptionsAffectEmit(compilerOptions, oldCompilerOptions)) {
       // Add all files to affectedFilesPendingEmit since emit changed
       newProgram.getSourceFiles().forEach((f) => addToAffectedFilesPendingEmit(state, f.resolvedPath, BuilderFileEmit.Full));
-      Debug.assert(!state.seenAffectedFiles || !state.seenAffectedFiles.size);
+      assert(!state.seenAffectedFiles || !state.seenAffectedFiles.size);
       state.seenAffectedFiles = state.seenAffectedFiles || createMap<true>();
     }
 
@@ -366,7 +366,7 @@ namespace qnr {
    * Verifies that source file is ok to be used in calls that arent handled by next
    */
   function assertSourceFileOkWithoutNextAffectedCall(state: BuilderProgramState, sourceFile: SourceFile | undefined) {
-    Debug.assert(
+    assert(
       !sourceFile ||
         !state.affectedFiles ||
         state.affectedFiles[state.affectedFilesIndex! - 1] !== sourceFile ||
@@ -423,7 +423,7 @@ namespace qnr {
       const program = Debug.checkDefined(state.program);
       const compilerOptions = program.getCompilerOptions();
       if (compilerOptions.outFile || compilerOptions.out) {
-        Debug.assert(!state.semanticDiagnosticsPerFile);
+        assert(!state.semanticDiagnosticsPerFile);
         return program;
       }
 
@@ -600,7 +600,7 @@ namespace qnr {
       }
     }
 
-    Debug.assert(!!state.currentAffectedFilesExportedModulesMap);
+    assert(!!state.currentAffectedFilesExportedModulesMap);
     const seenFileAndExportsOfFile = createMap<true>();
     // Go through exported modules from cache first
     // If exported modules has path, all files referencing file exported from are affected
@@ -660,7 +660,7 @@ namespace qnr {
       return true;
     }
 
-    Debug.assert(!!state.currentAffectedFilesExportedModulesMap);
+    assert(!!state.currentAffectedFilesExportedModulesMap);
     // Go through exported modules from cache first
     // If exported modules has path, all files referencing file exported from are affected
     if (
@@ -919,7 +919,7 @@ namespace qnr {
     diagnostics: readonly Diagnostic[],
     relativeToBuildInfo: (path: string) => string
   ): readonly ReusableDiagnostic[] {
-    Debug.assert(!!diagnostics.length);
+    assert(!!diagnostics.length);
     return diagnostics.map((diagnostic) => {
       const result: ReusableDiagnostic = convertToReusableDiagnosticRelatedInformation(diagnostic, relativeToBuildInfo);
       result.reportsUnnecessary = diagnostic.reportsUnnecessary;
@@ -969,10 +969,10 @@ namespace qnr {
     let newProgram: Program;
     let oldProgram: BuilderProgram;
     if (newProgramOrRootNames === undefined) {
-      Debug.assert(hostOrOptions === undefined);
+      assert(hostOrOptions === undefined);
       host = oldProgramOrHost as CompilerHost;
       oldProgram = configFileParsingDiagnosticsOrOldProgram as BuilderProgram;
-      Debug.assert(!!oldProgram);
+      assert(!!oldProgram);
       newProgram = oldProgram.getProgram();
     } else if (isArray(newProgramOrRootNames)) {
       oldProgram = configFileParsingDiagnosticsOrOldProgram as BuilderProgram;
@@ -1034,7 +1034,7 @@ namespace qnr {
     const builderProgram = createRedirectedBuilderProgram(state, configFileParsingDiagnostics);
     builderProgram.getState = () => state;
     builderProgram.backupState = () => {
-      Debug.assert(backupState === undefined);
+      assert(backupState === undefined);
       backupState = cloneBuilderProgramState(state);
     };
     builderProgram.restoreState = () => {
@@ -1219,7 +1219,7 @@ namespace qnr {
       assertSourceFileOkWithoutNextAffectedCall(state, sourceFile);
       const compilerOptions = Debug.checkDefined(state.program).getCompilerOptions();
       if (compilerOptions.outFile || compilerOptions.out) {
-        Debug.assert(!state.semanticDiagnosticsPerFile);
+        assert(!state.semanticDiagnosticsPerFile);
         // We dont need to cache the diagnostics just return them from program
         return Debug.checkDefined(state.program).getSemanticDiagnostics(sourceFile, cancellationToken);
       }

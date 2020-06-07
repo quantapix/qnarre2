@@ -1,4 +1,12 @@
 namespace qnr {
+  export function isSynthesized(x: number): boolean;
+  export function isSynthesized(r: QRange): boolean;
+  export function isSynthesized(x: QRange | number) {
+    //  x === undefined || x === null || isNaN(x) || x < 0;
+    if (typeof x === 'number') return !(x >= 0);
+    return isSynthesized(x.pos) || isSynthesized(x.end);
+  }
+
   export function isLineBreak(c: number) {
     return c === Codes.lineFeed || c === Codes.carriageReturn || c === Codes.lineSeparator || c === Codes.paragraphSeparator;
   }
@@ -285,7 +293,7 @@ namespace qnr {
   const mergeMarkerLength = '<<<<<<<'.length;
 
   function isConflictMarkerTrivia(t: string, pos: number) {
-    Debug.assert(pos >= 0);
+    assert(pos >= 0);
     if (pos === 0 || isLineBreak(t.charCodeAt(pos - 1))) {
       const c = t.charCodeAt(pos);
       if (pos + mergeMarkerLength < t.length) {
@@ -307,7 +315,7 @@ namespace qnr {
         pos++;
       }
     } else {
-      Debug.assert(c === Codes.bar || c === Codes.equals);
+      assert(c === Codes.bar || c === Codes.equals);
       while (pos < len) {
         const c2 = t.charCodeAt(pos);
         if ((c2 === Codes.equals || c2 === Codes.greaterThan) && c2 !== c && isConflictMarkerTrivia(t, pos)) break;
@@ -325,7 +333,7 @@ namespace qnr {
   }
 
   function isShebangTrivia(t: string, pos: number) {
-    Debug.assert(pos === 0);
+    assert(pos === 0);
     return shebangTriviaRegex.test(t);
   }
 
@@ -427,6 +435,20 @@ namespace qnr {
     return ss;
   }
 
+  export function calcLineOf(starts: readonly number[], pos: number, lowerBound?: number) {
+    let line = binarySearch(starts, pos, identity, compareValues, lowerBound);
+    if (line < 0) {
+      line = ~line - 1;
+      assert(line !== -1, 'position before beginning of file');
+    }
+    return line;
+  }
+
+  export function calcLineAndCharOf(starts: readonly number[], pos: number): LineAndCharacter {
+    const line = calcLineOf(starts, pos);
+    return { line, char: pos - starts[line] };
+  }
+
   function calcPosOf(starts: readonly number[], line: number, char: number, debug?: string, edits?: true) {
     if (line < 0 || line >= starts.length) {
       if (edits) line = line < 0 ? 0 : line >= starts.length ? starts.length - 1 : line;
@@ -440,78 +462,81 @@ namespace qnr {
     }
     const p = starts[line] + char;
     if (edits) return p > starts[line + 1] ? starts[line + 1] : typeof debug === 'string' && p > debug.length ? debug.length : p;
-    if (line < starts.length - 1) Debug.assert(p < starts[line + 1]);
-    else if (debug !== undefined) Debug.assert(p <= debug.length);
+    if (line < starts.length - 1) assert(p < starts[line + 1]);
+    else if (debug !== undefined) assert(p <= debug.length);
     return p;
   }
 
-  export function calcLineOf(starts: readonly number[], pos: number, lowerBound?: number) {
-    let line = binarySearch(starts, pos, identity, compareValues, lowerBound);
-    if (line < 0) {
-      line = ~line - 1;
-      Debug.assert(line !== -1, 'position before beginning of file');
+  export class SourceFile implements SourceFileLike {
+    lineStarts(): readonly number[] {
+      return this.lineMap || (this.lineMap = calcLineStarts(this.text));
     }
-    return line;
-  }
-
-  export function calcLineAndCharOf(starts: readonly number[], pos: number): LineAndCharacter {
-    const line = calcLineOf(starts, pos);
-    return { line, char: pos - starts[line] };
-  }
-
-  export namespace SourceFile {
-    export function getLineStarts(s: SourceFileLike): readonly number[] {
-      return s.lineMap || (s.lineMap = calcLineStarts(s.text));
+    lineAndCharOf(pos: number) {
+      return calcLineAndCharOf(this.lineStarts(), pos);
     }
-    export function getLineAndCharOf(s: SourceFileLike, pos: number) {
-      return calcLineAndCharOf(getLineStarts(s), pos);
+    posOf(line: number, char: number): number;
+    posOf(line: number, char: number, edits?: true): number;
+    posOf(line: number, char: number, edits?: true): number {
+      return calcPosOf(this.lineStarts(), line, char, this.text, edits);
     }
-    export function getPosOf(s: SourceFileLike, line: number, char: number): number;
-    export function getPosOf(s: SourceFileLike, line: number, char: number, edits?: true): number;
-    export function getPosOf(s: SourceFileLike, line: number, char: number, edits?: true): number {
-      return s.getPosOf ? s.getPosOf(line, char, edits) : calcPosOf(getLineStarts(s), line, char, s.text, edits);
-    }
-    export function getLinesBetween(s: SourceFileLike, p1: number, p2: number) {
-      if (p1 === p2) return 0;
-      const ss = getLineStarts(s);
-      const min = Math.min(p1, p2);
-      const isNegative = min === p2;
-      const max = isNegative ? p1 : p2;
-      const lower = calcLineOf(ss, min);
-      const upper = calcLineOf(ss, max, lower);
-      return isNegative ? lower - upper : upper - lower;
-    }
-    export function positionsAreOnSameLine(s: SourceFile, p1: number, p2: number) {
-      return getLinesBetween(s, p1, p2) === 0;
-    }
-    export function getLinesBetweenRangeEndAndRangeStart(r1: TextRange, r2: TextRange, s: SourceFile, includeSecondRangeComments: boolean) {
-      const range2Start = getStartPositionOfRange(r2, s, includeSecondRangeComments);
-      return getLinesBetween(s, r1.end, range2Start);
-    }
-    export function getLinesBetweenRangeEndPositions(r1: TextRange, r2: TextRange, s: SourceFile) {
-      return getLinesBetween(s, r1.end, r2.end);
-    }
-    export function isNodeArrayMultiLine(list: NodeArray<Node>, s: SourceFile) {
-      return !positionsAreOnSameLine(list.pos, list.end, s);
-    }
-    export function getLinesBetweenPositionAndPrecedingNonWhitespaceCharacter(
-      pos: number,
-      stopPos: number,
-      s: SourceFile,
-      includeComments?: boolean
-    ) {
-      const startPos = skipTrivia(s.text, pos, /*stopAfterLineBreak*/ false, includeComments);
-      const prevPos = getPreviousNonWhitespacePosition(startPos, stopPos, s);
-      return getLinesBetween(s, prevPos ?? stopPos, startPos);
-    }
-    export function getLinesBetweenPositionAndNextNonWhitespaceCharacter(pos: number, stopPos: number, s: SourceFile, includeComments?: boolean) {
-      const nextPos = skipTrivia(s.text, pos, /*stopAfterLineBreak*/ false, includeComments);
-      return getLinesBetween(s, pos, Math.min(stopPos, nextPos));
-    }
-    function getPreviousNonWhitespacePosition(pos: number, stopPos = 0, s: SourceFile) {
-      while (pos-- > stopPos) {
-        if (!isWhiteSpaceLike(s.text.charCodeAt(pos))) return pos;
+    linesBetween(p1: number, p2: number): number;
+    linesBetween(r1: QRange, r2: QRange, comments: boolean): number;
+    linesBetween(x1: QRange | number, x2: QRange | number, comments = false) {
+      if (typeof x1 === 'number') {
+        if (x1 === x2) return 0;
+        assert(typeof x2 === 'number');
+        const ss = this.lineStarts();
+        const min = Math.min(x1, x2);
+        const isNegative = min === x2;
+        const max = isNegative ? x1 : x2;
+        const lower = calcLineOf(ss, min);
+        const upper = calcLineOf(ss, max, lower);
+        return isNegative ? lower - upper : upper - lower;
       }
+      const s = this.startPos(x2 as QRange, comments);
+      return this.linesBetween(x1.end, s);
+    }
+    linesBetweenEnds(r1: QRange, r2: QRange) {
+      return this.linesBetween(r1.end, r2.end);
+    }
+    linesToPrevNonWhitespace(pos: number, stop: number, comments = false) {
+      const s = skipTrivia(this.text, pos, /*stopAfterLineBreak*/ false, comments);
+      const p = this.prevNonWhitespacePos(s, stop);
+      return this.linesBetween(p ?? stop, s);
+    }
+    linesToNextNonWhitespace(pos: number, stop: number, comments = false) {
+      const s = skipTrivia(this.text, pos, /*stopAfterLineBreak*/ false, comments);
+      return this.linesBetween(pos, Math.min(stop, s));
+    }
+    startPos(r: QRange, comments = false) {
+      return isSynthesized(r.pos) ? -1 : skipTrivia(this.text, r.pos, /*stopAfterLineBreak*/ false, comments);
+    }
+    prevNonWhitespacePos(pos: number, stop = 0) {
+      while (pos-- > stop) {
+        if (!isWhiteSpaceLike(this.text.charCodeAt(pos))) return pos;
+      }
+      return;
+    }
+    onSameLine(p1: number, p2: number) {
+      return this.linesBetween(p1, p2) === 0;
+    }
+    onSingleLine(r: QRange) {
+      return this.onSameLine(r.pos, r.end);
+    }
+    multiLine(a: NodeArray<Node>) {
+      return !this.onSameLine(a.pos, a.end);
+    }
+    startsOnSameLine(r1: QRange, r2: QRange) {
+      return this.onSameLine(this.startPos(r1), this.startPos(r2));
+    }
+    endsOnSameLine(r1: QRange, r2: QRange) {
+      return this.onSameLine(r1.end, r2.end);
+    }
+    startOnSameLineAsEnd(r1: QRange, r2: QRange) {
+      return this.onSameLine(this.startPos(r1), r2.end);
+    }
+    endOnSameLineAsStart(r1: QRange, r2: QRange) {
+      return this.onSameLine(r1.end, this.startPos(r2));
     }
   }
 
@@ -815,7 +840,7 @@ namespace qnr {
     }
 
     function setTextPos(p: number) {
-      Debug.assert(p >= 0);
+      assert(p >= 0);
       pos = p;
       startPos = p;
       tokPos = p;
@@ -1108,7 +1133,7 @@ namespace qnr {
         }
         pos++;
       }
-      Debug.assert(r !== undefined);
+      assert(r !== undefined);
       tokValue = v;
       return r;
     }
@@ -1731,7 +1756,7 @@ namespace qnr {
     }
 
     function reScanTemplateToken(isTagged: boolean): SyntaxKind {
-      Debug.assert(token === SyntaxKind.CloseBraceToken, "'reScanTemplateToken' should only be called on a '}'");
+      assert(token === SyntaxKind.CloseBraceToken, "'reScanTemplateToken' should only be called on a '}'");
       pos = tokPos;
       return (token = scanTemplateAndSetTokenValue(isTagged));
     }
@@ -1755,7 +1780,7 @@ namespace qnr {
     }
 
     function reScanQuestionToken(): SyntaxKind {
-      Debug.assert(token === SyntaxKind.Question2Token, "'reScanQuestionToken' should only be called on a '??'");
+      assert(token === SyntaxKind.Question2Token, "'reScanQuestionToken' should only be called on a '??'");
       pos = tokPos + 1;
       return (token = SyntaxKind.QuestionToken);
     }

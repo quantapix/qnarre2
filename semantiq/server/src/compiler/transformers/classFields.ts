@@ -183,7 +183,7 @@ namespace qnr {
     }
 
     function visitPropertyDeclaration(node: PropertyDeclaration) {
-      Debug.assert(!some(node.decorators));
+      assert(!some(node.decorators));
       if (!shouldTransformPrivateFields && isPrivateIdentifier(node.name)) {
         // Initializer is elided as the field is initialized in transformConstructor.
         return updateProperty(

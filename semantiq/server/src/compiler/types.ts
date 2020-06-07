@@ -2767,7 +2767,7 @@ namespace qnr {
   export interface SourceFileLike {
     readonly text: string;
     lineMap?: readonly number[];
-    getPosOf?(line: number, character: number, allowEdits?: true): number;
+    posOf?(line: number, character: number, allowEdits?: true): number;
   }
 
   export interface RedirectInfo {
@@ -2940,7 +2940,7 @@ namespace qnr {
     parsedSourceMap?: RawSourceMap | false | undefined;
     // Adding this to satisfy services, fix later
 
-    getLineAndCharOf(pos: number): LineAndCharacter;
+    lineAndCharOf(pos: number): LineAndCharacter;
   }
 
   export type UnparsedSourceText = UnparsedPrepend | UnparsedTextLike;

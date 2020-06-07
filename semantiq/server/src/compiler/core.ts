@@ -1,4 +1,19 @@
 namespace qnr {
+  export function fail(m?: string, mark?: AnyFunction): never {
+    debugger;
+    const e = new Error(m ? `Debug Failure. ${m}` : 'Debug Failure.');
+    Error.captureStackTrace(e, mark || fail);
+    throw e;
+  }
+
+  export function assert(cond: unknown, m?: string, info?: string | (() => string), mark?: AnyFunction): asserts cond {
+    if (!cond) {
+      m = m ? `False expression: ${m}` : 'False expression.';
+      if (info) m += '\r\nVerbose Debug Info: ' + (typeof info === 'string' ? info : info());
+      fail(m, mark || assert);
+    }
+  }
+
   export const versionMajorMinor = '4.0';
   export const version = `${versionMajorMinor}.0-dev`;
 
@@ -191,7 +206,7 @@ namespace qnr {
   }
 
   export function zipToMap<T>(keys: readonly string[], vs: readonly T[]): QMap<T> {
-    Debug.assert(keys.length === vs.length);
+    assert(keys.length === vs.length);
     const map = createMap<T>();
     for (let i = 0; i < keys.length; ++i) {
       map.set(keys[i], vs[i]);
@@ -929,7 +944,7 @@ namespace qnr {
   }
 
   export function first<T>(array: readonly T[]): T {
-    Debug.assert(array.length !== 0);
+    assert(array.length !== 0);
     return array[0];
   }
 
@@ -941,7 +956,7 @@ namespace qnr {
   }
 
   export function last<T>(array: readonly T[]): T {
-    Debug.assert(array.length !== 0);
+    assert(array.length !== 0);
     return array[array.length - 1];
   }
 
@@ -1603,7 +1618,7 @@ namespace qnr {
           justCheckExactMatches = true;
           bestCandidate = candidate;
         } else {
-          Debug.assert(distance < bestDistance); // Else `levenshteinWithMax` should return undefined
+          assert(distance < bestDistance); // Else `levenshteinWithMax` should return undefined
           bestDistance = distance;
           bestCandidate = candidate;
         }
@@ -1747,7 +1762,7 @@ namespace qnr {
    * E.g.: matchedText(tryParsePattern("foo*baz"), "foobarbaz") === "bar"
    */
   export function matchedText(pattern: Pattern, candidate: string): string {
-    Debug.assert(isPatternMatch(pattern, candidate));
+    assert(isPatternMatch(pattern, candidate));
     return candidate.substring(pattern.prefix.length, candidate.length - pattern.suffix.length);
   }
 

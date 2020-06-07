@@ -42,32 +42,8 @@ namespace qnr {
       return true;
     }
 
-    export function fail(message?: string, stackCrawlMark?: AnyFunction): never {
-      debugger;
-      const e = new Error(message ? `Debug Failure. ${message}` : 'Debug Failure.');
-      if ((<any>Error).captureStackTrace) {
-        (<any>Error).captureStackTrace(e, stackCrawlMark || fail);
-      }
-      throw e;
-    }
-
     export function failBadSyntaxKind(node: Node, message?: string, stackCrawlMark?: AnyFunction): never {
       return fail(`${message || 'Unexpected node.'}\r\nNode ${formatSyntaxKind(node.kind)} was unexpected.`, stackCrawlMark || failBadSyntaxKind);
-    }
-
-    export function assert(
-      expression: unknown,
-      message?: string,
-      verboseDebugInfo?: string | (() => string),
-      stackCrawlMark?: AnyFunction
-    ): asserts expression {
-      if (!expression) {
-        message = message ? `False expression: ${message}` : 'False expression.';
-        if (verboseDebugInfo) {
-          message += '\r\nVerbose Debug Information: ' + (typeof verboseDebugInfo === 'string' ? verboseDebugInfo : verboseDebugInfo());
-        }
-        fail(message, stackCrawlMark || assert);
-      }
     }
 
     export function assertEqual<T>(a: T, b: T, msg?: string, msg2?: string, stackCrawlMark?: AnyFunction): void {

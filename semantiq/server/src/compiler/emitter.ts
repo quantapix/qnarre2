@@ -136,7 +136,7 @@ namespace qnr {
   }
 
   export function getOutputDeclarationFileName(inputFileName: string, configFile: ParsedCommandLine, ignoreCase: boolean) {
-    Debug.assert(!fileExtensionIs(inputFileName, Extension.Dts) && !fileExtensionIs(inputFileName, Extension.Json));
+    assert(!fileExtensionIs(inputFileName, Extension.Dts) && !fileExtensionIs(inputFileName, Extension.Json));
     return changeExtension(
       getOutputPathWithoutChangingExt(inputFileName, configFile, ignoreCase, configFile.options.declarationDir || configFile.options.outDir),
       Extension.Dts
@@ -222,7 +222,7 @@ namespace qnr {
 
   export function getOutputFileNames(commandLine: ParsedCommandLine, inputFileName: string, ignoreCase: boolean): readonly string[] {
     inputFileName = normalizePath(inputFileName);
-    Debug.assert(contains(commandLine.fileNames, inputFileName), `Expected fileName to be present in command line`);
+    assert(contains(commandLine.fileNames, inputFileName), `Expected fileName to be present in command line`);
     const { addOutput, getOutputs } = createAddOutput();
     if (commandLine.options.outFile || commandLine.options.out) {
       getSingleOutputFileNames(commandLine, addOutput);
@@ -392,7 +392,7 @@ namespace qnr {
         substituteNode: transform.substituteNode,
       });
 
-      Debug.assert(transform.transformed.length === 1, 'Should only see one output from the transform');
+      assert(transform.transformed.length === 1, 'Should only see one output from the transform');
       printSourceFileOrBundle(jsFilePath, sourceMapFilePath, transform.transformed[0], printer, compilerOptions);
 
       // Clean up emit nodes on parse tree
@@ -467,7 +467,7 @@ namespace qnr {
         !!compilerOptions.noEmit;
       emitSkipped = emitSkipped || declBlocked;
       if (!declBlocked || forceDtsEmit) {
-        Debug.assert(declarationTransform.transformed.length === 1, 'Should only see one output from the decl transform');
+        assert(declarationTransform.transformed.length === 1, 'Should only see one output from the decl transform');
         printSourceFileOrBundle(declarationFilePath, declarationMapPath, declarationTransform.transformed[0], declarationPrinter, {
           sourceMap: compilerOptions.declarationMap,
           sourceRoot: compilerOptions.sourceRoot,
@@ -914,13 +914,13 @@ namespace qnr {
     function printNode(hint: EmitHint, node: Node, sourceFile: SourceFile): string {
       switch (hint) {
         case EmitHint.SourceFile:
-          Debug.assert(isSourceFile(node), 'Expected a SourceFile node.');
+          assert(isSourceFile(node), 'Expected a SourceFile node.');
           break;
         case EmitHint.IdentifierName:
-          Debug.assert(isIdentifier(node), 'Expected an Identifier node.');
+          assert(isIdentifier(node), 'Expected an Identifier node.');
           break;
         case EmitHint.Expression:
-          Debug.assert(isExpression(node), 'Expected an Expression node.');
+          assert(isExpression(node), 'Expected an Expression node.');
           break;
       }
       switch (node.kind) {
@@ -1046,7 +1046,7 @@ namespace qnr {
           bundleFileInfo.sections = savedSections!;
           if (prepend.oldFileOfCurrentEmit) bundleFileInfo.sections.push(...newSections);
           else {
-            newSections.forEach((section) => Debug.assert(isBundleFileTextLike(section)));
+            newSections.forEach((section) => assert(isBundleFileTextLike(section)));
             bundleFileInfo.sections.push({
               pos,
               end: writer.getTextPos(),
@@ -1157,7 +1157,7 @@ namespace qnr {
     }
 
     function getCurrentLineMap() {
-      return currentLineMap || (currentLineMap = getLineStarts(currentSourceFile!));
+      return currentLineMap || (currentLineMap = lineStarts(currentSourceFile!));
     }
 
     function emit(node: Node): Node;
@@ -1202,7 +1202,7 @@ namespace qnr {
       const pipelinePhase = getPipelinePhase(PipelinePhase.Notification, emitHint, node);
       pipelinePhase(emitHint, node);
 
-      Debug.assert(lastNode === node);
+      assert(lastNode === node);
 
       const substitute = lastSubstitution;
       lastNode = savedLastNode;
@@ -1251,14 +1251,14 @@ namespace qnr {
     }
 
     function pipelineEmitWithNotification(hint: EmitHint, node: Node) {
-      Debug.assert(lastNode === node);
+      assert(lastNode === node);
       const pipelinePhase = getNextPipelinePhase(PipelinePhase.Notification, hint, node);
       onEmitNode(hint, node, pipelinePhase);
-      Debug.assert(lastNode === node);
+      assert(lastNode === node);
     }
 
     function pipelineEmitWithHint(hint: EmitHint, node: Node): void {
-      Debug.assert(lastNode === node || lastSubstitution === node);
+      assert(lastNode === node || lastSubstitution === node);
       if (hint === EmitHint.SourceFile) return emitSourceFile(cast(node, isSourceFile));
       if (hint === EmitHint.IdentifierName) return emitIdentifier(cast(node, isIdentifier));
       if (hint === EmitHint.JsxAttributeValue) return emitLiteral(cast(node, isStringLiteral), /*jsxAttributeEscape*/ true);
@@ -1694,10 +1694,10 @@ namespace qnr {
     }
 
     function pipelineEmitWithSubstitution(hint: EmitHint, node: Node) {
-      Debug.assert(lastNode === node || lastSubstitution === node);
+      assert(lastNode === node || lastSubstitution === node);
       const pipelinePhase = getNextPipelinePhase(PipelinePhase.Substitution, hint, node);
       pipelinePhase(hint, lastSubstitution!);
-      Debug.assert(lastNode === node || lastSubstitution === node);
+      assert(lastNode === node || lastSubstitution === node);
     }
 
     function getHelpersFromBundledSourceFiles(bundle: Bundle): string[] | undefined {
@@ -2323,8 +2323,8 @@ namespace qnr {
     function emitPropertyAccessExpression(node: PropertyAccessExpression) {
       const expression = cast(emitExpression(node.expression), isExpression);
       const token = node.questionDotToken || (createNode(SyntaxKind.DotToken, node.expression.end, node.name.pos) as DotToken);
-      const linesBeforeDot = getLinesBetweenNodes(node, node.expression, token);
-      const linesAfterDot = getLinesBetweenNodes(node, token, node.name);
+      const linesBeforeDot = linesBetweenNodes(node, node.expression, token);
+      const linesAfterDot = linesBetweenNodes(node, token, node.name);
 
       writeLinesAndIndent(linesBeforeDot, /*writeSpaceIfNotIndenting*/ false);
 
@@ -2517,8 +2517,8 @@ namespace qnr {
           }
           case EmitBinaryExpressionState.EmitRight: {
             const isCommaOperator = node.operatorToken.kind !== SyntaxKind.CommaToken;
-            const linesBeforeOperator = getLinesBetweenNodes(node, node.left, node.operatorToken);
-            const linesAfterOperator = getLinesBetweenNodes(node, node.operatorToken, node.right);
+            const linesBeforeOperator = linesBetweenNodes(node, node.left, node.operatorToken);
+            const linesAfterOperator = linesBetweenNodes(node, node.operatorToken, node.right);
             writeLinesAndIndent(linesBeforeOperator, isCommaOperator);
             emitLeadingCommentsOfPosition(node.operatorToken.pos);
             writeTokenNode(node.operatorToken, node.operatorToken.kind === SyntaxKind.InKeyword ? writeKeyword : writeOperator);
@@ -2528,8 +2528,8 @@ namespace qnr {
             break;
           }
           case EmitBinaryExpressionState.FinishEmit: {
-            const linesBeforeOperator = getLinesBetweenNodes(node, node.left, node.operatorToken);
-            const linesAfterOperator = getLinesBetweenNodes(node, node.operatorToken, node.right);
+            const linesBeforeOperator = linesBetweenNodes(node, node.left, node.operatorToken);
+            const linesAfterOperator = linesBetweenNodes(node, node.operatorToken, node.right);
             decreaseIndentIf(linesBeforeOperator, linesAfterOperator);
             stackIndex--;
             break;
@@ -2565,7 +2565,7 @@ namespace qnr {
           pipelinePhase(EmitHint.Expression, next);
         }
 
-        Debug.assert(lastNode === next);
+        assert(lastNode === next);
 
         lastNode = savedLastNode;
         lastSubstitution = savedLastSubstitution;
@@ -2574,10 +2574,10 @@ namespace qnr {
     }
 
     function emitConditionalExpression(node: ConditionalExpression) {
-      const linesBeforeQuestion = getLinesBetweenNodes(node, node.condition, node.questionToken);
-      const linesAfterQuestion = getLinesBetweenNodes(node, node.questionToken, node.whenTrue);
-      const linesBeforeColon = getLinesBetweenNodes(node, node.whenTrue, node.colonToken);
-      const linesAfterColon = getLinesBetweenNodes(node, node.colonToken, node.whenFalse);
+      const linesBeforeQuestion = linesBetweenNodes(node, node.condition, node.questionToken);
+      const linesAfterQuestion = linesBetweenNodes(node, node.questionToken, node.whenTrue);
+      const linesBeforeColon = linesBetweenNodes(node, node.whenTrue, node.colonToken);
+      const linesAfterColon = linesBetweenNodes(node, node.colonToken, node.whenFalse);
 
       emitExpression(node.condition);
       writeLinesAndIndent(linesBeforeQuestion, /*writeSpaceIfNotIndenting*/ true);
@@ -2811,7 +2811,7 @@ namespace qnr {
         pos = skipTrivia(currentSourceFile.text, pos);
       }
       if (emitLeadingCommentsOfPosition && isSimilarNode && contextNode.pos !== startPos) {
-        const needsIndent = indentLeading && currentSourceFile && !positionsAreOnSameLine(startPos, pos, currentSourceFile);
+        const needsIndent = indentLeading && currentSourceFile && !onSameLine(startPos, pos, currentSourceFile);
         if (needsIndent) {
           increaseIndent();
         }
@@ -3404,9 +3404,7 @@ namespace qnr {
       const emitAsSingleStatement =
         statements.length === 1 &&
         // treat synthesized nodes as located on the same line for emit purposes
-        (isSynthesized(parentNode) ||
-          isSynthesized(statements[0]) ||
-          rangeStartPositionsAreOnSameLine(parentNode, statements[0], currentSourceFile!));
+        (isSynthesized(parentNode) || isSynthesized(statements[0]) || startsOnSameLine(parentNode, statements[0], currentSourceFile!));
 
       let format = ListFormat.CaseOrDefaultClauseStatements;
       if (emitAsSingleStatement) {
@@ -4347,10 +4345,10 @@ namespace qnr {
         if (!isSynthesized(parentNode.pos) && !isSynthesized(firstChild) && (!firstChild.parent || firstChild.parent === parentNode)) {
           if (preserveSourceNewlines) {
             return getEffectiveLines((includeComments) =>
-              getLinesBetweenPositionAndPrecedingNonWhitespaceCharacter(firstChild.pos, parentNode.pos, currentSourceFile!, includeComments)
+              linesToPrevNonWhitespace(firstChild.pos, parentNode.pos, currentSourceFile!, includeComments)
             );
           }
-          return rangeStartPositionsAreOnSameLine(parentNode, firstChild, currentSourceFile!) ? 0 : 1;
+          return startsOnSameLine(parentNode, firstChild, currentSourceFile!) ? 0 : 1;
         }
         if (synthesizedNodeStartsOnNewLine(firstChild, format)) {
           return 1;
@@ -4369,11 +4367,9 @@ namespace qnr {
           return 0;
         } else if (!isSynthesized(previousNode) && !isSynthesized(nextNode) && previousNode.parent === nextNode.parent) {
           if (preserveSourceNewlines) {
-            return getEffectiveLines((includeComments) =>
-              getLinesBetweenRangeEndAndRangeStart(previousNode, nextNode, currentSourceFile!, includeComments)
-            );
+            return getEffectiveLines((includeComments) => linesBetween(previousNode, nextNode, currentSourceFile!, includeComments));
           }
-          return rangeEndIsOnSameLineAsRangeStart(previousNode, nextNode, currentSourceFile!) ? 0 : 1;
+          return endOnSameLineAsStart(previousNode, nextNode, currentSourceFile!) ? 0 : 1;
         } else if (synthesizedNodeStartsOnNewLine(previousNode, format) || synthesizedNodeStartsOnNewLine(nextNode, format)) {
           return 1;
         }
@@ -4396,10 +4392,10 @@ namespace qnr {
         if (!isSynthesized(parentNode.pos) && !isSynthesized(lastChild) && (!lastChild.parent || lastChild.parent === parentNode)) {
           if (preserveSourceNewlines) {
             return getEffectiveLines((includeComments) =>
-              getLinesBetweenPositionAndNextNonWhitespaceCharacter(lastChild.end, parentNode.end, currentSourceFile!, includeComments)
+              linesToNextNonWhitespace(lastChild.end, parentNode.end, currentSourceFile!, includeComments)
             );
           }
-          return rangeEndPositionsAreOnSameLine(parentNode, lastChild, currentSourceFile!) ? 0 : 1;
+          return endsOnSameLine(parentNode, lastChild, currentSourceFile!) ? 0 : 1;
         }
         if (synthesizedNodeStartsOnNewLine(lastChild, format)) {
           return 1;
@@ -4414,7 +4410,7 @@ namespace qnr {
     function getEffectiveLines(getLineDifference: (includeComments: boolean) => number) {
       // If 'preserveSourceNewlines' is disabled, we should never call this function
       // because it could be more expensive than alternative approximations.
-      Debug.assert(!!preserveSourceNewlines);
+      assert(!!preserveSourceNewlines);
       // We start by measuring the line difference from a position to its adjacent comments,
       // so that this is counted as a one-line difference, not two:
       //
@@ -4463,7 +4459,7 @@ namespace qnr {
       return (format & ListFormat.PreferNewLine) !== 0;
     }
 
-    function getLinesBetweenNodes(parent: Node, node1: Node, node2: Node): number {
+    function linesBetweenNodes(parent: Node, node1: Node, node2: Node): number {
       if (getEmitFlags(parent) & EmitFlags.NoIndentation) {
         return 0;
       }
@@ -4479,16 +4475,16 @@ namespace qnr {
 
       if (!isSynthesized(parent) && !isSynthesized(node1) && !isSynthesized(node2)) {
         if (preserveSourceNewlines) {
-          return getEffectiveLines((includeComments) => getLinesBetweenRangeEndAndRangeStart(node1, node2, currentSourceFile!, includeComments));
+          return getEffectiveLines((includeComments) => linesBetween(node1, node2, currentSourceFile!, includeComments));
         }
-        return rangeEndIsOnSameLineAsRangeStart(node1, node2, currentSourceFile!) ? 0 : 1;
+        return endOnSameLineAsStart(node1, node2, currentSourceFile!) ? 0 : 1;
       }
 
       return 0;
     }
 
     function isEmptyBlock(block: BlockLike) {
-      return block.statements.length === 0 && rangeEndIsOnSameLineAsRangeStart(block, block, currentSourceFile!);
+      return block.statements.length === 0 && endOnSameLineAsStart(block, block, currentSourceFile!);
     }
 
     function skipSynthesizedParentheses(node: Node) {
@@ -4923,7 +4919,7 @@ namespace qnr {
     // Comments
 
     function pipelineEmitWithComments(hint: EmitHint, node: Node) {
-      Debug.assert(lastNode === node || lastSubstitution === node);
+      assert(lastNode === node || lastSubstitution === node);
       enterComment();
       hasWrittenComment = false;
       const emitFlags = getEmitFlags(node);
@@ -4989,7 +4985,7 @@ namespace qnr {
         }
       }
       exitComment();
-      Debug.assert(lastNode === node || lastSubstitution === node);
+      assert(lastNode === node || lastSubstitution === node);
     }
 
     function emitLeadingSynthesizedComment(comment: SynthesizedComment) {
@@ -5241,7 +5237,7 @@ namespace qnr {
     }
 
     function pipelineEmitWithSourceMap(hint: EmitHint, node: Node) {
-      Debug.assert(lastNode === node || lastSubstitution === node);
+      assert(lastNode === node || lastSubstitution === node);
       const pipelinePhase = getNextPipelinePhase(PipelinePhase.SourceMaps, hint, node);
       if (isUnparsedSource(node) || isUnparsedPrepend(node)) {
         pipelinePhase(hint, node);
@@ -5253,8 +5249,8 @@ namespace qnr {
             writer.getColumn(),
             parsed,
             node.parent.sourceMapPath!,
-            node.parent.getLineAndCharOf(node.pos),
-            node.parent.getLineAndCharOf(node.end)
+            node.parent.lineAndCharOf(node.pos),
+            node.parent.lineAndCharOf(node.end)
           );
         }
         pipelinePhase(hint, node);
@@ -5277,7 +5273,7 @@ namespace qnr {
           emitSourcePos(source, end);
         }
       }
-      Debug.assert(lastNode === node || lastSubstitution === node);
+      assert(lastNode === node || lastSubstitution === node);
     }
 
     /**
@@ -5300,7 +5296,7 @@ namespace qnr {
         return;
       }
 
-      const { line: sourceLine, character: sourceCharacter } = getLineAndCharOf(sourceMapSource, pos);
+      const { line: sourceLine, character: sourceCharacter } = lineAndCharOf(sourceMapSource, pos);
       sourceMapGenerator!.addMapping(
         writer.getLine(),
         writer.getColumn(),

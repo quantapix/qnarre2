@@ -329,7 +329,7 @@ namespace qnr {
     reportWatchDiagnostic(Diagnostics.Starting_compilation_in_watch_mode);
     if (configFileName && !host.configFileParsingResult) {
       newLine = getNewLineCharacter(optionsToExtendForConfigFile, () => host.getNewLine());
-      Debug.assert(!rootFileNames);
+      assert(!rootFileNames);
       parseConfigFile();
       newLine = updateNewLine();
     }
@@ -511,7 +511,7 @@ namespace qnr {
     }
 
     function updateRootFileNames(files: string[]) {
-      Debug.assert(!configFileName, 'Cannot update root file names with config file watch mode');
+      assert(!configFileName, 'Cannot update root file names with config file watch mode');
       rootFileNames = files;
       scheduleProgramUpdate();
     }
@@ -656,7 +656,7 @@ namespace qnr {
     }
 
     function scheduleProgramReload() {
-      Debug.assert(!!configFileName);
+      assert(!!configFileName);
       reloadLevel = ConfigFileProgramReloadLevel.Full;
       scheduleProgramUpdate();
     }
@@ -806,7 +806,7 @@ namespace qnr {
         host,
         directory,
         (fileOrDirectory) => {
-          Debug.assert(!!configFileName);
+          assert(!!configFileName);
 
           let fileOrDirectoryPath: Path | undefined = toPath(fileOrDirectory);
 

@@ -254,7 +254,7 @@ namespace qnr {
     oldResolutions: ReadonlyMap<T> | undefined,
     comparer: (oldResolution: T, newResolution: T) => boolean
   ): boolean {
-    Debug.assert(names.length === newResolutions.length);
+    assert(names.length === newResolutions.length);
 
     for (let i = 0; i < names.length; i++) {
       const newResolution = newResolutions[i];
@@ -314,20 +314,20 @@ namespace qnr {
   }
 
   export function getStartPositionOfLine(line: number, sourceFile: SourceFileLike): number {
-    Debug.assert(line >= 0);
-    return getLineStarts(sourceFile)[line];
+    assert(line >= 0);
+    return lineStarts(sourceFile)[line];
   }
 
   // This is a useful function for debugging purposes.
   export function nodePosToString(node: Node): string {
     const file = getSourceFileOfNode(node);
-    const loc = getLineAndCharOf(file, node.pos);
+    const loc = lineAndCharOf(file, node.pos);
     return `${file.fileName}(${loc.line + 1},${loc.character + 1})`;
   }
 
   export function getEndLinePosition(line: number, sourceFile: SourceFileLike): number {
-    Debug.assert(line >= 0);
-    const lineStarts = getLineStarts(sourceFile);
+    assert(line >= 0);
+    const lineStarts = lineStarts(sourceFile);
 
     const lineIndex = line;
     const sourceText = sourceFile.text;
@@ -339,7 +339,7 @@ namespace qnr {
       const start = lineStarts[lineIndex];
       // take the start position of the next line - 1 = it should be some line break
       let pos = lineStarts[lineIndex + 1] - 1;
-      Debug.assert(isLineBreak(sourceText.charCodeAt(pos)));
+      assert(isLineBreak(sourceText.charCodeAt(pos)));
       // walk backwards skipping line breaks, stop the the beginning of current line.
       // i.e:
       // <some text>
@@ -465,7 +465,7 @@ namespace qnr {
 
   export function createCommentDirectivesMap(sourceFile: SourceFile, commentDirectives: CommentDirective[]): CommentDirectivesMap {
     const directivesByLine = createMap(
-      commentDirectives.map((commentDirective) => [`${getLineAndCharOf(sourceFile, commentDirective.range.end).line}`, commentDirective])
+      commentDirectives.map((commentDirective) => [`${lineAndCharOf(sourceFile, commentDirective.range.end).line}`, commentDirective])
     );
 
     const usedLines = createMap<boolean>();
@@ -979,21 +979,21 @@ namespace qnr {
     const scanner = createScanner(/*skipTrivia*/ true, sourceFile.languageVariant, sourceFile.text, /*onError:*/ undefined, pos);
     scanner.scan();
     const start = scanner.getTokenPos();
-    return createTextSpanFromBounds(start, scanner.getTextPos());
+    return TextSpan.from(start, scanner.getTextPos());
   }
 
   function getErrorSpanForArrowFunction(sourceFile: SourceFile, node: ArrowFunction): TextSpan {
     const pos = skipTrivia(sourceFile.text, node.pos);
     if (node.body && node.body.kind === SyntaxKind.Block) {
-      const { line: startLine } = getLineAndCharOf(sourceFile, node.body.pos);
-      const { line: endLine } = getLineAndCharOf(sourceFile, node.body.end);
+      const { line: startLine } = sourceFile.lineAndCharOf(node.body.pos);
+      const { line: endLine } = sourceFile.lineAndCharOf(node.body.end);
       if (startLine < endLine) {
         // The arrow function spans multiple lines,
         // make the error span be the first line, inclusive.
-        return createTextSpan(pos, getEndLinePosition(startLine, sourceFile) - pos + 1);
+        return new TextSpan(pos, getEndLinePosition(startLine, sourceFile) - pos + 1);
       }
     }
-    return createTextSpanFromBounds(pos, node.end);
+    return TextSpan.from(pos, node.end);
   }
 
   export function getErrorSpanForNode(sourceFile: SourceFile, node: Node): TextSpan {
@@ -1003,7 +1003,7 @@ namespace qnr {
         const pos = skipTrivia(sourceFile.text, 0, /*stopAfterLineBreak*/ false);
         if (pos === sourceFile.text.length) {
           // file is empty - return span for the beginning of the file
-          return createTextSpan(0, 0);
+          return new TextSpan();
         }
         return getSpanOfTokenAtPosition(sourceFile, pos);
       // This list is a work in progress. Add missing node kinds to improve their error
@@ -1033,7 +1033,7 @@ namespace qnr {
         const start = skipTrivia(sourceFile.text, (<CaseOrDefaultClause>node).pos);
         const end =
           (<CaseOrDefaultClause>node).statements.length > 0 ? (<CaseOrDefaultClause>node).statements[0].pos : (<CaseOrDefaultClause>node).end;
-        return createTextSpanFromBounds(start, end);
+        return TextSpan.from(start, end);
     }
 
     if (errorNode === undefined) {
@@ -1042,21 +1042,21 @@ namespace qnr {
       return getSpanOfTokenAtPosition(sourceFile, node.pos);
     }
 
-    Debug.assert(!isJSDoc(errorNode));
+    assert(!isJSDoc(errorNode));
 
     const isMissing = nodeIsMissing(errorNode);
     const pos = isMissing || isJsxText(node) ? errorNode.pos : skipTrivia(sourceFile.text, errorNode.pos);
 
     // These asserts should all be satisfied for a properly constructed `errorNode`.
     if (isMissing) {
-      Debug.assert(pos === errorNode.pos, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
-      Debug.assert(pos === errorNode.end, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
+      assert(pos === errorNode.pos, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
+      assert(pos === errorNode.end, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
     } else {
-      Debug.assert(pos >= errorNode.pos, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
-      Debug.assert(pos <= errorNode.end, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
+      assert(pos >= errorNode.pos, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
+      assert(pos <= errorNode.end, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
     }
 
-    return createTextSpanFromBounds(pos, errorNode.end);
+    return TextSpan.from(pos, errorNode.end);
   }
 
   export function isExternalOrCommonJsModule(file: SourceFile): boolean {
@@ -1181,7 +1181,7 @@ namespace qnr {
           node = node.parent;
         }
         // At this point, node is either a qualified name or an identifier
-        Debug.assert(
+        assert(
           node.kind === SyntaxKind.Identifier || node.kind === SyntaxKind.QualifiedName || node.kind === SyntaxKind.PropertyAccessExpression,
           "'node' was expected to be a qualified name, identifier or property access in 'isPartOfTypeNode'."
         );
@@ -1478,7 +1478,7 @@ namespace qnr {
   }
 
   export function getThisContainer(node: Node, includeArrowFunctions: boolean): Node {
-    Debug.assert(node.kind !== SyntaxKind.SourceFile);
+    assert(node.kind !== SyntaxKind.SourceFile);
     while (true) {
       node = node.parent;
       if (!node) {
@@ -1879,7 +1879,7 @@ namespace qnr {
   }
 
   export function getExternalModuleImportEqualsDeclarationExpression(node: Node) {
-    Debug.assert(isExternalModuleImportEqualsDeclaration(node));
+    assert(isExternalModuleImportEqualsDeclaration(node));
     return (<ExternalModuleReference>(<ImportEqualsDeclaration>node).moduleReference).expression;
   }
 
@@ -2426,7 +2426,7 @@ namespace qnr {
       case SyntaxKind.CallExpression:
         return isImportCall(node.parent) || isRequireCall(node.parent, /*checkArg*/ false) ? (node.parent as RequireOrImportCall) : undefined;
       case SyntaxKind.LiteralType:
-        Debug.assert(isStringLiteral(node));
+        assert(isStringLiteral(node));
         return tryCast(node.parent.parent, isImportTypeNode) as ValidImportTypeNode | undefined;
       default:
         return;
@@ -4080,7 +4080,7 @@ namespace qnr {
   }
 
   export function getLineOfLocalPosition(sourceFile: SourceFile, pos: number) {
-    const lineStarts = getLineStarts(sourceFile);
+    const lineStarts = lineStarts(sourceFile);
     return calcLineOf(lineStarts, pos);
   }
 
@@ -4750,7 +4750,7 @@ namespace qnr {
         output.push(((cc >> 6) & 0b00111111) | 0b10000000);
         output.push((cc & 0b00111111) | 0b10000000);
       } else {
-        Debug.assert(false, 'Unexpected code point');
+        assert(false, 'Unexpected code point');
       }
     }
 
@@ -5228,7 +5228,7 @@ namespace qnr {
     if (node.kind === SyntaxKind.PropertyAccessExpression) {
       return node.name;
     }
-    Debug.assert(node.kind === SyntaxKind.ElementAccessExpression);
+    assert(node.kind === SyntaxKind.ElementAccessExpression);
     return node.argumentExpression;
   }
 
@@ -6207,7 +6207,7 @@ namespace qnr {
 
   export function tryParsePattern(pattern: string): Pattern | undefined {
     // This should be verified outside of here and a proper error thrown.
-    Debug.assert(hasZeroOrOneAsteriskCharacter(pattern));
+    assert(hasZeroOrOneAsteriskCharacter(pattern));
     const indexOfStar = pattern.indexOf('*');
     return indexOfStar === -1
       ? undefined
@@ -6277,7 +6277,7 @@ namespace qnr {
 
   export function sliceAfter<T>(arr: readonly T[], value: T): readonly T[] {
     const index = arr.indexOf(value);
-    Debug.assert(index !== -1);
+    assert(index !== -1);
     return arr.slice(index);
   }
 
@@ -6293,7 +6293,7 @@ namespace qnr {
   }
 
   export function minAndMax<T>(arr: readonly T[], getValue: (value: T) => number): { readonly min: number; readonly max: number } {
-    Debug.assert(arr.length !== 0);
+    assert(arr.length !== 0);
     let min = getValue(arr[0]);
     let max = min;
     for (let i = 1; i < arr.length; i++) {

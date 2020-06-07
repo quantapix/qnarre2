@@ -45,11 +45,11 @@ namespace qnr {
         ({ major, minor, patch, prerelease, build } = result);
       }
 
-      Debug.assert(major >= 0, 'Invalid argument: major');
-      Debug.assert(minor >= 0, 'Invalid argument: minor');
-      Debug.assert(patch >= 0, 'Invalid argument: patch');
-      Debug.assert(!prerelease || prereleaseRegExp.test(prerelease), 'Invalid argument: prerelease');
-      Debug.assert(!build || buildRegExp.test(build), 'Invalid argument: build');
+      assert(major >= 0, 'Invalid argument: major');
+      assert(minor >= 0, 'Invalid argument: minor');
+      assert(patch >= 0, 'Invalid argument: patch');
+      assert(!prerelease || prereleaseRegExp.test(prerelease), 'Invalid argument: prerelease');
+      assert(!build || buildRegExp.test(build), 'Invalid argument: build');
       this.major = major;
       this.minor = minor;
       this.patch = patch;

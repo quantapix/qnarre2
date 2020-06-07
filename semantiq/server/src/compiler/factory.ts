@@ -768,7 +768,7 @@ namespace qnr {
    * list of a source file, namespace, or function-like body.
    */
   export function addStandardPrologue(target: Statement[], source: readonly Statement[], ensureUseStrict?: boolean): number {
-    Debug.assert(target.length === 0, 'Prologue directives should be at the first statement in the target statements array');
+    assert(target.length === 0, 'Prologue directives should be at the first statement in the target statements array');
     let foundUseStrict = false;
     let statementOffset = 0;
     const numStatements = source.length;
@@ -1731,7 +1731,7 @@ namespace qnr {
     bindingElement: BindingOrAssignmentElement
   ): Exclude<PropertyName, PrivateIdentifier> | undefined {
     const propertyName = tryGetPropertyNameOfBindingOrAssignmentElement(bindingElement);
-    Debug.assert(!!propertyName || isSpreadAssignment(bindingElement), 'Invalid property name for binding element.');
+    assert(!!propertyName || isSpreadAssignment(bindingElement), 'Invalid property name for binding element.');
     return propertyName;
   }
 

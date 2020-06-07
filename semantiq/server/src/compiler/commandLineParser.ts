@@ -2310,7 +2310,7 @@ namespace qnr {
     extraFileExtensions: readonly FileExtensionInfo[] = [],
     extendedConfigCache?: QMap<ExtendedConfigCacheEntry>
   ): ParsedCommandLine {
-    Debug.assert((json === undefined && sourceFile !== undefined) || (json !== undefined && sourceFile === undefined));
+    assert((json === undefined && sourceFile !== undefined) || (json !== undefined && sourceFile === undefined));
     const errors: Diagnostic[] = [];
 
     const parsedConfig = parseConfig(json, sourceFile, host, basePath, configFileName, resolutionStack, errors, extendedConfigCache);

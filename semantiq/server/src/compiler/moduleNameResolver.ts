@@ -29,7 +29,7 @@ namespace qnr {
 
   function removeIgnoredPackageId(r: Resolved | undefined): PathAndExtension | undefined {
     if (r) {
-      Debug.assert(r.packageId === undefined);
+      assert(r.packageId === undefined);
       return { path: r.path, ext: r.extension };
     }
   }
@@ -78,7 +78,7 @@ namespace qnr {
     if (!resolved) {
       return;
     }
-    Debug.assert(extensionIsTS(resolved.extension));
+    assert(extensionIsTS(resolved.extension));
     return { fileName: resolved.path, packageId: resolved.packageId };
   }
 
@@ -616,7 +616,7 @@ namespace qnr {
     }
 
     function getOrCreateCacheForModuleName(nonRelativeModuleName: string, redirectedReference?: ResolvedProjectReference): PerModuleNameCache {
-      Debug.assert(!isExternalModuleNameRelative(nonRelativeModuleName));
+      assert(!isExternalModuleNameRelative(nonRelativeModuleName));
       return getOrCreateCache(moduleNameToDirectoryMap, redirectedReference, nonRelativeModuleName, createPerModuleNameCache);
     }
 
@@ -1142,7 +1142,7 @@ namespace qnr {
     if (traceEnabled) {
       trace(host, Diagnostics.Resolving_real_path_for_0_result_1, path, real);
     }
-    Debug.assert(host.fileExists(real), `${path} linked to nonexistent file ${real}`);
+    assert(host.fileExists(real), `${path} linked to nonexistent file ${real}`);
     return real;
   }
 

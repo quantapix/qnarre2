@@ -1159,7 +1159,7 @@ namespace qnr {
         }
       }
 
-      if (isTupleTypeNode(input) && getLineAndCharOf(currentSourceFile, input.pos).line === getLineAndCharOf(currentSourceFile, input.end).line) {
+      if (isTupleTypeNode(input) && lineAndCharOf(currentSourceFile, input.pos).line === lineAndCharOf(currentSourceFile, input.end).line) {
         setEmitFlags(input, EmitFlags.SingleLine);
       }
 
@@ -1648,7 +1648,7 @@ namespace qnr {
         getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNodeName(node);
       }
       errorNameNode = (node as NamedDeclaration).name;
-      Debug.assert(resolver.isLateBound(getParseTreeNode(node) as Declaration)); // Should only be called with dynamic names
+      assert(resolver.isLateBound(getParseTreeNode(node) as Declaration)); // Should only be called with dynamic names
       const decl = (node as NamedDeclaration) as LateBoundDeclaration;
       const entityName = decl.name.expression;
       checkEntityNameVisibility(entityName, enclosingDeclaration);

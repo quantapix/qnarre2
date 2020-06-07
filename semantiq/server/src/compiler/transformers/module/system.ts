@@ -433,13 +433,13 @@ namespace qnr {
             // falls through
 
             case SyntaxKind.ImportEqualsDeclaration:
-              Debug.assert(importVariableName !== undefined);
+              assert(importVariableName !== undefined);
               // save import into the local
               statements.push(createExpressionStatement(createAssignment(importVariableName, parameterName)));
               break;
 
             case SyntaxKind.ExportDeclaration:
-              Debug.assert(importVariableName !== undefined);
+              assert(importVariableName !== undefined);
               if (entry.exportClause) {
                 if (isNamedExports(entry.exportClause)) {
                   //  export {a, b as c} from 'foo'
@@ -561,10 +561,7 @@ namespace qnr {
      * @param node The node to visit.
      */
     function visitImportEqualsDeclaration(node: ImportEqualsDeclaration): VisitResult<Statement> {
-      Debug.assert(
-        isExternalModuleImportEqualsDeclaration(node),
-        'import= for internal module references should be handled in an earlier transformer.'
-      );
+      assert(isExternalModuleImportEqualsDeclaration(node), 'import= for internal module references should be handled in an earlier transformer.');
 
       let statements: Statement[] | undefined;
       hoistVariableDeclaration(getLocalNameForExternalImport(node, currentSourceFile)!); // TODO: GH#18217

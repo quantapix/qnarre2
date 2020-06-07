@@ -346,7 +346,7 @@ namespace qnr {
             return (tokenToString(nameExpression.operator) + nameExpression.operand.text) as __String;
           }
 
-          Debug.assert(isWellKnownSymbolSyntactically(nameExpression));
+          assert(isWellKnownSymbolSyntactically(nameExpression));
           return getPropertyNameForKnownSymbolName(idText((<PropertyAccessExpression>nameExpression).name));
         }
         if (isWellKnownSymbolSyntactically(name)) {
@@ -394,7 +394,7 @@ namespace qnr {
         case SyntaxKind.Parameter:
           // Parameters with names are handled at the top of this function.  Parameters
           // without names can only come from JSDocFunctionTypes.
-          Debug.assert(
+          assert(
             node.parent.kind === SyntaxKind.JSDocFunctionType,
             'Impossible parameter parent kind',
             () => `parent is: ${(ts as any).SyntaxKind ? (ts as any).SyntaxKind[node.parent.kind] : node.parent.kind}, expected JSDocFunctionType`
@@ -425,7 +425,7 @@ namespace qnr {
       excludes: SymbolFlags,
       isReplaceableByMethod?: boolean
     ): Symbol {
-      Debug.assert(!hasDynamicName(node));
+      assert(!hasDynamicName(node));
 
       const isDefaultExport = hasSyntacticModifier(node, ModifierFlags.Default) || (isExportSpecifier(node) && node.name.escapedText === 'default');
 
@@ -561,7 +561,7 @@ namespace qnr {
 
       addDeclarationToSymbol(symbol, node, includes);
       if (symbol.parent) {
-        Debug.assert(symbol.parent === parent, 'Existing symbol parent should match new one');
+        assert(symbol.parent === parent, 'Existing symbol parent should match new one');
       } else {
         symbol.parent = parent;
       }
@@ -593,7 +593,7 @@ namespace qnr {
         //       during global merging in the checker. Why? The only case when ambient module is permitted inside another module is module augmentation
         //       and this case is specially handled. Module augmentations should only be merged with original module definition
         //       and should never be merged directly with other augmentation, and the latter case would be possible if automatic merge is allowed.
-        if (isJSDocTypeAlias(node)) Debug.assert(isInJSFile(node)); // We shouldn't add symbols for JSDoc nodes if not in a JS file.
+        if (isJSDocTypeAlias(node)) assert(isInJSFile(node)); // We shouldn't add symbols for JSDoc nodes if not in a JS file.
         if ((!isAmbientModule(node) && (hasExportModifier || container.flags & NodeFlags.ExportContext)) || isJSDocTypeAlias(node)) {
           if (!container.locals || (hasSyntacticModifier(node, ModifierFlags.Default) && !getDeclarationName(node))) {
             return declareSymbol(container.symbol.exports!, container.symbol, node, symbolFlags, symbolExcludes); // No local symbol for an unnamed default!
@@ -2902,7 +2902,7 @@ namespace qnr {
     }
 
     function bindThisPropertyAssignment(node: BindablePropertyAssignmentExpression | PropertyAccessExpression | LiteralLikeElementAccessExpression) {
-      Debug.assert(isInJSFile(node));
+      assert(isInJSFile(node));
       // private identifiers *must* be declared (even in JS files)
       const hasPrivateIdentifier =
         (isBinaryExpression(node) && isPropertyAccessExpression(node.left) && isPrivateIdentifier(node.left.name)) ||
@@ -3094,7 +3094,7 @@ namespace qnr {
      * Also works for expression statements preceded by JSDoc, like / ** @type number * / x.y;
      */
     function bindStaticPropertyAssignment(node: BindableStaticNameExpression) {
-      Debug.assert(!isIdentifier(node));
+      assert(!isIdentifier(node));
       node.expression.parent = node;
       bindPropertyAssignment(node.expression, node, /*isPrototypeProperty*/ false, /*containerIsClass*/ false);
     }

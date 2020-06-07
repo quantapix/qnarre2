@@ -885,10 +885,7 @@ namespace qnr {
      * @param node The node to visit.
      */
     function visitImportEqualsDeclaration(node: ImportEqualsDeclaration): VisitResult<Statement> {
-      Debug.assert(
-        isExternalModuleImportEqualsDeclaration(node),
-        'import= for internal module references should be handled in an earlier transformer.'
-      );
+      assert(isExternalModuleImportEqualsDeclaration(node), 'import= for internal module references should be handled in an earlier transformer.');
 
       let statements: Statement[] | undefined;
       if (moduleKind !== ModuleKind.AMD) {

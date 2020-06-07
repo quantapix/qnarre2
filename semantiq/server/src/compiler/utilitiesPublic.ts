@@ -29,6 +29,7 @@ namespace qnr {
         }
       }
     }
+    return;
   }
 
   export type ParameterPropertyDeclaration = ParameterDeclaration & { parent: ConstructorDeclaration; name: Identifier };
@@ -370,7 +371,7 @@ namespace qnr {
         );
       } else {
         const i = param.parent.parameters.indexOf(param);
-        Debug.assert(i > -1, "Parameters should always be in their parents' parameter list");
+        assert(i > -1, "Parameters should always be in their parents' parameter list");
         const paramTags = getJSDocTagsWorker(param.parent, noCache).filter(isJSDocParameterTag);
         if (i < paramTags.length) {
           return [paramTags[i]];
@@ -521,7 +522,7 @@ namespace qnr {
     // If cache is 'null', that means we did the work of searching for JSDoc tags and came up with nothing.
     if (tags === undefined || noCache) {
       const comments = getJSDocCommentsAndTags(node, noCache);
-      Debug.assert(comments.length < 2 || comments[0] !== comments[1]);
+      assert(comments.length < 2 || comments[0] !== comments[1]);
       tags = flatMap(comments, (j) => (isJSDoc(j) ? j.tags : j));
       if (!noCache) {
         (node as JSDocContainer).jsDocCache = tags;
@@ -563,7 +564,7 @@ namespace qnr {
       return emptyArray;
     }
     if (isJSDocTypeAlias(node)) {
-      Debug.assert(node.parent.kind === SyntaxKind.JSDocComment);
+      assert(node.parent.kind === SyntaxKind.JSDocComment);
       return flatMap(node.parent.tags, (tag) => (isJSDocTemplateTag(tag) ? tag.typeParameters : undefined));
     }
     if (node.typeParameters) {

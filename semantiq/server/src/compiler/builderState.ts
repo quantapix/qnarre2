@@ -353,8 +353,8 @@ namespace qnr {
       computeHash: ComputeHash,
       exportedModulesMapCache?: ComputingExportedModulesMap
     ) {
-      Debug.assert(!!sourceFile);
-      Debug.assert(
+      assert(!!sourceFile);
+      assert(
         !exportedModulesMapCache || !!state.exportedModulesMap,
         'Compute visible to outside map only if visibleToOutsideReferencedMap present in the state'
       );
@@ -394,7 +394,7 @@ namespace qnr {
             ? emitOutput.outputFiles[0]
             : undefined;
         if (firstDts) {
-          Debug.assert(
+          assert(
             fileExtensionIs(firstDts.name, Extension.Dts),
             'File extension for signature expected to be dts',
             () =>
@@ -448,7 +448,7 @@ namespace qnr {
      */
     export function updateExportedFilesMapFromCache(state: BuilderState, exportedModulesMapCache: ComputingExportedModulesMap | undefined) {
       if (exportedModulesMapCache) {
-        Debug.assert(!!state.exportedModulesMap);
+        assert(!!state.exportedModulesMap);
         exportedModulesMapCache.forEach((exportedModules, path) => {
           if (exportedModules) {
             state.exportedModulesMap!.set(path, exportedModules);

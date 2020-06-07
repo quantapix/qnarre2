@@ -1827,7 +1827,7 @@ namespace qnr {
           multiLine = true;
         }
       } else {
-        Debug.assert(node.kind === SyntaxKind.ArrowFunction);
+        assert(node.kind === SyntaxKind.ArrowFunction);
 
         // To align with the old emitter, we use a synthetic end position on the location
         // for the statement list we synthesize when we down-level an arrow function with
@@ -1837,7 +1837,7 @@ namespace qnr {
 
         const equalsGreaterThanToken = node.equalsGreaterThanToken;
         if (!isSynthesized(equalsGreaterThanToken) && !isSynthesized(body)) {
-          if (rangeEndIsOnSameLineAsRangeStart(equalsGreaterThanToken, body, currentSourceFile)) {
+          if (endOnSameLineAsStart(equalsGreaterThanToken, body, currentSourceFile)) {
             singleLine = true;
           } else {
             multiLine = true;
@@ -3314,7 +3314,7 @@ namespace qnr {
     function visitCatchClause(node: CatchClause): CatchClause {
       const ancestorFacts = enterSubtree(HierarchyFacts.BlockScopeExcludes, HierarchyFacts.BlockScopeIncludes);
       let updated: CatchClause;
-      Debug.assert(!!node.variableDeclaration, 'Catch clause variable should always be present when downleveling ES2015.');
+      assert(!!node.variableDeclaration, 'Catch clause variable should always be present when downleveling ES2015.');
       if (isBindingPattern(node.variableDeclaration.name)) {
         const temp = createTempVariable(/*recordTempVariable*/ undefined);
         const newVariableDeclaration = createVariableDeclaration(temp);
@@ -3347,7 +3347,7 @@ namespace qnr {
       // We should only get here for methods on an object literal with regular identifier names.
       // Methods on classes are handled in visitClassDeclaration/visitClassExpression.
       // Methods with computed property names are handled in visitObjectLiteralExpression.
-      Debug.assert(!isComputedPropertyName(node.name));
+      assert(!isComputedPropertyName(node.name));
       const functionExpression = transformFunctionLikeToExpression(
         node,
         /*location*/ moveRangePos(node, -1),
@@ -3364,7 +3364,7 @@ namespace qnr {
      * @param node An AccessorDeclaration node.
      */
     function visitAccessorDeclaration(node: AccessorDeclaration): AccessorDeclaration {
-      Debug.assert(!isComputedPropertyName(node.name));
+      assert(!isComputedPropertyName(node.name));
       const savedConvertedLoopState = convertedLoopState;
       convertedLoopState = undefined;
       const ancestorFacts = enterSubtree(HierarchyFacts.FunctionExcludes, HierarchyFacts.FunctionIncludes);
@@ -3885,7 +3885,7 @@ namespace qnr {
 
       // There is always atleast one templateSpan in this code path, since
       // NoSubstitutionTemplateLiterals are directly emitted via emitLiteral()
-      Debug.assert(node.templateSpans.length !== 0);
+      assert(node.templateSpans.length !== 0);
 
       return node.head.text.length !== 0 || node.templateSpans[0].literal.text.length === 0;
     }

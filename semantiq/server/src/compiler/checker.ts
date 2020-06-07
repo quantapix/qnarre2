@@ -746,7 +746,7 @@ namespace qnr {
 
           // Ensure file is type checked
           checkSourceFile(file);
-          Debug.assert(!!(getNodeLinks(file).flags & NodeCheckFlags.TypeChecked));
+          assert(!!(getNodeLinks(file).flags & NodeCheckFlags.TypeChecked));
 
           diagnostics = addRange(diagnostics, suggestionDiagnostics.getDiagnostics(file.fileName));
           checkUnusedIdentifiers(getPotentiallyUnusedIdentifiers(file), (containingNode, kind, diag) => {
@@ -1406,7 +1406,7 @@ namespace qnr {
         // this is a combined symbol for multiple augmentations within the same file.
         // its symbol already has accumulated information for all declarations
         // so we need to add it just once - do the work only for first declaration
-        Debug.assert(moduleAugmentation.symbol.declarations.length > 1);
+        assert(moduleAugmentation.symbol.declarations.length > 1);
         return;
       }
 
@@ -1475,7 +1475,7 @@ namespace qnr {
       if (meaning) {
         const symbol = getMergedSymbol(symbols.get(name));
         if (symbol) {
-          Debug.assert((getCheckFlags(symbol) & CheckFlags.Instantiated) === 0, 'Should never get an instantiated symbol here.');
+          assert((getCheckFlags(symbol) & CheckFlags.Instantiated) === 0, 'Should never get an instantiated symbol here.');
           if (symbol.flags & meaning) {
             return symbol;
           }
@@ -2113,7 +2113,7 @@ namespace qnr {
 
       if (!result) {
         if (lastLocation) {
-          Debug.assert(lastLocation.kind === SyntaxKind.SourceFile);
+          assert(lastLocation.kind === SyntaxKind.SourceFile);
           if ((lastLocation as SourceFile).commonJsModuleIndicator && name === 'exports' && meaning & lastLocation.symbol.flags) {
             return lastLocation.symbol;
           }
@@ -2415,7 +2415,7 @@ namespace qnr {
         const parent = errorLocation.parent;
         if (symbol) {
           if (isQualifiedName(parent)) {
-            Debug.assert(parent.left === errorLocation, 'Should only be resolving left side of qualified name as a namespace');
+            assert(parent.left === errorLocation, 'Should only be resolving left side of qualified name as a namespace');
             const propName = parent.right.escapedText;
             const propType = getPropertyOfType(getDeclaredTypeOfSymbol(symbol), propName);
             if (propType) {
@@ -2548,7 +2548,7 @@ namespace qnr {
     }
 
     function checkResolvedBlockScopedVariable(result: Symbol, errorLocation: Node): void {
-      Debug.assert(!!(result.flags & SymbolFlags.BlockScopedVariable || result.flags & SymbolFlags.Class || result.flags & SymbolFlags.Enum));
+      assert(!!(result.flags & SymbolFlags.BlockScopedVariable || result.flags & SymbolFlags.Class || result.flags & SymbolFlags.Enum));
       if (result.flags & (SymbolFlags.Function | SymbolFlags.FunctionScopedVariable | SymbolFlags.Assignment) && result.flags & SymbolFlags.Class) {
         // constructor functions aren't block scoped
         return;
@@ -2568,7 +2568,7 @@ namespace qnr {
         } else if (result.flags & SymbolFlags.RegularEnum) {
           diagnosticMessage = error(errorLocation, Diagnostics.Enum_0_used_before_its_declaration, declarationName);
         } else {
-          Debug.assert(!!(result.flags & SymbolFlags.ConstEnum));
+          assert(!!(result.flags & SymbolFlags.ConstEnum));
           if (compilerOptions.preserveConstEnums) {
             diagnosticMessage = error(errorLocation, Diagnostics.Enum_0_used_before_its_declaration, declarationName);
           }
@@ -3128,7 +3128,7 @@ namespace qnr {
     }
 
     function resolveAlias(symbol: Symbol): Symbol {
-      Debug.assert((symbol.flags & SymbolFlags.Alias) !== 0, 'Should only get Alias here.');
+      assert((symbol.flags & SymbolFlags.Alias) !== 0, 'Should only get Alias here.');
       const links = getSymbolLinks(symbol);
       if (!links.target) {
         links.target = resolvingSymbol;
@@ -3286,7 +3286,7 @@ namespace qnr {
       } else {
         // Case 2 in above example
         // entityName.kind could be a QualifiedName or a Missing identifier
-        Debug.assert(entityName.parent.kind === SyntaxKind.ImportEqualsDeclaration);
+        assert(entityName.parent.kind === SyntaxKind.ImportEqualsDeclaration);
         return resolveEntityName(entityName, SymbolFlags.Value | SymbolFlags.Type | SymbolFlags.Namespace, /*ignoreErrors*/ false, dontResolveAlias);
       }
     }
@@ -3367,7 +3367,7 @@ namespace qnr {
       } else {
         throw Debug.assertNever(name, 'Unknown entity name kind.');
       }
-      Debug.assert((getCheckFlags(symbol) & CheckFlags.Instantiated) === 0, 'Should never get an instantiated symbol here.');
+      assert((getCheckFlags(symbol) & CheckFlags.Instantiated) === 0, 'Should never get an instantiated symbol here.');
       if (!isSynthesized(name) && isEntityName(name) && (symbol.flags & SymbolFlags.Alias || name.parent.kind === SyntaxKind.ExportAssignment)) {
         markSymbolOfAliasDeclarationIfTypeOnly(getAliasDeclarationFromName(name), symbol, /*finalTarget*/ undefined, /*overwriteEmpty*/ true);
       }
@@ -4747,7 +4747,7 @@ namespace qnr {
         tracker: SymbolTracker | undefined,
         cb: (context: NodeBuilderContext) => T
       ): T | undefined {
-        Debug.assert(enclosingDeclaration === undefined || (enclosingDeclaration.flags & NodeFlags.Synthesized) === 0);
+        assert(enclosingDeclaration === undefined || (enclosingDeclaration.flags & NodeFlags.Synthesized) === 0);
         const context: NodeBuilderContext = {
           enclosingDeclaration,
           flags: flags || NodeBuilderFlags.None,
@@ -4936,7 +4936,7 @@ namespace qnr {
         const objectFlags = getObjectFlags(type);
 
         if (objectFlags & ObjectFlags.Reference) {
-          Debug.assert(!!(type.flags & TypeFlags.Object));
+          assert(!!(type.flags & TypeFlags.Object));
           return (<TypeReference>type).node ? visitAndTransformType(type, typeReferenceToTypeNode) : typeReferenceToTypeNode(<TypeReference>type);
         }
         if (type.flags & TypeFlags.TypeParameter || objectFlags & ObjectFlags.ClassOrInterface) {
@@ -4978,7 +4978,7 @@ namespace qnr {
           }
         }
         if (objectFlags & (ObjectFlags.Anonymous | ObjectFlags.Mapped)) {
-          Debug.assert(!!(type.flags & TypeFlags.Object));
+          assert(!!(type.flags & TypeFlags.Object));
           // The type is an object literal type.
           return createAnonymousTypeNode(<ObjectType>type);
         }
@@ -5012,7 +5012,7 @@ namespace qnr {
         return Debug.fail('Should be unreachable.');
 
         function createMappedTypeNodeFromType(type: MappedType) {
-          Debug.assert(!!(type.flags & TypeFlags.Object));
+          assert(!!(type.flags & TypeFlags.Object));
           const readonlyToken = type.declaration.readonlyToken
             ? <ReadonlyToken | PlusToken | MinusToken>createToken(type.declaration.readonlyToken.kind)
             : undefined;
@@ -5751,7 +5751,7 @@ namespace qnr {
           !(context.flags & NodeBuilderFlags.DoNotIncludeSymbolChain)
         ) {
           chain = Debug.checkDefined(getSymbolChain(symbol, meaning, /*endOfChain*/ true));
-          Debug.assert(chain && chain.length > 0);
+          assert(chain && chain.length > 0);
         } else {
           chain = [symbol];
         }
@@ -5852,7 +5852,7 @@ namespace qnr {
       }
 
       function lookupTypeParameterNodes(chain: Symbol[], index: number, context: NodeBuilderContext) {
-        Debug.assert(chain && 0 <= index && index < chain.length);
+        assert(chain && 0 <= index && index < chain.length);
         const symbol = chain[index];
         const symbolId = '' + getSymbolId(symbol);
         if (context.typeParameterSymbolList && context.typeParameterSymbolList.get(symbolId)) {
@@ -6516,7 +6516,7 @@ namespace qnr {
             }
           }
 
-          if (file && isTupleTypeNode(node) && getLineAndCharOf(file, node.pos).line === getLineAndCharOf(file, node.end).line) {
+          if (file && isTupleTypeNode(node) && lineAndCharOf(file, node.pos).line === lineAndCharOf(file, node.end).line) {
             setEmitFlags(node, EmitFlags.SingleLine);
           }
 
@@ -8777,7 +8777,7 @@ namespace qnr {
             const thisParameter = getAccessorThisParameter(func as AccessorDeclaration);
             if (thisParameter && declaration === thisParameter) {
               // Use the type from the *getter*
-              Debug.assert(!thisParameter.type);
+              assert(!thisParameter.type);
               return getTypeOfSymbol(getterSignature.thisParameter!);
             }
             return getReturnTypeOfSignature(getterSignature);
@@ -9158,7 +9158,7 @@ namespace qnr {
     }
 
     function getConstructorDefinedThisAssignmentTypes(types: Type[], declarations: Declaration[]): Type[] | undefined {
-      Debug.assert(types.length === declarations.length);
+      assert(types.length === declarations.length);
       return types.filter((_, i) => {
         const declaration = declarations[i];
         const expression = isBinaryExpression(declaration) ? declaration : isBinaryExpression(declaration.parent) ? declaration.parent : undefined;
@@ -9533,7 +9533,7 @@ namespace qnr {
                 );
               }
             } else {
-              Debug.assert(!!getter, 'there must exist a getter as we are current checking either setter or getter in this function');
+              assert(!!getter, 'there must exist a getter as we are current checking either setter or getter in this function');
               if (!isPrivateWithinAmbient(getter)) {
                 errorOrSuggestion(
                   noImplicitAny,
@@ -9810,7 +9810,7 @@ namespace qnr {
     // The outer type parameters are those defined by enclosing generic classes, methods, or functions.
     function getOuterTypeParametersOfClassOrInterface(symbol: Symbol): TypeParameter[] | undefined {
       const declaration = symbol.flags & SymbolFlags.Class ? symbol.valueDeclaration : getDeclarationOfKind(symbol, SyntaxKind.InterfaceDeclaration)!;
-      Debug.assert(!!declaration, 'Class was missing valueDeclaration -OR- non-class had no interface declarations');
+      assert(!!declaration, 'Class was missing valueDeclaration -OR- non-class had no interface declarations');
       return getOuterTypeParameters(declaration);
     }
 
@@ -9912,7 +9912,7 @@ namespace qnr {
         }
         const baseConstructorType = checkExpression(baseTypeNode.expression);
         if (extended && baseTypeNode !== extended) {
-          Debug.assert(!extended.typeArguments); // Because this is in a JS file, and baseTypeNode is in an @extends tag
+          assert(!extended.typeArguments); // Because this is in a JS file, and baseTypeNode is in an @extends tag
           checkExpression(extended.expression);
         }
         if (baseConstructorType.flags & (TypeFlags.Object | TypeFlags.Intersection)) {
@@ -10550,7 +10550,7 @@ namespace qnr {
      * members.
      */
     function addDeclarationToLateBoundSymbol(symbol: Symbol, member: LateBoundDeclaration | BinaryExpression, symbolFlags: SymbolFlags) {
-      Debug.assert(!!(getCheckFlags(symbol) & CheckFlags.Late), 'Expected a late-bound symbol.');
+      assert(!!(getCheckFlags(symbol) & CheckFlags.Late), 'Expected a late-bound symbol.');
       symbol.flags |= symbolFlags;
       getSymbolLinks(member.symbol).lateSymbol = symbol;
       if (!symbol.declarations) {
@@ -10599,7 +10599,7 @@ namespace qnr {
       lateSymbols: UnderscoreEscapedMap<TransientSymbol>,
       decl: LateBoundDeclaration | LateBoundBinaryExpressionDeclaration
     ) {
-      Debug.assert(!!decl.symbol, 'The member is expected to have a symbol.');
+      assert(!!decl.symbol, 'The member is expected to have a symbol.');
       const links = getNodeLinks(decl);
       if (!links.resolvedSymbol) {
         // In the event we attempt to resolve the late-bound name of this member recursively,
@@ -10633,7 +10633,7 @@ namespace qnr {
           lateSymbol.nameType = type;
           addDeclarationToLateBoundSymbol(lateSymbol, decl, symbolFlags);
           if (lateSymbol.parent) {
-            Debug.assert(lateSymbol.parent === parent, 'Existing symbol parent should match new one');
+            assert(lateSymbol.parent === parent, 'Existing symbol parent should match new one');
           } else {
             lateSymbol.parent = parent;
           }
@@ -10843,7 +10843,7 @@ namespace qnr {
     }
 
     function createOptionalCallSignature(signature: Signature, callChainFlags: SignatureFlags) {
-      Debug.assert(
+      assert(
         callChainFlags === SignatureFlags.IsInnerCallChain || callChainFlags === SignatureFlags.IsOuterCallChain,
         'An optional call signature can either be for an inner call chain or an outer call chain, but not both.'
       );
@@ -11023,7 +11023,7 @@ namespace qnr {
         for (const signatures of signatureLists) {
           if (signatures !== masterList) {
             const signature = signatures[0];
-            Debug.assert(!!signature, 'getUnionSignatures bails early on empty signature lists and should not have empty lists on second pass');
+            assert(!!signature, 'getUnionSignatures bails early on empty signature lists and should not have empty lists on second pass');
             results =
               signature.typeParameters && some(results, (s) => !!s.typeParameters)
                 ? undefined
@@ -12378,7 +12378,7 @@ namespace qnr {
       if (node.initializer) {
         const signature = getSignatureFromDeclaration(node.parent);
         const parameterIndex = node.parent.parameters.indexOf(node);
-        Debug.assert(parameterIndex >= 0);
+        assert(parameterIndex >= 0);
         return parameterIndex >= getMinArgumentCount(signature, /*strongArityForUntypedJS*/ true);
       }
       const iife = getImmediatelyInvokedFunctionExpression(node.parent);
@@ -12694,7 +12694,7 @@ namespace qnr {
           signature.resolvedTypePredicate =
             type && isTypePredicateNode(type) ? createTypePredicateFromTypePredicateNode(type, signature) : jsdocPredicate || noTypePredicate;
         }
-        Debug.assert(!!signature.resolvedTypePredicate);
+        assert(!!signature.resolvedTypePredicate);
       }
       return signature.resolvedTypePredicate === noTypePredicate ? undefined : signature.resolvedTypePredicate;
     }
@@ -16407,7 +16407,7 @@ namespace qnr {
     // Returns true if the given expression contains (at any level of nesting) a function or arrow expression
     // that is subject to contextual typing.
     function isContextSensitive(node: Expression | MethodDeclaration | ObjectLiteralElementLike | JsxAttributeLike | JsxChild): boolean {
-      Debug.assert(node.kind !== SyntaxKind.MethodDeclaration || isObjectLiteralMethod(node));
+      assert(node.kind !== SyntaxKind.MethodDeclaration || isObjectLiteralMethod(node));
       switch (node.kind) {
         case SyntaxKind.FunctionExpression:
         case SyntaxKind.ArrowFunction:
@@ -17664,7 +17664,7 @@ namespace qnr {
       let incompatibleStack: [DiagnosticMessage, (string | number)?, (string | number)?, (string | number)?, (string | number)?][] = [];
       let inPropertyCheck = false;
 
-      Debug.assert(relation !== identityRelation || !errorNode, 'no error reporting in identity checking');
+      assert(relation !== identityRelation || !errorNode, 'no error reporting in identity checking');
 
       const result = isRelatedTo(source, target, /*reportErrors*/ !!errorNode, headMessage);
       if (incompatibleStack.length) {
@@ -17717,7 +17717,7 @@ namespace qnr {
         }
       }
       if (errorNode && errorOutputContainer && errorOutputContainer.skipLogging && result === Ternary.False) {
-        Debug.assert(!!errorOutputContainer.errors, 'missed opportunity to interact with error.');
+        assert(!!errorOutputContainer.errors, 'missed opportunity to interact with error.');
       }
       return result !== Ternary.False;
 
@@ -17860,14 +17860,14 @@ namespace qnr {
         arg2?: string | number,
         arg3?: string | number
       ): void {
-        Debug.assert(!!errorNode);
+        assert(!!errorNode);
         if (incompatibleStack.length) reportIncompatibleStack();
         if (message.elidedInCompatabilityPyramid) return;
         errorInfo = chainDiagnosticMessages(errorInfo, message, arg0, arg1, arg2, arg3);
       }
 
       function associateRelatedInfo(info: DiagnosticRelatedInformation) {
-        Debug.assert(!!errorInfo);
+        assert(!!errorInfo);
         if (!relatedInfo) {
           relatedInfo = [info];
         } else {
@@ -20590,7 +20590,7 @@ namespace qnr {
     }
 
     function getOptionalType(type: Type): Type {
-      Debug.assert(strictNullChecks);
+      assert(strictNullChecks);
       return type.flags & TypeFlags.Undefined ? type : getUnionType([type, undefinedType]);
     }
 
@@ -25468,7 +25468,7 @@ namespace qnr {
     // the matching property in T, if one exists. Otherwise, it is the type of the numeric index signature in T, if one
     // exists. Otherwise, it is the type of the string index signature in T, if one exists.
     function getContextualTypeForObjectLiteralMethod(node: MethodDeclaration, contextFlags?: ContextFlags): Type | undefined {
-      Debug.assert(isObjectLiteralMethod(node));
+      assert(isObjectLiteralMethod(node));
       if (node.flags & NodeFlags.InWithStatement) {
         // We cannot answer semantic questions within a with block, do not proceed any further
         return;
@@ -25767,7 +25767,7 @@ namespace qnr {
         case SyntaxKind.ConditionalExpression:
           return getContextualTypeForConditionalOperand(node, contextFlags);
         case SyntaxKind.TemplateSpan:
-          Debug.assert(parent.parent.kind === SyntaxKind.TemplateExpression);
+          assert(parent.parent.kind === SyntaxKind.TemplateExpression);
           return getContextualTypeForSubstitutionExpression(<TemplateExpression>parent.parent, node);
         case SyntaxKind.ParenthesizedExpression: {
           // Like in `checkParenthesizedExpression`, an `/** @type {xyz} */` comment before a parenthesized expression acts as a type cast.
@@ -25980,7 +25980,7 @@ namespace qnr {
     // all identical ignoring their return type, the result is same signature but with return type as
     // union type of return types from these signatures
     function getContextualSignature(node: FunctionExpression | ArrowFunction | MethodDeclaration): Signature | undefined {
-      Debug.assert(node.kind !== SyntaxKind.MethodDeclaration || isObjectLiteralMethod(node));
+      assert(node.kind !== SyntaxKind.MethodDeclaration || isObjectLiteralMethod(node));
       const typeTagSignature = getSignatureOfTypeTag(node);
       if (typeTagSignature) {
         return typeTagSignature;
@@ -26230,7 +26230,7 @@ namespace qnr {
     }
 
     function getImmediateAliasedSymbol(symbol: Symbol): Symbol | undefined {
-      Debug.assert((symbol.flags & SymbolFlags.Alias) !== 0, 'Should only get Alias here.');
+      assert((symbol.flags & SymbolFlags.Alias) !== 0, 'Should only get Alias here.');
       const links = getSymbolLinks(symbol);
       if (!links.immediateTarget) {
         const node = getDeclarationOfAliasSymbol(symbol);
@@ -26372,7 +26372,7 @@ namespace qnr {
           // an ordinary function declaration(section 6.1) with no parameters.
           // A set accessor declaration is processed in the same manner
           // as an ordinary function declaration with a single parameter and a Void return type.
-          Debug.assert(memberDecl.kind === SyntaxKind.GetAccessor || memberDecl.kind === SyntaxKind.SetAccessor);
+          assert(memberDecl.kind === SyntaxKind.GetAccessor || memberDecl.kind === SyntaxKind.SetAccessor);
           checkNodeDeferred(memberDecl);
         }
 
@@ -26563,7 +26563,7 @@ namespace qnr {
             explicitlySpecifyChildrenAttribute = true;
           }
         } else {
-          Debug.assert(attributeDecl.kind === SyntaxKind.JsxSpreadAttribute);
+          assert(attributeDecl.kind === SyntaxKind.JsxSpreadAttribute);
           if (attributesTable.size > 0) {
             spread = getSpreadType(spread, createJsxAttributesType(), attributes.symbol, objectFlags, /*readonly*/ false);
             attributesTable = new SymbolTable();
@@ -26966,7 +26966,7 @@ namespace qnr {
      * @param node an intrinsic JSX opening-like element
      */
     function getIntrinsicAttributesTypeFromJsxOpeningLikeElement(node: JsxOpeningLikeElement): Type {
-      Debug.assert(isJsxIntrinsicIdentifier(node.tagName));
+      assert(isJsxIntrinsicIdentifier(node.tagName));
       const links = getNodeLinks(node);
       if (!links.resolvedJsxElementAttributesType) {
         const symbol = getIntrinsicTagSymbol(node);
@@ -27403,7 +27403,7 @@ namespace qnr {
       if (propertyOnType) {
         const typeValueDecl = propertyOnType.valueDeclaration;
         const typeClass = getContainingClass(typeValueDecl);
-        Debug.assert(!!typeClass);
+        assert(!!typeClass);
         // We found a private identifier property with the same description.
         // Either:
         // - There is a lexically scoped private identifier AND it shadows the one we found on the type.
@@ -27411,7 +27411,7 @@ namespace qnr {
         if (lexicallyScopedIdentifier) {
           const lexicalValueDecl = lexicallyScopedIdentifier.valueDeclaration;
           const lexicalClass = getContainingClass(lexicalValueDecl);
-          Debug.assert(!!lexicalClass);
+          assert(!!lexicalClass);
           if (findAncestor(lexicalClass, (n) => typeClass === n)) {
             const diagnostic = error(
               right,
@@ -27760,7 +27760,7 @@ namespace qnr {
     }
 
     function getSuggestedSymbolForNonexistentSymbol(location: Node | undefined, outerName: __String, meaning: SymbolFlags): Symbol | undefined {
-      Debug.assert(outerName !== undefined, 'outername should always be defined');
+      assert(outerName !== undefined, 'outername should always be defined');
       const result = resolveNameHelper(
         location,
         outerName,
@@ -28115,7 +28115,7 @@ namespace qnr {
       let index: number | undefined;
       let specializedIndex = -1;
       let spliceIndex: number;
-      Debug.assert(!result.length);
+      assert(!result.length);
       for (const signature of signatures) {
         const symbol = signature.declaration && getSymbolOfNode(signature.declaration);
         const parent = signature.declaration && signature.declaration.parent;
@@ -28181,7 +28181,7 @@ namespace qnr {
           // then this might actually turn out to be a TemplateHead in the future;
           // so we consider the call to be incomplete.
           const templateLiteral = <LiteralExpression>node.template;
-          Debug.assert(templateLiteral.kind === SyntaxKind.NoSubstitutionTemplateLiteral);
+          assert(templateLiteral.kind === SyntaxKind.NoSubstitutionTemplateLiteral);
           callIsIncomplete = !!templateLiteral.isUnterminated;
         }
       } else if (node.kind === SyntaxKind.Decorator) {
@@ -28197,7 +28197,7 @@ namespace qnr {
       } else {
         if (!node.arguments) {
           // This only happens when we have something of the form: 'new C'
-          Debug.assert(node.kind === SyntaxKind.NewExpression);
+          assert(node.kind === SyntaxKind.NewExpression);
           return getMinArgumentCount(signature) === 0;
         }
 
@@ -28464,7 +28464,7 @@ namespace qnr {
       );
       let mapper: TypeMapper | undefined;
       for (let i = 0; i < typeArgumentNodes.length; i++) {
-        Debug.assert(typeParameters[i] !== undefined, 'Should not call checkTypeArguments with too many type arguments');
+        assert(typeParameters[i] !== undefined, 'Should not call checkTypeArguments with too many type arguments');
         const constraint = getConstraintOfTypeParameter(typeParameters[i]);
         if (constraint) {
           const errorInfo =
@@ -28647,7 +28647,7 @@ namespace qnr {
             errorOutputContainer
           )
         ) {
-          Debug.assert(!reportErrors || !!errorOutputContainer.errors, 'jsx should have errors when reporting errors');
+          assert(!reportErrors || !!errorOutputContainer.errors, 'jsx should have errors when reporting errors');
           return errorOutputContainer.errors || emptyArray;
         }
         return;
@@ -28673,7 +28673,7 @@ namespace qnr {
         const errorNode = reportErrors ? thisArgumentNode || node : undefined;
         const headMessage = Diagnostics.The_this_context_of_type_0_is_not_assignable_to_method_s_this_of_type_1;
         if (!checkTypeRelatedTo(thisArgumentType, thisType, relation, errorNode, headMessage, containingMessageChain, errorOutputContainer)) {
-          Debug.assert(!reportErrors || !!errorOutputContainer.errors, 'this parameter should have errors when reporting errors');
+          assert(!reportErrors || !!errorOutputContainer.errors, 'this parameter should have errors when reporting errors');
           return errorOutputContainer.errors || emptyArray;
         }
       }
@@ -28701,7 +28701,7 @@ namespace qnr {
               errorOutputContainer
             )
           ) {
-            Debug.assert(!reportErrors || !!errorOutputContainer.errors, 'parameter should have errors when reporting errors');
+            assert(!reportErrors || !!errorOutputContainer.errors, 'parameter should have errors when reporting errors');
             maybeAddMissingAwaitInfo(arg, checkArgType, paramType);
             return errorOutputContainer.errors || emptyArray;
           }
@@ -28711,7 +28711,7 @@ namespace qnr {
         const spreadType = getSpreadArgumentType(args, argCount, args.length, restType, /*context*/ undefined);
         const errorNode = reportErrors ? (argCount < args.length ? args[argCount] : node) : undefined;
         if (!checkTypeRelatedTo(spreadType, restType, relation, errorNode, headMessage, /*containingMessageChain*/ undefined, errorOutputContainer)) {
-          Debug.assert(!reportErrors || !!errorOutputContainer.errors, 'rest parameter should have errors when reporting errors');
+          assert(!reportErrors || !!errorOutputContainer.errors, 'rest parameter should have errors when reporting errors');
           maybeAddMissingAwaitInfo(errorNode, spreadType, restType);
           return errorOutputContainer.errors || emptyArray;
         }
@@ -29174,7 +29174,7 @@ namespace qnr {
             }
 
             const diags = max > 1 ? allDiagnostics[minIndex] : flatten(allDiagnostics);
-            Debug.assert(diags.length > 0, 'No errors reported for 3 or fewer overload signatures');
+            assert(diags.length > 0, 'No errors reported for 3 or fewer overload signatures');
             const chain = chainDiagnosticMessages(
               map(diags, (d) => (typeof d.messageText === 'string' ? (d as DiagnosticMessageChain) : d.messageText)),
               Diagnostics.No_overload_matches_this_call
@@ -29344,7 +29344,7 @@ namespace qnr {
       args: readonly Expression[],
       hasCandidatesOutArray: boolean
     ): Signature {
-      Debug.assert(candidates.length > 0); // Else should not have called this.
+      assert(candidates.length > 0); // Else should not have called this.
       checkNodeDeferred(node);
       // Normally we will combine overloads. Skip this if they have type parameters since that's hard to combine.
       // Don't do this if there is a `candidatesOutArray`,
@@ -29372,7 +29372,7 @@ namespace qnr {
             ? s.parameters[i]
             : undefined
         );
-        Debug.assert(symbols.length !== 0);
+        assert(symbols.length !== 0);
         parameters.push(
           createCombinedSymbolFromTypes(
             symbols,
@@ -30499,8 +30499,8 @@ namespace qnr {
         error(node, Diagnostics.The_import_meta_meta_property_is_only_allowed_when_the_module_option_is_esnext_or_system);
       }
       const file = getSourceFileOfNode(node);
-      Debug.assert(!!(file.flags & NodeFlags.PossiblyContainsImportMeta), 'Containing file is missing import meta node flag.');
-      Debug.assert(!!file.externalModuleIndicator, 'Containing file should be a module.');
+      assert(!!(file.flags & NodeFlags.PossiblyContainsImportMeta), 'Containing file is missing import meta node flag.');
+      assert(!!file.externalModuleIndicator, 'Containing file should be a module.');
       return node.name.escapedText === 'meta' ? getGlobalImportMetaType() : errorType;
     }
 
@@ -30516,7 +30516,7 @@ namespace qnr {
     }
 
     function getTupleElementLabel(d: ParameterDeclaration | NamedTupleMember) {
-      Debug.assert(isIdentifier(d.name)); // Parameter declarations could be binding patterns, but we only allow identifier names
+      assert(isIdentifier(d.name)); // Parameter declarations could be binding patterns, but we only allow identifier names
       return d.name.escapedText;
     }
 
@@ -31170,7 +31170,7 @@ namespace qnr {
     }
 
     function checkFunctionExpressionOrObjectLiteralMethod(node: FunctionExpression | ArrowFunction | MethodDeclaration, checkMode?: CheckMode): Type {
-      Debug.assert(node.kind !== SyntaxKind.MethodDeclaration || isObjectLiteralMethod(node));
+      assert(node.kind !== SyntaxKind.MethodDeclaration || isObjectLiteralMethod(node));
       checkNodeDeferred(node);
 
       // The identityMapper object is used to indicate that function expressions are wildcards
@@ -31258,7 +31258,7 @@ namespace qnr {
     }
 
     function checkFunctionExpressionOrObjectLiteralMethodDeferred(node: ArrowFunction | FunctionExpression | MethodDeclaration) {
-      Debug.assert(node.kind !== SyntaxKind.MethodDeclaration || isObjectLiteralMethod(node));
+      assert(node.kind !== SyntaxKind.MethodDeclaration || isObjectLiteralMethod(node));
 
       const functionFlags = getFunctionFlags(node);
       const returnType = getReturnTypeFromAnnotation(node);
@@ -33047,7 +33047,7 @@ namespace qnr {
       }
 
       if (compilerOptions.isolatedModules) {
-        Debug.assert(!!(type.symbol.flags & SymbolFlags.ConstEnum));
+        assert(!!(type.symbol.flags & SymbolFlags.ConstEnum));
         const constEnumDeclaration = type.symbol.valueDeclaration as EnumDeclaration;
         if (constEnumDeclaration.flags & NodeFlags.Ambient) {
           error(node, Diagnostics.Cannot_access_ambient_const_enums_when_the_isolatedModules_flag_is_provided);
@@ -35020,7 +35020,7 @@ namespace qnr {
       }
 
       const augmentsTags = getJSDocTags(classLike).filter(isJSDocAugmentsTag);
-      Debug.assert(augmentsTags.length > 0);
+      assert(augmentsTags.length > 0);
       if (augmentsTags.length > 1) {
         error(augmentsTags[1], Diagnostics.Class_declarations_cannot_have_more_than_one_augments_or_extends_tag);
       }
@@ -35130,7 +35130,7 @@ namespace qnr {
           allPotentiallyUnusedIdentifiers.set(sourceFile.path, potentiallyUnusedIdentifiers);
         }
         // TODO: GH#22580
-        // Debug.assert(addToSeen(seenPotentiallyUnusedIdentifiers, getNodeId(node)), "Adding potentially-unused identifier twice");
+        // assert(addToSeen(seenPotentiallyUnusedIdentifiers, getNodeId(node)), "Adding potentially-unused identifier twice");
         potentiallyUnusedIdentifiers.push(node);
       }
     }
@@ -37568,7 +37568,7 @@ namespace qnr {
         const derived = getTargetSymbol(baseSymbol);
         const baseDeclarationFlags = getDeclarationModifierFlagsFromSymbol(base);
 
-        Debug.assert(!!derived, "derived should point to something, even if it is the base class' declaration.");
+        assert(!!derived, "derived should point to something, even if it is the base class' declaration.");
 
         // In order to resolve whether the inherited method was overridden in the base class or not,
         // we compare the Symbols obtained. Since getTargetSymbol returns the symbol on the *uninstantiated*
@@ -37690,7 +37690,7 @@ namespace qnr {
               // method is overridden with method or property -- correct case
               continue;
             } else {
-              Debug.assert(!!(derived.flags & SymbolFlags.Accessor));
+              assert(!!(derived.flags & SymbolFlags.Accessor));
               errorMessage = Diagnostics.Class_0_defines_instance_member_function_1_but_extended_class_2_defines_it_as_instance_member_accessor;
             }
           } else if (base.flags & SymbolFlags.Accessor) {
@@ -39405,7 +39405,7 @@ namespace qnr {
       } else if (!isPropertyAccessExpression(name) && !isPrivateIdentifier(name) && isInRightSideOfImportOrExportAssignment(name)) {
         // Since we already checked for ExportAssignment, this really could only be an Import
         const importEqualsDeclaration = getAncestor(name, SyntaxKind.ImportEqualsDeclaration);
-        Debug.assert(importEqualsDeclaration !== undefined);
+        assert(importEqualsDeclaration !== undefined);
         return getSymbolOfPartOfRightHandSideOfImportEquals(name, /*dontResolveAlias*/ true);
       }
 
@@ -39448,7 +39448,7 @@ namespace qnr {
       }
 
       if (name.parent.kind === SyntaxKind.TypeParameter && name.parent.parent.kind === SyntaxKind.JSDocTemplateTag) {
-        Debug.assert(!isInJSFile(name)); // Otherwise `isDeclarationName` would have been true.
+        assert(!isInJSFile(name)); // Otherwise `isDeclarationName` would have been true.
         const typeParameter = getTypeParameterFromJsDoc(name.parent as TypeParameterDeclaration & { parent: JSDocTemplateTag });
         return typeParameter && typeParameter.symbol;
       }
@@ -39697,7 +39697,7 @@ namespace qnr {
     // [ a ] from
     //     [a] = [ some array ...]
     function getTypeOfAssignmentPattern(expr: AssignmentPattern): Type | undefined {
-      Debug.assert(expr.kind === SyntaxKind.ObjectLiteralExpression || expr.kind === SyntaxKind.ArrayLiteralExpression);
+      assert(expr.kind === SyntaxKind.ObjectLiteralExpression || expr.kind === SyntaxKind.ArrayLiteralExpression);
       // If this is from "for of"
       //     for ( { a } of elems) {
       //     }
@@ -40472,7 +40472,7 @@ namespace qnr {
         },
         getDeclarationStatementsForSourceFile: (node, flags, tracker, bundled) => {
           const n = getParseTreeNode(node) as SourceFile;
-          Debug.assert(n && n.kind === SyntaxKind.SourceFile, 'Non-sourcefile node passed into getDeclarationsForSourceFile');
+          assert(n && n.kind === SyntaxKind.SourceFile, 'Non-sourcefile node passed into getDeclarationsForSourceFile');
           const sym = getSymbolOfNode(node);
           if (!sym) {
             return !node.locals ? [] : nodeBuilder.symbolTableToDeclarationStatements(node.locals, node, flags, tracker, bundled);
@@ -41247,8 +41247,8 @@ namespace qnr {
       }
 
       const { equalsGreaterThanToken } = node;
-      const startLine = getLineAndCharOf(file, equalsGreaterThanToken.pos).line;
-      const endLine = getLineAndCharOf(file, equalsGreaterThanToken.end).line;
+      const startLine = lineAndCharOf(file, equalsGreaterThanToken.pos).line;
+      const endLine = lineAndCharOf(file, equalsGreaterThanToken.end).line;
       return startLine !== endLine && grammarErrorOnNode(equalsGreaterThanToken, Diagnostics.Line_terminator_not_permitted_before_arrow);
     }
 
@@ -41383,7 +41383,7 @@ namespace qnr {
 
             seenExtendsClause = true;
           } else {
-            Debug.assert(heritageClause.token === SyntaxKind.ImplementsKeyword);
+            assert(heritageClause.token === SyntaxKind.ImplementsKeyword);
             if (seenImplementsClause) {
               return grammarErrorOnFirstToken(heritageClause, Diagnostics.implements_clause_already_seen);
             }
@@ -41409,7 +41409,7 @@ namespace qnr {
 
             seenExtendsClause = true;
           } else {
-            Debug.assert(heritageClause.token === SyntaxKind.ImplementsKeyword);
+            assert(heritageClause.token === SyntaxKind.ImplementsKeyword);
             return grammarErrorOnFirstToken(heritageClause, Diagnostics.Interface_declaration_cannot_have_implements_clause);
           }
 
@@ -41438,7 +41438,7 @@ namespace qnr {
 
     function checkGrammarForGenerator(node: FunctionLikeDeclaration) {
       if (node.asteriskToken) {
-        Debug.assert(
+        assert(
           node.kind === SyntaxKind.FunctionDeclaration || node.kind === SyntaxKind.FunctionExpression || node.kind === SyntaxKind.MethodDeclaration
         );
         if (node.flags & NodeFlags.Ambient) {
@@ -41606,7 +41606,7 @@ namespace qnr {
             );
             const func = getContainingFunction(forInOrOfStatement);
             if (func && func.kind !== SyntaxKind.Constructor) {
-              Debug.assert((getFunctionFlags(func) & FunctionFlags.Async) === 0, 'Enclosing function should never be an async function.');
+              assert((getFunctionFlags(func) & FunctionFlags.Async) === 0, 'Enclosing function should never be an async function.');
               const relatedInfo = createDiagnosticForNode(func, Diagnostics.Did_you_mean_to_mark_this_function_as_async);
               addRelatedInfo(diagnostic, relatedInfo);
             }
@@ -42303,7 +42303,7 @@ namespace qnr {
         } else {
           // We must be parented by a statement.  If so, there's no need
           // to report the error as our parent will have already done it.
-          // Debug.assert(isStatement(node.parent));
+          // assert(isStatement(node.parent));
         }
       }
       return false;

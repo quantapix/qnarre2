@@ -573,7 +573,7 @@ namespace qnr {
     let isAccessor = tryAddPropertyAssignment(properties, 'get', attributes.get);
     isAccessor = tryAddPropertyAssignment(properties, 'set', attributes.set) || isAccessor;
 
-    Debug.assert(!(isData && isAccessor), 'A PropertyDescriptor may not be both an accessor descriptor and a data descriptor.');
+    assert(!(isData && isAccessor), 'A PropertyDescriptor may not be both an accessor descriptor and a data descriptor.');
     return createObjectLiteral(properties, !singleLine);
   }
 
@@ -1225,7 +1225,7 @@ namespace qnr {
     questionDotToken: QuestionDotToken | undefined,
     name: Identifier
   ) {
-    Debug.assert(
+    assert(
       !!(node.flags & NodeFlags.OptionalChain),
       'Cannot update a PropertyAccessExpression using updatePropertyAccessChain. Use updatePropertyAccess instead.'
     );
@@ -1267,7 +1267,7 @@ namespace qnr {
     questionDotToken: QuestionDotToken | undefined,
     argumentExpression: Expression
   ) {
-    Debug.assert(
+    assert(
       !!(node.flags & NodeFlags.OptionalChain),
       'Cannot update an ElementAccessExpression using updateElementAccessChain. Use updateElementAccess instead.'
     );
@@ -1324,7 +1324,7 @@ namespace qnr {
     typeArguments: readonly TypeNode[] | undefined,
     argumentsArray: readonly Expression[]
   ) {
-    Debug.assert(!!(node.flags & NodeFlags.OptionalChain), 'Cannot update a CallExpression using updateCallChain. Use updateCall instead.');
+    assert(!!(node.flags & NodeFlags.OptionalChain), 'Cannot update a CallExpression using updateCallChain. Use updateCall instead.');
     return node.expression !== expression ||
       node.questionDotToken !== questionDotToken ||
       node.typeArguments !== typeArguments ||
@@ -1699,7 +1699,7 @@ namespace qnr {
         return Debug.fail('Invalid raw text');
       }
 
-      Debug.assert(text === cooked, "Expected argument 'text' to be the normalized (i.e. 'cooked') version of argument 'rawText'.");
+      assert(text === cooked, "Expected argument 'text' to be the normalized (i.e. 'cooked') version of argument 'rawText'.");
       node.rawText = rawText;
     }
     return node;
@@ -1841,7 +1841,7 @@ namespace qnr {
   }
 
   export function updateNonNullChain(node: NonNullChain, expression: Expression) {
-    Debug.assert(
+    assert(
       !!(node.flags & NodeFlags.OptionalChain),
       'Cannot update a NonNullExpression using updateNonNullChain. Use updateNonNullExpression instead.'
     );
@@ -3375,7 +3375,7 @@ namespace qnr {
     node.prologues = emptyArray;
     node.referencedFiles = emptyArray;
     node.libReferenceDirectives = emptyArray;
-    node.getLineAndCharOf = (pos) => getLineAndCharOf(node, pos);
+    node.lineAndCharOf = (pos) => lineAndCharOf(node, pos);
     return node;
   }
 
@@ -3391,7 +3391,7 @@ namespace qnr {
     let stripInternal: boolean | undefined;
     let bundleFileInfo: BundleFileInfo | undefined;
     if (!isString(textOrInputFiles)) {
-      Debug.assert(mapPathOrType === 'js' || mapPathOrType === 'dts');
+      assert(mapPathOrType === 'js' || mapPathOrType === 'dts');
       node.fileName = (mapPathOrType === 'js' ? textOrInputFiles.javascriptPath : textOrInputFiles.declarationPath) || '';
       node.sourceMapPath = mapPathOrType === 'js' ? textOrInputFiles.javascriptMapPath : textOrInputFiles.declarationMapPath;
       Object.defineProperties(node, {
@@ -3409,7 +3409,7 @@ namespace qnr {
 
       if (textOrInputFiles.buildInfo && textOrInputFiles.buildInfo.bundle) {
         node.oldFileOfCurrentEmit = textOrInputFiles.oldFileOfCurrentEmit;
-        Debug.assert(mapTextOrStripInternal === undefined || typeof mapTextOrStripInternal === 'boolean');
+        assert(mapTextOrStripInternal === undefined || typeof mapTextOrStripInternal === 'boolean');
         stripInternal = mapTextOrStripInternal;
         bundleFileInfo = mapPathOrType === 'js' ? textOrInputFiles.buildInfo.bundle.js : textOrInputFiles.buildInfo.bundle.dts;
         if (node.oldFileOfCurrentEmit) {
@@ -3423,7 +3423,7 @@ namespace qnr {
       node.sourceMapPath = mapPathOrType;
       node.sourceMapText = mapTextOrStripInternal as string;
     }
-    Debug.assert(!node.oldFileOfCurrentEmit);
+    assert(!node.oldFileOfCurrentEmit);
     parseUnparsedSourceFile(node, bundleFileInfo, stripInternal);
     return node;
   }
@@ -3491,7 +3491,7 @@ namespace qnr {
   }
 
   function parseOldFileOfCurrentEmit(node: UnparsedSource, bundleFileInfo: BundleFileInfo) {
-    Debug.assert(!!node.oldFileOfCurrentEmit);
+    assert(!!node.oldFileOfCurrentEmit);
     let texts: UnparsedTextLike[] | undefined;
     let syntheticReferences: UnparsedSyntheticReference[] | undefined;
     for (const section of bundleFileInfo.sections) {

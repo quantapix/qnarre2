@@ -601,7 +601,7 @@ namespace qnr {
     const rightHoistedFunctionsEnd = findSpanEnd(declarations, isHoistedFunction, rightStandardPrologueEnd);
     const rightHoistedVariablesEnd = findSpanEnd(declarations, isHoistedVariableStatement, rightHoistedFunctionsEnd);
     const rightCustomPrologueEnd = findSpanEnd(declarations, isCustomPrologue, rightHoistedVariablesEnd);
-    Debug.assert(rightCustomPrologueEnd === declarations.length, 'Expected declarations to be valid standard or custom prologues');
+    assert(rightCustomPrologueEnd === declarations.length, 'Expected declarations to be valid standard or custom prologues');
 
     // splice prologues from the right into the left. We do this in reverse order
     // so that we don't need to recompute the index on the left when we insert items.
@@ -654,7 +654,7 @@ namespace qnr {
    * @param nodes The NodeArray.
    */
   export function liftToBlock(nodes: readonly Node[]): Statement {
-    Debug.assert(every(nodes, isStatement), 'Cannot lift nodes to a Block.');
+    assert(every(nodes, isStatement), 'Cannot lift nodes to a Block.');
     return <Statement>singleOrUndefined(nodes) || createBlock(<NodeArray<Statement>>nodes);
   }
 

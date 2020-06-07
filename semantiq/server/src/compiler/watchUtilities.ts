@@ -106,7 +106,7 @@ namespace qnr {
         return createCachedFileSystemEntries(rootDir, rootDirPath);
       } catch (_e) {
         // If there is exception to read directories, dont cache the result and direct the calls to host
-        Debug.assert(!cachedReadDirectoryResult.has(ensureTrailingDirectorySeparator(rootDirPath)));
+        assert(!cachedReadDirectoryResult.has(ensureTrailingDirectorySeparator(rootDirPath)));
         return;
       }
     }

@@ -423,7 +423,7 @@ namespace qnr {
             logChanges = false;
           }
         }
-        Debug.assert(resolution !== undefined && !resolution.isInvalidated);
+        assert(resolution !== undefined && !resolution.isInvalidated);
         seenNamesInFile.set(name, true);
         resolvedModules.push(getResolutionWithResolvedFileName(resolution));
       }
@@ -517,7 +517,7 @@ namespace qnr {
           : getNormalizedAbsolutePath(failedLookupLocation, getCurrentDirectory());
         const failedLookupPathSplit = failedLookupLocationPath.split(directorySeparator);
         const failedLookupSplit = failedLookupLocation.split(directorySeparator);
-        Debug.assert(
+        assert(
           failedLookupSplit.length === failedLookupPathSplit.length,
           `FailedLookup: ${failedLookupLocation} failedLookupLocationPath: ${failedLookupLocationPath}`
         );
@@ -588,7 +588,7 @@ namespace qnr {
         Debug.assertDefined(resolution.files);
       } else {
         resolution.refCount = 1;
-        Debug.assert(resolution.files === undefined);
+        assert(resolution.files === undefined);
         if (isExternalModuleNameRelative(name)) {
           watchFailedLookupLocationOfResolution(resolution);
         } else {
@@ -603,7 +603,7 @@ namespace qnr {
     }
 
     function watchFailedLookupLocationOfResolution(resolution: ResolutionWithFailedLookupLocations) {
-      Debug.assert(!!resolution.refCount);
+      assert(!!resolution.refCount);
 
       const { failedLookupLocations } = resolution;
       if (!failedLookupLocations.length) return;
@@ -622,7 +622,7 @@ namespace qnr {
             customFailedLookupPaths.set(failedLookupLocationPath, refCount + 1);
           }
           if (dirPath === rootPath) {
-            Debug.assert(!nonRecursive);
+            assert(!nonRecursive);
             setAtRoot = true;
           } else {
             setDirectoryWatcher(dir, dirPath, nonRecursive);
@@ -646,7 +646,7 @@ namespace qnr {
     function setDirectoryWatcher(dir: string, dirPath: Path, nonRecursive?: boolean) {
       const dirWatcher = directoryWatchesOfFailedLookups.get(dirPath);
       if (dirWatcher) {
-        Debug.assert(!!nonRecursive === !!dirWatcher.nonRecursive);
+        assert(!!nonRecursive === !!dirWatcher.nonRecursive);
         dirWatcher.refCount++;
       } else {
         directoryWatchesOfFailedLookups.set(dirPath, { watcher: createDirectoryWatcher(dir, dirPath, nonRecursive), refCount: 1, nonRecursive });
@@ -685,7 +685,7 @@ namespace qnr {
             if (refCount === 1) {
               customFailedLookupPaths.delete(failedLookupLocationPath);
             } else {
-              Debug.assert(refCount > 1);
+              assert(refCount > 1);
               customFailedLookupPaths.set(failedLookupLocationPath, refCount - 1);
             }
           }
@@ -784,7 +784,7 @@ namespace qnr {
     }
 
     function setFilesWithInvalidatedNonRelativeUnresolvedImports(filesMap: ReadonlyMap<readonly string[]>) {
-      Debug.assert(filesWithInvalidatedNonRelativeUnresolvedImports === filesMap || filesWithInvalidatedNonRelativeUnresolvedImports === undefined);
+      assert(filesWithInvalidatedNonRelativeUnresolvedImports === filesMap || filesWithInvalidatedNonRelativeUnresolvedImports === undefined);
       filesWithInvalidatedNonRelativeUnresolvedImports = filesMap;
     }
 

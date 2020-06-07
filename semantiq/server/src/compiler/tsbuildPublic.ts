@@ -536,9 +536,9 @@ namespace qnr {
       if (projectIndex === -1) return;
     }
     const buildOrder = resolvedProject ? (createBuildOrder(state, [resolvedProject]) as BuildOrder) : buildOrderFromState;
-    Debug.assert(!isCircularBuildOrder(buildOrder));
-    Debug.assert(!onlyReferences || resolvedProject !== undefined);
-    Debug.assert(!onlyReferences || buildOrder[buildOrder.length - 1] === resolvedProject);
+    assert(!isCircularBuildOrder(buildOrder));
+    assert(!onlyReferences || resolvedProject !== undefined);
+    assert(!onlyReferences || buildOrder[buildOrder.length - 1] === resolvedProject);
     return onlyReferences ? buildOrder.slice(0, buildOrder.length - 1) : buildOrder;
   }
 
@@ -827,7 +827,7 @@ namespace qnr {
     }
 
     function createProgram() {
-      Debug.assert(program === undefined);
+      assert(program === undefined);
 
       if (state.options.dry) {
         reportStatus(state, Diagnostics.A_non_dry_build_would_build_project_0, project);
@@ -896,7 +896,7 @@ namespace qnr {
 
     function emit(writeFileCallback?: WriteFileCallback, cancellationToken?: CancellationToken, customTransformers?: CustomTransformers): EmitResult {
       Debug.assertIsDefined(program);
-      Debug.assert(step === Step.Emit);
+      assert(step === Step.Emit);
       // Before emitting lets backup state, so we can revert it back if there are declaration errors to handle emit and declaration errors correctly
       program.backupState();
       let declDiagnostics: Diagnostic[] | undefined;
@@ -1007,7 +1007,7 @@ namespace qnr {
       writeFileCallback?: WriteFileCallback,
       customTransformers?: CustomTransformers
     ): EmitResult | BuildInvalidedProject<T> | undefined {
-      Debug.assert(kind === InvalidatedProjectKind.UpdateBundle);
+      assert(kind === InvalidatedProjectKind.UpdateBundle);
       if (state.options.dry) {
         reportStatus(state, Diagnostics.A_non_dry_build_would_update_output_of_project_0, project);
         buildResult = BuildResultFlags.Success;
@@ -1050,7 +1050,7 @@ namespace qnr {
       }
 
       // Actual Emit
-      Debug.assert(!!outputFiles.length);
+      assert(!!outputFiles.length);
       const emitterDiagnostics = createDiagnosticCollection();
       const emittedOutputs = createMap() as FileMap<string>;
       outputFiles.forEach(({ name, text, writeByteOrderMark }) => {
@@ -1108,7 +1108,7 @@ namespace qnr {
           default:
             assertType<Step.Done>(step);
         }
-        Debug.assert(step > currentStep);
+        assert(step > currentStep);
       }
     }
   }
@@ -1280,12 +1280,12 @@ namespace qnr {
     const projPath = toPath(state, proj);
     if (moduleResolutionCache.directoryToModuleNameMap.redirectsMap.size === 0) {
       // The own map will be for projectCompilerOptions
-      Debug.assert(moduleResolutionCache.moduleNameToDirectoryMap.redirectsMap.size === 0);
+      assert(moduleResolutionCache.moduleNameToDirectoryMap.redirectsMap.size === 0);
       moduleResolutionCache.directoryToModuleNameMap.redirectsMap.set(projPath, moduleResolutionCache.directoryToModuleNameMap.ownMap);
       moduleResolutionCache.moduleNameToDirectoryMap.redirectsMap.set(projPath, moduleResolutionCache.moduleNameToDirectoryMap.ownMap);
     } else {
       // Set correct own map
-      Debug.assert(moduleResolutionCache.moduleNameToDirectoryMap.redirectsMap.size > 0);
+      assert(moduleResolutionCache.moduleNameToDirectoryMap.redirectsMap.size > 0);
 
       const ref: ResolvedProjectReference = {
         sourceFile: config.options.configFile!,
@@ -1440,7 +1440,7 @@ namespace qnr {
           }
 
           // We have an output older than an upstream output - we are out of date
-          Debug.assert(oldestOutputFileName !== undefined, 'Should have an oldest output filename here');
+          assert(oldestOutputFileName !== undefined, 'Should have an oldest output filename here');
           return {
             type: UpToDateStatusType.OutOfDateWithUpstream,
             outOfDateOutputFileName: oldestOutputFileName,

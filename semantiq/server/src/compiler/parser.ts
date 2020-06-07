@@ -1047,7 +1047,7 @@ namespace qnr {
       processPragmasIntoFields((sourceFile as {}) as PragmaContext, reportPragmaDiagnostic);
 
       sourceFile.statements = parseList(ParsingContext.SourceElements, parseStatement);
-      Debug.assert(token() === SyntaxKind.EndOfFileToken);
+      assert(token() === SyntaxKind.EndOfFileToken);
       sourceFile.endOfFileToken = addJSDocComment(parseTokenNode());
 
       setExternalModuleIndicator(sourceFile);
@@ -1070,7 +1070,7 @@ namespace qnr {
     }
 
     function addJSDocComment<T extends HasJSDoc>(node: T): T {
-      Debug.assert(!node.jsDoc); // Should only be called once per node
+      assert(!node.jsDoc); // Should only be called once per node
       const jsDoc = mapDefined(getJSDocCommentRanges(node, sourceFile.text), (comment) =>
         JSDocParser.parseJSDocComment(node, comment.pos, comment.end - comment.pos)
       );
@@ -1341,7 +1341,7 @@ namespace qnr {
       // same.
       const result = isLookAhead ? scanner.lookAhead(callback) : scanner.tryScan(callback);
 
-      Debug.assert(saveContextFlags === contextFlags);
+      assert(saveContextFlags === contextFlags);
 
       // If our callback returned something 'falsy' or we're just looking ahead,
       // then unconditionally restore us to where we were.
@@ -1850,7 +1850,7 @@ namespace qnr {
     }
 
     function isValidHeritageClauseObjectLiteral() {
-      Debug.assert(token() === SyntaxKind.OpenBraceToken);
+      assert(token() === SyntaxKind.OpenBraceToken);
       if (nextToken() === SyntaxKind.CloseBraceToken) {
         // if we see "extends {}" then only treat the {} as what we're extending (and not
         // the class body) if we have:
@@ -2547,7 +2547,7 @@ namespace qnr {
       const template = <TemplateExpression>createNode(SyntaxKind.TemplateExpression);
 
       template.head = parseTemplateHead(isTaggedTemplate);
-      Debug.assert(template.head.kind === SyntaxKind.TemplateHead, 'Template head has wrong token kind');
+      assert(template.head.kind === SyntaxKind.TemplateHead, 'Template head has wrong token kind');
 
       const list = [];
       const listPos = getNodePos();
@@ -2586,16 +2586,13 @@ namespace qnr {
         reScanTemplateHeadOrNoSubstitutionTemplate();
       }
       const fragment = parseLiteralLikeNode(token());
-      Debug.assert(fragment.kind === SyntaxKind.TemplateHead, 'Template head has wrong token kind');
+      assert(fragment.kind === SyntaxKind.TemplateHead, 'Template head has wrong token kind');
       return <TemplateHead>fragment;
     }
 
     function parseTemplateMiddleOrTemplateTail(): TemplateMiddle | TemplateTail {
       const fragment = parseLiteralLikeNode(token());
-      Debug.assert(
-        fragment.kind === SyntaxKind.TemplateMiddle || fragment.kind === SyntaxKind.TemplateTail,
-        'Template fragment has wrong token kind'
-      );
+      assert(fragment.kind === SyntaxKind.TemplateMiddle || fragment.kind === SyntaxKind.TemplateTail, 'Template fragment has wrong token kind');
       return <TemplateMiddle | TemplateTail>fragment;
     }
 
@@ -3879,7 +3876,7 @@ namespace qnr {
     }
 
     function parseSimpleArrowFunctionExpression(identifier: Identifier, asyncModifier?: NodeArray<Modifier> | undefined): ArrowFunction {
-      Debug.assert(token() === SyntaxKind.EqualsGreaterThanToken, 'parseSimpleArrowFunctionExpression should only have been called if we had a =>');
+      assert(token() === SyntaxKind.EqualsGreaterThanToken, 'parseSimpleArrowFunctionExpression should only have been called if we had a =>');
 
       let node: ArrowFunction;
       if (asyncModifier) {
@@ -4043,7 +4040,7 @@ namespace qnr {
         // It is definitely not an arrow function
         return Tristate.False;
       } else {
-        Debug.assert(first === SyntaxKind.LessThanToken);
+        assert(first === SyntaxKind.LessThanToken);
 
         // If we have "<" not followed by an identifier,
         // then this definitely is not an arrow function.
@@ -4519,7 +4516,7 @@ namespace qnr {
 
       const expression = parseLeftHandSideExpressionOrHigher();
 
-      Debug.assert(isLeftHandSideExpression(expression));
+      assert(isLeftHandSideExpression(expression));
       if ((token() === SyntaxKind.Plus2Token || token() === SyntaxKind.Minus2Token) && !scanner.hasPrecedingLineBreak()) {
         const node = <PostfixUnaryExpression>createNode(SyntaxKind.PostfixUnaryExpression, expression.pos);
         node.operand = expression;
@@ -4700,7 +4697,7 @@ namespace qnr {
 
         result = finishNode(node);
       } else {
-        Debug.assert(opening.kind === SyntaxKind.JsxSelfClosingElement);
+        assert(opening.kind === SyntaxKind.JsxSelfClosingElement);
         // Nothing else to do for self-closing elements
         result = opening;
       }
@@ -5415,7 +5412,7 @@ namespace qnr {
         expression = parseMemberExpressionRest(expression, /*allowOptionalChain*/ false);
         typeArguments = tryParse(parseTypeArgumentsInExpression);
         if (isTemplateStartOfTaggedTemplate()) {
-          Debug.assert(
+          assert(
             !!typeArguments,
             "Expected a type argument list; all plain tagged template starts should be consumed in 'parseMemberExpressionRest'"
           );
@@ -6557,7 +6554,7 @@ namespace qnr {
 
     function parseHeritageClause(): HeritageClause {
       const tok = token();
-      Debug.assert(tok === SyntaxKind.ExtendsKeyword || tok === SyntaxKind.ImplementsKeyword); // isListElement() should ensure this.
+      assert(tok === SyntaxKind.ExtendsKeyword || tok === SyntaxKind.ImplementsKeyword); // isListElement() should ensure this.
       const node = <HeritageClause>createNode(SyntaxKind.HeritageClause);
       node.token = tok;
       nextToken();
@@ -7098,9 +7095,9 @@ namespace qnr {
         const end = length === undefined ? content.length : start + length;
         length = end - start;
 
-        Debug.assert(start >= 0);
-        Debug.assert(start <= end);
-        Debug.assert(end <= content.length);
+        assert(start >= 0);
+        assert(start <= end);
+        assert(end <= content.length);
 
         // Check for /** (JSDoc opening part)
         if (!isJSDocLikeText(content, start)) {
@@ -7265,7 +7262,7 @@ namespace qnr {
         }
 
         function parseTag(margin: number) {
-          Debug.assert(token() === SyntaxKind.AtToken);
+          assert(token() === SyntaxKind.AtToken);
           const start = scanner.getTokenPos();
           nextTokenJSDoc();
 
@@ -7899,7 +7896,7 @@ namespace qnr {
         }
 
         function tryParseChildTag(target: PropertyLikeParse, indent: number): JSDocTypeTag | JSDocPropertyTag | JSDocParameterTag | false {
-          Debug.assert(token() === SyntaxKind.AtToken);
+          assert(token() === SyntaxKind.AtToken);
           const start = scanner.getStartPos();
           nextTokenJSDoc();
 
@@ -8040,7 +8037,7 @@ namespace qnr {
       // tree and give them new positions and parents.  From that point on, trusting the old
       // tree at all is not possible as far too much of it may violate invariants.
       const incrementalSourceFile = <IncrementalNode>(<Node>sourceFile);
-      Debug.assert(!incrementalSourceFile.hasBeenIncrementallyParsed);
+      assert(!incrementalSourceFile.hasBeenIncrementallyParsed);
       incrementalSourceFile.hasBeenIncrementallyParsed = true;
       const oldText = sourceFile.text;
       const syntaxCursor = createSyntaxCursor(sourceFile);
@@ -8052,9 +8049,9 @@ namespace qnr {
 
       // Ensure that extending the affected range only moved the start of the change range
       // earlier in the file.
-      Debug.assert(changeRange.span.start <= textChangeRange.span.start);
-      Debug.assert(textSpanEnd(changeRange.span) === textSpanEnd(textChangeRange.span));
-      Debug.assert(textSpanEnd(textChangeRangeNewSpan(changeRange)) === textSpanEnd(textChangeRangeNewSpan(textChangeRange)));
+      assert(changeRange.span.start <= textChangeRange.span.start);
+      assert(textSpanEnd(changeRange.span) === textSpanEnd(textChangeRange.span));
+      assert(textSpanEnd(textChangeRangeNewSpan(changeRange)) === textSpanEnd(textChangeRangeNewSpan(textChangeRange)));
 
       // The is the amount the nodes after the edit range need to be adjusted.  It can be
       // positive (if the edit added characters), negative (if the edit deleted characters)
@@ -8150,7 +8147,7 @@ namespace qnr {
           };
           commentDirectives = append(commentDirectives, updatedDirective);
           if (aggressiveChecks) {
-            Debug.assert(oldText.substring(range.pos, range.end) === newText.substring(updatedDirective.range.pos, updatedDirective.range.end));
+            assert(oldText.substring(range.pos, range.end) === newText.substring(updatedDirective.range.pos, updatedDirective.range.end));
           }
         }
         // Ignore ranges that fall in change range
@@ -8200,7 +8197,7 @@ namespace qnr {
         node.end += delta;
 
         if (aggressiveChecks && shouldCheckNode(node)) {
-          Debug.assert(text === newText.substring(node.pos, node.end));
+          assert(text === newText.substring(node.pos, node.end));
         }
 
         forEachChild(node, visitNode, visitArray);
@@ -8241,9 +8238,9 @@ namespace qnr {
       changeRangeNewEnd: number,
       delta: number
     ) {
-      Debug.assert(element.end >= changeStart, 'Adjusting an element that was entirely before the change range');
-      Debug.assert(element.pos <= changeRangeOldEnd, 'Adjusting an element that was entirely after the change range');
-      Debug.assert(element.pos <= element.end);
+      assert(element.end >= changeStart, 'Adjusting an element that was entirely before the change range');
+      assert(element.pos <= changeRangeOldEnd, 'Adjusting an element that was entirely after the change range');
+      assert(element.pos <= element.end);
 
       // We have an element that intersects the change range in some way.  It may have its
       // start, or its end (or both) in the changed range.  We want to adjust any part
@@ -8307,10 +8304,10 @@ namespace qnr {
         element.end = Math.min(element.end, changeRangeNewEnd);
       }
 
-      Debug.assert(element.pos <= element.end);
+      assert(element.pos <= element.end);
       if (element.parent) {
-        Debug.assert(element.pos >= element.parent.pos);
-        Debug.assert(element.end <= element.parent.end);
+        assert(element.pos >= element.parent.pos);
+        assert(element.end <= element.parent.end);
       }
     }
 
@@ -8318,7 +8315,7 @@ namespace qnr {
       if (aggressiveChecks) {
         let pos = node.pos;
         const visitNode = (child: Node) => {
-          Debug.assert(child.pos >= pos);
+          assert(child.pos >= pos);
           pos = child.end;
         };
         if (hasJSDocNodes(node)) {
@@ -8327,7 +8324,7 @@ namespace qnr {
           }
         }
         forEachChild(node, visitNode);
-        Debug.assert(pos <= node.end);
+        assert(pos <= node.end);
       }
     }
 
@@ -8345,7 +8342,7 @@ namespace qnr {
       return;
 
       function visitNode(child: IncrementalNode) {
-        Debug.assert(child.pos <= child.end);
+        assert(child.pos <= child.end);
         if (child.pos > changeRangeOldEnd) {
           // Node is entirely past the change range.  We need to move both its pos and
           // end, forward or backward appropriately.
@@ -8374,11 +8371,11 @@ namespace qnr {
         }
 
         // Otherwise, the node is entirely before the change range.  No need to do anything with it.
-        Debug.assert(fullEnd < changeStart);
+        assert(fullEnd < changeStart);
       }
 
       function visitArray(array: IncrementalNodeArray) {
-        Debug.assert(array.pos <= array.end);
+        assert(array.pos <= array.end);
         if (array.pos > changeRangeOldEnd) {
           // Array is entirely after the change range.  We need to move it, and move any of
           // its children.
@@ -8403,7 +8400,7 @@ namespace qnr {
         }
 
         // Otherwise, the array is entirely before the change range.  No need to do anything with it.
-        Debug.assert(fullEnd < changeStart);
+        assert(fullEnd < changeStart);
       }
     }
 
@@ -8427,13 +8424,13 @@ namespace qnr {
       // start of the tree.
       for (let i = 0; start > 0 && i <= maxLookahead; i++) {
         const nearestNode = findNearestNodeStartingBeforeOrAtPosition(sourceFile, start);
-        Debug.assert(nearestNode.pos <= start);
+        assert(nearestNode.pos <= start);
         const position = nearestNode.pos;
 
         start = Math.max(0, position - 1);
       }
 
-      const finalSpan = createTextSpanFromBounds(start, textSpanEnd(changeRange.span));
+      const finalSpan = TextSpan.from(start, textSpanEnd(changeRange.span));
       const finalLength = changeRange.newLength + (changeRange.span.start - start);
 
       return createTextChangeRange(finalSpan, finalLength);
@@ -8495,7 +8492,7 @@ namespace qnr {
             // continue any further.
             return true;
           } else {
-            Debug.assert(child.end <= position);
+            assert(child.end <= position);
             // The child ends entirely before this position.  Say you have the following
             // (where $ is the position)
             //
@@ -8512,7 +8509,7 @@ namespace qnr {
             lastNodeEntirelyBeforePosition = child;
           }
         } else {
-          Debug.assert(child.pos > position);
+          assert(child.pos > position);
           // We're now at a node that is entirely past the position we're searching for.
           // This node (and all following nodes) could never contribute to the result,
           // so just skip them by returning 'true' here.
@@ -8525,16 +8522,16 @@ namespace qnr {
     function checkChangeRange(sourceFile: SourceFile, newText: string, textChangeRange: TextChangeRange, aggressiveChecks: boolean) {
       const oldText = sourceFile.text;
       if (textChangeRange) {
-        Debug.assert(oldText.length - textChangeRange.span.length + textChangeRange.newLength === newText.length);
+        assert(oldText.length - textChangeRange.span.length + textChangeRange.newLength === newText.length);
 
         if (aggressiveChecks || Debug.shouldAssert(AssertionLevel.VeryAggressive)) {
           const oldTextPrefix = oldText.substr(0, textChangeRange.span.start);
           const newTextPrefix = newText.substr(0, textChangeRange.span.start);
-          Debug.assert(oldTextPrefix === newTextPrefix);
+          assert(oldTextPrefix === newTextPrefix);
 
           const oldTextSuffix = oldText.substring(textSpanEnd(textChangeRange.span), oldText.length);
           const newTextSuffix = newText.substring(textSpanEnd(textChangeRangeNewSpan(textChangeRange)), newText.length);
-          Debug.assert(oldTextSuffix === newTextSuffix);
+          assert(oldTextSuffix === newTextSuffix);
         }
       }
     }
@@ -8565,7 +8562,7 @@ namespace qnr {
       let currentArray: NodeArray<Node> = sourceFile.statements;
       let currentArrayIndex = 0;
 
-      Debug.assert(currentArrayIndex < currentArray.length);
+      assert(currentArrayIndex < currentArray.length);
       let current = currentArray[currentArrayIndex];
       let lastQueriedPosition = InvalidPosition.Value;
 
@@ -8599,7 +8596,7 @@ namespace qnr {
           lastQueriedPosition = position;
 
           // Either we don'd have a node, or we have a node at the position being asked for.
-          Debug.assert(!current || current.pos === position);
+          assert(!current || current.pos === position);
           return <IncrementalNode>current;
         },
       };

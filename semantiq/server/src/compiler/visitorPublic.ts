@@ -1271,7 +1271,7 @@ namespace qnr {
    * @param nodes The NodeArray.
    */
   function extractSingleNode(nodes: readonly Node[]): Node | undefined {
-    Debug.assert(nodes.length <= 1, 'Too many nodes written to output.');
+    assert(nodes.length <= 1, 'Too many nodes written to output.');
     return singleOrUndefined(nodes);
   }
 }

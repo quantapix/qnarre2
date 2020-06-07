@@ -1475,7 +1475,7 @@ namespace qnr {
           variable = <Identifier>getSynthesizedClone(initializer.declarations[0].name);
         } else {
           variable = visitNode(initializer, visitor, isExpression);
-          Debug.assert(isLeftHandSideExpression(variable));
+          assert(isLeftHandSideExpression(variable));
         }
 
         emitAssignment(variable, createElementAccess(keysArray, keysIndex));
@@ -1890,7 +1890,7 @@ namespace qnr {
      * Marks the current operation with the specified label.
      */
     function markLabel(label: Label): void {
-      Debug.assert(labelOffsets !== undefined, 'No labels were defined.');
+      assert(labelOffsets !== undefined, 'No labels were defined.');
       labelOffsets[label] = operations ? operations.length : 0;
     }
 
@@ -1966,7 +1966,7 @@ namespace qnr {
      * Ends a code block for a generated `with` statement.
      */
     function endWithBlock(): void {
-      Debug.assert(peekBlockKind() === CodeBlockKind.With);
+      assert(peekBlockKind() === CodeBlockKind.With);
       const block = <WithBlock>endBlock();
       markLabel(block.endLabel);
     }
@@ -1994,7 +1994,7 @@ namespace qnr {
      * @param variable The catch variable.
      */
     function beginCatchBlock(variable: VariableDeclaration): void {
-      Debug.assert(peekBlockKind() === CodeBlockKind.Exception);
+      assert(peekBlockKind() === CodeBlockKind.Exception);
 
       // generated identifiers should already be unique within a file
       let name: Identifier;
@@ -2015,7 +2015,7 @@ namespace qnr {
       }
 
       const exception = <ExceptionBlock>peekBlock();
-      Debug.assert(exception.state < ExceptionBlockState.Catch);
+      assert(exception.state < ExceptionBlockState.Catch);
 
       const endLabel = exception.endLabel;
       emitBreak(endLabel);
@@ -2034,10 +2034,10 @@ namespace qnr {
      * Enters the `finally` block of a generated `try` statement.
      */
     function beginFinallyBlock(): void {
-      Debug.assert(peekBlockKind() === CodeBlockKind.Exception);
+      assert(peekBlockKind() === CodeBlockKind.Exception);
 
       const exception = <ExceptionBlock>peekBlock();
-      Debug.assert(exception.state < ExceptionBlockState.Finally);
+      assert(exception.state < ExceptionBlockState.Finally);
 
       const endLabel = exception.endLabel;
       emitBreak(endLabel);
@@ -2052,7 +2052,7 @@ namespace qnr {
      * Ends the code block for a generated `try` statement.
      */
     function endExceptionBlock(): void {
-      Debug.assert(peekBlockKind() === CodeBlockKind.Exception);
+      assert(peekBlockKind() === CodeBlockKind.Exception);
       const exception = <ExceptionBlock>endBlock();
       const state = exception.state;
       if (state < ExceptionBlockState.Finally) {
@@ -2105,7 +2105,7 @@ namespace qnr {
      * generated code or in the source tree.
      */
     function endLoopBlock(): void {
-      Debug.assert(peekBlockKind() === CodeBlockKind.Loop);
+      assert(peekBlockKind() === CodeBlockKind.Loop);
       const block = <SwitchBlock>endBlock();
       const breakLabel = block.breakLabel;
       if (!block.isScript) {
@@ -2145,7 +2145,7 @@ namespace qnr {
      * Ends a code block that supports `break` statements that are defined in generated code.
      */
     function endSwitchBlock(): void {
-      Debug.assert(peekBlockKind() === CodeBlockKind.Switch);
+      assert(peekBlockKind() === CodeBlockKind.Switch);
       const block = <SwitchBlock>endBlock();
       const breakLabel = block.breakLabel;
       if (!block.isScript) {
@@ -2173,7 +2173,7 @@ namespace qnr {
     }
 
     function endLabeledBlock() {
-      Debug.assert(peekBlockKind() === CodeBlockKind.Labeled);
+      assert(peekBlockKind() === CodeBlockKind.Labeled);
       const block = <LabeledBlock>endBlock();
       if (!block.isScript) {
         markLabel(block.breakLabel);

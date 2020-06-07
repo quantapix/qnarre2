@@ -175,7 +175,7 @@ namespace qnr {
             // These nodes should always have names unless they are default-exports;
             // however, class declaration parsing allows for undefined names, so syntactically invalid
             // programs may also have an undefined name.
-            Debug.assert(node.kind === SyntaxKind.ClassDeclaration || hasSyntacticModifier(node, ModifierFlags.Default));
+            assert(node.kind === SyntaxKind.ClassDeclaration || hasSyntacticModifier(node, ModifierFlags.Default));
           }
           if (isClassDeclaration(node)) {
             // XXX: should probably also cover interfaces and type aliases that can have type variables?

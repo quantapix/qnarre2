@@ -124,11 +124,11 @@ namespace qnr {
       sourceCharacter?: number,
       nameIndex?: number
     ) {
-      Debug.assert(generatedLine >= pendingGeneratedLine, 'generatedLine cannot backtrack');
-      Debug.assert(generatedCharacter >= 0, 'generatedCharacter cannot be negative');
-      Debug.assert(sourceIndex === undefined || sourceIndex >= 0, 'sourceIndex cannot be negative');
-      Debug.assert(sourceLine === undefined || sourceLine >= 0, 'sourceLine cannot be negative');
-      Debug.assert(sourceCharacter === undefined || sourceCharacter >= 0, 'sourceCharacter cannot be negative');
+      assert(generatedLine >= pendingGeneratedLine, 'generatedLine cannot backtrack');
+      assert(generatedCharacter >= 0, 'generatedCharacter cannot be negative');
+      assert(sourceIndex === undefined || sourceIndex >= 0, 'sourceIndex cannot be negative');
+      assert(sourceLine === undefined || sourceLine >= 0, 'sourceLine cannot be negative');
+      assert(sourceCharacter === undefined || sourceCharacter >= 0, 'sourceCharacter cannot be negative');
       enter();
       // If this location wasn't recorded or the location in source is going backwards, record the mapping
       if (isNewGeneratedPosition(generatedLine, generatedCharacter) || isBacktrackingSourcePosition(sourceIndex, sourceLine, sourceCharacter)) {
@@ -161,8 +161,8 @@ namespace qnr {
       start?: LineAndCharacter,
       end?: LineAndCharacter
     ) {
-      Debug.assert(generatedLine >= pendingGeneratedLine, 'generatedLine cannot backtrack');
-      Debug.assert(generatedCharacter >= 0, 'generatedCharacter cannot be negative');
+      assert(generatedLine >= pendingGeneratedLine, 'generatedLine cannot backtrack');
+      assert(generatedCharacter >= 0, 'generatedCharacter cannot be negative');
       enter();
       // First, decode the old component sourcemap
       const sourceIndexToNewSourceIndexMap: number[] = [];
@@ -628,7 +628,7 @@ namespace qnr {
   function compareSourcePositions(left: SourceMappedPosition, right: SourceMappedPosition) {
     // Compares sourcePosition without comparing sourceIndex
     // since the mappings are grouped by sourceIndex
-    Debug.assert(left.sourceIndex === right.sourceIndex);
+    assert(left.sourceIndex === right.sourceIndex);
     return compareValues(left.sourcePosition, right.sourcePosition);
   }
 
@@ -662,13 +662,13 @@ namespace qnr {
 
     function processMapping(mapping: Mapping): MappedPosition {
       const generatedPosition =
-        generatedFile !== undefined ? getPosOf(generatedFile, mapping.generatedLine, mapping.generatedCharacter, /*allowEdits*/ true) : -1;
+        generatedFile !== undefined ? posOf(generatedFile, mapping.generatedLine, mapping.generatedCharacter, /*allowEdits*/ true) : -1;
       let source: string | undefined;
       let sourcePosition: number | undefined;
       if (isSourceMapping(mapping)) {
         const sourceFile = host.getSourceFileLike(sourceFileAbsolutePaths[mapping.sourceIndex]);
         source = map.sources[mapping.sourceIndex];
-        sourcePosition = sourceFile !== undefined ? getPosOf(sourceFile, mapping.sourceLine, mapping.sourceCharacter, /*allowEdits*/ true) : -1;
+        sourcePosition = sourceFile !== undefined ? posOf(sourceFile, mapping.sourceLine, mapping.sourceCharacter, /*allowEdits*/ true) : -1;
       }
       return {
         generatedPosition,

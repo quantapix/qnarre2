@@ -358,7 +358,7 @@ namespace qnr {
     )}${host.getNewLine()}`;
 
     if (diagnostic.file) {
-      const { line, character } = getLineAndCharOf(diagnostic.file, diagnostic.start!); // TODO: GH#18217
+      const { line, character } = lineAndCharOf(diagnostic.file, diagnostic.start!); // TODO: GH#18217
       const fileName = diagnostic.file.fileName;
       const relativeFileName = convertToRelativePath(fileName, host.getCurrentDirectory(), (fileName) => host.getCanonicalFileName(fileName));
       return `${relativeFileName}(${line + 1},${character + 1}): ` + errorMessage;
@@ -405,9 +405,9 @@ namespace qnr {
     squiggleColor: ForegroundColorEscapeSequences,
     host: FormatDiagnosticsHost
   ) {
-    const { line: firstLine, character: firstLineChar } = getLineAndCharOf(file, start);
-    const { line: lastLine, character: lastLineChar } = getLineAndCharOf(file, start + length);
-    const lastLineInFile = getLineAndCharOf(file, file.text.length).line;
+    const { line: firstLine, character: firstLineChar } = lineAndCharOf(file, start);
+    const { line: lastLine, character: lastLineChar } = lineAndCharOf(file, start + length);
+    const lastLineInFile = lineAndCharOf(file, file.text.length).line;
 
     const hasMoreThanFiveLines = lastLine - firstLine >= 4;
     let gutterWidth = (lastLine + 1 + '').length;
@@ -425,8 +425,8 @@ namespace qnr {
         i = lastLine - 1;
       }
 
-      const lineStart = getPosOf(file, i, 0);
-      const lineEnd = i < lastLineInFile ? getPosOf(file, i + 1, 0) : file.text.length;
+      const lineStart = posOf(file, i, 0);
+      const lineEnd = i < lastLineInFile ? posOf(file, i + 1, 0) : file.text.length;
       let lineContent = file.text.slice(lineStart, lineEnd);
       lineContent = lineContent.replace(/\s+$/g, ''); // trim from end
       lineContent = lineContent.replace('\t', ' '); // convert tabs to single spaces
@@ -457,7 +457,7 @@ namespace qnr {
   }
 
   export function formatLocation(file: SourceFile, start: number, host: FormatDiagnosticsHost, color = formatColorAndReset) {
-    const { line: firstLine, character: firstLineChar } = getLineAndCharOf(file, start); // TODO: GH#18217
+    const { line: firstLine, character: firstLineChar } = lineAndCharOf(file, start); // TODO: GH#18217
     const relativeFileName = host
       ? convertToRelativePath(file.fileName, host.getCurrentDirectory(), (fileName) => host.getCanonicalFileName(fileName))
       : file.fileName;
@@ -960,7 +960,7 @@ namespace qnr {
       processingOtherFiles = undefined;
     }
 
-    Debug.assert(!!missingFilePaths);
+    assert(!!missingFilePaths);
 
     // Release any files we have acquired in the old program but are
     // not part of the new program.
@@ -1231,7 +1231,7 @@ namespace qnr {
       // Combine results of resolutions and predicted results
       if (!result) {
         // There were no unresolved/ambient resolutions.
-        Debug.assert(resolutions.length === moduleNames.length);
+        assert(resolutions.length === moduleNames.length);
         return resolutions;
       }
 
@@ -1248,7 +1248,7 @@ namespace qnr {
           j++;
         }
       }
-      Debug.assert(j === resolutions.length);
+      assert(j === resolutions.length);
 
       return result;
 
@@ -1314,7 +1314,7 @@ namespace qnr {
         return (oldProgram.structureIsReused = StructureIsReused.Not);
       }
 
-      Debug.assert(!(oldProgram.structureIsReused! & (StructureIsReused.Completely | StructureIsReused.SafeModules)));
+      assert(!(oldProgram.structureIsReused! & (StructureIsReused.Completely | StructureIsReused.SafeModules)));
 
       // there is an old program, check if we can reuse its structure
       const oldRootNames = oldProgram.getRootFileNames();
@@ -1368,7 +1368,7 @@ namespace qnr {
           return (oldProgram.structureIsReused = StructureIsReused.Not);
         }
 
-        Debug.assert(!newSourceFile.redirectInfo, 'Host should not return a redirect source file from `getSourceFile`');
+        assert(!newSourceFile.redirectInfo, 'Host should not return a redirect source file from `getSourceFile`');
 
         let fileChanged: boolean;
         if (oldSourceFile.redirectInfo) {
@@ -1523,7 +1523,7 @@ namespace qnr {
       refFileMap = oldProgram.getRefFileMap();
 
       // update fileName -> file mapping
-      Debug.assert(newSourceFiles.length === oldProgram.getSourceFiles().length);
+      assert(newSourceFiles.length === oldProgram.getSourceFiles().length);
       for (const newSourceFile of newSourceFiles) {
         filesByName.set(newSourceFile.path, newSourceFile);
       }
@@ -1595,7 +1595,7 @@ namespace qnr {
     }
 
     function emitBuildInfo(writeFileCallback?: WriteFileCallback): EmitResult {
-      Debug.assert(!options.out && !options.outFile);
+      assert(!options.out && !options.outFile);
       performance.mark('beforeEmit');
       const emitResult = emitFiles(
         notImplementedResolver,
@@ -1848,7 +1848,7 @@ namespace qnr {
 
         const typeChecker = getDiagnosticsProducingTypeChecker();
 
-        Debug.assert(!!sourceFile.bindDiagnostics);
+        assert(!!sourceFile.bindDiagnostics);
 
         const isCheckJs = isCheckJsEnabledForFile(sourceFile, options);
         const isTsNoCheck = !!sourceFile.checkJsDirective && sourceFile.checkJsDirective.enabled === false;
@@ -1911,7 +1911,7 @@ namespace qnr {
       }
 
       // Start out with the line just before the text
-      const lineStarts = getLineStarts(file);
+      const lineStarts = lineStarts(file);
       let line = calcLineAndCharOf(lineStarts, start!).line - 1; // TODO: GH#18217
       while (line >= 0) {
         // As soon as that line is known to have a comment directive, use that
@@ -2998,7 +2998,7 @@ namespace qnr {
         // Because global augmentation doesn't have string literal name, we can check for global augmentation as such.
         const moduleNames = getModuleNames(file);
         const resolutions = resolveModuleNamesReusingOldState(moduleNames, getNormalizedAbsolutePath(file.originalFileName, currentDirectory), file);
-        Debug.assert(resolutions.length === moduleNames.length);
+        assert(resolutions.length === moduleNames.length);
         for (let i = 0; i < moduleNames.length; i++) {
           const resolution = resolutions[i];
           setResolvedModule(file, moduleNames[i], resolution);
@@ -3117,7 +3117,7 @@ namespace qnr {
           return;
         }
         sourceFile = Debug.checkDefined(commandLine.options.configFile);
-        Debug.assert(!sourceFile.path || sourceFile.path === sourceFilePath);
+        assert(!sourceFile.path || sourceFile.path === sourceFilePath);
         addFileToFilesByName(sourceFile, sourceFilePath, /*redirectedPath*/ undefined);
       } else {
         // An absolute path pointing to the containing directory of the config file
