@@ -387,7 +387,7 @@ namespace qnr {
             // module.exports = ...
             return InternalSymbolName.ExportEquals;
           }
-          Debug.fail('Unknown binary declaration kind');
+          fail('Unknown binary declaration kind');
           break;
         case SyntaxKind.JSDocFunctionType:
           return isJSDocConstructSignature(node) ? InternalSymbolName.New : InternalSymbolName.Call;
@@ -1577,7 +1577,7 @@ namespace qnr {
             break;
           }
           default:
-            return Debug.fail(`Invalid state ${workStacks.state[stackIndex]} for bindBinaryExpressionFlow`);
+            return fail(`Invalid state ${workStacks.state[stackIndex]} for bindBinaryExpressionFlow`);
         }
       }
 
@@ -2185,7 +2185,7 @@ namespace qnr {
                   : declName.parent.expression;
                 break;
               case AssignmentDeclarationKind.None:
-                return Debug.fail("Shouldn't have detected typedef or enum on non-assignment declaration");
+                return fail("Shouldn't have detected typedef or enum on non-assignment declaration");
             }
             if (container) {
               declareModuleMember(typeAlias, SymbolFlags.TypeAlias, SymbolFlags.TypeAliasExcludes);
@@ -2577,7 +2577,7 @@ namespace qnr {
               // Nothing to do
               break;
             default:
-              Debug.fail('Unknown binary expression special property assignment kind');
+              fail('Unknown binary expression special property assignment kind');
           }
           return checkStrictModeBinaryExpression(<BinaryExpression>node);
         case SyntaxKind.CatchClause:
@@ -2669,7 +2669,7 @@ namespace qnr {
             case AssignmentDeclarationKind.None:
               break; // Nothing to do
             default:
-              return Debug.fail('Unknown call expression assignment declaration kind');
+              return fail('Unknown call expression assignment declaration kind');
           }
           if (isInJSFile(node)) {
             bindCallExpression(<CallExpression>node);
@@ -3273,7 +3273,7 @@ namespace qnr {
         const name = getNameOrArgument(e);
         // unreachable
         if (isPrivateIdentifier(name)) {
-          Debug.fail('unexpected PrivateIdentifier');
+          fail('unexpected PrivateIdentifier');
         }
         return action(name, s && s.exports && s.exports.get(getElementOrPropertyAccessName(e)), s);
       }
@@ -3863,7 +3863,7 @@ namespace qnr {
         break;
 
       default:
-        Debug.fail('Unexpected token for heritage clause');
+        fail('Unexpected token for heritage clause');
         break;
     }
 

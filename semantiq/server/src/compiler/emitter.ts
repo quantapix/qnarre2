@@ -249,7 +249,7 @@ namespace qnr {
     }
     const buildInfoPath = getTsBuildInfoEmitOutputFilePath(configFile.options);
     if (buildInfoPath) return buildInfoPath;
-    return Debug.fail(`project ${configFile.options.configFilePath} expected to have at least one output`);
+    return fail(`project ${configFile.options.configFilePath} expected to have at least one output`);
   }
 
   // targetSourceFile is when users only want one file in entire project to be emitted. This is used in compileOnSave feature
@@ -816,7 +816,7 @@ namespace qnr {
             if (declarationMapText === text) return;
             break;
           default:
-            Debug.fail(`Unexpected path: ${name}`);
+            fail(`Unexpected path: ${name}`);
         }
         outputFiles.push({ name, text, writeByteOrderMark });
       },
@@ -2535,7 +2535,7 @@ namespace qnr {
             break;
           }
           default:
-            return Debug.fail(`Invalid state ${stateStack[stackIndex]} for emitBinaryExpressionWorker`);
+            return fail(`Invalid state ${stateStack[stackIndex]} for emitBinaryExpressionWorker`);
         }
       }
 
@@ -4890,7 +4890,7 @@ namespace qnr {
           );
       }
 
-      return Debug.fail('Unsupported GeneratedIdentifierKind.');
+      return fail('Unsupported GeneratedIdentifierKind.');
     }
 
     /**

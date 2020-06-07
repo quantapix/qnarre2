@@ -365,7 +365,7 @@ namespace qnr {
       }
 
       const info = state.fileInfos.get(sourceFile.resolvedPath);
-      if (!info) return Debug.fail();
+      if (!info) return fail();
 
       const prevSignature = info.signature;
       let latestSignature: string;

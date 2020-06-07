@@ -557,7 +557,7 @@ namespace qnr {
       ? Codes.plus
       : value === 63
       ? Codes.slash
-      : Debug.fail(`${value}: not a base64 value`);
+      : fail(`${value}: not a base64 value`);
   }
 
   function base64FormatDecode(ch: number) {

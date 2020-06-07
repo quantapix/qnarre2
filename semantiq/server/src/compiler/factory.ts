@@ -717,7 +717,7 @@ namespace qnr {
   }
 
   export function convertFunctionDeclarationToExpression(node: FunctionDeclaration) {
-    if (!node.body) return Debug.fail();
+    if (!node.body) return fail();
     const updated = createFunctionExpression(
       node.modifiers,
       node.asteriskToken,

@@ -308,7 +308,7 @@ namespace qnr {
           break;
 
         default:
-          return Debug.fail('This is unknown kind for signature: ' + node.kind);
+          return fail('This is unknown kind for signature: ' + node.kind);
       }
 
       return {
@@ -395,7 +395,7 @@ namespace qnr {
             : Diagnostics.Parameter_0_of_accessor_has_or_is_using_private_name_1;
 
         default:
-          return Debug.fail(`Unknown parent for parameter: ${(ts as any).SyntaxKind[node.parent.kind]}`);
+          return fail(`Unknown parent for parameter: ${(ts as any).SyntaxKind[node.parent.kind]}`);
       }
     }
 
@@ -445,7 +445,7 @@ namespace qnr {
           break;
 
         default:
-          return Debug.fail('This is unknown parent for type parameter: ' + node.parent.kind);
+          return fail('This is unknown parent for type parameter: ' + node.parent.kind);
       }
 
       return {

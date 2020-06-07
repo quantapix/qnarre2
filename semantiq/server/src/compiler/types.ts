@@ -849,7 +849,6 @@ namespace qnr {
     left: ElementAccessExpression;
   }
 
-  // A declaration that supports late-binding (used in checker)
   export interface LateBoundDeclaration extends DynamicNamedDeclaration {
     name: LateBoundName;
   }
@@ -879,7 +878,6 @@ namespace qnr {
     escapedText: __String;
   }
 
-  // A name that supports late-binding (used in checker)
   export interface LateBoundName extends ComputedPropertyName {
     expression: EntityNameExpression;
   }
@@ -1336,13 +1334,6 @@ namespace qnr {
 
   export type StringLiteralLike = StringLiteral | NoSubstitutionTemplateLiteral;
 
-  // Note: 'brands' in our syntax nodes serve to give us a small amount of nominal typing.
-  // Consider 'Expression'.  Without the brand, 'Expression' is actually no different
-  // (structurally) than 'Node'.  Because of this you can pass any Node to a function that
-  // takes an Expression without any error.  By using the 'brands' we ensure that the type
-  // checker actually thinks you have something of the right type.  Note: the brands are
-  // never actually given values.  At runtime they have zero cost.
-
   export interface Expression extends Node {
     _expressionBrand: any;
   }
@@ -1362,14 +1353,10 @@ namespace qnr {
     _unaryExpressionBrand: any;
   }
 
-  /** Deprecated, please use UpdateExpression */
-  export type IncrementExpression = UpdateExpression;
   export interface UpdateExpression extends UnaryExpression {
     _updateExpressionBrand: any;
   }
 
-  // see: https://tc39.github.io/ecma262/#prod-UpdateExpression
-  // see: https://tc39.github.io/ecma262/#prod-UnaryExpression
   export type PrefixUnaryOperator =
     | SyntaxKind.Plus2Token
     | SyntaxKind.Minus2Token
@@ -1384,7 +1371,6 @@ namespace qnr {
     operand: UnaryExpression;
   }
 
-  // see: https://tc39.github.io/ecma262/#prod-UpdateExpression
   export type PostfixUnaryOperator = SyntaxKind.Plus2Token | SyntaxKind.Minus2Token;
 
   export interface PostfixUnaryExpression extends UpdateExpression {
@@ -1458,28 +1444,20 @@ namespace qnr {
     tupleNameSource?: ParameterDeclaration | NamedTupleMember;
   }
 
-  // see: https://tc39.github.io/ecma262/#prod-ExponentiationExpression
   export type ExponentiationOperator = SyntaxKind.Asterisk2Token;
 
-  // see: https://tc39.github.io/ecma262/#prod-MultiplicativeOperator
   export type MultiplicativeOperator = SyntaxKind.AsteriskToken | SyntaxKind.SlashToken | SyntaxKind.PercentToken;
 
-  // see: https://tc39.github.io/ecma262/#prod-MultiplicativeExpression
   export type MultiplicativeOperatorOrHigher = ExponentiationOperator | MultiplicativeOperator;
 
-  // see: https://tc39.github.io/ecma262/#prod-AdditiveExpression
   export type AdditiveOperator = SyntaxKind.PlusToken | SyntaxKind.MinusToken;
 
-  // see: https://tc39.github.io/ecma262/#prod-AdditiveExpression
   export type AdditiveOperatorOrHigher = MultiplicativeOperatorOrHigher | AdditiveOperator;
 
-  // see: https://tc39.github.io/ecma262/#prod-ShiftExpression
   export type ShiftOperator = SyntaxKind.LessThan2Token | SyntaxKind.GreaterThan2Token | SyntaxKind.GreaterThan3Token;
 
-  // see: https://tc39.github.io/ecma262/#prod-ShiftExpression
   export type ShiftOperatorOrHigher = AdditiveOperatorOrHigher | ShiftOperator;
 
-  // see: https://tc39.github.io/ecma262/#prod-RelationalExpression
   export type RelationalOperator =
     | SyntaxKind.LessThanToken
     | SyntaxKind.LessThanEqualsToken
@@ -1488,38 +1466,24 @@ namespace qnr {
     | SyntaxKind.InstanceOfKeyword
     | SyntaxKind.InKeyword;
 
-  // see: https://tc39.github.io/ecma262/#prod-RelationalExpression
   export type RelationalOperatorOrHigher = ShiftOperatorOrHigher | RelationalOperator;
 
-  // see: https://tc39.github.io/ecma262/#prod-EqualityExpression
   export type EqualityOperator =
     | SyntaxKind.Equals2Token
     | SyntaxKind.Equals3Token
     | SyntaxKind.ExclamationEquals2Token
     | SyntaxKind.ExclamationEqualsToken;
 
-  // see: https://tc39.github.io/ecma262/#prod-EqualityExpression
   export type EqualityOperatorOrHigher = RelationalOperatorOrHigher | EqualityOperator;
 
-  // see: https://tc39.github.io/ecma262/#prod-BitwiseANDExpression
-  // see: https://tc39.github.io/ecma262/#prod-BitwiseXORExpression
-  // see: https://tc39.github.io/ecma262/#prod-BitwiseORExpression
   export type BitwiseOperator = SyntaxKind.AmpersandToken | SyntaxKind.BarToken | SyntaxKind.CaretToken;
 
-  // see: https://tc39.github.io/ecma262/#prod-BitwiseANDExpression
-  // see: https://tc39.github.io/ecma262/#prod-BitwiseXORExpression
-  // see: https://tc39.github.io/ecma262/#prod-BitwiseORExpression
   export type BitwiseOperatorOrHigher = EqualityOperatorOrHigher | BitwiseOperator;
 
-  // see: https://tc39.github.io/ecma262/#prod-LogicalANDExpression
-  // see: https://tc39.github.io/ecma262/#prod-LogicalORExpression
   export type LogicalOperator = SyntaxKind.Ampersand2Token | SyntaxKind.Bar2Token;
 
-  // see: https://tc39.github.io/ecma262/#prod-LogicalANDExpression
-  // see: https://tc39.github.io/ecma262/#prod-LogicalORExpression
   export type LogicalOperatorOrHigher = BitwiseOperatorOrHigher | LogicalOperator;
 
-  // see: https://tc39.github.io/ecma262/#prod-AssignmentOperator
   export type CompoundAssignmentOperator =
     | SyntaxKind.PlusEqualsToken
     | SyntaxKind.MinusEqualsToken
@@ -1534,13 +1498,10 @@ namespace qnr {
     | SyntaxKind.GreaterThan3EqualsToken
     | SyntaxKind.GreaterThan2EqualsToken;
 
-  // see: https://tc39.github.io/ecma262/#prod-AssignmentExpression
   export type AssignmentOperator = SyntaxKind.EqualsToken | CompoundAssignmentOperator;
 
-  // see: https://tc39.github.io/ecma262/#prod-AssignmentExpression
   export type AssignmentOperatorOrHigher = SyntaxKind.Question2Token | LogicalOperatorOrHigher | AssignmentOperator;
 
-  // see: https://tc39.github.io/ecma262/#prod-Expression
   export type BinaryOperator = AssignmentOperatorOrHigher | SyntaxKind.CommaToken;
 
   export type BinaryOperatorToken = Token<BinaryOperator>;
@@ -1809,7 +1770,6 @@ namespace qnr {
     expression: SuperExpression;
   }
 
-  // see: https://tc39.github.io/ecma262/#prod-SuperProperty
   export type SuperProperty = SuperPropertyAccessExpression | SuperElementAccessExpression;
 
   export interface CallExpression extends LeftHandSideExpression, Declaration {
@@ -1868,7 +1828,6 @@ namespace qnr {
     left: BindableAccessExpression;
   }
 
-  // see: https://tc39.github.io/ecma262/#prod-SuperCall
   export interface SuperCall extends CallExpression {
     expression: SuperExpression;
   }
@@ -3029,11 +2988,6 @@ namespace qnr {
     trace?(s: string): void;
   }
 
-  /**
-   * Branded string for keeping track of when we've turned an ambiguous path
-   * specified like "./blah" to an absolute path to an actual
-   * tsconfig file, e.g. "/root/blah/tsconfig.json"
-   */
   export type ResolvedConfigFileName = string & { _isResolvedConfigFileName: never };
 
   export type WriteFileCallback = (

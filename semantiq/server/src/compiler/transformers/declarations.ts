@@ -62,7 +62,7 @@ namespace qnr {
    * This means that _no transforms should be allowed to occur before this one_.
    */
   export function transformDeclarations(context: TransformationContext) {
-    const throwDiagnostic = () => Debug.fail('Diagnostic emitted without context');
+    const throwDiagnostic = () => fail('Diagnostic emitted without context');
     let getSymbolAccessibilityDiagnostic: GetSymbolAccessibilityDiagnostic = throwDiagnostic;
     let needsDeclare = true;
     let isBundledEmit = false;
@@ -844,7 +844,7 @@ namespace qnr {
       while (length(lateMarkedStatements)) {
         const i = lateMarkedStatements!.shift()!;
         if (!isLateVisibilityPaintedStatement(i)) {
-          return Debug.fail(
+          return fail(
             `Late replaced statement was found which is not handled by the declaration transformer!: ${
               (ts as any).SyntaxKind ? (ts as any).SyntaxKind[(i as any).kind] : (i as any).kind
             }`

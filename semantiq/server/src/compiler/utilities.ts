@@ -622,7 +622,7 @@ namespace qnr {
         return node.text;
     }
 
-    return Debug.fail(`Literal kind '${node.kind}' not accounted for.`);
+    return fail(`Literal kind '${node.kind}' not accounted for.`);
   }
 
   export function getTextOfConstantValue(value: string | number) {
@@ -882,7 +882,7 @@ namespace qnr {
         return escapeLeadingUnderscores(name.text);
       case SyntaxKind.ComputedPropertyName:
         if (isStringOrNumericLiteralLike(name.expression)) return escapeLeadingUnderscores(name.expression.text);
-        return Debug.fail('Text of property name cannot be read from non-literal-valued ComputedPropertyNames');
+        return fail('Text of property name cannot be read from non-literal-valued ComputedPropertyNames');
       default:
         return Debug.assertNever(name);
     }
@@ -1482,7 +1482,7 @@ namespace qnr {
     while (true) {
       node = node.parent;
       if (!node) {
-        return Debug.fail(); // If we never pass in a SourceFile, this should be unreachable, since we'll stop when we reach that.
+        return fail(); // If we never pass in a SourceFile, this should be unreachable, since we'll stop when we reach that.
       }
       switch (node.kind) {
         case SyntaxKind.ComputedPropertyName:
@@ -2171,7 +2171,7 @@ namespace qnr {
     ) {
       const nameOrArgument = getNameOrArgument(initializer);
       if (isPrivateIdentifier(nameOrArgument)) {
-        Debug.fail('Unexpected PrivateIdentifier in name expression with literal-like access.');
+        fail('Unexpected PrivateIdentifier in name expression with literal-like access.');
       }
       return isSameEntityName(name, nameOrArgument);
     }
@@ -4143,7 +4143,7 @@ namespace qnr {
       } else if (accessor.kind === SyntaxKind.SetAccessor) {
         setAccessor = accessor;
       } else {
-        Debug.fail('Accessor has wrong kind');
+        fail('Accessor has wrong kind');
       }
     } else {
       forEach(declarations, (member) => {
@@ -6232,7 +6232,7 @@ namespace qnr {
    */
   export function extensionFromPath(path: string): Extension {
     const ext = tryGetExtensionFromPath(path);
-    return ext !== undefined ? ext : Debug.fail(`File ${path} has unknown extension.`);
+    return ext !== undefined ? ext : fail(`File ${path} has unknown extension.`);
   }
 
   export function isAnySupportedFileExtension(path: string): boolean {

@@ -224,7 +224,7 @@ namespace qnr {
   // Private Identifiers
   export function createPrivateIdentifier(text: string): PrivateIdentifier {
     if (text[0] !== '#') {
-      Debug.fail('First character of private identifier must be #: ' + text);
+      fail('First character of private identifier must be #: ' + text);
     }
     const node = createSynthesizedNode(SyntaxKind.PrivateIdentifier) as PrivateIdentifier;
     node.escapedText = escapeLeadingUnderscores(text);
@@ -1696,7 +1696,7 @@ namespace qnr {
     } else {
       const cooked = getCookedText(kind, rawText);
       if (typeof cooked === 'object') {
-        return Debug.fail('Invalid raw text');
+        return fail('Invalid raw text');
       }
 
       assert(text === cooked, "Expected argument 'text' to be the normalized (i.e. 'cooked') version of argument 'rawText'.");
@@ -3540,7 +3540,7 @@ namespace qnr {
       case BundleFileSectionKind.Reference:
       case BundleFileSectionKind.Type:
       case BundleFileSectionKind.Lib:
-        return Debug.fail(`BundleFileSectionKind: ${kind} not yet mapped to SyntaxKind`);
+        return fail(`BundleFileSectionKind: ${kind} not yet mapped to SyntaxKind`);
 
       default:
         return Debug.assertNever(kind);

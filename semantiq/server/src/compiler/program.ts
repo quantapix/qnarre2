@@ -387,7 +387,7 @@ namespace qnr {
       case DiagnosticCategory.Warning:
         return ForegroundColorEscapeSequences.Yellow;
       case DiagnosticCategory.Suggestion:
-        return Debug.fail('Should never get an Info diagnostic on the command line.');
+        return fail('Should never get an Info diagnostic on the command line.');
       case DiagnosticCategory.Message:
         return ForegroundColorEscapeSequences.Blue;
     }
@@ -2025,7 +2025,7 @@ namespace qnr {
               );
               return 'skip';
             case SyntaxKind.TypeAssertionExpression:
-              Debug.fail(); // Won't parse these in a JS file anyway, as they are interpreted as JSX.
+              fail(); // Won't parse these in a JS file anyway, as they are interpreted as JSX.
           }
         }
 

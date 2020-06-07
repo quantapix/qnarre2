@@ -43,7 +43,7 @@ namespace qnr.performance {
         mark(endMarkName);
         measure(measureName, startMarkName, endMarkName);
       } else if (enterCount < 0) {
-        Debug.fail('enter/exit count does not match.');
+        fail('enter/exit count does not match.');
       }
     }
   }

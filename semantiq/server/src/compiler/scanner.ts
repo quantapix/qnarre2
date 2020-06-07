@@ -290,24 +290,24 @@ namespace qnr {
     }
   }
 
-  const mergeMarkerLength = '<<<<<<<'.length;
+  const markerLength = '<<<<<<<'.length;
 
-  function isConflictMarkerTrivia(t: string, pos: number) {
+  function isMarkerTrivia(t: string, pos: number) {
     assert(pos >= 0);
     if (pos === 0 || isLineBreak(t.charCodeAt(pos - 1))) {
       const c = t.charCodeAt(pos);
-      if (pos + mergeMarkerLength < t.length) {
-        for (let i = 0; i < mergeMarkerLength; i++) {
+      if (pos + markerLength < t.length) {
+        for (let i = 0; i < markerLength; i++) {
           if (t.charCodeAt(pos + i) !== c) return false;
         }
-        return c === Codes.equals || t.charCodeAt(pos + mergeMarkerLength) === Codes.space;
+        return c === Codes.equals || t.charCodeAt(pos + markerLength) === Codes.space;
       }
     }
     return false;
   }
 
-  function scanConflictMarkerTrivia(t: string, pos: number, e?: (m: DiagnosticMessage, pos?: number, len?: number) => void) {
-    if (e) e(Diagnostics.Merge_conflict_marker_encountered, pos, mergeMarkerLength);
+  function scanMarkerTrivia(t: string, pos: number, e?: (m: DiagnosticMessage, pos?: number, len?: number) => void) {
+    if (e) e(Diagnostics.Merge_conflict_marker_encountered, pos, markerLength);
     const c = t.charCodeAt(pos);
     const len = t.length;
     if (c === Codes.lessThan || c === Codes.greaterThan) {
@@ -318,27 +318,27 @@ namespace qnr {
       assert(c === Codes.bar || c === Codes.equals);
       while (pos < len) {
         const c2 = t.charCodeAt(pos);
-        if ((c2 === Codes.equals || c2 === Codes.greaterThan) && c2 !== c && isConflictMarkerTrivia(t, pos)) break;
+        if ((c2 === Codes.equals || c2 === Codes.greaterThan) && c2 !== c && isMarkerTrivia(t, pos)) break;
         pos++;
       }
     }
     return pos;
   }
 
-  const shebangTriviaRegex = /^#!.*/;
+  const shebangRegex = /^#!.*/;
 
   export function getShebang(t: string) {
-    const m = shebangTriviaRegex.exec(t);
+    const m = shebangRegex.exec(t);
     return m ? m[0] : undefined;
   }
 
   function isShebangTrivia(t: string, pos: number) {
     assert(pos === 0);
-    return shebangTriviaRegex.test(t);
+    return shebangRegex.test(t);
   }
 
   function scanShebangTrivia(t: string, pos: number) {
-    const s = shebangTriviaRegex.exec(t)![0];
+    const s = shebangRegex.exec(t)![0];
     return pos + s.length;
   }
 
@@ -386,8 +386,8 @@ namespace qnr {
         case Codes.bar:
         case Codes.equals:
         case Codes.greaterThan:
-          if (isConflictMarkerTrivia(t, pos)) {
-            pos = scanConflictMarkerTrivia(t, pos);
+          if (isMarkerTrivia(t, pos)) {
+            pos = scanMarkerTrivia(t, pos);
             continue;
           }
           break;
@@ -453,7 +453,7 @@ namespace qnr {
     if (line < 0 || line >= starts.length) {
       if (edits) line = line < 0 ? 0 : line >= starts.length ? starts.length - 1 : line;
       else {
-        Debug.fail(
+        fail(
           `Bad line number. Line: ${line}, starts.length: ${starts.length} , line map is correct? ${
             debug !== undefined ? arraysEqual(starts, calcLineStarts(debug)) : 'unknown'
           }`
@@ -1546,8 +1546,8 @@ namespace qnr {
             pos++;
             return (token = SyntaxKind.SemicolonToken);
           case Codes.lessThan:
-            if (isConflictMarkerTrivia(text, pos)) {
-              pos = scanConflictMarkerTrivia(text, pos, error);
+            if (isMarkerTrivia(text, pos)) {
+              pos = scanMarkerTrivia(text, pos, error);
               if (skipTrivia) continue;
               else return (token = SyntaxKind.ConflictMarkerTrivia);
             }
@@ -1562,8 +1562,8 @@ namespace qnr {
             pos++;
             return (token = SyntaxKind.LessThanToken);
           case Codes.equals:
-            if (isConflictMarkerTrivia(text, pos)) {
-              pos = scanConflictMarkerTrivia(text, pos, error);
+            if (isMarkerTrivia(text, pos)) {
+              pos = scanMarkerTrivia(text, pos, error);
               if (skipTrivia) continue;
               else return (token = SyntaxKind.ConflictMarkerTrivia);
             }
@@ -1575,8 +1575,8 @@ namespace qnr {
             pos++;
             return (token = SyntaxKind.EqualsToken);
           case Codes.greaterThan:
-            if (isConflictMarkerTrivia(text, pos)) {
-              pos = scanConflictMarkerTrivia(text, pos, error);
+            if (isMarkerTrivia(text, pos)) {
+              pos = scanMarkerTrivia(text, pos, error);
               if (skipTrivia) continue;
               else return (token = SyntaxKind.ConflictMarkerTrivia);
             }
@@ -1607,8 +1607,8 @@ namespace qnr {
             pos++;
             return (token = SyntaxKind.OpenBraceToken);
           case Codes.bar:
-            if (isConflictMarkerTrivia(text, pos)) {
-              pos = scanConflictMarkerTrivia(text, pos, error);
+            if (isMarkerTrivia(text, pos)) {
+              pos = scanMarkerTrivia(text, pos, error);
               if (skipTrivia) continue;
               else return (token = SyntaxKind.ConflictMarkerTrivia);
             }
@@ -1808,8 +1808,8 @@ namespace qnr {
         c = text.charCodeAt(pos);
         if (c === Codes.openBrace) break;
         if (c === Codes.lessThan) {
-          if (isConflictMarkerTrivia(text, pos)) {
-            pos = scanConflictMarkerTrivia(text, pos, error);
+          if (isMarkerTrivia(text, pos)) {
+            pos = scanMarkerTrivia(text, pos, error);
             return (token = SyntaxKind.ConflictMarkerTrivia);
           }
           break;

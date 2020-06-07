@@ -765,7 +765,7 @@ namespace qnr {
           result = classicNameResolver(moduleName, containingFile, compilerOptions, host, cache, redirectedReference);
           break;
         default:
-          return Debug.fail(`Unexpected moduleResolution: ${moduleResolution}`);
+          return fail(`Unexpected moduleResolution: ${moduleResolution}`);
       }
       if (result && result.resolvedModule) perfLogger.logInfoEvent(`Module "${moduleName}" resolved to "${result.resolvedModule.resolvedFileName}"`);
       perfLogger.logStopResolveModule(result && result.resolvedModule ? '' + result.resolvedModule.resolvedFileName : 'null');

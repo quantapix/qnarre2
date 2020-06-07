@@ -2099,7 +2099,7 @@ namespace qnr {
         default:
           const iterResult = option.type.keys().next();
           if (!iterResult.done) return iterResult.value;
-          return Debug.fail("Expected 'option.type' to have entries.");
+          return fail("Expected 'option.type' to have entries.");
       }
     }
 
@@ -2618,7 +2618,7 @@ namespace qnr {
             currentOption = typingOptionstypeAcquisition || (typingOptionstypeAcquisition = getDefaultTypeAcquisition(configFileName));
             break;
           default:
-            Debug.fail('Unknown option');
+            fail('Unknown option');
         }
 
         currentOption[option.name] = normalizeOptionValue(option, basePath, value);

@@ -257,7 +257,7 @@ namespace qnr {
         case SyntaxKind.ExportDeclaration:
           return visitExportDeclaration(node);
         default:
-          Debug.fail('Unhandled ellided statement');
+          fail('Unhandled ellided statement');
       }
     }
 

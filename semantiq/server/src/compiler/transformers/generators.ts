@@ -1920,7 +1920,7 @@ namespace qnr {
      */
     function endBlock(): CodeBlock {
       const block = peekBlock();
-      if (block === undefined) return Debug.fail('beginBlock was never called.');
+      if (block === undefined) return fail('beginBlock was never called.');
 
       const index = blockActions!.length;
       blockActions![index] = BlockAction.Close;

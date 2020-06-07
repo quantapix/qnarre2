@@ -1846,7 +1846,7 @@ namespace qnr {
           return true;
       }
 
-      return Debug.fail("Non-exhaustive case in 'isListElement'.");
+      return fail("Non-exhaustive case in 'isListElement'.");
     }
 
     function isValidHeritageClauseObjectLiteral() {
@@ -6189,7 +6189,7 @@ namespace qnr {
           node.flags |= NodeFlags.Const;
           break;
         default:
-          Debug.fail();
+          fail();
       }
 
       nextToken();
@@ -6496,7 +6496,7 @@ namespace qnr {
       }
 
       // 'isClassMemberStart' should have hinted not to attempt parsing.
-      return Debug.fail('Should not have attempted to parse class member declaration.');
+      return fail('Should not have attempted to parse class member declaration.');
     }
 
     function parseClassExpression(): ClassExpression {
@@ -8774,7 +8774,7 @@ namespace qnr {
         case 'jsx':
           return; // Accessed directly
         default:
-          Debug.fail('Unhandled pragma kind'); // Can this be made into an assertNever in the future?
+          fail('Unhandled pragma kind'); // Can this be made into an assertNever in the future?
       }
     });
   }
@@ -8865,7 +8865,7 @@ namespace qnr {
         return 'fail';
       }
       if (argument.captureSpan) {
-        return Debug.fail('Capture spans not yet implemented for non-xml pragmas');
+        return fail('Capture spans not yet implemented for non-xml pragmas');
       }
       argMap[argument.name] = args[i];
     }

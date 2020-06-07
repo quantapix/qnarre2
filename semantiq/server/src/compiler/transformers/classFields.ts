@@ -212,7 +212,7 @@ namespace qnr {
         case PrivateIdentifierPlacement.InstanceField:
           return createClassPrivateFieldGetHelper(context, isSynthesized(receiver) ? receiver : getSynthesizedClone(receiver), info.weakMapName);
         default:
-          return Debug.fail('Unexpected private identifier placement');
+          return fail('Unexpected private identifier placement');
       }
     }
 
@@ -375,7 +375,7 @@ namespace qnr {
           return createPrivateIdentifierInstanceFieldAssignment(info, receiver, right, operator);
         }
         default:
-          return Debug.fail('Unexpected private identifier placement');
+          return fail('Unexpected private identifier placement');
       }
     }
 
@@ -734,7 +734,7 @@ namespace qnr {
             }
           }
         } else {
-          Debug.fail('Undeclared private name for property declaration.');
+          fail('Undeclared private name for property declaration.');
         }
       }
       if (isPrivateIdentifier(propertyName) && !property.initializer) {

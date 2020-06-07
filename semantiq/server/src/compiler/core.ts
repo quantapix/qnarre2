@@ -138,7 +138,7 @@ namespace qnr {
       const r = cb(x[i], i);
       if (r) return r;
     }
-    return Debug.fail();
+    return fail();
   }
 
   export interface MapLike<T> {
@@ -689,7 +689,7 @@ namespace qnr {
 
         case Comparison.LessThan:
           // If `array` is sorted, `next` should **never** be less than `last`.
-          return Debug.fail('Array is unsorted.');
+          return fail('Array is unsorted.');
       }
 
       deduplicated.push((last = next));
@@ -852,25 +852,20 @@ namespace qnr {
   }
 
   export function pushIfUnique<T>(array: T[], toAdd: T, eq?: EqualityComparer<T>): boolean {
-    if (contains(array, toAdd, eq)) {
-      return false;
-    } else {
-      array.push(toAdd);
-      return true;
-    }
+    if (contains(array, toAdd, eq)) return false;
+    array.push(toAdd);
+    return true;
   }
 
   export function appendIfUnique<T>(array: T[] | undefined, toAdd: T, eq?: EqualityComparer<T>): T[] {
     if (array) {
       pushIfUnique(array, toAdd, eq);
       return array;
-    } else {
-      return [toAdd];
     }
+    return [toAdd];
   }
 
   function stableSortIndices<T>(array: readonly T[], indices: number[], comparer: Comparer<T>) {
-    // sort indices by value then position
     indices.sort((x, y) => comparer(array[x], array[y]) || compareValues(x, y));
   }
 
@@ -882,9 +877,8 @@ namespace qnr {
     let i = 0;
     return {
       next: () => {
-        if (i === array.length) {
-          return { value: undefined as never, done: true };
-        } else {
+        if (i === array.length) return { value: undefined as never, done: true };
+        else {
           i++;
           return { value: array[i - 1], done: false };
         }
@@ -896,9 +890,8 @@ namespace qnr {
     let i = array.length;
     return {
       next: () => {
-        if (i === 0) {
-          return { value: undefined as never, done: true };
-        } else {
+        if (i === 0) return { value: undefined as never, done: true };
+        else {
           i--;
           return { value: array[i], done: false };
         }
@@ -914,31 +907,20 @@ namespace qnr {
 
   export function rangeEquals<T>(array1: readonly T[], array2: readonly T[], pos: number, end: number) {
     while (pos < end) {
-      if (array1[pos] !== array2[pos]) {
-        return false;
-      }
+      if (array1[pos] !== array2[pos]) return false;
       pos++;
     }
     return true;
   }
 
-  /**
-   * Returns the element at a specific offset in an array if non-empty, `undefined` otherwise.
-   * A negative offset indicates the element should be retrieved from the end of the array.
-   */
   export function elementAt<T>(array: readonly T[] | undefined, offset: number): T | undefined {
     if (array) {
       offset = toOffset(array, offset);
-      if (offset < array.length) {
-        return array[offset];
-      }
+      if (offset < array.length) return array[offset];
     }
     return;
   }
 
-  /**
-   * Returns the first element of an array if non-empty, `undefined` otherwise.
-   */
   export function firstOrUndefined<T>(array: readonly T[]): T | undefined {
     return array.length === 0 ? undefined : array[0];
   }
@@ -948,9 +930,6 @@ namespace qnr {
     return array[0];
   }
 
-  /**
-   * Returns the last element of an array if non-empty, `undefined` otherwise.
-   */
   export function lastOrUndefined<T>(array: readonly T[]): T | undefined {
     return array.length === 0 ? undefined : array[array.length - 1];
   }
@@ -960,17 +939,10 @@ namespace qnr {
     return array[array.length - 1];
   }
 
-  /**
-   * Returns the only element of an array if it contains only one element, `undefined` otherwise.
-   */
   export function singleOrUndefined<T>(array: readonly T[] | undefined): T | undefined {
     return array && array.length === 1 ? array[0] : undefined;
   }
 
-  /**
-   * Returns the only element of an array if it contains only one element; otherwise, returns the
-   * array.
-   */
   export function singleOrMany<T>(array: T[]): T | T[];
   export function singleOrMany<T>(array: readonly T[]): T | readonly T[];
   export function singleOrMany<T>(array: T[] | undefined): T | T[] | undefined;
@@ -985,36 +957,12 @@ namespace qnr {
     return result;
   }
 
-  /**
-   * Performs a binary search, finding the index at which `value` occurs in `array`.
-   * If no such index is found, returns the 2's-complement of first index at which
-   * `array[index]` exceeds `value`.
-   * @param array A sorted array whose first element must be no larger than number
-   * @param value The value to be searched for in the array.
-   * @param keySelector A cb used to select the search key from `value` and each element of
-   * `array`.
-   * @param keyComparer A cb used to compare two keys in a sorted array.
-   * @param offset An offset into `array` at which to start the search.
-   */
   export function binarySearch<T, U>(array: readonly T[], value: T, keySelector: (v: T) => U, keyComparer: Comparer<U>, offset?: number): number {
     return binarySearchKey(array, keySelector(value), keySelector, keyComparer, offset);
   }
 
-  /**
-   * Performs a binary search, finding the index at which an object with `key` occurs in `array`.
-   * If no such index is found, returns the 2's-complement of first index at which
-   * `array[index]` exceeds `key`.
-   * @param array A sorted array whose first element must be no larger than number
-   * @param key The key to be searched for in the array.
-   * @param keySelector A cb used to select the search key from each element of `array`.
-   * @param keyComparer A cb used to compare two keys in a sorted array.
-   * @param offset An offset into `array` at which to start the search.
-   */
   export function binarySearchKey<T, U>(array: readonly T[], key: U, keySelector: (v: T) => U, keyComparer: Comparer<U>, offset?: number): number {
-    if (!some(array)) {
-      return -1;
-    }
-
+    if (!some(array)) return -1;
     let low = offset || 0;
     let high = array.length - 1;
     while (low <= high) {
@@ -1031,7 +979,6 @@ namespace qnr {
           break;
       }
     }
-
     return ~low;
   }
 
@@ -1068,29 +1015,14 @@ namespace qnr {
 
   const hasOwnProperty = Object.prototype.hasOwnProperty;
 
-  /**
-   * Indicates whether a map-like contains an own property with the specified key.
-   *
-   * @param map A map-like.
-   * @param key A property key.
-   */
   export function hasProperty(map: MapLike<any>, key: string): boolean {
     return hasOwnProperty.call(map, key);
   }
 
-  /**
-   * Gets the value of an owned property in a map-like.
-   *
-   * @param map A map-like.
-   * @param key A property key.
-   */
   export function getProperty<T>(map: MapLike<T>, key: string): T | undefined {
     return hasOwnProperty.call(map, key) ? map[key] : undefined;
   }
 
-  /**
-   * Gets the owned, enumerable property keys of a map-like.
-   */
   export function getOwnKeys<T>(map: MapLike<T>): string[] {
     const keys: string[] = [];
     for (const key in map) {
@@ -1098,7 +1030,6 @@ namespace qnr {
         keys.push(key);
       }
     }
-
     return keys;
   }
 
@@ -1116,15 +1047,11 @@ namespace qnr {
   export function getOwnValues<T>(sparseArray: T[]): T[] {
     const values: T[] = [];
     for (const key in sparseArray) {
-      if (hasOwnProperty.call(sparseArray, key)) {
-        values.push(sparseArray[key]);
-      }
+      if (hasOwnProperty.call(sparseArray, key)) values.push(sparseArray[key]);
     }
-
     return values;
   }
 
-  /** Shims `Array.from`. */
   export function arrayFrom<T, U>(iterator: Iterator<T> | IterableIterator<T>, map: (t: T) => U): U[];
   export function arrayFrom<T>(iterator: Iterator<T> | IterableIterator<T>): T[];
   export function arrayFrom<T, U>(iterator: Iterator<T> | IterableIterator<T>, map?: (t: T) => U): (T | U)[] {
@@ -1139,9 +1066,7 @@ namespace qnr {
     for (const arg of args) {
       if (arg === undefined) continue;
       for (const p in arg) {
-        if (hasProperty(arg, p)) {
-          t[p] = arg[p];
-        }
+        if (hasProperty(arg, p)) t[p] = arg[p];
       }
     }
     return t;
@@ -1156,13 +1081,11 @@ namespace qnr {
         if (!eq(left[key], right[key])) return false;
       }
     }
-
     for (const key in right) {
       if (hasOwnProperty.call(right, key)) {
         if (!hasOwnProperty.call(left, key)) return false;
       }
     }
-
     return true;
   }
 
@@ -1228,14 +1151,10 @@ namespace qnr {
   export function extend<T1, T2>(first: T1, second: T2): T1 & T2 {
     const result: T1 & T2 = <any>{};
     for (const id in second) {
-      if (hasOwnProperty.call(second, id)) {
-        (result as any)[id] = (second as any)[id];
-      }
+      if (hasOwnProperty.call(second, id)) (result as any)[id] = (second as any)[id];
     }
     for (const id in first) {
-      if (hasOwnProperty.call(first, id)) {
-        (result as any)[id] = (first as any)[id];
-      }
+      if (hasOwnProperty.call(first, id)) (result as any)[id] = (first as any)[id];
     }
     return result;
   }
@@ -1272,22 +1191,19 @@ namespace qnr {
     map.remove = multiMapRemove;
     return map;
   }
+
   function multiMapAdd<T>(this: MultiMap<T>, key: string, value: T) {
     let values = this.get(key);
-    if (values) {
-      values.push(value);
-    } else {
-      this.set(key, (values = [value]));
-    }
+    if (values) values.push(value);
+    else this.set(key, (values = [value]));
     return values;
   }
+
   function multiMapRemove<T>(this: MultiMap<T>, key: string, value: T) {
     const values = this.get(key);
     if (values) {
       unorderedRemoveItem(values, value);
-      if (!values.length) {
-        this.delete(key);
-      }
+      if (!values.length) this.delete(key);
     }
   }
 
@@ -1316,7 +1232,7 @@ namespace qnr {
   export function cast<TOut extends TIn, TIn = any>(value: TIn | undefined, test: (value: TIn) => value is TOut): TOut {
     if (value !== undefined && test(value)) return value;
 
-    return Debug.fail(`Invalid cast. The supplied value ${value} did not pass the test '${Debug.getFunctionName(test)}'.`);
+    return fail(`Invalid cast. The supplied value ${value} did not pass the test '${Debug.getFunctionName(test)}'.`);
   }
 
   export function noop(_?: {} | null | undefined): void {}
@@ -1369,7 +1285,6 @@ namespace qnr {
       for (let i = 0; i < arguments.length; i++) {
         args[i] = arguments[i];
       }
-
       return (t) => reduceLeft(args, (u, f) => f(u), t);
     } else if (d) {
       return (t) => d(c(b(a(t))));
@@ -1465,16 +1380,12 @@ namespace qnr {
     }
 
     function createIntlCollatorStringComparer(locale: string | undefined): Comparer<string> {
-      // Intl.Collator.prototype.compare is bound to the collator. See NOTE in
-      // http://www.ecma-international.org/ecma-402/2.0/#sec-Intl.Collator.prototype.compare
       const comparer = new Intl.Collator(locale, { usage: 'sort', sensitivity: 'variant' }).compare;
       return (a, b) => compareWithCallback(a, b, comparer);
     }
 
     function createLocaleCompareStringComparer(locale: string | undefined): Comparer<string> {
-      // if the locale is not the default locale (`undefined`), use the fallback comparer.
       if (locale !== undefined) return createFallbackStringComparer();
-
       return (a, b) => compareWithCallback(a, b, compareStrings);
 
       function compareStrings(a: string, b: string) {
@@ -1483,13 +1394,6 @@ namespace qnr {
     }
 
     function createFallbackStringComparer(): Comparer<string> {
-      // An ordinal comparison puts "A" after "b", but for the UI we want "A" before "b".
-      // We first sort case insensitively.  So "Aaa" will come before "baa".
-      // Then we sort case sensitively, so "aaa" will come before "Aaa".
-      //
-      // For case insensitive comparisons we always map both strings to their
-      // upper-case form as some unicode characters do not properly round-trip to
-      // lowercase (such as `áºž` (German sharp capital s)).
       return (a, b) => compareWithCallback(a, b, compareDictionaryOrder);
 
       function compareDictionaryOrder(a: string, b: string) {
@@ -1502,13 +1406,9 @@ namespace qnr {
     }
 
     function getStringComparerFactory() {
-      // If the host supports Intl, we use it for comparisons using the default locale.
       if (typeof Intl === 'object' && typeof Intl.Collator === 'function') {
         return createIntlCollatorStringComparer;
       }
-
-      // If the host does not support Intl, we fall back to localeCompare.
-      // localeCompare in Node v0.10 is just an ordinal comparison, so don't use it.
       if (
         typeof String.prototype.localeCompare === 'function' &&
         typeof String.prototype.toLocaleUpperCase === 'function' &&
@@ -1516,14 +1416,10 @@ namespace qnr {
       ) {
         return createLocaleCompareStringComparer;
       }
-
-      // Otherwise, fall back to ordinal comparison:
       return createFallbackStringComparer;
     }
 
     function createStringComparer(locale: string | undefined) {
-      // Hold onto common string comparers. This avoids constantly reallocating comparers during
-      // tests.
       if (locale === undefined) {
         return defaultComparer || (defaultComparer = stringComparerFactory(locale));
       } else if (locale === 'en-US') {
@@ -1548,16 +1444,6 @@ namespace qnr {
     }
   }
 
-  /**
-   * Compare two strings in a using the case-sensitive sort behavior of the UI locale.
-   *
-   * Ordering is not predictable between different host locales, but is best for displaying
-   * ordered data for UI presentation. Characters with multiple unicode representations may
-   * be considered equal.
-   *
-   * Case-sensitive comparisons compare strings that differ in base characters, or
-   * accents/diacritic marks, or case as unequal.
-   */
   export function compareStringsCaseSensitiveUI(a: string, b: string) {
     const comparer = uiComparerCaseSensitive || (uiComparerCaseSensitive = createUIStringComparer(uiLocale));
     return comparer(a, b);
@@ -1567,25 +1453,10 @@ namespace qnr {
     return a === b ? Comparison.EqualTo : a === undefined ? Comparison.LessThan : b === undefined ? Comparison.GreaterThan : comparer(a[key], b[key]);
   }
 
-  /** True is greater than false. */
   export function compareBooleans(a: boolean, b: boolean): Comparison {
     return compareValues(a ? 1 : 0, b ? 1 : 0);
   }
 
-  /**
-   * Given a name and a list of names that are *not* equal to the name, return a spelling suggestion if there is one that is close enough.
-   * Names less than length 3 only check for case-insensitive equality, not Levenshtein distance.
-   *
-   * If there is a candidate that's the same except for case, return that.
-   * If there is a candidate that's within one edit of the name, return that.
-   * Otherwise, return the candidate with the smallest Levenshtein distance,
-   *    except for candidates:
-   *      * With no name
-   *      * Whose length differs from the target name by more than 0.34 of the length of the name.
-   *      * Whose levenshtein distance is more than 0.4 of the length of the name
-   *        (0.4 allows 1 substitution/transposition for every 5 characters,
-   *         and 1 insertion/deletion at 3 characters)
-   */
   export function getSpellingSuggestion<T>(name: string, candidates: T[], getName: (candidate: T) => string | undefined): T | undefined {
     const maximumLengthDifference = Math.min(2, Math.floor(name.length * 0.34));
     let bestDistance = Math.floor(name.length * 0.4) + 1; // If the best result isn't better than this, don't bother.
@@ -1630,13 +1501,10 @@ namespace qnr {
   function levenshteinWithMax(s1: string, s2: string, max: number): number | undefined {
     let previous = new Array(s2.length + 1);
     let current = new Array(s2.length + 1);
-    /** Represents any value > max. We don't care about the particular value. */
     const big = max + 1;
-
     for (let i = 0; i <= s2.length; i++) {
       previous[i] = i;
     }
-
     for (let i = 1; i <= s1.length; i++) {
       const c1 = s1.charCodeAt(i - 1);
       const minJ = i > max ? i - max : 1;
@@ -1689,9 +1557,6 @@ namespace qnr {
     return str.indexOf(substring) !== -1;
   }
 
-  /**
-   * Takes a string like "jquery-min.4.2.3" and returns "jquery"
-   */
   export function removeMinAndVersionNumbers(fileName: string) {
     // Match a "." or "-" followed by a version number or 'min' at the end of the name
     const trailingMinOrVersion = /[.-]((min)|(\d+(\.\d+)*))$/;
@@ -1700,7 +1565,6 @@ namespace qnr {
     return fileName.replace(trailingMinOrVersion, '').replace(trailingMinOrVersion, '');
   }
 
-  /** Remove an item from an array, moving everything to its right one space left. */
   export function orderedRemoveItem<T>(array: T[], item: T): boolean {
     for (let i = 0; i < array.length; i++) {
       if (array[i] === item) {
@@ -1711,7 +1575,6 @@ namespace qnr {
     return false;
   }
 
-  /** Remove an item by index from an array, moving everything to its right one space left. */
   export function orderedRemoveItemAt<T>(array: T[], index: number): void {
     // This seems to be faster than either `array.splice(i, 1)` or `array.copyWithin(i, i+ 1)`.
     for (let i = index; i < array.length - 1; i++) {
@@ -1757,10 +1620,6 @@ namespace qnr {
     return `${prefix}*${suffix}`;
   }
 
-  /**
-   * Given that candidate matches pattern, returns the text matching the '*'.
-   * E.g.: matchedText(tryParsePattern("foo*baz"), "foobarbaz") === "bar"
-   */
   export function matchedText(pattern: Pattern, candidate: string): string {
     assert(isPatternMatch(pattern, candidate));
     return candidate.substring(pattern.prefix.length, candidate.length - pattern.suffix.length);
@@ -1903,7 +1762,6 @@ namespace qnr {
     while (s.length < length) {
       s = s + ' ';
     }
-
     return s;
   }
 }

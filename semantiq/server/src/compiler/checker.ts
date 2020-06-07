@@ -469,7 +469,7 @@ namespace qnr {
       },
       getSymbolsOfParameterPropertyDeclaration: (parameterIn, parameterName) => {
         const parameter = getParseTreeNode(parameterIn, isParameter);
-        if (parameter === undefined) return Debug.fail('Cannot get symbols of a synthetic parameter that cannot be resolved to a parse-tree node.');
+        if (parameter === undefined) return fail('Cannot get symbols of a synthetic parameter that cannot be resolved to a parse-tree node.');
         return getSymbolsOfParameterPropertyDeclaration(parameter, escapeLeadingUnderscores(parameterName));
       },
       getDeclaredTypeOfSymbol,
@@ -923,13 +923,13 @@ namespace qnr {
     const iterationTypesCache = createMap<IterationTypes>(); // cache for common IterationTypes instances
     const noIterationTypes: IterationTypes = {
       get yieldType(): Type {
-        return Debug.fail('Not supported');
+        return fail('Not supported');
       },
       get returnType(): Type {
-        return Debug.fail('Not supported');
+        return fail('Not supported');
       },
       get nextType(): Type {
-        return Debug.fail('Not supported');
+        return fail('Not supported');
       },
     };
 
@@ -1508,7 +1508,7 @@ namespace qnr {
         return [parameterSymbol, propertySymbol];
       }
 
-      return Debug.fail('There should exist two symbols, one as property declaration and one as parameter declaration');
+      return fail('There should exist two symbols, one as property declaration and one as parameter declaration');
     }
 
     function isBlockScopedNameDeclaredBeforeUse(declaration: Declaration, usage: Node): boolean {
@@ -2556,7 +2556,7 @@ namespace qnr {
       // Block-scoped variables cannot be used before their definition
       const declaration = find(result.declarations, (d) => isBlockOrCatchScoped(d) || isClassLike(d) || d.kind === SyntaxKind.EnumDeclaration);
 
-      if (declaration === undefined) return Debug.fail('checkResolvedBlockScopedVariable could not find block-scoped declaration');
+      if (declaration === undefined) return fail('checkResolvedBlockScopedVariable could not find block-scoped declaration');
 
       if (!(declaration.flags & NodeFlags.Ambient) && !isBlockScopedNameDeclaredBeforeUse(declaration, errorLocation)) {
         let diagnosticMessage;
@@ -3105,7 +3105,7 @@ namespace qnr {
         case SyntaxKind.PropertyAccessExpression:
           return getTargetOfPropertyAccessExpression(node as PropertyAccessExpression, dontRecursivelyResolve);
         default:
-          return Debug.fail();
+          return fail();
       }
     }
 
@@ -3133,7 +3133,7 @@ namespace qnr {
       if (!links.target) {
         links.target = resolvingSymbol;
         const node = getDeclarationOfAliasSymbol(symbol);
-        if (!node) return Debug.fail();
+        if (!node) return fail();
         const target = getTargetOfAliasDeclaration(node);
         if (links.target === resolvingSymbol) {
           links.target = target || unknownSymbol;
@@ -3246,7 +3246,7 @@ namespace qnr {
       if (!links.referenced) {
         links.referenced = true;
         const node = getDeclarationOfAliasSymbol(symbol);
-        if (!node) return Debug.fail();
+        if (!node) return fail();
         // We defer checking of the reference of an `import =` until the import itself is referenced,
         // This way a chain of imports can be elided if ultimately the final input is only used in a type
         // position.
@@ -4666,7 +4666,7 @@ namespace qnr {
         toNodeBuilderFlags(flags) | NodeBuilderFlags.IgnoreErrors | (noTruncation ? NodeBuilderFlags.NoTruncation : 0),
         writer
       );
-      if (typeNode === undefined) return Debug.fail('should always get typenode');
+      if (typeNode === undefined) return fail('should always get typenode');
       const options = { removeComments: true };
       const printer = createPrinter(options);
       const sourceFile = enclosingDeclaration && getSourceFileOfNode(enclosingDeclaration);
@@ -5009,7 +5009,7 @@ namespace qnr {
           return typeToTypeNodeHelper((<SubstitutionType>type).baseType, context);
         }
 
-        return Debug.fail('Should be unreachable.');
+        return fail('Should be unreachable.');
 
         function createMappedTypeNodeFromType(type: MappedType) {
           assert(!!(type.flags & TypeFlags.Object));
@@ -6052,7 +6052,7 @@ namespace qnr {
           if (index > stopper) {
             const LHS = createAccessFromSymbolChain(chain, index - 1, stopper);
             if (!isEntityName(LHS)) {
-              return Debug.fail('Impossible construct - an export of an indexed access cannot be reachable');
+              return fail('Impossible construct - an export of an indexed access cannot be reachable');
             }
             return createQualifiedName(LHS, identifier);
           }
@@ -7435,7 +7435,7 @@ namespace qnr {
           // need to mark the alias `symbol` points at
           // as something we need to serialize as a private declaration as well
           const node = getDeclarationOfAliasSymbol(symbol);
-          if (!node) return Debug.fail();
+          if (!node) return fail();
           const target = getMergedSymbol(getTargetOfAliasDeclaration(node, /*dontRecursivelyResolve*/ true));
           if (!target) {
             return;
@@ -7852,7 +7852,7 @@ namespace qnr {
               return (results as unknown) as T[];
             }
             // The `Constructor`'s symbol isn't in the class's properties lists, obviously, since it's a signature on the static
-            return Debug.fail(`Unhandled class member kind! ${(p as any).__debugFlags || p.flags}`);
+            return fail(`Unhandled class member kind! ${(p as any).__debugFlags || p.flags}`);
           };
         }
 
@@ -9431,7 +9431,7 @@ namespace qnr {
       } else if (isAccessor(declaration)) {
         type = resolveTypeOfAccessors(symbol);
       } else {
-        return Debug.fail('Unhandled declaration kind! ' + Debug.formatSyntaxKind(declaration.kind) + ' for ' + Debug.formatSymbol(symbol));
+        return fail('Unhandled declaration kind! ' + Debug.formatSyntaxKind(declaration.kind) + ' for ' + Debug.formatSymbol(symbol));
       }
 
       if (!popTypeResolution()) {
@@ -9987,7 +9987,7 @@ namespace qnr {
             resolveBaseTypesOfInterface(type);
           }
         } else {
-          Debug.fail('type must be class or interface');
+          fail('type must be class or interface');
         }
       }
       return type.resolvedBaseTypes;
@@ -10541,7 +10541,7 @@ namespace qnr {
       if (type.flags & (TypeFlags.StringLiteral | TypeFlags.NumberLiteral)) {
         return escapeLeadingUnderscores('' + (<StringLiteralType | NumberLiteralType>type).value);
       }
-      return Debug.fail();
+      return fail();
     }
 
     /**
@@ -17827,7 +17827,7 @@ namespace qnr {
               break;
             }
             default:
-              return Debug.fail(`Unhandled Diagnostic: ${msg.code}`);
+              return fail(`Unhandled Diagnostic: ${msg.code}`);
           }
         }
         if (path) {
@@ -18293,7 +18293,7 @@ namespace qnr {
                 // We know *exactly* where things went wrong when comparing the types.
                 // Use this property as the error node as this will be more helpful in
                 // reasoning about what went wrong.
-                if (!errorNode) return Debug.fail();
+                if (!errorNode) return fail();
                 if (isJsxAttributes(errorNode) || isJsxOpeningLikeElement(errorNode) || isJsxOpeningLikeElement(errorNode.parent)) {
                   // JsxAttributes has an object-literal flag and undergo same type-assignablity check as normal object-literal.
                   // However, using an object-literal error message will be very confusing to the users so we give different a message.
@@ -25414,7 +25414,7 @@ namespace qnr {
         case AssignmentDeclarationKind.ObjectDefinePropertyValue:
         case AssignmentDeclarationKind.ObjectDefinePropertyExports:
         case AssignmentDeclarationKind.ObjectDefinePrototypeProperty:
-          return Debug.fail('Does not apply');
+          return fail('Does not apply');
         default:
           return Debug.assertNever(kind);
       }
@@ -26234,7 +26234,7 @@ namespace qnr {
       const links = getSymbolLinks(symbol);
       if (!links.immediateTarget) {
         const node = getDeclarationOfAliasSymbol(symbol);
-        if (!node) return Debug.fail();
+        if (!node) return fail();
         links.immediateTarget = getTargetOfAliasDeclaration(node, /*dontRecursivelyResolve*/ true);
       }
 
@@ -26736,7 +26736,7 @@ namespace qnr {
         const intrinsicElementsType = getJsxType(JsxNames.IntrinsicElements, node);
         if (intrinsicElementsType !== errorType) {
           // Property case
-          if (!isIdentifier(node.tagName)) return Debug.fail();
+          if (!isIdentifier(node.tagName)) return fail();
           const intrinsicProp = getPropertyOfType(intrinsicElementsType, node.tagName.escapedText);
           if (intrinsicProp) {
             links.jsxFlags |= JsxFlags.IntrinsicNamedElement;
@@ -28830,7 +28830,7 @@ namespace qnr {
             createSyntheticExpression(expr, hasPropDesc ? createTypedPropertyDescriptorType(getTypeOfNode(parent)) : anyType),
           ];
       }
-      return Debug.fail();
+      return fail();
     }
 
     /**
@@ -28851,7 +28851,7 @@ namespace qnr {
         case SyntaxKind.Parameter:
           return 3;
         default:
-          return Debug.fail();
+          return fail();
       }
     }
     function getDiagnosticSpanForCallNode(node: CallExpression, doNotIncludeArguments?: boolean) {
@@ -29142,7 +29142,7 @@ namespace qnr {
                 diagnostics.add(d);
               }
             } else {
-              Debug.fail('No error for last overload signature');
+              fail('No error for last overload signature');
             }
           } else {
             const allDiagnostics: (readonly DiagnosticRelatedInformation[])[] = [];
@@ -29168,7 +29168,7 @@ namespace qnr {
                 max = Math.max(max, diags.length);
                 allDiagnostics.push(diags);
               } else {
-                Debug.fail('No error for 3 or fewer overload signatures');
+                fail('No error for 3 or fewer overload signatures');
               }
               i++;
             }
@@ -29927,7 +29927,7 @@ namespace qnr {
           return Diagnostics.Unable_to_resolve_signature_of_method_decorator_when_called_as_an_expression;
 
         default:
-          return Debug.fail();
+          return fail();
       }
     }
 
@@ -30350,7 +30350,7 @@ namespace qnr {
       }
 
       // Make sure require is not a local function
-      if (!isIdentifier(node.expression)) return Debug.fail();
+      if (!isIdentifier(node.expression)) return fail();
       const resolvedRequire = resolveName(
         node.expression,
         node.expression.escapedText,
@@ -32027,7 +32027,7 @@ namespace qnr {
             break;
           }
           default:
-            return Debug.fail(`Invalid state ${workStacks.state[stackIndex]} for checkBinaryExpression`);
+            return fail(`Invalid state ${workStacks.state[stackIndex]} for checkBinaryExpression`);
         }
       }
 
@@ -32327,7 +32327,7 @@ namespace qnr {
           return rightType;
 
         default:
-          return Debug.fail();
+          return fail();
       }
 
       function bothAreBigIntLike(left: Type, right: Type): boolean {
@@ -33169,7 +33169,7 @@ namespace qnr {
         case SyntaxKind.JsxAttributes:
           return checkJsxAttributes(<JsxAttributes>node, checkMode);
         case SyntaxKind.JsxOpeningElement:
-          Debug.fail("Shouldn't ever directly check a JsxOpeningElement");
+          fail("Shouldn't ever directly check a JsxOpeningElement");
       }
       return errorType;
     }
@@ -34624,7 +34624,7 @@ namespace qnr {
       // be treated as a promise, they can cast to <any>.
       if (isThenableType(type)) {
         if (errorNode) {
-          if (!diagnosticMessage) return Debug.fail();
+          if (!diagnosticMessage) return fail();
           error(errorNode, diagnosticMessage, arg0);
         }
         return;
@@ -34736,7 +34736,7 @@ namespace qnr {
           break;
 
         default:
-          return Debug.fail();
+          return fail();
       }
 
       checkTypeAssignableTo(returnType, expectedReturnType, node, headMessage, () => errorInfo);
@@ -35253,7 +35253,7 @@ namespace qnr {
             // Can't be private
             break;
           default:
-            Debug.fail();
+            fail();
         }
       }
     }
@@ -35669,7 +35669,7 @@ namespace qnr {
 
       const symbol = getSymbolOfNode(node);
       if (symbol.flags & SymbolFlags.FunctionScopedVariable) {
-        if (!isIdentifier(node.name)) return Debug.fail();
+        if (!isIdentifier(node.name)) return fail();
         const localDeclarationSymbol = resolveName(
           node,
           node.name.escapedText,
@@ -39767,7 +39767,7 @@ namespace qnr {
           const nameType = checkComputedPropertyName(name);
           return isTypeAssignableToKind(nameType, TypeFlags.ESSymbolLike) ? nameType : stringType;
         default:
-          return Debug.fail('Unsupported property name.');
+          return fail('Unsupported property name.');
       }
     }
 
@@ -40833,7 +40833,7 @@ namespace qnr {
         case ExternalEmitHelpers.CreateBinding:
           return '__createBinding';
         default:
-          return Debug.fail('Unrecognized helper');
+          return fail('Unrecognized helper');
       }
     }
 
@@ -41125,7 +41125,7 @@ namespace qnr {
             case SyntaxKind.EnumDeclaration:
               return nodeHasAnyModifiersExcept(node, SyntaxKind.ConstKeyword);
             default:
-              Debug.fail();
+              fail();
               return false;
           }
       }
