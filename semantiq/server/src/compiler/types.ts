@@ -721,14 +721,7 @@ namespace qnr {
 
   export type HasInitializer = HasExpressionInitializer | ForStatement | ForInStatement | ForOfStatement | JsxAttribute;
 
-  export type HasExpressionInitializer =
-    | VariableDeclaration
-    | ParameterDeclaration
-    | BindingElement
-    | PropertySignature
-    | PropertyDeclaration
-    | PropertyAssignment
-    | EnumMember;
+  export type HasExpressionInitializer = VariableDeclaration | ParameterDeclaration | BindingElement | PropertySignature | PropertyDeclaration | PropertyAssignment | EnumMember;
 
   export type MutableNodeArray<T extends Node> = NodeArray<T> & T[];
 
@@ -815,15 +808,7 @@ namespace qnr {
 
   export type PropertyName = Identifier | StringLiteral | NumericLiteral | ComputedPropertyName | PrivateIdentifier;
 
-  export type DeclarationName =
-    | Identifier
-    | PrivateIdentifier
-    | StringLiteralLike
-    | NumericLiteral
-    | ComputedPropertyName
-    | ElementAccessExpression
-    | BindingPattern
-    | EntityNameExpression;
+  export type DeclarationName = Identifier | PrivateIdentifier | StringLiteralLike | NumericLiteral | ComputedPropertyName | ElementAccessExpression | BindingPattern | EntityNameExpression;
 
   export interface Declaration extends Node {
     _declarationBrand: any;
@@ -958,12 +943,7 @@ namespace qnr {
   }
 
   /** Unlike ObjectLiteralElement, excludes JSXAttribute and JSXSpreadAttribute. */
-  export type ObjectLiteralElementLike =
-    | PropertyAssignment
-    | ShorthandPropertyAssignment
-    | SpreadAssignment
-    | MethodDeclaration
-    | AccessorDeclaration;
+  export type ObjectLiteralElementLike = PropertyAssignment | ShorthandPropertyAssignment | SpreadAssignment | MethodDeclaration | AccessorDeclaration;
 
   export interface PropertyAssignment extends ObjectLiteralElement, JSDocContainer {
     parent: ObjectLiteralExpression;
@@ -1043,14 +1023,7 @@ namespace qnr {
     returnFlowNode?: FlowNode;
   }
 
-  export type FunctionLikeDeclaration =
-    | FunctionDeclaration
-    | MethodDeclaration
-    | GetAccessorDeclaration
-    | SetAccessorDeclaration
-    | ConstructorDeclaration
-    | FunctionExpression
-    | ArrowFunction;
+  export type FunctionLikeDeclaration = FunctionDeclaration | MethodDeclaration | GetAccessorDeclaration | SetAccessorDeclaration | ConstructorDeclaration | FunctionExpression | ArrowFunction;
   /** @deprecated Use SignatureDeclaration */
   export type FunctionLike = SignatureDeclaration;
 
@@ -1066,39 +1039,7 @@ namespace qnr {
   }
   export type AccessorDeclaration = GetAccessorDeclaration | SetAccessorDeclaration;
 
-  export interface TypeNode extends Node {
-    _typeNodeBrand: any;
-  }
-
-  export interface KeywordTypeNode extends TypeNode {
-    kind:
-      | SyntaxKind.AnyKeyword
-      | SyntaxKind.UnknownKeyword
-      | SyntaxKind.NumberKeyword
-      | SyntaxKind.BigIntKeyword
-      | SyntaxKind.ObjectKeyword
-      | SyntaxKind.BooleanKeyword
-      | SyntaxKind.StringKeyword
-      | SyntaxKind.SymbolKeyword
-      | SyntaxKind.ThisKeyword
-      | SyntaxKind.VoidKeyword
-      | SyntaxKind.UndefinedKeyword
-      | SyntaxKind.NullKeyword
-      | SyntaxKind.NeverKeyword;
-  }
-
-  export interface ImportTypeNode extends NodeWithTypeArguments {
-    kind: SyntaxKind.ImportType;
-    isTypeOf?: boolean;
-    argument: TypeNode;
-    qualifier?: EntityName;
-  }
-
   export type LiteralImportTypeNode = ImportTypeNode & { argument: LiteralTypeNode & { literal: StringLiteral } };
-
-  export interface ThisTypeNode extends TypeNode {
-    kind: SyntaxKind.ThisType;
-  }
 
   export type FunctionOrConstructorTypeNode = FunctionTypeNode | ConstructorTypeNode;
 
@@ -1107,129 +1048,16 @@ namespace qnr {
     type: TypeNode;
   }
 
-  export interface FunctionTypeNode extends FunctionOrConstructorTypeNodeBase {
-    kind: SyntaxKind.FunctionType;
-  }
-
-  export interface ConstructorTypeNode extends FunctionOrConstructorTypeNodeBase {
-    kind: SyntaxKind.ConstructorType;
-  }
-
   export interface NodeWithTypeArguments extends TypeNode {
     typeArguments?: NodeArray<TypeNode>;
   }
 
   export type TypeReferenceType = TypeReferenceNode | ExpressionWithTypeArguments;
 
-  export interface TypeReferenceNode extends NodeWithTypeArguments {
-    kind: SyntaxKind.TypeReference;
-    typeName: EntityName;
-  }
-
-  export interface TypePredicateNode extends TypeNode {
-    kind: SyntaxKind.TypePredicate;
-    parent: SignatureDeclaration | JSDocTypeExpression;
-    assertsModifier?: AssertsToken;
-    parameterName: Identifier | ThisTypeNode;
-    type?: TypeNode;
-  }
-
-  export interface TypeQueryNode extends TypeNode {
-    kind: SyntaxKind.TypeQuery;
-    exprName: EntityName;
-  }
-
-  // A TypeLiteral is the declaration node for an anonymous symbol.
-  export interface TypeLiteralNode extends TypeNode, Declaration {
-    kind: SyntaxKind.TypeLiteral;
-    members: NodeArray<TypeElement>;
-  }
-
-  export interface ArrayTypeNode extends TypeNode {
-    kind: SyntaxKind.ArrayType;
-    elementType: TypeNode;
-  }
-
-  export interface TupleTypeNode extends TypeNode {
-    kind: SyntaxKind.TupleType;
-    elements: NodeArray<TypeNode | NamedTupleMember>;
-  }
-
-  export interface NamedTupleMember extends TypeNode, JSDocContainer, Declaration {
-    kind: SyntaxKind.NamedTupleMember;
-    dotDotDotToken?: Token<SyntaxKind.Dot3Token>;
-    name: Identifier;
-    questionToken?: Token<SyntaxKind.QuestionToken>;
-    type: TypeNode;
-  }
-
-  export interface OptionalTypeNode extends TypeNode {
-    kind: SyntaxKind.OptionalType;
-    type: TypeNode;
-  }
-
-  export interface RestTypeNode extends TypeNode {
-    kind: SyntaxKind.RestType;
-    type: TypeNode;
-  }
-
   export type UnionOrIntersectionTypeNode = UnionTypeNode | IntersectionTypeNode;
-
-  export interface UnionTypeNode extends TypeNode {
-    kind: SyntaxKind.UnionType;
-    types: NodeArray<TypeNode>;
-  }
-
-  export interface IntersectionTypeNode extends TypeNode {
-    kind: SyntaxKind.IntersectionType;
-    types: NodeArray<TypeNode>;
-  }
-
-  export interface ConditionalTypeNode extends TypeNode {
-    kind: SyntaxKind.ConditionalType;
-    checkType: TypeNode;
-    extendsType: TypeNode;
-    trueType: TypeNode;
-    falseType: TypeNode;
-  }
-
-  export interface InferTypeNode extends TypeNode {
-    kind: SyntaxKind.InferType;
-    typeParameter: TypeParameterDeclaration;
-  }
-
-  export interface ParenthesizedTypeNode extends TypeNode {
-    kind: SyntaxKind.ParenthesizedType;
-    type: TypeNode;
-  }
-
-  export interface TypeOperatorNode extends TypeNode {
-    kind: SyntaxKind.TypeOperator;
-    operator: SyntaxKind.KeyOfKeyword | SyntaxKind.UniqueKeyword | SyntaxKind.ReadonlyKeyword;
-    type: TypeNode;
-  }
 
   export interface UniqueTypeOperatorNode extends TypeOperatorNode {
     operator: SyntaxKind.UniqueKeyword;
-  }
-
-  export interface IndexedAccessTypeNode extends TypeNode {
-    kind: SyntaxKind.IndexedAccessType;
-    objectType: TypeNode;
-    indexType: TypeNode;
-  }
-
-  export interface MappedTypeNode extends TypeNode, Declaration {
-    kind: SyntaxKind.MappedType;
-    readonlyToken?: ReadonlyToken | PlusToken | MinusToken;
-    typeParameter: TypeParameterDeclaration;
-    questionToken?: QuestionToken | PlusToken | MinusToken;
-    type?: TypeNode;
-  }
-
-  export interface LiteralTypeNode extends TypeNode {
-    kind: SyntaxKind.LiteralType;
-    literal: BooleanLiteral | LiteralExpression | PrefixUnaryExpression;
   }
 
   export type StringLiteralLike = StringLiteral | NoSubstitutionTemplateLiteral;
@@ -1257,13 +1085,7 @@ namespace qnr {
     _updateExpressionBrand: any;
   }
 
-  export type PrefixUnaryOperator =
-    | SyntaxKind.Plus2Token
-    | SyntaxKind.Minus2Token
-    | SyntaxKind.PlusToken
-    | SyntaxKind.MinusToken
-    | SyntaxKind.TildeToken
-    | SyntaxKind.ExclamationToken;
+  export type PrefixUnaryOperator = SyntaxKind.Plus2Token | SyntaxKind.Minus2Token | SyntaxKind.PlusToken | SyntaxKind.MinusToken | SyntaxKind.TildeToken | SyntaxKind.ExclamationToken;
 
   export interface PrefixUnaryExpression extends UpdateExpression {
     kind: SyntaxKind.PrefixUnaryExpression;
@@ -1368,11 +1190,7 @@ namespace qnr {
 
   export type RelationalOperatorOrHigher = ShiftOperatorOrHigher | RelationalOperator;
 
-  export type EqualityOperator =
-    | SyntaxKind.Equals2Token
-    | SyntaxKind.Equals3Token
-    | SyntaxKind.ExclamationEquals2Token
-    | SyntaxKind.ExclamationEqualsToken;
+  export type EqualityOperator = SyntaxKind.Equals2Token | SyntaxKind.Equals3Token | SyntaxKind.ExclamationEquals2Token | SyntaxKind.ExclamationEqualsToken;
 
   export type EqualityOperatorOrHigher = RelationalOperatorOrHigher | EqualityOperator;
 
@@ -1451,12 +1269,7 @@ namespace qnr {
     | SpreadElement // AssignmentRestElement
     | SpreadAssignment; // AssignmentRestProperty
 
-  export type BindingOrAssignmentElementTarget =
-    | BindingOrAssignmentPattern
-    | Identifier
-    | PropertyAccessExpression
-    | ElementAccessExpression
-    | OmittedExpression;
+  export type BindingOrAssignmentElementTarget = BindingOrAssignmentPattern | Identifier | PropertyAccessExpression | ElementAccessExpression | OmittedExpression;
 
   export type ObjectBindingOrAssignmentPattern = ObjectBindingPattern | ObjectLiteralExpression; // ObjectAssignmentPattern
 
@@ -2030,12 +1843,7 @@ namespace qnr {
   export type ObjectTypeDeclaration = ClassLikeDeclaration | InterfaceDeclaration | TypeLiteralNode;
 
   export type DeclarationWithTypeParameters = DeclarationWithTypeParameterChildren | JSDocTypedefTag | JSDocCallbackTag | JSDocSignature;
-  export type DeclarationWithTypeParameterChildren =
-    | SignatureDeclaration
-    | ClassLikeDeclaration
-    | InterfaceDeclaration
-    | TypeAliasDeclaration
-    | JSDocTemplateTag;
+  export type DeclarationWithTypeParameterChildren = SignatureDeclaration | ClassLikeDeclaration | InterfaceDeclaration | TypeAliasDeclaration | JSDocTemplateTag;
 
   export interface ClassLikeDeclarationBase extends NamedDeclaration, JSDocContainer {
     kind: SyntaxKind.ClassDeclaration | SyntaxKind.ClassExpression;
@@ -2481,16 +2289,7 @@ namespace qnr {
     Condition = TrueCondition | FalseCondition,
   }
 
-  export type FlowNode =
-    | FlowStart
-    | FlowLabel
-    | FlowAssignment
-    | FlowCall
-    | FlowCondition
-    | FlowSwitchClause
-    | FlowArrayMutation
-    | FlowCall
-    | FlowReduceLabel;
+  export type FlowNode = FlowStart | FlowLabel | FlowAssignment | FlowCall | FlowCondition | FlowSwitchClause | FlowArrayMutation | FlowCall | FlowReduceLabel;
 
   export interface FlowNodeBase {
     flags: FlowFlags;
@@ -2790,14 +2589,7 @@ namespace qnr {
   }
 
   export interface JsonObjectExpressionStatement extends ExpressionStatement {
-    expression:
-      | ObjectLiteralExpression
-      | ArrayLiteralExpression
-      | JsonMinusNumericLiteral
-      | NumericLiteral
-      | StringLiteral
-      | BooleanLiteral
-      | NullLiteral;
+    expression: ObjectLiteralExpression | ArrayLiteralExpression | JsonMinusNumericLiteral | NumericLiteral | StringLiteral | BooleanLiteral | NullLiteral;
   }
 
   export interface ScriptReferenceHost {
@@ -2810,13 +2602,7 @@ namespace qnr {
   export interface ParseConfigHost {
     useCaseSensitiveFileNames: boolean;
 
-    readDirectory(
-      rootDir: string,
-      extensions: readonly string[],
-      excludes: readonly string[] | undefined,
-      includes: readonly string[],
-      depth?: number
-    ): readonly string[];
+    readDirectory(rootDir: string, extensions: readonly string[], excludes: readonly string[] | undefined, includes: readonly string[], depth?: number): readonly string[];
 
     /**
      * Gets a value indicating whether the specified path exists and is a file.
@@ -2830,13 +2616,7 @@ namespace qnr {
 
   export type ResolvedConfigFileName = string & { _isResolvedConfigFileName: never };
 
-  export type WriteFileCallback = (
-    fileName: string,
-    data: string,
-    writeByteOrderMark: boolean,
-    onError?: (message: string) => void,
-    sourceFiles?: readonly SourceFile[]
-  ) => void;
+  export type WriteFileCallback = (fileName: string, data: string, writeByteOrderMark: boolean, onError?: (message: string) => void, sourceFiles?: readonly SourceFile[]) => void;
 
   export class OperationCanceledException {}
 
@@ -2890,13 +2670,7 @@ namespace qnr {
      * used for writing the JavaScript and declaration files.  Otherwise, the writeFile parameter
      * will be invoked when writing the JavaScript and declaration files.
      */
-    emit(
-      targetSourceFile?: SourceFile,
-      writeFile?: WriteFileCallback,
-      cancellationToken?: CancellationToken,
-      emitOnlyDtsFiles?: boolean,
-      customTransformers?: CustomTransformers
-    ): EmitResult;
+    emit(targetSourceFile?: SourceFile, writeFile?: WriteFileCallback, cancellationToken?: CancellationToken, emitOnlyDtsFiles?: boolean, customTransformers?: CustomTransformers): EmitResult;
 
     emit(
       targetSourceFile?: SourceFile,
@@ -2958,18 +2732,13 @@ namespace qnr {
     /** Is the file emitted file */
     isEmittedFile(file: string): boolean;
 
-    getResolvedModuleWithFailedLookupLocationsFromCache(
-      moduleName: string,
-      containingFile: string
-    ): ResolvedModuleWithFailedLookupLocations | undefined;
+    getResolvedModuleWithFailedLookupLocationsFromCache(moduleName: string, containingFile: string): ResolvedModuleWithFailedLookupLocations | undefined;
 
     getProjectReferences(): readonly ProjectReference[] | undefined;
     getResolvedProjectReferences(): readonly (ResolvedProjectReference | undefined)[] | undefined;
     getProjectReferenceRedirect(fileName: string): string | undefined;
     getResolvedProjectReferenceToRedirect(fileName: string): ResolvedProjectReference | undefined;
-    forEachResolvedProjectReference<T>(
-      cb: (resolvedProjectReference: ResolvedProjectReference | undefined, resolvedProjectReferencePath: Path) => T | undefined
-    ): T | undefined;
+    forEachResolvedProjectReference<T>(cb: (resolvedProjectReference: ResolvedProjectReference | undefined, resolvedProjectReferencePath: Path) => T | undefined): T | undefined;
     getResolvedProjectReferenceByPath(projectReferencePath: Path): ResolvedProjectReference | undefined;
     isSourceOfProjectReferenceRedirect(fileName: string): boolean;
     getProgramBuildInfo?(): ProgramBuildInfo | undefined;
@@ -3112,12 +2881,7 @@ namespace qnr {
     // TODO: GH#18217 `xToDeclaration` calls are frequently asserted as defined.
     /** Note that the resulting nodes cannot be checked. */
     typeToTypeNode(type: Type, enclosingDeclaration: Node | undefined, flags: NodeBuilderFlags | undefined): TypeNode | undefined;
-    typeToTypeNode(
-      type: Type,
-      enclosingDeclaration: Node | undefined,
-      flags: NodeBuilderFlags | undefined,
-      tracker?: SymbolTracker
-    ): TypeNode | undefined; // eslint-disable-line @typescript-eslint/unified-signatures
+    typeToTypeNode(type: Type, enclosingDeclaration: Node | undefined, flags: NodeBuilderFlags | undefined, tracker?: SymbolTracker): TypeNode | undefined; // eslint-disable-line @typescript-eslint/unified-signatures
     /** Note that the resulting nodes cannot be checked. */
     signatureToSignatureDeclaration(
       signature: Signature,
@@ -3133,12 +2897,7 @@ namespace qnr {
       tracker?: SymbolTracker
     ): (SignatureDeclaration & { typeArguments?: NodeArray<TypeNode> }) | undefined; // eslint-disable-line @typescript-eslint/unified-signatures
     /** Note that the resulting nodes cannot be checked. */
-    indexInfoToIndexSignatureDeclaration(
-      indexInfo: IndexInfo,
-      kind: IndexKind,
-      enclosingDeclaration: Node | undefined,
-      flags: NodeBuilderFlags | undefined
-    ): IndexSignatureDeclaration | undefined;
+    indexInfoToIndexSignatureDeclaration(indexInfo: IndexInfo, kind: IndexKind, enclosingDeclaration: Node | undefined, flags: NodeBuilderFlags | undefined): IndexSignatureDeclaration | undefined;
     indexInfoToIndexSignatureDeclaration(
       indexInfo: IndexInfo,
       kind: IndexKind,
@@ -3147,37 +2906,15 @@ namespace qnr {
       tracker?: SymbolTracker
     ): IndexSignatureDeclaration | undefined; // eslint-disable-line @typescript-eslint/unified-signatures
     /** Note that the resulting nodes cannot be checked. */
-    symbolToEntityName(
-      symbol: Symbol,
-      meaning: SymbolFlags,
-      enclosingDeclaration: Node | undefined,
-      flags: NodeBuilderFlags | undefined
-    ): EntityName | undefined;
+    symbolToEntityName(symbol: Symbol, meaning: SymbolFlags, enclosingDeclaration: Node | undefined, flags: NodeBuilderFlags | undefined): EntityName | undefined;
     /** Note that the resulting nodes cannot be checked. */
-    symbolToExpression(
-      symbol: Symbol,
-      meaning: SymbolFlags,
-      enclosingDeclaration: Node | undefined,
-      flags: NodeBuilderFlags | undefined
-    ): Expression | undefined;
+    symbolToExpression(symbol: Symbol, meaning: SymbolFlags, enclosingDeclaration: Node | undefined, flags: NodeBuilderFlags | undefined): Expression | undefined;
     /** Note that the resulting nodes cannot be checked. */
-    symbolToTypeParameterDeclarations(
-      symbol: Symbol,
-      enclosingDeclaration: Node | undefined,
-      flags: NodeBuilderFlags | undefined
-    ): NodeArray<TypeParameterDeclaration> | undefined;
+    symbolToTypeParameterDeclarations(symbol: Symbol, enclosingDeclaration: Node | undefined, flags: NodeBuilderFlags | undefined): NodeArray<TypeParameterDeclaration> | undefined;
     /** Note that the resulting nodes cannot be checked. */
-    symbolToParameterDeclaration(
-      symbol: Symbol,
-      enclosingDeclaration: Node | undefined,
-      flags: NodeBuilderFlags | undefined
-    ): ParameterDeclaration | undefined;
+    symbolToParameterDeclaration(symbol: Symbol, enclosingDeclaration: Node | undefined, flags: NodeBuilderFlags | undefined): ParameterDeclaration | undefined;
     /** Note that the resulting nodes cannot be checked. */
-    typeParameterToDeclaration(
-      parameter: TypeParameter,
-      enclosingDeclaration: Node | undefined,
-      flags: NodeBuilderFlags | undefined
-    ): TypeParameterDeclaration | undefined;
+    typeParameterToDeclaration(parameter: TypeParameter, enclosingDeclaration: Node | undefined, flags: NodeBuilderFlags | undefined): TypeParameterDeclaration | undefined;
 
     getSymbolsInScope(location: Node, meaning: SymbolFlags): Symbol[];
     getSymbolAtLocation(node: Node): Symbol | undefined;
@@ -3308,12 +3045,7 @@ namespace qnr {
     ): Signature;
     createSymbol(flags: SymbolFlags, name: __String): TransientSymbol;
     createIndexInfo(type: Type, isReadonly: boolean, declaration?: SignatureDeclaration): IndexInfo;
-    isSymbolAccessible(
-      symbol: Symbol,
-      enclosingDeclaration: Node | undefined,
-      meaning: SymbolFlags,
-      shouldComputeAliasToMarkVisible: boolean
-    ): SymbolAccessibilityResult;
+    isSymbolAccessible(symbol: Symbol, enclosingDeclaration: Node | undefined, meaning: SymbolFlags, shouldComputeAliasToMarkVisible: boolean): SymbolAccessibilityResult;
     tryFindAmbientModuleWithoutAugmentations(moduleName: string): Symbol | undefined;
 
     getSymbolWalker(accept?: (symbol: Symbol) => boolean): SymbolWalker;
@@ -3357,12 +3089,7 @@ namespace qnr {
      * Where `C` is the symbol we're looking for.
      * This should be called in a loop climbing parents of the symbol, so we'll get `N`.
      */
-    getAccessibleSymbolChain(
-      symbol: Symbol,
-      enclosingDeclaration: Node | undefined,
-      meaning: SymbolFlags,
-      useOnlyExternalAliasing: boolean
-    ): Symbol[] | undefined;
+    getAccessibleSymbolChain(symbol: Symbol, enclosingDeclaration: Node | undefined, meaning: SymbolFlags, useOnlyExternalAliasing: boolean): Symbol[] | undefined;
     getTypePredicateOfSignature(signature: Signature): TypePredicate | undefined;
     resolveExternalModuleName(moduleSpecifier: Expression): Symbol | undefined;
     /**
@@ -3726,23 +3453,10 @@ namespace qnr {
       tracker: SymbolTracker,
       addUndefined?: boolean
     ): TypeNode | undefined;
-    createReturnTypeOfSignatureDeclaration(
-      signatureDeclaration: SignatureDeclaration,
-      enclosingDeclaration: Node,
-      flags: NodeBuilderFlags,
-      tracker: SymbolTracker
-    ): TypeNode | undefined;
+    createReturnTypeOfSignatureDeclaration(signatureDeclaration: SignatureDeclaration, enclosingDeclaration: Node, flags: NodeBuilderFlags, tracker: SymbolTracker): TypeNode | undefined;
     createTypeOfExpression(expr: Expression, enclosingDeclaration: Node, flags: NodeBuilderFlags, tracker: SymbolTracker): TypeNode | undefined;
-    createLiteralConstValue(
-      node: VariableDeclaration | PropertyDeclaration | PropertySignature | ParameterDeclaration,
-      tracker: SymbolTracker
-    ): Expression;
-    isSymbolAccessible(
-      symbol: Symbol,
-      enclosingDeclaration: Node | undefined,
-      meaning: SymbolFlags | undefined,
-      shouldComputeAliasToMarkVisible: boolean
-    ): SymbolAccessibilityResult;
+    createLiteralConstValue(node: VariableDeclaration | PropertyDeclaration | PropertySignature | ParameterDeclaration, tracker: SymbolTracker): Expression;
+    isSymbolAccessible(symbol: Symbol, enclosingDeclaration: Node | undefined, meaning: SymbolFlags | undefined, shouldComputeAliasToMarkVisible: boolean): SymbolAccessibilityResult;
     isEntityNameVisible(entityName: EntityNameOrEntityNameExpression, enclosingDeclaration: Node): SymbolVisibilityResult;
     // Returns the constant value this property access resolves to, or 'undefined' for a non-constant
     getConstantValue(node: EnumMember | PropertyAccessExpression | ElementAccessExpression): string | number | undefined;
@@ -3751,9 +3465,7 @@ namespace qnr {
     isOptionalParameter(node: ParameterDeclaration): boolean;
     moduleExportsSomeValue(moduleReferenceExpression: Expression): boolean;
     isArgumentsLocalBinding(node: Identifier): boolean;
-    getExternalModuleFileFromDeclaration(
-      declaration: ImportEqualsDeclaration | ImportDeclaration | ExportDeclaration | ModuleDeclaration | ImportTypeNode
-    ): SourceFile | undefined;
+    getExternalModuleFileFromDeclaration(declaration: ImportEqualsDeclaration | ImportDeclaration | ExportDeclaration | ModuleDeclaration | ImportTypeNode): SourceFile | undefined;
     getTypeReferenceDirectivesForEntityName(name: EntityNameOrEntityNameExpression): string[] | undefined;
     getTypeReferenceDirectivesForSymbol(symbol: Symbol, meaning?: SymbolFlags): string[] | undefined;
     isLiteralConstDeclaration(node: VariableDeclaration | PropertyDeclaration | PropertySignature | ParameterDeclaration): boolean;
@@ -3761,12 +3473,7 @@ namespace qnr {
     getAllAccessorDeclarations(declaration: AccessorDeclaration): AllAccessorDeclarations;
     getSymbolOfExternalModuleSpecifier(node: StringLiteralLike): Symbol | undefined;
     isBindingCapturedByNode(node: Node, decl: VariableDeclaration | BindingElement): boolean;
-    getDeclarationStatementsForSourceFile(
-      node: SourceFile,
-      flags: NodeBuilderFlags,
-      tracker: SymbolTracker,
-      bundled?: boolean
-    ): Statement[] | undefined;
+    getDeclarationStatementsForSourceFile(node: SourceFile, flags: NodeBuilderFlags, tracker: SymbolTracker, bundled?: boolean): Statement[] | undefined;
     isImportRequiredByAugmentation(decl: ImportDeclaration): boolean;
   }
 
@@ -4179,16 +3886,7 @@ namespace qnr {
     Substructure = Object | Union | Intersection | Index | IndexedAccess | Conditional | Substitution,
     // 'Narrowable' types are types where narrowing actually narrows.
     // This *should* be every type other than null, undefined, void, and never
-    Narrowable = Any |
-      Unknown |
-      StructuredOrInstantiable |
-      StringLike |
-      NumberLike |
-      BigIntLike |
-      BooleanLike |
-      ESSymbol |
-      UniqueESSymbol |
-      NonPrimitive,
+    Narrowable = Any | Unknown | StructuredOrInstantiable | StringLike | NumberLike | BigIntLike | BooleanLike | ESSymbol | UniqueESSymbol | NonPrimitive,
     NotUnionOrUnit = Any | Unknown | ESSymbol | Object | NonPrimitive,
     NotPrimitiveUnion = Any | Unknown | Enum | Void | Never | StructuredOrInstantiable,
     // The following flags are aggregated during union and intersection type construction
@@ -4821,17 +4519,7 @@ namespace qnr {
     DynamicPriority,
   }
 
-  export type CompilerOptionsValue =
-    | string
-    | number
-    | boolean
-    | (string | number)[]
-    | string[]
-    | MapLike<string[]>
-    | PluginImport[]
-    | ProjectReference[]
-    | null
-    | undefined;
+  export type CompilerOptionsValue = string | number | boolean | (string | number)[] | string[] | MapLike<string[]> | PluginImport[] | ProjectReference[] | null | undefined;
 
   export interface CompilerOptions {
     all?: boolean;
@@ -5074,9 +4762,7 @@ namespace qnr {
     spec: ConfigFileSpecs;
   }
 
-  export type RequireResult<T = {}> =
-    | { module: T; modulePath?: string; error: undefined }
-    | { module: undefined; modulePath?: undefined; error: { stack?: string; message?: string } };
+  export type RequireResult<T = {}> = { module: T; modulePath?: string; error: undefined } | { module: undefined; modulePath?: undefined; error: { stack?: string; message?: string } };
 
   export interface CreateProgramOptions {
     rootNames: readonly string[];
@@ -5370,19 +5056,8 @@ namespace qnr {
   export type HasInvalidatedResolution = (sourceFile: Path) => boolean;
 
   export interface CompilerHost extends ModuleResolutionHost {
-    getSourceFile(
-      fileName: string,
-      languageVersion: ScriptTarget,
-      onError?: (message: string) => void,
-      shouldCreateNewSourceFile?: boolean
-    ): SourceFile | undefined;
-    getSourceFileByPath?(
-      fileName: string,
-      path: Path,
-      languageVersion: ScriptTarget,
-      onError?: (message: string) => void,
-      shouldCreateNewSourceFile?: boolean
-    ): SourceFile | undefined;
+    getSourceFile(fileName: string, languageVersion: ScriptTarget, onError?: (message: string) => void, shouldCreateNewSourceFile?: boolean): SourceFile | undefined;
+    getSourceFileByPath?(fileName: string, path: Path, languageVersion: ScriptTarget, onError?: (message: string) => void, shouldCreateNewSourceFile?: boolean): SourceFile | undefined;
     getCancellationToken?(): CancellationToken;
     getDefaultLibFileName(options: CompilerOptions): string;
     getDefaultLibLocation?(): string;
@@ -5391,13 +5066,7 @@ namespace qnr {
     getCanonicalFileName(fileName: string): string;
     useCaseSensitiveFileNames(): boolean;
     getNewLine(): string;
-    readDirectory?(
-      rootDir: string,
-      extensions: readonly string[],
-      excludes: readonly string[] | undefined,
-      includes: readonly string[],
-      depth?: number
-    ): string[];
+    readDirectory?(rootDir: string, extensions: readonly string[], excludes: readonly string[] | undefined, includes: readonly string[], depth?: number): string[];
 
     /*
      * CompilerHost must either implement resolveModuleNames (in case if it wants to be completely in charge of
@@ -5441,9 +5110,7 @@ namespace qnr {
 
   export interface ResolvedProjectReferenceCallbacks {
     getSourceOfProjectReferenceRedirect(fileName: string): SourceOfProjectReferenceRedirect | undefined;
-    forEachResolvedProjectReference<T>(
-      cb: (resolvedProjectReference: ResolvedProjectReference | undefined, resolvedProjectReferencePath: Path) => T | undefined
-    ): T | undefined;
+    forEachResolvedProjectReference<T>(cb: (resolvedProjectReference: ResolvedProjectReference | undefined, resolvedProjectReferencePath: Path) => T | undefined): T | undefined;
   }
 
   export const enum TransformFlags {
@@ -5538,11 +5205,7 @@ namespace qnr {
       ContainsObjectRestOrSpread,
     PropertyExcludes = NodeExcludes | ContainsLexicalThis,
     ClassExcludes = NodeExcludes | ContainsTypeScriptClassSyntax | ContainsComputedPropertyName,
-    ModuleExcludes = NodeExcludes |
-      ContainsTypeScriptClassSyntax |
-      ContainsLexicalThis |
-      ContainsBlockScopedBinding |
-      ContainsHoistedDeclarationOrCompletion,
+    ModuleExcludes = NodeExcludes | ContainsTypeScriptClassSyntax | ContainsLexicalThis | ContainsBlockScopedBinding | ContainsHoistedDeclarationOrCompletion,
     TypeExcludes = ~ContainsTypeScript,
     ObjectLiteralExcludes = NodeExcludes | ContainsTypeScriptClassSyntax | ContainsComputedPropertyName | ContainsObjectRestOrSpread,
     ArrayLiteralOrCallOrNewExcludes = NodeExcludes | ContainsRestOrSpread,
@@ -5950,13 +5613,7 @@ namespace qnr {
     kind: BundleFileTextLikeKind;
   }
 
-  export type BundleFileSection =
-    | BundleFilePrologue
-    | BundleFileEmitHelpers
-    | BundleFileHasNoDefaultLib
-    | BundleFileReference
-    | BundleFilePrepend
-    | BundleFileTextLike;
+  export type BundleFileSection = BundleFilePrologue | BundleFileEmitHelpers | BundleFileHasNoDefaultLib | BundleFileReference | BundleFilePrepend | BundleFileTextLike;
 
   export interface SourceFilePrologueDirectiveExpression extends TextRange {
     text: string;
@@ -6114,25 +5771,11 @@ namespace qnr {
     /**
      * Adds a mapping with source information.
      */
-    addMapping(
-      generatedLine: number,
-      generatedCharacter: number,
-      sourceIndex: number,
-      sourceLine: number,
-      sourceCharacter: number,
-      nameIndex?: number
-    ): void;
+    addMapping(generatedLine: number, generatedCharacter: number, sourceIndex: number, sourceLine: number, sourceCharacter: number, nameIndex?: number): void;
     /**
      * Appends a source map.
      */
-    appendSourceMap(
-      generatedLine: number,
-      generatedCharacter: number,
-      sourceMap: RawSourceMap,
-      sourceMapPath: string,
-      start?: LineAndCharacter,
-      end?: LineAndCharacter
-    ): void;
+    appendSourceMap(generatedLine: number, generatedCharacter: number, sourceMap: RawSourceMap, sourceMapPath: string, start?: LineAndCharacter, end?: LineAndCharacter): void;
     /**
      * Gets the source map as a `RawSourceMap` object.
      */
@@ -6303,13 +5946,7 @@ namespace qnr {
     IntersectionTypeConstituents = AmpersandDelimited | SpaceBetweenSiblings | SingleLine,
     ObjectBindingPatternElements = SingleLine | AllowTrailingComma | SpaceBetweenBraces | CommaDelimited | SpaceBetweenSiblings | NoSpaceIfEmpty,
     ArrayBindingPatternElements = SingleLine | AllowTrailingComma | CommaDelimited | SpaceBetweenSiblings | NoSpaceIfEmpty,
-    ObjectLiteralExpressionProperties = PreserveLines |
-      CommaDelimited |
-      SpaceBetweenSiblings |
-      SpaceBetweenBraces |
-      Indented |
-      Braces |
-      NoSpaceIfEmpty,
+    ObjectLiteralExpressionProperties = PreserveLines | CommaDelimited | SpaceBetweenSiblings | SpaceBetweenBraces | Indented | Braces | NoSpaceIfEmpty,
     ArrayLiteralExpressionElements = PreserveLines | CommaDelimited | SpaceBetweenSiblings | AllowTrailingComma | Indented | SquareBrackets,
     CommaListElements = CommaDelimited | SpaceBetweenSiblings | SingleLine,
     CallExpressionArguments = CommaDelimited | SpaceBetweenSiblings | SingleLine | Parenthesis,
@@ -6412,9 +6049,7 @@ namespace qnr {
 
   type PragmaArgTypeMaybeCapture<TDesc> = TDesc extends { captureSpan: true } ? { value: string; pos: number; end: number } : string;
 
-  type PragmaArgTypeOptional<TDesc, TName extends string> = TDesc extends { optional: true }
-    ? { [K in TName]?: PragmaArgTypeMaybeCapture<TDesc> }
-    : { [K in TName]: PragmaArgTypeMaybeCapture<TDesc> };
+  type PragmaArgTypeOptional<TDesc, TName extends string> = TDesc extends { optional: true } ? { [K in TName]?: PragmaArgTypeMaybeCapture<TDesc> } : { [K in TName]: PragmaArgTypeMaybeCapture<TDesc> };
 
   type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (k: infer I) => void ? I : never;
 
