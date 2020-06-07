@@ -186,7 +186,7 @@ namespace qnr {
       assert(!some(node.decorators));
       if (!shouldTransformPrivateFields && isPrivateIdentifier(node.name)) {
         // Initializer is elided as the field is initialized in transformConstructor.
-        return updateProperty(
+        return PropertyDeclaration.update(
           node,
           /*decorators*/ undefined,
           visitNodes(node.modifiers, visitor, isModifier),
@@ -398,7 +398,7 @@ namespace qnr {
     }
 
     function doesClassElementNeedTransform(node: ClassElement) {
-      return isPropertyDeclaration(node) || (shouldTransformPrivateFields && node.name && isPrivateIdentifier(node.name));
+      return PropertyDeclaration.kind(node) || (shouldTransformPrivateFields && node.name && isPrivateIdentifier(node.name));
     }
 
     function visitClassDeclaration(node: ClassDeclaration) {
@@ -527,7 +527,7 @@ namespace qnr {
     }
 
     function isPropertyDeclarationThatRequiresConstructorStatement(member: ClassElement): member is PropertyDeclaration {
-      if (!isPropertyDeclaration(member) || hasStaticModifier(member)) {
+      if (!PropertyDeclaration.kind(member) || hasStaticModifier(member)) {
         return false;
       }
       if (context.getCompilerOptions().useDefineForClassFields) {

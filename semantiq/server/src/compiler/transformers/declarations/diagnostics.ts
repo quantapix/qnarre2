@@ -31,7 +31,7 @@ namespace qnr {
   export function canProduceDiagnostics(node: Node): node is DeclarationDiagnosticProducing {
     return (
       isVariableDeclaration(node) ||
-      isPropertyDeclaration(node) ||
+      PropertyDeclaration.kind(node) ||
       PropertySignature.kind(node) ||
       isBindingElement(node) ||
       isSetAccessor(node) ||
@@ -39,7 +39,7 @@ namespace qnr {
       ConstructSignatureDeclaration.kind(node) ||
       CallSignatureDeclaration.kind(node) ||
       MethodDeclaration.kind(node) ||
-      isMethodSignature(node) ||
+      MethodSignature.kind(node) ||
       isFunctionDeclaration(node) ||
       isParameter(node) ||
       isTypeParameterDeclaration(node) ||
@@ -55,7 +55,7 @@ namespace qnr {
   export function createGetSymbolAccessibilityDiagnosticForNodeName(node: DeclarationDiagnosticProducing) {
     if (isSetAccessor(node) || isGetAccessor(node)) {
       return getAccessorNameVisibilityError;
-    } else if (isMethodSignature(node) || MethodDeclaration.kind(node)) {
+    } else if (MethodSignature.kind(node) || MethodDeclaration.kind(node)) {
       return getMethodNameVisibilityError;
     } else {
       return createGetSymbolAccessibilityDiagnosticForNode(node);
@@ -126,7 +126,14 @@ namespace qnr {
   export function createGetSymbolAccessibilityDiagnosticForNode(
     node: DeclarationDiagnosticProducing
   ): (symbolAccessibilityResult: SymbolAccessibilityResult) => SymbolAccessibilityDiagnostic | undefined {
-    if (isVariableDeclaration(node) || isPropertyDeclaration(node) || PropertySignature.kind(node) || isPropertyAccessExpression(node) || isBindingElement(node) || ConstructorDeclaration.kind(node)) {
+    if (
+      isVariableDeclaration(node) ||
+      PropertyDeclaration.kind(node) ||
+      PropertySignature.kind(node) ||
+      isPropertyAccessExpression(node) ||
+      isBindingElement(node) ||
+      ConstructorDeclaration.kind(node)
+    ) {
       return getVariableDeclarationTypeVisibilityError;
     } else if (isSetAccessor(node) || isGetAccessor(node)) {
       return getAccessorDeclarationTypeVisibilityError;
@@ -134,7 +141,7 @@ namespace qnr {
       ConstructSignatureDeclaration.kind(node) ||
       CallSignatureDeclaration.kind(node) ||
       MethodDeclaration.kind(node) ||
-      isMethodSignature(node) ||
+      MethodSignature.kind(node) ||
       isFunctionDeclaration(node) ||
       IndexSignatureDeclaration.kind(node)
     ) {

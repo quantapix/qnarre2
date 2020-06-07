@@ -877,7 +877,7 @@ namespace qnr {
             members.push(
               setOriginalNode(
                 aggregateTransformFlags(
-                  createProperty(/*decorators*/ undefined, /*modifiers*/ undefined, parameter.name, /*questionOrExclamationToken*/ undefined, /*type*/ undefined, /*initializer*/ undefined)
+                  PropertyDeclaration.create(/*decorators*/ undefined, /*modifiers*/ undefined, parameter.name, /*questionOrExclamationToken*/ undefined, /*type*/ undefined, /*initializer*/ undefined)
                 ),
                 parameter
               )
@@ -1824,7 +1824,7 @@ namespace qnr {
       if (node.flags & NodeFlags.Ambient) {
         return;
       }
-      const updated = updateProperty(
+      const updated = PropertyDeclaration.update(
         node,
         /*decorators*/ undefined,
         visitNodes(node.modifiers, visitor, isModifier),

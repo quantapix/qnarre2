@@ -56,18 +56,14 @@ namespace qnr {
       }
     }
     // Import star is required if there's default named refs mixed with non-default refs, or if theres non-default refs and it has a default import
-    return (
-      (defaultRefCount > 0 && defaultRefCount !== bindings.elements.length) ||
-      (!!(bindings.elements.length - defaultRefCount) && isDefaultImport(node))
-    );
+    return (defaultRefCount > 0 && defaultRefCount !== bindings.elements.length) || (!!(bindings.elements.length - defaultRefCount) && isDefaultImport(node));
   }
 
   export function getImportNeedsImportDefaultHelper(node: ImportDeclaration): boolean {
     // Import default is needed if there's a default import or a default ref and no other refs (meaning an import star helper wasn't requested)
     return (
       !getImportNeedsImportStarHelper(node) &&
-      (isDefaultImport(node) ||
-        (!!node.importClause && isNamedImports(node.importClause.namedBindings!) && containsDefaultReference(node.importClause.namedBindings)))
+      (isDefaultImport(node) || (!!node.importClause && isNamedImports(node.importClause.namedBindings!) && containsDefaultReference(node.importClause.namedBindings)))
     ); // TODO: GH#18217
   }
 
@@ -195,13 +191,7 @@ namespace qnr {
       }
     }
 
-    const externalHelpersImportDeclaration = createExternalHelpersImportDeclarationIfNeeded(
-      sourceFile,
-      compilerOptions,
-      hasExportStarsToExportValues,
-      hasImportStar,
-      hasImportDefault
-    );
+    const externalHelpersImportDeclaration = createExternalHelpersImportDeclarationIfNeeded(sourceFile, compilerOptions, hasExportStarsToExportValues, hasImportStar, hasImportDefault);
     if (externalHelpersImportDeclaration) {
       externalImports.unshift(externalHelpersImportDeclaration);
     }
@@ -217,11 +207,7 @@ namespace qnr {
     };
   }
 
-  function collectExportedVariableInfo(
-    decl: VariableDeclaration | BindingElement,
-    uniqueExports: Map<boolean>,
-    exportedNames: Identifier[] | undefined
-  ) {
+  function collectExportedVariableInfo(decl: VariableDeclaration | BindingElement, uniqueExports: Map<boolean>, exportedNames: Identifier[] | undefined) {
     if (isBindingPattern(decl.name)) {
       for (const element of decl.name.elements) {
         if (!isOmittedExpression(element)) {
@@ -354,11 +340,7 @@ namespace qnr {
    * @param node The class node.
    * @param isStatic A value indicating whether to get properties from the static or instance side of the class.
    */
-  export function getProperties(
-    node: ClassExpression | ClassDeclaration,
-    requireInitializer: boolean,
-    isStatic: boolean
-  ): readonly PropertyDeclaration[] {
+  export function getProperties(node: ClassExpression | ClassDeclaration, requireInitializer: boolean, isStatic: boolean): readonly PropertyDeclaration[] {
     return filter(node.members, (m) => isInitializedOrStaticProperty(m, requireInitializer, isStatic)) as PropertyDeclaration[];
   }
 
@@ -369,7 +351,7 @@ namespace qnr {
    * @param isStatic A value indicating whether the member should be a static or instance member.
    */
   function isInitializedOrStaticProperty(member: ClassElement, requireInitializer: boolean, isStatic: boolean) {
-    return isPropertyDeclaration(member) && (!!member.initializer || !requireInitializer) && hasStaticModifier(member) === isStatic;
+    return PropertyDeclaration.kind(member) && (!!member.initializer || !requireInitializer) && hasStaticModifier(member) === isStatic;
   }
 
   /**

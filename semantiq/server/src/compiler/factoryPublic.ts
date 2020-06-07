@@ -364,11 +364,11 @@ namespace qnr {
     return SignatureDeclaration.update(node, typeParameters, parameters, type);
   }
 
-  export function ConstructorDeclaration.createTypeNode(typeParameters: readonly TypeParameterDeclaration[] | undefined, parameters: readonly ParameterDeclaration[], type: TypeNode | undefined) {
+  export function createConstructorDeclarationTypeNode(typeParameters: readonly TypeParameterDeclaration[] | undefined, parameters: readonly ParameterDeclaration[], type: TypeNode | undefined) {
     return SignatureDeclaration.create(SyntaxKind.ConstructorType, typeParameters, parameters, type) as ConstructorTypeNode;
   }
 
-  export function ConstructorDeclaration.updateTypeNode(
+  export function updateConstructorDeclarationTypeNode(
     node: ConstructorTypeNode,
     typeParameters: NodeArray<TypeParameterDeclaration> | undefined,
     parameters: NodeArray<ParameterDeclaration>,
@@ -2453,7 +2453,7 @@ namespace qnr {
     return node;
   }
 
-  let allUnscopedEmitHelpers: ReadonlyMap<UnscopedEmitHelper> | undefined;
+  let allUnscopedEmitHelpers: QReadonlyMap<UnscopedEmitHelper> | undefined;
   function getAllUnscopedEmitHelpers() {
     return (
       allUnscopedEmitHelpers ||
@@ -2899,38 +2899,6 @@ namespace qnr {
   }
 
   // Utilities
-
-  function asName<T extends Identifier | BindingName | PropertyName | EntityName | ThisTypeNode | undefined>(name: string | T): T | Identifier {
-    return isString(name) ? createIdentifier(name) : name;
-  }
-
-  function asExpression<T extends Expression | undefined>(value: string | number | boolean | T): T | StringLiteral | NumericLiteral | BooleanLiteral {
-    return typeof value === 'string'
-      ? StringLiteral.create(value)
-      : typeof value === 'number'
-      ? NumericLiteral.create('' + value)
-      : typeof value === 'boolean'
-      ? value
-        ? createTrue()
-        : createFalse()
-      : value;
-  }
-
-  function asNodeArray<T extends Node>(array: readonly T[]): NodeArray<T>;
-  function asNodeArray<T extends Node>(array: readonly T[] | undefined): NodeArray<T> | undefined;
-  function asNodeArray<T extends Node>(array: readonly T[] | undefined): NodeArray<T> | undefined {
-    return array ? createNodeArray(array) : undefined;
-  }
-
-  function asToken<TKind extends SyntaxKind>(value: TKind | Token<TKind>): Token<TKind> {
-    return typeof value === 'number' ? createToken(value) : value;
-  }
-
-  function asEmbeddedStatement<T extends Node>(statement: T): T | EmptyStatement;
-  function asEmbeddedStatement<T extends Node>(statement: T | undefined): T | EmptyStatement | undefined;
-  function asEmbeddedStatement<T extends Node>(statement: T | undefined): T | EmptyStatement | undefined {
-    return statement && isNotEmittedStatement(statement) ? setTextRange(setOriginalNode(createEmptyStatement(), statement), statement) : statement;
-  }
 
   /**
    * Clears any EmitNode entries from parse-tree nodes.

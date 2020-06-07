@@ -366,7 +366,7 @@ namespace qnr {
         );
 
       case SyntaxKind.PropertyDeclaration:
-        return updateProperty(
+        return PropertyDeclaration.update(
           <PropertyDeclaration>node,
           nodesVisitor((<PropertyDeclaration>node).decorators, visitor, isDecorator),
           nodesVisitor((<PropertyDeclaration>node).modifiers, visitor, isModifier),
@@ -378,7 +378,7 @@ namespace qnr {
         );
 
       case SyntaxKind.MethodSignature:
-        return updateSignature(
+        return MethodSignature.update(
           <MethodSignature>node,
           nodesVisitor((<MethodSignature>node).typeParameters, visitor, isTypeParameterDeclaration),
           nodesVisitor((<MethodSignature>node).parameters, visitor, isParameterDeclaration),

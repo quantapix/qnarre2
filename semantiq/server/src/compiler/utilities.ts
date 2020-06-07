@@ -1119,7 +1119,7 @@ namespace qnr {
   export function isValidESSymbolDeclaration(node: Node): node is VariableDeclaration | PropertyDeclaration | SignatureDeclaration {
     return isVariableDeclaration(node)
       ? isVarConst(node) && isIdentifier(node.name) && isVariableDeclarationInVariableStatement(node)
-      : isPropertyDeclaration(node)
+      : PropertyDeclaration.kind(node)
       ? hasEffectiveReadonlyModifier(node) && hasStaticModifier(node)
       : PropertySignature.kind(node) && hasEffectiveReadonlyModifier(node);
   }

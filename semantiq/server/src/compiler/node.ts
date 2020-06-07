@@ -1,4 +1,28 @@
 namespace qnr {
+  export function asName<T extends Identifier | BindingName | PropertyName | EntityName | ThisTypeNode | undefined>(n: string | T): T | Identifier {
+    return isString(n) ? createIdentifier(n) : n;
+  }
+
+  export function asExpression<T extends Expression | undefined>(e: string | number | boolean | T): T | StringLiteral | NumericLiteral | BooleanLiteral {
+    return typeof e === 'string' ? StringLiteral.create(e) : typeof e === 'number' ? NumericLiteral.create('' + e) : typeof e === 'boolean' ? (e ? createTrue() : createFalse()) : e;
+  }
+
+  export function asNodeArray<T extends Node>(a: readonly T[]): NodeArray<T>;
+  export function asNodeArray<T extends Node>(a: readonly T[] | undefined): NodeArray<T> | undefined;
+  export function asNodeArray<T extends Node>(a: readonly T[] | undefined): NodeArray<T> | undefined {
+    return a ? createNodeArray(a) : undefined;
+  }
+
+  export function asToken<TKind extends SyntaxKind>(t: TKind | Token<TKind>): Token<TKind> {
+    return typeof t === 'number' ? createToken(t) : t;
+  }
+
+  export function asEmbeddedStatement<T extends Node>(statement: T): T | EmptyStatement;
+  export function asEmbeddedStatement<T extends Node>(statement: T | undefined): T | EmptyStatement | undefined;
+  export function asEmbeddedStatement<T extends Node>(statement: T | undefined): T | EmptyStatement | undefined {
+    return statement && isNotEmittedStatement(statement) ? setTextRange(setOriginalNode(createEmptyStatement(), statement), statement) : statement;
+  }
+
   export namespace Node {
     export function createSynthesized(k: SyntaxKind): Node {
       const n = createNode(k, -1, -1);
@@ -255,14 +279,7 @@ namespace qnr {
     initializer?: Expression;
   }
   export namespace PropertyDeclaration {
-    export function createProperty(
-      ds: readonly Decorator[] | undefined,
-      ms: readonly Modifier[] | undefined,
-      p: string | PropertyName,
-      q?: QuestionToken | ExclamationToken,
-      t?: TypeNode,
-      i?: Expression
-    ) {
+    export function create(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: string | PropertyName, q?: QuestionToken | ExclamationToken, t?: TypeNode, i?: Expression) {
       const n = Node.createSynthesized(SyntaxKind.PropertyDeclaration) as PropertyDeclaration;
       n.decorators = asNodeArray(ds);
       n.modifiers = asNodeArray(ms);
@@ -273,7 +290,7 @@ namespace qnr {
       n.initializer = i;
       return n;
     }
-    export function updateProperty(
+    export function update(
       n: PropertyDeclaration,
       ds: readonly Decorator[] | undefined,
       ms: readonly Modifier[] | undefined,
@@ -289,10 +306,10 @@ namespace qnr {
         n.exclamationToken !== (q !== undefined && q.kind === SyntaxKind.ExclamationToken ? q : undefined) ||
         n.type !== t ||
         n.initializer !== i
-        ? updateNode(createProperty(ds, ms, p, q, t, i), n)
+        ? updateNode(create(ds, ms, p, q, t, i), n)
         : n;
     }
-    export function isPropertyDeclaration(n: Node): n is PropertyDeclaration {
+    export function kind(n: Node): n is PropertyDeclaration {
       return n.kind === SyntaxKind.PropertyDeclaration;
     }
   }
@@ -303,29 +320,16 @@ namespace qnr {
     name: PropertyName;
   }
   export namespace MethodSignature {
-    export function createSignature(
-      ts: readonly TypeParameterDeclaration[] | undefined,
-      ps: readonly ParameterDeclaration[],
-      t: TypeNode | undefined,
-      p: string | PropertyName,
-      q?: QuestionToken
-    ) {
+    export function create(ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t: TypeNode | undefined, p: string | PropertyName, q?: QuestionToken) {
       const n = SignatureDeclaration.create(SyntaxKind.MethodSignature, ts, ps, t) as MethodSignature;
       n.name = asName(p);
       n.questionToken = q;
       return n;
     }
-    export function updateSignature(
-      n: MethodSignature,
-      ts: NodeArray<TypeParameterDeclaration> | undefined,
-      ps: NodeArray<ParameterDeclaration>,
-      t: TypeNode | undefined,
-      p: PropertyName,
-      q?: QuestionToken
-    ) {
-      return n.typeParameters !== ts || n.parameters !== ps || n.type !== t || n.name !== p || n.questionToken !== q ? updateNode(createSignature(ts, ps, t, p, q), n) : n;
+    export function update(n: MethodSignature, ts: NodeArray<TypeParameterDeclaration> | undefined, ps: NodeArray<ParameterDeclaration>, t: TypeNode | undefined, p: PropertyName, q?: QuestionToken) {
+      return n.typeParameters !== ts || n.parameters !== ps || n.type !== t || n.name !== p || n.questionToken !== q ? updateNode(create(ts, ps, t, p, q), n) : n;
     }
-    export function isMethodSignature(n: Node): n is MethodSignature {
+    export function kind(n: Node): n is MethodSignature {
       return n.kind === SyntaxKind.MethodSignature;
     }
   }
@@ -526,12 +530,12 @@ namespace qnr {
     }
   }
 
-  function MethodDeclaration.createCall(object: Expression, methodName: string | Identifier, argumentsList: readonly Expression[]) {
+  function createMethodCall(object: Expression, methodName: string | Identifier, argumentsList: readonly Expression[]) {
     return createCall(createPropertyAccess(object, asName(methodName)), /*typeArguments*/ undefined, argumentsList);
   }
 
   function createGlobalMethodCall(globalObjectName: string, methodName: string, argumentsList: readonly Expression[]) {
-    return MethodDeclaration.createCall(createIdentifier(globalObjectName), methodName, argumentsList);
+    return createMethodCall(createIdentifier(globalObjectName), methodName, argumentsList);
   }
 
   export function createObjectDefinePropertyCall(target: Expression, propertyName: string | Expression, attributes: Expression) {

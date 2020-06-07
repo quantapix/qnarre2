@@ -1239,7 +1239,7 @@ namespace qnr {
   }
 
   export function isPrivateIdentifierPropertyDeclaration(n: Node): n is PrivateIdentifierPropertyDeclaration {
-    return isPropertyDeclaration(n) && isPrivateIdentifier(n.name);
+    return PropertyDeclaration.kind(n) && isPrivateIdentifier(n.name);
   }
 
   export function isPrivateIdentifierPropertyAccessExpression(n: Node): n is PrivateIdentifierPropertyAccessExpression {

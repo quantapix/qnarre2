@@ -1432,7 +1432,7 @@ namespace qnr {
         return sourceFiles.indexOf(declarationFile) <= sourceFiles.indexOf(useFile);
       }
 
-      if (declaration.pos <= usage.pos && !(isPropertyDeclaration(declaration) && isThisProperty(usage.parent) && !declaration.initializer && !declaration.exclamationToken)) {
+      if (declaration.pos <= usage.pos && !(PropertyDeclaration.kind(declaration) && isThisProperty(usage.parent) && !declaration.initializer && !declaration.exclamationToken)) {
         // declaration is before usage
         if (declaration.kind === SyntaxKind.BindingElement) {
           // still might be illegal if declaration and usage are both binding elements (eg var [a = b, b = b] = [1, 2])
@@ -1448,7 +1448,7 @@ namespace qnr {
         } else if (isClassDeclaration(declaration)) {
           // still might be illegal if the usage is within a computed property name in the class (eg class A { static p = "a"; [A.p]() {} })
           return !findAncestor(usage, (n) => ComputedPropertyName.kind(n) && n.parent.parent === declaration);
-        } else if (isPropertyDeclaration(declaration)) {
+        } else if (PropertyDeclaration.kind(declaration)) {
           // still might be illegal if a self-referencing property initializer (eg private x = this.x)
           return !isPropertyImmediatelyReferencedWithinDeclaration(declaration, usage, /*stopAtAnyPropertyDeclaration*/ false);
         } else if (isParameterPropertyDeclaration(declaration, declaration.parent)) {
@@ -1490,7 +1490,7 @@ namespace qnr {
           compilerOptions.target === ScriptTarget.ESNext &&
           !!compilerOptions.useDefineForClassFields &&
           getContainingClass(declaration) &&
-          (isPropertyDeclaration(declaration) || isParameterPropertyDeclaration(declaration, declaration.parent))
+          (PropertyDeclaration.kind(declaration) || isParameterPropertyDeclaration(declaration, declaration.parent))
         ) {
           return !isPropertyImmediatelyReferencedWithinDeclaration(declaration, usage, /*stopAtAnyPropertyDeclaration*/ true);
         } else {
@@ -1568,7 +1568,7 @@ namespace qnr {
             case SyntaxKind.PropertyDeclaration:
               // even when stopping at any property declaration, they need to come from the same class
               return stopAtAnyPropertyDeclaration &&
-                ((isPropertyDeclaration(declaration) && node.parent === declaration.parent) ||
+                ((PropertyDeclaration.kind(declaration) && node.parent === declaration.parent) ||
                   (isParameterPropertyDeclaration(declaration, declaration.parent) && node.parent === declaration.parent.parent))
                 ? 'quit'
                 : true;
@@ -6541,7 +6541,7 @@ namespace qnr {
           // Boil down all private properties into a single one.
           const privateProperties = hasPrivateIdentifier
             ? [
-                createProperty(
+                PropertyDeclaration.create(
                   /*decorators*/ undefined,
                   /*modifiers*/ undefined,
                   createPrivateIdentifier('#private'),
@@ -6880,7 +6880,7 @@ namespace qnr {
             }
             const flag = (modifierFlags & ~ModifierFlags.Async) | (isStatic ? ModifierFlags.Static : 0);
             const name = getPropertyNameNodeForSymbol(p, context);
-            const firstPropertyLikeDecl = find(p.declarations, or(isPropertyDeclaration, isAccessor, isVariableDeclaration, PropertySignature.kind, isBinaryExpression, isPropertyAccessExpression));
+            const firstPropertyLikeDecl = find(p.declarations, or(PropertyDeclaration.kind, isAccessor, isVariableDeclaration, PropertySignature.kind, isBinaryExpression, isPropertyAccessExpression));
             if (p.flags & SymbolFlags.Accessor && useAccessors) {
               const result: AccessorDeclaration[] = [];
               if (p.flags & SymbolFlags.SetAccessor) {
@@ -6938,7 +6938,7 @@ namespace qnr {
                   // interface members can't have initializers, however class members _can_
                   /*initializer*/ undefined
                 ),
-                find(p.declarations, or(isPropertyDeclaration, isVariableDeclaration)) || firstPropertyLikeDecl
+                find(p.declarations, or(PropertyDeclaration.kind, isVariableDeclaration)) || firstPropertyLikeDecl
               );
             }
             if (p.flags & (SymbolFlags.Method | SymbolFlags.Function)) {
@@ -7861,7 +7861,7 @@ namespace qnr {
         return addOptionality(type, isOptional);
       }
 
-      if (isPropertyDeclaration(declaration) && (noImplicitAny || isInJSFile(declaration))) {
+      if (PropertyDeclaration.kind(declaration) && (noImplicitAny || isInJSFile(declaration))) {
         // We have a property declaration with no type annotation or initializer, in noImplicitAny mode or a .js file.
         // Use control flow analysis of this.xxx assignments in the constructor to determine the type of the property.
         const constructor = findConstructorDeclaration(declaration.parent);
@@ -7916,7 +7916,7 @@ namespace qnr {
       // A property is auto-typed when its declaration has no type annotation or initializer and we're in
       // noImplicitAny mode or a .js file.
       const declaration = symbol.valueDeclaration;
-      return declaration && isPropertyDeclaration(declaration) && !getEffectiveTypeAnnotationNode(declaration) && !declaration.initializer && (noImplicitAny || isInJSFile(declaration));
+      return declaration && PropertyDeclaration.kind(declaration) && !getEffectiveTypeAnnotationNode(declaration) && !declaration.initializer && (noImplicitAny || isInJSFile(declaration));
     }
 
     function getDeclaringConstructor(symbol: Symbol) {
@@ -8390,7 +8390,7 @@ namespace qnr {
         isClassDeclaration(declaration) ||
         isFunctionDeclaration(declaration) ||
         (MethodDeclaration.kind(declaration) && !isObjectLiteralMethod(declaration)) ||
-        isMethodSignature(declaration) ||
+        MethodSignature.kind(declaration) ||
         isSourceFile(declaration)
       ) {
         // Symbol is property of some kind that is merged with something - should use `getTypeOfFuncClassEnumModule` and not `getTypeOfVariableOrParameterOrProperty`
@@ -8406,7 +8406,7 @@ namespace qnr {
         type = tryGetTypeFromEffectiveTypeNode(declaration) || checkExpressionForMutableLocation(declaration.name, CheckMode.Normal);
       } else if (isObjectLiteralMethod(declaration)) {
         type = tryGetTypeFromEffectiveTypeNode(declaration) || checkObjectLiteralMethod(declaration, CheckMode.Normal);
-      } else if (isParameter(declaration) || isPropertyDeclaration(declaration) || PropertySignature.kind(declaration) || isVariableDeclaration(declaration) || isBindingElement(declaration)) {
+      } else if (isParameter(declaration) || PropertyDeclaration.kind(declaration) || PropertySignature.kind(declaration) || isVariableDeclaration(declaration) || isBindingElement(declaration)) {
         type = getWidenedTypeForVariableLikeDeclaration(declaration, /*includeOptionality*/ true);
       }
       // getTypeOfSymbol dispatches some JS merges incorrectly because their symbol flags are not mutually exclusive.
@@ -18855,7 +18855,7 @@ namespace qnr {
           const param = declaration as ParameterDeclaration;
           if (
             isIdentifier(param.name) &&
-            (CallSignatureDeclaration.kind(param.parent) || isMethodSignature(param.parent) || isFunctionTypeNode(param.parent)) &&
+            (CallSignatureDeclaration.kind(param.parent) || MethodSignature.kind(param.parent) || isFunctionTypeNode(param.parent)) &&
             param.parent.parameters.indexOf(param) > -1 &&
             (resolveName(param, param.name.escapedText, SymbolFlags.Type, undefined, param.name.escapedText, /*isUse*/ true) ||
               (param.name.originalKeywordKind && isTypeNodeKind(param.name.originalKeywordKind)))
@@ -33981,7 +33981,7 @@ namespace qnr {
           if (basePropertyFlags && derivedPropertyFlags) {
             // property/accessor is overridden with property/accessor
             if (
-              (baseDeclarationFlags & ModifierFlags.Abstract && !(base.valueDeclaration && isPropertyDeclaration(base.valueDeclaration) && base.valueDeclaration.initializer)) ||
+              (baseDeclarationFlags & ModifierFlags.Abstract && !(base.valueDeclaration && PropertyDeclaration.kind(base.valueDeclaration) && base.valueDeclaration.initializer)) ||
               (base.valueDeclaration && base.valueDeclaration.parent.kind === SyntaxKind.InterfaceDeclaration) ||
               (derived.valueDeclaration && isBinaryExpression(derived.valueDeclaration))
             ) {
@@ -35562,7 +35562,7 @@ namespace qnr {
 
     function isNodeUsedDuringClassInitialization(node: Node) {
       return !!findAncestor(node, (element) => {
-        if ((ConstructorDeclaration.kind(element) && nodeIsPresent(element.body)) || isPropertyDeclaration(element)) {
+        if ((ConstructorDeclaration.kind(element) && nodeIsPresent(element.body)) || PropertyDeclaration.kind(element)) {
           return true;
         } else if (isClassLike(element) || isFunctionLikeDeclaration(element)) {
           return 'quit';
@@ -37123,7 +37123,7 @@ namespace qnr {
               return grammarErrorOnNode(modifier, Diagnostics._0_modifier_already_seen, 'declare');
             } else if (flags & ModifierFlags.Async) {
               return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_be_used_in_an_ambient_context, 'async');
-            } else if (isClassLike(node.parent) && !isPropertyDeclaration(node)) {
+            } else if (isClassLike(node.parent) && !PropertyDeclaration.kind(node)) {
               return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_appear_on_a_class_element, 'declare');
             } else if (node.kind === SyntaxKind.Parameter) {
               return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_appear_on_a_parameter, 'declare');
@@ -38233,7 +38233,7 @@ namespace qnr {
       }
 
       if (
-        isPropertyDeclaration(node) &&
+        PropertyDeclaration.kind(node) &&
         node.exclamationToken &&
         (!isClassLike(node.parent) || !node.type || node.initializer || node.flags & NodeFlags.Ambient || hasSyntacticModifier(node, ModifierFlags.Static | ModifierFlags.Abstract))
       ) {

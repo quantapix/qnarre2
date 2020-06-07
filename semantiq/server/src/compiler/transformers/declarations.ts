@@ -832,10 +832,10 @@ namespace qnr {
       let shouldEnterSuppressNewDiagnosticsContextContext = (input.kind === SyntaxKind.TypeLiteral || input.kind === SyntaxKind.MappedType) && input.parent.kind !== SyntaxKind.TypeAliasDeclaration;
 
       // Emit methods which are private as properties with no type information
-      if (MethodDeclaration.kind(input) || isMethodSignature(input)) {
+      if (MethodDeclaration.kind(input) || MethodSignature.kind(input)) {
         if (hasEffectiveModifier(input, ModifierFlags.Private)) {
           if (input.symbol && input.symbol.declarations && input.symbol.declarations[0] !== input) return; // Elide all but the first overload
-          return cleanup(createProperty(/*decorators*/ undefined, ensureModifiers(input), input.name, /*questionToken*/ undefined, /*type*/ undefined, /*initializer*/ undefined));
+          return cleanup(PropertyDeclaration.create(/*decorators*/ undefined, ensureModifiers(input), input.name, /*questionToken*/ undefined, /*type*/ undefined, /*initializer*/ undefined));
         }
       }
 
@@ -930,7 +930,9 @@ namespace qnr {
             if (isPrivateIdentifier(input.name)) {
               return cleanup(/*returnValue*/ undefined);
             }
-            return cleanup(updateProperty(input, /*decorators*/ undefined, ensureModifiers(input), input.name, input.questionToken, ensureType(input, input.type), ensureNoInitializer(input)));
+            return cleanup(
+              PropertyDeclaration.update(input, /*decorators*/ undefined, ensureModifiers(input), input.name, input.questionToken, ensureType(input, input.type), ensureNoInitializer(input))
+            );
           case SyntaxKind.PropertySignature:
             if (isPrivateIdentifier(input.name)) {
               return cleanup(/*returnValue*/ undefined);
@@ -1275,7 +1277,7 @@ namespace qnr {
                 getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(param);
                 if (param.name.kind === SyntaxKind.Identifier) {
                   return preserveJsDoc(
-                    createProperty(/*decorators*/ undefined, ensureModifiers(param), param.name, param.questionToken, ensureType(param, param.type), ensureNoInitializer(param)),
+                    PropertyDeclaration.create(/*decorators*/ undefined, ensureModifiers(param), param.name, param.questionToken, ensureType(param, param.type), ensureNoInitializer(param)),
                     param
                   );
                 } else {
@@ -1292,7 +1294,7 @@ namespace qnr {
                     }
                     elems = elems || [];
                     elems.push(
-                      createProperty(
+                      PropertyDeclaration.create(
                         /*decorators*/ undefined,
                         ensureModifiers(param),
                         elem.name as Identifier,
@@ -1311,7 +1313,16 @@ namespace qnr {
 
           const hasPrivateIdentifier = some(input.members, (member) => !!member.name && isPrivateIdentifier(member.name));
           const privateIdentifier = hasPrivateIdentifier
-            ? [createProperty(/*decorators*/ undefined, /*modifiers*/ undefined, createPrivateIdentifier('#private'), /*questionToken*/ undefined, /*type*/ undefined, /*initializer*/ undefined)]
+            ? [
+                PropertyDeclaration.create(
+                  /*decorators*/ undefined,
+                  /*modifiers*/ undefined,
+                  createPrivateIdentifier('#private'),
+                  /*questionToken*/ undefined,
+                  /*type*/ undefined,
+                  /*initializer*/ undefined
+                ),
+              ]
             : undefined;
           const memberNodes = concatenate(concatenate(privateIdentifier, parameterProperties), visitNodes(input.members, visitDeclarationSubtree));
           const members = createNodeArray(memberNodes);
