@@ -1,6 +1,6 @@
 namespace qnr {
   export const resolvingEmptyArray: never[] = [] as never[];
-  export const emptyMap = createMap<never>() as ReadonlyMap<never> & ReadonlyPragmaMap;
+  export const emptyMap = createMap<never>() as QReadonlyMap<never> & ReadonlyPragmaMap;
   export const emptyUnderscoreEscapedMap: ReadonlyUnderscoreEscapedMap<never> = emptyMap as ReadonlyUnderscoreEscapedMap<never>;
 
   export const externalHelpersModuleNameText = 'tslib';
@@ -12,18 +12,14 @@ namespace qnr {
     const declarations = symbol.declarations;
     if (declarations) {
       for (const declaration of declarations) {
-        if (declaration.kind === kind) {
-          return declaration as T;
-        }
+        if (declaration.kind === kind) return declaration as T;
       }
     }
-
     return;
   }
 
-  /** Create a new escaped identifier map. */
   export function createUnderscoreEscapedMap<T>(): UnderscoreEscapedMap<T> {
-    return new Map<T>() as UnderscoreEscapedMap<T>;
+    return new QMap<T>() as UnderscoreEscapedMap<T>;
   }
 
   export function hasEntries(map: ReadonlyUnderscoreEscapedMap<any> | undefined): map is ReadonlyUnderscoreEscapedMap<any> {
@@ -61,9 +57,6 @@ namespace qnr {
       isAtStartOfLine: () => false,
       hasTrailingComment: () => false,
       hasTrailingWhitespace: () => !!str.length && isWhiteSpaceLike(str.charCodeAt(str.length - 1)),
-
-      // Completely ignore indentation for string writers.  And map newlines to
-      // a single space.
       writeLine: () => (str += ' '),
       increaseIndent: noop,
       decreaseIndent: noop,
@@ -83,22 +76,13 @@ namespace qnr {
     return moduleResolutionOptionDeclarations.some((o) => !isJsonEqual(getCompilerOptionValue(oldOptions, o), getCompilerOptionValue(newOptions, o)));
   }
 
-  /**
-   * Iterates through the parent chain of a node and performs the callback on each parent until the callback
-   * returns a truthy value, then returns that value.
-   * If no such value is found, it applies the callback until the parent pointer is undefined or the callback returns "quit"
-   * At that point findAncestor returns undefined.
-   */
   export function findAncestor<T extends Node>(node: Node | undefined, callback: (element: Node) => element is T): T | undefined;
   export function findAncestor(node: Node | undefined, callback: (element: Node) => boolean | 'quit'): Node | undefined;
   export function findAncestor(node: Node, callback: (element: Node) => boolean | 'quit'): Node | undefined {
     while (node) {
       const result = callback(node);
-      if (result === 'quit') {
-        return;
-      } else if (result) {
-        return node;
-      }
+      if (result === 'quit') return;
+      if (result) return node;
       node = node.parent;
     }
     return;
@@ -114,71 +98,59 @@ namespace qnr {
     }
   }
 
-  /**
-   * Calls `callback` for each entry in the map, returning the first truthy result.
-   * Use `map.forEach` instead for normal iteration.
-   */
   export function forEachEntry<T, U>(map: ReadonlyUnderscoreEscapedMap<T>, callback: (value: T, key: __String) => U | undefined): U | undefined;
-  export function forEachEntry<T, U>(map: ReadonlyMap<T>, callback: (value: T, key: string) => U | undefined): U | undefined;
+  export function forEachEntry<T, U>(map: QReadonlyMap<T>, callback: (value: T, key: string) => U | undefined): U | undefined;
   export function forEachEntry<T, U>(
-    map: ReadonlyUnderscoreEscapedMap<T> | ReadonlyMap<T>,
+    map: ReadonlyUnderscoreEscapedMap<T> | QReadonlyMap<T>,
     callback: (value: T, key: string & __String) => U | undefined
   ): U | undefined {
     const iterator = map.entries();
     for (let iterResult = iterator.next(); !iterResult.done; iterResult = iterator.next()) {
       const [key, value] = iterResult.value;
       const result = callback(value, key as string & __String);
-      if (result) {
-        return result;
-      }
+      if (result) return result;
     }
     return;
   }
 
-  /** `forEachEntry` for just keys. */
   export function forEachKey<T>(map: ReadonlyUnderscoreEscapedMap<{}>, callback: (key: __String) => T | undefined): T | undefined;
-  export function forEachKey<T>(map: ReadonlyMap<{}>, callback: (key: string) => T | undefined): T | undefined;
+  export function forEachKey<T>(map: QReadonlyMap<{}>, callback: (key: string) => T | undefined): T | undefined;
   export function forEachKey<T>(
-    map: ReadonlyUnderscoreEscapedMap<{}> | ReadonlyMap<{}>,
+    map: ReadonlyUnderscoreEscapedMap<{}> | QReadonlyMap<{}>,
     callback: (key: string & __String) => T | undefined
   ): T | undefined {
     const iterator = map.keys();
     for (let iterResult = iterator.next(); !iterResult.done; iterResult = iterator.next()) {
       const result = callback(iterResult.value as string & __String);
-      if (result) {
-        return result;
-      }
+      if (result) return result;
     }
     return;
   }
 
-  /** Copy entries from `source` to `target`. */
   export function copyEntries<T>(source: ReadonlyUnderscoreEscapedMap<T>, target: UnderscoreEscapedMap<T>): void;
-  export function copyEntries<T>(source: ReadonlyMap<T>, target: Map<T>): void;
-  export function copyEntries<T, U extends UnderscoreEscapedMap<T> | Map<T>>(source: U, target: U): void {
-    (source as Map<T>).forEach((value, key) => {
-      (target as Map<T>).set(key, value);
+  export function copyEntries<T>(source: QReadonlyMap<T>, target: QMap<T>): void;
+  export function copyEntries<T, U extends UnderscoreEscapedMap<T> | QMap<T>>(source: U, target: U): void {
+    (source as QMap<T>).forEach((value, key) => {
+      (target as QMap<T>).set(key, value);
     });
   }
 
-  /**
-   * Creates a set from the elements of an array.
-   *
-   * @param array the array of input elements.
-   */
-  export function arrayToSet(array: readonly string[]): Map<true>;
-  export function arrayToSet<T>(array: readonly T[], makeKey: (value: T) => string | undefined): Map<true>;
+  export function arrayToSet(array: readonly string[]): QMap<true>;
+  export function arrayToSet<T>(array: readonly T[], makeKey: (value: T) => string | undefined): QMap<true>;
   export function arrayToSet<T>(array: readonly T[], makeKey: (value: T) => __String | undefined): UnderscoreEscapedMap<true>;
-  export function arrayToSet(array: readonly any[], makeKey?: (value: any) => string | __String | undefined): Map<true> | UnderscoreEscapedMap<true> {
+  export function arrayToSet(
+    array: readonly any[],
+    makeKey?: (value: any) => string | __String | undefined
+  ): QMap<true> | UnderscoreEscapedMap<true> {
     return arrayToMap<any, true>(array, makeKey || ((s) => s), returnTrue);
   }
 
   export function cloneMap(map: SymbolTable): SymbolTable;
-  export function cloneMap<T>(map: ReadonlyMap<T>): Map<T>;
+  export function cloneMap<T>(map: QReadonlyMap<T>): QMap<T>;
   export function cloneMap<T>(map: ReadonlyUnderscoreEscapedMap<T>): UnderscoreEscapedMap<T>;
-  export function cloneMap<T>(map: ReadonlyMap<T> | ReadonlyUnderscoreEscapedMap<T> | SymbolTable): Map<T> | UnderscoreEscapedMap<T> | SymbolTable {
+  export function cloneMap<T>(map: QReadonlyMap<T> | ReadonlyUnderscoreEscapedMap<T> | SymbolTable): QMap<T> | UnderscoreEscapedMap<T> | SymbolTable {
     const clone = createMap<T>();
-    copyEntries(map as Map<T>, clone);
+    copyEntries(map as QMap<T>, clone);
     return clone;
   }
 
@@ -205,7 +177,6 @@ namespace qnr {
     if (!sourceFile.resolvedModules) {
       sourceFile.resolvedModules = createMap<ResolvedModuleFull>();
     }
-
     sourceFile.resolvedModules.set(moduleNameText, resolvedModule);
   }
 
@@ -217,7 +188,6 @@ namespace qnr {
     if (!sourceFile.resolvedTypeReferenceDirectiveNames) {
       sourceFile.resolvedTypeReferenceDirectiveNames = createMap<ResolvedTypeReferenceDirective | undefined>();
     }
-
     sourceFile.resolvedTypeReferenceDirectiveNames.set(typeReferenceDirectiveName, resolvedTypeReferenceDirective);
   }
 
@@ -251,23 +221,19 @@ namespace qnr {
   export function hasChangesInResolutions<T>(
     names: readonly string[],
     newResolutions: readonly T[],
-    oldResolutions: ReadonlyMap<T> | undefined,
+    oldResolutions: QReadonlyMap<T> | undefined,
     comparer: (oldResolution: T, newResolution: T) => boolean
   ): boolean {
     assert(names.length === newResolutions.length);
-
     for (let i = 0; i < names.length; i++) {
       const newResolution = newResolutions[i];
       const oldResolution = oldResolutions && oldResolutions.get(names[i]);
       const changed = oldResolution ? !newResolution || !comparer(oldResolution, newResolution) : newResolution;
-      if (changed) {
-        return true;
-      }
+      if (changed) return true;
     }
     return false;
   }
 
-  // Returns true if this node contains a parse error anywhere underneath it.
   export function containsParseError(node: Node): boolean {
     aggregateChildData(node);
     return (node.flags & NodeFlags.ThisNodeOrAnySubNodesHasError) !== 0;
@@ -275,19 +241,8 @@ namespace qnr {
 
   function aggregateChildData(node: Node): void {
     if (!(node.flags & NodeFlags.HasAggregatedChildData)) {
-      // A node is considered to contain a parse error if:
-      //  a) the parser explicitly marked that it had an error
-      //  b) any of it's children reported that it had an error.
       const thisNodeOrAnySubNodesHasError = (node.flags & NodeFlags.ThisNodeHasError) !== 0 || forEachChild(node, containsParseError);
-
-      // If so, mark ourselves accordingly.
-      if (thisNodeOrAnySubNodesHasError) {
-        node.flags |= NodeFlags.ThisNodeOrAnySubNodesHasError;
-      }
-
-      // Also mark that we've propagated the child information to this node.  This way we can
-      // always consult the bit directly on this node without needing to check its children
-      // again.
+      if (thisNodeOrAnySubNodesHasError) node.flags |= NodeFlags.ThisNodeOrAnySubNodesHasError;
       node.flags |= NodeFlags.HasAggregatedChildData;
     }
   }
@@ -318,7 +273,6 @@ namespace qnr {
     return lineStarts(sourceFile)[line];
   }
 
-  // This is a useful function for debugging purposes.
   export function nodePosToString(node: Node): string {
     const file = getSourceFileOfNode(node);
     const loc = lineAndCharOf(file, node.pos);
@@ -328,54 +282,24 @@ namespace qnr {
   export function getEndLinePosition(line: number, sourceFile: SourceFileLike): number {
     assert(line >= 0);
     const lineStarts = lineStarts(sourceFile);
-
     const lineIndex = line;
     const sourceText = sourceFile.text;
-    if (lineIndex + 1 === lineStarts.length) {
-      // last line - return EOF
-      return sourceText.length - 1;
-    } else {
-      // current line start
-      const start = lineStarts[lineIndex];
-      // take the start position of the next line - 1 = it should be some line break
-      let pos = lineStarts[lineIndex + 1] - 1;
-      assert(isLineBreak(sourceText.charCodeAt(pos)));
-      // walk backwards skipping line breaks, stop the the beginning of current line.
-      // i.e:
-      // <some text>
-      // $ <- end of line for this position should match the start position
-      while (start <= pos && isLineBreak(sourceText.charCodeAt(pos))) {
-        pos--;
-      }
-      return pos;
+    if (lineIndex + 1 === lineStarts.length) return sourceText.length - 1;
+    const start = lineStarts[lineIndex];
+    let pos = lineStarts[lineIndex + 1] - 1;
+    assert(isLineBreak(sourceText.charCodeAt(pos)));
+    while (start <= pos && isLineBreak(sourceText.charCodeAt(pos))) {
+      pos--;
     }
+    return pos;
   }
 
-  /**
-   * Returns a value indicating whether a name is unique globally or within the current file.
-   * Note: This does not consider whether a name appears as a free identifier or not, so at the expression `x.y` this includes both `x` and `y`.
-   */
   export function isFileLevelUniqueName(sourceFile: SourceFile, name: string, hasGlobalName?: PrintHandlers['hasGlobalName']): boolean {
     return !(hasGlobalName && hasGlobalName(name)) && !sourceFile.identifiers.has(name);
   }
 
-  // Returns true if this node is missing from the actual source code. A 'missing' node is different
-  // from 'undefined/defined'. When a node is undefined (which can happen for optional nodes
-  // in the tree), it is definitely missing. However, a node may be defined, but still be
-  // missing.  This happens whenever the parser knows it needs to parse something, but can't
-  // get anything in the source code that it expects at that location. For example:
-  //
-  //          let a: ;
-  //
-  // Here, the Type in the Type-Annotation is not-optional (as there is a colon in the source
-  // code). So the parser will attempt to parse out a type, and will create an actual node.
-  // However, this node will be 'missing' in the sense that no actual source-code/tokens are
-  // contained within it.
   export function nodeIsMissing(node: Node | undefined): boolean {
-    if (node === undefined) {
-      return true;
-    }
-
+    if (node === undefined) return true;
     return node.pos === node.end && node.pos >= 0 && node.kind !== SyntaxKind.EndOfFileToken;
   }
 
@@ -390,11 +314,8 @@ namespace qnr {
   ): T[] {
     if (from === undefined || from.length === 0) return to;
     let statementIndex = 0;
-    // skip all prologue directives to insert at the correct position
     for (; statementIndex < to.length; ++statementIndex) {
-      if (!isPrologueDirective(to[statementIndex])) {
-        break;
-      }
+      if (!isPrologueDirective(to[statementIndex])) break;
     }
     to.splice(statementIndex, 0, ...from);
     return to;
@@ -403,11 +324,8 @@ namespace qnr {
   function insertStatementAfterPrologue<T extends Statement>(to: T[], statement: T | undefined, isPrologueDirective: (node: Node) => boolean): T[] {
     if (statement === undefined) return to;
     let statementIndex = 0;
-    // skip all prologue directives to insert at the correct position
     for (; statementIndex < to.length; ++statementIndex) {
-      if (!isPrologueDirective(to[statementIndex])) {
-        break;
-      }
+      if (!isPrologueDirective(to[statementIndex])) break;
     }
     to.splice(statementIndex, 0, statement);
     return to;
@@ -417,9 +335,6 @@ namespace qnr {
     return isPrologueDirective(node) || !!(getEmitFlags(node) & EmitFlags.CustomPrologue);
   }
 
-  /**
-   * Prepends statements to an array while taking care of prologue directives.
-   */
   export function insertStatementsAfterStandardPrologue<T extends Statement>(to: T[], from: readonly T[] | undefined): T[] {
     return insertStatementsAfterPrologue(to, from, isPrologueDirective);
   }
@@ -428,9 +343,6 @@ namespace qnr {
     return insertStatementsAfterPrologue(to, from, isAnyPrologueDirective);
   }
 
-  /**
-   * Prepends statements to an array while taking care of prologue directives.
-   */
   export function insertStatementAfterStandardPrologue<T extends Statement>(to: T[], statement: T | undefined): T[] {
     return insertStatementAfterPrologue(to, statement, isPrologueDirective);
   }
@@ -439,14 +351,7 @@ namespace qnr {
     return insertStatementAfterPrologue(to, statement, isAnyPrologueDirective);
   }
 
-  /**
-   * Determine if the given comment is a triple-slash
-   *
-   * @return true if the comment is a triple-slash comment else false
-   */
   export function isRecognizedTripleSlashComment(text: string, commentPos: number, commentEnd: number) {
-    // Verify this is /// comment, but do the regexp match only when we first can find /// in the comment text
-    // so that we don't end up computing comment string and doing match for all // comments
     if (text.charCodeAt(commentPos + 1) === Codes.slash && commentPos + 2 < commentEnd && text.charCodeAt(commentPos + 2) === Codes.slash) {
       const textSubStr = text.substring(commentPos, commentEnd);
       return textSubStr.match(fullTripleSlashReferencePathRegEx) ||
@@ -467,9 +372,7 @@ namespace qnr {
     const directivesByLine = createMap(
       commentDirectives.map((commentDirective) => [`${lineAndCharOf(sourceFile, commentDirective.range.end).line}`, commentDirective])
     );
-
     const usedLines = createMap<boolean>();
-
     return { getUnusedExpectations, markUsed };
 
     function getUnusedExpectations() {
@@ -479,46 +382,24 @@ namespace qnr {
     }
 
     function markUsed(line: number) {
-      if (!directivesByLine.has(`${line}`)) {
-        return false;
-      }
-
+      if (!directivesByLine.has(`${line}`)) return false;
       usedLines.set(`${line}`, true);
       return true;
     }
   }
 
   export function getTokenPosOfNode(node: Node, sourceFile?: SourceFileLike, includeJsDoc?: boolean): number {
-    // With nodes that have no width (i.e. 'Missing' nodes), we actually *don't*
-    // want to skip trivia because this will launch us forward to the next token.
-    if (nodeIsMissing(node)) {
-      return node.pos;
-    }
-
-    if (isJSDocNode(node)) {
-      return skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.pos, /*stopAfterLineBreak*/ false, /*stopAtComments*/ true);
-    }
-
-    if (includeJsDoc && hasJSDocNodes(node)) {
-      return getTokenPosOfNode(node.jsDoc![0], sourceFile);
-    }
-
-    // For a syntax list, it is possible that one of its children has JSDocComment nodes, while
-    // the syntax list itself considers them as normal trivia. Therefore if we simply skip
-    // trivia for the list, we may have skipped the JSDocComment as well. So we should process its
-    // first child to determine the actual position of its first token.
+    if (nodeIsMissing(node)) return node.pos;
+    if (isJSDocNode(node)) return skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.pos, false, true);
+    if (includeJsDoc && hasJSDocNodes(node)) return getTokenPosOfNode(node.jsDoc![0], sourceFile);
     if (node.kind === SyntaxKind.SyntaxList && (<SyntaxList>node)._children.length > 0) {
       return getTokenPosOfNode((<SyntaxList>node)._children[0], sourceFile, includeJsDoc);
     }
-
     return skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.pos);
   }
 
   export function getNonDecoratorTokenPosOfNode(node: Node, sourceFile?: SourceFileLike): number {
-    if (nodeIsMissing(node) || !node.decorators) {
-      return getTokenPosOfNode(node, sourceFile);
-    }
-
+    if (nodeIsMissing(node) || !node.decorators) return getTokenPosOfNode(node, sourceFile);
     return skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.decorators.end);
   }
 
@@ -531,17 +412,12 @@ namespace qnr {
   }
 
   export function getTextOfNodeFromSourceText(sourceText: string, node: Node, includeTrivia = false): string {
-    if (nodeIsMissing(node)) {
-      return '';
-    }
-
+    if (nodeIsMissing(node)) return '';
     let text = sourceText.substring(includeTrivia ? node.pos : skipTrivia(sourceText, node.pos), node.end);
-
     if (isJSDocTypeExpressionOrChild(node)) {
       // strip space + asterisk at line start
       text = text.replace(/(^|\r?\n|\r)\s*\*\s*/g, '$1');
     }
-
     return text;
   }
 
@@ -553,25 +429,16 @@ namespace qnr {
     return range.pos;
   }
 
-  /**
-   * Note: it is expected that the `nodeArray` and the `node` are within the same file.
-   * For example, searching for a `SourceFile` in a `SourceFile[]` wouldn't work.
-   */
   export function indexOfNode(nodeArray: readonly Node[], node: Node) {
     return binarySearch(nodeArray, node, getPos, compareValues);
   }
 
-  /**
-   * Gets flags that control emit behavior of a node.
-   */
   export function getEmitFlags(node: Node): EmitFlags {
     const emitNode = node.emitNode;
     return (emitNode && emitNode.flags) || 0;
   }
 
   export function getLiteralText(node: LiteralLikeNode, sourceFile: SourceFile, neverAsciiEscape: boolean | undefined, jsxAttributeEscape: boolean) {
-    // If we don't need to downlevel and we can reach the original source text using
-    // the node's parent reference, then simply get the text as it was originally written.
     if (
       !isSynthesized(node) &&
       node.parent &&
@@ -579,9 +446,6 @@ namespace qnr {
     ) {
       return getSourceTextOfNodeFromSourceFile(sourceFile, node);
     }
-
-    // If we can't reach the original source text, use the canonical form if it's a number,
-    // or a (possibly escaped) quoted form of the original text if it's string-like.
     switch (node.kind) {
       case SyntaxKind.StringLiteral: {
         const escapeText = jsxAttributeEscape
@@ -599,10 +463,7 @@ namespace qnr {
       case SyntaxKind.TemplateHead:
       case SyntaxKind.TemplateMiddle:
       case SyntaxKind.TemplateTail: {
-        // If a NoSubstitutionTemplateLiteral appears to have a substitution in it, the original text
-        // had to include a backslash: `not \${a} substitution`.
         const escapeText = neverAsciiEscape || getEmitFlags(node) & EmitFlags.NoAsciiEscaping ? escapeString : escapeNonAsciiString;
-
         const rawText = (<TemplateLiteralLikeNode>node).rawText || escapeTemplateSubstitution(escapeText(node.text, Codes.backtick));
         switch (node.kind) {
           case SyntaxKind.NoSubstitutionTemplateLiteral:
@@ -629,8 +490,6 @@ namespace qnr {
     return isString(value) ? '"' + escapeNonAsciiString(value) + '"' : '' + value;
   }
 
-  // Make an identifier from an external module name by extracting the string after the last "/" and replacing
-  // all non-alphanumeric characters with underscores
   export function makeIdentifierFromModuleName(moduleName: string): string {
     return getBaseFileName(moduleName).replace(/^(\d)/, '_$1').replace(/\W/g, '_');
   }
@@ -656,23 +515,15 @@ namespace qnr {
     return isModuleDeclaration(node) && isStringLiteral(node.name);
   }
 
-  /**
-   * An effective module (namespace) declaration is either
-   * 1. An actual declaration: namespace X { ... }
-   * 2. A Javascript declaration, which is:
-   *    An identifier in a nested property access expression: Y in `X.Y.Z = { ... }`
-   */
   export function isEffectiveModuleDeclaration(node: Node) {
     return isModuleDeclaration(node) || isIdentifier(node);
   }
 
-  /** Given a symbol for a module, checks that it is a shorthand ambient module. */
   export function isShorthandAmbientModuleSymbol(moduleSymbol: Symbol): boolean {
     return isShorthandAmbientModule(moduleSymbol.valueDeclaration);
   }
 
   function isShorthandAmbientModule(node: Node): boolean {
-    // The only kind of module that can be missing a body is a shorthand ambient module.
     return node && node.kind === SyntaxKind.ModuleDeclaration && !(<ModuleDeclaration>node).body;
   }
 
@@ -689,9 +540,6 @@ namespace qnr {
   }
 
   export function isModuleAugmentationExternal(node: AmbientModuleDeclaration) {
-    // external module augmentation is a ambient module declaration that is either:
-    // - defined in the top level scope and source file is an external module
-    // - defined inside ambient module declaration located in the top level scope and source file not an external module
     switch (node.parent.kind) {
       case SyntaxKind.SourceFile:
         return isExternalModule(node.parent);
@@ -713,11 +561,7 @@ namespace qnr {
     );
   }
 
-  /**
-   * Returns whether the source file will be treated as if it were in strict mode at runtime.
-   */
   export function isEffectiveStrictModeSourceFile(node: SourceFile, compilerOptions: CompilerOptions) {
-    // We can only verify strict mode for JS/TS files
     switch (node.scriptKind) {
       case ScriptKind.JS:
       case ScriptKind.TS:
@@ -727,24 +571,11 @@ namespace qnr {
       default:
         return false;
     }
-    // Strict mode does not matter for declaration files.
-    if (node.isDeclarationFile) {
-      return false;
-    }
-    // If `alwaysStrict` is set, then treat the file as strict.
-    if (getStrictOptionValue(compilerOptions, 'alwaysStrict')) {
-      return true;
-    }
-    // Starting with a "use strict" directive indicates the file is strict.
-    if (startsWithUseStrict(node.statements)) {
-      return true;
-    }
+    if (node.isDeclarationFile) return false;
+    if (getStrictOptionValue(compilerOptions, 'alwaysStrict')) return true;
+    if (startsWithUseStrict(node.statements)) return true;
     if (isExternalModule(node) || compilerOptions.isolatedModules) {
-      // ECMAScript Modules are always strict.
-      if (getEmitModuleKind(compilerOptions) >= ModuleKind.ES2015) {
-        return true;
-      }
-      // Other modules are strict unless otherwise specified.
+      if (getEmitModuleKind(compilerOptions) >= ModuleKind.ES2015) return true;
       return !compilerOptions.noImplicitUseStrict;
     }
     return false;
@@ -767,13 +598,9 @@ namespace qnr {
       case SyntaxKind.FunctionExpression:
       case SyntaxKind.ArrowFunction:
         return true;
-
       case SyntaxKind.Block:
-        // function block is not considered block-scope container
-        // see comment in binder.ts: bind(...), case for SyntaxKind.Block
         return !isFunctionLike(parentNode);
     }
-
     return false;
   }
 
@@ -850,15 +677,10 @@ namespace qnr {
     return isAnyImportSyntax(node) || isExportDeclaration(node);
   }
 
-  // Gets the nearest enclosing block scope container that has the provided node
-  // as a descendant, that is not the provided node.
   export function getEnclosingBlockScopeContainer(node: Node): Node {
     return findAncestor(node.parent, (current) => isBlockScope(current, current.parent))!;
   }
 
-  // Return display name of an identifier
-  // Computed property names will just be emitted as "[<expr>]", where <expr> is the source
-  // text of the expression in the computed property.
   export function declarationNameToString(name: DeclarationName | QualifiedName | undefined) {
     return !name || getFullWidth(name) === 0 ? '(Missing)' : getTextOfNode(name);
   }
@@ -988,8 +810,6 @@ namespace qnr {
       const { line: startLine } = sourceFile.lineAndCharOf(node.body.pos);
       const { line: endLine } = sourceFile.lineAndCharOf(node.body.end);
       if (startLine < endLine) {
-        // The arrow function spans multiple lines,
-        // make the error span be the first line, inclusive.
         return new TextSpan(pos, getEndLinePosition(startLine, sourceFile) - pos + 1);
       }
     }
@@ -1001,13 +821,8 @@ namespace qnr {
     switch (node.kind) {
       case SyntaxKind.SourceFile:
         const pos = skipTrivia(sourceFile.text, 0, /*stopAfterLineBreak*/ false);
-        if (pos === sourceFile.text.length) {
-          // file is empty - return span for the beginning of the file
-          return new TextSpan();
-        }
+        if (pos === sourceFile.text.length) return new TextSpan();
         return getSpanOfTokenAtPosition(sourceFile, pos);
-      // This list is a work in progress. Add missing node kinds to improve their error
-      // spans.
       case SyntaxKind.VariableDeclaration:
       case SyntaxKind.BindingElement:
       case SyntaxKind.ClassDeclaration:
@@ -1035,19 +850,12 @@ namespace qnr {
           (<CaseOrDefaultClause>node).statements.length > 0 ? (<CaseOrDefaultClause>node).statements[0].pos : (<CaseOrDefaultClause>node).end;
         return TextSpan.from(start, end);
     }
-
     if (errorNode === undefined) {
-      // If we don't have a better node, then just set the error on the first token of
-      // construct.
       return getSpanOfTokenAtPosition(sourceFile, node.pos);
     }
-
     assert(!isJSDoc(errorNode));
-
     const isMissing = nodeIsMissing(errorNode);
     const pos = isMissing || isJsxText(node) ? errorNode.pos : skipTrivia(sourceFile.text, errorNode.pos);
-
-    // These asserts should all be satisfied for a properly constructed `errorNode`.
     if (isMissing) {
       assert(pos === errorNode.pos, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
       assert(pos === errorNode.end, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
@@ -1055,7 +863,6 @@ namespace qnr {
       assert(pos >= errorNode.pos, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
       assert(pos <= errorNode.end, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
     }
-
     return TextSpan.from(pos, errorNode.end);
   }
 
@@ -1132,7 +939,6 @@ namespace qnr {
       node.kind === SyntaxKind.ParenthesizedExpression
         ? concatenate(getTrailingCommentRanges(text, node.pos), getLeadingCommentRanges(text, node.pos))
         : getLeadingCommentRanges(text, node.pos);
-    // True if the comment starts with '/**' but not if it is '/**/'
     return filter(
       commentRanges,
       (comment) =>
@@ -1170,23 +976,17 @@ namespace qnr {
         return !isExpressionWithTypeArgumentsInClassExtendsClause(node);
       case SyntaxKind.TypeParameter:
         return node.parent.kind === SyntaxKind.MappedType || node.parent.kind === SyntaxKind.InferType;
-
-      // Identifiers and qualified names may be type nodes, depending on their context. Climb
-      // above them to find the lowest container
       case SyntaxKind.Identifier:
-        // If the identifier is the RHS of a qualified name, then it's a type iff its parent is.
         if (node.parent.kind === SyntaxKind.QualifiedName && (<QualifiedName>node.parent).right === node) {
           node = node.parent;
         } else if (node.parent.kind === SyntaxKind.PropertyAccessExpression && (<PropertyAccessExpression>node.parent).name === node) {
           node = node.parent;
         }
-        // At this point, node is either a qualified name or an identifier
         assert(
           node.kind === SyntaxKind.Identifier || node.kind === SyntaxKind.QualifiedName || node.kind === SyntaxKind.PropertyAccessExpression,
           "'node' was expected to be a qualified name, identifier or property access in 'isPartOfTypeNode'."
         );
       // falls through
-
       case SyntaxKind.QualifiedName:
       case SyntaxKind.PropertyAccessExpression:
       case SyntaxKind.ThisKeyword: {
@@ -1197,12 +997,6 @@ namespace qnr {
         if (parent.kind === SyntaxKind.ImportType) {
           return !(parent as ImportTypeNode).isTypeOf;
         }
-        // Do not recursively call isPartOfTypeNode on the parent. In the example:
-        //
-        //     let a: A.B.C;
-        //
-        // Calling isPartOfTypeNode would consider the qualified name A.B a type node.
-        // Only C and A.B.C are type nodes.
         if (SyntaxKind.FirstTypeNode <= parent.kind && parent.kind <= SyntaxKind.LastTypeNode) {
           return true;
         }
@@ -1256,8 +1050,6 @@ namespace qnr {
     return false;
   }
 
-  // Warning: This has the same semantics as the forEach family of functions,
-  //          in that traversal terminates in the event that 'visitor' supplies a truthy value.
   export function forEachReturnStatement<T>(body: Block, visitor: (stmt: ReturnStatement) => T): T | undefined {
     return traverse(body);
 
@@ -1282,6 +1074,7 @@ namespace qnr {
         case SyntaxKind.CatchClause:
           return forEachChild(node, traverse);
       }
+      return;
     }
   }
 
@@ -1301,32 +1094,20 @@ namespace qnr {
         case SyntaxKind.InterfaceDeclaration:
         case SyntaxKind.ModuleDeclaration:
         case SyntaxKind.TypeAliasDeclaration:
-          // These are not allowed inside a generator now, but eventually they may be allowed
-          // as local types. Regardless, skip them to avoid the work.
           return;
         default:
           if (isFunctionLike(node)) {
             if (node.name && node.name.kind === SyntaxKind.ComputedPropertyName) {
-              // Note that we will not include methods/accessors of a class because they would require
-              // first descending into the class. This is by design.
               traverse(node.name.expression);
               return;
             }
           } else if (!isPartOfTypeNode(node)) {
-            // This is the general case, which should include mostly expressions and statements.
-            // Also includes NodeArrays.
             forEachChild(node, traverse);
           }
       }
     }
   }
 
-  /**
-   * Gets the most likely element type for a TypeNode. This is not an exhaustive test
-   * as it assumes a rest argument can only be an array type (either T[], or Array<T>).
-   *
-   * @param node The type node.
-   */
   export function getRestParameterElementType(node: TypeNode | undefined) {
     if (node && node.kind === SyntaxKind.ArrayType) {
       return (<ArrayTypeNode>node).elementType;
@@ -1482,33 +1263,20 @@ namespace qnr {
     while (true) {
       node = node.parent;
       if (!node) {
-        return fail(); // If we never pass in a SourceFile, this should be unreachable, since we'll stop when we reach that.
+        return fail();
       }
       switch (node.kind) {
         case SyntaxKind.ComputedPropertyName:
-          // If the grandparent node is an object literal (as opposed to a class),
-          // then the computed property is not a 'this' container.
-          // A computed property name in a class needs to be a this container
-          // so that we can error on it.
           if (isClassLike(node.parent.parent)) {
             return node;
           }
-          // If this is a computed property, then the parent should not
-          // make it a this container. The parent might be a property
-          // in an object literal, like a method or accessor. But in order for
-          // such a parent to be a this container, the reference must be in
-          // the *body* of the container.
           node = node.parent;
           break;
         case SyntaxKind.Decorator:
           // Decorators are always applied outside of the body of a class or method.
           if (node.parent.kind === SyntaxKind.Parameter && isClassElement(node.parent.parent)) {
-            // If the decorator's parent is a Parameter, we resolve the this container from
-            // the grandparent class declaration.
             node = node.parent.parent;
           } else if (isClassElement(node.parent)) {
-            // If the decorator's parent is a class element, we resolve the 'this' container
-            // from the parent class declaration.
             node = node.parent;
           }
           break;
@@ -1517,7 +1285,6 @@ namespace qnr {
             continue;
           }
         // falls through
-
         case SyntaxKind.FunctionDeclaration:
         case SyntaxKind.FunctionExpression:
         case SyntaxKind.ModuleDeclaration:
@@ -1552,14 +1319,6 @@ namespace qnr {
     return;
   }
 
-  /**
-   * Given an super call/property node, returns the closest node where
-   * - a super call/property access is legal in the node and not legal in the parent node the node.
-   *   i.e. super call is legal in constructor but not legal in the class body.
-   * - the container is an arrow function (so caller might need to call getSuperContainer again in case it needs to climb higher)
-   * - a super call/property is definitely illegal in the container (but might be legal in some subnode)
-   *   i.e. super property access is illegal in function declaration but can be legal in the statement list
-   */
   export function getSuperContainer(node: Node, stopOnFunctions: boolean): Node {
     while (true) {
       node = node.parent;
@@ -1577,7 +1336,6 @@ namespace qnr {
             continue;
           }
         // falls through
-
         case SyntaxKind.PropertyDeclaration:
         case SyntaxKind.PropertySignature:
         case SyntaxKind.MethodDeclaration:
@@ -1587,14 +1345,9 @@ namespace qnr {
         case SyntaxKind.SetAccessor:
           return node;
         case SyntaxKind.Decorator:
-          // Decorators are always applied outside of the body of a class or method.
           if (node.parent.kind === SyntaxKind.Parameter && isClassElement(node.parent.parent)) {
-            // If the decorator's parent is a Parameter, we resolve the this container from
-            // the grandparent class declaration.
             node = node.parent.parent;
           } else if (isClassElement(node.parent)) {
-            // If the decorator's parent is a class element, we resolve the 'this' container
-            // from the parent class declaration.
             node = node.parent;
           }
           break;
@@ -1620,9 +1373,6 @@ namespace qnr {
     return node.kind === SyntaxKind.SuperKeyword || isSuperProperty(node);
   }
 
-  /**
-   * Determines whether a node is a property or element access expression for `super`.
-   */
   export function isSuperProperty(node: Node): node is SuperProperty {
     const kind = node.kind;
     return (
@@ -1631,9 +1381,6 @@ namespace qnr {
     );
   }
 
-  /**
-   * Determines whether a node is a property or element access expression for `this`.
-   */
   export function isThisProperty(node: Node): boolean {
     const kind = node.kind;
     return (
@@ -1646,17 +1393,14 @@ namespace qnr {
     switch (node.kind) {
       case SyntaxKind.TypeReference:
         return (<TypeReferenceNode>node).typeName;
-
       case SyntaxKind.ExpressionWithTypeArguments:
         return isEntityNameExpression((<ExpressionWithTypeArguments>node).expression)
           ? <EntityNameExpression>(<ExpressionWithTypeArguments>node).expression
           : undefined;
-
       case SyntaxKind.Identifier:
       case SyntaxKind.QualifiedName:
         return <EntityName>(<Node>node);
     }
-
     return;
   }
 
@@ -1676,7 +1420,6 @@ namespace qnr {
   export function nodeCanBeDecorated(node: ClassElement, parent: Node): boolean;
   export function nodeCanBeDecorated(node: Node, parent: Node, grandparent: Node): boolean;
   export function nodeCanBeDecorated(node: Node, parent?: Node, grandparent?: Node): boolean {
-    // private names cannot be used with decorators yet
     if (isNamedDeclaration(node) && isPrivateIdentifier(node.name)) {
       return false;
     }
@@ -1795,7 +1538,6 @@ namespace qnr {
           return true;
         }
       // falls through
-
       case SyntaxKind.NumericLiteral:
       case SyntaxKind.BigIntLiteral:
       case SyntaxKind.StringLiteral:
@@ -1924,11 +1666,6 @@ namespace qnr {
     );
   }
 
-  /**
-   * Returns true if the node is a CallExpression to the identifier 'require' with
-   * exactly one argument (of the form 'require("name")').
-   * This function does not test if the node is in a JavaScript file or not.
-   */
   export function isRequireCall(
     callExpression: Node,
     requireStringLiteralLikeArgument: true
@@ -1939,11 +1676,9 @@ namespace qnr {
       return false;
     }
     const { expression, arguments: args } = callExpression as CallExpression;
-
     if (expression.kind !== SyntaxKind.Identifier || (expression as Identifier).escapedText !== 'require') {
       return false;
     }
-
     if (args.length !== 1) {
       return false;
     }
@@ -1951,10 +1686,6 @@ namespace qnr {
     return !requireStringLiteralLikeArgument || isStringLiteralLike(arg);
   }
 
-  /**
-   * Returns true if the node is a VariableDeclaration initialized to a require call (see `isRequireCall`).
-   * This function does not test if the node is in a JavaScript file or not.
-   */
   export function isRequireVariableDeclaration(node: Node, requireStringLiteralLikeArgument: true): node is RequireVariableDeclaration;
   export function isRequireVariableDeclaration(node: Node, requireStringLiteralLikeArgument: boolean): node is VariableDeclaration;
   export function isRequireVariableDeclaration(node: Node, requireStringLiteralLikeArgument: boolean): node is VariableDeclaration {
@@ -2012,7 +1743,6 @@ namespace qnr {
         }
       }
     }
-
     if (!name || !getExpandoInitializer(node, isPrototypeAccess(name))) {
       return;
     }
@@ -2023,7 +1753,6 @@ namespace qnr {
     return isBinaryExpression(decl) || isAccessExpression(decl) || isIdentifier(decl) || isCallExpression(decl);
   }
 
-  /** Get the initializer, taking into account defaulted Javascript initializers */
   export function getEffectiveInitializer(node: HasExpressionInitializer) {
     if (
       isInJSFile(node) &&
@@ -2039,7 +1768,6 @@ namespace qnr {
     return node.initializer;
   }
 
-  /** Get the declaration initializer when it is container-like (See getExpandoInitializer). */
   export function getDeclaredExpandoInitializer(node: HasExpressionInitializer) {
     const init = getEffectiveInitializer(node);
     return init && getExpandoInitializer(init, isPrototypeAccess(node.name));
@@ -2057,10 +1785,6 @@ namespace qnr {
     );
   }
 
-  /**
-   * Get the assignment 'initializer' -- the righthand side-- when the initializer is container-like (See getExpandoInitializer).
-   * We treat the right hand side of assignments with container-like initializers as declarations.
-   */
   export function getAssignedExpandoInitializer(node: Node | undefined): Expression | undefined {
     if (node && node.parent && isBinaryExpression(node.parent) && node.parent.operatorToken.kind === SyntaxKind.EqualsToken) {
       const isPrototypeAssignment = isPrototypeAccess(node.parent.left);
@@ -2077,16 +1801,6 @@ namespace qnr {
     }
   }
 
-  /**
-   * Recognized expando initializers are:
-   * 1. (function() {})() -- IIFEs
-   * 2. function() { } -- Function expressions
-   * 3. class { } -- Class expressions
-   * 4. {} -- Empty object literals
-   * 5. { ... } -- Non-empty object literals, when used to initialize a prototype, like `C.prototype = { m() { } }`
-   *
-   * This function returns the provided initializer, or undefined if it is not valid.
-   */
   export function getExpandoInitializer(initializer: Node, isPrototypeAssignment: boolean): Expression | undefined {
     if (isCallExpression(initializer)) {
       const e = skipParentheses(initializer.expression);
@@ -2102,16 +1816,9 @@ namespace qnr {
     if (isObjectLiteralExpression(initializer) && (initializer.properties.length === 0 || isPrototypeAssignment)) {
       return initializer;
     }
+    return;
   }
 
-  /**
-   * A defaulted expando initializer matches the pattern
-   * `Lhs = Lhs || ExpandoInitializer`
-   * or `var Lhs = Lhs || ExpandoInitializer`
-   *
-   * The second Lhs is required to be the same as the first except that it may be prefixed with
-   * 'window.', 'global.' or 'self.' The second Lhs is otherwise ignored by the binder and checker.
-   */
   function getDefaultedExpandoInitializer(name: Expression, initializer: Expression, isPrototypeAssignment: boolean) {
     const e =
       isBinaryExpression(initializer) &&
@@ -2120,6 +1827,7 @@ namespace qnr {
     if (e && isSameEntityName(name, (initializer as BinaryExpression).left)) {
       return e;
     }
+    return;
   }
 
   export function isDefaultedExpandoInitializer(node: BinaryExpression) {
@@ -2131,7 +1839,6 @@ namespace qnr {
     return name && getExpandoInitializer(node.right, isPrototypeAccess(name)) && isEntityNameExpression(name) && isSameEntityName(name, node.left);
   }
 
-  /** Given an expando initializer, return its declaration name, or the left-hand side of the assignment if it's part of an assignment declaration. */
   export function getNameOfExpando(node: Declaration): DeclarationName | undefined {
     if (isBinaryExpression(node.parent)) {
       const parent =
@@ -2147,15 +1854,6 @@ namespace qnr {
     }
   }
 
-  /**
-   * Is the 'declared' name the same as the one in the initializer?
-   * @return true for identical entity names, as well as ones where the initializer is prefixed with
-   * 'window', 'self' or 'global'. For example:
-   *
-   * var my = my || {}
-   * var min = window.min || {}
-   * my.app = self.my.app || class { }
-   */
   function isSameEntityName(name: Expression, initializer: Expression): boolean {
     if (isPropertyNameLiteral(name) && isPropertyNameLiteral(initializer)) {
       return getTextOfIdentifierOrLiteral(name) === getTextOfIdentifierOrLiteral(name);
@@ -2207,8 +1905,6 @@ namespace qnr {
     );
   }
 
-  /// Given a BinaryExpression, returns SpecialPropertyAssignmentKind for the various kinds of property
-  /// assignments we treat as special in the binder
   export function getAssignmentDeclarationKind(expr: BinaryExpression | CallExpression): AssignmentDeclarationKind {
     const special = getAssignmentDeclarationKindWorker(expr);
     return special === AssignmentDeclarationKind.Property || isInJSFile(expr) ? special : AssignmentDeclarationKind.None;
@@ -2298,10 +1994,6 @@ namespace qnr {
     return getAssignmentDeclarationPropertyAccessKind(expr.left);
   }
 
-  /**
-   * Does not handle signed numeric names like `a[+0]` - handling those would require handling prefix unary expressions
-   * throughout late binding handling as well, which is awkward (but ultimately probably doable if there is demand)
-   */
   export function getElementOrPropertyAccessArgumentExpressionOrName(
     node: AccessExpression
   ): Identifier | PrivateIdentifier | StringLiteralLike | NumericLiteral | ElementAccessExpression | undefined {
@@ -5059,7 +4751,7 @@ namespace qnr {
   /**
    * clears already present map by calling onDeleteExistingValue callback before deleting that key/value
    */
-  export function clearMap<T>(map: { forEach: Map<T>['forEach']; clear: Map<T>['clear'] }, onDeleteValue: (valueInMap: T, key: string) => void) {
+  export function clearMap<T>(map: { forEach: QMap<T>['forEach']; clear: QMap<T>['clear'] }, onDeleteValue: (valueInMap: T, key: string) => void) {
     // Remove all
     map.forEach(onDeleteValue);
     map.clear();
@@ -5080,7 +4772,7 @@ namespace qnr {
   /**
    * Mutates the map with newMap such that keys in map will be same as newMap.
    */
-  export function mutateMapSkippingNewValues<T, U>(map: Map<T>, newMap: ReadonlyMap<U>, options: MutateMapSkippingNewValuesOptions<T, U>) {
+  export function mutateMapSkippingNewValues<T, U>(map: QMap<T>, newMap: QReadonlyMap<U>, options: MutateMapSkippingNewValuesOptions<T, U>) {
     const { onDeleteValue, onExistingValue } = options;
     // Needs update
     map.forEach((existingValue, key) => {
@@ -5104,7 +4796,7 @@ namespace qnr {
   /**
    * Mutates the map with newMap such that keys in map will be same as newMap.
    */
-  export function mutateMap<T, U>(map: Map<T>, newMap: ReadonlyMap<U>, options: MutateMapOptions<T, U>) {
+  export function mutateMap<T, U>(map: QMap<T>, newMap: QReadonlyMap<U>, options: MutateMapOptions<T, U>) {
     // Needs update
     mutateMapSkippingNewValues(map, newMap, options);
 
@@ -5178,9 +4870,9 @@ namespace qnr {
   }
 
   /** Add a value to a set, and return true if it wasn't already present. */
-  export function addToSeen(seen: Map<true>, key: string | number): boolean;
-  export function addToSeen<T>(seen: Map<T>, key: string | number, value: T): boolean;
-  export function addToSeen<T>(seen: Map<T>, key: string | number, value: T = true as any): boolean {
+  export function addToSeen(seen: QMap<true>, key: string | number): boolean;
+  export function addToSeen<T>(seen: QMap<T>, key: string | number, value: T): boolean;
+  export function addToSeen<T>(seen: QMap<T>, key: string | number, value: T = true as any): boolean {
     key = String(key);
     if (seen.has(key)) {
       return false;
@@ -6395,7 +6087,7 @@ namespace qnr {
     );
   }
 
-  export function getOrUpdate<T>(map: Map<T>, key: string, getDefault: () => T): T {
+  export function getOrUpdate<T>(map: QMap<T>, key: string, getDefault: () => T): T {
     const got = map.get(key);
     if (got === undefined) {
       const value = getDefault();

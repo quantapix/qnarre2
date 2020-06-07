@@ -19,7 +19,7 @@
     "prettier": "",
     "react": "",
     "semver": "",
-    "typescript": "",
+    "typescript": "next",
     "webpack": "",
     "webpack-cli": ""
   },
