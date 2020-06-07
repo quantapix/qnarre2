@@ -458,7 +458,7 @@ namespace qnr {
 
       // Types
       case SyntaxKind.TypePredicate:
-        return updateTypePredicateNodeWithModifier(
+        return TypePredicateNode.updateWithModifier(
           <TypePredicateNode>node,
           visitNode((<TypePredicateNode>node).assertsModifier, visitor),
           visitNode((<TypePredicateNode>node).parameterName, visitor),
@@ -466,14 +466,14 @@ namespace qnr {
         );
 
       case SyntaxKind.TypeReference:
-        return updateTypeReferenceNode(
+        return TypeReferenceNode.update(
           <TypeReferenceNode>node,
           visitNode((<TypeReferenceNode>node).typeName, visitor, isEntityName),
           nodesVisitor((<TypeReferenceNode>node).typeArguments, visitor, isTypeNode)
         );
 
       case SyntaxKind.FunctionType:
-        return updateFunctionTypeNode(
+        return FunctionTypeNode.update(
           <FunctionTypeNode>node,
           nodesVisitor((<FunctionTypeNode>node).typeParameters, visitor, isTypeParameterDeclaration),
           nodesVisitor((<FunctionTypeNode>node).parameters, visitor, isParameterDeclaration),
@@ -489,31 +489,31 @@ namespace qnr {
         );
 
       case SyntaxKind.TypeQuery:
-        return updateTypeQueryNode(<TypeQueryNode>node, visitNode((<TypeQueryNode>node).exprName, visitor, isEntityName));
+        return TypeQueryNode.update(<TypeQueryNode>node, visitNode((<TypeQueryNode>node).exprName, visitor, isEntityName));
 
       case SyntaxKind.TypeLiteral:
-        return updateTypeLiteralNode(<TypeLiteralNode>node, nodesVisitor((<TypeLiteralNode>node).members, visitor, isTypeElement));
+        return TypeLiteralNode.update(<TypeLiteralNode>node, nodesVisitor((<TypeLiteralNode>node).members, visitor, isTypeElement));
 
       case SyntaxKind.ArrayType:
-        return updateArrayTypeNode(<ArrayTypeNode>node, visitNode((<ArrayTypeNode>node).elementType, visitor, isTypeNode));
+        return ArrayTypeNode.update(<ArrayTypeNode>node, visitNode((<ArrayTypeNode>node).elementType, visitor, isTypeNode));
 
       case SyntaxKind.TupleType:
-        return updateTupleTypeNode(<TupleTypeNode>node, nodesVisitor((<TupleTypeNode>node).elements, visitor, isTypeNode));
+        return TupleTypeNode.update(<TupleTypeNode>node, nodesVisitor((<TupleTypeNode>node).elements, visitor, isTypeNode));
 
       case SyntaxKind.OptionalType:
-        return updateOptionalTypeNode(<OptionalTypeNode>node, visitNode((<OptionalTypeNode>node).type, visitor, isTypeNode));
+        return OptionalTypeNode.update(<OptionalTypeNode>node, visitNode((<OptionalTypeNode>node).type, visitor, isTypeNode));
 
       case SyntaxKind.RestType:
-        return updateRestTypeNode(<RestTypeNode>node, visitNode((<RestTypeNode>node).type, visitor, isTypeNode));
+        return RestTypeNode.update(<RestTypeNode>node, visitNode((<RestTypeNode>node).type, visitor, isTypeNode));
 
       case SyntaxKind.UnionType:
-        return updateUnionTypeNode(<UnionTypeNode>node, nodesVisitor((<UnionTypeNode>node).types, visitor, isTypeNode));
+        return UnionTypeNode.update(<UnionTypeNode>node, nodesVisitor((<UnionTypeNode>node).types, visitor, isTypeNode));
 
       case SyntaxKind.IntersectionType:
-        return updateIntersectionTypeNode(<IntersectionTypeNode>node, nodesVisitor((<IntersectionTypeNode>node).types, visitor, isTypeNode));
+        return IntersectionTypeNode.update(<IntersectionTypeNode>node, nodesVisitor((<IntersectionTypeNode>node).types, visitor, isTypeNode));
 
       case SyntaxKind.ConditionalType:
-        return updateConditionalTypeNode(
+        return ConditionalTypeNode.update(
           <ConditionalTypeNode>node,
           visitNode((<ConditionalTypeNode>node).checkType, visitor, isTypeNode),
           visitNode((<ConditionalTypeNode>node).extendsType, visitor, isTypeNode),
@@ -522,10 +522,10 @@ namespace qnr {
         );
 
       case SyntaxKind.InferType:
-        return updateInferTypeNode(<InferTypeNode>node, visitNode((<InferTypeNode>node).typeParameter, visitor, isTypeParameterDeclaration));
+        return InferTypeNode.update(<InferTypeNode>node, visitNode((<InferTypeNode>node).typeParameter, visitor, isTypeParameterDeclaration));
 
       case SyntaxKind.ImportType:
-        return updateImportTypeNode(
+        return ImportTypeNode.update(
           <ImportTypeNode>node,
           visitNode((<ImportTypeNode>node).argument, visitor, isTypeNode),
           visitNode((<ImportTypeNode>node).qualifier, visitor, isEntityName),
@@ -534,7 +534,7 @@ namespace qnr {
         );
 
       case SyntaxKind.NamedTupleMember:
-        return updateNamedTupleMember(
+        return NamedTupleMember.update(
           <NamedTupleMember>node,
           visitNode((<NamedTupleMember>node).dotDotDotToken, visitor, isToken),
           visitNode((<NamedTupleMember>node).name, visitor, isIdentifier),
@@ -543,20 +543,20 @@ namespace qnr {
         );
 
       case SyntaxKind.ParenthesizedType:
-        return updateParenthesizedType(<ParenthesizedTypeNode>node, visitNode((<ParenthesizedTypeNode>node).type, visitor, isTypeNode));
+        return ParenthesizedTypeNode.update(<ParenthesizedTypeNode>node, visitNode((<ParenthesizedTypeNode>node).type, visitor, isTypeNode));
 
       case SyntaxKind.TypeOperator:
-        return updateTypeOperatorNode(<TypeOperatorNode>node, visitNode((<TypeOperatorNode>node).type, visitor, isTypeNode));
+        return TypeOperatorNode.update(<TypeOperatorNode>node, visitNode((<TypeOperatorNode>node).type, visitor, isTypeNode));
 
       case SyntaxKind.IndexedAccessType:
-        return updateIndexedAccessTypeNode(
+        return IndexedAccessTypeNode.update(
           <IndexedAccessTypeNode>node,
           visitNode((<IndexedAccessTypeNode>node).objectType, visitor, isTypeNode),
           visitNode((<IndexedAccessTypeNode>node).indexType, visitor, isTypeNode)
         );
 
       case SyntaxKind.MappedType:
-        return updateMappedTypeNode(
+        return MappedTypeNode.update(
           <MappedTypeNode>node,
           visitNode((<MappedTypeNode>node).readonlyToken, tokenVisitor, isToken),
           visitNode((<MappedTypeNode>node).typeParameter, visitor, isTypeParameterDeclaration),
@@ -565,7 +565,7 @@ namespace qnr {
         );
 
       case SyntaxKind.LiteralType:
-        return updateLiteralTypeNode(<LiteralTypeNode>node, visitNode((<LiteralTypeNode>node).literal, visitor, isExpression));
+        return LiteralTypeNode.update(<LiteralTypeNode>node, visitNode((<LiteralTypeNode>node).literal, visitor, isExpression));
 
       // Binding patterns
       case SyntaxKind.ObjectBindingPattern:

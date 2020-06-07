@@ -551,8 +551,8 @@ namespace qnr {
       | SyntaxKind.NeverKeyword;
   }
   export namespace KeywordTypeNode {
-    export function createKeywordTypeNode(kind: KeywordTypeNode['kind']) {
-      return <KeywordTypeNode>Node.createSynthesized(kind);
+    export function create(k: KeywordTypeNode['kind']) {
+      return Node.createSynthesized(k) as KeywordTypeNode;
     }
   }
 
@@ -564,25 +564,23 @@ namespace qnr {
     type?: TypeNode;
   }
   export namespace TypePredicateNode {
-    export function createTypePredicateNode(parameterName: Identifier | ThisTypeNode | string, type: TypeNode) {
-      return createTypePredicateNodeWithModifier(/*assertsModifier*/ undefined, parameterName, type);
+    export function create(p: Identifier | ThisTypeNode | string, t: TypeNode) {
+      return createWithModifier(undefined, p, t);
     }
-    export function createTypePredicateNodeWithModifier(assertsModifier: AssertsToken | undefined, parameterName: Identifier | ThisTypeNode | string, type: TypeNode | undefined) {
-      const node = Node.createSynthesized(SyntaxKind.TypePredicate) as TypePredicateNode;
-      node.assertsModifier = assertsModifier;
-      node.parameterName = asName(parameterName);
-      node.type = type;
-      return node;
+    export function createWithModifier(a: AssertsToken | undefined, p: Identifier | ThisTypeNode | string, t?: TypeNode) {
+      const n = Node.createSynthesized(SyntaxKind.TypePredicate) as TypePredicateNode;
+      n.assertsModifier = a;
+      n.parameterName = asName(p);
+      n.type = t;
+      return n;
     }
-    export function updateTypePredicateNode(node: TypePredicateNode, parameterName: Identifier | ThisTypeNode, type: TypeNode) {
-      return updateTypePredicateNodeWithModifier(node, node.assertsModifier, parameterName, type);
+    export function update(n: TypePredicateNode, p: Identifier | ThisTypeNode, t: TypeNode) {
+      return updateWithModifier(n, n.assertsModifier, p, t);
     }
-    export function updateTypePredicateNodeWithModifier(node: TypePredicateNode, assertsModifier: AssertsToken | undefined, parameterName: Identifier | ThisTypeNode, type: TypeNode | undefined) {
-      return node.assertsModifier !== assertsModifier || node.parameterName !== parameterName || node.type !== type
-        ? updateNode(createTypePredicateNodeWithModifier(assertsModifier, parameterName, type), node)
-        : node;
+    export function updateWithModifier(n: TypePredicateNode, a: AssertsToken | undefined, p: Identifier | ThisTypeNode, t?: TypeNode) {
+      return n.assertsModifier !== a || n.parameterName !== p || n.type !== t ? updateNode(createWithModifier(a, p, t), n) : n;
     }
-    export function isTypePredicateNode(n: Node): n is TypePredicateNode {
+    export function kind(n: Node): n is TypePredicateNode {
       return n.kind === SyntaxKind.TypePredicate;
     }
   }
@@ -592,16 +590,16 @@ namespace qnr {
     typeName: EntityName;
   }
   export namespace TypeReferenceNode {
-    export function createTypeReferenceNode(typeName: string | EntityName, typeArguments: readonly TypeNode[] | undefined) {
-      const node = Node.createSynthesized(SyntaxKind.TypeReference) as TypeReferenceNode;
-      node.typeName = asName(typeName);
-      node.typeArguments = typeArguments && parenthesizeTypeParameters(typeArguments);
-      return node;
+    export function create(t: string | EntityName, ts?: readonly TypeNode[]) {
+      const n = Node.createSynthesized(SyntaxKind.TypeReference) as TypeReferenceNode;
+      n.typeName = asName(t);
+      n.typeArguments = ts && parenthesizeTypeParameters(ts);
+      return n;
     }
-    export function updateTypeReferenceNode(node: TypeReferenceNode, typeName: EntityName, typeArguments: NodeArray<TypeNode> | undefined) {
-      return node.typeName !== typeName || node.typeArguments !== typeArguments ? updateNode(createTypeReferenceNode(typeName, typeArguments), node) : node;
+    export function update(n: TypeReferenceNode, t: EntityName, ts?: NodeArray<TypeNode>) {
+      return n.typeName !== t || n.typeArguments !== ts ? updateNode(create(t, ts), n) : n;
     }
-    export function isTypeReferenceNode(n: Node): n is TypeReferenceNode {
+    export function kind(n: Node): n is TypeReferenceNode {
       return n.kind === SyntaxKind.TypeReference;
     }
   }
@@ -610,18 +608,13 @@ namespace qnr {
     kind: SyntaxKind.FunctionType;
   }
   export namespace FunctionTypeNode {
-    export function createFunctionTypeNode(typeParameters: readonly TypeParameterDeclaration[] | undefined, parameters: readonly ParameterDeclaration[], type: TypeNode | undefined) {
-      return SignatureDeclaration.create(SyntaxKind.FunctionType, typeParameters, parameters, type) as FunctionTypeNode;
+    export function create(ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t?: TypeNode) {
+      return SignatureDeclaration.create(SyntaxKind.FunctionType, ts, ps, t) as FunctionTypeNode;
     }
-    export function updateFunctionTypeNode(
-      node: FunctionTypeNode,
-      typeParameters: NodeArray<TypeParameterDeclaration> | undefined,
-      parameters: NodeArray<ParameterDeclaration>,
-      type: TypeNode | undefined
-    ) {
-      return SignatureDeclaration.update(node, typeParameters, parameters, type);
+    export function update(n: FunctionTypeNode, ts: NodeArray<TypeParameterDeclaration> | undefined, ps: NodeArray<ParameterDeclaration>, t?: TypeNode) {
+      return SignatureDeclaration.update(n, ts, ps, t);
     }
-    export function isFunctionTypeNode(n: Node): n is FunctionTypeNode {
+    export function kind(n: Node): n is FunctionTypeNode {
       return n.kind === SyntaxKind.FunctionType;
     }
   }
@@ -630,18 +623,13 @@ namespace qnr {
     kind: SyntaxKind.ConstructorType;
   }
   export namespace ConstructorTypeNode {
-    export function createConstructorDeclarationTypeNode(typeParameters: readonly TypeParameterDeclaration[] | undefined, parameters: readonly ParameterDeclaration[], type: TypeNode | undefined) {
-      return SignatureDeclaration.create(SyntaxKind.ConstructorType, typeParameters, parameters, type) as ConstructorTypeNode;
+    export function create(ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t?: TypeNode) {
+      return SignatureDeclaration.create(SyntaxKind.ConstructorType, ts, ps, t) as ConstructorTypeNode;
     }
-    export function updateConstructorDeclarationTypeNode(
-      node: ConstructorTypeNode,
-      typeParameters: NodeArray<TypeParameterDeclaration> | undefined,
-      parameters: NodeArray<ParameterDeclaration>,
-      type: TypeNode | undefined
-    ) {
-      return SignatureDeclaration.update(node, typeParameters, parameters, type);
+    export function update(n: ConstructorTypeNode, ts: NodeArray<TypeParameterDeclaration> | undefined, ps: NodeArray<ParameterDeclaration>, t?: TypeNode) {
+      return SignatureDeclaration.update(n, ts, ps, t);
     }
-    export function isConstructorTypeNode(n: Node): n is ConstructorTypeNode {
+    export function kind(n: Node): n is ConstructorTypeNode {
       return n.kind === SyntaxKind.ConstructorType;
     }
   }
@@ -651,15 +639,15 @@ namespace qnr {
     exprName: EntityName;
   }
   export namespace TypeQueryNode {
-    export function createTypeQueryNode(exprName: EntityName) {
-      const node = Node.createSynthesized(SyntaxKind.TypeQuery) as TypeQueryNode;
-      node.exprName = exprName;
-      return node;
+    export function create(e: EntityName) {
+      const n = Node.createSynthesized(SyntaxKind.TypeQuery) as TypeQueryNode;
+      n.exprName = e;
+      return n;
     }
-    export function updateTypeQueryNode(node: TypeQueryNode, exprName: EntityName) {
-      return node.exprName !== exprName ? updateNode(createTypeQueryNode(exprName), node) : node;
+    export function update(n: TypeQueryNode, e: EntityName) {
+      return n.exprName !== e ? updateNode(create(e), n) : n;
     }
-    export function isTypeQueryNode(n: Node): n is TypeQueryNode {
+    export function kind(n: Node): n is TypeQueryNode {
       return n.kind === SyntaxKind.TypeQuery;
     }
   }
@@ -669,15 +657,15 @@ namespace qnr {
     members: NodeArray<TypeElement>;
   }
   export namespace TypeLiteralNode {
-    export function createTypeLiteralNode(members: readonly TypeElement[] | undefined) {
-      const node = Node.createSynthesized(SyntaxKind.TypeLiteral) as TypeLiteralNode;
-      node.members = createNodeArray(members);
-      return node;
+    export function create(ms: readonly TypeElement[] | undefined) {
+      const n = Node.createSynthesized(SyntaxKind.TypeLiteral) as TypeLiteralNode;
+      n.members = createNodeArray(ms);
+      return n;
     }
-    export function updateTypeLiteralNode(node: TypeLiteralNode, members: NodeArray<TypeElement>) {
-      return node.members !== members ? updateNode(createTypeLiteralNode(members), node) : node;
+    export function update(n: TypeLiteralNode, ms: NodeArray<TypeElement>) {
+      return n.members !== ms ? updateNode(create(ms), n) : n;
     }
-    export function isTypeLiteralNode(n: Node): n is TypeLiteralNode {
+    export function kind(n: Node): n is TypeLiteralNode {
       return n.kind === SyntaxKind.TypeLiteral;
     }
   }
@@ -687,15 +675,15 @@ namespace qnr {
     elementType: TypeNode;
   }
   export namespace ArrayTypeNode {
-    export function createArrayTypeNode(elementType: TypeNode) {
-      const node = Node.createSynthesized(SyntaxKind.ArrayType) as ArrayTypeNode;
-      node.elementType = parenthesizeArrayTypeMember(elementType);
-      return node;
+    export function create(t: TypeNode) {
+      const n = Node.createSynthesized(SyntaxKind.ArrayType) as ArrayTypeNode;
+      n.elementType = parenthesizeArrayTypeMember(t);
+      return n;
     }
-    export function updateArrayTypeNode(node: ArrayTypeNode, elementType: TypeNode): ArrayTypeNode {
-      return node.elementType !== elementType ? updateNode(createArrayTypeNode(elementType), node) : node;
+    export function update(n: ArrayTypeNode, t: TypeNode) {
+      return n.elementType !== t ? updateNode(create(t), n) : n;
     }
-    export function isArrayTypeNode(n: Node): n is ArrayTypeNode {
+    export function kind(n: Node): n is ArrayTypeNode {
       return n.kind === SyntaxKind.ArrayType;
     }
   }
@@ -705,15 +693,15 @@ namespace qnr {
     elements: NodeArray<TypeNode | NamedTupleMember>;
   }
   export namespace TupleTypeNode {
-    export function createTupleTypeNode(elements: readonly (TypeNode | NamedTupleMember)[]) {
-      const node = Node.createSynthesized(SyntaxKind.TupleType) as TupleTypeNode;
-      node.elements = createNodeArray(elements);
-      return node;
+    export function create(es: readonly (TypeNode | NamedTupleMember)[]) {
+      const n = Node.createSynthesized(SyntaxKind.TupleType) as TupleTypeNode;
+      n.elements = createNodeArray(es);
+      return n;
     }
-    export function updateTupleTypeNode(node: TupleTypeNode, elements: readonly (TypeNode | NamedTupleMember)[]) {
-      return node.elements !== elements ? updateNode(createTupleTypeNode(elements), node) : node;
+    export function update(n: TupleTypeNode, es: readonly (TypeNode | NamedTupleMember)[]) {
+      return n.elements !== es ? updateNode(create(es), n) : n;
     }
-    export function isTupleTypeNode(n: Node): n is TupleTypeNode {
+    export function kind(n: Node): n is TupleTypeNode {
       return n.kind === SyntaxKind.TupleType;
     }
   }
@@ -723,13 +711,13 @@ namespace qnr {
     type: TypeNode;
   }
   export namespace OptionalTypeNode {
-    export function createOptionalTypeNode(type: TypeNode) {
-      const node = Node.createSynthesized(SyntaxKind.OptionalType) as OptionalTypeNode;
-      node.type = parenthesizeArrayTypeMember(type);
-      return node;
+    export function create(t: TypeNode) {
+      const n = Node.createSynthesized(SyntaxKind.OptionalType) as OptionalTypeNode;
+      n.type = parenthesizeArrayTypeMember(t);
+      return n;
     }
-    export function updateOptionalTypeNode(node: OptionalTypeNode, type: TypeNode): OptionalTypeNode {
-      return node.type !== type ? updateNode(createOptionalTypeNode(type), node) : node;
+    export function update(n: OptionalTypeNode, t: TypeNode): OptionalTypeNode {
+      return n.type !== t ? updateNode(create(t), n) : n;
     }
   }
 
@@ -738,13 +726,13 @@ namespace qnr {
     type: TypeNode;
   }
   export namespace RestTypeNode {
-    export function createRestTypeNode(type: TypeNode) {
-      const node = Node.createSynthesized(SyntaxKind.RestType) as RestTypeNode;
-      node.type = type;
-      return node;
+    export function create(t: TypeNode) {
+      const n = Node.createSynthesized(SyntaxKind.RestType) as RestTypeNode;
+      n.type = t;
+      return n;
     }
-    export function updateRestTypeNode(node: RestTypeNode, type: TypeNode): RestTypeNode {
-      return node.type !== type ? updateNode(createRestTypeNode(type), node) : node;
+    export function update(n: RestTypeNode, t: TypeNode): RestTypeNode {
+      return n.type !== t ? updateNode(create(t), n) : n;
     }
   }
 
@@ -753,21 +741,21 @@ namespace qnr {
     types: NodeArray<TypeNode>;
   }
   export namespace UnionTypeNode {
-    export function createUnionTypeNode(types: readonly TypeNode[]): UnionTypeNode {
-      return <UnionTypeNode>createUnionOrIntersectionTypeNode(SyntaxKind.UnionType, types);
+    export function create(ts: readonly TypeNode[]) {
+      return orIntersectionCreate(SyntaxKind.UnionType, ts) as UnionTypeNode;
     }
-    export function updateUnionTypeNode(node: UnionTypeNode, types: NodeArray<TypeNode>) {
-      return updateUnionOrIntersectionTypeNode(node, types);
+    export function orIntersectionCreate(k: SyntaxKind.UnionType | SyntaxKind.IntersectionType, ts: readonly TypeNode[]) {
+      const n = Node.createSynthesized(k) as UnionTypeNode | IntersectionTypeNode;
+      n.types = parenthesizeElementTypeMembers(ts);
+      return n;
     }
-    export function createUnionOrIntersectionTypeNode(kind: SyntaxKind.UnionType | SyntaxKind.IntersectionType, types: readonly TypeNode[]) {
-      const node = Node.createSynthesized(kind) as UnionTypeNode | IntersectionTypeNode;
-      node.types = parenthesizeElementTypeMembers(types);
-      return node;
+    export function update(n: UnionTypeNode, ts: NodeArray<TypeNode>) {
+      return orIntersectionUpdate(n, ts);
     }
-    export function updateUnionOrIntersectionTypeNode<T extends UnionOrIntersectionTypeNode>(node: T, types: NodeArray<TypeNode>): T {
-      return node.types !== types ? updateNode(<T>createUnionOrIntersectionTypeNode(node.kind, types), node) : node;
+    export function orIntersectionUpdate<T extends UnionOrIntersectionTypeNode>(n: T, ts: NodeArray<TypeNode>): T {
+      return n.types !== ts ? updateNode(orIntersectionCreate(n.kind, ts) as T, n) : n;
     }
-    export function isUnionTypeNode(n: Node): n is UnionTypeNode {
+    export function kind(n: Node): n is UnionTypeNode {
       return n.kind === SyntaxKind.UnionType;
     }
   }
@@ -777,13 +765,13 @@ namespace qnr {
     types: NodeArray<TypeNode>;
   }
   export namespace IntersectionTypeNode {
-    export function createIntersectionTypeNode(types: readonly TypeNode[]): IntersectionTypeNode {
-      return <IntersectionTypeNode>createUnionOrIntersectionTypeNode(SyntaxKind.IntersectionType, types);
+    export function create(ts: readonly TypeNode[]) {
+      return UnionTypeNode.orIntersectionCreate(SyntaxKind.IntersectionType, ts) as IntersectionTypeNode;
     }
-    export function updateIntersectionTypeNode(node: IntersectionTypeNode, types: NodeArray<TypeNode>) {
-      return updateUnionOrIntersectionTypeNode(node, types);
+    export function update(n: IntersectionTypeNode, ts: NodeArray<TypeNode>) {
+      return UnionTypeNode.orIntersectionUpdate(n, ts);
     }
-    export function isIntersectionTypeNode(n: Node): n is IntersectionTypeNode {
+    export function kind(n: Node): n is IntersectionTypeNode {
       return n.kind === SyntaxKind.IntersectionType;
     }
   }
@@ -796,20 +784,18 @@ namespace qnr {
     falseType: TypeNode;
   }
   export namespace ConditionalTypeNode {
-    export function createConditionalTypeNode(checkType: TypeNode, extendsType: TypeNode, trueType: TypeNode, falseType: TypeNode) {
-      const node = Node.createSynthesized(SyntaxKind.ConditionalType) as ConditionalTypeNode;
-      node.checkType = parenthesizeConditionalTypeMember(checkType);
-      node.extendsType = parenthesizeConditionalTypeMember(extendsType);
-      node.trueType = trueType;
-      node.falseType = falseType;
-      return node;
+    export function create(c: TypeNode, e: TypeNode, t: TypeNode, f: TypeNode) {
+      const n = Node.createSynthesized(SyntaxKind.ConditionalType) as ConditionalTypeNode;
+      n.checkType = parenthesizeConditionalTypeMember(c);
+      n.extendsType = parenthesizeConditionalTypeMember(e);
+      n.trueType = t;
+      n.falseType = f;
+      return n;
     }
-    export function updateConditionalTypeNode(node: ConditionalTypeNode, checkType: TypeNode, extendsType: TypeNode, trueType: TypeNode, falseType: TypeNode) {
-      return node.checkType !== checkType || node.extendsType !== extendsType || node.trueType !== trueType || node.falseType !== falseType
-        ? updateNode(createConditionalTypeNode(checkType, extendsType, trueType, falseType), node)
-        : node;
+    export function update(n: ConditionalTypeNode, c: TypeNode, e: TypeNode, t: TypeNode, f: TypeNode) {
+      return n.checkType !== c || n.extendsType !== e || n.trueType !== t || n.falseType !== f ? updateNode(create(c, e, t, f), n) : n;
     }
-    export function isConditionalTypeNode(n: Node): n is ConditionalTypeNode {
+    export function kind(n: Node): n is ConditionalTypeNode {
       return n.kind === SyntaxKind.ConditionalType;
     }
   }
@@ -819,15 +805,15 @@ namespace qnr {
     typeParameter: TypeParameterDeclaration;
   }
   export namespace InferTypeNode {
-    export function createInferTypeNode(typeParameter: TypeParameterDeclaration) {
-      const node = <InferTypeNode>Node.createSynthesized(SyntaxKind.InferType);
-      node.typeParameter = typeParameter;
-      return node;
+    export function create(p: TypeParameterDeclaration) {
+      const n = Node.createSynthesized(SyntaxKind.InferType) as InferTypeNode;
+      n.typeParameter = p;
+      return n;
     }
-    export function updateInferTypeNode(node: InferTypeNode, typeParameter: TypeParameterDeclaration) {
-      return node.typeParameter !== typeParameter ? updateNode(createInferTypeNode(typeParameter), node) : node;
+    export function update(n: InferTypeNode, p: TypeParameterDeclaration) {
+      return n.typeParameter !== p ? updateNode(create(p), n) : n;
     }
-    export function isInferTypeNode(n: Node): n is InferTypeNode {
+    export function kind(n: Node): n is InferTypeNode {
       return n.kind === SyntaxKind.InferType;
     }
   }
@@ -837,15 +823,15 @@ namespace qnr {
     type: TypeNode;
   }
   export namespace ParenthesizedTypeNode {
-    export function createParenthesizedType(type: TypeNode) {
-      const node = <ParenthesizedTypeNode>Node.createSynthesized(SyntaxKind.ParenthesizedType);
-      node.type = type;
-      return node;
+    export function create(t: TypeNode) {
+      const n = Node.createSynthesized(SyntaxKind.ParenthesizedType) as ParenthesizedTypeNode;
+      n.type = t;
+      return n;
     }
-    export function updateParenthesizedType(node: ParenthesizedTypeNode, type: TypeNode) {
-      return node.type !== type ? updateNode(createParenthesizedType(type), node) : node;
+    export function update(n: ParenthesizedTypeNode, t: TypeNode) {
+      return n.type !== t ? updateNode(create(t), n) : n;
     }
-    export function isParenthesizedTypeNode(n: Node): n is ParenthesizedTypeNode {
+    export function kind(n: Node): n is ParenthesizedTypeNode {
       return n.kind === SyntaxKind.ParenthesizedType;
     }
   }
@@ -854,10 +840,10 @@ namespace qnr {
     kind: SyntaxKind.ThisType;
   }
   export namespace ThisTypeNode {
-    export function createThisTypeNode() {
-      return <ThisTypeNode>Node.createSynthesized(SyntaxKind.ThisType);
+    export function create() {
+      return Node.createSynthesized(SyntaxKind.ThisType) as ThisTypeNode;
     }
-    export function isThisTypeNode(n: Node): n is ThisTypeNode {
+    export function kind(n: Node): n is ThisTypeNode {
       return n.kind === SyntaxKind.ThisType;
     }
   }
@@ -868,18 +854,18 @@ namespace qnr {
     type: TypeNode;
   }
   export namespace TypeOperatorNode {
-    export function createTypeOperatorNode(type: TypeNode): TypeOperatorNode;
-    export function createTypeOperatorNode(operator: SyntaxKind.KeyOfKeyword | SyntaxKind.UniqueKeyword | SyntaxKind.ReadonlyKeyword, type: TypeNode): TypeOperatorNode;
-    export function createTypeOperatorNode(operatorOrType: SyntaxKind.KeyOfKeyword | SyntaxKind.UniqueKeyword | SyntaxKind.ReadonlyKeyword | TypeNode, type?: TypeNode) {
-      const node = Node.createSynthesized(SyntaxKind.TypeOperator) as TypeOperatorNode;
-      node.operator = typeof operatorOrType === 'number' ? operatorOrType : SyntaxKind.KeyOfKeyword;
-      node.type = parenthesizeElementTypeMember(typeof operatorOrType === 'number' ? type! : operatorOrType);
-      return node;
+    export function create(t: TypeNode): TypeOperatorNode;
+    export function create(o: SyntaxKind.KeyOfKeyword | SyntaxKind.UniqueKeyword | SyntaxKind.ReadonlyKeyword, t: TypeNode): TypeOperatorNode;
+    export function create(o: SyntaxKind.KeyOfKeyword | SyntaxKind.UniqueKeyword | SyntaxKind.ReadonlyKeyword | TypeNode, t?: TypeNode) {
+      const n = Node.createSynthesized(SyntaxKind.TypeOperator) as TypeOperatorNode;
+      n.operator = typeof o === 'number' ? o : SyntaxKind.KeyOfKeyword;
+      n.type = parenthesizeElementTypeMember(typeof o === 'number' ? t! : o);
+      return n;
     }
-    export function updateTypeOperatorNode(node: TypeOperatorNode, type: TypeNode) {
-      return node.type !== type ? updateNode(createTypeOperatorNode(node.operator, type), node) : node;
+    export function update(n: TypeOperatorNode, t: TypeNode) {
+      return n.type !== t ? updateNode(create(n.operator, t), n) : n;
     }
-    export function isTypeOperatorNode(n: Node): n is TypeOperatorNode {
+    export function kind(n: Node): n is TypeOperatorNode {
       return n.kind === SyntaxKind.TypeOperator;
     }
   }
@@ -890,16 +876,16 @@ namespace qnr {
     indexType: TypeNode;
   }
   export namespace IndexedAccessTypeNode {
-    export function createIndexedAccessTypeNode(objectType: TypeNode, indexType: TypeNode) {
-      const node = Node.createSynthesized(SyntaxKind.IndexedAccessType) as IndexedAccessTypeNode;
-      node.objectType = parenthesizeElementTypeMember(objectType);
-      node.indexType = indexType;
-      return node;
+    export function create(o: TypeNode, i: TypeNode) {
+      const n = Node.createSynthesized(SyntaxKind.IndexedAccessType) as IndexedAccessTypeNode;
+      n.objectType = parenthesizeElementTypeMember(o);
+      n.indexType = i;
+      return n;
     }
-    export function updateIndexedAccessTypeNode(node: IndexedAccessTypeNode, objectType: TypeNode, indexType: TypeNode) {
-      return node.objectType !== objectType || node.indexType !== indexType ? updateNode(createIndexedAccessTypeNode(objectType, indexType), node) : node;
+    export function update(n: IndexedAccessTypeNode, o: TypeNode, i: TypeNode) {
+      return n.objectType !== o || n.indexType !== i ? updateNode(create(o, i), n) : n;
     }
-    export function isIndexedAccessTypeNode(n: Node): n is IndexedAccessTypeNode {
+    export function kind(n: Node): n is IndexedAccessTypeNode {
       return n.kind === SyntaxKind.IndexedAccessType;
     }
   }
@@ -912,31 +898,18 @@ namespace qnr {
     type?: TypeNode;
   }
   export namespace MappedTypeNode {
-    export function createMappedTypeNode(
-      readonlyToken: ReadonlyToken | PlusToken | MinusToken | undefined,
-      typeParameter: TypeParameterDeclaration,
-      questionToken: QuestionToken | PlusToken | MinusToken | undefined,
-      type: TypeNode | undefined
-    ): MappedTypeNode {
-      const node = Node.createSynthesized(SyntaxKind.MappedType) as MappedTypeNode;
-      node.readonlyToken = readonlyToken;
-      node.typeParameter = typeParameter;
-      node.questionToken = questionToken;
-      node.type = type;
-      return node;
+    export function create(r: ReadonlyToken | PlusToken | MinusToken | undefined, p: TypeParameterDeclaration, q?: QuestionToken | PlusToken | MinusToken, t?: TypeNode) {
+      const n = Node.createSynthesized(SyntaxKind.MappedType) as MappedTypeNode;
+      n.readonlyToken = r;
+      n.typeParameter = p;
+      n.questionToken = q;
+      n.type = t;
+      return n;
     }
-    export function updateMappedTypeNode(
-      node: MappedTypeNode,
-      readonlyToken: ReadonlyToken | PlusToken | MinusToken | undefined,
-      typeParameter: TypeParameterDeclaration,
-      questionToken: QuestionToken | PlusToken | MinusToken | undefined,
-      type: TypeNode | undefined
-    ): MappedTypeNode {
-      return node.readonlyToken !== readonlyToken || node.typeParameter !== typeParameter || node.questionToken !== questionToken || node.type !== type
-        ? updateNode(createMappedTypeNode(readonlyToken, typeParameter, questionToken, type), node)
-        : node;
+    export function update(n: MappedTypeNode, r: ReadonlyToken | PlusToken | MinusToken | undefined, p: TypeParameterDeclaration, q?: QuestionToken | PlusToken | MinusToken, t?: TypeNode) {
+      return n.readonlyToken !== r || n.typeParameter !== p || n.questionToken !== q || n.type !== t ? updateNode(create(r, p, q, t), n) : n;
     }
-    export function isMappedTypeNode(n: Node): n is MappedTypeNode {
+    export function kind(n: Node): n is MappedTypeNode {
       return n.kind === SyntaxKind.MappedType;
     }
   }
@@ -946,15 +919,15 @@ namespace qnr {
     literal: BooleanLiteral | LiteralExpression | PrefixUnaryExpression;
   }
   export namespace LiteralTypeNode {
-    export function createLiteralTypeNode(literal: LiteralTypeNode['literal']) {
-      const node = Node.createSynthesized(SyntaxKind.LiteralType) as LiteralTypeNode;
-      node.literal = literal;
-      return node;
+    export function create(l: LiteralTypeNode['literal']) {
+      const n = Node.createSynthesized(SyntaxKind.LiteralType) as LiteralTypeNode;
+      n.literal = l;
+      return n;
     }
-    export function updateLiteralTypeNode(node: LiteralTypeNode, literal: LiteralTypeNode['literal']) {
-      return node.literal !== literal ? updateNode(createLiteralTypeNode(literal), node) : node;
+    export function update(n: LiteralTypeNode, l: LiteralTypeNode['literal']) {
+      return n.literal !== l ? updateNode(create(l), n) : n;
     }
-    export function isLiteralTypeNode(n: Node): n is LiteralTypeNode {
+    export function kind(n: Node): n is LiteralTypeNode {
       return n.kind === SyntaxKind.LiteralType;
     }
   }
@@ -967,24 +940,16 @@ namespace qnr {
     type: TypeNode;
   }
   export namespace NamedTupleMember {
-    export function createNamedTupleMember(dotDotDotToken: Token<SyntaxKind.Dot3Token> | undefined, name: Identifier, questionToken: Token<SyntaxKind.QuestionToken> | undefined, type: TypeNode) {
-      const node = <NamedTupleMember>Node.createSynthesized(SyntaxKind.NamedTupleMember);
-      node.dotDotDotToken = dotDotDotToken;
-      node.name = name;
-      node.questionToken = questionToken;
-      node.type = type;
-      return node;
+    export function create(d: Token<SyntaxKind.Dot3Token> | undefined, i: Identifier, q: Token<SyntaxKind.QuestionToken> | undefined, t: TypeNode) {
+      const n = Node.createSynthesized(SyntaxKind.NamedTupleMember) as NamedTupleMember;
+      n.dotDotDotToken = d;
+      n.name = i;
+      n.questionToken = q;
+      n.type = t;
+      return n;
     }
-    export function updateNamedTupleMember(
-      node: NamedTupleMember,
-      dotDotDotToken: Token<SyntaxKind.Dot3Token> | undefined,
-      name: Identifier,
-      questionToken: Token<SyntaxKind.QuestionToken> | undefined,
-      type: TypeNode
-    ) {
-      return node.dotDotDotToken !== dotDotDotToken || node.name !== name || node.questionToken !== questionToken || node.type !== type
-        ? updateNode(createNamedTupleMember(dotDotDotToken, name, questionToken, type), node)
-        : node;
+    export function update(n: NamedTupleMember, d: Token<SyntaxKind.Dot3Token> | undefined, i: Identifier, q: Token<SyntaxKind.QuestionToken> | undefined, t: TypeNode) {
+      return n.dotDotDotToken !== d || n.name !== i || n.questionToken !== q || n.type !== t ? updateNode(create(d, i, q, t), n) : n;
     }
   }
 
@@ -995,20 +960,18 @@ namespace qnr {
     qualifier?: EntityName;
   }
   export namespace ImportTypeNode {
-    export function createImportTypeNode(argument: TypeNode, qualifier?: EntityName, typeArguments?: readonly TypeNode[], isTypeOf?: boolean) {
-      const node = <ImportTypeNode>Node.createSynthesized(SyntaxKind.ImportType);
-      node.argument = argument;
-      node.qualifier = qualifier;
-      node.typeArguments = parenthesizeTypeParameters(typeArguments);
-      node.isTypeOf = isTypeOf;
-      return node;
+    export function create(a: TypeNode, q?: EntityName, ts?: readonly TypeNode[], tof?: boolean) {
+      const n = Node.createSynthesized(SyntaxKind.ImportType) as ImportTypeNode;
+      n.argument = a;
+      n.qualifier = q;
+      n.typeArguments = parenthesizeTypeParameters(ts);
+      n.isTypeOf = tof;
+      return n;
     }
-    export function updateImportTypeNode(node: ImportTypeNode, argument: TypeNode, qualifier?: EntityName, typeArguments?: readonly TypeNode[], isTypeOf?: boolean) {
-      return node.argument !== argument || node.qualifier !== qualifier || node.typeArguments !== typeArguments || node.isTypeOf !== isTypeOf
-        ? updateNode(createImportTypeNode(argument, qualifier, typeArguments, isTypeOf), node)
-        : node;
+    export function update(n: ImportTypeNode, a: TypeNode, q?: EntityName, ts?: readonly TypeNode[], tof?: boolean) {
+      return n.argument !== a || n.qualifier !== q || n.typeArguments !== ts || n.isTypeOf !== tof ? updateNode(create(a, q, ts, tof), n) : n;
     }
-    export function isImportTypeNode(n: Node): n is ImportTypeNode {
+    export function kind(n: Node): n is ImportTypeNode {
       return n.kind === SyntaxKind.ImportType;
     }
   }

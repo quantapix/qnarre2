@@ -7491,7 +7491,7 @@ namespace qnr {
             case SyntaxKind.ArrayType:
               return isObjectOrObjectArrayTypeReference((node as ArrayTypeNode).elementType);
             default:
-              return isTypeReferenceNode(node) && qnr.isIdentifier(node.typeName) && node.typeName.escapedText === 'Object' && !node.typeArguments;
+              return TypeReferenceNode.kind(node) && qnr.isIdentifier(node.typeName) && node.typeName.escapedText === 'Object' && !node.typeArguments;
           }
         }
 

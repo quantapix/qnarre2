@@ -416,11 +416,11 @@ namespace qnr {
     const typeTag = getJSDocTypeTag(n);
     if (typeTag && typeTag.typeExpression) {
       const type = typeTag.typeExpression.type;
-      if (isTypeLiteralNode(type)) {
+      if (TypeLiteralNode.kind(type)) {
         const sig = find(type.members, CallSignatureDeclaration.kind);
         return sig && sig.type;
       }
-      if (isFunctionTypeNode(type) || isJSDocFunctionType(type)) return type.type;
+      if (FunctionTypeNode.kind(type) || isJSDocFunctionType(type)) return type.type;
     }
     return;
   }
@@ -467,7 +467,7 @@ namespace qnr {
       const decls = getJSDocTypeParameterDeclarations(n);
       if (decls.length) return decls;
       const typeTag = getJSDocType(n);
-      if (typeTag && isFunctionTypeNode(typeTag) && typeTag.typeParameters) return typeTag.typeParameters;
+      if (typeTag && FunctionTypeNode.kind(typeTag) && typeTag.typeParameters) return typeTag.typeParameters;
     }
     return emptyArray;
   }
@@ -596,7 +596,7 @@ namespace qnr {
   }
 
   export function isConstTypeReference(n: Node) {
-    return isTypeReferenceNode(n) && isIdentifier(n.typeName) && n.typeName.escapedText === 'const' && !n.typeArguments;
+    return TypeReferenceNode.kind(n) && isIdentifier(n.typeName) && n.typeName.escapedText === 'const' && !n.typeArguments;
   }
 
   export function isParenthesizedExpression(n: Node): n is ParenthesizedExpression {

@@ -523,12 +523,12 @@ namespace qnr {
         return visitNode(type, visitDeclarationSubtree);
       }
       if (!getParseTreeNode(node)) {
-        return type ? visitNode(type, visitDeclarationSubtree) : createKeywordTypeNode(SyntaxKind.AnyKeyword);
+        return type ? visitNode(type, visitDeclarationSubtree) : KeywordTypeNode.create(SyntaxKind.AnyKeyword);
       }
       if (node.kind === SyntaxKind.SetAccessor) {
         // Set accessors with no associated type node (from it's param or get accessor return) are `any` since they are never contextually typed right now
         // (The inferred type here will be void, but the old declaration emitter printed `any`, so this replicates that)
-        return createKeywordTypeNode(SyntaxKind.AnyKeyword);
+        return KeywordTypeNode.create(SyntaxKind.AnyKeyword);
       }
       errorNameNode = node.name;
       let oldDiag: typeof getSymbolAccessibilityDiagnostic;
@@ -553,7 +553,7 @@ namespace qnr {
         if (!suppressNewDiagnosticContexts) {
           getSymbolAccessibilityDiagnostic = oldDiag;
         }
-        return returnValue || createKeywordTypeNode(SyntaxKind.AnyKeyword);
+        return returnValue || KeywordTypeNode.create(SyntaxKind.AnyKeyword);
       }
     }
 
@@ -640,7 +640,7 @@ namespace qnr {
         isInterfaceDeclaration(node) ||
         isFunctionLike(node) ||
         IndexSignatureDeclaration.kind(node) ||
-        isMappedTypeNode(node)
+        MappedTypeNode.kind(node)
       );
     }
 
@@ -843,7 +843,7 @@ namespace qnr {
         getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(input as DeclarationDiagnosticProducing);
       }
 
-      if (isTypeQueryNode(input)) {
+      if (TypeQueryNode.kind(input)) {
         checkEntityNameVisibility(input.exprName, enclosingDeclaration);
       }
 
@@ -864,7 +864,7 @@ namespace qnr {
           case SyntaxKind.TypeReference: {
             checkEntityNameVisibility(input.typeName, enclosingDeclaration);
             const node = visitEachChild(input, visitDeclarationSubtree, context);
-            return cleanup(updateTypeReferenceNode(node, node.typeName, parenthesizeTypeParameters(node.typeArguments)));
+            return cleanup(TypeReferenceNode.update(node, node.typeName, parenthesizeTypeParameters(node.typeArguments)));
           }
           case SyntaxKind.ConstructSignature:
             return cleanup(ConstructSignatureDeclaration.update(input, ensureTypeParams(input, input.typeParameters), updateParamsList(input, input.parameters), ensureType(input, input.type)));
@@ -956,7 +956,7 @@ namespace qnr {
                 /*decorators*/ undefined,
                 ensureModifiers(input),
                 updateParamsList(input, input.parameters),
-                visitNode(input.type, visitDeclarationSubtree) || createKeywordTypeNode(SyntaxKind.AnyKeyword)
+                visitNode(input.type, visitDeclarationSubtree) || KeywordTypeNode.create(SyntaxKind.AnyKeyword)
               )
             );
           }
@@ -984,11 +984,11 @@ namespace qnr {
             const trueType = visitNode(input.trueType, visitDeclarationSubtree);
             enclosingDeclaration = oldEnclosingDecl;
             const falseType = visitNode(input.falseType, visitDeclarationSubtree);
-            return cleanup(updateConditionalTypeNode(input, checkType, extendsType, trueType, falseType));
+            return cleanup(ConditionalTypeNode.update(input, checkType, extendsType, trueType, falseType));
           }
           case SyntaxKind.FunctionType: {
             return cleanup(
-              updateFunctionTypeNode(input, visitNodes(input.typeParameters, visitDeclarationSubtree), updateParamsList(input, input.parameters), visitNode(input.type, visitDeclarationSubtree))
+              FunctionTypeNode.update(input, visitNodes(input.typeParameters, visitDeclarationSubtree), updateParamsList(input, input.parameters), visitNode(input.type, visitDeclarationSubtree))
             );
           }
           case SyntaxKind.ConstructorType: {
@@ -1004,9 +1004,9 @@ namespace qnr {
           case SyntaxKind.ImportType: {
             if (!isLiteralImportTypeNode(input)) return cleanup(input);
             return cleanup(
-              updateImportTypeNode(
+              ImportTypeNode.update(
                 input,
-                updateLiteralTypeNode(input.argument, rewriteModuleSpecifier(input, input.argument.literal)),
+                LiteralTypeNode.update(input.argument, rewriteModuleSpecifier(input, input.argument.literal)),
                 input.qualifier,
                 visitNodes(input.typeArguments, visitDeclarationSubtree, isTypeNode),
                 input.isTypeOf
@@ -1018,7 +1018,7 @@ namespace qnr {
         }
       }
 
-      if (isTupleTypeNode(input) && lineAndCharOf(currentSourceFile, input.pos).line === lineAndCharOf(currentSourceFile, input.end).line) {
+      if (TupleTypeNode.kind(input) && lineAndCharOf(currentSourceFile, input.pos).line === lineAndCharOf(currentSourceFile, input.end).line) {
         setEmitFlags(input, EmitFlags.SingleLine);
       }
 

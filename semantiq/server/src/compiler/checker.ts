@@ -2106,7 +2106,7 @@ namespace qnr {
       if (location.kind !== SyntaxKind.ArrowFunction && location.kind !== SyntaxKind.FunctionExpression) {
         // initializers in instance property declaration of class like entities are executed in constructor and thus deferred
         return (
-          isTypeQueryNode(location) ||
+          TypeQueryNode.kind(location) ||
           ((isFunctionLikeDeclaration(location) || (location.kind === SyntaxKind.PropertyDeclaration && !hasSyntacticModifier(location, ModifierFlags.Static))) &&
             (!lastLocation || lastLocation !== (location as FunctionLike | PropertyDeclaration).name))
         ); // A name is evaluated within the enclosing scope - so it shouldn't count as deferred
@@ -4306,7 +4306,7 @@ namespace qnr {
             return undefined!; // TODO: GH#18217
           }
           context.approximateLength += 3;
-          return createKeywordTypeNode(SyntaxKind.AnyKeyword);
+          return KeywordTypeNode.create(SyntaxKind.AnyKeyword);
         }
 
         if (!(context.flags & NodeBuilderFlags.NoTypeReduction)) {
@@ -4315,26 +4315,26 @@ namespace qnr {
 
         if (type.flags & TypeFlags.Any) {
           context.approximateLength += 3;
-          return createKeywordTypeNode(SyntaxKind.AnyKeyword);
+          return KeywordTypeNode.create(SyntaxKind.AnyKeyword);
         }
         if (type.flags & TypeFlags.Unknown) {
-          return createKeywordTypeNode(SyntaxKind.UnknownKeyword);
+          return KeywordTypeNode.create(SyntaxKind.UnknownKeyword);
         }
         if (type.flags & TypeFlags.String) {
           context.approximateLength += 6;
-          return createKeywordTypeNode(SyntaxKind.StringKeyword);
+          return KeywordTypeNode.create(SyntaxKind.StringKeyword);
         }
         if (type.flags & TypeFlags.Number) {
           context.approximateLength += 6;
-          return createKeywordTypeNode(SyntaxKind.NumberKeyword);
+          return KeywordTypeNode.create(SyntaxKind.NumberKeyword);
         }
         if (type.flags & TypeFlags.BigInt) {
           context.approximateLength += 6;
-          return createKeywordTypeNode(SyntaxKind.BigIntKeyword);
+          return KeywordTypeNode.create(SyntaxKind.BigIntKeyword);
         }
         if (type.flags & TypeFlags.Boolean) {
           context.approximateLength += 7;
-          return createKeywordTypeNode(SyntaxKind.BooleanKeyword);
+          return KeywordTypeNode.create(SyntaxKind.BooleanKeyword);
         }
         if (type.flags & TypeFlags.EnumLiteral && !(type.flags & TypeFlags.Union)) {
           const parentSymbol = getParentOfSymbol(type.symbol)!;
@@ -4342,7 +4342,7 @@ namespace qnr {
           const enumLiteralName =
             getDeclaredTypeOfSymbol(parentSymbol) === type
               ? parentName
-              : appendReferenceToType(parentName as TypeReferenceNode | ImportTypeNode, createTypeReferenceNode(symbolName(type.symbol), /*typeArguments*/ undefined));
+              : appendReferenceToType(parentName as TypeReferenceNode | ImportTypeNode, TypeReferenceNode.create(symbolName(type.symbol), /*typeArguments*/ undefined));
           return enumLiteralName;
         }
         if (type.flags & TypeFlags.EnumLike) {
@@ -4350,18 +4350,18 @@ namespace qnr {
         }
         if (type.flags & TypeFlags.StringLiteral) {
           context.approximateLength += (<StringLiteralType>type).value.length + 2;
-          return createLiteralTypeNode(
+          return LiteralTypeNode.create(
             setEmitFlags(createLiteral((<StringLiteralType>type).value, !!(context.flags & NodeBuilderFlags.UseSingleQuotesForStringLiteralType)), EmitFlags.NoAsciiEscaping)
           );
         }
         if (type.flags & TypeFlags.NumberLiteral) {
           const value = (<NumberLiteralType>type).value;
           context.approximateLength += ('' + value).length;
-          return createLiteralTypeNode(value < 0 ? createPrefix(SyntaxKind.MinusToken, createLiteral(-value)) : createLiteral(value));
+          return LiteralTypeNode.create(value < 0 ? createPrefix(SyntaxKind.MinusToken, createLiteral(-value)) : createLiteral(value));
         }
         if (type.flags & TypeFlags.BigIntLiteral) {
           context.approximateLength += pseudoBigIntToString((<BigIntLiteralType>type).value).length + 1;
-          return createLiteralTypeNode(createLiteral((<BigIntLiteralType>type).value));
+          return LiteralTypeNode.create(createLiteral((<BigIntLiteralType>type).value));
         }
         if (type.flags & TypeFlags.BooleanLiteral) {
           context.approximateLength += (<IntrinsicType>type).intrinsicName.length;
@@ -4378,31 +4378,31 @@ namespace qnr {
             }
           }
           context.approximateLength += 13;
-          return createTypeOperatorNode(SyntaxKind.UniqueKeyword, createKeywordTypeNode(SyntaxKind.SymbolKeyword));
+          return TypeOperatorNode.create(SyntaxKind.UniqueKeyword, KeywordTypeNode.create(SyntaxKind.SymbolKeyword));
         }
         if (type.flags & TypeFlags.Void) {
           context.approximateLength += 4;
-          return createKeywordTypeNode(SyntaxKind.VoidKeyword);
+          return KeywordTypeNode.create(SyntaxKind.VoidKeyword);
         }
         if (type.flags & TypeFlags.Undefined) {
           context.approximateLength += 9;
-          return createKeywordTypeNode(SyntaxKind.UndefinedKeyword);
+          return KeywordTypeNode.create(SyntaxKind.UndefinedKeyword);
         }
         if (type.flags & TypeFlags.Null) {
           context.approximateLength += 4;
-          return createKeywordTypeNode(SyntaxKind.NullKeyword);
+          return KeywordTypeNode.create(SyntaxKind.NullKeyword);
         }
         if (type.flags & TypeFlags.Never) {
           context.approximateLength += 5;
-          return createKeywordTypeNode(SyntaxKind.NeverKeyword);
+          return KeywordTypeNode.create(SyntaxKind.NeverKeyword);
         }
         if (type.flags & TypeFlags.ESSymbol) {
           context.approximateLength += 6;
-          return createKeywordTypeNode(SyntaxKind.SymbolKeyword);
+          return KeywordTypeNode.create(SyntaxKind.SymbolKeyword);
         }
         if (type.flags & TypeFlags.NonPrimitive) {
           context.approximateLength += 6;
-          return createKeywordTypeNode(SyntaxKind.ObjectKeyword);
+          return KeywordTypeNode.create(SyntaxKind.ObjectKeyword);
         }
         if (isThisTypeParameter(type)) {
           if (context.flags & NodeBuilderFlags.InObjectTypeLiteral) {
@@ -4419,7 +4419,7 @@ namespace qnr {
 
         if (!inTypeAlias && type.aliasSymbol && (context.flags & NodeBuilderFlags.UseAliasDefinedOutsideCurrentScope || isTypeSymbolAccessible(type.aliasSymbol, context.enclosingDeclaration))) {
           const typeArgumentNodes = mapToTypeNodes(type.aliasTypeArguments, context);
-          if (isReservedMemberName(type.aliasSymbol.escapedName) && !(type.aliasSymbol.flags & SymbolFlags.Class)) return createTypeReferenceNode(createIdentifier(''), typeArgumentNodes);
+          if (isReservedMemberName(type.aliasSymbol.escapedName) && !(type.aliasSymbol.flags & SymbolFlags.Class)) return TypeReferenceNode.create(createIdentifier(''), typeArgumentNodes);
           return symbolToTypeNode(type.aliasSymbol, context, SymbolFlags.Type, typeArgumentNodes);
         }
 
@@ -4432,15 +4432,15 @@ namespace qnr {
         if (type.flags & TypeFlags.TypeParameter || objectFlags & ObjectFlags.ClassOrInterface) {
           if (type.flags & TypeFlags.TypeParameter && contains(context.inferTypeParameters, type)) {
             context.approximateLength += symbolName(type.symbol).length + 6;
-            return createInferTypeNode(typeParameterToDeclarationWithConstraint(type as TypeParameter, context, /*constraintNode*/ undefined));
+            return InferTypeNode.create(typeParameterToDeclarationWithConstraint(type as TypeParameter, context, /*constraintNode*/ undefined));
           }
           if (context.flags & NodeBuilderFlags.GenerateNamesForShadowedTypeParams && type.flags & TypeFlags.TypeParameter && !isTypeSymbolAccessible(type.symbol, context.enclosingDeclaration)) {
             const name = typeParameterToName(type, context);
             context.approximateLength += idText(name).length;
-            return createTypeReferenceNode(createIdentifier(idText(name)), /*typeArguments*/ undefined);
+            return TypeReferenceNode.create(createIdentifier(idText(name)), /*typeArguments*/ undefined);
           }
           // Ignore constraint/default when creating a usage (as opposed to declaration) of a type parameter.
-          return type.symbol ? symbolToTypeNode(type.symbol, context, SymbolFlags.Type) : createTypeReferenceNode(createIdentifier('?'), /*typeArguments*/ undefined);
+          return type.symbol ? symbolToTypeNode(type.symbol, context, SymbolFlags.Type) : TypeReferenceNode.create(createIdentifier('?'), /*typeArguments*/ undefined);
         }
         if (type.flags & (TypeFlags.Union | TypeFlags.Intersection)) {
           const types = type.flags & TypeFlags.Union ? formatUnionTypes((<UnionType>type).types) : (<IntersectionType>type).types;
@@ -4449,7 +4449,7 @@ namespace qnr {
           }
           const typeNodes = mapToTypeNodes(types, context, /*isBareList*/ true);
           if (typeNodes && typeNodes.length > 0) {
-            const unionOrIntersectionTypeNode = createUnionOrIntersectionTypeNode(type.flags & TypeFlags.Union ? SyntaxKind.UnionType : SyntaxKind.IntersectionType, typeNodes);
+            const unionOrIntersectionTypeNode = UnionTypeNode.orIntersectionCreate(type.flags & TypeFlags.Union ? SyntaxKind.UnionType : SyntaxKind.IntersectionType, typeNodes);
             return unionOrIntersectionTypeNode;
           } else {
             if (!context.encounteredError && !(context.flags & NodeBuilderFlags.AllowEmptyUnionOrIntersection)) {
@@ -4467,13 +4467,13 @@ namespace qnr {
           const indexedType = (<IndexType>type).type;
           context.approximateLength += 6;
           const indexTypeNode = typeToTypeNodeHelper(indexedType, context);
-          return createTypeOperatorNode(indexTypeNode);
+          return TypeOperatorNode.create(indexTypeNode);
         }
         if (type.flags & TypeFlags.IndexedAccess) {
           const objectTypeNode = typeToTypeNodeHelper((<IndexedAccessType>type).objectType, context);
           const indexTypeNode = typeToTypeNodeHelper((<IndexedAccessType>type).indexType, context);
           context.approximateLength += 2;
-          return createIndexedAccessTypeNode(objectTypeNode, indexTypeNode);
+          return IndexedAccessTypeNode.create(objectTypeNode, indexTypeNode);
         }
         if (type.flags & TypeFlags.Conditional) {
           const checkTypeNode = typeToTypeNodeHelper((<ConditionalType>type).checkType, context);
@@ -4484,7 +4484,7 @@ namespace qnr {
           const trueTypeNode = typeToTypeNodeHelper(getTrueTypeFromConditionalType(<ConditionalType>type), context);
           const falseTypeNode = typeToTypeNodeHelper(getFalseTypeFromConditionalType(<ConditionalType>type), context);
           context.approximateLength += 15;
-          return createConditionalTypeNode(checkTypeNode, extendsTypeNode, trueTypeNode, falseTypeNode);
+          return ConditionalTypeNode.create(checkTypeNode, extendsTypeNode, trueTypeNode, falseTypeNode);
         }
         if (type.flags & TypeFlags.Substitution) {
           return typeToTypeNodeHelper((<SubstitutionType>type).baseType, context);
@@ -4492,7 +4492,7 @@ namespace qnr {
 
         return fail('Should be unreachable.');
 
-        function createMappedTypeNodeFromType(type: MappedType) {
+        function MappedTypeNode.createFromType(type: MappedType) {
           assert(!!(type.flags & TypeFlags.Object));
           const readonlyToken = type.declaration.readonlyToken ? <ReadonlyToken | PlusToken | MinusToken>createToken(type.declaration.readonlyToken.kind) : undefined;
           const questionToken = type.declaration.questionToken ? <QuestionToken | PlusToken | MinusToken>createToken(type.declaration.questionToken.kind) : undefined;
@@ -4500,13 +4500,13 @@ namespace qnr {
           if (isMappedTypeWithKeyofConstraintDeclaration(type)) {
             // We have a { [P in keyof T]: X }
             // We do this to ensure we retain the toplevel keyof-ness of the type which may be lost due to keyof distribution during `getConstraintTypeFromMappedType`
-            appropriateConstraintTypeNode = createTypeOperatorNode(typeToTypeNodeHelper(getModifiersTypeFromMappedType(type), context));
+            appropriateConstraintTypeNode = TypeOperatorNode.create(typeToTypeNodeHelper(getModifiersTypeFromMappedType(type), context));
           } else {
             appropriateConstraintTypeNode = typeToTypeNodeHelper(getConstraintTypeFromMappedType(type), context);
           }
           const typeParameterNode = typeParameterToDeclarationWithConstraint(getTypeParameterFromMappedType(type), context, appropriateConstraintTypeNode);
           const templateTypeNode = typeToTypeNodeHelper(getTemplateTypeFromMappedType(type), context);
-          const mappedTypeNode = createMappedTypeNode(readonlyToken, typeParameterNode, questionToken, templateTypeNode);
+          const mappedTypeNode = MappedTypeNode.create(readonlyToken, typeParameterNode, questionToken, templateTypeNode);
           context.approximateLength += 10;
           return setEmitFlags(mappedTypeNode, EmitFlags.SingleLine);
         }
@@ -4598,14 +4598,14 @@ namespace qnr {
 
         function createTypeNodeFromObjectType(type: ObjectType): TypeNode {
           if (isGenericMappedType(type)) {
-            return createMappedTypeNodeFromType(type);
+            return MappedTypeNode.createFromType(type);
           }
 
           const resolved = resolveStructuredTypeMembers(type);
           if (!resolved.properties.length && !resolved.stringIndexInfo && !resolved.numberIndexInfo) {
             if (!resolved.callSignatures.length && !resolved.constructSignatures.length) {
               context.approximateLength += 2;
-              return setEmitFlags(createTypeLiteralNode(/*members*/ undefined), EmitFlags.SingleLine);
+              return setEmitFlags(TypeLiteralNode.create(/*members*/ undefined), EmitFlags.SingleLine);
             }
 
             if (resolved.callSignatures.length === 1 && !resolved.constructSignatures.length) {
@@ -4625,7 +4625,7 @@ namespace qnr {
           context.flags |= NodeBuilderFlags.InObjectTypeLiteral;
           const members = createTypeNodesFromResolvedType(resolved);
           context.flags = savedFlags;
-          const typeLiteralNode = createTypeLiteralNode(members);
+          const typeLiteralNode = TypeLiteralNode.create(members);
           context.approximateLength += 2;
           return setEmitFlags(typeLiteralNode, context.flags & NodeBuilderFlags.MultilineObjectLiterals ? 0 : EmitFlags.SingleLine);
         }
@@ -4635,11 +4635,11 @@ namespace qnr {
           if (type.target === globalArrayType || type.target === globalReadonlyArrayType) {
             if (context.flags & NodeBuilderFlags.WriteArrayAsGenericType) {
               const typeArgumentNode = typeToTypeNodeHelper(typeArguments[0], context);
-              return createTypeReferenceNode(type.target === globalArrayType ? 'Array' : 'ReadonlyArray', [typeArgumentNode]);
+              return TypeReferenceNode.create(type.target === globalArrayType ? 'Array' : 'ReadonlyArray', [typeArgumentNode]);
             }
             const elementType = typeToTypeNodeHelper(typeArguments[0], context);
-            const arrayType = createArrayTypeNode(elementType);
-            return type.target === globalArrayType ? arrayType : createTypeOperatorNode(SyntaxKind.ReadonlyKeyword, arrayType);
+            const arrayType = ArrayTypeNode.create(elementType);
+            return type.target === globalArrayType ? arrayType : TypeOperatorNode.create(SyntaxKind.ReadonlyKeyword, arrayType);
           } else if (type.target.objectFlags & ObjectFlags.Tuple) {
             if (typeArguments.length > 0) {
               const arity = getTypeReferenceArity(type);
@@ -4651,25 +4651,26 @@ namespace qnr {
                     const isOptionalOrRest = i >= (<TupleType>type.target).minLength;
                     const isRest = isOptionalOrRest && hasRestElement && i === arity - 1;
                     const isOptional = isOptionalOrRest && !isRest;
-                    tupleConstituentNodes[i] = createNamedTupleMember(
+                    tupleConstituentNodes[i] = NamedTupleMember.create(
                       isRest ? createToken(SyntaxKind.Dot3Token) : undefined,
                       createIdentifier(unescapeLeadingUnderscores(getTupleElementLabel((type.target as TupleType).labeledElementDeclarations![i]))),
                       isOptional ? createToken(SyntaxKind.QuestionToken) : undefined,
-                      isRest ? createArrayTypeNode(tupleConstituentNodes[i]) : tupleConstituentNodes[i]
+                      isRest ? ArrayTypeNode.create(tupleConstituentNodes[i]) : tupleConstituentNodes[i]
                     );
                   }
                 } else {
                   for (let i = (<TupleType>type.target).minLength; i < Math.min(arity, tupleConstituentNodes.length); i++) {
-                    tupleConstituentNodes[i] = hasRestElement && i === arity - 1 ? createRestTypeNode(createArrayTypeNode(tupleConstituentNodes[i])) : createOptionalTypeNode(tupleConstituentNodes[i]);
+                    tupleConstituentNodes[i] =
+                      hasRestElement && i === arity - 1 ? RestTypeNode.create(ArrayTypeNode.create(tupleConstituentNodes[i])) : OptionalTypeNode.create(tupleConstituentNodes[i]);
                   }
                 }
-                const tupleTypeNode = setEmitFlags(createTupleTypeNode(tupleConstituentNodes), EmitFlags.SingleLine);
-                return (<TupleType>type.target).readonly ? createTypeOperatorNode(SyntaxKind.ReadonlyKeyword, tupleTypeNode) : tupleTypeNode;
+                const tupleTypeNode = setEmitFlags(TupleTypeNode.create(tupleConstituentNodes), EmitFlags.SingleLine);
+                return (<TupleType>type.target).readonly ? TypeOperatorNode.create(SyntaxKind.ReadonlyKeyword, tupleTypeNode) : tupleTypeNode;
               }
             }
             if (context.encounteredError || context.flags & NodeBuilderFlags.AllowEmptyTuple) {
-              const tupleTypeNode = setEmitFlags(createTupleTypeNode([]), EmitFlags.SingleLine);
-              return (<TupleType>type.target).readonly ? createTypeOperatorNode(SyntaxKind.ReadonlyKeyword, tupleTypeNode) : tupleTypeNode;
+              const tupleTypeNode = setEmitFlags(TupleTypeNode.create([]), EmitFlags.SingleLine);
+              return (<TupleType>type.target).readonly ? TypeOperatorNode.create(SyntaxKind.ReadonlyKeyword, tupleTypeNode) : tupleTypeNode;
             }
             context.encounteredError = true;
             return undefined!; // TODO: GH#18217
@@ -4719,7 +4720,7 @@ namespace qnr {
         }
 
         function appendReferenceToType(root: TypeReferenceNode | ImportTypeNode, ref: TypeReferenceNode): TypeReferenceNode | ImportTypeNode {
-          if (isImportTypeNode(root)) {
+          if (ImportTypeNode.kind(root)) {
             // first shift type arguments
             const innerParams = root.typeArguments;
             if (root.qualifier) {
@@ -4816,9 +4817,9 @@ namespace qnr {
       function createElidedInformationPlaceholder(context: NodeBuilderContext) {
         context.approximateLength += 3;
         if (!(context.flags & NodeBuilderFlags.NoTruncation)) {
-          return createTypeReferenceNode(createIdentifier('...'), /*typeArguments*/ undefined);
+          return TypeReferenceNode.create(createIdentifier('...'), /*typeArguments*/ undefined);
         }
-        return createKeywordTypeNode(SyntaxKind.AnyKeyword);
+        return KeywordTypeNode.create(SyntaxKind.AnyKeyword);
       }
 
       function addPropertyToElementList(propertySymbol: Symbol, context: NodeBuilderContext, typeElements: TypeElement[]) {
@@ -4861,7 +4862,7 @@ namespace qnr {
           if (propertyIsReverseMapped && !!(savedFlags & NodeBuilderFlags.InReverseMappedType)) {
             propertyTypeNode = createElidedInformationPlaceholder(context);
           } else {
-            propertyTypeNode = propertyType ? serializeTypeForDeclaration(context, propertyType, propertySymbol, saveEnclosingDeclaration) : createKeywordTypeNode(SyntaxKind.AnyKeyword);
+            propertyTypeNode = propertyType ? serializeTypeForDeclaration(context, propertyType, propertySymbol, saveEnclosingDeclaration) : KeywordTypeNode.create(SyntaxKind.AnyKeyword);
           }
           context.flags = savedFlags;
 
@@ -4901,11 +4902,11 @@ namespace qnr {
         if (some(types)) {
           if (checkTruncationLength(context)) {
             if (!isBareList) {
-              return [createTypeReferenceNode('...', /*typeArguments*/ undefined)];
+              return [TypeReferenceNode.create('...', /*typeArguments*/ undefined)];
             } else if (types.length > 2) {
               return [
                 typeToTypeNodeHelper(types[0], context),
-                createTypeReferenceNode(`... ${types.length - 2} more ...`, /*typeArguments*/ undefined),
+                TypeReferenceNode.create(`... ${types.length - 2} more ...`, /*typeArguments*/ undefined),
                 typeToTypeNodeHelper(types[types.length - 1], context),
               ];
             }
@@ -4918,7 +4919,7 @@ namespace qnr {
           for (const type of types) {
             i++;
             if (checkTruncationLength(context) && i + 2 < types.length - 1) {
-              result.push(createTypeReferenceNode(`... ${types.length - i} more ...`, /*typeArguments*/ undefined));
+              result.push(TypeReferenceNode.create(`... ${types.length - i} more ...`, /*typeArguments*/ undefined));
               const typeNode = typeToTypeNodeHelper(types[types.length - 1], context);
               if (typeNode) {
                 result.push(typeNode);
@@ -4965,7 +4966,7 @@ namespace qnr {
 
       function indexInfoToIndexSignatureDeclarationHelper(indexInfo: IndexInfo, kind: IndexKind, context: NodeBuilderContext): IndexSignatureDeclaration {
         const name = getNameFromIndexInfo(indexInfo) || 'x';
-        const indexerTypeNode = createKeywordTypeNode(kind === IndexKind.String ? SyntaxKind.StringKeyword : SyntaxKind.NumberKeyword);
+        const indexerTypeNode = KeywordTypeNode.create(kind === IndexKind.String ? SyntaxKind.StringKeyword : SyntaxKind.NumberKeyword);
 
         const indexingParameter = createParameter(
           /*decorators*/ undefined,
@@ -5017,15 +5018,15 @@ namespace qnr {
           const parameterName =
             typePredicate.kind === TypePredicateKind.Identifier || typePredicate.kind === TypePredicateKind.AssertsIdentifier
               ? setEmitFlags(createIdentifier(typePredicate.parameterName), EmitFlags.NoAsciiEscaping)
-              : createThisTypeNode();
+              : ThisTypeNode.create();
           const typeNode = typePredicate.type && typeToTypeNodeHelper(typePredicate.type, context);
-          returnTypeNode = createTypePredicateNodeWithModifier(assertsModifier, parameterName, typeNode);
+          returnTypeNode = TypePredicateNode.createWithModifier(assertsModifier, parameterName, typeNode);
         } else {
           const returnType = getReturnTypeOfSignature(signature);
           if (returnType && !(suppressAny && isTypeAny(returnType))) {
             returnTypeNode = serializeReturnTypeForSignature(context, returnType, signature, privateSymbolVisitor, bundledImports);
           } else if (!suppressAny) {
-            returnTypeNode = createKeywordTypeNode(SyntaxKind.AnyKeyword);
+            returnTypeNode = KeywordTypeNode.create(SyntaxKind.AnyKeyword);
           }
         }
         context.approximateLength += 3; // Usually a signature contributes a few more characters than this, but 3 is the minimum
@@ -5239,7 +5240,7 @@ namespace qnr {
        * Given A[B][C][D], finds A[B]
        */
       function getTopmostIndexedAccessType(top: IndexedAccessTypeNode): IndexedAccessTypeNode {
-        if (isIndexedAccessTypeNode(top.objectType)) {
+        if (IndexedAccessTypeNode.kind(top.objectType)) {
           return getTopmostIndexedAccessType(top.objectType);
         }
         return top;
@@ -5320,7 +5321,7 @@ namespace qnr {
               context.tracker.reportLikelyUnsafeImportRequiredError(specifier);
             }
           }
-          const lit = createLiteralTypeNode(createLiteral(specifier));
+          const lit = LiteralTypeNode.create(createLiteral(specifier));
           if (context.tracker.trackExternalModuleSymbolOfImportTypeNode) context.tracker.trackExternalModuleSymbolOfImportTypeNode(chain[0]);
           context.approximateLength += specifier.length + 10; // specifier + import("")
           if (!nonRootParts || isEntityName(nonRootParts)) {
@@ -5328,25 +5329,25 @@ namespace qnr {
               const lastId = isIdentifier(nonRootParts) ? nonRootParts : nonRootParts.right;
               lastId.typeArguments = undefined;
             }
-            return createImportTypeNode(lit, nonRootParts as EntityName, typeParameterNodes as readonly TypeNode[], isTypeOf);
+            return ImportTypeNode.create(lit, nonRootParts as EntityName, typeParameterNodes as readonly TypeNode[], isTypeOf);
           } else {
             const splitNode = getTopmostIndexedAccessType(nonRootParts);
             const qualifier = (splitNode.objectType as TypeReferenceNode).typeName;
-            return createIndexedAccessTypeNode(createImportTypeNode(lit, qualifier, typeParameterNodes as readonly TypeNode[], isTypeOf), splitNode.indexType);
+            return IndexedAccessTypeNode.create(ImportTypeNode.create(lit, qualifier, typeParameterNodes as readonly TypeNode[], isTypeOf), splitNode.indexType);
           }
         }
 
         const entityName = createAccessFromSymbolChain(chain, chain.length - 1, 0);
-        if (isIndexedAccessTypeNode(entityName)) {
+        if (IndexedAccessTypeNode.kind(entityName)) {
           return entityName; // Indexed accesses can never be `typeof`
         }
         if (isTypeOf) {
-          return createTypeQueryNode(entityName);
+          return TypeQueryNode.create(entityName);
         } else {
           const lastId = isIdentifier(entityName) ? entityName : entityName.right;
           const lastTypeArgs = lastId.typeArguments;
           lastId.typeArguments = undefined;
-          return createTypeReferenceNode(entityName, lastTypeArgs as NodeArray<TypeNode>);
+          return TypeReferenceNode.create(entityName, lastTypeArgs as NodeArray<TypeNode>);
         }
 
         function createAccessFromSymbolChain(chain: Symbol[], index: number, stopper: number): EntityName | IndexedAccessTypeNode {
@@ -5385,10 +5386,10 @@ namespace qnr {
           ) {
             // Should use an indexed access
             const LHS = createAccessFromSymbolChain(chain, index - 1, stopper);
-            if (isIndexedAccessTypeNode(LHS)) {
-              return createIndexedAccessTypeNode(LHS, createLiteralTypeNode(createLiteral(symbolName)));
+            if (IndexedAccessTypeNode.kind(LHS)) {
+              return IndexedAccessTypeNode.create(LHS, LiteralTypeNode.create(createLiteral(symbolName)));
             } else {
-              return createIndexedAccessTypeNode(createTypeReferenceNode(LHS, typeParameterNodes as readonly TypeNode[]), createLiteralTypeNode(createLiteral(symbolName)));
+              return IndexedAccessTypeNode.create(TypeReferenceNode.create(LHS, typeParameterNodes as readonly TypeNode[]), LiteralTypeNode.create(createLiteral(symbolName)));
             }
           }
 
@@ -5599,7 +5600,9 @@ namespace qnr {
 
       function existingTypeNodeIsNotReferenceOrIsReferenceWithCompatibleTypeArgumentCount(existing: TypeNode, type: Type) {
         return (
-          !(getObjectFlags(type) & ObjectFlags.Reference) || !isTypeReferenceNode(existing) || length(existing.typeArguments) >= getMinTypeArgumentCount((type as TypeReference).target.typeParameters)
+          !(getObjectFlags(type) & ObjectFlags.Reference) ||
+          !TypeReferenceNode.kind(existing) ||
+          length(existing.typeArguments) >= getMinTypeArgumentCount((type as TypeReference).target.typeParameters)
         );
       }
 
@@ -5670,25 +5673,25 @@ namespace qnr {
         function visitExistingNodeTreeSymbols<T extends Node>(node: T): Node {
           // We don't _actually_ support jsdoc namepath types, emit `any` instead
           if (isJSDocAllType(node) || node.kind === SyntaxKind.JSDocNamepathType) {
-            return createKeywordTypeNode(SyntaxKind.AnyKeyword);
+            return KeywordTypeNode.create(SyntaxKind.AnyKeyword);
           }
           if (isJSDocUnknownType(node)) {
-            return createKeywordTypeNode(SyntaxKind.UnknownKeyword);
+            return KeywordTypeNode.create(SyntaxKind.UnknownKeyword);
           }
           if (isJSDocNullableType(node)) {
-            return createUnionTypeNode([visitNode(node.type, visitExistingNodeTreeSymbols), createKeywordTypeNode(SyntaxKind.NullKeyword)]);
+            return UnionTypeNode.create([visitNode(node.type, visitExistingNodeTreeSymbols), KeywordTypeNode.create(SyntaxKind.NullKeyword)]);
           }
           if (isJSDocOptionalType(node)) {
-            return createUnionTypeNode([visitNode(node.type, visitExistingNodeTreeSymbols), createKeywordTypeNode(SyntaxKind.UndefinedKeyword)]);
+            return UnionTypeNode.create([visitNode(node.type, visitExistingNodeTreeSymbols), KeywordTypeNode.create(SyntaxKind.UndefinedKeyword)]);
           }
           if (isJSDocNonNullableType(node)) {
             return visitNode(node.type, visitExistingNodeTreeSymbols);
           }
           if (isJSDocVariadicType(node)) {
-            return createArrayTypeNode(visitNode((node as JSDocVariadicType).type, visitExistingNodeTreeSymbols));
+            return ArrayTypeNode.create(visitNode((node as JSDocVariadicType).type, visitExistingNodeTreeSymbols));
           }
           if (isJSDocTypeLiteral(node)) {
-            return createTypeLiteralNode(
+            return TypeLiteralNode.create(
               map(node.jsDocPropertyTags, (t) => {
                 const name = isIdentifier(t.name) ? t.name : t.name.right;
                 const typeViaParent = getTypeOfPropertyOfType(getTypeFromTypeNode(node), name.escapedText);
@@ -5698,17 +5701,17 @@ namespace qnr {
                   /*modifiers*/ undefined,
                   name,
                   t.typeExpression && isJSDocOptionalType(t.typeExpression.type) ? createToken(SyntaxKind.QuestionToken) : undefined,
-                  overrideTypeNode || (t.typeExpression && visitNode(t.typeExpression.type, visitExistingNodeTreeSymbols)) || createKeywordTypeNode(SyntaxKind.AnyKeyword),
+                  overrideTypeNode || (t.typeExpression && visitNode(t.typeExpression.type, visitExistingNodeTreeSymbols)) || KeywordTypeNode.create(SyntaxKind.AnyKeyword),
                   /*initializer*/ undefined
                 );
               })
             );
           }
-          if (isTypeReferenceNode(node) && isIdentifier(node.typeName) && node.typeName.escapedText === '') {
-            return setOriginalNode(createKeywordTypeNode(SyntaxKind.AnyKeyword), node);
+          if (TypeReferenceNode.kind(node) && isIdentifier(node.typeName) && node.typeName.escapedText === '') {
+            return setOriginalNode(KeywordTypeNode.create(SyntaxKind.AnyKeyword), node);
           }
-          if ((isExpressionWithTypeArguments(node) || isTypeReferenceNode(node)) && isJSDocIndexSignature(node)) {
-            return createTypeLiteralNode([
+          if ((isExpressionWithTypeArguments(node) || TypeReferenceNode.kind(node)) && isJSDocIndexSignature(node)) {
+            return TypeLiteralNode.create([
               IndexSignatureDeclaration.create(
                 /*decorators*/ undefined,
                 /*modifiers*/ undefined,
@@ -5747,7 +5750,7 @@ namespace qnr {
                 visitNode(newTypeNode || node.type, visitExistingNodeTreeSymbols)
               );
             } else {
-              return createFunctionTypeNode(
+              return FunctionTypeNode.create(
                 visitNodes(node.typeParameters, visitExistingNodeTreeSymbols),
                 map(node.parameters, (p, i) =>
                   createParameter(
@@ -5765,16 +5768,16 @@ namespace qnr {
             }
           }
           if (
-            isTypeReferenceNode(node) &&
+            TypeReferenceNode.kind(node) &&
             isInJSDoc(node) &&
             (getIntendedTypeFromJSDocTypeReference(node) || unknownSymbol === resolveTypeReferenceName(getTypeReferenceName(node), SymbolFlags.Type, /*ignoreErrors*/ true))
           ) {
             return setOriginalNode(typeToTypeNodeHelper(getTypeFromTypeNode(node), context), node);
           }
           if (isLiteralImportTypeNode(node)) {
-            return updateImportTypeNode(
+            return ImportTypeNode.update(
               node,
-              updateLiteralTypeNode(node.argument, rewriteModuleSpecifier(node, node.argument.literal)),
+              LiteralTypeNode.update(node.argument, rewriteModuleSpecifier(node, node.argument.literal)),
               node.qualifier,
               visitNodes(node.typeArguments, visitExistingNodeTreeSymbols, isTypeNode),
               node.isTypeOf
@@ -5808,7 +5811,7 @@ namespace qnr {
             }
           }
 
-          if (file && isTupleTypeNode(node) && lineAndCharOf(file, node.pos).line === lineAndCharOf(file, node.end).line) {
+          if (file && TupleTypeNode.kind(node) && lineAndCharOf(file, node.pos).line === lineAndCharOf(file, node.end).line) {
             setEmitFlags(node, EmitFlags.SingleLine);
           }
 
@@ -7141,9 +7144,9 @@ namespace qnr {
       return writer ? typePredicateToStringWorker(writer).getText() : usingSingleLineStringWriter(typePredicateToStringWorker);
 
       function typePredicateToStringWorker(writer: EmitTextWriter) {
-        const predicate = createTypePredicateNodeWithModifier(
+        const predicate = TypePredicateNode.createWithModifier(
           typePredicate.kind === TypePredicateKind.AssertsThis || typePredicate.kind === TypePredicateKind.AssertsIdentifier ? createToken(SyntaxKind.AssertsKeyword) : undefined,
-          typePredicate.kind === TypePredicateKind.Identifier || typePredicate.kind === TypePredicateKind.AssertsIdentifier ? createIdentifier(typePredicate.parameterName) : createThisTypeNode(),
+          typePredicate.kind === TypePredicateKind.Identifier || typePredicate.kind === TypePredicateKind.AssertsIdentifier ? createIdentifier(typePredicate.parameterName) : ThisTypeNode.create(),
           typePredicate.type &&
             nodeBuilder.typeToTypeNode(typePredicate.type, enclosingDeclaration, toNodeBuilderFlags(flags) | NodeBuilderFlags.IgnoreErrors | NodeBuilderFlags.WriteTypeParametersInQualifiedName)! // TODO: GH#18217
         );
@@ -7838,7 +7841,7 @@ namespace qnr {
         }
         if (isInJSFile(declaration)) {
           const typeTag = getJSDocType(func);
-          if (typeTag && isFunctionTypeNode(typeTag)) {
+          if (typeTag && FunctionTypeNode.kind(typeTag)) {
             return getTypeAtPosition(getSignatureFromDeclaration(typeTag), func.parameters.indexOf(declaration));
           }
         }
@@ -11460,7 +11463,7 @@ namespace qnr {
               jsdocPredicate = getTypePredicateOfSignature(jsdocSignature);
             }
           }
-          signature.resolvedTypePredicate = type && isTypePredicateNode(type) ? createTypePredicateFromTypePredicateNode(type, signature) : jsdocPredicate || noTypePredicate;
+          signature.resolvedTypePredicate = type && TypePredicateNode.kind(type) ? createTypePredicateFromTypePredicateNode(type, signature) : jsdocPredicate || noTypePredicate;
         }
         assert(!!signature.resolvedTypePredicate);
       }
@@ -12479,7 +12482,7 @@ namespace qnr {
     }
 
     function isReadonlyTypeOperator(node: Node) {
-      return isTypeOperatorNode(node) && node.operator === SyntaxKind.ReadonlyKeyword;
+      return TypeOperatorNode.kind(node) && node.operator === SyntaxKind.ReadonlyKeyword;
     }
 
     // We represent tuple types as type references to synthesized generic interface types created by
@@ -13889,7 +13892,7 @@ namespace qnr {
 
     function getAliasSymbolForTypeNode(node: Node) {
       let host = node.parent;
-      while (isParenthesizedTypeNode(host) || (isTypeOperatorNode(host) && host.operator === SyntaxKind.ReadonlyKeyword)) {
+      while (ParenthesizedTypeNode.kind(host) || (TypeOperatorNode.kind(host) && host.operator === SyntaxKind.ReadonlyKeyword)) {
         host = host.parent;
       }
       return isTypeAlias(host) ? getSymbolOfNode(host) : undefined;
@@ -18855,7 +18858,7 @@ namespace qnr {
           const param = declaration as ParameterDeclaration;
           if (
             isIdentifier(param.name) &&
-            (CallSignatureDeclaration.kind(param.parent) || MethodSignature.kind(param.parent) || isFunctionTypeNode(param.parent)) &&
+            (CallSignatureDeclaration.kind(param.parent) || MethodSignature.kind(param.parent) || FunctionTypeNode.kind(param.parent)) &&
             param.parent.parameters.indexOf(param) > -1 &&
             (resolveName(param, param.name.escapedText, SymbolFlags.Type, undefined, param.name.escapedText, /*isUse*/ true) ||
               (param.name.originalKeywordKind && isTypeNodeKind(param.name.originalKeywordKind)))
@@ -26999,10 +27002,10 @@ namespace qnr {
       // file would probably be preferable.
       const typeSymbol = exports && getSymbol(exports, JsxNames.Element, SymbolFlags.Type);
       const returnNode = typeSymbol && nodeBuilder.symbolToEntityName(typeSymbol, SymbolFlags.Type, node);
-      const declaration = createFunctionTypeNode(
+      const declaration = FunctionTypeNode.create(
         /*typeParameters*/ undefined,
         [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotdotdot*/ undefined, 'props', /*questionMark*/ undefined, nodeBuilder.typeToTypeNode(result, node))],
-        returnNode ? createTypeReferenceNode(returnNode, /*typeArguments*/ undefined) : createKeywordTypeNode(SyntaxKind.AnyKeyword)
+        returnNode ? TypeReferenceNode.create(returnNode, /*typeArguments*/ undefined) : KeywordTypeNode.create(SyntaxKind.AnyKeyword)
       );
       const parameterSymbol = createSymbol(SymbolFlags.FunctionScopedVariable, 'props' as __String);
       parameterSymbol.type = result;
@@ -35810,7 +35813,7 @@ namespace qnr {
             ((node.parent.kind === SyntaxKind.ImportDeclaration || node.parent.kind === SyntaxKind.ExportDeclaration) && (<ImportDeclaration>node.parent).moduleSpecifier === node) ||
             (isInJSFile(node) && isRequireCall(node.parent, /*checkArgumentIsStringLiteralLike*/ false)) ||
             isImportCall(node.parent) ||
-            (isLiteralTypeNode(node.parent) && isLiteralImportTypeNode(node.parent.parent) && node.parent.parent.argument === node.parent)
+            (LiteralTypeNode.kind(node.parent) && isLiteralImportTypeNode(node.parent.parent) && node.parent.parent.argument === node.parent)
           ) {
             return resolveExternalModuleName(node, <LiteralExpression>node, ignoreErrors);
           }
@@ -35825,7 +35828,7 @@ namespace qnr {
             ? parent.argumentExpression === node
               ? getTypeOfExpression(parent.expression)
               : undefined
-            : isLiteralTypeNode(parent) && isIndexedAccessTypeNode(grandParent)
+            : LiteralTypeNode.kind(parent) && IndexedAccessTypeNode.kind(grandParent)
             ? getTypeFromTypeNode(grandParent.objectType)
             : undefined;
           return objectType && getPropertyOfType(objectType, escapeLeadingUnderscores((node as StringLiteral | NumericLiteral).text));
@@ -38352,7 +38355,7 @@ namespace qnr {
     }
 
     function checkGrammarBigIntLiteral(node: BigIntLiteral): boolean {
-      const literalType = isLiteralTypeNode(node.parent) || (isPrefixUnaryExpression(node.parent) && isLiteralTypeNode(node.parent.parent));
+      const literalType = LiteralTypeNode.kind(node.parent) || (isPrefixUnaryExpression(node.parent) && LiteralTypeNode.kind(node.parent.parent));
       return false;
     }
 

@@ -867,7 +867,7 @@ namespace qnr {
   }
 
   export function isLiteralImportTypeNode(n: Node): n is LiteralImportTypeNode {
-    return isImportTypeNode(n) && isLiteralTypeNode(n.argument) && StringLiteral.kind(n.argument.literal);
+    return ImportTypeNode.kind(n) && LiteralTypeNode.kind(n.argument) && StringLiteral.kind(n.argument.literal);
   }
 
   export function isPrologueDirective(node: Node): node is PrologueDirective {
@@ -1592,7 +1592,7 @@ namespace qnr {
 
   export function isJSDocIndexSignature(node: TypeReferenceNode | ExpressionWithTypeArguments) {
     return (
-      isTypeReferenceNode(node) &&
+      TypeReferenceNode.kind(node) &&
       isIdentifier(node.typeName) &&
       node.typeName.escapedText === 'Object' &&
       node.typeArguments &&
@@ -2005,7 +2005,7 @@ namespace qnr {
         return isImportCall(node.parent) || isRequireCall(node.parent, /*checkArg*/ false) ? (node.parent as RequireOrImportCall) : undefined;
       case SyntaxKind.LiteralType:
         assert(StringLiteral.kind(node));
-        return tryCast(node.parent.parent, isImportTypeNode) as ValidImportTypeNode | undefined;
+        return tryCast(node.parent.parent, ImportTypeNode.kind) as ValidImportTypeNode | undefined;
       default:
         return;
     }
@@ -4662,7 +4662,7 @@ namespace qnr {
   }
 
   export function isObjectTypeDeclaration(node: Node): node is ObjectTypeDeclaration {
-    return isClassLike(node) || isInterfaceDeclaration(node) || isTypeLiteralNode(node);
+    return isClassLike(node) || isInterfaceDeclaration(node) || TypeLiteralNode.kind(node);
   }
 
   export function isTypeNodeKind(kind: SyntaxKind) {
@@ -5942,7 +5942,7 @@ namespace qnr {
   }
 
   export function isIdentifierTypeReference(node: Node): node is TypeReferenceNode & { typeName: Identifier } {
-    return isTypeReferenceNode(node) && isIdentifier(node.typeName);
+    return TypeReferenceNode.kind(node) && isIdentifier(node.typeName);
   }
 
   export function arrayIsHomogeneous<T>(array: readonly T[], comparer: EqualityComparer<T> = equateValues) {
