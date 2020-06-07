@@ -91,9 +91,7 @@ namespace qnr {
 
     if (!matchResult) {
       if (errors) {
-        errors.push(
-          createCompilerDiagnostic(Diagnostics.Locale_must_be_of_the_form_language_or_language_territory_For_example_0_or_1, 'en', 'ja-jp')
-        );
+        errors.push(createCompilerDiagnostic(Diagnostics.Locale_must_be_of_the_form_language_or_language_territory_For_example_0_or_1, 'en', 'ja-jp'));
       }
       return;
     }
@@ -162,9 +160,7 @@ namespace qnr {
   }
 
   export function escapeLeadingUnderscores(identifier: string): __String {
-    return (identifier.length >= 2 && identifier.charCodeAt(0) === Codes._ && identifier.charCodeAt(1) === Codes._
-      ? '_' + identifier
-      : identifier) as __String;
+    return (identifier.length >= 2 && identifier.charCodeAt(0) === Codes._ && identifier.charCodeAt(1) === Codes._ ? '_' + identifier : identifier) as __String;
   }
 
   export function unescapeLeadingUnderscores(identifier: __String): string {
@@ -282,10 +278,7 @@ namespace qnr {
 
   export function getNameOfDeclaration(declaration: Declaration | Expression): DeclarationName | undefined {
     if (declaration === undefined) return;
-    return (
-      getNonAssignedNameOfDeclaration(declaration) ||
-      (isFunctionExpression(declaration) || isClassExpression(declaration) ? getAssignedName(declaration) : undefined)
-    );
+    return getNonAssignedNameOfDeclaration(declaration) || (isFunctionExpression(declaration) || isClassExpression(declaration) ? getAssignedName(declaration) : undefined);
   }
 
   function getAssignedName(n: Node): DeclarationName | undefined {
@@ -309,9 +302,7 @@ namespace qnr {
     if (param.name) {
       if (isIdentifier(param.name)) {
         const name = param.name.escapedText;
-        return getJSDocTagsWorker(param.parent, noCache).filter(
-          (tag): tag is JSDocParameterTag => isJSDocParameterTag(tag) && isIdentifier(tag.name) && tag.name.escapedText === name
-        );
+        return getJSDocTagsWorker(param.parent, noCache).filter((tag): tag is JSDocParameterTag => isJSDocParameterTag(tag) && isIdentifier(tag.name) && tag.name.escapedText === name);
       } else {
         const i = param.parent.parameters.indexOf(param);
         assert(i > -1, "Parameters should always be in their parents' parameter list");
@@ -332,9 +323,7 @@ namespace qnr {
 
   function getJSDocTypeParameterTagsWorker(param: TypeParameterDeclaration, noCache?: boolean): readonly JSDocTemplateTag[] {
     const name = param.name.escapedText;
-    return getJSDocTagsWorker(param.parent, noCache).filter(
-      (tag): tag is JSDocTemplateTag => isJSDocTemplateTag(tag) && tag.typeParameters.some((tp) => tp.name.escapedText === name)
-    );
+    return getJSDocTagsWorker(param.parent, noCache).filter((tag): tag is JSDocTemplateTag => isJSDocTemplateTag(tag) && tag.typeParameters.some((tp) => tp.name.escapedText === name));
   }
 
   export function getJSDocTypeParameterTags(param: TypeParameterDeclaration): readonly JSDocTemplateTag[] {
@@ -428,7 +417,7 @@ namespace qnr {
     if (typeTag && typeTag.typeExpression) {
       const type = typeTag.typeExpression.type;
       if (isTypeLiteralNode(type)) {
-        const sig = find(type.members, isCallSignatureDeclaration);
+        const sig = find(type.members, CallSignatureDeclaration.kind);
         return sig && sig.type;
       }
       if (isFunctionTypeNode(type) || isJSDocFunctionType(type)) return type.type;
@@ -509,50 +498,6 @@ namespace qnr {
 
   export function isDecorator(n: Node): n is Decorator {
     return n.kind === SyntaxKind.Decorator;
-  }
-
-  export function isPropertySignature(n: Node): n is PropertySignature {
-    return n.kind === SyntaxKind.PropertySignature;
-  }
-
-  export function isPropertyDeclaration(n: Node): n is PropertyDeclaration {
-    return n.kind === SyntaxKind.PropertyDeclaration;
-  }
-
-  export function isMethodSignature(n: Node): n is MethodSignature {
-    return n.kind === SyntaxKind.MethodSignature;
-  }
-
-  export function isMethodDeclaration(n: Node): n is MethodDeclaration {
-    return n.kind === SyntaxKind.MethodDeclaration;
-  }
-
-  export function isConstructorDeclaration(n: Node): n is ConstructorDeclaration {
-    return n.kind === SyntaxKind.Constructor;
-  }
-
-  export function isGetAccessorDeclaration(n: Node): n is GetAccessorDeclaration {
-    return n.kind === SyntaxKind.GetAccessor;
-  }
-
-  export function isSetAccessorDeclaration(n: Node): n is SetAccessorDeclaration {
-    return n.kind === SyntaxKind.SetAccessor;
-  }
-
-  export function isCallSignatureDeclaration(n: Node): n is CallSignatureDeclaration {
-    return n.kind === SyntaxKind.CallSignature;
-  }
-
-  export function isConstructSignatureDeclaration(n: Node): n is ConstructSignatureDeclaration {
-    return n.kind === SyntaxKind.ConstructSignature;
-  }
-
-  export function isIndexSignatureDeclaration(n: Node): n is IndexSignatureDeclaration {
-    return n.kind === SyntaxKind.IndexSignature;
-  }
-
-  export function isGetOrSetAccessorDeclaration(n: Node): n is AccessorDeclaration {
-    return n.kind === SyntaxKind.SetAccessor || n.kind === SyntaxKind.GetAccessor;
   }
 
   export function isTypePredicateNode(n: Node): n is TypePredicateNode {
@@ -679,10 +624,7 @@ namespace qnr {
     const k = n.kind;
     return (
       !!(n.flags & NodeFlags.OptionalChain) &&
-      (k === SyntaxKind.PropertyAccessExpression ||
-        k === SyntaxKind.ElementAccessExpression ||
-        k === SyntaxKind.CallExpression ||
-        k === SyntaxKind.NonNullExpression)
+      (k === SyntaxKind.PropertyAccessExpression || k === SyntaxKind.ElementAccessExpression || k === SyntaxKind.CallExpression || k === SyntaxKind.NonNullExpression)
     );
   }
 
@@ -1341,13 +1283,7 @@ namespace qnr {
 
   export function isPropertyName(n: Node): n is PropertyName {
     const k = n.kind;
-    return (
-      k === SyntaxKind.Identifier ||
-      k === SyntaxKind.PrivateIdentifier ||
-      k === SyntaxKind.StringLiteral ||
-      k === SyntaxKind.NumericLiteral ||
-      k === SyntaxKind.ComputedPropertyName
-    );
+    return k === SyntaxKind.Identifier || k === SyntaxKind.PrivateIdentifier || k === SyntaxKind.StringLiteral || k === SyntaxKind.NumericLiteral || k === SyntaxKind.ComputedPropertyName;
   }
 
   export function isBindingName(n: Node): n is BindingName {
@@ -1432,13 +1368,7 @@ namespace qnr {
 
   export function isTypeElement(n: Node): n is TypeElement {
     const k = n.kind;
-    return (
-      k === SyntaxKind.ConstructSignature ||
-      k === SyntaxKind.CallSignature ||
-      k === SyntaxKind.PropertySignature ||
-      k === SyntaxKind.MethodSignature ||
-      k === SyntaxKind.IndexSignature
-    );
+    return k === SyntaxKind.ConstructSignature || k === SyntaxKind.CallSignature || k === SyntaxKind.PropertySignature || k === SyntaxKind.MethodSignature || k === SyntaxKind.IndexSignature;
   }
 
   export function isClassOrTypeElement(n: Node): n is ClassElement | TypeElement {
@@ -1861,13 +1791,7 @@ namespace qnr {
 
   export function isJsxChild(n: Node): n is JsxChild {
     const k = n.kind;
-    return (
-      k === SyntaxKind.JsxElement ||
-      k === SyntaxKind.JsxExpression ||
-      k === SyntaxKind.JsxSelfClosingElement ||
-      k === SyntaxKind.JsxText ||
-      k === SyntaxKind.JsxFragment
-    );
+    return k === SyntaxKind.JsxElement || k === SyntaxKind.JsxExpression || k === SyntaxKind.JsxSelfClosingElement || k === SyntaxKind.JsxText || k === SyntaxKind.JsxFragment;
   }
 
   export function isJsxAttributeLike(n: Node): n is JsxAttributeLike {
@@ -1890,9 +1814,7 @@ namespace qnr {
   }
 
   export function isJSDocCommentContainingNode(n: Node) {
-    return (
-      n.kind === SyntaxKind.JSDocComment || n.kind === SyntaxKind.JSDocNamepathType || isJSDocTag(n) || isJSDocTypeLiteral(n) || isJSDocSignature(n)
-    );
+    return n.kind === SyntaxKind.JSDocComment || n.kind === SyntaxKind.JSDocNamepathType || isJSDocTag(n) || isJSDocTypeLiteral(n) || isJSDocSignature(n);
   }
 
   export function isJSDocTag(n: Node): n is JSDocTag {

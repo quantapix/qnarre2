@@ -32,13 +32,13 @@ namespace qnr {
     return (
       isVariableDeclaration(node) ||
       isPropertyDeclaration(node) ||
-      isPropertySignature(node) ||
+      PropertySignature.kind(node) ||
       isBindingElement(node) ||
       isSetAccessor(node) ||
       isGetAccessor(node) ||
-      isConstructSignatureDeclaration(node) ||
-      isCallSignatureDeclaration(node) ||
-      isMethodDeclaration(node) ||
+      ConstructSignatureDeclaration.kind(node) ||
+      CallSignatureDeclaration.kind(node) ||
+      MethodDeclaration.kind(node) ||
       isMethodSignature(node) ||
       isFunctionDeclaration(node) ||
       isParameter(node) ||
@@ -46,8 +46,8 @@ namespace qnr {
       isExpressionWithTypeArguments(node) ||
       isImportEqualsDeclaration(node) ||
       isTypeAliasDeclaration(node) ||
-      isConstructorDeclaration(node) ||
-      isIndexSignatureDeclaration(node) ||
+      ConstructorDeclaration.kind(node) ||
+      IndexSignatureDeclaration.kind(node) ||
       isPropertyAccessExpression(node)
     );
   }
@@ -55,7 +55,7 @@ namespace qnr {
   export function createGetSymbolAccessibilityDiagnosticForNodeName(node: DeclarationDiagnosticProducing) {
     if (isSetAccessor(node) || isGetAccessor(node)) {
       return getAccessorNameVisibilityError;
-    } else if (isMethodSignature(node) || isMethodDeclaration(node)) {
+    } else if (isMethodSignature(node) || MethodDeclaration.kind(node)) {
       return getMethodNameVisibilityError;
     } else {
       return createGetSymbolAccessibilityDiagnosticForNode(node);
@@ -126,24 +126,17 @@ namespace qnr {
   export function createGetSymbolAccessibilityDiagnosticForNode(
     node: DeclarationDiagnosticProducing
   ): (symbolAccessibilityResult: SymbolAccessibilityResult) => SymbolAccessibilityDiagnostic | undefined {
-    if (
-      isVariableDeclaration(node) ||
-      isPropertyDeclaration(node) ||
-      isPropertySignature(node) ||
-      isPropertyAccessExpression(node) ||
-      isBindingElement(node) ||
-      isConstructorDeclaration(node)
-    ) {
+    if (isVariableDeclaration(node) || isPropertyDeclaration(node) || PropertySignature.kind(node) || isPropertyAccessExpression(node) || isBindingElement(node) || ConstructorDeclaration.kind(node)) {
       return getVariableDeclarationTypeVisibilityError;
     } else if (isSetAccessor(node) || isGetAccessor(node)) {
       return getAccessorDeclarationTypeVisibilityError;
     } else if (
-      isConstructSignatureDeclaration(node) ||
-      isCallSignatureDeclaration(node) ||
-      isMethodDeclaration(node) ||
+      ConstructSignatureDeclaration.kind(node) ||
+      CallSignatureDeclaration.kind(node) ||
+      MethodDeclaration.kind(node) ||
       isMethodSignature(node) ||
       isFunctionDeclaration(node) ||
-      isIndexSignatureDeclaration(node)
+      IndexSignatureDeclaration.kind(node)
     ) {
       return getReturnTypeVisibilityError;
     } else if (isParameter(node)) {
@@ -160,10 +153,7 @@ namespace qnr {
     } else if (isTypeAliasDeclaration(node)) {
       return getTypeAliasDeclarationVisibilityError;
     } else {
-      return Debug.assertNever(
-        node,
-        `Attempted to set a declaration diagnostic context for unhandled node kind: ${(ts as any).SyntaxKind[(node as any).kind]}`
-      );
+      return Debug.assertNever(node, `Attempted to set a declaration diagnostic context for unhandled node kind: ${(ts as any).SyntaxKind[(node as any).kind]}`);
     }
 
     function getVariableDeclarationTypeVisibilityDiagnosticMessage(symbolAccessibilityResult: SymbolAccessibilityResult) {
@@ -204,9 +194,7 @@ namespace qnr {
       }
     }
 
-    function getVariableDeclarationTypeVisibilityError(
-      symbolAccessibilityResult: SymbolAccessibilityResult
-    ): SymbolAccessibilityDiagnostic | undefined {
+    function getVariableDeclarationTypeVisibilityError(symbolAccessibilityResult: SymbolAccessibilityResult): SymbolAccessibilityDiagnostic | undefined {
       const diagnosticMessage = getVariableDeclarationTypeVisibilityDiagnosticMessage(symbolAccessibilityResult);
       return diagnosticMessage !== undefined
         ? {
@@ -317,9 +305,7 @@ namespace qnr {
       };
     }
 
-    function getParameterDeclarationTypeVisibilityError(
-      symbolAccessibilityResult: SymbolAccessibilityResult
-    ): SymbolAccessibilityDiagnostic | undefined {
+    function getParameterDeclarationTypeVisibilityError(symbolAccessibilityResult: SymbolAccessibilityResult): SymbolAccessibilityDiagnostic | undefined {
       const diagnosticMessage: DiagnosticMessage = getParameterDeclarationTypeVisibilityDiagnosticMessage(symbolAccessibilityResult);
       return diagnosticMessage !== undefined
         ? {

@@ -168,63 +168,23 @@ namespace qnr {
         case SyntaxKind.ForOfStatement:
           return visitForOfStatement(node as ForOfStatement, /*outermostLabeledStatement*/ undefined);
         case SyntaxKind.ForStatement:
-          return doWithHierarchyFacts(
-            visitForStatement,
-            node as ForStatement,
-            HierarchyFacts.IterationStatementExcludes,
-            HierarchyFacts.IterationStatementIncludes
-          );
+          return doWithHierarchyFacts(visitForStatement, node as ForStatement, HierarchyFacts.IterationStatementExcludes, HierarchyFacts.IterationStatementIncludes);
         case SyntaxKind.VoidExpression:
           return visitVoidExpression(node as VoidExpression);
         case SyntaxKind.Constructor:
-          return doWithHierarchyFacts(
-            visitConstructorDeclaration,
-            node as ConstructorDeclaration,
-            HierarchyFacts.ClassOrFunctionExcludes,
-            HierarchyFacts.ClassOrFunctionIncludes
-          );
+          return doWithHierarchyFacts(visitConstructorDeclaration, node as ConstructorDeclaration, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
         case SyntaxKind.MethodDeclaration:
-          return doWithHierarchyFacts(
-            visitMethodDeclaration,
-            node as MethodDeclaration,
-            HierarchyFacts.ClassOrFunctionExcludes,
-            HierarchyFacts.ClassOrFunctionIncludes
-          );
+          return doWithHierarchyFacts(visitMethodDeclaration, node as MethodDeclaration, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
         case SyntaxKind.GetAccessor:
-          return doWithHierarchyFacts(
-            visitGetAccessorDeclaration,
-            node as GetAccessorDeclaration,
-            HierarchyFacts.ClassOrFunctionExcludes,
-            HierarchyFacts.ClassOrFunctionIncludes
-          );
+          return doWithHierarchyFacts(visitGetAccessorDeclaration, node as GetAccessorDeclaration, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
         case SyntaxKind.SetAccessor:
-          return doWithHierarchyFacts(
-            visitSetAccessorDeclaration,
-            node as SetAccessorDeclaration,
-            HierarchyFacts.ClassOrFunctionExcludes,
-            HierarchyFacts.ClassOrFunctionIncludes
-          );
+          return doWithHierarchyFacts(visitSetAccessorDeclaration, node as SetAccessorDeclaration, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
         case SyntaxKind.FunctionDeclaration:
-          return doWithHierarchyFacts(
-            visitFunctionDeclaration,
-            node as FunctionDeclaration,
-            HierarchyFacts.ClassOrFunctionExcludes,
-            HierarchyFacts.ClassOrFunctionIncludes
-          );
+          return doWithHierarchyFacts(visitFunctionDeclaration, node as FunctionDeclaration, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
         case SyntaxKind.FunctionExpression:
-          return doWithHierarchyFacts(
-            visitFunctionExpression,
-            node as FunctionExpression,
-            HierarchyFacts.ClassOrFunctionExcludes,
-            HierarchyFacts.ClassOrFunctionIncludes
-          );
+          return doWithHierarchyFacts(visitFunctionExpression, node as FunctionExpression, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
         case SyntaxKind.ArrowFunction:
-          return doWithHierarchyFacts(
-            visitArrowFunction,
-            node as ArrowFunction,
-            HierarchyFacts.ArrowFunctionExcludes,
-            HierarchyFacts.ArrowFunctionIncludes
-          );
+          return doWithHierarchyFacts(visitArrowFunction, node as ArrowFunction, HierarchyFacts.ArrowFunctionExcludes, HierarchyFacts.ArrowFunctionIncludes);
         case SyntaxKind.Parameter:
           return visitParameter(node as ParameterDeclaration);
         case SyntaxKind.ExpressionStatement:
@@ -253,10 +213,7 @@ namespace qnr {
 
     function visitAwaitExpression(node: AwaitExpression): Expression {
       if (enclosingFunctionFlags & FunctionFlags.Async && enclosingFunctionFlags & FunctionFlags.Generator) {
-        return setOriginalNode(
-          setTextRange(createYield(createAwaitHelper(context, visitNode(node.expression, visitor, isExpression))), /*location*/ node),
-          node
-        );
+        return setOriginalNode(setTextRange(createYield(createAwaitHelper(context, visitNode(node.expression, visitor, isExpression))), /*location*/ node), node);
       }
       return visitEachChild(node, visitor, context);
     }
@@ -268,29 +225,14 @@ namespace qnr {
 
           return setOriginalNode(
             setTextRange(
-              createYield(
-                createAwaitHelper(
-                  context,
-                  updateYield(
-                    node,
-                    node.asteriskToken,
-                    createAsyncDelegatorHelper(context, createAsyncValuesHelper(context, expression, expression), expression)
-                  )
-                )
-              ),
+              createYield(createAwaitHelper(context, updateYield(node, node.asteriskToken, createAsyncDelegatorHelper(context, createAsyncValuesHelper(context, expression, expression), expression)))),
               node
             ),
             node
           );
         }
 
-        return setOriginalNode(
-          setTextRange(
-            createYield(createDownlevelAwait(node.expression ? visitNode(node.expression, visitor, isExpression) : createVoidZero())),
-            node
-          ),
-          node
-        );
+        return setOriginalNode(setTextRange(createYield(createDownlevelAwait(node.expression ? visitNode(node.expression, visitor, isExpression) : createVoidZero())), node), node);
       }
 
       return visitEachChild(node, visitor, context);
@@ -329,9 +271,7 @@ namespace qnr {
         } else {
           chunkObject = append(
             chunkObject,
-            e.kind === SyntaxKind.PropertyAssignment
-              ? createPropertyAssignment(e.name, visitNode(e.initializer, visitor, isExpression))
-              : visitNode(e, visitor, isObjectLiteralElementLike)
+            e.kind === SyntaxKind.PropertyAssignment ? createPropertyAssignment(e.name, visitNode(e.initializer, visitor, isExpression)) : visitNode(e, visitor, isObjectLiteralElementLike)
           );
         }
       }
@@ -399,9 +339,7 @@ namespace qnr {
       const visited = visitEachChild(node, visitor, context);
       const statement = concatenate(
         visited.statements,
-        taggedTemplateStringDeclarations && [
-          createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList(taggedTemplateStringDeclarations)),
-        ]
+        taggedTemplateStringDeclarations && [createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList(taggedTemplateStringDeclarations))]
       );
       const result = updateSourceFileNode(visited, setTextRange(createNodeArray(statement), node.statements));
       exitSubtree(ancestorFacts);
@@ -421,21 +359,13 @@ namespace qnr {
       if (isDestructuringAssignment(node) && node.left.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
         return flattenDestructuringAssignment(node, visitor, context, FlattenLevel.ObjectRest, !noDestructuringValue);
       } else if (node.operatorToken.kind === SyntaxKind.CommaToken) {
-        return updateBinary(
-          node,
-          visitNode(node.left, visitorNoDestructuringValue, isExpression),
-          visitNode(node.right, noDestructuringValue ? visitorNoDestructuringValue : visitor, isExpression)
-        );
+        return updateBinary(node, visitNode(node.left, visitorNoDestructuringValue, isExpression), visitNode(node.right, noDestructuringValue ? visitorNoDestructuringValue : visitor, isExpression));
       }
       return visitEachChild(node, visitor, context);
     }
 
     function visitCatchClause(node: CatchClause) {
-      if (
-        node.variableDeclaration &&
-        isBindingPattern(node.variableDeclaration.name) &&
-        node.variableDeclaration.name.transformFlags & TransformFlags.ContainsObjectRestOrSpread
-      ) {
+      if (node.variableDeclaration && isBindingPattern(node.variableDeclaration.name) && node.variableDeclaration.name.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
         const name = getGeneratedNameForNode(node.variableDeclaration.name);
         const updatedDecl = updateVariableDeclaration(node.variableDeclaration, node.variableDeclaration.name, /*type*/ undefined, name);
         const visitedBindings = flattenDestructuringBinding(updatedDecl, visitor, context, FlattenLevel.ObjectRest);
@@ -443,11 +373,7 @@ namespace qnr {
         if (some(visitedBindings)) {
           block = updateBlock(block, [createVariableStatement(/*modifiers*/ undefined, visitedBindings), ...block.statements]);
         }
-        return updateCatchClause(
-          node,
-          updateVariableDeclaration(node.variableDeclaration, name, /*type*/ undefined, /*initializer*/ undefined),
-          block
-        );
+        return updateCatchClause(node, updateVariableDeclaration(node.variableDeclaration, name, /*type*/ undefined, /*initializer*/ undefined), block);
       }
       return visitEachChild(node, visitor, context);
     }
@@ -537,10 +463,7 @@ namespace qnr {
         return updateForOf(
           node,
           node.awaitModifier,
-          setTextRange(
-            createVariableDeclarationList([setTextRange(createVariableDeclaration(temp), node.initializer)], NodeFlags.Let),
-            node.initializer
-          ),
+          setTextRange(createVariableDeclarationList([setTextRange(createVariableDeclaration(temp), node.initializer)], NodeFlags.Let), node.initializer),
           node.expression,
           setTextRange(createBlock(setTextRange(createNodeArray(statements), statementsLocation), /*multiLine*/ true), bodyLocation)
         );
@@ -570,16 +493,10 @@ namespace qnr {
     }
 
     function createDownlevelAwait(expression: Expression) {
-      return enclosingFunctionFlags & FunctionFlags.Generator
-        ? createYield(/*asteriskToken*/ undefined, createAwaitHelper(context, expression))
-        : createAwait(expression);
+      return enclosingFunctionFlags & FunctionFlags.Generator ? createYield(/*asteriskToken*/ undefined, createAwaitHelper(context, expression)) : createAwait(expression);
     }
 
-    function transformForAwaitOfStatement(
-      node: ForOfStatement,
-      outermostLabeledStatement: LabeledStatement | undefined,
-      ancestorFacts: HierarchyFacts
-    ) {
+    function transformForAwaitOfStatement(node: ForOfStatement, outermostLabeledStatement: LabeledStatement | undefined, ancestorFacts: HierarchyFacts) {
       const expression = visitNode(node.expression, visitor, isExpression);
       const iterator = isIdentifier(expression) ? getGeneratedNameForNode(expression) : createTempVariable(/*recordTempVariable*/ undefined);
       const result = isIdentifier(expression) ? getGeneratedNameForNode(iterator) : createTempVariable(/*recordTempVariable*/ undefined);
@@ -596,20 +513,14 @@ namespace qnr {
       hoistVariableDeclaration(returnMethod);
 
       // if we are enclosed in an outer loop ensure we reset 'errorRecord' per each iteration
-      const initializer =
-        ancestorFacts & HierarchyFacts.IterationContainer
-          ? inlineExpressions([createAssignment(errorRecord, createVoidZero()), callValues])
-          : callValues;
+      const initializer = ancestorFacts & HierarchyFacts.IterationContainer ? inlineExpressions([createAssignment(errorRecord, createVoidZero()), callValues]) : callValues;
 
       const forStatement = setEmitFlags(
         setTextRange(
           createFor(
             /*initializer*/ setEmitFlags(
               setTextRange(
-                createVariableDeclarationList([
-                  setTextRange(createVariableDeclaration(iterator, /*type*/ undefined, initializer), node.expression),
-                  createVariableDeclaration(result),
-                ]),
+                createVariableDeclarationList([setTextRange(createVariableDeclaration(iterator, /*type*/ undefined, initializer), node.expression), createVariableDeclaration(result)]),
                 node.expression
               ),
               EmitFlags.NoHoisting
@@ -627,32 +538,21 @@ namespace qnr {
         createBlock([restoreEnclosingLabel(forStatement, outermostLabeledStatement)]),
         createCatchClause(
           createVariableDeclaration(catchVariable),
-          setEmitFlags(
-            createBlock([
-              createExpressionStatement(createAssignment(errorRecord, createObjectLiteral([createPropertyAssignment('error', catchVariable)]))),
-            ]),
-            EmitFlags.SingleLine
-          )
+          setEmitFlags(createBlock([createExpressionStatement(createAssignment(errorRecord, createObjectLiteral([createPropertyAssignment('error', catchVariable)])))]), EmitFlags.SingleLine)
         ),
         createBlock([
           createTry(
             /*tryBlock*/ createBlock([
               setEmitFlags(
                 createIf(
-                  createLogicalAnd(
-                    createLogicalAnd(result, createLogicalNot(getDone)),
-                    createAssignment(returnMethod, createPropertyAccess(iterator, 'return'))
-                  ),
+                  createLogicalAnd(createLogicalAnd(result, createLogicalNot(getDone)), createAssignment(returnMethod, createPropertyAccess(iterator, 'return'))),
                   createExpressionStatement(createDownlevelAwait(callReturn))
                 ),
                 EmitFlags.SingleLine
               ),
             ]),
             /*catchClause*/ undefined,
-            /*finallyBlock*/ setEmitFlags(
-              createBlock([setEmitFlags(createIf(errorRecord, createThrow(createPropertyAccess(errorRecord, 'error'))), EmitFlags.SingleLine)]),
-              EmitFlags.SingleLine
-            )
+            /*finallyBlock*/ setEmitFlags(createBlock([setEmitFlags(createIf(errorRecord, createThrow(createPropertyAccess(errorRecord, 'error'))), EmitFlags.SingleLine)]), EmitFlags.SingleLine)
           ),
         ])
       );
@@ -679,13 +579,7 @@ namespace qnr {
     function visitConstructorDeclaration(node: ConstructorDeclaration) {
       const savedEnclosingFunctionFlags = enclosingFunctionFlags;
       enclosingFunctionFlags = FunctionFlags.Normal;
-      const updated = updateConstructor(
-        node,
-        /*decorators*/ undefined,
-        node.modifiers,
-        visitParameterList(node.parameters, visitor, context),
-        transformFunctionBody(node)
-      );
+      const updated = ConstructorDeclaration.update(node, /*decorators*/ undefined, node.modifiers, visitParameterList(node.parameters, visitor, context), transformFunctionBody(node));
       enclosingFunctionFlags = savedEnclosingFunctionFlags;
       return updated;
     }
@@ -693,7 +587,7 @@ namespace qnr {
     function visitGetAccessorDeclaration(node: GetAccessorDeclaration) {
       const savedEnclosingFunctionFlags = enclosingFunctionFlags;
       enclosingFunctionFlags = FunctionFlags.Normal;
-      const updated = updateGetAccessor(
+      const updated = GetAccessorDeclaration.update(
         node,
         /*decorators*/ undefined,
         node.modifiers,
@@ -709,7 +603,7 @@ namespace qnr {
     function visitSetAccessorDeclaration(node: SetAccessorDeclaration) {
       const savedEnclosingFunctionFlags = enclosingFunctionFlags;
       enclosingFunctionFlags = FunctionFlags.Normal;
-      const updated = updateSetAccessor(
+      const updated = SetAccessorDeclaration.update(
         node,
         /*decorators*/ undefined,
         node.modifiers,
@@ -724,7 +618,7 @@ namespace qnr {
     function visitMethodDeclaration(node: MethodDeclaration) {
       const savedEnclosingFunctionFlags = enclosingFunctionFlags;
       enclosingFunctionFlags = getFunctionFlags(node);
-      const updated = updateMethod(
+      const updated = MethodDeclaration.update(
         node,
         /*decorators*/ undefined,
         enclosingFunctionFlags & FunctionFlags.Generator ? visitNodes(node.modifiers, visitorNoAsyncModifier, isModifier) : node.modifiers,
@@ -734,9 +628,7 @@ namespace qnr {
         /*typeParameters*/ undefined,
         visitParameterList(node.parameters, visitor, context),
         /*type*/ undefined,
-        enclosingFunctionFlags & FunctionFlags.Async && enclosingFunctionFlags & FunctionFlags.Generator
-          ? transformAsyncGeneratorFunctionBody(node)
-          : transformFunctionBody(node)
+        enclosingFunctionFlags & FunctionFlags.Async && enclosingFunctionFlags & FunctionFlags.Generator ? transformAsyncGeneratorFunctionBody(node) : transformFunctionBody(node)
       );
       enclosingFunctionFlags = savedEnclosingFunctionFlags;
       return updated;
@@ -754,9 +646,7 @@ namespace qnr {
         /*typeParameters*/ undefined,
         visitParameterList(node.parameters, visitor, context),
         /*type*/ undefined,
-        enclosingFunctionFlags & FunctionFlags.Async && enclosingFunctionFlags & FunctionFlags.Generator
-          ? transformAsyncGeneratorFunctionBody(node)
-          : transformFunctionBody(node)
+        enclosingFunctionFlags & FunctionFlags.Async && enclosingFunctionFlags & FunctionFlags.Generator ? transformAsyncGeneratorFunctionBody(node) : transformFunctionBody(node)
       );
       enclosingFunctionFlags = savedEnclosingFunctionFlags;
       return updated;
@@ -789,17 +679,13 @@ namespace qnr {
         /*typeParameters*/ undefined,
         visitParameterList(node.parameters, visitor, context),
         /*type*/ undefined,
-        enclosingFunctionFlags & FunctionFlags.Async && enclosingFunctionFlags & FunctionFlags.Generator
-          ? transformAsyncGeneratorFunctionBody(node)
-          : transformFunctionBody(node)
+        enclosingFunctionFlags & FunctionFlags.Async && enclosingFunctionFlags & FunctionFlags.Generator ? transformAsyncGeneratorFunctionBody(node) : transformFunctionBody(node)
       );
       enclosingFunctionFlags = savedEnclosingFunctionFlags;
       return updated;
     }
 
-    function transformAsyncGeneratorFunctionBody(
-      node: MethodDeclaration | AccessorDeclaration | FunctionDeclaration | FunctionExpression
-    ): FunctionBody {
+    function transformAsyncGeneratorFunctionBody(node: MethodDeclaration | AccessorDeclaration | FunctionDeclaration | FunctionExpression): FunctionBody {
       resumeLexicalEnvironment();
       const statements: Statement[] = [];
       const statementOffset = addPrologue(statements, node.body!.statements, /*ensureUseStrict*/ false, visitor);
@@ -828,9 +714,7 @@ namespace qnr {
 
       // Minor optimization, emit `_super` helper to capture `super` access in an arrow.
       // This step isn't needed if we eventually transform this to ES5.
-      const emitSuperHelpers =
-        languageVersion >= ScriptTarget.ES2015 &&
-        resolver.getNodeCheckFlags(node) & (NodeCheckFlags.AsyncMethodWithSuperBinding | NodeCheckFlags.AsyncMethodWithSuper);
+      const emitSuperHelpers = languageVersion >= ScriptTarget.ES2015 && resolver.getNodeCheckFlags(node) & (NodeCheckFlags.AsyncMethodWithSuperBinding | NodeCheckFlags.AsyncMethodWithSuper);
 
       if (emitSuperHelpers) {
         enableSubstitutionForAsyncMethodsWithSuper();
@@ -858,9 +742,7 @@ namespace qnr {
       return block;
     }
 
-    function transformFunctionBody(
-      node: FunctionDeclaration | FunctionExpression | ConstructorDeclaration | MethodDeclaration | AccessorDeclaration
-    ): FunctionBody;
+    function transformFunctionBody(node: FunctionDeclaration | FunctionExpression | ConstructorDeclaration | MethodDeclaration | AccessorDeclaration): FunctionBody;
     function transformFunctionBody(node: ArrowFunction): ConciseBody;
     function transformFunctionBody(node: FunctionLikeDeclaration): ConciseBody {
       resumeLexicalEnvironment();
@@ -885,15 +767,7 @@ namespace qnr {
       for (const parameter of node.parameters) {
         if (parameter.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
           const temp = getGeneratedNameForNode(parameter);
-          const declarations = flattenDestructuringBinding(
-            parameter,
-            visitor,
-            context,
-            FlattenLevel.ObjectRest,
-            temp,
-            /*doNotRecordTempVariablesInLine*/ false,
-            /*skipInitializer*/ true
-          );
+          const declarations = flattenDestructuringBinding(parameter, visitor, context, FlattenLevel.ObjectRest, temp, /*doNotRecordTempVariablesInLine*/ false, /*skipInitializer*/ true);
           if (some(declarations)) {
             const statement = createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList(declarations));
             setEmitFlags(statement, EmitFlags.CustomPrologue);
@@ -936,8 +810,7 @@ namespace qnr {
       // If we need to support substitutions for `super` in an async method,
       // we should track it here.
       if (enabledSubstitutions & ESNextSubstitutionFlags.AsyncMethodsWithSuper && isSuperContainer(node)) {
-        const superContainerFlags =
-          resolver.getNodeCheckFlags(node) & (NodeCheckFlags.AsyncMethodWithSuper | NodeCheckFlags.AsyncMethodWithSuperBinding);
+        const superContainerFlags = resolver.getNodeCheckFlags(node) & (NodeCheckFlags.AsyncMethodWithSuper | NodeCheckFlags.AsyncMethodWithSuperBinding);
         if (superContainerFlags !== enclosingSuperContainerFlags) {
           const savedEnclosingSuperContainerFlags = enclosingSuperContainerFlags;
           enclosingSuperContainerFlags = superContainerFlags;
@@ -1001,9 +874,7 @@ namespace qnr {
     function substituteCallExpression(node: CallExpression): Expression {
       const expression = node.expression;
       if (isSuperProperty(expression)) {
-        const argumentExpression = isPropertyAccessExpression(expression)
-          ? substitutePropertyAccessExpression(expression)
-          : substituteElementAccessExpression(expression);
+        const argumentExpression = isPropertyAccessExpression(expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
         return createCall(createPropertyAccess(argumentExpression, 'call'), /*typeArguments*/ undefined, [createThis(), ...node.arguments]);
       }
       return node;
@@ -1011,21 +882,12 @@ namespace qnr {
 
     function isSuperContainer(node: Node) {
       const kind = node.kind;
-      return (
-        kind === SyntaxKind.ClassDeclaration ||
-        kind === SyntaxKind.Constructor ||
-        kind === SyntaxKind.MethodDeclaration ||
-        kind === SyntaxKind.GetAccessor ||
-        kind === SyntaxKind.SetAccessor
-      );
+      return kind === SyntaxKind.ClassDeclaration || kind === SyntaxKind.Constructor || kind === SyntaxKind.MethodDeclaration || kind === SyntaxKind.GetAccessor || kind === SyntaxKind.SetAccessor;
     }
 
     function createSuperElementAccessInAsyncMethod(argumentExpression: Expression, location: TextRange): LeftHandSideExpression {
       if (enclosingSuperContainerFlags & NodeCheckFlags.AsyncMethodWithSuperBinding) {
-        return setTextRange(
-          createPropertyAccess(createCall(createIdentifier('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), 'value'),
-          location
-        );
+        return setTextRange(createPropertyAccess(createCall(createIdentifier('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), 'value'), location);
       } else {
         return setTextRange(createCall(createIdentifier('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), location);
       }
@@ -1097,11 +959,7 @@ namespace qnr {
     // Mark this node as originally an async function
     (generatorFunc.emitNode || (generatorFunc.emitNode = {} as EmitNode)).flags |= EmitFlags.AsyncFunctionBody | EmitFlags.ReuseTempVariableScope;
 
-    return createCall(getUnscopedHelperName('__asyncGenerator'), /*typeArguments*/ undefined, [
-      hasLexicalThis ? createThis() : createVoidZero(),
-      createIdentifier('arguments'),
-      generatorFunc,
-    ]);
+    return createCall(getUnscopedHelperName('__asyncGenerator'), /*typeArguments*/ undefined, [hasLexicalThis ? createThis() : createVoidZero(), createIdentifier('arguments'), generatorFunc]);
   }
 
   export const asyncDelegator: UnscopedEmitHelper = {

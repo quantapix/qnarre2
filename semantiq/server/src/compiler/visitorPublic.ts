@@ -9,12 +9,7 @@ namespace qnr {
    * @param test A callback to execute to verify the Node is valid.
    * @param lift An optional callback to execute to lift a NodeArray into a valid Node.
    */
-  export function visitNode<T extends Node>(
-    node: T | undefined,
-    visitor: Visitor | undefined,
-    test?: (node: Node) => boolean,
-    lift?: (node: NodeArray<Node>) => T
-  ): T;
+  export function visitNode<T extends Node>(node: T | undefined, visitor: Visitor | undefined, test?: (node: Node) => boolean, lift?: (node: NodeArray<Node>) => T): T;
 
   /**
    * Visits a Node using the supplied visitor, possibly returning a new Node in its place.
@@ -24,19 +19,9 @@ namespace qnr {
    * @param test A callback to execute to verify the Node is valid.
    * @param lift An optional callback to execute to lift a NodeArray into a valid Node.
    */
-  export function visitNode<T extends Node>(
-    node: T | undefined,
-    visitor: Visitor | undefined,
-    test?: (node: Node) => boolean,
-    lift?: (node: NodeArray<Node>) => T
-  ): T | undefined;
+  export function visitNode<T extends Node>(node: T | undefined, visitor: Visitor | undefined, test?: (node: Node) => boolean, lift?: (node: NodeArray<Node>) => T): T | undefined;
 
-  export function visitNode<T extends Node>(
-    node: T | undefined,
-    visitor: Visitor | undefined,
-    test?: (node: Node) => boolean,
-    lift?: (node: NodeArray<Node>) => T
-  ): T | undefined {
+  export function visitNode<T extends Node>(node: T | undefined, visitor: Visitor | undefined, test?: (node: Node) => boolean, lift?: (node: NodeArray<Node>) => T): T | undefined {
     if (node === undefined || visitor === undefined) {
       return node;
     }
@@ -70,13 +55,7 @@ namespace qnr {
    * @param start An optional value indicating the starting offset at which to start visiting.
    * @param count An optional value indicating the maximum number of nodes to visit.
    */
-  export function visitNodes<T extends Node>(
-    nodes: NodeArray<T> | undefined,
-    visitor: Visitor,
-    test?: (node: Node) => boolean,
-    start?: number,
-    count?: number
-  ): NodeArray<T>;
+  export function visitNodes<T extends Node>(nodes: NodeArray<T> | undefined, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number): NodeArray<T>;
 
   /**
    * Visits a NodeArray using the supplied visitor, possibly returning a new NodeArray in its place.
@@ -87,13 +66,7 @@ namespace qnr {
    * @param start An optional value indicating the starting offset at which to start visiting.
    * @param count An optional value indicating the maximum number of nodes to visit.
    */
-  export function visitNodes<T extends Node>(
-    nodes: NodeArray<T> | undefined,
-    visitor: Visitor,
-    test?: (node: Node) => boolean,
-    start?: number,
-    count?: number
-  ): NodeArray<T> | undefined;
+  export function visitNodes<T extends Node>(nodes: NodeArray<T> | undefined, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number): NodeArray<T> | undefined;
 
   /**
    * Visits a NodeArray using the supplied visitor, possibly returning a new NodeArray in its place.
@@ -104,13 +77,7 @@ namespace qnr {
    * @param start An optional value indicating the starting offset at which to start visiting.
    * @param count An optional value indicating the maximum number of nodes to visit.
    */
-  export function visitNodes<T extends Node>(
-    nodes: NodeArray<T> | undefined,
-    visitor: Visitor,
-    test?: (node: Node) => boolean,
-    start?: number,
-    count?: number
-  ): NodeArray<T> | undefined {
+  export function visitNodes<T extends Node>(nodes: NodeArray<T> | undefined, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number): NodeArray<T> | undefined {
     if (nodes === undefined || visitor === undefined) {
       return nodes;
     }
@@ -168,13 +135,7 @@ namespace qnr {
    * Starts a new lexical environment and visits a statement list, ending the lexical environment
    * and merging hoisted declarations upon completion.
    */
-  export function visitLexicalEnvironment(
-    statements: NodeArray<Statement>,
-    visitor: Visitor,
-    context: TransformationContext,
-    start?: number,
-    ensureUseStrict?: boolean
-  ) {
+  export function visitLexicalEnvironment(statements: NodeArray<Statement>, visitor: Visitor, context: TransformationContext, start?: number, ensureUseStrict?: boolean) {
     context.startLexicalEnvironment();
     statements = visitNodes(statements, visitor, isStatement, start);
     if (ensureUseStrict) statements = qnr.ensureUseStrict(statements); // eslint-disable-line @typescript-eslint/no-unnecessary-qualifier
@@ -189,32 +150,15 @@ namespace qnr {
     nodes: NodeArray<ParameterDeclaration>,
     visitor: Visitor,
     context: TransformationContext,
-    nodesVisitor?: <T extends Node>(
-      nodes: NodeArray<T>,
-      visitor: Visitor,
-      test?: (node: Node) => boolean,
-      start?: number,
-      count?: number
-    ) => NodeArray<T>
+    nodesVisitor?: <T extends Node>(nodes: NodeArray<T>, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number) => NodeArray<T>
   ): NodeArray<ParameterDeclaration>;
   export function visitParameterList(
     nodes: NodeArray<ParameterDeclaration> | undefined,
     visitor: Visitor,
     context: TransformationContext,
-    nodesVisitor?: <T extends Node>(
-      nodes: NodeArray<T> | undefined,
-      visitor: Visitor,
-      test?: (node: Node) => boolean,
-      start?: number,
-      count?: number
-    ) => NodeArray<T> | undefined
+    nodesVisitor?: <T extends Node>(nodes: NodeArray<T> | undefined, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number) => NodeArray<T> | undefined
   ): NodeArray<ParameterDeclaration> | undefined;
-  export function visitParameterList(
-    nodes: NodeArray<ParameterDeclaration> | undefined,
-    visitor: Visitor,
-    context: TransformationContext,
-    nodesVisitor = visitNodes
-  ) {
+  export function visitParameterList(nodes: NodeArray<ParameterDeclaration> | undefined, visitor: Visitor, context: TransformationContext, nodesVisitor = visitNodes) {
     let updated: NodeArray<ParameterDeclaration> | undefined;
     context.startLexicalEnvironment();
     if (nodes) {
@@ -273,11 +217,7 @@ namespace qnr {
             parameter.name,
             parameter.type,
             parameter.initializer
-              ? createConditional(
-                  createStrictEquality(getGeneratedNameForNode(parameter), createVoidZero()),
-                  parameter.initializer,
-                  getGeneratedNameForNode(parameter)
-                )
+              ? createConditional(createStrictEquality(getGeneratedNameForNode(parameter), createVoidZero()), parameter.initializer, getGeneratedNameForNode(parameter))
               : getGeneratedNameForNode(parameter)
           ),
         ])
@@ -295,12 +235,7 @@ namespace qnr {
     );
   }
 
-  function addDefaultValueAssignmentForInitializer(
-    parameter: ParameterDeclaration,
-    name: Identifier,
-    initializer: Expression,
-    context: TransformationContext
-  ) {
+  function addDefaultValueAssignmentForInitializer(parameter: ParameterDeclaration, name: Identifier, initializer: Expression, context: TransformationContext) {
     context.addInitializationStatement(
       createIf(
         createTypeCheck(getSynthesizedClone(name), 'undefined'),
@@ -310,10 +245,7 @@ namespace qnr {
               createExpressionStatement(
                 setEmitFlags(
                   setTextRange(
-                    createAssignment(
-                      setEmitFlags(getMutableClone(name), EmitFlags.NoSourceMap),
-                      setEmitFlags(initializer, EmitFlags.NoSourceMap | getEmitFlags(initializer) | EmitFlags.NoComments)
-                    ),
+                    createAssignment(setEmitFlags(getMutableClone(name), EmitFlags.NoSourceMap), setEmitFlags(initializer, EmitFlags.NoSourceMap | getEmitFlags(initializer) | EmitFlags.NoComments)),
                     parameter
                   ),
                   EmitFlags.NoComments
@@ -326,16 +258,7 @@ namespace qnr {
         )
       )
     );
-    return updateParameter(
-      parameter,
-      parameter.decorators,
-      parameter.modifiers,
-      parameter.dotDotDotToken,
-      parameter.name,
-      parameter.questionToken,
-      parameter.type,
-      /*initializer*/ undefined
-    );
+    return updateParameter(parameter, parameter.decorators, parameter.modifiers, parameter.dotDotDotToken, parameter.name, parameter.questionToken, parameter.type, /*initializer*/ undefined);
   }
 
   /**
@@ -381,21 +304,9 @@ namespace qnr {
    * @param visitor The callback used to visit each child.
    * @param context A lexical environment context for the visitor.
    */
-  export function visitEachChild<T extends Node>(
-    node: T | undefined,
-    visitor: Visitor,
-    context: TransformationContext,
-    nodesVisitor?: typeof visitNodes,
-    tokenVisitor?: Visitor
-  ): T | undefined;
+  export function visitEachChild<T extends Node>(node: T | undefined, visitor: Visitor, context: TransformationContext, nodesVisitor?: typeof visitNodes, tokenVisitor?: Visitor): T | undefined;
 
-  export function visitEachChild(
-    node: Node | undefined,
-    visitor: Visitor,
-    context: TransformationContext,
-    nodesVisitor = visitNodes,
-    tokenVisitor?: Visitor
-  ): Node | undefined {
+  export function visitEachChild(node: Node | undefined, visitor: Visitor, context: TransformationContext, nodesVisitor = visitNodes, tokenVisitor?: Visitor): Node | undefined {
     if (node === undefined) {
       return;
     }
@@ -414,11 +325,7 @@ namespace qnr {
         return updateIdentifier(<Identifier>node, nodesVisitor((<Identifier>node).typeArguments, visitor, isTypeNodeOrTypeParameterDeclaration));
 
       case SyntaxKind.QualifiedName:
-        return QualifiedName.update(
-          <QualifiedName>node,
-          visitNode((<QualifiedName>node).left, visitor, isEntityName),
-          visitNode((<QualifiedName>node).right, visitor, isIdentifier)
-        );
+        return QualifiedName.update(<QualifiedName>node, visitNode((<QualifiedName>node).left, visitor, isEntityName), visitNode((<QualifiedName>node).right, visitor, isIdentifier));
 
       case SyntaxKind.ComputedPropertyName:
         return ComputedPropertyName.update(<ComputedPropertyName>node, visitNode((<ComputedPropertyName>node).expression, visitor, isExpression));
@@ -449,7 +356,7 @@ namespace qnr {
 
       // Type elements
       case SyntaxKind.PropertySignature:
-        return updatePropertySignature(
+        return PropertySignature.update(
           <PropertySignature>node,
           nodesVisitor((<PropertySignature>node).modifiers, visitor, isToken),
           visitNode((<PropertySignature>node).name, visitor, isPropertyName),
@@ -471,7 +378,7 @@ namespace qnr {
         );
 
       case SyntaxKind.MethodSignature:
-        return updateMethodSignature(
+        return updateSignature(
           <MethodSignature>node,
           nodesVisitor((<MethodSignature>node).typeParameters, visitor, isTypeParameterDeclaration),
           nodesVisitor((<MethodSignature>node).parameters, visitor, isParameterDeclaration),
@@ -481,7 +388,7 @@ namespace qnr {
         );
 
       case SyntaxKind.MethodDeclaration:
-        return updateMethod(
+        return MethodDeclaration.update(
           <MethodDeclaration>node,
           nodesVisitor((<MethodDeclaration>node).decorators, visitor, isDecorator),
           nodesVisitor((<MethodDeclaration>node).modifiers, visitor, isModifier),
@@ -495,7 +402,7 @@ namespace qnr {
         );
 
       case SyntaxKind.Constructor:
-        return updateConstructor(
+        return ConstructorDeclaration.update(
           <ConstructorDeclaration>node,
           nodesVisitor((<ConstructorDeclaration>node).decorators, visitor, isDecorator),
           nodesVisitor((<ConstructorDeclaration>node).modifiers, visitor, isModifier),
@@ -504,7 +411,7 @@ namespace qnr {
         );
 
       case SyntaxKind.GetAccessor:
-        return updateGetAccessor(
+        return GetAccessorDeclaration.update(
           <GetAccessorDeclaration>node,
           nodesVisitor((<GetAccessorDeclaration>node).decorators, visitor, isDecorator),
           nodesVisitor((<GetAccessorDeclaration>node).modifiers, visitor, isModifier),
@@ -515,7 +422,7 @@ namespace qnr {
         );
 
       case SyntaxKind.SetAccessor:
-        return updateSetAccessor(
+        return SetAccessorDeclaration.update(
           <SetAccessorDeclaration>node,
           nodesVisitor((<SetAccessorDeclaration>node).decorators, visitor, isDecorator),
           nodesVisitor((<SetAccessorDeclaration>node).modifiers, visitor, isModifier),
@@ -525,7 +432,7 @@ namespace qnr {
         );
 
       case SyntaxKind.CallSignature:
-        return updateCallSignature(
+        return CallSignatureDeclaration.update(
           <CallSignatureDeclaration>node,
           nodesVisitor((<CallSignatureDeclaration>node).typeParameters, visitor, isTypeParameterDeclaration),
           nodesVisitor((<CallSignatureDeclaration>node).parameters, visitor, isParameterDeclaration),
@@ -533,7 +440,7 @@ namespace qnr {
         );
 
       case SyntaxKind.ConstructSignature:
-        return updateConstructSignature(
+        return ConstructSignatureDeclaration.update(
           <ConstructSignatureDeclaration>node,
           nodesVisitor((<ConstructSignatureDeclaration>node).typeParameters, visitor, isTypeParameterDeclaration),
           nodesVisitor((<ConstructSignatureDeclaration>node).parameters, visitor, isParameterDeclaration),
@@ -541,7 +448,7 @@ namespace qnr {
         );
 
       case SyntaxKind.IndexSignature:
-        return updateIndexSignature(
+        return IndexSignatureDeclaration.update(
           <IndexSignatureDeclaration>node,
           nodesVisitor((<IndexSignatureDeclaration>node).decorators, visitor, isDecorator),
           nodesVisitor((<IndexSignatureDeclaration>node).modifiers, visitor, isModifier),
@@ -574,7 +481,7 @@ namespace qnr {
         );
 
       case SyntaxKind.ConstructorType:
-        return updateConstructorTypeNode(
+        return ConstructorDeclaration.updateTypeNode(
           <ConstructorTypeNode>node,
           nodesVisitor((<ConstructorTypeNode>node).typeParameters, visitor, isTypeParameterDeclaration),
           nodesVisitor((<ConstructorTypeNode>node).parameters, visitor, isParameterDeclaration),
@@ -665,10 +572,7 @@ namespace qnr {
         return updateObjectBindingPattern(<ObjectBindingPattern>node, nodesVisitor((<ObjectBindingPattern>node).elements, visitor, isBindingElement));
 
       case SyntaxKind.ArrayBindingPattern:
-        return updateArrayBindingPattern(
-          <ArrayBindingPattern>node,
-          nodesVisitor((<ArrayBindingPattern>node).elements, visitor, isArrayBindingElement)
-        );
+        return updateArrayBindingPattern(<ArrayBindingPattern>node, nodesVisitor((<ArrayBindingPattern>node).elements, visitor, isArrayBindingElement));
 
       case SyntaxKind.BindingElement:
         return updateBindingElement(
@@ -684,10 +588,7 @@ namespace qnr {
         return updateArrayLiteral(<ArrayLiteralExpression>node, nodesVisitor((<ArrayLiteralExpression>node).elements, visitor, isExpression));
 
       case SyntaxKind.ObjectLiteralExpression:
-        return updateObjectLiteral(
-          <ObjectLiteralExpression>node,
-          nodesVisitor((<ObjectLiteralExpression>node).properties, visitor, isObjectLiteralElementLike)
-        );
+        return updateObjectLiteral(<ObjectLiteralExpression>node, nodesVisitor((<ObjectLiteralExpression>node).properties, visitor, isObjectLiteralElementLike));
 
       case SyntaxKind.PropertyAccessExpression:
         if (node.flags & NodeFlags.OptionalChain) {
@@ -753,11 +654,7 @@ namespace qnr {
         );
 
       case SyntaxKind.TypeAssertionExpression:
-        return updateTypeAssertion(
-          <TypeAssertion>node,
-          visitNode((<TypeAssertion>node).type, visitor, isTypeNode),
-          visitNode((<TypeAssertion>node).expression, visitor, isExpression)
-        );
+        return updateTypeAssertion(<TypeAssertion>node, visitNode((<TypeAssertion>node).type, visitor, isTypeNode), visitNode((<TypeAssertion>node).expression, visitor, isExpression));
 
       case SyntaxKind.ParenthesizedExpression:
         return updateParen(<ParenthesizedExpression>node, visitNode((<ParenthesizedExpression>node).expression, visitor, isExpression));
@@ -829,11 +726,7 @@ namespace qnr {
         );
 
       case SyntaxKind.YieldExpression:
-        return updateYield(
-          <YieldExpression>node,
-          visitNode((<YieldExpression>node).asteriskToken, tokenVisitor, isToken),
-          visitNode((<YieldExpression>node).expression, visitor, isExpression)
-        );
+        return updateYield(<YieldExpression>node, visitNode((<YieldExpression>node).asteriskToken, tokenVisitor, isToken), visitNode((<YieldExpression>node).expression, visitor, isExpression));
 
       case SyntaxKind.SpreadElement:
         return updateSpread(<SpreadElement>node, visitNode((<SpreadElement>node).expression, visitor, isExpression));
@@ -856,11 +749,7 @@ namespace qnr {
         );
 
       case SyntaxKind.AsExpression:
-        return updateAsExpression(
-          <AsExpression>node,
-          visitNode((<AsExpression>node).expression, visitor, isExpression),
-          visitNode((<AsExpression>node).type, visitor, isTypeNode)
-        );
+        return updateAsExpression(<AsExpression>node, visitNode((<AsExpression>node).expression, visitor, isExpression), visitNode((<AsExpression>node).type, visitor, isTypeNode));
 
       case SyntaxKind.NonNullExpression:
         return updateNonNullExpression(<NonNullExpression>node, visitNode((<NonNullExpression>node).expression, visitor, isExpression));
@@ -899,18 +788,10 @@ namespace qnr {
         );
 
       case SyntaxKind.DoStatement:
-        return updateDo(
-          <DoStatement>node,
-          visitNode((<DoStatement>node).statement, visitor, isStatement, liftToBlock),
-          visitNode((<DoStatement>node).expression, visitor, isExpression)
-        );
+        return updateDo(<DoStatement>node, visitNode((<DoStatement>node).statement, visitor, isStatement, liftToBlock), visitNode((<DoStatement>node).expression, visitor, isExpression));
 
       case SyntaxKind.WhileStatement:
-        return updateWhile(
-          <WhileStatement>node,
-          visitNode((<WhileStatement>node).expression, visitor, isExpression),
-          visitNode((<WhileStatement>node).statement, visitor, isStatement, liftToBlock)
-        );
+        return updateWhile(<WhileStatement>node, visitNode((<WhileStatement>node).expression, visitor, isExpression), visitNode((<WhileStatement>node).statement, visitor, isStatement, liftToBlock));
 
       case SyntaxKind.ForStatement:
         return updateFor(
@@ -948,25 +829,13 @@ namespace qnr {
         return updateReturn(<ReturnStatement>node, visitNode((<ReturnStatement>node).expression, visitor, isExpression));
 
       case SyntaxKind.WithStatement:
-        return updateWith(
-          <WithStatement>node,
-          visitNode((<WithStatement>node).expression, visitor, isExpression),
-          visitNode((<WithStatement>node).statement, visitor, isStatement, liftToBlock)
-        );
+        return updateWith(<WithStatement>node, visitNode((<WithStatement>node).expression, visitor, isExpression), visitNode((<WithStatement>node).statement, visitor, isStatement, liftToBlock));
 
       case SyntaxKind.SwitchStatement:
-        return updateSwitch(
-          <SwitchStatement>node,
-          visitNode((<SwitchStatement>node).expression, visitor, isExpression),
-          visitNode((<SwitchStatement>node).caseBlock, visitor, isCaseBlock)
-        );
+        return updateSwitch(<SwitchStatement>node, visitNode((<SwitchStatement>node).expression, visitor, isExpression), visitNode((<SwitchStatement>node).caseBlock, visitor, isCaseBlock));
 
       case SyntaxKind.LabeledStatement:
-        return updateLabel(
-          <LabeledStatement>node,
-          visitNode((<LabeledStatement>node).label, visitor, isIdentifier),
-          visitNode((<LabeledStatement>node).statement, visitor, isStatement, liftToBlock)
-        );
+        return updateLabel(<LabeledStatement>node, visitNode((<LabeledStatement>node).label, visitor, isIdentifier), visitNode((<LabeledStatement>node).statement, visitor, isStatement, liftToBlock));
 
       case SyntaxKind.ThrowStatement:
         return updateThrow(<ThrowStatement>node, visitNode((<ThrowStatement>node).expression, visitor, isExpression));
@@ -989,10 +858,7 @@ namespace qnr {
         );
 
       case SyntaxKind.VariableDeclarationList:
-        return updateVariableDeclarationList(
-          <VariableDeclarationList>node,
-          nodesVisitor((<VariableDeclarationList>node).declarations, visitor, isVariableDeclaration)
-        );
+        return updateVariableDeclarationList(<VariableDeclarationList>node, nodesVisitor((<VariableDeclarationList>node).declarations, visitor, isVariableDeclaration));
 
       case SyntaxKind.FunctionDeclaration:
         return updateFunctionDeclaration(
@@ -1064,10 +930,7 @@ namespace qnr {
         return updateCaseBlock(<CaseBlock>node, nodesVisitor((<CaseBlock>node).clauses, visitor, isCaseOrDefaultClause));
 
       case SyntaxKind.NamespaceExportDeclaration:
-        return updateNamespaceExportDeclaration(
-          <NamespaceExportDeclaration>node,
-          visitNode((<NamespaceExportDeclaration>node).name, visitor, isIdentifier)
-        );
+        return updateNamespaceExportDeclaration(<NamespaceExportDeclaration>node, visitNode((<NamespaceExportDeclaration>node).name, visitor, isIdentifier));
 
       case SyntaxKind.ImportEqualsDeclaration:
         return updateImportEqualsDeclaration(
@@ -1105,11 +968,7 @@ namespace qnr {
         return updateNamedImports(<NamedImports>node, nodesVisitor((<NamedImports>node).elements, visitor, isImportSpecifier));
 
       case SyntaxKind.ImportSpecifier:
-        return updateImportSpecifier(
-          <ImportSpecifier>node,
-          visitNode((<ImportSpecifier>node).propertyName, visitor, isIdentifier),
-          visitNode((<ImportSpecifier>node).name, visitor, isIdentifier)
-        );
+        return updateImportSpecifier(<ImportSpecifier>node, visitNode((<ImportSpecifier>node).propertyName, visitor, isIdentifier), visitNode((<ImportSpecifier>node).name, visitor, isIdentifier));
 
       case SyntaxKind.ExportAssignment:
         return updateExportAssignment(
@@ -1133,18 +992,11 @@ namespace qnr {
         return updateNamedExports(<NamedExports>node, nodesVisitor((<NamedExports>node).elements, visitor, isExportSpecifier));
 
       case SyntaxKind.ExportSpecifier:
-        return updateExportSpecifier(
-          <ExportSpecifier>node,
-          visitNode((<ExportSpecifier>node).propertyName, visitor, isIdentifier),
-          visitNode((<ExportSpecifier>node).name, visitor, isIdentifier)
-        );
+        return updateExportSpecifier(<ExportSpecifier>node, visitNode((<ExportSpecifier>node).propertyName, visitor, isIdentifier), visitNode((<ExportSpecifier>node).name, visitor, isIdentifier));
 
       // Module references
       case SyntaxKind.ExternalModuleReference:
-        return updateExternalModuleReference(
-          <ExternalModuleReference>node,
-          visitNode((<ExternalModuleReference>node).expression, visitor, isExpression)
-        );
+        return updateExternalModuleReference(<ExternalModuleReference>node, visitNode((<ExternalModuleReference>node).expression, visitor, isExpression));
 
       // JSX
       case SyntaxKind.JsxElement:
@@ -1200,11 +1052,7 @@ namespace qnr {
 
       // Clauses
       case SyntaxKind.CaseClause:
-        return updateCaseClause(
-          <CaseClause>node,
-          visitNode((<CaseClause>node).expression, visitor, isExpression),
-          nodesVisitor((<CaseClause>node).statements, visitor, isStatement)
-        );
+        return updateCaseClause(<CaseClause>node, visitNode((<CaseClause>node).expression, visitor, isExpression), nodesVisitor((<CaseClause>node).statements, visitor, isStatement));
 
       case SyntaxKind.DefaultClause:
         return updateDefaultClause(<DefaultClause>node, nodesVisitor((<DefaultClause>node).statements, visitor, isStatement));
@@ -1213,11 +1061,7 @@ namespace qnr {
         return updateHeritageClause(<HeritageClause>node, nodesVisitor((<HeritageClause>node).types, visitor, isExpressionWithTypeArguments));
 
       case SyntaxKind.CatchClause:
-        return updateCatchClause(
-          <CatchClause>node,
-          visitNode((<CatchClause>node).variableDeclaration, visitor, isVariableDeclaration),
-          visitNode((<CatchClause>node).block, visitor, isBlock)
-        );
+        return updateCatchClause(<CatchClause>node, visitNode((<CatchClause>node).variableDeclaration, visitor, isVariableDeclaration), visitNode((<CatchClause>node).block, visitor, isBlock));
 
       // Property assignments
       case SyntaxKind.PropertyAssignment:
@@ -1239,11 +1083,7 @@ namespace qnr {
 
       // Enum
       case SyntaxKind.EnumMember:
-        return updateEnumMember(
-          <EnumMember>node,
-          visitNode((<EnumMember>node).name, visitor, isPropertyName),
-          visitNode((<EnumMember>node).initializer, visitor, isExpression)
-        );
+        return updateEnumMember(<EnumMember>node, visitNode((<EnumMember>node).name, visitor, isPropertyName), visitNode((<EnumMember>node).initializer, visitor, isExpression));
 
       // Top-level nodes
       case SyntaxKind.SourceFile:
@@ -1251,10 +1091,7 @@ namespace qnr {
 
       // Transformation nodes
       case SyntaxKind.PartiallyEmittedExpression:
-        return updatePartiallyEmittedExpression(
-          <PartiallyEmittedExpression>node,
-          visitNode((<PartiallyEmittedExpression>node).expression, visitor, isExpression)
-        );
+        return updatePartiallyEmittedExpression(<PartiallyEmittedExpression>node, visitNode((<PartiallyEmittedExpression>node).expression, visitor, isExpression));
 
       case SyntaxKind.CommaListExpression:
         return updateCommaList(<CommaListExpression>node, nodesVisitor((<CommaListExpression>node).elements, visitor, isExpression));

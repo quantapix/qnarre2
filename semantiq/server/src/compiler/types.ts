@@ -910,14 +910,6 @@ namespace qnr {
     | FunctionExpression
     | ArrowFunction;
 
-  export interface CallSignatureDeclaration extends SignatureDeclarationBase, TypeElement {
-    kind: SyntaxKind.CallSignature;
-  }
-
-  export interface ConstructSignatureDeclaration extends SignatureDeclarationBase, TypeElement {
-    kind: SyntaxKind.ConstructSignature;
-  }
-
   export type BindingName = Identifier | BindingPattern;
 
   export interface VariableDeclaration extends NamedDeclaration {
@@ -955,24 +947,6 @@ namespace qnr {
   }
 
   export type BindingElementGrandparent = BindingElement['parent']['parent'];
-
-  export interface PropertySignature extends TypeElement, JSDocContainer {
-    kind: SyntaxKind.PropertySignature;
-    name: PropertyName; // Declared property name
-    questionToken?: QuestionToken; // Present on optional property
-    type?: TypeNode; // Optional type annotation
-    initializer?: Expression; // Optional initializer
-  }
-
-  export interface PropertyDeclaration extends ClassElement, JSDocContainer {
-    kind: SyntaxKind.PropertyDeclaration;
-    parent: ClassLikeDeclaration;
-    name: PropertyName;
-    questionToken?: QuestionToken; // Present for use with reporting a grammar error
-    exclamationToken?: ExclamationToken;
-    type?: TypeNode;
-    initializer?: Expression; // Optional initializer
-  }
 
   export interface PrivateIdentifierPropertyDeclaration extends PropertyDeclaration {
     name: PrivateIdentifier;
@@ -1086,64 +1060,11 @@ namespace qnr {
     body?: FunctionBody;
   }
 
-  export interface MethodSignature extends SignatureDeclarationBase, TypeElement {
-    kind: SyntaxKind.MethodSignature;
-    parent: ObjectTypeDeclaration;
-    name: PropertyName;
-  }
-
-  // Note that a MethodDeclaration is considered both a ClassElement and an ObjectLiteralElement.
-  // Both the grammars for ClassDeclaration and ObjectLiteralExpression allow for MethodDeclarations
-  // as child elements, and so a MethodDeclaration satisfies both interfaces.  This avoids the
-  // alternative where we would need separate kinds/types for ClassMethodDeclaration and
-  // ObjectLiteralMethodDeclaration, which would look identical.
-  //
-  // Because of this, it may be necessary to determine what sort of MethodDeclaration you have
-  // at later stages of the compiler pipeline.  In that case, you can either check the parent kind
-  // of the method, or use helpers like isObjectLiteralMethodDeclaration
-  export interface MethodDeclaration extends FunctionLikeDeclarationBase, ClassElement, ObjectLiteralElement, JSDocContainer {
-    kind: SyntaxKind.MethodDeclaration;
-    parent: ClassLikeDeclaration | ObjectLiteralExpression;
-    name: PropertyName;
-    body?: FunctionBody;
-  }
-
-  export interface ConstructorDeclaration extends FunctionLikeDeclarationBase, ClassElement, JSDocContainer {
-    kind: SyntaxKind.Constructor;
-    parent: ClassLikeDeclaration;
-    body?: FunctionBody;
-  }
-
-  /** For when we encounter a semicolon in a class declaration. ES6 allows these as class elements. */
   export interface SemicolonClassElement extends ClassElement {
     kind: SyntaxKind.SemicolonClassElement;
     parent: ClassLikeDeclaration;
   }
-
-  // See the comment on MethodDeclaration for the intuition behind GetAccessorDeclaration being a
-  // ClassElement and an ObjectLiteralElement.
-  export interface GetAccessorDeclaration extends FunctionLikeDeclarationBase, ClassElement, ObjectLiteralElement, JSDocContainer {
-    kind: SyntaxKind.GetAccessor;
-    parent: ClassLikeDeclaration | ObjectLiteralExpression;
-    name: PropertyName;
-    body?: FunctionBody;
-  }
-
-  // See the comment on MethodDeclaration for the intuition behind SetAccessorDeclaration being a
-  // ClassElement and an ObjectLiteralElement.
-  export interface SetAccessorDeclaration extends FunctionLikeDeclarationBase, ClassElement, ObjectLiteralElement, JSDocContainer {
-    kind: SyntaxKind.SetAccessor;
-    parent: ClassLikeDeclaration | ObjectLiteralExpression;
-    name: PropertyName;
-    body?: FunctionBody;
-  }
-
   export type AccessorDeclaration = GetAccessorDeclaration | SetAccessorDeclaration;
-
-  export interface IndexSignatureDeclaration extends SignatureDeclarationBase, ClassElement, TypeElement {
-    kind: SyntaxKind.IndexSignature;
-    parent: ObjectTypeDeclaration;
-  }
 
   export interface TypeNode extends Node {
     _typeNodeBrand: any;

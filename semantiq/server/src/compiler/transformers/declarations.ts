@@ -1,21 +1,10 @@
 namespace qnr {
-  export function getDeclarationDiagnostics(
-    host: EmitHost,
-    resolver: EmitResolver,
-    file: SourceFile | undefined
-  ): DiagnosticWithLocation[] | undefined {
+  export function getDeclarationDiagnostics(host: EmitHost, resolver: EmitResolver, file: SourceFile | undefined): DiagnosticWithLocation[] | undefined {
     if (file && isJsonSourceFile(file)) {
       return []; // No declaration diagnostics for json for now
     }
     const compilerOptions = host.getCompilerOptions();
-    const result = transformNodes(
-      resolver,
-      host,
-      compilerOptions,
-      file ? [file] : filter(host.getSourceFiles(), isSourceFileNotJson),
-      [transformDeclarations],
-      /*allowDtsFiles*/ false
-    );
+    const result = transformNodes(resolver, host, compilerOptions, file ? [file] : filter(host.getSourceFiles(), isSourceFileNotJson), [transformDeclarations], /*allowDtsFiles*/ false);
     return result.diagnostics;
   }
 
@@ -176,9 +165,7 @@ namespace qnr {
 
     function reportPrivateInBaseOfClassExpression(propertyName: string) {
       if (errorNameNode) {
-        context.addDiagnostic(
-          createDiagnosticForNode(errorNameNode, Diagnostics.Property_0_of_exported_class_expression_may_not_be_private_or_protected, propertyName)
-        );
+        context.addDiagnostic(createDiagnosticForNode(errorNameNode, Diagnostics.Property_0_of_exported_class_expression_may_not_be_private_or_protected, propertyName));
       }
     }
 
@@ -198,12 +185,7 @@ namespace qnr {
     function reportInaccessibleThisError() {
       if (errorNameNode) {
         context.addDiagnostic(
-          createDiagnosticForNode(
-            errorNameNode,
-            Diagnostics.The_inferred_type_of_0_references_an_inaccessible_1_type_A_type_annotation_is_necessary,
-            declarationNameToString(errorNameNode),
-            'this'
-          )
+          createDiagnosticForNode(errorNameNode, Diagnostics.The_inferred_type_of_0_references_an_inaccessible_1_type_A_type_annotation_is_necessary, declarationNameToString(errorNameNode), 'this')
         );
       }
     }
@@ -228,10 +210,7 @@ namespace qnr {
         context.addDiagnostic(
           addRelatedInfo(
             createDiagnosticForNode(augmentations, Diagnostics.Declaration_augments_declaration_in_another_file_This_cannot_be_serialized),
-            createDiagnosticForNode(
-              primaryDeclaration,
-              Diagnostics.This_is_the_declaration_being_augmented_Consider_moving_the_augmenting_declaration_into_the_same_file
-            )
+            createDiagnosticForNode(primaryDeclaration, Diagnostics.This_is_the_declaration_being_augmented_Consider_moving_the_augmenting_declaration_into_the_same_file)
           )
         );
       }
@@ -280,9 +259,7 @@ namespace qnr {
             if (isExternalOrCommonJsModule(sourceFile) || isJsonSourceFile(sourceFile)) {
               resultHasExternalModuleIndicator = false; // unused in external module bundle emit (all external modules are within module blocks, therefore are known to be modules)
               needsDeclare = false;
-              const statements = isSourceFileJS(sourceFile)
-                ? createNodeArray(transformDeclarationsForJS(sourceFile, /*bundled*/ true))
-                : visitNodes(sourceFile.statements, visitDeclarationStatements);
+              const statements = isSourceFileJS(sourceFile) ? createNodeArray(transformDeclarationsForJS(sourceFile, /*bundled*/ true)) : visitNodes(sourceFile.statements, visitDeclarationStatements);
               const newFile = updateSourceFileNode(
                 sourceFile,
                 [
@@ -302,9 +279,7 @@ namespace qnr {
               return newFile;
             }
             needsDeclare = true;
-            const updated = isSourceFileJS(sourceFile)
-              ? createNodeArray(transformDeclarationsForJS(sourceFile))
-              : visitNodes(sourceFile.statements, visitDeclarationStatements);
+            const updated = isSourceFileJS(sourceFile) ? createNodeArray(transformDeclarationsForJS(sourceFile)) : visitNodes(sourceFile.statements, visitDeclarationStatements);
             return updateSourceFileNode(
               sourceFile,
               transformAndReplaceLatePaintedStatements(updated),
@@ -369,15 +344,7 @@ namespace qnr {
           combinedStatements = setTextRange(createNodeArray([...combinedStatements, createEmptyExports()]), combinedStatements);
         }
       }
-      const updated = updateSourceFileNode(
-        node,
-        combinedStatements,
-        /*isDeclarationFile*/ true,
-        references,
-        getFileReferencesForUsedTypeReferences(),
-        node.hasNoDefaultLib,
-        getLibReferences()
-      );
+      const updated = updateSourceFileNode(node, combinedStatements, /*isDeclarationFile*/ true, references, getFileReferencesForUsedTypeReferences(), node.hasNoDefaultLib, getLibReferences());
       updated.exportedModulesFromDeclarationEmit = exportedModulesFromDeclarationEmit;
       return updated;
 
@@ -398,11 +365,7 @@ namespace qnr {
               if (StringLiteral.like(expr) && expr.text === typeName) {
                 return;
               }
-            } else if (
-              isImportDeclaration(importStatement) &&
-              StringLiteral.kind(importStatement.moduleSpecifier) &&
-              importStatement.moduleSpecifier.text === typeName
-            ) {
+            } else if (isImportDeclaration(importStatement) && StringLiteral.kind(importStatement.moduleSpecifier) && importStatement.moduleSpecifier.text === typeName) {
               return;
             }
           }
@@ -441,13 +404,7 @@ namespace qnr {
               return;
             }
 
-            let fileName = getRelativePathToDirectoryOrUrl(
-              outputFilePath,
-              declFileName,
-              host.getCurrentDirectory(),
-              host.getCanonicalFileName,
-              /*isAbsolutePathAnUrl*/ false
-            );
+            let fileName = getRelativePathToDirectoryOrUrl(outputFilePath, declFileName, host.getCurrentDirectory(), host.getCanonicalFileName, /*isAbsolutePathAnUrl*/ false);
             if (startsWith(fileName, './') && hasExtension(fileName)) {
               fileName = fileName.substring(2);
             }
@@ -501,13 +458,7 @@ namespace qnr {
         if (elem.kind === SyntaxKind.OmittedExpression) {
           return elem;
         }
-        return updateBindingElement(
-          elem,
-          elem.dotDotDotToken,
-          elem.propertyName,
-          filterBindingPatternInitializers(elem.name),
-          shouldPrintWithInitializer(elem) ? elem.initializer : undefined
-        );
+        return updateBindingElement(elem, elem.dotDotDotToken, elem.propertyName, filterBindingPatternInitializers(elem.name), shouldPrintWithInitializer(elem) ? elem.initializer : undefined);
       }
     }
 
@@ -567,9 +518,7 @@ namespace qnr {
         // Literal const declarations will have an initializer ensured rather than a type
         return;
       }
-      const shouldUseResolverType =
-        node.kind === SyntaxKind.Parameter &&
-        (resolver.isRequiredInitializedParameter(node) || resolver.isOptionalUninitializedParameterProperty(node));
+      const shouldUseResolverType = node.kind === SyntaxKind.Parameter && (resolver.isRequiredInitializedParameter(node) || resolver.isOptionalUninitializedParameterProperty(node));
       if (type && !shouldUseResolverType) {
         return visitNode(type, visitDeclarationSubtree);
       }
@@ -591,10 +540,7 @@ namespace qnr {
         return cleanup(resolver.createTypeOfDeclaration(node, enclosingDeclaration, declarationEmitNodeBuilderFlags, symbolTracker));
       }
       if (node.kind === SyntaxKind.Parameter || node.kind === SyntaxKind.PropertyDeclaration || node.kind === SyntaxKind.PropertySignature) {
-        if (!node.initializer)
-          return cleanup(
-            resolver.createTypeOfDeclaration(node, enclosingDeclaration, declarationEmitNodeBuilderFlags, symbolTracker, shouldUseResolverType)
-          );
+        if (!node.initializer) return cleanup(resolver.createTypeOfDeclaration(node, enclosingDeclaration, declarationEmitNodeBuilderFlags, symbolTracker, shouldUseResolverType));
         return cleanup(
           resolver.createTypeOfDeclaration(node, enclosingDeclaration, declarationEmitNodeBuilderFlags, symbolTracker, shouldUseResolverType) ||
             resolver.createTypeOfExpression(node.initializer, enclosingDeclaration, declarationEmitNodeBuilderFlags, symbolTracker)
@@ -664,7 +610,7 @@ namespace qnr {
           newParams = [ensureParameter(thisParameter)];
         }
       }
-      if (isSetAccessorDeclaration(input)) {
+      if (SetAccessorDeclaration.kind(input)) {
         let newValueParameter: ParameterDeclaration | undefined;
         if (!isPrivate) {
           const valueParameter = getSetAccessorValueParameter(input);
@@ -693,7 +639,7 @@ namespace qnr {
         isClassDeclaration(node) ||
         isInterfaceDeclaration(node) ||
         isFunctionLike(node) ||
-        isIndexSignatureDeclaration(node) ||
+        IndexSignatureDeclaration.kind(node) ||
         isMappedTypeNode(node)
       );
     }
@@ -716,8 +662,7 @@ namespace qnr {
       input: T | undefined
     ): T | StringLiteral {
       if (!input) return undefined!; // TODO: GH#18217
-      resultHasExternalModuleIndicator =
-        resultHasExternalModuleIndicator || (parent.kind !== SyntaxKind.ModuleDeclaration && parent.kind !== SyntaxKind.ImportType);
+      resultHasExternalModuleIndicator = resultHasExternalModuleIndicator || (parent.kind !== SyntaxKind.ModuleDeclaration && parent.kind !== SyntaxKind.ImportType);
       if (StringLiteral.like(input)) {
         if (isBundledEmit) {
           const newName = getExternalModuleNameFromDeclaration(context.getEmitHost(), resolver, parent);
@@ -739,13 +684,7 @@ namespace qnr {
       if (decl.moduleReference.kind === SyntaxKind.ExternalModuleReference) {
         // Rewrite external module names if necessary
         const specifier = getExternalModuleImportEqualsDeclarationExpression(decl);
-        return updateImportEqualsDeclaration(
-          decl,
-          /*decorators*/ undefined,
-          decl.modifiers,
-          decl.name,
-          updateExternalModuleReference(decl.moduleReference, rewriteModuleSpecifier(decl, specifier))
-        );
+        return updateImportEqualsDeclaration(decl, /*decorators*/ undefined, decl.modifiers, decl.name, updateExternalModuleReference(decl.moduleReference, rewriteModuleSpecifier(decl, specifier)));
       } else {
         const oldDiag = getSymbolAccessibilityDiagnostic;
         getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(decl);
@@ -758,17 +697,10 @@ namespace qnr {
     function transformImportDeclaration(decl: ImportDeclaration) {
       if (!decl.importClause) {
         // import "mod" - possibly needed for side effects? (global interface patches, module augmentations, etc)
-        return updateImportDeclaration(
-          decl,
-          /*decorators*/ undefined,
-          decl.modifiers,
-          decl.importClause,
-          rewriteModuleSpecifier(decl, decl.moduleSpecifier)
-        );
+        return updateImportDeclaration(decl, /*decorators*/ undefined, decl.modifiers, decl.importClause, rewriteModuleSpecifier(decl, decl.moduleSpecifier));
       }
       // The `importClause` visibility corresponds to the default's visibility.
-      const visibleDefaultBinding =
-        decl.importClause && decl.importClause.name && resolver.isDeclarationVisible(decl.importClause) ? decl.importClause.name : undefined;
+      const visibleDefaultBinding = decl.importClause && decl.importClause.name && resolver.isDeclarationVisible(decl.importClause) ? decl.importClause.name : undefined;
       if (!decl.importClause.namedBindings) {
         // No named bindings (either namespace or list), meaning the import is just default or should be elided
         return (
@@ -784,9 +716,7 @@ namespace qnr {
       }
       if (decl.importClause.namedBindings.kind === SyntaxKind.NamespaceImport) {
         // Namespace import (optionally with visible default)
-        const namedBindings = resolver.isDeclarationVisible(decl.importClause.namedBindings)
-          ? decl.importClause.namedBindings
-          : /*namedBindings*/ undefined;
+        const namedBindings = resolver.isDeclarationVisible(decl.importClause.namedBindings) ? decl.importClause.namedBindings : /*namedBindings*/ undefined;
         return visibleDefaultBinding || namedBindings
           ? updateImportDeclaration(
               decl,
@@ -815,13 +745,7 @@ namespace qnr {
       }
       // Augmentation of export depends on import
       if (resolver.isImportRequiredByAugmentation(decl)) {
-        return updateImportDeclaration(
-          decl,
-          /*decorators*/ undefined,
-          decl.modifiers,
-          /*importClause*/ undefined,
-          rewriteModuleSpecifier(decl, decl.moduleSpecifier)
-        );
+        return updateImportDeclaration(decl, /*decorators*/ undefined, decl.modifiers, /*importClause*/ undefined, rewriteModuleSpecifier(decl, decl.moduleSpecifier));
       }
       // Nothing visible
     }
@@ -844,11 +768,7 @@ namespace qnr {
       while (length(lateMarkedStatements)) {
         const i = lateMarkedStatements!.shift()!;
         if (!isLateVisibilityPaintedStatement(i)) {
-          return fail(
-            `Late replaced statement was found which is not handled by the declaration transformer!: ${
-              (ts as any).SyntaxKind ? (ts as any).SyntaxKind[(i as any).kind] : (i as any).kind
-            }`
-          );
+          return fail(`Late replaced statement was found which is not handled by the declaration transformer!: ${(ts as any).SyntaxKind ? (ts as any).SyntaxKind[(i as any).kind] : (i as any).kind}`);
         }
         const priorNeedsDeclare = needsDeclare;
         needsDeclare = i.parent && isSourceFile(i.parent) && !(isExternalModule(i.parent) && isBundledEmit);
@@ -909,23 +829,13 @@ namespace qnr {
       // We'd see a TDZ violation at runtime
       const canProduceDiagnostic = canProduceDiagnostics(input);
       const oldWithinObjectLiteralType = suppressNewDiagnosticContexts;
-      let shouldEnterSuppressNewDiagnosticsContextContext =
-        (input.kind === SyntaxKind.TypeLiteral || input.kind === SyntaxKind.MappedType) && input.parent.kind !== SyntaxKind.TypeAliasDeclaration;
+      let shouldEnterSuppressNewDiagnosticsContextContext = (input.kind === SyntaxKind.TypeLiteral || input.kind === SyntaxKind.MappedType) && input.parent.kind !== SyntaxKind.TypeAliasDeclaration;
 
       // Emit methods which are private as properties with no type information
-      if (isMethodDeclaration(input) || isMethodSignature(input)) {
+      if (MethodDeclaration.kind(input) || isMethodSignature(input)) {
         if (hasEffectiveModifier(input, ModifierFlags.Private)) {
           if (input.symbol && input.symbol.declarations && input.symbol.declarations[0] !== input) return; // Elide all but the first overload
-          return cleanup(
-            createProperty(
-              /*decorators*/ undefined,
-              ensureModifiers(input),
-              input.name,
-              /*questionToken*/ undefined,
-              /*type*/ undefined,
-              /*initializer*/ undefined
-            )
-          );
+          return cleanup(createProperty(/*decorators*/ undefined, ensureModifiers(input), input.name, /*questionToken*/ undefined, /*type*/ undefined, /*initializer*/ undefined));
         }
       }
 
@@ -957,17 +867,10 @@ namespace qnr {
             return cleanup(updateTypeReferenceNode(node, node.typeName, parenthesizeTypeParameters(node.typeArguments)));
           }
           case SyntaxKind.ConstructSignature:
-            return cleanup(
-              updateConstructSignature(
-                input,
-                ensureTypeParams(input, input.typeParameters),
-                updateParamsList(input, input.parameters),
-                ensureType(input, input.type)
-              )
-            );
+            return cleanup(ConstructSignatureDeclaration.update(input, ensureTypeParams(input, input.typeParameters), updateParamsList(input, input.parameters), ensureType(input, input.type)));
           case SyntaxKind.Constructor: {
             // A constructor declaration may not have a type annotation
-            const ctor = createSignatureDeclaration(
+            const ctor = SignatureDeclaration.create(
               SyntaxKind.Constructor,
               ensureTypeParams(input, input.typeParameters),
               updateParamsList(input, input.parameters, ModifierFlags.None),
@@ -980,7 +883,7 @@ namespace qnr {
             if (isPrivateIdentifier(input.name)) {
               return cleanup(/*returnValue*/ undefined);
             }
-            const sig = createSignatureDeclaration(
+            const sig = SignatureDeclaration.create(
               SyntaxKind.MethodSignature,
               ensureTypeParams(input, input.typeParameters),
               updateParamsList(input, input.parameters),
@@ -997,7 +900,7 @@ namespace qnr {
             }
             const accessorType = getTypeAnnotationFromAllAccessorDeclarations(input, resolver.getAllAccessorDeclarations(input));
             return cleanup(
-              updateGetAccessor(
+              GetAccessorDeclaration.update(
                 input,
                 /*decorators*/ undefined,
                 ensureModifiers(input),
@@ -1013,7 +916,7 @@ namespace qnr {
               return cleanup(/*returnValue*/ undefined);
             }
             return cleanup(
-              updateSetAccessor(
+              SetAccessorDeclaration.update(
                 input,
                 /*decorators*/ undefined,
                 ensureModifiers(input),
@@ -1027,59 +930,26 @@ namespace qnr {
             if (isPrivateIdentifier(input.name)) {
               return cleanup(/*returnValue*/ undefined);
             }
-            return cleanup(
-              updateProperty(
-                input,
-                /*decorators*/ undefined,
-                ensureModifiers(input),
-                input.name,
-                input.questionToken,
-                ensureType(input, input.type),
-                ensureNoInitializer(input)
-              )
-            );
+            return cleanup(updateProperty(input, /*decorators*/ undefined, ensureModifiers(input), input.name, input.questionToken, ensureType(input, input.type), ensureNoInitializer(input)));
           case SyntaxKind.PropertySignature:
             if (isPrivateIdentifier(input.name)) {
               return cleanup(/*returnValue*/ undefined);
             }
-            return cleanup(
-              updatePropertySignature(
-                input,
-                ensureModifiers(input),
-                input.name,
-                input.questionToken,
-                ensureType(input, input.type),
-                ensureNoInitializer(input)
-              )
-            );
+            return cleanup(PropertySignature.update(input, ensureModifiers(input), input.name, input.questionToken, ensureType(input, input.type), ensureNoInitializer(input)));
           case SyntaxKind.MethodSignature: {
             if (isPrivateIdentifier(input.name)) {
               return cleanup(/*returnValue*/ undefined);
             }
             return cleanup(
-              updateMethodSignature(
-                input,
-                ensureTypeParams(input, input.typeParameters),
-                updateParamsList(input, input.parameters),
-                ensureType(input, input.type),
-                input.name,
-                input.questionToken
-              )
+              MethodSignature.update(input, ensureTypeParams(input, input.typeParameters), updateParamsList(input, input.parameters), ensureType(input, input.type), input.name, input.questionToken)
             );
           }
           case SyntaxKind.CallSignature: {
-            return cleanup(
-              updateCallSignature(
-                input,
-                ensureTypeParams(input, input.typeParameters),
-                updateParamsList(input, input.parameters),
-                ensureType(input, input.type)
-              )
-            );
+            return cleanup(CallSignatureDeclaration.update(input, ensureTypeParams(input, input.typeParameters), updateParamsList(input, input.parameters), ensureType(input, input.type)));
           }
           case SyntaxKind.IndexSignature: {
             return cleanup(
-              updateIndexSignature(
+              IndexSignatureDeclaration.update(
                 input,
                 /*decorators*/ undefined,
                 ensureModifiers(input),
@@ -1094,15 +964,7 @@ namespace qnr {
             }
             shouldEnterSuppressNewDiagnosticsContextContext = true;
             suppressNewDiagnosticContexts = true; // Variable declaration types also suppress new diagnostic contexts, provided the contexts wouldn't be made for binding pattern types
-            return cleanup(
-              updateTypeScriptVariableDeclaration(
-                input,
-                input.name,
-                /*exclaimationToken*/ undefined,
-                ensureType(input, input.type),
-                ensureNoInitializer(input)
-              )
-            );
+            return cleanup(updateTypeScriptVariableDeclaration(input, input.name, /*exclaimationToken*/ undefined, ensureType(input, input.type), ensureNoInitializer(input)));
           }
           case SyntaxKind.TypeParameter: {
             if (isPrivateMethodTypeParameter(input) && (input.default || input.constraint)) {
@@ -1124,17 +986,12 @@ namespace qnr {
           }
           case SyntaxKind.FunctionType: {
             return cleanup(
-              updateFunctionTypeNode(
-                input,
-                visitNodes(input.typeParameters, visitDeclarationSubtree),
-                updateParamsList(input, input.parameters),
-                visitNode(input.type, visitDeclarationSubtree)
-              )
+              updateFunctionTypeNode(input, visitNodes(input.typeParameters, visitDeclarationSubtree), updateParamsList(input, input.parameters), visitNode(input.type, visitDeclarationSubtree))
             );
           }
           case SyntaxKind.ConstructorType: {
             return cleanup(
-              updateConstructorTypeNode(
+              ConstructorDeclaration.updateTypeNode(
                 input,
                 visitNodes(input.typeParameters, visitDeclarationSubtree),
                 updateParamsList(input, input.parameters),
@@ -1204,14 +1061,7 @@ namespace qnr {
           resultHasScopeMarker = true;
           // Always visible if the parent node isn't dropped for being not visible
           // Rewrite external module names if necessary
-          return updateExportDeclaration(
-            input,
-            /*decorators*/ undefined,
-            input.modifiers,
-            input.exportClause,
-            rewriteModuleSpecifier(input, input.moduleSpecifier),
-            input.isTypeOnly
-          );
+          return updateExportDeclaration(input, /*decorators*/ undefined, input.modifiers, input.exportClause, rewriteModuleSpecifier(input, input.moduleSpecifier), input.isTypeOnly);
         }
         case SyntaxKind.ExportAssignment: {
           // Always visible if the parent node isn't dropped for being not visible
@@ -1227,15 +1077,8 @@ namespace qnr {
               diagnosticMessage: Diagnostics.Default_export_of_the_module_has_or_is_using_private_name_0,
               errorNode: input,
             });
-            const varDecl = createVariableDeclaration(
-              newId,
-              resolver.createTypeOfExpression(input.expression, input, declarationEmitNodeBuilderFlags, symbolTracker),
-              /*initializer*/ undefined
-            );
-            const statement = createVariableStatement(
-              needsDeclare ? [createModifier(SyntaxKind.DeclareKeyword)] : [],
-              createVariableDeclarationList([varDecl], NodeFlags.Const)
-            );
+            const varDecl = createVariableDeclaration(newId, resolver.createTypeOfExpression(input.expression, input, declarationEmitNodeBuilderFlags, symbolTracker), /*initializer*/ undefined);
+            const statement = createVariableStatement(needsDeclare ? [createModifier(SyntaxKind.DeclareKeyword)] : [], createVariableDeclarationList([varDecl], NodeFlags.Const));
             return [statement, updateExportAssignment(input, input.decorators, input.modifiers, newId)];
           }
         }
@@ -1329,13 +1172,7 @@ namespace qnr {
           );
           if (clean && resolver.isExpandoFunctionDeclaration(input)) {
             const props = resolver.getPropertiesOfContainerFunction(input);
-            const fakespace = createModuleDeclaration(
-              /*decorators*/ undefined,
-              /*modifiers*/ undefined,
-              clean.name || createIdentifier('_default'),
-              createModuleBlock([]),
-              NodeFlags.Namespace
-            );
+            const fakespace = createModuleDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, clean.name || createIdentifier('_default'), createModuleBlock([]), NodeFlags.Namespace);
             fakespace.flags ^= NodeFlags.Synthesized; // unset synthesized so it is usable as an enclosing declaration
             fakespace.parent = enclosingDeclaration as SourceFile | NamespaceDeclaration;
             fakespace.locals = new SymbolTable(props);
@@ -1350,21 +1187,13 @@ namespace qnr {
               const varDecl = createVariableDeclaration(unescapeLeadingUnderscores(p.escapedName), type, /*initializer*/ undefined);
               return createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([varDecl]));
             });
-            const namespaceDecl = createModuleDeclaration(
-              /*decorators*/ undefined,
-              ensureModifiers(input),
-              input.name!,
-              createModuleBlock(declarations),
-              NodeFlags.Namespace
-            );
+            const namespaceDecl = createModuleDeclaration(/*decorators*/ undefined, ensureModifiers(input), input.name!, createModuleBlock(declarations), NodeFlags.Namespace);
 
             if (!hasEffectiveModifier(clean, ModifierFlags.Default)) {
               return [clean, namespaceDecl];
             }
 
-            const modifiers = createModifiersFromModifierFlags(
-              (getEffectiveModifierFlags(clean) & ~ModifierFlags.ExportDefault) | ModifierFlags.Ambient
-            );
+            const modifiers = createModifiersFromModifierFlags((getEffectiveModifierFlags(clean) & ~ModifierFlags.ExportDefault) | ModifierFlags.Ambient);
             const cleanDeclaration = updateFunctionDeclaration(
               clean,
               /*decorators*/ undefined,
@@ -1377,20 +1206,9 @@ namespace qnr {
               /*body*/ undefined
             );
 
-            const namespaceDeclaration = updateModuleDeclaration(
-              namespaceDecl,
-              /*decorators*/ undefined,
-              modifiers,
-              namespaceDecl.name,
-              namespaceDecl.body
-            );
+            const namespaceDeclaration = updateModuleDeclaration(namespaceDecl, /*decorators*/ undefined, modifiers, namespaceDecl.name, namespaceDecl.body);
 
-            const exportDefaultDeclaration = createExportAssignment(
-              /*decorators*/ undefined,
-              /*modifiers*/ undefined,
-              /*isExportEquals*/ false,
-              namespaceDecl.name
-            );
+            const exportDefaultDeclaration = createExportAssignment(/*decorators*/ undefined, /*modifiers*/ undefined, /*isExportEquals*/ false, namespaceDecl.name);
 
             if (isSourceFile(input.parent)) {
               resultHasExternalModuleIndicator = true;
@@ -1431,15 +1249,7 @@ namespace qnr {
             needsScopeFixMarker = oldNeedsScopeFix;
             resultHasScopeMarker = oldHasScopeFix;
             const mods = ensureModifiers(input);
-            return cleanup(
-              updateModuleDeclaration(
-                input,
-                /*decorators*/ undefined,
-                mods,
-                isExternalModuleAugmentation(input) ? rewriteModuleSpecifier(input, input.name) : input.name,
-                body
-              )
-            );
+            return cleanup(updateModuleDeclaration(input, /*decorators*/ undefined, mods, isExternalModuleAugmentation(input) ? rewriteModuleSpecifier(input, input.name) : input.name, body));
           } else {
             needsDeclare = previousNeedsDeclare;
             const mods = ensureModifiers(input);
@@ -1465,14 +1275,7 @@ namespace qnr {
                 getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(param);
                 if (param.name.kind === SyntaxKind.Identifier) {
                   return preserveJsDoc(
-                    createProperty(
-                      /*decorators*/ undefined,
-                      ensureModifiers(param),
-                      param.name,
-                      param.questionToken,
-                      ensureType(param, param.type),
-                      ensureNoInitializer(param)
-                    ),
+                    createProperty(/*decorators*/ undefined, ensureModifiers(param), param.name, param.questionToken, ensureType(param, param.type), ensureNoInitializer(param)),
                     param
                   );
                 } else {
@@ -1508,16 +1311,7 @@ namespace qnr {
 
           const hasPrivateIdentifier = some(input.members, (member) => !!member.name && isPrivateIdentifier(member.name));
           const privateIdentifier = hasPrivateIdentifier
-            ? [
-                createProperty(
-                  /*decorators*/ undefined,
-                  /*modifiers*/ undefined,
-                  createPrivateIdentifier('#private'),
-                  /*questionToken*/ undefined,
-                  /*type*/ undefined,
-                  /*initializer*/ undefined
-                ),
-              ]
+            ? [createProperty(/*decorators*/ undefined, /*modifiers*/ undefined, createPrivateIdentifier('#private'), /*questionToken*/ undefined, /*type*/ undefined, /*initializer*/ undefined)]
             : undefined;
           const memberNodes = concatenate(concatenate(privateIdentifier, parameterProperties), visitNodes(input.members, visitDeclarationSubtree));
           const members = createNodeArray(memberNodes);
@@ -1538,10 +1332,7 @@ namespace qnr {
               resolver.createTypeOfExpression(extendsClause.expression, input, declarationEmitNodeBuilderFlags, symbolTracker),
               /*initializer*/ undefined
             );
-            const statement = createVariableStatement(
-              needsDeclare ? [createModifier(SyntaxKind.DeclareKeyword)] : [],
-              createVariableDeclarationList([varDecl], NodeFlags.Const)
-            );
+            const statement = createVariableStatement(needsDeclare ? [createModifier(SyntaxKind.DeclareKeyword)] : [], createVariableDeclarationList([varDecl], NodeFlags.Const));
             const heritageClauses = createNodeArray(
               map(input.heritageClauses, (clause) => {
                 if (clause.token === SyntaxKind.ExtendsKeyword) {
@@ -1556,19 +1347,11 @@ namespace qnr {
                 }
                 return updateHeritageClause(
                   clause,
-                  visitNodes(
-                    createNodeArray(
-                      filter(clause.types, (t) => isEntityNameExpression(t.expression) || t.expression.kind === SyntaxKind.NullKeyword)
-                    ),
-                    visitDeclarationSubtree
-                  )
+                  visitNodes(createNodeArray(filter(clause.types, (t) => isEntityNameExpression(t.expression) || t.expression.kind === SyntaxKind.NullKeyword)), visitDeclarationSubtree)
                 );
               })
             );
-            return [
-              statement,
-              cleanup(updateClassDeclaration(input, /*decorators*/ undefined, modifiers, input.name, typeParameters, heritageClauses, members))!,
-            ]; // TODO: GH#18217
+            return [statement, cleanup(updateClassDeclaration(input, /*decorators*/ undefined, modifiers, input.name, typeParameters, heritageClauses, members))!]; // TODO: GH#18217
           } else {
             const heritageClauses = transformHeritageClauses(input.heritageClauses);
             return cleanup(updateClassDeclaration(input, /*decorators*/ undefined, modifiers, input.name, typeParameters, heritageClauses, members));
@@ -1714,10 +1497,7 @@ namespace qnr {
               visitNodes(
                 createNodeArray(
                   filter(clause.types, (t) => {
-                    return (
-                      isEntityNameExpression(t.expression) ||
-                      (clause.token === SyntaxKind.ExtendsKeyword && t.expression.kind === SyntaxKind.NullKeyword)
-                    );
+                    return isEntityNameExpression(t.expression) || (clause.token === SyntaxKind.ExtendsKeyword && t.expression.kind === SyntaxKind.NullKeyword);
                   })
                 ),
                 visitDeclarationSubtree
@@ -1742,11 +1522,7 @@ namespace qnr {
     return createModifiersFromModifierFlags(maskModifierFlags(node, modifierMask, modifierAdditions));
   }
 
-  function maskModifierFlags(
-    node: Node,
-    modifierMask: ModifierFlags = ModifierFlags.All ^ ModifierFlags.Public,
-    modifierAdditions: ModifierFlags = ModifierFlags.None
-  ): ModifierFlags {
+  function maskModifierFlags(node: Node, modifierMask: ModifierFlags = ModifierFlags.All ^ ModifierFlags.Public, modifierAdditions: ModifierFlags = ModifierFlags.None): ModifierFlags {
     let flags = (getEffectiveModifierFlags(node) & modifierMask) | modifierAdditions;
     if (flags & ModifierFlags.Default && !(flags & ModifierFlags.Export)) {
       // A non-exported default is a nonsequitor - we usually try to remove all export modifiers

@@ -270,7 +270,7 @@ namespace qnr {
      * @param node The node to visit.
      */
     function visitMethodDeclaration(node: MethodDeclaration) {
-      return updateMethod(
+      return MethodDeclaration.update(
         node,
         /*decorators*/ undefined,
         visitNodes(node.modifiers, visitor, isModifier),
@@ -446,24 +446,14 @@ namespace qnr {
         const statements: Statement[] = [];
         const statementOffset = addPrologue(statements, (<Block>node.body).statements, /*ensureUseStrict*/ false, visitor);
         statements.push(
-          createReturn(
-            createAwaiterHelper(
-              context,
-              inHasLexicalThisContext(),
-              hasLexicalArguments,
-              promiseConstructor,
-              transformAsyncFunctionBodyWorker(<Block>node.body, statementOffset)
-            )
-          )
+          createReturn(createAwaiterHelper(context, inHasLexicalThisContext(), hasLexicalArguments, promiseConstructor, transformAsyncFunctionBodyWorker(<Block>node.body, statementOffset)))
         );
 
         insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
 
         // Minor optimization, emit `_super` helper to capture `super` access in an arrow.
         // This step isn't needed if we eventually transform this to ES5.
-        const emitSuperHelpers =
-          languageVersion >= ScriptTarget.ES2015 &&
-          resolver.getNodeCheckFlags(node) & (NodeCheckFlags.AsyncMethodWithSuperBinding | NodeCheckFlags.AsyncMethodWithSuper);
+        const emitSuperHelpers = languageVersion >= ScriptTarget.ES2015 && resolver.getNodeCheckFlags(node) & (NodeCheckFlags.AsyncMethodWithSuperBinding | NodeCheckFlags.AsyncMethodWithSuper);
 
         if (emitSuperHelpers) {
           enableSubstitutionForAsyncMethodsWithSuper();
@@ -488,13 +478,7 @@ namespace qnr {
 
         result = block;
       } else {
-        const expression = createAwaiterHelper(
-          context,
-          inHasLexicalThisContext(),
-          hasLexicalArguments,
-          promiseConstructor,
-          transformAsyncFunctionBodyWorker(node.body!)
-        );
+        const expression = createAwaiterHelper(context, inHasLexicalThisContext(), hasLexicalArguments, promiseConstructor, transformAsyncFunctionBodyWorker(node.body!));
 
         const declarations = endLexicalEnvironment();
         if (some(declarations)) {
@@ -525,10 +509,7 @@ namespace qnr {
       const typeName = type && getEntityNameFromTypeNode(type);
       if (typeName && isEntityName(typeName)) {
         const serializationKind = resolver.getTypeReferenceSerializationKind(typeName);
-        if (
-          serializationKind === TypeReferenceSerializationKind.TypeWithConstructSignatureAndValue ||
-          serializationKind === TypeReferenceSerializationKind.Unknown
-        ) {
+        if (serializationKind === TypeReferenceSerializationKind.TypeWithConstructSignatureAndValue || serializationKind === TypeReferenceSerializationKind.Unknown) {
           return typeName;
         }
       }
@@ -568,8 +549,7 @@ namespace qnr {
       // If we need to support substitutions for `super` in an async method,
       // we should track it here.
       if (enabledSubstitutions & ES2017SubstitutionFlags.AsyncMethodsWithSuper && isSuperContainer(node)) {
-        const superContainerFlags =
-          resolver.getNodeCheckFlags(node) & (NodeCheckFlags.AsyncMethodWithSuper | NodeCheckFlags.AsyncMethodWithSuperBinding);
+        const superContainerFlags = resolver.getNodeCheckFlags(node) & (NodeCheckFlags.AsyncMethodWithSuper | NodeCheckFlags.AsyncMethodWithSuperBinding);
         if (superContainerFlags !== enclosingSuperContainerFlags) {
           const savedEnclosingSuperContainerFlags = enclosingSuperContainerFlags;
           enclosingSuperContainerFlags = superContainerFlags;
@@ -633,9 +613,7 @@ namespace qnr {
     function substituteCallExpression(node: CallExpression): Expression {
       const expression = node.expression;
       if (isSuperProperty(expression)) {
-        const argumentExpression = isPropertyAccessExpression(expression)
-          ? substitutePropertyAccessExpression(expression)
-          : substituteElementAccessExpression(expression);
+        const argumentExpression = isPropertyAccessExpression(expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
         return createCall(createPropertyAccess(argumentExpression, 'call'), /*typeArguments*/ undefined, [createThis(), ...node.arguments]);
       }
       return node;
@@ -643,21 +621,12 @@ namespace qnr {
 
     function isSuperContainer(node: Node): node is SuperContainer {
       const kind = node.kind;
-      return (
-        kind === SyntaxKind.ClassDeclaration ||
-        kind === SyntaxKind.Constructor ||
-        kind === SyntaxKind.MethodDeclaration ||
-        kind === SyntaxKind.GetAccessor ||
-        kind === SyntaxKind.SetAccessor
-      );
+      return kind === SyntaxKind.ClassDeclaration || kind === SyntaxKind.Constructor || kind === SyntaxKind.MethodDeclaration || kind === SyntaxKind.GetAccessor || kind === SyntaxKind.SetAccessor;
     }
 
     function createSuperElementAccessInAsyncMethod(argumentExpression: Expression, location: TextRange): LeftHandSideExpression {
       if (enclosingSuperContainerFlags & NodeCheckFlags.AsyncMethodWithSuperBinding) {
-        return setTextRange(
-          createPropertyAccess(createCall(createFileLevelUniqueName('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), 'value'),
-          location
-        );
+        return setTextRange(createPropertyAccess(createCall(createFileLevelUniqueName('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), 'value'), location);
       } else {
         return setTextRange(createCall(createFileLevelUniqueName('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), location);
       }
@@ -706,10 +675,7 @@ namespace qnr {
               ],
               /* type */ undefined,
               /* equalsGreaterThanToken */ undefined,
-              createAssignment(
-                setEmitFlags(createPropertyAccess(setEmitFlags(createSuper(), EmitFlags.NoSubstitution), name), EmitFlags.NoSubstitution),
-                createIdentifier('v')
-              )
+              createAssignment(setEmitFlags(createPropertyAccess(setEmitFlags(createSuper(), EmitFlags.NoSubstitution), name), EmitFlags.NoSubstitution), createIdentifier('v'))
             )
           )
         );
@@ -723,10 +689,7 @@ namespace qnr {
           createVariableDeclaration(
             createFileLevelUniqueName('_super'),
             /* type */ undefined,
-            createCall(createPropertyAccess(createIdentifier('Object'), 'create'), /* typeArguments */ undefined, [
-              createNull(),
-              createObjectLiteral(accessors, /* multiline */ true),
-            ])
+            createCall(createPropertyAccess(createIdentifier('Object'), 'create'), /* typeArguments */ undefined, [createNull(), createObjectLiteral(accessors, /* multiline */ true)])
           ),
         ],
         NodeFlags.Const
@@ -751,13 +714,7 @@ namespace qnr {
             };`,
   };
 
-  function createAwaiterHelper(
-    context: TransformationContext,
-    hasLexicalThis: boolean,
-    hasLexicalArguments: boolean,
-    promiseConstructor: EntityName | Expression | undefined,
-    body: Block
-  ) {
+  function createAwaiterHelper(context: TransformationContext, hasLexicalThis: boolean, hasLexicalArguments: boolean, promiseConstructor: EntityName | Expression | undefined, body: Block) {
     context.requestEmitHelper(awaiterHelper);
 
     const generatorFunc = createFunctionExpression(

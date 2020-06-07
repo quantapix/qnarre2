@@ -228,12 +228,7 @@ namespace qnr {
 
     function visitPrefixUnaryExpression(node: PrefixUnaryExpression) {
       if (shouldTransformPrivateFields && isPrivateIdentifierPropertyAccessExpression(node.operand)) {
-        const operator =
-          node.operator === SyntaxKind.Plus2Token
-            ? SyntaxKind.PlusToken
-            : node.operator === SyntaxKind.Minus2Token
-            ? SyntaxKind.MinusToken
-            : undefined;
+        const operator = node.operator === SyntaxKind.Plus2Token ? SyntaxKind.PlusToken : node.operator === SyntaxKind.Minus2Token ? SyntaxKind.MinusToken : undefined;
         let info: PrivateIdentifierInfo | undefined;
         if (operator && (info = accessPrivateIdentifier(node.operand.name))) {
           const receiver = visitNode(node.operand.expression, visitor, isExpression);
@@ -242,12 +237,7 @@ namespace qnr {
           const existingValue = createPrefix(SyntaxKind.PlusToken, createPrivateIdentifierAccess(info, readExpression));
 
           return setOriginalNode(
-            createPrivateIdentifierAssignment(
-              info,
-              initializeExpression || readExpression,
-              createBinary(existingValue, operator, createLiteral(1)),
-              SyntaxKind.EqualsToken
-            ),
+            createPrivateIdentifierAssignment(info, initializeExpression || readExpression, createBinary(existingValue, operator, createLiteral(1)), SyntaxKind.EqualsToken),
             node
           );
         }
@@ -257,12 +247,7 @@ namespace qnr {
 
     function visitPostfixUnaryExpression(node: PostfixUnaryExpression, valueIsDiscarded: boolean) {
       if (shouldTransformPrivateFields && isPrivateIdentifierPropertyAccessExpression(node.operand)) {
-        const operator =
-          node.operator === SyntaxKind.Plus2Token
-            ? SyntaxKind.PlusToken
-            : node.operator === SyntaxKind.Minus2Token
-            ? SyntaxKind.MinusToken
-            : undefined;
+        const operator = node.operator === SyntaxKind.Plus2Token ? SyntaxKind.PlusToken : node.operator === SyntaxKind.Minus2Token ? SyntaxKind.MinusToken : undefined;
         let info: PrivateIdentifierInfo | undefined;
         if (operator && (info = accessPrivateIdentifier(node.operand.name))) {
           const receiver = visitNode(node.operand.expression, visitor, isExpression);
@@ -340,9 +325,7 @@ namespace qnr {
         const { thisArg, target } = createCallBinding(node.tag, hoistVariableDeclaration, languageVersion);
         return updateTaggedTemplate(
           node,
-          createCall(createPropertyAccess(visitNode(target, visitor), 'bind'), /*typeArguments*/ undefined, [
-            visitNode(thisArg, visitor, isExpression),
-          ]),
+          createCall(createPropertyAccess(visitNode(target, visitor), 'bind'), /*typeArguments*/ undefined, [visitNode(thisArg, visitor, isExpression)]),
           visitNode(node.template, visitor, isTemplateLiteral)
         );
       }
@@ -379,12 +362,7 @@ namespace qnr {
       }
     }
 
-    function createPrivateIdentifierInstanceFieldAssignment(
-      info: PrivateIdentifierInstanceField,
-      receiver: Expression,
-      right: Expression,
-      operator: AssignmentOperator
-    ) {
+    function createPrivateIdentifierInstanceFieldAssignment(info: PrivateIdentifierInstanceField, receiver: Expression, right: Expression, operator: AssignmentOperator) {
       receiver = visitNode(receiver, visitor, isExpression);
       right = visitNode(right, visitor, isExpression);
       if (isCompoundAssignment(operator)) {
@@ -393,11 +371,7 @@ namespace qnr {
           context,
           initializeExpression || readExpression,
           info.weakMapName,
-          createBinary(
-            createClassPrivateFieldGetHelper(context, readExpression, info.weakMapName),
-            getNonAssignmentOperatorForCompoundAssignment(operator),
-            right
-          )
+          createBinary(createClassPrivateFieldGetHelper(context, readExpression, info.weakMapName), getNonAssignmentOperatorForCompoundAssignment(operator), right)
         );
       } else {
         return createClassPrivateFieldSetHelper(context, receiver, info.weakMapName, right);
@@ -565,7 +539,7 @@ namespace qnr {
     }
 
     function transformConstructor(node: ClassDeclaration | ClassExpression, isDerivedClass: boolean) {
-      const constructor = visitNode(getFirstConstructorWithBody(node), visitor, isConstructorDeclaration);
+      const constructor = visitNode(getFirstConstructorWithBody(node), visitor, ConstructorDeclaration.kind);
       const properties = node.members.filter(isPropertyDeclarationThatRequiresConstructorStatement);
       if (!some(properties)) {
         return constructor;
@@ -575,19 +549,10 @@ namespace qnr {
       if (!body) {
         return;
       }
-      return startOnNewLine(
-        setOriginalNode(
-          setTextRange(createConstructor(/*decorators*/ undefined, /*modifiers*/ undefined, parameters ?? [], body), constructor || node),
-          constructor
-        )
-      );
+      return startOnNewLine(setOriginalNode(setTextRange(ConstructorDeclaration.create(/*decorators*/ undefined, /*modifiers*/ undefined, parameters ?? [], body), constructor || node), constructor));
     }
 
-    function transformConstructorBody(
-      node: ClassDeclaration | ClassExpression,
-      constructor: ConstructorDeclaration | undefined,
-      isDerivedClass: boolean
-    ) {
+    function transformConstructorBody(node: ClassDeclaration | ClassExpression, constructor: ConstructorDeclaration | undefined, isDerivedClass: boolean) {
       const useDefineForClassFields = context.getCompilerOptions().useDefineForClassFields;
       let properties = getProperties(node, /*requireInitializer*/ false, /*isStatic*/ false);
       if (!useDefineForClassFields) {
@@ -609,9 +574,7 @@ namespace qnr {
         //
         //  super(...arguments);
         //
-        statements.push(
-          createExpressionStatement(createCall(createSuper(), /*typeArguments*/ undefined, [createSpread(createIdentifier('arguments'))]))
-        );
+        statements.push(createExpressionStatement(createCall(createSuper(), /*typeArguments*/ undefined, [createSpread(createIdentifier('arguments'))])));
       }
 
       if (constructor) {
@@ -628,20 +591,13 @@ namespace qnr {
       //  }
       //
       if (constructor?.body) {
-        let afterParameterProperties = findIndex(
-          constructor.body.statements,
-          (s) => !isParameterPropertyDeclaration(getOriginalNode(s), constructor),
-          indexOfFirstStatement
-        );
+        let afterParameterProperties = findIndex(constructor.body.statements, (s) => !isParameterPropertyDeclaration(getOriginalNode(s), constructor), indexOfFirstStatement);
         if (afterParameterProperties === -1) {
           afterParameterProperties = constructor.body.statements.length;
         }
         if (afterParameterProperties > indexOfFirstStatement) {
           if (!useDefineForClassFields) {
-            addRange(
-              statements,
-              visitNodes(constructor.body.statements, visitor, isStatement, indexOfFirstStatement, afterParameterProperties - indexOfFirstStatement)
-            );
+            addRange(statements, visitNodes(constructor.body.statements, visitor, isStatement, indexOfFirstStatement, afterParameterProperties - indexOfFirstStatement));
           }
           indexOfFirstStatement = afterParameterProperties;
         }
@@ -656,10 +612,7 @@ namespace qnr {
       statements = mergeLexicalEnvironment(statements, endLexicalEnvironment());
 
       return setTextRange(
-        createBlock(
-          setTextRange(createNodeArray(statements), /*location*/ constructor ? constructor.body!.statements : node.members),
-          /*multiLine*/ true
-        ),
+        createBlock(setTextRange(createNodeArray(statements), /*location*/ constructor ? constructor.body!.statements : node.members), /*multiLine*/ true),
         /*location*/ constructor ? constructor.body : undefined
       );
     }
@@ -726,11 +679,7 @@ namespace qnr {
         if (privateIdentifierInfo) {
           switch (privateIdentifierInfo.placement) {
             case PrivateIdentifierPlacement.InstanceField: {
-              return createPrivateInstanceFieldInitializer(
-                receiver,
-                visitNode(property.initializer, visitor, isExpression),
-                privateIdentifierInfo.weakMapName
-              );
+              return createPrivateInstanceFieldInitializer(receiver, visitNode(property.initializer, visitor, isExpression), privateIdentifierInfo.weakMapName);
             }
           }
         } else {
@@ -868,9 +817,7 @@ namespace qnr {
         placement: PrivateIdentifierPlacement.InstanceField,
         weakMapName,
       });
-      (pendingExpressions || (pendingExpressions = [])).push(
-        createAssignment(weakMapName, createNew(createIdentifier('WeakMap'), /*typeArguments*/ undefined, []))
-      );
+      (pendingExpressions || (pendingExpressions = [])).push(createAssignment(weakMapName, createNew(createIdentifier('WeakMap'), /*typeArguments*/ undefined, [])));
     }
 
     function accessPrivateIdentifier(name: PrivateIdentifier) {
@@ -911,21 +858,11 @@ namespace qnr {
         // Explicit parens required because of v8 regression (https://bugs.chromium.org/p/v8/issues/detail?id=9560)
         createParen(
           createObjectLiteral([
-            createSetAccessor(
+            SetAccessorDeclaration.create(
               /*decorators*/ undefined,
               /*modifiers*/ undefined,
               'value',
-              [
-                createParameter(
-                  /*decorators*/ undefined,
-                  /*modifiers*/ undefined,
-                  /*dotDotDotToken*/ undefined,
-                  parameter,
-                  /*questionToken*/ undefined,
-                  /*type*/ undefined,
-                  /*initializer*/ undefined
-                ),
-              ],
+              [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, parameter, /*questionToken*/ undefined, /*type*/ undefined, /*initializer*/ undefined)],
               createBlock([createExpressionStatement(createPrivateIdentifierAssignment(info, receiver, parameter, SyntaxKind.EqualsToken))])
             ),
           ])
@@ -955,11 +892,7 @@ namespace qnr {
         if (target && isPrivateIdentifierPropertyAccessExpression(target)) {
           const initializer = getInitializerOfBindingOrAssignmentElement(node);
           const wrapped = wrapPrivateIdentifierForDestructuringTarget(target);
-          return updatePropertyAssignment(
-            node,
-            visitNode(node.name, visitor),
-            initializer ? createAssignment(wrapped, visitNode(initializer, visitor)) : wrapped
-          );
+          return updatePropertyAssignment(node, visitNode(node.name, visitor), initializer ? createAssignment(wrapped, visitNode(initializer, visitor)) : wrapped);
         }
         return updatePropertyAssignment(node, visitNode(node.name, visitor), visitNode(node.initializer, visitorDestructuringTarget));
       }

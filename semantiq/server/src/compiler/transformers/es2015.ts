@@ -193,13 +193,7 @@ namespace qnr {
 
     // Functions, methods, and accessors are both new lexical scopes and new block scopes.
     FunctionIncludes = Function | TopLevel,
-    FunctionExcludes = (BlockScopeExcludes & ~TopLevel) |
-      ArrowFunction |
-      AsyncFunctionBody |
-      CapturesThis |
-      NonStaticClassElement |
-      ConstructorWithCapturedSuper |
-      IterationContainer,
+    FunctionExcludes = (BlockScopeExcludes & ~TopLevel) | ArrowFunction | AsyncFunctionBody | CapturesThis | NonStaticClassElement | ConstructorWithCapturedSuper | IterationContainer,
 
     AsyncFunctionBodyIncludes = FunctionIncludes | AsyncFunctionBody,
     AsyncFunctionBodyExcludes = FunctionExcludes & ~NonStaticClassElement,
@@ -326,11 +320,7 @@ namespace qnr {
     }
 
     function isReturnVoidStatementInConstructorWithCapturedSuper(node: Node): boolean {
-      return (
-        (hierarchyFacts & HierarchyFacts.ConstructorWithCapturedSuper) !== 0 &&
-        node.kind === SyntaxKind.ReturnStatement &&
-        !(<ReturnStatement>node).expression
-      );
+      return (hierarchyFacts & HierarchyFacts.ConstructorWithCapturedSuper) !== 0 && node.kind === SyntaxKind.ReturnStatement && !(<ReturnStatement>node).expression;
     }
 
     function shouldVisitNode(node: Node): boolean {
@@ -546,14 +536,7 @@ namespace qnr {
         if (isReturnVoidStatementInConstructorWithCapturedSuper(node)) {
           node = returnCapturedThis(node);
         }
-        return createReturn(
-          createObjectLiteral([
-            createPropertyAssignment(
-              createIdentifier('value'),
-              node.expression ? visitNode(node.expression, visitor, isExpression) : createVoidZero()
-            ),
-          ])
-        );
+        return createReturn(createObjectLiteral([createPropertyAssignment(createIdentifier('value'), node.expression ? visitNode(node.expression, visitor, isExpression) : createVoidZero())]));
       } else if (isReturnVoidStatementInConstructorWithCapturedSuper(node)) {
         return returnCapturedThis(node);
       }
@@ -596,8 +579,7 @@ namespace qnr {
         //   - break/continue is non-labeled and located in non-converted loop/switch statement
         const jump = node.kind === SyntaxKind.BreakStatement ? Jump.Break : Jump.Continue;
         const canUseBreakOrContinue =
-          (node.label && convertedLoopState.labels && convertedLoopState.labels.get(idText(node.label))) ||
-          (!node.label && convertedLoopState.allowedNonLabeledJumps! & jump);
+          (node.label && convertedLoopState.labels && convertedLoopState.labels.get(idText(node.label))) || (!node.label && convertedLoopState.allowedNonLabeledJumps! & jump);
 
         if (!canUseBreakOrContinue) {
           let labelMarker: string;
@@ -656,11 +638,7 @@ namespace qnr {
       //          return C;
       //      }());
 
-      const variable = createVariableDeclaration(
-        getLocalName(node, /*allowComments*/ true),
-        /*type*/ undefined,
-        transformClassLikeDeclarationToExpression(node)
-      );
+      const variable = createVariableDeclaration(getLocalName(node, /*allowComments*/ true), /*type*/ undefined, transformClassLikeDeclarationToExpression(node));
 
       setOriginalNode(variable, node);
 
@@ -674,9 +652,7 @@ namespace qnr {
 
       // Add an `export default` statement for default exports (for `--target es5 --module es6`)
       if (hasSyntacticModifier(node, ModifierFlags.Export)) {
-        const exportStatement = hasSyntacticModifier(node, ModifierFlags.Default)
-          ? createExportDefault(getLocalName(node))
-          : createExternalModuleExport(getLocalName(node));
+        const exportStatement = hasSyntacticModifier(node, ModifierFlags.Default) ? createExportDefault(getLocalName(node)) : createExternalModuleExport(getLocalName(node));
 
         setOriginalNode(exportStatement, statement);
         statements.push(exportStatement);
@@ -750,9 +726,7 @@ namespace qnr {
         /*asteriskToken*/ undefined,
         /*name*/ undefined,
         /*typeParameters*/ undefined,
-        extendsClauseElement
-          ? [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, createFileLevelUniqueName('_super'))]
-          : [],
+        extendsClauseElement ? [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, createFileLevelUniqueName('_super'))] : [],
         /*type*/ undefined,
         transformClassBody(node, extendsClauseElement)
       );
@@ -772,13 +746,7 @@ namespace qnr {
       outer.end = skipTrivia(currentText, node.pos);
       setEmitFlags(outer, EmitFlags.NoComments);
 
-      const result = createParen(
-        createCall(
-          outer,
-          /*typeArguments*/ undefined,
-          extendsClauseElement ? [visitNode(extendsClauseElement.expression, visitor, isExpression)] : []
-        )
-      );
+      const result = createParen(createCall(outer, /*typeArguments*/ undefined, extendsClauseElement ? [visitNode(extendsClauseElement.expression, visitor, isExpression)] : []));
       addSyntheticLeadingComment(result, SyntaxKind.MultiLineCommentTrivia, '* @class ');
       return result;
     }
@@ -825,15 +793,9 @@ namespace qnr {
      * @param node The ClassExpression or ClassDeclaration node.
      * @param extendsClauseElement The expression for the class `extends` clause.
      */
-    function addExtendsHelperIfNeeded(
-      statements: Statement[],
-      node: ClassExpression | ClassDeclaration,
-      extendsClauseElement: ExpressionWithTypeArguments | undefined
-    ): void {
+    function addExtendsHelperIfNeeded(statements: Statement[], node: ClassExpression | ClassDeclaration, extendsClauseElement: ExpressionWithTypeArguments | undefined): void {
       if (extendsClauseElement) {
-        statements.push(
-          setTextRange(createExpressionStatement(createExtendsHelper(context, getInternalName(node))), /*location*/ extendsClauseElement)
-        );
+        statements.push(setTextRange(createExpressionStatement(createExtendsHelper(context, getInternalName(node))), /*location*/ extendsClauseElement));
       }
     }
 
@@ -844,11 +806,7 @@ namespace qnr {
      * @param node The ClassExpression or ClassDeclaration node.
      * @param extendsClauseElement The expression for the class `extends` clause.
      */
-    function addConstructor(
-      statements: Statement[],
-      node: ClassExpression | ClassDeclaration,
-      extendsClauseElement: ExpressionWithTypeArguments | undefined
-    ): void {
+    function addConstructor(statements: Statement[], node: ClassExpression | ClassDeclaration, extendsClauseElement: ExpressionWithTypeArguments | undefined): void {
       const savedConvertedLoopState = convertedLoopState;
       convertedLoopState = undefined;
       const ancestorFacts = enterSubtree(HierarchyFacts.ConstructorExcludes, HierarchyFacts.ConstructorIncludes);
@@ -888,9 +846,7 @@ namespace qnr {
       // `super` call.
       // If this is the case, we do not include the synthetic `...args` parameter and
       // will instead use the `arguments` object in ES5/3.
-      return (
-        visitParameterList(constructor && !hasSynthesizedSuper ? constructor.parameters : undefined, visitor, context) || <ParameterDeclaration[]>[]
-      );
+      return visitParameterList(constructor && !hasSynthesizedSuper ? constructor.parameters : undefined, visitor, context) || <ParameterDeclaration[]>[];
     }
 
     function createDefaultConstructorBody(node: ClassDeclaration | ClassExpression, isDerivedClass: boolean) {
@@ -988,11 +944,7 @@ namespace qnr {
       insertCaptureNewTargetIfNeeded(prologue, constructor, /*copyOnWrite*/ false);
 
       if (isDerivedClass) {
-        if (
-          superCallExpression &&
-          statementOffset === constructor.body.statements.length &&
-          !(constructor.body.transformFlags & TransformFlags.ContainsLexicalThis)
-        ) {
+        if (superCallExpression && statementOffset === constructor.body.statements.length && !(constructor.body.transformFlags & TransformFlags.ContainsLexicalThis)) {
           // If the subclass constructor does *not* contain `this` and *ends* with a `super()` call, we will use the
           // following representation:
           //
@@ -1066,10 +1018,7 @@ namespace qnr {
         insertCaptureThisForNodeIfNeeded(prologue, constructor);
       }
 
-      const block = createBlock(
-        setTextRange(createNodeArray(concatenate(prologue, statements)), /*location*/ constructor.body.statements),
-        /*multiLine*/ true
-      );
+      const block = createBlock(setTextRange(createNodeArray(concatenate(prologue, statements)), /*location*/ constructor.body.statements), /*multiLine*/ true);
 
       setTextRange(block, constructor.body);
 
@@ -1090,9 +1039,7 @@ namespace qnr {
       else if (statement.kind === SyntaxKind.IfStatement) {
         const ifStatement = statement as IfStatement;
         if (ifStatement.elseStatement) {
-          return (
-            isSufficientlyCoveredByReturnStatements(ifStatement.thenStatement) && isSufficientlyCoveredByReturnStatements(ifStatement.elseStatement)
-          );
+          return isSufficientlyCoveredByReturnStatements(ifStatement.thenStatement) && isSufficientlyCoveredByReturnStatements(ifStatement.elseStatement);
         }
       }
       // A block is covered if it has a last statement which is covered.
@@ -1151,15 +1098,7 @@ namespace qnr {
         // Initializers are elided
         return setOriginalNode(
           setTextRange(
-            createParameter(
-              /*decorators*/ undefined,
-              /*modifiers*/ undefined,
-              /*dotDotDotToken*/ undefined,
-              node.name,
-              /*questionToken*/ undefined,
-              /*type*/ undefined,
-              /*initializer*/ undefined
-            ),
+            createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, node.name, /*questionToken*/ undefined, /*type*/ undefined, /*initializer*/ undefined),
             /*location*/ node
           ),
           /*original*/ node
@@ -1213,12 +1152,7 @@ namespace qnr {
      * @param name The name of the parameter.
      * @param initializer The initializer for the parameter.
      */
-    function insertDefaultValueAssignmentForBindingPattern(
-      statements: Statement[],
-      parameter: ParameterDeclaration,
-      name: BindingPattern,
-      initializer: Expression | undefined
-    ): boolean {
+    function insertDefaultValueAssignmentForBindingPattern(statements: Statement[], parameter: ParameterDeclaration, name: BindingPattern, initializer: Expression | undefined): boolean {
       // In cases where a binding pattern is simply '[]' or '{}',
       // we usually don't want to emit a var declaration; however, in the presence
       // of an initializer, we must emit that expression to preserve side effects.
@@ -1228,9 +1162,7 @@ namespace qnr {
           setEmitFlags(
             createVariableStatement(
               /*modifiers*/ undefined,
-              createVariableDeclarationList(
-                flattenDestructuringBinding(parameter, visitor, context, FlattenLevel.All, getGeneratedNameForNode(parameter))
-              )
+              createVariableDeclarationList(flattenDestructuringBinding(parameter, visitor, context, FlattenLevel.All, getGeneratedNameForNode(parameter)))
             ),
             EmitFlags.CustomPrologue
           )
@@ -1239,10 +1171,7 @@ namespace qnr {
       } else if (initializer) {
         insertStatementAfterCustomPrologue(
           statements,
-          setEmitFlags(
-            createExpressionStatement(createAssignment(getGeneratedNameForNode(parameter), visitNode(initializer, visitor, isExpression))),
-            EmitFlags.CustomPrologue
-          )
+          setEmitFlags(createExpressionStatement(createAssignment(getGeneratedNameForNode(parameter), visitNode(initializer, visitor, isExpression))), EmitFlags.CustomPrologue)
         );
         return true;
       }
@@ -1257,12 +1186,7 @@ namespace qnr {
      * @param name The name of the parameter.
      * @param initializer The initializer for the parameter.
      */
-    function insertDefaultValueAssignmentForInitializer(
-      statements: Statement[],
-      parameter: ParameterDeclaration,
-      name: Identifier,
-      initializer: Expression
-    ): void {
+    function insertDefaultValueAssignmentForInitializer(statements: Statement[], parameter: ParameterDeclaration, name: Identifier, initializer: Expression): void {
       initializer = visitNode(initializer, visitor, isExpression);
       const statement = createIf(
         createTypeCheck(getSynthesizedClone(name), 'undefined'),
@@ -1272,10 +1196,7 @@ namespace qnr {
               createExpressionStatement(
                 setEmitFlags(
                   setTextRange(
-                    createAssignment(
-                      setEmitFlags(getMutableClone(name), EmitFlags.NoSourceMap),
-                      setEmitFlags(initializer, EmitFlags.NoSourceMap | getEmitFlags(initializer) | EmitFlags.NoComments)
-                    ),
+                    createAssignment(setEmitFlags(getMutableClone(name), EmitFlags.NoSourceMap), setEmitFlags(initializer, EmitFlags.NoSourceMap | getEmitFlags(initializer) | EmitFlags.NoComments)),
                     parameter
                   ),
                   EmitFlags.NoComments
@@ -1302,10 +1223,7 @@ namespace qnr {
      *                                          part of a constructor declaration with a
      *                                          synthesized call to `super`
      */
-    function shouldAddRestParameter(
-      node: ParameterDeclaration | undefined,
-      inConstructorWithSynthesizedSuper: boolean
-    ): node is ParameterDeclaration {
+    function shouldAddRestParameter(node: ParameterDeclaration | undefined, inConstructorWithSynthesizedSuper: boolean): node is ParameterDeclaration {
       return !!(node && node.dotDotDotToken && !inConstructorWithSynthesizedSuper);
     }
 
@@ -1326,8 +1244,7 @@ namespace qnr {
       }
 
       // `declarationName` is the name of the local declaration for the parameter.
-      const declarationName =
-        parameter.name.kind === SyntaxKind.Identifier ? getMutableClone(parameter.name) : createTempVariable(/*recordTempVariable*/ undefined);
+      const declarationName = parameter.name.kind === SyntaxKind.Identifier ? getMutableClone(parameter.name) : createTempVariable(/*recordTempVariable*/ undefined);
       setEmitFlags(declarationName, EmitFlags.NoSourceMap);
 
       // `expressionName` is the name of the parameter used in expressions.
@@ -1339,10 +1256,7 @@ namespace qnr {
       prologueStatements.push(
         setEmitFlags(
           setTextRange(
-            createVariableStatement(
-              /*modifiers*/ undefined,
-              createVariableDeclarationList([createVariableDeclaration(declarationName, /*type*/ undefined, createArrayLiteral([]))])
-            ),
+            createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([createVariableDeclaration(declarationName, /*type*/ undefined, createArrayLiteral([]))])),
             /*location*/ parameter
           ),
           EmitFlags.CustomPrologue
@@ -1360,10 +1274,7 @@ namespace qnr {
           startOnNewLine(
             setTextRange(
               createExpressionStatement(
-                createAssignment(
-                  createElementAccess(expressionName, restIndex === 0 ? temp : createSubtract(temp, createLiteral(restIndex))),
-                  createElementAccess(createIdentifier('arguments'), temp)
-                )
+                createAssignment(createElementAccess(expressionName, restIndex === 0 ? temp : createSubtract(temp, createLiteral(restIndex))), createElementAccess(createIdentifier('arguments'), temp))
               ),
               /*location*/ parameter
             )
@@ -1380,10 +1291,7 @@ namespace qnr {
         prologueStatements.push(
           setEmitFlags(
             setTextRange(
-              createVariableStatement(
-                /*modifiers*/ undefined,
-                createVariableDeclarationList(flattenDestructuringBinding(parameter, visitor, context, FlattenLevel.All, expressionName))
-              ),
+              createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList(flattenDestructuringBinding(parameter, visitor, context, FlattenLevel.All, expressionName))),
               parameter
             ),
             EmitFlags.CustomPrologue
@@ -1542,11 +1450,7 @@ namespace qnr {
           : isIdentifier(propertyName)
           ? StringLiteral.create(unescapeLeadingUnderscores(propertyName.escapedText))
           : propertyName;
-        e = createObjectDefinePropertyCall(
-          receiver,
-          name,
-          createPropertyDescriptor({ value: memberFunction, enumerable: false, writable: true, configurable: true })
-        );
+        e = createObjectDefinePropertyCall(receiver, name, createPropertyDescriptor({ value: memberFunction, enumerable: false, writable: true, configurable: true }));
       } else {
         const memberName = createMemberAccessForPropertyName(receiver, propertyName, /*location*/ member.name);
         e = createAssignment(memberName, memberFunction);
@@ -1626,10 +1530,7 @@ namespace qnr {
         properties.push(setter);
       }
 
-      properties.push(
-        createPropertyAssignment('enumerable', getAccessor || setAccessor ? createFalse() : createTrue()),
-        createPropertyAssignment('configurable', createTrue())
-      );
+      properties.push(createPropertyAssignment('enumerable', getAccessor || setAccessor ? createFalse() : createTrue()), createPropertyAssignment('configurable', createTrue()));
 
       const call = createCall(createPropertyAccess(createIdentifier('Object'), 'defineProperty'), /*typeArguments*/ undefined, [
         target,
@@ -1699,16 +1600,7 @@ namespace qnr {
 
       exitSubtree(ancestorFacts, HierarchyFacts.FunctionSubtreeExcludes, HierarchyFacts.None);
       convertedLoopState = savedConvertedLoopState;
-      return updateFunctionExpression(
-        node,
-        /*modifiers*/ undefined,
-        node.asteriskToken,
-        name,
-        /*typeParameters*/ undefined,
-        parameters,
-        /*type*/ undefined,
-        body
-      );
+      return updateFunctionExpression(node, /*modifiers*/ undefined, node.asteriskToken, name, /*typeParameters*/ undefined, parameters, /*type*/ undefined, body);
     }
 
     /**
@@ -1746,12 +1638,7 @@ namespace qnr {
      * @param location The source-map location for the new FunctionExpression.
      * @param name The name of the new FunctionExpression.
      */
-    function transformFunctionLikeToExpression(
-      node: FunctionLikeDeclaration,
-      location: TextRange | undefined,
-      name: Identifier | undefined,
-      container: Node | undefined
-    ): FunctionExpression {
+    function transformFunctionLikeToExpression(node: FunctionLikeDeclaration, location: TextRange | undefined, name: Identifier | undefined, container: Node | undefined): FunctionExpression {
       const savedConvertedLoopState = convertedLoopState;
       convertedLoopState = undefined;
       const ancestorFacts =
@@ -1760,29 +1647,14 @@ namespace qnr {
           : enterSubtree(HierarchyFacts.FunctionExcludes, HierarchyFacts.FunctionIncludes);
       const parameters = visitParameterList(node.parameters, visitor, context);
       const body = transformFunctionBody(node);
-      if (
-        hierarchyFacts & HierarchyFacts.NewTarget &&
-        !name &&
-        (node.kind === SyntaxKind.FunctionDeclaration || node.kind === SyntaxKind.FunctionExpression)
-      ) {
+      if (hierarchyFacts & HierarchyFacts.NewTarget && !name && (node.kind === SyntaxKind.FunctionDeclaration || node.kind === SyntaxKind.FunctionExpression)) {
         name = getGeneratedNameForNode(node);
       }
 
       exitSubtree(ancestorFacts, HierarchyFacts.FunctionSubtreeExcludes, HierarchyFacts.None);
       convertedLoopState = savedConvertedLoopState;
       return setOriginalNode(
-        setTextRange(
-          createFunctionExpression(
-            /*modifiers*/ undefined,
-            node.asteriskToken,
-            name,
-            /*typeParameters*/ undefined,
-            parameters,
-            /*type*/ undefined,
-            body
-          ),
-          location
-        ),
+        setTextRange(createFunctionExpression(/*modifiers*/ undefined, node.asteriskToken, name, /*typeParameters*/ undefined, parameters, /*type*/ undefined, body), location),
         /*original*/ node
       );
     }
@@ -1908,10 +1780,7 @@ namespace qnr {
       // If we are here it is most likely because our expression is a destructuring assignment.
       switch (node.expression.kind) {
         case SyntaxKind.ParenthesizedExpression:
-          return updateExpressionStatement(
-            node,
-            visitParenthesizedExpression(<ParenthesizedExpression>node.expression, /*needsDestructuringValue*/ false)
-          );
+          return updateExpressionStatement(node, visitParenthesizedExpression(<ParenthesizedExpression>node.expression, /*needsDestructuringValue*/ false));
         case SyntaxKind.BinaryExpression:
           return updateExpressionStatement(node, visitBinaryExpression(<BinaryExpression>node.expression, /*needsDestructuringValue*/ false));
       }
@@ -1965,10 +1834,7 @@ namespace qnr {
     }
 
     function visitVariableStatement(node: VariableStatement): Statement | undefined {
-      const ancestorFacts = enterSubtree(
-        HierarchyFacts.None,
-        hasSyntacticModifier(node, ModifierFlags.Export) ? HierarchyFacts.ExportedVariableStatement : HierarchyFacts.None
-      );
+      const ancestorFacts = enterSubtree(HierarchyFacts.None, hasSyntacticModifier(node, ModifierFlags.Export) ? HierarchyFacts.ExportedVariableStatement : HierarchyFacts.None);
       let updated: Statement | undefined;
       if (convertedLoopState && (node.declarationList.flags & NodeFlags.BlockScoped) === 0 && !isVariableStatementOfTypeScriptClassWrapper(node)) {
         // we are inside a converted loop - hoist variable declarations
@@ -2012,10 +1878,7 @@ namespace qnr {
           enableSubstitutionsForBlockScopedBindings();
         }
 
-        const declarations = flatMap(
-          node.declarations,
-          node.flags & NodeFlags.Let ? visitVariableDeclarationInLetDeclarationList : visitVariableDeclaration
-        );
+        const declarations = flatMap(node.declarations, node.flags & NodeFlags.Let ? visitVariableDeclarationInLetDeclarationList : visitVariableDeclaration);
 
         const declarationList = createVariableDeclarationList(declarations);
         setOriginalNode(declarationList, node);
@@ -2024,10 +1887,7 @@ namespace qnr {
 
         // If the first or last declaration is a binding pattern, we need to modify
         // the source map range for the declaration list.
-        if (
-          node.transformFlags & TransformFlags.ContainsBindingPattern &&
-          (isBindingPattern(node.declarations[0].name) || isBindingPattern(last(node.declarations).name))
-        ) {
+        if (node.transformFlags & TransformFlags.ContainsBindingPattern && (isBindingPattern(node.declarations[0].name) || isBindingPattern(last(node.declarations).name))) {
           setSourceMapRange(declarationList, getRangeUnion(declarations));
         }
 
@@ -2098,17 +1958,13 @@ namespace qnr {
       const flags = resolver.getNodeCheckFlags(node);
       const isCapturedInFunction = flags & NodeCheckFlags.CapturedBlockScopedBinding;
       const isDeclaredInLoop = flags & NodeCheckFlags.BlockScopedBindingInLoop;
-      const emittedAsTopLevel =
-        (hierarchyFacts & HierarchyFacts.TopLevel) !== 0 ||
-        (isCapturedInFunction && isDeclaredInLoop && (hierarchyFacts & HierarchyFacts.IterationStatementBlock) !== 0);
+      const emittedAsTopLevel = (hierarchyFacts & HierarchyFacts.TopLevel) !== 0 || (isCapturedInFunction && isDeclaredInLoop && (hierarchyFacts & HierarchyFacts.IterationStatementBlock) !== 0);
 
       const emitExplicitInitializer =
         !emittedAsTopLevel &&
         (hierarchyFacts & HierarchyFacts.ForInOrForOfStatement) === 0 &&
         (!resolver.isDeclarationWithCollidingName(node) ||
-          (isDeclaredInLoop &&
-            !isCapturedInFunction &&
-            (hierarchyFacts & (HierarchyFacts.ForStatement | HierarchyFacts.ForInOrForOfStatement)) === 0));
+          (isDeclaredInLoop && !isCapturedInFunction && (hierarchyFacts & (HierarchyFacts.ForStatement | HierarchyFacts.ForInOrForOfStatement)) === 0));
 
       return emitExplicitInitializer;
     }
@@ -2145,14 +2001,7 @@ namespace qnr {
       const ancestorFacts = enterSubtree(HierarchyFacts.ExportedVariableStatement, HierarchyFacts.None);
       let updated: VisitResult<VariableDeclaration>;
       if (isBindingPattern(node.name)) {
-        updated = flattenDestructuringBinding(
-          node,
-          visitor,
-          context,
-          FlattenLevel.All,
-          /*value*/ undefined,
-          (ancestorFacts & HierarchyFacts.ExportedVariableStatement) !== 0
-        );
+        updated = flattenDestructuringBinding(node, visitor, context, FlattenLevel.All, /*value*/ undefined, (ancestorFacts & HierarchyFacts.ExportedVariableStatement) !== 0);
       } else {
         updated = visitEachChild(node, visitor, context);
       }
@@ -2207,30 +2056,15 @@ namespace qnr {
     }
 
     function visitDoOrWhileStatement(node: DoStatement | WhileStatement, outermostLabeledStatement: LabeledStatement | undefined) {
-      return visitIterationStatementWithFacts(
-        HierarchyFacts.DoOrWhileStatementExcludes,
-        HierarchyFacts.DoOrWhileStatementIncludes,
-        node,
-        outermostLabeledStatement
-      );
+      return visitIterationStatementWithFacts(HierarchyFacts.DoOrWhileStatementExcludes, HierarchyFacts.DoOrWhileStatementIncludes, node, outermostLabeledStatement);
     }
 
     function visitForStatement(node: ForStatement, outermostLabeledStatement: LabeledStatement | undefined) {
-      return visitIterationStatementWithFacts(
-        HierarchyFacts.ForStatementExcludes,
-        HierarchyFacts.ForStatementIncludes,
-        node,
-        outermostLabeledStatement
-      );
+      return visitIterationStatementWithFacts(HierarchyFacts.ForStatementExcludes, HierarchyFacts.ForStatementIncludes, node, outermostLabeledStatement);
     }
 
     function visitForInStatement(node: ForInStatement, outermostLabeledStatement: LabeledStatement | undefined) {
-      return visitIterationStatementWithFacts(
-        HierarchyFacts.ForInOrForOfStatementExcludes,
-        HierarchyFacts.ForInOrForOfStatementIncludes,
-        node,
-        outermostLabeledStatement
-      );
+      return visitIterationStatementWithFacts(HierarchyFacts.ForInOrForOfStatementExcludes, HierarchyFacts.ForInOrForOfStatementIncludes, node, outermostLabeledStatement);
     }
 
     function visitForOfStatement(node: ForOfStatement, outermostLabeledStatement: LabeledStatement | undefined): VisitResult<Statement> {
@@ -2275,11 +2109,7 @@ namespace qnr {
                 setOriginalNode(
                   setTextRange(
                     createVariableDeclarationList([
-                      createVariableDeclaration(
-                        firstOriginalDeclaration ? firstOriginalDeclaration.name : createTempVariable(/*recordTempVariable*/ undefined),
-                        /*type*/ undefined,
-                        boundValue
-                      ),
+                      createVariableDeclaration(firstOriginalDeclaration ? firstOriginalDeclaration.name : createTempVariable(/*recordTempVariable*/ undefined), /*type*/ undefined, boundValue),
                     ]),
                     moveRangePos(initializer, -1)
                   ),
@@ -2320,11 +2150,7 @@ namespace qnr {
       return setEmitFlags(createBlock(createNodeArray(statements), /*multiLine*/ true), EmitFlags.NoSourceMap | EmitFlags.NoTokenSourceMaps);
     }
 
-    function convertForOfStatementForArray(
-      node: ForOfStatement,
-      outermostLabeledStatement: LabeledStatement,
-      convertedLoopBodyStatements: Statement[]
-    ): Statement {
+    function convertForOfStatementForArray(node: ForOfStatement, outermostLabeledStatement: LabeledStatement, convertedLoopBodyStatements: Statement[]): Statement {
       // The following ES6 code:
       //
       //    for (let v of expr) { }
@@ -2384,12 +2210,7 @@ namespace qnr {
       return restoreEnclosingLabel(forStatement, outermostLabeledStatement, convertedLoopState && resetLabel);
     }
 
-    function convertForOfStatementForIterable(
-      node: ForOfStatement,
-      outermostLabeledStatement: LabeledStatement,
-      convertedLoopBodyStatements: Statement[],
-      ancestorFacts: HierarchyFacts
-    ): Statement {
+    function convertForOfStatementForIterable(node: ForOfStatement, outermostLabeledStatement: LabeledStatement, convertedLoopBodyStatements: Statement[], ancestorFacts: HierarchyFacts): Statement {
       const expression = visitNode(node.expression, visitor, isExpression);
       const iterator = isIdentifier(expression) ? getGeneratedNameForNode(expression) : createTempVariable(/*recordTempVariable*/ undefined);
       const result = isIdentifier(expression) ? getGeneratedNameForNode(iterator) : createTempVariable(/*recordTempVariable*/ undefined);
@@ -2403,8 +2224,7 @@ namespace qnr {
       hoistVariableDeclaration(returnMethod);
 
       // if we are enclosed in an outer loop ensure we reset 'errorRecord' per each iteration
-      const initializer =
-        ancestorFacts & HierarchyFacts.IterationContainer ? inlineExpressions([createAssignment(errorRecord, createVoidZero()), values]) : values;
+      const initializer = ancestorFacts & HierarchyFacts.IterationContainer ? inlineExpressions([createAssignment(errorRecord, createVoidZero()), values]) : values;
 
       const forStatement = setEmitFlags(
         setTextRange(
@@ -2432,32 +2252,21 @@ namespace qnr {
         createBlock([restoreEnclosingLabel(forStatement, outermostLabeledStatement, convertedLoopState && resetLabel)]),
         createCatchClause(
           createVariableDeclaration(catchVariable),
-          setEmitFlags(
-            createBlock([
-              createExpressionStatement(createAssignment(errorRecord, createObjectLiteral([createPropertyAssignment('error', catchVariable)]))),
-            ]),
-            EmitFlags.SingleLine
-          )
+          setEmitFlags(createBlock([createExpressionStatement(createAssignment(errorRecord, createObjectLiteral([createPropertyAssignment('error', catchVariable)])))]), EmitFlags.SingleLine)
         ),
         createBlock([
           createTry(
             /*tryBlock*/ createBlock([
               setEmitFlags(
                 createIf(
-                  createLogicalAnd(
-                    createLogicalAnd(result, createLogicalNot(createPropertyAccess(result, 'done'))),
-                    createAssignment(returnMethod, createPropertyAccess(iterator, 'return'))
-                  ),
+                  createLogicalAnd(createLogicalAnd(result, createLogicalNot(createPropertyAccess(result, 'done'))), createAssignment(returnMethod, createPropertyAccess(iterator, 'return'))),
                   createExpressionStatement(createFunctionCall(returnMethod, iterator, []))
                 ),
                 EmitFlags.SingleLine
               ),
             ]),
             /*catchClause*/ undefined,
-            /*finallyBlock*/ setEmitFlags(
-              createBlock([setEmitFlags(createIf(errorRecord, createThrow(createPropertyAccess(errorRecord, 'error'))), EmitFlags.SingleLine)]),
-              EmitFlags.SingleLine
-            )
+            /*finallyBlock*/ setEmitFlags(createBlock([setEmitFlags(createIf(errorRecord, createThrow(createPropertyAccess(errorRecord, 'error'))), EmitFlags.SingleLine)]), EmitFlags.SingleLine)
           ),
         ])
       );
@@ -2479,11 +2288,7 @@ namespace qnr {
       let numInitialPropertiesWithoutYield = numProperties;
       for (let i = 0; i < numProperties; i++) {
         const property = properties[i];
-        if (
-          property.transformFlags & TransformFlags.ContainsYield &&
-          hierarchyFacts & HierarchyFacts.AsyncFunctionBody &&
-          i < numInitialPropertiesWithoutYield
-        ) {
+        if (property.transformFlags & TransformFlags.ContainsYield && hierarchyFacts & HierarchyFacts.AsyncFunctionBody && i < numInitialPropertiesWithoutYield) {
           numInitialPropertiesWithoutYield = i;
         }
         if (Debug.checkDefined(property.name).kind === SyntaxKind.ComputedPropertyName) {
@@ -2505,10 +2310,7 @@ namespace qnr {
         const expressions: Expression[] = [];
         const assignment = createAssignment(
           temp,
-          setEmitFlags(
-            createObjectLiteral(visitNodes(properties, visitor, isObjectLiteralElementLike, 0, numInitialProperties), node.multiLine),
-            EmitFlags.Indented
-          )
+          setEmitFlags(createObjectLiteral(visitNodes(properties, visitor, isObjectLiteralElementLike, 0, numInitialProperties), node.multiLine), EmitFlags.Indented)
         );
 
         if (node.multiLine) {
@@ -2617,12 +2419,8 @@ namespace qnr {
       const outerConvertedLoopState = convertedLoopState;
       convertedLoopState = currentState;
 
-      const initializerFunction = shouldConvertInitializerOfForStatement(node)
-        ? createFunctionForInitializerOfForStatement(node, currentState)
-        : undefined;
-      const bodyFunction = shouldConvertBodyOfIterationStatement(node)
-        ? createFunctionForBodyOfIterationStatement(node, currentState, outerConvertedLoopState)
-        : undefined;
+      const initializerFunction = shouldConvertInitializerOfForStatement(node) ? createFunctionForInitializerOfForStatement(node, currentState) : undefined;
+      const bodyFunction = shouldConvertBodyOfIterationStatement(node) ? createFunctionForBodyOfIterationStatement(node, currentState, outerConvertedLoopState) : undefined;
 
       convertedLoopState = outerConvertedLoopState;
 
@@ -2654,11 +2452,7 @@ namespace qnr {
       return statements;
     }
 
-    function convertIterationStatementCore(
-      node: IterationStatement,
-      initializerFunction: IterationStatementPartFunction<VariableDeclarationList> | undefined,
-      convertedLoopBody: Statement
-    ) {
+    function convertIterationStatementCore(node: IterationStatement, initializerFunction: IterationStatementPartFunction<VariableDeclarationList> | undefined, convertedLoopBody: Statement) {
       switch (node.kind) {
         case SyntaxKind.ForStatement:
           return convertForStatement(node as ForStatement, initializerFunction, convertedLoopBody);
@@ -2675,11 +2469,7 @@ namespace qnr {
       }
     }
 
-    function convertForStatement(
-      node: ForStatement,
-      initializerFunction: IterationStatementPartFunction<VariableDeclarationList> | undefined,
-      convertedLoopBody: Statement
-    ) {
+    function convertForStatement(node: ForStatement, initializerFunction: IterationStatementPartFunction<VariableDeclarationList> | undefined, convertedLoopBody: Statement) {
       const shouldConvertCondition = node.condition && shouldConvertPartOfIterationStatement(node.condition);
       const shouldConvertIncrementor = shouldConvertCondition || (node.incrementor && shouldConvertPartOfIterationStatement(node.incrementor));
       return updateFor(
@@ -2692,22 +2482,11 @@ namespace qnr {
     }
 
     function convertForOfStatement(node: ForOfStatement, convertedLoopBody: Statement) {
-      return updateForOf(
-        node,
-        /*awaitModifier*/ undefined,
-        visitNode(node.initializer, visitor, isForInitializer),
-        visitNode(node.expression, visitor, isExpression),
-        convertedLoopBody
-      );
+      return updateForOf(node, /*awaitModifier*/ undefined, visitNode(node.initializer, visitor, isForInitializer), visitNode(node.expression, visitor, isExpression), convertedLoopBody);
     }
 
     function convertForInStatement(node: ForInStatement, convertedLoopBody: Statement) {
-      return updateForIn(
-        node,
-        visitNode(node.initializer, visitor, isForInitializer),
-        visitNode(node.expression, visitor, isExpression),
-        convertedLoopBody
-      );
+      return updateForIn(node, visitNode(node.initializer, visitor, isForInitializer), visitNode(node.expression, visitor, isExpression), convertedLoopBody);
     }
 
     function convertDoStatement(node: DoStatement, convertedLoopBody: Statement) {
@@ -2775,9 +2554,7 @@ namespace qnr {
           outerState.argumentsName = state.argumentsName;
         } else {
           // this is top level converted loop and we need to create an alias for 'arguments' object
-          (extraVariableDeclarations || (extraVariableDeclarations = [])).push(
-            createVariableDeclaration(state.argumentsName, /*type*/ undefined, createIdentifier('arguments'))
-          );
+          (extraVariableDeclarations || (extraVariableDeclarations = [])).push(createVariableDeclaration(state.argumentsName, /*type*/ undefined, createIdentifier('arguments')));
         }
       }
 
@@ -2791,9 +2568,7 @@ namespace qnr {
           // NOTE:
           // if converted loops were all nested in arrow function then we'll always emit '_this' so convertedLoopState.thisName will not be set.
           // If it is set this means that all nested loops are not nested in arrow function and it is safe to capture 'this'.
-          (extraVariableDeclarations || (extraVariableDeclarations = [])).push(
-            createVariableDeclaration(state.thisName, /*type*/ undefined, createIdentifier('this'))
-          );
+          (extraVariableDeclarations || (extraVariableDeclarations = [])).push(createVariableDeclaration(state.thisName, /*type*/ undefined, createIdentifier('this')));
         }
       }
 
@@ -2853,10 +2628,7 @@ namespace qnr {
      * used to preserve the per-iteration environment semantics of
      * [13.7.4.8 RS: ForBodyEvaluation](https://tc39.github.io/ecma262/#sec-forbodyevaluation).
      */
-    function createFunctionForInitializerOfForStatement(
-      node: ForStatementWithConvertibleInitializer,
-      currentState: ConvertedLoopState
-    ): IterationStatementPartFunction<VariableDeclarationList> {
+    function createFunctionForInitializerOfForStatement(node: ForStatementWithConvertibleInitializer, currentState: ConvertedLoopState): IterationStatementPartFunction<VariableDeclarationList> {
       const functionName = createUniqueName('_loop_init');
 
       const containsYield = (node.initializer.transformFlags & TransformFlags.ContainsYield) !== 0;
@@ -2976,20 +2748,11 @@ namespace qnr {
 
         currentState.conditionVariable = createUniqueName('inc');
         statements.push(
-          createIf(
-            currentState.conditionVariable,
-            createStatement(visitNode(node.incrementor, visitor, isExpression)),
-            createStatement(createAssignment(currentState.conditionVariable, createTrue()))
-          )
+          createIf(currentState.conditionVariable, createStatement(visitNode(node.incrementor, visitor, isExpression)), createStatement(createAssignment(currentState.conditionVariable, createTrue())))
         );
 
         if (shouldConvertConditionOfForStatement(node)) {
-          statements.push(
-            createIf(
-              createPrefix(SyntaxKind.ExclamationToken, visitNode(node.condition, visitor, isExpression)),
-              visitNode(createBreak(), visitor, isStatement)
-            )
-          );
+          statements.push(createIf(createPrefix(SyntaxKind.ExclamationToken, visitNode(node.condition, visitor, isExpression)), visitNode(createBreak(), visitor, isStatement)));
         }
       }
 
@@ -3061,12 +2824,7 @@ namespace qnr {
       return createBinary(target, SyntaxKind.EqualsToken, source);
     }
 
-    function copyOutParameters(
-      outParams: LoopOutParameter[],
-      partFlags: LoopOutParameterFlags,
-      copyDirection: CopyDirection,
-      statements: Statement[]
-    ): void {
+    function copyOutParameters(outParams: LoopOutParameter[], partFlags: LoopOutParameterFlags, copyDirection: CopyDirection, statements: Statement[]): void {
       for (const outParam of outParams) {
         if (outParam.flags & partFlags) {
           statements.push(createExpressionStatement(copyOutParameter(outParam, copyDirection)));
@@ -3080,12 +2838,7 @@ namespace qnr {
       return createStatement(callResult);
     }
 
-    function generateCallToConvertedLoop(
-      loopFunctionExpressionName: Identifier,
-      state: ConvertedLoopState,
-      outerState: ConvertedLoopState | undefined,
-      containsYield: boolean
-    ): Statement[] {
+    function generateCallToConvertedLoop(loopFunctionExpressionName: Identifier, state: ConvertedLoopState, outerState: ConvertedLoopState | undefined, containsYield: boolean): Statement[] {
       const statements: Statement[] = [];
       // loop is considered simple if it does not have any return statements or break\continue that transfer control outside of the loop
       // simple loops are emitted as just 'loop()';
@@ -3103,10 +2856,7 @@ namespace qnr {
         copyOutParameters(state.loopOutParameters, LoopOutParameterFlags.Body, CopyDirection.ToOriginal, statements);
       } else {
         const loopResultName = createUniqueName('state');
-        const stateVariable = createVariableStatement(
-          /*modifiers*/ undefined,
-          createVariableDeclarationList([createVariableDeclaration(loopResultName, /*type*/ undefined, callResult)])
-        );
+        const stateVariable = createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([createVariableDeclaration(loopResultName, /*type*/ undefined, callResult)]));
         statements.push(stateVariable);
         copyOutParameters(state.loopOutParameters, LoopOutParameterFlags.Body, CopyDirection.ToOriginal, statements);
 
@@ -3149,13 +2899,7 @@ namespace qnr {
       }
     }
 
-    function processLabeledJumps(
-      table: Map<string>,
-      isBreak: boolean,
-      loopResultName: Identifier,
-      outerLoop: ConvertedLoopState | undefined,
-      caseClauses: CaseClause[]
-    ): void {
+    function processLabeledJumps(table: Map<string>, isBreak: boolean, loopResultName: Identifier, outerLoop: ConvertedLoopState | undefined, caseClauses: CaseClause[]): void {
       if (!table) {
         return;
       }
@@ -3257,10 +3001,7 @@ namespace qnr {
      * @param receiver The receiver for the assignment.
      */
     function transformPropertyAssignmentToExpression(property: PropertyAssignment, receiver: Expression, startsOnNewLine: boolean) {
-      const expression = createAssignment(
-        createMemberAccessForPropertyName(receiver, visitNode(property.name, visitor, isPropertyName)),
-        visitNode(property.initializer, visitor, isExpression)
-      );
+      const expression = createAssignment(createMemberAccessForPropertyName(receiver, visitNode(property.name, visitor, isPropertyName)), visitNode(property.initializer, visitor, isExpression));
       setTextRange(expression, property);
       if (startsOnNewLine) {
         startOnNewLine(expression);
@@ -3276,10 +3017,7 @@ namespace qnr {
      * @param receiver The receiver for the assignment.
      */
     function transformShorthandPropertyAssignmentToExpression(property: ShorthandPropertyAssignment, receiver: Expression, startsOnNewLine: boolean) {
-      const expression = createAssignment(
-        createMemberAccessForPropertyName(receiver, visitNode(property.name, visitor, isPropertyName)),
-        getSynthesizedClone(property.name)
-      );
+      const expression = createAssignment(createMemberAccessForPropertyName(receiver, visitNode(property.name, visitor, isPropertyName)), getSynthesizedClone(property.name));
       setTextRange(expression, property);
       if (startsOnNewLine) {
         startOnNewLine(expression);
@@ -3294,12 +3032,7 @@ namespace qnr {
      * @param method The MethodDeclaration node.
      * @param receiver The receiver for the assignment.
      */
-    function transformObjectLiteralMethodDeclarationToExpression(
-      method: MethodDeclaration,
-      receiver: Expression,
-      container: Node,
-      startsOnNewLine: boolean
-    ) {
+    function transformObjectLiteralMethodDeclarationToExpression(method: MethodDeclaration, receiver: Expression, container: Node, startsOnNewLine: boolean) {
       const expression = createAssignment(
         createMemberAccessForPropertyName(receiver, visitNode(method.name, visitor, isPropertyName)),
         transformFunctionLikeToExpression(method, /*location*/ method, /*name*/ undefined, container)
@@ -3348,12 +3081,7 @@ namespace qnr {
       // Methods on classes are handled in visitClassDeclaration/visitClassExpression.
       // Methods with computed property names are handled in visitObjectLiteralExpression.
       assert(!ComputedPropertyName.kind(node.name));
-      const functionExpression = transformFunctionLikeToExpression(
-        node,
-        /*location*/ moveRangePos(node, -1),
-        /*name*/ undefined,
-        /*container*/ undefined
-      );
+      const functionExpression = transformFunctionLikeToExpression(node, /*location*/ moveRangePos(node, -1), /*name*/ undefined, /*container*/ undefined);
       setEmitFlags(functionExpression, EmitFlags.NoLeadingComments | getEmitFlags(functionExpression));
       return setTextRange(createPropertyAssignment(node.name, functionExpression), /*location*/ node);
     }
@@ -3372,9 +3100,9 @@ namespace qnr {
       const parameters = visitParameterList(node.parameters, visitor, context);
       const body = transformFunctionBody(node);
       if (node.kind === SyntaxKind.GetAccessor) {
-        updated = updateGetAccessor(node, node.decorators, node.modifiers, node.name, parameters, node.type, body);
+        updated = GetAccessorDeclaration.update(node, node.decorators, node.modifiers, node.name, parameters, node.type, body);
       } else {
-        updated = updateSetAccessor(node, node.decorators, node.modifiers, node.name, parameters, body);
+        updated = SetAccessorDeclaration.update(node, node.decorators, node.modifiers, node.name, parameters, body);
       }
       exitSubtree(ancestorFacts, HierarchyFacts.FunctionSubtreeExcludes, HierarchyFacts.None);
       convertedLoopState = savedConvertedLoopState;
@@ -3412,12 +3140,7 @@ namespace qnr {
     function visitArrayLiteralExpression(node: ArrayLiteralExpression): Expression {
       if (some(node.elements, isSpreadElement)) {
         // We are here because we contain a SpreadElementExpression.
-        return transformAndSpreadElements(
-          node.elements,
-          /*needsUniqueCopy*/ true,
-          !!node.multiLine,
-          /*hasTrailingComma*/ !!node.elements.hasTrailingComma
-        );
+        return transformAndSpreadElements(node.elements, /*needsUniqueCopy*/ true, !!node.multiLine, /*hasTrailingComma*/ !!node.elements.hasTrailingComma);
       }
       return visitEachChild(node, visitor, context);
     }
@@ -3437,12 +3160,7 @@ namespace qnr {
         return visitCallExpressionWithPotentialCapturedThisAssignment(node, /*assignToCapturedThis*/ true);
       }
 
-      return updateCall(
-        node,
-        visitNode(node.expression, callExpressionVisitor, isExpression),
-        /*typeArguments*/ undefined,
-        visitNodes(node.arguments, visitor, isExpression)
-      );
+      return updateCall(node, visitNode(node.expression, callExpressionVisitor, isExpression), /*typeArguments*/ undefined, visitNodes(node.arguments, visitor, isExpression));
     }
 
     function visitTypeScriptClassWrapper(node: CallExpression) {
@@ -3483,8 +3201,7 @@ namespace qnr {
 
       // The class statements are the statements generated by visiting the first statement with initializer of the
       // body (1), while all other statements are added to remainingStatements (2)
-      const isVariableStatementWithInitializer = (stmt: Statement) =>
-        isVariableStatement(stmt) && !!first(stmt.declarationList.declarations).initializer;
+      const isVariableStatementWithInitializer = (stmt: Statement) => isVariableStatement(stmt) && !!first(stmt.declarationList.declarations).initializer;
 
       // visit the class body statements outside of any converted loop body.
       const savedConvertedLoopState = convertedLoopState;
@@ -3601,17 +3318,10 @@ namespace qnr {
       return visitCallExpressionWithPotentialCapturedThisAssignment(node, /*assignToCapturedThis*/ false);
     }
 
-    function visitCallExpressionWithPotentialCapturedThisAssignment(
-      node: CallExpression,
-      assignToCapturedThis: boolean
-    ): CallExpression | BinaryExpression {
+    function visitCallExpressionWithPotentialCapturedThisAssignment(node: CallExpression, assignToCapturedThis: boolean): CallExpression | BinaryExpression {
       // We are here either because SuperKeyword was used somewhere in the expression, or
       // because we contain a SpreadElementExpression.
-      if (
-        node.transformFlags & TransformFlags.ContainsRestOrSpread ||
-        node.expression.kind === SyntaxKind.SuperKeyword ||
-        isSuperProperty(skipOuterExpressions(node.expression))
-      ) {
+      if (node.transformFlags & TransformFlags.ContainsRestOrSpread || node.expression.kind === SyntaxKind.SuperKeyword || isSuperProperty(skipOuterExpressions(node.expression))) {
         const { target, thisArg } = createCallBinding(node.expression, hoistVariableDeclaration);
         if (node.expression.kind === SyntaxKind.SuperKeyword) {
           setEmitFlags(thisArg, EmitFlags.NoSubstitution);
@@ -3685,12 +3395,7 @@ namespace qnr {
           createFunctionApply(
             visitNode(target, visitor, isExpression),
             thisArg,
-            transformAndSpreadElements(
-              createNodeArray([createVoidZero(), ...node.arguments!]),
-              /*needsUniqueCopy*/ false,
-              /*multiLine*/ false,
-              /*hasTrailingComma*/ false
-            )
+            transformAndSpreadElements(createNodeArray([createVoidZero(), ...node.arguments!]), /*needsUniqueCopy*/ false, /*multiLine*/ false, /*hasTrailingComma*/ false)
           ),
           /*typeArguments*/ undefined,
           []
@@ -3706,12 +3411,7 @@ namespace qnr {
      * @param needsUniqueCopy A value indicating whether to ensure that the result is a fresh array.
      * @param multiLine A value indicating whether the result should be emitted on multiple lines.
      */
-    function transformAndSpreadElements(
-      elements: NodeArray<Expression>,
-      needsUniqueCopy: boolean,
-      multiLine: boolean,
-      hasTrailingComma: boolean
-    ): Expression {
+    function transformAndSpreadElements(elements: NodeArray<Expression>, needsUniqueCopy: boolean, multiLine: boolean, hasTrailingComma: boolean): Expression {
       // [source]
       //      [a, ...b, c]
       //
@@ -3725,9 +3425,7 @@ namespace qnr {
       // expressions into an array literal.
       const numElements = elements.length;
       const segments = flatten<Expression>(
-        spanMap(elements, partitionSpread, (partition, visitPartition, _start, end) =>
-          visitPartition(partition, multiLine, hasTrailingComma && end === numElements)
-        )
+        spanMap(elements, partitionSpread, (partition, visitPartition, _start, end) => visitPartition(partition, multiLine, hasTrailingComma && end === numElements))
       );
 
       if (compilerOptions.downlevelIteration) {
@@ -3761,10 +3459,7 @@ namespace qnr {
 
     function isCallToHelper(firstSegment: Expression, helperName: __String) {
       return (
-        isCallExpression(firstSegment) &&
-        isIdentifier(firstSegment.expression) &&
-        getEmitFlags(firstSegment.expression) & EmitFlags.HelperName &&
-        firstSegment.expression.escapedText === helperName
+        isCallExpression(firstSegment) && isIdentifier(firstSegment.expression) && getEmitFlags(firstSegment.expression) & EmitFlags.HelperName && firstSegment.expression.escapedText === helperName
       );
     }
 
@@ -3953,9 +3648,7 @@ namespace qnr {
         // If we are tracking a captured `this`, keep track of the enclosing function.
         const ancestorFacts = enterSubtree(
           HierarchyFacts.FunctionExcludes,
-          getEmitFlags(node) & EmitFlags.CapturesThis
-            ? HierarchyFacts.FunctionIncludes | HierarchyFacts.CapturesThis
-            : HierarchyFacts.FunctionIncludes
+          getEmitFlags(node) & EmitFlags.CapturesThis ? HierarchyFacts.FunctionIncludes | HierarchyFacts.CapturesThis : HierarchyFacts.FunctionIncludes
         );
         previousOnEmitNode(hint, node, emitCallback);
         exitSubtree(ancestorFacts, HierarchyFacts.None, HierarchyFacts.None);
