@@ -1537,7 +1537,7 @@ namespace qnr {
       const propertyName = visitNode(member.name, visitor, isPropertyName);
       let e: Expression;
       if (!isPrivateIdentifier(propertyName) && context.getCompilerOptions().useDefineForClassFields) {
-        const name = isComputedPropertyName(propertyName)
+        const name = ComputedPropertyName.kind(propertyName)
           ? propertyName.expression
           : isIdentifier(propertyName)
           ? StringLiteral.create(unescapeLeadingUnderscores(propertyName.escapedText))
@@ -3347,7 +3347,7 @@ namespace qnr {
       // We should only get here for methods on an object literal with regular identifier names.
       // Methods on classes are handled in visitClassDeclaration/visitClassExpression.
       // Methods with computed property names are handled in visitObjectLiteralExpression.
-      assert(!isComputedPropertyName(node.name));
+      assert(!ComputedPropertyName.kind(node.name));
       const functionExpression = transformFunctionLikeToExpression(
         node,
         /*location*/ moveRangePos(node, -1),
@@ -3364,7 +3364,7 @@ namespace qnr {
      * @param node An AccessorDeclaration node.
      */
     function visitAccessorDeclaration(node: AccessorDeclaration): AccessorDeclaration {
-      assert(!isComputedPropertyName(node.name));
+      assert(!ComputedPropertyName.kind(node.name));
       const savedConvertedLoopState = convertedLoopState;
       convertedLoopState = undefined;
       const ancestorFacts = enterSubtree(HierarchyFacts.FunctionExcludes, HierarchyFacts.FunctionIncludes);

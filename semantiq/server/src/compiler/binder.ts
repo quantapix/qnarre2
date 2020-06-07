@@ -339,7 +339,7 @@ namespace qnr {
         if (name.kind === SyntaxKind.ComputedPropertyName) {
           const nameExpression = name.expression;
           // treat computed property names where expression is string/numeric literal as just string/numeric literal
-          if (isStringOrNumericLiteralLike(nameExpression)) {
+          if (StringLiteral.orNumericLiteralLike(nameExpression)) {
             return escapeLeadingUnderscores(nameExpression.text);
           }
           if (isSignedNumericLiteral(nameExpression)) {
@@ -909,7 +909,7 @@ namespace qnr {
         expr.kind === SyntaxKind.SuperKeyword ||
         ((isPropertyAccessExpression(expr) || isNonNullExpression(expr) || isParenthesizedExpression(expr)) &&
           isNarrowableReference(expr.expression)) ||
-        (isElementAccessExpression(expr) && isStringOrNumericLiteralLike(expr.argumentExpression) && isNarrowableReference(expr.expression))
+        (isElementAccessExpression(expr) && StringLiteral.orNumericLiteralLike(expr.argumentExpression) && isNarrowableReference(expr.expression))
       );
     }
 
@@ -935,11 +935,11 @@ namespace qnr {
     }
 
     function isNarrowingTypeofOperands(expr1: Expression, expr2: Expression) {
-      return isTypeOfExpression(expr1) && isNarrowableOperand(expr1.expression) && isStringLiteralLike(expr2);
+      return isTypeOfExpression(expr1) && isNarrowableOperand(expr1.expression) && StringLiteral.like(expr2);
     }
 
     function isNarrowableInOperands(left: Expression, right: Expression) {
-      return isStringLiteralLike(left) && isNarrowingExpression(right);
+      return StringLiteral.like(left) && isNarrowingExpression(right);
     }
 
     function isNarrowingBinaryExpression(expr: BinaryExpression) {
@@ -3984,7 +3984,7 @@ namespace qnr {
     }
 
     // Hoisted variables related to class properties should live within the TypeScript class wrapper.
-    if (isComputedPropertyName(node.name) || (hasStaticModifier(node) && node.initializer)) {
+    if (ComputedPropertyName.kind(node.name) || (hasStaticModifier(node) && node.initializer)) {
       transformFlags |= TransformFlags.ContainsTypeScriptClassSyntax;
     }
 

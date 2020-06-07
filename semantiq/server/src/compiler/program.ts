@@ -2340,7 +2340,7 @@ namespace qnr {
             imports = append(imports, node.arguments[0]);
           }
           // we have to check the argument list has length of 1. We will still have to process these even though we have parsing error.
-          else if (isImportCall(node) && node.arguments.length === 1 && isStringLiteralLike(node.arguments[0])) {
+          else if (isImportCall(node) && node.arguments.length === 1 && StringLiteral.like(node.arguments[0])) {
             imports = append(imports, node.arguments[0] as StringLiteralLike);
           } else if (isLiteralImportTypeNode(node)) {
             imports = append(imports, node.argument.literal);

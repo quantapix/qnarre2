@@ -32,7 +32,7 @@ namespace qnr {
   }
 
   export function createMemberAccessForPropertyName(target: Expression, memberName: PropertyName, location?: TextRange): MemberExpression {
-    if (isComputedPropertyName(memberName)) {
+    if (ComputedPropertyName.kind(memberName)) {
       return setTextRange(createElementAccess(target, memberName.expression), location);
     } else {
       const expression = setTextRange(
@@ -84,7 +84,7 @@ namespace qnr {
   }
 
   function createJsxFactoryExpressionFromEntityName(jsxFactory: EntityName, parent: JsxOpeningLikeElement | JsxOpeningFragment): Expression {
-    if (isQualifiedName(jsxFactory)) {
+    if (QualifiedName.kind(jsxFactory)) {
       const left = createJsxFactoryExpressionFromEntityName(jsxFactory.left, parent);
       const right = createIdentifier(idText(jsxFactory.right));
       right.escapedText = jsxFactory.right.escapedText;
@@ -416,7 +416,7 @@ namespace qnr {
   }
 
   export function createExpressionFromEntityName(node: EntityName | Expression): Expression {
-    if (isQualifiedName(node)) {
+    if (QualifiedName.kind(node)) {
       const left = createExpressionFromEntityName(node.left);
       const right = getMutableClone(node.right);
       return setTextRange(createPropertyAccess(left, right), node);
@@ -428,7 +428,7 @@ namespace qnr {
   export function createExpressionForPropertyName(memberName: Exclude<PropertyName, PrivateIdentifier>): Expression {
     if (isIdentifier(memberName)) {
       return createLiteral(memberName);
-    } else if (isComputedPropertyName(memberName)) {
+    } else if (ComputedPropertyName.kind(memberName)) {
       return getMutableClone(memberName.expression);
     } else {
       return getMutableClone(memberName);
@@ -1749,7 +1749,9 @@ namespace qnr {
           if (isPrivateIdentifier(propertyName)) {
             return Debug.failBadSyntaxKind(propertyName);
           }
-          return isComputedPropertyName(propertyName) && isStringOrNumericLiteral(propertyName.expression) ? propertyName.expression : propertyName;
+          return ComputedPropertyName.kind(propertyName) && isStringOrNumericLiteral(propertyName.expression)
+            ? propertyName.expression
+            : propertyName;
         }
 
         break;
@@ -1764,7 +1766,9 @@ namespace qnr {
           if (isPrivateIdentifier(propertyName)) {
             return Debug.failBadSyntaxKind(propertyName);
           }
-          return isComputedPropertyName(propertyName) && isStringOrNumericLiteral(propertyName.expression) ? propertyName.expression : propertyName;
+          return ComputedPropertyName.kind(propertyName) && isStringOrNumericLiteral(propertyName.expression)
+            ? propertyName.expression
+            : propertyName;
         }
 
         break;

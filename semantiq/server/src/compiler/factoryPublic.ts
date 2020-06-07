@@ -10,9 +10,6 @@ namespace qnr {
 
   export function createNodeArray<T extends Node>(elements?: T[], hasTrailingComma?: boolean): MutableNodeArray<T>;
   export function createNodeArray<T extends Node>(elements?: readonly T[], hasTrailingComma?: boolean): NodeArray<T>;
-  /**
-   * Make `elements` into a `NodeArray<T>`. If `elements` is `undefined`, returns an empty `NodeArray<T>`.
-   */
   export function createNodeArray<T extends Node>(elements?: readonly T[], hasTrailingComma?: boolean): NodeArray<T> {
     if (!elements || elements === emptyArray) {
       elements = [];
@@ -27,30 +24,15 @@ namespace qnr {
     return array;
   }
 
-  /**
-   * Creates a shallow, memberwise clone of a node with no source map location.
-   */
   export function getSynthesizedClone<T extends Node>(node: T): T {
-    // We don't use "clone" from core.ts here, as we need to preserve the prototype chain of
-    // the original node. We also need to exclude specific properties and only include own-
-    // properties (to skip members already defined on the shared prototype).
-
-    if (node === undefined) {
-      return node;
-    }
-
-    const clone = <T>createSynthesizedNode(node.kind);
+    if (node === undefined) return node;
+    const clone = Node.createSynthesized(node.kind) as T;
     clone.flags |= node.flags;
     setOriginalNode(clone, node);
-
     for (const key in node) {
-      if (clone.hasOwnProperty(key) || !node.hasOwnProperty(key)) {
-        continue;
-      }
-
+      if (clone.hasOwnProperty(key) || !node.hasOwnProperty(key)) continue;
       (<any>clone)[key] = (<any>node)[key];
     }
-
     return clone;
   }
 
@@ -100,7 +82,7 @@ namespace qnr {
   export function createIdentifier(text: string): Identifier;
   export function createIdentifier(text: string, typeArguments: readonly (TypeNode | TypeParameterDeclaration)[] | undefined): Identifier; // eslint-disable-line @typescript-eslint/unified-signatures
   export function createIdentifier(text: string, typeArguments?: readonly (TypeNode | TypeParameterDeclaration)[]): Identifier {
-    const node = <Identifier>createSynthesizedNode(SyntaxKind.Identifier);
+    const node = <Identifier>Node.createSynthesized(SyntaxKind.Identifier);
     node.escapedText = escapeLeadingUnderscores(text);
     node.originalKeywordKind = text ? stringToToken(text) : SyntaxKind.Unknown;
     node.autoGenerateFlags = GeneratedIdentifierFlags.None;
@@ -195,7 +177,7 @@ namespace qnr {
     if (text[0] !== '#') {
       fail('First character of private identifier must be #: ' + text);
     }
-    const node = createSynthesizedNode(SyntaxKind.PrivateIdentifier) as PrivateIdentifier;
+    const node = Node.createSynthesized(SyntaxKind.PrivateIdentifier) as PrivateIdentifier;
     node.escapedText = escapeLeadingUnderscores(text);
     return node;
   }
@@ -203,29 +185,29 @@ namespace qnr {
   // Punctuation
 
   export function createToken<TKind extends SyntaxKind>(token: TKind) {
-    return <Token<TKind>>createSynthesizedNode(token);
+    return <Token<TKind>>Node.createSynthesized(token);
   }
 
   // Reserved words
 
   export function createSuper() {
-    return <SuperExpression>createSynthesizedNode(SyntaxKind.SuperKeyword);
+    return <SuperExpression>Node.createSynthesized(SyntaxKind.SuperKeyword);
   }
 
   export function createThis() {
-    return <ThisExpression & Token<SyntaxKind.ThisKeyword>>createSynthesizedNode(SyntaxKind.ThisKeyword);
+    return <ThisExpression & Token<SyntaxKind.ThisKeyword>>Node.createSynthesized(SyntaxKind.ThisKeyword);
   }
 
   export function createNull() {
-    return <NullLiteral & Token<SyntaxKind.NullKeyword>>createSynthesizedNode(SyntaxKind.NullKeyword);
+    return <NullLiteral & Token<SyntaxKind.NullKeyword>>Node.createSynthesized(SyntaxKind.NullKeyword);
   }
 
   export function createTrue() {
-    return <BooleanLiteral & Token<SyntaxKind.TrueKeyword>>createSynthesizedNode(SyntaxKind.TrueKeyword);
+    return <BooleanLiteral & Token<SyntaxKind.TrueKeyword>>Node.createSynthesized(SyntaxKind.TrueKeyword);
   }
 
   export function createFalse() {
-    return <BooleanLiteral & Token<SyntaxKind.FalseKeyword>>createSynthesizedNode(SyntaxKind.FalseKeyword);
+    return <BooleanLiteral & Token<SyntaxKind.FalseKeyword>>Node.createSynthesized(SyntaxKind.FalseKeyword);
   }
 
   // Modifiers
@@ -272,37 +254,10 @@ namespace qnr {
     return result;
   }
 
-  // Names
-
-  export function createQualifiedName(left: EntityName, right: string | Identifier) {
-    const node = <QualifiedName>createSynthesizedNode(SyntaxKind.QualifiedName);
-    node.left = left;
-    node.right = asName(right);
-    return node;
-  }
-
-  export function updateQualifiedName(node: QualifiedName, left: EntityName, right: Identifier) {
-    return node.left !== left || node.right !== right ? updateNode(createQualifiedName(left, right), node) : node;
-  }
-
-  function parenthesizeForComputedName(expression: Expression): Expression {
-    return isCommaSequence(expression) ? createParen(expression) : expression;
-  }
-
-  export function createComputedPropertyName(expression: Expression) {
-    const node = <ComputedPropertyName>createSynthesizedNode(SyntaxKind.ComputedPropertyName);
-    node.expression = parenthesizeForComputedName(expression);
-    return node;
-  }
-
-  export function updateComputedPropertyName(node: ComputedPropertyName, expression: Expression) {
-    return node.expression !== expression ? updateNode(createComputedPropertyName(expression), node) : node;
-  }
-
   // Signature elements
 
   export function createTypeParameterDeclaration(name: string | Identifier, constraint?: TypeNode, defaultType?: TypeNode) {
-    const node = createSynthesizedNode(SyntaxKind.TypeParameter) as TypeParameterDeclaration;
+    const node = Node.createSynthesized(SyntaxKind.TypeParameter) as TypeParameterDeclaration;
     node.name = asName(name);
     node.constraint = constraint;
     node.default = defaultType;
@@ -329,7 +284,7 @@ namespace qnr {
     type?: TypeNode,
     initializer?: Expression
   ) {
-    const node = <ParameterDeclaration>createSynthesizedNode(SyntaxKind.Parameter);
+    const node = <ParameterDeclaration>Node.createSynthesized(SyntaxKind.Parameter);
     node.decorators = asNodeArray(decorators);
     node.modifiers = asNodeArray(modifiers);
     node.dotDotDotToken = dotDotDotToken;
@@ -362,7 +317,7 @@ namespace qnr {
   }
 
   export function createDecorator(expression: Expression) {
-    const node = <Decorator>createSynthesizedNode(SyntaxKind.Decorator);
+    const node = <Decorator>Node.createSynthesized(SyntaxKind.Decorator);
     node.expression = parenthesizeForAccess(expression);
     return node;
   }
@@ -380,7 +335,7 @@ namespace qnr {
     type: TypeNode | undefined,
     initializer: Expression | undefined
   ): PropertySignature {
-    const node = createSynthesizedNode(SyntaxKind.PropertySignature) as PropertySignature;
+    const node = Node.createSynthesized(SyntaxKind.PropertySignature) as PropertySignature;
     node.modifiers = asNodeArray(modifiers);
     node.name = asName(name);
     node.questionToken = questionToken;
@@ -414,7 +369,7 @@ namespace qnr {
     type: TypeNode | undefined,
     initializer: Expression | undefined
   ) {
-    const node = <PropertyDeclaration>createSynthesizedNode(SyntaxKind.PropertyDeclaration);
+    const node = <PropertyDeclaration>Node.createSynthesized(SyntaxKind.PropertyDeclaration);
     node.decorators = asNodeArray(decorators);
     node.modifiers = asNodeArray(modifiers);
     node.name = asName(name);
@@ -498,7 +453,7 @@ namespace qnr {
     type: TypeNode | undefined,
     body: Block | undefined
   ) {
-    const node = <MethodDeclaration>createSynthesizedNode(SyntaxKind.MethodDeclaration);
+    const node = <MethodDeclaration>Node.createSynthesized(SyntaxKind.MethodDeclaration);
     node.decorators = asNodeArray(decorators);
     node.modifiers = asNodeArray(modifiers);
     node.asteriskToken = asteriskToken;
@@ -577,7 +532,7 @@ namespace qnr {
     parameters: readonly ParameterDeclaration[],
     body: Block | undefined
   ) {
-    const node = <ConstructorDeclaration>createSynthesizedNode(SyntaxKind.Constructor);
+    const node = <ConstructorDeclaration>Node.createSynthesized(SyntaxKind.Constructor);
     node.decorators = asNodeArray(decorators);
     node.modifiers = asNodeArray(modifiers);
     node.typeParameters = undefined;
@@ -607,7 +562,7 @@ namespace qnr {
     type: TypeNode | undefined,
     body: Block | undefined
   ) {
-    const node = <GetAccessorDeclaration>createSynthesizedNode(SyntaxKind.GetAccessor);
+    const node = <GetAccessorDeclaration>Node.createSynthesized(SyntaxKind.GetAccessor);
     node.decorators = asNodeArray(decorators);
     node.modifiers = asNodeArray(modifiers);
     node.name = asName(name);
@@ -644,7 +599,7 @@ namespace qnr {
     parameters: readonly ParameterDeclaration[],
     body: Block | undefined
   ) {
-    const node = <SetAccessorDeclaration>createSynthesizedNode(SyntaxKind.SetAccessor);
+    const node = <SetAccessorDeclaration>Node.createSynthesized(SyntaxKind.SetAccessor);
     node.decorators = asNodeArray(decorators);
     node.modifiers = asNodeArray(modifiers);
     node.name = asName(name);
@@ -711,7 +666,7 @@ namespace qnr {
     parameters: readonly ParameterDeclaration[],
     type: TypeNode
   ): IndexSignatureDeclaration {
-    const node = createSynthesizedNode(SyntaxKind.IndexSignature) as IndexSignatureDeclaration;
+    const node = Node.createSynthesized(SyntaxKind.IndexSignature) as IndexSignatureDeclaration;
     node.decorators = asNodeArray(decorators);
     node.modifiers = asNodeArray(modifiers);
     node.parameters = createNodeArray(parameters);
@@ -738,7 +693,7 @@ namespace qnr {
     type: TypeNode | undefined,
     typeArguments?: readonly TypeNode[] | undefined
   ) {
-    const node = createSynthesizedNode(kind) as SignatureDeclaration;
+    const node = Node.createSynthesized(kind) as SignatureDeclaration;
     node.typeParameters = asNodeArray(typeParameters);
     node.parameters = asNodeArray(parameters);
     node.type = type;
@@ -760,7 +715,7 @@ namespace qnr {
   // Types
 
   export function createKeywordTypeNode(kind: KeywordTypeNode['kind']) {
-    return <KeywordTypeNode>createSynthesizedNode(kind);
+    return <KeywordTypeNode>Node.createSynthesized(kind);
   }
 
   export function createTypePredicateNode(parameterName: Identifier | ThisTypeNode | string, type: TypeNode) {
@@ -772,7 +727,7 @@ namespace qnr {
     parameterName: Identifier | ThisTypeNode | string,
     type: TypeNode | undefined
   ) {
-    const node = createSynthesizedNode(SyntaxKind.TypePredicate) as TypePredicateNode;
+    const node = Node.createSynthesized(SyntaxKind.TypePredicate) as TypePredicateNode;
     node.assertsModifier = assertsModifier;
     node.parameterName = asName(parameterName);
     node.type = type;
@@ -795,7 +750,7 @@ namespace qnr {
   }
 
   export function createTypeReferenceNode(typeName: string | EntityName, typeArguments: readonly TypeNode[] | undefined) {
-    const node = createSynthesizedNode(SyntaxKind.TypeReference) as TypeReferenceNode;
+    const node = Node.createSynthesized(SyntaxKind.TypeReference) as TypeReferenceNode;
     node.typeName = asName(typeName);
     node.typeArguments = typeArguments && parenthesizeTypeParameters(typeArguments);
     return node;
@@ -842,7 +797,7 @@ namespace qnr {
   }
 
   export function createTypeQueryNode(exprName: EntityName) {
-    const node = createSynthesizedNode(SyntaxKind.TypeQuery) as TypeQueryNode;
+    const node = Node.createSynthesized(SyntaxKind.TypeQuery) as TypeQueryNode;
     node.exprName = exprName;
     return node;
   }
@@ -852,7 +807,7 @@ namespace qnr {
   }
 
   export function createTypeLiteralNode(members: readonly TypeElement[] | undefined) {
-    const node = createSynthesizedNode(SyntaxKind.TypeLiteral) as TypeLiteralNode;
+    const node = Node.createSynthesized(SyntaxKind.TypeLiteral) as TypeLiteralNode;
     node.members = createNodeArray(members);
     return node;
   }
@@ -862,7 +817,7 @@ namespace qnr {
   }
 
   export function createArrayTypeNode(elementType: TypeNode) {
-    const node = createSynthesizedNode(SyntaxKind.ArrayType) as ArrayTypeNode;
+    const node = Node.createSynthesized(SyntaxKind.ArrayType) as ArrayTypeNode;
     node.elementType = parenthesizeArrayTypeMember(elementType);
     return node;
   }
@@ -872,7 +827,7 @@ namespace qnr {
   }
 
   export function createTupleTypeNode(elements: readonly (TypeNode | NamedTupleMember)[]) {
-    const node = createSynthesizedNode(SyntaxKind.TupleType) as TupleTypeNode;
+    const node = Node.createSynthesized(SyntaxKind.TupleType) as TupleTypeNode;
     node.elements = createNodeArray(elements);
     return node;
   }
@@ -882,7 +837,7 @@ namespace qnr {
   }
 
   export function createOptionalTypeNode(type: TypeNode) {
-    const node = createSynthesizedNode(SyntaxKind.OptionalType) as OptionalTypeNode;
+    const node = Node.createSynthesized(SyntaxKind.OptionalType) as OptionalTypeNode;
     node.type = parenthesizeArrayTypeMember(type);
     return node;
   }
@@ -892,7 +847,7 @@ namespace qnr {
   }
 
   export function createRestTypeNode(type: TypeNode) {
-    const node = createSynthesizedNode(SyntaxKind.RestType) as RestTypeNode;
+    const node = Node.createSynthesized(SyntaxKind.RestType) as RestTypeNode;
     node.type = type;
     return node;
   }
@@ -918,7 +873,7 @@ namespace qnr {
   }
 
   export function createUnionOrIntersectionTypeNode(kind: SyntaxKind.UnionType | SyntaxKind.IntersectionType, types: readonly TypeNode[]) {
-    const node = createSynthesizedNode(kind) as UnionTypeNode | IntersectionTypeNode;
+    const node = Node.createSynthesized(kind) as UnionTypeNode | IntersectionTypeNode;
     node.types = parenthesizeElementTypeMembers(types);
     return node;
   }
@@ -928,7 +883,7 @@ namespace qnr {
   }
 
   export function createConditionalTypeNode(checkType: TypeNode, extendsType: TypeNode, trueType: TypeNode, falseType: TypeNode) {
-    const node = createSynthesizedNode(SyntaxKind.ConditionalType) as ConditionalTypeNode;
+    const node = Node.createSynthesized(SyntaxKind.ConditionalType) as ConditionalTypeNode;
     node.checkType = parenthesizeConditionalTypeMember(checkType);
     node.extendsType = parenthesizeConditionalTypeMember(extendsType);
     node.trueType = trueType;
@@ -949,7 +904,7 @@ namespace qnr {
   }
 
   export function createInferTypeNode(typeParameter: TypeParameterDeclaration) {
-    const node = <InferTypeNode>createSynthesizedNode(SyntaxKind.InferType);
+    const node = <InferTypeNode>Node.createSynthesized(SyntaxKind.InferType);
     node.typeParameter = typeParameter;
     return node;
   }
@@ -959,7 +914,7 @@ namespace qnr {
   }
 
   export function createImportTypeNode(argument: TypeNode, qualifier?: EntityName, typeArguments?: readonly TypeNode[], isTypeOf?: boolean) {
-    const node = <ImportTypeNode>createSynthesizedNode(SyntaxKind.ImportType);
+    const node = <ImportTypeNode>Node.createSynthesized(SyntaxKind.ImportType);
     node.argument = argument;
     node.qualifier = qualifier;
     node.typeArguments = parenthesizeTypeParameters(typeArguments);
@@ -980,7 +935,7 @@ namespace qnr {
   }
 
   export function createParenthesizedType(type: TypeNode) {
-    const node = <ParenthesizedTypeNode>createSynthesizedNode(SyntaxKind.ParenthesizedType);
+    const node = <ParenthesizedTypeNode>Node.createSynthesized(SyntaxKind.ParenthesizedType);
     node.type = type;
     return node;
   }
@@ -995,7 +950,7 @@ namespace qnr {
     questionToken: Token<SyntaxKind.QuestionToken> | undefined,
     type: TypeNode
   ) {
-    const node = <NamedTupleMember>createSynthesizedNode(SyntaxKind.NamedTupleMember);
+    const node = <NamedTupleMember>Node.createSynthesized(SyntaxKind.NamedTupleMember);
     node.dotDotDotToken = dotDotDotToken;
     node.name = name;
     node.questionToken = questionToken;
@@ -1016,7 +971,7 @@ namespace qnr {
   }
 
   export function createThisTypeNode() {
-    return <ThisTypeNode>createSynthesizedNode(SyntaxKind.ThisType);
+    return <ThisTypeNode>Node.createSynthesized(SyntaxKind.ThisType);
   }
 
   export function createTypeOperatorNode(type: TypeNode): TypeOperatorNode;
@@ -1028,7 +983,7 @@ namespace qnr {
     operatorOrType: SyntaxKind.KeyOfKeyword | SyntaxKind.UniqueKeyword | SyntaxKind.ReadonlyKeyword | TypeNode,
     type?: TypeNode
   ) {
-    const node = createSynthesizedNode(SyntaxKind.TypeOperator) as TypeOperatorNode;
+    const node = Node.createSynthesized(SyntaxKind.TypeOperator) as TypeOperatorNode;
     node.operator = typeof operatorOrType === 'number' ? operatorOrType : SyntaxKind.KeyOfKeyword;
     node.type = parenthesizeElementTypeMember(typeof operatorOrType === 'number' ? type! : operatorOrType);
     return node;
@@ -1039,7 +994,7 @@ namespace qnr {
   }
 
   export function createIndexedAccessTypeNode(objectType: TypeNode, indexType: TypeNode) {
-    const node = createSynthesizedNode(SyntaxKind.IndexedAccessType) as IndexedAccessTypeNode;
+    const node = Node.createSynthesized(SyntaxKind.IndexedAccessType) as IndexedAccessTypeNode;
     node.objectType = parenthesizeElementTypeMember(objectType);
     node.indexType = indexType;
     return node;
@@ -1057,7 +1012,7 @@ namespace qnr {
     questionToken: QuestionToken | PlusToken | MinusToken | undefined,
     type: TypeNode | undefined
   ): MappedTypeNode {
-    const node = createSynthesizedNode(SyntaxKind.MappedType) as MappedTypeNode;
+    const node = Node.createSynthesized(SyntaxKind.MappedType) as MappedTypeNode;
     node.readonlyToken = readonlyToken;
     node.typeParameter = typeParameter;
     node.questionToken = questionToken;
@@ -1078,7 +1033,7 @@ namespace qnr {
   }
 
   export function createLiteralTypeNode(literal: LiteralTypeNode['literal']) {
-    const node = createSynthesizedNode(SyntaxKind.LiteralType) as LiteralTypeNode;
+    const node = Node.createSynthesized(SyntaxKind.LiteralType) as LiteralTypeNode;
     node.literal = literal;
     return node;
   }
@@ -1090,7 +1045,7 @@ namespace qnr {
   // Binding Patterns
 
   export function createObjectBindingPattern(elements: readonly BindingElement[]) {
-    const node = <ObjectBindingPattern>createSynthesizedNode(SyntaxKind.ObjectBindingPattern);
+    const node = <ObjectBindingPattern>Node.createSynthesized(SyntaxKind.ObjectBindingPattern);
     node.elements = createNodeArray(elements);
     return node;
   }
@@ -1100,7 +1055,7 @@ namespace qnr {
   }
 
   export function createArrayBindingPattern(elements: readonly ArrayBindingElement[]) {
-    const node = <ArrayBindingPattern>createSynthesizedNode(SyntaxKind.ArrayBindingPattern);
+    const node = <ArrayBindingPattern>Node.createSynthesized(SyntaxKind.ArrayBindingPattern);
     node.elements = createNodeArray(elements);
     return node;
   }
@@ -1115,7 +1070,7 @@ namespace qnr {
     name: string | BindingName,
     initializer?: Expression
   ) {
-    const node = <BindingElement>createSynthesizedNode(SyntaxKind.BindingElement);
+    const node = <BindingElement>Node.createSynthesized(SyntaxKind.BindingElement);
     node.dotDotDotToken = dotDotDotToken;
     node.propertyName = asName(propertyName);
     node.name = asName(name);
@@ -1138,7 +1093,7 @@ namespace qnr {
   // Expression
 
   export function createArrayLiteral(elements?: readonly Expression[], multiLine?: boolean) {
-    const node = <ArrayLiteralExpression>createSynthesizedNode(SyntaxKind.ArrayLiteralExpression);
+    const node = <ArrayLiteralExpression>Node.createSynthesized(SyntaxKind.ArrayLiteralExpression);
     node.elements = parenthesizeListElements(createNodeArray(elements));
     if (multiLine) node.multiLine = true;
     return node;
@@ -1149,7 +1104,7 @@ namespace qnr {
   }
 
   export function createObjectLiteral(properties?: readonly ObjectLiteralElementLike[], multiLine?: boolean) {
-    const node = <ObjectLiteralExpression>createSynthesizedNode(SyntaxKind.ObjectLiteralExpression);
+    const node = <ObjectLiteralExpression>Node.createSynthesized(SyntaxKind.ObjectLiteralExpression);
     node.properties = createNodeArray(properties);
     if (multiLine) node.multiLine = true;
     return node;
@@ -1160,7 +1115,7 @@ namespace qnr {
   }
 
   export function createPropertyAccess(expression: Expression, name: string | Identifier | PrivateIdentifier) {
-    const node = <PropertyAccessExpression>createSynthesizedNode(SyntaxKind.PropertyAccessExpression);
+    const node = <PropertyAccessExpression>Node.createSynthesized(SyntaxKind.PropertyAccessExpression);
     node.expression = parenthesizeForAccess(expression);
     node.name = asName(name);
     setEmitFlags(node, EmitFlags.NoIndentation);
@@ -1179,7 +1134,7 @@ namespace qnr {
   }
 
   export function createPropertyAccessChain(expression: Expression, questionDotToken: QuestionDotToken | undefined, name: string | Identifier) {
-    const node = <PropertyAccessChain>createSynthesizedNode(SyntaxKind.PropertyAccessExpression);
+    const node = <PropertyAccessChain>Node.createSynthesized(SyntaxKind.PropertyAccessExpression);
     node.flags |= NodeFlags.OptionalChain;
     node.expression = parenthesizeForAccess(expression);
     node.questionDotToken = questionDotToken;
@@ -1206,7 +1161,7 @@ namespace qnr {
   }
 
   export function createElementAccess(expression: Expression, index: number | Expression) {
-    const node = <ElementAccessExpression>createSynthesizedNode(SyntaxKind.ElementAccessExpression);
+    const node = <ElementAccessExpression>Node.createSynthesized(SyntaxKind.ElementAccessExpression);
     node.expression = parenthesizeForAccess(expression);
     node.argumentExpression = asExpression(index);
     return node;
@@ -1222,7 +1177,7 @@ namespace qnr {
   }
 
   export function createElementAccessChain(expression: Expression, questionDotToken: QuestionDotToken | undefined, index: number | Expression) {
-    const node = <ElementAccessChain>createSynthesizedNode(SyntaxKind.ElementAccessExpression);
+    const node = <ElementAccessChain>Node.createSynthesized(SyntaxKind.ElementAccessExpression);
     node.flags |= NodeFlags.OptionalChain;
     node.expression = parenthesizeForAccess(expression);
     node.questionDotToken = questionDotToken;
@@ -1250,7 +1205,7 @@ namespace qnr {
     typeArguments: readonly TypeNode[] | undefined,
     argumentsArray: readonly Expression[] | undefined
   ) {
-    const node = <CallExpression>createSynthesizedNode(SyntaxKind.CallExpression);
+    const node = <CallExpression>Node.createSynthesized(SyntaxKind.CallExpression);
     node.expression = parenthesizeForAccess(expression);
     node.typeArguments = asNodeArray(typeArguments);
     node.arguments = parenthesizeListElements(createNodeArray(argumentsArray));
@@ -1277,7 +1232,7 @@ namespace qnr {
     typeArguments: readonly TypeNode[] | undefined,
     argumentsArray: readonly Expression[] | undefined
   ) {
-    const node = <CallChain>createSynthesizedNode(SyntaxKind.CallExpression);
+    const node = <CallChain>Node.createSynthesized(SyntaxKind.CallExpression);
     node.flags |= NodeFlags.OptionalChain;
     node.expression = parenthesizeForAccess(expression);
     node.questionDotToken = questionDotToken;
@@ -1307,7 +1262,7 @@ namespace qnr {
     typeArguments: readonly TypeNode[] | undefined,
     argumentsArray: readonly Expression[] | undefined
   ) {
-    const node = <NewExpression>createSynthesizedNode(SyntaxKind.NewExpression);
+    const node = <NewExpression>Node.createSynthesized(SyntaxKind.NewExpression);
     node.expression = parenthesizeForNew(expression);
     node.typeArguments = asNodeArray(typeArguments);
     node.arguments = argumentsArray ? parenthesizeListElements(createNodeArray(argumentsArray)) : undefined;
@@ -1342,7 +1297,7 @@ namespace qnr {
     typeArgumentsOrTemplate: readonly TypeNode[] | TemplateLiteral | undefined,
     template?: TemplateLiteral
   ) {
-    const node = <TaggedTemplateExpression>createSynthesizedNode(SyntaxKind.TaggedTemplateExpression);
+    const node = <TaggedTemplateExpression>Node.createSynthesized(SyntaxKind.TaggedTemplateExpression);
     node.tag = parenthesizeForAccess(tag);
     if (template) {
       node.typeArguments = asNodeArray(typeArgumentsOrTemplate as readonly TypeNode[]);
@@ -1380,7 +1335,7 @@ namespace qnr {
   }
 
   export function createTypeAssertion(type: TypeNode, expression: Expression) {
-    const node = <TypeAssertion>createSynthesizedNode(SyntaxKind.TypeAssertionExpression);
+    const node = <TypeAssertion>Node.createSynthesized(SyntaxKind.TypeAssertionExpression);
     node.type = type;
     node.expression = parenthesizePrefixOperand(expression);
     return node;
@@ -1391,7 +1346,7 @@ namespace qnr {
   }
 
   export function createParen(expression: Expression) {
-    const node = <ParenthesizedExpression>createSynthesizedNode(SyntaxKind.ParenthesizedExpression);
+    const node = <ParenthesizedExpression>Node.createSynthesized(SyntaxKind.ParenthesizedExpression);
     node.expression = expression;
     return node;
   }
@@ -1409,7 +1364,7 @@ namespace qnr {
     type: TypeNode | undefined,
     body: Block
   ) {
-    const node = <FunctionExpression>createSynthesizedNode(SyntaxKind.FunctionExpression);
+    const node = <FunctionExpression>Node.createSynthesized(SyntaxKind.FunctionExpression);
     node.modifiers = asNodeArray(modifiers);
     node.asteriskToken = asteriskToken;
     node.name = asName(name);
@@ -1449,7 +1404,7 @@ namespace qnr {
     equalsGreaterThanToken: EqualsGreaterThanToken | undefined,
     body: ConciseBody
   ) {
-    const node = <ArrowFunction>createSynthesizedNode(SyntaxKind.ArrowFunction);
+    const node = <ArrowFunction>Node.createSynthesized(SyntaxKind.ArrowFunction);
     node.modifiers = asNodeArray(modifiers);
     node.typeParameters = asNodeArray(typeParameters);
     node.parameters = createNodeArray(parameters);
@@ -1478,7 +1433,7 @@ namespace qnr {
   }
 
   export function createDelete(expression: Expression) {
-    const node = <DeleteExpression>createSynthesizedNode(SyntaxKind.DeleteExpression);
+    const node = <DeleteExpression>Node.createSynthesized(SyntaxKind.DeleteExpression);
     node.expression = parenthesizePrefixOperand(expression);
     return node;
   }
@@ -1488,7 +1443,7 @@ namespace qnr {
   }
 
   export function createTypeOf(expression: Expression) {
-    const node = <TypeOfExpression>createSynthesizedNode(SyntaxKind.TypeOfExpression);
+    const node = <TypeOfExpression>Node.createSynthesized(SyntaxKind.TypeOfExpression);
     node.expression = parenthesizePrefixOperand(expression);
     return node;
   }
@@ -1498,7 +1453,7 @@ namespace qnr {
   }
 
   export function createVoid(expression: Expression) {
-    const node = <VoidExpression>createSynthesizedNode(SyntaxKind.VoidExpression);
+    const node = <VoidExpression>Node.createSynthesized(SyntaxKind.VoidExpression);
     node.expression = parenthesizePrefixOperand(expression);
     return node;
   }
@@ -1508,7 +1463,7 @@ namespace qnr {
   }
 
   export function createAwait(expression: Expression) {
-    const node = <AwaitExpression>createSynthesizedNode(SyntaxKind.AwaitExpression);
+    const node = <AwaitExpression>Node.createSynthesized(SyntaxKind.AwaitExpression);
     node.expression = parenthesizePrefixOperand(expression);
     return node;
   }
@@ -1518,7 +1473,7 @@ namespace qnr {
   }
 
   export function createPrefix(operator: PrefixUnaryOperator, operand: Expression) {
-    const node = <PrefixUnaryExpression>createSynthesizedNode(SyntaxKind.PrefixUnaryExpression);
+    const node = <PrefixUnaryExpression>Node.createSynthesized(SyntaxKind.PrefixUnaryExpression);
     node.operator = operator;
     node.operand = parenthesizePrefixOperand(operand);
     return node;
@@ -1529,7 +1484,7 @@ namespace qnr {
   }
 
   export function createPostfix(operand: Expression, operator: PostfixUnaryOperator) {
-    const node = <PostfixUnaryExpression>createSynthesizedNode(SyntaxKind.PostfixUnaryExpression);
+    const node = <PostfixUnaryExpression>Node.createSynthesized(SyntaxKind.PostfixUnaryExpression);
     node.operand = parenthesizePostfixOperand(operand);
     node.operator = operator;
     return node;
@@ -1540,7 +1495,7 @@ namespace qnr {
   }
 
   export function createBinary(left: Expression, operator: BinaryOperator | BinaryOperatorToken, right: Expression) {
-    const node = <BinaryExpression>createSynthesizedNode(SyntaxKind.BinaryExpression);
+    const node = <BinaryExpression>Node.createSynthesized(SyntaxKind.BinaryExpression);
     const operatorToken = asToken(operator);
     const operatorKind = operatorToken.kind;
     node.left = parenthesizeBinaryOperand(operatorKind, left, /*isLeftSideOfBinary*/ true, /*leftOperand*/ undefined);
@@ -1575,7 +1530,7 @@ namespace qnr {
     colonToken?: ColonToken,
     whenFalse?: Expression
   ) {
-    const node = <ConditionalExpression>createSynthesizedNode(SyntaxKind.ConditionalExpression);
+    const node = <ConditionalExpression>Node.createSynthesized(SyntaxKind.ConditionalExpression);
     node.condition = parenthesizeForConditionalHead(condition);
     node.questionToken = whenFalse ? <QuestionToken>questionTokenOrWhenTrue : createToken(SyntaxKind.QuestionToken);
     node.whenTrue = parenthesizeSubexpressionOfConditionalExpression(whenFalse ? whenTrueOrWhenFalse : <Expression>questionTokenOrWhenTrue);
@@ -1601,7 +1556,7 @@ namespace qnr {
   }
 
   export function createTemplateExpression(head: TemplateHead, templateSpans: readonly TemplateSpan[]) {
-    const node = <TemplateExpression>createSynthesizedNode(SyntaxKind.TemplateExpression);
+    const node = <TemplateExpression>Node.createSynthesized(SyntaxKind.TemplateExpression);
     node.head = head;
     node.templateSpans = createNodeArray(templateSpans);
     return node;
@@ -1657,53 +1612,13 @@ namespace qnr {
     return tokenValue;
   }
 
-  function createTemplateLiteralLikeNode(kind: TemplateLiteralToken['kind'], text: string, rawText: string | undefined) {
-    const node = <TemplateLiteralLikeNode>createSynthesizedNode(kind);
-    node.text = text;
-    if (rawText === undefined || text === rawText) {
-      node.rawText = rawText;
-    } else {
-      const cooked = getCookedText(kind, rawText);
-      if (typeof cooked === 'object') {
-        return fail('Invalid raw text');
-      }
-
-      assert(text === cooked, "Expected argument 'text' to be the normalized (i.e. 'cooked') version of argument 'rawText'.");
-      node.rawText = rawText;
-    }
-    return node;
-  }
-
-  export function createTemplateHead(text: string, rawText?: string) {
-    const node = <TemplateHead>createTemplateLiteralLikeNode(SyntaxKind.TemplateHead, text, rawText);
-    node.text = text;
-    return node;
-  }
-
-  export function createTemplateMiddle(text: string, rawText?: string) {
-    const node = <TemplateMiddle>createTemplateLiteralLikeNode(SyntaxKind.TemplateMiddle, text, rawText);
-    node.text = text;
-    return node;
-  }
-
-  export function createTemplateTail(text: string, rawText?: string) {
-    const node = <TemplateTail>createTemplateLiteralLikeNode(SyntaxKind.TemplateTail, text, rawText);
-    node.text = text;
-    return node;
-  }
-
-  export function createNoSubstitutionTemplateLiteral(text: string, rawText?: string) {
-    const node = <NoSubstitutionTemplateLiteral>createTemplateLiteralLikeNode(SyntaxKind.NoSubstitutionTemplateLiteral, text, rawText);
-    return node;
-  }
-
   export function createYield(expression?: Expression): YieldExpression;
   export function createYield(asteriskToken: AsteriskToken | undefined, expression: Expression): YieldExpression;
   export function createYield(asteriskTokenOrExpression?: AsteriskToken | undefined | Expression, expression?: Expression) {
     const asteriskToken =
       asteriskTokenOrExpression && asteriskTokenOrExpression.kind === SyntaxKind.AsteriskToken ? <AsteriskToken>asteriskTokenOrExpression : undefined;
     expression = asteriskTokenOrExpression && asteriskTokenOrExpression.kind !== SyntaxKind.AsteriskToken ? asteriskTokenOrExpression : expression;
-    const node = <YieldExpression>createSynthesizedNode(SyntaxKind.YieldExpression);
+    const node = <YieldExpression>Node.createSynthesized(SyntaxKind.YieldExpression);
     node.asteriskToken = asteriskToken;
     node.expression = expression && parenthesizeExpressionForList(expression);
     return node;
@@ -1714,7 +1629,7 @@ namespace qnr {
   }
 
   export function createSpread(expression: Expression) {
-    const node = <SpreadElement>createSynthesizedNode(SyntaxKind.SpreadElement);
+    const node = <SpreadElement>Node.createSynthesized(SyntaxKind.SpreadElement);
     node.expression = parenthesizeExpressionForList(expression);
     return node;
   }
@@ -1730,7 +1645,7 @@ namespace qnr {
     heritageClauses: readonly HeritageClause[] | undefined,
     members: readonly ClassElement[]
   ) {
-    const node = <ClassExpression>createSynthesizedNode(SyntaxKind.ClassExpression);
+    const node = <ClassExpression>Node.createSynthesized(SyntaxKind.ClassExpression);
     node.decorators = undefined;
     node.modifiers = asNodeArray(modifiers);
     node.name = asName(name);
@@ -1758,11 +1673,11 @@ namespace qnr {
   }
 
   export function createOmittedExpression() {
-    return <OmittedExpression>createSynthesizedNode(SyntaxKind.OmittedExpression);
+    return <OmittedExpression>Node.createSynthesized(SyntaxKind.OmittedExpression);
   }
 
   export function createExpressionWithTypeArguments(typeArguments: readonly TypeNode[] | undefined, expression: Expression) {
-    const node = <ExpressionWithTypeArguments>createSynthesizedNode(SyntaxKind.ExpressionWithTypeArguments);
+    const node = <ExpressionWithTypeArguments>Node.createSynthesized(SyntaxKind.ExpressionWithTypeArguments);
     node.expression = parenthesizeForAccess(expression);
     node.typeArguments = asNodeArray(typeArguments);
     return node;
@@ -1779,7 +1694,7 @@ namespace qnr {
   }
 
   export function createAsExpression(expression: Expression, type: TypeNode) {
-    const node = <AsExpression>createSynthesizedNode(SyntaxKind.AsExpression);
+    const node = <AsExpression>Node.createSynthesized(SyntaxKind.AsExpression);
     node.expression = expression;
     node.type = type;
     return node;
@@ -1790,7 +1705,7 @@ namespace qnr {
   }
 
   export function createNonNullExpression(expression: Expression) {
-    const node = <NonNullExpression>createSynthesizedNode(SyntaxKind.NonNullExpression);
+    const node = <NonNullExpression>Node.createSynthesized(SyntaxKind.NonNullExpression);
     node.expression = parenthesizeForAccess(expression);
     return node;
   }
@@ -1803,7 +1718,7 @@ namespace qnr {
   }
 
   export function createNonNullChain(expression: Expression) {
-    const node = <NonNullChain>createSynthesizedNode(SyntaxKind.NonNullExpression);
+    const node = <NonNullChain>Node.createSynthesized(SyntaxKind.NonNullExpression);
     node.flags |= NodeFlags.OptionalChain;
     node.expression = parenthesizeForAccess(expression);
     return node;
@@ -1818,7 +1733,7 @@ namespace qnr {
   }
 
   export function createMetaProperty(keywordToken: MetaProperty['keywordToken'], name: Identifier) {
-    const node = <MetaProperty>createSynthesizedNode(SyntaxKind.MetaProperty);
+    const node = <MetaProperty>Node.createSynthesized(SyntaxKind.MetaProperty);
     node.keywordToken = keywordToken;
     node.name = name;
     return node;
@@ -1831,7 +1746,7 @@ namespace qnr {
   // Misc
 
   export function createTemplateSpan(expression: Expression, literal: TemplateMiddle | TemplateTail) {
-    const node = <TemplateSpan>createSynthesizedNode(SyntaxKind.TemplateSpan);
+    const node = <TemplateSpan>Node.createSynthesized(SyntaxKind.TemplateSpan);
     node.expression = expression;
     node.literal = literal;
     return node;
@@ -1842,13 +1757,13 @@ namespace qnr {
   }
 
   export function createSemicolonClassElement() {
-    return <SemicolonClassElement>createSynthesizedNode(SyntaxKind.SemicolonClassElement);
+    return <SemicolonClassElement>Node.createSynthesized(SyntaxKind.SemicolonClassElement);
   }
 
   // Element
 
   export function createBlock(statements: readonly Statement[], multiLine?: boolean): Block {
-    const block = <Block>createSynthesizedNode(SyntaxKind.Block);
+    const block = <Block>Node.createSynthesized(SyntaxKind.Block);
     block.statements = createNodeArray(statements);
     if (multiLine) block.multiLine = multiLine;
     return block;
@@ -1862,7 +1777,7 @@ namespace qnr {
     modifiers: readonly Modifier[] | undefined,
     declarationList: VariableDeclarationList | readonly VariableDeclaration[]
   ) {
-    const node = <VariableStatement>createSynthesizedNode(SyntaxKind.VariableStatement);
+    const node = <VariableStatement>Node.createSynthesized(SyntaxKind.VariableStatement);
     node.decorators = undefined;
     node.modifiers = asNodeArray(modifiers);
     node.declarationList = isArray(declarationList) ? createVariableDeclarationList(declarationList) : declarationList;
@@ -1880,11 +1795,11 @@ namespace qnr {
   }
 
   export function createEmptyStatement() {
-    return <EmptyStatement>createSynthesizedNode(SyntaxKind.EmptyStatement);
+    return <EmptyStatement>Node.createSynthesized(SyntaxKind.EmptyStatement);
   }
 
   export function createExpressionStatement(expression: Expression): ExpressionStatement {
-    const node = <ExpressionStatement>createSynthesizedNode(SyntaxKind.ExpressionStatement);
+    const node = <ExpressionStatement>Node.createSynthesized(SyntaxKind.ExpressionStatement);
     node.expression = parenthesizeExpressionForExpressionStatement(expression);
     return node;
   }
@@ -1899,7 +1814,7 @@ namespace qnr {
   export const updateStatement = updateExpressionStatement;
 
   export function createIf(expression: Expression, thenStatement: Statement, elseStatement?: Statement) {
-    const node = <IfStatement>createSynthesizedNode(SyntaxKind.IfStatement);
+    const node = <IfStatement>Node.createSynthesized(SyntaxKind.IfStatement);
     node.expression = expression;
     node.thenStatement = asEmbeddedStatement(thenStatement);
     node.elseStatement = asEmbeddedStatement(elseStatement);
@@ -1913,7 +1828,7 @@ namespace qnr {
   }
 
   export function createDo(statement: Statement, expression: Expression) {
-    const node = <DoStatement>createSynthesizedNode(SyntaxKind.DoStatement);
+    const node = <DoStatement>Node.createSynthesized(SyntaxKind.DoStatement);
     node.statement = asEmbeddedStatement(statement);
     node.expression = expression;
     return node;
@@ -1924,7 +1839,7 @@ namespace qnr {
   }
 
   export function createWhile(expression: Expression, statement: Statement) {
-    const node = <WhileStatement>createSynthesizedNode(SyntaxKind.WhileStatement);
+    const node = <WhileStatement>Node.createSynthesized(SyntaxKind.WhileStatement);
     node.expression = expression;
     node.statement = asEmbeddedStatement(statement);
     return node;
@@ -1940,7 +1855,7 @@ namespace qnr {
     incrementor: Expression | undefined,
     statement: Statement
   ) {
-    const node = <ForStatement>createSynthesizedNode(SyntaxKind.ForStatement);
+    const node = <ForStatement>Node.createSynthesized(SyntaxKind.ForStatement);
     node.initializer = initializer;
     node.condition = condition;
     node.incrementor = incrementor;
@@ -1961,7 +1876,7 @@ namespace qnr {
   }
 
   export function createForIn(initializer: ForInitializer, expression: Expression, statement: Statement) {
-    const node = <ForInStatement>createSynthesizedNode(SyntaxKind.ForInStatement);
+    const node = <ForInStatement>Node.createSynthesized(SyntaxKind.ForInStatement);
     node.initializer = initializer;
     node.expression = expression;
     node.statement = asEmbeddedStatement(statement);
@@ -1980,7 +1895,7 @@ namespace qnr {
     expression: Expression,
     statement: Statement
   ) {
-    const node = <ForOfStatement>createSynthesizedNode(SyntaxKind.ForOfStatement);
+    const node = <ForOfStatement>Node.createSynthesized(SyntaxKind.ForOfStatement);
     node.awaitModifier = awaitModifier;
     node.initializer = initializer;
     node.expression = isCommaSequence(expression) ? createParen(expression) : expression;
@@ -2001,7 +1916,7 @@ namespace qnr {
   }
 
   export function createContinue(label?: string | Identifier): ContinueStatement {
-    const node = <ContinueStatement>createSynthesizedNode(SyntaxKind.ContinueStatement);
+    const node = <ContinueStatement>Node.createSynthesized(SyntaxKind.ContinueStatement);
     node.label = asName(label);
     return node;
   }
@@ -2011,7 +1926,7 @@ namespace qnr {
   }
 
   export function createBreak(label?: string | Identifier): BreakStatement {
-    const node = <BreakStatement>createSynthesizedNode(SyntaxKind.BreakStatement);
+    const node = <BreakStatement>Node.createSynthesized(SyntaxKind.BreakStatement);
     node.label = asName(label);
     return node;
   }
@@ -2021,7 +1936,7 @@ namespace qnr {
   }
 
   export function createReturn(expression?: Expression): ReturnStatement {
-    const node = <ReturnStatement>createSynthesizedNode(SyntaxKind.ReturnStatement);
+    const node = <ReturnStatement>Node.createSynthesized(SyntaxKind.ReturnStatement);
     node.expression = expression;
     return node;
   }
@@ -2031,7 +1946,7 @@ namespace qnr {
   }
 
   export function createWith(expression: Expression, statement: Statement) {
-    const node = <WithStatement>createSynthesizedNode(SyntaxKind.WithStatement);
+    const node = <WithStatement>Node.createSynthesized(SyntaxKind.WithStatement);
     node.expression = expression;
     node.statement = asEmbeddedStatement(statement);
     return node;
@@ -2042,7 +1957,7 @@ namespace qnr {
   }
 
   export function createSwitch(expression: Expression, caseBlock: CaseBlock): SwitchStatement {
-    const node = <SwitchStatement>createSynthesizedNode(SyntaxKind.SwitchStatement);
+    const node = <SwitchStatement>Node.createSynthesized(SyntaxKind.SwitchStatement);
     node.expression = parenthesizeExpressionForList(expression);
     node.caseBlock = caseBlock;
     return node;
@@ -2053,7 +1968,7 @@ namespace qnr {
   }
 
   export function createLabel(label: string | Identifier, statement: Statement) {
-    const node = <LabeledStatement>createSynthesizedNode(SyntaxKind.LabeledStatement);
+    const node = <LabeledStatement>Node.createSynthesized(SyntaxKind.LabeledStatement);
     node.label = asName(label);
     node.statement = asEmbeddedStatement(statement);
     return node;
@@ -2064,7 +1979,7 @@ namespace qnr {
   }
 
   export function createThrow(expression: Expression) {
-    const node = <ThrowStatement>createSynthesizedNode(SyntaxKind.ThrowStatement);
+    const node = <ThrowStatement>Node.createSynthesized(SyntaxKind.ThrowStatement);
     node.expression = expression;
     return node;
   }
@@ -2074,7 +1989,7 @@ namespace qnr {
   }
 
   export function createTry(tryBlock: Block, catchClause: CatchClause | undefined, finallyBlock: Block | undefined) {
-    const node = <TryStatement>createSynthesizedNode(SyntaxKind.TryStatement);
+    const node = <TryStatement>Node.createSynthesized(SyntaxKind.TryStatement);
     node.tryBlock = tryBlock;
     node.catchClause = catchClause;
     node.finallyBlock = finallyBlock;
@@ -2088,12 +2003,12 @@ namespace qnr {
   }
 
   export function createDebuggerStatement() {
-    return <DebuggerStatement>createSynthesizedNode(SyntaxKind.DebuggerStatement);
+    return <DebuggerStatement>Node.createSynthesized(SyntaxKind.DebuggerStatement);
   }
 
   export function createVariableDeclaration(name: string | BindingName, type?: TypeNode, initializer?: Expression) {
     /* Internally, one should probably use createTypeScriptVariableDeclaration instead and handle definite assignment assertions */
-    const node = <VariableDeclaration>createSynthesizedNode(SyntaxKind.VariableDeclaration);
+    const node = <VariableDeclaration>Node.createSynthesized(SyntaxKind.VariableDeclaration);
     node.name = asName(name);
     node.type = type;
     node.initializer = initializer !== undefined ? parenthesizeExpressionForList(initializer) : undefined;
@@ -2118,7 +2033,7 @@ namespace qnr {
     type?: TypeNode,
     initializer?: Expression
   ) {
-    const node = <VariableDeclaration>createSynthesizedNode(SyntaxKind.VariableDeclaration);
+    const node = <VariableDeclaration>Node.createSynthesized(SyntaxKind.VariableDeclaration);
     node.name = asName(name);
     node.type = type;
     node.initializer = initializer !== undefined ? parenthesizeExpressionForList(initializer) : undefined;
@@ -2139,7 +2054,7 @@ namespace qnr {
   }
 
   export function createVariableDeclarationList(declarations: readonly VariableDeclaration[], flags = NodeFlags.None) {
-    const node = <VariableDeclarationList>createSynthesizedNode(SyntaxKind.VariableDeclarationList);
+    const node = <VariableDeclarationList>Node.createSynthesized(SyntaxKind.VariableDeclarationList);
     node.flags |= flags & NodeFlags.BlockScoped;
     node.declarations = createNodeArray(declarations);
     return node;
@@ -2159,7 +2074,7 @@ namespace qnr {
     type: TypeNode | undefined,
     body: Block | undefined
   ) {
-    const node = <FunctionDeclaration>createSynthesizedNode(SyntaxKind.FunctionDeclaration);
+    const node = <FunctionDeclaration>Node.createSynthesized(SyntaxKind.FunctionDeclaration);
     node.decorators = asNodeArray(decorators);
     node.modifiers = asNodeArray(modifiers);
     node.asteriskToken = asteriskToken;
@@ -2255,7 +2170,7 @@ namespace qnr {
     heritageClauses: readonly HeritageClause[] | undefined,
     members: readonly ClassElement[]
   ) {
-    const node = <ClassDeclaration>createSynthesizedNode(SyntaxKind.ClassDeclaration);
+    const node = <ClassDeclaration>Node.createSynthesized(SyntaxKind.ClassDeclaration);
     node.decorators = asNodeArray(decorators);
     node.modifiers = asNodeArray(modifiers);
     node.name = asName(name);
@@ -2292,7 +2207,7 @@ namespace qnr {
     heritageClauses: readonly HeritageClause[] | undefined,
     members: readonly TypeElement[]
   ) {
-    const node = <InterfaceDeclaration>createSynthesizedNode(SyntaxKind.InterfaceDeclaration);
+    const node = <InterfaceDeclaration>Node.createSynthesized(SyntaxKind.InterfaceDeclaration);
     node.decorators = asNodeArray(decorators);
     node.modifiers = asNodeArray(modifiers);
     node.name = asName(name);
@@ -2328,7 +2243,7 @@ namespace qnr {
     typeParameters: readonly TypeParameterDeclaration[] | undefined,
     type: TypeNode
   ) {
-    const node = <TypeAliasDeclaration>createSynthesizedNode(SyntaxKind.TypeAliasDeclaration);
+    const node = <TypeAliasDeclaration>Node.createSynthesized(SyntaxKind.TypeAliasDeclaration);
     node.decorators = asNodeArray(decorators);
     node.modifiers = asNodeArray(modifiers);
     node.name = asName(name);
@@ -2360,7 +2275,7 @@ namespace qnr {
     name: string | Identifier,
     members: readonly EnumMember[]
   ) {
-    const node = <EnumDeclaration>createSynthesizedNode(SyntaxKind.EnumDeclaration);
+    const node = <EnumDeclaration>Node.createSynthesized(SyntaxKind.EnumDeclaration);
     node.decorators = asNodeArray(decorators);
     node.modifiers = asNodeArray(modifiers);
     node.name = asName(name);
@@ -2387,7 +2302,7 @@ namespace qnr {
     body: ModuleBody | undefined,
     flags = NodeFlags.None
   ) {
-    const node = <ModuleDeclaration>createSynthesizedNode(SyntaxKind.ModuleDeclaration);
+    const node = <ModuleDeclaration>Node.createSynthesized(SyntaxKind.ModuleDeclaration);
     node.flags |= flags & (NodeFlags.Namespace | NodeFlags.NestedNamespace | NodeFlags.GlobalAugmentation);
     node.decorators = asNodeArray(decorators);
     node.modifiers = asNodeArray(modifiers);
@@ -2409,7 +2324,7 @@ namespace qnr {
   }
 
   export function createModuleBlock(statements: readonly Statement[]) {
-    const node = <ModuleBlock>createSynthesizedNode(SyntaxKind.ModuleBlock);
+    const node = <ModuleBlock>Node.createSynthesized(SyntaxKind.ModuleBlock);
     node.statements = createNodeArray(statements);
     return node;
   }
@@ -2419,7 +2334,7 @@ namespace qnr {
   }
 
   export function createCaseBlock(clauses: readonly CaseOrDefaultClause[]): CaseBlock {
-    const node = <CaseBlock>createSynthesizedNode(SyntaxKind.CaseBlock);
+    const node = <CaseBlock>Node.createSynthesized(SyntaxKind.CaseBlock);
     node.clauses = createNodeArray(clauses);
     return node;
   }
@@ -2429,7 +2344,7 @@ namespace qnr {
   }
 
   export function createNamespaceExportDeclaration(name: string | Identifier) {
-    const node = <NamespaceExportDeclaration>createSynthesizedNode(SyntaxKind.NamespaceExportDeclaration);
+    const node = <NamespaceExportDeclaration>Node.createSynthesized(SyntaxKind.NamespaceExportDeclaration);
     node.name = asName(name);
     return node;
   }
@@ -2444,7 +2359,7 @@ namespace qnr {
     name: string | Identifier,
     moduleReference: ModuleReference
   ) {
-    const node = <ImportEqualsDeclaration>createSynthesizedNode(SyntaxKind.ImportEqualsDeclaration);
+    const node = <ImportEqualsDeclaration>Node.createSynthesized(SyntaxKind.ImportEqualsDeclaration);
     node.decorators = asNodeArray(decorators);
     node.modifiers = asNodeArray(modifiers);
     node.name = asName(name);
@@ -2470,7 +2385,7 @@ namespace qnr {
     importClause: ImportClause | undefined,
     moduleSpecifier: Expression
   ): ImportDeclaration {
-    const node = <ImportDeclaration>createSynthesizedNode(SyntaxKind.ImportDeclaration);
+    const node = <ImportDeclaration>Node.createSynthesized(SyntaxKind.ImportDeclaration);
     node.decorators = asNodeArray(decorators);
     node.modifiers = asNodeArray(modifiers);
     node.importClause = importClause;
@@ -2494,7 +2409,7 @@ namespace qnr {
   }
 
   export function createImportClause(name: Identifier | undefined, namedBindings: NamedImportBindings | undefined, isTypeOnly = false): ImportClause {
-    const node = <ImportClause>createSynthesizedNode(SyntaxKind.ImportClause);
+    const node = <ImportClause>Node.createSynthesized(SyntaxKind.ImportClause);
     node.name = name;
     node.namedBindings = namedBindings;
     node.isTypeOnly = isTypeOnly;
@@ -2513,13 +2428,13 @@ namespace qnr {
   }
 
   export function createNamespaceImport(name: Identifier): NamespaceImport {
-    const node = <NamespaceImport>createSynthesizedNode(SyntaxKind.NamespaceImport);
+    const node = <NamespaceImport>Node.createSynthesized(SyntaxKind.NamespaceImport);
     node.name = name;
     return node;
   }
 
   export function createNamespaceExport(name: Identifier): NamespaceExport {
-    const node = <NamespaceExport>createSynthesizedNode(SyntaxKind.NamespaceExport);
+    const node = <NamespaceExport>Node.createSynthesized(SyntaxKind.NamespaceExport);
     node.name = name;
     return node;
   }
@@ -2533,7 +2448,7 @@ namespace qnr {
   }
 
   export function createNamedImports(elements: readonly ImportSpecifier[]): NamedImports {
-    const node = <NamedImports>createSynthesizedNode(SyntaxKind.NamedImports);
+    const node = <NamedImports>Node.createSynthesized(SyntaxKind.NamedImports);
     node.elements = createNodeArray(elements);
     return node;
   }
@@ -2543,7 +2458,7 @@ namespace qnr {
   }
 
   export function createImportSpecifier(propertyName: Identifier | undefined, name: Identifier) {
-    const node = <ImportSpecifier>createSynthesizedNode(SyntaxKind.ImportSpecifier);
+    const node = <ImportSpecifier>Node.createSynthesized(SyntaxKind.ImportSpecifier);
     node.propertyName = propertyName;
     node.name = name;
     return node;
@@ -2559,7 +2474,7 @@ namespace qnr {
     isExportEquals: boolean | undefined,
     expression: Expression
   ) {
-    const node = <ExportAssignment>createSynthesizedNode(SyntaxKind.ExportAssignment);
+    const node = <ExportAssignment>Node.createSynthesized(SyntaxKind.ExportAssignment);
     node.decorators = asNodeArray(decorators);
     node.modifiers = asNodeArray(modifiers);
     node.isExportEquals = isExportEquals;
@@ -2587,7 +2502,7 @@ namespace qnr {
     moduleSpecifier?: Expression,
     isTypeOnly = false
   ) {
-    const node = <ExportDeclaration>createSynthesizedNode(SyntaxKind.ExportDeclaration);
+    const node = <ExportDeclaration>Node.createSynthesized(SyntaxKind.ExportDeclaration);
     node.decorators = asNodeArray(decorators);
     node.modifiers = asNodeArray(modifiers);
     node.isTypeOnly = isTypeOnly;
@@ -2618,7 +2533,7 @@ namespace qnr {
   }
 
   export function createNamedExports(elements: readonly ExportSpecifier[]) {
-    const node = <NamedExports>createSynthesizedNode(SyntaxKind.NamedExports);
+    const node = <NamedExports>Node.createSynthesized(SyntaxKind.NamedExports);
     node.elements = createNodeArray(elements);
     return node;
   }
@@ -2628,7 +2543,7 @@ namespace qnr {
   }
 
   export function createExportSpecifier(propertyName: string | Identifier | undefined, name: string | Identifier) {
-    const node = <ExportSpecifier>createSynthesizedNode(SyntaxKind.ExportSpecifier);
+    const node = <ExportSpecifier>Node.createSynthesized(SyntaxKind.ExportSpecifier);
     node.propertyName = asName(propertyName);
     node.name = asName(name);
     return node;
@@ -2641,7 +2556,7 @@ namespace qnr {
   // Module references
 
   export function createExternalModuleReference(expression: Expression) {
-    const node = <ExternalModuleReference>createSynthesizedNode(SyntaxKind.ExternalModuleReference);
+    const node = <ExternalModuleReference>Node.createSynthesized(SyntaxKind.ExternalModuleReference);
     node.expression = expression;
     return node;
   }
@@ -2653,7 +2568,7 @@ namespace qnr {
   // JSDoc
 
   export function createJSDocTypeExpression(type: TypeNode): JSDocTypeExpression {
-    const node = createSynthesizedNode(SyntaxKind.JSDocTypeExpression) as JSDocTypeExpression;
+    const node = Node.createSynthesized(SyntaxKind.JSDocTypeExpression) as JSDocTypeExpression;
     node.type = type;
     return node;
   }
@@ -2697,14 +2612,14 @@ namespace qnr {
   }
 
   export function createJSDocComment(comment?: string | undefined, tags?: NodeArray<JSDocTag> | undefined) {
-    const node = createSynthesizedNode(SyntaxKind.JSDocComment) as JSDoc;
+    const node = Node.createSynthesized(SyntaxKind.JSDocComment) as JSDoc;
     node.comment = comment;
     node.tags = tags;
     return node;
   }
 
   export function createJSDocTag<T extends JSDocTag>(kind: T['kind'], tagName: string, comment?: string): T {
-    const node = createSynthesizedNode(kind) as T;
+    const node = Node.createSynthesized(kind) as T;
     node.tagName = createIdentifier(tagName);
     node.comment = comment;
     return node;
@@ -2764,7 +2679,7 @@ namespace qnr {
     parameters: readonly JSDocParameterTag[],
     type?: JSDocReturnTag
   ) {
-    const tag = createSynthesizedNode(SyntaxKind.JSDocSignature) as JSDocSignature;
+    const tag = Node.createSynthesized(SyntaxKind.JSDocSignature) as JSDocSignature;
     tag.typeParameters = typeParameters;
     tag.parameters = parameters;
     tag.type = type;
@@ -2825,7 +2740,7 @@ namespace qnr {
   }
 
   export function createJSDocTypeLiteral(jsDocPropertyTags?: readonly JSDocPropertyLikeTag[], isArrayType?: boolean) {
-    const tag = createSynthesizedNode(SyntaxKind.JSDocTypeLiteral) as JSDocTypeLiteral;
+    const tag = Node.createSynthesized(SyntaxKind.JSDocTypeLiteral) as JSDocTypeLiteral;
     tag.jsDocPropertyTags = jsDocPropertyTags;
     tag.isArrayType = isArrayType;
     return tag;
@@ -2863,7 +2778,7 @@ namespace qnr {
   }
 
   export function createJSDocVariadicType(type: TypeNode): JSDocVariadicType {
-    const node = createSynthesizedNode(SyntaxKind.JSDocVariadicType) as JSDocVariadicType;
+    const node = Node.createSynthesized(SyntaxKind.JSDocVariadicType) as JSDocVariadicType;
     node.type = type;
     return node;
   }
@@ -2875,7 +2790,7 @@ namespace qnr {
   // JSX
 
   export function createJsxElement(openingElement: JsxOpeningElement, children: readonly JsxChild[], closingElement: JsxClosingElement) {
-    const node = <JsxElement>createSynthesizedNode(SyntaxKind.JsxElement);
+    const node = <JsxElement>Node.createSynthesized(SyntaxKind.JsxElement);
     node.openingElement = openingElement;
     node.children = createNodeArray(children);
     node.closingElement = closingElement;
@@ -2898,7 +2813,7 @@ namespace qnr {
     typeArguments: readonly TypeNode[] | undefined,
     attributes: JsxAttributes
   ) {
-    const node = <JsxSelfClosingElement>createSynthesizedNode(SyntaxKind.JsxSelfClosingElement);
+    const node = <JsxSelfClosingElement>Node.createSynthesized(SyntaxKind.JsxSelfClosingElement);
     node.tagName = tagName;
     node.typeArguments = asNodeArray(typeArguments);
     node.attributes = attributes;
@@ -2917,7 +2832,7 @@ namespace qnr {
   }
 
   export function createJsxOpeningElement(tagName: JsxTagNameExpression, typeArguments: readonly TypeNode[] | undefined, attributes: JsxAttributes) {
-    const node = <JsxOpeningElement>createSynthesizedNode(SyntaxKind.JsxOpeningElement);
+    const node = <JsxOpeningElement>Node.createSynthesized(SyntaxKind.JsxOpeningElement);
     node.tagName = tagName;
     node.typeArguments = asNodeArray(typeArguments);
     node.attributes = attributes;
@@ -2936,7 +2851,7 @@ namespace qnr {
   }
 
   export function createJsxClosingElement(tagName: JsxTagNameExpression) {
-    const node = <JsxClosingElement>createSynthesizedNode(SyntaxKind.JsxClosingElement);
+    const node = <JsxClosingElement>Node.createSynthesized(SyntaxKind.JsxClosingElement);
     node.tagName = tagName;
     return node;
   }
@@ -2946,32 +2861,25 @@ namespace qnr {
   }
 
   export function createJsxFragment(openingFragment: JsxOpeningFragment, children: readonly JsxChild[], closingFragment: JsxClosingFragment) {
-    const node = <JsxFragment>createSynthesizedNode(SyntaxKind.JsxFragment);
+    const node = <JsxFragment>Node.createSynthesized(SyntaxKind.JsxFragment);
     node.openingFragment = openingFragment;
     node.children = createNodeArray(children);
     node.closingFragment = closingFragment;
     return node;
   }
 
-  export function createJsxText(text: string, containsOnlyTriviaWhiteSpaces?: boolean) {
-    const node = <JsxText>createSynthesizedNode(SyntaxKind.JsxText);
-    node.text = text;
-    node.containsOnlyTriviaWhiteSpaces = !!containsOnlyTriviaWhiteSpaces;
-    return node;
-  }
-
-  export function updateJsxText(node: JsxText, text: string, containsOnlyTriviaWhiteSpaces?: boolean) {
-    return node.text !== text || node.containsOnlyTriviaWhiteSpaces !== containsOnlyTriviaWhiteSpaces
-      ? updateNode(createJsxText(text, containsOnlyTriviaWhiteSpaces), node)
+  export function updateJsxText(node: JsxText, text: string, onlyTriviaWhitespaces?: boolean) {
+    return node.text !== text || node.onlyTriviaWhitespaces !== onlyTriviaWhitespaces
+      ? updateNode(JsxText.create(text, onlyTriviaWhitespaces), node)
       : node;
   }
 
   export function createJsxOpeningFragment() {
-    return <JsxOpeningFragment>createSynthesizedNode(SyntaxKind.JsxOpeningFragment);
+    return <JsxOpeningFragment>Node.createSynthesized(SyntaxKind.JsxOpeningFragment);
   }
 
   export function createJsxJsxClosingFragment() {
-    return <JsxClosingFragment>createSynthesizedNode(SyntaxKind.JsxClosingFragment);
+    return <JsxClosingFragment>Node.createSynthesized(SyntaxKind.JsxClosingFragment);
   }
 
   export function updateJsxFragment(
@@ -2986,7 +2894,7 @@ namespace qnr {
   }
 
   export function createJsxAttribute(name: Identifier, initializer: StringLiteral | JsxExpression) {
-    const node = <JsxAttribute>createSynthesizedNode(SyntaxKind.JsxAttribute);
+    const node = <JsxAttribute>Node.createSynthesized(SyntaxKind.JsxAttribute);
     node.name = name;
     node.initializer = initializer;
     return node;
@@ -2997,7 +2905,7 @@ namespace qnr {
   }
 
   export function createJsxAttributes(properties: readonly JsxAttributeLike[]) {
-    const node = <JsxAttributes>createSynthesizedNode(SyntaxKind.JsxAttributes);
+    const node = <JsxAttributes>Node.createSynthesized(SyntaxKind.JsxAttributes);
     node.properties = createNodeArray(properties);
     return node;
   }
@@ -3007,7 +2915,7 @@ namespace qnr {
   }
 
   export function createJsxSpreadAttribute(expression: Expression) {
-    const node = <JsxSpreadAttribute>createSynthesizedNode(SyntaxKind.JsxSpreadAttribute);
+    const node = <JsxSpreadAttribute>Node.createSynthesized(SyntaxKind.JsxSpreadAttribute);
     node.expression = expression;
     return node;
   }
@@ -3017,7 +2925,7 @@ namespace qnr {
   }
 
   export function createJsxExpression(dotDotDotToken: Dot3Token | undefined, expression: Expression | undefined) {
-    const node = <JsxExpression>createSynthesizedNode(SyntaxKind.JsxExpression);
+    const node = <JsxExpression>Node.createSynthesized(SyntaxKind.JsxExpression);
     node.dotDotDotToken = dotDotDotToken;
     node.expression = expression;
     return node;
@@ -3030,7 +2938,7 @@ namespace qnr {
   // Clauses
 
   export function createCaseClause(expression: Expression, statements: readonly Statement[]) {
-    const node = <CaseClause>createSynthesizedNode(SyntaxKind.CaseClause);
+    const node = <CaseClause>Node.createSynthesized(SyntaxKind.CaseClause);
     node.expression = parenthesizeExpressionForList(expression);
     node.statements = createNodeArray(statements);
     return node;
@@ -3041,7 +2949,7 @@ namespace qnr {
   }
 
   export function createDefaultClause(statements: readonly Statement[]) {
-    const node = <DefaultClause>createSynthesizedNode(SyntaxKind.DefaultClause);
+    const node = <DefaultClause>Node.createSynthesized(SyntaxKind.DefaultClause);
     node.statements = createNodeArray(statements);
     return node;
   }
@@ -3051,7 +2959,7 @@ namespace qnr {
   }
 
   export function createHeritageClause(token: HeritageClause['token'], types: readonly ExpressionWithTypeArguments[]) {
-    const node = <HeritageClause>createSynthesizedNode(SyntaxKind.HeritageClause);
+    const node = <HeritageClause>Node.createSynthesized(SyntaxKind.HeritageClause);
     node.token = token;
     node.types = createNodeArray(types);
     return node;
@@ -3062,7 +2970,7 @@ namespace qnr {
   }
 
   export function createCatchClause(variableDeclaration: string | VariableDeclaration | undefined, block: Block) {
-    const node = <CatchClause>createSynthesizedNode(SyntaxKind.CatchClause);
+    const node = <CatchClause>Node.createSynthesized(SyntaxKind.CatchClause);
     node.variableDeclaration = isString(variableDeclaration) ? createVariableDeclaration(variableDeclaration) : variableDeclaration;
     node.block = block;
     return node;
@@ -3077,7 +2985,7 @@ namespace qnr {
   // Property assignments
 
   export function createPropertyAssignment(name: string | PropertyName, initializer: Expression) {
-    const node = <PropertyAssignment>createSynthesizedNode(SyntaxKind.PropertyAssignment);
+    const node = <PropertyAssignment>Node.createSynthesized(SyntaxKind.PropertyAssignment);
     node.name = asName(name);
     node.questionToken = undefined;
     node.initializer = parenthesizeExpressionForList(initializer);
@@ -3089,7 +2997,7 @@ namespace qnr {
   }
 
   export function createShorthandPropertyAssignment(name: string | Identifier, objectAssignmentInitializer?: Expression) {
-    const node = <ShorthandPropertyAssignment>createSynthesizedNode(SyntaxKind.ShorthandPropertyAssignment);
+    const node = <ShorthandPropertyAssignment>Node.createSynthesized(SyntaxKind.ShorthandPropertyAssignment);
     node.name = asName(name);
     node.objectAssignmentInitializer =
       objectAssignmentInitializer !== undefined ? parenthesizeExpressionForList(objectAssignmentInitializer) : undefined;
@@ -3107,7 +3015,7 @@ namespace qnr {
   }
 
   export function createSpreadAssignment(expression: Expression) {
-    const node = <SpreadAssignment>createSynthesizedNode(SyntaxKind.SpreadAssignment);
+    const node = <SpreadAssignment>Node.createSynthesized(SyntaxKind.SpreadAssignment);
     node.expression = parenthesizeExpressionForList(expression);
     return node;
   }
@@ -3119,7 +3027,7 @@ namespace qnr {
   // Enum
 
   export function createEnumMember(name: string | PropertyName, initializer?: Expression) {
-    const node = <EnumMember>createSynthesizedNode(SyntaxKind.EnumMember);
+    const node = <EnumMember>Node.createSynthesized(SyntaxKind.EnumMember);
     node.name = asName(name);
     node.initializer = initializer && parenthesizeExpressionForList(initializer);
     return node;
@@ -3148,7 +3056,7 @@ namespace qnr {
       (libReferences !== undefined && node.libReferenceDirectives !== libReferences) ||
       (hasNoDefaultLib !== undefined && node.hasNoDefaultLib !== hasNoDefaultLib)
     ) {
-      const updated = <SourceFile>createSynthesizedNode(SyntaxKind.SourceFile);
+      const updated = <SourceFile>Node.createSynthesized(SyntaxKind.SourceFile);
       updated.flags |= node.flags;
       updated.statements = createNodeArray(statements);
       updated.endOfFileToken = node.endOfFileToken;
@@ -3211,7 +3119,7 @@ namespace qnr {
    * @param original The original statement.
    */
   export function createNotEmittedStatement(original: Node) {
-    const node = <NotEmittedStatement>createSynthesizedNode(SyntaxKind.NotEmittedStatement);
+    const node = <NotEmittedStatement>Node.createSynthesized(SyntaxKind.NotEmittedStatement);
     node.original = original;
     setTextRange(node, original);
     return node;
@@ -3222,7 +3130,7 @@ namespace qnr {
    * order to properly emit exports.
    */
   export function createEndOfDeclarationMarker(original: Node) {
-    const node = <EndOfDeclarationMarker>createSynthesizedNode(SyntaxKind.EndOfDeclarationMarker);
+    const node = <EndOfDeclarationMarker>Node.createSynthesized(SyntaxKind.EndOfDeclarationMarker);
     node.emitNode = {} as EmitNode;
     node.original = original;
     return node;
@@ -3233,7 +3141,7 @@ namespace qnr {
    * order to properly emit exports.
    */
   export function createMergeDeclarationMarker(original: Node) {
-    const node = <MergeDeclarationMarker>createSynthesizedNode(SyntaxKind.MergeDeclarationMarker);
+    const node = <MergeDeclarationMarker>Node.createSynthesized(SyntaxKind.MergeDeclarationMarker);
     node.emitNode = {} as EmitNode;
     node.original = original;
     return node;
@@ -3248,7 +3156,7 @@ namespace qnr {
    * @param location The location for the expression. Defaults to the positions from "original" if provided.
    */
   export function createPartiallyEmittedExpression(expression: Expression, original?: Node) {
-    const node = <PartiallyEmittedExpression>createSynthesizedNode(SyntaxKind.PartiallyEmittedExpression);
+    const node = <PartiallyEmittedExpression>Node.createSynthesized(SyntaxKind.PartiallyEmittedExpression);
     node.expression = expression;
     node.original = original;
     setTextRange(node, original);
@@ -3275,7 +3183,7 @@ namespace qnr {
   }
 
   export function createCommaList(elements: readonly Expression[]) {
-    const node = <CommaListExpression>createSynthesizedNode(SyntaxKind.CommaListExpression);
+    const node = <CommaListExpression>Node.createSynthesized(SyntaxKind.CommaListExpression);
     node.elements = createNodeArray(sameFlatMap(elements, flattenCommaElements));
     return node;
   }
@@ -3285,7 +3193,7 @@ namespace qnr {
   }
 
   export function createSyntheticReferenceExpression(expression: Expression, thisArg: Expression) {
-    const node = <SyntheticReferenceExpression>createSynthesizedNode(SyntaxKind.SyntheticReferenceExpression);
+    const node = <SyntheticReferenceExpression>Node.createSynthesized(SyntaxKind.SyntheticReferenceExpression);
     node.expression = expression;
     node.thisArg = thisArg;
     return node;

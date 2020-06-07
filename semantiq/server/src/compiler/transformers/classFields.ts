@@ -177,7 +177,7 @@ namespace qnr {
         const expressions = pendingExpressions;
         expressions.push(name.expression);
         pendingExpressions = [];
-        node = updateComputedPropertyName(node, inlineExpressions(expressions));
+        node = ComputedPropertyName.update(node, inlineExpressions(expressions));
       }
       return node;
     }
@@ -717,8 +717,8 @@ namespace qnr {
       // We generate a name here in order to reuse the value cached by the relocated computed name expression (which uses the same generated name)
       const emitAssignment = !context.getCompilerOptions().useDefineForClassFields;
       const propertyName =
-        isComputedPropertyName(property.name) && !isSimpleInlineableExpression(property.name.expression)
-          ? updateComputedPropertyName(property.name, getGeneratedNameForNode(property.name))
+        ComputedPropertyName.kind(property.name) && !isSimpleInlineableExpression(property.name.expression)
+          ? ComputedPropertyName.update(property.name, getGeneratedNameForNode(property.name))
           : property.name;
 
       if (shouldTransformPrivateFields && isPrivateIdentifier(propertyName)) {
@@ -757,7 +757,7 @@ namespace qnr {
         const memberAccess = createMemberAccessForPropertyName(receiver, propertyName, /*location*/ propertyName);
         return createAssignment(memberAccess, initializer);
       } else {
-        const name = isComputedPropertyName(propertyName)
+        const name = ComputedPropertyName.kind(propertyName)
           ? propertyName.expression
           : isIdentifier(propertyName)
           ? StringLiteral.create(unescapeLeadingUnderscores(propertyName.escapedText))
@@ -836,7 +836,7 @@ namespace qnr {
      * @param shouldHoist Does the expression need to be reused? (ie, for an initializer or a decorator)
      */
     function getPropertyNameExpressionIfNeeded(name: PropertyName, shouldHoist: boolean): Expression | undefined {
-      if (isComputedPropertyName(name)) {
+      if (ComputedPropertyName.kind(name)) {
         const expression = visitNode(name.expression, visitor, isExpression);
         const innerExpression = skipPartiallyEmittedExpressions(expression);
         const inlinable = isSimpleInlineableExpression(innerExpression);

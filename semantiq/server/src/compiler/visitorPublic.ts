@@ -414,14 +414,14 @@ namespace qnr {
         return updateIdentifier(<Identifier>node, nodesVisitor((<Identifier>node).typeArguments, visitor, isTypeNodeOrTypeParameterDeclaration));
 
       case SyntaxKind.QualifiedName:
-        return updateQualifiedName(
+        return QualifiedName.update(
           <QualifiedName>node,
           visitNode((<QualifiedName>node).left, visitor, isEntityName),
           visitNode((<QualifiedName>node).right, visitor, isIdentifier)
         );
 
       case SyntaxKind.ComputedPropertyName:
-        return updateComputedPropertyName(<ComputedPropertyName>node, visitNode((<ComputedPropertyName>node).expression, visitor, isExpression));
+        return ComputedPropertyName.update(<ComputedPropertyName>node, visitNode((<ComputedPropertyName>node).expression, visitor, isExpression));
 
       // Signature elements
       case SyntaxKind.TypeParameter:
@@ -824,7 +824,7 @@ namespace qnr {
       case SyntaxKind.TemplateExpression:
         return updateTemplateExpression(
           <TemplateExpression>node,
-          visitNode((<TemplateExpression>node).head, visitor, isTemplateHead),
+          visitNode((<TemplateExpression>node).head, visitor, TemplateHead.kind),
           nodesVisitor((<TemplateExpression>node).templateSpans, visitor, isTemplateSpan)
         );
 
@@ -873,7 +873,7 @@ namespace qnr {
         return updateTemplateSpan(
           <TemplateSpan>node,
           visitNode((<TemplateSpan>node).expression, visitor, isExpression),
-          visitNode((<TemplateSpan>node).literal, visitor, isTemplateMiddleOrTemplateTail)
+          visitNode((<TemplateSpan>node).literal, visitor, TemplateMiddle.kindOrTemplateTail)
         );
 
       // Element
@@ -1186,7 +1186,7 @@ namespace qnr {
         return updateJsxAttribute(
           <JsxAttribute>node,
           visitNode((<JsxAttribute>node).name, visitor, isIdentifier),
-          visitNode((<JsxAttribute>node).initializer, visitor, isStringLiteralOrJsxExpression)
+          visitNode((<JsxAttribute>node).initializer, visitor, StringLiteral.orJsxExpressionKind)
         );
 
       case SyntaxKind.JsxAttributes:

@@ -487,36 +487,8 @@ namespace qnr {
     return n.constraint ? n.constraint : isJSDocTemplateTag(n.parent) && n === n.parent.typeParameters[0] ? n.parent.constraint : undefined;
   }
 
-  export function isJsxText(n: Node): n is JsxText {
-    return n.kind === SyntaxKind.JsxText;
-  }
-
-  export function isNoSubstitutionTemplateLiteral(n: Node): n is NoSubstitutionTemplateLiteral {
-    return n.kind === SyntaxKind.NoSubstitutionTemplateLiteral;
-  }
-
-  export function isTemplateHead(n: Node): n is TemplateHead {
-    return n.kind === SyntaxKind.TemplateHead;
-  }
-
-  export function isTemplateMiddle(n: Node): n is TemplateMiddle {
-    return n.kind === SyntaxKind.TemplateMiddle;
-  }
-
-  export function isTemplateTail(n: Node): n is TemplateTail {
-    return n.kind === SyntaxKind.TemplateTail;
-  }
-
   export function isIdentifier(n: Node): n is Identifier {
     return n.kind === SyntaxKind.Identifier;
-  }
-
-  export function isQualifiedName(n: Node): n is QualifiedName {
-    return n.kind === SyntaxKind.QualifiedName;
-  }
-
-  export function isComputedPropertyName(n: Node): n is ComputedPropertyName {
-    return n.kind === SyntaxKind.ComputedPropertyName;
   }
 
   export function isPrivateIdentifier(n: Node): n is PrivateIdentifier {
@@ -1298,11 +1270,6 @@ namespace qnr {
     return isTemplateLiteralKind(n.kind);
   }
 
-  export function isTemplateMiddleOrTemplateTail(n: Node): n is TemplateMiddle | TemplateTail {
-    const k = n.kind;
-    return k === SyntaxKind.TemplateMiddle || k === SyntaxKind.TemplateTail;
-  }
-
   export function isImportOrExportSpecifier(n: Node): n is ImportSpecifier | ExportSpecifier {
     return isImportSpecifier(n) || isExportSpecifier(n);
   }
@@ -1908,11 +1875,6 @@ namespace qnr {
     return k === SyntaxKind.JsxAttribute || k === SyntaxKind.JsxSpreadAttribute;
   }
 
-  export function isStringLiteralOrJsxExpression(n: Node): n is StringLiteral | JsxExpression {
-    const k = n.kind;
-    return k === SyntaxKind.StringLiteral || k === SyntaxKind.JsxExpression;
-  }
-
   export function isJsxOpeningLikeElement(n: Node): n is JsxOpeningLikeElement {
     const k = n.kind;
     return k === SyntaxKind.JsxOpeningElement || k === SyntaxKind.JsxSelfClosingElement;
@@ -1994,9 +1956,5 @@ namespace qnr {
       if (indentation === 0) return 0;
     }
     return indentation === MAX_SMI_X86 ? undefined : indentation;
-  }
-
-  export function isStringLiteralLike(n: Node): n is StringLiteralLike {
-    return n.kind === SyntaxKind.StringLiteral || n.kind === SyntaxKind.NoSubstitutionTemplateLiteral;
   }
 }

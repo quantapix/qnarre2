@@ -811,13 +811,6 @@ namespace qnr {
     autoGenerateFlags: GeneratedIdentifierFlags;
   }
 
-  export interface QualifiedName extends Node {
-    kind: SyntaxKind.QualifiedName;
-    left: EntityName;
-    right: Identifier;
-    jsdocDotPos?: number; // QualifiedName occurs in JSDoc-style generic: Id1.Id2.<T>
-  }
-
   export type EntityName = Identifier | QualifiedName;
 
   export type PropertyName = Identifier | StringLiteral | NumericLiteral | ComputedPropertyName | PrivateIdentifier;
@@ -862,12 +855,6 @@ namespace qnr {
 
   export interface DeclarationStatement extends NamedDeclaration, Statement {
     name?: Identifier | StringLiteral | NumericLiteral;
-  }
-
-  export interface ComputedPropertyName extends Node {
-    parent: Declaration;
-    kind: SyntaxKind.ComputedPropertyName;
-    expression: Expression;
   }
 
   export interface PrivateIdentifier extends Node {
@@ -1324,12 +1311,6 @@ namespace qnr {
     literal: BooleanLiteral | LiteralExpression | PrefixUnaryExpression;
   }
 
-  export interface StringLiteral extends LiteralExpression, Declaration {
-    kind: SyntaxKind.StringLiteral;
-    textSourceNode?: Identifier | StringLiteralLike | NumericLiteral;
-    singleQuote?: boolean;
-  }
-
   export type StringLiteralLike = StringLiteral | NoSubstitutionTemplateLiteral;
 
   export interface Expression extends Node {
@@ -1603,11 +1584,6 @@ namespace qnr {
     _literalExpressionBrand: any;
   }
 
-  export interface NoSubstitutionTemplateLiteral extends LiteralExpression, TemplateLiteralLikeNode, Declaration {
-    kind: SyntaxKind.NoSubstitutionTemplateLiteral;
-    templateFlags?: TokenFlags;
-  }
-
   export const enum TokenFlags {
     None = 0,
     PrecedingLineBreak = 1 << 0,
@@ -1624,24 +1600,6 @@ namespace qnr {
     ContainsInvalidEscape = 1 << 11, // e.g. `\uhello`
     BinaryOrOctalSpecifier = BinarySpecifier | OctalSpecifier,
     NumericLiteralFlags = Scientific | Octal | HexSpecifier | BinaryOrOctalSpecifier | ContainsSeparator,
-  }
-
-  export interface TemplateHead extends TemplateLiteralLikeNode {
-    kind: SyntaxKind.TemplateHead;
-    parent: TemplateExpression;
-    templateFlags?: TokenFlags;
-  }
-
-  export interface TemplateMiddle extends TemplateLiteralLikeNode {
-    kind: SyntaxKind.TemplateMiddle;
-    parent: TemplateSpan;
-    templateFlags?: TokenFlags;
-  }
-
-  export interface TemplateTail extends TemplateLiteralLikeNode {
-    kind: SyntaxKind.TemplateTail;
-    parent: TemplateSpan;
-    templateFlags?: TokenFlags;
   }
 
   export type TemplateLiteral = TemplateExpression | NoSubstitutionTemplateLiteral;

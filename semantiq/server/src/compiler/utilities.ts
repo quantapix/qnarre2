@@ -690,7 +690,7 @@ namespace qnr {
   }
 
   export function isComputedNonLiteralName(name: PropertyName): boolean {
-    return name.kind === SyntaxKind.ComputedPropertyName && !isStringOrNumericLiteralLike(name.expression);
+    return name.kind === SyntaxKind.ComputedPropertyName && !StringLiteral.orNumericLiteralLike(name.expression);
   }
 
   export function getTextOfPropertyName(name: PropertyName | NoSubstitutionTemplateLiteral): __String {
@@ -703,7 +703,7 @@ namespace qnr {
       case SyntaxKind.NoSubstitutionTemplateLiteral:
         return escapeLeadingUnderscores(name.text);
       case SyntaxKind.ComputedPropertyName:
-        if (isStringOrNumericLiteralLike(name.expression)) return escapeLeadingUnderscores(name.expression.text);
+        if (StringLiteral.orNumericLiteralLike(name.expression)) return escapeLeadingUnderscores(name.expression.text);
         return fail('Text of property name cannot be read from non-literal-valued ComputedPropertyNames');
       default:
         return Debug.assertNever(name);
@@ -855,7 +855,7 @@ namespace qnr {
     }
     assert(!isJSDoc(errorNode));
     const isMissing = nodeIsMissing(errorNode);
-    const pos = isMissing || isJsxText(node) ? errorNode.pos : skipTrivia(sourceFile.text, errorNode.pos);
+    const pos = isMissing || JsxText.kind(node) ? errorNode.pos : skipTrivia(sourceFile.text, errorNode.pos);
     if (isMissing) {
       assert(pos === errorNode.pos, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
       assert(pos === errorNode.end, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
@@ -1683,7 +1683,7 @@ namespace qnr {
       return false;
     }
     const arg = args[0];
-    return !requireStringLiteralLikeArgument || isStringLiteralLike(arg);
+    return !requireStringLiteralLikeArgument || StringLiteral.like(arg);
   }
 
   export function isRequireVariableDeclaration(node: Node, requireStringLiteralLikeArgument: true): node is RequireVariableDeclaration;
@@ -1917,7 +1917,7 @@ namespace qnr {
       isIdentifier(expr.expression.expression) &&
       idText(expr.expression.expression) === 'Object' &&
       idText(expr.expression.name) === 'defineProperty' &&
-      isStringOrNumericLiteralLike(expr.arguments[1]) &&
+      StringLiteral.orNumericLiteralLike(expr.arguments[1]) &&
       isBindableStaticNameExpression(expr.arguments[0], /*excludeThisKeyword*/ true)
     );
   }
@@ -1931,7 +1931,7 @@ namespace qnr {
   export function isLiteralLikeElementAccess(node: Node): node is LiteralLikeElementAccessExpression {
     return (
       isElementAccessExpression(node) &&
-      (isStringOrNumericLiteralLike(node.argumentExpression) || isWellKnownSymbolSyntactically(node.argumentExpression))
+      (StringLiteral.orNumericLiteralLike(node.argumentExpression) || isWellKnownSymbolSyntactically(node.argumentExpression))
     );
   }
 
@@ -2001,7 +2001,7 @@ namespace qnr {
       return node.name;
     }
     const arg = skipParentheses(node.argumentExpression);
-    if (NumericLiteral.kind(arg) || isStringLiteralLike(arg)) {
+    if (NumericLiteral.kind(arg) || StringLiteral.like(arg)) {
       return arg;
     }
     return node;
@@ -2015,7 +2015,7 @@ namespace qnr {
       if (isIdentifier(name)) {
         return name.escapedText;
       }
-      if (isStringLiteralLike(name) || NumericLiteral.kind(name)) {
+      if (StringLiteral.like(name) || NumericLiteral.kind(name)) {
         return escapeLeadingUnderscores(name.text);
       }
     }
@@ -2532,12 +2532,12 @@ namespace qnr {
       case SyntaxKind.StringLiteral:
       case SyntaxKind.NoSubstitutionTemplateLiteral:
       case SyntaxKind.NumericLiteral:
-        if (isComputedPropertyName(parent)) return parent.parent;
+        if (ComputedPropertyName.kind(parent)) return parent.parent;
       // falls through
       case SyntaxKind.Identifier:
         if (isDeclaration(parent)) {
           return parent.name === name ? parent : undefined;
-        } else if (isQualifiedName(parent)) {
+        } else if (QualifiedName.kind(parent)) {
           const tag = parent.parent;
           return isJSDocParameterTag(tag) && tag.name === parent ? tag : undefined;
         } else {
@@ -2557,7 +2557,7 @@ namespace qnr {
   }
 
   export function isLiteralComputedPropertyDeclarationName(node: Node) {
-    return isStringOrNumericLiteralLike(node) && node.parent.kind === SyntaxKind.ComputedPropertyName && isDeclaration(node.parent.parent);
+    return StringLiteral.orNumericLiteralLike(node) && node.parent.kind === SyntaxKind.ComputedPropertyName && isDeclaration(node.parent.parent);
   }
 
   // Return true if the given identifier is classified as an IdentifierName
@@ -2824,10 +2824,6 @@ namespace qnr {
     return false;
   }
 
-  export function isStringOrNumericLiteralLike(node: Node): node is StringLiteralLike | NumericLiteral {
-    return isStringLiteralLike(node) || NumericLiteral.kind(node);
-  }
-
   export function isSignedNumericLiteral(node: Node): node is PrefixUnaryExpression & { operand: NumericLiteral } {
     return (
       isPrefixUnaryExpression(node) &&
@@ -2857,7 +2853,7 @@ namespace qnr {
       return false;
     }
     const expr = isElementAccessExpression(name) ? name.argumentExpression : name.expression;
-    return !isStringOrNumericLiteralLike(expr) && !isSignedNumericLiteral(expr) && !isWellKnownSymbolSyntactically(expr);
+    return !StringLiteral.orNumericLiteralLike(expr) && !isSignedNumericLiteral(expr) && !isWellKnownSymbolSyntactically(expr);
   }
 
   /**
@@ -2881,7 +2877,7 @@ namespace qnr {
         const nameExpression = name.expression;
         if (isWellKnownSymbolSyntactically(nameExpression)) {
           return getPropertyNameForKnownSymbolName(idText((<PropertyAccessExpression>nameExpression).name));
-        } else if (isStringOrNumericLiteralLike(nameExpression)) {
+        } else if (StringLiteral.orNumericLiteralLike(nameExpression)) {
           return escapeLeadingUnderscores(nameExpression.text);
         } else if (isSignedNumericLiteral(nameExpression)) {
           if (nameExpression.operator === SyntaxKind.MinusToken) {
@@ -3257,7 +3253,7 @@ namespace qnr {
   export function hasInvalidEscape(template: TemplateLiteral): boolean {
     return (
       template &&
-      !!(isNoSubstitutionTemplateLiteral(template)
+      !!(NoSubstitutionTemplateLiteral.kind(template)
         ? template.templateFlags
         : template.head.templateFlags || some(template.templateSpans, (span) => !!span.literal.templateFlags))
     );

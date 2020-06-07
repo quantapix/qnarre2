@@ -368,7 +368,7 @@ namespace qnr {
   }
 
   export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boolean): TypeChecker {
-    const getPackagesSet: () => Map<true> = memoize(() => {
+    const getPackagesSet: () => QMap<true> = memoize(() => {
       const set = createMap<true>();
       host.getSourceFiles().forEach((sf) => {
         if (!sf.resolvedModules) return;
@@ -974,10 +974,10 @@ namespace qnr {
       readonly firstFile: SourceFile;
       readonly secondFile: SourceFile;
       /** Key is symbol name. */
-      readonly conflictingSymbols: Map<DuplicateInfoForSymbol>;
+      readonly conflictingSymbols: QMap<DuplicateInfoForSymbol>;
     }
     /** Key is "/path/to/a.ts|/path/to/b.ts". */
-    let amalgamatedDuplicates: Map<DuplicateInfoForFiles> | undefined;
+    let amalgamatedDuplicates: QMap<DuplicateInfoForFiles> | undefined;
     const reverseMappedCache = createMap<Type | undefined>();
     let inInferTypeForHomomorphicMappedType = false;
     let ambientModulesCache: Symbol[] | undefined;
@@ -987,7 +987,7 @@ namespace qnr {
      * This is only used if there is no exact match.
      */
     let patternAmbientModules: PatternAmbientModule[];
-    let patternAmbientModuleAugmentations: Map<Symbol> | undefined;
+    let patternAmbientModuleAugmentations: QMap<Symbol> | undefined;
 
     let globalObjectType: ObjectType;
     let globalFunctionType: ObjectType;
@@ -1055,7 +1055,7 @@ namespace qnr {
     const mergedSymbols: Symbol[] = [];
     const symbolLinks: SymbolLinks[] = [];
     const nodeLinks: NodeLinks[] = [];
-    const flowLoopCaches: Map<Type>[] = [];
+    const flowLoopCaches: QMap<Type>[] = [];
     const flowLoopNodes: FlowNode[] = [];
     const flowLoopKeys: string[] = [];
     const flowLoopTypes: Type[][] = [];
@@ -1130,7 +1130,7 @@ namespace qnr {
         }
       }
       if (!_jsxFactoryEntity) {
-        _jsxFactoryEntity = createQualifiedName(createIdentifier(unescapeLeadingUnderscores(_jsxNamespace)), 'createElement');
+        _jsxFactoryEntity = QualifiedName.create(createIdentifier(unescapeLeadingUnderscores(_jsxNamespace)), 'createElement');
       }
       return _jsxNamespace;
 
@@ -1555,7 +1555,7 @@ namespace qnr {
           return !isImmediatelyUsedInInitializerOfBlockScopedVariable(declaration as VariableDeclaration, usage);
         } else if (isClassDeclaration(declaration)) {
           // still might be illegal if the usage is within a computed property name in the class (eg class A { static p = "a"; [A.p]() {} })
-          return !findAncestor(usage, (n) => isComputedPropertyName(n) && n.parent.parent === declaration);
+          return !findAncestor(usage, (n) => ComputedPropertyName.kind(n) && n.parent.parent === declaration);
         } else if (isPropertyDeclaration(declaration)) {
           // still might be illegal if a self-referencing property initializer (eg private x = this.x)
           return !isPropertyImmediatelyReferencedWithinDeclaration(declaration, usage, /*stopAtAnyPropertyDeclaration*/ false);
@@ -2414,7 +2414,7 @@ namespace qnr {
         );
         const parent = errorLocation.parent;
         if (symbol) {
-          if (isQualifiedName(parent)) {
+          if (QualifiedName.kind(parent)) {
             assert(parent.left === errorLocation, 'Should only be resolving left side of qualified name as a namespace');
             const propName = parent.right.escapedText;
             const propType = getPropertyOfType(getDeclaredTypeOfSymbol(symbol), propName);
@@ -3471,7 +3471,7 @@ namespace qnr {
       moduleNotFoundError: DiagnosticMessage | undefined,
       isForAugmentation = false
     ): Symbol | undefined {
-      return isStringLiteralLike(moduleReferenceExpression)
+      return StringLiteral.like(moduleReferenceExpression)
         ? resolveExternalModule(location, moduleReferenceExpression.text, moduleNotFoundError, moduleReferenceExpression, isForAugmentation)
         : undefined;
     }
@@ -4178,7 +4178,7 @@ namespace qnr {
       enclosingDeclaration: Node | undefined,
       meaning: SymbolFlags,
       useOnlyExternalAliasing: boolean,
-      visitedSymbolTablesMap: Map<SymbolTable[]> = createMap()
+      visitedSymbolTablesMap: QMap<SymbolTable[]> = createMap()
     ): Symbol[] | undefined {
       if (!(symbol && !isPropertyOrMethodDeclarationSymbol(symbol))) {
         return;
@@ -5266,7 +5266,7 @@ namespace qnr {
             // then move qualifiers
             const ids = getAccessStack(ref);
             for (const id of ids) {
-              root.qualifier = root.qualifier ? createQualifiedName(root.qualifier, id) : id;
+              root.qualifier = root.qualifier ? QualifiedName.create(root.qualifier, id) : id;
             }
             return root;
           } else {
@@ -5277,7 +5277,7 @@ namespace qnr {
             // then move qualifiers
             const ids = getAccessStack(ref);
             for (const id of ids) {
-              root.typeName = createQualifiedName(root.typeName, id);
+              root.typeName = QualifiedName.create(root.typeName, id);
             }
             return root;
           }
@@ -5696,7 +5696,7 @@ namespace qnr {
         function cloneBindingName(node: BindingName): BindingName {
           return <BindingName>elideInitializerAndSetEmitFlags(node);
           function elideInitializerAndSetEmitFlags(node: Node): Node {
-            if (context.tracker.trackSymbol && isComputedPropertyName(node) && isLateBindableName(node)) {
+            if (context.tracker.trackSymbol && ComputedPropertyName.kind(node) && isLateBindableName(node)) {
               trackComputedName(node.expression, context.enclosingDeclaration, context);
             }
             const visited = visitEachChild(
@@ -6054,7 +6054,7 @@ namespace qnr {
             if (!isEntityName(LHS)) {
               return fail('Impossible construct - an export of an indexed access cannot be reachable');
             }
-            return createQualifiedName(LHS, identifier);
+            return QualifiedName.create(LHS, identifier);
           }
           return identifier;
         }
@@ -6139,7 +6139,7 @@ namespace qnr {
           const identifier = setEmitFlags(createIdentifier(symbolName, typeParameterNodes), EmitFlags.NoAsciiEscaping);
           identifier.symbol = symbol;
 
-          return index > 0 ? createQualifiedName(createEntityNameFromSymbolChain(chain, index - 1), identifier) : identifier;
+          return index > 0 ? QualifiedName.create(createEntityNameFromSymbolChain(chain, index - 1), identifier) : identifier;
         }
       }
 
@@ -6211,7 +6211,7 @@ namespace qnr {
           return fromNameType;
         }
         if (isKnownSymbol(symbol)) {
-          return createComputedPropertyName(createPropertyAccess(createIdentifier('Symbol'), (symbol.escapedName as string).substr(3)));
+          return ComputedPropertyName.create(createPropertyAccess(createIdentifier('Symbol'), (symbol.escapedName as string).substr(3)));
         }
         const rawName = unescapeLeadingUnderscores(symbol.escapedName);
         return createPropertyNameNodeForIdentifierOrLiteral(rawName, singleQuote);
@@ -6223,24 +6223,22 @@ namespace qnr {
         if (nameType) {
           if (nameType.flags & TypeFlags.StringOrNumberLiteral) {
             const name = '' + (<StringLiteralType | NumberLiteralType>nameType).value;
-            if (!isIdentifierText(name) && !isNumericLiteralName(name)) {
+            if (!isIdentifierText(name) && !NumericLiteral.name(name)) {
               return createLiteral(name, !!singleQuote);
             }
-            if (isNumericLiteralName(name) && startsWith(name, '-')) {
-              return createComputedPropertyName(createLiteral(+name));
+            if (NumericLiteral.name(name) && startsWith(name, '-')) {
+              return ComputedPropertyName.create(createLiteral(+name));
             }
             return createPropertyNameNodeForIdentifierOrLiteral(name);
           }
           if (nameType.flags & TypeFlags.UniqueESSymbol) {
-            return createComputedPropertyName(symbolToExpression((<UniqueESSymbolType>nameType).symbol, context, SymbolFlags.Value));
+            return ComputedPropertyName.create(symbolToExpression((<UniqueESSymbolType>nameType).symbol, context, SymbolFlags.Value));
           }
         }
       }
 
       function createPropertyNameNodeForIdentifierOrLiteral(name: string, singleQuote?: boolean) {
-        return isIdentifierText(name)
-          ? createIdentifier(name)
-          : createLiteral(isNumericLiteralName(name) && +name >= 0 ? +name : name, !!singleQuote);
+        return isIdentifierText(name) ? createIdentifier(name) : createLiteral(NumericLiteral.name(name) && +name >= 0 ? +name : name, !!singleQuote);
       }
 
       function cloneNodeBuilderContext(context: NodeBuilderContext): NodeBuilderContext {
@@ -6491,7 +6489,7 @@ namespace qnr {
               isInJSFile(node) &&
               (isExportsIdentifier(leftmost) ||
                 isModuleExportsAccessExpression(leftmost.parent) ||
-                (isQualifiedName(leftmost.parent) && isModuleIdentifier(leftmost.parent.left) && isExportsIdentifier(leftmost.parent.right)))
+                (QualifiedName.kind(leftmost.parent) && isModuleIdentifier(leftmost.parent.left) && isExportsIdentifier(leftmost.parent.right)))
             ) {
               hadError = true;
               return node;
@@ -6574,8 +6572,8 @@ namespace qnr {
         // we're trying to emit from later on)
         const enclosingDeclaration = context.enclosingDeclaration!;
         let results: Statement[] = [];
-        const visitedSymbols: Map<true> = createMap();
-        let deferredPrivates: Map<Symbol> | undefined;
+        const visitedSymbols: QMap<true> = createMap();
+        let deferredPrivates: QMap<Symbol> | undefined;
         const oldcontext = context;
         context = {
           ...oldcontext,
@@ -7537,7 +7535,7 @@ namespace qnr {
               serializeExportSpecifier(
                 unescapeLeadingUnderscores(symbol.escapedName),
                 specifier ? verbatimTargetName : targetName,
-                specifier && isStringLiteralLike(specifier) ? createLiteral(specifier.text) : undefined
+                specifier && StringLiteral.like(specifier) ? createLiteral(specifier.text) : undefined
               );
               break;
             case SyntaxKind.ExportAssignment:
@@ -8118,16 +8116,16 @@ namespace qnr {
 
       // State
       encounteredError: boolean;
-      visitedTypes: Map<true> | undefined;
-      symbolDepth: Map<number> | undefined;
+      visitedTypes: QMap<true> | undefined;
+      symbolDepth: QMap<number> | undefined;
       inferTypeParameters: TypeParameter[] | undefined;
       approximateLength: number;
       truncating?: boolean;
-      typeParameterSymbolList?: Map<true>;
-      typeParameterNames?: Map<Identifier>;
-      typeParameterNamesByText?: Map<true>;
-      usedSymbolNames?: Map<true>;
-      remappedSymbolNames?: Map<string>;
+      typeParameterSymbolList?: QMap<true>;
+      typeParameterNames?: QMap<Identifier>;
+      typeParameterNamesByText?: QMap<true>;
+      usedSymbolNames?: QMap<true>;
+      remappedSymbolNames?: QMap<string>;
     }
 
     function isDefaultBindingContext(location: Node) {
@@ -8139,10 +8137,10 @@ namespace qnr {
       if (nameType) {
         if (nameType.flags & TypeFlags.StringOrNumberLiteral) {
           const name = '' + (<StringLiteralType | NumberLiteralType>nameType).value;
-          if (!isIdentifierText(name) && !isNumericLiteralName(name)) {
+          if (!isIdentifierText(name) && !NumericLiteral.name(name)) {
             return `"${escapeString(name, Codes.doubleQuote)}"`;
           }
-          if (isNumericLiteralName(name) && startsWith(name, '-')) {
+          if (NumericLiteral.name(name) && startsWith(name, '-')) {
             return `[${name}]`;
           }
           return name;
@@ -8182,7 +8180,7 @@ namespace qnr {
           if (isCallExpression(declaration) && isBindableObjectDefinePropertyCall(declaration)) {
             return symbolName(symbol);
           }
-          if (isComputedPropertyName(name) && !(getCheckFlags(symbol) & CheckFlags.Late)) {
+          if (ComputedPropertyName.kind(name) && !(getCheckFlags(symbol) & CheckFlags.Late)) {
             const nameType = getSymbolLinks(symbol).nameType;
             if (nameType && nameType.flags & TypeFlags.StringOrNumberLiteral) {
               // Computed property name isn't late bound, but has a well-known name type - use name type to generate a symbol name
@@ -8338,7 +8336,7 @@ namespace qnr {
         );
       }
       let result: Node[] | undefined;
-      let visited: Map<true> | undefined;
+      let visited: QMap<true> | undefined;
       if (exportSymbol) {
         visited = createMap();
         visited.set('' + getSymbolId(exportSymbol), true);
@@ -8486,7 +8484,7 @@ namespace qnr {
     function getTypeOfPropertyOrIndexSignature(type: Type, name: __String): Type {
       return (
         getTypeOfPropertyOfType(type, name) ||
-        (isNumericLiteralName(name) && getIndexTypeOfType(type, IndexKind.Number)) ||
+        (NumericLiteral.name(name) && getIndexTypeOfType(type, IndexKind.Number)) ||
         getIndexTypeOfType(type, IndexKind.String) ||
         unknownType
       );
@@ -8854,7 +8852,7 @@ namespace qnr {
                 isBinaryExpression(declaration) &&
                 getAssignmentDeclarationKind(declaration) === AssignmentDeclarationKind.ThisProperty &&
                 (declaration.left.kind !== SyntaxKind.ElementAccessExpression ||
-                  isStringOrNumericLiteralLike((<ElementAccessExpression>declaration.left).argumentExpression)) &&
+                  StringLiteral.orNumericLiteralLike((<ElementAccessExpression>declaration.left).argumentExpression)) &&
                 !getAnnotatedTypeForAssignmentDeclaration(/*declaredType*/ undefined, declaration, symbol, declaration)
             );
         }
@@ -9390,7 +9388,7 @@ namespace qnr {
         isPropertyAccessExpression(declaration) ||
         isElementAccessExpression(declaration) ||
         isIdentifier(declaration) ||
-        isStringLiteralLike(declaration) ||
+        StringLiteral.like(declaration) ||
         NumericLiteral.kind(declaration) ||
         isClassDeclaration(declaration) ||
         isFunctionDeclaration(declaration) ||
@@ -10214,7 +10212,7 @@ namespace qnr {
     }
 
     function isStringConcatExpression(expr: Node): boolean {
-      if (isStringLiteralLike(expr)) {
+      if (StringLiteral.like(expr)) {
         return true;
       } else if (expr.kind === SyntaxKind.BinaryExpression) {
         return isStringConcatExpression((<BinaryExpression>expr).left) && isStringConcatExpression((<BinaryExpression>expr).right);
@@ -10255,7 +10253,7 @@ namespace qnr {
       for (const declaration of symbol.declarations) {
         if (declaration.kind === SyntaxKind.EnumDeclaration) {
           for (const member of (<EnumDeclaration>declaration).members) {
-            if (member.initializer && isStringLiteralLike(member.initializer)) {
+            if (member.initializer && StringLiteral.like(member.initializer)) {
               return (links.enumKind = EnumKind.Literal);
             }
             if (!isLiteralEnumMember(member)) {
@@ -10495,13 +10493,13 @@ namespace qnr {
      * - The type of its expression is a string or numeric literal type, or is a `unique symbol` type.
      */
     function isLateBindableName(node: DeclarationName): node is LateBoundName {
-      if (!isComputedPropertyName(node) && !isElementAccessExpression(node)) {
+      if (!ComputedPropertyName.kind(node) && !isElementAccessExpression(node)) {
         return false;
       }
-      const expr = isComputedPropertyName(node) ? node.expression : node.argumentExpression;
+      const expr = ComputedPropertyName.kind(node) ? node.expression : node.argumentExpression;
       return (
         isEntityNameExpression(expr) &&
-        isTypeUsableAsPropertyName(isComputedPropertyName(node) ? checkComputedPropertyName(node) : checkExpressionCached(expr))
+        isTypeUsableAsPropertyName(ComputedPropertyName.kind(node) ? checkComputedPropertyName(node) : checkExpressionCached(expr))
       );
     }
 
@@ -12058,7 +12056,7 @@ namespace qnr {
           } else if (isUnion) {
             const indexInfo =
               !isLateBoundName(name) &&
-              ((isNumericLiteralName(name) && getIndexInfoOfType(type, IndexKind.Number)) || getIndexInfoOfType(type, IndexKind.String));
+              ((NumericLiteral.name(name) && getIndexInfoOfType(type, IndexKind.Number)) || getIndexInfoOfType(type, IndexKind.String));
             if (indexInfo) {
               checkFlags |= CheckFlags.WritePartial | (indexInfo.isReadonly ? CheckFlags.Readonly : 0);
               indexTypes = append(indexTypes, isTupleType(type) ? getRestTypeOfTupleType(type) || undefinedType : indexInfo.type);
@@ -12316,7 +12314,7 @@ namespace qnr {
       if (isObjectTypeWithInferableIndex(type)) {
         const propTypes: Type[] = [];
         for (const prop of getPropertiesOfType(type)) {
-          if (kind === IndexKind.String || isNumericLiteralName(prop.escapedName)) {
+          if (kind === IndexKind.String || NumericLiteral.name(prop.escapedName)) {
             propTypes.push(getTypeOfSymbol(prop));
           }
         }
@@ -14216,7 +14214,7 @@ namespace qnr {
       return links.resolvedType;
     }
 
-    function addTypeToIntersection(typeSet: Map<Type>, includes: TypeFlags, type: Type) {
+    function addTypeToIntersection(typeSet: QMap<Type>, includes: TypeFlags, type: Type) {
       const flags = type.flags;
       if (flags & TypeFlags.Intersection) {
         return addTypesToIntersection(typeSet, includes, (<IntersectionType>type).types);
@@ -14244,7 +14242,7 @@ namespace qnr {
 
     // Add the given types to the given type set. Order is preserved, freshness is removed from literal
     // types, duplicates are removed, and nested types of the given kind are flattened into the set.
-    function addTypesToIntersection(typeSet: Map<Type>, includes: TypeFlags, types: readonly Type[]) {
+    function addTypesToIntersection(typeSet: QMap<Type>, includes: TypeFlags, types: readonly Type[]) {
       for (const type of types) {
         includes = addTypeToIntersection(typeSet, includes, getRegularTypeOfLiteralType(type));
       }
@@ -14365,7 +14363,7 @@ namespace qnr {
     // Also, unlike union types, the order of the constituent types is preserved in order that overload resolution
     // for intersections of types with signatures can be deterministic.
     function getIntersectionType(types: readonly Type[], aliasSymbol?: Symbol, aliasTypeArguments?: readonly Type[]): Type {
-      const typeMembershipMap: Map<Type> = createMap();
+      const typeMembershipMap: QMap<Type> = createMap();
       const includes = addTypesToIntersection(typeMembershipMap, 0, types);
       const typeSet: Type[] = arrayFrom(typeMembershipMap.values());
       // An intersection type is considered empty if it contains
@@ -14481,7 +14479,7 @@ namespace qnr {
       }
       return isIdentifier(name)
         ? getLiteralType(unescapeLeadingUnderscores(name.escapedText))
-        : getRegularTypeOfLiteralType(isComputedPropertyName(name) ? checkComputedPropertyName(name) : checkExpression(name));
+        : getRegularTypeOfLiteralType(ComputedPropertyName.kind(name) ? checkComputedPropertyName(name) : checkExpression(name));
     }
 
     function getBigIntLiteralType(node: BigIntLiteral): LiteralType {
@@ -14672,7 +14670,7 @@ namespace qnr {
             ? getFlowTypeOfReference(accessExpression, propType)
             : propType;
         }
-        if (everyType(objectType, isTupleType) && isNumericLiteralName(propName) && +propName >= 0) {
+        if (everyType(objectType, isTupleType) && NumericLiteral.name(propName) && +propName >= 0) {
           if (
             accessNode &&
             everyType(objectType, (t) => !(<TupleTypeReference>t).target.hasRestElement) &&
@@ -16615,7 +16613,7 @@ namespace qnr {
     function checkTypeRelatedToAndOptionallyElaborate(
       source: Type,
       target: Type,
-      relation: Map<RelationComparisonResult>,
+      relation: QMap<RelationComparisonResult>,
       errorNode: Node | undefined,
       expr: Expression | undefined,
       headMessage: DiagnosticMessage | undefined,
@@ -16640,7 +16638,7 @@ namespace qnr {
       node: Expression | undefined,
       source: Type,
       target: Type,
-      relation: Map<RelationComparisonResult>,
+      relation: QMap<RelationComparisonResult>,
       headMessage: DiagnosticMessage | undefined,
       containingMessageChain: (() => DiagnosticMessageChain | undefined) | undefined,
       errorOutputContainer: { errors?: Diagnostic[]; skipLogging?: boolean } | undefined
@@ -16695,7 +16693,7 @@ namespace qnr {
       node: Expression,
       source: Type,
       target: Type,
-      relation: Map<RelationComparisonResult>,
+      relation: QMap<RelationComparisonResult>,
       headMessage: DiagnosticMessage | undefined,
       containingMessageChain: (() => DiagnosticMessageChain | undefined) | undefined,
       errorOutputContainer: { errors?: Diagnostic[]; skipLogging?: boolean } | undefined
@@ -16733,7 +16731,7 @@ namespace qnr {
       node: ArrowFunction,
       source: Type,
       target: Type,
-      relation: Map<RelationComparisonResult>,
+      relation: QMap<RelationComparisonResult>,
       containingMessageChain: (() => DiagnosticMessageChain | undefined) | undefined,
       errorOutputContainer: { errors?: Diagnostic[]; skipLogging?: boolean } | undefined
     ): boolean {
@@ -16835,7 +16833,7 @@ namespace qnr {
       iterator: ElaborationIterator,
       source: Type,
       target: Type,
-      relation: Map<RelationComparisonResult>,
+      relation: QMap<RelationComparisonResult>,
       containingMessageChain: (() => DiagnosticMessageChain | undefined) | undefined,
       errorOutputContainer: { errors?: Diagnostic[]; skipLogging?: boolean } | undefined
     ) {
@@ -16935,7 +16933,7 @@ namespace qnr {
           // child is of the type of the expression
           return { errorNode: child, innerExpression: child.expression, nameType };
         case SyntaxKind.JsxText:
-          if (child.containsOnlyTriviaWhiteSpaces) {
+          if (child.onlyTriviaWhitespaces) {
             break; // Whitespace only jsx text isn't real jsx text
           }
           // child is a string
@@ -16948,17 +16946,18 @@ namespace qnr {
         default:
           return Debug.assertNever(child, 'Found invalid jsx child');
       }
+      return;
     }
 
     function getSemanticJsxChildren(children: NodeArray<JsxChild>) {
-      return filter(children, (i) => !isJsxText(i) || !i.containsOnlyTriviaWhiteSpaces);
+      return filter(children, (i) => !JsxText.kind(i) || !i.onlyTriviaWhitespaces);
     }
 
     function elaborateJsxComponents(
       node: JsxAttributes,
       source: Type,
       target: Type,
-      relation: Map<RelationComparisonResult>,
+      relation: QMap<RelationComparisonResult>,
       containingMessageChain: (() => DiagnosticMessageChain | undefined) | undefined,
       errorOutputContainer: { errors?: Diagnostic[]; skipLogging?: boolean } | undefined
     ) {
@@ -17065,7 +17064,7 @@ namespace qnr {
       node: ArrayLiteralExpression,
       source: Type,
       target: Type,
-      relation: Map<RelationComparisonResult>,
+      relation: QMap<RelationComparisonResult>,
       containingMessageChain: (() => DiagnosticMessageChain | undefined) | undefined,
       errorOutputContainer: { errors?: Diagnostic[]; skipLogging?: boolean } | undefined
     ) {
@@ -17138,7 +17137,7 @@ namespace qnr {
       node: ObjectLiteralExpression,
       source: Type,
       target: Type,
-      relation: Map<RelationComparisonResult>,
+      relation: QMap<RelationComparisonResult>,
       containingMessageChain: (() => DiagnosticMessageChain | undefined) | undefined,
       errorOutputContainer: { errors?: Diagnostic[]; skipLogging?: boolean } | undefined
     ) {
@@ -17512,7 +17511,7 @@ namespace qnr {
       return true;
     }
 
-    function isSimpleTypeRelatedTo(source: Type, target: Type, relation: Map<RelationComparisonResult>, errorReporter?: ErrorReporter) {
+    function isSimpleTypeRelatedTo(source: Type, target: Type, relation: QMap<RelationComparisonResult>, errorReporter?: ErrorReporter) {
       const s = source.flags;
       const t = target.flags;
       if (t & TypeFlags.AnyOrUnknown || s & TypeFlags.Never || source === wildcardType) return true;
@@ -17567,7 +17566,7 @@ namespace qnr {
       return false;
     }
 
-    function isTypeRelatedTo(source: Type, target: Type, relation: Map<RelationComparisonResult>) {
+    function isTypeRelatedTo(source: Type, target: Type, relation: QMap<RelationComparisonResult>) {
       if (isFreshLiteralType(source)) {
         source = (<FreshableType>source).regularType;
       }
@@ -17644,7 +17643,7 @@ namespace qnr {
     function checkTypeRelatedTo(
       source: Type,
       target: Type,
-      relation: Map<RelationComparisonResult>,
+      relation: QMap<RelationComparisonResult>,
       errorNode: Node | undefined,
       headMessage?: DiagnosticMessage,
       containingMessageChain?: () => DiagnosticMessageChain | undefined,
@@ -18257,7 +18256,7 @@ namespace qnr {
               : getPropertyOfObjectType(type, name);
           const propType =
             (prop && getTypeOfSymbol(prop)) ||
-            (isNumericLiteralName(name) && getIndexTypeOfType(type, IndexKind.Number)) ||
+            (NumericLiteral.name(name) && getIndexTypeOfType(type, IndexKind.Number)) ||
             getIndexTypeOfType(type, IndexKind.String) ||
             undefinedType;
           return append(propTypes, propType);
@@ -19466,7 +19465,7 @@ namespace qnr {
         const numericNamesOnly = isTupleType(source) && isTupleType(target);
         for (const targetProp of excludeProperties(properties, excludedProperties)) {
           const name = targetProp.escapedName;
-          if (!(targetProp.flags & SymbolFlags.Prototype) && (!numericNamesOnly || isNumericLiteralName(name) || name === 'length')) {
+          if (!(targetProp.flags & SymbolFlags.Prototype) && (!numericNamesOnly || NumericLiteral.name(name) || name === 'length')) {
             const sourceProp = getPropertyOfType(source, name);
             if (sourceProp && sourceProp !== targetProp) {
               const related = propertyRelatedTo(
@@ -19698,7 +19697,7 @@ namespace qnr {
           if (nameType && nameType.flags & TypeFlags.UniqueESSymbol) {
             continue;
           }
-          if (kind === IndexKind.String || isNumericLiteralName(prop.escapedName)) {
+          if (kind === IndexKind.String || NumericLiteral.name(prop.escapedName)) {
             const related = isRelatedTo(getTypeOfSymbol(prop), target, reportErrors);
             if (!related) {
               if (reportErrors) {
@@ -20045,7 +20044,7 @@ namespace qnr {
      * To improve caching, the relation key for two generic types uses the target's id plus ids of the type parameters.
      * For other cases, the types ids are used.
      */
-    function getRelationKey(source: Type, target: Type, intersectionState: IntersectionState, relation: Map<RelationComparisonResult>) {
+    function getRelationKey(source: Type, target: Type, intersectionState: IntersectionState, relation: QMap<RelationComparisonResult>) {
       if (relation === identityRelation && source.id > target.id) {
         const temp = source;
         source = target;
@@ -21378,7 +21377,7 @@ namespace qnr {
       contravariant = false
     ) {
       let symbolOrTypeStack: (Symbol | Type)[];
-      let visited: Map<number>;
+      let visited: QMap<number>;
       let bivariant = false;
       let propagationType: Type;
       let inferencePriority = InferencePriority.MaxValue;
@@ -22265,7 +22264,7 @@ namespace qnr {
     function getAccessedPropertyName(access: AccessExpression): __String | undefined {
       return access.kind === SyntaxKind.PropertyAccessExpression
         ? access.name.escapedText
-        : isStringOrNumericLiteralLike(access.argumentExpression)
+        : StringLiteral.orNumericLiteralLike(access.argumentExpression)
         ? escapeLeadingUnderscores(access.argumentExpression.text)
         : undefined;
     }
@@ -22510,7 +22509,7 @@ namespace qnr {
       const text = getPropertyNameFromType(nameType);
       return (
         getConstraintForLocation(getTypeOfPropertyOfType(type, text), name) ||
-        (isNumericLiteralName(text) && getIndexTypeOfType(type, IndexKind.Number)) ||
+        (NumericLiteral.name(text) && getIndexTypeOfType(type, IndexKind.Number)) ||
         getIndexTypeOfType(type, IndexKind.String) ||
         errorType
       );
@@ -22683,7 +22682,7 @@ namespace qnr {
       const witnesses: (string | undefined)[] = [];
       for (const clause of switchStatement.caseBlock.clauses) {
         if (clause.kind === SyntaxKind.CaseClause) {
-          if (isStringLiteralLike(clause.expression)) {
+          if (StringLiteral.like(clause.expression)) {
             witnesses.push(clause.expression.text);
             continue;
           }
@@ -23679,10 +23678,10 @@ namespace qnr {
             const operator = expr.operatorToken.kind;
             const left = getReferenceCandidate(expr.left);
             const right = getReferenceCandidate(expr.right);
-            if (left.kind === SyntaxKind.TypeOfExpression && isStringLiteralLike(right)) {
+            if (left.kind === SyntaxKind.TypeOfExpression && StringLiteral.like(right)) {
               return narrowTypeByTypeof(type, <TypeOfExpression>left, operator, right, assumeTrue);
             }
-            if (right.kind === SyntaxKind.TypeOfExpression && isStringLiteralLike(left)) {
+            if (right.kind === SyntaxKind.TypeOfExpression && StringLiteral.like(left)) {
               return narrowTypeByTypeof(type, <TypeOfExpression>right, operator, left, assumeTrue);
             }
             if (isMatchingReference(reference, left)) {
@@ -23715,7 +23714,7 @@ namespace qnr {
             return narrowTypeByInstanceof(type, expr, assumeTrue);
           case SyntaxKind.InKeyword:
             const target = getReferenceCandidate(expr.right);
-            if (isStringLiteralLike(expr.left) && isMatchingReference(reference, target)) {
+            if (StringLiteral.like(expr.left) && isMatchingReference(reference, target)) {
               return narrowByInKeyword(type, expr.left, assumeTrue);
             }
             break;
@@ -24003,7 +24002,7 @@ namespace qnr {
       function isMatchingConstructorReference(expr: Expression) {
         return (
           ((isPropertyAccessExpression(expr) && idText(expr.name) === 'constructor') ||
-            (isElementAccessExpression(expr) && isStringLiteralLike(expr.argumentExpression) && expr.argumentExpression.text === 'constructor')) &&
+            (isElementAccessExpression(expr) && StringLiteral.like(expr.argumentExpression) && expr.argumentExpression.text === 'constructor')) &&
           isMatchingReference(reference, expr.expression)
         );
       }
@@ -25446,12 +25445,12 @@ namespace qnr {
             }
             if (isTupleType(t)) {
               const restType = getRestTypeOfTupleType(t);
-              if (restType && isNumericLiteralName(name) && +name >= 0) {
+              if (restType && NumericLiteral.name(name) && +name >= 0) {
                 return restType;
               }
             }
             return (
-              (isNumericLiteralName(name) && getIndexTypeOfContextualType(t, IndexKind.Number)) || getIndexTypeOfContextualType(t, IndexKind.String)
+              (NumericLiteral.name(name) && getIndexTypeOfContextualType(t, IndexKind.Number)) || getIndexTypeOfContextualType(t, IndexKind.String)
             );
           }
           return;
@@ -26155,10 +26154,10 @@ namespace qnr {
         case SyntaxKind.ComputedPropertyName:
           return isNumericComputedName(name);
         case SyntaxKind.Identifier:
-          return isNumericLiteralName(name.escapedText);
+          return NumericLiteral.name(name.escapedText);
         case SyntaxKind.NumericLiteral:
         case SyntaxKind.StringLiteral:
-          return isNumericLiteralName(name.text);
+          return NumericLiteral.name(name.text);
         default:
           return false;
       }
@@ -26172,31 +26171,6 @@ namespace qnr {
 
     function isInfinityOrNaNString(name: string | __String): boolean {
       return name === 'Infinity' || name === '-Infinity' || name === 'NaN';
-    }
-
-    function isNumericLiteralName(name: string | __String) {
-      // The intent of numeric names is that
-      //     - they are names with text in a numeric form, and that
-      //     - setting properties/indexing with them is always equivalent to doing so with the numeric literal 'numLit',
-      //         acquired by applying the abstract 'ToNumber' operation on the name's text.
-      //
-      // The subtlety is in the latter portion, as we cannot reliably say that anything that looks like a numeric literal is a numeric name.
-      // In fact, it is the case that the text of the name must be equal to 'ToString(numLit)' for this to hold.
-      //
-      // Consider the property name '"0xF00D"'. When one indexes with '0xF00D', they are actually indexing with the value of 'ToString(0xF00D)'
-      // according to the ECMAScript specification, so it is actually as if the user indexed with the string '"61453"'.
-      // Thus, the text of all numeric literals equivalent to '61543' such as '0xF00D', '0xf00D', '0170015', etc. are not valid numeric names
-      // because their 'ToString' representation is not equal to their original text.
-      // This is motivated by ECMA-262 sections 9.3.1, 9.8.1, 11.1.5, and 11.2.1.
-      //
-      // Here, we test whether 'ToString(ToNumber(name))' is exactly equal to 'name'.
-      // The '+' prefix operator is equivalent here to applying the abstract ToNumber operation.
-      // Applying the 'toString()' method on a number gives us the abstract ToString operation on a number.
-      //
-      // Note that this accepts the values 'Infinity', '-Infinity', and 'NaN', and that this is intentional.
-      // This is desired behavior, because when indexing with them as numeric entities, you are indexing
-      // with the strings '"Infinity"', '"-Infinity"', and '"NaN"' respectively.
-      return (+name).toString() === name;
     }
 
     function checkComputedPropertyName(node: ComputedPropertyName): Type {
@@ -26271,7 +26245,7 @@ namespace qnr {
       // As otherwise they may not be checked until exports for the type at this position are retrieved,
       // which may never occur.
       for (const elem of node.properties) {
-        if (elem.name && isComputedPropertyName(elem.name) && !isWellKnownSymbolSyntactically(elem.name)) {
+        if (elem.name && ComputedPropertyName.kind(elem.name) && !isWellKnownSymbolSyntactically(elem.name)) {
           checkComputedPropertyName(elem.name);
         }
       }
@@ -26680,7 +26654,7 @@ namespace qnr {
         // In React, JSX text that contains only whitespaces will be ignored so we don't want to type-check that
         // because then type of children property will have constituent of string type.
         if (child.kind === SyntaxKind.JsxText) {
-          if (!child.containsOnlyTriviaWhiteSpaces) {
+          if (!child.onlyTriviaWhitespaces) {
             childrenTypes.push(stringType);
           }
         } else {
@@ -27069,7 +27043,7 @@ namespace qnr {
         const resolved = resolveStructuredTypeMembers(targetType as ObjectType);
         if (
           resolved.stringIndexInfo ||
-          (resolved.numberIndexInfo && isNumericLiteralName(name)) ||
+          (resolved.numberIndexInfo && NumericLiteral.name(name)) ||
           getPropertyOfObjectType(targetType, name) ||
           (isComparingJsxAttributes && !isUnhyphenatedJsxName(name))
         ) {
@@ -28016,7 +27990,7 @@ namespace qnr {
         return objectType;
       }
 
-      if (isConstEnumObjectType(objectType) && !isStringLiteralLike(indexExpression)) {
+      if (isConstEnumObjectType(objectType) && !StringLiteral.like(indexExpression)) {
         error(indexExpression, Diagnostics.A_const_enum_member_can_only_be_accessed_using_a_string_literal);
         return errorType;
       }
@@ -28516,7 +28490,7 @@ namespace qnr {
     function checkApplicableSignatureForJsxOpeningLikeElement(
       node: JsxOpeningLikeElement,
       signature: Signature,
-      relation: Map<RelationComparisonResult>,
+      relation: QMap<RelationComparisonResult>,
       checkMode: CheckMode,
       reportErrors: boolean,
       containingMessageChain: (() => DiagnosticMessageChain | undefined) | undefined,
@@ -28630,7 +28604,7 @@ namespace qnr {
       node: CallLikeExpression,
       args: readonly Expression[],
       signature: Signature,
-      relation: Map<RelationComparisonResult>,
+      relation: QMap<RelationComparisonResult>,
       checkMode: CheckMode,
       reportErrors: boolean,
       containingMessageChain: (() => DiagnosticMessageChain | undefined) | undefined
@@ -29211,7 +29185,7 @@ namespace qnr {
 
       return getCandidateForOverloadFailure(node, candidates, args, !!candidatesOutArray);
 
-      function chooseOverload(candidates: Signature[], relation: Map<RelationComparisonResult>, signatureHelpTrailingComma = false) {
+      function chooseOverload(candidates: Signature[], relation: QMap<RelationComparisonResult>, signatureHelpTrailingComma = false) {
         candidatesForArgumentError = undefined;
         candidateForArgumentArityError = undefined;
         candidateForTypeArgumentError = undefined;
@@ -34153,7 +34127,7 @@ namespace qnr {
               ((isPrivateIdentifier(node.name) && isPrivateIdentifier(subsequentName) && node.name.escapedText === subsequentName.escapedText) ||
                 // Both are computed property names
                 // TODO: GH#17345: These are methods, so handle computed name case. (`Always allowing computed property names is *not* the correct behavior!)
-                (isComputedPropertyName(node.name) && isComputedPropertyName(subsequentName)) ||
+                (ComputedPropertyName.kind(node.name) && ComputedPropertyName.kind(subsequentName)) ||
                 // Both are literal property names that are the same.
                 (isPropertyNameLiteral(node.name) &&
                   isPropertyNameLiteral(subsequentName) &&
@@ -34970,7 +34944,7 @@ namespace qnr {
             return;
           }
           if (!containsArgumentsReference(decl)) {
-            if (isQualifiedName(node.name)) {
+            if (QualifiedName.kind(node.name)) {
               error(
                 node.name,
                 Diagnostics.Qualified_name_0_is_not_allowed_without_a_leading_param_object_1,
@@ -35318,7 +35292,7 @@ namespace qnr {
       );
     }
 
-    function addToGroup<K, V>(map: Map<string, [K, V[]]>, key: K, value: V, getKey: (key: K) => number | string): void {
+    function addToGroup<K, V>(map: QMap<string, [K, V[]]>, key: K, value: V, getKey: (key: K) => number | string): void {
       const keyString = String(getKey(key));
       const group = map.get(keyString);
       if (group) {
@@ -37169,7 +37143,7 @@ namespace qnr {
         }
 
         // index is numeric and property name is not valid numeric literal
-        if (indexKind === IndexKind.Number && !(name ? isNumericName(name) : isNumericLiteralName(prop.escapedName))) {
+        if (indexKind === IndexKind.Number && !(name ? isNumericName(name) : NumericLiteral.name(prop.escapedName))) {
           return;
         }
 
@@ -37907,7 +37881,7 @@ namespace qnr {
         error(member.name, Diagnostics.Computed_property_names_are_not_allowed_in_enums);
       } else {
         const text = getTextOfPropertyName(member.name);
-        if (isNumericLiteralName(text) && !isInfinityOrNaNString(text)) {
+        if (NumericLiteral.name(text) && !isInfinityOrNaNString(text)) {
           error(member.name, Diagnostics.An_enum_member_cannot_have_a_numeric_name);
         }
       }
@@ -38084,7 +38058,7 @@ namespace qnr {
         (node.kind === SyntaxKind.PropertyAccessExpression && isConstantMemberAccess((<PropertyAccessExpression>node).expression)) ||
         (node.kind === SyntaxKind.ElementAccessExpression &&
           isConstantMemberAccess((<ElementAccessExpression>node).expression) &&
-          isStringLiteralLike((<ElementAccessExpression>node).argumentExpression))
+          StringLiteral.like((<ElementAccessExpression>node).argumentExpression))
       );
     }
 
@@ -39364,7 +39338,7 @@ namespace qnr {
 
     function isImportTypeQualifierPart(node: EntityName): ImportTypeNode | undefined {
       let parent = node.parent;
-      while (isQualifiedName(parent)) {
+      while (QualifiedName.kind(parent)) {
         node = parent;
         parent = parent.parent;
       }
@@ -40374,7 +40348,7 @@ namespace qnr {
       // this variable and functions that use it are deliberately moved here from the outer scope
       // to avoid scope pollution
       const resolvedTypeReferenceDirectives = host.getResolvedTypeReferenceDirectives();
-      let fileToDirective: Map<string>;
+      let fileToDirective: QMap<string>;
       if (resolvedTypeReferenceDirectives) {
         // populate reverse mapping: file path -> type reference directive that was resolved to this file
         fileToDirective = createMap<string>();
@@ -41912,44 +41886,28 @@ namespace qnr {
           return grammarErrorAtPos(node, node.initializer.pos - 1, 1, Diagnostics.A_rest_element_cannot_have_an_initializer);
         }
       }
-    }
-
-    function isStringOrNumberLiteralExpression(expr: Expression) {
-      return (
-        isStringOrNumericLiteralLike(expr) ||
-        (expr.kind === SyntaxKind.PrefixUnaryExpression &&
-          (<PrefixUnaryExpression>expr).operator === SyntaxKind.MinusToken &&
-          (<PrefixUnaryExpression>expr).operand.kind === SyntaxKind.NumericLiteral)
-      );
-    }
-
-    function isBigIntLiteralExpression(expr: Expression) {
-      return (
-        expr.kind === SyntaxKind.BigIntLiteral ||
-        (expr.kind === SyntaxKind.PrefixUnaryExpression &&
-          (<PrefixUnaryExpression>expr).operator === SyntaxKind.MinusToken &&
-          (<PrefixUnaryExpression>expr).operand.kind === SyntaxKind.BigIntLiteral)
-      );
+      return;
     }
 
     function isSimpleLiteralEnumReference(expr: Expression) {
       if (
-        (isPropertyAccessExpression(expr) || (isElementAccessExpression(expr) && isStringOrNumberLiteralExpression(expr.argumentExpression))) &&
+        (isPropertyAccessExpression(expr) || (isElementAccessExpression(expr) && StringLiteral.orNumberLiteralExpression(expr.argumentExpression))) &&
         isEntityNameExpression(expr.expression)
       ) {
         return !!(checkExpressionCached(expr).flags & TypeFlags.EnumLiteral);
       }
+      return;
     }
 
     function checkAmbientInitializer(node: VariableDeclaration | PropertyDeclaration | PropertySignature) {
       const { initializer } = node;
       if (initializer) {
         const isInvalidInitializer = !(
-          isStringOrNumberLiteralExpression(initializer) ||
+          StringLiteral.orNumberLiteralExpression(initializer) ||
           isSimpleLiteralEnumReference(initializer) ||
           initializer.kind === SyntaxKind.TrueKeyword ||
           initializer.kind === SyntaxKind.FalseKeyword ||
-          isBigIntLiteralExpression(initializer)
+          BigIntLiteral.expression(initializer)
         );
         const isConstOrReadonly = isDeclarationReadonly(node) || (isVariableDeclaration(node) && isVarConst(node));
         if (isConstOrReadonly && !node.type) {
@@ -41966,6 +41924,7 @@ namespace qnr {
           return grammarErrorOnNode(initializer, Diagnostics.Initializers_are_not_allowed_in_ambient_contexts);
         }
       }
+      return;
     }
 
     function checkGrammarVariableDeclaration(node: VariableDeclaration) {

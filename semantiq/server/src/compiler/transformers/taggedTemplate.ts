@@ -27,7 +27,7 @@ namespace qnr {
       return visitEachChild(node, visitor, context);
     }
 
-    if (isNoSubstitutionTemplateLiteral(template)) {
+    if (NoSubstitutionTemplateLiteral.kind(template)) {
       cookedStrings.push(createTemplateCooked(template));
       rawStrings.push(getRawLiteral(template, currentSourceFile));
     } else {

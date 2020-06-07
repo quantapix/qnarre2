@@ -395,7 +395,7 @@ namespace qnr {
           for (const importStatement of emittedImports) {
             if (isImportEqualsDeclaration(importStatement) && isExternalModuleReference(importStatement.moduleReference)) {
               const expr = importStatement.moduleReference.expression;
-              if (isStringLiteralLike(expr) && expr.text === typeName) {
+              if (StringLiteral.like(expr) && expr.text === typeName) {
                 return;
               }
             } else if (
@@ -718,7 +718,7 @@ namespace qnr {
       if (!input) return undefined!; // TODO: GH#18217
       resultHasExternalModuleIndicator =
         resultHasExternalModuleIndicator || (parent.kind !== SyntaxKind.ModuleDeclaration && parent.kind !== SyntaxKind.ImportType);
-      if (isStringLiteralLike(input)) {
+      if (StringLiteral.like(input)) {
         if (isBundledEmit) {
           const newName = getExternalModuleNameFromDeclaration(context.getEmitHost(), resolver, parent);
           if (newName) {

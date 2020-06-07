@@ -2490,12 +2490,12 @@ namespace qnr {
           break;
         }
         dotPos = scanner.getStartPos();
-        entity = createQualifiedName(entity, parseRightSideOfDot(allowReservedWords, /* allowPrivateIdentifiers */ false) as Identifier);
+        entity = QualifiedName.create(entity, parseRightSideOfDot(allowReservedWords, /* allowPrivateIdentifiers */ false) as Identifier);
       }
       return entity;
     }
 
-    function createQualifiedName(entity: EntityName, name: Identifier): QualifiedName {
+    function QualifiedName.create(entity: EntityName, name: Identifier): QualifiedName {
       const node = createNode(SyntaxKind.QualifiedName, entity.pos) as QualifiedName;
       node.left = entity;
       node.right = name;
@@ -4729,7 +4729,7 @@ namespace qnr {
     function parseJsxText(): JsxText {
       const node = <JsxText>createNode(SyntaxKind.JsxText);
       node.text = scanner.getTokenValue();
-      node.containsOnlyTriviaWhiteSpaces = currentToken === SyntaxKind.JsxTextAllWhiteSpaces;
+      node.onlyTriviaWhitespaces = currentToken === SyntaxKind.JsxTextAllWhiteSpaces;
       currentToken = scanner.scanJsxToken();
       return finishNode(node);
     }
@@ -5002,7 +5002,7 @@ namespace qnr {
         );
       } else {
         const argument = allowInAnd(parseExpression);
-        if (isStringOrNumericLiteralLike(argument)) {
+        if (StringLiteral.orNumericLiteralLike(argument)) {
           argument.text = internIdentifier(argument.text);
         }
         indexedAccess.argumentExpression = argument;
@@ -7971,7 +7971,7 @@ namespace qnr {
             if (parseOptional(SyntaxKind.OpenBracketToken)) {
               parseExpected(SyntaxKind.CloseBracketToken);
             }
-            entity = createQualifiedName(entity, name);
+            entity = QualifiedName.create(entity, name);
           }
           return entity;
         }
