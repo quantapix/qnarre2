@@ -5496,7 +5496,7 @@ namespace qnr {
           if (isSingleOrDoubleQuote(firstChar) && some(symbol.declarations, hasNonGlobalAugmentationExternalModuleSymbol)) {
             return createLiteral(getSpecifierForModuleSymbol(symbol, context));
           }
-          const canUsePropertyAccess = firstChar === Codes.hash ? symbolName.length > 1 && isIdentifierStart(symbolName.charCodeAt(1)) : isIdentifierStart(firstChar);
+          const canUsePropertyAccess = firstChar === Codes.hash ? symbolName.length > 1 && Scanner.isIdentifierStart(symbolName.charCodeAt(1)) : Scanner.isIdentifierStart(firstChar);
           if (index === 0 || canUsePropertyAccess) {
             const identifier = setEmitFlags(createIdentifier(symbolName, typeParameterNodes), EmitFlags.NoAsciiEscaping);
             identifier.symbol = symbol;
@@ -5550,7 +5550,7 @@ namespace qnr {
         if (nameType) {
           if (nameType.flags & TypeFlags.StringOrNumberLiteral) {
             const name = '' + (<StringLiteralType | NumberLiteralType>nameType).value;
-            if (!isIdentifierText(name) && !NumericLiteral.name(name)) {
+            if (!Scanner.isIdentifierText(name) && !NumericLiteral.name(name)) {
               return createLiteral(name, !!singleQuote);
             }
             if (NumericLiteral.name(name) && startsWith(name, '-')) {
@@ -5565,7 +5565,7 @@ namespace qnr {
       }
 
       function createPropertyNameNodeForIdentifierOrLiteral(name: string, singleQuote?: boolean) {
-        return isIdentifierText(name) ? createIdentifier(name) : createLiteral(NumericLiteral.name(name) && +name >= 0 ? +name : name, !!singleQuote);
+        return Scanner.isIdentifierText(name) ? createIdentifier(name) : createLiteral(NumericLiteral.name(name) && +name >= 0 ? +name : name, !!singleQuote);
       }
 
       function cloneNodeBuilderContext(context: NodeBuilderContext): NodeBuilderContext {
@@ -6823,7 +6823,7 @@ namespace qnr {
             !(typeToSerialize.symbol && some(typeToSerialize.symbol.declarations, (d) => getSourceFileOfNode(d) !== ctxSrc)) &&
             !some(getPropertiesOfType(typeToSerialize), (p) => isLateBoundName(p.escapedName)) &&
             !some(getPropertiesOfType(typeToSerialize), (p) => some(p.declarations, (d) => getSourceFileOfNode(d) !== ctxSrc)) &&
-            every(getPropertiesOfType(typeToSerialize), (p) => isIdentifierText(symbolName(p)) && !isStringAKeyword(symbolName(p)))
+            every(getPropertiesOfType(typeToSerialize), (p) => Scanner.isIdentifierText(symbolName(p)) && !isStringAKeyword(symbolName(p)))
           );
         }
 
@@ -7119,7 +7119,7 @@ namespace qnr {
           } else if (localName === InternalSymbolName.ExportEquals) {
             localName = '_exports';
           }
-          localName = isIdentifierText(localName) && !isStringANonContextualKeyword(localName) ? localName : '_' + localName.replace(/[^a-zA-Z0-9]/g, '_');
+          localName = Scanner.isIdentifierText(localName) && !isStringANonContextualKeyword(localName) ? localName : '_' + localName.replace(/[^a-zA-Z0-9]/g, '_');
           return localName;
         }
 
@@ -7235,7 +7235,7 @@ namespace qnr {
       if (nameType) {
         if (nameType.flags & TypeFlags.StringOrNumberLiteral) {
           const name = '' + (<StringLiteralType | NumberLiteralType>nameType).value;
-          if (!isIdentifierText(name) && !NumericLiteral.name(name)) {
+          if (!Scanner.isIdentifierText(name) && !NumericLiteral.name(name)) {
             return `"${escapeString(name, Codes.doubleQuote)}"`;
           }
           if (NumericLiteral.name(name) && startsWith(name, '-')) {
@@ -16053,7 +16053,7 @@ namespace qnr {
                 path = `${str}`;
               }
               // Otherwise write a dotted name if possible
-              else if (isIdentifierText(str)) {
+              else if (Scanner.isIdentifierText(str)) {
                 path = `${path}.${str}`;
               }
               // Failing that, check if the name is already a computed name
@@ -26614,7 +26614,7 @@ namespace qnr {
           let relatedInformation: DiagnosticRelatedInformation | undefined;
           if (node.arguments.length === 1) {
             const text = getSourceFileOfNode(node).text;
-            if (isLineBreak(text.charCodeAt(skipTrivia(text, node.expression.end, /* stopAfterLineBreak */ true) - 1))) {
+            if (Scanner.isLineBreak(text.charCodeAt(Scanner.skipTrivia(text, node.expression.end, /* stopAfterLineBreak */ true) - 1))) {
               relatedInformation = createDiagnosticForNode(node.expression, Diagnostics.Are_you_missing_a_semicolon);
             }
           }
@@ -28455,11 +28455,11 @@ namespace qnr {
         case SyntaxKind.TildeToken:
           checkNonNullType(operandType, node.operand);
           if (maybeTypeOfKind(operandType, TypeFlags.ESSymbolLike)) {
-            error(node.operand, Diagnostics.The_0_operator_cannot_be_applied_to_type_symbol, tokenToString(node.operator));
+            error(node.operand, Diagnostics.The_0_operator_cannot_be_applied_to_type_symbol, Token.toString(node.operator));
           }
           if (node.operator === SyntaxKind.PlusToken) {
             if (maybeTypeOfKind(operandType, TypeFlags.BigIntLike)) {
-              error(node.operand, Diagnostics.Operator_0_cannot_be_applied_to_type_1, tokenToString(node.operator), typeToString(getBaseTypeOfLiteralType(operandType)));
+              error(node.operand, Diagnostics.Operator_0_cannot_be_applied_to_type_1, Token.toString(node.operator), typeToString(getBaseTypeOfLiteralType(operandType)));
             }
             return numberType;
           }
@@ -28908,10 +28908,10 @@ namespace qnr {
       const { left, operatorToken, right } = node;
       if (operatorToken.kind === SyntaxKind.Question2Token) {
         if (isBinaryExpression(left) && (left.operatorToken.kind === SyntaxKind.Bar2Token || left.operatorToken.kind === SyntaxKind.Ampersand2Token)) {
-          grammarErrorOnNode(left, Diagnostics._0_and_1_operations_cannot_be_mixed_without_parentheses, tokenToString(left.operatorToken.kind), tokenToString(operatorToken.kind));
+          grammarErrorOnNode(left, Diagnostics._0_and_1_operations_cannot_be_mixed_without_parentheses, Token.toString(left.operatorToken.kind), Token.toString(operatorToken.kind));
         }
         if (isBinaryExpression(right) && (right.operatorToken.kind === SyntaxKind.Bar2Token || right.operatorToken.kind === SyntaxKind.Ampersand2Token)) {
-          grammarErrorOnNode(right, Diagnostics._0_and_1_operations_cannot_be_mixed_without_parentheses, tokenToString(right.operatorToken.kind), tokenToString(operatorToken.kind));
+          grammarErrorOnNode(right, Diagnostics._0_and_1_operations_cannot_be_mixed_without_parentheses, Token.toString(right.operatorToken.kind), Token.toString(operatorToken.kind));
         }
       }
     }
@@ -28973,8 +28973,8 @@ namespace qnr {
             error(
               errorNode || operatorToken,
               Diagnostics.The_0_operator_is_not_allowed_for_boolean_types_Consider_using_1_instead,
-              tokenToString(operatorToken.kind),
-              tokenToString(suggestedOperator)
+              Token.toString(operatorToken.kind),
+              Token.toString(suggestedOperator)
             );
             return numberType;
           } else {
@@ -29157,7 +29157,7 @@ namespace qnr {
         const offendingSymbolOperand = maybeTypeOfKind(leftType, TypeFlags.ESSymbolLike) ? left : maybeTypeOfKind(rightType, TypeFlags.ESSymbolLike) ? right : undefined;
 
         if (offendingSymbolOperand) {
-          error(offendingSymbolOperand, Diagnostics.The_0_operator_cannot_be_applied_to_type_symbol, tokenToString(operator));
+          error(offendingSymbolOperand, Diagnostics.The_0_operator_cannot_be_applied_to_type_symbol, Token.toString(operator));
           return false;
         }
 
@@ -29247,7 +29247,7 @@ namespace qnr {
         }
         const [leftStr, rightStr] = getTypeNamesForErrorDisplay(effectiveLeft, effectiveRight);
         if (!tryGiveBetterPrimaryError(errNode, wouldWorkWithAwait, leftStr, rightStr)) {
-          errorAndMaybeSuggestAwait(errNode, wouldWorkWithAwait, Diagnostics.Operator_0_cannot_be_applied_to_types_1_and_2, tokenToString(operatorToken.kind), leftStr, rightStr);
+          errorAndMaybeSuggestAwait(errNode, wouldWorkWithAwait, Diagnostics.Operator_0_cannot_be_applied_to_types_1_and_2, Token.toString(operatorToken.kind), leftStr, rightStr);
         }
       }
 
@@ -37027,16 +37027,16 @@ namespace qnr {
       for (const modifier of node.modifiers!) {
         if (modifier.kind !== SyntaxKind.ReadonlyKeyword) {
           if (node.kind === SyntaxKind.PropertySignature || node.kind === SyntaxKind.MethodSignature) {
-            return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_appear_on_a_type_member, tokenToString(modifier.kind));
+            return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_appear_on_a_type_member, Token.toString(modifier.kind));
           }
           if (node.kind === SyntaxKind.IndexSignature) {
-            return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_appear_on_an_index_signature, tokenToString(modifier.kind));
+            return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_appear_on_an_index_signature, Token.toString(modifier.kind));
           }
         }
         switch (modifier.kind) {
           case SyntaxKind.ConstKeyword:
             if (node.kind !== SyntaxKind.EnumDeclaration) {
-              return grammarErrorOnNode(node, Diagnostics.A_class_member_cannot_have_the_0_keyword, tokenToString(SyntaxKind.ConstKeyword));
+              return grammarErrorOnNode(node, Diagnostics.A_class_member_cannot_have_the_0_keyword, Token.toString(SyntaxKind.ConstKeyword));
             }
             break;
           case SyntaxKind.PublicKeyword:
@@ -37276,7 +37276,7 @@ namespace qnr {
     function checkGrammarTypeParameterList(typeParameters: NodeArray<TypeParameterDeclaration> | undefined, file: SourceFile): boolean {
       if (typeParameters && typeParameters.length === 0) {
         const start = typeParameters.pos - '<'.length;
-        const end = skipTrivia(file.text, typeParameters.end) + '>'.length;
+        const end = Scanner.skipTrivia(file.text, typeParameters.end) + '>'.length;
         return grammarErrorAtPos(file, start, end - start, Diagnostics.Type_parameter_list_cannot_be_empty);
       }
       return false;
@@ -37429,7 +37429,7 @@ namespace qnr {
       if (typeArguments && typeArguments.length === 0) {
         const sourceFile = getSourceFileOfNode(node);
         const start = typeArguments.pos - '<'.length;
-        const end = skipTrivia(sourceFile.text, typeArguments.end) + '>'.length;
+        const end = Scanner.skipTrivia(sourceFile.text, typeArguments.end) + '>'.length;
         return grammarErrorAtPos(sourceFile, start, end - start, Diagnostics.Type_argument_list_cannot_be_empty);
       }
       return false;
@@ -37467,7 +37467,7 @@ namespace qnr {
         return true;
       }
       if (types && types.length === 0) {
-        const listType = tokenToString(node.token);
+        const listType = Token.toString(node.token);
         return grammarErrorAtPos(node, types.pos, 0, Diagnostics._0_list_cannot_be_empty, listType);
       }
       return some(types, checkGrammarExpressionWithTypeArguments);
@@ -37819,7 +37819,7 @@ namespace qnr {
     function checkGrammarTypeOperatorNode(node: TypeOperatorNode) {
       if (node.operator === SyntaxKind.UniqueKeyword) {
         if (node.type.kind !== SyntaxKind.SymbolKeyword) {
-          return grammarErrorOnNode(node.type, Diagnostics._0_expected, tokenToString(SyntaxKind.SymbolKeyword));
+          return grammarErrorOnNode(node.type, Diagnostics._0_expected, Token.toString(SyntaxKind.SymbolKeyword));
         }
 
         let parent = walkUpParenthesizedTypes(node.parent);
@@ -37861,7 +37861,7 @@ namespace qnr {
         }
       } else if (node.operator === SyntaxKind.ReadonlyKeyword) {
         if (node.type.kind !== SyntaxKind.ArrayType && node.type.kind !== SyntaxKind.TupleType) {
-          return grammarErrorOnFirstToken(node, Diagnostics.readonly_type_modifier_is_only_permitted_on_array_and_tuple_literal_types, tokenToString(SyntaxKind.SymbolKeyword));
+          return grammarErrorOnFirstToken(node, Diagnostics.readonly_type_modifier_is_only_permitted_on_array_and_tuple_literal_types, Token.toString(SyntaxKind.SymbolKeyword));
         }
       }
     }
@@ -38143,12 +38143,12 @@ namespace qnr {
       switch (node.keywordToken) {
         case SyntaxKind.NewKeyword:
           if (escapedText !== 'target') {
-            return grammarErrorOnNode(node.name, Diagnostics._0_is_not_a_valid_meta_property_for_keyword_1_Did_you_mean_2, node.name.escapedText, tokenToString(node.keywordToken), 'target');
+            return grammarErrorOnNode(node.name, Diagnostics._0_is_not_a_valid_meta_property_for_keyword_1_Did_you_mean_2, node.name.escapedText, Token.toString(node.keywordToken), 'target');
           }
           break;
         case SyntaxKind.ImportKeyword:
           if (escapedText !== 'meta') {
-            return grammarErrorOnNode(node.name, Diagnostics._0_is_not_a_valid_meta_property_for_keyword_1_Did_you_mean_2, node.name.escapedText, tokenToString(node.keywordToken), 'meta');
+            return grammarErrorOnNode(node.name, Diagnostics._0_is_not_a_valid_meta_property_for_keyword_1_Did_you_mean_2, node.name.escapedText, Token.toString(node.keywordToken), 'meta');
           }
           break;
       }
@@ -38190,7 +38190,7 @@ namespace qnr {
       const jsdocTypeParameters = isInJSFile(node) ? getJSDocTypeParameterDeclarations(node) : undefined;
       const range = node.typeParameters || (jsdocTypeParameters && firstOrUndefined(jsdocTypeParameters));
       if (range) {
-        const pos = range.pos === range.end ? range.pos : skipTrivia(getSourceFileOfNode(node).text, range.pos);
+        const pos = range.pos === range.end ? range.pos : Scanner.skipTrivia(getSourceFileOfNode(node).text, range.pos);
         return grammarErrorAtPos(node, pos, range.end - pos, Diagnostics.Type_parameters_cannot_appear_on_a_constructor_declaration);
       }
     }

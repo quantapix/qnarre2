@@ -22,6 +22,14 @@ namespace qnr {
     }
   }
 
+  export function isSynthesized(x: number): boolean;
+  export function isSynthesized(r: QRange): boolean;
+  export function isSynthesized(x: QRange | number) {
+    //  x === undefined || x === null || isNaN(x) || x < 0;
+    if (typeof x === 'number') return !(x >= 0);
+    return isSynthesized(x.pos) || isSynthesized(x.end);
+  }
+
   export class TextSpan implements QSpan {
     constructor(public start = 0, public length = 0) {
       assert(start >= 0 && length >= 0);
@@ -102,7 +110,7 @@ namespace qnr {
       return n.modifiers && n.modifiers.length > 0 ? n.movePos(n.modifiers.end) : movePastDecorators(n);
     }
     export function createTokenRange(pos: number, token: SyntaxKind): TextRange {
-      return new TextRange(pos, pos + tokenToString(token)!.length);
+      return new TextRange(pos, pos + Token.toString(token)!.length);
     }
     export function ofNode(n: Node): TextRange {
       return new TextRange(getTokenPosOfNode(n), n.end);

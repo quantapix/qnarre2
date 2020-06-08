@@ -82,12 +82,7 @@ namespace qnr {
       return visitJsxOpeningFragment(node.openingFragment, node.children, isChild, /*location*/ node);
     }
 
-    function visitJsxOpeningLikeElement(
-      node: JsxOpeningLikeElement,
-      children: readonly JsxChild[] | undefined,
-      isChild: boolean,
-      location: TextRange
-    ) {
+    function visitJsxOpeningLikeElement(node: JsxOpeningLikeElement, children: readonly JsxChild[] | undefined, isChild: boolean, location: TextRange) {
       const tagName = getTagName(node);
       let objectProperties: Expression | undefined;
       const attrs = node.attributes.properties;
@@ -99,9 +94,7 @@ namespace qnr {
         // of JsxSpreadAttribute nodes into expressions.
         const segments = flatten<Expression | ObjectLiteralExpression>(
           spanMap(attrs, isJsxSpreadAttribute, (attrs, isSpread) =>
-            isSpread
-              ? map(attrs, transformJsxSpreadAttributeToExpression)
-              : createObjectLiteral(map(attrs, transformJsxAttributeToObjectLiteralElement))
+            isSpread ? map(attrs, transformJsxSpreadAttributeToExpression) : createObjectLiteral(map(attrs, transformJsxAttributeToObjectLiteralElement))
           )
         );
 
@@ -213,7 +206,7 @@ namespace qnr {
 
       for (let i = 0; i < text.length; i++) {
         const c = text.charCodeAt(i);
-        if (isLineBreak(c)) {
+        if (Scanner.isLineBreak(c)) {
           // If we've seen any non-whitespace characters on this line, add the 'trim' of the line.
           // (lastNonWhitespace === -1 is a special flag to detect whether the first line is all whitespace.)
           if (firstNonWhitespace !== -1 && lastNonWhitespace !== -1) {
@@ -223,7 +216,7 @@ namespace qnr {
           // Reset firstNonWhitespace for the next line.
           // Don't bother to reset lastNonWhitespace because we ignore it if firstNonWhitespace = -1.
           firstNonWhitespace = -1;
-        } else if (!isWhiteSpaceSingleLine(c)) {
+        } else if (!Scanner.isWhiteSpaceSingleLine(c)) {
           lastNonWhitespace = i;
           if (firstNonWhitespace === -1) {
             firstNonWhitespace = i;

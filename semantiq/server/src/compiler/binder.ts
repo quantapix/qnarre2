@@ -337,7 +337,7 @@ namespace qnr {
             return escapeLeadingUnderscores(nameExpression.text);
           }
           if (isSignedNumericLiteral(nameExpression)) {
-            return (tokenToString(nameExpression.operator) + nameExpression.operand.text) as __String;
+            return (Token.toString(nameExpression.operator) + nameExpression.operand.text) as __String;
           }
 
           assert(isWellKnownSymbolSyntactically(nameExpression));

@@ -751,7 +751,7 @@ namespace qnr {
   namespace Parser {
     // Share a single scanner across all calls to parse a source file.  This helps speed things
     // up by avoiding the cost of creating/compiling scanners over and over again.
-    const scanner = createScanner(/*skipTrivia*/ true);
+    const scanner = Scanner.create(true);
     const disallowInAndDecoratorContext = NodeFlags.DisallowInContext | NodeFlags.DecoratorContext;
 
     // capture constructors in 'initializeState' to avoid null checks
@@ -1404,7 +1404,7 @@ namespace qnr {
       if (diagnosticMessage) {
         parseErrorAtCurrentToken(diagnosticMessage);
       } else {
-        parseErrorAtCurrentToken(Diagnostics._0_expected, tokenToString(kind));
+        parseErrorAtCurrentToken(Diagnostics._0_expected, Token.toString(kind));
       }
       return false;
     }
@@ -1414,7 +1414,7 @@ namespace qnr {
         nextTokenJSDoc();
         return true;
       }
-      parseErrorAtCurrentToken(Diagnostics._0_expected, tokenToString(kind));
+      parseErrorAtCurrentToken(Diagnostics._0_expected, Token.toString(kind));
       return false;
     }
 
@@ -1446,13 +1446,13 @@ namespace qnr {
     function parseExpectedToken(t: SyntaxKind, diagnosticMessage?: DiagnosticMessage, arg0?: any): Node {
       return (
         parseOptionalToken(t) ||
-        createMissingNode(t, /*reportAtCurrentPosition*/ false, diagnosticMessage || Diagnostics._0_expected, arg0 || tokenToString(t))
+        createMissingNode(t, /*reportAtCurrentPosition*/ false, diagnosticMessage || Diagnostics._0_expected, arg0 || Token.toString(t))
       );
     }
 
     function parseExpectedTokenJSDoc<TKind extends JSDocSyntaxKind>(t: TKind): Token<TKind>;
     function parseExpectedTokenJSDoc(t: JSDocSyntaxKind): Node {
-      return parseOptionalTokenJSDoc(t) || createMissingNode(t, /*reportAtCurrentPosition*/ false, Diagnostics._0_expected, tokenToString(t));
+      return parseOptionalTokenJSDoc(t) || createMissingNode(t, /*reportAtCurrentPosition*/ false, Diagnostics._0_expected, Token.toString(t));
     }
 
     function parseTokenNode<T extends Node>(): T {
@@ -1624,11 +1624,11 @@ namespace qnr {
     }
 
     function parseIdentifierName(diagnosticMessage?: DiagnosticMessage): Identifier {
-      return createIdentifier(tokenIsIdentifierOrKeyword(token()), diagnosticMessage);
+      return createIdentifier(Token.identifierOrKeyword(token()), diagnosticMessage);
     }
 
     function isLiteralPropertyName(): boolean {
-      return tokenIsIdentifierOrKeyword(token()) || token() === SyntaxKind.StringLiteral || token() === SyntaxKind.NumericLiteral;
+      return Token.identifierOrKeyword(token()) || token() === SyntaxKind.StringLiteral || token() === SyntaxKind.NumericLiteral;
     }
 
     function parsePropertyNameWorker(allowComputedPropertyNames: boolean): PropertyName {
@@ -1839,9 +1839,9 @@ namespace qnr {
         case ParsingContext.HeritageClauses:
           return isHeritageClause();
         case ParsingContext.ImportOrExportSpecifiers:
-          return tokenIsIdentifierOrKeyword(token());
+          return Token.identifierOrKeyword(token());
         case ParsingContext.JsxAttributes:
-          return tokenIsIdentifierOrKeyword(token()) || token() === SyntaxKind.OpenBraceToken;
+          return Token.identifierOrKeyword(token()) || token() === SyntaxKind.OpenBraceToken;
         case ParsingContext.JsxChildren:
           return true;
       }
@@ -1879,12 +1879,12 @@ namespace qnr {
 
     function nextTokenIsIdentifierOrKeyword() {
       nextToken();
-      return tokenIsIdentifierOrKeyword(token());
+      return Token.identifierOrKeyword(token());
     }
 
     function nextTokenIsIdentifierOrKeywordOrGreaterThan() {
       nextToken();
-      return tokenIsIdentifierOrKeywordOrGreaterThan(token());
+      return Token.identifierOrKeywordOrGreaterThan(token());
     }
 
     function isHeritageClauseExtendsOrImplementsKeyword(): boolean {
@@ -2522,7 +2522,7 @@ namespace qnr {
       // the code would be implicitly: "name.identifierOrKeyword; identifierNameOrKeyword".
       // In the first case though, ASI will not take effect because there is not a
       // line terminator after the identifier or keyword.
-      if (scanner.hasPrecedingLineBreak() && tokenIsIdentifierOrKeyword(token())) {
+      if (scanner.hasPrecedingLineBreak() && Token.identifierOrKeyword(token())) {
         const matchesPattern = lookAhead(nextTokenIsIdentifierOrKeywordOnSameLine);
 
         if (matchesPattern) {
@@ -2570,7 +2570,7 @@ namespace qnr {
         reScanTemplateToken(isTaggedTemplate);
         literal = parseTemplateMiddleOrTemplateTail();
       } else {
-        literal = <TemplateTail>parseExpectedToken(SyntaxKind.TemplateTail, Diagnostics._0_expected, tokenToString(SyntaxKind.CloseBraceToken));
+        literal = <TemplateTail>parseExpectedToken(SyntaxKind.TemplateTail, Diagnostics._0_expected, Token.toString(SyntaxKind.CloseBraceToken));
       }
 
       span.literal = literal;
@@ -2910,7 +2910,7 @@ namespace qnr {
         return true;
       } else if (isType && token() === SyntaxKind.EqualsGreaterThanToken) {
         // This is easy to get backward, especially in type contexts, so parse the type anyway
-        parseErrorAtCurrentToken(Diagnostics._0_expected, tokenToString(SyntaxKind.ColonToken));
+        parseErrorAtCurrentToken(Diagnostics._0_expected, Token.toString(SyntaxKind.ColonToken));
         nextToken();
         return true;
       }
@@ -3214,9 +3214,9 @@ namespace qnr {
 
     function isTupleElementName() {
       if (token() === SyntaxKind.Dot3Token) {
-        return tokenIsIdentifierOrKeyword(nextToken()) && isNextTokenColonOrQuestionColon();
+        return Token.identifierOrKeyword(nextToken()) && isNextTokenColonOrQuestionColon();
       }
-      return tokenIsIdentifierOrKeyword(token()) && isNextTokenColonOrQuestionColon();
+      return Token.identifierOrKeyword(token()) && isNextTokenColonOrQuestionColon();
     }
 
     function parseTupleElementNameOrTupleElementType() {
@@ -4207,7 +4207,7 @@ namespace qnr {
       node.colonToken = parseExpectedToken(SyntaxKind.ColonToken);
       node.whenFalse = nodeIsPresent(node.colonToken)
         ? parseAssignmentExpressionOrHigher()
-        : createMissingNode(SyntaxKind.Identifier, /*reportAtCurrentPosition*/ false, Diagnostics._0_expected, tokenToString(SyntaxKind.ColonToken));
+        : createMissingNode(SyntaxKind.Identifier, /*reportAtCurrentPosition*/ false, Diagnostics._0_expected, Token.toString(SyntaxKind.ColonToken));
       return finishNode(node);
     }
 
@@ -4390,7 +4390,7 @@ namespace qnr {
       const unaryOperator = token();
       const simpleUnaryExpression = parseSimpleUnaryExpression();
       if (token() === SyntaxKind.Asterisk2Token) {
-        const pos = skipTrivia(sourceText, simpleUnaryExpression.pos);
+        const pos = Scanner.skipTrivia(sourceText, simpleUnaryExpression.pos);
         const { end } = simpleUnaryExpression;
         if (simpleUnaryExpression.kind === SyntaxKind.TypeAssertionExpression) {
           parseErrorAt(
@@ -4403,7 +4403,7 @@ namespace qnr {
             pos,
             end,
             Diagnostics.An_unary_expression_with_the_0_operator_is_not_allowed_in_the_left_hand_side_of_an_exponentiation_expression_Consider_enclosing_the_expression_in_parentheses,
-            tokenToString(unaryOperator)
+            Token.toString(unaryOperator)
           );
         }
       }
@@ -4745,7 +4745,7 @@ namespace qnr {
             // We want the error span to cover only 'Foo.Bar' in < Foo.Bar >
             // or to cover only 'Foo' in < Foo >
             const tag = openingTag.tagName;
-            const start = skipTrivia(sourceText, tag.pos);
+            const start = Scanner.skipTrivia(sourceText, tag.pos);
             parseErrorAt(
               start,
               tag.end,
@@ -4923,7 +4923,7 @@ namespace qnr {
     function parseJsxClosingFragment(inExpressionContext: boolean): JsxClosingFragment {
       const node = <JsxClosingFragment>createNode(SyntaxKind.JsxClosingFragment);
       parseExpected(SyntaxKind.LessThanSlashToken);
-      if (tokenIsIdentifierOrKeyword(token())) {
+      if (Token.identifierOrKeyword(token())) {
         parseErrorAtRange(parseJsxElementName(), Diagnostics.Expected_corresponding_closing_tag_for_JSX_fragment);
       }
       if (inExpressionContext) {
@@ -4946,7 +4946,7 @@ namespace qnr {
 
     function nextTokenIsIdentifierOrKeywordOrOpenBracketOrTemplate() {
       nextToken();
-      return tokenIsIdentifierOrKeyword(token()) || token() === SyntaxKind.OpenBracketToken || isTemplateStartOfTaggedTemplate();
+      return Token.identifierOrKeyword(token()) || token() === SyntaxKind.OpenBracketToken || isTemplateStartOfTaggedTemplate();
     }
 
     function isStartOfOptionalPropertyOrElementAccessChain() {
@@ -5021,7 +5021,7 @@ namespace qnr {
         let isPropertyAccess = false;
         if (allowOptionalChain && isStartOfOptionalPropertyOrElementAccessChain()) {
           questionDotToken = parseExpectedToken(SyntaxKind.QuestionDotToken);
-          isPropertyAccess = tokenIsIdentifierOrKeyword(token());
+          isPropertyAccess = Token.identifierOrKeyword(token());
         } else {
           isPropertyAccess = parseOptional(SyntaxKind.DotToken);
         }
@@ -5728,7 +5728,7 @@ namespace qnr {
 
     function nextTokenIsIdentifierOrKeywordOnSameLine() {
       nextToken();
-      return tokenIsIdentifierOrKeyword(token()) && !scanner.hasPrecedingLineBreak();
+      return Token.identifierOrKeyword(token()) && !scanner.hasPrecedingLineBreak();
     }
 
     function nextTokenIsClassKeywordOnSameLine() {
@@ -5744,7 +5744,7 @@ namespace qnr {
     function nextTokenIsIdentifierOrKeywordOrLiteralOnSameLine() {
       nextToken();
       return (
-        (tokenIsIdentifierOrKeyword(token()) ||
+        (Token.identifierOrKeyword(token()) ||
           token() === SyntaxKind.NumericLiteral ||
           token() === SyntaxKind.BigIntLiteral ||
           token() === SyntaxKind.StringLiteral) &&
@@ -5814,7 +5814,7 @@ namespace qnr {
               token() === SyntaxKind.StringLiteral ||
               token() === SyntaxKind.AsteriskToken ||
               token() === SyntaxKind.OpenBraceToken ||
-              tokenIsIdentifierOrKeyword(token())
+              Token.identifierOrKeyword(token())
             );
           case SyntaxKind.ExportKeyword:
             let currentToken = nextToken();
@@ -6472,7 +6472,7 @@ namespace qnr {
       // It is very important that we check this *after* checking indexers because
       // the [ token can start an index signature or a computed property name
       if (
-        tokenIsIdentifierOrKeyword(token()) ||
+        Token.identifierOrKeyword(token()) ||
         token() === SyntaxKind.StringLiteral ||
         token() === SyntaxKind.NumericLiteral ||
         token() === SyntaxKind.AsteriskToken ||
@@ -7393,7 +7393,7 @@ namespace qnr {
                 state = JSDocState.SavingComments;
                 if (
                   lookAhead(
-                    () => nextTokenJSDoc() === SyntaxKind.AtToken && tokenIsIdentifierOrKeyword(nextTokenJSDoc()) && scanner.getTokenText() === 'link'
+                    () => nextTokenJSDoc() === SyntaxKind.AtToken && Token.identifierOrKeyword(nextTokenJSDoc()) && scanner.getTokenText() === 'link'
                   )
                 ) {
                   pushComment(scanner.getTokenText());
@@ -7772,7 +7772,7 @@ namespace qnr {
 
         function parseJSDocTypeNameWithNamespace(nested?: boolean) {
           const pos = scanner.getTokenPos();
-          if (!tokenIsIdentifierOrKeyword(token())) {
+          if (!Token.identifierOrKeyword(token())) {
             return;
           }
           const typeNameOrNamespaceName = parseJSDocIdentifierName();
@@ -7977,7 +7977,7 @@ namespace qnr {
         }
 
         function parseJSDocIdentifierName(message?: DiagnosticMessage): Identifier {
-          if (!tokenIsIdentifierOrKeyword(token())) {
+          if (!Token.identifierOrKeyword(token())) {
             return createMissingNode<Identifier>(
               SyntaxKind.Identifier,
               /*reportAtCurrentPosition*/ !message,

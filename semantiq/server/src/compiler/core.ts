@@ -145,24 +145,34 @@ namespace qnr {
     [k: string]: T;
   }
 
-  export class QMap<V> extends Map<string, V> {}
-  export type QReadonlyMap<V> = ReadonlyMap<string, V>;
-
-  export function createMap<T>(es?: MapLike<T> | [string, T][]): QMap<T> {
-    const m = new QMap<T>();
-    if (isArray(es)) {
-      for (const [k, v] of es) {
-        m.set(k, v);
-      }
-    } else if (es) {
-      for (const k in es) {
-        if (hasOwnProperty.call(es, k)) {
-          m.set(k, es[k]);
+  export class QMap<V> extends Map<string, V> {
+    reverse() {
+      const r = [] as string[];
+      this.forEach((v, k) => {
+        if (typeof v === 'number') r[v] = k;
+      });
+      return r;
+    }
+  }
+  export namespace QMap {
+    export function create<T>(es?: MapLike<T> | [string, T][]): QMap<T> {
+      const m = new QMap<T>();
+      if (isArray(es)) {
+        for (const [k, v] of es) {
+          m.set(k, v);
+        }
+      } else if (es) {
+        for (const k in es) {
+          if (hasOwnProperty.call(es, k)) {
+            m.set(k, es[k]);
+          }
         }
       }
+      return m;
     }
-    return m;
   }
+
+  export type QReadonlyMap<V> = ReadonlyMap<string, V>;
 
   export interface QIterator<T> {
     next(): { value: T; done?: false } | { value: never; done: true };

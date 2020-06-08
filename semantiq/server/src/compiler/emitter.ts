@@ -2261,7 +2261,7 @@ namespace qnr {
         const text = getLiteralTextOfNode(<LiteralExpression>expression, /*neverAsciiEscape*/ true, /*jsxAttributeEscape*/ false);
         // If he number will be printed verbatim and it doesn't already contain a dot, add one
         // if the expression doesn't have any comments that will be emitted.
-        return !expression.numericLiteralFlags && !stringContains(text, tokenToString(SyntaxKind.DotToken)!);
+        return !expression.numericLiteralFlags && !stringContains(text, Token.toString(SyntaxKind.DotToken)!);
       } else if (isAccessExpression(expression)) {
         // check if constant enum value is integer
         const constantValue = getConstantValue(expression);
@@ -2702,7 +2702,7 @@ namespace qnr {
       const isSimilarNode = node && node.kind === contextNode.kind;
       const startPos = pos;
       if (isSimilarNode && currentSourceFile) {
-        pos = skipTrivia(currentSourceFile.text, pos);
+        pos = Scanner.skipTrivia(currentSourceFile.text, pos);
       }
       if (emitLeadingCommentsOfPosition && isSimilarNode && contextNode.pos !== startPos) {
         const needsIndent = indentLeading && currentSourceFile && !onSameLine(startPos, pos, currentSourceFile);
@@ -4130,7 +4130,7 @@ namespace qnr {
       if (onBeforeEmitToken) {
         onBeforeEmitToken(node);
       }
-      writer(tokenToString(node.kind)!);
+      writer(Token.toString(node.kind)!);
       if (onAfterEmitToken) {
         onAfterEmitToken(node);
       }
@@ -4139,7 +4139,7 @@ namespace qnr {
     function writeTokenText(token: SyntaxKind, writer: (s: string) => void): void;
     function writeTokenText(token: SyntaxKind, writer: (s: string) => void, pos: number): number;
     function writeTokenText(token: SyntaxKind, writer: (s: string) => void, pos?: number): number {
-      const tokenString = tokenToString(token)!;
+      const tokenString = Token.toString(token)!;
       writer(tokenString);
       return pos! < 0 ? pos! : pos! + tokenString.length;
     }
@@ -4858,7 +4858,7 @@ namespace qnr {
 
     function writeSynthesizedComment(comment: SynthesizedComment) {
       const text = formatSynthesizedComment(comment);
-      const lineMap = comment.kind === SyntaxKind.MultiLineCommentTrivia ? calcLineStarts(text) : undefined;
+      const lineMap = comment.kind === SyntaxKind.MultiLineCommentTrivia ? Scanner.lineStarts(text) : undefined;
       writeCommentRange(text, lineMap!, writer, 0, text.length, newLine);
     }
 
@@ -5103,7 +5103,7 @@ namespace qnr {
      * Skips trivia such as comments and white-space that can be optionally overridden by the source-map source
      */
     function skipSourceTrivia(source: SourceMapSource, pos: number): number {
-      return source.skipTrivia ? source.skipTrivia(pos) : skipTrivia(source.text, pos);
+      return source.Scanner.skipTrivia ? source.Scanner.skipTrivia(pos) : Scanner.skipTrivia(source.text, pos);
     }
 
     /**

@@ -633,7 +633,7 @@ namespace qnr {
         //      return C;
         //  }();
         //
-        const closingBraceLocation = createTokenRange(skipTrivia(currentSourceFile.text, node.members.end), SyntaxKind.CloseBraceToken);
+        const closingBraceLocation = createTokenRange(Scanner.skipTrivia(currentSourceFile.text, node.members.end), SyntaxKind.CloseBraceToken);
         const localName = getInternalName(node);
 
         // The following partially-emitted expression exists purely to align our sourcemap

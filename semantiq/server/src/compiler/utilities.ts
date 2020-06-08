@@ -56,7 +56,7 @@ namespace qnr {
       getIndent: () => 0,
       isAtStartOfLine: () => false,
       hasTrailingComment: () => false,
-      hasTrailingWhitespace: () => !!str.length && isWhiteSpaceLike(str.charCodeAt(str.length - 1)),
+      hasTrailingWhitespace: () => !!str.length && Scanner.isWhiteSpaceLike(str.charCodeAt(str.length - 1)),
       writeLine: () => (str += ' '),
       increaseIndent: noop,
       decreaseIndent: noop,
@@ -274,8 +274,8 @@ namespace qnr {
     if (lineIndex + 1 === lineStarts.length) return sourceText.length - 1;
     const start = lineStarts[lineIndex];
     let pos = lineStarts[lineIndex + 1] - 1;
-    assert(isLineBreak(sourceText.charCodeAt(pos)));
-    while (start <= pos && isLineBreak(sourceText.charCodeAt(pos))) {
+    assert(Scanner.isLineBreak(sourceText.charCodeAt(pos)));
+    while (start <= pos && Scanner.isLineBreak(sourceText.charCodeAt(pos))) {
       pos--;
     }
     return pos;
@@ -371,17 +371,17 @@ namespace qnr {
 
   export function getTokenPosOfNode(node: Node, sourceFile?: SourceFileLike, includeJsDoc?: boolean): number {
     if (nodeIsMissing(node)) return node.pos;
-    if (isJSDocNode(node)) return skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.pos, false, true);
+    if (isJSDocNode(node)) return Scanner.skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.pos, false, true);
     if (includeJsDoc && hasJSDocNodes(node)) return getTokenPosOfNode(node.jsDoc![0], sourceFile);
     if (node.kind === SyntaxKind.SyntaxList && (<SyntaxList>node)._children.length > 0) {
       return getTokenPosOfNode((<SyntaxList>node)._children[0], sourceFile, includeJsDoc);
     }
-    return skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.pos);
+    return Scanner.skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.pos);
   }
 
   export function getNonDecoratorTokenPosOfNode(node: Node, sourceFile?: SourceFileLike): number {
     if (nodeIsMissing(node) || !node.decorators) return getTokenPosOfNode(node, sourceFile);
-    return skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.decorators.end);
+    return Scanner.skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.decorators.end);
   }
 
   export function getSourceTextOfNodeFromSourceFile(sourceFile: SourceFile, node: Node, includeTrivia = false): string {
@@ -394,7 +394,7 @@ namespace qnr {
 
   export function getTextOfNodeFromSourceText(sourceText: string, node: Node, includeTrivia = false): string {
     if (nodeIsMissing(node)) return '';
-    let text = sourceText.substring(includeTrivia ? node.pos : skipTrivia(sourceText, node.pos), node.end);
+    let text = sourceText.substring(includeTrivia ? node.pos : Scanner.skipTrivia(sourceText, node.pos), node.end);
     if (isJSDocTypeExpressionOrChild(node)) {
       // strip space + asterisk at line start
       text = text.replace(/(^|\r?\n|\r)\s*\*\s*/g, '$1');
@@ -720,7 +720,7 @@ namespace qnr {
     arg2?: string | number,
     arg3?: string | number
   ): DiagnosticWithLocation {
-    const start = skipTrivia(sourceFile.text, nodes.pos);
+    const start = Scanner.skipTrivia(sourceFile.text, nodes.pos);
     return createFileDiagnostic(sourceFile, start, nodes.end - start, message, arg0, arg1, arg2, arg3);
   }
 
@@ -763,14 +763,14 @@ namespace qnr {
   }
 
   export function getSpanOfTokenAtPosition(sourceFile: SourceFile, pos: number): TextSpan {
-    const scanner = createScanner(/*skipTrivia*/ true, sourceFile.languageVariant, sourceFile.text, /*onError:*/ undefined, pos);
+    const scanner = Scanner.create(true, sourceFile.languageVariant, sourceFile.text, /*onError:*/ undefined, pos);
     scanner.scan();
     const start = scanner.getTokenPos();
     return TextSpan.from(start, scanner.getTextPos());
   }
 
   function getErrorSpanForArrowFunction(sourceFile: SourceFile, node: ArrowFunction): TextSpan {
-    const pos = skipTrivia(sourceFile.text, node.pos);
+    const pos = Scanner.skipTrivia(sourceFile.text, node.pos);
     if (node.body && node.body.kind === SyntaxKind.Block) {
       const { line: startLine } = sourceFile.lineAndCharOf(node.body.pos);
       const { line: endLine } = sourceFile.lineAndCharOf(node.body.end);
@@ -785,7 +785,7 @@ namespace qnr {
     let errorNode: Node | undefined = node;
     switch (node.kind) {
       case SyntaxKind.SourceFile:
-        const pos = skipTrivia(sourceFile.text, 0, /*stopAfterLineBreak*/ false);
+        const pos = Scanner.skipTrivia(sourceFile.text, 0, /*stopAfterLineBreak*/ false);
         if (pos === sourceFile.text.length) return new TextSpan();
         return getSpanOfTokenAtPosition(sourceFile, pos);
       case SyntaxKind.VariableDeclaration:
@@ -810,7 +810,7 @@ namespace qnr {
         return getErrorSpanForArrowFunction(sourceFile, <ArrowFunction>node);
       case SyntaxKind.CaseClause:
       case SyntaxKind.DefaultClause:
-        const start = skipTrivia(sourceFile.text, (<CaseOrDefaultClause>node).pos);
+        const start = Scanner.skipTrivia(sourceFile.text, (<CaseOrDefaultClause>node).pos);
         const end = (<CaseOrDefaultClause>node).statements.length > 0 ? (<CaseOrDefaultClause>node).statements[0].pos : (<CaseOrDefaultClause>node).end;
         return TextSpan.from(start, end);
     }
@@ -819,7 +819,7 @@ namespace qnr {
     }
     assert(!isJSDoc(errorNode));
     const isMissing = nodeIsMissing(errorNode);
-    const pos = isMissing || JsxText.kind(node) ? errorNode.pos : skipTrivia(sourceFile.text, errorNode.pos);
+    const pos = isMissing || JsxText.kind(node) ? errorNode.pos : Scanner.skipTrivia(sourceFile.text, errorNode.pos);
     if (isMissing) {
       assert(pos === errorNode.pos, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
       assert(pos === errorNode.end, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
@@ -2608,12 +2608,12 @@ namespace qnr {
   }
 
   export function isStringANonContextualKeyword(name: string) {
-    const token = stringToToken(name);
+    const token = Token.fromString(name);
     return token !== undefined && isNonContextualKeyword(token);
   }
 
   export function isStringAKeyword(name: string) {
-    const token = stringToToken(name);
+    const token = Token.fromString(name);
     return token !== undefined && isKeyword(token);
   }
 
@@ -2733,7 +2733,7 @@ namespace qnr {
           return escapeLeadingUnderscores(nameExpression.text);
         } else if (isSignedNumericLiteral(nameExpression)) {
           if (nameExpression.operator === SyntaxKind.MinusToken) {
-            return (tokenToString(nameExpression.operator) + nameExpression.operand.text) as __String;
+            return (Token.toString(nameExpression.operator) + nameExpression.operand.text) as __String;
           }
           return nameExpression.operand.text as __String;
         }
@@ -3239,7 +3239,7 @@ namespace qnr {
     let hasTrailingComment = false;
 
     function updateLineCountAndPosFor(s: string) {
-      const lineStartsOfS = calcLineStarts(s);
+      const lineStartsOfS = Scanner.lineStarts(s);
       if (lineStartsOfS.length > 1) {
         lineCount = lineCount + lineStartsOfS.length - 1;
         linePos = output.length - s.length + last(lineStartsOfS);
@@ -3327,7 +3327,7 @@ namespace qnr {
       getText: () => output,
       isAtStartOfLine: () => lineStart,
       hasTrailingComment: () => hasTrailingComment,
-      hasTrailingWhitespace: () => !!output.length && isWhiteSpaceLike(output.charCodeAt(output.length - 1)),
+      hasTrailingWhitespace: () => !!output.length && Scanner.isWhiteSpaceLike(output.charCodeAt(output.length - 1)),
       clear: reset,
       reportInaccessibleThisError: noop,
       reportPrivateInBaseOfClassExpression: noop,
@@ -3588,11 +3588,11 @@ namespace qnr {
 
   export function getLineOfLocalPosition(sourceFile: SourceFile, pos: number) {
     const lineStarts = lineStarts(sourceFile);
-    return calcLineOf(lineStarts, pos);
+    return Scanner.lineOf(lineStarts, pos);
   }
 
   export function getLineOfLocalPositionFromLineMap(lineMap: readonly number[], pos: number) {
-    return calcLineOf(lineMap, pos);
+    return Scanner.lineOf(lineMap, pos);
   }
 
   export function getFirstConstructorWithBody(node: ClassLikeDeclaration): (ConstructorDeclaration & { body: FunctionBody }) | undefined {
@@ -3855,16 +3855,16 @@ namespace qnr {
 
   export function writeCommentRange(text: string, lineMap: readonly number[], writer: EmitTextWriter, commentPos: number, commentEnd: number, newLine: string) {
     if (text.charCodeAt(commentPos + 1) === Codes.asterisk) {
-      const firstCommentLineAndCharacter = calcLineAndCharOf(lineMap, commentPos);
+      const firstCommentLineAndChar = Scanner.lineAndCharOf(lineMap, commentPos);
       const lineCount = lineMap.length;
       let firstCommentLineIndent: number | undefined;
-      for (let pos = commentPos, currentLine = firstCommentLineAndCharacter.line; pos < commentEnd; currentLine++) {
+      for (let pos = commentPos, currentLine = firstCommentLineAndChar.line; pos < commentEnd; currentLine++) {
         const nextLineStart = currentLine + 1 === lineCount ? text.length + 1 : lineMap[currentLine + 1];
 
         if (pos !== commentPos) {
           // If we are not emitting first line, we need to write the spaces to adjust the alignment
           if (firstCommentLineIndent === undefined) {
-            firstCommentLineIndent = calculateIndent(text, lineMap[firstCommentLineAndCharacter.line], commentPos);
+            firstCommentLineIndent = calculateIndent(text, lineMap[firstCommentLineAndChar.line], commentPos);
           }
 
           // These are number of spaces writer is going to write at current indent
@@ -3931,7 +3931,7 @@ namespace qnr {
 
   function calculateIndent(text: string, pos: number, end: number) {
     let currentLineIndent = 0;
-    for (; pos < end && isWhiteSpaceSingleLine(text.charCodeAt(pos)); pos++) {
+    for (; pos < end && Scanner.isWhiteSpaceSingleLine(text.charCodeAt(pos)); pos++) {
       if (text.charCodeAt(pos) === Codes.tab) {
         // Tabs = TabSize = indent size and go to next tabStop
         currentLineIndent += getIndentSize() - (currentLineIndent % getIndentSize());
@@ -4791,7 +4791,7 @@ namespace qnr {
   function SourceMapSource(this: SourceMapSource, fileName: string, text: string, skipTrivia?: (pos: number) => number) {
     this.fileName = fileName;
     this.text = text;
-    this.skipTrivia = skipTrivia || ((pos) => pos);
+    this.Scanner.skipTrivia = Scanner.skipTrivia || ((pos) => pos);
   }
 
   // eslint-disable-next-line prefer-const

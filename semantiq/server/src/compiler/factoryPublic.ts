@@ -81,7 +81,7 @@ namespace qnr {
   export function createIdentifier(text: string, typeArguments?: readonly (TypeNode | TypeParameterDeclaration)[]): Identifier {
     const node = <Identifier>Node.createSynthesized(SyntaxKind.Identifier);
     node.escapedText = escapeLeadingUnderscores(text);
-    node.originalKeywordKind = text ? stringToToken(text) : SyntaxKind.Unknown;
+    node.originalKeywordKind = text ? Token.fromString(text) : SyntaxKind.Unknown;
     node.autoGenerateFlags = GeneratedIdentifierFlags.None;
     node.autoGenerateId = 0;
     if (typeArguments) {
@@ -693,7 +693,7 @@ namespace qnr {
 
   function getCookedText(kind: TemplateLiteralToken['kind'], rawText: string) {
     if (!rawTextScanner) {
-      rawTextScanner = createScanner(/*skipTrivia*/ false, LanguageVariant.TS);
+      rawTextScanner = Scanner.create(false, LanguageVariant.TS);
     }
     switch (kind) {
       case SyntaxKind.NoSubstitutionTemplateLiteral:

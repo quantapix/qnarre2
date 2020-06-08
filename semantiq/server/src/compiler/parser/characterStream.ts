@@ -12,7 +12,7 @@
 
 import Char from 'typescript-char';
 
-import { isLineBreak, isWhiteSpace } from './characters';
+import { Scanner.isLineBreak, isWhiteSpace } from './characters';
 
 export class CharacterStream {
     private _text: string;
@@ -90,7 +90,7 @@ export class CharacterStream {
     }
 
     isAtLineBreak(): boolean {
-        return isLineBreak(this.currentChar);
+        return Scanner.isLineBreak(this.currentChar);
     }
 
     skipLineBreak(): void {

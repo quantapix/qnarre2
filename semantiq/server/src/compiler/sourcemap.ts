@@ -3,16 +3,8 @@ namespace qnr {
     extendedDiagnostics?: boolean;
   }
 
-  export function createSourceMapGenerator(
-    host: EmitHost,
-    file: string,
-    sourceRoot: string,
-    sourcesDirectoryPath: string,
-    generatorOptions: SourceMapGeneratorOptions
-  ): SourceMapGenerator {
-    const { enter, exit } = generatorOptions.extendedDiagnostics
-      ? performance.createTimer('Source Map', 'beforeSourcemap', 'afterSourcemap')
-      : performance.nullTimer;
+  export function createSourceMapGenerator(host: EmitHost, file: string, sourceRoot: string, sourcesDirectoryPath: string, generatorOptions: SourceMapGeneratorOptions): SourceMapGenerator {
+    const { enter, exit } = generatorOptions.extendedDiagnostics ? performance.createTimer('Source Map', 'beforeSourcemap', 'afterSourcemap') : performance.nullTimer;
 
     // Current source map file and its index in the sources list
     const rawSources: string[] = [];
@@ -56,13 +48,7 @@ namespace qnr {
 
     function addSource(fileName: string) {
       enter();
-      const source = getRelativePathToDirectoryOrUrl(
-        sourcesDirectoryPath,
-        fileName,
-        host.getCurrentDirectory(),
-        host.getCanonicalFileName,
-        /*isAbsolutePathAnUrl*/ true
-      );
+      const source = getRelativePathToDirectoryOrUrl(sourcesDirectoryPath, fileName, host.getCurrentDirectory(), host.getCanonicalFileName, /*isAbsolutePathAnUrl*/ true);
 
       let sourceIndex = sourceToSourceIndexMap.get(source);
       if (sourceIndex === undefined) {
@@ -116,14 +102,7 @@ namespace qnr {
       );
     }
 
-    function addMapping(
-      generatedLine: number,
-      generatedCharacter: number,
-      sourceIndex?: number,
-      sourceLine?: number,
-      sourceCharacter?: number,
-      nameIndex?: number
-    ) {
+    function addMapping(generatedLine: number, generatedCharacter: number, sourceIndex?: number, sourceLine?: number, sourceCharacter?: number, nameIndex?: number) {
       assert(generatedLine >= pendingGeneratedLine, 'generatedLine cannot backtrack');
       assert(generatedCharacter >= 0, 'generatedCharacter cannot be negative');
       assert(sourceIndex === undefined || sourceIndex >= 0, 'sourceIndex cannot be negative');
@@ -153,14 +132,7 @@ namespace qnr {
       exit();
     }
 
-    function appendSourceMap(
-      generatedLine: number,
-      generatedCharacter: number,
-      map: RawSourceMap,
-      sourceMapPath: string,
-      start?: LineAndCharacter,
-      end?: LineAndCharacter
-    ) {
+    function appendSourceMap(generatedLine: number, generatedCharacter: number, map: RawSourceMap, sourceMapPath: string, start?: LineAndChar, end?: LineAndChar) {
       assert(generatedLine >= pendingGeneratedLine, 'generatedLine cannot backtrack');
       assert(generatedCharacter >= 0, 'generatedCharacter cannot be negative');
       enter();
@@ -620,9 +592,7 @@ namespace qnr {
   }
 
   function sameMappedPosition(left: MappedPosition, right: MappedPosition) {
-    return (
-      left.generatedPosition === right.generatedPosition && left.sourceIndex === right.sourceIndex && left.sourcePosition === right.sourcePosition
-    );
+    return left.generatedPosition === right.generatedPosition && left.sourceIndex === right.sourceIndex && left.sourcePosition === right.sourcePosition;
   }
 
   function compareSourcePositions(left: SourceMappedPosition, right: SourceMappedPosition) {
@@ -661,8 +631,7 @@ namespace qnr {
     };
 
     function processMapping(mapping: Mapping): MappedPosition {
-      const generatedPosition =
-        generatedFile !== undefined ? posOf(generatedFile, mapping.generatedLine, mapping.generatedCharacter, /*allowEdits*/ true) : -1;
+      const generatedPosition = generatedFile !== undefined ? posOf(generatedFile, mapping.generatedLine, mapping.generatedCharacter, /*allowEdits*/ true) : -1;
       let source: string | undefined;
       let sourcePosition: number | undefined;
       if (isSourceMapping(mapping)) {

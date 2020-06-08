@@ -743,7 +743,7 @@ namespace qnr {
       setEmitFlags(inner, EmitFlags.NoComments);
 
       const outer = createPartiallyEmittedExpression(inner);
-      outer.end = skipTrivia(currentText, node.pos);
+      outer.end = Scanner.skipTrivia(currentText, node.pos);
       setEmitFlags(outer, EmitFlags.NoComments);
 
       const result = createParen(createCall(outer, /*typeArguments*/ undefined, extendsClauseElement ? [visitNode(extendsClauseElement.expression, visitor, isExpression)] : []));
@@ -765,7 +765,7 @@ namespace qnr {
       addClassMembers(statements, node);
 
       // Create a synthetic text range for the return statement.
-      const closingBraceLocation = createTokenRange(skipTrivia(currentText, node.members.end), SyntaxKind.CloseBraceToken);
+      const closingBraceLocation = createTokenRange(Scanner.skipTrivia(currentText, node.members.end), SyntaxKind.CloseBraceToken);
       const localName = getInternalName(node);
 
       // The following partially-emitted expression exists purely to align our sourcemap

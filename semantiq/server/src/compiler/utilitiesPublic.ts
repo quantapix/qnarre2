@@ -1784,7 +1784,7 @@ namespace qnr {
       if (!line.length) continue;
       let i = 0;
       for (; i < line.length && i < indentation; i++) {
-        if (!isWhiteSpaceLike(line.charCodeAt(i))) break;
+        if (!Scanner.isWhiteSpaceLike(line.charCodeAt(i))) break;
       }
       if (i < indentation) indentation = i;
       if (indentation === 0) return 0;
