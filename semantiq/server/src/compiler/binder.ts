@@ -4075,11 +4075,11 @@ namespace qnr {
         transformFlags |= TransformFlags.AssertJsx;
         break;
 
-      case SyntaxKind.NoSubstitutionTemplateLiteral:
+      case SyntaxKind.NoSubstitutionLiteral:
       case SyntaxKind.TemplateHead:
       case SyntaxKind.TemplateMiddle:
       case SyntaxKind.TemplateTail:
-        if ((<NoSubstitutionTemplateLiteral | TemplateHead | TemplateMiddle | TemplateTail>node).templateFlags) {
+        if ((<NoSubstitutionLiteral | TemplateHead | TemplateMiddle | TemplateTail>node).templateFlags) {
           transformFlags |= TransformFlags.AssertES2018;
           break;
         }

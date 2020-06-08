@@ -29,14 +29,14 @@ namespace qnr {
       n.flags |= NodeFlags.Synthesized;
       return n;
     }
-    export function createTemplateLiteralLike(k: TemplateLiteralToken['kind'], t: string, raw: string | undefined) {
+    export function createTemplateLiteralLike(k: TemplateLiteralToken['kind'], t: string, raw?: string) {
       const n = createSynthesized(k) as TemplateLiteralLikeNode;
       n.text = t;
       if (raw === undefined || t === raw) n.rawText = raw;
       else {
-        const c = getCookedText(k, raw);
-        if (typeof c === 'object') return fail('Invalid raw text');
-        assert(t === c, "Expected argument 'text' to be the normalized (i.e. 'cooked') version of argument 'rawText'.");
+        const r = Scanner.process(k, raw);
+        if (typeof r === 'object') return fail('Invalid raw text');
+        assert(t === r, "Expected 'text' to be the normalized version of 'rawText'");
         n.rawText = raw;
       }
       return n;
@@ -97,7 +97,7 @@ namespace qnr {
       return n.kind === SyntaxKind.StringLiteral;
     }
     export function like(n: Node): n is StringLiteralLike {
-      return n.kind === SyntaxKind.StringLiteral || n.kind === SyntaxKind.NoSubstitutionTemplateLiteral;
+      return n.kind === SyntaxKind.StringLiteral || n.kind === SyntaxKind.NoSubstitutionLiteral;
     }
     export function orNumericLiteralLike(n: Node): n is StringLiteralLike | NumericLiteral {
       return like(n) || NumericLiteral.kind(n);
@@ -131,30 +131,30 @@ namespace qnr {
     }
   }
 
-  export interface RegularExpressionLiteral extends LiteralExpression {
-    kind: SyntaxKind.RegularExpressionLiteral;
+  export interface RegexLiteral extends LiteralExpression {
+    kind: SyntaxKind.RegexLiteral;
   }
-  export namespace RegularExpressionLiteral {
+  export namespace RegexLiteral {
     export function create(t: string) {
-      const n = Node.createSynthesized(SyntaxKind.RegularExpressionLiteral) as RegularExpressionLiteral;
+      const n = Node.createSynthesized(SyntaxKind.RegexLiteral) as RegexLiteral;
       n.text = t;
       return n;
     }
-    export function kind(n: Node): n is RegularExpressionLiteral {
-      return n.kind === SyntaxKind.RegularExpressionLiteral;
+    export function kind(n: Node): n is RegexLiteral {
+      return n.kind === SyntaxKind.RegexLiteral;
     }
   }
 
-  export interface NoSubstitutionTemplateLiteral extends LiteralExpression, TemplateLiteralLikeNode, Declaration {
-    kind: SyntaxKind.NoSubstitutionTemplateLiteral;
+  export interface NoSubstitutionLiteral extends LiteralExpression, TemplateLiteralLikeNode, Declaration {
+    kind: SyntaxKind.NoSubstitutionLiteral;
     templateFlags?: TokenFlags;
   }
-  export namespace NoSubstitutionTemplateLiteral {
+  export namespace NoSubstitutionLiteral {
     export function create(t: string, raw?: string) {
-      return Node.createTemplateLiteralLike(SyntaxKind.NoSubstitutionTemplateLiteral, t, raw) as NoSubstitutionTemplateLiteral;
+      return Node.createTemplateLiteralLike(SyntaxKind.NoSubstitutionLiteral, t, raw) as NoSubstitutionLiteral;
     }
-    export function kind(n: Node): n is NoSubstitutionTemplateLiteral {
-      return n.kind === SyntaxKind.NoSubstitutionTemplateLiteral;
+    export function kind(n: Node): n is NoSubstitutionLiteral {
+      return n.kind === SyntaxKind.NoSubstitutionLiteral;
     }
   }
 

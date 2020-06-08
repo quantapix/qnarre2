@@ -135,8 +135,8 @@ namespace qnr {
     StringLiteral,
     JsxText,
     JsxTextAllWhiteSpaces,
-    RegularExpressionLiteral,
-    NoSubstitutionTemplateLiteral,
+    RegexLiteral,
+    NoSubstitutionLiteral,
     // Pseudo-literals
     TemplateHead,
     TemplateMiddle,
@@ -185,7 +185,7 @@ namespace qnr {
     ColonToken,
     AtToken,
     Question2Token,
-    /** Only the JSDoc scanner produces BacktickToken. The normal scanner produces NoSubstitutionTemplateLiteral and related kinds. */
+    /** Only the JSDoc scanner produces BacktickToken. The normal scanner produces NoSubstitutionLiteral and related kinds. */
     BacktickToken,
     // Assignments
     EqualsToken,
@@ -519,8 +519,8 @@ namespace qnr {
     FirstTriviaToken = SingleLineCommentTrivia,
     LastTriviaToken = ConflictMarkerTrivia,
     FirstLiteralToken = NumericLiteral,
-    LastLiteralToken = NoSubstitutionTemplateLiteral,
-    FirstTemplateToken = NoSubstitutionTemplateLiteral,
+    LastLiteralToken = NoSubstitutionLiteral,
+    FirstTemplateToken = NoSubstitutionLiteral,
     LastTemplateToken = TemplateTail,
     FirstBinaryOperator = LessThanToken,
     LastBinaryOperator = CaretEqualsToken,
@@ -1039,7 +1039,7 @@ namespace qnr {
     operator: SyntaxKind.UniqueKeyword;
   }
 
-  export type StringLiteralLike = StringLiteral | NoSubstitutionTemplateLiteral;
+  export type StringLiteralLike = StringLiteral | NoSubstitutionLiteral;
 
   export interface Expression extends Node {
     _expressionBrand: any;
@@ -1315,7 +1315,7 @@ namespace qnr {
     NumericLiteralFlags = Scientific | Octal | HexSpecifier | BinaryOrOctalSpecifier | ContainsSeparator,
   }
 
-  export type TemplateLiteral = TemplateExpression | NoSubstitutionTemplateLiteral;
+  export type TemplateLiteral = TemplateExpression | NoSubstitutionLiteral;
 
   export interface TemplateExpression extends PrimaryExpression {
     kind: SyntaxKind.TemplateExpression;

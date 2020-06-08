@@ -749,8 +749,6 @@ namespace qnr {
   // parser instances can actually be expensive enough to impact us on projects with many source
   // files.
   namespace Parser {
-    // Share a single scanner across all calls to parse a source file.  This helps speed things
-    // up by avoiding the cost of creating/compiling scanners over and over again.
     const scanner = Scanner.create(true);
     const disallowInAndDecoratorContext = NodeFlags.DisallowInContext | NodeFlags.DecoratorContext;
 
@@ -2600,11 +2598,11 @@ namespace qnr {
       const node = <LiteralLikeNode>createNode(kind);
       node.text = scanner.getTokenValue();
       switch (kind) {
-        case SyntaxKind.NoSubstitutionTemplateLiteral:
+        case SyntaxKind.NoSubstitutionLiteral:
         case SyntaxKind.TemplateHead:
         case SyntaxKind.TemplateMiddle:
         case SyntaxKind.TemplateTail:
-          const isLast = kind === SyntaxKind.NoSubstitutionTemplateLiteral || kind === SyntaxKind.TemplateTail;
+          const isLast = kind === SyntaxKind.NoSubstitutionLiteral || kind === SyntaxKind.TemplateTail;
           const tokenText = scanner.getTokenText();
           (<TemplateLiteralLikeNode>node).rawText = tokenText.substring(1, tokenText.length - (scanner.isUnterminated() ? 0 : isLast ? 1 : 2));
           break;
@@ -2629,7 +2627,7 @@ namespace qnr {
       }
 
       if (isTemplateLiteralKind(node.kind)) {
-        (<TemplateHead | TemplateMiddle | TemplateTail | NoSubstitutionTemplateLiteral>node).templateFlags =
+        (<TemplateHead | TemplateMiddle | TemplateTail | NoSubstitutionLiteral>node).templateFlags =
           scanner.getTokenFlags() & TokenFlags.ContainsInvalidEscape;
       }
 
@@ -3342,7 +3340,7 @@ namespace qnr {
           return parseJSDocFunctionType();
         case SyntaxKind.ExclamationToken:
           return parseJSDocNonNullableType();
-        case SyntaxKind.NoSubstitutionTemplateLiteral:
+        case SyntaxKind.NoSubstitutionLiteral:
         case SyntaxKind.StringLiteral:
         case SyntaxKind.NumericLiteral:
         case SyntaxKind.BigIntLiteral:
@@ -3664,7 +3662,7 @@ namespace qnr {
         case SyntaxKind.NumericLiteral:
         case SyntaxKind.BigIntLiteral:
         case SyntaxKind.StringLiteral:
-        case SyntaxKind.NoSubstitutionTemplateLiteral:
+        case SyntaxKind.NoSubstitutionLiteral:
         case SyntaxKind.TemplateHead:
         case SyntaxKind.OpenParenToken:
         case SyntaxKind.OpenBracketToken:
@@ -5055,7 +5053,7 @@ namespace qnr {
     }
 
     function isTemplateStartOfTaggedTemplate() {
-      return token() === SyntaxKind.NoSubstitutionTemplateLiteral || token() === SyntaxKind.TemplateHead;
+      return token() === SyntaxKind.NoSubstitutionLiteral || token() === SyntaxKind.TemplateHead;
     }
 
     function parseTaggedTemplateRest(
@@ -5068,8 +5066,8 @@ namespace qnr {
       tagExpression.questionDotToken = questionDotToken;
       tagExpression.typeArguments = typeArguments;
       tagExpression.template =
-        token() === SyntaxKind.NoSubstitutionTemplateLiteral
-          ? (reScanHeadOrNoSubstTemplate(), <NoSubstitutionTemplateLiteral>parseLiteralNode())
+        token() === SyntaxKind.NoSubstitutionLiteral
+          ? (reScanHeadOrNoSubstTemplate(), <NoSubstitutionLiteral>parseLiteralNode())
           : parseTemplateExpression(/*isTaggedTemplate*/ true);
       if (questionDotToken || tag.flags & NodeFlags.OptionalChain) {
         tagExpression.flags |= NodeFlags.OptionalChain;
@@ -5158,7 +5156,7 @@ namespace qnr {
     function canFollowTypeArgumentsInExpression(): boolean {
       switch (token()) {
         case SyntaxKind.OpenParenToken: // foo<x>(
-        case SyntaxKind.NoSubstitutionTemplateLiteral: // foo<T> `...`
+        case SyntaxKind.NoSubstitutionLiteral: // foo<T> `...`
         case SyntaxKind.TemplateHead: // foo<T> `...${100}...`
         // these are the only tokens can legally follow a type argument
         // list. So we definitely want to treat them as type arg lists.
@@ -5203,7 +5201,7 @@ namespace qnr {
         case SyntaxKind.NumericLiteral:
         case SyntaxKind.BigIntLiteral:
         case SyntaxKind.StringLiteral:
-        case SyntaxKind.NoSubstitutionTemplateLiteral:
+        case SyntaxKind.NoSubstitutionLiteral:
           return parseLiteralNode();
         case SyntaxKind.ThisKeyword:
         case SyntaxKind.SuperKeyword:
@@ -5234,7 +5232,7 @@ namespace qnr {
           return parseNewExpressionOrNewDotTarget();
         case SyntaxKind.SlashToken:
         case SyntaxKind.SlashEqualsToken:
-          if (reScanSlashToken() === SyntaxKind.RegularExpressionLiteral) {
+          if (reScanSlashToken() === SyntaxKind.RegexLiteral) {
             return parseLiteralNode();
           }
           break;

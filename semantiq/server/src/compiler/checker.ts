@@ -9165,7 +9165,7 @@ namespace qnr {
       switch (expr.kind) {
         case SyntaxKind.StringLiteral:
         case SyntaxKind.NumericLiteral:
-        case SyntaxKind.NoSubstitutionTemplateLiteral:
+        case SyntaxKind.NoSubstitutionLiteral:
           return true;
         case SyntaxKind.PrefixUnaryExpression:
           return (<PrefixUnaryExpression>expr).operator === SyntaxKind.MinusToken && (<PrefixUnaryExpression>expr).operand.kind === SyntaxKind.NumericLiteral;
@@ -23114,7 +23114,7 @@ namespace qnr {
         case SyntaxKind.StringLiteral:
         case SyntaxKind.NumericLiteral:
         case SyntaxKind.BigIntLiteral:
-        case SyntaxKind.NoSubstitutionTemplateLiteral:
+        case SyntaxKind.NoSubstitutionLiteral:
         case SyntaxKind.TrueKeyword:
         case SyntaxKind.FalseKeyword:
         case SyntaxKind.NullKeyword:
@@ -25419,7 +25419,7 @@ namespace qnr {
           // then this might actually turn out to be a TemplateHead in the future;
           // so we consider the call to be incomplete.
           const templateLiteral = <LiteralExpression>node.template;
-          assert(templateLiteral.kind === SyntaxKind.NoSubstitutionTemplateLiteral);
+          assert(templateLiteral.kind === SyntaxKind.NoSubstitutionLiteral);
           callIsIncomplete = !!templateLiteral.isUnterminated;
         }
       } else if (node.kind === SyntaxKind.Decorator) {
@@ -27364,7 +27364,7 @@ namespace qnr {
     function isValidConstAssertionArgument(node: Node): boolean {
       switch (node.kind) {
         case SyntaxKind.StringLiteral:
-        case SyntaxKind.NoSubstitutionTemplateLiteral:
+        case SyntaxKind.NoSubstitutionLiteral:
         case SyntaxKind.NumericLiteral:
         case SyntaxKind.BigIntLiteral:
         case SyntaxKind.TrueKeyword:
@@ -28763,10 +28763,10 @@ namespace qnr {
       switch (node.kind) {
         case SyntaxKind.Identifier:
         case SyntaxKind.StringLiteral:
-        case SyntaxKind.RegularExpressionLiteral:
+        case SyntaxKind.RegexLiteral:
         case SyntaxKind.TaggedTemplateExpression:
         case SyntaxKind.TemplateExpression:
-        case SyntaxKind.NoSubstitutionTemplateLiteral:
+        case SyntaxKind.NoSubstitutionLiteral:
         case SyntaxKind.NumericLiteral:
         case SyntaxKind.BigIntLiteral:
         case SyntaxKind.TrueKeyword:
@@ -29816,7 +29816,7 @@ namespace qnr {
           return checkSuperExpression(node);
         case SyntaxKind.NullKeyword:
           return nullWideningType;
-        case SyntaxKind.NoSubstitutionTemplateLiteral:
+        case SyntaxKind.NoSubstitutionLiteral:
         case SyntaxKind.StringLiteral:
           return getFreshTypeOfLiteralType(getLiteralType((node as StringLiteralLike).text));
         case SyntaxKind.NumericLiteral:
@@ -29831,7 +29831,7 @@ namespace qnr {
           return falseType;
         case SyntaxKind.TemplateExpression:
           return checkTemplateExpression(<TemplateExpression>node);
-        case SyntaxKind.RegularExpressionLiteral:
+        case SyntaxKind.RegexLiteral:
           return globalRegExpType;
         case SyntaxKind.ArrayLiteralExpression:
           return checkArrayLiteral(<ArrayLiteralExpression>node, checkMode, forceTuple);
@@ -34328,7 +34328,7 @@ namespace qnr {
             }
             break;
           case SyntaxKind.StringLiteral:
-          case SyntaxKind.NoSubstitutionTemplateLiteral:
+          case SyntaxKind.NoSubstitutionLiteral:
             return (<StringLiteralLike>expr).text;
           case SyntaxKind.NumericLiteral:
             checkGrammarNumericLiteral(<NumericLiteral>expr);
@@ -35803,7 +35803,7 @@ namespace qnr {
           return;
 
         case SyntaxKind.StringLiteral:
-        case SyntaxKind.NoSubstitutionTemplateLiteral:
+        case SyntaxKind.NoSubstitutionLiteral:
           // 1). import x = require("./mo/*gotToDefinitionHere*/d")
           // 2). External module name in an import declaration
           // 3). Dynamic import call or require in javascript

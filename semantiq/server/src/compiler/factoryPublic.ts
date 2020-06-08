@@ -38,17 +38,14 @@ namespace qnr {
 
   // Literals
 
-  export function createLiteral(value: string | StringLiteral | NoSubstitutionTemplateLiteral | NumericLiteral | Identifier, isSingleQuote: boolean): StringLiteral; // eslint-disable-line @typescript-eslint/unified-signatures
+  export function createLiteral(value: string | StringLiteral | NoSubstitutionLiteral | NumericLiteral | Identifier, isSingleQuote: boolean): StringLiteral; // eslint-disable-line @typescript-eslint/unified-signatures
   export function createLiteral(value: string | number, isSingleQuote: boolean): StringLiteral | NumericLiteral;
   /** If a node is passed, creates a string literal whose source text is read from a source node during emit. */
-  export function createLiteral(value: string | StringLiteral | NoSubstitutionTemplateLiteral | NumericLiteral | Identifier): StringLiteral;
+  export function createLiteral(value: string | StringLiteral | NoSubstitutionLiteral | NumericLiteral | Identifier): StringLiteral;
   export function createLiteral(value: number | PseudoBigInt): NumericLiteral;
   export function createLiteral(value: boolean): BooleanLiteral;
   export function createLiteral(value: string | number | PseudoBigInt | boolean): PrimaryExpression;
-  export function createLiteral(
-    value: string | number | PseudoBigInt | boolean | StringLiteral | NoSubstitutionTemplateLiteral | NumericLiteral | Identifier,
-    isSingleQuote?: boolean
-  ): PrimaryExpression {
+  export function createLiteral(value: string | number | PseudoBigInt | boolean | StringLiteral | NoSubstitutionLiteral | NumericLiteral | Identifier, isSingleQuote?: boolean): PrimaryExpression {
     if (typeof value === 'number') {
       return NumericLiteral.create(value + '');
     }
@@ -686,52 +683,6 @@ namespace qnr {
 
   export function updateTemplateExpression(node: TemplateExpression, head: TemplateHead, templateSpans: readonly TemplateSpan[]) {
     return node.head !== head || node.templateSpans !== templateSpans ? updateNode(createTemplateExpression(head, templateSpans), node) : node;
-  }
-
-  let rawTextScanner: Scanner | undefined;
-  const invalidValueSentinel: object = {};
-
-  function getCookedText(kind: TemplateLiteralToken['kind'], rawText: string) {
-    if (!rawTextScanner) {
-      rawTextScanner = Scanner.create(false, LanguageVariant.TS);
-    }
-    switch (kind) {
-      case SyntaxKind.NoSubstitutionTemplateLiteral:
-        rawTextScanner.setText('`' + rawText + '`');
-        break;
-      case SyntaxKind.TemplateHead:
-        rawTextScanner.setText('`' + rawText + '${');
-        break;
-      case SyntaxKind.TemplateMiddle:
-        rawTextScanner.setText('}' + rawText + '${');
-        break;
-      case SyntaxKind.TemplateTail:
-        rawTextScanner.setText('}' + rawText + '`');
-        break;
-    }
-    let token = rawTextScanner.scan();
-    if (token === SyntaxKind.CloseBracketToken) {
-      token = rawTextScanner.reScanTemplateToken(/* isTaggedTemplate */ false);
-    }
-    if (rawTextScanner.isUnterminated()) {
-      rawTextScanner.setText(undefined);
-      return invalidValueSentinel;
-    }
-    let tokenValue: string | undefined;
-    switch (token) {
-      case SyntaxKind.NoSubstitutionTemplateLiteral:
-      case SyntaxKind.TemplateHead:
-      case SyntaxKind.TemplateMiddle:
-      case SyntaxKind.TemplateTail:
-        tokenValue = rawTextScanner.getTokenValue();
-        break;
-    }
-    if (rawTextScanner.scan() !== SyntaxKind.EndOfFileToken) {
-      rawTextScanner.setText(undefined);
-      return invalidValueSentinel;
-    }
-    rawTextScanner.setText(undefined);
-    return tokenValue;
   }
 
   export function createYield(expression?: Expression): YieldExpression;

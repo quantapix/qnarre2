@@ -1519,8 +1519,8 @@ namespace qnr {
             return emitNumericOrBigIntLiteral(<NumericLiteral | BigIntLiteral>node);
 
           case SyntaxKind.StringLiteral:
-          case SyntaxKind.RegularExpressionLiteral:
-          case SyntaxKind.NoSubstitutionTemplateLiteral:
+          case SyntaxKind.RegexLiteral:
+          case SyntaxKind.NoSubstitutionLiteral:
             return emitLiteral(<LiteralExpression>node, /*jsxAttributeEscape*/ false);
 
           // Identifiers
@@ -1713,8 +1713,8 @@ namespace qnr {
     }
 
     // SyntaxKind.StringLiteral
-    // SyntaxKind.RegularExpressionLiteral
-    // SyntaxKind.NoSubstitutionTemplateLiteral
+    // SyntaxKind.RegexLiteral
+    // SyntaxKind.NoSubstitutionLiteral
     // SyntaxKind.TemplateHead
     // SyntaxKind.TemplateMiddle
     // SyntaxKind.TemplateTail

@@ -846,17 +846,17 @@ namespace qnr {
     const directiveRegExSingleLine = /^\s*\/\/\/?\s*@(ts-expect-error|ts-ignore)/;
     const directiveRegExMultiLine = /^\s*(?:\/|\*)*\s*@(ts-expect-error|ts-ignore)/;
 
-    export function create(skipTrivia: boolean, lang = LanguageVariant.TS, text: string = '', onError?: ErrorCallback, s?: number, l?: number): Scanner {
-      let startPos: number; // Start position of whitespace before current token
+    export function create(skipTrivia = false, lang = LanguageVariant.TS, onError?: ErrorCallback): Scanner {
       let pos: number; // Current position (end position of text of current token)
       let end: number; // end of text
+      let text: string;
       let token: SyntaxKind;
       let tokPos: number; // Start position of text of current token
+      let startPos: number; // Start position of whitespace before current token
       let tokValue: string;
       let tokFlags: TokenFlags;
       let directives: CommentDirective[] | undefined;
       let inJSDocType = 0;
-      setText(text, s, l);
       const scanner: Scanner = {
         setLanguageVariant: (l) => {
           lang = l;
@@ -923,6 +923,7 @@ namespace qnr {
         end = length === undefined ? text.length : start! + length;
         setTextPos(start ?? 0);
       }
+
       function setTextPos(p: number) {
         assert(p >= 0);
         pos = p;
@@ -932,6 +933,7 @@ namespace qnr {
         tokValue = undefined!;
         tokFlags = TokenFlags.None;
       }
+
       function scan(): SyntaxKind {
         startPos = pos;
         tokFlags = TokenFlags.None;
@@ -1284,6 +1286,7 @@ namespace qnr {
           }
         }
       }
+
       function scanRange<T>(start: number, length: number, cb: () => T): T {
         const e = end;
         const p = pos;
@@ -1324,6 +1327,7 @@ namespace qnr {
         }
         return token;
       }
+
       function reScanLessToken(): SyntaxKind {
         if (token === SyntaxKind.LessThan2Token) {
           pos = tokPos + 1;
@@ -1331,6 +1335,7 @@ namespace qnr {
         }
         return token;
       }
+
       function reScanSlashToken(): SyntaxKind {
         if (token === SyntaxKind.SlashToken || token === SyntaxKind.SlashEqualsToken) {
           let p = tokPos + 1;
@@ -1362,28 +1367,33 @@ namespace qnr {
           }
           pos = p;
           tokValue = text.substring(tokPos, pos);
-          token = SyntaxKind.RegularExpressionLiteral;
+          token = SyntaxKind.RegexLiteral;
         }
         return token;
       }
+
       function reScanQuestionToken(): SyntaxKind {
         assert(token === SyntaxKind.Question2Token, "'reScanQuestionToken' should only be called on a '??'");
         pos = tokPos + 1;
         return (token = SyntaxKind.QuestionToken);
       }
+
       function reScanTemplateToken(tagged: boolean): SyntaxKind {
         assert(token === SyntaxKind.CloseBraceToken, "'reScanTemplateToken' should only be called on a '}'");
         pos = tokPos;
         return (token = scanTemplateAndSetTokenValue(tagged));
       }
+
       function reScanHeadOrNoSubstTemplate(): SyntaxKind {
         pos = tokPos;
         return (token = scanTemplateAndSetTokenValue(true));
       }
+
       function reScanJsxToken(): JsxTokenSyntaxKind {
         pos = tokPos = startPos;
         return (token = scanJsxToken());
       }
+
       function reScanJsxAttributeValue(): SyntaxKind {
         pos = tokPos = startPos;
         return scanJsxAttributeValue();
@@ -1399,6 +1409,7 @@ namespace qnr {
           pos = p;
         }
       }
+
       function speculate<T>(cb: () => T, isLookahead: boolean): T {
         const p = pos;
         const sp = startPos;
@@ -1417,6 +1428,7 @@ namespace qnr {
         }
         return r;
       }
+
       function scanIdentifier(): SyntaxKind.Identifier | KeywordSyntaxKind {
         const l = tokValue.length;
         if (l >= 2 && l <= 11) {
@@ -1428,6 +1440,7 @@ namespace qnr {
         }
         return (token = SyntaxKind.Identifier);
       }
+
       function peekUniEscape(): number {
         if (pos + 5 < end && text.charCodeAt(pos + 1) === Codes.u) {
           const s = pos;
@@ -1439,6 +1452,7 @@ namespace qnr {
         }
         return -1;
       }
+
       function peekExtEscape(): number {
         if (text.codePointAt(pos + 1) === Codes.u && text.codePointAt(pos + 2) === Codes.openBrace) {
           const s = pos;
@@ -1450,6 +1464,7 @@ namespace qnr {
         }
         return -1;
       }
+
       function scanIdentifierParts(): string {
         let r = '';
         let s = pos;
@@ -1478,6 +1493,7 @@ namespace qnr {
         r += text.substring(s, pos);
         return r;
       }
+
       function scanNumber(): { type: SyntaxKind; value: string } {
         const s = pos;
         function scanFragment() {
@@ -1559,6 +1575,7 @@ namespace qnr {
           return { type, value: tokValue };
         }
       }
+
       function parseNumber(): SyntaxKind {
         if (text.charCodeAt(pos) === Codes.n) {
           tokValue += 'n';
@@ -1576,6 +1593,7 @@ namespace qnr {
           return SyntaxKind.NumericLiteral;
         }
       }
+
       function scanOctDigits(): number {
         const s = pos;
         while (isOctalDigit(text.charCodeAt(pos))) {
@@ -1583,6 +1601,7 @@ namespace qnr {
         }
         return +text.substring(s, pos);
       }
+
       function scanHexDigits(min: number, greedy = true, seps = false): string {
         let ds = [] as number[];
         let sep = false;
@@ -1610,6 +1629,7 @@ namespace qnr {
         if (text.charCodeAt(pos - 1) === Codes._) error(Diagnostics.Numeric_separators_are_not_allowed_here, pos - 1, 1);
         return String.fromCharCode(...ds);
       }
+
       function scanBinOrOctDigits(base: 2 | 8): string {
         let r = '';
         let sep = false;
@@ -1635,6 +1655,7 @@ namespace qnr {
         if (text.charCodeAt(pos - 1) === Codes._) error(Diagnostics.Numeric_separators_are_not_allowed_here, pos - 1, 1);
         return r;
       }
+
       function scanExtEscape(): string {
         const vs = scanHexDigits(1);
         const v = vs ? parseInt(vs, 16) : -1;
@@ -1658,6 +1679,7 @@ namespace qnr {
         if (e) return '';
         return String.fromCodePoint(v);
       }
+
       function scanEscSequence(tagged?: boolean): string {
         const s = pos;
         pos++;
@@ -1758,6 +1780,7 @@ namespace qnr {
             return String.fromCharCode(c);
         }
       }
+
       function scanString(jsxAttr = false): string {
         let r = '';
         const quote = text.charCodeAt(pos);
@@ -1792,6 +1815,7 @@ namespace qnr {
         }
         return r;
       }
+
       function scanTemplateAndSetTokenValue(tagged: boolean): SyntaxKind {
         const backtick = text.charCodeAt(pos) === Codes.backtick;
         pos++;
@@ -1803,7 +1827,7 @@ namespace qnr {
             v += text.substring(s, pos);
             tokFlags |= TokenFlags.Unterminated;
             error(Diagnostics.Unterminated_template_literal);
-            r = backtick ? SyntaxKind.NoSubstitutionTemplateLiteral : SyntaxKind.TemplateTail;
+            r = backtick ? SyntaxKind.NoSubstitutionLiteral : SyntaxKind.TemplateTail;
             break;
           }
           const c = text.charCodeAt(pos);
@@ -1811,7 +1835,7 @@ namespace qnr {
           if (c === Codes.backtick) {
             v += text.substring(s, pos);
             pos++;
-            r = backtick ? SyntaxKind.NoSubstitutionTemplateLiteral : SyntaxKind.TemplateTail;
+            r = backtick ? SyntaxKind.NoSubstitutionLiteral : SyntaxKind.TemplateTail;
             break;
           }
           // '${'
@@ -1843,11 +1867,13 @@ namespace qnr {
         tokValue = v;
         return r;
       }
+
       function appendIfDirective(ds: CommentDirective[] | undefined, t: string, re: RegExp, line: number) {
         const d = directiveFrom(t, re);
         if (d === undefined) return ds;
         return append(ds, { range: { pos: line, end: pos }, type: d });
       }
+
       function directiveFrom(t: string, re: RegExp) {
         const m = re.exec(t);
         if (!m) return;
@@ -1859,6 +1885,7 @@ namespace qnr {
         }
         return;
       }
+
       function scanJsxToken(): JsxTokenSyntaxKind {
         startPos = tokPos = pos;
         if (pos >= end) return (token = SyntaxKind.EndOfFileToken);
@@ -1899,6 +1926,7 @@ namespace qnr {
         tokValue = text.substring(startPos, p);
         return first === -1 ? SyntaxKind.JsxTextAllWhiteSpaces : SyntaxKind.JsxText;
       }
+
       function scanJsxIdentifier(): SyntaxKind {
         if (Token.identifierOrKeyword(token)) {
           while (pos < end) {
@@ -1915,6 +1943,7 @@ namespace qnr {
         }
         return token;
       }
+
       function scanJsxAttributeValue(): SyntaxKind {
         startPos = pos;
         switch (text.charCodeAt(pos)) {
@@ -1926,6 +1955,7 @@ namespace qnr {
             return scan();
         }
       }
+
       function scanJsDocToken(): JSDocSyntaxKind {
         startPos = tokPos = pos;
         tokFlags = TokenFlags.None;
@@ -1997,6 +2027,48 @@ namespace qnr {
         }
         return (token = SyntaxKind.Unknown);
       }
+    }
+
+    let raw: Scanner | undefined;
+    const sentinel: object = {};
+
+    export function process(k: TemplateLiteralToken['kind'], s: string) {
+      if (!raw) raw = Scanner.create();
+      switch (k) {
+        case SyntaxKind.NoSubstitutionLiteral:
+          raw.setText('`' + s + '`');
+          break;
+        case SyntaxKind.TemplateHead:
+          raw.setText('`' + s + '${');
+          break;
+        case SyntaxKind.TemplateMiddle:
+          raw.setText('}' + s + '${');
+          break;
+        case SyntaxKind.TemplateTail:
+          raw.setText('}' + s + '`');
+          break;
+      }
+      let t = raw.scan();
+      if (t === SyntaxKind.CloseBracketToken) t = raw.reScanTemplateToken(false);
+      if (raw.isUnterminated()) {
+        raw.setText();
+        return sentinel;
+      }
+      let v: string | undefined;
+      switch (t) {
+        case SyntaxKind.NoSubstitutionLiteral:
+        case SyntaxKind.TemplateHead:
+        case SyntaxKind.TemplateMiddle:
+        case SyntaxKind.TemplateTail:
+          v = raw.getTokenValue();
+          break;
+      }
+      if (raw.scan() !== SyntaxKind.EndOfFileToken) {
+        raw.setText();
+        return sentinel;
+      }
+      raw.setText();
+      return v;
     }
   }
 }

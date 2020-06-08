@@ -439,7 +439,7 @@ namespace qnr {
         case SyntaxKind.BinaryExpression:
           return visitBinaryExpression(<BinaryExpression>node, /*needsDestructuringValue*/ true);
 
-        case SyntaxKind.NoSubstitutionTemplateLiteral:
+        case SyntaxKind.NoSubstitutionLiteral:
         case SyntaxKind.TemplateHead:
         case SyntaxKind.TemplateMiddle:
         case SyntaxKind.TemplateTail:
@@ -3579,7 +3579,7 @@ namespace qnr {
       //     "" + foo + bar
 
       // There is always atleast one templateSpan in this code path, since
-      // NoSubstitutionTemplateLiterals are directly emitted via emitLiteral()
+      // NoSubstitutionLiterals are directly emitted via emitLiteral()
       assert(node.templateSpans.length !== 0);
 
       return node.head.text.length !== 0 || node.templateSpans[0].literal.text.length === 0;

@@ -1119,7 +1119,7 @@ namespace qnr {
     return SyntaxKind.FirstTemplateToken <= k && k <= SyntaxKind.LastTemplateToken;
   }
 
-  export type TemplateLiteralToken = NoSubstitutionTemplateLiteral | TemplateHead | TemplateMiddle | TemplateTail;
+  export type TemplateLiteralToken = NoSubstitutionLiteral | TemplateHead | TemplateMiddle | TemplateTail;
   export function isTemplateLiteralToken(n: Node): n is TemplateLiteralToken {
     return isTemplateLiteralKind(n.kind);
   }
@@ -1392,7 +1392,7 @@ namespace qnr {
 
   export function isTemplateLiteral(n: Node): n is TemplateLiteral {
     const k = n.kind;
-    return k === SyntaxKind.TemplateExpression || k === SyntaxKind.NoSubstitutionTemplateLiteral;
+    return k === SyntaxKind.TemplateExpression || k === SyntaxKind.NoSubstitutionLiteral;
   }
 
   export function isLeftHandSideExpression(n: Node): n is LeftHandSideExpression {
@@ -1415,11 +1415,11 @@ namespace qnr {
       case SyntaxKind.ClassExpression:
       case SyntaxKind.FunctionExpression:
       case SyntaxKind.Identifier:
-      case SyntaxKind.RegularExpressionLiteral:
+      case SyntaxKind.RegexLiteral:
       case SyntaxKind.NumericLiteral:
       case SyntaxKind.BigIntLiteral:
       case SyntaxKind.StringLiteral:
-      case SyntaxKind.NoSubstitutionTemplateLiteral:
+      case SyntaxKind.NoSubstitutionLiteral:
       case SyntaxKind.TemplateExpression:
       case SyntaxKind.FalseKeyword:
       case SyntaxKind.NullKeyword:

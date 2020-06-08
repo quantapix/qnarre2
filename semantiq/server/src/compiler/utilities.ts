@@ -432,14 +432,14 @@ namespace qnr {
           return '"' + escapeText(node.text, Codes.doubleQuote) + '"';
         }
       }
-      case SyntaxKind.NoSubstitutionTemplateLiteral:
+      case SyntaxKind.NoSubstitutionLiteral:
       case SyntaxKind.TemplateHead:
       case SyntaxKind.TemplateMiddle:
       case SyntaxKind.TemplateTail: {
         const escapeText = neverAsciiEscape || getEmitFlags(node) & EmitFlags.NoAsciiEscaping ? escapeString : escapeNonAsciiString;
         const rawText = (<TemplateLiteralLikeNode>node).rawText || escapeTemplateSubstitution(escapeText(node.text, Codes.backtick));
         switch (node.kind) {
-          case SyntaxKind.NoSubstitutionTemplateLiteral:
+          case SyntaxKind.NoSubstitutionLiteral:
             return '`' + rawText + '`';
           case SyntaxKind.TemplateHead:
             return '`' + rawText + '${';
@@ -452,7 +452,7 @@ namespace qnr {
       }
       case SyntaxKind.NumericLiteral:
       case SyntaxKind.BigIntLiteral:
-      case SyntaxKind.RegularExpressionLiteral:
+      case SyntaxKind.RegexLiteral:
         return node.text;
     }
 
@@ -662,14 +662,14 @@ namespace qnr {
     return name.kind === SyntaxKind.ComputedPropertyName && !StringLiteral.orNumericLiteralLike(name.expression);
   }
 
-  export function getTextOfPropertyName(name: PropertyName | NoSubstitutionTemplateLiteral): __String {
+  export function getTextOfPropertyName(name: PropertyName | NoSubstitutionLiteral): __String {
     switch (name.kind) {
       case SyntaxKind.Identifier:
       case SyntaxKind.PrivateIdentifier:
         return name.escapedText;
       case SyntaxKind.StringLiteral:
       case SyntaxKind.NumericLiteral:
-      case SyntaxKind.NoSubstitutionTemplateLiteral:
+      case SyntaxKind.NoSubstitutionLiteral:
         return escapeLeadingUnderscores(name.text);
       case SyntaxKind.ComputedPropertyName:
         if (StringLiteral.orNumericLiteralLike(name.expression)) return escapeLeadingUnderscores(name.expression.text);
@@ -762,8 +762,9 @@ namespace qnr {
     };
   }
 
-  export function getSpanOfTokenAtPosition(sourceFile: SourceFile, pos: number): TextSpan {
-    const scanner = Scanner.create(true, sourceFile.languageVariant, sourceFile.text, /*onError:*/ undefined, pos);
+  export function getSpanOfTokenAtPosition(s: SourceFile, pos: number): TextSpan {
+    const scanner = Scanner.create(true, s.languageVariant);
+    scanner.setText(s.text, pos);
     scanner.scan();
     const start = scanner.getTokenPos();
     return TextSpan.from(start, scanner.getTextPos());
@@ -1444,7 +1445,7 @@ namespace qnr {
       case SyntaxKind.NullKeyword:
       case SyntaxKind.TrueKeyword:
       case SyntaxKind.FalseKeyword:
-      case SyntaxKind.RegularExpressionLiteral:
+      case SyntaxKind.RegexLiteral:
       case SyntaxKind.ArrayLiteralExpression:
       case SyntaxKind.ObjectLiteralExpression:
       case SyntaxKind.PropertyAccessExpression:
@@ -1489,7 +1490,7 @@ namespace qnr {
       case SyntaxKind.NumericLiteral:
       case SyntaxKind.BigIntLiteral:
       case SyntaxKind.StringLiteral:
-      case SyntaxKind.NoSubstitutionTemplateLiteral:
+      case SyntaxKind.NoSubstitutionLiteral:
       case SyntaxKind.ThisKeyword:
         return isInExpressionContext(node);
       default:
@@ -2399,7 +2400,7 @@ namespace qnr {
     const parent = name.parent;
     switch (name.kind) {
       case SyntaxKind.StringLiteral:
-      case SyntaxKind.NoSubstitutionTemplateLiteral:
+      case SyntaxKind.NoSubstitutionLiteral:
       case SyntaxKind.NumericLiteral:
         if (ComputedPropertyName.kind(parent)) return parent.parent;
       // falls through
@@ -2748,7 +2749,7 @@ namespace qnr {
     switch (node.kind) {
       case SyntaxKind.Identifier:
       case SyntaxKind.StringLiteral:
-      case SyntaxKind.NoSubstitutionTemplateLiteral:
+      case SyntaxKind.NoSubstitutionLiteral:
       case SyntaxKind.NumericLiteral:
         return true;
       default:
@@ -2960,8 +2961,8 @@ namespace qnr {
       case SyntaxKind.JsxElement:
       case SyntaxKind.JsxSelfClosingElement:
       case SyntaxKind.JsxFragment:
-      case SyntaxKind.RegularExpressionLiteral:
-      case SyntaxKind.NoSubstitutionTemplateLiteral:
+      case SyntaxKind.RegexLiteral:
+      case SyntaxKind.NoSubstitutionLiteral:
       case SyntaxKind.TemplateExpression:
       case SyntaxKind.ParenthesizedExpression:
       case SyntaxKind.OmittedExpression:
@@ -3103,7 +3104,7 @@ namespace qnr {
   }
 
   export function hasInvalidEscape(template: TemplateLiteral): boolean {
-    return template && !!(NoSubstitutionTemplateLiteral.kind(template) ? template.templateFlags : template.head.templateFlags || some(template.templateSpans, (span) => !!span.literal.templateFlags));
+    return template && !!(NoSubstitutionLiteral.kind(template) ? template.templateFlags : template.head.templateFlags || some(template.templateSpans, (span) => !!span.literal.templateFlags));
   }
 
   // This consists of the first 19 unprintable ASCII characters, canonical escapes, lineSeparator,
