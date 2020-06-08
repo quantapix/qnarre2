@@ -188,11 +188,11 @@ namespace qnr {
     reScanGreaterToken(): SyntaxKind;
     reScanJsxAttributeValue(): SyntaxKind;
     reScanJsxToken(): JsxTokenSyntaxKind;
-    reScanLessThanToken(): SyntaxKind;
+    reScanLessToken(): SyntaxKind;
     reScanQuestionToken(): SyntaxKind;
     reScanSlashToken(): SyntaxKind;
-    reScanTemplateHeadOrNoSubstitutionTemplate(): SyntaxKind;
-    reScanTemplateToken(isTagged: boolean): SyntaxKind;
+    reScanHeadOrNoSubstTemplate(): SyntaxKind;
+    reScanTemplateToken(tagged: boolean): SyntaxKind;
     tryScan<T>(cb: () => T): T;
     setInJSDocType(inType: boolean): void;
     lookAhead<T>(cb: () => T): T;
@@ -208,7 +208,6 @@ namespace qnr {
       paragraphSeparator = 0x2029,
       nextLine = 0x0085,
 
-      // Unicode 3.0 space characters
       space = 0x0020, // " "
       nonBreakingSpace = 0x00a0, //
       enQuad = 0x2000,
@@ -339,20 +338,22 @@ namespace qnr {
     }
 
     export function isWhiteSpaceSingleLine(c: number) {
-      return (
-        c === Codes.space ||
-        c === Codes.tab ||
-        c === Codes.verticalTab ||
-        c === Codes.formFeed ||
-        c === Codes.nonBreakingSpace ||
-        c === Codes.nextLine ||
-        c === Codes.ogham ||
-        (c >= Codes.enQuad && c <= Codes.zeroWidthSpace) ||
-        c === Codes.narrowNoBreakSpace ||
-        c === Codes.mathematicalSpace ||
-        c === Codes.ideographicSpace ||
-        c === Codes.byteOrderMark
-      );
+      switch (c) {
+        case Codes.space:
+        case Codes.tab:
+        case Codes.verticalTab:
+        case Codes.formFeed:
+        case Codes.nonBreakingSpace:
+        case Codes.nextLine:
+        case Codes.ogham:
+        case Codes.narrowNoBreakSpace:
+        case Codes.mathematicalSpace:
+        case Codes.ideographicSpace:
+        case Codes.byteOrderMark:
+          return true;
+        default:
+          return c >= Codes.enQuad && c <= Codes.zeroWidthSpace;
+      }
     }
 
     export function isWhiteSpaceLike(c: number) {
@@ -422,7 +423,7 @@ namespace qnr {
       return true;
     }
 
-    function couldStartTrivia(s: string, pos: number) {
+    export function couldStartTrivia(s: string, pos: number) {
       const c = s.charCodeAt(pos);
       switch (c) {
         case Codes.carriageReturn:
@@ -432,7 +433,6 @@ namespace qnr {
         case Codes.formFeed:
         case Codes.space:
         case Codes.slash:
-        // falls through
         case Codes.lessThan:
         case Codes.bar:
         case Codes.equals:
@@ -902,10 +902,10 @@ namespace qnr {
         reScanGreaterToken,
         reScanJsxAttributeValue,
         reScanJsxToken,
-        reScanLessThanToken,
+        reScanLessToken,
         reScanQuestionToken,
         reScanSlashToken,
-        reScanTemplateHeadOrNoSubstitutionTemplate,
+        reScanHeadOrNoSubstTemplate,
         reScanTemplateToken,
       };
       if (Debug.isDebugging) {
@@ -931,467 +931,6 @@ namespace qnr {
         token = SyntaxKind.Unknown;
         tokValue = undefined!;
         tokFlags = TokenFlags.None;
-      }
-      function error(m: DiagnosticMessage): void;
-      function error(m: DiagnosticMessage, errPos: number, length: number): void;
-      function error(m: DiagnosticMessage, errPos: number = pos, length?: number): void {
-        if (onError) {
-          const p = pos;
-          pos = errPos;
-          onError(m, length ?? 0);
-          pos = p;
-        }
-      }
-      function scanNumberFragment() {
-        let r = '';
-        let s = pos;
-        let sep = false;
-        let prev = false;
-        while (true) {
-          const c = text.charCodeAt(pos);
-          if (c === Codes._) {
-            tokFlags |= TokenFlags.ContainsSeparator;
-            if (sep) {
-              sep = false;
-              prev = true;
-              r += text.substring(s, pos);
-            } else if (prev) {
-              error(Diagnostics.Multiple_consecutive_numeric_separators_are_not_permitted, pos, 1);
-            } else {
-              error(Diagnostics.Numeric_separators_are_not_allowed_here, pos, 1);
-            }
-            pos++;
-            s = pos;
-            continue;
-          }
-          if (isDigit(c)) {
-            sep = true;
-            prev = false;
-            pos++;
-            continue;
-          }
-          break;
-        }
-        if (text.charCodeAt(pos - 1) === Codes._) {
-          error(Diagnostics.Numeric_separators_are_not_allowed_here, pos - 1, 1);
-        }
-        return r + text.substring(s, pos);
-      }
-      function checkBigIntSuffix(): SyntaxKind {
-        if (text.charCodeAt(pos) === Codes.n) {
-          tokValue += 'n';
-          if (tokFlags & TokenFlags.BinaryOrOctalSpecifier) tokValue = parsePseudoBigInt(tokValue) + 'n';
-          pos++;
-          return SyntaxKind.BigIntLiteral;
-        } else {
-          const v =
-            tokFlags & TokenFlags.BinarySpecifier
-              ? parseInt(tokValue.slice(2), 2) // skip "0b"
-              : tokFlags & TokenFlags.OctalSpecifier
-              ? parseInt(tokValue.slice(2), 8) // skip "0o"
-              : +tokValue;
-          tokValue = '' + v;
-          return SyntaxKind.NumericLiteral;
-        }
-      }
-      function scanIdentifierParts() {
-        let r = '';
-        let s = pos;
-        while (pos < end) {
-          let c = text.codePointAt(pos)!;
-          if (isIdentifierPart(c)) {
-            pos += charSize(c);
-          } else if (c === Codes.backslash) {
-            c = peekExtendedEscape();
-            if (c >= 0 && isIdentifierPart(c)) {
-              pos += 3;
-              tokFlags |= TokenFlags.ExtendedEscape;
-              r += scanExtendedEscape();
-              s = pos;
-              continue;
-            }
-            c = peekUnicodeEscape();
-            if (!(c >= 0 && isIdentifierPart(c))) break;
-            tokFlags |= TokenFlags.UnicodeEscape;
-            r += text.substring(s, pos);
-            r += String.fromCodePoint(c);
-            pos += 6;
-            s = pos;
-          } else break;
-        }
-        r += text.substring(s, pos);
-        return r;
-      }
-      function checkForIdentifierStartAfterNumericLiteral(start: number, isScientific?: boolean) {
-        if (!isIdentifierStart(text.codePointAt(pos)!)) return;
-        const s = pos;
-        const l = scanIdentifierParts().length;
-        if (l === 1 && text[s] === 'n') {
-          if (isScientific) {
-            error(Diagnostics.A_bigint_literal_cannot_use_exponential_notation, start, s - start + 1);
-          } else {
-            error(Diagnostics.A_bigint_literal_must_be_an_integer, start, s - start + 1);
-          }
-        } else {
-          error(Diagnostics.An_identifier_or_keyword_cannot_immediately_follow_a_numeric_literal, s, l);
-          pos = s;
-        }
-      }
-      function scanNumber(): { type: SyntaxKind; value: string } {
-        const s = pos;
-        const main = scanNumberFragment();
-        let decimal: string | undefined;
-        let scientific: string | undefined;
-        if (text.charCodeAt(pos) === Codes.dot) {
-          pos++;
-          decimal = scanNumberFragment();
-        }
-        let end = pos;
-        if (text.charCodeAt(pos) === Codes.E || text.charCodeAt(pos) === Codes.e) {
-          pos++;
-          tokFlags |= TokenFlags.Scientific;
-          if (text.charCodeAt(pos) === Codes.plus || text.charCodeAt(pos) === Codes.minus) pos++;
-          const pre = pos;
-          const final = scanNumberFragment();
-          if (!final) error(Diagnostics.Digit_expected);
-          else {
-            scientific = text.substring(end, pre) + final;
-            end = pos;
-          }
-        }
-        let r: string;
-        if (tokFlags & TokenFlags.ContainsSeparator) {
-          r = main;
-          if (decimal) r += '.' + decimal;
-          if (scientific) r += scientific;
-        } else r = text.substring(s, end);
-        if (decimal !== undefined || tokFlags & TokenFlags.Scientific) {
-          checkForIdentifierStartAfterNumericLiteral(s, decimal === undefined && !!(tokFlags & TokenFlags.Scientific));
-          return {
-            type: SyntaxKind.NumericLiteral,
-            value: '' + +r,
-          };
-        } else {
-          tokValue = r;
-          const type = checkBigIntSuffix();
-          checkForIdentifierStartAfterNumericLiteral(s);
-          return { type, value: tokValue };
-        }
-      }
-      function scanOctalDigits(): number {
-        const s = pos;
-        while (isOctalDigit(text.charCodeAt(pos))) {
-          pos++;
-        }
-        return +text.substring(s, pos);
-      }
-      function scanExactNumberOfHexDigits(count: number, canHaveSeparators: boolean) {
-        const v = scanHexDigits(/*minCount*/ count, /*scanAsManyAsPossible*/ false, canHaveSeparators);
-        return v ? parseInt(v, 16) : -1;
-      }
-      function scanMinimumNumberOfHexDigits(count: number, canHaveSeparators: boolean) {
-        return scanHexDigits(/*minCount*/ count, /*scanAsManyAsPossible*/ true, canHaveSeparators);
-      }
-      function scanHexDigits(minCount: number, scanAsManyAsPossible: boolean, canHaveSeparators: boolean): string {
-        let cs = [] as number[];
-        let sep = false;
-        let prev = false;
-        while (cs.length < minCount || scanAsManyAsPossible) {
-          let c = text.charCodeAt(pos);
-          if (canHaveSeparators && c === Codes._) {
-            tokFlags |= TokenFlags.ContainsSeparator;
-            if (sep) {
-              sep = false;
-              prev = true;
-            } else if (prev) {
-              error(Diagnostics.Multiple_consecutive_numeric_separators_are_not_permitted, pos, 1);
-            } else {
-              error(Diagnostics.Numeric_separators_are_not_allowed_here, pos, 1);
-            }
-            pos++;
-            continue;
-          }
-          sep = canHaveSeparators;
-          if (c >= Codes.A && c <= Codes.F) c += Codes.a - Codes.A;
-          else if (!((c >= Codes._0 && c <= Codes._9) || (c >= Codes.a && c <= Codes.f))) break;
-          cs.push(c);
-          pos++;
-          prev = false;
-        }
-        if (cs.length < minCount) cs = [];
-        if (text.charCodeAt(pos - 1) === Codes._) {
-          error(Diagnostics.Numeric_separators_are_not_allowed_here, pos - 1, 1);
-        }
-        return String.fromCharCode(...cs);
-      }
-      function scanString(jsxAttributeString = false) {
-        let r = '';
-        const quote = text.charCodeAt(pos);
-        pos++;
-        let s = pos;
-        while (true) {
-          if (pos >= end) {
-            r += text.substring(s, pos);
-            tokFlags |= TokenFlags.Unterminated;
-            error(Diagnostics.Unterminated_string_literal);
-            break;
-          }
-          const c = text.charCodeAt(pos);
-          if (c === quote) {
-            r += text.substring(s, pos);
-            pos++;
-            break;
-          }
-          if (c === Codes.backslash && !jsxAttributeString) {
-            r += text.substring(s, pos);
-            r += scanEscapeSequence();
-            s = pos;
-            continue;
-          }
-          if (isLineBreak(c) && !jsxAttributeString) {
-            r += text.substring(s, pos);
-            tokFlags |= TokenFlags.Unterminated;
-            error(Diagnostics.Unterminated_string_literal);
-            break;
-          }
-          pos++;
-        }
-        return r;
-      }
-      function scanTemplateAndSetTokenValue(isTagged: boolean): SyntaxKind {
-        const backtick = text.charCodeAt(pos) === Codes.backtick;
-        pos++;
-        let s = pos;
-        let v = '';
-        let r: SyntaxKind;
-        while (true) {
-          if (pos >= end) {
-            v += text.substring(s, pos);
-            tokFlags |= TokenFlags.Unterminated;
-            error(Diagnostics.Unterminated_template_literal);
-            r = backtick ? SyntaxKind.NoSubstitutionTemplateLiteral : SyntaxKind.TemplateTail;
-            break;
-          }
-          const c = text.charCodeAt(pos);
-          // '`'
-          if (c === Codes.backtick) {
-            v += text.substring(s, pos);
-            pos++;
-            r = backtick ? SyntaxKind.NoSubstitutionTemplateLiteral : SyntaxKind.TemplateTail;
-            break;
-          }
-          // '${'
-          if (c === Codes.$ && pos + 1 < end && text.charCodeAt(pos + 1) === Codes.openBrace) {
-            v += text.substring(s, pos);
-            pos += 2;
-            r = backtick ? SyntaxKind.TemplateHead : SyntaxKind.TemplateMiddle;
-            break;
-          }
-          // Escape character
-          if (c === Codes.backslash) {
-            v += text.substring(s, pos);
-            v += scanEscapeSequence(isTagged);
-            s = pos;
-            continue;
-          }
-          // <CR><LF> and <CR> LineTerminatorSequences are normalized to <LF> for Template Values
-          if (c === Codes.carriageReturn) {
-            v += text.substring(s, pos);
-            pos++;
-            if (pos < end && text.charCodeAt(pos) === Codes.lineFeed) pos++;
-            v += '\n';
-            s = pos;
-            continue;
-          }
-          pos++;
-        }
-        assert(r !== undefined);
-        tokValue = v;
-        return r;
-      }
-      function scanEscapeSequence(isTagged?: boolean): string {
-        const s = pos;
-        pos++;
-        if (pos >= end) {
-          error(Diagnostics.Unexpected_end_of_text);
-          return '';
-        }
-        const c = text.charCodeAt(pos);
-        pos++;
-        switch (c) {
-          case Codes._0:
-            // '\01'
-            if (isTagged && pos < end && isDigit(text.charCodeAt(pos))) {
-              pos++;
-              tokFlags |= TokenFlags.ContainsInvalidEscape;
-              return text.substring(s, pos);
-            }
-            return '\0';
-          case Codes.b:
-            return '\b';
-          case Codes.t:
-            return '\t';
-          case Codes.n:
-            return '\n';
-          case Codes.v:
-            return '\v';
-          case Codes.f:
-            return '\f';
-          case Codes.r:
-            return '\r';
-          case Codes.singleQuote:
-            return "'";
-          case Codes.doubleQuote:
-            return '"';
-          case Codes.u:
-            if (isTagged) {
-              // '\u' or '\u0' or '\u00' or '\u000'
-              for (let p = pos; p < pos + 4; p++) {
-                if (p < end && !isHexDigit(text.charCodeAt(p)) && text.charCodeAt(p) !== Codes.openBrace) {
-                  pos = p;
-                  tokFlags |= TokenFlags.ContainsInvalidEscape;
-                  return text.substring(s, pos);
-                }
-              }
-            }
-            // '\u{DDDDDDDD}'
-            if (pos < end && text.charCodeAt(pos) === Codes.openBrace) {
-              pos++;
-              // '\u{'
-              if (isTagged && !isHexDigit(text.charCodeAt(pos))) {
-                tokFlags |= TokenFlags.ContainsInvalidEscape;
-                return text.substring(s, pos);
-              }
-              if (isTagged) {
-                const p = pos;
-                const vs = scanMinimumNumberOfHexDigits(1, /*canHaveSeparators*/ false);
-                const v = vs ? parseInt(vs, 16) : -1;
-                // '\u{Not Code Point' or '\u{CodePoint'
-                if (!isCodePoint(v) || text.charCodeAt(pos) !== Codes.closeBrace) {
-                  tokFlags |= TokenFlags.ContainsInvalidEscape;
-                  return text.substring(s, pos);
-                } else pos = p;
-              }
-              tokFlags |= TokenFlags.ExtendedEscape;
-              return scanExtendedEscape();
-            }
-            tokFlags |= TokenFlags.UnicodeEscape;
-            // '\uDDDD'
-            return scanHexadecimalEscape(/*numDigits*/ 4);
-          case Codes.x:
-            if (isTagged) {
-              if (!isHexDigit(text.charCodeAt(pos))) {
-                tokFlags |= TokenFlags.ContainsInvalidEscape;
-                return text.substring(s, pos);
-              } else if (!isHexDigit(text.charCodeAt(pos + 1))) {
-                pos++;
-                tokFlags |= TokenFlags.ContainsInvalidEscape;
-                return text.substring(s, pos);
-              }
-            }
-            // '\xDD'
-            return scanHexadecimalEscape(/*numDigits*/ 2);
-          case Codes.carriageReturn:
-            if (pos < end && text.charCodeAt(pos) === Codes.lineFeed) pos++;
-          // falls through
-          case Codes.lineFeed:
-          case Codes.lineSeparator:
-          case Codes.paragraphSeparator:
-            return '';
-          default:
-            return String.fromCharCode(c);
-        }
-      }
-      function scanHexadecimalEscape(numDigits: number) {
-        const v = scanExactNumberOfHexDigits(numDigits, /*canHaveSeparators*/ false);
-        if (v >= 0) return String.fromCharCode(v);
-        error(Diagnostics.Hexadecimal_digit_expected);
-        return '';
-      }
-      function scanExtendedEscape() {
-        const vs = scanMinimumNumberOfHexDigits(1, /*canHaveSeparators*/ false);
-        const v = vs ? parseInt(vs, 16) : -1;
-        let invalid = false;
-        if (v < 0) {
-          error(Diagnostics.Hexadecimal_digit_expected);
-          invalid = true;
-        } else if (v > 0x10ffff) {
-          error(Diagnostics.An_extended_Unicode_escape_value_must_be_between_0x0_and_0x10FFFF_inclusive);
-          invalid = true;
-        }
-        if (pos >= end) {
-          error(Diagnostics.Unexpected_end_of_text);
-          invalid = true;
-        } else if (text.charCodeAt(pos) === Codes.closeBrace) {
-          pos++;
-        } else {
-          error(Diagnostics.Unterminated_Unicode_escape_sequence);
-          invalid = true;
-        }
-        if (invalid) return '';
-        return String.fromCodePoint(v);
-      }
-      function peekUnicodeEscape() {
-        if (pos + 5 < end && text.charCodeAt(pos + 1) === Codes.u) {
-          const s = pos;
-          pos += 2;
-          const v = scanExactNumberOfHexDigits(4, /*canHaveSeparators*/ false);
-          pos = s;
-          return v;
-        }
-        return -1;
-      }
-      function peekExtendedEscape() {
-        if (text.codePointAt(pos + 1) === Codes.u && text.codePointAt(pos + 2) === Codes.openBrace) {
-          const s = pos;
-          pos += 3;
-          const vs = scanMinimumNumberOfHexDigits(1, /*canHaveSeparators*/ false);
-          const v = vs ? parseInt(vs, 16) : -1;
-          pos = s;
-          return v;
-        }
-        return -1;
-      }
-      function getIdentifierToken(): SyntaxKind.Identifier | KeywordSyntaxKind {
-        const l = tokValue.length;
-        if (l >= 2 && l <= 11) {
-          const c = tokValue.charCodeAt(0);
-          if (c >= Codes.a && c <= Codes.z) {
-            const w = strToKey.get(tokValue);
-            if (w !== undefined) return (token = w);
-          }
-        }
-        return (token = SyntaxKind.Identifier);
-      }
-      function scanBinaryOrOctalDigits(base: 2 | 8) {
-        let r = '';
-        let sep = false;
-        let prev = false;
-        while (true) {
-          const c = text.charCodeAt(pos);
-          if (c === Codes._) {
-            tokFlags |= TokenFlags.ContainsSeparator;
-            if (sep) {
-              sep = false;
-              prev = true;
-            } else if (prev) {
-              error(Diagnostics.Multiple_consecutive_numeric_separators_are_not_permitted, pos, 1);
-            } else {
-              error(Diagnostics.Numeric_separators_are_not_allowed_here, pos, 1);
-            }
-            pos++;
-            continue;
-          }
-          sep = true;
-          if (!isDigit(c) || c - Codes._0 >= base) break;
-          r += text[pos];
-          pos++;
-          prev = false;
-        }
-        if (text.charCodeAt(pos - 1) === Codes._) {
-          error(Diagnostics.Numeric_separators_are_not_allowed_here, pos - 1, 1);
-        }
-        return r;
       }
       function scan(): SyntaxKind {
         startPos = pos;
@@ -1461,7 +1000,7 @@ namespace qnr {
               tokValue = scanString();
               return (token = SyntaxKind.StringLiteral);
             case Codes.backtick:
-              return (token = scanTemplateAndSetTokenValue(/* isTagged */ false));
+              return (token = scanTemplateAndSetTokenValue(/* tagged */ false));
             case Codes.percent:
               if (text.charCodeAt(pos + 1) === Codes.equals) return (pos += 2), (token = SyntaxKind.PercentEqualsToken);
               pos++;
@@ -1557,37 +1096,37 @@ namespace qnr {
             case Codes._0:
               if (pos + 2 < end && (text.charCodeAt(pos + 1) === Codes.X || text.charCodeAt(pos + 1) === Codes.x)) {
                 pos += 2;
-                tokValue = scanMinimumNumberOfHexDigits(1, /*canHaveSeparators*/ true);
+                tokValue = scanHexDigits(1, true, true);
                 if (!tokValue) {
                   error(Diagnostics.Hexadecimal_digit_expected);
                   tokValue = '0';
                 }
                 tokValue = '0x' + tokValue;
                 tokFlags |= TokenFlags.HexSpecifier;
-                return (token = checkBigIntSuffix());
+                return (token = parseNumber());
               } else if (pos + 2 < end && (text.charCodeAt(pos + 1) === Codes.B || text.charCodeAt(pos + 1) === Codes.b)) {
                 pos += 2;
-                tokValue = scanBinaryOrOctalDigits(/* base */ 2);
+                tokValue = scanBinOrOctDigits(/* base */ 2);
                 if (!tokValue) {
                   error(Diagnostics.Binary_digit_expected);
                   tokValue = '0';
                 }
                 tokValue = '0b' + tokValue;
                 tokFlags |= TokenFlags.BinarySpecifier;
-                return (token = checkBigIntSuffix());
+                return (token = parseNumber());
               } else if (pos + 2 < end && (text.charCodeAt(pos + 1) === Codes.O || text.charCodeAt(pos + 1) === Codes.o)) {
                 pos += 2;
-                tokValue = scanBinaryOrOctalDigits(/* base */ 8);
+                tokValue = scanBinOrOctDigits(/* base */ 8);
                 if (!tokValue) {
                   error(Diagnostics.Octal_digit_expected);
                   tokValue = '0';
                 }
                 tokValue = '0o' + tokValue;
                 tokFlags |= TokenFlags.OctalSpecifier;
-                return (token = checkBigIntSuffix());
+                return (token = parseNumber());
               }
               if (pos + 1 < end && isOctalDigit(text.charCodeAt(pos + 1))) {
-                tokValue = '' + scanOctalDigits();
+                tokValue = '' + scanOctDigits();
                 tokFlags |= TokenFlags.Octal;
                 return (token = SyntaxKind.NumericLiteral);
               }
@@ -1690,19 +1229,19 @@ namespace qnr {
               pos++;
               return (token = SyntaxKind.AtToken);
             case Codes.backslash:
-              const c2 = peekExtendedEscape();
+              const c2 = peekExtEscape();
               if (c2 >= 0 && isIdentifierStart(c2)) {
                 pos += 3;
                 tokFlags |= TokenFlags.ExtendedEscape;
-                tokValue = scanExtendedEscape() + scanIdentifierParts();
-                return (token = getIdentifierToken());
+                tokValue = scanExtEscape() + scanIdentifierParts();
+                return (token = scanIdentifier());
               }
-              const c3 = peekUnicodeEscape();
+              const c3 = peekUniEscape();
               if (c3 >= 0 && isIdentifierStart(c3)) {
                 pos += 6;
                 tokFlags |= TokenFlags.UnicodeEscape;
                 tokValue = String.fromCharCode(c3) + scanIdentifierParts();
-                return (token = getIdentifierToken());
+                return (token = scanIdentifier());
               }
               error(Diagnostics.Invalid_character);
               pos++;
@@ -1730,7 +1269,7 @@ namespace qnr {
                 while (pos < end && isIdentifierPart((c = text.codePointAt(pos)!))) pos += charSize(c);
                 tokValue = text.substring(tokPos, pos);
                 if (c === Codes.backslash) tokValue += scanIdentifierParts();
-                return (token = getIdentifierToken());
+                return (token = scanIdentifier());
               } else if (isWhiteSpaceSingleLine(c)) {
                 pos += charSize(c);
                 continue;
@@ -1745,6 +1284,28 @@ namespace qnr {
           }
         }
       }
+      function scanRange<T>(start: number, length: number, cb: () => T): T {
+        const e = end;
+        const p = pos;
+        const sp = startPos;
+        const tp = tokPos;
+        const t = token;
+        const v = tokValue;
+        const f = tokFlags;
+        const d = directives;
+        setText(text, start, length);
+        const r = cb();
+        end = e;
+        pos = p;
+        startPos = sp;
+        tokPos = tp;
+        token = t;
+        tokValue = v;
+        tokFlags = f;
+        directives = d;
+        return r;
+      }
+
       function reScanGreaterToken(): SyntaxKind {
         if (token === SyntaxKind.GreaterThanToken) {
           if (text.charCodeAt(pos) === Codes.greaterThan) {
@@ -1763,11 +1324,18 @@ namespace qnr {
         }
         return token;
       }
+      function reScanLessToken(): SyntaxKind {
+        if (token === SyntaxKind.LessThan2Token) {
+          pos = tokPos + 1;
+          return (token = SyntaxKind.LessThanToken);
+        }
+        return token;
+      }
       function reScanSlashToken(): SyntaxKind {
         if (token === SyntaxKind.SlashToken || token === SyntaxKind.SlashEqualsToken) {
           let p = tokPos + 1;
-          let inEscape = false;
-          let inClass = false;
+          let esc = false;
+          let cls = false;
           while (true) {
             if (p >= end) {
               tokFlags |= TokenFlags.Unterminated;
@@ -1780,13 +1348,13 @@ namespace qnr {
               error(Diagnostics.Unterminated_regular_expression_literal);
               break;
             }
-            if (inEscape) inEscape = false;
-            else if (c === Codes.slash && !inClass) {
+            if (esc) esc = false;
+            else if (c === Codes.slash && !cls) {
               p++;
               break;
-            } else if (c === Codes.openBracket) inClass = true;
-            else if (c === Codes.backslash) inEscape = true;
-            else if (c === Codes.closeBracket) inClass = false;
+            } else if (c === Codes.openBracket) cls = true;
+            else if (c === Codes.backslash) esc = true;
+            else if (c === Codes.closeBracket) cls = false;
             p++;
           }
           while (p < end && isIdentifierPart(text.charCodeAt(p))) {
@@ -1798,13 +1366,489 @@ namespace qnr {
         }
         return token;
       }
-      function appendIfDirective(ds: CommentDirective[] | undefined, t: string, re: RegExp, line: number) {
-        const type = getDirectiveFromComment(t, re);
-        if (type === undefined) return ds;
-        return append(ds, { range: { pos: line, end: pos }, type });
+      function reScanQuestionToken(): SyntaxKind {
+        assert(token === SyntaxKind.Question2Token, "'reScanQuestionToken' should only be called on a '??'");
+        pos = tokPos + 1;
+        return (token = SyntaxKind.QuestionToken);
+      }
+      function reScanTemplateToken(tagged: boolean): SyntaxKind {
+        assert(token === SyntaxKind.CloseBraceToken, "'reScanTemplateToken' should only be called on a '}'");
+        pos = tokPos;
+        return (token = scanTemplateAndSetTokenValue(tagged));
+      }
+      function reScanHeadOrNoSubstTemplate(): SyntaxKind {
+        pos = tokPos;
+        return (token = scanTemplateAndSetTokenValue(true));
+      }
+      function reScanJsxToken(): JsxTokenSyntaxKind {
+        pos = tokPos = startPos;
+        return (token = scanJsxToken());
+      }
+      function reScanJsxAttributeValue(): SyntaxKind {
+        pos = tokPos = startPos;
+        return scanJsxAttributeValue();
       }
 
-      function getDirectiveFromComment(t: string, re: RegExp) {
+      function error(m: DiagnosticMessage): void;
+      function error(m: DiagnosticMessage, errPos: number, length: number): void;
+      function error(m: DiagnosticMessage, errPos: number = pos, length?: number): void {
+        if (onError) {
+          const p = pos;
+          pos = errPos;
+          onError(m, length ?? 0);
+          pos = p;
+        }
+      }
+      function speculate<T>(cb: () => T, isLookahead: boolean): T {
+        const p = pos;
+        const sp = startPos;
+        const tp = tokPos;
+        const t = token;
+        const v = tokValue;
+        const f = tokFlags;
+        const r = cb();
+        if (!r || isLookahead) {
+          pos = p;
+          startPos = sp;
+          tokPos = tp;
+          token = t;
+          tokValue = v;
+          tokFlags = f;
+        }
+        return r;
+      }
+      function scanIdentifier(): SyntaxKind.Identifier | KeywordSyntaxKind {
+        const l = tokValue.length;
+        if (l >= 2 && l <= 11) {
+          const c = tokValue.charCodeAt(0);
+          if (c >= Codes.a && c <= Codes.z) {
+            const w = strToKey.get(tokValue);
+            if (w !== undefined) return (token = w);
+          }
+        }
+        return (token = SyntaxKind.Identifier);
+      }
+      function peekUniEscape(): number {
+        if (pos + 5 < end && text.charCodeAt(pos + 1) === Codes.u) {
+          const s = pos;
+          pos += 2;
+          const vs = scanHexDigits(4, false);
+          const v = vs ? parseInt(vs, 16) : -1;
+          pos = s;
+          return v;
+        }
+        return -1;
+      }
+      function peekExtEscape(): number {
+        if (text.codePointAt(pos + 1) === Codes.u && text.codePointAt(pos + 2) === Codes.openBrace) {
+          const s = pos;
+          pos += 3;
+          const vs = scanHexDigits(1);
+          const v = vs ? parseInt(vs, 16) : -1;
+          pos = s;
+          return v;
+        }
+        return -1;
+      }
+      function scanIdentifierParts(): string {
+        let r = '';
+        let s = pos;
+        while (pos < end) {
+          let c = text.codePointAt(pos)!;
+          if (isIdentifierPart(c)) {
+            pos += charSize(c);
+          } else if (c === Codes.backslash) {
+            c = peekExtEscape();
+            if (c >= 0 && isIdentifierPart(c)) {
+              pos += 3;
+              tokFlags |= TokenFlags.ExtendedEscape;
+              r += scanExtEscape();
+              s = pos;
+              continue;
+            }
+            c = peekUniEscape();
+            if (!(c >= 0 && isIdentifierPart(c))) break;
+            tokFlags |= TokenFlags.UnicodeEscape;
+            r += text.substring(s, pos);
+            r += String.fromCodePoint(c);
+            pos += 6;
+            s = pos;
+          } else break;
+        }
+        r += text.substring(s, pos);
+        return r;
+      }
+      function scanNumber(): { type: SyntaxKind; value: string } {
+        const s = pos;
+        function scanFragment() {
+          let r = '';
+          let s = pos;
+          let sep = false;
+          let prev = false;
+          while (true) {
+            const c = text.charCodeAt(pos);
+            if (c === Codes._) {
+              tokFlags |= TokenFlags.ContainsSeparator;
+              if (sep) {
+                sep = false;
+                prev = true;
+                r += text.substring(s, pos);
+              } else if (prev) error(Diagnostics.Multiple_consecutive_numeric_separators_are_not_permitted, pos, 1);
+              else error(Diagnostics.Numeric_separators_are_not_allowed_here, pos, 1);
+              pos++;
+              s = pos;
+              continue;
+            }
+            if (isDigit(c)) {
+              sep = true;
+              prev = false;
+              pos++;
+              continue;
+            }
+            break;
+          }
+          if (text.charCodeAt(pos - 1) === Codes._) error(Diagnostics.Numeric_separators_are_not_allowed_here, pos - 1, 1);
+          return r + text.substring(s, pos);
+        }
+        let r = scanFragment();
+        let decimal: string | undefined;
+        let scientific: string | undefined;
+        if (text.charCodeAt(pos) === Codes.dot) {
+          pos++;
+          decimal = scanFragment();
+        }
+        let e = pos;
+        if (text.charCodeAt(pos) === Codes.E || text.charCodeAt(pos) === Codes.e) {
+          pos++;
+          tokFlags |= TokenFlags.Scientific;
+          if (text.charCodeAt(pos) === Codes.plus || text.charCodeAt(pos) === Codes.minus) pos++;
+          const p = pos;
+          const f = scanFragment();
+          if (!f) error(Diagnostics.Digit_expected);
+          else {
+            scientific = text.substring(e, p) + f;
+            e = pos;
+          }
+        }
+        if (tokFlags & TokenFlags.ContainsSeparator) {
+          if (decimal) r += '.' + decimal;
+          if (scientific) r += scientific;
+        } else r = text.substring(s, e);
+        function checkForIdentifier(scientific = false) {
+          if (!isIdentifierStart(text.codePointAt(pos)!)) return;
+          const p = pos;
+          const l = scanIdentifierParts().length;
+          if (l === 1 && text[p] === 'n') {
+            if (scientific) error(Diagnostics.A_bigint_literal_cannot_use_exponential_notation, s, p - s + 1);
+            else error(Diagnostics.A_bigint_literal_must_be_an_integer, s, p - s + 1);
+          } else {
+            error(Diagnostics.An_identifier_or_keyword_cannot_immediately_follow_a_numeric_literal, p, l);
+            pos = p;
+          }
+        }
+        if (decimal !== undefined || tokFlags & TokenFlags.Scientific) {
+          checkForIdentifier(decimal === undefined && !!(tokFlags & TokenFlags.Scientific));
+          return {
+            type: SyntaxKind.NumericLiteral,
+            value: '' + +r,
+          };
+        } else {
+          tokValue = r;
+          const type = parseNumber();
+          checkForIdentifier();
+          return { type, value: tokValue };
+        }
+      }
+      function parseNumber(): SyntaxKind {
+        if (text.charCodeAt(pos) === Codes.n) {
+          tokValue += 'n';
+          if (tokFlags & TokenFlags.BinaryOrOctalSpecifier) tokValue = parsePseudoBigInt(tokValue) + 'n';
+          pos++;
+          return SyntaxKind.BigIntLiteral;
+        } else {
+          const v =
+            tokFlags & TokenFlags.BinarySpecifier
+              ? parseInt(tokValue.slice(2), 2) // skip "0b"
+              : tokFlags & TokenFlags.OctalSpecifier
+              ? parseInt(tokValue.slice(2), 8) // skip "0o"
+              : +tokValue;
+          tokValue = '' + v;
+          return SyntaxKind.NumericLiteral;
+        }
+      }
+      function scanOctDigits(): number {
+        const s = pos;
+        while (isOctalDigit(text.charCodeAt(pos))) {
+          pos++;
+        }
+        return +text.substring(s, pos);
+      }
+      function scanHexDigits(min: number, greedy = true, seps = false): string {
+        let ds = [] as number[];
+        let sep = false;
+        let prev = false;
+        while (ds.length < min || greedy) {
+          let d = text.charCodeAt(pos);
+          if (seps && d === Codes._) {
+            tokFlags |= TokenFlags.ContainsSeparator;
+            if (sep) {
+              sep = false;
+              prev = true;
+            } else if (prev) error(Diagnostics.Multiple_consecutive_numeric_separators_are_not_permitted, pos, 1);
+            else error(Diagnostics.Numeric_separators_are_not_allowed_here, pos, 1);
+            pos++;
+            continue;
+          }
+          sep = seps;
+          if (d >= Codes.A && d <= Codes.F) d += Codes.a - Codes.A;
+          else if (!((d >= Codes._0 && d <= Codes._9) || (d >= Codes.a && d <= Codes.f))) break;
+          ds.push(d);
+          pos++;
+          prev = false;
+        }
+        if (ds.length < min) ds = [];
+        if (text.charCodeAt(pos - 1) === Codes._) error(Diagnostics.Numeric_separators_are_not_allowed_here, pos - 1, 1);
+        return String.fromCharCode(...ds);
+      }
+      function scanBinOrOctDigits(base: 2 | 8): string {
+        let r = '';
+        let sep = false;
+        let prev = false;
+        while (true) {
+          const c = text.charCodeAt(pos);
+          if (c === Codes._) {
+            tokFlags |= TokenFlags.ContainsSeparator;
+            if (sep) {
+              sep = false;
+              prev = true;
+            } else if (prev) error(Diagnostics.Multiple_consecutive_numeric_separators_are_not_permitted, pos, 1);
+            else error(Diagnostics.Numeric_separators_are_not_allowed_here, pos, 1);
+            pos++;
+            continue;
+          }
+          sep = true;
+          if (!isDigit(c) || c - Codes._0 >= base) break;
+          r += text[pos];
+          pos++;
+          prev = false;
+        }
+        if (text.charCodeAt(pos - 1) === Codes._) error(Diagnostics.Numeric_separators_are_not_allowed_here, pos - 1, 1);
+        return r;
+      }
+      function scanExtEscape(): string {
+        const vs = scanHexDigits(1);
+        const v = vs ? parseInt(vs, 16) : -1;
+        let e = false;
+        if (v < 0) {
+          error(Diagnostics.Hexadecimal_digit_expected);
+          e = true;
+        } else if (v > 0x10ffff) {
+          error(Diagnostics.An_extended_Unicode_escape_value_must_be_between_0x0_and_0x10FFFF_inclusive);
+          e = true;
+        }
+        if (pos >= end) {
+          error(Diagnostics.Unexpected_end_of_text);
+          e = true;
+        } else if (text.charCodeAt(pos) === Codes.closeBrace) {
+          pos++;
+        } else {
+          error(Diagnostics.Unterminated_Unicode_escape_sequence);
+          e = true;
+        }
+        if (e) return '';
+        return String.fromCodePoint(v);
+      }
+      function scanEscSequence(tagged?: boolean): string {
+        const s = pos;
+        pos++;
+        if (pos >= end) {
+          error(Diagnostics.Unexpected_end_of_text);
+          return '';
+        }
+        const c = text.charCodeAt(pos);
+        pos++;
+        function scanHexEscape(count: number) {
+          const vs = scanHexDigits(count, false);
+          const v = vs ? parseInt(vs, 16) : -1;
+          if (v >= 0) return String.fromCharCode(v);
+          error(Diagnostics.Hexadecimal_digit_expected);
+          return '';
+        }
+        switch (c) {
+          case Codes._0:
+            // '\01'
+            if (tagged && pos < end && isDigit(text.charCodeAt(pos))) {
+              pos++;
+              tokFlags |= TokenFlags.ContainsInvalidEscape;
+              return text.substring(s, pos);
+            }
+            return '\0';
+          case Codes.b:
+            return '\b';
+          case Codes.t:
+            return '\t';
+          case Codes.n:
+            return '\n';
+          case Codes.v:
+            return '\v';
+          case Codes.f:
+            return '\f';
+          case Codes.r:
+            return '\r';
+          case Codes.singleQuote:
+            return "'";
+          case Codes.doubleQuote:
+            return '"';
+          case Codes.u:
+            if (tagged) {
+              // '\u' or '\u0' or '\u00' or '\u000'
+              for (let p = pos; p < pos + 4; p++) {
+                if (p < end && !isHexDigit(text.charCodeAt(p)) && text.charCodeAt(p) !== Codes.openBrace) {
+                  pos = p;
+                  tokFlags |= TokenFlags.ContainsInvalidEscape;
+                  return text.substring(s, pos);
+                }
+              }
+            }
+            // '\u{DDDDDDDD}'
+            if (pos < end && text.charCodeAt(pos) === Codes.openBrace) {
+              pos++;
+              // '\u{'
+              if (tagged && !isHexDigit(text.charCodeAt(pos))) {
+                tokFlags |= TokenFlags.ContainsInvalidEscape;
+                return text.substring(s, pos);
+              }
+              if (tagged) {
+                const p = pos;
+                const vs = scanHexDigits(1);
+                const v = vs ? parseInt(vs, 16) : -1;
+                // '\u{Not Code Point' or '\u{CodePoint'
+                if (!isCodePoint(v) || text.charCodeAt(pos) !== Codes.closeBrace) {
+                  tokFlags |= TokenFlags.ContainsInvalidEscape;
+                  return text.substring(s, pos);
+                } else pos = p;
+              }
+              tokFlags |= TokenFlags.ExtendedEscape;
+              return scanExtEscape();
+            }
+            tokFlags |= TokenFlags.UnicodeEscape;
+            // '\uDDDD'
+            return scanHexEscape(/*numDigits*/ 4);
+          case Codes.x:
+            if (tagged) {
+              if (!isHexDigit(text.charCodeAt(pos))) {
+                tokFlags |= TokenFlags.ContainsInvalidEscape;
+                return text.substring(s, pos);
+              } else if (!isHexDigit(text.charCodeAt(pos + 1))) {
+                pos++;
+                tokFlags |= TokenFlags.ContainsInvalidEscape;
+                return text.substring(s, pos);
+              }
+            }
+            // '\xDD'
+            return scanHexEscape(/*numDigits*/ 2);
+          case Codes.carriageReturn:
+            if (pos < end && text.charCodeAt(pos) === Codes.lineFeed) pos++;
+          // falls through
+          case Codes.lineFeed:
+          case Codes.lineSeparator:
+          case Codes.paragraphSeparator:
+            return '';
+          default:
+            return String.fromCharCode(c);
+        }
+      }
+      function scanString(jsxAttr = false): string {
+        let r = '';
+        const quote = text.charCodeAt(pos);
+        pos++;
+        let s = pos;
+        while (true) {
+          if (pos >= end) {
+            r += text.substring(s, pos);
+            tokFlags |= TokenFlags.Unterminated;
+            error(Diagnostics.Unterminated_string_literal);
+            break;
+          }
+          const c = text.charCodeAt(pos);
+          if (c === quote) {
+            r += text.substring(s, pos);
+            pos++;
+            break;
+          }
+          if (c === Codes.backslash && !jsxAttr) {
+            r += text.substring(s, pos);
+            r += scanEscSequence();
+            s = pos;
+            continue;
+          }
+          if (isLineBreak(c) && !jsxAttr) {
+            r += text.substring(s, pos);
+            tokFlags |= TokenFlags.Unterminated;
+            error(Diagnostics.Unterminated_string_literal);
+            break;
+          }
+          pos++;
+        }
+        return r;
+      }
+      function scanTemplateAndSetTokenValue(tagged: boolean): SyntaxKind {
+        const backtick = text.charCodeAt(pos) === Codes.backtick;
+        pos++;
+        let s = pos;
+        let v = '';
+        let r: SyntaxKind;
+        while (true) {
+          if (pos >= end) {
+            v += text.substring(s, pos);
+            tokFlags |= TokenFlags.Unterminated;
+            error(Diagnostics.Unterminated_template_literal);
+            r = backtick ? SyntaxKind.NoSubstitutionTemplateLiteral : SyntaxKind.TemplateTail;
+            break;
+          }
+          const c = text.charCodeAt(pos);
+          // '`'
+          if (c === Codes.backtick) {
+            v += text.substring(s, pos);
+            pos++;
+            r = backtick ? SyntaxKind.NoSubstitutionTemplateLiteral : SyntaxKind.TemplateTail;
+            break;
+          }
+          // '${'
+          if (c === Codes.$ && pos + 1 < end && text.charCodeAt(pos + 1) === Codes.openBrace) {
+            v += text.substring(s, pos);
+            pos += 2;
+            r = backtick ? SyntaxKind.TemplateHead : SyntaxKind.TemplateMiddle;
+            break;
+          }
+          // Escape character
+          if (c === Codes.backslash) {
+            v += text.substring(s, pos);
+            v += scanEscSequence(tagged);
+            s = pos;
+            continue;
+          }
+          // <CR><LF> and <CR> LineTerminatorSequences are normalized to <LF> for Template Values
+          if (c === Codes.carriageReturn) {
+            v += text.substring(s, pos);
+            pos++;
+            if (pos < end && text.charCodeAt(pos) === Codes.lineFeed) pos++;
+            v += '\n';
+            s = pos;
+            continue;
+          }
+          pos++;
+        }
+        assert(r !== undefined);
+        tokValue = v;
+        return r;
+      }
+      function appendIfDirective(ds: CommentDirective[] | undefined, t: string, re: RegExp, line: number) {
+        const d = directiveFrom(t, re);
+        if (d === undefined) return ds;
+        return append(ds, { range: { pos: line, end: pos }, type: d });
+      }
+      function directiveFrom(t: string, re: RegExp) {
         const m = re.exec(t);
         if (!m) return;
         switch (m[1]) {
@@ -1815,37 +1859,6 @@ namespace qnr {
         }
         return;
       }
-
-      function reScanTemplateToken(isTagged: boolean): SyntaxKind {
-        assert(token === SyntaxKind.CloseBraceToken, "'reScanTemplateToken' should only be called on a '}'");
-        pos = tokPos;
-        return (token = scanTemplateAndSetTokenValue(isTagged));
-      }
-
-      function reScanTemplateHeadOrNoSubstitutionTemplate(): SyntaxKind {
-        pos = tokPos;
-        return (token = scanTemplateAndSetTokenValue(/* isTagged */ true));
-      }
-
-      function reScanJsxToken(): JsxTokenSyntaxKind {
-        pos = tokPos = startPos;
-        return (token = scanJsxToken());
-      }
-
-      function reScanLessThanToken(): SyntaxKind {
-        if (token === SyntaxKind.LessThan2Token) {
-          pos = tokPos + 1;
-          return (token = SyntaxKind.LessThanToken);
-        }
-        return token;
-      }
-
-      function reScanQuestionToken(): SyntaxKind {
-        assert(token === SyntaxKind.Question2Token, "'reScanQuestionToken' should only be called on a '??'");
-        pos = tokPos + 1;
-        return (token = SyntaxKind.QuestionToken);
-      }
-
       function scanJsxToken(): JsxTokenSyntaxKind {
         startPos = tokPos = pos;
         if (pos >= end) return (token = SyntaxKind.EndOfFileToken);
@@ -1886,7 +1899,6 @@ namespace qnr {
         tokValue = text.substring(startPos, p);
         return first === -1 ? SyntaxKind.JsxTextAllWhiteSpaces : SyntaxKind.JsxText;
       }
-
       function scanJsxIdentifier(): SyntaxKind {
         if (Token.identifierOrKeyword(token)) {
           while (pos < end) {
@@ -1903,24 +1915,17 @@ namespace qnr {
         }
         return token;
       }
-
       function scanJsxAttributeValue(): SyntaxKind {
         startPos = pos;
         switch (text.charCodeAt(pos)) {
           case Codes.doubleQuote:
           case Codes.singleQuote:
-            tokValue = scanString(/*jsxAttributeString*/ true);
+            tokValue = scanString(true);
             return (token = SyntaxKind.StringLiteral);
           default:
             return scan();
         }
       }
-
-      function reScanJsxAttributeValue(): SyntaxKind {
-        pos = tokPos = startPos;
-        return scanJsxAttributeValue();
-      }
-
       function scanJsDocToken(): JSDocSyntaxKind {
         startPos = tokPos = pos;
         tokFlags = TokenFlags.None;
@@ -1966,19 +1971,19 @@ namespace qnr {
             return (token = SyntaxKind.BacktickToken);
           case Codes.backslash:
             pos--;
-            const c2 = peekExtendedEscape();
+            const c2 = peekExtEscape();
             if (c2 >= 0 && isIdentifierStart(c2)) {
               pos += 3;
               tokFlags |= TokenFlags.ExtendedEscape;
-              tokValue = scanExtendedEscape() + scanIdentifierParts();
-              return (token = getIdentifierToken());
+              tokValue = scanExtEscape() + scanIdentifierParts();
+              return (token = scanIdentifier());
             }
-            const c3 = peekUnicodeEscape();
+            const c3 = peekUniEscape();
             if (c3 >= 0 && isIdentifierStart(c3)) {
               pos += 6;
               tokFlags |= TokenFlags.UnicodeEscape;
               tokValue = String.fromCharCode(c3) + scanIdentifierParts();
-              return (token = getIdentifierToken());
+              return (token = scanIdentifier());
             }
             pos++;
             return (token = SyntaxKind.Unknown);
@@ -1988,50 +1993,9 @@ namespace qnr {
           while ((pos < end && isIdentifierPart((c2 = text.codePointAt(pos)!))) || text.charCodeAt(pos) === Codes.minus) pos += charSize(c2);
           tokValue = text.substring(tokPos, pos);
           if (c2 === Codes.backslash) tokValue += scanIdentifierParts();
-          return (token = getIdentifierToken());
+          return (token = scanIdentifier());
         }
         return (token = SyntaxKind.Unknown);
-      }
-
-      function speculate<T>(cb: () => T, isLookahead: boolean): T {
-        const p = pos;
-        const sp = startPos;
-        const tp = tokPos;
-        const t = token;
-        const v = tokValue;
-        const f = tokFlags;
-        const r = cb();
-        if (!r || isLookahead) {
-          pos = p;
-          startPos = sp;
-          tokPos = tp;
-          token = t;
-          tokValue = v;
-          tokFlags = f;
-        }
-        return r;
-      }
-
-      function scanRange<T>(start: number, length: number, cb: () => T): T {
-        const e = end;
-        const p = pos;
-        const sp = startPos;
-        const tp = tokPos;
-        const t = token;
-        const v = tokValue;
-        const f = tokFlags;
-        const d = directives;
-        setText(text, start, length);
-        const r = cb();
-        end = e;
-        pos = p;
-        startPos = sp;
-        tokPos = tp;
-        token = t;
-        tokValue = v;
-        tokFlags = f;
-        directives = d;
-        return r;
       }
     }
   }

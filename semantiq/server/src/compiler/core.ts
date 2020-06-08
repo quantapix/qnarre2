@@ -761,14 +761,13 @@ namespace qnr {
     to: TArray,
     value: TValue
   ): [undefined, undefined] extends [TArray, TValue] ? TArray : NonNullable<TArray>[number][];
-  export function append<T>(to: T[], value: T | undefined): T[];
-  export function append<T>(to: T[] | undefined, value: T): T[];
-  export function append<T>(to: T[] | undefined, value: T | undefined): T[] | undefined;
-  export function append<T>(to: Push<T>, value: T | undefined): void;
-  export function append<T>(to: T[], value: T | undefined): T[] | undefined {
-    if (value === undefined) return to;
-    if (to === undefined) return [value];
-    to.push(value);
+  export function append<T>(to: T[], v?: T): T[];
+  export function append<T>(to: T[] | undefined, v: T): T[];
+  //export function append<T>(to: Push<T>, v?: T): Push<T>;
+  export function append<T>(to?: T[], v?: T): T[] | undefined {
+    if (v === undefined) return to;
+    if (to === undefined) return [v];
+    to.push(v);
     return to;
   }
 

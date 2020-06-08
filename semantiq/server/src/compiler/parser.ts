@@ -1303,12 +1303,12 @@ namespace qnr {
       return (currentToken = scanner.reScanTemplateToken(isTaggedTemplate));
     }
 
-    function reScanTemplateHeadOrNoSubstitutionTemplate(): SyntaxKind {
-      return (currentToken = scanner.reScanTemplateHeadOrNoSubstitutionTemplate());
+    function reScanHeadOrNoSubstTemplate(): SyntaxKind {
+      return (currentToken = scanner.reScanHeadOrNoSubstTemplate());
     }
 
-    function reScanLessThanToken(): SyntaxKind {
-      return (currentToken = scanner.reScanLessThanToken());
+    function reScanLessToken(): SyntaxKind {
+      return (currentToken = scanner.reScanLessToken());
     }
 
     function scanJsxIdentifier(): SyntaxKind {
@@ -2583,7 +2583,7 @@ namespace qnr {
 
     function parseTemplateHead(isTaggedTemplate: boolean): TemplateHead {
       if (isTaggedTemplate) {
-        reScanTemplateHeadOrNoSubstitutionTemplate();
+        reScanHeadOrNoSubstTemplate();
       }
       const fragment = parseLiteralLikeNode(token());
       assert(fragment.kind === SyntaxKind.TemplateHead, 'Template head has wrong token kind');
@@ -2644,7 +2644,7 @@ namespace qnr {
     function parseTypeReference(): TypeReferenceNode {
       const node = <TypeReferenceNode>createNode(SyntaxKind.TypeReference);
       node.typeName = parseEntityName(/*allowReservedWords*/ true, Diagnostics.Type_expected);
-      if (!scanner.hasPrecedingLineBreak() && reScanLessThanToken() === SyntaxKind.LessThanToken) {
+      if (!scanner.hasPrecedingLineBreak() && reScanLessToken() === SyntaxKind.LessThanToken) {
         node.typeArguments = parseBracketedList(ParsingContext.TypeArguments, parseType, SyntaxKind.LessThanToken, SyntaxKind.GreaterThanToken);
       }
       return finishNode(node);
@@ -3303,7 +3303,7 @@ namespace qnr {
       if (parseOptional(SyntaxKind.DotToken)) {
         node.qualifier = parseEntityName(/*allowReservedWords*/ true, Diagnostics.Type_expected);
       }
-      if (!scanner.hasPrecedingLineBreak() && reScanLessThanToken() === SyntaxKind.LessThanToken) {
+      if (!scanner.hasPrecedingLineBreak() && reScanLessToken() === SyntaxKind.LessThanToken) {
         node.typeArguments = parseBracketedList(ParsingContext.TypeArguments, parseType, SyntaxKind.LessThanToken, SyntaxKind.GreaterThanToken);
       }
       return finishNode(node);
@@ -5069,7 +5069,7 @@ namespace qnr {
       tagExpression.typeArguments = typeArguments;
       tagExpression.template =
         token() === SyntaxKind.NoSubstitutionTemplateLiteral
-          ? (reScanTemplateHeadOrNoSubstitutionTemplate(), <NoSubstitutionTemplateLiteral>parseLiteralNode())
+          ? (reScanHeadOrNoSubstTemplate(), <NoSubstitutionTemplateLiteral>parseLiteralNode())
           : parseTemplateExpression(/*isTaggedTemplate*/ true);
       if (questionDotToken || tag.flags & NodeFlags.OptionalChain) {
         tagExpression.flags |= NodeFlags.OptionalChain;
@@ -5139,7 +5139,7 @@ namespace qnr {
     }
 
     function parseTypeArgumentsInExpression() {
-      if (reScanLessThanToken() !== SyntaxKind.LessThanToken) {
+      if (reScanLessToken() !== SyntaxKind.LessThanToken) {
         return;
       }
       nextToken();
