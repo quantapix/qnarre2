@@ -103,7 +103,7 @@ namespace qnr {
         return (
           visitNodes(cbNode, cbNodes, node.decorators) ||
           visitNodes(cbNode, cbNodes, node.modifiers) ||
-          visitNode(cbNode, (<ParameterDeclaration>node).dotDotDotToken) ||
+          visitNode(cbNode, (<ParameterDeclaration>node).dot3Token) ||
           visitNode(cbNode, (<ParameterDeclaration>node).name) ||
           visitNode(cbNode, (<ParameterDeclaration>node).questionToken) ||
           visitNode(cbNode, (<ParameterDeclaration>node).type) ||
@@ -149,7 +149,7 @@ namespace qnr {
         return (
           visitNodes(cbNode, cbNodes, node.decorators) ||
           visitNodes(cbNode, cbNodes, node.modifiers) ||
-          visitNode(cbNode, (<BindingElement>node).dotDotDotToken) ||
+          visitNode(cbNode, (<BindingElement>node).dot3Token) ||
           visitNode(cbNode, (<BindingElement>node).propertyName) ||
           visitNode(cbNode, (<BindingElement>node).name) ||
           visitNode(cbNode, (<BindingElement>node).initializer)
@@ -237,7 +237,7 @@ namespace qnr {
         return visitNode(cbNode, (<LiteralTypeNode>node).literal);
       case SyntaxKind.NamedTupleMember:
         return (
-          visitNode(cbNode, (<NamedTupleMember>node).dotDotDotToken) ||
+          visitNode(cbNode, (<NamedTupleMember>node).dot3Token) ||
           visitNode(cbNode, (<NamedTupleMember>node).name) ||
           visitNode(cbNode, (<NamedTupleMember>node).questionToken) ||
           visitNode(cbNode, (<NamedTupleMember>node).type)
@@ -521,7 +521,7 @@ namespace qnr {
       case SyntaxKind.JsxSpreadAttribute:
         return visitNode(cbNode, (<JsxSpreadAttribute>node).expression);
       case SyntaxKind.JsxExpression:
-        return visitNode(cbNode, (node as JsxExpression).dotDotDotToken) || visitNode(cbNode, (node as JsxExpression).expression);
+        return visitNode(cbNode, (node as JsxExpression).dot3Token) || visitNode(cbNode, (node as JsxExpression).expression);
       case SyntaxKind.JsxClosingElement:
         return visitNode(cbNode, (<JsxClosingElement>node).tagName);
 
@@ -2858,7 +2858,7 @@ namespace qnr {
 
       node.decorators = parseDecorators();
       node.modifiers = parseModifiers();
-      node.dotDotDotToken = parseOptionalToken(SyntaxKind.Dot3Token);
+      node.dot3Token = parseOptionalToken(SyntaxKind.Dot3Token);
 
       // FormalParameter [Yield,Await]:
       //      BindingElement[?Yield,?Await]
@@ -3222,7 +3222,7 @@ namespace qnr {
     function parseTupleElementNameOrTupleElementType() {
       if (lookAhead(isTupleElementName)) {
         const node = <NamedTupleMember>createNode(SyntaxKind.NamedTupleMember);
-        node.dotDotDotToken = parseOptionalToken(SyntaxKind.Dot3Token);
+        node.dot3Token = parseOptionalToken(SyntaxKind.Dot3Token);
         node.name = parseIdentifierName();
         node.questionToken = parseOptionalToken(SyntaxKind.QuestionToken);
         parseExpected(SyntaxKind.ColonToken);
@@ -4860,7 +4860,7 @@ namespace qnr {
       }
 
       if (token() !== SyntaxKind.CloseBraceToken) {
-        node.dotDotDotToken = parseOptionalToken(SyntaxKind.Dot3Token);
+        node.dot3Token = parseOptionalToken(SyntaxKind.Dot3Token);
         // Only an AssignmentExpression is valid here per the JSX spec,
         // but we can unambiguously parse a comma sequence and provide
         // a better error message in grammar checking.
@@ -6100,7 +6100,7 @@ namespace qnr {
         return <OmittedExpression>createNode(SyntaxKind.OmittedExpression);
       }
       const node = <BindingElement>createNode(SyntaxKind.BindingElement);
-      node.dotDotDotToken = parseOptionalToken(SyntaxKind.Dot3Token);
+      node.dot3Token = parseOptionalToken(SyntaxKind.Dot3Token);
       node.name = parseIdentifierOrPattern();
       node.initializer = parseInitializer();
       return finishNode(node);
@@ -6108,7 +6108,7 @@ namespace qnr {
 
     function parseObjectBindingElement(): BindingElement {
       const node = <BindingElement>createNode(SyntaxKind.BindingElement);
-      node.dotDotDotToken = parseOptionalToken(SyntaxKind.Dot3Token);
+      node.dot3Token = parseOptionalToken(SyntaxKind.Dot3Token);
       const tokenIsIdentifier = isIdentifier();
       const propertyName = parsePropertyName();
       if (tokenIsIdentifier && token() !== SyntaxKind.ColonToken) {

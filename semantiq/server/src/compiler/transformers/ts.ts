@@ -1406,7 +1406,7 @@ namespace qnr {
           if (i === 0 && isIdentifier(parameter.name) && parameter.name.escapedText === 'this') {
             continue;
           }
-          if (parameter.dotDotDotToken) {
+          if (parameter.dot3Token) {
             expressions.push(serializeTypeNode(getRestParameterElementType(parameter.type)));
           } else {
             expressions.push(serializeTypeOfNode(parameter));
@@ -2052,7 +2052,7 @@ namespace qnr {
         node,
         /*decorators*/ undefined,
         /*modifiers*/ undefined,
-        node.dotDotDotToken,
+        node.dot3Token,
         visitNode(node.name, visitor, isBindingName),
         /*questionToken*/ undefined,
         /*type*/ undefined,
@@ -2235,7 +2235,7 @@ namespace qnr {
             /*asteriskToken*/ undefined,
             /*name*/ undefined,
             /*typeParameters*/ undefined,
-            [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, parameterName)],
+            [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, parameterName)],
             /*type*/ undefined,
             transformEnumBody(node, containerName)
           ),
@@ -2496,7 +2496,7 @@ namespace qnr {
             /*asteriskToken*/ undefined,
             /*name*/ undefined,
             /*typeParameters*/ undefined,
-            [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, parameterName)],
+            [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, parameterName)],
             /*type*/ undefined,
             transformModuleBody(node, containerName)
           ),

@@ -47,14 +47,14 @@ namespace qnr {
 
   export function walkUpBindingElementsAndPatterns(binding: BindingElement): VariableDeclaration | ParameterDeclaration {
     let n = binding.parent;
-    while (isBindingElement(n.parent)) {
+    while (BindingElement.kind(n.parent)) {
       n = n.parent.parent;
     }
     return n.parent;
   }
 
   function getCombinedFlags(n: Node, getFlags: (n: Node) => number): number {
-    if (isBindingElement(n)) {
+    if (BindingElement.kind(n)) {
       n = walkUpBindingElementsAndPatterns(n);
     }
     let flags = getFlags(n);
@@ -284,7 +284,7 @@ namespace qnr {
   function getAssignedName(n: Node): DeclarationName | undefined {
     if (!n.parent) {
       return;
-    } else if (isPropertyAssignment(n.parent) || isBindingElement(n.parent)) {
+    } else if (isPropertyAssignment(n.parent) || BindingElement.kind(n.parent)) {
       return n.parent.name;
     } else if (isBinaryExpression(n.parent) && n === n.parent.right) {
       if (isIdentifier(n.parent.left)) {
@@ -498,18 +498,6 @@ namespace qnr {
 
   export function isDecorator(n: Node): n is Decorator {
     return n.kind === SyntaxKind.Decorator;
-  }
-
-  export function isObjectBindingPattern(n: Node): n is ObjectBindingPattern {
-    return n.kind === SyntaxKind.ObjectBindingPattern;
-  }
-
-  export function isArrayBindingPattern(n: Node): n is ArrayBindingPattern {
-    return n.kind === SyntaxKind.ArrayBindingPattern;
-  }
-
-  export function isBindingElement(n: Node): n is BindingElement {
-    return n.kind === SyntaxKind.BindingElement;
   }
 
   export function isArrayLiteralExpression(n: Node): n is ArrayLiteralExpression {

@@ -44,10 +44,7 @@ namespace qnr {
      * @param node The SourceFile node.
      */
     function transformSourceFile(node: SourceFile) {
-      if (
-        node.isDeclarationFile ||
-        !(isEffectiveExternalModule(node, compilerOptions) || node.transformFlags & TransformFlags.ContainsDynamicImport)
-      ) {
+      if (node.isDeclarationFile || !(isEffectiveExternalModule(node, compilerOptions) || node.transformFlags & TransformFlags.ContainsDynamicImport)) {
         return node;
       }
 
@@ -86,8 +83,8 @@ namespace qnr {
         /*name*/ undefined,
         /*typeParameters*/ undefined,
         [
-          createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, exportFunction),
-          createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, contextObject),
+          createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, exportFunction),
+          createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, contextObject),
         ],
         /*type*/ undefined,
         moduleBodyBlock
@@ -220,17 +217,14 @@ namespace qnr {
       startLexicalEnvironment();
 
       // Add any prologue directives.
-      const ensureUseStrict =
-        getStrictOptionValue(compilerOptions, 'alwaysStrict') || (!compilerOptions.noImplicitUseStrict && isExternalModule(currentSourceFile));
+      const ensureUseStrict = getStrictOptionValue(compilerOptions, 'alwaysStrict') || (!compilerOptions.noImplicitUseStrict && isExternalModule(currentSourceFile));
       const statementOffset = addPrologue(statements, node.statements, ensureUseStrict, sourceElementVisitor);
 
       // var __moduleName = context_1 && context_1.id;
       statements.push(
         createVariableStatement(
           /*modifiers*/ undefined,
-          createVariableDeclarationList([
-            createVariableDeclaration('__moduleName', /*type*/ undefined, createLogicalAnd(contextObject, createPropertyAccess(contextObject, 'id'))),
-          ])
+          createVariableDeclarationList([createVariableDeclaration('__moduleName', /*type*/ undefined, createLogicalAnd(contextObject, createPropertyAccess(contextObject, 'id')))])
         )
       );
 
@@ -346,9 +340,7 @@ namespace qnr {
       statements.push(
         createVariableStatement(
           /*modifiers*/ undefined,
-          createVariableDeclarationList([
-            createVariableDeclaration(exportedNamesStorageRef, /*type*/ undefined, createObjectLiteral(exportedNames, /*multiline*/ true)),
-          ])
+          createVariableDeclarationList([createVariableDeclaration(exportedNamesStorageRef, /*type*/ undefined, createObjectLiteral(exportedNames, /*multiline*/ true))])
         )
       );
 
@@ -371,10 +363,7 @@ namespace qnr {
       const exports = createIdentifier('exports');
       let condition: Expression = createStrictInequality(n, createLiteral('default'));
       if (localNames) {
-        condition = createLogicalAnd(
-          condition,
-          createLogicalNot(createCall(createPropertyAccess(localNames, 'hasOwnProperty'), /*typeArguments*/ undefined, [n]))
-        );
+        condition = createLogicalAnd(condition, createLogicalNot(createCall(createPropertyAccess(localNames, 'hasOwnProperty'), /*typeArguments*/ undefined, [n])));
       }
 
       return createFunctionDeclaration(
@@ -383,23 +372,15 @@ namespace qnr {
         /*asteriskToken*/ undefined,
         exportStarFunction,
         /*typeParameters*/ undefined,
-        [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, m)],
+        [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, m)],
         /*type*/ undefined,
         createBlock(
           [
-            createVariableStatement(
-              /*modifiers*/ undefined,
-              createVariableDeclarationList([createVariableDeclaration(exports, /*type*/ undefined, createObjectLiteral([]))])
-            ),
+            createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([createVariableDeclaration(exports, /*type*/ undefined, createObjectLiteral([]))])),
             createForIn(
               createVariableDeclarationList([createVariableDeclaration(n, /*type*/ undefined)]),
               m,
-              createBlock([
-                setEmitFlags(
-                  createIf(condition, createExpressionStatement(createAssignment(createElementAccess(exports, n), createElementAccess(m, n)))),
-                  EmitFlags.SingleLine
-                ),
-              ])
+              createBlock([setEmitFlags(createIf(condition, createExpressionStatement(createAssignment(createElementAccess(exports, n), createElementAccess(m, n)))), EmitFlags.SingleLine)])
             ),
             createExpressionStatement(createCall(exportFunction, /*typeArguments*/ undefined, [exports])),
           ],
@@ -452,25 +433,12 @@ namespace qnr {
                   //  });
                   const properties: PropertyAssignment[] = [];
                   for (const e of entry.exportClause.elements) {
-                    properties.push(
-                      createPropertyAssignment(
-                        createLiteral(idText(e.name)),
-                        createElementAccess(parameterName, createLiteral(idText(e.propertyName || e.name)))
-                      )
-                    );
+                    properties.push(createPropertyAssignment(createLiteral(idText(e.name)), createElementAccess(parameterName, createLiteral(idText(e.propertyName || e.name)))));
                   }
 
-                  statements.push(
-                    createExpressionStatement(
-                      createCall(exportFunction, /*typeArguments*/ undefined, [createObjectLiteral(properties, /*multiline*/ true)])
-                    )
-                  );
+                  statements.push(createExpressionStatement(createCall(exportFunction, /*typeArguments*/ undefined, [createObjectLiteral(properties, /*multiline*/ true)])));
                 } else {
-                  statements.push(
-                    createExpressionStatement(
-                      createCall(exportFunction, /*typeArguments*/ undefined, [createLiteral(idText(entry.exportClause.name)), parameterName])
-                    )
-                  );
+                  statements.push(createExpressionStatement(createCall(exportFunction, /*typeArguments*/ undefined, [createLiteral(idText(entry.exportClause.name)), parameterName])));
                 }
               } else {
                 //  export * from 'foo'
@@ -490,7 +458,7 @@ namespace qnr {
             /*asteriskToken*/ undefined,
             /*name*/ undefined,
             /*typeParameters*/ undefined,
-            [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, parameterName)],
+            [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, parameterName)],
             /*type*/ undefined,
             createBlock(statements, /*multiLine*/ true)
           )
@@ -743,10 +711,7 @@ namespace qnr {
      */
     function shouldHoistVariableDeclarationList(node: VariableDeclarationList) {
       // hoist only non-block scoped declarations or block scoped declarations parented by source file
-      return (
-        (getEmitFlags(node) & EmitFlags.NoHoisting) === 0 &&
-        (enclosingBlockScopedContainer.kind === SyntaxKind.SourceFile || (getOriginalNode(node).flags & NodeFlags.BlockScoped) === 0)
-      );
+      return (getEmitFlags(node) & EmitFlags.NoHoisting) === 0 && (enclosingBlockScopedContainer.kind === SyntaxKind.SourceFile || (getOriginalNode(node).flags & NodeFlags.BlockScoped) === 0);
     }
 
     /**
@@ -928,11 +893,7 @@ namespace qnr {
      * @param exportSelf A value indicating whether to also export each VariableDeclaration of
      * `nodes` declaration list.
      */
-    function appendExportsOfVariableStatement(
-      statements: Statement[] | undefined,
-      node: VariableStatement,
-      exportSelf: boolean
-    ): Statement[] | undefined {
+    function appendExportsOfVariableStatement(statements: Statement[] | undefined, node: VariableStatement, exportSelf: boolean): Statement[] | undefined {
       if (moduleInfo.exportEquals) {
         return statements;
       }
@@ -956,11 +917,7 @@ namespace qnr {
      * @param decl The declaration whose exports are to be recorded.
      * @param exportSelf A value indicating whether to also export the declaration itself.
      */
-    function appendExportsOfBindingElement(
-      statements: Statement[] | undefined,
-      decl: VariableDeclaration | BindingElement,
-      exportSelf: boolean
-    ): Statement[] | undefined {
+    function appendExportsOfBindingElement(statements: Statement[] | undefined, decl: VariableDeclaration | BindingElement, exportSelf: boolean): Statement[] | undefined {
       if (moduleInfo.exportEquals) {
         return statements;
       }
@@ -993,10 +950,7 @@ namespace qnr {
      * appended.
      * @param decl The declaration whose exports are to be recorded.
      */
-    function appendExportsOfHoistedDeclaration(
-      statements: Statement[] | undefined,
-      decl: ClassDeclaration | FunctionDeclaration
-    ): Statement[] | undefined {
+    function appendExportsOfHoistedDeclaration(statements: Statement[] | undefined, decl: ClassDeclaration | FunctionDeclaration): Statement[] | undefined {
       if (moduleInfo.exportEquals) {
         return statements;
       }
@@ -1052,12 +1006,7 @@ namespace qnr {
      * @param expression The expression to export.
      * @param allowComments Whether to allow comments on the export.
      */
-    function appendExportStatement(
-      statements: Statement[] | undefined,
-      exportName: Identifier | StringLiteral,
-      expression: Expression,
-      allowComments?: boolean
-    ): Statement[] | undefined {
+    function appendExportStatement(statements: Statement[] | undefined, exportName: Identifier | StringLiteral, expression: Expression, allowComments?: boolean): Statement[] | undefined {
       statements = append(statements, createExportStatement(exportName, expression, allowComments));
       return statements;
     }
@@ -1263,11 +1212,7 @@ namespace qnr {
      * @param node The node to visit.
      */
     function visitDoStatement(node: DoStatement): VisitResult<Statement> {
-      return updateDo(
-        node,
-        visitNode(node.statement, nestedElementVisitor, isStatement, liftToBlock),
-        visitNode(node.expression, destructuringAndImportCallVisitor, isExpression)
-      );
+      return updateDo(node, visitNode(node.statement, nestedElementVisitor, isStatement, liftToBlock), visitNode(node.expression, destructuringAndImportCallVisitor, isExpression));
     }
 
     /**
@@ -1276,11 +1221,7 @@ namespace qnr {
      * @param node The node to visit.
      */
     function visitWhileStatement(node: WhileStatement): VisitResult<Statement> {
-      return updateWhile(
-        node,
-        visitNode(node.expression, destructuringAndImportCallVisitor, isExpression),
-        visitNode(node.statement, nestedElementVisitor, isStatement, liftToBlock)
-      );
+      return updateWhile(node, visitNode(node.expression, destructuringAndImportCallVisitor, isExpression), visitNode(node.statement, nestedElementVisitor, isStatement, liftToBlock));
     }
 
     /**
@@ -1298,11 +1239,7 @@ namespace qnr {
      * @param node The node to visit.
      */
     function visitWithStatement(node: WithStatement): VisitResult<Statement> {
-      return updateWith(
-        node,
-        visitNode(node.expression, destructuringAndImportCallVisitor, isExpression),
-        visitNode(node.statement, nestedElementVisitor, isStatement, liftToBlock)
-      );
+      return updateWith(node, visitNode(node.expression, destructuringAndImportCallVisitor, isExpression), visitNode(node.statement, nestedElementVisitor, isStatement, liftToBlock));
     }
 
     /**
@@ -1311,11 +1248,7 @@ namespace qnr {
      * @param node The node to visit.
      */
     function visitSwitchStatement(node: SwitchStatement): VisitResult<Statement> {
-      return updateSwitch(
-        node,
-        visitNode(node.expression, destructuringAndImportCallVisitor, isExpression),
-        visitNode(node.caseBlock, nestedElementVisitor, isCaseBlock)
-      );
+      return updateSwitch(node, visitNode(node.expression, destructuringAndImportCallVisitor, isExpression), visitNode(node.caseBlock, nestedElementVisitor, isCaseBlock));
     }
 
     /**
@@ -1339,11 +1272,7 @@ namespace qnr {
      * @param node The node to visit.
      */
     function visitCaseClause(node: CaseClause): VisitResult<CaseOrDefaultClause> {
-      return updateCaseClause(
-        node,
-        visitNode(node.expression, destructuringAndImportCallVisitor, isExpression),
-        visitNodes(node.statements, nestedElementVisitor, isStatement)
-      );
+      return updateCaseClause(node, visitNode(node.expression, destructuringAndImportCallVisitor, isExpression), visitNodes(node.statements, nestedElementVisitor, isStatement));
     }
 
     /**
@@ -1576,20 +1505,14 @@ namespace qnr {
         if (importDeclaration) {
           if (isImportClause(importDeclaration)) {
             return setTextRange(
-              createPropertyAssignment(
-                getSynthesizedClone(name),
-                createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent), createIdentifier('default'))
-              ),
+              createPropertyAssignment(getSynthesizedClone(name), createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent), createIdentifier('default'))),
               /*location*/ node
             );
           } else if (isImportSpecifier(importDeclaration)) {
             return setTextRange(
               createPropertyAssignment(
                 getSynthesizedClone(name),
-                createPropertyAccess(
-                  getGeneratedNameForNode(importDeclaration.parent.parent.parent),
-                  getSynthesizedClone(importDeclaration.propertyName || importDeclaration.name)
-                )
+                createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent.parent.parent), getSynthesizedClone(importDeclaration.propertyName || importDeclaration.name))
               ),
               /*location*/ node
             );
@@ -1645,16 +1568,10 @@ namespace qnr {
         const importDeclaration = resolver.getReferencedImportDeclaration(node);
         if (importDeclaration) {
           if (isImportClause(importDeclaration)) {
-            return setTextRange(
-              createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent), createIdentifier('default')),
-              /*location*/ node
-            );
+            return setTextRange(createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent), createIdentifier('default')), /*location*/ node);
           } else if (isImportSpecifier(importDeclaration)) {
             return setTextRange(
-              createPropertyAccess(
-                getGeneratedNameForNode(importDeclaration.parent.parent.parent),
-                getSynthesizedClone(importDeclaration.propertyName || importDeclaration.name)
-              ),
+              createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent.parent.parent), getSynthesizedClone(importDeclaration.propertyName || importDeclaration.name)),
               /*location*/ node
             );
           }
@@ -1678,13 +1595,7 @@ namespace qnr {
       // - We do not substitute identifiers that were originally the name of an enum or
       //   namespace due to how they are transformed in TypeScript.
       // - We only substitute identifiers that are exported at the top level.
-      if (
-        isAssignmentOperator(node.operatorToken.kind) &&
-        isIdentifier(node.left) &&
-        !isGeneratedIdentifier(node.left) &&
-        !isLocalName(node.left) &&
-        !isDeclarationNameOfEnumOrNamespace(node.left)
-      ) {
+      if (isAssignmentOperator(node.operatorToken.kind) && isIdentifier(node.left) && !isGeneratedIdentifier(node.left) && !isLocalName(node.left) && !isDeclarationNameOfEnumOrNamespace(node.left)) {
         const exportedNames = getExports(node.left);
         if (exportedNames) {
           // For each additional export of the declaration, apply an export assignment.
@@ -1724,18 +1635,14 @@ namespace qnr {
       ) {
         const exportedNames = getExports(node.operand);
         if (exportedNames) {
-          let expression: Expression =
-            node.kind === SyntaxKind.PostfixUnaryExpression ? setTextRange(createPrefix(node.operator, node.operand), node) : node;
+          let expression: Expression = node.kind === SyntaxKind.PostfixUnaryExpression ? setTextRange(createPrefix(node.operator, node.operand), node) : node;
 
           for (const exportName of exportedNames) {
             expression = createExportExpression(exportName, preventSubstitution(expression));
           }
 
           if (node.kind === SyntaxKind.PostfixUnaryExpression) {
-            expression =
-              node.operator === SyntaxKind.Plus2Token
-                ? createSubtract(preventSubstitution(expression), createLiteral(1))
-                : createAdd(preventSubstitution(expression), createLiteral(1));
+            expression = node.operator === SyntaxKind.Plus2Token ? createSubtract(preventSubstitution(expression), createLiteral(1)) : createAdd(preventSubstitution(expression), createLiteral(1));
           }
 
           return expression;

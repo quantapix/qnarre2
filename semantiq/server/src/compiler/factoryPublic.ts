@@ -262,7 +262,7 @@ namespace qnr {
   export function createParameter(
     decorators: readonly Decorator[] | undefined,
     modifiers: readonly Modifier[] | undefined,
-    dotDotDotToken: Dot3Token | undefined,
+    dot3Token: Dot3Token | undefined,
     name: string | BindingName,
     questionToken?: QuestionToken,
     type?: TypeNode,
@@ -271,7 +271,7 @@ namespace qnr {
     const node = <ParameterDeclaration>Node.createSynthesized(SyntaxKind.Parameter);
     node.decorators = asNodeArray(decorators);
     node.modifiers = asNodeArray(modifiers);
-    node.dotDotDotToken = dotDotDotToken;
+    node.dot3Token = dot3Token;
     node.name = asName(name);
     node.questionToken = questionToken;
     node.type = type;
@@ -283,7 +283,7 @@ namespace qnr {
     node: ParameterDeclaration,
     decorators: readonly Decorator[] | undefined,
     modifiers: readonly Modifier[] | undefined,
-    dotDotDotToken: Dot3Token | undefined,
+    dot3Token: Dot3Token | undefined,
     name: string | BindingName,
     questionToken: QuestionToken | undefined,
     type: TypeNode | undefined,
@@ -291,12 +291,12 @@ namespace qnr {
   ) {
     return node.decorators !== decorators ||
       node.modifiers !== modifiers ||
-      node.dotDotDotToken !== dotDotDotToken ||
+      node.dot3Token !== dot3Token ||
       node.name !== name ||
       node.questionToken !== questionToken ||
       node.type !== type ||
       node.initializer !== initializer
-      ? updateNode(createParameter(decorators, modifiers, dotDotDotToken, name, questionToken, type, initializer), node)
+      ? updateNode(createParameter(decorators, modifiers, dot3Token, name, questionToken, type, initializer), node)
       : node;
   }
 
@@ -309,42 +309,6 @@ namespace qnr {
   export function updateDecorator(node: Decorator, expression: Expression) {
     return node.expression !== expression ? updateNode(createDecorator(expression), node) : node;
   }
-
-  export function createObjectBindingPattern(elements: readonly BindingElement[]) {
-    const node = <ObjectBindingPattern>Node.createSynthesized(SyntaxKind.ObjectBindingPattern);
-    node.elements = createNodeArray(elements);
-    return node;
-  }
-
-  export function updateObjectBindingPattern(node: ObjectBindingPattern, elements: readonly BindingElement[]) {
-    return node.elements !== elements ? updateNode(createObjectBindingPattern(elements), node) : node;
-  }
-
-  export function createArrayBindingPattern(elements: readonly ArrayBindingElement[]) {
-    const node = <ArrayBindingPattern>Node.createSynthesized(SyntaxKind.ArrayBindingPattern);
-    node.elements = createNodeArray(elements);
-    return node;
-  }
-
-  export function updateArrayBindingPattern(node: ArrayBindingPattern, elements: readonly ArrayBindingElement[]) {
-    return node.elements !== elements ? updateNode(createArrayBindingPattern(elements), node) : node;
-  }
-
-  export function createBindingElement(dotDotDotToken: Dot3Token | undefined, propertyName: string | PropertyName | undefined, name: string | BindingName, initializer?: Expression) {
-    const node = <BindingElement>Node.createSynthesized(SyntaxKind.BindingElement);
-    node.dotDotDotToken = dotDotDotToken;
-    node.propertyName = asName(propertyName);
-    node.name = asName(name);
-    node.initializer = initializer;
-    return node;
-  }
-
-  export function updateBindingElement(node: BindingElement, dotDotDotToken: Dot3Token | undefined, propertyName: PropertyName | undefined, name: BindingName, initializer: Expression | undefined) {
-    return node.propertyName !== propertyName || node.dotDotDotToken !== dotDotDotToken || node.name !== name || node.initializer !== initializer
-      ? updateNode(createBindingElement(dotDotDotToken, propertyName, name, initializer), node)
-      : node;
-  }
-
   // Expression
 
   export function createArrayLiteral(elements?: readonly Expression[], multiLine?: boolean) {
@@ -1887,15 +1851,15 @@ namespace qnr {
     return node.expression !== expression ? updateNode(createJsxSpreadAttribute(expression), node) : node;
   }
 
-  export function createJsxExpression(dotDotDotToken: Dot3Token | undefined, expression: Expression | undefined) {
+  export function createJsxExpression(dot3Token: Dot3Token | undefined, expression: Expression | undefined) {
     const node = <JsxExpression>Node.createSynthesized(SyntaxKind.JsxExpression);
-    node.dotDotDotToken = dotDotDotToken;
+    node.dot3Token = dot3Token;
     node.expression = expression;
     return node;
   }
 
   export function updateJsxExpression(node: JsxExpression, expression: Expression | undefined) {
-    return node.expression !== expression ? updateNode(createJsxExpression(node.dotDotDotToken, expression), node) : node;
+    return node.expression !== expression ? updateNode(createJsxExpression(node.dot3Token, expression), node) : node;
   }
 
   // Clauses

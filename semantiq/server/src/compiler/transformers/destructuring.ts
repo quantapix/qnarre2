@@ -67,10 +67,7 @@ namespace qnr {
     if (value) {
       value = visitNode(value, visitor, isExpression);
 
-      if (
-        (isIdentifier(value) && bindingOrAssignmentElementAssignsToName(node, value.escapedText)) ||
-        bindingOrAssignmentElementContainsNonLiteralComputedName(node)
-      ) {
+      if ((isIdentifier(value) && bindingOrAssignmentElementAssignsToName(node, value.escapedText)) || bindingOrAssignmentElementContainsNonLiteralComputedName(node)) {
         // If the right-hand value of the assignment is also an assignment target then
         // we need to cache the right-hand value.
         value = ensureIdentifier(flattenContext, value, /*reuseIdentifierExpressions*/ false, location);
@@ -197,11 +194,7 @@ namespace qnr {
 
     if (isVariableDeclaration(node)) {
       let initializer = getInitializerOfBindingOrAssignmentElement(node);
-      if (
-        initializer &&
-        ((isIdentifier(initializer) && bindingOrAssignmentElementAssignsToName(node, initializer.escapedText)) ||
-          bindingOrAssignmentElementContainsNonLiteralComputedName(node))
-      ) {
+      if (initializer && ((isIdentifier(initializer) && bindingOrAssignmentElementAssignsToName(node, initializer.escapedText)) || bindingOrAssignmentElementContainsNonLiteralComputedName(node))) {
         // If the right-hand value of the assignment is also an assignment target then
         // we need to cache the right-hand value.
         initializer = ensureIdentifier(flattenContext, initializer, /*reuseIdentifierExpressions*/ false, initializer);
@@ -225,11 +218,7 @@ namespace qnr {
       }
     }
     for (const { pendingExpressions, name, value, location, original } of pendingDeclarations) {
-      const variable = createVariableDeclaration(
-        name,
-        /*type*/ undefined,
-        pendingExpressions ? inlineExpressions(append(pendingExpressions, value)) : value
-      );
+      const variable = createVariableDeclaration(name, /*type*/ undefined, pendingExpressions ? inlineExpressions(append(pendingExpressions, value)) : value);
       variable.original = original;
       setTextRange(variable, location);
       aggregateTransformFlags(variable);
@@ -241,12 +230,7 @@ namespace qnr {
       pendingExpressions = append(pendingExpressions, value);
     }
 
-    function emitBindingOrAssignment(
-      target: BindingOrAssignmentElementTarget,
-      value: Expression,
-      location: TextRange | undefined,
-      original: Node | undefined
-    ) {
+    function emitBindingOrAssignment(target: BindingOrAssignmentElementTarget, value: Expression, location: TextRange | undefined, original: Node | undefined) {
       Debug.assertNode(target, isBindingName);
       if (pendingExpressions) {
         value = inlineExpressions(append(pendingExpressions, value));
@@ -266,13 +250,7 @@ namespace qnr {
    * @param skipInitializer An optional value indicating whether to include the initializer
    * for the element.
    */
-  function flattenBindingOrAssignmentElement(
-    flattenContext: FlattenContext,
-    element: BindingOrAssignmentElement,
-    value: Expression | undefined,
-    location: TextRange,
-    skipInitializer?: boolean
-  ) {
+  function flattenBindingOrAssignmentElement(flattenContext: FlattenContext, element: BindingOrAssignmentElement, value: Expression | undefined, location: TextRange, skipInitializer?: boolean) {
     if (!skipInitializer) {
       const initializer = visitNode(getInitializerOfBindingOrAssignmentElement(element), flattenContext.visitor, isExpression);
       if (initializer) {
@@ -328,10 +306,7 @@ namespace qnr {
         if (
           flattenContext.level >= FlattenLevel.ObjectRest &&
           !(element.transformFlags & (TransformFlags.ContainsRestOrSpread | TransformFlags.ContainsObjectRestOrSpread)) &&
-          !(
-            getTargetOfBindingOrAssignmentElement(element)!.transformFlags &
-            (TransformFlags.ContainsRestOrSpread | TransformFlags.ContainsObjectRestOrSpread)
-          ) &&
+          !(getTargetOfBindingOrAssignmentElement(element)!.transformFlags & (TransformFlags.ContainsRestOrSpread | TransformFlags.ContainsObjectRestOrSpread)) &&
           !ComputedPropertyName.kind(propertyName)
         ) {
           bindingElements = append(bindingElements, visitNode(element, flattenContext.visitor));
@@ -382,12 +357,7 @@ namespace qnr {
       // Read the elements of the iterable into an array
       value = ensureIdentifier(
         flattenContext,
-        createReadHelper(
-          flattenContext.context,
-          value,
-          numElements > 0 && getRestIndicatorOfBindingOrAssignmentElement(elements[numElements - 1]) ? undefined : numElements,
-          location
-        ),
+        createReadHelper(flattenContext.context, value, numElements > 0 && getRestIndicatorOfBindingOrAssignmentElement(elements[numElements - 1]) ? undefined : numElements, location),
         /*reuseIdentifierExpressions*/ false,
         location
       );
@@ -464,12 +434,7 @@ namespace qnr {
    */
   function createDestructuringPropertyAccess(flattenContext: FlattenContext, value: Expression, propertyName: PropertyName): LeftHandSideExpression {
     if (ComputedPropertyName.kind(propertyName)) {
-      const argumentExpression = ensureIdentifier(
-        flattenContext,
-        visitNode(propertyName.expression, flattenContext.visitor),
-        /*reuseIdentifierExpressions*/ false,
-        /*location*/ propertyName
-      );
+      const argumentExpression = ensureIdentifier(flattenContext, visitNode(propertyName.expression, flattenContext.visitor), /*reuseIdentifierExpressions*/ false, /*location*/ propertyName);
       return createElementAccess(value, argumentExpression);
     } else if (StringLiteral.orNumericLiteralLike(propertyName)) {
       const argumentExpression = getSynthesizedClone(propertyName);
@@ -509,7 +474,7 @@ namespace qnr {
 
   function makeArrayBindingPattern(elements: BindingOrAssignmentElement[]) {
     Debug.assertEachNode(elements, isArrayBindingElement);
-    return createArrayBindingPattern(<ArrayBindingElement[]>elements);
+    return ArrayBindingPattern.create(<ArrayBindingElement[]>elements);
   }
 
   function makeArrayAssignmentPattern(elements: BindingOrAssignmentElement[]) {
@@ -517,8 +482,8 @@ namespace qnr {
   }
 
   function makeObjectBindingPattern(elements: BindingOrAssignmentElement[]) {
-    Debug.assertEachNode(elements, isBindingElement);
-    return createObjectBindingPattern(<BindingElement[]>elements);
+    Debug.assertEachNode(elements, BindingElement.kind);
+    return ObjectBindingPattern.create(<BindingElement[]>elements);
   }
 
   function makeObjectAssignmentPattern(elements: BindingOrAssignmentElement[]) {
@@ -526,7 +491,7 @@ namespace qnr {
   }
 
   function makeBindingElement(name: Identifier) {
-    return createBindingElement(/*dotDotDotToken*/ undefined, /*propertyName*/ undefined, name);
+    return BindingElement.create(/*dot3Token*/ undefined, /*propertyName*/ undefined, name);
   }
 
   function makeAssignmentElement(name: Identifier) {
@@ -577,9 +542,6 @@ namespace qnr {
         }
       }
     }
-    return createCall(getUnscopedHelperName('__rest'), /*typeArguments*/ undefined, [
-      value,
-      setTextRange(createArrayLiteral(propertyNames), location),
-    ]);
+    return createCall(getUnscopedHelperName('__rest'), /*typeArguments*/ undefined, [value, setTextRange(createArrayLiteral(propertyNames), location)]);
   }
 }

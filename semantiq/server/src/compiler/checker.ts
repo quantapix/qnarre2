@@ -1438,7 +1438,7 @@ namespace qnr {
           // still might be illegal if declaration and usage are both binding elements (eg var [a = b, b = b] = [1, 2])
           const errorBindingElement = getAncestor(usage, SyntaxKind.BindingElement) as BindingElement;
           if (errorBindingElement) {
-            return findAncestor(errorBindingElement, isBindingElement) !== findAncestor(declaration, isBindingElement) || declaration.pos < errorBindingElement.pos;
+            return findAncestor(errorBindingElement, BindingElement.kind) !== findAncestor(declaration, BindingElement.kind) || declaration.pos < errorBindingElement.pos;
           }
           // or it might be illegal if usage happens before parent variable is declared (eg var [a] = a)
           return isBlockScopedNameDeclaredBeforeUse(getAncestor(declaration, SyntaxKind.VariableDeclaration) as Declaration, usage);
@@ -1635,7 +1635,7 @@ namespace qnr {
             if (isNullishCoalesce(node) || isOptionalChain(node)) {
               return false;
             }
-            if (isBindingElement(node) && node.dotDotDotToken && isObjectBindingPattern(node.parent)) {
+            if (BindingElement.kind(node) && node.dot3Token && ObjectBindingPattern.kind(node.parent)) {
               return false;
             }
             if (isTypeNode(node)) return false;
@@ -4971,7 +4971,7 @@ namespace qnr {
         const indexingParameter = createParameter(
           /*decorators*/ undefined,
           /*modifiers*/ undefined,
-          /*dotDotDotToken*/ undefined,
+          /*dot3Token*/ undefined,
           name,
           /*questionToken*/ undefined,
           indexerTypeNode,
@@ -5071,7 +5071,7 @@ namespace qnr {
             ? parameterDeclaration.modifiers.map(getSynthesizedClone)
             : undefined;
         const isRest = (parameterDeclaration && isRestParameter(parameterDeclaration)) || getCheckFlags(parameterSymbol) & CheckFlags.RestParameter;
-        const dotDotDotToken = isRest ? createToken(SyntaxKind.Dot3Token) : undefined;
+        const dot3Token = isRest ? createToken(SyntaxKind.Dot3Token) : undefined;
         const name = parameterDeclaration
           ? parameterDeclaration.name
             ? parameterDeclaration.name.kind === SyntaxKind.Identifier
@@ -5083,7 +5083,7 @@ namespace qnr {
           : symbolName(parameterSymbol);
         const isOptional = (parameterDeclaration && isOptionalParameter(parameterDeclaration)) || getCheckFlags(parameterSymbol) & CheckFlags.OptionalParameter;
         const questionToken = isOptional ? createToken(SyntaxKind.QuestionToken) : undefined;
-        const parameterNode = createParameter(/*decorators*/ undefined, modifiers, dotDotDotToken, name, questionToken, parameterTypeNode, /*initializer*/ undefined);
+        const parameterNode = createParameter(/*decorators*/ undefined, modifiers, dot3Token, name, questionToken, parameterTypeNode, /*initializer*/ undefined);
         context.approximateLength += symbolName(parameterSymbol).length + 3;
         return parameterNode;
 
@@ -5818,7 +5818,7 @@ namespace qnr {
           return visitEachChild(node, visitExistingNodeTreeSymbols, nullTransformationContext);
 
           function getEffectiveDotDotDotForParameter(p: ParameterDeclaration) {
-            return p.dotDotDotToken || (p.type && isJSDocVariadicType(p.type) ? createToken(SyntaxKind.Dot3Token) : undefined);
+            return p.dot3Token || (p.type && isJSDocVariadicType(p.type) ? createToken(SyntaxKind.Dot3Token) : undefined);
           }
 
           function rewriteModuleSpecifier(parent: ImportTypeNode, lit: StringLiteral) {
@@ -6897,7 +6897,7 @@ namespace qnr {
                         createParameter(
                           /*decorators*/ undefined,
                           /*modifiers*/ undefined,
-                          /*dotDotDotToken*/ undefined,
+                          /*dot3Token*/ undefined,
                           'arg',
                           /*questionToken*/ undefined,
                           isPrivate ? undefined : serializeTypeForDeclaration(context, getTypeOfSymbol(p), p, enclosingDeclaration, includePrivateSymbol, bundled)
@@ -7695,7 +7695,7 @@ namespace qnr {
 
       let type: Type | undefined;
       if (pattern.kind === SyntaxKind.ObjectBindingPattern) {
-        if (declaration.dotDotDotToken) {
+        if (declaration.dot3Token) {
           parentType = getReducedType(parentType);
           if (parentType.flags & TypeFlags.Unknown || !isValidSpreadType(parentType)) {
             error(declaration, Diagnostics.Rest_types_may_only_be_created_from_object_types);
@@ -7703,7 +7703,7 @@ namespace qnr {
           }
           const literalMembers: PropertyName[] = [];
           for (const element of pattern.elements) {
-            if (!element.dotDotDotToken) {
+            if (!element.dot3Token) {
               literalMembers.push(element.propertyName || (element.name as Identifier));
             }
           }
@@ -7721,7 +7721,7 @@ namespace qnr {
         // fact an iterable or array (depending on target language).
         const elementType = checkIteratedTypeOrElementType(IterationUse.Destructuring, parentType, undefinedType, pattern);
         const index = pattern.elements.indexOf(declaration);
-        if (declaration.dotDotDotToken) {
+        if (declaration.dot3Token) {
           // If the parent is a tuple type, the rest element has a tuple type of the
           // remaining tuple element types. Otherwise, the rest element has an array type with same
           // element type as the parent type.
@@ -7795,7 +7795,7 @@ namespace qnr {
 
       const isOptional =
         includeOptionality &&
-        ((isParameter(declaration) && isJSDocOptionalParameter(declaration)) || (!isBindingElement(declaration) && !isVariableDeclaration(declaration) && !!declaration.questionToken));
+        ((isParameter(declaration) && isJSDocOptionalParameter(declaration)) || (!BindingElement.kind(declaration) && !isVariableDeclaration(declaration) && !!declaration.questionToken));
 
       // Use type from type annotation if one is present
       const declaredType = tryGetTypeFromEffectiveTypeNode(declaration);
@@ -8210,7 +8210,7 @@ namespace qnr {
       let objectFlags = ObjectFlags.ObjectLiteral | ObjectFlags.ContainsObjectOrArrayLiteral;
       forEach(pattern.elements, (e) => {
         const name = e.propertyName || <Identifier>e.name;
-        if (e.dotDotDotToken) {
+        if (e.dot3Token) {
           stringIndexInfo = createIndexInfo(anyType, /*isReadonly*/ false);
           return;
         }
@@ -8241,7 +8241,7 @@ namespace qnr {
     function getTypeFromArrayBindingPattern(pattern: BindingPattern, includePatternInType: boolean, reportErrors: boolean): Type {
       const elements = pattern.elements;
       const lastElement = lastOrUndefined(elements);
-      const hasRestElement = !!(lastElement && lastElement.kind === SyntaxKind.BindingElement && lastElement.dotDotDotToken);
+      const hasRestElement = !!(lastElement && lastElement.kind === SyntaxKind.BindingElement && lastElement.dot3Token);
       if (elements.length === 0 || (elements.length === 1 && hasRestElement)) {
         return createIterableType(anyType);
       }
@@ -8292,7 +8292,7 @@ namespace qnr {
         }
 
         // always widen a 'unique symbol' type if the type was created for a different declaration.
-        if (type.flags & TypeFlags.UniqueESSymbol && (isBindingElement(declaration) || !declaration.type) && type.symbol !== getSymbolOfNode(declaration)) {
+        if (type.flags & TypeFlags.UniqueESSymbol && (BindingElement.kind(declaration) || !declaration.type) && type.symbol !== getSymbolOfNode(declaration)) {
           type = esSymbolType;
         }
 
@@ -8300,7 +8300,7 @@ namespace qnr {
       }
 
       // Rest parameters default to type any[], other parameters default to type any
-      type = isParameter(declaration) && declaration.dotDotDotToken ? anyArrayType : anyType;
+      type = isParameter(declaration) && declaration.dot3Token ? anyArrayType : anyType;
 
       // Report implicit any errors unless this is a private property within an ambient declaration
       if (reportErrors) {
@@ -8409,7 +8409,7 @@ namespace qnr {
         type = tryGetTypeFromEffectiveTypeNode(declaration) || checkExpressionForMutableLocation(declaration.name, CheckMode.Normal);
       } else if (isObjectLiteralMethod(declaration)) {
         type = tryGetTypeFromEffectiveTypeNode(declaration) || checkObjectLiteralMethod(declaration, CheckMode.Normal);
-      } else if (isParameter(declaration) || PropertyDeclaration.kind(declaration) || PropertySignature.kind(declaration) || isVariableDeclaration(declaration) || isBindingElement(declaration)) {
+      } else if (isParameter(declaration) || PropertyDeclaration.kind(declaration) || PropertySignature.kind(declaration) || isVariableDeclaration(declaration) || BindingElement.kind(declaration)) {
         type = getWidenedTypeForVariableLikeDeclaration(declaration, /*includeOptionality*/ true);
       }
       // getTypeOfSymbol dispatches some JS merges incorrectly because their symbol flags are not mutually exclusive.
@@ -11183,7 +11183,7 @@ namespace qnr {
       }
       const iife = getImmediatelyInvokedFunctionExpression(node.parent);
       if (iife) {
-        return !node.type && !node.dotDotDotToken && node.parent.parameters.indexOf(node) >= iife.arguments.length;
+        return !node.type && !node.dot3Token && node.parent.parameters.indexOf(node) >= iife.arguments.length;
       }
 
       return false;
@@ -11307,7 +11307,7 @@ namespace qnr {
             isOptionalJSDocParameterTag(param) ||
             param.initializer ||
             param.questionToken ||
-            param.dotDotDotToken ||
+            param.dot3Token ||
             (iife && parameters.length > iife.arguments.length && !type) ||
             isJSDocOptionalParameter(param);
           if (!isOptionalParameter) {
@@ -11735,7 +11735,7 @@ namespace qnr {
             }
             // When an 'infer T' declaration is immediately contained in a rest parameter
             // declaration, we infer an 'unknown[]' constraint.
-            else if (grandParent.kind === SyntaxKind.Parameter && (<ParameterDeclaration>grandParent).dotDotDotToken) {
+            else if (grandParent.kind === SyntaxKind.Parameter && (<ParameterDeclaration>grandParent).dot3Token) {
               inferences = append(inferences, createArrayType(unknownType));
             }
           }
@@ -12373,7 +12373,7 @@ namespace qnr {
     }
 
     function isTupleRestElement(node: TypeNode) {
-      return node.kind === SyntaxKind.RestType || (node.kind === SyntaxKind.NamedTupleMember && !!(node as NamedTupleMember).dotDotDotToken);
+      return node.kind === SyntaxKind.RestType || (node.kind === SyntaxKind.NamedTupleMember && !!(node as NamedTupleMember).dot3Token);
     }
 
     function isTupleOptionalElement(node: TypeNode) {
@@ -14209,7 +14209,7 @@ namespace qnr {
       const links = getNodeLinks(node);
       if (!links.resolvedType) {
         let type = getTypeFromTypeNode(node.type);
-        if (node.dotDotDotToken) {
+        if (node.dot3Token) {
           type = getElementTypeOfArrayType(type) || errorType;
         }
         if (node.questionToken && strictNullChecks) {
@@ -18867,7 +18867,7 @@ namespace qnr {
             errorOrSuggestion(noImplicitAny, declaration, Diagnostics.Parameter_has_a_name_but_no_type_Did_you_mean_0_Colon_1, newName, declarationNameToString(param.name));
             return;
           }
-          diagnostic = (<ParameterDeclaration>declaration).dotDotDotToken
+          diagnostic = (<ParameterDeclaration>declaration).dot3Token
             ? noImplicitAny
               ? Diagnostics.Rest_parameter_0_implicitly_has_an_any_type
               : Diagnostics.Rest_parameter_0_implicitly_has_an_any_type_but_a_better_type_may_be_inferred_from_usage
@@ -20339,7 +20339,7 @@ namespace qnr {
       const type =
         pattern.kind === SyntaxKind.ObjectBindingPattern
           ? getTypeOfDestructuredProperty(parentType, node.propertyName || <Identifier>node.name)
-          : !node.dotDotDotToken
+          : !node.dot3Token
           ? getTypeOfDestructuredArrayElement(parentType, pattern.elements.indexOf(node))
           : getTypeOfDestructuredSpreadExpression(parentType);
       return getTypeWithDefault(type, node.initializer!);
@@ -22087,7 +22087,7 @@ namespace qnr {
         isOuterVariable ||
         isSpreadDestructuringAssignmentTarget ||
         isModuleExports ||
-        isBindingElement(declaration) ||
+        BindingElement.kind(declaration) ||
         (type !== autoType &&
           type !== autoArrayType &&
           (!strictNullChecks || (type.flags & (TypeFlags.AnyOrUnknown | TypeFlags.Void)) !== 0 || isInTypeQuery(node) || node.parent.kind === SyntaxKind.ExportSpecifier)) ||
@@ -22692,7 +22692,7 @@ namespace qnr {
       if (iife && iife.arguments) {
         const args = getEffectiveCallArguments(iife);
         const indexOfParameter = func.parameters.indexOf(parameter);
-        if (parameter.dotDotDotToken) {
+        if (parameter.dot3Token) {
           return getSpreadArgumentType(args, indexOfParameter, args.length, anyType, /*context*/ undefined);
         }
         const links = getNodeLinks(iife);
@@ -22705,7 +22705,7 @@ namespace qnr {
       const contextualSignature = getContextualSignature(func);
       if (contextualSignature) {
         const index = func.parameters.indexOf(parameter) - (getThisParameter(func) ? 1 : 0);
-        return parameter.dotDotDotToken && lastOrUndefined(func.parameters) === parameter ? getRestTypeAtPosition(contextualSignature, index) : tryGetTypeAtPosition(contextualSignature, index);
+        return parameter.dot3Token && lastOrUndefined(func.parameters) === parameter ? getRestTypeAtPosition(contextualSignature, index) : tryGetTypeAtPosition(contextualSignature, index);
       }
     }
 
@@ -22809,7 +22809,7 @@ namespace qnr {
         if (isParameter(node.parent) && (inBindingInitializer || node.parent.initializer === node)) {
           return true;
         }
-        if (isBindingElement(node.parent) && node.parent.initializer === node) {
+        if (BindingElement.kind(node.parent) && node.parent.initializer === node) {
           inBindingInitializer = true;
         }
 
@@ -23459,7 +23459,7 @@ namespace qnr {
       let targetParameterCount = 0;
       for (; targetParameterCount < target.parameters.length; targetParameterCount++) {
         const param = target.parameters[targetParameterCount];
-        if (param.initializer || param.questionToken || param.dotDotDotToken || isJSDocOptionalParameter(param)) {
+        if (param.initializer || param.questionToken || param.dot3Token || isJSDocOptionalParameter(param)) {
           break;
         }
       }
@@ -24461,7 +24461,7 @@ namespace qnr {
       checkGrammarJsxExpression(node);
       if (node.expression) {
         const type = checkExpression(node.expression, checkMode);
-        if (node.dotDotDotToken && type !== anyType && !isArrayType(type)) {
+        if (node.dot3Token && type !== anyType && !isArrayType(type)) {
           error(node, Diagnostics.JSX_spread_child_must_be_an_array_type);
         }
         return type;
@@ -29434,7 +29434,7 @@ namespace qnr {
       const elementTypes = arity ? getTypeArguments(type).slice() : [];
       for (let i = arity; i < patternElements.length; i++) {
         const e = patternElements[i];
-        if (i < patternElements.length - 1 || !(e.kind === SyntaxKind.BindingElement && e.dotDotDotToken)) {
+        if (i < patternElements.length - 1 || !(e.kind === SyntaxKind.BindingElement && e.dot3Token)) {
           elementTypes.push(!isOmittedExpression(e) && hasDefaultValue(e) ? getTypeFromBindingElement(e, /*includePatternInType*/ false, /*reportErrors*/ false) : anyType);
           if (!isOmittedExpression(e) && !hasDefaultValue(e)) {
             reportImplicitAny(e, anyType);
@@ -29974,7 +29974,7 @@ namespace qnr {
 
       // Only check rest parameter type if it's not a binding pattern. Since binding patterns are
       // not allowed in a rest parameter, we already have an error from checkGrammarParameterList.
-      if (node.dotDotDotToken && !isBindingPattern(node.name) && !isTypeAssignableTo(getReducedType(getTypeOfSymbol(node.symbol)), anyReadonlyArrayType)) {
+      if (node.dot3Token && !isBindingPattern(node.name) && !isTypeAssignableTo(getReducedType(getTypeOfSymbol(node.symbol)), anyReadonlyArrayType)) {
         error(node, Diagnostics.A_rest_parameter_must_be_of_an_array_type);
       }
     }
@@ -30681,7 +30681,7 @@ namespace qnr {
     }
 
     function checkNamedTupleMember(node: NamedTupleMember) {
-      if (node.dotDotDotToken && node.questionToken) {
+      if (node.dot3Token && node.questionToken) {
         grammarErrorOnNode(node, Diagnostics.A_tuple_member_cannot_be_both_optional_and_rest);
       }
       if (node.type.kind === SyntaxKind.OptionalType) {
@@ -31899,9 +31899,9 @@ namespace qnr {
     }
 
     function isValidUnusedLocalDeclaration(declaration: Declaration): boolean {
-      if (isBindingElement(declaration) && isIdentifierThatStartsWithUnderscore(declaration.name)) {
+      if (BindingElement.kind(declaration) && isIdentifierThatStartsWithUnderscore(declaration.name)) {
         return !!findAncestor(declaration.parent, (ancestor) =>
-          isArrayBindingPattern(ancestor) || isVariableDeclaration(ancestor) || isVariableDeclarationList(ancestor) ? false : isForOfStatement(ancestor) ? true : 'quit'
+          ArrayBindingPattern.kind(ancestor) || isVariableDeclaration(ancestor) || isVariableDeclarationList(ancestor) ? false : isForOfStatement(ancestor) ? true : 'quit'
         );
       }
 
@@ -31930,10 +31930,10 @@ namespace qnr {
 
           if (isImportedDeclaration(declaration)) {
             addToGroup(unusedImports, importClauseFromImported(declaration), declaration, getNodeId);
-          } else if (isBindingElement(declaration) && isObjectBindingPattern(declaration.parent)) {
+          } else if (BindingElement.kind(declaration) && ObjectBindingPattern.kind(declaration.parent)) {
             // In `{ a, ...b }, `a` is considered used since it removes a property from `b`. `b` may still be unused though.
             const lastElement = last(declaration.parent.elements);
-            if (declaration === lastElement || !last(declaration.parent.elements).dotDotDotToken) {
+            if (declaration === lastElement || !last(declaration.parent.elements).dot3Token) {
               addToGroup(unusedDestructures, declaration.parent, declaration, getNodeId);
             }
           } else if (isVariableDeclaration(declaration)) {
@@ -32010,7 +32010,7 @@ namespace qnr {
           return idText(name);
         case SyntaxKind.ArrayBindingPattern:
         case SyntaxKind.ObjectBindingPattern:
-          return bindingNameText(cast(first(name.elements), isBindingElement).name);
+          return bindingNameText(cast(first(name.elements), BindingElement.kind).name);
         default:
           return Debug.assertNever(name);
       }
@@ -32217,7 +32217,7 @@ namespace qnr {
     // Check variable, parameter, or property declaration
     function checkVariableLikeDeclaration(node: ParameterDeclaration | PropertyDeclaration | PropertySignature | VariableDeclaration | BindingElement) {
       checkDecorators(node);
-      if (!isBindingElement(node)) {
+      if (!BindingElement.kind(node)) {
         checkSourceElement(node.type);
       }
 
@@ -32288,7 +32288,7 @@ namespace qnr {
           }
           // check the binding pattern with empty elements
           if (needCheckWidenedType) {
-            if (isArrayBindingPattern(node.name)) {
+            if (ArrayBindingPattern.kind(node.name)) {
               checkIteratedTypeOrElementType(IterationUse.Destructuring, widenedType, undefinedType, node);
             } else if (strictNullChecks) {
               checkNonNullNonVoidType(widenedType, node);
@@ -36152,7 +36152,7 @@ namespace qnr {
     }
 
     function isSymbolOfDestructuredElementOfCatchBinding(symbol: Symbol) {
-      return isBindingElement(symbol.valueDeclaration) && walkUpBindingElementsAndPatterns(symbol.valueDeclaration).parent.kind === SyntaxKind.CatchClause;
+      return BindingElement.kind(symbol.valueDeclaration) && walkUpBindingElementsAndPatterns(symbol.valueDeclaration).parent.kind === SyntaxKind.CatchClause;
     }
 
     function isSymbolOfDeclarationWithCollidingName(symbol: Symbol): boolean {
@@ -36641,7 +36641,7 @@ namespace qnr {
         isBindingCapturedByNode: (node, decl) => {
           const parseNode = getParseTreeNode(node);
           const parseDecl = getParseTreeNode(decl);
-          return !!parseNode && !!parseDecl && (isVariableDeclaration(parseDecl) || isBindingElement(parseDecl)) && isBindingCapturedByNode(parseNode, parseDecl);
+          return !!parseNode && !!parseDecl && (isVariableDeclaration(parseDecl) || BindingElement.kind(parseDecl)) && isBindingCapturedByNode(parseNode, parseDecl);
         },
         getDeclarationStatementsForSourceFile: (node, flags, tracker, bundled) => {
           const n = getParseTreeNode(node) as SourceFile;
@@ -37194,7 +37194,7 @@ namespace qnr {
         return grammarErrorOnNode(lastDeclare!, Diagnostics.A_0_modifier_cannot_be_used_with_an_import_declaration, 'declare');
       } else if (node.kind === SyntaxKind.Parameter && flags & ModifierFlags.ParameterPropertyModifier && isBindingPattern((<ParameterDeclaration>node).name)) {
         return grammarErrorOnNode(node, Diagnostics.A_parameter_property_may_not_be_declared_using_a_binding_pattern);
-      } else if (node.kind === SyntaxKind.Parameter && flags & ModifierFlags.ParameterPropertyModifier && (<ParameterDeclaration>node).dotDotDotToken) {
+      } else if (node.kind === SyntaxKind.Parameter && flags & ModifierFlags.ParameterPropertyModifier && (<ParameterDeclaration>node).dot3Token) {
         return grammarErrorOnNode(node, Diagnostics.A_parameter_property_cannot_be_declared_using_a_rest_parameter);
       }
       if (flags & ModifierFlags.Async) {
@@ -37288,9 +37288,9 @@ namespace qnr {
 
       for (let i = 0; i < parameterCount; i++) {
         const parameter = parameters[i];
-        if (parameter.dotDotDotToken) {
+        if (parameter.dot3Token) {
           if (i !== parameterCount - 1) {
-            return grammarErrorOnNode(parameter.dotDotDotToken, Diagnostics.A_rest_parameter_must_be_last_in_a_parameter_list);
+            return grammarErrorOnNode(parameter.dot3Token, Diagnostics.A_rest_parameter_must_be_last_in_a_parameter_list);
           }
           if (!(parameter.flags & NodeFlags.Ambient)) {
             // Allow `...foo,` in ambient declarations; see GH#23070
@@ -37380,8 +37380,8 @@ namespace qnr {
         }
       }
       checkGrammarForDisallowedTrailingComma(node.parameters, Diagnostics.An_index_signature_cannot_have_a_trailing_comma);
-      if (parameter.dotDotDotToken) {
-        return grammarErrorOnNode(parameter.dotDotDotToken, Diagnostics.An_index_signature_cannot_have_a_rest_parameter);
+      if (parameter.dot3Token) {
+        return grammarErrorOnNode(parameter.dot3Token, Diagnostics.An_index_signature_cannot_have_a_rest_parameter);
       }
       if (hasEffectiveModifiers(parameter)) {
         return grammarErrorOnNode(parameter.name, Diagnostics.An_index_signature_parameter_cannot_have_an_accessibility_modifier);
@@ -37789,8 +37789,8 @@ namespace qnr {
           return grammarErrorOnNode(accessor.name, Diagnostics.A_set_accessor_cannot_have_a_return_type_annotation);
         }
         const parameter = Debug.checkDefined(getSetAccessorValueParameter(accessor), 'Return value does not match parameter count assertion.');
-        if (parameter.dotDotDotToken) {
-          return grammarErrorOnNode(parameter.dotDotDotToken, Diagnostics.A_set_accessor_cannot_have_rest_parameter);
+        if (parameter.dot3Token) {
+          return grammarErrorOnNode(parameter.dot3Token, Diagnostics.A_set_accessor_cannot_have_rest_parameter);
         }
         if (parameter.questionToken) {
           return grammarErrorOnNode(parameter.questionToken, Diagnostics.A_set_accessor_cannot_have_an_optional_parameter);
@@ -37974,7 +37974,7 @@ namespace qnr {
     }
 
     function checkGrammarBindingElement(node: BindingElement) {
-      if (node.dotDotDotToken) {
+      if (node.dot3Token) {
         const elements = node.parent.elements;
         if (node !== last(elements)) {
           return grammarErrorOnNode(node, Diagnostics.A_rest_element_must_be_last_in_a_destructuring_pattern);

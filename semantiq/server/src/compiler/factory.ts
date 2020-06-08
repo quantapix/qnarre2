@@ -1572,7 +1572,7 @@ namespace qnr {
       case SyntaxKind.Parameter:
       case SyntaxKind.BindingElement:
         // `...` in `let [...a] = ...`
-        return bindingElement.dotDotDotToken;
+        return bindingElement.dot3Token;
 
       case SyntaxKind.SpreadElement:
       case SyntaxKind.SpreadAssignment:
@@ -1663,8 +1663,8 @@ namespace qnr {
   }
 
   export function convertToArrayAssignmentElement(element: BindingOrAssignmentElement) {
-    if (isBindingElement(element)) {
-      if (element.dotDotDotToken) {
+    if (BindingElement.kind(element)) {
+      if (element.dot3Token) {
         Debug.assertNode(element.name, isIdentifier);
         return setOriginalNode(setTextRange(createSpread(element.name), element), element);
       }
@@ -1676,8 +1676,8 @@ namespace qnr {
   }
 
   export function convertToObjectAssignmentElement(element: BindingOrAssignmentElement) {
-    if (isBindingElement(element)) {
-      if (element.dotDotDotToken) {
+    if (BindingElement.kind(element)) {
+      if (element.dot3Token) {
         Debug.assertNode(element.name, isIdentifier);
         return setOriginalNode(setTextRange(createSpreadAssignment(element.name), element), element);
       }
@@ -1705,7 +1705,7 @@ namespace qnr {
   }
 
   export function convertToObjectAssignmentPattern(node: ObjectBindingOrAssignmentPattern) {
-    if (isObjectBindingPattern(node)) {
+    if (ObjectBindingPattern.kind(node)) {
       return setOriginalNode(setTextRange(createObjectLiteral(map(node.elements, convertToObjectAssignmentElement)), node), node);
     }
     Debug.assertNode(node, isObjectLiteralExpression);
@@ -1713,7 +1713,7 @@ namespace qnr {
   }
 
   export function convertToArrayAssignmentPattern(node: ArrayBindingOrAssignmentPattern) {
-    if (isArrayBindingPattern(node)) {
+    if (ArrayBindingPattern.kind(node)) {
       return setOriginalNode(setTextRange(createArrayLiteral(map(node.elements, convertToArrayAssignmentElement)), node), node);
     }
     Debug.assertNode(node, isArrayLiteralExpression);

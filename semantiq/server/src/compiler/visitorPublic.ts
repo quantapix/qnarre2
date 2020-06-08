@@ -199,7 +199,7 @@ namespace qnr {
   function addDefaultValueAssignmentIfNeeded(parameter: ParameterDeclaration, context: TransformationContext) {
     // A rest parameter cannot have a binding pattern or an initializer,
     // so let's just ignore it.
-    return parameter.dotDotDotToken
+    return parameter.dot3Token
       ? parameter
       : isBindingPattern(parameter.name)
       ? addDefaultValueAssignmentForBindingPattern(parameter, context)
@@ -227,7 +227,7 @@ namespace qnr {
       parameter,
       parameter.decorators,
       parameter.modifiers,
-      parameter.dotDotDotToken,
+      parameter.dot3Token,
       getGeneratedNameForNode(parameter),
       parameter.questionToken,
       parameter.type,
@@ -258,7 +258,7 @@ namespace qnr {
         )
       )
     );
-    return updateParameter(parameter, parameter.decorators, parameter.modifiers, parameter.dotDotDotToken, parameter.name, parameter.questionToken, parameter.type, /*initializer*/ undefined);
+    return updateParameter(parameter, parameter.decorators, parameter.modifiers, parameter.dot3Token, parameter.name, parameter.questionToken, parameter.type, /*initializer*/ undefined);
   }
 
   /**
@@ -344,7 +344,7 @@ namespace qnr {
           <ParameterDeclaration>node,
           nodesVisitor((<ParameterDeclaration>node).decorators, visitor, isDecorator),
           nodesVisitor((<ParameterDeclaration>node).modifiers, visitor, isModifier),
-          visitNode((<ParameterDeclaration>node).dotDotDotToken, tokenVisitor, isToken),
+          visitNode((<ParameterDeclaration>node).dot3Token, tokenVisitor, isToken),
           visitNode((<ParameterDeclaration>node).name, visitor, isBindingName),
           visitNode((<ParameterDeclaration>node).questionToken, tokenVisitor, isToken),
           visitNode((<ParameterDeclaration>node).type, visitor, isTypeNode),
@@ -536,7 +536,7 @@ namespace qnr {
       case SyntaxKind.NamedTupleMember:
         return NamedTupleMember.update(
           <NamedTupleMember>node,
-          visitNode((<NamedTupleMember>node).dotDotDotToken, visitor, isToken),
+          visitNode((<NamedTupleMember>node).dot3Token, visitor, isToken),
           visitNode((<NamedTupleMember>node).name, visitor, isIdentifier),
           visitNode((<NamedTupleMember>node).questionToken, visitor, isToken),
           visitNode((<NamedTupleMember>node).type, visitor, isTypeNode)
@@ -569,15 +569,15 @@ namespace qnr {
 
       // Binding patterns
       case SyntaxKind.ObjectBindingPattern:
-        return updateObjectBindingPattern(<ObjectBindingPattern>node, nodesVisitor((<ObjectBindingPattern>node).elements, visitor, isBindingElement));
+        return ObjectBindingPattern.update(<ObjectBindingPattern>node, nodesVisitor((<ObjectBindingPattern>node).elements, visitor, BindingElement.kind));
 
       case SyntaxKind.ArrayBindingPattern:
-        return updateArrayBindingPattern(<ArrayBindingPattern>node, nodesVisitor((<ArrayBindingPattern>node).elements, visitor, isArrayBindingElement));
+        return ArrayBindingPattern.update(<ArrayBindingPattern>node, nodesVisitor((<ArrayBindingPattern>node).elements, visitor, isArrayBindingElement));
 
       case SyntaxKind.BindingElement:
-        return updateBindingElement(
+        return BindingElement.update(
           <BindingElement>node,
-          visitNode((<BindingElement>node).dotDotDotToken, tokenVisitor, isToken),
+          visitNode((<BindingElement>node).dot3Token, tokenVisitor, isToken),
           visitNode((<BindingElement>node).propertyName, visitor, isPropertyName),
           visitNode((<BindingElement>node).name, visitor, isBindingName),
           visitNode((<BindingElement>node).initializer, visitor, isExpression)

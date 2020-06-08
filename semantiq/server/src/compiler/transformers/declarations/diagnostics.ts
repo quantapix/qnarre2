@@ -33,7 +33,7 @@ namespace qnr {
       isVariableDeclaration(node) ||
       PropertyDeclaration.kind(node) ||
       PropertySignature.kind(node) ||
-      isBindingElement(node) ||
+      BindingElement.kind(node) ||
       isSetAccessor(node) ||
       isGetAccessor(node) ||
       ConstructSignatureDeclaration.kind(node) ||
@@ -131,7 +131,7 @@ namespace qnr {
       PropertyDeclaration.kind(node) ||
       PropertySignature.kind(node) ||
       isPropertyAccessExpression(node) ||
-      isBindingElement(node) ||
+      BindingElement.kind(node) ||
       ConstructorDeclaration.kind(node)
     ) {
       return getVariableDeclarationTypeVisibilityError;

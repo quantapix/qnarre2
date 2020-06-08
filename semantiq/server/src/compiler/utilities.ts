@@ -2229,7 +2229,7 @@ namespace qnr {
 
   export function isRestParameter(node: ParameterDeclaration | JSDocParameterTag): boolean {
     const type = isJSDocParameterTag(node) ? node.typeExpression && node.typeExpression.type : node.type;
-    return (node as ParameterDeclaration).dotDotDotToken !== undefined || (!!type && type.kind === SyntaxKind.JSDocVariadicType);
+    return (node as ParameterDeclaration).dot3Token !== undefined || (!!type && type.kind === SyntaxKind.JSDocVariadicType);
   }
 
   export function hasTypeArguments(node: Node): node is HasTypeArguments {

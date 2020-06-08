@@ -666,7 +666,7 @@ namespace qnr {
                 createParameter(
                   /* decorators */ undefined,
                   /* modifiers */ undefined,
-                  /* dotDotDotToken */ undefined,
+                  /* dot3Token */ undefined,
                   'v',
                   /* questionToken */ undefined,
                   /* type */ undefined,

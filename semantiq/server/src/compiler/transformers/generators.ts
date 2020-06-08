@@ -704,17 +704,7 @@ namespace qnr {
         const operator = node.operatorToken.kind;
         if (isCompoundAssignment(operator)) {
           return setTextRange(
-            createAssignment(
-              target,
-              setTextRange(
-                createBinary(
-                  cacheExpression(target),
-                  getNonAssignmentOperatorForCompoundAssignment(operator),
-                  visitNode(right, visitor, isExpression)
-                ),
-                node
-              )
-            ),
+            createAssignment(target, setTextRange(createBinary(cacheExpression(target), getNonAssignmentOperatorForCompoundAssignment(operator), visitNode(right, visitor, isExpression)), node)),
             node
           );
         } else {
@@ -895,8 +885,7 @@ namespace qnr {
       const resumeLabel = defineLabel();
       const expression = visitNode(node.expression, visitor, isExpression);
       if (node.asteriskToken) {
-        const iterator =
-          (getEmitFlags(node.expression!) & EmitFlags.Iterator) === 0 ? createValuesHelper(context, expression, /*location*/ node) : expression;
+        const iterator = (getEmitFlags(node.expression!) & EmitFlags.Iterator) === 0 ? createValuesHelper(context, expression, /*location*/ node) : expression;
         emitYieldStar(iterator, /*location*/ node);
       } else {
         emitYield(expression, /*location*/ node);
@@ -957,9 +946,7 @@ namespace qnr {
 
           emitAssignment(
             temp,
-            hasAssignedTemp
-              ? createArrayConcat(temp, [createArrayLiteral(expressions, multiLine)])
-              : createArrayLiteral(leadingElement ? [leadingElement, ...expressions] : expressions, multiLine)
+            hasAssignedTemp ? createArrayConcat(temp, [createArrayLiteral(expressions, multiLine)]) : createArrayLiteral(leadingElement ? [leadingElement, ...expressions] : expressions, multiLine)
           );
           leadingElement = undefined;
           expressions = [];
@@ -1057,15 +1044,7 @@ namespace qnr {
         //  .mark resumeLabel
         //      _b.apply(_a, _c.concat([%sent%, 2]));
         const { target, thisArg } = createCallBinding(node.expression, hoistVariableDeclaration, languageVersion, /*cacheIdentifiers*/ true);
-        return setOriginalNode(
-          createFunctionApply(
-            cacheExpression(visitNode(target, visitor, isLeftHandSideExpression)),
-            thisArg,
-            visitElements(node.arguments),
-            /*location*/ node
-          ),
-          node
-        );
+        return setOriginalNode(createFunctionApply(cacheExpression(visitNode(target, visitor, isLeftHandSideExpression)), thisArg, visitElements(node.arguments), /*location*/ node), node);
       }
 
       return visitEachChild(node, visitor, context);
@@ -1088,11 +1067,7 @@ namespace qnr {
         return setOriginalNode(
           setTextRange(
             createNew(
-              createFunctionApply(
-                cacheExpression(visitNode(target, visitor, isExpression)),
-                thisArg,
-                visitElements(node.arguments!, /*leadingElement*/ createVoidZero())
-              ),
+              createFunctionApply(cacheExpression(visitNode(target, visitor, isExpression)), thisArg, visitElements(node.arguments!, /*leadingElement*/ createVoidZero())),
               /*typeArguments*/ undefined,
               []
             ),
@@ -1210,13 +1185,7 @@ namespace qnr {
     }
 
     function transformInitializedVariable(node: VariableDeclaration) {
-      return setSourceMapRange(
-        createAssignment(
-          setSourceMapRange(<Identifier>getSynthesizedClone(node.name), node.name),
-          visitNode(node.initializer, visitor, isExpression)
-        ),
-        node
-      );
+      return setSourceMapRange(createAssignment(setSourceMapRange(<Identifier>getSynthesizedClone(node.name), node.name), visitNode(node.initializer, visitor, isExpression)), node);
     }
 
     function transformAndEmitIfStatement(node: IfStatement) {
@@ -1238,11 +1207,7 @@ namespace qnr {
         if (containsYield(node.thenStatement) || containsYield(node.elseStatement)) {
           const endLabel = defineLabel();
           const elseLabel = node.elseStatement ? defineLabel() : undefined;
-          emitBreakWhenFalse(
-            node.elseStatement ? elseLabel! : endLabel,
-            visitNode(node.expression, visitor, isExpression),
-            /*location*/ node.expression
-          );
+          emitBreakWhenFalse(node.elseStatement ? elseLabel! : endLabel, visitNode(node.expression, visitor, isExpression), /*location*/ node.expression);
           transformAndEmitEmbeddedStatement(node.thenStatement);
           if (node.elseStatement) {
             emitBreak(endLabel);
@@ -1450,11 +1415,7 @@ namespace qnr {
         emitAssignment(keysArray, createArrayLiteral());
 
         emitStatement(
-          createForIn(
-            key,
-            visitNode(node.expression, visitor, isExpression),
-            createExpressionStatement(createCall(createPropertyAccess(keysArray, 'push'), /*typeArguments*/ undefined, [key]))
-          )
+          createForIn(key, visitNode(node.expression, visitor, isExpression), createExpressionStatement(createCall(createPropertyAccess(keysArray, 'push'), /*typeArguments*/ undefined, [key])))
         );
 
         emitAssignment(keysIndex, createLiteral(0));
@@ -1515,12 +1476,7 @@ namespace qnr {
           hoistVariableDeclaration(<Identifier>variable.name);
         }
 
-        node = updateForIn(
-          node,
-          <Identifier>initializer.declarations[0].name,
-          visitNode(node.expression, visitor, isExpression),
-          visitNode(node.statement, visitor, isStatement, liftToBlock)
-        );
+        node = updateForIn(node, <Identifier>initializer.declarations[0].name, visitNode(node.expression, visitor, isExpression), visitNode(node.statement, visitor, isStatement, liftToBlock));
       } else {
         node = visitEachChild(node, visitor, context);
       }
@@ -1666,11 +1622,7 @@ namespace qnr {
                 break;
               }
 
-              pendingClauses.push(
-                createCaseClause(visitNode(clause.expression, visitor, isExpression), [
-                  createInlineBreak(clauseLabels[i], /*location*/ clause.expression),
-                ])
-              );
+              pendingClauses.push(createCaseClause(visitNode(clause.expression, visitor, isExpression), [createInlineBreak(clauseLabels[i], /*location*/ clause.expression)]));
             } else {
               defaultClausesSkipped++;
             }
@@ -2327,10 +2279,7 @@ namespace qnr {
      * @param location An optional source map location for the statement.
      */
     function createInlineReturn(expression?: Expression, location?: TextRange): ReturnStatement {
-      return setTextRange(
-        createReturn(createArrayLiteral(expression ? [createInstruction(Instruction.Return), expression] : [createInstruction(Instruction.Return)])),
-        location
-      );
+      return setTextRange(createReturn(createArrayLiteral(expression ? [createInstruction(Instruction.Return), expression] : [createInstruction(Instruction.Return)])), location);
     }
 
     /**
@@ -2500,7 +2449,7 @@ namespace qnr {
             /*asteriskToken*/ undefined,
             /*name*/ undefined,
             /*typeParameters*/ undefined,
-            [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, state)],
+            [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, state)],
             /*type*/ undefined,
             createBlock(buildResult, /*multiLine*/ buildResult.length > 0)
           ),
@@ -2831,12 +2780,7 @@ namespace qnr {
       lastOperationWasCompletion = true;
       writeStatement(
         setEmitFlags(
-          setTextRange(
-            createReturn(
-              createArrayLiteral(expression ? [createInstruction(Instruction.Return), expression] : [createInstruction(Instruction.Return)])
-            ),
-            operationLocation
-          ),
+          setTextRange(createReturn(createArrayLiteral(expression ? [createInstruction(Instruction.Return), expression] : [createInstruction(Instruction.Return)])), operationLocation),
           EmitFlags.NoTokenSourceMaps
         )
       );
@@ -2850,12 +2794,7 @@ namespace qnr {
      */
     function writeBreak(label: Label, operationLocation: TextRange | undefined): void {
       lastOperationWasAbrupt = true;
-      writeStatement(
-        setEmitFlags(
-          setTextRange(createReturn(createArrayLiteral([createInstruction(Instruction.Break), createLabel(label)])), operationLocation),
-          EmitFlags.NoTokenSourceMaps
-        )
-      );
+      writeStatement(setEmitFlags(setTextRange(createReturn(createArrayLiteral([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps));
     }
 
     /**
@@ -2868,13 +2807,7 @@ namespace qnr {
     function writeBreakWhenTrue(label: Label, condition: Expression, operationLocation: TextRange | undefined): void {
       writeStatement(
         setEmitFlags(
-          createIf(
-            condition,
-            setEmitFlags(
-              setTextRange(createReturn(createArrayLiteral([createInstruction(Instruction.Break), createLabel(label)])), operationLocation),
-              EmitFlags.NoTokenSourceMaps
-            )
-          ),
+          createIf(condition, setEmitFlags(setTextRange(createReturn(createArrayLiteral([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)),
           EmitFlags.SingleLine
         )
       );
@@ -2892,10 +2825,7 @@ namespace qnr {
         setEmitFlags(
           createIf(
             createLogicalNot(condition),
-            setEmitFlags(
-              setTextRange(createReturn(createArrayLiteral([createInstruction(Instruction.Break), createLabel(label)])), operationLocation),
-              EmitFlags.NoTokenSourceMaps
-            )
+            setEmitFlags(setTextRange(createReturn(createArrayLiteral([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)
           ),
           EmitFlags.SingleLine
         )
@@ -2912,12 +2842,7 @@ namespace qnr {
       lastOperationWasAbrupt = true;
       writeStatement(
         setEmitFlags(
-          setTextRange(
-            createReturn(
-              createArrayLiteral(expression ? [createInstruction(Instruction.Yield), expression] : [createInstruction(Instruction.Yield)])
-            ),
-            operationLocation
-          ),
+          setTextRange(createReturn(createArrayLiteral(expression ? [createInstruction(Instruction.Yield), expression] : [createInstruction(Instruction.Yield)])), operationLocation),
           EmitFlags.NoTokenSourceMaps
         )
       );
@@ -2931,12 +2856,7 @@ namespace qnr {
      */
     function writeYieldStar(expression: Expression, operationLocation: TextRange | undefined): void {
       lastOperationWasAbrupt = true;
-      writeStatement(
-        setEmitFlags(
-          setTextRange(createReturn(createArrayLiteral([createInstruction(Instruction.YieldStar), expression])), operationLocation),
-          EmitFlags.NoTokenSourceMaps
-        )
-      );
+      writeStatement(setEmitFlags(setTextRange(createReturn(createArrayLiteral([createInstruction(Instruction.YieldStar), expression])), operationLocation), EmitFlags.NoTokenSourceMaps));
     }
 
     /**

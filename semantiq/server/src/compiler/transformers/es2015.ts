@@ -726,7 +726,7 @@ namespace qnr {
         /*asteriskToken*/ undefined,
         /*name*/ undefined,
         /*typeParameters*/ undefined,
-        extendsClauseElement ? [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, createFileLevelUniqueName('_super'))] : [],
+        extendsClauseElement ? [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, createFileLevelUniqueName('_super'))] : [],
         /*type*/ undefined,
         transformClassBody(node, extendsClauseElement)
       );
@@ -1073,7 +1073,7 @@ namespace qnr {
      * @param node A ParameterDeclaration node.
      */
     function visitParameter(node: ParameterDeclaration): ParameterDeclaration | undefined {
-      if (node.dotDotDotToken) {
+      if (node.dot3Token) {
         // rest parameters are elided
         return;
       } else if (isBindingPattern(node.name)) {
@@ -1084,7 +1084,7 @@ namespace qnr {
             createParameter(
               /*decorators*/ undefined,
               /*modifiers*/ undefined,
-              /*dotDotDotToken*/ undefined,
+              /*dot3Token*/ undefined,
               getGeneratedNameForNode(node),
               /*questionToken*/ undefined,
               /*type*/ undefined,
@@ -1098,7 +1098,7 @@ namespace qnr {
         // Initializers are elided
         return setOriginalNode(
           setTextRange(
-            createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, node.name, /*questionToken*/ undefined, /*type*/ undefined, /*initializer*/ undefined),
+            createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, node.name, /*questionToken*/ undefined, /*type*/ undefined, /*initializer*/ undefined),
             /*location*/ node
           ),
           /*original*/ node
@@ -1126,11 +1126,11 @@ namespace qnr {
 
       let added = false;
       for (const parameter of node.parameters) {
-        const { name, initializer, dotDotDotToken } = parameter;
+        const { name, initializer, dot3Token } = parameter;
 
         // A rest parameter cannot have a binding pattern or an initializer,
         // so let's just ignore it.
-        if (dotDotDotToken) {
+        if (dot3Token) {
           continue;
         }
 
@@ -1224,7 +1224,7 @@ namespace qnr {
      *                                          synthesized call to `super`
      */
     function shouldAddRestParameter(node: ParameterDeclaration | undefined, inConstructorWithSynthesizedSuper: boolean): node is ParameterDeclaration {
-      return !!(node && node.dotDotDotToken && !inConstructorWithSynthesizedSuper);
+      return !!(node && node.dot3Token && !inConstructorWithSynthesizedSuper);
     }
 
     /**
@@ -2934,7 +2934,7 @@ namespace qnr {
           }
         }
       } else {
-        loopParameters.push(createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, name));
+        loopParameters.push(createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, name));
         const checkFlags = resolver.getNodeCheckFlags(decl);
         if (checkFlags & NodeCheckFlags.NeedsLoopOutParameter || hasCapturedBindingsInForInitializer) {
           const outParamName = createUniqueName('out_' + idText(name));

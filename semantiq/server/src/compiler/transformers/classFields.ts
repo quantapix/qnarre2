@@ -862,7 +862,7 @@ namespace qnr {
               /*decorators*/ undefined,
               /*modifiers*/ undefined,
               'value',
-              [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, parameter, /*questionToken*/ undefined, /*type*/ undefined, /*initializer*/ undefined)],
+              [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, parameter, /*questionToken*/ undefined, /*type*/ undefined, /*initializer*/ undefined)],
               createBlock([createExpressionStatement(createPrivateIdentifierAssignment(info, receiver, parameter, SyntaxKind.EqualsToken))])
             ),
           ])

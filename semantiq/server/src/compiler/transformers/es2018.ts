@@ -566,7 +566,7 @@ namespace qnr {
           node,
           /*decorators*/ undefined,
           /*modifiers*/ undefined,
-          node.dotDotDotToken,
+          node.dot3Token,
           getGeneratedNameForNode(node),
           /*questionToken*/ undefined,
           /*type*/ undefined,

@@ -3586,7 +3586,7 @@ namespace qnr {
     let transformFlags = subtreeFlags;
     const name = node.name;
     const initializer = node.initializer;
-    const dotDotDotToken = node.dotDotDotToken;
+    const dot3Token = node.dot3Token;
 
     // The '?' token, type annotations, decorators, and 'this' parameters are TypeSCript
     // syntax.
@@ -3606,7 +3606,7 @@ namespace qnr {
 
     // If a parameter has an initializer, a binding pattern or a dotDotDot token, then
     // it is ES6 syntax and its container must emit default value assignments or parameter destructuring downlevel.
-    if (subtreeFlags & TransformFlags.ContainsBindingPattern || initializer || dotDotDotToken) {
+    if (subtreeFlags & TransformFlags.ContainsBindingPattern || initializer || dot3Token) {
       transformFlags |= TransformFlags.AssertES2015;
     }
 
@@ -4212,7 +4212,7 @@ namespace qnr {
 
       case SyntaxKind.BindingElement:
         transformFlags |= TransformFlags.AssertES2015;
-        if ((<BindingElement>node).dotDotDotToken) {
+        if ((<BindingElement>node).dot3Token) {
           transformFlags |= TransformFlags.ContainsRestOrSpread;
         }
         break;

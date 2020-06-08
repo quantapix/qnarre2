@@ -447,9 +447,9 @@ namespace qnr {
         return name;
       } else {
         if (name.kind === SyntaxKind.ArrayBindingPattern) {
-          return updateArrayBindingPattern(name, visitNodes(name.elements, visitBindingElement));
+          return ArrayBindingPattern.update(name, visitNodes(name.elements, visitBindingElement));
         } else {
-          return updateObjectBindingPattern(name, visitNodes(name.elements, visitBindingElement));
+          return ObjectBindingPattern.update(name, visitNodes(name.elements, visitBindingElement));
         }
       }
 
@@ -458,7 +458,7 @@ namespace qnr {
         if (elem.kind === SyntaxKind.OmittedExpression) {
           return elem;
         }
-        return updateBindingElement(elem, elem.dotDotDotToken, elem.propertyName, filterBindingPatternInitializers(elem.name), shouldPrintWithInitializer(elem) ? elem.initializer : undefined);
+        return BindingElement.update(elem, elem.dot3Token, elem.propertyName, filterBindingPatternInitializers(elem.name), shouldPrintWithInitializer(elem) ? elem.initializer : undefined);
       }
     }
 
@@ -472,7 +472,7 @@ namespace qnr {
         p,
         /*decorators*/ undefined,
         maskModifiers(p, modifierMask),
-        p.dotDotDotToken,
+        p.dot3Token,
         filterBindingPatternInitializers(p.name),
         resolver.isOptionalParameter(p) ? p.questionToken || createToken(SyntaxKind.QuestionToken) : undefined,
         ensureType(p, type || p.type, /*ignorePrivate*/ true), // Ignore private param props, since this type is going straight back into a param
@@ -620,7 +620,7 @@ namespace qnr {
           }
         }
         if (!newValueParameter) {
-          newValueParameter = createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, 'value');
+          newValueParameter = createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, 'value');
         }
         newParams = append(newParams, newValueParameter);
       }
@@ -1418,10 +1418,10 @@ namespace qnr {
     }
 
     function recreateBindingPattern(d: BindingPattern): VariableDeclaration[] {
-      return flatten<VariableDeclaration>(mapDefined(d.elements, (e) => recreateBindingElement(e)));
+      return flatten<VariableDeclaration>(mapDefined(d.elements, (e) => reBindingElement.create(e)));
     }
 
-    function recreateBindingElement(e: ArrayBindingElement) {
+    function reBindingElement.create(e: ArrayBindingElement) {
       if (e.kind === SyntaxKind.OmittedExpression) {
         return;
       }

@@ -915,19 +915,10 @@ namespace qnr {
   export interface ParameterDeclaration extends NamedDeclaration, JSDocContainer {
     kind: SyntaxKind.Parameter;
     parent: SignatureDeclaration;
-    dotDotDotToken?: Dot3Token; // Present on rest parameter
+    dot3Token?: Dot3Token; // Present on rest parameter
     name: BindingName; // Declared parameter name.
     questionToken?: QuestionToken; // Present on optional parameter
     type?: TypeNode; // Optional type annotation
-    initializer?: Expression; // Optional initializer
-  }
-
-  export interface BindingElement extends NamedDeclaration {
-    kind: SyntaxKind.BindingElement;
-    parent: BindingPattern;
-    propertyName?: PropertyName; // Binding property name (in object binding pattern)
-    dotDotDotToken?: Dot3Token; // Present on rest element (in object binding pattern)
-    name: BindingName; // Declared binding element name
     initializer?: Expression; // Optional initializer
   }
 
@@ -986,18 +977,6 @@ namespace qnr {
 
   export interface PropertyLikeDeclaration extends NamedDeclaration {
     name: PropertyName;
-  }
-
-  export interface ObjectBindingPattern extends Node {
-    kind: SyntaxKind.ObjectBindingPattern;
-    parent: VariableDeclaration | ParameterDeclaration | BindingElement;
-    elements: NodeArray<BindingElement>;
-  }
-
-  export interface ArrayBindingPattern extends Node {
-    kind: SyntaxKind.ArrayBindingPattern;
-    parent: VariableDeclaration | ParameterDeclaration | BindingElement;
-    elements: NodeArray<ArrayBindingElement>;
   }
 
   export type BindingPattern = ObjectBindingPattern | ArrayBindingPattern;
@@ -1638,7 +1617,7 @@ namespace qnr {
   export interface JsxExpression extends Expression {
     kind: SyntaxKind.JsxExpression;
     parent: JsxElement | JsxAttributeLike;
-    dotDotDotToken?: Token<SyntaxKind.Dot3Token>;
+    dot3Token?: Token<SyntaxKind.Dot3Token>;
     expression?: Expression;
   }
 

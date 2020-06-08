@@ -934,7 +934,7 @@ namespace qnr {
 
   export interface NamedTupleMember extends TypeNode, JSDocContainer, Declaration {
     kind: SyntaxKind.NamedTupleMember;
-    dotDotDotToken?: Token<SyntaxKind.Dot3Token>;
+    dot3Token?: Token<SyntaxKind.Dot3Token>;
     name: Identifier;
     questionToken?: Token<SyntaxKind.QuestionToken>;
     type: TypeNode;
@@ -942,14 +942,14 @@ namespace qnr {
   export namespace NamedTupleMember {
     export function create(d: Token<SyntaxKind.Dot3Token> | undefined, i: Identifier, q: Token<SyntaxKind.QuestionToken> | undefined, t: TypeNode) {
       const n = Node.createSynthesized(SyntaxKind.NamedTupleMember) as NamedTupleMember;
-      n.dotDotDotToken = d;
+      n.dot3Token = d;
       n.name = i;
       n.questionToken = q;
       n.type = t;
       return n;
     }
     export function update(n: NamedTupleMember, d: Token<SyntaxKind.Dot3Token> | undefined, i: Identifier, q: Token<SyntaxKind.QuestionToken> | undefined, t: TypeNode) {
-      return n.dotDotDotToken !== d || n.name !== i || n.questionToken !== q || n.type !== t ? updateNode(create(d, i, q, t), n) : n;
+      return n.dot3Token !== d || n.name !== i || n.questionToken !== q || n.type !== t ? updateNode(create(d, i, q, t), n) : n;
     }
   }
 
@@ -973,6 +973,69 @@ namespace qnr {
     }
     export function kind(n: Node): n is ImportTypeNode {
       return n.kind === SyntaxKind.ImportType;
+    }
+  }
+
+  export interface ObjectBindingPattern extends Node {
+    kind: SyntaxKind.ObjectBindingPattern;
+    parent: VariableDeclaration | ParameterDeclaration | BindingElement;
+    elements: NodeArray<BindingElement>;
+  }
+  export namespace ObjectBindingPattern {
+    export function create(es: readonly BindingElement[]) {
+      const n = Node.createSynthesized(SyntaxKind.ObjectBindingPattern) as ObjectBindingPattern;
+      n.elements = createNodeArray(es);
+      return n;
+    }
+    export function update(n: ObjectBindingPattern, es: readonly BindingElement[]) {
+      return n.elements !== es ? updateNode(create(es), n) : n;
+    }
+    export function kind(n: Node): n is ObjectBindingPattern {
+      return n.kind === SyntaxKind.ObjectBindingPattern;
+    }
+  }
+
+  export interface ArrayBindingPattern extends Node {
+    kind: SyntaxKind.ArrayBindingPattern;
+    parent: VariableDeclaration | ParameterDeclaration | BindingElement;
+    elements: NodeArray<ArrayBindingElement>;
+  }
+  export namespace ArrayBindingPattern {
+    export function create(es: readonly ArrayBindingElement[]) {
+      const n = Node.createSynthesized(SyntaxKind.ArrayBindingPattern) as ArrayBindingPattern;
+      n.elements = createNodeArray(es);
+      return n;
+    }
+    export function update(n: ArrayBindingPattern, es: readonly ArrayBindingElement[]) {
+      return n.elements !== es ? updateNode(create(es), n) : n;
+    }
+    export function kind(n: Node): n is ArrayBindingPattern {
+      return n.kind === SyntaxKind.ArrayBindingPattern;
+    }
+  }
+
+  export interface BindingElement extends NamedDeclaration {
+    kind: SyntaxKind.BindingElement;
+    parent: BindingPattern;
+    propertyName?: PropertyName;
+    dot3Token?: Dot3Token;
+    name: BindingName;
+    initializer?: Expression;
+  }
+  export namespace BindingElement {
+    export function create(d: Dot3Token | undefined, p: string | PropertyName | undefined, b: string | BindingName, i?: Expression) {
+      const n = Node.createSynthesized(SyntaxKind.BindingElement) as BindingElement;
+      n.dot3Token = d;
+      n.propertyName = asName(p);
+      n.name = asName(b);
+      n.initializer = i;
+      return n;
+    }
+    export function update(n: BindingElement, d: Dot3Token | undefined, p: PropertyName | undefined, b: BindingName, i?: Expression) {
+      return n.propertyName !== p || n.dot3Token !== d || n.name !== b || n.initializer !== i ? updateNode(create(d, p, b, i), n) : n;
+    }
+    export function kind(n: Node): n is BindingElement {
+      return n.kind === SyntaxKind.BindingElement;
     }
   }
 

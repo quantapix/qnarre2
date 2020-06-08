@@ -91,8 +91,7 @@ namespace qnr {
       startLexicalEnvironment();
 
       const statements: Statement[] = [];
-      const ensureUseStrict =
-        getStrictOptionValue(compilerOptions, 'alwaysStrict') || (!compilerOptions.noImplicitUseStrict && isExternalModule(currentSourceFile));
+      const ensureUseStrict = getStrictOptionValue(compilerOptions, 'alwaysStrict') || (!compilerOptions.noImplicitUseStrict && isExternalModule(currentSourceFile));
       const statementOffset = addPrologue(statements, node.statements, ensureUseStrict && !isJsonSourceFile(node), sourceElementVisitor);
 
       if (shouldEmitUnderscoreUnderscoreESModule()) {
@@ -152,10 +151,7 @@ namespace qnr {
       //
       // we need to add modules without alias names to the end of the dependencies list
 
-      const { aliasedModuleNames, unaliasedModuleNames, importAliasNames } = collectAsynchronousDependencies(
-        node,
-        /*includeNonAmdDependencies*/ true
-      );
+      const { aliasedModuleNames, unaliasedModuleNames, importAliasNames } = collectAsynchronousDependencies(node, /*includeNonAmdDependencies*/ true);
 
       // Create an updated SourceFile:
       //
@@ -172,9 +168,7 @@ namespace qnr {
                 // Add the dependency array argument:
                 //
                 //     ["require", "exports", module1", "module2", ...]
-                createArrayLiteral(
-                  jsonSourceFile ? emptyArray : [createLiteral('require'), createLiteral('exports'), ...aliasedModuleNames, ...unaliasedModuleNames]
-                ),
+                createArrayLiteral(jsonSourceFile ? emptyArray : [createLiteral('require'), createLiteral('exports'), ...aliasedModuleNames, ...unaliasedModuleNames]),
 
                 // Add the module body function argument:
                 //
@@ -189,8 +183,8 @@ namespace qnr {
                       /*name*/ undefined,
                       /*typeParameters*/ undefined,
                       [
-                        createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, 'require'),
-                        createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, 'exports'),
+                        createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, 'require'),
+                        createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, 'exports'),
                         ...importAliasNames,
                       ],
                       /*type*/ undefined,
@@ -213,26 +207,20 @@ namespace qnr {
      * @param node The SourceFile node.
      */
     function transformUMDModule(node: SourceFile) {
-      const { aliasedModuleNames, unaliasedModuleNames, importAliasNames } = collectAsynchronousDependencies(
-        node,
-        /*includeNonAmdDependencies*/ false
-      );
+      const { aliasedModuleNames, unaliasedModuleNames, importAliasNames } = collectAsynchronousDependencies(node, /*includeNonAmdDependencies*/ false);
       const moduleName = tryGetModuleNameFromFile(node, host, compilerOptions);
       const umdHeader = createFunctionExpression(
         /*modifiers*/ undefined,
         /*asteriskToken*/ undefined,
         /*name*/ undefined,
         /*typeParameters*/ undefined,
-        [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, 'factory')],
+        [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, 'factory')],
         /*type*/ undefined,
         setTextRange(
           createBlock(
             [
               createIf(
-                createLogicalAnd(
-                  createTypeCheck(createIdentifier('module'), 'object'),
-                  createTypeCheck(createPropertyAccess(createIdentifier('module'), 'exports'), 'object')
-                ),
+                createLogicalAnd(createTypeCheck(createIdentifier('module'), 'object'), createTypeCheck(createPropertyAccess(createIdentifier('module'), 'exports'), 'object')),
                 createBlock([
                   createVariableStatement(/*modifiers*/ undefined, [
                     createVariableDeclaration(
@@ -297,8 +285,8 @@ namespace qnr {
                   /*name*/ undefined,
                   /*typeParameters*/ undefined,
                   [
-                    createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, 'require'),
-                    createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, 'exports'),
+                    createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, 'require'),
+                    createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, 'exports'),
                     ...importAliasNames,
                   ],
                   /*type*/ undefined,
@@ -337,7 +325,7 @@ namespace qnr {
       for (const amdDependency of node.amdDependencies) {
         if (amdDependency.name) {
           aliasedModuleNames.push(createLiteral(amdDependency.path));
-          importAliasNames.push(createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, amdDependency.name));
+          importAliasNames.push(createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, amdDependency.name));
         } else {
           unaliasedModuleNames.push(createLiteral(amdDependency.path));
         }
@@ -358,7 +346,7 @@ namespace qnr {
             // This is so that when printer will not substitute the identifier
             setEmitFlags(importAliasName, EmitFlags.NoSubstitution);
             aliasedModuleNames.push(externalModuleName);
-            importAliasNames.push(createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, importAliasName));
+            importAliasNames.push(createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, importAliasName));
           } else {
             unaliasedModuleNames.push(externalModuleName);
           }
@@ -369,11 +357,7 @@ namespace qnr {
     }
 
     function getAMDImportExpressionForImport(node: ImportDeclaration | ExportDeclaration | ImportEqualsDeclaration) {
-      if (
-        isImportEqualsDeclaration(node) ||
-        isExportDeclaration(node) ||
-        !getExternalModuleNameLiteral(node, currentSourceFile, host, resolver, compilerOptions)
-      ) {
+      if (isImportEqualsDeclaration(node) || isExportDeclaration(node) || !getExternalModuleNameLiteral(node, currentSourceFile, host, resolver, compilerOptions)) {
         return;
       }
       const name = getLocalNameForExternalImport(node, currentSourceFile)!; // TODO: GH#18217
@@ -393,12 +377,7 @@ namespace qnr {
       startLexicalEnvironment();
 
       const statements: Statement[] = [];
-      const statementOffset = addPrologue(
-        statements,
-        node.statements,
-        /*ensureUseStrict*/ !compilerOptions.noImplicitUseStrict,
-        sourceElementVisitor
-      );
+      const statementOffset = addPrologue(statements, node.statements, /*ensureUseStrict*/ !compilerOptions.noImplicitUseStrict, sourceElementVisitor);
 
       if (shouldEmitUnderscoreUnderscoreESModule()) {
         append(statements, createUnderscoreUnderscoreESModule());
@@ -456,9 +435,7 @@ namespace qnr {
             setEmitFlags(statement, EmitFlags.NoTokenSourceMaps | EmitFlags.NoComments);
             statements.push(statement);
           } else {
-            const statement = createExpressionStatement(
-              createAssignment(createPropertyAccess(createIdentifier('module'), 'exports'), expressionResult)
-            );
+            const statement = createExpressionStatement(createAssignment(createPropertyAccess(createIdentifier('module'), 'exports'), expressionResult));
 
             setTextRange(statement, currentModuleInfo.exportEquals);
             setEmitFlags(statement, EmitFlags.NoComments);
@@ -572,14 +549,7 @@ namespace qnr {
 
     function visitDestructuringAssignment(node: DestructuringAssignment): Expression {
       if (destructuringNeedsFlattening(node.left)) {
-        return flattenDestructuringAssignment(
-          node,
-          moduleExpressionElementVisitor,
-          context,
-          FlattenLevel.All,
-          /*needsValue*/ false,
-          createAllExportExpressions
-        );
+        return flattenDestructuringAssignment(node, moduleExpressionElementVisitor, context, FlattenLevel.All, /*needsValue*/ false, createAllExportExpressions);
       }
       return visitEachChild(node, moduleExpressionElementVisitor, context);
     }
@@ -614,11 +584,7 @@ namespace qnr {
       // });
       needUMDDynamicImportHelper = true;
       if (isSimpleCopiableExpression(arg)) {
-        const argClone = isGeneratedIdentifier(arg)
-          ? arg
-          : StringLiteral.kind(arg)
-          ? createLiteral(arg)
-          : setEmitFlags(setTextRange(getSynthesizedClone(arg), arg), EmitFlags.NoComments);
+        const argClone = isGeneratedIdentifier(arg) ? arg : StringLiteral.kind(arg) ? createLiteral(arg) : setEmitFlags(setTextRange(getSynthesizedClone(arg), arg), EmitFlags.NoComments);
         return createConditional(
           /*condition*/ createIdentifier('__syncRequire'),
           /*whenTrue*/ createImportCallExpressionCommonJS(arg, containsLexicalThis),
@@ -647,39 +613,18 @@ namespace qnr {
       const resolve = createUniqueName('resolve');
       const reject = createUniqueName('reject');
       const parameters = [
-        createParameter(/*decorator*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, /*name*/ resolve),
-        createParameter(/*decorator*/ undefined, /*modifiers*/ undefined, /*dotDotDotToken*/ undefined, /*name*/ reject),
+        createParameter(/*decorator*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, /*name*/ resolve),
+        createParameter(/*decorator*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, /*name*/ reject),
       ];
       const body = createBlock([
-        createExpressionStatement(
-          createCall(createIdentifier('require'), /*typeArguments*/ undefined, [
-            createArrayLiteral([arg || createOmittedExpression()]),
-            resolve,
-            reject,
-          ])
-        ),
+        createExpressionStatement(createCall(createIdentifier('require'), /*typeArguments*/ undefined, [createArrayLiteral([arg || createOmittedExpression()]), resolve, reject])),
       ]);
 
       let func: FunctionExpression | ArrowFunction;
       if (languageVersion >= ScriptTarget.ES2015) {
-        func = createArrowFunction(
-          /*modifiers*/ undefined,
-          /*typeParameters*/ undefined,
-          parameters,
-          /*type*/ undefined,
-          /*equalsGreaterThanToken*/ undefined,
-          body
-        );
+        func = createArrowFunction(/*modifiers*/ undefined, /*typeParameters*/ undefined, parameters, /*type*/ undefined, /*equalsGreaterThanToken*/ undefined, body);
       } else {
-        func = createFunctionExpression(
-          /*modifiers*/ undefined,
-          /*asteriskToken*/ undefined,
-          /*name*/ undefined,
-          /*typeParameters*/ undefined,
-          parameters,
-          /*type*/ undefined,
-          body
-        );
+        func = createFunctionExpression(/*modifiers*/ undefined, /*asteriskToken*/ undefined, /*name*/ undefined, /*typeParameters*/ undefined, parameters, /*type*/ undefined, body);
 
         // if there is a lexical 'this' in the import call arguments, ensure we indicate
         // that this new function expression indicates it captures 'this' so that the
@@ -692,9 +637,7 @@ namespace qnr {
       const promise = createNew(createIdentifier('Promise'), /*typeArguments*/ undefined, [func]);
       if (compilerOptions.esModuleInterop) {
         context.requestEmitHelper(importStarHelper);
-        return createCall(createPropertyAccess(promise, createIdentifier('then')), /*typeArguments*/ undefined, [
-          getUnscopedHelperName('__importStar'),
-        ]);
+        return createCall(createPropertyAccess(promise, createIdentifier('then')), /*typeArguments*/ undefined, [getUnscopedHelperName('__importStar')]);
       }
       return promise;
     }
@@ -705,11 +648,7 @@ namespace qnr {
       // Promise.resolve().then(function () { return require(x); }) /*CommonJs Require*/
       // We have to wrap require in then callback so that require is done in asynchronously
       // if we simply do require in resolve callback in Promise constructor. We will execute the loading immediately
-      const promiseResolveCall = createCall(
-        createPropertyAccess(createIdentifier('Promise'), 'resolve'),
-        /*typeArguments*/ undefined,
-        /*argumentsArray*/ []
-      );
+      const promiseResolveCall = createCall(createPropertyAccess(createIdentifier('Promise'), 'resolve'), /*typeArguments*/ undefined, /*argumentsArray*/ []);
       let requireCall = createCall(createIdentifier('require'), /*typeArguments*/ undefined, arg ? [arg] : []);
       if (compilerOptions.esModuleInterop) {
         context.requestEmitHelper(importStarHelper);
@@ -718,14 +657,7 @@ namespace qnr {
 
       let func: FunctionExpression | ArrowFunction;
       if (languageVersion >= ScriptTarget.ES2015) {
-        func = createArrowFunction(
-          /*modifiers*/ undefined,
-          /*typeParameters*/ undefined,
-          /*parameters*/ [],
-          /*type*/ undefined,
-          /*equalsGreaterThanToken*/ undefined,
-          requireCall
-        );
+        func = createArrowFunction(/*modifiers*/ undefined, /*typeParameters*/ undefined, /*parameters*/ [], /*type*/ undefined, /*equalsGreaterThanToken*/ undefined, requireCall);
       } else {
         func = createFunctionExpression(
           /*modifiers*/ undefined,
@@ -790,30 +722,16 @@ namespace qnr {
           const variables: VariableDeclaration[] = [];
           if (namespaceDeclaration && !isDefaultImport(node)) {
             // import * as n from "mod";
-            variables.push(
-              createVariableDeclaration(
-                getSynthesizedClone(namespaceDeclaration.name),
-                /*type*/ undefined,
-                getHelperExpressionForImport(node, createRequireCall(node))
-              )
-            );
+            variables.push(createVariableDeclaration(getSynthesizedClone(namespaceDeclaration.name), /*type*/ undefined, getHelperExpressionForImport(node, createRequireCall(node))));
           } else {
             // import d from "mod";
             // import { x, y } from "mod";
             // import d, { x, y } from "mod";
             // import d, * as n from "mod";
-            variables.push(
-              createVariableDeclaration(
-                getGeneratedNameForNode(node),
-                /*type*/ undefined,
-                getHelperExpressionForImport(node, createRequireCall(node))
-              )
-            );
+            variables.push(createVariableDeclaration(getGeneratedNameForNode(node), /*type*/ undefined, getHelperExpressionForImport(node, createRequireCall(node))));
 
             if (namespaceDeclaration && isDefaultImport(node)) {
-              variables.push(
-                createVariableDeclaration(getSynthesizedClone(namespaceDeclaration.name), /*type*/ undefined, getGeneratedNameForNode(node))
-              );
+              variables.push(createVariableDeclaration(getSynthesizedClone(namespaceDeclaration.name), /*type*/ undefined, getGeneratedNameForNode(node)));
             }
           }
 
@@ -821,10 +739,7 @@ namespace qnr {
             statements,
             setOriginalNode(
               setTextRange(
-                createVariableStatement(
-                  /*modifiers*/ undefined,
-                  createVariableDeclarationList(variables, languageVersion >= ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None)
-                ),
+                createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList(variables, languageVersion >= ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None)),
                 /*location*/ node
               ),
               /*original*/ node
@@ -840,10 +755,7 @@ namespace qnr {
             createVariableDeclarationList(
               [
                 setOriginalNode(
-                  setTextRange(
-                    createVariableDeclaration(getSynthesizedClone(namespaceDeclaration.name), /*type*/ undefined, getGeneratedNameForNode(node)),
-                    /*location*/ node
-                  ),
+                  setTextRange(createVariableDeclaration(getSynthesizedClone(namespaceDeclaration.name), /*type*/ undefined, getGeneratedNameForNode(node)), /*location*/ node),
                   /*original*/ node
                 ),
               ],
@@ -890,10 +802,7 @@ namespace qnr {
       let statements: Statement[] | undefined;
       if (moduleKind !== ModuleKind.AMD) {
         if (hasSyntacticModifier(node, ModifierFlags.Export)) {
-          statements = append(
-            statements,
-            setOriginalNode(setTextRange(createExpressionStatement(createExportExpression(node.name, createRequireCall(node))), node), node)
-          );
+          statements = append(statements, setOriginalNode(setTextRange(createExpressionStatement(createExportExpression(node.name, createRequireCall(node))), node), node));
         } else {
           statements = append(
             statements,
@@ -914,10 +823,7 @@ namespace qnr {
         }
       } else {
         if (hasSyntacticModifier(node, ModifierFlags.Export)) {
-          statements = append(
-            statements,
-            setOriginalNode(setTextRange(createExpressionStatement(createExportExpression(getExportName(node), getLocalName(node))), node), node)
-          );
+          statements = append(statements, setOriginalNode(setTextRange(createExpressionStatement(createExportExpression(getExportName(node), getLocalName(node))), node), node));
         }
       }
 
@@ -953,10 +859,7 @@ namespace qnr {
           statements.push(
             setOriginalNode(
               setTextRange(
-                createVariableStatement(
-                  /*modifiers*/ undefined,
-                  createVariableDeclarationList([createVariableDeclaration(generatedName, /*type*/ undefined, createRequireCall(node))])
-                ),
+                createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([createVariableDeclaration(generatedName, /*type*/ undefined, createRequireCall(node))])),
                 /*location*/ node
               ),
               /* original */ node
@@ -969,12 +872,7 @@ namespace qnr {
               setOriginalNode(
                 setTextRange(
                   createExpressionStatement(
-                    createCreateBindingHelper(
-                      context,
-                      generatedName,
-                      createLiteral(specifier.propertyName || specifier.name),
-                      specifier.propertyName ? createLiteral(specifier.name) : undefined
-                    )
+                    createCreateBindingHelper(context, generatedName, createLiteral(specifier.propertyName || specifier.name), specifier.propertyName ? createLiteral(specifier.name) : undefined)
                   ),
                   specifier
                 ),
@@ -985,12 +883,7 @@ namespace qnr {
             const exportedValue = createPropertyAccess(generatedName, specifier.propertyName || specifier.name);
             statements.push(
               setOriginalNode(
-                setTextRange(
-                  createExpressionStatement(
-                    createExportExpression(getExportName(specifier), exportedValue, /* location */ undefined, /* liveBinding */ true)
-                  ),
-                  specifier
-                ),
+                setTextRange(createExpressionStatement(createExportExpression(getExportName(specifier), exportedValue, /* location */ undefined, /* liveBinding */ true)), specifier),
                 specifier
               )
             );
@@ -1007,9 +900,7 @@ namespace qnr {
               createExpressionStatement(
                 createExportExpression(
                   getSynthesizedClone(node.exportClause.name),
-                  moduleKind !== ModuleKind.AMD
-                    ? getHelperExpressionForExport(node, createRequireCall(node))
-                    : createIdentifier(idText(node.exportClause.name))
+                  moduleKind !== ModuleKind.AMD ? getHelperExpressionForExport(node, createRequireCall(node)) : createIdentifier(idText(node.exportClause.name))
                 )
               ),
               node
@@ -1021,13 +912,7 @@ namespace qnr {
         return singleOrMany(statements);
       } else {
         // export * from "mod";
-        return setOriginalNode(
-          setTextRange(
-            createExpressionStatement(createExportStarHelper(context, moduleKind !== ModuleKind.AMD ? createRequireCall(node) : generatedName)),
-            node
-          ),
-          node
-        );
+        return setOriginalNode(setTextRange(createExpressionStatement(createExportStarHelper(context, moduleKind !== ModuleKind.AMD ? createRequireCall(node) : generatedName)), node), node);
       }
     }
 
@@ -1054,13 +939,7 @@ namespace qnr {
           /*allowComments*/ true
         );
       } else {
-        statements = appendExportStatement(
-          statements,
-          createIdentifier('default'),
-          visitNode(node.expression, moduleExpressionElementVisitor),
-          /*location*/ node,
-          /*allowComments*/ true
-        );
+        statements = appendExportStatement(statements, createIdentifier('default'), visitNode(node.expression, moduleExpressionElementVisitor), /*location*/ node, /*allowComments*/ true);
       }
 
       return singleOrMany(statements);
@@ -1219,14 +1098,7 @@ namespace qnr {
      */
     function transformInitializedVariable(node: VariableDeclaration): Expression {
       if (isBindingPattern(node.name)) {
-        return flattenDestructuringAssignment(
-          visitNode(node, moduleExpressionElementVisitor),
-          /*visitor*/ undefined,
-          context,
-          FlattenLevel.All,
-          /*needsValue*/ false,
-          createAllExportExpressions
-        );
+        return flattenDestructuringAssignment(visitNode(node, moduleExpressionElementVisitor), /*visitor*/ undefined, context, FlattenLevel.All, /*needsValue*/ false, createAllExportExpressions);
       } else {
         return createAssignment(
           setTextRange(createPropertyAccess(createIdentifier('exports'), node.name), /*location*/ node.name),
@@ -1402,10 +1274,7 @@ namespace qnr {
      * appended.
      * @param decl The declaration whose exports are to be recorded.
      */
-    function appendExportsOfHoistedDeclaration(
-      statements: Statement[] | undefined,
-      decl: ClassDeclaration | FunctionDeclaration
-    ): Statement[] | undefined {
+    function appendExportsOfHoistedDeclaration(statements: Statement[] | undefined, decl: ClassDeclaration | FunctionDeclaration): Statement[] | undefined {
       if (currentModuleInfo.exportEquals) {
         return statements;
       }
@@ -1435,14 +1304,7 @@ namespace qnr {
       const exportSpecifiers = currentModuleInfo.exportSpecifiers.get(idText(name));
       if (exportSpecifiers) {
         for (const exportSpecifier of exportSpecifiers) {
-          statements = appendExportStatement(
-            statements,
-            exportSpecifier.name,
-            name,
-            /*location*/ exportSpecifier.name,
-            /* allowComments */ undefined,
-            liveBinding
-          );
+          statements = appendExportStatement(statements, exportSpecifier.name, name, /*location*/ exportSpecifier.name, /* allowComments */ undefined, liveBinding);
         }
       }
       return statements;
@@ -1678,16 +1540,10 @@ namespace qnr {
         const importDeclaration = resolver.getReferencedImportDeclaration(node);
         if (importDeclaration) {
           if (isImportClause(importDeclaration)) {
-            return setTextRange(
-              createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent), createIdentifier('default')),
-              /*location*/ node
-            );
+            return setTextRange(createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent), createIdentifier('default')), /*location*/ node);
           } else if (isImportSpecifier(importDeclaration)) {
             const name = importDeclaration.propertyName || importDeclaration.name;
-            return setTextRange(
-              createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent.parent.parent), getSynthesizedClone(name)),
-              /*location*/ node
-            );
+            return setTextRange(createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent.parent.parent), getSynthesizedClone(name)), /*location*/ node);
           }
         }
       }
@@ -1708,13 +1564,7 @@ namespace qnr {
       // - We do not substitute identifiers that were originally the name of an enum or
       //   namespace due to how they are transformed in TypeScript.
       // - We only substitute identifiers that are exported at the top level.
-      if (
-        isAssignmentOperator(node.operatorToken.kind) &&
-        isIdentifier(node.left) &&
-        !isGeneratedIdentifier(node.left) &&
-        !isLocalName(node.left) &&
-        !isDeclarationNameOfEnumOrNamespace(node.left)
-      ) {
+      if (isAssignmentOperator(node.operatorToken.kind) && isIdentifier(node.left) && !isGeneratedIdentifier(node.left) && !isLocalName(node.left) && !isDeclarationNameOfEnumOrNamespace(node.left)) {
         const exportedNames = getExports(node.left);
         if (exportedNames) {
           // For each additional export of the declaration, apply an export assignment.
@@ -1759,11 +1609,7 @@ namespace qnr {
           let expression: Expression =
             node.kind === SyntaxKind.PostfixUnaryExpression
               ? setTextRange(
-                  createBinary(
-                    node.operand,
-                    createToken(node.operator === SyntaxKind.Plus2Token ? SyntaxKind.PlusEqualsToken : SyntaxKind.MinusEqualsToken),
-                    createLiteral(1)
-                  ),
+                  createBinary(node.operand, createToken(node.operator === SyntaxKind.Plus2Token ? SyntaxKind.PlusEqualsToken : SyntaxKind.MinusEqualsToken), createLiteral(1)),
                   /*location*/ node
                 )
               : node;
@@ -1812,12 +1658,7 @@ var __createBinding = (this && this.__createBinding) || (Object.create ? (functi
 
   function createCreateBindingHelper(context: TransformationContext, module: Expression, inputName: Expression, outputName: Expression | undefined) {
     context.requestEmitHelper(createBindingHelper);
-    return createCall(getUnscopedHelperName('__createBinding'), /*typeArguments*/ undefined, [
-      createIdentifier('exports'),
-      module,
-      inputName,
-      ...(outputName ? [outputName] : []),
-    ]);
+    return createCall(getUnscopedHelperName('__createBinding'), /*typeArguments*/ undefined, [createIdentifier('exports'), module, inputName, ...(outputName ? [outputName] : [])]);
   }
 
   export const setModuleDefaultHelper: UnscopedEmitHelper = {
