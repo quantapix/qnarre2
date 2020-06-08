@@ -249,10 +249,6 @@ namespace qnr {
     return count;
   }
 
-  /**
-   * Filters an array by a cb function. Returns the same array instance if the cb is
-   * true for all elements, otherwise returns a new array instance containing the filtered subset.
-   */
   export function filter<T, U extends T>(array: T[], f: (x: T) => x is U): U[];
   export function filter<T>(array: T[], f: (x: T) => boolean): T[];
   export function filter<T, U extends T>(array: readonly T[], f: (x: T) => x is U): readonly U[];
@@ -342,11 +338,6 @@ namespace qnr {
     return array;
   }
 
-  /**
-   * Flattens an array containing a mix of array or non-array elements.
-   *
-   * @param array The array to flatten.
-   */
   export function flatten<T>(array: T[][] | readonly (T | readonly T[] | undefined)[]): T[] {
     const result = [];
     for (const v of array) {
@@ -488,11 +479,7 @@ namespace qnr {
     };
   }
 
-  export function mapDefinedMap<T, U>(
-    map: QReadonlyMap<T>,
-    mapValue: (value: T, key: string) => U | undefined,
-    mapKey: (key: string) => string = identity
-  ): QMap<U> {
+  export function mapDefinedMap<T, U>(map: QReadonlyMap<T>, mapValue: (value: T, key: string) => U | undefined, mapKey: (key: string) => string = identity): QMap<U> {
     const result = createMap<U>();
     map.forEach((v, k) => {
       const mapped = mapValue(v, k);
@@ -516,21 +503,9 @@ namespace qnr {
     };
   }
 
-  export function spanMap<T, K, U>(
-    array: readonly T[],
-    keyfn: (x: T, i: number) => K,
-    mapfn: (chunk: T[], key: K, start: number, end: number) => U
-  ): U[];
-  export function spanMap<T, K, U>(
-    array: readonly T[] | undefined,
-    keyfn: (x: T, i: number) => K,
-    mapfn: (chunk: T[], key: K, start: number, end: number) => U
-  ): U[] | undefined;
-  export function spanMap<T, K, U>(
-    array: readonly T[] | undefined,
-    keyfn: (x: T, i: number) => K,
-    mapfn: (chunk: T[], key: K, start: number, end: number) => U
-  ): U[] | undefined {
+  export function spanMap<T, K, U>(array: readonly T[], keyfn: (x: T, i: number) => K, mapfn: (chunk: T[], key: K, start: number, end: number) => U): U[];
+  export function spanMap<T, K, U>(array: readonly T[] | undefined, keyfn: (x: T, i: number) => K, mapfn: (chunk: T[], key: K, start: number, end: number) => U): U[] | undefined;
+  export function spanMap<T, K, U>(array: readonly T[] | undefined, keyfn: (x: T, i: number) => K, mapfn: (chunk: T[], key: K, start: number, end: number) => U): U[] | undefined {
     let result: U[] | undefined;
     if (array) {
       result = [];
@@ -572,10 +547,7 @@ namespace qnr {
   export function mapEntries<T, U>(map: QReadonlyMap<T>, f: (key: string, value: T) => [string, U]): QMap<U>;
   export function mapEntries<T, U>(map: QReadonlyMap<T> | undefined, f: (key: string, value: T) => [string, U]): QMap<U> | undefined;
   export function mapEntries<T, U>(map: QReadonlyMap<T> | undefined, f: (key: string, value: T) => [string, U]): QMap<U> | undefined {
-    if (!map) {
-      return;
-    }
-
+    if (!map) return;
     const result = createMap<U>();
     map.forEach((value, key) => {
       const [newKey, newValue] = f(key, value);
@@ -662,36 +634,23 @@ namespace qnr {
   }
 
   export function deduplicate<T>(array: readonly T[], eq: EqualityComparer<T>, comparer?: Comparer<T>): T[] {
-    return array.length === 0
-      ? []
-      : array.length === 1
-      ? array.slice()
-      : comparer
-      ? deduplicateRelational(array, eq, comparer)
-      : deduplicateEquality(array, eq);
+    return array.length === 0 ? [] : array.length === 1 ? array.slice() : comparer ? deduplicateRelational(array, eq, comparer) : deduplicateEquality(array, eq);
   }
 
   function deduplicateSorted<T>(array: SortedReadonlyArray<T>, comparer: EqualityComparer<T> | Comparer<T>): SortedReadonlyArray<T> {
     if (array.length === 0) return (emptyArray as any) as SortedReadonlyArray<T>;
-
     let last = array[0];
     const deduplicated: T[] = [last];
     for (let i = 1; i < array.length; i++) {
       const next = array[i];
       switch (comparer(next, last)) {
-        // equality comparison
         case true:
-
-        // relational comparison
         // falls through
         case Comparison.EqualTo:
           continue;
-
         case Comparison.LessThan:
-          // If `array` is sorted, `next` should **never** be less than `last`.
           return fail('Array is unsorted.');
       }
-
       deduplicated.push((last = next));
     }
 
@@ -703,7 +662,6 @@ namespace qnr {
       array.push(insert);
       return;
     }
-
     const insertIndex = binarySearch(array, insert, identity, compare);
     if (insertIndex < 0) {
       array.splice(~insertIndex, 0, insert);
@@ -716,25 +674,12 @@ namespace qnr {
     return deduplicateSorted(sort(array, comparer), eq || comparer || ((compareStringsCaseSensitive as any) as Comparer<T>));
   }
 
-  export function arrayIsEqualTo<T>(
-    array1: readonly T[] | undefined,
-    array2: readonly T[] | undefined,
-    eq: (a: T, b: T, index: number) => boolean = equateValues
-  ): boolean {
-    if (!array1 || !array2) {
-      return array1 === array2;
-    }
-
-    if (array1.length !== array2.length) {
-      return false;
-    }
-
+  export function arrayIsEqualTo<T>(array1: readonly T[] | undefined, array2: readonly T[] | undefined, eq: (a: T, b: T, index: number) => boolean = equateValues): boolean {
+    if (!array1 || !array2) return array1 === array2;
+    if (array1.length !== array2.length) return false;
     for (let i = 0; i < array1.length; i++) {
-      if (!eq(array1[i], array2[i], i)) {
-        return false;
-      }
+      if (!eq(array1[i], array2[i], i)) return false;
     }
-
     return true;
   }
 
@@ -749,12 +694,8 @@ namespace qnr {
       for (let i = 0; i < array.length; i++) {
         const v = array[i];
         if (result || !v) {
-          if (!result) {
-            result = array.slice(0, i);
-          }
-          if (v) {
-            result.push(v);
-          }
+          if (!result) result = array.slice(0, i);
+          if (v) result.push(v);
         }
       }
     }
@@ -769,7 +710,6 @@ namespace qnr {
         // Ensure `arrayB` is properly sorted.
         Debug.assertGreaterThanOrEqual(comparer(arrayB[offsetB], arrayB[offsetB - 1]), Comparison.EqualTo);
       }
-
       loopA: for (const startA = offsetA; offsetA < arrayA.length; offsetA++) {
         if (offsetA > startA) {
           // Ensure `arrayA` is properly sorted. We only need to perform this check if
@@ -982,13 +922,7 @@ namespace qnr {
     return ~low;
   }
 
-  export function reduceLeft<T, U>(
-    array: readonly T[] | undefined,
-    f: (memo: U, value: T, i: number) => U,
-    initial: U,
-    start?: number,
-    count?: number
-  ): U;
+  export function reduceLeft<T, U>(array: readonly T[] | undefined, f: (memo: U, value: T, i: number) => U, initial: U, start?: number, count?: number): U;
   export function reduceLeft<T>(array: readonly T[], f: (memo: T, value: T, i: number) => T): T | undefined;
   export function reduceLeft<T>(array: T[], f: (memo: T, value: T, i: number) => T, initial?: T, start?: number, count?: number): T | undefined {
     if (array && array.length > 0) {
@@ -1026,9 +960,7 @@ namespace qnr {
   export function getOwnKeys<T>(map: MapLike<T>): string[] {
     const keys: string[] = [];
     for (const key in map) {
-      if (hasOwnProperty.call(map, key)) {
-        keys.push(key);
-      }
+      if (hasOwnProperty.call(map, key)) keys.push(key);
     }
     return keys;
   }
@@ -1091,11 +1023,7 @@ namespace qnr {
 
   export function arrayToMap<T>(array: readonly T[], makeKey: (value: T) => string | undefined): QMap<T>;
   export function arrayToMap<T, U>(array: readonly T[], makeKey: (value: T) => string | undefined, makeValue: (value: T) => U): QMap<U>;
-  export function arrayToMap<T, U>(
-    array: readonly T[],
-    makeKey: (value: T) => string | undefined,
-    makeValue: (value: T) => T | U = identity
-  ): QMap<T | U> {
+  export function arrayToMap<T, U>(array: readonly T[], makeKey: (value: T) => string | undefined, makeValue: (value: T) => T | U = identity): QMap<T | U> {
     const result = createMap<T | U>();
     for (const value of array) {
       const key = makeKey(value);
@@ -1116,11 +1044,7 @@ namespace qnr {
 
   export function arrayToMultiMap<T>(values: readonly T[], makeKey: (value: T) => string): MultiMap<T>;
   export function arrayToMultiMap<T, U>(values: readonly T[], makeKey: (value: T) => string, makeValue: (value: T) => U): MultiMap<U>;
-  export function arrayToMultiMap<T, U>(
-    values: readonly T[],
-    makeKey: (value: T) => string,
-    makeValue: (value: T) => T | U = identity
-  ): MultiMap<T | U> {
+  export function arrayToMultiMap<T, U>(values: readonly T[], makeKey: (value: T) => string, makeValue: (value: T) => T | U = identity): MultiMap<T | U> {
     const result = createMultiMap<T | U>();
     for (const value of values) {
       result.add(makeKey(value), makeValue(value));
@@ -1130,11 +1054,7 @@ namespace qnr {
 
   export function group<T>(values: readonly T[], getGroupId: (value: T) => string): readonly (readonly T[])[];
   export function group<T, R>(values: readonly T[], getGroupId: (value: T) => string, resultSelector: (values: readonly T[]) => R): R[];
-  export function group<T>(
-    values: readonly T[],
-    getGroupId: (value: T) => string,
-    resultSelector: (values: readonly T[]) => readonly T[] = identity
-  ): readonly (readonly T[])[] {
+  export function group<T>(values: readonly T[], getGroupId: (value: T) => string, resultSelector: (values: readonly T[]) => readonly T[] = identity): readonly (readonly T[])[] {
     return arrayFrom(arrayToMultiMap(values, getGroupId).values(), resultSelector);
   }
 
@@ -1159,9 +1079,9 @@ namespace qnr {
     return result;
   }
 
-  export function copyProperties<T1 extends T2, T2>(first: T1, second: T2) {
-    for (const id in second) {
-      if (hasOwnProperty.call(second, id)) (first as any)[id] = second[id];
+  export function copyProperties<T1 extends T2, T2>(to: T1, from: T2) {
+    for (const k in from) {
+      if (hasOwnProperty.call(from, k)) (to as any)[k] = from[k];
     }
   }
 
@@ -1171,10 +1091,7 @@ namespace qnr {
 
   export function mapMap<T, U>(map: QMap<T>, f: (t: T, key: string) => [string, U]): QMap<U>;
   export function mapMap<T, U>(map: UnderscoreEscapedMap<T>, f: (t: T, key: __String) => [string, U]): QMap<U>;
-  export function mapMap<T, U>(
-    map: QMap<T> | UnderscoreEscapedMap<T>,
-    f: ((t: T, key: string) => [string, U]) | ((t: T, key: __String) => [string, U])
-  ): QMap<U> {
+  export function mapMap<T, U>(map: QMap<T> | UnderscoreEscapedMap<T>, f: ((t: T, key: string) => [string, U]) | ((t: T, key: __String) => [string, U])): QMap<U> {
     const result = createMap<U>();
     map.forEach((t: T, key: string & __String) => result.set(...f(t, key)));
     return result;
@@ -1324,15 +1241,7 @@ namespace qnr {
   function compareComparableValues(a: string | undefined, b: string | undefined): Comparison;
   function compareComparableValues(a: number | undefined, b: number | undefined): Comparison;
   function compareComparableValues(a: string | number | undefined, b: string | number | undefined) {
-    return a === b
-      ? Comparison.EqualTo
-      : a === undefined
-      ? Comparison.LessThan
-      : b === undefined
-      ? Comparison.GreaterThan
-      : a < b
-      ? Comparison.LessThan
-      : Comparison.GreaterThan;
+    return a === b ? Comparison.EqualTo : a === undefined ? Comparison.LessThan : b === undefined ? Comparison.GreaterThan : a < b ? Comparison.LessThan : Comparison.GreaterThan;
   }
 
   export function compareValues(a: number | undefined, b: number | undefined): Comparison {
@@ -1409,11 +1318,7 @@ namespace qnr {
       if (typeof Intl === 'object' && typeof Intl.Collator === 'function') {
         return createIntlCollatorStringComparer;
       }
-      if (
-        typeof String.prototype.localeCompare === 'function' &&
-        typeof String.prototype.toLocaleUpperCase === 'function' &&
-        'a'.localeCompare('B') < 0
-      ) {
+      if (typeof String.prototype.localeCompare === 'function' && typeof String.prototype.toLocaleUpperCase === 'function' && 'a'.localeCompare('B') < 0) {
         return createLocaleCompareStringComparer;
       }
       return createFallbackStringComparer;
@@ -1516,10 +1421,7 @@ namespace qnr {
         current[j] = big;
       }
       for (let j = minJ; j <= maxJ; j++) {
-        const dist =
-          c1 === s2.charCodeAt(j - 1)
-            ? previous[j - 1]
-            : Math.min(/*delete*/ previous[j] + 1, /*insert*/ current[j - 1] + 1, /*substitute*/ previous[j - 1] + 2);
+        const dist = c1 === s2.charCodeAt(j - 1) ? previous[j - 1] : Math.min(/*delete*/ previous[j] + 1, /*insert*/ current[j - 1] + 1, /*substitute*/ previous[j - 1] + 2);
         current[j] = dist;
         colMin = Math.min(colMin, dist);
       }
