@@ -4099,7 +4099,7 @@ namespace qnr {
         break;
 
       case SyntaxKind.StringLiteral:
-        if ((<StringLiteral>node).hasExtendedUnicodeEscape) {
+        if ((<StringLiteral>node).hasExtendedEscape) {
           transformFlags |= TransformFlags.AssertES2015;
         }
         break;

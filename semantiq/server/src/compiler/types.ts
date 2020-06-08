@@ -1286,7 +1286,7 @@ namespace qnr {
   export interface LiteralLikeNode extends Node {
     text: string;
     isUnterminated?: boolean;
-    hasExtendedUnicodeEscape?: boolean;
+    hasExtendedEscape?: boolean;
   }
 
   export interface TemplateLiteralLikeNode extends LiteralLikeNode {
@@ -1302,7 +1302,7 @@ namespace qnr {
     PrecedingLineBreak = 1 << 0,
     PrecedingJSDocComment = 1 << 1,
     Unterminated = 1 << 2,
-    ExtendedUnicodeEscape = 1 << 3,
+    ExtendedEscape = 1 << 3,
     Scientific = 1 << 4, // e.g. `10e2`
     Octal = 1 << 5, // e.g. `0777`
     HexSpecifier = 1 << 6, // e.g. `0x00000000`

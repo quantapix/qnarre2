@@ -174,7 +174,7 @@ namespace qnr {
     getDirectives(): CommentDirective[] | undefined;
     clearDirectives(): void;
     hasUnicodeEscape(): boolean;
-    hasExtendedUnicodeEscape(): boolean;
+    hasExtendedEscape(): boolean;
     hasPrecedingLineBreak(): boolean;
     isIdentifier(): boolean;
     isReservedWord(): boolean;
@@ -858,9 +858,16 @@ namespace qnr {
       let inJSDocType = 0;
       setText(text, s, l);
       const scanner: Scanner = {
-        setLanguageVariant,
-        setOnError,
-        getText,
+        setLanguageVariant: (l) => {
+          lang = l;
+        },
+        setOnError: (cb) => {
+          onError = cb;
+        },
+        setInJSDocType: (t) => {
+          inJSDocType += t ? 1 : -1;
+        },
+        getText: () => text,
         setText,
         getTextPos: () => pos,
         setTextPos,
@@ -871,30 +878,35 @@ namespace qnr {
         getTokenValue: () => tokValue,
         getTokenFlags: () => tokFlags,
         getDirectives: () => directives,
-        clearDirectives,
+        clearDirectives: () => {
+          directives = undefined;
+        },
         hasUnicodeEscape: () => (tokFlags & TokenFlags.UnicodeEscape) !== 0,
-        hasExtendedUnicodeEscape: () => (tokFlags & TokenFlags.ExtendedUnicodeEscape) !== 0,
+        hasExtendedEscape: () => (tokFlags & TokenFlags.ExtendedEscape) !== 0,
         hasPrecedingLineBreak: () => (tokFlags & TokenFlags.PrecedingLineBreak) !== 0,
         isIdentifier: () => token === SyntaxKind.Identifier || token > SyntaxKind.LastReservedWord,
         isReservedWord: () => token >= SyntaxKind.FirstReservedWord && token <= SyntaxKind.LastReservedWord,
         isUnterminated: () => (tokFlags & TokenFlags.Unterminated) !== 0,
-        reScanGreaterToken,
-        reScanSlashToken,
-        reScanTemplateToken,
-        reScanTemplateHeadOrNoSubstitutionTemplate,
-        scanJsxIdentifier,
+        scan,
+        scanRange,
+        tryScan: <T>(cb: () => T): T => {
+          return speculate(cb, false);
+        },
+        lookAhead: <T>(cb: () => T): T => {
+          return speculate(cb, true);
+        },
+        scanJsDocToken,
         scanJsxAttributeValue,
+        scanJsxIdentifier,
+        scanJsxToken,
+        reScanGreaterToken,
         reScanJsxAttributeValue,
         reScanJsxToken,
         reScanLessThanToken,
         reScanQuestionToken,
-        scanJsxToken,
-        scanJsDocToken,
-        scan,
-        tryScan,
-        setInJSDocType,
-        lookAhead,
-        scanRange,
+        reScanSlashToken,
+        reScanTemplateHeadOrNoSubstitutionTemplate,
+        reScanTemplateToken,
       };
       if (Debug.isDebugging) {
         Object.defineProperty(scanner, '__debugShowCurrentPositionInText', {
@@ -906,20 +918,11 @@ namespace qnr {
       }
       return scanner;
 
-      function setLanguageVariant(l: LanguageVariant) {
-        lang = l;
-      }
-
-      function getText() {
-        return text;
-      }
-
       function setText(t?: string, start?: number, length?: number) {
         text = t ?? '';
         end = length === undefined ? text.length : start! + length;
         setTextPos(start ?? 0);
       }
-
       function setTextPos(p: number) {
         assert(p >= 0);
         pos = p;
@@ -929,7 +932,6 @@ namespace qnr {
         tokValue = undefined!;
         tokFlags = TokenFlags.None;
       }
-
       function error(m: DiagnosticMessage): void;
       function error(m: DiagnosticMessage, errPos: number, length: number): void;
       function error(m: DiagnosticMessage, errPos: number = pos, length?: number): void {
@@ -940,7 +942,6 @@ namespace qnr {
           pos = p;
         }
       }
-
       function scanNumberFragment() {
         let r = '';
         let s = pos;
@@ -976,7 +977,6 @@ namespace qnr {
         }
         return r + text.substring(s, pos);
       }
-
       function checkBigIntSuffix(): SyntaxKind {
         if (text.charCodeAt(pos) === Codes.n) {
           tokValue += 'n';
@@ -994,7 +994,6 @@ namespace qnr {
           return SyntaxKind.NumericLiteral;
         }
       }
-
       function scanIdentifierParts() {
         let r = '';
         let s = pos;
@@ -1003,11 +1002,11 @@ namespace qnr {
           if (isIdentifierPart(c)) {
             pos += charSize(c);
           } else if (c === Codes.backslash) {
-            c = peekExtendedUnicodeEscape();
+            c = peekExtendedEscape();
             if (c >= 0 && isIdentifierPart(c)) {
               pos += 3;
-              tokFlags |= TokenFlags.ExtendedUnicodeEscape;
-              r += scanExtendedUnicodeEscape();
+              tokFlags |= TokenFlags.ExtendedEscape;
+              r += scanExtendedEscape();
               s = pos;
               continue;
             }
@@ -1023,7 +1022,6 @@ namespace qnr {
         r += text.substring(s, pos);
         return r;
       }
-
       function checkForIdentifierStartAfterNumericLiteral(start: number, isScientific?: boolean) {
         if (!isIdentifierStart(text.codePointAt(pos)!)) return;
         const s = pos;
@@ -1039,7 +1037,6 @@ namespace qnr {
           pos = s;
         }
       }
-
       function scanNumber(): { type: SyntaxKind; value: string } {
         const s = pos;
         const main = scanNumberFragment();
@@ -1081,7 +1078,6 @@ namespace qnr {
           return { type, value: tokValue };
         }
       }
-
       function scanOctalDigits(): number {
         const s = pos;
         while (isOctalDigit(text.charCodeAt(pos))) {
@@ -1089,16 +1085,13 @@ namespace qnr {
         }
         return +text.substring(s, pos);
       }
-
       function scanExactNumberOfHexDigits(count: number, canHaveSeparators: boolean) {
         const v = scanHexDigits(/*minCount*/ count, /*scanAsManyAsPossible*/ false, canHaveSeparators);
         return v ? parseInt(v, 16) : -1;
       }
-
       function scanMinimumNumberOfHexDigits(count: number, canHaveSeparators: boolean) {
         return scanHexDigits(/*minCount*/ count, /*scanAsManyAsPossible*/ true, canHaveSeparators);
       }
-
       function scanHexDigits(minCount: number, scanAsManyAsPossible: boolean, canHaveSeparators: boolean): string {
         let cs = [] as number[];
         let sep = false;
@@ -1131,7 +1124,6 @@ namespace qnr {
         }
         return String.fromCharCode(...cs);
       }
-
       function scanString(jsxAttributeString = false) {
         let r = '';
         const quote = text.charCodeAt(pos);
@@ -1166,7 +1158,6 @@ namespace qnr {
         }
         return r;
       }
-
       function scanTemplateAndSetTokenValue(isTagged: boolean): SyntaxKind {
         const backtick = text.charCodeAt(pos) === Codes.backtick;
         pos++;
@@ -1218,7 +1209,6 @@ namespace qnr {
         tokValue = v;
         return r;
       }
-
       function scanEscapeSequence(isTagged?: boolean): string {
         const s = pos;
         pos++;
@@ -1282,8 +1272,8 @@ namespace qnr {
                   return text.substring(s, pos);
                 } else pos = p;
               }
-              tokFlags |= TokenFlags.ExtendedUnicodeEscape;
-              return scanExtendedUnicodeEscape();
+              tokFlags |= TokenFlags.ExtendedEscape;
+              return scanExtendedEscape();
             }
             tokFlags |= TokenFlags.UnicodeEscape;
             // '\uDDDD'
@@ -1312,15 +1302,13 @@ namespace qnr {
             return String.fromCharCode(c);
         }
       }
-
       function scanHexadecimalEscape(numDigits: number) {
         const v = scanExactNumberOfHexDigits(numDigits, /*canHaveSeparators*/ false);
         if (v >= 0) return String.fromCharCode(v);
         error(Diagnostics.Hexadecimal_digit_expected);
         return '';
       }
-
-      function scanExtendedUnicodeEscape() {
+      function scanExtendedEscape() {
         const vs = scanMinimumNumberOfHexDigits(1, /*canHaveSeparators*/ false);
         const v = vs ? parseInt(vs, 16) : -1;
         let invalid = false;
@@ -1343,7 +1331,6 @@ namespace qnr {
         if (invalid) return '';
         return String.fromCodePoint(v);
       }
-
       function peekUnicodeEscape() {
         if (pos + 5 < end && text.charCodeAt(pos + 1) === Codes.u) {
           const s = pos;
@@ -1354,8 +1341,7 @@ namespace qnr {
         }
         return -1;
       }
-
-      function peekExtendedUnicodeEscape() {
+      function peekExtendedEscape() {
         if (text.codePointAt(pos + 1) === Codes.u && text.codePointAt(pos + 2) === Codes.openBrace) {
           const s = pos;
           pos += 3;
@@ -1366,7 +1352,6 @@ namespace qnr {
         }
         return -1;
       }
-
       function getIdentifierToken(): SyntaxKind.Identifier | KeywordSyntaxKind {
         const l = tokValue.length;
         if (l >= 2 && l <= 11) {
@@ -1378,7 +1363,6 @@ namespace qnr {
         }
         return (token = SyntaxKind.Identifier);
       }
-
       function scanBinaryOrOctalDigits(base: 2 | 8) {
         let r = '';
         let sep = false;
@@ -1409,7 +1393,6 @@ namespace qnr {
         }
         return r;
       }
-
       function scan(): SyntaxKind {
         startPos = pos;
         tokFlags = TokenFlags.None;
@@ -1707,11 +1690,11 @@ namespace qnr {
               pos++;
               return (token = SyntaxKind.AtToken);
             case Codes.backslash:
-              const c2 = peekExtendedUnicodeEscape();
+              const c2 = peekExtendedEscape();
               if (c2 >= 0 && isIdentifierStart(c2)) {
                 pos += 3;
-                tokFlags |= TokenFlags.ExtendedUnicodeEscape;
-                tokValue = scanExtendedUnicodeEscape() + scanIdentifierParts();
+                tokFlags |= TokenFlags.ExtendedEscape;
+                tokValue = scanExtendedEscape() + scanIdentifierParts();
                 return (token = getIdentifierToken());
               }
               const c3 = peekUnicodeEscape();
@@ -1762,7 +1745,6 @@ namespace qnr {
           }
         }
       }
-
       function reScanGreaterToken(): SyntaxKind {
         if (token === SyntaxKind.GreaterThanToken) {
           if (text.charCodeAt(pos) === Codes.greaterThan) {
@@ -1781,7 +1763,6 @@ namespace qnr {
         }
         return token;
       }
-
       function reScanSlashToken(): SyntaxKind {
         if (token === SyntaxKind.SlashToken || token === SyntaxKind.SlashEqualsToken) {
           let p = tokPos + 1;
@@ -1817,7 +1798,6 @@ namespace qnr {
         }
         return token;
       }
-
       function appendIfDirective(ds: CommentDirective[] | undefined, t: string, re: RegExp, line: number) {
         const type = getDirectiveFromComment(t, re);
         if (type === undefined) return ds;
@@ -1986,11 +1966,11 @@ namespace qnr {
             return (token = SyntaxKind.BacktickToken);
           case Codes.backslash:
             pos--;
-            const c2 = peekExtendedUnicodeEscape();
+            const c2 = peekExtendedEscape();
             if (c2 >= 0 && isIdentifierStart(c2)) {
               pos += 3;
-              tokFlags |= TokenFlags.ExtendedUnicodeEscape;
-              tokValue = scanExtendedUnicodeEscape() + scanIdentifierParts();
+              tokFlags |= TokenFlags.ExtendedEscape;
+              tokValue = scanExtendedEscape() + scanIdentifierParts();
               return (token = getIdentifierToken());
             }
             const c3 = peekUnicodeEscape();
@@ -2052,26 +2032,6 @@ namespace qnr {
         tokFlags = f;
         directives = d;
         return r;
-      }
-
-      function lookAhead<T>(cb: () => T): T {
-        return speculate(cb, /*isLookahead*/ true);
-      }
-
-      function tryScan<T>(cb: () => T): T {
-        return speculate(cb, /*isLookahead*/ false);
-      }
-
-      function clearDirectives() {
-        directives = undefined;
-      }
-
-      function setOnError(cb: ErrorCallback | undefined) {
-        onError = cb;
-      }
-
-      function setInJSDocType(inType: boolean) {
-        inJSDocType += inType ? 1 : -1;
       }
     }
   }

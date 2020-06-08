@@ -1280,7 +1280,7 @@ namespace qnr {
 
     function nextToken(): SyntaxKind {
       // if the keyword had an escape
-      if (isKeyword(currentToken) && (scanner.hasUnicodeEscape() || scanner.hasExtendedUnicodeEscape())) {
+      if (isKeyword(currentToken) && (scanner.hasUnicodeEscape() || scanner.hasExtendedEscape())) {
         // issue a parse error for the escape
         parseErrorAt(scanner.getTokenPos(), scanner.getTextPos(), Diagnostics.Keywords_cannot_contain_escape_characters);
       }
@@ -2610,8 +2610,8 @@ namespace qnr {
           break;
       }
 
-      if (scanner.hasExtendedUnicodeEscape()) {
-        node.hasExtendedUnicodeEscape = true;
+      if (scanner.hasExtendedEscape()) {
+        node.hasExtendedEscape = true;
       }
 
       if (scanner.isUnterminated()) {

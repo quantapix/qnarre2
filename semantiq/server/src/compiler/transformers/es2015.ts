@@ -3503,7 +3503,7 @@ namespace qnr {
      * @param node A string literal.
      */
     function visitStringLiteral(node: StringLiteral) {
-      if (node.hasExtendedUnicodeEscape) {
+      if (node.hasExtendedEscape) {
         return setTextRange(createLiteral(node.text), node);
       }
       return node;
