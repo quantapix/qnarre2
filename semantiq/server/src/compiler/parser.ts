@@ -48,27 +48,9 @@ namespace qnr {
         }
       }
     }
+    return;
   }
 
-  export function isJSDocLikeText(text: string, start: number) {
-    return (
-      text.charCodeAt(start + 1) === Codes.asterisk && text.charCodeAt(start + 2) === Codes.asterisk && text.charCodeAt(start + 3) !== Codes.slash
-    );
-  }
-
-  /**
-   * Invokes a callback for each child of the given node. The 'cbNode' callback is invoked for all child nodes
-   * stored in properties. If a 'cbNodes' callback is specified, it is invoked for embedded arrays; otherwise,
-   * embedded arrays are flattened and the 'cbNode' callback is invoked for each element. If a callback returns
-   * a truthy value, iteration stops and that value is returned. Otherwise, undefined is returned.
-   *
-   * @param node a given node to visit its children
-   * @param cbNode a callback to be invoked for all child nodes
-   * @param cbNodes a callback to be invoked for embedded array
-   *
-   * @remarks `forEachChild` must visit the children of a node in the order
-   * that they appear in the source code. The language service depends on this property to locate nodes by position.
-   */
   export function forEachChild<T>(
     node: Node,
     cbNode: (node: Node) => T | undefined,
@@ -1594,7 +1576,7 @@ namespace qnr {
         if (token() !== SyntaxKind.Identifier) {
           node.originalKeywordKind = token();
         }
-        node.escapedText = escapeLeadingUnderscores(internIdentifier(scanner.getTokenValue()));
+        node.escapedText = Scanner.escapeUnderscores(internIdentifier(scanner.getTokenValue()));
         nextTokenWithoutCheck();
         return finishNode(node);
       }
@@ -1674,7 +1656,7 @@ namespace qnr {
 
     function parsePrivateIdentifier(): PrivateIdentifier {
       const node = createNode(SyntaxKind.PrivateIdentifier) as PrivateIdentifier;
-      node.escapedText = escapeLeadingUnderscores(internPrivateIdentifier(scanner.getTokenText()));
+      node.escapedText = Scanner.escapeUnderscores(internPrivateIdentifier(scanner.getTokenText()));
       nextToken();
       return finishNode(node);
     }
@@ -7098,7 +7080,7 @@ namespace qnr {
         assert(end <= content.length);
 
         // Check for /** (JSDoc opening part)
-        if (!isJSDocLikeText(content, start)) {
+        if (!Scanner.isJSDocLike(content, start)) {
           return;
         }
 
@@ -7990,7 +7972,7 @@ namespace qnr {
           if (token() !== SyntaxKind.Identifier) {
             result.originalKeywordKind = token();
           }
-          result.escapedText = escapeLeadingUnderscores(internIdentifier(scanner.getTokenValue()));
+          result.escapedText = Scanner.escapeUnderscores(internIdentifier(scanner.getTokenValue()));
           finishNode(result, end);
 
           nextTokenJSDoc();

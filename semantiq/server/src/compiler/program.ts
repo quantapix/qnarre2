@@ -1043,11 +1043,11 @@ namespace qnr {
           commonSourceDirectory = computeCommonSourceDirectory(emittedFiles);
         }
 
-        if (commonSourceDirectory && commonSourceDirectory[commonSourceDirectory.length - 1] !== directorySeparator) {
+        if (commonSourceDirectory && commonSourceDirectory[commonSourceDirectory.length - 1] !== dirSeparator) {
           // Make sure directory path ends with directory separator so this string can directly
           // used to replace with "" to get the relative path of the source file and the relative path doesn't
           // start with / making it rooted path
-          commonSourceDirectory += directorySeparator;
+          commonSourceDirectory += dirSeparator;
         }
       }
       return commonSourceDirectory;
@@ -3497,7 +3497,7 @@ namespace qnr {
 
     function directoryExistsIfProjectReferenceDeclDir(dir: string) {
       const dirPath = host.toPath(dir);
-      const dirPathWithTrailingDirectorySeparator = `${dirPath}${directorySeparator}`;
+      const dirPathWithTrailingDirectorySeparator = `${dirPath}${dirSeparator}`;
       return forEachKey(
         mapOfDeclarationDirectories!,
         (declDirPath) =>

@@ -1,28 +1,22 @@
 namespace qnr {
-  export const directorySeparator = '/';
-  const altDirectorySeparator = '\\';
-  const urlSchemeSeparator = '://';
+  export const dirSeparator = '/';
   const backslashRegExp = /\\/g;
 
-  export function isAnyDirectorySeparator(charCode: number): boolean {
-    return charCode === Codes.slash || charCode === Codes.backslash;
-  }
-
   export function isUrl(path: string) {
-    return getEncodedRootLength(path) < 0;
+    return Scanner.encodedRootLength(path) < 0;
   }
 
   export function isRootedDiskPath(path: string) {
-    return getEncodedRootLength(path) > 0;
+    return Scanner.encodedRootLength(path) > 0;
   }
 
   export function isDiskPathRoot(path: string) {
-    const rootLength = getEncodedRootLength(path);
+    const rootLength = Scanner.encodedRootLength(path);
     return rootLength > 0 && rootLength === path.length;
   }
 
   export function pathIsAbsolute(path: string): boolean {
-    return getEncodedRootLength(path) !== 0;
+    return Scanner.encodedRootLength(path) !== 0;
   }
 
   export function pathIsRelative(path: string): boolean {
@@ -47,64 +41,11 @@ namespace qnr {
   }
 
   export function hasTrailingDirectorySeparator(path: string) {
-    return path.length > 0 && isAnyDirectorySeparator(path.charCodeAt(path.length - 1));
-  }
-
-  function isVolumeCharacter(charCode: number) {
-    return (charCode >= Codes.a && charCode <= Codes.z) || (charCode >= Codes.A && charCode <= Codes.Z);
-  }
-
-  function getFileUrlVolumeSeparatorEnd(url: string, start: number) {
-    const ch0 = url.charCodeAt(start);
-    if (ch0 === Codes.colon) return start + 1;
-    if (ch0 === Codes.percent && url.charCodeAt(start + 1) === Codes._3) {
-      const ch2 = url.charCodeAt(start + 2);
-      if (ch2 === Codes.a || ch2 === Codes.A) return start + 3;
-    }
-    return -1;
-  }
-
-  function getEncodedRootLength(path: string): number {
-    if (!path) return 0;
-    const ch0 = path.charCodeAt(0);
-    if (ch0 === Codes.slash || ch0 === Codes.backslash) {
-      if (path.charCodeAt(1) !== ch0) return 1; // POSIX: "/" (or non-normalized "\")
-      const p1 = path.indexOf(ch0 === Codes.slash ? directorySeparator : altDirectorySeparator, 2);
-      if (p1 < 0) return path.length;
-      return p1 + 1;
-    }
-    if (isVolumeCharacter(ch0) && path.charCodeAt(1) === Codes.colon) {
-      const ch2 = path.charCodeAt(2);
-      if (ch2 === Codes.slash || ch2 === Codes.backslash) return 3; // DOS: "c:/" or "c:\"
-      if (path.length === 2) return 2;
-    }
-    const schemeEnd = path.indexOf(urlSchemeSeparator);
-    if (schemeEnd !== -1) {
-      const authorityStart = schemeEnd + urlSchemeSeparator.length;
-      const authorityEnd = path.indexOf(directorySeparator, authorityStart);
-      if (authorityEnd !== -1) {
-        const scheme = path.slice(0, schemeEnd);
-        const authority = path.slice(authorityStart, authorityEnd);
-        if (scheme === 'file' && (authority === '' || authority === 'localhost') && isVolumeCharacter(path.charCodeAt(authorityEnd + 1))) {
-          const volumeSeparatorEnd = getFileUrlVolumeSeparatorEnd(path, authorityEnd + 2);
-          if (volumeSeparatorEnd !== -1) {
-            if (path.charCodeAt(volumeSeparatorEnd) === Codes.slash) {
-              return ~(volumeSeparatorEnd + 1);
-            }
-            if (volumeSeparatorEnd === path.length) {
-              return ~volumeSeparatorEnd;
-            }
-          }
-        }
-        return ~(authorityEnd + 1);
-      }
-      return ~path.length;
-    }
-    return 0;
+    return path.length > 0 && Scanner.isDirSeparator(path.charCodeAt(path.length - 1));
   }
 
   export function getRootLength(path: string) {
-    const rootLength = getEncodedRootLength(path);
+    const rootLength = Scanner.encodedRootLength(path);
     return rootLength < 0 ? ~rootLength : rootLength;
   }
 
@@ -120,7 +61,7 @@ namespace qnr {
     // return the leading portion of the path up to the last (non-terminal) directory separator
     // but not including any trailing directory separator.
     path = removeTrailingDirectorySeparator(path);
-    return path.slice(0, Math.max(rootLength, path.lastIndexOf(directorySeparator)));
+    return path.slice(0, Math.max(rootLength, path.lastIndexOf(dirSeparator)));
   }
 
   export function getBaseFileName(path: string): string;
@@ -130,32 +71,17 @@ namespace qnr {
     const rootLength = getRootLength(path);
     if (rootLength === path.length) return '';
     path = removeTrailingDirectorySeparator(path);
-    const name = path.slice(Math.max(getRootLength(path), path.lastIndexOf(directorySeparator) + 1));
+    const name = path.slice(Math.max(getRootLength(path), path.lastIndexOf(dirSeparator) + 1));
     const extension = extensions !== undefined && ignoreCase !== undefined ? getAnyExtensionFromPath(name, extensions, ignoreCase) : undefined;
     return extension ? name.slice(0, name.length - extension.length) : name;
   }
 
-  function tryGetExtensionFromPath(path: string, extension: string, stringEqualityComparer: (a: string, b: string) => boolean) {
-    if (!startsWith(extension, '.')) extension = '.' + extension;
-    if (path.length >= extension.length && path.charCodeAt(path.length - extension.length) === Codes.dot) {
-      const pathExtension = path.slice(path.length - extension.length);
-      if (stringEqualityComparer(pathExtension, extension)) {
-        return pathExtension;
-      }
-    }
-    return;
-  }
-
-  function getAnyExtensionFromPathWorker(
-    path: string,
-    extensions: string | readonly string[],
-    stringEqualityComparer: (a: string, b: string) => boolean
-  ) {
+  function getAnyExtensionFromPathWorker(path: string, extensions: string | readonly string[], stringEqualityComparer: (a: string, b: string) => boolean) {
     if (typeof extensions === 'string') {
-      return tryGetExtensionFromPath(path, extensions, stringEqualityComparer) || '';
+      return Scanner.extensionFrom(path, extensions, stringEqualityComparer) || '';
     }
     for (const extension of extensions) {
-      const result = tryGetExtensionFromPath(path, extension, stringEqualityComparer);
+      const result = Scanner.extensionFrom(path, extension, stringEqualityComparer);
       if (result) return result;
     }
     return '';
@@ -165,11 +91,7 @@ namespace qnr {
   export function getAnyExtensionFromPath(path: string, extensions: string | readonly string[], ignoreCase: boolean): string;
   export function getAnyExtensionFromPath(path: string, extensions?: string | readonly string[], ignoreCase?: boolean): string {
     if (extensions) {
-      return getAnyExtensionFromPathWorker(
-        removeTrailingDirectorySeparator(path),
-        extensions,
-        ignoreCase ? equateStringsCaseInsensitive : equateStringsCaseSensitive
-      );
+      return getAnyExtensionFromPathWorker(removeTrailingDirectorySeparator(path), extensions, ignoreCase ? equateStringsCaseInsensitive : equateStringsCaseSensitive);
     }
     const baseFileName = getBaseFileName(path);
     const extensionIndex = baseFileName.lastIndexOf('.');
@@ -181,7 +103,7 @@ namespace qnr {
 
   function pathComponents(path: string, rootLength: number) {
     const root = path.substring(0, rootLength);
-    const rest = path.substring(rootLength).split(directorySeparator);
+    const rest = path.substring(rootLength).split(dirSeparator);
     if (rest.length && !lastOrUndefined(rest)) rest.pop();
     return [root, ...rest];
   }
@@ -195,11 +117,11 @@ namespace qnr {
     if (pathComponents.length === 0) return '';
 
     const root = pathComponents[0] && ensureTrailingDirectorySeparator(pathComponents[0]);
-    return root + pathComponents.slice(1).join(directorySeparator);
+    return root + pathComponents.slice(1).join(dirSeparator);
   }
 
   export function normalizeSlashes(path: string): string {
-    return path.replace(backslashRegExp, directorySeparator);
+    return path.replace(backslashRegExp, dirSeparator);
   }
 
   export function reducePathComponents(components: readonly string[]) {
@@ -256,7 +178,7 @@ namespace qnr {
 
   function getPathWithoutRoot(pathComponents: readonly string[]) {
     if (pathComponents.length === 0) return '';
-    return pathComponents.slice(1).join(directorySeparator);
+    return pathComponents.slice(1).join(dirSeparator);
   }
 
   export function getNormalizedAbsolutePathWithoutRoot(fileName: string, currentDirectory: string | undefined) {
@@ -272,7 +194,7 @@ namespace qnr {
     path = normalizeSlashes(path);
     const [root, ...parts] = reducePathComponents(getPathComponents(path));
     if (parts.length) {
-      const joinedParts = root + parts.join(directorySeparator);
+      const joinedParts = root + parts.join(dirSeparator);
       return { path: hasTrailingDirectorySeparator(path) ? ensureTrailingDirectorySeparator(joinedParts) : joinedParts, parts };
     } else {
       return { path: root, parts };
@@ -292,7 +214,7 @@ namespace qnr {
   export function ensureTrailingDirectorySeparator(path: string): string;
   export function ensureTrailingDirectorySeparator(path: string) {
     if (!hasTrailingDirectorySeparator(path)) {
-      return path + directorySeparator;
+      return path + dirSeparator;
     }
     return path;
   }
@@ -304,8 +226,7 @@ namespace qnr {
   export function changeAnyExtension(path: string, ext: string): string;
   export function changeAnyExtension(path: string, ext: string, extensions: string | readonly string[], ignoreCase: boolean): string;
   export function changeAnyExtension(path: string, ext: string, extensions?: string | readonly string[], ignoreCase?: boolean) {
-    const pathext =
-      extensions !== undefined && ignoreCase !== undefined ? getAnyExtensionFromPath(path, extensions, ignoreCase) : getAnyExtensionFromPath(path);
+    const pathext = extensions !== undefined && ignoreCase !== undefined ? getAnyExtensionFromPath(path, extensions, ignoreCase) : getAnyExtensionFromPath(path);
     return pathext ? path.slice(0, path.length - pathext.length) + (startsWith(ext, '.') ? ext : '.' + ext) : path;
   }
 
@@ -390,12 +311,7 @@ namespace qnr {
     return startsWith(canonicalFileName, canonicalDirectoryName + '/') || startsWith(canonicalFileName, canonicalDirectoryName + '\\');
   }
 
-  export function getPathComponentsRelativeTo(
-    from: string,
-    to: string,
-    stringEqualityComparer: (a: string, b: string) => boolean,
-    getCanonicalFileName: GetCanonicalFileName
-  ) {
+  export function getPathComponentsRelativeTo(from: string, to: string, stringEqualityComparer: (a: string, b: string) => boolean, getCanonicalFileName: GetCanonicalFileName) {
     const fromComponents = reducePathComponents(getPathComponents(from));
     const toComponents = reducePathComponents(getPathComponents(to));
     let start: number;
@@ -422,12 +338,7 @@ namespace qnr {
     assert(getRootLength(fromDirectory) > 0 === getRootLength(to) > 0, 'Paths must either both be absolute or both be relative');
     const getCanonicalFileName = typeof getCanonicalFileNameOrIgnoreCase === 'function' ? getCanonicalFileNameOrIgnoreCase : identity;
     const ignoreCase = typeof getCanonicalFileNameOrIgnoreCase === 'boolean' ? getCanonicalFileNameOrIgnoreCase : false;
-    const pathComponents = getPathComponentsRelativeTo(
-      fromDirectory,
-      to,
-      ignoreCase ? equateStringsCaseInsensitive : equateStringsCaseSensitive,
-      getCanonicalFileName
-    );
+    const pathComponents = getPathComponentsRelativeTo(fromDirectory, to, ignoreCase ? equateStringsCaseInsensitive : equateStringsCaseSensitive, getCanonicalFileName);
     return getPathFromPathComponents(pathComponents);
   }
 
@@ -456,7 +367,7 @@ namespace qnr {
     );
     const firstComponent = pathComponents[0];
     if (isAbsolutePathAnUrl && isRootedDiskPath(firstComponent)) {
-      const prefix = firstComponent.charAt(0) === directorySeparator ? 'file://' : 'file:///';
+      const prefix = firstComponent.charAt(0) === dirSeparator ? 'file://' : 'file:///';
       pathComponents[0] = prefix + firstComponent;
     }
     return getPathFromPathComponents(pathComponents);

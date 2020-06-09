@@ -159,24 +159,15 @@ namespace qnr {
     return;
   }
 
-  export function escapeLeadingUnderscores(identifier: string): __String {
-    return (identifier.length >= 2 && identifier.charCodeAt(0) === Codes._ && identifier.charCodeAt(1) === Codes._ ? '_' + identifier : identifier) as __String;
-  }
-
-  export function unescapeLeadingUnderscores(identifier: __String): string {
-    const id = identifier as string;
-    return id.length >= 3 && id.charCodeAt(0) === Codes._ && id.charCodeAt(1) === Codes._ && id.charCodeAt(2) === Codes._ ? id.substr(1) : id;
-  }
-
   export function idText(identifierOrPrivateName: Identifier | PrivateIdentifier): string {
-    return unescapeLeadingUnderscores(identifierOrPrivateName.escapedText);
+    return Scanner.unescapeUnderscores(identifierOrPrivateName.escapedText);
   }
 
   export function symbolName(s: Symbol): string {
     if (s.valueDeclaration && isPrivateIdentifierPropertyDeclaration(s.valueDeclaration)) {
       return idText(s.valueDeclaration.name);
     }
-    return unescapeLeadingUnderscores(s.escapedName);
+    return Scanner.unescapeUnderscores(s.escapedName);
   }
 
   function nameForNamelessJSDocTypedef(declaration: JSDocTypedefTag | JSDocEnumTag): Identifier | PrivateIdentifier | undefined {

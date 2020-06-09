@@ -4,21 +4,9 @@ namespace qnr {
     startRecordingFilesWithChangedResolutions(): void;
     finishRecordingFilesWithChangedResolutions(): Path[] | undefined;
 
-    resolveModuleNames(
-      moduleNames: string[],
-      containingFile: string,
-      reusedNames: string[] | undefined,
-      redirectedReference?: ResolvedProjectReference
-    ): (ResolvedModuleFull | undefined)[];
-    getResolvedModuleWithFailedLookupLocationsFromCache(
-      moduleName: string,
-      containingFile: string
-    ): CachedResolvedModuleWithFailedLookupLocations | undefined;
-    resolveTypeReferenceDirectives(
-      typeDirectiveNames: string[],
-      containingFile: string,
-      redirectedReference?: ResolvedProjectReference
-    ): (ResolvedTypeReferenceDirective | undefined)[];
+    resolveModuleNames(moduleNames: string[], containingFile: string, reusedNames: string[] | undefined, redirectedReference?: ResolvedProjectReference): (ResolvedModuleFull | undefined)[];
+    getResolvedModuleWithFailedLookupLocationsFromCache(moduleName: string, containingFile: string): CachedResolvedModuleWithFailedLookupLocations | undefined;
+    resolveTypeReferenceDirectives(typeDirectiveNames: string[], containingFile: string, redirectedReference?: ResolvedProjectReference): (ResolvedTypeReferenceDirective | undefined)[];
 
     invalidateResolutionOfFile(filePath: Path): void;
     removeResolutionsOfFile(filePath: Path): void;
@@ -49,9 +37,7 @@ namespace qnr {
 
   interface CachedResolvedModuleWithFailedLookupLocations extends ResolvedModuleWithFailedLookupLocations, ResolutionWithFailedLookupLocations {}
 
-  interface CachedResolvedTypeReferenceDirectiveWithFailedLookupLocations
-    extends ResolvedTypeReferenceDirectiveWithFailedLookupLocations,
-      ResolutionWithFailedLookupLocations {}
+  interface CachedResolvedTypeReferenceDirectiveWithFailedLookupLocations extends ResolvedTypeReferenceDirectiveWithFailedLookupLocations, ResolutionWithFailedLookupLocations {}
 
   export interface ResolutionCacheHost extends ModuleResolutionHost {
     toPath(fileName: string): Path;
@@ -108,7 +94,7 @@ namespace qnr {
       return false;
     }
 
-    let nextDirectorySeparator = dirPath.indexOf(directorySeparator, rootLength);
+    let nextDirectorySeparator = dirPath.indexOf(dirSeparator, rootLength);
     if (nextDirectorySeparator === -1) {
       // ignore "/user", "c:/users" or "c:/folderAtRoot"
       return false;
@@ -122,7 +108,7 @@ namespace qnr {
       pathPartForUserCheck.search(/[a-zA-z]\$\//) === 0
     ) {
       // Dos style nextPart
-      nextDirectorySeparator = dirPath.indexOf(directorySeparator, nextDirectorySeparator + 1);
+      nextDirectorySeparator = dirPath.indexOf(dirSeparator, nextDirectorySeparator + 1);
       if (nextDirectorySeparator === -1) {
         // ignore "//vda1cs4850/c$/folderAtRoot"
         return false;
@@ -137,7 +123,7 @@ namespace qnr {
     }
 
     for (let searchIndex = nextDirectorySeparator + 1, searchLevels = 2; searchLevels > 0; searchLevels--) {
-      searchIndex = dirPath.indexOf(directorySeparator, searchIndex) + 1;
+      searchIndex = dirPath.indexOf(dirSeparator, searchIndex) + 1;
       if (searchIndex === 0) {
         // Folder isnt at expected minimum levels
         return false;
@@ -151,11 +137,7 @@ namespace qnr {
     R extends ResolutionWithResolvedFileName = ResolutionWithResolvedFileName
   > = (resolution: T) => R | undefined;
 
-  export function createResolutionCache(
-    resolutionHost: ResolutionCacheHost,
-    rootDirForResolution: string | undefined,
-    logChangesWhenResolvingModule: boolean
-  ): ResolutionCache {
+  export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootDirForResolution: string | undefined, logChangesWhenResolvingModule: boolean): ResolutionCache {
     let filesWithChangedSetOfUnresolvedImports: Path[] | undefined;
     let filesWithInvalidatedResolutions: Map<true> | undefined;
     let filesWithInvalidatedNonRelativeUnresolvedImports: ReadonlyMap<readonly string[]> | undefined;
@@ -173,17 +155,10 @@ namespace qnr {
     const resolvedModuleNames = createMap<Map<CachedResolvedModuleWithFailedLookupLocations>>();
     const perDirectoryResolvedModuleNames: CacheWithRedirects<Map<CachedResolvedModuleWithFailedLookupLocations>> = createCacheWithRedirects();
     const nonRelativeModuleNameCache: CacheWithRedirects<PerModuleNameCache> = createCacheWithRedirects();
-    const moduleResolutionCache = createModuleResolutionCacheWithMaps(
-      perDirectoryResolvedModuleNames,
-      nonRelativeModuleNameCache,
-      getCurrentDirectory(),
-      resolutionHost.getCanonicalFileName
-    );
+    const moduleResolutionCache = createModuleResolutionCacheWithMaps(perDirectoryResolvedModuleNames, nonRelativeModuleNameCache, getCurrentDirectory(), resolutionHost.getCanonicalFileName);
 
     const resolvedTypeReferenceDirectives = createMap<Map<CachedResolvedTypeReferenceDirectiveWithFailedLookupLocations>>();
-    const perDirectoryResolvedTypeReferenceDirectives: CacheWithRedirects<Map<
-      CachedResolvedTypeReferenceDirectiveWithFailedLookupLocations
-    >> = createCacheWithRedirects();
+    const perDirectoryResolvedTypeReferenceDirectives: CacheWithRedirects<Map<CachedResolvedTypeReferenceDirectiveWithFailedLookupLocations>> = createCacheWithRedirects();
 
     /**
      * These are the extensions that failed lookup files will have by default,
@@ -197,7 +172,7 @@ namespace qnr {
     const directoryWatchesOfFailedLookups = createMap<DirectoryWatchesOfFailedLookup>();
     const rootDir = rootDirForResolution && removeTrailingDirectorySeparator(getNormalizedAbsolutePath(rootDirForResolution, getCurrentDirectory()));
     const rootPath = (rootDir && resolutionHost.toPath(rootDir)) as Path; // TODO: GH#18217
-    const rootSplitLength = rootPath !== undefined ? rootPath.split(directorySeparator).length : 0;
+    const rootSplitLength = rootPath !== undefined ? rootPath.split(dirSeparator).length : 0;
 
     // TypeRoot watches for the types that get added as part of getAutomaticTypeDirectiveNames
     const typeRootsWatches = createMap<FileWatcher>();
@@ -234,7 +209,7 @@ namespace qnr {
       if (dir === undefined || file.length <= dir.length) {
         return false;
       }
-      return startsWith(file, dir) && file[dir.length] === directorySeparator;
+      return startsWith(file, dir) && file[dir.length] === dirSeparator;
     }
 
     function clear() {
@@ -316,11 +291,7 @@ namespace qnr {
 
       // otherwise try to load typings from @types
       const globalCache = resolutionHost.getGlobalCache();
-      if (
-        globalCache !== undefined &&
-        !isExternalModuleNameRelative(moduleName) &&
-        !(primaryResult.resolvedModule && extensionIsTS(primaryResult.resolvedModule.extension))
-      ) {
+      if (globalCache !== undefined && !isExternalModuleNameRelative(moduleName) && !(primaryResult.resolvedModule && extensionIsTS(primaryResult.resolvedModule.extension))) {
         // create different collection of failed lookup locations for second pass
         // if it will fail and we've already found something during the first pass - we don't want to pollute its results
         const { resolvedModule, failedLookupLocations } = loadModuleFromGlobalCache(
@@ -348,13 +319,7 @@ namespace qnr {
       redirectedReference: ResolvedProjectReference | undefined;
       cache: Map<Map<T>>;
       perDirectoryCacheWithRedirects: CacheWithRedirects<Map<T>>;
-      loader: (
-        name: string,
-        containingFile: string,
-        options: CompilerOptions,
-        host: ModuleResolutionHost,
-        redirectedReference?: ResolvedProjectReference
-      ) => T;
+      loader: (name: string, containingFile: string, options: CompilerOptions, host: ModuleResolutionHost, redirectedReference?: ResolvedProjectReference) => T;
       getResolutionWithResolvedFileName: GetResolutionWithResolvedFileName<T, R>;
       shouldRetryResolution: (t: T) => boolean;
       reusedNames?: readonly string[];
@@ -388,9 +353,7 @@ namespace qnr {
       // All the resolutions in this file are invalidated if this file wasnt resolved using same redirect
       const program = resolutionHost.getCurrentProgram();
       const oldRedirect = program && program.getResolvedProjectReferenceToRedirect(containingFile);
-      const unmatchedRedirects = oldRedirect
-        ? !redirectedReference || redirectedReference.sourceFile.path !== oldRedirect.sourceFile.path
-        : !!redirectedReference;
+      const unmatchedRedirects = oldRedirect ? !redirectedReference || redirectedReference.sourceFile.path !== oldRedirect.sourceFile.path : !!redirectedReference;
 
       const seenNamesInFile = createMap<true>();
       for (const name of names) {
@@ -457,11 +420,7 @@ namespace qnr {
       }
     }
 
-    function resolveTypeReferenceDirectives(
-      typeDirectiveNames: string[],
-      containingFile: string,
-      redirectedReference?: ResolvedProjectReference
-    ): (ResolvedTypeReferenceDirective | undefined)[] {
+    function resolveTypeReferenceDirectives(typeDirectiveNames: string[], containingFile: string, redirectedReference?: ResolvedProjectReference): (ResolvedTypeReferenceDirective | undefined)[] {
       return resolveNamesWithLocalCache<CachedResolvedTypeReferenceDirectiveWithFailedLookupLocations, ResolvedTypeReferenceDirective>({
         names: typeDirectiveNames,
         containingFile,
@@ -474,12 +433,7 @@ namespace qnr {
       });
     }
 
-    function resolveModuleNames(
-      moduleNames: string[],
-      containingFile: string,
-      reusedNames: string[] | undefined,
-      redirectedReference?: ResolvedProjectReference
-    ): (ResolvedModuleFull | undefined)[] {
+    function resolveModuleNames(moduleNames: string[], containingFile: string, reusedNames: string[] | undefined, redirectedReference?: ResolvedProjectReference): (ResolvedModuleFull | undefined)[] {
       return resolveNamesWithLocalCache<CachedResolvedModuleWithFailedLookupLocations, ResolvedModuleFull>({
         names: moduleNames,
         containingFile,
@@ -494,10 +448,7 @@ namespace qnr {
       });
     }
 
-    function getResolvedModuleWithFailedLookupLocationsFromCache(
-      moduleName: string,
-      containingFile: string
-    ): CachedResolvedModuleWithFailedLookupLocations | undefined {
+    function getResolvedModuleWithFailedLookupLocationsFromCache(moduleName: string, containingFile: string): CachedResolvedModuleWithFailedLookupLocations | undefined {
       const cache = resolvedModuleNames.get(resolutionHost.toPath(containingFile));
       return cache && cache.get(moduleName);
     }
@@ -506,26 +457,18 @@ namespace qnr {
       return endsWith(dirPath, '/node_modules/@types');
     }
 
-    function getDirectoryToWatchFailedLookupLocation(
-      failedLookupLocation: string,
-      failedLookupLocationPath: Path
-    ): DirectoryOfFailedLookupWatch | undefined {
+    function getDirectoryToWatchFailedLookupLocation(failedLookupLocation: string, failedLookupLocationPath: Path): DirectoryOfFailedLookupWatch | undefined {
       if (isInDirectoryPath(rootPath, failedLookupLocationPath)) {
         // Ensure failed look up is normalized path
-        failedLookupLocation = isRootedDiskPath(failedLookupLocation)
-          ? normalizePath(failedLookupLocation)
-          : getNormalizedAbsolutePath(failedLookupLocation, getCurrentDirectory());
-        const failedLookupPathSplit = failedLookupLocationPath.split(directorySeparator);
-        const failedLookupSplit = failedLookupLocation.split(directorySeparator);
-        assert(
-          failedLookupSplit.length === failedLookupPathSplit.length,
-          `FailedLookup: ${failedLookupLocation} failedLookupLocationPath: ${failedLookupLocationPath}`
-        );
+        failedLookupLocation = isRootedDiskPath(failedLookupLocation) ? normalizePath(failedLookupLocation) : getNormalizedAbsolutePath(failedLookupLocation, getCurrentDirectory());
+        const failedLookupPathSplit = failedLookupLocationPath.split(dirSeparator);
+        const failedLookupSplit = failedLookupLocation.split(dirSeparator);
+        assert(failedLookupSplit.length === failedLookupPathSplit.length, `FailedLookup: ${failedLookupLocation} failedLookupLocationPath: ${failedLookupLocationPath}`);
         if (failedLookupPathSplit.length > rootSplitLength + 1) {
           // Instead of watching root, watch directory in root to avoid watching excluded directories not needed for module resolution
           return {
-            dir: failedLookupSplit.slice(0, rootSplitLength + 1).join(directorySeparator),
-            dirPath: failedLookupPathSplit.slice(0, rootSplitLength + 1).join(directorySeparator) as Path,
+            dir: failedLookupSplit.slice(0, rootSplitLength + 1).join(dirSeparator),
+            dirPath: failedLookupPathSplit.slice(0, rootSplitLength + 1).join(dirSeparator) as Path,
           };
         } else {
           // Always watch root directory non recursively
@@ -537,10 +480,7 @@ namespace qnr {
         }
       }
 
-      return getDirectoryToWatchFromFailedLookupLocationDirectory(
-        getDirectoryPath(getNormalizedAbsolutePath(failedLookupLocation, getCurrentDirectory())),
-        getDirectoryPath(failedLookupLocationPath)
-      );
+      return getDirectoryToWatchFromFailedLookupLocationDirectory(getDirectoryPath(getNormalizedAbsolutePath(failedLookupLocation, getCurrentDirectory())), getDirectoryPath(failedLookupLocationPath));
     }
 
     function getDirectoryToWatchFromFailedLookupLocationDirectory(dir: string, dirPath: Path): DirectoryOfFailedLookupWatch | undefined {
@@ -579,10 +519,12 @@ namespace qnr {
       return fileExtensionIsOneOf(path, failedLookupDefaultExtensions);
     }
 
-    function watchFailedLookupLocationsOfExternalModuleResolutions<
-      T extends ResolutionWithFailedLookupLocations,
-      R extends ResolutionWithResolvedFileName
-    >(name: string, resolution: T, filePath: Path, getResolutionWithResolvedFileName: GetResolutionWithResolvedFileName<T, R>) {
+    function watchFailedLookupLocationsOfExternalModuleResolutions<T extends ResolutionWithFailedLookupLocations, R extends ResolutionWithResolvedFileName>(
+      name: string,
+      resolution: T,
+      filePath: Path,
+      getResolutionWithResolvedFileName: GetResolutionWithResolvedFileName<T, R>
+    ) {
       if (resolution.refCount) {
         resolution.refCount++;
         Debug.assertDefined(resolution.files);

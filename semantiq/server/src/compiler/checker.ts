@@ -227,7 +227,7 @@ namespace qnr {
     EmptyObjectFacts = All,
   }
 
-  const typeofEQFacts: ReadonlyMap<TypeFacts> = createMap({
+  const typeofEQFacts: QReadonlyMap<TypeFacts> = QMap.create({
     string: TypeFacts.TypeofEQString,
     number: TypeFacts.TypeofEQNumber,
     bigint: TypeFacts.TypeofEQBigInt,
@@ -238,7 +238,7 @@ namespace qnr {
     function: TypeFacts.TypeofEQFunction,
   });
 
-  const typeofNEFacts: ReadonlyMap<TypeFacts> = createMap({
+  const typeofNEFacts: QReadonlyMap<TypeFacts> = QMap.create({
     string: TypeFacts.TypeofNEString,
     number: TypeFacts.TypeofNENumber,
     bigint: TypeFacts.TypeofNEBigInt,
@@ -369,7 +369,7 @@ namespace qnr {
 
   export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boolean): TypeChecker {
     const getPackagesSet: () => QMap<true> = memoize(() => {
-      const set = createMap<true>();
+      const set = QMap.create<true>();
       host.getSourceFiles().forEach((sf) => {
         if (!sf.resolvedModules) return;
 
@@ -470,21 +470,21 @@ namespace qnr {
       getSymbolsOfParameterPropertyDeclaration: (parameterIn, parameterName) => {
         const parameter = getParseTreeNode(parameterIn, isParameter);
         if (parameter === undefined) return fail('Cannot get symbols of a synthetic parameter that cannot be resolved to a parse-tree node.');
-        return getSymbolsOfParameterPropertyDeclaration(parameter, escapeLeadingUnderscores(parameterName));
+        return getSymbolsOfParameterPropertyDeclaration(parameter, Scanner.escapeUnderscores(parameterName));
       },
       getDeclaredTypeOfSymbol,
       getPropertiesOfType,
-      getPropertyOfType: (type, name) => getPropertyOfType(type, escapeLeadingUnderscores(name)),
+      getPropertyOfType: (type, name) => getPropertyOfType(type, Scanner.escapeUnderscores(name)),
       getPrivateIdentifierPropertyOfType: (leftType: Type, name: string, location: Node) => {
         const node = getParseTreeNode(location);
         if (!node) {
           return;
         }
-        const propName = escapeLeadingUnderscores(name);
+        const propName = Scanner.escapeUnderscores(name);
         const lexicallyScopedIdentifier = lookupSymbolForPrivateIdentifierDeclaration(propName, node);
         return lexicallyScopedIdentifier ? getPrivateIdentifierPropertyOfType(leftType, lexicallyScopedIdentifier) : undefined;
       },
-      getTypeOfPropertyOfType: (type, name) => getTypeOfPropertyOfType(type, escapeLeadingUnderscores(name)),
+      getTypeOfPropertyOfType: (type, name) => getTypeOfPropertyOfType(type, Scanner.escapeUnderscores(name)),
       getIndexInfoOfType,
       getSignaturesOfType,
       getIndexTypeOfType,
@@ -620,7 +620,7 @@ namespace qnr {
       },
       isValidPropertyAccess: (nodeIn, propertyName) => {
         const node = getParseTreeNode(nodeIn, isPropertyAccessOrQualifiedNameOrImportTypeNode);
-        return !!node && isValidPropertyAccess(node, escapeLeadingUnderscores(propertyName));
+        return !!node && isValidPropertyAccess(node, Scanner.escapeUnderscores(propertyName));
       },
       isValidPropertyAccessForCompletions: (nodeIn, type, property) => {
         const node = getParseTreeNode(nodeIn, isPropertyAccessExpression);
@@ -658,8 +658,8 @@ namespace qnr {
         const node = getParseTreeNode(nodeIn, isParameter);
         return node ? isOptionalParameter(node) : false;
       },
-      tryGetMemberInModuleExports: (name, symbol) => tryGetMemberInModuleExports(escapeLeadingUnderscores(name), symbol),
-      tryGetMemberInModuleExportsAndProperties: (name, symbol) => tryGetMemberInModuleExportsAndProperties(escapeLeadingUnderscores(name), symbol),
+      tryGetMemberInModuleExports: (name, symbol) => tryGetMemberInModuleExports(Scanner.escapeUnderscores(name), symbol),
+      tryGetMemberInModuleExportsAndProperties: (name, symbol) => tryGetMemberInModuleExportsAndProperties(Scanner.escapeUnderscores(name), symbol),
       tryFindAmbientModuleWithoutAugmentations: (moduleName) => {
         // we deliberately exclude augmentations
         // since we are only interested in declarations of the module itself
@@ -695,16 +695,16 @@ namespace qnr {
       getAllPossiblePropertiesOfTypes,
       getSuggestedSymbolForNonexistentProperty,
       getSuggestionForNonexistentProperty,
-      getSuggestedSymbolForNonexistentSymbol: (location, name, meaning) => getSuggestedSymbolForNonexistentSymbol(location, escapeLeadingUnderscores(name), meaning),
-      getSuggestionForNonexistentSymbol: (location, name, meaning) => getSuggestionForNonexistentSymbol(location, escapeLeadingUnderscores(name), meaning),
+      getSuggestedSymbolForNonexistentSymbol: (location, name, meaning) => getSuggestedSymbolForNonexistentSymbol(location, Scanner.escapeUnderscores(name), meaning),
+      getSuggestionForNonexistentSymbol: (location, name, meaning) => getSuggestionForNonexistentSymbol(location, Scanner.escapeUnderscores(name), meaning),
       getSuggestedSymbolForNonexistentModule,
       getSuggestionForNonexistentExport,
       getBaseConstraintOfType,
       getDefaultFromTypeParameter: (type) => (type && type.flags & TypeFlags.TypeParameter ? getDefaultFromTypeParameter(type as TypeParameter) : undefined),
       resolveName(name, location, meaning, excludeGlobals) {
-        return resolveName(location, escapeLeadingUnderscores(name), meaning, /*nameNotFoundMessage*/ undefined, /*nameArg*/ undefined, /*isUse*/ false, excludeGlobals);
+        return resolveName(location, Scanner.escapeUnderscores(name), meaning, /*nameNotFoundMessage*/ undefined, /*nameArg*/ undefined, /*isUse*/ false, excludeGlobals);
       },
-      getJsxNamespace: (n) => unescapeLeadingUnderscores(getJsxNamespace(n)),
+      getJsxNamespace: (n) => Scanner.unescapeUnderscores(getJsxNamespace(n)),
       getAccessibleSymbolChain,
       getTypePredicateOfSignature,
       resolveExternalModuleName: (moduleSpecifier) => {
@@ -769,14 +769,14 @@ namespace qnr {
       return res;
     }
 
-    const tupleTypes = createMap<GenericType>();
-    const unionTypes = createMap<UnionType>();
-    const intersectionTypes = createMap<Type>();
-    const literalTypes = createMap<LiteralType>();
-    const indexedAccessTypes = createMap<IndexedAccessType>();
-    const substitutionTypes = createMap<SubstitutionType>();
+    const tupleTypes = QMap.create<GenericType>();
+    const unionTypes = QMap.create<UnionType>();
+    const intersectionTypes = QMap.create<Type>();
+    const literalTypes = QMap.create<LiteralType>();
+    const indexedAccessTypes = QMap.create<IndexedAccessType>();
+    const substitutionTypes = QMap.create<SubstitutionType>();
     const evolvingArrayTypes: EvolvingArrayType[] = [];
-    const undefinedProperties = createMap<Symbol>() as UnderscoreEscapedMap<Symbol>;
+    const undefinedProperties = QMap.create<Symbol>() as UnderscoreEscapedMap<Symbol>;
 
     const unknownSymbol = createSymbol(SymbolFlags.Property, 'unknown' as __String);
     const resolvingSymbol = createSymbol(0, InternalSymbolName.Resolving);
@@ -837,7 +837,7 @@ namespace qnr {
     const emptyTypeLiteralType = createAnonymousType(emptyTypeLiteralSymbol, emptySymbols, emptyArray, emptyArray, undefined, undefined);
 
     const emptyGenericType = <GenericType>(<ObjectType>createAnonymousType(undefined, emptySymbols, emptyArray, emptyArray, undefined, undefined));
-    emptyGenericType.instantiations = createMap<TypeReference>();
+    emptyGenericType.instantiations = QMap.create<TypeReference>();
 
     const anyFunctionType = createAnonymousType(undefined, emptySymbols, emptyArray, emptyArray, undefined, undefined);
     // The anyFunctionType contains the anyFunctionType by definition. The flag is further propagated
@@ -862,7 +862,7 @@ namespace qnr {
 
     const enumNumberIndexInfo = createIndexInfo(stringType, /*isReadonly*/ true);
 
-    const iterationTypesCache = createMap<IterationTypes>(); // cache for common IterationTypes instances
+    const iterationTypesCache = QMap.create<IterationTypes>(); // cache for common IterationTypes instances
     const noIterationTypes: IterationTypes = {
       get yieldType(): Type {
         return fail('Not supported');
@@ -920,7 +920,7 @@ namespace qnr {
     }
     /** Key is "/path/to/a.ts|/path/to/b.ts". */
     let amalgamatedDuplicates: QMap<DuplicateInfoForFiles> | undefined;
-    const reverseMappedCache = createMap<Type | undefined>();
+    const reverseMappedCache = QMap.create<Type | undefined>();
     let inInferTypeForHomomorphicMappedType = false;
     let ambientModulesCache: Symbol[] | undefined;
     /**
@@ -973,7 +973,7 @@ namespace qnr {
     let deferredGlobalOmitSymbol: Symbol;
     let deferredGlobalBigIntType: ObjectType;
 
-    const allPotentiallyUnusedIdentifiers = createMap<PotentiallyUnusedIdentifier[]>(); // key is file name
+    const allPotentiallyUnusedIdentifiers = QMap.create<PotentiallyUnusedIdentifier[]>(); // key is file name
 
     let flowLoopStart = 0;
     let flowLoopCount = 0;
@@ -1013,7 +1013,7 @@ namespace qnr {
     const diagnostics = createDiagnosticCollection();
     const suggestionDiagnostics = createDiagnosticCollection();
 
-    const typeofTypesByName: ReadonlyMap<Type> = createMap<Type>({
+    const typeofTypesByName: QReadonlyMap<Type> = QMap.create<Type>({
       string: stringType,
       number: numberType,
       bigint: bigintType,
@@ -1027,12 +1027,12 @@ namespace qnr {
     let _jsxFactoryEntity: EntityName | undefined;
     let outofbandVarianceMarkerHandler: ((onlyUnreliable: boolean) => void) | undefined;
 
-    const subtypeRelation = createMap<RelationComparisonResult>();
-    const strictSubtypeRelation = createMap<RelationComparisonResult>();
-    const assignableRelation = createMap<RelationComparisonResult>();
-    const comparableRelation = createMap<RelationComparisonResult>();
-    const identityRelation = createMap<RelationComparisonResult>();
-    const enumRelation = createMap<RelationComparisonResult>();
+    const subtypeRelation = QMap.create<RelationComparisonResult>();
+    const strictSubtypeRelation = QMap.create<RelationComparisonResult>();
+    const assignableRelation = QMap.create<RelationComparisonResult>();
+    const comparableRelation = QMap.create<RelationComparisonResult>();
+    const identityRelation = QMap.create<RelationComparisonResult>();
+    const enumRelation = QMap.create<RelationComparisonResult>();
 
     const builtinGlobals = new SymbolTable();
     builtinGlobals.set(undefinedSymbol.escapedName, undefinedSymbol);
@@ -1068,11 +1068,11 @@ namespace qnr {
             _jsxNamespace = getFirstIdentifier(_jsxFactoryEntity).escapedText;
           }
         } else if (compilerOptions.reactNamespace) {
-          _jsxNamespace = escapeLeadingUnderscores(compilerOptions.reactNamespace);
+          _jsxNamespace = Scanner.escapeUnderscores(compilerOptions.reactNamespace);
         }
       }
       if (!_jsxFactoryEntity) {
-        _jsxFactoryEntity = QualifiedName.create(createIdentifier(unescapeLeadingUnderscores(_jsxNamespace)), 'createElement');
+        _jsxFactoryEntity = QualifiedName.create(createIdentifier(Scanner.unescapeUnderscores(_jsxNamespace)), 'createElement');
       }
       return _jsxNamespace;
 
@@ -1253,7 +1253,7 @@ namespace qnr {
           const filesDuplicates = getOrUpdate<DuplicateInfoForFiles>(amalgamatedDuplicates, `${firstFile.path}|${secondFile.path}`, () => ({
             firstFile,
             secondFile,
-            conflictingSymbols: createMap(),
+            conflictingSymbols: QMap.create(),
           }));
           const conflictingSymbolInfo = getOrUpdate<DuplicateInfoForSymbol>(filesDuplicates.conflictingSymbols, symbolName, () => ({
             isBlockScoped: isEitherBlockScoped,
@@ -1331,7 +1331,7 @@ namespace qnr {
           if (some(patternAmbientModules, (module) => mainModule === module.symbol)) {
             const merged = mergeSymbol(moduleAugmentation.symbol, mainModule, /*unidirectional*/ true);
             if (!patternAmbientModuleAugmentations) {
-              patternAmbientModuleAugmentations = createMap();
+              patternAmbientModuleAugmentations = QMap.create();
             }
             // moduleName will be a StringLiteral since this is not `declare global`.
             patternAmbientModuleAugmentations.set((moduleName as StringLiteral).text, merged);
@@ -2052,7 +2052,7 @@ namespace qnr {
               !compilerOptions.allowUmdGlobalAccess,
               errorLocation!,
               Diagnostics._0_refers_to_a_UMD_global_but_the_current_file_is_a_module_Consider_adding_an_import_instead,
-              unescapeLeadingUnderscores(name)
+              Scanner.unescapeUnderscores(name)
             );
           }
         }
@@ -2096,7 +2096,7 @@ namespace qnr {
             ? Diagnostics._0_cannot_be_used_as_a_value_because_it_was_exported_using_export_type
             : Diagnostics._0_cannot_be_used_as_a_value_because_it_was_imported_using_import_type;
           const relatedMessage = isExport ? Diagnostics._0_was_exported_here : Diagnostics._0_was_imported_here;
-          const unescapedName = unescapeLeadingUnderscores(name);
+          const unescapedName = Scanner.unescapeUnderscores(name);
           addRelatedInfo(error(useSite, message, unescapedName), createDiagnosticForNode(typeOnlyDeclaration, relatedMessage, unescapedName));
         }
       }
@@ -2136,7 +2136,7 @@ namespace qnr {
     }
 
     function diagnosticName(nameArg: __String | Identifier | PrivateIdentifier) {
-      return isString(nameArg) ? unescapeLeadingUnderscores(nameArg as __String) : declarationNameToString(nameArg as Identifier);
+      return isString(nameArg) ? Scanner.unescapeUnderscores(nameArg as __String) : declarationNameToString(nameArg as Identifier);
     }
 
     function isTypeParameterSymbolDeclaredInContainer(symbol: Symbol, container: Node) {
@@ -2230,13 +2230,13 @@ namespace qnr {
               error(
                 parent,
                 Diagnostics.Cannot_access_0_1_because_0_is_a_type_but_not_a_namespace_Did_you_mean_to_retrieve_the_type_of_the_property_1_in_0_with_0_1,
-                unescapeLeadingUnderscores(name),
-                unescapeLeadingUnderscores(propName)
+                Scanner.unescapeUnderscores(name),
+                Scanner.unescapeUnderscores(propName)
               );
               return true;
             }
           }
-          error(errorLocation, Diagnostics._0_only_refers_to_a_type_but_is_being_used_as_a_namespace_here, unescapeLeadingUnderscores(name));
+          error(errorLocation, Diagnostics._0_only_refers_to_a_type_but_is_being_used_as_a_namespace_here, Scanner.unescapeUnderscores(name));
           return true;
         }
       }
@@ -2248,7 +2248,7 @@ namespace qnr {
       if (meaning & (SymbolFlags.Type & ~SymbolFlags.Namespace)) {
         const symbol = resolveSymbol(resolveName(errorLocation, name, ~SymbolFlags.Type & SymbolFlags.Value, /*nameNotFoundMessage*/ undefined, /*nameArg*/ undefined, /*isUse*/ false));
         if (symbol && !(symbol.flags & SymbolFlags.Namespace)) {
-          error(errorLocation, Diagnostics._0_refers_to_a_value_but_is_being_used_as_a_type_here_Did_you_mean_typeof_0, unescapeLeadingUnderscores(name));
+          error(errorLocation, Diagnostics._0_refers_to_a_value_but_is_being_used_as_a_type_here_Did_you_mean_typeof_0, Scanner.unescapeUnderscores(name));
           return true;
         }
       }
@@ -2270,7 +2270,7 @@ namespace qnr {
     function checkAndReportErrorForUsingTypeAsValue(errorLocation: Node, name: __String, meaning: SymbolFlags): boolean {
       if (meaning & (SymbolFlags.Value & ~SymbolFlags.NamespaceModule)) {
         if (isPrimitiveTypeName(name)) {
-          error(errorLocation, Diagnostics._0_only_refers_to_a_type_but_is_being_used_as_a_value_here, unescapeLeadingUnderscores(name));
+          error(errorLocation, Diagnostics._0_only_refers_to_a_type_but_is_being_used_as_a_value_here, Scanner.unescapeUnderscores(name));
           return true;
         }
         const symbol = resolveSymbol(resolveName(errorLocation, name, SymbolFlags.Type & ~SymbolFlags.Value, /*nameNotFoundMessage*/ undefined, /*nameArg*/ undefined, /*isUse*/ false));
@@ -2278,7 +2278,7 @@ namespace qnr {
           const message = isES2015OrLaterConstructorName(name)
             ? Diagnostics._0_only_refers_to_a_type_but_is_being_used_as_a_value_here_Do_you_need_to_change_your_target_library_Try_changing_the_lib_compiler_option_to_es2015_or_later
             : Diagnostics._0_only_refers_to_a_type_but_is_being_used_as_a_value_here;
-          error(errorLocation, message, unescapeLeadingUnderscores(name));
+          error(errorLocation, message, Scanner.unescapeUnderscores(name));
           return true;
         }
       }
@@ -2302,7 +2302,7 @@ namespace qnr {
       if (meaning & (SymbolFlags.Value & ~SymbolFlags.NamespaceModule & ~SymbolFlags.Type)) {
         const symbol = resolveSymbol(resolveName(errorLocation, name, SymbolFlags.NamespaceModule & ~SymbolFlags.Value, /*nameNotFoundMessage*/ undefined, /*nameArg*/ undefined, /*isUse*/ false));
         if (symbol) {
-          error(errorLocation, Diagnostics.Cannot_use_namespace_0_as_a_value, unescapeLeadingUnderscores(name));
+          error(errorLocation, Diagnostics.Cannot_use_namespace_0_as_a_value, Scanner.unescapeUnderscores(name));
           return true;
         }
       } else if (meaning & (SymbolFlags.Type & ~SymbolFlags.NamespaceModule & ~SymbolFlags.Value)) {
@@ -2310,7 +2310,7 @@ namespace qnr {
           resolveName(errorLocation, name, (SymbolFlags.ValueModule | SymbolFlags.NamespaceModule) & ~SymbolFlags.Type, /*nameNotFoundMessage*/ undefined, /*nameArg*/ undefined, /*isUse*/ false)
         );
         if (symbol) {
-          error(errorLocation, Diagnostics.Cannot_use_namespace_0_as_a_type, unescapeLeadingUnderscores(name));
+          error(errorLocation, Diagnostics.Cannot_use_namespace_0_as_a_type, Scanner.unescapeUnderscores(name));
           return true;
         }
       }
@@ -2439,7 +2439,7 @@ namespace qnr {
 
         // Non-null assertion is safe because the optionality comes from ImportClause,
         // but if an ImportClause was the typeOnlyDeclaration, it had to have a `name`.
-        const name = unescapeLeadingUnderscores(typeOnlyDeclaration.name!.escapedText);
+        const name = Scanner.unescapeUnderscores(typeOnlyDeclaration.name!.escapedText);
         addRelatedInfo(error(node.moduleReference, message), createDiagnosticForNode(typeOnlyDeclaration, relatedMessage, name));
       }
     }
@@ -2472,7 +2472,7 @@ namespace qnr {
         }
         // It _might_ still be incorrect to assume there is no __esModule marker on the import at runtime, even if there is no `default` member
         // So we check a bit more,
-        if (resolveExportByName(moduleSymbol, escapeLeadingUnderscores('__esModule'), /*sourceNode*/ undefined, dontResolveAlias)) {
+        if (resolveExportByName(moduleSymbol, Scanner.escapeUnderscores('__esModule'), /*sourceNode*/ undefined, dontResolveAlias)) {
           // If there is an `__esModule` specified in the declaration (meaning someone explicitly added it or wrote it in their code),
           // it definitely is a module and does not have a synthetic default
           return false;
@@ -2487,7 +2487,7 @@ namespace qnr {
         return hasExportAssignmentSymbol(moduleSymbol);
       }
       // JS files have a synthetic default if they do not contain ES2015+ module syntax (export = is not valid in js) _and_ do not have an __esModule marker
-      return !file.externalModuleIndicator && !resolveExportByName(moduleSymbol, escapeLeadingUnderscores('__esModule'), /*sourceNode*/ undefined, dontResolveAlias);
+      return !file.externalModuleIndicator && !resolveExportByName(moduleSymbol, Scanner.escapeUnderscores('__esModule'), /*sourceNode*/ undefined, dontResolveAlias);
     }
 
     function getTargetOfImportClause(node: ImportClause, dontResolveAlias: boolean): Symbol | undefined {
@@ -3415,7 +3415,7 @@ namespace qnr {
         const exportStars = symbol.exports.get(InternalSymbolName.ExportStar);
         if (exportStars) {
           const nestedSymbols = new SymbolTable();
-          const lookupTable = createMap<ExportCollisionTracker>() as ExportCollisionTrackerTable;
+          const lookupTable = QMap.create<ExportCollisionTracker>() as ExportCollisionTrackerTable;
           for (const node of exportStars.declarations) {
             const resolvedModule = resolveExternalModuleName(node, (node as ExportDeclaration).moduleSpecifier!);
             const exportedSymbols = visit(resolvedModule);
@@ -3432,7 +3432,7 @@ namespace qnr {
                   node,
                   Diagnostics.Module_0_has_already_exported_a_member_named_1_Consider_explicitly_re_exporting_to_resolve_the_ambiguity,
                   lookupTable.get(id)!.specifierText,
-                  unescapeLeadingUnderscores(id)
+                  Scanner.unescapeUnderscores(id)
                 )
               );
             }
@@ -3479,7 +3479,7 @@ namespace qnr {
           results = append(results, resolvedModule);
         }
         if (length(results)) {
-          (links.extendedContainersByFile || (links.extendedContainersByFile = createMap())).set(id, results!);
+          (links.extendedContainersByFile || (links.extendedContainersByFile = QMap.create())).set(id, results!);
           return results!;
         }
       }
@@ -3643,28 +3643,15 @@ namespace qnr {
       return type;
     }
 
-    // A reserved member name starts with two underscores, but the third character cannot be an underscore,
-    // @, or #. A third underscore indicates an escaped form of an identifier that started
-    // with at least two underscores. The @ character indicates that the name is denoted by a well known ES
-    // Symbol instance and the # character indicates that the name is a PrivateIdentifier.
-    function isReservedMemberName(name: __String) {
-      return (
-        (name as string).charCodeAt(0) === Codes._ &&
-        (name as string).charCodeAt(1) === Codes._ &&
-        (name as string).charCodeAt(2) !== Codes._ &&
-        (name as string).charCodeAt(2) !== Codes.at &&
-        (name as string).charCodeAt(2) !== Codes.hash
-      );
-    }
 
-    function getNamedMembers(members: SymbolTable): Symbol[] {
-      let result: Symbol[] | undefined;
-      members.forEach((symbol, id) => {
-        if (!isReservedMemberName(id) && symbolIsValue(symbol)) {
-          (result || (result = [])).push(symbol);
-        }
+    function getNamedMembers(ms: SymbolTable): Symbol[] {
+      let r: Symbol[] | undefined;
+      ms.forEach((symbol, id) => {
+        if (!Scanner.isReservedName(id) && symbolIsValue(symbol)) 
+          (r || (r = [])).push(symbol);
+        
       });
-      return result || emptyArray;
+      return r || emptyArray;
     }
 
     function setStructuredTypeMembers(
@@ -3756,7 +3743,7 @@ namespace qnr {
       enclosingDeclaration: Node | undefined,
       meaning: SymbolFlags,
       useOnlyExternalAliasing: boolean,
-      visitedSymbolTablesMap: QMap<SymbolTable[]> = createMap()
+      visitedSymbolTablesMap: QMap<SymbolTable[]> = QMap.create()
     ): Symbol[] | undefined {
       if (!(symbol && !isPropertyOrMethodDeclarationSymbol(symbol))) {
         return;
@@ -4419,7 +4406,7 @@ namespace qnr {
 
         if (!inTypeAlias && type.aliasSymbol && (context.flags & NodeBuilderFlags.UseAliasDefinedOutsideCurrentScope || isTypeSymbolAccessible(type.aliasSymbol, context.enclosingDeclaration))) {
           const typeArgumentNodes = mapToTypeNodes(type.aliasTypeArguments, context);
-          if (isReservedMemberName(type.aliasSymbol.escapedName) && !(type.aliasSymbol.flags & SymbolFlags.Class)) return TypeReferenceNode.create(createIdentifier(''), typeArgumentNodes);
+          if (Scanner.isReservedName(type.aliasSymbol.escapedName) && !(type.aliasSymbol.flags & SymbolFlags.Class)) return TypeReferenceNode.create(createIdentifier(''), typeArgumentNodes);
           return symbolToTypeNode(type.aliasSymbol, context, SymbolFlags.Type, typeArgumentNodes);
         }
 
@@ -4573,10 +4560,10 @@ namespace qnr {
           // Since instantiations of the same anonymous type have the same symbol, tracking symbols instead
           // of types allows us to catch circular references to instantiations of the same anonymous type
           if (!context.visitedTypes) {
-            context.visitedTypes = createMap<true>();
+            context.visitedTypes = QMap.create<true>();
           }
           if (id && !context.symbolDepth) {
-            context.symbolDepth = createMap<number>();
+            context.symbolDepth = QMap.create<number>();
           }
 
           let depth: number | undefined;
@@ -4653,7 +4640,7 @@ namespace qnr {
                     const isOptional = isOptionalOrRest && !isRest;
                     tupleConstituentNodes[i] = NamedTupleMember.create(
                       isRest ? createToken(SyntaxKind.Dot3Token) : undefined,
-                      createIdentifier(unescapeLeadingUnderscores(getTupleElementLabel((type.target as TupleType).labeledElementDeclarations![i]))),
+                      createIdentifier(Scanner.unescapeUnderscores(getTupleElementLabel((type.target as TupleType).labeledElementDeclarations![i]))),
                       isOptional ? createToken(SyntaxKind.QuestionToken) : undefined,
                       isRest ? ArrayTypeNode.create(tupleConstituentNodes[i]) : tupleConstituentNodes[i]
                     );
@@ -4800,7 +4787,7 @@ namespace qnr {
                 continue;
               }
               if (getDeclarationModifierFlagsFromSymbol(propertySymbol) & (ModifierFlags.Private | ModifierFlags.Protected) && context.tracker.reportPrivateInBaseOfClassExpression) {
-                context.tracker.reportPrivateInBaseOfClassExpression(unescapeLeadingUnderscores(propertySymbol.escapedName));
+                context.tracker.reportPrivateInBaseOfClassExpression(Scanner.unescapeUnderscores(propertySymbol.escapedName));
               }
             }
             if (checkTruncationLength(context) && i + 2 < properties.length - 1) {
@@ -5218,7 +5205,7 @@ namespace qnr {
         if (context.typeParameterSymbolList && context.typeParameterSymbolList.get(symbolId)) {
           return;
         }
-        (context.typeParameterSymbolList || (context.typeParameterSymbolList = createMap())).set(symbolId, true);
+        (context.typeParameterSymbolList || (context.typeParameterSymbolList = QMap.create())).set(symbolId, true);
         let typeParameterNodes: readonly TypeNode[] | readonly TypeParameterDeclaration[] | undefined;
         if (context.flags & NodeBuilderFlags.WriteTypeParametersInQualifiedName && index < chain.length - 1) {
           const parentSymbol = symbol;
@@ -5294,7 +5281,7 @@ namespace qnr {
               importModuleSpecifierPreference: isBundle ? 'non-relative' : 'relative',
             })
           );
-          links.specifierCache = links.specifierCache || createMap();
+          links.specifierCache = links.specifierCache || QMap.create();
           links.specifierCache.set(contextFile.path, specifier);
         }
         return specifier;
@@ -5366,7 +5353,7 @@ namespace qnr {
               const exports = getExportsOfSymbol(parent);
               forEachEntry(exports, (ex, name) => {
                 if (getSymbolIfSameReference(ex, symbol) && !isLateBoundName(name) && name !== InternalSymbolName.ExportEquals) {
-                  symbolName = unescapeLeadingUnderscores(name);
+                  symbolName = Scanner.unescapeUnderscores(name);
                   return true;
                 }
               });
@@ -5440,8 +5427,8 @@ namespace qnr {
           if (text !== rawtext) {
             result = createIdentifier(text, result.typeArguments);
           }
-          (context.typeParameterNames || (context.typeParameterNames = createMap())).set('' + getTypeId(type), result);
-          (context.typeParameterNamesByText || (context.typeParameterNamesByText = createMap())).set(result.escapedText as string, true);
+          (context.typeParameterNames || (context.typeParameterNames = QMap.create())).set('' + getTypeId(type), result);
+          (context.typeParameterNamesByText || (context.typeParameterNamesByText = QMap.create())).set(result.escapedText as string, true);
         }
         return result;
       }
@@ -5540,7 +5527,7 @@ namespace qnr {
         if (isKnownSymbol(symbol)) {
           return ComputedPropertyName.create(createPropertyAccess(createIdentifier('Symbol'), (symbol.escapedName as string).substr(3)));
         }
-        const rawName = unescapeLeadingUnderscores(symbol.escapedName);
+        const rawName = Scanner.unescapeUnderscores(symbol.escapedName);
         return createPropertyNameNodeForIdentifierOrLiteral(rawName, singleQuote);
       }
 
@@ -5865,13 +5852,13 @@ namespace qnr {
         // we're trying to emit from later on)
         const enclosingDeclaration = context.enclosingDeclaration!;
         let results: Statement[] = [];
-        const visitedSymbols: QMap<true> = createMap();
+        const visitedSymbols: QMap<true> = QMap.create();
         let deferredPrivates: QMap<Symbol> | undefined;
         const oldcontext = context;
         context = {
           ...oldcontext,
-          usedSymbolNames: createMap(),
-          remappedSymbolNames: createMap(),
+          usedSymbolNames: QMap.create(),
+          remappedSymbolNames: QMap.create(),
           tracker: {
             ...oldcontext.tracker,
             trackSymbol: (sym, decl, meaning) => {
@@ -5894,7 +5881,7 @@ namespace qnr {
           });
         }
         forEachEntry(symbolTable, (symbol, name) => {
-          const baseName = unescapeLeadingUnderscores(name);
+          const baseName = Scanner.unescapeUnderscores(name);
           void getInternalSymbolName(symbol, baseName); // Called to cache values into `usedSymbolNames` and `remappedSymbolNames`
         });
         let addingDeclare = !bundled;
@@ -6068,7 +6055,7 @@ namespace qnr {
         function visitSymbolTable(symbolTable: SymbolTable, suppressNewPrivateContext?: boolean, propertyAsAlias?: boolean) {
           const oldDeferredPrivates = deferredPrivates;
           if (!suppressNewPrivateContext) {
-            deferredPrivates = createMap();
+            deferredPrivates = QMap.create();
           }
           symbolTable.forEach((symbol: Symbol) => {
             serializeSymbol(symbol, /*isPrivate*/ false, !!propertyAsAlias);
@@ -6113,7 +6100,7 @@ namespace qnr {
         // If it's a class/interface/function: emit a class/interface/function with a `default` modifier
         // These forms can merge, eg (`export default 12; export default interface A {}`)
         function serializeSymbolWorker(symbol: Symbol, isPrivate: boolean, propertyAsAlias: boolean) {
-          const symbolName = unescapeLeadingUnderscores(symbol.escapedName);
+          const symbolName = Scanner.unescapeUnderscores(symbol.escapedName);
           const isDefault = symbol.escapedName === InternalSymbolName.Default;
           if (!(context.flags & NodeBuilderFlags.AllowAnonymousIdentifier) && isStringANonContextualKeyword(symbolName) && !isDefault) {
             // Oh no. We cannot use this symbol's name as it's name... It's likely some jsdoc had an invalid name like `export` or `default` :(
@@ -6199,7 +6186,7 @@ namespace qnr {
         function includePrivateSymbol(symbol: Symbol) {
           if (some(symbol.declarations, isParameterDeclaration)) return;
           Debug.assertIsDefined(deferredPrivates);
-          getUnusedName(unescapeLeadingUnderscores(symbol.escapedName), symbol); // Call to cache unique name for symbol
+          getUnusedName(Scanner.unescapeUnderscores(symbol.escapedName), symbol); // Call to cache unique name for symbol
           deferredPrivates.set('' + getSymbolId(symbol), symbol);
         }
 
@@ -6327,7 +6314,7 @@ namespace qnr {
                   mapDefined(
                     filter(mergedMembers, (n) => n.escapedName !== InternalSymbolName.ExportEquals),
                     (s) => {
-                      const name = unescapeLeadingUnderscores(s.escapedName);
+                      const name = Scanner.unescapeUnderscores(s.escapedName);
                       const localName = getInternalSymbolName(s, name);
                       const aliasDecl = s.declarations && getDeclarationOfAliasSymbol(s);
                       if (containingFile && (aliasDecl ? containingFile !== getSourceFileOfNode(aliasDecl) : !some(s.declarations, (d) => getSourceFileOfNode(d) === containingFile))) {
@@ -6336,7 +6323,7 @@ namespace qnr {
                       }
                       const target = aliasDecl && getTargetOfAliasDeclaration(aliasDecl, /*dontRecursivelyResolve*/ true);
                       includePrivateSymbol(target || s);
-                      const targetName = target ? getInternalSymbolName(target, unescapeLeadingUnderscores(target.escapedName)) : localName;
+                      const targetName = target ? getInternalSymbolName(target, Scanner.unescapeUnderscores(target.escapedName)) : localName;
                       return createExportSpecifier(name === targetName ? undefined : targetName, name);
                     }
                   )
@@ -6361,7 +6348,7 @@ namespace qnr {
                   // other way to get the possible const value of an enum member that I'm aware of, as the value is cached
                   // _on the declaration_, not on the declaration's symbol...
                   const initializedValue = p.declarations && p.declarations[0] && isEnumMember(p.declarations[0]) && getConstantValue(p.declarations[0] as EnumMember);
-                  return createEnumMember(unescapeLeadingUnderscores(p.escapedName), initializedValue === undefined ? undefined : createLiteral(initializedValue));
+                  return createEnumMember(Scanner.unescapeUnderscores(p.escapedName), initializedValue === undefined ? undefined : createLiteral(initializedValue));
                 }
               )
             ),
@@ -6599,7 +6586,7 @@ namespace qnr {
           if (!target) {
             return;
           }
-          let verbatimTargetName = unescapeLeadingUnderscores(target.escapedName);
+          let verbatimTargetName = Scanner.unescapeUnderscores(target.escapedName);
           if (verbatimTargetName === InternalSymbolName.ExportEquals && (compilerOptions.esModuleInterop || compilerOptions.allowSyntheticDefaultImports)) {
             // target refers to an `export=` symbol that was hoisted into a synthetic default - rename here to match
             verbatimTargetName = InternalSymbolName.Default;
@@ -6686,7 +6673,7 @@ namespace qnr {
               // targetName is only used when the target is local, as otherwise the target is an alias that points at
               // another file
               serializeExportSpecifier(
-                unescapeLeadingUnderscores(symbol.escapedName),
+                Scanner.unescapeUnderscores(symbol.escapedName),
                 specifier ? verbatimTargetName : targetName,
                 specifier && StringLiteral.like(specifier) ? createLiteral(specifier.text) : undefined
               );
@@ -6726,7 +6713,7 @@ namespace qnr {
           if (symbol.flags & SymbolFlags.Prototype) {
             return;
           }
-          const name = unescapeLeadingUnderscores(symbol.escapedName);
+          const name = Scanner.unescapeUnderscores(symbol.escapedName);
           const isExportEquals = name === InternalSymbolName.ExportEquals;
           const isDefault = name === InternalSymbolName.Default;
           const isExportAssignment = isExportEquals || isDefault;
@@ -7425,7 +7412,7 @@ namespace qnr {
       let result: Node[] | undefined;
       let visited: QMap<true> | undefined;
       if (exportSymbol) {
-        visited = createMap();
+        visited = QMap.create();
         visited.set('' + getSymbolId(exportSymbol), true);
         buildVisibleNodeList(exportSymbol.declarations);
       }
@@ -7932,7 +7919,7 @@ namespace qnr {
     }
 
     function getFlowTypeInConstructor(symbol: Symbol, constructor: ConstructorDeclaration) {
-      const reference = createPropertyAccess(createThis(), unescapeLeadingUnderscores(symbol.escapedName));
+      const reference = createPropertyAccess(createThis(), Scanner.unescapeUnderscores(symbol.escapedName));
       reference.expression.parent = reference;
       reference.parent = constructor;
       reference.flowNode = constructor.returnFlowNode;
@@ -8121,7 +8108,7 @@ namespace qnr {
               // declaring an `export const a: number`. In that case, we issue a duplicate identifier error, because
               // it's unclear what that's supposed to mean, so it's probably a mistake.
               if (getSourceFileOfNode(s.valueDeclaration) !== getSourceFileOfNode(exportedMember.valueDeclaration)) {
-                const unescapedName = unescapeLeadingUnderscores(s.escapedName);
+                const unescapedName = Scanner.unescapeUnderscores(s.escapedName);
                 const exportedMemberName = tryCast(exportedMember.valueDeclaration, isNamedDeclaration)?.name || exportedMember.valueDeclaration;
                 addRelatedInfo(
                   error(s.valueDeclaration, Diagnostics.Duplicate_identifier_0, unescapedName),
@@ -9104,7 +9091,7 @@ namespace qnr {
           type.typeParameters = concatenate(outerTypeParameters, localTypeParameters);
           type.outerTypeParameters = outerTypeParameters;
           type.localTypeParameters = localTypeParameters;
-          (<GenericType>type).instantiations = createMap<TypeReference>();
+          (<GenericType>type).instantiations = QMap.create<TypeReference>();
           (<GenericType>type).instantiations.set(getTypeListId(type.typeParameters), <GenericType>type);
           (<GenericType>type).target = <GenericType>type;
           (<GenericType>type).resolvedTypeArguments = type.typeParameters;
@@ -9136,7 +9123,7 @@ namespace qnr {
             // Initialize the instantiation cache for generic type aliases. The declared type corresponds to
             // an instantiation of the type alias with the type parameters supplied as type arguments.
             links.typeParameters = typeParameters;
-            links.instantiations = createMap<Type>();
+            links.instantiations = QMap.create<Type>();
             links.instantiations.set(getTypeListId(typeParameters), type);
           }
         } else {
@@ -9464,7 +9451,7 @@ namespace qnr {
         return (<UniqueESSymbolType>type).escapedName;
       }
       if (type.flags & (TypeFlags.StringLiteral | TypeFlags.NumberLiteral)) {
-        return escapeLeadingUnderscores('' + (<StringLiteralType | NumberLiteralType>type).value);
+        return Scanner.escapeUnderscores('' + (<StringLiteralType | NumberLiteralType>type).value);
       }
       return fail();
     }
@@ -9548,7 +9535,7 @@ namespace qnr {
             // If we have an existing early-bound member, combine its declarations so that we can
             // report an error at each declaration.
             const declarations = earlySymbol ? concatenate(earlySymbol.declarations, lateSymbol.declarations) : lateSymbol.declarations;
-            const name = (!(type.flags & TypeFlags.UniqueESSymbol) && unescapeLeadingUnderscores(memberName)) || declarationNameToString(declName);
+            const name = (!(type.flags & TypeFlags.UniqueESSymbol) && Scanner.unescapeUnderscores(memberName)) || declarationNameToString(declName);
             forEach(declarations, (declaration) => error(getNameOfDeclaration(declaration) || declaration, Diagnostics.Property_0_was_also_declared_here, name));
             error(declName || decl, Diagnostics.Duplicate_property_0, name);
             lateSymbol = createSymbol(SymbolFlags.None, memberName, CheckFlags.Late);
@@ -10852,7 +10839,7 @@ namespace qnr {
               singleProp = prop;
             } else if (prop !== singleProp) {
               if (!propSet) {
-                propSet = createMap<Symbol>();
+                propSet = QMap.create<Symbol>();
                 propSet.set('' + getSymbolId(singleProp), singleProp);
               }
               const id = '' + getSymbolId(prop);
@@ -11145,7 +11132,7 @@ namespace qnr {
     function symbolsToArray(symbols: SymbolTable): Symbol[] {
       const result: Symbol[] = [];
       symbols.forEach((symbol, id) => {
-        if (!isReservedMemberName(id)) {
+        if (!Scanner.isReservedName(id)) {
           result.push(symbol);
         }
       });
@@ -11589,7 +11576,7 @@ namespace qnr {
     }
 
     function getSignatureInstantiationWithoutFillingInTypeArguments(signature: Signature, typeArguments: readonly Type[] | undefined): Signature {
-      const instantiations = signature.instantiations || (signature.instantiations = createMap<Signature>());
+      const instantiations = signature.instantiations || (signature.instantiations = QMap.create<Signature>());
       const id = getTypeListId(typeArguments);
       let instantiation = instantiations.get(id);
       if (!instantiation) {
@@ -12523,7 +12510,7 @@ namespace qnr {
       type.typeParameters = typeParameters;
       type.outerTypeParameters = undefined;
       type.localTypeParameters = typeParameters;
-      type.instantiations = createMap<TypeReference>();
+      type.instantiations = QMap.create<TypeReference>();
       type.instantiations.set(getTypeListId(type.typeParameters), <GenericType>type);
       type.target = <GenericType>type;
       type.resolvedTypeArguments = type.typeParameters;
@@ -12981,7 +12968,7 @@ namespace qnr {
     // Also, unlike union types, the order of the constituent types is preserved in order that overload resolution
     // for intersections of types with signatures can be deterministic.
     function getIntersectionType(types: readonly Type[], aliasSymbol?: Symbol, aliasTypeArguments?: readonly Type[]): Type {
-      const typeMembershipMap: QMap<Type> = createMap();
+      const typeMembershipMap: QMap<Type> = QMap.create();
       const includes = addTypesToIntersection(typeMembershipMap, 0, types);
       const typeSet: Type[] = arrayFrom(typeMembershipMap.values());
       // An intersection type is considered empty if it contains
@@ -13094,7 +13081,7 @@ namespace qnr {
         return neverType;
       }
       return isIdentifier(name)
-        ? getLiteralType(unescapeLeadingUnderscores(name.escapedText))
+        ? getLiteralType(Scanner.unescapeUnderscores(name.escapedText))
         : getRegularTypeOfLiteralType(ComputedPropertyName.kind(name) ? checkComputedPropertyName(name) : checkExpression(name));
     }
 
@@ -13287,9 +13274,9 @@ namespace qnr {
           if (accessNode && everyType(objectType, (t) => !(<TupleTypeReference>t).target.hasRestElement) && !(accessFlags & AccessFlags.NoTupleBoundsCheck)) {
             const indexNode = getIndexNodeForAccessExpression(accessNode);
             if (isTupleType(objectType)) {
-              error(indexNode, Diagnostics.Tuple_type_0_of_length_1_has_no_element_at_index_2, typeToString(objectType), getTypeReferenceArity(objectType), unescapeLeadingUnderscores(propName));
+              error(indexNode, Diagnostics.Tuple_type_0_of_length_1_has_no_element_at_index_2, typeToString(objectType), getTypeReferenceArity(objectType), Scanner.unescapeUnderscores(propName));
             } else {
-              error(indexNode, Diagnostics.Property_0_does_not_exist_on_type_1, unescapeLeadingUnderscores(propName), typeToString(objectType));
+              error(indexNode, Diagnostics.Property_0_does_not_exist_on_type_1, Scanner.unescapeUnderscores(propName), typeToString(objectType));
             }
           }
           errorIfWritingToReadonlyIndex(getIndexInfoOfType(objectType, IndexKind.Number));
@@ -13325,7 +13312,7 @@ namespace qnr {
         }
         if (accessExpression && !isConstEnumObjectType(objectType)) {
           if (objectType.symbol === globalThisSymbol && propName !== undefined && globalThisSymbol.exports!.has(propName) && globalThisSymbol.exports!.get(propName)!.flags & SymbolFlags.BlockScoped) {
-            error(accessExpression, Diagnostics.Property_0_does_not_exist_on_type_1, unescapeLeadingUnderscores(propName), typeToString(objectType));
+            error(accessExpression, Diagnostics.Property_0_does_not_exist_on_type_1, Scanner.unescapeUnderscores(propName), typeToString(objectType));
           } else if (noImplicitAny && !compilerOptions.suppressImplicitAnyIndexErrors && !suppressNoImplicitAnyError) {
             if (propName !== undefined && typeHasStaticProperty(propName, objectType)) {
               error(accessExpression, Diagnostics.Property_0_is_a_static_member_of_type_1, propName as string, typeToString(objectType));
@@ -13780,7 +13767,7 @@ namespace qnr {
         };
         links.resolvedType = getConditionalType(root, /*mapper*/ undefined);
         if (outerTypeParameters) {
-          root.instantiations = createMap<Type>();
+          root.instantiations = QMap.create<Type>();
           root.instantiations.set(getTypeListId(outerTypeParameters), links.resolvedType);
         }
       }
@@ -14531,7 +14518,7 @@ namespace qnr {
             : typeParameters;
         links.outerTypeParameters = typeParameters;
         if (typeParameters.length) {
-          links.instantiations = createMap<Type>();
+          links.instantiations = QMap.create<Type>();
           links.instantiations.set(getTypeListId(typeParameters), target);
         }
       }
@@ -15245,7 +15232,7 @@ namespace qnr {
                     createDiagnosticForNode(
                       targetNode,
                       Diagnostics.The_expected_type_comes_from_property_0_which_is_declared_here_on_type_1,
-                      propertyName && !(nameType.flags & TypeFlags.UniqueESSymbol) ? unescapeLeadingUnderscores(propertyName) : typeToString(nameType),
+                      propertyName && !(nameType.flags & TypeFlags.UniqueESSymbol) ? Scanner.unescapeUnderscores(propertyName) : typeToString(nameType),
                       typeToString(target)
                     )
                   );
@@ -15321,7 +15308,7 @@ namespace qnr {
       if (isJsxOpeningElement(node.parent) && isJsxElement(node.parent.parent)) {
         const containingElement = node.parent.parent;
         const childPropName = getJsxElementChildrenPropertyName(getJsxNamespaceAt(node));
-        const childrenPropName = childPropName === undefined ? 'children' : unescapeLeadingUnderscores(childPropName);
+        const childrenPropName = childPropName === undefined ? 'children' : Scanner.unescapeUnderscores(childPropName);
         const childrenNameType = getLiteralType(childrenPropName);
         const childrenTargetType = getIndexedAccessType(target, childrenNameType);
         const validChildren = getSemanticJsxChildren(containingElement.children);
@@ -15387,7 +15374,7 @@ namespace qnr {
         if (!invalidTextDiagnostic) {
           const tagNameText = getTextOfNode(node.parent.tagName);
           const childPropName = getJsxElementChildrenPropertyName(getJsxNamespaceAt(node));
-          const childrenPropName = childPropName === undefined ? 'children' : unescapeLeadingUnderscores(childPropName);
+          const childrenPropName = childPropName === undefined ? 'children' : Scanner.unescapeUnderscores(childPropName);
           const childrenTargetType = getIndexedAccessType(target, getLiteralType(childrenPropName));
           const diagnostic = Diagnostics._0_components_don_t_accept_text_as_child_elements_Text_in_JSX_has_the_type_string_but_the_expected_type_of_1_is_2;
           invalidTextDiagnostic = {
@@ -15636,8 +15623,8 @@ namespace qnr {
           if (reportErrors) {
             errorReporter!(
               Diagnostics.Types_of_parameters_0_and_1_are_incompatible,
-              unescapeLeadingUnderscores(getParameterNameAtPosition(source, i)),
-              unescapeLeadingUnderscores(getParameterNameAtPosition(target, i))
+              Scanner.unescapeUnderscores(getParameterNameAtPosition(source, i)),
+              Scanner.unescapeUnderscores(getParameterNameAtPosition(target, i))
             );
           }
           return Ternary.False;
@@ -18698,7 +18685,7 @@ namespace qnr {
 
     function getPropertiesOfContext(context: WideningContext): Symbol[] {
       if (!context.resolvedProperties) {
-        const names = createMap<Symbol>() as UnderscoreEscapedMap<Symbol>;
+        const names = QMap.create<Symbol>() as UnderscoreEscapedMap<Symbol>;
         for (const t of getSiblingsOfContext(context)) {
           if (isObjectLiteralType(t) && !(getObjectFlags(t) & ObjectFlags.ContainsSpread)) {
             for (const prop of getPropertiesOfType(t)) {
@@ -19093,7 +19080,7 @@ namespace qnr {
         if (!(t.flags & TypeFlags.StringLiteral)) {
           return;
         }
-        const name = escapeLeadingUnderscores((t as StringLiteralType).value);
+        const name = Scanner.escapeUnderscores((t as StringLiteralType).value);
         const literalProp = createSymbol(SymbolFlags.Property, name);
         literalProp.type = anyType;
         if (t.symbol) {
@@ -19460,7 +19447,7 @@ namespace qnr {
           inferencePriority = Math.min(inferencePriority, status);
           return;
         }
-        (visited || (visited = createMap<number>())).set(key, InferencePriority.Circularity);
+        (visited || (visited = QMap.create<number>())).set(key, InferencePriority.Circularity);
         const saveInferencePriority = inferencePriority;
         inferencePriority = InferencePriority.MaxValue;
         action(source, target);
@@ -20046,7 +20033,7 @@ namespace qnr {
       return access.kind === SyntaxKind.PropertyAccessExpression
         ? access.name.escapedText
         : StringLiteral.orNumericLiteralLike(access.argumentExpression)
-        ? escapeLeadingUnderscores(access.argumentExpression.text)
+        ? Scanner.escapeUnderscores(access.argumentExpression.text)
         : undefined;
     }
 
@@ -21203,7 +21190,7 @@ namespace qnr {
         // If we have previously computed the control flow type for the reference at
         // this flow loop junction, return the cached type.
         const id = getFlowNodeId(flow);
-        const cache = flowLoopCaches[id] || (flowLoopCaches[id] = createMap<Type>());
+        const cache = flowLoopCaches[id] || (flowLoopCaches[id] = QMap.create<Type>());
         const key = getOrSetCacheKey();
         if (!key) {
           // No cache key is generated when binding patterns are in unnarrowable situations
@@ -21336,7 +21323,7 @@ namespace qnr {
 
       function narrowByInKeyword(type: Type, literal: LiteralExpression, assumeTrue: boolean) {
         if (type.flags & (TypeFlags.Union | TypeFlags.Object) || isThisTypeParameter(type)) {
-          const propName = escapeLeadingUnderscores(literal.text);
+          const propName = Scanner.escapeUnderscores(literal.text);
           return filterType(type, (t) => isTypePresencePossible(t, propName, assumeTrue));
         }
         return type;
@@ -22982,7 +22969,7 @@ namespace qnr {
           if (isGenericMappedType(t)) {
             const constraint = getConstraintTypeFromMappedType(t);
             const constraintOfConstraint = getBaseConstraintOfType(constraint) || constraint;
-            const propertyNameType = getLiteralType(unescapeLeadingUnderscores(name));
+            const propertyNameType = getLiteralType(Scanner.unescapeUnderscores(name));
             if (isTypeAssignableTo(propertyNameType, constraintOfConstraint)) {
               return substituteIndexedMappedType(t, propertyNameType);
             }
@@ -23408,7 +23395,7 @@ namespace qnr {
       if (!attributesType) {
         // There is no property named 'props' on this instance type
         if (!!forcedLookupLocation && !!length(context.attributes.properties)) {
-          error(context, Diagnostics.JSX_element_class_does_not_support_attributes_because_it_does_not_have_a_0_property, unescapeLeadingUnderscores(forcedLookupLocation));
+          error(context, Diagnostics.JSX_element_class_does_not_support_attributes_because_it_does_not_have_a_0_property, Scanner.unescapeUnderscores(forcedLookupLocation));
         }
         return unknownType;
       }
@@ -24028,7 +24015,7 @@ namespace qnr {
           // This is because children element will overwrite the value from attributes.
           // Note: we will not warn "children" attribute overwritten if "children" attribute is specified in object spread.
           if (explicitlySpecifyChildrenAttribute) {
-            error(attributes, Diagnostics._0_are_specified_twice_The_attribute_named_0_will_be_overwritten, unescapeLeadingUnderscores(jsxChildrenPropertyName));
+            error(attributes, Diagnostics._0_are_specified_twice_The_attribute_named_0_will_be_overwritten, Scanner.unescapeUnderscores(jsxChildrenPropertyName));
           }
 
           const contextualType = getApparentTypeOfContextualType(openingLikeElement.attributes);
@@ -24042,7 +24029,7 @@ namespace qnr {
           // Fake up a property declaration for the children
           childrenPropSymbol.valueDeclaration = PropertySignature.create(
             /*modifiers*/ undefined,
-            unescapeLeadingUnderscores(jsxChildrenPropertyName),
+            Scanner.unescapeUnderscores(jsxChildrenPropertyName),
             /*questionToken*/ undefined,
             /*type*/ undefined,
             /*initializer*/ undefined
@@ -24103,7 +24090,7 @@ namespace qnr {
         const left = props.get(right.escapedName);
         const rightType = getTypeOfSymbol(right);
         if (left && !maybeTypeOfKind(rightType, TypeFlags.Nullable) && !(maybeTypeOfKind(rightType, TypeFlags.AnyOrUnknown) && right.flags & SymbolFlags.Optional)) {
-          const diagnostic = error(left.valueDeclaration, Diagnostics._0_is_specified_more_than_once_so_this_usage_will_be_overwritten, unescapeLeadingUnderscores(left.escapedName));
+          const diagnostic = error(left.valueDeclaration, Diagnostics._0_is_specified_more_than_once_so_this_usage_will_be_overwritten, Scanner.unescapeUnderscores(left.escapedName));
           addRelatedInfo(diagnostic, createDiagnosticForNode(spread, Diagnostics.This_spread_always_overwrites_this_property));
         }
       }
@@ -24156,7 +24143,7 @@ namespace qnr {
           return (links.resolvedSymbol = unknownSymbol);
         } else {
           if (noImplicitAny) {
-            error(node, Diagnostics.JSX_element_implicitly_has_type_any_because_no_interface_JSX_0_exists, unescapeLeadingUnderscores(JsxNames.IntrinsicElements));
+            error(node, Diagnostics.JSX_element_implicitly_has_type_any_because_no_interface_JSX_0_exists, Scanner.unescapeUnderscores(JsxNames.IntrinsicElements));
           }
           return (links.resolvedSymbol = unknownSymbol);
         }
@@ -24214,7 +24201,7 @@ namespace qnr {
           return propertiesOfJsxElementAttribPropInterface[0].escapedName;
         } else if (propertiesOfJsxElementAttribPropInterface.length > 1) {
           // More than one property on ElementAttributesProperty is an error
-          error(jsxElementAttribPropInterfaceSym!.declarations[0], Diagnostics.The_global_type_JSX_0_may_not_have_more_than_one_property, unescapeLeadingUnderscores(nameOfAttribPropContainer));
+          error(jsxElementAttribPropInterfaceSym!.declarations[0], Diagnostics.The_global_type_JSX_0_may_not_have_more_than_one_property, Scanner.unescapeUnderscores(nameOfAttribPropContainer));
         }
       }
       return;
@@ -24273,7 +24260,7 @@ namespace qnr {
       const intrinsicElementsType = getJsxType(JsxNames.IntrinsicElements, location);
       if (intrinsicElementsType !== errorType) {
         const stringLiteralTypeName = type.value;
-        const intrinsicProp = getPropertyOfType(intrinsicElementsType, escapeLeadingUnderscores(stringLiteralTypeName));
+        const intrinsicProp = getPropertyOfType(intrinsicElementsType, Scanner.escapeUnderscores(stringLiteralTypeName));
         if (intrinsicProp) {
           return getTypeOfSymbol(intrinsicProp);
         }
@@ -24818,7 +24805,7 @@ namespace qnr {
           }
           if (leftType.symbol === globalThisSymbol) {
             if (globalThisSymbol.exports!.has(right.escapedText) && globalThisSymbol.exports!.get(right.escapedText)!.flags & SymbolFlags.BlockScoped) {
-              error(right, Diagnostics.Property_0_does_not_exist_on_type_1, unescapeLeadingUnderscores(right.escapedText), typeToString(leftType));
+              error(right, Diagnostics.Property_0_does_not_exist_on_type_1, Scanner.unescapeUnderscores(right.escapedText), typeToString(leftType));
             } else if (noImplicitAny) {
               error(right, Diagnostics.Element_implicitly_has_an_any_type_because_type_0_has_no_index_signature, typeToString(leftType));
             }
@@ -25047,7 +25034,7 @@ namespace qnr {
         // Sometimes the symbol is found when location is a return type of a function: `typeof x` and `x` is declared in the body of the function
         // So the table *contains* `x` but `x` isn't actually in scope.
         // However, resolveNameHelper will continue and call this callback again, so we'll eventually get a correct suggestion.
-        return symbol || getSpellingSuggestionForName(unescapeLeadingUnderscores(name), arrayFrom(symbols.values()), meaning);
+        return symbol || getSpellingSuggestionForName(Scanner.unescapeUnderscores(name), arrayFrom(symbols.values()), meaning);
       });
       return result;
     }
@@ -27147,7 +27134,7 @@ namespace qnr {
           if (hasEntries(source.members)) {
             inferred.members.merge(source.members);
           }
-          (links.inferredClassSymbol || (links.inferredClassSymbol = createMap<TransientSymbol>())).set('' + getSymbolId(inferred), inferred);
+          (links.inferredClassSymbol || (links.inferredClassSymbol = QMap.create<TransientSymbol>())).set('' + getSymbolId(inferred), inferred);
           return inferred;
         }
         return links.inferredClassSymbol.get('' + getSymbolId(target));
@@ -29140,8 +29127,8 @@ namespace qnr {
               const name = prop.escapedName;
               const symbol = resolveName(prop.valueDeclaration, name, SymbolFlags.Type, undefined, name, /*isUse*/ false);
               if (symbol && symbol.declarations.some(isJSDocTypedefTag)) {
-                addDuplicateDeclarationErrorsForSymbols(symbol, Diagnostics.Duplicate_identifier_0, unescapeLeadingUnderscores(name), prop);
-                addDuplicateDeclarationErrorsForSymbols(prop, Diagnostics.Duplicate_identifier_0, unescapeLeadingUnderscores(name), symbol);
+                addDuplicateDeclarationErrorsForSymbols(symbol, Diagnostics.Duplicate_identifier_0, Scanner.unescapeUnderscores(name), prop);
+                addDuplicateDeclarationErrorsForSymbols(prop, Diagnostics.Duplicate_identifier_0, Scanner.unescapeUnderscores(name), symbol);
               }
             }
           }
@@ -29195,7 +29182,7 @@ namespace qnr {
               Diagnostics.The_left_hand_side_of_an_assignment_expression_must_be_a_variable_or_a_property_access,
               Diagnostics.The_left_hand_side_of_an_assignment_expression_may_not_be_an_optional_property_access
             ) &&
-            (!isIdentifier(left) || unescapeLeadingUnderscores(left.escapedText) !== 'exports')
+            (!isIdentifier(left) || Scanner.unescapeUnderscores(left.escapedText) !== 'exports')
           ) {
             // to avoid cascading errors check assignability only if 'isReference' check succeeded and no errors were reported
             checkTypeAssignableToAndOptionallyElaborate(valueType, leftType, left, right);
@@ -30227,7 +30214,7 @@ namespace qnr {
     }
 
     function checkObjectTypeForDuplicateDeclarations(node: TypeLiteralNode | InterfaceDeclaration) {
-      const names = createMap<boolean>();
+      const names = QMap.create<boolean>();
       for (const member of node.members) {
         if (member.kind === SyntaxKind.PropertySignature) {
           let memberName: string;
@@ -30626,7 +30613,7 @@ namespace qnr {
         if (propertyName) {
           const propertySymbol = forEachType(apparentObjectType, (t) => getPropertyOfType(t, propertyName));
           if (propertySymbol && getDeclarationModifierFlagsFromSymbol(propertySymbol) & ModifierFlags.NonPublicAccessibilityModifier) {
-            error(accessNode, Diagnostics.Private_or_protected_member_0_cannot_be_accessed_on_a_type_parameter, unescapeLeadingUnderscores(propertyName));
+            error(accessNode, Diagnostics.Private_or_protected_member_0_cannot_be_accessed_on_a_type_parameter, Scanner.unescapeUnderscores(propertyName));
             return errorType;
           }
         }
@@ -31913,9 +31900,9 @@ namespace qnr {
 
     function checkUnusedLocalsAndParameters(nodeWithLocals: Node, addDiagnostic: AddUnusedDiagnostic): void {
       // Ideally we could use the ImportClause directly as a key, but must wait until we have full ES6 maps. So must store key along with value.
-      const unusedImports = createMap<[ImportClause, ImportedDeclaration[]]>();
-      const unusedDestructures = createMap<[ObjectBindingPattern, BindingElement[]]>();
-      const unusedVariables = createMap<[VariableDeclarationList, VariableDeclaration[]]>();
+      const unusedImports = QMap.create<[ImportClause, ImportedDeclaration[]]>();
+      const unusedDestructures = QMap.create<[ObjectBindingPattern, BindingElement[]]>();
+      const unusedVariables = QMap.create<[VariableDeclarationList, VariableDeclaration[]]>();
       nodeWithLocals.locals!.forEach((local) => {
         // If it's purely a type parameter, ignore, will be checked in `checkUnusedTypeParameters`.
         // If it's a type parameter merged with a parameter, check if the parameter-side is used.
@@ -34351,7 +34338,7 @@ namespace qnr {
                 if (ex.kind === SyntaxKind.PropertyAccessExpression) {
                   name = ex.name.escapedText;
                 } else {
-                  name = escapeLeadingUnderscores(cast(ex.argumentExpression, isLiteralExpression).text);
+                  name = Scanner.escapeUnderscores(cast(ex.argumentExpression, isLiteralExpression).text);
                 }
                 return evaluateEnumMember(expr, type.symbol, name);
               }
@@ -34981,7 +34968,7 @@ namespace qnr {
             if (exportedDeclarationsCount > 1) {
               for (const declaration of declarations) {
                 if (isNotOverload(declaration)) {
-                  diagnostics.add(createDiagnosticForNode(declaration, Diagnostics.Cannot_redeclare_exported_variable_0, unescapeLeadingUnderscores(id)));
+                  diagnostics.add(createDiagnosticForNode(declaration, Diagnostics.Cannot_redeclare_exported_variable_0, Scanner.unescapeUnderscores(id)));
                 }
               }
             }
@@ -35261,7 +35248,7 @@ namespace qnr {
       const enclosingFile = getSourceFileOfNode(node);
       const links = getNodeLinks(enclosingFile);
       if (!(links.flags & NodeCheckFlags.TypeChecked)) {
-        links.deferredNodes = links.deferredNodes || createMap();
+        links.deferredNodes = links.deferredNodes || QMap.create();
         const id = '' + getNodeId(node);
         links.deferredNodes.set(id, node);
       }
@@ -35831,7 +35818,7 @@ namespace qnr {
             : LiteralTypeNode.kind(parent) && IndexedAccessTypeNode.kind(grandParent)
             ? getTypeFromTypeNode(grandParent.objectType)
             : undefined;
-          return objectType && getPropertyOfType(objectType, escapeLeadingUnderscores((node as StringLiteral | NumericLiteral).text));
+          return objectType && getPropertyOfType(objectType, Scanner.escapeUnderscores((node as StringLiteral | NumericLiteral).text));
 
         case SyntaxKind.DefaultKeyword:
         case SyntaxKind.FunctionKeyword:
@@ -36486,7 +36473,7 @@ namespace qnr {
     }
 
     function hasGlobalName(name: string): boolean {
-      return globals.has(escapeLeadingUnderscores(name));
+      return globals.has(Scanner.escapeUnderscores(name));
     }
 
     function getReferencedValueSymbol(reference: Identifier, startInDeclarationContainer?: boolean): Symbol | undefined {
@@ -36555,7 +36542,7 @@ namespace qnr {
       let fileToDirective: QMap<string>;
       if (resolvedTypeReferenceDirectives) {
         // populate reverse mapping: file path -> type reference directive that was resolved to this file
-        fileToDirective = createMap<string>();
+        fileToDirective = QMap.create<string>();
         resolvedTypeReferenceDirectives.forEach((resolvedDirective, key) => {
           if (!resolvedDirective || !resolvedDirective.resolvedFileName) {
             return;
@@ -36785,7 +36772,7 @@ namespace qnr {
         bindSourceFile(file, compilerOptions);
       }
 
-      amalgamatedDuplicates = createMap();
+      amalgamatedDuplicates = QMap.create();
 
       // Initialize global symbol table
       let augmentations: (readonly (StringLiteral | Identifier)[])[] | undefined;
@@ -36923,7 +36910,7 @@ namespace qnr {
             for (let helper = ExternalEmitHelpers.FirstEmitHelper; helper <= ExternalEmitHelpers.LastEmitHelper; helper <<= 1) {
               if (uncheckedHelpers & helper) {
                 const name = getHelperName(helper);
-                const symbol = getSymbol(helpersModule.exports!, escapeLeadingUnderscores(name), SymbolFlags.Value);
+                const symbol = getSymbol(helpersModule.exports!, Scanner.escapeUnderscores(name), SymbolFlags.Value);
                 if (!symbol) {
                   error(location, Diagnostics.This_syntax_requires_an_imported_helper_named_1_which_does_not_exist_in_0_Consider_upgrading_your_version_of_0, externalHelpersModuleNameText, name);
                 }
@@ -38373,7 +38360,7 @@ namespace qnr {
       if (!ambientModulesCache) {
         ambientModulesCache = [];
         globals.forEach((global, sym) => {
-          // No need to `unescapeLeadingUnderscores`, an escaped symbol is never an ambient module.
+          // No need to `Scanner.unescapeUnderscores`, an escaped symbol is never an ambient module.
           if (ambientModuleSymbolRegex.test(sym as string)) {
             ambientModulesCache!.push(global);
           }

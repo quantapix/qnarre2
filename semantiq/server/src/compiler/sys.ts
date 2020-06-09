@@ -47,18 +47,8 @@ namespace qnr {
     Low = 250,
   }
 
-  export type HostWatchFile = (
-    fileName: string,
-    callback: FileWatcherCallback,
-    pollingInterval: PollingInterval,
-    options: WatchOptions | undefined
-  ) => FileWatcher;
-  export type HostWatchDirectory = (
-    fileName: string,
-    callback: DirectoryWatcherCallback,
-    recursive: boolean,
-    options: WatchOptions | undefined
-  ) => FileWatcher;
+  export type HostWatchFile = (fileName: string, callback: FileWatcherCallback, pollingInterval: PollingInterval, options: WatchOptions | undefined) => FileWatcher;
+  export type HostWatchDirectory = (fileName: string, callback: DirectoryWatcherCallback, recursive: boolean, options: WatchOptions | undefined) => FileWatcher;
 
   export const missingFileModifiedTime = new Date(0); // Any subsequent modification will occur after this time
 
@@ -124,17 +114,11 @@ namespace qnr {
 
     function getCustomPollingBasedLevels(baseVariable: string, defaultLevels: Levels) {
       const customLevels = getCustomLevels(baseVariable);
-      return (
-        (pollingIntervalChanged || customLevels) &&
-        createPollingIntervalBasedLevels(customLevels ? { ...defaultLevels, ...customLevels } : defaultLevels)
-      );
+      return (pollingIntervalChanged || customLevels) && createPollingIntervalBasedLevels(customLevels ? { ...defaultLevels, ...customLevels } : defaultLevels);
     }
   }
 
-  export function createDynamicPriorityPollingWatchFile(host: {
-    getModifiedTime: NonNullable<System['getModifiedTime']>;
-    setTimeout: NonNullable<System['setTimeout']>;
-  }): HostWatchFile {
+  export function createDynamicPriorityPollingWatchFile(host: { getModifiedTime: NonNullable<System['getModifiedTime']>; setTimeout: NonNullable<System['setTimeout']> }): HostWatchFile {
     interface WatchedFile extends qnr.WatchedFile {
       isClosed?: boolean;
       unchangedPolls: number;
@@ -316,12 +300,7 @@ namespace qnr {
     const toCanonicalName = createGetCanonicalFileName(useCaseSensitiveFileNames);
     return nonPollingWatchFile;
 
-    function nonPollingWatchFile(
-      fileName: string,
-      callback: FileWatcherCallback,
-      _pollingInterval: PollingInterval,
-      fallbackOptions: WatchOptions | undefined
-    ): FileWatcher {
+    function nonPollingWatchFile(fileName: string, callback: FileWatcherCallback, _pollingInterval: PollingInterval, fallbackOptions: WatchOptions | undefined): FileWatcher {
       const filePath = toCanonicalName(fileName);
       fileWatcherCallbacks.add(filePath, callback);
       const dirPath = getDirectoryPath(filePath) || '.';
@@ -384,12 +363,7 @@ namespace qnr {
         existing.refCount++;
       } else {
         cache.set(path, {
-          watcher: watchFile(
-            fileName,
-            (fileName, eventKind) => forEach(callbacksCache.get(path), (cb) => cb(fileName, eventKind)),
-            pollingInterval,
-            options
-          ),
+          watcher: watchFile(fileName, (fileName, eventKind) => forEach(callbacksCache.get(path), (cb) => cb(fileName, eventKind)), pollingInterval, options),
           refCount: 1,
         });
       }
@@ -471,8 +445,7 @@ namespace qnr {
     const filePathComparer = getStringComparer(!host.useCaseSensitiveFileNames);
     const toCanonicalFilePath = createGetCanonicalFileName(host.useCaseSensitiveFileNames);
 
-    return (dirName, callback, recursive, options) =>
-      recursive ? createDirectoryWatcher(dirName, options, callback) : host.watchDirectory(dirName, callback, recursive, options);
+    return (dirName, callback, recursive, options) => (recursive ? createDirectoryWatcher(dirName, options, callback) : host.watchDirectory(dirName, callback, recursive, options));
 
     /**
      * Create the directory watcher for the dirPath.
@@ -541,7 +514,7 @@ namespace qnr {
       // Call the actual callback
       callbackCache.forEach((callbacks, rootDirName) => {
         if (invokeMap && invokeMap.has(rootDirName)) return;
-        if (rootDirName === dirPath || (startsWith(dirPath, rootDirName) && dirPath[rootDirName.length] === directorySeparator)) {
+        if (rootDirName === dirPath || (startsWith(dirPath, rootDirName) && dirPath[rootDirName.length] === dirSeparator)) {
           if (invokeMap) {
             invokeMap.set(rootDirName, true);
           } else {
@@ -635,10 +608,7 @@ namespace qnr {
               const childFullName = getNormalizedAbsolutePath(child, parentDir);
               // Filter our the symbolic link directories since those arent included in recursive watch
               // which is same behaviour when recursive: true is passed to fs.watch
-              return !isIgnoredPath(childFullName) &&
-                filePathComparer(childFullName, normalizePath(host.realpath(childFullName))) === Comparison.EqualTo
-                ? childFullName
-                : undefined;
+              return !isIgnoredPath(childFullName) && filePathComparer(childFullName, normalizePath(host.realpath(childFullName))) === Comparison.EqualTo ? childFullName : undefined;
             })
           : emptyArray,
         existingChildWatches,
@@ -697,11 +667,7 @@ namespace qnr {
     return (_fileName, eventKind) => callback(eventKind === FileWatcherEventKind.Changed ? 'change' : 'rename', '');
   }
 
-  function createFsWatchCallbackForFileWatcherCallback(
-    fileName: string,
-    callback: FileWatcherCallback,
-    fileExists: System['fileExists']
-  ): FsWatchCallback {
+  function createFsWatchCallbackForFileWatcherCallback(fileName: string, callback: FileWatcherCallback, fileExists: System['fileExists']): FsWatchCallback {
     return (eventName) => {
       if (eventName === 'rename') {
         callback(fileName, fileExists(fileName) ? FileWatcherEventKind.Created : FileWatcherEventKind.Deleted);
@@ -769,12 +735,7 @@ namespace qnr {
       watchDirectory,
     };
 
-    function watchFile(
-      fileName: string,
-      callback: FileWatcherCallback,
-      pollingInterval: PollingInterval,
-      options: WatchOptions | undefined
-    ): FileWatcher {
+    function watchFile(fileName: string, callback: FileWatcherCallback, pollingInterval: PollingInterval, options: WatchOptions | undefined): FileWatcher {
       options = updateOptionsForWatchFile(options, useNonPollingWatchers);
       const watchFileKind = Debug.checkDefined(options.watchFile);
       switch (watchFileKind) {
@@ -842,12 +803,7 @@ namespace qnr {
       };
     }
 
-    function watchDirectory(
-      directoryName: string,
-      callback: DirectoryWatcherCallback,
-      recursive: boolean,
-      options: WatchOptions | undefined
-    ): FileWatcher {
+    function watchDirectory(directoryName: string, callback: DirectoryWatcherCallback, recursive: boolean, options: WatchOptions | undefined): FileWatcher {
       if (fsSupportsRecursiveFsWatch) {
         return fsWatch(
           directoryName,
@@ -873,12 +829,7 @@ namespace qnr {
       return hostRecursiveDirectoryWatcher(directoryName, callback, recursive, options);
     }
 
-    function nonRecursiveWatchDirectory(
-      directoryName: string,
-      callback: DirectoryWatcherCallback,
-      recursive: boolean,
-      options: WatchOptions | undefined
-    ): FileWatcher {
+    function nonRecursiveWatchDirectory(directoryName: string, callback: DirectoryWatcherCallback, recursive: boolean, options: WatchOptions | undefined): FileWatcher {
       assert(!recursive);
       options = updateOptionsForWatchDirectory(options);
       const watchDirectoryKind = Debug.checkDefined(options.watchDirectory);
@@ -1290,13 +1241,7 @@ namespace qnr {
           if (node.callFrame.url) {
             const url = normalizeSlashes(node.callFrame.url);
             if (containsPath(fileUrlRoot, url, useCaseSensitiveFileNames)) {
-              node.callFrame.url = getRelativePathToDirectoryOrUrl(
-                fileUrlRoot,
-                url,
-                fileUrlRoot,
-                createGetCanonicalFileName(useCaseSensitiveFileNames),
-                /*isAbsolutePathAnUrl*/ true
-              );
+              node.callFrame.url = getRelativePathToDirectoryOrUrl(fileUrlRoot, url, fileUrlRoot, createGetCanonicalFileName(useCaseSensitiveFileNames), /*isAbsolutePathAnUrl*/ true);
             } else if (!nativePattern.test(url)) {
               node.callFrame.url = (remappedPaths.has(url) ? remappedPaths : remappedPaths.set(url, `external${externalFileCounter}.js`)).get(url)!;
               externalFileCounter++;
@@ -1402,8 +1347,8 @@ namespace qnr {
         let lastDirectoryPartWithDirectorySeparator: string | undefined;
         let lastDirectoryPart: string | undefined;
         if (isLinuxOrMacOs) {
-          lastDirectoryPartWithDirectorySeparator = fileOrDirectory.substr(fileOrDirectory.lastIndexOf(directorySeparator));
-          lastDirectoryPart = lastDirectoryPartWithDirectorySeparator.slice(directorySeparator.length);
+          lastDirectoryPartWithDirectorySeparator = fileOrDirectory.substr(fileOrDirectory.lastIndexOf(dirSeparator));
+          lastDirectoryPart = lastDirectoryPartWithDirectorySeparator.slice(dirSeparator.length);
         }
         /** Watcher for the file system entry depending on whether it is missing or present */
         let watcher = !fileSystemEntryExists(fileOrDirectory, entryKind) ? watchMissingFileSystemEntry() : watchPresentFileSystemEntry();
@@ -1420,11 +1365,7 @@ namespace qnr {
          * @param createWatcher
          */
         function invokeCallbackAndUpdateWatcher(createWatcher: () => FileWatcher) {
-          sysLog(
-            `sysLog:: ${fileOrDirectory}:: Changing watcher to ${
-              createWatcher === watchPresentFileSystemEntry ? 'Present' : 'Missing'
-            }FileSystemEntryWatcher`
-          );
+          sysLog(`sysLog:: ${fileOrDirectory}:: Changing watcher to ${createWatcher === watchPresentFileSystemEntry ? 'Present' : 'Missing'}FileSystemEntryWatcher`);
           // Call the callback for current directory
           callback('rename', '');
 
@@ -1468,8 +1409,7 @@ namespace qnr {
           return event === 'rename' &&
             (!relativeName ||
               relativeName === lastDirectoryPart ||
-              relativeName.lastIndexOf(lastDirectoryPartWithDirectorySeparator!) ===
-                relativeName.length - lastDirectoryPartWithDirectorySeparator!.length) &&
+              relativeName.lastIndexOf(lastDirectoryPartWithDirectorySeparator!) === relativeName.length - lastDirectoryPartWithDirectorySeparator!.length) &&
             !fileSystemEntryExists(fileOrDirectory, entryKind)
             ? invokeCallbackAndUpdateWatcher(watchMissingFileSystemEntry)
             : callback(event, relativeName);
@@ -1605,24 +1545,8 @@ namespace qnr {
         }
       }
 
-      function readDirectory(
-        path: string,
-        extensions?: readonly string[],
-        excludes?: readonly string[],
-        includes?: readonly string[],
-        depth?: number
-      ): string[] {
-        return matchFiles(
-          path,
-          extensions,
-          excludes,
-          includes,
-          useCaseSensitiveFileNames,
-          process.cwd(),
-          depth,
-          getAccessibleFileSystemEntries,
-          realpath
-        );
+      function readDirectory(path: string, extensions?: readonly string[], excludes?: readonly string[], includes?: readonly string[], depth?: number): string[] {
+        return matchFiles(path, extensions, excludes, includes, useCaseSensitiveFileNames, process.cwd(), depth, getAccessibleFileSystemEntries, realpath);
       }
 
       function fileSystemEntryExists(path: string, entryKind: FileSystemEntryKind): boolean {

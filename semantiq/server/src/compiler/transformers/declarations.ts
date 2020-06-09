@@ -1186,7 +1186,7 @@ namespace qnr {
               getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(p.valueDeclaration);
               const type = resolver.createTypeOfDeclaration(p.valueDeclaration, fakespace, declarationEmitNodeBuilderFlags, symbolTracker);
               getSymbolAccessibilityDiagnostic = oldDiag;
-              const varDecl = createVariableDeclaration(unescapeLeadingUnderscores(p.escapedName), type, /*initializer*/ undefined);
+              const varDecl = createVariableDeclaration(Scanner.unescapeUnderscores(p.escapedName), type, /*initializer*/ undefined);
               return createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([varDecl]));
             });
             const namespaceDecl = createModuleDeclaration(/*decorators*/ undefined, ensureModifiers(input), input.name!, createModuleBlock(declarations), NodeFlags.Namespace);
@@ -1331,7 +1331,7 @@ namespace qnr {
           if (extendsClause && !isEntityNameExpression(extendsClause.expression) && extendsClause.expression.kind !== SyntaxKind.NullKeyword) {
             // We must add a temporary declaration for the extends clause expression
 
-            const oldId = input.name ? unescapeLeadingUnderscores(input.name.escapedText) : 'default';
+            const oldId = input.name ? Scanner.unescapeUnderscores(input.name.escapedText) : 'default';
             const newId = createOptimisticUniqueName(`${oldId}_base`);
             getSymbolAccessibilityDiagnostic = () => ({
               diagnosticMessage: Diagnostics.extends_clause_of_exported_class_0_has_or_is_using_private_name_1,

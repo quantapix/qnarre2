@@ -352,7 +352,7 @@ namespace qnr {
   }
 
   export function createCommentDirectivesMap(sourceFile: SourceFile, commentDirectives: CommentDirective[]): CommentDirectivesMap {
-    const directivesByLine = createMap(commentDirectives.map((commentDirective) => [`${lineAndCharOf(sourceFile, commentDirective.range.end).line}`, commentDirective]));
+    const directivesByLine = QMap.create(commentDirectives.map((commentDirective) => [`${lineAndCharOf(sourceFile, commentDirective.range.end).line}`, commentDirective]));
     const usedLines = createMap<boolean>();
     return { getUnusedExpectations, markUsed };
 
@@ -670,9 +670,9 @@ namespace qnr {
       case SyntaxKind.StringLiteral:
       case SyntaxKind.NumericLiteral:
       case SyntaxKind.NoSubstitutionLiteral:
-        return escapeLeadingUnderscores(name.text);
+        return Scanner.escapeUnderscores(name.text);
       case SyntaxKind.ComputedPropertyName:
-        if (StringLiteral.orNumericLiteralLike(name.expression)) return escapeLeadingUnderscores(name.expression.text);
+        if (StringLiteral.orNumericLiteralLike(name.expression)) return Scanner.escapeUnderscores(name.expression.text);
         return fail('Text of property name cannot be read from non-literal-valued ComputedPropertyNames');
       default:
         return Debug.assertNever(name);
@@ -1911,7 +1911,7 @@ namespace qnr {
         return name.escapedText;
       }
       if (StringLiteral.like(name) || NumericLiteral.kind(name)) {
-        return escapeLeadingUnderscores(name.text);
+        return Scanner.escapeUnderscores(name.text);
       }
     }
     if (isElementAccessExpression(node) && isWellKnownSymbolSyntactically(node.argumentExpression)) {
@@ -2725,13 +2725,13 @@ namespace qnr {
         return name.escapedText;
       case SyntaxKind.StringLiteral:
       case SyntaxKind.NumericLiteral:
-        return escapeLeadingUnderscores(name.text);
+        return Scanner.escapeUnderscores(name.text);
       case SyntaxKind.ComputedPropertyName:
         const nameExpression = name.expression;
         if (isWellKnownSymbolSyntactically(nameExpression)) {
           return getPropertyNameForKnownSymbolName(idText((<PropertyAccessExpression>nameExpression).name));
         } else if (StringLiteral.orNumericLiteralLike(nameExpression)) {
-          return escapeLeadingUnderscores(nameExpression.text);
+          return Scanner.escapeUnderscores(nameExpression.text);
         } else if (isSignedNumericLiteral(nameExpression)) {
           if (nameExpression.operator === SyntaxKind.MinusToken) {
             return (Token.toString(nameExpression.operator) + nameExpression.operand.text) as __String;
@@ -2761,7 +2761,7 @@ namespace qnr {
   }
 
   export function getEscapedTextOfIdentifierOrLiteral(node: PropertyNameLiteral): __String {
-    return isIdentifierOrPrivateIdentifier(node) ? node.escapedText : escapeLeadingUnderscores(node.text);
+    return isIdentifierOrPrivateIdentifier(node) ? node.escapedText : Scanner.escapeUnderscores(node.text);
   }
 
   export function getPropertyNameForUniqueESSymbol(symbol: Symbol): __String {
@@ -4171,7 +4171,7 @@ namespace qnr {
         return baseStr + '.' + expr.name;
       }
     } else if (isIdentifier(expr)) {
-      return unescapeLeadingUnderscores(expr.escapedText);
+      return Scanner.unescapeUnderscores(expr.escapedText);
     }
     return;
   }
@@ -5130,7 +5130,7 @@ namespace qnr {
   }
 
   function stripLeadingDirectorySeparator(s: string): string | undefined {
-    return isAnyDirectorySeparator(s.charCodeAt(0)) ? s.slice(1) : undefined;
+    return Scanner.isDirSeparator(s.charCodeAt(0)) ? s.slice(1) : undefined;
   }
 
   export function tryRemoveDirectoryPrefix(path: string, dirPath: string, getCanonicalFileName: GetCanonicalFileName): string | undefined {
@@ -5262,7 +5262,7 @@ namespace qnr {
         }
 
         if (hasWrittenComponent) {
-          subpattern += directorySeparator;
+          subpattern += dirSeparator;
         }
 
         if (usage !== 'exclude') {
@@ -5460,7 +5460,7 @@ namespace qnr {
       // No "*" or "?" in the path
       return !hasExtension(absolute) ? absolute : removeTrailingDirectorySeparator(getDirectoryPath(absolute));
     }
-    return absolute.substring(0, absolute.lastIndexOf(directorySeparator, wildcardOffset));
+    return absolute.substring(0, absolute.lastIndexOf(dirSeparator, wildcardOffset));
   }
 
   export function ensureScriptKind(fileName: string, scriptKind: ScriptKind | undefined): ScriptKind {

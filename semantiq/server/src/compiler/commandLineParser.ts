@@ -87,8 +87,7 @@ namespace qnr {
         usefseventsonparentdirectory: WatchFileKind.UseFsEventsOnParentDirectory,
       }),
       category: Diagnostics.Advanced_Options,
-      description:
-        Diagnostics.Specify_strategy_for_watching_file_Colon_FixedPollingInterval_default_PriorityPollingInterval_DynamicPriorityPolling_UseFsEvents_UseFsEventsOnParentDirectory,
+      description: Diagnostics.Specify_strategy_for_watching_file_Colon_FixedPollingInterval_default_PriorityPollingInterval_DynamicPriorityPolling_UseFsEvents_UseFsEventsOnParentDirectory,
     },
     {
       name: 'watchDirectory',
@@ -109,15 +108,13 @@ namespace qnr {
         dynamicpriority: PollingWatchKind.DynamicPriority,
       }),
       category: Diagnostics.Advanced_Options,
-      description:
-        Diagnostics.Specify_strategy_for_creating_a_polling_watch_when_it_fails_to_create_using_file_system_events_Colon_FixedInterval_default_PriorityInterval_DynamicPriority,
+      description: Diagnostics.Specify_strategy_for_creating_a_polling_watch_when_it_fails_to_create_using_file_system_events_Colon_FixedInterval_default_PriorityInterval_DynamicPriority,
     },
     {
       name: 'synchronousWatchDirectory',
       type: 'boolean',
       category: Diagnostics.Advanced_Options,
-      description:
-        Diagnostics.Synchronously_call_callbacks_and_update_the_state_of_directory_watchers_on_platforms_that_don_t_support_recursive_watching_natively,
+      description: Diagnostics.Synchronously_call_callbacks_and_update_the_state_of_directory_watchers_on_platforms_that_don_t_support_recursive_watching_natively,
     },
   ];
 
@@ -210,8 +207,7 @@ namespace qnr {
       affectsSemanticDiagnostics: true,
       affectsEmit: true,
       category: Diagnostics.Advanced_Options,
-      description:
-        Diagnostics.Have_recompiles_in_incremental_and_watch_assume_that_changes_within_a_file_will_only_affect_files_directly_depending_on_it,
+      description: Diagnostics.Have_recompiles_in_incremental_and_watch_assume_that_changes_within_a_file_will_only_affect_files_directly_depending_on_it,
     },
     {
       name: 'locale',
@@ -684,8 +680,7 @@ namespace qnr {
       affectsEmit: true,
       showInSimplifiedHelpView: true,
       category: Diagnostics.Module_Resolution_Options,
-      description:
-        Diagnostics.Enables_emit_interoperability_between_CommonJS_and_ES_Modules_via_creation_of_namespace_objects_for_all_imports_Implies_allowSyntheticDefaultImports,
+      description: Diagnostics.Enables_emit_interoperability_between_CommonJS_and_ES_Modules_via_creation_of_namespace_objects_for_all_imports_Implies_allowSyntheticDefaultImports,
     },
     {
       name: 'preserveSymlinks',
@@ -991,23 +986,17 @@ namespace qnr {
     },
   ];
 
-  export const semanticDiagnosticsOptionDeclarations: readonly CommandLineOption[] = optionDeclarations.filter(
-    (option) => !!option.affectsSemanticDiagnostics
-  );
+  export const semanticDiagnosticsOptionDeclarations: readonly CommandLineOption[] = optionDeclarations.filter((option) => !!option.affectsSemanticDiagnostics);
 
   export const affectsEmitOptionDeclarations: readonly CommandLineOption[] = optionDeclarations.filter((option) => !!option.affectsEmit);
 
-  export const moduleResolutionOptionDeclarations: readonly CommandLineOption[] = optionDeclarations.filter(
-    (option) => !!option.affectsModuleResolution
-  );
+  export const moduleResolutionOptionDeclarations: readonly CommandLineOption[] = optionDeclarations.filter((option) => !!option.affectsModuleResolution);
 
   export const sourceFileAffectingCompilerOptions: readonly CommandLineOption[] = optionDeclarations.filter(
     (option) => !!option.affectsSourceFile || !!option.affectsModuleResolution || !!option.affectsBindDiagnostics
   );
 
-  export const transpileOptionValueCompilerOptions: readonly CommandLineOption[] = optionDeclarations.filter((option) =>
-    hasProperty(option, 'transpileOptionValue')
-  );
+  export const transpileOptionValueCompilerOptions: readonly CommandLineOption[] = optionDeclarations.filter((option) => hasProperty(option, 'transpileOptionValue'));
 
   export const buildOpts: CommandLineOption[] = [
     ...commonOptionsWithBuild,
@@ -1119,10 +1108,7 @@ namespace qnr {
     return createDiagnosticForInvalidCustomType(opt, createCompilerDiagnostic);
   }
 
-  function createDiagnosticForInvalidCustomType(
-    opt: CommandLineOptionOfCustomType,
-    createDiagnostic: (message: DiagnosticMessage, arg0: string, arg1: string) => Diagnostic
-  ): Diagnostic {
+  function createDiagnosticForInvalidCustomType(opt: CommandLineOptionOfCustomType, createDiagnostic: (message: DiagnosticMessage, arg0: string, arg1: string) => Diagnostic): Diagnostic {
     const namesOfType = arrayFrom(opt.type.keys())
       .map((key) => `'${key}'`)
       .join(', ');
@@ -1177,11 +1163,7 @@ namespace qnr {
       : createDiagnostics(diagnostics.unknownOptionDiagnostic, unknownOptionErrorText || unknownOption);
   }
 
-  export function parseCommandLineWorker(
-    diagnostics: ParseCommandLineWorkerDiagnostics,
-    commandLine: readonly string[],
-    readFile?: (path: string) => string | undefined
-  ) {
+  export function parseCommandLineWorker(diagnostics: ParseCommandLineWorkerDiagnostics, commandLine: readonly string[], readFile?: (path: string) => string | undefined) {
     const options = {} as OptionsBase;
     let watchOptions: WatchOptions | undefined;
     const fileNames: string[] = [];
@@ -1252,14 +1234,7 @@ namespace qnr {
     }
   }
 
-  function parseOptionValue(
-    args: readonly string[],
-    i: number,
-    diagnostics: ParseCommandLineWorkerDiagnostics,
-    opt: CommandLineOption,
-    options: OptionsBase,
-    errors: Diagnostic[]
-  ) {
+  function parseOptionValue(args: readonly string[], i: number, diagnostics: ParseCommandLineWorkerDiagnostics, opt: CommandLineOption, options: OptionsBase, errors: Diagnostic[]) {
     if (opt.isTSConfigOnly) {
       const optValue = args[i];
       if (optValue === 'null') {
@@ -1271,17 +1246,10 @@ namespace qnr {
           i++;
         } else {
           if (optValue === 'true') i++;
-          errors.push(
-            createCompilerDiagnostic(
-              Diagnostics.Option_0_can_only_be_specified_in_tsconfig_json_file_or_set_to_false_or_null_on_command_line,
-              opt.name
-            )
-          );
+          errors.push(createCompilerDiagnostic(Diagnostics.Option_0_can_only_be_specified_in_tsconfig_json_file_or_set_to_false_or_null_on_command_line, opt.name));
         }
       } else {
-        errors.push(
-          createCompilerDiagnostic(Diagnostics.Option_0_can_only_be_specified_in_tsconfig_json_file_or_set_to_null_on_command_line, opt.name)
-        );
+        errors.push(createCompilerDiagnostic(Diagnostics.Option_0_can_only_be_specified_in_tsconfig_json_file_or_set_to_null_on_command_line, opt.name));
         if (optValue && !startsWith(optValue, '-')) i++;
       }
     } else {
@@ -1345,11 +1313,7 @@ namespace qnr {
     return getOptionDeclarationFromName(getOptionsNameMap, optionName, allowShort);
   }
 
-  function getOptionDeclarationFromName(
-    getOptionNameMap: () => OptionsNameMap,
-    optionName: string,
-    allowShort = false
-  ): CommandLineOption | undefined {
+  function getOptionDeclarationFromName(getOptionNameMap: () => OptionsNameMap, optionName: string, allowShort = false): CommandLineOption | undefined {
     optionName = optionName.toLowerCase();
     const { optionsNameMap, shortOptionNames } = getOptionNameMap();
     // Try to translate short option names to their full equivalents.
@@ -1677,29 +1641,18 @@ namespace qnr {
         }
 
         if (element.questionToken) {
-          errors.push(
-            createDiagnosticForNodeInSourceFile(
-              sourceFile,
-              element.questionToken,
-              Diagnostics.The_0_modifier_can_only_be_used_in_TypeScript_files,
-              '?'
-            )
-          );
+          errors.push(createDiagnosticForNodeInSourceFile(sourceFile, element.questionToken, Diagnostics.The_0_modifier_can_only_be_used_in_TypeScript_files, '?'));
         }
         if (!isDoubleQuotedString(element.name)) {
           errors.push(createDiagnosticForNodeInSourceFile(sourceFile, element.name, Diagnostics.String_literal_with_double_quotes_expected));
         }
 
         const textOfKey = isComputedNonLiteralName(element.name) ? undefined : getTextOfPropertyName(element.name);
-        const keyText = textOfKey && unescapeLeadingUnderscores(textOfKey);
+        const keyText = textOfKey && Scanner.unescapeUnderscores(textOfKey);
         const option = keyText && knownOptions ? knownOptions.get(keyText) : undefined;
         if (keyText && extraKeyDiagnostics && !option) {
           if (knownOptions) {
-            errors.push(
-              createUnknownOptionError(keyText, extraKeyDiagnostics, (message, arg0, arg1) =>
-                createDiagnosticForNodeInSourceFile(sourceFile, element.name, message, arg0, arg1)
-              )
-            );
+            errors.push(createUnknownOptionError(keyText, extraKeyDiagnostics, (message, arg0, arg1) => createDiagnosticForNodeInSourceFile(sourceFile, element.name, message, arg0, arg1)));
           } else {
             errors.push(createDiagnosticForNodeInSourceFile(sourceFile, element.name, extraKeyDiagnostics.unknownOptionDiagnostic, keyText));
           }
@@ -1772,11 +1725,7 @@ namespace qnr {
             const customOption = <CommandLineOptionOfCustomType>option;
             // Validate custom option type
             if (!customOption.type.has(text.toLowerCase())) {
-              errors.push(
-                createDiagnosticForInvalidCustomType(customOption, (message, arg0, arg1) =>
-                  createDiagnosticForNodeInSourceFile(sourceFile, valueExpression, message, arg0, arg1)
-                )
-              );
+              errors.push(createDiagnosticForInvalidCustomType(customOption, (message, arg0, arg1) => createDiagnosticForNodeInSourceFile(sourceFile, valueExpression, message, arg0, arg1)));
             }
           }
           return text;
@@ -1786,10 +1735,7 @@ namespace qnr {
           return Number((<NumericLiteral>valueExpression).text);
 
         case SyntaxKind.PrefixUnaryExpression:
-          if (
-            (<PrefixUnaryExpression>valueExpression).operator !== SyntaxKind.MinusToken ||
-            (<PrefixUnaryExpression>valueExpression).operand.kind !== SyntaxKind.NumericLiteral
-          ) {
+          if ((<PrefixUnaryExpression>valueExpression).operator !== SyntaxKind.MinusToken || (<PrefixUnaryExpression>valueExpression).operand.kind !== SyntaxKind.NumericLiteral) {
             break; // not valid JSON syntax
           }
           reportInvalidOptionValue(option && option.type !== 'number');
@@ -1809,20 +1755,12 @@ namespace qnr {
             const { elementOptions, extraKeyDiagnostics, name: optionName } = <TsConfigOnlyOption>option;
             return convertObjectLiteralExpressionToJson(objectLiteralExpression, elementOptions, extraKeyDiagnostics, optionName);
           } else {
-            return convertObjectLiteralExpressionToJson(
-              objectLiteralExpression,
-              /* knownOptions*/ undefined,
-              /*extraKeyDiagnosticMessage */ undefined,
-              /*parentOption*/ undefined
-            );
+            return convertObjectLiteralExpressionToJson(objectLiteralExpression, /* knownOptions*/ undefined, /*extraKeyDiagnosticMessage */ undefined, /*parentOption*/ undefined);
           }
 
         case SyntaxKind.ArrayLiteralExpression:
           reportInvalidOptionValue(option && option.type !== 'list');
-          return convertArrayLiteralExpressionToJson(
-            (<ArrayLiteralExpression>valueExpression).elements,
-            option && (<CommandLineOptionOfListType>option).element
-          );
+          return convertArrayLiteralExpressionToJson((<ArrayLiteralExpression>valueExpression).elements, option && (<CommandLineOptionOfListType>option).element);
       }
 
       // Not in expected format
@@ -1830,11 +1768,7 @@ namespace qnr {
         reportInvalidOptionValue(/*isError*/ true);
       } else {
         errors.push(
-          createDiagnosticForNodeInSourceFile(
-            sourceFile,
-            valueExpression,
-            Diagnostics.Property_value_can_only_be_string_literal_numeric_literal_true_false_null_object_literal_or_array_literal
-          )
+          createDiagnosticForNodeInSourceFile(sourceFile, valueExpression, Diagnostics.Property_value_can_only_be_string_literal_numeric_literal_true_false_null_object_literal_or_array_literal)
         );
       }
 
@@ -1843,13 +1777,7 @@ namespace qnr {
       function reportInvalidOptionValue(isError: boolean | undefined) {
         if (isError) {
           errors.push(
-            createDiagnosticForNodeInSourceFile(
-              sourceFile,
-              valueExpression,
-              Diagnostics.Compiler_option_0_requires_a_value_of_type_1,
-              option!.name,
-              getCompilerOptionValueTypeString(option!)
-            )
+            createDiagnosticForNodeInSourceFile(sourceFile, valueExpression, Diagnostics.Compiler_option_0_requires_a_value_of_type_1, option!.name, getCompilerOptionValueTypeString(option!))
           );
         }
       }
@@ -1904,19 +1832,9 @@ namespace qnr {
         configParseResult.fileNames,
         !configParseResult.configFileSpecs || !configParseResult.configFileSpecs.validatedIncludeSpecs
           ? (_) => true
-          : matchesSpecs(
-              configFileName,
-              configParseResult.configFileSpecs.validatedIncludeSpecs,
-              configParseResult.configFileSpecs.validatedExcludeSpecs,
-              host
-            )
+          : matchesSpecs(configFileName, configParseResult.configFileSpecs.validatedIncludeSpecs, configParseResult.configFileSpecs.validatedExcludeSpecs, host)
       ),
-      (f) =>
-        getRelativePathFromFile(
-          getNormalizedAbsolutePath(configFileName, host.getCurrentDirectory()),
-          getNormalizedAbsolutePath(f, host.getCurrentDirectory()),
-          getCanonicalFileName
-        )
+      (f) => getRelativePathFromFile(getNormalizedAbsolutePath(configFileName, host.getCurrentDirectory()), getNormalizedAbsolutePath(f, host.getCurrentDirectory()), getCanonicalFileName)
     );
     const optionMap = serializeCompilerOptions(configParseResult.options, {
       configFilePath: getNormalizedAbsolutePath(configFileName, host.getCurrentDirectory()),
@@ -1964,12 +1882,7 @@ namespace qnr {
     return specs;
   }
 
-  function matchesSpecs(
-    path: string,
-    includeSpecs: readonly string[] | undefined,
-    excludeSpecs: readonly string[] | undefined,
-    host: ConvertToTSConfigHost
-  ): (path: string) => boolean {
+  function matchesSpecs(path: string, includeSpecs: readonly string[] | undefined, excludeSpecs: readonly string[] | undefined, host: ConvertToTSConfigHost): (path: string) => boolean {
     if (!includeSpecs) return (_) => true;
     const patterns = getFileMatcherPatterns(path, excludeSpecs, includeSpecs, host.useCaseSensitiveFileNames, host.getCurrentDirectory());
     const excludeRe = patterns.excludePattern && getRegexFromPattern(patterns.excludePattern, host.useCaseSensitiveFileNames);
@@ -1987,12 +1900,7 @@ namespace qnr {
   }
 
   function getCustomTypeMapOfCommandLineOption(optionDefinition: CommandLineOption): QMap<string | number> | undefined {
-    if (
-      optionDefinition.type === 'string' ||
-      optionDefinition.type === 'number' ||
-      optionDefinition.type === 'boolean' ||
-      optionDefinition.type === 'object'
-    ) {
+    if (optionDefinition.type === 'string' || optionDefinition.type === 'number' || optionDefinition.type === 'boolean' || optionDefinition.type === 'object') {
       // this is of a type CommandLineOptionOfPrimitiveType
       return;
     } else if (optionDefinition.type === 'list') {
@@ -2012,10 +1920,7 @@ namespace qnr {
     });
   }
 
-  function serializeCompilerOptions(
-    options: CompilerOptions,
-    pathOptions?: { configFilePath: string; useCaseSensitiveFileNames: boolean }
-  ): QMap<CompilerOptionsValue> {
+  function serializeCompilerOptions(options: CompilerOptions, pathOptions?: { configFilePath: string; useCaseSensitiveFileNames: boolean }): QMap<CompilerOptionsValue> {
     return serializeOptionBaseObject(options, getOptionsNameMap(), pathOptions);
   }
 
@@ -2046,14 +1951,7 @@ namespace qnr {
             // There is no map associated with this compiler option then use the value as-is
             // This is the case if the value is expect to be string, number, boolean or list of string
             if (pathOptions && optionDefinition.isFilePath) {
-              result.set(
-                name,
-                getRelativePathFromFile(
-                  pathOptions.configFilePath,
-                  getNormalizedAbsolutePath(value as string, getDirectoryPath(pathOptions.configFilePath)),
-                  getCanonicalFileName!
-                )
-              );
+              result.set(name, getRelativePathFromFile(pathOptions.configFilePath, getNormalizedAbsolutePath(value as string, getDirectoryPath(pathOptions.configFilePath)), getCanonicalFileName!));
             } else {
               result.set(name, value);
             }
@@ -2110,11 +2008,7 @@ namespace qnr {
     function isAllowedOption({ category, name }: CommandLineOption): boolean {
       // Skip options which do not have a category or have category `Command_line_Options`
       // Exclude all possible `Advanced_Options` in tsconfig.json which were NOT defined in command line
-      return (
-        category !== undefined &&
-        category !== Diagnostics.Command_line_Options &&
-        (category !== Diagnostics.Advanced_Options || compilerOptionsMap.has(name))
-      );
+      return category !== undefined && category !== Diagnostics.Command_line_Options && (category !== Diagnostics.Advanced_Options || compilerOptionsMap.has(name));
     }
 
     function writeConfigurations() {
@@ -2140,9 +2034,7 @@ namespace qnr {
         for (const option of options) {
           let optionName;
           if (compilerOptionsMap.has(option.name)) {
-            optionName = `"${option.name}": ${JSON.stringify(compilerOptionsMap.get(option.name))}${
-              (seenKnownKeys += 1) === compilerOptionsMap.size ? '' : ','
-            }`;
+            optionName = `"${option.name}": ${JSON.stringify(compilerOptionsMap.get(option.name))}${(seenKnownKeys += 1) === compilerOptionsMap.size ? '' : ','}`;
           } else {
             optionName = `// "${option.name}": ${JSON.stringify(getDefaultValueForOption(option))},`;
           }
@@ -2159,11 +2051,7 @@ namespace qnr {
       const result: string[] = [];
       result.push(`{`);
       result.push(`${tab}"compilerOptions": {`);
-      result.push(
-        `${tab}${tab}/* ${getLocaleSpecificMessage(
-          Diagnostics.Visit_https_Colon_Slash_Slashaka_ms_Slashtsconfig_json_to_read_more_about_this_file
-        )} */`
-      );
+      result.push(`${tab}${tab}/* ${getLocaleSpecificMessage(Diagnostics.Visit_https_Colon_Slash_Slashaka_ms_Slashtsconfig_json_to_read_more_about_this_file)} */`);
       result.push('');
       // Print out each row, aligning all the descriptions on the same column.
       for (const entry of entries) {
@@ -2192,11 +2080,7 @@ namespace qnr {
 
     for (const name in options) {
       if (hasProperty(options, name)) {
-        result[name] = convertToOptionValueWithAbsolutePaths(
-          optionsNameMap.get(name.toLowerCase()),
-          options[name] as CompilerOptionsValue,
-          toAbsolutePath
-        );
+        result[name] = convertToOptionValueWithAbsolutePaths(optionsNameMap.get(name.toLowerCase()), options[name] as CompilerOptionsValue, toAbsolutePath);
       }
     }
     if (result.configFilePath) {
@@ -2205,11 +2089,7 @@ namespace qnr {
     return result;
   }
 
-  function convertToOptionValueWithAbsolutePaths(
-    option: CommandLineOption | undefined,
-    value: CompilerOptionsValue,
-    toAbsolutePath: (path: string) => string
-  ) {
+  function convertToOptionValueWithAbsolutePaths(option: CommandLineOption | undefined, value: CompilerOptionsValue, toAbsolutePath: (path: string) => string) {
     if (option && !isNullOrUndefined(value)) {
       if (option.type === 'list') {
         const values = value as readonly (string | number)[];
@@ -2316,10 +2196,7 @@ namespace qnr {
     const parsedConfig = parseConfig(json, sourceFile, host, basePath, configFileName, resolutionStack, errors, extendedConfigCache);
     const { raw } = parsedConfig;
     const options = extend(existingOptions, parsedConfig.options || {});
-    const watchOptions =
-      existingWatchOptions && parsedConfig.watchOptions
-        ? extend(existingWatchOptions, parsedConfig.watchOptions)
-        : parsedConfig.watchOptions || existingWatchOptions;
+    const watchOptions = existingWatchOptions && parsedConfig.watchOptions ? extend(existingWatchOptions, parsedConfig.watchOptions) : parsedConfig.watchOptions || existingWatchOptions;
 
     options.configFilePath = configFileName && normalizeSlashes(configFileName);
     setConfigFileInOptions(options, sourceFile);
@@ -2351,9 +2228,7 @@ namespace qnr {
               const fileName = configFileName || 'tsconfig.json';
               const diagnosticMessage = Diagnostics.The_files_list_in_config_file_0_is_empty;
               const nodeValue = firstDefined(getTsConfigPropArray(sourceFile, 'files'), (property) => property.initializer);
-              const error = nodeValue
-                ? createDiagnosticForNodeInSourceFile(sourceFile, nodeValue, diagnosticMessage, fileName)
-                : createCompilerDiagnostic(diagnosticMessage, fileName);
+              const error = nodeValue ? createDiagnosticForNodeInSourceFile(sourceFile, nodeValue, diagnosticMessage, fileName) : createCompilerDiagnostic(diagnosticMessage, fileName);
               errors.push(error);
             } else {
               createCompilerDiagnosticOnlyIfJson(Diagnostics.The_files_list_in_config_file_0_is_empty, configFileName || 'tsconfig.json');
@@ -2458,13 +2333,7 @@ namespace qnr {
     return !hasProperty(raw, 'files') && !hasProperty(raw, 'references');
   }
 
-  export function updateErrorForNoInputFiles(
-    result: ExpandResult,
-    configFileName: string,
-    configFileSpecs: ConfigFileSpecs,
-    configParseDiagnostics: Diagnostic[],
-    canJsonReportNoInutFiles: boolean
-  ) {
+  export function updateErrorForNoInputFiles(result: ExpandResult, configFileName: string, configFileSpecs: ConfigFileSpecs, configParseDiagnostics: Diagnostic[], canJsonReportNoInutFiles: boolean) {
     const existingErrors = configParseDiagnostics.length;
     if (shouldReportNoInputFiles(result, canJsonReportNoInutFiles)) {
       configParseDiagnostics.push(getErrorForNoInputFiles(configFileSpecs, configFileName));
@@ -2507,31 +2376,16 @@ namespace qnr {
     const resolvedPath = getNormalizedAbsolutePath(configFileName || '', basePath);
 
     if (resolutionStack.indexOf(resolvedPath) >= 0) {
-      errors.push(
-        createCompilerDiagnostic(
-          Diagnostics.Circularity_detected_while_resolving_configuration_Colon_0,
-          [...resolutionStack, resolvedPath].join(' -> ')
-        )
-      );
+      errors.push(createCompilerDiagnostic(Diagnostics.Circularity_detected_while_resolving_configuration_Colon_0, [...resolutionStack, resolvedPath].join(' -> ')));
       return { raw: json || convertToObject(sourceFile!, errors) };
     }
 
-    const ownConfig = json
-      ? parseOwnConfigOfJson(json, host, basePath, configFileName, errors)
-      : parseOwnConfigOfJsonSourceFile(sourceFile!, host, basePath, configFileName, errors);
+    const ownConfig = json ? parseOwnConfigOfJson(json, host, basePath, configFileName, errors) : parseOwnConfigOfJsonSourceFile(sourceFile!, host, basePath, configFileName, errors);
 
     if (ownConfig.extendedConfigPath) {
       // copy the resolution stack so it is never reused between branches in potential diamond-problem scenarios.
       resolutionStack = resolutionStack.concat([resolvedPath]);
-      const extendedConfig = getExtendedConfig(
-        sourceFile,
-        ownConfig.extendedConfigPath,
-        host,
-        basePath,
-        resolutionStack,
-        errors,
-        extendedConfigCache
-      );
+      const extendedConfig = getExtendedConfig(sourceFile, ownConfig.extendedConfigPath, host, basePath, resolutionStack, errors, extendedConfigCache);
       if (extendedConfig && isSuccessfulParsedTsconfig(extendedConfig)) {
         const baseRaw = extendedConfig.raw;
         const raw = ownConfig.raw;
@@ -2549,9 +2403,7 @@ namespace qnr {
         }
         ownConfig.options = assign({}, extendedConfig.options, ownConfig.options);
         ownConfig.watchOptions =
-          ownConfig.watchOptions && extendedConfig.watchOptions
-            ? assign({}, extendedConfig.watchOptions, ownConfig.watchOptions)
-            : ownConfig.watchOptions || extendedConfig.watchOptions;
+          ownConfig.watchOptions && extendedConfig.watchOptions ? assign({}, extendedConfig.watchOptions, ownConfig.watchOptions) : ownConfig.watchOptions || extendedConfig.watchOptions;
         // TODO extend type typeAcquisition
       }
     }
@@ -2559,13 +2411,7 @@ namespace qnr {
     return ownConfig;
   }
 
-  function parseOwnConfigOfJson(
-    json: any,
-    host: ParseConfigHost,
-    basePath: string,
-    configFileName: string | undefined,
-    errors: Push<Diagnostic>
-  ): ParsedTsconfig {
+  function parseOwnConfigOfJson(json: any, host: ParseConfigHost, basePath: string, configFileName: string | undefined, errors: Push<Diagnostic>): ParsedTsconfig {
     if (hasProperty(json, 'excludes')) {
       errors.push(createCompilerDiagnostic(Diagnostics.Unknown_option_excludes_Did_you_mean_exclude));
     }
@@ -2589,13 +2435,7 @@ namespace qnr {
     return { raw: json, options, watchOptions, typeAcquisition, extendedConfigPath };
   }
 
-  function parseOwnConfigOfJsonSourceFile(
-    sourceFile: TsConfigSourceFile,
-    host: ParseConfigHost,
-    basePath: string,
-    configFileName: string | undefined,
-    errors: Push<Diagnostic>
-  ): ParsedTsconfig {
+  function parseOwnConfigOfJsonSourceFile(sourceFile: TsConfigSourceFile, host: ParseConfigHost, basePath: string, configFileName: string | undefined, errors: Push<Diagnostic>): ParsedTsconfig {
     const options = getDefaultCompilerOptions(configFileName);
     let typeAcquisition: TypeAcquisition | undefined, typingOptionstypeAcquisition: TypeAcquisition | undefined;
     let watchOptions: WatchOptions | undefined;
@@ -2627,9 +2467,7 @@ namespace qnr {
         switch (key) {
           case 'extends':
             const newBase = configFileName ? directoryOfCombinedPath(configFileName, basePath) : basePath;
-            extendedConfigPath = getExtendsConfigPath(<string>value, host, newBase, errors, (message, arg0) =>
-              createDiagnosticForNodeInSourceFile(sourceFile, valueNode, message, arg0)
-            );
+            extendedConfigPath = getExtendsConfigPath(<string>value, host, newBase, errors, (message, arg0) => createDiagnosticForNodeInSourceFile(sourceFile, valueNode, message, arg0));
             return;
         }
       },
@@ -2719,16 +2557,7 @@ namespace qnr {
       extendedResult = readJsonConfigFile(extendedConfigPath, (path) => host.readFile(path));
       if (!extendedResult.parseDiagnostics.length) {
         const extendedDirname = getDirectoryPath(extendedConfigPath);
-        extendedConfig = parseConfig(
-          /*json*/ undefined,
-          extendedResult,
-          host,
-          extendedDirname,
-          getBaseFileName(extendedConfigPath),
-          resolutionStack,
-          errors,
-          extendedConfigCache
-        );
+        extendedConfig = parseConfig(/*json*/ undefined, extendedResult, host, extendedDirname, getBaseFileName(extendedConfigPath), resolutionStack, errors, extendedConfigCache);
 
         if (isSuccessfulParsedTsconfig(extendedConfig)) {
           // Update the paths to reflect base path
@@ -2771,21 +2600,13 @@ namespace qnr {
     return typeof result === 'boolean' && result;
   }
 
-  export function convertCompilerOptionsFromJson(
-    jsonOptions: any,
-    basePath: string,
-    configFileName?: string
-  ): { options: CompilerOptions; errors: Diagnostic[] } {
+  export function convertCompilerOptionsFromJson(jsonOptions: any, basePath: string, configFileName?: string): { options: CompilerOptions; errors: Diagnostic[] } {
     const errors: Diagnostic[] = [];
     const options = convertCompilerOptionsFromJsonWorker(jsonOptions, basePath, errors, configFileName);
     return { options, errors };
   }
 
-  export function convertTypeAcquisitionFromJson(
-    jsonOptions: any,
-    basePath: string,
-    configFileName?: string
-  ): { options: TypeAcquisition; errors: Diagnostic[] } {
+  export function convertTypeAcquisitionFromJson(jsonOptions: any, basePath: string, configFileName?: string): { options: TypeAcquisition; errors: Diagnostic[] } {
     const errors: Diagnostic[] = [];
     const options = convertTypeAcquisitionFromJsonWorker(jsonOptions, basePath, errors, configFileName);
     return { options, errors };
@@ -2793,18 +2614,11 @@ namespace qnr {
 
   function getDefaultCompilerOptions(configFileName?: string) {
     const options: CompilerOptions =
-      configFileName && getBaseFileName(configFileName) === 'jsconfig.json'
-        ? { allowJs: true, maxNodeModuleJsDepth: 2, allowSyntheticDefaultImports: true, skipLibCheck: true, noEmit: true }
-        : {};
+      configFileName && getBaseFileName(configFileName) === 'jsconfig.json' ? { allowJs: true, maxNodeModuleJsDepth: 2, allowSyntheticDefaultImports: true, skipLibCheck: true, noEmit: true } : {};
     return options;
   }
 
-  function convertCompilerOptionsFromJsonWorker(
-    jsonOptions: any,
-    basePath: string,
-    errors: Push<Diagnostic>,
-    configFileName?: string
-  ): CompilerOptions {
+  function convertCompilerOptionsFromJsonWorker(jsonOptions: any, basePath: string, errors: Push<Diagnostic>, configFileName?: string): CompilerOptions {
     const options = getDefaultCompilerOptions(configFileName);
     convertOptionsFromJson(getCommandLineCompilerOptionsMap(), jsonOptions, basePath, options, compilerOptionsDidYouMeanDiagnostics, errors);
     if (configFileName) {
@@ -2817,12 +2631,7 @@ namespace qnr {
     return { enable: !!configFileName && getBaseFileName(configFileName) === 'jsconfig.json', include: [], exclude: [] };
   }
 
-  function convertTypeAcquisitionFromJsonWorker(
-    jsonOptions: any,
-    basePath: string,
-    errors: Push<Diagnostic>,
-    configFileName?: string
-  ): TypeAcquisition {
+  function convertTypeAcquisitionFromJsonWorker(jsonOptions: any, basePath: string, errors: Push<Diagnostic>, configFileName?: string): TypeAcquisition {
     const options = getDefaultTypeAcquisition(configFileName);
     const typeAcquisition = convertEnableAutoDiscoveryToEnable(jsonOptions);
 
@@ -2831,14 +2640,7 @@ namespace qnr {
   }
 
   function convertWatchOptionsFromJsonWorker(jsonOptions: any, basePath: string, errors: Push<Diagnostic>): WatchOptions | undefined {
-    return convertOptionsFromJson(
-      getCommandLineWatchOptionsMap(),
-      jsonOptions,
-      basePath,
-      /*defaultOptions*/ undefined,
-      watchOptionsDidYouMeanDiagnostics,
-      errors
-    );
+    return convertOptionsFromJson(getCommandLineWatchOptionsMap(), jsonOptions, basePath, /*defaultOptions*/ undefined, watchOptionsDidYouMeanDiagnostics, errors);
   }
 
   function convertOptionsFromJson(
@@ -2890,9 +2692,7 @@ namespace qnr {
       }
       return normalizeNonListOptionValue(opt, basePath, value);
     } else {
-      errors.push(
-        createCompilerDiagnostic(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, opt.name, getCompilerOptionValueTypeString(opt))
-      );
+      errors.push(createCompilerDiagnostic(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, opt.name, getCompilerOptionValueTypeString(opt)));
     }
     return;
   }
@@ -2936,12 +2736,7 @@ namespace qnr {
     return;
   }
 
-  function convertJsonOptionOfListType(
-    option: CommandLineOptionOfListType,
-    values: readonly any[],
-    basePath: string,
-    errors: Push<Diagnostic>
-  ): any[] {
+  function convertJsonOptionOfListType(option: CommandLineOptionOfListType, values: readonly any[], basePath: string, errors: Push<Diagnostic>): any[] {
     return filter(
       map(values, (v) => convertJsonOption(option.element, v, basePath, errors)),
       (v) => !!v
@@ -3088,21 +2883,13 @@ namespace qnr {
 
     let jsonOnlyIncludeRegexes: readonly RegExp[] | undefined;
     if (validatedIncludeSpecs && validatedIncludeSpecs.length > 0) {
-      for (const file of host.readDirectory(
-        basePath,
-        supportedExtensionsWithJsonIfResolveJsonModule,
-        validatedExcludeSpecs,
-        validatedIncludeSpecs,
-        /*depth*/ undefined
-      )) {
+      for (const file of host.readDirectory(basePath, supportedExtensionsWithJsonIfResolveJsonModule, validatedExcludeSpecs, validatedIncludeSpecs, /*depth*/ undefined)) {
         if (fileExtensionIs(file, Extension.Json)) {
           // Valid only if *.json specified
           if (!jsonOnlyIncludeRegexes) {
             const includes = validatedIncludeSpecs.filter((s) => endsWith(s, Extension.Json));
             const includeFilePatterns = map(getRegularExpressionsForWildcards(includes, basePath, 'files'), (pattern) => `^${pattern}$`);
-            jsonOnlyIncludeRegexes = includeFilePatterns
-              ? includeFilePatterns.map((pattern) => getRegexFromPattern(pattern, host.useCaseSensitiveFileNames))
-              : emptyArray;
+            jsonOnlyIncludeRegexes = includeFilePatterns ? includeFilePatterns.map((pattern) => getRegexFromPattern(pattern, host.useCaseSensitiveFileNames)) : emptyArray;
           }
           const includeIndex = findIndex(jsonOnlyIncludeRegexes, (re) => re.test(file));
           if (includeIndex !== -1) {
@@ -3146,13 +2933,7 @@ namespace qnr {
     };
   }
 
-  function validateSpecs(
-    specs: readonly string[],
-    errors: Push<Diagnostic>,
-    allowTrailingRecursion: boolean,
-    jsonSourceFile: TsConfigSourceFile | undefined,
-    specKey: string
-  ): readonly string[] {
+  function validateSpecs(specs: readonly string[], errors: Push<Diagnostic>, allowTrailingRecursion: boolean, jsonSourceFile: TsConfigSourceFile | undefined, specKey: string): readonly string[] {
     return specs.filter((spec) => {
       const diag = specToDiagnostic(spec, allowTrailingRecursion);
       if (diag !== undefined) {
@@ -3176,12 +2957,7 @@ namespace qnr {
     return;
   }
 
-  function getWildcardDirectories(
-    include: readonly string[] | undefined,
-    exclude: readonly string[] | undefined,
-    path: string,
-    useCaseSensitiveFileNames: boolean
-  ): MapLike<WatchDirectoryFlags> {
+  function getWildcardDirectories(include: readonly string[] | undefined, exclude: readonly string[] | undefined, path: string, useCaseSensitiveFileNames: boolean): MapLike<WatchDirectoryFlags> {
     const rawExcludeRegex = getRegularExpressionForWildcard(exclude, path, 'exclude');
     const excludeRegex = rawExcludeRegex && new RegExp(rawExcludeRegex, useCaseSensitiveFileNames ? '' : 'i');
     const wildcardDirectories: MapLike<WatchDirectoryFlags> = {};
@@ -3235,13 +3011,7 @@ namespace qnr {
     return;
   }
 
-  function hasFileWithHigherPriorityExtension(
-    file: string,
-    literalFiles: QMap<string>,
-    wildcardFiles: QMap<string>,
-    extensions: readonly string[],
-    keyMapper: (value: string) => string
-  ) {
+  function hasFileWithHigherPriorityExtension(file: string, literalFiles: QMap<string>, wildcardFiles: QMap<string>, extensions: readonly string[], keyMapper: (value: string) => string) {
     const extensionPriority = getExtensionPriority(file, extensions);
     const adjustedExtensionPriority = adjustExtensionPriority(extensionPriority, extensions);
     for (let i = ExtensionPriority.Highest; i < adjustedExtensionPriority; i++) {
@@ -3255,12 +3025,7 @@ namespace qnr {
     return false;
   }
 
-  function removeWildcardFilesWithLowerPriorityExtension(
-    file: string,
-    wildcardFiles: QMap<string>,
-    extensions: readonly string[],
-    keyMapper: (value: string) => string
-  ) {
+  function removeWildcardFilesWithLowerPriorityExtension(file: string, wildcardFiles: QMap<string>, extensions: readonly string[], keyMapper: (value: string) => string) {
     const extensionPriority = getExtensionPriority(file, extensions);
     const nextExtensionPriority = getNextLowestExtensionPriority(extensionPriority, extensions);
     for (let i = nextExtensionPriority; i < extensions.length; i++) {

@@ -77,7 +77,7 @@ namespace qnr {
   export function createIdentifier(text: string, typeArguments: readonly (TypeNode | TypeParameterDeclaration)[] | undefined): Identifier; // eslint-disable-line @typescript-eslint/unified-signatures
   export function createIdentifier(text: string, typeArguments?: readonly (TypeNode | TypeParameterDeclaration)[]): Identifier {
     const node = <Identifier>Node.createSynthesized(SyntaxKind.Identifier);
-    node.escapedText = escapeLeadingUnderscores(text);
+    node.escapedText = Scanner.escapeUnderscores(text);
     node.originalKeywordKind = text ? Token.fromString(text) : SyntaxKind.Unknown;
     node.autoGenerateFlags = GeneratedIdentifierFlags.None;
     node.autoGenerateId = 0;
@@ -166,7 +166,7 @@ namespace qnr {
       fail('First character of private identifier must be #: ' + text);
     }
     const node = Node.createSynthesized(SyntaxKind.PrivateIdentifier) as PrivateIdentifier;
-    node.escapedText = escapeLeadingUnderscores(text);
+    node.escapedText = Scanner.escapeUnderscores(text);
     return node;
   }
 

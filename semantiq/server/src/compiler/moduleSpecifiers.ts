@@ -18,18 +18,10 @@ namespace qnr.moduleSpecifiers {
     readonly ending: Ending;
   }
 
-  function getPreferences(
-    { importModuleSpecifierPreference, importModuleSpecifierEnding }: UserPreferences,
-    compilerOptions: CompilerOptions,
-    importingSourceFile: SourceFile
-  ): Preferences {
+  function getPreferences({ importModuleSpecifierPreference, importModuleSpecifierEnding }: UserPreferences, compilerOptions: CompilerOptions, importingSourceFile: SourceFile): Preferences {
     return {
       relativePreference:
-        importModuleSpecifierPreference === 'relative'
-          ? RelativePreference.Relative
-          : importModuleSpecifierPreference === 'non-relative'
-          ? RelativePreference.NonRelative
-          : RelativePreference.Auto,
+        importModuleSpecifierPreference === 'relative' ? RelativePreference.Relative : importModuleSpecifierPreference === 'non-relative' ? RelativePreference.NonRelative : RelativePreference.Auto,
       ending: getEnding(),
     };
     function getEnding(): Ending {
@@ -41,11 +33,7 @@ namespace qnr.moduleSpecifiers {
         case 'js':
           return Ending.JsExtension;
         default:
-          return usesJsExtensionOnImports(importingSourceFile)
-            ? Ending.JsExtension
-            : getEmitModuleResolutionKind(compilerOptions) !== ModuleResolutionKind.NodeJs
-            ? Ending.Index
-            : Ending.Minimal;
+          return usesJsExtensionOnImports(importingSourceFile) ? Ending.JsExtension : getEmitModuleResolutionKind(compilerOptions) !== ModuleResolutionKind.NodeJs ? Ending.Index : Ending.Minimal;
       }
     }
   }
@@ -68,13 +56,7 @@ namespace qnr.moduleSpecifiers {
     host: ModuleSpecifierResolutionHost,
     oldImportSpecifier: string
   ): string | undefined {
-    const res = getModuleSpecifierWorker(
-      compilerOptions,
-      importingSourceFileName,
-      toFileName,
-      host,
-      getPreferencesForUpdate(compilerOptions, oldImportSpecifier)
-    );
+    const res = getModuleSpecifierWorker(compilerOptions, importingSourceFileName, toFileName, host, getPreferencesForUpdate(compilerOptions, oldImportSpecifier));
     if (res === oldImportSpecifier) return;
     return res;
   }
@@ -88,35 +70,16 @@ namespace qnr.moduleSpecifiers {
     host: ModuleSpecifierResolutionHost,
     preferences: UserPreferences = {}
   ): string {
-    return getModuleSpecifierWorker(
-      compilerOptions,
-      importingSourceFileName,
-      toFileName,
-      host,
-      getPreferences(preferences, compilerOptions, importingSourceFile)
-    );
+    return getModuleSpecifierWorker(compilerOptions, importingSourceFileName, toFileName, host, getPreferences(preferences, compilerOptions, importingSourceFile));
   }
 
-  export function getNodeModulesPackageName(
-    compilerOptions: CompilerOptions,
-    importingSourceFileName: Path,
-    nodeModulesFileName: string,
-    host: ModuleSpecifierResolutionHost
-  ): string | undefined {
+  export function getNodeModulesPackageName(compilerOptions: CompilerOptions, importingSourceFileName: Path, nodeModulesFileName: string, host: ModuleSpecifierResolutionHost): string | undefined {
     const info = getInfo(importingSourceFileName, host);
     const modulePaths = getAllModulePaths(importingSourceFileName, nodeModulesFileName, host);
-    return firstDefined(modulePaths, (moduleFileName) =>
-      tryGetModuleNameAsNodeModule(moduleFileName, info, host, compilerOptions, /*packageNameOnly*/ true)
-    );
+    return firstDefined(modulePaths, (moduleFileName) => tryGetModuleNameAsNodeModule(moduleFileName, info, host, compilerOptions, /*packageNameOnly*/ true));
   }
 
-  function getModuleSpecifierWorker(
-    compilerOptions: CompilerOptions,
-    importingSourceFileName: Path,
-    toFileName: string,
-    host: ModuleSpecifierResolutionHost,
-    preferences: Preferences
-  ): string {
+  function getModuleSpecifierWorker(compilerOptions: CompilerOptions, importingSourceFileName: Path, toFileName: string, host: ModuleSpecifierResolutionHost, preferences: Preferences): string {
     const info = getInfo(importingSourceFileName, host);
     const modulePaths = getAllModulePaths(importingSourceFileName, toFileName, host);
     return (
@@ -156,21 +119,12 @@ namespace qnr.moduleSpecifiers {
     return { getCanonicalFileName, sourceDirectory };
   }
 
-  function getLocalModuleSpecifier(
-    moduleFileName: string,
-    { getCanonicalFileName, sourceDirectory }: Info,
-    compilerOptions: CompilerOptions,
-    { ending, relativePreference }: Preferences
-  ): string {
+  function getLocalModuleSpecifier(moduleFileName: string, { getCanonicalFileName, sourceDirectory }: Info, compilerOptions: CompilerOptions, { ending, relativePreference }: Preferences): string {
     const { baseUrl, paths, rootDirs } = compilerOptions;
 
     const relativePath =
       (rootDirs && tryGetModuleNameFromRootDirs(rootDirs, moduleFileName, sourceDirectory, getCanonicalFileName, ending, compilerOptions)) ||
-      removeExtensionAndIndexPostFix(
-        ensurePathIsNonModuleName(getRelativePathFromDirectory(sourceDirectory, moduleFileName, getCanonicalFileName)),
-        ending,
-        compilerOptions
-      );
+      removeExtensionAndIndexPostFix(ensurePathIsNonModuleName(getRelativePathFromDirectory(sourceDirectory, moduleFileName, getCanonicalFileName)), ending, compilerOptions);
     if (!baseUrl || relativePreference === RelativePreference.Relative) {
       return relativePath;
     }
@@ -224,9 +178,7 @@ namespace qnr.moduleSpecifiers {
   ): T | undefined {
     const getCanonicalFileName = hostGetCanonicalFileName(host);
     const cwd = host.getCurrentDirectory();
-    const referenceRedirect = host.isSourceOfProjectReferenceRedirect(importedFileName)
-      ? host.getProjectReferenceRedirect(importedFileName)
-      : undefined;
+    const referenceRedirect = host.isSourceOfProjectReferenceRedirect(importedFileName) ? host.getProjectReferenceRedirect(importedFileName) : undefined;
     const redirects = host.redirectTargetsMap.get(toPath(importedFileName, cwd, getCanonicalFileName)) || emptyArray;
     const importedFileNames = [...(referenceRedirect ? [referenceRedirect] : emptyArray), importedFileName, ...redirects];
     const targets = importedFileNames.map((f) => getNormalizedAbsolutePath(f, cwd));
@@ -234,12 +186,9 @@ namespace qnr.moduleSpecifiers {
       const result = forEach(targets, cb);
       if (result) return result;
     }
-    const links = host.getProbableSymlinks
-      ? host.getProbableSymlinks(host.getSourceFiles())
-      : discoverProbableSymlinks(host.getSourceFiles(), getCanonicalFileName, cwd);
+    const links = host.getProbableSymlinks ? host.getProbableSymlinks(host.getSourceFiles()) : discoverProbableSymlinks(host.getSourceFiles(), getCanonicalFileName, cwd);
 
-    const compareStrings =
-      !host.useCaseSensitiveFileNames || host.useCaseSensitiveFileNames() ? compareStringsCaseSensitive : compareStringsCaseInsensitive;
+    const compareStrings = !host.useCaseSensitiveFileNames || host.useCaseSensitiveFileNames() ? compareStringsCaseSensitive : compareStringsCaseInsensitive;
     const result = forEachEntry(links, (resolved, path) => {
       if (startsWithDirectory(importingFileName, resolved, getCanonicalFileName)) {
         return; // Don't want to a package to globally import from itself
@@ -306,20 +255,15 @@ namespace qnr.moduleSpecifiers {
   }
 
   function tryGetModuleNameFromAmbientModule(moduleSymbol: Symbol): string | undefined {
-    const decl = find(
-      moduleSymbol.declarations,
-      (d) => isNonGlobalAmbientModule(d) && (!isExternalModuleAugmentation(d) || !isExternalModuleNameRelative(getTextOfIdentifierOrLiteral(d.name)))
-    ) as (ModuleDeclaration & { name: StringLiteral }) | undefined;
+    const decl = find(moduleSymbol.declarations, (d) => isNonGlobalAmbientModule(d) && (!isExternalModuleAugmentation(d) || !isExternalModuleNameRelative(getTextOfIdentifierOrLiteral(d.name)))) as
+      | (ModuleDeclaration & { name: StringLiteral })
+      | undefined;
     if (decl) {
       return decl.name.text;
     }
   }
 
-  function tryGetModuleNameFromPaths(
-    relativeToBaseUrlWithIndex: string,
-    relativeToBaseUrl: string,
-    paths: MapLike<readonly string[]>
-  ): string | undefined {
+  function tryGetModuleNameFromPaths(relativeToBaseUrlWithIndex: string, relativeToBaseUrl: string, paths: MapLike<readonly string[]>): string | undefined {
     for (const key in paths) {
       for (const patternText of paths[key]) {
         const pattern = removeFileExtension(normalizePath(patternText));
@@ -328,9 +272,7 @@ namespace qnr.moduleSpecifiers {
           const prefix = pattern.substr(0, indexOfStar);
           const suffix = pattern.substr(indexOfStar + 1);
           if (
-            (relativeToBaseUrl.length >= prefix.length + suffix.length &&
-              startsWith(relativeToBaseUrl, prefix) &&
-              endsWith(relativeToBaseUrl, suffix)) ||
+            (relativeToBaseUrl.length >= prefix.length + suffix.length && startsWith(relativeToBaseUrl, prefix) && endsWith(relativeToBaseUrl, suffix)) ||
             (!suffix && relativeToBaseUrl === removeTrailingDirectorySeparator(prefix))
           ) {
             const matchedStar = relativeToBaseUrl.substr(prefix.length, relativeToBaseUrl.length - suffix.length);
@@ -358,12 +300,8 @@ namespace qnr.moduleSpecifiers {
 
     const normalizedSourcePath = getPathRelativeToRootDirs(sourceDirectory, rootDirs, getCanonicalFileName);
     const relativePath =
-      normalizedSourcePath !== undefined
-        ? ensurePathIsNonModuleName(getRelativePathFromDirectory(normalizedSourcePath, normalizedTargetPath, getCanonicalFileName))
-        : normalizedTargetPath;
-    return getEmitModuleResolutionKind(compilerOptions) === ModuleResolutionKind.NodeJs
-      ? removeExtensionAndIndexPostFix(relativePath, ending, compilerOptions)
-      : removeFileExtension(relativePath);
+      normalizedSourcePath !== undefined ? ensurePathIsNonModuleName(getRelativePathFromDirectory(normalizedSourcePath, normalizedTargetPath, getCanonicalFileName)) : normalizedTargetPath;
+    return getEmitModuleResolutionKind(compilerOptions) === ModuleResolutionKind.NodeJs ? removeExtensionAndIndexPostFix(relativePath, ending, compilerOptions) : removeFileExtension(relativePath);
   }
 
   function tryGetModuleNameAsNodeModule(
@@ -397,7 +335,7 @@ namespace qnr.moduleSpecifiers {
         if (!moduleFileNameForExtensionless) moduleFileNameForExtensionless = moduleFileToTry;
 
         // try with next level of directory
-        packageRootIndex = moduleFileName.indexOf(directorySeparator, packageRootIndex + 1);
+        packageRootIndex = moduleFileName.indexOf(dirSeparator, packageRootIndex + 1);
         if (packageRootIndex === -1) {
           moduleSpecifier = getExtensionlessFileName(moduleFileNameForExtensionless);
           break;
@@ -409,12 +347,7 @@ namespace qnr.moduleSpecifiers {
     // Get a path that's relative to node_modules or the importing file's path
     // if node_modules folder is in this folder or any of its parent folders, no need to keep it.
     const pathToTopLevelNodeModules = getCanonicalFileName(moduleSpecifier.substring(0, parts.topLevelNodeModulesIndex));
-    if (
-      !(
-        startsWith(sourceDirectory, pathToTopLevelNodeModules) ||
-        (globalTypingsCacheLocation && startsWith(getCanonicalFileName(globalTypingsCacheLocation), pathToTopLevelNodeModules))
-      )
-    ) {
+    if (!(startsWith(sourceDirectory, pathToTopLevelNodeModules) || (globalTypingsCacheLocation && startsWith(getCanonicalFileName(globalTypingsCacheLocation), pathToTopLevelNodeModules)))) {
       return;
     }
 
@@ -433,11 +366,7 @@ namespace qnr.moduleSpecifiers {
         const versionPaths = packageJsonContent.typesVersions ? getPackageJsonTypesVersionsPaths(packageJsonContent.typesVersions) : undefined;
         if (versionPaths) {
           const subModuleName = moduleFileName.slice(packageRootPath.length + 1);
-          const fromPaths = tryGetModuleNameFromPaths(
-            removeFileExtension(subModuleName),
-            removeExtensionAndIndexPostFix(subModuleName, Ending.Minimal, options),
-            versionPaths.paths
-          );
+          const fromPaths = tryGetModuleNameFromPaths(removeFileExtension(subModuleName), removeExtensionAndIndexPostFix(subModuleName, Ending.Minimal, options), versionPaths.paths);
           if (fromPaths !== undefined) {
             moduleFileToTry = combinePaths(packageRootPath, fromPaths);
           }
