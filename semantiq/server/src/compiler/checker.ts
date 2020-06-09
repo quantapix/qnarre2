@@ -2603,6 +2603,7 @@ namespace qnr {
         markSymbolOfAliasDeclarationIfTypeOnly(specifier, exportSymbol, resolved, /*overwriteEmpty*/ false);
         return resolved;
       }
+      return;
     }
 
     function getPropertyOfVariable(symbol: Symbol, name: __String): Symbol | undefined {
@@ -2612,6 +2613,7 @@ namespace qnr {
           return resolveSymbol(getPropertyOfType(getTypeFromTypeNode(typeAnnotation), name));
         }
       }
+      return;
     }
 
     function getExternalModuleMember(node: ImportDeclaration | ExportDeclaration, specifier: ImportOrExportSpecifier, dontResolveAlias = false): Symbol | undefined {
@@ -3643,13 +3645,10 @@ namespace qnr {
       return type;
     }
 
-
     function getNamedMembers(ms: SymbolTable): Symbol[] {
       let r: Symbol[] | undefined;
       ms.forEach((symbol, id) => {
-        if (!Scanner.isReservedName(id) && symbolIsValue(symbol)) 
-          (r || (r = [])).push(symbol);
-        
+        if (!Scanner.isReservedName(id) && symbolIsValue(symbol)) (r || (r = [])).push(symbol);
       });
       return r || emptyArray;
     }
@@ -4479,7 +4478,7 @@ namespace qnr {
 
         return fail('Should be unreachable.');
 
-        function MappedTypeNode.createFromType(type: MappedType) {
+        function createMappedTypeNodeFromType(type: MappedType) {
           assert(!!(type.flags & TypeFlags.Object));
           const readonlyToken = type.declaration.readonlyToken ? <ReadonlyToken | PlusToken | MinusToken>createToken(type.declaration.readonlyToken.kind) : undefined;
           const questionToken = type.declaration.questionToken ? <QuestionToken | PlusToken | MinusToken>createToken(type.declaration.questionToken.kind) : undefined;
@@ -4562,10 +4561,7 @@ namespace qnr {
           if (!context.visitedTypes) {
             context.visitedTypes = QMap.create<true>();
           }
-          if (id && !context.symbolDepth) {
-            context.symbolDepth = QMap.create<number>();
-          }
-
+          if (id && !context.symbolDepth) context.symbolDepth = QMap.create<number>();
           let depth: number | undefined;
           if (id) {
             depth = context.symbolDepth!.get(id) || 0;
@@ -4585,7 +4581,7 @@ namespace qnr {
 
         function createTypeNodeFromObjectType(type: ObjectType): TypeNode {
           if (isGenericMappedType(type)) {
-            return MappedTypeNode.createFromType(type);
+            return createMappedTypeNodeFromType(type);
           }
 
           const resolved = resolveStructuredTypeMembers(type);
