@@ -23,7 +23,63 @@ namespace qnr {
     return statement && isNotEmittedStatement(statement) ? setTextRange(setOriginalNode(createEmptyStatement(), statement), statement) : statement;
   }
 
+  type xxx = keyof typeof SyntaxKind;
+
+  const dispatch = new Map<xxx, SyntaxKind>();
+
+  export function isKind<T extends Node>(n: Node): n is T {
+    return n.kind === keyof T['kind'];
+  }
+
+  const enum Codes {
+    AAA,
+    BBB
+  }
+  interface QNode {
+    kind: Codes;
+  }
+  namespace QNode {
+    export function create(kind: Codes) {
+      return { kind } as QNode;
+    }
+  }
+  interface Aaa extends QNode {
+    kind: Codes.AAA;
+    aa?: number;
+  }
+  namespace Aaa {
+    export const kind = Codes.AAA;
+  }
+  interface Bbb extends QNode {
+    kind: Codes.BBB;
+    bb?: number;
+  }
+  namespace Bbb {
+    export const kind = Codes.BBB;
+  }
+  interface CMap {
+    [Codes.AAA]: Aaa;
+    [Codes.BBB]: Bbb;
+  }
+  type GN<C extends Codes> = C extends keyof CMap ? CMap[C] : never;
+  
+  function isKind<C extends Codes, T extends { kind: C }>(t: T, n: GN<C>): n is GN<C> {
+    return n.kind === t.kind;
+  }
+  
+  const a = QNode.create(Codes.AAA);
+  const b = QNode.create(Codes.BBB);
+  
+  console.log(isKind(Aaa, a), '*** true');
+  console.log(isKind(Bbb, a), '*** false');
+  console.log(isKind(Aaa, b), '*** false');
+  console.log(isKind(Bbb, b), '*** true');
+  
+
+
+
   export namespace Node {
+    const kind = SyntaxKind.Unknown;
     export function createSynthesized(k: SyntaxKind): Node {
       const n = createNode(k, -1, -1);
       n.flags |= NodeFlags.Synthesized;
@@ -48,13 +104,14 @@ namespace qnr {
     numericLiteralFlags: TokenFlags;
   }
   export namespace NumericLiteral {
+    export const kind = SyntaxKind.NumericLiteral;
     export function create(t: string, fs: TokenFlags = TokenFlags.None) {
       const n = Node.createSynthesized(SyntaxKind.NumericLiteral) as NumericLiteral;
       n.text = t;
       n.numericLiteralFlags = fs;
       return n;
     }
-    export function kind(n: Node): n is NumericLiteral {
+    export function kinda(n: Node): n is NumericLiteral {
       return n.kind === SyntaxKind.NumericLiteral;
     }
     export function name(name: string | __String) {

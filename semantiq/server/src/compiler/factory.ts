@@ -289,7 +289,7 @@ namespace qnr {
   }
 
   function shouldBeCapturedInTempVariable(node: Expression, cacheIdentifiers: boolean): boolean {
-    const target = skipParentheses(node);
+    const target = skipParentheses(node) as Expression | ArrayLiteralExpression | ObjectLiteralExpression;
     switch (target.kind) {
       case SyntaxKind.Identifier:
         return cacheIdentifiers;
@@ -299,7 +299,7 @@ namespace qnr {
       case SyntaxKind.StringLiteral:
         return false;
       case SyntaxKind.ArrayLiteralExpression:
-        const elements = (<ArrayLiteralExpression>target).elements;
+        const elements = target.elements;
         if (elements.length === 0) {
           return false;
         }
