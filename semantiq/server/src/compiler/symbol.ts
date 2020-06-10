@@ -177,7 +177,7 @@ namespace qnr {
           //  (their type resolved directly to the member deeply referenced)
           // So to get the intervening symbols, we need to check if there's a type
           // query node on any of the symbol's declarations and get symbols there
-          if ((d as any).type && (d as any).type.kind === SyntaxKind.TypeQuery) {
+          if ((d as any).type && (d as any).type.kind === Syntax.TypeQuery) {
             const query = (d as any).type as TypeQueryNode;
             const entity = getResolvedSymbol(getFirstIdentifier(query.exprName));
             visitSymbol(entity);

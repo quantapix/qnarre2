@@ -78,7 +78,7 @@ namespace qnr {
             ? Diagnostics.Public_static_property_0_of_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
             : Diagnostics.Public_static_property_0_of_exported_class_has_or_is_using_name_1_from_private_module_2
           : Diagnostics.Public_static_property_0_of_exported_class_has_or_is_using_private_name_1;
-      } else if (node.parent.kind === SyntaxKind.ClassDeclaration) {
+      } else if (node.parent.kind === Syntax.ClassDeclaration) {
         return symbolAccessibilityResult.errorModuleName
           ? symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed
             ? Diagnostics.Public_property_0_of_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
@@ -109,7 +109,7 @@ namespace qnr {
             ? Diagnostics.Public_static_method_0_of_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
             : Diagnostics.Public_static_method_0_of_exported_class_has_or_is_using_name_1_from_private_module_2
           : Diagnostics.Public_static_method_0_of_exported_class_has_or_is_using_private_name_1;
-      } else if (node.parent.kind === SyntaxKind.ClassDeclaration) {
+      } else if (node.parent.kind === Syntax.ClassDeclaration) {
         return symbolAccessibilityResult.errorModuleName
           ? symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed
             ? Diagnostics.Public_method_0_of_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
@@ -164,7 +164,7 @@ namespace qnr {
     }
 
     function getVariableDeclarationTypeVisibilityDiagnosticMessage(symbolAccessibilityResult: SymbolAccessibilityResult) {
-      if (node.kind === SyntaxKind.VariableDeclaration || node.kind === SyntaxKind.BindingElement) {
+      if (node.kind === Syntax.VariableDeclaration || node.kind === Syntax.BindingElement) {
         return symbolAccessibilityResult.errorModuleName
           ? symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed
             ? Diagnostics.Exported_variable_0_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
@@ -174,10 +174,10 @@ namespace qnr {
       // This check is to ensure we don't report error on constructor parameter property as that error would be reported during parameter emit
       // The only exception here is if the constructor was marked as private. we are not emitting the constructor parameters at all.
       else if (
-        node.kind === SyntaxKind.PropertyDeclaration ||
-        node.kind === SyntaxKind.PropertyAccessExpression ||
-        node.kind === SyntaxKind.PropertySignature ||
-        (node.kind === SyntaxKind.Parameter && hasSyntacticModifier(node.parent, ModifierFlags.Private))
+        node.kind === Syntax.PropertyDeclaration ||
+        node.kind === Syntax.PropertyAccessExpression ||
+        node.kind === Syntax.PropertySignature ||
+        (node.kind === Syntax.Parameter && hasSyntacticModifier(node.parent, ModifierFlags.Private))
       ) {
         // TODO(jfreeman): Deal with computed properties in error reporting.
         if (hasSyntacticModifier(node, ModifierFlags.Static)) {
@@ -186,7 +186,7 @@ namespace qnr {
               ? Diagnostics.Public_static_property_0_of_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
               : Diagnostics.Public_static_property_0_of_exported_class_has_or_is_using_name_1_from_private_module_2
             : Diagnostics.Public_static_property_0_of_exported_class_has_or_is_using_private_name_1;
-        } else if (node.parent.kind === SyntaxKind.ClassDeclaration || node.kind === SyntaxKind.Parameter) {
+        } else if (node.parent.kind === Syntax.ClassDeclaration || node.kind === Syntax.Parameter) {
           return symbolAccessibilityResult.errorModuleName
             ? symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed
               ? Diagnostics.Public_property_0_of_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
@@ -214,7 +214,7 @@ namespace qnr {
 
     function getAccessorDeclarationTypeVisibilityError(symbolAccessibilityResult: SymbolAccessibilityResult): SymbolAccessibilityDiagnostic {
       let diagnosticMessage: DiagnosticMessage;
-      if (node.kind === SyntaxKind.SetAccessor) {
+      if (node.kind === Syntax.SetAccessor) {
         // Getters can infer the return type from the returned expression, but setters cannot, so the
         // "_from_external_module_1_but_cannot_be_named" case cannot occur.
         if (hasSyntacticModifier(node, ModifierFlags.Static)) {
@@ -251,36 +251,36 @@ namespace qnr {
     function getReturnTypeVisibilityError(symbolAccessibilityResult: SymbolAccessibilityResult): SymbolAccessibilityDiagnostic {
       let diagnosticMessage: DiagnosticMessage;
       switch (node.kind) {
-        case SyntaxKind.ConstructSignature:
+        case Syntax.ConstructSignature:
           // Interfaces cannot have return types that cannot be named
           diagnosticMessage = symbolAccessibilityResult.errorModuleName
             ? Diagnostics.Return_type_of_constructor_signature_from_exported_interface_has_or_is_using_name_0_from_private_module_1
             : Diagnostics.Return_type_of_constructor_signature_from_exported_interface_has_or_is_using_private_name_0;
           break;
 
-        case SyntaxKind.CallSignature:
+        case Syntax.CallSignature:
           // Interfaces cannot have return types that cannot be named
           diagnosticMessage = symbolAccessibilityResult.errorModuleName
             ? Diagnostics.Return_type_of_call_signature_from_exported_interface_has_or_is_using_name_0_from_private_module_1
             : Diagnostics.Return_type_of_call_signature_from_exported_interface_has_or_is_using_private_name_0;
           break;
 
-        case SyntaxKind.IndexSignature:
+        case Syntax.IndexSignature:
           // Interfaces cannot have return types that cannot be named
           diagnosticMessage = symbolAccessibilityResult.errorModuleName
             ? Diagnostics.Return_type_of_index_signature_from_exported_interface_has_or_is_using_name_0_from_private_module_1
             : Diagnostics.Return_type_of_index_signature_from_exported_interface_has_or_is_using_private_name_0;
           break;
 
-        case SyntaxKind.MethodDeclaration:
-        case SyntaxKind.MethodSignature:
+        case Syntax.MethodDeclaration:
+        case Syntax.MethodSignature:
           if (hasSyntacticModifier(node, ModifierFlags.Static)) {
             diagnosticMessage = symbolAccessibilityResult.errorModuleName
               ? symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed
                 ? Diagnostics.Return_type_of_public_static_method_from_exported_class_has_or_is_using_name_0_from_external_module_1_but_cannot_be_named
                 : Diagnostics.Return_type_of_public_static_method_from_exported_class_has_or_is_using_name_0_from_private_module_1
               : Diagnostics.Return_type_of_public_static_method_from_exported_class_has_or_is_using_private_name_0;
-          } else if (node.parent.kind === SyntaxKind.ClassDeclaration) {
+          } else if (node.parent.kind === Syntax.ClassDeclaration) {
             diagnosticMessage = symbolAccessibilityResult.errorModuleName
               ? symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed
                 ? Diagnostics.Return_type_of_public_method_from_exported_class_has_or_is_using_name_0_from_external_module_1_but_cannot_be_named
@@ -294,7 +294,7 @@ namespace qnr {
           }
           break;
 
-        case SyntaxKind.FunctionDeclaration:
+        case Syntax.FunctionDeclaration:
           diagnosticMessage = symbolAccessibilityResult.errorModuleName
             ? symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed
               ? Diagnostics.Return_type_of_exported_function_has_or_is_using_name_0_from_external_module_1_but_cannot_be_named
@@ -325,41 +325,41 @@ namespace qnr {
 
     function getParameterDeclarationTypeVisibilityDiagnosticMessage(symbolAccessibilityResult: SymbolAccessibilityResult): DiagnosticMessage {
       switch (node.parent.kind) {
-        case SyntaxKind.Constructor:
+        case Syntax.Constructor:
           return symbolAccessibilityResult.errorModuleName
             ? symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed
               ? Diagnostics.Parameter_0_of_constructor_from_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
               : Diagnostics.Parameter_0_of_constructor_from_exported_class_has_or_is_using_name_1_from_private_module_2
             : Diagnostics.Parameter_0_of_constructor_from_exported_class_has_or_is_using_private_name_1;
 
-        case SyntaxKind.ConstructSignature:
-        case SyntaxKind.ConstructorType:
+        case Syntax.ConstructSignature:
+        case Syntax.ConstructorType:
           // Interfaces cannot have parameter types that cannot be named
           return symbolAccessibilityResult.errorModuleName
             ? Diagnostics.Parameter_0_of_constructor_signature_from_exported_interface_has_or_is_using_name_1_from_private_module_2
             : Diagnostics.Parameter_0_of_constructor_signature_from_exported_interface_has_or_is_using_private_name_1;
 
-        case SyntaxKind.CallSignature:
+        case Syntax.CallSignature:
           // Interfaces cannot have parameter types that cannot be named
           return symbolAccessibilityResult.errorModuleName
             ? Diagnostics.Parameter_0_of_call_signature_from_exported_interface_has_or_is_using_name_1_from_private_module_2
             : Diagnostics.Parameter_0_of_call_signature_from_exported_interface_has_or_is_using_private_name_1;
 
-        case SyntaxKind.IndexSignature:
+        case Syntax.IndexSignature:
           // Interfaces cannot have parameter types that cannot be named
           return symbolAccessibilityResult.errorModuleName
             ? Diagnostics.Parameter_0_of_index_signature_from_exported_interface_has_or_is_using_name_1_from_private_module_2
             : Diagnostics.Parameter_0_of_index_signature_from_exported_interface_has_or_is_using_private_name_1;
 
-        case SyntaxKind.MethodDeclaration:
-        case SyntaxKind.MethodSignature:
+        case Syntax.MethodDeclaration:
+        case Syntax.MethodSignature:
           if (hasSyntacticModifier(node.parent, ModifierFlags.Static)) {
             return symbolAccessibilityResult.errorModuleName
               ? symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed
                 ? Diagnostics.Parameter_0_of_public_static_method_from_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
                 : Diagnostics.Parameter_0_of_public_static_method_from_exported_class_has_or_is_using_name_1_from_private_module_2
               : Diagnostics.Parameter_0_of_public_static_method_from_exported_class_has_or_is_using_private_name_1;
-          } else if (node.parent.parent.kind === SyntaxKind.ClassDeclaration) {
+          } else if (node.parent.parent.kind === Syntax.ClassDeclaration) {
             return symbolAccessibilityResult.errorModuleName
               ? symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed
                 ? Diagnostics.Parameter_0_of_public_method_from_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
@@ -372,15 +372,15 @@ namespace qnr {
               : Diagnostics.Parameter_0_of_method_from_exported_interface_has_or_is_using_private_name_1;
           }
 
-        case SyntaxKind.FunctionDeclaration:
-        case SyntaxKind.FunctionType:
+        case Syntax.FunctionDeclaration:
+        case Syntax.FunctionType:
           return symbolAccessibilityResult.errorModuleName
             ? symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed
               ? Diagnostics.Parameter_0_of_exported_function_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
               : Diagnostics.Parameter_0_of_exported_function_has_or_is_using_name_1_from_private_module_2
             : Diagnostics.Parameter_0_of_exported_function_has_or_is_using_private_name_1;
-        case SyntaxKind.SetAccessor:
-        case SyntaxKind.GetAccessor:
+        case Syntax.SetAccessor:
+        case Syntax.GetAccessor:
           return symbolAccessibilityResult.errorModuleName
             ? symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed
               ? Diagnostics.Parameter_0_of_accessor_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
@@ -396,44 +396,44 @@ namespace qnr {
       // Type parameter constraints are named by user so we should always be able to name it
       let diagnosticMessage: DiagnosticMessage;
       switch (node.parent.kind) {
-        case SyntaxKind.ClassDeclaration:
+        case Syntax.ClassDeclaration:
           diagnosticMessage = Diagnostics.Type_parameter_0_of_exported_class_has_or_is_using_private_name_1;
           break;
 
-        case SyntaxKind.InterfaceDeclaration:
+        case Syntax.InterfaceDeclaration:
           diagnosticMessage = Diagnostics.Type_parameter_0_of_exported_interface_has_or_is_using_private_name_1;
           break;
 
-        case SyntaxKind.MappedType:
+        case Syntax.MappedType:
           diagnosticMessage = Diagnostics.Type_parameter_0_of_exported_mapped_object_type_is_using_private_name_1;
           break;
 
-        case SyntaxKind.ConstructorType:
-        case SyntaxKind.ConstructSignature:
+        case Syntax.ConstructorType:
+        case Syntax.ConstructSignature:
           diagnosticMessage = Diagnostics.Type_parameter_0_of_constructor_signature_from_exported_interface_has_or_is_using_private_name_1;
           break;
 
-        case SyntaxKind.CallSignature:
+        case Syntax.CallSignature:
           diagnosticMessage = Diagnostics.Type_parameter_0_of_call_signature_from_exported_interface_has_or_is_using_private_name_1;
           break;
 
-        case SyntaxKind.MethodDeclaration:
-        case SyntaxKind.MethodSignature:
+        case Syntax.MethodDeclaration:
+        case Syntax.MethodSignature:
           if (hasSyntacticModifier(node.parent, ModifierFlags.Static)) {
             diagnosticMessage = Diagnostics.Type_parameter_0_of_public_static_method_from_exported_class_has_or_is_using_private_name_1;
-          } else if (node.parent.parent.kind === SyntaxKind.ClassDeclaration) {
+          } else if (node.parent.parent.kind === Syntax.ClassDeclaration) {
             diagnosticMessage = Diagnostics.Type_parameter_0_of_public_method_from_exported_class_has_or_is_using_private_name_1;
           } else {
             diagnosticMessage = Diagnostics.Type_parameter_0_of_method_from_exported_interface_has_or_is_using_private_name_1;
           }
           break;
 
-        case SyntaxKind.FunctionType:
-        case SyntaxKind.FunctionDeclaration:
+        case Syntax.FunctionType:
+        case Syntax.FunctionDeclaration:
           diagnosticMessage = Diagnostics.Type_parameter_0_of_exported_function_has_or_is_using_private_name_1;
           break;
 
-        case SyntaxKind.TypeAliasDeclaration:
+        case Syntax.TypeAliasDeclaration:
           diagnosticMessage = Diagnostics.Type_parameter_0_of_exported_type_alias_has_or_is_using_private_name_1;
           break;
 
@@ -451,10 +451,10 @@ namespace qnr {
     function getHeritageClauseVisibilityError(): SymbolAccessibilityDiagnostic {
       let diagnosticMessage: DiagnosticMessage;
       // Heritage clause is written by user so it can always be named
-      if (node.parent.parent.kind === SyntaxKind.ClassDeclaration) {
+      if (node.parent.parent.kind === Syntax.ClassDeclaration) {
         // Class or Interface implemented/extended is inaccessible
         diagnosticMessage =
-          isHeritageClause(node.parent) && node.parent.token === SyntaxKind.ImplementsKeyword
+          isHeritageClause(node.parent) && node.parent.token === Syntax.ImplementsKeyword
             ? Diagnostics.Implements_clause_of_exported_class_0_has_or_is_using_private_name_1
             : Diagnostics.extends_clause_of_exported_class_0_has_or_is_using_private_name_1;
       } else {

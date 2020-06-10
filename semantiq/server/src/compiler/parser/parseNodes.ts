@@ -464,7 +464,7 @@ export namespace ClassNode {
         id: 0,
         nodeType: ParseNodeType.Name,
         token: {
-          type: SyntaxKind.Identifier,
+          type: Syntax.Identifier,
           start: 0,
           length: 0,
           comments: [],

@@ -1635,7 +1635,7 @@ namespace qnr {
     ): any {
       const result: any = returnValue ? {} : undefined;
       for (const element of node.properties) {
-        if (element.kind !== SyntaxKind.PropertyAssignment) {
+        if (element.kind !== Syntax.PropertyAssignment) {
           errors.push(createDiagnosticForNodeInSourceFile(sourceFile, element, Diagnostics.Property_assignment_expected));
           continue;
         }
@@ -1703,19 +1703,19 @@ namespace qnr {
 
     function convertPropertyValueToJson(valueExpression: Expression, option: CommandLineOption | undefined): any {
       switch (valueExpression.kind) {
-        case SyntaxKind.TrueKeyword:
+        case Syntax.TrueKeyword:
           reportInvalidOptionValue(option && option.type !== 'boolean');
           return true;
 
-        case SyntaxKind.FalseKeyword:
+        case Syntax.FalseKeyword:
           reportInvalidOptionValue(option && option.type !== 'boolean');
           return false;
 
-        case SyntaxKind.NullKeyword:
+        case Syntax.NullKeyword:
           reportInvalidOptionValue(option && option.name === 'extends'); // "extends" is the only option we don't allow null/undefined for
           return null; // eslint-disable-line no-null/no-null
 
-        case SyntaxKind.StringLiteral:
+        case Syntax.StringLiteral:
           if (!isDoubleQuotedString(valueExpression)) {
             errors.push(createDiagnosticForNodeInSourceFile(sourceFile, valueExpression, Diagnostics.String_literal_with_double_quotes_expected));
           }
@@ -1730,18 +1730,18 @@ namespace qnr {
           }
           return text;
 
-        case SyntaxKind.NumericLiteral:
+        case Syntax.NumericLiteral:
           reportInvalidOptionValue(option && option.type !== 'number');
           return Number((<NumericLiteral>valueExpression).text);
 
-        case SyntaxKind.PrefixUnaryExpression:
-          if ((<PrefixUnaryExpression>valueExpression).operator !== SyntaxKind.MinusToken || (<PrefixUnaryExpression>valueExpression).operand.kind !== SyntaxKind.NumericLiteral) {
+        case Syntax.PrefixUnaryExpression:
+          if ((<PrefixUnaryExpression>valueExpression).operator !== Syntax.MinusToken || (<PrefixUnaryExpression>valueExpression).operand.kind !== Syntax.NumericLiteral) {
             break; // not valid JSON syntax
           }
           reportInvalidOptionValue(option && option.type !== 'number');
           return -Number((<NumericLiteral>(<PrefixUnaryExpression>valueExpression).operand).text);
 
-        case SyntaxKind.ObjectLiteralExpression:
+        case Syntax.ObjectLiteralExpression:
           reportInvalidOptionValue(option && option.type !== 'object');
           const objectLiteralExpression = <ObjectLiteralExpression>valueExpression;
 
@@ -1758,7 +1758,7 @@ namespace qnr {
             return convertObjectLiteralExpressionToJson(objectLiteralExpression, /* knownOptions*/ undefined, /*extraKeyDiagnosticMessage */ undefined, /*parentOption*/ undefined);
           }
 
-        case SyntaxKind.ArrayLiteralExpression:
+        case Syntax.ArrayLiteralExpression:
           reportInvalidOptionValue(option && option.type !== 'list');
           return convertArrayLiteralExpressionToJson((<ArrayLiteralExpression>valueExpression).elements, option && (<CommandLineOptionOfListType>option).element);
       }

@@ -28,7 +28,7 @@ namespace qnr {
     return transformSourceFileOrBundle;
 
     function transformSourceFileOrBundle(node: SourceFile | Bundle) {
-      return node.kind === SyntaxKind.SourceFile ? transformSourceFile(node) : transformBundle(node);
+      return node.kind === Syntax.SourceFile ? transformSourceFile(node) : transformBundle(node);
     }
 
     function transformBundle(node: Bundle) {
@@ -81,7 +81,7 @@ namespace qnr {
 
     for (const node of sourceFile.statements) {
       switch (node.kind) {
-        case SyntaxKind.ImportDeclaration:
+        case Syntax.ImportDeclaration:
           // import "mod"
           // import x from "mod"
           // import * as x from "mod"
@@ -95,15 +95,15 @@ namespace qnr {
           }
           break;
 
-        case SyntaxKind.ImportEqualsDeclaration:
-          if ((<ImportEqualsDeclaration>node).moduleReference.kind === SyntaxKind.ExternalModuleReference) {
+        case Syntax.ImportEqualsDeclaration:
+          if ((<ImportEqualsDeclaration>node).moduleReference.kind === Syntax.ExternalModuleReference) {
             // import x = require("mod")
             externalImports.push(<ImportEqualsDeclaration>node);
           }
 
           break;
 
-        case SyntaxKind.ExportDeclaration:
+        case Syntax.ExportDeclaration:
           if ((<ExportDeclaration>node).moduleSpecifier) {
             if (!(<ExportDeclaration>node).exportClause) {
               // export * from "mod"
@@ -134,14 +134,14 @@ namespace qnr {
           }
           break;
 
-        case SyntaxKind.ExportAssignment:
+        case Syntax.ExportAssignment:
           if ((<ExportAssignment>node).isExportEquals && !exportEquals) {
             // export = x
             exportEquals = <ExportAssignment>node;
           }
           break;
 
-        case SyntaxKind.VariableStatement:
+        case Syntax.VariableStatement:
           if (hasSyntacticModifier(node, ModifierFlags.Export)) {
             for (const decl of (<VariableStatement>node).declarationList.declarations) {
               exportedNames = collectExportedVariableInfo(decl, uniqueExports, exportedNames);
@@ -149,7 +149,7 @@ namespace qnr {
           }
           break;
 
-        case SyntaxKind.FunctionDeclaration:
+        case Syntax.FunctionDeclaration:
           if (hasSyntacticModifier(node, ModifierFlags.Export)) {
             if (hasSyntacticModifier(node, ModifierFlags.Default)) {
               // export default function() { }
@@ -169,7 +169,7 @@ namespace qnr {
           }
           break;
 
-        case SyntaxKind.ClassDeclaration:
+        case Syntax.ClassDeclaration:
           if (hasSyntacticModifier(node, ModifierFlags.Export)) {
             if (hasSyntacticModifier(node, ModifierFlags.Default)) {
               // export default class { }
@@ -241,7 +241,7 @@ namespace qnr {
    *  - this is mostly subjective beyond the requirement that the expression not be sideeffecting
    */
   export function isSimpleCopiableExpression(expression: Expression) {
-    return StringLiteral.like(expression) || expression.kind === SyntaxKind.NumericLiteral || isKeyword(expression.kind) || isIdentifier(expression);
+    return StringLiteral.like(expression) || expression.kind === Syntax.NumericLiteral || isKeyword(expression.kind) || isIdentifier(expression);
   }
 
   /**
@@ -254,35 +254,35 @@ namespace qnr {
   }
 
   export function isCompoundAssignment(kind: BinaryOperator): kind is CompoundAssignmentOperator {
-    return kind >= SyntaxKind.FirstCompoundAssignment && kind <= SyntaxKind.LastCompoundAssignment;
+    return kind >= Syntax.FirstCompoundAssignment && kind <= Syntax.LastCompoundAssignment;
   }
 
   export function getNonAssignmentOperatorForCompoundAssignment(kind: CompoundAssignmentOperator): BitwiseOperatorOrHigher {
     switch (kind) {
-      case SyntaxKind.PlusEqualsToken:
-        return SyntaxKind.PlusToken;
-      case SyntaxKind.MinusEqualsToken:
-        return SyntaxKind.MinusToken;
-      case SyntaxKind.AsteriskEqualsToken:
-        return SyntaxKind.AsteriskToken;
-      case SyntaxKind.Asterisk2EqualsToken:
-        return SyntaxKind.Asterisk2Token;
-      case SyntaxKind.SlashEqualsToken:
-        return SyntaxKind.SlashToken;
-      case SyntaxKind.PercentEqualsToken:
-        return SyntaxKind.PercentToken;
-      case SyntaxKind.LessThan2EqualsToken:
-        return SyntaxKind.LessThan2Token;
-      case SyntaxKind.GreaterThan2EqualsToken:
-        return SyntaxKind.GreaterThan2Token;
-      case SyntaxKind.GreaterThan3EqualsToken:
-        return SyntaxKind.GreaterThan3Token;
-      case SyntaxKind.AmpersandEqualsToken:
-        return SyntaxKind.AmpersandToken;
-      case SyntaxKind.BarEqualsToken:
-        return SyntaxKind.BarToken;
-      case SyntaxKind.CaretEqualsToken:
-        return SyntaxKind.CaretToken;
+      case Syntax.PlusEqualsToken:
+        return Syntax.PlusToken;
+      case Syntax.MinusEqualsToken:
+        return Syntax.MinusToken;
+      case Syntax.AsteriskEqualsToken:
+        return Syntax.AsteriskToken;
+      case Syntax.Asterisk2EqualsToken:
+        return Syntax.Asterisk2Token;
+      case Syntax.SlashEqualsToken:
+        return Syntax.SlashToken;
+      case Syntax.PercentEqualsToken:
+        return Syntax.PercentToken;
+      case Syntax.LessThan2EqualsToken:
+        return Syntax.LessThan2Token;
+      case Syntax.GreaterThan2EqualsToken:
+        return Syntax.GreaterThan2Token;
+      case Syntax.GreaterThan3EqualsToken:
+        return Syntax.GreaterThan3Token;
+      case Syntax.AmpersandEqualsToken:
+        return Syntax.AmpersandToken;
+      case Syntax.BarEqualsToken:
+        return Syntax.BarToken;
+      case Syntax.CaretEqualsToken:
+        return Syntax.CaretToken;
     }
   }
 
@@ -361,6 +361,6 @@ namespace qnr {
    * @param isStatic A value indicating whether the member should be a static or instance member.
    */
   export function isInitializedProperty(member: ClassElement): member is PropertyDeclaration & { initializer: Expression } {
-    return member.kind === SyntaxKind.PropertyDeclaration && (<PropertyDeclaration>member).initializer !== undefined;
+    return member.kind === Syntax.PropertyDeclaration && (<PropertyDeclaration>member).initializer !== undefined;
   }
 }

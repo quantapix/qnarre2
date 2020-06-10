@@ -26,11 +26,7 @@ namespace qnr {
 
   export const noTransformers: EmitTransformers = { scriptTransformers: emptyArray, declarationTransformers: emptyArray };
 
-  export function getTransformers(
-    compilerOptions: CompilerOptions,
-    customTransformers?: CustomTransformers,
-    emitOnlyDtsFiles?: boolean
-  ): EmitTransformers {
+  export function getTransformers(compilerOptions: CompilerOptions, customTransformers?: CustomTransformers, emitOnlyDtsFiles?: boolean): EmitTransformers {
     return {
       scriptTransformers: getScriptTransformers(compilerOptions, customTransformers, emitOnlyDtsFiles),
       declarationTransformers: getDeclarationTransformers(customTransformers),
@@ -95,15 +91,11 @@ namespace qnr {
     };
   }
 
-  function wrapScriptTransformerFactory(
-    transformer: TransformerFactory<SourceFile> | CustomTransformerFactory
-  ): TransformerFactory<Bundle | SourceFile> {
+  function wrapScriptTransformerFactory(transformer: TransformerFactory<SourceFile> | CustomTransformerFactory): TransformerFactory<Bundle | SourceFile> {
     return wrapCustomTransformerFactory(transformer, chainBundle);
   }
 
-  function wrapDeclarationTransformerFactory(
-    transformer: TransformerFactory<Bundle | SourceFile> | CustomTransformerFactory
-  ): TransformerFactory<Bundle | SourceFile> {
+  function wrapDeclarationTransformerFactory(transformer: TransformerFactory<Bundle | SourceFile> | CustomTransformerFactory): TransformerFactory<Bundle | SourceFile> {
     return wrapCustomTransformerFactory(transformer, identity);
   }
 
@@ -133,7 +125,7 @@ namespace qnr {
     transformers: readonly TransformerFactory<T>[],
     allowDtsFiles: boolean
   ): TransformationResult<T> {
-    const enabledSyntaxKindFeatures = new Array<SyntaxKindFeatureFlags>(SyntaxKind.Count);
+    const enabledSyntaxKindFeatures = new Array<SyntaxKindFeatureFlags>(Syntax.Count);
     let lexicalEnvironmentVariableDeclarations: VariableDeclaration[];
     let lexicalEnvironmentFunctionDeclarations: FunctionDeclaration[];
     let lexicalEnvironmentStatements: Statement[];
@@ -234,9 +226,9 @@ namespace qnr {
     }
 
     /**
-     * Enables expression substitutions in the pretty printer for the provided SyntaxKind.
+     * Enables expression substitutions in the pretty printer for the provided Syntax.
      */
-    function enableSubstitution(kind: SyntaxKind) {
+    function enableSubstitution(kind: Syntax) {
       assert(state < TransformationState.Completed, 'Cannot modify the transformation context after transformation has completed.');
       enabledSyntaxKindFeatures[kind] |= SyntaxKindFeatureFlags.Substitution;
     }
@@ -245,9 +237,7 @@ namespace qnr {
      * Determines whether expression substitutions are enabled for the provided node.
      */
     function isSubstitutionEnabled(node: Node) {
-      return (
-        (enabledSyntaxKindFeatures[node.kind] & SyntaxKindFeatureFlags.Substitution) !== 0 && (getEmitFlags(node) & EmitFlags.NoSubstitution) === 0
-      );
+      return (enabledSyntaxKindFeatures[node.kind] & SyntaxKindFeatureFlags.Substitution) !== 0 && (getEmitFlags(node) & EmitFlags.NoSubstitution) === 0;
     }
 
     /**
@@ -263,9 +253,9 @@ namespace qnr {
     }
 
     /**
-     * Enables before/after emit notifications in the pretty printer for the provided SyntaxKind.
+     * Enables before/after emit notifications in the pretty printer for the provided Syntax.
      */
-    function enableEmitNotification(kind: SyntaxKind) {
+    function enableEmitNotification(kind: Syntax) {
       assert(state < TransformationState.Completed, 'Cannot modify the transformation context after transformation has completed.');
       enabledSyntaxKindFeatures[kind] |= SyntaxKindFeatureFlags.EmitNotifications;
     }
@@ -275,10 +265,7 @@ namespace qnr {
      * printer when it emits a node.
      */
     function isEmitNotificationEnabled(node: Node) {
-      return (
-        (enabledSyntaxKindFeatures[node.kind] & SyntaxKindFeatureFlags.EmitNotifications) !== 0 ||
-        (getEmitFlags(node) & EmitFlags.AdviseOnEmitNode) !== 0
-      );
+      return (enabledSyntaxKindFeatures[node.kind] & SyntaxKindFeatureFlags.EmitNotifications) !== 0 || (getEmitFlags(node) & EmitFlags.AdviseOnEmitNode) !== 0;
     }
 
     /**

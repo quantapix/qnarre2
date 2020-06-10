@@ -36,26 +36,26 @@ namespace qnr {
     // A module is uninstantiated if it contains only
     switch (node.kind) {
       // 1. interface declarations, type alias declarations
-      case SyntaxKind.InterfaceDeclaration:
-      case SyntaxKind.TypeAliasDeclaration:
+      case Syntax.InterfaceDeclaration:
+      case Syntax.TypeAliasDeclaration:
         return ModuleInstanceState.NonInstantiated;
       // 2. const enum declarations
-      case SyntaxKind.EnumDeclaration:
+      case Syntax.EnumDeclaration:
         if (isEnumConst(node as EnumDeclaration)) {
           return ModuleInstanceState.ConstEnumOnly;
         }
         break;
       // 3. non-exported import declarations
-      case SyntaxKind.ImportDeclaration:
-      case SyntaxKind.ImportEqualsDeclaration:
+      case Syntax.ImportDeclaration:
+      case Syntax.ImportEqualsDeclaration:
         if (!hasSyntacticModifier(node, ModifierFlags.Export)) {
           return ModuleInstanceState.NonInstantiated;
         }
         break;
       // 4. Export alias declarations pointing at only uninstantiated modules or things uninstantiated modules contain
-      case SyntaxKind.ExportDeclaration:
+      case Syntax.ExportDeclaration:
         const exportDeclaration = node as ExportDeclaration;
-        if (!exportDeclaration.moduleSpecifier && exportDeclaration.exportClause && exportDeclaration.exportClause.kind === SyntaxKind.NamedExports) {
+        if (!exportDeclaration.moduleSpecifier && exportDeclaration.exportClause && exportDeclaration.exportClause.kind === Syntax.NamedExports) {
           let state = ModuleInstanceState.NonInstantiated;
           for (const specifier of exportDeclaration.exportClause.elements) {
             const specifierState = getModuleInstanceStateForAliasTarget(specifier, visited);
@@ -70,7 +70,7 @@ namespace qnr {
         }
         break;
       // 5. other uninstantiated module declarations.
-      case SyntaxKind.ModuleBlock: {
+      case Syntax.ModuleBlock: {
         let state = ModuleInstanceState.NonInstantiated;
         forEachChild(node, (n) => {
           const childState = getModuleInstanceStateCached(n, visited);
@@ -92,9 +92,9 @@ namespace qnr {
         });
         return state;
       }
-      case SyntaxKind.ModuleDeclaration:
+      case Syntax.ModuleDeclaration:
         return getModuleInstanceState(node as ModuleDeclaration, visited);
-      case SyntaxKind.Identifier:
+      case Syntax.Identifier:
         // Only jsdoc typedef definition can exist in jsdoc namespace, and it should
         // be considered the same as type alias
         if ((<Identifier>node).isInJSDocNamespace) {
@@ -320,7 +320,7 @@ namespace qnr {
     // Should not be called on a declaration with a computed property name,
     // unless it is a well known Symbol.
     function getDeclarationName(node: Declaration): __String | undefined {
-      if (node.kind === SyntaxKind.ExportAssignment) {
+      if (node.kind === Syntax.ExportAssignment) {
         return (<ExportAssignment>node).isExportEquals ? InternalSymbolName.ExportEquals : InternalSymbolName.Default;
       }
 
@@ -330,7 +330,7 @@ namespace qnr {
           const moduleName = getTextOfIdentifierOrLiteral(name as Identifier | StringLiteral);
           return (isGlobalScopeAugmentation(<ModuleDeclaration>node) ? '__global' : `"${moduleName}"`) as __String;
         }
-        if (name.kind === SyntaxKind.ComputedPropertyName) {
+        if (name.kind === Syntax.ComputedPropertyName) {
           const nameExpression = name.expression;
           // treat computed property names where expression is string/numeric literal as just string/numeric literal
           if (StringLiteral.orNumericLiteralLike(nameExpression)) {
@@ -359,37 +359,37 @@ namespace qnr {
         return isPropertyNameLiteral(name) ? getEscapedTextOfIdentifierOrLiteral(name) : undefined;
       }
       switch (node.kind) {
-        case SyntaxKind.Constructor:
+        case Syntax.Constructor:
           return InternalSymbolName.Constructor;
-        case SyntaxKind.FunctionType:
-        case SyntaxKind.CallSignature:
-        case SyntaxKind.JSDocSignature:
+        case Syntax.FunctionType:
+        case Syntax.CallSignature:
+        case Syntax.JSDocSignature:
           return InternalSymbolName.Call;
-        case SyntaxKind.ConstructorType:
-        case SyntaxKind.ConstructSignature:
+        case Syntax.ConstructorType:
+        case Syntax.ConstructSignature:
           return InternalSymbolName.New;
-        case SyntaxKind.IndexSignature:
+        case Syntax.IndexSignature:
           return InternalSymbolName.Index;
-        case SyntaxKind.ExportDeclaration:
+        case Syntax.ExportDeclaration:
           return InternalSymbolName.ExportStar;
-        case SyntaxKind.SourceFile:
+        case Syntax.SourceFile:
           // json file should behave as
           // module.exports = ...
           return InternalSymbolName.ExportEquals;
-        case SyntaxKind.BinaryExpression:
+        case Syntax.BinaryExpression:
           if (getAssignmentDeclarationKind(node as BinaryExpression) === AssignmentDeclarationKind.ModuleExports) {
             // module.exports = ...
             return InternalSymbolName.ExportEquals;
           }
           fail('Unknown binary declaration kind');
           break;
-        case SyntaxKind.JSDocFunctionType:
+        case Syntax.JSDocFunctionType:
           return isJSDocConstructSignature(node) ? InternalSymbolName.New : InternalSymbolName.Call;
-        case SyntaxKind.Parameter:
+        case Syntax.Parameter:
           // Parameters with names are handled at the top of this function.  Parameters
           // without names can only come from JSDocFunctionTypes.
           assert(
-            node.parent.kind === SyntaxKind.JSDocFunctionType,
+            node.parent.kind === Syntax.JSDocFunctionType,
             'Impossible parameter parent kind',
             () => `parent is: ${(ts as any).SyntaxKind ? (ts as any).SyntaxKind[node.parent.kind] : node.parent.kind}, expected JSDocFunctionType`
           );
@@ -492,7 +492,7 @@ namespace qnr {
                 // Error on multiple export default in the following case:
                 // 1. multiple export default of class declaration or function declaration by checking NodeFlags.Default
                 // 2. multiple export default of export assignment. This one doesn't have NodeFlags.Default on (as export default doesn't considered as modifiers)
-                if (symbol.declarations && symbol.declarations.length && node.kind === SyntaxKind.ExportAssignment && !(<ExportAssignment>node).isExportEquals) {
+                if (symbol.declarations && symbol.declarations.length && node.kind === Syntax.ExportAssignment && !(<ExportAssignment>node).isExportEquals) {
                   message = Diagnostics.A_module_cannot_have_multiple_default_exports;
                   messageNeedsName = false;
                   multipleDefaultExports = true;
@@ -544,7 +544,7 @@ namespace qnr {
     function declareModuleMember(node: Declaration, symbolFlags: SymbolFlags, symbolExcludes: SymbolFlags): Symbol {
       const hasExportModifier = getCombinedModifierFlags(node) & ModifierFlags.Export;
       if (symbolFlags & SymbolFlags.Alias) {
-        if (node.kind === SyntaxKind.ExportSpecifier || (node.kind === SyntaxKind.ImportEqualsDeclaration && hasExportModifier)) {
+        if (node.kind === Syntax.ExportSpecifier || (node.kind === Syntax.ImportEqualsDeclaration && hasExportModifier)) {
           return declareSymbol(container.symbol.exports!, container.symbol, node, symbolFlags, symbolExcludes);
         } else {
           return declareSymbol(container.locals!, /*parent*/ undefined, node, symbolFlags, symbolExcludes);
@@ -610,7 +610,7 @@ namespace qnr {
       // for it.  We must clear this so we don't accidentally move any stale data forward from
       // a previous compilation.
       if (containerFlags & ContainerFlags.IsContainer) {
-        if (node.kind !== SyntaxKind.ArrowFunction) {
+        if (node.kind !== Syntax.ArrowFunction) {
           thisParentContainer = container;
         }
         container = blockScopeContainer = node;
@@ -646,9 +646,7 @@ namespace qnr {
         // We create a return control flow graph for IIFEs and constructors. For constructors
         // we use the return control flow graph in strict property initialization checks.
         currentReturnTarget =
-          isIIFE || node.kind === SyntaxKind.Constructor || (isInJSFile && (node.kind === SyntaxKind.FunctionDeclaration || node.kind === SyntaxKind.FunctionExpression))
-            ? createBranchLabel()
-            : undefined;
+          isIIFE || node.kind === Syntax.Constructor || (isInJSFile && (node.kind === Syntax.FunctionDeclaration || node.kind === Syntax.FunctionExpression)) ? createBranchLabel() : undefined;
         currentExceptionTarget = undefined;
         currentBreakTarget = undefined;
         currentContinueTarget = undefined;
@@ -662,14 +660,14 @@ namespace qnr {
           if (hasExplicitReturn) node.flags |= NodeFlags.HasExplicitReturn;
           (<FunctionLikeDeclaration>node).endFlowNode = currentFlow;
         }
-        if (node.kind === SyntaxKind.SourceFile) {
+        if (node.kind === Syntax.SourceFile) {
           node.flags |= emitFlags;
         }
 
         if (currentReturnTarget) {
           addAntecedent(currentReturnTarget, currentFlow);
           currentFlow = finishFlowLabel(currentReturnTarget);
-          if (node.kind === SyntaxKind.Constructor || (isInJSFile && (node.kind === SyntaxKind.FunctionDeclaration || node.kind === SyntaxKind.FunctionExpression))) {
+          if (node.kind === Syntax.Constructor || (isInJSFile && (node.kind === Syntax.FunctionDeclaration || node.kind === Syntax.FunctionExpression))) {
             (<FunctionLikeDeclaration>node).returnFlowNode = currentFlow;
           }
         }
@@ -712,8 +710,8 @@ namespace qnr {
     }
 
     function bindEachFunctionsFirst(nodes: NodeArray<Node> | undefined): void {
-      bindEach(nodes, (n) => (n.kind === SyntaxKind.FunctionDeclaration ? bind(n) : undefined));
-      bindEach(nodes, (n) => (n.kind !== SyntaxKind.FunctionDeclaration ? bind(n) : undefined));
+      bindEach(nodes, (n) => (n.kind === Syntax.FunctionDeclaration ? bind(n) : undefined));
+      bindEach(nodes, (n) => (n.kind !== Syntax.FunctionDeclaration ? bind(n) : undefined));
     }
 
     function bindEach(nodes: NodeArray<Node> | undefined, bindFunction: (node: Node) => void = bind): void {
@@ -746,93 +744,93 @@ namespace qnr {
         bindJSDoc(node);
         return;
       }
-      if (node.kind >= SyntaxKind.FirstStatement && node.kind <= SyntaxKind.LastStatement && !options.allowUnreachableCode) {
+      if (node.kind >= Syntax.FirstStatement && node.kind <= Syntax.LastStatement && !options.allowUnreachableCode) {
         node.flowNode = currentFlow;
       }
       switch (node.kind) {
-        case SyntaxKind.WhileStatement:
+        case Syntax.WhileStatement:
           bindWhileStatement(<WhileStatement>node);
           break;
-        case SyntaxKind.DoStatement:
+        case Syntax.DoStatement:
           bindDoStatement(<DoStatement>node);
           break;
-        case SyntaxKind.ForStatement:
+        case Syntax.ForStatement:
           bindForStatement(<ForStatement>node);
           break;
-        case SyntaxKind.ForInStatement:
-        case SyntaxKind.ForOfStatement:
+        case Syntax.ForInStatement:
+        case Syntax.ForOfStatement:
           bindForInOrForOfStatement(<ForInOrOfStatement>node);
           break;
-        case SyntaxKind.IfStatement:
+        case Syntax.IfStatement:
           bindIfStatement(<IfStatement>node);
           break;
-        case SyntaxKind.ReturnStatement:
-        case SyntaxKind.ThrowStatement:
+        case Syntax.ReturnStatement:
+        case Syntax.ThrowStatement:
           bindReturnOrThrow(<ReturnStatement | ThrowStatement>node);
           break;
-        case SyntaxKind.BreakStatement:
-        case SyntaxKind.ContinueStatement:
+        case Syntax.BreakStatement:
+        case Syntax.ContinueStatement:
           bindBreakOrContinueStatement(<BreakOrContinueStatement>node);
           break;
-        case SyntaxKind.TryStatement:
+        case Syntax.TryStatement:
           bindTryStatement(<TryStatement>node);
           break;
-        case SyntaxKind.SwitchStatement:
+        case Syntax.SwitchStatement:
           bindSwitchStatement(<SwitchStatement>node);
           break;
-        case SyntaxKind.CaseBlock:
+        case Syntax.CaseBlock:
           bindCaseBlock(<CaseBlock>node);
           break;
-        case SyntaxKind.CaseClause:
+        case Syntax.CaseClause:
           bindCaseClause(<CaseClause>node);
           break;
-        case SyntaxKind.ExpressionStatement:
+        case Syntax.ExpressionStatement:
           bindExpressionStatement(<ExpressionStatement>node);
           break;
-        case SyntaxKind.LabeledStatement:
+        case Syntax.LabeledStatement:
           bindLabeledStatement(<LabeledStatement>node);
           break;
-        case SyntaxKind.PrefixUnaryExpression:
+        case Syntax.PrefixUnaryExpression:
           bindPrefixUnaryExpressionFlow(<PrefixUnaryExpression>node);
           break;
-        case SyntaxKind.PostfixUnaryExpression:
+        case Syntax.PostfixUnaryExpression:
           bindPostfixUnaryExpressionFlow(<PostfixUnaryExpression>node);
           break;
-        case SyntaxKind.BinaryExpression:
+        case Syntax.BinaryExpression:
           bindBinaryExpressionFlow(<BinaryExpression>node);
           break;
-        case SyntaxKind.DeleteExpression:
+        case Syntax.DeleteExpression:
           bindDeleteExpressionFlow(<DeleteExpression>node);
           break;
-        case SyntaxKind.ConditionalExpression:
+        case Syntax.ConditionalExpression:
           bindConditionalExpressionFlow(<ConditionalExpression>node);
           break;
-        case SyntaxKind.VariableDeclaration:
+        case Syntax.VariableDeclaration:
           bindVariableDeclarationFlow(<VariableDeclaration>node);
           break;
-        case SyntaxKind.PropertyAccessExpression:
-        case SyntaxKind.ElementAccessExpression:
+        case Syntax.PropertyAccessExpression:
+        case Syntax.ElementAccessExpression:
           bindAccessExpressionFlow(<AccessExpression>node);
           break;
-        case SyntaxKind.CallExpression:
+        case Syntax.CallExpression:
           bindCallExpressionFlow(<CallExpression>node);
           break;
-        case SyntaxKind.NonNullExpression:
+        case Syntax.NonNullExpression:
           bindNonNullExpressionFlow(<NonNullExpression>node);
           break;
-        case SyntaxKind.JSDocTypedefTag:
-        case SyntaxKind.JSDocCallbackTag:
-        case SyntaxKind.JSDocEnumTag:
+        case Syntax.JSDocTypedefTag:
+        case Syntax.JSDocCallbackTag:
+        case Syntax.JSDocEnumTag:
           bindJSDocTypeAlias(node as JSDocTypedefTag | JSDocCallbackTag | JSDocEnumTag);
           break;
         // In source files and blocks, bind functions first to match hoisting that occurs at runtime
-        case SyntaxKind.SourceFile: {
+        case Syntax.SourceFile: {
           bindEachFunctionsFirst((node as SourceFile).statements);
           bind((node as SourceFile).endOfFileToken);
           break;
         }
-        case SyntaxKind.Block:
-        case SyntaxKind.ModuleBlock:
+        case Syntax.Block:
+        case Syntax.ModuleBlock:
           bindEachFunctionsFirst((node as Block).statements);
           break;
         default:
@@ -844,20 +842,20 @@ namespace qnr {
 
     function isNarrowingExpression(expr: Expression): boolean {
       switch (expr.kind) {
-        case SyntaxKind.Identifier:
-        case SyntaxKind.ThisKeyword:
-        case SyntaxKind.PropertyAccessExpression:
-        case SyntaxKind.ElementAccessExpression:
+        case Syntax.Identifier:
+        case Syntax.ThisKeyword:
+        case Syntax.PropertyAccessExpression:
+        case Syntax.ElementAccessExpression:
           return containsNarrowableReference(expr);
-        case SyntaxKind.CallExpression:
+        case Syntax.CallExpression:
           return hasNarrowableArgument(<CallExpression>expr);
-        case SyntaxKind.ParenthesizedExpression:
+        case Syntax.ParenthesizedExpression:
           return isNarrowingExpression((<ParenthesizedExpression>expr).expression);
-        case SyntaxKind.BinaryExpression:
+        case Syntax.BinaryExpression:
           return isNarrowingBinaryExpression(<BinaryExpression>expr);
-        case SyntaxKind.PrefixUnaryExpression:
-          return (<PrefixUnaryExpression>expr).operator === SyntaxKind.ExclamationToken && isNarrowingExpression((<PrefixUnaryExpression>expr).operand);
-        case SyntaxKind.TypeOfExpression:
+        case Syntax.PrefixUnaryExpression:
+          return (<PrefixUnaryExpression>expr).operator === Syntax.ExclamationToken && isNarrowingExpression((<PrefixUnaryExpression>expr).operand);
+        case Syntax.TypeOfExpression:
           return isNarrowingExpression((<TypeOfExpression>expr).expression);
       }
       return false;
@@ -865,9 +863,9 @@ namespace qnr {
 
     function isNarrowableReference(expr: Expression): boolean {
       return (
-        expr.kind === SyntaxKind.Identifier ||
-        expr.kind === SyntaxKind.ThisKeyword ||
-        expr.kind === SyntaxKind.SuperKeyword ||
+        expr.kind === Syntax.Identifier ||
+        expr.kind === Syntax.ThisKeyword ||
+        expr.kind === Syntax.SuperKeyword ||
         ((isPropertyAccessExpression(expr) || isNonNullExpression(expr) || isParenthesizedExpression(expr)) && isNarrowableReference(expr.expression)) ||
         (isElementAccessExpression(expr) && StringLiteral.orNumericLiteralLike(expr.argumentExpression) && isNarrowableReference(expr.expression))
       );
@@ -885,7 +883,7 @@ namespace qnr {
           }
         }
       }
-      if (expr.expression.kind === SyntaxKind.PropertyAccessExpression && containsNarrowableReference((<PropertyAccessExpression>expr.expression).expression)) {
+      if (expr.expression.kind === Syntax.PropertyAccessExpression && containsNarrowableReference((<PropertyAccessExpression>expr.expression).expression)) {
         return true;
       }
       return false;
@@ -901,18 +899,18 @@ namespace qnr {
 
     function isNarrowingBinaryExpression(expr: BinaryExpression) {
       switch (expr.operatorToken.kind) {
-        case SyntaxKind.EqualsToken:
+        case Syntax.EqualsToken:
           return containsNarrowableReference(expr.left);
-        case SyntaxKind.Equals2Token:
-        case SyntaxKind.ExclamationEqualsToken:
-        case SyntaxKind.Equals3Token:
-        case SyntaxKind.ExclamationEquals2Token:
+        case Syntax.Equals2Token:
+        case Syntax.ExclamationEqualsToken:
+        case Syntax.Equals3Token:
+        case Syntax.ExclamationEquals2Token:
           return isNarrowableOperand(expr.left) || isNarrowableOperand(expr.right) || isNarrowingTypeofOperands(expr.right, expr.left) || isNarrowingTypeofOperands(expr.left, expr.right);
-        case SyntaxKind.InstanceOfKeyword:
+        case Syntax.InstanceOfKeyword:
           return isNarrowableOperand(expr.left);
-        case SyntaxKind.InKeyword:
+        case Syntax.InKeyword:
           return isNarrowableInOperands(expr.left, expr.right);
-        case SyntaxKind.CommaToken:
+        case Syntax.CommaToken:
           return isNarrowingExpression(expr.right);
       }
       return false;
@@ -920,13 +918,13 @@ namespace qnr {
 
     function isNarrowableOperand(expr: Expression): boolean {
       switch (expr.kind) {
-        case SyntaxKind.ParenthesizedExpression:
+        case Syntax.ParenthesizedExpression:
           return isNarrowableOperand((<ParenthesizedExpression>expr).expression);
-        case SyntaxKind.BinaryExpression:
+        case Syntax.BinaryExpression:
           switch ((<BinaryExpression>expr).operatorToken.kind) {
-            case SyntaxKind.EqualsToken:
+            case Syntax.EqualsToken:
               return isNarrowableOperand((<BinaryExpression>expr).left);
-            case SyntaxKind.CommaToken:
+            case Syntax.CommaToken:
               return isNarrowableOperand((<BinaryExpression>expr).right);
           }
       }
@@ -965,7 +963,7 @@ namespace qnr {
         return flags & FlowFlags.TrueCondition ? antecedent : unreachableFlow;
       }
       if (
-        ((expression.kind === SyntaxKind.TrueKeyword && flags & FlowFlags.FalseCondition) || (expression.kind === SyntaxKind.FalseKeyword && flags & FlowFlags.TrueCondition)) &&
+        ((expression.kind === Syntax.TrueKeyword && flags & FlowFlags.FalseCondition) || (expression.kind === Syntax.FalseKeyword && flags & FlowFlags.TrueCondition)) &&
         !isExpressionOfOptionalChainRoot(expression) &&
         !isNullishCoalesce(expression.parent)
       ) {
@@ -1011,12 +1009,12 @@ namespace qnr {
     function isStatementCondition(node: Node) {
       const parent = node.parent;
       switch (parent.kind) {
-        case SyntaxKind.IfStatement:
-        case SyntaxKind.WhileStatement:
-        case SyntaxKind.DoStatement:
+        case Syntax.IfStatement:
+        case Syntax.WhileStatement:
+        case Syntax.DoStatement:
           return (<IfStatement | WhileStatement | DoStatement>parent).expression === node;
-        case SyntaxKind.ForStatement:
-        case SyntaxKind.ConditionalExpression:
+        case Syntax.ForStatement:
+        case Syntax.ConditionalExpression:
           return (<ForStatement | ConditionalExpression>parent).condition === node;
       }
       return false;
@@ -1024,23 +1022,23 @@ namespace qnr {
 
     function isLogicalExpression(node: Node) {
       while (true) {
-        if (node.kind === SyntaxKind.ParenthesizedExpression) {
+        if (node.kind === Syntax.ParenthesizedExpression) {
           node = (<ParenthesizedExpression>node).expression;
-        } else if (node.kind === SyntaxKind.PrefixUnaryExpression && (<PrefixUnaryExpression>node).operator === SyntaxKind.ExclamationToken) {
+        } else if (node.kind === Syntax.PrefixUnaryExpression && (<PrefixUnaryExpression>node).operator === Syntax.ExclamationToken) {
           node = (<PrefixUnaryExpression>node).operand;
         } else {
           return (
-            node.kind === SyntaxKind.BinaryExpression &&
-            ((<BinaryExpression>node).operatorToken.kind === SyntaxKind.Ampersand2Token ||
-              (<BinaryExpression>node).operatorToken.kind === SyntaxKind.Bar2Token ||
-              (<BinaryExpression>node).operatorToken.kind === SyntaxKind.Question2Token)
+            node.kind === Syntax.BinaryExpression &&
+            ((<BinaryExpression>node).operatorToken.kind === Syntax.Ampersand2Token ||
+              (<BinaryExpression>node).operatorToken.kind === Syntax.Bar2Token ||
+              (<BinaryExpression>node).operatorToken.kind === Syntax.Question2Token)
           );
         }
       }
     }
 
     function isTopLevelLogicalExpression(node: Node): boolean {
-      while (isParenthesizedExpression(node.parent) || (isPrefixUnaryExpression(node.parent) && node.parent.operator === SyntaxKind.ExclamationToken)) {
+      while (isParenthesizedExpression(node.parent) || (isPrefixUnaryExpression(node.parent) && node.parent.operator === Syntax.ExclamationToken)) {
         node = node.parent;
       }
       return !isStatementCondition(node) && !isLogicalExpression(node.parent) && !(isOptionalChain(node.parent) && node.parent.expression === node);
@@ -1076,7 +1074,7 @@ namespace qnr {
 
     function setContinueTarget(node: Node, target: FlowLabel) {
       let label = activeLabelList;
-      while (label && node.parent.kind === SyntaxKind.LabeledStatement) {
+      while (label && node.parent.kind === Syntax.LabeledStatement) {
         label.continueTarget = target;
         label = label.next;
         node = node.parent;
@@ -1131,12 +1129,12 @@ namespace qnr {
       bind(node.expression);
       addAntecedent(preLoopLabel, currentFlow);
       currentFlow = preLoopLabel;
-      if (node.kind === SyntaxKind.ForOfStatement) {
+      if (node.kind === Syntax.ForOfStatement) {
         bind(node.awaitModifier);
       }
       addAntecedent(postLoopLabel, currentFlow);
       bind(node.initializer);
-      if (node.initializer.kind !== SyntaxKind.VariableDeclarationList) {
+      if (node.initializer.kind !== Syntax.VariableDeclarationList) {
         bindAssignmentTargetFlow(node.initializer);
       }
       bindIterativeStatement(node.statement, postLoopLabel, preLoopLabel);
@@ -1160,7 +1158,7 @@ namespace qnr {
 
     function bindReturnOrThrow(node: ReturnStatement | ThrowStatement): void {
       bind(node.expression);
-      if (node.kind === SyntaxKind.ReturnStatement) {
+      if (node.kind === Syntax.ReturnStatement) {
         hasExplicitReturn = true;
         if (currentReturnTarget) {
           addAntecedent(currentReturnTarget, currentFlow);
@@ -1179,7 +1177,7 @@ namespace qnr {
     }
 
     function bindBreakOrContinueFlow(node: BreakOrContinueStatement, breakTarget: FlowLabel | undefined, continueTarget: FlowLabel | undefined) {
-      const flowLabel = node.kind === SyntaxKind.BreakStatement ? breakTarget : continueTarget;
+      const flowLabel = node.kind === Syntax.BreakStatement ? breakTarget : continueTarget;
       if (flowLabel) {
         addAntecedent(flowLabel, currentFlow);
         currentFlow = unreachableFlow;
@@ -1279,7 +1277,7 @@ namespace qnr {
       preSwitchCaseFlow = currentFlow;
       bind(node.caseBlock);
       addAntecedent(postSwitchLabel, currentFlow);
-      const hasDefault = forEach(node.caseBlock.clauses, (c) => c.kind === SyntaxKind.DefaultClause);
+      const hasDefault = forEach(node.caseBlock.clauses, (c) => c.kind === Syntax.DefaultClause);
       // We mark a switch statement as possibly exhaustive if it has no default clause and if all
       // case clauses have unreachable end points (e.g. they all return). Note, we no longer need
       // this property in control flow analysis, it's there only for backwards compatibility.
@@ -1331,9 +1329,9 @@ namespace qnr {
       bind(node.expression);
       // A top level call expression with a dotted function name and at least one argument
       // is potentially an assertion and is therefore included in the control flow.
-      if (node.expression.kind === SyntaxKind.CallExpression) {
+      if (node.expression.kind === Syntax.CallExpression) {
         const call = <CallExpression>node.expression;
-        if (isDottedName(call.expression) && call.expression.kind !== SyntaxKind.SuperKeyword) {
+        if (isDottedName(call.expression) && call.expression.kind !== Syntax.SuperKeyword) {
           currentFlow = createFlowCall(currentFlow, call);
         }
       }
@@ -1359,7 +1357,7 @@ namespace qnr {
     }
 
     function bindDestructuringTargetFlow(node: Expression) {
-      if (node.kind === SyntaxKind.BinaryExpression && (<BinaryExpression>node).operatorToken.kind === SyntaxKind.EqualsToken) {
+      if (node.kind === Syntax.BinaryExpression && (<BinaryExpression>node).operatorToken.kind === Syntax.EqualsToken) {
         bindAssignmentTargetFlow((<BinaryExpression>node).left);
       } else {
         bindAssignmentTargetFlow(node);
@@ -1369,21 +1367,21 @@ namespace qnr {
     function bindAssignmentTargetFlow(node: Expression) {
       if (isNarrowableReference(node)) {
         currentFlow = createFlowMutation(FlowFlags.Assignment, currentFlow, node);
-      } else if (node.kind === SyntaxKind.ArrayLiteralExpression) {
+      } else if (node.kind === Syntax.ArrayLiteralExpression) {
         for (const e of (<ArrayLiteralExpression>node).elements) {
-          if (e.kind === SyntaxKind.SpreadElement) {
+          if (e.kind === Syntax.SpreadElement) {
             bindAssignmentTargetFlow((<SpreadElement>e).expression);
           } else {
             bindDestructuringTargetFlow(e);
           }
         }
-      } else if (node.kind === SyntaxKind.ObjectLiteralExpression) {
+      } else if (node.kind === Syntax.ObjectLiteralExpression) {
         for (const p of (<ObjectLiteralExpression>node).properties) {
-          if (p.kind === SyntaxKind.PropertyAssignment) {
+          if (p.kind === Syntax.PropertyAssignment) {
             bindDestructuringTargetFlow(p.initializer);
-          } else if (p.kind === SyntaxKind.ShorthandPropertyAssignment) {
+          } else if (p.kind === Syntax.ShorthandPropertyAssignment) {
             bindAssignmentTargetFlow(p.name);
-          } else if (p.kind === SyntaxKind.SpreadAssignment) {
+          } else if (p.kind === Syntax.SpreadAssignment) {
             bindAssignmentTargetFlow(p.expression);
           }
         }
@@ -1392,7 +1390,7 @@ namespace qnr {
 
     function bindLogicalExpression(node: BinaryExpression, trueTarget: FlowLabel, falseTarget: FlowLabel) {
       const preRightLabel = createBranchLabel();
-      if (node.operatorToken.kind === SyntaxKind.Ampersand2Token) {
+      if (node.operatorToken.kind === Syntax.Ampersand2Token) {
         bindCondition(node.left, preRightLabel, falseTarget);
       } else {
         bindCondition(node.left, trueTarget, preRightLabel);
@@ -1403,7 +1401,7 @@ namespace qnr {
     }
 
     function bindPrefixUnaryExpressionFlow(node: PrefixUnaryExpression) {
-      if (node.operator === SyntaxKind.ExclamationToken) {
+      if (node.operator === Syntax.ExclamationToken) {
         const saveTrueTarget = currentTrueTarget;
         currentTrueTarget = currentFalseTarget;
         currentFalseTarget = saveTrueTarget;
@@ -1412,7 +1410,7 @@ namespace qnr {
         currentTrueTarget = saveTrueTarget;
       } else {
         bindEachChild(node);
-        if (node.operator === SyntaxKind.Plus2Token || node.operator === SyntaxKind.Minus2Token) {
+        if (node.operator === Syntax.Plus2Token || node.operator === Syntax.Minus2Token) {
           bindAssignmentTargetFlow(node.operand);
         }
       }
@@ -1420,7 +1418,7 @@ namespace qnr {
 
     function bindPostfixUnaryExpressionFlow(node: PostfixUnaryExpression) {
       bindEachChild(node);
-      if (node.operator === SyntaxKind.Plus2Token || node.operator === SyntaxKind.Minus2Token) {
+      if (node.operator === Syntax.Plus2Token || node.operator === Syntax.Minus2Token) {
         bindAssignmentTargetFlow(node.operand);
       }
     }
@@ -1482,7 +1480,7 @@ namespace qnr {
             // TODO: bindLogicalExpression is recursive - if we want to handle deeply nested `&&` expressions
             // we'll need to handle the `bindLogicalExpression` scenarios in this state machine, too
             // For now, though, since the common cases are chained `+`, leaving it recursive is fine
-            if (operator === SyntaxKind.Ampersand2Token || operator === SyntaxKind.Bar2Token || operator === SyntaxKind.Question2Token) {
+            if (operator === Syntax.Ampersand2Token || operator === Syntax.Bar2Token || operator === Syntax.Question2Token) {
               if (isTopLevelLogicalExpression(node)) {
                 const postExpressionLabel = createBranchLabel();
                 bindLogicalExpression(node, postExpressionLabel, postExpressionLabel);
@@ -1511,7 +1509,7 @@ namespace qnr {
             const operator = node.operatorToken.kind;
             if (isAssignmentOperator(operator) && !isAssignmentTarget(node)) {
               bindAssignmentTargetFlow(node.left);
-              if (operator === SyntaxKind.EqualsToken && node.left.kind === SyntaxKind.ElementAccessExpression) {
+              if (operator === Syntax.EqualsToken && node.left.kind === Syntax.ElementAccessExpression) {
                 const elementAccess = <ElementAccessExpression>node.left;
                 if (isNarrowableOperand(elementAccess.expression)) {
                   currentFlow = createFlowMutation(FlowFlags.ArrayMutation, currentFlow, node);
@@ -1576,7 +1574,7 @@ namespace qnr {
 
     function bindDeleteExpressionFlow(node: DeleteExpression) {
       bindEachChild(node);
-      if (node.expression.kind === SyntaxKind.PropertyAccessExpression) {
+      if (node.expression.kind === Syntax.PropertyAccessExpression) {
         bindAssignmentTargetFlow(node.expression);
       }
     }
@@ -1617,7 +1615,7 @@ namespace qnr {
 
     function bindJSDocTypeAlias(node: JSDocTypedefTag | JSDocCallbackTag | JSDocEnumTag) {
       node.tagName.parent = node;
-      if (node.kind !== SyntaxKind.JSDocEnumTag && node.fullName) {
+      if (node.kind !== Syntax.JSDocEnumTag && node.fullName) {
         setParentPointers(node, node.fullName);
       }
     }
@@ -1625,7 +1623,7 @@ namespace qnr {
     function bindJSDocClassTag(node: JSDocClassTag) {
       bindEachChild(node);
       const host = getHostSignatureFromJSDoc(node);
-      if (host && host.kind !== SyntaxKind.MethodDeclaration) {
+      if (host && host.kind !== Syntax.MethodDeclaration) {
         addDeclarationToSymbol(host.symbol, host, SymbolFlags.Class);
       }
     }
@@ -1640,15 +1638,15 @@ namespace qnr {
 
     function bindOptionalChainRest(node: OptionalChain) {
       switch (node.kind) {
-        case SyntaxKind.PropertyAccessExpression:
+        case Syntax.PropertyAccessExpression:
           bind(node.questionDotToken);
           bind(node.name);
           break;
-        case SyntaxKind.ElementAccessExpression:
+        case Syntax.ElementAccessExpression:
           bind(node.questionDotToken);
           bind(node.argumentExpression);
           break;
-        case SyntaxKind.CallExpression:
+        case Syntax.CallExpression:
           bind(node.questionDotToken);
           bindEach(node.typeArguments);
           bindEach(node.arguments);
@@ -1714,18 +1712,18 @@ namespace qnr {
         // an immediately invoked function expression (IIFE). Initialize the flowNode property to
         // the current control flow (which includes evaluation of the IIFE arguments).
         const expr = skipParentheses(node.expression);
-        if (expr.kind === SyntaxKind.FunctionExpression || expr.kind === SyntaxKind.ArrowFunction) {
+        if (expr.kind === Syntax.FunctionExpression || expr.kind === Syntax.ArrowFunction) {
           bindEach(node.typeArguments);
           bindEach(node.arguments);
           bind(node.expression);
         } else {
           bindEachChild(node);
-          if (node.expression.kind === SyntaxKind.SuperKeyword) {
+          if (node.expression.kind === Syntax.SuperKeyword) {
             currentFlow = createFlowCall(currentFlow, node);
           }
         }
       }
-      if (node.expression.kind === SyntaxKind.PropertyAccessExpression) {
+      if (node.expression.kind === Syntax.PropertyAccessExpression) {
         const propertyAccess = <PropertyAccessExpression>node.expression;
         if (isIdentifier(propertyAccess.name) && isNarrowableOperand(propertyAccess.expression) && isPushOrUnshiftIdentifier(propertyAccess.name)) {
           currentFlow = createFlowMutation(FlowFlags.ArrayMutation, currentFlow, node);
@@ -1735,64 +1733,64 @@ namespace qnr {
 
     function getContainerFlags(node: Node): ContainerFlags {
       switch (node.kind) {
-        case SyntaxKind.ClassExpression:
-        case SyntaxKind.ClassDeclaration:
-        case SyntaxKind.EnumDeclaration:
-        case SyntaxKind.ObjectLiteralExpression:
-        case SyntaxKind.TypeLiteral:
-        case SyntaxKind.JSDocTypeLiteral:
-        case SyntaxKind.JsxAttributes:
+        case Syntax.ClassExpression:
+        case Syntax.ClassDeclaration:
+        case Syntax.EnumDeclaration:
+        case Syntax.ObjectLiteralExpression:
+        case Syntax.TypeLiteral:
+        case Syntax.JSDocTypeLiteral:
+        case Syntax.JsxAttributes:
           return ContainerFlags.IsContainer;
 
-        case SyntaxKind.InterfaceDeclaration:
+        case Syntax.InterfaceDeclaration:
           return ContainerFlags.IsContainer | ContainerFlags.IsInterface;
 
-        case SyntaxKind.ModuleDeclaration:
-        case SyntaxKind.TypeAliasDeclaration:
-        case SyntaxKind.MappedType:
+        case Syntax.ModuleDeclaration:
+        case Syntax.TypeAliasDeclaration:
+        case Syntax.MappedType:
           return ContainerFlags.IsContainer | ContainerFlags.HasLocals;
 
-        case SyntaxKind.SourceFile:
+        case Syntax.SourceFile:
           return ContainerFlags.IsContainer | ContainerFlags.IsControlFlowContainer | ContainerFlags.HasLocals;
 
-        case SyntaxKind.MethodDeclaration:
+        case Syntax.MethodDeclaration:
           if (isObjectLiteralOrClassExpressionMethod(node)) {
             return (
               ContainerFlags.IsContainer | ContainerFlags.IsControlFlowContainer | ContainerFlags.HasLocals | ContainerFlags.IsFunctionLike | ContainerFlags.IsObjectLiteralOrClassExpressionMethod
             );
           }
         // falls through
-        case SyntaxKind.Constructor:
-        case SyntaxKind.FunctionDeclaration:
-        case SyntaxKind.MethodSignature:
-        case SyntaxKind.GetAccessor:
-        case SyntaxKind.SetAccessor:
-        case SyntaxKind.CallSignature:
-        case SyntaxKind.JSDocSignature:
-        case SyntaxKind.JSDocFunctionType:
-        case SyntaxKind.FunctionType:
-        case SyntaxKind.ConstructSignature:
-        case SyntaxKind.IndexSignature:
-        case SyntaxKind.ConstructorType:
+        case Syntax.Constructor:
+        case Syntax.FunctionDeclaration:
+        case Syntax.MethodSignature:
+        case Syntax.GetAccessor:
+        case Syntax.SetAccessor:
+        case Syntax.CallSignature:
+        case Syntax.JSDocSignature:
+        case Syntax.JSDocFunctionType:
+        case Syntax.FunctionType:
+        case Syntax.ConstructSignature:
+        case Syntax.IndexSignature:
+        case Syntax.ConstructorType:
           return ContainerFlags.IsContainer | ContainerFlags.IsControlFlowContainer | ContainerFlags.HasLocals | ContainerFlags.IsFunctionLike;
 
-        case SyntaxKind.FunctionExpression:
-        case SyntaxKind.ArrowFunction:
+        case Syntax.FunctionExpression:
+        case Syntax.ArrowFunction:
           return ContainerFlags.IsContainer | ContainerFlags.IsControlFlowContainer | ContainerFlags.HasLocals | ContainerFlags.IsFunctionLike | ContainerFlags.IsFunctionExpression;
 
-        case SyntaxKind.ModuleBlock:
+        case Syntax.ModuleBlock:
           return ContainerFlags.IsControlFlowContainer;
-        case SyntaxKind.PropertyDeclaration:
+        case Syntax.PropertyDeclaration:
           return (<PropertyDeclaration>node).initializer ? ContainerFlags.IsControlFlowContainer : 0;
 
-        case SyntaxKind.CatchClause:
-        case SyntaxKind.ForStatement:
-        case SyntaxKind.ForInStatement:
-        case SyntaxKind.ForOfStatement:
-        case SyntaxKind.CaseBlock:
+        case Syntax.CatchClause:
+        case Syntax.ForStatement:
+        case Syntax.ForInStatement:
+        case Syntax.ForOfStatement:
+        case Syntax.CaseBlock:
           return ContainerFlags.IsBlockScopedContainer;
 
-        case SyntaxKind.Block:
+        case Syntax.Block:
           // do not treat blocks directly inside a function as a block-scoped-container.
           // Locals that reside in this block should go to the function locals. Otherwise 'x'
           // would not appear to be a redeclaration of a block scoped local in the following
@@ -1829,24 +1827,24 @@ namespace qnr {
         // members are declared (for example, a member of a class will go into a specific
         // symbol table depending on if it is static or not). We defer to specialized
         // handlers to take care of declaring these child members.
-        case SyntaxKind.ModuleDeclaration:
+        case Syntax.ModuleDeclaration:
           return declareModuleMember(node, symbolFlags, symbolExcludes);
 
-        case SyntaxKind.SourceFile:
+        case Syntax.SourceFile:
           return declareSourceFileMember(node, symbolFlags, symbolExcludes);
 
-        case SyntaxKind.ClassExpression:
-        case SyntaxKind.ClassDeclaration:
+        case Syntax.ClassExpression:
+        case Syntax.ClassDeclaration:
           return declareClassMember(node, symbolFlags, symbolExcludes);
 
-        case SyntaxKind.EnumDeclaration:
+        case Syntax.EnumDeclaration:
           return declareSymbol(container.symbol.exports!, container.symbol, node, symbolFlags, symbolExcludes);
 
-        case SyntaxKind.TypeLiteral:
-        case SyntaxKind.JSDocTypeLiteral:
-        case SyntaxKind.ObjectLiteralExpression:
-        case SyntaxKind.InterfaceDeclaration:
-        case SyntaxKind.JsxAttributes:
+        case Syntax.TypeLiteral:
+        case Syntax.JSDocTypeLiteral:
+        case Syntax.ObjectLiteralExpression:
+        case Syntax.InterfaceDeclaration:
+        case Syntax.JsxAttributes:
           // Interface/Object-types always have their children added to the 'members' of
           // their container. They are only accessible through an instance of their
           // container, and are never in scope otherwise (even inside the body of the
@@ -1854,25 +1852,25 @@ namespace qnr {
           // which are in scope without qualification (similar to 'locals').
           return declareSymbol(container.symbol.members!, container.symbol, node, symbolFlags, symbolExcludes);
 
-        case SyntaxKind.FunctionType:
-        case SyntaxKind.ConstructorType:
-        case SyntaxKind.CallSignature:
-        case SyntaxKind.ConstructSignature:
-        case SyntaxKind.JSDocSignature:
-        case SyntaxKind.IndexSignature:
-        case SyntaxKind.MethodDeclaration:
-        case SyntaxKind.MethodSignature:
-        case SyntaxKind.Constructor:
-        case SyntaxKind.GetAccessor:
-        case SyntaxKind.SetAccessor:
-        case SyntaxKind.FunctionDeclaration:
-        case SyntaxKind.FunctionExpression:
-        case SyntaxKind.ArrowFunction:
-        case SyntaxKind.JSDocFunctionType:
-        case SyntaxKind.JSDocTypedefTag:
-        case SyntaxKind.JSDocCallbackTag:
-        case SyntaxKind.TypeAliasDeclaration:
-        case SyntaxKind.MappedType:
+        case Syntax.FunctionType:
+        case Syntax.ConstructorType:
+        case Syntax.CallSignature:
+        case Syntax.ConstructSignature:
+        case Syntax.JSDocSignature:
+        case Syntax.IndexSignature:
+        case Syntax.MethodDeclaration:
+        case Syntax.MethodSignature:
+        case Syntax.Constructor:
+        case Syntax.GetAccessor:
+        case Syntax.SetAccessor:
+        case Syntax.FunctionDeclaration:
+        case Syntax.FunctionExpression:
+        case Syntax.ArrowFunction:
+        case Syntax.JSDocFunctionType:
+        case Syntax.JSDocTypedefTag:
+        case Syntax.JSDocCallbackTag:
+        case Syntax.TypeAliasDeclaration:
+        case Syntax.MappedType:
           // All the children of these container types are never visible through another
           // symbol (i.e. through another symbol's 'exports' or 'members').  Instead,
           // they're only accessed 'lexically' (i.e. from code that exists underneath
@@ -1918,7 +1916,7 @@ namespace qnr {
           declareModuleSymbol(node);
         } else {
           let pattern: Pattern | undefined;
-          if (node.name.kind === SyntaxKind.StringLiteral) {
+          if (node.name.kind === Syntax.StringLiteral) {
             const { text } = node.name;
             if (hasZeroOrOneAsteriskCharacter(text)) {
               pattern = tryParsePattern(text);
@@ -1982,7 +1980,7 @@ namespace qnr {
         const seen = createUnderscoreEscapedMap<ElementKind>();
 
         for (const prop of node.properties) {
-          if (prop.kind === SyntaxKind.SpreadAssignment || prop.name.kind !== SyntaxKind.Identifier) {
+          if (prop.kind === Syntax.SpreadAssignment || prop.name.kind !== Syntax.Identifier) {
             continue;
           }
 
@@ -1997,9 +1995,7 @@ namespace qnr {
           //    d.IsAccessorDescriptor(previous) is true and IsAccessorDescriptor(propId.descriptor) is true
           // and either both previous and propId.descriptor have[[Get]] fields or both previous and propId.descriptor have[[Set]] fields
           const currentKind =
-            prop.kind === SyntaxKind.PropertyAssignment || prop.kind === SyntaxKind.ShorthandPropertyAssignment || prop.kind === SyntaxKind.MethodDeclaration
-              ? ElementKind.Property
-              : ElementKind.Accessor;
+            prop.kind === Syntax.PropertyAssignment || prop.kind === Syntax.ShorthandPropertyAssignment || prop.kind === Syntax.MethodDeclaration ? ElementKind.Property : ElementKind.Accessor;
 
           const existingKind = seen.get(identifier.escapedText);
           if (!existingKind) {
@@ -2036,10 +2032,10 @@ namespace qnr {
 
     function bindBlockScopedDeclaration(node: Declaration, symbolFlags: SymbolFlags, symbolExcludes: SymbolFlags) {
       switch (blockScopeContainer.kind) {
-        case SyntaxKind.ModuleDeclaration:
+        case Syntax.ModuleDeclaration:
           declareModuleMember(node, symbolFlags, symbolExcludes);
           break;
-        case SyntaxKind.SourceFile:
+        case Syntax.SourceFile:
           if (isExternalOrCommonJsModule(<SourceFile>container)) {
             declareModuleMember(node, symbolFlags, symbolExcludes);
             break;
@@ -2113,7 +2109,7 @@ namespace qnr {
             }
             container = oldContainer;
           }
-        } else if (isJSDocEnumTag(typeAlias) || !typeAlias.fullName || typeAlias.fullName.kind === SyntaxKind.Identifier) {
+        } else if (isJSDocEnumTag(typeAlias) || !typeAlias.fullName || typeAlias.fullName.kind === Syntax.Identifier) {
           parent = typeAlias.parent;
           bindBlockScopedDeclaration(typeAlias, SymbolFlags.TypeAlias, SymbolFlags.TypeAliasExcludes);
         } else {
@@ -2132,8 +2128,8 @@ namespace qnr {
     function checkStrictModeIdentifier(node: Identifier) {
       if (
         inStrictMode &&
-        node.originalKeywordKind! >= SyntaxKind.FirstFutureReservedWord &&
-        node.originalKeywordKind! <= SyntaxKind.LastFutureReservedWord &&
+        node.originalKeywordKind! >= Syntax.FirstFutureReservedWord &&
+        node.originalKeywordKind! <= Syntax.LastFutureReservedWord &&
         !isIdentifierName(node) &&
         !(node.flags & NodeFlags.Ambient) &&
         !(node.flags & NodeFlags.JSDoc)
@@ -2188,7 +2184,7 @@ namespace qnr {
 
     function checkStrictModeDeleteExpression(node: DeleteExpression) {
       // Grammar checking
-      if (inStrictMode && node.expression.kind === SyntaxKind.Identifier) {
+      if (inStrictMode && node.expression.kind === Syntax.Identifier) {
         // When a delete operator occurs within strict mode code, a SyntaxError is thrown if its
         // UnaryExpression is a direct reference to a variable, function argument, or function name
         const span = getErrorSpanForNode(file, node.expression);
@@ -2201,7 +2197,7 @@ namespace qnr {
     }
 
     function checkStrictModeEvalOrArguments(contextNode: Node, name: Node | undefined) {
-      if (name && name.kind === SyntaxKind.Identifier) {
+      if (name && name.kind === Syntax.Identifier) {
         const identifier = <Identifier>name;
         if (isEvalOrArgumentsIdentifier(identifier)) {
           // We check first if the name is inside class declaration or class expression; if so give explicit message
@@ -2250,7 +2246,7 @@ namespace qnr {
     function checkStrictModeFunctionDeclaration(node: FunctionDeclaration) {
       if (languageVersion < ScriptTarget.ES2015) {
         // Report error if function is not top level function declaration
-        if (blockScopeContainer.kind !== SyntaxKind.SourceFile && blockScopeContainer.kind !== SyntaxKind.ModuleDeclaration && !isFunctionLike(blockScopeContainer)) {
+        if (blockScopeContainer.kind !== Syntax.SourceFile && blockScopeContainer.kind !== Syntax.ModuleDeclaration && !isFunctionLike(blockScopeContainer)) {
           // We check first if the name is inside class declaration or class expression; if so give explicit message
           // otherwise report generic error message.
           const errorSpan = getErrorSpanForNode(file, node);
@@ -2278,7 +2274,7 @@ namespace qnr {
     function checkStrictModePrefixUnaryExpression(node: PrefixUnaryExpression) {
       // Grammar checking
       if (inStrictMode) {
-        if (node.operator === SyntaxKind.Plus2Token || node.operator === SyntaxKind.Minus2Token) {
+        if (node.operator === Syntax.Plus2Token || node.operator === Syntax.Minus2Token) {
           checkStrictModeEvalOrArguments(node, <Identifier>node.operand);
         }
       }
@@ -2355,7 +2351,7 @@ namespace qnr {
       // the current 'container' node when it changes. This helps us know which symbol table
       // a local should go into for example. Since terminal nodes are known not to have
       // children, as an optimization we don't process those.
-      if (node.kind > SyntaxKind.LastToken) {
+      if (node.kind > Syntax.LastToken) {
         const saveParent = parent;
         parent = node;
         const containerFlags = getContainerFlags(node);
@@ -2368,7 +2364,7 @@ namespace qnr {
       } else if (!skipTransformFlagAggregation && (node.transformFlags & TransformFlags.HasComputedFlags) === 0) {
         subtreeTransformFlags |= computeTransformFlagsForNode(node, 0);
         const saveParent = parent;
-        if (node.kind === SyntaxKind.EndOfFileToken) parent = node;
+        if (node.kind === Syntax.EndOfFileToken) parent = node;
         bindJSDoc(node);
         parent = saveParent;
       }
@@ -2416,7 +2412,7 @@ namespace qnr {
     function bindWorker(node: Node) {
       switch (node.kind) {
         /* Strict mode checks */
-        case SyntaxKind.Identifier:
+        case Syntax.Identifier:
           // for typedef type names with namespaces, bind the new jsdoc type symbol here
           // because it requires all containing namespaces to be in effect, namely the
           // current "blockScopeContainer" needs to be set to its immediate namespace parent.
@@ -2429,18 +2425,18 @@ namespace qnr {
             break;
           }
         // falls through
-        case SyntaxKind.ThisKeyword:
-          if (currentFlow && (isExpression(node) || parent.kind === SyntaxKind.ShorthandPropertyAssignment)) {
+        case Syntax.ThisKeyword:
+          if (currentFlow && (isExpression(node) || parent.kind === Syntax.ShorthandPropertyAssignment)) {
             node.flowNode = currentFlow;
           }
           return checkStrictModeIdentifier(<Identifier>node);
-        case SyntaxKind.SuperKeyword:
+        case Syntax.SuperKeyword:
           node.flowNode = currentFlow;
           break;
-        case SyntaxKind.PrivateIdentifier:
+        case Syntax.PrivateIdentifier:
           return checkPrivateIdentifier(node as PrivateIdentifier);
-        case SyntaxKind.PropertyAccessExpression:
-        case SyntaxKind.ElementAccessExpression:
+        case Syntax.PropertyAccessExpression:
+        case Syntax.ElementAccessExpression:
           const expr = node as PropertyAccessExpression | ElementAccessExpression;
           if (currentFlow && isNarrowableReference(expr)) {
             expr.flowNode = currentFlow;
@@ -2452,7 +2448,7 @@ namespace qnr {
             declareSymbol(file.locals!, /*parent*/ undefined, expr.expression, SymbolFlags.FunctionScopedVariable | SymbolFlags.ModuleExports, SymbolFlags.FunctionScopedVariableExcludes);
           }
           break;
-        case SyntaxKind.BinaryExpression:
+        case Syntax.BinaryExpression:
           const specialKind = getAssignmentDeclarationKind(node as BinaryExpression);
           switch (specialKind) {
             case AssignmentDeclarationKind.ExportsProperty:
@@ -2480,49 +2476,49 @@ namespace qnr {
               fail('Unknown binary expression special property assignment kind');
           }
           return checkStrictModeBinaryExpression(<BinaryExpression>node);
-        case SyntaxKind.CatchClause:
+        case Syntax.CatchClause:
           return checkStrictModeCatchClause(<CatchClause>node);
-        case SyntaxKind.DeleteExpression:
+        case Syntax.DeleteExpression:
           return checkStrictModeDeleteExpression(<DeleteExpression>node);
-        case SyntaxKind.NumericLiteral:
+        case Syntax.NumericLiteral:
           return checkStrictModeNumericLiteral(<NumericLiteral>node);
-        case SyntaxKind.PostfixUnaryExpression:
+        case Syntax.PostfixUnaryExpression:
           return checkStrictModePostfixUnaryExpression(<PostfixUnaryExpression>node);
-        case SyntaxKind.PrefixUnaryExpression:
+        case Syntax.PrefixUnaryExpression:
           return checkStrictModePrefixUnaryExpression(<PrefixUnaryExpression>node);
-        case SyntaxKind.WithStatement:
+        case Syntax.WithStatement:
           return checkStrictModeWithStatement(<WithStatement>node);
-        case SyntaxKind.LabeledStatement:
+        case Syntax.LabeledStatement:
           return checkStrictModeLabeledStatement(<LabeledStatement>node);
-        case SyntaxKind.ThisType:
+        case Syntax.ThisType:
           seenThisKeyword = true;
           return;
-        case SyntaxKind.TypePredicate:
+        case Syntax.TypePredicate:
           break; // Binding the children will handle everything
-        case SyntaxKind.TypeParameter:
+        case Syntax.TypeParameter:
           return bindTypeParameter(node as TypeParameterDeclaration);
-        case SyntaxKind.Parameter:
+        case Syntax.Parameter:
           return bindParameter(<ParameterDeclaration>node);
-        case SyntaxKind.VariableDeclaration:
+        case Syntax.VariableDeclaration:
           return bindVariableDeclarationOrBindingElement(<VariableDeclaration>node);
-        case SyntaxKind.BindingElement:
+        case Syntax.BindingElement:
           node.flowNode = currentFlow;
           return bindVariableDeclarationOrBindingElement(<BindingElement>node);
-        case SyntaxKind.PropertyDeclaration:
-        case SyntaxKind.PropertySignature:
+        case Syntax.PropertyDeclaration:
+        case Syntax.PropertySignature:
           return bindPropertyWorker(node as PropertyDeclaration | PropertySignature);
-        case SyntaxKind.PropertyAssignment:
-        case SyntaxKind.ShorthandPropertyAssignment:
+        case Syntax.PropertyAssignment:
+        case Syntax.ShorthandPropertyAssignment:
           return bindPropertyOrMethodOrAccessor(<Declaration>node, SymbolFlags.Property, SymbolFlags.PropertyExcludes);
-        case SyntaxKind.EnumMember:
+        case Syntax.EnumMember:
           return bindPropertyOrMethodOrAccessor(<Declaration>node, SymbolFlags.EnumMember, SymbolFlags.EnumMemberExcludes);
 
-        case SyntaxKind.CallSignature:
-        case SyntaxKind.ConstructSignature:
-        case SyntaxKind.IndexSignature:
+        case Syntax.CallSignature:
+        case Syntax.ConstructSignature:
+        case Syntax.IndexSignature:
           return declareSymbolAndAddToSymbolTable(<Declaration>node, SymbolFlags.Signature, SymbolFlags.None);
-        case SyntaxKind.MethodDeclaration:
-        case SyntaxKind.MethodSignature:
+        case Syntax.MethodDeclaration:
+        case Syntax.MethodSignature:
           // If this is an ObjectLiteralExpression method, then it sits in the same space
           // as other properties in the object literal.  So we use SymbolFlags.PropertyExcludes
           // so that it will conflict with any other object literal members with the same
@@ -2532,32 +2528,32 @@ namespace qnr {
             SymbolFlags.Method | ((<MethodDeclaration>node).questionToken ? SymbolFlags.Optional : SymbolFlags.None),
             isObjectLiteralMethod(node) ? SymbolFlags.PropertyExcludes : SymbolFlags.MethodExcludes
           );
-        case SyntaxKind.FunctionDeclaration:
+        case Syntax.FunctionDeclaration:
           return bindFunctionDeclaration(<FunctionDeclaration>node);
-        case SyntaxKind.Constructor:
+        case Syntax.Constructor:
           return declareSymbolAndAddToSymbolTable(<Declaration>node, SymbolFlags.Constructor, /*symbolExcludes:*/ SymbolFlags.None);
-        case SyntaxKind.GetAccessor:
+        case Syntax.GetAccessor:
           return bindPropertyOrMethodOrAccessor(<Declaration>node, SymbolFlags.GetAccessor, SymbolFlags.GetAccessorExcludes);
-        case SyntaxKind.SetAccessor:
+        case Syntax.SetAccessor:
           return bindPropertyOrMethodOrAccessor(<Declaration>node, SymbolFlags.SetAccessor, SymbolFlags.SetAccessorExcludes);
-        case SyntaxKind.FunctionType:
-        case SyntaxKind.JSDocFunctionType:
-        case SyntaxKind.JSDocSignature:
-        case SyntaxKind.ConstructorType:
+        case Syntax.FunctionType:
+        case Syntax.JSDocFunctionType:
+        case Syntax.JSDocSignature:
+        case Syntax.ConstructorType:
           return bindFunctionOrConstructorType(<SignatureDeclaration | JSDocSignature>node);
-        case SyntaxKind.TypeLiteral:
-        case SyntaxKind.JSDocTypeLiteral:
-        case SyntaxKind.MappedType:
+        case Syntax.TypeLiteral:
+        case Syntax.JSDocTypeLiteral:
+        case Syntax.MappedType:
           return bindAnonymousTypeWorker(node as TypeLiteralNode | MappedTypeNode | JSDocTypeLiteral);
-        case SyntaxKind.JSDocClassTag:
+        case Syntax.JSDocClassTag:
           return bindJSDocClassTag(node as JSDocClassTag);
-        case SyntaxKind.ObjectLiteralExpression:
+        case Syntax.ObjectLiteralExpression:
           return bindObjectLiteralExpression(<ObjectLiteralExpression>node);
-        case SyntaxKind.FunctionExpression:
-        case SyntaxKind.ArrowFunction:
+        case Syntax.FunctionExpression:
+        case Syntax.ArrowFunction:
           return bindFunctionExpression(<FunctionExpression>node);
 
-        case SyntaxKind.CallExpression:
+        case Syntax.CallExpression:
           const assignmentKind = getAssignmentDeclarationKind(node as CallExpression);
           switch (assignmentKind) {
             case AssignmentDeclarationKind.ObjectDefinePropertyValue:
@@ -2577,66 +2573,66 @@ namespace qnr {
           break;
 
         // Members of classes, interfaces, and modules
-        case SyntaxKind.ClassExpression:
-        case SyntaxKind.ClassDeclaration:
+        case Syntax.ClassExpression:
+        case Syntax.ClassDeclaration:
           // All classes are automatically in strict mode in ES6.
           inStrictMode = true;
           return bindClassLikeDeclaration(<ClassLikeDeclaration>node);
-        case SyntaxKind.InterfaceDeclaration:
+        case Syntax.InterfaceDeclaration:
           return bindBlockScopedDeclaration(<Declaration>node, SymbolFlags.Interface, SymbolFlags.InterfaceExcludes);
-        case SyntaxKind.TypeAliasDeclaration:
+        case Syntax.TypeAliasDeclaration:
           return bindBlockScopedDeclaration(<Declaration>node, SymbolFlags.TypeAlias, SymbolFlags.TypeAliasExcludes);
-        case SyntaxKind.EnumDeclaration:
+        case Syntax.EnumDeclaration:
           return bindEnumDeclaration(<EnumDeclaration>node);
-        case SyntaxKind.ModuleDeclaration:
+        case Syntax.ModuleDeclaration:
           return bindModuleDeclaration(<ModuleDeclaration>node);
         // Jsx-attributes
-        case SyntaxKind.JsxAttributes:
+        case Syntax.JsxAttributes:
           return bindJsxAttributes(<JsxAttributes>node);
-        case SyntaxKind.JsxAttribute:
+        case Syntax.JsxAttribute:
           return bindJsxAttribute(<JsxAttribute>node, SymbolFlags.Property, SymbolFlags.PropertyExcludes);
 
         // Imports and exports
-        case SyntaxKind.ImportEqualsDeclaration:
-        case SyntaxKind.NamespaceImport:
-        case SyntaxKind.ImportSpecifier:
-        case SyntaxKind.ExportSpecifier:
+        case Syntax.ImportEqualsDeclaration:
+        case Syntax.NamespaceImport:
+        case Syntax.ImportSpecifier:
+        case Syntax.ExportSpecifier:
           return declareSymbolAndAddToSymbolTable(<Declaration>node, SymbolFlags.Alias, SymbolFlags.AliasExcludes);
-        case SyntaxKind.NamespaceExportDeclaration:
+        case Syntax.NamespaceExportDeclaration:
           return bindNamespaceExportDeclaration(<NamespaceExportDeclaration>node);
-        case SyntaxKind.ImportClause:
+        case Syntax.ImportClause:
           return bindImportClause(<ImportClause>node);
-        case SyntaxKind.ExportDeclaration:
+        case Syntax.ExportDeclaration:
           return bindExportDeclaration(<ExportDeclaration>node);
-        case SyntaxKind.ExportAssignment:
+        case Syntax.ExportAssignment:
           return bindExportAssignment(<ExportAssignment>node);
-        case SyntaxKind.SourceFile:
+        case Syntax.SourceFile:
           updateStrictModeStatementList((<SourceFile>node).statements);
           return bindSourceFileIfExternalModule();
-        case SyntaxKind.Block:
+        case Syntax.Block:
           if (!isFunctionLike(node.parent)) {
             return;
           }
         // falls through
-        case SyntaxKind.ModuleBlock:
+        case Syntax.ModuleBlock:
           return updateStrictModeStatementList((<Block | ModuleBlock>node).statements);
 
-        case SyntaxKind.JSDocParameterTag:
-          if (node.parent.kind === SyntaxKind.JSDocSignature) {
+        case Syntax.JSDocParameterTag:
+          if (node.parent.kind === Syntax.JSDocSignature) {
             return bindParameter(node as JSDocParameterTag);
           }
-          if (node.parent.kind !== SyntaxKind.JSDocTypeLiteral) {
+          if (node.parent.kind !== Syntax.JSDocTypeLiteral) {
             break;
           }
         // falls through
-        case SyntaxKind.JSDocPropertyTag:
+        case Syntax.JSDocPropertyTag:
           const propTag = node as JSDocPropertyLikeTag;
           const flags =
-            propTag.isBracketed || (propTag.typeExpression && propTag.typeExpression.type.kind === SyntaxKind.JSDocOptionalType) ? SymbolFlags.Property | SymbolFlags.Optional : SymbolFlags.Property;
+            propTag.isBracketed || (propTag.typeExpression && propTag.typeExpression.type.kind === Syntax.JSDocOptionalType) ? SymbolFlags.Property | SymbolFlags.Optional : SymbolFlags.Property;
           return declareSymbolAndAddToSymbolTable(propTag, flags, SymbolFlags.PropertyExcludes);
-        case SyntaxKind.JSDocTypedefTag:
-        case SyntaxKind.JSDocCallbackTag:
-        case SyntaxKind.JSDocEnumTag:
+        case Syntax.JSDocTypedefTag:
+        case Syntax.JSDocCallbackTag:
+        case Syntax.JSDocEnumTag:
           return (delayedTypeAliases || (delayedTypeAliases = [])).push(node as JSDocTypedefTag | JSDocCallbackTag | JSDocEnumTag);
       }
     }
@@ -2803,11 +2799,11 @@ namespace qnr {
       }
       const thisContainer = getThisContainer(node, /*includeArrowFunctions*/ false);
       switch (thisContainer.kind) {
-        case SyntaxKind.FunctionDeclaration:
-        case SyntaxKind.FunctionExpression:
+        case Syntax.FunctionDeclaration:
+        case Syntax.FunctionExpression:
           let constructorSymbol: Symbol | undefined = thisContainer.symbol;
           // For `f.prototype.m = function() { this.x = 0; }`, `this.x = 0` should modify `f`'s members, not the function expression.
-          if (isBinaryExpression(thisContainer.parent) && thisContainer.parent.operatorToken.kind === SyntaxKind.EqualsToken) {
+          if (isBinaryExpression(thisContainer.parent) && thisContainer.parent.operatorToken.kind === Syntax.EqualsToken) {
             const l = thisContainer.parent.left;
             if (isBindableStaticAccessExpression(l) && isPrototypeAccess(l.expression)) {
               constructorSymbol = lookupSymbolForPropertyAccess(l.expression.expression, thisParentContainer);
@@ -2827,11 +2823,11 @@ namespace qnr {
           }
           break;
 
-        case SyntaxKind.Constructor:
-        case SyntaxKind.PropertyDeclaration:
-        case SyntaxKind.MethodDeclaration:
-        case SyntaxKind.GetAccessor:
-        case SyntaxKind.SetAccessor:
+        case Syntax.Constructor:
+        case Syntax.PropertyDeclaration:
+        case Syntax.MethodDeclaration:
+        case Syntax.GetAccessor:
+        case Syntax.SetAccessor:
           // this.foo assignment in a JavaScript class
           // Bind this property to the containing class
           const containingClass = thisContainer.parent;
@@ -2842,7 +2838,7 @@ namespace qnr {
             declareSymbol(symbolTable, containingClass.symbol, node, SymbolFlags.Property | SymbolFlags.Assignment, SymbolFlags.None, /*isReplaceableByMethod*/ true);
           }
           break;
-        case SyntaxKind.SourceFile:
+        case Syntax.SourceFile:
           // this.property = assignment in a source file -- declare symbol in exports for a module, in locals for a script
           if (hasDynamicName(node)) {
             break;
@@ -2854,7 +2850,7 @@ namespace qnr {
           break;
 
         default:
-          Debug.failBadSyntaxKind(thisContainer);
+          Debug.failBadSyntax(thisContainer);
       }
     }
 
@@ -2871,9 +2867,9 @@ namespace qnr {
     }
 
     function bindSpecialPropertyDeclaration(node: PropertyAccessExpression | LiteralLikeElementAccessExpression) {
-      if (node.expression.kind === SyntaxKind.ThisKeyword) {
+      if (node.expression.kind === Syntax.ThisKeyword) {
         bindThisPropertyAssignment(node);
-      } else if (isBindableStaticAccessExpression(node) && node.parent.parent.kind === SyntaxKind.SourceFile) {
+      } else if (isBindableStaticAccessExpression(node) && node.parent.parent.kind === Syntax.SourceFile) {
         if (isPrototypeAccess(node.expression)) {
           bindPrototypePropertyAssignment(node, node.parent);
         } else {
@@ -2918,7 +2914,7 @@ namespace qnr {
 
     function bindObjectDefinePropertyAssignment(node: BindableObjectDefinePropertyCall) {
       let namespaceSymbol = lookupSymbolForPropertyAccess(node.arguments[0]);
-      const isToplevel = node.parent.parent.kind === SyntaxKind.SourceFile;
+      const isToplevel = node.parent.parent.kind === Syntax.SourceFile;
       namespaceSymbol = bindPotentiallyMissingNamespaces(namespaceSymbol, node.arguments[0], isToplevel, /*isPrototypeProperty*/ false, /*containerIsClass*/ false);
       bindPotentiallyNewExpandoMemberToNamespace(node, namespaceSymbol, /*isPrototypeProperty*/ false);
     }
@@ -3031,9 +3027,7 @@ namespace qnr {
     }
 
     function isTopLevelNamespaceAssignment(propertyAccess: BindableAccessExpression) {
-      return isBinaryExpression(propertyAccess.parent)
-        ? getParentOfBinaryExpression(propertyAccess.parent).parent.kind === SyntaxKind.SourceFile
-        : propertyAccess.parent.parent.kind === SyntaxKind.SourceFile;
+      return isBinaryExpression(propertyAccess.parent) ? getParentOfBinaryExpression(propertyAccess.parent).parent.kind === Syntax.SourceFile : propertyAccess.parent.parent.kind === Syntax.SourceFile;
     }
 
     function bindPropertyAssignment(name: BindableStaticNameExpression, propertyAccess: BindableStaticAccessExpression, isPrototypeProperty: boolean, containerIsClass: boolean) {
@@ -3074,7 +3068,7 @@ namespace qnr {
       if (init) {
         const isPrototypeAssignment = isPrototypeAccess(isVariableDeclaration(node) ? node.name : isBinaryExpression(node) ? node.left : node);
         return !!getExpandoInitializer(
-          isBinaryExpression(init) && (init.operatorToken.kind === SyntaxKind.Bar2Token || init.operatorToken.kind === SyntaxKind.Question2Token) ? init.right : init,
+          isBinaryExpression(init) && (init.operatorToken.kind === Syntax.Bar2Token || init.operatorToken.kind === Syntax.Question2Token) ? init.right : init,
           isPrototypeAssignment
         );
       }
@@ -3126,7 +3120,7 @@ namespace qnr {
     }
 
     function bindClassLikeDeclaration(node: ClassLikeDeclaration) {
-      if (node.kind === SyntaxKind.ClassDeclaration) {
+      if (node.kind === Syntax.ClassDeclaration) {
         bindBlockScopedDeclaration(node, SymbolFlags.Class, SymbolFlags.ClassExcludes);
       } else {
         const bindingName = node.name ? node.name.escapedText : InternalSymbolName.Class;
@@ -3192,7 +3186,7 @@ namespace qnr {
     }
 
     function bindParameter(node: ParameterDeclaration | JSDocParameterTag) {
-      if (node.kind === SyntaxKind.JSDocParameterTag && container.kind !== SyntaxKind.JSDocSignature) {
+      if (node.kind === Syntax.JSDocParameterTag && container.kind !== Syntax.JSDocSignature) {
         return;
       }
       if (inStrictMode && !(node.flags & NodeFlags.Ambient)) {
@@ -3279,7 +3273,7 @@ namespace qnr {
         } else {
           declareSymbolAndAddToSymbolTable(node, SymbolFlags.TypeParameter, SymbolFlags.TypeParameterExcludes);
         }
-      } else if (node.parent.kind === SyntaxKind.InferType) {
+      } else if (node.parent.kind === Syntax.InferType) {
         const container = getInferTypeContainer(node.parent);
         if (container) {
           if (!container.locals) {
@@ -3308,11 +3302,11 @@ namespace qnr {
       if (currentFlow === unreachableFlow) {
         const reportError =
           // report error on all statements except empty ones
-          (isStatementButNotDeclaration(node) && node.kind !== SyntaxKind.EmptyStatement) ||
+          (isStatementButNotDeclaration(node) && node.kind !== Syntax.EmptyStatement) ||
           // report error on class declarations
-          node.kind === SyntaxKind.ClassDeclaration ||
+          node.kind === Syntax.ClassDeclaration ||
           // report error on instantiated modules or const-enums only modules if preserveConstEnums is set
-          (node.kind === SyntaxKind.ModuleDeclaration && shouldReportErrorOnModuleDeclaration(<ModuleDeclaration>node));
+          (node.kind === Syntax.ModuleDeclaration && shouldReportErrorOnModuleDeclaration(<ModuleDeclaration>node));
 
         if (reportError) {
           currentFlow = reportedUnreachableFlow;
@@ -3363,12 +3357,12 @@ namespace qnr {
 
   function isPurelyTypeDeclaration(s: Statement): boolean {
     switch (s.kind) {
-      case SyntaxKind.InterfaceDeclaration:
-      case SyntaxKind.TypeAliasDeclaration:
+      case Syntax.InterfaceDeclaration:
+      case Syntax.TypeAliasDeclaration:
         return true;
-      case SyntaxKind.ModuleDeclaration:
+      case Syntax.ModuleDeclaration:
         return getModuleInstanceState(s as ModuleDeclaration) !== ModuleInstanceState.Instantiated;
-      case SyntaxKind.EnumDeclaration:
+      case Syntax.EnumDeclaration:
         return hasSyntacticModifier(s, ModifierFlags.Const);
       default:
         return false;
@@ -3418,87 +3412,87 @@ namespace qnr {
   export function computeTransformFlagsForNode(node: Node, subtreeFlags: TransformFlags): TransformFlags {
     const kind = node.kind;
     switch (kind) {
-      case SyntaxKind.CallExpression:
+      case Syntax.CallExpression:
         return computeCallExpression(<CallExpression>node, subtreeFlags);
 
-      case SyntaxKind.NewExpression:
+      case Syntax.NewExpression:
         return computeNewExpression(<NewExpression>node, subtreeFlags);
 
-      case SyntaxKind.ModuleDeclaration:
+      case Syntax.ModuleDeclaration:
         return computeModuleDeclaration(<ModuleDeclaration>node, subtreeFlags);
 
-      case SyntaxKind.ParenthesizedExpression:
+      case Syntax.ParenthesizedExpression:
         return computeParenthesizedExpression(<ParenthesizedExpression>node, subtreeFlags);
 
-      case SyntaxKind.BinaryExpression:
+      case Syntax.BinaryExpression:
         return computeBinaryExpression(<BinaryExpression>node, subtreeFlags);
 
-      case SyntaxKind.ExpressionStatement:
+      case Syntax.ExpressionStatement:
         return computeExpressionStatement(<ExpressionStatement>node, subtreeFlags);
 
-      case SyntaxKind.Parameter:
+      case Syntax.Parameter:
         return computeParameter(<ParameterDeclaration>node, subtreeFlags);
 
-      case SyntaxKind.ArrowFunction:
+      case Syntax.ArrowFunction:
         return computeArrowFunction(<ArrowFunction>node, subtreeFlags);
 
-      case SyntaxKind.FunctionExpression:
+      case Syntax.FunctionExpression:
         return computeFunctionExpression(<FunctionExpression>node, subtreeFlags);
 
-      case SyntaxKind.FunctionDeclaration:
+      case Syntax.FunctionDeclaration:
         return computeFunctionDeclaration(<FunctionDeclaration>node, subtreeFlags);
 
-      case SyntaxKind.VariableDeclaration:
+      case Syntax.VariableDeclaration:
         return computeVariableDeclaration(<VariableDeclaration>node, subtreeFlags);
 
-      case SyntaxKind.VariableDeclarationList:
+      case Syntax.VariableDeclarationList:
         return computeVariableDeclarationList(<VariableDeclarationList>node, subtreeFlags);
 
-      case SyntaxKind.VariableStatement:
+      case Syntax.VariableStatement:
         return computeVariableStatement(<VariableStatement>node, subtreeFlags);
 
-      case SyntaxKind.LabeledStatement:
+      case Syntax.LabeledStatement:
         return computeLabeledStatement(<LabeledStatement>node, subtreeFlags);
 
-      case SyntaxKind.ClassDeclaration:
+      case Syntax.ClassDeclaration:
         return computeClassDeclaration(<ClassDeclaration>node, subtreeFlags);
 
-      case SyntaxKind.ClassExpression:
+      case Syntax.ClassExpression:
         return computeClassExpression(<ClassExpression>node, subtreeFlags);
 
-      case SyntaxKind.HeritageClause:
+      case Syntax.HeritageClause:
         return computeHeritageClause(<HeritageClause>node, subtreeFlags);
 
-      case SyntaxKind.CatchClause:
+      case Syntax.CatchClause:
         return computeCatchClause(<CatchClause>node, subtreeFlags);
 
-      case SyntaxKind.ExpressionWithTypeArguments:
+      case Syntax.ExpressionWithTypeArguments:
         return computeExpressionWithTypeArguments(<ExpressionWithTypeArguments>node, subtreeFlags);
 
-      case SyntaxKind.Constructor:
+      case Syntax.Constructor:
         return computeConstructor(<ConstructorDeclaration>node, subtreeFlags);
 
-      case SyntaxKind.PropertyDeclaration:
+      case Syntax.PropertyDeclaration:
         return computePropertyDeclaration(<PropertyDeclaration>node, subtreeFlags);
 
-      case SyntaxKind.MethodDeclaration:
+      case Syntax.MethodDeclaration:
         return computeMethod(<MethodDeclaration>node, subtreeFlags);
 
-      case SyntaxKind.GetAccessor:
-      case SyntaxKind.SetAccessor:
+      case Syntax.GetAccessor:
+      case Syntax.SetAccessor:
         return computeAccessor(<AccessorDeclaration>node, subtreeFlags);
 
-      case SyntaxKind.ImportEqualsDeclaration:
+      case Syntax.ImportEqualsDeclaration:
         return computeImportEquals(<ImportEqualsDeclaration>node, subtreeFlags);
 
-      case SyntaxKind.PropertyAccessExpression:
+      case Syntax.PropertyAccessExpression:
         return computePropertyAccess(<PropertyAccessExpression>node, subtreeFlags);
 
-      case SyntaxKind.ElementAccessExpression:
+      case Syntax.ElementAccessExpression:
         return computeElementAccess(<ElementAccessExpression>node, subtreeFlags);
 
-      case SyntaxKind.JsxSelfClosingElement:
-      case SyntaxKind.JsxOpeningElement:
+      case Syntax.JsxSelfClosingElement:
+      case Syntax.JsxOpeningElement:
         return computeJsxOpeningLikeElement(<JsxOpeningLikeElement>node, subtreeFlags);
 
       default:
@@ -3528,7 +3522,7 @@ namespace qnr {
       }
     }
 
-    if (expression.kind === SyntaxKind.ImportKeyword) {
+    if (expression.kind === Syntax.ImportKeyword) {
       transformFlags |= TransformFlags.ContainsDynamicImport;
     }
 
@@ -3564,16 +3558,16 @@ namespace qnr {
     const operatorTokenKind = node.operatorToken.kind;
     const leftKind = node.left.kind;
 
-    if (operatorTokenKind === SyntaxKind.Question2Token) {
+    if (operatorTokenKind === Syntax.Question2Token) {
       transformFlags |= TransformFlags.AssertES2020;
-    } else if (operatorTokenKind === SyntaxKind.EqualsToken && leftKind === SyntaxKind.ObjectLiteralExpression) {
+    } else if (operatorTokenKind === Syntax.EqualsToken && leftKind === Syntax.ObjectLiteralExpression) {
       // Destructuring object assignments with are ES2015 syntax
       // and possibly ES2018 if they contain rest
       transformFlags |= TransformFlags.AssertES2018 | TransformFlags.AssertES2015 | TransformFlags.AssertDestructuringAssignment;
-    } else if (operatorTokenKind === SyntaxKind.EqualsToken && leftKind === SyntaxKind.ArrayLiteralExpression) {
+    } else if (operatorTokenKind === Syntax.EqualsToken && leftKind === Syntax.ArrayLiteralExpression) {
       // Destructuring assignments are ES2015 syntax.
       transformFlags |= TransformFlags.AssertES2015 | TransformFlags.AssertDestructuringAssignment;
-    } else if (operatorTokenKind === SyntaxKind.Asterisk2Token || operatorTokenKind === SyntaxKind.Asterisk2EqualsToken) {
+    } else if (operatorTokenKind === Syntax.Asterisk2Token || operatorTokenKind === Syntax.Asterisk2EqualsToken) {
       // Exponentiation is ES2016 syntax.
       transformFlags |= TransformFlags.AssertES2016;
     }
@@ -3622,7 +3616,7 @@ namespace qnr {
     // If the node is synthesized, it means the emitter put the parentheses there,
     // not the user. If we didn't want them, the emitter would not have put them
     // there.
-    if (expressionKind === SyntaxKind.AsExpression || expressionKind === SyntaxKind.TypeAssertionExpression) {
+    if (expressionKind === Syntax.AsExpression || expressionKind === Syntax.TypeAssertionExpression) {
       transformFlags |= TransformFlags.AssertTypeScript;
     }
 
@@ -3669,12 +3663,12 @@ namespace qnr {
     let transformFlags = subtreeFlags;
 
     switch (node.token) {
-      case SyntaxKind.ExtendsKeyword:
+      case Syntax.ExtendsKeyword:
         // An `extends` HeritageClause is ES6 syntax.
         transformFlags |= TransformFlags.AssertES2015;
         break;
 
-      case SyntaxKind.ImplementsKeyword:
+      case Syntax.ImplementsKeyword:
         // An `implements` HeritageClause is TypeScript syntax.
         transformFlags |= TransformFlags.AssertTypeScript;
         break;
@@ -3901,7 +3895,7 @@ namespace qnr {
 
     // If a PropertyAccessExpression starts with a super keyword, then it is
     // ES6 syntax, and requires a lexical `this` binding.
-    if (node.expression.kind === SyntaxKind.SuperKeyword) {
+    if (node.expression.kind === Syntax.SuperKeyword) {
       // super inside of an async function requires hoisting the super access (ES2017).
       // same for super inside of an async generator, which is ES2018.
       transformFlags |= TransformFlags.ContainsES2017 | TransformFlags.ContainsES2018;
@@ -3920,7 +3914,7 @@ namespace qnr {
 
     // If an ElementAccessExpression starts with a super keyword, then it is
     // ES6 syntax, and requires a lexical `this` binding.
-    if (node.expression.kind === SyntaxKind.SuperKeyword) {
+    if (node.expression.kind === Syntax.SuperKeyword) {
       // super inside of an async function requires hoisting the super access (ES2017).
       // same for super inside of an async generator, which is ES2018.
       transformFlags |= TransformFlags.ContainsES2017 | TransformFlags.ContainsES2018;
@@ -4025,96 +4019,96 @@ namespace qnr {
     return transformFlags & ~TransformFlags.VariableDeclarationListExcludes;
   }
 
-  function computeOther(node: Node, kind: SyntaxKind, subtreeFlags: TransformFlags) {
+  function computeOther(node: Node, kind: Syntax, subtreeFlags: TransformFlags) {
     // Mark transformations needed for each node
     let transformFlags = subtreeFlags;
     let excludeFlags = TransformFlags.NodeExcludes;
 
     switch (kind) {
-      case SyntaxKind.AsyncKeyword:
+      case Syntax.AsyncKeyword:
         // async is ES2017 syntax, but may be ES2018 syntax (for async generators)
         transformFlags |= TransformFlags.AssertES2018 | TransformFlags.AssertES2017;
         break;
-      case SyntaxKind.AwaitExpression:
+      case Syntax.AwaitExpression:
         // await is ES2017 syntax, but may be ES2018 syntax (for async generators)
         transformFlags |= TransformFlags.AssertES2018 | TransformFlags.AssertES2017 | TransformFlags.ContainsAwait;
         break;
 
-      case SyntaxKind.TypeAssertionExpression:
-      case SyntaxKind.AsExpression:
-      case SyntaxKind.PartiallyEmittedExpression:
+      case Syntax.TypeAssertionExpression:
+      case Syntax.AsExpression:
+      case Syntax.PartiallyEmittedExpression:
         // These nodes are TypeScript syntax.
         transformFlags |= TransformFlags.AssertTypeScript;
         excludeFlags = TransformFlags.OuterExpressionExcludes;
         break;
-      case SyntaxKind.PublicKeyword:
-      case SyntaxKind.PrivateKeyword:
-      case SyntaxKind.ProtectedKeyword:
-      case SyntaxKind.AbstractKeyword:
-      case SyntaxKind.DeclareKeyword:
-      case SyntaxKind.ConstKeyword:
-      case SyntaxKind.EnumDeclaration:
-      case SyntaxKind.EnumMember:
-      case SyntaxKind.NonNullExpression:
-      case SyntaxKind.ReadonlyKeyword:
+      case Syntax.PublicKeyword:
+      case Syntax.PrivateKeyword:
+      case Syntax.ProtectedKeyword:
+      case Syntax.AbstractKeyword:
+      case Syntax.DeclareKeyword:
+      case Syntax.ConstKeyword:
+      case Syntax.EnumDeclaration:
+      case Syntax.EnumMember:
+      case Syntax.NonNullExpression:
+      case Syntax.ReadonlyKeyword:
         // These nodes are TypeScript syntax.
         transformFlags |= TransformFlags.AssertTypeScript;
         break;
 
-      case SyntaxKind.JsxElement:
-      case SyntaxKind.JsxText:
-      case SyntaxKind.JsxClosingElement:
-      case SyntaxKind.JsxFragment:
-      case SyntaxKind.JsxOpeningFragment:
-      case SyntaxKind.JsxClosingFragment:
-      case SyntaxKind.JsxAttribute:
-      case SyntaxKind.JsxAttributes:
-      case SyntaxKind.JsxSpreadAttribute:
-      case SyntaxKind.JsxExpression:
+      case Syntax.JsxElement:
+      case Syntax.JsxText:
+      case Syntax.JsxClosingElement:
+      case Syntax.JsxFragment:
+      case Syntax.JsxOpeningFragment:
+      case Syntax.JsxClosingFragment:
+      case Syntax.JsxAttribute:
+      case Syntax.JsxAttributes:
+      case Syntax.JsxSpreadAttribute:
+      case Syntax.JsxExpression:
         // These nodes are Jsx syntax.
         transformFlags |= TransformFlags.AssertJsx;
         break;
 
-      case SyntaxKind.NoSubstitutionLiteral:
-      case SyntaxKind.TemplateHead:
-      case SyntaxKind.TemplateMiddle:
-      case SyntaxKind.TemplateTail:
+      case Syntax.NoSubstitutionLiteral:
+      case Syntax.TemplateHead:
+      case Syntax.TemplateMiddle:
+      case Syntax.TemplateTail:
         if ((<NoSubstitutionLiteral | TemplateHead | TemplateMiddle | TemplateTail>node).templateFlags) {
           transformFlags |= TransformFlags.AssertES2018;
           break;
         }
       // falls through
-      case SyntaxKind.TaggedTemplateExpression:
+      case Syntax.TaggedTemplateExpression:
         if (hasInvalidEscape((<TaggedTemplateExpression>node).template)) {
           transformFlags |= TransformFlags.AssertES2018;
           break;
         }
       // falls through
-      case SyntaxKind.TemplateExpression:
-      case SyntaxKind.ShorthandPropertyAssignment:
-      case SyntaxKind.StaticKeyword:
-      case SyntaxKind.MetaProperty:
+      case Syntax.TemplateExpression:
+      case Syntax.ShorthandPropertyAssignment:
+      case Syntax.StaticKeyword:
+      case Syntax.MetaProperty:
         // These nodes are ES6 syntax.
         transformFlags |= TransformFlags.AssertES2015;
         break;
 
-      case SyntaxKind.StringLiteral:
+      case Syntax.StringLiteral:
         if ((<StringLiteral>node).hasExtendedEscape) {
           transformFlags |= TransformFlags.AssertES2015;
         }
         break;
 
-      case SyntaxKind.NumericLiteral:
+      case Syntax.NumericLiteral:
         if ((<NumericLiteral>node).numericLiteralFlags & TokenFlags.BinaryOrOctalSpecifier) {
           transformFlags |= TransformFlags.AssertES2015;
         }
         break;
 
-      case SyntaxKind.BigIntLiteral:
+      case Syntax.BigIntLiteral:
         transformFlags |= TransformFlags.AssertESNext;
         break;
 
-      case SyntaxKind.ForOfStatement:
+      case Syntax.ForOfStatement:
         // This node is either ES2015 syntax or ES2017 syntax (if it is a for-await-of).
         if ((<ForOfStatement>node).awaitModifier) {
           transformFlags |= TransformFlags.AssertES2018;
@@ -4122,82 +4116,82 @@ namespace qnr {
         transformFlags |= TransformFlags.AssertES2015;
         break;
 
-      case SyntaxKind.YieldExpression:
+      case Syntax.YieldExpression:
         // This node is either ES2015 syntax (in a generator) or ES2017 syntax (in an async
         // generator).
         transformFlags |= TransformFlags.AssertES2018 | TransformFlags.AssertES2015 | TransformFlags.ContainsYield;
         break;
 
-      case SyntaxKind.AnyKeyword:
-      case SyntaxKind.NumberKeyword:
-      case SyntaxKind.BigIntKeyword:
-      case SyntaxKind.NeverKeyword:
-      case SyntaxKind.ObjectKeyword:
-      case SyntaxKind.StringKeyword:
-      case SyntaxKind.BooleanKeyword:
-      case SyntaxKind.SymbolKeyword:
-      case SyntaxKind.VoidKeyword:
-      case SyntaxKind.TypeParameter:
-      case SyntaxKind.PropertySignature:
-      case SyntaxKind.MethodSignature:
-      case SyntaxKind.CallSignature:
-      case SyntaxKind.ConstructSignature:
-      case SyntaxKind.IndexSignature:
-      case SyntaxKind.TypePredicate:
-      case SyntaxKind.TypeReference:
-      case SyntaxKind.FunctionType:
-      case SyntaxKind.ConstructorType:
-      case SyntaxKind.TypeQuery:
-      case SyntaxKind.TypeLiteral:
-      case SyntaxKind.ArrayType:
-      case SyntaxKind.TupleType:
-      case SyntaxKind.OptionalType:
-      case SyntaxKind.RestType:
-      case SyntaxKind.UnionType:
-      case SyntaxKind.IntersectionType:
-      case SyntaxKind.ConditionalType:
-      case SyntaxKind.InferType:
-      case SyntaxKind.ParenthesizedType:
-      case SyntaxKind.InterfaceDeclaration:
-      case SyntaxKind.TypeAliasDeclaration:
-      case SyntaxKind.ThisType:
-      case SyntaxKind.TypeOperator:
-      case SyntaxKind.IndexedAccessType:
-      case SyntaxKind.MappedType:
-      case SyntaxKind.LiteralType:
-      case SyntaxKind.NamespaceExportDeclaration:
+      case Syntax.AnyKeyword:
+      case Syntax.NumberKeyword:
+      case Syntax.BigIntKeyword:
+      case Syntax.NeverKeyword:
+      case Syntax.ObjectKeyword:
+      case Syntax.StringKeyword:
+      case Syntax.BooleanKeyword:
+      case Syntax.SymbolKeyword:
+      case Syntax.VoidKeyword:
+      case Syntax.TypeParameter:
+      case Syntax.PropertySignature:
+      case Syntax.MethodSignature:
+      case Syntax.CallSignature:
+      case Syntax.ConstructSignature:
+      case Syntax.IndexSignature:
+      case Syntax.TypePredicate:
+      case Syntax.TypeReference:
+      case Syntax.FunctionType:
+      case Syntax.ConstructorType:
+      case Syntax.TypeQuery:
+      case Syntax.TypeLiteral:
+      case Syntax.ArrayType:
+      case Syntax.TupleType:
+      case Syntax.OptionalType:
+      case Syntax.RestType:
+      case Syntax.UnionType:
+      case Syntax.IntersectionType:
+      case Syntax.ConditionalType:
+      case Syntax.InferType:
+      case Syntax.ParenthesizedType:
+      case Syntax.InterfaceDeclaration:
+      case Syntax.TypeAliasDeclaration:
+      case Syntax.ThisType:
+      case Syntax.TypeOperator:
+      case Syntax.IndexedAccessType:
+      case Syntax.MappedType:
+      case Syntax.LiteralType:
+      case Syntax.NamespaceExportDeclaration:
         // Types and signatures are TypeScript syntax, and exclude all other facts.
         transformFlags = TransformFlags.AssertTypeScript;
         excludeFlags = TransformFlags.TypeExcludes;
         break;
 
-      case SyntaxKind.ComputedPropertyName:
+      case Syntax.ComputedPropertyName:
         // Even though computed property names are ES6, we don't treat them as such.
         // This is so that they can flow through PropertyName transforms unaffected.
         // Instead, we mark the container as ES6, so that it can properly handle the transform.
         transformFlags |= TransformFlags.ContainsComputedPropertyName;
         break;
 
-      case SyntaxKind.SpreadElement:
+      case Syntax.SpreadElement:
         transformFlags |= TransformFlags.AssertES2015 | TransformFlags.ContainsRestOrSpread;
         break;
 
-      case SyntaxKind.SpreadAssignment:
+      case Syntax.SpreadAssignment:
         transformFlags |= TransformFlags.AssertES2018 | TransformFlags.ContainsObjectRestOrSpread;
         break;
 
-      case SyntaxKind.SuperKeyword:
+      case Syntax.SuperKeyword:
         // This node is ES6 syntax.
         transformFlags |= TransformFlags.AssertES2015;
         excludeFlags = TransformFlags.OuterExpressionExcludes; // must be set to persist `Super`
         break;
 
-      case SyntaxKind.ThisKeyword:
+      case Syntax.ThisKeyword:
         // Mark this node and its ancestors as containing a lexical `this` keyword.
         transformFlags |= TransformFlags.ContainsLexicalThis;
         break;
 
-      case SyntaxKind.ObjectBindingPattern:
+      case Syntax.ObjectBindingPattern:
         transformFlags |= TransformFlags.AssertES2015 | TransformFlags.ContainsBindingPattern;
         if (subtreeFlags & TransformFlags.ContainsRestOrSpread) {
           transformFlags |= TransformFlags.AssertES2018 | TransformFlags.ContainsObjectRestOrSpread;
@@ -4205,24 +4199,24 @@ namespace qnr {
         excludeFlags = TransformFlags.BindingPatternExcludes;
         break;
 
-      case SyntaxKind.ArrayBindingPattern:
+      case Syntax.ArrayBindingPattern:
         transformFlags |= TransformFlags.AssertES2015 | TransformFlags.ContainsBindingPattern;
         excludeFlags = TransformFlags.BindingPatternExcludes;
         break;
 
-      case SyntaxKind.BindingElement:
+      case Syntax.BindingElement:
         transformFlags |= TransformFlags.AssertES2015;
         if ((<BindingElement>node).dot3Token) {
           transformFlags |= TransformFlags.ContainsRestOrSpread;
         }
         break;
 
-      case SyntaxKind.Decorator:
+      case Syntax.Decorator:
         // This node is TypeScript syntax, and marks its container as also being TypeScript syntax.
         transformFlags |= TransformFlags.AssertTypeScript | TransformFlags.ContainsTypeScriptClassSyntax;
         break;
 
-      case SyntaxKind.ObjectLiteralExpression:
+      case Syntax.ObjectLiteralExpression:
         excludeFlags = TransformFlags.ObjectLiteralExcludes;
         if (subtreeFlags & TransformFlags.ContainsComputedPropertyName) {
           // If an ObjectLiteralExpression contains a ComputedPropertyName, then it
@@ -4238,14 +4232,14 @@ namespace qnr {
 
         break;
 
-      case SyntaxKind.ArrayLiteralExpression:
+      case Syntax.ArrayLiteralExpression:
         excludeFlags = TransformFlags.ArrayLiteralOrCallOrNewExcludes;
         break;
 
-      case SyntaxKind.DoStatement:
-      case SyntaxKind.WhileStatement:
-      case SyntaxKind.ForStatement:
-      case SyntaxKind.ForInStatement:
+      case Syntax.DoStatement:
+      case Syntax.WhileStatement:
+      case Syntax.ForStatement:
+      case Syntax.ForInStatement:
         // A loop containing a block scoped binding *may* need to be transformed from ES6.
         if (subtreeFlags & TransformFlags.ContainsBlockScopedBinding) {
           transformFlags |= TransformFlags.AssertES2015;
@@ -4253,24 +4247,24 @@ namespace qnr {
 
         break;
 
-      case SyntaxKind.SourceFile:
+      case Syntax.SourceFile:
         break;
 
-      case SyntaxKind.NamespaceExport:
+      case Syntax.NamespaceExport:
         transformFlags |= TransformFlags.AssertESNext;
         break;
 
-      case SyntaxKind.ReturnStatement:
+      case Syntax.ReturnStatement:
         // Return statements may require an `await` in ES2018.
         transformFlags |= TransformFlags.ContainsHoistedDeclarationOrCompletion | TransformFlags.AssertES2018;
         break;
 
-      case SyntaxKind.ContinueStatement:
-      case SyntaxKind.BreakStatement:
+      case Syntax.ContinueStatement:
+      case Syntax.BreakStatement:
         transformFlags |= TransformFlags.ContainsHoistedDeclarationOrCompletion;
         break;
 
-      case SyntaxKind.PrivateIdentifier:
+      case Syntax.PrivateIdentifier:
         transformFlags |= TransformFlags.ContainsClassFields;
         break;
     }
@@ -4290,69 +4284,69 @@ namespace qnr {
    *       For performance reasons, `computeTransformFlagsForNode` uses local constant values rather
    *       than calling this function.
    */
-  export function getTransformFlagsSubtreeExclusions(kind: SyntaxKind) {
-    if (kind >= SyntaxKind.FirstTypeNode && kind <= SyntaxKind.LastTypeNode) {
+  export function getTransformFlagsSubtreeExclusions(kind: Syntax) {
+    if (kind >= Syntax.FirstTypeNode && kind <= Syntax.LastTypeNode) {
       return TransformFlags.TypeExcludes;
     }
 
     switch (kind) {
-      case SyntaxKind.CallExpression:
-      case SyntaxKind.NewExpression:
-      case SyntaxKind.ArrayLiteralExpression:
+      case Syntax.CallExpression:
+      case Syntax.NewExpression:
+      case Syntax.ArrayLiteralExpression:
         return TransformFlags.ArrayLiteralOrCallOrNewExcludes;
-      case SyntaxKind.ModuleDeclaration:
+      case Syntax.ModuleDeclaration:
         return TransformFlags.ModuleExcludes;
-      case SyntaxKind.Parameter:
+      case Syntax.Parameter:
         return TransformFlags.ParameterExcludes;
-      case SyntaxKind.ArrowFunction:
+      case Syntax.ArrowFunction:
         return TransformFlags.ArrowFunctionExcludes;
-      case SyntaxKind.FunctionExpression:
-      case SyntaxKind.FunctionDeclaration:
+      case Syntax.FunctionExpression:
+      case Syntax.FunctionDeclaration:
         return TransformFlags.FunctionExcludes;
-      case SyntaxKind.VariableDeclarationList:
+      case Syntax.VariableDeclarationList:
         return TransformFlags.VariableDeclarationListExcludes;
-      case SyntaxKind.ClassDeclaration:
-      case SyntaxKind.ClassExpression:
+      case Syntax.ClassDeclaration:
+      case Syntax.ClassExpression:
         return TransformFlags.ClassExcludes;
-      case SyntaxKind.Constructor:
+      case Syntax.Constructor:
         return TransformFlags.ConstructorExcludes;
-      case SyntaxKind.MethodDeclaration:
-      case SyntaxKind.GetAccessor:
-      case SyntaxKind.SetAccessor:
+      case Syntax.MethodDeclaration:
+      case Syntax.GetAccessor:
+      case Syntax.SetAccessor:
         return TransformFlags.MethodOrAccessorExcludes;
-      case SyntaxKind.AnyKeyword:
-      case SyntaxKind.NumberKeyword:
-      case SyntaxKind.BigIntKeyword:
-      case SyntaxKind.NeverKeyword:
-      case SyntaxKind.StringKeyword:
-      case SyntaxKind.ObjectKeyword:
-      case SyntaxKind.BooleanKeyword:
-      case SyntaxKind.SymbolKeyword:
-      case SyntaxKind.VoidKeyword:
-      case SyntaxKind.TypeParameter:
-      case SyntaxKind.PropertySignature:
-      case SyntaxKind.MethodSignature:
-      case SyntaxKind.CallSignature:
-      case SyntaxKind.ConstructSignature:
-      case SyntaxKind.IndexSignature:
-      case SyntaxKind.InterfaceDeclaration:
-      case SyntaxKind.TypeAliasDeclaration:
+      case Syntax.AnyKeyword:
+      case Syntax.NumberKeyword:
+      case Syntax.BigIntKeyword:
+      case Syntax.NeverKeyword:
+      case Syntax.StringKeyword:
+      case Syntax.ObjectKeyword:
+      case Syntax.BooleanKeyword:
+      case Syntax.SymbolKeyword:
+      case Syntax.VoidKeyword:
+      case Syntax.TypeParameter:
+      case Syntax.PropertySignature:
+      case Syntax.MethodSignature:
+      case Syntax.CallSignature:
+      case Syntax.ConstructSignature:
+      case Syntax.IndexSignature:
+      case Syntax.InterfaceDeclaration:
+      case Syntax.TypeAliasDeclaration:
         return TransformFlags.TypeExcludes;
-      case SyntaxKind.ObjectLiteralExpression:
+      case Syntax.ObjectLiteralExpression:
         return TransformFlags.ObjectLiteralExcludes;
-      case SyntaxKind.CatchClause:
+      case Syntax.CatchClause:
         return TransformFlags.CatchClauseExcludes;
-      case SyntaxKind.ObjectBindingPattern:
-      case SyntaxKind.ArrayBindingPattern:
+      case Syntax.ObjectBindingPattern:
+      case Syntax.ArrayBindingPattern:
         return TransformFlags.BindingPatternExcludes;
-      case SyntaxKind.TypeAssertionExpression:
-      case SyntaxKind.AsExpression:
-      case SyntaxKind.PartiallyEmittedExpression:
-      case SyntaxKind.ParenthesizedExpression:
-      case SyntaxKind.SuperKeyword:
+      case Syntax.TypeAssertionExpression:
+      case Syntax.AsExpression:
+      case Syntax.PartiallyEmittedExpression:
+      case Syntax.ParenthesizedExpression:
+      case Syntax.SuperKeyword:
         return TransformFlags.OuterExpressionExcludes;
-      case SyntaxKind.PropertyAccessExpression:
-      case SyntaxKind.ElementAccessExpression:
+      case Syntax.PropertyAccessExpression:
+      case Syntax.ElementAccessExpression:
         return TransformFlags.PropertyAccessExcludes;
       default:
         return TransformFlags.NodeExcludes;

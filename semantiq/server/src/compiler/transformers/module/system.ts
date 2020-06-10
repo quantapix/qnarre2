@@ -14,13 +14,13 @@ namespace qnr {
     const previousOnEmitNode = context.onEmitNode;
     context.onSubstituteNode = onSubstituteNode;
     context.onEmitNode = onEmitNode;
-    context.enableSubstitution(SyntaxKind.Identifier); // Substitutes expression identifiers for imported symbols.
-    context.enableSubstitution(SyntaxKind.ShorthandPropertyAssignment); // Substitutes expression identifiers for imported symbols
-    context.enableSubstitution(SyntaxKind.BinaryExpression); // Substitutes assignments to exported symbols.
-    context.enableSubstitution(SyntaxKind.PrefixUnaryExpression); // Substitutes updates to exported symbols.
-    context.enableSubstitution(SyntaxKind.PostfixUnaryExpression); // Substitutes updates to exported symbols.
-    context.enableSubstitution(SyntaxKind.MetaProperty); // Substitutes 'import.meta'
-    context.enableEmitNotification(SyntaxKind.SourceFile); // Restore state when substituting nodes in a file.
+    context.enableSubstitution(Syntax.Identifier); // Substitutes expression identifiers for imported symbols.
+    context.enableSubstitution(Syntax.ShorthandPropertyAssignment); // Substitutes expression identifiers for imported symbols
+    context.enableSubstitution(Syntax.BinaryExpression); // Substitutes assignments to exported symbols.
+    context.enableSubstitution(Syntax.PrefixUnaryExpression); // Substitutes updates to exported symbols.
+    context.enableSubstitution(Syntax.PostfixUnaryExpression); // Substitutes updates to exported symbols.
+    context.enableSubstitution(Syntax.MetaProperty); // Substitutes 'import.meta'
+    context.enableEmitNotification(Syntax.SourceFile); // Restore state when substituting nodes in a file.
 
     const moduleInfoMap: ExternalModuleInfo[] = []; // The ExternalModuleInfo for each file.
     const deferredExports: (Statement[] | undefined)[] = []; // Exports to defer until an EndOfDeclarationMarker is found.
@@ -290,7 +290,7 @@ namespace qnr {
         // check if we have any non star export declarations.
         let hasExportDeclarationWithExportClause = false;
         for (const externalImport of moduleInfo.externalImports) {
-          if (externalImport.kind === SyntaxKind.ExportDeclaration && externalImport.exportClause) {
+          if (externalImport.kind === Syntax.ExportDeclaration && externalImport.exportClause) {
             hasExportDeclarationWithExportClause = true;
             break;
           }
@@ -317,7 +317,7 @@ namespace qnr {
       }
 
       for (const externalImport of moduleInfo.externalImports) {
-        if (externalImport.kind !== SyntaxKind.ExportDeclaration) {
+        if (externalImport.kind !== Syntax.ExportDeclaration) {
           continue;
         }
 
@@ -405,7 +405,7 @@ namespace qnr {
         for (const entry of group.externalImports) {
           const importVariableName = getLocalNameForExternalImport(entry, currentSourceFile)!; // TODO: GH#18217
           switch (entry.kind) {
-            case SyntaxKind.ImportDeclaration:
+            case Syntax.ImportDeclaration:
               if (!entry.importClause) {
                 // 'import "..."' case
                 // module is imported only for side-effects, no emit required
@@ -413,13 +413,13 @@ namespace qnr {
               }
             // falls through
 
-            case SyntaxKind.ImportEqualsDeclaration:
+            case Syntax.ImportEqualsDeclaration:
               assert(importVariableName !== undefined);
               // save import into the local
               statements.push(createExpressionStatement(createAssignment(importVariableName, parameterName)));
               break;
 
-            case SyntaxKind.ExportDeclaration:
+            case Syntax.ExportDeclaration:
               assert(importVariableName !== undefined);
               if (entry.exportClause) {
                 if (isNamedExports(entry.exportClause)) {
@@ -479,16 +479,16 @@ namespace qnr {
      */
     function sourceElementVisitor(node: Node): VisitResult<Node> {
       switch (node.kind) {
-        case SyntaxKind.ImportDeclaration:
+        case Syntax.ImportDeclaration:
           return visitImportDeclaration(<ImportDeclaration>node);
 
-        case SyntaxKind.ImportEqualsDeclaration:
+        case Syntax.ImportEqualsDeclaration:
           return visitImportEqualsDeclaration(<ImportEqualsDeclaration>node);
 
-        case SyntaxKind.ExportDeclaration:
+        case Syntax.ExportDeclaration:
           return visitExportDeclaration(<ExportDeclaration>node);
 
-        case SyntaxKind.ExportAssignment:
+        case Syntax.ExportAssignment:
           return visitExportAssignment(<ExportAssignment>node);
 
         default:
@@ -711,7 +711,7 @@ namespace qnr {
      */
     function shouldHoistVariableDeclarationList(node: VariableDeclarationList) {
       // hoist only non-block scoped declarations or block scoped declarations parented by source file
-      return (getEmitFlags(node) & EmitFlags.NoHoisting) === 0 && (enclosingBlockScopedContainer.kind === SyntaxKind.SourceFile || (getOriginalNode(node).flags & NodeFlags.BlockScoped) === 0);
+      return (getEmitFlags(node) & EmitFlags.NoHoisting) === 0 && (enclosingBlockScopedContainer.kind === Syntax.SourceFile || (getOriginalNode(node).flags & NodeFlags.BlockScoped) === 0);
     }
 
     /**
@@ -780,7 +780,7 @@ namespace qnr {
       //
       // To balance the declaration, we defer the exports of the elided variable
       // statement until we visit this declaration's `EndOfDeclarationMarker`.
-      if (hasAssociatedEndOfDeclarationMarker(node) && node.original!.kind === SyntaxKind.VariableStatement) {
+      if (hasAssociatedEndOfDeclarationMarker(node) && node.original!.kind === Syntax.VariableStatement) {
         const id = getOriginalNodeId(node);
         const isExportedDeclaration = hasSyntacticModifier(node.original!, ModifierFlags.Export);
         deferredExports[id] = appendExportsOfVariableStatement(deferredExports[id], <VariableStatement>node.original, isExportedDeclaration);
@@ -849,11 +849,11 @@ namespace qnr {
       const namedBindings = importClause.namedBindings;
       if (namedBindings) {
         switch (namedBindings.kind) {
-          case SyntaxKind.NamespaceImport:
+          case Syntax.NamespaceImport:
             statements = appendExportsOfDeclaration(statements, namedBindings);
             break;
 
-          case SyntaxKind.NamedImports:
+          case Syntax.NamedImports:
             for (const importBinding of namedBindings.elements) {
               statements = appendExportsOfDeclaration(statements, importBinding);
             }
@@ -1051,61 +1051,61 @@ namespace qnr {
      */
     function nestedElementVisitor(node: Node): VisitResult<Node> {
       switch (node.kind) {
-        case SyntaxKind.VariableStatement:
+        case Syntax.VariableStatement:
           return visitVariableStatement(<VariableStatement>node);
 
-        case SyntaxKind.FunctionDeclaration:
+        case Syntax.FunctionDeclaration:
           return visitFunctionDeclaration(<FunctionDeclaration>node);
 
-        case SyntaxKind.ClassDeclaration:
+        case Syntax.ClassDeclaration:
           return visitClassDeclaration(<ClassDeclaration>node);
 
-        case SyntaxKind.ForStatement:
+        case Syntax.ForStatement:
           return visitForStatement(<ForStatement>node);
 
-        case SyntaxKind.ForInStatement:
+        case Syntax.ForInStatement:
           return visitForInStatement(<ForInStatement>node);
 
-        case SyntaxKind.ForOfStatement:
+        case Syntax.ForOfStatement:
           return visitForOfStatement(<ForOfStatement>node);
 
-        case SyntaxKind.DoStatement:
+        case Syntax.DoStatement:
           return visitDoStatement(<DoStatement>node);
 
-        case SyntaxKind.WhileStatement:
+        case Syntax.WhileStatement:
           return visitWhileStatement(<WhileStatement>node);
 
-        case SyntaxKind.LabeledStatement:
+        case Syntax.LabeledStatement:
           return visitLabeledStatement(<LabeledStatement>node);
 
-        case SyntaxKind.WithStatement:
+        case Syntax.WithStatement:
           return visitWithStatement(<WithStatement>node);
 
-        case SyntaxKind.SwitchStatement:
+        case Syntax.SwitchStatement:
           return visitSwitchStatement(<SwitchStatement>node);
 
-        case SyntaxKind.CaseBlock:
+        case Syntax.CaseBlock:
           return visitCaseBlock(<CaseBlock>node);
 
-        case SyntaxKind.CaseClause:
+        case Syntax.CaseClause:
           return visitCaseClause(<CaseClause>node);
 
-        case SyntaxKind.DefaultClause:
+        case Syntax.DefaultClause:
           return visitDefaultClause(<DefaultClause>node);
 
-        case SyntaxKind.TryStatement:
+        case Syntax.TryStatement:
           return visitTryStatement(<TryStatement>node);
 
-        case SyntaxKind.CatchClause:
+        case Syntax.CatchClause:
           return visitCatchClause(<CatchClause>node);
 
-        case SyntaxKind.Block:
+        case Syntax.Block:
           return visitBlock(<Block>node);
 
-        case SyntaxKind.MergeDeclarationMarker:
+        case Syntax.MergeDeclarationMarker:
           return visitMergeDeclarationMarker(<MergeDeclarationMarker>node);
 
-        case SyntaxKind.EndOfDeclarationMarker:
+        case Syntax.EndOfDeclarationMarker:
           return visitEndOfDeclarationMarker(<EndOfDeclarationMarker>node);
 
         default:
@@ -1395,7 +1395,7 @@ namespace qnr {
         return hasExportedReferenceInDestructuringTarget(node.initializer);
       } else if (isIdentifier(node)) {
         const container = resolver.getReferencedExportContainer(node);
-        return container !== undefined && container.kind === SyntaxKind.SourceFile;
+        return container !== undefined && container.kind === Syntax.SourceFile;
       } else {
         return false;
       }
@@ -1412,8 +1412,8 @@ namespace qnr {
      */
     function modifierVisitor(node: Node): VisitResult<Node> {
       switch (node.kind) {
-        case SyntaxKind.ExportKeyword:
-        case SyntaxKind.DefaultKeyword:
+        case Syntax.ExportKeyword:
+        case Syntax.DefaultKeyword:
           return;
       }
       return node;
@@ -1431,7 +1431,7 @@ namespace qnr {
      * @param emitCallback A callback used to emit the node in the printer.
      */
     function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void): void {
-      if (node.kind === SyntaxKind.SourceFile) {
+      if (node.kind === Syntax.SourceFile) {
         const id = getOriginalNodeId(node);
         currentSourceFile = <SourceFile>node;
         moduleInfo = moduleInfoMap[id];
@@ -1487,7 +1487,7 @@ namespace qnr {
      */
     function substituteUnspecified(node: Node) {
       switch (node.kind) {
-        case SyntaxKind.ShorthandPropertyAssignment:
+        case Syntax.ShorthandPropertyAssignment:
           return substituteShorthandPropertyAssignment(<ShorthandPropertyAssignment>node);
       }
       return node;
@@ -1529,14 +1529,14 @@ namespace qnr {
      */
     function substituteExpression(node: Expression) {
       switch (node.kind) {
-        case SyntaxKind.Identifier:
+        case Syntax.Identifier:
           return substituteExpressionIdentifier(<Identifier>node);
-        case SyntaxKind.BinaryExpression:
+        case Syntax.BinaryExpression:
           return substituteBinaryExpression(<BinaryExpression>node);
-        case SyntaxKind.PrefixUnaryExpression:
-        case SyntaxKind.PostfixUnaryExpression:
+        case Syntax.PrefixUnaryExpression:
+        case Syntax.PostfixUnaryExpression:
           return substituteUnaryExpression(<PrefixUnaryExpression | PostfixUnaryExpression>node);
-        case SyntaxKind.MetaProperty:
+        case Syntax.MetaProperty:
           return substituteMetaProperty(<MetaProperty>node);
       }
 
@@ -1627,7 +1627,7 @@ namespace qnr {
       //   namespace due to how they are transformed in TypeScript.
       // - We only substitute identifiers that are exported at the top level.
       if (
-        (node.operator === SyntaxKind.Plus2Token || node.operator === SyntaxKind.Minus2Token) &&
+        (node.operator === Syntax.Plus2Token || node.operator === Syntax.Minus2Token) &&
         isIdentifier(node.operand) &&
         !isGeneratedIdentifier(node.operand) &&
         !isLocalName(node.operand) &&
@@ -1635,14 +1635,14 @@ namespace qnr {
       ) {
         const exportedNames = getExports(node.operand);
         if (exportedNames) {
-          let expression: Expression = node.kind === SyntaxKind.PostfixUnaryExpression ? setTextRange(createPrefix(node.operator, node.operand), node) : node;
+          let expression: Expression = node.kind === Syntax.PostfixUnaryExpression ? setTextRange(createPrefix(node.operator, node.operand), node) : node;
 
           for (const exportName of exportedNames) {
             expression = createExportExpression(exportName, preventSubstitution(expression));
           }
 
-          if (node.kind === SyntaxKind.PostfixUnaryExpression) {
-            expression = node.operator === SyntaxKind.Plus2Token ? createSubtract(preventSubstitution(expression), createLiteral(1)) : createAdd(preventSubstitution(expression), createLiteral(1));
+          if (node.kind === Syntax.PostfixUnaryExpression) {
+            expression = node.operator === Syntax.Plus2Token ? createSubtract(preventSubstitution(expression), createLiteral(1)) : createAdd(preventSubstitution(expression), createLiteral(1));
           }
 
           return expression;
@@ -1671,7 +1671,7 @@ namespace qnr {
 
         if (valueDeclaration) {
           const exportContainer = resolver.getReferencedExportContainer(name, /*prefixLocals*/ false);
-          if (exportContainer && exportContainer.kind === SyntaxKind.SourceFile) {
+          if (exportContainer && exportContainer.kind === Syntax.SourceFile) {
             exportedNames = append(exportedNames, getDeclarationName(valueDeclaration));
           }
 

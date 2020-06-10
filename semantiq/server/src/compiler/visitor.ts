@@ -15,57 +15,48 @@ namespace qnr {
    * @param initial The initial value to supply to the reduction.
    * @param f The callback function
    */
-  export function reduceEachChild<T>(
-    node: Node | undefined,
-    initial: T,
-    cbNode: (memo: T, node: Node) => T,
-    cbNodeArray?: (memo: T, nodes: NodeArray<Node>) => T
-  ): T {
+  export function reduceEachChild<T>(node: Node | undefined, initial: T, cbNode: (memo: T, node: Node) => T, cbNodeArray?: (memo: T, nodes: NodeArray<Node>) => T): T {
     if (node === undefined) {
       return initial;
     }
 
-    const reduceNodes: (
-      nodes: NodeArray<Node> | undefined,
-      f: ((memo: T, node: Node) => T) | ((memo: T, node: NodeArray<Node>) => T),
-      initial: T
-    ) => T = cbNodeArray ? reduceNodeArray : reduceLeft;
+    const reduceNodes: (nodes: NodeArray<Node> | undefined, f: ((memo: T, node: Node) => T) | ((memo: T, node: NodeArray<Node>) => T), initial: T) => T = cbNodeArray ? reduceNodeArray : reduceLeft;
     const cbNodes = cbNodeArray || cbNode;
     const kind = node.kind;
 
     // No need to visit nodes with no children.
-    if (kind > SyntaxKind.FirstToken && kind <= SyntaxKind.LastToken) {
+    if (kind > Syntax.FirstToken && kind <= Syntax.LastToken) {
       return initial;
     }
 
     // We do not yet support types.
-    if (kind >= SyntaxKind.TypePredicate && kind <= SyntaxKind.LiteralType) {
+    if (kind >= Syntax.TypePredicate && kind <= Syntax.LiteralType) {
       return initial;
     }
 
     let result = initial;
     switch (node.kind) {
       // Leaf nodes
-      case SyntaxKind.SemicolonClassElement:
-      case SyntaxKind.EmptyStatement:
-      case SyntaxKind.OmittedExpression:
-      case SyntaxKind.DebuggerStatement:
-      case SyntaxKind.NotEmittedStatement:
+      case Syntax.SemicolonClassElement:
+      case Syntax.EmptyStatement:
+      case Syntax.OmittedExpression:
+      case Syntax.DebuggerStatement:
+      case Syntax.NotEmittedStatement:
         // No need to visit nodes with no children.
         break;
 
       // Names
-      case SyntaxKind.QualifiedName:
+      case Syntax.QualifiedName:
         result = reduceNode((<QualifiedName>node).left, cbNode, result);
         result = reduceNode((<QualifiedName>node).right, cbNode, result);
         break;
 
-      case SyntaxKind.ComputedPropertyName:
+      case Syntax.ComputedPropertyName:
         result = reduceNode((<ComputedPropertyName>node).expression, cbNode, result);
         break;
 
       // Signature elements
-      case SyntaxKind.Parameter:
+      case Syntax.Parameter:
         result = reduceNodes((<ParameterDeclaration>node).decorators, cbNodes, result);
         result = reduceNodes((<ParameterDeclaration>node).modifiers, cbNodes, result);
         result = reduceNode((<ParameterDeclaration>node).name, cbNode, result);
@@ -73,12 +64,12 @@ namespace qnr {
         result = reduceNode((<ParameterDeclaration>node).initializer, cbNode, result);
         break;
 
-      case SyntaxKind.Decorator:
+      case Syntax.Decorator:
         result = reduceNode((<Decorator>node).expression, cbNode, result);
         break;
 
       // Type member
-      case SyntaxKind.PropertySignature:
+      case Syntax.PropertySignature:
         result = reduceNodes((<PropertySignature>node).modifiers, cbNodes, result);
         result = reduceNode((<PropertySignature>node).name, cbNode, result);
         result = reduceNode((<PropertySignature>node).questionToken, cbNode, result);
@@ -86,7 +77,7 @@ namespace qnr {
         result = reduceNode((<PropertySignature>node).initializer, cbNode, result);
         break;
 
-      case SyntaxKind.PropertyDeclaration:
+      case Syntax.PropertyDeclaration:
         result = reduceNodes((<PropertyDeclaration>node).decorators, cbNodes, result);
         result = reduceNodes((<PropertyDeclaration>node).modifiers, cbNodes, result);
         result = reduceNode((<PropertyDeclaration>node).name, cbNode, result);
@@ -94,7 +85,7 @@ namespace qnr {
         result = reduceNode((<PropertyDeclaration>node).initializer, cbNode, result);
         break;
 
-      case SyntaxKind.MethodDeclaration:
+      case Syntax.MethodDeclaration:
         result = reduceNodes((<MethodDeclaration>node).decorators, cbNodes, result);
         result = reduceNodes((<MethodDeclaration>node).modifiers, cbNodes, result);
         result = reduceNode((<MethodDeclaration>node).name, cbNode, result);
@@ -104,13 +95,13 @@ namespace qnr {
         result = reduceNode((<MethodDeclaration>node).body, cbNode, result);
         break;
 
-      case SyntaxKind.Constructor:
+      case Syntax.Constructor:
         result = reduceNodes((<ConstructorDeclaration>node).modifiers, cbNodes, result);
         result = reduceNodes((<ConstructorDeclaration>node).parameters, cbNodes, result);
         result = reduceNode((<ConstructorDeclaration>node).body, cbNode, result);
         break;
 
-      case SyntaxKind.GetAccessor:
+      case Syntax.GetAccessor:
         result = reduceNodes((<GetAccessorDeclaration>node).decorators, cbNodes, result);
         result = reduceNodes((<GetAccessorDeclaration>node).modifiers, cbNodes, result);
         result = reduceNode((<GetAccessorDeclaration>node).name, cbNode, result);
@@ -119,7 +110,7 @@ namespace qnr {
         result = reduceNode((<GetAccessorDeclaration>node).body, cbNode, result);
         break;
 
-      case SyntaxKind.SetAccessor:
+      case Syntax.SetAccessor:
         result = reduceNodes((<GetAccessorDeclaration>node).decorators, cbNodes, result);
         result = reduceNodes((<GetAccessorDeclaration>node).modifiers, cbNodes, result);
         result = reduceNode((<GetAccessorDeclaration>node).name, cbNode, result);
@@ -128,60 +119,60 @@ namespace qnr {
         break;
 
       // Binding patterns
-      case SyntaxKind.ObjectBindingPattern:
-      case SyntaxKind.ArrayBindingPattern:
+      case Syntax.ObjectBindingPattern:
+      case Syntax.ArrayBindingPattern:
         result = reduceNodes((<BindingPattern>node).elements, cbNodes, result);
         break;
 
-      case SyntaxKind.BindingElement:
+      case Syntax.BindingElement:
         result = reduceNode((<BindingElement>node).propertyName, cbNode, result);
         result = reduceNode((<BindingElement>node).name, cbNode, result);
         result = reduceNode((<BindingElement>node).initializer, cbNode, result);
         break;
 
       // Expression
-      case SyntaxKind.ArrayLiteralExpression:
+      case Syntax.ArrayLiteralExpression:
         result = reduceNodes((<ArrayLiteralExpression>node).elements, cbNodes, result);
         break;
 
-      case SyntaxKind.ObjectLiteralExpression:
+      case Syntax.ObjectLiteralExpression:
         result = reduceNodes((<ObjectLiteralExpression>node).properties, cbNodes, result);
         break;
 
-      case SyntaxKind.PropertyAccessExpression:
+      case Syntax.PropertyAccessExpression:
         result = reduceNode((<PropertyAccessExpression>node).expression, cbNode, result);
         result = reduceNode((<PropertyAccessExpression>node).name, cbNode, result);
         break;
 
-      case SyntaxKind.ElementAccessExpression:
+      case Syntax.ElementAccessExpression:
         result = reduceNode((<ElementAccessExpression>node).expression, cbNode, result);
         result = reduceNode((<ElementAccessExpression>node).argumentExpression, cbNode, result);
         break;
 
-      case SyntaxKind.CallExpression:
+      case Syntax.CallExpression:
         result = reduceNode((<CallExpression>node).expression, cbNode, result);
         result = reduceNodes((<CallExpression>node).typeArguments, cbNodes, result);
         result = reduceNodes((<CallExpression>node).arguments, cbNodes, result);
         break;
 
-      case SyntaxKind.NewExpression:
+      case Syntax.NewExpression:
         result = reduceNode((<NewExpression>node).expression, cbNode, result);
         result = reduceNodes((<NewExpression>node).typeArguments, cbNodes, result);
         result = reduceNodes((<NewExpression>node).arguments, cbNodes, result);
         break;
 
-      case SyntaxKind.TaggedTemplateExpression:
+      case Syntax.TaggedTemplateExpression:
         result = reduceNode((<TaggedTemplateExpression>node).tag, cbNode, result);
         result = reduceNodes((<TaggedTemplateExpression>node).typeArguments, cbNodes, result);
         result = reduceNode((<TaggedTemplateExpression>node).template, cbNode, result);
         break;
 
-      case SyntaxKind.TypeAssertionExpression:
+      case Syntax.TypeAssertionExpression:
         result = reduceNode((<TypeAssertion>node).type, cbNode, result);
         result = reduceNode((<TypeAssertion>node).expression, cbNode, result);
         break;
 
-      case SyntaxKind.FunctionExpression:
+      case Syntax.FunctionExpression:
         result = reduceNodes((<FunctionExpression>node).modifiers, cbNodes, result);
         result = reduceNode((<FunctionExpression>node).name, cbNode, result);
         result = reduceNodes((<FunctionExpression>node).typeParameters, cbNodes, result);
@@ -190,7 +181,7 @@ namespace qnr {
         result = reduceNode((<FunctionExpression>node).body, cbNode, result);
         break;
 
-      case SyntaxKind.ArrowFunction:
+      case Syntax.ArrowFunction:
         result = reduceNodes((<ArrowFunction>node).modifiers, cbNodes, result);
         result = reduceNodes((<ArrowFunction>node).typeParameters, cbNodes, result);
         result = reduceNodes((<ArrowFunction>node).parameters, cbNodes, result);
@@ -198,52 +189,43 @@ namespace qnr {
         result = reduceNode((<ArrowFunction>node).body, cbNode, result);
         break;
 
-      case SyntaxKind.ParenthesizedExpression:
-      case SyntaxKind.DeleteExpression:
-      case SyntaxKind.TypeOfExpression:
-      case SyntaxKind.VoidExpression:
-      case SyntaxKind.AwaitExpression:
-      case SyntaxKind.YieldExpression:
-      case SyntaxKind.SpreadElement:
-      case SyntaxKind.NonNullExpression:
+      case Syntax.ParenthesizedExpression:
+      case Syntax.DeleteExpression:
+      case Syntax.TypeOfExpression:
+      case Syntax.VoidExpression:
+      case Syntax.AwaitExpression:
+      case Syntax.YieldExpression:
+      case Syntax.SpreadElement:
+      case Syntax.NonNullExpression:
         result = reduceNode(
-          (<
-            | ParenthesizedExpression
-            | DeleteExpression
-            | TypeOfExpression
-            | VoidExpression
-            | AwaitExpression
-            | YieldExpression
-            | SpreadElement
-            | NonNullExpression
-          >node).expression,
+          (<ParenthesizedExpression | DeleteExpression | TypeOfExpression | VoidExpression | AwaitExpression | YieldExpression | SpreadElement | NonNullExpression>node).expression,
           cbNode,
           result
         );
         break;
 
-      case SyntaxKind.PrefixUnaryExpression:
-      case SyntaxKind.PostfixUnaryExpression:
+      case Syntax.PrefixUnaryExpression:
+      case Syntax.PostfixUnaryExpression:
         result = reduceNode((<PrefixUnaryExpression | PostfixUnaryExpression>node).operand, cbNode, result);
         break;
 
-      case SyntaxKind.BinaryExpression:
+      case Syntax.BinaryExpression:
         result = reduceNode((<BinaryExpression>node).left, cbNode, result);
         result = reduceNode((<BinaryExpression>node).right, cbNode, result);
         break;
 
-      case SyntaxKind.ConditionalExpression:
+      case Syntax.ConditionalExpression:
         result = reduceNode((<ConditionalExpression>node).condition, cbNode, result);
         result = reduceNode((<ConditionalExpression>node).whenTrue, cbNode, result);
         result = reduceNode((<ConditionalExpression>node).whenFalse, cbNode, result);
         break;
 
-      case SyntaxKind.TemplateExpression:
+      case Syntax.TemplateExpression:
         result = reduceNode((<TemplateExpression>node).head, cbNode, result);
         result = reduceNodes((<TemplateExpression>node).templateSpans, cbNodes, result);
         break;
 
-      case SyntaxKind.ClassExpression:
+      case Syntax.ClassExpression:
         result = reduceNodes((<ClassExpression>node).modifiers, cbNodes, result);
         result = reduceNode((<ClassExpression>node).name, cbNode, result);
         result = reduceNodes((<ClassExpression>node).typeParameters, cbNodes, result);
@@ -251,99 +233,99 @@ namespace qnr {
         result = reduceNodes((<ClassExpression>node).members, cbNodes, result);
         break;
 
-      case SyntaxKind.ExpressionWithTypeArguments:
+      case Syntax.ExpressionWithTypeArguments:
         result = reduceNode((<ExpressionWithTypeArguments>node).expression, cbNode, result);
         result = reduceNodes((<ExpressionWithTypeArguments>node).typeArguments, cbNodes, result);
         break;
 
-      case SyntaxKind.AsExpression:
+      case Syntax.AsExpression:
         result = reduceNode((<AsExpression>node).expression, cbNode, result);
         result = reduceNode((<AsExpression>node).type, cbNode, result);
         break;
 
       // Misc
-      case SyntaxKind.TemplateSpan:
+      case Syntax.TemplateSpan:
         result = reduceNode((<TemplateSpan>node).expression, cbNode, result);
         result = reduceNode((<TemplateSpan>node).literal, cbNode, result);
         break;
 
       // Element
-      case SyntaxKind.Block:
+      case Syntax.Block:
         result = reduceNodes((<Block>node).statements, cbNodes, result);
         break;
 
-      case SyntaxKind.VariableStatement:
+      case Syntax.VariableStatement:
         result = reduceNodes((<VariableStatement>node).modifiers, cbNodes, result);
         result = reduceNode((<VariableStatement>node).declarationList, cbNode, result);
         break;
 
-      case SyntaxKind.ExpressionStatement:
+      case Syntax.ExpressionStatement:
         result = reduceNode((<ExpressionStatement>node).expression, cbNode, result);
         break;
 
-      case SyntaxKind.IfStatement:
+      case Syntax.IfStatement:
         result = reduceNode((<IfStatement>node).expression, cbNode, result);
         result = reduceNode((<IfStatement>node).thenStatement, cbNode, result);
         result = reduceNode((<IfStatement>node).elseStatement, cbNode, result);
         break;
 
-      case SyntaxKind.DoStatement:
+      case Syntax.DoStatement:
         result = reduceNode((<DoStatement>node).statement, cbNode, result);
         result = reduceNode((<DoStatement>node).expression, cbNode, result);
         break;
 
-      case SyntaxKind.WhileStatement:
-      case SyntaxKind.WithStatement:
+      case Syntax.WhileStatement:
+      case Syntax.WithStatement:
         result = reduceNode((<WhileStatement | WithStatement>node).expression, cbNode, result);
         result = reduceNode((<WhileStatement | WithStatement>node).statement, cbNode, result);
         break;
 
-      case SyntaxKind.ForStatement:
+      case Syntax.ForStatement:
         result = reduceNode((<ForStatement>node).initializer, cbNode, result);
         result = reduceNode((<ForStatement>node).condition, cbNode, result);
         result = reduceNode((<ForStatement>node).incrementor, cbNode, result);
         result = reduceNode((<ForStatement>node).statement, cbNode, result);
         break;
 
-      case SyntaxKind.ForInStatement:
-      case SyntaxKind.ForOfStatement:
+      case Syntax.ForInStatement:
+      case Syntax.ForOfStatement:
         result = reduceNode((<ForInOrOfStatement>node).initializer, cbNode, result);
         result = reduceNode((<ForInOrOfStatement>node).expression, cbNode, result);
         result = reduceNode((<ForInOrOfStatement>node).statement, cbNode, result);
         break;
 
-      case SyntaxKind.ReturnStatement:
-      case SyntaxKind.ThrowStatement:
+      case Syntax.ReturnStatement:
+      case Syntax.ThrowStatement:
         result = reduceNode((<ReturnStatement>node).expression, cbNode, result);
         break;
 
-      case SyntaxKind.SwitchStatement:
+      case Syntax.SwitchStatement:
         result = reduceNode((<SwitchStatement>node).expression, cbNode, result);
         result = reduceNode((<SwitchStatement>node).caseBlock, cbNode, result);
         break;
 
-      case SyntaxKind.LabeledStatement:
+      case Syntax.LabeledStatement:
         result = reduceNode((<LabeledStatement>node).label, cbNode, result);
         result = reduceNode((<LabeledStatement>node).statement, cbNode, result);
         break;
 
-      case SyntaxKind.TryStatement:
+      case Syntax.TryStatement:
         result = reduceNode((<TryStatement>node).tryBlock, cbNode, result);
         result = reduceNode((<TryStatement>node).catchClause, cbNode, result);
         result = reduceNode((<TryStatement>node).finallyBlock, cbNode, result);
         break;
 
-      case SyntaxKind.VariableDeclaration:
+      case Syntax.VariableDeclaration:
         result = reduceNode((<VariableDeclaration>node).name, cbNode, result);
         result = reduceNode((<VariableDeclaration>node).type, cbNode, result);
         result = reduceNode((<VariableDeclaration>node).initializer, cbNode, result);
         break;
 
-      case SyntaxKind.VariableDeclarationList:
+      case Syntax.VariableDeclarationList:
         result = reduceNodes((<VariableDeclarationList>node).declarations, cbNodes, result);
         break;
 
-      case SyntaxKind.FunctionDeclaration:
+      case Syntax.FunctionDeclaration:
         result = reduceNodes((<FunctionDeclaration>node).decorators, cbNodes, result);
         result = reduceNodes((<FunctionDeclaration>node).modifiers, cbNodes, result);
         result = reduceNode((<FunctionDeclaration>node).name, cbNode, result);
@@ -353,7 +335,7 @@ namespace qnr {
         result = reduceNode((<FunctionDeclaration>node).body, cbNode, result);
         break;
 
-      case SyntaxKind.ClassDeclaration:
+      case Syntax.ClassDeclaration:
         result = reduceNodes((<ClassDeclaration>node).decorators, cbNodes, result);
         result = reduceNodes((<ClassDeclaration>node).modifiers, cbNodes, result);
         result = reduceNode((<ClassDeclaration>node).name, cbNode, result);
@@ -362,73 +344,73 @@ namespace qnr {
         result = reduceNodes((<ClassDeclaration>node).members, cbNodes, result);
         break;
 
-      case SyntaxKind.EnumDeclaration:
+      case Syntax.EnumDeclaration:
         result = reduceNodes((<EnumDeclaration>node).decorators, cbNodes, result);
         result = reduceNodes((<EnumDeclaration>node).modifiers, cbNodes, result);
         result = reduceNode((<EnumDeclaration>node).name, cbNode, result);
         result = reduceNodes((<EnumDeclaration>node).members, cbNodes, result);
         break;
 
-      case SyntaxKind.ModuleDeclaration:
+      case Syntax.ModuleDeclaration:
         result = reduceNodes((<ModuleDeclaration>node).decorators, cbNodes, result);
         result = reduceNodes((<ModuleDeclaration>node).modifiers, cbNodes, result);
         result = reduceNode((<ModuleDeclaration>node).name, cbNode, result);
         result = reduceNode((<ModuleDeclaration>node).body, cbNode, result);
         break;
 
-      case SyntaxKind.ModuleBlock:
+      case Syntax.ModuleBlock:
         result = reduceNodes((<ModuleBlock>node).statements, cbNodes, result);
         break;
 
-      case SyntaxKind.CaseBlock:
+      case Syntax.CaseBlock:
         result = reduceNodes((<CaseBlock>node).clauses, cbNodes, result);
         break;
 
-      case SyntaxKind.ImportEqualsDeclaration:
+      case Syntax.ImportEqualsDeclaration:
         result = reduceNodes((<ImportEqualsDeclaration>node).decorators, cbNodes, result);
         result = reduceNodes((<ImportEqualsDeclaration>node).modifiers, cbNodes, result);
         result = reduceNode((<ImportEqualsDeclaration>node).name, cbNode, result);
         result = reduceNode((<ImportEqualsDeclaration>node).moduleReference, cbNode, result);
         break;
 
-      case SyntaxKind.ImportDeclaration:
+      case Syntax.ImportDeclaration:
         result = reduceNodes((<ImportDeclaration>node).decorators, cbNodes, result);
         result = reduceNodes((<ImportDeclaration>node).modifiers, cbNodes, result);
         result = reduceNode((<ImportDeclaration>node).importClause, cbNode, result);
         result = reduceNode((<ImportDeclaration>node).moduleSpecifier, cbNode, result);
         break;
 
-      case SyntaxKind.ImportClause:
+      case Syntax.ImportClause:
         result = reduceNode((<ImportClause>node).name, cbNode, result);
         result = reduceNode((<ImportClause>node).namedBindings, cbNode, result);
         break;
 
-      case SyntaxKind.NamespaceImport:
+      case Syntax.NamespaceImport:
         result = reduceNode((<NamespaceImport>node).name, cbNode, result);
         break;
 
-      case SyntaxKind.NamespaceExport:
+      case Syntax.NamespaceExport:
         result = reduceNode((<NamespaceExport>node).name, cbNode, result);
         break;
 
-      case SyntaxKind.NamedImports:
-      case SyntaxKind.NamedExports:
+      case Syntax.NamedImports:
+      case Syntax.NamedExports:
         result = reduceNodes((<NamedImports | NamedExports>node).elements, cbNodes, result);
         break;
 
-      case SyntaxKind.ImportSpecifier:
-      case SyntaxKind.ExportSpecifier:
+      case Syntax.ImportSpecifier:
+      case Syntax.ExportSpecifier:
         result = reduceNode((<ImportSpecifier | ExportSpecifier>node).propertyName, cbNode, result);
         result = reduceNode((<ImportSpecifier | ExportSpecifier>node).name, cbNode, result);
         break;
 
-      case SyntaxKind.ExportAssignment:
+      case Syntax.ExportAssignment:
         result = reduceLeft((<ExportAssignment>node).decorators, cbNode, result);
         result = reduceLeft((<ExportAssignment>node).modifiers, cbNode, result);
         result = reduceNode((<ExportAssignment>node).expression, cbNode, result);
         break;
 
-      case SyntaxKind.ExportDeclaration:
+      case Syntax.ExportDeclaration:
         result = reduceLeft((<ExportDeclaration>node).decorators, cbNode, result);
         result = reduceLeft((<ExportDeclaration>node).modifiers, cbNode, result);
         result = reduceNode((<ExportDeclaration>node).exportClause, cbNode, result);
@@ -436,101 +418,101 @@ namespace qnr {
         break;
 
       // Module references
-      case SyntaxKind.ExternalModuleReference:
+      case Syntax.ExternalModuleReference:
         result = reduceNode((<ExternalModuleReference>node).expression, cbNode, result);
         break;
 
       // JSX
-      case SyntaxKind.JsxElement:
+      case Syntax.JsxElement:
         result = reduceNode((<JsxElement>node).openingElement, cbNode, result);
         result = reduceLeft((<JsxElement>node).children, cbNode, result);
         result = reduceNode((<JsxElement>node).closingElement, cbNode, result);
         break;
 
-      case SyntaxKind.JsxFragment:
+      case Syntax.JsxFragment:
         result = reduceNode((<JsxFragment>node).openingFragment, cbNode, result);
         result = reduceLeft((<JsxFragment>node).children, cbNode, result);
         result = reduceNode((<JsxFragment>node).closingFragment, cbNode, result);
         break;
 
-      case SyntaxKind.JsxSelfClosingElement:
-      case SyntaxKind.JsxOpeningElement:
+      case Syntax.JsxSelfClosingElement:
+      case Syntax.JsxOpeningElement:
         result = reduceNode((<JsxSelfClosingElement | JsxOpeningElement>node).tagName, cbNode, result);
         result = reduceNodes((<JsxSelfClosingElement | JsxOpeningElement>node).typeArguments, cbNode, result);
         result = reduceNode((<JsxSelfClosingElement | JsxOpeningElement>node).attributes, cbNode, result);
         break;
 
-      case SyntaxKind.JsxAttributes:
+      case Syntax.JsxAttributes:
         result = reduceNodes((<JsxAttributes>node).properties, cbNodes, result);
         break;
 
-      case SyntaxKind.JsxClosingElement:
+      case Syntax.JsxClosingElement:
         result = reduceNode((<JsxClosingElement>node).tagName, cbNode, result);
         break;
 
-      case SyntaxKind.JsxAttribute:
+      case Syntax.JsxAttribute:
         result = reduceNode((<JsxAttribute>node).name, cbNode, result);
         result = reduceNode((<JsxAttribute>node).initializer, cbNode, result);
         break;
 
-      case SyntaxKind.JsxSpreadAttribute:
+      case Syntax.JsxSpreadAttribute:
         result = reduceNode((<JsxSpreadAttribute>node).expression, cbNode, result);
         break;
 
-      case SyntaxKind.JsxExpression:
+      case Syntax.JsxExpression:
         result = reduceNode((<JsxExpression>node).expression, cbNode, result);
         break;
 
       // Clauses
-      case SyntaxKind.CaseClause:
+      case Syntax.CaseClause:
         result = reduceNode((<CaseClause>node).expression, cbNode, result);
       // falls through
 
-      case SyntaxKind.DefaultClause:
+      case Syntax.DefaultClause:
         result = reduceNodes((<CaseClause | DefaultClause>node).statements, cbNodes, result);
         break;
 
-      case SyntaxKind.HeritageClause:
+      case Syntax.HeritageClause:
         result = reduceNodes((<HeritageClause>node).types, cbNodes, result);
         break;
 
-      case SyntaxKind.CatchClause:
+      case Syntax.CatchClause:
         result = reduceNode((<CatchClause>node).variableDeclaration, cbNode, result);
         result = reduceNode((<CatchClause>node).block, cbNode, result);
         break;
 
       // Property assignments
-      case SyntaxKind.PropertyAssignment:
+      case Syntax.PropertyAssignment:
         result = reduceNode((<PropertyAssignment>node).name, cbNode, result);
         result = reduceNode((<PropertyAssignment>node).initializer, cbNode, result);
         break;
 
-      case SyntaxKind.ShorthandPropertyAssignment:
+      case Syntax.ShorthandPropertyAssignment:
         result = reduceNode((<ShorthandPropertyAssignment>node).name, cbNode, result);
         result = reduceNode((<ShorthandPropertyAssignment>node).objectAssignmentInitializer, cbNode, result);
         break;
 
-      case SyntaxKind.SpreadAssignment:
+      case Syntax.SpreadAssignment:
         result = reduceNode((<SpreadAssignment>node).expression, cbNode, result);
         break;
 
       // Enum
-      case SyntaxKind.EnumMember:
+      case Syntax.EnumMember:
         result = reduceNode((<EnumMember>node).name, cbNode, result);
         result = reduceNode((<EnumMember>node).initializer, cbNode, result);
         break;
 
       // Top-level nodes
-      case SyntaxKind.SourceFile:
+      case Syntax.SourceFile:
         result = reduceNodes((<SourceFile>node).statements, cbNodes, result);
         break;
 
       // Transformation nodes
-      case SyntaxKind.PartiallyEmittedExpression:
+      case Syntax.PartiallyEmittedExpression:
         result = reduceNode((<PartiallyEmittedExpression>node).expression, cbNode, result);
         break;
 
-      case SyntaxKind.CommaListExpression:
+      case Syntax.CommaListExpression:
         result = reduceNodes((<CommaListExpression>node).elements, cbNodes, result);
         break;
 
@@ -704,7 +686,7 @@ namespace qnr {
   function aggregateTransformFlagsForSubtree(node: Node): TransformFlags {
     // We do not transform ambient declarations or types, so there is no need to
     // recursively aggregate transform flags.
-    if (hasSyntacticModifier(node, ModifierFlags.Ambient) || (isTypeNode(node) && node.kind !== SyntaxKind.ExpressionWithTypeArguments)) {
+    if (hasSyntacticModifier(node, ModifierFlags.Ambient) || (isTypeNode(node) && node.kind !== Syntax.ExpressionWithTypeArguments)) {
       return TransformFlags.None;
     }
 

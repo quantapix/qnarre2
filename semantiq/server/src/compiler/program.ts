@@ -1844,22 +1844,22 @@ namespace qnr {
           // Otherwise break to visit each child
 
           switch (parent.kind) {
-            case SyntaxKind.Parameter:
-            case SyntaxKind.PropertyDeclaration:
-            case SyntaxKind.MethodDeclaration:
+            case Syntax.Parameter:
+            case Syntax.PropertyDeclaration:
+            case Syntax.MethodDeclaration:
               if ((<ParameterDeclaration | PropertyDeclaration | MethodDeclaration>parent).questionToken === node) {
                 diagnostics.push(createDiagnosticForNode(node, Diagnostics.The_0_modifier_can_only_be_used_in_TypeScript_files, '?'));
                 return 'skip';
               }
             // falls through
-            case SyntaxKind.MethodSignature:
-            case SyntaxKind.Constructor:
-            case SyntaxKind.GetAccessor:
-            case SyntaxKind.SetAccessor:
-            case SyntaxKind.FunctionExpression:
-            case SyntaxKind.FunctionDeclaration:
-            case SyntaxKind.ArrowFunction:
-            case SyntaxKind.VariableDeclaration:
+            case Syntax.MethodSignature:
+            case Syntax.Constructor:
+            case Syntax.GetAccessor:
+            case Syntax.SetAccessor:
+            case Syntax.FunctionExpression:
+            case Syntax.FunctionDeclaration:
+            case Syntax.ArrowFunction:
+            case Syntax.VariableDeclaration:
               // type annotation
               if ((<FunctionLikeDeclaration | VariableDeclaration | ParameterDeclaration | PropertyDeclaration>parent).type === node) {
                 diagnostics.push(createDiagnosticForNode(node, Diagnostics.Type_annotations_can_only_be_used_in_TypeScript_files));
@@ -1868,58 +1868,58 @@ namespace qnr {
           }
 
           switch (node.kind) {
-            case SyntaxKind.ImportClause:
+            case Syntax.ImportClause:
               if ((node as ImportClause).isTypeOnly) {
                 diagnostics.push(createDiagnosticForNode(node.parent, Diagnostics._0_declarations_can_only_be_used_in_TypeScript_files, 'import type'));
                 return 'skip';
               }
               break;
-            case SyntaxKind.ExportDeclaration:
+            case Syntax.ExportDeclaration:
               if ((node as ExportDeclaration).isTypeOnly) {
                 diagnostics.push(createDiagnosticForNode(node, Diagnostics._0_declarations_can_only_be_used_in_TypeScript_files, 'export type'));
                 return 'skip';
               }
               break;
-            case SyntaxKind.ImportEqualsDeclaration:
+            case Syntax.ImportEqualsDeclaration:
               diagnostics.push(createDiagnosticForNode(node, Diagnostics.import_can_only_be_used_in_TypeScript_files));
               return 'skip';
-            case SyntaxKind.ExportAssignment:
+            case Syntax.ExportAssignment:
               if ((<ExportAssignment>node).isExportEquals) {
                 diagnostics.push(createDiagnosticForNode(node, Diagnostics.export_can_only_be_used_in_TypeScript_files));
                 return 'skip';
               }
               break;
-            case SyntaxKind.HeritageClause:
+            case Syntax.HeritageClause:
               const heritageClause = <HeritageClause>node;
-              if (heritageClause.token === SyntaxKind.ImplementsKeyword) {
+              if (heritageClause.token === Syntax.ImplementsKeyword) {
                 diagnostics.push(createDiagnosticForNode(node, Diagnostics.implements_clauses_can_only_be_used_in_TypeScript_files));
                 return 'skip';
               }
               break;
-            case SyntaxKind.InterfaceDeclaration:
-              const interfaceKeyword = Token.toString(SyntaxKind.InterfaceKeyword);
+            case Syntax.InterfaceDeclaration:
+              const interfaceKeyword = Token.toString(Syntax.InterfaceKeyword);
               Debug.assertIsDefined(interfaceKeyword);
               diagnostics.push(createDiagnosticForNode(node, Diagnostics._0_declarations_can_only_be_used_in_TypeScript_files, interfaceKeyword));
               return 'skip';
-            case SyntaxKind.ModuleDeclaration:
-              const moduleKeyword = node.flags & NodeFlags.Namespace ? Token.toString(SyntaxKind.NamespaceKeyword) : Token.toString(SyntaxKind.ModuleKeyword);
+            case Syntax.ModuleDeclaration:
+              const moduleKeyword = node.flags & NodeFlags.Namespace ? Token.toString(Syntax.NamespaceKeyword) : Token.toString(Syntax.ModuleKeyword);
               Debug.assertIsDefined(moduleKeyword);
               diagnostics.push(createDiagnosticForNode(node, Diagnostics._0_declarations_can_only_be_used_in_TypeScript_files, moduleKeyword));
               return 'skip';
-            case SyntaxKind.TypeAliasDeclaration:
+            case Syntax.TypeAliasDeclaration:
               diagnostics.push(createDiagnosticForNode(node, Diagnostics.Type_aliases_can_only_be_used_in_TypeScript_files));
               return 'skip';
-            case SyntaxKind.EnumDeclaration:
-              const enumKeyword = Debug.checkDefined(Token.toString(SyntaxKind.EnumKeyword));
+            case Syntax.EnumDeclaration:
+              const enumKeyword = Debug.checkDefined(Token.toString(Syntax.EnumKeyword));
               diagnostics.push(createDiagnosticForNode(node, Diagnostics._0_declarations_can_only_be_used_in_TypeScript_files, enumKeyword));
               return 'skip';
-            case SyntaxKind.NonNullExpression:
+            case Syntax.NonNullExpression:
               diagnostics.push(createDiagnosticForNode(node, Diagnostics.Non_null_assertions_can_only_be_used_in_TypeScript_files));
               return 'skip';
-            case SyntaxKind.AsExpression:
+            case Syntax.AsExpression:
               diagnostics.push(createDiagnosticForNode((node as AsExpression).type, Diagnostics.Type_assertion_expressions_can_only_be_used_in_TypeScript_files));
               return 'skip';
-            case SyntaxKind.TypeAssertionExpression:
+            case Syntax.TypeAssertionExpression:
               fail(); // Won't parse these in a JS file anyway, as they are interpreted as JSX.
           }
         }
@@ -1935,15 +1935,15 @@ namespace qnr {
           }
 
           switch (parent.kind) {
-            case SyntaxKind.ClassDeclaration:
-            case SyntaxKind.ClassExpression:
-            case SyntaxKind.MethodDeclaration:
-            case SyntaxKind.Constructor:
-            case SyntaxKind.GetAccessor:
-            case SyntaxKind.SetAccessor:
-            case SyntaxKind.FunctionExpression:
-            case SyntaxKind.FunctionDeclaration:
-            case SyntaxKind.ArrowFunction:
+            case Syntax.ClassDeclaration:
+            case Syntax.ClassExpression:
+            case Syntax.MethodDeclaration:
+            case Syntax.Constructor:
+            case Syntax.GetAccessor:
+            case Syntax.SetAccessor:
+            case Syntax.FunctionExpression:
+            case Syntax.FunctionDeclaration:
+            case Syntax.ArrowFunction:
               // Check type parameters
               if (nodes === (<DeclarationWithTypeParameterChildren>parent).typeParameters) {
                 diagnostics.push(createDiagnosticForNodeArray(nodes, Diagnostics.Type_parameter_declarations_can_only_be_used_in_TypeScript_files));
@@ -1951,37 +1951,37 @@ namespace qnr {
               }
             // falls through
 
-            case SyntaxKind.VariableStatement:
+            case Syntax.VariableStatement:
               // Check modifiers
               if (nodes === parent.modifiers) {
-                checkModifiers(parent.modifiers, parent.kind === SyntaxKind.VariableStatement);
+                checkModifiers(parent.modifiers, parent.kind === Syntax.VariableStatement);
                 return 'skip';
               }
               break;
-            case SyntaxKind.PropertyDeclaration:
+            case Syntax.PropertyDeclaration:
               // Check modifiers of property declaration
               if (nodes === (<PropertyDeclaration>parent).modifiers) {
                 for (const modifier of <NodeArray<Modifier>>nodes) {
-                  if (modifier.kind !== SyntaxKind.StaticKeyword) {
+                  if (modifier.kind !== Syntax.StaticKeyword) {
                     diagnostics.push(createDiagnosticForNode(modifier, Diagnostics.The_0_modifier_can_only_be_used_in_TypeScript_files, Token.toString(modifier.kind)));
                   }
                 }
                 return 'skip';
               }
               break;
-            case SyntaxKind.Parameter:
+            case Syntax.Parameter:
               // Check modifiers of parameter declaration
               if (nodes === (<ParameterDeclaration>parent).modifiers) {
                 diagnostics.push(createDiagnosticForNodeArray(nodes, Diagnostics.Parameter_modifiers_can_only_be_used_in_TypeScript_files));
                 return 'skip';
               }
               break;
-            case SyntaxKind.CallExpression:
-            case SyntaxKind.NewExpression:
-            case SyntaxKind.ExpressionWithTypeArguments:
-            case SyntaxKind.JsxSelfClosingElement:
-            case SyntaxKind.JsxOpeningElement:
-            case SyntaxKind.TaggedTemplateExpression:
+            case Syntax.CallExpression:
+            case Syntax.NewExpression:
+            case Syntax.ExpressionWithTypeArguments:
+            case Syntax.JsxSelfClosingElement:
+            case Syntax.JsxOpeningElement:
+            case Syntax.TaggedTemplateExpression:
               // Check type arguments
               if (nodes === (<NodeWithTypeArguments>parent).typeArguments) {
                 diagnostics.push(createDiagnosticForNodeArray(nodes, Diagnostics.Type_arguments_can_only_be_used_in_TypeScript_files));
@@ -1994,25 +1994,25 @@ namespace qnr {
         function checkModifiers(modifiers: NodeArray<Modifier>, isConstValid: boolean) {
           for (const modifier of modifiers) {
             switch (modifier.kind) {
-              case SyntaxKind.ConstKeyword:
+              case Syntax.ConstKeyword:
                 if (isConstValid) {
                   continue;
                 }
               // to report error,
               // falls through
-              case SyntaxKind.PublicKeyword:
-              case SyntaxKind.PrivateKeyword:
-              case SyntaxKind.ProtectedKeyword:
-              case SyntaxKind.ReadonlyKeyword:
-              case SyntaxKind.DeclareKeyword:
-              case SyntaxKind.AbstractKeyword:
+              case Syntax.PublicKeyword:
+              case Syntax.PrivateKeyword:
+              case Syntax.ProtectedKeyword:
+              case Syntax.ReadonlyKeyword:
+              case Syntax.DeclareKeyword:
+              case Syntax.AbstractKeyword:
                 diagnostics.push(createDiagnosticForNode(modifier, Diagnostics.The_0_modifier_can_only_be_used_in_TypeScript_files, Token.toString(modifier.kind)));
                 break;
 
               // These are all legal modifiers.
-              case SyntaxKind.StaticKeyword:
-              case SyntaxKind.ExportKeyword:
-              case SyntaxKind.DefaultKeyword:
+              case Syntax.StaticKeyword:
+              case Syntax.ExportKeyword:
+              case Syntax.DefaultKeyword:
             }
           }
         }
@@ -2103,7 +2103,7 @@ namespace qnr {
     }
 
     function moduleNameIsEqualTo(a: StringLiteralLike | Identifier, b: StringLiteralLike | Identifier): boolean {
-      return a.kind === SyntaxKind.Identifier ? b.kind === SyntaxKind.Identifier && a.escapedText === b.escapedText : b.kind === SyntaxKind.StringLiteral && a.text === b.text;
+      return a.kind === Syntax.Identifier ? b.kind === Syntax.Identifier && a.escapedText === b.escapedText : b.kind === Syntax.StringLiteral && a.text === b.text;
     }
 
     function collectExternalModuleReferences(file: SourceFile): void {
@@ -2206,7 +2206,7 @@ namespace qnr {
       function getNodeAtPosition(sourceFile: SourceFile, position: number): Node {
         let current: Node = sourceFile;
         const getContainingChild = (child: Node) => {
-          if (child.pos <= position && (position < child.end || (position === child.end && child.kind === SyntaxKind.EndOfFileToken))) {
+          if (child.pos <= position && (position < child.end || (position === child.end && child.kind === Syntax.EndOfFileToken))) {
             return child;
           }
         };
@@ -3682,7 +3682,7 @@ namespace qnr {
   function getModuleNames({ imports, moduleAugmentations }: SourceFile): string[] {
     const res = imports.map((i) => i.text);
     for (const aug of moduleAugmentations) {
-      if (aug.kind === SyntaxKind.StringLiteral) {
+      if (aug.kind === Syntax.StringLiteral) {
         res.push(aug.text);
       }
       // Do nothing if it's an Identifier; we don't need to do module resolution for `declare global`.

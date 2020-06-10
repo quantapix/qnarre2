@@ -329,13 +329,13 @@ namespace qnr {
      */
     function visitJavaScriptInStatementContainingYield(node: Node): VisitResult<Node> {
       switch (node.kind) {
-        case SyntaxKind.DoStatement:
+        case Syntax.DoStatement:
           return visitDoStatement(<DoStatement>node);
-        case SyntaxKind.WhileStatement:
+        case Syntax.WhileStatement:
           return visitWhileStatement(<WhileStatement>node);
-        case SyntaxKind.SwitchStatement:
+        case Syntax.SwitchStatement:
           return visitSwitchStatement(<SwitchStatement>node);
-        case SyntaxKind.LabeledStatement:
+        case Syntax.LabeledStatement:
           return visitLabeledStatement(<LabeledStatement>node);
         default:
           return visitJavaScriptInGeneratorFunctionBody(node);
@@ -349,24 +349,24 @@ namespace qnr {
      */
     function visitJavaScriptInGeneratorFunctionBody(node: Node): VisitResult<Node> {
       switch (node.kind) {
-        case SyntaxKind.FunctionDeclaration:
+        case Syntax.FunctionDeclaration:
           return visitFunctionDeclaration(<FunctionDeclaration>node);
-        case SyntaxKind.FunctionExpression:
+        case Syntax.FunctionExpression:
           return visitFunctionExpression(<FunctionExpression>node);
-        case SyntaxKind.GetAccessor:
-        case SyntaxKind.SetAccessor:
+        case Syntax.GetAccessor:
+        case Syntax.SetAccessor:
           return visitAccessorDeclaration(<AccessorDeclaration>node);
-        case SyntaxKind.VariableStatement:
+        case Syntax.VariableStatement:
           return visitVariableStatement(<VariableStatement>node);
-        case SyntaxKind.ForStatement:
+        case Syntax.ForStatement:
           return visitForStatement(<ForStatement>node);
-        case SyntaxKind.ForInStatement:
+        case Syntax.ForInStatement:
           return visitForInStatement(<ForInStatement>node);
-        case SyntaxKind.BreakStatement:
+        case Syntax.BreakStatement:
           return visitBreakStatement(<BreakStatement>node);
-        case SyntaxKind.ContinueStatement:
+        case Syntax.ContinueStatement:
           return visitContinueStatement(<ContinueStatement>node);
-        case SyntaxKind.ReturnStatement:
+        case Syntax.ReturnStatement:
           return visitReturnStatement(<ReturnStatement>node);
         default:
           if (node.transformFlags & TransformFlags.ContainsYield) {
@@ -386,21 +386,21 @@ namespace qnr {
      */
     function visitJavaScriptContainingYield(node: Node): VisitResult<Node> {
       switch (node.kind) {
-        case SyntaxKind.BinaryExpression:
+        case Syntax.BinaryExpression:
           return visitBinaryExpression(<BinaryExpression>node);
-        case SyntaxKind.ConditionalExpression:
+        case Syntax.ConditionalExpression:
           return visitConditionalExpression(<ConditionalExpression>node);
-        case SyntaxKind.YieldExpression:
+        case Syntax.YieldExpression:
           return visitYieldExpression(<YieldExpression>node);
-        case SyntaxKind.ArrayLiteralExpression:
+        case Syntax.ArrayLiteralExpression:
           return visitArrayLiteralExpression(<ArrayLiteralExpression>node);
-        case SyntaxKind.ObjectLiteralExpression:
+        case Syntax.ObjectLiteralExpression:
           return visitObjectLiteralExpression(<ObjectLiteralExpression>node);
-        case SyntaxKind.ElementAccessExpression:
+        case Syntax.ElementAccessExpression:
           return visitElementAccessExpression(<ElementAccessExpression>node);
-        case SyntaxKind.CallExpression:
+        case Syntax.CallExpression:
           return visitCallExpression(<CallExpression>node);
-        case SyntaxKind.NewExpression:
+        case Syntax.NewExpression:
           return visitNewExpression(<NewExpression>node);
         default:
           return visitEachChild(node, visitor, context);
@@ -414,14 +414,14 @@ namespace qnr {
      */
     function visitGenerator(node: Node): VisitResult<Node> {
       switch (node.kind) {
-        case SyntaxKind.FunctionDeclaration:
+        case Syntax.FunctionDeclaration:
           return visitFunctionDeclaration(<FunctionDeclaration>node);
 
-        case SyntaxKind.FunctionExpression:
+        case Syntax.FunctionExpression:
           return visitFunctionExpression(<FunctionExpression>node);
 
         default:
-          return Debug.failBadSyntaxKind(node);
+          return Debug.failBadSyntax(node);
       }
     }
 
@@ -659,7 +659,7 @@ namespace qnr {
       if (containsYield(right)) {
         let target: Expression;
         switch (left.kind) {
-          case SyntaxKind.PropertyAccessExpression:
+          case Syntax.PropertyAccessExpression:
             // [source]
             //      a.b = yield;
             //
@@ -677,7 +677,7 @@ namespace qnr {
             );
             break;
 
-          case SyntaxKind.ElementAccessExpression:
+          case Syntax.ElementAccessExpression:
             // [source]
             //      a[b] = yield;
             //
@@ -719,7 +719,7 @@ namespace qnr {
       if (containsYield(node.right)) {
         if (isLogicalOperator(node.operatorToken.kind)) {
           return visitLogicalBinaryExpression(node);
-        } else if (node.operatorToken.kind === SyntaxKind.CommaToken) {
+        } else if (node.operatorToken.kind === Syntax.CommaToken) {
           return visitCommaExpression(node);
         }
 
@@ -780,7 +780,7 @@ namespace qnr {
       const resultLocal = declareLocal();
 
       emitAssignment(resultLocal, visitNode(node.left, visitor, isExpression), /*location*/ node.left);
-      if (node.operatorToken.kind === SyntaxKind.Ampersand2Token) {
+      if (node.operatorToken.kind === Syntax.Ampersand2Token) {
         // Logical `&&` shortcuts when the left-hand operand is falsey.
         emitBreakWhenFalse(resultLabel, resultLocal, /*location*/ node.left);
       } else {
@@ -814,7 +814,7 @@ namespace qnr {
       return inlineExpressions(pendingExpressions);
 
       function visit(node: Expression) {
-        if (isBinaryExpression(node) && node.operatorToken.kind === SyntaxKind.CommaToken) {
+        if (isBinaryExpression(node) && node.operatorToken.kind === Syntax.CommaToken) {
           visit(node.left);
           visit(node.right);
         } else {
@@ -1106,35 +1106,35 @@ namespace qnr {
 
     function transformAndEmitStatementWorker(node: Statement): void {
       switch (node.kind) {
-        case SyntaxKind.Block:
+        case Syntax.Block:
           return transformAndEmitBlock(<Block>node);
-        case SyntaxKind.ExpressionStatement:
+        case Syntax.ExpressionStatement:
           return transformAndEmitExpressionStatement(<ExpressionStatement>node);
-        case SyntaxKind.IfStatement:
+        case Syntax.IfStatement:
           return transformAndEmitIfStatement(<IfStatement>node);
-        case SyntaxKind.DoStatement:
+        case Syntax.DoStatement:
           return transformAndEmitDoStatement(<DoStatement>node);
-        case SyntaxKind.WhileStatement:
+        case Syntax.WhileStatement:
           return transformAndEmitWhileStatement(<WhileStatement>node);
-        case SyntaxKind.ForStatement:
+        case Syntax.ForStatement:
           return transformAndEmitForStatement(<ForStatement>node);
-        case SyntaxKind.ForInStatement:
+        case Syntax.ForInStatement:
           return transformAndEmitForInStatement(<ForInStatement>node);
-        case SyntaxKind.ContinueStatement:
+        case Syntax.ContinueStatement:
           return transformAndEmitContinueStatement(<ContinueStatement>node);
-        case SyntaxKind.BreakStatement:
+        case Syntax.BreakStatement:
           return transformAndEmitBreakStatement(<BreakStatement>node);
-        case SyntaxKind.ReturnStatement:
+        case Syntax.ReturnStatement:
           return transformAndEmitReturnStatement(<ReturnStatement>node);
-        case SyntaxKind.WithStatement:
+        case Syntax.WithStatement:
           return transformAndEmitWithStatement(<WithStatement>node);
-        case SyntaxKind.SwitchStatement:
+        case Syntax.SwitchStatement:
           return transformAndEmitSwitchStatement(<SwitchStatement>node);
-        case SyntaxKind.LabeledStatement:
+        case Syntax.LabeledStatement:
           return transformAndEmitLabeledStatement(<LabeledStatement>node);
-        case SyntaxKind.ThrowStatement:
+        case Syntax.ThrowStatement:
           return transformAndEmitThrowStatement(<ThrowStatement>node);
-        case SyntaxKind.TryStatement:
+        case Syntax.TryStatement:
           return transformAndEmitTryStatement(<TryStatement>node);
         default:
           return emitStatement(visitNode(node, visitor, isStatement));
@@ -1603,7 +1603,7 @@ namespace qnr {
         for (let i = 0; i < numClauses; i++) {
           const clause = caseBlock.clauses[i];
           clauseLabels.push(defineLabel());
-          if (clause.kind === SyntaxKind.DefaultClause && defaultClauseIndex === -1) {
+          if (clause.kind === Syntax.DefaultClause && defaultClauseIndex === -1) {
             defaultClauseIndex = i;
           }
         }
@@ -1617,7 +1617,7 @@ namespace qnr {
           let defaultClausesSkipped = 0;
           for (let i = clausesWritten; i < numClauses; i++) {
             const clause = caseBlock.clauses[i];
-            if (clause.kind === SyntaxKind.CaseClause) {
+            if (clause.kind === Syntax.CaseClause) {
               if (containsYield(clause.expression) && pendingClauses.length > 0) {
                 break;
               }
@@ -1959,7 +1959,7 @@ namespace qnr {
         if (!renamedCatchVariables) {
           renamedCatchVariables = createMap<boolean>();
           renamedCatchVariableDeclarations = [];
-          context.enableSubstitution(SyntaxKind.Identifier);
+          context.enableSubstitution(Syntax.Identifier);
         }
 
         renamedCatchVariables.set(text, true);
@@ -2257,7 +2257,7 @@ namespace qnr {
      */
     function createInstruction(instruction: Instruction): NumericLiteral {
       const literal = createLiteral(instruction);
-      addSyntheticTrailingComment(literal, SyntaxKind.MultiLineCommentTrivia, getInstructionName(instruction));
+      addSyntheticTrailingComment(literal, Syntax.MultiLineCommentTrivia, getInstructionName(instruction));
       return literal;
     }
 

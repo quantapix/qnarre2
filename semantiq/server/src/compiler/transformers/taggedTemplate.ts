@@ -77,7 +77,7 @@ namespace qnr {
       // thus we need to remove those characters.
       // First template piece starts with "`", others with "}"
       // Last template piece ends with "`", others with "${"
-      const isLast = node.kind === SyntaxKind.NoSubstitutionLiteral || node.kind === SyntaxKind.TemplateTail;
+      const isLast = node.kind === Syntax.NoSubstitutionLiteral || node.kind === Syntax.TemplateTail;
       text = text.substring(1, text.length - (isLast ? 1 : 2));
     }
 

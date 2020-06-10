@@ -101,42 +101,42 @@ namespace qnr {
         return node;
       }
       switch (node.kind) {
-        case SyntaxKind.AsyncKeyword:
+        case Syntax.AsyncKeyword:
           // ES2017 async modifier should be elided for targets < ES2017
           return;
 
-        case SyntaxKind.AwaitExpression:
+        case Syntax.AwaitExpression:
           return visitAwaitExpression(<AwaitExpression>node);
 
-        case SyntaxKind.MethodDeclaration:
+        case Syntax.MethodDeclaration:
           return doWithContext(ContextFlags.NonTopLevel | ContextFlags.HasLexicalThis, visitMethodDeclaration, <MethodDeclaration>node);
 
-        case SyntaxKind.FunctionDeclaration:
+        case Syntax.FunctionDeclaration:
           return doWithContext(ContextFlags.NonTopLevel | ContextFlags.HasLexicalThis, visitFunctionDeclaration, <FunctionDeclaration>node);
 
-        case SyntaxKind.FunctionExpression:
+        case Syntax.FunctionExpression:
           return doWithContext(ContextFlags.NonTopLevel | ContextFlags.HasLexicalThis, visitFunctionExpression, <FunctionExpression>node);
 
-        case SyntaxKind.ArrowFunction:
+        case Syntax.ArrowFunction:
           return doWithContext(ContextFlags.NonTopLevel, visitArrowFunction, <ArrowFunction>node);
 
-        case SyntaxKind.PropertyAccessExpression:
-          if (capturedSuperProperties && isPropertyAccessExpression(node) && node.expression.kind === SyntaxKind.SuperKeyword) {
+        case Syntax.PropertyAccessExpression:
+          if (capturedSuperProperties && isPropertyAccessExpression(node) && node.expression.kind === Syntax.SuperKeyword) {
             capturedSuperProperties.set(node.name.escapedText, true);
           }
           return visitEachChild(node, visitor, context);
 
-        case SyntaxKind.ElementAccessExpression:
-          if (capturedSuperProperties && (<ElementAccessExpression>node).expression.kind === SyntaxKind.SuperKeyword) {
+        case Syntax.ElementAccessExpression:
+          if (capturedSuperProperties && (<ElementAccessExpression>node).expression.kind === Syntax.SuperKeyword) {
             hasSuperElementAccess = true;
           }
           return visitEachChild(node, visitor, context);
 
-        case SyntaxKind.GetAccessor:
-        case SyntaxKind.SetAccessor:
-        case SyntaxKind.Constructor:
-        case SyntaxKind.ClassDeclaration:
-        case SyntaxKind.ClassExpression:
+        case Syntax.GetAccessor:
+        case Syntax.SetAccessor:
+        case Syntax.Constructor:
+        case Syntax.ClassDeclaration:
+        case Syntax.ClassExpression:
           return doWithContext(ContextFlags.NonTopLevel | ContextFlags.HasLexicalThis, visitDefault, node);
 
         default:
@@ -147,27 +147,27 @@ namespace qnr {
     function asyncBodyVisitor(node: Node): VisitResult<Node> {
       if (isNodeWithPossibleHoistedDeclaration(node)) {
         switch (node.kind) {
-          case SyntaxKind.VariableStatement:
+          case Syntax.VariableStatement:
             return visitVariableStatementInAsyncBody(node);
-          case SyntaxKind.ForStatement:
+          case Syntax.ForStatement:
             return visitForStatementInAsyncBody(node);
-          case SyntaxKind.ForInStatement:
+          case Syntax.ForInStatement:
             return visitForInStatementInAsyncBody(node);
-          case SyntaxKind.ForOfStatement:
+          case Syntax.ForOfStatement:
             return visitForOfStatementInAsyncBody(node);
-          case SyntaxKind.CatchClause:
+          case Syntax.CatchClause:
             return visitCatchClauseInAsyncBody(node);
-          case SyntaxKind.Block:
-          case SyntaxKind.SwitchStatement:
-          case SyntaxKind.CaseBlock:
-          case SyntaxKind.CaseClause:
-          case SyntaxKind.DefaultClause:
-          case SyntaxKind.TryStatement:
-          case SyntaxKind.DoStatement:
-          case SyntaxKind.WhileStatement:
-          case SyntaxKind.IfStatement:
-          case SyntaxKind.WithStatement:
-          case SyntaxKind.LabeledStatement:
+          case Syntax.Block:
+          case Syntax.SwitchStatement:
+          case Syntax.CaseBlock:
+          case Syntax.CaseClause:
+          case Syntax.DefaultClause:
+          case Syntax.TryStatement:
+          case Syntax.DoStatement:
+          case Syntax.WhileStatement:
+          case Syntax.IfStatement:
+          case Syntax.WithStatement:
+          case Syntax.LabeledStatement:
             return visitEachChild(node, asyncBodyVisitor, context);
           default:
             return Debug.assertNever(node, 'Unhandled node.');
@@ -419,7 +419,7 @@ namespace qnr {
       const original = getOriginalNode(node, isFunctionLike);
       const nodeType = original.type;
       const promiseConstructor = languageVersion < ScriptTarget.ES2015 ? getPromiseConstructor(nodeType) : undefined;
-      const isArrowFunction = node.kind === SyntaxKind.ArrowFunction;
+      const isArrowFunction = node.kind === Syntax.ArrowFunction;
       const hasLexicalArguments = (resolver.getNodeCheckFlags(node) & NodeCheckFlags.CaptureArguments) !== 0;
 
       // An async function is emit as an outer function that calls an inner
@@ -523,18 +523,18 @@ namespace qnr {
 
         // We need to enable substitutions for call, property access, and element access
         // if we need to rewrite super calls.
-        context.enableSubstitution(SyntaxKind.CallExpression);
-        context.enableSubstitution(SyntaxKind.PropertyAccessExpression);
-        context.enableSubstitution(SyntaxKind.ElementAccessExpression);
+        context.enableSubstitution(Syntax.CallExpression);
+        context.enableSubstitution(Syntax.PropertyAccessExpression);
+        context.enableSubstitution(Syntax.ElementAccessExpression);
 
         // We need to be notified when entering and exiting declarations that bind super.
-        context.enableEmitNotification(SyntaxKind.ClassDeclaration);
-        context.enableEmitNotification(SyntaxKind.MethodDeclaration);
-        context.enableEmitNotification(SyntaxKind.GetAccessor);
-        context.enableEmitNotification(SyntaxKind.SetAccessor);
-        context.enableEmitNotification(SyntaxKind.Constructor);
+        context.enableEmitNotification(Syntax.ClassDeclaration);
+        context.enableEmitNotification(Syntax.MethodDeclaration);
+        context.enableEmitNotification(Syntax.GetAccessor);
+        context.enableEmitNotification(Syntax.SetAccessor);
+        context.enableEmitNotification(Syntax.Constructor);
         // We need to be notified when entering the generated accessor arrow functions.
-        context.enableEmitNotification(SyntaxKind.VariableStatement);
+        context.enableEmitNotification(Syntax.VariableStatement);
       }
     }
 
@@ -586,25 +586,25 @@ namespace qnr {
 
     function substituteExpression(node: Expression) {
       switch (node.kind) {
-        case SyntaxKind.PropertyAccessExpression:
+        case Syntax.PropertyAccessExpression:
           return substitutePropertyAccessExpression(<PropertyAccessExpression>node);
-        case SyntaxKind.ElementAccessExpression:
+        case Syntax.ElementAccessExpression:
           return substituteElementAccessExpression(<ElementAccessExpression>node);
-        case SyntaxKind.CallExpression:
+        case Syntax.CallExpression:
           return substituteCallExpression(<CallExpression>node);
       }
       return node;
     }
 
     function substitutePropertyAccessExpression(node: PropertyAccessExpression) {
-      if (node.expression.kind === SyntaxKind.SuperKeyword) {
+      if (node.expression.kind === Syntax.SuperKeyword) {
         return setTextRange(createPropertyAccess(createFileLevelUniqueName('_super'), node.name), node);
       }
       return node;
     }
 
     function substituteElementAccessExpression(node: ElementAccessExpression) {
-      if (node.expression.kind === SyntaxKind.SuperKeyword) {
+      if (node.expression.kind === Syntax.SuperKeyword) {
         return createSuperElementAccessInAsyncMethod(node.argumentExpression, node);
       }
       return node;
@@ -621,7 +621,7 @@ namespace qnr {
 
     function isSuperContainer(node: Node): node is SuperContainer {
       const kind = node.kind;
-      return kind === SyntaxKind.ClassDeclaration || kind === SyntaxKind.Constructor || kind === SyntaxKind.MethodDeclaration || kind === SyntaxKind.GetAccessor || kind === SyntaxKind.SetAccessor;
+      return kind === Syntax.ClassDeclaration || kind === Syntax.Constructor || kind === Syntax.MethodDeclaration || kind === Syntax.GetAccessor || kind === Syntax.SetAccessor;
     }
 
     function createSuperElementAccessInAsyncMethod(argumentExpression: Expression, location: TextRange): LeftHandSideExpression {
@@ -719,7 +719,7 @@ namespace qnr {
 
     const generatorFunc = createFunctionExpression(
       /*modifiers*/ undefined,
-      createToken(SyntaxKind.AsteriskToken),
+      createToken(Syntax.AsteriskToken),
       /*name*/ undefined,
       /*typeParameters*/ undefined,
       /*parameters*/ [],

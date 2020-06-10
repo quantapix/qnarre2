@@ -82,7 +82,7 @@ namespace qnr {
 
   export function getOutputPathsFor(sourceFile: SourceFile | Bundle, host: EmitHost, forceDtsPaths: boolean): EmitFileNames {
     const options = host.getCompilerOptions();
-    if (sourceFile.kind === SyntaxKind.Bundle) {
+    if (sourceFile.kind === Syntax.Bundle) {
       return getOutputPathsForBundle(options, forceDtsPaths);
     } else {
       const ownOutputFilePath = getOwnEmitOutputFilePath(sourceFile.fileName, host, getOutputExtension(sourceFile, options));
@@ -427,7 +427,7 @@ namespace qnr {
           extendedDiagnostics: compilerOptions.extendedDiagnostics,
           // Explicitly do not passthru either `inline` option
         });
-        if (forceDtsEmit && declarationTransform.transformed[0].kind === SyntaxKind.SourceFile) {
+        if (forceDtsEmit && declarationTransform.transformed[0].kind === Syntax.SourceFile) {
           const sourceFile = declarationTransform.transformed[0];
           exportedModulesFromDeclarationEmit = sourceFile.exportedModulesFromDeclarationEmit;
         }
@@ -438,7 +438,7 @@ namespace qnr {
 
     function collectLinkedAliases(node: Node) {
       if (isExportAssignment(node)) {
-        if (node.expression.kind === SyntaxKind.Identifier) {
+        if (node.expression.kind === Syntax.Identifier) {
           resolver.collectLinkedAliases(node.expression as Identifier, /*setVisibility*/ true);
         }
         return;
@@ -450,8 +450,8 @@ namespace qnr {
     }
 
     function printSourceFileOrBundle(jsFilePath: string, sourceMapFilePath: string | undefined, sourceFileOrBundle: SourceFile | Bundle, printer: Printer, mapOptions: SourceMapOptions) {
-      const bundle = sourceFileOrBundle.kind === SyntaxKind.Bundle ? sourceFileOrBundle : undefined;
-      const sourceFile = sourceFileOrBundle.kind === SyntaxKind.SourceFile ? sourceFileOrBundle : undefined;
+      const bundle = sourceFileOrBundle.kind === Syntax.Bundle ? sourceFileOrBundle : undefined;
+      const sourceFile = sourceFileOrBundle.kind === Syntax.SourceFile ? sourceFileOrBundle : undefined;
       const sourceFiles = bundle ? bundle.sourceFiles : [sourceFile!];
 
       let sourceMapGenerator: SourceMapGenerator | undefined;
@@ -512,7 +512,7 @@ namespace qnr {
     }
 
     function shouldEmitSourceMaps(mapOptions: SourceMapOptions, sourceFileOrBundle: SourceFile | Bundle) {
-      return (mapOptions.sourceMap || mapOptions.inlineSourceMap) && (sourceFileOrBundle.kind !== SyntaxKind.SourceFile || !fileExtensionIs(sourceFileOrBundle.fileName, Extension.Json));
+      return (mapOptions.sourceMap || mapOptions.inlineSourceMap) && (sourceFileOrBundle.kind !== Syntax.SourceFile || !fileExtensionIs(sourceFileOrBundle.fileName, Extension.Json));
     }
 
     function getSourceRoot(mapOptions: SourceMapOptions) {
@@ -637,7 +637,7 @@ namespace qnr {
 
   function createSourceFilesFromBundleBuildInfo(bundle: BundleBuildInfo, buildInfoDirectory: string, host: EmitUsingBuildInfoHost): readonly SourceFile[] {
     const sourceFiles = bundle.sourceFiles.map((fileName) => {
-      const sourceFile = createNode(SyntaxKind.SourceFile, 0, 0) as SourceFile;
+      const sourceFile = createNode(Syntax.SourceFile, 0, 0) as SourceFile;
       sourceFile.fileName = getRelativePathFromDirectory(host.getCurrentDirectory(), getNormalizedAbsolutePath(fileName, buildInfoDirectory), !host.useCaseSensitiveFileNames());
       sourceFile.text = '';
       sourceFile.statements = createNodeArray();
@@ -650,8 +650,8 @@ namespace qnr {
       sourceFile.end = prologueInfo.text.length;
       sourceFile.statements = createNodeArray(
         prologueInfo.directives.map((directive) => {
-          const statement = createNode(SyntaxKind.ExpressionStatement, directive.pos, directive.end) as PrologueDirective;
-          statement.expression = createNode(SyntaxKind.StringLiteral, directive.expression.pos, directive.expression.end) as StringLiteral;
+          const statement = createNode(Syntax.ExpressionStatement, directive.pos, directive.end) as PrologueDirective;
+          statement.expression = createNode(Syntax.StringLiteral, directive.expression.pos, directive.expression.end) as StringLiteral;
           statement.expression.text = directive.expression.text;
           return statement;
         })
@@ -850,11 +850,11 @@ namespace qnr {
           break;
       }
       switch (node.kind) {
-        case SyntaxKind.SourceFile:
+        case Syntax.SourceFile:
           return printFile(<SourceFile>node);
-        case SyntaxKind.Bundle:
+        case Syntax.Bundle:
           return printBundle(<Bundle>node);
-        case SyntaxKind.UnparsedSource:
+        case Syntax.UnparsedSource:
           return printUnparsedSource(<UnparsedSource>node);
       }
       writeNode(hint, node, sourceFile, beginPrint());
@@ -1153,13 +1153,13 @@ namespace qnr {
         // falls through
 
         case PipelinePhase.Comments:
-          if (!commentsDisabled && node.kind !== SyntaxKind.SourceFile) {
+          if (!commentsDisabled && node.kind !== Syntax.SourceFile) {
             return pipelineEmitWithComments;
           }
         // falls through
 
         case PipelinePhase.SourceMaps:
-          if (!sourceMapsDisabled && node.kind !== SyntaxKind.SourceFile && !isInJsonFile(node)) {
+          if (!sourceMapsDisabled && node.kind !== Syntax.SourceFile && !isInJsonFile(node)) {
             return pipelineEmitWithSourceMap;
           }
         // falls through
@@ -1198,305 +1198,305 @@ namespace qnr {
 
         switch (node.kind) {
           // Pseudo-literals
-          case SyntaxKind.TemplateHead:
-          case SyntaxKind.TemplateMiddle:
-          case SyntaxKind.TemplateTail:
+          case Syntax.TemplateHead:
+          case Syntax.TemplateMiddle:
+          case Syntax.TemplateTail:
             return emitLiteral(<LiteralExpression>node, /*jsxAttributeEscape*/ false);
 
-          case SyntaxKind.UnparsedSource:
-          case SyntaxKind.UnparsedPrepend:
+          case Syntax.UnparsedSource:
+          case Syntax.UnparsedPrepend:
             return emitUnparsedSourceOrPrepend(<UnparsedSource>node);
 
-          case SyntaxKind.UnparsedPrologue:
+          case Syntax.UnparsedPrologue:
             return writeUnparsedNode(<UnparsedNode>node);
 
-          case SyntaxKind.UnparsedText:
-          case SyntaxKind.UnparsedInternalText:
+          case Syntax.UnparsedText:
+          case Syntax.UnparsedInternalText:
             return emitUnparsedTextLike(<UnparsedTextLike>node);
 
-          case SyntaxKind.UnparsedSyntheticReference:
+          case Syntax.UnparsedSyntheticReference:
             return emitUnparsedSyntheticReference(<UnparsedSyntheticReference>node);
 
           // Identifiers
-          case SyntaxKind.Identifier:
+          case Syntax.Identifier:
             return emitIdentifier(<Identifier>node);
 
           // PrivateIdentifiers
-          case SyntaxKind.PrivateIdentifier:
+          case Syntax.PrivateIdentifier:
             return emitPrivateIdentifier(node as PrivateIdentifier);
 
           // Parse tree nodes
           // Names
-          case SyntaxKind.QualifiedName:
+          case Syntax.QualifiedName:
             return emitQualifiedName(<QualifiedName>node);
-          case SyntaxKind.ComputedPropertyName:
+          case Syntax.ComputedPropertyName:
             return emitComputedPropertyName(<ComputedPropertyName>node);
 
           // Signature elements
-          case SyntaxKind.TypeParameter:
+          case Syntax.TypeParameter:
             return emitTypeParameter(<TypeParameterDeclaration>node);
-          case SyntaxKind.Parameter:
+          case Syntax.Parameter:
             return emitParameter(<ParameterDeclaration>node);
-          case SyntaxKind.Decorator:
+          case Syntax.Decorator:
             return emitDecorator(<Decorator>node);
 
           // Type members
-          case SyntaxKind.PropertySignature:
+          case Syntax.PropertySignature:
             return emitPropertySignature(<PropertySignature>node);
-          case SyntaxKind.PropertyDeclaration:
+          case Syntax.PropertyDeclaration:
             return emitPropertyDeclaration(<PropertyDeclaration>node);
-          case SyntaxKind.MethodSignature:
+          case Syntax.MethodSignature:
             return emitMethodSignature(<MethodSignature>node);
-          case SyntaxKind.MethodDeclaration:
+          case Syntax.MethodDeclaration:
             return emitMethodDeclaration(<MethodDeclaration>node);
-          case SyntaxKind.Constructor:
+          case Syntax.Constructor:
             return emitConstructor(<ConstructorDeclaration>node);
-          case SyntaxKind.GetAccessor:
-          case SyntaxKind.SetAccessor:
+          case Syntax.GetAccessor:
+          case Syntax.SetAccessor:
             return emitAccessorDeclaration(<AccessorDeclaration>node);
-          case SyntaxKind.CallSignature:
+          case Syntax.CallSignature:
             return emitCallSignature(<CallSignatureDeclaration>node);
-          case SyntaxKind.ConstructSignature:
+          case Syntax.ConstructSignature:
             return emitConstructSignature(<ConstructSignatureDeclaration>node);
-          case SyntaxKind.IndexSignature:
+          case Syntax.IndexSignature:
             return emitIndexSignature(<IndexSignatureDeclaration>node);
 
           // Types
-          case SyntaxKind.TypePredicate:
+          case Syntax.TypePredicate:
             return emitTypePredicate(<TypePredicateNode>node);
-          case SyntaxKind.TypeReference:
+          case Syntax.TypeReference:
             return emitTypeReference(<TypeReferenceNode>node);
-          case SyntaxKind.FunctionType:
+          case Syntax.FunctionType:
             return emitFunctionType(<FunctionTypeNode>node);
-          case SyntaxKind.JSDocFunctionType:
+          case Syntax.JSDocFunctionType:
             return emitJSDocFunctionType(node as JSDocFunctionType);
-          case SyntaxKind.ConstructorType:
+          case Syntax.ConstructorType:
             return emitConstructorType(<ConstructorTypeNode>node);
-          case SyntaxKind.TypeQuery:
+          case Syntax.TypeQuery:
             return emitTypeQuery(<TypeQueryNode>node);
-          case SyntaxKind.TypeLiteral:
+          case Syntax.TypeLiteral:
             return emitTypeLiteral(<TypeLiteralNode>node);
-          case SyntaxKind.ArrayType:
+          case Syntax.ArrayType:
             return emitArrayType(<ArrayTypeNode>node);
-          case SyntaxKind.TupleType:
+          case Syntax.TupleType:
             return emitTupleType(<TupleTypeNode>node);
-          case SyntaxKind.OptionalType:
+          case Syntax.OptionalType:
             return emitOptionalType(<OptionalTypeNode>node);
-          case SyntaxKind.UnionType:
+          case Syntax.UnionType:
             return emitUnionType(<UnionTypeNode>node);
-          case SyntaxKind.IntersectionType:
+          case Syntax.IntersectionType:
             return emitIntersectionType(<IntersectionTypeNode>node);
-          case SyntaxKind.ConditionalType:
+          case Syntax.ConditionalType:
             return emitConditionalType(<ConditionalTypeNode>node);
-          case SyntaxKind.InferType:
+          case Syntax.InferType:
             return emitInferType(<InferTypeNode>node);
-          case SyntaxKind.ParenthesizedType:
+          case Syntax.ParenthesizedType:
             return emitParenthesizedType(<ParenthesizedTypeNode>node);
-          case SyntaxKind.ExpressionWithTypeArguments:
+          case Syntax.ExpressionWithTypeArguments:
             return emitExpressionWithTypeArguments(<ExpressionWithTypeArguments>node);
-          case SyntaxKind.ThisType:
+          case Syntax.ThisType:
             return emitThisType();
-          case SyntaxKind.TypeOperator:
+          case Syntax.TypeOperator:
             return emitTypeOperator(<TypeOperatorNode>node);
-          case SyntaxKind.IndexedAccessType:
+          case Syntax.IndexedAccessType:
             return emitIndexedAccessType(<IndexedAccessTypeNode>node);
-          case SyntaxKind.MappedType:
+          case Syntax.MappedType:
             return emitMappedType(<MappedTypeNode>node);
-          case SyntaxKind.LiteralType:
+          case Syntax.LiteralType:
             return emitLiteralType(<LiteralTypeNode>node);
-          case SyntaxKind.ImportType:
+          case Syntax.ImportType:
             return emitImportTypeNode(<ImportTypeNode>node);
-          case SyntaxKind.JSDocAllType:
+          case Syntax.JSDocAllType:
             writePunctuation('*');
             return;
-          case SyntaxKind.JSDocUnknownType:
+          case Syntax.JSDocUnknownType:
             writePunctuation('?');
             return;
-          case SyntaxKind.JSDocNullableType:
+          case Syntax.JSDocNullableType:
             return emitJSDocNullableType(node as JSDocNullableType);
-          case SyntaxKind.JSDocNonNullableType:
+          case Syntax.JSDocNonNullableType:
             return emitJSDocNonNullableType(node as JSDocNonNullableType);
-          case SyntaxKind.JSDocOptionalType:
+          case Syntax.JSDocOptionalType:
             return emitJSDocOptionalType(node as JSDocOptionalType);
-          case SyntaxKind.RestType:
-          case SyntaxKind.JSDocVariadicType:
+          case Syntax.RestType:
+          case Syntax.JSDocVariadicType:
             return emitRestOrJSDocVariadicType(node as RestTypeNode | JSDocVariadicType);
-          case SyntaxKind.NamedTupleMember:
+          case Syntax.NamedTupleMember:
             return emitNamedTupleMember(node as NamedTupleMember);
 
           // Binding patterns
-          case SyntaxKind.ObjectBindingPattern:
+          case Syntax.ObjectBindingPattern:
             return emitObjectBindingPattern(<ObjectBindingPattern>node);
-          case SyntaxKind.ArrayBindingPattern:
+          case Syntax.ArrayBindingPattern:
             return emitArrayBindingPattern(<ArrayBindingPattern>node);
-          case SyntaxKind.BindingElement:
+          case Syntax.BindingElement:
             return emitBindingElement(<BindingElement>node);
 
           // Misc
-          case SyntaxKind.TemplateSpan:
+          case Syntax.TemplateSpan:
             return emitTemplateSpan(<TemplateSpan>node);
-          case SyntaxKind.SemicolonClassElement:
+          case Syntax.SemicolonClassElement:
             return emitSemicolonClassElement();
 
           // Statements
-          case SyntaxKind.Block:
+          case Syntax.Block:
             return emitBlock(<Block>node);
-          case SyntaxKind.VariableStatement:
+          case Syntax.VariableStatement:
             return emitVariableStatement(<VariableStatement>node);
-          case SyntaxKind.EmptyStatement:
+          case Syntax.EmptyStatement:
             return emitEmptyStatement(/*isEmbeddedStatement*/ false);
-          case SyntaxKind.ExpressionStatement:
+          case Syntax.ExpressionStatement:
             return emitExpressionStatement(<ExpressionStatement>node);
-          case SyntaxKind.IfStatement:
+          case Syntax.IfStatement:
             return emitIfStatement(<IfStatement>node);
-          case SyntaxKind.DoStatement:
+          case Syntax.DoStatement:
             return emitDoStatement(<DoStatement>node);
-          case SyntaxKind.WhileStatement:
+          case Syntax.WhileStatement:
             return emitWhileStatement(<WhileStatement>node);
-          case SyntaxKind.ForStatement:
+          case Syntax.ForStatement:
             return emitForStatement(<ForStatement>node);
-          case SyntaxKind.ForInStatement:
+          case Syntax.ForInStatement:
             return emitForInStatement(<ForInStatement>node);
-          case SyntaxKind.ForOfStatement:
+          case Syntax.ForOfStatement:
             return emitForOfStatement(<ForOfStatement>node);
-          case SyntaxKind.ContinueStatement:
+          case Syntax.ContinueStatement:
             return emitContinueStatement(<ContinueStatement>node);
-          case SyntaxKind.BreakStatement:
+          case Syntax.BreakStatement:
             return emitBreakStatement(<BreakStatement>node);
-          case SyntaxKind.ReturnStatement:
+          case Syntax.ReturnStatement:
             return emitReturnStatement(<ReturnStatement>node);
-          case SyntaxKind.WithStatement:
+          case Syntax.WithStatement:
             return emitWithStatement(<WithStatement>node);
-          case SyntaxKind.SwitchStatement:
+          case Syntax.SwitchStatement:
             return emitSwitchStatement(<SwitchStatement>node);
-          case SyntaxKind.LabeledStatement:
+          case Syntax.LabeledStatement:
             return emitLabeledStatement(<LabeledStatement>node);
-          case SyntaxKind.ThrowStatement:
+          case Syntax.ThrowStatement:
             return emitThrowStatement(<ThrowStatement>node);
-          case SyntaxKind.TryStatement:
+          case Syntax.TryStatement:
             return emitTryStatement(<TryStatement>node);
-          case SyntaxKind.DebuggerStatement:
+          case Syntax.DebuggerStatement:
             return emitDebuggerStatement(<DebuggerStatement>node);
 
           // Declarations
-          case SyntaxKind.VariableDeclaration:
+          case Syntax.VariableDeclaration:
             return emitVariableDeclaration(<VariableDeclaration>node);
-          case SyntaxKind.VariableDeclarationList:
+          case Syntax.VariableDeclarationList:
             return emitVariableDeclarationList(<VariableDeclarationList>node);
-          case SyntaxKind.FunctionDeclaration:
+          case Syntax.FunctionDeclaration:
             return emitFunctionDeclaration(<FunctionDeclaration>node);
-          case SyntaxKind.ClassDeclaration:
+          case Syntax.ClassDeclaration:
             return emitClassDeclaration(<ClassDeclaration>node);
-          case SyntaxKind.InterfaceDeclaration:
+          case Syntax.InterfaceDeclaration:
             return emitInterfaceDeclaration(<InterfaceDeclaration>node);
-          case SyntaxKind.TypeAliasDeclaration:
+          case Syntax.TypeAliasDeclaration:
             return emitTypeAliasDeclaration(<TypeAliasDeclaration>node);
-          case SyntaxKind.EnumDeclaration:
+          case Syntax.EnumDeclaration:
             return emitEnumDeclaration(<EnumDeclaration>node);
-          case SyntaxKind.ModuleDeclaration:
+          case Syntax.ModuleDeclaration:
             return emitModuleDeclaration(<ModuleDeclaration>node);
-          case SyntaxKind.ModuleBlock:
+          case Syntax.ModuleBlock:
             return emitModuleBlock(<ModuleBlock>node);
-          case SyntaxKind.CaseBlock:
+          case Syntax.CaseBlock:
             return emitCaseBlock(<CaseBlock>node);
-          case SyntaxKind.NamespaceExportDeclaration:
+          case Syntax.NamespaceExportDeclaration:
             return emitNamespaceExportDeclaration(<NamespaceExportDeclaration>node);
-          case SyntaxKind.ImportEqualsDeclaration:
+          case Syntax.ImportEqualsDeclaration:
             return emitImportEqualsDeclaration(<ImportEqualsDeclaration>node);
-          case SyntaxKind.ImportDeclaration:
+          case Syntax.ImportDeclaration:
             return emitImportDeclaration(<ImportDeclaration>node);
-          case SyntaxKind.ImportClause:
+          case Syntax.ImportClause:
             return emitImportClause(<ImportClause>node);
-          case SyntaxKind.NamespaceImport:
+          case Syntax.NamespaceImport:
             return emitNamespaceImport(<NamespaceImport>node);
-          case SyntaxKind.NamespaceExport:
+          case Syntax.NamespaceExport:
             return emitNamespaceExport(<NamespaceExport>node);
-          case SyntaxKind.NamedImports:
+          case Syntax.NamedImports:
             return emitNamedImports(<NamedImports>node);
-          case SyntaxKind.ImportSpecifier:
+          case Syntax.ImportSpecifier:
             return emitImportSpecifier(<ImportSpecifier>node);
-          case SyntaxKind.ExportAssignment:
+          case Syntax.ExportAssignment:
             return emitExportAssignment(<ExportAssignment>node);
-          case SyntaxKind.ExportDeclaration:
+          case Syntax.ExportDeclaration:
             return emitExportDeclaration(<ExportDeclaration>node);
-          case SyntaxKind.NamedExports:
+          case Syntax.NamedExports:
             return emitNamedExports(<NamedExports>node);
-          case SyntaxKind.ExportSpecifier:
+          case Syntax.ExportSpecifier:
             return emitExportSpecifier(<ExportSpecifier>node);
-          case SyntaxKind.MissingDeclaration:
+          case Syntax.MissingDeclaration:
             return;
 
           // Module references
-          case SyntaxKind.ExternalModuleReference:
+          case Syntax.ExternalModuleReference:
             return emitExternalModuleReference(<ExternalModuleReference>node);
 
           // JSX (non-expression)
-          case SyntaxKind.JsxText:
+          case Syntax.JsxText:
             return emitJsxText(<JsxText>node);
-          case SyntaxKind.JsxOpeningElement:
-          case SyntaxKind.JsxOpeningFragment:
+          case Syntax.JsxOpeningElement:
+          case Syntax.JsxOpeningFragment:
             return emitJsxOpeningElementOrFragment(<JsxOpeningElement>node);
-          case SyntaxKind.JsxClosingElement:
-          case SyntaxKind.JsxClosingFragment:
+          case Syntax.JsxClosingElement:
+          case Syntax.JsxClosingFragment:
             return emitJsxClosingElementOrFragment(<JsxClosingElement>node);
-          case SyntaxKind.JsxAttribute:
+          case Syntax.JsxAttribute:
             return emitJsxAttribute(<JsxAttribute>node);
-          case SyntaxKind.JsxAttributes:
+          case Syntax.JsxAttributes:
             return emitJsxAttributes(<JsxAttributes>node);
-          case SyntaxKind.JsxSpreadAttribute:
+          case Syntax.JsxSpreadAttribute:
             return emitJsxSpreadAttribute(<JsxSpreadAttribute>node);
-          case SyntaxKind.JsxExpression:
+          case Syntax.JsxExpression:
             return emitJsxExpression(<JsxExpression>node);
 
           // Clauses
-          case SyntaxKind.CaseClause:
+          case Syntax.CaseClause:
             return emitCaseClause(<CaseClause>node);
-          case SyntaxKind.DefaultClause:
+          case Syntax.DefaultClause:
             return emitDefaultClause(<DefaultClause>node);
-          case SyntaxKind.HeritageClause:
+          case Syntax.HeritageClause:
             return emitHeritageClause(<HeritageClause>node);
-          case SyntaxKind.CatchClause:
+          case Syntax.CatchClause:
             return emitCatchClause(<CatchClause>node);
 
           // Property assignments
-          case SyntaxKind.PropertyAssignment:
+          case Syntax.PropertyAssignment:
             return emitPropertyAssignment(<PropertyAssignment>node);
-          case SyntaxKind.ShorthandPropertyAssignment:
+          case Syntax.ShorthandPropertyAssignment:
             return emitShorthandPropertyAssignment(<ShorthandPropertyAssignment>node);
-          case SyntaxKind.SpreadAssignment:
+          case Syntax.SpreadAssignment:
             return emitSpreadAssignment(node as SpreadAssignment);
 
           // Enum
-          case SyntaxKind.EnumMember:
+          case Syntax.EnumMember:
             return emitEnumMember(<EnumMember>node);
 
           // JSDoc nodes (only used in codefixes currently)
-          case SyntaxKind.JSDocParameterTag:
-          case SyntaxKind.JSDocPropertyTag:
+          case Syntax.JSDocParameterTag:
+          case Syntax.JSDocPropertyTag:
             return emitJSDocPropertyLikeTag(node as JSDocPropertyLikeTag);
-          case SyntaxKind.JSDocReturnTag:
-          case SyntaxKind.JSDocTypeTag:
-          case SyntaxKind.JSDocThisTag:
-          case SyntaxKind.JSDocEnumTag:
+          case Syntax.JSDocReturnTag:
+          case Syntax.JSDocTypeTag:
+          case Syntax.JSDocThisTag:
+          case Syntax.JSDocEnumTag:
             return emitJSDocSimpleTypedTag(node as JSDocTypeTag);
-          case SyntaxKind.JSDocImplementsTag:
-          case SyntaxKind.JSDocAugmentsTag:
+          case Syntax.JSDocImplementsTag:
+          case Syntax.JSDocAugmentsTag:
             return emitJSDocHeritageTag(node as JSDocImplementsTag | JSDocAugmentsTag);
-          case SyntaxKind.JSDocTemplateTag:
+          case Syntax.JSDocTemplateTag:
             return emitJSDocTemplateTag(node as JSDocTemplateTag);
-          case SyntaxKind.JSDocTypedefTag:
+          case Syntax.JSDocTypedefTag:
             return emitJSDocTypedefTag(node as JSDocTypedefTag);
-          case SyntaxKind.JSDocCallbackTag:
+          case Syntax.JSDocCallbackTag:
             return emitJSDocCallbackTag(node as JSDocCallbackTag);
-          case SyntaxKind.JSDocSignature:
+          case Syntax.JSDocSignature:
             return emitJSDocSignature(node as JSDocSignature);
-          case SyntaxKind.JSDocTypeLiteral:
+          case Syntax.JSDocTypeLiteral:
             return emitJSDocTypeLiteral(node as JSDocTypeLiteral);
-          case SyntaxKind.JSDocClassTag:
-          case SyntaxKind.JSDocTag:
+          case Syntax.JSDocClassTag:
+          case Syntax.JSDocTag:
             return emitJSDocSimpleTag(node as JSDocTag);
 
-          case SyntaxKind.JSDocComment:
+          case Syntax.JSDocComment:
             return emitJSDoc(node as JSDoc);
 
           // Transformation nodes (ignored)
@@ -1514,98 +1514,98 @@ namespace qnr {
       if (hint === EmitHint.Expression) {
         switch (node.kind) {
           // Literals
-          case SyntaxKind.NumericLiteral:
-          case SyntaxKind.BigIntLiteral:
+          case Syntax.NumericLiteral:
+          case Syntax.BigIntLiteral:
             return emitNumericOrBigIntLiteral(<NumericLiteral | BigIntLiteral>node);
 
-          case SyntaxKind.StringLiteral:
-          case SyntaxKind.RegexLiteral:
-          case SyntaxKind.NoSubstitutionLiteral:
+          case Syntax.StringLiteral:
+          case Syntax.RegexLiteral:
+          case Syntax.NoSubstitutionLiteral:
             return emitLiteral(<LiteralExpression>node, /*jsxAttributeEscape*/ false);
 
           // Identifiers
-          case SyntaxKind.Identifier:
+          case Syntax.Identifier:
             return emitIdentifier(<Identifier>node);
 
           // Reserved words
-          case SyntaxKind.FalseKeyword:
-          case SyntaxKind.NullKeyword:
-          case SyntaxKind.SuperKeyword:
-          case SyntaxKind.TrueKeyword:
-          case SyntaxKind.ThisKeyword:
-          case SyntaxKind.ImportKeyword:
+          case Syntax.FalseKeyword:
+          case Syntax.NullKeyword:
+          case Syntax.SuperKeyword:
+          case Syntax.TrueKeyword:
+          case Syntax.ThisKeyword:
+          case Syntax.ImportKeyword:
             writeTokenNode(node, writeKeyword);
             return;
 
           // Expressions
-          case SyntaxKind.ArrayLiteralExpression:
+          case Syntax.ArrayLiteralExpression:
             return emitArrayLiteralExpression(<ArrayLiteralExpression>node);
-          case SyntaxKind.ObjectLiteralExpression:
+          case Syntax.ObjectLiteralExpression:
             return emitObjectLiteralExpression(<ObjectLiteralExpression>node);
-          case SyntaxKind.PropertyAccessExpression:
+          case Syntax.PropertyAccessExpression:
             return emitPropertyAccessExpression(<PropertyAccessExpression>node);
-          case SyntaxKind.ElementAccessExpression:
+          case Syntax.ElementAccessExpression:
             return emitElementAccessExpression(<ElementAccessExpression>node);
-          case SyntaxKind.CallExpression:
+          case Syntax.CallExpression:
             return emitCallExpression(<CallExpression>node);
-          case SyntaxKind.NewExpression:
+          case Syntax.NewExpression:
             return emitNewExpression(<NewExpression>node);
-          case SyntaxKind.TaggedTemplateExpression:
+          case Syntax.TaggedTemplateExpression:
             return emitTaggedTemplateExpression(<TaggedTemplateExpression>node);
-          case SyntaxKind.TypeAssertionExpression:
+          case Syntax.TypeAssertionExpression:
             return emitTypeAssertionExpression(<TypeAssertion>node);
-          case SyntaxKind.ParenthesizedExpression:
+          case Syntax.ParenthesizedExpression:
             return emitParenthesizedExpression(<ParenthesizedExpression>node);
-          case SyntaxKind.FunctionExpression:
+          case Syntax.FunctionExpression:
             return emitFunctionExpression(<FunctionExpression>node);
-          case SyntaxKind.ArrowFunction:
+          case Syntax.ArrowFunction:
             return emitArrowFunction(<ArrowFunction>node);
-          case SyntaxKind.DeleteExpression:
+          case Syntax.DeleteExpression:
             return emitDeleteExpression(<DeleteExpression>node);
-          case SyntaxKind.TypeOfExpression:
+          case Syntax.TypeOfExpression:
             return emitTypeOfExpression(<TypeOfExpression>node);
-          case SyntaxKind.VoidExpression:
+          case Syntax.VoidExpression:
             return emitVoidExpression(<VoidExpression>node);
-          case SyntaxKind.AwaitExpression:
+          case Syntax.AwaitExpression:
             return emitAwaitExpression(<AwaitExpression>node);
-          case SyntaxKind.PrefixUnaryExpression:
+          case Syntax.PrefixUnaryExpression:
             return emitPrefixUnaryExpression(<PrefixUnaryExpression>node);
-          case SyntaxKind.PostfixUnaryExpression:
+          case Syntax.PostfixUnaryExpression:
             return emitPostfixUnaryExpression(<PostfixUnaryExpression>node);
-          case SyntaxKind.BinaryExpression:
+          case Syntax.BinaryExpression:
             return emitBinaryExpression(<BinaryExpression>node);
-          case SyntaxKind.ConditionalExpression:
+          case Syntax.ConditionalExpression:
             return emitConditionalExpression(<ConditionalExpression>node);
-          case SyntaxKind.TemplateExpression:
+          case Syntax.TemplateExpression:
             return emitTemplateExpression(<TemplateExpression>node);
-          case SyntaxKind.YieldExpression:
+          case Syntax.YieldExpression:
             return emitYieldExpression(<YieldExpression>node);
-          case SyntaxKind.SpreadElement:
+          case Syntax.SpreadElement:
             return emitSpreadExpression(<SpreadElement>node);
-          case SyntaxKind.ClassExpression:
+          case Syntax.ClassExpression:
             return emitClassExpression(<ClassExpression>node);
-          case SyntaxKind.OmittedExpression:
+          case Syntax.OmittedExpression:
             return;
-          case SyntaxKind.AsExpression:
+          case Syntax.AsExpression:
             return emitAsExpression(<AsExpression>node);
-          case SyntaxKind.NonNullExpression:
+          case Syntax.NonNullExpression:
             return emitNonNullExpression(<NonNullExpression>node);
-          case SyntaxKind.MetaProperty:
+          case Syntax.MetaProperty:
             return emitMetaProperty(<MetaProperty>node);
 
           // JSX
-          case SyntaxKind.JsxElement:
+          case Syntax.JsxElement:
             return emitJsxElement(<JsxElement>node);
-          case SyntaxKind.JsxSelfClosingElement:
+          case Syntax.JsxSelfClosingElement:
             return emitJsxSelfClosingElement(<JsxSelfClosingElement>node);
-          case SyntaxKind.JsxFragment:
+          case Syntax.JsxFragment:
             return emitJsxFragment(<JsxFragment>node);
 
           // Transformation nodes
-          case SyntaxKind.PartiallyEmittedExpression:
+          case Syntax.PartiallyEmittedExpression:
             return emitPartiallyEmittedExpression(<PartiallyEmittedExpression>node);
 
-          case SyntaxKind.CommaListExpression:
+          case Syntax.CommaListExpression:
             return emitCommaList(<CommaListExpression>node);
         }
       }
@@ -1649,7 +1649,7 @@ namespace qnr {
 
     function emitHelpers(node: Node) {
       let helpersEmitted = false;
-      const bundle = node.kind === SyntaxKind.Bundle ? <Bundle>node : undefined;
+      const bundle = node.kind === Syntax.Bundle ? <Bundle>node : undefined;
       if (bundle && moduleKind === ModuleKind.None) {
         return;
       }
@@ -1706,21 +1706,21 @@ namespace qnr {
     // Literals/Pseudo-literals
     //
 
-    // SyntaxKind.NumericLiteral
-    // SyntaxKind.BigIntLiteral
+    // Syntax.NumericLiteral
+    // Syntax.BigIntLiteral
     function emitNumericOrBigIntLiteral(node: NumericLiteral | BigIntLiteral) {
       emitLiteral(node, /*jsxAttributeEscape*/ false);
     }
 
-    // SyntaxKind.StringLiteral
-    // SyntaxKind.RegexLiteral
-    // SyntaxKind.NoSubstitutionLiteral
-    // SyntaxKind.TemplateHead
-    // SyntaxKind.TemplateMiddle
-    // SyntaxKind.TemplateTail
+    // Syntax.StringLiteral
+    // Syntax.RegexLiteral
+    // Syntax.NoSubstitutionLiteral
+    // Syntax.TemplateHead
+    // Syntax.TemplateMiddle
+    // Syntax.TemplateTail
     function emitLiteral(node: LiteralLikeNode, jsxAttributeEscape: boolean) {
       const text = getLiteralTextOfNode(node, printerOptions.neverAsciiEscape, jsxAttributeEscape);
-      if ((printerOptions.sourceMap || printerOptions.inlineSourceMap) && (node.kind === SyntaxKind.StringLiteral || isTemplateLiteralKind(node.kind))) {
+      if ((printerOptions.sourceMap || printerOptions.inlineSourceMap) && (node.kind === Syntax.StringLiteral || isTemplateLiteralKind(node.kind))) {
         writeLiteral(text);
       } else {
         // Quick info expects all literals to be called with writeStringLiteral, as there's no specific type for numberLiterals
@@ -1728,8 +1728,8 @@ namespace qnr {
       }
     }
 
-    // SyntaxKind.UnparsedSource
-    // SyntaxKind.UnparsedPrepend
+    // Syntax.UnparsedSource
+    // Syntax.UnparsedPrepend
     function emitUnparsedSourceOrPrepend(unparsed: UnparsedSource | UnparsedPrepend) {
       for (const text of unparsed.texts) {
         writeLine();
@@ -1737,25 +1737,25 @@ namespace qnr {
       }
     }
 
-    // SyntaxKind.UnparsedPrologue
-    // SyntaxKind.UnparsedText
-    // SyntaxKind.UnparsedInternal
-    // SyntaxKind.UnparsedSyntheticReference
+    // Syntax.UnparsedPrologue
+    // Syntax.UnparsedText
+    // Syntax.UnparsedInternal
+    // Syntax.UnparsedSyntheticReference
     function writeUnparsedNode(unparsed: UnparsedNode) {
       writer.rawWrite(unparsed.parent.text.substring(unparsed.pos, unparsed.end));
     }
 
-    // SyntaxKind.UnparsedText
-    // SyntaxKind.UnparsedInternal
+    // Syntax.UnparsedText
+    // Syntax.UnparsedInternal
     function emitUnparsedTextLike(unparsed: UnparsedTextLike) {
       const pos = getTextPosWithWriteLine();
       writeUnparsedNode(unparsed);
       if (bundleFileInfo) {
-        updateOrPushBundleFileTextLike(pos, writer.getTextPos(), unparsed.kind === SyntaxKind.UnparsedText ? BundleFileSectionKind.Text : BundleFileSectionKind.Internal);
+        updateOrPushBundleFileTextLike(pos, writer.getTextPos(), unparsed.kind === Syntax.UnparsedText ? BundleFileSectionKind.Text : BundleFileSectionKind.Internal);
       }
     }
 
-    // SyntaxKind.UnparsedSyntheticReference
+    // Syntax.UnparsedSyntheticReference
     function emitUnparsedSyntheticReference(unparsed: UnparsedSyntheticReference) {
       const pos = getTextPosWithWriteLine();
       writeUnparsedNode(unparsed);
@@ -1793,7 +1793,7 @@ namespace qnr {
     }
 
     function emitEntityName(node: EntityName) {
-      if (node.kind === SyntaxKind.Identifier) {
+      if (node.kind === Syntax.Identifier) {
         emitExpression(node);
       } else {
         emit(node);
@@ -1832,7 +1832,7 @@ namespace qnr {
       emit(node.dot3Token);
       emitNodeWithWriter(node.name, writeParameter);
       emit(node.questionToken);
-      if (node.parent && node.parent.kind === SyntaxKind.JSDocFunctionType && !node.name) {
+      if (node.parent && node.parent.kind === Syntax.JSDocFunctionType && !node.name) {
         emit(node.type);
       } else {
         emitTypeAnnotation(node.type);
@@ -1905,7 +1905,7 @@ namespace qnr {
     function emitAccessorDeclaration(node: AccessorDeclaration) {
       emitDecorators(node, node.decorators);
       emitModifiers(node, node.modifiers);
-      writeKeyword(node.kind === SyntaxKind.GetAccessor ? 'get' : 'set');
+      writeKeyword(node.kind === Syntax.GetAccessor ? 'get' : 'set');
       writeSpace();
       emit(node.name);
       emitSignatureAndBody(node, emitSignatureHead);
@@ -2041,17 +2041,17 @@ namespace qnr {
     }
 
     function emitTupleType(node: TupleTypeNode) {
-      emitTokenWithComment(SyntaxKind.OpenBracketToken, node.pos, writePunctuation, node);
+      emitTokenWithComment(Syntax.OpenBracketToken, node.pos, writePunctuation, node);
       const flags = getEmitFlags(node) & EmitFlags.SingleLine ? ListFormat.SingleLineTupleTypeElements : ListFormat.MultiLineTupleTypeElements;
       emitList(node, node.elements, flags | ListFormat.NoSpaceIfEmpty);
-      emitTokenWithComment(SyntaxKind.CloseBracketToken, node.elements.end, writePunctuation, node);
+      emitTokenWithComment(Syntax.CloseBracketToken, node.elements.end, writePunctuation, node);
     }
 
     function emitNamedTupleMember(node: NamedTupleMember) {
       emit(node.dot3Token);
       emit(node.name);
       emit(node.questionToken);
-      emitTokenWithComment(SyntaxKind.ColonToken, node.name.end, writePunctuation, node);
+      emitTokenWithComment(Syntax.ColonToken, node.name.end, writePunctuation, node);
       writeSpace();
       emit(node.type);
     }
@@ -2125,7 +2125,7 @@ namespace qnr {
       }
       if (node.readonlyToken) {
         emit(node.readonlyToken);
-        if (node.readonlyToken.kind !== SyntaxKind.ReadonlyKeyword) {
+        if (node.readonlyToken.kind !== Syntax.ReadonlyKeyword) {
           writeKeyword('readonly');
         }
         writeSpace();
@@ -2137,7 +2137,7 @@ namespace qnr {
       writePunctuation(']');
       if (node.questionToken) {
         emit(node.questionToken);
-        if (node.questionToken.kind !== SyntaxKind.QuestionToken) {
+        if (node.questionToken.kind !== Syntax.QuestionToken) {
           writePunctuation('?');
         }
       }
@@ -2230,13 +2230,13 @@ namespace qnr {
 
     function emitPropertyAccessExpression(node: PropertyAccessExpression) {
       const expression = cast(emitExpression(node.expression), isExpression);
-      const token = node.questionDotToken || (createNode(SyntaxKind.DotToken, node.expression.end, node.name.pos) as DotToken);
+      const token = node.questionDotToken || (createNode(Syntax.DotToken, node.expression.end, node.name.pos) as DotToken);
       const linesBeforeDot = linesBetweenNodes(node, node.expression, token);
       const linesAfterDot = linesBetweenNodes(node, token, node.name);
 
       writeLinesAndIndent(linesBeforeDot, /*writeSpaceIfNotIndenting*/ false);
 
-      const shouldEmitDotDot = token.kind !== SyntaxKind.QuestionDotToken && mayNeedDotDotForPropertyAccess(expression) && !writer.hasTrailingComment() && !writer.hasTrailingWhitespace();
+      const shouldEmitDotDot = token.kind !== Syntax.QuestionDotToken && mayNeedDotDotForPropertyAccess(expression) && !writer.hasTrailingComment() && !writer.hasTrailingWhitespace();
 
       if (shouldEmitDotDot) {
         writePunctuation('.');
@@ -2261,7 +2261,7 @@ namespace qnr {
         const text = getLiteralTextOfNode(<LiteralExpression>expression, /*neverAsciiEscape*/ true, /*jsxAttributeEscape*/ false);
         // If he number will be printed verbatim and it doesn't already contain a dot, add one
         // if the expression doesn't have any comments that will be emitted.
-        return !expression.numericLiteralFlags && !stringContains(text, Token.toString(SyntaxKind.DotToken)!);
+        return !expression.numericLiteralFlags && !stringContains(text, Token.toString(Syntax.DotToken)!);
       } else if (isAccessExpression(expression)) {
         // check if constant enum value is integer
         const constantValue = getConstantValue(expression);
@@ -2274,9 +2274,9 @@ namespace qnr {
     function emitElementAccessExpression(node: ElementAccessExpression) {
       emitExpression(node.expression);
       emit(node.questionDotToken);
-      emitTokenWithComment(SyntaxKind.OpenBracketToken, node.expression.end, writePunctuation, node);
+      emitTokenWithComment(Syntax.OpenBracketToken, node.expression.end, writePunctuation, node);
       emitExpression(node.argumentExpression);
-      emitTokenWithComment(SyntaxKind.CloseBracketToken, node.argumentExpression.end, writePunctuation, node);
+      emitTokenWithComment(Syntax.CloseBracketToken, node.argumentExpression.end, writePunctuation, node);
     }
 
     function emitCallExpression(node: CallExpression) {
@@ -2287,7 +2287,7 @@ namespace qnr {
     }
 
     function emitNewExpression(node: NewExpression) {
-      emitTokenWithComment(SyntaxKind.NewKeyword, node.pos, writeKeyword, node);
+      emitTokenWithComment(Syntax.NewKeyword, node.pos, writeKeyword, node);
       writeSpace();
       emitExpression(node.expression);
       emitTypeArguments(node, node.typeArguments);
@@ -2309,12 +2309,12 @@ namespace qnr {
     }
 
     function emitParenthesizedExpression(node: ParenthesizedExpression) {
-      const openParenPos = emitTokenWithComment(SyntaxKind.OpenParenToken, node.pos, writePunctuation, node);
+      const openParenPos = emitTokenWithComment(Syntax.OpenParenToken, node.pos, writePunctuation, node);
       const indented = writeLineSeparatorsAndIndentBefore(node.expression, node);
       emitExpression(node.expression);
       writeLineSeparatorsAfter(node.expression, node);
       decreaseIndentIf(indented);
-      emitTokenWithComment(SyntaxKind.CloseParenToken, node.expression ? node.expression.end : openParenPos, writePunctuation, node);
+      emitTokenWithComment(Syntax.CloseParenToken, node.expression ? node.expression.end : openParenPos, writePunctuation, node);
     }
 
     function emitFunctionExpression(node: FunctionExpression) {
@@ -2337,25 +2337,25 @@ namespace qnr {
     }
 
     function emitDeleteExpression(node: DeleteExpression) {
-      emitTokenWithComment(SyntaxKind.DeleteKeyword, node.pos, writeKeyword, node);
+      emitTokenWithComment(Syntax.DeleteKeyword, node.pos, writeKeyword, node);
       writeSpace();
       emitExpression(node.expression);
     }
 
     function emitTypeOfExpression(node: TypeOfExpression) {
-      emitTokenWithComment(SyntaxKind.TypeOfKeyword, node.pos, writeKeyword, node);
+      emitTokenWithComment(Syntax.TypeOfKeyword, node.pos, writeKeyword, node);
       writeSpace();
       emitExpression(node.expression);
     }
 
     function emitVoidExpression(node: VoidExpression) {
-      emitTokenWithComment(SyntaxKind.VoidKeyword, node.pos, writeKeyword, node);
+      emitTokenWithComment(Syntax.VoidKeyword, node.pos, writeKeyword, node);
       writeSpace();
       emitExpression(node.expression);
     }
 
     function emitAwaitExpression(node: AwaitExpression) {
-      emitTokenWithComment(SyntaxKind.AwaitKeyword, node.pos, writeKeyword, node);
+      emitTokenWithComment(Syntax.AwaitKeyword, node.pos, writeKeyword, node);
       writeSpace();
       emitExpression(node.expression);
     }
@@ -2383,9 +2383,9 @@ namespace qnr {
       // The same is true of minus of course.
       const operand = node.operand;
       return (
-        operand.kind === SyntaxKind.PrefixUnaryExpression &&
-        ((node.operator === SyntaxKind.PlusToken && ((<PrefixUnaryExpression>operand).operator === SyntaxKind.PlusToken || (<PrefixUnaryExpression>operand).operator === SyntaxKind.Plus2Token)) ||
-          (node.operator === SyntaxKind.MinusToken && ((<PrefixUnaryExpression>operand).operator === SyntaxKind.MinusToken || (<PrefixUnaryExpression>operand).operator === SyntaxKind.Minus2Token)))
+        operand.kind === Syntax.PrefixUnaryExpression &&
+        ((node.operator === Syntax.PlusToken && ((<PrefixUnaryExpression>operand).operator === Syntax.PlusToken || (<PrefixUnaryExpression>operand).operator === Syntax.Plus2Token)) ||
+          (node.operator === Syntax.MinusToken && ((<PrefixUnaryExpression>operand).operator === Syntax.MinusToken || (<PrefixUnaryExpression>operand).operator === Syntax.Minus2Token)))
       );
     }
 
@@ -2417,12 +2417,12 @@ namespace qnr {
             break;
           }
           case EmitBinaryExpressionState.EmitRight: {
-            const isCommaOperator = node.operatorToken.kind !== SyntaxKind.CommaToken;
+            const isCommaOperator = node.operatorToken.kind !== Syntax.CommaToken;
             const linesBeforeOperator = linesBetweenNodes(node, node.left, node.operatorToken);
             const linesAfterOperator = linesBetweenNodes(node, node.operatorToken, node.right);
             writeLinesAndIndent(linesBeforeOperator, isCommaOperator);
             emitLeadingCommentsOfPosition(node.operatorToken.pos);
-            writeTokenNode(node.operatorToken, node.operatorToken.kind === SyntaxKind.InKeyword ? writeKeyword : writeOperator);
+            writeTokenNode(node.operatorToken, node.operatorToken.kind === Syntax.InKeyword ? writeKeyword : writeOperator);
             emitTrailingCommentsOfPosition(node.operatorToken.end, /*prefixSpace*/ true); // Binary operators should have a space before the comment starts
             writeLinesAndIndent(linesAfterOperator, /*writeSpaceIfNotIndenting*/ true);
             maybePipelineEmitExpression(node.right);
@@ -2500,13 +2500,13 @@ namespace qnr {
     }
 
     function emitYieldExpression(node: YieldExpression) {
-      emitTokenWithComment(SyntaxKind.YieldKeyword, node.pos, writeKeyword, node);
+      emitTokenWithComment(Syntax.YieldKeyword, node.pos, writeKeyword, node);
       emit(node.asteriskToken);
       emitExpressionWithLeadingSpace(node.expression);
     }
 
     function emitSpreadExpression(node: SpreadElement) {
-      emitTokenWithComment(SyntaxKind.Dot3Token, node.pos, writePunctuation, node);
+      emitTokenWithComment(Syntax.Dot3Token, node.pos, writePunctuation, node);
       emitExpression(node.expression);
     }
 
@@ -2559,10 +2559,10 @@ namespace qnr {
     }
 
     function emitBlockStatements(node: BlockLike, forceSingleLine: boolean) {
-      emitTokenWithComment(SyntaxKind.OpenBraceToken, node.pos, writePunctuation, /*contextNode*/ node);
+      emitTokenWithComment(Syntax.OpenBraceToken, node.pos, writePunctuation, /*contextNode*/ node);
       const format = forceSingleLine || getEmitFlags(node) & EmitFlags.SingleLine ? ListFormat.SingleLineBlockStatements : ListFormat.MultiLineBlockStatements;
       emitList(node, node.statements, format);
-      emitTokenWithComment(SyntaxKind.CloseBraceToken, node.statements.end, writePunctuation, /*contextNode*/ node, /*indentLeading*/ !!(format & ListFormat.MultiLine));
+      emitTokenWithComment(Syntax.CloseBraceToken, node.statements.end, writePunctuation, /*contextNode*/ node, /*indentLeading*/ !!(format & ListFormat.MultiLine));
     }
 
     function emitVariableStatement(node: VariableStatement) {
@@ -2591,16 +2591,16 @@ namespace qnr {
     }
 
     function emitIfStatement(node: IfStatement) {
-      const openParenPos = emitTokenWithComment(SyntaxKind.IfKeyword, node.pos, writeKeyword, node);
+      const openParenPos = emitTokenWithComment(Syntax.IfKeyword, node.pos, writeKeyword, node);
       writeSpace();
-      emitTokenWithComment(SyntaxKind.OpenParenToken, openParenPos, writePunctuation, node);
+      emitTokenWithComment(Syntax.OpenParenToken, openParenPos, writePunctuation, node);
       emitExpression(node.expression);
-      emitTokenWithComment(SyntaxKind.CloseParenToken, node.expression.end, writePunctuation, node);
+      emitTokenWithComment(Syntax.CloseParenToken, node.expression.end, writePunctuation, node);
       emitEmbeddedStatement(node, node.thenStatement);
       if (node.elseStatement) {
         writeLineOrSpace(node);
-        emitTokenWithComment(SyntaxKind.ElseKeyword, node.thenStatement.end, writeKeyword, node);
-        if (node.elseStatement.kind === SyntaxKind.IfStatement) {
+        emitTokenWithComment(Syntax.ElseKeyword, node.thenStatement.end, writeKeyword, node);
+        if (node.elseStatement.kind === Syntax.IfStatement) {
           writeSpace();
           emit(node.elseStatement);
         } else {
@@ -2610,15 +2610,15 @@ namespace qnr {
     }
 
     function emitWhileClause(node: WhileStatement | DoStatement, startPos: number) {
-      const openParenPos = emitTokenWithComment(SyntaxKind.WhileKeyword, startPos, writeKeyword, node);
+      const openParenPos = emitTokenWithComment(Syntax.WhileKeyword, startPos, writeKeyword, node);
       writeSpace();
-      emitTokenWithComment(SyntaxKind.OpenParenToken, openParenPos, writePunctuation, node);
+      emitTokenWithComment(Syntax.OpenParenToken, openParenPos, writePunctuation, node);
       emitExpression(node.expression);
-      emitTokenWithComment(SyntaxKind.CloseParenToken, node.expression.end, writePunctuation, node);
+      emitTokenWithComment(Syntax.CloseParenToken, node.expression.end, writePunctuation, node);
     }
 
     function emitDoStatement(node: DoStatement) {
-      emitTokenWithComment(SyntaxKind.DoKeyword, node.pos, writeKeyword, node);
+      emitTokenWithComment(Syntax.DoKeyword, node.pos, writeKeyword, node);
       emitEmbeddedStatement(node, node.statement);
       if (isBlock(node.statement)) {
         writeSpace();
@@ -2636,48 +2636,48 @@ namespace qnr {
     }
 
     function emitForStatement(node: ForStatement) {
-      const openParenPos = emitTokenWithComment(SyntaxKind.ForKeyword, node.pos, writeKeyword, node);
+      const openParenPos = emitTokenWithComment(Syntax.ForKeyword, node.pos, writeKeyword, node);
       writeSpace();
-      let pos = emitTokenWithComment(SyntaxKind.OpenParenToken, openParenPos, writePunctuation, /*contextNode*/ node);
+      let pos = emitTokenWithComment(Syntax.OpenParenToken, openParenPos, writePunctuation, /*contextNode*/ node);
       emitForBinding(node.initializer);
-      pos = emitTokenWithComment(SyntaxKind.SemicolonToken, node.initializer ? node.initializer.end : pos, writePunctuation, node);
+      pos = emitTokenWithComment(Syntax.SemicolonToken, node.initializer ? node.initializer.end : pos, writePunctuation, node);
       emitExpressionWithLeadingSpace(node.condition);
-      pos = emitTokenWithComment(SyntaxKind.SemicolonToken, node.condition ? node.condition.end : pos, writePunctuation, node);
+      pos = emitTokenWithComment(Syntax.SemicolonToken, node.condition ? node.condition.end : pos, writePunctuation, node);
       emitExpressionWithLeadingSpace(node.incrementor);
-      emitTokenWithComment(SyntaxKind.CloseParenToken, node.incrementor ? node.incrementor.end : pos, writePunctuation, node);
+      emitTokenWithComment(Syntax.CloseParenToken, node.incrementor ? node.incrementor.end : pos, writePunctuation, node);
       emitEmbeddedStatement(node, node.statement);
     }
 
     function emitForInStatement(node: ForInStatement) {
-      const openParenPos = emitTokenWithComment(SyntaxKind.ForKeyword, node.pos, writeKeyword, node);
+      const openParenPos = emitTokenWithComment(Syntax.ForKeyword, node.pos, writeKeyword, node);
       writeSpace();
-      emitTokenWithComment(SyntaxKind.OpenParenToken, openParenPos, writePunctuation, node);
+      emitTokenWithComment(Syntax.OpenParenToken, openParenPos, writePunctuation, node);
       emitForBinding(node.initializer);
       writeSpace();
-      emitTokenWithComment(SyntaxKind.InKeyword, node.initializer.end, writeKeyword, node);
+      emitTokenWithComment(Syntax.InKeyword, node.initializer.end, writeKeyword, node);
       writeSpace();
       emitExpression(node.expression);
-      emitTokenWithComment(SyntaxKind.CloseParenToken, node.expression.end, writePunctuation, node);
+      emitTokenWithComment(Syntax.CloseParenToken, node.expression.end, writePunctuation, node);
       emitEmbeddedStatement(node, node.statement);
     }
 
     function emitForOfStatement(node: ForOfStatement) {
-      const openParenPos = emitTokenWithComment(SyntaxKind.ForKeyword, node.pos, writeKeyword, node);
+      const openParenPos = emitTokenWithComment(Syntax.ForKeyword, node.pos, writeKeyword, node);
       writeSpace();
       emitWithTrailingSpace(node.awaitModifier);
-      emitTokenWithComment(SyntaxKind.OpenParenToken, openParenPos, writePunctuation, node);
+      emitTokenWithComment(Syntax.OpenParenToken, openParenPos, writePunctuation, node);
       emitForBinding(node.initializer);
       writeSpace();
-      emitTokenWithComment(SyntaxKind.OfKeyword, node.initializer.end, writeKeyword, node);
+      emitTokenWithComment(Syntax.OfKeyword, node.initializer.end, writeKeyword, node);
       writeSpace();
       emitExpression(node.expression);
-      emitTokenWithComment(SyntaxKind.CloseParenToken, node.expression.end, writePunctuation, node);
+      emitTokenWithComment(Syntax.CloseParenToken, node.expression.end, writePunctuation, node);
       emitEmbeddedStatement(node, node.statement);
     }
 
     function emitForBinding(node: VariableDeclarationList | Expression | undefined) {
       if (node !== undefined) {
-        if (node.kind === SyntaxKind.VariableDeclarationList) {
+        if (node.kind === Syntax.VariableDeclarationList) {
           emit(node);
         } else {
           emitExpression(node);
@@ -2686,18 +2686,18 @@ namespace qnr {
     }
 
     function emitContinueStatement(node: ContinueStatement) {
-      emitTokenWithComment(SyntaxKind.ContinueKeyword, node.pos, writeKeyword, node);
+      emitTokenWithComment(Syntax.ContinueKeyword, node.pos, writeKeyword, node);
       emitWithLeadingSpace(node.label);
       writeTrailingSemicolon();
     }
 
     function emitBreakStatement(node: BreakStatement) {
-      emitTokenWithComment(SyntaxKind.BreakKeyword, node.pos, writeKeyword, node);
+      emitTokenWithComment(Syntax.BreakKeyword, node.pos, writeKeyword, node);
       emitWithLeadingSpace(node.label);
       writeTrailingSemicolon();
     }
 
-    function emitTokenWithComment(token: SyntaxKind, pos: number, writer: (s: string) => void, contextNode: Node, indentLeading?: boolean) {
+    function emitTokenWithComment(token: Syntax, pos: number, writer: (s: string) => void, contextNode: Node, indentLeading?: boolean) {
       const node = getParseTreeNode(contextNode);
       const isSimilarNode = node && node.kind === contextNode.kind;
       const startPos = pos;
@@ -2722,45 +2722,45 @@ namespace qnr {
     }
 
     function emitReturnStatement(node: ReturnStatement) {
-      emitTokenWithComment(SyntaxKind.ReturnKeyword, node.pos, writeKeyword, /*contextNode*/ node);
+      emitTokenWithComment(Syntax.ReturnKeyword, node.pos, writeKeyword, /*contextNode*/ node);
       emitExpressionWithLeadingSpace(node.expression);
       writeTrailingSemicolon();
     }
 
     function emitWithStatement(node: WithStatement) {
-      const openParenPos = emitTokenWithComment(SyntaxKind.WithKeyword, node.pos, writeKeyword, node);
+      const openParenPos = emitTokenWithComment(Syntax.WithKeyword, node.pos, writeKeyword, node);
       writeSpace();
-      emitTokenWithComment(SyntaxKind.OpenParenToken, openParenPos, writePunctuation, node);
+      emitTokenWithComment(Syntax.OpenParenToken, openParenPos, writePunctuation, node);
       emitExpression(node.expression);
-      emitTokenWithComment(SyntaxKind.CloseParenToken, node.expression.end, writePunctuation, node);
+      emitTokenWithComment(Syntax.CloseParenToken, node.expression.end, writePunctuation, node);
       emitEmbeddedStatement(node, node.statement);
     }
 
     function emitSwitchStatement(node: SwitchStatement) {
-      const openParenPos = emitTokenWithComment(SyntaxKind.SwitchKeyword, node.pos, writeKeyword, node);
+      const openParenPos = emitTokenWithComment(Syntax.SwitchKeyword, node.pos, writeKeyword, node);
       writeSpace();
-      emitTokenWithComment(SyntaxKind.OpenParenToken, openParenPos, writePunctuation, node);
+      emitTokenWithComment(Syntax.OpenParenToken, openParenPos, writePunctuation, node);
       emitExpression(node.expression);
-      emitTokenWithComment(SyntaxKind.CloseParenToken, node.expression.end, writePunctuation, node);
+      emitTokenWithComment(Syntax.CloseParenToken, node.expression.end, writePunctuation, node);
       writeSpace();
       emit(node.caseBlock);
     }
 
     function emitLabeledStatement(node: LabeledStatement) {
       emit(node.label);
-      emitTokenWithComment(SyntaxKind.ColonToken, node.label.end, writePunctuation, node);
+      emitTokenWithComment(Syntax.ColonToken, node.label.end, writePunctuation, node);
       writeSpace();
       emit(node.statement);
     }
 
     function emitThrowStatement(node: ThrowStatement) {
-      emitTokenWithComment(SyntaxKind.ThrowKeyword, node.pos, writeKeyword, node);
+      emitTokenWithComment(Syntax.ThrowKeyword, node.pos, writeKeyword, node);
       emitExpressionWithLeadingSpace(node.expression);
       writeTrailingSemicolon();
     }
 
     function emitTryStatement(node: TryStatement) {
-      emitTokenWithComment(SyntaxKind.TryKeyword, node.pos, writeKeyword, node);
+      emitTokenWithComment(Syntax.TryKeyword, node.pos, writeKeyword, node);
       writeSpace();
       emit(node.tryBlock);
       if (node.catchClause) {
@@ -2769,14 +2769,14 @@ namespace qnr {
       }
       if (node.finallyBlock) {
         writeLineOrSpace(node);
-        emitTokenWithComment(SyntaxKind.FinallyKeyword, (node.catchClause || node.tryBlock).end, writeKeyword, node);
+        emitTokenWithComment(Syntax.FinallyKeyword, (node.catchClause || node.tryBlock).end, writeKeyword, node);
         writeSpace();
         emit(node.finallyBlock);
       }
     }
 
     function emitDebuggerStatement(node: DebuggerStatement) {
-      writeToken(SyntaxKind.DebuggerKeyword, node.pos, writeKeyword);
+      writeToken(Syntax.DebuggerKeyword, node.pos, writeKeyword);
       writeTrailingSemicolon();
     }
 
@@ -2907,7 +2907,7 @@ namespace qnr {
       }
 
       decreaseIndent();
-      writeToken(SyntaxKind.CloseBraceToken, body.statements.end, writePunctuation, body);
+      writeToken(Syntax.CloseBraceToken, body.statements.end, writePunctuation, body);
     }
 
     function emitBlockFunctionBodyOnSingleLine(body: Block) {
@@ -3011,7 +3011,7 @@ namespace qnr {
 
       let body = node.body;
       if (!body) return writeTrailingSemicolon();
-      while (body.kind === SyntaxKind.ModuleDeclaration) {
+      while (body.kind === Syntax.ModuleDeclaration) {
         writePunctuation('.');
         emit((<ModuleDeclaration>body).name);
         body = (<ModuleDeclaration>body).body!;
@@ -3029,25 +3029,25 @@ namespace qnr {
     }
 
     function emitCaseBlock(node: CaseBlock) {
-      emitTokenWithComment(SyntaxKind.OpenBraceToken, node.pos, writePunctuation, node);
+      emitTokenWithComment(Syntax.OpenBraceToken, node.pos, writePunctuation, node);
       emitList(node, node.clauses, ListFormat.CaseBlockClauses);
-      emitTokenWithComment(SyntaxKind.CloseBraceToken, node.clauses.end, writePunctuation, node, /*indentLeading*/ true);
+      emitTokenWithComment(Syntax.CloseBraceToken, node.clauses.end, writePunctuation, node, /*indentLeading*/ true);
     }
 
     function emitImportEqualsDeclaration(node: ImportEqualsDeclaration) {
       emitModifiers(node, node.modifiers);
-      emitTokenWithComment(SyntaxKind.ImportKeyword, node.modifiers ? node.modifiers.end : node.pos, writeKeyword, node);
+      emitTokenWithComment(Syntax.ImportKeyword, node.modifiers ? node.modifiers.end : node.pos, writeKeyword, node);
       writeSpace();
       emit(node.name);
       writeSpace();
-      emitTokenWithComment(SyntaxKind.EqualsToken, node.name.end, writePunctuation, node);
+      emitTokenWithComment(Syntax.EqualsToken, node.name.end, writePunctuation, node);
       writeSpace();
       emitModuleReference(node.moduleReference);
       writeTrailingSemicolon();
     }
 
     function emitModuleReference(node: ModuleReference) {
-      if (node.kind === SyntaxKind.Identifier) {
+      if (node.kind === Syntax.Identifier) {
         emitExpression(node);
       } else {
         emit(node);
@@ -3056,12 +3056,12 @@ namespace qnr {
 
     function emitImportDeclaration(node: ImportDeclaration) {
       emitModifiers(node, node.modifiers);
-      emitTokenWithComment(SyntaxKind.ImportKeyword, node.modifiers ? node.modifiers.end : node.pos, writeKeyword, node);
+      emitTokenWithComment(Syntax.ImportKeyword, node.modifiers ? node.modifiers.end : node.pos, writeKeyword, node);
       writeSpace();
       if (node.importClause) {
         emit(node.importClause);
         writeSpace();
-        emitTokenWithComment(SyntaxKind.FromKeyword, node.importClause.end, writeKeyword, node);
+        emitTokenWithComment(Syntax.FromKeyword, node.importClause.end, writeKeyword, node);
         writeSpace();
       }
       emitExpression(node.moduleSpecifier);
@@ -3070,21 +3070,21 @@ namespace qnr {
 
     function emitImportClause(node: ImportClause) {
       if (node.isTypeOnly) {
-        emitTokenWithComment(SyntaxKind.TypeKeyword, node.pos, writeKeyword, node);
+        emitTokenWithComment(Syntax.TypeKeyword, node.pos, writeKeyword, node);
         writeSpace();
       }
       emit(node.name);
       if (node.name && node.namedBindings) {
-        emitTokenWithComment(SyntaxKind.CommaToken, node.name.end, writePunctuation, node);
+        emitTokenWithComment(Syntax.CommaToken, node.name.end, writePunctuation, node);
         writeSpace();
       }
       emit(node.namedBindings);
     }
 
     function emitNamespaceImport(node: NamespaceImport) {
-      const asPos = emitTokenWithComment(SyntaxKind.AsteriskToken, node.pos, writePunctuation, node);
+      const asPos = emitTokenWithComment(Syntax.AsteriskToken, node.pos, writePunctuation, node);
       writeSpace();
-      emitTokenWithComment(SyntaxKind.AsKeyword, asPos, writeKeyword, node);
+      emitTokenWithComment(Syntax.AsKeyword, asPos, writeKeyword, node);
       writeSpace();
       emit(node.name);
     }
@@ -3098,12 +3098,12 @@ namespace qnr {
     }
 
     function emitExportAssignment(node: ExportAssignment) {
-      const nextPos = emitTokenWithComment(SyntaxKind.ExportKeyword, node.pos, writeKeyword, node);
+      const nextPos = emitTokenWithComment(Syntax.ExportKeyword, node.pos, writeKeyword, node);
       writeSpace();
       if (node.isExportEquals) {
-        emitTokenWithComment(SyntaxKind.EqualsToken, nextPos, writeOperator, node);
+        emitTokenWithComment(Syntax.EqualsToken, nextPos, writeOperator, node);
       } else {
-        emitTokenWithComment(SyntaxKind.DefaultKeyword, nextPos, writeKeyword, node);
+        emitTokenWithComment(Syntax.DefaultKeyword, nextPos, writeKeyword, node);
       }
       writeSpace();
       emitExpression(node.expression);
@@ -3111,21 +3111,21 @@ namespace qnr {
     }
 
     function emitExportDeclaration(node: ExportDeclaration) {
-      let nextPos = emitTokenWithComment(SyntaxKind.ExportKeyword, node.pos, writeKeyword, node);
+      let nextPos = emitTokenWithComment(Syntax.ExportKeyword, node.pos, writeKeyword, node);
       writeSpace();
       if (node.isTypeOnly) {
-        nextPos = emitTokenWithComment(SyntaxKind.TypeKeyword, nextPos, writeKeyword, node);
+        nextPos = emitTokenWithComment(Syntax.TypeKeyword, nextPos, writeKeyword, node);
         writeSpace();
       }
       if (node.exportClause) {
         emit(node.exportClause);
       } else {
-        nextPos = emitTokenWithComment(SyntaxKind.AsteriskToken, nextPos, writePunctuation, node);
+        nextPos = emitTokenWithComment(Syntax.AsteriskToken, nextPos, writePunctuation, node);
       }
       if (node.moduleSpecifier) {
         writeSpace();
         const fromPos = node.exportClause ? node.exportClause.end : nextPos;
-        emitTokenWithComment(SyntaxKind.FromKeyword, fromPos, writeKeyword, node);
+        emitTokenWithComment(Syntax.FromKeyword, fromPos, writeKeyword, node);
         writeSpace();
         emitExpression(node.moduleSpecifier);
       }
@@ -3133,20 +3133,20 @@ namespace qnr {
     }
 
     function emitNamespaceExportDeclaration(node: NamespaceExportDeclaration) {
-      let nextPos = emitTokenWithComment(SyntaxKind.ExportKeyword, node.pos, writeKeyword, node);
+      let nextPos = emitTokenWithComment(Syntax.ExportKeyword, node.pos, writeKeyword, node);
       writeSpace();
-      nextPos = emitTokenWithComment(SyntaxKind.AsKeyword, nextPos, writeKeyword, node);
+      nextPos = emitTokenWithComment(Syntax.AsKeyword, nextPos, writeKeyword, node);
       writeSpace();
-      nextPos = emitTokenWithComment(SyntaxKind.NamespaceKeyword, nextPos, writeKeyword, node);
+      nextPos = emitTokenWithComment(Syntax.NamespaceKeyword, nextPos, writeKeyword, node);
       writeSpace();
       emit(node.name);
       writeTrailingSemicolon();
     }
 
     function emitNamespaceExport(node: NamespaceExport) {
-      const asPos = emitTokenWithComment(SyntaxKind.AsteriskToken, node.pos, writePunctuation, node);
+      const asPos = emitTokenWithComment(Syntax.AsteriskToken, node.pos, writePunctuation, node);
       writeSpace();
-      emitTokenWithComment(SyntaxKind.AsKeyword, asPos, writeKeyword, node);
+      emitTokenWithComment(Syntax.AsKeyword, asPos, writeKeyword, node);
       writeSpace();
       emit(node.name);
     }
@@ -3169,7 +3169,7 @@ namespace qnr {
       if (node.propertyName) {
         emit(node.propertyName);
         writeSpace();
-        emitTokenWithComment(SyntaxKind.AsKeyword, node.propertyName.end, writeKeyword, node);
+        emitTokenWithComment(Syntax.AsKeyword, node.propertyName.end, writeKeyword, node);
         writeSpace();
       }
 
@@ -3267,7 +3267,7 @@ namespace qnr {
     }
 
     function emitJsxTagName(node: JsxTagNameExpression) {
-      if (node.kind === SyntaxKind.Identifier) {
+      if (node.kind === Syntax.Identifier) {
         emitExpression(node);
       } else {
         emit(node);
@@ -3279,7 +3279,7 @@ namespace qnr {
     //
 
     function emitCaseClause(node: CaseClause) {
-      emitTokenWithComment(SyntaxKind.CaseKeyword, node.pos, writeKeyword, node);
+      emitTokenWithComment(Syntax.CaseKeyword, node.pos, writeKeyword, node);
       writeSpace();
       emitExpression(node.expression);
 
@@ -3287,7 +3287,7 @@ namespace qnr {
     }
 
     function emitDefaultClause(node: DefaultClause) {
-      const pos = emitTokenWithComment(SyntaxKind.DefaultKeyword, node.pos, writeKeyword, node);
+      const pos = emitTokenWithComment(Syntax.DefaultKeyword, node.pos, writeKeyword, node);
       emitCaseOrDefaultClauseRest(node, node.statements, pos);
     }
 
@@ -3299,11 +3299,11 @@ namespace qnr {
 
       let format = ListFormat.CaseOrDefaultClauseStatements;
       if (emitAsSingleStatement) {
-        writeToken(SyntaxKind.ColonToken, colonPos, writePunctuation, parentNode);
+        writeToken(Syntax.ColonToken, colonPos, writePunctuation, parentNode);
         writeSpace();
         format &= ~(ListFormat.MultiLine | ListFormat.Indented);
       } else {
-        emitTokenWithComment(SyntaxKind.ColonToken, colonPos, writePunctuation, parentNode);
+        emitTokenWithComment(Syntax.ColonToken, colonPos, writePunctuation, parentNode);
       }
       emitList(parentNode, statements, format);
     }
@@ -3316,12 +3316,12 @@ namespace qnr {
     }
 
     function emitCatchClause(node: CatchClause) {
-      const openParenPos = emitTokenWithComment(SyntaxKind.CatchKeyword, node.pos, writeKeyword, node);
+      const openParenPos = emitTokenWithComment(Syntax.CatchKeyword, node.pos, writeKeyword, node);
       writeSpace();
       if (node.variableDeclaration) {
-        emitTokenWithComment(SyntaxKind.OpenParenToken, openParenPos, writePunctuation, node);
+        emitTokenWithComment(Syntax.OpenParenToken, openParenPos, writePunctuation, node);
         emit(node.variableDeclaration);
-        emitTokenWithComment(SyntaxKind.CloseParenToken, node.variableDeclaration.end, writePunctuation, node);
+        emitTokenWithComment(Syntax.CloseParenToken, node.variableDeclaration.end, writePunctuation, node);
         writeSpace();
       }
       emit(node.block);
@@ -3362,7 +3362,7 @@ namespace qnr {
 
     function emitSpreadAssignment(node: SpreadAssignment) {
       if (node.expression) {
-        emitTokenWithComment(SyntaxKind.Dot3Token, node.pos, writePunctuation, node);
+        emitTokenWithComment(Syntax.Dot3Token, node.pos, writePunctuation, node);
         emitExpression(node.expression);
       }
     }
@@ -3392,7 +3392,7 @@ namespace qnr {
         }
       }
       if (node.tags) {
-        if (node.tags.length === 1 && node.tags[0].kind === SyntaxKind.JSDocTypeTag && !node.comment) {
+        if (node.tags.length === 1 && node.tags[0].kind === Syntax.JSDocTypeTag && !node.comment) {
           writeSpace();
           emit(node.tags[0]);
         } else {
@@ -3429,7 +3429,7 @@ namespace qnr {
     function emitJSDocTypedefTag(tag: JSDocTypedefTag) {
       emitJSDocTagName(tag.tagName);
       if (tag.typeExpression) {
-        if (tag.typeExpression.kind === SyntaxKind.JSDocTypeExpression) {
+        if (tag.typeExpression.kind === Syntax.JSDocTypeExpression) {
           emitJSDocTypeExpression(tag.typeExpression);
         } else {
           writeSpace();
@@ -3447,7 +3447,7 @@ namespace qnr {
         emit(tag.fullName);
       }
       emitJSDocComment(tag.comment);
-      if (tag.typeExpression && tag.typeExpression.kind === SyntaxKind.JSDocTypeLiteral) {
+      if (tag.typeExpression && tag.typeExpression.kind === Syntax.JSDocTypeLiteral) {
         emitJSDocTypeLiteral(tag.typeExpression);
       }
     }
@@ -3761,7 +3761,7 @@ namespace qnr {
     function emitInitializer(node: Expression | undefined, equalCommentStartPos: number, container: Node) {
       if (node) {
         writeSpace();
-        emitTokenWithComment(SyntaxKind.EqualsToken, equalCommentStartPos, writeOperator, container);
+        emitTokenWithComment(Syntax.EqualsToken, equalCommentStartPos, writeOperator, container);
         writeSpace();
         emitExpression(node);
       }
@@ -4122,7 +4122,7 @@ namespace qnr {
       writer.decreaseIndent();
     }
 
-    function writeToken(token: SyntaxKind, pos: number, writer: (s: string) => void, contextNode?: Node) {
+    function writeToken(token: Syntax, pos: number, writer: (s: string) => void, contextNode?: Node) {
       return !sourceMapsDisabled ? emitTokenWithSourceMap(contextNode, token, writer, pos, writeTokenText) : writeTokenText(token, writer, pos);
     }
 
@@ -4136,9 +4136,9 @@ namespace qnr {
       }
     }
 
-    function writeTokenText(token: SyntaxKind, writer: (s: string) => void): void;
-    function writeTokenText(token: SyntaxKind, writer: (s: string) => void, pos: number): number;
-    function writeTokenText(token: SyntaxKind, writer: (s: string) => void, pos?: number): number {
+    function writeTokenText(token: Syntax, writer: (s: string) => void): void;
+    function writeTokenText(token: Syntax, writer: (s: string) => void, pos: number): number;
+    function writeTokenText(token: Syntax, writer: (s: string) => void, pos?: number): number {
       const tokenString = Token.toString(token)!;
       writer(tokenString);
       return pos! < 0 ? pos! : pos! + tokenString.length;
@@ -4196,7 +4196,7 @@ namespace qnr {
         if (firstChild === undefined) {
           return rangeIsOnSingleLine(parentNode, currentSourceFile!) ? 0 : 1;
         }
-        if (firstChild.kind === SyntaxKind.JsxText) {
+        if (firstChild.kind === Syntax.JsxText) {
           // JsxText will be written with its leading whitespace, so don't add more manually.
           return 0;
         }
@@ -4218,7 +4218,7 @@ namespace qnr {
         if (previousNode === undefined || nextNode === undefined) {
           return 0;
         }
-        if (nextNode.kind === SyntaxKind.JsxText) {
+        if (nextNode.kind === Syntax.JsxText) {
           // JsxText will be written with its leading whitespace, so don't add more manually.
           return 0;
         } else if (!isSynthesized(previousNode) && !isSynthesized(nextNode) && previousNode.parent === nextNode.parent) {
@@ -4342,7 +4342,7 @@ namespace qnr {
     }
 
     function skipSynthesizedParentheses(node: Node) {
-      while (node.kind === SyntaxKind.ParenthesizedExpression && isSynthesized(node)) {
+      while (node.kind === Syntax.ParenthesizedExpression && isSynthesized(node)) {
         node = (<ParenthesizedExpression>node).expression;
       }
 
@@ -4357,7 +4357,7 @@ namespace qnr {
         (isSynthesized(node) || !node.parent || !currentSourceFile || (node.parent && currentSourceFile && getSourceFileOfNode(node) !== getOriginalNode(currentSourceFile)))
       ) {
         return idText(node);
-      } else if (node.kind === SyntaxKind.StringLiteral && (<StringLiteral>node).textSourceNode) {
+      } else if (node.kind === Syntax.StringLiteral && (<StringLiteral>node).textSourceNode) {
         return getTextOfNode((<StringLiteral>node).textSourceNode!, includeTrivia);
       } else if (isLiteralExpression(node) && (isSynthesized(node) || !node.parent)) {
         return node.text;
@@ -4367,7 +4367,7 @@ namespace qnr {
     }
 
     function getLiteralTextOfNode(node: LiteralLikeNode, neverAsciiEscape: boolean | undefined, jsxAttributeEscape: boolean): string {
-      if (node.kind === SyntaxKind.StringLiteral && (<StringLiteral>node).textSourceNode) {
+      if (node.kind === Syntax.StringLiteral && (<StringLiteral>node).textSourceNode) {
         const textSourceNode = (<StringLiteral>node).textSourceNode!;
         if (isIdentifier(textSourceNode) || NumericLiteral.kind(textSourceNode)) {
           const text = NumericLiteral.kind(textSourceNode) ? textSourceNode.text : getTextOfNode(textSourceNode);
@@ -4417,84 +4417,84 @@ namespace qnr {
     function generateNames(node: Node | undefined) {
       if (!node) return;
       switch (node.kind) {
-        case SyntaxKind.Block:
+        case Syntax.Block:
           forEach((<Block>node).statements, generateNames);
           break;
-        case SyntaxKind.LabeledStatement:
-        case SyntaxKind.WithStatement:
-        case SyntaxKind.DoStatement:
-        case SyntaxKind.WhileStatement:
+        case Syntax.LabeledStatement:
+        case Syntax.WithStatement:
+        case Syntax.DoStatement:
+        case Syntax.WhileStatement:
           generateNames((<LabeledStatement | WithStatement | DoStatement | WhileStatement>node).statement);
           break;
-        case SyntaxKind.IfStatement:
+        case Syntax.IfStatement:
           generateNames((<IfStatement>node).thenStatement);
           generateNames((<IfStatement>node).elseStatement);
           break;
-        case SyntaxKind.ForStatement:
-        case SyntaxKind.ForOfStatement:
-        case SyntaxKind.ForInStatement:
+        case Syntax.ForStatement:
+        case Syntax.ForOfStatement:
+        case Syntax.ForInStatement:
           generateNames((<ForStatement | ForInOrOfStatement>node).initializer);
           generateNames((<ForStatement | ForInOrOfStatement>node).statement);
           break;
-        case SyntaxKind.SwitchStatement:
+        case Syntax.SwitchStatement:
           generateNames((<SwitchStatement>node).caseBlock);
           break;
-        case SyntaxKind.CaseBlock:
+        case Syntax.CaseBlock:
           forEach((<CaseBlock>node).clauses, generateNames);
           break;
-        case SyntaxKind.CaseClause:
-        case SyntaxKind.DefaultClause:
+        case Syntax.CaseClause:
+        case Syntax.DefaultClause:
           forEach((<CaseOrDefaultClause>node).statements, generateNames);
           break;
-        case SyntaxKind.TryStatement:
+        case Syntax.TryStatement:
           generateNames((<TryStatement>node).tryBlock);
           generateNames((<TryStatement>node).catchClause);
           generateNames((<TryStatement>node).finallyBlock);
           break;
-        case SyntaxKind.CatchClause:
+        case Syntax.CatchClause:
           generateNames((<CatchClause>node).variableDeclaration);
           generateNames((<CatchClause>node).block);
           break;
-        case SyntaxKind.VariableStatement:
+        case Syntax.VariableStatement:
           generateNames((<VariableStatement>node).declarationList);
           break;
-        case SyntaxKind.VariableDeclarationList:
+        case Syntax.VariableDeclarationList:
           forEach((<VariableDeclarationList>node).declarations, generateNames);
           break;
-        case SyntaxKind.VariableDeclaration:
-        case SyntaxKind.Parameter:
-        case SyntaxKind.BindingElement:
-        case SyntaxKind.ClassDeclaration:
+        case Syntax.VariableDeclaration:
+        case Syntax.Parameter:
+        case Syntax.BindingElement:
+        case Syntax.ClassDeclaration:
           generateNameIfNeeded((<NamedDeclaration>node).name);
           break;
-        case SyntaxKind.FunctionDeclaration:
+        case Syntax.FunctionDeclaration:
           generateNameIfNeeded((<FunctionDeclaration>node).name);
           if (getEmitFlags(node) & EmitFlags.ReuseTempVariableScope) {
             forEach((<FunctionDeclaration>node).parameters, generateNames);
             generateNames((<FunctionDeclaration>node).body);
           }
           break;
-        case SyntaxKind.ObjectBindingPattern:
-        case SyntaxKind.ArrayBindingPattern:
+        case Syntax.ObjectBindingPattern:
+        case Syntax.ArrayBindingPattern:
           forEach((<BindingPattern>node).elements, generateNames);
           break;
-        case SyntaxKind.ImportDeclaration:
+        case Syntax.ImportDeclaration:
           generateNames((<ImportDeclaration>node).importClause);
           break;
-        case SyntaxKind.ImportClause:
+        case Syntax.ImportClause:
           generateNameIfNeeded((<ImportClause>node).name);
           generateNames((<ImportClause>node).namedBindings);
           break;
-        case SyntaxKind.NamespaceImport:
+        case Syntax.NamespaceImport:
           generateNameIfNeeded((<NamespaceImport>node).name);
           break;
-        case SyntaxKind.NamespaceExport:
+        case Syntax.NamespaceExport:
           generateNameIfNeeded((<NamespaceExport>node).name);
           break;
-        case SyntaxKind.NamedImports:
+        case Syntax.NamedImports:
           forEach((<NamedImports>node).elements, generateNames);
           break;
-        case SyntaxKind.ImportSpecifier:
+        case Syntax.ImportSpecifier:
           generateNameIfNeeded((<ImportSpecifier>node).propertyName || (<ImportSpecifier>node).name);
           break;
       }
@@ -4503,12 +4503,12 @@ namespace qnr {
     function generateMemberNames(node: Node | undefined) {
       if (!node) return;
       switch (node.kind) {
-        case SyntaxKind.PropertyAssignment:
-        case SyntaxKind.ShorthandPropertyAssignment:
-        case SyntaxKind.PropertyDeclaration:
-        case SyntaxKind.MethodDeclaration:
-        case SyntaxKind.GetAccessor:
-        case SyntaxKind.SetAccessor:
+        case Syntax.PropertyAssignment:
+        case Syntax.ShorthandPropertyAssignment:
+        case Syntax.PropertyDeclaration:
+        case Syntax.MethodDeclaration:
+        case Syntax.GetAccessor:
+        case Syntax.SetAccessor:
           generateNameIfNeeded((<NamedDeclaration>node).name);
           break;
       }
@@ -4693,25 +4693,25 @@ namespace qnr {
      */
     function generateNameForNode(node: Node, flags?: GeneratedIdentifierFlags): string {
       switch (node.kind) {
-        case SyntaxKind.Identifier:
+        case Syntax.Identifier:
           return makeUniqueName(getTextOfNode(node), isUniqueName, !!(flags! & GeneratedIdentifierFlags.Optimistic), !!(flags! & GeneratedIdentifierFlags.ReservedInNestedScopes));
-        case SyntaxKind.ModuleDeclaration:
-        case SyntaxKind.EnumDeclaration:
+        case Syntax.ModuleDeclaration:
+        case Syntax.EnumDeclaration:
           return generateNameForModuleOrEnum(<ModuleDeclaration | EnumDeclaration>node);
-        case SyntaxKind.ImportDeclaration:
-        case SyntaxKind.ExportDeclaration:
+        case Syntax.ImportDeclaration:
+        case Syntax.ExportDeclaration:
           return generateNameForImportOrExportDeclaration(<ImportDeclaration | ExportDeclaration>node);
-        case SyntaxKind.FunctionDeclaration:
-        case SyntaxKind.ClassDeclaration:
-        case SyntaxKind.ExportAssignment:
+        case Syntax.FunctionDeclaration:
+        case Syntax.ClassDeclaration:
+        case Syntax.ExportAssignment:
           return generateNameForExportDefault();
-        case SyntaxKind.ClassExpression:
+        case Syntax.ClassExpression:
           return generateNameForClassExpression();
-        case SyntaxKind.MethodDeclaration:
-        case SyntaxKind.GetAccessor:
-        case SyntaxKind.SetAccessor:
+        case Syntax.MethodDeclaration:
+        case Syntax.GetAccessor:
+        case Syntax.SetAccessor:
           return generateNameForMethodOrAccessor(<MethodDeclaration | AccessorDeclaration>node);
-        case SyntaxKind.ComputedPropertyName:
+        case Syntax.ComputedPropertyName:
           return makeTempVariableName(TempFlags.Auto, /*reserveInNestedScopes*/ true);
         default:
           return makeTempVariableName(TempFlags.Auto);
@@ -4770,12 +4770,12 @@ namespace qnr {
       hasWrittenComment = false;
       const emitFlags = getEmitFlags(node);
       const { pos, end } = getCommentRange(node);
-      const isEmittedNode = node.kind !== SyntaxKind.NotEmittedStatement;
+      const isEmittedNode = node.kind !== Syntax.NotEmittedStatement;
 
       // We have to explicitly check that the node is JsxText because if the compilerOptions.jsx is "preserve" we will not do any transformation.
       // It is expensive to walk entire tree just to set one kind of node to have no comments.
-      const skipLeadingComments = pos < 0 || (emitFlags & EmitFlags.NoLeadingComments) !== 0 || node.kind === SyntaxKind.JsxText;
-      const skipTrailingComments = end < 0 || (emitFlags & EmitFlags.NoTrailingComments) !== 0 || node.kind === SyntaxKind.JsxText;
+      const skipLeadingComments = pos < 0 || (emitFlags & EmitFlags.NoLeadingComments) !== 0 || node.kind === Syntax.JsxText;
+      const skipTrailingComments = end < 0 || (emitFlags & EmitFlags.NoTrailingComments) !== 0 || node.kind === Syntax.JsxText;
 
       // Save current container state on the stack.
       const savedContainerPos = containerPos;
@@ -4799,7 +4799,7 @@ namespace qnr {
 
           // To avoid invalid comment emit in a down-level binding pattern, we
           // keep track of the last declaration list container's end
-          if (node.kind === SyntaxKind.VariableDeclarationList) {
+          if (node.kind === Syntax.VariableDeclarationList) {
             declarationListContainerEnd = end;
           }
         }
@@ -4835,11 +4835,11 @@ namespace qnr {
     }
 
     function emitLeadingSynthesizedComment(comment: SynthesizedComment) {
-      if (comment.hasLeadingNewline || comment.kind === SyntaxKind.SingleLineCommentTrivia) {
+      if (comment.hasLeadingNewline || comment.kind === Syntax.SingleLineCommentTrivia) {
         writer.writeLine();
       }
       writeSynthesizedComment(comment);
-      if (comment.hasTrailingNewLine || comment.kind === SyntaxKind.SingleLineCommentTrivia) {
+      if (comment.hasTrailingNewLine || comment.kind === Syntax.SingleLineCommentTrivia) {
         writer.writeLine();
       } else {
         writer.writeSpace(' ');
@@ -4858,12 +4858,12 @@ namespace qnr {
 
     function writeSynthesizedComment(comment: SynthesizedComment) {
       const text = formatSynthesizedComment(comment);
-      const lineMap = comment.kind === SyntaxKind.MultiLineCommentTrivia ? Scanner.lineStarts(text) : undefined;
+      const lineMap = comment.kind === Syntax.MultiLineCommentTrivia ? Scanner.lineStarts(text) : undefined;
       writeCommentRange(text, lineMap!, writer, 0, text.length, newLine);
     }
 
     function formatSynthesizedComment(comment: SynthesizedComment) {
-      return comment.kind === SyntaxKind.MultiLineCommentTrivia ? `/*${comment.text}*/` : `//${comment.text}`;
+      return comment.kind === Syntax.MultiLineCommentTrivia ? `/*${comment.text}*/` : `//${comment.text}`;
     }
 
     function emitBodyWithDetachedComments(node: Node, detachedRange: TextRange, emitCallback: (node: Node) => void) {
@@ -4913,7 +4913,7 @@ namespace qnr {
       }
     }
 
-    function emitTripleSlashLeadingComment(commentPos: number, commentEnd: number, kind: SyntaxKind, hasTrailingNewLine: boolean, rangePos: number) {
+    function emitTripleSlashLeadingComment(commentPos: number, commentEnd: number, kind: Syntax, hasTrailingNewLine: boolean, rangePos: number) {
       if (isTripleSlashComment(commentPos, commentEnd)) {
         emitLeadingComment(commentPos, commentEnd, kind, hasTrailingNewLine, rangePos);
       }
@@ -4926,7 +4926,7 @@ namespace qnr {
       return true;
     }
 
-    function emitLeadingComment(commentPos: number, commentEnd: number, kind: SyntaxKind, hasTrailingNewLine: boolean, rangePos: number) {
+    function emitLeadingComment(commentPos: number, commentEnd: number, kind: Syntax, hasTrailingNewLine: boolean, rangePos: number) {
       if (!shouldWriteComment(currentSourceFile!.text, commentPos)) return;
       if (!hasWrittenComment) {
         emitNewLineBeforeLeadingCommentOfPosition(getCurrentLineMap(), writer, rangePos, commentPos);
@@ -4940,7 +4940,7 @@ namespace qnr {
 
       if (hasTrailingNewLine) {
         writer.writeLine();
-      } else if (kind === SyntaxKind.MultiLineCommentTrivia) {
+      } else if (kind === Syntax.MultiLineCommentTrivia) {
         writer.writeSpace(' ');
       }
     }
@@ -4957,7 +4957,7 @@ namespace qnr {
       forEachTrailingCommentToEmit(pos, emitTrailingComment);
     }
 
-    function emitTrailingComment(commentPos: number, commentEnd: number, _kind: SyntaxKind, hasTrailingNewLine: boolean) {
+    function emitTrailingComment(commentPos: number, commentEnd: number, _kind: Syntax, hasTrailingNewLine: boolean) {
       if (!shouldWriteComment(currentSourceFile!.text, commentPos)) return;
       // trailing comments are emitted at space/*trailing comment1 */space/*trailing comment2*/
       if (!writer.isAtStartOfLine()) {
@@ -4982,7 +4982,7 @@ namespace qnr {
       exitComment();
     }
 
-    function emitTrailingCommentOfPosition(commentPos: number, commentEnd: number, _kind: SyntaxKind, hasTrailingNewLine: boolean) {
+    function emitTrailingCommentOfPosition(commentPos: number, commentEnd: number, _kind: Syntax, hasTrailingNewLine: boolean) {
       // trailing comments of a position are emitted at /*trailing comment1 */space/*trailing comment*/space
 
       emitPos(commentPos);
@@ -4996,7 +4996,7 @@ namespace qnr {
       }
     }
 
-    function forEachLeadingCommentToEmit(pos: number, cb: (commentPos: number, commentEnd: number, kind: SyntaxKind, hasTrailingNewLine: boolean, rangePos: number) => void) {
+    function forEachLeadingCommentToEmit(pos: number, cb: (commentPos: number, commentEnd: number, kind: Syntax, hasTrailingNewLine: boolean, rangePos: number) => void) {
       // Emit the leading comments only if the container's pos doesn't match because the container should take care of emitting these comments
       if (currentSourceFile && (containerPos === -1 || pos !== containerPos)) {
         if (hasDetachedComments(pos)) {
@@ -5007,7 +5007,7 @@ namespace qnr {
       }
     }
 
-    function forEachTrailingCommentToEmit(end: number, cb: (commentPos: number, commentEnd: number, kind: SyntaxKind, hasTrailingNewLine: boolean) => void) {
+    function forEachTrailingCommentToEmit(end: number, cb: (commentPos: number, commentEnd: number, kind: Syntax, hasTrailingNewLine: boolean) => void) {
       // Emit the trailing comments only if the container's end doesn't match because the container should take care of emitting these comments
       if (currentSourceFile && (containerEnd === -1 || (end !== containerEnd && end !== declarationListContainerEnd))) {
         forEachTrailingCommentRange(currentSourceFile.text, end, cb);
@@ -5018,7 +5018,7 @@ namespace qnr {
       return detachedCommentsInfo !== undefined && last(detachedCommentsInfo).nodePos === pos;
     }
 
-    function forEachLeadingCommentWithoutDetachedComments(cb: (commentPos: number, commentEnd: number, kind: SyntaxKind, hasTrailingNewLine: boolean, rangePos: number) => void) {
+    function forEachLeadingCommentWithoutDetachedComments(cb: (commentPos: number, commentEnd: number, kind: Syntax, hasTrailingNewLine: boolean, rangePos: number) => void) {
       // get the leading comments from detachedPos
       const pos = last(detachedCommentsInfo!).detachedCommentEndPos;
       if (detachedCommentsInfo!.length - 1) {
@@ -5080,7 +5080,7 @@ namespace qnr {
       } else {
         const { pos, end, source = sourceMapSource } = getSourceMapRange(node);
         const emitFlags = getEmitFlags(node);
-        if (node.kind !== SyntaxKind.NotEmittedStatement && (emitFlags & EmitFlags.NoLeadingSourceMap) === 0 && pos >= 0) {
+        if (node.kind !== Syntax.NotEmittedStatement && (emitFlags & EmitFlags.NoLeadingSourceMap) === 0 && pos >= 0) {
           emitSourcePos(source, skipSourceTrivia(source, pos));
         }
 
@@ -5092,7 +5092,7 @@ namespace qnr {
           pipelinePhase(hint, node);
         }
 
-        if (node.kind !== SyntaxKind.NotEmittedStatement && (emitFlags & EmitFlags.NoTrailingSourceMap) === 0 && end >= 0) {
+        if (node.kind !== Syntax.NotEmittedStatement && (emitFlags & EmitFlags.NoTrailingSourceMap) === 0 && end >= 0) {
           emitSourcePos(source, end);
         }
       }
@@ -5144,10 +5144,10 @@ namespace qnr {
      */
     function emitTokenWithSourceMap(
       node: Node | undefined,
-      token: SyntaxKind,
+      token: Syntax,
       writer: (s: string) => void,
       tokenPos: number,
-      emitCallback: (token: SyntaxKind, writer: (s: string) => void, tokenStartPos: number) => number
+      emitCallback: (token: Syntax, writer: (s: string) => void, tokenStartPos: number) => number
     ) {
       if (sourceMapsDisabled || (node && isInJsonFile(node))) {
         return emitCallback(token, writer, tokenPos);

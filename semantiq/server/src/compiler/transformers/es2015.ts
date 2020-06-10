@@ -320,14 +320,14 @@ namespace qnr {
     }
 
     function isReturnVoidStatementInConstructorWithCapturedSuper(node: Node): boolean {
-      return (hierarchyFacts & HierarchyFacts.ConstructorWithCapturedSuper) !== 0 && node.kind === SyntaxKind.ReturnStatement && !(<ReturnStatement>node).expression;
+      return (hierarchyFacts & HierarchyFacts.ConstructorWithCapturedSuper) !== 0 && node.kind === Syntax.ReturnStatement && !(<ReturnStatement>node).expression;
     }
 
     function shouldVisitNode(node: Node): boolean {
       return (
         (node.transformFlags & TransformFlags.ContainsES2015) !== 0 ||
         convertedLoopState !== undefined ||
-        (hierarchyFacts & HierarchyFacts.ConstructorWithCapturedSuper && (isStatement(node) || node.kind === SyntaxKind.Block)) ||
+        (hierarchyFacts & HierarchyFacts.ConstructorWithCapturedSuper && (isStatement(node) || node.kind === Syntax.Block)) ||
         (isIterationStatement(node, /*lookInLabeledStatements*/ false) && shouldConvertIterationStatement(node)) ||
         (getEmitFlags(node) & EmitFlags.TypeScriptClassWrapper) !== 0
       );
@@ -342,7 +342,7 @@ namespace qnr {
     }
 
     function callExpressionVisitor(node: Node): VisitResult<Node> {
-      if (node.kind === SyntaxKind.SuperKeyword) {
+      if (node.kind === Syntax.SuperKeyword) {
         return visitSuperKeyword(/*isExpressionOfCall*/ true);
       }
       return visitor(node);
@@ -350,139 +350,139 @@ namespace qnr {
 
     function visitJavaScript(node: Node): VisitResult<Node> {
       switch (node.kind) {
-        case SyntaxKind.StaticKeyword:
+        case Syntax.StaticKeyword:
           return; // elide static keyword
 
-        case SyntaxKind.ClassDeclaration:
+        case Syntax.ClassDeclaration:
           return visitClassDeclaration(<ClassDeclaration>node);
 
-        case SyntaxKind.ClassExpression:
+        case Syntax.ClassExpression:
           return visitClassExpression(<ClassExpression>node);
 
-        case SyntaxKind.Parameter:
+        case Syntax.Parameter:
           return visitParameter(<ParameterDeclaration>node);
 
-        case SyntaxKind.FunctionDeclaration:
+        case Syntax.FunctionDeclaration:
           return visitFunctionDeclaration(<FunctionDeclaration>node);
 
-        case SyntaxKind.ArrowFunction:
+        case Syntax.ArrowFunction:
           return visitArrowFunction(<ArrowFunction>node);
 
-        case SyntaxKind.FunctionExpression:
+        case Syntax.FunctionExpression:
           return visitFunctionExpression(<FunctionExpression>node);
 
-        case SyntaxKind.VariableDeclaration:
+        case Syntax.VariableDeclaration:
           return visitVariableDeclaration(<VariableDeclaration>node);
 
-        case SyntaxKind.Identifier:
+        case Syntax.Identifier:
           return visitIdentifier(<Identifier>node);
 
-        case SyntaxKind.VariableDeclarationList:
+        case Syntax.VariableDeclarationList:
           return visitVariableDeclarationList(<VariableDeclarationList>node);
 
-        case SyntaxKind.SwitchStatement:
+        case Syntax.SwitchStatement:
           return visitSwitchStatement(<SwitchStatement>node);
 
-        case SyntaxKind.CaseBlock:
+        case Syntax.CaseBlock:
           return visitCaseBlock(<CaseBlock>node);
 
-        case SyntaxKind.Block:
+        case Syntax.Block:
           return visitBlock(<Block>node, /*isFunctionBody*/ false);
 
-        case SyntaxKind.BreakStatement:
-        case SyntaxKind.ContinueStatement:
+        case Syntax.BreakStatement:
+        case Syntax.ContinueStatement:
           return visitBreakOrContinueStatement(<BreakOrContinueStatement>node);
 
-        case SyntaxKind.LabeledStatement:
+        case Syntax.LabeledStatement:
           return visitLabeledStatement(<LabeledStatement>node);
 
-        case SyntaxKind.DoStatement:
-        case SyntaxKind.WhileStatement:
+        case Syntax.DoStatement:
+        case Syntax.WhileStatement:
           return visitDoOrWhileStatement(<DoStatement | WhileStatement>node, /*outermostLabeledStatement*/ undefined);
 
-        case SyntaxKind.ForStatement:
+        case Syntax.ForStatement:
           return visitForStatement(<ForStatement>node, /*outermostLabeledStatement*/ undefined);
 
-        case SyntaxKind.ForInStatement:
+        case Syntax.ForInStatement:
           return visitForInStatement(<ForInStatement>node, /*outermostLabeledStatement*/ undefined);
 
-        case SyntaxKind.ForOfStatement:
+        case Syntax.ForOfStatement:
           return visitForOfStatement(<ForOfStatement>node, /*outermostLabeledStatement*/ undefined);
 
-        case SyntaxKind.ExpressionStatement:
+        case Syntax.ExpressionStatement:
           return visitExpressionStatement(<ExpressionStatement>node);
 
-        case SyntaxKind.ObjectLiteralExpression:
+        case Syntax.ObjectLiteralExpression:
           return visitObjectLiteralExpression(<ObjectLiteralExpression>node);
 
-        case SyntaxKind.CatchClause:
+        case Syntax.CatchClause:
           return visitCatchClause(<CatchClause>node);
 
-        case SyntaxKind.ShorthandPropertyAssignment:
+        case Syntax.ShorthandPropertyAssignment:
           return visitShorthandPropertyAssignment(<ShorthandPropertyAssignment>node);
 
-        case SyntaxKind.ComputedPropertyName:
+        case Syntax.ComputedPropertyName:
           return visitComputedPropertyName(<ComputedPropertyName>node);
 
-        case SyntaxKind.ArrayLiteralExpression:
+        case Syntax.ArrayLiteralExpression:
           return visitArrayLiteralExpression(<ArrayLiteralExpression>node);
 
-        case SyntaxKind.CallExpression:
+        case Syntax.CallExpression:
           return visitCallExpression(<CallExpression>node);
 
-        case SyntaxKind.NewExpression:
+        case Syntax.NewExpression:
           return visitNewExpression(<NewExpression>node);
 
-        case SyntaxKind.ParenthesizedExpression:
+        case Syntax.ParenthesizedExpression:
           return visitParenthesizedExpression(<ParenthesizedExpression>node, /*needsDestructuringValue*/ true);
 
-        case SyntaxKind.BinaryExpression:
+        case Syntax.BinaryExpression:
           return visitBinaryExpression(<BinaryExpression>node, /*needsDestructuringValue*/ true);
 
-        case SyntaxKind.NoSubstitutionLiteral:
-        case SyntaxKind.TemplateHead:
-        case SyntaxKind.TemplateMiddle:
-        case SyntaxKind.TemplateTail:
+        case Syntax.NoSubstitutionLiteral:
+        case Syntax.TemplateHead:
+        case Syntax.TemplateMiddle:
+        case Syntax.TemplateTail:
           return visitTemplateLiteral(<LiteralExpression>node);
 
-        case SyntaxKind.StringLiteral:
+        case Syntax.StringLiteral:
           return visitStringLiteral(<StringLiteral>node);
 
-        case SyntaxKind.NumericLiteral:
+        case Syntax.NumericLiteral:
           return visitNumericLiteral(<NumericLiteral>node);
 
-        case SyntaxKind.TaggedTemplateExpression:
+        case Syntax.TaggedTemplateExpression:
           return visitTaggedTemplateExpression(<TaggedTemplateExpression>node);
 
-        case SyntaxKind.TemplateExpression:
+        case Syntax.TemplateExpression:
           return visitTemplateExpression(<TemplateExpression>node);
 
-        case SyntaxKind.YieldExpression:
+        case Syntax.YieldExpression:
           return visitYieldExpression(<YieldExpression>node);
 
-        case SyntaxKind.SpreadElement:
+        case Syntax.SpreadElement:
           return visitSpreadElement(<SpreadElement>node);
 
-        case SyntaxKind.SuperKeyword:
+        case Syntax.SuperKeyword:
           return visitSuperKeyword(/*isExpressionOfCall*/ false);
 
-        case SyntaxKind.ThisKeyword:
+        case Syntax.ThisKeyword:
           return visitThisKeyword(node);
 
-        case SyntaxKind.MetaProperty:
+        case Syntax.MetaProperty:
           return visitMetaProperty(<MetaProperty>node);
 
-        case SyntaxKind.MethodDeclaration:
+        case Syntax.MethodDeclaration:
           return visitMethodDeclaration(<MethodDeclaration>node);
 
-        case SyntaxKind.GetAccessor:
-        case SyntaxKind.SetAccessor:
+        case Syntax.GetAccessor:
+        case Syntax.SetAccessor:
           return visitAccessorDeclaration(<AccessorDeclaration>node);
 
-        case SyntaxKind.VariableStatement:
+        case Syntax.VariableStatement:
           return visitVariableStatement(<VariableStatement>node);
 
-        case SyntaxKind.ReturnStatement:
+        case Syntax.ReturnStatement:
           return visitReturnStatement(<ReturnStatement>node);
 
         default:
@@ -577,7 +577,7 @@ namespace qnr {
         // it is possible if either
         //   - break/continue is labeled and label is located inside the converted loop
         //   - break/continue is non-labeled and located in non-converted loop/switch statement
-        const jump = node.kind === SyntaxKind.BreakStatement ? Jump.Break : Jump.Continue;
+        const jump = node.kind === Syntax.BreakStatement ? Jump.Break : Jump.Continue;
         const canUseBreakOrContinue =
           (node.label && convertedLoopState.labels && convertedLoopState.labels.get(idText(node.label))) || (!node.label && convertedLoopState.allowedNonLabeledJumps! & jump);
 
@@ -585,7 +585,7 @@ namespace qnr {
           let labelMarker: string;
           const label = node.label;
           if (!label) {
-            if (node.kind === SyntaxKind.BreakStatement) {
+            if (node.kind === Syntax.BreakStatement) {
               convertedLoopState.nonLocalJumps! |= Jump.Break;
               labelMarker = 'break';
             } else {
@@ -594,7 +594,7 @@ namespace qnr {
               labelMarker = 'continue';
             }
           } else {
-            if (node.kind === SyntaxKind.BreakStatement) {
+            if (node.kind === Syntax.BreakStatement) {
               labelMarker = `break-${label.escapedText}`;
               setLabeledJump(convertedLoopState, /*isBreak*/ true, idText(label), labelMarker);
             } else {
@@ -611,10 +611,10 @@ namespace qnr {
               if (i === 0) {
                 expr = copyExpr;
               } else {
-                expr = createBinary(expr!, SyntaxKind.CommaToken, copyExpr);
+                expr = createBinary(expr!, Syntax.CommaToken, copyExpr);
               }
             }
-            returnExpression = createBinary(expr!, SyntaxKind.CommaToken, returnExpression);
+            returnExpression = createBinary(expr!, Syntax.CommaToken, returnExpression);
           }
           return createReturn(returnExpression);
         }
@@ -747,7 +747,7 @@ namespace qnr {
       setEmitFlags(outer, EmitFlags.NoComments);
 
       const result = createParen(createCall(outer, /*typeArguments*/ undefined, extendsClauseElement ? [visitNode(extendsClauseElement.expression, visitor, isExpression)] : []));
-      addSyntheticLeadingComment(result, SyntaxKind.MultiLineCommentTrivia, '* @class ');
+      addSyntheticLeadingComment(result, Syntax.MultiLineCommentTrivia, '* @class ');
       return result;
     }
 
@@ -765,7 +765,7 @@ namespace qnr {
       addClassMembers(statements, node);
 
       // Create a synthetic text range for the return statement.
-      const closingBraceLocation = createTokenRange(Scanner.skipTrivia(currentText, node.members.end), SyntaxKind.CloseBraceToken);
+      const closingBraceLocation = createTokenRange(Scanner.skipTrivia(currentText, node.members.end), Syntax.CloseBraceToken);
       const localName = getInternalName(node);
 
       // The following partially-emitted expression exists purely to align our sourcemap
@@ -888,7 +888,7 @@ namespace qnr {
     ) {
       // determine whether the class is known syntactically to be a derived class (e.g. a
       // class that extends a value that is not syntactically known to be `null`).
-      const isDerivedClass = !!extendsClauseElement && skipOuterExpressions(extendsClauseElement.expression).kind !== SyntaxKind.NullKeyword;
+      const isDerivedClass = !!extendsClauseElement && skipOuterExpressions(extendsClauseElement.expression).kind !== Syntax.NullKeyword;
 
       // When the subclass does not have a constructor, we synthesize a *default* constructor using the following
       // representation:
@@ -1032,18 +1032,18 @@ namespace qnr {
      */
     function isSufficientlyCoveredByReturnStatements(statement: Statement): boolean {
       // A return statement is considered covered.
-      if (statement.kind === SyntaxKind.ReturnStatement) {
+      if (statement.kind === Syntax.ReturnStatement) {
         return true;
       }
       // An if-statement with two covered branches is covered.
-      else if (statement.kind === SyntaxKind.IfStatement) {
+      else if (statement.kind === Syntax.IfStatement) {
         const ifStatement = statement as IfStatement;
         if (ifStatement.elseStatement) {
           return isSufficientlyCoveredByReturnStatements(ifStatement.thenStatement) && isSufficientlyCoveredByReturnStatements(ifStatement.elseStatement);
         }
       }
       // A block is covered if it has a last statement which is covered.
-      else if (statement.kind === SyntaxKind.Block) {
+      else if (statement.kind === Syntax.Block) {
         const lastStatement = lastOrUndefined((statement as Block).statements);
         if (lastStatement && isSufficientlyCoveredByReturnStatements(lastStatement)) {
           return true;
@@ -1244,11 +1244,11 @@ namespace qnr {
       }
 
       // `declarationName` is the name of the local declaration for the parameter.
-      const declarationName = parameter.name.kind === SyntaxKind.Identifier ? getMutableClone(parameter.name) : createTempVariable(/*recordTempVariable*/ undefined);
+      const declarationName = parameter.name.kind === Syntax.Identifier ? getMutableClone(parameter.name) : createTempVariable(/*recordTempVariable*/ undefined);
       setEmitFlags(declarationName, EmitFlags.NoSourceMap);
 
       // `expressionName` is the name of the parameter used in expressions.
-      const expressionName = parameter.name.kind === SyntaxKind.Identifier ? getSynthesizedClone(parameter.name) : declarationName;
+      const expressionName = parameter.name.kind === Syntax.Identifier ? getSynthesizedClone(parameter.name) : declarationName;
       const restIndex = node.parameters.length - 1;
       const temp = createLoopVariable();
 
@@ -1286,7 +1286,7 @@ namespace qnr {
       startOnNewLine(forStatement);
       prologueStatements.push(forStatement);
 
-      if (parameter.name.kind !== SyntaxKind.Identifier) {
+      if (parameter.name.kind !== Syntax.Identifier) {
         // do the actual destructuring of the rest parameter if necessary
         prologueStatements.push(
           setEmitFlags(
@@ -1311,7 +1311,7 @@ namespace qnr {
      * @param node A node.
      */
     function insertCaptureThisForNodeIfNeeded(statements: Statement[], node: Node): boolean {
-      if (hierarchyFacts & HierarchyFacts.CapturedLexicalThis && node.kind !== SyntaxKind.ArrowFunction) {
+      if (hierarchyFacts & HierarchyFacts.CapturedLexicalThis && node.kind !== Syntax.ArrowFunction) {
         insertCaptureThisForNode(statements, node, createThis());
         return true;
       }
@@ -1333,39 +1333,36 @@ namespace qnr {
       if (hierarchyFacts & HierarchyFacts.NewTarget) {
         let newTarget: Expression;
         switch (node.kind) {
-          case SyntaxKind.ArrowFunction:
+          case Syntax.ArrowFunction:
             return statements;
 
-          case SyntaxKind.MethodDeclaration:
-          case SyntaxKind.GetAccessor:
-          case SyntaxKind.SetAccessor:
+          case Syntax.MethodDeclaration:
+          case Syntax.GetAccessor:
+          case Syntax.SetAccessor:
             // Methods and accessors cannot be constructors, so 'new.target' will
             // always return 'undefined'.
             newTarget = createVoidZero();
             break;
 
-          case SyntaxKind.Constructor:
+          case Syntax.Constructor:
             // Class constructors can only be called with `new`, so `this.constructor`
             // should be relatively safe to use.
             newTarget = createPropertyAccess(setEmitFlags(createThis(), EmitFlags.NoSubstitution), 'constructor');
             break;
 
-          case SyntaxKind.FunctionDeclaration:
-          case SyntaxKind.FunctionExpression:
+          case Syntax.FunctionDeclaration:
+          case Syntax.FunctionExpression:
             // Functions can be called or constructed, and may have a `this` due to
             // being a member or when calling an imported function via `other_1.f()`.
             newTarget = createConditional(
-              createLogicalAnd(
-                setEmitFlags(createThis(), EmitFlags.NoSubstitution),
-                createBinary(setEmitFlags(createThis(), EmitFlags.NoSubstitution), SyntaxKind.InstanceOfKeyword, getLocalName(node))
-              ),
+              createLogicalAnd(setEmitFlags(createThis(), EmitFlags.NoSubstitution), createBinary(setEmitFlags(createThis(), EmitFlags.NoSubstitution), Syntax.InstanceOfKeyword, getLocalName(node))),
               createPropertyAccess(setEmitFlags(createThis(), EmitFlags.NoSubstitution), 'constructor'),
               createVoidZero()
             );
             break;
 
           default:
-            return Debug.failBadSyntaxKind(node);
+            return Debug.failBadSyntax(node);
         }
 
         const captureNewTargetStatement = createVariableStatement(
@@ -1395,16 +1392,16 @@ namespace qnr {
     function addClassMembers(statements: Statement[], node: ClassExpression | ClassDeclaration): void {
       for (const member of node.members) {
         switch (member.kind) {
-          case SyntaxKind.SemicolonClassElement:
+          case Syntax.SemicolonClassElement:
             statements.push(transformSemicolonClassElementToStatement(<SemicolonClassElement>member));
             break;
 
-          case SyntaxKind.MethodDeclaration:
+          case Syntax.MethodDeclaration:
             statements.push(transformClassMethodDeclarationToStatement(getClassMemberPrefix(node, member), <MethodDeclaration>member, node));
             break;
 
-          case SyntaxKind.GetAccessor:
-          case SyntaxKind.SetAccessor:
+          case Syntax.GetAccessor:
+          case Syntax.SetAccessor:
             const accessors = getAllAccessorDeclarations(node.members, <AccessorDeclaration>member);
             if (member === accessors.firstAccessor) {
               statements.push(transformAccessorsToStatement(getClassMemberPrefix(node, member), accessors, node));
@@ -1412,12 +1409,12 @@ namespace qnr {
 
             break;
 
-          case SyntaxKind.Constructor:
+          case Syntax.Constructor:
             // Constructors are handled in visitClassExpression/visitClassDeclaration
             break;
 
           default:
-            Debug.failBadSyntaxKind(member, currentSourceFile && currentSourceFile.fileName);
+            Debug.failBadSyntax(member, currentSourceFile && currentSourceFile.fileName);
             break;
         }
       }
@@ -1505,7 +1502,7 @@ namespace qnr {
 
       const visitedAccessorName = visitNode(firstAccessor.name, visitor, isPropertyName);
       if (isPrivateIdentifier(visitedAccessorName)) {
-        return Debug.failBadSyntaxKind(visitedAccessorName, 'Encountered unhandled private identifier while transforming ES2015.');
+        return Debug.failBadSyntax(visitedAccessorName, 'Encountered unhandled private identifier while transforming ES2015.');
       }
       const propertyName = createExpressionForPropertyName(visitedAccessorName);
       setEmitFlags(propertyName, EmitFlags.NoComments | EmitFlags.NoLeadingSourceMap);
@@ -1647,7 +1644,7 @@ namespace qnr {
           : enterSubtree(HierarchyFacts.FunctionExcludes, HierarchyFacts.FunctionIncludes);
       const parameters = visitParameterList(node.parameters, visitor, context);
       const body = transformFunctionBody(node);
-      if (hierarchyFacts & HierarchyFacts.NewTarget && !name && (node.kind === SyntaxKind.FunctionDeclaration || node.kind === SyntaxKind.FunctionExpression)) {
+      if (hierarchyFacts & HierarchyFacts.NewTarget && !name && (node.kind === Syntax.FunctionDeclaration || node.kind === Syntax.FunctionExpression)) {
         name = getGeneratedNameForNode(node);
       }
 
@@ -1699,7 +1696,7 @@ namespace qnr {
           multiLine = true;
         }
       } else {
-        assert(node.kind === SyntaxKind.ArrowFunction);
+        assert(node.kind === Syntax.ArrowFunction);
 
         // To align with the old emitter, we use a synthetic end position on the location
         // for the statement list we synthesize when we down-level an arrow function with
@@ -1750,7 +1747,7 @@ namespace qnr {
       }
 
       if (closeBraceLocation) {
-        setTokenSourceMapRange(block, SyntaxKind.CloseBraceToken, closeBraceLocation);
+        setTokenSourceMapRange(block, Syntax.CloseBraceToken, closeBraceLocation);
       }
 
       setOriginalNode(block, node.body);
@@ -1779,9 +1776,9 @@ namespace qnr {
     function visitExpressionStatement(node: ExpressionStatement): Statement {
       // If we are here it is most likely because our expression is a destructuring assignment.
       switch (node.expression.kind) {
-        case SyntaxKind.ParenthesizedExpression:
+        case Syntax.ParenthesizedExpression:
           return updateExpressionStatement(node, visitParenthesizedExpression(<ParenthesizedExpression>node.expression, /*needsDestructuringValue*/ false));
-        case SyntaxKind.BinaryExpression:
+        case Syntax.BinaryExpression:
           return updateExpressionStatement(node, visitBinaryExpression(<BinaryExpression>node.expression, /*needsDestructuringValue*/ false));
       }
       return visitEachChild(node, visitor, context);
@@ -1801,9 +1798,9 @@ namespace qnr {
         // expression. If we are in a state where we do not need the destructuring value,
         // we pass that information along to the children that care about it.
         switch (node.expression.kind) {
-          case SyntaxKind.ParenthesizedExpression:
+          case Syntax.ParenthesizedExpression:
             return updateParen(node, visitParenthesizedExpression(<ParenthesizedExpression>node.expression, /*needsDestructuringValue*/ false));
-          case SyntaxKind.BinaryExpression:
+          case Syntax.BinaryExpression:
             return updateParen(node, visitBinaryExpression(<BinaryExpression>node.expression, /*needsDestructuringValue*/ false));
         }
       }
@@ -1846,7 +1843,7 @@ namespace qnr {
             if (isBindingPattern(decl.name)) {
               assignment = flattenDestructuringAssignment(decl, visitor, context, FlattenLevel.All);
             } else {
-              assignment = createBinary(decl.name, SyntaxKind.EqualsToken, visitNode(decl.initializer, visitor, isExpression));
+              assignment = createBinary(decl.name, Syntax.EqualsToken, visitNode(decl.initializer, visitor, isExpression));
               setTextRange(assignment, decl);
             }
 
@@ -2030,14 +2027,14 @@ namespace qnr {
 
     function visitIterationStatement(node: IterationStatement, outermostLabeledStatement: LabeledStatement) {
       switch (node.kind) {
-        case SyntaxKind.DoStatement:
-        case SyntaxKind.WhileStatement:
+        case Syntax.DoStatement:
+        case Syntax.WhileStatement:
           return visitDoOrWhileStatement(<DoStatement | WhileStatement>node, outermostLabeledStatement);
-        case SyntaxKind.ForStatement:
+        case Syntax.ForStatement:
           return visitForStatement(<ForStatement>node, outermostLabeledStatement);
-        case SyntaxKind.ForInStatement:
+        case Syntax.ForInStatement:
           return visitForInStatement(<ForInStatement>node, outermostLabeledStatement);
-        case SyntaxKind.ForOfStatement:
+        case Syntax.ForOfStatement:
           return visitForOfStatement(<ForOfStatement>node, outermostLabeledStatement);
       }
     }
@@ -2291,7 +2288,7 @@ namespace qnr {
         if (property.transformFlags & TransformFlags.ContainsYield && hierarchyFacts & HierarchyFacts.AsyncFunctionBody && i < numInitialPropertiesWithoutYield) {
           numInitialPropertiesWithoutYield = i;
         }
-        if (Debug.checkDefined(property.name).kind === SyntaxKind.ComputedPropertyName) {
+        if (Debug.checkDefined(property.name).kind === Syntax.ComputedPropertyName) {
           numInitialProperties = i;
           break;
         }
@@ -2376,7 +2373,7 @@ namespace qnr {
       visit(node.name);
 
       function visit(node: Identifier | BindingPattern) {
-        if (node.kind === SyntaxKind.Identifier) {
+        if (node.kind === Syntax.Identifier) {
           state.hoistedLocalVariables!.push(node);
         } else {
           for (const element of node.elements) {
@@ -2454,18 +2451,18 @@ namespace qnr {
 
     function convertIterationStatementCore(node: IterationStatement, initializerFunction: IterationStatementPartFunction<VariableDeclarationList> | undefined, convertedLoopBody: Statement) {
       switch (node.kind) {
-        case SyntaxKind.ForStatement:
+        case Syntax.ForStatement:
           return convertForStatement(node as ForStatement, initializerFunction, convertedLoopBody);
-        case SyntaxKind.ForInStatement:
+        case Syntax.ForInStatement:
           return convertForInStatement(node as ForInStatement, convertedLoopBody);
-        case SyntaxKind.ForOfStatement:
+        case Syntax.ForOfStatement:
           return convertForOfStatement(node as ForOfStatement, convertedLoopBody);
-        case SyntaxKind.DoStatement:
+        case Syntax.DoStatement:
           return convertDoStatement(node as DoStatement, convertedLoopBody);
-        case SyntaxKind.WhileStatement:
+        case Syntax.WhileStatement:
           return convertWhileStatement(node as WhileStatement, convertedLoopBody);
         default:
-          return Debug.failBadSyntaxKind(node, 'IterationStatement expected');
+          return Debug.failBadSyntax(node, 'IterationStatement expected');
       }
     }
 
@@ -2500,11 +2497,11 @@ namespace qnr {
     function createConvertedLoopState(node: IterationStatement) {
       let loopInitializer: VariableDeclarationList | undefined;
       switch (node.kind) {
-        case SyntaxKind.ForStatement:
-        case SyntaxKind.ForInStatement:
-        case SyntaxKind.ForOfStatement:
+        case Syntax.ForStatement:
+        case Syntax.ForInStatement:
+        case Syntax.ForOfStatement:
           const initializer = (<ForStatement | ForInStatement | ForOfStatement>node).initializer;
-          if (initializer && initializer.kind === SyntaxKind.VariableDeclarationList) {
+          if (initializer && initializer.kind === Syntax.VariableDeclarationList) {
             loopInitializer = <VariableDeclarationList>initializer;
           }
           break;
@@ -2671,7 +2668,7 @@ namespace qnr {
               setEmitFlags(
                 createFunctionExpression(
                   /*modifiers*/ undefined,
-                  containsYield ? createToken(SyntaxKind.AsteriskToken) : undefined,
+                  containsYield ? createToken(Syntax.AsteriskToken) : undefined,
                   /*name*/ undefined,
                   /*typeParameters*/ undefined,
                   /*parameters*/ undefined,
@@ -2752,7 +2749,7 @@ namespace qnr {
         );
 
         if (shouldConvertConditionOfForStatement(node)) {
-          statements.push(createIf(createPrefix(SyntaxKind.ExclamationToken, visitNode(node.condition, visitor, isExpression)), visitNode(createBreak(), visitor, isStatement)));
+          statements.push(createIf(createPrefix(Syntax.ExclamationToken, visitNode(node.condition, visitor, isExpression)), visitNode(createBreak(), visitor, isStatement)));
         }
       }
 
@@ -2799,7 +2796,7 @@ namespace qnr {
               setEmitFlags(
                 createFunctionExpression(
                   /*modifiers*/ undefined,
-                  containsYield ? createToken(SyntaxKind.AsteriskToken) : undefined,
+                  containsYield ? createToken(Syntax.AsteriskToken) : undefined,
                   /*name*/ undefined,
                   /*typeParameters*/ undefined,
                   currentState.loopParameters,
@@ -2821,7 +2818,7 @@ namespace qnr {
     function copyOutParameter(outParam: LoopOutParameter, copyDirection: CopyDirection): BinaryExpression {
       const source = copyDirection === CopyDirection.ToOriginal ? outParam.outParamName : outParam.originalName;
       const target = copyDirection === CopyDirection.ToOriginal ? outParam.originalName : outParam.outParamName;
-      return createBinary(target, SyntaxKind.EqualsToken, source);
+      return createBinary(target, Syntax.EqualsToken, source);
     }
 
     function copyOutParameters(outParams: LoopOutParameter[], partFlags: LoopOutParameterFlags, copyDirection: CopyDirection, statements: Statement[]): void {
@@ -2834,7 +2831,7 @@ namespace qnr {
 
     function generateCallToConvertedLoopInitializer(initFunctionExpressionName: Identifier, containsYield: boolean): Statement {
       const call = createCall(initFunctionExpressionName, /*typeArguments*/ undefined, []);
-      const callResult = containsYield ? createYield(createToken(SyntaxKind.AsteriskToken), setEmitFlags(call, EmitFlags.Iterator)) : call;
+      const callResult = containsYield ? createYield(createToken(Syntax.AsteriskToken), setEmitFlags(call, EmitFlags.Iterator)) : call;
       return createStatement(callResult);
     }
 
@@ -2850,7 +2847,7 @@ namespace qnr {
         /*typeArguments*/ undefined,
         map(state.loopParameters, (p) => <Identifier>p.name)
       );
-      const callResult = containsYield ? createYield(createToken(SyntaxKind.AsteriskToken), setEmitFlags(call, EmitFlags.Iterator)) : call;
+      const callResult = containsYield ? createYield(createToken(Syntax.AsteriskToken), setEmitFlags(call, EmitFlags.Iterator)) : call;
       if (isSimpleLoop) {
         statements.push(createExpressionStatement(callResult));
         copyOutParameters(state.loopOutParameters, LoopOutParameterFlags.Body, CopyDirection.ToOriginal, statements);
@@ -2868,11 +2865,11 @@ namespace qnr {
           } else {
             returnStatement = createReturn(createPropertyAccess(loopResultName, 'value'));
           }
-          statements.push(createIf(createBinary(createTypeOf(loopResultName), SyntaxKind.Equals3Token, createLiteral('object')), returnStatement));
+          statements.push(createIf(createBinary(createTypeOf(loopResultName), Syntax.Equals3Token, createLiteral('object')), returnStatement));
         }
 
         if (state.nonLocalJumps! & Jump.Break) {
-          statements.push(createIf(createBinary(loopResultName, SyntaxKind.Equals3Token, createLiteral('break')), createBreak()));
+          statements.push(createIf(createBinary(loopResultName, Syntax.Equals3Token, createLiteral('break')), createBreak()));
         }
 
         if (state.labeledNonLocalBreaks || state.labeledNonLocalContinues) {
@@ -2965,8 +2962,8 @@ namespace qnr {
       for (let i = start; i < numProperties; i++) {
         const property = properties[i];
         switch (property.kind) {
-          case SyntaxKind.GetAccessor:
-          case SyntaxKind.SetAccessor:
+          case Syntax.GetAccessor:
+          case Syntax.SetAccessor:
             const accessors = getAllAccessorDeclarations(node.properties, property);
             if (property === accessors.firstAccessor) {
               expressions.push(transformAccessorsToExpression(receiver, accessors, node, !!node.multiLine));
@@ -2974,20 +2971,20 @@ namespace qnr {
 
             break;
 
-          case SyntaxKind.MethodDeclaration:
+          case Syntax.MethodDeclaration:
             expressions.push(transformObjectLiteralMethodDeclarationToExpression(property, receiver, node, node.multiLine!));
             break;
 
-          case SyntaxKind.PropertyAssignment:
+          case Syntax.PropertyAssignment:
             expressions.push(transformPropertyAssignmentToExpression(property, receiver, node.multiLine!));
             break;
 
-          case SyntaxKind.ShorthandPropertyAssignment:
+          case Syntax.ShorthandPropertyAssignment:
             expressions.push(transformShorthandPropertyAssignmentToExpression(property, receiver, node.multiLine!));
             break;
 
           default:
-            Debug.failBadSyntaxKind(node);
+            Debug.failBadSyntax(node);
             break;
         }
       }
@@ -3099,7 +3096,7 @@ namespace qnr {
       let updated: AccessorDeclaration;
       const parameters = visitParameterList(node.parameters, visitor, context);
       const body = transformFunctionBody(node);
-      if (node.kind === SyntaxKind.GetAccessor) {
+      if (node.kind === Syntax.GetAccessor) {
         updated = GetAccessorDeclaration.update(node, node.decorators, node.modifiers, node.name, parameters, node.type, body);
       } else {
         updated = SetAccessorDeclaration.update(node, node.decorators, node.modifiers, node.name, parameters, body);
@@ -3156,7 +3153,7 @@ namespace qnr {
       }
 
       const expression = skipOuterExpressions(node.expression);
-      if (expression.kind === SyntaxKind.SuperKeyword || isSuperProperty(expression) || some(node.arguments, isSpreadElement)) {
+      if (expression.kind === Syntax.SuperKeyword || isSuperProperty(expression) || some(node.arguments, isSpreadElement)) {
         return visitCallExpressionWithPotentialCapturedThisAssignment(node, /*assignToCapturedThis*/ true);
       }
 
@@ -3321,9 +3318,9 @@ namespace qnr {
     function visitCallExpressionWithPotentialCapturedThisAssignment(node: CallExpression, assignToCapturedThis: boolean): CallExpression | BinaryExpression {
       // We are here either because SuperKeyword was used somewhere in the expression, or
       // because we contain a SpreadElementExpression.
-      if (node.transformFlags & TransformFlags.ContainsRestOrSpread || node.expression.kind === SyntaxKind.SuperKeyword || isSuperProperty(skipOuterExpressions(node.expression))) {
+      if (node.transformFlags & TransformFlags.ContainsRestOrSpread || node.expression.kind === Syntax.SuperKeyword || isSuperProperty(skipOuterExpressions(node.expression))) {
         const { target, thisArg } = createCallBinding(node.expression, hoistVariableDeclaration);
-        if (node.expression.kind === SyntaxKind.SuperKeyword) {
+        if (node.expression.kind === Syntax.SuperKeyword) {
           setEmitFlags(thisArg, EmitFlags.NoSubstitution);
         }
 
@@ -3345,7 +3342,7 @@ namespace qnr {
 
           resultingCall = createFunctionApply(
             visitNode(target, callExpressionVisitor, isExpression),
-            node.expression.kind === SyntaxKind.SuperKeyword ? thisArg : visitNode(thisArg, visitor, isExpression),
+            node.expression.kind === Syntax.SuperKeyword ? thisArg : visitNode(thisArg, visitor, isExpression),
             transformAndSpreadElements(node.arguments, /*needsUniqueCopy*/ false, /*multiLine*/ false, /*hasTrailingComma*/ false)
           );
         } else {
@@ -3360,13 +3357,13 @@ namespace qnr {
           //      _super.prototype.m.call(this, a)
           resultingCall = createFunctionCall(
             visitNode(target, callExpressionVisitor, isExpression),
-            node.expression.kind === SyntaxKind.SuperKeyword ? thisArg : visitNode(thisArg, visitor, isExpression),
+            node.expression.kind === Syntax.SuperKeyword ? thisArg : visitNode(thisArg, visitor, isExpression),
             visitNodes(node.arguments, visitor, isExpression),
             /*location*/ node
           );
         }
 
-        if (node.expression.kind === SyntaxKind.SuperKeyword) {
+        if (node.expression.kind === Syntax.SuperKeyword) {
           const initializer = createLogicalOr(resultingCall, createActualThis());
           resultingCall = assignToCapturedThis ? createAssignment(createFileLevelUniqueName('_this'), initializer) : initializer;
         }
@@ -3629,7 +3626,7 @@ namespace qnr {
     }
 
     function visitMetaProperty(node: MetaProperty) {
-      if (node.keywordToken === SyntaxKind.NewKeyword && node.name.escapedText === 'target') {
+      if (node.keywordToken === Syntax.NewKeyword && node.name.escapedText === 'target') {
         hierarchyFacts |= HierarchyFacts.NewTarget;
         return createFileLevelUniqueName('_newTarget');
       }
@@ -3664,7 +3661,7 @@ namespace qnr {
     function enableSubstitutionsForBlockScopedBindings() {
       if ((enabledSubstitutions & ES2015SubstitutionFlags.BlockScopedBindings) === 0) {
         enabledSubstitutions |= ES2015SubstitutionFlags.BlockScopedBindings;
-        context.enableSubstitution(SyntaxKind.Identifier);
+        context.enableSubstitution(Syntax.Identifier);
       }
     }
 
@@ -3675,14 +3672,14 @@ namespace qnr {
     function enableSubstitutionsForCapturedThis() {
       if ((enabledSubstitutions & ES2015SubstitutionFlags.CapturedThis) === 0) {
         enabledSubstitutions |= ES2015SubstitutionFlags.CapturedThis;
-        context.enableSubstitution(SyntaxKind.ThisKeyword);
-        context.enableEmitNotification(SyntaxKind.Constructor);
-        context.enableEmitNotification(SyntaxKind.MethodDeclaration);
-        context.enableEmitNotification(SyntaxKind.GetAccessor);
-        context.enableEmitNotification(SyntaxKind.SetAccessor);
-        context.enableEmitNotification(SyntaxKind.ArrowFunction);
-        context.enableEmitNotification(SyntaxKind.FunctionExpression);
-        context.enableEmitNotification(SyntaxKind.FunctionDeclaration);
+        context.enableSubstitution(Syntax.ThisKeyword);
+        context.enableEmitNotification(Syntax.Constructor);
+        context.enableEmitNotification(Syntax.MethodDeclaration);
+        context.enableEmitNotification(Syntax.GetAccessor);
+        context.enableEmitNotification(Syntax.SetAccessor);
+        context.enableEmitNotification(Syntax.ArrowFunction);
+        context.enableEmitNotification(Syntax.FunctionExpression);
+        context.enableEmitNotification(Syntax.FunctionDeclaration);
       }
     }
 
@@ -3730,10 +3727,10 @@ namespace qnr {
      */
     function isNameOfDeclarationWithCollidingName(node: Identifier) {
       switch (node.parent.kind) {
-        case SyntaxKind.BindingElement:
-        case SyntaxKind.ClassDeclaration:
-        case SyntaxKind.EnumDeclaration:
-        case SyntaxKind.VariableDeclaration:
+        case Syntax.BindingElement:
+        case Syntax.ClassDeclaration:
+        case Syntax.EnumDeclaration:
+        case Syntax.VariableDeclaration:
           return (<NamedDeclaration>node.parent).name === node && resolver.isDeclarationWithCollidingName(<Declaration>node.parent);
       }
 
@@ -3747,10 +3744,10 @@ namespace qnr {
      */
     function substituteExpression(node: Node) {
       switch (node.kind) {
-        case SyntaxKind.Identifier:
+        case Syntax.Identifier:
           return substituteExpressionIdentifier(<Identifier>node);
 
-        case SyntaxKind.ThisKeyword:
+        case Syntax.ThisKeyword:
           return substituteThisKeyword(<PrimaryExpression>node);
       }
 
@@ -3823,22 +3820,22 @@ namespace qnr {
       }
 
       const statement = firstOrUndefined(constructor.body!.statements);
-      if (!statement || !isSynthesized(statement) || statement.kind !== SyntaxKind.ExpressionStatement) {
+      if (!statement || !isSynthesized(statement) || statement.kind !== Syntax.ExpressionStatement) {
         return false;
       }
 
       const statementExpression = (<ExpressionStatement>statement).expression;
-      if (!isSynthesized(statementExpression) || statementExpression.kind !== SyntaxKind.CallExpression) {
+      if (!isSynthesized(statementExpression) || statementExpression.kind !== Syntax.CallExpression) {
         return false;
       }
 
       const callTarget = (<CallExpression>statementExpression).expression;
-      if (!isSynthesized(callTarget) || callTarget.kind !== SyntaxKind.SuperKeyword) {
+      if (!isSynthesized(callTarget) || callTarget.kind !== Syntax.SuperKeyword) {
         return false;
       }
 
       const callArgument = singleOrUndefined((<CallExpression>statementExpression).arguments);
-      if (!callArgument || !isSynthesized(callArgument) || callArgument.kind !== SyntaxKind.SpreadElement) {
+      if (!callArgument || !isSynthesized(callArgument) || callArgument.kind !== Syntax.SpreadElement) {
         return false;
       }
 

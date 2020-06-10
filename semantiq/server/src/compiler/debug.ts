@@ -42,8 +42,8 @@ namespace qnr {
       return true;
     }
 
-    export function failBadSyntaxKind(node: Node, message?: string, stackCrawlMark?: AnyFunction): never {
-      return fail(`${message || 'Unexpected node.'}\r\nNode ${formatSyntaxKind(node.kind)} was unexpected.`, stackCrawlMark || failBadSyntaxKind);
+    export function failBadSyntax(node: Node, message?: string, stackCrawlMark?: AnyFunction): never {
+      return fail(`${message || 'Unexpected node.'}\r\nNode ${formatSyntax(node.kind)} was unexpected.`, stackCrawlMark || failBadSyntaxKind);
     }
 
     export function assertEqual<T>(a: T, b: T, msg?: string, msg2?: string, stackCrawlMark?: AnyFunction): void {
@@ -110,7 +110,7 @@ namespace qnr {
 
     export function assertNever(member: never, message = 'Illegal value:', stackCrawlMark?: AnyFunction): never {
       const detail =
-        typeof member === 'object' && hasProperty(member, 'kind') && hasProperty(member, 'pos') && formatSyntaxKind ? 'SyntaxKind: ' + formatSyntaxKind((member as Node).kind) : JSON.stringify(member);
+        typeof member === 'object' && hasProperty(member, 'kind') && hasProperty(member, 'pos') && formatSyntaxKind ? 'SyntaxKind: ' + formatSyntax((member as Node).kind) : JSON.stringify(member);
       return fail(`${message} ${detail}`, stackCrawlMark || assertNever);
     }
 
@@ -130,7 +130,7 @@ namespace qnr {
         assert(
           node !== undefined && (test === undefined || test(node)),
           message || 'Unexpected node.',
-          () => `Node ${formatSyntaxKind(node!.kind)} did not pass test '${getFunctionName(test!)}'.`,
+          () => `Node ${formatSyntax(node!.kind)} did not pass test '${getFunctionName(test!)}'.`,
           stackCrawlMark || assertNode
         );
       }
@@ -143,7 +143,7 @@ namespace qnr {
         assert(
           node === undefined || test === undefined || !test(node),
           message || 'Unexpected node.',
-          () => `Node ${formatSyntaxKind(node!.kind)} should not have passed test '${getFunctionName(test!)}'.`,
+          () => `Node ${formatSyntax(node!.kind)} should not have passed test '${getFunctionName(test!)}'.`,
           stackCrawlMark || assertNotNode
         );
       }
@@ -157,26 +157,26 @@ namespace qnr {
         assert(
           test === undefined || node === undefined || test(node),
           message || 'Unexpected node.',
-          () => `Node ${formatSyntaxKind(node!.kind)} did not pass test '${getFunctionName(test!)}'.`,
+          () => `Node ${formatSyntax(node!.kind)} did not pass test '${getFunctionName(test!)}'.`,
           stackCrawlMark || assertOptionalNode
         );
       }
     }
 
-    export function assertOptionalToken<T extends Node, K extends SyntaxKind>(node: T, kind: K, message?: string, stackCrawlMark?: AnyFunction): asserts node is Extract<T, { readonly kind: K }>;
-    export function assertOptionalToken<T extends Node, K extends SyntaxKind>(
+    export function assertOptionalToken<T extends Node, K extends Syntax>(node: T, kind: K, message?: string, stackCrawlMark?: AnyFunction): asserts node is Extract<T, { readonly kind: K }>;
+    export function assertOptionalToken<T extends Node, K extends Syntax>(
       node: T | undefined,
       kind: K,
       message?: string,
       stackCrawlMark?: AnyFunction
     ): asserts node is Extract<T, { readonly kind: K }> | undefined;
-    export function assertOptionalToken(node: Node | undefined, kind: SyntaxKind | undefined, message?: string, stackCrawlMark?: AnyFunction): void;
-    export function assertOptionalToken(node: Node | undefined, kind: SyntaxKind | undefined, message?: string, stackCrawlMark?: AnyFunction) {
+    export function assertOptionalToken(node: Node | undefined, kind: Syntax | undefined, message?: string, stackCrawlMark?: AnyFunction): void;
+    export function assertOptionalToken(node: Node | undefined, kind: Syntax | undefined, message?: string, stackCrawlMark?: AnyFunction) {
       if (shouldAssertFunction(AssertionLevel.Normal, 'assertOptionalToken')) {
         assert(
           kind === undefined || node === undefined || node.kind === kind,
           message || 'Unexpected node.',
-          () => `Node ${formatSyntaxKind(node!.kind)} was not a '${formatSyntaxKind(kind)}' token.`,
+          () => `Node ${formatSyntax(node!.kind)} was not a '${formatSyntax(kind)}' token.`,
           stackCrawlMark || assertOptionalToken
         );
       }
@@ -185,7 +185,7 @@ namespace qnr {
     export function assertMissingNode(node: Node | undefined, message?: string, stackCrawlMark?: AnyFunction): asserts node is undefined;
     export function assertMissingNode(node: Node | undefined, message?: string, stackCrawlMark?: AnyFunction) {
       if (shouldAssertFunction(AssertionLevel.Normal, 'assertMissingNode')) {
-        assert(node === undefined, message || 'Unexpected node.', () => `Node ${formatSyntaxKind(node!.kind)} was unexpected'.`, stackCrawlMark || assertMissingNode);
+        assert(node === undefined, message || 'Unexpected node.', () => `Node ${formatSyntax(node!.kind)} was unexpected'.`, stackCrawlMark || assertMissingNode);
       }
     }
 
@@ -202,9 +202,7 @@ namespace qnr {
     }
 
     export function formatSymbol(symbol: Symbol): string {
-      return `{ name: ${Scanner.unescapeUnderscores(symbol.escapedName)}; flags: ${formatSymbolFlags(symbol.flags)}; declarations: ${map(symbol.declarations, (node) =>
-        formatSyntaxKind(node.kind)
-      )} }`;
+      return `{ name: ${Scanner.unescapeUnderscores(symbol.escapedName)}; flags: ${formatSymbolFlags(symbol.flags)}; declarations: ${map(symbol.declarations, (node) => formatSyntax(node.kind))} }`;
     }
 
     /**
@@ -252,7 +250,7 @@ namespace qnr {
       return stableSort<[number, string]>(result, (x, y) => compareValues(x[0], y[0]));
     }
 
-    export function formatSyntaxKind(kind: SyntaxKind | undefined): string {
+    export function formatSyntax(kind: Syntax | undefined): string {
       return formatEnum(kind, (<any>ts).SyntaxKind, /*isFlags*/ false);
     }
 
@@ -369,7 +367,7 @@ namespace qnr {
           Object.defineProperties(ctor.prototype, {
             __debugKind: {
               get(this: Node) {
-                return formatSyntaxKind(this.kind);
+                return formatSyntax(this.kind);
               },
             },
             __debugNodeFlags: {

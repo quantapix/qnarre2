@@ -17,21 +17,21 @@ namespace qnr {
         return node;
       }
       switch (node.kind) {
-        case SyntaxKind.PropertyAccessExpression:
-        case SyntaxKind.ElementAccessExpression:
-        case SyntaxKind.CallExpression:
+        case Syntax.PropertyAccessExpression:
+        case Syntax.ElementAccessExpression:
+        case Syntax.CallExpression:
           if (node.flags & NodeFlags.OptionalChain) {
             const updated = visitOptionalExpression(node as OptionalChain, /*captureThisArg*/ false, /*isDelete*/ false);
             Debug.assertNotNode(updated, isSyntheticReference);
             return updated;
           }
           return visitEachChild(node, visitor, context);
-        case SyntaxKind.BinaryExpression:
-          if ((<BinaryExpression>node).operatorToken.kind === SyntaxKind.Question2Token) {
+        case Syntax.BinaryExpression:
+          if ((<BinaryExpression>node).operatorToken.kind === Syntax.Question2Token) {
             return transformNullishCoalescingExpression(<BinaryExpression>node);
           }
           return visitEachChild(node, visitor, context);
-        case SyntaxKind.DeleteExpression:
+        case Syntax.DeleteExpression:
           return visitDeleteExpression(node as DeleteExpression);
         default:
           return visitEachChild(node, visitor, context);
@@ -80,7 +80,7 @@ namespace qnr {
       }
 
       expression =
-        node.kind === SyntaxKind.PropertyAccessExpression
+        node.kind === Syntax.PropertyAccessExpression
           ? updatePropertyAccess(node, expression, visitNode(node.name, visitor, isIdentifier))
           : updateElementAccess(node, expression, visitNode(node.argumentExpression, visitor, isExpression));
       return thisArg ? createSyntheticReferenceExpression(expression, thisArg) : expression;
@@ -96,12 +96,12 @@ namespace qnr {
 
     function visitNonOptionalExpression(node: Expression, captureThisArg: boolean, isDelete: boolean): Expression {
       switch (node.kind) {
-        case SyntaxKind.ParenthesizedExpression:
+        case Syntax.ParenthesizedExpression:
           return visitNonOptionalParenthesizedExpression(node as ParenthesizedExpression, captureThisArg, isDelete);
-        case SyntaxKind.PropertyAccessExpression:
-        case SyntaxKind.ElementAccessExpression:
+        case Syntax.PropertyAccessExpression:
+        case Syntax.ElementAccessExpression:
           return visitNonOptionalPropertyOrElementAccessExpression(node as AccessExpression, captureThisArg, isDelete);
-        case SyntaxKind.CallExpression:
+        case Syntax.CallExpression:
           return visitNonOptionalCallExpression(node as CallExpression, captureThisArg);
         default:
           return visitNode(node, visitor, isExpression);
@@ -124,8 +124,8 @@ namespace qnr {
       for (let i = 0; i < chain.length; i++) {
         const segment = chain[i];
         switch (segment.kind) {
-          case SyntaxKind.PropertyAccessExpression:
-          case SyntaxKind.ElementAccessExpression:
+          case Syntax.PropertyAccessExpression:
+          case Syntax.ElementAccessExpression:
             if (i === chain.length - 1 && captureThisArg) {
               if (shouldCaptureInTempVariable(rightExpression)) {
                 thisArg = createTempVariable(hoistVariableDeclaration);
@@ -136,17 +136,13 @@ namespace qnr {
               }
             }
             rightExpression =
-              segment.kind === SyntaxKind.PropertyAccessExpression
+              segment.kind === Syntax.PropertyAccessExpression
                 ? createPropertyAccess(rightExpression, visitNode(segment.name, visitor, isIdentifier))
                 : createElementAccess(rightExpression, visitNode(segment.argumentExpression, visitor, isExpression));
             break;
-          case SyntaxKind.CallExpression:
+          case Syntax.CallExpression:
             if (i === 0 && leftThisArg) {
-              rightExpression = createFunctionCall(
-                rightExpression,
-                leftThisArg.kind === SyntaxKind.SuperKeyword ? createThis() : leftThisArg,
-                visitNodes(segment.arguments, visitor, isExpression)
-              );
+              rightExpression = createFunctionCall(rightExpression, leftThisArg.kind === Syntax.SuperKeyword ? createThis() : leftThisArg, visitNodes(segment.arguments, visitor, isExpression));
             } else {
               rightExpression = createCall(rightExpression, /*typeArguments*/ undefined, visitNodes(segment.arguments, visitor, isExpression));
             }
@@ -163,9 +159,9 @@ namespace qnr {
 
     function createNotNullCondition(left: Expression, right: Expression, invert?: boolean) {
       return createBinary(
-        createBinary(left, createToken(invert ? SyntaxKind.Equals3Token : SyntaxKind.ExclamationEquals2Token), createNull()),
-        createToken(invert ? SyntaxKind.Bar2Token : SyntaxKind.Ampersand2Token),
-        createBinary(right, createToken(invert ? SyntaxKind.Equals3Token : SyntaxKind.ExclamationEquals2Token), createVoidZero())
+        createBinary(left, createToken(invert ? Syntax.Equals3Token : Syntax.ExclamationEquals2Token), createNull()),
+        createToken(invert ? Syntax.Bar2Token : Syntax.Ampersand2Token),
+        createBinary(right, createToken(invert ? Syntax.Equals3Token : Syntax.ExclamationEquals2Token), createVoidZero())
       );
     }
 
@@ -183,7 +179,7 @@ namespace qnr {
     function shouldCaptureInTempVariable(expression: Expression): boolean {
       // don't capture identifiers and `this` in a temporary variable
       // `super` cannot be captured as it's no real variable
-      return !isIdentifier(expression) && expression.kind !== SyntaxKind.ThisKeyword && expression.kind !== SyntaxKind.SuperKeyword;
+      return !isIdentifier(expression) && expression.kind !== Syntax.ThisKeyword && expression.kind !== Syntax.SuperKeyword;
     }
 
     function visitDeleteExpression(node: DeleteExpression) {

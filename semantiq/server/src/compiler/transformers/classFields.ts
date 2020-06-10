@@ -76,32 +76,32 @@ namespace qnr {
       if (!(node.transformFlags & TransformFlags.ContainsClassFields)) return node;
 
       switch (node.kind) {
-        case SyntaxKind.ClassExpression:
-        case SyntaxKind.ClassDeclaration:
+        case Syntax.ClassExpression:
+        case Syntax.ClassDeclaration:
           return visitClassLike(node as ClassLikeDeclaration);
-        case SyntaxKind.PropertyDeclaration:
+        case Syntax.PropertyDeclaration:
           return visitPropertyDeclaration(node as PropertyDeclaration);
-        case SyntaxKind.VariableStatement:
+        case Syntax.VariableStatement:
           return visitVariableStatement(node as VariableStatement);
-        case SyntaxKind.ComputedPropertyName:
+        case Syntax.ComputedPropertyName:
           return visitComputedPropertyName(node as ComputedPropertyName);
-        case SyntaxKind.PropertyAccessExpression:
+        case Syntax.PropertyAccessExpression:
           return visitPropertyAccessExpression(node as PropertyAccessExpression);
-        case SyntaxKind.PrefixUnaryExpression:
+        case Syntax.PrefixUnaryExpression:
           return visitPrefixUnaryExpression(node as PrefixUnaryExpression);
-        case SyntaxKind.PostfixUnaryExpression:
+        case Syntax.PostfixUnaryExpression:
           return visitPostfixUnaryExpression(node as PostfixUnaryExpression, /*valueIsDiscarded*/ false);
-        case SyntaxKind.CallExpression:
+        case Syntax.CallExpression:
           return visitCallExpression(node as CallExpression);
-        case SyntaxKind.BinaryExpression:
+        case Syntax.BinaryExpression:
           return visitBinaryExpression(node as BinaryExpression);
-        case SyntaxKind.PrivateIdentifier:
+        case Syntax.PrivateIdentifier:
           return visitPrivateIdentifier(node as PrivateIdentifier);
-        case SyntaxKind.ExpressionStatement:
+        case Syntax.ExpressionStatement:
           return visitExpressionStatement(node as ExpressionStatement);
-        case SyntaxKind.ForStatement:
+        case Syntax.ForStatement:
           return visitForStatement(node as ForStatement);
-        case SyntaxKind.TaggedTemplateExpression:
+        case Syntax.TaggedTemplateExpression:
           return visitTaggedTemplateExpression(node as TaggedTemplateExpression);
       }
       return visitEachChild(node, visitor, context);
@@ -109,8 +109,8 @@ namespace qnr {
 
     function visitorDestructuringTarget(node: Node): VisitResult<Node> {
       switch (node.kind) {
-        case SyntaxKind.ObjectLiteralExpression:
-        case SyntaxKind.ArrayLiteralExpression:
+        case Syntax.ObjectLiteralExpression:
+        case Syntax.ArrayLiteralExpression:
           return visitAssignmentPattern(node as AssignmentPattern);
         default:
           return visitor(node);
@@ -135,24 +135,24 @@ namespace qnr {
      */
     function classElementVisitor(node: Node): VisitResult<Node> {
       switch (node.kind) {
-        case SyntaxKind.Constructor:
+        case Syntax.Constructor:
           // Constructors for classes using class fields are transformed in
           // `visitClassDeclaration` or `visitClassExpression`.
           return;
 
-        case SyntaxKind.GetAccessor:
-        case SyntaxKind.SetAccessor:
-        case SyntaxKind.MethodDeclaration:
+        case Syntax.GetAccessor:
+        case Syntax.SetAccessor:
+        case Syntax.MethodDeclaration:
           // Visit the name of the member (if it's a computed property name).
           return visitEachChild(node, classElementVisitor, context);
 
-        case SyntaxKind.PropertyDeclaration:
+        case Syntax.PropertyDeclaration:
           return visitPropertyDeclaration(node as PropertyDeclaration);
 
-        case SyntaxKind.ComputedPropertyName:
+        case Syntax.ComputedPropertyName:
           return visitComputedPropertyName(node as ComputedPropertyName);
 
-        case SyntaxKind.SemicolonClassElement:
+        case Syntax.SemicolonClassElement:
           return node;
 
         default:
@@ -228,18 +228,15 @@ namespace qnr {
 
     function visitPrefixUnaryExpression(node: PrefixUnaryExpression) {
       if (shouldTransformPrivateFields && isPrivateIdentifierPropertyAccessExpression(node.operand)) {
-        const operator = node.operator === SyntaxKind.Plus2Token ? SyntaxKind.PlusToken : node.operator === SyntaxKind.Minus2Token ? SyntaxKind.MinusToken : undefined;
+        const operator = node.operator === Syntax.Plus2Token ? Syntax.PlusToken : node.operator === Syntax.Minus2Token ? Syntax.MinusToken : undefined;
         let info: PrivateIdentifierInfo | undefined;
         if (operator && (info = accessPrivateIdentifier(node.operand.name))) {
           const receiver = visitNode(node.operand.expression, visitor, isExpression);
           const { readExpression, initializeExpression } = createCopiableReceiverExpr(receiver);
 
-          const existingValue = createPrefix(SyntaxKind.PlusToken, createPrivateIdentifierAccess(info, readExpression));
+          const existingValue = createPrefix(Syntax.PlusToken, createPrivateIdentifierAccess(info, readExpression));
 
-          return setOriginalNode(
-            createPrivateIdentifierAssignment(info, initializeExpression || readExpression, createBinary(existingValue, operator, createLiteral(1)), SyntaxKind.EqualsToken),
-            node
-          );
+          return setOriginalNode(createPrivateIdentifierAssignment(info, initializeExpression || readExpression, createBinary(existingValue, operator, createLiteral(1)), Syntax.EqualsToken), node);
         }
       }
       return visitEachChild(node, visitor, context);
@@ -247,13 +244,13 @@ namespace qnr {
 
     function visitPostfixUnaryExpression(node: PostfixUnaryExpression, valueIsDiscarded: boolean) {
       if (shouldTransformPrivateFields && isPrivateIdentifierPropertyAccessExpression(node.operand)) {
-        const operator = node.operator === SyntaxKind.Plus2Token ? SyntaxKind.PlusToken : node.operator === SyntaxKind.Minus2Token ? SyntaxKind.MinusToken : undefined;
+        const operator = node.operator === Syntax.Plus2Token ? Syntax.PlusToken : node.operator === Syntax.Minus2Token ? Syntax.MinusToken : undefined;
         let info: PrivateIdentifierInfo | undefined;
         if (operator && (info = accessPrivateIdentifier(node.operand.name))) {
           const receiver = visitNode(node.operand.expression, visitor, isExpression);
           const { readExpression, initializeExpression } = createCopiableReceiverExpr(receiver);
 
-          const existingValue = createPrefix(SyntaxKind.PlusToken, createPrivateIdentifierAccess(info, readExpression));
+          const existingValue = createPrefix(Syntax.PlusToken, createPrivateIdentifierAccess(info, readExpression));
 
           // Create a temporary variable to store the value returned by the expression.
           const returnValue = valueIsDiscarded ? undefined : createTempVariable(hoistVariableDeclaration);
@@ -265,7 +262,7 @@ namespace qnr {
                   info,
                   initializeExpression || readExpression,
                   createBinary(returnValue ? createAssignment(returnValue, existingValue) : existingValue, operator, createLiteral(1)),
-                  SyntaxKind.EqualsToken
+                  Syntax.EqualsToken
                 ),
                 returnValue,
               ])
@@ -407,7 +404,7 @@ namespace qnr {
       }
 
       const extendsClauseElement = getEffectiveBaseTypeNode(node);
-      const isDerivedClass = !!(extendsClauseElement && skipOuterExpressions(extendsClauseElement.expression).kind !== SyntaxKind.NullKeyword);
+      const isDerivedClass = !!(extendsClauseElement && skipOuterExpressions(extendsClauseElement.expression).kind !== Syntax.NullKeyword);
 
       const statements: Statement[] = [
         updateClassDeclaration(
@@ -455,7 +452,7 @@ namespace qnr {
 
       const staticProperties = getProperties(node, /*requireInitializer*/ true, /*isStatic*/ true);
       const extendsClauseElement = getEffectiveBaseTypeNode(node);
-      const isDerivedClass = !!(extendsClauseElement && skipOuterExpressions(extendsClauseElement.expression).kind !== SyntaxKind.NullKeyword);
+      const isDerivedClass = !!(extendsClauseElement && skipOuterExpressions(extendsClauseElement.expression).kind !== Syntax.NullKeyword);
 
       const classExpression = updateClassExpression(
         node,
@@ -722,7 +719,7 @@ namespace qnr {
 
         // We need to enable substitutions for identifiers. This allows us to
         // substitute class names inside of a class declaration.
-        context.enableSubstitution(SyntaxKind.Identifier);
+        context.enableSubstitution(Syntax.Identifier);
 
         // Keep track of class aliases.
         classAliases = [];
@@ -745,7 +742,7 @@ namespace qnr {
 
     function substituteExpression(node: Expression) {
       switch (node.kind) {
-        case SyntaxKind.Identifier:
+        case Syntax.Identifier:
           return substituteExpressionIdentifier(node as Identifier);
       }
       return node;
@@ -852,7 +849,7 @@ namespace qnr {
       if (isThisProperty(node) || isSuperProperty(node) || !isSimpleCopiableExpression(node.expression)) {
         receiver = createTempVariable(hoistVariableDeclaration);
         (receiver as Identifier).autoGenerateFlags! |= GeneratedIdentifierFlags.ReservedInNestedScopes;
-        (pendingExpressions || (pendingExpressions = [])).push(createBinary(receiver, SyntaxKind.EqualsToken, node.expression));
+        (pendingExpressions || (pendingExpressions = [])).push(createBinary(receiver, Syntax.EqualsToken, node.expression));
       }
       return createPropertyAccess(
         // Explicit parens required because of v8 regression (https://bugs.chromium.org/p/v8/issues/detail?id=9560)
@@ -863,7 +860,7 @@ namespace qnr {
               /*modifiers*/ undefined,
               'value',
               [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, parameter, /*questionToken*/ undefined, /*type*/ undefined, /*initializer*/ undefined)],
-              createBlock([createExpressionStatement(createPrivateIdentifierAssignment(info, receiver, parameter, SyntaxKind.EqualsToken))])
+              createBlock([createExpressionStatement(createPrivateIdentifierAssignment(info, receiver, parameter, Syntax.EqualsToken))])
             ),
           ])
         ),

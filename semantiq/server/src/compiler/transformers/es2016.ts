@@ -17,7 +17,7 @@ namespace qnr {
         return node;
       }
       switch (node.kind) {
-        case SyntaxKind.BinaryExpression:
+        case Syntax.BinaryExpression:
           return visitBinaryExpression(<BinaryExpression>node);
         default:
           return visitEachChild(node, visitor, context);
@@ -26,9 +26,9 @@ namespace qnr {
 
     function visitBinaryExpression(node: BinaryExpression): Expression {
       switch (node.operatorToken.kind) {
-        case SyntaxKind.Asterisk2EqualsToken:
+        case Syntax.Asterisk2EqualsToken:
           return visitExponentiationAssignmentExpression(node);
-        case SyntaxKind.Asterisk2Token:
+        case Syntax.Asterisk2Token:
           return visitExponentiationExpression(node);
         default:
           return visitEachChild(node, visitor, context);
@@ -55,10 +55,7 @@ namespace qnr {
       } else if (isPropertyAccessExpression(left)) {
         // Transforms `a.x **= b` into `(_a = a).x = Math.pow(_a.x, b)`
         const expressionTemp = createTempVariable(hoistVariableDeclaration);
-        target = setTextRange(
-          createPropertyAccess(setTextRange(createAssignment(expressionTemp, left.expression), left.expression), left.name),
-          left
-        );
+        target = setTextRange(createPropertyAccess(setTextRange(createAssignment(expressionTemp, left.expression), left.expression), left.name), left);
         value = setTextRange(createPropertyAccess(expressionTemp, left.name), left);
       } else {
         // Transforms `a **= b` into `a = Math.pow(a, b)`

@@ -275,7 +275,7 @@ namespace qnr {
     const updated = updateLabel(
       outermostLabeledStatement,
       outermostLabeledStatement.label,
-      outermostLabeledStatement.statement.kind === SyntaxKind.LabeledStatement ? restoreEnclosingLabel(node, <LabeledStatement>outermostLabeledStatement.statement) : node
+      outermostLabeledStatement.statement.kind === Syntax.LabeledStatement ? restoreEnclosingLabel(node, <LabeledStatement>outermostLabeledStatement.statement) : node
     );
     if (afterRestoreLabelCallback) {
       afterRestoreLabelCallback(outermostLabeledStatement);
@@ -291,20 +291,20 @@ namespace qnr {
   function shouldBeCapturedInTempVariable(node: Expression, cacheIdentifiers: boolean): boolean {
     const target = skipParentheses(node) as Expression | ArrayLiteralExpression | ObjectLiteralExpression;
     switch (target.kind) {
-      case SyntaxKind.Identifier:
+      case Syntax.Identifier:
         return cacheIdentifiers;
-      case SyntaxKind.ThisKeyword:
-      case SyntaxKind.NumericLiteral:
-      case SyntaxKind.BigIntLiteral:
-      case SyntaxKind.StringLiteral:
+      case Syntax.ThisKeyword:
+      case Syntax.NumericLiteral:
+      case Syntax.BigIntLiteral:
+      case Syntax.StringLiteral:
         return false;
-      case SyntaxKind.ArrayLiteralExpression:
+      case Syntax.ArrayLiteralExpression:
         const elements = target.elements;
         if (elements.length === 0) {
           return false;
         }
         return true;
-      case SyntaxKind.ObjectLiteralExpression:
+      case Syntax.ObjectLiteralExpression:
         return (<ObjectLiteralExpression>target).properties.length > 0;
       default:
         return true;
@@ -318,7 +318,7 @@ namespace qnr {
     if (isSuperProperty(callee)) {
       thisArg = createThis();
       target = callee;
-    } else if (callee.kind === SyntaxKind.SuperKeyword) {
+    } else if (callee.kind === Syntax.SuperKeyword) {
       thisArg = createThis();
       target = <PrimaryExpression>callee;
     } else if (getEmitFlags(callee) & EmitFlags.HelperName) {
@@ -326,7 +326,7 @@ namespace qnr {
       target = parenthesizeForAccess(callee);
     } else {
       switch (callee.kind) {
-        case SyntaxKind.PropertyAccessExpression: {
+        case Syntax.PropertyAccessExpression: {
           if (shouldBeCapturedInTempVariable((<PropertyAccessExpression>callee).expression, cacheIdentifiers)) {
             // for `a.b()` target is `(_a = a).b` and thisArg is `_a`
             thisArg = createTempVariable(recordTempVariable);
@@ -342,7 +342,7 @@ namespace qnr {
           break;
         }
 
-        case SyntaxKind.ElementAccessExpression: {
+        case Syntax.ElementAccessExpression: {
           if (shouldBeCapturedInTempVariable((<ElementAccessExpression>callee).expression, cacheIdentifiers)) {
             // for `a[b]()` target is `(_a = a)[b]` and thisArg is `_a`
             thisArg = createTempVariable(recordTempVariable);
@@ -399,17 +399,17 @@ namespace qnr {
 
   export function createExpressionForObjectLiteralElementLike(node: ObjectLiteralExpression, property: ObjectLiteralElementLike, receiver: Expression): Expression | undefined {
     if (property.name && isPrivateIdentifier(property.name)) {
-      Debug.failBadSyntaxKind(property.name, 'Private identifiers are not allowed in object literals.');
+      Debug.failBadSyntax(property.name, 'Private identifiers are not allowed in object literals.');
     }
     switch (property.kind) {
-      case SyntaxKind.GetAccessor:
-      case SyntaxKind.SetAccessor:
+      case Syntax.GetAccessor:
+      case Syntax.SetAccessor:
         return createExpressionForAccessorDeclaration(node.properties, property as typeof property & { name: Exclude<PropertyName, PrivateIdentifier> }, receiver, !!node.multiLine);
-      case SyntaxKind.PropertyAssignment:
+      case Syntax.PropertyAssignment:
         return createExpressionForPropertyAssignment(property, receiver);
-      case SyntaxKind.ShorthandPropertyAssignment:
+      case Syntax.ShorthandPropertyAssignment:
         return createExpressionForShorthandPropertyAssignment(property, receiver);
-      case SyntaxKind.MethodDeclaration:
+      case Syntax.MethodDeclaration:
         return createExpressionForMethodDeclaration(property, receiver);
     }
     return;
@@ -787,11 +787,11 @@ namespace qnr {
    * @param isLeftSideOfBinary A value indicating whether the operand is the left side of the
    *                           BinaryExpression.
    */
-  export function parenthesizeBinaryOperand(binaryOperator: SyntaxKind, operand: Expression, isLeftSideOfBinary: boolean, leftOperand?: Expression) {
+  export function parenthesizeBinaryOperand(binaryOperator: Syntax, operand: Expression, isLeftSideOfBinary: boolean, leftOperand?: Expression) {
     const skipped = skipPartiallyEmittedExpressions(operand);
 
     // If the resulting expression is already parenthesized, we do not need to do any further processing.
-    if (skipped.kind === SyntaxKind.ParenthesizedExpression) {
+    if (skipped.kind === Syntax.ParenthesizedExpression) {
       return operand;
     }
 
@@ -806,7 +806,7 @@ namespace qnr {
    * @param isLeftSideOfBinary A value indicating whether the operand is the left side of the
    *                           BinaryExpression.
    */
-  function binaryOperandNeedsParentheses(binaryOperator: SyntaxKind, operand: Expression, isLeftSideOfBinary: boolean, leftOperand: Expression | undefined) {
+  function binaryOperandNeedsParentheses(binaryOperator: Syntax, operand: Expression, isLeftSideOfBinary: boolean, leftOperand: Expression | undefined) {
     // If the operand has lower precedence, then it needs to be parenthesized to preserve the
     // intent of the expression. For example, if the operand is `a + b` and the operator is
     // `*`, then we need to parenthesize the operand to preserve the intended order of
@@ -824,10 +824,10 @@ namespace qnr {
     //
     // If `a ** d` is on the left of operator `**`, we need to parenthesize to preserve
     // the intended order of operations: `(a ** b) ** c`
-    const binaryOperatorPrecedence = getOperatorPrecedence(SyntaxKind.BinaryExpression, binaryOperator);
-    const binaryOperatorAssociativity = getOperatorAssociativity(SyntaxKind.BinaryExpression, binaryOperator);
+    const binaryOperatorPrecedence = getOperatorPrecedence(Syntax.BinaryExpression, binaryOperator);
+    const binaryOperatorAssociativity = getOperatorAssociativity(Syntax.BinaryExpression, binaryOperator);
     const emittedOperand = skipPartiallyEmittedExpressions(operand);
-    if (!isLeftSideOfBinary && operand.kind === SyntaxKind.ArrowFunction && binaryOperatorPrecedence > 3) {
+    if (!isLeftSideOfBinary && operand.kind === Syntax.ArrowFunction && binaryOperatorPrecedence > 3) {
       // We need to parenthesize arrow functions on the right side to avoid it being
       // parsed as parenthesized expression: `a && (() => {})`
       return true;
@@ -837,7 +837,7 @@ namespace qnr {
       case Comparison.LessThan:
         // If the operand is the right side of a right-associative binary operation
         // and is a yield expression, then we do not need parentheses.
-        if (!isLeftSideOfBinary && binaryOperatorAssociativity === Associativity.Right && operand.kind === SyntaxKind.YieldExpression) {
+        if (!isLeftSideOfBinary && binaryOperatorAssociativity === Associativity.Right && operand.kind === Syntax.YieldExpression) {
           return false;
         }
 
@@ -876,8 +876,8 @@ namespace qnr {
             // the same kind (recursively).
             //  "a"+(1+2)       => "a"+(1+2)
             //  "a"+("b"+"c")   => "a"+"b"+"c"
-            if (binaryOperator === SyntaxKind.PlusToken) {
-              const leftKind = leftOperand ? getLiteralKindOfBinaryPlusOperand(leftOperand) : SyntaxKind.Unknown;
+            if (binaryOperator === Syntax.PlusToken) {
+              const leftKind = leftOperand ? getLiteralKindOfBinaryPlusOperand(leftOperand) : Syntax.Unknown;
               if (isLiteralKind(leftKind) && leftKind === getLiteralKindOfBinaryPlusOperand(emittedOperand)) {
                 return false;
               }
@@ -904,7 +904,7 @@ namespace qnr {
    *
    * @param binaryOperator The binary operator.
    */
-  function operatorHasAssociativeProperty(binaryOperator: SyntaxKind) {
+  function operatorHasAssociativeProperty(binaryOperator: Syntax) {
     // The following operators are associative in JavaScript:
     //  (a*b)*c     -> a*(b*c)  -> a*b*c
     //  (a|b)|c     -> a|(b|c)  -> a|b|c
@@ -913,11 +913,11 @@ namespace qnr {
     //
     // While addition is associative in mathematics, JavaScript's `+` is not
     // guaranteed to be associative as it is overloaded with string concatenation.
-    return binaryOperator === SyntaxKind.AsteriskToken || binaryOperator === SyntaxKind.BarToken || binaryOperator === SyntaxKind.AmpersandToken || binaryOperator === SyntaxKind.CaretToken;
+    return binaryOperator === Syntax.AsteriskToken || binaryOperator === Syntax.BarToken || binaryOperator === Syntax.AmpersandToken || binaryOperator === Syntax.CaretToken;
   }
 
   interface BinaryPlusExpression extends BinaryExpression {
-    cachedLiteralKind: SyntaxKind;
+    cachedLiteralKind: Syntax;
   }
 
   /**
@@ -926,30 +926,30 @@ namespace qnr {
    * It is used to determine whether the right-hand operand of a binary plus expression can be
    * emitted without parentheses.
    */
-  function getLiteralKindOfBinaryPlusOperand(node: Expression): SyntaxKind {
+  function getLiteralKindOfBinaryPlusOperand(node: Expression): Syntax {
     node = skipPartiallyEmittedExpressions(node);
 
     if (isLiteralKind(node.kind)) {
       return node.kind;
     }
 
-    if (node.kind === SyntaxKind.BinaryExpression && (<BinaryExpression>node).operatorToken.kind === SyntaxKind.PlusToken) {
+    if (node.kind === Syntax.BinaryExpression && (<BinaryExpression>node).operatorToken.kind === Syntax.PlusToken) {
       if ((<BinaryPlusExpression>node).cachedLiteralKind !== undefined) {
         return (<BinaryPlusExpression>node).cachedLiteralKind;
       }
 
       const leftKind = getLiteralKindOfBinaryPlusOperand((<BinaryExpression>node).left);
-      const literalKind = isLiteralKind(leftKind) && leftKind === getLiteralKindOfBinaryPlusOperand((<BinaryExpression>node).right) ? leftKind : SyntaxKind.Unknown;
+      const literalKind = isLiteralKind(leftKind) && leftKind === getLiteralKindOfBinaryPlusOperand((<BinaryExpression>node).right) ? leftKind : Syntax.Unknown;
 
       (<BinaryPlusExpression>node).cachedLiteralKind = literalKind;
       return literalKind;
     }
 
-    return SyntaxKind.Unknown;
+    return Syntax.Unknown;
   }
 
   export function parenthesizeForConditionalHead(condition: Expression) {
-    const conditionalPrecedence = getOperatorPrecedence(SyntaxKind.ConditionalExpression, SyntaxKind.QuestionToken);
+    const conditionalPrecedence = getOperatorPrecedence(Syntax.ConditionalExpression, Syntax.QuestionToken);
     const emittedCondition = skipPartiallyEmittedExpressions(condition);
     const conditionPrecedence = getExpressionPrecedence(emittedCondition);
     if (compareValues(conditionPrecedence, conditionalPrecedence) !== Comparison.GreaterThan) {
@@ -982,8 +982,8 @@ namespace qnr {
     let needsParens = isCommaSequence(check);
     if (!needsParens) {
       switch (getLeftmostExpression(check, /*stopAtCallExpression*/ false).kind) {
-        case SyntaxKind.ClassExpression:
-        case SyntaxKind.FunctionExpression:
+        case Syntax.ClassExpression:
+        case Syntax.FunctionExpression:
           needsParens = true;
       }
     }
@@ -999,10 +999,10 @@ namespace qnr {
   export function parenthesizeForNew(expression: Expression): LeftHandSideExpression {
     const leftmostExpr = getLeftmostExpression(expression, /*stopAtCallExpressions*/ true);
     switch (leftmostExpr.kind) {
-      case SyntaxKind.CallExpression:
+      case Syntax.CallExpression:
         return createParen(expression);
 
-      case SyntaxKind.NewExpression:
+      case Syntax.NewExpression:
         return !(leftmostExpr as NewExpression).arguments ? createParen(expression) : <LeftHandSideExpression>expression;
     }
 
@@ -1023,7 +1023,7 @@ namespace qnr {
     //       new C.x        -> not the same as (new C).x
     //
     const emittedExpression = skipPartiallyEmittedExpressions(expression);
-    if (isLeftHandSideExpression(emittedExpression) && (emittedExpression.kind !== SyntaxKind.NewExpression || (<NewExpression>emittedExpression).arguments)) {
+    if (isLeftHandSideExpression(emittedExpression) && (emittedExpression.kind !== Syntax.NewExpression || (<NewExpression>emittedExpression).arguments)) {
       return <LeftHandSideExpression>expression;
     }
 
@@ -1061,7 +1061,7 @@ namespace qnr {
   export function parenthesizeExpressionForList(expression: Expression) {
     const emittedExpression = skipPartiallyEmittedExpressions(expression);
     const expressionPrecedence = getExpressionPrecedence(emittedExpression);
-    const commaPrecedence = getOperatorPrecedence(SyntaxKind.BinaryExpression, SyntaxKind.CommaToken);
+    const commaPrecedence = getOperatorPrecedence(Syntax.BinaryExpression, Syntax.CommaToken);
     return expressionPrecedence > commaPrecedence ? expression : setTextRange(createParen(expression), expression);
   }
 
@@ -1070,7 +1070,7 @@ namespace qnr {
     if (isCallExpression(emittedExpression)) {
       const callee = emittedExpression.expression;
       const kind = skipPartiallyEmittedExpressions(callee).kind;
-      if (kind === SyntaxKind.FunctionExpression || kind === SyntaxKind.ArrowFunction) {
+      if (kind === Syntax.FunctionExpression || kind === Syntax.ArrowFunction) {
         const mutableCall = getMutableClone(emittedExpression);
         mutableCall.expression = setTextRange(createParen(callee), callee);
         return recreateOuterExpressions(expression, mutableCall, OuterExpressionKinds.PartiallyEmittedExpressions);
@@ -1078,7 +1078,7 @@ namespace qnr {
     }
 
     const leftmostExpressionKind = getLeftmostExpression(emittedExpression, /*stopAtCallExpressions*/ false).kind;
-    if (leftmostExpressionKind === SyntaxKind.ObjectLiteralExpression || leftmostExpressionKind === SyntaxKind.FunctionExpression) {
+    if (leftmostExpressionKind === Syntax.ObjectLiteralExpression || leftmostExpressionKind === Syntax.FunctionExpression) {
       return setTextRange(createParen(expression), expression);
     }
 
@@ -1086,15 +1086,15 @@ namespace qnr {
   }
 
   export function parenthesizeConditionalTypeMember(member: TypeNode) {
-    return member.kind === SyntaxKind.ConditionalType ? ParenthesizedTypeNode.create(member) : member;
+    return member.kind === Syntax.ConditionalType ? ParenthesizedTypeNode.create(member) : member;
   }
 
   export function parenthesizeElementTypeMember(member: TypeNode) {
     switch (member.kind) {
-      case SyntaxKind.UnionType:
-      case SyntaxKind.IntersectionType:
-      case SyntaxKind.FunctionType:
-      case SyntaxKind.ConstructorType:
+      case Syntax.UnionType:
+      case Syntax.IntersectionType:
+      case Syntax.FunctionType:
+      case Syntax.ConstructorType:
         return ParenthesizedTypeNode.create(member);
     }
     return parenthesizeConditionalTypeMember(member);
@@ -1102,9 +1102,9 @@ namespace qnr {
 
   export function parenthesizeArrayTypeMember(member: TypeNode) {
     switch (member.kind) {
-      case SyntaxKind.TypeQuery:
-      case SyntaxKind.TypeOperator:
-      case SyntaxKind.InferType:
+      case Syntax.TypeQuery:
+      case Syntax.TypeOperator:
+      case Syntax.InferType:
         return ParenthesizedTypeNode.create(member);
     }
     return parenthesizeElementTypeMember(member);
@@ -1130,32 +1130,32 @@ namespace qnr {
   export function getLeftmostExpression(node: Expression, stopAtCallExpressions: boolean) {
     while (true) {
       switch (node.kind) {
-        case SyntaxKind.PostfixUnaryExpression:
+        case Syntax.PostfixUnaryExpression:
           node = (<PostfixUnaryExpression>node).operand;
           continue;
 
-        case SyntaxKind.BinaryExpression:
+        case Syntax.BinaryExpression:
           node = (<BinaryExpression>node).left;
           continue;
 
-        case SyntaxKind.ConditionalExpression:
+        case Syntax.ConditionalExpression:
           node = (<ConditionalExpression>node).condition;
           continue;
 
-        case SyntaxKind.TaggedTemplateExpression:
+        case Syntax.TaggedTemplateExpression:
           node = (<TaggedTemplateExpression>node).tag;
           continue;
 
-        case SyntaxKind.CallExpression:
+        case Syntax.CallExpression:
           if (stopAtCallExpressions) {
             return node;
           }
         // falls through
-        case SyntaxKind.AsExpression:
-        case SyntaxKind.ElementAccessExpression:
-        case SyntaxKind.PropertyAccessExpression:
-        case SyntaxKind.NonNullExpression:
-        case SyntaxKind.PartiallyEmittedExpression:
+        case Syntax.AsExpression:
+        case Syntax.ElementAccessExpression:
+        case Syntax.PropertyAccessExpression:
+        case Syntax.NonNullExpression:
+        case Syntax.PartiallyEmittedExpression:
           node = (<CallExpression | PropertyAccessExpression | ElementAccessExpression | AsExpression | NonNullExpression | PartiallyEmittedExpression>node).expression;
           continue;
       }
@@ -1165,15 +1165,15 @@ namespace qnr {
   }
 
   export function parenthesizeConciseBody(body: ConciseBody): ConciseBody {
-    if (!isBlock(body) && (isCommaSequence(body) || getLeftmostExpression(body, /*stopAtCallExpressions*/ false).kind === SyntaxKind.ObjectLiteralExpression)) {
+    if (!isBlock(body) && (isCommaSequence(body) || getLeftmostExpression(body, /*stopAtCallExpressions*/ false).kind === Syntax.ObjectLiteralExpression)) {
       return setTextRange(createParen(body), body);
     }
 
     return body;
   }
 
-  export function isCommaSequence(node: Expression): node is (BinaryExpression & { operatorToken: Token<SyntaxKind.CommaToken> }) | CommaListExpression {
-    return (node.kind === SyntaxKind.BinaryExpression && (<BinaryExpression>node).operatorToken.kind === SyntaxKind.CommaToken) || node.kind === SyntaxKind.CommaListExpression;
+  export function isCommaSequence(node: Expression): node is (BinaryExpression & { operatorToken: Token<Syntax.CommaToken> }) | CommaListExpression {
+    return (node.kind === Syntax.BinaryExpression && (<BinaryExpression>node).operatorToken.kind === Syntax.CommaToken) || node.kind === Syntax.CommaListExpression;
   }
 
   export const enum OuterExpressionKinds {
@@ -1190,14 +1190,14 @@ namespace qnr {
 
   export function isOuterExpression(node: Node, kinds = OuterExpressionKinds.All): node is OuterExpression {
     switch (node.kind) {
-      case SyntaxKind.ParenthesizedExpression:
+      case Syntax.ParenthesizedExpression:
         return (kinds & OuterExpressionKinds.Parentheses) !== 0;
-      case SyntaxKind.TypeAssertionExpression:
-      case SyntaxKind.AsExpression:
+      case Syntax.TypeAssertionExpression:
+      case Syntax.AsExpression:
         return (kinds & OuterExpressionKinds.TypeAssertions) !== 0;
-      case SyntaxKind.NonNullExpression:
+      case Syntax.NonNullExpression:
         return (kinds & OuterExpressionKinds.NonNullAssertions) !== 0;
-      case SyntaxKind.PartiallyEmittedExpression:
+      case Syntax.PartiallyEmittedExpression:
         return (kinds & OuterExpressionKinds.PartiallyEmittedExpressions) !== 0;
     }
     return false;
@@ -1220,15 +1220,15 @@ namespace qnr {
 
   function updateOuterExpression(outerExpression: OuterExpression, expression: Expression) {
     switch (outerExpression.kind) {
-      case SyntaxKind.ParenthesizedExpression:
+      case Syntax.ParenthesizedExpression:
         return updateParen(outerExpression, expression);
-      case SyntaxKind.TypeAssertionExpression:
+      case Syntax.TypeAssertionExpression:
         return updateTypeAssertion(outerExpression, outerExpression.type, expression);
-      case SyntaxKind.AsExpression:
+      case Syntax.AsExpression:
         return updateAsExpression(outerExpression, expression, outerExpression.type);
-      case SyntaxKind.NonNullExpression:
+      case Syntax.NonNullExpression:
         return updateNonNullExpression(outerExpression, expression);
-      case SyntaxKind.PartiallyEmittedExpression:
+      case Syntax.PartiallyEmittedExpression:
         return updatePartiallyEmittedExpression(outerExpression, expression);
     }
   }
@@ -1249,7 +1249,7 @@ namespace qnr {
    */
   function isIgnorableParen(node: Expression) {
     return (
-      node.kind === SyntaxKind.ParenthesizedExpression &&
+      node.kind === Syntax.ParenthesizedExpression &&
       isSynthesized(node) &&
       isSynthesized(getSourceMapRange(node)) &&
       isSynthesized(getCommentRange(node)) &&
@@ -1380,10 +1380,10 @@ namespace qnr {
       const name = namespaceDeclaration.name;
       return isGeneratedIdentifier(name) ? name : createIdentifier(getSourceTextOfNodeFromSourceFile(sourceFile, name) || idText(name));
     }
-    if (node.kind === SyntaxKind.ImportDeclaration && node.importClause) {
+    if (node.kind === Syntax.ImportDeclaration && node.importClause) {
       return getGeneratedNameForNode(node);
     }
-    if (node.kind === SyntaxKind.ExportDeclaration && node.moduleSpecifier) {
+    if (node.kind === Syntax.ExportDeclaration && node.moduleSpecifier) {
       return getGeneratedNameForNode(node);
     }
     return;
@@ -1405,7 +1405,7 @@ namespace qnr {
     compilerOptions: CompilerOptions
   ) {
     const moduleName = getExternalModuleName(importNode)!; // TODO: GH#18217
-    if (moduleName.kind === SyntaxKind.StringLiteral) {
+    if (moduleName.kind === Syntax.StringLiteral) {
       return (
         tryGetModuleNameFromDeclaration(importNode, host, resolver, compilerOptions) || tryRenameExternalModule(<StringLiteral>moduleName, sourceFile) || getSynthesizedClone(<StringLiteral>moduleName)
       );
@@ -1515,7 +1515,7 @@ namespace qnr {
 
     if (isObjectLiteralElementLike(bindingElement)) {
       switch (bindingElement.kind) {
-        case SyntaxKind.PropertyAssignment:
+        case Syntax.PropertyAssignment:
           // `b` in `({ a: b } = ...)`
           // `b` in `({ a: b = 1 } = ...)`
           // `{b}` in `({ a: {b} } = ...)`
@@ -1528,12 +1528,12 @@ namespace qnr {
           // `b[0]` in `({ a: b[0] = 1 } = ...)`
           return getTargetOfBindingOrAssignmentElement(<BindingOrAssignmentElement>bindingElement.initializer);
 
-        case SyntaxKind.ShorthandPropertyAssignment:
+        case Syntax.ShorthandPropertyAssignment:
           // `a` in `({ a } = ...)`
           // `a` in `({ a = 1 } = ...)`
           return bindingElement.name;
 
-        case SyntaxKind.SpreadAssignment:
+        case Syntax.SpreadAssignment:
           // `a` in `({ ...a } = ...)`
           return getTargetOfBindingOrAssignmentElement(<BindingOrAssignmentElement>bindingElement.expression);
       }
@@ -1569,13 +1569,13 @@ namespace qnr {
    */
   export function getRestIndicatorOfBindingOrAssignmentElement(bindingElement: BindingOrAssignmentElement): BindingOrAssignmentElementRestIndicator | undefined {
     switch (bindingElement.kind) {
-      case SyntaxKind.Parameter:
-      case SyntaxKind.BindingElement:
+      case Syntax.Parameter:
+      case Syntax.BindingElement:
         // `...` in `let [...a] = ...`
         return bindingElement.dot3Token;
 
-      case SyntaxKind.SpreadElement:
-      case SyntaxKind.SpreadAssignment:
+      case Syntax.SpreadElement:
+      case Syntax.SpreadAssignment:
         // `...` in `[...a] = ...`
         return bindingElement;
     }
@@ -1594,7 +1594,7 @@ namespace qnr {
 
   export function tryGetPropertyNameOfBindingOrAssignmentElement(bindingElement: BindingOrAssignmentElement): Exclude<PropertyName, PrivateIdentifier> | undefined {
     switch (bindingElement.kind) {
-      case SyntaxKind.BindingElement:
+      case Syntax.BindingElement:
         // `a` in `let { a: b } = ...`
         // `[a]` in `let { [a]: b } = ...`
         // `"a"` in `let { "a": b } = ...`
@@ -1602,14 +1602,14 @@ namespace qnr {
         if (bindingElement.propertyName) {
           const propertyName = bindingElement.propertyName;
           if (isPrivateIdentifier(propertyName)) {
-            return Debug.failBadSyntaxKind(propertyName);
+            return Debug.failBadSyntax(propertyName);
           }
           return ComputedPropertyName.kind(propertyName) && isStringOrNumericLiteral(propertyName.expression) ? propertyName.expression : propertyName;
         }
 
         break;
 
-      case SyntaxKind.PropertyAssignment:
+      case Syntax.PropertyAssignment:
         // `a` in `({ a: b } = ...)`
         // `[a]` in `({ [a]: b } = ...)`
         // `"a"` in `({ "a": b } = ...)`
@@ -1617,17 +1617,17 @@ namespace qnr {
         if (bindingElement.name) {
           const propertyName = bindingElement.name;
           if (isPrivateIdentifier(propertyName)) {
-            return Debug.failBadSyntaxKind(propertyName);
+            return Debug.failBadSyntax(propertyName);
           }
           return ComputedPropertyName.kind(propertyName) && isStringOrNumericLiteral(propertyName.expression) ? propertyName.expression : propertyName;
         }
 
         break;
 
-      case SyntaxKind.SpreadAssignment:
+      case Syntax.SpreadAssignment:
         // `a` in `({ ...a } = ...)`
         if (bindingElement.name && isPrivateIdentifier(bindingElement.name)) {
-          return Debug.failBadSyntaxKind(bindingElement.name);
+          return Debug.failBadSyntax(bindingElement.name);
         }
         return bindingElement.name;
     }
@@ -1641,7 +1641,7 @@ namespace qnr {
 
   function isStringOrNumericLiteral(node: Node): node is StringLiteral | NumericLiteral {
     const kind = node.kind;
-    return kind === SyntaxKind.StringLiteral || kind === SyntaxKind.NumericLiteral;
+    return kind === Syntax.StringLiteral || kind === Syntax.NumericLiteral;
   }
 
   /**
@@ -1649,14 +1649,14 @@ namespace qnr {
    */
   export function getElementsOfBindingOrAssignmentPattern(name: BindingOrAssignmentPattern): readonly BindingOrAssignmentElement[] {
     switch (name.kind) {
-      case SyntaxKind.ObjectBindingPattern:
-      case SyntaxKind.ArrayBindingPattern:
-      case SyntaxKind.ArrayLiteralExpression:
+      case Syntax.ObjectBindingPattern:
+      case Syntax.ArrayBindingPattern:
+      case Syntax.ArrayLiteralExpression:
         // `a` in `{a}`
         // `a` in `[a]`
         return <readonly BindingOrAssignmentElement[]>name.elements;
 
-      case SyntaxKind.ObjectLiteralExpression:
+      case Syntax.ObjectLiteralExpression:
         // `a` in `{a}`
         return <readonly BindingOrAssignmentElement[]>name.properties;
     }
@@ -1694,12 +1694,12 @@ namespace qnr {
 
   export function convertToAssignmentPattern(node: BindingOrAssignmentPattern): AssignmentPattern {
     switch (node.kind) {
-      case SyntaxKind.ArrayBindingPattern:
-      case SyntaxKind.ArrayLiteralExpression:
+      case Syntax.ArrayBindingPattern:
+      case Syntax.ArrayLiteralExpression:
         return convertToArrayAssignmentPattern(node);
 
-      case SyntaxKind.ObjectBindingPattern:
-      case SyntaxKind.ObjectLiteralExpression:
+      case Syntax.ObjectBindingPattern:
+      case Syntax.ObjectLiteralExpression:
         return convertToObjectAssignmentPattern(node);
     }
   }

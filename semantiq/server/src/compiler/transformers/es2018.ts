@@ -118,7 +118,7 @@ namespace qnr {
     }
 
     function visitorNoAsyncModifier(node: Node): VisitResult<Node> {
-      if (node.kind === SyntaxKind.AsyncKeyword) {
+      if (node.kind === Syntax.AsyncKeyword) {
         return;
       }
       return node;
@@ -143,68 +143,68 @@ namespace qnr {
         return node;
       }
       switch (node.kind) {
-        case SyntaxKind.AwaitExpression:
+        case Syntax.AwaitExpression:
           return visitAwaitExpression(node as AwaitExpression);
-        case SyntaxKind.YieldExpression:
+        case Syntax.YieldExpression:
           return visitYieldExpression(node as YieldExpression);
-        case SyntaxKind.ReturnStatement:
+        case Syntax.ReturnStatement:
           return visitReturnStatement(node as ReturnStatement);
-        case SyntaxKind.LabeledStatement:
+        case Syntax.LabeledStatement:
           return visitLabeledStatement(node as LabeledStatement);
-        case SyntaxKind.ObjectLiteralExpression:
+        case Syntax.ObjectLiteralExpression:
           return visitObjectLiteralExpression(node as ObjectLiteralExpression);
-        case SyntaxKind.BinaryExpression:
+        case Syntax.BinaryExpression:
           return visitBinaryExpression(node as BinaryExpression, noDestructuringValue);
-        case SyntaxKind.CatchClause:
+        case Syntax.CatchClause:
           return visitCatchClause(node as CatchClause);
-        case SyntaxKind.VariableStatement:
+        case Syntax.VariableStatement:
           return visitVariableStatement(node as VariableStatement);
-        case SyntaxKind.VariableDeclaration:
+        case Syntax.VariableDeclaration:
           return visitVariableDeclaration(node as VariableDeclaration);
-        case SyntaxKind.DoStatement:
-        case SyntaxKind.WhileStatement:
-        case SyntaxKind.ForInStatement:
+        case Syntax.DoStatement:
+        case Syntax.WhileStatement:
+        case Syntax.ForInStatement:
           return doWithHierarchyFacts(visitDefault, node, HierarchyFacts.IterationStatementExcludes, HierarchyFacts.IterationStatementIncludes);
-        case SyntaxKind.ForOfStatement:
+        case Syntax.ForOfStatement:
           return visitForOfStatement(node as ForOfStatement, /*outermostLabeledStatement*/ undefined);
-        case SyntaxKind.ForStatement:
+        case Syntax.ForStatement:
           return doWithHierarchyFacts(visitForStatement, node as ForStatement, HierarchyFacts.IterationStatementExcludes, HierarchyFacts.IterationStatementIncludes);
-        case SyntaxKind.VoidExpression:
+        case Syntax.VoidExpression:
           return visitVoidExpression(node as VoidExpression);
-        case SyntaxKind.Constructor:
+        case Syntax.Constructor:
           return doWithHierarchyFacts(visitConstructorDeclaration, node as ConstructorDeclaration, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
-        case SyntaxKind.MethodDeclaration:
+        case Syntax.MethodDeclaration:
           return doWithHierarchyFacts(visitMethodDeclaration, node as MethodDeclaration, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
-        case SyntaxKind.GetAccessor:
+        case Syntax.GetAccessor:
           return doWithHierarchyFacts(visitGetAccessorDeclaration, node as GetAccessorDeclaration, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
-        case SyntaxKind.SetAccessor:
+        case Syntax.SetAccessor:
           return doWithHierarchyFacts(visitSetAccessorDeclaration, node as SetAccessorDeclaration, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
-        case SyntaxKind.FunctionDeclaration:
+        case Syntax.FunctionDeclaration:
           return doWithHierarchyFacts(visitFunctionDeclaration, node as FunctionDeclaration, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
-        case SyntaxKind.FunctionExpression:
+        case Syntax.FunctionExpression:
           return doWithHierarchyFacts(visitFunctionExpression, node as FunctionExpression, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
-        case SyntaxKind.ArrowFunction:
+        case Syntax.ArrowFunction:
           return doWithHierarchyFacts(visitArrowFunction, node as ArrowFunction, HierarchyFacts.ArrowFunctionExcludes, HierarchyFacts.ArrowFunctionIncludes);
-        case SyntaxKind.Parameter:
+        case Syntax.Parameter:
           return visitParameter(node as ParameterDeclaration);
-        case SyntaxKind.ExpressionStatement:
+        case Syntax.ExpressionStatement:
           return visitExpressionStatement(node as ExpressionStatement);
-        case SyntaxKind.ParenthesizedExpression:
+        case Syntax.ParenthesizedExpression:
           return visitParenthesizedExpression(node as ParenthesizedExpression, noDestructuringValue);
-        case SyntaxKind.TaggedTemplateExpression:
+        case Syntax.TaggedTemplateExpression:
           return visitTaggedTemplateExpression(node as TaggedTemplateExpression);
-        case SyntaxKind.PropertyAccessExpression:
-          if (capturedSuperProperties && isPropertyAccessExpression(node) && node.expression.kind === SyntaxKind.SuperKeyword) {
+        case Syntax.PropertyAccessExpression:
+          if (capturedSuperProperties && isPropertyAccessExpression(node) && node.expression.kind === Syntax.SuperKeyword) {
             capturedSuperProperties.set(node.name.escapedText, true);
           }
           return visitEachChild(node, visitor, context);
-        case SyntaxKind.ElementAccessExpression:
-          if (capturedSuperProperties && (<ElementAccessExpression>node).expression.kind === SyntaxKind.SuperKeyword) {
+        case Syntax.ElementAccessExpression:
+          if (capturedSuperProperties && (<ElementAccessExpression>node).expression.kind === Syntax.SuperKeyword) {
             hasSuperElementAccess = true;
           }
           return visitEachChild(node, visitor, context);
-        case SyntaxKind.ClassDeclaration:
-        case SyntaxKind.ClassExpression:
+        case Syntax.ClassDeclaration:
+        case Syntax.ClassExpression:
           return doWithHierarchyFacts(visitDefault, node, HierarchyFacts.ClassOrFunctionExcludes, HierarchyFacts.ClassOrFunctionIncludes);
         default:
           return visitEachChild(node, visitor, context);
@@ -249,7 +249,7 @@ namespace qnr {
     function visitLabeledStatement(node: LabeledStatement) {
       if (enclosingFunctionFlags & FunctionFlags.Async) {
         const statement = unwrapInnermostStatementOfLabel(node);
-        if (statement.kind === SyntaxKind.ForOfStatement && (<ForOfStatement>statement).awaitModifier) {
+        if (statement.kind === Syntax.ForOfStatement && (<ForOfStatement>statement).awaitModifier) {
           return visitForOfStatement(<ForOfStatement>statement, node);
         }
         return restoreEnclosingLabel(visitNode(statement, visitor, isStatement, liftToBlock), node);
@@ -261,7 +261,7 @@ namespace qnr {
       let chunkObject: ObjectLiteralElementLike[] | undefined;
       const objects: Expression[] = [];
       for (const e of elements) {
-        if (e.kind === SyntaxKind.SpreadAssignment) {
+        if (e.kind === Syntax.SpreadAssignment) {
           if (chunkObject) {
             objects.push(createObjectLiteral(chunkObject));
             chunkObject = undefined;
@@ -271,7 +271,7 @@ namespace qnr {
         } else {
           chunkObject = append(
             chunkObject,
-            e.kind === SyntaxKind.PropertyAssignment ? createPropertyAssignment(e.name, visitNode(e.initializer, visitor, isExpression)) : visitNode(e, visitor, isObjectLiteralElementLike)
+            e.kind === Syntax.PropertyAssignment ? createPropertyAssignment(e.name, visitNode(e.initializer, visitor, isExpression)) : visitNode(e, visitor, isObjectLiteralElementLike)
           );
         }
       }
@@ -306,7 +306,7 @@ namespace qnr {
         // If we translate the above to `__assign({}, k, l)`, the `l` will evaluate before `k` is spread and we
         // end up with `{ a: 1, b: 2, c: 3 }`
         const objects = chunkObjectLiteralElements(node.properties);
-        if (objects.length && objects[0].kind !== SyntaxKind.ObjectLiteralExpression) {
+        if (objects.length && objects[0].kind !== Syntax.ObjectLiteralExpression) {
           objects.unshift(createObjectLiteral());
         }
         let expression: Expression = objects[0];
@@ -358,7 +358,7 @@ namespace qnr {
     function visitBinaryExpression(node: BinaryExpression, noDestructuringValue: boolean): Expression {
       if (isDestructuringAssignment(node) && node.left.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
         return flattenDestructuringAssignment(node, visitor, context, FlattenLevel.ObjectRest, !noDestructuringValue);
-      } else if (node.operatorToken.kind === SyntaxKind.CommaToken) {
+      } else if (node.operatorToken.kind === Syntax.CommaToken) {
         return updateBinary(node, visitNode(node.left, visitorNoDestructuringValue, isExpression), visitNode(node.right, noDestructuringValue ? visitorNoDestructuringValue : visitor, isExpression));
       }
       return visitEachChild(node, visitor, context);
@@ -624,7 +624,7 @@ namespace qnr {
         enclosingFunctionFlags & FunctionFlags.Generator ? visitNodes(node.modifiers, visitorNoAsyncModifier, isModifier) : node.modifiers,
         enclosingFunctionFlags & FunctionFlags.Async ? undefined : node.asteriskToken,
         visitNode(node.name, visitor, isPropertyName),
-        visitNode<Token<SyntaxKind.QuestionToken>>(/*questionToken*/ undefined, visitor, isToken),
+        visitNode<Token<Syntax.QuestionToken>>(/*questionToken*/ undefined, visitor, isToken),
         /*typeParameters*/ undefined,
         visitParameterList(node.parameters, visitor, context),
         /*type*/ undefined,
@@ -701,7 +701,7 @@ namespace qnr {
           context,
           createFunctionExpression(
             /*modifiers*/ undefined,
-            createToken(SyntaxKind.AsteriskToken),
+            createToken(Syntax.AsteriskToken),
             node.name && getGeneratedNameForNode(node.name),
             /*typeParameters*/ undefined,
             /*parameters*/ [],
@@ -784,18 +784,18 @@ namespace qnr {
 
         // We need to enable substitutions for call, property access, and element access
         // if we need to rewrite super calls.
-        context.enableSubstitution(SyntaxKind.CallExpression);
-        context.enableSubstitution(SyntaxKind.PropertyAccessExpression);
-        context.enableSubstitution(SyntaxKind.ElementAccessExpression);
+        context.enableSubstitution(Syntax.CallExpression);
+        context.enableSubstitution(Syntax.PropertyAccessExpression);
+        context.enableSubstitution(Syntax.ElementAccessExpression);
 
         // We need to be notified when entering and exiting declarations that bind super.
-        context.enableEmitNotification(SyntaxKind.ClassDeclaration);
-        context.enableEmitNotification(SyntaxKind.MethodDeclaration);
-        context.enableEmitNotification(SyntaxKind.GetAccessor);
-        context.enableEmitNotification(SyntaxKind.SetAccessor);
-        context.enableEmitNotification(SyntaxKind.Constructor);
+        context.enableEmitNotification(Syntax.ClassDeclaration);
+        context.enableEmitNotification(Syntax.MethodDeclaration);
+        context.enableEmitNotification(Syntax.GetAccessor);
+        context.enableEmitNotification(Syntax.SetAccessor);
+        context.enableEmitNotification(Syntax.Constructor);
         // We need to be notified when entering the generated accessor arrow functions.
-        context.enableEmitNotification(SyntaxKind.VariableStatement);
+        context.enableEmitNotification(Syntax.VariableStatement);
       }
     }
 
@@ -847,25 +847,25 @@ namespace qnr {
 
     function substituteExpression(node: Expression) {
       switch (node.kind) {
-        case SyntaxKind.PropertyAccessExpression:
+        case Syntax.PropertyAccessExpression:
           return substitutePropertyAccessExpression(<PropertyAccessExpression>node);
-        case SyntaxKind.ElementAccessExpression:
+        case Syntax.ElementAccessExpression:
           return substituteElementAccessExpression(<ElementAccessExpression>node);
-        case SyntaxKind.CallExpression:
+        case Syntax.CallExpression:
           return substituteCallExpression(<CallExpression>node);
       }
       return node;
     }
 
     function substitutePropertyAccessExpression(node: PropertyAccessExpression) {
-      if (node.expression.kind === SyntaxKind.SuperKeyword) {
+      if (node.expression.kind === Syntax.SuperKeyword) {
         return setTextRange(createPropertyAccess(createFileLevelUniqueName('_super'), node.name), node);
       }
       return node;
     }
 
     function substituteElementAccessExpression(node: ElementAccessExpression) {
-      if (node.expression.kind === SyntaxKind.SuperKeyword) {
+      if (node.expression.kind === Syntax.SuperKeyword) {
         return createSuperElementAccessInAsyncMethod(node.argumentExpression, node);
       }
       return node;
@@ -882,7 +882,7 @@ namespace qnr {
 
     function isSuperContainer(node: Node) {
       const kind = node.kind;
-      return kind === SyntaxKind.ClassDeclaration || kind === SyntaxKind.Constructor || kind === SyntaxKind.MethodDeclaration || kind === SyntaxKind.GetAccessor || kind === SyntaxKind.SetAccessor;
+      return kind === Syntax.ClassDeclaration || kind === Syntax.Constructor || kind === Syntax.MethodDeclaration || kind === Syntax.GetAccessor || kind === Syntax.SetAccessor;
     }
 
     function createSuperElementAccessInAsyncMethod(argumentExpression: Expression, location: TextRange): LeftHandSideExpression {

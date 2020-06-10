@@ -5,8 +5,8 @@ namespace qnr {
     const previousOnSubstituteNode = context.onSubstituteNode;
     context.onEmitNode = onEmitNode;
     context.onSubstituteNode = onSubstituteNode;
-    context.enableEmitNotification(SyntaxKind.SourceFile);
-    context.enableSubstitution(SyntaxKind.Identifier);
+    context.enableEmitNotification(Syntax.SourceFile);
+    context.enableSubstitution(Syntax.Identifier);
 
     let helperNameSubstitutions: Map<Identifier> | undefined;
     return chainBundle(transformSourceFile);
@@ -43,12 +43,12 @@ namespace qnr {
 
     function visitor(node: Node): VisitResult<Node> {
       switch (node.kind) {
-        case SyntaxKind.ImportEqualsDeclaration:
+        case Syntax.ImportEqualsDeclaration:
           // Elide `import=` as it is not legal with --module ES6
           return;
-        case SyntaxKind.ExportAssignment:
+        case Syntax.ExportAssignment:
           return visitExportAssignment(<ExportAssignment>node);
-        case SyntaxKind.ExportDeclaration:
+        case Syntax.ExportDeclaration:
           const exportDecl = node as ExportDeclaration;
           return visitExportDeclaration(exportDecl);
       }
@@ -74,19 +74,10 @@ namespace qnr {
 
       const oldIdentifier = node.exportClause.name;
       const synthName = getGeneratedNameForNode(oldIdentifier);
-      const importDecl = createImportDeclaration(
-        /*decorators*/ undefined,
-        /*modifiers*/ undefined,
-        createImportClause(/*name*/ undefined, createNamespaceImport(synthName)),
-        node.moduleSpecifier
-      );
+      const importDecl = createImportDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createImportClause(/*name*/ undefined, createNamespaceImport(synthName)), node.moduleSpecifier);
       setOriginalNode(importDecl, node.exportClause);
 
-      const exportDecl = createExportDeclaration(
-        /*decorators*/ undefined,
-        /*modifiers*/ undefined,
-        createNamedExports([createExportSpecifier(synthName, oldIdentifier)])
-      );
+      const exportDecl = createExportDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createNamedExports([createExportSpecifier(synthName, oldIdentifier)]));
       setOriginalNode(exportDecl, node);
 
       return [importDecl, exportDecl];

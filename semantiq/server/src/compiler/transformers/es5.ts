@@ -13,16 +13,16 @@ namespace qnr {
     if (compilerOptions.jsx === JsxEmit.Preserve || compilerOptions.jsx === JsxEmit.ReactNative) {
       previousOnEmitNode = context.onEmitNode;
       context.onEmitNode = onEmitNode;
-      context.enableEmitNotification(SyntaxKind.JsxOpeningElement);
-      context.enableEmitNotification(SyntaxKind.JsxClosingElement);
-      context.enableEmitNotification(SyntaxKind.JsxSelfClosingElement);
+      context.enableEmitNotification(Syntax.JsxOpeningElement);
+      context.enableEmitNotification(Syntax.JsxClosingElement);
+      context.enableEmitNotification(Syntax.JsxSelfClosingElement);
       noSubstitution = [];
     }
 
     const previousOnSubstituteNode = context.onSubstituteNode;
     context.onSubstituteNode = onSubstituteNode;
-    context.enableSubstitution(SyntaxKind.PropertyAccessExpression);
-    context.enableSubstitution(SyntaxKind.PropertyAssignment);
+    context.enableSubstitution(Syntax.PropertyAccessExpression);
+    context.enableSubstitution(Syntax.PropertyAssignment);
     return chainBundle(transformSourceFile);
 
     /**
@@ -43,9 +43,9 @@ namespace qnr {
      */
     function onEmitNode(hint: EmitHint, node: Node, emitCallback: (emitContext: EmitHint, node: Node) => void) {
       switch (node.kind) {
-        case SyntaxKind.JsxOpeningElement:
-        case SyntaxKind.JsxClosingElement:
-        case SyntaxKind.JsxSelfClosingElement:
+        case Syntax.JsxOpeningElement:
+        case Syntax.JsxClosingElement:
+        case Syntax.JsxSelfClosingElement:
           const tagName = (<JsxOpeningElement | JsxClosingElement | JsxSelfClosingElement>node).tagName;
           noSubstitution[getOriginalNodeId(tagName)] = true;
           break;
@@ -110,7 +110,7 @@ namespace qnr {
      */
     function trySubstituteReservedName(name: Identifier) {
       const token = name.originalKeywordKind || (isSynthesized(name) ? Token.fromString(idText(name)) : undefined);
-      if (token !== undefined && token >= SyntaxKind.FirstReservedWord && token <= SyntaxKind.LastReservedWord) {
+      if (token !== undefined && token >= Syntax.FirstReservedWord && token <= Syntax.LastReservedWord) {
         return setTextRange(createLiteral(name), name);
       }
       return;

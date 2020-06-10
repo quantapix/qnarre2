@@ -31,16 +31,16 @@ namespace qnr {
 
     function visitorWorker(node: Node): VisitResult<Node> {
       switch (node.kind) {
-        case SyntaxKind.JsxElement:
+        case Syntax.JsxElement:
           return visitJsxElement(<JsxElement>node, /*isChild*/ false);
 
-        case SyntaxKind.JsxSelfClosingElement:
+        case Syntax.JsxSelfClosingElement:
           return visitJsxSelfClosingElement(<JsxSelfClosingElement>node, /*isChild*/ false);
 
-        case SyntaxKind.JsxFragment:
+        case Syntax.JsxFragment:
           return visitJsxFragment(<JsxFragment>node, /*isChild*/ false);
 
-        case SyntaxKind.JsxExpression:
+        case Syntax.JsxExpression:
           return visitJsxExpression(<JsxExpression>node);
 
         default:
@@ -50,23 +50,23 @@ namespace qnr {
 
     function transformJsxChildToExpression(node: JsxChild): Expression | undefined {
       switch (node.kind) {
-        case SyntaxKind.JsxText:
+        case Syntax.JsxText:
           return visitJsxText(node);
 
-        case SyntaxKind.JsxExpression:
+        case Syntax.JsxExpression:
           return visitJsxExpression(node);
 
-        case SyntaxKind.JsxElement:
+        case Syntax.JsxElement:
           return visitJsxElement(node, /*isChild*/ true);
 
-        case SyntaxKind.JsxSelfClosingElement:
+        case Syntax.JsxSelfClosingElement:
           return visitJsxSelfClosingElement(node, /*isChild*/ true);
 
-        case SyntaxKind.JsxFragment:
+        case Syntax.JsxFragment:
           return visitJsxFragment(node, /*isChild*/ true);
 
         default:
-          return Debug.failBadSyntaxKind(node);
+          return Debug.failBadSyntax(node);
       }
     }
 
@@ -158,19 +158,19 @@ namespace qnr {
     function transformJsxAttributeInitializer(node: StringLiteral | JsxExpression | undefined): Expression {
       if (node === undefined) {
         return createTrue();
-      } else if (node.kind === SyntaxKind.StringLiteral) {
+      } else if (node.kind === Syntax.StringLiteral) {
         // Always recreate the literal to escape any escape sequences or newlines which may be in the original jsx string and which
         // Need to be escaped to be handled correctly in a normal string
         const literal = createLiteral(tryDecodeEntities(node.text) || node.text);
         literal.singleQuote = node.singleQuote !== undefined ? node.singleQuote : !isStringDoubleQuoted(node, currentSourceFile);
         return setTextRange(literal, node);
-      } else if (node.kind === SyntaxKind.JsxExpression) {
+      } else if (node.kind === Syntax.JsxExpression) {
         if (node.expression === undefined) {
           return createTrue();
         }
         return visitJsxExpression(node);
       } else {
-        return Debug.failBadSyntaxKind(node);
+        return Debug.failBadSyntax(node);
       }
     }
 
@@ -263,7 +263,7 @@ namespace qnr {
     }
 
     function getTagName(node: JsxElement | JsxOpeningLikeElement): Expression {
-      if (node.kind === SyntaxKind.JsxElement) {
+      if (node.kind === Syntax.JsxElement) {
         return getTagName(node.openingElement);
       } else {
         const name = node.tagName;

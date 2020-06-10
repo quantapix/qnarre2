@@ -19,7 +19,7 @@ export const enum NewLineType {
 
 export const enum OperatorType {
   // These operators are used with tokens
-  // of type SyntaxKind.Operator.
+  // of type Syntax.Operator.
   Add,
   AddEqual,
   Assign,
@@ -52,7 +52,7 @@ export const enum OperatorType {
   Walrus,
 
   // These operators are used with tokens
-  // of type SyntaxKind.Keyword.
+  // of type Syntax.Keyword.
   And,
   Or,
   Not,
@@ -125,7 +125,7 @@ export namespace Comment {
 }
 
 export interface TokenBase extends TextRange {
-  readonly type: SyntaxKind;
+  readonly type: Syntax;
 
   // Comments prior to the token.
   readonly comments?: Comment[];
@@ -134,7 +134,7 @@ export interface TokenBase extends TextRange {
 export interface Token extends TokenBase {}
 
 export namespace Token {
-  export function create(type: SyntaxKind, start: number, length: number, comments: Comment[] | undefined) {
+  export function create(type: Syntax, start: number, length: number, comments: Comment[] | undefined) {
     const token: Token = {
       start,
       length,
@@ -147,7 +147,7 @@ export namespace Token {
 }
 
 export interface IndentToken extends Token {
-  readonly type: SyntaxKind.Indent;
+  readonly type: Syntax.Indent;
   readonly indentAmount: number;
   readonly isIndentAmbiguous: boolean;
 }
@@ -157,7 +157,7 @@ export namespace IndentToken {
     const token: IndentToken = {
       start,
       length,
-      type: SyntaxKind.Indent,
+      type: Syntax.Indent,
       isIndentAmbiguous,
       comments,
       indentAmount,
@@ -168,7 +168,7 @@ export namespace IndentToken {
 }
 
 export interface DedentToken extends Token {
-  readonly type: SyntaxKind.Dedent;
+  readonly type: Syntax.Dedent;
   readonly indentAmount: number;
   readonly matchesIndent: boolean;
 }
@@ -178,7 +178,7 @@ export namespace DedentToken {
     const token: DedentToken = {
       start,
       length,
-      type: SyntaxKind.Dedent,
+      type: Syntax.Dedent,
       comments,
       indentAmount,
       matchesIndent,
@@ -189,7 +189,7 @@ export namespace DedentToken {
 }
 
 export interface NewLineToken extends Token {
-  readonly type: SyntaxKind.NewLineTrivia;
+  readonly type: Syntax.NewLineTrivia;
   readonly newLineType: NewLineType;
 }
 
@@ -198,7 +198,7 @@ export namespace NewLineToken {
     const token: NewLineToken = {
       start,
       length,
-      type: SyntaxKind.NewLineTrivia,
+      type: Syntax.NewLineTrivia,
       comments,
       newLineType,
     };
@@ -208,7 +208,7 @@ export namespace NewLineToken {
 }
 
 export interface KeywordToken extends Token {
-  readonly type: SyntaxKind.Keyword;
+  readonly type: Syntax.Keyword;
   readonly keywordType: KeywordType;
 }
 
@@ -217,7 +217,7 @@ export namespace KeywordToken {
     const token: KeywordToken = {
       start,
       length,
-      type: SyntaxKind.Keyword,
+      type: Syntax.Keyword,
       comments,
       keywordType,
     };
@@ -227,7 +227,7 @@ export namespace KeywordToken {
 }
 
 export interface StringToken extends Token {
-  readonly type: SyntaxKind.StringLiteral;
+  readonly type: Syntax.StringLiteral;
   readonly flags: StringTokenFlags;
 
   // Use StringTokenUtils to convert escaped value to unescaped value.
@@ -243,18 +243,11 @@ export interface StringToken extends Token {
 }
 
 export namespace StringToken {
-  export function create(
-    start: number,
-    length: number,
-    flags: StringTokenFlags,
-    escapedValue: string,
-    prefixLength: number,
-    comments: Comment[] | undefined
-  ) {
+  export function create(start: number, length: number, flags: StringTokenFlags, escapedValue: string, prefixLength: number, comments: Comment[] | undefined) {
     const token: StringToken = {
       start,
       length,
-      type: SyntaxKind.StringLiteral,
+      type: Syntax.StringLiteral,
       flags,
       escapedValue,
       prefixLength,
@@ -267,7 +260,7 @@ export namespace StringToken {
 }
 
 export interface NumberToken extends Token {
-  readonly type: SyntaxKind.Number;
+  readonly type: Syntax.Number;
   readonly value: number;
   readonly isInteger: boolean;
   readonly isImaginary: boolean;
@@ -278,7 +271,7 @@ export namespace NumberToken {
     const token: NumberToken = {
       start,
       length,
-      type: SyntaxKind.Number,
+      type: Syntax.Number,
       isInteger,
       isImaginary,
       value,
@@ -290,7 +283,7 @@ export namespace NumberToken {
 }
 
 export interface OperatorToken extends Token {
-  readonly type: SyntaxKind.Operator;
+  readonly type: Syntax.Operator;
   readonly operatorType: OperatorType;
 }
 
@@ -299,7 +292,7 @@ export namespace OperatorToken {
     const token: OperatorToken = {
       start,
       length,
-      type: SyntaxKind.Operator,
+      type: Syntax.Operator,
       operatorType,
       comments,
     };
@@ -309,7 +302,7 @@ export namespace OperatorToken {
 }
 
 export interface IdentifierToken extends Token {
-  readonly type: SyntaxKind.Identifier;
+  readonly type: Syntax.Identifier;
   readonly value: string;
 }
 
@@ -318,7 +311,7 @@ export namespace IdentifierToken {
     const token: IdentifierToken = {
       start,
       length,
-      type: SyntaxKind.Identifier,
+      type: Syntax.Identifier,
       value,
       comments,
     };

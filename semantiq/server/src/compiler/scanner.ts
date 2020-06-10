@@ -1,158 +1,158 @@
 namespace qnr {
-  const keywords: MapLike<KeywordSyntaxKind> = {
-    abstract: SyntaxKind.AbstractKeyword,
-    any: SyntaxKind.AnyKeyword,
-    as: SyntaxKind.AsKeyword,
-    asserts: SyntaxKind.AssertsKeyword,
-    bigint: SyntaxKind.BigIntKeyword,
-    boolean: SyntaxKind.BooleanKeyword,
-    break: SyntaxKind.BreakKeyword,
-    case: SyntaxKind.CaseKeyword,
-    catch: SyntaxKind.CatchKeyword,
-    class: SyntaxKind.ClassKeyword,
-    continue: SyntaxKind.ContinueKeyword,
-    const: SyntaxKind.ConstKeyword,
-    ['' + 'constructor']: SyntaxKind.ConstructorKeyword,
-    debugger: SyntaxKind.DebuggerKeyword,
-    declare: SyntaxKind.DeclareKeyword,
-    default: SyntaxKind.DefaultKeyword,
-    delete: SyntaxKind.DeleteKeyword,
-    do: SyntaxKind.DoKeyword,
-    else: SyntaxKind.ElseKeyword,
-    enum: SyntaxKind.EnumKeyword,
-    export: SyntaxKind.ExportKeyword,
-    extends: SyntaxKind.ExtendsKeyword,
-    false: SyntaxKind.FalseKeyword,
-    finally: SyntaxKind.FinallyKeyword,
-    for: SyntaxKind.ForKeyword,
-    from: SyntaxKind.FromKeyword,
-    function: SyntaxKind.FunctionKeyword,
-    get: SyntaxKind.GetKeyword,
-    if: SyntaxKind.IfKeyword,
-    implements: SyntaxKind.ImplementsKeyword,
-    import: SyntaxKind.ImportKeyword,
-    in: SyntaxKind.InKeyword,
-    infer: SyntaxKind.InferKeyword,
-    instanceof: SyntaxKind.InstanceOfKeyword,
-    interface: SyntaxKind.InterfaceKeyword,
-    is: SyntaxKind.IsKeyword,
-    keyof: SyntaxKind.KeyOfKeyword,
-    let: SyntaxKind.LetKeyword,
-    module: SyntaxKind.ModuleKeyword,
-    namespace: SyntaxKind.NamespaceKeyword,
-    never: SyntaxKind.NeverKeyword,
-    new: SyntaxKind.NewKeyword,
-    null: SyntaxKind.NullKeyword,
-    number: SyntaxKind.NumberKeyword,
-    object: SyntaxKind.ObjectKeyword,
-    package: SyntaxKind.PackageKeyword,
-    private: SyntaxKind.PrivateKeyword,
-    protected: SyntaxKind.ProtectedKeyword,
-    public: SyntaxKind.PublicKeyword,
-    readonly: SyntaxKind.ReadonlyKeyword,
-    require: SyntaxKind.RequireKeyword,
-    global: SyntaxKind.GlobalKeyword,
-    return: SyntaxKind.ReturnKeyword,
-    set: SyntaxKind.SetKeyword,
-    static: SyntaxKind.StaticKeyword,
-    string: SyntaxKind.StringKeyword,
-    super: SyntaxKind.SuperKeyword,
-    switch: SyntaxKind.SwitchKeyword,
-    symbol: SyntaxKind.SymbolKeyword,
-    this: SyntaxKind.ThisKeyword,
-    throw: SyntaxKind.ThrowKeyword,
-    true: SyntaxKind.TrueKeyword,
-    try: SyntaxKind.TryKeyword,
-    type: SyntaxKind.TypeKeyword,
-    typeof: SyntaxKind.TypeOfKeyword,
-    undefined: SyntaxKind.UndefinedKeyword,
-    unique: SyntaxKind.UniqueKeyword,
-    unknown: SyntaxKind.UnknownKeyword,
-    var: SyntaxKind.VarKeyword,
-    void: SyntaxKind.VoidKeyword,
-    while: SyntaxKind.WhileKeyword,
-    with: SyntaxKind.WithKeyword,
-    yield: SyntaxKind.YieldKeyword,
-    async: SyntaxKind.AsyncKeyword,
-    await: SyntaxKind.AwaitKeyword,
-    of: SyntaxKind.OfKeyword,
+  const keywords: MapLike<KeywordSyntax> = {
+    abstract: Syntax.AbstractKeyword,
+    any: Syntax.AnyKeyword,
+    as: Syntax.AsKeyword,
+    asserts: Syntax.AssertsKeyword,
+    bigint: Syntax.BigIntKeyword,
+    boolean: Syntax.BooleanKeyword,
+    break: Syntax.BreakKeyword,
+    case: Syntax.CaseKeyword,
+    catch: Syntax.CatchKeyword,
+    class: Syntax.ClassKeyword,
+    continue: Syntax.ContinueKeyword,
+    const: Syntax.ConstKeyword,
+    ['' + 'constructor']: Syntax.ConstructorKeyword,
+    debugger: Syntax.DebuggerKeyword,
+    declare: Syntax.DeclareKeyword,
+    default: Syntax.DefaultKeyword,
+    delete: Syntax.DeleteKeyword,
+    do: Syntax.DoKeyword,
+    else: Syntax.ElseKeyword,
+    enum: Syntax.EnumKeyword,
+    export: Syntax.ExportKeyword,
+    extends: Syntax.ExtendsKeyword,
+    false: Syntax.FalseKeyword,
+    finally: Syntax.FinallyKeyword,
+    for: Syntax.ForKeyword,
+    from: Syntax.FromKeyword,
+    function: Syntax.FunctionKeyword,
+    get: Syntax.GetKeyword,
+    if: Syntax.IfKeyword,
+    implements: Syntax.ImplementsKeyword,
+    import: Syntax.ImportKeyword,
+    in: Syntax.InKeyword,
+    infer: Syntax.InferKeyword,
+    instanceof: Syntax.InstanceOfKeyword,
+    interface: Syntax.InterfaceKeyword,
+    is: Syntax.IsKeyword,
+    keyof: Syntax.KeyOfKeyword,
+    let: Syntax.LetKeyword,
+    module: Syntax.ModuleKeyword,
+    namespace: Syntax.NamespaceKeyword,
+    never: Syntax.NeverKeyword,
+    new: Syntax.NewKeyword,
+    null: Syntax.NullKeyword,
+    number: Syntax.NumberKeyword,
+    object: Syntax.ObjectKeyword,
+    package: Syntax.PackageKeyword,
+    private: Syntax.PrivateKeyword,
+    protected: Syntax.ProtectedKeyword,
+    public: Syntax.PublicKeyword,
+    readonly: Syntax.ReadonlyKeyword,
+    require: Syntax.RequireKeyword,
+    global: Syntax.GlobalKeyword,
+    return: Syntax.ReturnKeyword,
+    set: Syntax.SetKeyword,
+    static: Syntax.StaticKeyword,
+    string: Syntax.StringKeyword,
+    super: Syntax.SuperKeyword,
+    switch: Syntax.SwitchKeyword,
+    symbol: Syntax.SymbolKeyword,
+    this: Syntax.ThisKeyword,
+    throw: Syntax.ThrowKeyword,
+    true: Syntax.TrueKeyword,
+    try: Syntax.TryKeyword,
+    type: Syntax.TypeKeyword,
+    typeof: Syntax.TypeOfKeyword,
+    undefined: Syntax.UndefinedKeyword,
+    unique: Syntax.UniqueKeyword,
+    unknown: Syntax.UnknownKeyword,
+    var: Syntax.VarKeyword,
+    void: Syntax.VoidKeyword,
+    while: Syntax.WhileKeyword,
+    with: Syntax.WithKeyword,
+    yield: Syntax.YieldKeyword,
+    async: Syntax.AsyncKeyword,
+    await: Syntax.AwaitKeyword,
+    of: Syntax.OfKeyword,
   };
   const strToKey = QMap.create(keywords);
   const strToTok = QMap.create<SyntaxKind>({
     ...keywords,
-    '{': SyntaxKind.OpenBraceToken,
-    '}': SyntaxKind.CloseBraceToken,
-    '(': SyntaxKind.OpenParenToken,
-    ')': SyntaxKind.CloseParenToken,
-    '[': SyntaxKind.OpenBracketToken,
-    ']': SyntaxKind.CloseBracketToken,
-    '.': SyntaxKind.DotToken,
-    '...': SyntaxKind.Dot3Token,
-    ';': SyntaxKind.SemicolonToken,
-    ',': SyntaxKind.CommaToken,
-    '<': SyntaxKind.LessThanToken,
-    '>': SyntaxKind.GreaterThanToken,
-    '<=': SyntaxKind.LessThanEqualsToken,
-    '>=': SyntaxKind.GreaterThanEqualsToken,
-    '==': SyntaxKind.Equals2Token,
-    '!=': SyntaxKind.ExclamationEqualsToken,
-    '===': SyntaxKind.Equals3Token,
-    '!==': SyntaxKind.ExclamationEquals2Token,
-    '=>': SyntaxKind.EqualsGreaterThanToken,
-    '+': SyntaxKind.PlusToken,
-    '-': SyntaxKind.MinusToken,
-    '**': SyntaxKind.Asterisk2Token,
-    '*': SyntaxKind.AsteriskToken,
-    '/': SyntaxKind.SlashToken,
-    '%': SyntaxKind.PercentToken,
-    '++': SyntaxKind.Plus2Token,
-    '--': SyntaxKind.Minus2Token,
-    '<<': SyntaxKind.LessThan2Token,
-    '</': SyntaxKind.LessThanSlashToken,
-    '>>': SyntaxKind.GreaterThan2Token,
-    '>>>': SyntaxKind.GreaterThan3Token,
-    '&': SyntaxKind.AmpersandToken,
-    '|': SyntaxKind.BarToken,
-    '^': SyntaxKind.CaretToken,
-    '!': SyntaxKind.ExclamationToken,
-    '~': SyntaxKind.TildeToken,
-    '&&': SyntaxKind.Ampersand2Token,
-    '||': SyntaxKind.Bar2Token,
-    '?': SyntaxKind.QuestionToken,
-    '??': SyntaxKind.Question2Token,
-    '?.': SyntaxKind.QuestionDotToken,
-    ':': SyntaxKind.ColonToken,
-    '=': SyntaxKind.EqualsToken,
-    '+=': SyntaxKind.PlusEqualsToken,
-    '-=': SyntaxKind.MinusEqualsToken,
-    '*=': SyntaxKind.AsteriskEqualsToken,
-    '**=': SyntaxKind.Asterisk2EqualsToken,
-    '/=': SyntaxKind.SlashEqualsToken,
-    '%=': SyntaxKind.PercentEqualsToken,
-    '<<=': SyntaxKind.LessThan2EqualsToken,
-    '>>=': SyntaxKind.GreaterThan2EqualsToken,
-    '>>>=': SyntaxKind.GreaterThan3EqualsToken,
-    '&=': SyntaxKind.AmpersandEqualsToken,
-    '|=': SyntaxKind.BarEqualsToken,
-    '^=': SyntaxKind.CaretEqualsToken,
-    '@': SyntaxKind.AtToken,
-    '`': SyntaxKind.BacktickToken,
+    '{': Syntax.OpenBraceToken,
+    '}': Syntax.CloseBraceToken,
+    '(': Syntax.OpenParenToken,
+    ')': Syntax.CloseParenToken,
+    '[': Syntax.OpenBracketToken,
+    ']': Syntax.CloseBracketToken,
+    '.': Syntax.DotToken,
+    '...': Syntax.Dot3Token,
+    ';': Syntax.SemicolonToken,
+    ',': Syntax.CommaToken,
+    '<': Syntax.LessThanToken,
+    '>': Syntax.GreaterThanToken,
+    '<=': Syntax.LessThanEqualsToken,
+    '>=': Syntax.GreaterThanEqualsToken,
+    '==': Syntax.Equals2Token,
+    '!=': Syntax.ExclamationEqualsToken,
+    '===': Syntax.Equals3Token,
+    '!==': Syntax.ExclamationEquals2Token,
+    '=>': Syntax.EqualsGreaterThanToken,
+    '+': Syntax.PlusToken,
+    '-': Syntax.MinusToken,
+    '**': Syntax.Asterisk2Token,
+    '*': Syntax.AsteriskToken,
+    '/': Syntax.SlashToken,
+    '%': Syntax.PercentToken,
+    '++': Syntax.Plus2Token,
+    '--': Syntax.Minus2Token,
+    '<<': Syntax.LessThan2Token,
+    '</': Syntax.LessThanSlashToken,
+    '>>': Syntax.GreaterThan2Token,
+    '>>>': Syntax.GreaterThan3Token,
+    '&': Syntax.AmpersandToken,
+    '|': Syntax.BarToken,
+    '^': Syntax.CaretToken,
+    '!': Syntax.ExclamationToken,
+    '~': Syntax.TildeToken,
+    '&&': Syntax.Ampersand2Token,
+    '||': Syntax.Bar2Token,
+    '?': Syntax.QuestionToken,
+    '??': Syntax.Question2Token,
+    '?.': Syntax.QuestionDotToken,
+    ':': Syntax.ColonToken,
+    '=': Syntax.EqualsToken,
+    '+=': Syntax.PlusEqualsToken,
+    '-=': Syntax.MinusEqualsToken,
+    '*=': Syntax.AsteriskEqualsToken,
+    '**=': Syntax.Asterisk2EqualsToken,
+    '/=': Syntax.SlashEqualsToken,
+    '%=': Syntax.PercentEqualsToken,
+    '<<=': Syntax.LessThan2EqualsToken,
+    '>>=': Syntax.GreaterThan2EqualsToken,
+    '>>>=': Syntax.GreaterThan3EqualsToken,
+    '&=': Syntax.AmpersandEqualsToken,
+    '|=': Syntax.BarEqualsToken,
+    '^=': Syntax.CaretEqualsToken,
+    '@': Syntax.AtToken,
+    '`': Syntax.BacktickToken,
   });
 
   const tokStrings = strToTok.reverse();
 
   export namespace Token {
-    export function toString(t: SyntaxKind) {
+    export function toString(t: Syntax) {
       return tokStrings[t];
     }
     export function fromString(s: string) {
       return strToTok.get(s);
     }
-    export function identifierOrKeyword(t: SyntaxKind) {
-      return t >= SyntaxKind.Identifier;
+    export function identifierOrKeyword(t: Syntax) {
+      return t >= Syntax.Identifier;
     }
-    export function identifierOrKeywordOrGreaterThan(t: SyntaxKind) {
-      return t === SyntaxKind.GreaterThanToken || Token.identifierOrKeyword(t);
+    export function identifierOrKeywordOrGreaterThan(t: Syntax) {
+      return t === Syntax.GreaterThanToken || Token.identifierOrKeyword(t);
     }
   }
 
@@ -166,7 +166,7 @@ namespace qnr {
     getTextPos(): number;
     setTextPos(p: number): void;
     getStartPos(): number;
-    getToken(): SyntaxKind;
+    getToken(): Syntax;
     getTokenPos(): number;
     getTokenText(): string;
     getTokenValue(): string;
@@ -179,20 +179,20 @@ namespace qnr {
     isIdentifier(): boolean;
     isReservedWord(): boolean;
     isUnterminated(): boolean;
-    scan(): SyntaxKind;
-    scanJsDocToken(): JSDocSyntaxKind;
-    scanJsxAttributeValue(): SyntaxKind;
-    scanJsxIdentifier(): SyntaxKind;
-    scanJsxToken(): JsxTokenSyntaxKind;
+    scan(): Syntax;
+    scanJsDocToken(): JSDocSyntax;
+    scanJsxAttributeValue(): Syntax;
+    scanJsxIdentifier(): Syntax;
+    scanJsxToken(): JsxTokenSyntax;
     scanRange<T>(start: number, length: number, cb: () => T): T;
-    reScanGreaterToken(): SyntaxKind;
-    reScanJsxAttributeValue(): SyntaxKind;
-    reScanJsxToken(): JsxTokenSyntaxKind;
-    reScanLessToken(): SyntaxKind;
-    reScanQuestionToken(): SyntaxKind;
-    reScanSlashToken(): SyntaxKind;
-    reScanHeadOrNoSubstTemplate(): SyntaxKind;
-    reScanTemplateToken(tagged: boolean): SyntaxKind;
+    reScanGreaterToken(): Syntax;
+    reScanJsxAttributeValue(): Syntax;
+    reScanJsxToken(): JsxTokenSyntax;
+    reScanLessToken(): Syntax;
+    reScanQuestionToken(): Syntax;
+    reScanSlashToken(): Syntax;
+    reScanHeadOrNoSubstTemplate(): Syntax;
+    reScanTemplateToken(tagged: boolean): Syntax;
     tryScan<T>(cb: () => T): T;
     setInJSDocType(inType: boolean): void;
     lookAhead<T>(cb: () => T): T;
@@ -821,7 +821,7 @@ namespace qnr {
             const nextChar = text.charCodeAt(pos + 1);
             let hasTrailingNewLine = false;
             if (nextChar === Codes.slash || nextChar === Codes.asterisk) {
-              const kind = nextChar === Codes.slash ? SyntaxKind.SingleLineCommentTrivia : SyntaxKind.MultiLineCommentTrivia;
+              const kind = nextChar === Codes.slash ? Syntax.SingleLineCommentTrivia : Syntax.MultiLineCommentTrivia;
               const startPos = pos;
               pos += 2;
               if (nextChar === Codes.slash) {
@@ -933,7 +933,7 @@ namespace qnr {
       let pos: number; // Current position (end position of text of current token)
       let end: number; // end of text
       let text: string;
-      let token: SyntaxKind;
+      let token: Syntax;
       let tokPos: number; // Start position of text of current token
       let startPos: number; // Start position of whitespace before current token
       let tokValue: string;
@@ -967,8 +967,8 @@ namespace qnr {
         hasUnicodeEscape: () => (tokFlags & TokenFlags.UnicodeEscape) !== 0,
         hasExtendedEscape: () => (tokFlags & TokenFlags.ExtendedEscape) !== 0,
         hasPrecedingLineBreak: () => (tokFlags & TokenFlags.PrecedingLineBreak) !== 0,
-        isIdentifier: () => token === SyntaxKind.Identifier || token > SyntaxKind.LastReservedWord,
-        isReservedWord: () => token >= SyntaxKind.FirstReservedWord && token <= SyntaxKind.LastReservedWord,
+        isIdentifier: () => token === Syntax.Identifier || token > Syntax.LastReservedWord,
+        isReservedWord: () => token >= Syntax.FirstReservedWord && token <= Syntax.LastReservedWord,
         isUnterminated: () => (tokFlags & TokenFlags.Unterminated) !== 0,
         scan,
         scanRange,
@@ -1012,23 +1012,23 @@ namespace qnr {
         pos = p;
         startPos = p;
         tokPos = p;
-        token = SyntaxKind.Unknown;
+        token = Syntax.Unknown;
         tokValue = undefined!;
         tokFlags = TokenFlags.None;
       }
 
-      function scan(): SyntaxKind {
+      function scan(): Syntax {
         startPos = pos;
         tokFlags = TokenFlags.None;
         let asterisk = false;
         while (true) {
           tokPos = pos;
-          if (pos >= end) return (token = SyntaxKind.EndOfFileToken);
+          if (pos >= end) return (token = Syntax.EndOfFileToken);
           let c = text.codePointAt(pos)!;
           if (c === Codes.hash && pos === 0 && isShebangTrivia(text, pos)) {
             pos = scanShebangTrivia(text, pos);
             if (skipTrivia) continue;
-            else return (token = SyntaxKind.ShebangTrivia);
+            else return (token = Syntax.ShebangTrivia);
           }
           switch (c) {
             case Codes.lineFeed:
@@ -1040,7 +1040,7 @@ namespace qnr {
               } else {
                 if (c === Codes.carriageReturn && pos + 1 < end && text.charCodeAt(pos + 1) === Codes.lineFeed) pos += 2;
                 else pos++;
-                return (token = SyntaxKind.NewLineTrivia);
+                return (token = Syntax.NewLineTrivia);
               }
             case Codes.tab:
             case Codes.verticalTab:
@@ -1071,71 +1071,71 @@ namespace qnr {
                 while (pos < end && isWhiteSpaceSingleLine(text.charCodeAt(pos))) {
                   pos++;
                 }
-                return (token = SyntaxKind.WhitespaceTrivia);
+                return (token = Syntax.WhitespaceTrivia);
               }
             case Codes.exclamation:
               if (text.charCodeAt(pos + 1) === Codes.equals) {
-                if (text.charCodeAt(pos + 2) === Codes.equals) return (pos += 3), (token = SyntaxKind.ExclamationEquals2Token);
-                return (pos += 2), (token = SyntaxKind.ExclamationEqualsToken);
+                if (text.charCodeAt(pos + 2) === Codes.equals) return (pos += 3), (token = Syntax.ExclamationEquals2Token);
+                return (pos += 2), (token = Syntax.ExclamationEqualsToken);
               }
               pos++;
-              return (token = SyntaxKind.ExclamationToken);
+              return (token = Syntax.ExclamationToken);
             case Codes.doubleQuote:
             case Codes.singleQuote:
               tokValue = scanString();
-              return (token = SyntaxKind.StringLiteral);
+              return (token = Syntax.StringLiteral);
             case Codes.backtick:
               return (token = scanTemplateAndSetTokenValue(/* tagged */ false));
             case Codes.percent:
-              if (text.charCodeAt(pos + 1) === Codes.equals) return (pos += 2), (token = SyntaxKind.PercentEqualsToken);
+              if (text.charCodeAt(pos + 1) === Codes.equals) return (pos += 2), (token = Syntax.PercentEqualsToken);
               pos++;
-              return (token = SyntaxKind.PercentToken);
+              return (token = Syntax.PercentToken);
             case Codes.ampersand:
-              if (text.charCodeAt(pos + 1) === Codes.ampersand) return (pos += 2), (token = SyntaxKind.Ampersand2Token);
-              if (text.charCodeAt(pos + 1) === Codes.equals) return (pos += 2), (token = SyntaxKind.AmpersandEqualsToken);
+              if (text.charCodeAt(pos + 1) === Codes.ampersand) return (pos += 2), (token = Syntax.Ampersand2Token);
+              if (text.charCodeAt(pos + 1) === Codes.equals) return (pos += 2), (token = Syntax.AmpersandEqualsToken);
               pos++;
-              return (token = SyntaxKind.AmpersandToken);
+              return (token = Syntax.AmpersandToken);
             case Codes.openParen:
               pos++;
-              return (token = SyntaxKind.OpenParenToken);
+              return (token = Syntax.OpenParenToken);
             case Codes.closeParen:
               pos++;
-              return (token = SyntaxKind.CloseParenToken);
+              return (token = Syntax.CloseParenToken);
             case Codes.asterisk:
-              if (text.charCodeAt(pos + 1) === Codes.equals) return (pos += 2), (token = SyntaxKind.AsteriskEqualsToken);
+              if (text.charCodeAt(pos + 1) === Codes.equals) return (pos += 2), (token = Syntax.AsteriskEqualsToken);
               if (text.charCodeAt(pos + 1) === Codes.asterisk) {
-                if (text.charCodeAt(pos + 2) === Codes.equals) return (pos += 3), (token = SyntaxKind.Asterisk2EqualsToken);
-                return (pos += 2), (token = SyntaxKind.Asterisk2Token);
+                if (text.charCodeAt(pos + 2) === Codes.equals) return (pos += 3), (token = Syntax.Asterisk2EqualsToken);
+                return (pos += 2), (token = Syntax.Asterisk2Token);
               }
               pos++;
               if (inJSDocType && !asterisk && tokFlags & TokenFlags.PrecedingLineBreak) {
                 asterisk = true;
                 continue;
               }
-              return (token = SyntaxKind.AsteriskToken);
+              return (token = Syntax.AsteriskToken);
             case Codes.plus:
-              if (text.charCodeAt(pos + 1) === Codes.plus) return (pos += 2), (token = SyntaxKind.Plus2Token);
-              if (text.charCodeAt(pos + 1) === Codes.equals) return (pos += 2), (token = SyntaxKind.PlusEqualsToken);
+              if (text.charCodeAt(pos + 1) === Codes.plus) return (pos += 2), (token = Syntax.Plus2Token);
+              if (text.charCodeAt(pos + 1) === Codes.equals) return (pos += 2), (token = Syntax.PlusEqualsToken);
               pos++;
-              return (token = SyntaxKind.PlusToken);
+              return (token = Syntax.PlusToken);
             case Codes.comma:
               pos++;
-              return (token = SyntaxKind.CommaToken);
+              return (token = Syntax.CommaToken);
             case Codes.minus:
-              if (text.charCodeAt(pos + 1) === Codes.minus) return (pos += 2), (token = SyntaxKind.Minus2Token);
-              if (text.charCodeAt(pos + 1) === Codes.equals) return (pos += 2), (token = SyntaxKind.MinusEqualsToken);
+              if (text.charCodeAt(pos + 1) === Codes.minus) return (pos += 2), (token = Syntax.Minus2Token);
+              if (text.charCodeAt(pos + 1) === Codes.equals) return (pos += 2), (token = Syntax.MinusEqualsToken);
               pos++;
-              return (token = SyntaxKind.MinusToken);
+              return (token = Syntax.MinusToken);
             case Codes.dot:
               if (isDigit(text.charCodeAt(pos + 1))) {
                 tokValue = scanNumber().value;
-                return (token = SyntaxKind.NumericLiteral);
+                return (token = Syntax.NumericLiteral);
               }
               if (text.charCodeAt(pos + 1) === Codes.dot && text.charCodeAt(pos + 2) === Codes.dot) {
-                return (pos += 3), (token = SyntaxKind.Dot3Token);
+                return (pos += 3), (token = Syntax.Dot3Token);
               }
               pos++;
-              return (token = SyntaxKind.DotToken);
+              return (token = Syntax.DotToken);
             case Codes.slash:
               if (text.charCodeAt(pos + 1) === Codes.slash) {
                 pos += 2;
@@ -1145,7 +1145,7 @@ namespace qnr {
                 }
                 directives = appendIfDirective(directives, text.slice(tokPos, pos), directiveRegExSingleLine, tokPos);
                 if (skipTrivia) continue;
-                else return (token = SyntaxKind.SingleLineCommentTrivia);
+                else return (token = Syntax.SingleLineCommentTrivia);
               }
               if (text.charCodeAt(pos + 1) === Codes.asterisk) {
                 pos += 2;
@@ -1172,12 +1172,12 @@ namespace qnr {
                 if (skipTrivia) continue;
                 else {
                   if (!closed) tokFlags |= TokenFlags.Unterminated;
-                  return (token = SyntaxKind.MultiLineCommentTrivia);
+                  return (token = Syntax.MultiLineCommentTrivia);
                 }
               }
-              if (text.charCodeAt(pos + 1) === Codes.equals) return (pos += 2), (token = SyntaxKind.SlashEqualsToken);
+              if (text.charCodeAt(pos + 1) === Codes.equals) return (pos += 2), (token = Syntax.SlashEqualsToken);
               pos++;
-              return (token = SyntaxKind.SlashToken);
+              return (token = Syntax.SlashToken);
             case Codes._0:
               if (pos + 2 < end && (text.charCodeAt(pos + 1) === Codes.X || text.charCodeAt(pos + 1) === Codes.x)) {
                 pos += 2;
@@ -1213,7 +1213,7 @@ namespace qnr {
               if (pos + 1 < end && isOctalDigit(text.charCodeAt(pos + 1))) {
                 tokValue = '' + scanOctDigits();
                 tokFlags |= TokenFlags.Octal;
-                return (token = SyntaxKind.NumericLiteral);
+                return (token = Syntax.NumericLiteral);
               }
             // falls through
             case Codes._1:
@@ -1229,90 +1229,90 @@ namespace qnr {
               return token;
             case Codes.colon:
               pos++;
-              return (token = SyntaxKind.ColonToken);
+              return (token = Syntax.ColonToken);
             case Codes.semicolon:
               pos++;
-              return (token = SyntaxKind.SemicolonToken);
+              return (token = Syntax.SemicolonToken);
             case Codes.lessThan:
               if (isMarkerTrivia(text, pos)) {
                 pos = scanMarkerTrivia(text, pos, error);
                 if (skipTrivia) continue;
-                else return (token = SyntaxKind.ConflictMarkerTrivia);
+                else return (token = Syntax.ConflictMarkerTrivia);
               }
               if (text.charCodeAt(pos + 1) === Codes.lessThan) {
-                if (text.charCodeAt(pos + 2) === Codes.equals) return (pos += 3), (token = SyntaxKind.LessThan2EqualsToken);
-                return (pos += 2), (token = SyntaxKind.LessThan2Token);
+                if (text.charCodeAt(pos + 2) === Codes.equals) return (pos += 3), (token = Syntax.LessThan2EqualsToken);
+                return (pos += 2), (token = Syntax.LessThan2Token);
               }
-              if (text.charCodeAt(pos + 1) === Codes.equals) return (pos += 2), (token = SyntaxKind.LessThanEqualsToken);
+              if (text.charCodeAt(pos + 1) === Codes.equals) return (pos += 2), (token = Syntax.LessThanEqualsToken);
               if (lang === LanguageVariant.TX && text.charCodeAt(pos + 1) === Codes.slash && text.charCodeAt(pos + 2) !== Codes.asterisk) {
-                return (pos += 2), (token = SyntaxKind.LessThanSlashToken);
+                return (pos += 2), (token = Syntax.LessThanSlashToken);
               }
               pos++;
-              return (token = SyntaxKind.LessThanToken);
+              return (token = Syntax.LessThanToken);
             case Codes.equals:
               if (isMarkerTrivia(text, pos)) {
                 pos = scanMarkerTrivia(text, pos, error);
                 if (skipTrivia) continue;
-                else return (token = SyntaxKind.ConflictMarkerTrivia);
+                else return (token = Syntax.ConflictMarkerTrivia);
               }
               if (text.charCodeAt(pos + 1) === Codes.equals) {
-                if (text.charCodeAt(pos + 2) === Codes.equals) return (pos += 3), (token = SyntaxKind.Equals3Token);
-                return (pos += 2), (token = SyntaxKind.Equals2Token);
+                if (text.charCodeAt(pos + 2) === Codes.equals) return (pos += 3), (token = Syntax.Equals3Token);
+                return (pos += 2), (token = Syntax.Equals2Token);
               }
-              if (text.charCodeAt(pos + 1) === Codes.greaterThan) return (pos += 2), (token = SyntaxKind.EqualsGreaterThanToken);
+              if (text.charCodeAt(pos + 1) === Codes.greaterThan) return (pos += 2), (token = Syntax.EqualsGreaterThanToken);
               pos++;
-              return (token = SyntaxKind.EqualsToken);
+              return (token = Syntax.EqualsToken);
             case Codes.greaterThan:
               if (isMarkerTrivia(text, pos)) {
                 pos = scanMarkerTrivia(text, pos, error);
                 if (skipTrivia) continue;
-                else return (token = SyntaxKind.ConflictMarkerTrivia);
+                else return (token = Syntax.ConflictMarkerTrivia);
               }
               pos++;
-              return (token = SyntaxKind.GreaterThanToken);
+              return (token = Syntax.GreaterThanToken);
             case Codes.question:
               pos++;
               if (text.charCodeAt(pos) === Codes.dot && !isDigit(text.charCodeAt(pos + 1))) {
                 pos++;
-                return (token = SyntaxKind.QuestionDotToken);
+                return (token = Syntax.QuestionDotToken);
               }
               if (text.charCodeAt(pos) === Codes.question) {
                 pos++;
-                return (token = SyntaxKind.Question2Token);
+                return (token = Syntax.Question2Token);
               }
-              return (token = SyntaxKind.QuestionToken);
+              return (token = Syntax.QuestionToken);
             case Codes.openBracket:
               pos++;
-              return (token = SyntaxKind.OpenBracketToken);
+              return (token = Syntax.OpenBracketToken);
             case Codes.closeBracket:
               pos++;
-              return (token = SyntaxKind.CloseBracketToken);
+              return (token = Syntax.CloseBracketToken);
             case Codes.caret:
-              if (text.charCodeAt(pos + 1) === Codes.equals) return (pos += 2), (token = SyntaxKind.CaretEqualsToken);
+              if (text.charCodeAt(pos + 1) === Codes.equals) return (pos += 2), (token = Syntax.CaretEqualsToken);
               pos++;
-              return (token = SyntaxKind.CaretToken);
+              return (token = Syntax.CaretToken);
             case Codes.openBrace:
               pos++;
-              return (token = SyntaxKind.OpenBraceToken);
+              return (token = Syntax.OpenBraceToken);
             case Codes.bar:
               if (isMarkerTrivia(text, pos)) {
                 pos = scanMarkerTrivia(text, pos, error);
                 if (skipTrivia) continue;
-                else return (token = SyntaxKind.ConflictMarkerTrivia);
+                else return (token = Syntax.ConflictMarkerTrivia);
               }
-              if (text.charCodeAt(pos + 1) === Codes.bar) return (pos += 2), (token = SyntaxKind.Bar2Token);
-              if (text.charCodeAt(pos + 1) === Codes.equals) return (pos += 2), (token = SyntaxKind.BarEqualsToken);
+              if (text.charCodeAt(pos + 1) === Codes.bar) return (pos += 2), (token = Syntax.Bar2Token);
+              if (text.charCodeAt(pos + 1) === Codes.equals) return (pos += 2), (token = Syntax.BarEqualsToken);
               pos++;
-              return (token = SyntaxKind.BarToken);
+              return (token = Syntax.BarToken);
             case Codes.closeBrace:
               pos++;
-              return (token = SyntaxKind.CloseBraceToken);
+              return (token = Syntax.CloseBraceToken);
             case Codes.tilde:
               pos++;
-              return (token = SyntaxKind.TildeToken);
+              return (token = Syntax.TildeToken);
             case Codes.at:
               pos++;
-              return (token = SyntaxKind.AtToken);
+              return (token = Syntax.AtToken);
             case Codes.backslash:
               const c2 = peekExtEscape();
               if (c2 >= 0 && isIdentifierStart(c2)) {
@@ -1330,12 +1330,12 @@ namespace qnr {
               }
               error(Diagnostics.Invalid_character);
               pos++;
-              return (token = SyntaxKind.Unknown);
+              return (token = Syntax.Unknown);
             case Codes.hash:
               if (pos !== 0 && text[pos + 1] === '!') {
                 error(Diagnostics.can_only_be_used_at_the_start_of_a_file);
                 pos++;
-                return (token = SyntaxKind.Unknown);
+                return (token = Syntax.Unknown);
               }
               pos++;
               if (isIdentifierStart((c = text.charCodeAt(pos)))) {
@@ -1347,7 +1347,7 @@ namespace qnr {
                 tokValue = '#';
                 error(Diagnostics.Invalid_character);
               }
-              return (token = SyntaxKind.PrivateIdentifier);
+              return (token = Syntax.PrivateIdentifier);
             default:
               if (isIdentifierStart(c)) {
                 pos += charSize(c);
@@ -1365,7 +1365,7 @@ namespace qnr {
               }
               error(Diagnostics.Invalid_character);
               pos += charSize(c);
-              return (token = SyntaxKind.Unknown);
+              return (token = Syntax.Unknown);
           }
         }
       }
@@ -1392,35 +1392,35 @@ namespace qnr {
         return r;
       }
 
-      function reScanGreaterToken(): SyntaxKind {
-        if (token === SyntaxKind.GreaterThanToken) {
+      function reScanGreaterToken(): Syntax {
+        if (token === Syntax.GreaterThanToken) {
           if (text.charCodeAt(pos) === Codes.greaterThan) {
             if (text.charCodeAt(pos + 1) === Codes.greaterThan) {
-              if (text.charCodeAt(pos + 2) === Codes.equals) return (pos += 3), (token = SyntaxKind.GreaterThan3EqualsToken);
-              return (pos += 2), (token = SyntaxKind.GreaterThan3Token);
+              if (text.charCodeAt(pos + 2) === Codes.equals) return (pos += 3), (token = Syntax.GreaterThan3EqualsToken);
+              return (pos += 2), (token = Syntax.GreaterThan3Token);
             }
-            if (text.charCodeAt(pos + 1) === Codes.equals) return (pos += 2), (token = SyntaxKind.GreaterThan2EqualsToken);
+            if (text.charCodeAt(pos + 1) === Codes.equals) return (pos += 2), (token = Syntax.GreaterThan2EqualsToken);
             pos++;
-            return (token = SyntaxKind.GreaterThan2Token);
+            return (token = Syntax.GreaterThan2Token);
           }
           if (text.charCodeAt(pos) === Codes.equals) {
             pos++;
-            return (token = SyntaxKind.GreaterThanEqualsToken);
+            return (token = Syntax.GreaterThanEqualsToken);
           }
         }
         return token;
       }
 
-      function reScanLessToken(): SyntaxKind {
-        if (token === SyntaxKind.LessThan2Token) {
+      function reScanLessToken(): Syntax {
+        if (token === Syntax.LessThan2Token) {
           pos = tokPos + 1;
-          return (token = SyntaxKind.LessThanToken);
+          return (token = Syntax.LessThanToken);
         }
         return token;
       }
 
-      function reScanSlashToken(): SyntaxKind {
-        if (token === SyntaxKind.SlashToken || token === SyntaxKind.SlashEqualsToken) {
+      function reScanSlashToken(): Syntax {
+        if (token === Syntax.SlashToken || token === Syntax.SlashEqualsToken) {
           let p = tokPos + 1;
           let esc = false;
           let cls = false;
@@ -1450,34 +1450,34 @@ namespace qnr {
           }
           pos = p;
           tokValue = text.substring(tokPos, pos);
-          token = SyntaxKind.RegexLiteral;
+          token = Syntax.RegexLiteral;
         }
         return token;
       }
 
-      function reScanQuestionToken(): SyntaxKind {
-        assert(token === SyntaxKind.Question2Token, "'reScanQuestionToken' should only be called on a '??'");
+      function reScanQuestionToken(): Syntax {
+        assert(token === Syntax.Question2Token, "'reScanQuestionToken' should only be called on a '??'");
         pos = tokPos + 1;
-        return (token = SyntaxKind.QuestionToken);
+        return (token = Syntax.QuestionToken);
       }
 
-      function reScanTemplateToken(tagged: boolean): SyntaxKind {
-        assert(token === SyntaxKind.CloseBraceToken, "'reScanTemplateToken' should only be called on a '}'");
+      function reScanTemplateToken(tagged: boolean): Syntax {
+        assert(token === Syntax.CloseBraceToken, "'reScanTemplateToken' should only be called on a '}'");
         pos = tokPos;
         return (token = scanTemplateAndSetTokenValue(tagged));
       }
 
-      function reScanHeadOrNoSubstTemplate(): SyntaxKind {
+      function reScanHeadOrNoSubstTemplate(): Syntax {
         pos = tokPos;
         return (token = scanTemplateAndSetTokenValue(true));
       }
 
-      function reScanJsxToken(): JsxTokenSyntaxKind {
+      function reScanJsxToken(): JsxTokenSyntax {
         pos = tokPos = startPos;
         return (token = scanJsxToken());
       }
 
-      function reScanJsxAttributeValue(): SyntaxKind {
+      function reScanJsxAttributeValue(): Syntax {
         pos = tokPos = startPos;
         return scanJsxAttributeValue();
       }
@@ -1512,7 +1512,7 @@ namespace qnr {
         return r;
       }
 
-      function scanIdentifier(): SyntaxKind.Identifier | KeywordSyntaxKind {
+      function scanIdentifier(): Syntax.Identifier | KeywordSyntax {
         const l = tokValue.length;
         if (l >= 2 && l <= 11) {
           const c = tokValue.charCodeAt(0);
@@ -1521,7 +1521,7 @@ namespace qnr {
             if (w !== undefined) return (token = w);
           }
         }
-        return (token = SyntaxKind.Identifier);
+        return (token = Syntax.Identifier);
       }
 
       function peekUniEscape(): number {
@@ -1577,7 +1577,7 @@ namespace qnr {
         return r;
       }
 
-      function scanNumber(): { type: SyntaxKind; value: string } {
+      function scanNumber(): { type: Syntax; value: string } {
         const s = pos;
         function scanFragment() {
           let r = '';
@@ -1648,7 +1648,7 @@ namespace qnr {
         if (decimal !== undefined || tokFlags & TokenFlags.Scientific) {
           checkForIdentifier(decimal === undefined && !!(tokFlags & TokenFlags.Scientific));
           return {
-            type: SyntaxKind.NumericLiteral,
+            type: Syntax.NumericLiteral,
             value: '' + +r,
           };
         } else {
@@ -1659,12 +1659,12 @@ namespace qnr {
         }
       }
 
-      function parseNumber(): SyntaxKind {
+      function parseNumber(): Syntax {
         if (text.charCodeAt(pos) === Codes.n) {
           tokValue += 'n';
           if (tokFlags & TokenFlags.BinaryOrOctalSpecifier) tokValue = parsePseudoBigInt(tokValue) + 'n';
           pos++;
-          return SyntaxKind.BigIntLiteral;
+          return Syntax.BigIntLiteral;
         } else {
           const v =
             tokFlags & TokenFlags.BinarySpecifier
@@ -1673,7 +1673,7 @@ namespace qnr {
               ? parseInt(tokValue.slice(2), 8) // skip "0o"
               : +tokValue;
           tokValue = '' + v;
-          return SyntaxKind.NumericLiteral;
+          return Syntax.NumericLiteral;
         }
       }
 
@@ -1899,18 +1899,18 @@ namespace qnr {
         return r;
       }
 
-      function scanTemplateAndSetTokenValue(tagged: boolean): SyntaxKind {
+      function scanTemplateAndSetTokenValue(tagged: boolean): Syntax {
         const backtick = text.charCodeAt(pos) === Codes.backtick;
         pos++;
         let s = pos;
         let v = '';
-        let r: SyntaxKind;
+        let r: Syntax;
         while (true) {
           if (pos >= end) {
             v += text.substring(s, pos);
             tokFlags |= TokenFlags.Unterminated;
             error(Diagnostics.Unterminated_template_literal);
-            r = backtick ? SyntaxKind.NoSubstitutionLiteral : SyntaxKind.TemplateTail;
+            r = backtick ? Syntax.NoSubstitutionLiteral : Syntax.TemplateTail;
             break;
           }
           const c = text.charCodeAt(pos);
@@ -1918,14 +1918,14 @@ namespace qnr {
           if (c === Codes.backtick) {
             v += text.substring(s, pos);
             pos++;
-            r = backtick ? SyntaxKind.NoSubstitutionLiteral : SyntaxKind.TemplateTail;
+            r = backtick ? Syntax.NoSubstitutionLiteral : Syntax.TemplateTail;
             break;
           }
           // '${'
           if (c === Codes.$ && pos + 1 < end && text.charCodeAt(pos + 1) === Codes.openBrace) {
             v += text.substring(s, pos);
             pos += 2;
-            r = backtick ? SyntaxKind.TemplateHead : SyntaxKind.TemplateMiddle;
+            r = backtick ? Syntax.TemplateHead : Syntax.TemplateMiddle;
             break;
           }
           // Escape character
@@ -1969,21 +1969,21 @@ namespace qnr {
         return;
       }
 
-      function scanJsxToken(): JsxTokenSyntaxKind {
+      function scanJsxToken(): JsxTokenSyntax {
         startPos = tokPos = pos;
-        if (pos >= end) return (token = SyntaxKind.EndOfFileToken);
+        if (pos >= end) return (token = Syntax.EndOfFileToken);
         let c = text.charCodeAt(pos);
         if (c === Codes.lessThan) {
           if (text.charCodeAt(pos + 1) === Codes.slash) {
             pos += 2;
-            return (token = SyntaxKind.LessThanSlashToken);
+            return (token = Syntax.LessThanSlashToken);
           }
           pos++;
-          return (token = SyntaxKind.LessThanToken);
+          return (token = Syntax.LessThanToken);
         }
         if (c === Codes.openBrace) {
           pos++;
-          return (token = SyntaxKind.OpenBraceToken);
+          return (token = Syntax.OpenBraceToken);
         }
         let first = 0;
         let last = -1;
@@ -1994,7 +1994,7 @@ namespace qnr {
           if (c === Codes.lessThan) {
             if (isMarkerTrivia(text, pos)) {
               pos = scanMarkerTrivia(text, pos, error);
-              return (token = SyntaxKind.ConflictMarkerTrivia);
+              return (token = Syntax.ConflictMarkerTrivia);
             }
             break;
           }
@@ -2007,10 +2007,10 @@ namespace qnr {
         }
         const p = last === -1 ? pos : last;
         tokValue = text.substring(startPos, p);
-        return first === -1 ? SyntaxKind.JsxTextAllWhiteSpaces : SyntaxKind.JsxText;
+        return first === -1 ? Syntax.JsxTextAllWhiteSpaces : Syntax.JsxText;
       }
 
-      function scanJsxIdentifier(): SyntaxKind {
+      function scanJsxIdentifier(): Syntax {
         if (Token.identifierOrKeyword(token)) {
           while (pos < end) {
             const c = text.charCodeAt(pos);
@@ -2027,22 +2027,22 @@ namespace qnr {
         return token;
       }
 
-      function scanJsxAttributeValue(): SyntaxKind {
+      function scanJsxAttributeValue(): Syntax {
         startPos = pos;
         switch (text.charCodeAt(pos)) {
           case Codes.doubleQuote:
           case Codes.singleQuote:
             tokValue = scanString(true);
-            return (token = SyntaxKind.StringLiteral);
+            return (token = Syntax.StringLiteral);
           default:
             return scan();
         }
       }
 
-      function scanJsDocToken(): JSDocSyntaxKind {
+      function scanJsDocToken(): JSDocSyntax {
         startPos = tokPos = pos;
         tokFlags = TokenFlags.None;
-        if (pos >= end) return (token = SyntaxKind.EndOfFileToken);
+        if (pos >= end) return (token = Syntax.EndOfFileToken);
         const c = text.codePointAt(pos)!;
         pos += charSize(c);
         switch (c) {
@@ -2053,35 +2053,35 @@ namespace qnr {
             while (pos < end && isWhiteSpaceSingleLine(text.charCodeAt(pos))) {
               pos++;
             }
-            return (token = SyntaxKind.WhitespaceTrivia);
+            return (token = Syntax.WhitespaceTrivia);
           case Codes.at:
-            return (token = SyntaxKind.AtToken);
+            return (token = Syntax.AtToken);
           case Codes.lineFeed:
           case Codes.carriageReturn:
             tokFlags |= TokenFlags.PrecedingLineBreak;
-            return (token = SyntaxKind.NewLineTrivia);
+            return (token = Syntax.NewLineTrivia);
           case Codes.asterisk:
-            return (token = SyntaxKind.AsteriskToken);
+            return (token = Syntax.AsteriskToken);
           case Codes.openBrace:
-            return (token = SyntaxKind.OpenBraceToken);
+            return (token = Syntax.OpenBraceToken);
           case Codes.closeBrace:
-            return (token = SyntaxKind.CloseBraceToken);
+            return (token = Syntax.CloseBraceToken);
           case Codes.openBracket:
-            return (token = SyntaxKind.OpenBracketToken);
+            return (token = Syntax.OpenBracketToken);
           case Codes.closeBracket:
-            return (token = SyntaxKind.CloseBracketToken);
+            return (token = Syntax.CloseBracketToken);
           case Codes.lessThan:
-            return (token = SyntaxKind.LessThanToken);
+            return (token = Syntax.LessThanToken);
           case Codes.greaterThan:
-            return (token = SyntaxKind.GreaterThanToken);
+            return (token = Syntax.GreaterThanToken);
           case Codes.equals:
-            return (token = SyntaxKind.EqualsToken);
+            return (token = Syntax.EqualsToken);
           case Codes.comma:
-            return (token = SyntaxKind.CommaToken);
+            return (token = Syntax.CommaToken);
           case Codes.dot:
-            return (token = SyntaxKind.DotToken);
+            return (token = Syntax.DotToken);
           case Codes.backtick:
-            return (token = SyntaxKind.BacktickToken);
+            return (token = Syntax.BacktickToken);
           case Codes.backslash:
             pos--;
             const c2 = peekExtEscape();
@@ -2099,7 +2099,7 @@ namespace qnr {
               return (token = scanIdentifier());
             }
             pos++;
-            return (token = SyntaxKind.Unknown);
+            return (token = Syntax.Unknown);
         }
         if (isIdentifierStart(c)) {
           let c2 = c;
@@ -2108,7 +2108,7 @@ namespace qnr {
           if (c2 === Codes.backslash) tokValue += scanIdentifierParts();
           return (token = scanIdentifier());
         }
-        return (token = SyntaxKind.Unknown);
+        return (token = Syntax.Unknown);
       }
     }
 
@@ -2118,35 +2118,35 @@ namespace qnr {
     export function process(k: TemplateLiteralToken['kind'], s: string) {
       if (!raw) raw = Scanner.create();
       switch (k) {
-        case SyntaxKind.NoSubstitutionLiteral:
+        case Syntax.NoSubstitutionLiteral:
           raw.setText('`' + s + '`');
           break;
-        case SyntaxKind.TemplateHead:
+        case Syntax.TemplateHead:
           raw.setText('`' + s + '${');
           break;
-        case SyntaxKind.TemplateMiddle:
+        case Syntax.TemplateMiddle:
           raw.setText('}' + s + '${');
           break;
-        case SyntaxKind.TemplateTail:
+        case Syntax.TemplateTail:
           raw.setText('}' + s + '`');
           break;
       }
       let t = raw.scan();
-      if (t === SyntaxKind.CloseBracketToken) t = raw.reScanTemplateToken(false);
+      if (t === Syntax.CloseBracketToken) t = raw.reScanTemplateToken(false);
       if (raw.isUnterminated()) {
         raw.setText();
         return sentinel;
       }
       let v: string | undefined;
       switch (t) {
-        case SyntaxKind.NoSubstitutionLiteral:
-        case SyntaxKind.TemplateHead:
-        case SyntaxKind.TemplateMiddle:
-        case SyntaxKind.TemplateTail:
+        case Syntax.NoSubstitutionLiteral:
+        case Syntax.TemplateHead:
+        case Syntax.TemplateMiddle:
+        case Syntax.TemplateTail:
           v = raw.getTokenValue();
           break;
       }
-      if (raw.scan() !== SyntaxKind.EndOfFileToken) {
+      if (raw.scan() !== Syntax.EndOfFileToken) {
         raw.setText();
         return sentinel;
       }

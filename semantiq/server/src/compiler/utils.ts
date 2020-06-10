@@ -109,7 +109,7 @@ namespace qnr {
     export function movePastModifiers(n: Node): TextRange {
       return n.modifiers && n.modifiers.length > 0 ? n.movePos(n.modifiers.end) : movePastDecorators(n);
     }
-    export function createTokenRange(pos: number, token: SyntaxKind): TextRange {
+    export function createTokenRange(pos: number, token: Syntax): TextRange {
       return new TextRange(pos, pos + Token.toString(token)!.length);
     }
     export function ofNode(n: Node): TextRange {
