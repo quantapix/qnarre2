@@ -4792,7 +4792,7 @@ namespace qnr {
   function SourceMapSource(this: SourceMapSource, fileName: string, text: string, skipTrivia?: (pos: number) => number) {
     this.fileName = fileName;
     this.text = text;
-    this.Scanner.skipTrivia = Scanner.skipTrivia || ((pos) => pos);
+    this.skipTrivia = skipTrivia || ((pos) => pos);
   }
 
   // eslint-disable-next-line prefer-const

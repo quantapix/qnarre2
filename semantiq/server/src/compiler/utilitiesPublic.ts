@@ -1082,14 +1082,6 @@ namespace qnr {
     return n.kind === SyntaxKind.SyntaxList;
   }
 
-  export function isNode(n: Node) {
-    return isNodeKind(n.kind);
-  }
-
-  export function isNodeKind(k: SyntaxKind) {
-    return k >= SyntaxKind.FirstNode;
-  }
-
   export function isToken(n: Node) {
     return n.kind >= SyntaxKind.FirstToken && n.kind <= SyntaxKind.LastToken;
   }
