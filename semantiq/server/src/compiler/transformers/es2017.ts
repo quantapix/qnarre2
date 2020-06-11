@@ -182,12 +182,12 @@ namespace qnr {
 
       // names declared in a catch variable are block scoped
       let catchClauseUnshadowedNames: UnderscoreEscapedMap<true> | undefined;
-      catchClauseNames.forEach((_, escapedName) => {
-        if (enclosingFunctionParameterNames.has(escapedName)) {
+      catchClauseNames.forEach((_, escName) => {
+        if (enclosingFunctionParameterNames.has(escName)) {
           if (!catchClauseUnshadowedNames) {
             catchClauseUnshadowedNames = cloneMap(enclosingFunctionParameterNames);
           }
-          catchClauseUnshadowedNames.delete(escapedName);
+          catchClauseUnshadowedNames.delete(escName);
         }
       });
 

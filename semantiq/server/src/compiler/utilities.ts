@@ -2751,7 +2751,7 @@ namespace qnr {
   }
 
   export function getPropertyNameForUniqueESSymbol(symbol: Symbol): __String {
-    return `__@${getSymbolId(symbol)}@${symbol.escapedName}` as __String;
+    return `__@${getSymbolId(symbol)}@${symbol.escName}` as __String;
   }
 
   export function getPropertyNameForKnownSymbolName(symbolName: string): __String {
@@ -2763,7 +2763,7 @@ namespace qnr {
   }
 
   export function isKnownSymbol(symbol: Symbol): boolean {
-    return startsWith(symbol.escapedName as string, '__@');
+    return startsWith(symbol.escName as string, '__@');
   }
 
   /**

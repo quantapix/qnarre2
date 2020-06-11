@@ -3541,7 +3541,7 @@ namespace qnr {
 
   export interface Symbol {
     flags: SymbolFlags; // Symbol flags
-    escapedName: __String; // Name of symbol
+    escName: __String; // Name of symbol
     declarations: Declaration[]; // Declarations associated with this symbol
     valueDeclaration: Declaration; // First value declaration of the symbol
     members?: SymbolTable; // Class, interface or object literal instance members
@@ -3675,7 +3675,7 @@ namespace qnr {
       super();
       if (ss) {
         for (const s of ss) {
-          this.set(s.escapedName, s);
+          this.set(s.escName, s);
         }
       }
     }
@@ -3895,7 +3895,7 @@ namespace qnr {
   // Unique symbol types (TypeFlags.UniqueESSymbol)
   export interface UniqueESSymbolType extends Type {
     symbol: Symbol;
-    escapedName: __String;
+    escName: __String;
   }
 
   export interface StringLiteralType extends LiteralType {

@@ -551,62 +551,6 @@ namespace qnr {
       }
     }
 
-    function createChildren(n: Node, s: SourceFileLike | undefined): Node[] {
-      if (!isNodeKind(n.kind)) return emptyArray;
-      const cs: Node[] = [];
-      if (isJSDocCommentContainingNode(n)) {
-        n.forEachChild((c) => {
-          cs.push(c);
-        });
-        return cs;
-      }
-      scanner.setText((s || n.getSourceFile()).text);
-      let pos = n.pos;
-      const processNode = (c: Node) => {
-        addSyntheticNodes(cs, pos, c.pos, n);
-        cs.push(c);
-        pos = c.end;
-      };
-      const processNodes = (ns: NodeArray<Node>) => {
-        addSyntheticNodes(cs, pos, ns.pos, n);
-        cs.push(createSyntaxList(ns, n));
-        pos = ns.end;
-      };
-      forEach((n as JSDocContainer).jsDoc, processNode);
-      pos = n.pos;
-      n.forEachChild(processNode, processNodes);
-      addSyntheticNodes(cs, pos, n.end, n);
-      scanner.setText(undefined);
-      return cs;
-    }
-
-    function addSyntheticNodes(ns: Push<Node>, pos: number, end: number, parent: Node): void {
-      scanner.setTextPos(pos);
-      while (pos < end) {
-        const token = scanner.scan();
-        const textPos = scanner.getTextPos();
-        if (textPos <= end) {
-          if (token === Syntax.Identifier) fail(`Did not expect ${Debug.formatSyntaxKind(parent.kind)} to have an Identifier in its trivia`);
-          ns.push(createNode(token, pos, textPos, parent));
-        }
-        pos = textPos;
-        if (token === Syntax.EndOfFileToken) break;
-      }
-    }
-
-    function createSyntaxList(ns: NodeArray<Node>, parent: Node): Node {
-      const list = (createNode(Syntax.SyntaxList, ns.pos, ns.end, parent) as any) as SyntaxList;
-      list._children = [];
-      let pos = ns.pos;
-      for (const n of ns) {
-        addSyntheticNodes(list._children, pos, n.pos, parent);
-        list._children.push(n);
-        pos = n.end;
-      }
-      addSyntheticNodes(list._children, pos, ns.end, parent);
-      return list;
-    }
-
     class TokenOrIdentifierObj implements Node {
       id = 0;
       kind!: Syntax;
@@ -682,68 +626,6 @@ namespace qnr {
       }
     }
 
-    export class SymbolObj implements Symbol {
-      declarations!: Declaration[];
-      valueDeclaration!: Declaration;
-      documentationComment?: SymbolDisplayPart[];
-      contextualGetAccessorDocumentationComment?: SymbolDisplayPart[];
-      contextualSetAccessorDocumentationComment?: SymbolDisplayPart[];
-      tags?: JSDocTagInfo[];
-
-      constructor(public flags: SymbolFlags, public escapedName: __String) {}
-
-      getFlags(): SymbolFlags {
-        return this.flags;
-      }
-      get name(): string {
-        return symbolName(this);
-      }
-      getEscapedName(): __String {
-        return this.escapedName;
-      }
-      getName(): string {
-        return this.name;
-      }
-      getDeclarations(): Declaration[] | undefined {
-        return this.declarations;
-      }
-      getDocumentationComment(checker: TypeChecker | undefined): SymbolDisplayPart[] {
-        if (!this.documentationComment) {
-          this.documentationComment = emptyArray; // Set temporarily to avoid an infinite loop finding inherited docs
-
-          if (!this.declarations && ((this as Symbol) as TransientSymbol).target && (((this as Symbol) as TransientSymbol).target as TransientSymbol).tupleLabelDeclaration) {
-            const labelDecl = (((this as Symbol) as TransientSymbol).target as TransientSymbol).tupleLabelDeclaration!;
-            this.documentationComment = getDocumentationComment([labelDecl], checker);
-          } else {
-            this.documentationComment = getDocumentationComment(this.declarations, checker);
-          }
-        }
-        return this.documentationComment;
-      }
-      getContextualDocumentationComment(context: Node | undefined, checker: TypeChecker | undefined): SymbolDisplayPart[] {
-        switch (context?.kind) {
-          case Syntax.GetAccessor:
-            if (!this.contextualGetAccessorDocumentationComment) {
-              this.contextualGetAccessorDocumentationComment = emptyArray;
-              this.contextualGetAccessorDocumentationComment = getDocumentationComment(filter(this.declarations, isGetAccessor), checker);
-            }
-            return this.contextualGetAccessorDocumentationComment;
-          case Syntax.SetAccessor:
-            if (!this.contextualSetAccessorDocumentationComment) {
-              this.contextualSetAccessorDocumentationComment = emptyArray;
-              this.contextualSetAccessorDocumentationComment = getDocumentationComment(filter(this.declarations, isSetAccessor), checker);
-            }
-            return this.contextualSetAccessorDocumentationComment;
-          default:
-            return this.getDocumentationComment(checker);
-        }
-      }
-      getJsDocTags(): JSDocTagInfo[] {
-        if (this.tags === undefined) this.tags = JsDoc.getJsDocTagsFromDeclarations(this.declarations);
-        return this.tags;
-      }
-    }
-
     export class TokenObj<TKind extends Syntax> extends TokenOrIdentifierObj implements Token<TKind> {
       constructor(public kind: TKind, pos: number, end: number) {
         super(pos, end);
@@ -786,10 +668,74 @@ namespace qnr {
     }
     PrivateIdentifierObj.prototype.kind = Syntax.PrivateIdentifier;
 
+    interface SymbolDisplayPart {}
+    interface JSDocTagInfo {}
+
+    export class SymbolObj implements Symbol {
+      declarations!: Declaration[];
+      valueDeclaration!: Declaration;
+      docComment?: SymbolDisplayPart[];
+      getComment?: SymbolDisplayPart[];
+      setComment?: SymbolDisplayPart[];
+      tags?: JSDocTagInfo[];
+
+      constructor(public flags: SymbolFlags, public escName: __String) {}
+
+      get name(): string {
+        return symbolName(this);
+      }
+      getName(): string {
+        return this.name;
+      }
+      getEscName(): __String {
+        return this.escName;
+      }
+      getFlags(): SymbolFlags {
+        return this.flags;
+      }
+      getDeclarations(): Declaration[] | undefined {
+        return this.declarations;
+      }
+      getDocComment(checker: TypeChecker | undefined): SymbolDisplayPart[] {
+        if (!this.docComment) {
+          this.docComment = emptyArray;
+          if (!this.declarations && ((this as Symbol) as TransientSymbol).target && (((this as Symbol) as TransientSymbol).target as TransientSymbol).tupleLabelDeclaration) {
+            const labelDecl = (((this as Symbol) as TransientSymbol).target as TransientSymbol).tupleLabelDeclaration!;
+            this.docComment = getDocComment([labelDecl], checker);
+          } else {
+            this.docComment = getDocComment(this.declarations, checker);
+          }
+        }
+        return this.docComment;
+      }
+      getCtxComment(context: Node | undefined, checker: TypeChecker | undefined): SymbolDisplayPart[] {
+        switch (context?.kind) {
+          case Syntax.GetAccessor:
+            if (!this.getComment) {
+              this.getComment = emptyArray;
+              this.getComment = getDocComment(filter(this.declarations, isGetAccessor), checker);
+            }
+            return this.getComment;
+          case Syntax.SetAccessor:
+            if (!this.setComment) {
+              this.setComment = emptyArray;
+              this.setComment = getDocComment(filter(this.declarations, isSetAccessor), checker);
+            }
+            return this.setComment;
+          default:
+            return this.getDocComment(checker);
+        }
+      }
+      getJsDocTags(): JSDocTagInfo[] {
+        if (this.tags === undefined) this.tags = JsDoc.getJsDocTagsFromDeclarations(this.declarations);
+        return this.tags;
+      }
+    }
+
     export class TypeObj implements Type {
-      objectFlags?: ObjectFlags;
       id!: number;
       symbol!: Symbol;
+      objectFlags?: ObjectFlags;
       constructor(public checker: TypeChecker, public flags: TypeFlags) {}
       getFlags(): TypeFlags {
         return this.flags;
@@ -863,14 +809,9 @@ namespace qnr {
       isClass(): this is InterfaceType {
         return !!(getObjectFlags(this) & ObjectFlags.Class);
       }
-      /**
-       * This polyfills `referenceType.typeArguments` for API consumers
-       */
       get typeArguments() {
-        if (getObjectFlags(this) & ObjectFlags.Reference) {
-          return this.checker.getTypeArguments((this as Type) as TypeReference);
-        }
-        return undefined;
+        if (getObjectFlags(this) & ObjectFlags.Reference) return this.checker.getTypeArguments((this as Type) as TypeReference);
+        return;
       }
     }
 
@@ -883,7 +824,7 @@ namespace qnr {
       resolvedTypePredicate: TypePredicate | undefined;
       minTypeArgumentCount!: number;
       minArgumentCount!: number;
-      documentationComment?: SymbolDisplayPart[];
+      docComment?: SymbolDisplayPart[];
       jsDocTags?: JSDocTagInfo[];
 
       constructor(public checker: TypeChecker, public flags: SignatureFlags) {}
@@ -899,8 +840,8 @@ namespace qnr {
       getReturnType(): Type {
         return this.checker.getReturnTypeOfSignature(this);
       }
-      getDocumentationComment(): SymbolDisplayPart[] {
-        return this.documentationComment || (this.documentationComment = getDocumentationComment(singleElementArray(this.declaration), this.checker));
+      getDocComment(): SymbolDisplayPart[] {
+        return this.docComment || (this.docComment = getDocComment(singleElementArray(this.declaration), this.checker));
       }
       getJsDocTags(): JSDocTagInfo[] {
         if (this.jsDocTags === undefined) {
@@ -908,33 +849,6 @@ namespace qnr {
         }
         return this.jsDocTags;
       }
-    }
-
-    function hasJSDocInheritDocTag(node: Node) {
-      return getJSDocTags(node).some((tag) => tag.tagName.text === 'inheritDoc');
-    }
-
-    function getDocumentationComment(declarations: readonly Declaration[] | undefined, checker: TypeChecker | undefined): SymbolDisplayPart[] {
-      if (!declarations) return emptyArray;
-
-      let doc = JsDoc.getJsDocCommentsFromDeclarations(declarations);
-      if (doc.length === 0 || declarations.some(hasJSDocInheritDocTag)) {
-        forEachUnique(declarations, (declaration) => {
-          const inheritedDocs = findInheritedJSDocComments(declaration, declaration.symbol.name, checker!); // TODO: GH#18217
-          // TODO: GH#16312 Return a ReadonlyArray, avoid copying inheritedDocs
-          if (inheritedDocs) doc = doc.length === 0 ? inheritedDocs.slice() : inheritedDocs.concat(lineBreakPart(), doc);
-        });
-      }
-      return doc;
-    }
-
-    function findInheritedJSDocComments(declaration: Declaration, propertyName: string, typeChecker: TypeChecker): readonly SymbolDisplayPart[] | undefined {
-      return firstDefined(declaration.parent ? getAllSuperTypeNodes(declaration.parent) : emptyArray, (superTypeNode) => {
-        const superType = typeChecker.getTypeAtLocation(superTypeNode);
-        const baseProperty = superType && typeChecker.getPropertyOfType(superType, propertyName);
-        const inheritedDocs = baseProperty && baseProperty.getDocumentationComment(typeChecker);
-        return inheritedDocs && inheritedDocs.length ? inheritedDocs : undefined;
-      });
     }
 
     export class SourceFileObj extends NodeObj implements SourceFile {
@@ -1180,6 +1094,87 @@ namespace qnr {
       public getLineAndCharacterOfPosition(pos: number): LineAndCharacter {
         return getLineAndCharacterOfPosition(this, pos);
       }
+    }
+
+    function createChildren(n: Node, s: SourceFileLike | undefined): Node[] {
+      if (!isNodeKind(n.kind)) return emptyArray;
+      const cs: Node[] = [];
+      if (isJSDocCommentContainingNode(n)) {
+        n.forEachChild((c) => {
+          cs.push(c);
+        });
+        return cs;
+      }
+      scanner.setText((s || n.getSourceFile()).text);
+      let pos = n.pos;
+      const processNode = (c: Node) => {
+        addSyntheticNodes(cs, pos, c.pos, n);
+        cs.push(c);
+        pos = c.end;
+      };
+      const processNodes = (ns: NodeArray<Node>) => {
+        addSyntheticNodes(cs, pos, ns.pos, n);
+        cs.push(createSyntaxList(ns, n));
+        pos = ns.end;
+      };
+      forEach((n as JSDocContainer).jsDoc, processNode);
+      pos = n.pos;
+      n.forEachChild(processNode, processNodes);
+      addSyntheticNodes(cs, pos, n.end, n);
+      scanner.setText(undefined);
+      return cs;
+    }
+
+    function addSyntheticNodes(ns: Push<Node>, pos: number, end: number, parent: Node): void {
+      scanner.setTextPos(pos);
+      while (pos < end) {
+        const token = scanner.scan();
+        const textPos = scanner.getTextPos();
+        if (textPos <= end) {
+          if (token === Syntax.Identifier) fail(`Did not expect ${Debug.formatSyntaxKind(parent.kind)} to have an Identifier in its trivia`);
+          ns.push(createNode(token, pos, textPos, parent));
+        }
+        pos = textPos;
+        if (token === Syntax.EndOfFileToken) break;
+      }
+    }
+
+    function createSyntaxList(ns: NodeArray<Node>, parent: Node): Node {
+      const list = (createNode(Syntax.SyntaxList, ns.pos, ns.end, parent) as any) as SyntaxList;
+      list._children = [];
+      let pos = ns.pos;
+      for (const n of ns) {
+        addSyntheticNodes(list._children, pos, n.pos, parent);
+        list._children.push(n);
+        pos = n.end;
+      }
+      addSyntheticNodes(list._children, pos, ns.end, parent);
+      return list;
+    }
+
+    function hasJSDocInheritDocTag(node: Node) {
+      return getJSDocTags(node).some((tag) => tag.tagName.text === 'inheritDoc');
+    }
+
+    function getDocComment(declarations: readonly Declaration[] | undefined, checker: TypeChecker | undefined): SymbolDisplayPart[] {
+      if (!declarations) return emptyArray;
+      let doc = JsDoc.getJsDocCommentsFromDeclarations(declarations);
+      if (doc.length === 0 || declarations.some(hasJSDocInheritDocTag)) {
+        forEachUnique(declarations, (declaration) => {
+          const inheritedDocs = findInheritedJSDocComments(declaration, declaration.symbol.name, checker!); // TODO: GH#18217
+          if (inheritedDocs) doc = doc.length === 0 ? inheritedDocs.slice() : inheritedDocs.concat(lineBreakPart(), doc);
+        });
+      }
+      return doc;
+    }
+
+    function findInheritedJSDocComments(declaration: Declaration, propertyName: string, typeChecker: TypeChecker): readonly SymbolDisplayPart[] | undefined {
+      return firstDefined(declaration.parent ? getAllSuperTypeNodes(declaration.parent) : emptyArray, (superTypeNode) => {
+        const superType = typeChecker.getTypeAtLocation(superTypeNode);
+        const baseProperty = superType && typeChecker.getPropertyOfType(superType, propertyName);
+        const inheritedDocs = baseProperty && baseProperty.getDocComment(typeChecker);
+        return inheritedDocs && inheritedDocs.length ? inheritedDocs : undefined;
+      });
     }
   }
 

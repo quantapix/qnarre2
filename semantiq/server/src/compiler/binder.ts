@@ -1967,7 +1967,7 @@ namespace qnr {
       const typeLiteralSymbol = createSymbol(SymbolFlags.TypeLiteral, InternalSymbolName.Type);
       addDeclarationToSymbol(typeLiteralSymbol, node, SymbolFlags.TypeLiteral);
       typeLiteralSymbol.members = new SymbolTable();
-      typeLiteralSymbol.members.set(symbol.escapedName, symbol);
+      typeLiteralSymbol.members.set(symbol.escName, symbol);
     }
 
     function bindObjectLiteralExpression(node: ObjectLiteralExpression) {
@@ -3143,14 +3143,14 @@ namespace qnr {
       // module might have an exported variable called 'prototype'.  We can't allow that as
       // that would clash with the built-in 'prototype' for the class.
       const prototypeSymbol = createSymbol(SymbolFlags.Property | SymbolFlags.Prototype, 'prototype' as __String);
-      const symbolExport = symbol.exports!.get(prototypeSymbol.escapedName);
+      const symbolExport = symbol.exports!.get(prototypeSymbol.escName);
       if (symbolExport) {
         if (node.name) {
           node.name.parent = node;
         }
         file.bindDiagnostics.push(createDiagnosticForNode(symbolExport.declarations[0], Diagnostics.Duplicate_identifier_0, symbolName(prototypeSymbol)));
       }
-      symbol.exports!.set(prototypeSymbol.escapedName, prototypeSymbol);
+      symbol.exports!.set(prototypeSymbol.escName, prototypeSymbol);
       prototypeSymbol.parent = symbol;
     }
 

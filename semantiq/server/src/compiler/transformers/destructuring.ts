@@ -117,20 +117,20 @@ namespace qnr {
     }
   }
 
-  function bindingOrAssignmentElementAssignsToName(element: BindingOrAssignmentElement, escapedName: __String): boolean {
+  function bindingOrAssignmentElementAssignsToName(element: BindingOrAssignmentElement, escName: __String): boolean {
     const target = getTargetOfBindingOrAssignmentElement(element)!; // TODO: GH#18217
     if (isBindingOrAssignmentPattern(target)) {
-      return bindingOrAssignmentPatternAssignsToName(target, escapedName);
+      return bindingOrAssignmentPatternAssignsToName(target, escName);
     } else if (isIdentifier(target)) {
-      return target.escapedText === escapedName;
+      return target.escapedText === escName;
     }
     return false;
   }
 
-  function bindingOrAssignmentPatternAssignsToName(pattern: BindingOrAssignmentPattern, escapedName: __String): boolean {
+  function bindingOrAssignmentPatternAssignsToName(pattern: BindingOrAssignmentPattern, escName: __String): boolean {
     const elements = getElementsOfBindingOrAssignmentPattern(pattern);
     for (const element of elements) {
-      if (bindingOrAssignmentElementAssignsToName(element, escapedName)) {
+      if (bindingOrAssignmentElementAssignsToName(element, escName)) {
         return true;
       }
     }

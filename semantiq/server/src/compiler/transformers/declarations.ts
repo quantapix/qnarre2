@@ -1186,7 +1186,7 @@ namespace qnr {
               getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(p.valueDeclaration);
               const type = resolver.createTypeOfDeclaration(p.valueDeclaration, fakespace, declarationEmitNodeBuilderFlags, symbolTracker);
               getSymbolAccessibilityDiagnostic = oldDiag;
-              const varDecl = createVariableDeclaration(Scanner.unescapeUnderscores(p.escapedName), type, /*initializer*/ undefined);
+              const varDecl = createVariableDeclaration(Scanner.unescapeUnderscores(p.escName), type, /*initializer*/ undefined);
               return createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([varDecl]));
             });
             const namespaceDecl = createModuleDeclaration(/*decorators*/ undefined, ensureModifiers(input), input.name!, createModuleBlock(declarations), NodeFlags.Namespace);
