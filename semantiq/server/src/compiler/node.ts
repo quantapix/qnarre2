@@ -23,6 +23,145 @@ namespace qnr {
     return statement && isNotEmittedStatement(statement) ? setTextRange(setOriginalNode(createEmptyStatement(), statement), statement) : statement;
   }
 
+  let r = [...Array(5).keys()];
+  const enum SymKey {
+    AAA,
+    BBB,
+    CCC,
+    End
+  }
+  r = [...Array(SymKey.End).keys()];
+  console.log(r);
+  
+  type KS = keyof typeof SymKey;
+  
+  const INTERVALS = ['total', 'weekly', 'biweekly', 'monthly', 'annually'] as const;
+  type Interval = typeof INTERVALS[number];
+  
+  type KS2<T extends Record<string, KS>> = {
+    -readonly [K in keyof T]: KS
+  }
+  let SymNames: { [P in keyof typeof SymKey]: { Name: P, Value: typeof SymKey[P] } } = {
+    AAA: { Value: SymKey.AAA, Name: "AAA" },
+    BBB: { Value: SymKey.BBB, Name: "BBB" },
+    CCC: { Value: SymKey.CCC, Name: "CCC" },
+    End: { Value: SymKey.End, Name: "End"}
+  }
+  
+  
+  interface QNode {
+    kind: SymKey;
+  }
+  namespace QNode {
+    export function create(kind: SymKey) {
+      return { kind } as QNode;
+    }
+    export interface Aaa extends QNode {
+      kind: SymKey.AAA;
+      aa?: number;
+    }
+    export namespace Aaa {
+      export const kind = SymKey.AAA;
+    }
+    export interface Bbb extends QNode {
+      kind: SymKey.BBB;
+      bb?: number;
+    }
+    export namespace Bbb {
+      export const kind = SymKey.BBB;
+    }
+  }
+  type NS<T> = T extends QNode ? T : never;
+  const nodes = Object.keys(QNode).map(k => (QNode as any)[k]);
+  console.log(nodes);
+  /*
+  function cNode<C extends SymKey>(cs: C, n: string): { [P in keyof C]: C[P] }[keyof C] {
+      return  (cs as any)[n];
+  }
+  
+  type SymType<K extends SymKey> = K extends keyof CMap ? CMap[K] : never;
+  
+  
+  function cNode<C extends SymKey>(cs: C, n: string): { [P in keyof C]: C[P] }[keyof C] {
+      return  (cs as any)[n];
+  }
+  const m = mapEnum(SymKey, "");
+  
+  type QRecord<C extends keyof typeof SymKey, N extends QNode> = {
+    [P in C]: N;
+  };
+  type QI<T extends QRecord<string, keyof MapSchemaTypes>> = {
+    -readonly [K in keyof T]: (typeof nodes)[T[K]]
+  }
+  */
+  interface CMap {
+    [SymKey.AAA]: QNode.Aaa;
+    [SymKey.BBB]: QNode.Bbb;
+  }
+  type GN<C extends SymKey> = C extends keyof CMap ? CMap[C] : never;
+  function create<C extends SymKey>(c: C): GN<C> {
+    return QNode.create(c) as GN<C>;
+  }
+  function isKind<C extends SymKey, T extends { kind: C }>(n: GN<C>, t: T): n is GN<C> {
+    return n.kind === t.kind;
+  }
+  
+  const a = QNode.create(SymKey.AAA) as QNode.Aaa;
+  const b = QNode.create(SymKey.BBB) as QNode.Bbb;
+  
+  const a2 = create(SymKey.AAA);
+  const b2 = create(SymKey.BBB);
+  
+  console.log(isKind(a, QNode.Aaa), '*** true');
+  console.log(isKind(a, QNode.Bbb), '*** false');
+  console.log(isKind(b, QNode.Aaa), '*** false');
+  console.log(isKind(b, QNode.Bbb), '*** true');
+  
+  interface typeMap {
+    string: string;
+    number: number;
+    boolean: boolean;
+  }
+  
+  type KeysOfUnion<T> = T extends any ? keyof T : never;
+  
+  type POC =
+    | { new(...args: any[]): any }
+    | keyof typeMap;
+  
+  type GuardedType<T extends POC> = T extends { new(...args: any[]): infer U; } ? U : T extends keyof typeMap ? typeMap[T] : never;
+  
+  function typeGuard<T extends POC>(o, className: T):
+    o is GuardedType<T> {
+    const poc: POC = className;
+    if (typeof poc === 'string') {
+      return typeof o === poc;
+    }
+    return o instanceof poc;
+  }
+  
+  class A {
+    a: string = 'a';
+  }
+  
+  class B extends A {
+    b: number = 5;
+  }
+  
+  console.log(typeGuard(5, 'number'), 'true'); // typeGuard<"number">(o: any, className: "number"): o is number
+  console.log(typeGuard(5, 'string'), 'false'); // typeGuard<"string">(o: any, className: "string"): o is string
+  
+  console.log(typeGuard(new A(), A), 'true'); // typeGuard<typeof A>(o: any, className: typeof A): o is A
+  console.log(typeGuard(new B(), A), 'true');
+  
+  console.log(typeGuard(new A(), B), 'false'); // typeGuard<typeof B>(o: any, className: typeof B): o is B
+  console.log(typeGuard(new B(), B), 'true');
+  
+
+
+
+
+
   const enum Codes {
     AAA,
     BBB,
@@ -66,6 +205,373 @@ namespace qnr {
   console.log(isKind(Bbb, a), '*** false');
   console.log(isKind(Aaa, b), '*** false');
   console.log(isKind(Bbb, b), '*** true');
+
+
+  interface Interfaces {
+    Syntax.Unknown,
+    Syntax.EndOfFileToken,
+    Syntax.SingleLineCommentTrivia,
+    Syntax.MultiLineCommentTrivia,
+    Syntax.NewLineTrivia,
+    Syntax.WhitespaceTrivia,
+
+    Syntax.ShebangTrivia,
+    Syntax.ConflictMarkerTrivia,
+    Syntax.NumericLiteral,
+    Syntax.BigIntLiteral,
+    Syntax.StringLiteral,
+    Syntax.JsxText,
+    Syntax.JsxTextAllWhiteSpaces,
+    Syntax.RegexLiteral,
+    Syntax.NoSubstitutionLiteral,
+
+    Syntax.TemplateHead,
+    Syntax.TemplateMiddle,
+    Syntax.TemplateTail,
+
+    Syntax.OpenBraceToken,
+    Syntax.CloseBraceToken,
+    Syntax.OpenParenToken,
+    Syntax.CloseParenToken,
+    Syntax.OpenBracketToken,
+    Syntax.CloseBracketToken,
+    Syntax.DotToken,
+    Syntax.Dot3Token,
+    Syntax.SemicolonToken,
+    Syntax.CommaToken,
+    Syntax.QuestionDotToken,
+    Syntax.LessThanToken,
+    Syntax.LessThanSlashToken,
+    Syntax.GreaterThanToken,
+    Syntax.LessThanEqualsToken,
+    Syntax.GreaterThanEqualsToken,
+    Syntax.Equals2Token,
+    Syntax.ExclamationEqualsToken,
+    Syntax.Equals3Token,
+    Syntax.ExclamationEquals2Token,
+    Syntax.EqualsGreaterThanToken,
+    Syntax.PlusToken,
+    Syntax.MinusToken,
+    Syntax.AsteriskToken,
+    Syntax.Asterisk2Token,
+    Syntax.SlashToken,
+    Syntax.PercentToken,
+    Syntax.Plus2Token,
+    Syntax.Minus2Token,
+    Syntax.LessThan2Token,
+    Syntax.GreaterThan2Token,
+    Syntax.GreaterThan3Token,
+    Syntax.AmpersandToken,
+    Syntax.BarToken,
+    Syntax.CaretToken,
+    Syntax.ExclamationToken,
+    Syntax.TildeToken,
+    Syntax.Ampersand2Token,
+    Syntax.Bar2Token,
+    Syntax.QuestionToken,
+    Syntax.ColonToken,
+    Syntax.AtToken,
+    Syntax.Question2Token,
+    Syntax.BacktickToken,
+
+    Syntax.EqualsToken,
+    Syntax.PlusEqualsToken,
+    Syntax.MinusEqualsToken,
+    Syntax.AsteriskEqualsToken,
+    Syntax.Asterisk2EqualsToken,
+    Syntax.SlashEqualsToken,
+    Syntax.PercentEqualsToken,
+    Syntax.LessThan2EqualsToken,
+    Syntax.GreaterThan2EqualsToken,
+    Syntax.GreaterThan3EqualsToken,
+    Syntax.AmpersandEqualsToken,
+    Syntax.BarEqualsToken,
+    Syntax.CaretEqualsToken,
+
+    Syntax.Identifier,
+    Syntax.PrivateIdentifier,
+
+    Syntax.BreakKeyword,
+    Syntax.CaseKeyword,
+    Syntax.CatchKeyword,
+    Syntax.ClassKeyword,
+    Syntax.ConstKeyword,
+    Syntax.ContinueKeyword,
+    Syntax.DebuggerKeyword,
+    Syntax.DefaultKeyword,
+    Syntax.DeleteKeyword,
+    Syntax.DoKeyword,
+    Syntax.ElseKeyword,
+    Syntax.EnumKeyword,
+    Syntax.ExportKeyword,
+    Syntax.ExtendsKeyword,
+    Syntax.FalseKeyword,
+    Syntax.FinallyKeyword,
+    Syntax.ForKeyword,
+    Syntax.FunctionKeyword,
+    Syntax.IfKeyword,
+    Syntax.ImportKeyword,
+    Syntax.InKeyword,
+    Syntax.InstanceOfKeyword,
+    Syntax.NewKeyword,
+    Syntax.NullKeyword,
+    Syntax.ReturnKeyword,
+    Syntax.SuperKeyword,
+    Syntax.SwitchKeyword,
+    Syntax.ThisKeyword,
+    Syntax.ThrowKeyword,
+    Syntax.TrueKeyword,
+    Syntax.TryKeyword,
+    Syntax.TypeOfKeyword,
+    Syntax.VarKeyword,
+    Syntax.VoidKeyword,
+    Syntax.WhileKeyword,
+    Syntax.WithKeyword,
+
+    Syntax.ImplementsKeyword,
+    Syntax.InterfaceKeyword,
+    Syntax.LetKeyword,
+    Syntax.PackageKeyword,
+    Syntax.PrivateKeyword,
+    Syntax.ProtectedKeyword,
+    Syntax.PublicKeyword,
+    Syntax.StaticKeyword,
+    Syntax.YieldKeyword,
+
+    Syntax.AbstractKeyword,
+    Syntax.AsKeyword,
+    Syntax.AssertsKeyword,
+    Syntax.AnyKeyword,
+    Syntax.AsyncKeyword,
+    Syntax.AwaitKeyword,
+    Syntax.BooleanKeyword,
+    Syntax.ConstructorKeyword,
+    Syntax.DeclareKeyword,
+    Syntax.GetKeyword,
+    Syntax.InferKeyword,
+    Syntax.IsKeyword,
+    Syntax.KeyOfKeyword,
+    Syntax.ModuleKeyword,
+    Syntax.NamespaceKeyword,
+    Syntax.NeverKeyword,
+    Syntax.ReadonlyKeyword,
+    Syntax.RequireKeyword,
+    Syntax.NumberKeyword,
+    Syntax.ObjectKeyword,
+    Syntax.SetKeyword,
+    Syntax.StringKeyword,
+    Syntax.SymbolKeyword,
+    Syntax.TypeKeyword,
+    Syntax.UndefinedKeyword,
+    Syntax.UniqueKeyword,
+    Syntax.UnknownKeyword,
+    Syntax.FromKeyword,
+    Syntax.GlobalKeyword,
+    Syntax.BigIntKeyword,
+    Syntax.OfKeyword,
+
+    Syntax.QualifiedName,
+    Syntax.ComputedPropertyName,
+
+    Syntax.TypeParameter,
+    Syntax.Parameter,
+    Syntax.Decorator,
+
+    Syntax.PropertySignature,
+    Syntax.PropertyDeclaration,
+    Syntax.MethodSignature,
+    Syntax.MethodDeclaration,
+    Syntax.Constructor,
+    Syntax.GetAccessor,
+    Syntax.SetAccessor,
+    Syntax.CallSignature,
+    Syntax.ConstructSignature,
+    Syntax.IndexSignature,
+
+    Syntax.TypePredicate,
+    Syntax.TypeReference,
+    Syntax.FunctionType,
+    Syntax.ConstructorType,
+    Syntax.TypeQuery,
+    Syntax.TypeLiteral,
+    Syntax.ArrayType,
+    Syntax.TupleType,
+    Syntax.OptionalType,
+    Syntax.RestType,
+    Syntax.UnionType,
+    Syntax.IntersectionType,
+    Syntax.ConditionalType,
+    Syntax.InferType,
+    Syntax.ParenthesizedType,
+    Syntax.ThisType,
+    Syntax.TypeOperator,
+    Syntax.IndexedAccessType,
+    Syntax.MappedType,
+    Syntax.LiteralType,
+    Syntax.NamedTupleMember,
+    Syntax.ImportType,
+
+    Syntax.ObjectBindingPattern,
+    Syntax.ArrayBindingPattern,
+    Syntax.BindingElement,
+
+    Syntax.ArrayLiteralExpression,
+    Syntax.ObjectLiteralExpression,
+    Syntax.PropertyAccessExpression,
+    Syntax.ElementAccessExpression,
+    Syntax.CallExpression,
+    Syntax.NewExpression,
+    Syntax.TaggedTemplateExpression,
+    Syntax.TypeAssertionExpression,
+    Syntax.ParenthesizedExpression,
+    Syntax.FunctionExpression,
+    Syntax.ArrowFunction,
+    Syntax.DeleteExpression,
+    Syntax.TypeOfExpression,
+    Syntax.VoidExpression,
+    Syntax.AwaitExpression,
+    Syntax.PrefixUnaryExpression,
+    Syntax.PostfixUnaryExpression,
+    Syntax.BinaryExpression,
+    Syntax.ConditionalExpression,
+    Syntax.TemplateExpression,
+    Syntax.YieldExpression,
+    Syntax.SpreadElement,
+    Syntax.ClassExpression,
+    Syntax.OmittedExpression,
+    Syntax.ExpressionWithTypeArguments,
+    Syntax.AsExpression,
+    Syntax.NonNullExpression,
+    Syntax.MetaProperty,
+    Syntax.SyntheticExpression,
+
+    Syntax.TemplateSpan,
+    Syntax.SemicolonClassElement,
+
+    Syntax.Block,
+    Syntax.EmptyStatement,
+    Syntax.VariableStatement,
+    Syntax.ExpressionStatement,
+    Syntax.IfStatement,
+    Syntax.DoStatement,
+    Syntax.WhileStatement,
+    Syntax.ForStatement,
+    Syntax.ForInStatement,
+    Syntax.ForOfStatement,
+    Syntax.ContinueStatement,
+    Syntax.BreakStatement,
+    Syntax.ReturnStatement,
+    Syntax.WithStatement,
+    Syntax.SwitchStatement,
+    Syntax.LabeledStatement,
+    Syntax.ThrowStatement,
+    Syntax.TryStatement,
+    Syntax.DebuggerStatement,
+    Syntax.VariableDeclaration,
+    Syntax.VariableDeclarationList,
+    Syntax.FunctionDeclaration,
+    Syntax.ClassDeclaration,
+    Syntax.InterfaceDeclaration,
+    Syntax.TypeAliasDeclaration,
+    Syntax.EnumDeclaration,
+    Syntax.ModuleDeclaration,
+    Syntax.ModuleBlock,
+    Syntax.CaseBlock,
+    Syntax.NamespaceExportDeclaration,
+    Syntax.ImportEqualsDeclaration,
+    Syntax.ImportDeclaration,
+    Syntax.ImportClause,
+    Syntax.NamespaceImport,
+    Syntax.NamedImports,
+    Syntax.ImportSpecifier,
+    Syntax.ExportAssignment,
+    Syntax.ExportDeclaration,
+    Syntax.NamedExports,
+    Syntax.NamespaceExport,
+    Syntax.ExportSpecifier,
+    Syntax.MissingDeclaration,
+
+    Syntax.ExternalModuleReference,
+
+    Syntax.JsxElement,
+    Syntax.JsxSelfClosingElement,
+    Syntax.JsxOpeningElement,
+    Syntax.JsxClosingElement,
+    Syntax.JsxFragment,
+    Syntax.JsxOpeningFragment,
+    Syntax.JsxClosingFragment,
+    Syntax.JsxAttribute,
+    Syntax.JsxAttributes,
+    Syntax.JsxSpreadAttribute,
+    Syntax.JsxExpression,
+
+    Syntax.CaseClause,
+    Syntax.DefaultClause,
+    Syntax.HeritageClause,
+    Syntax.CatchClause,
+
+    Syntax.PropertyAssignment,
+    Syntax.ShorthandPropertyAssignment,
+    Syntax.SpreadAssignment,
+
+    Syntax.EnumMember,
+
+    Syntax.UnparsedPrologue,
+    Syntax.UnparsedPrepend,
+    Syntax.UnparsedText,
+    Syntax.UnparsedInternalText,
+    Syntax.UnparsedSyntheticReference,
+
+    Syntax.SourceFile,
+    Syntax.Bundle,
+    Syntax.UnparsedSource,
+    Syntax.InputFiles,
+
+    Syntax.JSDocTypeExpression,
+    Syntax.JSDocAllType,
+
+    Syntax.JSDocUnknownType,
+    Syntax.JSDocNullableType,
+    Syntax.JSDocNonNullableType,
+    Syntax.JSDocOptionalType,
+    Syntax.JSDocFunctionType,
+    Syntax.JSDocVariadicType,
+
+    Syntax.JSDocNamepathType,
+    Syntax.JSDocComment,
+    Syntax.JSDocTypeLiteral,
+    Syntax.JSDocSignature,
+    Syntax.JSDocTag,
+    Syntax.JSDocAugmentsTag,
+    Syntax.JSDocImplementsTag,
+    Syntax.JSDocAuthorTag,
+    Syntax.JSDocClassTag,
+    Syntax.JSDocPublicTag,
+    Syntax.JSDocPrivateTag,
+    Syntax.JSDocProtectedTag,
+    Syntax.JSDocReadonlyTag,
+    Syntax.JSDocCallbackTag,
+    Syntax.JSDocEnumTag,
+    Syntax.JSDocParameterTag,
+    Syntax.JSDocReturnTag,
+    Syntax.JSDocThisTag,
+    Syntax.JSDocTypeTag,
+    Syntax.JSDocTemplateTag,
+    Syntax.JSDocTypedefTag,
+    Syntax.JSDocPropertyTag,
+
+    Syntax.SyntaxList,
+
+    Syntax.NotEmittedStatement,
+    Syntax.PartiallyEmittedExpression,
+    Syntax.CommaListExpression,
+    Syntax.MergeDeclarationMarker,
+    Syntax.EndOfDeclarationMarker,
+    Syntax.SyntheticReferenceExpression,
+
+    Syntax.Count,
+  }
+
 
   export namespace Node {
     const kind = Syntax.Unknown;
