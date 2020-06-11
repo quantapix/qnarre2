@@ -393,9 +393,9 @@ namespace qnr {
     let requestedExternalEmitHelpers: ExternalEmitHelpers;
     let externalHelpersModule: Symbol;
 
-    const Symbol = objectAllocator.getSymbolConstructor();
-    const Type = objectAllocator.getTypeConstructor();
-    const Signature = objectAllocator.getSignatureConstructor();
+    const Symbol = Node.SymbolObj;
+    const Type = Node.TypeObj;
+    const Signature = Node.SignatureObj;
 
     let typeCount = 0;
     let symbolCount = 0;

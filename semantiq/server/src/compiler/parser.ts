@@ -8,26 +8,6 @@ namespace qnr {
     JSDoc = 1 << 5,
   }
 
-  function isNode(n: Node) {
-    return isNodeKind(n.kind);
-  }
-  function isNodeKind(k: Syntax) {
-    return k >= Syntax.FirstNode;
-  }
-  let NodeC: new (k: Syntax, pos?: number, end?: number) => Node;
-  let TokenC: new (k: Syntax, pos?: number, end?: number) => Node;
-  let IdentifierC: new (k: Syntax.Identifier, pos?: number, end?: number) => Node;
-  let PrivateIdentifierC: new (k: Syntax.PrivateIdentifier, pos?: number, end?: number) => Node;
-  let SourceFileC: new (k: Syntax.SourceFile, pos?: number, end?: number) => Node;
-
-  export function createNode(k: Syntax, pos?: number, end?: number): Node {
-    if (k === Syntax.SourceFile) return new (SourceFileC || (SourceFileC = objectAllocator.getSourceFileConstructor()))(k, pos, end);
-    if (k === Syntax.Identifier) return new (IdentifierC || (IdentifierC = objectAllocator.getIdentifierConstructor()))(k, pos, end);
-    if (k === Syntax.PrivateIdentifier) return new (PrivateIdentifierC || (PrivateIdentifierC = objectAllocator.getPrivateIdentifierConstructor()))(k, pos, end);
-    if (!isNodeKind(k)) return new (TokenC || (TokenC = objectAllocator.getTokenConstructor()))(k, pos, end);
-    return new (NodeC || (NodeC = objectAllocator.getNodeConstructor()))(k, pos, end);
-  }
-
   function visitNode<T>(cbNode: (node: Node) => T, node: Node | undefined): T | undefined {
     return node && cbNode(node);
   }
@@ -628,12 +608,6 @@ namespace qnr {
     const scanner = Scanner.create(true);
     const disallowInAndDecoratorContext = NodeFlags.DisallowInContext | NodeFlags.DecoratorContext;
 
-    let NodeC: new <T extends Node>(k: Syntax, pos: number, end: number) => T;
-    let TokenC: new <T extends Node>(k: Syntax, pos: number, end: number) => T;
-    let IdentifierC: new <T extends Node>(k: Syntax.Identifier, pos: number, end: number) => T;
-    let PrivateIdentifierC: new <T extends Node>(k: Syntax.PrivateIdentifier, pos: number, end: number) => T;
-    let SourceFileC: new (kind: Syntax.SourceFile, pos: number, end: number) => Node;
-
     let sourceFile: SourceFile;
     let parseDiagnostics: DiagnosticWithLocation[];
     let syntaxCursor: IncrementalParser.SyntaxCursor | undefined;
@@ -766,12 +740,6 @@ namespace qnr {
     }
 
     function initializeState(_sourceText: string, languageVersion: ScriptTarget, _syntaxCursor: IncrementalParser.SyntaxCursor | undefined, scriptKind: ScriptKind) {
-      NodeC = objectAllocator.getNodeConstructor() as any;
-      TokenC = objectAllocator.getTokenConstructor() as any;
-      IdentifierC = objectAllocator.getIdentifierConstructor() as any;
-      PrivateIdentifierC = objectAllocator.getPrivateIdentifierConstructor() as any;
-      SourceFileC = objectAllocator.getSourceFileConstructor();
-
       sourceText = _sourceText;
       syntaxCursor = _syntaxCursor;
 
@@ -1051,13 +1019,7 @@ namespace qnr {
     function createNode<T extends Node>(k: Syntax, pos?: number): T {
       nodeCount++;
       const p = pos! >= 0 ? pos! : scanner.getStartPos();
-      return isNodeKind(k) || k === Syntax.Unknown
-        ? new NodeC<T>(k, p, p)
-        : k === Syntax.Identifier
-        ? new IdentifierC<T>(k, p, p)
-        : k === Syntax.PrivateIdentifier
-        ? new PrivateIdentifierC<T>(k, p, p)
-        : new TokenC<T>(k, p, p);
+      return Node.create(k, p, p);
     }
     function createMissingNode<T extends Node>(k: T['kind'], report: false, m?: DiagnosticMessage, arg0?: any): T;
     function createMissingNode<T extends Node>(k: T['kind'], report: true, m: DiagnosticMessage, arg0?: any): T;

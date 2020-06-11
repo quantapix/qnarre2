@@ -334,7 +334,7 @@ namespace qnr {
       if (isDebugInfoEnabled) return;
 
       // Add additional properties in debug mode to assist with debugging.
-      Object.defineProperties(objectAllocator.getSymbolConstructor().prototype, {
+      Object.defineProperties(Node.SymbolObj.prototype, {
         __debugFlags: {
           get(this: Symbol) {
             return formatSymbolFlags(this.flags);
@@ -342,7 +342,7 @@ namespace qnr {
         },
       });
 
-      Object.defineProperties(objectAllocator.getTypeConstructor().prototype, {
+      Object.defineProperties(Node.TypeObj.prototype, {
         __debugFlags: {
           get(this: Type) {
             return formatTypeFlags(this.flags);
@@ -360,7 +360,7 @@ namespace qnr {
         },
       });
 
-      const nodeConstructors = [objectAllocator.getNodeConstructor(), objectAllocator.getIdentifierConstructor(), objectAllocator.getTokenConstructor(), objectAllocator.getSourceFileConstructor()];
+      const nodeConstructors = [Node.NodeObj, Node.IdentifierObj, Node.TokenObj, Node.SourceFileObj];
 
       for (const ctor of nodeConstructors) {
         if (!ctor.prototype.hasOwnProperty('__debugKind')) {

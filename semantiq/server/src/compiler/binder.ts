@@ -241,7 +241,7 @@ namespace qnr {
       symbolCount = 0;
       skipTransformFlagAggregation = file.isDeclarationFile;
 
-      Symbol = objectAllocator.getSymbolConstructor();
+      Symbol = Node.SymbolObj;
 
       // Attach debugging information if necessary
       Debug.attachFlowNodeDebugInfo(unreachableFlow);

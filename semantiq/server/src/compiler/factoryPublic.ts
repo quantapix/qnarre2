@@ -2588,34 +2588,22 @@ namespace qnr {
     return range;
   }
 
-  /**
-   * Sets flags that control emit behavior of a node.
-   */
   export function setEmitFlags<T extends Node>(node: T, emitFlags: EmitFlags) {
     getOrCreateEmitNode(node).flags = emitFlags;
     return node;
   }
 
-  /**
-   * Sets flags that control emit behavior of a node.
-   */
   export function addEmitFlags<T extends Node>(node: T, emitFlags: EmitFlags) {
     const emitNode = getOrCreateEmitNode(node);
     emitNode.flags = emitNode.flags | emitFlags;
     return node;
   }
 
-  /**
-   * Gets a custom text range to use when emitting source maps.
-   */
   export function getSourceMapRange(node: Node): SourceMapRange {
     const emitNode = node.emitNode;
     return (emitNode && emitNode.sourceMapRange) || node;
   }
 
-  /**
-   * Sets a custom text range to use when emitting source maps.
-   */
   export function setSourceMapRange<T extends Node>(node: T, range: SourceMapRange | undefined) {
     getOrCreateEmitNode(node).sourceMapRange = range;
     return node;
@@ -2623,25 +2611,16 @@ namespace qnr {
 
   let SourceMapSource: new (fileName: string, text: string, skipTrivia?: (pos: number) => number) => SourceMapSource;
 
-  /**
-   * Create an external source map source file reference
-   */
   export function createSourceMapSource(fileName: string, text: string, skipTrivia?: (pos: number) => number): SourceMapSource {
-    return new (SourceMapSource || (SourceMapSource = objectAllocator.getSourceMapSourceConstructor()))(fileName, text, skipTrivia);
+    return new (SourceMapSource || (SourceMapSource = Node.SourceMapSourceObj))(fileName, text, skipTrivia);
   }
 
-  /**
-   * Gets the TextRange to use for source maps for a token of a node.
-   */
   export function getTokenSourceMapRange(node: Node, token: Syntax): SourceMapRange | undefined {
     const emitNode = node.emitNode;
     const tokenSourceMapRanges = emitNode && emitNode.tokenSourceMapRanges;
     return tokenSourceMapRanges && tokenSourceMapRanges[token];
   }
 
-  /**
-   * Sets the TextRange to use for source maps for a token of a node.
-   */
   export function setTokenSourceMapRange<T extends Node>(node: T, token: Syntax, range: SourceMapRange | undefined) {
     const emitNode = getOrCreateEmitNode(node);
     const tokenSourceMapRanges = emitNode.tokenSourceMapRanges || (emitNode.tokenSourceMapRanges = []);
@@ -2649,35 +2628,21 @@ namespace qnr {
     return node;
   }
 
-  /**
-   * Gets a custom text range to use when emitting comments.
-   */
-
   export function getStartsOnNewLine(node: Node) {
     const emitNode = node.emitNode;
     return emitNode && emitNode.startsOnNewLine;
   }
-
-  /**
-   * Sets a custom text range to use when emitting comments.
-   */
 
   export function setStartsOnNewLine<T extends Node>(node: T, newLine: boolean) {
     getOrCreateEmitNode(node).startsOnNewLine = newLine;
     return node;
   }
 
-  /**
-   * Gets a custom text range to use when emitting comments.
-   */
   export function getCommentRange(node: Node) {
     const emitNode = node.emitNode;
     return (emitNode && emitNode.commentRange) || node;
   }
 
-  /**
-   * Sets a custom text range to use when emitting comments.
-   */
   export function setCommentRange<T extends Node>(node: T, range: TextRange) {
     getOrCreateEmitNode(node).commentRange = range;
     return node;
