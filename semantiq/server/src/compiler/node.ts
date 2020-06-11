@@ -478,162 +478,140 @@ namespace qnr {
       symbol!: Symbol;
       jsDoc?: JSDoc[];
       original?: Node;
-      private _children: Node[] | undefined;
+      private _children?: Node[];
 
       constructor(public kind: Syntax, public pos: number, public end: number) {}
 
-      private assertHasRealPosition(message?: string) {
-        assert(!positionIsSynthesized(this.pos) && !positionIsSynthesized(this.end), message || 'Node must have a real position for this operation');
-      }
       getSourceFile(): SourceFile {
         return getSourceFileOfNode(this);
       }
-      public getStart(s?: SourceFileLike, includeJsDocComment?: boolean): number {
-        this.assertHasRealPosition();
+      getStart(s?: SourceFileLike, includeJsDocComment?: boolean) {
+        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
         return getTokenPosOfNode(this, s, includeJsDocComment);
       }
-      public getFullStart(): number {
-        this.assertHasRealPosition();
+      getFullStart() {
+        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
         return this.pos;
       }
-      public getEnd(): number {
-        this.assertHasRealPosition();
+      getEnd() {
+        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
         return this.end;
       }
-      public getWidth(s?: SourceFile): number {
-        this.assertHasRealPosition();
+      getWidth(s?: SourceFile) {
+        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
         return this.getEnd() - this.getStart(s);
       }
-      public getFullWidth(): number {
-        this.assertHasRealPosition();
+      getFullWidth() {
+        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
         return this.end - this.pos;
       }
-      public getLeadingTriviaWidth(s?: SourceFile): number {
-        this.assertHasRealPosition();
+      getLeadingTriviaWidth(s?: SourceFile) {
+        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
         return this.getStart(s) - this.pos;
       }
-      public getFullText(s?: SourceFile): string {
-        this.assertHasRealPosition();
+      getFullText(s?: SourceFile) {
+        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
         return (s || this.getSourceFile()).text.substring(this.pos, this.end);
       }
-      public getText(s?: SourceFile): string {
-        this.assertHasRealPosition();
+      getText(s?: SourceFile) {
+        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
         if (!s) s = this.getSourceFile();
         return s.text.substring(this.getStart(s), this.getEnd());
       }
-      public getChildCount(s?: SourceFile): number {
+      getChildCount(s?: SourceFile) {
         return this.getChildren(s).length;
       }
-      public getChildAt(i: number, s?: SourceFile): Node {
+      getChildAt(i: number, s?: SourceFile) {
         return this.getChildren(s)[i];
       }
-      public getChildren(s?: SourceFileLike): Node[] {
-        this.assertHasRealPosition("Node without a real position cannot be scanned and thus has no token nodes - use forEachChild and collect the result if that's fine");
-        return this._children || (this._children = createChildren(this, s));
+      getChildren(s?: SourceFileLike) {
+        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
+        const scanner = Scanner.getRaw();
+        const addSynthetics = (ns: Push<Node>, pos: number, end: number) => {
+          scanner.setTextPos(pos);
+          while (pos < end) {
+            const t = scanner.scan();
+            const p = scanner.getTextPos();
+            if (p <= end) {
+              if (t === Syntax.Identifier) fail(`Did not expect ${Debug.formatSyntax(this.kind)} to have an Identifier in its trivia`);
+              ns.push(createNode(t, pos, p, this));
+            }
+            pos = p;
+            if (t === Syntax.EndOfFileToken) break;
+          }
+        };
+        const createSyntaxList = (ns: NodeArray<Node>) => {
+          const list = (createNode(Syntax.SyntaxList, ns.pos, ns.end, this) as any) as SyntaxList;
+          list._children = [];
+          let p = ns.pos;
+          for (const n of ns) {
+            addSynthetics(list._children, p, n.pos);
+            list._children.push(n);
+            p = n.end;
+          }
+          addSynthetics(list._children, p, ns.end);
+          return list;
+        };
+        const createChildren = () => {
+          const cs = [] as Node[];
+          if (isNodeKind(this.kind)) {
+            if (isJSDocCommentContainingNode(this)) {
+              this.forEachChild((c) => {
+                cs.push(c);
+              });
+              return cs;
+            }
+            scanner.setText((s || this.getSourceFile()).text);
+            let p = this.pos;
+            const processNode = (c: Node) => {
+              addSynthetics(cs, p, c.pos);
+              cs.push(c);
+              p = c.end;
+            };
+            const processNodes = (ns: NodeArray<Node>) => {
+              addSynthetics(cs, p, ns.pos);
+              cs.push(createSyntaxList(ns));
+              p = ns.end;
+            };
+            forEach((this as JSDocContainer).jsDoc, processNode);
+            p = this.pos;
+            this.forEachChild(processNode, processNodes);
+            addSynthetics(cs, p, this.end);
+            scanner.setText(undefined);
+          }
+          return cs;
+        };
+        return this._children || (this._children = createChildren());
       }
-      public getFirstToken(s?: SourceFileLike): Node | undefined {
-        this.assertHasRealPosition();
+      getFirstToken(s?: SourceFileLike): Node | undefined {
+        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
         const cs = this.getChildren(s);
         if (!cs.length) return;
         const c = find(cs, (c) => c.kind < Syntax.FirstJSDocNode || c.kind > Syntax.LastJSDocNode)!;
         return c.kind < Syntax.FirstNode ? c : c.getFirstToken(s);
       }
-      public getLastToken(s?: SourceFileLike): Node | undefined {
-        this.assertHasRealPosition();
+      getLastToken(s?: SourceFileLike): Node | undefined {
+        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
         const cs = this.getChildren(s);
         const c = lastOrUndefined(cs);
         if (!c) return;
         return c.kind < Syntax.FirstNode ? c : c.getLastToken(s);
       }
 
-      public forEachChild<T>(cbNode: (n: Node) => T, cbNodeArray?: (ns: NodeArray<Node>) => T): T | undefined {
+      forEachChild<T>(cbNode: (n: Node) => T, cbNodeArray?: (ns: NodeArray<Node>) => T): T | undefined {
         return forEachChild(this, cbNode, cbNodeArray);
       }
     }
 
-    class TokenOrIdentifierObj implements Node {
-      id = 0;
-      kind!: Syntax;
-      flags = NodeFlags.None;
-      modifierFlagsCache = ModifierFlags.None;
-      transformFlags = TransformFlags.None;
-      parent!: Node;
-      symbol!: Symbol;
-      jsDocComments?: JSDoc[];
-
-      constructor(public pos: number, public end: number) {}
-
-      public getSourceFile(): SourceFile {
-        return getSourceFileOfNode(this);
-      }
-      public getStart(s?: SourceFileLike, includeJsDocComment?: boolean): number {
-        return getTokenPosOfNode(this, s, includeJsDocComment);
-      }
-
-      public getFullStart(): number {
-        return this.pos;
-      }
-
-      public getEnd(): number {
-        return this.end;
-      }
-
-      public getWidth(s?: SourceFile): number {
-        return this.getEnd() - this.getStart(s);
-      }
-
-      public getFullWidth(): number {
-        return this.end - this.pos;
-      }
-
-      public getLeadingTriviaWidth(s?: SourceFile): number {
-        return this.getStart(s) - this.pos;
-      }
-
-      public getFullText(s?: SourceFile): string {
-        return (s || this.getSourceFile()).text.substring(this.pos, this.end);
-      }
-
-      public getText(s?: SourceFile): string {
-        if (!s) {
-          s = this.getSourceFile();
-        }
-        return s.text.substring(this.getStart(s), this.getEnd());
-      }
-
-      public getChildCount(): number {
-        return 0;
-      }
-
-      public getChildAt(): Node {
-        return undefined!; // TODO: GH#18217
-      }
-
-      public getChildren(): Node[] {
+    class TokenOrIdentifierObj extends NodeObj {
+      getChildren(): Node[] {
         return this.kind === Syntax.EndOfFileToken ? (this as EndOfFileToken).jsDoc || emptyArray : emptyArray;
       }
-
-      public getFirstToken(): Node | undefined {
-        return undefined;
-      }
-
-      public getLastToken(): Node | undefined {
-        return undefined;
-      }
-
-      public forEachChild<T>(): T | undefined {
-        return undefined;
-      }
     }
 
-    export class TokenObj<TKind extends Syntax> extends TokenOrIdentifierObj implements Token<TKind> {
-      constructor(public kind: TKind, pos: number, end: number) {
-        super(pos, end);
-      }
-    }
+    export class TokenObj<T extends Syntax> extends TokenOrIdentifierObj implements Token<T> {}
 
     export class IdentifierObj extends TokenOrIdentifierObj implements Identifier {
-      kind: Syntax.Identifier = Syntax.Identifier;
       escapedText!: __String;
       autoGenerateFlags!: GeneratedIdentifierFlags;
       _primaryExpressionBrand: any;
@@ -644,10 +622,9 @@ namespace qnr {
       _expressionBrand: any;
       _declarationBrand: any;
       typeArguments!: NodeArray<TypeNode>;
-      original = undefined;
       flowNode = undefined;
-      constructor(_: Syntax.Identifier, pos: number, end: number) {
-        super(pos, end);
+      constructor(kind: Syntax.Identifier, pos: number, end: number) {
+        super(kind, pos, end);
       }
       get text(): string {
         return idText(this);
@@ -656,11 +633,9 @@ namespace qnr {
     IdentifierObj.prototype.kind = Syntax.Identifier;
 
     export class PrivateIdentifierObj extends TokenOrIdentifierObj implements PrivateIdentifier {
-      kind: Syntax.PrivateIdentifier = Syntax.PrivateIdentifier;
       escapedText!: __String;
-      symbol!: Symbol;
-      constructor(_: Syntax.PrivateIdentifier, pos: number, end: number) {
-        super(pos, end);
+      constructor(kind: Syntax.PrivateIdentifier, pos: number, end: number) {
+        super(kind, pos, end);
       }
       get text(): string {
         return idText(this);
@@ -852,73 +827,73 @@ namespace qnr {
     }
 
     export class SourceFileObj extends NodeObj implements SourceFile {
-      public kind: Syntax.SourceFile = Syntax.SourceFile;
-      public _declarationBrand: any;
-      public fileName!: string;
-      public path!: Path;
-      public resolvedPath!: Path;
-      public originalFileName!: string;
-      public text!: string;
-      public scriptSnapshot!: IScriptSnapshot;
-      public lineMap!: readonly number[];
+      kind: Syntax.SourceFile = Syntax.SourceFile;
+      _declarationBrand: any;
+      fileName!: string;
+      path!: Path;
+      resolvedPath!: Path;
+      originalFileName!: string;
+      text!: string;
+      scriptSnapshot!: IScriptSnapshot;
+      lineMap!: readonly number[];
 
-      public statements!: NodeArray<Statement>;
-      public endOfFileToken!: Token<Syntax.EndOfFileToken>;
+      statements!: NodeArray<Statement>;
+      endOfFileToken!: Token<Syntax.EndOfFileToken>;
 
-      public amdDependencies!: { name: string; path: string }[];
-      public moduleName!: string;
-      public referencedFiles!: FileReference[];
-      public typeReferenceDirectives!: FileReference[];
-      public libReferenceDirectives!: FileReference[];
+      amdDependencies!: { name: string; path: string }[];
+      moduleName!: string;
+      referencedFiles!: FileReference[];
+      typeReferenceDirectives!: FileReference[];
+      libReferenceDirectives!: FileReference[];
 
-      public syntacticDiagnostics!: DiagnosticWithLocation[];
-      public parseDiagnostics!: DiagnosticWithLocation[];
-      public bindDiagnostics!: DiagnosticWithLocation[];
-      public bindSuggestionDiagnostics?: DiagnosticWithLocation[];
+      syntacticDiagnostics!: DiagnosticWithLocation[];
+      parseDiagnostics!: DiagnosticWithLocation[];
+      bindDiagnostics!: DiagnosticWithLocation[];
+      bindSuggestionDiagnostics?: DiagnosticWithLocation[];
 
-      public isDeclarationFile!: boolean;
-      public isDefaultLib!: boolean;
-      public hasNoDefaultLib!: boolean;
-      public externalModuleIndicator!: Node; // The first node that causes this file to be an external module
-      public commonJsModuleIndicator!: Node; // The first node that causes this file to be a CommonJS module
-      public nodeCount!: number;
-      public identifierCount!: number;
-      public symbolCount!: number;
-      public version!: string;
-      public scriptKind!: ScriptKind;
-      public languageVersion!: ScriptTarget;
-      public languageVariant!: LanguageVariant;
-      public identifiers!: QMap<string>;
-      public nameTable: UnderscoreEscapedMap<number> | undefined;
-      public resolvedModules: QMap<ResolvedModuleFull> | undefined;
-      public resolvedTypeReferenceDirectiveNames!: QMap<ResolvedTypeReferenceDirective>;
-      public imports!: readonly StringLiteralLike[];
-      public moduleAugmentations!: StringLiteral[];
+      isDeclarationFile!: boolean;
+      isDefaultLib!: boolean;
+      hasNoDefaultLib!: boolean;
+      externalModuleIndicator!: Node; // The first node that causes this file to be an external module
+      commonJsModuleIndicator!: Node; // The first node that causes this file to be a CommonJS module
+      nodeCount!: number;
+      identifierCount!: number;
+      symbolCount!: number;
+      version!: string;
+      scriptKind!: ScriptKind;
+      languageVersion!: ScriptTarget;
+      languageVariant!: LanguageVariant;
+      identifiers!: QMap<string>;
+      nameTable: UnderscoreEscapedMap<number> | undefined;
+      resolvedModules: QMap<ResolvedModuleFull> | undefined;
+      resolvedTypeReferenceDirectiveNames!: QMap<ResolvedTypeReferenceDirective>;
+      imports!: readonly StringLiteralLike[];
+      moduleAugmentations!: StringLiteral[];
       private namedDeclarations: QMap<Declaration[]> | undefined;
-      public ambientModuleNames!: string[];
-      public checkJsDirective: CheckJsDirective | undefined;
-      public errorExpectations: TextRange[] | undefined;
-      public possiblyContainDynamicImport?: boolean;
-      public pragmas!: PragmaMap;
-      public localJsxFactory: EntityName | undefined;
-      public localJsxNamespace: __String | undefined;
+      ambientModuleNames!: string[];
+      checkJsDirective: CheckJsDirective | undefined;
+      errorExpectations: TextRange[] | undefined;
+      possiblyContainDynamicImport?: boolean;
+      pragmas!: PragmaMap;
+      localJsxFactory: EntityName | undefined;
+      localJsxNamespace: __String | undefined;
 
       constructor(kind: Syntax, pos: number, end: number) {
         super(kind, pos, end);
       }
-      public update(newText: string, textChangeRange: TextChangeRange): SourceFile {
+      update(newText: string, textChangeRange: TextChangeRange): SourceFile {
         return updateSourceFile(this, newText, textChangeRange);
       }
-      public getLineAndCharacterOfPosition(position: number): LineAndCharacter {
+      getLineAndCharacterOfPosition(position: number): LineAndCharacter {
         return getLineAndCharacterOfPosition(this, position);
       }
-      public getLineStarts(): readonly number[] {
+      getLineStarts(): readonly number[] {
         return getLineStarts(this);
       }
-      public getPositionOfLineAndCharacter(line: number, character: number, allowEdits?: true): number {
+      getPositionOfLineAndCharacter(line: number, character: number, allowEdits?: true): number {
         return computePositionOfLineAndCharacter(getLineStarts(this), line, character, this.text, allowEdits);
       }
-      public getLineEndOfPosition(pos: number): number {
+      getLineEndOfPosition(pos: number): number {
         const { line } = this.getLineAndCharacterOfPosition(pos);
         const lineStarts = this.getLineStarts();
 
@@ -935,7 +910,7 @@ namespace qnr {
         return fullText[lastCharPos] === '\n' && fullText[lastCharPos - 1] === '\r' ? lastCharPos - 1 : lastCharPos;
       }
 
-      public getNamedDeclarations(): QMap<Declaration[]> {
+      getNamedDeclarations(): QMap<Declaration[]> {
         if (!this.namedDeclarations) {
           this.namedDeclarations = this.computeNamedDeclarations();
         }
@@ -1091,65 +1066,9 @@ namespace qnr {
     export class SourceMapSourceObj implements SourceMapSource {
       lineMap!: number[];
       constructor(public fileName: string, public text: string, public skipTrivia = (pos: number) => pos) {}
-      public getLineAndCharacterOfPosition(pos: number): LineAndCharacter {
+      getLineAndCharacterOfPosition(pos: number): LineAndCharacter {
         return getLineAndCharacterOfPosition(this, pos);
       }
-    }
-
-    function createChildren(n: Node, s: SourceFileLike | undefined): Node[] {
-      if (!isNodeKind(n.kind)) return emptyArray;
-      const cs: Node[] = [];
-      if (isJSDocCommentContainingNode(n)) {
-        n.forEachChild((c) => {
-          cs.push(c);
-        });
-        return cs;
-      }
-      scanner.setText((s || n.getSourceFile()).text);
-      let pos = n.pos;
-      const processNode = (c: Node) => {
-        addSyntheticNodes(cs, pos, c.pos, n);
-        cs.push(c);
-        pos = c.end;
-      };
-      const processNodes = (ns: NodeArray<Node>) => {
-        addSyntheticNodes(cs, pos, ns.pos, n);
-        cs.push(createSyntaxList(ns, n));
-        pos = ns.end;
-      };
-      forEach((n as JSDocContainer).jsDoc, processNode);
-      pos = n.pos;
-      n.forEachChild(processNode, processNodes);
-      addSyntheticNodes(cs, pos, n.end, n);
-      scanner.setText(undefined);
-      return cs;
-    }
-
-    function addSyntheticNodes(ns: Push<Node>, pos: number, end: number, parent: Node): void {
-      scanner.setTextPos(pos);
-      while (pos < end) {
-        const token = scanner.scan();
-        const textPos = scanner.getTextPos();
-        if (textPos <= end) {
-          if (token === Syntax.Identifier) fail(`Did not expect ${Debug.formatSyntaxKind(parent.kind)} to have an Identifier in its trivia`);
-          ns.push(createNode(token, pos, textPos, parent));
-        }
-        pos = textPos;
-        if (token === Syntax.EndOfFileToken) break;
-      }
-    }
-
-    function createSyntaxList(ns: NodeArray<Node>, parent: Node): Node {
-      const list = (createNode(Syntax.SyntaxList, ns.pos, ns.end, parent) as any) as SyntaxList;
-      list._children = [];
-      let pos = ns.pos;
-      for (const n of ns) {
-        addSyntheticNodes(list._children, pos, n.pos, parent);
-        list._children.push(n);
-        pos = n.end;
-      }
-      addSyntheticNodes(list._children, pos, ns.end, parent);
-      return list;
     }
 
     function hasJSDocInheritDocTag(node: Node) {

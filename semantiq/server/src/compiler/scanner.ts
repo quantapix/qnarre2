@@ -2113,28 +2113,32 @@ namespace qnr {
     }
 
     let raw: Scanner | undefined;
+    export function getRaw() {
+      return raw || (raw = Scanner.create(true));
+    }
+
     const sentinel: object = {};
 
     export function process(k: TemplateLiteralToken['kind'], s: string) {
-      if (!raw) raw = Scanner.create();
+      const r = getRaw();
       switch (k) {
         case Syntax.NoSubstitutionLiteral:
-          raw.setText('`' + s + '`');
+          r.setText('`' + s + '`');
           break;
         case Syntax.TemplateHead:
-          raw.setText('`' + s + '${');
+          r.setText('`' + s + '${');
           break;
         case Syntax.TemplateMiddle:
-          raw.setText('}' + s + '${');
+          r.setText('}' + s + '${');
           break;
         case Syntax.TemplateTail:
-          raw.setText('}' + s + '`');
+          r.setText('}' + s + '`');
           break;
       }
-      let t = raw.scan();
-      if (t === Syntax.CloseBracketToken) t = raw.reScanTemplateToken(false);
-      if (raw.isUnterminated()) {
-        raw.setText();
+      let t = r.scan();
+      if (t === Syntax.CloseBracketToken) t = r.reScanTemplateToken(false);
+      if (r.isUnterminated()) {
+        r.setText();
         return sentinel;
       }
       let v: string | undefined;
@@ -2143,14 +2147,14 @@ namespace qnr {
         case Syntax.TemplateHead:
         case Syntax.TemplateMiddle:
         case Syntax.TemplateTail:
-          v = raw.getTokenValue();
+          v = r.getTokenValue();
           break;
       }
-      if (raw.scan() !== Syntax.EndOfFileToken) {
-        raw.setText();
+      if (r.scan() !== Syntax.EndOfFileToken) {
+        r.setText();
         return sentinel;
       }
-      raw.setText();
+      r.setText();
       return v;
     }
   }
