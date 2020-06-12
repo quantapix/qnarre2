@@ -1012,7 +1012,7 @@ namespace qnr {
       else if (isLiteralKind(k) || isTemplateLiteralKind(k)) (r as LiteralLikeNode).text = '';
       return finishNode(r);
     }
-    function NodeArray.create<T extends Node>(es: T[], pos: number, end?: number): NodeArray<T> {
+    function createNodeArray<T extends Node>(es: T[], pos: number, end?: number): NodeArray<T> {
       const l = es.length;
       const r = (l >= 1 && l <= 4 ? es.slice() : es) as MutableNodeArray<T>;
       r.pos = pos;
