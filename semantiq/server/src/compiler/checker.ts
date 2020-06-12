@@ -5188,7 +5188,7 @@ namespace qnr {
         let typeParameterNodes: NodeArray<TypeParameterDeclaration> | undefined;
         const targetSymbol = getTargetSymbol(symbol);
         if (targetSymbol.flags & (SymbolFlags.Class | SymbolFlags.Interface | SymbolFlags.TypeAlias)) {
-          typeParameterNodes = createNodeArray(map(getLocalTypeParametersOfClassOrInterfaceOrTypeAlias(symbol), (tp) => typeParameterToDeclaration(tp, context)));
+          typeParameterNodes = NodeArray.create(map(getLocalTypeParametersOfClassOrInterfaceOrTypeAlias(symbol), (tp) => typeParameterToDeclaration(tp, context)));
         }
         return typeParameterNodes;
       }
@@ -5715,7 +5715,7 @@ namespace qnr {
             if (isJSDocConstructSignature(node)) {
               let newTypeNode: TypeNode | undefined;
               return ConstructorDeclaration.createTypeNode(
-                visitNodes(node.typeParameters, visitExistingNodeTreeSymbols),
+                NodeArray.visit(node.typeParameters, visitExistingNodeTreeSymbols),
                 mapDefined(node.parameters, (p, i) =>
                   p.name && isIdentifier(p.name) && p.name.escapedText === 'new'
                     ? ((newTypeNode = p.type), undefined)
@@ -5733,7 +5733,7 @@ namespace qnr {
               );
             } else {
               return FunctionTypeNode.create(
-                visitNodes(node.typeParameters, visitExistingNodeTreeSymbols),
+                NodeArray.visit(node.typeParameters, visitExistingNodeTreeSymbols),
                 map(node.parameters, (p, i) =>
                   createParameter(
                     /*decorators*/ undefined,
@@ -5761,7 +5761,7 @@ namespace qnr {
               node,
               LiteralTypeNode.update(node.argument, rewriteModuleSpecifier(node, node.argument.literal)),
               node.qualifier,
-              visitNodes(node.typeArguments, visitExistingNodeTreeSymbols, isTypeNode),
+              NodeArray.visit(node.typeArguments, visitExistingNodeTreeSymbols, isTypeNode),
               node.isTypeOf
             );
           }
@@ -5918,7 +5918,7 @@ namespace qnr {
             //  the top-level exports and exporting them in the targeted ns, as can occur when a js file has both typedefs and `module.export` assignments
             const excessExports = filter(statements, (s) => !!(getEffectiveModifierFlags(s) & ModifierFlags.Export));
             if (length(excessExports)) {
-              ns.body.statements = createNodeArray([
+              ns.body.statements = NodeArray.create([
                 ...ns.body.statements,
                 createExportDeclaration(
                   /*decorators*/ undefined,
@@ -6006,7 +6006,7 @@ namespace qnr {
             } else {
               // some items filtered, others not - update the export declaration
               // (mutating because why not, we're building a whole new tree here anyway)
-              exportDecl.exportClause.elements = createNodeArray(replacements);
+              exportDecl.exportClause.elements = NodeArray.create(replacements);
             }
           }
           return statements;
@@ -6043,7 +6043,7 @@ namespace qnr {
 
         function addExportModifier(statement: Statement) {
           const flags = (getEffectiveModifierFlags(statement) | ModifierFlags.Export) & ~ModifierFlags.Ambient;
-          statement.modifiers = createNodeArray(createModifiersFromModifierFlags(flags));
+          statement.modifiers = NodeArray.create(createModifiersFromModifierFlags(flags));
           statement.modifierFlagsCache = 0;
         }
 
@@ -6213,7 +6213,7 @@ namespace qnr {
             newModifierFlags |= ModifierFlags.Default;
           }
           if (newModifierFlags) {
-            node.modifiers = createNodeArray(createModifiersFromModifierFlags(newModifierFlags | getEffectiveModifierFlags(node)));
+            node.modifiers = NodeArray.create(createModifiersFromModifierFlags(newModifierFlags | getEffectiveModifierFlags(node)));
             node.modifierFlagsCache = 0; // Reset computed flags cache
           }
           results.push(node);
@@ -6949,7 +6949,7 @@ namespace qnr {
                 const decl = signatureToSignatureDeclarationHelper(sig, methodKind, context) as MethodDeclaration;
                 decl.name = name; // TODO: Clone
                 if (flag) {
-                  decl.modifiers = createNodeArray(createModifiersFromModifierFlags(flag));
+                  decl.modifiers = NodeArray.create(createModifiersFromModifierFlags(flag));
                 }
                 if (p.flags & SymbolFlags.Optional) {
                   decl.questionToken = createToken(Syntax.QuestionToken);
@@ -26056,13 +26056,13 @@ namespace qnr {
       }
 
       if (hasRestParameter || hasSpreadArgument) {
-        spanArray = createNodeArray(args);
+        spanArray = NodeArray.create(args);
         if (hasSpreadArgument && argCount) {
           const nextArg = elementAt(args, getSpreadArgumentIndex(args) + 1) || undefined;
-          spanArray = createNodeArray(args.slice(max > argCount && nextArg ? args.indexOf(nextArg) : Math.min(max, args.length - 1)));
+          spanArray = NodeArray.create(args.slice(max > argCount && nextArg ? args.indexOf(nextArg) : Math.min(max, args.length - 1)));
         }
       } else {
-        spanArray = createNodeArray(args.slice(max));
+        spanArray = NodeArray.create(args.slice(max));
       }
 
       spanArray.pos = first(spanArray).pos;

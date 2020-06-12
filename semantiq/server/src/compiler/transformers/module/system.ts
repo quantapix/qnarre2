@@ -99,7 +99,7 @@ namespace qnr {
         updateSourceFileNode(
           node,
           setTextRange(
-            createNodeArray([
+            NodeArray.create([
               createExpressionStatement(
                 createCall(
                   createPropertyAccess(createIdentifier('System'), 'register'),
@@ -236,7 +236,7 @@ namespace qnr {
       // as we both emit transformations as well as aggregate some data used when creating
       // setters. This allows us to reduce the number of times we need to loop through the
       // statements of the source file.
-      const executeStatements = visitNodes(node.statements, sourceElementVisitor, isStatement, statementOffset);
+      const executeStatements = NodeArray.visit(node.statements, sourceElementVisitor, isStatement, statementOffset);
 
       // Emit early exports for function declarations.
       addRange(statements, hoistedStatements);
@@ -579,11 +579,11 @@ namespace qnr {
           updateFunctionDeclaration(
             node,
             node.decorators,
-            visitNodes(node.modifiers, modifierVisitor, isModifier),
+            NodeArray.visit(node.modifiers, modifierVisitor, isModifier),
             node.asteriskToken,
             getDeclarationName(node, /*allowComments*/ true, /*allowSourceMaps*/ true),
             /*typeParameters*/ undefined,
-            visitNodes(node.parameters, destructuringAndImportCallVisitor, isParameterDeclaration),
+            NodeArray.visit(node.parameters, destructuringAndImportCallVisitor, isParameterDeclaration),
             /*type*/ undefined,
             visitNode(node.body, destructuringAndImportCallVisitor, isBlock)
           )
@@ -627,8 +627,8 @@ namespace qnr {
                   /*modifiers*/ undefined,
                   node.name,
                   /*typeParameters*/ undefined,
-                  visitNodes(node.heritageClauses, destructuringAndImportCallVisitor, isHeritageClause),
-                  visitNodes(node.members, destructuringAndImportCallVisitor, isClassElement)
+                  NodeArray.visit(node.heritageClauses, destructuringAndImportCallVisitor, isHeritageClause),
+                  NodeArray.visit(node.members, destructuringAndImportCallVisitor, isClassElement)
                 ),
                 node
               )
@@ -1260,7 +1260,7 @@ namespace qnr {
       const savedEnclosingBlockScopedContainer = enclosingBlockScopedContainer;
       enclosingBlockScopedContainer = node;
 
-      node = updateCaseBlock(node, visitNodes(node.clauses, nestedElementVisitor, isCaseOrDefaultClause));
+      node = updateCaseBlock(node, NodeArray.visit(node.clauses, nestedElementVisitor, isCaseOrDefaultClause));
 
       enclosingBlockScopedContainer = savedEnclosingBlockScopedContainer;
       return node;
@@ -1272,7 +1272,7 @@ namespace qnr {
      * @param node The node to visit.
      */
     function visitCaseClause(node: CaseClause): VisitResult<CaseOrDefaultClause> {
-      return updateCaseClause(node, visitNode(node.expression, destructuringAndImportCallVisitor, isExpression), visitNodes(node.statements, nestedElementVisitor, isStatement));
+      return updateCaseClause(node, visitNode(node.expression, destructuringAndImportCallVisitor, isExpression), NodeArray.visit(node.statements, nestedElementVisitor, isStatement));
     }
 
     /**

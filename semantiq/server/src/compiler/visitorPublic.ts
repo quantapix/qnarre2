@@ -55,7 +55,7 @@ namespace qnr {
    * @param start An optional value indicating the starting offset at which to start visiting.
    * @param count An optional value indicating the maximum number of nodes to visit.
    */
-  export function visitNodes<T extends Node>(nodes: NodeArray<T> | undefined, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number): NodeArray<T>;
+  export function NodeArray.visit<T extends Node>(nodes: NodeArray<T> | undefined, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number): NodeArray<T>;
 
   /**
    * Visits a NodeArray using the supplied visitor, possibly returning a new NodeArray in its place.
@@ -66,7 +66,7 @@ namespace qnr {
    * @param start An optional value indicating the starting offset at which to start visiting.
    * @param count An optional value indicating the maximum number of nodes to visit.
    */
-  export function visitNodes<T extends Node>(nodes: NodeArray<T> | undefined, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number): NodeArray<T> | undefined;
+  export function NodeArray.visit<T extends Node>(nodes: NodeArray<T> | undefined, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number): NodeArray<T> | undefined;
 
   /**
    * Visits a NodeArray using the supplied visitor, possibly returning a new NodeArray in its place.
@@ -77,7 +77,7 @@ namespace qnr {
    * @param start An optional value indicating the starting offset at which to start visiting.
    * @param count An optional value indicating the maximum number of nodes to visit.
    */
-  export function visitNodes<T extends Node>(nodes: NodeArray<T> | undefined, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number): NodeArray<T> | undefined {
+  export function NodeArray.visit<T extends Node>(nodes: NodeArray<T> | undefined, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number): NodeArray<T> | undefined {
     if (nodes === undefined || visitor === undefined) {
       return nodes;
     }
@@ -98,7 +98,7 @@ namespace qnr {
       // If we are not visiting all of the original nodes, we must always create a new array.
       // Since this is a fragment of a node array, we do not copy over the previous location
       // and will only copy over `hasTrailingComma` if we are including the last element.
-      updated = createNodeArray<T>([], /*hasTrailingComma*/ nodes.hasTrailingComma && start + count === length);
+      updated = NodeArray.create<T>([], /*hasTrailingComma*/ nodes.hasTrailingComma && start + count === length);
     }
 
     // Visit each original node.
@@ -109,7 +109,7 @@ namespace qnr {
       if (updated !== undefined || visited === undefined || visited !== node) {
         if (updated === undefined) {
           // Ensure we have a copy of `nodes`, up to the current index.
-          updated = createNodeArray(nodes.slice(0, i), nodes.hasTrailingComma);
+          updated = NodeArray.create(nodes.slice(0, i), nodes.hasTrailingComma);
           setTextRange(updated, nodes);
         }
         if (visited) {
@@ -137,7 +137,7 @@ namespace qnr {
    */
   export function visitLexicalEnvironment(statements: NodeArray<Statement>, visitor: Visitor, context: TransformationContext, start?: number, ensureUseStrict?: boolean) {
     context.startLexicalEnvironment();
-    statements = visitNodes(statements, visitor, isStatement, start);
+    statements = NodeArray.visit(statements, visitor, isStatement, start);
     if (ensureUseStrict) statements = qnr.ensureUseStrict(statements); // eslint-disable-line @typescript-eslint/no-unnecessary-qualifier
     return mergeLexicalEnvironment(statements, context.endLexicalEnvironment());
   }
@@ -158,7 +158,7 @@ namespace qnr {
     context: TransformationContext,
     nodesVisitor?: <T extends Node>(nodes: NodeArray<T> | undefined, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number) => NodeArray<T> | undefined
   ): NodeArray<ParameterDeclaration> | undefined;
-  export function visitParameterList(nodes: NodeArray<ParameterDeclaration> | undefined, visitor: Visitor, context: TransformationContext, nodesVisitor = visitNodes) {
+  export function visitParameterList(nodes: NodeArray<ParameterDeclaration> | undefined, visitor: Visitor, context: TransformationContext, nodesVisitor = NodeArray.visit) {
     let updated: NodeArray<ParameterDeclaration> | undefined;
     context.startLexicalEnvironment();
     if (nodes) {
@@ -191,7 +191,7 @@ namespace qnr {
       }
     }
     if (result) {
-      return setTextRange(createNodeArray(result, parameters.hasTrailingComma), parameters);
+      return setTextRange(NodeArray.create(result, parameters.hasTrailingComma), parameters);
     }
     return parameters;
   }
@@ -304,9 +304,9 @@ namespace qnr {
    * @param visitor The callback used to visit each child.
    * @param context A lexical environment context for the visitor.
    */
-  export function visitEachChild<T extends Node>(node: T | undefined, visitor: Visitor, context: TransformationContext, nodesVisitor?: typeof visitNodes, tokenVisitor?: Visitor): T | undefined;
+  export function visitEachChild<T extends Node>(node: T | undefined, visitor: Visitor, context: TransformationContext, nodesVisitor?: typeof NodeArray.visit, tokenVisitor?: Visitor): T | undefined;
 
-  export function visitEachChild(node: Node | undefined, visitor: Visitor, context: TransformationContext, nodesVisitor = visitNodes, tokenVisitor?: Visitor): Node | undefined {
+  export function visitEachChild(node: Node | undefined, visitor: Visitor, context: TransformationContext, nodesVisitor = NodeArray.visit, tokenVisitor?: Visitor): Node | undefined {
     if (node === undefined) {
       return;
     }
@@ -529,7 +529,7 @@ namespace qnr {
           <ImportTypeNode>node,
           visitNode((<ImportTypeNode>node).argument, visitor, isTypeNode),
           visitNode((<ImportTypeNode>node).qualifier, visitor, isEntityName),
-          visitNodes((<ImportTypeNode>node).typeArguments, visitor, isTypeNode),
+          NodeArray.visit((<ImportTypeNode>node).typeArguments, visitor, isTypeNode),
           (<ImportTypeNode>node).isTypeOf
         );
 
@@ -649,7 +649,7 @@ namespace qnr {
         return updateTaggedTemplate(
           <TaggedTemplateExpression>node,
           visitNode((<TaggedTemplateExpression>node).tag, visitor, isExpression),
-          visitNodes((<TaggedTemplateExpression>node).typeArguments, visitor, isExpression),
+          NodeArray.visit((<TaggedTemplateExpression>node).typeArguments, visitor, isExpression),
           visitNode((<TaggedTemplateExpression>node).template, visitor, isTemplateLiteral)
         );
 

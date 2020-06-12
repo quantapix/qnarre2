@@ -8,25 +8,6 @@ namespace qnr {
     JSDoc = 1 << 5,
   }
 
-  function visitNode<T>(cbNode: (node: Node) => T, node: Node | undefined): T | undefined {
-    return node && cbNode(node);
-  }
-
-  function visitNodes<T>(cbNode: (node: Node) => T, cbNodes: ((node: NodeArray<Node>) => T | undefined) | undefined, nodes: NodeArray<Node> | undefined): T | undefined {
-    if (nodes) {
-      if (cbNodes) {
-        return cbNodes(nodes);
-      }
-      for (const node of nodes) {
-        const result = cbNode(node);
-        if (result) {
-          return result;
-        }
-      }
-    }
-    return;
-  }
-
   export function forEachChild<T>(node: Node, cbNode: (node: Node) => T | undefined, cbNodes?: (nodes: NodeArray<Node>) => T | undefined): T | undefined {
     if (!node || node.kind <= Syntax.LastToken) {
       return;
@@ -43,8 +24,8 @@ namespace qnr {
         );
       case Syntax.ShorthandPropertyAssignment:
         return (
-          visitNodes(cbNode, cbNodes, node.decorators) ||
-          visitNodes(cbNode, cbNodes, node.modifiers) ||
+          NodeArray.visit(cbNode, cbNodes, node.decorators) ||
+          NodeArray.visit(cbNode, cbNodes, node.modifiers) ||
           visitNode(cbNode, (<ShorthandPropertyAssignment>node).name) ||
           visitNode(cbNode, (<ShorthandPropertyAssignment>node).questionToken) ||
           visitNode(cbNode, (<ShorthandPropertyAssignment>node).exclamationToken) ||
@@ -55,8 +36,8 @@ namespace qnr {
         return visitNode(cbNode, (<SpreadAssignment>node).expression);
       case Syntax.Parameter:
         return (
-          visitNodes(cbNode, cbNodes, node.decorators) ||
-          visitNodes(cbNode, cbNodes, node.modifiers) ||
+          NodeArray.visit(cbNode, cbNodes, node.decorators) ||
+          NodeArray.visit(cbNode, cbNodes, node.modifiers) ||
           visitNode(cbNode, (<ParameterDeclaration>node).dot3Token) ||
           visitNode(cbNode, (<ParameterDeclaration>node).name) ||
           visitNode(cbNode, (<ParameterDeclaration>node).questionToken) ||
@@ -65,8 +46,8 @@ namespace qnr {
         );
       case Syntax.PropertyDeclaration:
         return (
-          visitNodes(cbNode, cbNodes, node.decorators) ||
-          visitNodes(cbNode, cbNodes, node.modifiers) ||
+          NodeArray.visit(cbNode, cbNodes, node.decorators) ||
+          NodeArray.visit(cbNode, cbNodes, node.modifiers) ||
           visitNode(cbNode, (<PropertyDeclaration>node).name) ||
           visitNode(cbNode, (<PropertyDeclaration>node).questionToken) ||
           visitNode(cbNode, (<PropertyDeclaration>node).exclamationToken) ||
@@ -75,8 +56,8 @@ namespace qnr {
         );
       case Syntax.PropertySignature:
         return (
-          visitNodes(cbNode, cbNodes, node.decorators) ||
-          visitNodes(cbNode, cbNodes, node.modifiers) ||
+          NodeArray.visit(cbNode, cbNodes, node.decorators) ||
+          NodeArray.visit(cbNode, cbNodes, node.modifiers) ||
           visitNode(cbNode, (<PropertySignature>node).name) ||
           visitNode(cbNode, (<PropertySignature>node).questionToken) ||
           visitNode(cbNode, (<PropertySignature>node).type) ||
@@ -84,16 +65,16 @@ namespace qnr {
         );
       case Syntax.PropertyAssignment:
         return (
-          visitNodes(cbNode, cbNodes, node.decorators) ||
-          visitNodes(cbNode, cbNodes, node.modifiers) ||
+          NodeArray.visit(cbNode, cbNodes, node.decorators) ||
+          NodeArray.visit(cbNode, cbNodes, node.modifiers) ||
           visitNode(cbNode, (<PropertyAssignment>node).name) ||
           visitNode(cbNode, (<PropertyAssignment>node).questionToken) ||
           visitNode(cbNode, (<PropertyAssignment>node).initializer)
         );
       case Syntax.VariableDeclaration:
         return (
-          visitNodes(cbNode, cbNodes, node.decorators) ||
-          visitNodes(cbNode, cbNodes, node.modifiers) ||
+          NodeArray.visit(cbNode, cbNodes, node.decorators) ||
+          NodeArray.visit(cbNode, cbNodes, node.modifiers) ||
           visitNode(cbNode, (<VariableDeclaration>node).name) ||
           visitNode(cbNode, (<VariableDeclaration>node).exclamationToken) ||
           visitNode(cbNode, (<VariableDeclaration>node).type) ||
@@ -101,8 +82,8 @@ namespace qnr {
         );
       case Syntax.BindingElement:
         return (
-          visitNodes(cbNode, cbNodes, node.decorators) ||
-          visitNodes(cbNode, cbNodes, node.modifiers) ||
+          NodeArray.visit(cbNode, cbNodes, node.decorators) ||
+          NodeArray.visit(cbNode, cbNodes, node.modifiers) ||
           visitNode(cbNode, (<BindingElement>node).dot3Token) ||
           visitNode(cbNode, (<BindingElement>node).propertyName) ||
           visitNode(cbNode, (<BindingElement>node).name) ||
@@ -114,10 +95,10 @@ namespace qnr {
       case Syntax.ConstructSignature:
       case Syntax.IndexSignature:
         return (
-          visitNodes(cbNode, cbNodes, node.decorators) ||
-          visitNodes(cbNode, cbNodes, node.modifiers) ||
-          visitNodes(cbNode, cbNodes, (<SignatureDeclaration>node).typeParameters) ||
-          visitNodes(cbNode, cbNodes, (<SignatureDeclaration>node).parameters) ||
+          NodeArray.visit(cbNode, cbNodes, node.decorators) ||
+          NodeArray.visit(cbNode, cbNodes, node.modifiers) ||
+          NodeArray.visit(cbNode, cbNodes, (<SignatureDeclaration>node).typeParameters) ||
+          NodeArray.visit(cbNode, cbNodes, (<SignatureDeclaration>node).parameters) ||
           visitNode(cbNode, (<SignatureDeclaration>node).type)
         );
       case Syntax.MethodDeclaration:
@@ -129,33 +110,33 @@ namespace qnr {
       case Syntax.FunctionDeclaration:
       case Syntax.ArrowFunction:
         return (
-          visitNodes(cbNode, cbNodes, node.decorators) ||
-          visitNodes(cbNode, cbNodes, node.modifiers) ||
+          NodeArray.visit(cbNode, cbNodes, node.decorators) ||
+          NodeArray.visit(cbNode, cbNodes, node.modifiers) ||
           visitNode(cbNode, (<FunctionLikeDeclaration>node).asteriskToken) ||
           visitNode(cbNode, (<FunctionLikeDeclaration>node).name) ||
           visitNode(cbNode, (<FunctionLikeDeclaration>node).questionToken) ||
           visitNode(cbNode, (<FunctionLikeDeclaration>node).exclamationToken) ||
-          visitNodes(cbNode, cbNodes, (<FunctionLikeDeclaration>node).typeParameters) ||
-          visitNodes(cbNode, cbNodes, (<FunctionLikeDeclaration>node).parameters) ||
+          NodeArray.visit(cbNode, cbNodes, (<FunctionLikeDeclaration>node).typeParameters) ||
+          NodeArray.visit(cbNode, cbNodes, (<FunctionLikeDeclaration>node).parameters) ||
           visitNode(cbNode, (<FunctionLikeDeclaration>node).type) ||
           visitNode(cbNode, (<ArrowFunction>node).equalsGreaterThanToken) ||
           visitNode(cbNode, (<FunctionLikeDeclaration>node).body)
         );
       case Syntax.TypeReference:
-        return visitNode(cbNode, (<TypeReferenceNode>node).typeName) || visitNodes(cbNode, cbNodes, (<TypeReferenceNode>node).typeArguments);
+        return visitNode(cbNode, (<TypeReferenceNode>node).typeName) || NodeArray.visit(cbNode, cbNodes, (<TypeReferenceNode>node).typeArguments);
       case Syntax.TypePredicate:
         return visitNode(cbNode, (<TypePredicateNode>node).assertsModifier) || visitNode(cbNode, (<TypePredicateNode>node).parameterName) || visitNode(cbNode, (<TypePredicateNode>node).type);
       case Syntax.TypeQuery:
         return visitNode(cbNode, (<TypeQueryNode>node).exprName);
       case Syntax.TypeLiteral:
-        return visitNodes(cbNode, cbNodes, (<TypeLiteralNode>node).members);
+        return NodeArray.visit(cbNode, cbNodes, (<TypeLiteralNode>node).members);
       case Syntax.ArrayType:
         return visitNode(cbNode, (<ArrayTypeNode>node).elementType);
       case Syntax.TupleType:
-        return visitNodes(cbNode, cbNodes, (<TupleTypeNode>node).elements);
+        return NodeArray.visit(cbNode, cbNodes, (<TupleTypeNode>node).elements);
       case Syntax.UnionType:
       case Syntax.IntersectionType:
-        return visitNodes(cbNode, cbNodes, (<UnionOrIntersectionTypeNode>node).types);
+        return NodeArray.visit(cbNode, cbNodes, (<UnionOrIntersectionTypeNode>node).types);
       case Syntax.ConditionalType:
         return (
           visitNode(cbNode, (<ConditionalTypeNode>node).checkType) ||
@@ -166,7 +147,7 @@ namespace qnr {
       case Syntax.InferType:
         return visitNode(cbNode, (<InferTypeNode>node).typeParameter);
       case Syntax.ImportType:
-        return visitNode(cbNode, (<ImportTypeNode>node).argument) || visitNode(cbNode, (<ImportTypeNode>node).qualifier) || visitNodes(cbNode, cbNodes, (<ImportTypeNode>node).typeArguments);
+        return visitNode(cbNode, (<ImportTypeNode>node).argument) || visitNode(cbNode, (<ImportTypeNode>node).qualifier) || NodeArray.visit(cbNode, cbNodes, (<ImportTypeNode>node).typeArguments);
       case Syntax.ParenthesizedType:
       case Syntax.TypeOperator:
         return visitNode(cbNode, (<ParenthesizedTypeNode | TypeOperatorNode>node).type);
@@ -190,11 +171,11 @@ namespace qnr {
         );
       case Syntax.ObjectBindingPattern:
       case Syntax.ArrayBindingPattern:
-        return visitNodes(cbNode, cbNodes, (<BindingPattern>node).elements);
+        return NodeArray.visit(cbNode, cbNodes, (<BindingPattern>node).elements);
       case Syntax.ArrayLiteralExpression:
-        return visitNodes(cbNode, cbNodes, (<ArrayLiteralExpression>node).elements);
+        return NodeArray.visit(cbNode, cbNodes, (<ArrayLiteralExpression>node).elements);
       case Syntax.ObjectLiteralExpression:
-        return visitNodes(cbNode, cbNodes, (<ObjectLiteralExpression>node).properties);
+        return NodeArray.visit(cbNode, cbNodes, (<ObjectLiteralExpression>node).properties);
       case Syntax.PropertyAccessExpression:
         return (
           visitNode(cbNode, (<PropertyAccessExpression>node).expression) ||
@@ -212,14 +193,14 @@ namespace qnr {
         return (
           visitNode(cbNode, (<CallExpression>node).expression) ||
           visitNode(cbNode, (<CallExpression>node).questionDotToken) ||
-          visitNodes(cbNode, cbNodes, (<CallExpression>node).typeArguments) ||
-          visitNodes(cbNode, cbNodes, (<CallExpression>node).arguments)
+          NodeArray.visit(cbNode, cbNodes, (<CallExpression>node).typeArguments) ||
+          NodeArray.visit(cbNode, cbNodes, (<CallExpression>node).arguments)
         );
       case Syntax.TaggedTemplateExpression:
         return (
           visitNode(cbNode, (<TaggedTemplateExpression>node).tag) ||
           visitNode(cbNode, (<TaggedTemplateExpression>node).questionDotToken) ||
-          visitNodes(cbNode, cbNodes, (<TaggedTemplateExpression>node).typeArguments) ||
+          NodeArray.visit(cbNode, cbNodes, (<TaggedTemplateExpression>node).typeArguments) ||
           visitNode(cbNode, (<TaggedTemplateExpression>node).template)
         );
       case Syntax.TypeAssertionExpression:
@@ -260,13 +241,13 @@ namespace qnr {
         return visitNode(cbNode, (<SpreadElement>node).expression);
       case Syntax.Block:
       case Syntax.ModuleBlock:
-        return visitNodes(cbNode, cbNodes, (<Block>node).statements);
+        return NodeArray.visit(cbNode, cbNodes, (<Block>node).statements);
       case Syntax.SourceFile:
-        return visitNodes(cbNode, cbNodes, (<SourceFile>node).statements) || visitNode(cbNode, (<SourceFile>node).endOfFileToken);
+        return NodeArray.visit(cbNode, cbNodes, (<SourceFile>node).statements) || visitNode(cbNode, (<SourceFile>node).endOfFileToken);
       case Syntax.VariableStatement:
-        return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, (<VariableStatement>node).declarationList);
+        return NodeArray.visit(cbNode, cbNodes, node.decorators) || NodeArray.visit(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, (<VariableStatement>node).declarationList);
       case Syntax.VariableDeclarationList:
-        return visitNodes(cbNode, cbNodes, (<VariableDeclarationList>node).declarations);
+        return NodeArray.visit(cbNode, cbNodes, (<VariableDeclarationList>node).declarations);
       case Syntax.ExpressionStatement:
         return visitNode(cbNode, (<ExpressionStatement>node).expression);
       case Syntax.IfStatement:
@@ -301,11 +282,11 @@ namespace qnr {
       case Syntax.SwitchStatement:
         return visitNode(cbNode, (<SwitchStatement>node).expression) || visitNode(cbNode, (<SwitchStatement>node).caseBlock);
       case Syntax.CaseBlock:
-        return visitNodes(cbNode, cbNodes, (<CaseBlock>node).clauses);
+        return NodeArray.visit(cbNode, cbNodes, (<CaseBlock>node).clauses);
       case Syntax.CaseClause:
-        return visitNode(cbNode, (<CaseClause>node).expression) || visitNodes(cbNode, cbNodes, (<CaseClause>node).statements);
+        return visitNode(cbNode, (<CaseClause>node).expression) || NodeArray.visit(cbNode, cbNodes, (<CaseClause>node).statements);
       case Syntax.DefaultClause:
-        return visitNodes(cbNode, cbNodes, (<DefaultClause>node).statements);
+        return NodeArray.visit(cbNode, cbNodes, (<DefaultClause>node).statements);
       case Syntax.LabeledStatement:
         return visitNode(cbNode, (<LabeledStatement>node).label) || visitNode(cbNode, (<LabeledStatement>node).statement);
       case Syntax.ThrowStatement:
@@ -319,57 +300,57 @@ namespace qnr {
       case Syntax.ClassDeclaration:
       case Syntax.ClassExpression:
         return (
-          visitNodes(cbNode, cbNodes, node.decorators) ||
-          visitNodes(cbNode, cbNodes, node.modifiers) ||
+          NodeArray.visit(cbNode, cbNodes, node.decorators) ||
+          NodeArray.visit(cbNode, cbNodes, node.modifiers) ||
           visitNode(cbNode, (<ClassLikeDeclaration>node).name) ||
-          visitNodes(cbNode, cbNodes, (<ClassLikeDeclaration>node).typeParameters) ||
-          visitNodes(cbNode, cbNodes, (<ClassLikeDeclaration>node).heritageClauses) ||
-          visitNodes(cbNode, cbNodes, (<ClassLikeDeclaration>node).members)
+          NodeArray.visit(cbNode, cbNodes, (<ClassLikeDeclaration>node).typeParameters) ||
+          NodeArray.visit(cbNode, cbNodes, (<ClassLikeDeclaration>node).heritageClauses) ||
+          NodeArray.visit(cbNode, cbNodes, (<ClassLikeDeclaration>node).members)
         );
       case Syntax.InterfaceDeclaration:
         return (
-          visitNodes(cbNode, cbNodes, node.decorators) ||
-          visitNodes(cbNode, cbNodes, node.modifiers) ||
+          NodeArray.visit(cbNode, cbNodes, node.decorators) ||
+          NodeArray.visit(cbNode, cbNodes, node.modifiers) ||
           visitNode(cbNode, (<InterfaceDeclaration>node).name) ||
-          visitNodes(cbNode, cbNodes, (<InterfaceDeclaration>node).typeParameters) ||
-          visitNodes(cbNode, cbNodes, (<ClassDeclaration>node).heritageClauses) ||
-          visitNodes(cbNode, cbNodes, (<InterfaceDeclaration>node).members)
+          NodeArray.visit(cbNode, cbNodes, (<InterfaceDeclaration>node).typeParameters) ||
+          NodeArray.visit(cbNode, cbNodes, (<ClassDeclaration>node).heritageClauses) ||
+          NodeArray.visit(cbNode, cbNodes, (<InterfaceDeclaration>node).members)
         );
       case Syntax.TypeAliasDeclaration:
         return (
-          visitNodes(cbNode, cbNodes, node.decorators) ||
-          visitNodes(cbNode, cbNodes, node.modifiers) ||
+          NodeArray.visit(cbNode, cbNodes, node.decorators) ||
+          NodeArray.visit(cbNode, cbNodes, node.modifiers) ||
           visitNode(cbNode, (<TypeAliasDeclaration>node).name) ||
-          visitNodes(cbNode, cbNodes, (<TypeAliasDeclaration>node).typeParameters) ||
+          NodeArray.visit(cbNode, cbNodes, (<TypeAliasDeclaration>node).typeParameters) ||
           visitNode(cbNode, (<TypeAliasDeclaration>node).type)
         );
       case Syntax.EnumDeclaration:
         return (
-          visitNodes(cbNode, cbNodes, node.decorators) ||
-          visitNodes(cbNode, cbNodes, node.modifiers) ||
+          NodeArray.visit(cbNode, cbNodes, node.decorators) ||
+          NodeArray.visit(cbNode, cbNodes, node.modifiers) ||
           visitNode(cbNode, (<EnumDeclaration>node).name) ||
-          visitNodes(cbNode, cbNodes, (<EnumDeclaration>node).members)
+          NodeArray.visit(cbNode, cbNodes, (<EnumDeclaration>node).members)
         );
       case Syntax.EnumMember:
         return visitNode(cbNode, (<EnumMember>node).name) || visitNode(cbNode, (<EnumMember>node).initializer);
       case Syntax.ModuleDeclaration:
         return (
-          visitNodes(cbNode, cbNodes, node.decorators) ||
-          visitNodes(cbNode, cbNodes, node.modifiers) ||
+          NodeArray.visit(cbNode, cbNodes, node.decorators) ||
+          NodeArray.visit(cbNode, cbNodes, node.modifiers) ||
           visitNode(cbNode, (<ModuleDeclaration>node).name) ||
           visitNode(cbNode, (<ModuleDeclaration>node).body)
         );
       case Syntax.ImportEqualsDeclaration:
         return (
-          visitNodes(cbNode, cbNodes, node.decorators) ||
-          visitNodes(cbNode, cbNodes, node.modifiers) ||
+          NodeArray.visit(cbNode, cbNodes, node.decorators) ||
+          NodeArray.visit(cbNode, cbNodes, node.modifiers) ||
           visitNode(cbNode, (<ImportEqualsDeclaration>node).name) ||
           visitNode(cbNode, (<ImportEqualsDeclaration>node).moduleReference)
         );
       case Syntax.ImportDeclaration:
         return (
-          visitNodes(cbNode, cbNodes, node.decorators) ||
-          visitNodes(cbNode, cbNodes, node.modifiers) ||
+          NodeArray.visit(cbNode, cbNodes, node.decorators) ||
+          NodeArray.visit(cbNode, cbNodes, node.modifiers) ||
           visitNode(cbNode, (<ImportDeclaration>node).importClause) ||
           visitNode(cbNode, (<ImportDeclaration>node).moduleSpecifier)
         );
@@ -384,11 +365,11 @@ namespace qnr {
         return visitNode(cbNode, (<NamespaceExport>node).name);
       case Syntax.NamedImports:
       case Syntax.NamedExports:
-        return visitNodes(cbNode, cbNodes, (<NamedImportsOrExports>node).elements);
+        return NodeArray.visit(cbNode, cbNodes, (<NamedImportsOrExports>node).elements);
       case Syntax.ExportDeclaration:
         return (
-          visitNodes(cbNode, cbNodes, node.decorators) ||
-          visitNodes(cbNode, cbNodes, node.modifiers) ||
+          NodeArray.visit(cbNode, cbNodes, node.decorators) ||
+          NodeArray.visit(cbNode, cbNodes, node.modifiers) ||
           visitNode(cbNode, (<ExportDeclaration>node).exportClause) ||
           visitNode(cbNode, (<ExportDeclaration>node).moduleSpecifier)
         );
@@ -396,37 +377,37 @@ namespace qnr {
       case Syntax.ExportSpecifier:
         return visitNode(cbNode, (<ImportOrExportSpecifier>node).propertyName) || visitNode(cbNode, (<ImportOrExportSpecifier>node).name);
       case Syntax.ExportAssignment:
-        return visitNodes(cbNode, cbNodes, node.decorators) || visitNodes(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, (<ExportAssignment>node).expression);
+        return NodeArray.visit(cbNode, cbNodes, node.decorators) || NodeArray.visit(cbNode, cbNodes, node.modifiers) || visitNode(cbNode, (<ExportAssignment>node).expression);
       case Syntax.TemplateExpression:
-        return visitNode(cbNode, (<TemplateExpression>node).head) || visitNodes(cbNode, cbNodes, (<TemplateExpression>node).templateSpans);
+        return visitNode(cbNode, (<TemplateExpression>node).head) || NodeArray.visit(cbNode, cbNodes, (<TemplateExpression>node).templateSpans);
       case Syntax.TemplateSpan:
         return visitNode(cbNode, (<TemplateSpan>node).expression) || visitNode(cbNode, (<TemplateSpan>node).literal);
       case Syntax.ComputedPropertyName:
         return visitNode(cbNode, (<ComputedPropertyName>node).expression);
       case Syntax.HeritageClause:
-        return visitNodes(cbNode, cbNodes, (<HeritageClause>node).types);
+        return NodeArray.visit(cbNode, cbNodes, (<HeritageClause>node).types);
       case Syntax.ExpressionWithTypeArguments:
-        return visitNode(cbNode, (<ExpressionWithTypeArguments>node).expression) || visitNodes(cbNode, cbNodes, (<ExpressionWithTypeArguments>node).typeArguments);
+        return visitNode(cbNode, (<ExpressionWithTypeArguments>node).expression) || NodeArray.visit(cbNode, cbNodes, (<ExpressionWithTypeArguments>node).typeArguments);
       case Syntax.ExternalModuleReference:
         return visitNode(cbNode, (<ExternalModuleReference>node).expression);
       case Syntax.MissingDeclaration:
-        return visitNodes(cbNode, cbNodes, node.decorators);
+        return NodeArray.visit(cbNode, cbNodes, node.decorators);
       case Syntax.CommaListExpression:
-        return visitNodes(cbNode, cbNodes, (<CommaListExpression>node).elements);
+        return NodeArray.visit(cbNode, cbNodes, (<CommaListExpression>node).elements);
 
       case Syntax.JsxElement:
-        return visitNode(cbNode, (<JsxElement>node).openingElement) || visitNodes(cbNode, cbNodes, (<JsxElement>node).children) || visitNode(cbNode, (<JsxElement>node).closingElement);
+        return visitNode(cbNode, (<JsxElement>node).openingElement) || NodeArray.visit(cbNode, cbNodes, (<JsxElement>node).children) || visitNode(cbNode, (<JsxElement>node).closingElement);
       case Syntax.JsxFragment:
-        return visitNode(cbNode, (<JsxFragment>node).openingFragment) || visitNodes(cbNode, cbNodes, (<JsxFragment>node).children) || visitNode(cbNode, (<JsxFragment>node).closingFragment);
+        return visitNode(cbNode, (<JsxFragment>node).openingFragment) || NodeArray.visit(cbNode, cbNodes, (<JsxFragment>node).children) || visitNode(cbNode, (<JsxFragment>node).closingFragment);
       case Syntax.JsxSelfClosingElement:
       case Syntax.JsxOpeningElement:
         return (
           visitNode(cbNode, (<JsxOpeningLikeElement>node).tagName) ||
-          visitNodes(cbNode, cbNodes, (<JsxOpeningLikeElement>node).typeArguments) ||
+          NodeArray.visit(cbNode, cbNodes, (<JsxOpeningLikeElement>node).typeArguments) ||
           visitNode(cbNode, (<JsxOpeningLikeElement>node).attributes)
         );
       case Syntax.JsxAttributes:
-        return visitNodes(cbNode, cbNodes, (<JsxAttributes>node).properties);
+        return NodeArray.visit(cbNode, cbNodes, (<JsxAttributes>node).properties);
       case Syntax.JsxAttribute:
         return visitNode(cbNode, (<JsxAttribute>node).name) || visitNode(cbNode, (<JsxAttribute>node).initializer);
       case Syntax.JsxSpreadAttribute:
@@ -445,9 +426,9 @@ namespace qnr {
       case Syntax.JSDocVariadicType:
         return visitNode(cbNode, (<OptionalTypeNode | RestTypeNode | JSDocTypeExpression | JSDocTypeReferencingNode>node).type);
       case Syntax.JSDocFunctionType:
-        return visitNodes(cbNode, cbNodes, (<JSDocFunctionType>node).parameters) || visitNode(cbNode, (<JSDocFunctionType>node).type);
+        return NodeArray.visit(cbNode, cbNodes, (<JSDocFunctionType>node).parameters) || visitNode(cbNode, (<JSDocFunctionType>node).type);
       case Syntax.JSDocComment:
-        return visitNodes(cbNode, cbNodes, (<JSDoc>node).tags);
+        return NodeArray.visit(cbNode, cbNodes, (<JSDoc>node).tags);
       case Syntax.JSDocParameterTag:
       case Syntax.JSDocPropertyTag:
         return (
@@ -463,7 +444,7 @@ namespace qnr {
       case Syntax.JSDocAugmentsTag:
         return visitNode(cbNode, (node as JSDocTag).tagName) || visitNode(cbNode, (<JSDocAugmentsTag>node).class);
       case Syntax.JSDocTemplateTag:
-        return visitNode(cbNode, (node as JSDocTag).tagName) || visitNode(cbNode, (<JSDocTemplateTag>node).constraint) || visitNodes(cbNode, cbNodes, (<JSDocTemplateTag>node).typeParameters);
+        return visitNode(cbNode, (node as JSDocTag).tagName) || visitNode(cbNode, (<JSDocTemplateTag>node).constraint) || NodeArray.visit(cbNode, cbNodes, (<JSDocTemplateTag>node).typeParameters);
       case Syntax.JSDocTypedefTag:
         return (
           visitNode(cbNode, (node as JSDocTag).tagName) ||
@@ -684,7 +665,7 @@ namespace qnr {
       nextToken();
       const pos = getNodePos();
       if (token() === Syntax.EndOfFileToken) {
-        sourceFile.statements = createNodeArray([], pos, pos);
+        sourceFile.statements = NodeArray.create([], pos, pos);
         sourceFile.endOfFileToken = parseTokenNode<EndOfFileToken>();
       } else {
         const statement = createNode(Syntax.ExpressionStatement) as JsonObjectExpressionStatement;
@@ -716,7 +697,7 @@ namespace qnr {
             break;
         }
         finishNode(statement);
-        sourceFile.statements = createNodeArray([statement], pos);
+        sourceFile.statements = NodeArray.create([statement], pos);
         sourceFile.endOfFileToken = parseExpectedToken(Syntax.EndOfFileToken, Diagnostics.Unexpected_token);
       }
 
@@ -1031,7 +1012,7 @@ namespace qnr {
       else if (isLiteralKind(k) || isTemplateLiteralKind(k)) (r as LiteralLikeNode).text = '';
       return finishNode(r);
     }
-    function createNodeArray<T extends Node>(es: T[], pos: number, end?: number): NodeArray<T> {
+    function NodeArray.create<T extends Node>(es: T[], pos: number, end?: number): NodeArray<T> {
       const l = es.length;
       const r = (l >= 1 && l <= 4 ? es.slice() : es) as MutableNodeArray<T>;
       r.pos = pos;
@@ -1411,7 +1392,7 @@ namespace qnr {
         if (abortParsingListOrMoveToNextToken(c)) break;
       }
       parsingContext = o;
-      return createNodeArray(es, p);
+      return NodeArray.create(es, p);
     }
     function parseListElement<T extends Node>(c: ParsingContext, cb: () => T): T {
       const n = currentNode(c);
@@ -1644,7 +1625,7 @@ namespace qnr {
         if (abortParsingListOrMoveToNextToken(c)) break;
       }
       parsingContext = o;
-      const r = createNodeArray(es, p);
+      const r = NodeArray.create(es, p);
       if (s >= 0) r.hasTrailingComma = true;
       return r;
     }
@@ -1655,7 +1636,7 @@ namespace qnr {
       isMissingList: true;
     }
     function createMissingList<T extends Node>(): MissingList<T> {
-      const l = createNodeArray<T>([], getNodePos()) as MissingList<T>;
+      const l = NodeArray.create<T>([], getNodePos()) as MissingList<T>;
       l.isMissingList = true;
       return l;
     }
@@ -1710,7 +1691,7 @@ namespace qnr {
       do {
         ss.push(parseTemplateSpan(tagged));
       } while (last(ss).literal.kind === Syntax.TemplateMiddle);
-      n.templateSpans = createNodeArray(ss, p);
+      n.templateSpans = NodeArray.create(ss, p);
       return finishNode(n);
     }
 
@@ -2466,7 +2447,7 @@ namespace qnr {
           types.push(cb());
         }
         const n = <UnionOrIntersectionTypeNode>createNode(k, start);
-        n.types = createNodeArray(types, start);
+        n.types = NodeArray.create(types, start);
         type = finishNode(n);
       }
       return type;
@@ -2707,7 +2688,7 @@ namespace qnr {
       const parameter = <ParameterDeclaration>createNode(Syntax.Parameter, identifier.pos);
       parameter.name = identifier;
       finishNode(parameter);
-      n.parameters = createNodeArray<ParameterDeclaration>([parameter], parameter.pos, parameter.end);
+      n.parameters = NodeArray.create<ParameterDeclaration>([parameter], parameter.pos, parameter.end);
       n.equalsGreaterThanToken = parseExpectedToken(Syntax.EqualsGreaterThanToken);
       n.body = parseArrowFunctionExpressionBody(/*isAsync*/ !!asyncModifier);
       return addJSDocComment(finishNode(n));
@@ -3488,7 +3469,7 @@ namespace qnr {
       }
 
       parsingContext = saveParsingContext;
-      return createNodeArray(list, listPos);
+      return NodeArray.create(list, listPos);
     }
 
     function parseJsxAttributes(): JsxAttributes {
@@ -5037,7 +5018,7 @@ namespace qnr {
         finishNode(decorator);
         (list || (list = [])).push(decorator);
       }
-      return list && createNodeArray(list, listPos);
+      return list && NodeArray.create(list, listPos);
     }
 
     function parseModifiers(permitInvalidConstAsModifier?: boolean): NodeArray<Modifier> | undefined {
@@ -5062,7 +5043,7 @@ namespace qnr {
         const modifier = finishNode(<Modifier>createNode(modifierKind, modifierStart));
         (list || (list = [])).push(modifier);
       }
-      return list && createNodeArray(list, listPos);
+      return list && NodeArray.create(list, listPos);
     }
 
     function parseModifiersForArrowFunction(): NodeArray<Modifier> | undefined {
@@ -5072,7 +5053,7 @@ namespace qnr {
         const modifierKind = token();
         nextToken();
         const modifier = finishNode(<Modifier>createNode(modifierKind, modifierStart));
-        modifiers = createNodeArray<Modifier>([modifier], modifierStart);
+        modifiers = NodeArray.create<Modifier>([modifier], modifierStart);
       }
       return modifiers;
     }
@@ -5771,7 +5752,7 @@ namespace qnr {
 
         function createJSDocComment(): JSDoc {
           const result = <JSDoc>createNode(Syntax.JSDocComment, start);
-          result.tags = tags && createNodeArray(tags, tagsPos, tagsEnd);
+          result.tags = tags && NodeArray.create(tags, tagsPos, tagsEnd);
           result.comment = comments.length ? comments.join('') : undefined;
           return finishNode(result, end);
         }
@@ -6476,7 +6457,7 @@ namespace qnr {
           const result = <JSDocTemplateTag>createNode(Syntax.JSDocTemplateTag, start);
           result.tagName = tagName;
           result.constraint = constraint;
-          result.typeParameters = createNodeArray(typeParameters, typeParametersPos);
+          result.typeParameters = NodeArray.create(typeParameters, typeParametersPos);
           finishNode(result);
           return result;
         }

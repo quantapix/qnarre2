@@ -111,11 +111,11 @@ namespace qnr {
       }
 
       append(statements, visitNode(currentModuleInfo.externalHelpersImportDeclaration, sourceElementVisitor, isStatement));
-      addRange(statements, visitNodes(node.statements, sourceElementVisitor, isStatement, statementOffset));
+      addRange(statements, NodeArray.visit(node.statements, sourceElementVisitor, isStatement, statementOffset));
       addExportEqualsIfNeeded(statements, /*emitAsReturn*/ false);
       insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
 
-      const updated = updateSourceFileNode(node, setTextRange(createNodeArray(statements), node.statements));
+      const updated = updateSourceFileNode(node, setTextRange(NodeArray.create(statements), node.statements));
       addEmitHelpers(updated, context.readEmitHelpers());
       return updated;
     }
@@ -159,7 +159,7 @@ namespace qnr {
       const updated = updateSourceFileNode(
         node,
         setTextRange(
-          createNodeArray([
+          NodeArray.create([
             createExpressionStatement(
               createCall(define, /*typeArguments*/ undefined, [
                 // Add the module name (if provided).
@@ -273,7 +273,7 @@ namespace qnr {
       const updated = updateSourceFileNode(
         node,
         setTextRange(
-          createNodeArray([
+          NodeArray.create([
             createExpressionStatement(
               createCall(umdHeader, /*typeArguments*/ undefined, [
                 // Add the module body function argument:
@@ -400,7 +400,7 @@ namespace qnr {
       if (moduleKind === ModuleKind.AMD) {
         addRange(statements, mapDefined(currentModuleInfo.externalImports, getAMDImportExpressionForImport));
       }
-      addRange(statements, visitNodes(node.statements, sourceElementVisitor, isStatement, statementOffset));
+      addRange(statements, NodeArray.visit(node.statements, sourceElementVisitor, isStatement, statementOffset));
 
       // Append the 'export =' statement if provided.
       addExportEqualsIfNeeded(statements, /*emitAsReturn*/ true);
@@ -959,11 +959,11 @@ namespace qnr {
             setTextRange(
               createFunctionDeclaration(
                 /*decorators*/ undefined,
-                visitNodes(node.modifiers, modifierVisitor, isModifier),
+                NodeArray.visit(node.modifiers, modifierVisitor, isModifier),
                 node.asteriskToken,
                 getDeclarationName(node, /*allowComments*/ true, /*allowSourceMaps*/ true),
                 /*typeParameters*/ undefined,
-                visitNodes(node.parameters, moduleExpressionElementVisitor),
+                NodeArray.visit(node.parameters, moduleExpressionElementVisitor),
                 /*type*/ undefined,
                 visitEachChild(node.body, moduleExpressionElementVisitor, context)
               ),
@@ -1001,11 +1001,11 @@ namespace qnr {
             setTextRange(
               createClassDeclaration(
                 /*decorators*/ undefined,
-                visitNodes(node.modifiers, modifierVisitor, isModifier),
+                NodeArray.visit(node.modifiers, modifierVisitor, isModifier),
                 getDeclarationName(node, /*allowComments*/ true, /*allowSourceMaps*/ true),
                 /*typeParameters*/ undefined,
-                visitNodes(node.heritageClauses, moduleExpressionElementVisitor),
-                visitNodes(node.members, moduleExpressionElementVisitor)
+                NodeArray.visit(node.heritageClauses, moduleExpressionElementVisitor),
+                NodeArray.visit(node.members, moduleExpressionElementVisitor)
               ),
               node
             ),
@@ -1044,7 +1044,7 @@ namespace qnr {
         for (const variable of node.declarationList.declarations) {
           if (isIdentifier(variable.name) && isLocalName(variable.name)) {
             if (!modifiers) {
-              modifiers = visitNodes(node.modifiers, modifierVisitor, isModifier);
+              modifiers = NodeArray.visit(node.modifiers, modifierVisitor, isModifier);
             }
 
             variables = append(variables, variable);

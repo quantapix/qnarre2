@@ -273,7 +273,7 @@ namespace qnr {
       return MethodDeclaration.update(
         node,
         /*decorators*/ undefined,
-        visitNodes(node.modifiers, visitor, isModifier),
+        NodeArray.visit(node.modifiers, visitor, isModifier),
         node.asteriskToken,
         node.name,
         /*questionToken*/ undefined,
@@ -296,7 +296,7 @@ namespace qnr {
       return updateFunctionDeclaration(
         node,
         /*decorators*/ undefined,
-        visitNodes(node.modifiers, visitor, isModifier),
+        NodeArray.visit(node.modifiers, visitor, isModifier),
         node.asteriskToken,
         node.name,
         /*typeParameters*/ undefined,
@@ -317,7 +317,7 @@ namespace qnr {
     function visitFunctionExpression(node: FunctionExpression): Expression {
       return updateFunctionExpression(
         node,
-        visitNodes(node.modifiers, visitor, isModifier),
+        NodeArray.visit(node.modifiers, visitor, isModifier),
         node.asteriskToken,
         node.name,
         /*typeParameters*/ undefined,
@@ -338,7 +338,7 @@ namespace qnr {
     function visitArrowFunction(node: ArrowFunction) {
       return updateArrowFunction(
         node,
-        visitNodes(node.modifiers, visitor, isModifier),
+        NodeArray.visit(node.modifiers, visitor, isModifier),
         /*typeParameters*/ undefined,
         visitParameterList(node.parameters, visitor, context),
         /*type*/ undefined,
@@ -483,7 +483,7 @@ namespace qnr {
         const declarations = endLexicalEnvironment();
         if (some(declarations)) {
           const block = convertToFunctionBody(expression);
-          result = updateBlock(block, setTextRange(createNodeArray(concatenate(declarations, block.statements)), block.statements));
+          result = updateBlock(block, setTextRange(NodeArray.create(concatenate(declarations, block.statements)), block.statements));
         } else {
           result = expression;
         }
@@ -499,7 +499,7 @@ namespace qnr {
 
     function transformAsyncFunctionBodyWorker(body: ConciseBody, start?: number) {
       if (isBlock(body)) {
-        return updateBlock(body, visitNodes(body.statements, asyncBodyVisitor, isStatement, start));
+        return updateBlock(body, NodeArray.visit(body.statements, asyncBodyVisitor, isStatement, start));
       } else {
         return convertToFunctionBody(visitNode(body, asyncBodyVisitor, isConciseBody));
       }

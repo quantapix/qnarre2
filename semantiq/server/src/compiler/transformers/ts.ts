@@ -699,14 +699,14 @@ namespace qnr {
       //  }
 
       // we do not emit modifiers on the declaration if we are emitting an IIFE
-      const modifiers = !(facts & ClassFacts.UseImmediatelyInvokedFunctionExpression) ? visitNodes(node.modifiers, modifierVisitor, isModifier) : undefined;
+      const modifiers = !(facts & ClassFacts.UseImmediatelyInvokedFunctionExpression) ? NodeArray.visit(node.modifiers, modifierVisitor, isModifier) : undefined;
 
       const classDeclaration = createClassDeclaration(
         /*decorators*/ undefined,
         modifiers,
         name,
         /*typeParameters*/ undefined,
-        visitNodes(node.heritageClauses, visitor, isHeritageClause),
+        NodeArray.visit(node.heritageClauses, visitor, isHeritageClause),
         transformClassMembers(node)
       );
 
@@ -822,7 +822,7 @@ namespace qnr {
       //  ... = class ${name} ${heritageClauses} {
       //      ${members}
       //  }
-      const heritageClauses = visitNodes(node.heritageClauses, visitor, isHeritageClause);
+      const heritageClauses = NodeArray.visit(node.heritageClauses, visitor, isHeritageClause);
       const members = transformClassMembers(node);
       const classExpression = createClassExpression(/*modifiers*/ undefined, name, /*typeParameters*/ undefined, heritageClauses, members);
       aggregateTransformFlags(classExpression);
@@ -850,7 +850,7 @@ namespace qnr {
         /*modifiers*/ undefined,
         node.name,
         /*typeParameters*/ undefined,
-        visitNodes(node.heritageClauses, visitor, isHeritageClause),
+        NodeArray.visit(node.heritageClauses, visitor, isHeritageClause),
         transformClassMembers(node)
       );
 
@@ -886,8 +886,8 @@ namespace qnr {
         }
       }
 
-      addRange(members, visitNodes(node.members, classElementVisitor, isClassElement));
-      return setTextRange(createNodeArray(members), /*location*/ node.members);
+      addRange(members, NodeArray.visit(node.members, classElementVisitor, isClassElement));
+      return setTextRange(NodeArray.create(members), /*location*/ node.members);
     }
 
     /**
@@ -1827,7 +1827,7 @@ namespace qnr {
       const updated = PropertyDeclaration.update(
         node,
         /*decorators*/ undefined,
-        visitNodes(node.modifiers, visitor, isModifier),
+        NodeArray.visit(node.modifiers, visitor, isModifier),
         visitPropertyNameOfClassElement(node),
         /*questionOrExclamationToken*/ undefined,
         /*type*/ undefined,
@@ -1878,11 +1878,11 @@ namespace qnr {
       addRange(statements, map(parametersWithPropertyAssignments, transformParameterWithPropertyAssignment));
 
       // Add the existing statements, skipping the initial super call.
-      addRange(statements, visitNodes(body.statements, visitor, isStatement, indexOfFirstStatement));
+      addRange(statements, NodeArray.visit(body.statements, visitor, isStatement, indexOfFirstStatement));
 
       // End the lexical environment.
       statements = mergeLexicalEnvironment(statements, endLexicalEnvironment());
-      const block = createBlock(setTextRange(createNodeArray(statements), body.statements), /*multiLine*/ true);
+      const block = createBlock(setTextRange(NodeArray.create(statements), body.statements), /*multiLine*/ true);
       setTextRange(block, /*location*/ body);
       setOriginalNode(block, body);
       return block;
@@ -1919,7 +1919,7 @@ namespace qnr {
       const updated = MethodDeclaration.update(
         node,
         /*decorators*/ undefined,
-        visitNodes(node.modifiers, modifierVisitor, isModifier),
+        NodeArray.visit(node.modifiers, modifierVisitor, isModifier),
         node.asteriskToken,
         visitPropertyNameOfClassElement(node),
         /*questionToken*/ undefined,
@@ -1954,7 +1954,7 @@ namespace qnr {
       const updated = GetAccessorDeclaration.update(
         node,
         /*decorators*/ undefined,
-        visitNodes(node.modifiers, modifierVisitor, isModifier),
+        NodeArray.visit(node.modifiers, modifierVisitor, isModifier),
         visitPropertyNameOfClassElement(node),
         visitParameterList(node.parameters, visitor, context),
         /*type*/ undefined,
@@ -1976,7 +1976,7 @@ namespace qnr {
       const updated = SetAccessorDeclaration.update(
         node,
         /*decorators*/ undefined,
-        visitNodes(node.modifiers, modifierVisitor, isModifier),
+        NodeArray.visit(node.modifiers, modifierVisitor, isModifier),
         visitPropertyNameOfClassElement(node),
         visitParameterList(node.parameters, visitor, context),
         visitFunctionBody(node.body, visitor, context) || createBlock([])
@@ -1997,7 +1997,7 @@ namespace qnr {
       const updated = updateFunctionDeclaration(
         node,
         /*decorators*/ undefined,
-        visitNodes(node.modifiers, modifierVisitor, isModifier),
+        NodeArray.visit(node.modifiers, modifierVisitor, isModifier),
         node.asteriskToken,
         node.name,
         /*typeParameters*/ undefined,
@@ -2019,7 +2019,7 @@ namespace qnr {
       }
       const updated = updateFunctionExpression(
         node,
-        visitNodes(node.modifiers, modifierVisitor, isModifier),
+        NodeArray.visit(node.modifiers, modifierVisitor, isModifier),
         node.asteriskToken,
         node.name,
         /*typeParameters*/ undefined,
@@ -2033,7 +2033,7 @@ namespace qnr {
     function visitArrowFunction(node: ArrowFunction) {
       const updated = updateArrowFunction(
         node,
-        visitNodes(node.modifiers, modifierVisitor, isModifier),
+        NodeArray.visit(node.modifiers, modifierVisitor, isModifier),
         /*typeParameters*/ undefined,
         visitParameterList(node.parameters, visitor, context),
         /*type*/ undefined,
@@ -2144,11 +2144,11 @@ namespace qnr {
     }
 
     function visitCallExpression(node: CallExpression) {
-      return updateCall(node, visitNode(node.expression, visitor, isExpression), /*typeArguments*/ undefined, visitNodes(node.arguments, visitor, isExpression));
+      return updateCall(node, visitNode(node.expression, visitor, isExpression), /*typeArguments*/ undefined, NodeArray.visit(node.arguments, visitor, isExpression));
     }
 
     function visitNewExpression(node: NewExpression) {
-      return updateNew(node, visitNode(node.expression, visitor, isExpression), /*typeArguments*/ undefined, visitNodes(node.arguments, visitor, isExpression));
+      return updateNew(node, visitNode(node.expression, visitor, isExpression), /*typeArguments*/ undefined, NodeArray.visit(node.arguments, visitor, isExpression));
     }
 
     function visitTaggedTemplateExpression(node: TaggedTemplateExpression) {
@@ -2276,7 +2276,7 @@ namespace qnr {
       addRange(statements, members);
 
       currentNamespaceContainerName = savedCurrentNamespaceLocalName;
-      return createBlock(setTextRange(createNodeArray(statements), /*location*/ node.members), /*multiLine*/ true);
+      return createBlock(setTextRange(NodeArray.create(statements), /*location*/ node.members), /*multiLine*/ true);
     }
 
     /**
@@ -2379,7 +2379,7 @@ namespace qnr {
       // declaration to avoid static errors in global scripts scripts due to redeclaration.
       // enums in any other scope are emitted as a `let` declaration.
       const statement = createVariableStatement(
-        visitNodes(node.modifiers, modifierVisitor, isModifier),
+        NodeArray.visit(node.modifiers, modifierVisitor, isModifier),
         createVariableDeclarationList(
           [createVariableDeclaration(getLocalName(node, /*allowComments*/ false, /*allowSourceMaps*/ true))],
           currentLexicalScope.kind === Syntax.SourceFile ? NodeFlags.None : NodeFlags.Let
@@ -2541,7 +2541,7 @@ namespace qnr {
       let blockLocation: TextRange | undefined;
       if (node.body) {
         if (node.body.kind === Syntax.ModuleBlock) {
-          saveStateAndInvoke(node.body, (body) => addRange(statements, visitNodes((<ModuleBlock>body).statements, namespaceElementVisitor, isStatement)));
+          saveStateAndInvoke(node.body, (body) => addRange(statements, NodeArray.visit((<ModuleBlock>body).statements, namespaceElementVisitor, isStatement)));
           statementsLocation = node.body.statements;
           blockLocation = node.body;
         } else {
@@ -2564,7 +2564,7 @@ namespace qnr {
       currentNamespace = savedCurrentNamespace;
       currentScopeFirstDeclarationsOfName = savedCurrentScopeFirstDeclarationsOfName;
 
-      const block = createBlock(setTextRange(createNodeArray(statements), /*location*/ statementsLocation), /*multiLine*/ true);
+      const block = createBlock(setTextRange(NodeArray.create(statements), /*location*/ statementsLocation), /*multiLine*/ true);
       setTextRange(block, blockLocation);
 
       // namespace hello.hi.world {
@@ -2649,7 +2649,7 @@ namespace qnr {
         return resolver.isReferencedAliasDeclaration(node) ? node : undefined;
       } else {
         // Elide named imports if all of its import specifiers are elided.
-        const elements = visitNodes(node.elements, visitImportSpecifier, isImportSpecifier);
+        const elements = NodeArray.visit(node.elements, visitImportSpecifier, isImportSpecifier);
         return some(elements) ? updateNamedImports(node, elements) : undefined;
       }
     }
@@ -2711,7 +2711,7 @@ namespace qnr {
      */
     function visitNamedExports(node: NamedExports): VisitResult<NamedExports> {
       // Elide the named exports if all of its export specifiers were elided.
-      const elements = visitNodes(node.elements, visitExportSpecifier, isExportSpecifier);
+      const elements = NodeArray.visit(node.elements, visitExportSpecifier, isExportSpecifier);
       return some(elements) ? updateNamedExports(node, elements) : undefined;
     }
 
@@ -2774,7 +2774,7 @@ namespace qnr {
         return setOriginalNode(
           setTextRange(
             createVariableStatement(
-              visitNodes(node.modifiers, modifierVisitor, isModifier),
+              NodeArray.visit(node.modifiers, modifierVisitor, isModifier),
               createVariableDeclarationList([setOriginalNode(createVariableDeclaration(node.name, /*type*/ undefined, moduleReference), node)])
             ),
             node

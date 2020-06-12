@@ -624,7 +624,7 @@ namespace qnr {
     }
 
     if (isNodeArray(statements)) {
-      return setTextRange(createNodeArray(left, statements.hasTrailingComma), statements);
+      return setTextRange(NodeArray.create(left, statements.hasTrailingComma), statements);
     }
 
     return statements;

@@ -497,14 +497,14 @@ namespace qnr {
       startLexicalEnvironment();
       let statementOffset = addStandardPrologue(prologue, node.statements, /*ensureUseStrict*/ false);
       statementOffset = addCustomPrologue(prologue, node.statements, statementOffset, visitor);
-      addRange(statements, visitNodes(node.statements, visitor, isStatement, statementOffset));
+      addRange(statements, NodeArray.visit(node.statements, visitor, isStatement, statementOffset));
       if (taggedTemplateStringDeclarations) {
         statements.push(createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList(taggedTemplateStringDeclarations)));
       }
       mergeLexicalEnvironment(prologue, endLexicalEnvironment());
       insertCaptureThisForNodeIfNeeded(prologue, node);
       exitSubtree(ancestorFacts, HierarchyFacts.None, HierarchyFacts.None);
-      return updateSourceFileNode(node, setTextRange(createNodeArray(concatenate(prologue, statements)), node.statements));
+      return updateSourceFileNode(node, setTextRange(NodeArray.create(concatenate(prologue, statements)), node.statements));
     }
 
     function visitSwitchStatement(node: SwitchStatement): SwitchStatement {
@@ -781,7 +781,7 @@ namespace qnr {
 
       insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
 
-      const block = createBlock(setTextRange(createNodeArray(statements), /*location*/ node.members), /*multiLine*/ true);
+      const block = createBlock(setTextRange(NodeArray.create(statements), /*location*/ node.members), /*multiLine*/ true);
       setEmitFlags(block, EmitFlags.NoComments);
       return block;
     }
@@ -862,7 +862,7 @@ namespace qnr {
         statements.push(createReturn(createDefaultSuperCallOrThis()));
       }
 
-      const statementsArray = createNodeArray(statements);
+      const statementsArray = NodeArray.create(statements);
       setTextRange(statementsArray, node.members);
 
       const block = createBlock(statementsArray, /*multiLine*/ true);
@@ -938,7 +938,7 @@ namespace qnr {
       }
 
       // visit the remaining statements
-      addRange(statements, visitNodes(constructor.body.statements, visitor, isStatement, /*start*/ statementOffset));
+      addRange(statements, NodeArray.visit(constructor.body.statements, visitor, isStatement, /*start*/ statementOffset));
 
       mergeLexicalEnvironment(prologue, endLexicalEnvironment());
       insertCaptureNewTargetIfNeeded(prologue, constructor, /*copyOnWrite*/ false);
@@ -1018,7 +1018,7 @@ namespace qnr {
         insertCaptureThisForNodeIfNeeded(prologue, constructor);
       }
 
-      const block = createBlock(setTextRange(createNodeArray(concatenate(prologue, statements)), /*location*/ constructor.body.statements), /*multiLine*/ true);
+      const block = createBlock(setTextRange(NodeArray.create(concatenate(prologue, statements)), /*location*/ constructor.body.statements), /*multiLine*/ true);
 
       setTextRange(block, constructor.body);
 
@@ -1618,7 +1618,7 @@ namespace qnr {
       return updateFunctionDeclaration(
         node,
         /*decorators*/ undefined,
-        visitNodes(node.modifiers, visitor, isModifier),
+        NodeArray.visit(node.modifiers, visitor, isModifier),
         node.asteriskToken,
         name,
         /*typeParameters*/ undefined,
@@ -1689,7 +1689,7 @@ namespace qnr {
         statementOffset = addCustomPrologue(statements, body.statements, statementOffset, visitor);
 
         statementsLocation = body.statements;
-        addRange(statements, visitNodes(body.statements, visitor, isStatement, statementOffset));
+        addRange(statements, NodeArray.visit(body.statements, visitor, isStatement, statementOffset));
 
         // If the original body was a multi-line block, this must be a multi-line block.
         if (!multiLine && body.multiLine) {
@@ -1740,7 +1740,7 @@ namespace qnr {
         return body;
       }
 
-      const block = createBlock(setTextRange(createNodeArray(statements), statementsLocation), multiLine);
+      const block = createBlock(setTextRange(NodeArray.create(statements), statementsLocation), multiLine);
       setTextRange(block, node.body);
       if (!multiLine && singleLine) {
         setEmitFlags(block, EmitFlags.SingleLine);
@@ -2135,7 +2135,7 @@ namespace qnr {
       } else {
         const statement = visitNode(node.statement, visitor, isStatement, liftToBlock);
         if (isBlock(statement)) {
-          return updateBlock(statement, setTextRange(createNodeArray(concatenate(statements, statement.statements)), statement.statements));
+          return updateBlock(statement, setTextRange(NodeArray.create(concatenate(statements, statement.statements)), statement.statements));
         } else {
           statements.push(statement);
           return createSyntheticBlockForConvertedStatements(statements);
@@ -2144,7 +2144,7 @@ namespace qnr {
     }
 
     function createSyntheticBlockForConvertedStatements(statements: Statement[]) {
-      return setEmitFlags(createBlock(createNodeArray(statements), /*multiLine*/ true), EmitFlags.NoSourceMap | EmitFlags.NoTokenSourceMaps);
+      return setEmitFlags(createBlock(NodeArray.create(statements), /*multiLine*/ true), EmitFlags.NoSourceMap | EmitFlags.NoTokenSourceMaps);
     }
 
     function convertForOfStatementForArray(node: ForOfStatement, outermostLabeledStatement: LabeledStatement, convertedLoopBodyStatements: Statement[]): Statement {
@@ -2307,7 +2307,7 @@ namespace qnr {
         const expressions: Expression[] = [];
         const assignment = createAssignment(
           temp,
-          setEmitFlags(createObjectLiteral(visitNodes(properties, visitor, isObjectLiteralElementLike, 0, numInitialProperties), node.multiLine), EmitFlags.Indented)
+          setEmitFlags(createObjectLiteral(NodeArray.visit(properties, visitor, isObjectLiteralElementLike, 0, numInitialProperties), node.multiLine), EmitFlags.Indented)
         );
 
         if (node.multiLine) {
@@ -3063,7 +3063,7 @@ namespace qnr {
     }
 
     function addStatementToStartOfBlock(block: Block, statement: Statement): Block {
-      const transformedStatements = visitNodes(block.statements, visitor, isStatement);
+      const transformedStatements = NodeArray.visit(block.statements, visitor, isStatement);
       return updateBlock(block, [statement, ...transformedStatements]);
     }
 
@@ -3157,7 +3157,7 @@ namespace qnr {
         return visitCallExpressionWithPotentialCapturedThisAssignment(node, /*assignToCapturedThis*/ true);
       }
 
-      return updateCall(node, visitNode(node.expression, callExpressionVisitor, isExpression), /*typeArguments*/ undefined, visitNodes(node.arguments, visitor, isExpression));
+      return updateCall(node, visitNode(node.expression, callExpressionVisitor, isExpression), /*typeArguments*/ undefined, NodeArray.visit(node.arguments, visitor, isExpression));
     }
 
     function visitTypeScriptClassWrapper(node: CallExpression) {
@@ -3203,7 +3203,7 @@ namespace qnr {
       // visit the class body statements outside of any converted loop body.
       const savedConvertedLoopState = convertedLoopState;
       convertedLoopState = undefined;
-      const bodyStatements = visitNodes(body.statements, visitor, isStatement);
+      const bodyStatements = NodeArray.visit(body.statements, visitor, isStatement);
       convertedLoopState = savedConvertedLoopState;
 
       const classStatements = filter(bodyStatements, isVariableStatementWithInitializer);
@@ -3358,7 +3358,7 @@ namespace qnr {
           resultingCall = createFunctionCall(
             visitNode(target, callExpressionVisitor, isExpression),
             node.expression.kind === Syntax.SuperKeyword ? thisArg : visitNode(thisArg, visitor, isExpression),
-            visitNodes(node.arguments, visitor, isExpression),
+            NodeArray.visit(node.arguments, visitor, isExpression),
             /*location*/ node
           );
         }
@@ -3392,7 +3392,7 @@ namespace qnr {
           createFunctionApply(
             visitNode(target, visitor, isExpression),
             thisArg,
-            transformAndSpreadElements(createNodeArray([createVoidZero(), ...node.arguments!]), /*needsUniqueCopy*/ false, /*multiLine*/ false, /*hasTrailingComma*/ false)
+            transformAndSpreadElements(NodeArray.create([createVoidZero(), ...node.arguments!]), /*needsUniqueCopy*/ false, /*multiLine*/ false, /*hasTrailingComma*/ false)
           ),
           /*typeArguments*/ undefined,
           []
@@ -3469,7 +3469,7 @@ namespace qnr {
     }
 
     function visitSpanOfNonSpreads(chunk: Expression[], multiLine: boolean, hasTrailingComma: boolean): VisitResult<Expression> {
-      return createArrayLiteral(visitNodes(createNodeArray(chunk, hasTrailingComma), visitor, isExpression), multiLine);
+      return createArrayLiteral(NodeArray.visit(NodeArray.create(chunk, hasTrailingComma), visitor, isExpression), multiLine);
     }
 
     function visitSpreadElement(node: SpreadElement) {

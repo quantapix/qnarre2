@@ -927,7 +927,7 @@ namespace qnr {
       let temp: Identifier | undefined;
       if (numInitialElements > 0) {
         temp = declareLocal();
-        const initialElements = visitNodes(elements, visitor, isExpression, 0, numInitialElements);
+        const initialElements = NodeArray.visit(elements, visitor, isExpression, 0, numInitialElements);
         emitAssignment(temp, createArrayLiteral(leadingElement ? [leadingElement, ...initialElements] : initialElements));
         leadingElement = undefined;
       }
@@ -981,7 +981,7 @@ namespace qnr {
       const numInitialProperties = countInitialNodesWithoutYield(properties);
 
       const temp = declareLocal();
-      emitAssignment(temp, createObjectLiteral(visitNodes(properties, visitor, isObjectLiteralElementLike, 0, numInitialProperties), multiLine));
+      emitAssignment(temp, createObjectLiteral(NodeArray.visit(properties, visitor, isObjectLiteralElementLike, 0, numInitialProperties), multiLine));
 
       const expressions = reduceLeft(properties, reduceProperty, <Expression[]>[], numInitialProperties);
       expressions.push(multiLine ? startOnNewLine(getMutableClone(temp)) : temp);

@@ -21,7 +21,7 @@ namespace qnr {
         if (!isExternalModule(node) || some(result.statements, isExternalModuleIndicator)) {
           return result;
         }
-        return updateSourceFileNode(result, setTextRange(createNodeArray([...result.statements, createEmptyExports()]), result.statements));
+        return updateSourceFileNode(result, setTextRange(NodeArray.create([...result.statements, createEmptyExports()]), result.statements));
       }
 
       return node;
@@ -34,8 +34,8 @@ namespace qnr {
         const statementOffset = addPrologue(statements, node.statements);
         append(statements, externalHelpersImportDeclaration);
 
-        addRange(statements, visitNodes(node.statements, visitor, isStatement, statementOffset));
-        return updateSourceFileNode(node, setTextRange(createNodeArray(statements), node.statements));
+        addRange(statements, NodeArray.visit(node.statements, visitor, isStatement, statementOffset));
+        return updateSourceFileNode(node, setTextRange(NodeArray.create(statements), node.statements));
       } else {
         return visitEachChild(node, visitor, context);
       }

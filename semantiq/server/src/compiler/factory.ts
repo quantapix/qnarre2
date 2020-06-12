@@ -262,9 +262,9 @@ namespace qnr {
 
   export function insertLeadingStatement(dest: Statement, source: Statement) {
     if (isBlock(dest)) {
-      return updateBlock(dest, setTextRange(createNodeArray([source, ...dest.statements]), dest.statements));
+      return updateBlock(dest, setTextRange(NodeArray.create([source, ...dest.statements]), dest.statements));
     } else {
-      return createBlock(createNodeArray([dest, source]), /*multiLine*/ true);
+      return createBlock(NodeArray.create([dest, source]), /*multiLine*/ true);
     }
   }
 
@@ -770,7 +770,7 @@ namespace qnr {
 
     if (!foundUseStrict) {
       return setTextRange(
-        createNodeArray<Statement>([startOnNewLine(createStatement(createLiteral('use strict'))), ...statements]),
+        NodeArray.create<Statement>([startOnNewLine(createStatement(createLiteral('use strict'))), ...statements]),
         statements
       );
     }
@@ -1052,7 +1052,7 @@ namespace qnr {
     }
 
     if (result !== undefined) {
-      return setTextRange(createNodeArray(result, elements.hasTrailingComma), elements);
+      return setTextRange(NodeArray.create(result, elements.hasTrailingComma), elements);
     }
 
     return elements;
@@ -1111,7 +1111,7 @@ namespace qnr {
   }
 
   export function parenthesizeElementTypeMembers(members: readonly TypeNode[]) {
-    return createNodeArray(sameMap(members, parenthesizeElementTypeMember));
+    return NodeArray.create(sameMap(members, parenthesizeElementTypeMember));
   }
 
   export function parenthesizeTypeParameters(typeParameters: readonly TypeNode[] | undefined) {
@@ -1122,7 +1122,7 @@ namespace qnr {
         params.push(i === 0 && isFunctionOrConstructorTypeNode(entry) && entry.typeParameters ? ParenthesizedTypeNode.create(entry) : entry);
       }
 
-      return createNodeArray(params);
+      return NodeArray.create(params);
     }
     return;
   }

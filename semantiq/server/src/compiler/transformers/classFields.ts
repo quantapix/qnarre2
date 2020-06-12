@@ -189,7 +189,7 @@ namespace qnr {
         return PropertyDeclaration.update(
           node,
           /*decorators*/ undefined,
-          visitNodes(node.modifiers, visitor, isModifier),
+          NodeArray.visit(node.modifiers, visitor, isModifier),
           node.name,
           /*questionOrExclamationToken*/ undefined,
           /*type*/ undefined,
@@ -310,7 +310,7 @@ namespace qnr {
         const { thisArg, target } = createCallBinding(node.expression, hoistVariableDeclaration, languageVersion);
         return updateCall(node, createPropertyAccess(visitNode(target, visitor), 'call'), /*typeArguments*/ undefined, [
           visitNode(thisArg, visitor, isExpression),
-          ...visitNodes(node.arguments, visitor, isExpression),
+          ...NodeArray.visit(node.arguments, visitor, isExpression),
         ]);
       }
       return visitEachChild(node, visitor, context);
@@ -413,7 +413,7 @@ namespace qnr {
           node.modifiers,
           node.name,
           /*typeParameters*/ undefined,
-          visitNodes(node.heritageClauses, visitor, isHeritageClause),
+          NodeArray.visit(node.heritageClauses, visitor, isHeritageClause),
           transformClassMembers(node, isDerivedClass)
         ),
       ];
@@ -459,7 +459,7 @@ namespace qnr {
         node.modifiers,
         node.name,
         /*typeParameters*/ undefined,
-        visitNodes(node.heritageClauses, visitor, isHeritageClause),
+        NodeArray.visit(node.heritageClauses, visitor, isHeritageClause),
         transformClassMembers(node, isDerivedClass)
       );
 
@@ -519,8 +519,8 @@ namespace qnr {
       if (constructor) {
         members.push(constructor);
       }
-      addRange(members, visitNodes(node.members, classElementVisitor, isClassElement));
-      return setTextRange(createNodeArray(members), /*location*/ node.members);
+      addRange(members, NodeArray.visit(node.members, classElementVisitor, isClassElement));
+      return setTextRange(NodeArray.create(members), /*location*/ node.members);
     }
 
     function isPropertyDeclarationThatRequiresConstructorStatement(member: ClassElement): member is PropertyDeclaration {
@@ -594,7 +594,7 @@ namespace qnr {
         }
         if (afterParameterProperties > indexOfFirstStatement) {
           if (!useDefineForClassFields) {
-            addRange(statements, visitNodes(constructor.body.statements, visitor, isStatement, indexOfFirstStatement, afterParameterProperties - indexOfFirstStatement));
+            addRange(statements, NodeArray.visit(constructor.body.statements, visitor, isStatement, indexOfFirstStatement, afterParameterProperties - indexOfFirstStatement));
           }
           indexOfFirstStatement = afterParameterProperties;
         }
@@ -603,13 +603,13 @@ namespace qnr {
 
       // Add existing statements, skipping the initial super call.
       if (constructor) {
-        addRange(statements, visitNodes(constructor.body!.statements, visitor, isStatement, indexOfFirstStatement));
+        addRange(statements, NodeArray.visit(constructor.body!.statements, visitor, isStatement, indexOfFirstStatement));
       }
 
       statements = mergeLexicalEnvironment(statements, endLexicalEnvironment());
 
       return setTextRange(
-        createBlock(setTextRange(createNodeArray(statements), /*location*/ constructor ? constructor.body!.statements : node.members), /*multiLine*/ true),
+        createBlock(setTextRange(NodeArray.create(statements), /*location*/ constructor ? constructor.body!.statements : node.members), /*multiLine*/ true),
         /*location*/ constructor ? constructor.body : undefined
       );
     }
@@ -905,7 +905,7 @@ namespace qnr {
         //
         // Transformation:
         // [ { set value(x) { this.#myProp = x; } }.value ] = [ "hello" ];
-        return updateArrayLiteral(node, visitNodes(node.elements, visitArrayAssignmentTarget, isExpression));
+        return updateArrayLiteral(node, NodeArray.visit(node.elements, visitArrayAssignmentTarget, isExpression));
       } else {
         // Transforms private names in destructuring assignment object bindings.
         //
@@ -914,7 +914,7 @@ namespace qnr {
         //
         // Transformation:
         // ({ stringProperty: { set value(x) { this.#myProp = x; } }.value }) = { stringProperty: "hello" };
-        return updateObjectLiteral(node, visitNodes(node.properties, visitObjectAssignmentTarget, isObjectLiteralElementLike));
+        return updateObjectLiteral(node, NodeArray.visit(node.properties, visitObjectAssignmentTarget, isObjectLiteralElementLike));
       }
     }
   }

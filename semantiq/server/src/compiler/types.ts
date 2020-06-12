@@ -657,6 +657,7 @@ namespace qnr {
     emitNode?: EmitNode; // Associated EmitNode (initialized by transforms)
     contextualType?: Type; // Used to temporarily assign a contextual type during overload resolution
     inferenceContext?: InferenceContext; // Inference context for contextual type
+    visit<T>(cb: (n: Node) => T): T | undefined;
   }
 
   export interface JSDocContainer {
@@ -723,12 +724,12 @@ namespace qnr {
 
   export type HasExpressionInitializer = VariableDeclaration | ParameterDeclaration | BindingElement | PropertySignature | PropertyDeclaration | PropertyAssignment | EnumMember;
 
-  export type MutableNodeArray<T extends Node> = NodeArray<T> & T[];
-
-  export interface NodeArray<T extends Node> extends ReadonlyArray<T>, TextRange {
+  export interface NodeArray<T extends Node> extends ReadonlyArray<T>, QRange {
     hasTrailingComma?: boolean;
-    transformFlags: TransformFlags; // Flags for transforms, possibly undefined
+    transformFlags: TransformFlags;
   }
+
+  export type MutableNodeArray<T extends Node> = NodeArray<T> & T[];
 
   export interface Token<TKind extends Syntax> extends Node {
     kind: TKind;

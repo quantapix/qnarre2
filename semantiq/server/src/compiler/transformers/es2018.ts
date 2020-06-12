@@ -341,7 +341,7 @@ namespace qnr {
         visited.statements,
         taggedTemplateStringDeclarations && [createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList(taggedTemplateStringDeclarations))]
       );
-      const result = updateSourceFileNode(visited, setTextRange(createNodeArray(statement), node.statements));
+      const result = updateSourceFileNode(visited, setTextRange(NodeArray.create(statement), node.statements));
       exitSubtree(ancestorFacts);
       return result;
     }
@@ -465,7 +465,7 @@ namespace qnr {
           node.awaitModifier,
           setTextRange(createVariableDeclarationList([setTextRange(createVariableDeclaration(temp), node.initializer)], NodeFlags.Let), node.initializer),
           node.expression,
-          setTextRange(createBlock(setTextRange(createNodeArray(statements), statementsLocation), /*multiLine*/ true), bodyLocation)
+          setTextRange(createBlock(setTextRange(NodeArray.create(statements), statementsLocation), /*multiLine*/ true), bodyLocation)
         );
       }
       return node;
@@ -487,7 +487,7 @@ namespace qnr {
       }
 
       return setEmitFlags(
-        setTextRange(createBlock(setTextRange(createNodeArray(statements), statementsLocation), /*multiLine*/ true), bodyLocation),
+        setTextRange(createBlock(setTextRange(NodeArray.create(statements), statementsLocation), /*multiLine*/ true), bodyLocation),
         EmitFlags.NoSourceMap | EmitFlags.NoTokenSourceMaps
       );
     }
@@ -621,7 +621,7 @@ namespace qnr {
       const updated = MethodDeclaration.update(
         node,
         /*decorators*/ undefined,
-        enclosingFunctionFlags & FunctionFlags.Generator ? visitNodes(node.modifiers, visitorNoAsyncModifier, isModifier) : node.modifiers,
+        enclosingFunctionFlags & FunctionFlags.Generator ? NodeArray.visit(node.modifiers, visitorNoAsyncModifier, isModifier) : node.modifiers,
         enclosingFunctionFlags & FunctionFlags.Async ? undefined : node.asteriskToken,
         visitNode(node.name, visitor, isPropertyName),
         visitNode<Token<Syntax.QuestionToken>>(/*questionToken*/ undefined, visitor, isToken),
@@ -640,7 +640,7 @@ namespace qnr {
       const updated = updateFunctionDeclaration(
         node,
         /*decorators*/ undefined,
-        enclosingFunctionFlags & FunctionFlags.Generator ? visitNodes(node.modifiers, visitorNoAsyncModifier, isModifier) : node.modifiers,
+        enclosingFunctionFlags & FunctionFlags.Generator ? NodeArray.visit(node.modifiers, visitorNoAsyncModifier, isModifier) : node.modifiers,
         enclosingFunctionFlags & FunctionFlags.Async ? undefined : node.asteriskToken,
         node.name,
         /*typeParameters*/ undefined,
@@ -673,7 +673,7 @@ namespace qnr {
       enclosingFunctionFlags = getFunctionFlags(node);
       const updated = updateFunctionExpression(
         node,
-        enclosingFunctionFlags & FunctionFlags.Generator ? visitNodes(node.modifiers, visitorNoAsyncModifier, isModifier) : node.modifiers,
+        enclosingFunctionFlags & FunctionFlags.Generator ? NodeArray.visit(node.modifiers, visitorNoAsyncModifier, isModifier) : node.modifiers,
         enclosingFunctionFlags & FunctionFlags.Async ? undefined : node.asteriskToken,
         node.name,
         /*typeParameters*/ undefined,
@@ -758,7 +758,7 @@ namespace qnr {
         const block = convertToFunctionBody(body, /*multiLine*/ true);
         insertStatementsAfterStandardPrologue(statements, leadingStatements);
         addRange(statements, block.statements.slice(statementOffset));
-        return updateBlock(block, setTextRange(createNodeArray(statements), block.statements));
+        return updateBlock(block, setTextRange(NodeArray.create(statements), block.statements));
       }
       return body;
     }

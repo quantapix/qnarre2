@@ -142,9 +142,9 @@ namespace qnr {
             break;
           case Syntax.CallExpression:
             if (i === 0 && leftThisArg) {
-              rightExpression = createFunctionCall(rightExpression, leftThisArg.kind === Syntax.SuperKeyword ? createThis() : leftThisArg, visitNodes(segment.arguments, visitor, isExpression));
+              rightExpression = createFunctionCall(rightExpression, leftThisArg.kind === Syntax.SuperKeyword ? createThis() : leftThisArg, NodeArray.visit(segment.arguments, visitor, isExpression));
             } else {
-              rightExpression = createCall(rightExpression, /*typeArguments*/ undefined, visitNodes(segment.arguments, visitor, isExpression));
+              rightExpression = createCall(rightExpression, /*typeArguments*/ undefined, NodeArray.visit(segment.arguments, visitor, isExpression));
             }
             break;
         }

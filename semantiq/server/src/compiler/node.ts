@@ -7,12 +7,6 @@ namespace qnr {
     return typeof e === 'string' ? StringLiteral.create(e) : typeof e === 'number' ? NumericLiteral.create('' + e) : typeof e === 'boolean' ? (e ? createTrue() : createFalse()) : e;
   }
 
-  export function asNodeArray<T extends Node>(a: readonly T[]): NodeArray<T>;
-  export function asNodeArray<T extends Node>(a: readonly T[] | undefined): NodeArray<T> | undefined;
-  export function asNodeArray<T extends Node>(a: readonly T[] | undefined): NodeArray<T> | undefined {
-    return a ? createNodeArray(a) : undefined;
-  }
-
   export function asToken<TKind extends Syntax>(t: TKind | Token<TKind>): Token<TKind> {
     return typeof t === 'number' ? createToken(t) : t;
   }
@@ -23,21 +17,34 @@ namespace qnr {
     return statement && isNotEmittedStatement(statement) ? setTextRange(setOriginalNode(createEmptyStatement(), statement), statement) : statement;
   }
 
-  /*
-  let SymNames: { [P in keyof typeof SymKey]: { Name: P, Value: typeof SymKey[P] } } = {
-    AAA: { Value: SymKey.AAA, Name: "AAA" },
-    BBB: { Value: SymKey.BBB, Name: "BBB" },
-    CCC: { Value: SymKey.CCC, Name: "CCC" },
-    End: { Value: SymKey.End, Name: "End"}
+  export namespace NodeArray {
+    export function create<T extends Node>(es?: T[], hasTrailingComma?: boolean): MutableNodeArray<T>;
+    export function create<T extends Node>(es?: readonly T[], hasTrailingComma?: boolean): NodeArray<T>;
+    export function create<T extends Node>(es?: readonly T[], hasTrailingComma?: boolean): NodeArray<T> {
+      if (!es || es === emptyArray) es = [];
+      else if (isNodeArray(es)) return es;
+      const a = es as NodeArray<T>;
+      a.pos = -1;
+      a.end = -1;
+      a.hasTrailingComma = hasTrailingComma;
+      return a;
+    }
+    export function from<T extends Node>(a: readonly T[]): NodeArray<T>;
+    export function from<T extends Node>(a: readonly T[] | undefined): NodeArray<T> | undefined;
+    export function from<T extends Node>(a: readonly T[] | undefined): NodeArray<T> | undefined {
+      return a ? create(a) : undefined;
+    }
+    export function visit<T>(cb: (n: Node) => T, cbs?: (ns: NodeArray<Node>) => T | undefined, ns?: NodeArray<Node>): T | undefined {
+      if (ns) {
+        if (cbs) return cbs(ns);
+        for (const n of ns) {
+          const r = cb(n);
+          if (r) return r;
+        }
+      }
+      return;
+    }
   }
-  type GN<C extends SymKey> = C extends keyof CMap ? CMap[C] : never;
-  function create<C extends SymKey>(c: C): GN<C> {
-    return QNode.create(c) as GN<C>;
-  }
-  function isKind<C extends SymKey, T extends { kind: C }>(n: GN<C>, t: T): n is GN<C> {
-    return n.kind === t.kind;
-  }
-*/
 
   interface SynMap {
     [Syntax.Unknown]: Unknown;
@@ -407,6 +414,26 @@ namespace qnr {
   type NodeType<T extends Syntax> = T extends keyof SynMap ? SynMap[T] : never;
 
   export namespace Node {
+    // const kind = Syntax.Unknown;
+
+    export function create<T extends Syntax>(k: T, pos: number, end: number, parent?: Node): NodeType<T> {
+      const n =
+        isNodeKind(k) || k === Syntax.Unknown
+          ? new NodeObj(k, pos, end)
+          : k === Syntax.SourceFile
+          ? new SourceFileObj(Syntax.SourceFile, pos, end)
+          : k === Syntax.Identifier
+          ? new IdentifierObj(Syntax.Identifier, pos, end)
+          : k === Syntax.PrivateIdentifier
+          ? new PrivateIdentifierObj(Syntax.PrivateIdentifier, pos, end)
+          : new TokenObj<T>(k, pos, end);
+      if (parent) {
+        n.parent = parent;
+        n.flags = parent.flags & NodeFlags.ContextFlags;
+      }
+      return n as NodeType<T>;
+    }
+
     export function createSynthesized<T extends Syntax>(k: T): NodeType<T> {
       const n = create<T>(k, -1, -1);
       n.flags |= NodeFlags.Synthesized;
@@ -429,24 +456,8 @@ namespace qnr {
       return k >= Syntax.FirstNode;
     }
 
-    //const kind = Syntax.Unknown;
-
-    export function create<T extends Syntax>(k: T, pos: number, end: number, parent?: Node): NodeType<T> {
-      const n =
-        isNodeKind(k) || k === Syntax.Unknown
-          ? new NodeObj(k, pos, end)
-          : k === Syntax.SourceFile
-          ? new SourceFileObj(Syntax.SourceFile, pos, end)
-          : k === Syntax.Identifier
-          ? new IdentifierObj(Syntax.Identifier, pos, end)
-          : k === Syntax.PrivateIdentifier
-          ? new PrivateIdentifierObj(Syntax.PrivateIdentifier, pos, end)
-          : new TokenObj<T>(k, pos, end);
-      if (parent) {
-        n.parent = parent;
-        n.flags = parent.flags & NodeFlags.ContextFlags;
-      }
-      return n as NodeType<T>;
+    export function isKind<S extends Syntax, T extends { kind: S }>(n: NodeType<S>, t: T): n is NodeType<S> {
+      return n.kind === t.kind;
     }
 
     export class NodeObj extends TextRange implements Node {
@@ -515,14 +526,14 @@ namespace qnr {
             const p = scanner.getTextPos();
             if (p <= end) {
               if (t === Syntax.Identifier) fail(`Did not expect ${Debug.formatSyntax(this.kind)} to have an Identifier in its trivia`);
-              ns.push(createNode(t, pos, p, this));
+              ns.push(Node.create(t, pos, p, this));
             }
             pos = p;
             if (t === Syntax.EndOfFileToken) break;
           }
         };
         const createSyntaxList = (ns: NodeArray<Node>) => {
-          const list = (createNode(Syntax.SyntaxList, ns.pos, ns.end, this) as any) as SyntaxList;
+          const list = Node.create(Syntax.SyntaxList, ns.pos, ns.end, this);
           list._children = [];
           let p = ns.pos;
           for (const n of ns) {
@@ -578,8 +589,523 @@ namespace qnr {
         if (!c) return;
         return c.kind < Syntax.FirstNode ? c : c.getLastToken(s);
       }
-      forEachChild<T>(cbNode: (n: Node) => T, cbNodeArray?: (ns: NodeArray<Node>) => T): T | undefined {
-        return forEachChild(this, cbNode, cbNodeArray);
+      visit<T>(cb: (n: Node) => T): T | undefined {
+        return cb(this);
+      }
+      forEachChild<T extends Node>(cb: (n: Node) => T, cbs?: (ns: NodeArray<Node>) => T): T | undefined {
+        if (this.kind <= Syntax.LastToken) return;
+        
+
+        const n = this as unknown as QualifiedName | NamedTupleMember| LiteralTypeNode|MappedTypeNode| IndexedAccessTypeNode| TypeOperatorNode| ParenthesizedTypeNode| ImportTypeNode|InferTypeNode|ConditionalTypeNode| UnionOrIntersectionTypeNode| TupleTypeNode| ArrayTypeNode|TypeLiteralNode|TypeQueryNode|TypeReferenceNode| TypePredicateNode|FunctionLikeDeclaration| SignatureDeclaration|BindingElement|VariableDeclaration|PropertyAssignment|PropertySignature|PropertyDeclaration|ParameterDeclaration| TypeParameterDeclaration | ShorthandPropertyAssignment | SpreadAssignment;
+        switch (n.kind) {
+          case Syntax.QualifiedName:
+            return n.left.visit(cb) || n.right.visit(cb);
+          case Syntax.TypeParameter:
+            return (
+              n.name.visit(cb) ||
+              n.constraint?.visit(cb) ||
+              n.default?.visit(cb) ||
+              n.expression?.visit(cb )
+            );
+          case Syntax.ShorthandPropertyAssignment:
+            return (
+              NodeArray.visit(cb, cbs, n.decorators) ||
+              NodeArray.visit(cb, cbs, n.modifiers) ||
+              n.name.visit(cb) ||
+              n.questionToken?.visit(cb) ||
+              n.exclamationToken?.visit(cb) ||
+              n.equalsToken?.visit(cb) ||
+              n.objectAssignmentInitializer?.visit(cb)
+            );
+          case Syntax.SpreadAssignment:
+            return n.expression.visit(cb);
+          case Syntax.Parameter:
+            return (
+              NodeArray.visit(cb, cbs, n.decorators) ||
+              NodeArray.visit(cb, cbs, n.modifiers) ||
+              n.dot3Token?.visit(cb) ||
+              n.name.visit(cb) ||
+              n.questionToken?.visit(cb) ||
+              n.type?.visit(cb) ||
+              n.initializer?.visit(cb)
+            );
+          case Syntax.PropertyDeclaration:
+            return (
+              NodeArray.visit(cb, cbs, n.decorators) ||
+              NodeArray.visit(cb, cbs, n.modifiers) ||
+              n.name.visit(cb) ||
+              n.questionToken?.visit(cb) ||
+              n.exclamationToken?.visit(cb) ||
+              n.type?.visit(cb) ||
+              n.initializer?.visit(cb)
+            );
+          case Syntax.PropertySignature:
+            return (
+              NodeArray.visit(cb, cbs, n.decorators) ||
+              NodeArray.visit(cb, cbs, n.modifiers) ||
+              n.name.visit(cb) ||
+              n.questionToken?.visit(cb) ||
+              n.type?.visit(cb) ||
+              n.initializer?.visit(cb)
+            );
+          case Syntax.PropertyAssignment:
+            return (
+              NodeArray.visit(cb, cbs, n.decorators) ||
+              NodeArray.visit(cb, cbs, n.modifiers) ||
+              n.name.visit(cb) ||
+              n.questionToken?.visit(cb) ||
+              n.initializer.visit(cb)
+            );
+          case Syntax.VariableDeclaration:
+            return (
+              NodeArray.visit(cb, cbs, n.decorators) ||
+              NodeArray.visit(cb, cbs, n.modifiers) ||
+              n.name.visit(cb) ||
+              n.exclamationToken?.visit(cb) ||
+              n.type?.visit(cb) ||
+              n.initializer?.visit(cb)
+            );
+          case Syntax.BindingElement:
+            return (
+              NodeArray.visit(cb, cbs, n.decorators) ||
+              NodeArray.visit(cb, cbs, n.modifiers) ||
+              n.dot3Token?.visit(cb) ||
+              n.propertyName?.visit(cb) ||
+              n.name.visit(cb) ||
+              n.initializer?.visit(cb)
+            );
+          case Syntax.FunctionType:
+          case Syntax.ConstructorType:
+          case Syntax.CallSignature:
+          case Syntax.ConstructSignature:
+          case Syntax.IndexSignature:
+            return (
+              NodeArray.visit(cb, cbs, n.decorators) ||
+              NodeArray.visit(cb, cbs, n.modifiers) ||
+              NodeArray.visit(cb, cbs, n.typeParameters) ||
+              NodeArray.visit(cb, cbs, n.parameters) ||
+              n.type?.visit(cb)
+            );
+          case Syntax.MethodDeclaration:
+          case Syntax.MethodSignature:
+          case Syntax.Constructor:
+          case Syntax.GetAccessor:
+          case Syntax.SetAccessor:
+          case Syntax.FunctionExpression:
+          case Syntax.FunctionDeclaration:
+          case Syntax.ArrowFunction:
+            return (
+              NodeArray.visit(cb, cbs, n.decorators) ||
+              NodeArray.visit(cb, cbs, n.modifiers) ||
+              n.asteriskToken?.visit(cb) ||
+              n.name?.visit(cb) ||
+              n.questionToken?.visit(cb) ||
+              n.exclamationToken.visit(cb) ||
+              NodeArray.visit(cb, cbs, n.typeParameters) ||
+              NodeArray.visit(cb, cbs, n.parameters) ||
+              n.type?.visit(cb) ||
+              (n as ArrowFunction).equalsGreaterThanToken.visit(cb) ||
+              n.body.visit(cb)
+            );
+          case Syntax.TypeReference:
+            return n.typeName.visit(cb) || NodeArray.visit(cb, cbs, n.typeArguments);
+          case Syntax.TypePredicate:
+            return n.assertsModifier?.visit(cb) || n.parameterName.visit(cb) || n.type?.visit(cb);
+          case Syntax.TypeQuery:
+            return n.exprName.visit(cb);
+          case Syntax.TypeLiteral:
+            return NodeArray.visit(cb, cbs, n.members);
+          case Syntax.ArrayType:
+            return n.elementType.visit(cb );
+          case Syntax.TupleType:
+            return NodeArray.visit(cb, cbs, n.elements);
+          case Syntax.UnionType:
+          case Syntax.IntersectionType:
+            return NodeArray.visit(cb, cbs, n.types);
+          case Syntax.ConditionalType:
+            return (
+              n.checkType.visit(cb) ||
+              n.extendsType.visit(cb) ||
+              n.trueType.visit(cb) ||
+              n.falseType.visit(cb)
+            );
+          case Syntax.InferType:
+            return n.typeParameter.visit(cb);
+          case Syntax.ImportType:
+            return n.argument.visit(cb) || n.qualifier?.visit(cb ) || NodeArray.visit(cb, cbs, n.typeArguments);
+          case Syntax.ParenthesizedType:
+          case Syntax.TypeOperator:
+            return n.type.visit(cb);
+          case Syntax.IndexedAccessType:
+            return n.objectType.visit(cb) || n.indexType.visit(cb);
+          case Syntax.MappedType:
+            return (
+              n.readonlyToken?.visit(cb) ||
+              n.typeParameter.visit(cb) ||
+              n.questionToken?.visit(cb) ||
+              n.type?.visit(cb)
+            );
+          case Syntax.LiteralType:
+            return n.literal.visit(cb);
+          case Syntax.NamedTupleMember:
+            return (
+              n.dot3Token?.visit(cb) ||
+              n.name.visit(cb) ||
+              n.questionToken?.visit(cb) ||
+              n.type.visit(cb)
+            );
+          case Syntax.ObjectBindingPattern:
+          case Syntax.ArrayBindingPattern:
+            return NodeArray.visit(cb, cbs, (<BindingPattern> n.elements);
+          case Syntax.ArrayLiteralExpression:
+            return NodeArray.visit(cb, cbs, (<ArrayLiteralExpression> n.elements);
+          case Syntax.ObjectLiteralExpression:
+            return NodeArray.visit(cb, cbs, (<ObjectLiteralExpression> n.properties);
+          case Syntax.PropertyAccessExpression:
+            return (
+              visit(cb, (<PropertyAccessExpression> n.expression) || visit(cb, (<PropertyAccessExpression> n.questionDotToken) || visit(cb, (<PropertyAccessExpression> n.name)
+            );
+          case Syntax.ElementAccessExpression:
+            return (
+              visit(cb, (<ElementAccessExpression> n.expression) ||
+              visit(cb, (<ElementAccessExpression> n.questionDotToken) ||
+              visit(cb, (<ElementAccessExpression> n.argumentExpression)
+            );
+          case Syntax.CallExpression:
+          case Syntax.NewExpression:
+            return (
+              visit(cb, (<CallExpression> n.expression) ||
+              visit(cb, (<CallExpression> n.questionDotToken) ||
+              NodeArray.visit(cb, cbs, (<CallExpression> n.typeArguments) ||
+              NodeArray.visit(cb, cbs, (<CallExpression> n.arguments)
+            );
+          case Syntax.TaggedTemplateExpression:
+            return (
+              visit(cb, (<TaggedTemplateExpression> n.tag) ||
+              visit(cb, (<TaggedTemplateExpression> n.questionDotToken) ||
+              NodeArray.visit(cb, cbs, (<TaggedTemplateExpression> n.typeArguments) ||
+              visit(cb, (<TaggedTemplateExpression> n.template)
+            );
+          case Syntax.TypeAssertionExpression:
+            return visit(cb, (<TypeAssertion> n.type) || visit(cb, (<TypeAssertion> n.expression);
+          case Syntax.ParenthesizedExpression:
+            return visit(cb, (<ParenthesizedExpression> n.expression);
+          case Syntax.DeleteExpression:
+            return visit(cb, (<DeleteExpression> n.expression);
+          case Syntax.TypeOfExpression:
+            return visit(cb, (<TypeOfExpression> n.expression);
+          case Syntax.VoidExpression:
+            return visit(cb, (<VoidExpression> n.expression);
+          case Syntax.PrefixUnaryExpression:
+            return visit(cb, (<PrefixUnaryExpression> n.operand);
+          case Syntax.YieldExpression:
+            return visit(cb, (<YieldExpression> n.asteriskToken) || visit(cb, (<YieldExpression> n.expression);
+          case Syntax.AwaitExpression:
+            return visit(cb, (<AwaitExpression> n.expression);
+          case Syntax.PostfixUnaryExpression:
+            return visit(cb, (<PostfixUnaryExpression> n.operand);
+          case Syntax.BinaryExpression:
+            return visit(cb, (<BinaryExpression> n.left) || visit(cb, (<BinaryExpression> n.operatorToken) || visit(cb, (<BinaryExpression> n.right);
+          case Syntax.AsExpression:
+            return visit(cb, (<AsExpression> n.expression) || visit(cb, (<AsExpression> n.type);
+          case Syntax.NonNullExpression:
+            return visit(cb, (<NonNullExpression> n.expression);
+          case Syntax.MetaProperty:
+            return visit(cb, (<MetaProperty> n.name);
+          case Syntax.ConditionalExpression:
+            return (
+              visit(cb, (<ConditionalExpression> n.condition) ||
+              visit(cb, (<ConditionalExpression> n.questionToken) ||
+              visit(cb, (<ConditionalExpression> n.whenTrue) ||
+              visit(cb, (<ConditionalExpression> n.colonToken) ||
+              visit(cb, (<ConditionalExpression> n.whenFalse)
+            );
+          case Syntax.SpreadElement:
+            return visit(cb, (<SpreadElement> n.expression);
+          case Syntax.Block:
+          case Syntax.ModuleBlock:
+            return NodeArray.visit(cb, cbs, (<Block> n.statements);
+          case Syntax.SourceFile:
+            return NodeArray.visit(cb, cbs, (<SourceFile> n.statements) || visit(cb, (<SourceFile> n.endOfFileToken);
+          case Syntax.VariableStatement:
+            return NodeArray.visit(cb, cbs, n.decorators) || NodeArray.visit(cb, cbs, n.modifiers) || visit(cb, (<VariableStatement> n.declarationList);
+          case Syntax.VariableDeclarationList:
+            return NodeArray.visit(cb, cbs, (<VariableDeclarationList> n.declarations);
+          case Syntax.ExpressionStatement:
+            return visit(cb, (<ExpressionStatement> n.expression);
+          case Syntax.IfStatement:
+            return visit(cb, (<IfStatement> n.expression) || visit(cb, (<IfStatement> n.thenStatement) || visit(cb, (<IfStatement> n.elseStatement);
+          case Syntax.DoStatement:
+            return visit(cb, (<DoStatement> n.statement) || visit(cb, (<DoStatement> n.expression);
+          case Syntax.WhileStatement:
+            return visit(cb, (<WhileStatement> n.expression) || visit(cb, (<WhileStatement> n.statement);
+          case Syntax.ForStatement:
+            return (
+              visit(cb, (<ForStatement> n.initializer) ||
+              visit(cb, (<ForStatement> n.condition) ||
+              visit(cb, (<ForStatement> n.incrementor) ||
+              visit(cb, (<ForStatement> n.statement)
+            );
+          case Syntax.ForInStatement:
+            return visit(cb, (<ForInStatement> n.initializer) || visit(cb, (<ForInStatement> n.expression) || visit(cb, (<ForInStatement> n.statement);
+          case Syntax.ForOfStatement:
+            return (
+              visit(cb, (<ForOfStatement> n.awaitModifier) ||
+              visit(cb, (<ForOfStatement> n.initializer) ||
+              visit(cb, (<ForOfStatement> n.expression) ||
+              visit(cb, (<ForOfStatement> n.statement)
+            );
+          case Syntax.ContinueStatement:
+          case Syntax.BreakStatement:
+            return visit(cb, (<BreakOrContinueStatement> n.label);
+          case Syntax.ReturnStatement:
+            return visit(cb, (<ReturnStatement> n.expression);
+          case Syntax.WithStatement:
+            return visit(cb, (<WithStatement> n.expression) || visit(cb, (<WithStatement> n.statement);
+          case Syntax.SwitchStatement:
+            return visit(cb, (<SwitchStatement> n.expression) || visit(cb, (<SwitchStatement> n.caseBlock);
+          case Syntax.CaseBlock:
+            return NodeArray.visit(cb, cbs, (<CaseBlock> n.clauses);
+          case Syntax.CaseClause:
+            return visit(cb, (<CaseClause> n.expression) || NodeArray.visit(cb, cbs, (<CaseClause> n.statements);
+          case Syntax.DefaultClause:
+            return NodeArray.visit(cb, cbs, (<DefaultClause> n.statements);
+          case Syntax.LabeledStatement:
+            return visit(cb, (<LabeledStatement> n.label) || visit(cb, (<LabeledStatement> n.statement);
+          case Syntax.ThrowStatement:
+            return visit(cb, (<ThrowStatement> n.expression);
+          case Syntax.TryStatement:
+            return visit(cb, (<TryStatement> n.tryBlock) || visit(cb, (<TryStatement> n.catchClause) || visit(cb, (<TryStatement> n.finallyBlock);
+          case Syntax.CatchClause:
+            return visit(cb, (<CatchClause> n.variableDeclaration) || visit(cb, (<CatchClause> n.block);
+          case Syntax.Decorator:
+            return visit(cb, (<Decorator> n.expression);
+          case Syntax.ClassDeclaration:
+          case Syntax.ClassExpression:
+            return (
+              NodeArray.visit(cb, cbs, n.decorators) ||
+              NodeArray.visit(cb, cbs, n.modifiers) ||
+              visit(cb, (<ClassLikeDeclaration> n.name) ||
+              NodeArray.visit(cb, cbs, (<ClassLikeDeclaration> n.typeParameters) ||
+              NodeArray.visit(cb, cbs, (<ClassLikeDeclaration> n.heritageClauses) ||
+              NodeArray.visit(cb, cbs, (<ClassLikeDeclaration> n.members)
+            );
+          case Syntax.InterfaceDeclaration:
+            return (
+              NodeArray.visit(cb, cbs, n.decorators) ||
+              NodeArray.visit(cb, cbs, n.modifiers) ||
+              visit(cb, (<InterfaceDeclaration> n.name) ||
+              NodeArray.visit(cb, cbs, (<InterfaceDeclaration> n.typeParameters) ||
+              NodeArray.visit(cb, cbs, (<ClassDeclaration> n.heritageClauses) ||
+              NodeArray.visit(cb, cbs, (<InterfaceDeclaration> n.members)
+            );
+          case Syntax.TypeAliasDeclaration:
+            return (
+              NodeArray.visit(cb, cbs, n.decorators) ||
+              NodeArray.visit(cb, cbs, n.modifiers) ||
+              visit(cb, (<TypeAliasDeclaration> n.name) ||
+              NodeArray.visit(cb, cbs, (<TypeAliasDeclaration> n.typeParameters) ||
+              visit(cb, (<TypeAliasDeclaration> n.type)
+            );
+          case Syntax.EnumDeclaration:
+            return (
+              NodeArray.visit(cb, cbs, n.decorators) ||
+              NodeArray.visit(cb, cbs, n.modifiers) ||
+              visit(cb, (<EnumDeclaration> n.name) ||
+              NodeArray.visit(cb, cbs, (<EnumDeclaration> n.members)
+            );
+          case Syntax.EnumMember:
+            return visit(cb, (<EnumMember> n.name) || visit(cb, (<EnumMember> n.initializer);
+          case Syntax.ModuleDeclaration:
+            return (
+              NodeArray.visit(cb, cbs, n.decorators) || NodeArray.visit(cb, cbs, n.modifiers) || visit(cb, (<ModuleDeclaration> n.name) || visit(cb, (<ModuleDeclaration> n.body)
+            );
+          case Syntax.ImportEqualsDeclaration:
+            return (
+              NodeArray.visit(cb, cbs, n.decorators) ||
+              NodeArray.visit(cb, cbs, n.modifiers) ||
+              visit(cb, (<ImportEqualsDeclaration> n.name) ||
+              visit(cb, (<ImportEqualsDeclaration> n.moduleReference)
+            );
+          case Syntax.ImportDeclaration:
+            return (
+              NodeArray.visit(cb, cbs, n.decorators) ||
+              NodeArray.visit(cb, cbs, n.modifiers) ||
+              visit(cb, (<ImportDeclaration> n.importClause) ||
+              visit(cb, (<ImportDeclaration> n.moduleSpecifier)
+            );
+          case Syntax.ImportClause:
+            return visit(cb, (<ImportClause> n.name) || visit(cb, (<ImportClause> n.namedBindings);
+          case Syntax.NamespaceExportDeclaration:
+            return visit(cb, (<NamespaceExportDeclaration> n.name);
+
+          case Syntax.NamespaceImport:
+            return visit(cb, (<NamespaceImport> n.name);
+          case Syntax.NamespaceExport:
+            return visit(cb, (<NamespaceExport> n.name);
+          case Syntax.NamedImports:
+          case Syntax.NamedExports:
+            return NodeArray.visit(cb, cbs, (<NamedImportsOrExports> n.elements);
+          case Syntax.ExportDeclaration:
+            return (
+              NodeArray.visit(cb, cbs, n.decorators) ||
+              NodeArray.visit(cb, cbs, n.modifiers) ||
+              visit(cb, (<ExportDeclaration> n.exportClause) ||
+              visit(cb, (<ExportDeclaration> n.moduleSpecifier)
+            );
+          case Syntax.ImportSpecifier:
+          case Syntax.ExportSpecifier:
+            return visit(cb, (<ImportOrExportSpecifier> n.propertyName) || visit(cb, (<ImportOrExportSpecifier> n.name);
+          case Syntax.ExportAssignment:
+            return NodeArray.visit(cb, cbs, n.decorators) || NodeArray.visit(cb, cbs, n.modifiers) || visit(cb, (<ExportAssignment> n.expression);
+          case Syntax.TemplateExpression:
+            return visit(cb, (<TemplateExpression> n.head) || NodeArray.visit(cb, cbs, (<TemplateExpression> n.templateSpans);
+          case Syntax.TemplateSpan:
+            return visit(cb, (<TemplateSpan> n.expression) || visit(cb, (<TemplateSpan> n.literal);
+          case Syntax.ComputedPropertyName:
+            return visit(cb, (<ComputedPropertyName> n.expression);
+          case Syntax.HeritageClause:
+            return NodeArray.visit(cb, cbs, (<HeritageClause> n.types);
+          case Syntax.ExpressionWithTypeArguments:
+            return visit(cb, (<ExpressionWithTypeArguments> n.expression) || NodeArray.visit(cb, cbs, (<ExpressionWithTypeArguments> n.typeArguments);
+          case Syntax.ExternalModuleReference:
+            return visit(cb, (<ExternalModuleReference> n.expression);
+          case Syntax.MissingDeclaration:
+            return NodeArray.visit(cb, cbs, n.decorators);
+          case Syntax.CommaListExpression:
+            return NodeArray.visit(cb, cbs, (<CommaListExpression> n.elements);
+
+          case Syntax.JsxElement:
+            return visit(cb, (<JsxElement> n.openingElement) || NodeArray.visit(cb, cbs, (<JsxElement> n.children) || visit(cb, (<JsxElement> n.closingElement);
+          case Syntax.JsxFragment:
+            return visit(cb, (<JsxFragment> n.openingFragment) || NodeArray.visit(cb, cbs, (<JsxFragment> n.children) || visit(cb, (<JsxFragment> n.closingFragment);
+          case Syntax.JsxSelfClosingElement:
+          case Syntax.JsxOpeningElement:
+            return (
+              visit(cb, (<JsxOpeningLikeElement> n.tagName) || NodeArray.visit(cb, cbs, (<JsxOpeningLikeElement> n.typeArguments) || visit(cb, (<JsxOpeningLikeElement> n.attributes)
+            );
+          case Syntax.JsxAttributes:
+            return NodeArray.visit(cb, cbs, (<JsxAttributes> n.properties);
+          case Syntax.JsxAttribute:
+            return visit(cb, (<JsxAttribute> n.name) || visit(cb, (<JsxAttribute> n.initializer);
+          case Syntax.JsxSpreadAttribute:
+            return visit(cb, (<JsxSpreadAttribute> n.expression);
+          case Syntax.JsxExpression:
+            return visit(cb, (node as JsxExpression).dot3Token) || visit(cb, (node as JsxExpression).expression);
+          case Syntax.JsxClosingElement:
+            return visit(cb, (<JsxClosingElement> n.tagName);
+
+          case Syntax.OptionalType:
+          case Syntax.RestType:
+          case Syntax.JSDocTypeExpression:
+          case Syntax.JSDocNonNullableType:
+          case Syntax.JSDocNullableType:
+          case Syntax.JSDocOptionalType:
+          case Syntax.JSDocVariadicType:
+            return visit(cb, (<OptionalTypeNode | RestTypeNode | JSDocTypeExpression | JSDocTypeReferencingNode> n.type);
+          case Syntax.JSDocFunctionType:
+            return NodeArray.visit(cb, cbs, (<JSDocFunctionType> n.parameters) || visit(cb, (<JSDocFunctionType> n.type);
+          case Syntax.JSDocComment:
+            return NodeArray.visit(cb, cbs, (<JSDoc> n.tags);
+          case Syntax.JSDocParameterTag:
+          case Syntax.JSDocPropertyTag:
+            return (
+              visit(cb, (node as JSDocTag).tagName) ||
+              ((node as JSDocPropertyLikeTag).isNameFirst
+                ? visit(cb, (<JSDocPropertyLikeTag> n.name) || visit(cb, (<JSDocPropertyLikeTag> n.typeExpression)
+                : visit(cb, (<JSDocPropertyLikeTag> n.typeExpression) || visit(cb, (<JSDocPropertyLikeTag> n.name))
+            );
+          case Syntax.JSDocAuthorTag:
+            return visit(cb, (node as JSDocTag).tagName);
+          case Syntax.JSDocImplementsTag:
+            return visit(cb, (node as JSDocTag).tagName) || visit(cb, (<JSDocImplementsTag> n.class);
+          case Syntax.JSDocAugmentsTag:
+            return visit(cb, (node as JSDocTag).tagName) || visit(cb, (<JSDocAugmentsTag> n.class);
+          case Syntax.JSDocTemplateTag:
+            return visit(cb, (node as JSDocTag).tagName) || visit(cb, (<JSDocTemplateTag> n.constraint) || NodeArray.visit(cb, cbs, (<JSDocTemplateTag> n.typeParameters);
+          case Syntax.JSDocTypedefTag:
+            return (
+              visit(cb, (node as JSDocTag).tagName) ||
+              ((node as JSDocTypedefTag).typeExpression && (node as JSDocTypedefTag).typeExpression!.kind === Syntax.JSDocTypeExpression
+                ? visit(cb, (<JSDocTypedefTag> n.typeExpression) || visit(cb, (<JSDocTypedefTag> n.fullName)
+                : visit(cb, (<JSDocTypedefTag> n.fullName) || visit(cb, (<JSDocTypedefTag> n.typeExpression))
+            );
+          case Syntax.JSDocCallbackTag:
+            return visit(cb, (node as JSDocTag).tagName) || visit(cb, (node as JSDocCallbackTag).fullName) || visit(cb, (node as JSDocCallbackTag).typeExpression);
+          case Syntax.JSDocReturnTag:
+          case Syntax.JSDocTypeTag:
+          case Syntax.JSDocThisTag:
+          case Syntax.JSDocEnumTag:
+            return visit(cb, (node as JSDocTag).tagName) || visit(cb, (node as JSDocReturnTag | JSDocTypeTag | JSDocThisTag | JSDocEnumTag).typeExpression);
+          case Syntax.JSDocSignature:
+            return forEach((<JSDocSignature> n.typeParameters, cb) || forEach((<JSDocSignature> n.parameters, cb) || visit(cb, (<JSDocSignature> n.type);
+          case Syntax.JSDocTypeLiteral:
+            return forEach((node as JSDocTypeLiteral).jsDocPropertyTags, cb);
+          case Syntax.JSDocTag:
+          case Syntax.JSDocClassTag:
+          case Syntax.JSDocPublicTag:
+          case Syntax.JSDocPrivateTag:
+          case Syntax.JSDocProtectedTag:
+          case Syntax.JSDocReadonlyTag:
+            return visit(cb, (node as JSDocTag).tagName);
+          case Syntax.PartiallyEmittedExpression:
+            return visit(cb, (<PartiallyEmittedExpression> n.expression);
+        }
+        return;
+      }
+      forEachChildRecursively<T>(rootNode: Node, cb: (node: Node, parent: Node) => T | 'skip' | undefined, cbs?: (nodes: NodeArray<Node>, parent: Node) => T | 'skip' | undefined): T | undefined {
+        const stack: Node[] = [rootNode];
+        while (stack.length) {
+          const parent = stack.pop()!;
+          const res = visitAllPossibleChildren(parent, gatherPossibleChildren(parent));
+          if (res) {
+            return res;
+          }
+        }
+
+        return;
+
+        function gatherPossibleChildren(node: Node) {
+          const children: (Node | NodeArray<Node>)[] = [];
+          forEachChild(node, addWorkItem, addWorkItem); // By using a stack above and `unshift` here, we emulate a depth-first preorder traversal
+          return children;
+
+          function addWorkItem(n: Node | NodeArray<Node>) {
+            children.unshift(n);
+          }
+        }
+
+        function visitAllPossibleChildren(parent: Node, children: readonly (Node | NodeArray<Node>)[]) {
+          for (const child of children) {
+            if (isArray(child)) {
+              if (cbs) {
+                const res = cbs(child, parent);
+                if (res) {
+                  if (res === 'skip') continue;
+                  return res;
+                }
+              }
+
+              for (let i = child.length - 1; i >= 0; i--) {
+                const realChild = child[i];
+                const res = cb(realChild, parent);
+                if (res) {
+                  if (res === 'skip') continue;
+                  return res;
+                }
+                stack.push(realChild);
+              }
+            } else {
+              stack.push(child);
+              const res = cb(child, parent);
+              if (res) {
+                if (res === 'skip') continue;
+                return res;
+              }
+            }
+          }
+          return;
+        }
       }
     }
 
@@ -1003,7 +1529,7 @@ namespace qnr {
               break;
 
             case Syntax.ImportDeclaration:
-              const importClause = (<ImportDeclaration>node).importClause;
+              const importClause = (<ImportDeclaration> n.importClause;
               if (importClause) {
                 // Handle default import case e.g.:
                 //    import d from "mod";
@@ -1283,7 +1809,7 @@ namespace qnr {
   export namespace PropertySignature {
     export function create(ms: readonly Modifier[] | undefined, p: PropertyName | string, q?: QuestionToken, t?: TypeNode, i?: Expression) {
       const n = Node.createSynthesized(Syntax.PropertySignature) as PropertySignature;
-      n.modifiers = asNodeArray(ms);
+      n.modifiers = NodeArray.from(ms);
       n.name = asName(p);
       n.questionToken = q;
       n.type = t;
@@ -1310,8 +1836,8 @@ namespace qnr {
   export namespace PropertyDeclaration {
     export function create(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: string | PropertyName, q?: QuestionToken | ExclamationToken, t?: TypeNode, i?: Expression) {
       const n = Node.createSynthesized(Syntax.PropertyDeclaration) as PropertyDeclaration;
-      n.decorators = asNodeArray(ds);
-      n.modifiers = asNodeArray(ms);
+      n.decorators = NodeArray.from(ds);
+      n.modifiers = NodeArray.from(ms);
       n.name = asName(p);
       n.questionToken = q !== undefined && q.kind === Syntax.QuestionToken ? q : undefined;
       n.exclamationToken = q !== undefined && q.kind === Syntax.ExclamationToken ? q : undefined;
@@ -1382,13 +1908,13 @@ namespace qnr {
       b?: Block
     ) {
       const n = Node.createSynthesized(Syntax.MethodDeclaration) as MethodDeclaration;
-      n.decorators = asNodeArray(ds);
-      n.modifiers = asNodeArray(ms);
+      n.decorators = NodeArray.from(ds);
+      n.modifiers = NodeArray.from(ms);
       n.asteriskToken = a;
       n.name = asName(p);
       n.questionToken = q;
-      n.typeParameters = asNodeArray(ts);
-      n.parameters = createNodeArray(ps);
+      n.typeParameters = NodeArray.from(ts);
+      n.parameters = NodeArray.create(ps);
       n.type = t;
       n.body = b;
       return n;
@@ -1430,10 +1956,10 @@ namespace qnr {
   export namespace ConstructorDeclaration {
     export function create(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, ps: readonly ParameterDeclaration[], b?: Block) {
       const n = Node.createSynthesized(Syntax.Constructor) as ConstructorDeclaration;
-      n.decorators = asNodeArray(ds);
-      n.modifiers = asNodeArray(ms);
+      n.decorators = NodeArray.from(ds);
+      n.modifiers = NodeArray.from(ms);
       n.typeParameters = undefined;
-      n.parameters = createNodeArray(ps);
+      n.parameters = NodeArray.create(ps);
       n.type = undefined;
       n.body = b;
       return n;
@@ -1455,11 +1981,11 @@ namespace qnr {
   export namespace GetAccessorDeclaration {
     export function create(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: string | PropertyName, ps: readonly ParameterDeclaration[], t?: TypeNode, b?: Block) {
       const n = Node.createSynthesized(Syntax.GetAccessor) as GetAccessorDeclaration;
-      n.decorators = asNodeArray(ds);
-      n.modifiers = asNodeArray(ms);
+      n.decorators = NodeArray.from(ds);
+      n.modifiers = NodeArray.from(ms);
       n.name = asName(p);
       n.typeParameters = undefined;
-      n.parameters = createNodeArray(ps);
+      n.parameters = NodeArray.create(ps);
       n.type = t;
       n.body = b;
       return n;
@@ -1492,11 +2018,11 @@ namespace qnr {
   export namespace SetAccessorDeclaration {
     export function create(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: string | PropertyName, ps: readonly ParameterDeclaration[], b?: Block) {
       const n = Node.createSynthesized(Syntax.SetAccessor) as SetAccessorDeclaration;
-      n.decorators = asNodeArray(ds);
-      n.modifiers = asNodeArray(ms);
+      n.decorators = NodeArray.from(ds);
+      n.modifiers = NodeArray.from(ms);
       n.name = asName(p);
       n.typeParameters = undefined;
-      n.parameters = createNodeArray(ps);
+      n.parameters = NodeArray.create(ps);
       n.body = b;
       return n;
     }
@@ -1545,9 +2071,9 @@ namespace qnr {
   export namespace IndexSignatureDeclaration {
     export function create(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, ps: readonly ParameterDeclaration[], t: TypeNode): IndexSignatureDeclaration {
       const n = Node.createSynthesized(Syntax.IndexSignature) as IndexSignatureDeclaration;
-      n.decorators = asNodeArray(ds);
-      n.modifiers = asNodeArray(ms);
-      n.parameters = createNodeArray(ps);
+      n.decorators = NodeArray.from(ds);
+      n.modifiers = NodeArray.from(ms);
+      n.parameters = NodeArray.create(ps);
       n.type = t;
       return n;
     }
@@ -1688,7 +2214,7 @@ namespace qnr {
   export namespace TypeLiteralNode {
     export function create(ms: readonly TypeElement[] | undefined) {
       const n = Node.createSynthesized(Syntax.TypeLiteral) as TypeLiteralNode;
-      n.members = createNodeArray(ms);
+      n.members = NodeArray.create(ms);
       return n;
     }
     export function update(n: TypeLiteralNode, ms: NodeArray<TypeElement>) {
@@ -1724,7 +2250,7 @@ namespace qnr {
   export namespace TupleTypeNode {
     export function create(es: readonly (TypeNode | NamedTupleMember)[]) {
       const n = Node.createSynthesized(Syntax.TupleType) as TupleTypeNode;
-      n.elements = createNodeArray(es);
+      n.elements = NodeArray.create(es);
       return n;
     }
     export function update(n: TupleTypeNode, es: readonly (TypeNode | NamedTupleMember)[]) {
@@ -2013,7 +2539,7 @@ namespace qnr {
   export namespace ObjectBindingPattern {
     export function create(es: readonly BindingElement[]) {
       const n = Node.createSynthesized(Syntax.ObjectBindingPattern) as ObjectBindingPattern;
-      n.elements = createNodeArray(es);
+      n.elements = NodeArray.create(es);
       return n;
     }
     export function update(n: ObjectBindingPattern, es: readonly BindingElement[]) {
@@ -2032,7 +2558,7 @@ namespace qnr {
   export namespace ArrayBindingPattern {
     export function create(es: readonly ArrayBindingElement[]) {
       const n = Node.createSynthesized(Syntax.ArrayBindingPattern) as ArrayBindingPattern;
-      n.elements = createNodeArray(es);
+      n.elements = NodeArray.create(es);
       return n;
     }
     export function update(n: ArrayBindingPattern, es: readonly ArrayBindingElement[]) {
@@ -2103,10 +2629,10 @@ namespace qnr {
   export namespace SignatureDeclaration {
     export function create(k: Syntax, ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t?: TypeNode, ta?: readonly TypeNode[]) {
       const n = Node.createSynthesized(k) as SignatureDeclaration;
-      n.typeParameters = asNodeArray(ts);
-      n.parameters = asNodeArray(ps);
+      n.typeParameters = NodeArray.from(ts);
+      n.parameters = NodeArray.from(ps);
       n.type = t;
-      n.typeArguments = asNodeArray(ta);
+      n.typeArguments = NodeArray.from(ta);
       return n;
     }
     export function update<T extends SignatureDeclaration>(n: T, ts: NodeArray<TypeParameterDeclaration> | undefined, ps: NodeArray<ParameterDeclaration>, t?: TypeNode): T {
