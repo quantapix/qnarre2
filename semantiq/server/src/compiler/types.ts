@@ -773,7 +773,6 @@ namespace qnr {
     Unique = 3, // Unique name based on the 'text' property.
     Node = 4, // Unique name based on the node in the 'original' property.
     KindMask = 7, // Mask to extract the kind of identifier from its flags.
-
     // Flags
     ReservedInNestedScopes = 1 << 3, // Reserve the generated name in nested scopes
     Optimistic = 1 << 4, // First instance won't use '_#' if there's no conflict
@@ -782,10 +781,6 @@ namespace qnr {
 
   export interface Identifier extends PrimaryExpression, Declaration {
     kind: Syntax.Identifier;
-    /**
-     * Prefer to use `id.unescapedText`. (Note: This is available only in services, not internally to the TypeScript compiler.)
-     * Text of identifier, but if the identifier begins with two underscores, this will begin with three.
-     */
     escapedText: __String;
     originalKeywordKind?: Syntax; // Original syntaxKind which get set so that we can report an error later
     autoGenerateFlags?: GeneratedIdentifierFlags; // Specifies whether to auto-generate the text for an identifier.
@@ -3683,7 +3678,7 @@ namespace qnr {
     add(ss: SymbolTable<S>, m: DiagnosticMessage) {
       ss.forEach((s, id) => {
         const t = this.get(id);
-        if (t) forEach(t.declarations, addDeclarationDiagnostic(Scanner.unescapeUnderscores(id), m));
+        if (t) forEach(t.declarations, addDeclarationDiagnostic(Scanner.unescUnderscores(id), m));
         else this.set(id, s);
       });
 

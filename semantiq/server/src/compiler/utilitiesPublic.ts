@@ -160,12 +160,12 @@ namespace qnr {
   }
 
   export function idText(identifierOrPrivateName: Identifier | PrivateIdentifier): string {
-    return Scanner.unescapeUnderscores(identifierOrPrivateName.escapedText);
+    return Scanner.unescUnderscores(identifierOrPrivateName.escapedText);
   }
 
   export function symbolName(s: Symbol): string {
     if (s.valueDeclaration && isPrivateIdentifierPropertyDeclaration(s.valueDeclaration)) return idText(s.valueDeclaration.name);
-    return Scanner.unescapeUnderscores(s.escName);
+    return Scanner.unescUnderscores(s.escName);
   }
 
   function nameForNamelessJSDocTypedef(declaration: JSDocTypedefTag | JSDocEnumTag): Identifier | PrivateIdentifier | undefined {

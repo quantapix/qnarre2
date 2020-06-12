@@ -334,7 +334,7 @@ namespace qnr {
           const nameExpression = name.expression;
           // treat computed property names where expression is string/numeric literal as just string/numeric literal
           if (StringLiteral.orNumericLiteralLike(nameExpression)) {
-            return Scanner.escapeUnderscores(nameExpression.text);
+            return Scanner.escUnderscores(nameExpression.text);
           }
           if (isSignedNumericLiteral(nameExpression)) {
             return (Token.toString(nameExpression.operator) + nameExpression.operand.text) as __String;
@@ -400,7 +400,7 @@ namespace qnr {
     }
 
     function getDisplayName(node: Declaration): string {
-      return isNamedDeclaration(node) ? declarationNameToString(node.name) : Scanner.unescapeUnderscores(Debug.checkDefined(getDeclarationName(node)));
+      return isNamedDeclaration(node) ? declarationNameToString(node.name) : Scanner.unescUnderscores(Debug.checkDefined(getDeclarationName(node)));
     }
 
     /**
@@ -508,7 +508,7 @@ namespace qnr {
               symbol.flags & (SymbolFlags.Alias | SymbolFlags.Type | SymbolFlags.Namespace)
             ) {
               // export type T; - may have meant export type { T }?
-              relatedInformation.push(createDiagnosticForNode(node, Diagnostics.Did_you_mean_0, `export type { ${Scanner.unescapeUnderscores(node.name.escapedText)} }`));
+              relatedInformation.push(createDiagnosticForNode(node, Diagnostics.Did_you_mean_0, `export type { ${Scanner.unescUnderscores(node.name.escapedText)} }`));
             }
 
             const declarationName = getNameOfDeclaration(node) || node;

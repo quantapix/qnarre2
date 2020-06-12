@@ -4566,7 +4566,7 @@ namespace qnr {
     function isUniqueLocalName(name: string, container: Node): boolean {
       for (let node = container; isNodeDescendantOf(node, container); node = node.nextContainer!) {
         if (node.locals) {
-          const local = node.locals.get(Scanner.escapeUnderscores(name));
+          const local = node.locals.get(Scanner.escUnderscores(name));
           // We conservatively include alias symbols to cover cases where they're emitted as locals
           if (local && local.flags & (SymbolFlags.Value | SymbolFlags.ExportValue | SymbolFlags.Alias)) {
             return false;

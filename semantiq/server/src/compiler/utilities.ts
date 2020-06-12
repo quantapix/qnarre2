@@ -670,9 +670,9 @@ namespace qnr {
       case Syntax.StringLiteral:
       case Syntax.NumericLiteral:
       case Syntax.NoSubstitutionLiteral:
-        return Scanner.escapeUnderscores(name.text);
+        return Scanner.escUnderscores(name.text);
       case Syntax.ComputedPropertyName:
-        if (StringLiteral.orNumericLiteralLike(name.expression)) return Scanner.escapeUnderscores(name.expression.text);
+        if (StringLiteral.orNumericLiteralLike(name.expression)) return Scanner.escUnderscores(name.expression.text);
         return fail('Text of property name cannot be read from non-literal-valued ComputedPropertyNames');
       default:
         return Debug.assertNever(name);
@@ -1903,7 +1903,7 @@ namespace qnr {
         return name.escapedText;
       }
       if (StringLiteral.like(name) || NumericLiteral.kind(name)) {
-        return Scanner.escapeUnderscores(name.text);
+        return Scanner.escUnderscores(name.text);
       }
     }
     if (isElementAccessExpression(node) && isWellKnownSymbolSyntactically(node.argumentExpression)) {
@@ -2711,13 +2711,13 @@ namespace qnr {
         return name.escapedText;
       case Syntax.StringLiteral:
       case Syntax.NumericLiteral:
-        return Scanner.escapeUnderscores(name.text);
+        return Scanner.escUnderscores(name.text);
       case Syntax.ComputedPropertyName:
         const nameExpression = name.expression;
         if (isWellKnownSymbolSyntactically(nameExpression)) {
           return getPropertyNameForKnownSymbolName(idText((<PropertyAccessExpression>nameExpression).name));
         } else if (StringLiteral.orNumericLiteralLike(nameExpression)) {
-          return Scanner.escapeUnderscores(nameExpression.text);
+          return Scanner.escUnderscores(nameExpression.text);
         } else if (isSignedNumericLiteral(nameExpression)) {
           if (nameExpression.operator === Syntax.MinusToken) {
             return (Token.toString(nameExpression.operator) + nameExpression.operand.text) as __String;
@@ -2747,7 +2747,7 @@ namespace qnr {
   }
 
   export function getEscapedTextOfIdentifierOrLiteral(node: PropertyNameLiteral): __String {
-    return isIdentifierOrPrivateIdentifier(node) ? node.escapedText : Scanner.escapeUnderscores(node.text);
+    return isIdentifierOrPrivateIdentifier(node) ? node.escapedText : Scanner.escUnderscores(node.text);
   }
 
   export function getPropertyNameForUniqueESSymbol(symbol: Symbol): __String {
@@ -4155,7 +4155,7 @@ namespace qnr {
         return baseStr + '.' + expr.name;
       }
     } else if (isIdentifier(expr)) {
-      return Scanner.unescapeUnderscores(expr.escapedText);
+      return Scanner.unescUnderscores(expr.escapedText);
     }
     return;
   }

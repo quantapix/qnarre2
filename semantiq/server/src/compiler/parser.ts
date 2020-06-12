@@ -1134,7 +1134,7 @@ namespace qnr {
       if (isIdentifier) {
         const n = createNode<Identifier>(Syntax.Identifier);
         if (token() !== Syntax.Identifier) n.originalKeywordKind = token();
-        n.escapedText = Scanner.escapeUnderscores(internIdentifier(scanner.getTokenValue()));
+        n.escapedText = Scanner.escUnderscores(internIdentifier(scanner.getTokenValue()));
         nextTokenWithoutCheck();
         return finishNode(n);
       }
@@ -1187,7 +1187,7 @@ namespace qnr {
     }
     function parsePrivateIdentifier(): PrivateIdentifier {
       const n = createNode<PrivateIdentifier>(Syntax.PrivateIdentifier);
-      n.escapedText = Scanner.escapeUnderscores(internPrivateIdentifier(scanner.getTokenText()));
+      n.escapedText = Scanner.escUnderscores(internPrivateIdentifier(scanner.getTokenText()));
       nextToken();
       return finishNode(n);
     }
@@ -6518,7 +6518,7 @@ namespace qnr {
           if (token() !== Syntax.Identifier) {
             result.originalKeywordKind = token();
           }
-          result.escapedText = Scanner.escapeUnderscores(internIdentifier(scanner.getTokenValue()));
+          result.escapedText = Scanner.escUnderscores(internIdentifier(scanner.getTokenValue()));
           finishNode(result, end);
           nextTokenJSDoc();
           return result;

@@ -404,9 +404,11 @@ namespace qnr {
     [Syntax.Count]: Count;
   }
 
+  type NodeType<T extends Syntax> = T extends keyof SynMap ? SynMap[T] : never;
+
   export namespace Node {
-    export function createSynthesized(k: Syntax): Node {
-      const n = createNode(k, -1, -1);
+    export function createSynthesized<T extends Syntax>(k: T): NodeType<T> {
+      const n = create<T>(k, -1, -1);
       n.flags |= NodeFlags.Synthesized;
       return n;
     }
@@ -423,53 +425,31 @@ namespace qnr {
       return n;
     }
 
-    function isNode(n: Node) {
-      return isNodeKind(n.kind);
-    }
     function isNodeKind(k: Syntax) {
       return k >= Syntax.FirstNode;
     }
 
-    export function createNode(k: Syntax, pos?: number, end?: number): Node {
-      if (k === Syntax.SourceFile) return new (SourceFileC || (SourceFileC = objectAllocator.getSourceFileConstructor()))(k, pos, end);
-      if (k === Syntax.Identifier) return new (IdentifierC || (IdentifierC = objectAllocator.getIdentifierConstructor()))(k, pos, end);
-      if (k === Syntax.PrivateIdentifier) return new (PrivateIdentifierC || (PrivateIdentifierC = objectAllocator.getPrivateIdentifierConstructor()))(k, pos, end);
-      if (!isNodeKind(k)) return new (TokenC || (TokenC = objectAllocator.getTokenConstructor()))(k, pos, end);
-      return new (NodeC || (NodeC = objectAllocator.getNodeConstructor()))(k, pos, end);
+    //const kind = Syntax.Unknown;
+
+    export function create<T extends Syntax>(k: T, pos: number, end: number, parent?: Node): NodeType<T> {
+      const n =
+        isNodeKind(k) || k === Syntax.Unknown
+          ? new NodeObj(k, pos, end)
+          : k === Syntax.SourceFile
+          ? new SourceFileObj(Syntax.SourceFile, pos, end)
+          : k === Syntax.Identifier
+          ? new IdentifierObj(Syntax.Identifier, pos, end)
+          : k === Syntax.PrivateIdentifier
+          ? new PrivateIdentifierObj(Syntax.PrivateIdentifier, pos, end)
+          : new TokenObj<T>(k, pos, end);
+      if (parent) {
+        n.parent = parent;
+        n.flags = parent.flags & NodeFlags.ContextFlags;
+      }
+      return n as NodeType<T>;
     }
 
-    let NodeC: new <T extends Node>(k: Syntax, pos: number, end: number) => T;
-    let TokenC: new <T extends Node>(k: Syntax, pos: number, end: number) => T;
-    let IdentifierC: new <T extends Node>(k: Syntax.Identifier, pos: number, end: number) => T;
-    let PrivateIdentifierC: new <T extends Node>(k: Syntax.PrivateIdentifier, pos: number, end: number) => T;
-    let SourceFileC: new (kind: Syntax.SourceFile, pos: number, end: number) => Node;
-
-    const kind = Syntax.Unknown;
-
-    export function createNode(k: Syntax, pos?: number, end?: number): Node {
-      return isNodeKind(k) || k === Syntax.Unknown
-        ? new NodeC<T>(k, p, p)
-        : k === Syntax.Identifier
-        ? new IdentifierC<T>(k, p, p)
-        : k === Syntax.PrivateIdentifier
-        ? new PrivateIdentifierC<T>(k, p, p)
-        : new TokenC<T>(k, p, p);
-    }
-
-    function createNode<TKind extends Syntax>(kind: TKind, pos: number, end: number, parent: Node): NodeObj | TokenObj<TKind> | IdentifierObj | PrivateIdentifierObj {
-      const node = isNodeKind(kind)
-        ? new NodeObj(kind, pos, end)
-        : kind === Syntax.Identifier
-        ? new IdentifierObj(Syntax.Identifier, pos, end)
-        : kind === Syntax.PrivateIdentifier
-        ? new PrivateIdentifierObj(Syntax.PrivateIdentifier, pos, end)
-        : new TokenObj(kind, pos, end);
-      node.parent = parent;
-      node.flags = parent.flags & NodeFlags.ContextFlags;
-      return node;
-    }
-
-    export class NodeObj implements Node {
+    export class NodeObj extends TextRange implements Node {
       id = 0;
       flags = NodeFlags.None;
       modifierFlagsCache = ModifierFlags.None;
@@ -480,8 +460,9 @@ namespace qnr {
       original?: Node;
       private _children?: Node[];
 
-      constructor(public kind: Syntax, public pos: number, public end: number) {}
-
+      constructor(public kind: Syntax, pos: number, end: number) {
+        super(pos, end);
+      }
       getSourceFile(): SourceFile {
         return getSourceFileOfNode(this);
       }
@@ -597,7 +578,6 @@ namespace qnr {
         if (!c) return;
         return c.kind < Syntax.FirstNode ? c : c.getLastToken(s);
       }
-
       forEachChild<T>(cbNode: (n: Node) => T, cbNodeArray?: (ns: NodeArray<Node>) => T): T | undefined {
         return forEachChild(this, cbNode, cbNodeArray);
       }
@@ -612,6 +592,7 @@ namespace qnr {
     export class TokenObj<T extends Syntax> extends TokenOrIdentifierObj implements Token<T> {}
 
     export class IdentifierObj extends TokenOrIdentifierObj implements Identifier {
+      kind: Syntax.Identifier = Syntax.Identifier;
       escapedText!: __String;
       autoGenerateFlags!: GeneratedIdentifierFlags;
       _primaryExpressionBrand: any;
@@ -633,6 +614,7 @@ namespace qnr {
     IdentifierObj.prototype.kind = Syntax.Identifier;
 
     export class PrivateIdentifierObj extends TokenOrIdentifierObj implements PrivateIdentifier {
+      kind: Syntax.PrivateIdentifier = Syntax.PrivateIdentifier;
       escapedText!: __String;
       constructor(kind: Syntax.PrivateIdentifier, pos: number, end: number) {
         super(kind, pos, end);
@@ -914,15 +896,12 @@ namespace qnr {
         if (!this.namedDeclarations) {
           this.namedDeclarations = this.computeNamedDeclarations();
         }
-
         return this.namedDeclarations;
       }
 
       private computeNamedDeclarations(): QMap<Declaration[]> {
         const result = createMultiMap<Declaration>();
-
         this.forEachChild(visit);
-
         return result;
 
         function addDeclaration(declaration: Declaration) {
@@ -953,11 +932,9 @@ namespace qnr {
             case Syntax.MethodSignature:
               const functionDeclaration = <FunctionLikeDeclaration>node;
               const declarationName = getDeclarationName(functionDeclaration);
-
               if (declarationName) {
                 const declarations = getDeclarations(declarationName);
                 const lastDeclaration = lastOrUndefined(declarations);
-
                 // Check whether this declaration belongs to an "overload group".
                 if (lastDeclaration && functionDeclaration.parent === lastDeclaration.parent && functionDeclaration.symbol === lastDeclaration.symbol) {
                   // Overwrite the last declaration if it was an overload
@@ -971,7 +948,6 @@ namespace qnr {
               }
               forEachChild(node, visit);
               break;
-
             case Syntax.ClassDeclaration:
             case Syntax.ClassExpression:
             case Syntax.InterfaceDeclaration:
@@ -989,14 +965,12 @@ namespace qnr {
               addDeclaration(<Declaration>node);
               forEachChild(node, visit);
               break;
-
             case Syntax.Parameter:
               // Only consider parameter properties
               if (!hasSyntacticModifier(node, ModifierFlags.ParameterPropertyModifier)) {
                 break;
               }
             // falls through
-
             case Syntax.VariableDeclaration:
             case Syntax.BindingElement: {
               const decl = <VariableDeclaration>node;

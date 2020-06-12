@@ -152,4 +152,79 @@ namespace qnr {
       return new TextChange(TextSpan.from(s, e), e2 - s);
     }
   }
+
+  export class SourceFile2 implements SourceFileLike {
+    text = '';
+    lineMap?: number[];
+    lineStarts(): readonly number[] {
+      return this.lineMap ?? (this.lineMap = Scanner.lineStarts(this.text));
+    }
+    lineAndCharOf(pos: number) {
+      return Scanner.lineAndCharOf(this.lineStarts(), pos);
+    }
+    posOf(line: number, char: number): number;
+    posOf(line: number, char: number, edits?: true): number;
+    posOf(line: number, char: number, edits?: true): number {
+      return Scanner.posOf(this.lineStarts(), line, char, this.text, edits);
+    }
+    linesBetween(p1: number, p2: number): number;
+    linesBetween(r1: QRange, r2: QRange, comments: boolean): number;
+    linesBetween(x1: QRange | number, x2: QRange | number, comments = false) {
+      if (typeof x1 === 'number') {
+        if (x1 === x2) return 0;
+        assert(typeof x2 === 'number');
+        const ss = this.lineStarts();
+        const min = Math.min(x1, x2);
+        const isNegative = min === x2;
+        const max = isNegative ? x1 : x2;
+        const lower = Scanner.lineOf(ss, min);
+        const upper = Scanner.lineOf(ss, max, lower);
+        return isNegative ? lower - upper : upper - lower;
+      }
+      const s = this.startPos(x2 as QRange, comments);
+      return this.linesBetween(x1.end, s);
+    }
+    linesBetweenEnds(r1: QRange, r2: QRange) {
+      return this.linesBetween(r1.end, r2.end);
+    }
+    linesToPrevNonWhitespace(pos: number, stop: number, comments = false) {
+      const s = Scanner.skipTrivia(this.text, pos, false, comments);
+      const p = this.prevNonWhitespacePos(s, stop);
+      return this.linesBetween(p ?? stop, s);
+    }
+    linesToNextNonWhitespace(pos: number, stop: number, comments = false) {
+      const s = Scanner.skipTrivia(this.text, pos, false, comments);
+      return this.linesBetween(pos, Math.min(stop, s));
+    }
+    startPos(r: QRange, comments = false) {
+      return isSynthesized(r.pos) ? -1 : Scanner.skipTrivia(this.text, r.pos, false, comments);
+    }
+    prevNonWhitespacePos(pos: number, stop = 0) {
+      while (pos-- > stop) {
+        if (!Scanner.isWhiteSpaceLike(this.text.charCodeAt(pos))) return pos;
+      }
+      return;
+    }
+    onSameLine(p1: number, p2: number) {
+      return this.linesBetween(p1, p2) === 0;
+    }
+    onSingleLine(r: QRange) {
+      return this.onSameLine(r.pos, r.end);
+    }
+    multiLine(a: NodeArray<Node>) {
+      return !this.onSameLine(a.pos, a.end);
+    }
+    startsOnSameLine(r1: QRange, r2: QRange) {
+      return this.onSameLine(this.startPos(r1), this.startPos(r2));
+    }
+    endsOnSameLine(r1: QRange, r2: QRange) {
+      return this.onSameLine(r1.end, r2.end);
+    }
+    startOnSameLineAsEnd(r1: QRange, r2: QRange) {
+      return this.onSameLine(this.startPos(r1), r2.end);
+    }
+    endOnSameLineAsStart(r1: QRange, r2: QRange) {
+      return this.onSameLine(r1.end, this.startPos(r2));
+    }
+  }
 }

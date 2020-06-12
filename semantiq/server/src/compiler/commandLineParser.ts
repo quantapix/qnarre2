@@ -1648,7 +1648,7 @@ namespace qnr {
         }
 
         const textOfKey = isComputedNonLiteralName(element.name) ? undefined : getTextOfPropertyName(element.name);
-        const keyText = textOfKey && Scanner.unescapeUnderscores(textOfKey);
+        const keyText = textOfKey && Scanner.unescUnderscores(textOfKey);
         const option = keyText && knownOptions ? knownOptions.get(keyText) : undefined;
         if (keyText && extraKeyDiagnostics && !option) {
           if (knownOptions) {

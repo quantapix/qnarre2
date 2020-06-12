@@ -20,6 +20,7 @@
     "sys.ts",
     "path.ts",
     "diagnosticInformationMap.generated.ts",
+    "syntax.ts",
     "scanner.ts",
     "node.ts",
     "utilitiesPublic.ts",
