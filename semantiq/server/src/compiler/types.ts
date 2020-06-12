@@ -2048,7 +2048,7 @@ namespace qnr {
 
   export type CommentKind = Syntax.SingleLineCommentTrivia | Syntax.MultiLineCommentTrivia;
 
-  export interface CommentRange extends TextRange {
+  export interface CommentRange extends QRange {
     hasTrailingNewLine?: boolean;
     kind: CommentKind;
   }
@@ -2427,7 +2427,7 @@ namespace qnr {
   }
 
   export interface CommentDirective {
-    range: TextRange;
+    range: QRange;
     type: CommentDirectiveType;
   }
 

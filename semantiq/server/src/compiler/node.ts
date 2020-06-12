@@ -129,7 +129,7 @@ namespace qnr {
 
     [Syntax.Identifier]: Identifier;
     [Syntax.PrivateIdentifier]: PrivateIdentifier;
-
+    /*
     [Syntax.BreakKeyword]: BreakKeyword;
     [Syntax.CaseKeyword]: CaseKeyword;
     [Syntax.CatchKeyword]: CatchKeyword;
@@ -208,47 +208,47 @@ namespace qnr {
     [Syntax.GlobalKeyword]: GlobalKeyword;
     [Syntax.BigIntKeyword]: BigIntKeyword;
     [Syntax.OfKeyword]: OfKeyword;
-
+    */
     [Syntax.QualifiedName]: QualifiedName;
     [Syntax.ComputedPropertyName]: ComputedPropertyName;
 
-    [Syntax.TypeParameter]: TypeParameter;
-    [Syntax.Parameter]: Parameter;
+    [Syntax.TypeParameter]: TypeParameterDeclaration;
+    [Syntax.Parameter]: ParameterDeclaration;
     [Syntax.Decorator]: Decorator;
 
     [Syntax.PropertySignature]: PropertySignature;
     [Syntax.PropertyDeclaration]: PropertyDeclaration;
     [Syntax.MethodSignature]: MethodSignature;
     [Syntax.MethodDeclaration]: MethodDeclaration;
-    [Syntax.Constructor]: Constructor;
-    [Syntax.GetAccessor]: GetAccessor;
-    [Syntax.SetAccessor]: SetAccessor;
-    [Syntax.CallSignature]: CallSignature;
-    [Syntax.ConstructSignature]: ConstructSignature;
-    [Syntax.IndexSignature]: IndexSignature;
+    [Syntax.Constructor]: ConstructorDeclaration;
+    [Syntax.GetAccessor]: GetAccessorDeclaration;
+    [Syntax.SetAccessor]: SetAccessorDeclaration;
+    [Syntax.CallSignature]: CallSignatureDeclaration;
+    [Syntax.ConstructSignature]: ConstructSignatureDeclaration;
+    [Syntax.IndexSignature]: IndexSignatureDeclaration;
 
-    [Syntax.TypePredicate]: TypePredicate;
-    [Syntax.TypeReference]: TypeReference;
-    [Syntax.FunctionType]: FunctionType;
-    [Syntax.ConstructorType]: ConstructorType;
-    [Syntax.TypeQuery]: TypeQuery;
-    [Syntax.TypeLiteral]: TypeLiteral;
-    [Syntax.ArrayType]: ArrayType;
-    [Syntax.TupleType]: TupleType;
-    [Syntax.OptionalType]: OptionalType;
-    [Syntax.RestType]: RestType;
-    [Syntax.UnionType]: UnionType;
-    [Syntax.IntersectionType]: IntersectionType;
-    [Syntax.ConditionalType]: ConditionalType;
-    [Syntax.InferType]: InferType;
-    [Syntax.ParenthesizedType]: ParenthesizedType;
-    [Syntax.ThisType]: ThisType;
-    [Syntax.TypeOperator]: TypeOperator;
-    [Syntax.IndexedAccessType]: IndexedAccessType;
-    [Syntax.MappedType]: MappedType;
-    [Syntax.LiteralType]: LiteralType;
+    [Syntax.TypePredicate]: TypePredicateNode;
+    [Syntax.TypeReference]: TypeReferenceNode;
+    [Syntax.FunctionType]: FunctionTypeNode;
+    [Syntax.ConstructorType]: ConstructorTypeNode;
+    [Syntax.TypeQuery]: TypeQueryNode;
+    [Syntax.TypeLiteral]: TypeLiteralNode;
+    [Syntax.ArrayType]: ArrayTypeNode;
+    [Syntax.TupleType]: TupleTypeNode;
+    [Syntax.OptionalType]: OptionalTypeNode;
+    [Syntax.RestType]: RestTypeNode;
+    [Syntax.UnionType]: UnionTypeNode;
+    [Syntax.IntersectionType]: IntersectionTypeNode;
+    [Syntax.ConditionalType]: ConditionalTypeNode;
+    [Syntax.InferType]: InferTypeNode;
+    [Syntax.ParenthesizedType]: ParenthesizedTypeNode;
+    [Syntax.ThisType]: ThisTypeNode;
+    [Syntax.TypeOperator]: TypeOperatorNode;
+    [Syntax.IndexedAccessType]: IndexedAccessTypeNode;
+    [Syntax.MappedType]: MappedTypeNode;
+    [Syntax.LiteralType]: LiteralTypeNode;
     [Syntax.NamedTupleMember]: NamedTupleMember;
-    [Syntax.ImportType]: ImportType;
+    [Syntax.ImportType]: ImportTypeNode;
 
     [Syntax.ObjectBindingPattern]: ObjectBindingPattern;
     [Syntax.ArrayBindingPattern]: ArrayBindingPattern;
@@ -261,7 +261,7 @@ namespace qnr {
     [Syntax.CallExpression]: CallExpression;
     [Syntax.NewExpression]: NewExpression;
     [Syntax.TaggedTemplateExpression]: TaggedTemplateExpression;
-    [Syntax.TypeAssertionExpression]: TypeAssertionExpression;
+    [Syntax.TypeAssertionExpression]: TypeAssertion;
     [Syntax.ParenthesizedExpression]: ParenthesizedExpression;
     [Syntax.FunctionExpression]: FunctionExpression;
     [Syntax.ArrowFunction]: ArrowFunction;
@@ -357,8 +357,8 @@ namespace qnr {
 
     [Syntax.UnparsedPrologue]: UnparsedPrologue;
     [Syntax.UnparsedPrepend]: UnparsedPrepend;
-    [Syntax.UnparsedText]: UnparsedText;
-    [Syntax.UnparsedInternalText]: UnparsedInternalText;
+    [Syntax.UnparsedText]: UnparsedTextLike;
+    [Syntax.UnparsedInternalText]: UnparsedTextLike;
     [Syntax.UnparsedSyntheticReference]: UnparsedSyntheticReference;
 
     [Syntax.SourceFile]: SourceFile;
@@ -377,7 +377,7 @@ namespace qnr {
     [Syntax.JSDocVariadicType]: JSDocVariadicType;
 
     [Syntax.JSDocNamepathType]: JSDocNamepathType;
-    [Syntax.JSDocComment]: JSDocComment;
+    [Syntax.JSDocComment]: JSDoc;
     [Syntax.JSDocTypeLiteral]: JSDocTypeLiteral;
     [Syntax.JSDocSignature]: JSDocSignature;
     [Syntax.JSDocTag]: JSDocTag;
@@ -408,10 +408,10 @@ namespace qnr {
     [Syntax.EndOfDeclarationMarker]: EndOfDeclarationMarker;
     [Syntax.SyntheticReferenceExpression]: SyntheticReferenceExpression;
 
-    [Syntax.Count]: Count;
+    //[Syntax.Count]: Count;
   }
 
-  type NodeType<T extends Syntax> = T extends keyof SynMap ? SynMap[T] : never;
+  export type NodeType<T extends Syntax> = T extends keyof SynMap ? SynMap[T] : never;
 
   export namespace Node {
     // const kind = Syntax.Unknown;
