@@ -2,7 +2,7 @@ namespace qnr {
   export const nullTransformationContext: TransformationContext = {
     enableEmitNotification: noop,
     enableSubstitution: noop,
-    endLexicalEnvironment: returnUndefined,
+    endLexicalEnvironment: () => undefined,
     getCompilerOptions: () => ({}),
     getEmitHost: notImplemented,
     getEmitResolver: notImplemented,
@@ -727,7 +727,7 @@ namespace qnr {
     source: readonly Statement[],
     statementOffset: number | undefined,
     visitor?: (node: Node) => VisitResult<Node>,
-    filter: (node: Node) => boolean = returnTrue
+    filter: (node: Node) => boolean = () => true
   ): number | undefined {
     const numStatements = source.length;
     while (statementOffset !== undefined && statementOffset < numStatements) {

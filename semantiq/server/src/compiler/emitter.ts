@@ -707,14 +707,14 @@ namespace qnr {
       getCompilerOptions: () => config.options,
       getCurrentDirectory: () => host.getCurrentDirectory(),
       getNewLine: () => host.getNewLine(),
-      getSourceFile: returnUndefined,
-      getSourceFileByPath: returnUndefined,
+      getSourceFile: () => undefined,
+      getSourceFileByPath: () => undefined,
       getSourceFiles: () => sourceFilesForJsEmit,
       getLibFileFromReference: notImplemented,
-      isSourceFileFromExternalLibrary: returnFalse,
-      getResolvedProjectReferenceToRedirect: returnUndefined,
-      getProjectReferenceRedirect: returnUndefined,
-      isSourceOfProjectReferenceRedirect: returnFalse,
+      isSourceFileFromExternalLibrary: () => false,
+      getResolvedProjectReferenceToRedirect: () => undefined,
+      getProjectReferenceRedirect: () => undefined,
+      isSourceOfProjectReferenceRedirect: () => false,
       writeFile: (name, text, writeByteOrderMark) => {
         switch (name) {
           case jsFilePath:
@@ -746,12 +746,12 @@ namespace qnr {
         }
         outputFiles.push({ name, text, writeByteOrderMark });
       },
-      isEmitBlocked: returnFalse,
+      isEmitBlocked: () => false,
       readFile: (f) => host.readFile(f),
       fileExists: (f) => host.fileExists(f),
       useCaseSensitiveFileNames: () => host.useCaseSensitiveFileNames(),
-      getProgramBuildInfo: returnUndefined,
-      getSourceFileFromReference: returnUndefined,
+      getProgramBuildInfo: () => undefined,
+      getSourceFileFromReference: () => undefined,
       redirectTargetsMap: createMultiMap(),
     };
     emitFiles(notImplementedResolver, emitHost, /*targetSourceFile*/ undefined, getTransformers(config.options, customTransformers));

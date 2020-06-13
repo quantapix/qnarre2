@@ -1,4 +1,67 @@
 namespace qnr {
+  export namespace qn {
+    export function findAncestor<T extends Node>(n: Node | undefined, cb: (n: Node) => n is T): T | undefined;
+    export function findAncestor(n: Node | undefined, cb: (n: Node) => boolean | 'quit'): Node | undefined;
+    export function findAncestor(n: Node | undefined, cb: (n: Node) => boolean | 'quit'): Node | undefined {
+      while (n) {
+        const r = cb(n);
+        if (r === 'quit') return;
+        if (r) return n;
+        n = n.parent;
+      }
+      return;
+    }
+    export function forEachAncestor<T>(n: Node, cb: (n: Node) => T | undefined | 'quit'): T | undefined {
+      while (n) {
+        const r = cb(n);
+        if (r === 'quit') return;
+        if (r) return r;
+        if (isSourceFile(n)) return;
+        n = n.parent;
+      }
+      return;
+    }
+  }
+  export namespace qu {
+    export function forEachEntry<T, U>(map: ReadonlyUnderscoreEscapedMap<T>, cb: (value: T, key: __String) => U | undefined): U | undefined;
+    export function forEachEntry<T, U>(map: QReadonlyMap<T>, cb: (value: T, key: string) => U | undefined): U | undefined;
+    export function forEachEntry<T, U>(map: ReadonlyUnderscoreEscapedMap<T> | QReadonlyMap<T>, cb: (value: T, key: string & __String) => U | undefined): U | undefined {
+      const iter = map.entries();
+      for (let i = iter.next(); !i.done; i = iter.next()) {
+        const [k, v] = i.value;
+        const r = cb(v, k as string & __String);
+        if (r) return r;
+      }
+      return;
+    }
+
+    export function forEachKey<T>(map: ReadonlyUnderscoreEscapedMap<{}>, cb: (key: __String) => T | undefined): T | undefined;
+    export function forEachKey<T>(map: QReadonlyMap<{}>, cb: (key: string) => T | undefined): T | undefined;
+    export function forEachKey<T>(map: ReadonlyUnderscoreEscapedMap<{}> | QReadonlyMap<{}>, cb: (key: string & __String) => T | undefined): T | undefined {
+      const iter = map.keys();
+      for (let i = iter.next(); !i.done; i = iter.next()) {
+        const r = cb(i.value as string & __String);
+        if (r) return r;
+      }
+      return;
+    }
+
+    export function copyEntries<T>(source: ReadonlyUnderscoreEscapedMap<T>, target: UnderscoreEscapedMap<T>): void;
+    export function copyEntries<T>(source: QReadonlyMap<T>, target: QMap<T>): void;
+    export function copyEntries<T, U extends UnderscoreEscapedMap<T> | QMap<T>>(source: U, target: U): void {
+      (source as QMap<T>).forEach((v, k) => {
+        (target as QMap<T>).set(k, v);
+      });
+    }
+
+    export function arrayToSet(a: readonly string[]): QMap<true>;
+    export function arrayToSet<T>(a: readonly T[], key: (v: T) => string | undefined): QMap<true>;
+    export function arrayToSet<T>(a: readonly T[], key: (v: T) => __String | undefined): UnderscoreEscapedMap<true>;
+    export function arrayToSet(a: readonly any[], key?: (v: any) => string | __String | undefined): QMap<true> | UnderscoreEscapedMap<true> {
+      return arrayToMap<any, true>(a, key || ((v) => v), () => true);
+    }
+  }
+
   export const resolvingEmptyArray: never[] = [] as never[];
   export const emptyMap = createMap<never>() as QReadonlyMap<never> & ReadonlyPragmaMap;
   export const emptyUnderscoreEscapedMap: ReadonlyUnderscoreEscapedMap<never> = emptyMap as ReadonlyUnderscoreEscapedMap<never>;
@@ -17,21 +80,16 @@ namespace qnr {
     }
     return;
   }
-
   export function createUnderscoreEscapedMap<T>(): UnderscoreEscapedMap<T> {
     return new QMap<T>() as UnderscoreEscapedMap<T>;
   }
-
   export function hasEntries(map: ReadonlyUnderscoreEscapedMap<any> | undefined): map is ReadonlyUnderscoreEscapedMap<any> {
     return !!map && !!map.size;
   }
-
   export function isTransientSymbol(symbol: Symbol): symbol is TransientSymbol {
     return (symbol.flags & SymbolFlags.Transient) !== 0;
   }
-
   const stringWriter = createSingleLineStringWriter();
-
   function createSingleLineStringWriter(): EmitTextWriter {
     let str = '';
     const writeText: (text: string) => void = (text) => (str += text);
@@ -67,73 +125,11 @@ namespace qnr {
       reportPrivateInBaseOfClassExpression: noop,
     };
   }
-
   export function changesAffectModuleResolution(oldOptions: CompilerOptions, newOptions: CompilerOptions): boolean {
     return oldOptions.configFilePath !== newOptions.configFilePath || optionsHaveModuleResolutionChanges(oldOptions, newOptions);
   }
-
   export function optionsHaveModuleResolutionChanges(oldOptions: CompilerOptions, newOptions: CompilerOptions) {
     return moduleResolutionOptionDeclarations.some((o) => !isJsonEqual(getCompilerOptionValue(oldOptions, o), getCompilerOptionValue(newOptions, o)));
-  }
-
-  export function findAncestor<T extends Node>(node: Node | undefined, callback: (element: Node) => element is T): T | undefined;
-  export function findAncestor(node: Node | undefined, callback: (element: Node) => boolean | 'quit'): Node | undefined;
-  export function findAncestor(node: Node, callback: (element: Node) => boolean | 'quit'): Node | undefined {
-    while (node) {
-      const result = callback(node);
-      if (result === 'quit') return;
-      if (result) return node;
-      node = node.parent;
-    }
-    return;
-  }
-
-  export function forEachAncestor<T>(node: Node, callback: (n: Node) => T | undefined | 'quit'): T | undefined {
-    while (true) {
-      const res = callback(node);
-      if (res === 'quit') return;
-      if (res !== undefined) return res;
-      if (isSourceFile(node)) return;
-      node = node.parent;
-    }
-  }
-
-  export function forEachEntry<T, U>(map: ReadonlyUnderscoreEscapedMap<T>, callback: (value: T, key: __String) => U | undefined): U | undefined;
-  export function forEachEntry<T, U>(map: QReadonlyMap<T>, callback: (value: T, key: string) => U | undefined): U | undefined;
-  export function forEachEntry<T, U>(map: ReadonlyUnderscoreEscapedMap<T> | QReadonlyMap<T>, callback: (value: T, key: string & __String) => U | undefined): U | undefined {
-    const iterator = map.entries();
-    for (let iterResult = iterator.next(); !iterResult.done; iterResult = iterator.next()) {
-      const [key, value] = iterResult.value;
-      const result = callback(value, key as string & __String);
-      if (result) return result;
-    }
-    return;
-  }
-
-  export function forEachKey<T>(map: ReadonlyUnderscoreEscapedMap<{}>, callback: (key: __String) => T | undefined): T | undefined;
-  export function forEachKey<T>(map: QReadonlyMap<{}>, callback: (key: string) => T | undefined): T | undefined;
-  export function forEachKey<T>(map: ReadonlyUnderscoreEscapedMap<{}> | QReadonlyMap<{}>, callback: (key: string & __String) => T | undefined): T | undefined {
-    const iterator = map.keys();
-    for (let iterResult = iterator.next(); !iterResult.done; iterResult = iterator.next()) {
-      const result = callback(iterResult.value as string & __String);
-      if (result) return result;
-    }
-    return;
-  }
-
-  export function copyEntries<T>(source: ReadonlyUnderscoreEscapedMap<T>, target: UnderscoreEscapedMap<T>): void;
-  export function copyEntries<T>(source: QReadonlyMap<T>, target: QMap<T>): void;
-  export function copyEntries<T, U extends UnderscoreEscapedMap<T> | QMap<T>>(source: U, target: U): void {
-    (source as QMap<T>).forEach((value, key) => {
-      (target as QMap<T>).set(key, value);
-    });
-  }
-
-  export function arrayToSet(array: readonly string[]): QMap<true>;
-  export function arrayToSet<T>(array: readonly T[], makeKey: (value: T) => string | undefined): QMap<true>;
-  export function arrayToSet<T>(array: readonly T[], makeKey: (value: T) => __String | undefined): UnderscoreEscapedMap<true>;
-  export function arrayToSet(array: readonly any[], makeKey?: (value: any) => string | __String | undefined): QMap<true> | UnderscoreEscapedMap<true> {
-    return arrayToMap<any, true>(array, makeKey || ((s) => s), returnTrue);
   }
 
   export function cloneMap(map: SymbolTable): SymbolTable;
@@ -141,7 +137,7 @@ namespace qnr {
   export function cloneMap<T>(map: ReadonlyUnderscoreEscapedMap<T>): UnderscoreEscapedMap<T>;
   export function cloneMap<T>(map: QReadonlyMap<T> | ReadonlyUnderscoreEscapedMap<T> | SymbolTable): QMap<T> | UnderscoreEscapedMap<T> | SymbolTable {
     const clone = createMap<T>();
-    copyEntries(map as QMap<T>, clone);
+    qu.copyEntries(map as QMap<T>, clone);
     return clone;
   }
 
@@ -389,7 +385,7 @@ namespace qnr {
   }
 
   function isJSDocTypeExpressionOrChild(node: Node): boolean {
-    return !!findAncestor(node, isJSDocTypeExpression);
+    return !!qn.findAncestor(node, isJSDocTypeExpression);
   }
 
   export function getTextOfNodeFromSourceText(sourceText: string, node: Node, includeTrivia = false): string {
@@ -647,7 +643,7 @@ namespace qnr {
   }
 
   export function getEnclosingBlockScopeContainer(node: Node): Node {
-    return findAncestor(node.parent, (current) => isBlockScope(current, current.parent))!;
+    return qn.findAncestor(node.parent, (current) => isBlockScope(current, current.parent))!;
   }
 
   export function declarationNameToString(name: DeclarationName | QualifiedName | undefined) {
@@ -1202,15 +1198,15 @@ namespace qnr {
   }
 
   export function getContainingFunction(node: Node): SignatureDeclaration | undefined {
-    return findAncestor(node.parent, isFunctionLike);
+    return qn.findAncestor(node.parent, isFunctionLike);
   }
 
   export function getContainingFunctionDeclaration(node: Node): FunctionLikeDeclaration | undefined {
-    return findAncestor(node.parent, isFunctionLikeDeclaration);
+    return qn.findAncestor(node.parent, isFunctionLikeDeclaration);
   }
 
   export function getContainingClass(node: Node): ClassLikeDeclaration | undefined {
-    return findAncestor(node.parent, isClassLike);
+    return qn.findAncestor(node.parent, isClassLike);
   }
 
   export function getThisContainer(node: Node, includeArrowFunctions: boolean): Node {
@@ -2206,7 +2202,7 @@ namespace qnr {
 
   /** Use getEffectiveJSDocHost if you additionally need to look for jsdoc on parent nodes, like assignments.  */
   export function getJSDocHost(node: Node): HasJSDoc {
-    return Debug.checkDefined(findAncestor(node.parent, isJSDoc)).parent;
+    return Debug.checkDefined(qn.findAncestor(node.parent, isJSDoc)).parent;
   }
 
   export function getTypeParameterFromJsDoc(node: TypeParameterDeclaration & { parent: JSDocTemplateTag }): TypeParameterDeclaration | undefined {
@@ -3600,7 +3596,7 @@ namespace qnr {
   }
 
   export function getThisParameter(signature: SignatureDeclaration | JSDocSignature): ParameterDeclaration | undefined {
-    // callback tags do not currently support this parameters
+    // cb tags do not currently support this parameters
     if (signature.parameters.length && !isJSDocSignature(signature)) {
       const thisParameter = signature.parameters[0];
       if (parameterIsThisKeyword(thisParameter)) {
@@ -4516,7 +4512,7 @@ namespace qnr {
   }
 
   /**
-   * clears already present map by calling onDeleteExistingValue callback before deleting that key/value
+   * clears already present map by calling onDeleteExistingValue cb before deleting that key/value
    */
   export function clearMap<T>(map: { forEach: QMap<T>['forEach']; clear: QMap<T>['clear'] }, onDeleteValue: (valueInMap: T, key: string) => void) {
     // Remove all
@@ -4530,8 +4526,8 @@ namespace qnr {
     /**
      * If present this is called with the key when there is value for that key both in new map as well as existing map provided
      * Caller can then decide to update or remove this key.
-     * If the key is removed, caller will get callback of createNewValue for that key.
-     * If this callback is not provided, the value of such keys is not updated.
+     * If the key is removed, caller will get cb of createNewValue for that key.
+     * If this cb is not provided, the value of such keys is not updated.
      */
     onExistingValue?(existingValue: T, valueInNewMap: U, key: string): void;
   }
@@ -4602,8 +4598,8 @@ namespace qnr {
     return checker.getSignaturesOfType(type, SignatureKind.Call).length !== 0 || checker.getSignaturesOfType(type, SignatureKind.Construct).length !== 0;
   }
 
-  export function forSomeAncestorDirectory(directory: string, callback: (directory: string) => boolean): boolean {
-    return !!forEachAncestorDirectory(directory, (d) => (callback(d) ? true : undefined));
+  export function forSomeAncestorDirectory(directory: string, cb: (directory: string) => boolean): boolean {
+    return !!forEachAncestorDirectory(directory, (d) => (cb(d) ? true : undefined));
   }
 
   export function isUMDExportSymbol(symbol: Symbol | undefined): boolean {
@@ -5648,7 +5644,7 @@ namespace qnr {
       this.map.forEach(cb);
     }
     some(pred: (node: TNode) => boolean): boolean {
-      return forEachEntry(this.map, pred) || false;
+      return qu.forEachEntry(this.map, pred) || false;
     }
   }
 
@@ -5819,7 +5815,7 @@ namespace qnr {
   /** Returns true for an identifier in 1) an `implements` clause, and 2) an `extends` clause of an interface. */
   function isIdentifierInNonEmittingHeritageClause(node: Node): boolean {
     if (node.kind !== Syntax.Identifier) return false;
-    const heritageClause = findAncestor(node.parent, (parent) => {
+    const heritageClause = qn.findAncestor(node.parent, (parent) => {
       switch (parent.kind) {
         case Syntax.HeritageClause:
           return true;

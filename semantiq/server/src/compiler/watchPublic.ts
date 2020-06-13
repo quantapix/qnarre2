@@ -272,9 +272,7 @@ namespace qnr {
   /**
    * Creates the watch from the host for root files and compiler options
    */
-  export function createWatchProgram<T extends BuilderProgram>(
-    host: WatchCompilerHostOfFilesAndCompilerOptions<T>
-  ): WatchOfFilesAndCompilerOptions<T>;
+  export function createWatchProgram<T extends BuilderProgram>(host: WatchCompilerHostOfFilesAndCompilerOptions<T>): WatchOfFilesAndCompilerOptions<T>;
   /**
    * Creates the watch from the host for config file
    */
@@ -315,8 +313,7 @@ namespace qnr {
     let canConfigFileJsonReportNoInputFiles = false;
     let hasChangedConfigFileParsingErrors = false;
 
-    const cachedDirectoryStructureHost =
-      configFileName === undefined ? undefined : createCachedDirectoryStructureHost(host, currentDirectory, useCaseSensitiveFileNames);
+    const cachedDirectoryStructureHost = configFileName === undefined ? undefined : createCachedDirectoryStructureHost(host, currentDirectory, useCaseSensitiveFileNames);
     const directoryStructureHost: DirectoryStructureHost = cachedDirectoryStructureHost || host;
     const parseConfigFileHost = parseConfigHostFromCompilerHostLike(host, directoryStructureHost);
 
@@ -356,8 +353,7 @@ namespace qnr {
     compilerHost.toPath = toPath;
     compilerHost.getCompilationSettings = () => compilerOptions;
     compilerHost.useSourceOfProjectReferenceRedirect = maybeBind(host, host.useSourceOfProjectReferenceRedirect);
-    compilerHost.watchDirectoryOfFailedLookupLocation = (dir, cb, flags) =>
-      watchDirectory(host, dir, cb, flags, watchOptions, WatchType.FailedLookupLocations);
+    compilerHost.watchDirectoryOfFailedLookupLocation = (dir, cb, flags) => watchDirectory(host, dir, cb, flags, watchOptions, WatchType.FailedLookupLocations);
     compilerHost.watchTypeRootsDirectory = (dir, cb, flags) => watchDirectory(host, dir, cb, flags, watchOptions, WatchType.TypeRoots);
     compilerHost.getCachedDirectoryStructureHost = () => cachedDirectoryStructureHost;
     compilerHost.onInvalidatedResolution = scheduleProgramUpdate;
@@ -365,7 +361,7 @@ namespace qnr {
       hasChangedAutomaticTypeDirectiveNames = true;
       scheduleProgramUpdate();
     };
-    compilerHost.fileIsOpen = returnFalse;
+    compilerHost.fileIsOpen = () => false;
     compilerHost.getCurrentProgram = getCurrentProgram;
     compilerHost.writeLog = writeLog;
 
@@ -378,12 +374,10 @@ namespace qnr {
     // Resolve module using host module resolution strategy if provided otherwise use resolution cache to resolve module names
     compilerHost.resolveModuleNames = host.resolveModuleNames
       ? (...args) => host.resolveModuleNames!(...args)
-      : (moduleNames, containingFile, reusedNames, redirectedReference) =>
-          resolutionCache.resolveModuleNames(moduleNames, containingFile, reusedNames, redirectedReference);
+      : (moduleNames, containingFile, reusedNames, redirectedReference) => resolutionCache.resolveModuleNames(moduleNames, containingFile, reusedNames, redirectedReference);
     compilerHost.resolveTypeReferenceDirectives = host.resolveTypeReferenceDirectives
       ? (...args) => host.resolveTypeReferenceDirectives!(...args)
-      : (typeDirectiveNames, containingFile, redirectedReference) =>
-          resolutionCache.resolveTypeReferenceDirectives(typeDirectiveNames, containingFile, redirectedReference);
+      : (typeDirectiveNames, containingFile, redirectedReference) => resolutionCache.resolveTypeReferenceDirectives(typeDirectiveNames, containingFile, redirectedReference);
     const userProvidedResolution = !!host.resolveModuleNames || !!host.resolveTypeReferenceDirectives;
 
     builderProgram = (readBuilderProgram(compilerOptions, compilerHost) as any) as T;
@@ -439,27 +433,9 @@ namespace qnr {
 
       // All resolutions are invalid if user provided resolutions
       const hasInvalidatedResolution = resolutionCache.createHasInvalidatedResolution(userProvidedResolution);
-      if (
-        isProgramUptoDate(
-          getCurrentProgram(),
-          rootFileNames,
-          compilerOptions,
-          getSourceVersion,
-          fileExists,
-          hasInvalidatedResolution,
-          hasChangedAutomaticTypeDirectiveNames,
-          projectReferences
-        )
-      ) {
+      if (isProgramUptoDate(getCurrentProgram(), rootFileNames, compilerOptions, getSourceVersion, fileExists, hasInvalidatedResolution, hasChangedAutomaticTypeDirectiveNames, projectReferences)) {
         if (hasChangedConfigFileParsingErrors) {
-          builderProgram = createProgram(
-            /*rootNames*/ undefined,
-            /*options*/ undefined,
-            compilerHost,
-            builderProgram,
-            configFileParsingDiagnostics,
-            projectReferences
-          );
+          builderProgram = createProgram(/*rootNames*/ undefined, /*options*/ undefined, compilerHost, builderProgram, configFileParsingDiagnostics, projectReferences);
           hasChangedConfigFileParsingErrors = false;
         }
       } else {
@@ -565,15 +541,7 @@ namespace qnr {
             (hostSourceFile as FilePresentOnHost).sourceFile = sourceFile;
             hostSourceFile.version = sourceFile.version;
             if (!hostSourceFile.fileWatcher) {
-              hostSourceFile.fileWatcher = watchFilePath(
-                host,
-                fileName,
-                onSourceFileChange,
-                PollingInterval.Low,
-                watchOptions,
-                path,
-                WatchType.SourceFile
-              );
+              hostSourceFile.fileWatcher = watchFilePath(host, fileName, onSourceFileChange, PollingInterval.Low, watchOptions, path, WatchType.SourceFile);
             }
           } else {
             // There is no source file on host any more, close the watch, missing file paths will track it
@@ -688,21 +656,8 @@ namespace qnr {
 
     function reloadFileNamesFromConfigFile() {
       writeLog('Reloading new file names and options');
-      const result = getFileNamesFromConfigSpecs(
-        configFileSpecs,
-        getNormalizedAbsolutePath(getDirectoryPath(configFileName), currentDirectory),
-        compilerOptions,
-        parseConfigFileHost
-      );
-      if (
-        updateErrorForNoInputFiles(
-          result,
-          getNormalizedAbsolutePath(configFileName, currentDirectory),
-          configFileSpecs,
-          configFileParsingDiagnostics!,
-          canConfigFileJsonReportNoInputFiles
-        )
-      ) {
+      const result = getFileNamesFromConfigSpecs(configFileSpecs, getNormalizedAbsolutePath(getDirectoryPath(configFileName), currentDirectory), compilerOptions, parseConfigFileHost);
+      if (updateErrorForNoInputFiles(result, getNormalizedAbsolutePath(configFileName, currentDirectory), configFileSpecs, configFileParsingDiagnostics!, canConfigFileJsonReportNoInputFiles)) {
         hasChangedConfigFileParsingErrors = true;
       }
       rootFileNames = result.fileNames;
@@ -728,14 +683,7 @@ namespace qnr {
 
     function parseConfigFile() {
       setConfigFileParsingResult(
-        getParsedCommandLineOfConfigFile(
-          configFileName,
-          optionsToExtendForConfigFile,
-          parseConfigFileHost,
-          /*extendedConfigCache*/ undefined,
-          watchOptionsToExtend,
-          extraFileExtensions
-        )!
+        getParsedCommandLineOfConfigFile(configFileName, optionsToExtendForConfigFile, parseConfigFileHost, /*extendedConfigCache*/ undefined, watchOptionsToExtend, extraFileExtensions)!
       ); // TODO: GH#18217
     }
 
@@ -791,11 +739,7 @@ namespace qnr {
 
     function watchConfigFileWildCardDirectories() {
       if (configFileSpecs) {
-        updateWatchingWildcardDirectories(
-          watchedWildcardDirectories || (watchedWildcardDirectories = createMap()),
-          createMap(configFileSpecs.wildcardDirectories),
-          watchWildcardDirectory
-        );
+        updateWatchingWildcardDirectories(watchedWildcardDirectories || (watchedWildcardDirectories = createMap()), createMap(configFileSpecs.wildcardDirectories), watchWildcardDirectory);
       } else if (watchedWildcardDirectories) {
         clearMap(watchedWildcardDirectories, closeFileWatcherOf);
       }
@@ -821,11 +765,7 @@ namespace qnr {
 
           // If the the added or created file or directory is not supported file name, ignore the file
           // But when watched directory is added/removed, we need to reload the file list
-          if (
-            fileOrDirectoryPath !== directory &&
-            hasExtension(fileOrDirectoryPath) &&
-            !isSupportedSourceFileName(fileOrDirectory, compilerOptions)
-          ) {
+          if (fileOrDirectoryPath !== directory && hasExtension(fileOrDirectoryPath) && !isSupportedSourceFileName(fileOrDirectory, compilerOptions)) {
             writeLog(`Project: ${configFileName} Detected file add/remove of non supported extension: ${fileOrDirectory}`);
             return;
           }

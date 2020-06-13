@@ -189,7 +189,7 @@ namespace qnr.moduleSpecifiers {
     const links = host.getProbableSymlinks ? host.getProbableSymlinks(host.getSourceFiles()) : discoverProbableSymlinks(host.getSourceFiles(), getCanonicalFileName, cwd);
 
     const compareStrings = !host.useCaseSensitiveFileNames || host.useCaseSensitiveFileNames() ? compareStringsCaseSensitive : compareStringsCaseInsensitive;
-    const result = forEachEntry(links, (resolved, path) => {
+    const result = qu.forEachEntry(links, (resolved, path) => {
       if (startsWithDirectory(importingFileName, resolved, getCanonicalFileName)) {
         return; // Don't want to a package to globally import from itself
       }

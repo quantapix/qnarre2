@@ -373,7 +373,7 @@ namespace qnr {
       host.getSourceFiles().forEach((sf) => {
         if (!sf.resolvedModules) return;
 
-        forEachEntry(sf.resolvedModules, (r) => {
+        qu.forEachEntry(sf.resolvedModules, (r) => {
           if (r && r.packageId) set.set(r.packageId.name, true);
         });
       });
@@ -575,7 +575,7 @@ namespace qnr {
         if (!node) {
           return;
         }
-        const containingCall = findAncestor(node, isCallLikeExpression);
+        const containingCall = qn.findAncestor(node, isCallLikeExpression);
         const containingCallResolvedSignature = containingCall && getNodeLinks(containingCall).resolvedSignature;
         if (contextFlags! & ContextFlags.Completions && containingCall) {
           let toMarkSkip = node as Node;
@@ -1438,7 +1438,7 @@ namespace qnr {
           // still might be illegal if declaration and usage are both binding elements (eg var [a = b, b = b] = [1, 2])
           const errorBindingElement = getAncestor(usage, Syntax.BindingElement) as BindingElement;
           if (errorBindingElement) {
-            return findAncestor(errorBindingElement, BindingElement.kind) !== findAncestor(declaration, BindingElement.kind) || declaration.pos < errorBindingElement.pos;
+            return qn.findAncestor(errorBindingElement, BindingElement.kind) !== qn.findAncestor(declaration, BindingElement.kind) || declaration.pos < errorBindingElement.pos;
           }
           // or it might be illegal if usage happens before parent variable is declared (eg var [a] = a)
           return isBlockScopedNameDeclaredBeforeUse(getAncestor(declaration, Syntax.VariableDeclaration) as Declaration, usage);
@@ -1447,7 +1447,7 @@ namespace qnr {
           return !isImmediatelyUsedInInitializerOfBlockScopedVariable(declaration as VariableDeclaration, usage);
         } else if (isClassDeclaration(declaration)) {
           // still might be illegal if the usage is within a computed property name in the class (eg class A { static p = "a"; [A.p]() {} })
-          return !findAncestor(usage, (n) => ComputedPropertyName.kind(n) && n.parent.parent === declaration);
+          return !qn.findAncestor(usage, (n) => ComputedPropertyName.kind(n) && n.parent.parent === declaration);
         } else if (PropertyDeclaration.kind(declaration)) {
           // still might be illegal if a self-referencing property initializer (eg private x = this.x)
           return !isPropertyImmediatelyReferencedWithinDeclaration(declaration, usage, /*stopAtAnyPropertyDeclaration*/ false);
@@ -1500,7 +1500,7 @@ namespace qnr {
       return false;
 
       function usageInTypeDeclaration() {
-        return !!findAncestor(usage, (node) => isInterfaceDeclaration(node) || isTypeAliasDeclaration(node));
+        return !!qn.findAncestor(usage, (node) => isInterfaceDeclaration(node) || isTypeAliasDeclaration(node));
       }
 
       function isImmediatelyUsedInInitializerOfBlockScopedVariable(declaration: VariableDeclaration, usage: Node): boolean {
@@ -1522,7 +1522,7 @@ namespace qnr {
       }
 
       function isUsedInFunctionOrInstanceProperty(usage: Node, declaration: Node): boolean {
-        return !!findAncestor(usage, (current) => {
+        return !!qn.findAncestor(usage, (current) => {
           if (current === declContainer) {
             return 'quit';
           }
@@ -1557,7 +1557,7 @@ namespace qnr {
 
         // still might be legal if usage is deferred (e.g. x: any = () => this.x)
         // otherwise illegal if immediately referenced within the declaration (e.g. x: any = this.x)
-        const ancestorChangingReferenceScope = findAncestor(usage, (node: Node) => {
+        const ancestorChangingReferenceScope = qn.findAncestor(usage, (node: Node) => {
           if (node === declaration) {
             return 'quit';
           }
@@ -1715,7 +1715,7 @@ namespace qnr {
                   // technically for parameter list case here we might mix parameters and variables declared in function,
                   // however it is detected separately when checking initializers of parameters
                   // to make sure that they reference no variables declared after them.
-                  useResult = lastLocation.kind === Syntax.Parameter || (lastLocation === (<FunctionLikeDeclaration>location).type && !!findAncestor(result.valueDeclaration, isParameter));
+                  useResult = lastLocation.kind === Syntax.Parameter || (lastLocation === (<FunctionLikeDeclaration>location).type && !!qn.findAncestor(result.valueDeclaration, isParameter));
                 }
               }
             } else if (location.kind === Syntax.ConditionalType) {
@@ -2355,7 +2355,7 @@ namespace qnr {
      * Return false if 'stopAt' node is reached or isFunctionLike(current) === true.
      */
     function isSameScopeDescendentOf(initial: Node, parent: Node | undefined, stopAt: Node): boolean {
-      return !!parent && !!findAncestor(initial, (n) => (n === stopAt || isFunctionLike(n) ? 'quit' : n === parent));
+      return !!parent && !!qn.findAncestor(initial, (n) => (n === stopAt || isFunctionLike(n) ? 'quit' : n === parent));
     }
 
     function getAnyImportSyntax(node: Node): AnyImportSyntax | undefined {
@@ -3042,7 +3042,7 @@ namespace qnr {
     }
 
     function getAssignmentDeclarationLocation(node: TypeReferenceNode): Node | undefined {
-      const typeAlias = findAncestor(node, (node) => (!(isJSDocNode(node) || node.flags & NodeFlags.JSDoc) ? 'quit' : isJSDocTypeAlias(node)));
+      const typeAlias = qn.findAncestor(node, (node) => (!(isJSDocNode(node) || node.flags & NodeFlags.JSDoc) ? 'quit' : isJSDocTypeAlias(node)));
       if (typeAlias) {
         return;
       }
@@ -3566,7 +3566,7 @@ namespace qnr {
       if (quick && getSymbolIfSameReference(quick, symbol)) {
         return quick;
       }
-      return forEachEntry(exports, (exported) => {
+      return qu.forEachEntry(exports, (exported) => {
         if (getSymbolIfSameReference(exported, symbol)) {
           return exported;
         }
@@ -3795,7 +3795,7 @@ namespace qnr {
         }
 
         // Check if symbol is any of the aliases in scope
-        const result = forEachEntry(symbols, (symbolFromSymbolTable) => {
+        const result = qu.forEachEntry(symbols, (symbolFromSymbolTable) => {
           if (
             symbolFromSymbolTable.flags & SymbolFlags.Alias &&
             symbolFromSymbolTable.escName !== InternalSymbolName.ExportEquals &&
@@ -4025,7 +4025,7 @@ namespace qnr {
     }
 
     function getExternalModuleContainer(declaration: Node) {
-      const node = findAncestor(declaration, hasExternalModuleSymbol);
+      const node = qn.findAncestor(declaration, hasExternalModuleSymbol);
       return node && getSymbolOfNode(node);
     }
 
@@ -5346,7 +5346,7 @@ namespace qnr {
           } else {
             if (parent && getExportsOfSymbol(parent)) {
               const exports = getExportsOfSymbol(parent);
-              forEachEntry(exports, (ex, name) => {
+              qu.forEachEntry(exports, (ex, name) => {
                 if (getSymbolIfSameReference(ex, symbol) && !isLateBoundName(name) && name !== InternalSymbolName.ExportEquals) {
                   symbolName = Scanner.unescUnderscores(name);
                   return true;
@@ -5577,7 +5577,7 @@ namespace qnr {
       }
 
       function getDeclarationWithTypeAnnotation(symbol: Symbol, enclosingDeclaration: Node | undefined) {
-        return symbol.declarations && find(symbol.declarations, (s) => !!getEffectiveTypeAnnotationNode(s) && (!enclosingDeclaration || !!findAncestor(s, (n) => n === enclosingDeclaration)));
+        return symbol.declarations && find(symbol.declarations, (s) => !!getEffectiveTypeAnnotationNode(s) && (!enclosingDeclaration || !!qn.findAncestor(s, (n) => n === enclosingDeclaration)));
       }
 
       function existingTypeNodeIsNotReferenceOrIsReferenceWithCompatibleTypeArgumentCount(existing: TypeNode, type: Type) {
@@ -5626,7 +5626,7 @@ namespace qnr {
         if (type !== errorType && context.enclosingDeclaration) {
           const annotation = signature.declaration && getEffectiveReturnTypeNode(signature.declaration);
           if (
-            !!findAncestor(annotation, (n) => n === context.enclosingDeclaration) &&
+            !!qn.findAncestor(annotation, (n) => n === context.enclosingDeclaration) &&
             annotation &&
             instantiateType(getTypeFromTypeNode(annotation), signature.mapper) === type &&
             existingTypeNodeIsNotReferenceOrIsReferenceWithCompatibleTypeArgumentCount(annotation, type)
@@ -5875,7 +5875,7 @@ namespace qnr {
             context.usedSymbolNames!.set(name, true);
           });
         }
-        forEachEntry(symbolTable, (symbol, name) => {
+        qu.forEachEntry(symbolTable, (symbol, name) => {
           const baseName = Scanner.unescUnderscores(name);
           void getInternalSymbolName(symbol, baseName); // Called to cache values into `usedSymbolNames` and `remappedSymbolNames`
         });
@@ -6076,7 +6076,7 @@ namespace qnr {
           visitedSymbols.set('' + getSymbolId(visitedSym), true);
           // Only actually serialize symbols within the correct enclosing declaration, otherwise do nothing with the out-of-context symbol
           const skipMembershipCheck = !isPrivate; // We only call this on exported symbols when we know they're in the correct scope
-          if (skipMembershipCheck || (!!length(symbol.declarations) && some(symbol.declarations, (d) => !!findAncestor(d, (n) => n === enclosingDeclaration)))) {
+          if (skipMembershipCheck || (!!length(symbol.declarations) && some(symbol.declarations, (d) => !!qn.findAncestor(d, (n) => n === enclosingDeclaration)))) {
             const oldContext = context;
             context = cloneNodeBuilderContext(context);
             const result = serializeSymbolWorker(symbol, isPrivate, propertyAsAlias);
@@ -7248,7 +7248,7 @@ namespace qnr {
           // if the symbol is synthesized, it will only be referenced externally it must print as `default`
           !symbol.declarations ||
           // if not in the same binding context (source file, module declaration), it must print as `default`
-          (context.enclosingDeclaration && findAncestor(symbol.declarations[0], isDefaultBindingContext) !== findAncestor(context.enclosingDeclaration, isDefaultBindingContext)))
+          (context.enclosingDeclaration && qn.findAncestor(symbol.declarations[0], isDefaultBindingContext) !== qn.findAncestor(context.enclosingDeclaration, isDefaultBindingContext)))
       ) {
         return 'default';
       }
@@ -7508,7 +7508,7 @@ namespace qnr {
     }
 
     function getDeclarationContainer(node: Node): Node {
-      return findAncestor(getRootDeclaration(node), (node) => {
+      return qn.findAncestor(getRootDeclaration(node), (node) => {
         switch (node.kind) {
           case Syntax.VariableDeclaration:
           case Syntax.VariableDeclarationList:
@@ -8084,7 +8084,7 @@ namespace qnr {
       if (type.flags & TypeFlags.Object && kind === AssignmentDeclarationKind.ModuleExports && symbol.escName === InternalSymbolName.ExportEquals) {
         const exportedType = resolveStructuredTypeMembers(type as ObjectType);
         const members = new SymbolTable();
-        copyEntries(exportedType.members, members);
+        qu.copyEntries(exportedType.members, members);
         if (resolvedSymbol && !resolvedSymbol.exports) {
           resolvedSymbol.exports = new SymbolTable();
         }
@@ -8699,7 +8699,7 @@ namespace qnr {
           const assignmentKind = getAssignmentDeclarationKind(node);
           if (assignmentKind === AssignmentDeclarationKind.Prototype || assignmentKind === AssignmentDeclarationKind.PrototypeProperty) {
             const symbol = getSymbolOfNode(node.left);
-            if (symbol && symbol.parent && !findAncestor(symbol.parent.valueDeclaration, (d) => node === d)) {
+            if (symbol && symbol.parent && !qn.findAncestor(symbol.parent.valueDeclaration, (d) => node === d)) {
               node = symbol.parent.valueDeclaration;
             }
           }
@@ -14485,7 +14485,7 @@ namespace qnr {
         // set of type parameters to those that are possibly referenced in the literal.
         let declaration = node;
         if (isInJSFile(declaration)) {
-          const paramTag = findAncestor(declaration, isJSDocParameterTag);
+          const paramTag = qn.findAncestor(declaration, isJSDocParameterTag);
           if (paramTag) {
             const paramSymbol = getParameterSymbolFromJSDoc(paramTag);
             if (paramSymbol) {
@@ -16495,7 +16495,7 @@ namespace qnr {
                   let suggestion;
                   if (
                     prop.valueDeclaration &&
-                    findAncestor(prop.valueDeclaration, (d) => d === objectLiteralDeclaration) &&
+                    qn.findAncestor(prop.valueDeclaration, (d) => d === objectLiteralDeclaration) &&
                     getSourceFileOfNode(objectLiteralDeclaration) === getSourceFileOfNode(errorNode)
                   ) {
                     const propDeclaration = prop.valueDeclaration as ObjectLiteralElementLike;
@@ -19044,7 +19044,7 @@ namespace qnr {
     function isNonGenericTopLevelType(type: Type) {
       if (type.aliasSymbol && !type.aliasTypeArguments) {
         const declaration = getDeclarationOfKind(type.aliasSymbol, Syntax.TypeAliasDeclaration);
-        return !!(declaration && findAncestor(declaration.parent, (n) => (n.kind === Syntax.SourceFile ? true : n.kind === Syntax.ModuleDeclaration ? false : 'quit')));
+        return !!(declaration && qn.findAncestor(declaration.parent, (n) => (n.kind === Syntax.SourceFile ? true : n.kind === Syntax.ModuleDeclaration ? false : 'quit')));
       }
       return false;
     }
@@ -19942,7 +19942,7 @@ namespace qnr {
       // TypeScript 1.0 spec (April 2014): 3.6.3
       // A type query consists of the keyword typeof followed by an expression.
       // The expression is restricted to a single identifier or a sequence of identifiers separated by periods
-      return !!findAncestor(node, (n) => (n.kind === Syntax.TypeQuery ? true : n.kind === Syntax.Identifier || n.kind === Syntax.QualifiedName ? false : 'quit'));
+      return !!qn.findAncestor(node, (n) => (n.kind === Syntax.TypeQuery ? true : n.kind === Syntax.Identifier || n.kind === Syntax.QualifiedName ? false : 'quit'));
     }
 
     // Return the flow cache key for a "dotted name" (i.e. a sequence of identifiers
@@ -20698,7 +20698,7 @@ namespace qnr {
     }
 
     function reportFlowControlError(node: Node) {
-      const block = <Block | ModuleBlock | SourceFile>findAncestor(node, isFunctionOrModuleBlock);
+      const block = <Block | ModuleBlock | SourceFile>qn.findAncestor(node, isFunctionOrModuleBlock);
       const sourceFile = getSourceFileOfNode(node);
       const span = getSpanOfTokenAtPosition(sourceFile, block.statements.pos);
       diagnostics.add(createFileDiagnostic(sourceFile, span.start, span.length, Diagnostics.The_containing_function_or_module_body_is_too_large_for_control_flow_analysis));
@@ -21828,7 +21828,7 @@ namespace qnr {
     }
 
     function getControlFlowContainer(node: Node): Node {
-      return findAncestor(
+      return qn.findAncestor(
         node.parent,
         (node) =>
           (isFunctionLike(node) && !getImmediatelyInvokedFunctionExpression(node)) || node.kind === Syntax.ModuleBlock || node.kind === Syntax.SourceFile || node.kind === Syntax.PropertyDeclaration
@@ -21849,7 +21849,7 @@ namespace qnr {
     }
 
     function hasParentWithAssignmentsMarked(node: Node) {
-      return !!findAncestor(node.parent, (node) => isFunctionLike(node) && !!(getNodeLinks(node).flags & NodeCheckFlags.AssignmentsMarked));
+      return !!qn.findAncestor(node.parent, (node) => isFunctionLike(node) && !!(getNodeLinks(node).flags & NodeCheckFlags.AssignmentsMarked));
     }
 
     function markParameterAssignments(node: Node) {
@@ -21915,7 +21915,7 @@ namespace qnr {
     }
 
     function isExportOrExportExpression(location: Node) {
-      return !!findAncestor(location, (e) => e.parent && isExportAssignment(e.parent) && e.parent.expression === e && isEntityNameExpression(e));
+      return !!qn.findAncestor(location, (e) => e.parent && isExportAssignment(e.parent) && e.parent.expression === e && isEntityNameExpression(e));
     }
 
     function markAliasReferenced(symbol: Symbol, location: Node) {
@@ -22095,11 +22095,11 @@ namespace qnr {
     }
 
     function isInsideFunction(node: Node, threshold: Node): boolean {
-      return !!findAncestor(node, (n) => (n === threshold ? 'quit' : isFunctionLike(n)));
+      return !!qn.findAncestor(node, (n) => (n === threshold ? 'quit' : isFunctionLike(n)));
     }
 
     function getPartOfForStatementContainingNode(node: Node, container: ForStatement) {
-      return findAncestor(node, (n) => (n === container ? 'quit' : n === container.initializer || n === container.condition || n === container.incrementor || n === container.statement));
+      return qn.findAncestor(node, (n) => (n === container ? 'quit' : n === container.initializer || n === container.condition || n === container.incrementor || n === container.statement));
     }
 
     function checkNestedBlockScopedBinding(node: Identifier, symbol: Symbol): void {
@@ -22133,7 +22133,7 @@ namespace qnr {
 
       // at this point we know that node is the target of assignment
       // now check that modification happens inside the statement part of the ForStatement
-      return !!findAncestor(current, (n) => (n === container ? 'quit' : n === container.statement));
+      return !!qn.findAncestor(current, (n) => (n === container ? 'quit' : n === container.statement));
     }
 
     function captureLexicalThis(node: Node, container: Node): void {
@@ -22378,7 +22378,7 @@ namespace qnr {
     }
 
     function isInConstructorArgumentInitializer(node: Node, constructorDecl: Node): boolean {
-      return !!findAncestor(node, (n) => (isFunctionLikeDeclaration(n) ? 'quit' : n.kind === Syntax.Parameter && n.parent === constructorDecl));
+      return !!qn.findAncestor(node, (n) => (isFunctionLikeDeclaration(n) ? 'quit' : n.kind === Syntax.Parameter && n.parent === constructorDecl));
     }
 
     function checkSuperExpression(node: Node): Type {
@@ -22405,7 +22405,7 @@ namespace qnr {
         // class B {
         //     [super.foo()]() {}
         // }
-        const current = findAncestor(node, (n) => (n === container ? 'quit' : n.kind === Syntax.ComputedPropertyName));
+        const current = qn.findAncestor(node, (n) => (n === container ? 'quit' : n.kind === Syntax.ComputedPropertyName));
         if (current && current.kind === Syntax.ComputedPropertyName) {
           error(node, Diagnostics.super_cannot_be_referenced_in_a_computed_property_name);
         } else if (isCallExpression) {
@@ -23265,7 +23265,7 @@ namespace qnr {
     }
 
     function getInferenceContext(node: Node) {
-      const ancestor = findAncestor(node, (n) => !!n.inferenceContext);
+      const ancestor = qn.findAncestor(node, (n) => !!n.inferenceContext);
       return ancestor && ancestor.inferenceContext!;
     }
 
@@ -24701,7 +24701,7 @@ namespace qnr {
           const lexicalValueDecl = lexicallyScopedIdentifier.valueDeclaration;
           const lexicalClass = getContainingClass(lexicalValueDecl);
           assert(!!lexicalClass);
-          if (findAncestor(lexicalClass, (n) => typeClass === n)) {
+          if (qn.findAncestor(lexicalClass, (n) => typeClass === n)) {
             const diagnostic = error(
               right,
               Diagnostics.The_property_0_cannot_be_accessed_on_type_1_within_this_class_because_it_is_shadowed_by_another_private_identifier_with_the_same_spelling,
@@ -24883,7 +24883,7 @@ namespace qnr {
     }
 
     function isInPropertyInitializer(node: Node): boolean {
-      return !!findAncestor(node, (node) => {
+      return !!qn.findAncestor(node, (node) => {
         switch (node.kind) {
           case Syntax.PropertyDeclaration:
             return true;
@@ -25105,7 +25105,7 @@ namespace qnr {
 
       if (isThisAccess) {
         // Find any FunctionLikeDeclaration because those create a new 'this' binding. But this should only matter for methods (or getters/setters).
-        const containingMethod = findAncestor(nodeForCheckWriteOnly, isFunctionLikeDeclaration);
+        const containingMethod = qn.findAncestor(nodeForCheckWriteOnly, isFunctionLikeDeclaration);
         if (containingMethod && containingMethod.symbol === prop) {
           return;
         }
@@ -25138,7 +25138,7 @@ namespace qnr {
       if (prop) {
         if (isPropertyAccessExpression(node) && prop.valueDeclaration && isPrivateIdentifierPropertyDeclaration(prop.valueDeclaration)) {
           const declClass = getContainingClass(prop.valueDeclaration);
-          return !isOptionalChain(node) && !!findAncestor(node, (parent) => parent === declClass);
+          return !isOptionalChain(node) && !!qn.findAncestor(node, (parent) => parent === declClass);
         }
         return checkPropertyAccessibility(node, isSuper, type, prop);
       }
@@ -30624,7 +30624,7 @@ namespace qnr {
     }
 
     function checkInferType(node: InferTypeNode) {
-      if (!findAncestor(node, (n) => n.parent && n.parent.kind === Syntax.ConditionalType && (<ConditionalTypeNode>n.parent).extendsType === n)) {
+      if (!qn.findAncestor(node, (n) => n.parent && n.parent.kind === Syntax.ConditionalType && (<ConditionalTypeNode>n.parent).extendsType === n)) {
         grammarErrorOnNode(node, Diagnostics.infer_declarations_are_only_permitted_in_the_extends_clause_of_a_conditional_type);
       }
       checkSourceElement(node.typeParameter);
@@ -31856,7 +31856,7 @@ namespace qnr {
 
     function isValidUnusedLocalDeclaration(declaration: Declaration): boolean {
       if (BindingElement.kind(declaration) && isIdentifierThatStartsWithUnderscore(declaration.name)) {
-        return !!findAncestor(declaration.parent, (ancestor) =>
+        return !!qn.findAncestor(declaration.parent, (ancestor) =>
           ArrayBindingPattern.kind(ancestor) || isVariableDeclaration(ancestor) || isVariableDeclarationList(ancestor) ? false : isForOfStatement(ancestor) ? true : 'quit'
         );
       }
@@ -32034,7 +32034,7 @@ namespace qnr {
 
     // this function will run after checking the source file so 'CaptureThis' is correct for all nodes
     function checkIfThisIsCapturedInEnclosingScope(node: Node): void {
-      findAncestor(node, (current) => {
+      qn.findAncestor(node, (current) => {
         if (getNodeCheckFlags(current) & NodeCheckFlags.CaptureThis) {
           const isDeclaration = node.kind !== Syntax.Identifier;
           if (isDeclaration) {
@@ -32049,7 +32049,7 @@ namespace qnr {
     }
 
     function checkIfNewTargetIsCapturedInEnclosingScope(node: Node): void {
-      findAncestor(node, (current) => {
+      qn.findAncestor(node, (current) => {
         if (getNodeCheckFlags(current) & NodeCheckFlags.CaptureNewTarget) {
           const isDeclaration = node.kind !== Syntax.Identifier;
           if (isDeclaration) {
@@ -33380,7 +33380,7 @@ namespace qnr {
     function checkLabeledStatement(node: LabeledStatement) {
       // Grammar checking
       if (!checkGrammarStatementInAmbientContext(node)) {
-        findAncestor(node.parent, (current) => {
+        qn.findAncestor(node.parent, (current) => {
           if (isFunctionLike(current)) {
             return 'quit';
           }
@@ -33425,7 +33425,7 @@ namespace qnr {
           } else {
             const blockLocals = catchClause.block.locals;
             if (blockLocals) {
-              forEachKey(catchClause.locals!, (caughtName) => {
+              qu.forEachKey(catchClause.locals!, (caughtName) => {
                 const blockLocal = blockLocals.get(caughtName);
                 if (blockLocal && (blockLocal.flags & SymbolFlags.BlockScopedVariable) !== 0) {
                   grammarErrorOnNode(blockLocal.valueDeclaration, Diagnostics.Cannot_redeclare_identifier_0_in_catch_clause, caughtName);
@@ -34900,7 +34900,7 @@ namespace qnr {
     }
 
     function hasExportedMembers(moduleSymbol: Symbol) {
-      return forEachEntry(moduleSymbol.exports!, (_, id) => id !== 'export=');
+      return qu.forEachEntry(moduleSymbol.exports!, (_, id) => id !== 'export=');
     }
 
     function checkExternalModuleExports(node: SourceFile | ModuleDeclaration) {
@@ -35518,7 +35518,7 @@ namespace qnr {
     }
 
     function isNodeUsedDuringClassInitialization(node: Node) {
-      return !!findAncestor(node, (element) => {
+      return !!qn.findAncestor(node, (element) => {
         if ((ConstructorDeclaration.kind(element) && nodeIsPresent(element.body)) || PropertyDeclaration.kind(element)) {
           return true;
         } else if (isClassLike(element) || isFunctionLikeDeclaration(element)) {
@@ -36038,7 +36038,7 @@ namespace qnr {
       if (symbolLinks.exportsSomeValue === undefined) {
         // for export assignments - check if resolved symbol for RHS is itself a value
         // otherwise - check if at least one export is value
-        symbolLinks.exportsSomeValue = hasExportAssignment ? !!(moduleSymbol.flags & SymbolFlags.Value) : forEachEntry(getExportsOfModule(moduleSymbol), isValue);
+        symbolLinks.exportsSomeValue = hasExportAssignment ? !!(moduleSymbol.flags & SymbolFlags.Value) : qu.forEachEntry(getExportsOfModule(moduleSymbol), isValue);
       }
 
       return symbolLinks.exportsSomeValue!;
@@ -36083,7 +36083,7 @@ namespace qnr {
               const symbolIsUmdExport = symbolFile !== referenceFile;
               return symbolIsUmdExport ? undefined : symbolFile;
             }
-            return findAncestor(node.parent, (n): n is ModuleDeclaration | EnumDeclaration => isModuleOrEnumDeclaration(n) && getSymbolOfNode(n) === parentSymbol);
+            return qn.findAncestor(node.parent, (n): n is ModuleDeclaration | EnumDeclaration => isModuleOrEnumDeclaration(n) && getSymbolOfNode(n) === parentSymbol);
           }
         }
       }
@@ -36287,7 +36287,7 @@ namespace qnr {
       if (!symbol || !(symbol.flags & SymbolFlags.Function)) {
         return false;
       }
-      return !!forEachEntry(getExportsOfSymbol(symbol), (p) => p.flags & SymbolFlags.Value && p.valueDeclaration && isPropertyAccessExpression(p.valueDeclaration));
+      return !!qu.forEachEntry(getExportsOfSymbol(symbol), (p) => p.flags & SymbolFlags.Value && p.valueDeclaration && isPropertyAccessExpression(p.valueDeclaration));
     }
 
     function getPropertiesOfContainerFunction(node: Declaration): Symbol[] {

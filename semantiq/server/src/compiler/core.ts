@@ -1163,18 +1163,6 @@ namespace qnr {
 
   export function noop(_?: {} | null | undefined): void {}
 
-  export function returnFalse(): false {
-    return false;
-  }
-
-  export function returnTrue(): true {
-    return true;
-  }
-
-  export function returnUndefined(): undefined {
-    return;
-  }
-
   export function identity<T>(x: T) {
     return x;
   }

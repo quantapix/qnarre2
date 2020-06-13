@@ -250,7 +250,7 @@ namespace qnr {
       if (forceAllFilesAsInvalidated) {
         // Any file asked would have invalidated resolution
         filesWithInvalidatedResolutions = undefined;
-        return returnTrue;
+        return () => true;
       }
       const collected = filesWithInvalidatedResolutions;
       filesWithInvalidatedResolutions = undefined;

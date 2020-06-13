@@ -1912,7 +1912,7 @@ namespace qnr {
 
   function getNameOfCompilerOptionValue(value: CompilerOptionsValue, customTypeMap: QMap<string | number>): string | undefined {
     // There is a typeMap associated with this command-line option so use it to map value back to its name
-    return forEachEntry(customTypeMap, (mapValue, key) => {
+    return qu.forEachEntry(customTypeMap, (mapValue, key) => {
       if (mapValue === value) {
         return key;
       }
@@ -3063,7 +3063,7 @@ namespace qnr {
         const elementType = option.element;
         return isArray(value) ? value.map((v) => getOptionValueWithEmptyStrings(v, elementType)) : '';
       default:
-        return forEachEntry(option.type, (optionEnumValue, optionStringValue) => {
+        return qu.forEachEntry(option.type, (optionEnumValue, optionStringValue) => {
           if (optionEnumValue === value) {
             return optionStringValue;
           }

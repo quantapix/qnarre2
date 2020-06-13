@@ -160,20 +160,13 @@ namespace qnr {
 
   function hasSameKeys<T, U>(map1: ReadonlyMap<T> | undefined, map2: ReadonlyMap<U> | undefined): boolean {
     // Has same size and every key is present in both maps
-    return (
-      (map1 as ReadonlyMap<T | U>) === map2 ||
-      (map1 !== undefined && map2 !== undefined && map1.size === map2.size && !forEachKey(map1, (key) => !map2.has(key)))
-    );
+    return (map1 as ReadonlyMap<T | U>) === map2 || (map1 !== undefined && map2 !== undefined && map1.size === map2.size && !qu.forEachKey(map1, (key) => !map2.has(key)));
   }
 
   /**
    * Create the state so that we can iterate on changedFiles/affected files
    */
-  function createBuilderProgramState(
-    newProgram: Program,
-    getCanonicalFileName: GetCanonicalFileName,
-    oldState?: Readonly<ReusableBuilderProgramState>
-  ): BuilderProgramState {
+  function createBuilderProgramState(newProgram: Program, getCanonicalFileName: GetCanonicalFileName, oldState?: Readonly<ReusableBuilderProgramState>): BuilderProgramState {
     const state = BuilderState.create(newProgram, getCanonicalFileName, oldState) as BuilderProgramState;
     state.program = newProgram;
     const compilerOptions = newProgram.getCompilerOptions();
@@ -187,30 +180,21 @@ namespace qnr {
     const useOldState = BuilderState.canReuseOldState(state.referencedMap, oldState);
     const oldCompilerOptions = useOldState ? oldState!.compilerOptions : undefined;
     const canCopySemanticDiagnostics =
-      useOldState &&
-      oldState!.semanticDiagnosticsPerFile &&
-      !!state.semanticDiagnosticsPerFile &&
-      !compilerOptionsAffectSemanticDiagnostics(compilerOptions, oldCompilerOptions!);
+      useOldState && oldState!.semanticDiagnosticsPerFile && !!state.semanticDiagnosticsPerFile && !compilerOptionsAffectSemanticDiagnostics(compilerOptions, oldCompilerOptions!);
     if (useOldState) {
       // Verify the sanity of old state
       if (!oldState!.currentChangedFilePath) {
         const affectedSignatures = oldState!.currentAffectedFilesSignatures;
-        assert(
-          !oldState!.affectedFiles && (!affectedSignatures || !affectedSignatures.size),
-          'Cannot reuse if only few affected files of currentChangedFile were iterated'
-        );
+        assert(!oldState!.affectedFiles && (!affectedSignatures || !affectedSignatures.size), 'Cannot reuse if only few affected files of currentChangedFile were iterated');
       }
       const changedFilesSet = oldState!.changedFilesSet;
       if (canCopySemanticDiagnostics) {
-        assert(
-          !changedFilesSet || !forEachKey(changedFilesSet, (path) => oldState!.semanticDiagnosticsPerFile!.has(path)),
-          'Semantic diagnostics shouldnt be available for changed files'
-        );
+        assert(!changedFilesSet || !qu.forEachKey(changedFilesSet, (path) => oldState!.semanticDiagnosticsPerFile!.has(path)), 'Semantic diagnostics shouldnt be available for changed files');
       }
 
       // Copy old state's changed files set
       if (changedFilesSet) {
-        copyEntries(changedFilesSet, state.changedFilesSet);
+        qu.copyEntries(changedFilesSet, state.changedFilesSet);
       }
       if (!compilerOptions.outFile && !compilerOptions.out && oldState!.affectedFilesPendingEmit) {
         state.affectedFilesPendingEmit = oldState!.affectedFilesPendingEmit.slice();
@@ -224,8 +208,7 @@ namespace qnr {
     const referencedMap = state.referencedMap;
     const oldReferencedMap = useOldState ? oldState!.referencedMap : undefined;
     const copyDeclarationFileDiagnostics = canCopySemanticDiagnostics && !compilerOptions.skipLibCheck === !oldCompilerOptions!.skipLibCheck;
-    const copyLibFileDiagnostics =
-      copyDeclarationFileDiagnostics && !compilerOptions.skipDefaultLibCheck === !oldCompilerOptions!.skipDefaultLibCheck;
+    const copyLibFileDiagnostics = copyDeclarationFileDiagnostics && !compilerOptions.skipDefaultLibCheck === !oldCompilerOptions!.skipDefaultLibCheck;
     state.fileInfos.forEach((info, sourceFilePath) => {
       let oldInfo: Readonly<BuilderState.FileInfo> | undefined;
       let newReferences: BuilderState.ReferencedSet | undefined;
@@ -238,12 +221,9 @@ namespace qnr {
         // versions dont match
         oldInfo.version !== info.version ||
         // Referenced files changed
-        !hasSameKeys(
-          (newReferences = referencedMap && referencedMap.get(sourceFilePath)),
-          oldReferencedMap && oldReferencedMap.get(sourceFilePath)
-        ) ||
+        !hasSameKeys((newReferences = referencedMap && referencedMap.get(sourceFilePath)), oldReferencedMap && oldReferencedMap.get(sourceFilePath)) ||
         // Referenced file was deleted in the new program
-        (newReferences && forEachKey(newReferences, (path) => !state.fileInfos.has(path) && oldState!.fileInfos.has(path)))
+        (newReferences && qu.forEachKey(newReferences, (path) => !state.fileInfos.has(path) && oldState!.fileInfos.has(path)))
       ) {
         // Register file as changed file and do not copy semantic diagnostics, since all changed files need to be re-evaluated
         state.changedFilesSet.set(sourceFilePath, true);
@@ -262,9 +242,7 @@ namespace qnr {
         if (diagnostics) {
           state.semanticDiagnosticsPerFile!.set(
             sourceFilePath,
-            oldState!.hasReusableDiagnostic
-              ? convertToDiagnostics(diagnostics as readonly ReusableDiagnostic[], newProgram, getCanonicalFileName)
-              : (diagnostics as readonly Diagnostic[])
+            oldState!.hasReusableDiagnostic ? convertToDiagnostics(diagnostics as readonly ReusableDiagnostic[], newProgram, getCanonicalFileName) : (diagnostics as readonly Diagnostic[])
           );
           if (!state.semanticDiagnosticsFromOldState) {
             state.semanticDiagnosticsFromOldState = createMap<true>();
@@ -275,10 +253,8 @@ namespace qnr {
     });
 
     // If the global file is removed, add all files as changed
-    if (useOldState && forEachEntry(oldState!.fileInfos, (info, sourceFilePath) => info.affectsGlobalScope && !state.fileInfos.has(sourceFilePath))) {
-      BuilderState.getAllFilesExcludingDefaultLibraryFile(state, newProgram, /*firstSourceFile*/ undefined).forEach((file) =>
-        state.changedFilesSet.set(file.resolvedPath, true)
-      );
+    if (useOldState && qu.forEachEntry(oldState!.fileInfos, (info, sourceFilePath) => info.affectsGlobalScope && !state.fileInfos.has(sourceFilePath))) {
+      BuilderState.getAllFilesExcludingDefaultLibraryFile(state, newProgram, /*firstSourceFile*/ undefined).forEach((file) => state.changedFilesSet.set(file.resolvedPath, true));
     } else if (oldCompilerOptions && compilerOptionsAffectEmit(compilerOptions, oldCompilerOptions)) {
       // Add all files to affectedFilesPendingEmit since emit changed
       newProgram.getSourceFiles().forEach((f) => addToAffectedFilesPendingEmit(state, f.resolvedPath, BuilderFileEmit.Full));
@@ -290,15 +266,9 @@ namespace qnr {
     return state;
   }
 
-  function convertToDiagnostics(
-    diagnostics: readonly ReusableDiagnostic[],
-    newProgram: Program,
-    getCanonicalFileName: GetCanonicalFileName
-  ): readonly Diagnostic[] {
+  function convertToDiagnostics(diagnostics: readonly ReusableDiagnostic[], newProgram: Program, getCanonicalFileName: GetCanonicalFileName): readonly Diagnostic[] {
     if (!diagnostics.length) return emptyArray;
-    const buildInfoDirectory = getDirectoryPath(
-      getNormalizedAbsolutePath(getTsBuildInfoEmitOutputFilePath(newProgram.getCompilerOptions())!, newProgram.getCurrentDirectory())
-    );
+    const buildInfoDirectory = getDirectoryPath(getNormalizedAbsolutePath(getTsBuildInfoEmitOutputFilePath(newProgram.getCompilerOptions())!, newProgram.getCurrentDirectory()));
     return diagnostics.map((diagnostic) => {
       const result: Diagnostic = convertToDiagnosticRelatedInformation(diagnostic, newProgram, toPath);
       result.reportsUnnecessary = diagnostic.reportsUnnecessary;
@@ -317,11 +287,7 @@ namespace qnr {
     }
   }
 
-  function convertToDiagnosticRelatedInformation(
-    diagnostic: ReusableDiagnosticRelatedInformation,
-    newProgram: Program,
-    toPath: (path: string) => Path
-  ): DiagnosticRelatedInformation {
+  function convertToDiagnosticRelatedInformation(diagnostic: ReusableDiagnosticRelatedInformation, newProgram: Program, toPath: (path: string) => Path): DiagnosticRelatedInformation {
     const { file } = diagnostic;
     return {
       ...diagnostic,
@@ -366,12 +332,7 @@ namespace qnr {
    * Verifies that source file is ok to be used in calls that arent handled by next
    */
   function assertSourceFileOkWithoutNextAffectedCall(state: BuilderProgramState, sourceFile: SourceFile | undefined) {
-    assert(
-      !sourceFile ||
-        !state.affectedFiles ||
-        state.affectedFiles[state.affectedFilesIndex! - 1] !== sourceFile ||
-        !state.semanticDiagnosticsPerFile!.has(sourceFile.resolvedPath)
-    );
+    assert(!sourceFile || !state.affectedFiles || state.affectedFiles[state.affectedFilesIndex! - 1] !== sourceFile || !state.semanticDiagnosticsPerFile!.has(sourceFile.resolvedPath));
   }
 
   /**
@@ -380,11 +341,7 @@ namespace qnr {
    * This is to allow the callers to be able to actually remove affected file only when the operation is complete
    * eg. if during diagnostics check cancellation token ends up cancelling the request, the affected file should be retained
    */
-  function getNextAffectedFile(
-    state: BuilderProgramState,
-    cancellationToken: CancellationToken | undefined,
-    computeHash: BuilderState.ComputeHash
-  ): SourceFile | Program | undefined {
+  function getNextAffectedFile(state: BuilderProgramState, cancellationToken: CancellationToken | undefined, computeHash: BuilderState.ComputeHash): SourceFile | Program | undefined {
     while (true) {
       const { affectedFiles } = state;
       if (affectedFiles) {
@@ -430,8 +387,7 @@ namespace qnr {
       // Get next batch of affected files
       state.currentAffectedFilesSignatures = state.currentAffectedFilesSignatures || createMap();
       if (state.exportedModulesMap) {
-        state.currentAffectedFilesExportedModulesMap =
-          state.currentAffectedFilesExportedModulesMap || createMap<BuilderState.ReferencedSet | false>();
+        state.currentAffectedFilesExportedModulesMap = state.currentAffectedFilesExportedModulesMap || createMap<BuilderState.ReferencedSet | false>();
       }
       state.affectedFiles = BuilderState.getFilesAffectedBy(
         state,
@@ -478,12 +434,7 @@ namespace qnr {
    *  Handles semantic diagnostics and dts emit for affectedFile and files, that are referencing modules that export entities from affected file
    *  This is because even though js emit doesnt change, dts emit / type used can change resulting in need for dts emit and js change
    */
-  function handleDtsMayChangeOfAffectedFile(
-    state: BuilderProgramState,
-    affectedFile: SourceFile,
-    cancellationToken: CancellationToken | undefined,
-    computeHash: BuilderState.ComputeHash
-  ) {
+  function handleDtsMayChangeOfAffectedFile(state: BuilderProgramState, affectedFile: SourceFile, cancellationToken: CancellationToken | undefined, computeHash: BuilderState.ComputeHash) {
     removeSemanticDiagnosticsOf(state, affectedFile.resolvedPath);
 
     // If affected files is everything except default library, then nothing more to do
@@ -492,18 +443,13 @@ namespace qnr {
         state.cleanedDiagnosticsOfLibFiles = true;
         const program = Debug.checkDefined(state.program);
         const options = program.getCompilerOptions();
-        forEach(
-          program.getSourceFiles(),
-          (f) => program.isSourceFileDefaultLibrary(f) && !skipTypeChecking(f, options, program) && removeSemanticDiagnosticsOf(state, f.resolvedPath)
-        );
+        forEach(program.getSourceFiles(), (f) => program.isSourceFileDefaultLibrary(f) && !skipTypeChecking(f, options, program) && removeSemanticDiagnosticsOf(state, f.resolvedPath));
       }
       return;
     }
 
     if (!state.compilerOptions.assumeChangesOnlyAffectDirectDependencies) {
-      forEachReferencingModulesOfExportOfAffectedFile(state, affectedFile, (state, path) =>
-        handleDtsMayChangeOf(state, path, cancellationToken, computeHash)
-      );
+      forEachReferencingModulesOfExportOfAffectedFile(state, affectedFile, (state, path) => handleDtsMayChangeOf(state, path, cancellationToken, computeHash));
     }
   }
 
@@ -511,12 +457,7 @@ namespace qnr {
    * Handle the dts may change, so they need to be added to pending emit if dts emit is enabled,
    * Also we need to make sure signature is updated for these files
    */
-  function handleDtsMayChangeOf(
-    state: BuilderProgramState,
-    path: Path,
-    cancellationToken: CancellationToken | undefined,
-    computeHash: BuilderState.ComputeHash
-  ) {
+  function handleDtsMayChangeOf(state: BuilderProgramState, path: Path, cancellationToken: CancellationToken | undefined, computeHash: BuilderState.ComputeHash) {
     removeSemanticDiagnosticsOf(state, path);
 
     if (!state.changedFilesSet.has(path)) {
@@ -568,11 +509,7 @@ namespace qnr {
   /**
    * Iterate on referencing modules that export entities from affected file
    */
-  function forEachReferencingModulesOfExportOfAffectedFile(
-    state: BuilderProgramState,
-    affectedFile: SourceFile,
-    fn: (state: BuilderProgramState, filePath: Path) => boolean
-  ) {
+  function forEachReferencingModulesOfExportOfAffectedFile(state: BuilderProgramState, affectedFile: SourceFile, fn: (state: BuilderProgramState, filePath: Path) => boolean) {
     // If there was change in signature (dts output) for the changed file,
     // then only we need to handle pending file emit
     if (!state.exportedModulesMap || !state.changedFilesSet.has(affectedFile.resolvedPath)) {
@@ -605,19 +542,17 @@ namespace qnr {
     // Go through exported modules from cache first
     // If exported modules has path, all files referencing file exported from are affected
     if (
-      forEachEntry(
+      qu.forEachEntry(
         state.currentAffectedFilesExportedModulesMap,
         (exportedModules, exportedFromPath) =>
-          exportedModules &&
-          exportedModules.has(affectedFile.resolvedPath) &&
-          forEachFilesReferencingPath(state, exportedFromPath as Path, seenFileAndExportsOfFile, fn)
+          exportedModules && exportedModules.has(affectedFile.resolvedPath) && forEachFilesReferencingPath(state, exportedFromPath as Path, seenFileAndExportsOfFile, fn)
       )
     ) {
       return;
     }
 
     // If exported from path is not from cache and exported modules has path, all files referencing file exported from are affected
-    forEachEntry(
+    qu.forEachEntry(
       state.exportedModulesMap,
       (exportedModules, exportedFromPath) =>
         !state.currentAffectedFilesExportedModulesMap!.has(exportedFromPath) && // If we already iterated this through cache, ignore it
@@ -629,28 +564,17 @@ namespace qnr {
   /**
    * Iterate on files referencing referencedPath
    */
-  function forEachFilesReferencingPath(
-    state: BuilderProgramState,
-    referencedPath: Path,
-    seenFileAndExportsOfFile: Map<true>,
-    fn: (state: BuilderProgramState, filePath: Path) => boolean
-  ) {
-    return forEachEntry(
+  function forEachFilesReferencingPath(state: BuilderProgramState, referencedPath: Path, seenFileAndExportsOfFile: Map<true>, fn: (state: BuilderProgramState, filePath: Path) => boolean) {
+    return qu.forEachEntry(
       state.referencedMap!,
-      (referencesInFile, filePath) =>
-        referencesInFile.has(referencedPath) && forEachFileAndExportsOfFile(state, filePath as Path, seenFileAndExportsOfFile, fn)
+      (referencesInFile, filePath) => referencesInFile.has(referencedPath) && forEachFileAndExportsOfFile(state, filePath as Path, seenFileAndExportsOfFile, fn)
     );
   }
 
   /**
    * fn on file and iterate on anything that exports this file
    */
-  function forEachFileAndExportsOfFile(
-    state: BuilderProgramState,
-    filePath: Path,
-    seenFileAndExportsOfFile: Map<true>,
-    fn: (state: BuilderProgramState, filePath: Path) => boolean
-  ): boolean {
+  function forEachFileAndExportsOfFile(state: BuilderProgramState, filePath: Path, seenFileAndExportsOfFile: Map<true>, fn: (state: BuilderProgramState, filePath: Path) => boolean): boolean {
     if (!addToSeen(seenFileAndExportsOfFile, filePath)) {
       return false;
     }
@@ -664,12 +588,9 @@ namespace qnr {
     // Go through exported modules from cache first
     // If exported modules has path, all files referencing file exported from are affected
     if (
-      forEachEntry(
+      qu.forEachEntry(
         state.currentAffectedFilesExportedModulesMap,
-        (exportedModules, exportedFromPath) =>
-          exportedModules &&
-          exportedModules.has(filePath) &&
-          forEachFileAndExportsOfFile(state, exportedFromPath as Path, seenFileAndExportsOfFile, fn)
+        (exportedModules, exportedFromPath) => exportedModules && exportedModules.has(filePath) && forEachFileAndExportsOfFile(state, exportedFromPath as Path, seenFileAndExportsOfFile, fn)
       )
     ) {
       return true;
@@ -677,7 +598,7 @@ namespace qnr {
 
     // If exported from path is not from cache and exported modules has path, all files referencing file exported from are affected
     if (
-      forEachEntry(
+      qu.forEachEntry(
         state.exportedModulesMap!,
         (exportedModules, exportedFromPath) =>
           !state.currentAffectedFilesExportedModulesMap!.has(exportedFromPath) && // If we already iterated this through cache, ignore it
@@ -689,7 +610,7 @@ namespace qnr {
     }
 
     // Remove diagnostics of files that import this file (without going to exports of referencing files)
-    return !!forEachEntry(
+    return !!qu.forEachEntry(
       state.referencedMap!,
       (referencesInFile, referencingFilePath) =>
         referencesInFile.has(filePath) &&
@@ -702,13 +623,7 @@ namespace qnr {
    * This is called after completing operation on the next affected file.
    * The operations here are postponed to ensure that cancellation during the iteration is handled correctly
    */
-  function doneWithAffectedFile(
-    state: BuilderProgramState,
-    affected: SourceFile | Program,
-    emitKind?: BuilderFileEmit,
-    isPendingEmit?: boolean,
-    isBuildInfoEmit?: boolean
-  ) {
+  function doneWithAffectedFile(state: BuilderProgramState, affected: SourceFile | Program, emitKind?: BuilderFileEmit, isPendingEmit?: boolean, isBuildInfoEmit?: boolean) {
     if (isBuildInfoEmit) {
       state.emittedBuildInfo = true;
     } else if (affected === state.program) {
@@ -754,26 +669,15 @@ namespace qnr {
    * Gets semantic diagnostics for the file which are
    * bindAndCheckDiagnostics (from cache) and program diagnostics
    */
-  function getSemanticDiagnosticsOfFile(
-    state: BuilderProgramState,
-    sourceFile: SourceFile,
-    cancellationToken?: CancellationToken
-  ): readonly Diagnostic[] {
-    return concatenate(
-      getBinderAndCheckerDiagnosticsOfFile(state, sourceFile, cancellationToken),
-      Debug.checkDefined(state.program).getProgramDiagnostics(sourceFile)
-    );
+  function getSemanticDiagnosticsOfFile(state: BuilderProgramState, sourceFile: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[] {
+    return concatenate(getBinderAndCheckerDiagnosticsOfFile(state, sourceFile, cancellationToken), Debug.checkDefined(state.program).getProgramDiagnostics(sourceFile));
   }
 
   /**
    * Gets the binder and checker diagnostics either from cache if present, or otherwise from program and caches it
    * Note that it is assumed that when asked about binder and checker diagnostics, the file has been taken out of affected files/changed file set
    */
-  function getBinderAndCheckerDiagnosticsOfFile(
-    state: BuilderProgramState,
-    sourceFile: SourceFile,
-    cancellationToken?: CancellationToken
-  ): readonly Diagnostic[] {
+  function getBinderAndCheckerDiagnosticsOfFile(state: BuilderProgramState, sourceFile: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[] {
     const path = sourceFile.resolvedPath;
     if (state.semanticDiagnosticsPerFile) {
       const cachedDiagnostics = state.semanticDiagnosticsPerFile.get(path);
@@ -803,20 +707,14 @@ namespace qnr {
   /**
    * Gets the program information to be emitted in buildInfo so that we can use it to create new program
    */
-  function getProgramBuildInfo(
-    state: Readonly<ReusableBuilderProgramState>,
-    getCanonicalFileName: GetCanonicalFileName
-  ): ProgramBuildInfo | undefined {
+  function getProgramBuildInfo(state: Readonly<ReusableBuilderProgramState>, getCanonicalFileName: GetCanonicalFileName): ProgramBuildInfo | undefined {
     if (state.compilerOptions.outFile || state.compilerOptions.out) return;
     const currentDirectory = Debug.checkDefined(state.program).getCurrentDirectory();
-    const buildInfoDirectory = getDirectoryPath(
-      getNormalizedAbsolutePath(getTsBuildInfoEmitOutputFilePath(state.compilerOptions)!, currentDirectory)
-    );
+    const buildInfoDirectory = getDirectoryPath(getNormalizedAbsolutePath(getTsBuildInfoEmitOutputFilePath(state.compilerOptions)!, currentDirectory));
     const fileInfos: MapLike<BuilderState.FileInfo> = {};
     state.fileInfos.forEach((value, key) => {
       const signature = state.currentAffectedFilesSignatures && state.currentAffectedFilesSignatures.get(key);
-      fileInfos[relativeToBuildInfo(key)] =
-        signature === undefined ? value : { version: value.version, signature, affectsGlobalScope: value.affectsGlobalScope };
+      fileInfos[relativeToBuildInfo(key)] = signature === undefined ? value : { version: value.version, signature, affectsGlobalScope: value.affectsGlobalScope };
     });
 
     const result: ProgramBuildInfo = {
@@ -826,9 +724,7 @@ namespace qnr {
     if (state.referencedMap) {
       const referencedMap: MapLike<string[]> = {};
       for (const key of arrayFrom(state.referencedMap.keys()).sort(compareStringsCaseSensitive)) {
-        referencedMap[relativeToBuildInfo(key)] = arrayFrom(state.referencedMap.get(key)!.keys(), relativeToBuildInfo).sort(
-          compareStringsCaseSensitive
-        );
+        referencedMap[relativeToBuildInfo(key)] = arrayFrom(state.referencedMap.get(key)!.keys(), relativeToBuildInfo).sort(compareStringsCaseSensitive);
       }
       result.referencedMap = referencedMap;
     }
@@ -838,13 +734,9 @@ namespace qnr {
       for (const key of arrayFrom(state.exportedModulesMap.keys()).sort(compareStringsCaseSensitive)) {
         const newValue = state.currentAffectedFilesExportedModulesMap && state.currentAffectedFilesExportedModulesMap.get(key);
         // Not in temporary cache, use existing value
-        if (newValue === undefined)
-          exportedModulesMap[relativeToBuildInfo(key)] = arrayFrom(state.exportedModulesMap.get(key)!.keys(), relativeToBuildInfo).sort(
-            compareStringsCaseSensitive
-          );
+        if (newValue === undefined) exportedModulesMap[relativeToBuildInfo(key)] = arrayFrom(state.exportedModulesMap.get(key)!.keys(), relativeToBuildInfo).sort(compareStringsCaseSensitive);
         // Value in cache and has updated value map, use that
-        else if (newValue)
-          exportedModulesMap[relativeToBuildInfo(key)] = arrayFrom(newValue.keys(), relativeToBuildInfo).sort(compareStringsCaseSensitive);
+        else if (newValue) exportedModulesMap[relativeToBuildInfo(key)] = arrayFrom(newValue.keys(), relativeToBuildInfo).sort(compareStringsCaseSensitive);
       }
       result.exportedModulesMap = exportedModulesMap;
     }
@@ -855,12 +747,7 @@ namespace qnr {
         const value = state.semanticDiagnosticsPerFile.get(key)!;
         semanticDiagnosticsPerFile.push(
           value.length
-            ? [
-                relativeToBuildInfo(key),
-                state.hasReusableDiagnostic
-                  ? (value as readonly ReusableDiagnostic[])
-                  : convertToReusableDiagnostics(value as readonly Diagnostic[], relativeToBuildInfo),
-              ]
+            ? [relativeToBuildInfo(key), state.hasReusableDiagnostic ? (value as readonly ReusableDiagnostic[]) : convertToReusableDiagnostics(value as readonly Diagnostic[], relativeToBuildInfo)]
             : relativeToBuildInfo(key)
         );
       }
@@ -884,11 +771,7 @@ namespace qnr {
 
     for (const name in options) {
       if (hasProperty(options, name)) {
-        result[name] = convertToReusableCompilerOptionValue(
-          optionsNameMap.get(name.toLowerCase()),
-          options[name] as CompilerOptionsValue,
-          relativeToBuildInfo
-        );
+        result[name] = convertToReusableCompilerOptionValue(optionsNameMap.get(name.toLowerCase()), options[name] as CompilerOptionsValue, relativeToBuildInfo);
       }
     }
     if (result.configFilePath) {
@@ -897,11 +780,7 @@ namespace qnr {
     return result;
   }
 
-  function convertToReusableCompilerOptionValue(
-    option: CommandLineOption | undefined,
-    value: CompilerOptionsValue,
-    relativeToBuildInfo: (path: string) => string
-  ) {
+  function convertToReusableCompilerOptionValue(option: CommandLineOption | undefined, value: CompilerOptionsValue, relativeToBuildInfo: (path: string) => string) {
     if (option) {
       if (option.type === 'list') {
         const values = value as readonly (string | number)[];
@@ -915,10 +794,7 @@ namespace qnr {
     return value;
   }
 
-  function convertToReusableDiagnostics(
-    diagnostics: readonly Diagnostic[],
-    relativeToBuildInfo: (path: string) => string
-  ): readonly ReusableDiagnostic[] {
+  function convertToReusableDiagnostics(diagnostics: readonly Diagnostic[], relativeToBuildInfo: (path: string) => string): readonly ReusableDiagnostic[] {
     assert(!!diagnostics.length);
     return diagnostics.map((diagnostic) => {
       const result: ReusableDiagnostic = convertToReusableDiagnosticRelatedInformation(diagnostic, relativeToBuildInfo);
@@ -934,10 +810,7 @@ namespace qnr {
     });
   }
 
-  function convertToReusableDiagnosticRelatedInformation(
-    diagnostic: DiagnosticRelatedInformation,
-    relativeToBuildInfo: (path: string) => string
-  ): ReusableDiagnosticRelatedInformation {
+  function convertToReusableDiagnosticRelatedInformation(diagnostic: DiagnosticRelatedInformation, relativeToBuildInfo: (path: string) => string): ReusableDiagnosticRelatedInformation {
     const { file } = diagnostic;
     return {
       ...diagnostic,
@@ -994,18 +867,12 @@ namespace qnr {
     return { host, newProgram, oldProgram, configFileParsingDiagnostics: configFileParsingDiagnostics || emptyArray };
   }
 
-  export function createBuilderProgram(
-    kind: BuilderProgramKind.SemanticDiagnosticsBuilderProgram,
-    builderCreationParameters: BuilderCreationParameters
-  ): SemanticDiagnosticsBuilderProgram;
+  export function createBuilderProgram(kind: BuilderProgramKind.SemanticDiagnosticsBuilderProgram, builderCreationParameters: BuilderCreationParameters): SemanticDiagnosticsBuilderProgram;
   export function createBuilderProgram(
     kind: BuilderProgramKind.EmitAndSemanticDiagnosticsBuilderProgram,
     builderCreationParameters: BuilderCreationParameters
   ): EmitAndSemanticDiagnosticsBuilderProgram;
-  export function createBuilderProgram(
-    kind: BuilderProgramKind,
-    { newProgram, host, oldProgram, configFileParsingDiagnostics }: BuilderCreationParameters
-  ) {
+  export function createBuilderProgram(kind: BuilderProgramKind, { newProgram, host, oldProgram, configFileParsingDiagnostics }: BuilderCreationParameters) {
     // Return same program if underlying program doesnt change
     let oldState = oldProgram && oldProgram.getState();
     if (oldState && newProgram === oldState.program && configFileParsingDiagnostics === newProgram.getConfigFileParsingDiagnostics()) {
@@ -1164,23 +1031,14 @@ namespace qnr {
           };
         }
       }
-      return Debug.checkDefined(state.program).emit(
-        targetSourceFile,
-        writeFile || maybeBind(host, host.writeFile),
-        cancellationToken,
-        emitOnlyDtsFiles,
-        customTransformers
-      );
+      return Debug.checkDefined(state.program).emit(targetSourceFile, writeFile || maybeBind(host, host.writeFile), cancellationToken, emitOnlyDtsFiles, customTransformers);
     }
 
     /**
      * Return the semantic diagnostics for the next affected file or undefined if iteration is complete
      * If provided ignoreSourceFile would be called before getting the diagnostics and would ignore the sourceFile if the returned value was true
      */
-    function getSemanticDiagnosticsOfNextAffectedFile(
-      cancellationToken?: CancellationToken,
-      ignoreSourceFile?: (sourceFile: SourceFile) => boolean
-    ): AffectedFileResult<readonly Diagnostic[]> {
+    function getSemanticDiagnosticsOfNextAffectedFile(cancellationToken?: CancellationToken, ignoreSourceFile?: (sourceFile: SourceFile) => boolean): AffectedFileResult<readonly Diagnostic[]> {
       while (true) {
         const affected = getNextAffectedFile(state, cancellationToken, computeHash);
         if (!affected) {
@@ -1258,27 +1116,20 @@ namespace qnr {
     }
   }
 
-  function getMapOfReferencedSet(
-    mapLike: MapLike<readonly string[]> | undefined,
-    toPath: (path: string) => Path
-  ): ReadonlyMap<BuilderState.ReferencedSet> | undefined {
+  function getMapOfReferencedSet(mapLike: MapLike<readonly string[]> | undefined, toPath: (path: string) => Path): ReadonlyMap<BuilderState.ReferencedSet> | undefined {
     if (!mapLike) return;
     const map = createMap<BuilderState.ReferencedSet>();
     // Copies keys/values from template. Note that for..in will not throw if
     // template is undefined, and instead will just exit the loop.
     for (const key in mapLike) {
       if (hasProperty(mapLike, key)) {
-        map.set(toPath(key), arrayToSet(mapLike[key], toPath));
+        map.set(toPath(key), qu.arrayToSet(mapLike[key], toPath));
       }
     }
     return map;
   }
 
-  export function createBuildProgramUsingProgramBuildInfo(
-    program: ProgramBuildInfo,
-    buildInfoPath: string,
-    host: ReadBuildProgramHost
-  ): EmitAndSemanticDiagnosticsBuilderProgram {
+  export function createBuildProgramUsingProgramBuildInfo(program: ProgramBuildInfo, buildInfoPath: string, host: ReadBuildProgramHost): EmitAndSemanticDiagnosticsBuilderProgram {
     const buildInfoDirectory = getDirectoryPath(getNormalizedAbsolutePath(buildInfoPath, host.getCurrentDirectory()));
     const getCanonicalFileName = createGetCanonicalFileName(host.useCaseSensitiveFileNames());
 
@@ -1308,7 +1159,7 @@ namespace qnr {
       backupState: noop,
       restoreState: noop,
       getProgram: notImplemented,
-      getProgramOrUndefined: returnUndefined,
+      getProgramOrUndefined: () => undefined,
       releaseProgram: noop,
       getCompilerOptions: () => state.compilerOptions,
       getSourceFile: notImplemented,
@@ -1336,10 +1187,7 @@ namespace qnr {
     }
   }
 
-  export function createRedirectedBuilderProgram(
-    state: { program: Program | undefined; compilerOptions: CompilerOptions },
-    configFileParsingDiagnostics: readonly Diagnostic[]
-  ): BuilderProgram {
+  export function createRedirectedBuilderProgram(state: { program: Program | undefined; compilerOptions: CompilerOptions }, configFileParsingDiagnostics: readonly Diagnostic[]): BuilderProgram {
     return {
       getState: notImplemented,
       backupState: noop,
@@ -1356,8 +1204,7 @@ namespace qnr {
       getSyntacticDiagnostics: (sourceFile, cancellationToken) => getProgram().getSyntacticDiagnostics(sourceFile, cancellationToken),
       getDeclarationDiagnostics: (sourceFile, cancellationToken) => getProgram().getDeclarationDiagnostics(sourceFile, cancellationToken),
       getSemanticDiagnostics: (sourceFile, cancellationToken) => getProgram().getSemanticDiagnostics(sourceFile, cancellationToken),
-      emit: (sourceFile, writeFile, cancellationToken, emitOnlyDts, customTransformers) =>
-        getProgram().emit(sourceFile, writeFile, cancellationToken, emitOnlyDts, customTransformers),
+      emit: (sourceFile, writeFile, cancellationToken, emitOnlyDts, customTransformers) => getProgram().emit(sourceFile, writeFile, cancellationToken, emitOnlyDts, customTransformers),
       getAllDependencies: notImplemented,
       getCurrentDirectory: () => getProgram().getCurrentDirectory(),
       close: noop,

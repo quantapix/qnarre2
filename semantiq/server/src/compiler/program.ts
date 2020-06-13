@@ -749,7 +749,7 @@ namespace qnr {
 
     let moduleResolutionCache: ModuleResolutionCache | undefined;
     let actualResolveModuleNamesWorker: (moduleNames: string[], containingFile: string, reusedNames?: string[], redirectedReference?: ResolvedProjectReference) => ResolvedModuleFull[];
-    const hasInvalidatedResolution = host.hasInvalidatedResolution || returnFalse;
+    const hasInvalidatedResolution = host.hasInvalidatedResolution || () => false;
     if (host.resolveModuleNames) {
       actualResolveModuleNamesWorker = (moduleNames, containingFile, reusedNames, redirectedReference) =>
         host.resolveModuleNames!(Debug.checkEachDefined(moduleNames), containingFile, reusedNames, redirectedReference, options).map((resolved) => {
@@ -1060,7 +1060,7 @@ namespace qnr {
         classifiableNames = createUnderscoreEscapedMap<true>();
 
         for (const sourceFile of files) {
-          copyEntries(sourceFile.classifiableNames!, classifiableNames);
+          qu.copyEntries(sourceFile.classifiableNames!, classifiableNames);
         }
       }
 
@@ -2844,7 +2844,7 @@ namespace qnr {
         if (!sourceFile.isDeclarationFile) {
           const absoluteSourceFilePath = host.getCanonicalFileName(getNormalizedAbsolutePath(sourceFile.fileName, currentDirectory));
           if (absoluteSourceFilePath.indexOf(absoluteRootDirectoryPath) !== 0) {
-            if (!rootPaths) rootPaths = arrayToSet(rootNames, toPath);
+            if (!rootPaths) rootPaths = qu.arrayToSet(rootNames, toPath);
             addProgramDiagnosticAtRefPath(sourceFile, rootPaths, Diagnostics.File_0_is_not_under_rootDir_1_rootDir_is_expected_to_contain_all_source_files, sourceFile.fileName, rootDirectory);
             allFilesBelongToPath = false;
           }
@@ -2956,7 +2956,7 @@ namespace qnr {
 
       // List of collected files is complete; validate exhautiveness if this is a project with a file list
       if (options.composite) {
-        const rootPaths = arrayToSet(rootNames, toPath);
+        const rootPaths = qu.arrayToSet(rootNames, toPath);
         for (const file of files) {
           // Ignore file that is not emitted
           if (sourceFileMayBeEmitted(file, program) && !rootPaths.has(file.path)) {
@@ -3498,7 +3498,7 @@ namespace qnr {
     function directoryExistsIfProjectReferenceDeclDir(dir: string) {
       const dirPath = host.toPath(dir);
       const dirPathWithTrailingDirectorySeparator = `${dirPath}${dirSeparator}`;
-      return forEachKey(
+      return qu.forEachKey(
         mapOfDeclarationDirectories!,
         (declDirPath) =>
           dirPath === declDirPath ||
@@ -3604,7 +3604,7 @@ namespace qnr {
       readFile: (f) => directoryStructureHost.readFile(f),
       useCaseSensitiveFileNames: host.useCaseSensitiveFileNames(),
       getCurrentDirectory: () => host.getCurrentDirectory(),
-      onUnRecoverableConfigFileDiagnostic: host.onUnRecoverableConfigFileDiagnostic || returnUndefined,
+      onUnRecoverableConfigFileDiagnostic: host.onUnRecoverableConfigFileDiagnostic || () => undefined,
       trace: host.trace ? (s) => host.trace!(s) : undefined,
     };
   }

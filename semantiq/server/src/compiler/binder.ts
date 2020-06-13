@@ -2061,7 +2061,7 @@ namespace qnr {
       const saveCurrentFlow = currentFlow;
       for (const typeAlias of delayedTypeAliases) {
         const host = getJSDocHost(typeAlias);
-        container = findAncestor(host.parent, (n) => !!(getContainerFlags(n) & ContainerFlags.IsContainer)) || file;
+        container = qn.findAncestor(host.parent, (n) => !!(getContainerFlags(n) & ContainerFlags.IsContainer)) || file;
         blockScopeContainer = getEnclosingBlockScopeContainer(host) || file;
         currentFlow = initFlowNode({ flags: FlowFlags.Start });
         parent = typeAlias;
@@ -2075,7 +2075,7 @@ namespace qnr {
               file.symbol,
               declName.parent,
               isTopLevel,
-              !!findAncestor(declName, (d) => isPropertyAccessExpression(d) && d.name.escapedText === 'prototype'),
+              !!qn.findAncestor(declName, (d) => isPropertyAccessExpression(d) && d.name.escapedText === 'prototype'),
               /*containerIsClass*/ false
             );
             const oldContainer = container;
@@ -3258,7 +3258,7 @@ namespace qnr {
     }
 
     function getInferTypeContainer(node: Node): ConditionalTypeNode | undefined {
-      const extendsType = findAncestor(node, (n) => n.parent && ConditionalTypeNode.kind(n.parent) && n.parent.extendsType === n);
+      const extendsType = qn.findAncestor(node, (n) => n.parent && ConditionalTypeNode.kind(n.parent) && n.parent.extendsType === n);
       return extendsType && (extendsType.parent as ConditionalTypeNode);
     }
 

@@ -38,11 +38,7 @@ namespace qnr {
     readonly directories: string[];
   }
 
-  export function createCachedDirectoryStructureHost(
-    host: DirectoryStructureHost,
-    currentDirectory: string,
-    useCaseSensitiveFileNames: boolean
-  ): CachedDirectoryStructureHost | undefined {
+  export function createCachedDirectoryStructureHost(host: DirectoryStructureHost, currentDirectory: string, useCaseSensitiveFileNames: boolean): CachedDirectoryStructureHost | undefined {
     if (!host.getDirectories || !host.readDirectory) {
       return;
     }
@@ -168,27 +164,11 @@ namespace qnr {
       return host.getDirectories!(rootDir);
     }
 
-    function readDirectory(
-      rootDir: string,
-      extensions?: readonly string[],
-      excludes?: readonly string[],
-      includes?: readonly string[],
-      depth?: number
-    ): string[] {
+    function readDirectory(rootDir: string, extensions?: readonly string[], excludes?: readonly string[], includes?: readonly string[], depth?: number): string[] {
       const rootDirPath = toPath(rootDir);
       const result = tryReadDirectory(rootDir, rootDirPath);
       if (result) {
-        return matchFiles(
-          rootDir,
-          extensions,
-          excludes,
-          includes,
-          useCaseSensitiveFileNames,
-          currentDirectory,
-          depth,
-          getFileSystemEntries,
-          realpath
-        );
+        return matchFiles(rootDir, extensions, excludes, includes, useCaseSensitiveFileNames, currentDirectory, depth, getFileSystemEntries, realpath);
       }
       return host.readDirectory!(rootDir, extensions, excludes, includes, depth);
 
@@ -274,13 +254,9 @@ namespace qnr {
   /**
    * Updates the existing missing file watches with the new set of missing files after new program is created
    */
-  export function updateMissingFilePathsWatch(
-    program: Program,
-    missingFileWatches: Map<FileWatcher>,
-    createMissingFileWatch: (missingFilePath: Path) => FileWatcher
-  ) {
+  export function updateMissingFilePathsWatch(program: Program, missingFileWatches: Map<FileWatcher>, createMissingFileWatch: (missingFilePath: Path) => FileWatcher) {
     const missingFilePaths = program.getMissingFilePaths();
-    const newMissingFilePathMap = arrayToSet(missingFilePaths);
+    const newMissingFilePathMap = qu.arrayToSet(missingFilePaths);
     // Update the missing file paths watcher
     mutateMap(missingFileWatches, newMissingFilePathMap, {
       // Watch the missing files
@@ -391,11 +367,7 @@ namespace qnr {
     watchDirectory: WatchDirectory<X, Y>;
   }
 
-  export function getWatchFactory<X, Y = undefined>(
-    watchLogLevel: WatchLogLevel,
-    log: (s: string) => void,
-    getDetailWatchInfo?: GetDetailWatchInfo<X, Y>
-  ): WatchFactory<X, Y> {
+  export function getWatchFactory<X, Y = undefined>(watchLogLevel: WatchLogLevel, log: (s: string) => void, getDetailWatchInfo?: GetDetailWatchInfo<X, Y>): WatchFactory<X, Y> {
     return getWatchFactoryWith(watchLogLevel, log, getDetailWatchInfo, watchFile, watchDirectory);
   }
 
@@ -403,111 +375,34 @@ namespace qnr {
     watchLogLevel: WatchLogLevel,
     log: (s: string) => void,
     getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined,
-    watchFile: (
-      host: WatchFileHost,
-      file: string,
-      callback: FileWatcherCallback,
-      watchPriority: PollingInterval,
-      options: WatchOptions | undefined
-    ) => FileWatcher,
-    watchDirectory: (
-      host: WatchDirectoryHost,
-      directory: string,
-      callback: DirectoryWatcherCallback,
-      flags: WatchDirectoryFlags,
-      options: WatchOptions | undefined
-    ) => FileWatcher
+    watchFile: (host: WatchFileHost, file: string, callback: FileWatcherCallback, watchPriority: PollingInterval, options: WatchOptions | undefined) => FileWatcher,
+    watchDirectory: (host: WatchDirectoryHost, directory: string, callback: DirectoryWatcherCallback, flags: WatchDirectoryFlags, options: WatchOptions | undefined) => FileWatcher
   ): WatchFactory<X, Y> {
-    const createFileWatcher: CreateFileWatcher<WatchFileHost, PollingInterval, FileWatcherEventKind, never, X, Y> = getCreateFileWatcher(
-      watchLogLevel,
-      watchFile
-    );
-    const createFilePathWatcher: CreateFileWatcher<WatchFileHost, PollingInterval, FileWatcherEventKind, Path, X, Y> =
-      watchLogLevel === WatchLogLevel.None ? watchFilePath : createFileWatcher;
-    const createDirectoryWatcher: CreateFileWatcher<WatchDirectoryHost, WatchDirectoryFlags, undefined, never, X, Y> = getCreateFileWatcher(
-      watchLogLevel,
-      watchDirectory
-    );
+    const createFileWatcher: CreateFileWatcher<WatchFileHost, PollingInterval, FileWatcherEventKind, never, X, Y> = getCreateFileWatcher(watchLogLevel, watchFile);
+    const createFilePathWatcher: CreateFileWatcher<WatchFileHost, PollingInterval, FileWatcherEventKind, Path, X, Y> = watchLogLevel === WatchLogLevel.None ? watchFilePath : createFileWatcher;
+    const createDirectoryWatcher: CreateFileWatcher<WatchDirectoryHost, WatchDirectoryFlags, undefined, never, X, Y> = getCreateFileWatcher(watchLogLevel, watchDirectory);
     if (watchLogLevel === WatchLogLevel.Verbose && sysLog === noop) {
       setSysLog((s) => log(s));
     }
     return {
       watchFile: (host, file, callback, pollingInterval, options, detailInfo1, detailInfo2) =>
-        createFileWatcher(
-          host,
-          file,
-          callback,
-          pollingInterval,
-          options,
-          /*passThrough*/ undefined,
-          detailInfo1,
-          detailInfo2,
-          watchFile,
-          log,
-          'FileWatcher',
-          getDetailWatchInfo
-        ),
+        createFileWatcher(host, file, callback, pollingInterval, options, /*passThrough*/ undefined, detailInfo1, detailInfo2, watchFile, log, 'FileWatcher', getDetailWatchInfo),
       watchFilePath: (host, file, callback, pollingInterval, options, path, detailInfo1, detailInfo2) =>
-        createFilePathWatcher(
-          host,
-          file,
-          callback,
-          pollingInterval,
-          options,
-          path,
-          detailInfo1,
-          detailInfo2,
-          watchFile,
-          log,
-          'FileWatcher',
-          getDetailWatchInfo
-        ),
+        createFilePathWatcher(host, file, callback, pollingInterval, options, path, detailInfo1, detailInfo2, watchFile, log, 'FileWatcher', getDetailWatchInfo),
       watchDirectory: (host, directory, callback, flags, options, detailInfo1, detailInfo2) =>
-        createDirectoryWatcher(
-          host,
-          directory,
-          callback,
-          flags,
-          options,
-          /*passThrough*/ undefined,
-          detailInfo1,
-          detailInfo2,
-          watchDirectory,
-          log,
-          'DirectoryWatcher',
-          getDetailWatchInfo
-        ),
+        createDirectoryWatcher(host, directory, callback, flags, options, /*passThrough*/ undefined, detailInfo1, detailInfo2, watchDirectory, log, 'DirectoryWatcher', getDetailWatchInfo),
     };
   }
 
-  function watchFile(
-    host: WatchFileHost,
-    file: string,
-    callback: FileWatcherCallback,
-    pollingInterval: PollingInterval,
-    options: WatchOptions | undefined
-  ): FileWatcher {
+  function watchFile(host: WatchFileHost, file: string, callback: FileWatcherCallback, pollingInterval: PollingInterval, options: WatchOptions | undefined): FileWatcher {
     return host.watchFile(file, callback, pollingInterval, options);
   }
 
-  function watchFilePath(
-    host: WatchFileHost,
-    file: string,
-    callback: FilePathWatcherCallback,
-    pollingInterval: PollingInterval,
-    options: WatchOptions | undefined,
-    path: Path
-  ): FileWatcher {
+  function watchFilePath(host: WatchFileHost, file: string, callback: FilePathWatcherCallback, pollingInterval: PollingInterval, options: WatchOptions | undefined, path: Path): FileWatcher {
     return watchFile(host, file, (fileName, eventKind) => callback(fileName, eventKind, path), pollingInterval, options);
   }
 
-  function watchDirectory(
-    host: WatchDirectoryHost,
-    directory: string,
-    callback: DirectoryWatcherCallback,
-    flags: WatchDirectoryFlags,
-    options: WatchOptions | undefined
-  ): FileWatcher {
+  function watchDirectory(host: WatchDirectoryHost, directory: string, callback: DirectoryWatcherCallback, flags: WatchDirectoryFlags, options: WatchOptions | undefined): FileWatcher {
     return host.watchDirectory(directory, callback, (flags & WatchDirectoryFlags.Recursive) !== 0, options);
   }
 
@@ -564,20 +459,7 @@ namespace qnr {
     getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined
   ): FileWatcher {
     log(`${watchCaption}:: Added:: ${getWatchInfo(file, flags, options, detailInfo1, detailInfo2, getDetailWatchInfo)}`);
-    const watcher = createFileWatcherWithTriggerLogging(
-      host,
-      file,
-      cb,
-      flags,
-      options,
-      passThrough,
-      detailInfo1,
-      detailInfo2,
-      addWatch,
-      log,
-      watchCaption,
-      getDetailWatchInfo
-    );
+    const watcher = createFileWatcherWithTriggerLogging(host, file, cb, flags, options, passThrough, detailInfo1, detailInfo2, addWatch, log, watchCaption, getDetailWatchInfo);
     return {
       close: () => {
         log(`${watchCaption}:: Close:: ${getWatchInfo(file, flags, options, detailInfo1, detailInfo2, getDetailWatchInfo)}`);
@@ -603,20 +485,7 @@ namespace qnr {
     const watchInfo = `${watchCaption}:: Added:: ${getWatchInfo(file, flags, options, detailInfo1, detailInfo2, getDetailWatchInfo)}`;
     log(watchInfo);
     const start = timestamp();
-    const watcher = createFileWatcherWithTriggerLogging(
-      host,
-      file,
-      cb,
-      flags,
-      options,
-      passThrough,
-      detailInfo1,
-      detailInfo2,
-      addWatch,
-      log,
-      watchCaption,
-      getDetailWatchInfo
-    );
+    const watcher = createFileWatcherWithTriggerLogging(host, file, cb, flags, options, passThrough, detailInfo1, detailInfo2, addWatch, log, watchCaption, getDetailWatchInfo);
     const elapsed = timestamp() - start;
     log(`Elapsed:: ${elapsed}ms ${watchInfo}`);
     return {
@@ -675,14 +544,7 @@ namespace qnr {
     };
   }
 
-  function getWatchInfo<T, X, Y>(
-    file: string,
-    flags: T,
-    options: WatchOptions | undefined,
-    detailInfo1: X,
-    detailInfo2: Y | undefined,
-    getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined
-  ) {
+  function getWatchInfo<T, X, Y>(file: string, flags: T, options: WatchOptions | undefined, detailInfo1: X, detailInfo2: Y | undefined, getDetailWatchInfo: GetDetailWatchInfo<X, Y> | undefined) {
     return `WatchInfo: ${file} ${flags} ${JSON.stringify(options)} ${
       getDetailWatchInfo ? getDetailWatchInfo(detailInfo1, detailInfo2) : detailInfo2 === undefined ? detailInfo1 : `${detailInfo1} ${detailInfo2}`
     }`;
