@@ -159,86 +159,99 @@ namespace qnr {
     const getNodePos = () => scanner.getStartPos();
 
     const is = new (class {
-      isIdentifier() {
+      identifier() {
         if (tok() === Syntax.Identifier) return true;
         if (tok() === Syntax.YieldKeyword && flags.inContext(NodeFlags.YieldContext)) return false;
         if (tok() === Syntax.AwaitKeyword && flags.inContext(NodeFlags.AwaitContext)) return false;
         return tok() > Syntax.LastReservedWord;
       }
-      isLiteralPropertyName(): boolean {
+      identifierOrPrivateIdentifierOrPattern() {
+        return tok() === Syntax.OpenBraceToken || tok() === Syntax.OpenBracketToken || tok() === Syntax.PrivateIdentifier || this.identifier();
+      }
+      literalPropertyName() {
         return identifierOrKeyword(tok()) || tok() === Syntax.StringLiteral || tok() === Syntax.NumericLiteral;
       }
-      isValidHeritageClauseObjectLiteral() {
-        assert(tok() === Syntax.OpenBraceToken);
-        if (next.tok() === Syntax.CloseBraceToken) {
-          const t = next.tok();
-          return t === Syntax.CommaToken || t === Syntax.OpenBraceToken || t === Syntax.ExtendsKeyword || t === Syntax.ImplementsKeyword;
-        }
-        return true;
-      }
-      isHeritageClauseExtendsOrImplementsKeyword(): boolean {
-        if (tok() === Syntax.ImplementsKeyword || tok() === Syntax.ExtendsKeyword) return lookAhead(next.isStartOfExpression);
-        return false;
-      }
-      isVariableDeclaratorListTerminator(): boolean {
-        if (can.parseSemicolon()) return true;
-        if (isInOrOfKeyword(tok())) return true;
-        if (tok() === Syntax.EqualsGreaterThanToken) return true;
-        return false;
-      }
-      isStartOfParameter(isJSDocParameter: boolean): boolean {
-        return tok() === Syntax.Dot3Token || isIdentifierOrPrivateIdentifierOrPattern() || isModifierKind(tok()) || tok() === Syntax.AtToken || isStartOfType(!isJSDocParameter);
-      }
-      isIndexSignature(): boolean {
+      indexSignature() {
+        const isUnambiguouslyIndexSignature = () => {
+          next.tok();
+          if (tok() === Syntax.Dot3Token || tok() === Syntax.CloseBracketToken) return true;
+          if (isModifierKind(tok())) {
+            next.tok();
+            if (this.identifier()) return true;
+          } else if (!this.identifier()) return false;
+          else next.tok();
+          if (tok() === Syntax.ColonToken || tok() === Syntax.CommaToken) return true;
+          if (tok() !== Syntax.QuestionToken) return false;
+          next.tok();
+          return tok() === Syntax.ColonToken || tok() === Syntax.CommaToken || tok() === Syntax.CloseBracketToken;
+        };
         return tok() === Syntax.OpenBracketToken && lookAhead(isUnambiguouslyIndexSignature);
       }
-      isUnambiguouslyIndexSignature() {
-        next.tok();
-        if (tok() === Syntax.Dot3Token || tok() === Syntax.CloseBracketToken) return true;
-        if (isModifierKind(tok())) {
-          next.tok();
-          if (isIdentifier()) return true;
-        } else if (!isIdentifier()) return false;
-        else next.tok();
-        if (tok() === Syntax.ColonToken || tok() === Syntax.CommaToken) return true;
-        if (tok() !== Syntax.QuestionToken) return false;
-        next.tok();
-        return tok() === Syntax.ColonToken || tok() === Syntax.CommaToken || tok() === Syntax.CloseBracketToken;
+      declareModifier(modifier: Modifier) {
+        return modifier.kind === Syntax.DeclareKeyword;
       }
-      isTypeMemberStart(): boolean {
-        if (tok() === Syntax.OpenParenToken || tok() === Syntax.LessThanToken) return true;
-        let idToken = false;
-        while (isModifierKind(tok())) {
-          idToken = true;
-          next.tok();
-        }
-        if (tok() === Syntax.OpenBracketToken) return true;
-        if (isLiteralPropertyName()) {
-          idToken = true;
-          next.tok();
-        }
-        if (idToken) {
-          return (
-            tok() === Syntax.OpenParenToken || tok() === Syntax.LessThanToken || tok() === Syntax.QuestionToken || tok() === Syntax.ColonToken || tok() === Syntax.CommaToken || can.parseSemicolon()
-          );
-        }
-        return false;
+      heritageClause() {
+        return tok() === Syntax.ExtendsKeyword || tok() === Syntax.ImplementsKeyword;
       }
-      isStartOfMappedType() {
-        next.tok();
-        if (tok() === Syntax.PlusToken || tok() === Syntax.MinusToken) return next.tok() === Syntax.ReadonlyKeyword;
-        if (tok() === Syntax.ReadonlyKeyword) next.tok();
-        return tok() === Syntax.OpenBracketToken && next.isIdentifier() && next.tok() === Syntax.InKeyword;
+      startOfDeclaration() {
+        const isDeclaration = () => {
+          while (true) {
+            switch (tok()) {
+              case Syntax.VarKeyword:
+              case Syntax.LetKeyword:
+              case Syntax.ConstKeyword:
+              case Syntax.FunctionKeyword:
+              case Syntax.ClassKeyword:
+              case Syntax.EnumKeyword:
+                return true;
+              case Syntax.InterfaceKeyword:
+              case Syntax.TypeKeyword:
+                next.tok();
+                return !scanner.hasPrecedingLineBreak() && this.identifier();
+              case Syntax.ModuleKeyword:
+              case Syntax.NamespaceKeyword:
+                next.tok();
+                return !scanner.hasPrecedingLineBreak() && (this.identifier() || tok() === Syntax.StringLiteral);
+              case Syntax.AbstractKeyword:
+              case Syntax.AsyncKeyword:
+              case Syntax.DeclareKeyword:
+              case Syntax.PrivateKeyword:
+              case Syntax.ProtectedKeyword:
+              case Syntax.PublicKeyword:
+              case Syntax.ReadonlyKeyword:
+                next.tok();
+                if (scanner.hasPrecedingLineBreak()) return false;
+                continue;
+              case Syntax.GlobalKeyword:
+                next.tok();
+                return tok() === Syntax.OpenBraceToken || tok() === Syntax.Identifier || tok() === Syntax.ExportKeyword;
+              case Syntax.ImportKeyword:
+                next.tok();
+                return tok() === Syntax.StringLiteral || tok() === Syntax.AsteriskToken || tok() === Syntax.OpenBraceToken || identifierOrKeyword(tok());
+              case Syntax.ExportKeyword:
+                let currentToken = next.tok();
+                if (currentToken === Syntax.TypeKeyword) currentToken = lookAhead(next.tok);
+                if (
+                  currentToken === Syntax.EqualsToken ||
+                  currentToken === Syntax.AsteriskToken ||
+                  currentToken === Syntax.OpenBraceToken ||
+                  currentToken === Syntax.DefaultKeyword ||
+                  currentToken === Syntax.AsKeyword
+                ) {
+                  return true;
+                }
+                continue;
+              case Syntax.StaticKeyword:
+                next.tok();
+                continue;
+              default:
+                return false;
+            }
+          }
+        };
+        return lookAhead(isDeclaration);
       }
-      isTupleElementName() {
-        if (tok() === Syntax.Dot3Token) return identifierOrKeyword(next.tok()) && next.isColonOrQuestionColon();
-        return identifierOrKeyword(tok()) && next.isColonOrQuestionColon();
-      }
-      isStartOfTypeOfImportType() {
-        next.tok();
-        return tok() === Syntax.ImportKeyword;
-      }
-      isStartOfType(inStartOfParameter?: boolean): boolean {
+      startOfType(inParameter?: boolean) {
         switch (tok()) {
           case Syntax.AnyKeyword:
           case Syntax.UnknownKeyword:
@@ -276,271 +289,23 @@ namespace qnr {
           case Syntax.AssertsKeyword:
             return true;
           case Syntax.FunctionKeyword:
-            return !inStartOfParameter;
+            return !inParameter;
           case Syntax.MinusToken:
-            return !inStartOfParameter && lookAhead(next.isNumericOrBigIntLiteral);
+            return !inParameter && lookAhead(next.isNumericOrBigIntLiteral);
           case Syntax.OpenParenToken:
-            // Only consider '(' the start of a type if followed by ')', '...', an identifier, a modifier,
-            // or something that starts a type. We don't want to consider things like '(1)' a type.
-            return !inStartOfParameter && lookAhead(isStartOfParenthesizedOrFunctionType);
+            const isParenthesizedOrFunctionType = (): boolean => {
+              next.tok();
+              return tok() === Syntax.CloseParenToken || this.startOfParameter(false) || this.startOfType();
+            };
+            return !inParameter && lookAhead(isParenthesizedOrFunctionType);
           default:
-            return isIdentifier();
+            return this.identifier();
         }
       }
-      isStartOfParenthesizedOrFunctionType() {
-        next.tok();
-        return tok() === Syntax.CloseParenToken || isStartOfParameter(/*isJSDocParameter*/ false) || isStartOfType();
+      startOfParameter(isJSDocParameter: boolean) {
+        return tok() === Syntax.Dot3Token || this.identifierOrPrivateIdentifierOrPattern() || isModifierKind(tok()) || tok() === Syntax.AtToken || this.startOfType(!isJSDocParameter);
       }
-      isStartOfFunctionType(): boolean {
-        if (tok() === Syntax.LessThanToken) return true;
-        return tok() === Syntax.OpenParenToken && lookAhead(isUnambiguouslyStartOfFunctionType);
-      }
-      isUnambiguouslyStartOfFunctionType() {
-        next.tok();
-        if (tok() === Syntax.CloseParenToken || tok() === Syntax.Dot3Token) return true;
-        if (skipParameterStart()) {
-          if (tok() === Syntax.ColonToken || tok() === Syntax.CommaToken || tok() === Syntax.QuestionToken || tok() === Syntax.EqualsToken) return true;
-          if (tok() === Syntax.CloseParenToken) {
-            next.tok();
-            if (tok() === Syntax.EqualsGreaterThanToken) return true;
-          }
-        }
-        return false;
-      }
-      isStartOfLeftHandSideExpression() {
-        switch (tok()) {
-          case Syntax.ThisKeyword:
-          case Syntax.SuperKeyword:
-          case Syntax.NullKeyword:
-          case Syntax.TrueKeyword:
-          case Syntax.FalseKeyword:
-          case Syntax.NumericLiteral:
-          case Syntax.BigIntLiteral:
-          case Syntax.StringLiteral:
-          case Syntax.NoSubstitutionLiteral:
-          case Syntax.TemplateHead:
-          case Syntax.OpenParenToken:
-          case Syntax.OpenBracketToken:
-          case Syntax.OpenBraceToken:
-          case Syntax.FunctionKeyword:
-          case Syntax.ClassKeyword:
-          case Syntax.NewKeyword:
-          case Syntax.SlashToken:
-          case Syntax.SlashEqualsToken:
-          case Syntax.Identifier:
-            return true;
-          case Syntax.ImportKeyword:
-            return lookAhead(next.isOpenParenOrLessThanOrDot);
-          default:
-            return isIdentifier();
-        }
-      }
-      isStartOfExpression() {
-        if (isStartOfLeftHandSideExpression()) return true;
-        switch (tok()) {
-          case Syntax.PlusToken:
-          case Syntax.MinusToken:
-          case Syntax.TildeToken:
-          case Syntax.ExclamationToken:
-          case Syntax.DeleteKeyword:
-          case Syntax.TypeOfKeyword:
-          case Syntax.VoidKeyword:
-          case Syntax.Plus2Token:
-          case Syntax.Minus2Token:
-          case Syntax.LessThanToken:
-          case Syntax.AwaitKeyword:
-          case Syntax.YieldKeyword:
-          case Syntax.PrivateIdentifier:
-            return true;
-          default:
-            if (isBinaryOperator()) return true;
-            return isIdentifier();
-        }
-      }
-      isStartOfExpressionStatement() {
-        return tok() !== Syntax.OpenBraceToken && tok() !== Syntax.FunctionKeyword && tok() !== Syntax.ClassKeyword && tok() !== Syntax.AtToken && isStartOfExpression();
-      }
-      isYieldExpression() {
-        if (tok() === Syntax.YieldKeyword) {
-          if (flags.inContext(NodeFlags.YieldContext)) return true;
-          return lookAhead(next.isIdentifierOrKeywordOrLiteralOnSameLine);
-        }
-        return false;
-      }
-      isParenthesizedArrowFunctionExpression(): Tristate {
-        if (tok() === Syntax.OpenParenToken || tok() === Syntax.LessThanToken || tok() === Syntax.AsyncKeyword) {
-          return lookAhead(isParenthesizedArrowFunctionExpressionWorker);
-        }
-        if (tok() === Syntax.EqualsGreaterThanToken) return Tristate.True;
-        return Tristate.False;
-      }
-      isParenthesizedArrowFunctionExpressionWorker(): Tristate {
-        if (tok() === Syntax.AsyncKeyword) {
-          next.tok();
-          if (scanner.hasPrecedingLineBreak()) return Tristate.False;
-          if (tok() !== Syntax.OpenParenToken && tok() !== Syntax.LessThanToken) return Tristate.False;
-        }
-        const first = tok();
-        const second = next.tok();
-        if (first === Syntax.OpenParenToken) {
-          if (second === Syntax.CloseParenToken) {
-            const third = next.tok();
-            switch (third) {
-              case Syntax.EqualsGreaterThanToken:
-              case Syntax.ColonToken:
-              case Syntax.OpenBraceToken:
-                return Tristate.True;
-              default:
-                return Tristate.False;
-            }
-          }
-          if (second === Syntax.OpenBracketToken || second === Syntax.OpenBraceToken) return Tristate.Unknown;
-          if (second === Syntax.Dot3Token) return Tristate.True;
-          if (isModifierKind(second) && second !== Syntax.AsyncKeyword && lookAhead(nextTokenIsIdentifier)) return Tristate.True;
-          if (!isIdentifier() && second !== Syntax.ThisKeyword) return Tristate.False;
-          switch (next.tok()) {
-            case Syntax.ColonToken:
-              return Tristate.True;
-            case Syntax.QuestionToken:
-              next.tok();
-              if (tok() === Syntax.ColonToken || tok() === Syntax.CommaToken || tok() === Syntax.EqualsToken || tok() === Syntax.CloseParenToken) return Tristate.True;
-              return Tristate.False;
-            case Syntax.CommaToken:
-            case Syntax.EqualsToken:
-            case Syntax.CloseParenToken:
-              return Tristate.Unknown;
-          }
-          return Tristate.False;
-        } else {
-          assert(first === Syntax.LessThanToken);
-          if (!isIdentifier()) return Tristate.False;
-          if (sourceFile.languageVariant === LanguageVariant.JSX) {
-            const isArrowFunctionInJsx = lookAhead(() => {
-              const third = next.tok();
-              if (third === Syntax.ExtendsKeyword) {
-                const fourth = next.tok();
-                switch (fourth) {
-                  case Syntax.EqualsToken:
-                  case Syntax.GreaterThanToken:
-                    return false;
-                  default:
-                    return true;
-                }
-              } else if (third === Syntax.CommaToken) return true;
-              return false;
-            });
-            if (isArrowFunctionInJsx) return Tristate.True;
-            return Tristate.False;
-          }
-          return Tristate.Unknown;
-        }
-      }
-      isUnParenthesizedAsyncArrowFunctionWorker(): Tristate {
-        if (tok() === Syntax.AsyncKeyword) {
-          next.tok();
-          if (scanner.hasPrecedingLineBreak() || tok() === Syntax.EqualsGreaterThanToken) return Tristate.False;
-          const expr = parse.binaryExpressionOrHigher(/*precedence*/ 0);
-          if (!scanner.hasPrecedingLineBreak() && expr.kind === Syntax.Identifier && tok() === Syntax.EqualsGreaterThanToken) return Tristate.True;
-        }
-        return Tristate.False;
-      }
-      isInOrOfKeyword(t: Syntax) {
-        return t === Syntax.InKeyword || t === Syntax.OfKeyword;
-      }
-      isBinaryOperator() {
-        if (flags.inContext(NodeFlags.DisallowInContext) && tok() === Syntax.InKeyword) return false;
-
-        return getBinaryOperatorPrecedence(tok()) > 0;
-      }
-      isAwaitExpression() {
-        if (tok() === Syntax.AwaitKeyword) {
-          if (flags.inContext(NodeFlags.AwaitContext)) return true;
-          return lookAhead(next.isIdentifierOrKeywordOrLiteralOnSameLine);
-        }
-        return false;
-      }
-      isUpdateExpression() {
-        switch (tok()) {
-          case Syntax.PlusToken:
-          case Syntax.MinusToken:
-          case Syntax.TildeToken:
-          case Syntax.ExclamationToken:
-          case Syntax.DeleteKeyword:
-          case Syntax.TypeOfKeyword:
-          case Syntax.VoidKeyword:
-          case Syntax.AwaitKeyword:
-            return false;
-          case Syntax.LessThanToken:
-            if (sourceFile.languageVariant !== LanguageVariant.JSX) return false;
-          default:
-            return true;
-        }
-      }
-      isStartOfOptionalPropertyOrElementAccessChain() {
-        return tok() === Syntax.QuestionDotToken && lookAhead(next.isIdentifierOrKeywordOrOpenBracketOrTemplate);
-      }
-      isTemplateStartOfTaggedTemplate() {
-        return tok() === Syntax.NoSubstitutionLiteral || tok() === Syntax.TemplateHead;
-      }
-      isDeclaration() {
-        while (true) {
-          switch (tok()) {
-            case Syntax.VarKeyword:
-            case Syntax.LetKeyword:
-            case Syntax.ConstKeyword:
-            case Syntax.FunctionKeyword:
-            case Syntax.ClassKeyword:
-            case Syntax.EnumKeyword:
-              return true;
-            case Syntax.InterfaceKeyword:
-            case Syntax.TypeKeyword:
-              next.tok();
-              return !scanner.hasPrecedingLineBreak() && isIdentifier();
-            case Syntax.ModuleKeyword:
-            case Syntax.NamespaceKeyword:
-              next.tok();
-              return !scanner.hasPrecedingLineBreak() && (isIdentifier() || tok() === Syntax.StringLiteral);
-            case Syntax.AbstractKeyword:
-            case Syntax.AsyncKeyword:
-            case Syntax.DeclareKeyword:
-            case Syntax.PrivateKeyword:
-            case Syntax.ProtectedKeyword:
-            case Syntax.PublicKeyword:
-            case Syntax.ReadonlyKeyword:
-              next.tok();
-              if (scanner.hasPrecedingLineBreak()) return false;
-              continue;
-            case Syntax.GlobalKeyword:
-              next.tok();
-              return tok() === Syntax.OpenBraceToken || tok() === Syntax.Identifier || tok() === Syntax.ExportKeyword;
-            case Syntax.ImportKeyword:
-              next.tok();
-              return tok() === Syntax.StringLiteral || tok() === Syntax.AsteriskToken || tok() === Syntax.OpenBraceToken || identifierOrKeyword(tok());
-            case Syntax.ExportKeyword:
-              let currentToken = next.tok();
-              if (currentToken === Syntax.TypeKeyword) currentToken = lookAhead(nextToken);
-              if (
-                currentToken === Syntax.EqualsToken ||
-                currentToken === Syntax.AsteriskToken ||
-                currentToken === Syntax.OpenBraceToken ||
-                currentToken === Syntax.DefaultKeyword ||
-                currentToken === Syntax.AsKeyword
-              ) {
-                return true;
-              }
-              continue;
-            case Syntax.StaticKeyword:
-              next.tok();
-              continue;
-            default:
-              return false;
-          }
-        }
-      }
-      isStartOfDeclaration() {
-        return lookAhead(isDeclaration);
-      }
-      isStartOfStatement() {
+      startOfStatement() {
         switch (tok()) {
           case Syntax.AtToken:
           case Syntax.SemicolonToken:
@@ -566,10 +331,10 @@ namespace qnr {
           case Syntax.FinallyKeyword:
             return true;
           case Syntax.ImportKeyword:
-            return isStartOfDeclaration() || lookAhead(next.isOpenParenOrLessThanOrDot);
+            return this.startOfDeclaration() || lookAhead(next.isOpenParenOrLessThanOrDot);
           case Syntax.ConstKeyword:
           case Syntax.ExportKeyword:
-            return isStartOfDeclaration();
+            return this.startOfDeclaration();
           case Syntax.AsyncKeyword:
           case Syntax.DeclareKeyword:
           case Syntax.InterfaceKeyword:
@@ -583,90 +348,80 @@ namespace qnr {
           case Syntax.ProtectedKeyword:
           case Syntax.StaticKeyword:
           case Syntax.ReadonlyKeyword:
-            return isStartOfDeclaration() || !lookAhead(next.isIdentifierOrKeywordOnSameLine);
+            return this.startOfDeclaration() || !lookAhead(next.isIdentifierOrKeywordOnSameLine);
           default:
-            return isStartOfExpression();
+            return this.startOfExpression();
         }
       }
-      isLetDeclaration() {
-        return lookAhead(next.isIdentifierOrStartOfDestructuring);
-      }
-      isDeclareModifier(modifier: Modifier) {
-        return modifier.kind === Syntax.DeclareKeyword;
-      }
-      isIdentifierOrPrivateIdentifierOrPattern() {
-        return tok() === Syntax.OpenBraceToken || tok() === Syntax.OpenBracketToken || tok() === Syntax.PrivateIdentifier || isIdentifier();
-      }
-      isClassMemberStart() {
-        let idToken: Syntax | undefined;
-        if (tok() === Syntax.AtToken) return true;
-        while (isModifierKind(tok())) {
-          idToken = tok();
-          if (isClassMemberModifier(idToken)) return true;
-          next.tok();
+      startOfExpression() {
+        if (this.startOfLeftHandSideExpression()) return true;
+        switch (tok()) {
+          case Syntax.PlusToken:
+          case Syntax.MinusToken:
+          case Syntax.TildeToken:
+          case Syntax.ExclamationToken:
+          case Syntax.DeleteKeyword:
+          case Syntax.TypeOfKeyword:
+          case Syntax.VoidKeyword:
+          case Syntax.Plus2Token:
+          case Syntax.Minus2Token:
+          case Syntax.LessThanToken:
+          case Syntax.AwaitKeyword:
+          case Syntax.YieldKeyword:
+          case Syntax.PrivateIdentifier:
+            return true;
+          default:
+            const isBinaryOperator = () => {
+              if (flags.inContext(NodeFlags.DisallowInContext) && tok() === Syntax.InKeyword) return false;
+              return getBinaryOperatorPrecedence(tok()) > 0;
+            };
+            if (isBinaryOperator()) return true;
+            return this.identifier();
         }
-        if (tok() === Syntax.AsteriskToken) return true;
-        if (isLiteralPropertyName()) {
-          idToken = tok();
-          next.tok();
+      }
+      startOfLeftHandSideExpression() {
+        switch (tok()) {
+          case Syntax.ThisKeyword:
+          case Syntax.SuperKeyword:
+          case Syntax.NullKeyword:
+          case Syntax.TrueKeyword:
+          case Syntax.FalseKeyword:
+          case Syntax.NumericLiteral:
+          case Syntax.BigIntLiteral:
+          case Syntax.StringLiteral:
+          case Syntax.NoSubstitutionLiteral:
+          case Syntax.TemplateHead:
+          case Syntax.OpenParenToken:
+          case Syntax.OpenBracketToken:
+          case Syntax.OpenBraceToken:
+          case Syntax.FunctionKeyword:
+          case Syntax.ClassKeyword:
+          case Syntax.NewKeyword:
+          case Syntax.SlashToken:
+          case Syntax.SlashEqualsToken:
+          case Syntax.Identifier:
+            return true;
+          case Syntax.ImportKeyword:
+            return lookAhead(next.isOpenParenOrLessThanOrDot);
+          default:
+            return this.identifier();
         }
-        if (tok() === Syntax.OpenBracketToken) return true;
-        if (idToken !== undefined) {
-          if (!isKeyword(idToken) || idToken === Syntax.SetKeyword || idToken === Syntax.GetKeyword) return true;
-          switch (tok()) {
-            case Syntax.OpenParenToken: // Method declaration
-            case Syntax.LessThanToken: // Generic Method declaration
-            case Syntax.ExclamationToken: // Non-null assertion on property name
-            case Syntax.ColonToken: // Type Annotation for declaration
-            case Syntax.EqualsToken: // Initializer for declaration
-            case Syntax.QuestionToken: // Not valid, but permitted so that it gets caught later on.
-              return true;
-            default:
-              return can.parseSemicolon();
-          }
-        }
-        return false;
       }
-      isImplementsClause() {
-        return tok() === Syntax.ImplementsKeyword && lookAhead(next.isIdentifierOrKeyword);
+      inOrOfKeyword(t: Syntax) {
+        return t === Syntax.InKeyword || t === Syntax.OfKeyword;
       }
-      isHeritageClause() {
-        return tok() === Syntax.ExtendsKeyword || tok() === Syntax.ImplementsKeyword;
+      templateStartOfTaggedTemplate() {
+        return tok() === Syntax.NoSubstitutionLiteral || tok() === Syntax.TemplateHead;
       }
-      isExternalModuleReference() {
-        return tok() === Syntax.RequireKeyword && lookAhead(next.isOpenParen);
-      }
-      isAnExternalModuleIndicatorNode(n: Node) {
-        return hasModifierOfKind(n, Syntax.ExportKeyword) ||
-          (n.kind === Syntax.ImportEqualsDeclaration && (<ImportEqualsDeclaration>n).moduleReference.kind === Syntax.ExternalModuleReference) ||
-          n.kind === Syntax.ImportDeclaration ||
-          n.kind === Syntax.ExportAssignment ||
-          n.kind === Syntax.ExportDeclaration
-          ? n
-          : undefined;
-      }
-      isImportMeta(n: Node): boolean {
-        return isMetaProperty(n) && n.keywordToken === Syntax.ImportKeyword && n.name.escapedText === 'meta';
-      }
-      isObjectOrObjectArrayTypeReference(n: TypeNode): boolean {
+      objectOrObjectArrayTypeReference(n: TypeNode): boolean {
         switch (n.kind) {
           case Syntax.ObjectKeyword:
             return true;
           case Syntax.ArrayType:
-            return isObjectOrObjectArrayTypeReference((n as ArrayTypeNode).elementType);
+            return this.objectOrObjectArrayTypeReference((n as ArrayTypeNode).elementType);
           default:
             return TypeReferenceNode.kind(n) && isIdentifier(n.typeName) && n.typeName.escapedText === 'Object' && !n.typeArguments;
         }
-      }
-      isNextNonwhitespaceTokenEndOfFile(): boolean {
-        while (true) {
-          next.tokJSDoc();
-          if (tok() === Syntax.EndOfFileToken) return true;
-          if (!(tok() === Syntax.WhitespaceTrivia || tok() === Syntax.NewLineTrivia)) return false;
-        }
-      }
-      isMissingList(ns: NodeArray<Node>): boolean {
-        return !!(ns as MissingList<Node>).isMissingList;
       }
     })();
     const can = new (class {
@@ -675,7 +430,7 @@ namespace qnr {
         return tok() === Syntax.CloseBraceToken || tok() === Syntax.EndOfFileToken || scanner.hasPrecedingLineBreak();
       }
       followModifier() {
-        return tok() === Syntax.OpenBracketToken || tok() === Syntax.OpenBraceToken || tok() === Syntax.AsteriskToken || tok() === Syntax.Dot3Token || isLiteralPropertyName();
+        return tok() === Syntax.OpenBracketToken || tok() === Syntax.OpenBraceToken || tok() === Syntax.AsteriskToken || tok() === Syntax.Dot3Token || is.literalPropertyName();
       }
       followExportModifier() {
         return tok() !== Syntax.AsteriskToken && tok() !== Syntax.AsKeyword && tok() !== Syntax.OpenBraceToken && can.followModifier();
@@ -749,6 +504,13 @@ namespace qnr {
         if (scanner.hasPrecedingLineBreak()) return false;
         return can.followModifier();
       }
+      isNonwhitespaceTokenEndOfFile(): boolean {
+        while (true) {
+          next.tokJSDoc();
+          if (tok() === Syntax.EndOfFileToken) return true;
+          if (!(tok() === Syntax.WhitespaceTrivia || tok() === Syntax.NewLineTrivia)) return false;
+        }
+      }
       private canFollowExportModifier() {
         this.tok();
         return can.followExportModifier();
@@ -765,7 +527,7 @@ namespace qnr {
       }
       isIdentifier() {
         this.tok();
-        return isIdentifier();
+        return is.identifier();
       }
       isIdentifierOrKeyword() {
         this.tok();
@@ -777,11 +539,11 @@ namespace qnr {
       }
       isStartOfExpression() {
         this.tok();
-        return isStartOfExpression();
+        return is.startOfExpression();
       }
       isStartOfType() {
         this.tok();
-        return isStartOfType();
+        return is.startOfType();
       }
       isOpenParenOrLessThan() {
         this.tok();
@@ -805,7 +567,7 @@ namespace qnr {
       }
       isIdentifierOrKeywordOrOpenBracketOrTemplate() {
         this.tok();
-        return identifierOrKeyword(tok()) || tok() === Syntax.OpenBracketToken || isTemplateStartOfTaggedTemplate();
+        return identifierOrKeyword(tok()) || tok() === Syntax.OpenBracketToken || is.templateStartOfTaggedTemplate();
       }
       isIdentifierOrKeywordOnSameLine() {
         this.tok();
@@ -825,7 +587,7 @@ namespace qnr {
       }
       isIdentifierOrStartOfDestructuring() {
         this.tok();
-        return isIdentifier() || tok() === Syntax.OpenBraceToken || tok() === Syntax.OpenBracketToken;
+        return is.identifier() || tok() === Syntax.OpenBraceToken || tok() === Syntax.OpenBracketToken;
       }
       isOpenParen() {
         return this.tok() === Syntax.OpenParenToken;
@@ -897,8 +659,8 @@ namespace qnr {
     const create = new (class {
       nodeCount = 0;
       identifierCount = 0;
-      createSourceFile(fileName: string, languageVersion: ScriptTarget, scriptKind: ScriptKind, isDeclarationFile: boolean): SourceFile {
-        const s = <SourceFile>new SourceFileC(Syntax.SourceFile, /*pos*/ 0, /* end */ sourceText.length);
+      createSourceFile(fileName: string, languageVersion: ScriptTarget, scriptKind: ScriptKind, declaration: boolean): SourceFile {
+        const s = <SourceFile>new SourceFileC(Syntax.SourceFile, 0, sourceText.length);
         this.nodeCount++;
         s.text = sourceText;
         s.bindDiagnostics = [];
@@ -906,7 +668,7 @@ namespace qnr {
         s.languageVersion = languageVersion;
         s.fileName = normalizePath(fileName);
         s.languageVariant = getLanguageVariant(scriptKind);
-        s.isDeclarationFile = isDeclarationFile;
+        s.isDeclarationFile = declaration;
         s.scriptKind = scriptKind;
         return s;
       }
@@ -973,6 +735,19 @@ namespace qnr {
         next.tok();
         const n = create.node(k, type.pos) as OptionalTypeNode | JSDocOptionalType | JSDocNonNullableType | JSDocNullableType;
         n.type = type;
+        return finishNode(n);
+      }
+      makeBinaryExpression(left: Expression, operatorToken: BinaryOperatorToken, right: Expression): BinaryExpression {
+        const n = create.node(Syntax.BinaryExpression, left.pos);
+        n.left = left;
+        n.operatorToken = operatorToken;
+        n.right = right;
+        return finishNode(n);
+      }
+      makeAsExpression(left: Expression, right: TypeNode): AsExpression {
+        const n = create.node(Syntax.AsExpression, left.pos);
+        n.expression = left;
+        n.type = right;
         return finishNode(n);
       }
       createJSDocComment(): JSDoc {
@@ -1057,7 +832,7 @@ namespace qnr {
       tryReuseAmbientDeclaration(): Statement | undefined {
         return flags.withContext(NodeFlags.Ambient, () => {
           const n = this.nodeFor(this.value);
-          if (n) return consumeNode(n) as Statement;
+          if (n) return this.consumeNode(n) as Statement;
           return;
         });
       }
@@ -1167,21 +942,80 @@ namespace qnr {
         if ((n as JSDocContainer).jsDocCache) (n as JSDocContainer).jsDocCache = undefined;
         return n;
       }
+      private consumeNode(n: Node) {
+        scanner.setTextPos(n.end);
+        next.tok();
+        return n;
+      }
       private isListElement(c: Parser.Context, error: boolean) {
         if (this.nodeFor(c)) return true;
         switch (c) {
           case Parser.Context.SourceElements:
           case Parser.Context.BlockStatements:
           case Parser.Context.SwitchClauseStatements:
-            return !(tok() === Syntax.SemicolonToken && error) && isStartOfStatement();
+            return !(tok() === Syntax.SemicolonToken && error) && is.startOfStatement();
           case Parser.Context.SwitchClauses:
             return tok() === Syntax.CaseKeyword || tok() === Syntax.DefaultKeyword;
           case Parser.Context.TypeMembers:
+            const isTypeMemberStart = () => {
+              if (tok() === Syntax.OpenParenToken || tok() === Syntax.LessThanToken) return true;
+              let idToken = false;
+              while (isModifierKind(tok())) {
+                idToken = true;
+                next.tok();
+              }
+              if (tok() === Syntax.OpenBracketToken) return true;
+              if (is.literalPropertyName()) {
+                idToken = true;
+                next.tok();
+              }
+              if (idToken) {
+                return (
+                  tok() === Syntax.OpenParenToken ||
+                  tok() === Syntax.LessThanToken ||
+                  tok() === Syntax.QuestionToken ||
+                  tok() === Syntax.ColonToken ||
+                  tok() === Syntax.CommaToken ||
+                  can.parseSemicolon()
+                );
+              }
+              return false;
+            };
             return lookAhead(isTypeMemberStart);
           case Parser.Context.ClassMembers:
+            const isClassMemberStart = () => {
+              let t: Syntax | undefined;
+              if (tok() === Syntax.AtToken) return true;
+              while (isModifierKind(tok())) {
+                t = tok();
+                if (isClassMemberModifier(t)) return true;
+                next.tok();
+              }
+              if (tok() === Syntax.AsteriskToken) return true;
+              if (is.literalPropertyName()) {
+                t = tok();
+                next.tok();
+              }
+              if (tok() === Syntax.OpenBracketToken) return true;
+              if (t !== undefined) {
+                if (!isKeyword(t) || t === Syntax.SetKeyword || t === Syntax.GetKeyword) return true;
+                switch (tok()) {
+                  case Syntax.OpenParenToken:
+                  case Syntax.LessThanToken:
+                  case Syntax.ExclamationToken:
+                  case Syntax.ColonToken:
+                  case Syntax.EqualsToken:
+                  case Syntax.QuestionToken:
+                    return true;
+                  default:
+                    return can.parseSemicolon();
+                }
+              }
+              return false;
+            };
             return lookAhead(isClassMemberStart) || (tok() === Syntax.SemicolonToken && !error);
           case Parser.Context.EnumMembers:
-            return tok() === Syntax.OpenBracketToken || isLiteralPropertyName();
+            return tok() === Syntax.OpenBracketToken || is.literalPropertyName();
           case Parser.Context.ObjectLiteralMembers:
             switch (tok()) {
               case Syntax.OpenBracketToken:
@@ -1190,22 +1024,34 @@ namespace qnr {
               case Syntax.DotToken:
                 return true;
               default:
-                return isLiteralPropertyName();
+                return is.literalPropertyName();
             }
           case Parser.Context.RestProperties:
-            return isLiteralPropertyName();
+            return is.literalPropertyName();
           case Parser.Context.ObjectBindingElements:
-            return tok() === Syntax.OpenBracketToken || tok() === Syntax.Dot3Token || isLiteralPropertyName();
+            return tok() === Syntax.OpenBracketToken || tok() === Syntax.Dot3Token || is.literalPropertyName();
           case Parser.Context.HeritageClauseElement:
-            if (tok() === Syntax.OpenBraceToken) return lookAhead(isValidHeritageClauseObjectLiteral);
-            if (!error) return isStartOfLeftHandSideExpression() && !isHeritageClauseExtendsOrImplementsKeyword();
-            return isIdentifier() && !isHeritageClauseExtendsOrImplementsKeyword();
+            const isHeritageClauseObjectLiteral = () => {
+              assert(tok() === Syntax.OpenBraceToken);
+              if (next.tok() === Syntax.CloseBraceToken) {
+                const t = next.tok();
+                return t === Syntax.CommaToken || t === Syntax.OpenBraceToken || t === Syntax.ExtendsKeyword || t === Syntax.ImplementsKeyword;
+              }
+              return true;
+            };
+            if (tok() === Syntax.OpenBraceToken) return lookAhead(isHeritageClauseObjectLiteral);
+            const isExtendsOrImplementsKeyword = () => {
+              if (tok() === Syntax.ImplementsKeyword || tok() === Syntax.ExtendsKeyword) return lookAhead(next.isStartOfExpression);
+              return false;
+            };
+            if (!error) return is.startOfLeftHandSideExpression() && !isExtendsOrImplementsKeyword();
+            return is.identifier() && !isExtendsOrImplementsKeyword();
           case Parser.Context.VariableDeclarations:
-            return isIdentifierOrPrivateIdentifierOrPattern();
+            return is.identifierOrPrivateIdentifierOrPattern();
           case Parser.Context.ArrayBindingElements:
-            return tok() === Syntax.CommaToken || tok() === Syntax.Dot3Token || isIdentifierOrPrivateIdentifierOrPattern();
+            return tok() === Syntax.CommaToken || tok() === Syntax.Dot3Token || is.identifierOrPrivateIdentifierOrPattern();
           case Parser.Context.TypeParameters:
-            return isIdentifier();
+            return is.identifier();
           case Parser.Context.ArrayLiteralMembers:
             switch (tok()) {
               case Syntax.CommaToken:
@@ -1213,16 +1059,16 @@ namespace qnr {
                 return true;
             }
           case Parser.Context.ArgumentExpressions:
-            return tok() === Syntax.Dot3Token || isStartOfExpression();
+            return tok() === Syntax.Dot3Token || is.startOfExpression();
           case Parser.Context.Parameters:
-            return isStartOfParameter(false);
+            return is.startOfParameter(false);
           case Parser.Context.JSDocParameters:
-            return isStartOfParameter(true);
+            return is.startOfParameter(true);
           case Parser.Context.TypeArguments:
           case Parser.Context.TupleElementTypes:
-            return tok() === Syntax.CommaToken || isStartOfType();
+            return tok() === Syntax.CommaToken || is.startOfType();
           case Parser.Context.HeritageClauses:
-            return isHeritageClause();
+            return is.heritageClause();
           case Parser.Context.ImportOrExportSpecifiers:
             return identifierOrKeyword(tok());
           case Parser.Context.JsxAttributes:
@@ -1249,7 +1095,13 @@ namespace qnr {
           case Parser.Context.HeritageClauseElement:
             return tok() === Syntax.OpenBraceToken || tok() === Syntax.ExtendsKeyword || tok() === Syntax.ImplementsKeyword;
           case Parser.Context.VariableDeclarations:
-            return isVariableDeclaratorListTerminator();
+            const isTerminator = () => {
+              if (can.parseSemicolon()) return true;
+              if (is.inOrOfKeyword(tok())) return true;
+              if (tok() === Syntax.EqualsGreaterThanToken) return true;
+              return false;
+            };
+            return isTerminator();
           case Parser.Context.TypeParameters:
             return tok() === Syntax.GreaterThanToken || tok() === Syntax.OpenParenToken || tok() === Syntax.OpenBraceToken || tok() === Syntax.ExtendsKeyword || tok() === Syntax.ImplementsKeyword;
           case Parser.Context.ArgumentExpressions:
@@ -1276,7 +1128,7 @@ namespace qnr {
       }
       private parseListElement<T extends Node>(c: Parser.Context, cb: () => T): T {
         const n = this.nodeFor(c);
-        if (n) return <T>consumeNode(n);
+        if (n) return this.consumeNode(n) as T;
         return cb();
       }
       private abort(c: Parser.Context) {
@@ -1382,7 +1234,7 @@ namespace qnr {
         return this.expected(Syntax.SemicolonToken);
       }
       identifier(m?: DiagnosticMessage, pm?: DiagnosticMessage): Identifier {
-        return create.identifier(isIdentifier(), m, pm);
+        return create.identifier(is.identifier(), m, pm);
       }
       identifierName(m?: DiagnosticMessage): Identifier {
         return create.identifier(identifierOrKeyword(tok()), m);
@@ -1406,6 +1258,11 @@ namespace qnr {
       }
       privateIdentifier(): PrivateIdentifier {
         const n = create.node(Syntax.PrivateIdentifier);
+        const internPrivateIdentifier = (s: string): string => {
+          let i = privateIdentifiers.get(s);
+          if (i === undefined) privateIdentifiers.set(s, (i = s));
+          return i;
+        };
         n.escapedText = Scanner.escUnderscores(internPrivateIdentifier(scanner.getTokenText()));
         next.tok();
         return finishNode(n);
@@ -1527,7 +1384,7 @@ namespace qnr {
         const n = create.node(Syntax.TypeParameter);
         n.name = this.identifier();
         if (this.optional(Syntax.ExtendsKeyword)) {
-          if (isStartOfType() || !isStartOfExpression()) n.constraint = this.type();
+          if (is.startOfType() || !is.startOfExpression()) n.constraint = this.type();
           else n.expression = this.unaryExpressionOrHigher();
         }
         if (this.optional(Syntax.EqualsToken)) n.default = this.type();
@@ -1619,7 +1476,7 @@ namespace qnr {
             if (tok() === Syntax.NewKeyword && lookAhead(next.isOpenParenOrLessThan)) return this.signatureMember(Syntax.ConstructSignature);
             const n = create.nodeWithJSDoc(Syntax.Unknown);
             n.modifiers = this.modifiers();
-            if (isIndexSignature()) return this.indexSignatureDeclaration(<IndexSignatureDeclaration>n);
+            if (is.indexSignature()) return this.indexSignatureDeclaration(<IndexSignatureDeclaration>n);
             return this.propertyOrMethodSignature(<PropertySignature | MethodSignature>n);
           };
           es = ctx.parseList(Parser.Context.TypeMembers, typeMember);
@@ -1668,6 +1525,10 @@ namespace qnr {
       tupleType(): TupleTypeNode {
         const n = create.node(Syntax.TupleType);
         const nameOrType = () => {
+          const isTupleElementName = () => {
+            if (tok() === Syntax.Dot3Token) return identifierOrKeyword(next.tok()) && next.isColonOrQuestionColon();
+            return identifierOrKeyword(tok()) && next.isColonOrQuestionColon();
+          };
           if (lookAhead(isTupleElementName)) {
             const n = create.node(Syntax.NamedTupleMember);
             n.dot3Token = this.optionalToken(Syntax.Dot3Token);
@@ -1746,13 +1607,11 @@ namespace qnr {
           case Syntax.ObjectKeyword:
             return tryParse(this.keywordAndNoDot) || this.typeReference();
           case Syntax.AsteriskToken:
-            return parseJSDoc.allType(/*postfixEquals*/ false);
+            return parseJSDoc.allType(false);
           case Syntax.AsteriskEqualsToken:
-            return parseJSDoc.allType(/*postfixEquals*/ true);
+            return parseJSDoc.allType(true);
           case Syntax.Question2Token:
-            // If there is '??', consider that is prefix '?' in JSDoc type.
             scanner.reScanQuestionToken();
-          // falls through
           case Syntax.QuestionToken:
             return parseJSDoc.unknownOrNullableType();
           case Syntax.FunctionKeyword:
@@ -1780,8 +1639,18 @@ namespace qnr {
             }
           }
           case Syntax.TypeOfKeyword:
+            const isStartOfTypeOfImportType = () => {
+              next.tok();
+              return tok() === Syntax.ImportKeyword;
+            };
             return lookAhead(isStartOfTypeOfImportType) ? this.importType() : this.typeQuery();
           case Syntax.OpenBraceToken:
+            const isStartOfMappedType = () => {
+              next.tok();
+              if (tok() === Syntax.PlusToken || tok() === Syntax.MinusToken) return next.tok() === Syntax.ReadonlyKeyword;
+              if (tok() === Syntax.ReadonlyKeyword) next.tok();
+              return tok() === Syntax.OpenBracketToken && next.isIdentifier() && next.tok() === Syntax.InKeyword;
+            };
             return lookAhead(isStartOfMappedType) ? this.mappedType() : this.typeLiteral();
           case Syntax.OpenBracketToken:
             return this.tupleType();
@@ -1808,7 +1677,7 @@ namespace qnr {
               break;
             case Syntax.OpenBracketToken:
               this.expected(Syntax.OpenBracketToken);
-              if (isStartOfType()) {
+              if (is.startOfType()) {
                 const n = create.node(Syntax.IndexedAccessType, type.pos);
                 n.objectType = type;
                 n.indexType = this.type();
@@ -1876,7 +1745,7 @@ namespace qnr {
         return this.unionOrIntersectionType(Syntax.UnionType, this.intersectionTypeOrHigher, Syntax.BarToken);
       }
       typeOrTypePredicate(): TypeNode {
-        const typePredicateVariable = isIdentifier() && tryParse(this.typePredicatePrefix);
+        const typePredicateVariable = is.identifier() && tryParse(this.typePredicatePrefix);
         const type = this.type();
         if (typePredicateVariable) {
           const n = create.node(Syntax.TypePredicate, typePredicateVariable.pos);
@@ -1906,6 +1775,35 @@ namespace qnr {
         return flags.withoutContext(NodeFlags.TypeExcludesFlags, this.typeWorker);
       }
       typeWorker(noConditionalTypes?: boolean): TypeNode {
+        const isStartOfFunctionType = () => {
+          if (tok() === Syntax.LessThanToken) return true;
+          const isUnambiguouslyStartOfFunctionType = () => {
+            next.tok();
+            if (tok() === Syntax.CloseParenToken || tok() === Syntax.Dot3Token) return true;
+            const skipParameterStart = () => {
+              if (isModifierKind(tok())) parse.modifiers();
+              if (is.identifier() || tok() === Syntax.ThisKeyword) {
+                next.tok();
+                return true;
+              }
+              if (tok() === Syntax.OpenBracketToken || tok() === Syntax.OpenBraceToken) {
+                const previousErrorCount = parseDiagnostics.length;
+                parse.identifierOrPattern();
+                return previousErrorCount === parseDiagnostics.length;
+              }
+              return false;
+            };
+            if (skipParameterStart()) {
+              if (tok() === Syntax.ColonToken || tok() === Syntax.CommaToken || tok() === Syntax.QuestionToken || tok() === Syntax.EqualsToken) return true;
+              if (tok() === Syntax.CloseParenToken) {
+                next.tok();
+                if (tok() === Syntax.EqualsGreaterThanToken) return true;
+              }
+            }
+            return false;
+          };
+          return tok() === Syntax.OpenParenToken && lookAhead(isUnambiguouslyStartOfFunctionType);
+        };
         if (isStartOfFunctionType() || tok() === Syntax.NewKeyword) return this.functionOrConstructorType();
         const type = this.unionTypeOrHigher();
         if (!noConditionalTypes && !scanner.hasPrecedingLineBreak() && this.optional(Syntax.ExtendsKeyword)) {
@@ -1938,18 +1836,123 @@ namespace qnr {
         return this.optional(Syntax.EqualsToken) ? this.assignmentExpressionOrHigher() : undefined;
       }
       assignmentExpressionOrHigher(): Expression {
+        const isYieldExpression = () => {
+          if (tok() === Syntax.YieldKeyword) {
+            if (flags.inContext(NodeFlags.YieldContext)) return true;
+            return lookAhead(next.isIdentifierOrKeywordOrLiteralOnSameLine);
+          }
+          return false;
+        };
         if (isYieldExpression()) return this.yieldExpression();
-        const arrowExpression = tryParseParenthesizedArrowFunctionExpression() || tryParseAsyncSimpleArrowFunctionExpression();
-        if (arrowExpression) return arrowExpression;
-        const expr = this.binaryExpressionOrHigher(/*precedence*/ 0);
-        if (expr.kind === Syntax.Identifier && tok() === Syntax.EqualsGreaterThanToken) return this.simpleArrowFunctionExpression(<Identifier>expr);
-        if (isLeftHandSideExpression(expr) && isAssignmentOperator(reScanGreaterToken())) return makeBinaryExpression(expr, this.tokenNode(), this.assignmentExpressionOrHigher());
-        return this.conditionalExpressionRest(expr);
+        const tryParenthesizedArrowFunction = () => {
+          const isParenthesizedArrowFunction = (): Tristate => {
+            if (tok() === Syntax.OpenParenToken || tok() === Syntax.LessThanToken || tok() === Syntax.AsyncKeyword) {
+              const worker = (): Tristate => {
+                if (tok() === Syntax.AsyncKeyword) {
+                  next.tok();
+                  if (scanner.hasPrecedingLineBreak()) return Tristate.False;
+                  if (tok() !== Syntax.OpenParenToken && tok() !== Syntax.LessThanToken) return Tristate.False;
+                }
+                const first = tok();
+                const second = next.tok();
+                if (first === Syntax.OpenParenToken) {
+                  if (second === Syntax.CloseParenToken) {
+                    const third = next.tok();
+                    switch (third) {
+                      case Syntax.EqualsGreaterThanToken:
+                      case Syntax.ColonToken:
+                      case Syntax.OpenBraceToken:
+                        return Tristate.True;
+                      default:
+                        return Tristate.False;
+                    }
+                  }
+                  if (second === Syntax.OpenBracketToken || second === Syntax.OpenBraceToken) return Tristate.Unknown;
+                  if (second === Syntax.Dot3Token) return Tristate.True;
+                  if (isModifierKind(second) && second !== Syntax.AsyncKeyword && lookAhead(next.isIdentifier)) return Tristate.True;
+                  if (!is.identifier() && second !== Syntax.ThisKeyword) return Tristate.False;
+                  switch (next.tok()) {
+                    case Syntax.ColonToken:
+                      return Tristate.True;
+                    case Syntax.QuestionToken:
+                      next.tok();
+                      if (tok() === Syntax.ColonToken || tok() === Syntax.CommaToken || tok() === Syntax.EqualsToken || tok() === Syntax.CloseParenToken) return Tristate.True;
+                      return Tristate.False;
+                    case Syntax.CommaToken:
+                    case Syntax.EqualsToken:
+                    case Syntax.CloseParenToken:
+                      return Tristate.Unknown;
+                  }
+                  return Tristate.False;
+                } else {
+                  assert(first === Syntax.LessThanToken);
+                  if (!is.identifier()) return Tristate.False;
+                  if (sourceFile.languageVariant === LanguageVariant.JSX) {
+                    const isArrowFunctionInJsx = lookAhead(() => {
+                      const third = next.tok();
+                      if (third === Syntax.ExtendsKeyword) {
+                        const fourth = next.tok();
+                        switch (fourth) {
+                          case Syntax.EqualsToken:
+                          case Syntax.GreaterThanToken:
+                            return false;
+                          default:
+                            return true;
+                        }
+                      } else if (third === Syntax.CommaToken) return true;
+                      return false;
+                    });
+                    if (isArrowFunctionInJsx) return Tristate.True;
+                    return Tristate.False;
+                  }
+                  return Tristate.Unknown;
+                }
+              };
+              return lookAhead(worker);
+            }
+            if (tok() === Syntax.EqualsGreaterThanToken) return Tristate.True;
+            return Tristate.False;
+          };
+          const triState = isParenthesizedArrowFunction();
+          if (triState === Tristate.False) return;
+          const arrowFunction = triState === Tristate.True ? parse.parenthesizedArrowFunctionExpressionHead(true) : tryParse(parse.possibleParenthesizedArrowFunctionExpressionHead);
+          if (!arrowFunction) return;
+          const isAsync = hasModifierOfKind(arrowFunction, Syntax.AsyncKeyword);
+          const lastToken = tok();
+          arrowFunction.equalsGreaterThanToken = parse.expectedToken(Syntax.EqualsGreaterThanToken);
+          arrowFunction.body = lastToken === Syntax.EqualsGreaterThanToken || lastToken === Syntax.OpenBraceToken ? parse.arrowFunctionExpressionBody(isAsync) : parse.identifier();
+          return finishNode(arrowFunction);
+        };
+        const tryAsyncArrowFunction = () => {
+          if (tok() === Syntax.AsyncKeyword) {
+            const worker = (): Tristate => {
+              if (tok() === Syntax.AsyncKeyword) {
+                next.tok();
+                if (scanner.hasPrecedingLineBreak() || tok() === Syntax.EqualsGreaterThanToken) return Tristate.False;
+                const e = parse.binaryExpressionOrHigher(0);
+                if (!scanner.hasPrecedingLineBreak() && e.kind === Syntax.Identifier && tok() === Syntax.EqualsGreaterThanToken) return Tristate.True;
+              }
+              return Tristate.False;
+            };
+            if (lookAhead(worker) === Tristate.True) {
+              const m = parse.modifiersForArrowFunction();
+              const e = parse.binaryExpressionOrHigher(0);
+              return parse.simpleArrowFunctionExpression(e as Identifier, m);
+            }
+          }
+          return;
+        };
+        const arrow = tryParenthesizedArrowFunction() || tryAsyncArrowFunction();
+        if (arrow) return arrow;
+        const e = this.binaryExpressionOrHigher(0);
+        if (e.kind === Syntax.Identifier && tok() === Syntax.EqualsGreaterThanToken) return this.simpleArrowFunctionExpression(e as Identifier);
+        if (isLeftHandSideExpression(e) && isAssignmentOperator(reScanGreaterToken())) return makeBinaryExpression(e, this.tokenNode(), this.assignmentExpressionOrHigher());
+        return this.conditionalExpressionRest(e);
       }
       yieldExpression(): YieldExpression {
         const n = create.node(Syntax.YieldExpression);
         next.tok();
-        if (!scanner.hasPrecedingLineBreak() && (tok() === Syntax.AsteriskToken || isStartOfExpression())) {
+        if (!scanner.hasPrecedingLineBreak() && (tok() === Syntax.AsteriskToken || is.startOfExpression())) {
           n.asteriskToken = this.optionalToken(Syntax.AsteriskToken);
           n.expression = this.assignmentExpressionOrHigher();
           return finishNode(n);
@@ -1972,10 +1975,10 @@ namespace qnr {
         return addJSDocComment(finishNode(n));
       }
       possibleParenthesizedArrowFunctionExpressionHead(): ArrowFunction | undefined {
-        const tokenPos = scanner.getTokenPos();
-        if (notParenthesizedArrow && notParenthesizedArrow.has(tokenPos.toString())) return;
-        const result = this.parenthesizedArrowFunctionExpressionHead(/*allowAmbiguity*/ false);
-        if (!result) (notParenthesizedArrow || (notParenthesizedArrow = createMap())).set(tokenPos.toString(), true);
+        const p = scanner.getTokenPos();
+        if (notParenthesizedArrow && notParenthesizedArrow.has(p.toString())) return;
+        const result = this.parenthesizedArrowFunctionExpressionHead(false);
+        if (!result) (notParenthesizedArrow || (notParenthesizedArrow = createMap())).set(p.toString(), true);
         return result;
       }
       parenthesizedArrowFunctionExpressionHead(allowAmbiguity: boolean): ArrowFunction | undefined {
@@ -1988,20 +1991,21 @@ namespace qnr {
         return n;
       }
       arrowFunctionExpressionBody(isAsync: boolean): Block | Expression {
-        if (tok() === Syntax.OpenBraceToken) {
-          return this.functionBlock(isAsync ? SignatureFlags.Await : SignatureFlags.None);
-        }
-        if (tok() !== Syntax.SemicolonToken && tok() !== Syntax.FunctionKeyword && tok() !== Syntax.ClassKeyword && isStartOfStatement() && !isStartOfExpressionStatement()) {
+        if (tok() === Syntax.OpenBraceToken) return this.functionBlock(isAsync ? SignatureFlags.Await : SignatureFlags.None);
+        const isStartOfExpressionStatement = () => {
+          return tok() !== Syntax.OpenBraceToken && tok() !== Syntax.FunctionKeyword && tok() !== Syntax.ClassKeyword && tok() !== Syntax.AtToken && is.startOfExpression();
+        };
+        if (tok() !== Syntax.SemicolonToken && tok() !== Syntax.FunctionKeyword && tok() !== Syntax.ClassKeyword && is.startOfStatement() && !isStartOfExpressionStatement()) {
           return this.functionBlock(SignatureFlags.IgnoreMissingOpenBrace | (isAsync ? SignatureFlags.Await : SignatureFlags.None));
         }
         return isAsync ? flags.withAwait(this.assignmentExpressionOrHigher) : flags.withoutAwait(this.assignmentExpressionOrHigher);
       }
       conditionalExpressionRest(leftOperand: Expression): Expression {
-        const questionToken = this.optionalToken(Syntax.QuestionToken);
-        if (!questionToken) return leftOperand;
+        const t = this.optionalToken(Syntax.QuestionToken);
+        if (!t) return leftOperand;
         const n = create.node(Syntax.ConditionalExpression, leftOperand.pos);
         n.condition = leftOperand;
-        n.questionToken = questionToken;
+        n.questionToken = t;
         n.whenTrue = flags.withoutContext(withDisallowInDecoratorContext, this.assignmentExpressionOrHigher);
         n.colonToken = this.expectedToken(Syntax.ColonToken);
         n.whenFalse = nodeIsPresent(n.colonToken) ? this.assignmentExpressionOrHigher() : create.missingNode(Syntax.Identifier, false, Diagnostics._0_expected, toString(Syntax.ColonToken));
@@ -2030,7 +2034,7 @@ namespace qnr {
       }
       prefixUnaryExpression() {
         const n = create.node(Syntax.PrefixUnaryExpression);
-        n.operator = <PrefixUnaryOperator>tok();
+        n.operator = tok() as PrefixUnaryOperator;
         next.tok();
         n.operand = this.simpleUnaryExpression();
         return finishNode(n);
@@ -2060,16 +2064,33 @@ namespace qnr {
         return finishNode(n);
       }
       unaryExpressionOrHigher(): UnaryExpression | BinaryExpression {
+        const isUpdateExpression = () => {
+          switch (tok()) {
+            case Syntax.PlusToken:
+            case Syntax.MinusToken:
+            case Syntax.TildeToken:
+            case Syntax.ExclamationToken:
+            case Syntax.DeleteKeyword:
+            case Syntax.TypeOfKeyword:
+            case Syntax.VoidKeyword:
+            case Syntax.AwaitKeyword:
+              return false;
+            case Syntax.LessThanToken:
+              if (sourceFile.languageVariant !== LanguageVariant.JSX) return false;
+            default:
+              return true;
+          }
+        };
         if (isUpdateExpression()) {
-          const updateExpression = this.updateExpression();
-          return tok() === Syntax.Asterisk2Token ? <BinaryExpression>this.binaryExpressionRest(getBinaryOperatorPrecedence(tok()), updateExpression) : updateExpression;
+          const e = this.updateExpression();
+          return tok() === Syntax.Asterisk2Token ? <BinaryExpression>this.binaryExpressionRest(getBinaryOperatorPrecedence(tok()), e) : e;
         }
         const unaryOperator = tok();
-        const simpleUnaryExpression = this.simpleUnaryExpression();
+        const e = this.simpleUnaryExpression();
         if (tok() === Syntax.Asterisk2Token) {
-          const pos = Scanner.skipTrivia(sourceText, simpleUnaryExpression.pos);
-          const { end } = simpleUnaryExpression;
-          if (simpleUnaryExpression.kind === Syntax.TypeAssertionExpression) {
+          const pos = Scanner.skipTrivia(sourceText, e.pos);
+          const { end } = e;
+          if (e.kind === Syntax.TypeAssertionExpression) {
             this.errorAt(pos, end, Diagnostics.A_type_assertion_expression_is_not_allowed_in_the_left_hand_side_of_an_exponentiation_expression_Consider_enclosing_the_expression_in_parentheses);
           } else {
             this.errorAt(
@@ -2080,7 +2101,7 @@ namespace qnr {
             );
           }
         }
-        return simpleUnaryExpression;
+        return e;
       }
       simpleUnaryExpression(): UnaryExpression {
         switch (tok()) {
@@ -2098,6 +2119,13 @@ namespace qnr {
           case Syntax.LessThanToken:
             return this.typeAssertion();
           case Syntax.AwaitKeyword:
+            const isAwaitExpression = () => {
+              if (tok() === Syntax.AwaitKeyword) {
+                if (flags.inContext(NodeFlags.AwaitContext)) return true;
+                return lookAhead(next.isIdentifierOrKeywordOrLiteralOnSameLine);
+              }
+              return false;
+            };
             if (isAwaitExpression()) return this.awaitExpression();
           default:
             return this.updateExpression();
@@ -2178,7 +2206,7 @@ namespace qnr {
         n.expression = expression;
         n.questionDotToken = questionDotToken;
         n.name = this.rightSideOfDot(true, true);
-        if (questionDotToken || tryReparseOptionalChain(expression)) {
+        if (questionDotToken || parse.reparseOptionalChain(expression)) {
           n.flags |= NodeFlags.OptionalChain;
           if (isPrivateIdentifier(n.name)) this.errorAtRange(n.name, Diagnostics.An_optional_chain_cannot_contain_private_identifiers);
         }
@@ -2196,14 +2224,17 @@ namespace qnr {
           n.argumentExpression = argument;
         }
         this.expected(Syntax.CloseBracketToken);
-        if (questionDotToken || tryReparseOptionalChain(expression)) n.flags |= NodeFlags.OptionalChain;
+        if (questionDotToken || parse.reparseOptionalChain(expression)) n.flags |= NodeFlags.OptionalChain;
         return finishNode(n);
       }
       memberExpressionRest(expression: LeftHandSideExpression, allowOptionalChain: boolean): MemberExpression {
         while (true) {
           let questionDotToken: QuestionDotToken | undefined;
           let isPropertyAccess = false;
-          if (allowOptionalChain && isStartOfOptionalPropertyOrElementAccessChain()) {
+          const isStartOfChain = () => {
+            return tok() === Syntax.QuestionDotToken && lookAhead(next.isIdentifierOrKeywordOrOpenBracketOrTemplate);
+          };
+          if (allowOptionalChain && isStartOfChain()) {
             questionDotToken = this.expectedToken(Syntax.QuestionDotToken);
             isPropertyAccess = identifierOrKeyword(tok());
           } else isPropertyAccess = this.optional(Syntax.DotToken);
@@ -2222,7 +2253,7 @@ namespace qnr {
             expression = this.elementAccessExpressionRest(expression, questionDotToken);
             continue;
           }
-          if (isTemplateStartOfTaggedTemplate()) {
+          if (is.templateStartOfTaggedTemplate()) {
             expression = this.taggedTemplateRest(expression, questionDotToken, undefined);
             continue;
           }
@@ -2245,7 +2276,7 @@ namespace qnr {
           if (tok() === Syntax.LessThanToken || tok() === Syntax.LessThan2Token) {
             const typeArguments = tryParse(this.typeArgumentsInExpression);
             if (typeArguments) {
-              if (isTemplateStartOfTaggedTemplate()) {
+              if (is.templateStartOfTaggedTemplate()) {
                 expression = this.taggedTemplateRest(expression, questionDotToken, typeArguments);
                 continue;
               }
@@ -2254,7 +2285,7 @@ namespace qnr {
               n.questionDotToken = questionDotToken;
               n.typeArguments = typeArguments;
               n.arguments = this.argumentList();
-              if (questionDotToken || tryReparseOptionalChain(expression)) n.flags |= NodeFlags.OptionalChain;
+              if (questionDotToken || parse.reparseOptionalChain(expression)) n.flags |= NodeFlags.OptionalChain;
               expression = finishNode(n);
               continue;
             }
@@ -2263,7 +2294,7 @@ namespace qnr {
             n.expression = expression;
             n.questionDotToken = questionDotToken;
             n.arguments = this.argumentList();
-            if (questionDotToken || tryReparseOptionalChain(expression)) n.flags |= NodeFlags.OptionalChain;
+            if (questionDotToken || parse.reparseOptionalChain(expression)) n.flags |= NodeFlags.OptionalChain;
             expression = finishNode(n);
             continue;
           }
@@ -2372,7 +2403,7 @@ namespace qnr {
           return this.accessorDeclaration(n as AccessorDeclaration, Syntax.SetAccessor);
         }
         const asteriskToken = this.optionalToken(Syntax.AsteriskToken);
-        const tokenIsIdentifier = isIdentifier();
+        const tokenIsIdentifier = is.identifier();
         n.name = this.propertyName();
         (n as MethodDeclaration).questionToken = this.optionalToken(Syntax.QuestionToken);
         (n as MethodDeclaration).exclamationToken = this.optionalToken(Syntax.ExclamationToken);
@@ -2431,7 +2462,7 @@ namespace qnr {
         return finishNode(n);
       }
       optionalIdentifier(): Identifier | undefined {
-        return isIdentifier() ? this.identifier() : undefined;
+        return is.identifier() ? this.identifier() : undefined;
       }
       newExpressionOrNewDotTarget(): NewExpression | MetaProperty {
         const fullStart = scanner.getStartPos();
@@ -2447,7 +2478,7 @@ namespace qnr {
         while (true) {
           expression = this.memberExpressionRest(expression, /*allowOptionalChain*/ false);
           typeArguments = tryParse(this.typeArgumentsInExpression);
-          if (isTemplateStartOfTaggedTemplate()) {
+          if (is.templateStartOfTaggedTemplate()) {
             assert(!!typeArguments, "Expected a type argument list; all plain tagged template starts should be consumed in 'this.memberExpressionRest'");
             expression = this.taggedTemplateRest(expression, /*optionalChain*/ undefined, typeArguments);
             typeArguments = undefined;
@@ -2676,6 +2707,8 @@ namespace qnr {
           case Syntax.VarKeyword:
             return this.variableStatement(create.nodeWithJSDoc(Syntax.VariableDeclaration));
           case Syntax.LetKeyword:
+            const isLetDeclaration = () => lookAhead(next.isIdentifierOrStartOfDestructuring);
+
             if (isLetDeclaration()) return this.variableStatement(create.nodeWithJSDoc(Syntax.VariableDeclaration));
             break;
           case Syntax.FunctionKeyword:
@@ -2727,14 +2760,14 @@ namespace qnr {
           case Syntax.StaticKeyword:
           case Syntax.ReadonlyKeyword:
           case Syntax.GlobalKeyword:
-            if (isStartOfDeclaration()) return this.declaration();
+            if (is.startOfDeclaration()) return this.declaration();
             break;
         }
         return this.expressionOrLabeledStatement();
       }
       declaration(): Statement {
         const modifiers = lookAhead(() => (this.decorators(), this.modifiers()));
-        const isAmbient = some(modifiers, isDeclareModifier);
+        const isAmbient = some(modifiers, is.declareModifier);
         if (isAmbient) {
           const n = ctx.tryReuseAmbientDeclaration();
           if (n) return n;
@@ -2813,7 +2846,7 @@ namespace qnr {
       objectBindingElement(): BindingElement {
         const n = create.node(Syntax.BindingElement);
         n.dot3Token = this.optionalToken(Syntax.Dot3Token);
-        const tokenIsIdentifier = isIdentifier();
+        const tokenIsIdentifier = is.identifier();
         const propertyName = this.propertyName();
         if (tokenIsIdentifier && tok() !== Syntax.ColonToken) n.name = <Identifier>propertyName;
         else {
@@ -2853,7 +2886,7 @@ namespace qnr {
           n.exclamationToken = this.tokenNode<Token<Syntax.ExclamationToken>>();
         }
         n.type = this.typeAnnotation();
-        if (!isInOrOfKeyword(tok())) n.initializer = this.initializer();
+        if (!is.inOrOfKeyword(tok())) n.initializer = this.initializer();
         return finishNode(n);
       }
       variableDeclarationList(inForStatementInitializer: boolean): VariableDeclarationList {
@@ -2993,12 +3026,23 @@ namespace qnr {
         if (this.contextualModifier(Syntax.GetKeyword)) return this.accessorDeclaration(<AccessorDeclaration>n, Syntax.GetAccessor);
         if (this.contextualModifier(Syntax.SetKeyword)) return this.accessorDeclaration(<AccessorDeclaration>n, Syntax.SetAccessor);
         if (tok() === Syntax.ConstructorKeyword || tok() === Syntax.StringLiteral) {
-          const d = tryParseConstructorDeclaration(<ConstructorDeclaration>n);
+          const tryConstructorDeclaration = (n: ConstructorDeclaration) => {
+            return tryParse(() => {
+              if (parse.constructorName()) {
+                n.kind = Syntax.Constructor;
+                fillSignature(Syntax.ColonToken, SignatureFlags.None, n);
+                n.body = parse.functionBlockOrSemicolon(SignatureFlags.None, Diagnostics.or_expected);
+                return finishNode(n);
+              }
+              return;
+            });
+          };
+          const d = tryConstructorDeclaration(n as ConstructorDeclaration);
           if (d) return d;
         }
-        if (isIndexSignature()) return this.indexSignatureDeclaration(<IndexSignatureDeclaration>n);
+        if (is.indexSignature()) return this.indexSignatureDeclaration(<IndexSignatureDeclaration>n);
         if (identifierOrKeyword(tok()) || tok() === Syntax.StringLiteral || tok() === Syntax.NumericLiteral || tok() === Syntax.AsteriskToken || tok() === Syntax.OpenBracketToken) {
-          const isAmbient = n.modifiers && some(n.modifiers, isDeclareModifier);
+          const isAmbient = n.modifiers && some(n.modifiers, is.declareModifier);
           if (isAmbient) {
             for (const m of n.modifiers!) {
               m.flags |= NodeFlags.Ambient;
@@ -3032,17 +3076,18 @@ namespace qnr {
         return finishNode(n);
       }
       nameOfClassDeclarationOrExpression(): Identifier | undefined {
-        return isIdentifier() && !isImplementsClause() ? this.identifier() : undefined;
+        const isImplementsClause = () => tok() === Syntax.ImplementsKeyword && lookAhead(next.isIdentifierOrKeyword);
+        return is.identifier() && !isImplementsClause() ? this.identifier() : undefined;
       }
       heritageClauses(): NodeArray<HeritageClause> | undefined {
-        if (isHeritageClause()) return ctx.parseList(Parser.Context.HeritageClauses, this.heritageClause);
+        if (is.heritageClause()) return ctx.parseList(Parser.Context.HeritageClauses, this.heritageClause);
         return;
       }
       heritageClause(): HeritageClause {
-        const tok = tok();
-        assert(tok === Syntax.ExtendsKeyword || tok === Syntax.ImplementsKeyword);
+        const t = tok();
+        assert(t === Syntax.ExtendsKeyword || t === Syntax.ImplementsKeyword);
         const n = create.node(Syntax.HeritageClause);
-        n.token = tok;
+        n.token = t;
         next.tok();
         n.types = ctx.parseDelimitedList(Parser.Context.HeritageClauseElement, this.expressionWithTypeArguments);
         return finishNode(n);
@@ -3050,7 +3095,7 @@ namespace qnr {
       expressionWithTypeArguments(): ExpressionWithTypeArguments {
         const n = create.node(Syntax.ExpressionWithTypeArguments);
         n.expression = this.leftHandSideExpressionOrHigher();
-        n.typeArguments = tryParseTypeArguments();
+        n.typeArguments = parse.typeArguments();
         return finishNode(n);
       }
       classMembers(): NodeArray<ClassElement> {
@@ -3146,12 +3191,18 @@ namespace qnr {
         this.expected(Syntax.ImportKeyword);
         const afterImportPos = scanner.getStartPos();
         let identifier: Identifier | undefined;
-        if (isIdentifier()) identifier = this.identifier();
+        if (is.identifier()) identifier = this.identifier();
         let isTypeOnly = false;
-        if (tok() !== Syntax.FromKeyword && identifier?.escapedText === 'type' && (isIdentifier() || tokenAfterImportDefinitelyProducesImportDeclaration())) {
+        const tokenAfterImportDefinitelyProducesImportDeclaration = () => {
+          return tok() === Syntax.AsteriskToken || tok() === Syntax.OpenBraceToken;
+        };
+        if (tok() !== Syntax.FromKeyword && identifier?.escapedText === 'type' && (is.identifier() || tokenAfterImportDefinitelyProducesImportDeclaration())) {
           isTypeOnly = true;
-          identifier = isIdentifier() ? this.identifier() : undefined;
+          identifier = is.identifier() ? this.identifier() : undefined;
         }
+        const tokenAfterImportedIdentifierDefinitelyProducesImportDeclaration = () => {
+          return tok() === Syntax.CommaToken || tok() === Syntax.FromKeyword;
+        };
         if (identifier && !tokenAfterImportedIdentifierDefinitelyProducesImportDeclaration()) {
           return this.importEqualsDeclaration(<ImportEqualsDeclaration>n, identifier, isTypeOnly);
         }
@@ -3186,6 +3237,7 @@ namespace qnr {
         return finishNode(n);
       }
       moduleReference() {
+        const isExternalModuleReference = () => tok() === Syntax.RequireKeyword && lookAhead(next.isOpenParen);
         return isExternalModuleReference() ? this.externalModuleReference() : this.entityName(false);
       }
       externalModuleReference() {
@@ -3228,14 +3280,14 @@ namespace qnr {
       }
       importOrExportSpecifier(kind: Syntax): ImportOrExportSpecifier {
         const n = create.node(kind);
-        let checkIdentifierIsKeyword = isKeyword(tok()) && !isIdentifier();
+        let checkIdentifierIsKeyword = isKeyword(tok()) && !is.identifier();
         let checkIdentifierStart = scanner.getTokenPos();
         let checkIdentifierEnd = scanner.getTextPos();
         const identifierName = this.identifierName();
         if (tok() === Syntax.AsKeyword) {
           n.propertyName = identifierName;
           this.expected(Syntax.AsKeyword);
-          checkIdentifierIsKeyword = isKeyword(tok()) && !isIdentifier();
+          checkIdentifierIsKeyword = isKeyword(tok()) && !is.identifier();
           checkIdentifierStart = scanner.getTokenPos();
           checkIdentifierEnd = scanner.getTextPos();
           n.name = this.identifierName();
@@ -3291,6 +3343,26 @@ namespace qnr {
       }
       scanError(m: DiagnosticMessage, length: number) {
         this.errorAtPosition(scanner.getTextPos(), length, m);
+      }
+      reparseOptionalChain(n: Expression) {
+        if (n.flags & NodeFlags.OptionalChain) return true;
+        if (isNonNullExpression(n)) {
+          let expr = n.expression;
+          while (isNonNullExpression(expr) && !(expr.flags & NodeFlags.OptionalChain)) {
+            expr = expr.expression;
+          }
+          if (expr.flags & NodeFlags.OptionalChain) {
+            while (isNonNullExpression(n)) {
+              n.flags |= NodeFlags.OptionalChain;
+              n = n.expression;
+            }
+            return true;
+          }
+        }
+        return false;
+      }
+      typeArguments(): NodeArray<TypeNode> | undefined {
+        return tok() === Syntax.LessThanToken ? ctx.parseBracketedList(Parser.Context.TypeArguments, parse.type, Syntax.LessThanToken, Syntax.GreaterThanToken) : undefined;
       }
     })();
     const parseJsx = new (class {
@@ -3386,7 +3458,7 @@ namespace qnr {
           return finishNode(n);
         }
         const tagName = this.elementName();
-        const typeArguments = tryParseTypeArguments();
+        const typeArguments = parse.typeArguments();
         const attributes = this.attributes();
         let n: JsxOpeningLikeElement;
         if (tok() === Syntax.GreaterThanToken) {
@@ -3492,6 +3564,16 @@ namespace qnr {
         } else this.tags.push(tag);
         this.tagsEnd = tag.end;
       }
+      removeLeadingNewlines(ss: string[]) {
+        while (ss.length && (ss[0] === '\n' || ss[0] === '\r')) {
+          ss.shift();
+        }
+      }
+      removeTrailingWhitespace(ss: string[]) {
+        while (ss.length && ss[ss.length - 1].trim() === '') {
+          ss.pop();
+        }
+      }
       comment(start = 0, length: number | undefined): JSDoc | undefined {
         const content = sourceText;
         const end = length === undefined ? content.length : start + length;
@@ -3520,7 +3602,7 @@ namespace qnr {
             switch (tok()) {
               case Syntax.AtToken:
                 if (state === Parser.State.BeginningOfLine || state === Parser.State.SawAsterisk) {
-                  removeTrailingWhitespace(this.comments);
+                  this.removeTrailingWhitespace(this.comments);
                   this.addTag(this.tag(indent));
                   state = Parser.State.BeginningOfLine;
                   margin = undefined;
@@ -3559,8 +3641,8 @@ namespace qnr {
             }
             next.tokJSDoc();
           }
-          removeLeadingNewlines(this.comments);
-          removeTrailingWhitespace(this.comments);
+          this.removeLeadingNewlines(this.comments);
+          this.removeTrailingWhitespace(this.comments);
           return createJSDocComment();
         });
       }
@@ -3773,9 +3855,9 @@ namespace qnr {
           if (initialMargin !== '') pushComment(initialMargin);
           state = Parser.State.SawAsterisk;
         }
-        let tok = tok() as JSDocSyntax;
+        let t = tok() as JSDocSyntax;
         loop: while (true) {
-          switch (tok) {
+          switch (t) {
             case Syntax.NewLineTrivia:
               if (state >= Parser.State.SawAsterisk) {
                 state = Parser.State.BeginningOfLine;
@@ -3826,10 +3908,10 @@ namespace qnr {
               pushComment(scanner.getTokenText());
               break;
           }
-          tok = next.tokJSDoc();
+          t = next.tokJSDoc();
         }
-        removeLeadingNewlines(comments);
-        removeTrailingWhitespace(comments);
+        this.removeLeadingNewlines(comments);
+        this.removeTrailingWhitespace(comments);
         return comments.length === 0 ? undefined : comments.join('');
       }
       unknownTag(start: number, tagName: Identifier) {
@@ -3849,7 +3931,7 @@ namespace qnr {
         if (isBackquoted) this.expectedToken(Syntax.BacktickToken);
         if (isBracketed) {
           skipWhitespace();
-          if (this.optionalToken(Syntax.EqualsToken)) this.expression();
+          if (this.optionalToken(Syntax.EqualsToken)) parse.expression();
           this.expected(Syntax.CloseBracketToken);
         }
         return { name, isBracketed };
@@ -3877,7 +3959,7 @@ namespace qnr {
         return finishNode(n);
       }
       nestedTypeLiteral(typeExpression: JSDocTypeExpression | undefined, name: EntityName, target: Parser.PropertyLike, indent: number) {
-        if (typeExpression && isObjectOrObjectArrayTypeReference(typeExpression.type)) {
+        if (typeExpression && is.objectOrObjectArrayTypeReference(typeExpression.type)) {
           const n = create.node(Syntax.JSDocTypeExpression, scanner.getTokenPos());
           let child: JSDocPropertyLikeTag | JSDocTypeTag | false;
           let n2: JSDocTypeLiteral;
@@ -3975,7 +4057,7 @@ namespace qnr {
           expression: Identifier | PropertyAccessEntityNameExpression;
         };
         n.expression = this.propertyAccessEntityNameExpression();
-        n.typeArguments = tryParseTypeArguments();
+        n.typeArguments = parse.typeArguments();
         const res = finishNode(n);
         if (usedBrace) parse.expected(Syntax.CloseBraceToken);
         return res;
@@ -4015,12 +4097,12 @@ namespace qnr {
         const n = create.node(Syntax.JSDocTypedefTag, start);
         n.tagName = tagName;
         n.fullName = this.typeNameWithNamespace();
-        n.name = getJSDocTypeAliasName(n.fullName);
+        n.name = this.getJSDocTypeAliasName(n.fullName);
         skipWhitespace();
         n.comment = this.tagComments(indent);
         n.typeExpression = typeExpression;
         let end: number | undefined;
-        if (!typeExpression || isObjectOrObjectArrayTypeReference(typeExpression.type)) {
+        if (!typeExpression || is.objectOrObjectArrayTypeReference(typeExpression.type)) {
           let child: JSDocTypeTag | JSDocPropertyTag | false;
           let n2: JSDocTypeLiteral | undefined;
           let childTypeTag: JSDocTypeTag | undefined;
@@ -4037,31 +4119,31 @@ namespace qnr {
           }
           if (n2) {
             if (typeExpression && typeExpression.type.kind === Syntax.ArrayType) n2.isArrayType = true;
-            n.typeExpression = childTypeTag && childTypeTag.typeExpression && !isObjectOrObjectArrayTypeReference(childTypeTag.typeExpression.type) ? childTypeTag.typeExpression : finishNode(n2);
+            n.typeExpression = childTypeTag && childTypeTag.typeExpression && !is.objectOrObjectArrayTypeReference(childTypeTag.typeExpression.type) ? childTypeTag.typeExpression : finishNode(n2);
             end = n.typeExpression.end;
           }
         }
         return finishNode(n, end || n.comment !== undefined ? scanner.getStartPos() : (n.fullName || n.typeExpression || n.tagName).end);
       }
       typeNameWithNamespace(nested?: boolean) {
-        const pos = scanner.getTokenPos();
+        const p = scanner.getTokenPos();
         if (!identifierOrKeyword(tok())) return;
-        const typeNameOrNamespaceName = this.identifierName();
+        const r = this.identifierName();
         if (parse.optional(Syntax.DotToken)) {
-          const n = create.node(Syntax.ModuleDeclaration, pos);
+          const n = create.node(Syntax.ModuleDeclaration, p);
           if (nested) n.flags |= NodeFlags.NestedNamespace;
-          n.name = typeNameOrNamespaceName;
+          n.name = r;
           n.body = this.typeNameWithNamespace(true);
           return finishNode(n);
         }
-        if (nested) typeNameOrNamespaceName.isInJSDocNamespace = true;
-        return typeNameOrNamespaceName;
+        if (nested) r.isInJSDocNamespace = true;
+        return r;
       }
       callbackTag(start: number, tagName: Identifier, indent: number): JSDocCallbackTag {
         const n = create.node(Syntax.JSDocCallbackTag, start) as JSDocCallbackTag;
         n.tagName = tagName;
         n.fullName = this.typeNameWithNamespace();
-        n.name = getJSDocTypeAliasName(n.fullName);
+        n.name = this.getJSDocTypeAliasName(n.fullName);
         skipWhitespace();
         n.comment = this.tagComments(indent);
         let child: JSDocParameterTag | false;
@@ -4121,7 +4203,6 @@ namespace qnr {
               break;
             case Syntax.AsteriskToken:
               if (seenAsterisk) canParseTag = false;
-
               seenAsterisk = true;
               break;
             case Syntax.Identifier:
@@ -4240,14 +4321,9 @@ namespace qnr {
       sourceText = undefined!;
       notParenthesizedArrow = undefined!;
     }
-    function consumeNode(n: Node) {
-      scanner.setTextPos(n.end);
-      next.tok();
-      return n;
-    }
-    function skipWhitespace(): void {
+    function skipWhitespace() {
       if (tok() === Syntax.WhitespaceTrivia || tok() === Syntax.NewLineTrivia) {
-        if (lookAhead(isNextNonwhitespaceTokenEndOfFile)) return;
+        if (lookAhead(next.isNonwhitespaceTokenEndOfFile)) return;
       }
       while (tok() === Syntax.WhitespaceTrivia || tok() === Syntax.NewLineTrivia) {
         next.tokJSDoc();
@@ -4255,7 +4331,7 @@ namespace qnr {
     }
     function skipWhitespaceOrAsterisk(): string {
       if (tok() === Syntax.WhitespaceTrivia || tok() === Syntax.NewLineTrivia) {
-        if (lookAhead(isNextNonwhitespaceTokenEndOfFile)) return '';
+        if (lookAhead(next.isNonwhitespaceTokenEndOfFile)) return '';
       }
       let precedingLineBreak = scanner.hasPrecedingLineBreak();
       let seenLineBreak = false;
@@ -4271,28 +4347,48 @@ namespace qnr {
       }
       return seenLineBreak ? indentText : '';
     }
-    function removeLeadingNewlines(comments: string[]) {
-      while (comments.length && (comments[0] === '\n' || comments[0] === '\r')) {
-        comments.shift();
-      }
-    }
-    function removeTrailingWhitespace(comments: string[]) {
-      while (comments.length && comments[comments.length - 1].trim() === '') {
-        comments.pop();
-      }
-    }
-
     function internIdentifier(s: string): string {
       let i = identifiers.get(s);
       if (i === undefined) identifiers.set(s, (i = s));
       return i;
     }
-    function internPrivateIdentifier(s: string): string {
-      let i = privateIdentifiers.get(s);
-      if (i === undefined) privateIdentifiers.set(s, (i = s));
-      return i;
+    function fillSignature(t: Syntax.ColonToken | Syntax.EqualsGreaterThanToken, f: SignatureFlags, s: SignatureDeclaration): boolean {
+      if (!(f & SignatureFlags.JSDoc)) s.typeParameters = parse.typeParameters();
+      const r = parse.parameterList(s, f);
+      const shouldParseReturnType = (isType: boolean) => {
+        if (t === Syntax.EqualsGreaterThanToken) {
+          parse.expected(t);
+          return true;
+        } else if (parse.optional(Syntax.ColonToken)) return true;
+        else if (isType && tok() === Syntax.EqualsGreaterThanToken) {
+          parse.errorAtToken(Diagnostics._0_expected, toString(Syntax.ColonToken));
+          next.tok();
+          return true;
+        }
+        return false;
+      };
+      if (shouldParseReturnType(!!(f & SignatureFlags.Type))) {
+        s.type = parse.typeOrTypePredicate();
+        const hasArrowFunctionBlockingError = (n: TypeNode): boolean => {
+          switch (n.kind) {
+            case Syntax.TypeReference:
+              return nodeIsMissing((n as TypeReferenceNode).typeName);
+            case Syntax.FunctionType:
+            case Syntax.ConstructorType: {
+              const { parameters, type } = n as FunctionOrConstructorTypeNode;
+              const isMissingList = (ns: NodeArray<Node>) => !!(ns as MissingList<Node>).isMissingList;
+              return isMissingList(parameters) || hasArrowFunctionBlockingError(type);
+            }
+            case Syntax.ParenthesizedType:
+              return hasArrowFunctionBlockingError((n as ParenthesizedTypeNode).type);
+            default:
+              return false;
+          }
+        };
+        if (hasArrowFunctionBlockingError(s.type)) return false;
+      }
+      return r;
     }
-
     function finishNode<T extends Node>(n: T, end?: number): T {
       n.end = end === undefined ? scanner.getStartPos() : end;
       if (flags.value) n.flags |= flags.value;
@@ -4322,6 +4418,21 @@ namespace qnr {
     function tryParse<T>(cb: () => T): T {
       return speculate(cb, false);
     }
+    function reScanGreaterToken(): Syntax {
+      return (currentToken = scanner.reScanGreaterToken());
+    }
+    function reScanLessToken(): Syntax {
+      return (currentToken = scanner.reScanLessToken());
+    }
+    function reScanSlashToken(): Syntax {
+      return (currentToken = scanner.reScanSlashToken());
+    }
+    function reScanTemplateToken(tagged: boolean): Syntax {
+      return (currentToken = scanner.reScanTemplateToken(tagged));
+    }
+    function reScanHeadOrNoSubstTemplate(): Syntax {
+      return (currentToken = scanner.reScanHeadOrNoSubstTemplate());
+    }
     function comment(parent: HasJSDoc, start: number, length: number): JSDoc | undefined {
       const saveToken = currentToken;
       const saveParseDiagnosticsLength = parseDiagnostics.length;
@@ -4345,7 +4456,6 @@ namespace qnr {
       clearState();
       return jsDoc ? { jsDoc, diagnostics } : undefined;
     }
-
     function escapedTextsEqual(a: EntityName, b: EntityName): boolean {
       while (!isIdentifier(a) || !isIdentifier(b)) {
         if (!isIdentifier(a) && !isIdentifier(b) && a.right.escapedText === b.right.escapedText) {
@@ -4424,7 +4534,6 @@ namespace qnr {
   export function identifierOrKeywordOrGreaterThan(t: Syntax) {
     return t === Syntax.GreaterThanToken || identifierOrKeyword(t);
   }
-
   export function createSourceFile(fileName: string, sourceText: string, languageVersion: ScriptTarget, setParentNodes = false, scriptKind?: ScriptKind): SourceFile {
     performance.mark('beforeParse');
     let result: SourceFile;
@@ -4450,19 +4559,14 @@ namespace qnr {
   }
   export function updateSourceFile(sourceFile: SourceFile, newText: string, textChangeRange: TextChangeRange, aggressiveChecks = false): SourceFile {
     const newSourceFile = IncrementalParser.updateSourceFile(sourceFile, newText, textChangeRange, aggressiveChecks);
-    // Because new source file node is created, it may not have the flag PossiblyContainDynamicImport. This is the case if there is no new edit to add dynamic import.
-    // We will manually port the flag to the new source file.
     newSourceFile.flags |= sourceFile.flags & NodeFlags.PermanentlySetIncrementalFlags;
     return newSourceFile;
   }
   export function parseJSDocIsolatedComment(content: string, start?: number, length?: number) {
     const result = Parser.parseJSDoc.isolatedComment(content, start, length);
     if (result && result.jsDoc) {
-      // because the jsDocComment was parsed out of the source file, it might
-      // not be covered by the fixupParentReferences.
       Parser.fixupParentReferences(result.jsDoc);
     }
-
     return result;
   }
   export function parseJSDocTypeExpressionForTests(content: string, start?: number, length?: number) {
@@ -4511,7 +4615,7 @@ namespace qnr {
       setParentNodes?: boolean
     ): JsonSourceFile {
       initializeState(sourceText, languageVersion, syntaxCursor, ScriptKind.JSON);
-      sourceFile = createSourceFile(fileName, ScriptTarget.ES2020, ScriptKind.JSON, /*isDeclaration*/ false);
+      sourceFile = createSourceFile(fileName, ScriptTarget.ES2020, ScriptKind.JSON, false);
       sourceFile.flags = flags.value;
       next.tok();
       const pos = getNodePos();
@@ -4563,9 +4667,9 @@ namespace qnr {
       return scriptKind === ScriptKind.TSX || scriptKind === ScriptKind.JSX || scriptKind === ScriptKind.JS || scriptKind === ScriptKind.JSON ? LanguageVariant.TX : LanguageVariant.TS;
     }
     function parseSourceFileWorker(fileName: string, languageVersion: ScriptTarget, setParentNodes: boolean, scriptKind: ScriptKind): SourceFile {
-      const isDeclarationFile = isDeclarationFileName(fileName);
-      if (isDeclarationFile) flags.value |= NodeFlags.Ambient;
-      sourceFile = createSourceFile(fileName, languageVersion, scriptKind, isDeclarationFile);
+      const declaration = fileExtensionIs(fileName, Extension.Dts);
+      if (declaration) flags.value |= NodeFlags.Ambient;
+      sourceFile = createSourceFile(fileName, languageVersion, scriptKind, declaration);
       sourceFile.flags = flags.value;
       next.tok();
       processCommentPragmas((sourceFile as {}) as PragmaContext, sourceText);
@@ -4573,7 +4677,25 @@ namespace qnr {
       sourceFile.statements = ctx.parseList(Parser.Context.SourceElements, parse.statement);
       assert(tok() === Syntax.EndOfFileToken);
       sourceFile.endOfFileToken = addJSDocComment(parse.tokenNode());
-      setExternalModuleIndicator(sourceFile);
+      const getImportMetaIfNecessary = () => {
+        const isImportMeta = (n: Node): boolean => {
+          return isMetaProperty(n) && n.keywordToken === Syntax.ImportKeyword && n.name.escapedText === 'meta';
+        };
+        const walkTreeForExternalModuleIndicators = (n: Node): Node | undefined => {
+          return isImportMeta(n) ? n : forEachChild(n, walkTreeForExternalModuleIndicators);
+        };
+        return sourceFile.flags & NodeFlags.PossiblyContainsImportMeta ? walkTreeForExternalModuleIndicators(sourceFile) : undefined;
+      };
+      const isAnExternalModuleIndicatorNode = (n: Node) => {
+        return hasModifierOfKind(n, Syntax.ExportKeyword) ||
+          (n.kind === Syntax.ImportEqualsDeclaration && (<ImportEqualsDeclaration>n).moduleReference.kind === Syntax.ExternalModuleReference) ||
+          n.kind === Syntax.ImportDeclaration ||
+          n.kind === Syntax.ExportAssignment ||
+          n.kind === Syntax.ExportDeclaration
+          ? n
+          : undefined;
+      };
+      sourceFile.externalModuleIndicator = forEach(sourceFile.statements, isAnExternalModuleIndicatorNode) || getImportMetaIfNecessary();
       sourceFile.commentDirectives = scanner.getDirectives();
       sourceFile.nodeCount = create.nodeCount;
       sourceFile.identifierCount = create.identifierCount;
@@ -4603,155 +4725,8 @@ namespace qnr {
         }
       }
     }
-    function reScanGreaterToken(): Syntax {
-      return (currentToken = scanner.reScanGreaterToken());
-    }
-    function reScanLessToken(): Syntax {
-      return (currentToken = scanner.reScanLessToken());
-    }
-    function reScanSlashToken(): Syntax {
-      return (currentToken = scanner.reScanSlashToken());
-    }
-    function reScanTemplateToken(tagged: boolean): Syntax {
-      return (currentToken = scanner.reScanTemplateToken(tagged));
-    }
-    function reScanHeadOrNoSubstTemplate(): Syntax {
-      return (currentToken = scanner.reScanHeadOrNoSubstTemplate());
-    }
-    function tokenAfterImportDefinitelyProducesImportDeclaration() {
-      return tok() === Syntax.AsteriskToken || tok() === Syntax.OpenBraceToken;
-    }
-
-    function tokenAfterImportedIdentifierDefinitelyProducesImportDeclaration() {
-      return tok() === Syntax.CommaToken || tok() === Syntax.FromKeyword;
-    }
     function hasModifierOfKind(n: Node, kind: Syntax) {
       return some(n.modifiers, (m) => m.kind === kind);
-    }
-    function typeHasArrowFunctionBlockingParseError(n: TypeNode): boolean {
-      switch (n.kind) {
-        case Syntax.TypeReference:
-          return nodeIsMissing((n as TypeReferenceNode).typeName);
-        case Syntax.FunctionType:
-        case Syntax.ConstructorType: {
-          const { parameters, type } = n as FunctionOrConstructorTypeNode;
-          return isMissingList(parameters) || typeHasArrowFunctionBlockingParseError(type);
-        }
-        case Syntax.ParenthesizedType:
-          return typeHasArrowFunctionBlockingParseError((n as ParenthesizedTypeNode).type);
-        default:
-          return false;
-      }
-    }
-
-    function fillSignature(returnToken: Syntax.ColonToken | Syntax.EqualsGreaterThanToken, flags: SignatureFlags, signature: SignatureDeclaration): boolean {
-      if (!(flags & SignatureFlags.JSDoc)) signature.typeParameters = parse.typeParameters();
-      const parametersParsedSuccessfully = parse.parameterList(signature, flags);
-      if (shouldParseReturnType(returnToken, !!(flags & SignatureFlags.Type))) {
-        signature.type = parse.typeOrTypePredicate();
-        if (typeHasArrowFunctionBlockingParseError(signature.type)) return false;
-      }
-      return parametersParsedSuccessfully;
-    }
-    function shouldParseReturnType(returnToken: Syntax.ColonToken | Syntax.EqualsGreaterThanToken, isType: boolean): boolean {
-      if (returnToken === Syntax.EqualsGreaterThanToken) {
-        parse.expected(returnToken);
-        return true;
-      } else if (parse.optional(Syntax.ColonToken)) {
-        return true;
-      } else if (isType && tok() === Syntax.EqualsGreaterThanToken) {
-        parse.errorAtToken(Diagnostics._0_expected, toString(Syntax.ColonToken));
-        next.tok();
-        return true;
-      }
-      return false;
-    }
-    function skipParameterStart(): boolean {
-      if (isModifierKind(tok())) parse.modifiers();
-      if (isIdentifier() || tok() === Syntax.ThisKeyword) {
-        next.tok();
-        return true;
-      }
-      if (tok() === Syntax.OpenBracketToken || tok() === Syntax.OpenBraceToken) {
-        const previousErrorCount = parseDiagnostics.length;
-        parse.identifierOrPattern();
-        return previousErrorCount === parseDiagnostics.length;
-      }
-      return false;
-    }
-    function tryParseParenthesizedArrowFunctionExpression(): Expression | undefined {
-      const triState = isParenthesizedArrowFunctionExpression();
-      if (triState === Tristate.False) return;
-      const arrowFunction = triState === Tristate.True ? parse.parenthesizedArrowFunctionExpressionHead(true) : tryParse(parse.possibleParenthesizedArrowFunctionExpressionHead);
-      if (!arrowFunction) return;
-      const isAsync = hasModifierOfKind(arrowFunction, Syntax.AsyncKeyword);
-      const lastToken = tok();
-      arrowFunction.equalsGreaterThanToken = parse.expectedToken(Syntax.EqualsGreaterThanToken);
-      arrowFunction.body = lastToken === Syntax.EqualsGreaterThanToken || lastToken === Syntax.OpenBraceToken ? parse.arrowFunctionExpressionBody(isAsync) : parse.identifier();
-      return finishNode(arrowFunction);
-    }
-    function tryParseAsyncSimpleArrowFunctionExpression(): ArrowFunction | undefined {
-      if (tok() === Syntax.AsyncKeyword) {
-        if (lookAhead(isUnParenthesizedAsyncArrowFunctionWorker) === Tristate.True) {
-          const asyncModifier = parse.modifiersForArrowFunction();
-          const expr = parse.binaryExpressionOrHigher(/*precedence*/ 0);
-          return parse.simpleArrowFunctionExpression(<Identifier>expr, asyncModifier);
-        }
-      }
-      return;
-    }
-    function makeBinaryExpression(left: Expression, operatorToken: BinaryOperatorToken, right: Expression): BinaryExpression {
-      const n = create.node(Syntax.BinaryExpression, left.pos);
-      n.left = left;
-      n.operatorToken = operatorToken;
-      n.right = right;
-      return finishNode(n);
-    }
-    function makeAsExpression(left: Expression, right: TypeNode): AsExpression {
-      const n = create.node(Syntax.AsExpression, left.pos);
-      n.expression = left;
-      n.type = right;
-      return finishNode(n);
-    }
-    function tryReparseOptionalChain(n: Expression) {
-      if (n.flags & NodeFlags.OptionalChain) return true;
-      if (isNonNullExpression(n)) {
-        let expr = n.expression;
-        while (isNonNullExpression(expr) && !(expr.flags & NodeFlags.OptionalChain)) {
-          expr = expr.expression;
-        }
-        if (expr.flags & NodeFlags.OptionalChain) {
-          while (isNonNullExpression(n)) {
-            n.flags |= NodeFlags.OptionalChain;
-            n = n.expression;
-          }
-          return true;
-        }
-      }
-      return false;
-    }
-    function tryParseConstructorDeclaration(n: ConstructorDeclaration): ConstructorDeclaration | undefined {
-      return tryParse(() => {
-        if (parse.constructorName()) {
-          n.kind = Syntax.Constructor;
-          fillSignature(Syntax.ColonToken, SignatureFlags.None, n);
-          n.body = parse.functionBlockOrSemicolon(SignatureFlags.None, Diagnostics.or_expected);
-          return finishNode(n);
-        }
-        return;
-      });
-    }
-    function tryParseTypeArguments(): NodeArray<TypeNode> | undefined {
-      return tok() === Syntax.LessThanToken ? ctx.parseBracketedList(Parser.Context.TypeArguments, parse.type, Syntax.LessThanToken, Syntax.GreaterThanToken) : undefined;
-    }
-    function setExternalModuleIndicator(sourceFile: SourceFile) {
-      sourceFile.externalModuleIndicator = forEach(sourceFile.statements, isAnExternalModuleIndicatorNode) || getImportMetaIfNecessary(sourceFile);
-    }
-    function getImportMetaIfNecessary(sourceFile: SourceFile) {
-      return sourceFile.flags & NodeFlags.PossiblyContainsImportMeta ? walkTreeForExternalModuleIndicators(sourceFile) : undefined;
-    }
-    function walkTreeForExternalModuleIndicators(n: Node): Node | undefined {
-      return isImportMeta(n) ? n : forEachChild(n, walkTreeForExternalModuleIndicators);
     }
   }
 
@@ -5113,10 +5088,6 @@ namespace qnr {
     const enum InvalidPosition {
       Value = -1,
     }
-  }
-
-  export function isDeclarationFileName(fileName: string): boolean {
-    return fileExtensionIs(fileName, Extension.Dts);
   }
 
   export interface PragmaContext {
