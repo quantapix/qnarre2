@@ -281,9 +281,9 @@ namespace qnr {
     return !(hasGlobalName && hasGlobalName(name)) && !sourceFile.identifiers.has(name);
   }
 
-  export function nodeIsMissing(node: Node | undefined): boolean {
-    if (node === undefined) return true;
-    return node.pos === node.end && node.pos >= 0 && node.kind !== Syntax.EndOfFileToken;
+  export function nodeIsMissing(n?: Node): boolean {
+    if (!n) return true;
+    return n.pos === n.end && n.pos >= 0 && n.kind !== Syntax.EndOfFileToken;
   }
 
   export function nodeIsPresent(node: Node | undefined): boolean {

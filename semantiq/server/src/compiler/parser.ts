@@ -703,24 +703,21 @@ namespace qnr {
       }
     })();
     const next = new (class {
-      tok(): Syntax {
-        if (isKeyword(currentToken) && (scanner.hasUnicodeEscape() || scanner.hasExtendedEscape())) {
+      tok(check = true): Syntax {
+        if (check && isKeyword(currentToken) && (scanner.hasUnicodeEscape() || scanner.hasExtendedEscape())) {
           parse.errorAt(scanner.getTokenPos(), scanner.getTextPos(), Diagnostics.Keywords_cannot_contain_escape_characters);
         }
-        return this.withoutCheck();
+        return (currentToken = scanner.scan());
       }
       tokJSDoc(): JSDocSyntax {
         return (currentToken = scanner.scanJsDocToken());
       }
-      withoutCheck(): Syntax {
-        return (currentToken = scanner.scan());
-      }
       canFollowModifier() {
         switch (tok()) {
           case Syntax.ConstKeyword:
-            return next.tok() === Syntax.EnumKeyword;
+            return this.tok() === Syntax.EnumKeyword;
           case Syntax.ExportKeyword:
-            next.tok();
+            this.tok();
             if (tok() === Syntax.DefaultKeyword) return lookAhead(this.canFollowDefaultKeyword);
             if (tok() === Syntax.TypeKeyword) return lookAhead(this.canFollowExportModifier);
             return canFollowExportModifier();
@@ -729,23 +726,23 @@ namespace qnr {
           case Syntax.StaticKeyword:
           case Syntax.GetKeyword:
           case Syntax.SetKeyword:
-            next.tok();
+            this.tok();
             return canFollowModifier();
           default:
             return this.isOnSameLineAndCanFollowModifier();
         }
       }
       isOnSameLineAndCanFollowModifier() {
-        next.tok();
+        this.tok();
         if (scanner.hasPrecedingLineBreak()) return false;
         return canFollowModifier();
       }
       private canFollowExportModifier() {
-        next.tok();
+        this.tok();
         return canFollowExportModifier();
       }
       private canFollowDefaultKeyword() {
-        next.tok();
+        this.tok();
         return (
           tok() === Syntax.ClassKeyword ||
           tok() === Syntax.FunctionKeyword ||
@@ -759,30 +756,30 @@ namespace qnr {
         return isIdentifier();
       }
       isIdentifierOrKeyword() {
-        next.tok();
+        this.tok();
         return identifierOrKeyword(tok());
       }
       isIdentifierOrKeywordOrGreaterThan() {
-        next.tok();
+        this.tok();
         return identifierOrKeywordOrGreaterThan(tok());
       }
       isStartOfExpression() {
-        next.tok();
+        this.tok();
         return isStartOfExpression();
       }
       isStartOfType() {
-        next.tok();
+        this.tok();
         return isStartOfType();
       }
       isOpenParenOrLessThan() {
-        next.tok();
+        this.tok();
         return tok() === Syntax.OpenParenToken || tok() === Syntax.LessThanToken;
       }
       isDot() {
-        return next.tok() === Syntax.DotToken;
+        return this.tok() === Syntax.DotToken;
       }
       isOpenParenOrLessThanOrDot() {
-        switch (next.tok()) {
+        switch (this.tok()) {
           case Syntax.OpenParenToken:
           case Syntax.LessThanToken:
           case Syntax.DotToken:
@@ -791,41 +788,41 @@ namespace qnr {
         return false;
       }
       isNumericOrBigIntLiteral() {
-        next.tok();
+        this.tok();
         return tok() === Syntax.NumericLiteral || tok() === Syntax.BigIntLiteral;
       }
       isIdentifierOrKeywordOrOpenBracketOrTemplate() {
-        next.tok();
+        this.tok();
         return identifierOrKeyword(tok()) || tok() === Syntax.OpenBracketToken || isTemplateStartOfTaggedTemplate();
       }
       isIdentifierOrKeywordOnSameLine() {
-        next.tok();
+        this.tok();
         return identifierOrKeyword(tok()) && !scanner.hasPrecedingLineBreak();
       }
       isClassKeywordOnSameLine() {
-        next.tok();
+        this.tok();
         return tok() === Syntax.ClassKeyword && !scanner.hasPrecedingLineBreak();
       }
       isFunctionKeywordOnSameLine() {
-        next.tok();
+        this.tok();
         return tok() === Syntax.FunctionKeyword && !scanner.hasPrecedingLineBreak();
       }
       isIdentifierOrKeywordOrLiteralOnSameLine() {
-        next.tok();
+        this.tok();
         return (identifierOrKeyword(tok()) || tok() === Syntax.NumericLiteral || tok() === Syntax.BigIntLiteral || tok() === Syntax.StringLiteral) && !scanner.hasPrecedingLineBreak();
       }
       isIdentifierOrStartOfDestructuring() {
-        next.tok();
+        this.tok();
         return isIdentifier() || tok() === Syntax.OpenBraceToken || tok() === Syntax.OpenBracketToken;
       }
       isOpenParen() {
-        return next.tok() === Syntax.OpenParenToken;
+        return this.tok() === Syntax.OpenParenToken;
       }
       isSlash() {
-        return next.tok() === Syntax.SlashToken;
+        return this.tok() === Syntax.SlashToken;
       }
       isColonOrQuestionColon() {
-        return next.tok() === Syntax.ColonToken || (tok() === Syntax.QuestionToken && next.tok() === Syntax.ColonToken);
+        return this.tok() === Syntax.ColonToken || (tok() === Syntax.QuestionToken && this.tok() === Syntax.ColonToken);
       }
     })();
     interface MissingList<T extends Node> extends NodeArray<T> {
@@ -935,7 +932,7 @@ namespace qnr {
           const n = createNode(Syntax.Identifier);
           if (tok() !== Syntax.Identifier) n.originalKeywordKind = tok();
           n.escapedText = Scanner.escUnderscores(internIdentifier(scanner.getTokenValue()));
-          next.withoutCheck();
+          next.tok(false);
           return finishNode(n);
         }
         if (tok() === Syntax.PrivateIdentifier) {
@@ -973,13 +970,13 @@ namespace qnr {
       }
     })();
     const ctx = new (class {
-      code = 0 as Parser.Context;
+      value = 0 as Parser.Context;
       init() {
-        this.code = 0;
+        this.value = 0;
       }
       parseList<T extends Node>(c: Parser.Context, cb: () => T): NodeArray<T> {
-        const o = this.code;
-        this.code |= 1 << c;
+        const o = this.value;
+        this.value |= 1 << c;
         const es = [] as T[];
         const p = getNodePos();
         while (!this.isListTerminator(c)) {
@@ -990,7 +987,7 @@ namespace qnr {
           }
           if (this.abort(c)) break;
         }
-        this.code = o;
+        this.value = o;
         return createNodeArray(es, p);
       }
       parseBracketedList<T extends Node>(c: Parser.Context, cb: () => T, open: Syntax, close: Syntax): NodeArray<T> {
@@ -1002,11 +999,14 @@ namespace qnr {
         return createMissingList<T>();
       }
       parseDelimitedList<T extends Node>(c: Parser.Context, cb: () => T, semicolon?: boolean): NodeArray<T> {
-        const o = this.code;
-        this.code |= 1 << c;
+        const o = this.value;
+        this.value |= 1 << c;
         const es = [] as T[];
         const p = getNodePos();
         let s = -1;
+        const commaDiag = () => {
+          return c === Parser.Context.EnumMembers ? Diagnostics.An_enum_member_name_must_be_followed_by_a_or : undefined;
+        };
         while (true) {
           if (this.isListElement(c, false)) {
             const sp = scanner.getStartPos();
@@ -1015,7 +1015,7 @@ namespace qnr {
             if (parseOptional(Syntax.CommaToken)) continue;
             s = -1;
             if (this.isListTerminator(c)) break;
-            parseExpected(Syntax.CommaToken, this.commaDiag(c));
+            parseExpected(Syntax.CommaToken, commaDiag());
             if (semicolon && tok() === Syntax.SemicolonToken && !scanner.hasPrecedingLineBreak()) next.tok();
             if (sp === scanner.getStartPos()) next.tok();
             continue;
@@ -1023,7 +1023,7 @@ namespace qnr {
           if (this.isListTerminator(c)) break;
           if (this.abort(c)) break;
         }
-        this.code = o;
+        this.value = o;
         const r = createNodeArray(es, p);
         if (s >= 0) r.hasTrailingComma = true;
         return r;
@@ -1031,30 +1031,126 @@ namespace qnr {
       parseJsxChildren(tag: JsxOpeningElement | JsxOpeningFragment): NodeArray<JsxChild> {
         const list = [];
         const listPos = getNodePos();
-        const c = this.code;
-        this.code |= 1 << Parser.Context.JsxChildren;
+        const o = this.value;
+        this.value |= 1 << Parser.Context.JsxChildren;
         while (true) {
           const child = parseJsxChild(tag, (currentToken = scanner.reScanJsxToken()));
           if (!child) break;
           list.push(child);
         }
-        this.code = c;
+        this.value = o;
         return createNodeArray(list, listPos);
       }
       tryReuseAmbientDeclaration(): Statement | undefined {
         return flags.withContext(NodeFlags.Ambient, () => {
-          const n = this.nodeFor(this.code);
+          const n = this.nodeFor(this.value);
           if (n) return consumeNode(n) as Statement;
           return;
         });
       }
       private nodeFor(c: Parser.Context): Node | undefined {
-        if (!syntaxCursor || !this.isReusable(c) || parseErrorBeforeNextFinishedNode) return;
+        const isReusable = () => {
+          switch (c) {
+            case Parser.Context.ClassMembers:
+            case Parser.Context.SwitchClauses:
+            case Parser.Context.SourceElements:
+            case Parser.Context.BlockStatements:
+            case Parser.Context.SwitchClauseStatements:
+            case Parser.Context.EnumMembers:
+            case Parser.Context.TypeMembers:
+            case Parser.Context.VariableDeclarations:
+            case Parser.Context.JSDocParameters:
+            case Parser.Context.Parameters:
+              return true;
+          }
+          return false;
+        };
+        if (!syntaxCursor || !isReusable() || parseErrorBeforeNextFinishedNode) return;
         const n = syntaxCursor.currentNode(scanner.getStartPos());
         if (nodeIsMissing(n) || n.intersectsChange || containsParseError(n)) return;
         const fs = n.flags & NodeFlags.ContextFlags;
         if (fs !== flags.value) return;
-        if (!this.canReuse(c, n)) return;
+        const canReuse = () => {
+          switch (c) {
+            case Parser.Context.ClassMembers:
+              switch (n.kind) {
+                case Syntax.Constructor:
+                case Syntax.IndexSignature:
+                case Syntax.GetAccessor:
+                case Syntax.SetAccessor:
+                case Syntax.PropertyDeclaration:
+                case Syntax.SemicolonClassElement:
+                  return true;
+                case Syntax.MethodDeclaration:
+                  const n2 = n as MethodDeclaration;
+                  return !(n2.name.kind === Syntax.Identifier && n2.name.originalKeywordKind === Syntax.ConstructorKeyword);
+              }
+              break;
+            case Parser.Context.SwitchClauses:
+              switch (n.kind) {
+                case Syntax.CaseClause:
+                case Syntax.DefaultClause:
+                  return true;
+              }
+              break;
+            case Parser.Context.SourceElements:
+            case Parser.Context.BlockStatements:
+            case Parser.Context.SwitchClauseStatements:
+              switch (n.kind) {
+                case Syntax.FunctionDeclaration:
+                case Syntax.VariableStatement:
+                case Syntax.Block:
+                case Syntax.IfStatement:
+                case Syntax.ExpressionStatement:
+                case Syntax.ThrowStatement:
+                case Syntax.ReturnStatement:
+                case Syntax.SwitchStatement:
+                case Syntax.BreakStatement:
+                case Syntax.ContinueStatement:
+                case Syntax.ForInStatement:
+                case Syntax.ForOfStatement:
+                case Syntax.ForStatement:
+                case Syntax.WhileStatement:
+                case Syntax.WithStatement:
+                case Syntax.EmptyStatement:
+                case Syntax.TryStatement:
+                case Syntax.LabeledStatement:
+                case Syntax.DoStatement:
+                case Syntax.DebuggerStatement:
+                case Syntax.ImportDeclaration:
+                case Syntax.ImportEqualsDeclaration:
+                case Syntax.ExportDeclaration:
+                case Syntax.ExportAssignment:
+                case Syntax.ModuleDeclaration:
+                case Syntax.ClassDeclaration:
+                case Syntax.InterfaceDeclaration:
+                case Syntax.EnumDeclaration:
+                case Syntax.TypeAliasDeclaration:
+                  return true;
+              }
+              break;
+            case Parser.Context.EnumMembers:
+              return n.kind === Syntax.EnumMember;
+            case Parser.Context.TypeMembers:
+              switch (n.kind) {
+                case Syntax.ConstructSignature:
+                case Syntax.MethodSignature:
+                case Syntax.IndexSignature:
+                case Syntax.PropertySignature:
+                case Syntax.CallSignature:
+                  return true;
+              }
+              break;
+            case Parser.Context.VariableDeclarations:
+              if (n.kind === Syntax.VariableDeclaration) return (n as VariableDeclaration).initializer === undefined;
+              break;
+            case Parser.Context.JSDocParameters:
+            case Parser.Context.Parameters:
+              if (n.kind === Syntax.Parameter) return (n as ParameterDeclaration).initializer === undefined;
+          }
+          return false;
+        };
+        if (!canReuse()) return;
         if ((n as JSDocContainer).jsDocCache) (n as JSDocContainer).jsDocCache = undefined;
         return n;
       }
@@ -1170,167 +1266,67 @@ namespace qnr {
         if (n) return <T>consumeNode(n);
         return cb();
       }
-      private commaDiag(c: Parser.Context) {
-        return c === Parser.Context.EnumMembers ? Diagnostics.An_enum_member_name_must_be_followed_by_a_or : undefined;
-      }
       private abort(c: Parser.Context) {
-        parse.errorAtToken(this.errors(c));
+        const errors = (): DiagnosticMessage => {
+          switch (c) {
+            case Parser.Context.SourceElements:
+              return Diagnostics.Declaration_or_statement_expected;
+            case Parser.Context.BlockStatements:
+              return Diagnostics.Declaration_or_statement_expected;
+            case Parser.Context.SwitchClauses:
+              return Diagnostics.case_or_default_expected;
+            case Parser.Context.SwitchClauseStatements:
+              return Diagnostics.Statement_expected;
+            case Parser.Context.RestProperties:
+            case Parser.Context.TypeMembers:
+              return Diagnostics.Property_or_signature_expected;
+            case Parser.Context.ClassMembers:
+              return Diagnostics.Unexpected_token_A_constructor_method_accessor_or_property_was_expected;
+            case Parser.Context.EnumMembers:
+              return Diagnostics.Enum_member_expected;
+            case Parser.Context.HeritageClauseElement:
+              return Diagnostics.Expression_expected;
+            case Parser.Context.VariableDeclarations:
+              return Diagnostics.Variable_declaration_expected;
+            case Parser.Context.ObjectBindingElements:
+              return Diagnostics.Property_destructuring_pattern_expected;
+            case Parser.Context.ArrayBindingElements:
+              return Diagnostics.Array_element_destructuring_pattern_expected;
+            case Parser.Context.ArgumentExpressions:
+              return Diagnostics.Argument_expression_expected;
+            case Parser.Context.ObjectLiteralMembers:
+              return Diagnostics.Property_assignment_expected;
+            case Parser.Context.ArrayLiteralMembers:
+              return Diagnostics.Expression_or_comma_expected;
+            case Parser.Context.JSDocParameters:
+              return Diagnostics.Parameter_declaration_expected;
+            case Parser.Context.Parameters:
+              return Diagnostics.Parameter_declaration_expected;
+            case Parser.Context.TypeParameters:
+              return Diagnostics.Type_parameter_declaration_expected;
+            case Parser.Context.TypeArguments:
+              return Diagnostics.Type_argument_expected;
+            case Parser.Context.TupleElementTypes:
+              return Diagnostics.Type_expected;
+            case Parser.Context.HeritageClauses:
+              return Diagnostics.Unexpected_token_expected;
+            case Parser.Context.ImportOrExportSpecifiers:
+              return Diagnostics.Identifier_expected;
+            case Parser.Context.JsxAttributes:
+              return Diagnostics.Identifier_expected;
+            case Parser.Context.JsxChildren:
+              return Diagnostics.Identifier_expected;
+            default:
+              return undefined!;
+          }
+        };
+        parse.errorAtToken(errors());
         for (let c = 0; c < Parser.Context.Count; c++) {
-          if (this.code & (1 << c)) {
+          if (this.value & (1 << c)) {
             if (this.isListElement(c, true) || this.isListTerminator(c)) return true;
           }
         }
         next.tok();
-        return false;
-      }
-      private errors(c: Parser.Context): DiagnosticMessage {
-        switch (c) {
-          case Parser.Context.SourceElements:
-            return Diagnostics.Declaration_or_statement_expected;
-          case Parser.Context.BlockStatements:
-            return Diagnostics.Declaration_or_statement_expected;
-          case Parser.Context.SwitchClauses:
-            return Diagnostics.case_or_default_expected;
-          case Parser.Context.SwitchClauseStatements:
-            return Diagnostics.Statement_expected;
-          case Parser.Context.RestProperties:
-          case Parser.Context.TypeMembers:
-            return Diagnostics.Property_or_signature_expected;
-          case Parser.Context.ClassMembers:
-            return Diagnostics.Unexpected_token_A_constructor_method_accessor_or_property_was_expected;
-          case Parser.Context.EnumMembers:
-            return Diagnostics.Enum_member_expected;
-          case Parser.Context.HeritageClauseElement:
-            return Diagnostics.Expression_expected;
-          case Parser.Context.VariableDeclarations:
-            return Diagnostics.Variable_declaration_expected;
-          case Parser.Context.ObjectBindingElements:
-            return Diagnostics.Property_destructuring_pattern_expected;
-          case Parser.Context.ArrayBindingElements:
-            return Diagnostics.Array_element_destructuring_pattern_expected;
-          case Parser.Context.ArgumentExpressions:
-            return Diagnostics.Argument_expression_expected;
-          case Parser.Context.ObjectLiteralMembers:
-            return Diagnostics.Property_assignment_expected;
-          case Parser.Context.ArrayLiteralMembers:
-            return Diagnostics.Expression_or_comma_expected;
-          case Parser.Context.JSDocParameters:
-            return Diagnostics.Parameter_declaration_expected;
-          case Parser.Context.Parameters:
-            return Diagnostics.Parameter_declaration_expected;
-          case Parser.Context.TypeParameters:
-            return Diagnostics.Type_parameter_declaration_expected;
-          case Parser.Context.TypeArguments:
-            return Diagnostics.Type_argument_expected;
-          case Parser.Context.TupleElementTypes:
-            return Diagnostics.Type_expected;
-          case Parser.Context.HeritageClauses:
-            return Diagnostics.Unexpected_token_expected;
-          case Parser.Context.ImportOrExportSpecifiers:
-            return Diagnostics.Identifier_expected;
-          case Parser.Context.JsxAttributes:
-            return Diagnostics.Identifier_expected;
-          case Parser.Context.JsxChildren:
-            return Diagnostics.Identifier_expected;
-          default:
-            return undefined!;
-        }
-      }
-      private isReusable(c: Parser.Context) {
-        switch (c) {
-          case Parser.Context.ClassMembers:
-          case Parser.Context.SwitchClauses:
-          case Parser.Context.SourceElements:
-          case Parser.Context.BlockStatements:
-          case Parser.Context.SwitchClauseStatements:
-          case Parser.Context.EnumMembers:
-          case Parser.Context.TypeMembers:
-          case Parser.Context.VariableDeclarations:
-          case Parser.Context.JSDocParameters:
-          case Parser.Context.Parameters:
-            return true;
-        }
-        return false;
-      }
-      private canReuse(c: Parser.Context, n?: Node) {
-        if (!n) return false;
-        switch (c) {
-          case Parser.Context.ClassMembers:
-            switch (n.kind) {
-              case Syntax.Constructor:
-              case Syntax.IndexSignature:
-              case Syntax.GetAccessor:
-              case Syntax.SetAccessor:
-              case Syntax.PropertyDeclaration:
-              case Syntax.SemicolonClassElement:
-                return true;
-              case Syntax.MethodDeclaration:
-                const n2 = n as MethodDeclaration;
-                return !(n2.name.kind === Syntax.Identifier && n2.name.originalKeywordKind === Syntax.ConstructorKeyword);
-            }
-            break;
-          case Parser.Context.SwitchClauses:
-            switch (n.kind) {
-              case Syntax.CaseClause:
-              case Syntax.DefaultClause:
-                return true;
-            }
-            break;
-          case Parser.Context.SourceElements:
-          case Parser.Context.BlockStatements:
-          case Parser.Context.SwitchClauseStatements:
-            switch (n.kind) {
-              case Syntax.FunctionDeclaration:
-              case Syntax.VariableStatement:
-              case Syntax.Block:
-              case Syntax.IfStatement:
-              case Syntax.ExpressionStatement:
-              case Syntax.ThrowStatement:
-              case Syntax.ReturnStatement:
-              case Syntax.SwitchStatement:
-              case Syntax.BreakStatement:
-              case Syntax.ContinueStatement:
-              case Syntax.ForInStatement:
-              case Syntax.ForOfStatement:
-              case Syntax.ForStatement:
-              case Syntax.WhileStatement:
-              case Syntax.WithStatement:
-              case Syntax.EmptyStatement:
-              case Syntax.TryStatement:
-              case Syntax.LabeledStatement:
-              case Syntax.DoStatement:
-              case Syntax.DebuggerStatement:
-              case Syntax.ImportDeclaration:
-              case Syntax.ImportEqualsDeclaration:
-              case Syntax.ExportDeclaration:
-              case Syntax.ExportAssignment:
-              case Syntax.ModuleDeclaration:
-              case Syntax.ClassDeclaration:
-              case Syntax.InterfaceDeclaration:
-              case Syntax.EnumDeclaration:
-              case Syntax.TypeAliasDeclaration:
-                return true;
-            }
-            break;
-          case Parser.Context.EnumMembers:
-            return n.kind === Syntax.EnumMember;
-          case Parser.Context.TypeMembers:
-            switch (n.kind) {
-              case Syntax.ConstructSignature:
-              case Syntax.MethodSignature:
-              case Syntax.IndexSignature:
-              case Syntax.PropertySignature:
-              case Syntax.CallSignature:
-                return true;
-            }
-            break;
-          case Parser.Context.VariableDeclarations:
-            if (n.kind === Syntax.VariableDeclaration) return (n as VariableDeclaration).initializer === undefined;
-            break;
-          case Parser.Context.JSDocParameters:
-          case Parser.Context.Parameters:
-            if (n.kind === Syntax.Parameter) return (n as ParameterDeclaration).initializer === undefined;
-        }
         return false;
       }
     })();
