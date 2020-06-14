@@ -743,7 +743,7 @@ namespace qnr {
       setEmitFlags(inner, EmitFlags.NoComments);
 
       const outer = createPartiallyEmittedExpression(inner);
-      outer.end = Scanner.skipTrivia(currentText, node.pos);
+      outer.end = qy_syntax.skipTrivia(currentText, node.pos);
       setEmitFlags(outer, EmitFlags.NoComments);
 
       const result = createParen(createCall(outer, /*typeArguments*/ undefined, extendsClauseElement ? [visitNode(extendsClauseElement.expression, visitor, isExpression)] : []));
@@ -765,7 +765,7 @@ namespace qnr {
       addClassMembers(statements, node);
 
       // Create a synthetic text range for the return statement.
-      const closingBraceLocation = createTokenRange(Scanner.skipTrivia(currentText, node.members.end), Syntax.CloseBraceToken);
+      const closingBraceLocation = createTokenRange(qy_syntax.skipTrivia(currentText, node.members.end), Syntax.CloseBraceToken);
       const localName = getInternalName(node);
 
       // The following partially-emitted expression exists purely to align our sourcemap
@@ -1445,7 +1445,7 @@ namespace qnr {
         const name = ComputedPropertyName.kind(propertyName)
           ? propertyName.expression
           : isIdentifier(propertyName)
-          ? StringLiteral.create(Scanner.unescUnderscores(propertyName.escapedText))
+          ? StringLiteral.create(qy_get.unescUnderscores(propertyName.escapedText))
           : propertyName;
         e = createObjectDefinePropertyCall(receiver, name, createPropertyDescriptor({ value: memberFunction, enumerable: false, writable: true, configurable: true }));
       } else {

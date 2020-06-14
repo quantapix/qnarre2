@@ -444,7 +444,7 @@ namespace qnr {
       n.text = t;
       if (raw === undefined || t === raw) n.rawText = raw;
       else {
-        const r = Scanner.process(k, raw);
+        const r = qs_process(k, raw);
         if (typeof r === 'object') return fail('Invalid raw text');
         assert(t === r, "Expected 'text' to be the normalized version of 'rawText'");
         n.rawText = raw;
@@ -518,7 +518,7 @@ namespace qnr {
       }
       getChildren(s?: SourceFileLike) {
         assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
-        const scanner = Scanner.getRaw();
+        const scanner = qs_getRaw();
         const addSynthetics = (ns: Push<Node>, pos: number, end: number) => {
           scanner.setTextPos(pos);
           while (pos < end) {
@@ -1401,14 +1401,14 @@ namespace qnr {
       }
       getLineEndOfPosition(pos: number): number {
         const { line } = this.getLineAndCharacterOfPosition(pos);
-        const lineStarts = this.getLineStarts();
+        const qy_get.lineStarts = this.getLineStarts();
 
         let lastCharPos: number | undefined;
-        if (line + 1 >= lineStarts.length) {
+        if (line + 1 >= qy_get.lineStarts.length) {
           lastCharPos = this.getEnd();
         }
         if (!lastCharPos) {
-          lastCharPos = lineStarts[line + 1] - 1;
+          lastCharPos = qy_get.lineStarts[line + 1] - 1;
         }
 
         const fullText = this.getFullText();

@@ -334,7 +334,7 @@ namespace qnr {
     const errorMessage = `${diagnosticCategoryName(diagnostic)} TS${diagnostic.code}: ${flattenDiagnosticMessageText(diagnostic.messageText, host.getNewLine())}${host.getNewLine()}`;
 
     if (diagnostic.file) {
-      const { line, character } = lineAndCharOf(diagnostic.file, diagnostic.start!); // TODO: GH#18217
+      const { line, character } = qy_get.lineAndCharOf(diagnostic.file, diagnostic.start!); // TODO: GH#18217
       const fileName = diagnostic.file.fileName;
       const relativeFileName = convertToRelativePath(fileName, host.getCurrentDirectory(), (fileName) => host.getCanonicalFileName(fileName));
       return `${relativeFileName}(${line + 1},${character + 1}): ` + errorMessage;
@@ -374,9 +374,9 @@ namespace qnr {
   }
 
   function formatCodeSpan(file: SourceFile, start: number, length: number, indent: string, squiggleColor: ForegroundColorEscapeSequences, host: FormatDiagnosticsHost) {
-    const { line: firstLine, character: firstLineChar } = lineAndCharOf(file, start);
-    const { line: lastLine, character: lastLineChar } = lineAndCharOf(file, start + length);
-    const lastLineInFile = lineAndCharOf(file, file.text.length).line;
+    const { line: firstLine, character: firstLineChar } = qy_get.lineAndCharOf(file, start);
+    const { line: lastLine, character: lastLineChar } = qy_get.lineAndCharOf(file, start + length);
+    const lastLineInFile = qy_get.lineAndCharOf(file, file.text.length).line;
 
     const hasMoreThanFiveLines = lastLine - firstLine >= 4;
     let gutterWidth = (lastLine + 1 + '').length;
@@ -394,8 +394,8 @@ namespace qnr {
         i = lastLine - 1;
       }
 
-      const lineStart = posOf(file, i, 0);
-      const lineEnd = i < lastLineInFile ? posOf(file, i + 1, 0) : file.text.length;
+      const lineStart = qy_get.posOf(file, i, 0);
+      const lineEnd = i < lastLineInFile ? qy_get.posOf(file, i + 1, 0) : file.text.length;
       let lineContent = file.text.slice(lineStart, lineEnd);
       lineContent = lineContent.replace(/\s+$/g, ''); // trim from end
       lineContent = lineContent.replace('\t', ' '); // convert tabs to single spaces
@@ -426,7 +426,7 @@ namespace qnr {
   }
 
   export function formatLocation(file: SourceFile, start: number, host: FormatDiagnosticsHost, color = formatColorAndReset) {
-    const { line: firstLine, character: firstLineChar } = lineAndCharOf(file, start); // TODO: GH#18217
+    const { line: firstLine, character: firstLineChar } = qy_get.lineAndCharOf(file, start); // TODO: GH#18217
     const relativeFileName = host ? convertToRelativePath(file.fileName, host.getCurrentDirectory(), (fileName) => host.getCanonicalFileName(fileName)) : file.fileName;
 
     let output = '';
@@ -758,7 +758,7 @@ namespace qnr {
             return resolved as ResolvedModuleFull;
           }
           const withExtension = clone(resolved) as ResolvedModuleFull;
-          withExtension.extension = extensionFromPath(resolved.resolvedFileName);
+          withExtension.extension = qy_get.extensionFromPath(resolved.resolvedFileName);
           return withExtension;
         });
     } else {
@@ -1811,8 +1811,8 @@ namespace qnr {
       }
 
       // Start out with the line just before the text
-      const lineStarts = lineStarts(file);
-      let line = Scanner.lineAndCharOf(lineStarts, start!).line - 1; // TODO: GH#18217
+      const qy_get.lineStarts = qy_get.lineStarts(file);
+      let line = qy_get.lineAndCharOf(qy_get.lineStarts, start!).line - 1; // TODO: GH#18217
       while (line >= 0) {
         // As soon as that line is known to have a comment directive, use that
         if (directives.markUsed(line)) {
@@ -1820,7 +1820,7 @@ namespace qnr {
         }
 
         // Stop searching if the line is not empty and not a comment
-        const lineText = file.text.slice(lineStarts[line], lineStarts[line + 1]).trim();
+        const lineText = file.text.slice(qy_get.lineStarts[line], qy_get.lineStarts[line + 1]).trim();
         if (lineText !== '' && !/^(\s*)\/\/(.*)$/.test(lineText)) {
           return -1;
         }
@@ -2803,7 +2803,7 @@ namespace qnr {
             modulesWithElidedImports.set(file.path, true);
           } else if (shouldAddFile) {
             const path = toPath(resolvedFileName);
-            const pos = Scanner.skipTrivia(file.text, file.imports[i].pos);
+            const pos = qy_syntax.skipTrivia(file.text, file.imports[i].pos);
             findSourceFile(
               resolvedFileName,
               path,
@@ -3122,7 +3122,7 @@ namespace qnr {
         if (!parseIsolatedEntityName(options.jsxFactory, languageVersion)) {
           createOptionValueDiagnostic('jsxFactory', Diagnostics.Invalid_value_for_jsxFactory_0_is_not_a_valid_identifier_or_qualified_name, options.jsxFactory);
         }
-      } else if (options.reactNamespace && !Scanner.isIdentifierText(options.reactNamespace)) {
+      } else if (options.reactNamespace && !qy_is.identifierText(options.reactNamespace)) {
         createOptionValueDiagnostic('reactNamespace', Diagnostics.Invalid_value_for_reactNamespace_0_is_not_a_valid_identifier, options.reactNamespace);
       }
 
@@ -3174,7 +3174,7 @@ namespace qnr {
       let pos: number, end: number;
       switch (kind) {
         case RefFileKind.Import:
-          pos = Scanner.skipTrivia(refFile.text, refFile.imports[index].pos);
+          pos = qy_syntax.skipTrivia(refFile.text, refFile.imports[index].pos);
           end = refFile.imports[index].end;
           break;
         case RefFileKind.ReferenceFile:

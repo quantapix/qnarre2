@@ -114,7 +114,7 @@ namespace qnr {
       getIndent: () => 0,
       isAtStartOfLine: () => false,
       hasTrailingComment: () => false,
-      hasTrailingWhitespace: () => !!str.length && Scanner.isWhiteSpaceLike(str.charCodeAt(str.length - 1)),
+      hasTrailingWhitespace: () => !!str.length && qy_is.whiteSpaceLike(str.charCodeAt(str.length - 1)),
       writeLine: () => (str += ' '),
       increaseIndent: noop,
       decreaseIndent: noop,
@@ -253,25 +253,25 @@ namespace qnr {
 
   export function getStartPositionOfLine(line: number, sourceFile: SourceFileLike): number {
     assert(line >= 0);
-    return lineStarts(sourceFile)[line];
+    return qy_get.lineStarts(sourceFile)[line];
   }
 
   export function nodePosToString(node: Node): string {
     const file = getSourceFileOfNode(node);
-    const loc = lineAndCharOf(file, node.pos);
+    const loc = qy_get.lineAndCharOf(file, node.pos);
     return `${file.fileName}(${loc.line + 1},${loc.character + 1})`;
   }
 
   export function getEndLinePosition(line: number, sourceFile: SourceFileLike): number {
     assert(line >= 0);
-    const lineStarts = lineStarts(sourceFile);
+    const lineStarts = qy_get.lineStarts(sourceFile);
     const lineIndex = line;
     const sourceText = sourceFile.text;
-    if (lineIndex + 1 === lineStarts.length) return sourceText.length - 1;
+    if (lineIndex + 1 === qy_get.lineStarts.length) return sourceText.length - 1;
     const start = lineStarts[lineIndex];
     let pos = lineStarts[lineIndex + 1] - 1;
-    assert(Scanner.isLineBreak(sourceText.charCodeAt(pos)));
-    while (start <= pos && Scanner.isLineBreak(sourceText.charCodeAt(pos))) {
+    assert(qy_is.lineBreak(sourceText.charCodeAt(pos)));
+    while (start <= pos && qy_is.lineBreak(sourceText.charCodeAt(pos))) {
       pos--;
     }
     return pos;
@@ -348,7 +348,7 @@ namespace qnr {
   }
 
   export function createCommentDirectivesMap(sourceFile: SourceFile, commentDirectives: CommentDirective[]): CommentDirectivesMap {
-    const directivesByLine = QMap.create(commentDirectives.map((commentDirective) => [`${lineAndCharOf(sourceFile, commentDirective.range.end).line}`, commentDirective]));
+    const directivesByLine = QMap.create(commentDirectives.map((commentDirective) => [`${qy_get.lineAndCharOf(sourceFile, commentDirective.range.end).line}`, commentDirective]));
     const usedLines = createMap<boolean>();
     return { getUnusedExpectations, markUsed };
 
@@ -367,17 +367,17 @@ namespace qnr {
 
   export function getTokenPosOfNode(node: Node, sourceFile?: SourceFileLike, includeJsDoc?: boolean): number {
     if (nodeIsMissing(node)) return node.pos;
-    if (isJSDocNode(node)) return Scanner.skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.pos, false, true);
+    if (isJSDocNode(node)) return qy_syntax.skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.pos, false, true);
     if (includeJsDoc && hasJSDocNodes(node)) return getTokenPosOfNode(node.jsDoc![0], sourceFile);
     if (node.kind === Syntax.SyntaxList && (<SyntaxList>node)._children.length > 0) {
       return getTokenPosOfNode((<SyntaxList>node)._children[0], sourceFile, includeJsDoc);
     }
-    return Scanner.skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.pos);
+    return qy_syntax.skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.pos);
   }
 
   export function getNonDecoratorTokenPosOfNode(node: Node, sourceFile?: SourceFileLike): number {
     if (nodeIsMissing(node) || !node.decorators) return getTokenPosOfNode(node, sourceFile);
-    return Scanner.skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.decorators.end);
+    return qy_syntax.skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.decorators.end);
   }
 
   export function getSourceTextOfNodeFromSourceFile(sourceFile: SourceFile, node: Node, includeTrivia = false): string {
@@ -390,7 +390,7 @@ namespace qnr {
 
   export function getTextOfNodeFromSourceText(sourceText: string, node: Node, includeTrivia = false): string {
     if (nodeIsMissing(node)) return '';
-    let text = sourceText.substring(includeTrivia ? node.pos : Scanner.skipTrivia(sourceText, node.pos), node.end);
+    let text = sourceText.substring(includeTrivia ? node.pos : qy_syntax.skipTrivia(sourceText, node.pos), node.end);
     if (isJSDocTypeExpressionOrChild(node)) {
       // strip space + asterisk at line start
       text = text.replace(/(^|\r?\n|\r)\s*\*\s*/g, '$1');
@@ -666,9 +666,9 @@ namespace qnr {
       case Syntax.StringLiteral:
       case Syntax.NumericLiteral:
       case Syntax.NoSubstitutionLiteral:
-        return Scanner.escUnderscores(name.text);
+        return qy_get.escUnderscores(name.text);
       case Syntax.ComputedPropertyName:
-        if (StringLiteral.orNumericLiteralLike(name.expression)) return Scanner.escUnderscores(name.expression.text);
+        if (StringLiteral.orNumericLiteralLike(name.expression)) return qy_get.escUnderscores(name.expression.text);
         return fail('Text of property name cannot be read from non-literal-valued ComputedPropertyNames');
       default:
         return Debug.assertNever(name);
@@ -716,7 +716,7 @@ namespace qnr {
     arg2?: string | number,
     arg3?: string | number
   ): DiagnosticWithLocation {
-    const start = Scanner.skipTrivia(sourceFile.text, nodes.pos);
+    const start = qy_syntax.skipTrivia(sourceFile.text, nodes.pos);
     return createFileDiagnostic(sourceFile, start, nodes.end - start, message, arg0, arg1, arg2, arg3);
   }
 
@@ -759,7 +759,7 @@ namespace qnr {
   }
 
   export function getSpanOfTokenAtPosition(s: SourceFile, pos: number): TextSpan {
-    const scanner = Scanner.create(true, s.languageVariant);
+    const scanner = qs_create(true, s.languageVariant);
     scanner.setText(s.text, pos);
     scanner.scan();
     const start = scanner.getTokenPos();
@@ -767,7 +767,7 @@ namespace qnr {
   }
 
   function getErrorSpanForArrowFunction(sourceFile: SourceFile, node: ArrowFunction): TextSpan {
-    const pos = Scanner.skipTrivia(sourceFile.text, node.pos);
+    const pos = qy_syntax.skipTrivia(sourceFile.text, node.pos);
     if (node.body && node.body.kind === Syntax.Block) {
       const { line: startLine } = sourceFile.lineAndCharOf(node.body.pos);
       const { line: endLine } = sourceFile.lineAndCharOf(node.body.end);
@@ -782,7 +782,7 @@ namespace qnr {
     let errorNode: Node | undefined = node;
     switch (node.kind) {
       case Syntax.SourceFile:
-        const pos = Scanner.skipTrivia(sourceFile.text, 0, /*stopAfterLineBreak*/ false);
+        const pos = qy_syntax.skipTrivia(sourceFile.text, 0, /*stopAfterLineBreak*/ false);
         if (pos === sourceFile.text.length) return new TextSpan();
         return getSpanOfTokenAtPosition(sourceFile, pos);
       case Syntax.VariableDeclaration:
@@ -807,7 +807,7 @@ namespace qnr {
         return getErrorSpanForArrowFunction(sourceFile, <ArrowFunction>node);
       case Syntax.CaseClause:
       case Syntax.DefaultClause:
-        const start = Scanner.skipTrivia(sourceFile.text, (<CaseOrDefaultClause>node).pos);
+        const start = qy_syntax.skipTrivia(sourceFile.text, (<CaseOrDefaultClause>node).pos);
         const end = (<CaseOrDefaultClause>node).statements.length > 0 ? (<CaseOrDefaultClause>node).statements[0].pos : (<CaseOrDefaultClause>node).end;
         return TextSpan.from(start, end);
     }
@@ -816,7 +816,7 @@ namespace qnr {
     }
     assert(!isJSDoc(errorNode));
     const isMissing = nodeIsMissing(errorNode);
-    const pos = isMissing || JsxText.kind(node) ? errorNode.pos : Scanner.skipTrivia(sourceFile.text, errorNode.pos);
+    const pos = isMissing || JsxText.kind(node) ? errorNode.pos : qy_syntax.skipTrivia(sourceFile.text, errorNode.pos);
     if (isMissing) {
       assert(pos === errorNode.pos, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
       assert(pos === errorNode.end, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
@@ -888,7 +888,7 @@ namespace qnr {
   }
 
   export function getLeadingCommentRangesOfNode(node: Node, sourceFileOfNode: SourceFile) {
-    return node.kind !== Syntax.JsxText ? getLeadingCommentRanges(sourceFileOfNode.text, node.pos) : undefined;
+    return node.kind !== Syntax.JsxText ? qy_get.leadingCommentRanges(sourceFileOfNode.text, node.pos) : undefined;
   }
 
   export function getJSDocCommentRanges(node: Node, text: string) {
@@ -898,8 +898,8 @@ namespace qnr {
       node.kind === Syntax.FunctionExpression ||
       node.kind === Syntax.ArrowFunction ||
       node.kind === Syntax.ParenthesizedExpression
-        ? concatenate(getTrailingCommentRanges(text, node.pos), getLeadingCommentRanges(text, node.pos))
-        : getLeadingCommentRanges(text, node.pos);
+        ? concatenate(qy_get.trailingCommentRanges(text, node.pos), qy_get.leadingCommentRanges(text, node.pos))
+        : qy_get.leadingCommentRanges(text, node.pos);
     return filter(
       commentRanges,
       (comment) => text.charCodeAt(comment.pos + 1) === Codes.asterisk && text.charCodeAt(comment.pos + 2) === Codes.asterisk && text.charCodeAt(comment.pos + 3) !== Codes.slash
@@ -1899,7 +1899,7 @@ namespace qnr {
         return name.escapedText;
       }
       if (StringLiteral.like(name) || NumericLiteral.kind(name)) {
-        return Scanner.escUnderscores(name.text);
+        return qy_get.escUnderscores(name.text);
       }
     }
     if (isElementAccessExpression(node) && isWellKnownSymbolSyntactically(node.argumentExpression)) {
@@ -2691,11 +2691,6 @@ namespace qnr {
     return !StringLiteral.orNumericLiteralLike(expr) && !isSignedNumericLiteral(expr) && !isWellKnownSymbolSyntactically(expr);
   }
 
-  /**
-   * Checks if the expression is of the form:
-   *    Symbol.name
-   * where Symbol is literally the word "Symbol", and name is any identifierName
-   */
   export function isWellKnownSymbolSyntactically(node: Node): node is WellKnownSymbolExpression {
     return isPropertyAccessExpression(node) && isESSymbolIdentifier(node.expression);
   }
@@ -2707,13 +2702,13 @@ namespace qnr {
         return name.escapedText;
       case Syntax.StringLiteral:
       case Syntax.NumericLiteral:
-        return Scanner.escUnderscores(name.text);
+        return qy_get.escUnderscores(name.text);
       case Syntax.ComputedPropertyName:
         const nameExpression = name.expression;
         if (isWellKnownSymbolSyntactically(nameExpression)) {
           return getPropertyNameForKnownSymbolName(idText((<PropertyAccessExpression>nameExpression).name));
         } else if (StringLiteral.orNumericLiteralLike(nameExpression)) {
-          return Scanner.escUnderscores(nameExpression.text);
+          return qy_get.escUnderscores(nameExpression.text);
         } else if (isSignedNumericLiteral(nameExpression)) {
           if (nameExpression.operator === Syntax.MinusToken) {
             return (Token.toString(nameExpression.operator) + nameExpression.operand.text) as __String;
@@ -2743,7 +2738,7 @@ namespace qnr {
   }
 
   export function getEscapedTextOfIdentifierOrLiteral(node: PropertyNameLiteral): __String {
-    return isIdentifierOrPrivateIdentifier(node) ? node.escapedText : Scanner.escUnderscores(node.text);
+    return isIdentifierOrPrivateIdentifier(node) ? node.escapedText : qy_get.escUnderscores(node.text);
   }
 
   export function getPropertyNameForUniqueESSymbol(symbol: Symbol): __String {
@@ -3222,10 +3217,10 @@ namespace qnr {
     let hasTrailingComment = false;
 
     function updateLineCountAndPosFor(s: string) {
-      const lineStartsOfS = Scanner.lineStarts(s);
-      if (lineStartsOfS.length > 1) {
-        lineCount = lineCount + lineStartsOfS.length - 1;
-        linePos = output.length - s.length + last(lineStartsOfS);
+      const qy_get.lineStartsOfS = qy_get.lineStarts(s);
+      if (qy_get.lineStartsOfS.length > 1) {
+        lineCount = lineCount + qy_get.lineStartsOfS.length - 1;
+        linePos = output.length - s.length + last(qy_get.lineStartsOfS);
         lineStart = linePos - output.length === 0;
       } else {
         lineStart = false;
@@ -3310,7 +3305,7 @@ namespace qnr {
       getText: () => output,
       isAtStartOfLine: () => lineStart,
       hasTrailingComment: () => hasTrailingComment,
-      hasTrailingWhitespace: () => !!output.length && Scanner.isWhiteSpaceLike(output.charCodeAt(output.length - 1)),
+      hasTrailingWhitespace: () => !!output.length && qy_is.whiteSpaceLike(output.charCodeAt(output.length - 1)),
       clear: reset,
       reportInaccessibleThisError: noop,
       reportPrivateInBaseOfClassExpression: noop,
@@ -3570,8 +3565,8 @@ namespace qnr {
   }
 
   export function getLineOfLocalPosition(sourceFile: SourceFile, pos: number) {
-    const lineStarts = lineStarts(sourceFile);
-    return Scanner.lineOf(lineStarts, pos);
+    const qy_get.lineStarts = qy_get.lineStarts(sourceFile);
+    return Scanner.lineOf(qy_get.lineStarts, pos);
   }
 
   export function getLineOfLocalPositionFromLineMap(lineMap: readonly number[], pos: number) {
@@ -3786,11 +3781,11 @@ namespace qnr {
       //
       //      var x = 10;
       if (node.pos === 0) {
-        leadingComments = filter(getLeadingCommentRanges(text, node.pos), isPinnedCommentLocal);
+        leadingComments = filter(qy_get.leadingCommentRanges(text, node.pos), isPinnedCommentLocal);
       }
     } else {
       // removeComments is false, just get detached as normal and bypass the process to filter comment
-      leadingComments = getLeadingCommentRanges(text, node.pos);
+      leadingComments = qy_get.leadingCommentRanges(text, node.pos);
     }
 
     if (leadingComments) {
@@ -3819,7 +3814,7 @@ namespace qnr {
         // sure there is at least one blank line between it and the node.  If not, it's not
         // a copyright header.
         const lastCommentLine = getLineOfLocalPositionFromLineMap(lineMap, last(detachedComments).end);
-        const nodeLine = getLineOfLocalPositionFromLineMap(lineMap, skipTrivia(text, node.pos));
+        const nodeLine = getLineOfLocalPositionFromLineMap(lineMap, qy_syntax.skipTrivia(text, node.pos));
         if (nodeLine >= lastCommentLine + 2) {
           // Valid detachedComments
           emitNewLineBeforeLeadingComments(lineMap, writer, node, leadingComments);
@@ -3838,7 +3833,7 @@ namespace qnr {
 
   export function writeCommentRange(text: string, lineMap: readonly number[], writer: EmitTextWriter, commentPos: number, commentEnd: number, newLine: string) {
     if (text.charCodeAt(commentPos + 1) === Codes.asterisk) {
-      const firstCommentLineAndChar = Scanner.lineAndCharOf(lineMap, commentPos);
+      const firstCommentLineAndChar = qy_get.lineAndCharOf(lineMap, commentPos);
       const lineCount = lineMap.length;
       let firstCommentLineIndent: number | undefined;
       for (let pos = commentPos, currentLine = firstCommentLineAndChar.line; pos < commentEnd; currentLine++) {
@@ -3914,7 +3909,7 @@ namespace qnr {
 
   function calculateIndent(text: string, pos: number, end: number) {
     let currentLineIndent = 0;
-    for (; pos < end && Scanner.isWhiteSpaceSingleLine(text.charCodeAt(pos)); pos++) {
+    for (; pos < end && qy_is.whiteSpaceSingleLine(text.charCodeAt(pos)); pos++) {
       if (text.charCodeAt(pos) === Codes.tab) {
         // Tabs = TabSize = indent size and go to next tabStop
         currentLineIndent += getIndentSize() - (currentLineIndent % getIndentSize());
@@ -4151,7 +4146,7 @@ namespace qnr {
         return baseStr + '.' + expr.name;
       }
     } else if (isIdentifier(expr)) {
-      return Scanner.unescUnderscores(expr.escapedText);
+      return qy_get.unescUnderscores(expr.escapedText);
     }
     return;
   }
@@ -5017,7 +5012,7 @@ namespace qnr {
   }
 
   function stripLeadingDirectorySeparator(s: string): string | undefined {
-    return Scanner.isDirSeparator(s.charCodeAt(0)) ? s.slice(1) : undefined;
+    return qy_is.dirSeparator(s.charCodeAt(0)) ? s.slice(1) : undefined;
   }
 
   export function tryRemoveDirectoryPrefix(path: string, dirPath: string, getCanonicalFileName: GetCanonicalFileName): string | undefined {
@@ -5539,10 +5534,6 @@ namespace qnr {
     return extensionIsTS(ext) || ext === Extension.Json;
   }
 
-  /**
-   * Gets the extension from a path.
-   * Path must have a valid extension.
-   */
   export function extensionFromPath(path: string): Extension {
     const ext = tryGetExtensionFromPath(path);
     return ext !== undefined ? ext : fail(`File ${path} has unknown extension.`);
@@ -5565,11 +5556,6 @@ namespace qnr {
     directories: emptyArray,
   };
 
-  /**
-   * patternStrings contains both pattern strings (containing "*") and regular strings.
-   * Return an exact match if possible, or a pattern match, or undefined.
-   * (These are verified by verifyCompilerOptions to have 0 or 1 "*" characters.)
-   */
   export function matchPatternOrExact(patternStrings: readonly string[], candidate: string): string | Pattern | undefined {
     const patterns: Pattern[] = [];
     for (const patternString of patternStrings) {

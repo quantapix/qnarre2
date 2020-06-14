@@ -1,148 +1,7 @@
 namespace qnr {
-  const keywords: MapLike<KeywordSyntax> = {
-    abstract: Syntax.AbstractKeyword,
-    any: Syntax.AnyKeyword,
-    as: Syntax.AsKeyword,
-    asserts: Syntax.AssertsKeyword,
-    bigint: Syntax.BigIntKeyword,
-    boolean: Syntax.BooleanKeyword,
-    break: Syntax.BreakKeyword,
-    case: Syntax.CaseKeyword,
-    catch: Syntax.CatchKeyword,
-    class: Syntax.ClassKeyword,
-    continue: Syntax.ContinueKeyword,
-    const: Syntax.ConstKeyword,
-    ['' + 'constructor']: Syntax.ConstructorKeyword,
-    debugger: Syntax.DebuggerKeyword,
-    declare: Syntax.DeclareKeyword,
-    default: Syntax.DefaultKeyword,
-    delete: Syntax.DeleteKeyword,
-    do: Syntax.DoKeyword,
-    else: Syntax.ElseKeyword,
-    enum: Syntax.EnumKeyword,
-    export: Syntax.ExportKeyword,
-    extends: Syntax.ExtendsKeyword,
-    false: Syntax.FalseKeyword,
-    finally: Syntax.FinallyKeyword,
-    for: Syntax.ForKeyword,
-    from: Syntax.FromKeyword,
-    function: Syntax.FunctionKeyword,
-    get: Syntax.GetKeyword,
-    if: Syntax.IfKeyword,
-    implements: Syntax.ImplementsKeyword,
-    import: Syntax.ImportKeyword,
-    in: Syntax.InKeyword,
-    infer: Syntax.InferKeyword,
-    instanceof: Syntax.InstanceOfKeyword,
-    interface: Syntax.InterfaceKeyword,
-    is: Syntax.IsKeyword,
-    keyof: Syntax.KeyOfKeyword,
-    let: Syntax.LetKeyword,
-    module: Syntax.ModuleKeyword,
-    namespace: Syntax.NamespaceKeyword,
-    never: Syntax.NeverKeyword,
-    new: Syntax.NewKeyword,
-    null: Syntax.NullKeyword,
-    number: Syntax.NumberKeyword,
-    object: Syntax.ObjectKeyword,
-    package: Syntax.PackageKeyword,
-    private: Syntax.PrivateKeyword,
-    protected: Syntax.ProtectedKeyword,
-    public: Syntax.PublicKeyword,
-    readonly: Syntax.ReadonlyKeyword,
-    require: Syntax.RequireKeyword,
-    global: Syntax.GlobalKeyword,
-    return: Syntax.ReturnKeyword,
-    set: Syntax.SetKeyword,
-    static: Syntax.StaticKeyword,
-    string: Syntax.StringKeyword,
-    super: Syntax.SuperKeyword,
-    switch: Syntax.SwitchKeyword,
-    symbol: Syntax.SymbolKeyword,
-    this: Syntax.ThisKeyword,
-    throw: Syntax.ThrowKeyword,
-    true: Syntax.TrueKeyword,
-    try: Syntax.TryKeyword,
-    type: Syntax.TypeKeyword,
-    typeof: Syntax.TypeOfKeyword,
-    undefined: Syntax.UndefinedKeyword,
-    unique: Syntax.UniqueKeyword,
-    unknown: Syntax.UnknownKeyword,
-    var: Syntax.VarKeyword,
-    void: Syntax.VoidKeyword,
-    while: Syntax.WhileKeyword,
-    with: Syntax.WithKeyword,
-    yield: Syntax.YieldKeyword,
-    async: Syntax.AsyncKeyword,
-    await: Syntax.AwaitKeyword,
-    of: Syntax.OfKeyword,
-  };
-  export const strToKey = QMap.create(keywords);
-  const strToTok = QMap.create<Syntax>({
-    ...keywords,
-    '{': Syntax.OpenBraceToken,
-    '}': Syntax.CloseBraceToken,
-    '(': Syntax.OpenParenToken,
-    ')': Syntax.CloseParenToken,
-    '[': Syntax.OpenBracketToken,
-    ']': Syntax.CloseBracketToken,
-    '.': Syntax.DotToken,
-    '...': Syntax.Dot3Token,
-    ';': Syntax.SemicolonToken,
-    ',': Syntax.CommaToken,
-    '<': Syntax.LessThanToken,
-    '>': Syntax.GreaterThanToken,
-    '<=': Syntax.LessThanEqualsToken,
-    '>=': Syntax.GreaterThanEqualsToken,
-    '==': Syntax.Equals2Token,
-    '!=': Syntax.ExclamationEqualsToken,
-    '===': Syntax.Equals3Token,
-    '!==': Syntax.ExclamationEquals2Token,
-    '=>': Syntax.EqualsGreaterThanToken,
-    '+': Syntax.PlusToken,
-    '-': Syntax.MinusToken,
-    '**': Syntax.Asterisk2Token,
-    '*': Syntax.AsteriskToken,
-    '/': Syntax.SlashToken,
-    '%': Syntax.PercentToken,
-    '++': Syntax.Plus2Token,
-    '--': Syntax.Minus2Token,
-    '<<': Syntax.LessThan2Token,
-    '</': Syntax.LessThanSlashToken,
-    '>>': Syntax.GreaterThan2Token,
-    '>>>': Syntax.GreaterThan3Token,
-    '&': Syntax.AmpersandToken,
-    '|': Syntax.BarToken,
-    '^': Syntax.CaretToken,
-    '!': Syntax.ExclamationToken,
-    '~': Syntax.TildeToken,
-    '&&': Syntax.Ampersand2Token,
-    '||': Syntax.Bar2Token,
-    '?': Syntax.QuestionToken,
-    '??': Syntax.Question2Token,
-    '?.': Syntax.QuestionDotToken,
-    ':': Syntax.ColonToken,
-    '=': Syntax.EqualsToken,
-    '+=': Syntax.PlusEqualsToken,
-    '-=': Syntax.MinusEqualsToken,
-    '*=': Syntax.AsteriskEqualsToken,
-    '**=': Syntax.Asterisk2EqualsToken,
-    '/=': Syntax.SlashEqualsToken,
-    '%=': Syntax.PercentEqualsToken,
-    '<<=': Syntax.LessThan2EqualsToken,
-    '>>=': Syntax.GreaterThan2EqualsToken,
-    '>>>=': Syntax.GreaterThan3EqualsToken,
-    '&=': Syntax.AmpersandEqualsToken,
-    '|=': Syntax.BarEqualsToken,
-    '^=': Syntax.CaretEqualsToken,
-    '@': Syntax.AtToken,
-    '`': Syntax.BacktickToken,
-  });
-  const tokStrings = strToTok.reverse();
-
   export interface Parser {}
   function parser() {
-    const scanner = Scanner.create(true);
+    const scanner = qs_create(true);
     let currentToken: Syntax;
     let identifiers: QMap<string>;
     let privateIdentifiers: QMap<string>;
@@ -169,7 +28,7 @@ namespace qnr {
         return tok() === Syntax.OpenBraceToken || tok() === Syntax.OpenBracketToken || tok() === Syntax.PrivateIdentifier || this.identifier();
       }
       literalPropertyName() {
-        return identifierOrKeyword(tok()) || tok() === Syntax.StringLiteral || tok() === Syntax.NumericLiteral;
+        return qy_is.identifierOrKeyword(tok()) || tok() === Syntax.StringLiteral || tok() === Syntax.NumericLiteral;
       }
       indexSignature() {
         const isUnambiguouslyIndexSignature = () => {
@@ -227,7 +86,7 @@ namespace qnr {
                 return tok() === Syntax.OpenBraceToken || tok() === Syntax.Identifier || tok() === Syntax.ExportKeyword;
               case Syntax.ImportKeyword:
                 next.tok();
-                return tok() === Syntax.StringLiteral || tok() === Syntax.AsteriskToken || tok() === Syntax.OpenBraceToken || identifierOrKeyword(tok());
+                return tok() === Syntax.StringLiteral || tok() === Syntax.AsteriskToken || tok() === Syntax.OpenBraceToken || qy_is.identifierOrKeyword(tok());
               case Syntax.ExportKeyword:
                 let currentToken = next.tok();
                 if (currentToken === Syntax.TypeKeyword) currentToken = lookAhead(next.tok);
@@ -531,11 +390,11 @@ namespace qnr {
       }
       isIdentifierOrKeyword() {
         this.tok();
-        return identifierOrKeyword(tok());
+        return qy_is.identifierOrKeyword(tok());
       }
       isIdentifierOrKeywordOrGreaterThan() {
         this.tok();
-        return identifierOrKeywordOrGreaterThan(tok());
+        return qy_is.identifierOrKeywordOrGreaterThan(tok());
       }
       isStartOfExpression() {
         this.tok();
@@ -567,11 +426,11 @@ namespace qnr {
       }
       isIdentifierOrKeywordOrOpenBracketOrTemplate() {
         this.tok();
-        return identifierOrKeyword(tok()) || tok() === Syntax.OpenBracketToken || is.templateStartOfTaggedTemplate();
+        return qy_is.identifierOrKeyword(tok()) || tok() === Syntax.OpenBracketToken || is.templateStartOfTaggedTemplate();
       }
       isIdentifierOrKeywordOnSameLine() {
         this.tok();
-        return identifierOrKeyword(tok()) && !scanner.hasPrecedingLineBreak();
+        return qy_is.identifierOrKeyword(tok()) && !scanner.hasPrecedingLineBreak();
       }
       isClassKeywordOnSameLine() {
         this.tok();
@@ -583,7 +442,7 @@ namespace qnr {
       }
       isIdentifierOrKeywordOrLiteralOnSameLine() {
         this.tok();
-        return (identifierOrKeyword(tok()) || tok() === Syntax.NumericLiteral || tok() === Syntax.BigIntLiteral || tok() === Syntax.StringLiteral) && !scanner.hasPrecedingLineBreak();
+        return (qy_is.identifierOrKeyword(tok()) || tok() === Syntax.NumericLiteral || tok() === Syntax.BigIntLiteral || tok() === Syntax.StringLiteral) && !scanner.hasPrecedingLineBreak();
       }
       isIdentifierOrStartOfDestructuring() {
         this.tok();
@@ -706,7 +565,7 @@ namespace qnr {
         if (isIdentifier) {
           const n = create.node(Syntax.Identifier);
           if (tok() !== Syntax.Identifier) n.originalKeywordKind = tok();
-          n.escapedText = Scanner.escUnderscores(internIdentifier(scanner.getTokenValue()));
+          n.escapedText = qy_get.escUnderscores(internIdentifier(scanner.getTokenValue()));
           next.tok(false);
           return finishNode(n);
         }
@@ -1070,9 +929,9 @@ namespace qnr {
           case Parser.Context.HeritageClauses:
             return is.heritageClause();
           case Parser.Context.ImportOrExportSpecifiers:
-            return identifierOrKeyword(tok());
+            return qy_is.identifierOrKeyword(tok());
           case Parser.Context.JsxAttributes:
-            return identifierOrKeyword(tok()) || tok() === Syntax.OpenBraceToken;
+            return qy_is.identifierOrKeyword(tok()) || tok() === Syntax.OpenBraceToken;
           case Parser.Context.JsxChildren:
             return true;
         }
@@ -1202,12 +1061,12 @@ namespace qnr {
           return true;
         }
         if (m) this.errorAtToken(m);
-        else this.errorAtToken(Diagnostics._0_expected, toString(t));
+        else this.errorAtToken(Diagnostics._0_expected, qy_syntax.toString(t));
         return false;
       }
       expectedToken<T extends Syntax>(t: T, m?: DiagnosticMessage, arg0?: any): Token<T>;
       expectedToken(t: Syntax, m?: DiagnosticMessage, arg0?: any): Node {
-        return this.optionalToken(t) || create.missingNode(t, false, m || Diagnostics._0_expected, arg0 || toString(t));
+        return this.optionalToken(t) || create.missingNode(t, false, m || Diagnostics._0_expected, arg0 || qy_syntax.toString(t));
       }
       optional(t: Syntax): boolean {
         if (tok() === t) {
@@ -1237,7 +1096,7 @@ namespace qnr {
         return create.identifier(is.identifier(), m, pm);
       }
       identifierName(m?: DiagnosticMessage): Identifier {
-        return create.identifier(identifierOrKeyword(tok()), m);
+        return create.identifier(qy_is.identifierOrKeyword(tok()), m);
       }
       propertyName(computed = true): PropertyName {
         if (tok() === Syntax.StringLiteral || tok() === Syntax.NumericLiteral) {
@@ -1263,7 +1122,7 @@ namespace qnr {
           if (i === undefined) privateIdentifiers.set(s, (i = s));
           return i;
         };
-        n.escapedText = Scanner.escUnderscores(internPrivateIdentifier(scanner.getTokenText()));
+        n.escapedText = qy_get.escUnderscores(internPrivateIdentifier(scanner.getTokenText()));
         next.tok();
         return finishNode(n);
       }
@@ -1284,7 +1143,7 @@ namespace qnr {
         return e;
       }
       rightSideOfDot(allow: boolean, privates: boolean): Identifier | PrivateIdentifier {
-        if (scanner.hasPrecedingLineBreak() && identifierOrKeyword(tok())) {
+        if (scanner.hasPrecedingLineBreak() && qy_is.identifierOrKeyword(tok())) {
           const m = lookAhead(next.isIdentifierOrKeywordOnSameLine);
           if (m) return create.missingNode<Identifier>(Syntax.Identifier, true, Diagnostics.Identifier_expected);
         }
@@ -1325,7 +1184,7 @@ namespace qnr {
           };
           l = middleOrTail();
         } else {
-          l = this.expectedToken(Syntax.TemplateTail, Diagnostics._0_expected, toString(Syntax.CloseBraceToken)) as TemplateTail;
+          l = this.expectedToken(Syntax.TemplateTail, Diagnostics._0_expected, qy_syntax.toString(Syntax.CloseBraceToken)) as TemplateTail;
         }
         n.literal = l;
         return finishNode(n);
@@ -1526,8 +1385,8 @@ namespace qnr {
         const n = create.node(Syntax.TupleType);
         const nameOrType = () => {
           const isTupleElementName = () => {
-            if (tok() === Syntax.Dot3Token) return identifierOrKeyword(next.tok()) && next.isColonOrQuestionColon();
-            return identifierOrKeyword(tok()) && next.isColonOrQuestionColon();
+            if (tok() === Syntax.Dot3Token) return qy_is.identifierOrKeyword(next.tok()) && next.isColonOrQuestionColon();
+            return qy_is.identifierOrKeyword(tok()) && next.isColonOrQuestionColon();
           };
           if (lookAhead(isTupleElementName)) {
             const n = create.node(Syntax.NamedTupleMember);
@@ -2008,7 +1867,7 @@ namespace qnr {
         n.questionToken = t;
         n.whenTrue = flags.withoutContext(withDisallowInDecoratorContext, this.assignmentExpressionOrHigher);
         n.colonToken = this.expectedToken(Syntax.ColonToken);
-        n.whenFalse = nodeIsPresent(n.colonToken) ? this.assignmentExpressionOrHigher() : create.missingNode(Syntax.Identifier, false, Diagnostics._0_expected, toString(Syntax.ColonToken));
+        n.whenFalse = nodeIsPresent(n.colonToken) ? this.assignmentExpressionOrHigher() : create.missingNode(Syntax.Identifier, false, Diagnostics._0_expected, qy_syntax.toString(Syntax.ColonToken));
         return finishNode(n);
       }
       binaryExpressionOrHigher(precedence: number): Expression {
@@ -2088,7 +1947,7 @@ namespace qnr {
         const unaryOperator = tok();
         const e = this.simpleUnaryExpression();
         if (tok() === Syntax.Asterisk2Token) {
-          const pos = Scanner.skipTrivia(sourceText, e.pos);
+          const pos = qy_syntax.skipTrivia(sourceText, e.pos);
           const { end } = e;
           if (e.kind === Syntax.TypeAssertionExpression) {
             this.errorAt(pos, end, Diagnostics.A_type_assertion_expression_is_not_allowed_in_the_left_hand_side_of_an_exponentiation_expression_Consider_enclosing_the_expression_in_parentheses);
@@ -2097,7 +1956,7 @@ namespace qnr {
               pos,
               end,
               Diagnostics.An_unary_expression_with_the_0_operator_is_not_allowed_in_the_left_hand_side_of_an_exponentiation_expression_Consider_enclosing_the_expression_in_parentheses,
-              toString(unaryOperator)
+              qy_syntax.toString(unaryOperator)
             );
           }
         }
@@ -2236,7 +2095,7 @@ namespace qnr {
           };
           if (allowOptionalChain && isStartOfChain()) {
             questionDotToken = this.expectedToken(Syntax.QuestionDotToken);
-            isPropertyAccess = identifierOrKeyword(tok());
+            isPropertyAccess = qy_is.identifierOrKeyword(tok());
           } else isPropertyAccess = this.optional(Syntax.DotToken);
           if (isPropertyAccess) {
             expression = this.propertyAccessExpressionRest(expression, questionDotToken);
@@ -3041,7 +2900,7 @@ namespace qnr {
           if (d) return d;
         }
         if (is.indexSignature()) return this.indexSignatureDeclaration(<IndexSignatureDeclaration>n);
-        if (identifierOrKeyword(tok()) || tok() === Syntax.StringLiteral || tok() === Syntax.NumericLiteral || tok() === Syntax.AsteriskToken || tok() === Syntax.OpenBracketToken) {
+        if (qy_is.identifierOrKeyword(tok()) || tok() === Syntax.StringLiteral || tok() === Syntax.NumericLiteral || tok() === Syntax.AsteriskToken || tok() === Syntax.OpenBracketToken) {
           const isAmbient = n.modifiers && some(n.modifiers, is.declareModifier);
           if (isAmbient) {
             for (const m of n.modifiers!) {
@@ -3426,7 +3285,7 @@ namespace qnr {
               parse.errorAtRange(openingTag, Diagnostics.JSX_fragment_has_no_corresponding_closing_tag);
             } else {
               const tag = openingTag.tagName;
-              const start = Scanner.skipTrivia(sourceText, tag.pos);
+              const start = qy_syntax.skipTrivia(sourceText, tag.pos);
               parse.errorAt(start, tag.end, Diagnostics.JSX_element_0_has_no_corresponding_closing_tag, getTextOfNodeFromSourceText(sourceText, openingTag.tagName));
             }
             return;
@@ -3541,7 +3400,7 @@ namespace qnr {
       closingFragment(inExpressionContext: boolean): JsxClosingFragment {
         const n = create.node(Syntax.JsxClosingFragment);
         parse.expected(Syntax.LessThanSlashToken);
-        if (identifierOrKeyword(tok())) parse.errorAtRange(this.elementName(), Diagnostics.Expected_corresponding_closing_tag_for_JSX_fragment);
+        if (qy_is.identifierOrKeyword(tok())) parse.errorAtRange(this.elementName(), Diagnostics.Expected_corresponding_closing_tag_for_JSX_fragment);
         if (inExpressionContext) parse.expected(Syntax.GreaterThanToken);
         else {
           parse.expected(Syntax.GreaterThanToken, undefined, false);
@@ -3581,7 +3440,7 @@ namespace qnr {
         assert(start >= 0);
         assert(start <= end);
         assert(end <= content.length);
-        if (!Scanner.isJSDocLike(content, start)) return;
+        if (!qy_is.jsDocLike(content, start)) return;
         return scanner.scanRange(start + 3, length - 5, () => {
           let state = Parser.State.SawAsterisk;
           let margin: number | undefined;
@@ -3651,12 +3510,12 @@ namespace qnr {
           next.tokJSDoc();
           return true;
         }
-        parse.errorAtToken(Diagnostics._0_expected, toString(t));
+        parse.errorAtToken(Diagnostics._0_expected, qy_syntax.toString(t));
         return false;
       }
       expectedToken<T extends JSDocSyntax>(t: T): Token<T>;
       expectedToken(t: JSDocSyntax): Node {
-        return this.optionalToken(t) || create.missingNode(t, false, Diagnostics._0_expected, toString(t));
+        return this.optionalToken(t) || create.missingNode(t, false, Diagnostics._0_expected, qy_syntax.toString(t));
       }
       optional(t: JSDocSyntax): boolean {
         if (tok() === t) {
@@ -3884,7 +3743,7 @@ namespace qnr {
               break;
             case Syntax.OpenBraceToken:
               state = Parser.State.SavingComments;
-              if (lookAhead(() => next.tokJSDoc() === Syntax.AtToken && identifierOrKeyword(next.tokJSDoc()) && scanner.getTokenText() === 'link')) {
+              if (lookAhead(() => next.tokJSDoc() === Syntax.AtToken && qy_is.identifierOrKeyword(next.tokJSDoc()) && scanner.getTokenText() === 'link')) {
                 pushComment(scanner.getTokenText());
                 next.tokJSDoc();
                 pushComment(scanner.getTokenText());
@@ -4127,7 +3986,7 @@ namespace qnr {
       }
       typeNameWithNamespace(nested?: boolean) {
         const p = scanner.getTokenPos();
-        if (!identifierOrKeyword(tok())) return;
+        if (!qy_is.identifierOrKeyword(tok())) return;
         const r = this.identifierName();
         if (parse.optional(Syntax.DotToken)) {
           const n = create.node(Syntax.ModuleDeclaration, p);
@@ -4270,13 +4129,13 @@ namespace qnr {
         return entity;
       }
       identifierName(m?: DiagnosticMessage): Identifier {
-        if (!identifierOrKeyword(tok())) return create.missingNode<Identifier>(Syntax.Identifier, !m, m || Diagnostics.Identifier_expected);
+        if (!qy_is.identifierOrKeyword(tok())) return create.missingNode<Identifier>(Syntax.Identifier, !m, m || Diagnostics.Identifier_expected);
         create.identifierCount++;
         const pos = scanner.getTokenPos();
         const end = scanner.getTextPos();
         const n = create.node(Syntax.Identifier, pos);
         if (tok() !== Syntax.Identifier) n.originalKeywordKind = tok();
-        n.escapedText = Scanner.escUnderscores(internIdentifier(scanner.getTokenValue()));
+        n.escapedText = qy_get.escUnderscores(internIdentifier(scanner.getTokenValue()));
         finishNode(n, end);
         next.tokJSDoc();
         return n;
@@ -4361,7 +4220,7 @@ namespace qnr {
           return true;
         } else if (parse.optional(Syntax.ColonToken)) return true;
         else if (isType && tok() === Syntax.EqualsGreaterThanToken) {
-          parse.errorAtToken(Diagnostics._0_expected, toString(Syntax.ColonToken));
+          parse.errorAtToken(Diagnostics._0_expected, qy_syntax.toString(Syntax.ColonToken));
           next.tok();
           return true;
         }
@@ -4522,18 +4381,6 @@ namespace qnr {
     Unknown,
   }
 
-  export function toString(t: Syntax) {
-    return tokStrings[t];
-  }
-  export function fromString(s: string) {
-    return strToTok.get(s);
-  }
-  export function identifierOrKeyword(t: Syntax) {
-    return t >= Syntax.Identifier;
-  }
-  export function identifierOrKeywordOrGreaterThan(t: Syntax) {
-    return t === Syntax.GreaterThanToken || identifierOrKeyword(t);
-  }
   export function createSourceFile(fileName: string, sourceText: string, languageVersion: ScriptTarget, setParentNodes = false, scriptKind?: ScriptKind): SourceFile {
     performance.mark('beforeParse');
     let result: SourceFile;
@@ -5104,7 +4951,7 @@ namespace qnr {
 
   export function processCommentPragmas(context: PragmaContext, sourceText: string): void {
     const pragmas: PragmaPseudoMapEntry[] = [];
-    for (const range of getLeadingCommentRanges(sourceText, 0) || emptyArray) {
+    for (const range of qy_get.leadingCommentRanges(sourceText, 0) || emptyArray) {
       const comment = sourceText.substring(range.pos, range.end);
       extractPragmas(pragmas, range, comment);
     }

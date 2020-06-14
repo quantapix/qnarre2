@@ -156,16 +156,16 @@ namespace qnr {
   export class SourceFile2 implements SourceFileLike {
     text = '';
     lineMap?: number[];
-    lineStarts(): readonly number[] {
-      return this.lineMap ?? (this.lineMap = Scanner.lineStarts(this.text));
+    qy_get.lineStarts(): readonly number[] {
+      return this.lineMap ?? (this.lineMap = qy_get.lineStarts(this.text));
     }
-    lineAndCharOf(pos: number) {
-      return Scanner.lineAndCharOf(this.lineStarts(), pos);
+    qy_get.lineAndCharOf(pos: number) {
+      return qy_get.lineAndCharOf(this.qy_get.lineStarts(), pos);
     }
-    posOf(line: number, char: number): number;
-    posOf(line: number, char: number, edits?: true): number;
-    posOf(line: number, char: number, edits?: true): number {
-      return Scanner.posOf(this.lineStarts(), line, char, this.text, edits);
+    qy_get.posOf(line: number, char: number): number;
+    qy_get.posOf(line: number, char: number, edits?: true): number;
+    qy_get.posOf(line: number, char: number, edits?: true): number {
+      return qy_get.posOf(this.qy_get.lineStarts(), line, char, this.text, edits);
     }
     linesBetween(p1: number, p2: number): number;
     linesBetween(r1: QRange, r2: QRange, comments: boolean): number;
@@ -173,7 +173,7 @@ namespace qnr {
       if (typeof x1 === 'number') {
         if (x1 === x2) return 0;
         assert(typeof x2 === 'number');
-        const ss = this.lineStarts();
+        const ss = this.qy_get.lineStarts();
         const min = Math.min(x1, x2);
         const isNegative = min === x2;
         const max = isNegative ? x1 : x2;
@@ -188,20 +188,20 @@ namespace qnr {
       return this.linesBetween(r1.end, r2.end);
     }
     linesToPrevNonWhitespace(pos: number, stop: number, comments = false) {
-      const s = Scanner.skipTrivia(this.text, pos, false, comments);
+      const s = qy_syntax.skipTrivia(this.text, pos, false, comments);
       const p = this.prevNonWhitespacePos(s, stop);
       return this.linesBetween(p ?? stop, s);
     }
     linesToNextNonWhitespace(pos: number, stop: number, comments = false) {
-      const s = Scanner.skipTrivia(this.text, pos, false, comments);
+      const s = qy_syntax.skipTrivia(this.text, pos, false, comments);
       return this.linesBetween(pos, Math.min(stop, s));
     }
     startPos(r: QRange, comments = false) {
-      return isSynthesized(r.pos) ? -1 : Scanner.skipTrivia(this.text, r.pos, false, comments);
+      return isSynthesized(r.pos) ? -1 : qy_syntax.skipTrivia(this.text, r.pos, false, comments);
     }
     prevNonWhitespacePos(pos: number, stop = 0) {
       while (pos-- > stop) {
-        if (!Scanner.isWhiteSpaceLike(this.text.charCodeAt(pos))) return pos;
+        if (!qy_is.whiteSpaceLike(this.text.charCodeAt(pos))) return pos;
       }
       return;
     }

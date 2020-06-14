@@ -273,10 +273,10 @@ namespace qnr {
     getLineText(line: number): string;
   }
 
-  export function getLineInfo(text: string, lineStarts: readonly number[]): LineInfo {
+  export function getLineInfo(text: string, qy_get.lineStarts: readonly number[]): LineInfo {
     return {
-      getLineCount: () => lineStarts.length,
-      getLineText: (line) => text.substring(lineStarts[line], lineStarts[line + 1]),
+      getLineCount: () => qy_get.lineStarts.length,
+      getLineText: (line) => text.substring(qy_get.lineStarts[line], qy_get.lineStarts[line + 1]),
     };
   }
 
@@ -631,13 +631,13 @@ namespace qnr {
     };
 
     function processMapping(mapping: Mapping): MappedPosition {
-      const generatedPosition = generatedFile !== undefined ? posOf(generatedFile, mapping.generatedLine, mapping.generatedCharacter, /*allowEdits*/ true) : -1;
+      const generatedPosition = generatedFile !== undefined ? qy_get.posOf(generatedFile, mapping.generatedLine, mapping.generatedCharacter, /*allowEdits*/ true) : -1;
       let source: string | undefined;
       let sourcePosition: number | undefined;
       if (isSourceMapping(mapping)) {
         const sourceFile = host.getSourceFileLike(sourceFileAbsolutePaths[mapping.sourceIndex]);
         source = map.sources[mapping.sourceIndex];
-        sourcePosition = sourceFile !== undefined ? posOf(sourceFile, mapping.sourceLine, mapping.sourceCharacter, /*allowEdits*/ true) : -1;
+        sourcePosition = sourceFile !== undefined ? qy_get.posOf(sourceFile, mapping.sourceLine, mapping.sourceCharacter, /*allowEdits*/ true) : -1;
       }
       return {
         generatedPosition,

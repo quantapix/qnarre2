@@ -633,7 +633,7 @@ namespace qnr {
         //      return C;
         //  }();
         //
-        const closingBraceLocation = createTokenRange(Scanner.skipTrivia(currentSourceFile.text, node.members.end), Syntax.CloseBraceToken);
+        const closingBraceLocation = createTokenRange(qy_syntax.skipTrivia(currentSourceFile.text, node.members.end), Syntax.CloseBraceToken);
         const localName = getInternalName(node);
 
         // The following partially-emitted expression exists purely to align our sourcemap
@@ -2124,7 +2124,7 @@ namespace qnr {
         // aggressively.
         // HOWEVER - if there are leading comments on the expression itself, to handle ASI
         // correctly for return and throw, we must keep the parenthesis
-        if (length(getLeadingCommentRangesOfNode(expression, currentSourceFile))) {
+        if (length(qy_get.leadingCommentRangesOfNode(expression, currentSourceFile))) {
           return updateParen(node, expression);
         }
         return createPartiallyEmittedExpression(expression, node);

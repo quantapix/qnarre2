@@ -21,15 +21,13 @@ namespace qnr {
       const text = currentSourceFile.text;
       const commentRanges = previousSibling
         ? concatenate(
-            // to handle
-            // ... parameters,                     // public param: string
-            getTrailingCommentRanges(text, skipTrivia(text, previousSibling.end + 1, /* stopAfterLineBreak */ false, /* stopAtComments */ true)),
-            getLeadingCommentRanges(text, node.pos)
+            qy_get.trailingCommentRanges(text, qy_syntax.skipTrivia(text, previousSibling.end + 1, false, true)),
+            qy_get.leadingCommentRanges(text, node.pos)
           )
-        : getTrailingCommentRanges(text, skipTrivia(text, node.pos, /* stopAfterLineBreak */ false, /* stopAtComments */ true));
+        : qy_get.trailingCommentRanges(text, qy_syntax.skipTrivia(text, node.pos, false, true));
       return commentRanges && commentRanges.length && hasInternalAnnotation(last(commentRanges), currentSourceFile);
     }
-    const leadingCommentRanges = parseTreeNode && getLeadingCommentRangesOfNode(parseTreeNode, currentSourceFile);
+    const leadingCommentRanges = parseTreeNode && qy_get.leadingCommentRangesOfNode(parseTreeNode, currentSourceFile);
     return !!forEach(leadingCommentRanges, (range) => {
       return hasInternalAnnotation(range, currentSourceFile);
     });
@@ -44,12 +42,6 @@ namespace qnr {
     NodeBuilderFlags.GenerateNamesForShadowedTypeParams |
     NodeBuilderFlags.NoTruncation;
 
-  /**
-   * Transforms a ts file into a .d.ts file
-   * This process requires type information, which is retrieved through the emit resolver. Because of this,
-   * in many places this transformer assumes it will be operating on parse tree nodes directly.
-   * This means that _no transforms should be allowed to occur before this one_.
-   */
   export function transformDeclarations(context: TransformationContext) {
     const throwDiagnostic = () => fail('Diagnostic emitted without context');
     let getSymbolAccessibilityDiagnostic: GetSymbolAccessibilityDiagnostic = throwDiagnostic;
@@ -1018,7 +1010,7 @@ namespace qnr {
         }
       }
 
-      if (TupleTypeNode.kind(input) && lineAndCharOf(currentSourceFile, input.pos).line === lineAndCharOf(currentSourceFile, input.end).line) {
+      if (TupleTypeNode.kind(input) && qy_get.lineAndCharOf(currentSourceFile, input.pos).line === qy_get.lineAndCharOf(currentSourceFile, input.end).line) {
         setEmitFlags(input, EmitFlags.SingleLine);
       }
 
@@ -1186,7 +1178,7 @@ namespace qnr {
               getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(p.valueDeclaration);
               const type = resolver.createTypeOfDeclaration(p.valueDeclaration, fakespace, declarationEmitNodeBuilderFlags, symbolTracker);
               getSymbolAccessibilityDiagnostic = oldDiag;
-              const varDecl = createVariableDeclaration(Scanner.unescUnderscores(p.escName), type, /*initializer*/ undefined);
+              const varDecl = createVariableDeclaration(qy_get.unescUnderscores(p.escName), type, /*initializer*/ undefined);
               return createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([varDecl]));
             });
             const namespaceDecl = createModuleDeclaration(/*decorators*/ undefined, ensureModifiers(input), input.name!, createModuleBlock(declarations), NodeFlags.Namespace);
@@ -1331,7 +1323,7 @@ namespace qnr {
           if (extendsClause && !isEntityNameExpression(extendsClause.expression) && extendsClause.expression.kind !== Syntax.NullKeyword) {
             // We must add a temporary declaration for the extends clause expression
 
-            const oldId = input.name ? Scanner.unescUnderscores(input.name.escapedText) : 'default';
+            const oldId = input.name ? qy_get.unescUnderscores(input.name.escapedText) : 'default';
             const newId = createOptimisticUniqueName(`${oldId}_base`);
             getSymbolAccessibilityDiagnostic = () => ({
               diagnosticMessage: Diagnostics.extends_clause_of_exported_class_0_has_or_is_using_private_name_1,

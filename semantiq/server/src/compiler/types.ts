@@ -3679,7 +3679,7 @@ namespace qnr {
     add(ss: SymbolTable<S>, m: DiagnosticMessage) {
       ss.forEach((s, id) => {
         const t = this.get(id);
-        if (t) forEach(t.declarations, addDeclarationDiagnostic(Scanner.unescUnderscores(id), m));
+        if (t) forEach(t.declarations, addDeclarationDiagnostic(qy_get.unescUnderscores(id), m));
         else this.set(id, s);
       });
 
@@ -5916,4 +5916,6 @@ namespace qnr {
     negative: boolean;
     base10Value: string;
   }
+
+  export type ErrorCallback = (m: DiagnosticMessage, length: number) => void;
 }

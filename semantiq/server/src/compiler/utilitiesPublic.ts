@@ -160,12 +160,12 @@ namespace qnr {
   }
 
   export function idText(identifierOrPrivateName: Identifier | PrivateIdentifier): string {
-    return Scanner.unescUnderscores(identifierOrPrivateName.escapedText);
+    return qy_get.unescUnderscores(identifierOrPrivateName.escapedText);
   }
 
   export function symbolName(s: Symbol): string {
     if (s.valueDeclaration && isPrivateIdentifierPropertyDeclaration(s.valueDeclaration)) return idText(s.valueDeclaration.name);
-    return Scanner.unescUnderscores(s.escName);
+    return qy_get.unescUnderscores(s.escName);
   }
 
   function nameForNamelessJSDocTypedef(declaration: JSDocTypedefTag | JSDocEnumTag): Identifier | PrivateIdentifier | undefined {
@@ -1762,7 +1762,7 @@ namespace qnr {
       if (!line.length) continue;
       let i = 0;
       for (; i < line.length && i < indentation; i++) {
-        if (!Scanner.isWhiteSpaceLike(line.charCodeAt(i))) break;
+        if (!qy_is.whiteSpaceLike(line.charCodeAt(i))) break;
       }
       if (i < indentation) indentation = i;
       if (indentation === 0) return 0;

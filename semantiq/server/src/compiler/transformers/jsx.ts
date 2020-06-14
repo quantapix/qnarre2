@@ -206,7 +206,7 @@ namespace qnr {
 
       for (let i = 0; i < text.length; i++) {
         const c = text.charCodeAt(i);
-        if (Scanner.isLineBreak(c)) {
+        if (qy_is.lineBreak(c)) {
           // If we've seen any non-whitespace characters on this line, add the 'trim' of the line.
           // (lastNonWhitespace === -1 is a special flag to detect whether the first line is all whitespace.)
           if (firstNonWhitespace !== -1 && lastNonWhitespace !== -1) {
@@ -216,7 +216,7 @@ namespace qnr {
           // Reset firstNonWhitespace for the next line.
           // Don't bother to reset lastNonWhitespace because we ignore it if firstNonWhitespace = -1.
           firstNonWhitespace = -1;
-        } else if (!Scanner.isWhiteSpaceSingleLine(c)) {
+        } else if (!qy_is.whiteSpaceSingleLine(c)) {
           lastNonWhitespace = i;
           if (firstNonWhitespace === -1) {
             firstNonWhitespace = i;
