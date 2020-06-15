@@ -1835,7 +1835,7 @@ namespace qnr {
       return runWithCancellationToken(() => {
         const diagnostics: DiagnosticWithLocation[] = [];
         walk(sourceFile, sourceFile);
-        forEachChildRecursively(sourceFile, walk, walkArray);
+        qn.forEach.childRecursively(sourceFile, walk, walkArray);
 
         return diagnostics;
 
@@ -2211,7 +2211,7 @@ namespace qnr {
           }
         };
         while (true) {
-          const child = (isJavaScriptFile && hasJSDocNodes(current) && forEach(current.jsDoc, getContainingChild)) || forEachChild(current, getContainingChild);
+          const child = (isJavaScriptFile && hasJSDocNodes(current) && forEach(current.jsDoc, getContainingChild)) || qn.forEach.child(current, getContainingChild);
           if (!child) {
             return current;
           }

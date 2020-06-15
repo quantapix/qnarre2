@@ -72,7 +72,7 @@ namespace qnr {
       // 5. other uninstantiated module declarations.
       case Syntax.ModuleBlock: {
         let state = ModuleInstanceState.NonInstantiated;
-        forEachChild(node, (n) => {
+        qn.forEach.child(node, (n) => {
           const childState = getModuleInstanceStateCached(n, visited);
           switch (childState) {
             case ModuleInstanceState.NonInstantiated:
@@ -735,7 +735,7 @@ namespace qnr {
     }
 
     function bindEachChild(node: Node) {
-      forEachChild(node, bind, bindEach);
+      qn.forEach.child(node, bind, bindEach);
     }
 
     function bindChildrenWorker(node: Node): void {
@@ -4359,6 +4359,6 @@ namespace qnr {
    */
   function setParentPointers(parent: Node, child: Node): void {
     child.parent = parent;
-    forEachChild(child, (grandchild) => setParentPointers(child, grandchild));
+    qn.forEach.child(child, (grandchild) => setParentPointers(child, grandchild));
   }
 }

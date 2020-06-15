@@ -446,7 +446,7 @@ namespace qnr {
         resolver.collectLinkedAliases(node.propertyName || node.name, /*setVisibility*/ true);
         return;
       }
-      forEachChild(node, collectLinkedAliases);
+      qn.forEach.child(node, collectLinkedAliases);
     }
 
     function printSourceFileOrBundle(jsFilePath: string, sourceMapFilePath: string | undefined, sourceFileOrBundle: SourceFile | Bundle, printer: Printer, mapOptions: SourceMapOptions) {

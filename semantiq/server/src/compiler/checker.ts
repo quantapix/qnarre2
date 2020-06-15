@@ -1639,7 +1639,7 @@ namespace qnr {
               return false;
             }
             if (isTypeNode(node)) return false;
-            return forEachChild(node, requiresScopeChangeWorker) || false;
+            return qn.forEach.child(node, requiresScopeChangeWorker) || false;
         }
       }
     }
@@ -8132,7 +8132,7 @@ namespace qnr {
     }
 
     function containsSameNamedThisProperty(thisProperty: Expression, expression: Expression) {
-      return isPropertyAccessExpression(thisProperty) && thisProperty.expression.kind === Syntax.ThisKeyword && forEachChildRecursively(expression, (n) => isMatchingReference(thisProperty, n));
+      return isPropertyAccessExpression(thisProperty) && thisProperty.expression.kind === Syntax.ThisKeyword && qn.forEach.childRecursively(expression, (n) => isMatchingReference(thisProperty, n));
     }
 
     function isDeclarationInConstructor(expression: Expression) {
@@ -11378,7 +11378,7 @@ namespace qnr {
             return (<NamedDeclaration>node).name!.kind === Syntax.ComputedPropertyName && traverse((<NamedDeclaration>node).name!);
 
           default:
-            return !nodeStartsNewLexicalEnvironment(node) && !isPartOfTypeNode(node) && !!forEachChild(node, traverse);
+            return !nodeStartsNewLexicalEnvironment(node) && !isPartOfTypeNode(node) && !!qn.forEach.child(node, traverse);
         }
       }
     }
@@ -14547,11 +14547,11 @@ namespace qnr {
       if (tp.symbol && tp.symbol.declarations && tp.symbol.declarations.length === 1) {
         const container = tp.symbol.declarations[0].parent;
         for (let n = node; n !== container; n = n.parent) {
-          if (!n || n.kind === Syntax.Block || (n.kind === Syntax.ConditionalType && forEachChild((<ConditionalTypeNode>n).extendsType, containsReference))) {
+          if (!n || n.kind === Syntax.Block || (n.kind === Syntax.ConditionalType && qn.forEach.child((<ConditionalTypeNode>n).extendsType, containsReference))) {
             return true;
           }
         }
-        return !!forEachChild(node, containsReference);
+        return !!qn.forEach.child(node, containsReference);
       }
       return true;
       function containsReference(node: Node): boolean {
@@ -14563,7 +14563,7 @@ namespace qnr {
           case Syntax.TypeQuery:
             return true;
         }
-        return !!forEachChild(node, containsReference);
+        return !!qn.forEach.child(node, containsReference);
       }
     }
 
@@ -21861,7 +21861,7 @@ namespace qnr {
           }
         }
       } else {
-        forEachChild(node, markParameterAssignments);
+        qn.forEach.child(node, markParameterAssignments);
       }
     }
 
@@ -22147,7 +22147,7 @@ namespace qnr {
     }
 
     function findFirstSuperCall(node: Node): SuperCall | undefined {
-      return isSuperCall(node) ? node : isFunctionLike(node) ? undefined : forEachChild(node, findFirstSuperCall);
+      return isSuperCall(node) ? node : isFunctionLike(node) ? undefined : qn.forEach.child(node, findFirstSuperCall);
     }
 
     /**
@@ -30620,7 +30620,7 @@ namespace qnr {
     }
 
     function checkConditionalType(node: ConditionalTypeNode) {
-      forEachChild(node, checkSourceElement);
+      qn.forEach.child(node, checkSourceElement);
     }
 
     function checkInferType(node: InferTypeNode) {
@@ -30749,7 +30749,7 @@ namespace qnr {
         }
 
         let seen = false;
-        const subsequentNode = forEachChild(node.parent, (c) => {
+        const subsequentNode = qn.forEach.child(node.parent, (c) => {
           if (seen) {
             return c;
           } else {
@@ -32396,7 +32396,7 @@ namespace qnr {
         return;
       }
 
-      const functionIsUsedInBody = forEachChild(body, function check(childNode): boolean | undefined {
+      const functionIsUsedInBody = qn.forEach.child(body, function check(childNode): boolean | undefined {
         if (isIdentifier(childNode)) {
           const childSymbol = getSymbolAtLocation(childNode);
           if (childSymbol && childSymbol === testedFunctionSymbol) {
@@ -32425,7 +32425,7 @@ namespace qnr {
           }
         }
 
-        return forEachChild(childNode, check);
+        return qn.forEach.child(childNode, check);
       });
 
       if (!functionIsUsedInBody) {
@@ -33602,7 +33602,7 @@ namespace qnr {
             }
           }
         }
-        forEachChild(node, visit);
+        qn.forEach.child(node, visit);
       }
     }
 
@@ -35055,7 +35055,7 @@ namespace qnr {
         case Syntax.JSDocUnknownType:
         case Syntax.JSDocTypeLiteral:
           checkJSDocTypeIsInJsFile(node);
-          forEachChild(node, checkSourceElement);
+          qn.forEach.child(node, checkSourceElement);
           return;
         case Syntax.JSDocVariadicType:
           checkJSDocVariadicType(node as JSDocVariadicType);
@@ -36239,7 +36239,7 @@ namespace qnr {
       }
 
       if (checkChildren) {
-        return !!forEachChild(node, (node) => isReferencedAliasDeclaration(node, checkChildren));
+        return !!qn.forEach.child(node, (node) => isReferencedAliasDeclaration(node, checkChildren));
       }
       return false;
     }

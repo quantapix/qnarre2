@@ -731,8 +731,8 @@ namespace qnr {
 
   export type MutableNodeArray<T extends Node> = NodeArray<T> & T[];
 
-  export interface Token<TKind extends Syntax> extends Node {
-    kind: TKind;
+  export interface Token<T extends Syntax> extends Node {
+    kind: T;
   }
 
   export type DotToken = Token<Syntax.DotToken>;

@@ -1,4 +1,6 @@
 namespace qnr {
+  export type NodeType<T extends Syntax> = T extends keyof SynMap ? SynMap[T] : never;
+
   export function asName<T extends Identifier | BindingName | PropertyName | EntityName | ThisTypeNode | undefined>(n: string | T): T | Identifier {
     return isString(n) ? createIdentifier(n) : n;
   }
@@ -46,379 +48,10 @@ namespace qnr {
     }
   }
 
-  interface SynMap {
-    [Syntax.Unknown]: Unknown;
-    [Syntax.EndOfFileToken]: EndOfFileToken;
-    [Syntax.SingleLineCommentTrivia]: SingleLineCommentTrivia;
-    [Syntax.MultiLineCommentTrivia]: MultiLineCommentTrivia;
-    [Syntax.NewLineTrivia]: NewLineTrivia;
-    [Syntax.WhitespaceTrivia]: WhitespaceTrivia;
-
-    [Syntax.ShebangTrivia]: ShebangTrivia;
-    [Syntax.ConflictMarkerTrivia]: ConflictMarkerTrivia;
-    [Syntax.NumericLiteral]: NumericLiteral;
-    [Syntax.BigIntLiteral]: BigIntLiteral;
-    [Syntax.StringLiteral]: StringLiteral;
-    [Syntax.JsxText]: JsxText;
-    [Syntax.JsxTextAllWhiteSpaces]: JsxTextAllWhiteSpaces;
-    [Syntax.RegexLiteral]: RegexLiteral;
-    [Syntax.NoSubstitutionLiteral]: NoSubstitutionLiteral;
-
-    [Syntax.TemplateHead]: TemplateHead;
-    [Syntax.TemplateMiddle]: TemplateMiddle;
-    [Syntax.TemplateTail]: TemplateTail;
-
-    [Syntax.OpenBraceToken]: OpenBraceToken;
-    [Syntax.CloseBraceToken]: CloseBraceToken;
-    [Syntax.OpenParenToken]: OpenParenToken;
-    [Syntax.CloseParenToken]: CloseParenToken;
-    [Syntax.OpenBracketToken]: OpenBracketToken;
-    [Syntax.CloseBracketToken]: CloseBracketToken;
-    [Syntax.DotToken]: DotToken;
-    [Syntax.Dot3Token]: Dot3Token;
-    [Syntax.SemicolonToken]: SemicolonToken;
-    [Syntax.CommaToken]: CommaToken;
-    [Syntax.QuestionDotToken]: QuestionDotToken;
-    [Syntax.LessThanToken]: LessThanToken;
-    [Syntax.LessThanSlashToken]: LessThanSlashToken;
-    [Syntax.GreaterThanToken]: GreaterThanToken;
-    [Syntax.LessThanEqualsToken]: LessThanEqualsToken;
-    [Syntax.GreaterThanEqualsToken]: GreaterThanEqualsToken;
-    [Syntax.Equals2Token]: Equals2Token;
-    [Syntax.ExclamationEqualsToken]: ExclamationEqualsToken;
-    [Syntax.Equals3Token]: Equals3Token;
-    [Syntax.ExclamationEquals2Token]: ExclamationEquals2Token;
-    [Syntax.EqualsGreaterThanToken]: EqualsGreaterThanToken;
-    [Syntax.PlusToken]: PlusToken;
-    [Syntax.MinusToken]: MinusToken;
-    [Syntax.AsteriskToken]: AsteriskToken;
-    [Syntax.Asterisk2Token]: Asterisk2Token;
-    [Syntax.SlashToken]: SlashToken;
-    [Syntax.PercentToken]: PercentToken;
-    [Syntax.Plus2Token]: Plus2Token;
-    [Syntax.Minus2Token]: Minus2Token;
-    [Syntax.LessThan2Token]: LessThan2Token;
-    [Syntax.GreaterThan2Token]: GreaterThan2Token;
-    [Syntax.GreaterThan3Token]: GreaterThan3Token;
-    [Syntax.AmpersandToken]: AmpersandToken;
-    [Syntax.BarToken]: BarToken;
-    [Syntax.CaretToken]: CaretToken;
-    [Syntax.ExclamationToken]: ExclamationToken;
-    [Syntax.TildeToken]: TildeToken;
-    [Syntax.Ampersand2Token]: Ampersand2Token;
-    [Syntax.Bar2Token]: Bar2Token;
-    [Syntax.QuestionToken]: QuestionToken;
-    [Syntax.ColonToken]: ColonToken;
-    [Syntax.AtToken]: AtToken;
-    [Syntax.Question2Token]: Question2Token;
-    [Syntax.BacktickToken]: BacktickToken;
-
-    [Syntax.EqualsToken]: EqualsToken;
-    [Syntax.PlusEqualsToken]: PlusEqualsToken;
-    [Syntax.MinusEqualsToken]: MinusEqualsToken;
-    [Syntax.AsteriskEqualsToken]: AsteriskEqualsToken;
-    [Syntax.Asterisk2EqualsToken]: Asterisk2EqualsToken;
-    [Syntax.SlashEqualsToken]: SlashEqualsToken;
-    [Syntax.PercentEqualsToken]: PercentEqualsToken;
-    [Syntax.LessThan2EqualsToken]: LessThan2EqualsToken;
-    [Syntax.GreaterThan2EqualsToken]: GreaterThan2EqualsToken;
-    [Syntax.GreaterThan3EqualsToken]: GreaterThan3EqualsToken;
-    [Syntax.AmpersandEqualsToken]: AmpersandEqualsToken;
-    [Syntax.BarEqualsToken]: BarEqualsToken;
-    [Syntax.CaretEqualsToken]: CaretEqualsToken;
-
-    [Syntax.Identifier]: Identifier;
-    [Syntax.PrivateIdentifier]: PrivateIdentifier;
-    /*
-    [Syntax.BreakKeyword]: BreakKeyword;
-    [Syntax.CaseKeyword]: CaseKeyword;
-    [Syntax.CatchKeyword]: CatchKeyword;
-    [Syntax.ClassKeyword]: ClassKeyword;
-    [Syntax.ConstKeyword]: ConstKeyword;
-    [Syntax.ContinueKeyword]: ContinueKeyword;
-    [Syntax.DebuggerKeyword]: DebuggerKeyword;
-    [Syntax.DefaultKeyword]: DefaultKeyword;
-    [Syntax.DeleteKeyword]: DeleteKeyword;
-    [Syntax.DoKeyword]: DoKeyword;
-    [Syntax.ElseKeyword]: ElseKeyword;
-    [Syntax.EnumKeyword]: EnumKeyword;
-    [Syntax.ExportKeyword]: ExportKeyword;
-    [Syntax.ExtendsKeyword]: ExtendsKeyword;
-    [Syntax.FalseKeyword]: FalseKeyword;
-    [Syntax.FinallyKeyword]: FinallyKeyword;
-    [Syntax.ForKeyword]: ForKeyword;
-    [Syntax.FunctionKeyword]: FunctionKeyword;
-    [Syntax.IfKeyword]: IfKeyword;
-    [Syntax.ImportKeyword]: ImportKeyword;
-    [Syntax.InKeyword]: InKeyword;
-    [Syntax.InstanceOfKeyword]: InstanceOfKeyword;
-    [Syntax.NewKeyword]: NewKeyword;
-    [Syntax.NullKeyword]: NullKeyword;
-    [Syntax.ReturnKeyword]: ReturnKeyword;
-    [Syntax.SuperKeyword]: SuperKeyword;
-    [Syntax.SwitchKeyword]: SwitchKeyword;
-    [Syntax.ThisKeyword]: ThisKeyword;
-    [Syntax.ThrowKeyword]: ThrowKeyword;
-    [Syntax.TrueKeyword]: TrueKeyword;
-    [Syntax.TryKeyword]: TryKeyword;
-    [Syntax.TypeOfKeyword]: TypeOfKeyword;
-    [Syntax.VarKeyword]: VarKeyword;
-    [Syntax.VoidKeyword]: VoidKeyword;
-    [Syntax.WhileKeyword]: WhileKeyword;
-    [Syntax.WithKeyword]: WithKeyword;
-
-    [Syntax.ImplementsKeyword]: ImplementsKeyword;
-    [Syntax.InterfaceKeyword]: InterfaceKeyword;
-    [Syntax.LetKeyword]: LetKeyword;
-    [Syntax.PackageKeyword]: PackageKeyword;
-    [Syntax.PrivateKeyword]: PrivateKeyword;
-    [Syntax.ProtectedKeyword]: ProtectedKeyword;
-    [Syntax.PublicKeyword]: PublicKeyword;
-    [Syntax.StaticKeyword]: StaticKeyword;
-    [Syntax.YieldKeyword]: YieldKeyword;
-
-    [Syntax.AbstractKeyword]: AbstractKeyword;
-    [Syntax.AsKeyword]: AsKeyword;
-    [Syntax.AssertsKeyword]: AssertsKeyword;
-    [Syntax.AnyKeyword]: AnyKeyword;
-    [Syntax.AsyncKeyword]: AsyncKeyword;
-    [Syntax.AwaitKeyword]: AwaitKeyword;
-    [Syntax.BooleanKeyword]: BooleanKeyword;
-    [Syntax.ConstructorKeyword]: ConstructorKeyword;
-    [Syntax.DeclareKeyword]: DeclareKeyword;
-    [Syntax.GetKeyword]: GetKeyword;
-    [Syntax.InferKeyword]: InferKeyword;
-    [Syntax.IsKeyword]: IsKeyword;
-    [Syntax.KeyOfKeyword]: KeyOfKeyword;
-    [Syntax.ModuleKeyword]: ModuleKeyword;
-    [Syntax.NamespaceKeyword]: NamespaceKeyword;
-    [Syntax.NeverKeyword]: NeverKeyword;
-    [Syntax.ReadonlyKeyword]: ReadonlyKeyword;
-    [Syntax.RequireKeyword]: RequireKeyword;
-    [Syntax.NumberKeyword]: NumberKeyword;
-    [Syntax.ObjectKeyword]: ObjectKeyword;
-    [Syntax.SetKeyword]: SetKeyword;
-    [Syntax.StringKeyword]: StringKeyword;
-    [Syntax.SymbolKeyword]: SymbolKeyword;
-    [Syntax.TypeKeyword]: TypeKeyword;
-    [Syntax.UndefinedKeyword]: UndefinedKeyword;
-    [Syntax.UniqueKeyword]: UniqueKeyword;
-    [Syntax.UnknownKeyword]: UnknownKeyword;
-    [Syntax.FromKeyword]: FromKeyword;
-    [Syntax.GlobalKeyword]: GlobalKeyword;
-    [Syntax.BigIntKeyword]: BigIntKeyword;
-    [Syntax.OfKeyword]: OfKeyword;
-    */
-    [Syntax.QualifiedName]: QualifiedName;
-    [Syntax.ComputedPropertyName]: ComputedPropertyName;
-
-    [Syntax.TypeParameter]: TypeParameterDeclaration;
-    [Syntax.Parameter]: ParameterDeclaration;
-    [Syntax.Decorator]: Decorator;
-
-    [Syntax.PropertySignature]: PropertySignature;
-    [Syntax.PropertyDeclaration]: PropertyDeclaration;
-    [Syntax.MethodSignature]: MethodSignature;
-    [Syntax.MethodDeclaration]: MethodDeclaration;
-    [Syntax.Constructor]: ConstructorDeclaration;
-    [Syntax.GetAccessor]: GetAccessorDeclaration;
-    [Syntax.SetAccessor]: SetAccessorDeclaration;
-    [Syntax.CallSignature]: CallSignatureDeclaration;
-    [Syntax.ConstructSignature]: ConstructSignatureDeclaration;
-    [Syntax.IndexSignature]: IndexSignatureDeclaration;
-
-    [Syntax.TypePredicate]: TypePredicateNode;
-    [Syntax.TypeReference]: TypeReferenceNode;
-    [Syntax.FunctionType]: FunctionTypeNode;
-    [Syntax.ConstructorType]: ConstructorTypeNode;
-    [Syntax.TypeQuery]: TypeQueryNode;
-    [Syntax.TypeLiteral]: TypeLiteralNode;
-    [Syntax.ArrayType]: ArrayTypeNode;
-    [Syntax.TupleType]: TupleTypeNode;
-    [Syntax.OptionalType]: OptionalTypeNode;
-    [Syntax.RestType]: RestTypeNode;
-    [Syntax.UnionType]: UnionTypeNode;
-    [Syntax.IntersectionType]: IntersectionTypeNode;
-    [Syntax.ConditionalType]: ConditionalTypeNode;
-    [Syntax.InferType]: InferTypeNode;
-    [Syntax.ParenthesizedType]: ParenthesizedTypeNode;
-    [Syntax.ThisType]: ThisTypeNode;
-    [Syntax.TypeOperator]: TypeOperatorNode;
-    [Syntax.IndexedAccessType]: IndexedAccessTypeNode;
-    [Syntax.MappedType]: MappedTypeNode;
-    [Syntax.LiteralType]: LiteralTypeNode;
-    [Syntax.NamedTupleMember]: NamedTupleMember;
-    [Syntax.ImportType]: ImportTypeNode;
-
-    [Syntax.ObjectBindingPattern]: ObjectBindingPattern;
-    [Syntax.ArrayBindingPattern]: ArrayBindingPattern;
-    [Syntax.BindingElement]: BindingElement;
-
-    [Syntax.ArrayLiteralExpression]: ArrayLiteralExpression;
-    [Syntax.ObjectLiteralExpression]: ObjectLiteralExpression;
-    [Syntax.PropertyAccessExpression]: PropertyAccessExpression;
-    [Syntax.ElementAccessExpression]: ElementAccessExpression;
-    [Syntax.CallExpression]: CallExpression;
-    [Syntax.NewExpression]: NewExpression;
-    [Syntax.TaggedTemplateExpression]: TaggedTemplateExpression;
-    [Syntax.TypeAssertionExpression]: TypeAssertion;
-    [Syntax.ParenthesizedExpression]: ParenthesizedExpression;
-    [Syntax.FunctionExpression]: FunctionExpression;
-    [Syntax.ArrowFunction]: ArrowFunction;
-    [Syntax.DeleteExpression]: DeleteExpression;
-    [Syntax.TypeOfExpression]: TypeOfExpression;
-    [Syntax.VoidExpression]: VoidExpression;
-    [Syntax.AwaitExpression]: AwaitExpression;
-    [Syntax.PrefixUnaryExpression]: PrefixUnaryExpression;
-    [Syntax.PostfixUnaryExpression]: PostfixUnaryExpression;
-    [Syntax.BinaryExpression]: BinaryExpression;
-    [Syntax.ConditionalExpression]: ConditionalExpression;
-    [Syntax.TemplateExpression]: TemplateExpression;
-    [Syntax.YieldExpression]: YieldExpression;
-    [Syntax.SpreadElement]: SpreadElement;
-    [Syntax.ClassExpression]: ClassExpression;
-    [Syntax.OmittedExpression]: OmittedExpression;
-    [Syntax.ExpressionWithTypeArguments]: ExpressionWithTypeArguments;
-    [Syntax.AsExpression]: AsExpression;
-    [Syntax.NonNullExpression]: NonNullExpression;
-    [Syntax.MetaProperty]: MetaProperty;
-    [Syntax.SyntheticExpression]: SyntheticExpression;
-
-    [Syntax.TemplateSpan]: TemplateSpan;
-    [Syntax.SemicolonClassElement]: SemicolonClassElement;
-
-    [Syntax.Block]: Block;
-    [Syntax.EmptyStatement]: EmptyStatement;
-    [Syntax.VariableStatement]: VariableStatement;
-    [Syntax.ExpressionStatement]: ExpressionStatement;
-    [Syntax.IfStatement]: IfStatement;
-    [Syntax.DoStatement]: DoStatement;
-    [Syntax.WhileStatement]: WhileStatement;
-    [Syntax.ForStatement]: ForStatement;
-    [Syntax.ForInStatement]: ForInStatement;
-    [Syntax.ForOfStatement]: ForOfStatement;
-    [Syntax.ContinueStatement]: ContinueStatement;
-    [Syntax.BreakStatement]: BreakStatement;
-    [Syntax.ReturnStatement]: ReturnStatement;
-    [Syntax.WithStatement]: WithStatement;
-    [Syntax.SwitchStatement]: SwitchStatement;
-    [Syntax.LabeledStatement]: LabeledStatement;
-    [Syntax.ThrowStatement]: ThrowStatement;
-    [Syntax.TryStatement]: TryStatement;
-    [Syntax.DebuggerStatement]: DebuggerStatement;
-    [Syntax.VariableDeclaration]: VariableDeclaration;
-    [Syntax.VariableDeclarationList]: VariableDeclarationList;
-    [Syntax.FunctionDeclaration]: FunctionDeclaration;
-    [Syntax.ClassDeclaration]: ClassDeclaration;
-    [Syntax.InterfaceDeclaration]: InterfaceDeclaration;
-    [Syntax.TypeAliasDeclaration]: TypeAliasDeclaration;
-    [Syntax.EnumDeclaration]: EnumDeclaration;
-    [Syntax.ModuleDeclaration]: ModuleDeclaration;
-    [Syntax.ModuleBlock]: ModuleBlock;
-    [Syntax.CaseBlock]: CaseBlock;
-    [Syntax.NamespaceExportDeclaration]: NamespaceExportDeclaration;
-    [Syntax.ImportEqualsDeclaration]: ImportEqualsDeclaration;
-    [Syntax.ImportDeclaration]: ImportDeclaration;
-    [Syntax.ImportClause]: ImportClause;
-    [Syntax.NamespaceImport]: NamespaceImport;
-    [Syntax.NamedImports]: NamedImports;
-    [Syntax.ImportSpecifier]: ImportSpecifier;
-    [Syntax.ExportAssignment]: ExportAssignment;
-    [Syntax.ExportDeclaration]: ExportDeclaration;
-    [Syntax.NamedExports]: NamedExports;
-    [Syntax.NamespaceExport]: NamespaceExport;
-    [Syntax.ExportSpecifier]: ExportSpecifier;
-    [Syntax.MissingDeclaration]: MissingDeclaration;
-
-    [Syntax.ExternalModuleReference]: ExternalModuleReference;
-
-    [Syntax.JsxElement]: JsxElement;
-    [Syntax.JsxSelfClosingElement]: JsxSelfClosingElement;
-    [Syntax.JsxOpeningElement]: JsxOpeningElement;
-    [Syntax.JsxClosingElement]: JsxClosingElement;
-    [Syntax.JsxFragment]: JsxFragment;
-    [Syntax.JsxOpeningFragment]: JsxOpeningFragment;
-    [Syntax.JsxClosingFragment]: JsxClosingFragment;
-    [Syntax.JsxAttribute]: JsxAttribute;
-    [Syntax.JsxAttributes]: JsxAttributes;
-    [Syntax.JsxSpreadAttribute]: JsxSpreadAttribute;
-    [Syntax.JsxExpression]: JsxExpression;
-
-    [Syntax.CaseClause]: CaseClause;
-    [Syntax.DefaultClause]: DefaultClause;
-    [Syntax.HeritageClause]: HeritageClause;
-    [Syntax.CatchClause]: CatchClause;
-
-    [Syntax.PropertyAssignment]: PropertyAssignment;
-    [Syntax.ShorthandPropertyAssignment]: ShorthandPropertyAssignment;
-    [Syntax.SpreadAssignment]: SpreadAssignment;
-
-    [Syntax.EnumMember]: EnumMember;
-
-    [Syntax.UnparsedPrologue]: UnparsedPrologue;
-    [Syntax.UnparsedPrepend]: UnparsedPrepend;
-    [Syntax.UnparsedText]: UnparsedTextLike;
-    [Syntax.UnparsedInternalText]: UnparsedTextLike;
-    [Syntax.UnparsedSyntheticReference]: UnparsedSyntheticReference;
-
-    [Syntax.SourceFile]: SourceFile;
-    [Syntax.Bundle]: Bundle;
-    [Syntax.UnparsedSource]: UnparsedSource;
-    [Syntax.InputFiles]: InputFiles;
-
-    [Syntax.JSDocTypeExpression]: JSDocTypeExpression;
-    [Syntax.JSDocAllType]: JSDocAllType;
-
-    [Syntax.JSDocUnknownType]: JSDocUnknownType;
-    [Syntax.JSDocNullableType]: JSDocNullableType;
-    [Syntax.JSDocNonNullableType]: JSDocNonNullableType;
-    [Syntax.JSDocOptionalType]: JSDocOptionalType;
-    [Syntax.JSDocFunctionType]: JSDocFunctionType;
-    [Syntax.JSDocVariadicType]: JSDocVariadicType;
-
-    [Syntax.JSDocNamepathType]: JSDocNamepathType;
-    [Syntax.JSDocComment]: JSDoc;
-    [Syntax.JSDocTypeLiteral]: JSDocTypeLiteral;
-    [Syntax.JSDocSignature]: JSDocSignature;
-    [Syntax.JSDocTag]: JSDocTag;
-    [Syntax.JSDocAugmentsTag]: JSDocAugmentsTag;
-    [Syntax.JSDocImplementsTag]: JSDocImplementsTag;
-    [Syntax.JSDocAuthorTag]: JSDocAuthorTag;
-    [Syntax.JSDocClassTag]: JSDocClassTag;
-    [Syntax.JSDocPublicTag]: JSDocPublicTag;
-    [Syntax.JSDocPrivateTag]: JSDocPrivateTag;
-    [Syntax.JSDocProtectedTag]: JSDocProtectedTag;
-    [Syntax.JSDocReadonlyTag]: JSDocReadonlyTag;
-    [Syntax.JSDocCallbackTag]: JSDocCallbackTag;
-    [Syntax.JSDocEnumTag]: JSDocEnumTag;
-    [Syntax.JSDocParameterTag]: JSDocParameterTag;
-    [Syntax.JSDocReturnTag]: JSDocReturnTag;
-    [Syntax.JSDocThisTag]: JSDocThisTag;
-    [Syntax.JSDocTypeTag]: JSDocTypeTag;
-    [Syntax.JSDocTemplateTag]: JSDocTemplateTag;
-    [Syntax.JSDocTypedefTag]: JSDocTypedefTag;
-    [Syntax.JSDocPropertyTag]: JSDocPropertyTag;
-
-    [Syntax.SyntaxList]: SyntaxList;
-
-    [Syntax.NotEmittedStatement]: NotEmittedStatement;
-    [Syntax.PartiallyEmittedExpression]: PartiallyEmittedExpression;
-    [Syntax.CommaListExpression]: CommaListExpression;
-    [Syntax.MergeDeclarationMarker]: MergeDeclarationMarker;
-    [Syntax.EndOfDeclarationMarker]: EndOfDeclarationMarker;
-    [Syntax.SyntheticReferenceExpression]: SyntheticReferenceExpression;
-
-    //[Syntax.Count]: Count;
-  }
-
-  export type NodeType<T extends Syntax> = T extends keyof SynMap ? SynMap[T] : never;
-
-  export namespace Node {
-    // const kind = Syntax.Unknown;
-
+  export namespace qn {
     export function create<T extends Syntax>(k: T, pos: number, end: number, parent?: Node): NodeType<T> {
       const n =
-        isNodeKind(k) || k === Syntax.Unknown
+        is.node(k) || k === Syntax.Unknown
           ? new NodeObj(k, pos, end)
           : k === Syntax.SourceFile
           ? new SourceFileObj(Syntax.SourceFile, pos, end)
@@ -452,269 +85,19 @@ namespace qnr {
       return n;
     }
 
-    function isNodeKind(k: Syntax) {
-      return k >= Syntax.FirstNode;
-    }
+    export const is = new (class {
+      node(k: Syntax) {
+        return k >= Syntax.FirstNode;
+      }
+      kind<S extends Syntax, T extends { kind: S }>(n: NodeType<S>, t: T): n is NodeType<S> {
+        return n.kind === t.kind;
+      }
+    })();
 
-    export function isKind<S extends Syntax, T extends { kind: S }>(n: NodeType<S>, t: T): n is NodeType<S> {
-      return n.kind === t.kind;
-    }
-
-    export class NodeObj extends TextRange implements Node {
-      id = 0;
-      flags = NodeFlags.None;
-      modifierFlagsCache = ModifierFlags.None;
-      transformFlags = TransformFlags.None;
-      parent!: Node;
-      symbol!: Symbol;
-      jsDoc?: JSDoc[];
-      original?: Node;
-      private _children?: Node[];
-
-      constructor(public kind: Syntax, pos: number, end: number) {
-        super(pos, end);
-      }
-      getSourceFile(): SourceFile {
-        return getSourceFileOfNode(this);
-      }
-      getStart(s?: SourceFileLike, includeJsDocComment?: boolean) {
-        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
-        return getTokenPosOfNode(this, s, includeJsDocComment);
-      }
-      getFullStart() {
-        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
-        return this.pos;
-      }
-      getEnd() {
-        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
-        return this.end;
-      }
-      getWidth(s?: SourceFile) {
-        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
-        return this.getEnd() - this.getStart(s);
-      }
-      getFullWidth() {
-        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
-        return this.end - this.pos;
-      }
-      getLeadingTriviaWidth(s?: SourceFile) {
-        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
-        return this.getStart(s) - this.pos;
-      }
-      getFullText(s?: SourceFile) {
-        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
-        return (s || this.getSourceFile()).text.substring(this.pos, this.end);
-      }
-      getText(s?: SourceFile) {
-        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
-        if (!s) s = this.getSourceFile();
-        return s.text.substring(this.getStart(s), this.getEnd());
-      }
-      getChildCount(s?: SourceFile) {
-        return this.getChildren(s).length;
-      }
-      getChildAt(i: number, s?: SourceFile) {
-        return this.getChildren(s)[i];
-      }
-      getChildren(s?: SourceFileLike) {
-        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
-        const scanner = qs_getRaw();
-        const addSynthetics = (ns: Push<Node>, pos: number, end: number) => {
-          scanner.setTextPos(pos);
-          while (pos < end) {
-            const t = scanner.scan();
-            const p = scanner.getTextPos();
-            if (p <= end) {
-              if (t === Syntax.Identifier) fail(`Did not expect ${Debug.formatSyntax(this.kind)} to have an Identifier in its trivia`);
-              ns.push(Node.create(t, pos, p, this));
-            }
-            pos = p;
-            if (t === Syntax.EndOfFileToken) break;
-          }
-        };
-        const createSyntaxList = (ns: NodeArray<Node>) => {
-          const list = Node.create(Syntax.SyntaxList, ns.pos, ns.end, this);
-          list._children = [];
-          let p = ns.pos;
-          for (const n of ns) {
-            addSynthetics(list._children, p, n.pos);
-            list._children.push(n);
-            p = n.end;
-          }
-          addSynthetics(list._children, p, ns.end);
-          return list;
-        };
-        const createChildren = () => {
-          const cs = [] as Node[];
-          if (isNodeKind(this.kind)) {
-            if (isJSDocCommentContainingNode(this)) {
-              this.forEachChild((c) => {
-                cs.push(c);
-              });
-              return cs;
-            }
-            scanner.setText((s || this.getSourceFile()).text);
-            let p = this.pos;
-            const processNode = (c: Node) => {
-              addSynthetics(cs, p, c.pos);
-              cs.push(c);
-              p = c.end;
-            };
-            const processNodes = (ns: NodeArray<Node>) => {
-              addSynthetics(cs, p, ns.pos);
-              cs.push(createSyntaxList(ns));
-              p = ns.end;
-            };
-            forEach((this as JSDocContainer).jsDoc, processNode);
-            p = this.pos;
-            this.forEachChild(processNode, processNodes);
-            addSynthetics(cs, p, this.end);
-            scanner.setText(undefined);
-          }
-          return cs;
-        };
-        return this._children || (this._children = createChildren());
-      }
-      getFirstToken(s?: SourceFileLike): Node | undefined {
-        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
-        const cs = this.getChildren(s);
-        if (!cs.length) return;
-        const c = find(cs, (c) => c.kind < Syntax.FirstJSDocNode || c.kind > Syntax.LastJSDocNode)!;
-        return c.kind < Syntax.FirstNode ? c : c.getFirstToken(s);
-      }
-      getLastToken(s?: SourceFileLike): Node | undefined {
-        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
-        const cs = this.getChildren(s);
-        const c = lastOrUndefined(cs);
-        if (!c) return;
-        return c.kind < Syntax.FirstNode ? c : c.getLastToken(s);
-      }
-      visit<T>(cb: (n: Node) => T): T | undefined {
-        return cb(this);
-      }
-      forEachChild<T extends Node>(cb: (n: Node) => T, cbs?: (ns: NodeArray<Node>) => T): T | undefined {
-        if (this.kind <= Syntax.LastToken) return;
-        const n = (this as unknown) as
-          | QualifiedName
-          | JSDocTypeLiteral
-          | JSDocSignature
-          | PartiallyEmittedExpression
-          | JSDocAuthorTag
-          | JSDocTypedefTag
-          | JSDocAugmentsTag
-          | JSDocImplementsTag
-          | JSDocTemplateTag
-          | JSDoc
-          | JSDocFunctionType
-          | OptionalTypeNode
-          | RestTypeNode
-          | JSDocTypeExpression
-          | JSDocTypeReferencingNode
-          | JsxClosingElement
-          | JsxExpression
-          | JsxSpreadAttribute
-          | JsxAttribute
-          | JsxAttributes
-          | JsxOpeningLikeElement
-          | JsxFragment
-          | JsxElement
-          | CommaListExpression
-          | MissingDeclaration
-          | ExternalModuleReference
-          | ExpressionWithTypeArguments
-          | HeritageClause
-          | ComputedPropertyName
-          | TemplateSpan
-          | TemplateExpression
-          | ExportAssignment
-          | ImportOrExportSpecifier
-          | ExportDeclaration
-          | NamedImportsOrExports
-          | NamespaceExport
-          | NamespaceImport
-          | NamespaceExportDeclaration
-          | ImportClause
-          | ImportDeclaration
-          | ImportEqualsDeclaration
-          | ModuleDeclaration
-          | EnumMember
-          | EnumDeclaration
-          | TypeAliasDeclaration
-          | InterfaceDeclaration
-          | ClassLikeDeclaration
-          | Decorator
-          | CatchClause
-          | TryStatement
-          | ThrowStatement
-          | LabeledStatement
-          | DefaultClause
-          | CaseClause
-          | CaseBlock
-          | SwitchStatement
-          | WithStatement
-          | ReturnStatement
-          | BreakOrContinueStatement
-          | ForOfStatement
-          | ForInStatement
-          | ForStatement
-          | WhileStatement
-          | DoStatement
-          | IfStatement
-          | ExpressionStatement
-          | VariableDeclarationList
-          | VariableStatement
-          | SourceFile
-          | Block
-          | SpreadElement
-          | ConditionalExpression
-          | MetaProperty
-          | NonNullExpression
-          | AsExpression
-          | BinaryExpression
-          | PostfixUnaryExpression
-          | AwaitExpression
-          | YieldExpression
-          | PrefixUnaryExpression
-          | DeleteExpression
-          | VoidExpression
-          | TypeOfExpression
-          | DeleteExpression
-          | ParenthesizedExpression
-          | TypeAssertion
-          | TaggedTemplateExpression
-          | CallExpression
-          | ElementAccessExpression
-          | PropertyAccessExpression
-          | ObjectLiteralExpression
-          | ArrayLiteralExpression
-          | BindingPattern
-          | NamedTupleMember
-          | LiteralTypeNode
-          | MappedTypeNode
-          | IndexedAccessTypeNode
-          | TypeOperatorNode
-          | ParenthesizedTypeNode
-          | ImportTypeNode
-          | InferTypeNode
-          | ConditionalTypeNode
-          | UnionOrIntersectionTypeNode
-          | TupleTypeNode
-          | ArrayTypeNode
-          | TypeLiteralNode
-          | TypeQueryNode
-          | TypeReferenceNode
-          | TypePredicateNode
-          | FunctionLikeDeclaration
-          | SignatureDeclaration
-          | BindingElement
-          | VariableDeclaration
-          | PropertyAssignment
-          | PropertySignature
-          | PropertyDeclaration
-          | ParameterDeclaration
-          | TypeParameterDeclaration
-          | ShorthandPropertyAssignment
-          | SpreadAssignment;
+    export const forEach = new (class {
+      child<T extends Node>(node: Node, cb: (n: Node) => T, cbs?: (ns: NodeArray<Node>) => T): T | undefined {
+        if (node.kind <= Syntax.LastToken) return;
+        const n = node as NodeTypes;
         switch (n.kind) {
           case Syntax.QualifiedName:
             return n.left.visit(cb) || n.right.visit(cb);
@@ -1056,54 +439,187 @@ namespace qnr {
           case Syntax.PartiallyEmittedExpression:
             return n.expression.visit(cb);
         }
-        return;
       }
-      forEachChildRecursively<T>(rootNode: Node, cb: (node: Node, parent: Node) => T | 'skip' | undefined, cbs?: (nodes: NodeArray<Node>, parent: Node) => T | 'skip' | undefined): T | undefined {
-        const stack: Node[] = [rootNode];
-        while (stack.length) {
-          const parent = stack.pop()!;
-          const res = visitAllPossibleChildren(parent, gatherPossibleChildren(parent));
-          if (res) return res;
-        }
-        return;
-        function gatherPossibleChildren(node: Node) {
-          const children: (Node | NodeArray<Node>)[] = [];
-          forEachChild(node, addWorkItem, addWorkItem); // By using a stack above and `unshift` here, we emulate a depth-first preorder traversal
-          return children;
-          function addWorkItem(n: Node | NodeArray<Node>) {
-            children.unshift(n);
-          }
-        }
-        function visitAllPossibleChildren(parent: Node, children: readonly (Node | NodeArray<Node>)[]) {
-          for (const child of children) {
-            if (isArray(child)) {
+      childRecursively<T>(root: Node, cb: (n: Node, parent: Node) => T | 'skip' | undefined, cbs?: (ns: NodeArray<Node>, parent: Node) => T | 'skip' | undefined): T | undefined {
+        const ns: Node[] = [root];
+        const children = (n: Node) => {
+          const cs: (Node | NodeArray<Node>)[] = [];
+          const add = (n: Node | NodeArray<Node>) => {
+            cs.unshift(n);
+          };
+          this.child(n, add, add);
+          return cs;
+        };
+        const visitAll = (parent: Node, cs: readonly (Node | NodeArray<Node>)[]) => {
+          for (const c of cs) {
+            if (isArray(c)) {
               if (cbs) {
-                const res = cbs(child, parent);
-                if (res) {
-                  if (res === 'skip') continue;
-                  return res;
+                const r = cbs(c, parent);
+                if (r) {
+                  if (r === 'skip') continue;
+                  return r;
                 }
               }
-              for (let i = child.length - 1; i >= 0; i--) {
-                const realChild = child[i];
-                const res = cb(realChild, parent);
-                if (res) {
-                  if (res === 'skip') continue;
-                  return res;
+              for (let i = c.length - 1; i >= 0; i--) {
+                const real = c[i];
+                const r = cb(real, parent);
+                if (r) {
+                  if (r === 'skip') continue;
+                  return r;
                 }
-                stack.push(realChild);
+                ns.push(real);
               }
             } else {
-              stack.push(child);
-              const res = cb(child, parent);
-              if (res) {
-                if (res === 'skip') continue;
-                return res;
+              ns.push(c);
+              const r = cb(c, parent);
+              if (r) {
+                if (r === 'skip') continue;
+                return r;
               }
             }
           }
           return;
+        };
+        while (ns.length) {
+          const parent = ns.pop()!;
+          const res = visitAll(parent, children(parent));
+          if (res) return res;
         }
+        return;
+      }
+    })();
+
+    class NodeObj extends TextRange implements Node {
+      id = 0;
+      flags = NodeFlags.None;
+      modifierFlagsCache = ModifierFlags.None;
+      transformFlags = TransformFlags.None;
+      parent!: Node;
+      symbol!: Symbol;
+      jsDoc?: JSDoc[];
+      original?: Node;
+      private _children?: Node[];
+
+      constructor(public kind: Syntax, pos: number, end: number) {
+        super(pos, end);
+      }
+      getSourceFile(): SourceFile {
+        return getSourceFileOfNode(this);
+      }
+      getStart(s?: SourceFileLike, includeJsDocComment?: boolean) {
+        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
+        return getTokenPosOfNode(this, s, includeJsDocComment);
+      }
+      getFullStart() {
+        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
+        return this.pos;
+      }
+      getEnd() {
+        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
+        return this.end;
+      }
+      getWidth(s?: SourceFile) {
+        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
+        return this.getEnd() - this.getStart(s);
+      }
+      getFullWidth() {
+        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
+        return this.end - this.pos;
+      }
+      getLeadingTriviaWidth(s?: SourceFile) {
+        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
+        return this.getStart(s) - this.pos;
+      }
+      getFullText(s?: SourceFile) {
+        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
+        return (s || this.getSourceFile()).text.substring(this.pos, this.end);
+      }
+      getText(s?: SourceFile) {
+        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
+        if (!s) s = this.getSourceFile();
+        return s.text.substring(this.getStart(s), this.getEnd());
+      }
+      getChildCount(s?: SourceFile) {
+        return this.getChildren(s).length;
+      }
+      getChildAt(i: number, s?: SourceFile) {
+        return this.getChildren(s)[i];
+      }
+      getChildren(s?: SourceFileLike) {
+        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
+        const scanner = qs_getRaw();
+        const addSynthetics = (ns: Push<Node>, pos: number, end: number) => {
+          scanner.setTextPos(pos);
+          while (pos < end) {
+            const t = scanner.scan();
+            const p = scanner.getTextPos();
+            if (p <= end) {
+              if (t === Syntax.Identifier) fail(`Did not expect ${Debug.formatSyntax(this.kind)} to have an Identifier in its trivia`);
+              ns.push(create(t, pos, p, this));
+            }
+            pos = p;
+            if (t === Syntax.EndOfFileToken) break;
+          }
+        };
+        const createSyntaxList = (ns: NodeArray<Node>) => {
+          const list = create(Syntax.SyntaxList, ns.pos, ns.end, this);
+          list._children = [];
+          let p = ns.pos;
+          for (const n of ns) {
+            addSynthetics(list._children, p, n.pos);
+            list._children.push(n);
+            p = n.end;
+          }
+          addSynthetics(list._children, p, ns.end);
+          return list;
+        };
+        const createChildren = () => {
+          const cs = [] as Node[];
+          if (is.node(this.kind)) {
+            if (isJSDocCommentContainingNode(this)) {
+              forEach.child(this, (c) => {
+                cs.push(c);
+              });
+              return cs;
+            }
+            scanner.setText((s || this.getSourceFile()).text);
+            let p = this.pos;
+            const processNode = (c: Node) => {
+              addSynthetics(cs, p, c.pos);
+              cs.push(c);
+              p = c.end;
+            };
+            const processNodes = (ns: NodeArray<Node>) => {
+              addSynthetics(cs, p, ns.pos);
+              cs.push(createSyntaxList(ns));
+              p = ns.end;
+            };
+            forEach((this as JSDocContainer).jsDoc, processNode);
+            p = this.pos;
+            forEach.child(this, processNode, processNodes);
+            addSynthetics(cs, p, this.end);
+            scanner.setText(undefined);
+          }
+          return cs;
+        };
+        return this._children || (this._children = createChildren());
+      }
+      getFirstToken(s?: SourceFileLike): Node | undefined {
+        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
+        const cs = this.getChildren(s);
+        if (!cs.length) return;
+        const c = find(cs, (c) => c.kind < Syntax.FirstJSDocNode || c.kind > Syntax.LastJSDocNode)!;
+        return c.kind < Syntax.FirstNode ? c : c.getFirstToken(s);
+      }
+      getLastToken(s?: SourceFileLike): Node | undefined {
+        assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
+        const cs = this.getChildren(s);
+        const c = lastOrUndefined(cs);
+        if (!c) return;
+        return c.kind < Syntax.FirstNode ? c : c.getLastToken(s);
+      }
+      visit<T>(cb: (n: Node) => T): T | undefined {
+        return cb(this);
       }
     }
 
@@ -1113,10 +629,13 @@ namespace qnr {
       }
     }
 
-    export class TokenObj<T extends Syntax> extends TokenOrIdentifierObj implements Token<T> {}
+    export class TokenObj<T extends Syntax> extends TokenOrIdentifierObj implements Token<T> {
+      constructor(public kind: T, pos: number, end: number) {
+        super(kind, pos, end);
+      }
+    }
 
     export class IdentifierObj extends TokenOrIdentifierObj implements Identifier {
-      kind: Syntax.Identifier = Syntax.Identifier;
       escapedText!: __String;
       autoGenerateFlags!: GeneratedIdentifierFlags;
       _primaryExpressionBrand: any;
@@ -1128,7 +647,7 @@ namespace qnr {
       _declarationBrand: any;
       typeArguments!: NodeArray<TypeNode>;
       flowNode = undefined;
-      constructor(kind: Syntax.Identifier, pos: number, end: number) {
+      constructor(public kind: Syntax.Identifier, pos: number, end: number) {
         super(kind, pos, end);
       }
       get text(): string {
@@ -1138,9 +657,8 @@ namespace qnr {
     IdentifierObj.prototype.kind = Syntax.Identifier;
 
     export class PrivateIdentifierObj extends TokenOrIdentifierObj implements PrivateIdentifier {
-      kind: Syntax.PrivateIdentifier = Syntax.PrivateIdentifier;
       escapedText!: __String;
-      constructor(kind: Syntax.PrivateIdentifier, pos: number, end: number) {
+      constructor(public kind: Syntax.PrivateIdentifier, pos: number, end: number) {
         super(kind, pos, end);
       }
       get text(): string {
@@ -1401,14 +919,14 @@ namespace qnr {
       }
       getLineEndOfPosition(pos: number): number {
         const { line } = this.getLineAndCharacterOfPosition(pos);
-        const qy_get.lineStarts = this.getLineStarts();
+        const lineStarts = this.getLineStarts();
 
         let lastCharPos: number | undefined;
-        if (line + 1 >= qy_get.lineStarts.length) {
+        if (line + 1 >= lineStarts.length) {
           lastCharPos = this.getEnd();
         }
         if (!lastCharPos) {
-          lastCharPos = qy_get.lineStarts[line + 1] - 1;
+          lastCharPos = lineStarts[line + 1] - 1;
         }
 
         const fullText = this.getFullText();
@@ -1425,7 +943,7 @@ namespace qnr {
 
       private computeNamedDeclarations(): QMap<Declaration[]> {
         const result = createMultiMap<Declaration>();
-        this.forEachChild(visit);
+        this.qn.forEach.child(visit);
         return result;
 
         function addDeclaration(declaration: Declaration) {
@@ -1467,7 +985,7 @@ namespace qnr {
                   declarations.push(functionDeclaration);
                 }
               }
-              forEachChild(node, visit);
+              qn.forEach.child(node, visit);
               break;
             case Syntax.ClassDeclaration:
             case Syntax.ClassExpression:
@@ -1484,7 +1002,7 @@ namespace qnr {
             case Syntax.SetAccessor:
             case Syntax.TypeLiteral:
               addDeclaration(<Declaration>node);
-              forEachChild(node, visit);
+              qn.forEach.child(node, visit);
               break;
             case Syntax.Parameter:
               // Only consider parameter properties
@@ -1496,7 +1014,7 @@ namespace qnr {
             case Syntax.BindingElement: {
               const decl = <VariableDeclaration>node;
               if (isBindingPattern(decl.name)) {
-                forEachChild(decl.name, visit);
+                qn.forEach.child(decl.name, visit);
                 break;
               }
               if (decl.initializer) visit(decl.initializer);
@@ -1538,7 +1056,7 @@ namespace qnr {
               }
             // falls through
             default:
-              forEachChild(node, visit);
+              qn.forEach.child(node, visit);
           }
         }
       }
@@ -1585,7 +1103,7 @@ namespace qnr {
   export namespace NumericLiteral {
     export const kind = Syntax.NumericLiteral;
     export function create(t: string, fs: TokenFlags = TokenFlags.None) {
-      const n = Node.createSynthesized(Syntax.NumericLiteral) as NumericLiteral;
+      const n = qn.createSynthesized(Syntax.NumericLiteral) as NumericLiteral;
       n.text = t;
       n.numericLiteralFlags = fs;
       return n;
@@ -1603,7 +1121,7 @@ namespace qnr {
   }
   export namespace BigIntLiteral {
     export function create(t: string) {
-      const n = Node.createSynthesized(Syntax.BigIntLiteral) as BigIntLiteral;
+      const n = qn.createSynthesized(Syntax.BigIntLiteral) as BigIntLiteral;
       n.text = t;
       return n;
     }
@@ -1625,7 +1143,7 @@ namespace qnr {
   }
   export namespace StringLiteral {
     export function create(t: string) {
-      const n = Node.createSynthesized(Syntax.StringLiteral) as StringLiteral;
+      const n = qn.createSynthesized(Syntax.StringLiteral) as StringLiteral;
       n.text = t;
       return n;
     }
@@ -1657,7 +1175,7 @@ namespace qnr {
   }
   export namespace JsxText {
     export function create(t: string, onlyTriviaWhitespaces?: boolean) {
-      const n = Node.createSynthesized(Syntax.JsxText) as JsxText;
+      const n = qn.createSynthesized(Syntax.JsxText) as JsxText;
       n.text = t;
       n.onlyTriviaWhitespaces = !!onlyTriviaWhitespaces;
       return n;
@@ -1672,7 +1190,7 @@ namespace qnr {
   }
   export namespace RegexLiteral {
     export function create(t: string) {
-      const n = Node.createSynthesized(Syntax.RegexLiteral) as RegexLiteral;
+      const n = qn.createSynthesized(Syntax.RegexLiteral) as RegexLiteral;
       n.text = t;
       return n;
     }
@@ -1687,7 +1205,7 @@ namespace qnr {
   }
   export namespace NoSubstitutionLiteral {
     export function create(t: string, raw?: string) {
-      return Node.createTemplateLiteralLike(Syntax.NoSubstitutionLiteral, t, raw) as NoSubstitutionLiteral;
+      return qn.createTemplateLiteralLike(Syntax.NoSubstitutionLiteral, t, raw) as NoSubstitutionLiteral;
     }
     export function kind(n: Node): n is NoSubstitutionLiteral {
       return n.kind === Syntax.NoSubstitutionLiteral;
@@ -1701,7 +1219,7 @@ namespace qnr {
   }
   export namespace TemplateHead {
     export function create(t: string, raw?: string) {
-      return Node.createTemplateLiteralLike(Syntax.TemplateHead, t, raw) as TemplateHead;
+      return qn.createTemplateLiteralLike(Syntax.TemplateHead, t, raw) as TemplateHead;
     }
     export function kind(n: Node): n is TemplateHead {
       return n.kind === Syntax.TemplateHead;
@@ -1715,7 +1233,7 @@ namespace qnr {
   }
   export namespace TemplateMiddle {
     export function create(t: string, raw?: string) {
-      return Node.createTemplateLiteralLike(Syntax.TemplateMiddle, t, raw) as TemplateMiddle;
+      return qn.createTemplateLiteralLike(Syntax.TemplateMiddle, t, raw) as TemplateMiddle;
     }
     export function kind(n: Node): n is TemplateMiddle {
       return n.kind === Syntax.TemplateMiddle;
@@ -1733,7 +1251,7 @@ namespace qnr {
   }
   export namespace TemplateTail {
     export function create(t: string, raw?: string) {
-      return Node.createTemplateLiteralLike(Syntax.TemplateTail, t, raw) as TemplateTail;
+      return qn.createTemplateLiteralLike(Syntax.TemplateTail, t, raw) as TemplateTail;
     }
     export function kind(n: Node): n is TemplateTail {
       return n.kind === Syntax.TemplateTail;
@@ -1748,7 +1266,7 @@ namespace qnr {
   }
   export namespace QualifiedName {
     export function create(left: EntityName, right: string | Identifier) {
-      const n = Node.createSynthesized(Syntax.QualifiedName) as QualifiedName;
+      const n = qn.createSynthesized(Syntax.QualifiedName) as QualifiedName;
       n.left = left;
       n.right = asName(right);
       return n;
@@ -1768,7 +1286,7 @@ namespace qnr {
   }
   export namespace ComputedPropertyName {
     export function create(e: Expression) {
-      const n = Node.createSynthesized(Syntax.ComputedPropertyName) as ComputedPropertyName;
+      const n = qn.createSynthesized(Syntax.ComputedPropertyName) as ComputedPropertyName;
       n.expression = isCommaSequence(e) ? createParen(e) : e;
       return n;
     }
@@ -1789,7 +1307,7 @@ namespace qnr {
   }
   export namespace PropertySignature {
     export function create(ms: readonly Modifier[] | undefined, p: PropertyName | string, q?: QuestionToken, t?: TypeNode, i?: Expression) {
-      const n = Node.createSynthesized(Syntax.PropertySignature) as PropertySignature;
+      const n = qn.createSynthesized(Syntax.PropertySignature) as PropertySignature;
       n.modifiers = NodeArray.from(ms);
       n.name = asName(p);
       n.questionToken = q;
@@ -1816,7 +1334,7 @@ namespace qnr {
   }
   export namespace PropertyDeclaration {
     export function create(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: string | PropertyName, q?: QuestionToken | ExclamationToken, t?: TypeNode, i?: Expression) {
-      const n = Node.createSynthesized(Syntax.PropertyDeclaration) as PropertyDeclaration;
+      const n = qn.createSynthesized(Syntax.PropertyDeclaration) as PropertyDeclaration;
       n.decorators = NodeArray.from(ds);
       n.modifiers = NodeArray.from(ms);
       n.name = asName(p);
@@ -1888,7 +1406,7 @@ namespace qnr {
       t?: TypeNode,
       b?: Block
     ) {
-      const n = Node.createSynthesized(Syntax.MethodDeclaration) as MethodDeclaration;
+      const n = qn.createSynthesized(Syntax.MethodDeclaration) as MethodDeclaration;
       n.decorators = NodeArray.from(ds);
       n.modifiers = NodeArray.from(ms);
       n.asteriskToken = a;
@@ -1936,7 +1454,7 @@ namespace qnr {
   }
   export namespace ConstructorDeclaration {
     export function create(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, ps: readonly ParameterDeclaration[], b?: Block) {
-      const n = Node.createSynthesized(Syntax.Constructor) as ConstructorDeclaration;
+      const n = qn.createSynthesized(Syntax.Constructor) as ConstructorDeclaration;
       n.decorators = NodeArray.from(ds);
       n.modifiers = NodeArray.from(ms);
       n.typeParameters = undefined;
@@ -1961,7 +1479,7 @@ namespace qnr {
   }
   export namespace GetAccessorDeclaration {
     export function create(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: string | PropertyName, ps: readonly ParameterDeclaration[], t?: TypeNode, b?: Block) {
-      const n = Node.createSynthesized(Syntax.GetAccessor) as GetAccessorDeclaration;
+      const n = qn.createSynthesized(Syntax.GetAccessor) as GetAccessorDeclaration;
       n.decorators = NodeArray.from(ds);
       n.modifiers = NodeArray.from(ms);
       n.name = asName(p);
@@ -1998,7 +1516,7 @@ namespace qnr {
   }
   export namespace SetAccessorDeclaration {
     export function create(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: string | PropertyName, ps: readonly ParameterDeclaration[], b?: Block) {
-      const n = Node.createSynthesized(Syntax.SetAccessor) as SetAccessorDeclaration;
+      const n = qn.createSynthesized(Syntax.SetAccessor) as SetAccessorDeclaration;
       n.decorators = NodeArray.from(ds);
       n.modifiers = NodeArray.from(ms);
       n.name = asName(p);
@@ -2051,7 +1569,7 @@ namespace qnr {
   }
   export namespace IndexSignatureDeclaration {
     export function create(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, ps: readonly ParameterDeclaration[], t: TypeNode): IndexSignatureDeclaration {
-      const n = Node.createSynthesized(Syntax.IndexSignature) as IndexSignatureDeclaration;
+      const n = qn.createSynthesized(Syntax.IndexSignature) as IndexSignatureDeclaration;
       n.decorators = NodeArray.from(ds);
       n.modifiers = NodeArray.from(ms);
       n.parameters = NodeArray.create(ps);
@@ -2088,7 +1606,7 @@ namespace qnr {
   }
   export namespace KeywordTypeNode {
     export function create(k: KeywordTypeNode['kind']) {
-      return Node.createSynthesized(k) as KeywordTypeNode;
+      return qn.createSynthesized(k) as KeywordTypeNode;
     }
   }
 
@@ -2104,7 +1622,7 @@ namespace qnr {
       return createWithModifier(undefined, p, t);
     }
     export function createWithModifier(a: AssertsToken | undefined, p: Identifier | ThisTypeNode | string, t?: TypeNode) {
-      const n = Node.createSynthesized(Syntax.TypePredicate) as TypePredicateNode;
+      const n = qn.createSynthesized(Syntax.TypePredicate) as TypePredicateNode;
       n.assertsModifier = a;
       n.parameterName = asName(p);
       n.type = t;
@@ -2127,7 +1645,7 @@ namespace qnr {
   }
   export namespace TypeReferenceNode {
     export function create(t: string | EntityName, ts?: readonly TypeNode[]) {
-      const n = Node.createSynthesized(Syntax.TypeReference) as TypeReferenceNode;
+      const n = qn.createSynthesized(Syntax.TypeReference) as TypeReferenceNode;
       n.typeName = asName(t);
       n.typeArguments = ts && parenthesizeTypeParameters(ts);
       return n;
@@ -2176,7 +1694,7 @@ namespace qnr {
   }
   export namespace TypeQueryNode {
     export function create(e: EntityName) {
-      const n = Node.createSynthesized(Syntax.TypeQuery) as TypeQueryNode;
+      const n = qn.createSynthesized(Syntax.TypeQuery) as TypeQueryNode;
       n.exprName = e;
       return n;
     }
@@ -2194,7 +1712,7 @@ namespace qnr {
   }
   export namespace TypeLiteralNode {
     export function create(ms: readonly TypeElement[] | undefined) {
-      const n = Node.createSynthesized(Syntax.TypeLiteral) as TypeLiteralNode;
+      const n = qn.createSynthesized(Syntax.TypeLiteral) as TypeLiteralNode;
       n.members = NodeArray.create(ms);
       return n;
     }
@@ -2212,7 +1730,7 @@ namespace qnr {
   }
   export namespace ArrayTypeNode {
     export function create(t: TypeNode) {
-      const n = Node.createSynthesized(Syntax.ArrayType) as ArrayTypeNode;
+      const n = qn.createSynthesized(Syntax.ArrayType) as ArrayTypeNode;
       n.elementType = parenthesizeArrayTypeMember(t);
       return n;
     }
@@ -2230,7 +1748,7 @@ namespace qnr {
   }
   export namespace TupleTypeNode {
     export function create(es: readonly (TypeNode | NamedTupleMember)[]) {
-      const n = Node.createSynthesized(Syntax.TupleType) as TupleTypeNode;
+      const n = qn.createSynthesized(Syntax.TupleType) as TupleTypeNode;
       n.elements = NodeArray.create(es);
       return n;
     }
@@ -2248,7 +1766,7 @@ namespace qnr {
   }
   export namespace OptionalTypeNode {
     export function create(t: TypeNode) {
-      const n = Node.createSynthesized(Syntax.OptionalType) as OptionalTypeNode;
+      const n = qn.createSynthesized(Syntax.OptionalType) as OptionalTypeNode;
       n.type = parenthesizeArrayTypeMember(t);
       return n;
     }
@@ -2263,7 +1781,7 @@ namespace qnr {
   }
   export namespace RestTypeNode {
     export function create(t: TypeNode) {
-      const n = Node.createSynthesized(Syntax.RestType) as RestTypeNode;
+      const n = qn.createSynthesized(Syntax.RestType) as RestTypeNode;
       n.type = t;
       return n;
     }
@@ -2281,7 +1799,7 @@ namespace qnr {
       return orIntersectionCreate(Syntax.UnionType, ts) as UnionTypeNode;
     }
     export function orIntersectionCreate(k: Syntax.UnionType | Syntax.IntersectionType, ts: readonly TypeNode[]) {
-      const n = Node.createSynthesized(k) as UnionTypeNode | IntersectionTypeNode;
+      const n = qn.createSynthesized(k) as UnionTypeNode | IntersectionTypeNode;
       n.types = parenthesizeElementTypeMembers(ts);
       return n;
     }
@@ -2321,7 +1839,7 @@ namespace qnr {
   }
   export namespace ConditionalTypeNode {
     export function create(c: TypeNode, e: TypeNode, t: TypeNode, f: TypeNode) {
-      const n = Node.createSynthesized(Syntax.ConditionalType) as ConditionalTypeNode;
+      const n = qn.createSynthesized(Syntax.ConditionalType) as ConditionalTypeNode;
       n.checkType = parenthesizeConditionalTypeMember(c);
       n.extendsType = parenthesizeConditionalTypeMember(e);
       n.trueType = t;
@@ -2342,7 +1860,7 @@ namespace qnr {
   }
   export namespace InferTypeNode {
     export function create(p: TypeParameterDeclaration) {
-      const n = Node.createSynthesized(Syntax.InferType) as InferTypeNode;
+      const n = qn.createSynthesized(Syntax.InferType) as InferTypeNode;
       n.typeParameter = p;
       return n;
     }
@@ -2360,7 +1878,7 @@ namespace qnr {
   }
   export namespace ParenthesizedTypeNode {
     export function create(t: TypeNode) {
-      const n = Node.createSynthesized(Syntax.ParenthesizedType) as ParenthesizedTypeNode;
+      const n = qn.createSynthesized(Syntax.ParenthesizedType) as ParenthesizedTypeNode;
       n.type = t;
       return n;
     }
@@ -2377,7 +1895,7 @@ namespace qnr {
   }
   export namespace ThisTypeNode {
     export function create() {
-      return Node.createSynthesized(Syntax.ThisType) as ThisTypeNode;
+      return qn.createSynthesized(Syntax.ThisType) as ThisTypeNode;
     }
     export function kind(n: Node): n is ThisTypeNode {
       return n.kind === Syntax.ThisType;
@@ -2393,7 +1911,7 @@ namespace qnr {
     export function create(t: TypeNode): TypeOperatorNode;
     export function create(o: Syntax.KeyOfKeyword | Syntax.UniqueKeyword | Syntax.ReadonlyKeyword, t: TypeNode): TypeOperatorNode;
     export function create(o: Syntax.KeyOfKeyword | Syntax.UniqueKeyword | Syntax.ReadonlyKeyword | TypeNode, t?: TypeNode) {
-      const n = Node.createSynthesized(Syntax.TypeOperator) as TypeOperatorNode;
+      const n = qn.createSynthesized(Syntax.TypeOperator) as TypeOperatorNode;
       n.operator = typeof o === 'number' ? o : Syntax.KeyOfKeyword;
       n.type = parenthesizeElementTypeMember(typeof o === 'number' ? t! : o);
       return n;
@@ -2413,7 +1931,7 @@ namespace qnr {
   }
   export namespace IndexedAccessTypeNode {
     export function create(o: TypeNode, i: TypeNode) {
-      const n = Node.createSynthesized(Syntax.IndexedAccessType) as IndexedAccessTypeNode;
+      const n = qn.createSynthesized(Syntax.IndexedAccessType) as IndexedAccessTypeNode;
       n.objectType = parenthesizeElementTypeMember(o);
       n.indexType = i;
       return n;
@@ -2435,7 +1953,7 @@ namespace qnr {
   }
   export namespace MappedTypeNode {
     export function create(r: ReadonlyToken | PlusToken | MinusToken | undefined, p: TypeParameterDeclaration, q?: QuestionToken | PlusToken | MinusToken, t?: TypeNode) {
-      const n = Node.createSynthesized(Syntax.MappedType) as MappedTypeNode;
+      const n = qn.createSynthesized(Syntax.MappedType) as MappedTypeNode;
       n.readonlyToken = r;
       n.typeParameter = p;
       n.questionToken = q;
@@ -2456,7 +1974,7 @@ namespace qnr {
   }
   export namespace LiteralTypeNode {
     export function create(l: LiteralTypeNode['literal']) {
-      const n = Node.createSynthesized(Syntax.LiteralType) as LiteralTypeNode;
+      const n = qn.createSynthesized(Syntax.LiteralType) as LiteralTypeNode;
       n.literal = l;
       return n;
     }
@@ -2477,7 +1995,7 @@ namespace qnr {
   }
   export namespace NamedTupleMember {
     export function create(d: Token<Syntax.Dot3Token> | undefined, i: Identifier, q: Token<Syntax.QuestionToken> | undefined, t: TypeNode) {
-      const n = Node.createSynthesized(Syntax.NamedTupleMember) as NamedTupleMember;
+      const n = qn.createSynthesized(Syntax.NamedTupleMember) as NamedTupleMember;
       n.dot3Token = d;
       n.name = i;
       n.questionToken = q;
@@ -2497,7 +2015,7 @@ namespace qnr {
   }
   export namespace ImportTypeNode {
     export function create(a: TypeNode, q?: EntityName, ts?: readonly TypeNode[], tof?: boolean) {
-      const n = Node.createSynthesized(Syntax.ImportType) as ImportTypeNode;
+      const n = qn.createSynthesized(Syntax.ImportType) as ImportTypeNode;
       n.argument = a;
       n.qualifier = q;
       n.typeArguments = parenthesizeTypeParameters(ts);
@@ -2519,7 +2037,7 @@ namespace qnr {
   }
   export namespace ObjectBindingPattern {
     export function create(es: readonly BindingElement[]) {
-      const n = Node.createSynthesized(Syntax.ObjectBindingPattern) as ObjectBindingPattern;
+      const n = qn.createSynthesized(Syntax.ObjectBindingPattern) as ObjectBindingPattern;
       n.elements = NodeArray.create(es);
       return n;
     }
@@ -2538,7 +2056,7 @@ namespace qnr {
   }
   export namespace ArrayBindingPattern {
     export function create(es: readonly ArrayBindingElement[]) {
-      const n = Node.createSynthesized(Syntax.ArrayBindingPattern) as ArrayBindingPattern;
+      const n = qn.createSynthesized(Syntax.ArrayBindingPattern) as ArrayBindingPattern;
       n.elements = NodeArray.create(es);
       return n;
     }
@@ -2560,7 +2078,7 @@ namespace qnr {
   }
   export namespace BindingElement {
     export function create(d: Dot3Token | undefined, p: string | PropertyName | undefined, b: string | BindingName, i?: Expression) {
-      const n = Node.createSynthesized(Syntax.BindingElement) as BindingElement;
+      const n = qn.createSynthesized(Syntax.BindingElement) as BindingElement;
       n.dot3Token = d;
       n.propertyName = asName(p);
       n.name = asName(b);
@@ -2609,7 +2127,7 @@ namespace qnr {
 
   export namespace SignatureDeclaration {
     export function create(k: Syntax, ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t?: TypeNode, ta?: readonly TypeNode[]) {
-      const n = Node.createSynthesized(k) as SignatureDeclaration;
+      const n = qn.createSynthesized(k) as SignatureDeclaration;
       n.typeParameters = NodeArray.from(ts);
       n.parameters = NodeArray.from(ps);
       n.type = t;
@@ -2620,4 +2138,126 @@ namespace qnr {
       return n.typeParameters !== ts || n.parameters !== ps || n.type !== t ? updateNode(create(n.kind, ts, ps, t) as T, n) : n;
     }
   }
+
+  type NodeTypes =
+    | ArrayLiteralExpression
+    | ArrayTypeNode
+    | AsExpression
+    | AwaitExpression
+    | BinaryExpression
+    | BindingElement
+    | BindingPattern
+    | Block
+    | BreakOrContinueStatement
+    | CallExpression
+    | CaseBlock
+    | CaseClause
+    | CatchClause
+    | ClassLikeDeclaration
+    | CommaListExpression
+    | ComputedPropertyName
+    | ConditionalExpression
+    | ConditionalTypeNode
+    | Decorator
+    | DefaultClause
+    | DeleteExpression
+    | DeleteExpression
+    | DoStatement
+    | ElementAccessExpression
+    | EnumDeclaration
+    | EnumMember
+    | ExportAssignment
+    | ExportDeclaration
+    | ExpressionStatement
+    | ExpressionWithTypeArguments
+    | ExternalModuleReference
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | FunctionLikeDeclaration
+    | HeritageClause
+    | IfStatement
+    | ImportClause
+    | ImportDeclaration
+    | ImportEqualsDeclaration
+    | ImportOrExportSpecifier
+    | ImportTypeNode
+    | IndexedAccessTypeNode
+    | InferTypeNode
+    | InterfaceDeclaration
+    | JSDoc
+    | JSDocAugmentsTag
+    | JSDocAuthorTag
+    | JSDocFunctionType
+    | JSDocImplementsTag
+    | JSDocSignature
+    | JSDocTemplateTag
+    | JSDocTypedefTag
+    | JSDocTypeExpression
+    | JSDocTypeLiteral
+    | JSDocTypeReferencingNode
+    | JsxAttribute
+    | JsxAttributes
+    | JsxClosingElement
+    | JsxElement
+    | JsxExpression
+    | JsxFragment
+    | JsxOpeningLikeElement
+    | JsxSpreadAttribute
+    | LabeledStatement
+    | LiteralTypeNode
+    | MappedTypeNode
+    | MetaProperty
+    | MissingDeclaration
+    | ModuleDeclaration
+    | NamedImportsOrExports
+    | NamedTupleMember
+    | NamespaceExport
+    | NamespaceExportDeclaration
+    | NamespaceImport
+    | NonNullExpression
+    | ObjectLiteralExpression
+    | OptionalTypeNode
+    | ParameterDeclaration
+    | ParenthesizedExpression
+    | ParenthesizedTypeNode
+    | PartiallyEmittedExpression
+    | PostfixUnaryExpression
+    | PrefixUnaryExpression
+    | PropertyAccessExpression
+    | PropertyAssignment
+    | PropertyDeclaration
+    | PropertySignature
+    | QualifiedName
+    | RestTypeNode
+    | ReturnStatement
+    | ShorthandPropertyAssignment
+    | SignatureDeclaration
+    | SourceFile
+    | SpreadAssignment
+    | SpreadElement
+    | SwitchStatement
+    | TaggedTemplateExpression
+    | TemplateExpression
+    | TemplateSpan
+    | ThrowStatement
+    | TryStatement
+    | TupleTypeNode
+    | TypeAliasDeclaration
+    | TypeAssertion
+    | TypeLiteralNode
+    | TypeOfExpression
+    | TypeOperatorNode
+    | TypeParameterDeclaration
+    | TypePredicateNode
+    | TypeQueryNode
+    | TypeReferenceNode
+    | UnionOrIntersectionTypeNode
+    | VariableDeclaration
+    | VariableDeclarationList
+    | VariableStatement
+    | VoidExpression
+    | WhileStatement
+    | WithStatement
+    | YieldExpression;
 }

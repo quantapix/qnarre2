@@ -224,7 +224,7 @@ namespace qnr {
 
   function aggregateChildData(node: Node): void {
     if (!(node.flags & NodeFlags.HasAggregatedChildData)) {
-      const thisNodeOrAnySubNodesHasError = (node.flags & NodeFlags.ThisNodeHasError) !== 0 || forEachChild(node, containsParseError);
+      const thisNodeOrAnySubNodesHasError = (node.flags & NodeFlags.ThisNodeHasError) !== 0 || qn.forEach.child(node, containsParseError);
       if (thisNodeOrAnySubNodesHasError) node.flags |= NodeFlags.ThisNodeOrAnySubNodesHasError;
       node.flags |= NodeFlags.HasAggregatedChildData;
     }
@@ -1030,7 +1030,7 @@ namespace qnr {
         case Syntax.LabeledStatement:
         case Syntax.TryStatement:
         case Syntax.CatchClause:
-          return forEachChild(node, traverse);
+          return qn.forEach.child(node, traverse);
       }
       return;
     }
@@ -1060,7 +1060,7 @@ namespace qnr {
               return;
             }
           } else if (!isPartOfTypeNode(node)) {
-            forEachChild(node, traverse);
+            qn.forEach.child(node, traverse);
           }
       }
     }
@@ -4607,7 +4607,7 @@ namespace qnr {
 
   export function getLastChild(node: Node): Node | undefined {
     let lastChild: Node | undefined;
-    forEachChild(
+    qn.forEach.child(
       node,
       (child) => {
         if (nodeIsPresent(child)) lastChild = child;

@@ -1,4 +1,12 @@
 namespace qnr {
+  interface Parser {
+    parseSource(fileName: string, t: string, languageVersion: ScriptTarget, syntaxCursor?: IncrementalParser.SyntaxCursor, setParentNodes?: boolean, scriptKind?: ScriptKind): SourceFile;
+    parseJsonText(fileName: string, text: string, lang?: ScriptTarget, syntaxCursor?: IncrementalParser.SyntaxCursor, setParentNodes?: boolean): JsonSourceFile;
+    parseIsolatedEntityName(s: string, languageVersion: ScriptTarget): EntityName | undefined;
+    parseJSDocIsolatedComment(t: string, start?: number, length?: number): { jsDoc: JSDoc; diagnostics: Diagnostic[] } | undefined;
+    parseJSDocTypeExpressionForTests(content: string, start: number | undefined, length: number | undefined): { jsDocTypeExpression: JSDocTypeExpression; diagnostics: Diagnostic[] } | undefined;
+  }
+
   const enum PropertyLike {
     Property = 1 << 0,
     Parameter = 1 << 1,
@@ -49,6 +57,9 @@ namespace qnr {
     False,
     True,
     Unknown,
+  }
+  interface MissingList<T extends Node> extends NodeArray<T> {
+    isMissingList: true;
   }
 
   function create() {
@@ -510,9 +521,6 @@ namespace qnr {
         return this.tok() === Syntax.ColonToken || (tok() === Syntax.QuestionToken && this.tok() === Syntax.ColonToken);
       }
     })();
-    interface MissingList<T extends Node> extends NodeArray<T> {
-      isMissingList: true;
-    }
     const flags = new (class {
       value: NodeFlags = NodeFlags.None;
       set(v: boolean, fs: NodeFlags) {
@@ -586,7 +594,7 @@ namespace qnr {
       node<T extends Syntax>(k: T, pos?: number): NodeType<T> {
         this.nodeCount++;
         const p = pos! >= 0 ? pos! : scanner.getStartPos();
-        return Node.create<T>(k, p, p);
+        return qn.create<T>(k, p, p);
       }
       nodeArray<T extends Node>(es: T[], pos: number, end?: number): NodeArray<T> {
         const l = es.length;
@@ -1139,7 +1147,7 @@ namespace qnr {
             return isMetaProperty(n) && n.keywordToken === Syntax.ImportKeyword && n.name.escapedText === 'meta';
           };
           const walkTreeForExternalModuleIndicators = (n: Node): Node | undefined => {
-            return isImportMeta(n) ? n : forEachChild(n, walkTreeForExternalModuleIndicators);
+            return isImportMeta(n) ? n : qn.forEach.child(n, walkTreeForExternalModuleIndicators);
           };
           return source.flags & NodeFlags.PossiblyContainsImportMeta ? walkTreeForExternalModuleIndicators(source) : undefined;
         };
@@ -4478,11 +4486,11 @@ namespace qnr {
         if (hasJSDocNodes(c)) {
           for (const d of c.jsDoc!) {
             bindParentToChild(d, c);
-            forEachChildRecursively(d, bindParentToChild);
+            qn.forEach.childRecursively(d, bindParentToChild);
           }
         }
       };
-      forEachChildRecursively(root, bindParentToChild);
+      qn.forEach.childRecursively(root, bindParentToChild);
     }
     function comment(parent: HasJSDoc, start: number, length: number): JSDoc | undefined {
       const saveToken = currentToken;
@@ -4528,14 +4536,6 @@ namespace qnr {
       parseJSDocIsolatedComment,
       parseJSDocTypeExpressionForTests: parseJSDoc.typeExpressionForTests.bind(parseJSDoc),
     } as Parser;
-  }
-
-  interface Parser {
-    parseSource(fileName: string, t: string, languageVersion: ScriptTarget, syntaxCursor?: IncrementalParser.SyntaxCursor, setParentNodes?: boolean, scriptKind?: ScriptKind): SourceFile;
-    parseJsonText(fileName: string, text: string, lang?: ScriptTarget, syntaxCursor?: IncrementalParser.SyntaxCursor, setParentNodes?: boolean): JsonSourceFile;
-    parseIsolatedEntityName(s: string, languageVersion: ScriptTarget): EntityName | undefined;
-    parseJSDocIsolatedComment(t: string, start?: number, length?: number): { jsDoc: JSDoc; diagnostics: Diagnostic[] } | undefined;
-    parseJSDocTypeExpressionForTests(content: string, start: number | undefined, length: number | undefined): { jsDocTypeExpression: JSDocTypeExpression; diagnostics: Diagnostic[] } | undefined;
   }
 
   let parser: Parser;
@@ -4664,7 +4664,7 @@ namespace qnr {
         n.pos += delta;
         n.end += delta;
         if (aggressiveChecks && shouldCheck(n)) assert(text === newText.substring(n.pos, n.end));
-        forEachChild(n, visitNode, visitArray);
+        qn.forEach.child(n, visitNode, visitArray);
         if (hasJSDocNodes(n)) {
           for (const jsDocComment of n.jsDoc!) {
             visitNode(<IncrementalNode>(<Node>jsDocComment));
@@ -4718,7 +4718,7 @@ namespace qnr {
           child.intersectsChange = true;
           child._children = undefined;
           adjustIntersectingElement(child, changeStart, changeRangeOldEnd, changeRangeNewEnd, delta);
-          forEachChild(child, visitNode, visitArray);
+          qn.forEach.child(child, visitNode, visitArray);
           if (hasJSDocNodes(child)) {
             for (const jsDocComment of child.jsDoc!) {
               visitNode(<IncrementalNode>(<Node>jsDocComment));
@@ -4761,7 +4761,7 @@ namespace qnr {
             visitNode(jsDocComment);
           }
         }
-        forEachChild(n, visitNode);
+        qn.forEach.child(n, visitNode);
         assert(pos <= n.end);
       }
     }
@@ -4781,7 +4781,7 @@ namespace qnr {
     function findNearestNodeStartingBeforeOrAtPosition(source: SourceFile, position: number): Node {
       let bestResult: Node = source;
       let lastNodeEntirelyBeforePosition: Node | undefined;
-      forEachChild(source, visit);
+      qn.forEach.child(source, visit);
       if (lastNodeEntirelyBeforePosition) {
         const lastChildOfLastEntireNodeBeforePosition = getLastDescendant(lastNodeEntirelyBeforePosition);
         if (lastChildOfLastEntireNodeBeforePosition.pos > bestResult.pos) {
@@ -4801,7 +4801,7 @@ namespace qnr {
         if (child.pos <= position) {
           if (child.pos >= bestResult.pos) bestResult = child;
           if (position < child.end) {
-            forEachChild(child, visit);
+            qn.forEach.child(child, visit);
             return true;
           } else {
             assert(child.end <= position);
@@ -4867,11 +4867,11 @@ namespace qnr {
         currentArray = undefined!;
         currentArrayIndex = InvalidPosition.Value;
         current = undefined!;
-        forEachChild(source, visitNode, visitArray);
+        qn.forEach.child(source, visitNode, visitArray);
         return;
         function visitNode(n: Node) {
           if (position >= n.pos && position < n.end) {
-            forEachChild(n, visitNode, visitArray);
+            qn.forEach.child(n, visitNode, visitArray);
             return true;
           }
           return false;
@@ -4888,7 +4888,7 @@ namespace qnr {
                   return true;
                 } else {
                   if (child.pos < position && position < child.end) {
-                    forEachChild(child, visitNode, visitArray);
+                    qn.forEach.child(child, visitNode, visitArray);
                     return true;
                   }
                 }
