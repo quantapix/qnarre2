@@ -489,10 +489,6 @@ namespace qnr {
     return n.kind === Syntax.Decorator;
   }
 
-  export function isArrayLiteralExpression(n: Node): n is ArrayLiteralExpression {
-    return n.kind === Syntax.ArrayLiteralExpression;
-  }
-
   export function isObjectLiteralExpression(n: Node): n is ObjectLiteralExpression {
     return n.kind === Syntax.ObjectLiteralExpression;
   }
@@ -603,20 +599,12 @@ namespace qnr {
     return n.kind === Syntax.VoidExpression;
   }
 
-  export function isAwaitExpression(n: Node): n is AwaitExpression {
-    return n.kind === Syntax.AwaitExpression;
-  }
-
   export function isPrefixUnaryExpression(n: Node): n is PrefixUnaryExpression {
     return n.kind === Syntax.PrefixUnaryExpression;
   }
 
   export function isPostfixUnaryExpression(n: Node): n is PostfixUnaryExpression {
     return n.kind === Syntax.PostfixUnaryExpression;
-  }
-
-  export function isBinaryExpression(n: Node): n is BinaryExpression {
-    return n.kind === Syntax.BinaryExpression;
   }
 
   export function isConditionalExpression(n: Node): n is ConditionalExpression {
@@ -645,10 +633,6 @@ namespace qnr {
 
   export function isExpressionWithTypeArguments(n: Node): n is ExpressionWithTypeArguments {
     return n.kind === Syntax.ExpressionWithTypeArguments;
-  }
-
-  export function isAsExpression(n: Node): n is AsExpression {
-    return n.kind === Syntax.AsExpression;
   }
 
   export function isNonNullExpression(n: Node): n is NonNullExpression {

@@ -1639,7 +1639,7 @@ namespace qnr {
       }
       name = node.parent.name;
       decl = node.parent;
-    } else if (isBinaryExpression(node.parent)) {
+    } else if (qn.is.kind(node.parent, BinaryExpression)) {
       const parentNode = node.parent;
       const parentNodeOperator = node.parent.operatorToken.kind;
       if (parentNodeOperator === Syntax.EqualsToken && parentNode.right === node) {
@@ -1649,7 +1649,7 @@ namespace qnr {
         if (isVariableDeclaration(parentNode.parent) && parentNode.parent.initializer === parentNode) {
           name = parentNode.parent.name;
           decl = parentNode.parent;
-        } else if (isBinaryExpression(parentNode.parent) && parentNode.parent.operatorToken.kind === Syntax.EqualsToken && parentNode.parent.right === parentNode) {
+        } else if (qn.is.kind(parentNode.parent, BinaryExpression) && parentNode.parent.operatorToken.kind === Syntax.EqualsToken && parentNode.parent.right === parentNode) {
           name = parentNode.parent.left;
           decl = name;
         }
@@ -1666,14 +1666,14 @@ namespace qnr {
   }
 
   export function isAssignmentDeclaration(decl: Declaration) {
-    return isBinaryExpression(decl) || isAccessExpression(decl) || isIdentifier(decl) || isCallExpression(decl);
+    return qn.is.kind(BinaryExpression, decl) || isAccessExpression(decl) || isIdentifier(decl) || isCallExpression(decl);
   }
 
   export function getEffectiveInitializer(node: HasExpressionInitializer) {
     if (
       isInJSFile(node) &&
       node.initializer &&
-      isBinaryExpression(node.initializer) &&
+      qn.is.kind(BinaryExpression, node.initializer) &&
       (node.initializer.operatorToken.kind === Syntax.Bar2Token || node.initializer.operatorToken.kind === Syntax.Question2Token) &&
       node.name &&
       isEntityNameExpression(node.name) &&
@@ -1697,7 +1697,7 @@ namespace qnr {
   }
 
   export function getAssignedExpandoInitializer(node: Node | undefined): Expression | undefined {
-    if (node && node.parent && isBinaryExpression(node.parent) && node.parent.operatorToken.kind === Syntax.EqualsToken) {
+    if (node && node.parent && qn.is.kind(BinaryExpression, node.parent) && node.parent.operatorToken.kind === Syntax.EqualsToken) {
       const isPrototypeAssignment = isPrototypeAccess(node.parent.left);
       return getExpandoInitializer(node.parent.right, isPrototypeAssignment) || getDefaultedExpandoInitializer(node.parent.left, node.parent.right, isPrototypeAssignment);
     }
@@ -1725,7 +1725,7 @@ namespace qnr {
 
   function getDefaultedExpandoInitializer(name: Expression, initializer: Expression, isPrototypeAssignment: boolean) {
     const e =
-      isBinaryExpression(initializer) &&
+      qn.is.kind(BinaryExpression, initializer) &&
       (initializer.operatorToken.kind === Syntax.Bar2Token || initializer.operatorToken.kind === Syntax.Question2Token) &&
       getExpandoInitializer(initializer.right, isPrototypeAssignment);
     if (e && isSameEntityName(name, (initializer as BinaryExpression).left)) {
@@ -1735,14 +1735,14 @@ namespace qnr {
   }
 
   export function isDefaultedExpandoInitializer(node: BinaryExpression) {
-    const name = isVariableDeclaration(node.parent) ? node.parent.name : isBinaryExpression(node.parent) && node.parent.operatorToken.kind === Syntax.EqualsToken ? node.parent.left : undefined;
+    const name = isVariableDeclaration(node.parent) ? node.parent.name : qn.is.kind(BinaryExpression, node.parent) && node.parent.operatorToken.kind === Syntax.EqualsToken ? node.parent.left : undefined;
     return name && getExpandoInitializer(node.right, isPrototypeAccess(name)) && isEntityNameExpression(name) && isSameEntityName(name, node.left);
   }
 
   export function getNameOfExpando(node: Declaration): DeclarationName | undefined {
-    if (isBinaryExpression(node.parent)) {
+    if (qn.is.kind(BinaryExpression, node.parent)) {
       const parent =
-        (node.parent.operatorToken.kind === Syntax.Bar2Token || node.parent.operatorToken.kind === Syntax.Question2Token) && isBinaryExpression(node.parent.parent) ? node.parent.parent : node.parent;
+        (node.parent.operatorToken.kind === Syntax.Bar2Token || node.parent.operatorToken.kind === Syntax.Question2Token) && qn.is.kind(BinaryExpression, node.parent.parent) ? node.parent.parent : node.parent;
       if (parent.operatorToken.kind === Syntax.EqualsToken && isIdentifier(parent.left)) {
         return parent.left;
       }
@@ -1943,14 +1943,14 @@ namespace qnr {
   }
 
   export function getInitializerOfBinaryExpression(expr: BinaryExpression) {
-    while (isBinaryExpression(expr.right)) {
+    while (qn.is.kind(BinaryExpression, expr.right)) {
       expr = expr.right;
     }
     return expr.right;
   }
 
   export function isPrototypePropertyAssignment(node: Node): boolean {
-    return isBinaryExpression(node) && getAssignmentDeclarationKind(node) === AssignmentDeclarationKind.PrototypeProperty;
+    return qn.is.kind(BinaryExpression, node) && getAssignmentDeclarationKind(node) === AssignmentDeclarationKind.PrototypeProperty;
   }
 
   export function isSpecialPropertyDeclaration(expr: PropertyAccessExpression | ElementAccessExpression): expr is PropertyAccessExpression | LiteralLikeElementAccessExpression {
@@ -2074,16 +2074,16 @@ namespace qnr {
   }
 
   function getSourceOfAssignment(node: Node): Node | undefined {
-    return isExpressionStatement(node) && isBinaryExpression(node.expression) && node.expression.operatorToken.kind === Syntax.EqualsToken
+    return isExpressionStatement(node) && qn.is.kind(BinaryExpression, node.expression) && node.expression.operatorToken.kind === Syntax.EqualsToken
       ? getRightMostAssignedExpression(node.expression)
       : undefined;
   }
 
   function getSourceOfDefaultedAssignment(node: Node): Node | undefined {
     return isExpressionStatement(node) &&
-      isBinaryExpression(node.expression) &&
+      qn.is.kind(BinaryExpression, node.expression) &&
       getAssignmentDeclarationKind(node.expression) !== AssignmentDeclarationKind.None &&
-      isBinaryExpression(node.expression.right) &&
+      qn.is.kind(BinaryExpression, node.expression.right) &&
       (node.expression.right.operatorToken.kind === Syntax.Bar2Token || node.expression.right.operatorToken.kind === Syntax.Question2Token)
       ? node.expression.right.right
       : undefined;
@@ -2143,7 +2143,7 @@ namespace qnr {
       parent.kind === Syntax.PropertyDeclaration ||
       (parent.kind === Syntax.ExpressionStatement && node.kind === Syntax.PropertyAccessExpression) ||
       getNestedModuleDeclaration(parent) ||
-      (isBinaryExpression(node) && node.operatorToken.kind === Syntax.EqualsToken)
+      (qn.is.kind(BinaryExpression, node) && node.operatorToken.kind === Syntax.EqualsToken)
     ) {
       return parent;
     }
@@ -2153,7 +2153,7 @@ namespace qnr {
     //   * @returns {number}
     //   */
     // var x = function(name) { return name.length; }
-    else if (parent.parent && (getSingleVariableOfVariableStatement(parent.parent) === node || (isBinaryExpression(parent) && parent.operatorToken.kind === Syntax.EqualsToken))) {
+    else if (parent.parent && (getSingleVariableOfVariableStatement(parent.parent) === node || (qn.is.kind(BinaryExpression, parent) && parent.operatorToken.kind === Syntax.EqualsToken))) {
       return parent.parent;
     } else if (
       parent.parent &&
@@ -2400,7 +2400,7 @@ namespace qnr {
           return isJSDocParameterTag(tag) && tag.name === parent ? tag : undefined;
         } else {
           const binExp = parent.parent;
-          return isBinaryExpression(binExp) && getAssignmentDeclarationKind(binExp) !== AssignmentDeclarationKind.None && (binExp.left.symbol || binExp.symbol) && getNameOfDeclaration(binExp) === name
+          return qn.is.kind(BinaryExpression, binExp) && getAssignmentDeclarationKind(binExp) !== AssignmentDeclarationKind.None && (binExp.left.symbol || binExp.symbol) && getNameOfDeclaration(binExp) === name
             ? binExp
             : undefined;
         }
@@ -2473,9 +2473,9 @@ namespace qnr {
       node.kind === Syntax.ImportSpecifier ||
       node.kind === Syntax.ExportSpecifier ||
       (node.kind === Syntax.ExportAssignment && exportAssignmentIsAlias(<ExportAssignment>node)) ||
-      (isBinaryExpression(node) && getAssignmentDeclarationKind(node) === AssignmentDeclarationKind.ModuleExports && exportAssignmentIsAlias(node)) ||
+      (qn.is.kind(BinaryExpression, node) && getAssignmentDeclarationKind(node) === AssignmentDeclarationKind.ModuleExports && exportAssignmentIsAlias(node)) ||
       (isPropertyAccessExpression(node) &&
-        isBinaryExpression(node.parent) &&
+        qn.is.kind(BinaryExpression, node.parent) &&
         node.parent.left === node &&
         node.parent.operatorToken.kind === Syntax.EqualsToken &&
         isAliasableExpression(node.parent.right)) ||
@@ -4087,7 +4087,7 @@ namespace qnr {
   export function isAssignmentExpression(node: Node, excludeCompoundAssignment?: false): node is AssignmentExpression<AssignmentOperatorToken>;
   export function isAssignmentExpression(node: Node, excludeCompoundAssignment?: boolean): node is AssignmentExpression<AssignmentOperatorToken> {
     return (
-      isBinaryExpression(node) && (excludeCompoundAssignment ? node.operatorToken.kind === Syntax.EqualsToken : isAssignmentOperator(node.operatorToken.kind)) && isLeftHandSideExpression(node.left)
+      qn.is.kind(BinaryExpression, node) && (excludeCompoundAssignment ? node.operatorToken.kind === Syntax.EqualsToken : isAssignmentOperator(node.operatorToken.kind)) && isLeftHandSideExpression(node.left)
     );
   }
 

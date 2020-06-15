@@ -2456,7 +2456,7 @@ namespace qnr {
         lastSubstitution = undefined;
 
         const pipelinePhase = getPipelinePhase(PipelinePhase.Notification, EmitHint.Expression, next);
-        if (pipelinePhase === pipelineEmitWithHint && isBinaryExpression(next)) {
+        if (pipelinePhase === pipelineEmitWithHint && qn.is.kind(next, BinaryExpression)) {
           // If the target pipeline phase is emit directly, and the next node's also a binary expression,
           // skip all the intermediate indirection and push the expression directly onto the work stack
           stackIndex++;

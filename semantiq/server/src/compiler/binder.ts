@@ -1559,7 +1559,7 @@ namespace qnr {
        * If `node` is a BinaryExpression, adds it to the local work stack, otherwise recursively binds it
        */
       function maybeBind(node: Node) {
-        if (node && isBinaryExpression(node)) {
+        if (node && qn.is.kind(BinaryExpression, node)) {
           stackIndex++;
           workStacks.expr[stackIndex] = node;
           workStacks.state[stackIndex] = BindBinaryExpressionFlowState.BindThenBindChildren;
@@ -2793,7 +2793,7 @@ namespace qnr {
       assert(isInJSFile(node));
       // private identifiers *must* be declared (even in JS files)
       const hasPrivateIdentifier =
-        (isBinaryExpression(node) && isPropertyAccessExpression(node.left) && isPrivateIdentifier(node.left.name)) || (isPropertyAccessExpression(node) && isPrivateIdentifier(node.name));
+        (qn.is.kind(node, BinaryExpression) && isPropertyAccessExpression(node.left) && isPrivateIdentifier(node.left.name)) || (isPropertyAccessExpression(node) && isPrivateIdentifier(node.name));
       if (hasPrivateIdentifier) {
         return;
       }
@@ -2803,7 +2803,7 @@ namespace qnr {
         case Syntax.FunctionExpression:
           let constructorSymbol: Symbol | undefined = thisContainer.symbol;
           // For `f.prototype.m = function() { this.x = 0; }`, `this.x = 0` should modify `f`'s members, not the function expression.
-          if (isBinaryExpression(thisContainer.parent) && thisContainer.parent.operatorToken.kind === Syntax.EqualsToken) {
+          if (qn.is.kind(thisContainer.parent, BinaryExpression) && thisContainer.parent.operatorToken.kind === Syntax.EqualsToken) {
             const l = thisContainer.parent.left;
             if (isBindableStaticAccessExpression(l) && isPrototypeAccess(l.expression)) {
               constructorSymbol = lookupSymbolForPropertyAccess(l.expression.expression, thisParentContainer);
@@ -3027,7 +3027,9 @@ namespace qnr {
     }
 
     function isTopLevelNamespaceAssignment(propertyAccess: BindableAccessExpression) {
-      return isBinaryExpression(propertyAccess.parent) ? getParentOfBinaryExpression(propertyAccess.parent).parent.kind === Syntax.SourceFile : propertyAccess.parent.parent.kind === Syntax.SourceFile;
+      return qn.is.kind(BinaryExpression, propertyAccess.parent)
+        ? getParentOfBinaryExpression(propertyAccess.parent).parent.kind === Syntax.SourceFile
+        : propertyAccess.parent.parent.kind === Syntax.SourceFile;
     }
 
     function bindPropertyAssignment(name: BindableStaticNameExpression, propertyAccess: BindableStaticAccessExpression, isPrototypeProperty: boolean, containerIsClass: boolean) {
@@ -3059,16 +3061,16 @@ namespace qnr {
         ? undefined
         : isVariableDeclaration(node)
         ? node.initializer
-        : isBinaryExpression(node)
+        : qn.is.kind(BinaryExpression, node)
         ? node.right
-        : isPropertyAccessExpression(node) && isBinaryExpression(node.parent)
+        : isPropertyAccessExpression(node) && qn.is.kind(BinaryExpression, node.parent)
         ? node.parent.right
         : undefined;
       init = init && getRightMostAssignedExpression(init);
       if (init) {
-        const isPrototypeAssignment = isPrototypeAccess(isVariableDeclaration(node) ? node.name : isBinaryExpression(node) ? node.left : node);
+        const isPrototypeAssignment = isPrototypeAccess(isVariableDeclaration(node) ? node.name : qn.is.kind(BinaryExpression, node) ? node.left : node);
         return !!getExpandoInitializer(
-          isBinaryExpression(init) && (init.operatorToken.kind === Syntax.Bar2Token || init.operatorToken.kind === Syntax.Question2Token) ? init.right : init,
+          qn.is.kind(BinaryExpression, init) && (init.operatorToken.kind === Syntax.Bar2Token || init.operatorToken.kind === Syntax.Question2Token) ? init.right : init,
           isPrototypeAssignment
         );
       }
@@ -3076,7 +3078,7 @@ namespace qnr {
     }
 
     function getParentOfBinaryExpression(expr: Node) {
-      while (isBinaryExpression(expr.parent)) {
+      while (qn.is.kind(BinaryExpression, expr.parent)) {
         expr = expr.parent;
       }
       return expr.parent;

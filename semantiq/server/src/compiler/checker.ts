@@ -2401,9 +2401,9 @@ namespace qnr {
         node.kind === Syntax.ImportSpecifier ||
         node.kind === Syntax.ExportSpecifier ||
         (node.kind === Syntax.ExportAssignment && exportAssignmentIsAlias(<ExportAssignment>node)) ||
-        (isBinaryExpression(node) && getAssignmentDeclarationKind(node) === AssignmentDeclarationKind.ModuleExports && exportAssignmentIsAlias(node)) ||
+        (qn.is.kind(BinaryExpression, node) && getAssignmentDeclarationKind(node) === AssignmentDeclarationKind.ModuleExports && exportAssignmentIsAlias(node)) ||
         (isPropertyAccessExpression(node) &&
-          isBinaryExpression(node.parent) &&
+          qn.is.kind(BinaryExpression, node.parent) &&
           node.parent.left === node &&
           node.parent.operatorToken.kind === Syntax.EqualsToken &&
           isAliasableOrJsExpression(node.parent.right)) ||
@@ -2766,7 +2766,7 @@ namespace qnr {
     }
 
     function getTargetOfPropertyAccessExpression(node: PropertyAccessExpression, dontRecursivelyResolve: boolean): Symbol | undefined {
-      if (!(isBinaryExpression(node.parent) && node.parent.left === node && node.parent.operatorToken.kind === Syntax.EqualsToken)) {
+      if (!(qn.is.kind(BinaryExpression, node.parent) && node.parent.left === node && node.parent.operatorToken.kind === Syntax.EqualsToken)) {
         return;
       }
 
@@ -3047,7 +3047,7 @@ namespace qnr {
         return;
       }
       const host = getJSDocHost(node);
-      if (isExpressionStatement(host) && isBinaryExpression(host.expression) && getAssignmentDeclarationKind(host.expression) === AssignmentDeclarationKind.PrototypeProperty) {
+      if (isExpressionStatement(host) && qn.is.kind(BinaryExpression, host.expression) && getAssignmentDeclarationKind(host.expression) === AssignmentDeclarationKind.PrototypeProperty) {
         // X.prototype.m = /** @param {K} p */ function () { } <-- look for K on X's declaration
         const symbol = getSymbolOfNode(host.expression.left);
         if (symbol) {
@@ -3056,7 +3056,7 @@ namespace qnr {
       }
       if (
         (isObjectLiteralMethod(host) || isPropertyAssignment(host)) &&
-        isBinaryExpression(host.parent.parent) &&
+        qn.is.kind(BinaryExpression, host.parent.parent) &&
         getAssignmentDeclarationKind(host.parent.parent) === AssignmentDeclarationKind.Prototype
       ) {
         // X.prototype = { /** @param {K} p */m() { } } <-- look for K on X's declaration
@@ -3522,7 +3522,7 @@ namespace qnr {
         }
         if (
           isClassExpression(d) &&
-          isBinaryExpression(d.parent) &&
+          qn.is.kind(BinaryExpression, d.parent) &&
           d.parent.operatorToken.kind === Syntax.EqualsToken &&
           isAccessExpression(d.parent.left) &&
           isEntityNameExpression(d.parent.left.expression)
@@ -4813,7 +4813,7 @@ namespace qnr {
         if (context.tracker.trackSymbol && getCheckFlags(propertySymbol) & CheckFlags.Late) {
           const decl = first(propertySymbol.declarations);
           if (hasLateBindableName(decl)) {
-            if (isBinaryExpression(decl)) {
+            if (qn.is.kind(BinaryExpression, decl)) {
               const name = getNameOfDeclaration(decl);
               if (name && isElementAccessExpression(name) && isPropertyAccessEntityNameExpression(name.argumentExpression)) {
                 trackComputedName(name.argumentExpression, saveEnclosingDeclaration, context);
@@ -6137,7 +6137,7 @@ namespace qnr {
             serializeEnum(symbol, symbolName, modifierFlags);
           }
           if (symbol.flags & SymbolFlags.Class) {
-            if (symbol.flags & SymbolFlags.Property && isBinaryExpression(symbol.valueDeclaration.parent) && isClassExpression(symbol.valueDeclaration.parent.right)) {
+            if (symbol.flags & SymbolFlags.Property && qn.is.kind(BinaryExpression, symbol.valueDeclaration.parent) && isClassExpression(symbol.valueDeclaration.parent.right)) {
               // Looks like a `module.exports.Sub = class {}` - if we serialize `symbol` as a class, the result will have no members,
               // since the classiness is actually from the target of the effective alias the symbol is. yes. A BlockScopedVariable|Class|Property
               // _really_ acts like an Alias, and none of a BlockScopedVariable, Class, or Property. This is the travesty of JS binding today.
@@ -7878,7 +7878,7 @@ namespace qnr {
       // A property is considered a constructor declared property when all declaration sites are this.xxx assignments,
       // when no declaration sites have JSDoc type annotations, and when at least one declaration site is in the body of
       // a class constructor.
-      if (symbol.valueDeclaration && isBinaryExpression(symbol.valueDeclaration)) {
+      if (symbol.valueDeclaration && qn.is.kind(BinaryExpression, symbol.valueDeclaration)) {
         const links = getSymbolLinks(symbol);
         if (links.isConstructorDeclaredProperty === undefined) {
           links.isConstructorDeclaredProperty =
@@ -7886,7 +7886,7 @@ namespace qnr {
             every(
               symbol.declarations,
               (declaration) =>
-                isBinaryExpression(declaration) &&
+                qn.is.kind(BinaryExpression, declaration) &&
                 getAssignmentDeclarationKind(declaration) === AssignmentDeclarationKind.ThisProperty &&
                 (declaration.left.kind !== Syntax.ElementAccessExpression || StringLiteral.orNumericLiteralLike((<ElementAccessExpression>declaration.left).argumentExpression)) &&
                 !getAnnotatedTypeForAssignmentDeclaration(/*declaredType*/ undefined, declaration, symbol, declaration)
@@ -7955,10 +7955,10 @@ namespace qnr {
         let types: Type[] | undefined;
         for (const declaration of symbol.declarations) {
           const expression =
-            isBinaryExpression(declaration) || isCallExpression(declaration)
+            qn.is.kind(BinaryExpression, declaration) || isCallExpression(declaration)
               ? declaration
               : isAccessExpression(declaration)
-              ? isBinaryExpression(declaration.parent)
+              ? qn.is.kind(BinaryExpression, declaration.parent)
                 ? declaration.parent
                 : declaration
               : undefined;
@@ -7979,7 +7979,7 @@ namespace qnr {
           }
           if (!jsdocType) {
             (types || (types = [])).push(
-              isBinaryExpression(expression) || isCallExpression(expression) ? getInitializerTypeFromAssignmentDeclaration(symbol, resolvedSymbol, expression, kind) : neverType
+              qn.is.kind(BinaryExpression, expression) || isCallExpression(expression) ? getInitializerTypeFromAssignmentDeclaration(symbol, resolvedSymbol, expression, kind) : neverType
             );
           }
         }
@@ -8014,12 +8014,12 @@ namespace qnr {
         return;
       }
       const exports = new SymbolTable();
-      while (isBinaryExpression(decl) || isPropertyAccessExpression(decl)) {
+      while (qn.is.kind(BinaryExpression, decl) || isPropertyAccessExpression(decl)) {
         const s = getSymbolOfNode(decl);
         if (s && hasEntries(s.exports)) {
           exports.merge(s.exports);
         }
-        decl = isBinaryExpression(decl) ? decl.parent : decl.parent.parent;
+        decl = qn.is.kind(BinaryExpression, decl) ? decl.parent : decl.parent.parent;
       }
       const s = getSymbolOfNode(decl);
       if (s && hasEntries(s.exports)) {
@@ -8150,7 +8150,7 @@ namespace qnr {
       assert(types.length === declarations.length);
       return types.filter((_, i) => {
         const declaration = declarations[i];
-        const expression = isBinaryExpression(declaration) ? declaration : isBinaryExpression(declaration.parent) ? declaration.parent : undefined;
+        const expression = qn.is.kind(BinaryExpression, declaration) ? declaration : qn.is.kind(BinaryExpression, declaration.parent) ? declaration.parent : undefined;
         return expression && isDeclarationInConstructor(expression);
       });
     }
@@ -8354,9 +8354,9 @@ namespace qnr {
       if (declaration.kind === Syntax.ExportAssignment) {
         type = widenTypeForVariableLikeDeclaration(checkExpressionCached((<ExportAssignment>declaration).expression), declaration);
       } else if (
-        isBinaryExpression(declaration) ||
+        qn.is.kind(BinaryExpression, declaration) ||
         (isInJSFile(declaration) &&
-          (isCallExpression(declaration) || ((isPropertyAccessExpression(declaration) || isBindableStaticElementAccessExpression(declaration)) && isBinaryExpression(declaration.parent))))
+          (isCallExpression(declaration) || ((isPropertyAccessExpression(declaration) || isBindableStaticElementAccessExpression(declaration)) && qn.is.kind(BinaryExpression, declaration.parent))))
       ) {
         type = getWidenedTypeForAssignmentDeclaration(symbol);
       } else if (
@@ -8376,7 +8376,7 @@ namespace qnr {
         if (symbol.flags & (SymbolFlags.Function | SymbolFlags.Method | SymbolFlags.Class | SymbolFlags.Enum | SymbolFlags.ValueModule)) {
           return getTypeOfFuncClassEnumModule(symbol);
         }
-        type = isBinaryExpression(declaration.parent) ? getWidenedTypeForAssignmentDeclaration(symbol) : tryGetTypeFromEffectiveTypeNode(declaration) || anyType;
+        type = qn.is.kind(BinaryExpression, declaration.parent) ? getWidenedTypeForAssignmentDeclaration(symbol) : tryGetTypeFromEffectiveTypeNode(declaration) || anyType;
       } else if (isPropertyAssignment(declaration)) {
         type = tryGetTypeFromEffectiveTypeNode(declaration) || checkPropertyAssignment(declaration);
       } else if (isJsxAttribute(declaration)) {
@@ -8694,7 +8694,7 @@ namespace qnr {
     function getOuterTypeParameters(node: Node, includeThisTypes?: boolean): TypeParameter[] | undefined {
       while (true) {
         node = node.parent; // TODO: GH#18217 Use SourceFile kind check instead
-        if (node && isBinaryExpression(node)) {
+        if (node && qn.is.kind(node, BinaryExpression)) {
           // prototype assignments get the outer type parameters of their constructor function
           const assignmentKind = getAssignmentDeclarationKind(node);
           if (assignmentKind === AssignmentDeclarationKind.Prototype || assignmentKind === AssignmentDeclarationKind.PrototypeProperty) {
@@ -9504,7 +9504,7 @@ namespace qnr {
         // In the event we attempt to resolve the late-bound name of this member recursively,
         // fall back to the early-bound name of this member.
         links.resolvedSymbol = decl.symbol;
-        const declName = isBinaryExpression(decl) ? decl.left : decl.name;
+        const declName = qn.is.kind(BinaryExpression, decl) ? decl.left : decl.name;
         const type = isElementAccessExpression(declName) ? checkExpressionCached(declName.argumentExpression) : checkComputedPropertyName(declName);
         if (isTypeUsableAsPropertyName(type)) {
           const memberName = getPropertyNameFromType(type);
@@ -14154,13 +14154,13 @@ namespace qnr {
       }
 
       // inside x.prototype = { ... }
-      if (parent && isObjectLiteralExpression(parent) && isBinaryExpression(parent.parent) && getAssignmentDeclarationKind(parent.parent) === AssignmentDeclarationKind.Prototype) {
+      if (parent && isObjectLiteralExpression(parent) && qn.is.kind(BinaryExpression, parent.parent) && getAssignmentDeclarationKind(parent.parent) === AssignmentDeclarationKind.Prototype) {
         return getDeclaredTypeOfClassOrInterface(getSymbolOfNode(parent.parent.left)!.parent!).thisType!;
       }
       // /** @return {this} */
       // x.prototype.m = function() { ... }
       const host = node.flags & NodeFlags.JSDoc ? getHostSignatureFromJSDoc(node) : undefined;
-      if (host && isFunctionExpression(host) && isBinaryExpression(host.parent) && getAssignmentDeclarationKind(host.parent) === AssignmentDeclarationKind.PrototypeProperty) {
+      if (host && isFunctionExpression(host) && qn.is.kind(BinaryExpression, host.parent) && getAssignmentDeclarationKind(host.parent) === AssignmentDeclarationKind.PrototypeProperty) {
         return getDeclaredTypeOfClassOrInterface(getSymbolOfNode(host.parent.left)!.parent!).thisType!;
       }
       // inside constructor function C() { ... }
@@ -21765,7 +21765,7 @@ namespace qnr {
       // will be a subtype or the same type as the argument.
       function narrowType(type: Type, expr: Expression, assumeTrue: boolean): Type {
         // for `a?.b`, we emulate a synthetic `a !== null && a !== undefined` condition for `a`
-        if (isExpressionOfOptionalChainRoot(expr) || (isBinaryExpression(expr.parent) && expr.parent.operatorToken.kind === Syntax.Question2Token && expr.parent.left === expr)) {
+        if (isExpressionOfOptionalChainRoot(expr) || (qn.is.kind(BinaryExpression, expr.parent) && expr.parent.operatorToken.kind === Syntax.Question2Token && expr.parent.left === expr)) {
           return narrowTypeByOptionality(type, expr, assumeTrue);
         }
         switch (expr.kind) {
@@ -22309,7 +22309,11 @@ namespace qnr {
 
     function getClassNameFromPrototypeMethod(container: Node) {
       // Check if it's the RHS of a x.prototype.y = function [name]() { .... }
-      if (container.kind === Syntax.FunctionExpression && isBinaryExpression(container.parent) && getAssignmentDeclarationKind(container.parent) === AssignmentDeclarationKind.PrototypeProperty) {
+      if (
+        container.kind === Syntax.FunctionExpression &&
+        qn.is.kind(BinaryExpression, container.parent) &&
+        getAssignmentDeclarationKind(container.parent) === AssignmentDeclarationKind.PrototypeProperty
+      ) {
         // Get the 'x' of 'x.prototype.y = container'
         return ((container.parent.left as PropertyAccessExpression).expression as PropertyAccessExpression).expression; // x.prototype.y = container // x.prototype.y // x.prototype // x
       }
@@ -22317,7 +22321,7 @@ namespace qnr {
       else if (
         container.kind === Syntax.MethodDeclaration &&
         container.parent.kind === Syntax.ObjectLiteralExpression &&
-        isBinaryExpression(container.parent.parent) &&
+        qn.is.kind(BinaryExpression, container.parent.parent) &&
         getAssignmentDeclarationKind(container.parent.parent) === AssignmentDeclarationKind.Prototype
       ) {
         return (container.parent.parent.left as PropertyAccessExpression).expression;
@@ -22327,7 +22331,7 @@ namespace qnr {
         container.kind === Syntax.FunctionExpression &&
         container.parent.kind === Syntax.PropertyAssignment &&
         container.parent.parent.kind === Syntax.ObjectLiteralExpression &&
-        isBinaryExpression(container.parent.parent.parent) &&
+        qn.is.kind(BinaryExpression, container.parent.parent.parent) &&
         getAssignmentDeclarationKind(container.parent.parent.parent) === AssignmentDeclarationKind.Prototype
       ) {
         return (container.parent.parent.parent.left as PropertyAccessExpression).expression;
@@ -24443,7 +24447,7 @@ namespace qnr {
       }
       if (isInJSFile(symbol.valueDeclaration)) {
         const parent = symbol.valueDeclaration.parent;
-        return parent && isBinaryExpression(parent) && getAssignmentDeclarationKind(parent) === AssignmentDeclarationKind.PrototypeProperty;
+        return parent && qn.is.kind(BinaryExpression, parent) && getAssignmentDeclarationKind(parent) === AssignmentDeclarationKind.PrototypeProperty;
       }
     }
 
@@ -27118,7 +27122,7 @@ namespace qnr {
         decl &&
         decl.parent &&
         ((isFunctionDeclaration(decl) && getSymbolOfNode(decl)) ||
-          (isBinaryExpression(decl.parent) && getSymbolOfNode(decl.parent.left)) ||
+          (qn.is.kind(BinaryExpression, decl.parent) && getSymbolOfNode(decl.parent.left)) ||
           (isVariableDeclaration(decl.parent) && getSymbolOfNode(decl.parent)));
       const prototype = assignmentSymbol && assignmentSymbol.exports && assignmentSymbol.exports.get('prototype' as __String);
       const init = prototype && prototype.valueDeclaration && getAssignedJSPrototype(prototype.valueDeclaration);
@@ -27133,7 +27137,7 @@ namespace qnr {
       while (parent && parent.kind === Syntax.PropertyAccessExpression) {
         parent = parent.parent;
       }
-      if (parent && isBinaryExpression(parent) && isPrototypeAccess(parent.left) && parent.operatorToken.kind === Syntax.EqualsToken) {
+      if (parent && qn.is.kind(BinaryExpression, parent) && isPrototypeAccess(parent.left) && parent.operatorToken.kind === Syntax.EqualsToken) {
         const right = getInitializerOfBinaryExpression(parent);
         return isObjectLiteralExpression(right) && right;
       }
@@ -28240,7 +28244,7 @@ namespace qnr {
             return true;
           }
           if (symbol.valueDeclaration) {
-            const isAssignmentDeclaration = isBinaryExpression(symbol.valueDeclaration);
+            const isAssignmentDeclaration = qn.is.kind(BinaryExpression, symbol.valueDeclaration);
             const isLocalPropertyDeclaration = ctor.parent === symbol.valueDeclaration.parent;
             const isLocalParameterProperty = ctor === symbol.valueDeclaration.parent;
             const isLocalThisPropertyAssignment = isAssignmentDeclaration && symbol.parent?.valueDeclaration === ctor.parent;
@@ -28849,7 +28853,7 @@ namespace qnr {
       }
 
       function maybeCheckExpression(node: Expression) {
-        if (isBinaryExpression(node)) {
+        if (qn.is.kind(node, BinaryExpression)) {
           stackIndex++;
           workStacks.expr[stackIndex] = node;
           workStacks.state[stackIndex] = CheckBinaryExpressionState.MaybeCheckLeft;
@@ -28863,10 +28867,10 @@ namespace qnr {
     function checkGrammarNullishCoalesceWithLogicalExpression(node: BinaryExpression) {
       const { left, operatorToken, right } = node;
       if (operatorToken.kind === Syntax.Question2Token) {
-        if (isBinaryExpression(left) && (left.operatorToken.kind === Syntax.Bar2Token || left.operatorToken.kind === Syntax.Ampersand2Token)) {
+        if (qn.is.kind(BinaryExpression, left) && (left.operatorToken.kind === Syntax.Bar2Token || left.operatorToken.kind === Syntax.Ampersand2Token)) {
           grammarErrorOnNode(left, Diagnostics._0_and_1_operations_cannot_be_mixed_without_parentheses, Token.toString(left.operatorToken.kind), Token.toString(operatorToken.kind));
         }
-        if (isBinaryExpression(right) && (right.operatorToken.kind === Syntax.Bar2Token || right.operatorToken.kind === Syntax.Ampersand2Token)) {
+        if (qn.is.kind(BinaryExpression, right) && (right.operatorToken.kind === Syntax.Bar2Token || right.operatorToken.kind === Syntax.Ampersand2Token)) {
           grammarErrorOnNode(right, Diagnostics._0_and_1_operations_cannot_be_mixed_without_parentheses, Token.toString(right.operatorToken.kind), Token.toString(operatorToken.kind));
         }
       }
@@ -29055,7 +29059,7 @@ namespace qnr {
         case Syntax.Question2Token:
           return getTypeFacts(leftType) & TypeFacts.EQUndefinedOrNull ? getUnionType([getNonNullableType(leftType), rightType], UnionReduction.Subtype) : leftType;
         case Syntax.EqualsToken:
-          const declKind = isBinaryExpression(left.parent) ? getAssignmentDeclarationKind(left.parent) : AssignmentDeclarationKind.None;
+          const declKind = qn.is.kind(BinaryExpression, left.parent) ? getAssignmentDeclarationKind(left.parent) : AssignmentDeclarationKind.None;
           checkAssignmentDeclaration(declKind, rightType);
           if (isAssignmentDeclaration(declKind)) {
             if (
@@ -33942,7 +33946,7 @@ namespace qnr {
             if (
               (baseDeclarationFlags & ModifierFlags.Abstract && !(base.valueDeclaration && PropertyDeclaration.kind(base.valueDeclaration) && base.valueDeclaration.initializer)) ||
               (base.valueDeclaration && base.valueDeclaration.parent.kind === Syntax.InterfaceDeclaration) ||
-              (derived.valueDeclaration && isBinaryExpression(derived.valueDeclaration))
+              (derived.valueDeclaration && qn.is.kind(BinaryExpression, derived.valueDeclaration))
             ) {
               // when the base property is abstract or from an interface, base/derived flags don't need to match
               // same when the derived property is from an assignment

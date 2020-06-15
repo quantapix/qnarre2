@@ -2025,7 +2025,7 @@ namespace qnr {
       if (node.kind === Syntax.CommaListExpression) {
         return (<CommaListExpression>node).elements;
       }
-      if (isBinaryExpression(node) && node.operatorToken.kind === Syntax.CommaToken) {
+      if (qn.is.kind(node, BinaryExpression) && node.operatorToken.kind === Syntax.CommaToken) {
         return [node.left, node.right];
       }
     }

@@ -793,11 +793,6 @@ namespace qnr {
       return resultLocal;
     }
 
-    /**
-     * Visits a comma expression containing `yield`.
-     *
-     * @param node The node to visit.
-     */
     function visitCommaExpression(node: BinaryExpression) {
       // [source]
       //      x = a(), yield, b();
@@ -814,7 +809,7 @@ namespace qnr {
       return inlineExpressions(pendingExpressions);
 
       function visit(node: Expression) {
-        if (isBinaryExpression(node) && node.operatorToken.kind === Syntax.CommaToken) {
+        if (qn.is.kind(node, BinaryExpression) && node.operatorToken.kind === Syntax.CommaToken) {
           visit(node.left);
           visit(node.right);
         } else {
@@ -822,17 +817,11 @@ namespace qnr {
             emitWorker(OpCode.Statement, [createExpressionStatement(inlineExpressions(pendingExpressions))]);
             pendingExpressions = [];
           }
-
           pendingExpressions.push(visitNode(node, visitor, isExpression));
         }
       }
     }
 
-    /**
-     * Visits a conditional expression containing `yield`.
-     *
-     * @param node The node to visit.
-     */
     function visitConditionalExpression(node: ConditionalExpression): Expression {
       // [source]
       //      x = a() ? yield : b();

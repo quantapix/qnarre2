@@ -859,7 +859,7 @@ namespace qnr {
           //  (a**b)**x  -> (a**b)**x
           return binaryOperatorAssociativity === Associativity.Right;
         } else {
-          if (isBinaryExpression(emittedOperand) && emittedOperand.operatorToken.kind === binaryOperator) {
+          if (qn.is.kind(emittedOperand, BinaryExpression) && emittedOperand.operatorToken.kind === binaryOperator) {
             // No need to parenthesize the right operand when the binary operator and
             // operand are the same and one of the following:
             //  x*(a*b)     => x*a*b

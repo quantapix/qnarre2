@@ -1,5 +1,5 @@
 namespace qnr {
-  export type NodeType<T extends Syntax> = T extends keyof SynMap ? SynMap[T] : never;
+  export type NodeType<S extends Syntax> = S extends keyof SynMap ? SynMap[S] : never;
 
   export function asName<T extends Identifier | BindingName | PropertyName | EntityName | ThisTypeNode | undefined>(n: string | T): T | Identifier {
     return isString(n) ? createIdentifier(n) : n;
@@ -89,7 +89,7 @@ namespace qnr {
       node(k: Syntax) {
         return k >= Syntax.FirstNode;
       }
-      kind<S extends Syntax, T extends { kind: S }>(n: NodeType<S>, t: T): n is NodeType<S> {
+      kind<S extends Syntax, T extends { kind: S }>(t: T, n: NodeType<S>): n is NodeType<T['kind']> {
         return n.kind === t.kind;
       }
     })();
@@ -2260,4 +2260,135 @@ namespace qnr {
     | WhileStatement
     | WithStatement
     | YieldExpression;
+
+  namespace ArrayLiteralExpression {
+    export const kind = Syntax.ArrayLiteralExpression;
+  }
+  //namespace ArrayTypeNode { export const kind  = Syntax.; }
+  namespace AsExpression {
+    export const kind = Syntax.Syntax.AsExpression;
+  }
+  namespace AwaitExpression {
+    export const kind = Syntax.AwaitExpression;
+  }
+  export namespace BinaryExpression {
+    export const kind = Syntax.BinaryExpression;
+  }
+  /*
+namespace BindingElement
+{ export const kind  = Syntax.; } namespace BindingPattern
+{ export const kind  = Syntax.; } namespace Block
+{ export const kind  = Syntax.; } namespace BreakOrContinueStatement
+{ export const kind  = Syntax.; } namespace CallExpression
+{ export const kind  = Syntax.; } namespace CaseBlock
+{ export const kind  = Syntax.; } namespace CaseClause
+{ export const kind  = Syntax.; } namespace CatchClause
+{ export const kind  = Syntax.; } namespace ClassLikeDeclaration
+{ export const kind  = Syntax.; } namespace CommaListExpression
+{ export const kind  = Syntax.; } namespace ComputedPropertyName
+{ export const kind  = Syntax.; } namespace ConditionalExpression
+{ export const kind  = Syntax.; } namespace ConditionalTypeNode
+{ export const kind  = Syntax.; } namespace Decorator
+{ export const kind  = Syntax.; } namespace DefaultClause
+{ export const kind  = Syntax.; } namespace DeleteExpression
+{ export const kind  = Syntax.; } namespace DeleteExpression
+{ export const kind  = Syntax.; } namespace DoStatement
+{ export const kind  = Syntax.; } namespace ElementAccessExpression
+{ export const kind  = Syntax.; } namespace EnumDeclaration
+{ export const kind  = Syntax.; } namespace EnumMember
+{ export const kind  = Syntax.; } namespace ExportAssignment
+{ export const kind  = Syntax.; } namespace ExportDeclaration
+{ export const kind  = Syntax.; } namespace ExpressionStatement
+{ export const kind  = Syntax.; } namespace ExpressionWithTypeArguments
+{ export const kind  = Syntax.; } namespace ExternalModuleReference
+{ export const kind  = Syntax.; } namespace ForInStatement
+{ export const kind  = Syntax.; } namespace ForOfStatement
+{ export const kind  = Syntax.; } namespace ForStatement
+{ export const kind  = Syntax.; } namespace FunctionLikeDeclaration
+{ export const kind  = Syntax.; } namespace HeritageClause
+{ export const kind  = Syntax.; } namespace IfStatement
+{ export const kind  = Syntax.; } namespace ImportClause
+{ export const kind  = Syntax.; } namespace ImportDeclaration
+{ export const kind  = Syntax.; } namespace ImportEqualsDeclaration
+{ export const kind  = Syntax.; } namespace ImportOrExportSpecifier
+{ export const kind  = Syntax.; } namespace ImportTypeNode
+{ export const kind  = Syntax.; } namespace IndexedAccessTypeNode
+{ export const kind  = Syntax.; } namespace InferTypeNode
+{ export const kind  = Syntax.; } namespace InterfaceDeclaration
+{ export const kind  = Syntax.; } namespace JSDoc
+{ export const kind  = Syntax.; } namespace JSDocAugmentsTag
+{ export const kind  = Syntax.; } namespace JSDocAuthorTag
+{ export const kind  = Syntax.; } namespace JSDocFunctionType
+{ export const kind  = Syntax.; } namespace JSDocImplementsTag
+{ export const kind  = Syntax.; } namespace JSDocSignature
+{ export const kind  = Syntax.; } namespace JSDocTemplateTag
+{ export const kind  = Syntax.; } namespace JSDocTypedefTag
+{ export const kind  = Syntax.; } namespace JSDocTypeExpression
+{ export const kind  = Syntax.; } namespace JSDocTypeLiteral
+{ export const kind  = Syntax.; } namespace JSDocTypeReferencingNode
+{ export const kind  = Syntax.; } namespace JsxAttribute
+{ export const kind  = Syntax.; } namespace JsxAttributes
+{ export const kind  = Syntax.; } namespace JsxClosingElement
+{ export const kind  = Syntax.; } namespace JsxElement
+{ export const kind  = Syntax.; } namespace JsxExpression
+{ export const kind  = Syntax.; } namespace JsxFragment
+{ export const kind  = Syntax.; } namespace JsxOpeningLikeElement
+{ export const kind  = Syntax.; } namespace JsxSpreadAttribute
+{ export const kind  = Syntax.; } namespace LabeledStatement
+{ export const kind  = Syntax.; } namespace LiteralTypeNode
+{ export const kind  = Syntax.; } namespace MappedTypeNode
+{ export const kind  = Syntax.; } namespace MetaProperty
+{ export const kind  = Syntax.; } namespace MissingDeclaration
+{ export const kind  = Syntax.; } namespace ModuleDeclaration
+{ export const kind  = Syntax.; } namespace NamedImportsOrExports
+{ export const kind  = Syntax.; } namespace NamedTupleMember
+{ export const kind  = Syntax.; } namespace NamespaceExport
+{ export const kind  = Syntax.; } namespace NamespaceExportDeclaration
+{ export const kind  = Syntax.; } namespace NamespaceImport
+{ export const kind  = Syntax.; } namespace NonNullExpression
+{ export const kind  = Syntax.; } namespace ObjectLiteralExpression
+{ export const kind  = Syntax.; } namespace OptionalTypeNode
+{ export const kind  = Syntax.; } namespace ParameterDeclaration
+{ export const kind  = Syntax.; } namespace ParenthesizedExpression
+{ export const kind  = Syntax.; } namespace ParenthesizedTypeNode
+{ export const kind  = Syntax.; } namespace PartiallyEmittedExpression
+{ export const kind  = Syntax.; } namespace PostfixUnaryExpression
+{ export const kind  = Syntax.; } namespace PrefixUnaryExpression
+{ export const kind  = Syntax.; } namespace PropertyAccessExpression
+{ export const kind  = Syntax.; } namespace PropertyAssignment
+{ export const kind  = Syntax.; } namespace PropertyDeclaration
+{ export const kind  = Syntax.; } namespace PropertySignature
+{ export const kind  = Syntax.; } namespace QualifiedName
+{ export const kind  = Syntax.; } namespace RestTypeNode
+{ export const kind  = Syntax.; } namespace ReturnStatement
+{ export const kind  = Syntax.; } namespace ShorthandPropertyAssignment
+{ export const kind  = Syntax.; } namespace SignatureDeclaration
+{ export const kind  = Syntax.; } namespace SourceFile
+{ export const kind  = Syntax.; } namespace SpreadAssignment
+{ export const kind  = Syntax.; } namespace SpreadElement
+{ export const kind  = Syntax.; } namespace SwitchStatement
+{ export const kind  = Syntax.; } namespace TaggedTemplateExpression
+{ export const kind  = Syntax.; } namespace TemplateExpression
+{ export const kind  = Syntax.; } namespace TemplateSpan
+{ export const kind  = Syntax.; } namespace ThrowStatement
+{ export const kind  = Syntax.; } namespace TryStatement
+{ export const kind  = Syntax.; } namespace TupleTypeNode
+{ export const kind  = Syntax.; } namespace TypeAliasDeclaration
+{ export const kind  = Syntax.; } namespace TypeAssertion
+{ export const kind  = Syntax.; } namespace TypeLiteralNode
+{ export const kind  = Syntax.; } namespace TypeOfExpression
+{ export const kind  = Syntax.; } namespace TypeOperatorNode
+{ export const kind  = Syntax.; } namespace TypeParameterDeclaration
+{ export const kind  = Syntax.; } namespace TypePredicateNode
+{ export const kind  = Syntax.; } namespace TypeQueryNode
+{ export const kind  = Syntax.; } namespace TypeReferenceNode
+{ export const kind  = Syntax.; } namespace UnionOrIntersectionTypeNode
+{ export const kind  = Syntax.; } namespace VariableDeclaration
+{ export const kind  = Syntax.; } namespace VariableDeclarationList
+{ export const kind  = Syntax.; } namespace VariableStatement
+{ export const kind  = Syntax.; } namespace VoidExpression
+{ export const kind  = Syntax.; } namespace WhileStatement
+{ export const kind  = Syntax.; } namespace WithStatement
+{ export const kind  = Syntax.; } namespace YieldExpression { export const kind  = Syntax.; } 
+*/
 }
