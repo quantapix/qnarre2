@@ -1888,7 +1888,7 @@ namespace qnr {
     }
 
     function declareSourceFileMember(node: Declaration, symbolFlags: SymbolFlags, symbolExcludes: SymbolFlags) {
-      return isExternalModule(file) ? declareModuleMember(node, symbolFlags, symbolExcludes) : declareSymbol(file.locals!, /*parent*/ undefined, node, symbolFlags, symbolExcludes);
+      return qp_isExternalModule(file) ? declareModuleMember(node, symbolFlags, symbolExcludes) : declareSymbol(file.locals!, /*parent*/ undefined, node, symbolFlags, symbolExcludes);
     }
 
     function hasExportDeclarations(node: ModuleDeclaration | SourceFile): boolean {
@@ -2647,7 +2647,7 @@ namespace qnr {
 
     function bindSourceFileIfExternalModule() {
       setExportContextFlag(file);
-      if (isExternalModule(file)) {
+      if (qp_isExternalModule(file)) {
         bindSourceFileAsExternalModule();
       } else if (isJsonSourceFile(file)) {
         bindSourceFileAsExternalModule();
@@ -2689,7 +2689,7 @@ namespace qnr {
       }
       const diag = !isSourceFile(node.parent)
         ? Diagnostics.Global_module_exports_may_only_appear_at_top_level
-        : !isExternalModule(node.parent)
+        : !qp_isExternalModule(node.parent)
         ? Diagnostics.Global_module_exports_may_only_appear_in_module_files
         : !node.parent.isDeclarationFile
         ? Diagnostics.Global_module_exports_may_only_appear_in_declaration_files
@@ -3977,7 +3977,7 @@ namespace qnr {
     let transformFlags = subtreeFlags;
 
     // An ImportEqualsDeclaration with a namespace reference is TypeScript.
-    if (!isExternalModuleImportEqualsDeclaration(node)) {
+    if (!qp_isExternalModuleImportEqualsDeclaration(node)) {
       transformFlags |= TransformFlags.AssertTypeScript;
     }
 

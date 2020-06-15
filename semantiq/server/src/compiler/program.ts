@@ -85,7 +85,7 @@ namespace qnr {
         }
         text = '';
       }
-      return text !== undefined ? createSourceFile(fileName, text, languageVersion, setParentNodes) : undefined;
+      return text !== undefined ? qp_createSource(fileName, text, languageVersion, setParentNodes) : undefined;
     }
 
     function directoryExists(directoryPath: string): boolean {
@@ -2112,7 +2112,7 @@ namespace qnr {
       }
 
       const isJavaScriptFile = isSourceFileJS(file);
-      const isExternalModuleFile = isExternalModule(file);
+      const qp_isExternalModuleFile = qp_isExternalModule(file);
 
       // file.imports may not be undefined if there exists dynamic import
       let imports: StringLiteralLike[] | undefined;
@@ -2121,7 +2121,7 @@ namespace qnr {
 
       // If we are importing helpers, we need to add a synthetic reference to resolve the
       // helpers library.
-      if (options.importHelpers && (options.isolatedModules || isExternalModuleFile) && !file.isDeclarationFile) {
+      if (options.importHelpers && (options.isolatedModules || qp_isExternalModuleFile) && !file.isDeclarationFile) {
         // synthesize 'import "tslib"' declaration
         const externalHelpersModuleReference = createLiteral(externalHelpersModuleNameText);
         const importDecl = createImportDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, /*importClause*/ undefined, externalHelpersModuleReference);
@@ -2150,7 +2150,7 @@ namespace qnr {
           // TypeScript 1.0 spec (April 2014): 12.1.6
           // An ExternalImportDeclaration in an AmbientExternalModuleDeclaration may reference other external modules
           // only through top - level external module names. Relative external module names are not permitted.
-          if (moduleNameExpr && StringLiteral.kind(moduleNameExpr) && moduleNameExpr.text && (!inAmbientModule || !isExternalModuleNameRelative(moduleNameExpr.text))) {
+          if (moduleNameExpr && StringLiteral.kind(moduleNameExpr) && moduleNameExpr.text && (!inAmbientModule || !qp_isExternalModuleNameRelative(moduleNameExpr.text))) {
             imports = append(imports, moduleNameExpr);
           }
         } else if (isModuleDeclaration(node)) {
@@ -2161,7 +2161,7 @@ namespace qnr {
             // - if current file is external module then module augmentation is a ambient module declaration defined in the top level scope
             // - if current file is not external module then module augmentation is an ambient module declaration with non-relative module name
             //   immediately nested in top level ambient module declaration .
-            if (isExternalModuleFile || (inAmbientModule && !isExternalModuleNameRelative(nameText))) {
+            if (qp_isExternalModuleFile || (inAmbientModule && !qp_isExternalModuleNameRelative(nameText))) {
               (moduleAugmentations || (moduleAugmentations = [])).push(node.name);
             } else if (!inAmbientModule) {
               if (file.isDeclarationFile) {
@@ -3043,9 +3043,9 @@ namespace qnr {
       const languageVersion = options.target || ScriptTarget.ES2020;
       const outFile = options.outFile || options.out;
 
-      const firstNonAmbientExternalModuleSourceFile = find(files, (f) => isExternalModule(f) && !f.isDeclarationFile);
+      const firstNonAmbientExternalModuleSourceFile = find(files, (f) => qp_isExternalModule(f) && !f.isDeclarationFile);
       if (options.isolatedModules) {
-        const firstNonExternalModuleSourceFile = find(files, (f) => !isExternalModule(f) && !isSourceFileJS(f) && !f.isDeclarationFile && f.scriptKind !== ScriptKind.JSON);
+        const firstNonExternalModuleSourceFile = find(files, (f) => !qp_isExternalModule(f) && !isSourceFileJS(f) && !f.isDeclarationFile && f.scriptKind !== ScriptKind.JSON);
         if (firstNonExternalModuleSourceFile) {
           const span = getErrorSpanForNode(firstNonExternalModuleSourceFile, firstNonExternalModuleSourceFile);
           programDiagnostics.add(createFileDiagnostic(firstNonExternalModuleSourceFile, span.start, span.length, Diagnostics.All_files_must_be_modules_when_the_isolatedModules_flag_is_provided));
@@ -3119,7 +3119,7 @@ namespace qnr {
         if (options.reactNamespace) {
           createDiagnosticForOptionName(Diagnostics.Option_0_cannot_be_specified_with_option_1, 'reactNamespace', 'jsxFactory');
         }
-        if (!parseIsolatedEntityName(options.jsxFactory, languageVersion)) {
+        if (!qp_parseIsolatedEntityName(options.jsxFactory, languageVersion)) {
           createOptionValueDiagnostic('jsxFactory', Diagnostics.Invalid_value_for_jsxFactory_0_is_not_a_valid_identifier_or_qualified_name, options.jsxFactory);
         }
       } else if (options.reactNamespace && !qy_is.identifierText(options.reactNamespace)) {

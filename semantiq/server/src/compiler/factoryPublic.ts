@@ -1890,7 +1890,7 @@ namespace qnr {
 
   // Top-level nodes
 
-  export function updateSourceFileNode(
+  export function qp_updateSourceNode(
     node: SourceFile,
     statements: readonly Statement[],
     isDeclarationFile?: boolean,

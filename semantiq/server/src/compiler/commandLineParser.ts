@@ -1401,7 +1401,7 @@ namespace qnr {
       return;
     }
 
-    const result = parseJsonText(configFileName, configFileText);
+    const result = qp_parseJsonText(configFileName, configFileText);
     const cwd = host.getCurrentDirectory();
     result.path = toPath(configFileName, cwd, createGetCanonicalFileName(host.useCaseSensitiveFileNames));
     result.resolvedPath = result.path;
@@ -1419,35 +1419,22 @@ namespace qnr {
     );
   }
 
-  /**
-   * Read tsconfig.json file
-   * @param fileName The path to the config file
-   */
   export function readConfigFile(fileName: string, readFile: (path: string) => string | undefined): { config?: any; error?: Diagnostic } {
     const textOrDiagnostic = tryReadFile(fileName, readFile);
     return isString(textOrDiagnostic) ? parseConfigFileTextToJson(fileName, textOrDiagnostic) : { config: {}, error: textOrDiagnostic };
   }
 
-  /**
-   * Parse the text of the tsconfig.json file
-   * @param fileName The path to the config file
-   * @param jsonText The text of the config file
-   */
   export function parseConfigFileTextToJson(fileName: string, jsonText: string): { config?: any; error?: Diagnostic } {
-    const jsonSourceFile = parseJsonText(fileName, jsonText);
+    const jsonSourceFile = qp_parseJsonText(fileName, jsonText);
     return {
       config: convertToObject(jsonSourceFile, jsonSourceFile.parseDiagnostics),
       error: jsonSourceFile.parseDiagnostics.length ? jsonSourceFile.parseDiagnostics[0] : undefined,
     };
   }
 
-  /**
-   * Read tsconfig.json file
-   * @param fileName The path to the config file
-   */
   export function readJsonConfigFile(fileName: string, readFile: (path: string) => string | undefined): TsConfigSourceFile {
     const textOrDiagnostic = tryReadFile(fileName, readFile);
-    return isString(textOrDiagnostic) ? parseJsonText(fileName, textOrDiagnostic) : <TsConfigSourceFile>{ parseDiagnostics: [textOrDiagnostic] };
+    return isString(textOrDiagnostic) ? qp_parseJsonText(fileName, textOrDiagnostic) : <TsConfigSourceFile>{ parseDiagnostics: [textOrDiagnostic] };
   }
 
   export function tryReadFile(fileName: string, readFile: (path: string) => string | undefined): string | Diagnostic {

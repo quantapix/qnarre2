@@ -1087,7 +1087,7 @@ namespace qnr {
 
       // Top-level nodes
       case Syntax.SourceFile:
-        return updateSourceFileNode(<SourceFile>node, visitLexicalEnvironment((<SourceFile>node).statements, visitor, context));
+        return qp_updateSourceNode(<SourceFile>node, visitLexicalEnvironment((<SourceFile>node).statements, visitor, context));
 
       // Transformation nodes
       case Syntax.PartiallyEmittedExpression:

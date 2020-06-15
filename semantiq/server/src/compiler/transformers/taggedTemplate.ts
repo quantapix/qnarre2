@@ -45,7 +45,7 @@ namespace qnr {
     // Create a variable to cache the template object if we're in a module.
     // Do not do this in the global scope, as any variable we currently generate could conflict with
     // variables from outside of the current compilation. In the future, we can revisit this behavior.
-    if (isExternalModule(currentSourceFile)) {
+    if (qp_isExternalModule(currentSourceFile)) {
       const tempVar = createUniqueName('templateObject');
       recordTaggedTemplateString(tempVar);
       templateArguments[0] = createLogicalOr(tempVar, createAssignment(tempVar, helperCall));

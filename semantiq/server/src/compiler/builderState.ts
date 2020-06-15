@@ -8,14 +8,7 @@ namespace qnr {
     forceDtsEmit?: boolean
   ): EmitOutput {
     const outputFiles: OutputFile[] = [];
-    const { emitSkipped, diagnostics, exportedModulesFromDeclarationEmit } = program.emit(
-      sourceFile,
-      writeFile,
-      cancellationToken,
-      emitOnlyDtsFiles,
-      customTransformers,
-      forceDtsEmit
-    );
+    const { emitSkipped, diagnostics, exportedModulesFromDeclarationEmit } = program.emit(sourceFile, writeFile, cancellationToken, emitOnlyDtsFiles, customTransformers, forceDtsEmit);
     return { outputFiles, emitSkipped, diagnostics, exportedModulesFromDeclarationEmit };
 
     function writeFile(fileName: string, text: string, writeByteOrderMark: boolean) {
@@ -118,12 +111,7 @@ namespace qnr {
     /**
      * Gets the path to reference file from file name, it could be resolvedPath if present otherwise path
      */
-    function getReferencedFileFromFileName(
-      program: Program,
-      fileName: string,
-      sourceFileDirectory: Path,
-      getCanonicalFileName: GetCanonicalFileName
-    ): Path {
+    function getReferencedFileFromFileName(program: Program, fileName: string, sourceFileDirectory: Path, getCanonicalFileName: GetCanonicalFileName): Path {
       return toPath(program.getProjectReferenceRedirect(fileName) || fileName, sourceFileDirectory, getCanonicalFileName);
     }
 
@@ -354,10 +342,7 @@ namespace qnr {
       exportedModulesMapCache?: ComputingExportedModulesMap
     ) {
       assert(!!sourceFile);
-      assert(
-        !exportedModulesMapCache || !!state.exportedModulesMap,
-        'Compute visible to outside map only if visibleToOutsideReferencedMap present in the state'
-      );
+      assert(!exportedModulesMapCache || !!state.exportedModulesMap, 'Compute visible to outside map only if visibleToOutsideReferencedMap present in the state');
 
       // If we have cached the result for this file, that means hence forth we should assume file shape is uptodate
       if (state.hasCalledUpdateShapeSignature.has(sourceFile.resolvedPath) || cacheToUpdateSignature.has(sourceFile.resolvedPath)) {
@@ -377,14 +362,7 @@ namespace qnr {
           exportedModulesMapCache.set(sourceFile.resolvedPath, references || false);
         }
       } else {
-        const emitOutput = getFileEmitOutput(
-          programOfThisState,
-          sourceFile,
-          /*emitOnlyDtsFiles*/ true,
-          cancellationToken,
-          /*customTransformers*/ undefined,
-          /*forceDtsEmit*/ true
-        );
+        const emitOutput = getFileEmitOutput(programOfThisState, sourceFile, /*emitOnlyDtsFiles*/ true, cancellationToken, /*customTransformers*/ undefined, /*forceDtsEmit*/ true);
         const firstDts =
           emitOutput.outputFiles && programOfThisState.getCompilerOptions().declarationMap
             ? emitOutput.outputFiles.length > 1
@@ -397,10 +375,7 @@ namespace qnr {
           assert(
             fileExtensionIs(firstDts.name, Extension.Dts),
             'File extension for signature expected to be dts',
-            () =>
-              `Found: ${getAnyExtensionFromPath(firstDts.name)} for ${firstDts.name}:: All output files: ${JSON.stringify(
-                emitOutput.outputFiles.map((f) => f.name)
-              )}`
+            () => `Found: ${getAnyExtensionFromPath(firstDts.name)} for ${firstDts.name}:: All output files: ${JSON.stringify(emitOutput.outputFiles.map((f) => f.name))}`
           );
           latestSignature = computeHash(firstDts.text);
           if (exportedModulesMapCache && latestSignature !== prevSignature) {
@@ -418,11 +393,7 @@ namespace qnr {
     /**
      * Coverts the declaration emit result into exported modules map
      */
-    function updateExportedModules(
-      sourceFile: SourceFile,
-      exportedModulesFromDeclarationEmit: ExportedModulesFromDeclarationEmit | undefined,
-      exportedModulesMapCache: ComputingExportedModulesMap
-    ) {
+    function updateExportedModules(sourceFile: SourceFile, exportedModulesFromDeclarationEmit: ExportedModulesFromDeclarationEmit | undefined, exportedModulesMapCache: ComputingExportedModulesMap) {
       if (!exportedModulesFromDeclarationEmit) {
         exportedModulesMapCache.set(sourceFile.resolvedPath, false);
         return;
@@ -514,11 +485,7 @@ namespace qnr {
      * Gets the files referenced by the the file path
      */
     export function getReferencedByPaths(state: Readonly<BuilderState>, referencedFilePath: Path) {
-      return arrayFrom(
-        mapDefinedIterator(state.referencedMap!.entries(), ([filePath, referencesInFile]) =>
-          referencesInFile.has(referencedFilePath) ? (filePath as Path) : undefined
-        )
-      );
+      return arrayFrom(mapDefinedIterator(state.referencedMap!.entries(), ([filePath, referencesInFile]) => (referencesInFile.has(referencedFilePath) ? (filePath as Path) : undefined)));
     }
 
     /**
@@ -548,17 +515,13 @@ namespace qnr {
      * Return true if the file will invalidate all files because it affectes global scope
      */
     function isFileAffectingGlobalScope(sourceFile: SourceFile) {
-      return containsGlobalScopeAugmentation(sourceFile) || (!isExternalModule(sourceFile) && !containsOnlyAmbientModules(sourceFile));
+      return containsGlobalScopeAugmentation(sourceFile) || (!qp_isExternalModule(sourceFile) && !containsOnlyAmbientModules(sourceFile));
     }
 
     /**
      * Gets all files of the program excluding the default library file
      */
-    export function getAllFilesExcludingDefaultLibraryFile(
-      state: BuilderState,
-      programOfThisState: Program,
-      firstSourceFile: SourceFile | undefined
-    ): readonly SourceFile[] {
+    export function getAllFilesExcludingDefaultLibraryFile(state: BuilderState, programOfThisState: Program, firstSourceFile: SourceFile | undefined): readonly SourceFile[] {
       // Use cached result
       if (state.allFilesExcludingDefaultLibraryFile) {
         return state.allFilesExcludingDefaultLibraryFile;
@@ -584,11 +547,7 @@ namespace qnr {
     /**
      * When program emits non modular code, gets the files affected by the sourceFile whose shape has changed
      */
-    function getFilesAffectedByUpdatedShapeWhenNonModuleEmit(
-      state: BuilderState,
-      programOfThisState: Program,
-      sourceFileWithUpdatedShape: SourceFile
-    ) {
+    function getFilesAffectedByUpdatedShapeWhenNonModuleEmit(state: BuilderState, programOfThisState: Program, sourceFileWithUpdatedShape: SourceFile) {
       const compilerOptions = programOfThisState.getCompilerOptions();
       // If `--out` or `--outFile` is specified, any new emit will result in re-emitting the entire project,
       // so returning the file itself is good enough.
@@ -632,18 +591,7 @@ namespace qnr {
         if (!seenFileNamesMap.has(currentPath)) {
           const currentSourceFile = programOfThisState.getSourceFileByPath(currentPath)!;
           seenFileNamesMap.set(currentPath, currentSourceFile);
-          if (
-            currentSourceFile &&
-            updateShapeSignature(
-              state,
-              programOfThisState,
-              currentSourceFile,
-              cacheToUpdateSignature,
-              cancellationToken,
-              computeHash!,
-              exportedModulesMapCache
-            )
-          ) {
+          if (currentSourceFile && updateShapeSignature(state, programOfThisState, currentSourceFile, cacheToUpdateSignature, cancellationToken, computeHash!, exportedModulesMapCache)) {
             // TODO: GH#18217
             queue.push(...getReferencedByPaths(state, currentSourceFile.resolvedPath));
           }

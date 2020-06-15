@@ -96,7 +96,7 @@ namespace qnr {
       const moduleName = tryGetModuleNameFromFile(node, host, compilerOptions);
       const dependencies = createArrayLiteral(map(dependencyGroups, (dependencyGroup) => dependencyGroup.name));
       const updated = setEmitFlags(
-        updateSourceFileNode(
+        qp_updateSourceNode(
           node,
           setTextRange(
             NodeArray.create([
@@ -217,7 +217,7 @@ namespace qnr {
       startLexicalEnvironment();
 
       // Add any prologue directives.
-      const ensureUseStrict = getStrictOptionValue(compilerOptions, 'alwaysStrict') || (!compilerOptions.noImplicitUseStrict && isExternalModule(currentSourceFile));
+      const ensureUseStrict = getStrictOptionValue(compilerOptions, 'alwaysStrict') || (!compilerOptions.noImplicitUseStrict && qp_isExternalModule(currentSourceFile));
       const statementOffset = addPrologue(statements, node.statements, ensureUseStrict, sourceElementVisitor);
 
       // var __moduleName = context_1 && context_1.id;
@@ -529,7 +529,7 @@ namespace qnr {
      * @param node The node to visit.
      */
     function visitImportEqualsDeclaration(node: ImportEqualsDeclaration): VisitResult<Statement> {
-      assert(isExternalModuleImportEqualsDeclaration(node), 'import= for internal module references should be handled in an earlier transformer.');
+      assert(qp_isExternalModuleImportEqualsDeclaration(node), 'import= for internal module references should be handled in an earlier transformer.');
 
       let statements: Statement[] | undefined;
       hoistVariableDeclaration(getLocalNameForExternalImport(node, currentSourceFile)!); // TODO: GH#18217

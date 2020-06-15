@@ -252,7 +252,7 @@ namespace qnr {
               resultHasExternalModuleIndicator = false; // unused in external module bundle emit (all external modules are within module blocks, therefore are known to be modules)
               needsDeclare = false;
               const statements = isSourceFileJS(sourceFile) ? NodeArray.create(transformDeclarationsForJS(sourceFile, /*bundled*/ true)) : NodeArray.visit(sourceFile.statements, visitDeclarationStatements);
-              const newFile = updateSourceFileNode(
+              const newFile = qp_updateSourceNode(
                 sourceFile,
                 [
                   createModuleDeclaration(
@@ -272,7 +272,7 @@ namespace qnr {
             }
             needsDeclare = true;
             const updated = isSourceFileJS(sourceFile) ? NodeArray.create(transformDeclarationsForJS(sourceFile)) : NodeArray.visit(sourceFile.statements, visitDeclarationStatements);
-            return updateSourceFileNode(
+            return qp_updateSourceNode(
               sourceFile,
               transformAndReplaceLatePaintedStatements(updated),
               /*isDeclarationFile*/ true,
@@ -332,11 +332,11 @@ namespace qnr {
         combinedStatements = setTextRange(NodeArray.create(transformAndReplaceLatePaintedStatements(statements)), node.statements);
         refs.forEach(referenceVisitor);
         emittedImports = filter(combinedStatements, isAnyImportSyntax);
-        if (isExternalModule(node) && (!resultHasExternalModuleIndicator || (needsScopeFixMarker && !resultHasScopeMarker))) {
+        if (qp_isExternalModule(node) && (!resultHasExternalModuleIndicator || (needsScopeFixMarker && !resultHasScopeMarker))) {
           combinedStatements = setTextRange(NodeArray.create([...combinedStatements, createEmptyExports()]), combinedStatements);
         }
       }
-      const updated = updateSourceFileNode(node, combinedStatements, /*isDeclarationFile*/ true, references, getFileReferencesForUsedTypeReferences(), node.hasNoDefaultLib, getLibReferences());
+      const updated = qp_updateSourceNode(node, combinedStatements, /*isDeclarationFile*/ true, references, getFileReferencesForUsedTypeReferences(), node.hasNoDefaultLib, getLibReferences());
       updated.exportedModulesFromDeclarationEmit = exportedModulesFromDeclarationEmit;
       return updated;
 
@@ -352,7 +352,7 @@ namespace qnr {
         // Elide type references for which we have imports
         if (emittedImports) {
           for (const importStatement of emittedImports) {
-            if (isImportEqualsDeclaration(importStatement) && isExternalModuleReference(importStatement.moduleReference)) {
+            if (isImportEqualsDeclaration(importStatement) && qp_isExternalModuleReference(importStatement.moduleReference)) {
               const expr = importStatement.moduleReference.expression;
               if (StringLiteral.like(expr) && expr.text === typeName) {
                 return;
@@ -763,7 +763,7 @@ namespace qnr {
           return fail(`Late replaced statement was found which is not handled by the declaration transformer!: ${(ts as any).SyntaxKind ? (ts as any).SyntaxKind[(i as any).kind] : (i as any).kind}`);
         }
         const priorNeedsDeclare = needsDeclare;
-        needsDeclare = i.parent && isSourceFile(i.parent) && !(isExternalModule(i.parent) && isBundledEmit);
+        needsDeclare = i.parent && isSourceFile(i.parent) && !(qp_isExternalModule(i.parent) && isBundledEmit);
         const result = transformTopLevelDeclaration(i);
         needsDeclare = priorNeedsDeclare;
         lateStatementReplacementMap.set('' + getOriginalNodeId(i), result);
@@ -784,7 +784,7 @@ namespace qnr {
                 // Top-level declarations in .d.ts files are always considered exported even without a modifier unless there's an export assignment or specifier
                 needsScopeFixMarker = true;
               }
-              if (isSourceFile(statement.parent) && (isArray(result) ? some(result, isExternalModuleIndicator) : isExternalModuleIndicator(result))) {
+              if (isSourceFile(statement.parent) && (isArray(result) ? some(result, qp_isExternalModuleIndicator) : qp_isExternalModuleIndicator(result))) {
                 resultHasExternalModuleIndicator = true;
               }
             }
@@ -1243,7 +1243,7 @@ namespace qnr {
             needsScopeFixMarker = oldNeedsScopeFix;
             resultHasScopeMarker = oldHasScopeFix;
             const mods = ensureModifiers(input);
-            return cleanup(updateModuleDeclaration(input, /*decorators*/ undefined, mods, isExternalModuleAugmentation(input) ? rewriteModuleSpecifier(input, input.name) : input.name, body));
+            return cleanup(updateModuleDeclaration(input, /*decorators*/ undefined, mods, qp_isExternalModuleAugmentation(input) ? rewriteModuleSpecifier(input, input.name) : input.name, body));
           } else {
             needsDeclare = previousNeedsDeclare;
             const mods = ensureModifiers(input);
@@ -1469,7 +1469,7 @@ namespace qnr {
       let mask = ModifierFlags.All ^ (ModifierFlags.Public | ModifierFlags.Async); // No async modifiers in declaration files
       let additions = needsDeclare && !isAlwaysType(node) ? ModifierFlags.Ambient : ModifierFlags.None;
       const parentIsFile = node.parent.kind === Syntax.SourceFile;
-      if (!parentIsFile || (isBundledEmit && parentIsFile && isExternalModule(node.parent as SourceFile))) {
+      if (!parentIsFile || (isBundledEmit && parentIsFile && qp_isExternalModule(node.parent as SourceFile))) {
         mask ^= ModifierFlags.Ambient;
         additions = ModifierFlags.None;
       }

@@ -549,9 +549,9 @@ namespace qnr {
     }
 
     function visitSourceFile(node: SourceFile) {
-      const alwaysStrict = getStrictOptionValue(compilerOptions, 'alwaysStrict') && !(isExternalModule(node) && moduleKind >= ModuleKind.ES2015) && !isJsonSourceFile(node);
+      const alwaysStrict = getStrictOptionValue(compilerOptions, 'alwaysStrict') && !(qp_isExternalModule(node) && moduleKind >= ModuleKind.ES2015) && !isJsonSourceFile(node);
 
-      return updateSourceFileNode(node, visitLexicalEnvironment(node.statements, sourceElementVisitor, context, /*start*/ 0, alwaysStrict));
+      return qp_updateSourceNode(node, visitLexicalEnvironment(node.statements, sourceElementVisitor, context, /*start*/ 0, alwaysStrict));
     }
 
     /**
@@ -2335,7 +2335,7 @@ namespace qnr {
     function hasNamespaceQualifiedExportName(node: Node) {
       return (
         isExportOfNamespace(node) ||
-        (isExternalModuleExport(node) && moduleKind !== ModuleKind.ES2015 && moduleKind !== ModuleKind.ES2020 && moduleKind !== ModuleKind.ESNext && moduleKind !== ModuleKind.System)
+        (qp_isExternalModuleExport(node) && moduleKind !== ModuleKind.ES2015 && moduleKind !== ModuleKind.ES2020 && moduleKind !== ModuleKind.ESNext && moduleKind !== ModuleKind.System)
       );
     }
 
@@ -2742,7 +2742,7 @@ namespace qnr {
       // preserve old compiler's behavior: emit 'var' for import declaration (even if we do not consider them referenced) when
       // - current file is not external module
       // - import declaration is top level and target is value imported by entity name
-      return resolver.isReferencedAliasDeclaration(node) || (!isExternalModule(currentSourceFile) && resolver.isTopLevelValueImportEqualsWithEntityName(node));
+      return resolver.isReferencedAliasDeclaration(node) || (!qp_isExternalModule(currentSourceFile) && resolver.isTopLevelValueImportEqualsWithEntityName(node));
     }
 
     /**
@@ -2751,7 +2751,7 @@ namespace qnr {
      * @param node The import equals declaration node.
      */
     function visitImportEqualsDeclaration(node: ImportEqualsDeclaration): VisitResult<Statement> {
-      if (isExternalModuleImportEqualsDeclaration(node)) {
+      if (qp_isExternalModuleImportEqualsDeclaration(node)) {
         const isReferenced = resolver.isReferencedAliasDeclaration(node);
         // If the alias is unreferenced but we want to keep the import, replace with 'import "mod"'.
         if (!isReferenced && compilerOptions.importsNotUsedAsValues === ImportsNotUsedAsValues.Preserve) {
@@ -2801,7 +2801,7 @@ namespace qnr {
      *
      * @param node The node to test.
      */
-    function isExternalModuleExport(node: Node) {
+    function qp_isExternalModuleExport(node: Node) {
       return currentNamespace === undefined && hasSyntacticModifier(node, ModifierFlags.Export);
     }
 
@@ -2811,7 +2811,7 @@ namespace qnr {
      * @param node The node to test.
      */
     function isNamedExternalModuleExport(node: Node) {
-      return isExternalModuleExport(node) && !hasSyntacticModifier(node, ModifierFlags.Default);
+      return qp_isExternalModuleExport(node) && !hasSyntacticModifier(node, ModifierFlags.Default);
     }
 
     /**
@@ -2820,7 +2820,7 @@ namespace qnr {
      * @param node The node to test.
      */
     function isDefaultExternalModuleExport(node: Node) {
-      return isExternalModuleExport(node) && hasSyntacticModifier(node, ModifierFlags.Default);
+      return qp_isExternalModuleExport(node) && hasSyntacticModifier(node, ModifierFlags.Default);
     }
 
     /**

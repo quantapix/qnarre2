@@ -398,7 +398,7 @@ namespace qnr {
           trace(host, Diagnostics.Looking_up_in_node_modules_folder_initial_location_0, initialLocationForSecondaryLookup);
         }
         let result: Resolved | undefined;
-        if (!isExternalModuleNameRelative(typeReferenceDirectiveName)) {
+        if (!qp_isExternalModuleNameRelative(typeReferenceDirectiveName)) {
           const searchResult = loadModuleFromNearestNodeModulesDirectory(
             Extensions.DtsOnly,
             typeReferenceDirectiveName,
@@ -560,7 +560,7 @@ namespace qnr {
     }
 
     function getOrCreateCacheForModuleName(nonRelativeModuleName: string, redirectedReference?: ResolvedProjectReference): PerModuleNameCache {
-      assert(!isExternalModuleNameRelative(nonRelativeModuleName));
+      assert(!qp_isExternalModuleNameRelative(nonRelativeModuleName));
       return getOrCreateCache(moduleNameToDirectoryMap, redirectedReference, nonRelativeModuleName, createPerModuleNameCache);
     }
 
@@ -707,7 +707,7 @@ namespace qnr {
 
       if (perFolderCache) {
         perFolderCache.set(moduleName, result);
-        if (!isExternalModuleNameRelative(moduleName)) {
+        if (!qp_isExternalModuleNameRelative(moduleName)) {
           // put result in per-module name cache
           cache!.getOrCreateCacheForModuleName(moduleName, redirectedReference).set(containingDirectory, result);
         }
@@ -815,7 +815,7 @@ namespace qnr {
     const resolved = tryLoadModuleUsingPathsIfEligible(extensions, moduleName, loader, state);
     if (resolved) return resolved.value;
 
-    if (!isExternalModuleNameRelative(moduleName)) {
+    if (!qp_isExternalModuleNameRelative(moduleName)) {
       return tryLoadModuleUsingBaseUrl(extensions, moduleName, loader, state);
     } else {
       return tryLoadModuleUsingRootDirs(extensions, moduleName, containingDirectory, loader, state);
@@ -1023,7 +1023,7 @@ namespace qnr {
         return toSearchResult({ resolved, isExternalLibraryImport: pathContainsNodeModules(resolved.path) });
       }
 
-      if (!isExternalModuleNameRelative(moduleName)) {
+      if (!qp_isExternalModuleNameRelative(moduleName)) {
         if (traceEnabled) {
           trace(host, Diagnostics.Loading_module_0_from_node_modules_folder_target_file_type_1, moduleName, Extensions[extensions]);
         }
@@ -1572,7 +1572,7 @@ namespace qnr {
         return { value: resolvedUsingSettings };
       }
 
-      if (!isExternalModuleNameRelative(moduleName)) {
+      if (!qp_isExternalModuleNameRelative(moduleName)) {
         const perModuleNameCache = cache && cache.getOrCreateCacheForModuleName(moduleName, redirectedReference);
         // Climb up parent directories looking for a module.
         const resolved = forEachAncestorDirectory(containingDirectory, (directory) => {

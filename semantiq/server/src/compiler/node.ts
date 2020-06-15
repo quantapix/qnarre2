@@ -1388,7 +1388,7 @@ namespace qnr {
         super(kind, pos, end);
       }
       update(newText: string, textChangeRange: TextChangeRange): SourceFile {
-        return updateSourceFile(this, newText, textChangeRange);
+        return qp_updateSource(this, newText, textChangeRange);
       }
       getLineAndCharacterOfPosition(position: number): LineAndCharacter {
         return getLineAndCharacterOfPosition(this, position);

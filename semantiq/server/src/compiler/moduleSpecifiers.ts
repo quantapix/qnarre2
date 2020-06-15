@@ -40,7 +40,7 @@ namespace qnr.moduleSpecifiers {
 
   function getPreferencesForUpdate(compilerOptions: CompilerOptions, oldImportSpecifier: string): Preferences {
     return {
-      relativePreference: isExternalModuleNameRelative(oldImportSpecifier) ? RelativePreference.Relative : RelativePreference.NonRelative,
+      relativePreference: qp_isExternalModuleNameRelative(oldImportSpecifier) ? RelativePreference.Relative : RelativePreference.NonRelative,
       ending: hasJSFileExtension(oldImportSpecifier)
         ? Ending.JsExtension
         : getEmitModuleResolutionKind(compilerOptions) !== ModuleResolutionKind.NodeJs || endsWith(oldImportSpecifier, 'index')
@@ -255,9 +255,10 @@ namespace qnr.moduleSpecifiers {
   }
 
   function tryGetModuleNameFromAmbientModule(moduleSymbol: Symbol): string | undefined {
-    const decl = find(moduleSymbol.declarations, (d) => isNonGlobalAmbientModule(d) && (!isExternalModuleAugmentation(d) || !isExternalModuleNameRelative(getTextOfIdentifierOrLiteral(d.name)))) as
-      | (ModuleDeclaration & { name: StringLiteral })
-      | undefined;
+    const decl = find(
+      moduleSymbol.declarations,
+      (d) => isNonGlobalAmbientModule(d) && (!qp_isExternalModuleAugmentation(d) || !qp_isExternalModuleNameRelative(getTextOfIdentifierOrLiteral(d.name)))
+    ) as (ModuleDeclaration & { name: StringLiteral }) | undefined;
     if (decl) {
       return decl.name.text;
     }

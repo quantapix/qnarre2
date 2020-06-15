@@ -16,12 +16,12 @@ namespace qnr {
         return node;
       }
 
-      if (isExternalModule(node) || compilerOptions.isolatedModules) {
+      if (qp_isExternalModule(node) || compilerOptions.isolatedModules) {
         const result = updateExternalModule(node);
-        if (!isExternalModule(node) || some(result.statements, isExternalModuleIndicator)) {
+        if (!qp_isExternalModule(node) || some(result.statements, qp_isExternalModuleIndicator)) {
           return result;
         }
-        return updateSourceFileNode(result, setTextRange(NodeArray.create([...result.statements, createEmptyExports()]), result.statements));
+        return qp_updateSourceNode(result, setTextRange(NodeArray.create([...result.statements, createEmptyExports()]), result.statements));
       }
 
       return node;
@@ -35,7 +35,7 @@ namespace qnr {
         append(statements, externalHelpersImportDeclaration);
 
         addRange(statements, NodeArray.visit(node.statements, visitor, isStatement, statementOffset));
-        return updateSourceFileNode(node, setTextRange(NodeArray.create(statements), node.statements));
+        return qp_updateSourceNode(node, setTextRange(NodeArray.create(statements), node.statements));
       } else {
         return visitEachChild(node, visitor, context);
       }
@@ -96,7 +96,7 @@ namespace qnr {
      */
     function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void): void {
       if (isSourceFile(node)) {
-        if ((isExternalModule(node) || compilerOptions.isolatedModules) && compilerOptions.importHelpers) {
+        if ((qp_isExternalModule(node) || compilerOptions.isolatedModules) && compilerOptions.importHelpers) {
           helperNameSubstitutions = createMap<Identifier>();
         }
         previousOnEmitNode(hint, node, emitCallback);

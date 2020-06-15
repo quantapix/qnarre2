@@ -504,26 +504,26 @@ namespace qnr {
     return !!(module.flags & NodeFlags.GlobalAugmentation);
   }
 
-  export function isExternalModuleAugmentation(node: Node): node is AmbientModuleDeclaration {
+  export function qp_isExternalModuleAugmentation(node: Node): node is AmbientModuleDeclaration {
     return isAmbientModule(node) && isModuleAugmentationExternal(node);
   }
 
   export function isModuleAugmentationExternal(node: AmbientModuleDeclaration) {
     switch (node.parent.kind) {
       case Syntax.SourceFile:
-        return isExternalModule(node.parent);
+        return qp_isExternalModule(node.parent);
       case Syntax.ModuleBlock:
-        return isAmbientModule(node.parent.parent) && isSourceFile(node.parent.parent.parent) && !isExternalModule(node.parent.parent.parent);
+        return isAmbientModule(node.parent.parent) && isSourceFile(node.parent.parent.parent) && !qp_isExternalModule(node.parent.parent.parent);
     }
     return false;
   }
 
   export function getNonAugmentationDeclaration(symbol: Symbol) {
-    return find(symbol.declarations, (d) => !isExternalModuleAugmentation(d) && !(isModuleDeclaration(d) && isGlobalScopeAugmentation(d)));
+    return find(symbol.declarations, (d) => !qp_isExternalModuleAugmentation(d) && !(isModuleDeclaration(d) && isGlobalScopeAugmentation(d)));
   }
 
   export function isEffectiveExternalModule(node: SourceFile, compilerOptions: CompilerOptions) {
-    return isExternalModule(node) || compilerOptions.isolatedModules || (getEmitModuleKind(compilerOptions) === ModuleKind.CommonJS && !!node.commonJsModuleIndicator);
+    return qp_isExternalModule(node) || compilerOptions.isolatedModules || (getEmitModuleKind(compilerOptions) === ModuleKind.CommonJS && !!node.commonJsModuleIndicator);
   }
 
   export function isEffectiveStrictModeSourceFile(node: SourceFile, compilerOptions: CompilerOptions) {
@@ -539,7 +539,7 @@ namespace qnr {
     if (node.isDeclarationFile) return false;
     if (getStrictOptionValue(compilerOptions, 'alwaysStrict')) return true;
     if (startsWithUseStrict(node.statements)) return true;
-    if (isExternalModule(node) || compilerOptions.isolatedModules) {
+    if (qp_isExternalModule(node) || compilerOptions.isolatedModules) {
       if (getEmitModuleKind(compilerOptions) >= ModuleKind.ES2015) return true;
       return !compilerOptions.noImplicitUseStrict;
     }
@@ -1544,12 +1544,12 @@ namespace qnr {
     return node.kind === Syntax.TypeQuery;
   }
 
-  export function isExternalModuleImportEqualsDeclaration(node: Node): node is ImportEqualsDeclaration & { moduleReference: ExternalModuleReference } {
+  export function qp_isExternalModuleImportEqualsDeclaration(node: Node): node is ImportEqualsDeclaration & { moduleReference: ExternalModuleReference } {
     return node.kind === Syntax.ImportEqualsDeclaration && (<ImportEqualsDeclaration>node).moduleReference.kind === Syntax.ExternalModuleReference;
   }
 
   export function getExternalModuleImportEqualsDeclarationExpression(node: Node) {
-    assert(isExternalModuleImportEqualsDeclaration(node));
+    assert(qp_isExternalModuleImportEqualsDeclaration(node));
     return (<ExternalModuleReference>(<ImportEqualsDeclaration>node).moduleReference).expression;
   }
 
@@ -3489,7 +3489,7 @@ namespace qnr {
       const moduleKind = getEmitModuleKind(options);
       const moduleEmitEnabled = options.emitDeclarationOnly || moduleKind === ModuleKind.AMD || moduleKind === ModuleKind.System;
       // Can emit only sources that are not declaration file and are either non module code or module with --module or --target es6 specified
-      return filter(host.getSourceFiles(), (sourceFile) => (moduleEmitEnabled || !isExternalModule(sourceFile)) && sourceFileMayBeEmitted(sourceFile, host, forceDtsEmit));
+      return filter(host.getSourceFiles(), (sourceFile) => (moduleEmitEnabled || !qp_isExternalModule(sourceFile)) && sourceFileMayBeEmitted(sourceFile, host, forceDtsEmit));
     } else {
       const sourceFiles = targetSourceFile === undefined ? host.getSourceFiles() : [targetSourceFile];
       return filter(sourceFiles, (sourceFile) => sourceFileMayBeEmitted(sourceFile, host, forceDtsEmit));

@@ -504,7 +504,7 @@ namespace qnr {
       mergeLexicalEnvironment(prologue, endLexicalEnvironment());
       insertCaptureThisForNodeIfNeeded(prologue, node);
       exitSubtree(ancestorFacts, HierarchyFacts.None, HierarchyFacts.None);
-      return updateSourceFileNode(node, setTextRange(NodeArray.create(concatenate(prologue, statements)), node.statements));
+      return qp_updateSourceNode(node, setTextRange(NodeArray.create(concatenate(prologue, statements)), node.statements));
     }
 
     function visitSwitchStatement(node: SwitchStatement): SwitchStatement {

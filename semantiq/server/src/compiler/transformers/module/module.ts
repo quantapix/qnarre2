@@ -76,7 +76,7 @@ namespace qnr {
     }
 
     function shouldEmitUnderscoreUnderscoreESModule() {
-      if (!currentModuleInfo.exportEquals && isExternalModule(currentSourceFile)) {
+      if (!currentModuleInfo.exportEquals && qp_isExternalModule(currentSourceFile)) {
         return true;
       }
       return false;
@@ -91,7 +91,7 @@ namespace qnr {
       startLexicalEnvironment();
 
       const statements: Statement[] = [];
-      const ensureUseStrict = getStrictOptionValue(compilerOptions, 'alwaysStrict') || (!compilerOptions.noImplicitUseStrict && isExternalModule(currentSourceFile));
+      const ensureUseStrict = getStrictOptionValue(compilerOptions, 'alwaysStrict') || (!compilerOptions.noImplicitUseStrict && qp_isExternalModule(currentSourceFile));
       const statementOffset = addPrologue(statements, node.statements, ensureUseStrict && !isJsonSourceFile(node), sourceElementVisitor);
 
       if (shouldEmitUnderscoreUnderscoreESModule()) {
@@ -115,7 +115,7 @@ namespace qnr {
       addExportEqualsIfNeeded(statements, /*emitAsReturn*/ false);
       insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
 
-      const updated = updateSourceFileNode(node, setTextRange(NodeArray.create(statements), node.statements));
+      const updated = qp_updateSourceNode(node, setTextRange(NodeArray.create(statements), node.statements));
       addEmitHelpers(updated, context.readEmitHelpers());
       return updated;
     }
@@ -156,7 +156,7 @@ namespace qnr {
       // Create an updated SourceFile:
       //
       //     define(moduleName?, ["module1", "module2"], function ...
-      const updated = updateSourceFileNode(
+      const updated = qp_updateSourceNode(
         node,
         setTextRange(
           NodeArray.create([
@@ -270,7 +270,7 @@ namespace qnr {
       //      }
       //  })(function ...)
 
-      const updated = updateSourceFileNode(
+      const updated = qp_updateSourceNode(
         node,
         setTextRange(
           NodeArray.create([
@@ -797,7 +797,7 @@ namespace qnr {
      * @param node The node to visit.
      */
     function visitImportEqualsDeclaration(node: ImportEqualsDeclaration): VisitResult<Statement> {
-      assert(isExternalModuleImportEqualsDeclaration(node), 'import= for internal module references should be handled in an earlier transformer.');
+      assert(qp_isExternalModuleImportEqualsDeclaration(node), 'import= for internal module references should be handled in an earlier transformer.');
 
       let statements: Statement[] | undefined;
       if (moduleKind !== ModuleKind.AMD) {

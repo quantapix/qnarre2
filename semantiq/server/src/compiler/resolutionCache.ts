@@ -291,7 +291,7 @@ namespace qnr {
 
       // otherwise try to load typings from @types
       const globalCache = resolutionHost.getGlobalCache();
-      if (globalCache !== undefined && !isExternalModuleNameRelative(moduleName) && !(primaryResult.resolvedModule && extensionIsTS(primaryResult.resolvedModule.extension))) {
+      if (globalCache !== undefined && !qp_isExternalModuleNameRelative(moduleName) && !(primaryResult.resolvedModule && extensionIsTS(primaryResult.resolvedModule.extension))) {
         // create different collection of failed lookup locations for second pass
         // if it will fail and we've already found something during the first pass - we don't want to pollute its results
         const { resolvedModule, failedLookupLocations } = loadModuleFromGlobalCache(
@@ -364,7 +364,7 @@ namespace qnr {
           !resolution ||
           resolution.isInvalidated ||
           // If the name is unresolved import that was invalidated, recalculate
-          (hasInvalidatedNonRelativeUnresolvedImport && !isExternalModuleNameRelative(name) && shouldRetryResolution(resolution))
+          (hasInvalidatedNonRelativeUnresolvedImport && !qp_isExternalModuleNameRelative(name) && shouldRetryResolution(resolution))
         ) {
           const existingResolution = resolution;
           const resolutionInDirectory = perDirectoryResolution.get(name);
@@ -531,7 +531,7 @@ namespace qnr {
       } else {
         resolution.refCount = 1;
         assert(resolution.files === undefined);
-        if (isExternalModuleNameRelative(name)) {
+        if (qp_isExternalModuleNameRelative(name)) {
           watchFailedLookupLocationOfResolution(resolution);
         } else {
           nonRelativeExternalModuleResolutions.add(name, resolution);

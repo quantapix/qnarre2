@@ -35,13 +35,7 @@ namespace qnr {
    * @returns Whether the screen was cleared.
    */
   function clearScreenIfNotWatchingForFileChanges(system: System, diagnostic: Diagnostic, options: CompilerOptions): boolean {
-    if (
-      system.clearScreen &&
-      !options.preserveWatchOutput &&
-      !options.extendedDiagnostics &&
-      !options.diagnostics &&
-      contains(screenStartingMessageCodes, diagnostic.code)
-    ) {
+    if (system.clearScreen && !options.preserveWatchOutput && !options.extendedDiagnostics && !options.diagnostics && contains(screenStartingMessageCodes, diagnostic.code)) {
       system.clearScreen();
       return true;
     }
@@ -49,10 +43,7 @@ namespace qnr {
     return false;
   }
 
-  export const screenStartingMessageCodes: number[] = [
-    Diagnostics.Starting_compilation_in_watch_mode.code,
-    Diagnostics.File_change_detected_Starting_incremental_compilation.code,
-  ];
+  export const screenStartingMessageCodes: number[] = [Diagnostics.Starting_compilation_in_watch_mode.code, Diagnostics.File_change_detected_Starting_incremental_compilation.code];
 
   function getPlainDiagnosticFollowingNewLines(diagnostic: Diagnostic, newLine: string): string {
     return contains(screenStartingMessageCodes, diagnostic.code) ? newLine + newLine : newLine;
@@ -84,10 +75,7 @@ namespace qnr {
           }
 
           output += `${getLocaleTimeString(system)} - `;
-          output += `${flattenDiagnosticMessageText(diagnostic.messageText, system.newLine)}${getPlainDiagnosticFollowingNewLines(
-            diagnostic,
-            newLine
-          )}`;
+          output += `${flattenDiagnosticMessageText(diagnostic.messageText, system.newLine)}${getPlainDiagnosticFollowingNewLines(diagnostic, newLine)}`;
 
           system.write(output);
         };
@@ -135,13 +123,7 @@ namespace qnr {
     getSemanticDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
     getDeclarationDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly DiagnosticWithLocation[];
     getConfigFileParsingDiagnostics(): readonly Diagnostic[];
-    emit(
-      targetSourceFile?: SourceFile,
-      writeFile?: WriteFileCallback,
-      cancellationToken?: CancellationToken,
-      emitOnlyDtsFiles?: boolean,
-      customTransformers?: CustomTransformers
-    ): EmitResult;
+    emit(targetSourceFile?: SourceFile, writeFile?: WriteFileCallback, cancellationToken?: CancellationToken, emitOnlyDtsFiles?: boolean, customTransformers?: CustomTransformers): EmitResult;
   }
 
   export function listFiles(program: ProgramToEmitFilesAndReportErrors, writeFileName: (s: string) => void) {
@@ -224,16 +206,7 @@ namespace qnr {
     emitOnlyDtsFiles?: boolean,
     customTransformers?: CustomTransformers
   ) {
-    const { emitResult, diagnostics } = emitFilesAndReportErrors(
-      program,
-      reportDiagnostic,
-      writeFileName,
-      reportSummary,
-      writeFile,
-      cancellationToken,
-      emitOnlyDtsFiles,
-      customTransformers
-    );
+    const { emitResult, diagnostics } = emitFilesAndReportErrors(program, reportDiagnostic, writeFileName, reportSummary, writeFile, cancellationToken, emitOnlyDtsFiles, customTransformers);
 
     if (emitResult.emitSkipped && diagnostics.length > 0) {
       // If the emitter didn't emit anything, then pass that value along.
@@ -282,28 +255,15 @@ namespace qnr {
     writeLog: (s: string) => void;
   }
 
-  export function createWatchFactory<Y = undefined>(
-    host: { trace?(s: string): void },
-    options: { extendedDiagnostics?: boolean; diagnostics?: boolean }
-  ) {
-    const watchLogLevel = host.trace
-      ? options.extendedDiagnostics
-        ? WatchLogLevel.Verbose
-        : options.diagnostics
-        ? WatchLogLevel.TriggerOnly
-        : WatchLogLevel.None
-      : WatchLogLevel.None;
+  export function createWatchFactory<Y = undefined>(host: { trace?(s: string): void }, options: { extendedDiagnostics?: boolean; diagnostics?: boolean }) {
+    const watchLogLevel = host.trace ? (options.extendedDiagnostics ? WatchLogLevel.Verbose : options.diagnostics ? WatchLogLevel.TriggerOnly : WatchLogLevel.None) : WatchLogLevel.None;
     const writeLog: (s: string) => void = watchLogLevel !== WatchLogLevel.None ? (s) => host.trace!(s) : noop;
     const result = getWatchFactory<WatchType, Y>(watchLogLevel, writeLog) as WatchFactory<WatchType, Y>;
     result.writeLog = writeLog;
     return result;
   }
 
-  export function createCompilerHostFromProgramHost(
-    host: ProgramHost<any>,
-    getCompilerOptions: () => CompilerOptions,
-    directoryStructureHost: DirectoryStructureHost = host
-  ): CompilerHost {
+  export function createCompilerHostFromProgramHost(host: ProgramHost<any>, getCompilerOptions: () => CompilerOptions, directoryStructureHost: DirectoryStructureHost = host): CompilerHost {
     const useCaseSensitiveFileNames = host.useCaseSensitiveFileNames();
     const hostGetNewLine = memoize(() => host.getNewLine());
     return {
@@ -321,7 +281,7 @@ namespace qnr {
           text = '';
         }
 
-        return text !== undefined ? createSourceFile(fileName, text, languageVersion) : undefined;
+        return text !== undefined ? qp_createSource(fileName, text, languageVersion) : undefined;
       },
       getDefaultLibLocation: maybeBind(host, host.getDefaultLibLocation),
       getDefaultLibFileName: (options) => host.getDefaultLibFileName(options),
@@ -382,10 +342,7 @@ namespace qnr {
   /**
    * Creates the watch compiler host that can be extended with config file or root file names and options host
    */
-  export function createProgramHost<T extends BuilderProgram = EmitAndSemanticDiagnosticsBuilderProgram>(
-    system: System,
-    createProgram: CreateProgram<T> | undefined
-  ): ProgramHost<T> {
+  export function createProgramHost<T extends BuilderProgram = EmitAndSemanticDiagnosticsBuilderProgram>(system: System, createProgram: CreateProgram<T> | undefined): ProgramHost<T> {
     const getDefaultLibLocation = memoize(() => getDirectoryPath(normalizePath(system.getExecutingFilePath())));
     return {
       useCaseSensitiveFileNames: () => system.useCaseSensitiveFileNames,
@@ -425,12 +382,7 @@ namespace qnr {
       const newLine = getNewLineCharacter(compilerOptions, () => system.newLine);
 
       emitFilesAndReportErrors(builderProgram, reportDiagnostic, writeFileName, (errorCount) =>
-        result.onWatchStatusChange!(
-          createCompilerDiagnostic(getWatchErrorSummaryDiagnosticMessage(errorCount), errorCount),
-          newLine,
-          compilerOptions,
-          errorCount
-        )
+        result.onWatchStatusChange!(createCompilerDiagnostic(getWatchErrorSummaryDiagnosticMessage(errorCount), errorCount), newLine, compilerOptions, errorCount)
       );
     };
     return result;
@@ -499,12 +451,7 @@ namespace qnr {
     reportDiagnostic,
     reportWatchStatus,
   }: CreateWatchCompilerHostOfFilesAndCompilerOptionsInput<T>): WatchCompilerHostOfFilesAndCompilerOptions<T> {
-    const host = createWatchCompilerHost(
-      system,
-      createProgram,
-      reportDiagnostic || createDiagnosticReporter(system),
-      reportWatchStatus
-    ) as WatchCompilerHostOfFilesAndCompilerOptions<T>;
+    const host = createWatchCompilerHost(system, createProgram, reportDiagnostic || createDiagnosticReporter(system), reportWatchStatus) as WatchCompilerHostOfFilesAndCompilerOptions<T>;
     host.rootFiles = rootFiles;
     host.options = options;
     host.watchOptions = watchOptions;

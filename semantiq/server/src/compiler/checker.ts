@@ -1051,7 +1051,7 @@ namespace qnr {
           const jsxPragma = file.pragmas.get('jsx');
           if (jsxPragma) {
             const chosenpragma = isArray(jsxPragma) ? jsxPragma[0] : jsxPragma;
-            file.localJsxFactory = parseIsolatedEntityName(chosenpragma.arguments.factory, languageVersion);
+            file.localJsxFactory = qp_parseIsolatedEntityName(chosenpragma.arguments.factory, languageVersion);
             visitNode(file.localJsxFactory, markAsSynthetic);
             if (file.localJsxFactory) {
               return (file.localJsxNamespace = getFirstIdentifier(file.localJsxFactory).escapedText);
@@ -1062,7 +1062,7 @@ namespace qnr {
       if (!_jsxNamespace) {
         _jsxNamespace = 'React' as __String;
         if (compilerOptions.jsxFactory) {
-          _jsxFactoryEntity = parseIsolatedEntityName(compilerOptions.jsxFactory, languageVersion);
+          _jsxFactoryEntity = qp_parseIsolatedEntityName(compilerOptions.jsxFactory, languageVersion);
           visitNode(_jsxFactoryEntity, markAsSynthetic);
           if (_jsxFactoryEntity) {
             _jsxNamespace = getFirstIdentifier(_jsxFactoryEntity).escapedText;
@@ -3205,7 +3205,7 @@ namespace qnr {
 
     function errorOnImplicitAnyModule(isError: boolean, errorNode: Node, { packageId, resolvedFileName }: ResolvedModuleFull, moduleReference: string): void {
       const errorInfo =
-        !isExternalModuleNameRelative(moduleReference) && packageId
+        !qp_isExternalModuleNameRelative(moduleReference) && packageId
           ? typesPackageExists(packageId.name)
             ? chainDiagnosticMessages(
                 /*details*/ undefined,
@@ -3491,7 +3491,7 @@ namespace qnr {
       // No results from files already being imported by this file - expand search (expensive, but not location-specific, so cached)
       const otherFiles = host.getSourceFiles();
       for (const file of otherFiles) {
-        if (!isExternalModule(file)) continue;
+        if (!qp_isExternalModule(file)) continue;
         const sym = getSymbolOfNode(file);
         const ref = getAliasForSymbolInContainer(sym, symbol);
         if (!ref) continue;
@@ -3800,9 +3800,9 @@ namespace qnr {
             symbolFromSymbolTable.flags & SymbolFlags.Alias &&
             symbolFromSymbolTable.escName !== InternalSymbolName.ExportEquals &&
             symbolFromSymbolTable.escName !== InternalSymbolName.Default &&
-            !(isUMDExportSymbol(symbolFromSymbolTable) && enclosingDeclaration && isExternalModule(getSourceFileOfNode(enclosingDeclaration))) &&
+            !(isUMDExportSymbol(symbolFromSymbolTable) && enclosingDeclaration && qp_isExternalModule(getSourceFileOfNode(enclosingDeclaration))) &&
             // If `!useOnlyExternalAliasing`, we can use any type of alias to get the name
-            (!useOnlyExternalAliasing || some(symbolFromSymbolTable.declarations, isExternalModuleImportEqualsDeclaration)) &&
+            (!useOnlyExternalAliasing || some(symbolFromSymbolTable.declarations, qp_isExternalModuleImportEqualsDeclaration)) &&
             // While exports are generally considered to be in scope, export-specifier declared symbols are _not_
             // See similar comment in `resolveName` for details
             (ignoreQualification || !getDeclarationOfKind(symbolFromSymbolTable, Syntax.ExportSpecifier))
@@ -6022,7 +6022,7 @@ namespace qnr {
           if (
             enclosingDeclaration &&
             ((isSourceFile(enclosingDeclaration) && isExternalOrCommonJsModule(enclosingDeclaration)) || isModuleDeclaration(enclosingDeclaration)) &&
-            (!some(statements, isExternalModuleIndicator) || (!hasScopeMarker(statements) && some(statements, needsScopeMarker)))
+            (!some(statements, qp_isExternalModuleIndicator) || (!hasScopeMarker(statements) && some(statements, needsScopeMarker)))
           ) {
             statements.push(createEmptyExports());
           }
@@ -6035,7 +6035,7 @@ namespace qnr {
             isVariableStatement(node) ||
             isFunctionDeclaration(node) ||
             isClassDeclaration(node) ||
-            (isModuleDeclaration(node) && !isExternalModuleAugmentation(node) && !isGlobalScopeAugmentation(node)) ||
+            (isModuleDeclaration(node) && !qp_isExternalModuleAugmentation(node) && !isGlobalScopeAugmentation(node)) ||
             isInterfaceDeclaration(node) ||
             isTypeDeclaration(node)
           );
@@ -7186,7 +7186,7 @@ namespace qnr {
     }
 
     function isTopLevelInExternalModuleAugmentation(node: Node): boolean {
-      return node && node.parent && node.parent.kind === Syntax.ModuleBlock && isExternalModuleAugmentation(node.parent.parent);
+      return node && node.parent && node.parent.kind === Syntax.ModuleBlock && qp_isExternalModuleAugmentation(node.parent.parent);
     }
 
     interface NodeBuilderContext {
@@ -7326,7 +7326,7 @@ namespace qnr {
           case Syntax.EnumDeclaration:
           case Syntax.ImportEqualsDeclaration:
             // external module augmentation is always visible
-            if (isExternalModuleAugmentation(node)) {
+            if (qp_isExternalModuleAugmentation(node)) {
               return true;
             }
             const parent = getDeclarationContainer(node);
@@ -11136,7 +11136,7 @@ namespace qnr {
     }
 
     function tryFindAmbientModule(moduleName: string, withAugmentations: boolean) {
-      if (isExternalModuleNameRelative(moduleName)) {
+      if (qp_isExternalModuleNameRelative(moduleName)) {
         return;
       }
       const symbol = getSymbol(globals, ('"' + moduleName + '"') as __String, SymbolFlags.ValueModule);
@@ -34490,7 +34490,7 @@ namespace qnr {
         }
 
         if (isAmbientExternalModule) {
-          if (isExternalModuleAugmentation(node)) {
+          if (qp_isExternalModuleAugmentation(node)) {
             // body of the augmentation should be checked for consistency only if augmentation was applied to its target (either global scope or module)
             // otherwise we'll be swamped in cascading errors.
             // We can detect if augmentation was applied using following rules:
@@ -34505,7 +34505,7 @@ namespace qnr {
           } else if (isGlobalSourceFile(node.parent)) {
             if (isGlobalAugmentation) {
               error(node.name, Diagnostics.Augmentations_for_the_global_scope_can_only_be_directly_nested_in_external_modules_or_ambient_module_declarations);
-            } else if (isExternalModuleNameRelative(getTextOfIdentifierOrLiteral(node.name))) {
+            } else if (qp_isExternalModuleNameRelative(getTextOfIdentifierOrLiteral(node.name))) {
               error(node.name, Diagnostics.Ambient_module_declaration_cannot_specify_relative_module_name);
             }
           } else {
@@ -34573,7 +34573,7 @@ namespace qnr {
             let reportError = !(symbol.flags & SymbolFlags.Transient);
             if (!reportError) {
               // symbol should not originate in augmentation
-              reportError = !!symbol.parent && isExternalModuleAugmentation(symbol.parent.declarations[0]);
+              reportError = !!symbol.parent && qp_isExternalModuleAugmentation(symbol.parent.declarations[0]);
             }
           }
           break;
@@ -34618,7 +34618,7 @@ namespace qnr {
         );
         return false;
       }
-      if (inAmbientExternalModule && isExternalModuleNameRelative(moduleName.text)) {
+      if (inAmbientExternalModule && qp_isExternalModuleNameRelative(moduleName.text)) {
         // we have already reported errors on top level imports/exports in external module augmentations in checkModuleDeclaration
         // no need to do this again.
         if (!isTopLevelInExternalModuleAugmentation(node)) {
@@ -35323,7 +35323,7 @@ namespace qnr {
           });
         }
 
-        if (compilerOptions.importsNotUsedAsValues === ImportsNotUsedAsValues.Error && !node.isDeclarationFile && isExternalModule(node)) {
+        if (compilerOptions.importsNotUsedAsValues === ImportsNotUsedAsValues.Error && !node.isDeclarationFile && qp_isExternalModule(node)) {
           checkImportsForTypeOnlyConversion(node);
         }
 
@@ -35691,7 +35691,7 @@ namespace qnr {
 
     function getSymbolAtLocation(node: Node, ignoreErrors?: boolean): Symbol | undefined {
       if (node.kind === Syntax.SourceFile) {
-        return isExternalModule(<SourceFile>node) ? getMergedSymbol(node.symbol) : undefined;
+        return qp_isExternalModule(<SourceFile>node) ? getMergedSymbol(node.symbol) : undefined;
       }
       const { parent } = node;
       const grandParent = parent.parent;
@@ -35763,7 +35763,7 @@ namespace qnr {
           // 3). Dynamic import call or require in javascript
           // 4). type A = import("./f/*gotToDefinitionHere*/oo")
           if (
-            (isExternalModuleImportEqualsDeclaration(node.parent.parent) && getExternalModuleImportEqualsDeclarationExpression(node.parent.parent) === node) ||
+            (qp_isExternalModuleImportEqualsDeclaration(node.parent.parent) && getExternalModuleImportEqualsDeclarationExpression(node.parent.parent) === node) ||
             ((node.parent.kind === Syntax.ImportDeclaration || node.parent.kind === Syntax.ExportDeclaration) && (<ImportDeclaration>node.parent).moduleSpecifier === node) ||
             (isInJSFile(node) && isRequireCall(node.parent, /*checkArgumentIsStringLiteralLike*/ false)) ||
             isImportCall(node.parent) ||

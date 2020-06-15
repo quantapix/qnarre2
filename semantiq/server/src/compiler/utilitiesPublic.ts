@@ -1,5 +1,5 @@
 namespace qnr {
-  export function isExternalModuleNameRelative(moduleName: string) {
+  export function qp_isExternalModuleNameRelative(moduleName: string) {
     return pathIsRelative(moduleName) || isRootedDiskPath(moduleName);
   }
 
@@ -847,7 +847,7 @@ namespace qnr {
     return n.kind === Syntax.MissingDeclaration;
   }
 
-  export function isExternalModuleReference(n: Node): n is ExternalModuleReference {
+  export function qp_isExternalModuleReference(n: Node): n is ExternalModuleReference {
     return n.kind === Syntax.ExternalModuleReference;
   }
 
@@ -1513,7 +1513,7 @@ namespace qnr {
     return !isAnyImportOrReExport(s) && !isExportAssignment(s) && !hasSyntacticModifier(s, ModifierFlags.Export) && !isAmbientModule(s);
   }
 
-  export function isExternalModuleIndicator(s: Statement) {
+  export function qp_isExternalModuleIndicator(s: Statement) {
     return isAnyImportOrReExport(s) || isExportAssignment(s) || hasSyntacticModifier(s, ModifierFlags.Export);
   }
 

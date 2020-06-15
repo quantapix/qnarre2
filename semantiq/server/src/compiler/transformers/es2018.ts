@@ -341,7 +341,7 @@ namespace qnr {
         visited.statements,
         taggedTemplateStringDeclarations && [createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList(taggedTemplateStringDeclarations))]
       );
-      const result = updateSourceFileNode(visited, setTextRange(NodeArray.create(statement), node.statements));
+      const result = qp_updateSourceNode(visited, setTextRange(NodeArray.create(statement), node.statements));
       exitSubtree(ancestorFacts);
       return result;
     }
