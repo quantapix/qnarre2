@@ -35,7 +35,7 @@ namespace qnr {
   }
 
   export function isEmptyBindingPattern(n: BindingName): n is BindingPattern {
-    if (isBindingPattern(n)) return every(n.elements, isEmptyBindingElement);
+    if (qn.is.kind(BindingPattern, n)) return every(n.elements, isEmptyBindingElement);
     return false;
   }
 
@@ -1272,19 +1272,6 @@ namespace qnr {
         return true;
     }
     return false;
-  }
-
-  export function isBindingPattern(n: Node | undefined): n is BindingPattern {
-    if (n) {
-      const k = n.kind;
-      return k === Syntax.ArrayBindingPattern || k === Syntax.ObjectBindingPattern;
-    }
-    return false;
-  }
-
-  export function isAssignmentPattern(n: Node): n is AssignmentPattern {
-    const k = n.kind;
-    return k === Syntax.ArrayLiteralExpression || k === Syntax.ObjectLiteralExpression;
   }
 
   export function isArrayBindingElement(n: Node): n is ArrayBindingElement {

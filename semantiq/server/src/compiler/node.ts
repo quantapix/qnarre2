@@ -89,8 +89,8 @@ namespace qnr {
       node(k: Syntax) {
         return k >= Syntax.FirstNode;
       }
-      kind<S extends Syntax, T extends { kind: S }>(t: T, n: NodeType<S>): n is NodeType<T['kind']> {
-        return n.kind === t.kind;
+      kind<S extends Syntax, T extends { kind: S; also?: S[] }>(t: T, n: NodeType<S>): n is NodeType<T['kind']> {
+        return n.kind === t.kind || !!t.also?.includes(n.kind);
       }
     })();
 
@@ -1013,7 +1013,7 @@ namespace qnr {
             case Syntax.VariableDeclaration:
             case Syntax.BindingElement: {
               const decl = <VariableDeclaration>node;
-              if (isBindingPattern(decl.name)) {
+              if (qn.is.kind(BindingPattern, decl.name)) {
                 qn.forEach.child(decl.name, visit);
                 break;
               }
@@ -2261,29 +2261,41 @@ namespace qnr {
     | WithStatement
     | YieldExpression;
 
-  namespace ArrayLiteralExpression {
+  export namespace ArrayLiteralExpression {
     export const kind = Syntax.ArrayLiteralExpression;
   }
   //namespace ArrayTypeNode { export const kind  = Syntax.; }
-  namespace AsExpression {
-    export const kind = Syntax.Syntax.AsExpression;
+  export namespace AsExpression {
+    export const kind = Syntax.AsExpression;
   }
-  namespace AwaitExpression {
+  export namespace AwaitExpression {
     export const kind = Syntax.AwaitExpression;
   }
   export namespace BinaryExpression {
     export const kind = Syntax.BinaryExpression;
   }
+  export namespace BindingPattern {
+    export const kind = Syntax.ArrayBindingPattern;
+    export const also = [Syntax.ObjectBindingPattern];
+  }
+  export namespace AssignmentPattern {
+    export const kind = Syntax.ArrayLiteralExpression;
+    export const also = [Syntax.ObjectLiteralExpression];
+  }
+  export namespace ArrayBindingElement {
+    export const kind = undefined;
+    export const also = [Syntax.BindingElement, Syntax.OmittedExpression];
+  }
+
+  //namespace BindingElement { export const kind  = Syntax.; }
   /*
-namespace BindingElement
-{ export const kind  = Syntax.; } namespace BindingPattern
-{ export const kind  = Syntax.; } namespace Block
-{ export const kind  = Syntax.; } namespace BreakOrContinueStatement
-{ export const kind  = Syntax.; } namespace CallExpression
-{ export const kind  = Syntax.; } namespace CaseBlock
-{ export const kind  = Syntax.; } namespace CaseClause
-{ export const kind  = Syntax.; } namespace CatchClause
-{ export const kind  = Syntax.; } namespace ClassLikeDeclaration
+namespace Block { export const kind  = Syntax.; }
+namespace BreakOrContinueStatement { export const kind  = Syntax.; }
+namespace CallExpression { export const kind  = Syntax.; }
+namespace CaseBlock { export const kind  = Syntax.; }
+namespace CaseClause { export const kind  = Syntax.; }
+namespace CatchClause { export const kind  = Syntax.; }
+namespace ClassLikeDeclaration
 { export const kind  = Syntax.; } namespace CommaListExpression
 { export const kind  = Syntax.; } namespace ComputedPropertyName
 { export const kind  = Syntax.; } namespace ConditionalExpression

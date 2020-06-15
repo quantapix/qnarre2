@@ -1597,7 +1597,7 @@ namespace qnr {
 
     function bindInitializedVariableFlow(node: VariableDeclaration | ArrayBindingElement) {
       const name = !isOmittedExpression(node) ? node.name : undefined;
-      if (isBindingPattern(name)) {
+      if (qn.is.kind(BindingPattern, name)) {
         for (const child of name.elements) {
           bindInitializedVariableFlow(child);
         }
@@ -3167,7 +3167,7 @@ namespace qnr {
         checkStrictModeEvalOrArguments(node, node.name);
       }
 
-      if (!isBindingPattern(node.name)) {
+      if (!qn.is.kind(BindingPattern, node.name)) {
         if (isBlockOrCatchScoped(node)) {
           bindBlockScopedDeclaration(node, SymbolFlags.BlockScopedVariable, SymbolFlags.BlockScopedVariableExcludes);
         } else if (isParameterDeclaration(node)) {
@@ -3197,7 +3197,7 @@ namespace qnr {
         checkStrictModeEvalOrArguments(node, node.name);
       }
 
-      if (isBindingPattern(node.name)) {
+      if (qn.is.kind(BindingPattern, node.name)) {
         bindAnonymousDeclaration(node, SymbolFlags.FunctionScopedVariable, ('__' + (node as ParameterDeclaration).parent.parameters.indexOf(node as ParameterDeclaration)) as __String);
       } else {
         declareSymbolAndAddToSymbolTable(node, SymbolFlags.FunctionScopedVariable, SymbolFlags.ParameterExcludes);
@@ -3689,7 +3689,7 @@ namespace qnr {
 
     if (!node.variableDeclaration) {
       transformFlags |= TransformFlags.AssertES2019;
-    } else if (isBindingPattern(node.variableDeclaration.name)) {
+    } else if (qn.is.kind(BindingPattern, node.variableDeclaration.name)) {
       transformFlags |= TransformFlags.AssertES2015;
     }
 

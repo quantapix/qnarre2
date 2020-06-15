@@ -1928,14 +1928,17 @@ namespace qnr {
             location = getJSDocHost(location);
             break;
           case Syntax.Parameter:
-            if (lastLocation && (lastLocation === (location as ParameterDeclaration).initializer || (lastLocation === (location as ParameterDeclaration).name && isBindingPattern(lastLocation)))) {
+            if (
+              lastLocation &&
+              (lastLocation === (location as ParameterDeclaration).initializer || (lastLocation === (location as ParameterDeclaration).name && qn.is.kind(BindingPattern, lastLocation)))
+            ) {
               if (!associatedDeclarationForContainingInitializerOrBindingName) {
                 associatedDeclarationForContainingInitializerOrBindingName = location as ParameterDeclaration;
               }
             }
             break;
           case Syntax.BindingElement:
-            if (lastLocation && (lastLocation === (location as BindingElement).initializer || (lastLocation === (location as BindingElement).name && isBindingPattern(lastLocation)))) {
+            if (lastLocation && (lastLocation === (location as BindingElement).initializer || (lastLocation === (location as BindingElement).name && qn.is.kind(BindingPattern, lastLocation)))) {
               const root = getRootDeclaration(location);
               if (root.kind === Syntax.Parameter) {
                 if (!associatedDeclarationForContainingInitializerOrBindingName) {
@@ -7313,7 +7316,7 @@ namespace qnr {
           case Syntax.BindingElement:
             return isDeclarationVisible(node.parent.parent);
           case Syntax.VariableDeclaration:
-            if (isBindingPattern((node as VariableDeclaration).name) && !((node as VariableDeclaration).name as BindingPattern).elements.length) {
+            if (qn.is.kind(BindingPattern, (node as VariableDeclaration).name) && !((node as VariableDeclaration).name as BindingPattern).elements.length) {
               // If the binding pattern is empty, this variable declaration is not visible
               return false;
             }
@@ -7771,7 +7774,7 @@ namespace qnr {
         return checkRightHandSideOfForOf(forOfStatement) || anyType;
       }
 
-      if (isBindingPattern(declaration.parent)) {
+      if (qn.is.kind(BindingPattern, declaration.parent)) {
         return getTypeForBindingElement(<BindingElement>declaration);
       }
 
@@ -7788,7 +7791,7 @@ namespace qnr {
       if (
         (noImplicitAny || isInJSFile(declaration)) &&
         declaration.kind === Syntax.VariableDeclaration &&
-        !isBindingPattern(declaration.name) &&
+        !qn.is.kind(BindingPattern, declaration.name) &&
         !(getCombinedModifierFlags(declaration) & ModifierFlags.Export) &&
         !(declaration.flags & NodeFlags.Ambient)
       ) {
@@ -7866,7 +7869,7 @@ namespace qnr {
 
       // If the declaration specifies a binding pattern and is not a parameter of a contextually
       // typed function, use the type implied by the binding pattern
-      if (isBindingPattern(declaration.name)) {
+      if (qn.is.kind(BindingPattern, declaration.name)) {
         return getTypeFromBindingPattern(declaration.name, /*includePatternInType*/ false, /*reportErrors*/ true);
       }
 
@@ -8163,10 +8166,10 @@ namespace qnr {
         // The type implied by a binding pattern is independent of context, so we check the initializer with no
         // contextual type or, if the element itself is a binding pattern, with the type implied by that binding
         // pattern.
-        const contextualType = isBindingPattern(element.name) ? getTypeFromBindingPattern(element.name, /*includePatternInType*/ true, /*reportErrors*/ false) : unknownType;
+        const contextualType = qn.is.kind(BindingPattern, element.name) ? getTypeFromBindingPattern(element.name, /*includePatternInType*/ true, /*reportErrors*/ false) : unknownType;
         return addOptionality(widenTypeInferredFromInitializer(element, checkDeclarationInitializer(element, contextualType)));
       }
-      if (isBindingPattern(element.name)) {
+      if (qn.is.kind(BindingPattern, element.name)) {
         return getTypeFromBindingPattern(element.name, includePatternInType, reportErrors);
       }
       if (reportErrors && !declarationBelongsToPrivateAmbientMember(element)) {
@@ -11261,7 +11264,7 @@ namespace qnr {
           let paramSymbol = param.symbol;
           const type = isJSDocParameterTag(param) ? param.typeExpression && param.typeExpression.type : param.type;
           // Include parameter symbol instead of property symbol in the signature
-          if (paramSymbol && !!(paramSymbol.flags & SymbolFlags.Property) && !isBindingPattern(param.name)) {
+          if (paramSymbol && !!(paramSymbol.flags & SymbolFlags.Property) && !qn.is.kind(BindingPattern, param.name)) {
             const resolvedSymbol = resolveName(param, paramSymbol.escName, SymbolFlags.Value, undefined, undefined, /*isUse*/ false);
             paramSymbol = resolvedSymbol!;
           }
@@ -22694,7 +22697,7 @@ namespace qnr {
       const parent = declaration.parent.parent;
       const name = declaration.propertyName || declaration.name;
       const parentType = getContextualTypeForVariableLikeDeclaration(parent) || (parent.kind !== Syntax.BindingElement && parent.initializer && checkDeclarationInitializer(parent));
-      if (parentType && !isBindingPattern(name) && !isComputedNonLiteralName(name)) {
+      if (parentType && !qn.is.kind(BindingPattern, name) && !isComputedNonLiteralName(name)) {
         const nameType = getLiteralTypeFromPropertyName(name);
         if (isTypeUsableAsPropertyName(nameType)) {
           const text = getPropertyNameFromType(nameType);
@@ -22718,7 +22721,7 @@ namespace qnr {
         if (result) {
           return result;
         }
-        if (isBindingPattern(declaration.name)) {
+        if (qn.is.kind(BindingPattern, declaration.name)) {
           // This is less a contextual type and more an implied shape - in some cases, this may be undesirable
           return getTypeFromBindingPattern(declaration.name, /*includePatternInType*/ true, /*reportErrors*/ false);
         }
@@ -25157,7 +25160,7 @@ namespace qnr {
       const initializer = node.initializer;
       if (initializer.kind === Syntax.VariableDeclarationList) {
         const variable = (<VariableDeclarationList>initializer).declarations[0];
-        if (variable && !isBindingPattern(variable.name)) {
+        if (variable && !qn.is.kind(BindingPattern, variable.name)) {
           return getSymbolOfNode(variable);
         }
       } else if (initializer.kind === Syntax.Identifier) {
@@ -26045,8 +26048,8 @@ namespace qnr {
         if (paramDecl) {
           related = createDiagnosticForNode(
             paramDecl,
-            isBindingPattern(paramDecl.name) ? Diagnostics.An_argument_matching_this_binding_pattern_was_not_provided : Diagnostics.An_argument_for_0_was_not_provided,
-            !paramDecl.name ? argCount : !isBindingPattern(paramDecl.name) ? idText(getFirstIdentifier(paramDecl.name)) : undefined
+            qn.is.kind(BindingPattern, paramDecl.name) ? Diagnostics.An_argument_matching_this_binding_pattern_was_not_provided : Diagnostics.An_argument_for_0_was_not_provided,
+            !paramDecl.name ? argCount : !qn.is.kind(BindingPattern, paramDecl.name) ? idText(getFirstIdentifier(paramDecl.name)) : undefined
           );
         }
       }
@@ -29914,7 +29917,7 @@ namespace qnr {
           error(node.name, Diagnostics.constructor_cannot_be_used_as_a_parameter_property_name);
         }
       }
-      if (node.questionToken && isBindingPattern(node.name) && (func as FunctionLikeDeclaration).body) {
+      if (node.questionToken && qn.is.kind(BindingPattern, node.name) && (func as FunctionLikeDeclaration).body) {
         error(node, Diagnostics.A_binding_pattern_parameter_cannot_be_optional_in_an_implementation_signature);
       }
       if (node.name && isIdentifier(node.name) && (node.name.escapedText === 'this' || node.name.escapedText === 'new')) {
@@ -29934,7 +29937,7 @@ namespace qnr {
 
       // Only check rest parameter type if it's not a binding pattern. Since binding patterns are
       // not allowed in a rest parameter, we already have an error from checkGrammarParameterList.
-      if (node.dot3Token && !isBindingPattern(node.name) && !isTypeAssignableTo(getReducedType(getTypeOfSymbol(node.symbol)), anyReadonlyArrayType)) {
+      if (node.dot3Token && !qn.is.kind(BindingPattern, node.name) && !isTypeAssignableTo(getReducedType(getTypeOfSymbol(node.symbol)), anyReadonlyArrayType)) {
         error(node, Diagnostics.A_rest_parameter_must_be_of_an_array_type);
       }
     }
@@ -29971,7 +29974,7 @@ namespace qnr {
         } else if (parameterName) {
           let hasReportedError = false;
           for (const { name } of parent.parameters) {
-            if (isBindingPattern(name) && checkIfTypePredicateVariableIsDeclaredInBindingPattern(name, parameterName, typePredicate.parameterName)) {
+            if (qn.is.kind(BindingPattern, name) && checkIfTypePredicateVariableIsDeclaredInBindingPattern(name, parameterName, typePredicate.parameterName)) {
               hasReportedError = true;
               break;
             }
@@ -30102,7 +30105,7 @@ namespace qnr {
       for (const member of node.members) {
         if (member.kind === Syntax.Constructor) {
           for (const param of (member as ConstructorDeclaration).parameters) {
-            if (isParameterPropertyDeclaration(param, member) && !isBindingPattern(param.name)) {
+            if (isParameterPropertyDeclaration(param, member) && !qn.is.kind(BindingPattern, param.name)) {
               addName(instanceNames, param.name, param.name.escapedText, DeclarationMeaning.GetOrSetAccessor);
             }
           }
@@ -31534,7 +31537,7 @@ namespace qnr {
         // but the tag doesn't have an array type
         if (decl) {
           const i = getJSDocTags(decl).filter(isJSDocParameterTag).indexOf(node);
-          if (i > -1 && i < decl.parameters.length && isBindingPattern(decl.parameters[i].name)) {
+          if (i > -1 && i < decl.parameters.length && qn.is.kind(BindingPattern, decl.parameters[i].name)) {
             return;
           }
           if (!containsArgumentsReference(decl)) {
@@ -32209,7 +32212,7 @@ namespace qnr {
         const parent = node.parent.parent;
         const parentType = getTypeForBindingElementParent(parent);
         const name = node.propertyName || node.name;
-        if (parentType && !isBindingPattern(name)) {
+        if (parentType && !qn.is.kind(BindingPattern, name)) {
           const exprType = getLiteralTypeFromPropertyName(name);
           if (isTypeUsableAsPropertyName(exprType)) {
             const nameText = getPropertyNameFromType(exprType);
@@ -32223,7 +32226,7 @@ namespace qnr {
       }
 
       // For a binding pattern, check contained binding elements
-      if (isBindingPattern(node.name)) {
+      if (qn.is.kind(BindingPattern, node.name)) {
         forEach(node.name.elements, checkSourceElement);
       }
       // For a parameter declaration with an initializer, error and exit if the containing function doesn't have a body
@@ -32232,7 +32235,7 @@ namespace qnr {
         return;
       }
       // For a binding pattern, validate the initializer and exit
-      if (isBindingPattern(node.name)) {
+      if (qn.is.kind(BindingPattern, node.name)) {
         const needCheckInitializer = node.initializer && node.parent.parent.kind !== Syntax.ForInStatement;
         const needCheckWidenedType = node.name.elements.length === 0;
         if (needCheckInitializer || needCheckWidenedType) {
@@ -32552,7 +32555,7 @@ namespace qnr {
       //   and Expr must be an expression of type Any, an object type, or a type parameter type.
       if (node.initializer.kind === Syntax.VariableDeclarationList) {
         const variable = (<VariableDeclarationList>node.initializer).declarations[0];
-        if (variable && isBindingPattern(variable.name)) {
+        if (variable && qn.is.kind(BindingPattern, variable.name)) {
           error(variable.name, Diagnostics.The_left_hand_side_of_a_for_in_statement_cannot_be_a_destructuring_pattern);
         }
         checkForInOrForOfVariableDeclaration(node);
@@ -34551,7 +34554,7 @@ namespace qnr {
         case Syntax.BindingElement:
         case Syntax.VariableDeclaration:
           const name = (<VariableDeclaration | BindingElement>node).name;
-          if (isBindingPattern(name)) {
+          if (qn.is.kind(BindingPattern, name)) {
             for (const el of name.elements) {
               // mark individual names in binding pattern
               checkModuleAugmentationElement(el, isGlobalAugmentation);
@@ -35870,7 +35873,7 @@ namespace qnr {
         return errorType;
       }
 
-      if (isBindingPattern(node)) {
+      if (qn.is.kind(BindingPattern, node)) {
         return getTypeForVariableLikeDeclaration(node.parent, /*includeOptionality*/ true) || errorType;
       }
 
@@ -37150,7 +37153,7 @@ namespace qnr {
         return false;
       } else if ((node.kind === Syntax.ImportDeclaration || node.kind === Syntax.ImportEqualsDeclaration) && flags & ModifierFlags.Ambient) {
         return grammarErrorOnNode(lastDeclare!, Diagnostics.A_0_modifier_cannot_be_used_with_an_import_declaration, 'declare');
-      } else if (node.kind === Syntax.Parameter && flags & ModifierFlags.ParameterPropertyModifier && isBindingPattern((<ParameterDeclaration>node).name)) {
+      } else if (node.kind === Syntax.Parameter && flags & ModifierFlags.ParameterPropertyModifier && qn.is.kind(BindingPattern, (<ParameterDeclaration>node).name)) {
         return grammarErrorOnNode(node, Diagnostics.A_parameter_property_may_not_be_declared_using_a_binding_pattern);
       } else if (node.kind === Syntax.Parameter && flags & ModifierFlags.ParameterPropertyModifier && (<ParameterDeclaration>node).dot3Token) {
         return grammarErrorOnNode(node, Diagnostics.A_parameter_property_cannot_be_declared_using_a_rest_parameter);
@@ -37274,7 +37277,7 @@ namespace qnr {
     }
 
     function getNonSimpleParameters(parameters: readonly ParameterDeclaration[]): readonly ParameterDeclaration[] {
-      return filter(parameters, (parameter) => !!parameter.initializer || isBindingPattern(parameter.name) || isRestParameter(parameter));
+      return filter(parameters, (parameter) => !!parameter.initializer || qn.is.kind(BindingPattern, parameter.name) || isRestParameter(parameter));
     }
 
     function checkGrammarForUseStrictSimpleParameterList(node: FunctionLikeDeclaration): boolean {
@@ -37985,7 +37988,7 @@ namespace qnr {
         if (node.flags & NodeFlags.Ambient) {
           checkAmbientInitializer(node);
         } else if (!node.initializer) {
-          if (isBindingPattern(node.name) && !isBindingPattern(node.parent)) {
+          if (qn.is.kind(BindingPattern, node.name) && !qn.is.kind(BindingPattern, node.parent)) {
             return grammarErrorOnNode(node, Diagnostics.A_destructuring_declaration_must_have_an_initializer);
           }
           if (isVarConst(node)) {

@@ -2380,7 +2380,7 @@ namespace qnr {
 
   // True if `name` is the name of a declaration node
   export function isDeclarationName(name: Node): boolean {
-    return !isSourceFile(name) && !isBindingPattern(name) && isDeclaration(name.parent) && name.parent.name === name;
+    return !isSourceFile(name) && !qn.is.kind(BindingPattern, name) && isDeclaration(name.parent) && name.parent.name === name;
   }
 
   // See GH#16030

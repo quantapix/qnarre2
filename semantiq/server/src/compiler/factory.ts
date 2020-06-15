@@ -1721,7 +1721,7 @@ namespace qnr {
   }
 
   export function convertToAssignmentElementTarget(node: BindingOrAssignmentElementTarget): Expression {
-    if (isBindingPattern(node)) {
+    if (qn.is.kind(BindingPattern, node)) {
       return convertToAssignmentPattern(node);
     }
 

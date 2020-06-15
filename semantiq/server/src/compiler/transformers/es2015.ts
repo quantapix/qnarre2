@@ -1076,7 +1076,7 @@ namespace qnr {
       if (node.dot3Token) {
         // rest parameters are elided
         return;
-      } else if (isBindingPattern(node.name)) {
+      } else if (qn.is.kind(BindingPattern, node.name)) {
         // Binding patterns are converted into a generated name and are
         // evaluated inside the function body.
         return setOriginalNode(
@@ -1109,7 +1109,7 @@ namespace qnr {
     }
 
     function hasDefaultValueOrBindingPattern(node: ParameterDeclaration) {
-      return node.initializer !== undefined || isBindingPattern(node.name);
+      return node.initializer !== undefined || qn.is.kind(BindingPattern, node.name);
     }
 
     /**
@@ -1134,7 +1134,7 @@ namespace qnr {
           continue;
         }
 
-        if (isBindingPattern(name)) {
+        if (qn.is.kind(BindingPattern, name)) {
           added = insertDefaultValueAssignmentForBindingPattern(statements, parameter, name, initializer) || added;
         } else if (initializer) {
           insertDefaultValueAssignmentForInitializer(statements, parameter, name, initializer);
@@ -1840,7 +1840,7 @@ namespace qnr {
           hoistVariableDeclarationDeclaredInConvertedLoop(convertedLoopState, decl);
           if (decl.initializer) {
             let assignment: Expression;
-            if (isBindingPattern(decl.name)) {
+            if (qn.is.kind(BindingPattern, decl.name)) {
               assignment = flattenDestructuringAssignment(decl, visitor, context, FlattenLevel.All);
             } else {
               assignment = createBinary(decl.name, Syntax.EqualsToken, visitNode(decl.initializer, visitor, isExpression));
@@ -1884,7 +1884,7 @@ namespace qnr {
 
         // If the first or last declaration is a binding pattern, we need to modify
         // the source map range for the declaration list.
-        if (node.transformFlags & TransformFlags.ContainsBindingPattern && (isBindingPattern(node.declarations[0].name) || isBindingPattern(last(node.declarations).name))) {
+        if (node.transformFlags & TransformFlags.ContainsBindingPattern && (qn.is.kind(BindingPattern, node.declarations[0].name) || qn.is.kind(BindingPattern, last(node.declarations).name))) {
           setSourceMapRange(declarationList, getRangeUnion(declarations));
         }
 
@@ -1976,7 +1976,7 @@ namespace qnr {
       // explicit initializer since downlevel codegen for destructuring will fail
       // in the absence of initializer so all binding elements will say uninitialized
       const name = node.name;
-      if (isBindingPattern(name)) {
+      if (qn.is.kind(BindingPattern, name)) {
         return visitVariableDeclaration(node);
       }
 
@@ -1997,7 +1997,7 @@ namespace qnr {
     function visitVariableDeclaration(node: VariableDeclaration): VisitResult<VariableDeclaration> {
       const ancestorFacts = enterSubtree(HierarchyFacts.ExportedVariableStatement, HierarchyFacts.None);
       let updated: VisitResult<VariableDeclaration>;
-      if (isBindingPattern(node.name)) {
+      if (qn.is.kind(BindingPattern, node.name)) {
         updated = flattenDestructuringBinding(node, visitor, context, FlattenLevel.All, /*value*/ undefined, (ancestorFacts & HierarchyFacts.ExportedVariableStatement) !== 0);
       } else {
         updated = visitEachChild(node, visitor, context);
@@ -2083,7 +2083,7 @@ namespace qnr {
         }
 
         const firstOriginalDeclaration = firstOrUndefined(initializer.declarations);
-        if (firstOriginalDeclaration && isBindingPattern(firstOriginalDeclaration.name)) {
+        if (firstOriginalDeclaration && qn.is.kind(BindingPattern, firstOriginalDeclaration.name)) {
           // This works whether the declaration is a var, let, or const.
           // It will use rhsIterationValue _a[_i] as the initializer.
           const declarations = flattenDestructuringBinding(firstOriginalDeclaration, visitor, context, FlattenLevel.All, boundValue);
@@ -2924,7 +2924,7 @@ namespace qnr {
       hasCapturedBindingsInForInitializer: boolean
     ) {
       const name = decl.name;
-      if (isBindingPattern(name)) {
+      if (qn.is.kind(BindingPattern, name)) {
         for (const element of name.elements) {
           if (!isOmittedExpression(element)) {
             processLoopVariableDeclaration(container, element, loopParameters, loopOutParameters, hasCapturedBindingsInForInitializer);
@@ -3045,7 +3045,7 @@ namespace qnr {
       const ancestorFacts = enterSubtree(HierarchyFacts.BlockScopeExcludes, HierarchyFacts.BlockScopeIncludes);
       let updated: CatchClause;
       assert(!!node.variableDeclaration, 'Catch clause variable should always be present when downleveling ES2015.');
-      if (isBindingPattern(node.variableDeclaration.name)) {
+      if (qn.is.kind(BindingPattern, node.variableDeclaration.name)) {
         const temp = createTempVariable(/*recordTempVariable*/ undefined);
         const newVariableDeclaration = createVariableDeclaration(temp);
         setTextRange(newVariableDeclaration, node.variableDeclaration);

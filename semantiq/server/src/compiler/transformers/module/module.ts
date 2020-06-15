@@ -1097,7 +1097,7 @@ namespace qnr {
      * @param node The node to transform.
      */
     function transformInitializedVariable(node: VariableDeclaration): Expression {
-      if (isBindingPattern(node.name)) {
+      if (qn.is.kind(BindingPattern, node.name)) {
         return flattenDestructuringAssignment(visitNode(node, moduleExpressionElementVisitor), /*visitor*/ undefined, context, FlattenLevel.All, /*needsValue*/ false, createAllExportExpressions);
       } else {
         return createAssignment(
@@ -1252,7 +1252,7 @@ namespace qnr {
         return statements;
       }
 
-      if (isBindingPattern(decl.name)) {
+      if (qn.is.kind(BindingPattern, decl.name)) {
         for (const element of decl.name.elements) {
           if (!isOmittedExpression(element)) {
             statements = appendExportsOfBindingElement(statements, element);

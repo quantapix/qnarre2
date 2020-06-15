@@ -201,7 +201,7 @@ namespace qnr {
     // so let's just ignore it.
     return parameter.dot3Token
       ? parameter
-      : isBindingPattern(parameter.name)
+      : qn.is.kind(BindingPattern, parameter.name)
       ? addDefaultValueAssignmentForBindingPattern(parameter, context)
       : parameter.initializer
       ? addDefaultValueAssignmentForInitializer(parameter, parameter.name, parameter.initializer, context)

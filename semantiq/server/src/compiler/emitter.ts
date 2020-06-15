@@ -4518,7 +4518,7 @@ namespace qnr {
       if (name) {
         if (isGeneratedIdentifier(name)) {
           generateName(name);
-        } else if (isBindingPattern(name)) {
+        } else if (qn.is.kind(BindingPattern, name)) {
           generateNames(name);
         }
       }

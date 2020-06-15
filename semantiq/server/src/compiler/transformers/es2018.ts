@@ -365,7 +365,7 @@ namespace qnr {
     }
 
     function visitCatchClause(node: CatchClause) {
-      if (node.variableDeclaration && isBindingPattern(node.variableDeclaration.name) && node.variableDeclaration.name.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
+      if (node.variableDeclaration && qn.is.kind(BindingPattern, node.variableDeclaration.name) && node.variableDeclaration.name.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
         const name = getGeneratedNameForNode(node.variableDeclaration.name);
         const updatedDecl = updateVariableDeclaration(node.variableDeclaration, node.variableDeclaration.name, /*type*/ undefined, name);
         const visitedBindings = flattenDestructuringBinding(updatedDecl, visitor, context, FlattenLevel.ObjectRest);
@@ -407,7 +407,7 @@ namespace qnr {
 
     function visitVariableDeclarationWorker(node: VariableDeclaration, exportedVariableStatement: boolean): VisitResult<VariableDeclaration> {
       // If we are here it is because the name contains a binding pattern with a rest somewhere in it.
-      if (isBindingPattern(node.name) && node.name.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
+      if (qn.is.kind(BindingPattern, node.name) && node.name.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
         return flattenDestructuringBinding(node, visitor, context, FlattenLevel.ObjectRest, /*rval*/ undefined, exportedVariableStatement);
       }
       return visitEachChild(node, visitor, context);
@@ -446,7 +446,7 @@ namespace qnr {
 
     function transformForOfStatementWithObjectRest(node: ForOfStatement) {
       const initializerWithoutParens = skipParentheses(node.initializer) as ForInitializer;
-      if (isVariableDeclarationList(initializerWithoutParens) || isAssignmentPattern(initializerWithoutParens)) {
+      if (isVariableDeclarationList(initializerWithoutParens) || qn.is.kind(AssignmentPattern, initializerWithoutParens)) {
         let bodyLocation: TextRange | undefined;
         let statementsLocation: TextRange | undefined;
         const temp = createTempVariable(/*recordTempVariable*/ undefined);

@@ -208,7 +208,7 @@ namespace qnr {
   }
 
   function collectExportedVariableInfo(decl: VariableDeclaration | BindingElement, uniqueExports: Map<boolean>, exportedNames: Identifier[] | undefined) {
-    if (isBindingPattern(decl.name)) {
+    if (qn.is.kind(BindingPattern, decl.name)) {
       for (const element of decl.name.elements) {
         if (!isOmittedExpression(element)) {
           exportedNames = collectExportedVariableInfo(element, uniqueExports, exportedNames);

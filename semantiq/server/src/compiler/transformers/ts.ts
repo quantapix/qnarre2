@@ -2085,7 +2085,7 @@ namespace qnr {
 
     function transformInitializedVariable(node: VariableDeclaration): Expression {
       const name = node.name;
-      if (isBindingPattern(name)) {
+      if (qn.is.kind(BindingPattern, name)) {
         return flattenDestructuringAssignment(node, visitor, context, FlattenLevel.All, /*needsValue*/ false, createNamespaceExportExpression);
       } else {
         return setTextRange(createAssignment(getNamespaceMemberNameWithSourceMapsAndWithoutComments(name), visitNode(node.initializer, visitor, isExpression)), /*location*/ node);

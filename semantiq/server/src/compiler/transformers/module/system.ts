@@ -693,7 +693,7 @@ namespace qnr {
      * @param node The declaration to hoist.
      */
     function hoistBindingElement(node: VariableDeclaration | BindingElement): void {
-      if (isBindingPattern(node.name)) {
+      if (qn.is.kind(BindingPattern, node.name)) {
         for (const element of node.name.elements) {
           if (!isOmittedExpression(element)) {
             hoistBindingElement(element);
@@ -722,7 +722,7 @@ namespace qnr {
      */
     function transformInitializedVariable(node: VariableDeclaration, isExportedDeclaration: boolean): Expression {
       const createAssignment = isExportedDeclaration ? createExportedVariableAssignment : createNonExportedVariableAssignment;
-      return isBindingPattern(node.name)
+      return qn.is.kind(BindingPattern, node.name)
         ? flattenDestructuringAssignment(node, destructuringAndImportCallVisitor, context, FlattenLevel.All, /*needsValue*/ false, createAssignment)
         : node.initializer
         ? createAssignment(node.name, visitNode(node.initializer, destructuringAndImportCallVisitor, isExpression))
@@ -922,7 +922,7 @@ namespace qnr {
         return statements;
       }
 
-      if (isBindingPattern(decl.name)) {
+      if (qn.is.kind(BindingPattern, decl.name)) {
         for (const element of decl.name.elements) {
           if (!isOmittedExpression(element)) {
             statements = appendExportsOfBindingElement(statements, element, exportSelf);

@@ -575,7 +575,7 @@ namespace qnr {
       if (isOmittedExpression(elem)) {
         return false;
       }
-      if (isBindingPattern(elem.name)) {
+      if (qn.is.kind(BindingPattern, elem.name)) {
         // If any child binding pattern element has been marked visible (usually by collect linked aliases), then this is visible
         return some(elem.name.elements, getBindingNameVisible);
       } else {
@@ -953,7 +953,7 @@ namespace qnr {
             );
           }
           case Syntax.VariableDeclaration: {
-            if (isBindingPattern(input.name)) {
+            if (qn.is.kind(BindingPattern, input.name)) {
               return recreateBindingPattern(input.name);
             }
             shouldEnterSuppressNewDiagnosticsContextContext = true;
@@ -1281,7 +1281,7 @@ namespace qnr {
                   let elems: PropertyDeclaration[] | undefined;
                   for (const elem of pattern.elements) {
                     if (isOmittedExpression(elem)) continue;
-                    if (isBindingPattern(elem.name)) {
+                    if (qn.is.kind(BindingPattern, elem.name)) {
                       elems = concatenate(elems, walkBindingPattern(elem.name));
                     }
                     elems = elems || [];
@@ -1419,7 +1419,7 @@ namespace qnr {
       }
       if (e.name) {
         if (!getBindingNameVisible(e)) return;
-        if (isBindingPattern(e.name)) {
+        if (qn.is.kind(BindingPattern, e.name)) {
           return recreateBindingPattern(e.name);
         } else {
           return createVariableDeclaration(e.name, ensureType(e, /*type*/ undefined), /*initializer*/ undefined);
