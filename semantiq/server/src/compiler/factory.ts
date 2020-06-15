@@ -32,7 +32,7 @@ namespace qnr {
   }
 
   export function createMemberAccessForPropertyName(target: Expression, memberName: PropertyName, location?: TextRange): MemberExpression {
-    if (ComputedPropertyName.kind(memberName)) {
+    if (qn.is.kind(ComputedPropertyName, memberName)) {
       return setTextRange(createElementAccess(target, memberName.expression), location);
     } else {
       const expression = setTextRange(isIdentifier(memberName) || isPrivateIdentifier(memberName) ? createPropertyAccess(target, memberName) : createElementAccess(target, memberName), memberName);
@@ -79,7 +79,7 @@ namespace qnr {
   }
 
   function createJsxFactoryExpressionFromEntityName(jsxFactory: EntityName, parent: JsxOpeningLikeElement | JsxOpeningFragment): Expression {
-    if (QualifiedName.kind(jsxFactory)) {
+    if (qn.is.kind(QualifiedName, jsxFactory)) {
       const left = createJsxFactoryExpressionFromEntityName(jsxFactory.left, parent);
       const right = createIdentifier(idText(jsxFactory.right));
       right.escapedText = jsxFactory.right.escapedText;
@@ -378,7 +378,7 @@ namespace qnr {
   }
 
   export function createExpressionFromEntityName(node: EntityName | Expression): Expression {
-    if (QualifiedName.kind(node)) {
+    if (qn.is.kind(QualifiedName, node)) {
       const left = createExpressionFromEntityName(node.left);
       const right = getMutableClone(node.right);
       return setTextRange(createPropertyAccess(left, right), node);
@@ -390,7 +390,7 @@ namespace qnr {
   export function createExpressionForPropertyName(memberName: Exclude<PropertyName, PrivateIdentifier>): Expression {
     if (isIdentifier(memberName)) {
       return createLiteral(memberName);
-    } else if (ComputedPropertyName.kind(memberName)) {
+    } else if (qn.is.kind(ComputedPropertyName, memberName)) {
       return getMutableClone(memberName.expression);
     } else {
       return getMutableClone(memberName);
@@ -660,7 +660,7 @@ namespace qnr {
   }
 
   function isUseStrictPrologue(node: ExpressionStatement): boolean {
-    return StringLiteral.kind(node.expression) && node.expression.text === 'use strict';
+    return qn.is.kind(StringLiteral, node.expression) && node.expression.text === 'use strict';
   }
 
   /**
@@ -1604,7 +1604,7 @@ namespace qnr {
           if (isPrivateIdentifier(propertyName)) {
             return Debug.failBadSyntax(propertyName);
           }
-          return ComputedPropertyName.kind(propertyName) && isStringOrNumericLiteral(propertyName.expression) ? propertyName.expression : propertyName;
+          return qn.is.kind(ComputedPropertyName, propertyName) && isStringOrNumericLiteral(propertyName.expression) ? propertyName.expression : propertyName;
         }
 
         break;
@@ -1619,7 +1619,7 @@ namespace qnr {
           if (isPrivateIdentifier(propertyName)) {
             return Debug.failBadSyntax(propertyName);
           }
-          return ComputedPropertyName.kind(propertyName) && isStringOrNumericLiteral(propertyName.expression) ? propertyName.expression : propertyName;
+          return qn.is.kind(ComputedPropertyName, propertyName) && isStringOrNumericLiteral(propertyName.expression) ? propertyName.expression : propertyName;
         }
 
         break;

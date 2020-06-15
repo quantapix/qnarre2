@@ -584,7 +584,7 @@ namespace qnr {
       // });
       needUMDDynamicImportHelper = true;
       if (isSimpleCopiableExpression(arg)) {
-        const argClone = isGeneratedIdentifier(arg) ? arg : StringLiteral.kind(arg) ? createLiteral(arg) : setEmitFlags(setTextRange(getSynthesizedClone(arg), arg), EmitFlags.NoComments);
+        const argClone = isGeneratedIdentifier(arg) ? arg : qn.is.kind(StringLiteral, arg) ? createLiteral(arg) : setEmitFlags(setTextRange(getSynthesizedClone(arg), arg), EmitFlags.NoComments);
         return createConditional(
           /*condition*/ createIdentifier('__syncRequire'),
           /*whenTrue*/ createImportCallExpressionCommonJS(arg, containsLexicalThis),

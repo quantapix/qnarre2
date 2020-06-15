@@ -160,7 +160,7 @@ namespace qnr {
       if (sourceFile.moduleAugmentations.length) {
         const checker = program.getTypeChecker();
         for (const moduleName of sourceFile.moduleAugmentations) {
-          if (!StringLiteral.kind(moduleName)) {
+          if (!qn.is.kind(StringLiteral, moduleName)) {
             continue;
           }
           const symbol = checker.getSymbolAtLocation(moduleName);

@@ -139,7 +139,7 @@ namespace qnr {
 
   function bindingOrAssignmentElementContainsNonLiteralComputedName(element: BindingOrAssignmentElement): boolean {
     const propertyName = tryGetPropertyNameOfBindingOrAssignmentElement(element);
-    if (propertyName && ComputedPropertyName.kind(propertyName) && !isLiteralExpression(propertyName.expression)) {
+    if (propertyName && qn.is.kind(ComputedPropertyName, propertyName) && !isLiteralExpression(propertyName.expression)) {
       return true;
     }
     const target = getTargetOfBindingOrAssignmentElement(element);
@@ -307,7 +307,7 @@ namespace qnr {
           flattenContext.level >= FlattenLevel.ObjectRest &&
           !(element.transformFlags & (TransformFlags.ContainsRestOrSpread | TransformFlags.ContainsObjectRestOrSpread)) &&
           !(getTargetOfBindingOrAssignmentElement(element)!.transformFlags & (TransformFlags.ContainsRestOrSpread | TransformFlags.ContainsObjectRestOrSpread)) &&
-          !ComputedPropertyName.kind(propertyName)
+          !qn.is.kind(ComputedPropertyName, propertyName)
         ) {
           bindingElements = append(bindingElements, visitNode(element, flattenContext.visitor));
         } else {
@@ -316,7 +316,7 @@ namespace qnr {
             bindingElements = undefined;
           }
           const rhsValue = createDestructuringPropertyAccess(flattenContext, value, propertyName);
-          if (ComputedPropertyName.kind(propertyName)) {
+          if (qn.is.kind(ComputedPropertyName, propertyName)) {
             computedTempVariables = append<Expression>(computedTempVariables, (rhsValue as ElementAccessExpression).argumentExpression);
           }
           flattenBindingOrAssignmentElement(flattenContext, element, rhsValue, /*location*/ element);
@@ -433,7 +433,7 @@ namespace qnr {
    * @param propertyName The destructuring property name.
    */
   function createDestructuringPropertyAccess(flattenContext: FlattenContext, value: Expression, propertyName: PropertyName): LeftHandSideExpression {
-    if (ComputedPropertyName.kind(propertyName)) {
+    if (qn.is.kind(ComputedPropertyName, propertyName)) {
       const argumentExpression = ensureIdentifier(flattenContext, visitNode(propertyName.expression, flattenContext.visitor), /*reuseIdentifierExpressions*/ false, /*location*/ propertyName);
       return createElementAccess(value, argumentExpression);
     } else if (StringLiteral.orNumericLiteralLike(propertyName)) {
@@ -532,7 +532,7 @@ namespace qnr {
     for (let i = 0; i < elements.length - 1; i++) {
       const propertyName = getPropertyNameOfBindingOrAssignmentElement(elements[i]);
       if (propertyName) {
-        if (ComputedPropertyName.kind(propertyName)) {
+        if (qn.is.kind(ComputedPropertyName, propertyName)) {
           const temp = computedTempVariables[computedTempVariableOffset];
           computedTempVariableOffset++;
           // typeof _tmp === "symbol" ? _tmp : _tmp + ""

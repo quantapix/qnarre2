@@ -1112,7 +1112,7 @@ namespace qnr {
     }
 
     function emitJsxAttributeValue(node: StringLiteral | JsxExpression): Node {
-      return pipelineEmit(StringLiteral.kind(node) ? EmitHint.JsxAttributeValue : EmitHint.Unspecified, node);
+      return pipelineEmit(qn.is.kind(StringLiteral, node) ? EmitHint.JsxAttributeValue : EmitHint.Unspecified, node);
     }
 
     function pipelineEmit(emitHint: EmitHint, node: Node) {
@@ -2256,7 +2256,7 @@ namespace qnr {
     // Also emit a dot if expression is a integer const enum value - it will appear in generated code as numeric literal
     function mayNeedDotDotForPropertyAccess(expression: Expression) {
       expression = skipPartiallyEmittedExpressions(expression);
-      if (NumericLiteral.kind(expression)) {
+      if (qn.is.kind(NumericLiteral, expression)) {
         // check if numeric literal is a decimal literal that was originally written with a dot
         const text = getLiteralTextOfNode(<LiteralExpression>expression, /*neverAsciiEscape*/ true, /*jsxAttributeEscape*/ false);
         // If he number will be printed verbatim and it doesn't already contain a dot, add one
@@ -4369,8 +4369,8 @@ namespace qnr {
     function getLiteralTextOfNode(node: LiteralLikeNode, neverAsciiEscape: boolean | undefined, jsxAttributeEscape: boolean): string {
       if (node.kind === Syntax.StringLiteral && (<StringLiteral>node).textSourceNode) {
         const textSourceNode = (<StringLiteral>node).textSourceNode!;
-        if (isIdentifier(textSourceNode) || NumericLiteral.kind(textSourceNode)) {
-          const text = NumericLiteral.kind(textSourceNode) ? textSourceNode.text : getTextOfNode(textSourceNode);
+        if (isIdentifier(textSourceNode) || qn.is.kind(NumericLiteral, textSourceNode)) {
+          const text = qn.is.kind(NumericLiteral, textSourceNode) ? textSourceNode.text : getTextOfNode(textSourceNode);
           return jsxAttributeEscape
             ? `"${escapeJsxAttributeString(text)}"`
             : neverAsciiEscape || getEmitFlags(node) & EmitFlags.NoAsciiEscaping
@@ -4663,7 +4663,7 @@ namespace qnr {
      */
     function generateNameForImportOrExportDeclaration(node: ImportDeclaration | ExportDeclaration) {
       const expr = getExternalModuleName(node)!; // TODO: GH#18217
-      const baseName = StringLiteral.kind(expr) ? makeIdentifierFromModuleName(expr.text) : 'module';
+      const baseName = qn.is.kind(StringLiteral, expr) ? makeIdentifierFromModuleName(expr.text) : 'module';
       return makeUniqueName(baseName);
     }
 

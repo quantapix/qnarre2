@@ -3784,7 +3784,7 @@ namespace qnr {
     }
 
     // Hoisted variables related to class properties should live within the TypeScript class wrapper.
-    if (ComputedPropertyName.kind(node.name) || (hasStaticModifier(node) && node.initializer)) {
+    if (qn.is.kind(ComputedPropertyName, node.name) || (hasStaticModifier(node) && node.initializer)) {
       transformFlags |= TransformFlags.ContainsTypeScriptClassSyntax;
     }
 

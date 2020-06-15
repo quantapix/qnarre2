@@ -351,7 +351,7 @@ namespace qnr {
    * @param isStatic A value indicating whether the member should be a static or instance member.
    */
   function isInitializedOrStaticProperty(member: ClassElement, requireInitializer: boolean, isStatic: boolean) {
-    return PropertyDeclaration.kind(member) && (!!member.initializer || !requireInitializer) && hasStaticModifier(member) === isStatic;
+    return qn.is.kind(PropertyDeclaration, member) && (!!member.initializer || !requireInitializer) && hasStaticModifier(member) === isStatic;
   }
 
   /**

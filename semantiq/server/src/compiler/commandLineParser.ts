@@ -1771,7 +1771,7 @@ namespace qnr {
     }
 
     function isDoubleQuotedString(node: Node): boolean {
-      return StringLiteral.kind(node) && isStringDoubleQuoted(node, sourceFile);
+      return qn.is.kind(StringLiteral, node) && isStringDoubleQuoted(node, sourceFile);
     }
   }
 

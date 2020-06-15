@@ -416,7 +416,7 @@ namespace qnr {
   }
 
   export function getLiteralText(node: LiteralLikeNode, sourceFile: SourceFile, neverAsciiEscape: boolean | undefined, jsxAttributeEscape: boolean) {
-    if (!isSynthesized(node) && node.parent && !((NumericLiteral.kind(node) && node.numericLiteralFlags & TokenFlags.ContainsSeparator) || BigIntLiteral.kind(node))) {
+    if (!isSynthesized(node) && node.parent && !((qn.is.kind(NumericLiteral, node) && node.numericLiteralFlags & TokenFlags.ContainsSeparator) || qn.is.kind(BigIntLiteral, node))) {
       return getSourceTextOfNodeFromSourceFile(sourceFile, node);
     }
     switch (node.kind) {
@@ -481,7 +481,7 @@ namespace qnr {
   }
 
   export function isNonGlobalAmbientModule(node: Node): node is ModuleDeclaration & { name: StringLiteral } {
-    return isModuleDeclaration(node) && StringLiteral.kind(node.name);
+    return isModuleDeclaration(node) && qn.is.kind(StringLiteral, node.name);
   }
 
   export function isEffectiveModuleDeclaration(node: Node) {
@@ -816,7 +816,7 @@ namespace qnr {
     }
     assert(!isJSDoc(errorNode));
     const isMissing = nodeIsMissing(errorNode);
-    const pos = isMissing || JsxText.kind(node) ? errorNode.pos : qy_syntax.skipTrivia(sourceFile.text, errorNode.pos);
+    const pos = isMissing || qn.is.kind(JsxText, node) ? errorNode.pos : qy_syntax.skipTrivia(sourceFile.text, errorNode.pos);
     if (isMissing) {
       assert(pos === errorNode.pos, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
       assert(pos === errorNode.end, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
@@ -864,7 +864,7 @@ namespace qnr {
   }
 
   export function isLiteralImportTypeNode(n: Node): n is LiteralImportTypeNode {
-    return ImportTypeNode.kind(n) && LiteralTypeNode.kind(n.argument) && StringLiteral.kind(n.argument.literal);
+    return ImportTypeNode.kind(n) && LiteralTypeNode.kind(n.argument) && qn.is.kind(StringLiteral, n.argument.literal);
   }
 
   export function isPrologueDirective(node: Node): node is PrologueDirective {
@@ -1116,9 +1116,9 @@ namespace qnr {
   export function isValidESSymbolDeclaration(node: Node): node is VariableDeclaration | PropertyDeclaration | SignatureDeclaration {
     return isVariableDeclaration(node)
       ? isVarConst(node) && isIdentifier(node.name) && isVariableDeclarationInVariableStatement(node)
-      : PropertyDeclaration.kind(node)
+      : qn.is.kind(PropertyDeclaration, node)
       ? hasEffectiveReadonlyModifier(node) && hasStaticModifier(node)
-      : PropertySignature.kind(node) && hasEffectiveReadonlyModifier(node);
+      : qn.is.kind(PropertySignature, node) && hasEffectiveReadonlyModifier(node);
   }
 
   export function introducesArgumentsExoticObject(node: Node) {
@@ -1187,7 +1187,7 @@ namespace qnr {
   export function getTsConfigPropArrayElementValue(tsConfigSourceFile: TsConfigSourceFile | undefined, propKey: string, elementValue: string): StringLiteral | undefined {
     return firstDefined(getTsConfigPropArray(tsConfigSourceFile, propKey), (property) =>
       isArrayLiteralExpression(property.initializer)
-        ? find(property.initializer.elements, (element): element is StringLiteral => StringLiteral.kind(element) && element.text === elementValue)
+        ? find(property.initializer.elements, (element): element is StringLiteral => qn.is.kind(StringLiteral, element) && element.text === elementValue)
         : undefined
     );
   }
@@ -1583,7 +1583,7 @@ namespace qnr {
 
   export function isJSDocIndexSignature(node: TypeReferenceNode | ExpressionWithTypeArguments) {
     return (
-      TypeReferenceNode.kind(node) &&
+      qn.is.kind(TypeReferenceNode, node) &&
       isIdentifier(node.typeName) &&
       node.typeName.escapedText === 'Object' &&
       node.typeArguments &&
@@ -1884,7 +1884,7 @@ namespace qnr {
       return node.name;
     }
     const arg = skipParentheses(node.argumentExpression);
-    if (NumericLiteral.kind(arg) || StringLiteral.like(arg)) {
+    if (qn.is.kind(NumericLiteral, arg) || StringLiteral.like(arg)) {
       return arg;
     }
     return node;
@@ -1898,7 +1898,7 @@ namespace qnr {
       if (isIdentifier(name)) {
         return name.escapedText;
       }
-      if (StringLiteral.like(name) || NumericLiteral.kind(name)) {
+      if (StringLiteral.like(name) || qn.is.kind(NumericLiteral, name)) {
         return qy_get.escUnderscores(name.text);
       }
     }
@@ -1993,7 +1993,7 @@ namespace qnr {
       case Syntax.CallExpression:
         return isImportCall(node.parent) || isRequireCall(node.parent, /*checkArg*/ false) ? (node.parent as RequireOrImportCall) : undefined;
       case Syntax.LiteralType:
-        assert(StringLiteral.kind(node));
+        assert(qn.is.kind(StringLiteral, node));
         return tryCast(node.parent.parent, ImportTypeNode.kind) as ValidImportTypeNode | undefined;
       default:
         return;
@@ -2330,7 +2330,7 @@ namespace qnr {
   export type ValueSignatureDeclaration = FunctionDeclaration | MethodDeclaration | ConstructorDeclaration | AccessorDeclaration | FunctionExpression | ArrowFunction;
 
   export function isValueSignatureDeclaration(node: Node): node is ValueSignatureDeclaration {
-    return isFunctionExpression(node) || isArrowFunction(node) || isMethodOrAccessor(node) || isFunctionDeclaration(node) || ConstructorDeclaration.kind(node);
+    return isFunctionExpression(node) || isArrowFunction(node) || isMethodOrAccessor(node) || isFunctionDeclaration(node) || qn.is.kind(ConstructorDeclaration, node);
   }
 
   function walkUp(node: Node, kind: Syntax) {
@@ -2390,12 +2390,12 @@ namespace qnr {
       case Syntax.StringLiteral:
       case Syntax.NoSubstitutionLiteral:
       case Syntax.NumericLiteral:
-        if (ComputedPropertyName.kind(parent)) return parent.parent;
+        if (qn.is.kind(ComputedPropertyName, parent)) return parent.parent;
       // falls through
       case Syntax.Identifier:
         if (isDeclaration(parent)) {
           return parent.name === name ? parent : undefined;
-        } else if (QualifiedName.kind(parent)) {
+        } else if (qn.is.kind(QualifiedName, parent)) {
           const tag = parent.parent;
           return isJSDocParameterTag(tag) && tag.name === parent ? tag : undefined;
         } else {
@@ -2664,7 +2664,7 @@ namespace qnr {
   }
 
   export function isSignedNumericLiteral(node: Node): node is PrefixUnaryExpression & { operand: NumericLiteral } {
-    return isPrefixUnaryExpression(node) && (node.operator === Syntax.PlusToken || node.operator === Syntax.MinusToken) && NumericLiteral.kind(node.operand);
+    return isPrefixUnaryExpression(node) && (node.operator === Syntax.PlusToken || node.operator === Syntax.MinusToken) && qn.is.kind(NumericLiteral, node.operand);
   }
 
   /**
@@ -3081,7 +3081,7 @@ namespace qnr {
   }
 
   export function hasInvalidEscape(template: TemplateLiteral): boolean {
-    return template && !!(NoSubstitutionLiteral.kind(template) ? template.templateFlags : template.head.templateFlags || some(template.templateSpans, (span) => !!span.literal.templateFlags));
+    return template && !!(qn.is.kind(NoSubstitutionLiteral, template) ? template.templateFlags : template.head.templateFlags || some(template.templateSpans, (span) => !!span.literal.templateFlags));
   }
 
   // This consists of the first 19 unprintable ASCII characters, canonical escapes, lineSeparator,
@@ -3574,7 +3574,7 @@ namespace qnr {
   }
 
   export function getFirstConstructorWithBody(node: ClassLikeDeclaration): (ConstructorDeclaration & { body: FunctionBody }) | undefined {
-    return find(node.members, (member): member is ConstructorDeclaration & { body: FunctionBody } => ConstructorDeclaration.kind(member) && nodeIsPresent(member.body));
+    return find(node.members, (member): member is ConstructorDeclaration & { body: FunctionBody } => qn.is.kind(ConstructorDeclaration, member) && nodeIsPresent(member.body));
   }
 
   export function getSetAccessorValueParameter(accessor: SetAccessorDeclaration): ParameterDeclaration | undefined {
@@ -4602,7 +4602,7 @@ namespace qnr {
   }
 
   export function showModuleSpecifier({ moduleSpecifier }: ImportDeclaration): string {
-    return StringLiteral.kind(moduleSpecifier) ? moduleSpecifier.text : getTextOfNode(moduleSpecifier);
+    return qn.is.kind(StringLiteral, moduleSpecifier) ? moduleSpecifier.text : getTextOfNode(moduleSpecifier);
   }
 
   export function getLastChild(node: Node): Node | undefined {
@@ -4638,7 +4638,7 @@ namespace qnr {
   }
 
   export function isObjectTypeDeclaration(node: Node): node is ObjectTypeDeclaration {
-    return isClassLike(node) || isInterfaceDeclaration(node) || TypeLiteralNode.kind(node);
+    return isClassLike(node) || isInterfaceDeclaration(node) || qn.is.kind(TypeLiteralNode, node);
   }
 
   export function isTypeNodeKind(kind: Syntax) {
@@ -5816,7 +5816,7 @@ namespace qnr {
   }
 
   export function isIdentifierTypeReference(node: Node): node is TypeReferenceNode & { typeName: Identifier } {
-    return TypeReferenceNode.kind(node) && isIdentifier(node.typeName);
+    return qn.is.kind(TypeReferenceNode, node) && isIdentifier(node.typeName);
   }
 
   export function arrayIsHomogeneous<T>(array: readonly T[], comparer: EqualityComparer<T> = equateValues) {

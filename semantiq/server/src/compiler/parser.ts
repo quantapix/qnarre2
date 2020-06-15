@@ -342,7 +342,7 @@ namespace qnr {
           case Syntax.ArrayType:
             return this.objectOrObjectArrayTypeReference((n as ArrayTypeNode).elementType);
           default:
-            return TypeReferenceNode.kind(n) && isIdentifier(n.typeName) && n.typeName.escapedText === 'Object' && !n.typeArguments;
+            return qn.is.kind(TypeReferenceNode, n) && isIdentifier(n.typeName) && n.typeName.escapedText === 'Object' && !n.typeArguments;
         }
       }
     })();

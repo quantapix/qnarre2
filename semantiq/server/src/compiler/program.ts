@@ -2150,7 +2150,7 @@ namespace qnr {
           // TypeScript 1.0 spec (April 2014): 12.1.6
           // An ExternalImportDeclaration in an AmbientExternalModuleDeclaration may reference other external modules
           // only through top - level external module names. Relative external module names are not permitted.
-          if (moduleNameExpr && StringLiteral.kind(moduleNameExpr) && moduleNameExpr.text && (!inAmbientModule || !qp_isExternalModuleNameRelative(moduleNameExpr.text))) {
+          if (moduleNameExpr && qn.is.kind(StringLiteral, moduleNameExpr) && moduleNameExpr.text && (!inAmbientModule || !qp_isExternalModuleNameRelative(moduleNameExpr.text))) {
             imports = append(imports, moduleNameExpr);
           }
         } else if (isModuleDeclaration(node)) {

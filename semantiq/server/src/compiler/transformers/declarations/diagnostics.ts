@@ -31,23 +31,23 @@ namespace qnr {
   export function canProduceDiagnostics(node: Node): node is DeclarationDiagnosticProducing {
     return (
       isVariableDeclaration(node) ||
-      PropertyDeclaration.kind(node) ||
-      PropertySignature.kind(node) ||
+      qn.is.kind(PropertyDeclaration, node) ||
+      qn.is.kind(PropertySignature, node) ||
       BindingElement.kind(node) ||
       isSetAccessor(node) ||
       isGetAccessor(node) ||
-      ConstructSignatureDeclaration.kind(node) ||
-      CallSignatureDeclaration.kind(node) ||
-      MethodDeclaration.kind(node) ||
-      MethodSignature.kind(node) ||
+      qn.is.kind(ConstructSignatureDeclaration, node) ||
+      qn.is.kind(CallSignatureDeclaration, node) ||
+      qn.is.kind(MethodDeclaration, node) ||
+      qn.is.kind(MethodSignature, node) ||
       isFunctionDeclaration(node) ||
       isParameter(node) ||
       isTypeParameterDeclaration(node) ||
       isExpressionWithTypeArguments(node) ||
       isImportEqualsDeclaration(node) ||
       isTypeAliasDeclaration(node) ||
-      ConstructorDeclaration.kind(node) ||
-      IndexSignatureDeclaration.kind(node) ||
+      qn.is.kind(ConstructorDeclaration, node) ||
+      qn.is.kind(IndexSignatureDeclaration, node) ||
       isPropertyAccessExpression(node)
     );
   }
@@ -55,7 +55,7 @@ namespace qnr {
   export function createGetSymbolAccessibilityDiagnosticForNodeName(node: DeclarationDiagnosticProducing) {
     if (isSetAccessor(node) || isGetAccessor(node)) {
       return getAccessorNameVisibilityError;
-    } else if (MethodSignature.kind(node) || MethodDeclaration.kind(node)) {
+    } else if (qn.is.kind(MethodSignature, node) || qn.is.kind(MethodDeclaration, node)) {
       return getMethodNameVisibilityError;
     } else {
       return createGetSymbolAccessibilityDiagnosticForNode(node);
@@ -128,22 +128,22 @@ namespace qnr {
   ): (symbolAccessibilityResult: SymbolAccessibilityResult) => SymbolAccessibilityDiagnostic | undefined {
     if (
       isVariableDeclaration(node) ||
-      PropertyDeclaration.kind(node) ||
-      PropertySignature.kind(node) ||
+      qn.is.kind(PropertyDeclaration, node) ||
+      qn.is.kind(PropertySignature, node) ||
       isPropertyAccessExpression(node) ||
       BindingElement.kind(node) ||
-      ConstructorDeclaration.kind(node)
+      qn.is.kind(ConstructorDeclaration, node)
     ) {
       return getVariableDeclarationTypeVisibilityError;
     } else if (isSetAccessor(node) || isGetAccessor(node)) {
       return getAccessorDeclarationTypeVisibilityError;
     } else if (
-      ConstructSignatureDeclaration.kind(node) ||
-      CallSignatureDeclaration.kind(node) ||
-      MethodDeclaration.kind(node) ||
-      MethodSignature.kind(node) ||
+      qn.is.kind(ConstructSignatureDeclaration, node) ||
+      qn.is.kind(CallSignatureDeclaration, node) ||
+      qn.is.kind(MethodDeclaration, node) ||
+      qn.is.kind(MethodSignature, node) ||
       isFunctionDeclaration(node) ||
-      IndexSignatureDeclaration.kind(node)
+      qn.is.kind(IndexSignatureDeclaration, node)
     ) {
       return getReturnTypeVisibilityError;
     } else if (isParameter(node)) {

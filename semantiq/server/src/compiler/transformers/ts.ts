@@ -1747,7 +1747,7 @@ namespace qnr {
       const name = member.name!;
       if (isPrivateIdentifier(name)) {
         return createIdentifier('');
-      } else if (ComputedPropertyName.kind(name)) {
+      } else if (qn.is.kind(ComputedPropertyName, name)) {
         return generateNameForComputedPropertyName && !isSimpleInlineableExpression(name.expression) ? getGeneratedNameForNode(name) : name.expression;
       } else if (isIdentifier(name)) {
         return createLiteral(idText(name));
@@ -1769,7 +1769,7 @@ namespace qnr {
       // The names are used more than once when:
       //   - the property is non-static and its initializer is moved to the constructor (when there are parameter property assignments).
       //   - the property has a decorator.
-      if (ComputedPropertyName.kind(name) && ((!hasStaticModifier(member) && currentClassHasParameterProperties) || some(member.decorators))) {
+      if (qn.is.kind(ComputedPropertyName, name) && ((!hasStaticModifier(member) && currentClassHasParameterProperties) || some(member.decorators))) {
         const expression = visitNode(name.expression, visitor, isExpression);
         const innerExpression = skipPartiallyEmittedExpressions(expression);
         if (!isSimpleInlineableExpression(innerExpression)) {

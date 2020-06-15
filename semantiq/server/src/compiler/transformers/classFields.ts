@@ -395,7 +395,7 @@ namespace qnr {
     }
 
     function doesClassElementNeedTransform(node: ClassElement) {
-      return PropertyDeclaration.kind(node) || (shouldTransformPrivateFields && node.name && isPrivateIdentifier(node.name));
+      return qn.is.kind(PropertyDeclaration, node) || (shouldTransformPrivateFields && node.name && isPrivateIdentifier(node.name));
     }
 
     function visitClassDeclaration(node: ClassDeclaration) {
@@ -524,7 +524,7 @@ namespace qnr {
     }
 
     function isPropertyDeclarationThatRequiresConstructorStatement(member: ClassElement): member is PropertyDeclaration {
-      if (!PropertyDeclaration.kind(member) || hasStaticModifier(member)) {
+      if (!qn.is.kind(PropertyDeclaration, member) || hasStaticModifier(member)) {
         return false;
       }
       if (context.getCompilerOptions().useDefineForClassFields) {
@@ -667,7 +667,7 @@ namespace qnr {
       // We generate a name here in order to reuse the value cached by the relocated computed name expression (which uses the same generated name)
       const emitAssignment = !context.getCompilerOptions().useDefineForClassFields;
       const propertyName =
-        ComputedPropertyName.kind(property.name) && !isSimpleInlineableExpression(property.name.expression)
+        qn.is.kind(ComputedPropertyName, property.name) && !isSimpleInlineableExpression(property.name.expression)
           ? ComputedPropertyName.update(property.name, getGeneratedNameForNode(property.name))
           : property.name;
 
@@ -703,7 +703,7 @@ namespace qnr {
         const memberAccess = createMemberAccessForPropertyName(receiver, propertyName, /*location*/ propertyName);
         return createAssignment(memberAccess, initializer);
       } else {
-        const name = ComputedPropertyName.kind(propertyName)
+        const name = qn.is.kind(ComputedPropertyName, propertyName)
           ? propertyName.expression
           : isIdentifier(propertyName)
           ? StringLiteral.create(qy_get.unescUnderscores(propertyName.escapedText))
@@ -782,7 +782,7 @@ namespace qnr {
      * @param shouldHoist Does the expression need to be reused? (ie, for an initializer or a decorator)
      */
     function getPropertyNameExpressionIfNeeded(name: PropertyName, shouldHoist: boolean): Expression | undefined {
-      if (ComputedPropertyName.kind(name)) {
+      if (qn.is.kind(ComputedPropertyName, name)) {
         const expression = visitNode(name.expression, visitor, isExpression);
         const innerExpression = skipPartiallyEmittedExpressions(expression);
         const inlinable = isSimpleInlineableExpression(innerExpression);

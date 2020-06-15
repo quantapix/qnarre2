@@ -1432,7 +1432,7 @@ namespace qnr {
         return sourceFiles.indexOf(declarationFile) <= sourceFiles.indexOf(useFile);
       }
 
-      if (declaration.pos <= usage.pos && !(PropertyDeclaration.kind(declaration) && isThisProperty(usage.parent) && !declaration.initializer && !declaration.exclamationToken)) {
+      if (declaration.pos <= usage.pos && !(qn.is.kind(PropertyDeclaration, declaration) && isThisProperty(usage.parent) && !declaration.initializer && !declaration.exclamationToken)) {
         // declaration is before usage
         if (declaration.kind === Syntax.BindingElement) {
           // still might be illegal if declaration and usage are both binding elements (eg var [a = b, b = b] = [1, 2])
@@ -1447,8 +1447,8 @@ namespace qnr {
           return !isImmediatelyUsedInInitializerOfBlockScopedVariable(declaration as VariableDeclaration, usage);
         } else if (isClassDeclaration(declaration)) {
           // still might be illegal if the usage is within a computed property name in the class (eg class A { static p = "a"; [A.p]() {} })
-          return !qn.findAncestor(usage, (n) => ComputedPropertyName.kind(n) && n.parent.parent === declaration);
-        } else if (PropertyDeclaration.kind(declaration)) {
+          return !qn.findAncestor(usage, (n) => qn.is.kind(ComputedPropertyName, n) && n.parent.parent === declaration);
+        } else if (qn.is.kind(PropertyDeclaration, declaration)) {
           // still might be illegal if a self-referencing property initializer (eg private x = this.x)
           return !isPropertyImmediatelyReferencedWithinDeclaration(declaration, usage, /*stopAtAnyPropertyDeclaration*/ false);
         } else if (isParameterPropertyDeclaration(declaration, declaration.parent)) {
@@ -1490,7 +1490,7 @@ namespace qnr {
           compilerOptions.target === ScriptTarget.ESNext &&
           !!compilerOptions.useDefineForClassFields &&
           getContainingClass(declaration) &&
-          (PropertyDeclaration.kind(declaration) || isParameterPropertyDeclaration(declaration, declaration.parent))
+          (qn.is.kind(PropertyDeclaration, declaration) || isParameterPropertyDeclaration(declaration, declaration.parent))
         ) {
           return !isPropertyImmediatelyReferencedWithinDeclaration(declaration, usage, /*stopAtAnyPropertyDeclaration*/ true);
         } else {
@@ -1568,7 +1568,7 @@ namespace qnr {
             case Syntax.PropertyDeclaration:
               // even when stopping at any property declaration, they need to come from the same class
               return stopAtAnyPropertyDeclaration &&
-                ((PropertyDeclaration.kind(declaration) && node.parent === declaration.parent) ||
+                ((qn.is.kind(PropertyDeclaration, declaration) && node.parent === declaration.parent) ||
                   (isParameterPropertyDeclaration(declaration, declaration.parent) && node.parent === declaration.parent.parent))
                 ? 'quit'
                 : true;
@@ -2109,7 +2109,7 @@ namespace qnr {
       if (location.kind !== Syntax.ArrowFunction && location.kind !== Syntax.FunctionExpression) {
         // initializers in instance property declaration of class like entities are executed in constructor and thus deferred
         return (
-          TypeQueryNode.kind(location) ||
+          qn.is.kind(TypeQueryNode, location) ||
           ((isFunctionLikeDeclaration(location) || (location.kind === Syntax.PropertyDeclaration && !hasSyntacticModifier(location, ModifierFlags.Static))) &&
             (!lastLocation || lastLocation !== (location as FunctionLike | PropertyDeclaration).name))
         ); // A name is evaluated within the enclosing scope - so it shouldn't count as deferred
@@ -2225,7 +2225,7 @@ namespace qnr {
         const symbol = resolveSymbol(resolveName(errorLocation, name, SymbolFlags.Type & ~namespaceMeaning, /*nameNotFoundMessage*/ undefined, /*nameArg*/ undefined, /*isUse*/ false));
         const parent = errorLocation.parent;
         if (symbol) {
-          if (QualifiedName.kind(parent)) {
+          if (qn.is.kind(QualifiedName, parent)) {
             assert(parent.left === errorLocation, 'Should only be resolving left side of qualified name as a namespace');
             const propName = parent.right.escapedText;
             const propType = getPropertyOfType(getDeclaredTypeOfSymbol(symbol), propName);
@@ -5075,7 +5075,7 @@ namespace qnr {
         function cloneBindingName(node: BindingName): BindingName {
           return <BindingName>elideInitializerAndSetEmitFlags(node);
           function elideInitializerAndSetEmitFlags(node: Node): Node {
-            if (context.tracker.trackSymbol && ComputedPropertyName.kind(node) && isLateBindableName(node)) {
+            if (context.tracker.trackSymbol && qn.is.kind(ComputedPropertyName, node) && isLateBindableName(node)) {
               trackComputedName(node.expression, context.enclosingDeclaration, context);
             }
             const visited = visitEachChild(node, elideInitializerAndSetEmitFlags, nullTransformationContext, /*nodesVisitor*/ undefined, elideInitializerAndSetEmitFlags)!;
@@ -5510,7 +5510,7 @@ namespace qnr {
 
       function isSingleQuotedStringNamed(d: Declaration) {
         const name = getNameOfDeclaration(d);
-        if (name && StringLiteral.kind(name) && (name.singleQuote || (!isSynthesized(name) && startsWith(getTextOfNode(name, /*includeTrivia*/ false), "'")))) {
+        if (name && qn.is.kind(StringLiteral, name) && (name.singleQuote || (!isSynthesized(name) && startsWith(getTextOfNode(name, /*includeTrivia*/ false), "'")))) {
           return true;
         }
         return false;
@@ -5586,7 +5586,7 @@ namespace qnr {
       function existingTypeNodeIsNotReferenceOrIsReferenceWithCompatibleTypeArgumentCount(existing: TypeNode, type: Type) {
         return (
           !(getObjectFlags(type) & ObjectFlags.Reference) ||
-          !TypeReferenceNode.kind(existing) ||
+          !qn.is.kind(TypeReferenceNode, existing) ||
           length(existing.typeArguments) >= getMinTypeArgumentCount((type as TypeReference).target.typeParameters)
         );
       }
@@ -5692,10 +5692,10 @@ namespace qnr {
               })
             );
           }
-          if (TypeReferenceNode.kind(node) && isIdentifier(node.typeName) && node.typeName.escapedText === '') {
+          if (qn.is.kind(TypeReferenceNode, node) && isIdentifier(node.typeName) && node.typeName.escapedText === '') {
             return setOriginalNode(KeywordTypeNode.create(Syntax.AnyKeyword), node);
           }
-          if ((isExpressionWithTypeArguments(node) || TypeReferenceNode.kind(node)) && isJSDocIndexSignature(node)) {
+          if ((isExpressionWithTypeArguments(node) || qn.is.kind(TypeReferenceNode, node)) && isJSDocIndexSignature(node)) {
             return TypeLiteralNode.create([
               IndexSignatureDeclaration.create(
                 /*decorators*/ undefined,
@@ -5753,7 +5753,7 @@ namespace qnr {
             }
           }
           if (
-            TypeReferenceNode.kind(node) &&
+            qn.is.kind(TypeReferenceNode, node) &&
             isInJSDoc(node) &&
             (getIntendedTypeFromJSDocTypeReference(node) || unknownSymbol === resolveTypeReferenceName(getTypeReferenceName(node), SymbolFlags.Type, /*ignoreErrors*/ true))
           ) {
@@ -5775,7 +5775,7 @@ namespace qnr {
               isInJSFile(node) &&
               (isExportsIdentifier(leftmost) ||
                 isModuleExportsAccessExpression(leftmost.parent) ||
-                (QualifiedName.kind(leftmost.parent) && isModuleIdentifier(leftmost.parent.left) && isExportsIdentifier(leftmost.parent.right)))
+                (qn.is.kind(QualifiedName, leftmost.parent) && isModuleIdentifier(leftmost.parent.left) && isExportsIdentifier(leftmost.parent.right)))
             ) {
               hadError = true;
               return node;
@@ -5796,7 +5796,7 @@ namespace qnr {
             }
           }
 
-          if (file && TupleTypeNode.kind(node) && qy_get.lineAndCharOf(file, node.pos).line === qy_get.lineAndCharOf(file, node.end).line) {
+          if (file && qn.is.kind(TupleTypeNode, node) && qy_get.lineAndCharOf(file, node.pos).line === qy_get.lineAndCharOf(file, node.end).line) {
             setEmitFlags(node, EmitFlags.SingleLine);
           }
 
@@ -5967,7 +5967,7 @@ namespace qnr {
           // Pass 2b: Also combine all `export {} from "..."` declarations as needed
           const reexports = filter(statements, (d) => isExportDeclaration(d) && !!d.moduleSpecifier && !!d.exportClause && isNamedExports(d.exportClause)) as ExportDeclaration[];
           if (length(reexports) > 1) {
-            const groups = group(reexports, (decl) => (StringLiteral.kind(decl.moduleSpecifier!) ? '>' + decl.moduleSpecifier.text : '>'));
+            const groups = group(reexports, (decl) => (qn.is.kind(StringLiteral, decl.moduleSpecifier!) ? '>' + decl.moduleSpecifier.text : '>'));
             if (groups.length !== reexports.length) {
               for (const group of groups) {
                 if (group.length > 1) {
@@ -7262,7 +7262,7 @@ namespace qnr {
           if (isCallExpression(declaration) && isBindableObjectDefinePropertyCall(declaration)) {
             return symbolName(symbol);
           }
-          if (ComputedPropertyName.kind(name) && !(getCheckFlags(symbol) & CheckFlags.Late)) {
+          if (qn.is.kind(ComputedPropertyName, name) && !(getCheckFlags(symbol) & CheckFlags.Late)) {
             const nameType = getSymbolLinks(symbol).nameType;
             if (nameType && nameType.flags & TypeFlags.StringOrNumberLiteral) {
               // Computed property name isn't late bound, but has a well-known name type - use name type to generate a symbol name
@@ -7826,7 +7826,7 @@ namespace qnr {
         }
         if (isInJSFile(declaration)) {
           const typeTag = getJSDocType(func);
-          if (typeTag && FunctionTypeNode.kind(typeTag)) {
+          if (typeTag && qn.is.kind(FunctionTypeNode, typeTag)) {
             return getTypeAtPosition(getSignatureFromDeclaration(typeTag), func.parameters.indexOf(declaration));
           }
         }
@@ -7849,7 +7849,7 @@ namespace qnr {
         return addOptionality(type, isOptional);
       }
 
-      if (PropertyDeclaration.kind(declaration) && (noImplicitAny || isInJSFile(declaration))) {
+      if (qn.is.kind(PropertyDeclaration, declaration) && (noImplicitAny || isInJSFile(declaration))) {
         // We have a property declaration with no type annotation or initializer, in noImplicitAny mode or a .js file.
         // Use control flow analysis of this.xxx assignments in the constructor to determine the type of the property.
         const constructor = findConstructorDeclaration(declaration.parent);
@@ -7904,7 +7904,7 @@ namespace qnr {
       // A property is auto-typed when its declaration has no type annotation or initializer and we're in
       // noImplicitAny mode or a .js file.
       const declaration = symbol.valueDeclaration;
-      return declaration && PropertyDeclaration.kind(declaration) && !getEffectiveTypeAnnotationNode(declaration) && !declaration.initializer && (noImplicitAny || isInJSFile(declaration));
+      return declaration && qn.is.kind(PropertyDeclaration, declaration) && !getEffectiveTypeAnnotationNode(declaration) && !declaration.initializer && (noImplicitAny || isInJSFile(declaration));
     }
 
     function getDeclaringConstructor(symbol: Symbol) {
@@ -8368,11 +8368,11 @@ namespace qnr {
         isElementAccessExpression(declaration) ||
         isIdentifier(declaration) ||
         StringLiteral.like(declaration) ||
-        NumericLiteral.kind(declaration) ||
+        qn.is.kind(NumericLiteral, declaration) ||
         isClassDeclaration(declaration) ||
         isFunctionDeclaration(declaration) ||
-        (MethodDeclaration.kind(declaration) && !isObjectLiteralMethod(declaration)) ||
-        MethodSignature.kind(declaration) ||
+        (qn.is.kind(MethodDeclaration, declaration) && !isObjectLiteralMethod(declaration)) ||
+        qn.is.kind(MethodSignature, declaration) ||
         isSourceFile(declaration)
       ) {
         // Symbol is property of some kind that is merged with something - should use `getTypeOfFuncClassEnumModule` and not `getTypeOfVariableOrParameterOrProperty`
@@ -8388,7 +8388,13 @@ namespace qnr {
         type = tryGetTypeFromEffectiveTypeNode(declaration) || checkExpressionForMutableLocation(declaration.name, CheckMode.Normal);
       } else if (isObjectLiteralMethod(declaration)) {
         type = tryGetTypeFromEffectiveTypeNode(declaration) || checkObjectLiteralMethod(declaration, CheckMode.Normal);
-      } else if (isParameter(declaration) || PropertyDeclaration.kind(declaration) || PropertySignature.kind(declaration) || isVariableDeclaration(declaration) || BindingElement.kind(declaration)) {
+      } else if (
+        isParameter(declaration) ||
+        qn.is.kind(PropertyDeclaration, declaration) ||
+        qn.is.kind(PropertySignature, declaration) ||
+        isVariableDeclaration(declaration) ||
+        BindingElement.kind(declaration)
+      ) {
         type = getWidenedTypeForVariableLikeDeclaration(declaration, /*includeOptionality*/ true);
       }
       // getTypeOfSymbol dispatches some JS merges incorrectly because their symbol flags are not mutually exclusive.
@@ -9400,11 +9406,11 @@ namespace qnr {
      * - The type of its expression is a string or numeric literal type, or is a `unique symbol` type.
      */
     function isLateBindableName(node: DeclarationName): node is LateBoundName {
-      if (!ComputedPropertyName.kind(node) && !isElementAccessExpression(node)) {
+      if (!qn.is.kind(ComputedPropertyName, node) && !isElementAccessExpression(node)) {
         return false;
       }
-      const expr = ComputedPropertyName.kind(node) ? node.expression : node.argumentExpression;
-      return isEntityNameExpression(expr) && isTypeUsableAsPropertyName(ComputedPropertyName.kind(node) ? checkComputedPropertyName(node) : checkExpressionCached(expr));
+      const expr = qn.is.kind(ComputedPropertyName, node) ? node.expression : node.argumentExpression;
+      return isEntityNameExpression(expr) && isTypeUsableAsPropertyName(qn.is.kind(ComputedPropertyName, node) ? checkComputedPropertyName(node) : checkExpressionCached(expr));
     }
 
     function isLateBoundName(name: __String): boolean {
@@ -11440,7 +11446,7 @@ namespace qnr {
               jsdocPredicate = getTypePredicateOfSignature(jsdocSignature);
             }
           }
-          signature.resolvedTypePredicate = type && TypePredicateNode.kind(type) ? createTypePredicateFromTypePredicateNode(type, signature) : jsdocPredicate || noTypePredicate;
+          signature.resolvedTypePredicate = type && qn.is.kind(TypePredicateNode, type) ? createTypePredicateFromTypePredicateNode(type, signature) : jsdocPredicate || noTypePredicate;
         }
         assert(!!signature.resolvedTypePredicate);
       }
@@ -13072,7 +13078,7 @@ namespace qnr {
       }
       return isIdentifier(name)
         ? getLiteralType(qy_get.unescUnderscores(name.escapedText))
-        : getRegularTypeOfLiteralType(ComputedPropertyName.kind(name) ? checkComputedPropertyName(name) : checkExpression(name));
+        : getRegularTypeOfLiteralType(qn.is.kind(ComputedPropertyName, name) ? checkComputedPropertyName(name) : checkExpression(name));
     }
 
     function getBigIntLiteralType(node: BigIntLiteral): LiteralType {
@@ -14151,7 +14157,7 @@ namespace qnr {
       const container = getThisContainer(node, /*includeArrowFunctions*/ false);
       const parent = container && container.parent;
       if (parent && (isClassLike(parent) || parent.kind === Syntax.InterfaceDeclaration)) {
-        if (!hasSyntacticModifier(container, ModifierFlags.Static) && (!ConstructorDeclaration.kind(container) || isNodeDescendantOf(node, container.body))) {
+        if (!hasSyntacticModifier(container, ModifierFlags.Static) && (!qn.is.kind(ConstructorDeclaration, container) || isNodeDescendantOf(node, container.body))) {
           return getDeclaredTypeOfClassOrInterface(getSymbolOfNode(parent as ClassLikeDeclaration | InterfaceDeclaration)).thisType!;
         }
       }
@@ -15282,7 +15288,7 @@ namespace qnr {
     }
 
     function getSemanticJsxChildren(children: NodeArray<JsxChild>) {
-      return filter(children, (i) => !JsxText.kind(i) || !i.onlyTriviaWhitespaces);
+      return filter(children, (i) => !qn.is.kind(JsxText, i) || !i.onlyTriviaWhitespaces);
     }
 
     function elaborateJsxComponents(
@@ -18834,7 +18840,7 @@ namespace qnr {
           const param = declaration as ParameterDeclaration;
           if (
             isIdentifier(param.name) &&
-            (CallSignatureDeclaration.kind(param.parent) || MethodSignature.kind(param.parent) || FunctionTypeNode.kind(param.parent)) &&
+            (qn.is.kind(CallSignatureDeclaration, param.parent) || qn.is.kind(MethodSignature, param.parent) || qn.is.kind(FunctionTypeNode, param.parent)) &&
             param.parent.parameters.indexOf(param) > -1 &&
             (resolveName(param, param.name.escapedText, SymbolFlags.Type, undefined, param.name.escapedText, /*isUse*/ true) ||
               (param.name.originalKeywordKind && isTypeNodeKind(param.name.originalKeywordKind)))
@@ -22358,7 +22364,7 @@ namespace qnr {
       // Object.defineProperty(x, "method", { set(x: () => void) {} });
       // Object.defineProperty(x, "method", { get() { return () => {} } });
       else if (
-        MethodDeclaration.kind(container) &&
+        qn.is.kind(MethodDeclaration, container) &&
         isIdentifier(container.name) &&
         (container.name.escapedText === 'value' || container.name.escapedText === 'get' || container.name.escapedText === 'set') &&
         isObjectLiteralExpression(container.parent) &&
@@ -23681,7 +23687,7 @@ namespace qnr {
       // As otherwise they may not be checked until exports for the type at this position are retrieved,
       // which may never occur.
       for (const elem of node.properties) {
-        if (elem.name && ComputedPropertyName.kind(elem.name) && !isWellKnownSymbolSyntactically(elem.name)) {
+        if (elem.name && qn.is.kind(ComputedPropertyName, elem.name) && !isWellKnownSymbolSyntactically(elem.name)) {
           checkComputedPropertyName(elem.name);
         }
       }
@@ -30776,7 +30782,7 @@ namespace qnr {
               ((isPrivateIdentifier(node.name) && isPrivateIdentifier(subsequentName) && node.name.escapedText === subsequentName.escapedText) ||
                 // Both are computed property names
                 // TODO: GH#17345: These are methods, so handle computed name case. (`Always allowing computed property names is *not* the correct behavior!)
-                (ComputedPropertyName.kind(node.name) && ComputedPropertyName.kind(subsequentName)) ||
+                (qn.is.kind(ComputedPropertyName, node.name) && qn.is.kind(ComputedPropertyName, subsequentName)) ||
                 // Both are literal property names that are the same.
                 (isPropertyNameLiteral(node.name) && isPropertyNameLiteral(subsequentName) && getEscapedTextOfIdentifierOrLiteral(node.name) === getEscapedTextOfIdentifierOrLiteral(subsequentName)))
             ) {
@@ -31541,7 +31547,7 @@ namespace qnr {
             return;
           }
           if (!containsArgumentsReference(decl)) {
-            if (QualifiedName.kind(node.name)) {
+            if (qn.is.kind(QualifiedName, node.name)) {
               error(node.name, Diagnostics.Qualified_name_0_is_not_allowed_without_a_leading_param_object_1, entityNameToString(node.name), entityNameToString(node.name.left));
             } else {
               error(node.name, Diagnostics.JSDoc_param_tag_has_name_0_but_there_is_no_parameter_with_that_name, idText(node.name));
@@ -33947,7 +33953,7 @@ namespace qnr {
           if (basePropertyFlags && derivedPropertyFlags) {
             // property/accessor is overridden with property/accessor
             if (
-              (baseDeclarationFlags & ModifierFlags.Abstract && !(base.valueDeclaration && PropertyDeclaration.kind(base.valueDeclaration) && base.valueDeclaration.initializer)) ||
+              (baseDeclarationFlags & ModifierFlags.Abstract && !(base.valueDeclaration && qn.is.kind(PropertyDeclaration, base.valueDeclaration) && base.valueDeclaration.initializer)) ||
               (base.valueDeclaration && base.valueDeclaration.parent.kind === Syntax.InterfaceDeclaration) ||
               (derived.valueDeclaration && qn.is.kind(BinaryExpression, derived.valueDeclaration))
             ) {
@@ -34613,7 +34619,7 @@ namespace qnr {
         // Should be a parse error.
         return false;
       }
-      if (!StringLiteral.kind(moduleName)) {
+      if (!qn.is.kind(StringLiteral, moduleName)) {
         error(moduleName, Diagnostics.String_literal_expected);
         return false;
       }
@@ -35526,7 +35532,7 @@ namespace qnr {
 
     function isNodeUsedDuringClassInitialization(node: Node) {
       return !!qn.findAncestor(node, (element) => {
-        if ((ConstructorDeclaration.kind(element) && nodeIsPresent(element.body)) || PropertyDeclaration.kind(element)) {
+        if ((qn.is.kind(ConstructorDeclaration, element) && nodeIsPresent(element.body)) || qn.is.kind(PropertyDeclaration, element)) {
           return true;
         } else if (isClassLike(element) || isFunctionLikeDeclaration(element)) {
           return 'quit';
@@ -35575,7 +35581,7 @@ namespace qnr {
 
     function isImportTypeQualifierPart(node: EntityName): ImportTypeNode | undefined {
       let parent = node.parent;
-      while (QualifiedName.kind(parent)) {
+      while (qn.is.kind(QualifiedName, parent)) {
         node = parent;
         parent = parent.parent;
       }
@@ -37087,7 +37093,7 @@ namespace qnr {
               return grammarErrorOnNode(modifier, Diagnostics._0_modifier_already_seen, 'declare');
             } else if (flags & ModifierFlags.Async) {
               return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_be_used_in_an_ambient_context, 'async');
-            } else if (isClassLike(node.parent) && !PropertyDeclaration.kind(node)) {
+            } else if (isClassLike(node.parent) && !qn.is.kind(PropertyDeclaration, node)) {
               return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_appear_on_a_class_element, 'declare');
             } else if (node.kind === Syntax.Parameter) {
               return grammarErrorOnNode(modifier, Diagnostics._0_modifier_cannot_appear_on_a_parameter, 'declare');
@@ -38162,7 +38168,7 @@ namespace qnr {
 
     function checkGrammarProperty(node: PropertyDeclaration | PropertySignature) {
       if (isClassLike(node.parent)) {
-        if (StringLiteral.kind(node.name) && node.name.text === 'constructor') {
+        if (qn.is.kind(StringLiteral, node.name) && node.name.text === 'constructor') {
           return grammarErrorOnNode(node.name, Diagnostics.Classes_may_not_have_a_field_named_constructor);
         }
         if (
@@ -38194,7 +38200,7 @@ namespace qnr {
       }
 
       if (
-        PropertyDeclaration.kind(node) &&
+        qn.is.kind(PropertyDeclaration, node) &&
         node.exclamationToken &&
         (!isClassLike(node.parent) || !node.type || node.initializer || node.flags & NodeFlags.Ambient || hasSyntacticModifier(node, ModifierFlags.Static | ModifierFlags.Abstract))
       ) {

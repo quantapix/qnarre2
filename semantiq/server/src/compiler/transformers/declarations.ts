@@ -357,7 +357,7 @@ namespace qnr {
               if (StringLiteral.like(expr) && expr.text === typeName) {
                 return;
               }
-            } else if (isImportDeclaration(importStatement) && StringLiteral.kind(importStatement.moduleSpecifier) && importStatement.moduleSpecifier.text === typeName) {
+            } else if (isImportDeclaration(importStatement) && qn.is.kind(StringLiteral, importStatement.moduleSpecifier) && importStatement.moduleSpecifier.text === typeName) {
               return;
             }
           }
@@ -602,7 +602,7 @@ namespace qnr {
           newParams = [ensureParameter(thisParameter)];
         }
       }
-      if (SetAccessorDeclaration.kind(input)) {
+      if (qn.is.kind(SetAccessorDeclaration, input)) {
         let newValueParameter: ParameterDeclaration | undefined;
         if (!isPrivate) {
           const valueParameter = getSetAccessorValueParameter(input);
@@ -631,7 +631,7 @@ namespace qnr {
         isClassDeclaration(node) ||
         isInterfaceDeclaration(node) ||
         isFunctionLike(node) ||
-        IndexSignatureDeclaration.kind(node) ||
+        qn.is.kind(IndexSignatureDeclaration, node) ||
         MappedTypeNode.kind(node)
       );
     }
@@ -824,7 +824,7 @@ namespace qnr {
       let shouldEnterSuppressNewDiagnosticsContextContext = (input.kind === Syntax.TypeLiteral || input.kind === Syntax.MappedType) && input.parent.kind !== Syntax.TypeAliasDeclaration;
 
       // Emit methods which are private as properties with no type information
-      if (MethodDeclaration.kind(input) || MethodSignature.kind(input)) {
+      if (qn.is.kind(MethodDeclaration, input) || qn.is.kind(MethodSignature, input)) {
         if (hasEffectiveModifier(input, ModifierFlags.Private)) {
           if (input.symbol && input.symbol.declarations && input.symbol.declarations[0] !== input) return; // Elide all but the first overload
           return cleanup(PropertyDeclaration.create(/*decorators*/ undefined, ensureModifiers(input), input.name, /*questionToken*/ undefined, /*type*/ undefined, /*initializer*/ undefined));
@@ -835,7 +835,7 @@ namespace qnr {
         getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(input as DeclarationDiagnosticProducing);
       }
 
-      if (TypeQueryNode.kind(input)) {
+      if (qn.is.kind(TypeQueryNode, input)) {
         checkEntityNameVisibility(input.exprName, enclosingDeclaration);
       }
 
@@ -1010,7 +1010,7 @@ namespace qnr {
         }
       }
 
-      if (TupleTypeNode.kind(input) && qy_get.lineAndCharOf(currentSourceFile, input.pos).line === qy_get.lineAndCharOf(currentSourceFile, input.end).line) {
+      if (qn.is.kind(TupleTypeNode, input) && qy_get.lineAndCharOf(currentSourceFile, input.pos).line === qy_get.lineAndCharOf(currentSourceFile, input.end).line) {
         setEmitFlags(input, EmitFlags.SingleLine);
       }
 
