@@ -41,7 +41,7 @@ namespace qnr {
     function flattenChain(chain: OptionalChain) {
       Debug.assertNotNode(chain, isNonNullChain);
       const links: OptionalChain[] = [chain];
-      while (!chain.questionDotToken && !isTaggedTemplateExpression(chain)) {
+      while (!chain.questionDotToken && !qn.is.kind(TaggedTemplateExpression, chain)) {
         chain = cast(skipPartiallyEmittedExpressions(chain.expression), isOptionalChain);
         Debug.assertNotNode(chain, isNonNullChain);
         links.unshift(chain);
@@ -51,7 +51,7 @@ namespace qnr {
 
     function visitNonOptionalParenthesizedExpression(node: ParenthesizedExpression, captureThisArg: boolean, isDelete: boolean): Expression {
       const expression = visitNonOptionalExpression(node.expression, captureThisArg, isDelete);
-      if (isSyntheticReference(expression)) {
+      if (qn.is.kind(SyntheticReferenceExpression, expression)) {
         // `(a.b)` -> { expression `((_a = a).b)`, thisArg: `_a` }
         // `(a[b])` -> { expression `((_a = a)[b])`, thisArg: `_a` }
         return createSyntheticReferenceExpression(updateParen(node, expression.expression), expression.thisArg);
@@ -111,8 +111,8 @@ namespace qnr {
     function visitOptionalExpression(node: OptionalChain, captureThisArg: boolean, isDelete: boolean): Expression {
       const { expression, chain } = flattenChain(node);
       const left = visitNonOptionalExpression(expression, isCallChain(chain[0]), /*isDelete*/ false);
-      const leftThisArg = isSyntheticReference(left) ? left.thisArg : undefined;
-      let leftExpression = isSyntheticReference(left) ? left.expression : left;
+      const leftThisArg = qn.is.kind(SyntheticReferenceExpression, left) ? left.thisArg : undefined;
+      let leftExpression = qn.is.kind(SyntheticReferenceExpression, left) ? left.expression : left;
       let capturedLeft: Expression = leftExpression;
       if (shouldCaptureInTempVariable(leftExpression)) {
         capturedLeft = createTempVariable(hoistVariableDeclaration);
@@ -179,7 +179,7 @@ namespace qnr {
     function shouldCaptureInTempVariable(expression: Expression): boolean {
       // don't capture identifiers and `this` in a temporary variable
       // `super` cannot be captured as it's no real variable
-      return !isIdentifier(expression) && expression.kind !== Syntax.ThisKeyword && expression.kind !== Syntax.SuperKeyword;
+      return !qn.is.kind(Identifier, expression) && expression.kind !== Syntax.ThisKeyword && expression.kind !== Syntax.SuperKeyword;
     }
 
     function visitDeleteExpression(node: DeleteExpression) {

@@ -35,7 +35,10 @@ namespace qnr {
     if (qn.is.kind(ComputedPropertyName, memberName)) {
       return setTextRange(createElementAccess(target, memberName.expression), location);
     } else {
-      const expression = setTextRange(isIdentifier(memberName) || isPrivateIdentifier(memberName) ? createPropertyAccess(target, memberName) : createElementAccess(target, memberName), memberName);
+      const expression = setTextRange(
+        qn.is.kind(Identifier, memberName) || qn.is.kind(PrivateIdentifier, memberName) ? createPropertyAccess(target, memberName) : createElementAccess(target, memberName),
+        memberName
+      );
       getOrCreateEmitNode(expression).flags |= EmitFlags.NoNestedSourceMaps;
       return expression;
     }
@@ -250,7 +253,7 @@ namespace qnr {
   // Utilities
 
   export function createForOfBindingStatement(node: ForInitializer, boundValue: Expression): Statement {
-    if (isVariableDeclarationList(node)) {
+    if (qn.is.kind(VariableDeclarationList, node)) {
       const firstDeclaration = first(node.declarations);
       const updatedDeclaration = updateVariableDeclaration(firstDeclaration, firstDeclaration.name, /*typeNode*/ undefined, boundValue);
       return setTextRange(createVariableStatement(/*modifiers*/ undefined, updateVariableDeclarationList(node, [updatedDeclaration])), /*location*/ node);
@@ -261,7 +264,7 @@ namespace qnr {
   }
 
   export function insertLeadingStatement(dest: Statement, source: Statement) {
-    if (isBlock(dest)) {
+    if (qn.is.kind(Block, dest)) {
       return updateBlock(dest, setTextRange(NodeArray.create([source, ...dest.statements]), dest.statements));
     } else {
       return createBlock(NodeArray.create([dest, source]), /*multiLine*/ true);
@@ -388,7 +391,7 @@ namespace qnr {
   }
 
   export function createExpressionForPropertyName(memberName: Exclude<PropertyName, PrivateIdentifier>): Expression {
-    if (isIdentifier(memberName)) {
+    if (qn.is.kind(Identifier, memberName)) {
       return createLiteral(memberName);
     } else if (qn.is.kind(ComputedPropertyName, memberName)) {
       return getMutableClone(memberName.expression);
@@ -398,7 +401,7 @@ namespace qnr {
   }
 
   export function createExpressionForObjectLiteralElementLike(node: ObjectLiteralExpression, property: ObjectLiteralElementLike, receiver: Expression): Expression | undefined {
-    if (property.name && isPrivateIdentifier(property.name)) {
+    if (property.name && qn.is.kind(PrivateIdentifier, property.name)) {
       Debug.failBadSyntax(property.name, 'Private identifiers are not allowed in object literals.');
     }
     switch (property.kind) {
@@ -596,7 +599,7 @@ namespace qnr {
 
   function getName(node: Declaration, allowComments?: boolean, allowSourceMaps?: boolean, emitFlags: EmitFlags = 0) {
     const nodeName = getNameOfDeclaration(node);
-    if (nodeName && isIdentifier(nodeName) && !isGeneratedIdentifier(nodeName)) {
+    if (nodeName && qn.is.kind(Identifier, nodeName) && !isGeneratedIdentifier(nodeName)) {
       const name = getMutableClone(nodeName);
       emitFlags |= getEmitFlags(nodeName);
       if (!allowSourceMaps) emitFlags |= EmitFlags.NoSourceMap;
@@ -644,7 +647,7 @@ namespace qnr {
   }
 
   export function convertToFunctionBody(node: ConciseBody, multiLine?: boolean): Block {
-    return isBlock(node) ? node : setTextRange(createBlock([setTextRange(createReturn(node), node)], multiLine), node);
+    return qn.is.kind(Block, node) ? node : setTextRange(createBlock([setTextRange(createReturn(node), node)], multiLine), node);
   }
 
   export function convertFunctionDeclarationToExpression(node: FunctionDeclaration) {
@@ -1067,7 +1070,7 @@ namespace qnr {
 
   export function parenthesizeExpressionForExpressionStatement(expression: Expression) {
     const emittedExpression = skipPartiallyEmittedExpressions(expression);
-    if (isCallExpression(emittedExpression)) {
+    if (qn.is.kind(CallExpression, emittedExpression)) {
       const callee = emittedExpression.expression;
       const kind = skipPartiallyEmittedExpressions(callee).kind;
       if (kind === Syntax.FunctionExpression || kind === Syntax.ArrowFunction) {
@@ -1165,7 +1168,7 @@ namespace qnr {
   }
 
   export function parenthesizeConciseBody(body: ConciseBody): ConciseBody {
-    if (!isBlock(body) && (isCommaSequence(body) || getLeftmostExpression(body, /*stopAtCallExpressions*/ false).kind === Syntax.ObjectLiteralExpression)) {
+    if (!qn.is.kind(Block, body) && (isCommaSequence(body) || getLeftmostExpression(body, /*stopAtCallExpressions*/ false).kind === Syntax.ObjectLiteralExpression)) {
       return setTextRange(createParen(body), body);
     }
 
@@ -1462,7 +1465,7 @@ namespace qnr {
       return bindingElement.initializer;
     }
 
-    if (isPropertyAssignment(bindingElement)) {
+    if (qn.is.kind(PropertyAssignment, bindingElement)) {
       // `1` in `({ a: b = 1 } = ...)`
       // `1` in `({ a: {b} = 1 } = ...)`
       // `1` in `({ a: [b] = 1 } = ...)`
@@ -1470,7 +1473,7 @@ namespace qnr {
       return isAssignmentExpression(initializer, /*excludeCompoundAssignment*/ true) ? initializer.right : undefined;
     }
 
-    if (isShorthandPropertyAssignment(bindingElement)) {
+    if (qn.is.kind(ShorthandPropertyAssignment, bindingElement)) {
       // `1` in `({ a = 1 } = ...)`
       return bindingElement.objectAssignmentInitializer;
     }
@@ -1482,7 +1485,7 @@ namespace qnr {
       return bindingElement.right;
     }
 
-    if (isSpreadElement(bindingElement)) {
+    if (qn.is.kind(SpreadElement, bindingElement)) {
       // Recovery consistent with existing emit.
       return getInitializerOfBindingOrAssignmentElement(<BindingOrAssignmentElement>bindingElement.expression);
     }
@@ -1551,7 +1554,7 @@ namespace qnr {
       return getTargetOfBindingOrAssignmentElement(<BindingOrAssignmentElement>bindingElement.left);
     }
 
-    if (isSpreadElement(bindingElement)) {
+    if (qn.is.kind(SpreadElement, bindingElement)) {
       // `a` in `[...a] = ...`
       return getTargetOfBindingOrAssignmentElement(<BindingOrAssignmentElement>bindingElement.expression);
     }
@@ -1588,7 +1591,7 @@ namespace qnr {
    */
   export function getPropertyNameOfBindingOrAssignmentElement(bindingElement: BindingOrAssignmentElement): Exclude<PropertyName, PrivateIdentifier> | undefined {
     const propertyName = tryGetPropertyNameOfBindingOrAssignmentElement(bindingElement);
-    assert(!!propertyName || isSpreadAssignment(bindingElement), 'Invalid property name for binding element.');
+    assert(!!propertyName || qn.is.kind(SpreadAssignment, bindingElement), 'Invalid property name for binding element.');
     return propertyName;
   }
 
@@ -1601,7 +1604,7 @@ namespace qnr {
         // `1` in `let { 1: b } = ...`
         if (bindingElement.propertyName) {
           const propertyName = bindingElement.propertyName;
-          if (isPrivateIdentifier(propertyName)) {
+          if (qn.is.kind(PrivateIdentifier, propertyName)) {
             return Debug.failBadSyntax(propertyName);
           }
           return qn.is.kind(ComputedPropertyName, propertyName) && isStringOrNumericLiteral(propertyName.expression) ? propertyName.expression : propertyName;
@@ -1616,7 +1619,7 @@ namespace qnr {
         // `1` in `({ 1: b } = ...)`
         if (bindingElement.name) {
           const propertyName = bindingElement.name;
-          if (isPrivateIdentifier(propertyName)) {
+          if (qn.is.kind(PrivateIdentifier, propertyName)) {
             return Debug.failBadSyntax(propertyName);
           }
           return qn.is.kind(ComputedPropertyName, propertyName) && isStringOrNumericLiteral(propertyName.expression) ? propertyName.expression : propertyName;
@@ -1626,7 +1629,7 @@ namespace qnr {
 
       case Syntax.SpreadAssignment:
         // `a` in `({ ...a } = ...)`
-        if (bindingElement.name && isPrivateIdentifier(bindingElement.name)) {
+        if (bindingElement.name && qn.is.kind(PrivateIdentifier, bindingElement.name)) {
           return Debug.failBadSyntax(bindingElement.name);
         }
         return bindingElement.name;

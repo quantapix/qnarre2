@@ -68,7 +68,7 @@ namespace qnr {
       }
 
       // Either ill-formed or don't need to be tranformed.
-      if (!node.exportClause || !isNamespaceExport(node.exportClause) || !node.moduleSpecifier) {
+      if (!node.exportClause || !qn.is.kind(NamespaceExport, node.exportClause) || !node.moduleSpecifier) {
         return node;
       }
 
@@ -95,7 +95,7 @@ namespace qnr {
      * @param emit A callback used to emit the node in the printer.
      */
     function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void): void {
-      if (isSourceFile(node)) {
+      if (qn.is.kind(SourceFile, node)) {
         if ((qp_isExternalModule(node) || compilerOptions.isolatedModules) && compilerOptions.importHelpers) {
           helperNameSubstitutions = createMap<Identifier>();
         }
@@ -118,7 +118,7 @@ namespace qnr {
      */
     function onSubstituteNode(hint: EmitHint, node: Node) {
       node = previousOnSubstituteNode(hint, node);
-      if (helperNameSubstitutions && isIdentifier(node) && getEmitFlags(node) & EmitFlags.HelperName) {
+      if (helperNameSubstitutions && qn.is.kind(Identifier, node) && getEmitFlags(node) & EmitFlags.HelperName) {
         return substituteHelperName(node);
       }
 

@@ -121,7 +121,7 @@ namespace qnr {
           return doWithContext(ContextFlags.NonTopLevel, visitArrowFunction, <ArrowFunction>node);
 
         case Syntax.PropertyAccessExpression:
-          if (capturedSuperProperties && isPropertyAccessExpression(node) && node.expression.kind === Syntax.SuperKeyword) {
+          if (capturedSuperProperties && qn.is.kind(PropertyAccessExpression, node) && node.expression.kind === Syntax.SuperKeyword) {
             capturedSuperProperties.set(node.name.escapedText, true);
           }
           return visitEachChild(node, visitor, context);
@@ -348,11 +348,11 @@ namespace qnr {
     }
 
     function recordDeclarationName({ name }: ParameterDeclaration | VariableDeclaration | BindingElement, names: UnderscoreEscapedMap<true>) {
-      if (isIdentifier(name)) {
+      if (qn.is.kind(Identifier, name)) {
         names.set(name.escapedText, true);
       } else {
         for (const element of name.elements) {
-          if (!isOmittedExpression(element)) {
+          if (!qn.is.kind(OmittedExpression, element)) {
             recordDeclarationName(element, names);
           }
         }
@@ -360,7 +360,7 @@ namespace qnr {
     }
 
     function isVariableDeclarationListWithCollidingName(node: ForInitializer): node is VariableDeclarationList {
-      return !!node && isVariableDeclarationList(node) && !(node.flags & NodeFlags.BlockScoped) && node.declarations.some(collidesWithParameterName);
+      return !!node && qn.is.kind(VariableDeclarationList, node) && !(node.flags & NodeFlags.BlockScoped) && node.declarations.some(collidesWithParameterName);
     }
 
     function visitVariableDeclarationListWithCollidingNames(node: VariableDeclarationList, hasReceiver: boolean) {
@@ -382,11 +382,11 @@ namespace qnr {
     }
 
     function hoistVariable({ name }: VariableDeclaration | BindingElement) {
-      if (isIdentifier(name)) {
+      if (qn.is.kind(Identifier, name)) {
         hoistVariableDeclaration(name);
       } else {
         for (const element of name.elements) {
-          if (!isOmittedExpression(element)) {
+          if (!qn.is.kind(OmittedExpression, element)) {
             hoistVariable(element);
           }
         }
@@ -399,11 +399,11 @@ namespace qnr {
     }
 
     function collidesWithParameterName({ name }: VariableDeclaration | BindingElement): boolean {
-      if (isIdentifier(name)) {
+      if (qn.is.kind(Identifier, name)) {
         return enclosingFunctionParameterNames.has(name.escapedText);
       } else {
         for (const element of name.elements) {
-          if (!isOmittedExpression(element) && collidesWithParameterName(element)) {
+          if (!qn.is.kind(OmittedExpression, element) && collidesWithParameterName(element)) {
             return true;
           }
         }
@@ -498,7 +498,7 @@ namespace qnr {
     }
 
     function transformAsyncFunctionBodyWorker(body: ConciseBody, start?: number) {
-      if (isBlock(body)) {
+      if (qn.is.kind(Block, body)) {
         return updateBlock(body, NodeArray.visit(body.statements, asyncBodyVisitor, isStatement, start));
       } else {
         return convertToFunctionBody(visitNode(body, asyncBodyVisitor, isConciseBody));
@@ -613,7 +613,7 @@ namespace qnr {
     function substituteCallExpression(node: CallExpression): Expression {
       const expression = node.expression;
       if (isSuperProperty(expression)) {
-        const argumentExpression = isPropertyAccessExpression(expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
+        const argumentExpression = qn.is.kind(PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
         return createCall(createPropertyAccess(argumentExpression, 'call'), /*typeArguments*/ undefined, [createThis(), ...node.arguments]);
       }
       return node;

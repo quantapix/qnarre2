@@ -184,7 +184,7 @@ namespace qnr {
 
     function visitPropertyDeclaration(node: PropertyDeclaration) {
       assert(!some(node.decorators));
-      if (!shouldTransformPrivateFields && isPrivateIdentifier(node.name)) {
+      if (!shouldTransformPrivateFields && qn.is.kind(PrivateIdentifier, node.name)) {
         // Initializer is elided as the field is initialized in transformConstructor.
         return PropertyDeclaration.update(
           node,
@@ -217,7 +217,7 @@ namespace qnr {
     }
 
     function visitPropertyAccessExpression(node: PropertyAccessExpression) {
-      if (shouldTransformPrivateFields && isPrivateIdentifier(node.name)) {
+      if (shouldTransformPrivateFields && qn.is.kind(PrivateIdentifier, node.name)) {
         const privateIdentifierInfo = accessPrivateIdentifier(node.name);
         if (privateIdentifierInfo) {
           return setOriginalNode(createPrivateIdentifierAccess(privateIdentifierInfo, node.expression), node);
@@ -275,7 +275,7 @@ namespace qnr {
     }
 
     function visitForStatement(node: ForStatement) {
-      if (node.incrementor && isPostfixUnaryExpression(node.incrementor)) {
+      if (node.incrementor && qn.is.kind(PostfixUnaryExpression, node.incrementor)) {
         return updateFor(
           node,
           visitNode(node.initializer, visitor, isForInitializer),
@@ -288,7 +288,7 @@ namespace qnr {
     }
 
     function visitExpressionStatement(node: ExpressionStatement) {
-      if (isPostfixUnaryExpression(node.expression)) {
+      if (qn.is.kind(PostfixUnaryExpression, node.expression)) {
         return updateExpressionStatement(node, visitPostfixUnaryExpression(node.expression, /*valueIsDiscarded*/ true));
       }
       return visitEachChild(node, visitor, context);
@@ -385,7 +385,7 @@ namespace qnr {
         startPrivateIdentifierEnvironment();
       }
 
-      const result = isClassDeclaration(node) ? visitClassDeclaration(node) : visitClassExpression(node);
+      const result = qn.is.kind(ClassDeclaration, node) ? visitClassDeclaration(node) : visitClassExpression(node);
 
       if (shouldTransformPrivateFields) {
         endPrivateIdentifierEnvironment();
@@ -395,7 +395,7 @@ namespace qnr {
     }
 
     function doesClassElementNeedTransform(node: ClassElement) {
-      return qn.is.kind(PropertyDeclaration, node) || (shouldTransformPrivateFields && node.name && isPrivateIdentifier(node.name));
+      return qn.is.kind(PropertyDeclaration, node) || (shouldTransformPrivateFields && node.name && qn.is.kind(PrivateIdentifier, node.name));
     }
 
     function visitClassDeclaration(node: ClassDeclaration) {
@@ -448,7 +448,7 @@ namespace qnr {
       // In this case, we use pendingStatements to produce the same output as the
       // class declaration transformation. The VariableStatement visitor will insert
       // these statements after the class expression variable statement.
-      const isDecoratedClassDeclaration = isClassDeclaration(getOriginalNode(node));
+      const isDecoratedClassDeclaration = qn.is.kind(ClassDeclaration, getOriginalNode(node));
 
       const staticProperties = getProperties(node, /*requireInitializer*/ true, /*isStatic*/ true);
       const extendsClauseElement = getEffectiveBaseTypeNode(node);
@@ -553,7 +553,7 @@ namespace qnr {
       const useDefineForClassFields = context.getCompilerOptions().useDefineForClassFields;
       let properties = getProperties(node, /*requireInitializer*/ false, /*isStatic*/ false);
       if (!useDefineForClassFields) {
-        properties = filter(properties, (property) => !!property.initializer || isPrivateIdentifier(property.name));
+        properties = filter(properties, (property) => !!property.initializer || qn.is.kind(PrivateIdentifier, property.name));
       }
 
       // Only generate synthetic constructor when there are property initializers to move.
@@ -671,7 +671,7 @@ namespace qnr {
           ? ComputedPropertyName.update(property.name, getGeneratedNameForNode(property.name))
           : property.name;
 
-      if (shouldTransformPrivateFields && isPrivateIdentifier(propertyName)) {
+      if (shouldTransformPrivateFields && qn.is.kind(PrivateIdentifier, propertyName)) {
         const privateIdentifierInfo = accessPrivateIdentifier(propertyName);
         if (privateIdentifierInfo) {
           switch (privateIdentifierInfo.placement) {
@@ -683,11 +683,11 @@ namespace qnr {
           fail('Undeclared private name for property declaration.');
         }
       }
-      if (isPrivateIdentifier(propertyName) && !property.initializer) {
+      if (qn.is.kind(PrivateIdentifier, propertyName) && !property.initializer) {
         return;
       }
 
-      if (isPrivateIdentifier(propertyName) && !property.initializer) {
+      if (qn.is.kind(PrivateIdentifier, propertyName) && !property.initializer) {
         return;
       }
 
@@ -695,17 +695,17 @@ namespace qnr {
       const initializer =
         property.initializer || emitAssignment
           ? visitNode(property.initializer, visitor, isExpression)
-          : isParameterPropertyDeclaration(propertyOriginalNode, propertyOriginalNode.parent) && isIdentifier(propertyName)
+          : isParameterPropertyDeclaration(propertyOriginalNode, propertyOriginalNode.parent) && qn.is.kind(Identifier, propertyName)
           ? propertyName
           : createVoidZero();
 
-      if (emitAssignment || isPrivateIdentifier(propertyName)) {
+      if (emitAssignment || qn.is.kind(PrivateIdentifier, propertyName)) {
         const memberAccess = createMemberAccessForPropertyName(receiver, propertyName, /*location*/ propertyName);
         return createAssignment(memberAccess, initializer);
       } else {
         const name = qn.is.kind(ComputedPropertyName, propertyName)
           ? propertyName.expression
-          : isIdentifier(propertyName)
+          : qn.is.kind(Identifier, propertyName)
           ? StringLiteral.create(qy_get.unescUnderscores(propertyName.escapedText))
           : propertyName;
         const descriptor = createPropertyDescriptor({ value: initializer, configurable: true, writable: true, enumerable: true });
@@ -792,7 +792,7 @@ namespace qnr {
           hoistVariableDeclaration(generatedName);
           return createAssignment(generatedName, expression);
         }
-        return inlinable || isIdentifier(innerExpression) ? undefined : expression;
+        return inlinable || qn.is.kind(Identifier, innerExpression) ? undefined : expression;
       }
     }
 
@@ -874,7 +874,7 @@ namespace qnr {
         const wrapped = wrapPrivateIdentifierForDestructuringTarget(target);
         if (isAssignmentExpression(node)) {
           return updateBinary(node, wrapped, visitNode(node.right, visitor, isExpression), node.operatorToken);
-        } else if (isSpreadElement(node)) {
+        } else if (qn.is.kind(SpreadElement, node)) {
           return updateSpread(node, wrapped);
         } else {
           return wrapped;
@@ -884,7 +884,7 @@ namespace qnr {
     }
 
     function visitObjectAssignmentTarget(node: ObjectLiteralElementLike) {
-      if (isPropertyAssignment(node)) {
+      if (qn.is.kind(PropertyAssignment, node)) {
         const target = getTargetOfBindingOrAssignmentElement(node);
         if (target && isPrivateIdentifierPropertyAccessExpression(target)) {
           const initializer = getInitializerOfBindingOrAssignmentElement(node);

@@ -1076,7 +1076,7 @@ namespace qnr {
     }
 
     function transformAndEmitEmbeddedStatement(node: Statement) {
-      if (isBlock(node)) {
+      if (qn.is.kind(Block, node)) {
         transformAndEmitStatements(node.statements);
       } else {
         transformAndEmitStatement(node);
@@ -1317,7 +1317,7 @@ namespace qnr {
         const endLabel = beginLoopBlock(incrementLabel);
         if (node.initializer) {
           const initializer = node.initializer;
-          if (isVariableDeclarationList(initializer)) {
+          if (qn.is.kind(VariableDeclarationList, initializer)) {
             transformAndEmitVariableDeclarationList(initializer);
           } else {
             emitStatement(setTextRange(createExpressionStatement(visitNode(initializer, visitor, isExpression)), initializer));
@@ -1348,7 +1348,7 @@ namespace qnr {
       }
 
       const initializer = node.initializer;
-      if (initializer && isVariableDeclarationList(initializer)) {
+      if (initializer && qn.is.kind(VariableDeclarationList, initializer)) {
         for (const variable of initializer.declarations) {
           hoistVariableDeclaration(<Identifier>variable.name);
         }
@@ -1417,7 +1417,7 @@ namespace qnr {
         emitBreakWhenFalse(endLabel, createLessThan(keysIndex, createPropertyAccess(keysArray, 'length')));
 
         let variable: Expression;
-        if (isVariableDeclarationList(initializer)) {
+        if (qn.is.kind(VariableDeclarationList, initializer)) {
           for (const variable of initializer.declarations) {
             hoistVariableDeclaration(<Identifier>variable.name);
           }
@@ -1460,7 +1460,7 @@ namespace qnr {
       }
 
       const initializer = node.initializer;
-      if (isVariableDeclarationList(initializer)) {
+      if (qn.is.kind(VariableDeclarationList, initializer)) {
         for (const variable of initializer.declarations) {
           hoistVariableDeclaration(<Identifier>variable.name);
         }
@@ -1771,7 +1771,7 @@ namespace qnr {
     }
 
     function substituteExpression(node: Expression): Expression {
-      if (isIdentifier(node)) {
+      if (qn.is.kind(Identifier, node)) {
         return substituteExpressionIdentifier(node);
       }
       return node;
@@ -1780,7 +1780,7 @@ namespace qnr {
     function substituteExpressionIdentifier(node: Identifier) {
       if (!isGeneratedIdentifier(node) && renamedCatchVariables && renamedCatchVariables.has(idText(node))) {
         const original = getOriginalNode(node);
-        if (isIdentifier(original) && original.parent) {
+        if (qn.is.kind(Identifier, original) && original.parent) {
           const declaration = resolver.getReferencedValueDeclaration(original);
           if (declaration) {
             const name = renamedCatchVariableDeclarations[getOriginalNodeId(declaration)];

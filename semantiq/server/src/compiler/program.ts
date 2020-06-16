@@ -2153,7 +2153,7 @@ namespace qnr {
           if (moduleNameExpr && qn.is.kind(StringLiteral, moduleNameExpr) && moduleNameExpr.text && (!inAmbientModule || !qp_isExternalModuleNameRelative(moduleNameExpr.text))) {
             imports = append(imports, moduleNameExpr);
           }
-        } else if (isModuleDeclaration(node)) {
+        } else if (qn.is.kind(ModuleDeclaration, node)) {
           if (isAmbientModule(node) && (inAmbientModule || hasSyntacticModifier(node, ModifierFlags.Ambient) || file.isDeclarationFile)) {
             const nameText = getTextOfIdentifierOrLiteral(node.name);
             // Ambient module declarations can be interpreted as augmentations for some existing external modules.
@@ -3233,7 +3233,7 @@ namespace qnr {
       let needCompilerDiagnostic = true;
       const pathsSyntax = getOptionPathsSyntax();
       for (const pathProp of pathsSyntax) {
-        if (isObjectLiteralExpression(pathProp.initializer)) {
+        if (qn.is.kind(ObjectLiteralExpression, pathProp.initializer)) {
           for (const keyProps of getPropertyAssignment(pathProp.initializer, key)) {
             const initializer = keyProps.initializer;
             if (isArrayLiteralExpression(initializer) && initializer.elements.length > valueIndex) {
@@ -3253,7 +3253,7 @@ namespace qnr {
       let needCompilerDiagnostic = true;
       const pathsSyntax = getOptionPathsSyntax();
       for (const pathProp of pathsSyntax) {
-        if (isObjectLiteralExpression(pathProp.initializer) && createOptionDiagnosticInObjectLiteralSyntax(pathProp.initializer, onKey, key, /*key2*/ undefined, message, arg0)) {
+        if (qn.is.kind(ObjectLiteralExpression, pathProp.initializer) && createOptionDiagnosticInObjectLiteralSyntax(pathProp.initializer, onKey, key, /*key2*/ undefined, message, arg0)) {
           needCompilerDiagnostic = false;
         }
       }
@@ -3317,7 +3317,7 @@ namespace qnr {
         const jsonObjectLiteral = getTsConfigObjectLiteralExpression(options.configFile);
         if (jsonObjectLiteral) {
           for (const prop of getPropertyAssignment(jsonObjectLiteral, 'compilerOptions')) {
-            if (isObjectLiteralExpression(prop.initializer)) {
+            if (qn.is.kind(ObjectLiteralExpression, prop.initializer)) {
               _compilerOptionsObjectLiteralSyntax = prop.initializer;
               break;
             }

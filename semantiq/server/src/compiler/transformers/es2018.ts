@@ -194,7 +194,7 @@ namespace qnr {
         case Syntax.TaggedTemplateExpression:
           return visitTaggedTemplateExpression(node as TaggedTemplateExpression);
         case Syntax.PropertyAccessExpression:
-          if (capturedSuperProperties && isPropertyAccessExpression(node) && node.expression.kind === Syntax.SuperKeyword) {
+          if (capturedSuperProperties && qn.is.kind(PropertyAccessExpression, node) && node.expression.kind === Syntax.SuperKeyword) {
             capturedSuperProperties.set(node.name.escapedText, true);
           }
           return visitEachChild(node, visitor, context);
@@ -446,12 +446,12 @@ namespace qnr {
 
     function transformForOfStatementWithObjectRest(node: ForOfStatement) {
       const initializerWithoutParens = skipParentheses(node.initializer) as ForInitializer;
-      if (isVariableDeclarationList(initializerWithoutParens) || qn.is.kind(AssignmentPattern, initializerWithoutParens)) {
+      if (qn.is.kind(VariableDeclarationList, initializerWithoutParens) || qn.is.kind(AssignmentPattern, initializerWithoutParens)) {
         let bodyLocation: TextRange | undefined;
         let statementsLocation: TextRange | undefined;
         const temp = createTempVariable(/*recordTempVariable*/ undefined);
         const statements: Statement[] = [createForOfBindingStatement(initializerWithoutParens, temp)];
-        if (isBlock(node.statement)) {
+        if (qn.is.kind(Block, node.statement)) {
           addRange(statements, node.statement.statements);
           bodyLocation = node.statement;
           statementsLocation = node.statement.statements;
@@ -478,7 +478,7 @@ namespace qnr {
       let statementsLocation: TextRange | undefined;
       const statements: Statement[] = [visitNode(binding, visitor, isStatement)];
       const statement = visitNode(node.statement, visitor, isStatement);
-      if (isBlock(statement)) {
+      if (qn.is.kind(Block, statement)) {
         addRange(statements, statement.statements);
         bodyLocation = statement;
         statementsLocation = statement.statements;
@@ -498,8 +498,8 @@ namespace qnr {
 
     function transformForAwaitOfStatement(node: ForOfStatement, outermostLabeledStatement: LabeledStatement | undefined, ancestorFacts: HierarchyFacts) {
       const expression = visitNode(node.expression, visitor, isExpression);
-      const iterator = isIdentifier(expression) ? getGeneratedNameForNode(expression) : createTempVariable(/*recordTempVariable*/ undefined);
-      const result = isIdentifier(expression) ? getGeneratedNameForNode(iterator) : createTempVariable(/*recordTempVariable*/ undefined);
+      const iterator = qn.is.kind(Identifier, expression) ? getGeneratedNameForNode(expression) : createTempVariable(/*recordTempVariable*/ undefined);
+      const result = qn.is.kind(Identifier, expression) ? getGeneratedNameForNode(iterator) : createTempVariable(/*recordTempVariable*/ undefined);
       const errorRecord = createUniqueName('e');
       const catchVariable = getGeneratedNameForNode(errorRecord);
       const returnMethod = createTempVariable(/*recordTempVariable*/ undefined);
@@ -749,7 +749,7 @@ namespace qnr {
       let statementOffset = 0;
       const statements: Statement[] = [];
       const body = visitNode(node.body, visitor, isConciseBody);
-      if (isBlock(body)) {
+      if (qn.is.kind(Block, body)) {
         statementOffset = addPrologue(statements, body.statements, /*ensureUseStrict*/ false, visitor);
       }
       addRange(statements, appendObjectRestAssignmentsIfNeeded(/*statements*/ undefined, node));
@@ -874,7 +874,7 @@ namespace qnr {
     function substituteCallExpression(node: CallExpression): Expression {
       const expression = node.expression;
       if (isSuperProperty(expression)) {
-        const argumentExpression = isPropertyAccessExpression(expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
+        const argumentExpression = qn.is.kind(PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
         return createCall(createPropertyAccess(argumentExpression, 'call'), /*typeArguments*/ undefined, [createThis(), ...node.arguments]);
       }
       return node;

@@ -352,12 +352,12 @@ namespace qnr {
         // Elide type references for which we have imports
         if (emittedImports) {
           for (const importStatement of emittedImports) {
-            if (isImportEqualsDeclaration(importStatement) && qp_isExternalModuleReference(importStatement.moduleReference)) {
+            if (qn.is.kind(ImportEqualsDeclaration, importStatement) && qp_qn.is.kind(ExternalModuleReference, importStatement.moduleReference)) {
               const expr = importStatement.moduleReference.expression;
               if (StringLiteral.like(expr) && expr.text === typeName) {
                 return;
               }
-            } else if (isImportDeclaration(importStatement) && qn.is.kind(StringLiteral, importStatement.moduleSpecifier) && importStatement.moduleSpecifier.text === typeName) {
+            } else if (qn.is.kind(ImportDeclaration, importStatement) && qn.is.kind(StringLiteral, importStatement.moduleSpecifier) && importStatement.moduleSpecifier.text === typeName) {
               return;
             }
           }
@@ -414,7 +414,7 @@ namespace qnr {
     }
 
     function collectReferences(sourceFile: SourceFile | UnparsedSource, ret: Map<SourceFile>) {
-      if (noResolve || (!isUnparsedSource(sourceFile) && isSourceFileJS(sourceFile))) return ret;
+      if (noResolve || (!qn.is.kind(UnparsedSource, sourceFile) && isSourceFileJS(sourceFile))) return ret;
       forEach(sourceFile.referencedFiles, (f) => {
         const elem = host.getSourceFileFromReference(sourceFile, f);
         if (elem) {
@@ -572,7 +572,7 @@ namespace qnr {
     }
 
     function getBindingNameVisible(elem: BindingElement | VariableDeclaration | OmittedExpression): boolean {
-      if (isOmittedExpression(elem)) {
+      if (qn.is.kind(OmittedExpression, elem)) {
         return false;
       }
       if (qn.is.kind(BindingPattern, elem.name)) {
@@ -597,7 +597,7 @@ namespace qnr {
     function updateAccessorParamsList(input: AccessorDeclaration, isPrivate: boolean) {
       let newParams: ParameterDeclaration[] | undefined;
       if (!isPrivate) {
-        const thisParameter = getThisParameter(input);
+        const thisParameter = getThqn.is.kind(ParameterDeclaration, input);
         if (thisParameter) {
           newParams = [ensureParameter(thisParameter)];
         }
@@ -625,11 +625,11 @@ namespace qnr {
 
     function isEnclosingDeclaration(node: Node) {
       return (
-        isSourceFile(node) ||
-        isTypeAliasDeclaration(node) ||
-        isModuleDeclaration(node) ||
-        isClassDeclaration(node) ||
-        isInterfaceDeclaration(node) ||
+        qn.is.kind(SourceFile, node) ||
+        qn.is.kind(TypeAliasDeclaration, node) ||
+        qn.is.kind(ModuleDeclaration, node) ||
+        qn.is.kind(ClassDeclaration, node) ||
+        qn.is.kind(InterfaceDeclaration, node) ||
         isFunctionLike(node) ||
         qn.is.kind(IndexSignatureDeclaration, node) ||
         qn.is.kind(MappedTypeNode, node)
@@ -763,7 +763,7 @@ namespace qnr {
           return fail(`Late replaced statement was found which is not handled by the declaration transformer!: ${(ts as any).SyntaxKind ? (ts as any).SyntaxKind[(i as any).kind] : (i as any).kind}`);
         }
         const priorNeedsDeclare = needsDeclare;
-        needsDeclare = i.parent && isSourceFile(i.parent) && !(qp_isExternalModule(i.parent) && isBundledEmit);
+        needsDeclare = i.parent && qn.is.kind(SourceFile, i.parent) && !(qp_isExternalModule(i.parent) && isBundledEmit);
         const result = transformTopLevelDeclaration(i);
         needsDeclare = priorNeedsDeclare;
         lateStatementReplacementMap.set('' + getOriginalNodeId(i), result);
@@ -784,7 +784,7 @@ namespace qnr {
                 // Top-level declarations in .d.ts files are always considered exported even without a modifier unless there's an export assignment or specifier
                 needsScopeFixMarker = true;
               }
-              if (isSourceFile(statement.parent) && (isArray(result) ? some(result, qp_isExternalModuleIndicator) : qp_isExternalModuleIndicator(result))) {
+              if (qn.is.kind(SourceFile, statement.parent) && (isArray(result) ? some(result, qp_isExternalModuleIndicator) : qp_isExternalModuleIndicator(result))) {
                 resultHasExternalModuleIndicator = true;
               }
             }
@@ -808,7 +808,7 @@ namespace qnr {
       if (isFunctionLike(input) && resolver.isImplementationOfOverload(input)) return;
 
       // Elide semicolon class statements
-      if (isSemicolonClassElement(input)) return;
+      if (qn.is.kind(SemicolonClassElement, input)) return;
 
       let previousEnclosingDeclaration: typeof enclosingDeclaration;
       if (isEnclosingDeclaration(input)) {
@@ -872,7 +872,7 @@ namespace qnr {
             return cleanup(ctor);
           }
           case Syntax.MethodDeclaration: {
-            if (isPrivateIdentifier(input.name)) {
+            if (qn.is.kind(PrivateIdentifier, input.name)) {
               return cleanup(/*returnValue*/ undefined);
             }
             const sig = SignatureDeclaration.create(
@@ -887,7 +887,7 @@ namespace qnr {
             return cleanup(sig);
           }
           case Syntax.GetAccessor: {
-            if (isPrivateIdentifier(input.name)) {
+            if (qn.is.kind(PrivateIdentifier, input.name)) {
               return cleanup(/*returnValue*/ undefined);
             }
             const accessorType = getTypeAnnotationFromAllAccessorDeclarations(input, resolver.getAllAccessorDeclarations(input));
@@ -904,7 +904,7 @@ namespace qnr {
             );
           }
           case Syntax.SetAccessor: {
-            if (isPrivateIdentifier(input.name)) {
+            if (qn.is.kind(PrivateIdentifier, input.name)) {
               return cleanup(/*returnValue*/ undefined);
             }
             return cleanup(
@@ -919,19 +919,19 @@ namespace qnr {
             );
           }
           case Syntax.PropertyDeclaration:
-            if (isPrivateIdentifier(input.name)) {
+            if (qn.is.kind(PrivateIdentifier, input.name)) {
               return cleanup(/*returnValue*/ undefined);
             }
             return cleanup(
               PropertyDeclaration.update(input, /*decorators*/ undefined, ensureModifiers(input), input.name, input.questionToken, ensureType(input, input.type), ensureNoInitializer(input))
             );
           case Syntax.PropertySignature:
-            if (isPrivateIdentifier(input.name)) {
+            if (qn.is.kind(PrivateIdentifier, input.name)) {
               return cleanup(/*returnValue*/ undefined);
             }
             return cleanup(PropertySignature.update(input, ensureModifiers(input), input.name, input.questionToken, ensureType(input, input.type), ensureNoInitializer(input)));
           case Syntax.MethodSignature: {
-            if (isPrivateIdentifier(input.name)) {
+            if (qn.is.kind(PrivateIdentifier, input.name)) {
               return cleanup(/*returnValue*/ undefined);
             }
             return cleanup(
@@ -1049,7 +1049,7 @@ namespace qnr {
 
       switch (input.kind) {
         case Syntax.ExportDeclaration: {
-          if (isSourceFile(input.parent)) {
+          if (qn.is.kind(SourceFile, input.parent)) {
             resultHasExternalModuleIndicator = true;
           }
           resultHasScopeMarker = true;
@@ -1059,7 +1059,7 @@ namespace qnr {
         }
         case Syntax.ExportAssignment: {
           // Always visible if the parent node isn't dropped for being not visible
-          if (isSourceFile(input.parent)) {
+          if (qn.is.kind(SourceFile, input.parent)) {
             resultHasExternalModuleIndicator = true;
           }
           resultHasScopeMarker = true;
@@ -1085,7 +1085,7 @@ namespace qnr {
     }
 
     function stripExportModifiers(statement: Statement): Statement {
-      if (isImportEqualsDeclaration(statement) || hasEffectiveModifier(statement, ModifierFlags.Default)) {
+      if (qn.is.kind(ImportEqualsDeclaration, statement) || hasEffectiveModifier(statement, ModifierFlags.Default)) {
         // `export import` statements should remain as-is, as imports are _not_ implicitly exported in an ambient namespace
         // Likewise, `export default` classes and the like and just be `default`, so we preserve their `export` modifiers, too
         return statement;
@@ -1172,7 +1172,7 @@ namespace qnr {
             fakespace.locals = new SymbolTable(props);
             fakespace.symbol = props[0].parent!;
             const declarations = mapDefined(props, (p) => {
-              if (!isPropertyAccessExpression(p.valueDeclaration)) {
+              if (!qn.is.kind(PropertyAccessExpression, p.valueDeclaration)) {
                 return; // TODO GH#33569: Handle element access expressions that created late bound names (rather than silently omitting them)
               }
               getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(p.valueDeclaration);
@@ -1204,7 +1204,7 @@ namespace qnr {
 
             const exportDefaultDeclaration = createExportAssignment(/*decorators*/ undefined, /*modifiers*/ undefined, /*isExportEquals*/ false, namespaceDecl.name);
 
-            if (isSourceFile(input.parent)) {
+            if (qn.is.kind(SourceFile, input.parent)) {
               resultHasExternalModuleIndicator = true;
             }
             resultHasScopeMarker = true;
@@ -1280,7 +1280,7 @@ namespace qnr {
                 function walkBindingPattern(pattern: BindingPattern) {
                   let elems: PropertyDeclaration[] | undefined;
                   for (const elem of pattern.elements) {
-                    if (isOmittedExpression(elem)) continue;
+                    if (qn.is.kind(OmittedExpression, elem)) continue;
                     if (qn.is.kind(BindingPattern, elem.name)) {
                       elems = concatenate(elems, walkBindingPattern(elem.name));
                     }
@@ -1303,7 +1303,7 @@ namespace qnr {
             getSymbolAccessibilityDiagnostic = oldDiag;
           }
 
-          const hasPrivateIdentifier = some(input.members, (member) => !!member.name && isPrivateIdentifier(member.name));
+          const hasPrivateIdentifier = some(input.members, (member) => !!member.name && qn.is.kind(PrivateIdentifier, member.name));
           const privateIdentifier = hasPrivateIdentifier
             ? [
                 PropertyDeclaration.create(
@@ -1449,7 +1449,7 @@ namespace qnr {
     }
 
     function isScopeMarker(node: Node) {
-      return isExportAssignment(node) || isExportDeclaration(node);
+      return qn.is.kind(ExportAssignment, node) || qn.is.kind(ExportDeclaration, node);
     }
 
     function hasScopeMarker(statements: readonly Statement[]) {

@@ -40,7 +40,7 @@ namespace qnr {
       let value: Expression;
       const left = visitNode(node.left, visitor, isExpression);
       const right = visitNode(node.right, visitor, isExpression);
-      if (isElementAccessExpression(left)) {
+      if (qn.is.kind(ElementAccessExpression, left)) {
         // Transforms `a[x] **= b` into `(_a = a)[_x = x] = Math.pow(_a[_x], b)`
         const expressionTemp = createTempVariable(hoistVariableDeclaration);
         const argumentExpressionTemp = createTempVariable(hoistVariableDeclaration);
@@ -52,7 +52,7 @@ namespace qnr {
           left
         );
         value = setTextRange(createElementAccess(expressionTemp, argumentExpressionTemp), left);
-      } else if (isPropertyAccessExpression(left)) {
+      } else if (qn.is.kind(PropertyAccessExpression, left)) {
         // Transforms `a.x **= b` into `(_a = a).x = Math.pow(_a.x, b)`
         const expressionTemp = createTempVariable(hoistVariableDeclaration);
         target = setTextRange(createPropertyAccess(setTextRange(createAssignment(expressionTemp, left.expression), left.expression), left.name), left);

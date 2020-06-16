@@ -177,7 +177,7 @@ namespace qnr {
             // programs may also have an undefined name.
             assert(node.kind === Syntax.ClassDeclaration || hasSyntacticModifier(node, ModifierFlags.Default));
           }
-          if (isClassDeclaration(node)) {
+          if (qn.is.kind(ClassDeclaration, node)) {
             // XXX: should probably also cover interfaces and type aliases that can have type variables?
             currentNameScope = node;
           }
@@ -873,7 +873,7 @@ namespace qnr {
 
       if (parametersWithPropertyAssignments) {
         for (const parameter of parametersWithPropertyAssignments) {
-          if (isIdentifier(parameter.name)) {
+          if (qn.is.kind(Identifier, parameter.name)) {
             members.push(
               setOriginalNode(
                 aggregateTransformFlags(
@@ -1403,7 +1403,7 @@ namespace qnr {
         const numParameters = parameters.length;
         for (let i = 0; i < numParameters; i++) {
           const parameter = parameters[i];
-          if (i === 0 && isIdentifier(parameter.name) && parameter.name.escapedText === 'this') {
+          if (i === 0 && qn.is.kind(Identifier, parameter.name) && parameter.name.escapedText === 'this') {
             continue;
           }
           if (parameter.dot3Token) {
@@ -1584,7 +1584,7 @@ namespace qnr {
         }
         const serializedIndividual = serializeTypeNode(typeNode);
 
-        if (isIdentifier(serializedIndividual) && serializedIndividual.escapedText === 'Object') {
+        if (qn.is.kind(Identifier, serializedIndividual) && serializedIndividual.escapedText === 'Object') {
           // One of the individual is global object, return immediately
           return serializedIndividual;
         }
@@ -1592,7 +1592,7 @@ namespace qnr {
         // anything more complex and we will just default to Object
         else if (serializedUnion) {
           // Different types
-          if (!isIdentifier(serializedUnion) || !isIdentifier(serializedIndividual) || serializedUnion.escapedText !== serializedIndividual.escapedText) {
+          if (!qn.is.kind(Identifier, serializedUnion) || !qn.is.kind(Identifier, serializedIndividual) || serializedUnion.escapedText !== serializedIndividual.escapedText) {
             return createIdentifier('Object');
           }
         } else {
@@ -1745,11 +1745,11 @@ namespace qnr {
      */
     function getExpressionForPropertyName(member: ClassElement | EnumMember, generateNameForComputedPropertyName: boolean): Expression {
       const name = member.name!;
-      if (isPrivateIdentifier(name)) {
+      if (qn.is.kind(PrivateIdentifier, name)) {
         return createIdentifier('');
       } else if (qn.is.kind(ComputedPropertyName, name)) {
         return generateNameForComputedPropertyName && !isSimpleInlineableExpression(name.expression) ? getGeneratedNameForNode(name) : name.expression;
-      } else if (isIdentifier(name)) {
+      } else if (qn.is.kind(Identifier, name)) {
         return createLiteral(idText(name));
       } else {
         return getSynthesizedClone(name);
@@ -1895,7 +1895,7 @@ namespace qnr {
      */
     function transformParameterWithPropertyAssignment(node: ParameterPropertyDeclaration) {
       const name = node.name;
-      if (!isIdentifier(name)) {
+      if (!qn.is.kind(Identifier, name)) {
         return;
       }
 
@@ -2686,7 +2686,7 @@ namespace qnr {
         return;
       }
 
-      if (!node.exportClause || isNamespaceExport(node.exportClause)) {
+      if (!node.exportClause || qn.is.kind(NamespaceExport, node.exportClause)) {
         // never elide `export <whatever> from <whereever>` declarations -
         // they should be kept for sideffects/untyped exports, even when the
         // type checker doesn't know about any exports
@@ -2720,7 +2720,7 @@ namespace qnr {
     }
 
     function visitNamedExportBindings(node: NamedExportBindings): VisitResult<NamedExportBindings> {
-      return isNamespaceExport(node) ? visitNamespaceExports(node) : visitNamedExports(node);
+      return qn.is.kind(NamespaceExport, node) ? visitNamespaceExports(node) : visitNamedExports(node);
     }
 
     /**
@@ -2947,7 +2947,7 @@ namespace qnr {
       const savedApplicableSubstitutions = applicableSubstitutions;
       const savedCurrentSourceFile = currentSourceFile;
 
-      if (isSourceFile(node)) {
+      if (qn.is.kind(SourceFile, node)) {
         currentSourceFile = node;
       }
 
@@ -2975,7 +2975,7 @@ namespace qnr {
       node = previousOnSubstituteNode(hint, node);
       if (hint === EmitHint.Expression) {
         return substituteExpression(<Expression>node);
-      } else if (isShorthandPropertyAssignment(node)) {
+      } else if (qn.is.kind(ShorthandPropertyAssignment, node)) {
         return substituteShorthandPropertyAssignment(node);
       }
 
@@ -3076,7 +3076,7 @@ namespace qnr {
         const substitute = createLiteral(constantValue);
         if (!compilerOptions.removeComments) {
           const originalNode = getOriginalNode(node, isAccessExpression);
-          const propertyName = isPropertyAccessExpression(originalNode) ? declarationNameToString(originalNode.name) : getTextOfNode(originalNode.argumentExpression);
+          const propertyName = qn.is.kind(PropertyAccessExpression, originalNode) ? declarationNameToString(originalNode.name) : getTextOfNode(originalNode.argumentExpression);
 
           addSyntheticTrailingComment(substitute, Syntax.MultiLineCommentTrivia, ` ${propertyName} `);
         }
@@ -3092,7 +3092,7 @@ namespace qnr {
         return;
       }
 
-      return isPropertyAccessExpression(node) || isElementAccessExpression(node) ? resolver.getConstantValue(node) : undefined;
+      return qn.is.kind(PropertyAccessExpression, node) || qn.is.kind(ElementAccessExpression, node) ? resolver.getConstantValue(node) : undefined;
     }
   }
 

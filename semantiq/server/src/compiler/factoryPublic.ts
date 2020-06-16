@@ -136,7 +136,7 @@ namespace qnr {
   export function getGeneratedNameForNode(node: Node | undefined): Identifier;
   export function getGeneratedNameForNode(node: Node | undefined, flags: GeneratedIdentifierFlags): Identifier; // eslint-disable-line @typescript-eslint/unified-signatures
   export function getGeneratedNameForNode(node: Node | undefined, flags?: GeneratedIdentifierFlags): Identifier {
-    const name = createIdentifier(node && isIdentifier(node) ? idText(node) : '');
+    const name = createIdentifier(node && qn.is.kind(Identifier, node) ? idText(node) : '');
     name.autoGenerateFlags = GeneratedIdentifierFlags.Node | flags!;
     name.autoGenerateId = nextAutoGenerateId;
     name.original = node;

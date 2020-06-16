@@ -108,7 +108,7 @@ namespace qnr {
     const name = specifier.propertyName || specifier.name;
     let p: Node | undefined = specifier.parent;
     while (p) {
-      if (isBlock(p) || isModuleBlock(p) || isSourceFile(p)) {
+      if (qn.is.kind(Block, p) || qn.is.kind(ModuleBlock, p) || qn.is.kind(SourceFile, p)) {
         const statements = p.statements;
         let found: ModuleInstanceState | undefined;
         for (const statement of statements) {
@@ -346,7 +346,7 @@ namespace qnr {
         if (isWellKnownSymbolSyntactically(name)) {
           return getPropertyNameForKnownSymbolName(idText(name.name));
         }
-        if (isPrivateIdentifier(name)) {
+        if (qn.is.kind(PrivateIdentifier, name)) {
           // containingClass exists because private names only allowed inside classes
           const containingClass = getContainingClass(node);
           if (!containingClass) {
@@ -414,7 +414,7 @@ namespace qnr {
     function declareSymbol(symbolTable: SymbolTable, parent: Symbol | undefined, node: Declaration, includes: SymbolFlags, excludes: SymbolFlags, isReplaceableByMethod?: boolean): Symbol {
       assert(!hasDynamicName(node));
 
-      const isDefaultExport = hasSyntacticModifier(node, ModifierFlags.Default) || (isExportSpecifier(node) && node.name.escapedText === 'default');
+      const isDefaultExport = hasSyntacticModifier(node, ModifierFlags.Default) || (qn.is.kind(ExportSpecifier, node) && node.name.escapedText === 'default');
 
       // The exported symbol for an export default function/class node is always named "default"
       const name = isDefaultExport && parent ? InternalSymbolName.Default : getDeclarationName(node);
@@ -502,7 +502,7 @@ namespace qnr {
 
             const relatedInformation: DiagnosticRelatedInformation[] = [];
             if (
-              isTypeAliasDeclaration(node) &&
+              qn.is.kind(TypeAliasDeclaration, node) &&
               nodeIsMissing(node.type) &&
               hasSyntacticModifier(node, ModifierFlags.Export) &&
               symbol.flags & (SymbolFlags.Alias | SymbolFlags.Type | SymbolFlags.Namespace)
@@ -866,8 +866,8 @@ namespace qnr {
         expr.kind === Syntax.Identifier ||
         expr.kind === Syntax.ThisKeyword ||
         expr.kind === Syntax.SuperKeyword ||
-        ((isPropertyAccessExpression(expr) || isNonNullExpression(expr) || isParenthesizedExpression(expr)) && isNarrowableReference(expr.expression)) ||
-        (isElementAccessExpression(expr) && StringLiteral.orNumericLiteralLike(expr.argumentExpression) && isNarrowableReference(expr.expression))
+        ((qn.is.kind(PropertyAccessExpression, expr) || qn.is.kind(NonNullExpression, expr) || qn.is.kind(ParenthesizedExpression, expr)) && isNarrowableReference(expr.expression)) ||
+        (qn.is.kind(ElementAccessExpression, expr) && StringLiteral.orNumericLiteralLike(expr.argumentExpression) && isNarrowableReference(expr.expression))
       );
     }
 
@@ -890,7 +890,7 @@ namespace qnr {
     }
 
     function isNarrowingTypeofOperands(expr1: Expression, expr2: Expression) {
-      return isTypeOfExpression(expr1) && isNarrowableOperand(expr1.expression) && StringLiteral.like(expr2);
+      return qn.is.kind(TypeOfExpression, expr1) && isNarrowableOperand(expr1.expression) && StringLiteral.like(expr2);
     }
 
     function isNarrowableInOperands(left: Expression, right: Expression) {
@@ -1038,7 +1038,7 @@ namespace qnr {
     }
 
     function isTopLevelLogicalExpression(node: Node): boolean {
-      while (isParenthesizedExpression(node.parent) || (isPrefixUnaryExpression(node.parent) && node.parent.operator === Syntax.ExclamationToken)) {
+      while (qn.is.kind(ParenthesizedExpression, node.parent) || (qn.is.kind(PrefixUnaryExpression, node.parent) && node.parent.operator === Syntax.ExclamationToken)) {
         node = node.parent;
       }
       return !isStatementCondition(node) && !isLogicalExpression(node.parent) && !(isOptionalChain(node.parent) && node.parent.expression === node);
@@ -1596,7 +1596,7 @@ namespace qnr {
     }
 
     function bindInitializedVariableFlow(node: VariableDeclaration | ArrayBindingElement) {
-      const name = !isOmittedExpression(node) ? node.name : undefined;
+      const name = !qn.is.kind(OmittedExpression, node) ? node.name : undefined;
       if (qn.is.kind(BindingPattern, name)) {
         for (const child of name.elements) {
           bindInitializedVariableFlow(child);
@@ -1725,7 +1725,7 @@ namespace qnr {
       }
       if (node.expression.kind === Syntax.PropertyAccessExpression) {
         const propertyAccess = <PropertyAccessExpression>node.expression;
-        if (isIdentifier(propertyAccess.name) && isNarrowableOperand(propertyAccess.expression) && isPushOrUnshiftIdentifier(propertyAccess.name)) {
+        if (qn.is.kind(Identifier, propertyAccess.name) && isNarrowableOperand(propertyAccess.expression) && isPushOrUnshiftIdentifier(propertyAccess.name)) {
           currentFlow = createFlowMutation(FlowFlags.ArrayMutation, currentFlow, node);
         }
       }
@@ -1892,8 +1892,8 @@ namespace qnr {
     }
 
     function hasExportDeclarations(node: ModuleDeclaration | SourceFile): boolean {
-      const body = isSourceFile(node) ? node : tryCast(node.body, isModuleBlock);
-      return !!body && body.statements.some((s) => isExportDeclaration(s) || isExportAssignment(s));
+      const body = qn.is.kind(SourceFile, node) ? node : tryCast(node.body, isModuleBlock);
+      return !!body && body.statements.some((s) => qn.is.kind(ExportDeclaration, s) || qn.is.kind(ExportAssignment, s));
     }
 
     function setExportContextFlag(node: ModuleDeclaration | SourceFile) {
@@ -2067,7 +2067,7 @@ namespace qnr {
         parent = typeAlias;
         bind(typeAlias.typeExpression);
         const declName = getNameOfDeclaration(typeAlias);
-        if ((isJSDocEnumTag(typeAlias) || !typeAlias.fullName) && declName && isPropertyAccessEntityNameExpression(declName.parent)) {
+        if ((qn.is.kind(JSDocEnumTag, typeAlias) || !typeAlias.fullName) && declName && isPropertyAccessEntityNameExpression(declName.parent)) {
           // typedef anchored to an A.B.C assignment - we need to bind into B's namespace under name C
           const isTopLevel = isTopLevelNamespaceAssignment(declName.parent);
           if (isTopLevel) {
@@ -2075,7 +2075,7 @@ namespace qnr {
               file.symbol,
               declName.parent,
               isTopLevel,
-              !!qn.findAncestor(declName, (d) => isPropertyAccessExpression(d) && d.name.escapedText === 'prototype'),
+              !!qn.findAncestor(declName, (d) => qn.is.kind(PropertyAccessExpression, d) && d.name.escapedText === 'prototype'),
               /*containerIsClass*/ false
             );
             const oldContainer = container;
@@ -2097,7 +2097,7 @@ namespace qnr {
               case AssignmentDeclarationKind.Property:
                 container = isExportsOrModuleExportsOrAlias(file, declName.parent.expression)
                   ? file
-                  : isPropertyAccessExpression(declName.parent.expression)
+                  : qn.is.kind(PropertyAccessExpression, declName.parent.expression)
                   ? declName.parent.expression.name
                   : declName.parent.expression;
                 break;
@@ -2109,7 +2109,7 @@ namespace qnr {
             }
             container = oldContainer;
           }
-        } else if (isJSDocEnumTag(typeAlias) || !typeAlias.fullName || typeAlias.fullName.kind === Syntax.Identifier) {
+        } else if (qn.is.kind(JSDocEnumTag, typeAlias) || !typeAlias.fullName || typeAlias.fullName.kind === Syntax.Identifier) {
           parent = typeAlias.parent;
           bindBlockScopedDeclaration(typeAlias, SymbolFlags.TypeAlias, SymbolFlags.TypeAliasExcludes);
         } else {
@@ -2193,7 +2193,7 @@ namespace qnr {
     }
 
     function isEvalOrArgumentsIdentifier(node: Node): boolean {
-      return isIdentifier(node) && (node.escapedText === 'eval' || node.escapedText === 'arguments');
+      return qn.is.kind(Identifier, node) && (node.escapedText === 'eval' || node.escapedText === 'arguments');
     }
 
     function checkStrictModeEvalOrArguments(contextNode: Node, name: Node | undefined) {
@@ -2290,7 +2290,7 @@ namespace qnr {
     function checkStrictModeLabeledStatement(node: LabeledStatement) {
       // Grammar checking for labeledStatement
       if (inStrictMode && options.target! >= ScriptTarget.ES2015) {
-        if (isDeclarationStatement(node.statement) || isVariableStatement(node.statement)) {
+        if (isDeclarationStatement(node.statement) || qn.is.kind(VariableStatement, node.statement)) {
           errorOnFirstToken(node.label, Diagnostics.A_label_is_not_allowed_here);
         }
       }
@@ -2464,7 +2464,7 @@ namespace qnr {
               bindPrototypeAssignment(node as BindableStaticPropertyAssignmentExpression);
               break;
             case AssignmentDeclarationKind.ThisProperty:
-              bindThisPropertyAssignment(node as BindablePropertyAssignmentExpression);
+              bindThqn.is.kind(PropertyAssignment, node as BindablePropertyAssignmentExpression);
               break;
             case AssignmentDeclarationKind.Property:
               bindSpecialPropertyAssignment(node as BindablePropertyAssignmentExpression);
@@ -2687,7 +2687,7 @@ namespace qnr {
       if (node.modifiers && node.modifiers.length) {
         file.bindDiagnostics.push(createDiagnosticForNode(node, Diagnostics.Modifiers_cannot_appear_here));
       }
-      const diag = !isSourceFile(node.parent)
+      const diag = !qn.is.kind(SourceFile, node.parent)
         ? Diagnostics.Global_module_exports_may_only_appear_at_top_level
         : !qp_isExternalModule(node.parent)
         ? Diagnostics.Global_module_exports_may_only_appear_in_module_files
@@ -2709,7 +2709,7 @@ namespace qnr {
       } else if (!node.exportClause) {
         // All export * declarations are collected in an __export symbol
         declareSymbol(container.symbol.exports, container.symbol, node, SymbolFlags.ExportStar, SymbolFlags.None);
-      } else if (isNamespaceExport(node.exportClause)) {
+      } else if (qn.is.kind(NamespaceExport, node.exportClause)) {
         // declareSymbol walks up parents to find name text, parent _must_ be set
         // but won't be set by the normal binder walk until `bindChildren` later on.
         node.exportClause.parent = node;
@@ -2763,7 +2763,7 @@ namespace qnr {
         return symbol;
       });
       if (symbol) {
-        const flags = isClassExpression(node.right) ? SymbolFlags.Property | SymbolFlags.ExportValue | SymbolFlags.Class : SymbolFlags.Property | SymbolFlags.ExportValue;
+        const flags = qn.is.kind(ClassExpression, node.right) ? SymbolFlags.Property | SymbolFlags.ExportValue | SymbolFlags.Class : SymbolFlags.Property | SymbolFlags.ExportValue;
         declareSymbol(symbol.exports!, symbol, node.left, flags, SymbolFlags.None);
       }
     }
@@ -2789,11 +2789,12 @@ namespace qnr {
       setValueDeclaration(symbol, node);
     }
 
-    function bindThisPropertyAssignment(node: BindablePropertyAssignmentExpression | PropertyAccessExpression | LiteralLikeElementAccessExpression) {
+    function bindThqn.is.kind(PropertyAssignment, node: BindablePropertyAssignmentExpression | PropertyAccessExpression | LiteralLikeElementAccessExpression) {
       assert(isInJSFile(node));
       // private identifiers *must* be declared (even in JS files)
       const hasPrivateIdentifier =
-        (qn.is.kind(node, BinaryExpression) && isPropertyAccessExpression(node.left) && isPrivateIdentifier(node.left.name)) || (isPropertyAccessExpression(node) && isPrivateIdentifier(node.name));
+        (qn.is.kind(node, BinaryExpression) && qn.is.kind(PropertyAccessExpression, node.left) && qn.is.kind(PrivateIdentifier, node.left.name)) ||
+        (qn.is.kind(PropertyAccessExpression, node) && qn.is.kind(PrivateIdentifier, node.name));
       if (hasPrivateIdentifier) {
         return;
       }
@@ -2815,7 +2816,7 @@ namespace qnr {
             constructorSymbol.members = constructorSymbol.members || new SymbolTable();
             // It's acceptable for multiple 'this' assignments of the same identifier to occur
             if (hasDynamicName(node)) {
-              bindDynamicallyNamedThisPropertyAssignment(node, constructorSymbol);
+              bindDynamicallyNamedThqn.is.kind(PropertyAssignment, node, constructorSymbol);
             } else {
               declareSymbol(constructorSymbol.members, constructorSymbol, node, SymbolFlags.Property | SymbolFlags.Assignment, SymbolFlags.PropertyExcludes & ~SymbolFlags.Property);
             }
@@ -2833,7 +2834,7 @@ namespace qnr {
           const containingClass = thisContainer.parent;
           const symbolTable = hasSyntacticModifier(thisContainer, ModifierFlags.Static) ? containingClass.symbol.exports! : containingClass.symbol.members!;
           if (hasDynamicName(node)) {
-            bindDynamicallyNamedThisPropertyAssignment(node, containingClass.symbol);
+            bindDynamicallyNamedThqn.is.kind(PropertyAssignment, node, containingClass.symbol);
           } else {
             declareSymbol(symbolTable, containingClass.symbol, node, SymbolFlags.Property | SymbolFlags.Assignment, SymbolFlags.None, /*isReplaceableByMethod*/ true);
           }
@@ -2854,7 +2855,7 @@ namespace qnr {
       }
     }
 
-    function bindDynamicallyNamedThisPropertyAssignment(node: BinaryExpression | DynamicNamedDeclaration, symbol: Symbol) {
+    function bindDynamicallyNamedThqn.is.kind(PropertyAssignment, node: BinaryExpression | DynamicNamedDeclaration, symbol: Symbol) {
       bindAnonymousDeclaration(node, SymbolFlags.Property, InternalSymbolName.Computed);
       addLateBoundAssignmentDeclarationToSymbol(node, symbol);
     }
@@ -2868,7 +2869,7 @@ namespace qnr {
 
     function bindSpecialPropertyDeclaration(node: PropertyAccessExpression | LiteralLikeElementAccessExpression) {
       if (node.expression.kind === Syntax.ThisKeyword) {
-        bindThisPropertyAssignment(node);
+        bindThqn.is.kind(PropertyAssignment, node);
       } else if (isBindableStaticAccessExpression(node) && node.parent.parent.kind === Syntax.SourceFile) {
         if (isPrototypeAccess(node.expression)) {
           bindPrototypePropertyAssignment(node, node.parent);
@@ -2928,7 +2929,7 @@ namespace qnr {
       // Fix up parent pointers since we're going to use these nodes before we bind into them
       node.left.parent = node;
       node.right.parent = node;
-      if (isIdentifier(node.left.expression) && container === file && isExportsOrModuleExportsOrAlias(file, node.left.expression)) {
+      if (qn.is.kind(Identifier, node.left.expression) && container === file && isExportsOrModuleExportsOrAlias(file, node.left.expression)) {
         // This can be an alias for the 'exports' or 'module.exports' names, e.g.
         //    var util = module.exports;
         //    util.property = function ...
@@ -2947,7 +2948,7 @@ namespace qnr {
      * Also works for expression statements preceded by JSDoc, like / ** @type number * / x.y;
      */
     function bindStaticPropertyAssignment(node: BindableStaticNameExpression) {
-      assert(!isIdentifier(node));
+      assert(!qn.is.kind(Identifier, node));
       node.expression.parent = node;
       bindPropertyAssignment(node.expression, node, /*isPrototypeProperty*/ false, /*containerIsClass*/ false);
     }
@@ -2995,11 +2996,11 @@ namespace qnr {
         excludes = SymbolFlags.MethodExcludes;
       }
       // Maybe accessor-like
-      else if (isCallExpression(declaration) && isBindableObjectDefinePropertyCall(declaration)) {
+      else if (qn.is.kind(CallExpression, declaration) && isBindableObjectDefinePropertyCall(declaration)) {
         if (
           some(declaration.arguments[2].properties, (p) => {
             const id = getNameOfDeclaration(p);
-            return !!id && isIdentifier(id) && idText(id) === 'set';
+            return !!id && qn.is.kind(Identifier, id) && idText(id) === 'set';
           })
         ) {
           // We mix in `SymbolFLags.Property` so in the checker `getTypeOfVariableParameterOrProperty` is used for this
@@ -3010,7 +3011,7 @@ namespace qnr {
         if (
           some(declaration.arguments[2].properties, (p) => {
             const id = getNameOfDeclaration(p);
-            return !!id && isIdentifier(id) && idText(id) === 'get';
+            return !!id && qn.is.kind(Identifier, id) && idText(id) === 'get';
           })
         ) {
           includes |= SymbolFlags.GetAccessor | SymbolFlags.Property;
@@ -3054,21 +3055,21 @@ namespace qnr {
         return true;
       }
       const node = symbol.valueDeclaration;
-      if (node && isCallExpression(node)) {
+      if (node && qn.is.kind(CallExpression, node)) {
         return !!getAssignedExpandoInitializer(node);
       }
       let init = !node
         ? undefined
-        : isVariableDeclaration(node)
+        : qn.is.kind(VariableDeclaration, node)
         ? node.initializer
         : qn.is.kind(BinaryExpression, node)
         ? node.right
-        : isPropertyAccessExpression(node) && qn.is.kind(BinaryExpression, node.parent)
+        : qn.is.kind(PropertyAccessExpression, node) && qn.is.kind(BinaryExpression, node.parent)
         ? node.parent.right
         : undefined;
       init = init && getRightMostAssignedExpression(init);
       if (init) {
-        const isPrototypeAssignment = isPrototypeAccess(isVariableDeclaration(node) ? node.name : qn.is.kind(BinaryExpression, node) ? node.left : node);
+        const isPrototypeAssignment = isPrototypeAccess(qn.is.kind(VariableDeclaration, node) ? node.name : qn.is.kind(BinaryExpression, node) ? node.left : node);
         return !!getExpandoInitializer(
           qn.is.kind(BinaryExpression, init) && (init.operatorToken.kind === Syntax.Bar2Token || init.operatorToken.kind === Syntax.Question2Token) ? init.right : init,
           isPrototypeAssignment
@@ -3085,7 +3086,7 @@ namespace qnr {
     }
 
     function lookupSymbolForPropertyAccess(node: BindableStaticNameExpression, lookupContainer: Node = container): Symbol | undefined {
-      if (isIdentifier(node)) {
+      if (qn.is.kind(Identifier, node)) {
         return lookupSymbolForNameWorker(lookupContainer, node.escapedText);
       } else {
         const symbol = lookupSymbolForPropertyAccess(node.expression);
@@ -3100,13 +3101,13 @@ namespace qnr {
     ): Symbol | undefined {
       if (isExportsOrModuleExportsOrAlias(file, e)) {
         return file.symbol;
-      } else if (isIdentifier(e)) {
+      } else if (qn.is.kind(Identifier, e)) {
         return action(e, lookupSymbolForPropertyAccess(e), parent);
       } else {
         const s = forEachIdentifierInEntityName(e.expression, parent, action);
         const name = getNameOrArgument(e);
         // unreachable
-        if (isPrivateIdentifier(name)) {
+        if (qn.is.kind(PrivateIdentifier, name)) {
           fail('unexpected PrivateIdentifier');
         }
         return action(name, s && s.exports && s.exports.get(getElementOrPropertyAccessName(e)), s);
@@ -3265,7 +3266,7 @@ namespace qnr {
     }
 
     function bindTypeParameter(node: TypeParameterDeclaration) {
-      if (isJSDocTemplateTag(node.parent)) {
+      if (qn.is.kind(JSDocTemplateTag, node.parent)) {
         const container = find((node.parent.parent as JSDoc).tags!, isJSDocTypeAlias) || getHostSignatureFromJSDoc(node.parent); // TODO: GH#18217
         if (container) {
           if (!container.locals) {
@@ -3326,7 +3327,7 @@ namespace qnr {
             const isError =
               unreachableCodeIsError(options) &&
               !(node.flags & NodeFlags.Ambient) &&
-              (!isVariableStatement(node) || !!(getCombinedNodeFlags(node.declarationList) & NodeFlags.BlockScoped) || node.declarationList.declarations.some((d) => !!d.initializer));
+              (!qn.is.kind(VariableStatement, node) || !!(getCombinedNodeFlags(node.declarationList) & NodeFlags.BlockScoped) || node.declarationList.declarations.some((d) => !!d.initializer));
 
             eachUnreachableRange(node, (start, end) => errorOrSuggestionOnRange(isError, start, end, Diagnostics.Unreachable_code_detected));
           }
@@ -3337,7 +3338,7 @@ namespace qnr {
   }
 
   function eachUnreachableRange(node: Node, cb: (start: Node, last: Node) => void): void {
-    if (isStatement(node) && isExecutableStatement(node) && isBlock(node.parent)) {
+    if (isStatement(node) && isExecutableStatement(node) && qn.is.kind(Block, node.parent)) {
       const { statements } = node.parent;
       const slice = sliceAfter(statements, node);
       getRangesWhere(slice, isExecutableStatement, (start, afterEnd) => cb(slice[start], slice[afterEnd - 1]));
@@ -3349,11 +3350,11 @@ namespace qnr {
   function isExecutableStatement(s: Statement): boolean {
     // Don't remove statements that can validly be used before they appear.
     return (
-      !isFunctionDeclaration(s) &&
+      !qn.is.kind(FunctionDeclaration, s) &&
       !isPurelyTypeDeclaration(s) &&
-      !isEnumDeclaration(s) &&
+      !qn.is.kind(EnumDeclaration, s) &&
       // `var x;` may declare a variable used above
-      !(isVariableStatement(s) && !(getCombinedNodeFlags(s) & (NodeFlags.Let | NodeFlags.Const)) && s.declarationList.declarations.some((d) => !d.initializer))
+      !(qn.is.kind(VariableStatement, s) && !(getCombinedNodeFlags(s) & (NodeFlags.Let | NodeFlags.Const)) && s.declarationList.declarations.some((d) => !d.initializer))
     );
   }
 
@@ -3379,9 +3380,9 @@ namespace qnr {
       node = q.shift()!;
       if (isExportsIdentifier(node) || isModuleExportsAccessExpression(node)) {
         return true;
-      } else if (isIdentifier(node)) {
+      } else if (qn.is.kind(Identifier, node)) {
         const symbol = lookupSymbolForNameWorker(sourceFile, node.escapedText);
-        if (!!symbol && !!symbol.valueDeclaration && isVariableDeclaration(symbol.valueDeclaration) && !!symbol.valueDeclaration.initializer) {
+        if (!!symbol && !!symbol.valueDeclaration && qn.is.kind(VariableDeclaration, symbol.valueDeclaration) && !!symbol.valueDeclaration.initializer) {
           const init = symbol.valueDeclaration.initializer;
           q.push(init);
           if (isAssignmentExpression(init, /*excludeCompoundAssignment*/ true)) {
@@ -3399,7 +3400,7 @@ namespace qnr {
     if (local) {
       return local.exportSymbol || local;
     }
-    if (isSourceFile(container) && container.jsGlobalAugmentations && container.jsGlobalAugmentations.has(name)) {
+    if (qn.is.kind(SourceFile, container) && container.jsGlobalAugmentations && container.jsGlobalAugmentations.has(name)) {
       return container.jsGlobalAugmentations.get(name);
     }
     return container.symbol && container.symbol.exports && container.symbol.exports.get(name);
@@ -3586,7 +3587,7 @@ namespace qnr {
 
     // The '?' token, type annotations, decorators, and 'this' parameters are TypeSCript
     // syntax.
-    if (node.questionToken || node.type || (subtreeFlags & TransformFlags.ContainsTypeScriptClassSyntax && some(node.decorators)) || isThisIdentifier(name)) {
+    if (node.questionToken || node.type || (subtreeFlags & TransformFlags.ContainsTypeScriptClassSyntax && some(node.decorators)) || isThqn.is.kind(Identifier, name)) {
       transformFlags |= TransformFlags.AssertTypeScript;
     }
 

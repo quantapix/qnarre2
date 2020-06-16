@@ -75,7 +75,7 @@ namespace qnr {
    * Wrap a custom script or declaration transformer object in a `Transformer` callback with fallback support for transforming bundles.
    */
   function wrapCustomTransformer(transformer: CustomTransformer): Transformer<Bundle | SourceFile> {
-    return (node) => (isBundle(node) ? transformer.transformBundle(node) : transformer.transformSourceFile(node));
+    return (node) => (qn.is.kind(Bundle, node) ? transformer.transformBundle(node) : transformer.transformSourceFile(node));
   }
 
   /**
@@ -222,7 +222,7 @@ namespace qnr {
     };
 
     function transformRoot(node: T) {
-      return node && (!isSourceFile(node) || !node.isDeclarationFile) ? transformation(node) : node;
+      return node && (!qn.is.kind(SourceFile, node) || !node.isDeclarationFile) ? transformation(node) : node;
     }
 
     /**

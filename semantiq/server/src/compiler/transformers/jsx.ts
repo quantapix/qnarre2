@@ -98,7 +98,7 @@ namespace qnr {
           )
         );
 
-        if (isJsxSpreadAttribute(attrs[0])) {
+        if (qn.is.kind(JsxSpreadAttribute, attrs[0])) {
           // We must always emit at least one object literal before a spread
           // argument.
           segments.unshift(createObjectLiteral());
@@ -267,7 +267,7 @@ namespace qnr {
         return getTagName(node.openingElement);
       } else {
         const name = node.tagName;
-        if (isIdentifier(name) && isIntrinsicJsxName(name.escapedText)) {
+        if (qn.is.kind(Identifier, name) && isIntrinsicJsxName(name.escapedText)) {
           return createLiteral(idText(name));
         } else {
           return createExpressionFromEntityName(name);

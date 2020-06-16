@@ -326,7 +326,7 @@ namespace qnr {
           continue;
         }
 
-        if (isNamedExports(externalImport.exportClause)) {
+        if (qn.is.kind(NamedExports, externalImport.exportClause)) {
           for (const element of externalImport.exportClause.elements) {
             // write name of indirectly exported entry, i.e. 'export {x} from ...'
             exportedNames.push(createPropertyAssignment(createLiteral(idText(element.name || element.propertyName)), createTrue()));
@@ -422,7 +422,7 @@ namespace qnr {
             case Syntax.ExportDeclaration:
               assert(importVariableName !== undefined);
               if (entry.exportClause) {
-                if (isNamedExports(entry.exportClause)) {
+                if (qn.is.kind(NamedExports, entry.exportClause)) {
                   //  export {a, b as c} from 'foo'
                   //
                   // emit as:
@@ -695,7 +695,7 @@ namespace qnr {
     function hoistBindingElement(node: VariableDeclaration | BindingElement): void {
       if (qn.is.kind(BindingPattern, node.name)) {
         for (const element of node.name.elements) {
-          if (!isOmittedExpression(element)) {
+          if (!qn.is.kind(OmittedExpression, element)) {
             hoistBindingElement(element);
           }
         }
@@ -924,7 +924,7 @@ namespace qnr {
 
       if (qn.is.kind(BindingPattern, decl.name)) {
         for (const element of decl.name.elements) {
-          if (!isOmittedExpression(element)) {
+          if (!qn.is.kind(OmittedExpression, element)) {
             statements = appendExportsOfBindingElement(statements, element, exportSelf);
           }
         }
@@ -1035,7 +1035,7 @@ namespace qnr {
      * @param value The exported value.
      */
     function createExportExpression(name: Identifier | StringLiteral, value: Expression) {
-      const exportName = isIdentifier(name) ? createLiteral(name) : name;
+      const exportName = qn.is.kind(Identifier, name) ? createLiteral(name) : name;
       setEmitFlags(value, getEmitFlags(value) | EmitFlags.NoComments);
       return setCommentRange(createCall(exportFunction, /*typeArguments*/ undefined, [exportName, value]), value);
     }
@@ -1182,7 +1182,7 @@ namespace qnr {
      * @param node The node to test.
      */
     function shouldHoistForInitializer(node: ForInitializer): node is VariableDeclarationList {
-      return isVariableDeclarationList(node) && shouldHoistVariableDeclarationList(node);
+      return qn.is.kind(VariableDeclarationList, node) && shouldHoistVariableDeclarationList(node);
     }
 
     /**
@@ -1383,17 +1383,17 @@ namespace qnr {
     function hasExportedReferenceInDestructuringTarget(node: Expression | ObjectLiteralElementLike): boolean {
       if (isAssignmentExpression(node, /*excludeCompoundAssignment*/ true)) {
         return hasExportedReferenceInDestructuringTarget(node.left);
-      } else if (isSpreadElement(node)) {
+      } else if (qn.is.kind(SpreadElement, node)) {
         return hasExportedReferenceInDestructuringTarget(node.expression);
-      } else if (isObjectLiteralExpression(node)) {
+      } else if (qn.is.kind(ObjectLiteralExpression, node)) {
         return some(node.properties, hasExportedReferenceInDestructuringTarget);
       } else if (isArrayLiteralExpression(node)) {
         return some(node.elements, hasExportedReferenceInDestructuringTarget);
-      } else if (isShorthandPropertyAssignment(node)) {
+      } else if (qn.is.kind(ShorthandPropertyAssignment, node)) {
         return hasExportedReferenceInDestructuringTarget(node.name);
-      } else if (isPropertyAssignment(node)) {
+      } else if (qn.is.kind(PropertyAssignment, node)) {
         return hasExportedReferenceInDestructuringTarget(node.initializer);
-      } else if (isIdentifier(node)) {
+      } else if (qn.is.kind(Identifier, node)) {
         const container = resolver.getReferencedExportContainer(node);
         return container !== undefined && container.kind === Syntax.SourceFile;
       } else {
@@ -1503,12 +1503,12 @@ namespace qnr {
       if (!isGeneratedIdentifier(name) && !isLocalName(name)) {
         const importDeclaration = resolver.getReferencedImportDeclaration(name);
         if (importDeclaration) {
-          if (isImportClause(importDeclaration)) {
+          if (qn.is.kind(ImportClause, importDeclaration)) {
             return setTextRange(
               createPropertyAssignment(getSynthesizedClone(name), createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent), createIdentifier('default'))),
               /*location*/ node
             );
-          } else if (isImportSpecifier(importDeclaration)) {
+          } else if (qn.is.kind(ImportSpecifier, importDeclaration)) {
             return setTextRange(
               createPropertyAssignment(
                 getSynthesizedClone(name),
@@ -1567,9 +1567,9 @@ namespace qnr {
       if (!isGeneratedIdentifier(node) && !isLocalName(node)) {
         const importDeclaration = resolver.getReferencedImportDeclaration(node);
         if (importDeclaration) {
-          if (isImportClause(importDeclaration)) {
+          if (qn.is.kind(ImportClause, importDeclaration)) {
             return setTextRange(createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent), createIdentifier('default')), /*location*/ node);
-          } else if (isImportSpecifier(importDeclaration)) {
+          } else if (qn.is.kind(ImportSpecifier, importDeclaration)) {
             return setTextRange(
               createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent.parent.parent), getSynthesizedClone(importDeclaration.propertyName || importDeclaration.name)),
               /*location*/ node
@@ -1595,7 +1595,13 @@ namespace qnr {
       // - We do not substitute identifiers that were originally the name of an enum or
       //   namespace due to how they are transformed in TypeScript.
       // - We only substitute identifiers that are exported at the top level.
-      if (isAssignmentOperator(node.operatorToken.kind) && isIdentifier(node.left) && !isGeneratedIdentifier(node.left) && !isLocalName(node.left) && !isDeclarationNameOfEnumOrNamespace(node.left)) {
+      if (
+        isAssignmentOperator(node.operatorToken.kind) &&
+        qn.is.kind(Identifier, node.left) &&
+        !isGeneratedIdentifier(node.left) &&
+        !isLocalName(node.left) &&
+        !isDeclarationNameOfEnumOrNamespace(node.left)
+      ) {
         const exportedNames = getExports(node.left);
         if (exportedNames) {
           // For each additional export of the declaration, apply an export assignment.
@@ -1628,7 +1634,7 @@ namespace qnr {
       // - We only substitute identifiers that are exported at the top level.
       if (
         (node.operator === Syntax.Plus2Token || node.operator === Syntax.Minus2Token) &&
-        isIdentifier(node.operand) &&
+        qn.is.kind(Identifier, node.operand) &&
         !isGeneratedIdentifier(node.operand) &&
         !isLocalName(node.operand) &&
         !isDeclarationNameOfEnumOrNamespace(node.operand)

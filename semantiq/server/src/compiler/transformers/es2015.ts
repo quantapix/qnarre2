@@ -927,7 +927,7 @@ namespace qnr {
         superCallExpression = createDefaultSuperCallOrThis();
       } else if (isDerivedClass && statementOffset < constructor.body.statements.length) {
         const firstStatement = constructor.body.statements[statementOffset];
-        if (isExpressionStatement(firstStatement) && isSuperCall(firstStatement.expression)) {
+        if (qn.is.kind(ExpressionStatement, firstStatement) && isSuperCall(firstStatement.expression)) {
           superCallExpression = visitImmediateSuperCallInBody(firstStatement.expression);
         }
       }
@@ -1441,10 +1441,10 @@ namespace qnr {
       const memberFunction = transformFunctionLikeToExpression(member, /*location*/ member, /*name*/ undefined, container);
       const propertyName = visitNode(member.name, visitor, isPropertyName);
       let e: Expression;
-      if (!isPrivateIdentifier(propertyName) && context.getCompilerOptions().useDefineForClassFields) {
+      if (!qn.is.kind(PrivateIdentifier, propertyName) && context.getCompilerOptions().useDefineForClassFields) {
         const name = qn.is.kind(ComputedPropertyName, propertyName)
           ? propertyName.expression
-          : isIdentifier(propertyName)
+          : qn.is.kind(Identifier, propertyName)
           ? StringLiteral.create(qy_get.unescUnderscores(propertyName.escapedText))
           : propertyName;
         e = createObjectDefinePropertyCall(receiver, name, createPropertyDescriptor({ value: memberFunction, enumerable: false, writable: true, configurable: true }));
@@ -1501,7 +1501,7 @@ namespace qnr {
       setSourceMapRange(target, firstAccessor.name);
 
       const visitedAccessorName = visitNode(firstAccessor.name, visitor, isPropertyName);
-      if (isPrivateIdentifier(visitedAccessorName)) {
+      if (qn.is.kind(PrivateIdentifier, visitedAccessorName)) {
         return Debug.failBadSyntax(visitedAccessorName, 'Encountered unhandled private identifier while transforming ES2015.');
       }
       const propertyName = createExpressionForPropertyName(visitedAccessorName);
@@ -1673,7 +1673,7 @@ namespace qnr {
       let statementOffset: number | undefined;
 
       resumeLexicalEnvironment();
-      if (isBlock(body)) {
+      if (qn.is.kind(Block, body)) {
         // ensureUseStrict is false because no new prologue-directive should be added.
         // addStandardPrologue will put already-existing directives at the beginning of the target statement-array
         statementOffset = addStandardPrologue(prologue, body.statements, /*ensureUseStrict*/ false);
@@ -1684,7 +1684,7 @@ namespace qnr {
       multiLine = addDefaultValueAssignmentsIfNeeded(statements, node) || multiLine;
       multiLine = addRestParameterIfNeeded(statements, node, /*inConstructorWithSynthesizedSuper*/ false) || multiLine;
 
-      if (isBlock(body)) {
+      if (qn.is.kind(Block, body)) {
         // addCustomPrologue puts already-existing directives at the beginning of the target statement-array
         statementOffset = addCustomPrologue(statements, body.statements, statementOffset, visitor);
 
@@ -1735,7 +1735,7 @@ namespace qnr {
       }
 
       statements.unshift(...prologue);
-      if (isBlock(body) && arrayIsEqualTo(statements, body.statements)) {
+      if (qn.is.kind(Block, body) && arrayIsEqualTo(statements, body.statements)) {
         // no changes were made, preserve the tree
         return body;
       }
@@ -2077,7 +2077,7 @@ namespace qnr {
     function convertForOfStatementHead(node: ForOfStatement, boundValue: Expression, convertedLoopBodyStatements: Statement[]) {
       const statements: Statement[] = [];
       const initializer = node.initializer;
-      if (isVariableDeclarationList(initializer)) {
+      if (qn.is.kind(VariableDeclarationList, initializer)) {
         if (node.initializer.flags & NodeFlags.BlockScoped) {
           enableSubstitutionsForBlockScopedBindings();
         }
@@ -2134,7 +2134,7 @@ namespace qnr {
         return createSyntheticBlockForConvertedStatements(addRange(statements, convertedLoopBodyStatements));
       } else {
         const statement = visitNode(node.statement, visitor, isStatement, liftToBlock);
-        if (isBlock(statement)) {
+        if (qn.is.kind(Block, statement)) {
           return updateBlock(statement, setTextRange(NodeArray.create(concatenate(statements, statement.statements)), statement.statements));
         } else {
           statements.push(statement);
@@ -2177,7 +2177,7 @@ namespace qnr {
       //
       // we don't want to emit a temporary variable for the RHS, just use it directly.
       const counter = createLoopVariable();
-      const rhsReference = isIdentifier(expression) ? getGeneratedNameForNode(expression) : createTempVariable(/*recordTempVariable*/ undefined);
+      const rhsReference = qn.is.kind(Identifier, expression) ? getGeneratedNameForNode(expression) : createTempVariable(/*recordTempVariable*/ undefined);
 
       // The old emitter does not emit source maps for the expression
       setEmitFlags(expression, EmitFlags.NoSourceMap | getEmitFlags(expression));
@@ -2209,8 +2209,8 @@ namespace qnr {
 
     function convertForOfStatementForIterable(node: ForOfStatement, outermostLabeledStatement: LabeledStatement, convertedLoopBodyStatements: Statement[], ancestorFacts: HierarchyFacts): Statement {
       const expression = visitNode(node.expression, visitor, isExpression);
-      const iterator = isIdentifier(expression) ? getGeneratedNameForNode(expression) : createTempVariable(/*recordTempVariable*/ undefined);
-      const result = isIdentifier(expression) ? getGeneratedNameForNode(iterator) : createTempVariable(/*recordTempVariable*/ undefined);
+      const iterator = qn.is.kind(Identifier, expression) ? getGeneratedNameForNode(expression) : createTempVariable(/*recordTempVariable*/ undefined);
+      const result = qn.is.kind(Identifier, expression) ? getGeneratedNameForNode(iterator) : createTempVariable(/*recordTempVariable*/ undefined);
       const errorRecord = createUniqueName('e');
       const catchVariable = getGeneratedNameForNode(errorRecord);
       const returnMethod = createTempVariable(/*recordTempVariable*/ undefined);
@@ -2343,15 +2343,15 @@ namespace qnr {
     }
 
     function shouldConvertInitializerOfForStatement(node: IterationStatement): node is ForStatementWithConvertibleInitializer {
-      return isForStatement(node) && !!node.initializer && shouldConvertPartOfIterationStatement(node.initializer);
+      return qn.is.kind(ForStatement, node) && !!node.initializer && shouldConvertPartOfIterationStatement(node.initializer);
     }
 
     function shouldConvertConditionOfForStatement(node: IterationStatement): node is ForStatementWithConvertibleCondition {
-      return isForStatement(node) && !!node.condition && shouldConvertPartOfIterationStatement(node.condition);
+      return qn.is.kind(ForStatement, node) && !!node.condition && shouldConvertPartOfIterationStatement(node.condition);
     }
 
     function shouldConvertIncrementorOfForStatement(node: IterationStatement): node is ForStatementWithConvertibleIncrementor {
-      return isForStatement(node) && !!node.incrementor && shouldConvertPartOfIterationStatement(node.incrementor);
+      return qn.is.kind(ForStatement, node) && !!node.incrementor && shouldConvertPartOfIterationStatement(node.incrementor);
     }
 
     function shouldConvertIterationStatement(node: IterationStatement) {
@@ -2377,7 +2377,7 @@ namespace qnr {
           state.hoistedLocalVariables!.push(node);
         } else {
           for (const element of node.elements) {
-            if (!isOmittedExpression(element)) {
+            if (!qn.is.kind(OmittedExpression, element)) {
               visit(element.name);
             }
           }
@@ -2753,7 +2753,7 @@ namespace qnr {
         }
       }
 
-      if (isBlock(statement)) {
+      if (qn.is.kind(Block, statement)) {
         addRange(statements, statement.statements);
       } else {
         statements.push(statement);
@@ -2763,7 +2763,7 @@ namespace qnr {
       insertStatementsAfterStandardPrologue(statements, lexicalEnvironment);
 
       const loopBody = createBlock(statements, /*multiLine*/ true);
-      if (isBlock(statement)) setOriginalNode(loopBody, statement);
+      if (qn.is.kind(Block, statement)) setOriginalNode(loopBody, statement);
 
       const containsYield = (node.statement.transformFlags & TransformFlags.ContainsYield) !== 0;
 
@@ -2926,7 +2926,7 @@ namespace qnr {
       const name = decl.name;
       if (qn.is.kind(BindingPattern, name)) {
         for (const element of name.elements) {
-          if (!isOmittedExpression(element)) {
+          if (!qn.is.kind(OmittedExpression, element)) {
             processLoopVariableDeclaration(container, element, loopParameters, loopOutParameters, hasCapturedBindingsInForInitializer);
           }
         }
@@ -2939,7 +2939,7 @@ namespace qnr {
           if (checkFlags & NodeCheckFlags.NeedsLoopOutParameter) {
             flags |= LoopOutParameterFlags.Body;
           }
-          if (isForStatement(container) && container.initializer && resolver.isBindingCapturedByNode(container.initializer, decl)) {
+          if (qn.is.kind(ForStatement, container) && container.initializer && resolver.isBindingCapturedByNode(container.initializer, decl)) {
             flags |= LoopOutParameterFlags.Initializer;
           }
           loopOutParameters.push({ flags, originalName: name, outParamName });
@@ -3198,7 +3198,7 @@ namespace qnr {
 
       // The class statements are the statements generated by visiting the first statement with initializer of the
       // body (1), while all other statements are added to remainingStatements (2)
-      const isVariableStatementWithInitializer = (stmt: Statement) => isVariableStatement(stmt) && !!first(stmt.declarationList.declarations).initializer;
+      const isVariableStatementWithInitializer = (stmt: Statement) => qn.is.kind(VariableStatement, stmt) && !!first(stmt.declarationList.declarations).initializer;
 
       // visit the class body statements outside of any converted loop body.
       const savedConvertedLoopState = convertedLoopState;
@@ -3259,7 +3259,7 @@ namespace qnr {
       }
 
       // Find the trailing 'return' statement (4)
-      while (!isReturnStatement(elementAt(funcStatements, classBodyEnd)!)) {
+      while (!qn.is.kind(ReturnStatement, elementAt(funcStatements, classBodyEnd)!)) {
         classBodyEnd--;
       }
 
@@ -3447,7 +3447,7 @@ namespace qnr {
     }
 
     function isPackedElement(node: Expression) {
-      return !isOmittedExpression(node);
+      return !qn.is.kind(OmittedExpression, node);
     }
 
     function isPackedArrayLiteral(node: Expression) {
@@ -3456,12 +3456,15 @@ namespace qnr {
 
     function isCallToHelper(firstSegment: Expression, helperName: __String) {
       return (
-        isCallExpression(firstSegment) && isIdentifier(firstSegment.expression) && getEmitFlags(firstSegment.expression) & EmitFlags.HelperName && firstSegment.expression.escapedText === helperName
+        qn.is.kind(CallExpression, firstSegment) &&
+        qn.is.kind(Identifier, firstSegment.expression) &&
+        getEmitFlags(firstSegment.expression) & EmitFlags.HelperName &&
+        firstSegment.expression.escapedText === helperName
       );
     }
 
     function partitionSpread(node: Expression) {
-      return isSpreadElement(node) ? visitSpanOfSpreads : visitSpanOfNonSpreads;
+      return qn.is.kind(SpreadElement, node) ? visitSpanOfSpreads : visitSpanOfNonSpreads;
     }
 
     function visitSpanOfSpreads(chunk: Expression[]): VisitResult<Expression> {
@@ -3696,7 +3699,7 @@ namespace qnr {
         return substituteExpression(node);
       }
 
-      if (isIdentifier(node)) {
+      if (qn.is.kind(Identifier, node)) {
         return substituteIdentifier(node);
       }
 
@@ -3840,7 +3843,7 @@ namespace qnr {
       }
 
       const expression = (<SpreadElement>callArgument).expression;
-      return isIdentifier(expression) && expression.escapedText === 'arguments';
+      return qn.is.kind(Identifier, expression) && expression.escapedText === 'arguments';
     }
   }
 

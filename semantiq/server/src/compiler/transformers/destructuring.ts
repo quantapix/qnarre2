@@ -67,7 +67,7 @@ namespace qnr {
     if (value) {
       value = visitNode(value, visitor, isExpression);
 
-      if ((isIdentifier(value) && bindingOrAssignmentElementAssignsToName(node, value.escapedText)) || bindingOrAssignmentElementContainsNonLiteralComputedName(node)) {
+      if ((qn.is.kind(Identifier, value) && bindingOrAssignmentElementAssignsToName(node, value.escapedText)) || bindingOrAssignmentElementContainsNonLiteralComputedName(node)) {
         // If the right-hand value of the assignment is also an assignment target then
         // we need to cache the right-hand value.
         value = ensureIdentifier(flattenContext, value, /*reuseIdentifierExpressions*/ false, location);
@@ -121,7 +121,7 @@ namespace qnr {
     const target = getTargetOfBindingOrAssignmentElement(element)!; // TODO: GH#18217
     if (isBindingOrAssignmentPattern(target)) {
       return bindingOrAssignmentPatternAssignsToName(target, escName);
-    } else if (isIdentifier(target)) {
+    } else if (qn.is.kind(Identifier, target)) {
       return target.escapedText === escName;
     }
     return false;
@@ -192,9 +192,12 @@ namespace qnr {
       visitor,
     };
 
-    if (isVariableDeclaration(node)) {
+    if (qn.is.kind(VariableDeclaration, node)) {
       let initializer = getInitializerOfBindingOrAssignmentElement(node);
-      if (initializer && ((isIdentifier(initializer) && bindingOrAssignmentElementAssignsToName(node, initializer.escapedText)) || bindingOrAssignmentElementContainsNonLiteralComputedName(node))) {
+      if (
+        initializer &&
+        ((qn.is.kind(Identifier, initializer) && bindingOrAssignmentElementAssignsToName(node, initializer.escapedText)) || bindingOrAssignmentElementContainsNonLiteralComputedName(node))
+      ) {
         // If the right-hand value of the assignment is also an assignment target then
         // we need to cache the right-hand value.
         initializer = ensureIdentifier(flattenContext, initializer, /*reuseIdentifierExpressions*/ false, initializer);
@@ -389,7 +392,7 @@ namespace qnr {
         } else {
           bindingElements = append(bindingElements, element);
         }
-      } else if (isOmittedExpression(element)) {
+      } else if (qn.is.kind(OmittedExpression, element)) {
         continue;
       } else if (!getRestIndicatorOfBindingOrAssignmentElement(element)) {
         const rhsValue = createElementAccess(value, i);
@@ -458,7 +461,7 @@ namespace qnr {
    * @param location The location to use for source maps and comments.
    */
   function ensureIdentifier(flattenContext: FlattenContext, value: Expression, reuseIdentifierExpressions: boolean, location: TextRange) {
-    if (isIdentifier(value) && reuseIdentifierExpressions) {
+    if (qn.is.kind(Identifier, value) && reuseIdentifierExpressions) {
       return value;
     } else {
       const temp = createTempVariable(/*recordTempVariable*/ undefined);

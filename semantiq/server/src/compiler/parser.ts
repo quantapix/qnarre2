@@ -342,7 +342,7 @@ namespace qnr {
           case Syntax.ArrayType:
             return this.objectOrObjectArrayTypeReference((n as ArrayTypeNode).elementType);
           default:
-            return qn.is.kind(TypeReferenceNode, n) && isIdentifier(n.typeName) && n.typeName.escapedText === 'Object' && !n.typeArguments;
+            return qn.is.kind(TypeReferenceNode, n) && qn.is.kind(Identifier, n.typeName) && n.typeName.escapedText === 'Object' && !n.typeArguments;
         }
       }
     })();
@@ -358,7 +358,7 @@ namespace qnr {
         return tok() !== Syntax.AsteriskToken && tok() !== Syntax.AsKeyword && tok() !== Syntax.OpenBraceToken && can.followModifier();
       }
       followContextualOfKeyword() {
-        return next.isIdentifier() && next.tok() === Syntax.CloseParenToken;
+        return next.qn.is.kind(Identifier, ) && next.tok() === Syntax.CloseParenToken;
       }
       followTypeArgumentsInExpression() {
         switch (tok()) {
@@ -447,7 +447,7 @@ namespace qnr {
           (tok() === Syntax.AsyncKeyword && lookAhead(next.isFunctionKeywordOnSameLine))
         );
       }
-      isIdentifier() {
+      qn.is.kind(Identifier, ) {
         this.tok();
         return is.identifier();
       }
@@ -1144,7 +1144,7 @@ namespace qnr {
         source.endOfFileToken = addJSDocComment(parse.tokenNode());
         const getImportMetaIfNecessary = () => {
           const isImportMeta = (n: Node): boolean => {
-            return isMetaProperty(n) && n.keywordToken === Syntax.ImportKeyword && n.name.escapedText === 'meta';
+            return qn.is.kind(MetaProperty, n) && n.keywordToken === Syntax.ImportKeyword && n.name.escapedText === 'meta';
           };
           const walkTreeForExternalModuleIndicators = (n: Node): Node | undefined => {
             return isImportMeta(n) ? n : qn.forEach.child(n, walkTreeForExternalModuleIndicators);
@@ -1679,7 +1679,7 @@ namespace qnr {
               next.tok();
               if (tok() === Syntax.PlusToken || tok() === Syntax.MinusToken) return next.tok() === Syntax.ReadonlyKeyword;
               if (tok() === Syntax.ReadonlyKeyword) next.tok();
-              return tok() === Syntax.OpenBracketToken && next.isIdentifier() && next.tok() === Syntax.InKeyword;
+              return tok() === Syntax.OpenBracketToken && next.qn.is.kind(Identifier, ) && next.tok() === Syntax.InKeyword;
             };
             return lookAhead(isStartOfMappedType) ? this.mappedType() : this.typeLiteral();
           case Syntax.OpenBracketToken:
@@ -1873,7 +1873,7 @@ namespace qnr {
           }
           return false;
         };
-        if (isYieldExpression()) return this.yieldExpression();
+        if (qn.is.kind(YieldExpression, )) return this.yieldExpression();
         const tryParenthesizedArrowFunction = () => {
           const isParenthesizedArrowFunction = (): Tristate => {
             if (tok() === Syntax.OpenParenToken || tok() === Syntax.LessThanToken || tok() === Syntax.AsyncKeyword) {
@@ -2016,7 +2016,7 @@ namespace qnr {
         n.modifiers = this.modifiersForArrowFunction();
         const isAsync = hasModifierOfKind(n, Syntax.AsyncKeyword) ? SignatureFlags.Await : SignatureFlags.None;
         if (!fillSignature(Syntax.ColonToken, isAsync, n) && !allowAmbiguity) return;
-        const hasJSDocFunctionType = n.type && isJSDocFunctionType(n.type);
+        const hasJSDocFunctionType = n.type && qn.is.kind(JSDocFunctionType, n.type);
         if (!allowAmbiguity && tok() !== Syntax.EqualsGreaterThanToken && (hasJSDocFunctionType || tok() !== Syntax.OpenBraceToken)) return;
         return n;
       }
@@ -2238,7 +2238,7 @@ namespace qnr {
         n.name = this.rightSideOfDot(true, true);
         if (questionDotToken || parse.reparseOptionalChain(expression)) {
           n.flags |= NodeFlags.OptionalChain;
-          if (isPrivateIdentifier(n.name)) this.errorAtRange(n.name, Diagnostics.An_optional_chain_cannot_contain_private_identifiers);
+          if (qn.is.kind(PrivateIdentifier, n.name)) this.errorAtRange(n.name, Diagnostics.An_optional_chain_cannot_contain_private_identifiers);
         }
         return finishNode(n);
       }
@@ -3267,7 +3267,7 @@ namespace qnr {
       }
       moduleReference() {
         const qp_isExternalModuleReference = () => tok() === Syntax.RequireKeyword && lookAhead(next.isOpenParen);
-        return qp_isExternalModuleReference() ? this.externalModuleReference() : this.entityName(false);
+        return qp_qn.is.kind(ExternalModuleReference, ) ? this.externalModuleReference() : this.entityName(false);
       }
       externalModuleReference() {
         const n = create.node(Syntax.ExternalModuleReference);
@@ -3375,13 +3375,13 @@ namespace qnr {
       }
       reparseOptionalChain(n: Expression) {
         if (n.flags & NodeFlags.OptionalChain) return true;
-        if (isNonNullExpression(n)) {
+        if (qn.is.kind(NonNullExpression, n)) {
           let expr = n.expression;
-          while (isNonNullExpression(expr) && !(expr.flags & NodeFlags.OptionalChain)) {
+          while (qn.is.kind(NonNullExpression, expr) && !(expr.flags & NodeFlags.OptionalChain)) {
             expr = expr.expression;
           }
           if (expr.flags & NodeFlags.OptionalChain) {
-            while (isNonNullExpression(n)) {
+            while (qn.is.kind(NonNullExpression, n)) {
               n.flags |= NodeFlags.OptionalChain;
               n = n.expression;
             }
@@ -3460,7 +3460,7 @@ namespace qnr {
       child(openingTag: JsxOpeningElement | JsxOpeningFragment, token: JsxTokenSyntax): JsxChild | undefined {
         switch (token) {
           case Syntax.EndOfFileToken:
-            if (isJsxOpeningFragment(openingTag)) {
+            if (qn.is.kind(JsxOpeningFragment, openingTag)) {
               parse.errorAtRange(openingTag, Diagnostics.JSX_fragment_has_no_corresponding_closing_tag);
             } else {
               const tag = openingTag.tagName;
@@ -4205,7 +4205,7 @@ namespace qnr {
         if (fullName) {
           let rightNode = fullName;
           while (true) {
-            if (isIdentifier(rightNode) || !rightNode.body) return isIdentifier(rightNode) ? rightNode : rightNode.name;
+            if (qn.is.kind(Identifier, rightNode) || !rightNode.body) return qn.is.kind(Identifier, rightNode) ? rightNode : rightNode.name;
             rightNode = rightNode.body;
           }
         }
@@ -4227,7 +4227,7 @@ namespace qnr {
                   (child.kind === Syntax.JSDocParameterTag || child.kind === Syntax.JSDocPropertyTag) &&
                   target !== PropertyLike.CallbackParameter &&
                   name &&
-                  (isIdentifier(child.name) || !escapedTextsEqual(name, child.name.left))
+                  (qn.is.kind(Identifier, child.name) || !escapedTextsEqual(name, child.name.left))
                 ) {
                   return false;
                 }
@@ -4518,8 +4518,8 @@ namespace qnr {
       return r;
     }
     function escapedTextsEqual(a: EntityName, b: EntityName): boolean {
-      while (!isIdentifier(a) || !isIdentifier(b)) {
-        if (!isIdentifier(a) && !isIdentifier(b) && a.right.escapedText === b.right.escapedText) {
+      while (!qn.is.kind(Identifier, a) || !qn.is.kind(Identifier, b)) {
+        if (!qn.is.kind(Identifier, a) && !qn.is.kind(Identifier, b) && a.right.escapedText === b.right.escapedText) {
           a = a.left;
           b = b.left;
         } else return false;

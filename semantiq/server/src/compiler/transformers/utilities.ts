@@ -16,7 +16,7 @@ namespace qnr {
 
   function containsDefaultReference(node: NamedImportBindings | undefined) {
     if (!node) return false;
-    if (!isNamedImports(node)) return false;
+    if (!qn.is.kind(NamedImports, node)) return false;
     return some(node.elements, isNamedDefaultReference);
   }
 
@@ -48,7 +48,7 @@ namespace qnr {
     if (!bindings) {
       return false;
     }
-    if (!isNamedImports(bindings)) return false;
+    if (!qn.is.kind(NamedImports, bindings)) return false;
     let defaultRefCount = 0;
     for (const binding of bindings.elements) {
       if (isNamedDefaultReference(binding)) {
@@ -63,7 +63,7 @@ namespace qnr {
     // Import default is needed if there's a default import or a default ref and no other refs (meaning an import star helper wasn't requested)
     return (
       !getImportNeedsImportStarHelper(node) &&
-      (isDefaultImport(node) || (!!node.importClause && isNamedImports(node.importClause.namedBindings!) && containsDefaultReference(node.importClause.namedBindings)))
+      (isDefaultImport(node) || (!!node.importClause && qn.is.kind(NamedImports, node.importClause.namedBindings!) && containsDefaultReference(node.importClause.namedBindings)))
     ); // TODO: GH#18217
   }
 
@@ -210,7 +210,7 @@ namespace qnr {
   function collectExportedVariableInfo(decl: VariableDeclaration | BindingElement, uniqueExports: Map<boolean>, exportedNames: Identifier[] | undefined) {
     if (qn.is.kind(BindingPattern, decl.name)) {
       for (const element of decl.name.elements) {
-        if (!isOmittedExpression(element)) {
+        if (!qn.is.kind(OmittedExpression, element)) {
           exportedNames = collectExportedVariableInfo(element, uniqueExports, exportedNames);
         }
       }
@@ -241,7 +241,7 @@ namespace qnr {
    *  - this is mostly subjective beyond the requirement that the expression not be sideeffecting
    */
   export function isSimpleCopiableExpression(expression: Expression) {
-    return StringLiteral.like(expression) || expression.kind === Syntax.NumericLiteral || isKeyword(expression.kind) || isIdentifier(expression);
+    return StringLiteral.like(expression) || expression.kind === Syntax.NumericLiteral || isKeyword(expression.kind) || qn.is.kind(Identifier, expression);
   }
 
   /**
@@ -250,7 +250,7 @@ namespace qnr {
    * any such locations
    */
   export function isSimpleInlineableExpression(expression: Expression) {
-    return (!isIdentifier(expression) && isSimpleCopiableExpression(expression)) || isWellKnownSymbolSyntactically(expression);
+    return (!qn.is.kind(Identifier, expression) && isSimpleCopiableExpression(expression)) || isWellKnownSymbolSyntactically(expression);
   }
 
   export function isCompoundAssignment(kind: BinaryOperator): kind is CompoundAssignmentOperator {
@@ -304,7 +304,7 @@ namespace qnr {
         return index;
       }
 
-      const superIndex = findIndex(statements, (s) => isExpressionStatement(s) && isSuperCall(s.expression), index);
+      const superIndex = findIndex(statements, (s) => qn.is.kind(ExpressionStatement, s) && isSuperCall(s.expression), index);
       if (superIndex > -1) {
         for (let i = index; i <= superIndex; i++) {
           result.push(visitNode(statements[i], visitor, isStatement));

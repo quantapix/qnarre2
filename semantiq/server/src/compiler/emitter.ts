@@ -265,7 +265,7 @@ namespace qnr {
 
     function emitSourceFileOrBundle({ jsFilePath, sourceMapFilePath, declarationFilePath, declarationMapPath, buildInfoPath }: EmitFileNames, sourceFileOrBundle: SourceFile | Bundle | undefined) {
       let buildInfoDirectory: string | undefined;
-      if (buildInfoPath && sourceFileOrBundle && isBundle(sourceFileOrBundle)) {
+      if (buildInfoPath && sourceFileOrBundle && qn.is.kind(Bundle, sourceFileOrBundle)) {
         buildInfoDirectory = getDirectoryPath(getNormalizedAbsolutePath(buildInfoPath, host.getCurrentDirectory()));
         bundleBuildInfo = {
           commonSourceDirectory: relativeToBuildInfo(host.getCommonSourceDirectory()),
@@ -375,11 +375,11 @@ namespace qnr {
         if (emitOnlyDtsFiles || compilerOptions.emitDeclarationOnly) emitSkipped = true;
         return;
       }
-      const sourceFiles = isSourceFile(sourceFileOrBundle) ? [sourceFileOrBundle] : sourceFileOrBundle.sourceFiles;
+      const sourceFiles = qn.is.kind(SourceFile, sourceFileOrBundle) ? [sourceFileOrBundle] : sourceFileOrBundle.sourceFiles;
       const filesForEmit = forceDtsEmit ? sourceFiles : filter(sourceFiles, isSourceFileNotJson);
       // Setup and perform the transformation to retrieve declarations from the input files
       const inputListOrBundle =
-        compilerOptions.outFile || compilerOptions.out ? [createBundle(filesForEmit, !isSourceFile(sourceFileOrBundle) ? sourceFileOrBundle.prepends : undefined)] : filesForEmit;
+        compilerOptions.outFile || compilerOptions.out ? [createBundle(filesForEmit, !qn.is.kind(SourceFile, sourceFileOrBundle) ? sourceFileOrBundle.prepends : undefined)] : filesForEmit;
       if (emitOnlyDtsFiles && !getEmitDeclarations(compilerOptions)) {
         // Checker wont collect the linked aliases since thats only done when declaration is enabled.
         // Do that here when emitting only dts files
@@ -437,12 +437,12 @@ namespace qnr {
     }
 
     function collectLinkedAliases(node: Node) {
-      if (isExportAssignment(node)) {
+      if (qn.is.kind(ExportAssignment, node)) {
         if (node.expression.kind === Syntax.Identifier) {
           resolver.collectLinkedAliases(node.expression as Identifier, /*setVisibility*/ true);
         }
         return;
-      } else if (isExportSpecifier(node)) {
+      } else if (qn.is.kind(ExportSpecifier, node)) {
         resolver.collectLinkedAliases(node.propertyName || node.name, /*setVisibility*/ true);
         return;
       }
@@ -840,10 +840,10 @@ namespace qnr {
     function printNode(hint: EmitHint, node: Node, sourceFile: SourceFile): string {
       switch (hint) {
         case EmitHint.SourceFile:
-          assert(isSourceFile(node), 'Expected a SourceFile node.');
+          assert(qn.is.kind(SourceFile, node), 'Expected a SourceFile node.');
           break;
         case EmitHint.IdentifierName:
-          assert(isIdentifier(node), 'Expected an Identifier node.');
+          assert(qn.is.kind(Identifier, node), 'Expected an Identifier node.');
           break;
         case EmitHint.Expression:
           assert(isExpression(node), 'Expected an Expression node.');
@@ -923,7 +923,7 @@ namespace qnr {
         recordInternalSection &&
         bundleFileInfo &&
         currentSourceFile &&
-        (isDeclaration(node) || isVariableStatement(node)) &&
+        (isDeclaration(node) || qn.is.kind(VariableStatement, node)) &&
         isInternalDeclaration(node, currentSourceFile) &&
         sourceFileTextKind !== BundleFileSectionKind.Internal
       ) {
@@ -1657,10 +1657,10 @@ namespace qnr {
       const numNodes = bundle ? bundle.sourceFiles.length + numPrepends : 1;
       for (let i = 0; i < numNodes; i++) {
         const currentNode = bundle ? (i < numPrepends ? bundle.prepends[i] : bundle.sourceFiles[i - numPrepends]) : node;
-        const sourceFile = isSourceFile(currentNode) ? currentNode : isUnparsedSource(currentNode) ? undefined : currentSourceFile!;
+        const sourceFile = qn.is.kind(SourceFile, currentNode) ? currentNode : qn.is.kind(UnparsedSource, currentNode) ? undefined : currentSourceFile!;
         const shouldSkip = printerOptions.noEmitHelpers || (!!sourceFile && hasRecordedExternalHelpers(sourceFile));
-        const shouldBundle = (isSourceFile(currentNode) || isUnparsedSource(currentNode)) && !isOwnFileEmit;
-        const helpers = isUnparsedSource(currentNode) ? currentNode.helpers : getSortedEmitHelpers(currentNode);
+        const shouldBundle = (qn.is.kind(SourceFile, currentNode) || qn.is.kind(UnparsedSource, currentNode)) && !isOwnFileEmit;
+        const helpers = qn.is.kind(UnparsedSource, currentNode) ? currentNode.helpers : getSortedEmitHelpers(currentNode);
         if (helpers) {
           for (const helper of helpers) {
             if (!helper.scoped) {
@@ -2620,7 +2620,7 @@ namespace qnr {
     function emitDoStatement(node: DoStatement) {
       emitTokenWithComment(Syntax.DoKeyword, node.pos, writeKeyword, node);
       emitEmbeddedStatement(node, node.statement);
-      if (isBlock(node.statement)) {
+      if (qn.is.kind(Block, node.statement)) {
         writeSpace();
       } else {
         writeLineOrSpace(node);
@@ -2818,7 +2818,7 @@ namespace qnr {
     function emitSignatureAndBody(node: FunctionLikeDeclaration, emitSignatureHead: (node: SignatureDeclaration) => void) {
       const body = node.body;
       if (body) {
-        if (isBlock(body)) {
+        if (qn.is.kind(Block, body)) {
           const indentedFlag = getEmitFlags(node) & EmitFlags.Indented;
           if (indentedFlag) {
             increaseIndent();
@@ -3215,7 +3215,7 @@ namespace qnr {
     function emitJsxOpeningElementOrFragment(node: JsxOpeningElement | JsxOpeningFragment) {
       writePunctuation('<');
 
-      if (isJsxOpeningElement(node)) {
+      if (qn.is.kind(JsxOpeningElement, node)) {
         const indented = writeLineSeparatorsAndIndentBefore(node.tagName, node);
         emitJsxTagName(node.tagName);
         emitTypeArguments(node, node.typeArguments);
@@ -3236,7 +3236,7 @@ namespace qnr {
 
     function emitJsxClosingElementOrFragment(node: JsxClosingElement | JsxClosingFragment) {
       writePunctuation('</');
-      if (isJsxClosingElement(node)) {
+      if (qn.is.kind(JsxClosingElement, node)) {
         emitJsxTagName(node.tagName);
       }
       writePunctuation('>');
@@ -3544,7 +3544,7 @@ namespace qnr {
     function emitSyntheticTripleSlashReferencesIfNeeded(node: Bundle) {
       emitTripleSlashDirectives(!!node.hasNoDefaultLib, node.syntheticFileReferences || [], node.syntheticTypeReferences || [], node.syntheticLibReferences || []);
       for (const prepend of node.prepends) {
-        if (isUnparsedSource(prepend) && prepend.syntheticReferences) {
+        if (qn.is.kind(UnparsedSource, prepend) && prepend.syntheticReferences) {
           for (const ref of prepend.syntheticReferences) {
             emit(ref);
             writeLine();
@@ -3666,7 +3666,7 @@ namespace qnr {
     }
 
     function emitPrologueDirectivesIfNeeded(sourceFileOrBundle: Bundle | SourceFile) {
-      if (isSourceFile(sourceFileOrBundle)) {
+      if (qn.is.kind(SourceFile, sourceFileOrBundle)) {
         emitPrologueDirectives(sourceFileOrBundle.statements, sourceFileOrBundle);
       } else {
         const seenPrologueDirectives = createMap<true>();
@@ -3708,7 +3708,7 @@ namespace qnr {
     }
 
     function emitShebangIfNeeded(sourceFileOrBundle: Bundle | SourceFile | UnparsedSource) {
-      if (isSourceFile(sourceFileOrBundle) || isUnparsedSource(sourceFileOrBundle)) {
+      if (qn.is.kind(SourceFile, sourceFileOrBundle) || qn.is.kind(UnparsedSource, sourceFileOrBundle)) {
         const shebang = qy_get.shebang(sourceFileOrBundle.text);
         if (shebang) {
           writeComment(shebang);
@@ -3796,13 +3796,13 @@ namespace qnr {
     }
 
     function emitEmbeddedStatement(parent: Node, node: Statement) {
-      if (isBlock(node) || getEmitFlags(parent) & EmitFlags.SingleLine) {
+      if (qn.is.kind(Block, node) || getEmitFlags(parent) & EmitFlags.SingleLine) {
         writeSpace();
         emit(node);
       } else {
         writeLine();
         increaseIndent();
-        if (isEmptyStatement(node)) {
+        if (qn.is.kind(EmptyStatement, node)) {
           pipelineEmit(EmitHint.EmbeddedStatement, node);
         } else {
           emit(node);
@@ -3839,7 +3839,7 @@ namespace qnr {
       return (
         parameter &&
         parameter.pos === parentNode.pos && // may not have parsed tokens between parent and parameter
-        isArrowFunction(parentNode) && // only arrow functions may have simple arrow head
+        qn.is.kind(ArrowFunction, parentNode) && // only arrow functions may have simple arrow head
         !parentNode.type && // arrow function may not have return type annotation
         !some(parentNode.decorators) && // parent may not have decorators
         !some(parentNode.modifiers) && // parent may not have modifiers
@@ -3850,7 +3850,7 @@ namespace qnr {
         !parameter.questionToken && // parameter may not be optional
         !parameter.type && // parameter may not have a type annotation
         !parameter.initializer && // parameter may not have an initializer
-        isIdentifier(parameter.name)
+        qn.is.kind(Identifier, parameter.name)
       ); // parameter name must be identifier
     }
 
@@ -4353,7 +4353,7 @@ namespace qnr {
       if (isGeneratedIdentifier(node)) {
         return generateName(node);
       } else if (
-        (isIdentifier(node) || isPrivateIdentifier(node)) &&
+        (qn.is.kind(Identifier, node) || qn.is.kind(PrivateIdentifier, node)) &&
         (isSynthesized(node) || !node.parent || !currentSourceFile || (node.parent && currentSourceFile && getSourceFileOfNode(node) !== getOriginalNode(currentSourceFile)))
       ) {
         return idText(node);
@@ -4369,7 +4369,7 @@ namespace qnr {
     function getLiteralTextOfNode(node: LiteralLikeNode, neverAsciiEscape: boolean | undefined, jsxAttributeEscape: boolean): string {
       if (node.kind === Syntax.StringLiteral && (<StringLiteral>node).textSourceNode) {
         const textSourceNode = (<StringLiteral>node).textSourceNode!;
-        if (isIdentifier(textSourceNode) || qn.is.kind(NumericLiteral, textSourceNode)) {
+        if (qn.is.kind(Identifier, textSourceNode) || qn.is.kind(NumericLiteral, textSourceNode)) {
           const text = qn.is.kind(NumericLiteral, textSourceNode) ? textSourceNode.text : getTextOfNode(textSourceNode);
           return jsxAttributeEscape
             ? `"${escapeJsxAttributeString(text)}"`
@@ -4682,7 +4682,7 @@ namespace qnr {
     }
 
     function generateNameForMethodOrAccessor(node: MethodDeclaration | AccessorDeclaration) {
-      if (isIdentifier(node.name)) {
+      if (qn.is.kind(Identifier, node.name)) {
         return generateNameCached(node.name);
       }
       return makeTempVariableName(TempFlags.Auto);
@@ -4751,7 +4751,7 @@ namespace qnr {
 
         // if "node" is a different generated name (having a different
         // "autoGenerateId"), use it and stop traversing.
-        if (isIdentifier(node) && !!(node.autoGenerateFlags! & GeneratedIdentifierFlags.Node) && node.autoGenerateId !== autoGenerateId) {
+        if (qn.is.kind(Identifier, node) && !!(node.autoGenerateFlags! & GeneratedIdentifierFlags.Node) && node.autoGenerateId !== autoGenerateId) {
           break;
         }
 
@@ -5069,7 +5069,7 @@ namespace qnr {
     function pipelineEmitWithSourceMap(hint: EmitHint, node: Node) {
       assert(lastNode === node || lastSubstitution === node);
       const pipelinePhase = getNextPipelinePhase(PipelinePhase.SourceMaps, hint, node);
-      if (isUnparsedSource(node) || isUnparsedPrepend(node)) {
+      if (qn.is.kind(UnparsedSource, node) || qn.is.kind(UnparsedPrepend, node)) {
         pipelinePhase(hint, node);
       } else if (isUnparsedNode(node)) {
         const parsed = getParsedSourceMap(node.parent);
