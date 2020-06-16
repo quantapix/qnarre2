@@ -2,7 +2,7 @@ import Char from 'typescript-char';
 
 import { TextRange } from '../common/textRange';
 import { TextRangeCollection } from '../common/textRangeCollection';
-import { isBinary, isDecimal, isHex, qy_is.identifierPart, qy_is.identifierStart, isOctal } from './characters';
+import { isBinary, isDecimal, isHex, qy.is.identifierPart, qy.is.identifierStart, isOctal } from './characters';
 import { CharacterStream } from './characterStream';
 import {
   Comment,
@@ -599,9 +599,9 @@ export class Tokenizer {
 
   private _tryIdentifier(): boolean {
     const start = this._cs.position;
-    if (qy_is.identifierStart(this._cs.currentChar)) {
+    if (qy.is.identifierStart(this._cs.currentChar)) {
       this._cs.moveNext();
-      while (qy_is.identifierPart(this._cs.currentChar)) {
+      while (qy.is.identifierPart(this._cs.currentChar)) {
         this._cs.moveNext();
       }
     }

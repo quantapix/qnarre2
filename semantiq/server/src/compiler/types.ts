@@ -3679,7 +3679,7 @@ namespace qnr {
     add(ss: SymbolTable<S>, m: DiagnosticMessage) {
       ss.forEach((s, id) => {
         const t = this.get(id);
-        if (t) forEach(t.declarations, addDeclarationDiagnostic(qy_get.unescUnderscores(id), m));
+        if (t) forEach(t.declarations, addDeclarationDiagnostic(qy.get.unescUnderscores(id), m));
         else this.set(id, s);
       });
 

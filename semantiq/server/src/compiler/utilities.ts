@@ -92,7 +92,7 @@ namespace qnr {
       getIndent: () => 0,
       isAtStartOfLine: () => false,
       hasTrailingComment: () => false,
-      hasTrailingWhitespace: () => !!str.length && qy_is.whiteSpaceLike(str.charCodeAt(str.length - 1)),
+      hasTrailingWhitespace: () => !!str.length && qy.is.whiteSpaceLike(str.charCodeAt(str.length - 1)),
       writeLine: () => (str += ' '),
       increaseIndent: noop,
       decreaseIndent: noop,
@@ -148,18 +148,18 @@ namespace qnr {
   }
   export function getStartPositionOfLine(line: number, sourceFile: SourceFileLike): number {
     assert(line >= 0);
-    return qy_get.lineStarts(sourceFile)[line];
+    return qy.get.lineStarts(sourceFile)[line];
   }
   export function getEndLinePosition(line: number, sourceFile: SourceFileLike): number {
     assert(line >= 0);
-    const lineStarts = qy_get.lineStarts(sourceFile);
+    const lineStarts = qy.get.lineStarts(sourceFile);
     const lineIndex = line;
     const sourceText = sourceFile.text;
-    if (lineIndex + 1 === qy_get.lineStarts.length) return sourceText.length - 1;
+    if (lineIndex + 1 === qy.get.lineStarts.length) return sourceText.length - 1;
     const start = lineStarts[lineIndex];
     let pos = lineStarts[lineIndex + 1] - 1;
-    assert(qy_is.lineBreak(sourceText.charCodeAt(pos)));
-    while (start <= pos && qy_is.lineBreak(sourceText.charCodeAt(pos))) {
+    assert(qy.is.lineBreak(sourceText.charCodeAt(pos)));
+    while (start <= pos && qy.is.lineBreak(sourceText.charCodeAt(pos))) {
       pos--;
     }
     return pos;
@@ -267,7 +267,7 @@ namespace qnr {
   }
 
   export function createCommentDirectivesMap(sourceFile: SourceFile, commentDirectives: CommentDirective[]): CommentDirectivesMap {
-    const directivesByLine = QMap.create(commentDirectives.map((commentDirective) => [`${qy_get.lineAndCharOf(sourceFile, commentDirective.range.end).line}`, commentDirective]));
+    const directivesByLine = QMap.create(commentDirectives.map((commentDirective) => [`${qy.get.lineAndCharOf(sourceFile, commentDirective.range.end).line}`, commentDirective]));
     const usedLines = createMap<boolean>();
     return { getUnusedExpectations, markUsed };
 
@@ -286,17 +286,17 @@ namespace qnr {
 
   export function getTokenPosOfNode(node: Node, sourceFile?: SourceFileLike, includeJsDoc?: boolean): number {
     if (qn.is.missing(node)) return node.pos;
-    if (qn.isJSDoc.node(node)) return qy_syntax.skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.pos, false, true);
+    if (qn.isJSDoc.node(node)) return qy.skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.pos, false, true);
     if (includeJsDoc && qn.is.withJSDocNodes(node)) return getTokenPosOfNode(node.jsDoc![0], sourceFile);
     if (node.kind === Syntax.SyntaxList && (<SyntaxList>node)._children.length > 0) {
       return getTokenPosOfNode((<SyntaxList>node)._children[0], sourceFile, includeJsDoc);
     }
-    return qy_syntax.skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.pos);
+    return qy.skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.pos);
   }
 
   export function getNonDecoratorTokenPosOfNode(node: Node, sourceFile?: SourceFileLike): number {
     if (qn.is.missing(node) || !node.decorators) return getTokenPosOfNode(node, sourceFile);
-    return qy_syntax.skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.decorators.end);
+    return qy.skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.decorators.end);
   }
 
   export function getSourceTextOfNodeFromSourceFile(sourceFile: SourceFile, node: Node, includeTrivia = false): string {
@@ -309,7 +309,7 @@ namespace qnr {
 
   export function getTextOfNodeFromSourceText(sourceText: string, node: Node, includeTrivia = false): string {
     if (qn.is.missing(node)) return '';
-    let text = sourceText.substring(includeTrivia ? node.pos : qy_syntax.skipTrivia(sourceText, node.pos), node.end);
+    let text = sourceText.substring(includeTrivia ? node.pos : qy.skipTrivia(sourceText, node.pos), node.end);
     if (isJSDocTypeExpressionOrChild(node)) {
       // strip space + asterisk at line start
       text = text.replace(/(^|\r?\n|\r)\s*\*\s*/g, '$1');
@@ -401,9 +401,9 @@ namespace qnr {
       case Syntax.StringLiteral:
       case Syntax.NumericLiteral:
       case Syntax.NoSubstitutionLiteral:
-        return qy_get.escUnderscores(name.text);
+        return qy.get.escUnderscores(name.text);
       case Syntax.ComputedPropertyName:
-        if (StringLiteral.orNumericLiteralLike(name.expression)) return qy_get.escUnderscores(name.expression.text);
+        if (StringLiteral.orNumericLiteralLike(name.expression)) return qy.get.escUnderscores(name.expression.text);
         return fail('Text of property name cannot be read from non-literal-valued ComputedPropertyNames');
       default:
         return Debug.assertNever(name);
@@ -449,7 +449,7 @@ namespace qnr {
     arg2?: string | number,
     arg3?: string | number
   ): DiagnosticWithLocation {
-    const start = qy_syntax.skipTrivia(sourceFile.text, nodes.pos);
+    const start = qy.skipTrivia(sourceFile.text, nodes.pos);
     return createFileDiagnostic(sourceFile, start, nodes.end - start, message, arg0, arg1, arg2, arg3);
   }
   export function createDiagnosticForNodeInSourceFile(
@@ -496,7 +496,7 @@ namespace qnr {
     return TextSpan.from(start, scanner.getTextPos());
   }
   function getErrorSpanForArrowFunction(sourceFile: SourceFile, node: ArrowFunction): TextSpan {
-    const pos = qy_syntax.skipTrivia(sourceFile.text, node.pos);
+    const pos = qy.skipTrivia(sourceFile.text, node.pos);
     if (node.body && node.body.kind === Syntax.Block) {
       const { line: startLine } = sourceFile.lineAndCharOf(node.body.pos);
       const { line: endLine } = sourceFile.lineAndCharOf(node.body.end);
@@ -510,7 +510,7 @@ namespace qnr {
     let errorNode: Node | undefined = node;
     switch (node.kind) {
       case Syntax.SourceFile:
-        const pos = qy_syntax.skipTrivia(sourceFile.text, 0, /*stopAfterLineBreak*/ false);
+        const pos = qy.skipTrivia(sourceFile.text, 0, /*stopAfterLineBreak*/ false);
         if (pos === sourceFile.text.length) return new TextSpan();
         return getSpanOfTokenAtPosition(sourceFile, pos);
       case Syntax.VariableDeclaration:
@@ -535,7 +535,7 @@ namespace qnr {
         return getErrorSpanForArrowFunction(sourceFile, <ArrowFunction>node);
       case Syntax.CaseClause:
       case Syntax.DefaultClause:
-        const start = qy_syntax.skipTrivia(sourceFile.text, (<CaseOrDefaultClause>node).pos);
+        const start = qy.skipTrivia(sourceFile.text, (<CaseOrDefaultClause>node).pos);
         const end = (<CaseOrDefaultClause>node).statements.length > 0 ? (<CaseOrDefaultClause>node).statements[0].pos : (<CaseOrDefaultClause>node).end;
         return TextSpan.from(start, end);
     }
@@ -544,7 +544,7 @@ namespace qnr {
     }
     assert(!qn.is.kind(JSDoc, errorNode));
     const isMissing = qn.is.missing(errorNode);
-    const pos = isMissing || qn.is.kind(JsxText, node) ? errorNode.pos : qy_syntax.skipTrivia(sourceFile.text, errorNode.pos);
+    const pos = isMissing || qn.is.kind(JsxText, node) ? errorNode.pos : qy.skipTrivia(sourceFile.text, errorNode.pos);
     if (isMissing) {
       assert(pos === errorNode.pos, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
       assert(pos === errorNode.end, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
@@ -589,7 +589,7 @@ namespace qnr {
   }
 
   export function getLeadingCommentRangesOfNode(node: Node, sourceFileOfNode: SourceFile) {
-    return node.kind !== Syntax.JsxText ? qy_get.leadingCommentRanges(sourceFileOfNode.text, node.pos) : undefined;
+    return node.kind !== Syntax.JsxText ? qy.get.leadingCommentRanges(sourceFileOfNode.text, node.pos) : undefined;
   }
   export function getJSDocCommentRanges(node: Node, text: string) {
     const commentRanges =
@@ -598,8 +598,8 @@ namespace qnr {
       node.kind === Syntax.FunctionExpression ||
       node.kind === Syntax.ArrowFunction ||
       node.kind === Syntax.ParenthesizedExpression
-        ? concatenate(qy_get.trailingCommentRanges(text, node.pos), qy_get.leadingCommentRanges(text, node.pos))
-        : qy_get.leadingCommentRanges(text, node.pos);
+        ? concatenate(qy.get.trailingCommentRanges(text, node.pos), qy.get.leadingCommentRanges(text, node.pos))
+        : qy.get.leadingCommentRanges(text, node.pos);
     return filter(
       commentRanges,
       (comment) => text.charCodeAt(comment.pos + 1) === Codes.asterisk && text.charCodeAt(comment.pos + 2) === Codes.asterisk && text.charCodeAt(comment.pos + 3) !== Codes.slash
@@ -1176,7 +1176,7 @@ namespace qnr {
         return name.escapedText;
       }
       if (StringLiteral.like(name) || qn.is.kind(NumericLiteral, name)) {
-        return qy_get.escUnderscores(name.text);
+        return qy.get.escUnderscores(name.text);
       }
     }
     if (qn.is.kind(ElementAccessExpression, node) && isWellKnownSymbolSyntactically(node.argumentExpression)) {
@@ -1498,7 +1498,7 @@ namespace qnr {
       switch (parent.kind) {
         case Syntax.BinaryExpression:
           const binaryOperator = (<BinaryExpression>parent).operatorToken.kind;
-          return isAssignmentOperator(binaryOperator) && (<BinaryExpression>parent).left === node
+          return qy.is.assignmentOperator(binaryOperator) && (<BinaryExpression>parent).left === node
             ? binaryOperator === Syntax.EqualsToken
               ? AssignmentKind.Definite
               : AssignmentKind.Compound
@@ -1775,7 +1775,6 @@ namespace qnr {
     }
   }
 
-  /** Returns the node in an `extends` or `implements` clause of a class or interface. */
   export function getAllSuperTypeNodes(node: Node): readonly TypeNode[] {
     return qn.is.kind(InterfaceDeclaration, node)
       ? getInterfaceBaseTypeNodes(node) || emptyArray
@@ -1813,9 +1812,9 @@ namespace qnr {
 
 
   export function isIdentifierANonContextualKeyword({ originalKeywordKind }: Identifier): boolean {
-    return !!originalKeywordKind && !isContextualKeyword(originalKeywordKind);
+    return !!originalKeywordKind && !qy.is.contextualKeyword(originalKeywordKind);
   }
-
+  
   export type TriviaKind = Syntax.SingleLineCommentTrivia | Syntax.MultiLineCommentTrivia | Syntax.NewLineTrivia | Syntax.WhitespaceTrivia | Syntax.ShebangTrivia | Syntax.ConflictMarkerTrivia;
 
   export const enum FunctionFlags {
@@ -1879,13 +1878,13 @@ namespace qnr {
         return name.escapedText;
       case Syntax.StringLiteral:
       case Syntax.NumericLiteral:
-        return qy_get.escUnderscores(name.text);
+        return qy.get.escUnderscores(name.text);
       case Syntax.ComputedPropertyName:
         const nameExpression = name.expression;
         if (isWellKnownSymbolSyntactically(nameExpression)) {
           return getPropertyNameForKnownSymbolName(idText((<PropertyAccessExpression>nameExpression).name));
         } else if (StringLiteral.orNumericLiteralLike(nameExpression)) {
-          return qy_get.escUnderscores(nameExpression.text);
+          return qy.get.escUnderscores(nameExpression.text);
         } else if (qn.is.signedNumericLiteral(nameExpression)) {
           if (nameExpression.operator === Syntax.MinusToken) {
             return (Token.toString(nameExpression.operator) + nameExpression.operand.text) as __String;
@@ -1915,7 +1914,7 @@ namespace qnr {
   }
 
   export function getEscapedTextOfIdentifierOrLiteral(node: PropertyNameLiteral): __String {
-    return qn.is.identifierOrPrivateIdentifier(node) ? node.escapedText : qy_get.escUnderscores(node.text);
+    return qn.is.identifierOrPrivateIdentifier(node) ? node.escapedText : qy.get.escUnderscores(node.text);
   }
 
   export function getPropertyNameForUniqueESSymbol(symbol: Symbol): __String {
@@ -1984,49 +1983,14 @@ namespace qnr {
   export function getExpressionAssociativity(expression: Expression) {
     const operator = getOperator(expression);
     const hasArguments = expression.kind === Syntax.NewExpression && (<NewExpression>expression).arguments !== undefined;
-    return getOperatorAssociativity(expression.kind, operator, hasArguments);
+    return qy.get.operatorAssociativity(expression.kind, operator, hasArguments);
   }
 
-  export function getOperatorAssociativity(kind: Syntax, operator: Syntax, hasArguments?: boolean) {
-    switch (kind) {
-      case Syntax.NewExpression:
-        return hasArguments ? Associativity.Left : Associativity.Right;
-
-      case Syntax.PrefixUnaryExpression:
-      case Syntax.TypeOfExpression:
-      case Syntax.VoidExpression:
-      case Syntax.DeleteExpression:
-      case Syntax.AwaitExpression:
-      case Syntax.ConditionalExpression:
-      case Syntax.YieldExpression:
-        return Associativity.Right;
-
-      case Syntax.BinaryExpression:
-        switch (operator) {
-          case Syntax.Asterisk2Token:
-          case Syntax.EqualsToken:
-          case Syntax.PlusEqualsToken:
-          case Syntax.MinusEqualsToken:
-          case Syntax.Asterisk2EqualsToken:
-          case Syntax.AsteriskEqualsToken:
-          case Syntax.SlashEqualsToken:
-          case Syntax.PercentEqualsToken:
-          case Syntax.LessThan2EqualsToken:
-          case Syntax.GreaterThan2EqualsToken:
-          case Syntax.GreaterThan3EqualsToken:
-          case Syntax.AmpersandEqualsToken:
-          case Syntax.CaretEqualsToken:
-          case Syntax.BarEqualsToken:
-            return Associativity.Right;
-        }
-    }
-    return Associativity.Left;
-  }
 
   export function getExpressionPrecedence(expression: Expression) {
     const operator = getOperator(expression);
     const hasArguments = expression.kind === Syntax.NewExpression && (<NewExpression>expression).arguments !== undefined;
-    return getOperatorPrecedence(expression.kind, operator, hasArguments);
+    return qy.get.operatorPrecedence(expression.kind, operator, hasArguments);
   }
 
   export function getOperator(expression: Expression): Syntax {
@@ -2039,140 +2003,6 @@ namespace qnr {
     }
   }
 
-  export function getOperatorPrecedence(nodeKind: Syntax, operatorKind: Syntax, hasArguments?: boolean) {
-    switch (nodeKind) {
-      case Syntax.CommaListExpression:
-        return 0;
-
-      case Syntax.SpreadElement:
-        return 1;
-
-      case Syntax.YieldExpression:
-        return 2;
-
-      case Syntax.ConditionalExpression:
-        return 4;
-
-      case Syntax.BinaryExpression:
-        switch (operatorKind) {
-          case Syntax.CommaToken:
-            return 0;
-
-          case Syntax.EqualsToken:
-          case Syntax.PlusEqualsToken:
-          case Syntax.MinusEqualsToken:
-          case Syntax.Asterisk2EqualsToken:
-          case Syntax.AsteriskEqualsToken:
-          case Syntax.SlashEqualsToken:
-          case Syntax.PercentEqualsToken:
-          case Syntax.LessThan2EqualsToken:
-          case Syntax.GreaterThan2EqualsToken:
-          case Syntax.GreaterThan3EqualsToken:
-          case Syntax.AmpersandEqualsToken:
-          case Syntax.CaretEqualsToken:
-          case Syntax.BarEqualsToken:
-            return 3;
-
-          default:
-            return getBinaryOperatorPrecedence(operatorKind);
-        }
-
-      case Syntax.PrefixUnaryExpression:
-      case Syntax.TypeOfExpression:
-      case Syntax.VoidExpression:
-      case Syntax.DeleteExpression:
-      case Syntax.AwaitExpression:
-        return 16;
-
-      case Syntax.PostfixUnaryExpression:
-        return 17;
-
-      case Syntax.CallExpression:
-        return 18;
-
-      case Syntax.NewExpression:
-        return hasArguments ? 19 : 18;
-
-      case Syntax.TaggedTemplateExpression:
-      case Syntax.PropertyAccessExpression:
-      case Syntax.ElementAccessExpression:
-        return 19;
-
-      case Syntax.ThisKeyword:
-      case Syntax.SuperKeyword:
-      case Syntax.Identifier:
-      case Syntax.NullKeyword:
-      case Syntax.TrueKeyword:
-      case Syntax.FalseKeyword:
-      case Syntax.NumericLiteral:
-      case Syntax.BigIntLiteral:
-      case Syntax.StringLiteral:
-      case Syntax.ArrayLiteralExpression:
-      case Syntax.ObjectLiteralExpression:
-      case Syntax.FunctionExpression:
-      case Syntax.ArrowFunction:
-      case Syntax.ClassExpression:
-      case Syntax.JsxElement:
-      case Syntax.JsxSelfClosingElement:
-      case Syntax.JsxFragment:
-      case Syntax.RegexLiteral:
-      case Syntax.NoSubstitutionLiteral:
-      case Syntax.TemplateExpression:
-      case Syntax.ParenthesizedExpression:
-      case Syntax.OmittedExpression:
-        return 20;
-
-      default:
-        return -1;
-    }
-  }
-
-  export function getBinaryOperatorPrecedence(kind: Syntax): number {
-    switch (kind) {
-      case Syntax.Question2Token:
-        return 4;
-      case Syntax.Bar2Token:
-        return 5;
-      case Syntax.Ampersand2Token:
-        return 6;
-      case Syntax.BarToken:
-        return 7;
-      case Syntax.CaretToken:
-        return 8;
-      case Syntax.AmpersandToken:
-        return 9;
-      case Syntax.Equals2Token:
-      case Syntax.ExclamationEqualsToken:
-      case Syntax.Equals3Token:
-      case Syntax.ExclamationEquals2Token:
-        return 10;
-      case Syntax.LessThanToken:
-      case Syntax.GreaterThanToken:
-      case Syntax.LessThanEqualsToken:
-      case Syntax.GreaterThanEqualsToken:
-      case Syntax.InstanceOfKeyword:
-      case Syntax.InKeyword:
-      case Syntax.AsKeyword:
-        return 11;
-      case Syntax.LessThan2Token:
-      case Syntax.GreaterThan2Token:
-      case Syntax.GreaterThan3Token:
-        return 12;
-      case Syntax.PlusToken:
-      case Syntax.MinusToken:
-        return 13;
-      case Syntax.AsteriskToken:
-      case Syntax.SlashToken:
-      case Syntax.PercentToken:
-        return 14;
-      case Syntax.Asterisk2Token:
-        return 15;
-    }
-
-    // -1 is lower than all other precedences.  Returning it will cause binary expression
-    // parsing to stop.
-    return -1;
-  }
 
   export function createDiagnosticCollection(): DiagnosticCollection {
     let nonFileDiagnostics = ([] as Diagnostic[]) as SortedArray<Diagnostic>; // See GH#19873
@@ -2394,10 +2224,10 @@ namespace qnr {
     let hasTrailingComment = false;
 
     function updateLineCountAndPosFor(s: string) {
-      const qy_get.lineStartsOfS = qy_get.lineStarts(s);
-      if (qy_get.lineStartsOfS.length > 1) {
-        lineCount = lineCount + qy_get.lineStartsOfS.length - 1;
-        linePos = output.length - s.length + last(qy_get.lineStartsOfS);
+      const qy.get.lineStartsOfS = qy.get.lineStarts(s);
+      if (qy.get.lineStartsOfS.length > 1) {
+        lineCount = lineCount + qy.get.lineStartsOfS.length - 1;
+        linePos = output.length - s.length + last(qy.get.lineStartsOfS);
         lineStart = linePos - output.length === 0;
       } else {
         lineStart = false;
@@ -2482,7 +2312,7 @@ namespace qnr {
       getText: () => output,
       isAtStartOfLine: () => lineStart,
       hasTrailingComment: () => hasTrailingComment,
-      hasTrailingWhitespace: () => !!output.length && qy_is.whiteSpaceLike(output.charCodeAt(output.length - 1)),
+      hasTrailingWhitespace: () => !!output.length && qy.is.whiteSpaceLike(output.charCodeAt(output.length - 1)),
       clear: reset,
       reportInaccessibleThisError: noop,
       reportPrivateInBaseOfClassExpression: noop,
@@ -2742,8 +2572,8 @@ namespace qnr {
   }
 
   export function getLineOfLocalPosition(sourceFile: SourceFile, pos: number) {
-    const qy_get.lineStarts = qy_get.lineStarts(sourceFile);
-    return Scanner.lineOf(qy_get.lineStarts, pos);
+    const qy.get.lineStarts = qy.get.lineStarts(sourceFile);
+    return Scanner.lineOf(qy.get.lineStarts, pos);
   }
 
   export function getLineOfLocalPositionFromLineMap(lineMap: readonly number[], pos: number) {
@@ -2756,7 +2586,7 @@ namespace qnr {
 
   export function getSetAccessorValueParameter(accessor: SetAccessorDeclaration): ParameterDeclaration | undefined {
     if (accessor && accessor.parameters.length > 0) {
-      const hasThis = accessor.parameters.length === 2 && parameterIsThisKeyword(accessor.parameters[0]);
+      const hasThis = accessor.parameters.length === 2 && parameterIsThqy.is.keyword(accessor.parameters[0]);
       return accessor.parameters[hasThis ? 1 : 0];
     }
   }
@@ -2771,21 +2601,21 @@ namespace qnr {
     // cb tags do not currently support this parameters
     if (signature.parameters.length && !qn.is.kind(JSDocSignature, signature)) {
       const thisParameter = signature.parameters[0];
-      if (parameterIsThisKeyword(thisParameter)) {
+      if (parameterIsThqy.is.keyword(thisParameter)) {
         return thisParameter;
       }
     }
   }
 
-  export function parameterIsThisKeyword(parameter: ParameterDeclaration): boolean {
+  export function parameterIsThqy.is.keyword(parameter: ParameterDeclaration): boolean {
     return isThqn.is.kind(Identifier, parameter.name);
   }
 
   export function isThqn.is.kind(Identifier, node: Node | undefined): boolean {
-    return !!node && node.kind === Syntax.Identifier && identifierIsThisKeyword(node as Identifier);
+    return !!node && node.kind === Syntax.Identifier && identifierIsThqy.is.keyword(node as Identifier);
   }
 
-  export function identifierIsThisKeyword(id: Identifier): boolean {
+  export function identifierIsThqy.is.keyword(id: Identifier): boolean {
     return id.originalKeywordKind === Syntax.ThisKeyword;
   }
 
@@ -2958,11 +2788,11 @@ namespace qnr {
       //
       //      var x = 10;
       if (node.pos === 0) {
-        leadingComments = filter(qy_get.leadingCommentRanges(text, node.pos), isPinnedCommentLocal);
+        leadingComments = filter(qy.get.leadingCommentRanges(text, node.pos), isPinnedCommentLocal);
       }
     } else {
       // removeComments is false, just get detached as normal and bypass the process to filter comment
-      leadingComments = qy_get.leadingCommentRanges(text, node.pos);
+      leadingComments = qy.get.leadingCommentRanges(text, node.pos);
     }
 
     if (leadingComments) {
@@ -2991,7 +2821,7 @@ namespace qnr {
         // sure there is at least one blank line between it and the node.  If not, it's not
         // a copyright header.
         const lastCommentLine = getLineOfLocalPositionFromLineMap(lineMap, last(detachedComments).end);
-        const nodeLine = getLineOfLocalPositionFromLineMap(lineMap, qy_syntax.skipTrivia(text, node.pos));
+        const nodeLine = getLineOfLocalPositionFromLineMap(lineMap, qy.skipTrivia(text, node.pos));
         if (nodeLine >= lastCommentLine + 2) {
           // Valid detachedComments
           emitNewLineBeforeLeadingComments(lineMap, writer, node, leadingComments);
@@ -3010,7 +2840,7 @@ namespace qnr {
 
   export function writeCommentRange(text: string, lineMap: readonly number[], writer: EmitTextWriter, commentPos: number, commentEnd: number, newLine: string) {
     if (text.charCodeAt(commentPos + 1) === Codes.asterisk) {
-      const firstCommentLineAndChar = qy_get.lineAndCharOf(lineMap, commentPos);
+      const firstCommentLineAndChar = qy.get.lineAndCharOf(lineMap, commentPos);
       const lineCount = lineMap.length;
       let firstCommentLineIndent: number | undefined;
       for (let pos = commentPos, currentLine = firstCommentLineAndChar.line; pos < commentEnd; currentLine++) {
@@ -3086,7 +2916,7 @@ namespace qnr {
 
   function calculateIndent(text: string, pos: number, end: number) {
     let currentLineIndent = 0;
-    for (; pos < end && qy_is.whiteSpaceSingleLine(text.charCodeAt(pos)); pos++) {
+    for (; pos < end && qy.is.whiteSpaceSingleLine(text.charCodeAt(pos)); pos++) {
       if (text.charCodeAt(pos) === Codes.tab) {
         // Tabs = TabSize = indent size and go to next tabStop
         currentLineIndent += getIndentSize() - (currentLineIndent % getIndentSize());
@@ -3202,47 +3032,13 @@ namespace qnr {
     let flags = ModifierFlags.None;
     if (modifiers) {
       for (const modifier of modifiers) {
-        flags |= modifierToFlag(modifier.kind);
+        flags |= qy.get.modifierFlag(modifier.kind);
       }
     }
     return flags;
   }
 
-  export function modifierToFlag(token: Syntax): ModifierFlags {
-    switch (token) {
-      case Syntax.StaticKeyword:
-        return ModifierFlags.Static;
-      case Syntax.PublicKeyword:
-        return ModifierFlags.Public;
-      case Syntax.ProtectedKeyword:
-        return ModifierFlags.Protected;
-      case Syntax.PrivateKeyword:
-        return ModifierFlags.Private;
-      case Syntax.AbstractKeyword:
-        return ModifierFlags.Abstract;
-      case Syntax.ExportKeyword:
-        return ModifierFlags.Export;
-      case Syntax.DeclareKeyword:
-        return ModifierFlags.Ambient;
-      case Syntax.ConstKeyword:
-        return ModifierFlags.Const;
-      case Syntax.DefaultKeyword:
-        return ModifierFlags.Default;
-      case Syntax.AsyncKeyword:
-        return ModifierFlags.Async;
-      case Syntax.ReadonlyKeyword:
-        return ModifierFlags.Readonly;
-    }
-    return ModifierFlags.None;
-  }
 
-  export function isLogicalOperator(token: Syntax): boolean {
-    return token === Syntax.Bar2Token || token === Syntax.Ampersand2Token || token === Syntax.ExclamationToken;
-  }
-
-  export function isAssignmentOperator(token: Syntax): boolean {
-    return token >= Syntax.FirstAssignment && token <= Syntax.LastAssignment;
-  }
 
   /** Get `C` given `N` if `N` is in the position `class C extends N` where `N` is an ExpressionWithTypeArguments. */
   export function tryGetClassExtendingExpressionWithTypeArguments(node: Node): ClassLikeDeclaration | undefined {
@@ -3264,7 +3060,7 @@ namespace qnr {
   export function isAssignmentExpression(node: Node, excludeCompoundAssignment?: false): node is AssignmentExpression<AssignmentOperatorToken>;
   export function isAssignmentExpression(node: Node, excludeCompoundAssignment?: boolean): node is AssignmentExpression<AssignmentOperatorToken> {
     return (
-      qn.is.kind(BinaryExpression, node) && (excludeCompoundAssignment ? node.operatorToken.kind === Syntax.EqualsToken : isAssignmentOperator(node.operatorToken.kind)) && qn.is.leftHandSideExpression(node.left)
+      qn.is.kind(BinaryExpression, node) && (excludeCompoundAssignment ? node.operatorToken.kind === Syntax.EqualsToken : qy.is.assignmentOperator(node.operatorToken.kind)) && qn.is.leftHandSideExpression(node.left)
     );
   }
 
@@ -3323,7 +3119,7 @@ namespace qnr {
         return baseStr + '.' + expr.name;
       }
     } else if (qn.is.kind(Identifier, expr)) {
-      return qy_get.unescUnderscores(expr.escapedText);
+      return qy.get.unescUnderscores(expr.escapedText);
     }
     return;
   }
@@ -3629,7 +3425,7 @@ namespace qnr {
         return operator === Syntax.Plus2Token || operator === Syntax.Minus2Token ? writeOrReadWrite() : AccessKind.Read;
       case Syntax.BinaryExpression:
         const { left, operatorToken } = parent as BinaryExpression;
-        return left === node && isAssignmentOperator(operatorToken.kind) ? (operatorToken.kind === Syntax.EqualsToken ? AccessKind.Write : writeOrReadWrite()) : AccessKind.Read;
+        return left === node && qy.is.assignmentOperator(operatorToken.kind) ? (operatorToken.kind === Syntax.EqualsToken ? AccessKind.Write : writeOrReadWrite()) : AccessKind.Read;
       case Syntax.PropertyAccessExpression:
         return (parent as PropertyAccessExpression).name !== node ? AccessKind.Read : accessKind(parent);
       case Syntax.PropertyAssignment: {
@@ -3816,33 +3612,6 @@ namespace qnr {
 
   export function isObjectTypeDeclaration(node: Node): node is ObjectTypeDeclaration {
     return qn.is.classLike(node) || qn.is.kind(InterfaceDeclaration, node) || qn.is.kind(TypeLiteralNode, node);
-  }
-
-  export function isTypeNodeKind(kind: Syntax) {
-    return (
-      (kind >= Syntax.FirstTypeNode && kind <= Syntax.LastTypeNode) ||
-      kind === Syntax.AnyKeyword ||
-      kind === Syntax.UnknownKeyword ||
-      kind === Syntax.NumberKeyword ||
-      kind === Syntax.BigIntKeyword ||
-      kind === Syntax.ObjectKeyword ||
-      kind === Syntax.BooleanKeyword ||
-      kind === Syntax.StringKeyword ||
-      kind === Syntax.SymbolKeyword ||
-      kind === Syntax.ThisKeyword ||
-      kind === Syntax.VoidKeyword ||
-      kind === Syntax.UndefinedKeyword ||
-      kind === Syntax.NullKeyword ||
-      kind === Syntax.NeverKeyword ||
-      kind === Syntax.ExpressionWithTypeArguments ||
-      kind === Syntax.JSDocAllType ||
-      kind === Syntax.JSDocUnknownType ||
-      kind === Syntax.JSDocNullableType ||
-      kind === Syntax.JSDocNonNullableType ||
-      kind === Syntax.JSDocOptionalType ||
-      kind === Syntax.JSDocFunctionType ||
-      kind === Syntax.JSDocVariadicType
-    );
   }
 
   export function isAccessExpression(node: Node): node is AccessExpression {
@@ -4189,7 +3958,7 @@ namespace qnr {
   }
 
   function stripLeadingDirectorySeparator(s: string): string | undefined {
-    return qy_is.dirSeparator(s.charCodeAt(0)) ? s.slice(1) : undefined;
+    return qy.is.dirSeparator(s.charCodeAt(0)) ? s.slice(1) : undefined;
   }
 
   export function tryRemoveDirectoryPrefix(path: string, dirPath: string, getCanonicalFileName: GetCanonicalFileName): string | undefined {

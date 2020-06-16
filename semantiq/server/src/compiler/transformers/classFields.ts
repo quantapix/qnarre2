@@ -706,7 +706,7 @@ namespace qnr {
         const name = qn.is.kind(ComputedPropertyName, propertyName)
           ? propertyName.expression
           : qn.is.kind(Identifier, propertyName)
-          ? StringLiteral.create(qy_get.unescUnderscores(propertyName.escapedText))
+          ? StringLiteral.create(qy.get.unescUnderscores(propertyName.escapedText))
           : propertyName;
         const descriptor = createPropertyDescriptor({ value: initializer, configurable: true, writable: true, enumerable: true });
         return createObjectDefinePropertyCall(receiver, name, descriptor);

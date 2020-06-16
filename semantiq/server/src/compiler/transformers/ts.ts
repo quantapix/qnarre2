@@ -330,7 +330,7 @@ namespace qnr {
     }
 
     function modifierVisitor(node: Node): VisitResult<Node> {
-      if (modifierToFlag(node.kind) & ModifierFlags.TypeScriptModifier) {
+      if (qy.get.modifierFlag(node.kind) & ModifierFlags.TypeScriptModifier) {
         return;
       } else if (currentNamespace && node.kind === Syntax.ExportKeyword) {
         return;
@@ -633,7 +633,7 @@ namespace qnr {
         //      return C;
         //  }();
         //
-        const closingBraceLocation = createTokenRange(qy_syntax.skipTrivia(currentSourceFile.text, node.members.end), Syntax.CloseBraceToken);
+        const closingBraceLocation = createTokenRange(qy.skipTrivia(currentSourceFile.text, node.members.end), Syntax.CloseBraceToken);
         const localName = getInternalName(node);
 
         // The following partially-emitted expression exists purely to align our sourcemap
@@ -950,7 +950,7 @@ namespace qnr {
       let decorators: (readonly Decorator[] | undefined)[] | undefined;
       if (node) {
         const parameters = node.parameters;
-        const firstParameterIsThis = parameters.length > 0 && parameterIsThisKeyword(parameters[0]);
+        const firstParameterIsThis = parameters.length > 0 && parameterIsThqy.is.keyword(parameters[0]);
         const firstParameterOffset = firstParameterIsThis ? 1 : 0;
         const numParameters = firstParameterIsThis ? parameters.length - 1 : parameters.length;
         for (let i = 0; i < numParameters; i++) {
@@ -2044,7 +2044,7 @@ namespace qnr {
     }
 
     function visitParameter(node: ParameterDeclaration) {
-      if (parameterIsThisKeyword(node)) {
+      if (parameterIsThqy.is.keyword(node)) {
         return;
       }
 
@@ -2124,7 +2124,7 @@ namespace qnr {
         // aggressively.
         // HOWEVER - if there are leading comments on the expression itself, to handle ASI
         // correctly for return and throw, we must keep the parenthesis
-        if (length(qy_get.leadingCommentRangesOfNode(expression, currentSourceFile))) {
+        if (length(qy.get.leadingCommentRangesOfNode(expression, currentSourceFile))) {
           return updateParen(node, expression);
         }
         return createPartiallyEmittedExpression(expression, node);

@@ -827,8 +827,8 @@ namespace qnr {
     //
     // If `a ** d` is on the left of operator `**`, we need to parenthesize to preserve
     // the intended order of operations: `(a ** b) ** c`
-    const binaryOperatorPrecedence = getOperatorPrecedence(Syntax.BinaryExpression, binaryOperator);
-    const binaryOperatorAssociativity = getOperatorAssociativity(Syntax.BinaryExpression, binaryOperator);
+    const binaryOperatorPrecedence = qy.get.operatorPrecedence(Syntax.BinaryExpression, binaryOperator);
+    const binaryOperatorAssociativity = qy.get.operatorAssociativity(Syntax.BinaryExpression, binaryOperator);
     const emittedOperand = skipPartiallyEmittedExpressions(operand);
     if (!isLeftSideOfBinary && operand.kind === Syntax.ArrowFunction && binaryOperatorPrecedence > 3) {
       // We need to parenthesize arrow functions on the right side to avoid it being
@@ -881,7 +881,7 @@ namespace qnr {
             //  "a"+("b"+"c")   => "a"+"b"+"c"
             if (binaryOperator === Syntax.PlusToken) {
               const leftKind = leftOperand ? getLiteralKindOfBinaryPlusOperand(leftOperand) : Syntax.Unknown;
-              if (isLiteralKind(leftKind) && leftKind === getLiteralKindOfBinaryPlusOperand(emittedOperand)) {
+              if (qy.is.literal(leftKind) && leftKind === getLiteralKindOfBinaryPlusOperand(emittedOperand)) {
                 return false;
               }
             }
@@ -932,7 +932,7 @@ namespace qnr {
   function getLiteralKindOfBinaryPlusOperand(node: Expression): Syntax {
     node = skipPartiallyEmittedExpressions(node);
 
-    if (isLiteralKind(node.kind)) {
+    if (qy.is.literal(node.kind)) {
       return node.kind;
     }
 
@@ -942,7 +942,7 @@ namespace qnr {
       }
 
       const leftKind = getLiteralKindOfBinaryPlusOperand((<BinaryExpression>node).left);
-      const literalKind = isLiteralKind(leftKind) && leftKind === getLiteralKindOfBinaryPlusOperand((<BinaryExpression>node).right) ? leftKind : Syntax.Unknown;
+      const literalKind = qy.is.literal(leftKind) && leftKind === getLiteralKindOfBinaryPlusOperand((<BinaryExpression>node).right) ? leftKind : Syntax.Unknown;
 
       (<BinaryPlusExpression>node).cachedLiteralKind = literalKind;
       return literalKind;
@@ -952,7 +952,7 @@ namespace qnr {
   }
 
   export function parenthesizeForConditionalHead(condition: Expression) {
-    const conditionalPrecedence = getOperatorPrecedence(Syntax.ConditionalExpression, Syntax.QuestionToken);
+    const conditionalPrecedence = qy.get.operatorPrecedence(Syntax.ConditionalExpression, Syntax.QuestionToken);
     const emittedCondition = skipPartiallyEmittedExpressions(condition);
     const conditionPrecedence = getExpressionPrecedence(emittedCondition);
     if (compareValues(conditionPrecedence, conditionalPrecedence) !== Comparison.GreaterThan) {
@@ -1064,7 +1064,7 @@ namespace qnr {
   export function parenthesizeExpressionForList(expression: Expression) {
     const emittedExpression = skipPartiallyEmittedExpressions(expression);
     const expressionPrecedence = getExpressionPrecedence(emittedExpression);
-    const commaPrecedence = getOperatorPrecedence(Syntax.BinaryExpression, Syntax.CommaToken);
+    const commaPrecedence = qy.get.operatorPrecedence(Syntax.BinaryExpression, Syntax.CommaToken);
     return expressionPrecedence > commaPrecedence ? expression : setTextRange(createParen(expression), expression);
   }
 

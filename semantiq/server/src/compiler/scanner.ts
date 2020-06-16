@@ -135,8 +135,8 @@ namespace qnr {
         tokPos = pos;
         if (pos >= end) return (token = Syntax.EndOfFileToken);
         let c = text.codePointAt(pos)!;
-        if (c === Codes.hash && pos === 0 && qy_is.shebangTrivia(text, pos)) {
-          pos = qy_syntax.shebangTrivia(text, pos);
+        if (c === Codes.hash && pos === 0 && qy.is.shebangTrivia(text, pos)) {
+          pos = qy.shebangTrivia(text, pos);
           if (skipTrivia) continue;
           else return (token = Syntax.ShebangTrivia);
         }
@@ -178,7 +178,7 @@ namespace qnr {
               pos++;
               continue;
             } else {
-              while (pos < end && qy_is.whiteSpaceSingleLine(text.charCodeAt(pos))) {
+              while (pos < end && qy.is.whiteSpaceSingleLine(text.charCodeAt(pos))) {
                 pos++;
               }
               return (token = Syntax.WhitespaceTrivia);
@@ -237,7 +237,7 @@ namespace qnr {
             pos++;
             return (token = Syntax.MinusToken);
           case Codes.dot:
-            if (qy_is.digit(text.charCodeAt(pos + 1))) {
+            if (qy.is.digit(text.charCodeAt(pos + 1))) {
               tokValue = scanNumber().value;
               return (token = Syntax.NumericLiteral);
             }
@@ -250,7 +250,7 @@ namespace qnr {
             if (text.charCodeAt(pos + 1) === Codes.slash) {
               pos += 2;
               while (pos < end) {
-                if (qy_is.lineBreak(text.charCodeAt(pos))) break;
+                if (qy.is.lineBreak(text.charCodeAt(pos))) break;
                 pos++;
               }
               directives = appendIfDirective(directives, text.slice(tokPos, pos), directiveRegExSingleLine, tokPos);
@@ -272,7 +272,7 @@ namespace qnr {
                   break;
                 }
                 pos++;
-                if (qy_is.lineBreak(c2)) {
+                if (qy.is.lineBreak(c2)) {
                   last = pos;
                   tokFlags |= TokenFlags.PrecedingLineBreak;
                 }
@@ -320,7 +320,7 @@ namespace qnr {
               tokFlags |= TokenFlags.OctalSpecifier;
               return (token = parseNumber());
             }
-            if (pos + 1 < end && qy_is.octalDigit(text.charCodeAt(pos + 1))) {
+            if (pos + 1 < end && qy.is.octalDigit(text.charCodeAt(pos + 1))) {
               tokValue = '' + scanOctDigits();
               tokFlags |= TokenFlags.Octal;
               return (token = Syntax.NumericLiteral);
@@ -344,8 +344,8 @@ namespace qnr {
             pos++;
             return (token = Syntax.SemicolonToken);
           case Codes.lessThan:
-            if (qy_is.markerTrivia(text, pos)) {
-              pos = qy_syntax.markerTrivia(text, pos, error);
+            if (qy.is.markerTrivia(text, pos)) {
+              pos = qy.markerTrivia(text, pos, error);
               if (skipTrivia) continue;
               else return (token = Syntax.ConflictMarkerTrivia);
             }
@@ -360,8 +360,8 @@ namespace qnr {
             pos++;
             return (token = Syntax.LessThanToken);
           case Codes.equals:
-            if (qy_is.markerTrivia(text, pos)) {
-              pos = qy_syntax.markerTrivia(text, pos, error);
+            if (qy.is.markerTrivia(text, pos)) {
+              pos = qy.markerTrivia(text, pos, error);
               if (skipTrivia) continue;
               else return (token = Syntax.ConflictMarkerTrivia);
             }
@@ -373,8 +373,8 @@ namespace qnr {
             pos++;
             return (token = Syntax.EqualsToken);
           case Codes.greaterThan:
-            if (qy_is.markerTrivia(text, pos)) {
-              pos = qy_syntax.markerTrivia(text, pos, error);
+            if (qy.is.markerTrivia(text, pos)) {
+              pos = qy.markerTrivia(text, pos, error);
               if (skipTrivia) continue;
               else return (token = Syntax.ConflictMarkerTrivia);
             }
@@ -382,7 +382,7 @@ namespace qnr {
             return (token = Syntax.GreaterThanToken);
           case Codes.question:
             pos++;
-            if (text.charCodeAt(pos) === Codes.dot && !qy_is.digit(text.charCodeAt(pos + 1))) {
+            if (text.charCodeAt(pos) === Codes.dot && !qy.is.digit(text.charCodeAt(pos + 1))) {
               pos++;
               return (token = Syntax.QuestionDotToken);
             }
@@ -405,8 +405,8 @@ namespace qnr {
             pos++;
             return (token = Syntax.OpenBraceToken);
           case Codes.bar:
-            if (qy_is.markerTrivia(text, pos)) {
-              pos = qy_syntax.markerTrivia(text, pos, error);
+            if (qy.is.markerTrivia(text, pos)) {
+              pos = qy.markerTrivia(text, pos, error);
               if (skipTrivia) continue;
               else return (token = Syntax.ConflictMarkerTrivia);
             }
@@ -425,14 +425,14 @@ namespace qnr {
             return (token = Syntax.AtToken);
           case Codes.backslash:
             const c2 = peekExtEscape();
-            if (c2 >= 0 && qy_is.identifierStart(c2)) {
+            if (c2 >= 0 && qy.is.identifierStart(c2)) {
               pos += 3;
               tokFlags |= TokenFlags.ExtendedEscape;
               tokValue = scanExtEscape() + scanIdentifierParts();
               return (token = scanIdentifier());
             }
             const c3 = peekUniEscape();
-            if (c3 >= 0 && qy_is.identifierStart(c3)) {
+            if (c3 >= 0 && qy.is.identifierStart(c3)) {
               pos += 6;
               tokFlags |= TokenFlags.UnicodeEscape;
               tokValue = String.fromCharCode(c3) + scanIdentifierParts();
@@ -448,9 +448,9 @@ namespace qnr {
               return (token = Syntax.Unknown);
             }
             pos++;
-            if (qy_is.identifierStart((c = text.charCodeAt(pos)))) {
+            if (qy.is.identifierStart((c = text.charCodeAt(pos)))) {
               pos++;
-              while (pos < end && qy_is.identifierPart((c = text.charCodeAt(pos)))) pos++;
+              while (pos < end && qy.is.identifierPart((c = text.charCodeAt(pos)))) pos++;
               tokValue = text.substring(tokPos, pos);
               if (c === Codes.backslash) tokValue += scanIdentifierParts();
             } else {
@@ -459,22 +459,22 @@ namespace qnr {
             }
             return (token = Syntax.PrivateIdentifier);
           default:
-            if (qy_is.identifierStart(c)) {
-              pos += qy_get.charSize(c);
-              while (pos < end && qy_is.identifierPart((c = text.codePointAt(pos)!))) pos += qy_get.charSize(c);
+            if (qy.is.identifierStart(c)) {
+              pos += qy.get.charSize(c);
+              while (pos < end && qy.is.identifierPart((c = text.codePointAt(pos)!))) pos += qy.get.charSize(c);
               tokValue = text.substring(tokPos, pos);
               if (c === Codes.backslash) tokValue += scanIdentifierParts();
               return (token = scanIdentifier());
-            } else if (qy_is.whiteSpaceSingleLine(c)) {
-              pos += qy_get.charSize(c);
+            } else if (qy.is.whiteSpaceSingleLine(c)) {
+              pos += qy.get.charSize(c);
               continue;
-            } else if (qy_is.lineBreak(c)) {
+            } else if (qy.is.lineBreak(c)) {
               tokFlags |= TokenFlags.PrecedingLineBreak;
-              pos += qy_get.charSize(c);
+              pos += qy.get.charSize(c);
               continue;
             }
             error(Diagnostics.Invalid_character);
-            pos += qy_get.charSize(c);
+            pos += qy.get.charSize(c);
             return (token = Syntax.Unknown);
         }
       }
@@ -537,7 +537,7 @@ namespace qnr {
             break;
           }
           const c = text.charCodeAt(p);
-          if (qy_is.lineBreak(c)) {
+          if (qy.is.lineBreak(c)) {
             tokFlags |= TokenFlags.Unterminated;
             error(Diagnostics.Unterminated_regular_expression_literal);
             break;
@@ -551,7 +551,7 @@ namespace qnr {
           else if (c === Codes.closeBracket) cls = false;
           p++;
         }
-        while (p < end && qy_is.identifierPart(text.charCodeAt(p))) {
+        while (p < end && qy.is.identifierPart(text.charCodeAt(p))) {
           p++;
         }
         pos = p;
@@ -615,7 +615,7 @@ namespace qnr {
       if (l >= 2 && l <= 11) {
         const c = tokValue.charCodeAt(0);
         if (c >= Codes.a && c <= Codes.z) {
-          const w = qy_strToKey.get(tokValue);
+          const w = qy.strToKey.get(tokValue);
           if (w !== undefined) return (token = w);
         }
       }
@@ -648,11 +648,11 @@ namespace qnr {
       let s = pos;
       while (pos < end) {
         let c = text.codePointAt(pos)!;
-        if (qy_is.identifierPart(c)) {
-          pos += qy_get.charSize(c);
+        if (qy.is.identifierPart(c)) {
+          pos += qy.get.charSize(c);
         } else if (c === Codes.backslash) {
           c = peekExtEscape();
-          if (c >= 0 && qy_is.identifierPart(c)) {
+          if (c >= 0 && qy.is.identifierPart(c)) {
             pos += 3;
             tokFlags |= TokenFlags.ExtendedEscape;
             r += scanExtEscape();
@@ -660,7 +660,7 @@ namespace qnr {
             continue;
           }
           c = peekUniEscape();
-          if (!(c >= 0 && qy_is.identifierPart(c))) break;
+          if (!(c >= 0 && qy.is.identifierPart(c))) break;
           tokFlags |= TokenFlags.UnicodeEscape;
           r += text.substring(s, pos);
           r += String.fromCodePoint(c);
@@ -692,7 +692,7 @@ namespace qnr {
             s = pos;
             continue;
           }
-          if (qy_is.digit(c)) {
+          if (qy.is.digit(c)) {
             sep = true;
             prev = false;
             pos++;
@@ -728,7 +728,7 @@ namespace qnr {
         if (scientific) r += scientific;
       } else r = text.substring(s, e);
       function checkForIdentifier(scientific = false) {
-        if (!qy_is.identifierStart(text.codePointAt(pos)!)) return;
+        if (!qy.is.identifierStart(text.codePointAt(pos)!)) return;
         const p = pos;
         const l = scanIdentifierParts().length;
         if (l === 1 && text[p] === 'n') {
@@ -771,7 +771,7 @@ namespace qnr {
     }
     function scanOctDigits(): number {
       const s = pos;
-      while (qy_is.octalDigit(text.charCodeAt(pos))) {
+      while (qy.is.octalDigit(text.charCodeAt(pos))) {
         pos++;
       }
       return +text.substring(s, pos);
@@ -820,7 +820,7 @@ namespace qnr {
           continue;
         }
         sep = true;
-        if (!qy_is.digit(c) || c - Codes._0 >= base) break;
+        if (!qy.is.digit(c) || c - Codes._0 >= base) break;
         r += text[pos];
         pos++;
         prev = false;
@@ -870,7 +870,7 @@ namespace qnr {
       switch (c) {
         case Codes._0:
           // '\01'
-          if (tagged && pos < end && qy_is.digit(text.charCodeAt(pos))) {
+          if (tagged && pos < end && qy.is.digit(text.charCodeAt(pos))) {
             pos++;
             tokFlags |= TokenFlags.ContainsInvalidEscape;
             return text.substring(s, pos);
@@ -896,7 +896,7 @@ namespace qnr {
           if (tagged) {
             // '\u' or '\u0' or '\u00' or '\u000'
             for (let p = pos; p < pos + 4; p++) {
-              if (p < end && !qy_is.hexDigit(text.charCodeAt(p)) && text.charCodeAt(p) !== Codes.openBrace) {
+              if (p < end && !qy.is.hexDigit(text.charCodeAt(p)) && text.charCodeAt(p) !== Codes.openBrace) {
                 pos = p;
                 tokFlags |= TokenFlags.ContainsInvalidEscape;
                 return text.substring(s, pos);
@@ -907,7 +907,7 @@ namespace qnr {
           if (pos < end && text.charCodeAt(pos) === Codes.openBrace) {
             pos++;
             // '\u{'
-            if (tagged && !qy_is.hexDigit(text.charCodeAt(pos))) {
+            if (tagged && !qy.is.hexDigit(text.charCodeAt(pos))) {
               tokFlags |= TokenFlags.ContainsInvalidEscape;
               return text.substring(s, pos);
             }
@@ -916,7 +916,7 @@ namespace qnr {
               const vs = scanHexDigits(1);
               const v = vs ? parseInt(vs, 16) : -1;
               // '\u{Not Code Point' or '\u{CodePoint'
-              if (!qy_is.codePoint(v) || text.charCodeAt(pos) !== Codes.closeBrace) {
+              if (!qy.is.codePoint(v) || text.charCodeAt(pos) !== Codes.closeBrace) {
                 tokFlags |= TokenFlags.ContainsInvalidEscape;
                 return text.substring(s, pos);
               } else pos = p;
@@ -929,10 +929,10 @@ namespace qnr {
           return scanHexEscape(/*numDigits*/ 4);
         case Codes.x:
           if (tagged) {
-            if (!qy_is.hexDigit(text.charCodeAt(pos))) {
+            if (!qy.is.hexDigit(text.charCodeAt(pos))) {
               tokFlags |= TokenFlags.ContainsInvalidEscape;
               return text.substring(s, pos);
-            } else if (!qy_is.hexDigit(text.charCodeAt(pos + 1))) {
+            } else if (!qy.is.hexDigit(text.charCodeAt(pos + 1))) {
               pos++;
               tokFlags |= TokenFlags.ContainsInvalidEscape;
               return text.substring(s, pos);
@@ -975,7 +975,7 @@ namespace qnr {
           s = pos;
           continue;
         }
-        if (qy_is.lineBreak(c) && !jsxAttr) {
+        if (qy.is.lineBreak(c) && !jsxAttr) {
           r += text.substring(s, pos);
           tokFlags |= TokenFlags.Unterminated;
           error(Diagnostics.Unterminated_string_literal);
@@ -1071,12 +1071,12 @@ namespace qnr {
       let first = 0;
       let last = -1;
       while (pos < end) {
-        if (!qy_is.whiteSpaceSingleLine(c)) last = pos;
+        if (!qy.is.whiteSpaceSingleLine(c)) last = pos;
         c = text.charCodeAt(pos);
         if (c === Codes.openBrace) break;
         if (c === Codes.lessThan) {
-          if (qy_is.markerTrivia(text, pos)) {
-            pos = qy_syntax.markerTrivia(text, pos, error);
+          if (qy.is.markerTrivia(text, pos)) {
+            pos = qy.markerTrivia(text, pos, error);
             return (token = Syntax.ConflictMarkerTrivia);
           }
           break;
@@ -1084,8 +1084,8 @@ namespace qnr {
         if (c === Codes.greaterThan) error(Diagnostics.Unexpected_token_Did_you_mean_or_gt, pos, 1);
         if (c === Codes.closeBrace) error(Diagnostics.Unexpected_token_Did_you_mean_or_rbrace, pos, 1);
         if (last > 0) last++;
-        if (qy_is.lineBreak(c) && first === 0) first = -1;
-        else if (!qy_is.whiteSpaceLike(c)) first = pos;
+        if (qy.is.lineBreak(c) && first === 0) first = -1;
+        else if (!qy.is.whiteSpaceLike(c)) first = pos;
         pos++;
       }
       const p = last === -1 ? pos : last;
@@ -1093,7 +1093,7 @@ namespace qnr {
       return first === -1 ? Syntax.JsxTextAllWhiteSpaces : Syntax.JsxText;
     }
     function scanJsxIdentifier(): Syntax {
-      if (qy_is.identifierOrKeyword(token)) {
+      if (qy.is.identifierOrKeyword(token)) {
         while (pos < end) {
           const c = text.charCodeAt(pos);
           if (c === Codes.minus) {
@@ -1124,13 +1124,13 @@ namespace qnr {
       tokFlags = TokenFlags.None;
       if (pos >= end) return (token = Syntax.EndOfFileToken);
       const c = text.codePointAt(pos)!;
-      pos += qy_get.charSize(c);
+      pos += qy.get.charSize(c);
       switch (c) {
         case Codes.tab:
         case Codes.verticalTab:
         case Codes.formFeed:
         case Codes.space:
-          while (pos < end && qy_is.whiteSpaceSingleLine(text.charCodeAt(pos))) {
+          while (pos < end && qy.is.whiteSpaceSingleLine(text.charCodeAt(pos))) {
             pos++;
           }
           return (token = Syntax.WhitespaceTrivia);
@@ -1165,14 +1165,14 @@ namespace qnr {
         case Codes.backslash:
           pos--;
           const c2 = peekExtEscape();
-          if (c2 >= 0 && qy_is.identifierStart(c2)) {
+          if (c2 >= 0 && qy.is.identifierStart(c2)) {
             pos += 3;
             tokFlags |= TokenFlags.ExtendedEscape;
             tokValue = scanExtEscape() + scanIdentifierParts();
             return (token = scanIdentifier());
           }
           const c3 = peekUniEscape();
-          if (c3 >= 0 && qy_is.identifierStart(c3)) {
+          if (c3 >= 0 && qy.is.identifierStart(c3)) {
             pos += 6;
             tokFlags |= TokenFlags.UnicodeEscape;
             tokValue = String.fromCharCode(c3) + scanIdentifierParts();
@@ -1181,9 +1181,9 @@ namespace qnr {
           pos++;
           return (token = Syntax.Unknown);
       }
-      if (qy_is.identifierStart(c)) {
+      if (qy.is.identifierStart(c)) {
         let c2 = c;
-        while ((pos < end && qy_is.identifierPart((c2 = text.codePointAt(pos)!))) || text.charCodeAt(pos) === Codes.minus) pos += qy_get.charSize(c2);
+        while ((pos < end && qy.is.identifierPart((c2 = text.codePointAt(pos)!))) || text.charCodeAt(pos) === Codes.minus) pos += qy.get.charSize(c2);
         tokValue = text.substring(tokPos, pos);
         if (c2 === Codes.backslash) tokValue += scanIdentifierParts();
         return (token = scanIdentifier());

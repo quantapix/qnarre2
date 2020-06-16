@@ -717,7 +717,7 @@ namespace qnr {
 
     function visitLeftAssociativeBinaryExpression(node: BinaryExpression) {
       if (containsYield(node.right)) {
-        if (isLogicalOperator(node.operatorToken.kind)) {
+        if (qy.is.logicalOperator(node.operatorToken.kind)) {
           return visitLogicalBinaryExpression(node);
         } else if (node.operatorToken.kind === Syntax.CommaToken) {
           return visitCommaExpression(node);

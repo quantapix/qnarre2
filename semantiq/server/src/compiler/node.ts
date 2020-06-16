@@ -636,10 +636,10 @@ namespace qnr {
         return this.unparsedTextLike(n) || n.kind === Syntax.UnparsedPrologue || n.kind === Syntax.UnparsedSyntheticReference;
       }
       literalExpression(n: Node): n is LiteralExpression {
-        return isLiteralKind(n.kind);
+        return qy.is.literal(n.kind);
       }
       templateLiteralToken(n: Node): n is TemplateLiteralToken {
-        return isTemplateLiteralKind(n.kind);
+        return qy.is.templateLiteral(n.kind);
       }
       importOrExportSpecifier(n: Node): n is ImportSpecifier | ExportSpecifier {
         return this.kind(ImportSpecifier, n) || this.kind(ExportSpecifier, n);
@@ -658,7 +658,7 @@ namespace qnr {
         }
       }
       stringTextContainingNode(n: Node): n is StringLiteral | TemplateLiteralToken {
-        return n.kind === Syntax.StringLiteral || isTemplateLiteralKind(n.kind);
+        return n.kind === Syntax.StringLiteral || qy.is.templateLiteral(n.kind);
       }
       generatedIdentifier(n: Node): n is GeneratedIdentifier {
         return this.kind(Identifier, n) && (n.autoGenerateFlags! & GeneratedIdentifierFlags.KindMask) > GeneratedIdentifierFlags.None;
@@ -670,13 +670,13 @@ namespace qnr {
         return this.kind(PropertyAccessExpression, n) && this.kind(PrivateIdentifier, n.name);
       }
       modifier(n: Node): n is Modifier {
-        return isModifierKind(n.kind);
+        return qy.is.modifier(n.kind);
       }
       functionLike(n: Node): n is SignatureDeclaration {
-        return isFunctionLikeKind(n.kind);
+        return qy.is.functionLike(n.kind);
       }
       functionLikeDeclaration(n: Node): n is FunctionLikeDeclaration {
-        return isFunctionLikeDeclarationKind(n.kind);
+        return qy.is.functionLikeDeclaration(n.kind);
       }
       functionOrModuleBlock(n: Node) {
         return this.kind(SourceFile, n) || this.kind(ModuleBlock, n) || (this.kind(Block, n) && this.functionLike(n.parent));
@@ -724,7 +724,7 @@ namespace qnr {
         );
       }
       typeNode(n: Node): n is TypeNode {
-        return isTypeNodeKind(n.kind);
+        return qy.is.typeNode(n.kind);
       }
       functionOrConstructorTypeNode(n: Node): n is FunctionTypeNode | ConstructorTypeNode {
         switch (n.kind) {
@@ -748,10 +748,10 @@ namespace qnr {
         }
       }
       leftHandSideExpression(n: Node): n is LeftHandSideExpression {
-        return isLeftHandSideExpressionKind(skipPartiallyEmittedExpressions(n).kind);
+        return qy.is.leftHandSideExpression(skipPartiallyEmittedExpressions(n).kind);
       }
       unaryExpression(n: Node): n is UnaryExpression {
-        return isUnaryExpressionKind(skipPartiallyEmittedExpressions(n).kind);
+        return qy.is.unaryExpression(skipPartiallyEmittedExpressions(n).kind);
       }
       unaryExpressionWithWrite(n: Node): n is PrefixUnaryExpression | PostfixUnaryExpression {
         switch (n.kind) {
@@ -764,7 +764,7 @@ namespace qnr {
         }
       }
       expression(n: Node): n is Expression {
-        return isExpressionKind(skipPartiallyEmittedExpressions(n).kind);
+        return qy.is.expression(skipPartiallyEmittedExpressions(n).kind);
       }
       notEmittedOrPartiallyEmittedNode(n: Node): n is NotEmittedStatement | PartiallyEmittedExpression {
         return this.kind(NotEmittedStatement, n) || this.kind(PartiallyEmittedExpression, n);
@@ -798,17 +798,17 @@ namespace qnr {
       }
       declaration(n: Node): n is NamedDeclaration {
         if (n.kind === Syntax.TypeParameter) return (n.parent && n.parent.kind !== Syntax.JSDocTemplateTag) || isInJSFile(n);
-        return isDeclarationKind(n.kind);
+        return qy.is.declaration(n.kind);
       }
       declarationStatement(n: Node): n is DeclarationStatement {
-        return isDeclarationStatementKind(n.kind);
+        return qy.is.declarationStatement(n.kind);
       }
       statementButNotDeclaration(n: Node): n is Statement {
-        return isStatementKindButNotDeclarationKind(n.kind);
+        return qy.is.statementKindButNotDeclaration(n.kind);
       }
       statement(n: Node): n is Statement {
         const k = n.kind;
-        return isStatementKindButNotDeclarationKind(k) || isDeclarationStatementKind(k) || this.blockStatement(n);
+        return qy.is.statementKindButNotDeclaration(k) || qy.is.declarationStatement(k) || this.blockStatement(n);
       }
       blockStatement(n: Node): n is Block {
         if (n.kind !== Syntax.Block) return false;
@@ -960,234 +960,6 @@ namespace qnr {
       }
       tag(n: Node): n is JSDocTag {
         return n.kind >= Syntax.FirstJSDocTagNode && n.kind <= Syntax.LastJSDocTagNode;
-      }
-    })();
-
-    export const qy = new (class {
-      isTrivia(token: Syntax): token is TriviaKind {
-        return Syntax.FirstTriviaToken <= token && token <= Syntax.LastTriviaToken;
-      }
-      isKeyword(token: Syntax) {
-        return Syntax.FirstKeyword <= token && token <= Syntax.LastKeyword;
-      }
-      isContextualKeyword(token: Syntax) {
-        return Syntax.FirstContextualKeyword <= token && token <= Syntax.LastContextualKeyword;
-      }
-      isNonContextualKeyword(token: Syntax) {
-        return isKeyword(token) && !isContextualKeyword(token);
-      }
-      isFutureReservedKeyword(token: Syntax) {
-        return Syntax.FirstFutureReservedWord <= token && token <= Syntax.LastFutureReservedWord;
-      }
-      isStringANonContextualKeyword(name: string) {
-        const token = Token.fromString(name);
-        return token !== undefined && isNonContextualKeyword(token);
-      }
-      isStringAKeyword(name: string) {
-        const token = Token.fromString(name);
-        return token !== undefined && isKeyword(token);
-      }
-      isLiteralKind(k: Syntax) {
-        return Syntax.FirstLiteralToken <= k && k <= Syntax.LastLiteralToken;
-      }
-      isTemplateLiteralKind(k: Syntax) {
-        return Syntax.FirstTemplateToken <= k && k <= Syntax.LastTemplateToken;
-      }
-      isModifierKind(token: Syntax): token is Modifier['kind'] {
-        switch (token) {
-          case Syntax.AbstractKeyword:
-          case Syntax.AsyncKeyword:
-          case Syntax.ConstKeyword:
-          case Syntax.DeclareKeyword:
-          case Syntax.DefaultKeyword:
-          case Syntax.ExportKeyword:
-          case Syntax.PublicKeyword:
-          case Syntax.PrivateKeyword:
-          case Syntax.ProtectedKeyword:
-          case Syntax.ReadonlyKeyword:
-          case Syntax.StaticKeyword:
-            return true;
-        }
-        return false;
-      }
-      isParameterPropertyModifier(k: Syntax) {
-        return !!(modifierToFlag(k) & ModifierFlags.ParameterPropertyModifier);
-      }
-      isClassMemberModifier(idToken: Syntax) {
-        return isParameterPropertyModifier(idToken) || idToken === Syntax.StaticKeyword;
-      }
-      isFunctionLikeDeclarationKind(k: Syntax) {
-        switch (k) {
-          case Syntax.FunctionDeclaration:
-          case Syntax.MethodDeclaration:
-          case Syntax.Constructor:
-          case Syntax.GetAccessor:
-          case Syntax.SetAccessor:
-          case Syntax.FunctionExpression:
-          case Syntax.ArrowFunction:
-            return true;
-          default:
-            return false;
-        }
-      }
-      isFunctionLikeKind(k: Syntax) {
-        switch (k) {
-          case Syntax.MethodSignature:
-          case Syntax.CallSignature:
-          case Syntax.JSDocSignature:
-          case Syntax.ConstructSignature:
-          case Syntax.IndexSignature:
-          case Syntax.FunctionType:
-          case Syntax.JSDocFunctionType:
-          case Syntax.ConstructorType:
-            return true;
-          default:
-            return isFunctionLikeDeclarationKind(k);
-        }
-      }
-      isLeftHandSideExpressionKind(k: Syntax) {
-        switch (k) {
-          case Syntax.PropertyAccessExpression:
-          case Syntax.ElementAccessExpression:
-          case Syntax.NewExpression:
-          case Syntax.CallExpression:
-          case Syntax.JsxElement:
-          case Syntax.JsxSelfClosingElement:
-          case Syntax.JsxFragment:
-          case Syntax.TaggedTemplateExpression:
-          case Syntax.ArrayLiteralExpression:
-          case Syntax.ParenthesizedExpression:
-          case Syntax.ObjectLiteralExpression:
-          case Syntax.ClassExpression:
-          case Syntax.FunctionExpression:
-          case Syntax.Identifier:
-          case Syntax.RegexLiteral:
-          case Syntax.NumericLiteral:
-          case Syntax.BigIntLiteral:
-          case Syntax.StringLiteral:
-          case Syntax.NoSubstitutionLiteral:
-          case Syntax.TemplateExpression:
-          case Syntax.FalseKeyword:
-          case Syntax.NullKeyword:
-          case Syntax.ThisKeyword:
-          case Syntax.TrueKeyword:
-          case Syntax.SuperKeyword:
-          case Syntax.NonNullExpression:
-          case Syntax.MetaProperty:
-          case Syntax.ImportKeyword:
-            return true;
-          default:
-            return false;
-        }
-      }
-      isUnaryExpressionKind(k: Syntax) {
-        switch (k) {
-          case Syntax.PrefixUnaryExpression:
-          case Syntax.PostfixUnaryExpression:
-          case Syntax.DeleteExpression:
-          case Syntax.TypeOfExpression:
-          case Syntax.VoidExpression:
-          case Syntax.AwaitExpression:
-          case Syntax.TypeAssertionExpression:
-            return true;
-          default:
-            return isLeftHandSideExpressionKind(k);
-        }
-      }
-      isExpressionKind(k: Syntax) {
-        switch (k) {
-          case Syntax.ConditionalExpression:
-          case Syntax.YieldExpression:
-          case Syntax.ArrowFunction:
-          case Syntax.BinaryExpression:
-          case Syntax.SpreadElement:
-          case Syntax.AsExpression:
-          case Syntax.OmittedExpression:
-          case Syntax.CommaListExpression:
-          case Syntax.PartiallyEmittedExpression:
-            return true;
-          default:
-            return isUnaryExpressionKind(k);
-        }
-      }
-      isDeclarationKind(k: Syntax) {
-        return (
-          k === Syntax.ArrowFunction ||
-          k === Syntax.BindingElement ||
-          k === Syntax.ClassDeclaration ||
-          k === Syntax.ClassExpression ||
-          k === Syntax.Constructor ||
-          k === Syntax.EnumDeclaration ||
-          k === Syntax.EnumMember ||
-          k === Syntax.ExportSpecifier ||
-          k === Syntax.FunctionDeclaration ||
-          k === Syntax.FunctionExpression ||
-          k === Syntax.GetAccessor ||
-          k === Syntax.ImportClause ||
-          k === Syntax.ImportEqualsDeclaration ||
-          k === Syntax.ImportSpecifier ||
-          k === Syntax.InterfaceDeclaration ||
-          k === Syntax.JsxAttribute ||
-          k === Syntax.MethodDeclaration ||
-          k === Syntax.MethodSignature ||
-          k === Syntax.ModuleDeclaration ||
-          k === Syntax.NamespaceExportDeclaration ||
-          k === Syntax.NamespaceImport ||
-          k === Syntax.NamespaceExport ||
-          k === Syntax.Parameter ||
-          k === Syntax.PropertyAssignment ||
-          k === Syntax.PropertyDeclaration ||
-          k === Syntax.PropertySignature ||
-          k === Syntax.SetAccessor ||
-          k === Syntax.ShorthandPropertyAssignment ||
-          k === Syntax.TypeAliasDeclaration ||
-          k === Syntax.TypeParameter ||
-          k === Syntax.VariableDeclaration ||
-          k === Syntax.JSDocTypedefTag ||
-          k === Syntax.JSDocCallbackTag ||
-          k === Syntax.JSDocPropertyTag
-        );
-      }
-      isDeclarationStatementKind(k: Syntax) {
-        return (
-          k === Syntax.FunctionDeclaration ||
-          k === Syntax.MissingDeclaration ||
-          k === Syntax.ClassDeclaration ||
-          k === Syntax.InterfaceDeclaration ||
-          k === Syntax.TypeAliasDeclaration ||
-          k === Syntax.EnumDeclaration ||
-          k === Syntax.ModuleDeclaration ||
-          k === Syntax.ImportDeclaration ||
-          k === Syntax.ImportEqualsDeclaration ||
-          k === Syntax.ExportDeclaration ||
-          k === Syntax.ExportAssignment ||
-          k === Syntax.NamespaceExportDeclaration
-        );
-      }
-      isStatementKindButNotDeclarationKind(k: Syntax) {
-        return (
-          k === Syntax.BreakStatement ||
-          k === Syntax.ContinueStatement ||
-          k === Syntax.DebuggerStatement ||
-          k === Syntax.DoStatement ||
-          k === Syntax.ExpressionStatement ||
-          k === Syntax.EmptyStatement ||
-          k === Syntax.ForInStatement ||
-          k === Syntax.ForOfStatement ||
-          k === Syntax.ForStatement ||
-          k === Syntax.IfStatement ||
-          k === Syntax.LabeledStatement ||
-          k === Syntax.ReturnStatement ||
-          k === Syntax.SwitchStatement ||
-          k === Syntax.ThrowStatement ||
-          k === Syntax.TryStatement ||
-          k === Syntax.VariableStatement ||
-          k === Syntax.WhileStatement ||
-          k === Syntax.WithStatement ||
-          k === Syntax.NotEmittedStatement ||
-          k === Syntax.EndOfDeclarationMarker ||
-          k === Syntax.MergeDeclarationMarker
-        );
       }
     })();
 
@@ -1574,7 +1346,7 @@ namespace qnr {
       }
       nPosToString(n: Node): string {
         const file = getSourceFileOfNode(n);
-        const loc = qy_get.lineAndCharOf(file, n.pos);
+        const loc = qy.get.lineAndCharOf(file, n.pos);
         return `${file.fileName}(${loc.line + 1},${loc.character + 1})`;
       }
 
@@ -1596,7 +1368,7 @@ namespace qnr {
           if (!line.length) continue;
           let i = 0;
           for (; i < line.length && i < indentation; i++) {
-            if (!qy_is.whiteSpaceLike(line.charCodeAt(i))) break;
+            if (!qy.is.whiteSpaceLike(line.charCodeAt(i))) break;
           }
           if (i < indentation) indentation = i;
           if (indentation === 0) return 0;
@@ -1734,11 +1506,11 @@ namespace qnr {
         }
       }
       idText(identifierOrPrivateName: Identifier | PrivateIdentifier): string {
-        return qy_get.unescUnderscores(identifierOrPrivateName.escapedText);
+        return qy.get.unescUnderscores(identifierOrPrivateName.escapedText);
       }
       symbolName(s: Symbol): string {
         if (s.valueDeclaration && qn.is.privateIdentifierPropertyDeclaration(s.valueDeclaration)) return idText(s.valueDeclaration.name);
-        return qy_get.unescUnderscores(s.escName);
+        return qy.get.unescUnderscores(s.escName);
       }
       nameForNamelessJSDocTypedef(declaration: JSDocTypedefTag | JSDocEnumTag): Identifier | PrivateIdentifier | undefined {
         const n = declaration.parent.parent;

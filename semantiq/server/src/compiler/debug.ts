@@ -202,7 +202,7 @@ namespace qnr {
     }
 
     export function formatSymbol(symbol: Symbol): string {
-      return `{ name: ${qy_get.unescUnderscores(symbol.escName)}; flags: ${formatSymbolFlags(symbol.flags)}; declarations: ${map(symbol.declarations, (node) => formatSyntax(node.kind))} }`;
+      return `{ name: ${qy.get.unescUnderscores(symbol.escName)}; flags: ${formatSymbolFlags(symbol.flags)}; declarations: ${map(symbol.declarations, (node) => formatSyntax(node.kind))} }`;
     }
 
     /**

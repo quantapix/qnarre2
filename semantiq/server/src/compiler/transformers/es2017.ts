@@ -640,7 +640,7 @@ namespace qnr {
     const hasBinding = (resolver.getNodeCheckFlags(node) & NodeCheckFlags.AsyncMethodWithSuperBinding) !== 0;
     const accessors: PropertyAssignment[] = [];
     names.forEach((_, key) => {
-      const name = qy_get.unescUnderscores(key);
+      const name = qy.get.unescUnderscores(key);
       const getterAndSetter: PropertyAssignment[] = [];
       getterAndSetter.push(
         createPropertyAssignment(

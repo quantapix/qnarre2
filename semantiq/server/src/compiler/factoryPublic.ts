@@ -61,7 +61,7 @@ namespace qnr {
   export function createIdentifier(text: string, typeArguments: readonly (TypeNode | TypeParameterDeclaration)[] | undefined): Identifier; // eslint-disable-line @typescript-eslint/unified-signatures
   export function createIdentifier(text: string, typeArguments?: readonly (TypeNode | TypeParameterDeclaration)[]): Identifier {
     const node = <Identifier>qn.createSynthesized(Syntax.Identifier);
-    node.escapedText = qy_get.escUnderscores(text);
+    node.escapedText = qy.get.escUnderscores(text);
     node.originalKeywordKind = text ? Token.fromString(text) : Syntax.Unknown;
     node.autoGenerateFlags = GeneratedIdentifierFlags.None;
     node.autoGenerateId = 0;
@@ -150,7 +150,7 @@ namespace qnr {
       fail('First character of private identifier must be #: ' + text);
     }
     const node = qn.createSynthesized(Syntax.PrivateIdentifier) as PrivateIdentifier;
-    node.escapedText = qy_get.escUnderscores(text);
+    node.escapedText = qy.get.escUnderscores(text);
     return node;
   }
 
@@ -2100,7 +2100,7 @@ namespace qnr {
     node.prologues = emptyArray;
     node.referencedFiles = emptyArray;
     node.libReferenceDirectives = emptyArray;
-    node.lineAndCharOf = (pos) => qy_get.lineAndCharOf(node, pos);
+    node.lineAndCharOf = (pos) => qy.get.lineAndCharOf(node, pos);
     return node;
   }
 
@@ -2585,7 +2585,7 @@ namespace qnr {
   let SourceMapSource: new (fileName: string, text: string, skipTrivia?: (pos: number) => number) => SourceMapSource;
 
   export function createSourceMapSource(fileName: string, text: string, skipTrivia?: (pos: number) => number): SourceMapSource {
-    return new (SourceMapSource || (SourceMapSource = Node.SourceMapSourceObj))(fileName, text, qy_syntax.skipTrivia);
+    return new (SourceMapSource || (SourceMapSource = Node.SourceMapSourceObj))(fileName, text, qy.skipTrivia);
   }
 
   export function getTokenSourceMapRange(node: Node, token: Syntax): SourceMapRange | undefined {

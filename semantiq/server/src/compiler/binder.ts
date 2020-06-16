@@ -334,7 +334,7 @@ namespace qnr {
           const nameExpression = name.expression;
           // treat computed property names where expression is string/numeric literal as just string/numeric literal
           if (StringLiteral.orNumericLiteralLike(nameExpression)) {
-            return qy_get.escUnderscores(nameExpression.text);
+            return qy.get.escUnderscores(nameExpression.text);
           }
           if (qn.is.signedNumericLiteral(nameExpression)) {
             return (Token.toString(nameExpression.operator) + nameExpression.operand.text) as __String;
@@ -400,7 +400,7 @@ namespace qnr {
     }
 
     function getDisplayName(node: Declaration): string {
-      return qn.is.namedDeclaration(node) ? declarationNameToString(node.name) : qy_get.unescUnderscores(Debug.checkDefined(getDeclarationName(node)));
+      return qn.is.namedDeclaration(node) ? declarationNameToString(node.name) : qy.get.unescUnderscores(Debug.checkDefined(getDeclarationName(node)));
     }
 
     /**
@@ -508,7 +508,7 @@ namespace qnr {
               symbol.flags & (SymbolFlags.Alias | SymbolFlags.Type | SymbolFlags.Namespace)
             ) {
               // export type T; - may have meant export type { T }?
-              relatedInformation.push(createDiagnosticForNode(node, Diagnostics.Did_you_mean_0, `export type { ${qy_get.unescUnderscores(node.name.escapedText)} }`));
+              relatedInformation.push(createDiagnosticForNode(node, Diagnostics.Did_you_mean_0, `export type { ${qy.get.unescUnderscores(node.name.escapedText)} }`));
             }
 
             const declarationName = getNameOfDeclaration(node) || node;
@@ -1507,7 +1507,7 @@ namespace qnr {
           }
           case BindBinaryExpressionFlowState.FinishBind: {
             const operator = node.operatorToken.kind;
-            if (isAssignmentOperator(operator) && !isAssignmentTarget(node)) {
+            if (qy.is.assignmentOperator(operator) && !isAssignmentTarget(node)) {
               bindAssignmentTargetFlow(node.left);
               if (operator === Syntax.EqualsToken && node.left.kind === Syntax.ElementAccessExpression) {
                 const elementAccess = <ElementAccessExpression>node.left;
@@ -2167,7 +2167,7 @@ namespace qnr {
     }
 
     function checkStrictModeBinaryExpression(node: BinaryExpression) {
-      if (inStrictMode && qn.is.leftHandSideExpression(node.left) && isAssignmentOperator(node.operatorToken.kind)) {
+      if (inStrictMode && qn.is.leftHandSideExpression(node.left) && qy.is.assignmentOperator(node.operatorToken.kind)) {
         // ECMA 262 (Annex C) The identifier eval or arguments may not appear as the LeftHandSideExpression of an
         // Assignment operator(11.13) or of a PostfixExpression(11.3)
         checkStrictModeEvalOrArguments(node, <Identifier>node.left);

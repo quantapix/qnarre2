@@ -241,7 +241,7 @@ namespace qnr {
    *  - this is mostly subjective beyond the requirement that the expression not be sideeffecting
    */
   export function isSimpleCopiableExpression(expression: Expression) {
-    return StringLiteral.like(expression) || expression.kind === Syntax.NumericLiteral || isKeyword(expression.kind) || qn.is.kind(Identifier, expression);
+    return StringLiteral.like(expression) || expression.kind === Syntax.NumericLiteral || qy.is.keyword(expression.kind) || qn.is.kind(Identifier, expression);
   }
 
   /**

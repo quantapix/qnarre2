@@ -1565,7 +1565,7 @@ namespace qnr {
       //   namespace due to how they are transformed in TypeScript.
       // - We only substitute identifiers that are exported at the top level.
       if (
-        isAssignmentOperator(node.operatorToken.kind) &&
+        qy.is.assignmentOperator(node.operatorToken.kind) &&
         qn.is.kind(Identifier, node.left) &&
         !qn.is.generatedIdentifier(node.left) &&
         !isLocalName(node.left) &&
