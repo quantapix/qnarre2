@@ -47,14 +47,14 @@ namespace qnr {
 
   export function walkUpBindingElementsAndPatterns(binding: BindingElement): VariableDeclaration | ParameterDeclaration {
     let n = binding.parent;
-    while (BindingElement.kind(n.parent)) {
+    while (qn.is.kind(BindingElement, n.parent)) {
       n = n.parent.parent;
     }
     return n.parent;
   }
 
   function getCombinedFlags(n: Node, getFlags: (n: Node) => number): number {
-    if (BindingElement.kind(n)) {
+    if (qn.is.kind(BindingElement, n)) {
       n = walkUpBindingElementsAndPatterns(n);
     }
     let flags = getFlags(n);
@@ -273,7 +273,7 @@ namespace qnr {
   function getAssignedName(n: Node): DeclarationName | undefined {
     if (!n.parent) {
       return;
-    } else if (isPropertyAssignment(n.parent) || BindingElement.kind(n.parent)) {
+    } else if (isPropertyAssignment(n.parent) || qn.is.kind(BindingElement, n.parent)) {
       return n.parent.name;
     } else if (isBinaryExpression(n.parent) && n === n.parent.right) {
       if (isIdentifier(n.parent.left)) {

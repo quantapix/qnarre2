@@ -3260,7 +3260,7 @@ namespace qnr {
     }
 
     function getInferTypeContainer(node: Node): ConditionalTypeNode | undefined {
-      const extendsType = qn.findAncestor(node, (n) => n.parent && ConditionalTypeNode.kind(n.parent) && n.parent.extendsType === n);
+      const extendsType = qn.findAncestor(node, (n) => n.parent && qn.is.kind(ConditionalTypeNode, n.parent) && n.parent.extendsType === n);
       return extendsType && (extendsType.parent as ConditionalTypeNode);
     }
 

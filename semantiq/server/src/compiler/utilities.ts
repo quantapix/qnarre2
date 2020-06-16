@@ -864,7 +864,7 @@ namespace qnr {
   }
 
   export function isLiteralImportTypeNode(n: Node): n is LiteralImportTypeNode {
-    return ImportTypeNode.kind(n) && LiteralTypeNode.kind(n.argument) && qn.is.kind(StringLiteral, n.argument.literal);
+    return qn.is.kind(ImportTypeNode, n) && qn.is.kind(LiteralTypeNode, n.argument) && qn.is.kind(StringLiteral, n.argument.literal);
   }
 
   export function isPrologueDirective(node: Node): node is PrologueDirective {

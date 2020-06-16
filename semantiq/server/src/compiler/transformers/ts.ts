@@ -1616,7 +1616,7 @@ namespace qnr {
       switch (kind) {
         case TypeReferenceSerializationKind.Unknown:
           // From conditional type type reference that cannot be resolved is Similar to any or unknown
-          if (qn.findAncestor(node, (n) => n.parent && ConditionalTypeNode.kind(n.parent) && (n.parent.trueType === n || n.parent.falseType === n))) {
+          if (qn.findAncestor(node, (n) => n.parent && qn.is.kind(ConditionalTypeNode, n.parent) && (n.parent.trueType === n || n.parent.falseType === n))) {
             return createIdentifier('Object');
           }
 

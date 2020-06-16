@@ -632,7 +632,7 @@ namespace qnr {
         isInterfaceDeclaration(node) ||
         isFunctionLike(node) ||
         qn.is.kind(IndexSignatureDeclaration, node) ||
-        MappedTypeNode.kind(node)
+        qn.is.kind(MappedTypeNode, node)
       );
     }
 

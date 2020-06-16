@@ -19,6 +19,38 @@ namespace qnr {
     return statement && isNotEmittedStatement(statement) ? setTextRange(setOriginalNode(createEmptyStatement(), statement), statement) : statement;
   }
 
+  function createMethodCall(object: Expression, methodName: string | Identifier, argumentsList: readonly Expression[]) {
+    return createCall(createPropertyAccess(object, asName(methodName)), /*typeArguments*/ undefined, argumentsList);
+  }
+
+  function createGlobalMethodCall(globalObjectName: string, methodName: string, argumentsList: readonly Expression[]) {
+    return createMethodCall(createIdentifier(globalObjectName), methodName, argumentsList);
+  }
+
+  export function createObjectDefinePropertyCall(target: Expression, propertyName: string | Expression, attributes: Expression) {
+    return createGlobalMethodCall('Object', 'defineProperty', [target, asExpression(propertyName), attributes]);
+  }
+
+  function tryAddPropertyAssignment(ps: Push<PropertyAssignment>, p: string, e?: Expression) {
+    if (e) {
+      ps.push(createPropertyAssignment(p, e));
+      return true;
+    }
+    return false;
+  }
+
+  export function createPropertyDescriptor(attributes: PropertyDescriptorAttributes, singleLine?: boolean) {
+    const ps: PropertyAssignment[] = [];
+    tryAddPropertyAssignment(ps, 'enumerable', asExpression(attributes.enumerable));
+    tryAddPropertyAssignment(ps, 'configurable', asExpression(attributes.configurable));
+    let isData = tryAddPropertyAssignment(ps, 'writable', asExpression(attributes.writable));
+    isData = tryAddPropertyAssignment(ps, 'value', attributes.value) || isData;
+    let isAccessor = tryAddPropertyAssignment(ps, 'get', attributes.get);
+    isAccessor = tryAddPropertyAssignment(ps, 'set', attributes.set) || isAccessor;
+    assert(!(isData && isAccessor), 'A PropertyDescriptor may not be both an accessor descriptor and a data descriptor.');
+    return createObjectLiteral(ps, !singleLine);
+  }
+
   export namespace NodeArray {
     export function create<T extends Node>(es?: T[], hasTrailingComma?: boolean): MutableNodeArray<T>;
     export function create<T extends Node>(es?: readonly T[], hasTrailingComma?: boolean): NodeArray<T>;
@@ -1103,6 +1135,23 @@ namespace qnr {
     export const kind = Syntax.ArrayLiteralExpression;
   }
 
+  export interface ArrayBindingPattern extends Node {
+    kind: Syntax.ArrayBindingPattern;
+    parent: VariableDeclaration | ParameterDeclaration | BindingElement;
+    elements: NodeArray<ArrayBindingElement>;
+  }
+  export namespace ArrayBindingPattern {
+    export const kind = Syntax.ArrayBindingPattern;
+    export function create(es: readonly ArrayBindingElement[]) {
+      const n = qn.createSynthesized(Syntax.ArrayBindingPattern);
+      n.elements = NodeArray.create(es);
+      return n;
+    }
+    export function update(n: ArrayBindingPattern, es: readonly ArrayBindingElement[]) {
+      return n.elements !== es ? updateNode(create(es), n) : n;
+    }
+  }
+
   export interface ArrayTypeNode extends TypeNode {
     kind: Syntax.ArrayType;
     elementType: TypeNode;
@@ -1156,6 +1205,29 @@ namespace qnr {
     export const also = [Syntax.ObjectBindingPattern] as const;
   }
 
+  export interface BindingElement extends NamedDeclaration {
+    kind: Syntax.BindingElement;
+    parent: BindingPattern;
+    propertyName?: PropertyName;
+    dot3Token?: Dot3Token;
+    name: BindingName;
+    initializer?: Expression;
+  }
+  export namespace BindingElement {
+    export const kind = Syntax.BindingElement;
+    export function create(d: Dot3Token | undefined, p: string | PropertyName | undefined, b: string | BindingName, i?: Expression) {
+      const n = qn.createSynthesized(Syntax.BindingElement);
+      n.dot3Token = d;
+      n.propertyName = asName(p);
+      n.name = asName(b);
+      n.initializer = i;
+      return n;
+    }
+    export function update(n: BindingElement, d: Dot3Token | undefined, p: PropertyName | undefined, b: BindingName, i?: Expression) {
+      return n.propertyName !== p || n.dot3Token !== d || n.name !== b || n.initializer !== i ? updateNode(create(d, p, b, i), n) : n;
+    }
+  }
+
   export interface CallSignatureDeclaration extends SignatureDeclarationBase, TypeElement {
     kind: Syntax.CallSignature;
   }
@@ -1183,6 +1255,28 @@ namespace qnr {
     }
     export function update(n: ComputedPropertyName, e: Expression) {
       return n.expression !== e ? updateNode(create(e), n) : n;
+    }
+  }
+
+  export interface ConditionalTypeNode extends TypeNode {
+    kind: Syntax.ConditionalType;
+    checkType: TypeNode;
+    extendsType: TypeNode;
+    trueType: TypeNode;
+    falseType: TypeNode;
+  }
+  export namespace ConditionalTypeNode {
+    export const kind = Syntax.ConditionalType;
+    export function create(c: TypeNode, e: TypeNode, t: TypeNode, f: TypeNode) {
+      const n = qn.createSynthesized(Syntax.ConditionalType);
+      n.checkType = parenthesizeConditionalTypeMember(c);
+      n.extendsType = parenthesizeConditionalTypeMember(e);
+      n.trueType = t;
+      n.falseType = f;
+      return n;
+    }
+    export function update(n: ConditionalTypeNode, c: TypeNode, e: TypeNode, t: TypeNode, f: TypeNode) {
+      return n.checkType !== c || n.extendsType !== e || n.trueType !== t || n.falseType !== f ? updateNode(create(c, e, t, f), n) : n;
     }
   }
 
@@ -1282,6 +1376,45 @@ namespace qnr {
     }
   }
 
+  export interface ImportTypeNode extends NodeWithTypeArguments {
+    kind: Syntax.ImportType;
+    isTypeOf?: boolean;
+    argument: TypeNode;
+    qualifier?: EntityName;
+  }
+  export namespace ImportTypeNode {
+    export const kind = Syntax.ImportType;
+    export function create(a: TypeNode, q?: EntityName, ts?: readonly TypeNode[], tof?: boolean) {
+      const n = qn.createSynthesized(Syntax.ImportType);
+      n.argument = a;
+      n.qualifier = q;
+      n.typeArguments = parenthesizeTypeParameters(ts);
+      n.isTypeOf = tof;
+      return n;
+    }
+    export function update(n: ImportTypeNode, a: TypeNode, q?: EntityName, ts?: readonly TypeNode[], tof?: boolean) {
+      return n.argument !== a || n.qualifier !== q || n.typeArguments !== ts || n.isTypeOf !== tof ? updateNode(create(a, q, ts, tof), n) : n;
+    }
+  }
+
+  export interface IndexedAccessTypeNode extends TypeNode {
+    kind: Syntax.IndexedAccessType;
+    objectType: TypeNode;
+    indexType: TypeNode;
+  }
+  export namespace IndexedAccessTypeNode {
+    export const kind = Syntax.IndexedAccessType;
+    export function create(o: TypeNode, i: TypeNode) {
+      const n = qn.createSynthesized(Syntax.IndexedAccessType);
+      n.objectType = parenthesizeElementTypeMember(o);
+      n.indexType = i;
+      return n;
+    }
+    export function update(n: IndexedAccessTypeNode, o: TypeNode, i: TypeNode) {
+      return n.objectType !== o || n.indexType !== i ? updateNode(create(o, i), n) : n;
+    }
+  }
+
   export interface IndexSignatureDeclaration extends SignatureDeclarationBase, ClassElement, TypeElement {
     kind: Syntax.IndexSignature;
     parent: ObjectTypeDeclaration;
@@ -1298,6 +1431,36 @@ namespace qnr {
     }
     export function update(n: IndexSignatureDeclaration, ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, ps: readonly ParameterDeclaration[], t: TypeNode) {
       return n.parameters !== ps || n.type !== t || n.decorators !== ds || n.modifiers !== ms ? updateNode(create(ds, ms, ps, t), n) : n;
+    }
+  }
+
+  export interface InferTypeNode extends TypeNode {
+    kind: Syntax.InferType;
+    typeParameter: TypeParameterDeclaration;
+  }
+  export namespace InferTypeNode {
+    export const kind = Syntax.InferType;
+    export function create(p: TypeParameterDeclaration) {
+      const n = qn.createSynthesized(Syntax.InferType);
+      n.typeParameter = p;
+      return n;
+    }
+    export function update(n: InferTypeNode, p: TypeParameterDeclaration) {
+      return n.typeParameter !== p ? updateNode(create(p), n) : n;
+    }
+  }
+
+  export interface IntersectionTypeNode extends TypeNode {
+    kind: Syntax.IntersectionType;
+    types: NodeArray<TypeNode>;
+  }
+  export namespace IntersectionTypeNode {
+    export const kind = Syntax.IntersectionType;
+    export function create(ts: readonly TypeNode[]) {
+      return UnionTypeNode.orIntersectionCreate(Syntax.IntersectionType, ts) as IntersectionTypeNode;
+    }
+    export function update(n: IntersectionTypeNode, ts: NodeArray<TypeNode>) {
+      return UnionTypeNode.orIntersectionUpdate(n, ts);
     }
   }
 
@@ -1335,6 +1498,44 @@ namespace qnr {
   export namespace KeywordTypeNode {
     export function create(k: KeywordTypeNode['kind']) {
       return qn.createSynthesized(k) as KeywordTypeNode;
+    }
+  }
+
+  export interface LiteralTypeNode extends TypeNode {
+    kind: Syntax.LiteralType;
+    literal: BooleanLiteral | LiteralExpression | PrefixUnaryExpression;
+  }
+  export namespace LiteralTypeNode {
+    export const kind = Syntax.LiteralType;
+    export function create(l: LiteralTypeNode['literal']) {
+      const n = qn.createSynthesized(Syntax.LiteralType);
+      n.literal = l;
+      return n;
+    }
+    export function update(n: LiteralTypeNode, l: LiteralTypeNode['literal']) {
+      return n.literal !== l ? updateNode(create(l), n) : n;
+    }
+  }
+
+  export interface MappedTypeNode extends TypeNode, Declaration {
+    kind: Syntax.MappedType;
+    readonlyToken?: ReadonlyToken | PlusToken | MinusToken;
+    typeParameter: TypeParameterDeclaration;
+    questionToken?: QuestionToken | PlusToken | MinusToken;
+    type?: TypeNode;
+  }
+  export namespace MappedTypeNode {
+    export const kind = Syntax.MappedType;
+    export function create(r: ReadonlyToken | PlusToken | MinusToken | undefined, p: TypeParameterDeclaration, q?: QuestionToken | PlusToken | MinusToken, t?: TypeNode) {
+      const n = qn.createSynthesized(Syntax.MappedType);
+      n.readonlyToken = r;
+      n.typeParameter = p;
+      n.questionToken = q;
+      n.type = t;
+      return n;
+    }
+    export function update(n: MappedTypeNode, r: ReadonlyToken | PlusToken | MinusToken | undefined, p: TypeParameterDeclaration, q?: QuestionToken | PlusToken | MinusToken, t?: TypeNode) {
+      return n.readonlyToken !== r || n.typeParameter !== p || n.questionToken !== q || n.type !== t ? updateNode(create(r, p, q, t), n) : n;
     }
   }
 
@@ -1413,6 +1614,28 @@ namespace qnr {
     }
   }
 
+  export interface NamedTupleMember extends TypeNode, JSDocContainer, Declaration {
+    kind: Syntax.NamedTupleMember;
+    dot3Token?: Token<Syntax.Dot3Token>;
+    name: Identifier;
+    questionToken?: Token<Syntax.QuestionToken>;
+    type: TypeNode;
+  }
+  export namespace NamedTupleMember {
+    export const kind = Syntax.NamedTupleMember;
+    export function create(d: Token<Syntax.Dot3Token> | undefined, i: Identifier, q: Token<Syntax.QuestionToken> | undefined, t: TypeNode) {
+      const n = qn.createSynthesized(Syntax.NamedTupleMember);
+      n.dot3Token = d;
+      n.name = i;
+      n.questionToken = q;
+      n.type = t;
+      return n;
+    }
+    export function update(n: NamedTupleMember, d: Token<Syntax.Dot3Token> | undefined, i: Identifier, q: Token<Syntax.QuestionToken> | undefined, t: TypeNode) {
+      return n.dot3Token !== d || n.name !== i || n.questionToken !== q || n.type !== t ? updateNode(create(d, i, q, t), n) : n;
+    }
+  }
+
   export interface NoSubstitutionLiteral extends LiteralExpression, TemplateLiteralLikeNode, Declaration {
     kind: Syntax.NoSubstitutionLiteral;
     templateFlags?: TokenFlags;
@@ -1441,6 +1664,23 @@ namespace qnr {
     }
   }
 
+  export interface ObjectBindingPattern extends Node {
+    kind: Syntax.ObjectBindingPattern;
+    parent: VariableDeclaration | ParameterDeclaration | BindingElement;
+    elements: NodeArray<BindingElement>;
+  }
+  export namespace ObjectBindingPattern {
+    export const kind = Syntax.ObjectBindingPattern;
+    export function create(es: readonly BindingElement[]) {
+      const n = qn.createSynthesized(Syntax.ObjectBindingPattern);
+      n.elements = NodeArray.create(es);
+      return n;
+    }
+    export function update(n: ObjectBindingPattern, es: readonly BindingElement[]) {
+      return n.elements !== es ? updateNode(create(es), n) : n;
+    }
+  }
+
   export interface OptionalTypeNode extends TypeNode {
     kind: Syntax.OptionalType;
     type: TypeNode;
@@ -1453,6 +1693,22 @@ namespace qnr {
       return n;
     }
     export function update(n: OptionalTypeNode, t: TypeNode): OptionalTypeNode {
+      return n.type !== t ? updateNode(create(t), n) : n;
+    }
+  }
+
+  export interface ParenthesizedTypeNode extends TypeNode {
+    kind: Syntax.ParenthesizedType;
+    type: TypeNode;
+  }
+  export namespace ParenthesizedTypeNode {
+    export const kind = Syntax.ParenthesizedType;
+    export function create(t: TypeNode) {
+      const n = qn.createSynthesized(Syntax.ParenthesizedType);
+      n.type = t;
+      return n;
+    }
+    export function update(n: ParenthesizedTypeNode, t: TypeNode) {
       return n.type !== t ? updateNode(create(t), n) : n;
     }
   }
@@ -1663,6 +1919,16 @@ namespace qnr {
     }
   }
 
+  export interface ThisTypeNode extends TypeNode {
+    kind: Syntax.ThisType;
+  }
+  export namespace ThisTypeNode {
+    export const kind = Syntax.ThisType;
+    export function create() {
+      return qn.createSynthesized(Syntax.ThisType);
+    }
+  }
+
   export interface TupleTypeNode extends TypeNode {
     kind: Syntax.TupleType;
     elements: NodeArray<TypeNode | NamedTupleMember>;
@@ -1697,6 +1963,26 @@ namespace qnr {
 
   export interface TypeNode extends Node {
     _typeNodeBrand: any;
+  }
+
+  export interface TypeOperatorNode extends TypeNode {
+    kind: Syntax.TypeOperator;
+    operator: Syntax.KeyOfKeyword | Syntax.UniqueKeyword | Syntax.ReadonlyKeyword;
+    type: TypeNode;
+  }
+  export namespace TypeOperatorNode {
+    export const kind = Syntax.TypeOperator;
+    export function create(t: TypeNode): TypeOperatorNode;
+    export function create(o: Syntax.KeyOfKeyword | Syntax.UniqueKeyword | Syntax.ReadonlyKeyword, t: TypeNode): TypeOperatorNode;
+    export function create(o: Syntax.KeyOfKeyword | Syntax.UniqueKeyword | Syntax.ReadonlyKeyword | TypeNode, t?: TypeNode) {
+      const n = qn.createSynthesized(Syntax.TypeOperator);
+      n.operator = typeof o === 'number' ? o : Syntax.KeyOfKeyword;
+      n.type = parenthesizeElementTypeMember(typeof o === 'number' ? t! : o);
+      return n;
+    }
+    export function update(n: TypeOperatorNode, t: TypeNode) {
+      return n.type !== t ? updateNode(create(n.operator, t), n) : n;
+    }
   }
 
   export interface TypePredicateNode extends TypeNode {
@@ -1764,6 +2050,7 @@ namespace qnr {
     types: NodeArray<TypeNode>;
   }
   export namespace UnionTypeNode {
+    export const kind = Syntax.UnionType;
     export function create(ts: readonly TypeNode[]) {
       return orIntersectionCreate(Syntax.UnionType, ts) as UnionTypeNode;
     }
@@ -1778,320 +2065,6 @@ namespace qnr {
     export function orIntersectionUpdate<T extends UnionOrIntersectionTypeNode>(n: T, ts: NodeArray<TypeNode>): T {
       return n.types !== ts ? updateNode(orIntersectionCreate(n.kind, ts) as T, n) : n;
     }
-    export function kind(n: Node): n is UnionTypeNode {
-      return n.kind === Syntax.UnionType;
-    }
-  }
-
-  export interface IntersectionTypeNode extends TypeNode {
-    kind: Syntax.IntersectionType;
-    types: NodeArray<TypeNode>;
-  }
-  export namespace IntersectionTypeNode {
-    export function create(ts: readonly TypeNode[]) {
-      return UnionTypeNode.orIntersectionCreate(Syntax.IntersectionType, ts) as IntersectionTypeNode;
-    }
-    export function update(n: IntersectionTypeNode, ts: NodeArray<TypeNode>) {
-      return UnionTypeNode.orIntersectionUpdate(n, ts);
-    }
-    export function kind(n: Node): n is IntersectionTypeNode {
-      return n.kind === Syntax.IntersectionType;
-    }
-  }
-
-  export interface ConditionalTypeNode extends TypeNode {
-    kind: Syntax.ConditionalType;
-    checkType: TypeNode;
-    extendsType: TypeNode;
-    trueType: TypeNode;
-    falseType: TypeNode;
-  }
-  export namespace ConditionalTypeNode {
-    export function create(c: TypeNode, e: TypeNode, t: TypeNode, f: TypeNode) {
-      const n = qn.createSynthesized(Syntax.ConditionalType);
-      n.checkType = parenthesizeConditionalTypeMember(c);
-      n.extendsType = parenthesizeConditionalTypeMember(e);
-      n.trueType = t;
-      n.falseType = f;
-      return n;
-    }
-    export function update(n: ConditionalTypeNode, c: TypeNode, e: TypeNode, t: TypeNode, f: TypeNode) {
-      return n.checkType !== c || n.extendsType !== e || n.trueType !== t || n.falseType !== f ? updateNode(create(c, e, t, f), n) : n;
-    }
-    export function kind(n: Node): n is ConditionalTypeNode {
-      return n.kind === Syntax.ConditionalType;
-    }
-  }
-
-  export interface InferTypeNode extends TypeNode {
-    kind: Syntax.InferType;
-    typeParameter: TypeParameterDeclaration;
-  }
-  export namespace InferTypeNode {
-    export function create(p: TypeParameterDeclaration) {
-      const n = qn.createSynthesized(Syntax.InferType);
-      n.typeParameter = p;
-      return n;
-    }
-    export function update(n: InferTypeNode, p: TypeParameterDeclaration) {
-      return n.typeParameter !== p ? updateNode(create(p), n) : n;
-    }
-    export function kind(n: Node): n is InferTypeNode {
-      return n.kind === Syntax.InferType;
-    }
-  }
-
-  export interface ParenthesizedTypeNode extends TypeNode {
-    kind: Syntax.ParenthesizedType;
-    type: TypeNode;
-  }
-  export namespace ParenthesizedTypeNode {
-    export function create(t: TypeNode) {
-      const n = qn.createSynthesized(Syntax.ParenthesizedType);
-      n.type = t;
-      return n;
-    }
-    export function update(n: ParenthesizedTypeNode, t: TypeNode) {
-      return n.type !== t ? updateNode(create(t), n) : n;
-    }
-    export function kind(n: Node): n is ParenthesizedTypeNode {
-      return n.kind === Syntax.ParenthesizedType;
-    }
-  }
-
-  export interface ThisTypeNode extends TypeNode {
-    kind: Syntax.ThisType;
-  }
-  export namespace ThisTypeNode {
-    export function create() {
-      return qn.createSynthesized(Syntax.ThisType);
-    }
-    export function kind(n: Node): n is ThisTypeNode {
-      return n.kind === Syntax.ThisType;
-    }
-  }
-
-  export interface TypeOperatorNode extends TypeNode {
-    kind: Syntax.TypeOperator;
-    operator: Syntax.KeyOfKeyword | Syntax.UniqueKeyword | Syntax.ReadonlyKeyword;
-    type: TypeNode;
-  }
-  export namespace TypeOperatorNode {
-    export function create(t: TypeNode): TypeOperatorNode;
-    export function create(o: Syntax.KeyOfKeyword | Syntax.UniqueKeyword | Syntax.ReadonlyKeyword, t: TypeNode): TypeOperatorNode;
-    export function create(o: Syntax.KeyOfKeyword | Syntax.UniqueKeyword | Syntax.ReadonlyKeyword | TypeNode, t?: TypeNode) {
-      const n = qn.createSynthesized(Syntax.TypeOperator);
-      n.operator = typeof o === 'number' ? o : Syntax.KeyOfKeyword;
-      n.type = parenthesizeElementTypeMember(typeof o === 'number' ? t! : o);
-      return n;
-    }
-    export function update(n: TypeOperatorNode, t: TypeNode) {
-      return n.type !== t ? updateNode(create(n.operator, t), n) : n;
-    }
-    export function kind(n: Node): n is TypeOperatorNode {
-      return n.kind === Syntax.TypeOperator;
-    }
-  }
-
-  export interface IndexedAccessTypeNode extends TypeNode {
-    kind: Syntax.IndexedAccessType;
-    objectType: TypeNode;
-    indexType: TypeNode;
-  }
-  export namespace IndexedAccessTypeNode {
-    export function create(o: TypeNode, i: TypeNode) {
-      const n = qn.createSynthesized(Syntax.IndexedAccessType);
-      n.objectType = parenthesizeElementTypeMember(o);
-      n.indexType = i;
-      return n;
-    }
-    export function update(n: IndexedAccessTypeNode, o: TypeNode, i: TypeNode) {
-      return n.objectType !== o || n.indexType !== i ? updateNode(create(o, i), n) : n;
-    }
-    export function kind(n: Node): n is IndexedAccessTypeNode {
-      return n.kind === Syntax.IndexedAccessType;
-    }
-  }
-
-  export interface MappedTypeNode extends TypeNode, Declaration {
-    kind: Syntax.MappedType;
-    readonlyToken?: ReadonlyToken | PlusToken | MinusToken;
-    typeParameter: TypeParameterDeclaration;
-    questionToken?: QuestionToken | PlusToken | MinusToken;
-    type?: TypeNode;
-  }
-  export namespace MappedTypeNode {
-    export function create(r: ReadonlyToken | PlusToken | MinusToken | undefined, p: TypeParameterDeclaration, q?: QuestionToken | PlusToken | MinusToken, t?: TypeNode) {
-      const n = qn.createSynthesized(Syntax.MappedType);
-      n.readonlyToken = r;
-      n.typeParameter = p;
-      n.questionToken = q;
-      n.type = t;
-      return n;
-    }
-    export function update(n: MappedTypeNode, r: ReadonlyToken | PlusToken | MinusToken | undefined, p: TypeParameterDeclaration, q?: QuestionToken | PlusToken | MinusToken, t?: TypeNode) {
-      return n.readonlyToken !== r || n.typeParameter !== p || n.questionToken !== q || n.type !== t ? updateNode(create(r, p, q, t), n) : n;
-    }
-    export function kind(n: Node): n is MappedTypeNode {
-      return n.kind === Syntax.MappedType;
-    }
-  }
-
-  export interface LiteralTypeNode extends TypeNode {
-    kind: Syntax.LiteralType;
-    literal: BooleanLiteral | LiteralExpression | PrefixUnaryExpression;
-  }
-  export namespace LiteralTypeNode {
-    export function create(l: LiteralTypeNode['literal']) {
-      const n = qn.createSynthesized(Syntax.LiteralType);
-      n.literal = l;
-      return n;
-    }
-    export function update(n: LiteralTypeNode, l: LiteralTypeNode['literal']) {
-      return n.literal !== l ? updateNode(create(l), n) : n;
-    }
-    export function kind(n: Node): n is LiteralTypeNode {
-      return n.kind === Syntax.LiteralType;
-    }
-  }
-
-  export interface NamedTupleMember extends TypeNode, JSDocContainer, Declaration {
-    kind: Syntax.NamedTupleMember;
-    dot3Token?: Token<Syntax.Dot3Token>;
-    name: Identifier;
-    questionToken?: Token<Syntax.QuestionToken>;
-    type: TypeNode;
-  }
-  export namespace NamedTupleMember {
-    export function create(d: Token<Syntax.Dot3Token> | undefined, i: Identifier, q: Token<Syntax.QuestionToken> | undefined, t: TypeNode) {
-      const n = qn.createSynthesized(Syntax.NamedTupleMember);
-      n.dot3Token = d;
-      n.name = i;
-      n.questionToken = q;
-      n.type = t;
-      return n;
-    }
-    export function update(n: NamedTupleMember, d: Token<Syntax.Dot3Token> | undefined, i: Identifier, q: Token<Syntax.QuestionToken> | undefined, t: TypeNode) {
-      return n.dot3Token !== d || n.name !== i || n.questionToken !== q || n.type !== t ? updateNode(create(d, i, q, t), n) : n;
-    }
-  }
-
-  export interface ImportTypeNode extends NodeWithTypeArguments {
-    kind: Syntax.ImportType;
-    isTypeOf?: boolean;
-    argument: TypeNode;
-    qualifier?: EntityName;
-  }
-  export namespace ImportTypeNode {
-    export function create(a: TypeNode, q?: EntityName, ts?: readonly TypeNode[], tof?: boolean) {
-      const n = qn.createSynthesized(Syntax.ImportType);
-      n.argument = a;
-      n.qualifier = q;
-      n.typeArguments = parenthesizeTypeParameters(ts);
-      n.isTypeOf = tof;
-      return n;
-    }
-    export function update(n: ImportTypeNode, a: TypeNode, q?: EntityName, ts?: readonly TypeNode[], tof?: boolean) {
-      return n.argument !== a || n.qualifier !== q || n.typeArguments !== ts || n.isTypeOf !== tof ? updateNode(create(a, q, ts, tof), n) : n;
-    }
-    export function kind(n: Node): n is ImportTypeNode {
-      return n.kind === Syntax.ImportType;
-    }
-  }
-
-  export interface ObjectBindingPattern extends Node {
-    kind: Syntax.ObjectBindingPattern;
-    parent: VariableDeclaration | ParameterDeclaration | BindingElement;
-    elements: NodeArray<BindingElement>;
-  }
-  export namespace ObjectBindingPattern {
-    export function create(es: readonly BindingElement[]) {
-      const n = qn.createSynthesized(Syntax.ObjectBindingPattern);
-      n.elements = NodeArray.create(es);
-      return n;
-    }
-    export function update(n: ObjectBindingPattern, es: readonly BindingElement[]) {
-      return n.elements !== es ? updateNode(create(es), n) : n;
-    }
-    export function kind(n: Node): n is ObjectBindingPattern {
-      return n.kind === Syntax.ObjectBindingPattern;
-    }
-  }
-
-  export interface ArrayBindingPattern extends Node {
-    kind: Syntax.ArrayBindingPattern;
-    parent: VariableDeclaration | ParameterDeclaration | BindingElement;
-    elements: NodeArray<ArrayBindingElement>;
-  }
-  export namespace ArrayBindingPattern {
-    export function create(es: readonly ArrayBindingElement[]) {
-      const n = qn.createSynthesized(Syntax.ArrayBindingPattern);
-      n.elements = NodeArray.create(es);
-      return n;
-    }
-    export function update(n: ArrayBindingPattern, es: readonly ArrayBindingElement[]) {
-      return n.elements !== es ? updateNode(create(es), n) : n;
-    }
-    export function kind(n: Node): n is ArrayBindingPattern {
-      return n.kind === Syntax.ArrayBindingPattern;
-    }
-  }
-
-  export interface BindingElement extends NamedDeclaration {
-    kind: Syntax.BindingElement;
-    parent: BindingPattern;
-    propertyName?: PropertyName;
-    dot3Token?: Dot3Token;
-    name: BindingName;
-    initializer?: Expression;
-  }
-  export namespace BindingElement {
-    export function create(d: Dot3Token | undefined, p: string | PropertyName | undefined, b: string | BindingName, i?: Expression) {
-      const n = qn.createSynthesized(Syntax.BindingElement);
-      n.dot3Token = d;
-      n.propertyName = asName(p);
-      n.name = asName(b);
-      n.initializer = i;
-      return n;
-    }
-    export function update(n: BindingElement, d: Dot3Token | undefined, p: PropertyName | undefined, b: BindingName, i?: Expression) {
-      return n.propertyName !== p || n.dot3Token !== d || n.name !== b || n.initializer !== i ? updateNode(create(d, p, b, i), n) : n;
-    }
-    export function kind(n: Node): n is BindingElement {
-      return n.kind === Syntax.BindingElement;
-    }
-  }
-
-  function createMethodCall(object: Expression, methodName: string | Identifier, argumentsList: readonly Expression[]) {
-    return createCall(createPropertyAccess(object, asName(methodName)), /*typeArguments*/ undefined, argumentsList);
-  }
-
-  function createGlobalMethodCall(globalObjectName: string, methodName: string, argumentsList: readonly Expression[]) {
-    return createMethodCall(createIdentifier(globalObjectName), methodName, argumentsList);
-  }
-
-  export function createObjectDefinePropertyCall(target: Expression, propertyName: string | Expression, attributes: Expression) {
-    return createGlobalMethodCall('Object', 'defineProperty', [target, asExpression(propertyName), attributes]);
-  }
-
-  function tryAddPropertyAssignment(ps: Push<PropertyAssignment>, p: string, e?: Expression) {
-    if (e) {
-      ps.push(createPropertyAssignment(p, e));
-      return true;
-    }
-    return false;
-  }
-
-  export function createPropertyDescriptor(attributes: PropertyDescriptorAttributes, singleLine?: boolean) {
-    const ps: PropertyAssignment[] = [];
-    tryAddPropertyAssignment(ps, 'enumerable', asExpression(attributes.enumerable));
-    tryAddPropertyAssignment(ps, 'configurable', asExpression(attributes.configurable));
-    let isData = tryAddPropertyAssignment(ps, 'writable', asExpression(attributes.writable));
-    isData = tryAddPropertyAssignment(ps, 'value', attributes.value) || isData;
-    let isAccessor = tryAddPropertyAssignment(ps, 'get', attributes.get);
-    isAccessor = tryAddPropertyAssignment(ps, 'set', attributes.set) || isAccessor;
-    assert(!(isData && isAccessor), 'A PropertyDescriptor may not be both an accessor descriptor and a data descriptor.');
-    return createObjectLiteral(ps, !singleLine);
   }
 
   export namespace SignatureDeclaration {
@@ -2233,9 +2206,7 @@ namespace qnr {
   //// ====================
 
   interface xxx {
-    [Syntax.ArrayBindingPattern]: ArrayBindingPattern;
     [Syntax.ArrowFunction]: ArrowFunction;
-    [Syntax.BindingElement]: BindingElement;
     [Syntax.Block]: Block;
     [Syntax.BreakStatement]: BreakStatement;
     [Syntax.Bundle]: Bundle;
@@ -2248,7 +2219,6 @@ namespace qnr {
     [Syntax.ColonToken]: ColonToken;
     [Syntax.CommaListExpression]: CommaListExpression;
     [Syntax.ConditionalExpression]: ConditionalExpression;
-    [Syntax.ConditionalType]: ConditionalTypeNode;
     [Syntax.ContinueStatement]: ContinueStatement;
     [Syntax.DebuggerStatement]: DebuggerStatement;
     [Syntax.Decorator]: Decorator;
@@ -2284,12 +2254,8 @@ namespace qnr {
     [Syntax.ImportDeclaration]: ImportDeclaration;
     [Syntax.ImportEqualsDeclaration]: ImportEqualsDeclaration;
     [Syntax.ImportSpecifier]: ImportSpecifier;
-    [Syntax.ImportType]: ImportTypeNode;
-    [Syntax.IndexedAccessType]: IndexedAccessTypeNode;
-    [Syntax.InferType]: InferTypeNode;
     [Syntax.InputFiles]: InputFiles;
     [Syntax.InterfaceDeclaration]: InterfaceDeclaration;
-    [Syntax.IntersectionType]: IntersectionTypeNode;
     [Syntax.JSDocAllType]: JSDocAllType;
     [Syntax.JSDocAugmentsTag]: JSDocAugmentsTag;
     [Syntax.JSDocAuthorTag]: JSDocAuthorTag;
@@ -2332,8 +2298,6 @@ namespace qnr {
     [Syntax.JsxSelfClosingElement]: JsxSelfClosingElement;
     [Syntax.JsxSpreadAttribute]: JsxSpreadAttribute;
     [Syntax.LabeledStatement]: LabeledStatement;
-    [Syntax.LiteralType]: LiteralTypeNode;
-    [Syntax.MappedType]: MappedTypeNode;
     [Syntax.MergeDeclarationMarker]: MergeDeclarationMarker;
     [Syntax.MetaProperty]: MetaProperty;
     [Syntax.MissingDeclaration]: MissingDeclaration;
@@ -2341,19 +2305,16 @@ namespace qnr {
     [Syntax.ModuleDeclaration]: ModuleDeclaration;
     [Syntax.NamedExports]: NamedExports;
     [Syntax.NamedImports]: NamedImports;
-    [Syntax.NamedTupleMember]: NamedTupleMember;
     [Syntax.NamespaceExport]: NamespaceExport;
     [Syntax.NamespaceExportDeclaration]: NamespaceExportDeclaration;
     [Syntax.NamespaceImport]: NamespaceImport;
     [Syntax.NewExpression]: NewExpression;
     [Syntax.NonNullExpression]: NonNullExpression;
     [Syntax.NotEmittedStatement]: NotEmittedStatement;
-    [Syntax.ObjectBindingPattern]: ObjectBindingPattern;
     [Syntax.ObjectLiteralExpression]: ObjectLiteralExpression;
     [Syntax.OmittedExpression]: OmittedExpression;
     [Syntax.Parameter]: ParameterDeclaration;
     [Syntax.ParenthesizedExpression]: ParenthesizedExpression;
-    [Syntax.ParenthesizedType]: ParenthesizedTypeNode;
     [Syntax.PartiallyEmittedExpression]: PartiallyEmittedExpression;
     [Syntax.PlusToken]: PlusToken;
     [Syntax.PostfixUnaryExpression]: PostfixUnaryExpression;
@@ -2374,7 +2335,6 @@ namespace qnr {
     [Syntax.TaggedTemplateExpression]: TaggedTemplateExpression;
     [Syntax.TemplateExpression]: TemplateExpression;
     [Syntax.TemplateSpan]: TemplateSpan;
-    [Syntax.ThisType]: ThisTypeNode;
     [Syntax.ThrowStatement]: ThrowStatement;
     [Syntax.TryStatement]: TryStatement;
     [Syntax.TypeAliasDeclaration]: TypeAliasDeclaration;
@@ -2382,7 +2342,6 @@ namespace qnr {
     [Syntax.TypeOfExpression]: TypeOfExpression;
     [Syntax.TypeOperator]: TypeOperatorNode;
     [Syntax.TypeParameter]: TypeParameterDeclaration;
-    [Syntax.TypePredicate]: TypePredicateNode;
     [Syntax.UnparsedInternalText]: UnparsedTextLike;
     [Syntax.UnparsedPrepend]: UnparsedPrepend;
     [Syntax.UnparsedPrologue]: UnparsedPrologue;
@@ -2396,124 +2355,5 @@ namespace qnr {
     [Syntax.WhileStatement]: WhileStatement;
     [Syntax.WithStatement]: WithStatement;
     [Syntax.YieldExpression]: YieldExpression;
-
-    //[Syntax.Count]: Count;
   }
-
-  //namespace BindingElement { export const kind  = Syntax.; }
-  /*
-namespace Block { export const kind  = Syntax.; }
-namespace BreakOrContinueStatement { export const kind  = Syntax.; }
-namespace CallExpression { export const kind  = Syntax.; }
-namespace CaseBlock { export const kind  = Syntax.; }
-namespace CaseClause { export const kind  = Syntax.; }
-namespace CatchClause { export const kind  = Syntax.; }
-namespace ClassLikeDeclaration
-{ export const kind  = Syntax.; } namespace CommaListExpression
-{ export const kind  = Syntax.; } namespace ComputedPropertyName
-{ export const kind  = Syntax.; } namespace ConditionalExpression
-{ export const kind  = Syntax.; } namespace ConditionalTypeNode
-{ export const kind  = Syntax.; } namespace Decorator
-{ export const kind  = Syntax.; } namespace DefaultClause
-{ export const kind  = Syntax.; } namespace DeleteExpression
-{ export const kind  = Syntax.; } namespace DeleteExpression
-{ export const kind  = Syntax.; } namespace DoStatement
-{ export const kind  = Syntax.; } namespace ElementAccessExpression
-{ export const kind  = Syntax.; } namespace EnumDeclaration
-{ export const kind  = Syntax.; } namespace EnumMember
-{ export const kind  = Syntax.; } namespace ExportAssignment
-{ export const kind  = Syntax.; } namespace ExportDeclaration
-{ export const kind  = Syntax.; } namespace ExpressionStatement
-{ export const kind  = Syntax.; } namespace ExpressionWithTypeArguments
-{ export const kind  = Syntax.; } namespace ExternalModuleReference
-{ export const kind  = Syntax.; } namespace ForInStatement
-{ export const kind  = Syntax.; } namespace ForOfStatement
-{ export const kind  = Syntax.; } namespace ForStatement
-{ export const kind  = Syntax.; } namespace FunctionLikeDeclaration
-{ export const kind  = Syntax.; } namespace HeritageClause
-{ export const kind  = Syntax.; } namespace IfStatement
-{ export const kind  = Syntax.; } namespace ImportClause
-{ export const kind  = Syntax.; } namespace ImportDeclaration
-{ export const kind  = Syntax.; } namespace ImportEqualsDeclaration
-{ export const kind  = Syntax.; } namespace ImportOrExportSpecifier
-{ export const kind  = Syntax.; } namespace ImportTypeNode
-{ export const kind  = Syntax.; } namespace IndexedAccessTypeNode
-{ export const kind  = Syntax.; } namespace InferTypeNode
-{ export const kind  = Syntax.; } namespace InterfaceDeclaration
-{ export const kind  = Syntax.; } namespace JSDoc
-{ export const kind  = Syntax.; } namespace JSDocAugmentsTag
-{ export const kind  = Syntax.; } namespace JSDocAuthorTag
-{ export const kind  = Syntax.; } namespace JSDocFunctionType
-{ export const kind  = Syntax.; } namespace JSDocImplementsTag
-{ export const kind  = Syntax.; } namespace JSDocSignature
-{ export const kind  = Syntax.; } namespace JSDocTemplateTag
-{ export const kind  = Syntax.; } namespace JSDocTypedefTag
-{ export const kind  = Syntax.; } namespace JSDocTypeExpression
-{ export const kind  = Syntax.; } namespace JSDocTypeLiteral
-{ export const kind  = Syntax.; } namespace JSDocTypeReferencingNode
-{ export const kind  = Syntax.; } namespace JsxAttribute
-{ export const kind  = Syntax.; } namespace JsxAttributes
-{ export const kind  = Syntax.; } namespace JsxClosingElement
-{ export const kind  = Syntax.; } namespace JsxElement
-{ export const kind  = Syntax.; } namespace JsxExpression
-{ export const kind  = Syntax.; } namespace JsxFragment
-{ export const kind  = Syntax.; } namespace JsxOpeningLikeElement
-{ export const kind  = Syntax.; } namespace JsxSpreadAttribute
-{ export const kind  = Syntax.; } namespace LabeledStatement
-{ export const kind  = Syntax.; } namespace LiteralTypeNode
-{ export const kind  = Syntax.; } namespace MappedTypeNode
-{ export const kind  = Syntax.; } namespace MetaProperty
-{ export const kind  = Syntax.; } namespace MissingDeclaration
-{ export const kind  = Syntax.; } namespace ModuleDeclaration
-{ export const kind  = Syntax.; } namespace NamedImportsOrExports
-{ export const kind  = Syntax.; } namespace NamedTupleMember
-{ export const kind  = Syntax.; } namespace NamespaceExport
-{ export const kind  = Syntax.; } namespace NamespaceExportDeclaration
-{ export const kind  = Syntax.; } namespace NamespaceImport
-{ export const kind  = Syntax.; } namespace NonNullExpression
-{ export const kind  = Syntax.; } namespace ObjectLiteralExpression
-{ export const kind  = Syntax.; } namespace OptionalTypeNode
-{ export const kind  = Syntax.; } namespace ParameterDeclaration
-{ export const kind  = Syntax.; } namespace ParenthesizedExpression
-{ export const kind  = Syntax.; } namespace ParenthesizedTypeNode
-{ export const kind  = Syntax.; } namespace PartiallyEmittedExpression
-{ export const kind  = Syntax.; } namespace PostfixUnaryExpression
-{ export const kind  = Syntax.; } namespace PrefixUnaryExpression
-{ export const kind  = Syntax.; } namespace PropertyAccessExpression
-{ export const kind  = Syntax.; } namespace PropertyAssignment
-{ export const kind  = Syntax.; } namespace PropertyDeclaration
-{ export const kind  = Syntax.; } namespace PropertySignature
-{ export const kind  = Syntax.; } namespace QualifiedName
-{ export const kind  = Syntax.; } namespace RestTypeNode
-{ export const kind  = Syntax.; } namespace ReturnStatement
-{ export const kind  = Syntax.; } namespace ShorthandPropertyAssignment
-{ export const kind  = Syntax.; } namespace SignatureDeclaration
-{ export const kind  = Syntax.; } namespace SourceFile
-{ export const kind  = Syntax.; } namespace SpreadAssignment
-{ export const kind  = Syntax.; } namespace SpreadElement
-{ export const kind  = Syntax.; } namespace SwitchStatement
-{ export const kind  = Syntax.; } namespace TaggedTemplateExpression
-{ export const kind  = Syntax.; } namespace TemplateExpression
-{ export const kind  = Syntax.; } namespace TemplateSpan
-{ export const kind  = Syntax.; } namespace ThrowStatement
-{ export const kind  = Syntax.; } namespace TryStatement
-{ export const kind  = Syntax.; } namespace TupleTypeNode
-{ export const kind  = Syntax.; } namespace TypeAliasDeclaration
-{ export const kind  = Syntax.; } namespace TypeAssertion
-{ export const kind  = Syntax.; } namespace TypeLiteralNode
-{ export const kind  = Syntax.; } namespace TypeOfExpression
-{ export const kind  = Syntax.; } namespace TypeOperatorNode
-{ export const kind  = Syntax.; } namespace TypeParameterDeclaration
-{ export const kind  = Syntax.; } namespace TypePredicateNode
-{ export const kind  = Syntax.; } namespace TypeQueryNode
-{ export const kind  = Syntax.; } namespace TypeReferenceNode
-{ export const kind  = Syntax.; } namespace UnionOrIntersectionTypeNode
-{ export const kind  = Syntax.; } namespace VariableDeclaration
-{ export const kind  = Syntax.; } namespace VariableDeclarationList
-{ export const kind  = Syntax.; } namespace VariableStatement
-{ export const kind  = Syntax.; } namespace VoidExpression
-{ export const kind  = Syntax.; } namespace WhileStatement
-{ export const kind  = Syntax.; } namespace WithStatement
-{ export const kind  = Syntax.; } namespace YieldExpression { export const kind  = Syntax.; } 
-*/
 }

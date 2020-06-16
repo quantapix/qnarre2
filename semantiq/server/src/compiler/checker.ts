@@ -1635,7 +1635,7 @@ namespace qnr {
             if (isNullishCoalesce(node) || isOptionalChain(node)) {
               return false;
             }
-            if (BindingElement.kind(node) && node.dot3Token && ObjectBindingPattern.kind(node.parent)) {
+            if (qn.is.kind(BindingElement, node) && node.dot3Token && qn.is.kind(ObjectBindingPattern, node.parent)) {
               return false;
             }
             if (isTypeNode(node)) return false;
@@ -4706,7 +4706,7 @@ namespace qnr {
         }
 
         function appendReferenceToType(root: TypeReferenceNode | ImportTypeNode, ref: TypeReferenceNode): TypeReferenceNode | ImportTypeNode {
-          if (ImportTypeNode.kind(root)) {
+          if (qn.is.kind(ImportTypeNode, root)) {
             // first shift type arguments
             const innerParams = root.typeArguments;
             if (root.qualifier) {
@@ -5225,7 +5225,7 @@ namespace qnr {
        * Given A[B][C][D], finds A[B]
        */
       function getTopmostIndexedAccessType(top: IndexedAccessTypeNode): IndexedAccessTypeNode {
-        if (IndexedAccessTypeNode.kind(top.objectType)) {
+        if (qn.is.kind(IndexedAccessTypeNode, top.objectType)) {
           return getTopmostIndexedAccessType(top.objectType);
         }
         return top;
@@ -5323,7 +5323,7 @@ namespace qnr {
         }
 
         const entityName = createAccessFromSymbolChain(chain, chain.length - 1, 0);
-        if (IndexedAccessTypeNode.kind(entityName)) {
+        if (qn.is.kind(IndexedAccessTypeNode, entityName)) {
           return entityName; // Indexed accesses can never be `typeof`
         }
         if (isTypeOf) {
@@ -5371,7 +5371,7 @@ namespace qnr {
           ) {
             // Should use an indexed access
             const LHS = createAccessFromSymbolChain(chain, index - 1, stopper);
-            if (IndexedAccessTypeNode.kind(LHS)) {
+            if (qn.is.kind(IndexedAccessTypeNode, LHS)) {
               return IndexedAccessTypeNode.create(LHS, LiteralTypeNode.create(createLiteral(symbolName)));
             } else {
               return IndexedAccessTypeNode.create(TypeReferenceNode.create(LHS, typeParameterNodes as readonly TypeNode[]), LiteralTypeNode.create(createLiteral(symbolName)));
@@ -7780,7 +7780,7 @@ namespace qnr {
 
       const isOptional =
         includeOptionality &&
-        ((isParameter(declaration) && isJSDocOptionalParameter(declaration)) || (!BindingElement.kind(declaration) && !isVariableDeclaration(declaration) && !!declaration.questionToken));
+        ((isParameter(declaration) && isJSDocOptionalParameter(declaration)) || (!qn.is.kind(BindingElement, declaration) && !isVariableDeclaration(declaration) && !!declaration.questionToken));
 
       // Use type from type annotation if one is present
       const declaredType = tryGetTypeFromEffectiveTypeNode(declaration);
@@ -8271,7 +8271,7 @@ namespace qnr {
         }
 
         // always widen a 'unique symbol' type if the type was created for a different declaration.
-        if (type.flags & TypeFlags.UniqueESSymbol && (BindingElement.kind(declaration) || !declaration.type) && type.symbol !== getSymbolOfNode(declaration)) {
+        if (type.flags & TypeFlags.UniqueESSymbol && (qn.is.kind(BindingElement, declaration) || !declaration.type) && type.symbol !== getSymbolOfNode(declaration)) {
           type = esSymbolType;
         }
 
@@ -8393,7 +8393,7 @@ namespace qnr {
         qn.is.kind(PropertyDeclaration, declaration) ||
         qn.is.kind(PropertySignature, declaration) ||
         isVariableDeclaration(declaration) ||
-        BindingElement.kind(declaration)
+        qn.is.kind(BindingElement, declaration)
       ) {
         type = getWidenedTypeForVariableLikeDeclaration(declaration, /*includeOptionality*/ true);
       }
@@ -12465,7 +12465,7 @@ namespace qnr {
     }
 
     function isReadonlyTypeOperator(node: Node) {
-      return TypeOperatorNode.kind(node) && node.operator === Syntax.ReadonlyKeyword;
+      return qn.is.kind(TypeOperatorNode, node) && node.operator === Syntax.ReadonlyKeyword;
     }
 
     // We represent tuple types as type references to synthesized generic interface types created by
@@ -13875,7 +13875,7 @@ namespace qnr {
 
     function getAliasSymbolForTypeNode(node: Node) {
       let host = node.parent;
-      while (ParenthesizedTypeNode.kind(host) || (TypeOperatorNode.kind(host) && host.operator === Syntax.ReadonlyKeyword)) {
+      while (qn.is.kind(ParenthesizedTypeNode, host) || (qn.is.kind(TypeOperatorNode, host) && host.operator === Syntax.ReadonlyKeyword)) {
         host = host.parent;
       }
       return isTypeAlias(host) ? getSymbolOfNode(host) : undefined;
@@ -22064,7 +22064,7 @@ namespace qnr {
         isOuterVariable ||
         isSpreadDestructuringAssignmentTarget ||
         isModuleExports ||
-        BindingElement.kind(declaration) ||
+        qn.is.kind(BindingElement, declaration) ||
         (type !== autoType &&
           type !== autoArrayType &&
           (!strictNullChecks || (type.flags & (TypeFlags.AnyOrUnknown | TypeFlags.Void)) !== 0 || isInTypeQuery(node) || node.parent.kind === Syntax.ExportSpecifier)) ||
@@ -22785,7 +22785,7 @@ namespace qnr {
         if (isParameter(node.parent) && (inBindingInitializer || node.parent.initializer === node)) {
           return true;
         }
-        if (BindingElement.kind(node.parent) && node.parent.initializer === node) {
+        if (qn.is.kind(BindingElement, node.parent) && node.parent.initializer === node) {
           inBindingInitializer = true;
         }
 
@@ -31868,9 +31868,9 @@ namespace qnr {
     }
 
     function isValidUnusedLocalDeclaration(declaration: Declaration): boolean {
-      if (BindingElement.kind(declaration) && isIdentifierThatStartsWithUnderscore(declaration.name)) {
+      if (qn.is.kind(BindingElement, declaration) && isIdentifierThatStartsWithUnderscore(declaration.name)) {
         return !!qn.findAncestor(declaration.parent, (ancestor) =>
-          ArrayBindingPattern.kind(ancestor) || isVariableDeclaration(ancestor) || isVariableDeclarationList(ancestor) ? false : isForOfStatement(ancestor) ? true : 'quit'
+          qn.is.kind(ArrayBindingPattern, ancestor) || isVariableDeclaration(ancestor) || isVariableDeclarationList(ancestor) ? false : isForOfStatement(ancestor) ? true : 'quit'
         );
       }
 
@@ -31899,7 +31899,7 @@ namespace qnr {
 
           if (isImportedDeclaration(declaration)) {
             addToGroup(unusedImports, importClauseFromImported(declaration), declaration, getNodeId);
-          } else if (BindingElement.kind(declaration) && ObjectBindingPattern.kind(declaration.parent)) {
+          } else if (qn.is.kind(BindingElement, declaration) && qn.is.kind(ObjectBindingPattern, declaration.parent)) {
             // In `{ a, ...b }, `a` is considered used since it removes a property from `b`. `b` may still be unused though.
             const lastElement = last(declaration.parent.elements);
             if (declaration === lastElement || !last(declaration.parent.elements).dot3Token) {
@@ -32186,7 +32186,7 @@ namespace qnr {
     // Check variable, parameter, or property declaration
     function checkVariableLikeDeclaration(node: ParameterDeclaration | PropertyDeclaration | PropertySignature | VariableDeclaration | BindingElement) {
       checkDecorators(node);
-      if (!BindingElement.kind(node)) {
+      if (!qn.is.kind(BindingElement, node)) {
         checkSourceElement(node.type);
       }
 
@@ -32257,7 +32257,7 @@ namespace qnr {
           }
           // check the binding pattern with empty elements
           if (needCheckWidenedType) {
-            if (ArrayBindingPattern.kind(node.name)) {
+            if (qn.is.kind(ArrayBindingPattern, node.name)) {
               checkIteratedTypeOrElementType(IterationUse.Destructuring, widenedType, undefinedType, node);
             } else if (strictNullChecks) {
               checkNonNullNonVoidType(widenedType, node);
@@ -35780,7 +35780,7 @@ namespace qnr {
             ((node.parent.kind === Syntax.ImportDeclaration || node.parent.kind === Syntax.ExportDeclaration) && (<ImportDeclaration>node.parent).moduleSpecifier === node) ||
             (isInJSFile(node) && isRequireCall(node.parent, /*checkArgumentIsStringLiteralLike*/ false)) ||
             isImportCall(node.parent) ||
-            (LiteralTypeNode.kind(node.parent) && isLiteralImportTypeNode(node.parent.parent) && node.parent.parent.argument === node.parent)
+            (qn.is.kind(LiteralTypeNode, node.parent) && isLiteralImportTypeNode(node.parent.parent) && node.parent.parent.argument === node.parent)
           ) {
             return resolveExternalModuleName(node, <LiteralExpression>node, ignoreErrors);
           }
@@ -35795,7 +35795,7 @@ namespace qnr {
             ? parent.argumentExpression === node
               ? getTypeOfExpression(parent.expression)
               : undefined
-            : LiteralTypeNode.kind(parent) && IndexedAccessTypeNode.kind(grandParent)
+            : qn.is.kind(LiteralTypeNode, parent) && qn.is.kind(IndexedAccessTypeNode, grandParent)
             ? getTypeFromTypeNode(grandParent.objectType)
             : undefined;
           return objectType && getPropertyOfType(objectType, qy_get.escUnderscores((node as StringLiteral | NumericLiteral).text));
@@ -36119,7 +36119,7 @@ namespace qnr {
     }
 
     function isSymbolOfDestructuredElementOfCatchBinding(symbol: Symbol) {
-      return BindingElement.kind(symbol.valueDeclaration) && walkUpBindingElementsAndPatterns(symbol.valueDeclaration).parent.kind === Syntax.CatchClause;
+      return qn.is.kind(BindingElement, symbol.valueDeclaration) && walkUpBindingElementsAndPatterns(symbol.valueDeclaration).parent.kind === Syntax.CatchClause;
     }
 
     function isSymbolOfDeclarationWithCollidingName(symbol: Symbol): boolean {
@@ -36608,7 +36608,7 @@ namespace qnr {
         isBindingCapturedByNode: (node, decl) => {
           const parseNode = getParseTreeNode(node);
           const parseDecl = getParseTreeNode(decl);
-          return !!parseNode && !!parseDecl && (isVariableDeclaration(parseDecl) || BindingElement.kind(parseDecl)) && isBindingCapturedByNode(parseNode, parseDecl);
+          return !!parseNode && !!parseDecl && (isVariableDeclaration(parseDecl) || qn.is.kind(BindingElement, parseDecl)) && isBindingCapturedByNode(parseNode, parseDecl);
         },
         getDeclarationStatementsForSourceFile: (node, flags, tracker, bundled) => {
           const n = getParseTreeNode(node) as SourceFile;
@@ -38319,7 +38319,7 @@ namespace qnr {
     }
 
     function checkGrammarBigIntLiteral(node: BigIntLiteral): boolean {
-      const literalType = LiteralTypeNode.kind(node.parent) || (isPrefixUnaryExpression(node.parent) && LiteralTypeNode.kind(node.parent.parent));
+      const literalType = qn.is.kind(LiteralTypeNode, node.parent) || (isPrefixUnaryExpression(node.parent) && qn.is.kind(LiteralTypeNode, node.parent.parent));
       return false;
     }
 

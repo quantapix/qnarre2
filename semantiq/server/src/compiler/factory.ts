@@ -1663,7 +1663,7 @@ namespace qnr {
   }
 
   export function convertToArrayAssignmentElement(element: BindingOrAssignmentElement) {
-    if (BindingElement.kind(element)) {
+    if (qn.is.kind(BindingElement, element)) {
       if (element.dot3Token) {
         Debug.assertNode(element.name, isIdentifier);
         return setOriginalNode(setTextRange(createSpread(element.name), element), element);
@@ -1676,7 +1676,7 @@ namespace qnr {
   }
 
   export function convertToObjectAssignmentElement(element: BindingOrAssignmentElement) {
-    if (BindingElement.kind(element)) {
+    if (qn.is.kind(BindingElement, element)) {
       if (element.dot3Token) {
         Debug.assertNode(element.name, isIdentifier);
         return setOriginalNode(setTextRange(createSpreadAssignment(element.name), element), element);
@@ -1705,7 +1705,7 @@ namespace qnr {
   }
 
   export function convertToObjectAssignmentPattern(node: ObjectBindingOrAssignmentPattern) {
-    if (ObjectBindingPattern.kind(node)) {
+    if (qn.is.kind(ObjectBindingPattern, node)) {
       return setOriginalNode(setTextRange(createObjectLiteral(map(node.elements, convertToObjectAssignmentElement)), node), node);
     }
     Debug.assertNode(node, isObjectLiteralExpression);
@@ -1713,7 +1713,7 @@ namespace qnr {
   }
 
   export function convertToArrayAssignmentPattern(node: ArrayBindingOrAssignmentPattern) {
-    if (ArrayBindingPattern.kind(node)) {
+    if (qn.is.kind(ArrayBindingPattern, node)) {
       return setOriginalNode(setTextRange(createArrayLiteral(map(node.elements, convertToArrayAssignmentElement)), node), node);
     }
     Debug.assertNode(node, isArrayLiteralExpression);
