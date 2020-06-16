@@ -214,7 +214,7 @@ namespace qnr {
           exportedNames = collectExportedVariableInfo(element, uniqueExports, exportedNames);
         }
       }
-    } else if (!isGeneratedIdentifier(decl.name)) {
+    } else if (!qn.is.generatedIdentifier(decl.name)) {
       const text = idText(decl.name);
       if (!uniqueExports.get(text)) {
         uniqueExports.set(text, true);
@@ -304,7 +304,7 @@ namespace qnr {
         return index;
       }
 
-      const superIndex = findIndex(statements, (s) => qn.is.kind(ExpressionStatement, s) && isSuperCall(s.expression), index);
+      const superIndex = findIndex(statements, (s) => qn.is.kind(ExpressionStatement, s) && qn.is.superCall(s.expression), index);
       if (superIndex > -1) {
         for (let i = index; i <= superIndex; i++) {
           result.push(visitNode(statements[i], visitor, isStatement));

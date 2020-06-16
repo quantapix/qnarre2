@@ -495,7 +495,7 @@ namespace qnr {
         return node;
       }
 
-      if (isImportCall(node)) {
+      if (qn.is.importCall(node)) {
         return visitImportCallExpression(node);
       } else if (isDestructuringAssignment(node)) {
         return visitDestructuringAssignment(node);
@@ -584,7 +584,7 @@ namespace qnr {
       // });
       needUMDDynamicImportHelper = true;
       if (isSimpleCopiableExpression(arg)) {
-        const argClone = isGeneratedIdentifier(arg) ? arg : qn.is.kind(StringLiteral, arg) ? createLiteral(arg) : setEmitFlags(setTextRange(getSynthesizedClone(arg), arg), EmitFlags.NoComments);
+        const argClone = qn.is.generatedIdentifier(arg) ? arg : qn.is.kind(StringLiteral, arg) ? createLiteral(arg) : setEmitFlags(setTextRange(getSynthesizedClone(arg), arg), EmitFlags.NoComments);
         return createConditional(
           /*condition*/ createIdentifier('__syncRequire'),
           /*whenTrue*/ createImportCallExpressionCommonJS(arg, containsLexicalThis),
@@ -797,7 +797,7 @@ namespace qnr {
      * @param node The node to visit.
      */
     function visitImportEqualsDeclaration(node: ImportEqualsDeclaration): VisitResult<Statement> {
-      assert(qp_isExternalModuleImportEqualsDeclaration(node), 'import= for internal module references should be handled in an earlier transformer.');
+      assert(qn.is.externalModuleImportEqualsDeclaration(node), 'import= for internal module references should be handled in an earlier transformer.');
 
       let statements: Statement[] | undefined;
       if (moduleKind !== ModuleKind.AMD) {
@@ -1258,7 +1258,7 @@ namespace qnr {
             statements = appendExportsOfBindingElement(statements, element);
           }
         }
-      } else if (!isGeneratedIdentifier(decl.name)) {
+      } else if (!qn.is.generatedIdentifier(decl.name)) {
         statements = appendExportsOfDeclaration(statements, decl);
       }
 
@@ -1531,7 +1531,7 @@ namespace qnr {
         return node;
       }
 
-      if (!isGeneratedIdentifier(node) && !isLocalName(node)) {
+      if (!qn.is.generatedIdentifier(node) && !isLocalName(node)) {
         const exportContainer = resolver.getReferencedExportContainer(node, isExportName(node));
         if (exportContainer && exportContainer.kind === Syntax.SourceFile) {
           return setTextRange(createPropertyAccess(createIdentifier('exports'), getSynthesizedClone(node)), /*location*/ node);
@@ -1567,7 +1567,7 @@ namespace qnr {
       if (
         isAssignmentOperator(node.operatorToken.kind) &&
         qn.is.kind(Identifier, node.left) &&
-        !isGeneratedIdentifier(node.left) &&
+        !qn.is.generatedIdentifier(node.left) &&
         !isLocalName(node.left) &&
         !isDeclarationNameOfEnumOrNamespace(node.left)
       ) {
@@ -1606,7 +1606,7 @@ namespace qnr {
       if (
         (node.operator === Syntax.Plus2Token || node.operator === Syntax.Minus2Token) &&
         qn.is.kind(Identifier, node.operand) &&
-        !isGeneratedIdentifier(node.operand) &&
+        !qn.is.generatedIdentifier(node.operand) &&
         !isLocalName(node.operand) &&
         !isDeclarationNameOfEnumOrNamespace(node.operand)
       ) {
@@ -1635,7 +1635,7 @@ namespace qnr {
      * @param name The name.
      */
     function getExports(name: Identifier): Identifier[] | undefined {
-      if (!isGeneratedIdentifier(name)) {
+      if (!qn.is.generatedIdentifier(name)) {
         const valueDeclaration = resolver.getReferencedImportDeclaration(name) || resolver.getReferencedValueDeclaration(name);
         if (valueDeclaration) {
           return currentModuleInfo && currentModuleInfo.exportedBindings[getOriginalNodeId(valueDeclaration)];

@@ -2145,7 +2145,7 @@ namespace qnr {
       return;
 
       function collectModuleReferences(node: Statement, inAmbientModule: boolean): void {
-        if (isAnyImportOrReExport(node)) {
+        if (qn.is.anyImportOrReExport(node)) {
           const moduleNameExpr = getExternalModuleName(node);
           // TypeScript 1.0 spec (April 2014): 12.1.6
           // An ExternalImportDeclaration in an AmbientExternalModuleDeclaration may reference other external modules
@@ -2154,7 +2154,7 @@ namespace qnr {
             imports = append(imports, moduleNameExpr);
           }
         } else if (qn.is.kind(ModuleDeclaration, node)) {
-          if (isAmbientModule(node) && (inAmbientModule || hasSyntacticModifier(node, ModifierFlags.Ambient) || file.isDeclarationFile)) {
+          if (qn.is.ambientModule(node) && (inAmbientModule || hasSyntacticModifier(node, ModifierFlags.Ambient) || file.isDeclarationFile)) {
             const nameText = getTextOfIdentifierOrLiteral(node.name);
             // Ambient module declarations can be interpreted as augmentations for some existing external modules.
             // This will happen in two cases:
@@ -2194,9 +2194,9 @@ namespace qnr {
             imports = append(imports, node.arguments[0]);
           }
           // we have to check the argument list has length of 1. We will still have to process these even though we have parsing error.
-          else if (isImportCall(node) && node.arguments.length === 1 && StringLiteral.like(node.arguments[0])) {
+          else if (qn.is.importCall(node) && node.arguments.length === 1 && StringLiteral.like(node.arguments[0])) {
             imports = append(imports, node.arguments[0] as StringLiteralLike);
-          } else if (isLiteralImportTypeNode(node)) {
+          } else if (qn.is.literalImportTypeNode(node)) {
             imports = append(imports, node.argument.literal);
           }
         }
@@ -2211,7 +2211,7 @@ namespace qnr {
           }
         };
         while (true) {
-          const child = (isJavaScriptFile && hasJSDocNodes(current) && forEach(current.jsDoc, getContainingChild)) || qn.forEach.child(current, getContainingChild);
+          const child = (isJavaScriptFile && qn.is.withJSDocNodes(current) && forEach(current.jsDoc, getContainingChild)) || qn.forEach.child(current, getContainingChild);
           if (!child) {
             return current;
           }

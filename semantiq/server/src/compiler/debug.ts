@@ -387,7 +387,7 @@ namespace qnr {
             },
             __debugIsParseTreeNode: {
               get(this: Node) {
-                return isParseTreeNode(this);
+                return qn.is.parseTreeNode(this);
               },
             },
             __debugEmitFlags: {

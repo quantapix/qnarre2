@@ -60,7 +60,7 @@ namespace qnr {
     }
 
     function visitNonOptionalPropertyOrElementAccessExpression(node: AccessExpression, captureThisArg: boolean, isDelete: boolean): Expression {
-      if (isOptionalChain(node)) {
+      if (qn.is.optionalChain(node)) {
         // If `node` is an optional chain, then it is the outermost chain of an optional expression.
         return visitOptionalExpression(node, captureThisArg, isDelete);
       }
@@ -87,7 +87,7 @@ namespace qnr {
     }
 
     function visitNonOptionalCallExpression(node: CallExpression, captureThisArg: boolean): Expression {
-      if (isOptionalChain(node)) {
+      if (qn.is.optionalChain(node)) {
         // If `node` is an optional chain, then it is the outermost chain of an optional expression.
         return visitOptionalExpression(node, captureThisArg, /*isDelete*/ false);
       }
@@ -110,7 +110,7 @@ namespace qnr {
 
     function visitOptionalExpression(node: OptionalChain, captureThisArg: boolean, isDelete: boolean): Expression {
       const { expression, chain } = flattenChain(node);
-      const left = visitNonOptionalExpression(expression, isCallChain(chain[0]), /*isDelete*/ false);
+      const left = visitNonOptionalExpression(expression, qn.is.callChain(chain[0]), /*isDelete*/ false);
       const leftThisArg = qn.is.kind(SyntheticReferenceExpression, left) ? left.thisArg : undefined;
       let leftExpression = qn.is.kind(SyntheticReferenceExpression, left) ? left.expression : left;
       let capturedLeft: Expression = leftExpression;
@@ -183,7 +183,7 @@ namespace qnr {
     }
 
     function visitDeleteExpression(node: DeleteExpression) {
-      return isOptionalChain(skipParentheses(node.expression))
+      return qn.is.optionalChain(skipParentheses(node.expression))
         ? setOriginalNode(visitNonOptionalExpression(node.expression, /*captureThisArg*/ false, /*isDelete*/ true), node)
         : updateDelete(node, visitNode(node.expression, visitor, isExpression));
     }

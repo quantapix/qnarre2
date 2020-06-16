@@ -327,8 +327,8 @@ namespace qnr {
       return (
         (node.transformFlags & TransformFlags.ContainsES2015) !== 0 ||
         convertedLoopState !== undefined ||
-        (hierarchyFacts & HierarchyFacts.ConstructorWithCapturedSuper && (isStatement(node) || node.kind === Syntax.Block)) ||
-        (isIterationStatement(node, /*lookInLabeledStatements*/ false) && shouldConvertIterationStatement(node)) ||
+        (hierarchyFacts & HierarchyFacts.ConstructorWithCapturedSuper && (qn.is.statement(node) || node.kind === Syntax.Block)) ||
+        (qn.is.iterationStatement(node, /*lookInLabeledStatements*/ false) && shouldConvertIterationStatement(node)) ||
         (getEmitFlags(node) & EmitFlags.TypeScriptClassWrapper) !== 0
       );
     }
@@ -562,7 +562,7 @@ namespace qnr {
       if (!convertedLoopState) {
         return node;
       }
-      if (isGeneratedIdentifier(node)) {
+      if (qn.is.generatedIdentifier(node)) {
         return node;
       }
       if (node.escapedText !== 'arguments' || !resolver.isArgumentsLocalBinding(node)) {
@@ -927,7 +927,7 @@ namespace qnr {
         superCallExpression = createDefaultSuperCallOrThis();
       } else if (isDerivedClass && statementOffset < constructor.body.statements.length) {
         const firstStatement = constructor.body.statements[statementOffset];
-        if (qn.is.kind(ExpressionStatement, firstStatement) && isSuperCall(firstStatement.expression)) {
+        if (qn.is.kind(ExpressionStatement, firstStatement) && qn.is.superCall(firstStatement.expression)) {
           superCallExpression = visitImmediateSuperCallInBody(firstStatement.expression);
         }
       }
@@ -1639,7 +1639,7 @@ namespace qnr {
       const savedConvertedLoopState = convertedLoopState;
       convertedLoopState = undefined;
       const ancestorFacts =
-        container && isClassLike(container) && !hasSyntacticModifier(node, ModifierFlags.Static)
+        container && qn.is.classLike(container) && !hasSyntacticModifier(node, ModifierFlags.Static)
           ? enterSubtree(HierarchyFacts.FunctionExcludes, HierarchyFacts.FunctionIncludes | HierarchyFacts.NonStaticClassElement)
           : enterSubtree(HierarchyFacts.FunctionExcludes, HierarchyFacts.FunctionIncludes);
       const parameters = visitParameterList(node.parameters, visitor, context);
@@ -2020,7 +2020,7 @@ namespace qnr {
         convertedLoopState.labels = createMap<boolean>();
       }
       const statement = unwrapInnermostStatementOfLabel(node, convertedLoopState && recordLabel);
-      return isIterationStatement(statement, /*lookInLabeledStatements*/ false)
+      return qn.is.iterationStatement(statement, /*lookInLabeledStatements*/ false)
         ? visitIterationStatement(statement, /*outermostLabeledStatement*/ node)
         : restoreEnclosingLabel(visitNode(statement, visitor, isStatement, liftToBlock), node, convertedLoopState && resetLabel);
     }
@@ -3153,7 +3153,7 @@ namespace qnr {
       }
 
       const expression = skipOuterExpressions(node.expression);
-      if (expression.kind === Syntax.SuperKeyword || isSuperProperty(expression) || some(node.arguments, isSpreadElement)) {
+      if (expression.kind === Syntax.SuperKeyword || qn.is.superProperty(expression) || some(node.arguments, isSpreadElement)) {
         return visitCallExpressionWithPotentialCapturedThisAssignment(node, /*assignToCapturedThis*/ true);
       }
 
@@ -3318,7 +3318,7 @@ namespace qnr {
     function visitCallExpressionWithPotentialCapturedThisAssignment(node: CallExpression, assignToCapturedThis: boolean): CallExpression | BinaryExpression {
       // We are here either because SuperKeyword was used somewhere in the expression, or
       // because we contain a SpreadElementExpression.
-      if (node.transformFlags & TransformFlags.ContainsRestOrSpread || node.expression.kind === Syntax.SuperKeyword || isSuperProperty(skipOuterExpressions(node.expression))) {
+      if (node.transformFlags & TransformFlags.ContainsRestOrSpread || node.expression.kind === Syntax.SuperKeyword || qn.is.superProperty(skipOuterExpressions(node.expression))) {
         const { target, thisArg } = createCallBinding(node.expression, hoistVariableDeclaration);
         if (node.expression.kind === Syntax.SuperKeyword) {
           setEmitFlags(thisArg, EmitFlags.NoSubstitution);
@@ -3644,7 +3644,7 @@ namespace qnr {
      * @param emitCallback The callback used to emit the node.
      */
     function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void) {
-      if (enabledSubstitutions & ES2015SubstitutionFlags.CapturedThis && isFunctionLike(node)) {
+      if (enabledSubstitutions & ES2015SubstitutionFlags.CapturedThis && qn.is.functionLike(node)) {
         // If we are tracking a captured `this`, keep track of the enclosing function.
         const ancestorFacts = enterSubtree(
           HierarchyFacts.FunctionExcludes,
@@ -3765,7 +3765,7 @@ namespace qnr {
     function substituteExpressionIdentifier(node: Identifier): Identifier {
       if (enabledSubstitutions & ES2015SubstitutionFlags.BlockScopedBindings && !isInternalName(node)) {
         const declaration = resolver.getReferencedDeclarationWithCollidingName(node);
-        if (declaration && !(isClassLike(declaration) && isPartOfClassBody(declaration, node))) {
+        if (declaration && !(qn.is.classLike(declaration) && isPartOfClassBody(declaration, node))) {
           return setTextRange(getGeneratedNameForNode(getNameOfDeclaration(declaration)), node);
         }
       }
@@ -3789,7 +3789,7 @@ namespace qnr {
           // not inside the class body.
           return false;
         }
-        if (isClassElement(currentNode) && currentNode.parent === declaration) {
+        if (qn.is.classElement(currentNode) && currentNode.parent === declaration) {
           return true;
         }
         currentNode = currentNode.parent;

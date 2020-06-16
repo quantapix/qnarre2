@@ -313,7 +313,7 @@ namespace qnr {
         return visitJavaScriptInStatementContainingYield(node);
       } else if (inGeneratorFunctionBody) {
         return visitJavaScriptInGeneratorFunctionBody(node);
-      } else if (isFunctionLikeDeclaration(node) && node.asteriskToken) {
+      } else if (qn.is.functionLikeDeclaration(node) && node.asteriskToken) {
         return visitGenerator(node);
       } else if (transformFlags & TransformFlags.ContainsGenerator) {
         return visitEachChild(node, visitor, context);
@@ -1021,7 +1021,7 @@ namespace qnr {
     }
 
     function visitCallExpression(node: CallExpression) {
-      if (!isImportCall(node) && forEach(node.arguments, containsYield)) {
+      if (!qn.is.importCall(node) && forEach(node.arguments, containsYield)) {
         // [source]
         //      a.b(1, yield, 2);
         //
@@ -1425,7 +1425,7 @@ namespace qnr {
           variable = <Identifier>getSynthesizedClone(initializer.declarations[0].name);
         } else {
           variable = visitNode(initializer, visitor, isExpression);
-          assert(isLeftHandSideExpression(variable));
+          assert(qn.is.leftHandSideExpression(variable));
         }
 
         emitAssignment(variable, createElementAccess(keysArray, keysIndex));
@@ -1778,7 +1778,7 @@ namespace qnr {
     }
 
     function substituteExpressionIdentifier(node: Identifier) {
-      if (!isGeneratedIdentifier(node) && renamedCatchVariables && renamedCatchVariables.has(idText(node))) {
+      if (!qn.is.generatedIdentifier(node) && renamedCatchVariables && renamedCatchVariables.has(idText(node))) {
         const original = getOriginalNode(node);
         if (qn.is.kind(Identifier, original) && original.parent) {
           const declaration = resolver.getReferencedValueDeclaration(original);
@@ -1798,7 +1798,7 @@ namespace qnr {
     }
 
     function cacheExpression(node: Expression): Identifier {
-      if (isGeneratedIdentifier(node) || getEmitFlags(node) & EmitFlags.HelperName) {
+      if (qn.is.generatedIdentifier(node) || getEmitFlags(node) & EmitFlags.HelperName) {
         return <Identifier>node;
       }
 
@@ -1939,7 +1939,7 @@ namespace qnr {
 
       // generated identifiers should already be unique within a file
       let name: Identifier;
-      if (isGeneratedIdentifier(variable.name)) {
+      if (qn.is.generatedIdentifier(variable.name)) {
         name = variable.name;
         hoistVariableDeclaration(variable.name);
       } else {

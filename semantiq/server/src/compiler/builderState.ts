@@ -496,7 +496,7 @@ namespace qnr {
      */
     function containsOnlyAmbientModules(sourceFile: SourceFile) {
       for (const statement of sourceFile.statements) {
-        if (!isModuleWithStringLiteralName(statement)) {
+        if (!qn.is.moduleWithStringLiteralName(statement)) {
           return false;
         }
       }

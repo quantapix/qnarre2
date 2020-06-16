@@ -529,7 +529,7 @@ namespace qnr {
      * @param node The node to visit.
      */
     function visitImportEqualsDeclaration(node: ImportEqualsDeclaration): VisitResult<Statement> {
-      assert(qp_isExternalModuleImportEqualsDeclaration(node), 'import= for internal module references should be handled in an earlier transformer.');
+      assert(qn.is.externalModuleImportEqualsDeclaration(node), 'import= for internal module references should be handled in an earlier transformer.');
 
       let statements: Statement[] | undefined;
       hoistVariableDeclaration(getLocalNameForExternalImport(node, currentSourceFile)!); // TODO: GH#18217
@@ -815,7 +815,7 @@ namespace qnr {
         return append(statements, node);
       } else {
         const original = getOriginalNode(node);
-        if (isModuleOrEnumDeclaration(original)) {
+        if (qn.is.moduleOrEnumDeclaration(original)) {
           return append(appendExportsOfDeclaration(statements, original), node);
         }
       }
@@ -928,7 +928,7 @@ namespace qnr {
             statements = appendExportsOfBindingElement(statements, element, exportSelf);
           }
         }
-      } else if (!isGeneratedIdentifier(decl.name)) {
+      } else if (!qn.is.generatedIdentifier(decl.name)) {
         let excludeName: string | undefined;
         if (exportSelf) {
           statements = appendExportStatement(statements, decl.name, getLocalName(decl));
@@ -1335,7 +1335,7 @@ namespace qnr {
     function destructuringAndImportCallVisitor(node: Node): VisitResult<Node> {
       if (isDestructuringAssignment(node)) {
         return visitDestructuringAssignment(node);
-      } else if (isImportCall(node)) {
+      } else if (qn.is.importCall(node)) {
         return visitImportCallExpression(node);
       } else if (node.transformFlags & TransformFlags.ContainsDestructuringAssignment || node.transformFlags & TransformFlags.ContainsDynamicImport) {
         return visitEachChild(node, destructuringAndImportCallVisitor, context);
@@ -1500,7 +1500,7 @@ namespace qnr {
      */
     function substituteShorthandPropertyAssignment(node: ShorthandPropertyAssignment) {
       const name = node.name;
-      if (!isGeneratedIdentifier(name) && !isLocalName(name)) {
+      if (!qn.is.generatedIdentifier(name) && !isLocalName(name)) {
         const importDeclaration = resolver.getReferencedImportDeclaration(name);
         if (importDeclaration) {
           if (qn.is.kind(ImportClause, importDeclaration)) {
@@ -1564,7 +1564,7 @@ namespace qnr {
       //
       // - We do not substitute generated identifiers for any reason.
       // - We do not substitute identifiers tagged with the LocalName flag.
-      if (!isGeneratedIdentifier(node) && !isLocalName(node)) {
+      if (!qn.is.generatedIdentifier(node) && !isLocalName(node)) {
         const importDeclaration = resolver.getReferencedImportDeclaration(node);
         if (importDeclaration) {
           if (qn.is.kind(ImportClause, importDeclaration)) {
@@ -1598,7 +1598,7 @@ namespace qnr {
       if (
         isAssignmentOperator(node.operatorToken.kind) &&
         qn.is.kind(Identifier, node.left) &&
-        !isGeneratedIdentifier(node.left) &&
+        !qn.is.generatedIdentifier(node.left) &&
         !isLocalName(node.left) &&
         !isDeclarationNameOfEnumOrNamespace(node.left)
       ) {
@@ -1635,7 +1635,7 @@ namespace qnr {
       if (
         (node.operator === Syntax.Plus2Token || node.operator === Syntax.Minus2Token) &&
         qn.is.kind(Identifier, node.operand) &&
-        !isGeneratedIdentifier(node.operand) &&
+        !qn.is.generatedIdentifier(node.operand) &&
         !isLocalName(node.operand) &&
         !isDeclarationNameOfEnumOrNamespace(node.operand)
       ) {
@@ -1659,7 +1659,7 @@ namespace qnr {
     }
 
     function substituteMetaProperty(node: MetaProperty) {
-      if (isImportMeta(node)) {
+      if (qn.is.importMeta(node)) {
         return createPropertyAccess(contextObject, createIdentifier('meta'));
       }
       return node;
@@ -1672,7 +1672,7 @@ namespace qnr {
      */
     function getExports(name: Identifier) {
       let exportedNames: Identifier[] | undefined;
-      if (!isGeneratedIdentifier(name)) {
+      if (!qn.is.generatedIdentifier(name)) {
         const valueDeclaration = resolver.getReferencedImportDeclaration(name) || resolver.getReferencedValueDeclaration(name);
 
         if (valueDeclaration) {

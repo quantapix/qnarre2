@@ -227,7 +227,7 @@ namespace qnr {
     }
 
     function visitPrefixUnaryExpression(node: PrefixUnaryExpression) {
-      if (shouldTransformPrivateFields && isPrivateIdentifierPropertyAccessExpression(node.operand)) {
+      if (shouldTransformPrivateFields && qn.is.privateIdentifierPropertyAccessExpression(node.operand)) {
         const operator = node.operator === Syntax.Plus2Token ? Syntax.PlusToken : node.operator === Syntax.Minus2Token ? Syntax.MinusToken : undefined;
         let info: PrivateIdentifierInfo | undefined;
         if (operator && (info = accessPrivateIdentifier(node.operand.name))) {
@@ -243,7 +243,7 @@ namespace qnr {
     }
 
     function visitPostfixUnaryExpression(node: PostfixUnaryExpression, valueIsDiscarded: boolean) {
-      if (shouldTransformPrivateFields && isPrivateIdentifierPropertyAccessExpression(node.operand)) {
+      if (shouldTransformPrivateFields && qn.is.privateIdentifierPropertyAccessExpression(node.operand)) {
         const operator = node.operator === Syntax.Plus2Token ? Syntax.PlusToken : node.operator === Syntax.Minus2Token ? Syntax.MinusToken : undefined;
         let info: PrivateIdentifierInfo | undefined;
         if (operator && (info = accessPrivateIdentifier(node.operand.name))) {
@@ -305,7 +305,7 @@ namespace qnr {
     }
 
     function visitCallExpression(node: CallExpression) {
-      if (shouldTransformPrivateFields && isPrivateIdentifierPropertyAccessExpression(node.expression)) {
+      if (shouldTransformPrivateFields && qn.is.privateIdentifierPropertyAccessExpression(node.expression)) {
         // Transform call expressions of private names to properly bind the `this` parameter.
         const { thisArg, target } = createCallBinding(node.expression, hoistVariableDeclaration, languageVersion);
         return updateCall(node, createPropertyAccess(visitNode(target, visitor), 'call'), /*typeArguments*/ undefined, [
@@ -317,7 +317,7 @@ namespace qnr {
     }
 
     function visitTaggedTemplateExpression(node: TaggedTemplateExpression) {
-      if (shouldTransformPrivateFields && isPrivateIdentifierPropertyAccessExpression(node.tag)) {
+      if (shouldTransformPrivateFields && qn.is.privateIdentifierPropertyAccessExpression(node.tag)) {
         // Bind the `this` correctly for tagged template literals when the tag is a private identifier property access.
         const { thisArg, target } = createCallBinding(node.tag, hoistVariableDeclaration, languageVersion);
         return updateTaggedTemplate(
@@ -339,7 +339,7 @@ namespace qnr {
           pendingExpressions = savedPendingExpressions;
           return expr;
         }
-        if (isAssignmentExpression(node) && isPrivateIdentifierPropertyAccessExpression(node.left)) {
+        if (isAssignmentExpression(node) && qn.is.privateIdentifierPropertyAccessExpression(node.left)) {
           const info = accessPrivateIdentifier(node.left.name);
           if (info) {
             return setOriginalNode(createPrivateIdentifierAssignment(info, node.left.expression, node.right, node.operatorToken.kind), node);
@@ -508,7 +508,7 @@ namespace qnr {
       if (shouldTransformPrivateFields) {
         // Declare private names.
         for (const member of node.members) {
-          if (isPrivateIdentifierPropertyDeclaration(member)) {
+          if (qn.is.privateIdentifierPropertyDeclaration(member)) {
             addPrivateIdentifierToEnvironment(member.name);
           }
         }
@@ -532,7 +532,7 @@ namespace qnr {
         // then we don't need to transform any class properties.
         return languageVersion < ScriptTarget.ESNext;
       }
-      return isInitializedProperty(member) || (shouldTransformPrivateFields && isPrivateIdentifierPropertyDeclaration(member));
+      return isInitializedProperty(member) || (shouldTransformPrivateFields && qn.is.privateIdentifierPropertyDeclaration(member));
     }
 
     function transformConstructor(node: ClassDeclaration | ClassExpression, isDerivedClass: boolean) {
@@ -588,7 +588,7 @@ namespace qnr {
       //  }
       //
       if (constructor?.body) {
-        let afterParameterProperties = findIndex(constructor.body.statements, (s) => !isParameterPropertyDeclaration(getOriginalNode(s), constructor), indexOfFirstStatement);
+        let afterParameterProperties = findIndex(constructor.body.statements, (s) => !qn.is.parameterPropertyDeclaration(getOriginalNode(s), constructor), indexOfFirstStatement);
         if (afterParameterProperties === -1) {
           afterParameterProperties = constructor.body.statements.length;
         }
@@ -695,7 +695,7 @@ namespace qnr {
       const initializer =
         property.initializer || emitAssignment
           ? visitNode(property.initializer, visitor, isExpression)
-          : isParameterPropertyDeclaration(propertyOriginalNode, propertyOriginalNode.parent) && qn.is.kind(Identifier, propertyName)
+          : qn.is.parameterPropertyDeclaration(propertyOriginalNode, propertyOriginalNode.parent) && qn.is.kind(Identifier, propertyName)
           ? propertyName
           : createVoidZero();
 
@@ -786,7 +786,7 @@ namespace qnr {
         const expression = visitNode(name.expression, visitor, isExpression);
         const innerExpression = skipPartiallyEmittedExpressions(expression);
         const inlinable = isSimpleInlineableExpression(innerExpression);
-        const alreadyTransformed = isAssignmentExpression(innerExpression) && isGeneratedIdentifier(innerExpression.left);
+        const alreadyTransformed = isAssignmentExpression(innerExpression) && qn.is.generatedIdentifier(innerExpression.left);
         if (!alreadyTransformed && !inlinable && shouldHoist) {
           const generatedName = getGeneratedNameForNode(name);
           hoistVariableDeclaration(generatedName);
@@ -846,7 +846,7 @@ namespace qnr {
       let receiver = node.expression;
       // We cannot copy `this` or `super` into the function because they will be bound
       // differently inside the function.
-      if (isThisProperty(node) || isSuperProperty(node) || !isSimpleCopiableExpression(node.expression)) {
+      if (qn.is.thisProperty(node) || qn.is.superProperty(node) || !isSimpleCopiableExpression(node.expression)) {
         receiver = createTempVariable(hoistVariableDeclaration);
         (receiver as Identifier).autoGenerateFlags! |= GeneratedIdentifierFlags.ReservedInNestedScopes;
         (pendingExpressions || (pendingExpressions = [])).push(createBinary(receiver, Syntax.EqualsToken, node.expression));
@@ -870,7 +870,7 @@ namespace qnr {
 
     function visitArrayAssignmentTarget(node: BindingOrAssignmentElement) {
       const target = getTargetOfBindingOrAssignmentElement(node);
-      if (target && isPrivateIdentifierPropertyAccessExpression(target)) {
+      if (target && qn.is.privateIdentifierPropertyAccessExpression(target)) {
         const wrapped = wrapPrivateIdentifierForDestructuringTarget(target);
         if (isAssignmentExpression(node)) {
           return updateBinary(node, wrapped, visitNode(node.right, visitor, isExpression), node.operatorToken);
@@ -886,7 +886,7 @@ namespace qnr {
     function visitObjectAssignmentTarget(node: ObjectLiteralElementLike) {
       if (qn.is.kind(PropertyAssignment, node)) {
         const target = getTargetOfBindingOrAssignmentElement(node);
-        if (target && isPrivateIdentifierPropertyAccessExpression(target)) {
+        if (target && qn.is.privateIdentifierPropertyAccessExpression(target)) {
           const initializer = getInitializerOfBindingOrAssignmentElement(node);
           const wrapped = wrapPrivateIdentifierForDestructuringTarget(target);
           return updatePropertyAssignment(node, visitNode(node.name, visitor), initializer ? createAssignment(wrapped, visitNode(initializer, visitor)) : wrapped);

@@ -257,7 +257,7 @@ namespace qnr.moduleSpecifiers {
   function tryGetModuleNameFromAmbientModule(moduleSymbol: Symbol): string | undefined {
     const decl = find(
       moduleSymbol.declarations,
-      (d) => isNonGlobalAmbientModule(d) && (!qp_isExternalModuleAugmentation(d) || !qp_isExternalModuleNameRelative(getTextOfIdentifierOrLiteral(d.name)))
+      (d) => qn.is.nonGlobalAmbientModule(d) && (!qn.is.externalModuleAugmentation(d) || !qp_isExternalModuleNameRelative(getTextOfIdentifierOrLiteral(d.name)))
     ) as (ModuleDeclaration & { name: StringLiteral }) | undefined;
     if (decl) {
       return decl.name.text;

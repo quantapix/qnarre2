@@ -17,7 +17,7 @@ namespace qnr {
     hasUnicodeEscape(): boolean;
     hasExtendedEscape(): boolean;
     hasPrecedingLineBreak(): boolean;
-    qn.is.kind(Identifier, ): boolean;
+    isIdentifier(): boolean;
     isReservedWord(): boolean;
     isUnterminated(): boolean;
     scan(): Syntax;

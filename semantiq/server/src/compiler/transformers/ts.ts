@@ -345,7 +345,7 @@ namespace qnr {
      * @param node The node to visit.
      */
     function visitTypeScript(node: Node): VisitResult<Node> {
-      if (isStatement(node) && hasSyntacticModifier(node, ModifierFlags.Ambient)) {
+      if (qn.is.statement(node) && hasSyntacticModifier(node, ModifierFlags.Ambient)) {
         // TypeScript ambient declarations are elided, but some comments may be preserved.
         // See the implementation of `getLeadingComments` in comments.ts for more details.
         return createNotEmittedStatement(node);
@@ -869,7 +869,7 @@ namespace qnr {
     function transformClassMembers(node: ClassDeclaration | ClassExpression) {
       const members: ClassElement[] = [];
       const constructor = getFirstConstructorWithBody(node);
-      const parametersWithPropertyAssignments = constructor && filter(constructor.parameters, (p) => isParameterPropertyDeclaration(p, constructor));
+      const parametersWithPropertyAssignments = constructor && filter(constructor.parameters, (p) => qn.is.parameterPropertyDeclaration(p, constructor));
 
       if (parametersWithPropertyAssignments) {
         for (const parameter of parametersWithPropertyAssignments) {
@@ -1395,7 +1395,7 @@ namespace qnr {
      * @param node The node that should have its parameter types serialized.
      */
     function serializeParameterTypesOfNode(node: Node, container: ClassLikeDeclaration): ArrayLiteralExpression {
-      const valueDeclaration = isClassLike(node) ? getFirstConstructorWithBody(node) : isFunctionLike(node) && nodeIsPresent((node as FunctionLikeDeclaration).body) ? node : undefined;
+      const valueDeclaration = qn.is.classLike(node) ? getFirstConstructorWithBody(node) : qn.is.functionLike(node) && qn.is.present((node as FunctionLikeDeclaration).body) ? node : undefined;
 
       const expressions: SerializedTypeNode[] = [];
       if (valueDeclaration) {
@@ -1433,9 +1433,9 @@ namespace qnr {
      * @param node The node that should have its return type serialized.
      */
     function serializeReturnTypeOfNode(node: Node): SerializedTypeNode {
-      if (isFunctionLike(node) && node.type) {
+      if (qn.is.functionLike(node) && node.type) {
         return serializeTypeNode(node.type);
-      } else if (isAsyncFunction(node)) {
+      } else if (qn.is.asyncFunction(node)) {
         return createIdentifier('Promise');
       }
 
@@ -1817,7 +1817,7 @@ namespace qnr {
      * @param node The declaration node.
      */
     function shouldEmitFunctionLikeDeclaration<T extends FunctionLikeDeclaration>(node: T): node is T & { body: NonNullable<T['body']> } {
-      return !nodeIsMissing(node.body);
+      return !qn.is.missing(node.body);
     }
 
     function visitPropertyDeclaration(node: PropertyDeclaration) {
@@ -1851,7 +1851,7 @@ namespace qnr {
     }
 
     function transformConstructorBody(body: Block, constructor: ConstructorDeclaration) {
-      const parametersWithPropertyAssignments = constructor && filter(constructor.parameters, (p) => isParameterPropertyDeclaration(p, constructor));
+      const parametersWithPropertyAssignments = constructor && filter(constructor.parameters, (p) => qn.is.parameterPropertyDeclaration(p, constructor));
       if (!some(parametersWithPropertyAssignments)) {
         return visitFunctionBody(body, visitor, context);
       }
@@ -1944,7 +1944,7 @@ namespace qnr {
      * @param node The declaration node.
      */
     function shouldEmitAccessorDeclaration(node: AccessorDeclaration) {
-      return !(nodeIsMissing(node.body) && hasSyntacticModifier(node, ModifierFlags.Abstract));
+      return !(qn.is.missing(node.body) && hasSyntacticModifier(node, ModifierFlags.Abstract));
     }
 
     function visitGetAccessor(node: GetAccessorDeclaration) {
@@ -2104,7 +2104,7 @@ namespace qnr {
 
     function visitParenthesizedExpression(node: ParenthesizedExpression): Expression {
       const innerExpression = skipOuterExpressions(node.expression, ~OuterExpressionKinds.Assertions);
-      if (isAssertionExpression(innerExpression)) {
+      if (qn.is.assertionExpression(innerExpression)) {
         // Make sure we consider all nested cast expressions, e.g.:
         // (<any><number><any>-A).x;
         const expression = visitNode(node.expression, visitor, isExpression);
@@ -2751,7 +2751,7 @@ namespace qnr {
      * @param node The import equals declaration node.
      */
     function visitImportEqualsDeclaration(node: ImportEqualsDeclaration): VisitResult<Statement> {
-      if (qp_isExternalModuleImportEqualsDeclaration(node)) {
+      if (qn.is.externalModuleImportEqualsDeclaration(node)) {
         const isReferenced = resolver.isReferencedAliasDeclaration(node);
         // If the alias is unreferenced but we want to keep the import, replace with 'import "mod"'.
         if (!isReferenced && compilerOptions.importsNotUsedAsValues === ImportsNotUsedAsValues.Preserve) {
@@ -2879,7 +2879,7 @@ namespace qnr {
     function getClassAliasIfNeeded(node: ClassDeclaration) {
       if (resolver.getNodeCheckFlags(node) & NodeCheckFlags.ClassWithConstructorReference) {
         enableSubstitutionForClassAliases();
-        const classAlias = createUniqueName(node.name && !isGeneratedIdentifier(node.name) ? idText(node.name) : 'default');
+        const classAlias = createUniqueName(node.name && !qn.is.generatedIdentifier(node.name) ? idText(node.name) : 'default');
         classAliases[getOriginalNodeId(node)] = classAlias;
         hoistVariableDeclaration(classAlias);
         return classAlias;
@@ -3042,7 +3042,7 @@ namespace qnr {
 
     function trySubstituteNamespaceExportedName(node: Identifier): Expression | undefined {
       // If this is explicitly a local name, do not substitute.
-      if (enabledSubstitutions & applicableSubstitutions && !isGeneratedIdentifier(node) && !isLocalName(node)) {
+      if (enabledSubstitutions & applicableSubstitutions && !qn.is.generatedIdentifier(node) && !isLocalName(node)) {
         // If we are nested within a namespace declaration, we may need to qualifiy
         // an identifier that is exported from a merged namespace.
         const container = resolver.getReferencedExportContainer(node, /*prefixLocals*/ false);

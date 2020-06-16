@@ -358,7 +358,7 @@ namespace qnr {
         return tok() !== Syntax.AsteriskToken && tok() !== Syntax.AsKeyword && tok() !== Syntax.OpenBraceToken && can.followModifier();
       }
       followContextualOfKeyword() {
-        return next.qn.is.kind(Identifier, ) && next.tok() === Syntax.CloseParenToken;
+        return next.isIdentifier() && next.tok() === Syntax.CloseParenToken;
       }
       followTypeArgumentsInExpression() {
         switch (tok()) {
@@ -447,7 +447,7 @@ namespace qnr {
           (tok() === Syntax.AsyncKeyword && lookAhead(next.isFunctionKeywordOnSameLine))
         );
       }
-      qn.is.kind(Identifier, ) {
+      isIdentifier() {
         this.tok();
         return is.identifier();
       }
@@ -774,7 +774,7 @@ namespace qnr {
         };
         if (!syntaxCursor || !isReusable() || parseErrorBeforeNextFinishedNode) return;
         const n = syntaxCursor.currentNode(scanner.getStartPos());
-        if (nodeIsMissing(n) || n.intersectsChange || containsParseError(n)) return;
+        if (qn.is.missing(n) || n.intersectsChange || containsParseError(n)) return;
         const fs = n.flags & NodeFlags.ContextFlags;
         if (fs !== flags.value) return;
         const canReuse = () => {
@@ -1679,7 +1679,7 @@ namespace qnr {
               next.tok();
               if (tok() === Syntax.PlusToken || tok() === Syntax.MinusToken) return next.tok() === Syntax.ReadonlyKeyword;
               if (tok() === Syntax.ReadonlyKeyword) next.tok();
-              return tok() === Syntax.OpenBracketToken && next.qn.is.kind(Identifier, ) && next.tok() === Syntax.InKeyword;
+              return tok() === Syntax.OpenBracketToken && next.isIdentifier() && next.tok() === Syntax.InKeyword;
             };
             return lookAhead(isStartOfMappedType) ? this.mappedType() : this.typeLiteral();
           case Syntax.OpenBracketToken:
@@ -1873,7 +1873,7 @@ namespace qnr {
           }
           return false;
         };
-        if (qn.is.kind(YieldExpression, )) return this.yieldExpression();
+        if (isYieldExpression()) return this.yieldExpression();
         const tryParenthesizedArrowFunction = () => {
           const isParenthesizedArrowFunction = (): Tristate => {
             if (tok() === Syntax.OpenParenToken || tok() === Syntax.LessThanToken || tok() === Syntax.AsyncKeyword) {
@@ -1976,7 +1976,7 @@ namespace qnr {
         if (arrow) return arrow;
         const e = this.binaryExpressionOrHigher(0);
         if (e.kind === Syntax.Identifier && tok() === Syntax.EqualsGreaterThanToken) return this.simpleArrowFunctionExpression(e as Identifier);
-        if (isLeftHandSideExpression(e) && isAssignmentOperator(reScanGreaterToken())) return create.binaryExpression(e, this.tokenNode(), this.assignmentExpressionOrHigher());
+        if (qn.is.leftHandSideExpression(e) && isAssignmentOperator(reScanGreaterToken())) return create.binaryExpression(e, this.tokenNode(), this.assignmentExpressionOrHigher());
         return this.conditionalExpressionRest(e);
       }
       yieldExpression(): YieldExpression {
@@ -2038,7 +2038,7 @@ namespace qnr {
         n.questionToken = t;
         n.whenTrue = flags.withoutContext(withDisallowInDecoratorContext, this.assignmentExpressionOrHigher);
         n.colonToken = this.expectedToken(Syntax.ColonToken);
-        n.whenFalse = nodeIsPresent(n.colonToken) ? this.assignmentExpressionOrHigher() : create.missingNode(Syntax.Identifier, false, Diagnostics._0_expected, qy_syntax.toString(Syntax.ColonToken));
+        n.whenFalse = qn.is.present(n.colonToken) ? this.assignmentExpressionOrHigher() : create.missingNode(Syntax.Identifier, false, Diagnostics._0_expected, qy_syntax.toString(Syntax.ColonToken));
         return finishNode(n);
       }
       binaryExpressionOrHigher(precedence: number): Expression {
@@ -2172,7 +2172,7 @@ namespace qnr {
           return parseJsx.elementOrSelfClosingElementOrFragment(true);
         }
         const expression = this.leftHandSideExpressionOrHigher();
-        assert(isLeftHandSideExpression(expression));
+        assert(qn.is.leftHandSideExpression(expression));
         if ((tok() === Syntax.Plus2Token || tok() === Syntax.Minus2Token) && !scanner.hasPrecedingLineBreak()) {
           const n = create.node(Syntax.PostfixUnaryExpression, expression.pos);
           n.operand = expression;
@@ -2854,7 +2854,7 @@ namespace qnr {
               missing.modifiers = n.modifiers;
               return finishNode(missing);
             }
-            return undefined!; // TODO: GH#18217
+            return undefined!;
         }
       }
       functionBlockOrSemicolon(flags: SignatureFlags, m?: DiagnosticMessage): Block | undefined {
@@ -3266,8 +3266,8 @@ namespace qnr {
         return finishNode(n);
       }
       moduleReference() {
-        const qp_isExternalModuleReference = () => tok() === Syntax.RequireKeyword && lookAhead(next.isOpenParen);
-        return qp_qn.is.kind(ExternalModuleReference, ) ? this.externalModuleReference() : this.entityName(false);
+        const isExternalModuleReference = () => tok() === Syntax.RequireKeyword && lookAhead(next.isOpenParen);
+        return isExternalModuleReference() ? this.externalModuleReference() : this.entityName(false);
       }
       externalModuleReference() {
         const n = create.node(Syntax.ExternalModuleReference);
@@ -4413,7 +4413,7 @@ namespace qnr {
         const hasArrowFunctionBlockingError = (n: TypeNode): boolean => {
           switch (n.kind) {
             case Syntax.TypeReference:
-              return nodeIsMissing((n as TypeReferenceNode).typeName);
+              return qn.is.missing((n as TypeReferenceNode).typeName);
             case Syntax.FunctionType:
             case Syntax.ConstructorType: {
               const { parameters, type } = n as FunctionOrConstructorTypeNode;
@@ -4483,7 +4483,7 @@ namespace qnr {
     function fixupParentReferences(root: Node) {
       const bindParentToChild = (c: Node, parent: Node) => {
         c.parent = parent;
-        if (hasJSDocNodes(c)) {
+        if (qn.is.withJSDocNodes(c)) {
           for (const d of c.jsDoc!) {
             bindParentToChild(d, c);
             qn.forEach.childRecursively(d, bindParentToChild);
@@ -4665,7 +4665,7 @@ namespace qnr {
         n.end += delta;
         if (aggressiveChecks && shouldCheck(n)) assert(text === newText.substring(n.pos, n.end));
         qn.forEach.child(n, visitNode, visitArray);
-        if (hasJSDocNodes(n)) {
+        if (qn.is.withJSDocNodes(n)) {
           for (const jsDocComment of n.jsDoc!) {
             visitNode(<IncrementalNode>(<Node>jsDocComment));
           }
@@ -4719,7 +4719,7 @@ namespace qnr {
           child._children = undefined;
           adjustIntersectingElement(child, changeStart, changeRangeOldEnd, changeRangeNewEnd, delta);
           qn.forEach.child(child, visitNode, visitArray);
-          if (hasJSDocNodes(child)) {
+          if (qn.is.withJSDocNodes(child)) {
             for (const jsDocComment of child.jsDoc!) {
               visitNode(<IncrementalNode>(<Node>jsDocComment));
             }
@@ -4756,7 +4756,7 @@ namespace qnr {
           assert(c.pos >= pos);
           pos = c.end;
         };
-        if (hasJSDocNodes(n)) {
+        if (qn.is.withJSDocNodes(n)) {
           for (const jsDocComment of n.jsDoc!) {
             visitNode(jsDocComment);
           }
@@ -4797,7 +4797,7 @@ namespace qnr {
         }
       }
       function visit(child: Node) {
-        if (nodeIsMissing(child)) return;
+        if (qn.is.missing(child)) return;
         if (child.pos <= position) {
           if (child.pos >= bestResult.pos) bestResult = child;
           if (position < child.end) {

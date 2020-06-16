@@ -619,7 +619,7 @@ export type ExpressionNode =
   | ListNode
   | SetNode;
 
-export function isExpressionNode(node: ParseNode) {
+export function qn.is.expressionNode(node: ParseNode) {
   switch (node.nodeType) {
     case ParseNodeType.Error:
     case ParseNodeType.UnaryOperation:

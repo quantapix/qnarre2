@@ -846,7 +846,7 @@ namespace qnr {
           assert(qn.is.kind(Identifier, node), 'Expected an Identifier node.');
           break;
         case EmitHint.Expression:
-          assert(isExpression(node), 'Expected an Expression node.');
+          assert(qn.is.expression(node), 'Expected an Expression node.');
           break;
       }
       switch (node.kind) {
@@ -923,7 +923,7 @@ namespace qnr {
         recordInternalSection &&
         bundleFileInfo &&
         currentSourceFile &&
-        (isDeclaration(node) || qn.is.kind(VariableStatement, node)) &&
+        (qn.is.declaration(node) || qn.is.kind(VariableStatement, node)) &&
         isInternalDeclaration(node, currentSourceFile) &&
         sourceFileTextKind !== BundleFileSectionKind.Internal
       ) {
@@ -1502,12 +1502,12 @@ namespace qnr {
           // Transformation nodes (ignored)
         }
 
-        if (isExpression(node)) {
+        if (qn.is.expression(node)) {
           hint = EmitHint.Expression;
           if (substituteNode !== noEmitSubstitution) {
             lastSubstitution = node = substituteNode(hint, node);
           }
-        } else if (isToken(node)) {
+        } else if (qn.is.token(node)) {
           return writeTokenNode(node, writePunctuation);
         }
       }
@@ -2792,7 +2792,7 @@ namespace qnr {
     }
 
     function emitVariableDeclarationList(node: VariableDeclarationList) {
-      writeKeyword(isLet(node) ? 'let' : isVarConst(node) ? 'const' : 'var');
+      writeKeyword(qn.is.aLet(node) ? 'let' : isVarConst(node) ? 'const' : 'var');
       writeSpace();
       emitList(node, node.declarations, ListFormat.VariableDeclarationList);
     }
@@ -3532,7 +3532,7 @@ namespace qnr {
       if (emitBodyWithDetachedComments) {
         // Emit detached comment if there are no prologue directives or if the first node is synthesized.
         // The synthesized node will have no leading comment so some comments may be missed.
-        const shouldEmitDetachedComment = statements.length === 0 || !isPrologueDirective(statements[0]) || isSynthesized(statements[0]);
+        const shouldEmitDetachedComment = statements.length === 0 || !qn.is.prologueDirective(statements[0]) || isSynthesized(statements[0]);
         if (shouldEmitDetachedComment) {
           emitBodyWithDetachedComments(node, statements, emitSourceFileWorker);
           return;
@@ -3603,7 +3603,7 @@ namespace qnr {
       pushNameGenerationScope(node);
       forEach(node.statements, generateNames);
       emitHelpers(node);
-      const index = findIndex(statements, (statement) => !isPrologueDirective(statement));
+      const index = findIndex(statements, (statement) => !qn.is.prologueDirective(statement));
       emitTripleSlashDirectivesIfNeeded(node);
       emitList(node, statements, ListFormat.MultiLine, index === -1 ? statements.length : index);
       popNameGenerationScope(node);
@@ -3627,7 +3627,7 @@ namespace qnr {
       let needsToSetSourceFile = !!sourceFile;
       for (let i = 0; i < statements.length; i++) {
         const statement = statements[i];
-        if (isPrologueDirective(statement)) {
+        if (qn.is.prologueDirective(statement)) {
           const shouldEmitPrologueDirective = seenPrologueDirectives ? !seenPrologueDirectives.has(statement.expression.text) : true;
           if (shouldEmitPrologueDirective) {
             if (needsToSetSourceFile) {
@@ -3688,7 +3688,7 @@ namespace qnr {
         let directives: SourceFilePrologueDirective[] | undefined;
         let end = 0;
         for (const statement of sourceFile.statements) {
-          if (!isPrologueDirective(statement)) break;
+          if (!qn.is.prologueDirective(statement)) break;
           if (seenPrologueDirectives.has(statement.expression.text)) continue;
           seenPrologueDirectives.set(statement.expression.text, true);
           (directives || (directives = [])).push({
@@ -3823,7 +3823,7 @@ namespace qnr {
       parentNode: SignatureDeclaration | InterfaceDeclaration | TypeAliasDeclaration | ClassDeclaration | ClassExpression,
       typeParameters: NodeArray<TypeParameterDeclaration> | undefined
     ) {
-      if (isFunctionLike(parentNode) && parentNode.typeArguments) {
+      if (qn.is.functionLike(parentNode) && parentNode.typeArguments) {
         // Quick info uses type arguments in place of type parameters on instantiated signatures
         return emitTypeArguments(parentNode, parentNode.typeArguments);
       }
@@ -4350,7 +4350,7 @@ namespace qnr {
     }
 
     function getTextOfNode(node: Node, includeTrivia?: boolean): string {
-      if (isGeneratedIdentifier(node)) {
+      if (qn.is.generatedIdentifier(node)) {
         return generateName(node);
       } else if (
         (qn.is.kind(Identifier, node) || qn.is.kind(PrivateIdentifier, node)) &&
@@ -4359,7 +4359,7 @@ namespace qnr {
         return idText(node);
       } else if (node.kind === Syntax.StringLiteral && (<StringLiteral>node).textSourceNode) {
         return getTextOfNode((<StringLiteral>node).textSourceNode!, includeTrivia);
-      } else if (isLiteralExpression(node) && (isSynthesized(node) || !node.parent)) {
+      } else if (qn.is.literalExpression(node) && (isSynthesized(node) || !node.parent)) {
         return node.text;
       }
 
@@ -4516,7 +4516,7 @@ namespace qnr {
 
     function generateNameIfNeeded(name: DeclarationName | undefined) {
       if (name) {
-        if (isGeneratedIdentifier(name)) {
+        if (qn.is.generatedIdentifier(name)) {
           generateName(name);
         } else if (qn.is.kind(BindingPattern, name)) {
           generateNames(name);
@@ -4564,7 +4564,7 @@ namespace qnr {
      * Returns a value indicating whether a name is unique within a container.
      */
     function isUniqueLocalName(name: string, container: Node): boolean {
-      for (let node = container; isNodeDescendantOf(node, container); node = node.nextContainer!) {
+      for (let node = container; qn.is.descendantOf(node, container); node = node.nextContainer!) {
         if (node.locals) {
           const local = node.locals.get(qy_get.escUnderscores(name));
           // We conservatively include alias symbols to cover cases where they're emitted as locals
@@ -5071,7 +5071,7 @@ namespace qnr {
       const pipelinePhase = getNextPipelinePhase(PipelinePhase.SourceMaps, hint, node);
       if (qn.is.kind(UnparsedSource, node) || qn.is.kind(UnparsedPrepend, node)) {
         pipelinePhase(hint, node);
-      } else if (isUnparsedNode(node)) {
+      } else if (qn.is.unparsedNode(node)) {
         const parsed = getParsedSourceMap(node.parent);
         if (parsed && sourceMapGenerator) {
           sourceMapGenerator.appendSourceMap(

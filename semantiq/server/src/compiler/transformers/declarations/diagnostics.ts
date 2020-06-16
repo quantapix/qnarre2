@@ -147,7 +147,7 @@ namespace qnr {
     ) {
       return getReturnTypeVisibilityError;
     } else if (qn.is.kind(ParameterDeclaration, node)) {
-      if (isParameterPropertyDeclaration(node, node.parent) && hasSyntacticModifier(node.parent, ModifierFlags.Private)) {
+      if (qn.is.parameterPropertyDeclaration(node, node.parent) && hasSyntacticModifier(node.parent, ModifierFlags.Private)) {
         return getVariableDeclarationTypeVisibilityError;
       }
       return getParameterDeclarationTypeVisibilityError;

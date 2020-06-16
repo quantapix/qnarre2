@@ -139,7 +139,7 @@ namespace qnr {
 
   function bindingOrAssignmentElementContainsNonLiteralComputedName(element: BindingOrAssignmentElement): boolean {
     const propertyName = tryGetPropertyNameOfBindingOrAssignmentElement(element);
-    if (propertyName && qn.is.kind(ComputedPropertyName, propertyName) && !isLiteralExpression(propertyName.expression)) {
+    if (propertyName && qn.is.kind(ComputedPropertyName, propertyName) && !qn.is.literalExpression(propertyName.expression)) {
       return true;
     }
     const target = getTargetOfBindingOrAssignmentElement(element);

@@ -318,7 +318,7 @@ namespace qnr {
     const callee = skipOuterExpressions(expression, OuterExpressionKinds.All);
     let thisArg: Expression;
     let target: LeftHandSideExpression;
-    if (isSuperProperty(callee)) {
+    if (qn.is.superProperty(callee)) {
       thisArg = createThis();
       target = callee;
     } else if (callee.kind === Syntax.SuperKeyword) {
@@ -599,7 +599,7 @@ namespace qnr {
 
   function getName(node: Declaration, allowComments?: boolean, allowSourceMaps?: boolean, emitFlags: EmitFlags = 0) {
     const nodeName = getNameOfDeclaration(node);
-    if (nodeName && qn.is.kind(Identifier, nodeName) && !isGeneratedIdentifier(nodeName)) {
+    if (nodeName && qn.is.kind(Identifier, nodeName) && !qn.is.generatedIdentifier(nodeName)) {
       const name = getMutableClone(nodeName);
       emitFlags |= getEmitFlags(nodeName);
       if (!allowSourceMaps) emitFlags |= EmitFlags.NoSourceMap;
@@ -695,7 +695,7 @@ namespace qnr {
     const numStatements = source.length;
     while (statementOffset < numStatements) {
       const statement = source[statementOffset];
-      if (isPrologueDirective(statement)) {
+      if (qn.is.prologueDirective(statement)) {
         if (isUseStrictPrologue(statement)) {
           foundUseStrict = true;
         }
@@ -747,7 +747,7 @@ namespace qnr {
 
   export function findUseStrictPrologue(statements: readonly Statement[]): Statement | undefined {
     for (const statement of statements) {
-      if (isPrologueDirective(statement)) {
+      if (qn.is.prologueDirective(statement)) {
         if (isUseStrictPrologue(statement)) {
           return statement;
         }
@@ -760,7 +760,7 @@ namespace qnr {
 
   export function startsWithUseStrict(statements: readonly Statement[]) {
     const firstStatement = firstOrUndefined(statements);
-    return firstStatement !== undefined && isPrologueDirective(firstStatement) && isUseStrictPrologue(firstStatement);
+    return firstStatement !== undefined && qn.is.prologueDirective(firstStatement) && isUseStrictPrologue(firstStatement);
   }
 
   /**
@@ -1026,7 +1026,7 @@ namespace qnr {
     //       new C.x        -> not the same as (new C).x
     //
     const emittedExpression = skipPartiallyEmittedExpressions(expression);
-    if (isLeftHandSideExpression(emittedExpression) && (emittedExpression.kind !== Syntax.NewExpression || (<NewExpression>emittedExpression).arguments)) {
+    if (qn.is.leftHandSideExpression(emittedExpression) && (emittedExpression.kind !== Syntax.NewExpression || (<NewExpression>emittedExpression).arguments)) {
       return <LeftHandSideExpression>expression;
     }
 
@@ -1034,11 +1034,11 @@ namespace qnr {
   }
 
   export function parenthesizePostfixOperand(operand: Expression) {
-    return isLeftHandSideExpression(operand) ? operand : setTextRange(createParen(operand), operand);
+    return qn.is.leftHandSideExpression(operand) ? operand : setTextRange(createParen(operand), operand);
   }
 
   export function parenthesizePrefixOperand(operand: Expression) {
-    return isUnaryExpression(operand) ? operand : setTextRange(createParen(operand), operand);
+    return qn.is.unaryExpression(operand) ? operand : setTextRange(createParen(operand), operand);
   }
 
   export function parenthesizeListElements(elements: NodeArray<Expression>) {
@@ -1122,7 +1122,7 @@ namespace qnr {
       const params: TypeNode[] = [];
       for (let i = 0; i < typeParameters.length; ++i) {
         const entry = typeParameters[i];
-        params.push(i === 0 && isFunctionOrConstructorTypeNode(entry) && entry.typeParameters ? ParenthesizedTypeNode.create(entry) : entry);
+        params.push(i === 0 && qn.is.functionOrConstructorTypeNode(entry) && entry.typeParameters ? ParenthesizedTypeNode.create(entry) : entry);
       }
 
       return NodeArray.create(params);
@@ -1381,7 +1381,7 @@ namespace qnr {
     const namespaceDeclaration = getNamespaceDeclarationNode(node);
     if (namespaceDeclaration && !isDefaultImport(node)) {
       const name = namespaceDeclaration.name;
-      return isGeneratedIdentifier(name) ? name : createIdentifier(getSourceTextOfNodeFromSourceFile(sourceFile, name) || idText(name));
+      return qn.is.generatedIdentifier(name) ? name : createIdentifier(getSourceTextOfNodeFromSourceFile(sourceFile, name) || idText(name));
     }
     if (node.kind === Syntax.ImportDeclaration && node.importClause) {
       return getGeneratedNameForNode(node);
@@ -1516,7 +1516,7 @@ namespace qnr {
       return bindingElement.name;
     }
 
-    if (isObjectLiteralElementLike(bindingElement)) {
+    if (qn.is.objectLiteralElementLike(bindingElement)) {
       switch (bindingElement.kind) {
         case Syntax.PropertyAssignment:
           // `b` in `({ a: b } = ...)`
@@ -1636,7 +1636,7 @@ namespace qnr {
     }
 
     const target = getTargetOfBindingOrAssignmentElement(bindingElement);
-    if (target && isPropertyName(target)) {
+    if (target && qn.is.propertyName(target)) {
       return target;
     }
     return;

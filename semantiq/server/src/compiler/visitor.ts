@@ -686,7 +686,7 @@ namespace qnr {
   function aggregateTransformFlagsForSubtree(node: Node): TransformFlags {
     // We do not transform ambient declarations or types, so there is no need to
     // recursively aggregate transform flags.
-    if (hasSyntacticModifier(node, ModifierFlags.Ambient) || (isTypeNode(node) && node.kind !== Syntax.ExpressionWithTypeArguments)) {
+    if (hasSyntacticModifier(node, ModifierFlags.Ambient) || (qn.is.typeNode(node) && node.kind !== Syntax.ExpressionWithTypeArguments)) {
       return TransformFlags.None;
     }
 

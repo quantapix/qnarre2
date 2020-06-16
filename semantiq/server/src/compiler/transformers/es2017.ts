@@ -507,7 +507,7 @@ namespace qnr {
 
     function getPromiseConstructor(type: TypeNode | undefined) {
       const typeName = type && getEntityNameFromTypeNode(type);
-      if (typeName && isEntityName(typeName)) {
+      if (typeName && qn.is.entityName(typeName)) {
         const serializationKind = resolver.getTypeReferenceSerializationKind(typeName);
         if (serializationKind === TypeReferenceSerializationKind.TypeWithConstructSignatureAndValue || serializationKind === TypeReferenceSerializationKind.Unknown) {
           return typeName;
@@ -612,7 +612,7 @@ namespace qnr {
 
     function substituteCallExpression(node: CallExpression): Expression {
       const expression = node.expression;
-      if (isSuperProperty(expression)) {
+      if (qn.is.superProperty(expression)) {
         const argumentExpression = qn.is.kind(PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
         return createCall(createPropertyAccess(argumentExpression, 'call'), /*typeArguments*/ undefined, [createThis(), ...node.arguments]);
       }

@@ -630,7 +630,7 @@ namespace qnr {
         qn.is.kind(ModuleDeclaration, node) ||
         qn.is.kind(ClassDeclaration, node) ||
         qn.is.kind(InterfaceDeclaration, node) ||
-        isFunctionLike(node) ||
+        qn.is.functionLike(node) ||
         qn.is.kind(IndexSignatureDeclaration, node) ||
         qn.is.kind(MappedTypeNode, node)
       );
@@ -643,7 +643,7 @@ namespace qnr {
     }
 
     function preserveJsDoc<T extends Node>(updated: T, original: Node): T {
-      if (hasJSDocNodes(updated) && hasJSDocNodes(original)) {
+      if (qn.is.withJSDocNodes(updated) && qn.is.withJSDocNodes(original)) {
         updated.jsDoc = original.jsDoc;
       }
       return setCommentRange(updated, getCommentRange(original));
@@ -759,7 +759,7 @@ namespace qnr {
       // dependent imports and allowing a valid declaration file output. Today, this dependent alias marking only happens for internal import aliases.
       while (length(lateMarkedStatements)) {
         const i = lateMarkedStatements!.shift()!;
-        if (!isLateVisibilityPaintedStatement(i)) {
+        if (!qn.is.lateVisibilityPaintedStatement(i)) {
           return fail(`Late replaced statement was found which is not handled by the declaration transformer!: ${(ts as any).SyntaxKind ? (ts as any).SyntaxKind[(i as any).kind] : (i as any).kind}`);
         }
         const priorNeedsDeclare = needsDeclare;
@@ -774,7 +774,7 @@ namespace qnr {
       return NodeArray.visit(statements, visitLateVisibilityMarkedStatements);
 
       function visitLateVisibilityMarkedStatements(statement: Statement) {
-        if (isLateVisibilityPaintedStatement(statement)) {
+        if (qn.is.lateVisibilityPaintedStatement(statement)) {
           const key = '' + getOriginalNodeId(statement);
           if (lateStatementReplacementMap.has(key)) {
             const result = lateStatementReplacementMap.get(key);
@@ -797,7 +797,7 @@ namespace qnr {
 
     function visitDeclarationSubtree(input: Node): VisitResult<Node> {
       if (shouldStripInternal(input)) return;
-      if (isDeclaration(input)) {
+      if (qn.is.declaration(input)) {
         if (isDeclarationAndNotVisible(input)) return;
         if (hasDynamicName(input) && !resolver.isLateBound(getParseTreeNode(input) as Declaration)) {
           return;
@@ -805,7 +805,7 @@ namespace qnr {
       }
 
       // Elide implementation signatures from overload sets
-      if (isFunctionLike(input) && resolver.isImplementationOfOverload(input)) return;
+      if (qn.is.functionLike(input) && resolver.isImplementationOfOverload(input)) return;
 
       // Elide semicolon class statements
       if (qn.is.kind(SemicolonClassElement, input)) return;
@@ -847,7 +847,7 @@ namespace qnr {
       if (isProcessedComponent(input)) {
         switch (input.kind) {
           case Syntax.ExpressionWithTypeArguments: {
-            if (isEntityName(input.expression) || isEntityNameExpression(input.expression)) {
+            if (qn.is.entityName(input.expression) || isEntityNameExpression(input.expression)) {
               checkEntityNameVisibility(input.expression, enclosingDeclaration);
             }
             const node = visitEachChild(input, visitDeclarationSubtree, context);
@@ -994,7 +994,7 @@ namespace qnr {
             );
           }
           case Syntax.ImportType: {
-            if (!isLiteralImportTypeNode(input)) return cleanup(input);
+            if (!qn.is.literalImportTypeNode(input)) return cleanup(input);
             return cleanup(
               ImportTypeNode.update(
                 input,
@@ -1106,10 +1106,10 @@ namespace qnr {
           return transformImportDeclaration(input);
         }
       }
-      if (isDeclaration(input) && isDeclarationAndNotVisible(input)) return;
+      if (qn.is.declaration(input) && isDeclarationAndNotVisible(input)) return;
 
       // Elide implementation signatures from overload sets
-      if (isFunctionLike(input) && resolver.isImplementationOfOverload(input)) return;
+      if (qn.is.functionLike(input) && resolver.isImplementationOfOverload(input)) return;
 
       let previousEnclosingDeclaration: typeof enclosingDeclaration;
       if (isEnclosingDeclaration(input)) {
@@ -1243,7 +1243,7 @@ namespace qnr {
             needsScopeFixMarker = oldNeedsScopeFix;
             resultHasScopeMarker = oldHasScopeFix;
             const mods = ensureModifiers(input);
-            return cleanup(updateModuleDeclaration(input, /*decorators*/ undefined, mods, qp_isExternalModuleAugmentation(input) ? rewriteModuleSpecifier(input, input.name) : input.name, body));
+            return cleanup(updateModuleDeclaration(input, /*decorators*/ undefined, mods, qn.is.externalModuleAugmentation(input) ? rewriteModuleSpecifier(input, input.name) : input.name, body));
           } else {
             needsDeclare = previousNeedsDeclare;
             const mods = ensureModifiers(input);
@@ -1448,7 +1448,7 @@ namespace qnr {
       return !!stripInternal && !!node && isInternalDeclaration(node, currentSourceFile);
     }
 
-    function isScopeMarker(node: Node) {
+    function qn.is.scopeMarker(node: Node) {
       return qn.is.kind(ExportAssignment, node) || qn.is.kind(ExportDeclaration, node);
     }
 

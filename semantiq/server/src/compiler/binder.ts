@@ -112,7 +112,7 @@ namespace qnr {
         const statements = p.statements;
         let found: ModuleInstanceState | undefined;
         for (const statement of statements) {
-          if (nodeHasName(statement, name)) {
+          if (qn.is.withName(statement, name)) {
             if (!statement.parent) {
               setParentPointers(p, statement);
             }
@@ -326,7 +326,7 @@ namespace qnr {
 
       const name = getNameOfDeclaration(node);
       if (name) {
-        if (isAmbientModule(node)) {
+        if (qn.is.ambientModule(node)) {
           const moduleName = getTextOfIdentifierOrLiteral(name as Identifier | StringLiteral);
           return (isGlobalScopeAugmentation(<ModuleDeclaration>node) ? '__global' : `"${moduleName}"`) as __String;
         }
@@ -336,7 +336,7 @@ namespace qnr {
           if (StringLiteral.orNumericLiteralLike(nameExpression)) {
             return qy_get.escUnderscores(nameExpression.text);
           }
-          if (isSignedNumericLiteral(nameExpression)) {
+          if (qn.is.signedNumericLiteral(nameExpression)) {
             return (Token.toString(nameExpression.operator) + nameExpression.operand.text) as __String;
           }
 
@@ -384,7 +384,7 @@ namespace qnr {
           fail('Unknown binary declaration kind');
           break;
         case Syntax.JSDocFunctionType:
-          return isJSDocConstructSignature(node) ? InternalSymbolName.New : InternalSymbolName.Call;
+          return qn.isJSDoc.constructSignature(node) ? InternalSymbolName.New : InternalSymbolName.Call;
         case Syntax.Parameter:
           // Parameters with names are handled at the top of this function.  Parameters
           // without names can only come from JSDocFunctionTypes.
@@ -400,7 +400,7 @@ namespace qnr {
     }
 
     function getDisplayName(node: Declaration): string {
-      return isNamedDeclaration(node) ? declarationNameToString(node.name) : qy_get.unescUnderscores(Debug.checkDefined(getDeclarationName(node)));
+      return qn.is.namedDeclaration(node) ? declarationNameToString(node.name) : qy_get.unescUnderscores(Debug.checkDefined(getDeclarationName(node)));
     }
 
     /**
@@ -465,7 +465,7 @@ namespace qnr {
             symbolTable.set(name, (symbol = createSymbol(SymbolFlags.None, name)));
           } else if (!(includes & SymbolFlags.Variable && symbol.flags & SymbolFlags.Assignment)) {
             // Assignment declarations are allowed to merge with variables, no matter what other flags they have.
-            if (isNamedDeclaration(node)) {
+            if (qn.is.namedDeclaration(node)) {
               node.name.parent = node;
             }
             // Report errors every position with duplicate declaration
@@ -503,7 +503,7 @@ namespace qnr {
             const relatedInformation: DiagnosticRelatedInformation[] = [];
             if (
               qn.is.kind(TypeAliasDeclaration, node) &&
-              nodeIsMissing(node.type) &&
+              qn.is.missing(node.type) &&
               hasSyntacticModifier(node, ModifierFlags.Export) &&
               symbol.flags & (SymbolFlags.Alias | SymbolFlags.Type | SymbolFlags.Namespace)
             ) {
@@ -565,8 +565,8 @@ namespace qnr {
         //       during global merging in the checker. Why? The only case when ambient module is permitted inside another module is module augmentation
         //       and this case is specially handled. Module augmentations should only be merged with original module definition
         //       and should never be merged directly with other augmentation, and the latter case would be possible if automatic merge is allowed.
-        if (isJSDocTypeAlias(node)) assert(isInJSFile(node)); // We shouldn't add symbols for JSDoc nodes if not in a JS file.
-        if ((!isAmbientModule(node) && (hasExportModifier || container.flags & NodeFlags.ExportContext)) || isJSDocTypeAlias(node)) {
+        if (qn.isJSDoc.typeAlias(node)) assert(isInJSFile(node)); // We shouldn't add symbols for JSDoc nodes if not in a JS file.
+        if ((!qn.is.ambientModule(node) && (hasExportModifier || container.flags & NodeFlags.ExportContext)) || qn.isJSDoc.typeAlias(node)) {
           if (!container.locals || (hasSyntacticModifier(node, ModifierFlags.Default) && !getDeclarationName(node))) {
             return declareSymbol(container.symbol.exports!, container.symbol, node, symbolFlags, symbolExcludes); // No local symbol for an unnamed default!
           }
@@ -655,7 +655,7 @@ namespace qnr {
         bindChildren(node);
         // Reset all reachability check related flags on node (for incremental scenarios)
         node.flags &= ~NodeFlags.ReachabilityAndEmitFlags;
-        if (!(currentFlow.flags & FlowFlags.Unreachable) && containerFlags & ContainerFlags.IsFunctionLike && nodeIsPresent((<FunctionLikeDeclaration>node).body)) {
+        if (!(currentFlow.flags & FlowFlags.Unreachable) && containerFlags & ContainerFlags.IsFunctionLike && qn.is.present((<FunctionLikeDeclaration>node).body)) {
           node.flags |= NodeFlags.HasImplicitReturn;
           if (hasExplicitReturn) node.flags |= NodeFlags.HasExplicitReturn;
           (<FunctionLikeDeclaration>node).endFlowNode = currentFlow;
@@ -872,7 +872,7 @@ namespace qnr {
     }
 
     function containsNarrowableReference(expr: Expression): boolean {
-      return isNarrowableReference(expr) || (isOptionalChain(expr) && containsNarrowableReference(expr.expression));
+      return isNarrowableReference(expr) || (qn.is.optionalChain(expr) && containsNarrowableReference(expr.expression));
     }
 
     function hasNarrowableArgument(expr: CallExpression) {
@@ -964,8 +964,8 @@ namespace qnr {
       }
       if (
         ((expression.kind === Syntax.TrueKeyword && flags & FlowFlags.FalseCondition) || (expression.kind === Syntax.FalseKeyword && flags & FlowFlags.TrueCondition)) &&
-        !isExpressionOfOptionalChainRoot(expression) &&
-        !isNullishCoalesce(expression.parent)
+        !qn.is.expressionOfOptionalChainRoot(expression) &&
+        !qn.is.nullishCoalesce(expression.parent)
       ) {
         return unreachableFlow;
       }
@@ -1041,7 +1041,7 @@ namespace qnr {
       while (qn.is.kind(ParenthesizedExpression, node.parent) || (qn.is.kind(PrefixUnaryExpression, node.parent) && node.parent.operator === Syntax.ExclamationToken)) {
         node = node.parent;
       }
-      return !isStatementCondition(node) && !isLogicalExpression(node.parent) && !(isOptionalChain(node.parent) && node.parent.expression === node);
+      return !isStatementCondition(node) && !isLogicalExpression(node.parent) && !(qn.is.optionalChain(node.parent) && node.parent.expression === node);
     }
 
     function doWithConditionalBranches<T>(action: (value: T) => void, value: T, trueTarget: FlowLabel, falseTarget: FlowLabel) {
@@ -1056,7 +1056,7 @@ namespace qnr {
 
     function bindCondition(node: Expression | undefined, trueTarget: FlowLabel, falseTarget: FlowLabel) {
       doWithConditionalBranches(bind, node, trueTarget, falseTarget);
-      if (!node || (!isLogicalExpression(node) && !(isOptionalChain(node) && isOutermostOptionalChain(node)))) {
+      if (!node || (!isLogicalExpression(node) && !(qn.is.optionalChain(node) && isOutermostOptionalChain(node)))) {
         addAntecedent(trueTarget, createFlowCondition(FlowFlags.TrueCondition, currentFlow, node));
         addAntecedent(falseTarget, createFlowCondition(FlowFlags.FalseCondition, currentFlow, node));
       }
@@ -1608,7 +1608,7 @@ namespace qnr {
 
     function bindVariableDeclarationFlow(node: VariableDeclaration) {
       bindEachChild(node);
-      if (node.initializer || isForInOrOfStatement(node.parent.parent)) {
+      if (node.initializer || qn.is.forInOrOfStatement(node.parent.parent)) {
         bindInitializedVariableFlow(node);
       }
     }
@@ -1630,7 +1630,7 @@ namespace qnr {
 
     function bindOptionalExpression(node: Expression, trueTarget: FlowLabel, falseTarget: FlowLabel) {
       doWithConditionalBranches(bind, node, trueTarget, falseTarget);
-      if (!isOptionalChain(node) || isOutermostOptionalChain(node)) {
+      if (!qn.is.optionalChain(node) || isOutermostOptionalChain(node)) {
         addAntecedent(trueTarget, createFlowCondition(FlowFlags.TrueCondition, currentFlow, node));
         addAntecedent(falseTarget, createFlowCondition(FlowFlags.FalseCondition, currentFlow, node));
       }
@@ -1666,7 +1666,7 @@ namespace qnr {
       // and build it's CFA graph as if it were the first condition (`a && ...`). Then we bind the rest
       // of the node as part of the "true" branch, and continue to do so as we ascend back up to the outermost
       // chain node. We then treat the entire node as the right side of the expression.
-      const preChainLabel = isOptionalChainRoot(node) ? createBranchLabel() : undefined;
+      const preChainLabel = qn.is.optionalChainRoot(node) ? createBranchLabel() : undefined;
       bindOptionalExpression(node.expression, preChainLabel || trueTarget, falseTarget);
       if (preChainLabel) {
         currentFlow = finishFlowLabel(preChainLabel);
@@ -1689,7 +1689,7 @@ namespace qnr {
     }
 
     function bindNonNullExpressionFlow(node: NonNullExpression | NonNullChain) {
-      if (isOptionalChain(node)) {
+      if (qn.is.optionalChain(node)) {
         bindOptionalChainFlow(node);
       } else {
         bindEachChild(node);
@@ -1697,7 +1697,7 @@ namespace qnr {
     }
 
     function bindAccessExpressionFlow(node: AccessExpression | PropertyAccessChain | ElementAccessChain) {
-      if (isOptionalChain(node)) {
+      if (qn.is.optionalChain(node)) {
         bindOptionalChainFlow(node);
       } else {
         bindEachChild(node);
@@ -1705,7 +1705,7 @@ namespace qnr {
     }
 
     function bindCallExpressionFlow(node: CallExpression | CallChain) {
-      if (isOptionalChain(node)) {
+      if (qn.is.optionalChain(node)) {
         bindOptionalChainFlow(node);
       } else {
         // If the target of the call expression is a function expression or arrow function we have
@@ -1754,7 +1754,7 @@ namespace qnr {
           return ContainerFlags.IsContainer | ContainerFlags.IsControlFlowContainer | ContainerFlags.HasLocals;
 
         case Syntax.MethodDeclaration:
-          if (isObjectLiteralOrClassExpressionMethod(node)) {
+          if (qn.is.objectLiteralOrClassExpressionMethod(node)) {
             return (
               ContainerFlags.IsContainer | ContainerFlags.IsControlFlowContainer | ContainerFlags.HasLocals | ContainerFlags.IsFunctionLike | ContainerFlags.IsObjectLiteralOrClassExpressionMethod
             );
@@ -1807,7 +1807,7 @@ namespace qnr {
           // By not creating a new block-scoped-container here, we ensure that both 'var x'
           // and 'let x' go into the Function-container's locals, and we do get a collision
           // conflict.
-          return isFunctionLike(node.parent) ? ContainerFlags.None : ContainerFlags.IsBlockScopedContainer;
+          return qn.is.functionLike(node.parent) ? ContainerFlags.None : ContainerFlags.IsBlockScopedContainer;
       }
 
       return ContainerFlags.None;
@@ -1908,11 +1908,11 @@ namespace qnr {
 
     function bindModuleDeclaration(node: ModuleDeclaration) {
       setExportContextFlag(node);
-      if (isAmbientModule(node)) {
+      if (qn.is.ambientModule(node)) {
         if (hasSyntacticModifier(node, ModifierFlags.Export)) {
           errorOnFirstToken(node, Diagnostics.export_modifier_cannot_be_applied_to_ambient_modules_and_module_augmentations_since_they_are_always_visible);
         }
-        if (isModuleAugmentationExternal(node)) {
+        if (qn.is.moduleAugmentationExternal(node)) {
           declareModuleSymbol(node);
         } else {
           let pattern: Pattern | undefined;
@@ -2167,7 +2167,7 @@ namespace qnr {
     }
 
     function checkStrictModeBinaryExpression(node: BinaryExpression) {
-      if (inStrictMode && isLeftHandSideExpression(node.left) && isAssignmentOperator(node.operatorToken.kind)) {
+      if (inStrictMode && qn.is.leftHandSideExpression(node.left) && isAssignmentOperator(node.operatorToken.kind)) {
         // ECMA 262 (Annex C) The identifier eval or arguments may not appear as the LeftHandSideExpression of an
         // Assignment operator(11.13) or of a PostfixExpression(11.3)
         checkStrictModeEvalOrArguments(node, <Identifier>node.left);
@@ -2246,7 +2246,7 @@ namespace qnr {
     function checkStrictModeFunctionDeclaration(node: FunctionDeclaration) {
       if (languageVersion < ScriptTarget.ES2015) {
         // Report error if function is not top level function declaration
-        if (blockScopeContainer.kind !== Syntax.SourceFile && blockScopeContainer.kind !== Syntax.ModuleDeclaration && !isFunctionLike(blockScopeContainer)) {
+        if (blockScopeContainer.kind !== Syntax.SourceFile && blockScopeContainer.kind !== Syntax.ModuleDeclaration && !qn.is.functionLike(blockScopeContainer)) {
           // We check first if the name is inside class declaration or class expression; if so give explicit message
           // otherwise report generic error message.
           const errorSpan = getErrorSpanForNode(file, node);
@@ -2290,7 +2290,7 @@ namespace qnr {
     function checkStrictModeLabeledStatement(node: LabeledStatement) {
       // Grammar checking for labeledStatement
       if (inStrictMode && options.target! >= ScriptTarget.ES2015) {
-        if (isDeclarationStatement(node.statement) || qn.is.kind(VariableStatement, node.statement)) {
+        if (qn.is.declarationStatement(node.statement) || qn.is.kind(VariableStatement, node.statement)) {
           errorOnFirstToken(node.label, Diagnostics.A_label_is_not_allowed_here);
         }
       }
@@ -2372,7 +2372,7 @@ namespace qnr {
     }
 
     function bindJSDoc(node: Node) {
-      if (hasJSDocNodes(node)) {
+      if (qn.is.withJSDocNodes(node)) {
         if (isInJSFile(node)) {
           for (const j of node.jsDoc!) {
             bind(j);
@@ -2388,7 +2388,7 @@ namespace qnr {
     function updateStrictModeStatementList(statements: NodeArray<Statement>) {
       if (!inStrictMode) {
         for (const statement of statements) {
-          if (!isPrologueDirective(statement)) {
+          if (!qn.is.prologueDirective(statement)) {
             return;
           }
 
@@ -2400,7 +2400,7 @@ namespace qnr {
       }
     }
 
-    /// Should be called only on prologue directives (isPrologueDirective(node) should be true)
+    /// Should be called only on prologue directives (qn.is.prologueDirective(node) should be true)
     function isUseStrictPrologueDirective(node: ExpressionStatement): boolean {
       const nodeText = getSourceTextOfNodeFromSourceFile(file, node.expression);
 
@@ -2418,7 +2418,7 @@ namespace qnr {
           // current "blockScopeContainer" needs to be set to its immediate namespace parent.
           if ((<Identifier>node).isInJSDocNamespace) {
             let parentNode = node.parent;
-            while (parentNode && !isJSDocTypeAlias(parentNode)) {
+            while (parentNode && !qn.isJSDoc.typeAlias(parentNode)) {
               parentNode = parentNode.parent;
             }
             bindBlockScopedDeclaration(parentNode as Declaration, SymbolFlags.TypeAlias, SymbolFlags.TypeAliasExcludes);
@@ -2426,7 +2426,7 @@ namespace qnr {
           }
         // falls through
         case Syntax.ThisKeyword:
-          if (currentFlow && (isExpression(node) || parent.kind === Syntax.ShorthandPropertyAssignment)) {
+          if (currentFlow && (qn.is.expression(node) || parent.kind === Syntax.ShorthandPropertyAssignment)) {
             node.flowNode = currentFlow;
           }
           return checkStrictModeIdentifier(<Identifier>node);
@@ -2444,7 +2444,7 @@ namespace qnr {
           if (isSpecialPropertyDeclaration(expr)) {
             bindSpecialPropertyDeclaration(expr);
           }
-          if (isInJSFile(expr) && file.commonJsModuleIndicator && isModuleExportsAccessExpression(expr) && !lookupSymbolForNameWorker(blockScopeContainer, 'module' as __String)) {
+          if (isInJSFile(expr) && file.commonJsModuleIndicator && qn.is.moduleExportsAccessExpression(expr) && !lookupSymbolForNameWorker(blockScopeContainer, 'module' as __String)) {
             declareSymbol(file.locals!, /*parent*/ undefined, expr.expression, SymbolFlags.FunctionScopedVariable | SymbolFlags.ModuleExports, SymbolFlags.FunctionScopedVariableExcludes);
           }
           break;
@@ -2526,7 +2526,7 @@ namespace qnr {
           return bindPropertyOrMethodOrAccessor(
             <Declaration>node,
             SymbolFlags.Method | ((<MethodDeclaration>node).questionToken ? SymbolFlags.Optional : SymbolFlags.None),
-            isObjectLiteralMethod(node) ? SymbolFlags.PropertyExcludes : SymbolFlags.MethodExcludes
+            qn.is.objectLiteralMethod(node) ? SymbolFlags.PropertyExcludes : SymbolFlags.MethodExcludes
           );
         case Syntax.FunctionDeclaration:
           return bindFunctionDeclaration(<FunctionDeclaration>node);
@@ -2610,7 +2610,7 @@ namespace qnr {
           updateStrictModeStatementList((<SourceFile>node).statements);
           return bindSourceFileIfExternalModule();
         case Syntax.Block:
-          if (!isFunctionLike(node.parent)) {
+          if (!qn.is.functionLike(node.parent)) {
             return;
           }
         // falls through
@@ -2991,7 +2991,7 @@ namespace qnr {
       let includes = SymbolFlags.None;
       let excludes = SymbolFlags.None;
       // Method-like
-      if (isFunctionLikeDeclaration(getAssignedExpandoInitializer(declaration)!)) {
+      if (qn.is.functionLikeDeclaration(getAssignedExpandoInitializer(declaration)!)) {
         includes = SymbolFlags.Method;
         excludes = SymbolFlags.MethodExcludes;
       }
@@ -3206,7 +3206,7 @@ namespace qnr {
 
       // If this is a property-parameter, then also declare the property symbol into the
       // containing class.
-      if (isParameterPropertyDeclaration(node, node.parent)) {
+      if (qn.is.parameterPropertyDeclaration(node, node.parent)) {
         const classDeclaration = node.parent.parent;
         declareSymbol(
           classDeclaration.symbol.members!,
@@ -3220,7 +3220,7 @@ namespace qnr {
 
     function bindFunctionDeclaration(node: FunctionDeclaration) {
       if (!file.isDeclarationFile && !(node.flags & NodeFlags.Ambient)) {
-        if (isAsyncFunction(node)) {
+        if (qn.is.asyncFunction(node)) {
           emitFlags |= NodeFlags.HasAsyncFunctions;
         }
       }
@@ -3236,7 +3236,7 @@ namespace qnr {
 
     function bindFunctionExpression(node: FunctionExpression) {
       if (!file.isDeclarationFile && !(node.flags & NodeFlags.Ambient)) {
-        if (isAsyncFunction(node)) {
+        if (qn.is.asyncFunction(node)) {
           emitFlags |= NodeFlags.HasAsyncFunctions;
         }
       }
@@ -3249,11 +3249,11 @@ namespace qnr {
     }
 
     function bindPropertyOrMethodOrAccessor(node: Declaration, symbolFlags: SymbolFlags, symbolExcludes: SymbolFlags) {
-      if (!file.isDeclarationFile && !(node.flags & NodeFlags.Ambient) && isAsyncFunction(node)) {
+      if (!file.isDeclarationFile && !(node.flags & NodeFlags.Ambient) && qn.is.asyncFunction(node)) {
         emitFlags |= NodeFlags.HasAsyncFunctions;
       }
 
-      if (currentFlow && isObjectLiteralOrClassExpressionMethod(node)) {
+      if (currentFlow && qn.is.objectLiteralOrClassExpressionMethod(node)) {
         node.flowNode = currentFlow;
       }
 
@@ -3305,7 +3305,7 @@ namespace qnr {
       if (currentFlow === unreachableFlow) {
         const reportError =
           // report error on all statements except empty ones
-          (isStatementButNotDeclaration(node) && node.kind !== Syntax.EmptyStatement) ||
+          (qn.is.statementButNotDeclaration(node) && node.kind !== Syntax.EmptyStatement) ||
           // report error on class declarations
           node.kind === Syntax.ClassDeclaration ||
           // report error on instantiated modules or const-enums only modules if preserveConstEnums is set
@@ -3338,7 +3338,7 @@ namespace qnr {
   }
 
   function eachUnreachableRange(node: Node, cb: (start: Node, last: Node) => void): void {
-    if (isStatement(node) && isExecutableStatement(node) && qn.is.kind(Block, node.parent)) {
+    if (qn.is.statement(node) && isExecutableStatement(node) && qn.is.kind(Block, node.parent)) {
       const { statements } = node.parent;
       const slice = sliceAfter(statements, node);
       getRangesWhere(slice, isExecutableStatement, (start, afterEnd) => cb(slice[start], slice[afterEnd - 1]));
@@ -3378,7 +3378,7 @@ namespace qnr {
     while (q.length && i < 100) {
       i++;
       node = q.shift()!;
-      if (isExportsIdentifier(node) || isModuleExportsAccessExpression(node)) {
+      if (qn.is.exportsIdentifier(node) || qn.is.moduleExportsAccessExpression(node)) {
         return true;
       } else if (qn.is.kind(Identifier, node)) {
         const symbol = lookupSymbolForNameWorker(sourceFile, node.escapedText);
@@ -3516,11 +3516,11 @@ namespace qnr {
       transformFlags |= TransformFlags.AssertTypeScript;
     }
 
-    if (subtreeFlags & TransformFlags.ContainsRestOrSpread || isSuperOrSuperProperty(callee)) {
+    if (subtreeFlags & TransformFlags.ContainsRestOrSpread || qn.is.superOrSuperProperty(callee)) {
       // If the this node contains a SpreadExpression, or is a super call, then it is an ES6
       // node.
       transformFlags |= TransformFlags.AssertES2015;
-      if (isSuperProperty(callee)) {
+      if (qn.is.superProperty(callee)) {
         transformFlags |= TransformFlags.ContainsLexicalThis;
       }
     }
@@ -3968,7 +3968,7 @@ namespace qnr {
     let transformFlags = subtreeFlags;
 
     // A labeled statement containing a block scoped binding *may* need to be transformed from ES6.
-    if (subtreeFlags & TransformFlags.ContainsBlockScopedBinding && isIterationStatement(node, /*lookInLabeledStatements*/ true)) {
+    if (subtreeFlags & TransformFlags.ContainsBlockScopedBinding && qn.is.iterationStatement(node, /*lookInLabeledStatements*/ true)) {
       transformFlags |= TransformFlags.AssertES2015;
     }
 
@@ -3980,7 +3980,7 @@ namespace qnr {
     let transformFlags = subtreeFlags;
 
     // An ImportEqualsDeclaration with a namespace reference is TypeScript.
-    if (!qp_isExternalModuleImportEqualsDeclaration(node)) {
+    if (!qn.is.externalModuleImportEqualsDeclaration(node)) {
       transformFlags |= TransformFlags.AssertTypeScript;
     }
 

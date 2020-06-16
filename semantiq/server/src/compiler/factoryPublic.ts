@@ -323,7 +323,7 @@ namespace qnr {
   }
 
   export function updatePropertyAccess(node: PropertyAccessExpression, expression: Expression, name: Identifier | PrivateIdentifier) {
-    if (isPropertyAccessChain(node)) {
+    if (qn.is.propertyAccessChain(node)) {
       return updatePropertyAccessChain(node, expression, node.questionDotToken, cast(name, isIdentifier));
     }
     // Because we are updating existed propertyAccess we want to inherit its emitFlags
@@ -358,7 +358,7 @@ namespace qnr {
   }
 
   export function updateElementAccess(node: ElementAccessExpression, expression: Expression, argumentExpression: Expression) {
-    if (isOptionalChain(node)) {
+    if (qn.is.optionalChain(node)) {
       return updateElementAccessChain(node, expression, node.questionDotToken, argumentExpression);
     }
     return node.expression !== expression || node.argumentExpression !== argumentExpression ? updateNode(createElementAccess(expression, argumentExpression), node) : node;
@@ -389,7 +389,7 @@ namespace qnr {
   }
 
   export function updateCall(node: CallExpression, expression: Expression, typeArguments: readonly TypeNode[] | undefined, argumentsArray: readonly Expression[]) {
-    if (isOptionalChain(node)) {
+    if (qn.is.optionalChain(node)) {
       return updateCallChain(node, expression, node.questionDotToken, typeArguments, argumentsArray);
     }
     return node.expression !== expression || node.typeArguments !== typeArguments || node.arguments !== argumentsArray ? updateNode(createCall(expression, typeArguments, argumentsArray), node) : node;
@@ -757,7 +757,7 @@ namespace qnr {
   }
 
   export function updateNonNullExpression(node: NonNullExpression, expression: Expression) {
-    if (isNonNullChain(node)) {
+    if (qn.is.nonNullChain(node)) {
       return updateNonNullChain(node, expression);
     }
     return node.expression !== expression ? updateNode(createNonNullExpression(expression), node) : node;
@@ -2021,7 +2021,7 @@ namespace qnr {
   }
 
   function flattenCommaElements(node: Expression): Expression | readonly Expression[] {
-    if (isSynthesized(node) && !isParseTreeNode(node) && !node.original && !node.emitNode && !node.id) {
+    if (isSynthesized(node) && !qn.is.parseTreeNode(node) && !node.original && !node.emitNode && !node.id) {
       if (node.kind === Syntax.CommaListExpression) {
         return (<CommaListExpression>node).elements;
       }
@@ -2530,7 +2530,7 @@ namespace qnr {
 
   export function getOrCreateEmitNode(node: Node): EmitNode {
     if (!node.emitNode) {
-      if (isParseTreeNode(node)) {
+      if (qn.is.parseTreeNode(node)) {
         if (node.kind === Syntax.SourceFile) {
           return (node.emitNode = { annotatedNodes: [node] } as EmitNode);
         }

@@ -873,7 +873,7 @@ namespace qnr {
 
     function substituteCallExpression(node: CallExpression): Expression {
       const expression = node.expression;
-      if (isSuperProperty(expression)) {
+      if (qn.is.superProperty(expression)) {
         const argumentExpression = qn.is.kind(PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
         return createCall(createPropertyAccess(argumentExpression, 'call'), /*typeArguments*/ undefined, [createThis(), ...node.arguments]);
       }
