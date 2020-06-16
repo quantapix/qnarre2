@@ -1,16 +1,221 @@
 namespace qnr {
-  export function fail(m?: string, mark?: AnyFunction): never {
-    debugger;
-    const e = new Error(m ? `Debug Failure. ${m}` : 'Debug Failure.');
-    Error.captureStackTrace(e, mark || fail);
-    throw e;
-  }
+  export namespace qa {
+    export function fail(m?: string, mark?: AnyFunction): never {
+      debugger;
+      const e = new Error(m ? `Debug Failure. ${m}` : 'Debug Failure.');
+      Error.captureStackTrace(e, mark || fail);
+      throw e;
+    }
+    export function assert(cond: unknown, m?: string, info?: string | (() => string), mark?: AnyFunction): asserts cond {
+      if (!cond) {
+        m = m ? `False expression: ${m}` : 'False expression.';
+        if (info) m += '\r\nVerbose Debug Info: ' + (typeof info === 'string' ? info : info());
+        fail(m, mark || assert);
+      }
+    }
 
-  export function assert(cond: unknown, m?: string, info?: string | (() => string), mark?: AnyFunction): asserts cond {
-    if (!cond) {
-      m = m ? `False expression: ${m}` : 'False expression.';
-      if (info) m += '\r\nVerbose Debug Info: ' + (typeof info === 'string' ? info : info());
-      fail(m, mark || assert);
+    export function length(ts?: readonly unknown[]) {
+      return ts ? ts.length : 0;
+    }
+    export function some<T>(ts?: readonly T[]): ts is readonly T[];
+    export function some<T>(ts: readonly T[] | undefined, cb: (t: T) => boolean): boolean;
+    export function some<T>(ts: readonly T[] | undefined, cb?: (t: T) => boolean): boolean {
+      if (ts) {
+        if (cb) {
+          for (const t of ts) {
+            if (cb(t)) return true;
+          }
+        } else return ts.length > 0;
+      }
+      return false;
+    }
+    export function every<T>(ts: readonly T[] | undefined, cb: (t: T, i: number) => boolean): boolean {
+      if (ts) {
+        for (let i = 0; i < ts.length; i++) {
+          if (!cb(ts[i], i)) return false;
+        }
+      }
+      return true;
+    }
+    export function find<T, U extends T>(ts: readonly T[], cb: (t: T, i: number) => t is U): U | undefined;
+    export function find<T>(ts: readonly T[], cb: (t: T, i: number) => boolean): T | undefined;
+    export function find<T>(ts: readonly T[], cb: (t: T, i: number) => boolean): T | undefined {
+      for (let i = 0; i < ts.length; i++) {
+        const t = ts[i];
+        if (cb(t, i)) return t;
+      }
+      return;
+    }
+    export function findLast<T, U extends T>(ts: readonly T[], cb: (t: T, i: number) => t is U): U | undefined;
+    export function findLast<T>(ts: readonly T[], cb: (t: T, i: number) => boolean): T | undefined;
+    export function findLast<T>(ts: readonly T[], cb: (t: T, i: number) => boolean): T | undefined {
+      for (let i = ts.length - 1; i >= 0; i--) {
+        const t = ts[i];
+        if (cb(t, i)) return t;
+      }
+      return;
+    }
+    export function findIndex<T>(ts: readonly T[], cb: (t: T, i: number) => boolean, start?: number): number {
+      for (let i = start ?? 0; i < ts.length; i++) {
+        if (cb(ts[i], i)) return i;
+      }
+      return -1;
+    }
+    export function findLastIndex<T>(ts: readonly T[], cb: (t: T, i: number) => boolean, start?: number): number {
+      for (let i = start === undefined ? ts.length - 1 : start; i >= 0; i--) {
+        if (cb(ts[i], i)) return i;
+      }
+      return -1;
+    }
+    export function findMap<T, U>(ts: readonly T[], cb: (t: T, i: number) => U | undefined): U {
+      for (let i = 0; i < ts.length; i++) {
+        const t = cb(ts[i], i);
+        if (t) return t;
+      }
+      return fail();
+    }
+    export function forEach<T, U>(ts: readonly T[] | undefined, cb: (t: T, i: number) => U | undefined): U | undefined {
+      if (ts) {
+        for (let i = 0; i < ts.length; i++) {
+          const t = cb(ts[i], i);
+          if (t) return t;
+        }
+      }
+      return;
+    }
+    export function forEachRight<T, U>(ts: readonly T[] | undefined, cb: (t: T, i: number) => U | undefined): U | undefined {
+      if (ts) {
+        for (let i = ts.length - 1; i >= 0; i--) {
+          const t = cb(ts[i], i);
+          if (t) return t;
+        }
+      }
+      return;
+    }
+    export function firstDefined<T, U>(ts: readonly T[] | undefined, cb: (t: T, i: number) => U | undefined): U | undefined {
+      if (ts) {
+        for (let i = 0; i < ts.length; i++) {
+          const t = cb(ts[i], i);
+          if (t !== undefined) return t;
+        }
+      }
+      return;
+    }
+    export function firstDefinedIterator<T, U>(ts: Iterator<T>, cb: (i: T) => U | undefined): U | undefined {
+      while (true) {
+        const t = ts.next();
+        if (t.done) return;
+        const t2 = cb(t.value);
+        if (t2 !== undefined) return t2;
+      }
+    }
+    export function filter<T, U extends T>(ts: T[], cb: (t: T) => t is U): U[];
+    export function filter<T>(ts: T[], cb: (t: T) => boolean): T[];
+    export function filter<T, U extends T>(ts: readonly T[], cb: (t: T) => t is U): readonly U[];
+    export function filter<T, U extends T>(ts: readonly T[], cb: (t: T) => boolean): readonly T[];
+    export function filter<T, U extends T>(ts: T[] | undefined, cb: (t: T) => t is U): U[] | undefined;
+    export function filter<T>(ts: T[] | undefined, cb: (t: T) => boolean): T[] | undefined;
+    export function filter<T, U extends T>(ts: readonly T[] | undefined, cb: (t: T) => t is U): readonly U[] | undefined;
+    export function filter<T, U extends T>(ts: readonly T[] | undefined, cb: (t: T) => boolean): readonly T[] | undefined;
+    export function filter<T>(ts: readonly T[] | undefined, cb: (t: T) => boolean): readonly T[] | undefined {
+      if (ts) {
+        const len = ts.length;
+        let i = 0;
+        while (i < len && cb(ts[i])) i++;
+        if (i < len) {
+          const r = ts.slice(0, i);
+          i++;
+          while (i < len) {
+            const t = ts[i];
+            if (cb(t)) r.push(t);
+            i++;
+          }
+          return r;
+        }
+      }
+      return ts;
+    }
+    export function filterMutate<T>(ts: T[], cb: (t: T, i: number, ts: T[]) => boolean): void {
+      let out = 0;
+      for (let i = 0; i < ts.length; i++) {
+        if (cb(ts[i], i, ts)) {
+          ts[out] = ts[i];
+          out++;
+        }
+      }
+      ts.length = out;
+    }
+    export function contains<T>(ts: readonly T[] | undefined, x: T, eq: EqualityComparer<T> = equateValues): boolean {
+      if (ts) {
+        for (const t of ts) {
+          if (eq(t, x)) return true;
+        }
+      }
+      return false;
+    }
+    export function intersperse<T>(ts: T[], t: T): T[] {
+      if (ts.length <= 1) return ts;
+      const r = [] as T[];
+      for (let i = 0, n = ts.length; i < n; i++) {
+        if (i) r.push(t);
+        r.push(ts[i]);
+      }
+      return r;
+    }
+    export function clear(ts: unknown[]): void {
+      ts.length = 0;
+    }
+
+    export const is = new (class {
+      isArray(x: any): x is readonly {}[] {
+        return Array.isArray ? Array.isArray(x) : x instanceof Array;
+      }
+    })();
+
+    export interface MapLike<T> {
+      [k: string]: T;
+    }
+    export class QMap<V> extends Map<string, V> {
+      reverse() {
+        const r = [] as string[];
+        this.forEach((v, k) => {
+          if (typeof v === 'number') r[v] = k;
+        });
+        return r;
+      }
+    }
+    export namespace QMap {
+      export function create<T>(es?: MapLike<T> | [string, T][]): QMap<T> {
+        const m = new QMap<T>();
+        if (isArray(es)) {
+          for (const [k, v] of es) {
+            m.set(k, v);
+          }
+        } else if (es) {
+          for (const k in es) {
+            if (hasOwnProperty.call(es, k)) {
+              m.set(k, es[k]);
+            }
+          }
+        }
+        return m;
+      }
+    }
+
+    export type QReadonlyMap<V> = ReadonlyMap<string, V>;
+
+    export interface QIterator<T> {
+      next(): { value: T; done?: false } | { value: never; done: true };
+    }
+
+    export interface Push<T> {
+      push(..._: T[]): void;
+    }
+    export interface SortedArray<T> extends Array<T> {
+      ' __sortedArrayBrand': any;
+    }
+    export interface SortedReadonlyArray<T> extends ReadonlyArray<T> {
+      ' __sortedArrayBrand': any;
     }
   }
 
@@ -19,167 +224,10 @@ namespace qnr {
 
   export const emptyArray = [] as never[];
 
-  export function isArray(x: any): x is readonly {}[] {
-    return Array.isArray ? Array.isArray(x) : x instanceof Array;
-  }
-
   export function toArray<T>(x: T | T[]): T[];
   export function toArray<T>(x: T | readonly T[]): readonly T[];
   export function toArray<T>(x: T | T[]): T[] {
     return isArray(x) ? x : [x];
-  }
-
-  export interface SortedArray<T> extends Array<T> {
-    ' __sortedArrayBrand': any;
-  }
-
-  export interface SortedReadonlyArray<T> extends ReadonlyArray<T> {
-    ' __sortedArrayBrand': any;
-  }
-
-  export function length(x: readonly any[] | undefined) {
-    return x ? x.length : 0;
-  }
-
-  export function forEach<T, U>(x: readonly T[] | undefined, cb: (e: T, i: number) => U | undefined): U | undefined {
-    if (x) {
-      for (let i = 0; i < x.length; i++) {
-        const r = cb(x[i], i);
-        if (r) return r;
-      }
-    }
-    return;
-  }
-
-  export function forEachRight<T, U>(x: readonly T[] | undefined, cb: (e: T, i: number) => U | undefined): U | undefined {
-    if (x) {
-      for (let i = x.length - 1; i >= 0; i--) {
-        const r = cb(x[i], i);
-        if (r) return r;
-      }
-    }
-    return;
-  }
-
-  export function firstDefined<T, U>(x: readonly T[] | undefined, cb: (e: T, i: number) => U | undefined): U | undefined {
-    if (x !== undefined) {
-      for (let i = 0; i < x.length; i++) {
-        const r = cb(x[i], i);
-        if (r !== undefined) return r;
-      }
-    }
-    return;
-  }
-
-  export function firstDefinedIterator<T, U>(i: Iterator<T>, cb: (e: T) => U | undefined): U | undefined {
-    while (true) {
-      const r = i.next();
-      if (r.done) return;
-      const r2 = cb(r.value);
-      if (r2 !== undefined) return r2;
-    }
-  }
-
-  export function intersperse<T>(x: T[], y: T): T[] {
-    if (x.length <= 1) return x;
-    const r = [] as T[];
-    for (let i = 0, n = x.length; i < n; i++) {
-      if (i) r.push(y);
-      r.push(x[i]);
-    }
-    return r;
-  }
-
-  export function every<T>(x: readonly T[] | undefined, cb: (e: T, i: number) => boolean): boolean {
-    if (x) {
-      for (let i = 0; i < x.length; i++) {
-        if (!cb(x[i], i)) return false;
-      }
-    }
-    return true;
-  }
-
-  export function find<T, U extends T>(x: readonly T[], cb: (e: T, i: number) => e is U): U | undefined;
-  export function find<T>(x: readonly T[], cb: (e: T, i: number) => boolean): T | undefined;
-  export function find<T>(x: readonly T[], cb: (e: T, i: number) => boolean): T | undefined {
-    for (let i = 0; i < x.length; i++) {
-      const r = x[i];
-      if (cb(r, i)) return r;
-    }
-    return;
-  }
-
-  export function findLast<T, U extends T>(x: readonly T[], cb: (e: T, i: number) => e is U): U | undefined;
-  export function findLast<T>(x: readonly T[], cb: (e: T, i: number) => boolean): T | undefined;
-  export function findLast<T>(x: readonly T[], cb: (e: T, i: number) => boolean): T | undefined {
-    for (let i = x.length - 1; i >= 0; i--) {
-      const r = x[i];
-      if (cb(r, i)) return r;
-    }
-    return;
-  }
-
-  export function findIndex<T>(x: readonly T[], cb: (e: T, i: number) => boolean, start?: number): number {
-    for (let i = start ?? 0; i < x.length; i++) {
-      if (cb(x[i], i)) return i;
-    }
-    return -1;
-  }
-
-  export function findLastIndex<T>(x: readonly T[], cb: (e: T, i: number) => boolean, start?: number): number {
-    for (let i = start === undefined ? x.length - 1 : start; i >= 0; i--) {
-      if (cb(x[i], i)) return i;
-    }
-    return -1;
-  }
-
-  export function findMap<T, U>(x: readonly T[], cb: (e: T, i: number) => U | undefined): U {
-    for (let i = 0; i < x.length; i++) {
-      const r = cb(x[i], i);
-      if (r) return r;
-    }
-    return fail();
-  }
-
-  export interface MapLike<T> {
-    [k: string]: T;
-  }
-
-  export class QMap<V> extends Map<string, V> {
-    reverse() {
-      const r = [] as string[];
-      this.forEach((v, k) => {
-        if (typeof v === 'number') r[v] = k;
-      });
-      return r;
-    }
-  }
-  export namespace QMap {
-    export function create<T>(es?: MapLike<T> | [string, T][]): QMap<T> {
-      const m = new QMap<T>();
-      if (isArray(es)) {
-        for (const [k, v] of es) {
-          m.set(k, v);
-        }
-      } else if (es) {
-        for (const k in es) {
-          if (hasOwnProperty.call(es, k)) {
-            m.set(k, es[k]);
-          }
-        }
-      }
-      return m;
-    }
-  }
-
-  export type QReadonlyMap<V> = ReadonlyMap<string, V>;
-
-  export interface QIterator<T> {
-    next(): { value: T; done?: false } | { value: never; done: true };
-  }
-
-  export interface Push<T> {
-    push(..._: T[]): void;
   }
 
   export type EqualityComparer<T> = (a: T, b: T) => boolean;
@@ -224,15 +272,6 @@ namespace qnr {
     return map;
   }
 
-  export function contains<T>(x: readonly T[] | undefined, y: T, eq: EqualityComparer<T> = equateValues): boolean {
-    if (x) {
-      for (const v of x) {
-        if (eq(v, y)) return true;
-      }
-    }
-    return false;
-  }
-
   export function arraysEqual<T>(a: readonly T[], b: readonly T[], eq: EqualityComparer<T> = equateValues): boolean {
     return a.length === b.length && a.every((x, i) => eq(x, b[i]));
   }
@@ -259,58 +298,14 @@ namespace qnr {
     return count;
   }
 
-  export function filter<T, U extends T>(array: T[], f: (x: T) => x is U): U[];
-  export function filter<T>(array: T[], f: (x: T) => boolean): T[];
-  export function filter<T, U extends T>(array: readonly T[], f: (x: T) => x is U): readonly U[];
-  export function filter<T, U extends T>(array: readonly T[], f: (x: T) => boolean): readonly T[];
-  export function filter<T, U extends T>(array: T[] | undefined, f: (x: T) => x is U): U[] | undefined;
-  export function filter<T>(array: T[] | undefined, f: (x: T) => boolean): T[] | undefined;
-  export function filter<T, U extends T>(array: readonly T[] | undefined, f: (x: T) => x is U): readonly U[] | undefined;
-  export function filter<T, U extends T>(array: readonly T[] | undefined, f: (x: T) => boolean): readonly T[] | undefined;
-  export function filter<T>(array: readonly T[] | undefined, f: (x: T) => boolean): readonly T[] | undefined {
-    if (array) {
-      const len = array.length;
-      let i = 0;
-      while (i < len && f(array[i])) i++;
-      if (i < len) {
-        const result = array.slice(0, i);
-        i++;
-        while (i < len) {
-          const item = array[i];
-          if (f(item)) {
-            result.push(item);
-          }
-          i++;
-        }
-        return result;
-      }
-    }
-    return array;
-  }
-
-  export function filterMutate<T>(array: T[], f: (x: T, i: number, array: T[]) => boolean): void {
-    let outIndex = 0;
-    for (let i = 0; i < array.length; i++) {
-      if (f(array[i], i, array)) {
-        array[outIndex] = array[i];
-        outIndex++;
-      }
-    }
-    array.length = outIndex;
-  }
-
-  export function clear(array: {}[]): void {
-    array.length = 0;
-  }
-
-  export function map<T, U>(array: readonly T[], f: (x: T, i: number) => U): U[];
-  export function map<T, U>(array: readonly T[] | undefined, f: (x: T, i: number) => U): U[] | undefined;
-  export function map<T, U>(array: readonly T[] | undefined, f: (x: T, i: number) => U): U[] | undefined {
+  export function map<T, U>(ts: readonly T[], f: (x: T, i: number) => U): U[];
+  export function map<T, U>(ts: readonly T[] | undefined, f: (x: T, i: number) => U): U[] | undefined;
+  export function map<T, U>(ts: readonly T[] | undefined, f: (x: T, i: number) => U): U[] | undefined {
     let result: U[] | undefined;
-    if (array) {
+    if (ts) {
       result = [];
-      for (let i = 0; i < array.length; i++) {
-        result.push(f(array[i], i));
+      for (let i = 0; i < ts.length; i++) {
+        result.push(f(ts[i], i));
       }
     }
     return result;
@@ -325,32 +320,31 @@ namespace qnr {
     };
   }
 
-  // Maps from T to T and avoids allocation if all elements map to themselves
-  export function sameMap<T>(array: T[], f: (x: T, i: number) => T): T[];
-  export function sameMap<T>(array: readonly T[], f: (x: T, i: number) => T): readonly T[];
-  export function sameMap<T>(array: T[] | undefined, f: (x: T, i: number) => T): T[] | undefined;
-  export function sameMap<T>(array: readonly T[] | undefined, f: (x: T, i: number) => T): readonly T[] | undefined;
-  export function sameMap<T>(array: readonly T[] | undefined, f: (x: T, i: number) => T): readonly T[] | undefined {
-    if (array) {
-      for (let i = 0; i < array.length; i++) {
-        const item = array[i];
+  export function sameMap<T>(ts: T[], f: (x: T, i: number) => T): T[];
+  export function sameMap<T>(ts: readonly T[], f: (x: T, i: number) => T): readonly T[];
+  export function sameMap<T>(ts: T[] | undefined, f: (x: T, i: number) => T): T[] | undefined;
+  export function sameMap<T>(ts: readonly T[] | undefined, f: (x: T, i: number) => T): readonly T[] | undefined;
+  export function sameMap<T>(ts: readonly T[] | undefined, f: (x: T, i: number) => T): readonly T[] | undefined {
+    if (ts) {
+      for (let i = 0; i < ts.length; i++) {
+        const item = ts[i];
         const mapped = f(item, i);
         if (item !== mapped) {
-          const result = array.slice(0, i);
+          const result = ts.slice(0, i);
           result.push(mapped);
-          for (i++; i < array.length; i++) {
-            result.push(f(array[i], i));
+          for (i++; i < ts.length; i++) {
+            result.push(f(ts[i], i));
           }
           return result;
         }
       }
     }
-    return array;
+    return ts;
   }
 
-  export function flatten<T>(array: T[][] | readonly (T | readonly T[] | undefined)[]): T[] {
+  export function flatten<T>(ts: T[][] | readonly (T | readonly T[] | undefined)[]): T[] {
     const result = [];
-    for (const v of array) {
+    for (const v of ts) {
       if (v) {
         if (isArray(v)) {
           addRange(result, v);
@@ -362,11 +356,11 @@ namespace qnr {
     return result;
   }
 
-  export function flatMap<T, U>(array: readonly T[] | undefined, mapfn: (x: T, i: number) => U | readonly U[] | undefined): readonly U[] {
+  export function flatMap<T, U>(ts: readonly T[] | undefined, mapfn: (x: T, i: number) => U | readonly U[] | undefined): readonly U[] {
     let result: U[] | undefined;
-    if (array) {
-      for (let i = 0; i < array.length; i++) {
-        const v = mapfn(array[i], i);
+    if (ts) {
+      for (let i = 0; i < ts.length; i++) {
+        const v = mapfn(ts[i], i);
         if (v) {
           if (isArray(v)) {
             result = addRange(result, v);
@@ -379,11 +373,11 @@ namespace qnr {
     return result || emptyArray;
   }
 
-  export function flatMapToMutable<T, U>(array: readonly T[] | undefined, mapfn: (x: T, i: number) => U | readonly U[] | undefined): U[] {
+  export function flatMapToMutable<T, U>(ts: readonly T[] | undefined, mapfn: (x: T, i: number) => U | readonly U[] | undefined): U[] {
     const result: U[] = [];
-    if (array) {
-      for (let i = 0; i < array.length; i++) {
-        const v = mapfn(array[i], i);
+    if (ts) {
+      for (let i = 0; i < ts.length; i++) {
+        const v = mapfn(ts[i], i);
         if (v) {
           if (isArray(v)) {
             addRange(result, v);
@@ -424,17 +418,17 @@ namespace qnr {
     }
   }
 
-  export function sameFlatMap<T>(array: T[], mapfn: (x: T, i: number) => T | readonly T[]): T[];
-  export function sameFlatMap<T>(array: readonly T[], mapfn: (x: T, i: number) => T | readonly T[]): readonly T[];
-  export function sameFlatMap<T>(array: T[], mapfn: (x: T, i: number) => T | T[]): T[] {
+  export function sameFlatMap<T>(ts: T[], mapfn: (x: T, i: number) => T | readonly T[]): T[];
+  export function sameFlatMap<T>(ts: readonly T[], mapfn: (x: T, i: number) => T | readonly T[]): readonly T[];
+  export function sameFlatMap<T>(ts: T[], mapfn: (x: T, i: number) => T | T[]): T[] {
     let result: T[] | undefined;
-    if (array) {
-      for (let i = 0; i < array.length; i++) {
-        const item = array[i];
+    if (ts) {
+      for (let i = 0; i < ts.length; i++) {
+        const item = ts[i];
         const mapped = mapfn(item, i);
         if (result || item !== mapped || isArray(mapped)) {
           if (!result) {
-            result = array.slice(0, i);
+            result = ts.slice(0, i);
           }
           if (isArray(mapped)) {
             addRange(result, mapped);
@@ -444,13 +438,13 @@ namespace qnr {
         }
       }
     }
-    return result || array;
+    return result || ts;
   }
 
-  export function mapAllOrFail<T, U>(array: readonly T[], mapFn: (x: T, i: number) => U | undefined): U[] | undefined {
+  export function mapAllOrFail<T, U>(ts: readonly T[], mapFn: (x: T, i: number) => U | undefined): U[] | undefined {
     const result: U[] = [];
-    for (let i = 0; i < array.length; i++) {
-      const mapped = mapFn(array[i], i);
+    for (let i = 0; i < ts.length; i++) {
+      const mapped = mapFn(ts[i], i);
       if (mapped === undefined) {
         return;
       }
@@ -459,11 +453,11 @@ namespace qnr {
     return result;
   }
 
-  export function mapDefined<T, U>(array: readonly T[] | undefined, mapFn: (x: T, i: number) => U | undefined): U[] {
+  export function mapDefined<T, U>(ts: readonly T[] | undefined, mapFn: (x: T, i: number) => U | undefined): U[] {
     const result: U[] = [];
-    if (array) {
-      for (let i = 0; i < array.length; i++) {
-        const mapped = mapFn(array[i], i);
+    if (ts) {
+      for (let i = 0; i < ts.length; i++) {
+        const mapped = mapFn(ts[i], i);
         if (mapped !== undefined) {
           result.push(mapped);
         }
@@ -513,20 +507,20 @@ namespace qnr {
     };
   }
 
-  export function spanMap<T, K, U>(array: readonly T[], keyfn: (x: T, i: number) => K, mapfn: (chunk: T[], key: K, start: number, end: number) => U): U[];
-  export function spanMap<T, K, U>(array: readonly T[] | undefined, keyfn: (x: T, i: number) => K, mapfn: (chunk: T[], key: K, start: number, end: number) => U): U[] | undefined;
-  export function spanMap<T, K, U>(array: readonly T[] | undefined, keyfn: (x: T, i: number) => K, mapfn: (chunk: T[], key: K, start: number, end: number) => U): U[] | undefined {
+  export function spanMap<T, K, U>(ts: readonly T[], keyfn: (x: T, i: number) => K, mapfn: (chunk: T[], key: K, start: number, end: number) => U): U[];
+  export function spanMap<T, K, U>(ts: readonly T[] | undefined, keyfn: (x: T, i: number) => K, mapfn: (chunk: T[], key: K, start: number, end: number) => U): U[] | undefined;
+  export function spanMap<T, K, U>(ts: readonly T[] | undefined, keyfn: (x: T, i: number) => K, mapfn: (chunk: T[], key: K, start: number, end: number) => U): U[] | undefined {
     let result: U[] | undefined;
-    if (array) {
+    if (ts) {
       result = [];
-      const len = array.length;
+      const len = ts.length;
       let previousKey: K | undefined;
       let key: K | undefined;
       let start = 0;
       let pos = 0;
       while (start < len) {
         while (pos < len) {
-          const value = array[pos];
+          const value = ts[pos];
           key = keyfn(value, pos);
           if (pos === 0) {
             previousKey = key;
@@ -538,7 +532,7 @@ namespace qnr {
         }
 
         if (start < pos) {
-          const v = mapfn(array.slice(start, pos), previousKey!, start, pos);
+          const v = mapfn(ts.slice(start, pos), previousKey!, start, pos);
           if (v) {
             result.push(v);
           }
@@ -565,22 +559,6 @@ namespace qnr {
     });
     return result;
   }
-  export function some<T>(array: readonly T[] | undefined): array is readonly T[];
-  export function some<T>(array: readonly T[] | undefined, cb: (value: T) => boolean): boolean;
-  export function some<T>(array: readonly T[] | undefined, cb?: (value: T) => boolean): boolean {
-    if (array) {
-      if (cb) {
-        for (const v of array) {
-          if (cb(v)) {
-            return true;
-          }
-        }
-      } else {
-        return array.length > 0;
-      }
-    }
-    return false;
-  }
 
   export function getRangesWhere<T>(arr: readonly T[], pred: (t: T) => boolean, cb: (start: number, afterEnd: number) => void): void {
     let start: number | undefined;
@@ -597,7 +575,7 @@ namespace qnr {
     if (start !== undefined) cb(start, arr.length);
   }
 
-  export function concatenate<T>(array1: T[], array2: T[]): T[];
+  export function concatenate<T>(ts1: T[], array2: T[]): T[];
   export function concatenate<T>(array1: readonly T[], array2: readonly T[]): readonly T[];
   export function concatenate<T>(array1: T[] | undefined, array2: T[] | undefined): T[];
   export function concatenate<T>(array1: readonly T[] | undefined, array2: readonly T[] | undefined): readonly T[];
@@ -1509,7 +1487,6 @@ namespace qnr {
     return useCaseSensitiveFileNames ? identity : toFileNameLowerCase;
   }
 
-  /** Represents a "prefix*suffix" pattern. */
   export interface Pattern {
     prefix: string;
     suffix: string;
@@ -1524,7 +1501,6 @@ namespace qnr {
     return candidate.substring(pattern.prefix.length, candidate.length - pattern.suffix.length);
   }
 
-  /** Return the object corresponding to the best pattern to match `candidate`. */
   export function findBestPatternMatch<T>(values: readonly T[], getPattern: (value: T) => Pattern, candidate: string): T | undefined {
     let matchedValue: T | undefined;
     // use length of prefix as betterness criteria
