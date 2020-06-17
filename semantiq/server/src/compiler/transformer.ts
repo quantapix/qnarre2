@@ -186,7 +186,7 @@ namespace qnr {
 
     // Ensure the parse tree is clean before applying transformations
     for (const node of nodes) {
-      disposeEmitNodes(getSourceFileOfNode(getParseTreeNode(node)));
+      disposeEmitNodes(qn.get.sourceFileOf(qn.get.parseTreeOf(node)));
     }
 
     performance.mark('beforeTransform');
@@ -237,7 +237,7 @@ namespace qnr {
      * Determines whether expression substitutions are enabled for the provided node.
      */
     function isSubstitutionEnabled(node: Node) {
-      return (enabledSyntaxKindFeatures[node.kind] & SyntaxKindFeatureFlags.Substitution) !== 0 && (getEmitFlags(node) & EmitFlags.NoSubstitution) === 0;
+      return (enabledSyntaxKindFeatures[node.kind] & SyntaxKindFeatureFlags.Substitution) !== 0 && (qn.get.emitFlags(node) & EmitFlags.NoSubstitution) === 0;
     }
 
     /**
@@ -265,7 +265,7 @@ namespace qnr {
      * printer when it emits a node.
      */
     function isEmitNotificationEnabled(node: Node) {
-      return (enabledSyntaxKindFeatures[node.kind] & SyntaxKindFeatureFlags.EmitNotifications) !== 0 || (getEmitFlags(node) & EmitFlags.AdviseOnEmitNode) !== 0;
+      return (enabledSyntaxKindFeatures[node.kind] & SyntaxKindFeatureFlags.EmitNotifications) !== 0 || (qn.get.emitFlags(node) & EmitFlags.AdviseOnEmitNode) !== 0;
     }
 
     /**
@@ -456,7 +456,7 @@ namespace qnr {
       if (state < TransformationState.Disposed) {
         // Clean up emit nodes on parse tree
         for (const node of nodes) {
-          disposeEmitNodes(getSourceFileOfNode(getParseTreeNode(node)));
+          disposeEmitNodes(qn.get.sourceFileOf(qn.get.parseTreeOf(node)));
         }
 
         // Release references to external entries for GC purposes.

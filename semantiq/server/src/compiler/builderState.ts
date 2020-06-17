@@ -95,7 +95,7 @@ namespace qnr {
      */
     function getReferencedFileFromImportedModuleSymbol(symbol: Symbol) {
       if (symbol.declarations && symbol.declarations[0]) {
-        const declarationSourceFile = getSourceFileOfNode(symbol.declarations[0]);
+        const declarationSourceFile = qn.get.sourceFileOf(symbol.declarations[0]);
         return declarationSourceFile && declarationSourceFile.resolvedPath;
       }
     }
@@ -185,7 +185,7 @@ namespace qnr {
       function addReferenceFromAmbientModule(symbol: Symbol) {
         // Add any file other than our own as reference
         for (const declaration of symbol.declarations) {
-          const declarationSourceFile = getSourceFileOfNode(declaration);
+          const declarationSourceFile = qn.get.sourceFileOf(declaration);
           if (declarationSourceFile && declarationSourceFile !== sourceFile) {
             addReferencedFile(declarationSourceFile.resolvedPath);
           }

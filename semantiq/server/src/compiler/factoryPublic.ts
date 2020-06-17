@@ -328,7 +328,7 @@ namespace qnr {
     }
     // Because we are updating existed propertyAccess we want to inherit its emitFlags
     // instead of using the default from createPropertyAccess
-    return node.expression !== expression || node.name !== name ? updateNode(setEmitFlags(createPropertyAccess(expression, name), getEmitFlags(node)), node) : node;
+    return node.expression !== expression || node.name !== name ? updateNode(setEmitFlags(createPropertyAccess(expression, name), qn.get.emitFlags(node)), node) : node;
   }
 
   export function createPropertyAccessChain(expression: Expression, questionDotToken: QuestionDotToken | undefined, name: string | Identifier) {
@@ -346,7 +346,7 @@ namespace qnr {
     // Because we are updating an existing PropertyAccessChain we want to inherit its emitFlags
     // instead of using the default from createPropertyAccess
     return node.expression !== expression || node.questionDotToken !== questionDotToken || node.name !== name
-      ? updateNode(setEmitFlags(createPropertyAccessChain(expression, questionDotToken, name), getEmitFlags(node)), node)
+      ? updateNode(setEmitFlags(createPropertyAccessChain(expression, questionDotToken, name), qn.get.emitFlags(node)), node)
       : node;
   }
 
@@ -2518,7 +2518,7 @@ namespace qnr {
     // from these nodes to ensure we do not hold onto entire subtrees just for position
     // information. We also need to reset these nodes to a pre-transformation state
     // for incremental parsing scenarios so that we do not impact later emit.
-    sourceFile = getSourceFileOfNode(getParseTreeNode(sourceFile));
+    sourceFile = qn.get.sourceFileOf(qn.get.parseTreeOf(sourceFile));
     const emitNode = sourceFile && sourceFile.emitNode;
     const annotatedNodes = emitNode && emitNode.annotatedNodes;
     if (annotatedNodes) {
@@ -2535,7 +2535,7 @@ namespace qnr {
           return (node.emitNode = { annotatedNodes: [node] } as EmitNode);
         }
 
-        const sourceFile = getSourceFileOfNode(getParseTreeNode(getSourceFileOfNode(node)));
+        const sourceFile = qn.get.sourceFileOf(qn.get.parseTreeOf(qn.get.sourceFileOf(node)));
         getOrCreateEmitNode(sourceFile).annotatedNodes!.push(node);
       }
 

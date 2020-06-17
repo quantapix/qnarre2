@@ -732,7 +732,7 @@ namespace qnr {
         }
         this.value = o;
         const r = create.nodeArray(es, p);
-        if (s >= 0) r.hasTrailingComma = true;
+        if (s >= 0) r.trailingComma = true;
         return r;
       }
       parseJsxChildren(tag: JsxOpeningElement | JsxOpeningFragment): NodeArray<JsxChild> {
@@ -1441,7 +1441,7 @@ namespace qnr {
         n.modifiers = this.modifiers();
         n.dot3Token = this.optionalToken(Syntax.Dot3Token);
         n.name = this.identifierOrPattern(Diagnostics.Private_identifiers_cannot_be_used_as_parameters);
-        if (getFullWidth(n.name) === 0 && !n.modifiers && qy.is.modifier(tok())) next.tok();
+        if (qn.get.fullWidth(n.name) === 0 && !n.modifiers && qy.is.modifier(tok())) next.tok();
         n.questionToken = this.optionalToken(Syntax.QuestionToken);
         n.type = parameterType();
         n.initializer = this.initializer();
@@ -4457,7 +4457,7 @@ namespace qnr {
     }
     function addJSDocComment<T extends HasJSDoc>(n: T): T {
       qa.assert(!n.jsDoc);
-      const jsDoc = mapDefined(getJSDocCommentRanges(n, source.text), (comment) => parseJSDoc.comment(n, comment.pos, comment.end - comment.pos));
+      const jsDoc = mapDefined(qn.getJSDoc.commentRanges(n, source.text), (comment) => parseJSDoc.comment(n, comment.pos, comment.end - comment.pos));
       if (jsDoc.length) n.jsDoc = jsDoc;
       return n;
     }

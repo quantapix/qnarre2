@@ -1121,7 +1121,7 @@ namespace qnr {
       const savedPreserveSourceNewlines = preserveSourceNewlines;
       lastNode = node;
       lastSubstitution = undefined;
-      if (preserveSourceNewlines && !!(getEmitFlags(node) & EmitFlags.IgnoreSourceNewlines)) {
+      if (preserveSourceNewlines && !!(qn.get.emitFlags(node) & EmitFlags.IgnoreSourceNewlines)) {
         preserveSourceNewlines = false;
       }
 
@@ -1773,7 +1773,7 @@ namespace qnr {
 
     function emitIdentifier(node: Identifier) {
       const writeText = node.symbol ? writeSymbol : write;
-      writeText(getTextOfNode(node, /*includeTrivia*/ false), node.symbol);
+      writeText(qn.get.textOf(node, /*includeTrivia*/ false), node.symbol);
       emitList(node, node.typeArguments, ListFormat.TypeParameters); // Call emitList directly since it could be an array of TypeParameterDeclarations _or_ type arguments
     }
 
@@ -1783,7 +1783,7 @@ namespace qnr {
 
     function emitPrivateIdentifier(node: PrivateIdentifier) {
       const writeText = node.symbol ? writeSymbol : write;
-      writeText(getTextOfNode(node, /*includeTrivia*/ false), node.symbol);
+      writeText(qn.get.textOf(node, /*includeTrivia*/ false), node.symbol);
     }
 
     function emitQualifiedName(node: QualifiedName) {
@@ -2024,7 +2024,7 @@ namespace qnr {
 
     function emitTypeLiteral(node: TypeLiteralNode) {
       writePunctuation('{');
-      const flags = getEmitFlags(node) & EmitFlags.SingleLine ? ListFormat.SingleLineTypeLiteralMembers : ListFormat.MultiLineTypeLiteralMembers;
+      const flags = qn.get.emitFlags(node) & EmitFlags.SingleLine ? ListFormat.SingleLineTypeLiteralMembers : ListFormat.MultiLineTypeLiteralMembers;
       emitList(node, node.members, flags | ListFormat.NoSpaceIfEmpty);
       writePunctuation('}');
     }
@@ -2042,7 +2042,7 @@ namespace qnr {
 
     function emitTupleType(node: TupleTypeNode) {
       emitTokenWithComment(Syntax.OpenBracketToken, node.pos, writePunctuation, node);
-      const flags = getEmitFlags(node) & EmitFlags.SingleLine ? ListFormat.SingleLineTupleTypeElements : ListFormat.MultiLineTupleTypeElements;
+      const flags = qn.get.emitFlags(node) & EmitFlags.SingleLine ? ListFormat.SingleLineTupleTypeElements : ListFormat.MultiLineTupleTypeElements;
       emitList(node, node.elements, flags | ListFormat.NoSpaceIfEmpty);
       emitTokenWithComment(Syntax.CloseBracketToken, node.elements.end, writePunctuation, node);
     }
@@ -2115,7 +2115,7 @@ namespace qnr {
     }
 
     function emitMappedType(node: MappedTypeNode) {
-      const emitFlags = getEmitFlags(node);
+      const emitFlags = qn.get.emitFlags(node);
       writePunctuation('{');
       if (emitFlags & EmitFlags.SingleLine) {
         writeSpace();
@@ -2214,7 +2214,7 @@ namespace qnr {
     function emitObjectLiteralExpression(node: ObjectLiteralExpression) {
       forEach(node.properties, generateMemberNames);
 
-      const indentedFlag = getEmitFlags(node) & EmitFlags.Indented;
+      const indentedFlag = qn.get.emitFlags(node) & EmitFlags.Indented;
       if (indentedFlag) {
         increaseIndent();
       }
@@ -2560,7 +2560,7 @@ namespace qnr {
 
     function emitBlockStatements(node: BlockLike, forceSingleLine: boolean) {
       emitTokenWithComment(Syntax.OpenBraceToken, node.pos, writePunctuation, /*contextNode*/ node);
-      const format = forceSingleLine || getEmitFlags(node) & EmitFlags.SingleLine ? ListFormat.SingleLineBlockStatements : ListFormat.MultiLineBlockStatements;
+      const format = forceSingleLine || qn.get.emitFlags(node) & EmitFlags.SingleLine ? ListFormat.SingleLineBlockStatements : ListFormat.MultiLineBlockStatements;
       emitList(node, node.statements, format);
       emitTokenWithComment(Syntax.CloseBraceToken, node.statements.end, writePunctuation, /*contextNode*/ node, /*indentLeading*/ !!(format & ListFormat.MultiLine));
     }
@@ -2698,7 +2698,7 @@ namespace qnr {
     }
 
     function emitTokenWithComment(token: Syntax, pos: number, writer: (s: string) => void, contextNode: Node, indentLeading?: boolean) {
-      const node = getParseTreeNode(contextNode);
+      const node = qn.get.parseTreeOf(contextNode);
       const isSimilarNode = node && node.kind === contextNode.kind;
       const startPos = pos;
       if (isSimilarNode && currentSourceFile) {
@@ -2819,7 +2819,7 @@ namespace qnr {
       const body = node.body;
       if (body) {
         if (qn.is.kind(Block, body)) {
-          const indentedFlag = getEmitFlags(node) & EmitFlags.Indented;
+          const indentedFlag = qn.get.emitFlags(node) & EmitFlags.Indented;
           if (indentedFlag) {
             increaseIndent();
           }
@@ -2865,7 +2865,7 @@ namespace qnr {
       // * A non-synthesized body's start and end position are on different lines.
       // * Any statement in the body starts on a new line.
 
-      if (getEmitFlags(body) & EmitFlags.SingleLine) {
+      if (qn.get.emitFlags(body) & EmitFlags.SingleLine) {
         return true;
       }
 
@@ -2943,7 +2943,7 @@ namespace qnr {
         emitIdentifierName(node.name);
       }
 
-      const indentedFlag = getEmitFlags(node) & EmitFlags.Indented;
+      const indentedFlag = qn.get.emitFlags(node) & EmitFlags.Indented;
       if (indentedFlag) {
         increaseIndent();
       }
@@ -3343,7 +3343,7 @@ namespace qnr {
       // "comment1" is not considered to be leading comment for node.initializer
       // but rather a trailing comment on the previous node.
       const initializer = node.initializer;
-      if (emitTrailingCommentsOfPosition && (getEmitFlags(initializer) & EmitFlags.NoLeadingComments) === 0) {
+      if (emitTrailingCommentsOfPosition && (qn.get.emitFlags(initializer) & EmitFlags.NoLeadingComments) === 0) {
         const commentRange = getCommentRange(initializer);
         emitTrailingCommentsOfPosition(commentRange.pos);
       }
@@ -3796,7 +3796,7 @@ namespace qnr {
     }
 
     function emitEmbeddedStatement(parent: Node, node: Statement) {
-      if (qn.is.kind(Block, node) || getEmitFlags(parent) & EmitFlags.SingleLine) {
+      if (qn.is.kind(Block, node) || qn.get.emitFlags(parent) & EmitFlags.SingleLine) {
         writeSpace();
         emit(node);
       } else {
@@ -4014,8 +4014,8 @@ namespace qnr {
         }
 
         // Write a trailing comma, if requested.
-        const hasTrailingComma = format & ListFormat.AllowTrailingComma && children!.hasTrailingComma;
-        if (format & ListFormat.CommaDelimited && hasTrailingComma) {
+        const trailingComma = format & ListFormat.AllowTrailingComma && children!.trailingComma;
+        if (format & ListFormat.CommaDelimited && trailingComma) {
           writePunctuation(',');
         }
 
@@ -4025,7 +4025,7 @@ namespace qnr {
         //          2
         //          /* end of element 2 */
         //       ];
-        if (previousSibling && format & ListFormat.DelimitersMask && previousSibling.end !== parentNode.end && !(getEmitFlags(previousSibling) & EmitFlags.NoTrailingComments)) {
+        if (previousSibling && format & ListFormat.DelimitersMask && previousSibling.end !== parentNode.end && !(qn.get.emitFlags(previousSibling) & EmitFlags.NoTrailingComments)) {
           emitLeadingCommentsOfPosition(previousSibling.end);
         }
 
@@ -4145,7 +4145,7 @@ namespace qnr {
     }
 
     function writeLineOrSpace(node: Node) {
-      if (getEmitFlags(node) & EmitFlags.SingleLine) {
+      if (qn.get.emitFlags(node) & EmitFlags.SingleLine) {
         writeSpace();
       } else {
         writeLine();
@@ -4314,7 +4314,7 @@ namespace qnr {
     }
 
     function linesBetweenNodes(parent: Node, node1: Node, node2: Node): number {
-      if (getEmitFlags(parent) & EmitFlags.NoIndentation) {
+      if (qn.get.emitFlags(parent) & EmitFlags.NoIndentation) {
         return 0;
       }
 
@@ -4349,16 +4349,16 @@ namespace qnr {
       return node;
     }
 
-    function getTextOfNode(node: Node, includeTrivia?: boolean): string {
+    function qn.get.textOf(node: Node, includeTrivia?: boolean): string {
       if (qn.is.generatedIdentifier(node)) {
         return generateName(node);
       } else if (
         (qn.is.kind(Identifier, node) || qn.is.kind(PrivateIdentifier, node)) &&
-        (isSynthesized(node) || !node.parent || !currentSourceFile || (node.parent && currentSourceFile && getSourceFileOfNode(node) !== getOriginalNode(currentSourceFile)))
+        (isSynthesized(node) || !node.parent || !currentSourceFile || (node.parent && currentSourceFile && qn.get.sourceFileOf(node) !== qn.get.originalOf(currentSourceFile)))
       ) {
         return idText(node);
       } else if (node.kind === Syntax.StringLiteral && (<StringLiteral>node).textSourceNode) {
-        return getTextOfNode((<StringLiteral>node).textSourceNode!, includeTrivia);
+        return qn.get.textOf((<StringLiteral>node).textSourceNode!, includeTrivia);
       } else if (qn.is.literalExpression(node) && (isSynthesized(node) || !node.parent)) {
         return node.text;
       }
@@ -4370,10 +4370,10 @@ namespace qnr {
       if (node.kind === Syntax.StringLiteral && (<StringLiteral>node).textSourceNode) {
         const textSourceNode = (<StringLiteral>node).textSourceNode!;
         if (qn.is.kind(Identifier, textSourceNode) || qn.is.kind(NumericLiteral, textSourceNode)) {
-          const text = qn.is.kind(NumericLiteral, textSourceNode) ? textSourceNode.text : getTextOfNode(textSourceNode);
+          const text = qn.is.kind(NumericLiteral, textSourceNode) ? textSourceNode.text : qn.get.textOf(textSourceNode);
           return jsxAttributeEscape
             ? `"${escapeJsxAttributeString(text)}"`
-            : neverAsciiEscape || getEmitFlags(node) & EmitFlags.NoAsciiEscaping
+            : neverAsciiEscape || qn.get.emitFlags(node) & EmitFlags.NoAsciiEscaping
             ? `"${escapeString(text)}"`
             : `"${escapeNonAsciiString(text)}"`;
         } else {
@@ -4381,14 +4381,14 @@ namespace qnr {
         }
       }
 
-      return getLiteralText(node, currentSourceFile!, neverAsciiEscape, jsxAttributeEscape);
+      return qn.get.literalText(node, currentSourceFile!, neverAsciiEscape, jsxAttributeEscape);
     }
 
     /**
      * Push a new name generation scope.
      */
     function pushNameGenerationScope(node: Node | undefined) {
-      if (node && getEmitFlags(node) & EmitFlags.ReuseTempVariableScope) {
+      if (node && qn.get.emitFlags(node) & EmitFlags.ReuseTempVariableScope) {
         return;
       }
       tempFlagsStack.push(tempFlags);
@@ -4400,7 +4400,7 @@ namespace qnr {
      * Pop the current name generation scope.
      */
     function popNameGenerationScope(node: Node | undefined) {
-      if (node && getEmitFlags(node) & EmitFlags.ReuseTempVariableScope) {
+      if (node && qn.get.emitFlags(node) & EmitFlags.ReuseTempVariableScope) {
         return;
       }
       tempFlags = tempFlagsStack.pop()!;
@@ -4469,7 +4469,7 @@ namespace qnr {
           break;
         case Syntax.FunctionDeclaration:
           generateNameIfNeeded((<FunctionDeclaration>node).name);
-          if (getEmitFlags(node) & EmitFlags.ReuseTempVariableScope) {
+          if (qn.get.emitFlags(node) & EmitFlags.ReuseTempVariableScope) {
             forEach((<FunctionDeclaration>node).parameters, generateNames);
             generateNames((<FunctionDeclaration>node).body);
           }
@@ -4653,7 +4653,7 @@ namespace qnr {
      * Generates a unique name for a ModuleDeclaration or EnumDeclaration.
      */
     function generateNameForModuleOrEnum(node: ModuleDeclaration | EnumDeclaration) {
-      const name = getTextOfNode(node.name);
+      const name = qn.get.textOf(node.name);
       // Use module/enum name itself if it is unique, otherwise make a unique variation
       return isUniqueLocalName(name, node) ? name : makeUniqueName(name);
     }
@@ -4694,7 +4694,7 @@ namespace qnr {
     function generateNameForNode(node: Node, flags?: GeneratedIdentifierFlags): string {
       switch (node.kind) {
         case Syntax.Identifier:
-          return makeUniqueName(getTextOfNode(node), isUniqueName, !!(flags! & GeneratedIdentifierFlags.Optimistic), !!(flags! & GeneratedIdentifierFlags.ReservedInNestedScopes));
+          return makeUniqueName(qn.get.textOf(node), isUniqueName, !!(flags! & GeneratedIdentifierFlags.Optimistic), !!(flags! & GeneratedIdentifierFlags.ReservedInNestedScopes));
         case Syntax.ModuleDeclaration:
         case Syntax.EnumDeclaration:
           return generateNameForModuleOrEnum(<ModuleDeclaration | EnumDeclaration>node);
@@ -4768,7 +4768,7 @@ namespace qnr {
       assert(lastNode === node || lastSubstitution === node);
       enterComment();
       hasWrittenComment = false;
-      const emitFlags = getEmitFlags(node);
+      const emitFlags = qn.get.emitFlags(node);
       const { pos, end } = getCommentRange(node);
       const isEmittedNode = node.kind !== Syntax.NotEmittedStatement;
 
@@ -4869,7 +4869,7 @@ namespace qnr {
     function emitBodyWithDetachedComments(node: Node, detachedRange: TextRange, emitCallback: (node: Node) => void) {
       enterComment();
       const { pos, end } = detachedRange;
-      const emitFlags = getEmitFlags(node);
+      const emitFlags = qn.get.emitFlags(node);
       const skipLeadingComments = pos < 0 || (emitFlags & EmitFlags.NoLeadingComments) !== 0;
       const skipTrailingComments = commentsDisabled || end < 0 || (emitFlags & EmitFlags.NoTrailingComments) !== 0;
       if (!skipLeadingComments) {
@@ -5086,7 +5086,7 @@ namespace qnr {
         pipelinePhase(hint, node);
       } else {
         const { pos, end, source = sourceMapSource } = getSourceMapRange(node);
-        const emitFlags = getEmitFlags(node);
+        const emitFlags = qn.get.emitFlags(node);
         if (node.kind !== Syntax.NotEmittedStatement && (emitFlags & EmitFlags.NoLeadingSourceMap) === 0 && pos >= 0) {
           emitSourcePos(source, skipSourceTrivia(source, pos));
         }

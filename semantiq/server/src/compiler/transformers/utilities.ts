@@ -1,6 +1,6 @@
 namespace qnr {
   export function getOriginalNodeId(node: Node) {
-    node = getOriginalNode(node);
+    node = qn.get.originalOf(node);
     return node ? getNodeId(node) : 0;
   }
 

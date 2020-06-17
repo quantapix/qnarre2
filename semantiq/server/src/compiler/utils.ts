@@ -32,7 +32,7 @@ namespace qnr {
 
   export class TextSpan implements QSpan {
     constructor(public start = 0, public length = 0) {
-      assert(start >= 0 && length >= 0);
+      qa.assert(start >= 0 && length >= 0);
     }
     get end() {
       return TextSpan.end(this);
@@ -87,7 +87,7 @@ namespace qnr {
 
   export class TextRange implements QRange {
     constructor(public pos = 0, public end = 0) {
-      assert(pos <= end || end === -1);
+      qa.assert(pos <= end || end === -1);
     }
     isCollapsed() {
       return this.pos === this.end;
@@ -110,7 +110,7 @@ namespace qnr {
       return n.modifiers && n.modifiers.length > 0 ? n.movePos(n.modifiers.end) : movePastDecorators(n);
     }
     export function createTokenRange(pos: number, token: Syntax): TextRange {
-      return new TextRange(pos, pos + Token.toString(token)!.length);
+      return new TextRange(pos, pos + qy.toString(token)!.length);
     }
     export function ofNode(n: Node): TextRange {
       return new TextRange(getTokenPosOfNode(n), n.end);
@@ -122,7 +122,7 @@ namespace qnr {
 
   export class TextChange implements QRange.Change {
     constructor(public span: QSpan = new TextSpan(), public newLength = 0) {
-      assert(newLength >= 0);
+      qa.assert(newLength >= 0);
     }
     isUnchanged() {
       return this.span.length === 0 && this.newLength === 0;
@@ -156,29 +156,29 @@ namespace qnr {
   export class SourceFile2 implements SourceFileLike {
     text = '';
     lineMap?: number[];
-    qy.get.lineStarts(): readonly number[] {
+    lineStarts(): readonly number[] {
       return this.lineMap ?? (this.lineMap = qy.get.lineStarts(this.text));
     }
-    qy.get.lineAndCharOf(pos: number) {
-      return qy.get.lineAndCharOf(this.qy.get.lineStarts(), pos);
+    lineAndCharOf(pos: number) {
+      return qy.get.lineAndCharOf(this.lineStarts(), pos);
     }
-    qy.get.posOf(line: number, char: number): number;
-    qy.get.posOf(line: number, char: number, edits?: true): number;
-    qy.get.posOf(line: number, char: number, edits?: true): number {
-      return qy.get.posOf(this.qy.get.lineStarts(), line, char, this.text, edits);
+    posOf(line: number, char: number): number;
+    posOf(line: number, char: number, edits?: true): number;
+    posOf(line: number, char: number, edits?: true): number {
+      return qy.get.posOf(this.lineStarts(), line, char, this.text, edits);
     }
     linesBetween(p1: number, p2: number): number;
     linesBetween(r1: QRange, r2: QRange, comments: boolean): number;
     linesBetween(x1: QRange | number, x2: QRange | number, comments = false) {
       if (typeof x1 === 'number') {
         if (x1 === x2) return 0;
-        assert(typeof x2 === 'number');
-        const ss = this.qy.get.lineStarts();
+        qa.assert(typeof x2 === 'number');
+        const ss = this.lineStarts();
         const min = Math.min(x1, x2);
         const isNegative = min === x2;
         const max = isNegative ? x1 : x2;
-        const lower = Scanner.lineOf(ss, min);
-        const upper = Scanner.lineOf(ss, max, lower);
+        const lower = qy.get.lineOf(ss, min);
+        const upper = qy.get.lineOf(ss, max, lower);
         return isNegative ? lower - upper : upper - lower;
       }
       const s = this.startPos(x2 as QRange, comments);
@@ -228,3 +228,26 @@ namespace qnr {
     }
   }
 }
+
+/*
+CommaListExpression: CommaListExpression;
+EndOfDeclarationMarker: EndOfDeclarationMarker;
+InputFiles: InputFiles;
+JSDoc: Syntax.JSDocComment;
+JSDocComment: JSDoc;
+JSDocNamepathType: JSDocNamepathType;
+JSDocTag: JSDocTag;
+MergeDeclarationMarker: MergeDeclarationMarker;
+Parameter: ParameterDeclaration;
+ParameterDeclaration: Syntax.Parameter;
+SyntheticExpression: SyntheticExpression;
+TypeAssertion: Syntax.TypeAssertionExpression;
+TypeAssertionExpression: TypeAssertion;
+TypeOperator: TypeOperatorNode;
+TypeParameter: TypeParameterDeclaration;
+TypeParameterDeclaration: Syntax.TypeParameter;
+UnparsedInternalText: UnparsedTextLike;
+UnparsedPrologue: UnparsedPrologue;
+UnparsedSyntheticReference: UnparsedSyntheticReference;
+UnparsedText: UnparsedTextLike;
+*/

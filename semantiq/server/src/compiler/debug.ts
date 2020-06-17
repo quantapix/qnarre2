@@ -392,14 +392,14 @@ namespace qnr {
             },
             __debugEmitFlags: {
               get(this: Node) {
-                return formatEmitFlags(getEmitFlags(this));
+                return formatEmitFlags(qn.get.emitFlags(this));
               },
             },
             __debugGetText: {
               value(this: Node, includeTrivia?: boolean) {
                 if (isSynthesized(this)) return '';
-                const parseNode = getParseTreeNode(this);
-                const sourceFile = parseNode && getSourceFileOfNode(parseNode);
+                const parseNode = qn.get.parseTreeOf(this);
+                const sourceFile = parseNode && qn.get.sourceFileOf(parseNode);
                 return sourceFile ? getSourceTextOfNodeFromSourceFile(sourceFile, parseNode, includeTrivia) : '';
               },
             },

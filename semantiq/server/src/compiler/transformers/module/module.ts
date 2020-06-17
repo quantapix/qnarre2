@@ -681,7 +681,7 @@ namespace qnr {
     }
 
     function getHelperExpressionForExport(node: ExportDeclaration, innerExpr: Expression) {
-      if (!compilerOptions.esModuleInterop || getEmitFlags(node) & EmitFlags.NeverApplyImportHelper) {
+      if (!compilerOptions.esModuleInterop || qn.get.emitFlags(node) & EmitFlags.NeverApplyImportHelper) {
         return innerExpr;
       }
       if (getExportNeedsImportStarHelper(node)) {
@@ -692,7 +692,7 @@ namespace qnr {
     }
 
     function getHelperExpressionForImport(node: ImportDeclaration, innerExpr: Expression) {
-      if (!compilerOptions.esModuleInterop || getEmitFlags(node) & EmitFlags.NeverApplyImportHelper) {
+      if (!compilerOptions.esModuleInterop || qn.get.emitFlags(node) & EmitFlags.NeverApplyImportHelper) {
         return innerExpr;
       }
       if (getImportNeedsImportStarHelper(node)) {
@@ -1135,7 +1135,7 @@ namespace qnr {
      * @param node The node to test.
      */
     function hasAssociatedEndOfDeclarationMarker(node: Node) {
-      return (getEmitFlags(node) & EmitFlags.HasEndOfDeclarationMarker) !== 0;
+      return (qn.get.emitFlags(node) & EmitFlags.HasEndOfDeclarationMarker) !== 0;
     }
 
     /**
@@ -1522,7 +1522,7 @@ namespace qnr {
      * @param node The node to substitute.
      */
     function substituteExpressionIdentifier(node: Identifier): Expression {
-      if (getEmitFlags(node) & EmitFlags.HelperName) {
+      if (qn.get.emitFlags(node) & EmitFlags.HelperName) {
         const externalHelpersModuleName = getExternalHelpersModuleName(currentSourceFile);
         if (externalHelpersModuleName) {
           return createPropertyAccess(externalHelpersModuleName, node);

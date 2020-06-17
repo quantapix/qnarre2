@@ -229,7 +229,7 @@ namespace qnr {
      * This version of `createDiagnosticForNode` uses the binder's context to account for this, and always yields correct diagnostics even in these situations.
      */
     function createDiagnosticForNode(node: Node, message: DiagnosticMessage, arg0?: string | number, arg1?: string | number, arg2?: string | number): DiagnosticWithLocation {
-      return createDiagnosticForNodeInSourceFile(getSourceFileOfNode(node) || file, node, message, arg0, arg1, arg2);
+      return createDiagnosticForNodeInSourceFile(qn.get.sourceFileOf(node) || file, node, message, arg0, arg1, arg2);
     }
 
     function bindSourceFile(f: SourceFile, opts: CompilerOptions) {
@@ -348,7 +348,7 @@ namespace qnr {
         }
         if (qn.is.kind(PrivateIdentifier, name)) {
           // containingClass exists because private names only allowed inside classes
-          const containingClass = getContainingClass(node);
+          const containingClass = qn.get.containingClass(node);
           if (!containingClass) {
             // we can get here in cases where there is already a parse error.
             return;
@@ -634,7 +634,7 @@ namespace qnr {
           containerFlags & ContainerFlags.IsFunctionExpression &&
           !hasSyntacticModifier(node, ModifierFlags.Async) &&
           !(<FunctionLikeDeclaration>node).asteriskToken &&
-          !!getImmediatelyInvokedFunctionExpression(node);
+          !!qn.get.immediatelyInvokedFunctionExpression(node);
         // A non-async, non-generator IIFE is considered part of the containing control flow. Return statements behave
         // similarly to break statements that exit to a label just past the statement body.
         if (!isIIFE) {
@@ -2060,9 +2060,9 @@ namespace qnr {
       const saveParent = parent;
       const saveCurrentFlow = currentFlow;
       for (const typeAlias of delayedTypeAliases) {
-        const host = getJSDocHost(typeAlias);
+        const host = qn.getJSDoc.host(typeAlias);
         container = qn.findAncestor(host.parent, (n) => !!(getContainerFlags(n) & ContainerFlags.IsContainer)) || file;
-        blockScopeContainer = getEnclosingBlockScopeContainer(host) || file;
+        blockScopeContainer = qn.get.enclosingBlockScopeContainer(host) || file;
         currentFlow = initFlowNode({ flags: FlowFlags.Start });
         parent = typeAlias;
         bind(typeAlias.typeExpression);
@@ -2144,7 +2144,7 @@ namespace qnr {
     function getStrictModeIdentifierMessage(node: Node) {
       // Provide specialized messages to help the user understand why we think they're in
       // strict mode.
-      if (getContainingClass(node)) {
+      if (qn.get.containingClass(node)) {
         return Diagnostics.Identifier_expected_0_is_a_reserved_word_in_strict_mode_Class_definitions_are_automatically_in_strict_mode;
       }
 
@@ -2211,7 +2211,7 @@ namespace qnr {
     function getStrictModeEvalOrArgumentsMessage(node: Node) {
       // Provide specialized messages to help the user understand why we think they're in
       // strict mode.
-      if (getContainingClass(node)) {
+      if (qn.get.containingClass(node)) {
         return Diagnostics.Invalid_use_of_0_Class_definitions_are_automatically_in_strict_mode;
       }
 
@@ -2232,7 +2232,7 @@ namespace qnr {
     function getStrictModeBlockScopeFunctionDeclarationMessage(node: Node) {
       // Provide specialized messages to help the user understand why we think they're in
       // strict mode.
-      if (getContainingClass(node)) {
+      if (qn.get.containingClass(node)) {
         return Diagnostics.Function_declarations_are_not_allowed_inside_blocks_in_strict_mode_when_targeting_ES3_or_ES5_Class_definitions_are_automatically_in_strict_mode;
       }
 
@@ -2798,7 +2798,7 @@ namespace qnr {
       if (hasPrivateIdentifier) {
         return;
       }
-      const thisContainer = getThisContainer(node, /*includeArrowFunctions*/ false);
+      const thisContainer = qn.get.thisContainer(node, /*includeArrowFunctions*/ false);
       switch (thisContainer.kind) {
         case Syntax.FunctionDeclaration:
         case Syntax.FunctionExpression:
@@ -3327,7 +3327,7 @@ namespace qnr {
             const isError =
               unreachableCodeIsError(options) &&
               !(node.flags & NodeFlags.Ambient) &&
-              (!qn.is.kind(VariableStatement, node) || !!(getCombinedNodeFlags(node.declarationList) & NodeFlags.BlockScoped) || node.declarationList.declarations.some((d) => !!d.initializer));
+              (!qn.is.kind(VariableStatement, node) || !!(qn.get.combinedFlagsOf(node.declarationList) & NodeFlags.BlockScoped) || node.declarationList.declarations.some((d) => !!d.initializer));
 
             eachUnreachableRange(node, (start, end) => errorOrSuggestionOnRange(isError, start, end, Diagnostics.Unreachable_code_detected));
           }
@@ -3354,7 +3354,7 @@ namespace qnr {
       !isPurelyTypeDeclaration(s) &&
       !qn.is.kind(EnumDeclaration, s) &&
       // `var x;` may declare a variable used above
-      !(qn.is.kind(VariableStatement, s) && !(getCombinedNodeFlags(s) & (NodeFlags.Let | NodeFlags.Const)) && s.declarationList.declarations.some((d) => !d.initializer))
+      !(qn.is.kind(VariableStatement, s) && !(qn.get.combinedFlagsOf(s) & (NodeFlags.Let | NodeFlags.Const)) && s.declarationList.declarations.some((d) => !d.initializer))
     );
   }
 

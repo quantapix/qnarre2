@@ -14,7 +14,7 @@ namespace qnr {
   }
 
   export function isInternalDeclaration(node: Node, currentSourceFile: SourceFile) {
-    const parseTreeNode = getParseTreeNode(node);
+    const parseTreeNode = qn.get.parseTreeOf(node);
     if (parseTreeNode && parseTreeNode.kind === Syntax.Parameter) {
       const paramIdx = (parseTreeNode.parent as FunctionLike).parameters.indexOf(parseTreeNode as ParameterDeclaration);
       const previousSibling = paramIdx > 0 ? (parseTreeNode.parent as FunctionLike).parameters[paramIdx - 1] : undefined;
@@ -97,7 +97,7 @@ namespace qnr {
         return recordTypeReferenceDirectivesIfNecessary(directives);
       }
       // Otherwise we should emit a path-based reference
-      const container = getSourceFileOfNode(node);
+      const container = qn.get.sourceFileOf(node);
       refs.set('' + getOriginalNodeId(container), container);
     }
 
@@ -124,7 +124,7 @@ namespace qnr {
               createDiagnosticForNode(
                 symbolAccessibilityResult.errorNode || errorInfo.errorNode,
                 errorInfo.diagnosticMessage,
-                getTextOfNode(errorInfo.typeName),
+                qn.get.textOf(errorInfo.typeName),
                 symbolAccessibilityResult.errorSymbolName,
                 symbolAccessibilityResult.errorModuleName
               )
@@ -196,8 +196,8 @@ namespace qnr {
     }
 
     function reportNonlocalAugmentation(containingFile: SourceFile, parentSymbol: Symbol, symbol: Symbol) {
-      const primaryDeclaration = find(parentSymbol.declarations, (d) => getSourceFileOfNode(d) === containingFile)!;
-      const augmentingDeclarations = filter(symbol.declarations, (d) => getSourceFileOfNode(d) !== containingFile);
+      const primaryDeclaration = find(parentSymbol.declarations, (d) => qn.get.sourceFileOf(d) === containingFile)!;
+      const augmentingDeclarations = filter(symbol.declarations, (d) => qn.get.sourceFileOf(d) !== containingFile);
       for (const augmentations of augmentingDeclarations) {
         context.addDiagnostic(
           addRelatedInfo(
@@ -477,12 +477,12 @@ namespace qnr {
     }
 
     function shouldPrintWithInitializer(node: Node) {
-      return canHaveLiteralInitializer(node) && resolver.isLiteralConstDeclaration(getParseTreeNode(node) as CanHaveLiteralInitializer); // TODO: Make safe
+      return canHaveLiteralInitializer(node) && resolver.isLiteralConstDeclaration(qn.get.parseTreeOf(node) as CanHaveLiteralInitializer); // TODO: Make safe
     }
 
     function ensureNoInitializer(node: CanHaveLiteralInitializer) {
       if (shouldPrintWithInitializer(node)) {
-        return resolver.createLiteralConstValue(getParseTreeNode(node) as CanHaveLiteralInitializer, symbolTracker); // TODO: Make safe
+        return resolver.createLiteralConstValue(qn.get.parseTreeOf(node) as CanHaveLiteralInitializer, symbolTracker); // TODO: Make safe
       }
       return;
     }
@@ -514,7 +514,7 @@ namespace qnr {
       if (type && !shouldUseResolverType) {
         return visitNode(type, visitDeclarationSubtree);
       }
-      if (!getParseTreeNode(node)) {
+      if (!qn.get.parseTreeOf(node)) {
         return type ? visitNode(type, visitDeclarationSubtree) : KeywordTypeNode.create(Syntax.AnyKeyword);
       }
       if (node.kind === Syntax.SetAccessor) {
@@ -550,7 +550,7 @@ namespace qnr {
     }
 
     function isDeclarationAndNotVisible(node: NamedDeclaration) {
-      node = getParseTreeNode(node) as NamedDeclaration;
+      node = qn.get.parseTreeOf(node) as NamedDeclaration;
       switch (node.kind) {
         case Syntax.FunctionDeclaration:
         case Syntax.ModuleDeclaration:
@@ -591,7 +591,7 @@ namespace qnr {
       if (!newParams) {
         return undefined!; // TODO: GH#18217
       }
-      return NodeArray.create(newParams, params.hasTrailingComma);
+      return NodeArray.create(newParams, params.trailingComma);
     }
 
     function updateAccessorParamsList(input: AccessorDeclaration, isPrivate: boolean) {
@@ -799,7 +799,7 @@ namespace qnr {
       if (shouldStripInternal(input)) return;
       if (qn.is.declaration(input)) {
         if (isDeclarationAndNotVisible(input)) return;
-        if (hasDynamicName(input) && !resolver.isLateBound(getParseTreeNode(input) as Declaration)) {
+        if (hasDynamicName(input) && !resolver.isLateBound(qn.get.parseTreeOf(input) as Declaration)) {
           return;
         }
       }
@@ -1434,7 +1434,7 @@ namespace qnr {
         getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNodeName(node);
       }
       errorNameNode = (node as NamedDeclaration).name;
-      assert(resolver.isLateBound(getParseTreeNode(node) as Declaration)); // Should only be called with dynamic names
+      assert(resolver.isLateBound(qn.get.parseTreeOf(node) as Declaration)); // Should only be called with dynamic names
       const decl = (node as NamedDeclaration) as LateBoundDeclaration;
       const entityName = decl.name.expression;
       checkEntityNameVisibility(entityName, enclosingDeclaration);

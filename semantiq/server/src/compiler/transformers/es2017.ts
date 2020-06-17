@@ -416,7 +416,7 @@ namespace qnr {
     function transformAsyncFunctionBody(node: FunctionLikeDeclaration): ConciseBody {
       resumeLexicalEnvironment();
 
-      const original = getOriginalNode(node, isFunctionLike);
+      const original = qn.get.originalOf(node, isFunctionLike);
       const nodeType = original.type;
       const promiseConstructor = languageVersion < ScriptTarget.ES2015 ? getPromiseConstructor(nodeType) : undefined;
       const isArrowFunction = node.kind === Syntax.ArrowFunction;

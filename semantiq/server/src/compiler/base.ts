@@ -91,6 +91,40 @@ namespace qnr {
       }
       return;
     }
+    export function forEachEntry<T, U>(m: ReadonlyUnderscoreEscapedMap<T>, cb: (t: T, k: __String) => U | undefined): U | undefined;
+    export function forEachEntry<T, U>(m: QReadonlyMap<T>, cb: (t: T, k: string) => U | undefined): U | undefined;
+    export function forEachEntry<T, U>(m: ReadonlyUnderscoreEscapedMap<T> | QReadonlyMap<T>, cb: (t: T, k: string & __String) => U | undefined): U | undefined {
+      const ts = m.entries();
+      for (let i = ts.next(); !i.done; i = ts.next()) {
+        const [k, t] = i.value;
+        const u = cb(t, k as string & __String);
+        if (u) return u;
+      }
+      return;
+    }
+    export function forEachKey<T>(m: ReadonlyUnderscoreEscapedMap<{}>, cb: (k: __String) => T | undefined): T | undefined;
+    export function forEachKey<T>(m: QReadonlyMap<{}>, cb: (k: string) => T | undefined): T | undefined;
+    export function forEachKey<T>(m: ReadonlyUnderscoreEscapedMap<{}> | QReadonlyMap<{}>, cb: (k: string & __String) => T | undefined): T | undefined {
+      const ks = m.keys();
+      for (let i = ks.next(); !i.done; i = ks.next()) {
+        const t = cb(i.value as string & __String);
+        if (t) return t;
+      }
+      return;
+    }
+    export function copyEntries<T>(s: ReadonlyUnderscoreEscapedMap<T>, t: UnderscoreEscapedMap<T>): void;
+    export function copyEntries<T>(s: QReadonlyMap<T>, t: QMap<T>): void;
+    export function copyEntries<T, U extends UnderscoreEscapedMap<T> | QMap<T>>(s: U, t: U): void {
+      (s as QMap<T>).forEach((v, k) => {
+        (t as QMap<T>).set(k, v);
+      });
+    }
+    export function arrayToSet(ts: readonly string[]): QMap<true>;
+    export function arrayToSet<T>(ts: readonly T[], key: (t: T) => string | undefined): QMap<true>;
+    export function arrayToSet<T>(ts: readonly T[], key: (t: T) => __String | undefined): UnderscoreEscapedMap<true>;
+    export function arrayToSet(ts: readonly any[], key?: (t: any) => string | __String | undefined): QMap<true> | UnderscoreEscapedMap<true> {
+      return arrayToMap<any, true>(ts, key || ((t) => t), () => true);
+    }
     export function forEachRight<T, U>(ts: readonly T[] | undefined, cb: (t: T, i: number) => U | undefined): U | undefined {
       if (ts) {
         for (let i = ts.length - 1; i >= 0; i--) {

@@ -711,7 +711,7 @@ namespace qnr {
      */
     function shouldHoistVariableDeclarationList(node: VariableDeclarationList) {
       // hoist only non-block scoped declarations or block scoped declarations parented by source file
-      return (getEmitFlags(node) & EmitFlags.NoHoisting) === 0 && (enclosingBlockScopedContainer.kind === Syntax.SourceFile || (getOriginalNode(node).flags & NodeFlags.BlockScoped) === 0);
+      return (qn.get.emitFlags(node) & EmitFlags.NoHoisting) === 0 && (enclosingBlockScopedContainer.kind === Syntax.SourceFile || (qn.get.originalOf(node).flags & NodeFlags.BlockScoped) === 0);
     }
 
     /**
@@ -795,7 +795,7 @@ namespace qnr {
      * @param node The node to test.
      */
     function hasAssociatedEndOfDeclarationMarker(node: Node) {
-      return (getEmitFlags(node) & EmitFlags.HasEndOfDeclarationMarker) !== 0;
+      return (qn.get.emitFlags(node) & EmitFlags.HasEndOfDeclarationMarker) !== 0;
     }
 
     /**
@@ -814,7 +814,7 @@ namespace qnr {
         delete deferredExports[id];
         return append(statements, node);
       } else {
-        const original = getOriginalNode(node);
+        const original = qn.get.originalOf(node);
         if (qn.is.moduleOrEnumDeclaration(original)) {
           return append(appendExportsOfDeclaration(statements, original), node);
         }
@@ -1036,7 +1036,7 @@ namespace qnr {
      */
     function createExportExpression(name: Identifier | StringLiteral, value: Expression) {
       const exportName = qn.is.kind(Identifier, name) ? createLiteral(name) : name;
-      setEmitFlags(value, getEmitFlags(value) | EmitFlags.NoComments);
+      setEmitFlags(value, qn.get.emitFlags(value) | EmitFlags.NoComments);
       return setCommentRange(createCall(exportFunction, /*typeArguments*/ undefined, [exportName, value]), value);
     }
 
@@ -1549,7 +1549,7 @@ namespace qnr {
      * @param node The node to substitute.
      */
     function substituteExpressionIdentifier(node: Identifier): Expression {
-      if (getEmitFlags(node) & EmitFlags.HelperName) {
+      if (qn.get.emitFlags(node) & EmitFlags.HelperName) {
         const externalHelpersModuleName = getExternalHelpersModuleName(currentSourceFile);
         if (externalHelpersModuleName) {
           return createPropertyAccess(externalHelpersModuleName, node);

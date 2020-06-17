@@ -1,46 +1,6 @@
 namespace qnr {
-  export namespace qu {
-    export function forEachEntry<T, U>(map: ReadonlyUnderscoreEscapedMap<T>, cb: (value: T, key: __String) => U | undefined): U | undefined;
-    export function forEachEntry<T, U>(map: QReadonlyMap<T>, cb: (value: T, key: string) => U | undefined): U | undefined;
-    export function forEachEntry<T, U>(map: ReadonlyUnderscoreEscapedMap<T> | QReadonlyMap<T>, cb: (value: T, key: string & __String) => U | undefined): U | undefined {
-      const iter = map.entries();
-      for (let i = iter.next(); !i.done; i = iter.next()) {
-        const [k, v] = i.value;
-        const r = cb(v, k as string & __String);
-        if (r) return r;
-      }
-      return;
-    }
-
-    export function forEachKey<T>(map: ReadonlyUnderscoreEscapedMap<{}>, cb: (key: __String) => T | undefined): T | undefined;
-    export function forEachKey<T>(map: QReadonlyMap<{}>, cb: (key: string) => T | undefined): T | undefined;
-    export function forEachKey<T>(map: ReadonlyUnderscoreEscapedMap<{}> | QReadonlyMap<{}>, cb: (key: string & __String) => T | undefined): T | undefined {
-      const iter = map.keys();
-      for (let i = iter.next(); !i.done; i = iter.next()) {
-        const r = cb(i.value as string & __String);
-        if (r) return r;
-      }
-      return;
-    }
-
-    export function copyEntries<T>(source: ReadonlyUnderscoreEscapedMap<T>, target: UnderscoreEscapedMap<T>): void;
-    export function copyEntries<T>(source: QReadonlyMap<T>, target: QMap<T>): void;
-    export function copyEntries<T, U extends UnderscoreEscapedMap<T> | QMap<T>>(source: U, target: U): void {
-      (source as QMap<T>).forEach((v, k) => {
-        (target as QMap<T>).set(k, v);
-      });
-    }
-
-    export function arrayToSet(a: readonly string[]): QMap<true>;
-    export function arrayToSet<T>(a: readonly T[], key: (v: T) => string | undefined): QMap<true>;
-    export function arrayToSet<T>(a: readonly T[], key: (v: T) => __String | undefined): UnderscoreEscapedMap<true>;
-    export function arrayToSet(a: readonly any[], key?: (v: any) => string | __String | undefined): QMap<true> | UnderscoreEscapedMap<true> {
-      return arrayToMap<any, true>(a, key || ((v) => v), () => true);
-    }
-  }
-
   export const resolvingEmptyArray: never[] = [] as never[];
-  export const emptyMap = createMap<never>() as QReadonlyMap<never> & ReadonlyPragmaMap;
+  export const emptyMap = createMap<never>() as qa.QReadonlyMap<never> & ReadonlyPragmaMap;
   export const emptyUnderscoreEscapedMap: ReadonlyUnderscoreEscapedMap<never> = emptyMap as ReadonlyUnderscoreEscapedMap<never>;
 
   export const externalHelpersModuleNameText = 'tslib';
@@ -58,7 +18,7 @@ namespace qnr {
     return;
   }
   export function createUnderscoreEscapedMap<T>(): UnderscoreEscapedMap<T> {
-    return new QMap<T>() as UnderscoreEscapedMap<T>;
+    return new qa.QMap<T>() as UnderscoreEscapedMap<T>;
   }
   export function hasEntries(map: ReadonlyUnderscoreEscapedMap<any> | undefined): map is ReadonlyUnderscoreEscapedMap<any> {
     return !!map && !!map.size;
@@ -111,11 +71,11 @@ namespace qnr {
   }
 
   export function cloneMap(map: SymbolTable): SymbolTable;
-  export function cloneMap<T>(map: QReadonlyMap<T>): QMap<T>;
+  export function cloneMap<T>(map: qa.QReadonlyMap<T>): qa.QMap<T>;
   export function cloneMap<T>(map: ReadonlyUnderscoreEscapedMap<T>): UnderscoreEscapedMap<T>;
-  export function cloneMap<T>(map: QReadonlyMap<T> | ReadonlyUnderscoreEscapedMap<T> | SymbolTable): QMap<T> | UnderscoreEscapedMap<T> | SymbolTable {
+  export function cloneMap<T>(map: qa.QReadonlyMap<T> | ReadonlyUnderscoreEscapedMap<T> | SymbolTable): qa.QMap<T> | UnderscoreEscapedMap<T> | SymbolTable {
     const clone = createMap<T>();
-    qu.copyEntries(map as QMap<T>, clone);
+    qu.copyEntries(map as qa.QMap<T>, clone);
     return clone;
   }
 
@@ -196,7 +156,7 @@ namespace qnr {
   export function hasChangesInResolutions<T>(
     names: readonly string[],
     newResolutions: readonly T[],
-    oldResolutions: QReadonlyMap<T> | undefined,
+    oldResolutions: qa.QReadonlyMap<T> | undefined,
     comparer: (oldResolution: T, newResolution: T) => boolean
   ): boolean {
     assert(names.length === newResolutions.length);
@@ -230,7 +190,7 @@ namespace qnr {
   }
 
   function isAnyPrologueDirective(node: Node) {
-    return qn.is.prologueDirective(node) || !!(getEmitFlags(node) & EmitFlags.CustomPrologue);
+    return qn.is.prologueDirective(node) || !!(qn.get.emitFlags(node) & EmitFlags.CustomPrologue);
   }
 
   export function insertStatementsAfterStandardPrologue<T extends Statement>(to: T[], from: readonly T[] | undefined): T[] {
@@ -267,7 +227,7 @@ namespace qnr {
   }
 
   export function createCommentDirectivesMap(sourceFile: SourceFile, commentDirectives: CommentDirective[]): CommentDirectivesMap {
-    const directivesByLine = QMap.create(commentDirectives.map((commentDirective) => [`${qy.get.lineAndCharOf(sourceFile, commentDirective.range.end).line}`, commentDirective]));
+    const directivesByLine = qa.QMap.create(commentDirectives.map((commentDirective) => [`${qy.get.lineAndCharOf(sourceFile, commentDirective.range.end).line}`, commentDirective]));
     const usedLines = createMap<boolean>();
     return { getUnusedExpectations, markUsed };
 
@@ -286,17 +246,17 @@ namespace qnr {
 
   export function getTokenPosOfNode(node: Node, sourceFile?: SourceFileLike, includeJsDoc?: boolean): number {
     if (qn.is.missing(node)) return node.pos;
-    if (qn.isJSDoc.node(node)) return qy.skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.pos, false, true);
+    if (qn.isJSDoc.node(node)) return qy.skipTrivia((sourceFile || qn.get.sourceFileOf(node)).text, node.pos, false, true);
     if (includeJsDoc && qn.is.withJSDocNodes(node)) return getTokenPosOfNode(node.jsDoc![0], sourceFile);
     if (node.kind === Syntax.SyntaxList && (<SyntaxList>node)._children.length > 0) {
       return getTokenPosOfNode((<SyntaxList>node)._children[0], sourceFile, includeJsDoc);
     }
-    return qy.skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.pos);
+    return qy.skipTrivia((sourceFile || qn.get.sourceFileOf(node)).text, node.pos);
   }
 
   export function getNonDecoratorTokenPosOfNode(node: Node, sourceFile?: SourceFileLike): number {
     if (qn.is.missing(node) || !node.decorators) return getTokenPosOfNode(node, sourceFile);
-    return qy.skipTrivia((sourceFile || getSourceFileOfNode(node)).text, node.decorators.end);
+    return qy.skipTrivia((sourceFile || qn.get.sourceFileOf(node)).text, node.decorators.end);
   }
 
   export function getSourceTextOfNodeFromSourceFile(sourceFile: SourceFile, node: Node, includeTrivia = false): string {
@@ -332,7 +292,7 @@ namespace qnr {
   }
 
   export function isBlockOrCatchScoped(declaration: Declaration) {
-    return (getCombinedNodeFlags(declaration) & NodeFlags.BlockScoped) !== 0 || isCatchClauseVariableDeclarationOrBindingElement(declaration);
+    return (qn.get.combinedFlagsOf(declaration) & NodeFlags.BlockScoped) !== 0 || isCatchClauseVariableDeclarationOrBindingElement(declaration);
   }
 
   export function isCatchClauseVariableDeclarationOrBindingElement(declaration: Declaration) {
@@ -382,7 +342,7 @@ namespace qnr {
 
 
   export function declarationNameToString(name: DeclarationName | QualifiedName | undefined) {
-    return !name || getFullWidth(name) === 0 ? '(Missing)' : getTextOfNode(name);
+    return !name || qn.get.fullWidth(name) === 0 ? '(Missing)' : qn.get.textOf(name);
   }
 
   export function getNameFromIndexInfo(info: IndexInfo): string | undefined {
@@ -415,7 +375,7 @@ namespace qnr {
         return 'this';
       case Syntax.PrivateIdentifier:
       case Syntax.Identifier:
-        return getFullWidth(name) === 0 ? idText(name) : getTextOfNode(name);
+        return qn.get.fullWidth(name) === 0 ? idText(name) : qn.get.textOf(name);
       case Syntax.QualifiedName:
         return entityNameToString(name.left) + '.' + entityNameToString(name.right);
       case Syntax.PropertyAccessExpression:
@@ -437,7 +397,7 @@ namespace qnr {
     arg2?: string | number,
     arg3?: string | number
   ): DiagnosticWithLocation {
-    const sourceFile = getSourceFileOfNode(node);
+    const sourceFile = qn.get.sourceFileOf(node);
     return createDiagnosticForNodeInSourceFile(sourceFile, node, message, arg0, arg1, arg2, arg3);
   }
   export function createDiagnosticForNodeArray(
@@ -465,7 +425,7 @@ namespace qnr {
     return createFileDiagnostic(sourceFile, span.start, span.length, message, arg0, arg1, arg2, arg3);
   }
   export function createDiagnosticForNodeFromMessageChain(node: Node, messageChain: DiagnosticMessageChain, relatedInformation?: DiagnosticRelatedInformation[]): DiagnosticWithLocation {
-    const sourceFile = getSourceFileOfNode(node);
+    const sourceFile = qn.get.sourceFileOf(node);
     const span = getErrorSpanForNode(sourceFile, node);
     return {
       file: sourceFile,
@@ -568,12 +528,12 @@ namespace qnr {
     return !!(getCombinedModifierFlags(declaration) & ModifierFlags.Readonly && !qn.is.parameterPropertyDeclaration(declaration, declaration.parent));
   }
   export function isVarConst(node: VariableDeclaration | VariableDeclarationList): boolean {
-    return !!(getCombinedNodeFlags(node) & NodeFlags.Const);
+    return !!(qn.get.combinedFlagsOf(node) & NodeFlags.Const);
   }
 
   
   export function isCustomPrologue(node: Statement) {
-    return !!(getEmitFlags(node) & EmitFlags.CustomPrologue);
+    return !!(qn.get.emitFlags(node) & EmitFlags.CustomPrologue);
   }
 
   export function isHoistedFunction(node: Statement) {
@@ -591,21 +551,7 @@ namespace qnr {
   export function getLeadingCommentRangesOfNode(node: Node, sourceFileOfNode: SourceFile) {
     return node.kind !== Syntax.JsxText ? qy.get.leadingCommentRanges(sourceFileOfNode.text, node.pos) : undefined;
   }
-  export function getJSDocCommentRanges(node: Node, text: string) {
-    const commentRanges =
-      node.kind === Syntax.Parameter ||
-      node.kind === Syntax.TypeParameter ||
-      node.kind === Syntax.FunctionExpression ||
-      node.kind === Syntax.ArrowFunction ||
-      node.kind === Syntax.ParenthesizedExpression
-        ? concatenate(qy.get.trailingCommentRanges(text, node.pos), qy.get.leadingCommentRanges(text, node.pos))
-        : qy.get.leadingCommentRanges(text, node.pos);
-    return filter(
-      commentRanges,
-      (comment) => text.charCodeAt(comment.pos + 1) === Codes.asterisk && text.charCodeAt(comment.pos + 2) === Codes.asterisk && text.charCodeAt(comment.pos + 3) !== Codes.slash
-    );
-  }
-
+  
   export const fullTripleSlashReferencePathRegEx = /^(\/\/\/\s*<reference\s+path\s*=\s*)('|")(.+?)\2.*?\/>/;
   const fullTripleSlashReferenceTypeReferenceDirectiveRegEx = /^(\/\/\/\s*<reference\s+types\s*=\s*)('|")(.+?)\2.*?\/>/;
   export const fullTripleSlashAMDReferencePathRegEx = /^(\/\/\/\s*<amd-dependency\s+path\s*=\s*)('|")(.+?)\2.*?\/>/;
@@ -1232,7 +1178,7 @@ namespace qnr {
 
   export function isSpecialPropertyDeclaration(expr: PropertyAccessExpression | ElementAccessExpression): expr is PropertyAccessExpression | LiteralLikeElementAccessExpression {
     return (
-      isInJSFile(expr) && expr.parent && expr.parent.kind === Syntax.ExpressionStatement && (!qn.is.kind(ElementAccessExpression, expr) || qn.is.literalLikeElementAccess(expr)) && !!getJSDocTypeTag(expr.parent)
+      isInJSFile(expr) && expr.parent && expr.parent.kind === Syntax.ExpressionStatement && (!qn.is.kind(ElementAccessExpression, expr) || qn.is.literalLikeElementAccess(expr)) && !!qn.getJSDoc.typeTag(expr.parent)
     );
   }
 
@@ -1372,63 +1318,6 @@ namespace qnr {
     return qn.is.kind(ModuleDeclaration, node) && node.body && node.body.kind === Syntax.ModuleDeclaration ? node.body : undefined;
   }
 
-  export function getJSDocCommentsAndTags(hostNode: Node, noCache?: boolean): readonly (JSDoc | JSDocTag)[] {
-    let result: (JSDoc | JSDocTag)[] | undefined;
-    // Pull parameter comments from declaring function as well
-    if (qn.is.variableLike(hostNode) && qn.is.withInitializer(hostNode) && qn.is.withJSDocNodes(hostNode.initializer!)) {
-      result = append(result, last((hostNode.initializer as HasJSDoc).jsDoc!));
-    }
-
-    let node: Node | undefined = hostNode;
-    while (node && node.parent) {
-      if (qn.is.withJSDocNodes(node)) {
-        result = append(result, last(node.jsDoc!));
-      }
-
-      if (node.kind === Syntax.Parameter) {
-        result = addRange(result, (noCache ? getJSDocParameterTagsNoCache : getJSDocParameterTags)(node as ParameterDeclaration));
-        break;
-      }
-      if (node.kind === Syntax.TypeParameter) {
-        result = addRange(result, (noCache ? getJSDocTypeParameterTagsNoCache : getJSDocTypeParameterTags)(node as TypeParameterDeclaration));
-        break;
-      }
-      node = getNextJSDocCommentLocation(node);
-    }
-    return result || emptyArray;
-  }
-
-  function getNextJSDocCommentLocation(node: Node) {
-    const parent = node.parent;
-    if (
-      parent.kind === Syntax.PropertyAssignment ||
-      parent.kind === Syntax.ExportAssignment ||
-      parent.kind === Syntax.PropertyDeclaration ||
-      (parent.kind === Syntax.ExpressionStatement && node.kind === Syntax.PropertyAccessExpression) ||
-      getNestedModuleDeclaration(parent) ||
-      (qn.is.kind(BinaryExpression, node) && node.operatorToken.kind === Syntax.EqualsToken)
-    ) {
-      return parent;
-    }
-    // Try to recognize this pattern when node is initializer of variable declaration and JSDoc comments are on containing variable statement.
-    // /**
-    //   * @param {number} name
-    //   * @returns {number}
-    //   */
-    // var x = function(name) { return name.length; }
-    else if (parent.parent && (getSingleVariableOfVariableStatement(parent.parent) === node || (qn.is.kind(BinaryExpression, parent) && parent.operatorToken.kind === Syntax.EqualsToken))) {
-      return parent.parent;
-    } else if (
-      parent.parent &&
-      parent.parent.parent &&
-      (getSingleVariableOfVariableStatement(parent.parent.parent) ||
-        getSingleInitializerOfVariableStatementOrPropertyDeclaration(parent.parent.parent) === node ||
-        getSourceOfDefaultedAssignment(parent.parent.parent))
-    ) {
-      return parent.parent.parent;
-    }
-  }
-
   export function getParameterSymbolFromJSDoc(node: JSDocParameterTag): Symbol | undefined {
     if (node.symbol) {
       return node.symbol;
@@ -1451,7 +1340,7 @@ namespace qnr {
   }
 
   export function getEffectiveJSDocHost(node: Node): Node | undefined {
-    const host = getJSDocHost(node);
+    const host = qn.getJSDoc.host(node);
     const decl =
       getSourceOfDefaultedAssignment(host) ||
       getSourceOfAssignment(host) ||
@@ -1462,9 +1351,6 @@ namespace qnr {
     return decl;
   }
 
-  export function getJSDocHost(node: Node): HasJSDoc {
-    return Debug.checkDefined(qn.findAncestor(node.parent, isJSDoc)).parent;
-  }
 
   export function getTypeParameterFromJsDoc(node: TypeParameterDeclaration & { parent: JSDocTemplateTag }): TypeParameterDeclaration | undefined {
     const name = node.name.escapedText;
@@ -1753,7 +1639,7 @@ namespace qnr {
     const baseType = getClassExtendsHeritageElement(node);
     if (baseType && isInJSFile(node)) {
       // Prefer an @augments tag because it may have type parameters.
-      const tag = getJSDocAugmentsTag(node);
+      const tag = qn.getJSDoc.augmentsTag(node);
       if (tag) {
         return tag.class;
       }
@@ -1768,7 +1654,7 @@ namespace qnr {
 
   export function getEffectiveImplementsTypeNodes(node: ClassLikeDeclaration): undefined | readonly ExpressionWithTypeArguments[] {
     if (isInJSFile(node)) {
-      return getJSDocImplementsTags(node).map((n) => n.class);
+      return qn.getJSDoc.implementsTags(node).map((n) => n.class);
     } else {
       const heritageClause = getHeritageClause(node.heritageClauses, Syntax.ImplementsKeyword);
       return heritageClause?.types;
@@ -1972,7 +1858,7 @@ namespace qnr {
   }
 
   export function getOriginalSourceFile(sourceFile: SourceFile) {
-    return getParseTreeNode(sourceFile, isSourceFile) || sourceFile;
+    return qn.get.parseTreeOf(sourceFile, isSourceFile) || sourceFile;
   }
 
   export const enum Associativity {
@@ -2665,43 +2551,26 @@ namespace qnr {
     };
   }
 
-  /**
-   * Gets the effective type annotation of a variable, parameter, or property. If the node was
-   * parsed in a JavaScript file, gets the type annotation from JSDoc.  Also gets the type of
-   * functions only the JSDoc case.
-   */
   export function getEffectiveTypeAnnotationNode(node: Node): TypeNode | undefined {
     if (!isInJSFile(node) && qn.is.kind(FunctionDeclaration, node)) return;
     const type = (node as HasType).type;
     if (type || !isInJSFile(node)) return type;
-    return qn.isJSDoc.propertyLikeTag(node) ? node.typeExpression && node.typeExpression.type : getJSDocType(node);
+    return qn.isJSDoc.propertyLikeTag(node) ? node.typeExpression && node.typeExpression.type : qn.getJSDoc.type(node);
   }
 
   export function getTypeAnnotationNode(node: Node): TypeNode | undefined {
     return (node as HasType).type;
   }
 
-  /**
-   * Gets the effective return type annotation of a signature. If the node was parsed in a
-   * JavaScript file, gets the return type annotation from JSDoc.
-   */
   export function getEffectiveReturnTypeNode(node: SignatureDeclaration | JSDocSignature): TypeNode | undefined {
-    return qn.is.kind(JSDocSignature, node) ? node.type && node.type.typeExpression && node.type.typeExpression.type : node.type || (isInJSFile(node) ? getJSDocReturnType(node) : undefined);
+    return qn.is.kind(JSDocSignature, node) ? node.type && node.type.typeExpression && node.type.typeExpression.type : node.type || (isInJSFile(node) ? qn.getJSDoc.returnType(node) : undefined);
   }
 
-  export function getJSDocTypeParameterDeclarations(node: DeclarationWithTypeParameters): readonly TypeParameterDeclaration[] {
-    return flatMap(getJSDocTags(node), (tag) => (isNonTypeAliasTemplate(tag) ? tag.typeParameters : undefined));
-  }
 
-  /** template tags are only available when a typedef isn't already using them */
   function isNonTypeAliasTemplate(tag: JSDocTag): tag is JSDocTemplateTag {
     return qn.is.kind(JSDocTemplateTag, tag) && !(tag.parent.kind === Syntax.JSDocComment && tag.parent.tags!.some(isJSDocTypeAlias));
   }
 
-  /**
-   * Gets the effective type annotation of the value parameter of a set accessor. If the node
-   * was parsed in a JavaScript file, gets the type annotation from JSDoc.
-   */
   export function getEffectiveSetAccessorTypeAnnotationNode(node: SetAccessorDeclaration): TypeNode | undefined {
     const parameter = getSetAccessorValueParameter(node);
     return parameter && getEffectiveTypeAnnotationNode(parameter);
@@ -2971,55 +2840,25 @@ namespace qnr {
     }
 
     if (includeJSDoc && !(node.modifierFlagsCache & ModifierFlags.HasComputedJSDocModifiers) && isInJSFile(node) && node.parent) {
-      node.modifierFlagsCache |= getJSDocModifierFlagsNoCache(node) | ModifierFlags.HasComputedJSDocModifiers;
+      node.modifierFlagsCache |= qn.getJSDoc.modifierFlagsNoCache(node) | ModifierFlags.HasComputedJSDocModifiers;
     }
 
     return node.modifierFlagsCache & ~(ModifierFlags.HasComputedFlags | ModifierFlags.HasComputedJSDocModifiers);
   }
 
-  /**
-   * Gets the effective ModifierFlags for the provided node, including JSDoc modifiers. The modifiers will be cached on the node to improve performance.
-   *
-   * NOTE: This function may use `parent` pointers.
-   */
   export function getEffectiveModifierFlags(node: Node): ModifierFlags {
     return getModifierFlagsWorker(node, /*includeJSDoc*/ true);
   }
 
-  /**
-   * Gets the ModifierFlags for syntactic modifiers on the provided node. The modifiers will be cached on the node to improve performance.
-   *
-   * NOTE: This function does not use `parent` pointers and will not include modifiers from JSDoc.
-   */
   export function getSyntacticModifierFlags(node: Node): ModifierFlags {
     return getModifierFlagsWorker(node, /*includeJSDoc*/ false);
   }
 
-  function getJSDocModifierFlagsNoCache(node: Node): ModifierFlags {
-    let flags = ModifierFlags.None;
-    if (isInJSFile(node) && !!node.parent && !qn.is.kind(ParameterDeclaration, node)) {
-      if (getJSDocPublicTagNoCache(node)) flags |= ModifierFlags.Public;
-      if (getJSDocPrivateTagNoCache(node)) flags |= ModifierFlags.Private;
-      if (getJSDocProtectedTagNoCache(node)) flags |= ModifierFlags.Protected;
-      if (getJSDocReadonlyTagNoCache(node)) flags |= ModifierFlags.Readonly;
-    }
-    return flags;
-  }
 
-  /**
-   * Gets the effective ModifierFlags for the provided node, including JSDoc modifiers. The modifier flags cache on the node is ignored.
-   *
-   * NOTE: This function may use `parent` pointers.
-   */
   export function getEffectiveModifierFlagsNoCache(node: Node): ModifierFlags {
-    return getSyntacticModifierFlagsNoCache(node) | getJSDocModifierFlagsNoCache(node);
+    return getSyntacticModifierFlagsNoCache(node) | qn.getJSDoc.modifierFlagsNoCache(node);
   }
 
-  /**
-   * Gets the ModifierFlags for syntactic modifiers on the provided node. The modifier flags cache on the node is ignored.
-   *
-   * NOTE: This function does not use `parent` pointers and will not include modifiers from JSDoc.
-   */
   export function getSyntacticModifierFlagsNoCache(node: Node): ModifierFlags {
     let flags = modifiersToFlags(node.modifiers);
     if (node.flags & NodeFlags.NestedNamespace || (node.kind === Syntax.Identifier && (<Identifier>node).isInJSDocNamespace)) {
@@ -3155,10 +2994,7 @@ namespace qnr {
   export function tryExtractTSExtension(fileName: string): string | undefined {
     return find(supportedTSExtensionsForExtractExtension, (extension) => fileExtensionIs(fileName, extension));
   }
-  /**
-   * Replace each instance of non-ascii characters by one, two, three, or four escape sequences
-   * representing the UTF-8 encoding of the character, and return the expanded char code list.
-   */
+
   function getExpandedCodes(input: string): number[] {
     const output: number[] = [];
     const length = input.length;
@@ -3191,9 +3027,6 @@ namespace qnr {
 
   const base64Digits = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
 
-  /**
-   * Converts a string to a base-64 encoded ASCII string.
-   */
   export function convertToBase64(input: string): string {
     let result = '';
     const ccs = getExpandedCodes(input);
@@ -3333,12 +3166,8 @@ namespace qnr {
     return getNewLine ? getNewLine() : sys ? sys.newLine : carriageReturnLineFeed;
   }
 
-  /**
-   * Determines whether a name was originally the declaration name of an enum or namespace
-   * declaration.
-   */
   export function isDeclarationNameOfEnumOrNamespace(node: Identifier) {
-    const parseNode = getParseTreeNode(node);
+    const parseNode = qn.get.parseTreeOf(node);
     if (parseNode) {
       switch (parseNode.parent.kind) {
         case Syntax.EnumDeclaration:
@@ -3479,10 +3308,7 @@ namespace qnr {
     return true;
   }
 
-  /**
-   * clears already present map by calling onDeleteExistingValue cb before deleting that key/value
-   */
-  export function clearMap<T>(map: { forEach: QMap<T>['forEach']; clear: QMap<T>['clear'] }, onDeleteValue: (valueInMap: T, key: string) => void) {
+  export function clearMap<T>(map: { forEach: qa.QMap<T>['forEach']; clear: qa.QMap<T>['clear'] }, onDeleteValue: (valueInMap: T, key: string) => void) {
     // Remove all
     map.forEach(onDeleteValue);
     map.clear();
@@ -3491,19 +3317,10 @@ namespace qnr {
   export interface MutateMapSkippingNewValuesOptions<T, U> {
     onDeleteValue(existingValue: T, key: string): void;
 
-    /**
-     * If present this is called with the key when there is value for that key both in new map as well as existing map provided
-     * Caller can then decide to update or remove this key.
-     * If the key is removed, caller will get cb of createNewValue for that key.
-     * If this cb is not provided, the value of such keys is not updated.
-     */
     onExistingValue?(existingValue: T, valueInNewMap: U, key: string): void;
   }
 
-  /**
-   * Mutates the map with newMap such that keys in map will be same as newMap.
-   */
-  export function mutateMapSkippingNewValues<T, U>(map: QMap<T>, newMap: QReadonlyMap<U>, options: MutateMapSkippingNewValuesOptions<T, U>) {
+  export function mutateMapSkippingNewValues<T, U>(map: qa.QMap<T>, newMap: qa.QReadonlyMap<U>, options: MutateMapSkippingNewValuesOptions<T, U>) {
     const { onDeleteValue, onExistingValue } = options;
     // Needs update
     map.forEach((existingValue, key) => {
@@ -3524,10 +3341,7 @@ namespace qnr {
     createNewValue(key: string, valueInNewMap: U): T;
   }
 
-  /**
-   * Mutates the map with newMap such that keys in map will be same as newMap.
-   */
-  export function mutateMap<T, U>(map: QMap<T>, newMap: QReadonlyMap<U>, options: MutateMapOptions<T, U>) {
+  export function mutateMap<T, U>(map: qa.QMap<T>, newMap: qa.QReadonlyMap<U>, options: MutateMapOptions<T, U>) {
     // Needs update
     mutateMapSkippingNewValues(map, newMap, options);
 
@@ -3575,7 +3389,7 @@ namespace qnr {
   }
 
   export function showModuleSpecifier({ moduleSpecifier }: ImportDeclaration): string {
-    return qn.is.kind(StringLiteral, moduleSpecifier) ? moduleSpecifier.text : getTextOfNode(moduleSpecifier);
+    return qn.is.kind(StringLiteral, moduleSpecifier) ? moduleSpecifier.text : qn.get.textOf(moduleSpecifier);
   }
 
   export function getLastChild(node: Node): Node | undefined {
@@ -3599,9 +3413,9 @@ namespace qnr {
   }
 
   /** Add a value to a set, and return true if it wasn't already present. */
-  export function addToSeen(seen: QMap<true>, key: string | number): boolean;
-  export function addToSeen<T>(seen: QMap<T>, key: string | number, value: T): boolean;
-  export function addToSeen<T>(seen: QMap<T>, key: string | number, value: T = true as any): boolean {
+  export function addToSeen(seen: qa.QMap<true>, key: string | number): boolean;
+  export function addToSeen<T>(seen: qa.QMap<T>, key: string | number, value: T): boolean;
+  export function addToSeen<T>(seen: qa.QMap<T>, key: string | number, value: T = true as any): boolean {
     key = String(key);
     if (seen.has(key)) {
       return false;
@@ -3914,7 +3728,7 @@ namespace qnr {
     return true;
   }
 
-  export function discoverProbableSymlinks(files: readonly SourceFile[], getCanonicalFileName: GetCanonicalFileName, cwd: string): QReadonlyMap<string> {
+  export function discoverProbableSymlinks(files: readonly SourceFile[], getCanonicalFileName: GetCanonicalFileName, cwd: string): qa.QReadonlyMap<string> {
     const result = createMap<string>();
     const symlinks = flatten<readonly [string, string]>(
       mapDefined(
@@ -4629,7 +4443,7 @@ namespace qnr {
     return a === b || (typeof a === 'object' && a !== null && typeof b === 'object' && b !== null && equalOwnProperties(a as MapLike<unknown>, b as MapLike<unknown>, isJsonEqual));
   }
 
-  export function getOrUpdate<T>(map: QMap<T>, key: string, getDefault: () => T): T {
+  export function getOrUpdate<T>(map: qa.QMap<T>, key: string, getDefault: () => T): T {
     const got = map.get(key);
     if (got === undefined) {
       const value = getDefault();

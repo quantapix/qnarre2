@@ -612,7 +612,7 @@ namespace qnr {
         return;
       } else {
         // Do not hoist custom prologues.
-        if (getEmitFlags(node) & EmitFlags.CustomPrologue) {
+        if (qn.get.emitFlags(node) & EmitFlags.CustomPrologue) {
           return node;
         }
 
@@ -874,7 +874,7 @@ namespace qnr {
       const resumeLabel = defineLabel();
       const expression = visitNode(node.expression, visitor, isExpression);
       if (node.asteriskToken) {
-        const iterator = (getEmitFlags(node.expression!) & EmitFlags.Iterator) === 0 ? createValuesHelper(context, expression, /*location*/ node) : expression;
+        const iterator = (qn.get.emitFlags(node.expression!) & EmitFlags.Iterator) === 0 ? createValuesHelper(context, expression, /*location*/ node) : expression;
         emitYieldStar(iterator, /*location*/ node);
       } else {
         emitYield(expression, /*location*/ node);
@@ -1779,7 +1779,7 @@ namespace qnr {
 
     function substituteExpressionIdentifier(node: Identifier) {
       if (!qn.is.generatedIdentifier(node) && renamedCatchVariables && renamedCatchVariables.has(idText(node))) {
-        const original = getOriginalNode(node);
+        const original = qn.get.originalOf(node);
         if (qn.is.kind(Identifier, original) && original.parent) {
           const declaration = resolver.getReferencedValueDeclaration(original);
           if (declaration) {
@@ -1798,7 +1798,7 @@ namespace qnr {
     }
 
     function cacheExpression(node: Expression): Identifier {
-      if (qn.is.generatedIdentifier(node) || getEmitFlags(node) & EmitFlags.HelperName) {
+      if (qn.is.generatedIdentifier(node) || qn.get.emitFlags(node) & EmitFlags.HelperName) {
         return <Identifier>node;
       }
 

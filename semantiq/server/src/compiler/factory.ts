@@ -77,7 +77,7 @@ namespace qnr {
     react.flags &= ~NodeFlags.Synthesized;
     // Set the parent that is in parse tree
     // this makes sure that parent chain is intact for checker to traverse complete scope tree
-    react.parent = getParseTreeNode(parent);
+    react.parent = qn.get.parseTreeOf(parent);
     return react;
   }
 
@@ -324,7 +324,7 @@ namespace qnr {
     } else if (callee.kind === Syntax.SuperKeyword) {
       thisArg = createThis();
       target = <PrimaryExpression>callee;
-    } else if (getEmitFlags(callee) & EmitFlags.HelperName) {
+    } else if (qn.get.emitFlags(callee) & EmitFlags.HelperName) {
       thisArg = createVoidZero();
       target = parenthesizeForAccess(callee);
     } else {
@@ -540,7 +540,7 @@ namespace qnr {
    * Gets whether an identifier should only be referred to by its internal name.
    */
   export function isInternalName(node: Identifier) {
-    return (getEmitFlags(node) & EmitFlags.InternalName) !== 0;
+    return (qn.get.emitFlags(node) & EmitFlags.InternalName) !== 0;
   }
 
   /**
@@ -561,7 +561,7 @@ namespace qnr {
    * Gets whether an identifier should only be referred to by its local name.
    */
   export function isLocalName(node: Identifier) {
-    return (getEmitFlags(node) & EmitFlags.LocalName) !== 0;
+    return (qn.get.emitFlags(node) & EmitFlags.LocalName) !== 0;
   }
 
   /**
@@ -583,7 +583,7 @@ namespace qnr {
    * name points to an exported symbol.
    */
   export function isExportName(node: Identifier) {
-    return (getEmitFlags(node) & EmitFlags.ExportName) !== 0;
+    return (qn.get.emitFlags(node) & EmitFlags.ExportName) !== 0;
   }
 
   /**
@@ -601,7 +601,7 @@ namespace qnr {
     const nodeName = getNameOfDeclaration(node);
     if (nodeName && qn.is.kind(Identifier, nodeName) && !qn.is.generatedIdentifier(nodeName)) {
       const name = getMutableClone(nodeName);
-      emitFlags |= getEmitFlags(nodeName);
+      emitFlags |= qn.get.emitFlags(nodeName);
       if (!allowSourceMaps) emitFlags |= EmitFlags.NoSourceMap;
       if (!allowComments) emitFlags |= EmitFlags.NoComments;
       if (emitFlags) setEmitFlags(name, emitFlags);
@@ -735,7 +735,7 @@ namespace qnr {
     const numStatements = source.length;
     while (statementOffset !== undefined && statementOffset < numStatements) {
       const statement = source[statementOffset];
-      if (getEmitFlags(statement) & EmitFlags.CustomPrologue && filter(statement)) {
+      if (qn.get.emitFlags(statement) & EmitFlags.CustomPrologue && filter(statement)) {
         append(target, visitor ? visitNode(statement, visitor, isStatement) : statement);
       } else {
         break;
@@ -1055,7 +1055,7 @@ namespace qnr {
     }
 
     if (result !== undefined) {
-      return setTextRange(NodeArray.create(result, elements.hasTrailingComma), elements);
+      return setTextRange(NodeArray.create(result, elements.trailingComma), elements);
     }
 
     return elements;
@@ -1273,13 +1273,13 @@ namespace qnr {
   }
 
   export function getExternalHelpersModuleName(node: SourceFile) {
-    const parseNode = getOriginalNode(node, isSourceFile);
+    const parseNode = qn.get.originalOf(node, isSourceFile);
     const emitNode = parseNode && parseNode.emitNode;
     return emitNode && emitNode.externalHelpersModuleName;
   }
 
   export function hasRecordedExternalHelpers(sourceFile: SourceFile) {
-    const parseNode = getOriginalNode(sourceFile, isSourceFile);
+    const parseNode = qn.get.originalOf(sourceFile, isSourceFile);
     const emitNode = parseNode && parseNode.emitNode;
     return !!emitNode && (!!emitNode.externalHelpersModuleName || !!emitNode.externalHelpers);
   }
@@ -1318,7 +1318,7 @@ namespace qnr {
                   : createImportSpecifier(createIdentifier(name), getUnscopedHelperName(name))
               )
             );
-            const parseNode = getOriginalNode(sourceFile, isSourceFile);
+            const parseNode = qn.get.originalOf(sourceFile, isSourceFile);
             const emitNode = getOrCreateEmitNode(parseNode);
             emitNode.externalHelpers = true;
           }
@@ -1366,7 +1366,7 @@ namespace qnr {
       }
 
       if (create) {
-        const parseNode = getOriginalNode(node, isSourceFile);
+        const parseNode = qn.get.originalOf(node, isSourceFile);
         const emitNode = getOrCreateEmitNode(parseNode);
         return emitNode.externalHelpersModuleName || (emitNode.externalHelpersModuleName = createUniqueName(externalHelpersModuleNameText));
       }

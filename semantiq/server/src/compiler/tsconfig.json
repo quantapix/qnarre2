@@ -8,7 +8,7 @@
   "references": [{ "path": "../shims" }],
 
   "files": [
-    "core.ts",
+    "base.ts",
     "utils.ts",
     "debug.ts",
     "performanceTimestamp.ts",
@@ -23,7 +23,7 @@
     "syntax.ts",
     "scanner.ts",
     "node.ts",
-    "utilitiesPublic.ts",
+    "nodes.ts",
     "utilities.ts",
     "parser.ts",
     "commandLineParser.ts",
@@ -34,7 +34,6 @@
     "checker.ts",
     "factoryPublic.ts",
     "factory.ts",
-    "visitorPublic.ts",
     "visitor.ts",
     "sourcemap.ts",
     "transformers/utilities.ts",

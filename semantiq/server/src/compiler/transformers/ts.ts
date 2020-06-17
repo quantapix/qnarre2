@@ -234,7 +234,7 @@ namespace qnr {
     }
 
     function visitEllidableStatement(node: ImportDeclaration | ImportEqualsDeclaration | ExportAssignment | ExportDeclaration): VisitResult<Node> {
-      const parsed = getParseTreeNode(node);
+      const parsed = qn.get.parseTreeOf(node);
       if (parsed !== node) {
         // If the node has been transformed by a `before` transformer, perform no ellision on it
         // As the type information we would attempt to lookup to perform ellision is potentially unavailable for the synthesized nodes
@@ -680,7 +680,7 @@ namespace qnr {
       if (statements.length > 1) {
         // Add a DeclarationMarker as a marker for the end of the declaration
         statements.push(createEndOfDeclarationMarker(node));
-        setEmitFlags(classStatement, getEmitFlags(classStatement) | EmitFlags.HasEndOfDeclarationMarker);
+        setEmitFlags(classStatement, qn.get.emitFlags(classStatement) | EmitFlags.HasEndOfDeclarationMarker);
       }
 
       return singleOrMany(statements);
@@ -712,7 +712,7 @@ namespace qnr {
 
       // To better align with the old emitter, we should not emit a trailing source map
       // entry if the class has static properties.
-      let emitFlags = getEmitFlags(node);
+      let emitFlags = qn.get.emitFlags(node);
       if (facts & ClassFacts.HasStaticInitializedProperties) {
         emitFlags |= EmitFlags.NoTrailingSourceMap;
       }
@@ -1699,7 +1699,7 @@ namespace qnr {
           const name = getMutableClone(node);
           name.flags &= ~NodeFlags.Synthesized;
           name.original = undefined;
-          name.parent = getParseTreeNode(currentLexicalScope); // ensure the parent is set to a parse tree node.
+          name.parent = qn.get.parseTreeOf(currentLexicalScope); // ensure the parent is set to a parse tree node.
 
           return name;
 
@@ -2320,7 +2320,7 @@ namespace qnr {
      * @param node The module declaration node.
      */
     function shouldEmitModuleDeclaration(nodeIn: ModuleDeclaration) {
-      const node = getParseTreeNode(nodeIn, isModuleDeclaration);
+      const node = qn.get.parseTreeOf(nodeIn, isModuleDeclaration);
       if (!node) {
         // If we can't find a parse tree node, assume the node is instantiated.
         return true;
@@ -2588,7 +2588,7 @@ namespace qnr {
       // })(hello || (hello = {}));
       // We only want to emit comment on the namespace which contains block body itself, not the containing namespaces.
       if (!node.body || node.body.kind !== Syntax.ModuleBlock) {
-        setEmitFlags(block, getEmitFlags(block) | EmitFlags.NoComments);
+        setEmitFlags(block, qn.get.emitFlags(block) | EmitFlags.NoComments);
       }
       return block;
     }
@@ -2929,11 +2929,11 @@ namespace qnr {
     }
 
     function isTransformedModuleDeclaration(node: Node): boolean {
-      return getOriginalNode(node).kind === Syntax.ModuleDeclaration;
+      return qn.get.originalOf(node).kind === Syntax.ModuleDeclaration;
     }
 
     function isTransformedEnumDeclaration(node: Node): boolean {
-      return getOriginalNode(node).kind === Syntax.EnumDeclaration;
+      return qn.get.originalOf(node).kind === Syntax.EnumDeclaration;
     }
 
     /**
@@ -3075,8 +3075,8 @@ namespace qnr {
 
         const substitute = createLiteral(constantValue);
         if (!compilerOptions.removeComments) {
-          const originalNode = getOriginalNode(node, isAccessExpression);
-          const propertyName = qn.is.kind(PropertyAccessExpression, originalNode) ? declarationNameToString(originalNode.name) : getTextOfNode(originalNode.argumentExpression);
+          const originalNode = qn.get.originalOf(node, isAccessExpression);
+          const propertyName = qn.is.kind(PropertyAccessExpression, originalNode) ? declarationNameToString(originalNode.name) : qn.get.textOf(originalNode.argumentExpression);
 
           addSyntheticTrailingComment(substitute, Syntax.MultiLineCommentTrivia, ` ${propertyName} `);
         }

@@ -448,7 +448,7 @@ namespace qnr {
       // In this case, we use pendingStatements to produce the same output as the
       // class declaration transformation. The VariableStatement visitor will insert
       // these statements after the class expression variable statement.
-      const isDecoratedClassDeclaration = qn.is.kind(ClassDeclaration, getOriginalNode(node));
+      const isDecoratedClassDeclaration = qn.is.kind(ClassDeclaration, qn.get.originalOf(node));
 
       const staticProperties = getProperties(node, /*requireInitializer*/ true, /*isStatic*/ true);
       const extendsClauseElement = getEffectiveBaseTypeNode(node);
@@ -490,7 +490,7 @@ namespace qnr {
 
           // To preserve the behavior of the old emitter, we explicitly indent
           // the body of a class with static initializers.
-          setEmitFlags(classExpression, EmitFlags.Indented | getEmitFlags(classExpression));
+          setEmitFlags(classExpression, EmitFlags.Indented | qn.get.emitFlags(classExpression));
           expressions.push(startOnNewLine(createAssignment(temp, classExpression)));
           // Add any pending expressions leftover from elided or relocated computed property names
           addRange(expressions, map(pendingExpressions, startOnNewLine));
@@ -588,7 +588,7 @@ namespace qnr {
       //  }
       //
       if (constructor?.body) {
-        let afterParameterProperties = findIndex(constructor.body.statements, (s) => !qn.is.parameterPropertyDeclaration(getOriginalNode(s), constructor), indexOfFirstStatement);
+        let afterParameterProperties = findIndex(constructor.body.statements, (s) => !qn.is.parameterPropertyDeclaration(qn.get.originalOf(s), constructor), indexOfFirstStatement);
         if (afterParameterProperties === -1) {
           afterParameterProperties = constructor.body.statements.length;
         }
@@ -691,7 +691,7 @@ namespace qnr {
         return;
       }
 
-      const propertyOriginalNode = getOriginalNode(property);
+      const propertyOriginalNode = qn.get.originalOf(property);
       const initializer =
         property.initializer || emitAssignment
           ? visitNode(property.initializer, visitor, isExpression)

@@ -118,7 +118,7 @@ namespace qnr {
      */
     function onSubstituteNode(hint: EmitHint, node: Node) {
       node = previousOnSubstituteNode(hint, node);
-      if (helperNameSubstitutions && qn.is.kind(Identifier, node) && getEmitFlags(node) & EmitFlags.HelperName) {
+      if (helperNameSubstitutions && qn.is.kind(Identifier, node) && qn.get.emitFlags(node) & EmitFlags.HelperName) {
         return substituteHelperName(node);
       }
 

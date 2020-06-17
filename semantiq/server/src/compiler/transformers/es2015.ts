@@ -329,7 +329,7 @@ namespace qnr {
         convertedLoopState !== undefined ||
         (hierarchyFacts & HierarchyFacts.ConstructorWithCapturedSuper && (qn.is.statement(node) || node.kind === Syntax.Block)) ||
         (qn.is.iterationStatement(node, /*lookInLabeledStatements*/ false) && shouldConvertIterationStatement(node)) ||
-        (getEmitFlags(node) & EmitFlags.TypeScriptClassWrapper) !== 0
+        (qn.get.emitFlags(node) & EmitFlags.TypeScriptClassWrapper) !== 0
       );
     }
 
@@ -658,7 +658,7 @@ namespace qnr {
         statements.push(exportStatement);
       }
 
-      const emitFlags = getEmitFlags(node);
+      const emitFlags = qn.get.emitFlags(node);
       if ((emitFlags & EmitFlags.HasEndOfDeclarationMarker) === 0) {
         // Add a DeclarationMarker as a marker for the end of the declaration
         statements.push(createEndOfDeclarationMarker(node));
@@ -734,7 +734,7 @@ namespace qnr {
       // To preserve the behavior of the old emitter, we explicitly indent
       // the body of the function here if it was requested in an earlier
       // transformation.
-      setEmitFlags(classFunction, (getEmitFlags(node) & EmitFlags.Indented) | EmitFlags.ReuseTempVariableScope);
+      setEmitFlags(classFunction, (qn.get.emitFlags(node) & EmitFlags.Indented) | EmitFlags.ReuseTempVariableScope);
 
       // "inner" and "outer" below are added purely to preserve source map locations from
       // the old emitter
@@ -1196,7 +1196,7 @@ namespace qnr {
               createExpressionStatement(
                 setEmitFlags(
                   setTextRange(
-                    createAssignment(setEmitFlags(getMutableClone(name), EmitFlags.NoSourceMap), setEmitFlags(initializer, EmitFlags.NoSourceMap | getEmitFlags(initializer) | EmitFlags.NoComments)),
+                    createAssignment(setEmitFlags(getMutableClone(name), EmitFlags.NoSourceMap), setEmitFlags(initializer, EmitFlags.NoSourceMap | qn.get.emitFlags(initializer) | EmitFlags.NoComments)),
                     parameter
                   ),
                   EmitFlags.NoComments
@@ -1585,7 +1585,7 @@ namespace qnr {
      */
     function visitFunctionExpression(node: FunctionExpression): Expression {
       const ancestorFacts =
-        getEmitFlags(node) & EmitFlags.AsyncFunctionBody
+        qn.get.emitFlags(node) & EmitFlags.AsyncFunctionBody
           ? enterSubtree(HierarchyFacts.AsyncFunctionBodyExcludes, HierarchyFacts.AsyncFunctionBodyIncludes)
           : enterSubtree(HierarchyFacts.FunctionExcludes, HierarchyFacts.FunctionIncludes);
       const savedConvertedLoopState = convertedLoopState;
@@ -1826,7 +1826,7 @@ namespace qnr {
       return (
         node.declarationList.declarations.length === 1 &&
         !!node.declarationList.declarations[0].initializer &&
-        !!(getEmitFlags(node.declarationList.declarations[0].initializer) & EmitFlags.TypeScriptClassWrapper)
+        !!(qn.get.emitFlags(node.declarationList.declarations[0].initializer) & EmitFlags.TypeScriptClassWrapper)
       );
     }
 
@@ -2180,7 +2180,7 @@ namespace qnr {
       const rhsReference = qn.is.kind(Identifier, expression) ? getGeneratedNameForNode(expression) : createTempVariable(/*recordTempVariable*/ undefined);
 
       // The old emitter does not emit source maps for the expression
-      setEmitFlags(expression, EmitFlags.NoSourceMap | getEmitFlags(expression));
+      setEmitFlags(expression, EmitFlags.NoSourceMap | qn.get.emitFlags(expression));
 
       const forStatement = setTextRange(
         createFor(
@@ -2511,7 +2511,7 @@ namespace qnr {
       const loopParameters: ParameterDeclaration[] = [];
       // variables declared in the loop initializer that will be changed inside the loop
       const loopOutParameters: LoopOutParameter[] = [];
-      if (loopInitializer && getCombinedNodeFlags(loopInitializer) & NodeFlags.BlockScoped) {
+      if (loopInitializer && qn.get.combinedFlagsOf(loopInitializer) & NodeFlags.BlockScoped) {
         const hasCapturedBindingsInForInitializer = shouldConvertInitializerOfForStatement(node);
         for (const decl of loopInitializer.declarations) {
           processLoopVariableDeclaration(node, decl, loopParameters, loopOutParameters, hasCapturedBindingsInForInitializer);
@@ -3079,7 +3079,7 @@ namespace qnr {
       // Methods with computed property names are handled in visitObjectLiteralExpression.
       assert(!qn.is.kind(ComputedPropertyName, node.name));
       const functionExpression = transformFunctionLikeToExpression(node, /*location*/ moveRangePos(node, -1), /*name*/ undefined, /*container*/ undefined);
-      setEmitFlags(functionExpression, EmitFlags.NoLeadingComments | getEmitFlags(functionExpression));
+      setEmitFlags(functionExpression, EmitFlags.NoLeadingComments | qn.get.emitFlags(functionExpression));
       return setTextRange(createPropertyAssignment(node.name, functionExpression), /*location*/ node);
     }
 
@@ -3137,7 +3137,7 @@ namespace qnr {
     function visitArrayLiteralExpression(node: ArrayLiteralExpression): Expression {
       if (some(node.elements, isSpreadElement)) {
         // We are here because we contain a SpreadElementExpression.
-        return transformAndSpreadElements(node.elements, /*needsUniqueCopy*/ true, !!node.multiLine, /*hasTrailingComma*/ !!node.elements.hasTrailingComma);
+        return transformAndSpreadElements(node.elements, /*needsUniqueCopy*/ true, !!node.multiLine, /*trailingComma*/ !!node.elements.trailingComma);
       }
       return visitEachChild(node, visitor, context);
     }
@@ -3148,7 +3148,7 @@ namespace qnr {
      * @param node a CallExpression.
      */
     function visitCallExpression(node: CallExpression) {
-      if (getEmitFlags(node) & EmitFlags.TypeScriptClassWrapper) {
+      if (qn.get.emitFlags(node) & EmitFlags.TypeScriptClassWrapper) {
         return visitTypeScriptClassWrapper(node);
       }
 
@@ -3343,7 +3343,7 @@ namespace qnr {
           resultingCall = createFunctionApply(
             visitNode(target, callExpressionVisitor, isExpression),
             node.expression.kind === Syntax.SuperKeyword ? thisArg : visitNode(thisArg, visitor, isExpression),
-            transformAndSpreadElements(node.arguments, /*needsUniqueCopy*/ false, /*multiLine*/ false, /*hasTrailingComma*/ false)
+            transformAndSpreadElements(node.arguments, /*needsUniqueCopy*/ false, /*multiLine*/ false, /*trailingComma*/ false)
           );
         } else {
           // [source]
@@ -3392,7 +3392,7 @@ namespace qnr {
           createFunctionApply(
             visitNode(target, visitor, isExpression),
             thisArg,
-            transformAndSpreadElements(NodeArray.create([createVoidZero(), ...node.arguments!]), /*needsUniqueCopy*/ false, /*multiLine*/ false, /*hasTrailingComma*/ false)
+            transformAndSpreadElements(NodeArray.create([createVoidZero(), ...node.arguments!]), /*needsUniqueCopy*/ false, /*multiLine*/ false, /*trailingComma*/ false)
           ),
           /*typeArguments*/ undefined,
           []
@@ -3408,7 +3408,7 @@ namespace qnr {
      * @param needsUniqueCopy A value indicating whether to ensure that the result is a fresh array.
      * @param multiLine A value indicating whether the result should be emitted on multiple lines.
      */
-    function transformAndSpreadElements(elements: NodeArray<Expression>, needsUniqueCopy: boolean, multiLine: boolean, hasTrailingComma: boolean): Expression {
+    function transformAndSpreadElements(elements: NodeArray<Expression>, needsUniqueCopy: boolean, multiLine: boolean, trailingComma: boolean): Expression {
       // [source]
       //      [a, ...b, c]
       //
@@ -3422,7 +3422,7 @@ namespace qnr {
       // expressions into an array literal.
       const numElements = elements.length;
       const segments = flatten<Expression>(
-        spanMap(elements, partitionSpread, (partition, visitPartition, _start, end) => visitPartition(partition, multiLine, hasTrailingComma && end === numElements))
+        spanMap(elements, partitionSpread, (partition, visitPartition, _start, end) => visitPartition(partition, multiLine, trailingComma && end === numElements))
       );
 
       if (compilerOptions.downlevelIteration) {
@@ -3458,7 +3458,7 @@ namespace qnr {
       return (
         qn.is.kind(CallExpression, firstSegment) &&
         qn.is.kind(Identifier, firstSegment.expression) &&
-        getEmitFlags(firstSegment.expression) & EmitFlags.HelperName &&
+        qn.get.emitFlags(firstSegment.expression) & EmitFlags.HelperName &&
         firstSegment.expression.escapedText === helperName
       );
     }
@@ -3471,8 +3471,8 @@ namespace qnr {
       return map(chunk, visitExpressionOfSpread);
     }
 
-    function visitSpanOfNonSpreads(chunk: Expression[], multiLine: boolean, hasTrailingComma: boolean): VisitResult<Expression> {
-      return createArrayLiteral(NodeArray.visit(NodeArray.create(chunk, hasTrailingComma), visitor, isExpression), multiLine);
+    function visitSpanOfNonSpreads(chunk: Expression[], multiLine: boolean, trailingComma: boolean): VisitResult<Expression> {
+      return createArrayLiteral(NodeArray.visit(NodeArray.create(chunk, trailingComma), visitor, isExpression), multiLine);
     }
 
     function visitSpreadElement(node: SpreadElement) {
@@ -3648,7 +3648,7 @@ namespace qnr {
         // If we are tracking a captured `this`, keep track of the enclosing function.
         const ancestorFacts = enterSubtree(
           HierarchyFacts.FunctionExcludes,
-          getEmitFlags(node) & EmitFlags.CapturesThis ? HierarchyFacts.FunctionIncludes | HierarchyFacts.CapturesThis : HierarchyFacts.FunctionIncludes
+          qn.get.emitFlags(node) & EmitFlags.CapturesThis ? HierarchyFacts.FunctionIncludes | HierarchyFacts.CapturesThis : HierarchyFacts.FunctionIncludes
         );
         previousOnEmitNode(hint, node, emitCallback);
         exitSubtree(ancestorFacts, HierarchyFacts.None, HierarchyFacts.None);
@@ -3713,7 +3713,7 @@ namespace qnr {
       // Only substitute the identifier if we have enabled substitutions for block-scoped
       // bindings.
       if (enabledSubstitutions & ES2015SubstitutionFlags.BlockScopedBindings && !isInternalName(node)) {
-        const original = getParseTreeNode(node, isIdentifier);
+        const original = qn.get.parseTreeOf(node, isIdentifier);
         if (original && isNameOfDeclarationWithCollidingName(original)) {
           return setTextRange(getGeneratedNameForNode(original), node);
         }
@@ -3774,7 +3774,7 @@ namespace qnr {
     }
 
     function isPartOfClassBody(declaration: ClassLikeDeclaration, node: Identifier) {
-      let currentNode: Node | undefined = getParseTreeNode(node);
+      let currentNode: Node | undefined = qn.get.parseTreeOf(node);
       if (!currentNode || currentNode === declaration || currentNode.end <= declaration.pos || currentNode.pos >= declaration.end) {
         // if the node has no correlation to a parse tree node, its definitely not
         // part of the body.
@@ -3782,7 +3782,7 @@ namespace qnr {
         // definitely not part of the body.
         return false;
       }
-      const blockScope = getEnclosingBlockScopeContainer(declaration);
+      const blockScope = qn.get.enclosingBlockScopeContainer(declaration);
       while (currentNode) {
         if (currentNode === blockScope || currentNode === declaration) {
           // if we are in the enclosing block scope of the declaration, we are definitely
