@@ -145,6 +145,36 @@ namespace qnr {
       }
       ts.length = out;
     }
+    export function map<T, U>(ts: readonly T[], cb: (x: T, i: number) => U): U[];
+    export function map<T, U>(ts: readonly T[] | undefined, cb: (x: T, i: number) => U): U[] | undefined;
+    export function map<T, U>(ts: readonly T[] | undefined, cb: (x: T, i: number) => U): U[] | undefined {
+      let r: U[] | undefined;
+      if (ts) {
+        r = [];
+        for (let i = 0; i < ts.length; i++) {
+          r.push(cb(ts[i], i));
+        }
+      }
+      return r;
+    }
+    export function mapIterator<T, U>(ts: Iterator<T>, cb: (t: T) => U): Iterator<U> {
+      return {
+        next() {
+          const t = ts.next();
+          return t.done ? (t as { done: true; value: never }) : { value: cb(t.value), done: false };
+        },
+      };
+    }
+    export function countWhere<T>(ts: readonly T[], cb: (t: T, i: number) => boolean): number {
+      let r = 0;
+      if (ts) {
+        for (let i = 0; i < ts.length; i++) {
+          const t = ts[i];
+          if (cb(t, i)) r++;
+        }
+      }
+      return r;
+    }
     export function contains<T>(ts: readonly T[] | undefined, x: T, eq: EqualityComparer<T> = equateValues): boolean {
       if (ts) {
         for (const t of ts) {
@@ -283,41 +313,6 @@ namespace qnr {
       }
     }
     return -1;
-  }
-
-  export function countWhere<T>(array: readonly T[], cb: (x: T, i: number) => boolean): number {
-    let count = 0;
-    if (array) {
-      for (let i = 0; i < array.length; i++) {
-        const v = array[i];
-        if (cb(v, i)) {
-          count++;
-        }
-      }
-    }
-    return count;
-  }
-
-  export function map<T, U>(ts: readonly T[], f: (x: T, i: number) => U): U[];
-  export function map<T, U>(ts: readonly T[] | undefined, f: (x: T, i: number) => U): U[] | undefined;
-  export function map<T, U>(ts: readonly T[] | undefined, f: (x: T, i: number) => U): U[] | undefined {
-    let result: U[] | undefined;
-    if (ts) {
-      result = [];
-      for (let i = 0; i < ts.length; i++) {
-        result.push(f(ts[i], i));
-      }
-    }
-    return result;
-  }
-
-  export function mapIterator<T, U>(iter: Iterator<T>, mapFn: (x: T) => U): Iterator<U> {
-    return {
-      next() {
-        const iterRes = iter.next();
-        return iterRes.done ? (iterRes as { done: true; value: never }) : { value: mapFn(iterRes.value), done: false };
-      },
-    };
   }
 
   export function sameMap<T>(ts: T[], f: (x: T, i: number) => T): T[];
@@ -673,9 +668,8 @@ namespace qnr {
 
   export function compact<T>(array: (T | undefined | null | false | 0 | '')[]): T[];
   export function compact<T>(array: readonly (T | undefined | null | false | 0 | '')[]): readonly T[];
-  // ESLint thinks these can be combined with the above - they cannot; they'd produce higher-priority inferences and prevent the falsey types from being stripped
-  export function compact<T>(array: T[]): T[]; // eslint-disable-line @typescript-eslint/unified-signatures
-  export function compact<T>(array: readonly T[]): readonly T[]; // eslint-disable-line @typescript-eslint/unified-signatures
+  export function compact<T>(array: T[]): T[];
+  export function compact<T>(array: readonly T[]): readonly T[];
   export function compact<T>(array: T[] | readonly T[]): T[] | readonly T[] {
     let result: T[] | undefined;
     if (array) {
