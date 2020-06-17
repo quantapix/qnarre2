@@ -107,18 +107,18 @@ namespace qnr {
     sourceFile.resolvedTypeReferenceDirectiveNames.set(typeReferenceDirectiveName, resolvedTypeReferenceDirective);
   }
   export function getStartPositionOfLine(line: number, sourceFile: SourceFileLike): number {
-    assert(line >= 0);
+    qa.assert(line >= 0);
     return qy.get.lineStarts(sourceFile)[line];
   }
   export function getEndLinePosition(line: number, sourceFile: SourceFileLike): number {
-    assert(line >= 0);
+    qa.assert(line >= 0);
     const lineStarts = qy.get.lineStarts(sourceFile);
     const lineIndex = line;
     const sourceText = sourceFile.text;
     if (lineIndex + 1 === qy.get.lineStarts.length) return sourceText.length - 1;
     const start = lineStarts[lineIndex];
     let pos = lineStarts[lineIndex + 1] - 1;
-    assert(qy.is.lineBreak(sourceText.charCodeAt(pos)));
+    qa.assert(qy.is.lineBreak(sourceText.charCodeAt(pos)));
     while (start <= pos && qy.is.lineBreak(sourceText.charCodeAt(pos))) {
       pos--;
     }
@@ -159,7 +159,7 @@ namespace qnr {
     oldResolutions: qa.QReadonlyMap<T> | undefined,
     comparer: (oldResolution: T, newResolution: T) => boolean
   ): boolean {
-    assert(names.length === newResolutions.length);
+    qa.assert(names.length === newResolutions.length);
     for (let i = 0; i < names.length; i++) {
       const newResolution = newResolutions[i];
       const oldResolution = oldResolutions && oldResolutions.get(names[i]);
@@ -502,15 +502,15 @@ namespace qnr {
     if (errorNode === undefined) {
       return getSpanOfTokenAtPosition(sourceFile, node.pos);
     }
-    assert(!qn.is.kind(JSDoc, errorNode));
+    qa.assert(!qn.is.kind(JSDoc, errorNode));
     const isMissing = qn.is.missing(errorNode);
     const pos = isMissing || qn.is.kind(JsxText, node) ? errorNode.pos : qy.skipTrivia(sourceFile.text, errorNode.pos);
     if (isMissing) {
-      assert(pos === errorNode.pos, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
-      assert(pos === errorNode.end, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
+      qa.assert(pos === errorNode.pos, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
+      qa.assert(pos === errorNode.end, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
     } else {
-      assert(pos >= errorNode.pos, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
-      assert(pos <= errorNode.end, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
+      qa.assert(pos >= errorNode.pos, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
+      qa.assert(pos <= errorNode.end, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
     }
     return TextSpan.from(pos, errorNode.end);
   }
@@ -794,7 +794,7 @@ namespace qnr {
 
 
   export function getExternalModuleImportEqualsDeclarationExpression(node: Node) {
-    assert(qn.is.externalModuleImportEqualsDeclaration(node));
+    qa.assert(qn.is.externalModuleImportEqualsDeclaration(node));
     return (<ExternalModuleReference>(<ImportEqualsDeclaration>node).moduleReference).expression;
   }
 
@@ -1216,7 +1216,7 @@ namespace qnr {
       case Syntax.CallExpression:
         return qn.is.importCall(node.parent) || isRequireCall(node.parent, /*checkArg*/ false) ? (node.parent as RequireOrImportCall) : undefined;
       case Syntax.LiteralType:
-        assert(qn.is.kind(StringLiteral, node));
+        qa.assert(qn.is.kind(StringLiteral, node));
         return tryCast(node.parent.parent, ImportTypeNode.kind) as ValidImportTypeNode | undefined;
       default:
         return;
@@ -3018,7 +3018,7 @@ namespace qnr {
         output.push(((cc >> 6) & 0b00111111) | 0b10000000);
         output.push((cc & 0b00111111) | 0b10000000);
       } else {
-        assert(false, 'Unexpected code point');
+        qa.assert(false, 'Unexpected code point');
       }
     }
 
@@ -3436,7 +3436,7 @@ namespace qnr {
     if (node.kind === Syntax.PropertyAccessExpression) {
       return node.name;
     }
-    assert(node.kind === Syntax.ElementAccessExpression);
+    qa.assert(node.kind === Syntax.ElementAccessExpression);
     return node.argumentExpression;
   }
 
@@ -4275,7 +4275,7 @@ namespace qnr {
 
   export function tryParsePattern(pattern: string): Pattern | undefined {
     // This should be verified outside of here and a proper error thrown.
-    assert(hasZeroOrOneAsteriskCharacter(pattern));
+    qa.assert(hasZeroOrOneAsteriskCharacter(pattern));
     const indexOfStar = pattern.indexOf('*');
     return indexOfStar === -1
       ? undefined
@@ -4336,7 +4336,7 @@ namespace qnr {
 
   export function sliceAfter<T>(arr: readonly T[], value: T): readonly T[] {
     const index = arr.indexOf(value);
-    assert(index !== -1);
+    qa.assert(index !== -1);
     return arr.slice(index);
   }
 
@@ -4352,7 +4352,7 @@ namespace qnr {
   }
 
   export function minAndMax<T>(arr: readonly T[], getValue: (value: T) => number): { readonly min: number; readonly max: number } {
-    assert(arr.length !== 0);
+    qa.assert(arr.length !== 0);
     let min = getValue(arr[0]);
     let max = min;
     for (let i = 1; i < arr.length; i++) {

@@ -32,7 +32,6 @@
     "binder.ts",
     "symbol.ts",
     "checker.ts",
-    "factoryPublic.ts",
     "factory.ts",
     "visitor.ts",
     "sourcemap.ts",

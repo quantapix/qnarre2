@@ -779,17 +779,6 @@ namespace qnr {
     FileLevel = 1 << 5, // Use only the file identifiers list and not generated names to search for conflicts
   }
 
-  export interface Identifier extends PrimaryExpression, Declaration {
-    kind: Syntax.Identifier;
-    escapedText: __String;
-    originalKeywordKind?: Syntax; // Original syntaxKind which get set so that we can report an error later
-    autoGenerateFlags?: GeneratedIdentifierFlags; // Specifies whether to auto-generate the text for an identifier.
-    autoGenerateId?: number; // Ensures unique generated identifiers get unique names, but clones get the same name.
-    isInJSDocNamespace?: boolean; // if the node is a member in a JSDoc namespace
-    typeArguments?: Nodes<TypeNode | TypeParameterDeclaration>; // Only defined on synthesized nodes. Though not syntactically valid, used in emitting diagnostics, quickinfo, and signature help.
-    jsdocDotPos?: number; // Identifier occurs in JSDoc-style generic: Id.<T>
-  }
-
   // Transient identifier node (marked by id === -1)
   export interface TransientIdentifier extends Identifier {
     resolvedSymbol: Symbol;
@@ -837,85 +826,11 @@ namespace qnr {
     name?: Identifier | StringLiteral | NumericLiteral;
   }
 
-  export interface PrivateIdentifier extends Node {
-    kind: Syntax.PrivateIdentifier;
-    // escaping not strictly necessary
-    // avoids gotchas in transforms and utils
-    escapedText: __String;
-  }
-
   export interface LateBoundName extends ComputedPropertyName {
     expression: EntityNameExpression;
   }
 
-  export interface Decorator extends Node {
-    kind: Syntax.Decorator;
-    parent: NamedDeclaration;
-    expression: LeftHandSideExpression;
-  }
-
-  export interface TypeParameterDeclaration extends NamedDeclaration {
-    kind: Syntax.TypeParameter;
-    parent: DeclarationWithTypeParameterChildren | InferTypeNode;
-    name: Identifier;
-    /** Note: Consider calling `getEffectiveConstraintOfTypeParameter` */
-    constraint?: TypeNode;
-    default?: TypeNode;
-
-    // For error recovery purposes.
-    expression?: Expression;
-  }
-
-  export interface SignatureDeclarationBase extends NamedDeclaration, JSDocContainer {
-    kind: SignatureDeclaration['kind'];
-    name?: PropertyName;
-    typeParameters?: Nodes<TypeParameterDeclaration>;
-    parameters: Nodes<ParameterDeclaration>;
-    type?: TypeNode;
-    typeArguments?: Nodes<TypeNode>; // Used for quick info, replaces typeParameters for instantiated signatures
-  }
-
-  export type SignatureDeclaration =
-    | CallSignatureDeclaration
-    | ConstructSignatureDeclaration
-    | MethodSignature
-    | IndexSignatureDeclaration
-    | FunctionTypeNode
-    | ConstructorTypeNode
-    | JSDocFunctionType
-    | FunctionDeclaration
-    | MethodDeclaration
-    | ConstructorDeclaration
-    | AccessorDeclaration
-    | FunctionExpression
-    | ArrowFunction;
-
   export type BindingName = Identifier | BindingPattern;
-
-  export interface VariableDeclaration extends NamedDeclaration {
-    kind: Syntax.VariableDeclaration;
-    parent: VariableDeclarationList | CatchClause;
-    name: BindingName; // Declared variable name
-    exclamationToken?: ExclamationToken; // Optional definite assignment assertion
-    type?: TypeNode; // Optional type annotation
-    initializer?: Expression; // Optional initializer
-  }
-
-  export interface VariableDeclarationList extends Node {
-    kind: Syntax.VariableDeclarationList;
-    parent: VariableStatement | ForStatement | ForOfStatement | ForInStatement;
-    declarations: Nodes<VariableDeclaration>;
-  }
-
-  export interface ParameterDeclaration extends NamedDeclaration, JSDocContainer {
-    kind: Syntax.Parameter;
-    parent: SignatureDeclaration;
-    dot3Token?: Dot3Token; // Present on rest parameter
-    name: BindingName; // Declared parameter name.
-    questionToken?: QuestionToken; // Present on optional parameter
-    type?: TypeNode; // Optional type annotation
-    initializer?: Expression; // Optional initializer
-  }
 
   export type BindingElementGrandparent = BindingElement['parent']['parent'];
 
@@ -929,32 +844,6 @@ namespace qnr {
   }
 
   export type ObjectLiteralElementLike = PropertyAssignment | ShorthandPropertyAssignment | SpreadAssignment | MethodDeclaration | AccessorDeclaration;
-
-  export interface PropertyAssignment extends ObjectLiteralElement, JSDocContainer {
-    parent: ObjectLiteralExpression;
-    kind: Syntax.PropertyAssignment;
-    name: PropertyName;
-    questionToken?: QuestionToken;
-    initializer: Expression;
-  }
-
-  export interface ShorthandPropertyAssignment extends ObjectLiteralElement, JSDocContainer {
-    parent: ObjectLiteralExpression;
-    kind: Syntax.ShorthandPropertyAssignment;
-    name: Identifier;
-    questionToken?: QuestionToken;
-    exclamationToken?: ExclamationToken;
-    // used when ObjectLiteralExpression is used in ObjectAssignmentPattern
-    // it is grammar error to appear in actual object initializer
-    equalsToken?: Token<Syntax.EqualsToken>;
-    objectAssignmentInitializer?: Expression;
-  }
-
-  export interface SpreadAssignment extends ObjectLiteralElement, JSDocContainer {
-    parent: ObjectLiteralExpression;
-    kind: Syntax.SpreadAssignment;
-    expression: Expression;
-  }
 
   export type VariableLikeDeclaration =
     | VariableDeclaration
@@ -973,10 +862,6 @@ namespace qnr {
     name: PropertyName;
   }
 
-  export type BindingPattern = ObjectBindingPattern | ArrayBindingPattern;
-
-  export type ArrayBindingElement = BindingElement | OmittedExpression;
-
   export interface FunctionLikeDeclarationBase extends SignatureDeclarationBase {
     _functionLikeDeclarationBrand: any;
 
@@ -992,16 +877,6 @@ namespace qnr {
   /** @deprecated Use SignatureDeclaration */
   export type xFunctionLike = SignatureDeclaration;
 
-  export interface FunctionDeclaration extends FunctionLikeDeclarationBase, DeclarationStatement {
-    kind: Syntax.FunctionDeclaration;
-    name?: Identifier;
-    body?: FunctionBody;
-  }
-
-  export interface SemicolonClassElement extends ClassElement {
-    kind: Syntax.SemicolonClassElement;
-    parent: ClassLikeDeclaration;
-  }
   export type AccessorDeclaration = GetAccessorDeclaration | SetAccessorDeclaration;
 
   export type LiteralImportTypeNode = ImportTypeNode & { argument: LiteralTypeNode & { literal: StringLiteral } };
@@ -1031,15 +906,6 @@ namespace qnr {
     _expressionBrand: any;
   }
 
-  export interface OmittedExpression extends Expression {
-    kind: Syntax.OmittedExpression;
-  }
-
-  export interface PartiallyEmittedExpression extends LeftHandSideExpression {
-    kind: Syntax.PartiallyEmittedExpression;
-    expression: Expression;
-  }
-
   export interface UnaryExpression extends Expression {
     _unaryExpressionBrand: any;
   }
@@ -1050,19 +916,7 @@ namespace qnr {
 
   export type PrefixUnaryOperator = Syntax.Plus2Token | Syntax.Minus2Token | Syntax.PlusToken | Syntax.MinusToken | Syntax.TildeToken | Syntax.ExclamationToken;
 
-  export interface PrefixUnaryExpression extends UpdateExpression {
-    kind: Syntax.PrefixUnaryExpression;
-    operator: PrefixUnaryOperator;
-    operand: UnaryExpression;
-  }
-
   export type PostfixUnaryOperator = Syntax.Plus2Token | Syntax.Minus2Token;
-
-  export interface PostfixUnaryExpression extends UpdateExpression {
-    kind: Syntax.PostfixUnaryExpression;
-    operand: LeftHandSideExpression;
-    operator: PostfixUnaryOperator;
-  }
 
   export interface LeftHandSideExpression extends UpdateExpression {
     _leftHandSideExpressionBrand: any;
@@ -1094,32 +948,6 @@ namespace qnr {
 
   export interface ImportExpression extends PrimaryExpression {
     kind: Syntax.ImportKeyword;
-  }
-
-  export interface DeleteExpression extends UnaryExpression {
-    kind: Syntax.DeleteExpression;
-    expression: UnaryExpression;
-  }
-
-  export interface TypeOfExpression extends UnaryExpression {
-    kind: Syntax.TypeOfExpression;
-    expression: UnaryExpression;
-  }
-
-  export interface VoidExpression extends UnaryExpression {
-    kind: Syntax.VoidExpression;
-    expression: UnaryExpression;
-  }
-
-  export interface AwaitExpression extends UnaryExpression {
-    kind: Syntax.AwaitExpression;
-    expression: UnaryExpression;
-  }
-
-  export interface YieldExpression extends Expression {
-    kind: Syntax.YieldExpression;
-    asteriskToken?: AsteriskToken;
-    expression?: Expression;
   }
 
   export interface SyntheticExpression extends Expression {
@@ -1181,13 +1009,6 @@ namespace qnr {
 
   export type BinaryOperatorToken = Token<BinaryOperator>;
 
-  export interface BinaryExpression extends Expression, Declaration {
-    kind: Syntax.BinaryExpression;
-    left: Expression;
-    operatorToken: BinaryOperatorToken;
-    right: Expression;
-  }
-
   export type AssignmentOperatorToken = Token<AssignmentOperator>;
 
   export interface AssignmentExpression<TOperator extends AssignmentOperatorToken> extends BinaryExpression {
@@ -1232,34 +1053,10 @@ namespace qnr {
 
   export type ArrayBindingOrAssignmentPattern = ArrayBindingPattern | ArrayLiteralExpression; // ArrayAssignmentPattern
 
-  export type AssignmentPattern = ObjectLiteralExpression | ArrayLiteralExpression;
-
   export type BindingOrAssignmentPattern = ObjectBindingOrAssignmentPattern | ArrayBindingOrAssignmentPattern;
-
-  export interface ConditionalExpression extends Expression {
-    kind: Syntax.ConditionalExpression;
-    condition: Expression;
-    questionToken: QuestionToken;
-    whenTrue: Expression;
-    colonToken: ColonToken;
-    whenFalse: Expression;
-  }
 
   export type FunctionBody = Block;
   export type ConciseBody = FunctionBody | Expression;
-
-  export interface FunctionExpression extends PrimaryExpression, FunctionLikeDeclarationBase, JSDocContainer {
-    kind: Syntax.FunctionExpression;
-    name?: Identifier;
-    body: FunctionBody; // Required, whereas the member inherited from FunctionDeclaration is optional
-  }
-
-  export interface ArrowFunction extends Expression, FunctionLikeDeclarationBase, JSDocContainer {
-    kind: Syntax.ArrowFunction;
-    equalsGreaterThanToken: EqualsGreaterThanToken;
-    body: ConciseBody;
-    name: never;
-  }
 
   export interface LiteralLikeNode extends Node {
     text: string;
@@ -1295,56 +1092,10 @@ namespace qnr {
 
   export type TemplateLiteral = TemplateExpression | NoSubstitutionLiteral;
 
-  export interface TemplateExpression extends PrimaryExpression {
-    kind: Syntax.TemplateExpression;
-    head: TemplateHead;
-    templateSpans: Nodes<TemplateSpan>;
-  }
-
-  export interface TemplateSpan extends Node {
-    kind: Syntax.TemplateSpan;
-    parent: TemplateExpression;
-    expression: Expression;
-    literal: TemplateMiddle | TemplateTail;
-  }
-
-  export interface ParenthesizedExpression extends PrimaryExpression, JSDocContainer {
-    kind: Syntax.ParenthesizedExpression;
-    expression: Expression;
-  }
-
-  export interface ArrayLiteralExpression extends PrimaryExpression {
-    kind: Syntax.ArrayLiteralExpression;
-    elements: Nodes<Expression>;
-    multiLine?: boolean;
-  }
-
-  export interface SpreadElement extends Expression {
-    kind: Syntax.SpreadElement;
-    parent: ArrayLiteralExpression | CallExpression | NewExpression;
-    expression: Expression;
-  }
-
-  export interface ObjectLiteralExpressionBase<T extends ObjectLiteralElement> extends PrimaryExpression, Declaration {
-    properties: Nodes<T>;
-  }
-
-  export interface ObjectLiteralExpression extends ObjectLiteralExpressionBase<ObjectLiteralElementLike> {
-    kind: Syntax.ObjectLiteralExpression;
-    multiLine?: boolean;
-  }
-
   export type EntityNameExpression = Identifier | PropertyAccessEntityNameExpression;
   export type EntityNameOrEntityNameExpression = EntityName | EntityNameExpression;
 
   export type AccessExpression = PropertyAccessExpression | ElementAccessExpression;
-
-  export interface PropertyAccessExpression extends MemberExpression, NamedDeclaration {
-    kind: Syntax.PropertyAccessExpression;
-    expression: LeftHandSideExpression;
-    questionDotToken?: QuestionDotToken;
-    name: Identifier | PrivateIdentifier;
-  }
 
   export interface PrivateIdentifierPropertyAccessExpression extends PropertyAccessExpression {
     name: PrivateIdentifier;
@@ -1369,13 +1120,6 @@ namespace qnr {
     name: Identifier;
   }
 
-  export interface ElementAccessExpression extends MemberExpression {
-    kind: Syntax.ElementAccessExpression;
-    expression: LeftHandSideExpression;
-    questionDotToken?: QuestionDotToken;
-    argumentExpression: Expression;
-  }
-
   export interface ElementAccessChain extends ElementAccessExpression {
     _optionalChainBrand: any;
   }
@@ -1389,14 +1133,6 @@ namespace qnr {
   }
 
   export type SuperProperty = SuperPropertyAccessExpression | SuperElementAccessExpression;
-
-  export interface CallExpression extends LeftHandSideExpression, Declaration {
-    kind: Syntax.CallExpression;
-    expression: LeftHandSideExpression;
-    questionDotToken?: QuestionDotToken;
-    typeArguments?: Nodes<TypeNode>;
-    arguments: Nodes<Expression>;
-  }
 
   export interface CallChain extends CallExpression {
     _optionalChainBrand: any;
@@ -1454,68 +1190,17 @@ namespace qnr {
     expression: ImportExpression;
   }
 
-  export interface ExpressionWithTypeArguments extends NodeWithTypeArguments {
-    kind: Syntax.ExpressionWithTypeArguments;
-    parent: HeritageClause | JSDocAugmentsTag | JSDocImplementsTag;
-    expression: LeftHandSideExpression;
-  }
-
-  export interface NewExpression extends PrimaryExpression, Declaration {
-    kind: Syntax.NewExpression;
-    expression: LeftHandSideExpression;
-    typeArguments?: Nodes<TypeNode>;
-    arguments?: Nodes<Expression>;
-  }
-
-  export interface TaggedTemplateExpression extends MemberExpression {
-    kind: Syntax.TaggedTemplateExpression;
-    tag: LeftHandSideExpression;
-    typeArguments?: Nodes<TypeNode>;
-    template: TemplateLiteral;
-    questionDotToken?: QuestionDotToken; // NOTE: Invalid syntax, only used to report a grammar error.
-  }
-
   export type CallLikeExpression = CallExpression | NewExpression | TaggedTemplateExpression | Decorator | JsxOpeningLikeElement;
 
-  export interface AsExpression extends Expression {
-    kind: Syntax.AsExpression;
-    expression: Expression;
-    type: TypeNode;
-  }
-
-  export interface TypeAssertion extends UnaryExpression {
-    kind: Syntax.TypeAssertionExpression;
-    type: TypeNode;
-    expression: UnaryExpression;
-  }
-
   export type AssertionExpression = TypeAssertion | AsExpression;
-
-  export interface NonNullExpression extends LeftHandSideExpression {
-    kind: Syntax.NonNullExpression;
-    expression: Expression;
-  }
 
   export interface NonNullChain extends NonNullExpression {
     _optionalChainBrand: any;
   }
 
-  export interface MetaProperty extends PrimaryExpression {
-    kind: Syntax.MetaProperty;
-    keywordToken: Syntax.NewKeyword | Syntax.ImportKeyword;
-    name: Identifier;
-  }
-
   export interface ImportMetaProperty extends MetaProperty {
     keywordToken: Syntax.ImportKeyword;
     name: Identifier & { escapedText: __String & 'meta' };
-  }
-
-  export interface JsxElement extends PrimaryExpression {
-    kind: Syntax.JsxElement;
-    openingElement: JsxOpeningElement;
-    children: Nodes<JsxChild>;
-    closingElement: JsxClosingElement;
   }
 
   export type JsxOpeningLikeElement = JsxSelfClosingElement | JsxOpeningElement;
@@ -1526,77 +1211,10 @@ namespace qnr {
     expression: JsxTagNameExpression;
   }
 
-  export interface JsxAttributes extends ObjectLiteralExpressionBase<JsxAttributeLike> {
-    kind: Syntax.JsxAttributes;
-    parent: JsxOpeningLikeElement;
-  }
-
-  export interface JsxOpeningElement extends Expression {
-    kind: Syntax.JsxOpeningElement;
-    parent: JsxElement;
-    tagName: JsxTagNameExpression;
-    typeArguments?: Nodes<TypeNode>;
-    attributes: JsxAttributes;
-  }
-
-  export interface JsxSelfClosingElement extends PrimaryExpression {
-    kind: Syntax.JsxSelfClosingElement;
-    tagName: JsxTagNameExpression;
-    typeArguments?: Nodes<TypeNode>;
-    attributes: JsxAttributes;
-  }
-
-  export interface JsxFragment extends PrimaryExpression {
-    kind: Syntax.JsxFragment;
-    openingFragment: JsxOpeningFragment;
-    children: Nodes<JsxChild>;
-    closingFragment: JsxClosingFragment;
-  }
-
-  export interface JsxOpeningFragment extends Expression {
-    kind: Syntax.JsxOpeningFragment;
-    parent: JsxFragment;
-  }
-
-  export interface JsxClosingFragment extends Expression {
-    kind: Syntax.JsxClosingFragment;
-    parent: JsxFragment;
-  }
-
-  export interface JsxAttribute extends ObjectLiteralElement {
-    kind: Syntax.JsxAttribute;
-    parent: JsxAttributes;
-    name: Identifier;
-    initializer?: StringLiteral | JsxExpression;
-  }
-
-  export interface JsxSpreadAttribute extends ObjectLiteralElement {
-    kind: Syntax.JsxSpreadAttribute;
-    parent: JsxAttributes;
-    expression: Expression;
-  }
-
-  export interface JsxClosingElement extends Node {
-    kind: Syntax.JsxClosingElement;
-    parent: JsxElement;
-    tagName: JsxTagNameExpression;
-  }
-
-  export interface JsxExpression extends Expression {
-    kind: Syntax.JsxExpression;
-    parent: JsxElement | JsxAttributeLike;
-    dot3Token?: Token<Syntax.Dot3Token>;
-    expression?: Expression;
-  }
-
   export type JsxChild = JsxText | JsxExpression | JsxElement | JsxSelfClosingElement | JsxFragment;
 
   export interface Statement extends Node {
     _statementBrand: any;
-  }
-
-  export interface NotEmittedStatement extends Statement {
-    kind: Syntax.NotEmittedStatement;
   }
 
   export interface EndOfDeclarationMarker extends Statement {
@@ -1612,194 +1230,22 @@ namespace qnr {
     kind: Syntax.MergeDeclarationMarker;
   }
 
-  export interface SyntheticReferenceExpression extends LeftHandSideExpression {
-    kind: Syntax.SyntheticReferenceExpression;
-    expression: Expression;
-    thisArg: Expression;
-  }
-
-  export interface EmptyStatement extends Statement {
-    kind: Syntax.EmptyStatement;
-  }
-
-  export interface DebuggerStatement extends Statement {
-    kind: Syntax.DebuggerStatement;
-  }
-
-  export interface MissingDeclaration extends DeclarationStatement {
-    kind: Syntax.MissingDeclaration;
-    name?: Identifier;
-  }
-
-  export type BlockLike = SourceFile | Block | ModuleBlock | CaseOrDefaultClause;
-
-  export interface Block extends Statement {
-    kind: Syntax.Block;
-    statements: Nodes<Statement>;
-    multiLine?: boolean;
-  }
-
-  export interface VariableStatement extends Statement, JSDocContainer {
-    kind: Syntax.VariableStatement;
-    declarationList: VariableDeclarationList;
-  }
-
-  export interface ExpressionStatement extends Statement, JSDocContainer {
-    kind: Syntax.ExpressionStatement;
-    expression: Expression;
-  }
-
   export interface PrologueDirective extends ExpressionStatement {
     expression: StringLiteral;
-  }
-
-  export interface IfStatement extends Statement {
-    kind: Syntax.IfStatement;
-    expression: Expression;
-    thenStatement: Statement;
-    elseStatement?: Statement;
   }
 
   export interface IterationStatement extends Statement {
     statement: Statement;
   }
 
-  export interface DoStatement extends IterationStatement {
-    kind: Syntax.DoStatement;
-    expression: Expression;
-  }
-
-  export interface WhileStatement extends IterationStatement {
-    kind: Syntax.WhileStatement;
-    expression: Expression;
-  }
-
-  export type ForInitializer = VariableDeclarationList | Expression;
-
-  export interface ForStatement extends IterationStatement {
-    kind: Syntax.ForStatement;
-    initializer?: ForInitializer;
-    condition?: Expression;
-    incrementor?: Expression;
-  }
-
-  export type ForInOrOfStatement = ForInStatement | ForOfStatement;
-
-  export interface ForInStatement extends IterationStatement {
-    kind: Syntax.ForInStatement;
-    initializer: ForInitializer;
-    expression: Expression;
-  }
-
-  export interface ForOfStatement extends IterationStatement {
-    kind: Syntax.ForOfStatement;
-    awaitModifier?: AwaitKeywordToken;
-    initializer: ForInitializer;
-    expression: Expression;
-  }
-
-  export interface BreakStatement extends Statement {
-    kind: Syntax.BreakStatement;
-    label?: Identifier;
-  }
-
-  export interface ContinueStatement extends Statement {
-    kind: Syntax.ContinueStatement;
-    label?: Identifier;
-  }
-
   export type BreakOrContinueStatement = BreakStatement | ContinueStatement;
 
-  export interface ReturnStatement extends Statement {
-    kind: Syntax.ReturnStatement;
-    expression?: Expression;
-  }
-
-  export interface WithStatement extends Statement {
-    kind: Syntax.WithStatement;
-    expression: Expression;
-    statement: Statement;
-  }
-
-  export interface SwitchStatement extends Statement {
-    kind: Syntax.SwitchStatement;
-    expression: Expression;
-    caseBlock: CaseBlock;
-    possiblyExhaustive?: boolean;
-  }
-
-  export interface CaseBlock extends Node {
-    kind: Syntax.CaseBlock;
-    parent: SwitchStatement;
-    clauses: Nodes<CaseOrDefaultClause>;
-  }
-
-  export interface CaseClause extends Node {
-    kind: Syntax.CaseClause;
-    parent: CaseBlock;
-    expression: Expression;
-    statements: Nodes<Statement>;
-    fallthroughFlowNode?: FlowNode;
-  }
-
-  export interface DefaultClause extends Node {
-    kind: Syntax.DefaultClause;
-    parent: CaseBlock;
-    statements: Nodes<Statement>;
-    fallthroughFlowNode?: FlowNode;
-  }
-
   export type CaseOrDefaultClause = CaseClause | DefaultClause;
-
-  export interface LabeledStatement extends Statement, JSDocContainer {
-    kind: Syntax.LabeledStatement;
-    label: Identifier;
-    statement: Statement;
-  }
-
-  export interface ThrowStatement extends Statement {
-    kind: Syntax.ThrowStatement;
-    expression?: Expression;
-  }
-
-  export interface TryStatement extends Statement {
-    kind: Syntax.TryStatement;
-    tryBlock: Block;
-    catchClause?: CatchClause;
-    finallyBlock?: Block;
-  }
-
-  export interface CatchClause extends Node {
-    kind: Syntax.CatchClause;
-    parent: TryStatement;
-    variableDeclaration?: VariableDeclaration;
-    block: Block;
-  }
 
   export type ObjectTypeDeclaration = ClassLikeDeclaration | InterfaceDeclaration | TypeLiteralNode;
 
   export type DeclarationWithTypeParameters = DeclarationWithTypeParameterChildren | JSDocTypedefTag | JSDocCallbackTag | JSDocSignature;
   export type DeclarationWithTypeParameterChildren = SignatureDeclaration | ClassLikeDeclaration | InterfaceDeclaration | TypeAliasDeclaration | JSDocTemplateTag;
-
-  export interface ClassLikeDeclarationBase extends NamedDeclaration, JSDocContainer {
-    kind: Syntax.ClassDeclaration | Syntax.ClassExpression;
-    name?: Identifier;
-    typeParameters?: Nodes<TypeParameterDeclaration>;
-    heritageClauses?: Nodes<HeritageClause>;
-    members: Nodes<ClassElement>;
-  }
-
-  export interface ClassDeclaration extends ClassLikeDeclarationBase, DeclarationStatement {
-    kind: Syntax.ClassDeclaration;
-    /** May be undefined in `export default class { ... }`. */
-    name?: Identifier;
-  }
-
-  export interface ClassExpression extends ClassLikeDeclarationBase, PrimaryExpression {
-    kind: Syntax.ClassExpression;
-  }
-
-  export type ClassLikeDeclaration = ClassDeclaration | ClassExpression;
 
   export interface ClassElement extends NamedDeclaration {
     _classElementBrand: any;
@@ -1812,56 +1258,12 @@ namespace qnr {
     questionToken?: QuestionToken;
   }
 
-  export interface InterfaceDeclaration extends DeclarationStatement, JSDocContainer {
-    kind: Syntax.InterfaceDeclaration;
-    name: Identifier;
-    typeParameters?: Nodes<TypeParameterDeclaration>;
-    heritageClauses?: Nodes<HeritageClause>;
-    members: Nodes<TypeElement>;
-  }
-
-  export interface HeritageClause extends Node {
-    kind: Syntax.HeritageClause;
-    parent: InterfaceDeclaration | ClassLikeDeclaration;
-    token: Syntax.ExtendsKeyword | Syntax.ImplementsKeyword;
-    types: Nodes<ExpressionWithTypeArguments>;
-  }
-
-  export interface TypeAliasDeclaration extends DeclarationStatement, JSDocContainer {
-    kind: Syntax.TypeAliasDeclaration;
-    name: Identifier;
-    typeParameters?: Nodes<TypeParameterDeclaration>;
-    type: TypeNode;
-  }
-
-  export interface EnumMember extends NamedDeclaration, JSDocContainer {
-    kind: Syntax.EnumMember;
-    parent: EnumDeclaration;
-    // This does include ComputedPropertyName, but the parser will give an error
-    // if it parses a ComputedPropertyName in an EnumMember
-    name: PropertyName;
-    initializer?: Expression;
-  }
-
-  export interface EnumDeclaration extends DeclarationStatement, JSDocContainer {
-    kind: Syntax.EnumDeclaration;
-    name: Identifier;
-    members: Nodes<EnumMember>;
-  }
-
   export type ModuleName = Identifier | StringLiteral;
 
   export type ModuleBody = NamespaceBody | JSDocNamespaceBody;
 
   export interface AmbientModuleDeclaration extends ModuleDeclaration {
     body?: ModuleBlock;
-  }
-
-  export interface ModuleDeclaration extends DeclarationStatement, JSDocContainer {
-    kind: Syntax.ModuleDeclaration;
-    parent: ModuleBody | SourceFile;
-    name: ModuleName;
-    body?: ModuleBody | JSDocNamespaceDeclaration;
   }
 
   export type NamespaceBody = ModuleBlock | NamespaceDeclaration;
@@ -1878,113 +1280,15 @@ namespace qnr {
     body?: JSDocNamespaceBody;
   }
 
-  export interface ModuleBlock extends Node, Statement {
-    kind: Syntax.ModuleBlock;
-    parent: ModuleDeclaration;
-    statements: Nodes<Statement>;
-  }
-
   export type ModuleReference = EntityName | ExternalModuleReference;
-
-  export interface ImportEqualsDeclaration extends DeclarationStatement, JSDocContainer {
-    kind: Syntax.ImportEqualsDeclaration;
-    parent: SourceFile | ModuleBlock;
-    name: Identifier;
-
-    // 'EntityName' for an internal module reference, 'ExternalModuleReference' for an external
-    // module reference.
-    moduleReference: ModuleReference;
-  }
-
-  export interface ExternalModuleReference extends Node {
-    kind: Syntax.ExternalModuleReference;
-    parent: ImportEqualsDeclaration;
-    expression: Expression;
-  }
-
-  export interface ImportDeclaration extends Statement {
-    kind: Syntax.ImportDeclaration;
-    parent: SourceFile | ModuleBlock;
-    importClause?: ImportClause;
-    /** If this is not a StringLiteral it will be a grammar error. */
-    moduleSpecifier: Expression;
-  }
 
   export type NamedImportBindings = NamespaceImport | NamedImports;
   export type NamedExportBindings = NamespaceExport | NamedExports;
 
-  export interface ImportClause extends NamedDeclaration {
-    kind: Syntax.ImportClause;
-    parent: ImportDeclaration;
-    isTypeOnly: boolean;
-    name?: Identifier; // Default binding
-    namedBindings?: NamedImportBindings;
-  }
-
-  export interface NamespaceImport extends NamedDeclaration {
-    kind: Syntax.NamespaceImport;
-    parent: ImportClause;
-    name: Identifier;
-  }
-
-  export interface NamespaceExport extends NamedDeclaration {
-    kind: Syntax.NamespaceExport;
-    parent: ExportDeclaration;
-    name: Identifier;
-  }
-
-  export interface NamespaceExportDeclaration extends DeclarationStatement {
-    kind: Syntax.NamespaceExportDeclaration;
-    name: Identifier;
-  }
-
-  export interface ExportDeclaration extends DeclarationStatement, JSDocContainer {
-    kind: Syntax.ExportDeclaration;
-    parent: SourceFile | ModuleBlock;
-    isTypeOnly: boolean;
-    /** Will not be assigned in the case of `export * from "foo";` */
-    exportClause?: NamedExportBindings;
-    /** If this is not a StringLiteral it will be a grammar error. */
-    moduleSpecifier?: Expression;
-  }
-
-  export interface NamedImports extends Node {
-    kind: Syntax.NamedImports;
-    parent: ImportClause;
-    elements: Nodes<ImportSpecifier>;
-  }
-
-  export interface NamedExports extends Node {
-    kind: Syntax.NamedExports;
-    parent: ExportDeclaration;
-    elements: Nodes<ExportSpecifier>;
-  }
-
   export type NamedImportsOrExports = NamedImports | NamedExports;
-
-  export interface ImportSpecifier extends NamedDeclaration {
-    kind: Syntax.ImportSpecifier;
-    parent: NamedImports;
-    propertyName?: Identifier; // Name preceding "as" keyword (or undefined when "as" is absent)
-    name: Identifier; // Declared name
-  }
-
-  export interface ExportSpecifier extends NamedDeclaration {
-    kind: Syntax.ExportSpecifier;
-    parent: NamedExports;
-    propertyName?: Identifier; // Name preceding "as" keyword (or undefined when "as" is absent)
-    name: Identifier; // Declared name
-  }
 
   export type ImportOrExportSpecifier = ImportSpecifier | ExportSpecifier;
   export type TypeOnlyCompatibleAliasDeclaration = ImportClause | NamespaceImport | ImportOrExportSpecifier;
-
-  export interface ExportAssignment extends DeclarationStatement {
-    kind: Syntax.ExportAssignment;
-    parent: SourceFile;
-    isExportEquals?: boolean;
-    expression: Expression;
-  }
 
   export interface FileReference extends TextRange {
     fileName: string;
@@ -2008,45 +1312,8 @@ namespace qnr {
     hasLeadingNewline?: boolean;
   }
 
-  export interface JSDocTypeExpression extends TypeNode {
-    kind: Syntax.JSDocTypeExpression;
-    type: TypeNode;
-  }
-
   export interface JSDocType extends TypeNode {
     _jsDocTypeBrand: any;
-  }
-
-  export interface JSDocAllType extends JSDocType {
-    kind: Syntax.JSDocAllType;
-  }
-
-  export interface JSDocUnknownType extends JSDocType {
-    kind: Syntax.JSDocUnknownType;
-  }
-
-  export interface JSDocNonNullableType extends JSDocType {
-    kind: Syntax.JSDocNonNullableType;
-    type: TypeNode;
-  }
-
-  export interface JSDocNullableType extends JSDocType {
-    kind: Syntax.JSDocNullableType;
-    type: TypeNode;
-  }
-
-  export interface JSDocOptionalType extends JSDocType {
-    kind: Syntax.JSDocOptionalType;
-    type: TypeNode;
-  }
-
-  export interface JSDocFunctionType extends JSDocType, SignatureDeclarationBase {
-    kind: Syntax.JSDocFunctionType;
-  }
-
-  export interface JSDocVariadicType extends JSDocType {
-    kind: Syntax.JSDocVariadicType;
-    type: TypeNode;
   }
 
   export interface JSDocNamepathType extends JSDocType {
@@ -2056,13 +1323,6 @@ namespace qnr {
 
   export type JSDocTypeReferencingNode = JSDocVariadicType | JSDocOptionalType | JSDocNullableType | JSDocNonNullableType;
 
-  export interface JSDoc extends Node {
-    kind: Syntax.JSDocComment;
-    parent: HasJSDoc;
-    tags?: Nodes<JSDocTag>;
-    comment?: string;
-  }
-
   export interface JSDocTag extends Node {
     parent: JSDoc | JSDocTypeLiteral;
     tagName: Identifier;
@@ -2071,114 +1331,6 @@ namespace qnr {
 
   export interface JSDocUnknownTag extends JSDocTag {
     kind: Syntax.JSDocTag;
-  }
-
-  export interface JSDocAugmentsTag extends JSDocTag {
-    kind: Syntax.JSDocAugmentsTag;
-    class: ExpressionWithTypeArguments & { expression: Identifier | PropertyAccessEntityNameExpression };
-  }
-
-  export interface JSDocImplementsTag extends JSDocTag {
-    kind: Syntax.JSDocImplementsTag;
-    class: ExpressionWithTypeArguments & { expression: Identifier | PropertyAccessEntityNameExpression };
-  }
-
-  export interface JSDocAuthorTag extends JSDocTag {
-    kind: Syntax.JSDocAuthorTag;
-  }
-
-  export interface JSDocClassTag extends JSDocTag {
-    kind: Syntax.JSDocClassTag;
-  }
-
-  export interface JSDocPublicTag extends JSDocTag {
-    kind: Syntax.JSDocPublicTag;
-  }
-
-  export interface JSDocPrivateTag extends JSDocTag {
-    kind: Syntax.JSDocPrivateTag;
-  }
-
-  export interface JSDocProtectedTag extends JSDocTag {
-    kind: Syntax.JSDocProtectedTag;
-  }
-
-  export interface JSDocReadonlyTag extends JSDocTag {
-    kind: Syntax.JSDocReadonlyTag;
-  }
-
-  export interface JSDocEnumTag extends JSDocTag, Declaration {
-    parent: JSDoc;
-    kind: Syntax.JSDocEnumTag;
-    typeExpression?: JSDocTypeExpression;
-  }
-
-  export interface JSDocThisTag extends JSDocTag {
-    kind: Syntax.JSDocThisTag;
-    typeExpression?: JSDocTypeExpression;
-  }
-
-  export interface JSDocTemplateTag extends JSDocTag {
-    kind: Syntax.JSDocTemplateTag;
-    constraint: JSDocTypeExpression | undefined;
-    typeParameters: Nodes<TypeParameterDeclaration>;
-  }
-
-  export interface JSDocReturnTag extends JSDocTag {
-    kind: Syntax.JSDocReturnTag;
-    typeExpression?: JSDocTypeExpression;
-  }
-
-  export interface JSDocTypeTag extends JSDocTag {
-    kind: Syntax.JSDocTypeTag;
-    typeExpression: JSDocTypeExpression;
-  }
-
-  export interface JSDocTypedefTag extends JSDocTag, NamedDeclaration {
-    parent: JSDoc;
-    kind: Syntax.JSDocTypedefTag;
-    fullName?: JSDocNamespaceDeclaration | Identifier;
-    name?: Identifier;
-    typeExpression?: JSDocTypeExpression | JSDocTypeLiteral;
-  }
-
-  export interface JSDocCallbackTag extends JSDocTag, NamedDeclaration {
-    parent: JSDoc;
-    kind: Syntax.JSDocCallbackTag;
-    fullName?: JSDocNamespaceDeclaration | Identifier;
-    name?: Identifier;
-    typeExpression: JSDocSignature;
-  }
-
-  export interface JSDocSignature extends JSDocType, Declaration {
-    kind: Syntax.JSDocSignature;
-    typeParameters?: readonly JSDocTemplateTag[];
-    parameters: readonly JSDocParameterTag[];
-    type: JSDocReturnTag | undefined;
-  }
-
-  export interface JSDocPropertyLikeTag extends JSDocTag, Declaration {
-    parent: JSDoc;
-    name: EntityName;
-    typeExpression?: JSDocTypeExpression;
-    /** Whether the property name came before the type -- non-standard for JSDoc, but Typescript-like */
-    isNameFirst: boolean;
-    isBracketed: boolean;
-  }
-
-  export interface JSDocPropertyTag extends JSDocPropertyLikeTag {
-    kind: Syntax.JSDocPropertyTag;
-  }
-
-  export interface JSDocParameterTag extends JSDocPropertyLikeTag {
-    kind: Syntax.JSDocParameterTag;
-  }
-
-  export interface JSDocTypeLiteral extends JSDocType {
-    kind: Syntax.JSDocTypeLiteral;
-    jsDocPropertyTags?: readonly JSDocPropertyLikeTag[];
-    /** If true, then this type literal represents an *array* of its type. */
-    isArrayType?: boolean;
   }
 
   export const enum FlowFlags {
@@ -2271,90 +1423,6 @@ namespace qnr {
     readonly unredirected: SourceFile;
   }
 
-  export interface SourceFile extends Declaration {
-    kind: Syntax.SourceFile;
-    statements: Nodes<Statement>;
-    endOfFileToken: Token<Syntax.EndOfFileToken>;
-
-    fileName: string;
-    path: Path;
-    text: string;
-    resolvedPath: Path;
-    originalFileName: string;
-
-    redirectInfo?: RedirectInfo;
-
-    amdDependencies: readonly AmdDependency[];
-    moduleName?: string;
-    referencedFiles: readonly FileReference[];
-    typeReferenceDirectives: readonly FileReference[];
-    libReferenceDirectives: readonly FileReference[];
-    languageVariant: LanguageVariant;
-    isDeclarationFile: boolean;
-
-    // this map is used by transpiler to supply alternative names for dependencies (i.e. in case of bundling)
-    renamedDependencies?: qa.QReadonlyMap<string>;
-
-    hasNoDefaultLib: boolean;
-
-    languageVersion: ScriptTarget;
-    scriptKind: ScriptKind;
-
-    /**
-     * The first "most obvious" node that makes a file an external module.
-     * This is intended to be the first top-level import/export,
-     * but could be arbitrarily nested (e.g. `import.meta`).
-     */
-    externalModuleIndicator?: Node;
-    // The first node that causes this file to be a CommonJS module
-    commonJsModuleIndicator?: Node;
-    // JS identifier-declarations that are intended to merge with globals
-    jsGlobalAugmentations?: SymbolTable;
-
-    identifiers: qa.QMap<string>; // Map from a string to an interned string
-    nodeCount: number;
-    identifierCount: number;
-    symbolCount: number;
-
-    // File-level diagnostics reported by the parser (includes diagnostics about /// references
-    // as well as code diagnostics).
-    parseDiagnostics: DiagnosticWithLocation[];
-
-    // File-level diagnostics reported by the binder.
-    bindDiagnostics: DiagnosticWithLocation[];
-    bindSuggestionDiagnostics?: DiagnosticWithLocation[];
-
-    // File-level JSDoc diagnostics reported by the JSDoc parser
-    jsDocDiagnostics?: DiagnosticWithLocation[];
-
-    // Stores additional file-level diagnostics reported by the program
-    additionalSyntacticDiagnostics?: readonly DiagnosticWithLocation[];
-
-    // Stores a line map for the file.
-    // This field should never be used directly to obtain line map, use getLineMap function instead.
-    lineMap: readonly number[];
-    classifiableNames?: ReadonlyUnderscoreEscapedMap<true>;
-    // Comments containing @ts-* directives, in order.
-    commentDirectives?: CommentDirective[];
-    // Stores a mapping 'external module reference text' -> 'resolved file name' | undefined
-    // It is used to resolve module names in the checker.
-    // Content of this field should never be used directly - use getResolvedModuleFileName/setResolvedModuleFileName functions instead
-    resolvedModules?: qa.QMap<ResolvedModuleFull | undefined>;
-    resolvedTypeReferenceDirectiveNames: qa.QMap<ResolvedTypeReferenceDirective | undefined>;
-    imports: readonly StringLiteralLike[];
-    // Identifier only if `declare global`
-    moduleAugmentations: readonly (StringLiteral | Identifier)[];
-    patternAmbientModules?: PatternAmbientModule[];
-    ambientModuleNames: readonly string[];
-    checkJsDirective?: CheckJsDirective;
-    version: string;
-    pragmas: ReadonlyPragmaMap;
-    localJsxNamespace?: __String;
-    localJsxFactory?: EntityName;
-
-    exportedModulesFromDeclarationEmit?: ExportedModulesFromDeclarationEmit;
-  }
-
   export interface CommentDirective {
     range: QRange;
     type: CommentDirectiveType;
@@ -2366,16 +1434,6 @@ namespace qnr {
   }
 
   export type ExportedModulesFromDeclarationEmit = readonly Symbol[];
-
-  export interface Bundle extends Node {
-    kind: Syntax.Bundle;
-    prepends: readonly (InputFiles | UnparsedSource)[];
-    sourceFiles: readonly SourceFile[];
-    syntheticFileReferences?: readonly FileReference[];
-    syntheticTypeReferences?: readonly FileReference[];
-    syntheticLibReferences?: readonly FileReference[];
-    hasNoDefaultLib?: boolean;
-  }
 
   export interface InputFiles extends Node {
     kind: Syntax.InputFiles;
@@ -2392,30 +1450,6 @@ namespace qnr {
     oldFileOfCurrentEmit?: boolean;
   }
 
-  export interface UnparsedSource extends Node {
-    kind: Syntax.UnparsedSource;
-    fileName: string;
-    text: string;
-    prologues: readonly UnparsedPrologue[];
-    helpers: readonly UnscopedEmitHelper[] | undefined;
-
-    // References and noDefaultLibAre Dts only
-    referencedFiles: readonly FileReference[];
-    typeReferenceDirectives: readonly string[] | undefined;
-    libReferenceDirectives: readonly FileReference[];
-    hasNoDefaultLib?: boolean;
-
-    sourceMapPath?: string;
-    sourceMapText?: string;
-    syntheticReferences?: readonly UnparsedSyntheticReference[];
-    texts: readonly UnparsedSourceText[];
-    oldFileOfCurrentEmit?: boolean;
-    parsedSourceMap?: RawSourceMap | false | undefined;
-    // Adding this to satisfy services, fix later
-
-    lineAndCharOf(pos: number): LineAndChar;
-  }
-
   export type UnparsedSourceText = UnparsedPrepend | UnparsedTextLike;
   export type UnparsedNode = UnparsedPrologue | UnparsedSourceText | UnparsedSyntheticReference;
 
@@ -2429,13 +1463,6 @@ namespace qnr {
     kind: Syntax.UnparsedPrologue;
     data: string;
     parent: UnparsedSource;
-  }
-
-  export interface UnparsedPrepend extends UnparsedSection {
-    kind: Syntax.UnparsedPrepend;
-    data: string;
-    parent: UnparsedSource;
-    texts: readonly UnparsedTextLike[];
   }
 
   export interface UnparsedTextLike extends UnparsedSection {
@@ -5554,10 +4581,6 @@ namespace qnr {
     getDiagnostics(fileName: string): DiagnosticWithLocation[];
 
     reattachFileDiagnostics(newFile: SourceFile): void;
-  }
-
-  export interface SyntaxList extends Node {
-    _children: Node[];
   }
 
   export const enum ListFormat {
