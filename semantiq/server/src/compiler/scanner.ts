@@ -119,7 +119,7 @@ namespace qnr {
       setTextPos(start ?? 0);
     }
     function setTextPos(p: number) {
-      assert(p >= 0);
+      qa.assert(p >= 0);
       pos = p;
       startPos = p;
       tokPos = p;
@@ -561,12 +561,12 @@ namespace qnr {
       return token;
     }
     function reScanQuestionToken(): Syntax {
-      assert(token === Syntax.Question2Token, "'reScanQuestionToken' should only be called on a '??'");
+      qa.assert(token === Syntax.Question2Token, "'reScanQuestionToken' should only be called on a '??'");
       pos = tokPos + 1;
       return (token = Syntax.QuestionToken);
     }
     function reScanTemplateToken(tagged: boolean): Syntax {
-      assert(token === Syntax.CloseBraceToken, "'reScanTemplateToken' should only be called on a '}'");
+      qa.assert(token === Syntax.CloseBraceToken, "'reScanTemplateToken' should only be called on a '}'");
       pos = tokPos;
       return (token = scanTemplateAndSetTokenValue(tagged));
     }
@@ -1032,14 +1032,14 @@ namespace qnr {
         }
         pos++;
       }
-      assert(r !== undefined);
+      qa.assert(r !== undefined);
       tokValue = v;
       return r;
     }
     function appendIfDirective(ds: CommentDirective[] | undefined, t: string, re: RegExp, line: number) {
       const d = directiveFrom(t, re);
       if (d === undefined) return ds;
-      return append(ds, { range: { pos: line, end: pos }, type: d });
+      return qa.append(ds, { range: { pos: line, end: pos }, type: d });
     }
     function directiveFrom(t: string, re: RegExp) {
       const m = re.exec(t);

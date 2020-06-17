@@ -509,7 +509,7 @@ namespace qnr {
     const markerLength = '<<<<<<<'.length;
     const shebangRegex = /^#!.*/;
 
-    const keywords: MapLike<KeywordSyntax> = {
+    const keywords: qa.MapLike<KeywordSyntax> = {
       abstract: Syntax.AbstractKeyword,
       any: Syntax.AnyKeyword,
       as: Syntax.AsKeyword,
@@ -587,8 +587,8 @@ namespace qnr {
       await: Syntax.AwaitKeyword,
       of: Syntax.OfKeyword,
     };
-    export const strToKey = QMap.create(keywords);
-    const strToTok = QMap.create<Syntax>({
+    export const strToKey = qa.QMap.create(keywords);
+    const strToTok = qa.QMap.create<Syntax>({
       ...keywords,
       '{': Syntax.OpenBraceToken,
       '}': Syntax.CloseBraceToken,
@@ -723,7 +723,7 @@ namespace qnr {
       oneOf(c: number, cs: readonly number[]) {
         if (c < cs[0]) return false;
         let lo = 0;
-        let hi = map.length;
+        let hi = cs.length;
         let mid: number;
         while (lo + 1 < hi) {
           mid = lo + (hi - lo) / 2;
@@ -764,7 +764,7 @@ namespace qnr {
         }
       }
       markerTrivia(s: string, pos: number) {
-        assert(pos >= 0);
+        qa.assert(pos >= 0);
         if (pos === 0 || this.lineBreak(s.charCodeAt(pos - 1))) {
           const c = s.charCodeAt(pos);
           if (pos + markerLength < s.length) {
@@ -777,7 +777,7 @@ namespace qnr {
         return false;
       }
       shebangTrivia(s: string, pos: number) {
-        assert(pos === 0);
+        qa.assert(pos === 0);
         return shebangRegex.test(s);
       }
       trivia(k: Syntax): k is TriviaKind {
@@ -1093,7 +1093,7 @@ namespace qnr {
         return 0;
       }
       extensionFrom(path: string, ext: string, eq: (a: string, b: string) => boolean): string | undefined {
-        if (!startsWith(ext, '.')) ext = '.' + ext;
+        if (!qa.startsWith(ext, '.')) ext = '.' + ext;
         if (path.length >= ext.length && path.charCodeAt(path.length - ext.length) === Codes.dot) {
           const e = path.slice(path.length - ext.length);
           if (eq(e, ext)) return e;
@@ -1126,10 +1126,10 @@ namespace qnr {
         return ss;
       }
       lineOf(starts: readonly number[], pos: number, lowerBound?: number): number {
-        let l = binarySearch(starts, pos, identity, compareValues, lowerBound);
+        let l = qa.binarySearch(starts, pos, qa.identity, qa.compareValues, lowerBound);
         if (l < 0) {
           l = ~l - 1;
-          assert(l !== -1, 'position before beginning of file');
+          qa.assert(l !== -1, 'position before beginning of file');
         }
         return l;
       }
@@ -1141,13 +1141,13 @@ namespace qnr {
         if (line < 0 || line >= starts.length) {
           if (edits) line = line < 0 ? 0 : line >= starts.length ? starts.length - 1 : line;
           else {
-            fail(`Bad line number. Line: ${line}, starts.length: ${starts.length} , line map is correct? ${debug !== undefined ? arraysEqual(starts, this.lineStarts(debug)) : 'unknown'}`);
+            qa.fail(`Bad line number. Line: ${line}, starts.length: ${starts.length} , line map is correct? ${debug !== undefined ? qa.arraysEqual(starts, this.lineStarts(debug)) : 'unknown'}`);
           }
         }
         const p = starts[line] + char;
         if (edits) return p > starts[line + 1] ? starts[line + 1] : typeof debug === 'string' && p > debug.length ? debug.length : p;
-        if (line < starts.length - 1) assert(p < starts[line + 1]);
-        else if (debug !== undefined) assert(p <= debug.length);
+        if (line < starts.length - 1) qa.assert(p < starts[line + 1]);
+        else if (debug !== undefined) qa.assert(p <= debug.length);
         return p;
       }
       shebang(s: string): string | undefined {
@@ -1354,7 +1354,7 @@ namespace qnr {
           pos++;
         }
       } else {
-        assert(c === Codes.bar || c === Codes.equals);
+        qa.assert(c === Codes.bar || c === Codes.equals);
         while (pos < l) {
           const c2 = s.charCodeAt(pos);
           if ((c2 === Codes.equals || c2 === Codes.greaterThan) && c2 !== c && is.markerTrivia(s, pos)) break;

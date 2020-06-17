@@ -66,15 +66,15 @@ namespace qnr {
     const scanner = qs_create(true);
 
     let currentToken: Syntax;
-    let identifiers: QMap<string>;
-    let privateIdentifiers: QMap<string>;
+    let identifiers: qa.QMap<string>;
+    let privateIdentifiers: qa.QMap<string>;
 
     const withDisallowInDecoratorContext = NodeFlags.DisallowInContext | NodeFlags.DecoratorContext;
     let source: SourceFile;
     let diags: DiagnosticWithLocation[];
     let syntaxCursor: IncrementalParser.SyntaxCursor | undefined;
     let sourceText: string;
-    let notParenthesizedArrow: QMap<true> | undefined;
+    let notParenthesizedArrow: qa.QMap<true> | undefined;
     let parseErrorBeforeNextFinishedNode = false;
 
     const tok = () => currentToken;
@@ -951,7 +951,7 @@ namespace qnr {
             return tok() === Syntax.OpenBracketToken || tok() === Syntax.Dot3Token || is.literalPropertyName();
           case Context.HeritageClauseElement:
             const isHeritageClauseObjectLiteral = () => {
-              assert(tok() === Syntax.OpenBraceToken);
+              qa.assert(tok() === Syntax.OpenBraceToken);
               if (next.tok() === Syntax.CloseBraceToken) {
                 const t = next.tok();
                 return t === Syntax.CommaToken || t === Syntax.OpenBraceToken || t === Syntax.ExtendsKeyword || t === Syntax.ImplementsKeyword;
@@ -995,7 +995,7 @@ namespace qnr {
           case Context.JsxChildren:
             return true;
         }
-        return fail("Non-exhaustive case in 'isListElement'.");
+        return qa.fail("Non-exhaustive case in 'isListElement'.");
       }
       private isListTerminator(c: Context) {
         if (tok() === Syntax.EndOfFileToken) return true;
@@ -1120,10 +1120,10 @@ namespace qnr {
         if (scriptKind === ScriptKind.JSON) {
           const r = this.jsonText(fileName, t, languageVersion, syntaxCursor, setParentNodes);
           convertToObjectWorker(r, r.diags, false, undefined, undefined);
-          r.referencedFiles = emptyArray;
-          r.typeReferenceDirectives = emptyArray;
-          r.libReferenceDirectives = emptyArray;
-          r.amdDependencies = emptyArray;
+          r.referencedFiles = qa.emptyArray;
+          r.typeReferenceDirectives = qa.emptyArray;
+          r.libReferenceDirectives = qa.emptyArray;
+          r.amdDependencies = qa.emptyArray;
           r.hasNoDefaultLib = false;
           r.pragmas = emptyMap;
           return r;
@@ -1140,7 +1140,7 @@ namespace qnr {
         };
         processPragmasIntoFields((source as {}) as PragmaContext, reportPragmaDiagnostic);
         source.statements = ctx.parseList(Context.SourceElements, parse.statement);
-        assert(tok() === Syntax.EndOfFileToken);
+        qa.assert(tok() === Syntax.EndOfFileToken);
         source.endOfFileToken = addJSDocComment(parse.tokenNode());
         const getImportMetaIfNecessary = () => {
           const isImportMeta = (n: Node): boolean => {
@@ -1160,7 +1160,7 @@ namespace qnr {
             ? n
             : undefined;
         };
-        source.externalModuleIndicator = forEach(source.statements, isAnExternalModuleIndicatorNode) || getImportMetaIfNecessary();
+        source.externalModuleIndicator = qa.forEach(source.statements, isAnExternalModuleIndicatorNode) || getImportMetaIfNecessary();
         source.commentDirectives = scanner.getDirectives();
         source.nodeCount = create.nodeCount;
         source.identifierCount = create.identifierCount;
@@ -1329,11 +1329,11 @@ namespace qnr {
         const templateHead = (): TemplateHead => {
           if (tagged) reScanHeadOrNoSubstTemplate();
           const n2 = this.literalLikeNode(tok());
-          assert(n2.kind === Syntax.TemplateHead, 'Template head has wrong token kind');
+          qa.assert(n2.kind === Syntax.TemplateHead, 'Template head has wrong token kind');
           return n2 as TemplateHead;
         };
         n.head = templateHead();
-        assert(n.head.kind === Syntax.TemplateHead, 'Template head has wrong token kind');
+        qa.assert(n.head.kind === Syntax.TemplateHead, 'Template head has wrong token kind');
         const ss = [];
         const p = getNodePos();
         do {
@@ -1350,7 +1350,7 @@ namespace qnr {
           reScanTemplateToken(tagged);
           const middleOrTail = (): TemplateMiddle | TemplateTail => {
             const n2 = this.literalLikeNode(tok());
-            assert(n2.kind === Syntax.TemplateMiddle || n2.kind === Syntax.TemplateTail, 'Template fragment has wrong token kind');
+            qa.assert(n2.kind === Syntax.TemplateMiddle || n2.kind === Syntax.TemplateTail, 'Template fragment has wrong token kind');
             return n2 as TemplateMiddle | TemplateTail;
           };
           l = middleOrTail();
@@ -1662,11 +1662,8 @@ namespace qnr {
             return this.tokenNode<TypeNode>();
           case Syntax.ThisKeyword: {
             const thisKeyword = this.thisTypeNode();
-            if (tok() === Syntax.IsKeyword && !scanner.hasPrecedingLineBreak()) {
-              return this.thisTypePredicate(thisKeyword);
-            } else {
-              return thisKeyword;
-            }
+            if (tok() === Syntax.IsKeyword && !scanner.hasPrecedingLineBreak()) return this.thisTypePredicate(thisKeyword);
+            return thisKeyword;
           }
           case Syntax.TypeOfKeyword:
             const isStartOfTypeOfImportType = () => {
@@ -1915,7 +1912,7 @@ namespace qnr {
                   }
                   return Tristate.False;
                 } else {
-                  assert(first === Syntax.LessThanToken);
+                  qa.assert(first === Syntax.LessThanToken);
                   if (!is.identifier()) return Tristate.False;
                   if (source.languageVariant === LanguageVariant.JSX) {
                     const isArrowFunctionInJsx = lookAhead(() => {
@@ -1990,7 +1987,7 @@ namespace qnr {
         return finishNode(n);
       }
       simpleArrowFunctionExpression(identifier: Identifier, asyncModifier?: NodeArray<Modifier> | undefined): ArrowFunction {
-        assert(tok() === Syntax.EqualsGreaterThanToken, 'this.simpleArrowFunctionExpression should only have been called if we had a =>');
+        qa.assert(tok() === Syntax.EqualsGreaterThanToken, 'this.simpleArrowFunctionExpression should only have been called if we had a =>');
         let n: ArrowFunction;
         if (asyncModifier) {
           n = create.node(Syntax.ArrowFunction, asyncModifier.pos);
@@ -2008,7 +2005,7 @@ namespace qnr {
         const p = scanner.getTokenPos();
         if (notParenthesizedArrow && notParenthesizedArrow.has(p.toString())) return;
         const result = this.parenthesizedArrowFunctionExpressionHead(false);
-        if (!result) (notParenthesizedArrow || (notParenthesizedArrow = QMap.create())).set(p.toString(), true);
+        if (!result) (notParenthesizedArrow || (notParenthesizedArrow = qa.QMap.create())).set(p.toString(), true);
         return result;
       }
       parenthesizedArrowFunctionExpressionHead(allowAmbiguity: boolean): ArrowFunction | undefined {
@@ -2172,7 +2169,7 @@ namespace qnr {
           return parseJsx.elementOrSelfClosingElementOrFragment(true);
         }
         const expression = this.leftHandSideExpressionOrHigher();
-        assert(qn.is.leftHandSideExpression(expression));
+        qa.assert(qn.is.leftHandSideExpression(expression));
         if ((tok() === Syntax.Plus2Token || tok() === Syntax.Minus2Token) && !scanner.hasPrecedingLineBreak()) {
           const n = create.node(Syntax.PostfixUnaryExpression, expression.pos);
           n.operand = expression;
@@ -2426,20 +2423,14 @@ namespace qnr {
         }
         n.decorators = this.decorators();
         n.modifiers = this.modifiers();
-        if (this.contextualModifier(Syntax.GetKeyword)) {
-          return this.accessorDeclaration(n as AccessorDeclaration, Syntax.GetAccessor);
-        }
-        if (this.contextualModifier(Syntax.SetKeyword)) {
-          return this.accessorDeclaration(n as AccessorDeclaration, Syntax.SetAccessor);
-        }
+        if (this.contextualModifier(Syntax.GetKeyword)) return this.accessorDeclaration(n as AccessorDeclaration, Syntax.GetAccessor);
+        if (this.contextualModifier(Syntax.SetKeyword)) return this.accessorDeclaration(n as AccessorDeclaration, Syntax.SetAccessor);
         const asteriskToken = this.optionalToken(Syntax.AsteriskToken);
         const tokenIsIdentifier = is.identifier();
         n.name = this.propertyName();
         (n as MethodDeclaration).questionToken = this.optionalToken(Syntax.QuestionToken);
         (n as MethodDeclaration).exclamationToken = this.optionalToken(Syntax.ExclamationToken);
-        if (asteriskToken || tok() === Syntax.OpenParenToken || tok() === Syntax.LessThanToken) {
-          return this.methodDeclaration(<MethodDeclaration>n, asteriskToken);
-        }
+        if (asteriskToken || tok() === Syntax.OpenParenToken || tok() === Syntax.LessThanToken) return this.methodDeclaration(<MethodDeclaration>n, asteriskToken);
         const isShorthandPropertyAssignment = tokenIsIdentifier && tok() !== Syntax.ColonToken;
         if (isShorthandPropertyAssignment) {
           n.kind = Syntax.ShorthandPropertyAssignment;
@@ -2509,7 +2500,7 @@ namespace qnr {
           expression = this.memberExpressionRest(expression, /*allowOptionalChain*/ false);
           typeArguments = tryParse(this.typeArgumentsInExpression);
           if (is.templateStartOfTaggedTemplate()) {
-            assert(!!typeArguments, "Expected a type argument list; all plain tagged template starts should be consumed in 'this.memberExpressionRest'");
+            qa.assert(!!typeArguments, "Expected a type argument list; all plain tagged template starts should be consumed in 'this.memberExpressionRest'");
             expression = this.taggedTemplateRest(expression, /*optionalChain*/ undefined, typeArguments);
             typeArguments = undefined;
           }
@@ -2593,11 +2584,8 @@ namespace qnr {
         this.expected(Syntax.OpenParenToken);
         let initializer!: VariableDeclarationList | Expression;
         if (tok() !== Syntax.SemicolonToken) {
-          if (tok() === Syntax.VarKeyword || tok() === Syntax.LetKeyword || tok() === Syntax.ConstKeyword) {
-            initializer = this.variableDeclarationList(true);
-          } else {
-            initializer = flags.withDisallowIn(this.expression);
-          }
+          if (tok() === Syntax.VarKeyword || tok() === Syntax.LetKeyword || tok() === Syntax.ConstKeyword) initializer = this.variableDeclarationList(true);
+          else initializer = flags.withDisallowIn(this.expression);
         }
         let n: IterationStatement;
         if (awaitToken ? this.expected(Syntax.OfKeyword) : this.optional(Syntax.OfKeyword)) {
@@ -2796,7 +2784,7 @@ namespace qnr {
       }
       declaration(): Statement {
         const modifiers = lookAhead(() => (this.decorators(), this.modifiers()));
-        const isAmbient = some(modifiers, is.declareModifier);
+        const isAmbient = qa.some(modifiers, is.declareModifier);
         if (isAmbient) {
           const n = ctx.tryReuseAmbientDeclaration();
           if (n) return n;
@@ -2846,8 +2834,6 @@ namespace qnr {
             }
           default:
             if (n.decorators || n.modifiers) {
-              // We reached this point because we encountered decorators and/or modifiers and assumed a declaration
-              // would follow. For recovery and error reporting purposes, return an incomplete declaration.
               const missing = create.missingNode<Statement>(Syntax.MissingDeclaration, true, Diagnostics.Declaration_expected);
               missing.pos = n.pos;
               missing.decorators = n.decorators;
@@ -2930,7 +2916,7 @@ namespace qnr {
             n.flags |= NodeFlags.Const;
             break;
           default:
-            fail();
+            qa.fail();
         }
         next.tok();
         if (tok() === Syntax.OfKeyword && lookAhead(can.followContextualOfKeyword)) {
@@ -3071,7 +3057,7 @@ namespace qnr {
         }
         if (is.indexSignature()) return this.indexSignatureDeclaration(<IndexSignatureDeclaration>n);
         if (qy.is.identifierOrKeyword(tok()) || tok() === Syntax.StringLiteral || tok() === Syntax.NumericLiteral || tok() === Syntax.AsteriskToken || tok() === Syntax.OpenBracketToken) {
-          const isAmbient = n.modifiers && some(n.modifiers, is.declareModifier);
+          const isAmbient = n.modifiers && qa.some(n.modifiers, is.declareModifier);
           if (isAmbient) {
             for (const m of n.modifiers!) {
               m.flags |= NodeFlags.Ambient;
@@ -3084,7 +3070,7 @@ namespace qnr {
           n.name = create.missingNode<Identifier>(Syntax.Identifier, true, Diagnostics.Declaration_expected);
           return this.propertyDeclaration(<PropertyDeclaration>n);
         }
-        return fail('Should not have attempted to parse class member declaration.');
+        return qa.fail('Should not have attempted to parse class member declaration.');
       }
       classExpression(): ClassExpression {
         return <ClassExpression>this.classDeclarationOrExpression(create.nodeWithJSDoc(Syntax.Unknown), Syntax.ClassExpression);
@@ -3114,7 +3100,7 @@ namespace qnr {
       }
       heritageClause(): HeritageClause {
         const t = tok();
-        assert(t === Syntax.ExtendsKeyword || t === Syntax.ImplementsKeyword);
+        qa.assert(t === Syntax.ExtendsKeyword || t === Syntax.ImplementsKeyword);
         const n = create.node(Syntax.HeritageClause);
         n.token = t;
         next.tok();
@@ -3236,11 +3222,7 @@ namespace qnr {
           return this.importEqualsDeclaration(<ImportEqualsDeclaration>n, identifier, isTypeOnly);
         }
         n.kind = Syntax.ImportDeclaration;
-        if (
-          identifier || // import id
-          tok() === Syntax.AsteriskToken || // import *
-          tok() === Syntax.OpenBraceToken // import {
-        ) {
+        if (identifier || tok() === Syntax.AsteriskToken || tok() === Syntax.OpenBraceToken) {
           (<ImportDeclaration>n).importClause = this.importClause(identifier, afterImportPos, isTypeOnly);
           this.expected(Syntax.FromKeyword);
         }
@@ -3432,7 +3414,7 @@ namespace qnr {
           n.closingFragment = this.closingFragment(inExpressionContext);
           r = finishNode(n);
         } else {
-          assert(opening.kind === Syntax.JsxSelfClosingElement);
+          qa.assert(opening.kind === Syntax.JsxSelfClosingElement);
           r = opening;
         }
         if (inExpressionContext && tok() === Syntax.LessThanToken) {
@@ -3616,9 +3598,9 @@ namespace qnr {
         const content = sourceText;
         const end = length === undefined ? content.length : start + length;
         length = end - start;
-        assert(start >= 0);
-        assert(start <= end);
-        assert(end <= content.length);
+        qa.assert(start >= 0);
+        qa.assert(start <= end);
+        qa.assert(end <= content.length);
         if (!qy.is.jsDocLike(content, start)) return;
         return scanner.scanRange(start + 3, length - 5, () => {
           let state = State.SawAsterisk;
@@ -3811,7 +3793,7 @@ namespace qnr {
         return jsDocTypeExpression ? { jsDocTypeExpression, diagnostics } : undefined;
       }
       tag(margin: number) {
-        assert(tok() === Syntax.AtToken);
+        qa.assert(tok() === Syntax.AtToken);
         const start = scanner.getTokenPos();
         next.tokJSDoc();
         const tagName = this.identifierName(undefined);
@@ -4004,7 +3986,7 @@ namespace qnr {
           const start = scanner.getStartPos();
           let children: JSDocPropertyLikeTag[] | undefined;
           while ((child = tryParse(() => this.childParameterOrPropertyTag(target, indent, name)))) {
-            if (child.kind === Syntax.JSDocParameterTag || child.kind === Syntax.JSDocPropertyTag) children = append(children, child);
+            if (child.kind === Syntax.JSDocParameterTag || child.kind === Syntax.JSDocPropertyTag) children = qa.append(children, child);
           }
           if (children) {
             n2 = create.node(Syntax.JSDocTypeLiteral, start);
@@ -4017,14 +3999,14 @@ namespace qnr {
         return;
       }
       returnTag(start: number, tagName: Identifier): JSDocReturnTag {
-        if (some(this.tags, isJSDocReturnTag)) parse.errorAt(tagName.pos, scanner.getTokenPos(), Diagnostics._0_tag_already_specified, tagName.escapedText);
+        if (qa.some(this.tags, isJSDocReturnTag)) parse.errorAt(tagName.pos, scanner.getTokenPos(), Diagnostics._0_tag_already_specified, tagName.escapedText);
         const n = create.node(Syntax.JSDocReturnTag, start);
         n.tagName = tagName;
         n.typeExpression = this.tryTypeExpression();
         return finishNode(n);
       }
       typeTag(start: number, tagName: Identifier): JSDocTypeTag {
-        if (some(this.tags, isJSDocTypeTag)) parse.errorAt(tagName.pos, scanner.getTokenPos(), Diagnostics._0_tag_already_specified, tagName.escapedText);
+        if (qa.some(this.tags, isJSDocTypeTag)) parse.errorAt(tagName.pos, scanner.getTokenPos(), Diagnostics._0_tag_already_specified, tagName.escapedText);
         const n = create.node(Syntax.JSDocTypeTag, start);
         n.tagName = tagName;
         n.typeExpression = this.typeExpression(true);
@@ -4153,7 +4135,7 @@ namespace qnr {
                 if (e) addRelatedInfo(e, createDiagnosticForNode(source, Diagnostics.The_tag_was_first_specified_here));
                 break;
               } else childTypeTag = child;
-            } else n2.jsDocPropertyTags = append(n2.jsDocPropertyTags as MutableNodeArray<JSDocPropertyTag>, child);
+            } else n2.jsDocPropertyTags = qa.append(n2.jsDocPropertyTags as MutableNodeArray<JSDocPropertyTag>, child);
           }
           if (n2) {
             if (typeExpression && typeExpression.type.kind === Syntax.ArrayType) n2.isArrayType = true;
@@ -4188,7 +4170,7 @@ namespace qnr {
         const n2 = create.node(Syntax.JSDocSignature, start) as JSDocSignature;
         n2.parameters = [];
         while ((child = tryParse(() => this.childParameterOrPropertyTag(PropertyLike.CallbackParameter, indent) as JSDocParameterTag))) {
-          n2.parameters = append(n2.parameters as MutableNodeArray<JSDocParameterTag>, child);
+          n2.parameters = qa.append(n2.parameters as MutableNodeArray<JSDocParameterTag>, child);
         }
         const returnTag = tryParse(() => {
           if (this.optional(Syntax.AtToken)) {
@@ -4252,7 +4234,7 @@ namespace qnr {
         }
       }
       tryChildTag(target: PropertyLike, indent: number): JSDocTypeTag | JSDocPropertyTag | JSDocParameterTag | false {
-        assert(tok() === Syntax.AtToken);
+        qa.assert(tok() === Syntax.AtToken);
         const start = scanner.getStartPos();
         next.tokJSDoc();
         const tagName = this.identifierName();
@@ -4289,7 +4271,6 @@ namespace qnr {
           skipWhitespaceOrAsterisk();
           typeParameters.push(n);
         } while (this.optional(Syntax.CommaToken));
-
         const n = create.node(Syntax.JSDocTemplateTag, start);
         n.tagName = tagName;
         n.constraint = constraint;
@@ -4329,8 +4310,8 @@ namespace qnr {
       syntaxCursor = _syntaxCursor;
       diags = [];
       ctx.init();
-      identifiers = QMap.create<string>();
-      privateIdentifiers = QMap.create<string>();
+      identifiers = qa.QMap.create<string>();
+      privateIdentifiers = qa.QMap.create<string>();
       create.identifierCount = 0;
       create.nodeCount = 0;
       switch (scriptKind) {
@@ -4445,7 +4426,7 @@ namespace qnr {
       const saveParseErrorBeforeNextFinishedNode = parseErrorBeforeNextFinishedNode;
       const saveContextFlags = flags.value;
       const r = isLookAhead ? scanner.lookAhead(cb) : scanner.tryScan(cb);
-      assert(saveContextFlags === flags.value);
+      qa.assert(saveContextFlags === flags.value);
       if (!r || isLookAhead) {
         currentToken = saveToken;
         diags.length = saveParseDiagnosticsLength;
@@ -4475,7 +4456,7 @@ namespace qnr {
       return (currentToken = scanner.reScanHeadOrNoSubstTemplate());
     }
     function addJSDocComment<T extends HasJSDoc>(n: T): T {
-      assert(!n.jsDoc);
+      qa.assert(!n.jsDoc);
       const jsDoc = mapDefined(getJSDocCommentRanges(n, source.text), (comment) => parseJSDoc.comment(n, comment.pos, comment.end - comment.pos));
       if (jsDoc.length) n.jsDoc = jsDoc;
       return n;
@@ -4527,7 +4508,7 @@ namespace qnr {
       return a.escapedText === b.escapedText;
     }
     function hasModifierOfKind(n: Node, k: Syntax) {
-      return some(n.modifiers, (m) => m.kind === k);
+      return qa.some(n.modifiers, (m) => m.kind === k);
     }
     return {
       parseSource: parse.source.bind(parse),
@@ -4578,15 +4559,15 @@ namespace qnr {
         return Parser.parseSourceFile(source.fileName, newText, source.languageVersion, undefined, /*setParentNodes*/ true, source.scriptKind);
       }
       const incrementalSourceFile = <IncrementalNode>(<Node>source);
-      assert(!incrementalSourceFile.hasBeenIncrementallyParsed);
+      qa.assert(!incrementalSourceFile.hasBeenIncrementallyParsed);
       incrementalSourceFile.hasBeenIncrementallyParsed = true;
       const oldText = source.text;
       const syntaxCursor = createSyntaxCursor(source);
       const changeRange = extendToAffectedRange(source, textChangeRange);
       checkChangeRange(source, newText, changeRange, aggressiveChecks);
-      assert(changeRange.span.start <= textChangeRange.span.start);
-      assert(textSpanEnd(changeRange.span) === textSpanEnd(textChangeRange.span));
-      assert(textSpanEnd(textChangeRangeNewSpan(changeRange)) === textSpanEnd(textChangeRangeNewSpan(textChangeRange)));
+      qa.assert(changeRange.span.start <= textChangeRange.span.start);
+      qa.assert(textSpanEnd(changeRange.span) === textSpanEnd(textChangeRange.span));
+      qa.assert(textSpanEnd(textChangeRangeNewSpan(changeRange)) === textSpanEnd(textChangeRangeNewSpan(textChangeRange)));
       const delta = textChangeRangeNewSpan(changeRange).length - changeRange.span.length;
       updateTokenPositionsAndMarkElements(
         incrementalSourceFile,
@@ -4618,16 +4599,16 @@ namespace qnr {
       for (const directive of oldDirectives) {
         const { range, type } = directive;
         if (range.end < changeStart) {
-          commentDirectives = append(commentDirectives, directive);
+          commentDirectives = qa.append(commentDirectives, directive);
         } else if (range.pos > changeRangeOldEnd) {
           addNewlyScannedDirectives();
           const updatedDirective: CommentDirective = {
             range: { pos: range.pos + delta, end: range.end + delta },
             type,
           };
-          commentDirectives = append(commentDirectives, updatedDirective);
+          commentDirectives = qa.append(commentDirectives, updatedDirective);
           if (aggressiveChecks) {
-            assert(oldText.substring(range.pos, range.end) === newText.substring(updatedDirective.range.pos, updatedDirective.range.end));
+            qa.assert(oldText.substring(range.pos, range.end) === newText.substring(updatedDirective.range.pos, updatedDirective.range.end));
           }
         }
       }
@@ -4663,7 +4644,7 @@ namespace qnr {
         if (n._children) n._children = undefined;
         n.pos += delta;
         n.end += delta;
-        if (aggressiveChecks && shouldCheck(n)) assert(text === newText.substring(n.pos, n.end));
+        if (aggressiveChecks && shouldCheck(n)) qa.assert(text === newText.substring(n.pos, n.end));
         qn.forEach.child(n, visitNode, visitArray);
         if (qn.is.withJSDocNodes(n)) {
           for (const jsDocComment of n.jsDoc!) {
@@ -4682,17 +4663,17 @@ namespace qnr {
       }
     }
     function adjustIntersectingElement(element: IncrementalElement, changeStart: number, changeRangeOldEnd: number, changeRangeNewEnd: number, delta: number) {
-      assert(element.end >= changeStart, 'Adjusting an element that was entirely before the change range');
-      assert(element.pos <= changeRangeOldEnd, 'Adjusting an element that was entirely after the change range');
-      assert(element.pos <= element.end);
+      qa.assert(element.end >= changeStart, 'Adjusting an element that was entirely before the change range');
+      qa.assert(element.pos <= changeRangeOldEnd, 'Adjusting an element that was entirely after the change range');
+      qa.assert(element.pos <= element.end);
       element.pos = Math.min(element.pos, changeRangeNewEnd);
       if (element.end >= changeRangeOldEnd) {
         element.end += delta;
       } else element.end = Math.min(element.end, changeRangeNewEnd);
-      assert(element.pos <= element.end);
+      qa.assert(element.pos <= element.end);
       if (element.parent) {
-        assert(element.pos >= element.parent.pos);
-        assert(element.end <= element.parent.end);
+        qa.assert(element.pos >= element.parent.pos);
+        qa.assert(element.end <= element.parent.end);
       }
     }
     function updateTokenPositionsAndMarkElements(
@@ -4708,7 +4689,7 @@ namespace qnr {
       visitNode(source);
       return;
       function visitNode(child: IncrementalNode) {
-        assert(child.pos <= child.end);
+        qa.assert(child.pos <= child.end);
         if (child.pos > changeRangeOldEnd) {
           moveElementEntirelyPastChangeRange(child, /*isArray*/ false, delta, oldText, newText, aggressiveChecks);
           return;
@@ -4727,11 +4708,11 @@ namespace qnr {
           checkNodePositions(child, aggressiveChecks);
           return;
         }
-        assert(fullEnd < changeStart);
+        qa.assert(fullEnd < changeStart);
       }
 
       function visitArray(array: IncrementalNodeArray) {
-        assert(array.pos <= array.end);
+        qa.assert(array.pos <= array.end);
         if (array.pos > changeRangeOldEnd) {
           moveElementEntirelyPastChangeRange(array, /*isArray*/ true, delta, oldText, newText, aggressiveChecks);
           return;
@@ -4746,14 +4727,14 @@ namespace qnr {
           }
           return;
         }
-        assert(fullEnd < changeStart);
+        qa.assert(fullEnd < changeStart);
       }
     }
     function checkNodePositions(n: Node, aggressive: boolean) {
       if (aggressive) {
         let pos = n.pos;
         const visitNode = (c: Node) => {
-          assert(c.pos >= pos);
+          qa.assert(c.pos >= pos);
           pos = c.end;
         };
         if (qn.is.withJSDocNodes(n)) {
@@ -4762,7 +4743,7 @@ namespace qnr {
           }
         }
         qn.forEach.child(n, visitNode);
-        assert(pos <= n.end);
+        qa.assert(pos <= n.end);
       }
     }
     function extendToAffectedRange(source: SourceFile, changeRange: TextChangeRange): TextChangeRange {
@@ -4770,7 +4751,7 @@ namespace qnr {
       let start = changeRange.span.start;
       for (let i = 0; start > 0 && i <= maxLookahead; i++) {
         const nearestNode = findNearestNodeStartingBeforeOrAtPosition(source, start);
-        assert(nearestNode.pos <= start);
+        qa.assert(nearestNode.pos <= start);
         const position = nearestNode.pos;
         start = Math.max(0, position - 1);
       }
@@ -4804,11 +4785,11 @@ namespace qnr {
             qn.forEach.child(child, visit);
             return true;
           } else {
-            assert(child.end <= position);
+            qa.assert(child.end <= position);
             lastNodeEntirelyBeforePosition = child;
           }
         } else {
-          assert(child.pos > position);
+          qa.assert(child.pos > position);
           return true;
         }
         return;
@@ -4817,14 +4798,14 @@ namespace qnr {
     function checkChangeRange(source: SourceFile, newText: string, textChangeRange: TextChangeRange, aggressiveChecks: boolean) {
       const oldText = source.text;
       if (textChangeRange) {
-        assert(oldText.length - textChangeRange.span.length + textChangeRange.newLength === newText.length);
+        qa.assert(oldText.length - textChangeRange.span.length + textChangeRange.newLength === newText.length);
         if (aggressiveChecks || Debug.shouldAssert(AssertionLevel.VeryAggressive)) {
           const oldTextPrefix = oldText.substr(0, textChangeRange.span.start);
           const newTextPrefix = newText.substr(0, textChangeRange.span.start);
-          assert(oldTextPrefix === newTextPrefix);
+          qa.assert(oldTextPrefix === newTextPrefix);
           const oldTextSuffix = oldText.substring(textSpanEnd(textChangeRange.span), oldText.length);
           const newTextSuffix = newText.substring(textSpanEnd(textChangeRangeNewSpan(textChangeRange)), newText.length);
-          assert(oldTextSuffix === newTextSuffix);
+          qa.assert(oldTextSuffix === newTextSuffix);
         }
       }
     }
@@ -4846,7 +4827,7 @@ namespace qnr {
     function createSyntaxCursor(source: SourceFile): SyntaxCursor {
       let currentArray: NodeArray<Node> = source.statements;
       let currentArrayIndex = 0;
-      assert(currentArrayIndex < currentArray.length);
+      qa.assert(currentArrayIndex < currentArray.length);
       let current = currentArray[currentArrayIndex];
       let lastQueriedPosition = InvalidPosition.Value;
       return {
@@ -4859,7 +4840,7 @@ namespace qnr {
             if (!current || current.pos !== position) findHighestListElementThatStartsAtPosition(position);
           }
           lastQueriedPosition = position;
-          assert(!current || current.pos === position);
+          qa.assert(!current || current.pos === position);
           return <IncrementalNode>current;
         },
       };
@@ -4918,11 +4899,11 @@ namespace qnr {
 
   export function processCommentPragmas(ctx: PragmaContext, sourceText: string): void {
     const ps: PragmaPseudoMapEntry[] = [];
-    for (const r of qy.get.leadingCommentRanges(sourceText, 0) || emptyArray) {
+    for (const r of qy.get.leadingCommentRanges(sourceText, 0) || qa.emptyArray) {
       const comment = sourceText.substring(r.pos, r.end);
       extractPragmas(ps, r, comment);
     }
-    ctx.pragmas = QMap.create() as PragmaMap;
+    ctx.pragmas = qa.QMap.create() as PragmaMap;
     for (const p of ps) {
       if (ctx.pragmas.has(p.name)) {
         const v = ctx.pragmas.get(p.name);
@@ -4949,7 +4930,7 @@ namespace qnr {
           const referencedFiles = c.referencedFiles;
           const typeReferenceDirectives = c.typeReferenceDirectives;
           const libReferenceDirectives = c.libReferenceDirectives;
-          forEach(toArray(entryOrList) as PragmaPseudoMap['reference'][], (arg) => {
+          qa.forEach(toArray(entryOrList) as PragmaPseudoMap['reference'][], (arg) => {
             const { types, lib, path } = arg.arguments;
             if (arg.arguments['no-default-lib']) {
               c.hasNoDefaultLib = true;
@@ -4979,7 +4960,7 @@ namespace qnr {
         }
         case 'ts-nocheck':
         case 'ts-check': {
-          forEach(toArray(entryOrList), (entry) => {
+          qa.forEach(toArray(entryOrList), (entry) => {
             if (!c.checkJsDirective || entry.range.pos > c.checkJsDirective.pos) {
               c.checkJsDirective = {
                 enabled: k === 'ts-check',
@@ -4993,12 +4974,12 @@ namespace qnr {
         case 'jsx':
           return;
         default:
-          fail('Unhandled pragma kind');
+          qa.fail('Unhandled pragma kind');
       }
     });
   }
 
-  const namedArgRegExCache = QMap.create<RegExp>();
+  const namedArgRegExCache = qa.QMap.create<RegExp>();
 
   const tripleSlashXMLCommentStartRegEx = /^\/\/\/\s*<(\S+)\s.*?\/>/im;
   const singleLinePragmaRegEx = /^\/\/\/?\s*@(\S+)\s*(.*)\s*$/im;
@@ -5051,7 +5032,7 @@ namespace qnr {
         for (let i = 0; i < p.args.length; i++) {
           const a = p.args[i];
           if (!args[i] && !a.optional) return 'fail';
-          if (a.captureSpan) return fail('Capture spans not yet implemented for non-xml pragmas');
+          if (a.captureSpan) return qa.fail('Capture spans not yet implemented for non-xml pragmas');
           m[a.name] = args[i];
         }
         return m;
