@@ -894,10 +894,6 @@ namespace qnr {
 
   export type StringLiteralLike = StringLiteral | NoSubstitutionLiteral;
 
-  export interface Expression extends Node {
-    _expressionBrand: any;
-  }
-
   export interface UnaryExpression extends Expression {
     _unaryExpressionBrand: any;
   }
@@ -1176,23 +1172,6 @@ namespace qnr {
 
   export type JsxChild = JsxText | JsxExpression | JsxElement | JsxSelfClosingElement | JsxFragment;
 
-  export interface Statement extends Node {
-    _statementBrand: any;
-  }
-
-  export interface EndOfDeclarationMarker extends Statement {
-    kind: Syntax.EndOfDeclarationMarker;
-  }
-
-  export interface CommaListExpression extends Expression {
-    kind: Syntax.CommaListExpression;
-    elements: Nodes<Expression>;
-  }
-
-  export interface MergeDeclarationMarker extends Statement {
-    kind: Syntax.MergeDeclarationMarker;
-  }
-
   export interface PrologueDirective extends ExpressionStatement {
     expression: StringLiteral;
   }
@@ -1285,12 +1264,6 @@ namespace qnr {
   }
 
   export type JSDocTypeReferencingNode = JSDocVariadicType | JSDocOptionalType | JSDocNullableType | JSDocNonNullableType;
-
-  export interface JSDocTag extends Node {
-    parent: JSDoc | JSDocTypeLiteral;
-    tagName: Identifier;
-    comment?: string;
-  }
 
   export interface JSDocUnknownTag extends JSDocTag {
     kind: Syntax.JSDocTag;
@@ -1414,7 +1387,6 @@ namespace qnr {
   }
 
   export type UnparsedSourceText = UnparsedPrepend | UnparsedTextLike;
-  export type UnparsedNode = UnparsedPrologue | UnparsedSourceText | UnparsedSyntheticReference;
 
   export interface UnparsedSection extends Node {
     kind: Syntax;
@@ -1431,12 +1403,6 @@ namespace qnr {
   export interface UnparsedTextLike extends UnparsedSection {
     kind: Syntax.UnparsedText | Syntax.UnparsedInternalText;
     parent: UnparsedSource;
-  }
-
-  export interface UnparsedSyntheticReference extends UnparsedSection {
-    kind: Syntax.UnparsedSyntheticReference;
-    parent: UnparsedSource;
-    section: BundleFileHasNoDefaultLib | BundleFileReference;
   }
 
   export interface JsonSourceFile extends SourceFile {

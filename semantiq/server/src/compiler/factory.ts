@@ -718,7 +718,7 @@ namespace qnr {
             /*type*/ undefined,
             createBlock(statements, true)
           ),
-          /*typeArguments*/ undefined,
+          undefined,
           /*argumentsArray*/ paramValue ? [paramValue] : []
         );
       }
@@ -728,7 +728,7 @@ namespace qnr {
       export function createImmediatelyInvokedArrowFunction(statements: readonly Statement[], param?: ParameterDeclaration, paramValue?: Expression) {
         return createCall(
           createArrowFunction(undefined, /*typeParameters*/ undefined, /*parameters*/ param ? [param] : [], /*type*/ undefined, /*equalsGreaterThanToken*/ undefined, createBlock(statements, true)),
-          /*typeArguments*/ undefined,
+          undefined,
           /*argumentsArray*/ paramValue ? [paramValue] : []
         );
       }
@@ -889,6 +889,28 @@ namespace qnr {
       members: Nodes<ClassElement>;
     }
     export type ClassLikeDeclaration = ClassDeclaration | ClassExpression;
+
+    export interface CommaListExpression extends Expression {
+      kind: Syntax.CommaListExpression;
+      elements: Nodes<Expression>;
+    }
+    export namespace CommaListExpression {
+      function flattenCommaElements(node: Expression): Expression | readonly Expression[] {
+        if (isSynthesized(node) && !qn.is.parseTreeNode(node) && !node.original && !node.emitNode && !node.id) {
+          if (node.kind === Syntax.CommaListExpression) return (<CommaListExpression>node).elements;
+          if (qn.is.kind(node, BinaryExpression) && node.operatorToken.kind === Syntax.CommaToken) return [node.left, node.right];
+        }
+        return node;
+      }
+      export function createCommaList(elements: readonly Expression[]) {
+        const node = <CommaListExpression>qn.createSynthesized(Syntax.CommaListExpression);
+        node.elements = NodeArray.create(sameFlatMap(elements, flattenCommaElements));
+        return node;
+      }
+      export function updateCommaList(node: CommaListExpression, elements: readonly Expression[]) {
+        return node.elements !== elements ? updateNode(createCommaList(elements), node) : node;
+      }
+    }
 
     export interface ComputedPropertyName extends Node {
       kind: Syntax.ComputedPropertyName;
@@ -1191,6 +1213,18 @@ namespace qnr {
       }
     }
 
+    export interface EndOfDeclarationMarker extends Statement {
+      kind: Syntax.EndOfDeclarationMarker;
+    }
+    export namespace EndOfDeclarationMarker {
+      export function createEndOfDeclarationMarker(original: Node) {
+        const node = <EndOfDeclarationMarker>qn.createSynthesized(Syntax.EndOfDeclarationMarker);
+        node.emitNode = {} as EmitNode;
+        node.original = original;
+        return node;
+      }
+    }
+
     export interface EnumDeclaration extends DeclarationStatement, JSDocContainer {
       kind: Syntax.EnumDeclaration;
       name: Identifier;
@@ -1235,40 +1269,6 @@ namespace qnr {
       }
       export function updateEnumMember(node: EnumMember, name: PropertyName, initializer: Expression | undefined) {
         return node.name !== name || node.initializer !== initializer ? updateNode(createEnumMember(name, initializer), node) : node;
-      }
-    }
-
-    export interface ExpressionStatement extends Statement, JSDocContainer {
-      kind: Syntax.ExpressionStatement;
-      expression: Expression;
-    }
-    export namespace ExpressionStatement {
-      export const kind = Syntax.ExpressionStatement;
-      export function createExpressionStatement(expression: Expression): ExpressionStatement {
-        const node = <ExpressionStatement>qn.createSynthesized(Syntax.ExpressionStatement);
-        node.expression = parenthesizeExpressionForExpressionStatement(expression);
-        return node;
-      }
-      export function updateExpressionStatement(node: ExpressionStatement, expression: Expression) {
-        return node.expression !== expression ? updateNode(createExpressionStatement(expression), node) : node;
-      }
-    }
-
-    export interface ExpressionWithTypeArguments extends NodeWithTypeArguments {
-      kind: Syntax.ExpressionWithTypeArguments;
-      parent: HeritageClause | JSDocAugmentsTag | JSDocImplementsTag;
-      expression: LeftHandSideExpression;
-    }
-    export namespace ExpressionWithTypeArguments {
-      export const kind = Syntax.ExpressionWithTypeArguments;
-      export function createExpressionWithTypeArguments(typeArguments: readonly TypeNode[] | undefined, expression: Expression) {
-        const node = <ExpressionWithTypeArguments>qn.createSynthesized(Syntax.ExpressionWithTypeArguments);
-        node.expression = parenthesizeForAccess(expression);
-        node.typeArguments = NodeArray.from(typeArguments);
-        return node;
-      }
-      export function updateExpressionWithTypeArguments(node: ExpressionWithTypeArguments, typeArguments: readonly TypeNode[] | undefined, expression: Expression) {
-        return node.typeArguments !== typeArguments || node.expression !== expression ? updateNode(createExpressionWithTypeArguments(typeArguments, expression), node) : node;
       }
     }
 
@@ -1360,6 +1360,246 @@ namespace qnr {
       }
       export function updateExportSpecifier(node: ExportSpecifier, propertyName: Identifier | undefined, name: Identifier) {
         return node.propertyName !== propertyName || node.name !== name ? updateNode(createExportSpecifier(propertyName, name), node) : node;
+      }
+    }
+
+    export interface Expression extends Node {
+      _expressionBrand: any;
+    }
+    export namespace Expression {
+      export function createExpressionFromEntityName(node: EntityName | Expression): Expression {
+        if (qn.is.kind(QualifiedName, node)) {
+          const left = createExpressionFromEntityName(node.left);
+          const right = getMutableClone(node.right);
+          return setTextRange(createPropertyAccess(left, right), node);
+        } else {
+          return getMutableClone(node);
+        }
+      }
+      export function createExpressionForPropertyName(memberName: Exclude<PropertyName, PrivateIdentifier>): Expression {
+        if (qn.is.kind(Identifier, memberName)) {
+          return createLiteral(memberName);
+        } else if (qn.is.kind(ComputedPropertyName, memberName)) {
+          return getMutableClone(memberName.expression);
+        } else {
+          return getMutableClone(memberName);
+        }
+      }
+      export function createExpressionForObjectLiteralElementLike(node: ObjectLiteralExpression, property: ObjectLiteralElementLike, receiver: Expression): Expression | undefined {
+        if (property.name && qn.is.kind(PrivateIdentifier, property.name)) {
+          Debug.failBadSyntax(property.name, 'Private identifiers are not allowed in object literals.');
+        }
+        function createExpressionForAccessorDeclaration(
+          properties: NodeArray<Declaration>,
+          property: AccessorDeclaration & { name: Exclude<PropertyName, PrivateIdentifier> },
+          receiver: Expression,
+          multiLine: boolean
+        ) {
+          const { firstAccessor, getAccessor, setAccessor } = getAllAccessorDeclarations(properties, property);
+          if (property === firstAccessor) {
+            const properties: ObjectLiteralElementLike[] = [];
+            if (getAccessor) {
+              const getterFunction = createFunctionExpression(
+                getAccessor.modifiers,
+                /*asteriskToken*/ undefined,
+                /*name*/ undefined,
+                /*typeParameters*/ undefined,
+                getAccessor.parameters,
+                /*type*/ undefined,
+                getAccessor.body! // TODO: GH#18217
+              );
+              setTextRange(getterFunction, getAccessor);
+              setOriginalNode(getterFunction, getAccessor);
+              const getter = createPropertyAssignment('get', getterFunction);
+              properties.push(getter);
+            }
+
+            if (setAccessor) {
+              const setterFunction = createFunctionExpression(
+                setAccessor.modifiers,
+                /*asteriskToken*/ undefined,
+                /*name*/ undefined,
+                /*typeParameters*/ undefined,
+                setAccessor.parameters,
+                /*type*/ undefined,
+                setAccessor.body! // TODO: GH#18217
+              );
+              setTextRange(setterFunction, setAccessor);
+              setOriginalNode(setterFunction, setAccessor);
+              const setter = createPropertyAssignment('set', setterFunction);
+              properties.push(setter);
+            }
+
+            properties.push(createPropertyAssignment('enumerable', getAccessor || setAccessor ? createFalse() : createTrue()));
+            properties.push(createPropertyAssignment('configurable', createTrue()));
+
+            const expression = setTextRange(
+              createCall(createPropertyAccess(createIdentifier('Object'), 'defineProperty'), undefined, [
+                receiver,
+                createExpressionForPropertyName(property.name),
+                createObjectLiteral(properties, multiLine),
+              ]),
+              firstAccessor
+            );
+
+            return aggregateTransformFlags(expression);
+          }
+
+          return;
+        }
+        function createExpressionForPropertyAssignment(property: PropertyAssignment, receiver: Expression) {
+          return aggregateTransformFlags(
+            setOriginalNode(setTextRange(createAssignment(createMemberAccessForPropertyName(receiver, property.name, property.name), property.initializer), property), property)
+          );
+        }
+        function createExpressionForShorthandPropertyAssignment(property: ShorthandPropertyAssignment, receiver: Expression) {
+          return aggregateTransformFlags(
+            setOriginalNode(
+              setTextRange(createAssignment(createMemberAccessForPropertyName(receiver, property.name, property.name), getSynthesizedClone(property.name)), property),
+              /*original*/ property
+            )
+          );
+        }
+        function createExpressionForMethodDeclaration(method: MethodDeclaration, receiver: Expression) {
+          return aggregateTransformFlags(
+            setOriginalNode(
+              setTextRange(
+                createAssignment(
+                  createMemberAccessForPropertyName(receiver, method.name, method.name),
+                  setOriginalNode(
+                    setTextRange(
+                      createFunctionExpression(
+                        method.modifiers,
+                        method.asteriskToken,
+                        /*name*/ undefined,
+                        /*typeParameters*/ undefined,
+                        method.parameters,
+                        /*type*/ undefined,
+                        method.body! // TODO: GH#18217
+                      ),
+                      method
+                    ),
+                    /*original*/ method
+                  )
+                ),
+                method
+              ),
+              /*original*/ method
+            )
+          );
+        }
+        switch (property.kind) {
+          case Syntax.GetAccessor:
+          case Syntax.SetAccessor:
+            return createExpressionForAccessorDeclaration(node.properties, property as typeof property & { name: Exclude<PropertyName, PrivateIdentifier> }, receiver, !!node.multiLine);
+          case Syntax.PropertyAssignment:
+            return createExpressionForPropertyAssignment(property, receiver);
+          case Syntax.ShorthandPropertyAssignment:
+            return createExpressionForShorthandPropertyAssignment(property, receiver);
+          case Syntax.MethodDeclaration:
+            return createExpressionForMethodDeclaration(property, receiver);
+        }
+        return;
+      }
+      export function createTypeCheck(value: Expression, tag: TypeOfTag) {
+        return tag === 'undefined' ? createStrictEquality(value, createVoidZero()) : createStrictEquality(createTypeOf(value), createLiteral(tag));
+      }
+      export function createMemberAccessForPropertyName(target: Expression, memberName: PropertyName, location?: TextRange): MemberExpression {
+        if (qn.is.kind(ComputedPropertyName, memberName)) {
+          return setTextRange(createElementAccess(target, memberName.expression), location);
+        } else {
+          const expression = setTextRange(
+            qn.is.kind(Identifier, memberName) || qn.is.kind(PrivateIdentifier, memberName) ? createPropertyAccess(target, memberName) : createElementAccess(target, memberName),
+            memberName
+          );
+          getOrCreateEmitNode(expression).flags |= EmitFlags.NoNestedSourceMaps;
+          return expression;
+        }
+      }
+      export function createFunctionCall(func: Expression, thisArg: Expression, argumentsList: readonly Expression[], location?: TextRange) {
+        return setTextRange(createCall(createPropertyAccess(func, 'call'), undefined, [thisArg, ...argumentsList]), location);
+      }
+      export function createFunctionApply(func: Expression, thisArg: Expression, argumentsExpression: Expression, location?: TextRange) {
+        return setTextRange(createCall(createPropertyAccess(func, 'apply'), undefined, [thisArg, argumentsExpression]), location);
+      }
+      export function createArraySlice(array: Expression, start?: number | Expression) {
+        const argumentsList: Expression[] = [];
+        if (start !== undefined) {
+          argumentsList.push(typeof start === 'number' ? createLiteral(start) : start);
+        }
+        return createCall(createPropertyAccess(array, 'slice'), undefined, argumentsList);
+      }
+      export function createArrayConcat(array: Expression, values: readonly Expression[]) {
+        return createCall(createPropertyAccess(array, 'concat'), undefined, values);
+      }
+      export function createMathPow(left: Expression, right: Expression, location?: TextRange) {
+        return setTextRange(createCall(createPropertyAccess(createIdentifier('Math'), 'pow'), undefined, [left, right]), location);
+      }
+
+      export function getLeftmostExpression(node: Expression, stopAtCallExpressions: boolean) {
+        while (true) {
+          switch (node.kind) {
+            case Syntax.PostfixUnaryExpression:
+              node = (<PostfixUnaryExpression>node).operand;
+              continue;
+            case Syntax.BinaryExpression:
+              node = (<BinaryExpression>node).left;
+              continue;
+            case Syntax.ConditionalExpression:
+              node = (<ConditionalExpression>node).condition;
+              continue;
+            case Syntax.TaggedTemplateExpression:
+              node = (<TaggedTemplateExpression>node).tag;
+              continue;
+            case Syntax.CallExpression:
+              if (stopAtCallExpressions) return node;
+            case Syntax.AsExpression:
+            case Syntax.ElementAccessExpression:
+            case Syntax.PropertyAccessExpression:
+            case Syntax.NonNullExpression:
+            case Syntax.PartiallyEmittedExpression:
+              node = (<CallExpression | PropertyAccessExpression | ElementAccessExpression | AsExpression | NonNullExpression | PartiallyEmittedExpression>node).expression;
+              continue;
+          }
+          return node;
+        }
+      }
+      export function isCommaSequence(node: Expression): node is (BinaryExpression & { operatorToken: Token<Syntax.CommaToken> }) | CommaListExpression {
+        return (node.kind === Syntax.BinaryExpression && (<BinaryExpression>node).operatorToken.kind === Syntax.CommaToken) || node.kind === Syntax.CommaListExpression;
+      }
+    }
+
+    export interface ExpressionStatement extends Statement, JSDocContainer {
+      kind: Syntax.ExpressionStatement;
+      expression: Expression;
+    }
+    export namespace ExpressionStatement {
+      export const kind = Syntax.ExpressionStatement;
+      export function createExpressionStatement(expression: Expression): ExpressionStatement {
+        const node = <ExpressionStatement>qn.createSynthesized(Syntax.ExpressionStatement);
+        node.expression = parenthesizeExpressionForExpressionStatement(expression);
+        return node;
+      }
+      export function updateExpressionStatement(node: ExpressionStatement, expression: Expression) {
+        return node.expression !== expression ? updateNode(createExpressionStatement(expression), node) : node;
+      }
+    }
+
+    export interface ExpressionWithTypeArguments extends NodeWithTypeArguments {
+      kind: Syntax.ExpressionWithTypeArguments;
+      parent: HeritageClause | JSDocAugmentsTag | JSDocImplementsTag;
+      expression: LeftHandSideExpression;
+    }
+    export namespace ExpressionWithTypeArguments {
+      export const kind = Syntax.ExpressionWithTypeArguments;
+      export function createExpressionWithTypeArguments(typeArguments: readonly TypeNode[] | undefined, expression: Expression) {
+        const node = <ExpressionWithTypeArguments>qn.createSynthesized(Syntax.ExpressionWithTypeArguments);
+        node.expression = parenthesizeForAccess(expression);
+        node.typeArguments = NodeArray.from(typeArguments);
+        return node;
+      }
+      export function updateExpressionWithTypeArguments(node: ExpressionWithTypeArguments, typeArguments: readonly TypeNode[] | undefined, expression: Expression) {
+        return node.typeArguments !== typeArguments || node.expression !== expression ? updateNode(createExpressionWithTypeArguments(typeArguments, expression), node) : node;
       }
     }
 
@@ -1718,6 +1958,20 @@ namespace qnr {
         if (emitFlags) setEmitFlags(qualifiedName, emitFlags);
         return qualifiedName;
       }
+      export function getLocalNameForExternalImport(node: ImportDeclaration | ExportDeclaration | ImportEqualsDeclaration, sourceFile: SourceFile): Identifier | undefined {
+        const namespaceDeclaration = getNamespaceDeclarationNode(node);
+        if (namespaceDeclaration && !isDefaultImport(node)) {
+          const name = namespaceDeclaration.name;
+          return qn.is.generatedIdentifier(name) ? name : createIdentifier(getSourceTextOfNodeFromSourceFile(sourceFile, name) || idText(name));
+        }
+        if (node.kind === Syntax.ImportDeclaration && node.importClause) {
+          return getGeneratedNameForNode(node);
+        }
+        if (node.kind === Syntax.ExportDeclaration && node.moduleSpecifier) {
+          return getGeneratedNameForNode(node);
+        }
+        return;
+      }
     }
 
     export interface IfStatement extends Statement {
@@ -1992,6 +2246,12 @@ namespace qnr {
     }
     export namespace JSDoc {
       export const kind = Syntax.JSDocComment;
+      export function createJSDocComment(comment?: string | undefined, tags?: NodeArray<JSDocTag> | undefined) {
+        const node = qn.createSynthesized(Syntax.JSDocComment) as JSDoc;
+        node.comment = comment;
+        node.tags = tags;
+        return node;
+      }
     }
 
     export interface JSDocAllType extends JSDocType {
@@ -2230,6 +2490,20 @@ namespace qnr {
         tag.parameters = parameters;
         tag.type = type;
         return tag;
+      }
+    }
+
+    export interface JSDocTag extends Node {
+      parent: JSDoc | JSDocTypeLiteral;
+      tagName: Identifier;
+      comment?: string;
+    }
+    export namespace JSDocTag {
+      export function createJSDocTag<T extends JSDocTag>(kind: T['kind'], tagName: string, comment?: string): T {
+        const node = qn.createSynthesized(kind) as T;
+        node.tagName = createIdentifier(tagName);
+        node.comment = comment;
+        return node;
       }
     }
 
@@ -2502,6 +2776,72 @@ namespace qnr {
       export function createJsxOpeningFragment() {
         return <JsxOpeningFragment>qn.createSynthesized(Syntax.JsxOpeningFragment);
       }
+      function createReactNamespace(reactNamespace: string, parent: JsxOpeningLikeElement | JsxOpeningFragment) {
+        // To ensure the emit resolver can properly resolve the namespace, we need to
+        // treat this identifier as if it were a source tree node by clearing the `Synthesized`
+        // flag and setting a parent node.
+        const react = createIdentifier(reactNamespace || 'React');
+        react.flags &= ~NodeFlags.Synthesized;
+        // Set the parent that is in parse tree
+        // this makes sure that parent chain is intact for checker to traverse complete scope tree
+        react.parent = qn.get.parseTreeOf(parent);
+        return react;
+      }
+      function createJsxFactoryExpressionFromEntityName(jsxFactory: EntityName, parent: JsxOpeningLikeElement | JsxOpeningFragment): Expression {
+        if (qn.is.kind(QualifiedName, jsxFactory)) {
+          const left = createJsxFactoryExpressionFromEntityName(jsxFactory.left, parent);
+          const right = createIdentifier(idText(jsxFactory.right));
+          right.escapedText = jsxFactory.right.escapedText;
+          return createPropertyAccess(left, right);
+        } else {
+          return createReactNamespace(idText(jsxFactory), parent);
+        }
+      }
+      function createJsxFactoryExpression(jsxFactoryEntity: EntityName | undefined, reactNamespace: string, parent: JsxOpeningLikeElement | JsxOpeningFragment): Expression {
+        return jsxFactoryEntity ? createJsxFactoryExpressionFromEntityName(jsxFactoryEntity, parent) : createPropertyAccess(createReactNamespace(reactNamespace, parent), 'createElement');
+      }
+      export function createExpressionForJsxElement(
+        jsxFactoryEntity: EntityName | undefined,
+        reactNamespace: string,
+        tagName: Expression,
+        props: Expression,
+        children: readonly Expression[],
+        parentElement: JsxOpeningLikeElement,
+        location: TextRange
+      ): LeftHandSideExpression {
+        const argumentsList = [tagName];
+        if (props) argumentsList.push(props);
+        if (children && children.length > 0) {
+          if (!props) argumentsList.push(createNull());
+          if (children.length > 1) {
+            for (const child of children) {
+              startOnNewLine(child);
+              argumentsList.push(child);
+            }
+          } else argumentsList.push(children[0]);
+        }
+        return setTextRange(createCall(createJsxFactoryExpression(jsxFactoryEntity, reactNamespace, parentElement), undefined, argumentsList), location);
+      }
+      export function createExpressionForJsxFragment(
+        jsxFactoryEntity: EntityName | undefined,
+        reactNamespace: string,
+        children: readonly Expression[],
+        parentElement: JsxOpeningFragment,
+        location: TextRange
+      ): LeftHandSideExpression {
+        const tagName = createPropertyAccess(createReactNamespace(reactNamespace, parentElement), 'Fragment');
+        const argumentsList = [<Expression>tagName];
+        argumentsList.push(createNull());
+        if (children && children.length > 0) {
+          if (children.length > 1) {
+            for (const child of children) {
+              startOnNewLine(child);
+              argumentsList.push(child);
+            }
+          } else argumentsList.push(children[0]);
+        }
+        return setTextRange(createCall(createJsxFactoryExpression(jsxFactoryEntity, reactNamespace, parentElement), undefined, argumentsList), location);
+      }
     }
 
     export interface JsxSelfClosingElement extends PrimaryExpression {
@@ -2636,6 +2976,18 @@ namespace qnr {
       }
       export function update(n: MappedTypeNode, r: ReadonlyToken | PlusToken | MinusToken | undefined, p: TypeParameterDeclaration, q?: QuestionToken | PlusToken | MinusToken, t?: TypeNode) {
         return n.readonlyToken !== r || n.typeParameter !== p || n.questionToken !== q || n.type !== t ? updateNode(create(r, p, q, t), n) : n;
+      }
+    }
+
+    export interface MergeDeclarationMarker extends Statement {
+      kind: Syntax.MergeDeclarationMarker;
+    }
+    export namespace MergeDeclarationMarker {
+      export function createMergeDeclarationMarker(original: Node) {
+        const node = <MergeDeclarationMarker>qn.createSynthesized(Syntax.MergeDeclarationMarker);
+        node.emitNode = {} as EmitNode;
+        node.original = original;
+        return node;
       }
     }
 
@@ -3059,6 +3411,75 @@ namespace qnr {
       }
       export function update(n: OptionalTypeNode, t: TypeNode): OptionalTypeNode {
         return n.type !== t ? updateNode(create(t), n) : n;
+      }
+    }
+
+    export const enum OuterExpressionKinds {
+      Parentheses = 1 << 0,
+      TypeAssertions = 1 << 1,
+      NonNullAssertions = 1 << 2,
+      PartiallyEmittedExpressions = 1 << 3,
+      Assertions = TypeAssertions | NonNullAssertions,
+      All = Parentheses | Assertions | PartiallyEmittedExpressions,
+    }
+    export type OuterExpression = ParenthesizedExpression | TypeAssertion | AsExpression | NonNullExpression | PartiallyEmittedExpression;
+    export namespace OuterExpression {
+      export function isOuterExpression(node: Node, kinds = OuterExpressionKinds.All): node is OuterExpression {
+        switch (node.kind) {
+          case Syntax.ParenthesizedExpression:
+            return (kinds & OuterExpressionKinds.Parentheses) !== 0;
+          case Syntax.TypeAssertionExpression:
+          case Syntax.AsExpression:
+            return (kinds & OuterExpressionKinds.TypeAssertions) !== 0;
+          case Syntax.NonNullExpression:
+            return (kinds & OuterExpressionKinds.NonNullAssertions) !== 0;
+          case Syntax.PartiallyEmittedExpression:
+            return (kinds & OuterExpressionKinds.PartiallyEmittedExpressions) !== 0;
+        }
+        return false;
+      }
+      export function skipOuterExpressions(node: Expression, kinds?: OuterExpressionKinds): Expression;
+      export function skipOuterExpressions(node: Node, kinds?: OuterExpressionKinds): Node;
+      export function skipOuterExpressions(node: Node, kinds = OuterExpressionKinds.All) {
+        while (isOuterExpression(node, kinds)) {
+          node = node.expression;
+        }
+        return node;
+      }
+      export function skipAssertions(node: Expression): Expression;
+      export function skipAssertions(node: Node): Node;
+      export function skipAssertions(node: Node): Node {
+        return skipOuterExpressions(node, OuterExpressionKinds.Assertions);
+      }
+      function updateOuterExpression(outerExpression: OuterExpression, expression: Expression) {
+        switch (outerExpression.kind) {
+          case Syntax.ParenthesizedExpression:
+            return updateParen(outerExpression, expression);
+          case Syntax.TypeAssertionExpression:
+            return updateTypeAssertion(outerExpression, outerExpression.type, expression);
+          case Syntax.AsExpression:
+            return updateAsExpression(outerExpression, expression, outerExpression.type);
+          case Syntax.NonNullExpression:
+            return updateNonNullExpression(outerExpression, expression);
+          case Syntax.PartiallyEmittedExpression:
+            return updatePartiallyEmittedExpression(outerExpression, expression);
+        }
+      }
+      function isIgnorableParen(node: Expression) {
+        return (
+          node.kind === Syntax.ParenthesizedExpression &&
+          isSynthesized(node) &&
+          isSynthesized(getSourceMapRange(node)) &&
+          isSynthesized(getCommentRange(node)) &&
+          !some(getSyntheticLeadingComments(node)) &&
+          !some(getSyntheticTrailingComments(node))
+        );
+      }
+      export function recreateOuterExpressions(outerExpression: Expression | undefined, innerExpression: Expression, kinds = OuterExpressionKinds.All): Expression {
+        if (outerExpression && isOuterExpression(outerExpression, kinds) && !isIgnorableParen(outerExpression)) {
+          return updateOuterExpression(outerExpression, recreateOuterExpressions(outerExpression.expression, innerExpression));
+        }
+        return innerExpression;
       }
     }
 
@@ -3512,75 +3933,6 @@ namespace qnr {
       }
     }
 
-    export interface SpreadElement extends Expression {
-      kind: Syntax.SpreadElement;
-      parent: ArrayLiteralExpression | CallExpression | NewExpression;
-      expression: Expression;
-    }
-    export namespace SpreadElement {
-      export const kind = Syntax.SpreadElement;
-      export function createSpread(expression: Expression) {
-        const node = <SpreadElement>qn.createSynthesized(Syntax.SpreadElement);
-        node.expression = parenthesizeExpressionForList(expression);
-        return node;
-      }
-      export function updateSpread(node: SpreadElement, expression: Expression) {
-        return node.expression !== expression ? updateNode(createSpread(expression), node) : node;
-      }
-    }
-
-    export interface SpreadAssignment extends ObjectLiteralElement, JSDocContainer {
-      parent: ObjectLiteralExpression;
-      kind: Syntax.SpreadAssignment;
-      expression: Expression;
-    }
-    export namespace SpreadAssignment {
-      export const kind = Syntax.SpreadAssignment;
-      export function createSpreadAssignment(expression: Expression) {
-        const node = <SpreadAssignment>qn.createSynthesized(Syntax.SpreadAssignment);
-        node.expression = parenthesizeExpressionForList(expression);
-        return node;
-      }
-      export function updateSpreadAssignment(node: SpreadAssignment, expression: Expression) {
-        return node.expression !== expression ? updateNode(createSpreadAssignment(expression), node) : node;
-      }
-    }
-
-    export interface StringLiteral extends LiteralExpression, Declaration {
-      kind: Syntax.StringLiteral;
-      textSourceNode?: Identifier | StringLiteralLike | NumericLiteral;
-      singleQuote?: boolean;
-    }
-    export namespace StringLiteral {
-      export const kind = Syntax.StringLiteral;
-      export function create(t: string) {
-        const n = qn.createSynthesized(Syntax.StringLiteral);
-        n.text = t;
-        return n;
-      }
-      export function like(n: Node): n is StringLiteralLike {
-        return n.kind === Syntax.StringLiteral || n.kind === Syntax.NoSubstitutionLiteral;
-      }
-      export function orNumericLiteralLike(n: Node): n is StringLiteralLike | NumericLiteral {
-        return like(n) || qn.is.kind(NumericLiteral, n);
-      }
-      export function orJsxExpressionKind(n: Node): n is StringLiteral | JsxExpression {
-        const k = n.kind;
-        return k === Syntax.StringLiteral || k === Syntax.JsxExpression;
-      }
-      export function orNumberLiteralExpression(e: Expression) {
-        return (
-          orNumericLiteralLike(e) ||
-          (e.kind === Syntax.PrefixUnaryExpression && (e as PrefixUnaryExpression).operator === Syntax.MinusToken && (e as PrefixUnaryExpression).operand.kind === Syntax.NumericLiteral)
-        );
-      }
-      function createLiteralFromNode(sourceNode: Exclude<PropertyNameLiteral, PrivateIdentifier>): StringLiteral {
-        const node = StringLiteral.create(getTextOfIdentifierOrLiteral(sourceNode));
-        node.textSourceNode = sourceNode;
-        return node;
-      }
-    }
-
     export interface SourceFile extends Declaration {
       kind: Syntax.SourceFile;
       statements: Nodes<Statement>;
@@ -3713,6 +4065,186 @@ namespace qnr {
           return updateNode(updated, node);
         }
 
+        return node;
+      }
+    }
+
+    export interface SpreadElement extends Expression {
+      kind: Syntax.SpreadElement;
+      parent: ArrayLiteralExpression | CallExpression | NewExpression;
+      expression: Expression;
+    }
+    export namespace SpreadElement {
+      export const kind = Syntax.SpreadElement;
+      export function createSpread(expression: Expression) {
+        const node = <SpreadElement>qn.createSynthesized(Syntax.SpreadElement);
+        node.expression = parenthesizeExpressionForList(expression);
+        return node;
+      }
+      export function updateSpread(node: SpreadElement, expression: Expression) {
+        return node.expression !== expression ? updateNode(createSpread(expression), node) : node;
+      }
+    }
+
+    export interface SpreadAssignment extends ObjectLiteralElement, JSDocContainer {
+      parent: ObjectLiteralExpression;
+      kind: Syntax.SpreadAssignment;
+      expression: Expression;
+    }
+    export namespace SpreadAssignment {
+      export const kind = Syntax.SpreadAssignment;
+      export function createSpreadAssignment(expression: Expression) {
+        const node = <SpreadAssignment>qn.createSynthesized(Syntax.SpreadAssignment);
+        node.expression = parenthesizeExpressionForList(expression);
+        return node;
+      }
+      export function updateSpreadAssignment(node: SpreadAssignment, expression: Expression) {
+        return node.expression !== expression ? updateNode(createSpreadAssignment(expression), node) : node;
+      }
+    }
+
+    export interface Statement extends Node {
+      _statementBrand: any;
+    }
+    export namespace Statement {
+      function isUseStrictPrologue(node: ExpressionStatement): boolean {
+        return qn.is.kind(StringLiteral, node.expression) && node.expression.text === 'use strict';
+      }
+      export function addPrologue(target: Statement[], source: readonly Statement[], ensureUseStrict?: boolean, visitor?: (node: Node) => VisitResult<Node>): number {
+        const offset = addStandardPrologue(target, source, ensureUseStrict);
+        return addCustomPrologue(target, source, offset, visitor);
+      }
+      export function addStandardPrologue(target: Statement[], source: readonly Statement[], ensureUseStrict?: boolean): number {
+        assert(target.length === 0, 'Prologue directives should be at the first statement in the target statements array');
+        let foundUseStrict = false;
+        let statementOffset = 0;
+        const numStatements = source.length;
+        while (statementOffset < numStatements) {
+          const statement = source[statementOffset];
+          if (qn.is.prologueDirective(statement)) {
+            if (isUseStrictPrologue(statement)) {
+              foundUseStrict = true;
+            }
+            target.push(statement);
+          } else {
+            break;
+          }
+          statementOffset++;
+        }
+        if (ensureUseStrict && !foundUseStrict) {
+          target.push(startOnNewLine(createStatement(createLiteral('use strict'))));
+        }
+        return statementOffset;
+      }
+      export function addCustomPrologue(
+        target: Statement[],
+        source: readonly Statement[],
+        statementOffset: number,
+        visitor?: (node: Node) => VisitResult<Node>,
+        filter?: (node: Node) => boolean
+      ): number;
+      export function addCustomPrologue(
+        target: Statement[],
+        source: readonly Statement[],
+        statementOffset: number | undefined,
+        visitor?: (node: Node) => VisitResult<Node>,
+        filter?: (node: Node) => boolean
+      ): number | undefined;
+      export function addCustomPrologue(
+        target: Statement[],
+        source: readonly Statement[],
+        statementOffset: number | undefined,
+        visitor?: (node: Node) => VisitResult<Node>,
+        filter: (node: Node) => boolean = () => true
+      ): number | undefined {
+        const numStatements = source.length;
+        while (statementOffset !== undefined && statementOffset < numStatements) {
+          const statement = source[statementOffset];
+          if (qn.get.emitFlags(statement) & EmitFlags.CustomPrologue && filter(statement)) {
+            qa.append(target, visitor ? visitNode(statement, visitor, isStatement) : statement);
+          } else {
+            break;
+          }
+          statementOffset++;
+        }
+        return statementOffset;
+      }
+      export function findUseStrictPrologue(statements: readonly Statement[]): Statement | undefined {
+        for (const statement of statements) {
+          if (qn.is.prologueDirective(statement)) {
+            if (isUseStrictPrologue(statement)) {
+              return statement;
+            }
+          } else {
+            break;
+          }
+        }
+        return;
+      }
+      export function startsWithUseStrict(statements: readonly Statement[]) {
+        const firstStatement = firstOrUndefined(statements);
+        return firstStatement !== undefined && qn.is.prologueDirective(firstStatement) && isUseStrictPrologue(firstStatement);
+      }
+      export function createForOfBindingStatement(node: ForInitializer, boundValue: Expression): Statement {
+        if (qn.is.kind(VariableDeclarationList, node)) {
+          const firstDeclaration = first(node.declarations);
+          const updatedDeclaration = updateVariableDeclaration(firstDeclaration, firstDeclaration.name, /*typeNode*/ undefined, boundValue);
+          return setTextRange(createVariableStatement(undefined, updateVariableDeclarationList(node, [updatedDeclaration])), node);
+        } else {
+          const updatedExpression = setTextRange(createAssignment(node, boundValue), node);
+          return setTextRange(createStatement(updatedExpression), node);
+        }
+      }
+      export function insertLeadingStatement(dest: Statement, source: Statement) {
+        if (qn.is.kind(Block, dest)) {
+          return updateBlock(dest, setTextRange(NodeArray.create([source, ...dest.statements]), dest.statements));
+        } else {
+          return createBlock(NodeArray.create([dest, source]), true);
+        }
+      }
+      export function restoreEnclosingLabel(node: Statement, outermostLabeledStatement: LabeledStatement | undefined, afterRestoreLabelCallback?: (node: LabeledStatement) => void): Statement {
+        if (!outermostLabeledStatement) return node;
+        const updated = updateLabel(
+          outermostLabeledStatement,
+          outermostLabeledStatement.label,
+          outermostLabeledStatement.statement.kind === Syntax.LabeledStatement ? restoreEnclosingLabel(node, <LabeledStatement>outermostLabeledStatement.statement) : node
+        );
+        if (afterRestoreLabelCallback) afterRestoreLabelCallback(outermostLabeledStatement);
+        return updated;
+      }
+    }
+
+    export interface StringLiteral extends LiteralExpression, Declaration {
+      kind: Syntax.StringLiteral;
+      textSourceNode?: Identifier | StringLiteralLike | NumericLiteral;
+      singleQuote?: boolean;
+    }
+    export namespace StringLiteral {
+      export const kind = Syntax.StringLiteral;
+      export function create(t: string) {
+        const n = qn.createSynthesized(Syntax.StringLiteral);
+        n.text = t;
+        return n;
+      }
+      export function like(n: Node): n is StringLiteralLike {
+        return n.kind === Syntax.StringLiteral || n.kind === Syntax.NoSubstitutionLiteral;
+      }
+      export function orNumericLiteralLike(n: Node): n is StringLiteralLike | NumericLiteral {
+        return like(n) || qn.is.kind(NumericLiteral, n);
+      }
+      export function orJsxExpressionKind(n: Node): n is StringLiteral | JsxExpression {
+        const k = n.kind;
+        return k === Syntax.StringLiteral || k === Syntax.JsxExpression;
+      }
+      export function orNumberLiteralExpression(e: Expression) {
+        return (
+          orNumericLiteralLike(e) ||
+          (e.kind === Syntax.PrefixUnaryExpression && (e as PrefixUnaryExpression).operator === Syntax.MinusToken && (e as PrefixUnaryExpression).operand.kind === Syntax.NumericLiteral)
+        );
+      }
+      function createLiteralFromNode(sourceNode: Exclude<PropertyNameLiteral, PrivateIdentifier>): StringLiteral {
+        const node = StringLiteral.create(getTextOfIdentifierOrLiteral(sourceNode));
+        node.textSourceNode = sourceNode;
         return node;
       }
     }
@@ -4027,6 +4559,8 @@ namespace qnr {
       }
     }
 
+    export type TypeOfTag = 'undefined' | 'number' | 'boolean' | 'string' | 'symbol' | 'object' | 'function';
+
     export interface TypeOperatorNode extends TypeNode {
       kind: Syntax.TypeOperator;
       operator: Syntax.KeyOfKeyword | Syntax.UniqueKeyword | Syntax.ReadonlyKeyword;
@@ -4151,6 +4685,38 @@ namespace qnr {
       }
     }
 
+    export type UnparsedNode = UnparsedPrologue | UnparsedSourceText | UnparsedSyntheticReference;
+    export namespace UnparsedNode {
+      function createUnparsedNode(section: BundleFileSection, parent: UnparsedSource): UnparsedNode {
+        const node = createNode(mapBundleFileSectionKindToSyntax(section.kind), section.pos, section.end) as UnparsedNode;
+        node.parent = parent;
+        node.data = section.data;
+        return node;
+      }
+      function mapBundleFileSectionKindToSyntax(kind: BundleFileSectionKind): Syntax {
+        switch (kind) {
+          case BundleFileSectionKind.Prologue:
+            return Syntax.UnparsedPrologue;
+          case BundleFileSectionKind.Prepend:
+            return Syntax.UnparsedPrepend;
+          case BundleFileSectionKind.Internal:
+            return Syntax.UnparsedInternalText;
+          case BundleFileSectionKind.Text:
+            return Syntax.UnparsedText;
+
+          case BundleFileSectionKind.EmitHelpers:
+          case BundleFileSectionKind.NoDefaultLib:
+          case BundleFileSectionKind.Reference:
+          case BundleFileSectionKind.Type:
+          case BundleFileSectionKind.Lib:
+            return fail(`BundleFileSectionKind: ${kind} not yet mapped to SyntaxKind`);
+
+          default:
+            return Debug.assertNever(kind);
+        }
+      }
+    }
+
     export interface UnparsedPrepend extends UnparsedSection {
       kind: Syntax.UnparsedPrepend;
       data: string;
@@ -4237,6 +4803,40 @@ namespace qnr {
         assert(!node.oldFileOfCurrentEmit);
         parseUnparsedSourceFile(node, bundleFileInfo, stripInternal);
         return node;
+      }
+      let allUnscopedEmitHelpers: qa.QReadonlyMap<UnscopedEmitHelper> | undefined;
+      function getAllUnscopedEmitHelpers() {
+        return (
+          allUnscopedEmitHelpers ||
+          (allUnscopedEmitHelpers = arrayToMap(
+            [
+              valuesHelper,
+              readHelper,
+              spreadHelper,
+              spreadArraysHelper,
+              restHelper,
+              decorateHelper,
+              metadataHelper,
+              paramHelper,
+              awaiterHelper,
+              assignHelper,
+              awaitHelper,
+              asyncGeneratorHelper,
+              asyncDelegator,
+              asyncValues,
+              extendsHelper,
+              templateObjectHelper,
+              generatorHelper,
+              importStarHelper,
+              importDefaultHelper,
+              classPrivateFieldGetHelper,
+              classPrivateFieldSetHelper,
+              createBindingHelper,
+              setModuleDefaultHelper,
+            ],
+            (helper) => helper.name
+          ))
+        );
       }
       function parseUnparsedSourceFile(node: UnparsedSource, bundleFileInfo: BundleFileInfo | undefined, stripInternal: boolean | undefined) {
         let prologues: UnparsedPrologue[] | undefined;
@@ -4329,6 +4929,21 @@ namespace qnr {
         node.texts = texts || emptyArray;
         node.helpers = map(bundleFileInfo.sources && bundleFileInfo.sources.helpers, (name) => getAllUnscopedEmitHelpers().get(name)!);
         node.syntheticReferences = syntheticReferences;
+        return node;
+      }
+    }
+
+    export interface UnparsedSyntheticReference extends UnparsedSection {
+      kind: Syntax.UnparsedSyntheticReference;
+      parent: UnparsedSource;
+      section: BundleFileHasNoDefaultLib | BundleFileReference;
+    }
+    export namespace UnparsedSyntheticReference {
+      function createUnparsedSyntheticReference(section: BundleFileHasNoDefaultLib | BundleFileReference, parent: UnparsedSource) {
+        const node = createNode(Syntax.UnparsedSyntheticReference, section.pos, section.end) as UnparsedSyntheticReference;
+        node.parent = parent;
+        node.data = section.data;
+        node.section = section;
         return node;
       }
     }
@@ -4609,6 +5224,471 @@ namespace qnr {
       | WhileStatement
       | WithStatement
       | YieldExpression;
+
+    export namespace parenthesize {
+      interface BinaryPlusExpression extends BinaryExpression {
+        cachedLiteralKind: Syntax;
+      }
+
+      function getLiteralKindOfBinaryPlusOperand(node: Expression): Syntax {
+        node = skipPartiallyEmittedExpressions(node);
+
+        if (qy.is.literal(node.kind)) {
+          return node.kind;
+        }
+
+        if (node.kind === Syntax.BinaryExpression && (<BinaryExpression>node).operatorToken.kind === Syntax.PlusToken) {
+          if ((<BinaryPlusExpression>node).cachedLiteralKind !== undefined) {
+            return (<BinaryPlusExpression>node).cachedLiteralKind;
+          }
+
+          const leftKind = getLiteralKindOfBinaryPlusOperand((<BinaryExpression>node).left);
+          const literalKind = qy.is.literal(leftKind) && leftKind === getLiteralKindOfBinaryPlusOperand((<BinaryExpression>node).right) ? leftKind : Syntax.Unknown;
+
+          (<BinaryPlusExpression>node).cachedLiteralKind = literalKind;
+          return literalKind;
+        }
+
+        return Syntax.Unknown;
+      }
+
+      export function parenthesizeBinaryOperand(binaryOperator: Syntax, operand: Expression, isLeftSideOfBinary: boolean, leftOperand?: Expression) {
+        const skipped = skipPartiallyEmittedExpressions(operand);
+        if (skipped.kind === Syntax.ParenthesizedExpression) return operand;
+        function operatorHasAssociativeProperty(binaryOperator: Syntax) {
+          // The following operators are associative in JavaScript:
+          //  (a*b)*c     -> a*(b*c)  -> a*b*c
+          //  (a|b)|c     -> a|(b|c)  -> a|b|c
+          //  (a&b)&c     -> a&(b&c)  -> a&b&c
+          //  (a^b)^c     -> a^(b^c)  -> a^b^c
+          //
+          // While addition is associative in mathematics, JavaScript's `+` is not
+          // guaranteed to be associative as it is overloaded with string concatenation.
+          return binaryOperator === Syntax.AsteriskToken || binaryOperator === Syntax.BarToken || binaryOperator === Syntax.AmpersandToken || binaryOperator === Syntax.CaretToken;
+        }
+        function binaryOperandNeedsParentheses(binaryOperator: Syntax, operand: Expression, isLeftSideOfBinary: boolean, leftOperand: Expression | undefined) {
+          // If the operand has lower precedence, then it needs to be parenthesized to preserve the
+          // intent of the expression. For example, if the operand is `a + b` and the operator is
+          // `*`, then we need to parenthesize the operand to preserve the intended order of
+          // operations: `(a + b) * x`.
+          //
+          // If the operand has higher precedence, then it does not need to be parenthesized. For
+          // example, if the operand is `a * b` and the operator is `+`, then we do not need to
+          // parenthesize to preserve the intended order of operations: `a * b + x`.
+          //
+          // If the operand has the same precedence, then we need to check the associativity of
+          // the operator based on whether this is the left or right operand of the expression.
+          //
+          // For example, if `a / d` is on the right of operator `*`, we need to parenthesize
+          // to preserve the intended order of operations: `x * (a / d)`
+          //
+          // If `a ** d` is on the left of operator `**`, we need to parenthesize to preserve
+          // the intended order of operations: `(a ** b) ** c`
+          const binaryOperatorPrecedence = qy.get.operatorPrecedence(Syntax.BinaryExpression, binaryOperator);
+          const binaryOperatorAssociativity = qy.get.operatorAssociativity(Syntax.BinaryExpression, binaryOperator);
+          const emittedOperand = skipPartiallyEmittedExpressions(operand);
+          if (!isLeftSideOfBinary && operand.kind === Syntax.ArrowFunction && binaryOperatorPrecedence > 3) {
+            // We need to parenthesize arrow functions on the right side to avoid it being
+            // parsed as parenthesized expression: `a && (() => {})`
+            return true;
+          }
+          const operandPrecedence = getExpressionPrecedence(emittedOperand);
+          switch (compareValues(operandPrecedence, binaryOperatorPrecedence)) {
+            case Comparison.LessThan:
+              // If the operand is the right side of a right-associative binary operation
+              // and is a yield expression, then we do not need parentheses.
+              if (!isLeftSideOfBinary && binaryOperatorAssociativity === Associativity.Right && operand.kind === Syntax.YieldExpression) {
+                return false;
+              }
+
+              return true;
+
+            case Comparison.GreaterThan:
+              return false;
+
+            case Comparison.EqualTo:
+              if (isLeftSideOfBinary) {
+                // No need to parenthesize the left operand when the binary operator is
+                // left associative:
+                //  (a*b)/x    -> a*b/x
+                //  (a**b)/x   -> a**b/x
+                //
+                // Parentheses are needed for the left operand when the binary operator is
+                // right associative:
+                //  (a/b)**x   -> (a/b)**x
+                //  (a**b)**x  -> (a**b)**x
+                return binaryOperatorAssociativity === Associativity.Right;
+              } else {
+                if (qn.is.kind(emittedOperand, BinaryExpression) && emittedOperand.operatorToken.kind === binaryOperator) {
+                  // No need to parenthesize the right operand when the binary operator and
+                  // operand are the same and one of the following:
+                  //  x*(a*b)     => x*a*b
+                  //  x|(a|b)     => x|a|b
+                  //  x&(a&b)     => x&a&b
+                  //  x^(a^b)     => x^a^b
+                  if (operatorHasAssociativeProperty(binaryOperator)) {
+                    return false;
+                  }
+
+                  // No need to parenthesize the right operand when the binary operator
+                  // is plus (+) if both the left and right operands consist solely of either
+                  // literals of the same kind or binary plus (+) expressions for literals of
+                  // the same kind (recursively).
+                  //  "a"+(1+2)       => "a"+(1+2)
+                  //  "a"+("b"+"c")   => "a"+"b"+"c"
+                  if (binaryOperator === Syntax.PlusToken) {
+                    const leftKind = leftOperand ? getLiteralKindOfBinaryPlusOperand(leftOperand) : Syntax.Unknown;
+                    if (qy.is.literal(leftKind) && leftKind === getLiteralKindOfBinaryPlusOperand(emittedOperand)) {
+                      return false;
+                    }
+                  }
+                }
+
+                // No need to parenthesize the right operand when the operand is right
+                // associative:
+                //  x/(a**b)    -> x/a**b
+                //  x**(a**b)   -> x**a**b
+                //
+                // Parentheses are needed for the right operand when the operand is left
+                // associative:
+                //  x/(a*b)     -> x/(a*b)
+                //  x**(a/b)    -> x**(a/b)
+                const operandAssociativity = getExpressionAssociativity(emittedOperand);
+                return operandAssociativity === Associativity.Left;
+              }
+          }
+        }
+        return binaryOperandNeedsParentheses(binaryOperator, operand, isLeftSideOfBinary, leftOperand) ? createParen(operand) : operand;
+      }
+      export function parenthesizeForConditionalHead(condition: Expression) {
+        const conditionalPrecedence = qy.get.operatorPrecedence(Syntax.ConditionalExpression, Syntax.QuestionToken);
+        const emittedCondition = skipPartiallyEmittedExpressions(condition);
+        const conditionPrecedence = getExpressionPrecedence(emittedCondition);
+        if (compareValues(conditionPrecedence, conditionalPrecedence) !== Comparison.GreaterThan) return createParen(condition);
+        return condition;
+      }
+      export function parenthesizeSubexpressionOfConditionalExpression(e: Expression): Expression {
+        const emittedExpression = skipPartiallyEmittedExpressions(e);
+        return isCommaSequence(emittedExpression) ? createParen(e) : e;
+      }
+      export function parenthesizeForAccess(expression: Expression): LeftHandSideExpression {
+        const emittedExpression = skipPartiallyEmittedExpressions(expression);
+        if (qn.is.leftHandSideExpression(emittedExpression) && (emittedExpression.kind !== Syntax.NewExpression || (<NewExpression>emittedExpression).arguments)) {
+          return <LeftHandSideExpression>expression;
+        }
+        return setTextRange(createParen(expression), expression);
+      }
+      export function parenthesizePostfixOperand(operand: Expression) {
+        return qn.is.leftHandSideExpression(operand) ? operand : setTextRange(createParen(operand), operand);
+      }
+      export function parenthesizePrefixOperand(operand: Expression) {
+        return qn.is.unaryExpression(operand) ? operand : setTextRange(createParen(operand), operand);
+      }
+      export function parenthesizeListElements(elements: NodeArray<Expression>) {
+        let result: Expression[] | undefined;
+        for (let i = 0; i < elements.length; i++) {
+          const element = parenthesizeExpressionForList(elements[i]);
+          if (result !== undefined || element !== elements[i]) {
+            if (result === undefined) result = elements.slice(0, i);
+            result.push(element);
+          }
+        }
+        if (result !== undefined) return setTextRange(NodeArray.create(result, elements.trailingComma), elements);
+        return elements;
+      }
+      export function parenthesizeExpressionForList(expression: Expression) {
+        const emittedExpression = skipPartiallyEmittedExpressions(expression);
+        const expressionPrecedence = getExpressionPrecedence(emittedExpression);
+        const commaPrecedence = qy.get.operatorPrecedence(Syntax.BinaryExpression, Syntax.CommaToken);
+        return expressionPrecedence > commaPrecedence ? expression : setTextRange(createParen(expression), expression);
+      }
+      export function parenthesizeExpressionForExpressionStatement(expression: Expression) {
+        const emittedExpression = skipPartiallyEmittedExpressions(expression);
+        if (qn.is.kind(CallExpression, emittedExpression)) {
+          const callee = emittedExpression.expression;
+          const kind = skipPartiallyEmittedExpressions(callee).kind;
+          if (kind === Syntax.FunctionExpression || kind === Syntax.ArrowFunction) {
+            const mutableCall = getMutableClone(emittedExpression);
+            mutableCall.expression = setTextRange(createParen(callee), callee);
+            return recreateOuterExpressions(expression, mutableCall, OuterExpressionKinds.PartiallyEmittedExpressions);
+          }
+        }
+        const leftmostExpressionKind = getLeftmostExpression(emittedExpression, false).kind;
+        if (leftmostExpressionKind === Syntax.ObjectLiteralExpression || leftmostExpressionKind === Syntax.FunctionExpression) {
+          return setTextRange(createParen(expression), expression);
+        }
+        return expression;
+      }
+      export function parenthesizeConditionalTypeMember(member: TypeNode) {
+        return member.kind === Syntax.ConditionalType ? ParenthesizedTypeNode.create(member) : member;
+      }
+      export function parenthesizeElementTypeMember(member: TypeNode) {
+        switch (member.kind) {
+          case Syntax.UnionType:
+          case Syntax.IntersectionType:
+          case Syntax.FunctionType:
+          case Syntax.ConstructorType:
+            return ParenthesizedTypeNode.create(member);
+        }
+        return parenthesizeConditionalTypeMember(member);
+      }
+      export function parenthesizeArrayTypeMember(member: TypeNode) {
+        switch (member.kind) {
+          case Syntax.TypeQuery:
+          case Syntax.TypeOperator:
+          case Syntax.InferType:
+            return ParenthesizedTypeNode.create(member);
+        }
+        return parenthesizeElementTypeMember(member);
+      }
+      export function parenthesizeElementTypeMembers(members: readonly TypeNode[]) {
+        return NodeArray.create(sameMap(members, parenthesizeElementTypeMember));
+      }
+      export function parenthesizeTypeParameters(typeParameters: readonly TypeNode[] | undefined) {
+        if (qa.some(typeParameters)) {
+          const params: TypeNode[] = [];
+          for (let i = 0; i < typeParameters.length; ++i) {
+            const entry = typeParameters[i];
+            params.push(i === 0 && qn.is.functionOrConstructorTypeNode(entry) && entry.typeParameters ? ParenthesizedTypeNode.create(entry) : entry);
+          }
+          return NodeArray.create(params);
+        }
+        return;
+      }
+      export function parenthesizeDefaultExpression(e: Expression) {
+        const check = skipPartiallyEmittedExpressions(e);
+        let needsParens = isCommaSequence(check);
+        if (!needsParens) {
+          switch (getLeftmostExpression(check, false).kind) {
+            case Syntax.ClassExpression:
+            case Syntax.FunctionExpression:
+              needsParens = true;
+          }
+        }
+        return needsParens ? createParen(e) : e;
+      }
+      export function parenthesizeForNew(expression: Expression): LeftHandSideExpression {
+        const leftmostExpr = getLeftmostExpression(expression, true);
+        switch (leftmostExpr.kind) {
+          case Syntax.CallExpression:
+            return createParen(expression);
+          case Syntax.NewExpression:
+            return !(leftmostExpr as NewExpression).arguments ? createParen(expression) : <LeftHandSideExpression>expression;
+        }
+        return parenthesizeForAccess(expression);
+      }
+      export function parenthesizeConciseBody(body: ConciseBody): ConciseBody {
+        if (!qn.is.kind(Block, body) && (isCommaSequence(body) || getLeftmostExpression(body, false).kind === Syntax.ObjectLiteralExpression)) {
+          return setTextRange(createParen(body), body);
+        }
+        return body;
+      }
+    }
+
+    export namespace emit {
+      export function disposeEmitNodes(sourceFile: SourceFile) {
+        sourceFile = qn.get.sourceFileOf(qn.get.parseTreeOf(sourceFile));
+        const emitNode = sourceFile && sourceFile.emitNode;
+        const annotatedNodes = emitNode && emitNode.annotatedNodes;
+        if (annotatedNodes) {
+          for (const node of annotatedNodes) {
+            node.emitNode = undefined;
+          }
+        }
+      }
+      export function getOrCreateEmitNode(node: Node): EmitNode {
+        if (!node.emitNode) {
+          if (qn.is.parseTreeNode(node)) {
+            if (node.kind === Syntax.SourceFile) return (node.emitNode = { annotatedNodes: [node] } as EmitNode);
+            const sourceFile = qn.get.sourceFileOf(qn.get.parseTreeOf(qn.get.sourceFileOf(node)));
+            getOrCreateEmitNode(sourceFile).annotatedNodes!.push(node);
+          }
+          node.emitNode = {} as EmitNode;
+        }
+        return node.emitNode;
+      }
+      export function removeAllComments<T extends Node>(node: T): T {
+        const emitNode = getOrCreateEmitNode(node);
+        emitNode.flags |= EmitFlags.NoComments;
+        emitNode.leadingComments = undefined;
+        emitNode.trailingComments = undefined;
+        return node;
+      }
+      export function setEmitFlags<T extends Node>(node: T, emitFlags: EmitFlags) {
+        getOrCreateEmitNode(node).flags = emitFlags;
+        return node;
+      }
+      export function addEmitFlags<T extends Node>(node: T, emitFlags: EmitFlags) {
+        const emitNode = getOrCreateEmitNode(node);
+        emitNode.flags = emitNode.flags | emitFlags;
+        return node;
+      }
+      export function getSourceMapRange(node: Node): SourceMapRange {
+        const emitNode = node.emitNode;
+        return (emitNode && emitNode.sourceMapRange) || node;
+      }
+      export function setSourceMapRange<T extends Node>(node: T, range: SourceMapRange | undefined) {
+        getOrCreateEmitNode(node).sourceMapRange = range;
+        return node;
+      }
+      export function getTokenSourceMapRange(node: Node, token: Syntax): SourceMapRange | undefined {
+        const emitNode = node.emitNode;
+        const tokenSourceMapRanges = emitNode && emitNode.tokenSourceMapRanges;
+        return tokenSourceMapRanges && tokenSourceMapRanges[token];
+      }
+      export function setTokenSourceMapRange<T extends Node>(node: T, token: Syntax, range: SourceMapRange | undefined) {
+        const emitNode = getOrCreateEmitNode(node);
+        const tokenSourceMapRanges = emitNode.tokenSourceMapRanges || (emitNode.tokenSourceMapRanges = []);
+        tokenSourceMapRanges[token] = range;
+        return node;
+      }
+      export function getStartsOnNewLine(node: Node) {
+        const emitNode = node.emitNode;
+        return emitNode && emitNode.startsOnNewLine;
+      }
+      export function setStartsOnNewLine<T extends Node>(node: T, newLine: boolean) {
+        getOrCreateEmitNode(node).startsOnNewLine = newLine;
+        return node;
+      }
+      export function getCommentRange(node: Node) {
+        const emitNode = node.emitNode;
+        return (emitNode && emitNode.commentRange) || node;
+      }
+      export function setCommentRange<T extends Node>(node: T, range: TextRange) {
+        getOrCreateEmitNode(node).commentRange = range;
+        return node;
+      }
+      export function getSyntheticLeadingComments(node: Node): SynthesizedComment[] | undefined {
+        const emitNode = node.emitNode;
+        return emitNode && emitNode.leadingComments;
+      }
+      export function setSyntheticLeadingComments<T extends Node>(node: T, comments: SynthesizedComment[] | undefined) {
+        getOrCreateEmitNode(node).leadingComments = comments;
+        return node;
+      }
+      export function addSyntheticLeadingComment<T extends Node>(node: T, kind: Syntax.SingleLineCommentTrivia | Syntax.MultiLineCommentTrivia, text: string, hasTrailingNewLine?: boolean) {
+        return setSyntheticLeadingComments(
+          node,
+          qa.append<SynthesizedComment>(getSyntheticLeadingComments(node), { kind, pos: -1, end: -1, hasTrailingNewLine, text })
+        );
+      }
+      export function getSyntheticTrailingComments(node: Node): SynthesizedComment[] | undefined {
+        const emitNode = node.emitNode;
+        return emitNode && emitNode.trailingComments;
+      }
+      export function setSyntheticTrailingComments<T extends Node>(node: T, comments: SynthesizedComment[] | undefined) {
+        getOrCreateEmitNode(node).trailingComments = comments;
+        return node;
+      }
+      export function addSyntheticTrailingComment<T extends Node>(node: T, kind: Syntax.SingleLineCommentTrivia | Syntax.MultiLineCommentTrivia, text: string, hasTrailingNewLine?: boolean) {
+        return setSyntheticTrailingComments(
+          node,
+          qa.append<SynthesizedComment>(getSyntheticTrailingComments(node), { kind, pos: -1, end: -1, hasTrailingNewLine, text })
+        );
+      }
+      export function moveSyntheticComments<T extends Node>(node: T, original: Node): T {
+        setSyntheticLeadingComments(node, getSyntheticLeadingComments(original));
+        setSyntheticTrailingComments(node, getSyntheticTrailingComments(original));
+        const emit = getOrCreateEmitNode(original);
+        emit.leadingComments = undefined;
+        emit.trailingComments = undefined;
+        return node;
+      }
+      export function ignoreSourceNewlines<T extends Node>(node: T): T {
+        getOrCreateEmitNode(node).flags |= EmitFlags.IgnoreSourceNewlines;
+        return node;
+      }
+      export function getConstantValue(node: PropertyAccessExpression | ElementAccessExpression): string | number | undefined {
+        const emitNode = node.emitNode;
+        return emitNode && emitNode.constantValue;
+      }
+      export function setConstantValue(node: PropertyAccessExpression | ElementAccessExpression, value: string | number): PropertyAccessExpression | ElementAccessExpression {
+        const emitNode = getOrCreateEmitNode(node);
+        emitNode.constantValue = value;
+        return node;
+      }
+      export function addEmitHelper<T extends Node>(node: T, helper: EmitHelper): T {
+        const emitNode = getOrCreateEmitNode(node);
+        emitNode.helpers = qa.append(emitNode.helpers, helper);
+        return node;
+      }
+      export function addEmitHelpers<T extends Node>(node: T, helpers: EmitHelper[] | undefined): T {
+        if (qa.some(helpers)) {
+          const emitNode = getOrCreateEmitNode(node);
+          for (const helper of helpers) {
+            emitNode.helpers = qa.appendIfUnique(emitNode.helpers, helper);
+          }
+        }
+        return node;
+      }
+      export function removeEmitHelper(node: Node, helper: EmitHelper): boolean {
+        const emitNode = node.emitNode;
+        if (emitNode) {
+          const helpers = emitNode.helpers;
+          if (helpers) return orderedRemoveItem(helpers, helper);
+        }
+        return false;
+      }
+      export function getEmitHelpers(node: Node): EmitHelper[] | undefined {
+        const emitNode = node.emitNode;
+        return emitNode && emitNode.helpers;
+      }
+      export function moveEmitHelpers(source: Node, target: Node, predicate: (helper: EmitHelper) => boolean) {
+        const sourceEmitNode = source.emitNode;
+        const sourceEmitHelpers = sourceEmitNode && sourceEmitNode.helpers;
+        if (!some(sourceEmitHelpers)) return;
+        const targetEmitNode = getOrCreateEmitNode(target);
+        let helpersRemoved = 0;
+        for (let i = 0; i < sourceEmitHelpers.length; i++) {
+          const helper = sourceEmitHelpers[i];
+          if (predicate(helper)) {
+            helpersRemoved++;
+            targetEmitNode.helpers = qa.appendIfUnique(targetEmitNode.helpers, helper);
+          } else if (helpersRemoved > 0) sourceEmitHelpers[i - helpersRemoved] = helper;
+        }
+        if (helpersRemoved > 0) sourceEmitHelpers.length -= helpersRemoved;
+      }
+      export function compareEmitHelpers(x: EmitHelper, y: EmitHelper) {
+        if (x === y) return Comparison.EqualTo;
+        if (x.priority === y.priority) return Comparison.EqualTo;
+        if (x.priority === undefined) return Comparison.GreaterThan;
+        if (y.priority === undefined) return Comparison.LessThan;
+        return compareValues(x.priority, y.priority);
+      }
+      export function setOriginalNode<T extends Node>(node: T, original: Node | undefined): T {
+        node.original = original;
+        if (original) {
+          const emitNode = original.emitNode;
+          if (emitNode) node.emitNode = mergeEmitNode(emitNode, node.emitNode);
+        }
+        return node;
+      }
+      function mergeEmitNode(sourceEmitNode: EmitNode, destEmitNode: EmitNode | undefined) {
+        const { flags, leadingComments, trailingComments, commentRange, sourceMapRange, tokenSourceMapRanges, constantValue, helpers, startsOnNewLine } = sourceEmitNode;
+        if (!destEmitNode) destEmitNode = {} as EmitNode;
+        // We are using `.slice()` here in case `destEmitNode.leadingComments` is pushed to later.
+        if (leadingComments) destEmitNode.leadingComments = qa.addRange(leadingComments.slice(), destEmitNode.leadingComments);
+        if (trailingComments) destEmitNode.trailingComments = qa.addRange(trailingComments.slice(), destEmitNode.trailingComments);
+        if (flags) destEmitNode.flags = flags;
+        if (commentRange) destEmitNode.commentRange = commentRange;
+        if (sourceMapRange) destEmitNode.sourceMapRange = sourceMapRange;
+        if (tokenSourceMapRanges) destEmitNode.tokenSourceMapRanges = mergeTokenSourceMapRanges(tokenSourceMapRanges, destEmitNode.tokenSourceMapRanges!);
+        if (constantValue !== undefined) destEmitNode.constantValue = constantValue;
+        if (helpers) destEmitNode.helpers = qa.addRange(destEmitNode.helpers, helpers);
+        if (startsOnNewLine !== undefined) destEmitNode.startsOnNewLine = startsOnNewLine;
+        return destEmitNode;
+      }
+      export function getExternalHelpersModuleName(node: SourceFile) {
+        const parseNode = qn.get.originalOf(node, isSourceFile);
+        const emitNode = parseNode && parseNode.emitNode;
+        return emitNode && emitNode.externalHelpersModuleName;
+      }
+      export function hasRecordedExternalHelpers(sourceFile: SourceFile) {
+        const parseNode = qn.get.originalOf(sourceFile, isSourceFile);
+        const emitNode = parseNode && parseNode.emitNode;
+        return !!emitNode && (!!emitNode.externalHelpersModuleName || !!emitNode.externalHelpers);
+      }
+    }
   }
 
   export function createLiteral(value: string | StringLiteral | NoSubstitutionLiteral | NumericLiteral | Identifier, isSingleQuote: boolean): StringLiteral; // eslint-disable-line @typescript-eslint/unified-signatures
@@ -4690,130 +5770,8 @@ namespace qnr {
     }
   }
 
-  export function createJSDocComment(comment?: string | undefined, tags?: NodeArray<JSDocTag> | undefined) {
-    const node = qn.createSynthesized(Syntax.JSDocComment) as JSDoc;
-    node.comment = comment;
-    node.tags = tags;
-    return node;
-  }
-
-  export function createJSDocTag<T extends JSDocTag>(kind: T['kind'], tagName: string, comment?: string): T {
-    const node = qn.createSynthesized(kind) as T;
-    node.tagName = createIdentifier(tagName);
-    node.comment = comment;
-    return node;
-  }
-
   export function appendJSDocToContainer(node: JSDocContainer, jsdoc: JSDoc) {
     node.jsDoc = qa.append(node.jsDoc, jsdoc);
-    return node;
-  }
-
-  export function createEndOfDeclarationMarker(original: Node) {
-    const node = <EndOfDeclarationMarker>qn.createSynthesized(Syntax.EndOfDeclarationMarker);
-    node.emitNode = {} as EmitNode;
-    node.original = original;
-    return node;
-  }
-  export function createMergeDeclarationMarker(original: Node) {
-    const node = <MergeDeclarationMarker>qn.createSynthesized(Syntax.MergeDeclarationMarker);
-    node.emitNode = {} as EmitNode;
-    node.original = original;
-    return node;
-  }
-
-  function flattenCommaElements(node: Expression): Expression | readonly Expression[] {
-    if (isSynthesized(node) && !qn.is.parseTreeNode(node) && !node.original && !node.emitNode && !node.id) {
-      if (node.kind === Syntax.CommaListExpression) {
-        return (<CommaListExpression>node).elements;
-      }
-      if (qn.is.kind(node, BinaryExpression) && node.operatorToken.kind === Syntax.CommaToken) {
-        return [node.left, node.right];
-      }
-    }
-    return node;
-  }
-
-  export function createCommaList(elements: readonly Expression[]) {
-    const node = <CommaListExpression>qn.createSynthesized(Syntax.CommaListExpression);
-    node.elements = NodeArray.create(sameFlatMap(elements, flattenCommaElements));
-    return node;
-  }
-
-  export function updateCommaList(node: CommaListExpression, elements: readonly Expression[]) {
-    return node.elements !== elements ? updateNode(createCommaList(elements), node) : node;
-  }
-
-  let allUnscopedEmitHelpers: qa.QReadonlyMap<UnscopedEmitHelper> | undefined;
-  function getAllUnscopedEmitHelpers() {
-    return (
-      allUnscopedEmitHelpers ||
-      (allUnscopedEmitHelpers = arrayToMap(
-        [
-          valuesHelper,
-          readHelper,
-          spreadHelper,
-          spreadArraysHelper,
-          restHelper,
-          decorateHelper,
-          metadataHelper,
-          paramHelper,
-          awaiterHelper,
-          assignHelper,
-          awaitHelper,
-          asyncGeneratorHelper,
-          asyncDelegator,
-          asyncValues,
-          extendsHelper,
-          templateObjectHelper,
-          generatorHelper,
-          importStarHelper,
-          importDefaultHelper,
-          classPrivateFieldGetHelper,
-          classPrivateFieldSetHelper,
-          createBindingHelper,
-          setModuleDefaultHelper,
-        ],
-        (helper) => helper.name
-      ))
-    );
-  }
-
-  function mapBundleFileSectionKindToSyntax(kind: BundleFileSectionKind): Syntax {
-    switch (kind) {
-      case BundleFileSectionKind.Prologue:
-        return Syntax.UnparsedPrologue;
-      case BundleFileSectionKind.Prepend:
-        return Syntax.UnparsedPrepend;
-      case BundleFileSectionKind.Internal:
-        return Syntax.UnparsedInternalText;
-      case BundleFileSectionKind.Text:
-        return Syntax.UnparsedText;
-
-      case BundleFileSectionKind.EmitHelpers:
-      case BundleFileSectionKind.NoDefaultLib:
-      case BundleFileSectionKind.Reference:
-      case BundleFileSectionKind.Type:
-      case BundleFileSectionKind.Lib:
-        return fail(`BundleFileSectionKind: ${kind} not yet mapped to SyntaxKind`);
-
-      default:
-        return Debug.assertNever(kind);
-    }
-  }
-
-  function createUnparsedNode(section: BundleFileSection, parent: UnparsedSource): UnparsedNode {
-    const node = createNode(mapBundleFileSectionKindToSyntax(section.kind), section.pos, section.end) as UnparsedNode;
-    node.parent = parent;
-    node.data = section.data;
-    return node;
-  }
-
-  function createUnparsedSyntheticReference(section: BundleFileHasNoDefaultLib | BundleFileReference, parent: UnparsedSource) {
-    const node = createNode(Syntax.UnparsedSyntheticReference, section.pos, section.end) as UnparsedSyntheticReference;
-    node.parent = parent;
-    node.data = section.data;
-    node.section = section;
     return node;
   }
 
@@ -4939,492 +5897,12 @@ namespace qnr {
     return new (SourceMapSource || (SourceMapSource = Node.SourceMapSourceObj))(fileName, text, qy.skipTrivia);
   }
 
-  export namespace emit {
-    export function disposeEmitNodes(sourceFile: SourceFile) {
-      sourceFile = qn.get.sourceFileOf(qn.get.parseTreeOf(sourceFile));
-      const emitNode = sourceFile && sourceFile.emitNode;
-      const annotatedNodes = emitNode && emitNode.annotatedNodes;
-      if (annotatedNodes) {
-        for (const node of annotatedNodes) {
-          node.emitNode = undefined;
-        }
-      }
-    }
-    export function getOrCreateEmitNode(node: Node): EmitNode {
-      if (!node.emitNode) {
-        if (qn.is.parseTreeNode(node)) {
-          if (node.kind === Syntax.SourceFile) return (node.emitNode = { annotatedNodes: [node] } as EmitNode);
-          const sourceFile = qn.get.sourceFileOf(qn.get.parseTreeOf(qn.get.sourceFileOf(node)));
-          getOrCreateEmitNode(sourceFile).annotatedNodes!.push(node);
-        }
-        node.emitNode = {} as EmitNode;
-      }
-      return node.emitNode;
-    }
-    export function removeAllComments<T extends Node>(node: T): T {
-      const emitNode = getOrCreateEmitNode(node);
-      emitNode.flags |= EmitFlags.NoComments;
-      emitNode.leadingComments = undefined;
-      emitNode.trailingComments = undefined;
-      return node;
-    }
-    export function setEmitFlags<T extends Node>(node: T, emitFlags: EmitFlags) {
-      getOrCreateEmitNode(node).flags = emitFlags;
-      return node;
-    }
-    export function addEmitFlags<T extends Node>(node: T, emitFlags: EmitFlags) {
-      const emitNode = getOrCreateEmitNode(node);
-      emitNode.flags = emitNode.flags | emitFlags;
-      return node;
-    }
-    export function getSourceMapRange(node: Node): SourceMapRange {
-      const emitNode = node.emitNode;
-      return (emitNode && emitNode.sourceMapRange) || node;
-    }
-    export function setSourceMapRange<T extends Node>(node: T, range: SourceMapRange | undefined) {
-      getOrCreateEmitNode(node).sourceMapRange = range;
-      return node;
-    }
-    export function getTokenSourceMapRange(node: Node, token: Syntax): SourceMapRange | undefined {
-      const emitNode = node.emitNode;
-      const tokenSourceMapRanges = emitNode && emitNode.tokenSourceMapRanges;
-      return tokenSourceMapRanges && tokenSourceMapRanges[token];
-    }
-    export function setTokenSourceMapRange<T extends Node>(node: T, token: Syntax, range: SourceMapRange | undefined) {
-      const emitNode = getOrCreateEmitNode(node);
-      const tokenSourceMapRanges = emitNode.tokenSourceMapRanges || (emitNode.tokenSourceMapRanges = []);
-      tokenSourceMapRanges[token] = range;
-      return node;
-    }
-    export function getStartsOnNewLine(node: Node) {
-      const emitNode = node.emitNode;
-      return emitNode && emitNode.startsOnNewLine;
-    }
-    export function setStartsOnNewLine<T extends Node>(node: T, newLine: boolean) {
-      getOrCreateEmitNode(node).startsOnNewLine = newLine;
-      return node;
-    }
-    export function getCommentRange(node: Node) {
-      const emitNode = node.emitNode;
-      return (emitNode && emitNode.commentRange) || node;
-    }
-    export function setCommentRange<T extends Node>(node: T, range: TextRange) {
-      getOrCreateEmitNode(node).commentRange = range;
-      return node;
-    }
-    export function getSyntheticLeadingComments(node: Node): SynthesizedComment[] | undefined {
-      const emitNode = node.emitNode;
-      return emitNode && emitNode.leadingComments;
-    }
-    export function setSyntheticLeadingComments<T extends Node>(node: T, comments: SynthesizedComment[] | undefined) {
-      getOrCreateEmitNode(node).leadingComments = comments;
-      return node;
-    }
-    export function addSyntheticLeadingComment<T extends Node>(node: T, kind: Syntax.SingleLineCommentTrivia | Syntax.MultiLineCommentTrivia, text: string, hasTrailingNewLine?: boolean) {
-      return setSyntheticLeadingComments(
-        node,
-        qa.append<SynthesizedComment>(getSyntheticLeadingComments(node), { kind, pos: -1, end: -1, hasTrailingNewLine, text })
-      );
-    }
-    export function getSyntheticTrailingComments(node: Node): SynthesizedComment[] | undefined {
-      const emitNode = node.emitNode;
-      return emitNode && emitNode.trailingComments;
-    }
-    export function setSyntheticTrailingComments<T extends Node>(node: T, comments: SynthesizedComment[] | undefined) {
-      getOrCreateEmitNode(node).trailingComments = comments;
-      return node;
-    }
-    export function addSyntheticTrailingComment<T extends Node>(node: T, kind: Syntax.SingleLineCommentTrivia | Syntax.MultiLineCommentTrivia, text: string, hasTrailingNewLine?: boolean) {
-      return setSyntheticTrailingComments(
-        node,
-        qa.append<SynthesizedComment>(getSyntheticTrailingComments(node), { kind, pos: -1, end: -1, hasTrailingNewLine, text })
-      );
-    }
-    export function moveSyntheticComments<T extends Node>(node: T, original: Node): T {
-      setSyntheticLeadingComments(node, getSyntheticLeadingComments(original));
-      setSyntheticTrailingComments(node, getSyntheticTrailingComments(original));
-      const emit = getOrCreateEmitNode(original);
-      emit.leadingComments = undefined;
-      emit.trailingComments = undefined;
-      return node;
-    }
-    export function ignoreSourceNewlines<T extends Node>(node: T): T {
-      getOrCreateEmitNode(node).flags |= EmitFlags.IgnoreSourceNewlines;
-      return node;
-    }
-    export function getConstantValue(node: PropertyAccessExpression | ElementAccessExpression): string | number | undefined {
-      const emitNode = node.emitNode;
-      return emitNode && emitNode.constantValue;
-    }
-    export function setConstantValue(node: PropertyAccessExpression | ElementAccessExpression, value: string | number): PropertyAccessExpression | ElementAccessExpression {
-      const emitNode = getOrCreateEmitNode(node);
-      emitNode.constantValue = value;
-      return node;
-    }
-    export function addEmitHelper<T extends Node>(node: T, helper: EmitHelper): T {
-      const emitNode = getOrCreateEmitNode(node);
-      emitNode.helpers = qa.append(emitNode.helpers, helper);
-      return node;
-    }
-    export function addEmitHelpers<T extends Node>(node: T, helpers: EmitHelper[] | undefined): T {
-      if (qa.some(helpers)) {
-        const emitNode = getOrCreateEmitNode(node);
-        for (const helper of helpers) {
-          emitNode.helpers = qa.appendIfUnique(emitNode.helpers, helper);
-        }
-      }
-      return node;
-    }
-    export function removeEmitHelper(node: Node, helper: EmitHelper): boolean {
-      const emitNode = node.emitNode;
-      if (emitNode) {
-        const helpers = emitNode.helpers;
-        if (helpers) return orderedRemoveItem(helpers, helper);
-      }
-      return false;
-    }
-    export function getEmitHelpers(node: Node): EmitHelper[] | undefined {
-      const emitNode = node.emitNode;
-      return emitNode && emitNode.helpers;
-    }
-    export function moveEmitHelpers(source: Node, target: Node, predicate: (helper: EmitHelper) => boolean) {
-      const sourceEmitNode = source.emitNode;
-      const sourceEmitHelpers = sourceEmitNode && sourceEmitNode.helpers;
-      if (!some(sourceEmitHelpers)) return;
-      const targetEmitNode = getOrCreateEmitNode(target);
-      let helpersRemoved = 0;
-      for (let i = 0; i < sourceEmitHelpers.length; i++) {
-        const helper = sourceEmitHelpers[i];
-        if (predicate(helper)) {
-          helpersRemoved++;
-          targetEmitNode.helpers = qa.appendIfUnique(targetEmitNode.helpers, helper);
-        } else if (helpersRemoved > 0) sourceEmitHelpers[i - helpersRemoved] = helper;
-      }
-      if (helpersRemoved > 0) sourceEmitHelpers.length -= helpersRemoved;
-    }
-    export function compareEmitHelpers(x: EmitHelper, y: EmitHelper) {
-      if (x === y) return Comparison.EqualTo;
-      if (x.priority === y.priority) return Comparison.EqualTo;
-      if (x.priority === undefined) return Comparison.GreaterThan;
-      if (y.priority === undefined) return Comparison.LessThan;
-      return compareValues(x.priority, y.priority);
-    }
-    export function setOriginalNode<T extends Node>(node: T, original: Node | undefined): T {
-      node.original = original;
-      if (original) {
-        const emitNode = original.emitNode;
-        if (emitNode) node.emitNode = mergeEmitNode(emitNode, node.emitNode);
-      }
-      return node;
-    }
-    function mergeEmitNode(sourceEmitNode: EmitNode, destEmitNode: EmitNode | undefined) {
-      const { flags, leadingComments, trailingComments, commentRange, sourceMapRange, tokenSourceMapRanges, constantValue, helpers, startsOnNewLine } = sourceEmitNode;
-      if (!destEmitNode) destEmitNode = {} as EmitNode;
-      // We are using `.slice()` here in case `destEmitNode.leadingComments` is pushed to later.
-      if (leadingComments) destEmitNode.leadingComments = qa.addRange(leadingComments.slice(), destEmitNode.leadingComments);
-      if (trailingComments) destEmitNode.trailingComments = qa.addRange(trailingComments.slice(), destEmitNode.trailingComments);
-      if (flags) destEmitNode.flags = flags;
-      if (commentRange) destEmitNode.commentRange = commentRange;
-      if (sourceMapRange) destEmitNode.sourceMapRange = sourceMapRange;
-      if (tokenSourceMapRanges) destEmitNode.tokenSourceMapRanges = mergeTokenSourceMapRanges(tokenSourceMapRanges, destEmitNode.tokenSourceMapRanges!);
-      if (constantValue !== undefined) destEmitNode.constantValue = constantValue;
-      if (helpers) destEmitNode.helpers = qa.addRange(destEmitNode.helpers, helpers);
-      if (startsOnNewLine !== undefined) destEmitNode.startsOnNewLine = startsOnNewLine;
-      return destEmitNode;
-    }
-  }
-
-  export type TypeOfTag = 'undefined' | 'number' | 'boolean' | 'string' | 'symbol' | 'object' | 'function';
-
-  export function createTypeCheck(value: Expression, tag: TypeOfTag) {
-    return tag === 'undefined' ? createStrictEquality(value, createVoidZero()) : createStrictEquality(createTypeOf(value), createLiteral(tag));
-  }
-
-  export function createMemberAccessForPropertyName(target: Expression, memberName: PropertyName, location?: TextRange): MemberExpression {
-    if (qn.is.kind(ComputedPropertyName, memberName)) {
-      return setTextRange(createElementAccess(target, memberName.expression), location);
-    } else {
-      const expression = setTextRange(
-        qn.is.kind(Identifier, memberName) || qn.is.kind(PrivateIdentifier, memberName) ? createPropertyAccess(target, memberName) : createElementAccess(target, memberName),
-        memberName
-      );
-      getOrCreateEmitNode(expression).flags |= EmitFlags.NoNestedSourceMaps;
-      return expression;
-    }
-  }
-
-  export function createFunctionCall(func: Expression, thisArg: Expression, argumentsList: readonly Expression[], location?: TextRange) {
-    return setTextRange(createCall(createPropertyAccess(func, 'call'), /*typeArguments*/ undefined, [thisArg, ...argumentsList]), location);
-  }
-
-  export function createFunctionApply(func: Expression, thisArg: Expression, argumentsExpression: Expression, location?: TextRange) {
-    return setTextRange(createCall(createPropertyAccess(func, 'apply'), /*typeArguments*/ undefined, [thisArg, argumentsExpression]), location);
-  }
-
-  export function createArraySlice(array: Expression, start?: number | Expression) {
-    const argumentsList: Expression[] = [];
-    if (start !== undefined) {
-      argumentsList.push(typeof start === 'number' ? createLiteral(start) : start);
-    }
-    return createCall(createPropertyAccess(array, 'slice'), /*typeArguments*/ undefined, argumentsList);
-  }
-
-  export function createArrayConcat(array: Expression, values: readonly Expression[]) {
-    return createCall(createPropertyAccess(array, 'concat'), /*typeArguments*/ undefined, values);
-  }
-
-  export function createMathPow(left: Expression, right: Expression, location?: TextRange) {
-    return setTextRange(createCall(createPropertyAccess(createIdentifier('Math'), 'pow'), /*typeArguments*/ undefined, [left, right]), location);
-  }
-
-  function createReactNamespace(reactNamespace: string, parent: JsxOpeningLikeElement | JsxOpeningFragment) {
-    // To ensure the emit resolver can properly resolve the namespace, we need to
-    // treat this identifier as if it were a source tree node by clearing the `Synthesized`
-    // flag and setting a parent node.
-    const react = createIdentifier(reactNamespace || 'React');
-    react.flags &= ~NodeFlags.Synthesized;
-    // Set the parent that is in parse tree
-    // this makes sure that parent chain is intact for checker to traverse complete scope tree
-    react.parent = qn.get.parseTreeOf(parent);
-    return react;
-  }
-
-  function createJsxFactoryExpressionFromEntityName(jsxFactory: EntityName, parent: JsxOpeningLikeElement | JsxOpeningFragment): Expression {
-    if (qn.is.kind(QualifiedName, jsxFactory)) {
-      const left = createJsxFactoryExpressionFromEntityName(jsxFactory.left, parent);
-      const right = createIdentifier(idText(jsxFactory.right));
-      right.escapedText = jsxFactory.right.escapedText;
-      return createPropertyAccess(left, right);
-    } else {
-      return createReactNamespace(idText(jsxFactory), parent);
-    }
-  }
-
-  function createJsxFactoryExpression(jsxFactoryEntity: EntityName | undefined, reactNamespace: string, parent: JsxOpeningLikeElement | JsxOpeningFragment): Expression {
-    return jsxFactoryEntity ? createJsxFactoryExpressionFromEntityName(jsxFactoryEntity, parent) : createPropertyAccess(createReactNamespace(reactNamespace, parent), 'createElement');
-  }
-
-  export function createExpressionForJsxElement(
-    jsxFactoryEntity: EntityName | undefined,
-    reactNamespace: string,
-    tagName: Expression,
-    props: Expression,
-    children: readonly Expression[],
-    parentElement: JsxOpeningLikeElement,
-    location: TextRange
-  ): LeftHandSideExpression {
-    const argumentsList = [tagName];
-    if (props) argumentsList.push(props);
-    if (children && children.length > 0) {
-      if (!props) argumentsList.push(createNull());
-      if (children.length > 1) {
-        for (const child of children) {
-          startOnNewLine(child);
-          argumentsList.push(child);
-        }
-      } else argumentsList.push(children[0]);
-    }
-    return setTextRange(createCall(createJsxFactoryExpression(jsxFactoryEntity, reactNamespace, parentElement), /*typeArguments*/ undefined, argumentsList), location);
-  }
-
-  export function createExpressionForJsxFragment(
-    jsxFactoryEntity: EntityName | undefined,
-    reactNamespace: string,
-    children: readonly Expression[],
-    parentElement: JsxOpeningFragment,
-    location: TextRange
-  ): LeftHandSideExpression {
-    const tagName = createPropertyAccess(createReactNamespace(reactNamespace, parentElement), 'Fragment');
-    const argumentsList = [<Expression>tagName];
-    argumentsList.push(createNull());
-    if (children && children.length > 0) {
-      if (children.length > 1) {
-        for (const child of children) {
-          startOnNewLine(child);
-          argumentsList.push(child);
-        }
-      } else argumentsList.push(children[0]);
-    }
-    return setTextRange(createCall(createJsxFactoryExpression(jsxFactoryEntity, reactNamespace, parentElement), /*typeArguments*/ undefined, argumentsList), location);
-  }
-
   export function getUnscopedHelperName(name: string) {
     return setEmitFlags(createIdentifier(name), EmitFlags.HelperName | EmitFlags.AdviseOnEmitNode);
   }
 
-  export function createForOfBindingStatement(node: ForInitializer, boundValue: Expression): Statement {
-    if (qn.is.kind(VariableDeclarationList, node)) {
-      const firstDeclaration = first(node.declarations);
-      const updatedDeclaration = updateVariableDeclaration(firstDeclaration, firstDeclaration.name, /*typeNode*/ undefined, boundValue);
-      return setTextRange(createVariableStatement(undefined, updateVariableDeclarationList(node, [updatedDeclaration])), node);
-    } else {
-      const updatedExpression = setTextRange(createAssignment(node, boundValue), node);
-      return setTextRange(createStatement(updatedExpression), node);
-    }
-  }
-
-  export function insertLeadingStatement(dest: Statement, source: Statement) {
-    if (qn.is.kind(Block, dest)) {
-      return updateBlock(dest, setTextRange(NodeArray.create([source, ...dest.statements]), dest.statements));
-    } else {
-      return createBlock(NodeArray.create([dest, source]), true);
-    }
-  }
-
-  export function restoreEnclosingLabel(node: Statement, outermostLabeledStatement: LabeledStatement | undefined, afterRestoreLabelCallback?: (node: LabeledStatement) => void): Statement {
-    if (!outermostLabeledStatement) return node;
-
-    const updated = updateLabel(
-      outermostLabeledStatement,
-      outermostLabeledStatement.label,
-      outermostLabeledStatement.statement.kind === Syntax.LabeledStatement ? restoreEnclosingLabel(node, <LabeledStatement>outermostLabeledStatement.statement) : node
-    );
-    if (afterRestoreLabelCallback) afterRestoreLabelCallback(outermostLabeledStatement);
-
-    return updated;
-  }
   export function inlineExpressions(expressions: readonly Expression[]) {
-    // Avoid deeply nested comma expressions as traversing them during emit can result in "Maximum call
-    // stack size exceeded" errors.
     return expressions.length > 10 ? createCommaList(expressions) : reduceLeft(expressions, createComma)!;
-  }
-
-  export function createExpressionFromEntityName(node: EntityName | Expression): Expression {
-    if (qn.is.kind(QualifiedName, node)) {
-      const left = createExpressionFromEntityName(node.left);
-      const right = getMutableClone(node.right);
-      return setTextRange(createPropertyAccess(left, right), node);
-    } else {
-      return getMutableClone(node);
-    }
-  }
-
-  export function createExpressionForPropertyName(memberName: Exclude<PropertyName, PrivateIdentifier>): Expression {
-    if (qn.is.kind(Identifier, memberName)) {
-      return createLiteral(memberName);
-    } else if (qn.is.kind(ComputedPropertyName, memberName)) {
-      return getMutableClone(memberName.expression);
-    } else {
-      return getMutableClone(memberName);
-    }
-  }
-
-  export function createExpressionForObjectLiteralElementLike(node: ObjectLiteralExpression, property: ObjectLiteralElementLike, receiver: Expression): Expression | undefined {
-    if (property.name && qn.is.kind(PrivateIdentifier, property.name)) {
-      Debug.failBadSyntax(property.name, 'Private identifiers are not allowed in object literals.');
-    }
-    switch (property.kind) {
-      case Syntax.GetAccessor:
-      case Syntax.SetAccessor:
-        return createExpressionForAccessorDeclaration(node.properties, property as typeof property & { name: Exclude<PropertyName, PrivateIdentifier> }, receiver, !!node.multiLine);
-      case Syntax.PropertyAssignment:
-        return createExpressionForPropertyAssignment(property, receiver);
-      case Syntax.ShorthandPropertyAssignment:
-        return createExpressionForShorthandPropertyAssignment(property, receiver);
-      case Syntax.MethodDeclaration:
-        return createExpressionForMethodDeclaration(property, receiver);
-    }
-    return;
-  }
-
-  function createExpressionForAccessorDeclaration(
-    properties: NodeArray<Declaration>,
-    property: AccessorDeclaration & { name: Exclude<PropertyName, PrivateIdentifier> },
-    receiver: Expression,
-    multiLine: boolean
-  ) {
-    const { firstAccessor, getAccessor, setAccessor } = getAllAccessorDeclarations(properties, property);
-    if (property === firstAccessor) {
-      const properties: ObjectLiteralElementLike[] = [];
-      if (getAccessor) {
-        const getterFunction = createFunctionExpression(
-          getAccessor.modifiers,
-          /*asteriskToken*/ undefined,
-          /*name*/ undefined,
-          /*typeParameters*/ undefined,
-          getAccessor.parameters,
-          /*type*/ undefined,
-          getAccessor.body! // TODO: GH#18217
-        );
-        setTextRange(getterFunction, getAccessor);
-        setOriginalNode(getterFunction, getAccessor);
-        const getter = createPropertyAssignment('get', getterFunction);
-        properties.push(getter);
-      }
-
-      if (setAccessor) {
-        const setterFunction = createFunctionExpression(
-          setAccessor.modifiers,
-          /*asteriskToken*/ undefined,
-          /*name*/ undefined,
-          /*typeParameters*/ undefined,
-          setAccessor.parameters,
-          /*type*/ undefined,
-          setAccessor.body! // TODO: GH#18217
-        );
-        setTextRange(setterFunction, setAccessor);
-        setOriginalNode(setterFunction, setAccessor);
-        const setter = createPropertyAssignment('set', setterFunction);
-        properties.push(setter);
-      }
-
-      properties.push(createPropertyAssignment('enumerable', getAccessor || setAccessor ? createFalse() : createTrue()));
-      properties.push(createPropertyAssignment('configurable', createTrue()));
-
-      const expression = setTextRange(
-        createCall(createPropertyAccess(createIdentifier('Object'), 'defineProperty'), /*typeArguments*/ undefined, [
-          receiver,
-          createExpressionForPropertyName(property.name),
-          createObjectLiteral(properties, multiLine),
-        ]),
-        firstAccessor
-      );
-
-      return aggregateTransformFlags(expression);
-    }
-
-    return;
-  }
-
-  function createExpressionForPropertyAssignment(property: PropertyAssignment, receiver: Expression) {
-    return aggregateTransformFlags(
-      setOriginalNode(setTextRange(createAssignment(createMemberAccessForPropertyName(receiver, property.name, property.name), property.initializer), property), property)
-    );
-  }
-
-  function createExpressionForShorthandPropertyAssignment(property: ShorthandPropertyAssignment, receiver: Expression) {
-    return aggregateTransformFlags(
-      setOriginalNode(setTextRange(createAssignment(createMemberAccessForPropertyName(receiver, property.name, property.name), getSynthesizedClone(property.name)), property), /*original*/ property)
-    );
-  }
-
-  function createExpressionForMethodDeclaration(method: MethodDeclaration, receiver: Expression) {
-    return aggregateTransformFlags(
-      setOriginalNode(
-        setTextRange(
-          createAssignment(
-            createMemberAccessForPropertyName(receiver, method.name, method.name),
-            setOriginalNode(
-              setTextRange(
-                createFunctionExpression(
-                  method.modifiers,
-                  method.asteriskToken,
-                  /*name*/ undefined,
-                  /*typeParameters*/ undefined,
-                  method.parameters,
-                  /*type*/ undefined,
-                  method.body! // TODO: GH#18217
-                ),
-                method
-              ),
-              /*original*/ method
-            )
-          ),
-          method
-        ),
-        /*original*/ method
-      )
-    );
   }
 
   export function convertToFunctionBody(node: ConciseBody, multiLine?: boolean): Block {
@@ -5436,89 +5914,10 @@ namespace qnr {
     const updated = createFunctionExpression(node.modifiers, node.asteriskToken, node.name, node.typeParameters, node.parameters, node.type, node.body);
     setOriginalNode(updated, node);
     setTextRange(updated, node);
-    if (getStartsOnNewLine(node)) {
-      setStartsOnNewLine(updated, /*newLine*/ true);
-    }
+    if (getStartsOnNewLine(node)) setStartsOnNewLine(updated, true);
+
     aggregateTransformFlags(updated);
     return updated;
-  }
-
-  function isUseStrictPrologue(node: ExpressionStatement): boolean {
-    return qn.is.kind(StringLiteral, node.expression) && node.expression.text === 'use strict';
-  }
-
-  export function addPrologue(target: Statement[], source: readonly Statement[], ensureUseStrict?: boolean, visitor?: (node: Node) => VisitResult<Node>): number {
-    const offset = addStandardPrologue(target, source, ensureUseStrict);
-    return addCustomPrologue(target, source, offset, visitor);
-  }
-
-  export function addStandardPrologue(target: Statement[], source: readonly Statement[], ensureUseStrict?: boolean): number {
-    assert(target.length === 0, 'Prologue directives should be at the first statement in the target statements array');
-    let foundUseStrict = false;
-    let statementOffset = 0;
-    const numStatements = source.length;
-    while (statementOffset < numStatements) {
-      const statement = source[statementOffset];
-      if (qn.is.prologueDirective(statement)) {
-        if (isUseStrictPrologue(statement)) {
-          foundUseStrict = true;
-        }
-        target.push(statement);
-      } else {
-        break;
-      }
-      statementOffset++;
-    }
-    if (ensureUseStrict && !foundUseStrict) {
-      target.push(startOnNewLine(createStatement(createLiteral('use strict'))));
-    }
-    return statementOffset;
-  }
-
-  export function addCustomPrologue(target: Statement[], source: readonly Statement[], statementOffset: number, visitor?: (node: Node) => VisitResult<Node>, filter?: (node: Node) => boolean): number;
-  export function addCustomPrologue(
-    target: Statement[],
-    source: readonly Statement[],
-    statementOffset: number | undefined,
-    visitor?: (node: Node) => VisitResult<Node>,
-    filter?: (node: Node) => boolean
-  ): number | undefined;
-  export function addCustomPrologue(
-    target: Statement[],
-    source: readonly Statement[],
-    statementOffset: number | undefined,
-    visitor?: (node: Node) => VisitResult<Node>,
-    filter: (node: Node) => boolean = () => true
-  ): number | undefined {
-    const numStatements = source.length;
-    while (statementOffset !== undefined && statementOffset < numStatements) {
-      const statement = source[statementOffset];
-      if (qn.get.emitFlags(statement) & EmitFlags.CustomPrologue && filter(statement)) {
-        qa.append(target, visitor ? visitNode(statement, visitor, isStatement) : statement);
-      } else {
-        break;
-      }
-      statementOffset++;
-    }
-    return statementOffset;
-  }
-
-  export function findUseStrictPrologue(statements: readonly Statement[]): Statement | undefined {
-    for (const statement of statements) {
-      if (qn.is.prologueDirective(statement)) {
-        if (isUseStrictPrologue(statement)) {
-          return statement;
-        }
-      } else {
-        break;
-      }
-    }
-    return;
-  }
-
-  export function startsWithUseStrict(statements: readonly Statement[]) {
-    const firstStatement = firstOrUndefined(statements);
-    return firstStatement !== undefined && qn.is.prologueDirective(firstStatement) && isUseStrictPrologue(firstStatement);
   }
 
   export function ensureUseStrict(statements: NodeArray<Statement>): NodeArray<Statement> {
@@ -5534,442 +5933,8 @@ namespace qnr {
     return statements;
   }
 
-  export function parenthesizeBinaryOperand(binaryOperator: Syntax, operand: Expression, isLeftSideOfBinary: boolean, leftOperand?: Expression) {
-    const skipped = skipPartiallyEmittedExpressions(operand);
-
-    // If the resulting expression is already parenthesized, we do not need to do any further processing.
-    if (skipped.kind === Syntax.ParenthesizedExpression) {
-      return operand;
-    }
-
-    return binaryOperandNeedsParentheses(binaryOperator, operand, isLeftSideOfBinary, leftOperand) ? createParen(operand) : operand;
-  }
-
-  function binaryOperandNeedsParentheses(binaryOperator: Syntax, operand: Expression, isLeftSideOfBinary: boolean, leftOperand: Expression | undefined) {
-    // If the operand has lower precedence, then it needs to be parenthesized to preserve the
-    // intent of the expression. For example, if the operand is `a + b` and the operator is
-    // `*`, then we need to parenthesize the operand to preserve the intended order of
-    // operations: `(a + b) * x`.
-    //
-    // If the operand has higher precedence, then it does not need to be parenthesized. For
-    // example, if the operand is `a * b` and the operator is `+`, then we do not need to
-    // parenthesize to preserve the intended order of operations: `a * b + x`.
-    //
-    // If the operand has the same precedence, then we need to check the associativity of
-    // the operator based on whether this is the left or right operand of the expression.
-    //
-    // For example, if `a / d` is on the right of operator `*`, we need to parenthesize
-    // to preserve the intended order of operations: `x * (a / d)`
-    //
-    // If `a ** d` is on the left of operator `**`, we need to parenthesize to preserve
-    // the intended order of operations: `(a ** b) ** c`
-    const binaryOperatorPrecedence = qy.get.operatorPrecedence(Syntax.BinaryExpression, binaryOperator);
-    const binaryOperatorAssociativity = qy.get.operatorAssociativity(Syntax.BinaryExpression, binaryOperator);
-    const emittedOperand = skipPartiallyEmittedExpressions(operand);
-    if (!isLeftSideOfBinary && operand.kind === Syntax.ArrowFunction && binaryOperatorPrecedence > 3) {
-      // We need to parenthesize arrow functions on the right side to avoid it being
-      // parsed as parenthesized expression: `a && (() => {})`
-      return true;
-    }
-    const operandPrecedence = getExpressionPrecedence(emittedOperand);
-    switch (compareValues(operandPrecedence, binaryOperatorPrecedence)) {
-      case Comparison.LessThan:
-        // If the operand is the right side of a right-associative binary operation
-        // and is a yield expression, then we do not need parentheses.
-        if (!isLeftSideOfBinary && binaryOperatorAssociativity === Associativity.Right && operand.kind === Syntax.YieldExpression) {
-          return false;
-        }
-
-        return true;
-
-      case Comparison.GreaterThan:
-        return false;
-
-      case Comparison.EqualTo:
-        if (isLeftSideOfBinary) {
-          // No need to parenthesize the left operand when the binary operator is
-          // left associative:
-          //  (a*b)/x    -> a*b/x
-          //  (a**b)/x   -> a**b/x
-          //
-          // Parentheses are needed for the left operand when the binary operator is
-          // right associative:
-          //  (a/b)**x   -> (a/b)**x
-          //  (a**b)**x  -> (a**b)**x
-          return binaryOperatorAssociativity === Associativity.Right;
-        } else {
-          if (qn.is.kind(emittedOperand, BinaryExpression) && emittedOperand.operatorToken.kind === binaryOperator) {
-            // No need to parenthesize the right operand when the binary operator and
-            // operand are the same and one of the following:
-            //  x*(a*b)     => x*a*b
-            //  x|(a|b)     => x|a|b
-            //  x&(a&b)     => x&a&b
-            //  x^(a^b)     => x^a^b
-            if (operatorHasAssociativeProperty(binaryOperator)) {
-              return false;
-            }
-
-            // No need to parenthesize the right operand when the binary operator
-            // is plus (+) if both the left and right operands consist solely of either
-            // literals of the same kind or binary plus (+) expressions for literals of
-            // the same kind (recursively).
-            //  "a"+(1+2)       => "a"+(1+2)
-            //  "a"+("b"+"c")   => "a"+"b"+"c"
-            if (binaryOperator === Syntax.PlusToken) {
-              const leftKind = leftOperand ? getLiteralKindOfBinaryPlusOperand(leftOperand) : Syntax.Unknown;
-              if (qy.is.literal(leftKind) && leftKind === getLiteralKindOfBinaryPlusOperand(emittedOperand)) {
-                return false;
-              }
-            }
-          }
-
-          // No need to parenthesize the right operand when the operand is right
-          // associative:
-          //  x/(a**b)    -> x/a**b
-          //  x**(a**b)   -> x**a**b
-          //
-          // Parentheses are needed for the right operand when the operand is left
-          // associative:
-          //  x/(a*b)     -> x/(a*b)
-          //  x**(a/b)    -> x**(a/b)
-          const operandAssociativity = getExpressionAssociativity(emittedOperand);
-          return operandAssociativity === Associativity.Left;
-        }
-    }
-  }
-
-  function operatorHasAssociativeProperty(binaryOperator: Syntax) {
-    // The following operators are associative in JavaScript:
-    //  (a*b)*c     -> a*(b*c)  -> a*b*c
-    //  (a|b)|c     -> a|(b|c)  -> a|b|c
-    //  (a&b)&c     -> a&(b&c)  -> a&b&c
-    //  (a^b)^c     -> a^(b^c)  -> a^b^c
-    //
-    // While addition is associative in mathematics, JavaScript's `+` is not
-    // guaranteed to be associative as it is overloaded with string concatenation.
-    return binaryOperator === Syntax.AsteriskToken || binaryOperator === Syntax.BarToken || binaryOperator === Syntax.AmpersandToken || binaryOperator === Syntax.CaretToken;
-  }
-
-  interface BinaryPlusExpression extends BinaryExpression {
-    cachedLiteralKind: Syntax;
-  }
-
-  function getLiteralKindOfBinaryPlusOperand(node: Expression): Syntax {
-    node = skipPartiallyEmittedExpressions(node);
-
-    if (qy.is.literal(node.kind)) {
-      return node.kind;
-    }
-
-    if (node.kind === Syntax.BinaryExpression && (<BinaryExpression>node).operatorToken.kind === Syntax.PlusToken) {
-      if ((<BinaryPlusExpression>node).cachedLiteralKind !== undefined) {
-        return (<BinaryPlusExpression>node).cachedLiteralKind;
-      }
-
-      const leftKind = getLiteralKindOfBinaryPlusOperand((<BinaryExpression>node).left);
-      const literalKind = qy.is.literal(leftKind) && leftKind === getLiteralKindOfBinaryPlusOperand((<BinaryExpression>node).right) ? leftKind : Syntax.Unknown;
-
-      (<BinaryPlusExpression>node).cachedLiteralKind = literalKind;
-      return literalKind;
-    }
-
-    return Syntax.Unknown;
-  }
-
-  export function parenthesizeForConditionalHead(condition: Expression) {
-    const conditionalPrecedence = qy.get.operatorPrecedence(Syntax.ConditionalExpression, Syntax.QuestionToken);
-    const emittedCondition = skipPartiallyEmittedExpressions(condition);
-    const conditionPrecedence = getExpressionPrecedence(emittedCondition);
-    if (compareValues(conditionPrecedence, conditionalPrecedence) !== Comparison.GreaterThan) {
-      return createParen(condition);
-    }
-    return condition;
-  }
-
-  export function parenthesizeSubexpressionOfConditionalExpression(e: Expression): Expression {
-    // per ES grammar both 'whenTrue' and 'whenFalse' parts of conditional expression are assignment expressions
-    // so in case when comma expression is introduced as a part of previous transformations
-    // if should be wrapped in parens since comma operator has the lowest precedence
-    const emittedExpression = skipPartiallyEmittedExpressions(e);
-    return isCommaSequence(emittedExpression) ? createParen(e) : e;
-  }
-
-  export function parenthesizeDefaultExpression(e: Expression) {
-    const check = skipPartiallyEmittedExpressions(e);
-    let needsParens = isCommaSequence(check);
-    if (!needsParens) {
-      switch (getLeftmostExpression(check, /*stopAtCallExpression*/ false).kind) {
-        case Syntax.ClassExpression:
-        case Syntax.FunctionExpression:
-          needsParens = true;
-      }
-    }
-    return needsParens ? createParen(e) : e;
-  }
-
-  export function parenthesizeForNew(expression: Expression): LeftHandSideExpression {
-    const leftmostExpr = getLeftmostExpression(expression, /*stopAtCallExpressions*/ true);
-    switch (leftmostExpr.kind) {
-      case Syntax.CallExpression:
-        return createParen(expression);
-
-      case Syntax.NewExpression:
-        return !(leftmostExpr as NewExpression).arguments ? createParen(expression) : <LeftHandSideExpression>expression;
-    }
-
-    return parenthesizeForAccess(expression);
-  }
-
-  export function parenthesizeForAccess(expression: Expression): LeftHandSideExpression {
-    // isLeftHandSideExpression is almost the correct criterion for when it is not necessary
-    // to parenthesize the expression before a dot. The known exception is:
-    //
-    //    NewExpression:
-    //       new C.x        -> not the same as (new C).x
-    //
-    const emittedExpression = skipPartiallyEmittedExpressions(expression);
-    if (qn.is.leftHandSideExpression(emittedExpression) && (emittedExpression.kind !== Syntax.NewExpression || (<NewExpression>emittedExpression).arguments)) {
-      return <LeftHandSideExpression>expression;
-    }
-
-    return setTextRange(createParen(expression), expression);
-  }
-
-  export function parenthesizePostfixOperand(operand: Expression) {
-    return qn.is.leftHandSideExpression(operand) ? operand : setTextRange(createParen(operand), operand);
-  }
-
-  export function parenthesizePrefixOperand(operand: Expression) {
-    return qn.is.unaryExpression(operand) ? operand : setTextRange(createParen(operand), operand);
-  }
-
-  export function parenthesizeListElements(elements: NodeArray<Expression>) {
-    let result: Expression[] | undefined;
-    for (let i = 0; i < elements.length; i++) {
-      const element = parenthesizeExpressionForList(elements[i]);
-      if (result !== undefined || element !== elements[i]) {
-        if (result === undefined) {
-          result = elements.slice(0, i);
-        }
-
-        result.push(element);
-      }
-    }
-
-    if (result !== undefined) {
-      return setTextRange(NodeArray.create(result, elements.trailingComma), elements);
-    }
-
-    return elements;
-  }
-
-  export function parenthesizeExpressionForList(expression: Expression) {
-    const emittedExpression = skipPartiallyEmittedExpressions(expression);
-    const expressionPrecedence = getExpressionPrecedence(emittedExpression);
-    const commaPrecedence = qy.get.operatorPrecedence(Syntax.BinaryExpression, Syntax.CommaToken);
-    return expressionPrecedence > commaPrecedence ? expression : setTextRange(createParen(expression), expression);
-  }
-
-  export function parenthesizeExpressionForExpressionStatement(expression: Expression) {
-    const emittedExpression = skipPartiallyEmittedExpressions(expression);
-    if (qn.is.kind(CallExpression, emittedExpression)) {
-      const callee = emittedExpression.expression;
-      const kind = skipPartiallyEmittedExpressions(callee).kind;
-      if (kind === Syntax.FunctionExpression || kind === Syntax.ArrowFunction) {
-        const mutableCall = getMutableClone(emittedExpression);
-        mutableCall.expression = setTextRange(createParen(callee), callee);
-        return recreateOuterExpressions(expression, mutableCall, OuterExpressionKinds.PartiallyEmittedExpressions);
-      }
-    }
-
-    const leftmostExpressionKind = getLeftmostExpression(emittedExpression, /*stopAtCallExpressions*/ false).kind;
-    if (leftmostExpressionKind === Syntax.ObjectLiteralExpression || leftmostExpressionKind === Syntax.FunctionExpression) {
-      return setTextRange(createParen(expression), expression);
-    }
-
-    return expression;
-  }
-
-  export function parenthesizeConditionalTypeMember(member: TypeNode) {
-    return member.kind === Syntax.ConditionalType ? ParenthesizedTypeNode.create(member) : member;
-  }
-
-  export function parenthesizeElementTypeMember(member: TypeNode) {
-    switch (member.kind) {
-      case Syntax.UnionType:
-      case Syntax.IntersectionType:
-      case Syntax.FunctionType:
-      case Syntax.ConstructorType:
-        return ParenthesizedTypeNode.create(member);
-    }
-    return parenthesizeConditionalTypeMember(member);
-  }
-
-  export function parenthesizeArrayTypeMember(member: TypeNode) {
-    switch (member.kind) {
-      case Syntax.TypeQuery:
-      case Syntax.TypeOperator:
-      case Syntax.InferType:
-        return ParenthesizedTypeNode.create(member);
-    }
-    return parenthesizeElementTypeMember(member);
-  }
-
-  export function parenthesizeElementTypeMembers(members: readonly TypeNode[]) {
-    return NodeArray.create(sameMap(members, parenthesizeElementTypeMember));
-  }
-
-  export function parenthesizeTypeParameters(typeParameters: readonly TypeNode[] | undefined) {
-    if (qa.some(typeParameters)) {
-      const params: TypeNode[] = [];
-      for (let i = 0; i < typeParameters.length; ++i) {
-        const entry = typeParameters[i];
-        params.push(i === 0 && qn.is.functionOrConstructorTypeNode(entry) && entry.typeParameters ? ParenthesizedTypeNode.create(entry) : entry);
-      }
-
-      return NodeArray.create(params);
-    }
-    return;
-  }
-
-  export function getLeftmostExpression(node: Expression, stopAtCallExpressions: boolean) {
-    while (true) {
-      switch (node.kind) {
-        case Syntax.PostfixUnaryExpression:
-          node = (<PostfixUnaryExpression>node).operand;
-          continue;
-
-        case Syntax.BinaryExpression:
-          node = (<BinaryExpression>node).left;
-          continue;
-
-        case Syntax.ConditionalExpression:
-          node = (<ConditionalExpression>node).condition;
-          continue;
-
-        case Syntax.TaggedTemplateExpression:
-          node = (<TaggedTemplateExpression>node).tag;
-          continue;
-
-        case Syntax.CallExpression:
-          if (stopAtCallExpressions) {
-            return node;
-          }
-        // falls through
-        case Syntax.AsExpression:
-        case Syntax.ElementAccessExpression:
-        case Syntax.PropertyAccessExpression:
-        case Syntax.NonNullExpression:
-        case Syntax.PartiallyEmittedExpression:
-          node = (<CallExpression | PropertyAccessExpression | ElementAccessExpression | AsExpression | NonNullExpression | PartiallyEmittedExpression>node).expression;
-          continue;
-      }
-
-      return node;
-    }
-  }
-
-  export function parenthesizeConciseBody(body: ConciseBody): ConciseBody {
-    if (!qn.is.kind(Block, body) && (isCommaSequence(body) || getLeftmostExpression(body, /*stopAtCallExpressions*/ false).kind === Syntax.ObjectLiteralExpression)) {
-      return setTextRange(createParen(body), body);
-    }
-
-    return body;
-  }
-
-  export function isCommaSequence(node: Expression): node is (BinaryExpression & { operatorToken: Token<Syntax.CommaToken> }) | CommaListExpression {
-    return (node.kind === Syntax.BinaryExpression && (<BinaryExpression>node).operatorToken.kind === Syntax.CommaToken) || node.kind === Syntax.CommaListExpression;
-  }
-
-  export const enum OuterExpressionKinds {
-    Parentheses = 1 << 0,
-    TypeAssertions = 1 << 1,
-    NonNullAssertions = 1 << 2,
-    PartiallyEmittedExpressions = 1 << 3,
-
-    Assertions = TypeAssertions | NonNullAssertions,
-    All = Parentheses | Assertions | PartiallyEmittedExpressions,
-  }
-
-  export type OuterExpression = ParenthesizedExpression | TypeAssertion | AsExpression | NonNullExpression | PartiallyEmittedExpression;
-
-  export function isOuterExpression(node: Node, kinds = OuterExpressionKinds.All): node is OuterExpression {
-    switch (node.kind) {
-      case Syntax.ParenthesizedExpression:
-        return (kinds & OuterExpressionKinds.Parentheses) !== 0;
-      case Syntax.TypeAssertionExpression:
-      case Syntax.AsExpression:
-        return (kinds & OuterExpressionKinds.TypeAssertions) !== 0;
-      case Syntax.NonNullExpression:
-        return (kinds & OuterExpressionKinds.NonNullAssertions) !== 0;
-      case Syntax.PartiallyEmittedExpression:
-        return (kinds & OuterExpressionKinds.PartiallyEmittedExpressions) !== 0;
-    }
-    return false;
-  }
-
-  export function skipOuterExpressions(node: Expression, kinds?: OuterExpressionKinds): Expression;
-  export function skipOuterExpressions(node: Node, kinds?: OuterExpressionKinds): Node;
-  export function skipOuterExpressions(node: Node, kinds = OuterExpressionKinds.All) {
-    while (isOuterExpression(node, kinds)) {
-      node = node.expression;
-    }
-    return node;
-  }
-
-  export function skipAssertions(node: Expression): Expression;
-  export function skipAssertions(node: Node): Node;
-  export function skipAssertions(node: Node): Node {
-    return skipOuterExpressions(node, OuterExpressionKinds.Assertions);
-  }
-
-  function updateOuterExpression(outerExpression: OuterExpression, expression: Expression) {
-    switch (outerExpression.kind) {
-      case Syntax.ParenthesizedExpression:
-        return updateParen(outerExpression, expression);
-      case Syntax.TypeAssertionExpression:
-        return updateTypeAssertion(outerExpression, outerExpression.type, expression);
-      case Syntax.AsExpression:
-        return updateAsExpression(outerExpression, expression, outerExpression.type);
-      case Syntax.NonNullExpression:
-        return updateNonNullExpression(outerExpression, expression);
-      case Syntax.PartiallyEmittedExpression:
-        return updatePartiallyEmittedExpression(outerExpression, expression);
-    }
-  }
-
-  function isIgnorableParen(node: Expression) {
-    return (
-      node.kind === Syntax.ParenthesizedExpression &&
-      isSynthesized(node) &&
-      isSynthesized(getSourceMapRange(node)) &&
-      isSynthesized(getCommentRange(node)) &&
-      !some(getSyntheticLeadingComments(node)) &&
-      !some(getSyntheticTrailingComments(node))
-    );
-  }
-
-  export function recreateOuterExpressions(outerExpression: Expression | undefined, innerExpression: Expression, kinds = OuterExpressionKinds.All): Expression {
-    if (outerExpression && isOuterExpression(outerExpression, kinds) && !isIgnorableParen(outerExpression)) {
-      return updateOuterExpression(outerExpression, recreateOuterExpressions(outerExpression.expression, innerExpression));
-    }
-    return innerExpression;
-  }
-
   export function startOnNewLine<T extends Node>(node: T): T {
-    return setStartsOnNewLine(node, /*newLine*/ true);
-  }
-
-  export function getExternalHelpersModuleName(node: SourceFile) {
-    const parseNode = qn.get.originalOf(node, isSourceFile);
-    const emitNode = parseNode && parseNode.emitNode;
-    return emitNode && emitNode.externalHelpersModuleName;
-  }
-
-  export function hasRecordedExternalHelpers(sourceFile: SourceFile) {
-    const parseNode = qn.get.originalOf(sourceFile, isSourceFile);
-    const emitNode = parseNode && parseNode.emitNode;
-    return !!emitNode && (!!emitNode.externalHelpersModuleName || !!emitNode.externalHelpers);
+    return setStartsOnNewLine(node, true);
   }
 
   export function createExternalHelpersImportDeclarationIfNeeded(
@@ -6062,21 +6027,6 @@ namespace qnr {
     return;
   }
 
-  export function getLocalNameForExternalImport(node: ImportDeclaration | ExportDeclaration | ImportEqualsDeclaration, sourceFile: SourceFile): Identifier | undefined {
-    const namespaceDeclaration = getNamespaceDeclarationNode(node);
-    if (namespaceDeclaration && !isDefaultImport(node)) {
-      const name = namespaceDeclaration.name;
-      return qn.is.generatedIdentifier(name) ? name : createIdentifier(getSourceTextOfNodeFromSourceFile(sourceFile, name) || idText(name));
-    }
-    if (node.kind === Syntax.ImportDeclaration && node.importClause) {
-      return getGeneratedNameForNode(node);
-    }
-    if (node.kind === Syntax.ExportDeclaration && node.moduleSpecifier) {
-      return getGeneratedNameForNode(node);
-    }
-    return;
-  }
-
   export function getExternalModuleNameLiteral(
     importNode: ImportDeclaration | ExportDeclaration | ImportEqualsDeclaration,
     sourceFile: SourceFile,
@@ -6086,17 +6036,19 @@ namespace qnr {
   ) {
     const moduleName = getExternalModuleName(importNode)!; // TODO: GH#18217
     if (moduleName.kind === Syntax.StringLiteral) {
+      function tryRenameExternalModule(moduleName: LiteralExpression, sourceFile: SourceFile) {
+        const rename = sourceFile.renamedDependencies && sourceFile.renamedDependencies.get(moduleName.text);
+        return rename && createLiteral(rename);
+      }
+      function tryGetModuleNameFromDeclaration(declaration: ImportEqualsDeclaration | ImportDeclaration | ExportDeclaration, host: EmitHost, resolver: EmitResolver, compilerOptions: CompilerOptions) {
+        return tryGetModuleNameFromFile(resolver.getExternalModuleFileFromDeclaration(declaration), host, compilerOptions);
+      }
       return (
         tryGetModuleNameFromDeclaration(importNode, host, resolver, compilerOptions) || tryRenameExternalModule(<StringLiteral>moduleName, sourceFile) || getSynthesizedClone(<StringLiteral>moduleName)
       );
     }
 
     return;
-  }
-
-  function tryRenameExternalModule(moduleName: LiteralExpression, sourceFile: SourceFile) {
-    const rename = sourceFile.renamedDependencies && sourceFile.renamedDependencies.get(moduleName.text);
-    return rename && createLiteral(rename);
   }
 
   export function tryGetModuleNameFromFile(file: SourceFile | undefined, host: EmitHost, options: CompilerOptions): StringLiteral | undefined {
@@ -6110,9 +6062,5 @@ namespace qnr {
       return createLiteral(getExternalModuleNameFromPath(host, file.fileName));
     }
     return;
-  }
-
-  function tryGetModuleNameFromDeclaration(declaration: ImportEqualsDeclaration | ImportDeclaration | ExportDeclaration, host: EmitHost, resolver: EmitResolver, compilerOptions: CompilerOptions) {
-    return tryGetModuleNameFromFile(resolver.getExternalModuleFileFromDeclaration(declaration), host, compilerOptions);
   }
 }
