@@ -1,14 +1,7 @@
 namespace qnr {
-  export namespace qf {
-    export type ArrayBindingElement = BindingElement | OmittedExpression;
+  export namespace qt {
     export namespace ArrayBindingElement {
       export const also = [Syntax.BindingElement, Syntax.OmittedExpression];
-    }
-
-    export interface ArrayBindingPattern extends Node {
-      kind: Syntax.ArrayBindingPattern;
-      parent: VariableDeclaration | ParameterDeclaration | BindingElement;
-      elements: Nodes<ArrayBindingElement>;
     }
     export namespace ArrayBindingPattern {
       export const kind = Syntax.ArrayBindingPattern;
@@ -20,12 +13,6 @@ namespace qnr {
       export function update(n: ArrayBindingPattern, es: readonly ArrayBindingElement[]) {
         return n.elements !== es ? updateNode(create(es), n) : n;
       }
-    }
-
-    export interface ArrayLiteralExpression extends PrimaryExpression {
-      kind: Syntax.ArrayLiteralExpression;
-      elements: Nodes<Expression>;
-      multiLine?: boolean;
     }
     export namespace ArrayLiteralExpression {
       export const kind = Syntax.ArrayLiteralExpression;
@@ -39,11 +26,6 @@ namespace qnr {
         return node.elements !== elements ? updateNode(createArrayLiteral(elements, node.multiLine), node) : node;
       }
     }
-
-    export interface ArrayTypeNode extends TypeNode {
-      kind: Syntax.ArrayType;
-      elementType: TypeNode;
-    }
     export namespace ArrayTypeNode {
       export const kind = Syntax.ArrayType;
       export function create(t: TypeNode) {
@@ -54,13 +36,6 @@ namespace qnr {
       export function update(n: ArrayTypeNode, t: TypeNode) {
         return n.elementType !== t ? updateNode(create(t), n) : n;
       }
-    }
-
-    export interface ArrowFunction extends Expression, FunctionLikeDeclarationBase, JSDocContainer {
-      kind: Syntax.ArrowFunction;
-      equalsGreaterThanToken: EqualsGreaterThanToken;
-      body: ConciseBody;
-      name: never;
     }
     export namespace ArrowFunction {
       export const kind = Syntax.ArrowFunction;
@@ -100,12 +75,6 @@ namespace qnr {
           : node;
       }
     }
-
-    export interface AsExpression extends Expression {
-      kind: Syntax.AsExpression;
-      expression: Expression;
-      type: TypeNode;
-    }
     export namespace AsExpression {
       export const kind = Syntax.AsExpression;
       export function createAsExpression(expression: Expression, type: TypeNode) {
@@ -118,16 +87,9 @@ namespace qnr {
         return node.expression !== expression || node.type !== type ? updateNode(createAsExpression(expression, type), node) : node;
       }
     }
-
-    export type AssignmentPattern = ArrayLiteralExpression | ObjectLiteralExpression;
     export namespace AssignmentPattern {
       export const kind = Syntax.ArrayLiteralExpression;
       export const also = [Syntax.ObjectLiteralExpression];
-    }
-
-    export interface AwaitExpression extends UnaryExpression {
-      kind: Syntax.AwaitExpression;
-      expression: UnaryExpression;
     }
     export namespace AwaitExpression {
       export const kind = Syntax.AwaitExpression;
@@ -139,10 +101,6 @@ namespace qnr {
       export function updateAwait(node: AwaitExpression, expression: Expression) {
         return node.expression !== expression ? updateNode(createAwait(expression), node) : node;
       }
-    }
-
-    export interface BigIntLiteral extends LiteralExpression {
-      kind: Syntax.BigIntLiteral;
     }
     export namespace BigIntLiteral {
       export const kind = Syntax.BigIntLiteral;
@@ -157,13 +115,6 @@ namespace qnr {
           (e.kind === Syntax.PrefixUnaryExpression && (e as PrefixUnaryExpression).operator === Syntax.MinusToken && (e as PrefixUnaryExpression).operand.kind === Syntax.BigIntLiteral)
         );
       }
-    }
-
-    export interface BinaryExpression extends Expression, Declaration {
-      kind: Syntax.BinaryExpression;
-      left: Expression;
-      operatorToken: BinaryOperatorToken;
-      right: Expression;
     }
     export namespace BinaryExpression {
       export const kind = Syntax.BinaryExpression;
@@ -212,15 +163,6 @@ namespace qnr {
         return createBinary(left, Syntax.EqualsToken, right);
       }
     }
-
-    export interface BindingElement extends NamedDeclaration {
-      kind: Syntax.BindingElement;
-      parent: BindingPattern;
-      propertyName?: PropertyName;
-      dot3Token?: Dot3Token;
-      name: BindingName;
-      initializer?: Expression;
-    }
     export namespace BindingElement {
       export const kind = Syntax.BindingElement;
       export function create(d: Dot3Token | undefined, p: string | PropertyName | undefined, b: string | BindingName, i?: Expression) {
@@ -235,22 +177,6 @@ namespace qnr {
         return n.propertyName !== p || n.dot3Token !== d || n.name !== b || n.initializer !== i ? updateNode(create(d, p, b, i), n) : n;
       }
     }
-
-    export type BindingOrAssignmentElement =
-      | VariableDeclaration
-      | ParameterDeclaration
-      | BindingElement
-      | PropertyAssignment // AssignmentProperty
-      | ShorthandPropertyAssignment // AssignmentProperty
-      | SpreadAssignment // AssignmentRestProperty
-      | OmittedExpression // Elision
-      | SpreadElement // AssignmentRestElement
-      | ArrayLiteralExpression // ArrayAssignmentPattern
-      | ObjectLiteralExpression // ObjectAssignmentPattern
-      | AssignmentExpression<EqualsToken> // AssignmentElement
-      | Identifier // DestructuringAssignmentTarget
-      | PropertyAccessExpression // DestructuringAssignmentTarget
-      | ElementAccessExpression; // DestructuringAssignmentTarget
     export namespace BindingOrAssignmentElement {
       export function getInitializerOfBindingOrAssignmentElement(bindingElement: BindingOrAssignmentElement): Expression | undefined {
         if (isDeclarationBindingElement(bindingElement)) {
@@ -441,16 +367,6 @@ namespace qnr {
         return <ObjectLiteralElementLike>element;
       }
     }
-
-    export type BindingOrAssignmentElementRestIndicator =
-      | Dot3Token // from BindingElement
-      | SpreadElement // AssignmentRestElement
-      | SpreadAssignment; // AssignmentRestProperty
-    export type BindingOrAssignmentElementTarget = BindingOrAssignmentPattern | Identifier | PropertyAccessExpression | ElementAccessExpression | OmittedExpression;
-
-    export type ObjectBindingOrAssignmentPattern = ObjectBindingPattern | ObjectLiteralExpression;
-    export type ArrayBindingOrAssignmentPattern = ArrayBindingPattern | ArrayLiteralExpression;
-    export type BindingOrAssignmentPattern = ObjectBindingOrAssignmentPattern | ArrayBindingOrAssignmentPattern;
     export namespace BindingOrAssignmentPattern {
       export function getElementsOfBindingOrAssignmentPattern(name: BindingOrAssignmentPattern): readonly BindingOrAssignmentElement[] {
         switch (name.kind) {
@@ -496,8 +412,6 @@ namespace qnr {
         return node;
       }
     }
-
-    export type BindingPattern = ArrayBindingPattern | ObjectBindingPattern;
     export namespace BindingPattern {
       export const kind = Syntax.ArrayBindingPattern;
       export const also = [Syntax.ObjectBindingPattern];
@@ -505,12 +419,6 @@ namespace qnr {
         if (qn.is.kind(BindingPattern, n)) return qa.every(n.elements, isEmptyBindingElement);
         return false;
       }
-    }
-
-    export interface Block extends Statement {
-      kind: Syntax.Block;
-      statements: Nodes<Statement>;
-      multiLine?: boolean;
     }
     export namespace Block {
       export const kind = Syntax.Block;
@@ -524,13 +432,6 @@ namespace qnr {
         return node.statements !== statements ? updateNode(createBlock(statements, node.multiLine), node) : node;
       }
     }
-
-    export type BlockLike = SourceFile | Block | ModuleBlock | CaseOrDefaultClause;
-
-    export interface BreakStatement extends Statement {
-      kind: Syntax.BreakStatement;
-      label?: Identifier;
-    }
     export namespace BreakStatement {
       export const kind = Syntax.BreakStatement;
       export function createBreak(label?: string | Identifier): BreakStatement {
@@ -541,16 +442,6 @@ namespace qnr {
       export function updateBreak(node: BreakStatement, label: Identifier | undefined) {
         return node.label !== label ? updateNode(createBreak(label), node) : node;
       }
-    }
-
-    export interface Bundle extends Node {
-      kind: Syntax.Bundle;
-      prepends: readonly (InputFiles | UnparsedSource)[];
-      sourceFiles: readonly SourceFile[];
-      syntheticFileReferences?: readonly FileReference[];
-      syntheticTypeReferences?: readonly FileReference[];
-      syntheticLibReferences?: readonly FileReference[];
-      hasNoDefaultLib?: boolean;
     }
     export namespace Bundle {
       export const kind = Syntax.Bundle;
@@ -566,11 +457,6 @@ namespace qnr {
         }
         return node;
       }
-    }
-
-    export interface CallBinding {
-      target: LeftHandSideExpression;
-      thisArg: Expression;
     }
     export namespace CallBinding {
       function shouldBeCapturedInTempVariable(node: Expression, cacheIdentifiers: boolean): boolean {
@@ -651,7 +537,6 @@ namespace qnr {
         return { target, thisArg };
       }
     }
-
     export namespace CallChain {
       export function createCallChain(
         expression: Expression,
@@ -679,14 +564,6 @@ namespace qnr {
           ? updateNode(createCallChain(expression, questionDotToken, typeArguments, argumentsArray), node)
           : node;
       }
-    }
-
-    export interface CallExpression extends LeftHandSideExpression, Declaration {
-      kind: Syntax.CallExpression;
-      expression: LeftHandSideExpression;
-      questionDotToken?: QuestionDotToken;
-      typeArguments?: Nodes<TypeNode>;
-      arguments: Nodes<Expression>;
     }
     export namespace CallExpression {
       export const kind = Syntax.CallExpression;
@@ -733,10 +610,6 @@ namespace qnr {
         );
       }
     }
-
-    export interface CallSignatureDeclaration extends SignatureDeclarationBase, TypeElement {
-      kind: Syntax.CallSignature;
-    }
     export namespace CallSignatureDeclaration {
       export const kind = Syntax.CallSignature;
       export function create(ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t?: TypeNode) {
@@ -745,12 +618,6 @@ namespace qnr {
       export function update(n: CallSignatureDeclaration, ts: Nodes<TypeParameterDeclaration> | undefined, ps: Nodes<ParameterDeclaration>, t?: TypeNode) {
         return SignatureDeclaration.update(n, ts, ps, t);
       }
-    }
-
-    export interface CaseBlock extends Node {
-      kind: Syntax.CaseBlock;
-      parent: SwitchStatement;
-      clauses: Nodes<CaseOrDefaultClause>;
     }
     export namespace CaseBlock {
       export const kind = Syntax.CaseBlock;
@@ -762,14 +629,6 @@ namespace qnr {
       export function updateCaseBlock(node: CaseBlock, clauses: readonly CaseOrDefaultClause[]) {
         return node.clauses !== clauses ? updateNode(createCaseBlock(clauses), node) : node;
       }
-    }
-
-    export interface CaseClause extends Node {
-      kind: Syntax.CaseClause;
-      parent: CaseBlock;
-      expression: Expression;
-      statements: Nodes<Statement>;
-      fallthroughFlowNode?: FlowNode;
     }
     export namespace CaseClause {
       export const kind = Syntax.CaseClause;
@@ -783,13 +642,6 @@ namespace qnr {
         return node.expression !== expression || node.statements !== statements ? updateNode(createCaseClause(expression, statements), node) : node;
       }
     }
-
-    export interface CatchClause extends Node {
-      kind: Syntax.CatchClause;
-      parent: TryStatement;
-      variableDeclaration?: VariableDeclaration;
-      block: Block;
-    }
     export namespace CatchClause {
       export const kind = Syntax.CatchClause;
       export function createCatchClause(variableDeclaration: string | VariableDeclaration | undefined, block: Block) {
@@ -801,11 +653,6 @@ namespace qnr {
       export function updateCatchClause(node: CatchClause, variableDeclaration: VariableDeclaration | undefined, block: Block) {
         return node.variableDeclaration !== variableDeclaration || node.block !== block ? updateNode(createCatchClause(variableDeclaration, block), node) : node;
       }
-    }
-
-    export interface ClassDeclaration extends ClassLikeDeclarationBase, DeclarationStatement {
-      kind: Syntax.ClassDeclaration;
-      name?: Identifier;
     }
     export namespace ClassDeclaration {
       export const kind = Syntax.ClassDeclaration;
@@ -845,10 +692,6 @@ namespace qnr {
           : node;
       }
     }
-
-    export interface ClassExpression extends ClassLikeDeclarationBase, PrimaryExpression {
-      kind: Syntax.ClassExpression;
-    }
     export namespace ClassExpression {
       export const kind = Syntax.ClassExpression;
       export function createClassExpression(
@@ -880,20 +723,6 @@ namespace qnr {
           : node;
       }
     }
-
-    export interface ClassLikeDeclarationBase extends NamedDeclaration, JSDocContainer {
-      kind: Syntax.ClassDeclaration | Syntax.ClassExpression;
-      name?: Identifier;
-      typeParameters?: Nodes<TypeParameterDeclaration>;
-      heritageClauses?: Nodes<HeritageClause>;
-      members: Nodes<ClassElement>;
-    }
-    export type ClassLikeDeclaration = ClassDeclaration | ClassExpression;
-
-    export interface CommaListExpression extends Expression {
-      kind: Syntax.CommaListExpression;
-      elements: Nodes<Expression>;
-    }
     export namespace CommaListExpression {
       function flattenCommaElements(node: Expression): Expression | readonly Expression[] {
         if (isSynthesized(node) && !qn.is.parseTreeNode(node) && !node.original && !node.emitNode && !node.id) {
@@ -911,12 +740,6 @@ namespace qnr {
         return node.elements !== elements ? updateNode(createCommaList(elements), node) : node;
       }
     }
-
-    export interface ComputedPropertyName extends Node {
-      kind: Syntax.ComputedPropertyName;
-      parent: Declaration;
-      expression: Expression;
-    }
     export namespace ComputedPropertyName {
       export const kind = Syntax.ComputedPropertyName;
       export function create(e: Expression) {
@@ -927,15 +750,6 @@ namespace qnr {
       export function update(n: ComputedPropertyName, e: Expression) {
         return n.expression !== e ? updateNode(create(e), n) : n;
       }
-    }
-
-    export interface ConditionalExpression extends Expression {
-      kind: Syntax.ConditionalExpression;
-      condition: Expression;
-      questionToken: QuestionToken;
-      whenTrue: Expression;
-      colonToken: ColonToken;
-      whenFalse: Expression;
     }
     export namespace ConditionalExpression {
       export const kind = Syntax.ConditionalExpression;
@@ -962,14 +776,6 @@ namespace qnr {
           : node;
       }
     }
-
-    export interface ConditionalTypeNode extends TypeNode {
-      kind: Syntax.ConditionalType;
-      checkType: TypeNode;
-      extendsType: TypeNode;
-      trueType: TypeNode;
-      falseType: TypeNode;
-    }
     export namespace ConditionalTypeNode {
       export const kind = Syntax.ConditionalType;
       export function create(c: TypeNode, e: TypeNode, t: TypeNode, f: TypeNode) {
@@ -983,12 +789,6 @@ namespace qnr {
       export function update(n: ConditionalTypeNode, c: TypeNode, e: TypeNode, t: TypeNode, f: TypeNode) {
         return n.checkType !== c || n.extendsType !== e || n.trueType !== t || n.falseType !== f ? updateNode(create(c, e, t, f), n) : n;
       }
-    }
-
-    export interface ConstructorDeclaration extends FunctionLikeDeclarationBase, ClassElement, JSDocContainer {
-      kind: Syntax.Constructor;
-      parent: ClassLikeDeclaration;
-      body?: FunctionBody;
     }
     export namespace ConstructorDeclaration {
       export const kind = Syntax.Constructor;
@@ -1006,10 +806,6 @@ namespace qnr {
         return n.decorators !== ds || n.modifiers !== ms || n.parameters !== ps || n.body !== b ? updateNode(create(ds, ms, ps, b), n) : n;
       }
     }
-
-    export interface ConstructorTypeNode extends FunctionOrConstructorTypeNodeBase {
-      kind: Syntax.ConstructorType;
-    }
     export namespace ConstructorTypeNode {
       export const kind = Syntax.ConstructorType;
       export function create(ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t?: TypeNode) {
@@ -1019,10 +815,6 @@ namespace qnr {
         return SignatureDeclaration.update(n, ts, ps, t);
       }
     }
-
-    export interface ConstructSignatureDeclaration extends SignatureDeclarationBase, TypeElement {
-      kind: Syntax.ConstructSignature;
-    }
     export namespace ConstructSignatureDeclaration {
       export const kind = Syntax.ConstructSignature;
       export function create(ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t?: TypeNode) {
@@ -1031,11 +823,6 @@ namespace qnr {
       export function update(n: ConstructSignatureDeclaration, ts: Nodes<TypeParameterDeclaration> | undefined, ps: Nodes<ParameterDeclaration>, t?: TypeNode) {
         return SignatureDeclaration.update(n, ts, ps, t);
       }
-    }
-
-    export interface ContinueStatement extends Statement {
-      kind: Syntax.ContinueStatement;
-      label?: Identifier;
     }
     export namespace ContinueStatement {
       export const kind = Syntax.ContinueStatement;
@@ -1048,19 +835,11 @@ namespace qnr {
         return node.label !== label ? updateNode(createContinue(label), node) : node;
       }
     }
-
-    export interface DebuggerStatement extends Statement {
-      kind: Syntax.DebuggerStatement;
-    }
     export namespace DebuggerStatement {
       export const kind = Syntax.DebuggerStatement;
       export function createDebuggerStatement() {
         return <DebuggerStatement>qn.createSynthesized(Syntax.DebuggerStatement);
       }
-    }
-
-    export interface Declaration extends Node {
-      _declarationBrand: any;
     }
     export namespace Declaration {
       export function getInternalName(node: Declaration, allowComments?: boolean, allowSourceMaps?: boolean) {
@@ -1094,12 +873,6 @@ namespace qnr {
         return getExportName(node, allowComments, allowSourceMaps);
       }
     }
-
-    export interface Decorator extends Node {
-      kind: Syntax.Decorator;
-      parent: NamedDeclaration;
-      expression: LeftHandSideExpression;
-    }
     export namespace Decorator {
       export const kind = Syntax.Decorator;
       export function createDecorator(expression: Expression) {
@@ -1110,13 +883,6 @@ namespace qnr {
       export function updateDecorator(node: Decorator, expression: Expression) {
         return node.expression !== expression ? updateNode(createDecorator(expression), node) : node;
       }
-    }
-
-    export interface DefaultClause extends Node {
-      kind: Syntax.DefaultClause;
-      parent: CaseBlock;
-      statements: Nodes<Statement>;
-      fallthroughFlowNode?: FlowNode;
     }
     export namespace DefaultClause {
       export const kind = Syntax.DefaultClause;
@@ -1129,11 +895,6 @@ namespace qnr {
         return node.statements !== statements ? updateNode(createDefaultClause(statements), node) : node;
       }
     }
-
-    export interface DeleteExpression extends UnaryExpression {
-      kind: Syntax.DeleteExpression;
-      expression: UnaryExpression;
-    }
     export namespace DeleteExpression {
       export const kind = Syntax.DeleteExpression;
       export function createDelete(expression: Expression) {
@@ -1144,11 +905,6 @@ namespace qnr {
       export function updateDelete(node: DeleteExpression, expression: Expression) {
         return node.expression !== expression ? updateNode(createDelete(expression), node) : node;
       }
-    }
-
-    export interface DoStatement extends IterationStatement {
-      kind: Syntax.DoStatement;
-      expression: Expression;
     }
     export namespace DoStatement {
       export const kind = Syntax.DoStatement;
@@ -1163,7 +919,6 @@ namespace qnr {
         return node.statement !== statement || node.expression !== expression ? updateNode(createDo(statement, expression), node) : node;
       }
     }
-
     export namespace ElementAccessChain {
       export function createElementAccessChain(expression: Expression, questionDotToken: QuestionDotToken | undefined, index: number | Expression) {
         const node = <ElementAccessChain>qn.createSynthesized(Syntax.ElementAccessExpression);
@@ -1180,13 +935,6 @@ namespace qnr {
           : node;
       }
     }
-
-    export interface ElementAccessExpression extends MemberExpression {
-      kind: Syntax.ElementAccessExpression;
-      expression: LeftHandSideExpression;
-      questionDotToken?: QuestionDotToken;
-      argumentExpression: Expression;
-    }
     export namespace ElementAccessExpression {
       export const kind = Syntax.ElementAccessExpression;
       export function createElementAccess(expression: Expression, index: number | Expression) {
@@ -1202,19 +950,11 @@ namespace qnr {
         return node.expression !== expression || node.argumentExpression !== argumentExpression ? updateNode(createElementAccess(expression, argumentExpression), node) : node;
       }
     }
-
-    export interface EmptyStatement extends Statement {
-      kind: Syntax.EmptyStatement;
-    }
     export namespace EmptyStatement {
       export const kind = Syntax.EmptyStatement;
       export function createEmptyStatement() {
         return <EmptyStatement>qn.createSynthesized(Syntax.EmptyStatement);
       }
-    }
-
-    export interface EndOfDeclarationMarker extends Statement {
-      kind: Syntax.EndOfDeclarationMarker;
     }
     export namespace EndOfDeclarationMarker {
       export function createEndOfDeclarationMarker(original: Node) {
@@ -1223,12 +963,6 @@ namespace qnr {
         node.original = original;
         return node;
       }
-    }
-
-    export interface EnumDeclaration extends DeclarationStatement, JSDocContainer {
-      kind: Syntax.EnumDeclaration;
-      name: Identifier;
-      members: Nodes<EnumMember>;
     }
     export namespace EnumDeclaration {
       export const kind = Syntax.EnumDeclaration;
@@ -1252,13 +986,6 @@ namespace qnr {
           : node;
       }
     }
-
-    export interface EnumMember extends NamedDeclaration, JSDocContainer {
-      kind: Syntax.EnumMember;
-      parent: EnumDeclaration;
-      name: PropertyName;
-      initializer?: Expression;
-    }
     export namespace EnumMember {
       export const kind = Syntax.EnumMember;
       export function createEnumMember(name: string | PropertyName, initializer?: Expression) {
@@ -1270,13 +997,6 @@ namespace qnr {
       export function updateEnumMember(node: EnumMember, name: PropertyName, initializer: Expression | undefined) {
         return node.name !== name || node.initializer !== initializer ? updateNode(createEnumMember(name, initializer), node) : node;
       }
-    }
-
-    export interface ExportAssignment extends DeclarationStatement {
-      kind: Syntax.ExportAssignment;
-      parent: SourceFile;
-      isExportEquals?: boolean;
-      expression: Expression;
     }
     export namespace ExportAssignment {
       export const kind = Syntax.ExportAssignment;
@@ -1298,14 +1018,6 @@ namespace qnr {
           ? updateNode(createExportAssignment(decorators, modifiers, node.isExportEquals, expression), node)
           : node;
       }
-    }
-
-    export interface ExportDeclaration extends DeclarationStatement, JSDocContainer {
-      kind: Syntax.ExportDeclaration;
-      parent: SourceFile | ModuleBlock;
-      isTypeOnly: boolean;
-      exportClause?: NamedExportBindings;
-      moduleSpecifier?: Expression;
     }
     export namespace ExportDeclaration {
       export const kind = Syntax.ExportDeclaration;
@@ -1343,13 +1055,6 @@ namespace qnr {
           : node;
       }
     }
-
-    export interface ExportSpecifier extends NamedDeclaration {
-      kind: Syntax.ExportSpecifier;
-      parent: NamedExports;
-      propertyName?: Identifier;
-      name: Identifier;
-    }
     export namespace ExportSpecifier {
       export const kind = Syntax.ExportSpecifier;
       export function createExportSpecifier(propertyName: string | Identifier | undefined, name: string | Identifier) {
@@ -1361,10 +1066,6 @@ namespace qnr {
       export function updateExportSpecifier(node: ExportSpecifier, propertyName: Identifier | undefined, name: Identifier) {
         return node.propertyName !== propertyName || node.name !== name ? updateNode(createExportSpecifier(propertyName, name), node) : node;
       }
-    }
-
-    export interface Expression extends Node {
-      _expressionBrand: any;
     }
     export namespace Expression {
       export function createExpressionFromEntityName(node: EntityName | Expression): Expression {
@@ -1568,11 +1269,6 @@ namespace qnr {
         return (node.kind === Syntax.BinaryExpression && (<BinaryExpression>node).operatorToken.kind === Syntax.CommaToken) || node.kind === Syntax.CommaListExpression;
       }
     }
-
-    export interface ExpressionStatement extends Statement, JSDocContainer {
-      kind: Syntax.ExpressionStatement;
-      expression: Expression;
-    }
     export namespace ExpressionStatement {
       export const kind = Syntax.ExpressionStatement;
       export function createExpressionStatement(expression: Expression): ExpressionStatement {
@@ -1583,12 +1279,6 @@ namespace qnr {
       export function updateExpressionStatement(node: ExpressionStatement, expression: Expression) {
         return node.expression !== expression ? updateNode(createExpressionStatement(expression), node) : node;
       }
-    }
-
-    export interface ExpressionWithTypeArguments extends NodeWithTypeArguments {
-      kind: Syntax.ExpressionWithTypeArguments;
-      parent: HeritageClause | JSDocAugmentsTag | JSDocImplementsTag;
-      expression: LeftHandSideExpression;
     }
     export namespace ExpressionWithTypeArguments {
       export const kind = Syntax.ExpressionWithTypeArguments;
@@ -1602,12 +1292,6 @@ namespace qnr {
         return node.typeArguments !== typeArguments || node.expression !== expression ? updateNode(createExpressionWithTypeArguments(typeArguments, expression), node) : node;
       }
     }
-
-    export interface ExternalModuleReference extends Node {
-      kind: Syntax.ExternalModuleReference;
-      parent: ImportEqualsDeclaration;
-      expression: Expression;
-    }
     export namespace ExternalModuleReference {
       export const kind = Syntax.ExternalModuleReference;
       export function createExternalModuleReference(expression: Expression) {
@@ -1618,15 +1302,6 @@ namespace qnr {
       export function updateExternalModuleReference(node: ExternalModuleReference, expression: Expression) {
         return node.expression !== expression ? updateNode(createExternalModuleReference(expression), node) : node;
       }
-    }
-
-    export type ForInitializer = VariableDeclarationList | Expression;
-    export type ForInOrOfStatement = ForInStatement | ForOfStatement;
-
-    export interface ForInStatement extends IterationStatement {
-      kind: Syntax.ForInStatement;
-      initializer: ForInitializer;
-      expression: Expression;
     }
     export namespace ForInStatement {
       export const kind = Syntax.ForInStatement;
@@ -1640,13 +1315,6 @@ namespace qnr {
       export function updateForIn(node: ForInStatement, initializer: ForInitializer, expression: Expression, statement: Statement) {
         return node.initializer !== initializer || node.expression !== expression || node.statement !== statement ? updateNode(createForIn(initializer, expression, statement), node) : node;
       }
-    }
-
-    export interface ForOfStatement extends IterationStatement {
-      kind: Syntax.ForOfStatement;
-      awaitModifier?: AwaitKeywordToken;
-      initializer: ForInitializer;
-      expression: Expression;
     }
     export namespace ForOfStatement {
       export const kind = Syntax.ForOfStatement;
@@ -1664,13 +1332,6 @@ namespace qnr {
           : node;
       }
     }
-
-    export interface ForStatement extends IterationStatement {
-      kind: Syntax.ForStatement;
-      initializer?: ForInitializer;
-      condition?: Expression;
-      incrementor?: Expression;
-    }
     export namespace ForStatement {
       export const kind = Syntax.ForStatement;
       export function createFor(initializer: ForInitializer | undefined, condition: Expression | undefined, incrementor: Expression | undefined, statement: Statement) {
@@ -1686,12 +1347,6 @@ namespace qnr {
           ? updateNode(createFor(initializer, condition, incrementor, statement), node)
           : node;
       }
-    }
-
-    export interface FunctionDeclaration extends FunctionLikeDeclarationBase, DeclarationStatement {
-      kind: Syntax.FunctionDeclaration;
-      name?: Identifier;
-      body?: FunctionBody;
     }
     export namespace FunctionDeclaration {
       export const kind = Syntax.FunctionDeclaration;
@@ -1739,12 +1394,6 @@ namespace qnr {
           : node;
       }
     }
-
-    export interface FunctionExpression extends PrimaryExpression, FunctionLikeDeclarationBase, JSDocContainer {
-      kind: Syntax.FunctionExpression;
-      name?: Identifier;
-      body: FunctionBody;
-    }
     export namespace FunctionExpression {
       export const kind = Syntax.FunctionExpression;
       export function createFunctionExpression(
@@ -1787,10 +1436,6 @@ namespace qnr {
           : node;
       }
     }
-
-    export interface FunctionTypeNode extends FunctionOrConstructorTypeNodeBase {
-      kind: Syntax.FunctionType;
-    }
     export namespace FunctionTypeNode {
       export const kind = Syntax.FunctionType;
       export function create(ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t?: TypeNode) {
@@ -1799,13 +1444,6 @@ namespace qnr {
       export function update(n: FunctionTypeNode, ts: Nodes<TypeParameterDeclaration> | undefined, ps: Nodes<ParameterDeclaration>, t?: TypeNode) {
         return SignatureDeclaration.update(n, ts, ps, t);
       }
-    }
-
-    export interface GetAccessorDeclaration extends FunctionLikeDeclarationBase, ClassElement, ObjectLiteralElement, JSDocContainer {
-      kind: Syntax.GetAccessor;
-      parent: ClassLikeDeclaration | ObjectLiteralExpression;
-      name: PropertyName;
-      body?: FunctionBody;
     }
     export namespace GetAccessorDeclaration {
       export const kind = Syntax.GetAccessor;
@@ -1835,13 +1473,6 @@ namespace qnr {
         return n.kind === Syntax.SetAccessor || n.kind === Syntax.GetAccessor;
       }
     }
-
-    export interface HeritageClause extends Node {
-      kind: Syntax.HeritageClause;
-      parent: InterfaceDeclaration | ClassLikeDeclaration;
-      token: Syntax.ExtendsKeyword | Syntax.ImplementsKeyword;
-      types: Nodes<ExpressionWithTypeArguments>;
-    }
     export namespace HeritageClause {
       export const kind = Syntax.HeritageClause;
       export function createHeritageClause(token: HeritageClause['token'], types: readonly ExpressionWithTypeArguments[]) {
@@ -1853,17 +1484,6 @@ namespace qnr {
       export function updateHeritageClause(node: HeritageClause, types: readonly ExpressionWithTypeArguments[]) {
         return node.types !== types ? updateNode(createHeritageClause(node.token, types), node) : node;
       }
-    }
-
-    export interface Identifier extends PrimaryExpression, Declaration {
-      kind: Syntax.Identifier;
-      escapedText: __String;
-      originalKeywordKind?: Syntax; // Original syntaxKind which get set so that we can report an error later
-      autoGenerateFlags?: GeneratedIdentifierFlags; // Specifies whether to auto-generate the text for an identifier.
-      autoGenerateId?: number; // Ensures unique generated identifiers get unique names, but clones get the same name.
-      isInJSDocNamespace?: boolean; // if the node is a member in a JSDoc namespace
-      typeArguments?: Nodes<TypeNode | TypeParameterDeclaration>; // Only defined on synthesized nodes. Though not syntactically valid, used in emitting diagnostics, quickinfo, and signature help.
-      jsdocDotPos?: number; // Identifier occurs in JSDoc-style generic: Id.<T>
     }
     export namespace Identifier {
       export const kind = Syntax.Identifier;
@@ -1973,13 +1593,6 @@ namespace qnr {
         return;
       }
     }
-
-    export interface IfStatement extends Statement {
-      kind: Syntax.IfStatement;
-      expression: Expression;
-      thenStatement: Statement;
-      elseStatement?: Statement;
-    }
     export namespace IfStatement {
       export const kind = Syntax.IfStatement;
       export function createIf(expression: Expression, thenStatement: Statement, elseStatement?: Statement) {
@@ -1995,14 +1608,6 @@ namespace qnr {
           : node;
       }
     }
-
-    export interface ImportClause extends NamedDeclaration {
-      kind: Syntax.ImportClause;
-      parent: ImportDeclaration;
-      isTypeOnly: boolean;
-      name?: Identifier;
-      namedBindings?: NamedImportBindings;
-    }
     export namespace ImportClause {
       export const kind = Syntax.ImportClause;
       export function createImportClause(name: Identifier | undefined, namedBindings: NamedImportBindings | undefined, isTypeOnly = false): ImportClause {
@@ -2015,13 +1620,6 @@ namespace qnr {
       export function updateImportClause(node: ImportClause, name: Identifier | undefined, namedBindings: NamedImportBindings | undefined, isTypeOnly: boolean) {
         return node.name !== name || node.namedBindings !== namedBindings || node.isTypeOnly !== isTypeOnly ? updateNode(createImportClause(name, namedBindings, isTypeOnly), node) : node;
       }
-    }
-
-    export interface ImportDeclaration extends Statement {
-      kind: Syntax.ImportDeclaration;
-      parent: SourceFile | ModuleBlock;
-      importClause?: ImportClause;
-      moduleSpecifier: Expression;
     }
     export namespace ImportDeclaration {
       export const kind = Syntax.ImportDeclaration;
@@ -2050,13 +1648,6 @@ namespace qnr {
           : node;
       }
     }
-
-    export interface ImportEqualsDeclaration extends DeclarationStatement, JSDocContainer {
-      kind: Syntax.ImportEqualsDeclaration;
-      parent: SourceFile | ModuleBlock;
-      name: Identifier;
-      moduleReference: ModuleReference;
-    }
     export namespace ImportEqualsDeclaration {
       export const kind = Syntax.ImportEqualsDeclaration;
       export function createImportEqualsDeclaration(
@@ -2084,13 +1675,6 @@ namespace qnr {
           : node;
       }
     }
-
-    export interface ImportSpecifier extends NamedDeclaration {
-      kind: Syntax.ImportSpecifier;
-      parent: NamedImports;
-      propertyName?: Identifier;
-      name: Identifier;
-    }
     export namespace ImportSpecifier {
       export const kind = Syntax.ImportSpecifier;
       export function createImportSpecifier(propertyName: Identifier | undefined, name: Identifier) {
@@ -2102,13 +1686,6 @@ namespace qnr {
       export function updateImportSpecifier(node: ImportSpecifier, propertyName: Identifier | undefined, name: Identifier) {
         return node.propertyName !== propertyName || node.name !== name ? updateNode(createImportSpecifier(propertyName, name), node) : node;
       }
-    }
-
-    export interface ImportTypeNode extends NodeWithTypeArguments {
-      kind: Syntax.ImportType;
-      isTypeOf?: boolean;
-      argument: TypeNode;
-      qualifier?: EntityName;
     }
     export namespace ImportTypeNode {
       export const kind = Syntax.ImportType;
@@ -2124,12 +1701,6 @@ namespace qnr {
         return n.argument !== a || n.qualifier !== q || n.typeArguments !== ts || n.isTypeOf !== tof ? updateNode(create(a, q, ts, tof), n) : n;
       }
     }
-
-    export interface IndexedAccessTypeNode extends TypeNode {
-      kind: Syntax.IndexedAccessType;
-      objectType: TypeNode;
-      indexType: TypeNode;
-    }
     export namespace IndexedAccessTypeNode {
       export const kind = Syntax.IndexedAccessType;
       export function create(o: TypeNode, i: TypeNode) {
@@ -2141,11 +1712,6 @@ namespace qnr {
       export function update(n: IndexedAccessTypeNode, o: TypeNode, i: TypeNode) {
         return n.objectType !== o || n.indexType !== i ? updateNode(create(o, i), n) : n;
       }
-    }
-
-    export interface IndexSignatureDeclaration extends SignatureDeclarationBase, ClassElement, TypeElement {
-      kind: Syntax.IndexSignature;
-      parent: ObjectTypeDeclaration;
     }
     export namespace IndexSignatureDeclaration {
       export const kind = Syntax.IndexSignature;
@@ -2161,11 +1727,6 @@ namespace qnr {
         return n.parameters !== ps || n.type !== t || n.decorators !== ds || n.modifiers !== ms ? updateNode(create(ds, ms, ps, t), n) : n;
       }
     }
-
-    export interface InferTypeNode extends TypeNode {
-      kind: Syntax.InferType;
-      typeParameter: TypeParameterDeclaration;
-    }
     export namespace InferTypeNode {
       export const kind = Syntax.InferType;
       export function create(p: TypeParameterDeclaration) {
@@ -2176,14 +1737,6 @@ namespace qnr {
       export function update(n: InferTypeNode, p: TypeParameterDeclaration) {
         return n.typeParameter !== p ? updateNode(create(p), n) : n;
       }
-    }
-
-    export interface InterfaceDeclaration extends DeclarationStatement, JSDocContainer {
-      kind: Syntax.InterfaceDeclaration;
-      name: Identifier;
-      typeParameters?: Nodes<TypeParameterDeclaration>;
-      heritageClauses?: Nodes<HeritageClause>;
-      members: Nodes<TypeElement>;
     }
     export namespace InterfaceDeclaration {
       export const kind = Syntax.InterfaceDeclaration;
@@ -2223,11 +1776,6 @@ namespace qnr {
           : node;
       }
     }
-
-    export interface IntersectionTypeNode extends TypeNode {
-      kind: Syntax.IntersectionType;
-      types: Nodes<TypeNode>;
-    }
     export namespace IntersectionTypeNode {
       export const kind = Syntax.IntersectionType;
       export function create(ts: readonly TypeNode[]) {
@@ -2236,13 +1784,6 @@ namespace qnr {
       export function update(n: IntersectionTypeNode, ts: Nodes<TypeNode>) {
         return UnionTypeNode.orIntersectionUpdate(n, ts);
       }
-    }
-
-    export interface JSDoc extends Node {
-      kind: Syntax.JSDocComment;
-      parent: HasJSDoc;
-      tags?: Nodes<JSDocTag>;
-      comment?: string;
     }
     export namespace JSDoc {
       export const kind = Syntax.JSDocComment;
@@ -2253,17 +1794,8 @@ namespace qnr {
         return node;
       }
     }
-
-    export interface JSDocAllType extends JSDocType {
-      kind: Syntax.JSDocAllType;
-    }
     export namespace JSDocAllType {
       export const kind = Syntax.JSDocAllType;
-    }
-
-    export interface JSDocAugmentsTag extends JSDocTag {
-      kind: Syntax.JSDocAugmentsTag;
-      class: ExpressionWithTypeArguments & { expression: Identifier | PropertyAccessEntityNameExpression };
     }
     export namespace JSDocAugmentsTag {
       export const kind = Syntax.JSDocAugmentsTag;
@@ -2273,23 +1805,11 @@ namespace qnr {
         return tag;
       }
     }
-
-    export interface JSDocAuthorTag extends JSDocTag {
-      kind: Syntax.JSDocAuthorTag;
-    }
     export namespace JSDocAuthorTag {
       export const kind = Syntax.JSDocAuthorTag;
       export function createJSDocAuthorTag(comment?: string) {
         return createJSDocTag<JSDocAuthorTag>(Syntax.JSDocAuthorTag, 'author', comment);
       }
-    }
-
-    export interface JSDocCallbackTag extends JSDocTag, NamedDeclaration {
-      parent: JSDoc;
-      kind: Syntax.JSDocCallbackTag;
-      fullName?: JSDocNamespaceDeclaration | Identifier;
-      name?: Identifier;
-      typeExpression: JSDocSignature;
     }
     export namespace JSDocCallbackTag {
       export const kind = Syntax.JSDocCallbackTag;
@@ -2301,21 +1821,11 @@ namespace qnr {
         return tag;
       }
     }
-
-    export interface JSDocClassTag extends JSDocTag {
-      kind: Syntax.JSDocClassTag;
-    }
     export namespace JSDocClassTag {
       export const kind = Syntax.JSDocClassTag;
       export function createJSDocClassTag(comment?: string): JSDocClassTag {
         return createJSDocTag<JSDocClassTag>(Syntax.JSDocClassTag, 'class', comment);
       }
-    }
-
-    export interface JSDocEnumTag extends JSDocTag, Declaration {
-      parent: JSDoc;
-      kind: Syntax.JSDocEnumTag;
-      typeExpression?: JSDocTypeExpression;
     }
     export namespace JSDocEnumTag {
       export const kind = Syntax.JSDocEnumTag;
@@ -2325,17 +1835,8 @@ namespace qnr {
         return tag;
       }
     }
-
-    export interface JSDocFunctionType extends JSDocType, SignatureDeclarationBase {
-      kind: Syntax.JSDocFunctionType;
-    }
     export namespace JSDocFunctionType {
       export const kind = Syntax.JSDocFunctionType;
-    }
-
-    export interface JSDocImplementsTag extends JSDocTag {
-      kind: Syntax.JSDocImplementsTag;
-      class: ExpressionWithTypeArguments & { expression: Identifier | PropertyAccessEntityNameExpression };
     }
     export namespace JSDocImplementsTag {
       export const kind = Syntax.JSDocImplementsTag;
@@ -2345,33 +1846,14 @@ namespace qnr {
         return tag;
       }
     }
-
-    export interface JSDocNonNullableType extends JSDocType {
-      kind: Syntax.JSDocNonNullableType;
-      type: TypeNode;
-    }
     export namespace JSDocNonNullableType {
       export const kind = Syntax.JSDocNonNullableType;
-    }
-
-    export interface JSDocNullableType extends JSDocType {
-      kind: Syntax.JSDocNullableType;
-      type: TypeNode;
     }
     export namespace JSDocNullableType {
       export const kind = Syntax.JSDocNullableType;
     }
-
-    export interface JSDocOptionalType extends JSDocType {
-      kind: Syntax.JSDocOptionalType;
-      type: TypeNode;
-    }
     export namespace JSDocOptionalType {
       export const kind = Syntax.JSDocOptionalType;
-    }
-
-    export interface JSDocParameterTag extends JSDocPropertyLikeTag {
-      kind: Syntax.JSDocParameterTag;
     }
     export namespace JSDocParameterTag {
       export const kind = Syntax.JSDocParameterTag;
@@ -2386,33 +1868,17 @@ namespace qnr {
         return createJSDocPropertyLikeTag<JSDocParameterTag>(Syntax.JSDocParameterTag, 'param', typeExpression, name, isNameFirst, isBracketed, comment);
       }
     }
-
-    export interface JSDocPrivateTag extends JSDocTag {
-      kind: Syntax.JSDocPrivateTag;
-    }
     export namespace JSDocPrivateTag {
       export const kind = Syntax.JSDocPrivateTag;
       export function createJSDocPrivateTag() {
         return createJSDocTag<JSDocPrivateTag>(Syntax.JSDocPrivateTag, 'private');
       }
     }
-
-    export interface JSDocPropertyTag extends JSDocPropertyLikeTag {
-      kind: Syntax.JSDocPropertyTag;
-    }
     export namespace JSDocPropertyTag {
       export const kind = Syntax.JSDocPropertyTag;
       export function createJSDocPropertyTag(typeExpression: JSDocTypeExpression | undefined, name: EntityName, isNameFirst: boolean, isBracketed: boolean, comment?: string) {
         return createJSDocPropertyLikeTag<JSDocPropertyTag>(Syntax.JSDocPropertyTag, 'param', typeExpression, name, isNameFirst, isBracketed, comment);
       }
-    }
-
-    export interface JSDocPropertyLikeTag extends JSDocTag, Declaration {
-      parent: JSDoc;
-      name: EntityName;
-      typeExpression?: JSDocTypeExpression;
-      isNameFirst: boolean;
-      isBracketed: boolean;
     }
     export namespace JSDocPropertyLikeTag {
       function createJSDocPropertyLikeTag<T extends JSDocPropertyLikeTag>(
@@ -2432,19 +1898,11 @@ namespace qnr {
         return tag;
       }
     }
-
-    export interface JSDocProtectedTag extends JSDocTag {
-      kind: Syntax.JSDocProtectedTag;
-    }
     export namespace JSDocProtectedTag {
       export const kind = Syntax.JSDocProtectedTag;
       export function createJSDocProtectedTag() {
         return createJSDocTag<JSDocProtectedTag>(Syntax.JSDocProtectedTag, 'protected');
       }
-    }
-
-    export interface JSDocPublicTag extends JSDocTag {
-      kind: Syntax.JSDocPublicTag;
     }
     export namespace JSDocPublicTag {
       export const kind = Syntax.JSDocPublicTag;
@@ -2452,20 +1910,11 @@ namespace qnr {
         return createJSDocTag<JSDocPublicTag>(Syntax.JSDocPublicTag, 'public');
       }
     }
-
-    export interface JSDocReadonlyTag extends JSDocTag {
-      kind: Syntax.JSDocReadonlyTag;
-    }
     export namespace JSDocReadonlyTag {
       export const kind = Syntax.JSDocReadonlyTag;
       export function createJSDocReadonlyTag() {
         return createJSDocTag<JSDocReadonlyTag>(Syntax.JSDocReadonlyTag, 'readonly');
       }
-    }
-
-    export interface JSDocReturnTag extends JSDocTag {
-      kind: Syntax.JSDocReturnTag;
-      typeExpression?: JSDocTypeExpression;
     }
     export namespace JSDocReturnTag {
       export const kind = Syntax.JSDocReturnTag;
@@ -2474,13 +1923,6 @@ namespace qnr {
         tag.typeExpression = typeExpression;
         return tag;
       }
-    }
-
-    export interface JSDocSignature extends JSDocType, Declaration {
-      kind: Syntax.JSDocSignature;
-      typeParameters?: readonly JSDocTemplateTag[];
-      parameters: readonly JSDocParameterTag[];
-      type: JSDocReturnTag | undefined;
     }
     export namespace JSDocSignature {
       export const kind = Syntax.JSDocSignature;
@@ -2492,12 +1934,6 @@ namespace qnr {
         return tag;
       }
     }
-
-    export interface JSDocTag extends Node {
-      parent: JSDoc | JSDocTypeLiteral;
-      tagName: Identifier;
-      comment?: string;
-    }
     export namespace JSDocTag {
       export function createJSDocTag<T extends JSDocTag>(kind: T['kind'], tagName: string, comment?: string): T {
         const node = qn.createSynthesized(kind) as T;
@@ -2505,12 +1941,6 @@ namespace qnr {
         node.comment = comment;
         return node;
       }
-    }
-
-    export interface JSDocTemplateTag extends JSDocTag {
-      kind: Syntax.JSDocTemplateTag;
-      constraint: JSDocTypeExpression | undefined;
-      typeParameters: Nodes<TypeParameterDeclaration>;
     }
     export namespace JSDocTemplateTag {
       export const kind = Syntax.JSDocTemplateTag;
@@ -2521,11 +1951,6 @@ namespace qnr {
         return tag;
       }
     }
-
-    export interface JSDocThisTag extends JSDocTag {
-      kind: Syntax.JSDocThisTag;
-      typeExpression?: JSDocTypeExpression;
-    }
     export namespace JSDocThisTag {
       export const kind = Syntax.JSDocThisTag;
       export function createJSDocThisTag(typeExpression?: JSDocTypeExpression): JSDocThisTag {
@@ -2533,14 +1958,6 @@ namespace qnr {
         tag.typeExpression = typeExpression;
         return tag;
       }
-    }
-
-    export interface JSDocTypedefTag extends JSDocTag, NamedDeclaration {
-      parent: JSDoc;
-      kind: Syntax.JSDocTypedefTag;
-      fullName?: JSDocNamespaceDeclaration | Identifier;
-      name?: Identifier;
-      typeExpression?: JSDocTypeExpression | JSDocTypeLiteral;
     }
     export namespace JSDocTypedefTag {
       export const kind = Syntax.JSDocTypedefTag;
@@ -2552,11 +1969,6 @@ namespace qnr {
         return tag;
       }
     }
-
-    export interface JSDocTypeExpression extends TypeNode {
-      kind: Syntax.JSDocTypeExpression;
-      type: TypeNode;
-    }
     export namespace JSDocTypeExpression {
       export const kind = Syntax.JSDocTypeExpression;
       export function createJSDocTypeExpression(type: TypeNode): JSDocTypeExpression {
@@ -2564,13 +1976,6 @@ namespace qnr {
         node.type = type;
         return node;
       }
-    }
-
-    export interface JSDocTypeLiteral extends JSDocType {
-      kind: Syntax.JSDocTypeLiteral;
-      jsDocPropertyTags?: readonly JSDocPropertyLikeTag[];
-      /** If true, then this type literal represents an *array* of its type. */
-      isArrayType?: boolean;
     }
     export namespace JSDocTypeLiteral {
       export const kind = Syntax.JSDocTypeLiteral;
@@ -2581,11 +1986,6 @@ namespace qnr {
         return tag;
       }
     }
-
-    export interface JSDocTypeTag extends JSDocTag {
-      kind: Syntax.JSDocTypeTag;
-      typeExpression: JSDocTypeExpression;
-    }
     export namespace JSDocTypeTag {
       export const kind = Syntax.JSDocTypeTag;
       export function createJSDocTypeTag(typeExpression: JSDocTypeExpression, comment?: string): JSDocTypeTag {
@@ -2594,17 +1994,8 @@ namespace qnr {
         return tag;
       }
     }
-
-    export interface JSDocUnknownType extends JSDocType {
-      kind: Syntax.JSDocUnknownType;
-    }
     export namespace JSDocUnknownType {
       export const kind = Syntax.JSDocUnknownType;
-    }
-
-    export interface JSDocVariadicType extends JSDocType {
-      kind: Syntax.JSDocVariadicType;
-      type: TypeNode;
     }
     export namespace JSDocVariadicType {
       export const kind = Syntax.JSDocVariadicType;
@@ -2616,13 +2007,6 @@ namespace qnr {
       export function updateJSDocVariadicType(node: JSDocVariadicType, type: TypeNode): JSDocVariadicType {
         return node.type !== type ? updateNode(createJSDocVariadicType(type), node) : node;
       }
-    }
-
-    export interface JsxAttribute extends ObjectLiteralElement {
-      kind: Syntax.JsxAttribute;
-      parent: JsxAttributes;
-      name: Identifier;
-      initializer?: StringLiteral | JsxExpression;
     }
     export namespace JsxAttribute {
       export const kind = Syntax.JsxAttribute;
@@ -2636,11 +2020,6 @@ namespace qnr {
         return node.name !== name || node.initializer !== initializer ? updateNode(createJsxAttribute(name, initializer), node) : node;
       }
     }
-
-    export interface JsxAttributes extends ObjectLiteralExpressionBase<JsxAttributeLike> {
-      kind: Syntax.JsxAttributes;
-      parent: JsxOpeningLikeElement;
-    }
     export namespace JsxAttributes {
       export const kind = Syntax.JsxAttributes;
       export function createJsxAttributes(properties: readonly JsxAttributeLike[]) {
@@ -2651,12 +2030,6 @@ namespace qnr {
       export function updateJsxAttributes(node: JsxAttributes, properties: readonly JsxAttributeLike[]) {
         return node.properties !== properties ? updateNode(createJsxAttributes(properties), node) : node;
       }
-    }
-
-    export interface JsxClosingElement extends Node {
-      kind: Syntax.JsxClosingElement;
-      parent: JsxElement;
-      tagName: JsxTagNameExpression;
     }
     export namespace JsxClosingElement {
       export const kind = Syntax.JsxClosingElement;
@@ -2669,23 +2042,11 @@ namespace qnr {
         return node.tagName !== tagName ? updateNode(createJsxClosingElement(tagName), node) : node;
       }
     }
-
-    export interface JsxClosingFragment extends Expression {
-      kind: Syntax.JsxClosingFragment;
-      parent: JsxFragment;
-    }
     export namespace JsxClosingFragment {
       export const kind = Syntax.JsxClosingFragment;
       export function createJsxJsxClosingFragment() {
         return <JsxClosingFragment>qn.createSynthesized(Syntax.JsxClosingFragment);
       }
-    }
-
-    export interface JsxElement extends PrimaryExpression {
-      kind: Syntax.JsxElement;
-      openingElement: JsxOpeningElement;
-      children: Nodes<JsxChild>;
-      closingElement: JsxClosingElement;
     }
     export namespace JsxElement {
       export const kind = Syntax.JsxElement;
@@ -2702,13 +2063,6 @@ namespace qnr {
           : node;
       }
     }
-
-    export interface JsxExpression extends Expression {
-      kind: Syntax.JsxExpression;
-      parent: JsxElement | JsxAttributeLike;
-      dot3Token?: Token<Syntax.Dot3Token>;
-      expression?: Expression;
-    }
     export namespace JsxExpression {
       export const kind = Syntax.JsxExpression;
       export function createJsxExpression(dot3Token: Dot3Token | undefined, expression: Expression | undefined) {
@@ -2720,13 +2074,6 @@ namespace qnr {
       export function updateJsxExpression(node: JsxExpression, expression: Expression | undefined) {
         return node.expression !== expression ? updateNode(createJsxExpression(node.dot3Token, expression), node) : node;
       }
-    }
-
-    export interface JsxFragment extends PrimaryExpression {
-      kind: Syntax.JsxFragment;
-      openingFragment: JsxOpeningFragment;
-      children: Nodes<JsxChild>;
-      closingFragment: JsxClosingFragment;
     }
     export namespace JsxFragment {
       export const kind = Syntax.JsxFragment;
@@ -2743,14 +2090,6 @@ namespace qnr {
           : node;
       }
     }
-
-    export interface JsxOpeningElement extends Expression {
-      kind: Syntax.JsxOpeningElement;
-      parent: JsxElement;
-      tagName: JsxTagNameExpression;
-      typeArguments?: Nodes<TypeNode>;
-      attributes: JsxAttributes;
-    }
     export namespace JsxOpeningElement {
       export const kind = Syntax.JsxOpeningElement;
       export function createJsxOpeningElement(tagName: JsxTagNameExpression, typeArguments: readonly TypeNode[] | undefined, attributes: JsxAttributes) {
@@ -2765,11 +2104,6 @@ namespace qnr {
           ? updateNode(createJsxOpeningElement(tagName, typeArguments, attributes), node)
           : node;
       }
-    }
-
-    export interface JsxOpeningFragment extends Expression {
-      kind: Syntax.JsxOpeningFragment;
-      parent: JsxFragment;
     }
     export namespace JsxOpeningFragment {
       export const kind = Syntax.JsxOpeningFragment;
@@ -2843,13 +2177,6 @@ namespace qnr {
         return setTextRange(createCall(createJsxFactoryExpression(jsxFactoryEntity, reactNamespace, parentElement), undefined, argumentsList), location);
       }
     }
-
-    export interface JsxSelfClosingElement extends PrimaryExpression {
-      kind: Syntax.JsxSelfClosingElement;
-      tagName: JsxTagNameExpression;
-      typeArguments?: Nodes<TypeNode>;
-      attributes: JsxAttributes;
-    }
     export namespace JsxSelfClosingElement {
       export const kind = Syntax.JsxSelfClosingElement;
       export function createJsxSelfClosingElement(tagName: JsxTagNameExpression, typeArguments: readonly TypeNode[] | undefined, attributes: JsxAttributes) {
@@ -2865,12 +2192,6 @@ namespace qnr {
           : node;
       }
     }
-
-    export interface JsxSpreadAttribute extends ObjectLiteralElement {
-      kind: Syntax.JsxSpreadAttribute;
-      parent: JsxAttributes;
-      expression: Expression;
-    }
     export namespace JsxSpreadAttribute {
       export const kind = Syntax.JsxSpreadAttribute;
       export function createJsxSpreadAttribute(expression: Expression) {
@@ -2881,12 +2202,6 @@ namespace qnr {
       export function updateJsxSpreadAttribute(node: JsxSpreadAttribute, expression: Expression) {
         return node.expression !== expression ? updateNode(createJsxSpreadAttribute(expression), node) : node;
       }
-    }
-
-    export interface JsxText extends LiteralLikeNode {
-      kind: Syntax.JsxText;
-      onlyTriviaWhitespaces: boolean;
-      parent: JsxElement;
     }
     export namespace JsxText {
       export const kind = Syntax.JsxText;
@@ -2900,33 +2215,10 @@ namespace qnr {
         return node.text !== text || node.onlyTriviaWhitespaces !== onlyTriviaWhitespaces ? updateNode(JsxText.create(text, onlyTriviaWhitespaces), node) : node;
       }
     }
-
-    export interface KeywordTypeNode extends TypeNode {
-      kind:
-        | Syntax.AnyKeyword
-        | Syntax.UnknownKeyword
-        | Syntax.NumberKeyword
-        | Syntax.BigIntKeyword
-        | Syntax.ObjectKeyword
-        | Syntax.BooleanKeyword
-        | Syntax.StringKeyword
-        | Syntax.SymbolKeyword
-        | Syntax.ThisKeyword
-        | Syntax.VoidKeyword
-        | Syntax.UndefinedKeyword
-        | Syntax.NullKeyword
-        | Syntax.NeverKeyword;
-    }
     export namespace KeywordTypeNode {
       export function create(k: KeywordTypeNode['kind']) {
         return qn.createSynthesized(k) as KeywordTypeNode;
       }
-    }
-
-    export interface LabeledStatement extends Statement, JSDocContainer {
-      kind: Syntax.LabeledStatement;
-      label: Identifier;
-      statement: Statement;
     }
     export namespace LabeledStatement {
       export const kind = Syntax.LabeledStatement;
@@ -2940,11 +2232,6 @@ namespace qnr {
         return node.label !== label || node.statement !== statement ? updateNode(createLabel(label, statement), node) : node;
       }
     }
-
-    export interface LiteralTypeNode extends TypeNode {
-      kind: Syntax.LiteralType;
-      literal: BooleanLiteral | LiteralExpression | PrefixUnaryExpression;
-    }
     export namespace LiteralTypeNode {
       export const kind = Syntax.LiteralType;
       export function create(l: LiteralTypeNode['literal']) {
@@ -2955,14 +2242,6 @@ namespace qnr {
       export function update(n: LiteralTypeNode, l: LiteralTypeNode['literal']) {
         return n.literal !== l ? updateNode(create(l), n) : n;
       }
-    }
-
-    export interface MappedTypeNode extends TypeNode, Declaration {
-      kind: Syntax.MappedType;
-      readonlyToken?: ReadonlyToken | PlusToken | MinusToken;
-      typeParameter: TypeParameterDeclaration;
-      questionToken?: QuestionToken | PlusToken | MinusToken;
-      type?: TypeNode;
     }
     export namespace MappedTypeNode {
       export const kind = Syntax.MappedType;
@@ -2978,10 +2257,6 @@ namespace qnr {
         return n.readonlyToken !== r || n.typeParameter !== p || n.questionToken !== q || n.type !== t ? updateNode(create(r, p, q, t), n) : n;
       }
     }
-
-    export interface MergeDeclarationMarker extends Statement {
-      kind: Syntax.MergeDeclarationMarker;
-    }
     export namespace MergeDeclarationMarker {
       export function createMergeDeclarationMarker(original: Node) {
         const node = <MergeDeclarationMarker>qn.createSynthesized(Syntax.MergeDeclarationMarker);
@@ -2989,12 +2264,6 @@ namespace qnr {
         node.original = original;
         return node;
       }
-    }
-
-    export interface MetaProperty extends PrimaryExpression {
-      kind: Syntax.MetaProperty;
-      keywordToken: Syntax.NewKeyword | Syntax.ImportKeyword;
-      name: Identifier;
     }
     export namespace MetaProperty {
       export const kind = Syntax.MetaProperty;
@@ -3007,13 +2276,6 @@ namespace qnr {
       export function updateMetaProperty(node: MetaProperty, name: Identifier) {
         return node.name !== name ? updateNode(createMetaProperty(node.keywordToken, name), node) : node;
       }
-    }
-
-    export interface MethodDeclaration extends FunctionLikeDeclarationBase, ClassElement, ObjectLiteralElement, JSDocContainer {
-      kind: Syntax.MethodDeclaration;
-      parent: ClassLikeDeclaration | ObjectLiteralExpression;
-      name: PropertyName;
-      body?: FunctionBody;
     }
     export namespace MethodDeclaration {
       export const kind = Syntax.MethodDeclaration;
@@ -3065,12 +2327,6 @@ namespace qnr {
           : n;
       }
     }
-
-    export interface MethodSignature extends SignatureDeclarationBase, TypeElement {
-      kind: Syntax.MethodSignature;
-      parent: ObjectTypeDeclaration;
-      name: PropertyName;
-    }
     export namespace MethodSignature {
       export const kind = Syntax.MethodSignature;
       export function create(ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t: TypeNode | undefined, p: string | PropertyName, q?: QuestionToken) {
@@ -3083,19 +2339,8 @@ namespace qnr {
         return n.typeParameters !== ts || n.parameters !== ps || n.type !== t || n.name !== p || n.questionToken !== q ? updateNode(create(ts, ps, t, p, q), n) : n;
       }
     }
-
-    export interface MissingDeclaration extends DeclarationStatement {
-      kind: Syntax.MissingDeclaration;
-      name?: Identifier;
-    }
     export namespace MissingDeclaration {
       export const kind = Syntax.MissingDeclaration;
-    }
-
-    export interface ModuleBlock extends Node, Statement {
-      kind: Syntax.ModuleBlock;
-      parent: ModuleDeclaration;
-      statements: Nodes<Statement>;
     }
     export namespace ModuleBlock {
       export const kind = Syntax.ModuleBlock;
@@ -3107,13 +2352,6 @@ namespace qnr {
       export function updateModuleBlock(node: ModuleBlock, statements: readonly Statement[]) {
         return node.statements !== statements ? updateNode(createModuleBlock(statements), node) : node;
       }
-    }
-
-    export interface ModuleDeclaration extends DeclarationStatement, JSDocContainer {
-      kind: Syntax.ModuleDeclaration;
-      parent: ModuleBody | SourceFile;
-      name: ModuleName;
-      body?: ModuleBody | JSDocNamespaceDeclaration;
     }
     export namespace ModuleDeclaration {
       export const kind = Syntax.ModuleDeclaration;
@@ -3144,16 +2382,6 @@ namespace qnr {
           : node;
       }
     }
-
-    export interface NamedDeclaration extends Declaration {
-      name?: DeclarationName;
-    }
-
-    export interface NamedExports extends Node {
-      kind: Syntax.NamedExports;
-      parent: ExportDeclaration;
-      elements: Nodes<ExportSpecifier>;
-    }
     export namespace NamedExports {
       export const kind = Syntax.NamedExports;
       export function createNamedExports(elements: readonly ExportSpecifier[]) {
@@ -3165,12 +2393,6 @@ namespace qnr {
         return node.elements !== elements ? updateNode(createNamedExports(elements), node) : node;
       }
     }
-
-    export interface NamedImports extends Node {
-      kind: Syntax.NamedImports;
-      parent: ImportClause;
-      elements: Nodes<ImportSpecifier>;
-    }
     export namespace NamedImports {
       export const kind = Syntax.NamedImports;
       export function createNamedImports(elements: readonly ImportSpecifier[]): NamedImports {
@@ -3181,14 +2403,6 @@ namespace qnr {
       export function updateNamedImports(node: NamedImports, elements: readonly ImportSpecifier[]) {
         return node.elements !== elements ? updateNode(createNamedImports(elements), node) : node;
       }
-    }
-
-    export interface NamedTupleMember extends TypeNode, JSDocContainer, Declaration {
-      kind: Syntax.NamedTupleMember;
-      dot3Token?: Token<Syntax.Dot3Token>;
-      name: Identifier;
-      questionToken?: Token<Syntax.QuestionToken>;
-      type: TypeNode;
     }
     export namespace NamedTupleMember {
       export const kind = Syntax.NamedTupleMember;
@@ -3204,12 +2418,6 @@ namespace qnr {
         return n.dot3Token !== d || n.name !== i || n.questionToken !== q || n.type !== t ? updateNode(create(d, i, q, t), n) : n;
       }
     }
-
-    export interface NamespaceExport extends NamedDeclaration {
-      kind: Syntax.NamespaceExport;
-      parent: ExportDeclaration;
-      name: Identifier;
-    }
     export namespace NamespaceExport {
       export const kind = Syntax.NamespaceExport;
       export function createNamespaceExport(name: Identifier): NamespaceExport {
@@ -3220,11 +2428,6 @@ namespace qnr {
       export function updateNamespaceExport(node: NamespaceExport, name: Identifier) {
         return node.name !== name ? updateNode(createNamespaceExport(name), node) : node;
       }
-    }
-
-    export interface NamespaceExportDeclaration extends DeclarationStatement {
-      kind: Syntax.NamespaceExportDeclaration;
-      name: Identifier;
     }
     export namespace NamespaceExportDeclaration {
       export const kind = Syntax.NamespaceExportDeclaration;
@@ -3237,12 +2440,6 @@ namespace qnr {
         return node.name !== name ? updateNode(createNamespaceExportDeclaration(name), node) : node;
       }
     }
-
-    export interface NamespaceImport extends NamedDeclaration {
-      kind: Syntax.NamespaceImport;
-      parent: ImportClause;
-      name: Identifier;
-    }
     export namespace NamespaceImport {
       export const kind = Syntax.NamespaceImport;
       export function createNamespaceImport(name: Identifier): NamespaceImport {
@@ -3253,13 +2450,6 @@ namespace qnr {
       export function updateNamespaceImport(node: NamespaceImport, name: Identifier) {
         return node.name !== name ? updateNode(createNamespaceImport(name), node) : node;
       }
-    }
-
-    export interface NewExpression extends PrimaryExpression, Declaration {
-      kind: Syntax.NewExpression;
-      expression: LeftHandSideExpression;
-      typeArguments?: Nodes<TypeNode>;
-      arguments?: Nodes<Expression>;
     }
     export namespace NewExpression {
       export const kind = Syntax.NewExpression;
@@ -3277,7 +2467,6 @@ namespace qnr {
           : node;
       }
     }
-
     export namespace NonNullChain {
       export function createNonNullChain(expression: Expression) {
         const node = <NonNullChain>qn.createSynthesized(Syntax.NonNullExpression);
@@ -3289,11 +2478,6 @@ namespace qnr {
         assert(!!(node.flags & NodeFlags.OptionalChain), 'Cannot update a NonNullExpression using updateNonNullChain. Use updateNonNullExpression instead.');
         return node.expression !== expression ? updateNode(createNonNullChain(expression), node) : node;
       }
-    }
-
-    export interface NonNullExpression extends LeftHandSideExpression {
-      kind: Syntax.NonNullExpression;
-      expression: Expression;
     }
     export namespace NonNullExpression {
       export const kind = Syntax.NonNullExpression;
@@ -3309,20 +2493,11 @@ namespace qnr {
         return node.expression !== expression ? updateNode(createNonNullExpression(expression), node) : node;
       }
     }
-
-    export interface NoSubstitutionLiteral extends LiteralExpression, TemplateLiteralLikeNode, Declaration {
-      kind: Syntax.NoSubstitutionLiteral;
-      templateFlags?: TokenFlags;
-    }
     export namespace NoSubstitutionLiteral {
       export const kind = Syntax.NoSubstitutionLiteral;
       export function create(t: string, raw?: string) {
         return qn.createTemplateLiteralLike(Syntax.NoSubstitutionLiteral, t, raw) as NoSubstitutionLiteral;
       }
-    }
-
-    export interface NotEmittedStatement extends Statement {
-      kind: Syntax.NotEmittedStatement;
     }
     export namespace NotEmittedStatement {
       export const kind = Syntax.NotEmittedStatement;
@@ -3332,11 +2507,6 @@ namespace qnr {
         setTextRange(node, original);
         return node;
       }
-    }
-
-    export interface NumericLiteral extends LiteralExpression, Declaration {
-      kind: Syntax.NumericLiteral;
-      numericLiteralFlags: TokenFlags;
     }
     export namespace NumericLiteral {
       export const kind = Syntax.NumericLiteral;
@@ -3350,12 +2520,6 @@ namespace qnr {
         return (+name).toString() === name;
       }
     }
-
-    export interface ObjectBindingPattern extends Node {
-      kind: Syntax.ObjectBindingPattern;
-      parent: VariableDeclaration | ParameterDeclaration | BindingElement;
-      elements: Nodes<BindingElement>;
-    }
     export namespace ObjectBindingPattern {
       export const kind = Syntax.ObjectBindingPattern;
       export function create(es: readonly BindingElement[]) {
@@ -3366,14 +2530,6 @@ namespace qnr {
       export function update(n: ObjectBindingPattern, es: readonly BindingElement[]) {
         return n.elements !== es ? updateNode(create(es), n) : n;
       }
-    }
-
-    export interface ObjectLiteralExpressionBase<T extends ObjectLiteralElement> extends PrimaryExpression, Declaration {
-      properties: Nodes<T>;
-    }
-    export interface ObjectLiteralExpression extends ObjectLiteralExpressionBase<ObjectLiteralElementLike> {
-      kind: Syntax.ObjectLiteralExpression;
-      multiLine?: boolean;
     }
     export namespace ObjectLiteralExpression {
       export const kind = Syntax.ObjectLiteralExpression;
@@ -3387,20 +2543,11 @@ namespace qnr {
         return node.properties !== properties ? updateNode(createObjectLiteral(properties, node.multiLine), node) : node;
       }
     }
-
-    export interface OmittedExpression extends Expression {
-      kind: Syntax.OmittedExpression;
-    }
     export namespace OmittedExpression {
       export const kind = Syntax.OmittedExpression;
       export function createOmittedExpression() {
         return <OmittedExpression>qn.createSynthesized(Syntax.OmittedExpression);
       }
-    }
-
-    export interface OptionalTypeNode extends TypeNode {
-      kind: Syntax.OptionalType;
-      type: TypeNode;
     }
     export namespace OptionalTypeNode {
       export const kind = Syntax.OptionalType;
@@ -3413,16 +2560,6 @@ namespace qnr {
         return n.type !== t ? updateNode(create(t), n) : n;
       }
     }
-
-    export const enum OuterExpressionKinds {
-      Parentheses = 1 << 0,
-      TypeAssertions = 1 << 1,
-      NonNullAssertions = 1 << 2,
-      PartiallyEmittedExpressions = 1 << 3,
-      Assertions = TypeAssertions | NonNullAssertions,
-      All = Parentheses | Assertions | PartiallyEmittedExpressions,
-    }
-    export type OuterExpression = ParenthesizedExpression | TypeAssertion | AsExpression | NonNullExpression | PartiallyEmittedExpression;
     export namespace OuterExpression {
       export function isOuterExpression(node: Node, kinds = OuterExpressionKinds.All): node is OuterExpression {
         switch (node.kind) {
@@ -3482,16 +2619,6 @@ namespace qnr {
         return innerExpression;
       }
     }
-
-    export interface ParameterDeclaration extends NamedDeclaration, JSDocContainer {
-      kind: Syntax.Parameter;
-      parent: SignatureDeclaration;
-      dot3Token?: Dot3Token;
-      name: BindingName;
-      questionToken?: QuestionToken;
-      type?: TypeNode;
-      initializer?: Expression;
-    }
     export namespace ParameterDeclaration {
       export const kind = Syntax.Parameter;
       export function createParameter(
@@ -3534,13 +2661,6 @@ namespace qnr {
           : node;
       }
     }
-
-    export type ParameterPropertyDeclaration = ParameterDeclaration & { parent: ConstructorDeclaration; name: Identifier };
-
-    export interface ParenthesizedExpression extends PrimaryExpression, JSDocContainer {
-      kind: Syntax.ParenthesizedExpression;
-      expression: Expression;
-    }
     export namespace ParenthesizedExpression {
       export const kind = Syntax.ParenthesizedExpression;
       export function createParen(expression: Expression) {
@@ -3552,11 +2672,6 @@ namespace qnr {
         return node.expression !== expression ? updateNode(createParen(expression), node) : node;
       }
     }
-
-    export interface ParenthesizedTypeNode extends TypeNode {
-      kind: Syntax.ParenthesizedType;
-      type: TypeNode;
-    }
     export namespace ParenthesizedTypeNode {
       export const kind = Syntax.ParenthesizedType;
       export function create(t: TypeNode) {
@@ -3567,11 +2682,6 @@ namespace qnr {
       export function update(n: ParenthesizedTypeNode, t: TypeNode) {
         return n.type !== t ? updateNode(create(t), n) : n;
       }
-    }
-
-    export interface PartiallyEmittedExpression extends LeftHandSideExpression {
-      kind: Syntax.PartiallyEmittedExpression;
-      expression: Expression;
     }
     export namespace PartiallyEmittedExpression {
       export const kind = Syntax.PartiallyEmittedExpression;
@@ -3589,12 +2699,6 @@ namespace qnr {
         return node;
       }
     }
-
-    export interface PostfixUnaryExpression extends UpdateExpression {
-      kind: Syntax.PostfixUnaryExpression;
-      operand: LeftHandSideExpression;
-      operator: PostfixUnaryOperator;
-    }
     export namespace PostfixUnaryExpression {
       export const kind = Syntax.PostfixUnaryExpression;
       export function createPostfix(operand: Expression, operator: PostfixUnaryOperator) {
@@ -3609,12 +2713,6 @@ namespace qnr {
       export function createPostfixIncrement(operand: Expression) {
         return createPostfix(operand, Syntax.Plus2Token);
       }
-    }
-
-    export interface PrefixUnaryExpression extends UpdateExpression {
-      kind: Syntax.PrefixUnaryExpression;
-      operator: PrefixUnaryOperator;
-      operand: UnaryExpression;
     }
     export namespace PrefixUnaryExpression {
       export const kind = Syntax.PrefixUnaryExpression;
@@ -3631,11 +2729,6 @@ namespace qnr {
         return createPrefix(Syntax.ExclamationToken, operand);
       }
     }
-
-    export interface PrivateIdentifier extends Node {
-      kind: Syntax.PrivateIdentifier;
-      escapedText: __String;
-    }
     export namespace PrivateIdentifier {
       export const kind = Syntax.PrivateIdentifier;
       export function createPrivateIdentifier(text: string): PrivateIdentifier {
@@ -3647,7 +2740,6 @@ namespace qnr {
         return node;
       }
     }
-
     export namespace PropertyAccessChain {
       export function createPropertyAccessChain(expression: Expression, questionDotToken: QuestionDotToken | undefined, name: string | Identifier) {
         const node = <PropertyAccessChain>qn.createSynthesized(Syntax.PropertyAccessExpression);
@@ -3667,13 +2759,6 @@ namespace qnr {
           : node;
       }
     }
-
-    export interface PropertyAccessExpression extends MemberExpression, NamedDeclaration {
-      kind: Syntax.PropertyAccessExpression;
-      expression: LeftHandSideExpression;
-      questionDotToken?: QuestionDotToken;
-      name: Identifier | PrivateIdentifier;
-    }
     export namespace PropertyAccessExpression {
       export const kind = Syntax.PropertyAccessExpression;
       export function createPropertyAccess(expression: Expression, name: string | Identifier | PrivateIdentifier) {
@@ -3690,14 +2775,6 @@ namespace qnr {
         return node.expression !== expression || node.name !== name ? updateNode(setEmitFlags(createPropertyAccess(expression, name), qn.get.emitFlags(node)), node) : node;
       }
     }
-
-    export interface PropertyAssignment extends ObjectLiteralElement, JSDocContainer {
-      parent: ObjectLiteralExpression;
-      kind: Syntax.PropertyAssignment;
-      name: PropertyName;
-      questionToken?: QuestionToken;
-      initializer: Expression;
-    }
     export namespace PropertyAssignment {
       export const kind = Syntax.PropertyAssignment;
       export function createPropertyAssignment(name: string | PropertyName, initializer: Expression) {
@@ -3710,16 +2787,6 @@ namespace qnr {
       export function updatePropertyAssignment(node: PropertyAssignment, name: PropertyName, initializer: Expression) {
         return node.name !== name || node.initializer !== initializer ? updateNode(createPropertyAssignment(name, initializer), node) : node;
       }
-    }
-
-    export interface PropertyDeclaration extends ClassElement, JSDocContainer {
-      kind: Syntax.PropertyDeclaration;
-      parent: ClassLikeDeclaration;
-      name: PropertyName;
-      questionToken?: QuestionToken;
-      exclamationToken?: ExclamationToken;
-      type?: TypeNode;
-      initializer?: Expression;
     }
     export namespace PropertyDeclaration {
       export const kind = Syntax.PropertyDeclaration;
@@ -3754,14 +2821,6 @@ namespace qnr {
           : n;
       }
     }
-
-    export interface PropertySignature extends TypeElement, JSDocContainer {
-      kind: Syntax.PropertySignature;
-      name: PropertyName;
-      questionToken?: QuestionToken;
-      type?: TypeNode;
-      initializer?: Expression;
-    }
     export namespace PropertySignature {
       export const kind = Syntax.PropertySignature;
       export function create(ms: readonly Modifier[] | undefined, p: PropertyName | string, q?: QuestionToken, t?: TypeNode, i?: Expression) {
@@ -3777,13 +2836,6 @@ namespace qnr {
         return n.modifiers !== ms || n.name !== p || n.questionToken !== q || n.type !== t || n.initializer !== i ? updateNode(create(ms, p, q, t, i), n) : n;
       }
     }
-
-    export interface QualifiedName extends Node {
-      kind: Syntax.QualifiedName;
-      left: EntityName;
-      right: Identifier;
-      jsdocDotPos?: number;
-    }
     export namespace QualifiedName {
       export const kind = Syntax.QualifiedName;
       export function create(left: EntityName, right: string | Identifier) {
@@ -3796,10 +2848,6 @@ namespace qnr {
         return n.left !== left || n.right !== right ? updateNode(create(left, right), n) : n;
       }
     }
-
-    export interface RegexLiteral extends LiteralExpression {
-      kind: Syntax.RegexLiteral;
-    }
     export namespace RegexLiteral {
       export const kind = Syntax.RegexLiteral;
       export function create(t: string) {
@@ -3807,11 +2855,6 @@ namespace qnr {
         n.text = t;
         return n;
       }
-    }
-
-    export interface RestTypeNode extends TypeNode {
-      kind: Syntax.RestType;
-      type: TypeNode;
     }
     export namespace RestTypeNode {
       export const kind = Syntax.RestType;
@@ -3824,11 +2867,6 @@ namespace qnr {
         return n.type !== t ? updateNode(create(t), n) : n;
       }
     }
-
-    export interface ReturnStatement extends Statement {
-      kind: Syntax.ReturnStatement;
-      expression?: Expression;
-    }
     export namespace ReturnStatement {
       export const kind = Syntax.ReturnStatement;
       export function createReturn(expression?: Expression): ReturnStatement {
@@ -3840,23 +2878,11 @@ namespace qnr {
         return node.expression !== expression ? updateNode(createReturn(expression), node) : node;
       }
     }
-
-    export interface SemicolonClassElement extends ClassElement {
-      kind: Syntax.SemicolonClassElement;
-      parent: ClassLikeDeclaration;
-    }
     export namespace SemicolonClassElement {
       export const kind = Syntax.SemicolonClassElement;
       export function createSemicolonClassElement() {
         return <SemicolonClassElement>qn.createSynthesized(Syntax.SemicolonClassElement);
       }
-    }
-
-    export interface SetAccessorDeclaration extends FunctionLikeDeclarationBase, ClassElement, ObjectLiteralElement, JSDocContainer {
-      kind: Syntax.SetAccessor;
-      parent: ClassLikeDeclaration | ObjectLiteralExpression;
-      name: PropertyName;
-      body?: FunctionBody;
     }
     export namespace SetAccessorDeclaration {
       export const kind = Syntax.SetAccessor;
@@ -3874,16 +2900,6 @@ namespace qnr {
         return n.decorators !== ds || n.modifiers !== ms || n.name !== p || n.parameters !== ps || n.body !== b ? updateNode(create(ds, ms, p, ps, b), n) : n;
       }
     }
-
-    export interface ShorthandPropertyAssignment extends ObjectLiteralElement, JSDocContainer {
-      parent: ObjectLiteralExpression;
-      kind: Syntax.ShorthandPropertyAssignment;
-      name: Identifier;
-      questionToken?: QuestionToken;
-      exclamationToken?: ExclamationToken;
-      equalsToken?: Token<Syntax.EqualsToken>;
-      objectAssignmentInitializer?: Expression;
-    }
     export namespace ShorthandPropertyAssignment {
       export const kind = Syntax.ShorthandPropertyAssignment;
       export function createShorthandPropertyAssignment(name: string | Identifier, objectAssignmentInitializer?: Expression) {
@@ -3896,29 +2912,6 @@ namespace qnr {
         return node.name !== name || node.objectAssignmentInitializer !== objectAssignmentInitializer ? updateNode(createShorthandPropertyAssignment(name, objectAssignmentInitializer), node) : node;
       }
     }
-
-    export interface SignatureDeclarationBase extends NamedDeclaration, JSDocContainer {
-      kind: SignatureDeclaration['kind'];
-      name?: PropertyName;
-      typeParameters?: Nodes<TypeParameterDeclaration>;
-      parameters: Nodes<ParameterDeclaration>;
-      type?: TypeNode;
-      typeArguments?: Nodes<TypeNode>;
-    }
-    export type SignatureDeclaration =
-      | CallSignatureDeclaration
-      | ConstructSignatureDeclaration
-      | MethodSignature
-      | IndexSignatureDeclaration
-      | FunctionTypeNode
-      | ConstructorTypeNode
-      | JSDocFunctionType
-      | FunctionDeclaration
-      | MethodDeclaration
-      | ConstructorDeclaration
-      | AccessorDeclaration
-      | FunctionExpression
-      | ArrowFunction;
     export namespace SignatureDeclaration {
       export function create(k: Syntax, ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t?: TypeNode, ta?: readonly TypeNode[]) {
         const n = qn.createSynthesized(k);
@@ -3931,80 +2924,6 @@ namespace qnr {
       export function update<T extends SignatureDeclaration>(n: T, ts: Nodes<TypeParameterDeclaration> | undefined, ps: Nodes<ParameterDeclaration>, t?: TypeNode): T {
         return n.typeParameters !== ts || n.parameters !== ps || n.type !== t ? updateNode(create(n.kind, ts, ps, t) as T, n) : n;
       }
-    }
-
-    export interface SourceFile extends Declaration {
-      kind: Syntax.SourceFile;
-      statements: Nodes<Statement>;
-      endOfFileToken: Token<Syntax.EndOfFileToken>;
-      fileName: string;
-      path: Path;
-      text: string;
-      resolvedPath: Path;
-      originalFileName: string;
-      redirectInfo?: RedirectInfo;
-      amdDependencies: readonly AmdDependency[];
-      moduleName?: string;
-      referencedFiles: readonly FileReference[];
-      typeReferenceDirectives: readonly FileReference[];
-      libReferenceDirectives: readonly FileReference[];
-      languageVariant: LanguageVariant;
-      isDeclarationFile: boolean;
-      renamedDependencies?: qa.QReadonlyMap<string>;
-
-      hasNoDefaultLib: boolean;
-
-      languageVersion: ScriptTarget;
-      scriptKind: ScriptKind;
-
-      externalModuleIndicator?: Node;
-      // The first node that causes this file to be a CommonJS module
-      commonJsModuleIndicator?: Node;
-      // JS identifier-declarations that are intended to merge with globals
-      jsGlobalAugmentations?: SymbolTable;
-
-      identifiers: qa.QMap<string>; // Map from a string to an interned string
-      nodeCount: number;
-      identifierCount: number;
-      symbolCount: number;
-
-      // File-level diagnostics reported by the parser (includes diagnostics about /// references
-      // as well as code diagnostics).
-      parseDiagnostics: DiagnosticWithLocation[];
-
-      // File-level diagnostics reported by the binder.
-      bindDiagnostics: DiagnosticWithLocation[];
-      bindSuggestionDiagnostics?: DiagnosticWithLocation[];
-
-      // File-level JSDoc diagnostics reported by the JSDoc parser
-      jsDocDiagnostics?: DiagnosticWithLocation[];
-
-      // Stores additional file-level diagnostics reported by the program
-      additionalSyntacticDiagnostics?: readonly DiagnosticWithLocation[];
-
-      // Stores a line map for the file.
-      // This field should never be used directly to obtain line map, use getLineMap function instead.
-      lineMap: readonly number[];
-      classifiableNames?: ReadonlyUnderscoreEscapedMap<true>;
-      // Comments containing @ts-* directives, in order.
-      commentDirectives?: CommentDirective[];
-      // Stores a mapping 'external module reference text' -> 'resolved file name' | undefined
-      // It is used to resolve module names in the checker.
-      // Content of this field should never be used directly - use getResolvedModuleFileName/setResolvedModuleFileName functions instead
-      resolvedModules?: qa.QMap<ResolvedModuleFull | undefined>;
-      resolvedTypeReferenceDirectiveNames: qa.QMap<ResolvedTypeReferenceDirective | undefined>;
-      imports: readonly StringLiteralLike[];
-      // Identifier only if `declare global`
-      moduleAugmentations: readonly (StringLiteral | Identifier)[];
-      patternAmbientModules?: PatternAmbientModule[];
-      ambientModuleNames: readonly string[];
-      checkJsDirective?: CheckJsDirective;
-      version: string;
-      pragmas: ReadonlyPragmaMap;
-      localJsxNamespace?: __String;
-      localJsxFactory?: EntityName;
-
-      exportedModulesFromDeclarationEmit?: ExportedModulesFromDeclarationEmit;
     }
     export namespace SourceFile {
       export const kind = Syntax.SourceFile;
@@ -4068,12 +2987,6 @@ namespace qnr {
         return node;
       }
     }
-
-    export interface SpreadElement extends Expression {
-      kind: Syntax.SpreadElement;
-      parent: ArrayLiteralExpression | CallExpression | NewExpression;
-      expression: Expression;
-    }
     export namespace SpreadElement {
       export const kind = Syntax.SpreadElement;
       export function createSpread(expression: Expression) {
@@ -4085,12 +2998,6 @@ namespace qnr {
         return node.expression !== expression ? updateNode(createSpread(expression), node) : node;
       }
     }
-
-    export interface SpreadAssignment extends ObjectLiteralElement, JSDocContainer {
-      parent: ObjectLiteralExpression;
-      kind: Syntax.SpreadAssignment;
-      expression: Expression;
-    }
     export namespace SpreadAssignment {
       export const kind = Syntax.SpreadAssignment;
       export function createSpreadAssignment(expression: Expression) {
@@ -4101,10 +3008,6 @@ namespace qnr {
       export function updateSpreadAssignment(node: SpreadAssignment, expression: Expression) {
         return node.expression !== expression ? updateNode(createSpreadAssignment(expression), node) : node;
       }
-    }
-
-    export interface Statement extends Node {
-      _statementBrand: any;
     }
     export namespace Statement {
       function isUseStrictPrologue(node: ExpressionStatement): boolean {
@@ -4213,12 +3116,6 @@ namespace qnr {
         return updated;
       }
     }
-
-    export interface StringLiteral extends LiteralExpression, Declaration {
-      kind: Syntax.StringLiteral;
-      textSourceNode?: Identifier | StringLiteralLike | NumericLiteral;
-      singleQuote?: boolean;
-    }
     export namespace StringLiteral {
       export const kind = Syntax.StringLiteral;
       export function create(t: string) {
@@ -4248,13 +3145,6 @@ namespace qnr {
         return node;
       }
     }
-
-    export interface SwitchStatement extends Statement {
-      kind: Syntax.SwitchStatement;
-      expression: Expression;
-      caseBlock: CaseBlock;
-      possiblyExhaustive?: boolean;
-    }
     export namespace SwitchStatement {
       export const kind = Syntax.SwitchStatement;
       export function createSwitch(expression: Expression, caseBlock: CaseBlock): SwitchStatement {
@@ -4267,18 +3157,8 @@ namespace qnr {
         return node.expression !== expression || node.caseBlock !== caseBlock ? updateNode(createSwitch(expression, caseBlock), node) : node;
       }
     }
-
-    export interface SyntaxList extends Node {
-      _children: Node[];
-    }
     export namespace SyntaxList {
       export const kind = Syntax.SyntaxList;
-    }
-
-    export interface SyntheticReferenceExpression extends LeftHandSideExpression {
-      kind: Syntax.SyntheticReferenceExpression;
-      expression: Expression;
-      thisArg: Expression;
     }
     export namespace SyntheticReferenceExpression {
       export const kind = Syntax.SyntheticReferenceExpression;
@@ -4291,14 +3171,6 @@ namespace qnr {
       export function updateSyntheticReferenceExpression(node: SyntheticReferenceExpression, expression: Expression, thisArg: Expression) {
         return node.expression !== expression || node.thisArg !== thisArg ? updateNode(createSyntheticReferenceExpression(expression, thisArg), node) : node;
       }
-    }
-
-    export interface TaggedTemplateExpression extends MemberExpression {
-      kind: Syntax.TaggedTemplateExpression;
-      tag: LeftHandSideExpression;
-      typeArguments?: Nodes<TypeNode>;
-      template: TemplateLiteral;
-      questionDotToken?: QuestionDotToken;
     }
     export namespace TaggedTemplateExpression {
       export const kind = Syntax.TaggedTemplateExpression;
@@ -4325,12 +3197,6 @@ namespace qnr {
           : node;
       }
     }
-
-    export interface TemplateExpression extends PrimaryExpression {
-      kind: Syntax.TemplateExpression;
-      head: TemplateHead;
-      templateSpans: Nodes<TemplateSpan>;
-    }
     export namespace TemplateExpression {
       export const kind = Syntax.TemplateExpression;
       export function createTemplateExpression(head: TemplateHead, templateSpans: readonly TemplateSpan[]) {
@@ -4343,25 +3209,11 @@ namespace qnr {
         return node.head !== head || node.templateSpans !== templateSpans ? updateNode(createTemplateExpression(head, templateSpans), node) : node;
       }
     }
-
-    export interface TemplateHead extends TemplateLiteralLikeNode {
-      kind: Syntax.TemplateHead;
-      parent: TemplateExpression;
-      templateFlags?: TokenFlags;
-    }
     export namespace TemplateHead {
       export const kind = Syntax.TemplateHead;
       export function create(t: string, raw?: string) {
         return qn.createTemplateLiteralLike(Syntax.TemplateHead, t, raw) as TemplateHead;
       }
-    }
-
-    export type TemplateLiteralToken = NoSubstitutionLiteral | TemplateHead | TemplateMiddle | TemplateTail;
-
-    export interface TemplateMiddle extends TemplateLiteralLikeNode {
-      kind: Syntax.TemplateMiddle;
-      parent: TemplateSpan;
-      templateFlags?: TokenFlags;
     }
     export namespace TemplateMiddle {
       export const kind = Syntax.TemplateMiddle;
@@ -4372,13 +3224,6 @@ namespace qnr {
         const k = n.kind;
         return k === Syntax.TemplateMiddle || k === Syntax.TemplateTail;
       }
-    }
-
-    export interface TemplateSpan extends Node {
-      kind: Syntax.TemplateSpan;
-      parent: TemplateExpression;
-      expression: Expression;
-      literal: TemplateMiddle | TemplateTail;
     }
     export namespace TemplateSpan {
       export const kind = Syntax.TemplateSpan;
@@ -4392,32 +3237,17 @@ namespace qnr {
         return node.expression !== expression || node.literal !== literal ? updateNode(createTemplateSpan(expression, literal), node) : node;
       }
     }
-
-    export interface TemplateTail extends TemplateLiteralLikeNode {
-      kind: Syntax.TemplateTail;
-      parent: TemplateSpan;
-      templateFlags?: TokenFlags;
-    }
     export namespace TemplateTail {
       export const kind = Syntax.TemplateTail;
       export function create(t: string, raw?: string) {
         return qn.createTemplateLiteralLike(Syntax.TemplateTail, t, raw) as TemplateTail;
       }
     }
-
-    export interface ThisTypeNode extends TypeNode {
-      kind: Syntax.ThisType;
-    }
     export namespace ThisTypeNode {
       export const kind = Syntax.ThisType;
       export function create() {
         return qn.createSynthesized(Syntax.ThisType);
       }
-    }
-
-    export interface ThrowStatement extends Statement {
-      kind: Syntax.ThrowStatement;
-      expression?: Expression;
     }
     export namespace ThrowStatement {
       export const kind = Syntax.ThrowStatement;
@@ -4429,13 +3259,6 @@ namespace qnr {
       export function updateThrow(node: ThrowStatement, expression: Expression) {
         return node.expression !== expression ? updateNode(createThrow(expression), node) : node;
       }
-    }
-
-    export interface TryStatement extends Statement {
-      kind: Syntax.TryStatement;
-      tryBlock: Block;
-      catchClause?: CatchClause;
-      finallyBlock?: Block;
     }
     export namespace TryStatement {
       export const kind = Syntax.TryStatement;
@@ -4450,11 +3273,6 @@ namespace qnr {
         return node.tryBlock !== tryBlock || node.catchClause !== catchClause || node.finallyBlock !== finallyBlock ? updateNode(createTry(tryBlock, catchClause, finallyBlock), node) : node;
       }
     }
-
-    export interface TupleTypeNode extends TypeNode {
-      kind: Syntax.TupleType;
-      elements: Nodes<TypeNode | NamedTupleMember>;
-    }
     export namespace TupleTypeNode {
       export const kind = Syntax.TupleType;
       export function create(es: readonly (TypeNode | NamedTupleMember)[]) {
@@ -4465,13 +3283,6 @@ namespace qnr {
       export function update(n: TupleTypeNode, es: readonly (TypeNode | NamedTupleMember)[]) {
         return n.elements !== es ? updateNode(create(es), n) : n;
       }
-    }
-
-    export interface TypeAliasDeclaration extends DeclarationStatement, JSDocContainer {
-      kind: Syntax.TypeAliasDeclaration;
-      name: Identifier;
-      typeParameters?: Nodes<TypeParameterDeclaration>;
-      type: TypeNode;
     }
     export namespace TypeAliasDeclaration {
       export const kind = Syntax.TypeAliasDeclaration;
@@ -4503,12 +3314,6 @@ namespace qnr {
           : node;
       }
     }
-
-    export interface TypeAssertion extends UnaryExpression {
-      kind: Syntax.TypeAssertionExpression;
-      type: TypeNode;
-      expression: UnaryExpression;
-    }
     export namespace TypeAssertion {
       export const kind = Syntax.TypeAssertionExpression;
       export function createTypeAssertion(type: TypeNode, expression: Expression) {
@@ -4522,11 +3327,6 @@ namespace qnr {
         return node.type !== type || node.expression !== expression ? updateNode(createTypeAssertion(type, expression), node) : node;
       }
     }
-
-    export interface TypeLiteralNode extends TypeNode, Declaration {
-      kind: Syntax.TypeLiteral;
-      members: Nodes<TypeElement>;
-    }
     export namespace TypeLiteralNode {
       export const kind = Syntax.TypeLiteral;
       export function create(ms: readonly TypeElement[] | undefined) {
@@ -4538,15 +3338,6 @@ namespace qnr {
         return n.members !== ms ? updateNode(create(ms), n) : n;
       }
     }
-
-    export interface TypeNode extends Node {
-      _typeNodeBrand: any;
-    }
-
-    export interface TypeOfExpression extends UnaryExpression {
-      kind: Syntax.TypeOfExpression;
-      expression: UnaryExpression;
-    }
     export namespace TypeOfExpression {
       export const kind = Syntax.TypeOfExpression;
       export function createTypeOf(expression: Expression) {
@@ -4557,14 +3348,6 @@ namespace qnr {
       export function updateTypeOf(node: TypeOfExpression, expression: Expression) {
         return node.expression !== expression ? updateNode(createTypeOf(expression), node) : node;
       }
-    }
-
-    export type TypeOfTag = 'undefined' | 'number' | 'boolean' | 'string' | 'symbol' | 'object' | 'function';
-
-    export interface TypeOperatorNode extends TypeNode {
-      kind: Syntax.TypeOperator;
-      operator: Syntax.KeyOfKeyword | Syntax.UniqueKeyword | Syntax.ReadonlyKeyword;
-      type: TypeNode;
     }
     export namespace TypeOperatorNode {
       export const kind = Syntax.TypeOperator;
@@ -4580,15 +3363,6 @@ namespace qnr {
         return n.type !== t ? updateNode(create(n.operator, t), n) : n;
       }
     }
-
-    export interface TypeParameterDeclaration extends NamedDeclaration {
-      kind: Syntax.TypeParameter;
-      parent: DeclarationWithTypeParameterChildren | InferTypeNode;
-      name: Identifier;
-      constraint?: TypeNode;
-      default?: TypeNode;
-      expression?: Expression;
-    }
     export namespace TypeParameterDeclaration {
       export const kind = Syntax.TypeParameter;
       export function createTypeParameterDeclaration(name: string | Identifier, constraint?: TypeNode, defaultType?: TypeNode) {
@@ -4601,14 +3375,6 @@ namespace qnr {
       export function updateTypeParameterDeclaration(node: TypeParameterDeclaration, name: Identifier, constraint: TypeNode | undefined, defaultType: TypeNode | undefined) {
         return node.name !== name || node.constraint !== constraint || node.default !== defaultType ? updateNode(createTypeParameterDeclaration(name, constraint, defaultType), node) : node;
       }
-    }
-
-    export interface TypePredicateNode extends TypeNode {
-      kind: Syntax.TypePredicate;
-      parent: SignatureDeclaration | JSDocTypeExpression;
-      assertsModifier?: AssertsToken;
-      parameterName: Identifier | ThisTypeNode;
-      type?: TypeNode;
     }
     export namespace TypePredicateNode {
       export const kind = Syntax.TypePredicate;
@@ -4629,11 +3395,6 @@ namespace qnr {
         return n.assertsModifier !== a || n.parameterName !== p || n.type !== t ? updateNode(createWithModifier(a, p, t), n) : n;
       }
     }
-
-    export interface TypeQueryNode extends TypeNode {
-      kind: Syntax.TypeQuery;
-      exprName: EntityName;
-    }
     export namespace TypeQueryNode {
       export const kind = Syntax.TypeQuery;
       export function create(e: EntityName) {
@@ -4644,11 +3405,6 @@ namespace qnr {
       export function update(n: TypeQueryNode, e: EntityName) {
         return n.exprName !== e ? updateNode(create(e), n) : n;
       }
-    }
-
-    export interface TypeReferenceNode extends NodeWithTypeArguments {
-      kind: Syntax.TypeReference;
-      typeName: EntityName;
     }
     export namespace TypeReferenceNode {
       export const kind = Syntax.TypeReference;
@@ -4661,11 +3417,6 @@ namespace qnr {
       export function update(n: TypeReferenceNode, t: EntityName, ts?: Nodes<TypeNode>) {
         return n.typeName !== t || n.typeArguments !== ts ? updateNode(create(t, ts), n) : n;
       }
-    }
-
-    export interface UnionTypeNode extends TypeNode {
-      kind: Syntax.UnionType;
-      types: Nodes<TypeNode>;
     }
     export namespace UnionTypeNode {
       export const kind = Syntax.UnionType;
@@ -4684,8 +3435,6 @@ namespace qnr {
         return n.types !== ts ? updateNode(orIntersectionCreate(n.kind, ts) as T, n) : n;
       }
     }
-
-    export type UnparsedNode = UnparsedPrologue | UnparsedSourceText | UnparsedSyntheticReference;
     export namespace UnparsedNode {
       function createUnparsedNode(section: BundleFileSection, parent: UnparsedSource): UnparsedNode {
         const node = createNode(mapBundleFileSectionKindToSyntax(section.kind), section.pos, section.end) as UnparsedNode;
@@ -4716,39 +3465,8 @@ namespace qnr {
         }
       }
     }
-
-    export interface UnparsedPrepend extends UnparsedSection {
-      kind: Syntax.UnparsedPrepend;
-      data: string;
-      parent: UnparsedSource;
-      texts: readonly UnparsedTextLike[];
-    }
     export namespace UnparsedPrepend {
       export const kind = Syntax.UnparsedPrepend;
-    }
-
-    export interface UnparsedSource extends Node {
-      kind: Syntax.UnparsedSource;
-      fileName: string;
-      text: string;
-      prologues: readonly UnparsedPrologue[];
-      helpers: readonly UnscopedEmitHelper[] | undefined;
-
-      // References and noDefaultLibAre Dts only
-      referencedFiles: readonly FileReference[];
-      typeReferenceDirectives: readonly string[] | undefined;
-      libReferenceDirectives: readonly FileReference[];
-      hasNoDefaultLib?: boolean;
-
-      sourceMapPath?: string;
-      sourceMapText?: string;
-      syntheticReferences?: readonly UnparsedSyntheticReference[];
-      texts: readonly UnparsedSourceText[];
-      oldFileOfCurrentEmit?: boolean;
-      parsedSourceMap?: RawSourceMap | false | undefined;
-      // Adding this to satisfy services, fix later
-
-      lineAndCharOf(pos: number): LineAndChar;
     }
     export namespace UnparsedSource {
       export const kind = Syntax.UnparsedSource;
@@ -4932,12 +3650,6 @@ namespace qnr {
         return node;
       }
     }
-
-    export interface UnparsedSyntheticReference extends UnparsedSection {
-      kind: Syntax.UnparsedSyntheticReference;
-      parent: UnparsedSource;
-      section: BundleFileHasNoDefaultLib | BundleFileReference;
-    }
     export namespace UnparsedSyntheticReference {
       function createUnparsedSyntheticReference(section: BundleFileHasNoDefaultLib | BundleFileReference, parent: UnparsedSource) {
         const node = createNode(Syntax.UnparsedSyntheticReference, section.pos, section.end) as UnparsedSyntheticReference;
@@ -4946,15 +3658,6 @@ namespace qnr {
         node.section = section;
         return node;
       }
-    }
-
-    export interface VariableDeclaration extends NamedDeclaration {
-      kind: Syntax.VariableDeclaration;
-      parent: VariableDeclarationList | CatchClause;
-      name: BindingName;
-      exclamationToken?: ExclamationToken;
-      type?: TypeNode;
-      initializer?: Expression;
     }
     export namespace VariableDeclaration {
       export const kind = Syntax.VariableDeclaration;
@@ -4990,12 +3693,6 @@ namespace qnr {
           : node;
       }
     }
-
-    export interface VariableDeclarationList extends Node {
-      kind: Syntax.VariableDeclarationList;
-      parent: VariableStatement | ForStatement | ForOfStatement | ForInStatement;
-      declarations: Nodes<VariableDeclaration>;
-    }
     export namespace VariableDeclarationList {
       export const kind = Syntax.VariableDeclarationList;
       export function createVariableDeclarationList(declarations: readonly VariableDeclaration[], flags = NodeFlags.None) {
@@ -5007,11 +3704,6 @@ namespace qnr {
       export function updateVariableDeclarationList(node: VariableDeclarationList, declarations: readonly VariableDeclaration[]) {
         return node.declarations !== declarations ? updateNode(createVariableDeclarationList(declarations, node.flags), node) : node;
       }
-    }
-
-    export interface VariableStatement extends Statement, JSDocContainer {
-      kind: Syntax.VariableStatement;
-      declarationList: VariableDeclarationList;
     }
     export namespace VariableStatement {
       export const kind = Syntax.VariableStatement;
@@ -5025,11 +3717,6 @@ namespace qnr {
       export function updateVariableStatement(node: VariableStatement, modifiers: readonly Modifier[] | undefined, declarationList: VariableDeclarationList) {
         return node.modifiers !== modifiers || node.declarationList !== declarationList ? updateNode(createVariableStatement(modifiers, declarationList), node) : node;
       }
-    }
-
-    export interface VoidExpression extends UnaryExpression {
-      kind: Syntax.VoidExpression;
-      expression: UnaryExpression;
     }
     export namespace VoidExpression {
       export const kind = Syntax.VoidExpression;
@@ -5045,11 +3732,6 @@ namespace qnr {
         return createVoid(createLiteral(0));
       }
     }
-
-    export interface WhileStatement extends IterationStatement {
-      kind: Syntax.WhileStatement;
-      expression: Expression;
-    }
     export namespace WhileStatement {
       export const kind = Syntax.WhileStatement;
       export function createWhile(expression: Expression, statement: Statement) {
@@ -5062,12 +3744,6 @@ namespace qnr {
         return node.expression !== expression || node.statement !== statement ? updateNode(createWhile(expression, statement), node) : node;
       }
     }
-
-    export interface WithStatement extends Statement {
-      kind: Syntax.WithStatement;
-      expression: Expression;
-      statement: Statement;
-    }
     export namespace WithStatement {
       export const kind = Syntax.WithStatement;
       export function createWith(expression: Expression, statement: Statement) {
@@ -5079,12 +3755,6 @@ namespace qnr {
       export function updateWith(node: WithStatement, expression: Expression, statement: Statement) {
         return node.expression !== expression || node.statement !== statement ? updateNode(createWith(expression, statement), node) : node;
       }
-    }
-
-    export interface YieldExpression extends Expression {
-      kind: Syntax.YieldExpression;
-      asteriskToken?: AsteriskToken;
-      expression?: Expression;
     }
     export namespace YieldExpression {
       export const kind = Syntax.YieldExpression;
@@ -6047,7 +4717,6 @@ namespace qnr {
         tryGetModuleNameFromDeclaration(importNode, host, resolver, compilerOptions) || tryRenameExternalModule(<StringLiteral>moduleName, sourceFile) || getSynthesizedClone(<StringLiteral>moduleName)
       );
     }
-
     return;
   }
 
