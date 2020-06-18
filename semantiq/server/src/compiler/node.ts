@@ -88,7 +88,77 @@ namespace qnr {
       }
       return n;
     }
-
+    /// new
+    export function createToken<TKind extends Syntax>(token: TKind) {
+      return <Token<TKind>>qn.createSynthesized(token);
+    }
+    export function createModifier<T extends Modifier['kind']>(kind: T): Token<T> {
+      return createToken(kind);
+    }
+    export function createModifiersFromModifierFlags(flags: ModifierFlags) {
+      const result: Modifier[] = [];
+      if (flags & ModifierFlags.Export) {
+        result.push(createModifier(Syntax.ExportKeyword));
+      }
+      if (flags & ModifierFlags.Ambient) {
+        result.push(createModifier(Syntax.DeclareKeyword));
+      }
+      if (flags & ModifierFlags.Default) {
+        result.push(createModifier(Syntax.DefaultKeyword));
+      }
+      if (flags & ModifierFlags.Const) {
+        result.push(createModifier(Syntax.ConstKeyword));
+      }
+      if (flags & ModifierFlags.Public) {
+        result.push(createModifier(Syntax.PublicKeyword));
+      }
+      if (flags & ModifierFlags.Private) {
+        result.push(createModifier(Syntax.PrivateKeyword));
+      }
+      if (flags & ModifierFlags.Protected) {
+        result.push(createModifier(Syntax.ProtectedKeyword));
+      }
+      if (flags & ModifierFlags.Abstract) {
+        result.push(createModifier(Syntax.AbstractKeyword));
+      }
+      if (flags & ModifierFlags.Static) {
+        result.push(createModifier(Syntax.StaticKeyword));
+      }
+      if (flags & ModifierFlags.Readonly) {
+        result.push(createModifier(Syntax.ReadonlyKeyword));
+      }
+      if (flags & ModifierFlags.Async) {
+        result.push(createModifier(Syntax.AsyncKeyword));
+      }
+      return result;
+    }
+    export function getMutableClone<T extends Node>(node: T): T {
+      const clone = getSynthesizedClone(node);
+      clone.pos = node.pos;
+      clone.end = node.end;
+      clone.parent = node.parent;
+      return clone;
+    }
+    export function getSynthesizedClone<T extends Node>(node: T): T {
+      if (node === undefined) return node;
+      const clone = qn.createSynthesized(node.kind) as T;
+      clone.flags |= node.flags;
+      setOriginalNode(clone, node);
+      for (const key in node) {
+        if (clone.hasOwnProperty(key) || !node.hasOwnProperty(key)) continue;
+        (<any>clone)[key] = (<any>node)[key];
+      }
+      return clone;
+    }
+    export function updateNode<T extends Node>(updated: T, original: T): T {
+      if (updated !== original) {
+        setOriginalNode(updated, original);
+        setTextRange(updated, original);
+        aggregateTransformFlags(updated);
+      }
+      return updated;
+    }
+    ///
     export const is = new (class {
       node(k: Syntax) {
         return k >= Syntax.FirstNode;
