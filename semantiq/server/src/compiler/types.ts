@@ -97,21 +97,18 @@ namespace qnr {
       | VariableDeclaration
       | ParameterDeclaration
       | BindingElement
-      | PropertyAssignment // AssignmentProperty
-      | ShorthandPropertyAssignment // AssignmentProperty
-      | SpreadAssignment // AssignmentRestProperty
-      | OmittedExpression // Elision
-      | SpreadElement // AssignmentRestElement
-      | ArrayLiteralExpression // ArrayAssignmentPattern
-      | ObjectLiteralExpression // ObjectAssignmentPattern
-      | AssignmentExpression<EqualsToken> // AssignmentElement
-      | Identifier // DestructuringAssignmentTarget
-      | PropertyAccessExpression // DestructuringAssignmentTarget
-      | ElementAccessExpression; // DestructuringAssignmentTarget
-    export type BindingOrAssignmentElementRestIndicator =
-      | Dot3Token // from BindingElement
-      | SpreadElement // AssignmentRestElement
-      | SpreadAssignment; // AssignmentRestProperty
+      | PropertyAssignment
+      | ShorthandPropertyAssignment
+      | SpreadAssignment
+      | OmittedExpression
+      | SpreadElement
+      | ArrayLiteralExpression
+      | ObjectLiteralExpression
+      | AssignmentExpression<EqualsToken>
+      | Identifier
+      | PropertyAccessExpression
+      | ElementAccessExpression;
+    export type BindingOrAssignmentElementRestIndicator = Dot3Token | SpreadElement | SpreadAssignment;
     export type BindingOrAssignmentElementTarget = BindingOrAssignmentPattern | Identifier | PropertyAccessExpression | ElementAccessExpression | OmittedExpression;
     export interface BooleanLiteral extends PrimaryExpression, TypeNode {
       kind: Syntax.TrueKeyword | Syntax.FalseKeyword;
@@ -324,19 +321,19 @@ namespace qnr {
       antecedent: FlowNode;
     }
     export const enum FlowFlags {
-      Unreachable = 1 << 0, // Unreachable code
-      Start = 1 << 1, // Start of flow graph
-      BranchLabel = 1 << 2, // Non-looping junction
-      LoopLabel = 1 << 3, // Looping junction
-      Assignment = 1 << 4, // Assignment
-      TrueCondition = 1 << 5, // Condition known to be true
-      FalseCondition = 1 << 6, // Condition known to be false
-      SwitchClause = 1 << 7, // Switch statement clause
-      ArrayMutation = 1 << 8, // Potential array mutation
-      Call = 1 << 9, // Potential assertion call
-      ReduceLabel = 1 << 10, // Temporarily reduce antecedents of label
-      Referenced = 1 << 11, // Referenced as antecedent once
-      Shared = 1 << 12, // Referenced as antecedent more than once
+      Unreachable = 1 << 0,
+      Start = 1 << 1,
+      BranchLabel = 1 << 2,
+      LoopLabel = 1 << 3,
+      Assignment = 1 << 4,
+      TrueCondition = 1 << 5,
+      FalseCondition = 1 << 6,
+      SwitchClause = 1 << 7,
+      ArrayMutation = 1 << 8,
+      Call = 1 << 9,
+      ReduceLabel = 1 << 10,
+      Referenced = 1 << 11,
+      Shared = 1 << 12,
       Label = BranchLabel | LoopLabel,
       Condition = TrueCondition | FalseCondition,
     }
@@ -358,8 +355,8 @@ namespace qnr {
     }
     export interface FlowSwitchClause extends FlowNodeBase {
       switchStatement: SwitchStatement;
-      clauseStart: number; // Start index of case/default clause range
-      clauseEnd: number; // End index of case/default clause range
+      clauseStart: number;
+      clauseEnd: number;
       antecedent: FlowNode;
     }
     export type FlowType = Type | IncompleteType;
@@ -426,12 +423,12 @@ namespace qnr {
     export interface Identifier extends PrimaryExpression, Declaration {
       kind: Syntax.Identifier;
       escapedText: __String;
-      originalKeywordKind?: Syntax; // Original syntaxKind which get set so that we can report an error later
-      autoGenerateFlags?: GeneratedIdentifierFlags; // Specifies whether to auto-generate the text for an identifier.
-      autoGenerateId?: number; // Ensures unique generated identifiers get unique names, but clones get the same name.
-      isInJSDocNamespace?: boolean; // if the node is a member in a JSDoc namespace
-      typeArguments?: Nodes<TypeNode | TypeParameterDeclaration>; // Only defined on synthesized nodes. Though not syntactically valid, used in emitting diagnostics, quickinfo, and signature help.
-      jsdocDotPos?: number; // Identifier occurs in JSDoc-style generic: Id.<T>
+      originalKeywordKind?: Syntax;
+      autoGenerateFlags?: GeneratedIdentifierFlags;
+      autoGenerateId?: number;
+      isInJSDocNamespace?: boolean;
+      typeArguments?: Nodes<TypeNode | TypeParameterDeclaration>;
+      jsdocDotPos?: number;
     }
     export interface IfStatement extends Statement {
       kind: Syntax.IfStatement;
@@ -626,7 +623,6 @@ namespace qnr {
     export interface JSDocTypeLiteral extends JSDocType {
       kind: Syntax.JSDocTypeLiteral;
       jsDocPropertyTags?: readonly JSDocPropertyLikeTag[];
-      /** If true, then this type literal represents an *array* of its type. */
       isArrayType?: boolean;
     }
     export interface JSDocTypeTag extends JSDocTag {
@@ -673,9 +669,7 @@ namespace qnr {
     }
     export const enum JsxFlags {
       None = 0,
-      /** An element from a named property of the JSX.IntrinsicElements interface */
       IntrinsicNamedElement = 1 << 0,
-      /** An element inferred from the string index signature of the JSX.IntrinsicElements interface */
       IntrinsicIndexedElement = 1 << 1,
       IntrinsicElement = IntrinsicNamedElement | IntrinsicIndexedElement,
     }
@@ -858,21 +852,20 @@ namespace qnr {
       | Token<Syntax.StaticKeyword>;
     export const enum ModifierFlags {
       None = 0,
-      Export = 1 << 0, // Declarations
-      Ambient = 1 << 1, // Declarations
-      Public = 1 << 2, // Property/Method
-      Private = 1 << 3, // Property/Method
-      Protected = 1 << 4, // Property/Method
-      Static = 1 << 5, // Property/Method
-      Readonly = 1 << 6, // Property/Method
-      Abstract = 1 << 7, // Class/Method/ConstructSignature
-      Async = 1 << 8, // Property/Method/Function
-      Default = 1 << 9, // Function/Class (export default declaration)
-      Const = 1 << 11, // Const enum
-      HasComputedJSDocModifiers = 1 << 12, // Indicates the computed modifier flags include modifiers from JSDoc.
-      HasComputedFlags = 1 << 29, // Modifier flags have been computed
+      Export = 1 << 0,
+      Ambient = 1 << 1,
+      Public = 1 << 2,
+      Private = 1 << 3,
+      Protected = 1 << 4,
+      Static = 1 << 5,
+      Readonly = 1 << 6,
+      Abstract = 1 << 7,
+      Async = 1 << 8,
+      Default = 1 << 9,
+      Const = 1 << 11,
+      HasComputedJSDocModifiers = 1 << 12,
+      HasComputedFlags = 1 << 29,
       AccessibilityModifier = Public | Private | Protected,
-      // Accessibility modifiers and 'readonly' can be attached to a parameter in a constructor to make it a property.
       ParameterPropertyModifier = AccessibilityModifier | Readonly,
       NonPublicAccessibilityModifier = Private | Protected,
       TypeScriptModifier = Ambient | Public | Private | Protected | Readonly | Abstract | Const,
@@ -974,15 +967,6 @@ namespace qnr {
       JavaScriptFile = 1 << 17, // If node was parsed in a JavaScript
       ThisNodeOrAnySubNodesHasError = 1 << 18, // If this node or any of its children had an error
       HasAggregatedChildData = 1 << 19, // If we've computed data from children and cached it in this node
-      // These flags will be set when the parser encounters a dynamic import expression or 'import.meta' to avoid
-      // walking the tree if the flags are not set. However, these flags are just a approximation
-      // (hence why it's named "PossiblyContainsDynamicImport") because once set, the flags never get cleared.
-      // During editing, if a dynamic import is removed, incremental parsing will *NOT* clear this flag.
-      // This means that the tree will always be traversed during module resolution, or when looking for external module indicators.
-      // However, the removal operation should not occur often and in the case of the
-      // removal, it is likely that users will add the import anyway.
-      // The advantage of this approach is its simplicity. For the case of batch compilation,
-      // we guarantee that users won't have to pay the price of walking the tree if a dynamic import isn't used.
       PossiblyContainsDynamicImport = 1 << 20,
       PossiblyContainsImportMeta = 1 << 21,
       JSDoc = 1 << 22, // If node was parsed inside jsdoc
@@ -993,13 +977,8 @@ namespace qnr {
       BlockScoped = Let | Const,
       ReachabilityCheckFlags = HasImplicitReturn | HasExplicitReturn,
       ReachabilityAndEmitFlags = ReachabilityCheckFlags | HasAsyncFunctions,
-      // Parsing context flags
       ContextFlags = DisallowInContext | YieldContext | DecoratorContext | AwaitContext | JavaScriptFile | InWithStatement | Ambient,
-      // Exclude these flags when parsing a Type
       TypeExcludesFlags = YieldContext | AwaitContext,
-      // Represents all flags that are potentially set once and
-      // never cleared on SourceFiles which get re-used in between incremental parses.
-      // See the comment above on `PossiblyContainsDynamicImport` and `PossiblyContainsImportMeta`.
       PermanentlySetIncrementalFlags = PossiblyContainsDynamicImport | PossiblyContainsImportMeta,
     }
     export interface Nodes<T extends Node> extends ReadonlyArray<T>, QRange {
@@ -1267,12 +1246,8 @@ namespace qnr {
       MultiLineCommentTrivia,
       NewLineTrivia,
       WhitespaceTrivia,
-      // We detect and preserve #! on the first line
       ShebangTrivia,
-      // We detect and provide better error recovery when we encounter a git merge marker.  This
-      // allows us to edit files with git-conflict markers in them in a much more pleasant manner.
       ConflictMarkerTrivia,
-      // Literals
       NumericLiteral,
       BigIntLiteral,
       StringLiteral,
@@ -1280,11 +1255,9 @@ namespace qnr {
       JsxTextAllWhiteSpaces,
       RegexLiteral,
       NoSubstitutionLiteral,
-      // Pseudo-literals
       TemplateHead,
       TemplateMiddle,
       TemplateTail,
-      // Punctuation
       OpenBraceToken,
       CloseBraceToken,
       OpenParenToken,
@@ -1328,9 +1301,7 @@ namespace qnr {
       ColonToken,
       AtToken,
       Question2Token,
-      /** Only the JSDoc scanner produces BacktickToken. The normal scanner produces NoSubstitutionLiteral and related kinds. */
       BacktickToken,
-      // Assignments
       EqualsToken,
       PlusEqualsToken,
       MinusEqualsToken,
@@ -1344,10 +1315,8 @@ namespace qnr {
       AmpersandEqualsToken,
       BarEqualsToken,
       CaretEqualsToken,
-      // Identifiers and PrivateIdentifiers
       Identifier,
       PrivateIdentifier,
-      // Reserved words
       BreakKeyword,
       CaseKeyword,
       CatchKeyword,
@@ -1384,7 +1353,6 @@ namespace qnr {
       VoidKeyword,
       WhileKeyword,
       WithKeyword,
-      // Strict mode reserved words
       ImplementsKeyword,
       InterfaceKeyword,
       LetKeyword,
@@ -1394,7 +1362,6 @@ namespace qnr {
       PublicKeyword,
       StaticKeyword,
       YieldKeyword,
-      // Contextual keywords
       AbstractKeyword,
       AsKeyword,
       AssertsKeyword,
@@ -1426,15 +1393,11 @@ namespace qnr {
       GlobalKeyword,
       BigIntKeyword,
       OfKeyword, // LastKeyword and LastToken and LastContextualKeyword
-      // Parse tree nodes
-      // Names
       QualifiedName,
       ComputedPropertyName,
-      // Signature elements
       TypeParameter,
       Parameter,
       Decorator,
-      // TypeMember
       PropertySignature,
       PropertyDeclaration,
       MethodSignature,
@@ -1445,7 +1408,6 @@ namespace qnr {
       CallSignature,
       ConstructSignature,
       IndexSignature,
-      // Type
       TypePredicate,
       TypeReference,
       FunctionType,
@@ -1468,11 +1430,9 @@ namespace qnr {
       LiteralType,
       NamedTupleMember,
       ImportType,
-      // Binding patterns
       ObjectBindingPattern,
       ArrayBindingPattern,
       BindingElement,
-      // Expression
       ArrayLiteralExpression,
       ObjectLiteralExpression,
       PropertyAccessExpression,
@@ -1502,10 +1462,8 @@ namespace qnr {
       NonNullExpression,
       MetaProperty,
       SyntheticExpression,
-      // Misc
       TemplateSpan,
       SemicolonClassElement,
-      // Element
       Block,
       EmptyStatement,
       VariableStatement,
@@ -1548,7 +1506,6 @@ namespace qnr {
       NamespaceExport,
       ExportSpecifier,
       MissingDeclaration,
-      // Module references
       ExternalModuleReference,
       JsxElement,
       JsxSelfClosingElement,
@@ -1561,40 +1518,31 @@ namespace qnr {
       JsxAttributes,
       JsxSpreadAttribute,
       JsxExpression,
-      // Clauses
       CaseClause,
       DefaultClause,
       HeritageClause,
       CatchClause,
-      // Property assignments
       PropertyAssignment,
       ShorthandPropertyAssignment,
       SpreadAssignment,
-      // Enum
       EnumMember,
-      // Unparsed
       UnparsedPrologue,
       UnparsedPrepend,
       UnparsedText,
       UnparsedInternalText,
       UnparsedSyntheticReference,
-      // Top-level nodes
       SourceFile,
       Bundle,
       UnparsedSource,
       InputFiles,
-      // JSDoc nodes
       JSDocTypeExpression,
-      // The * type
       JSDocAllType,
-      // The ? type
       JSDocUnknownType,
       JSDocNullableType,
       JSDocNonNullableType,
       JSDocOptionalType,
       JSDocFunctionType,
       JSDocVariadicType,
-      // https://jsdoc.app/about-namepaths.html
       JSDocNamepathType,
       JSDocComment,
       JSDocTypeLiteral,
@@ -1617,18 +1565,14 @@ namespace qnr {
       JSDocTemplateTag,
       JSDocTypedefTag,
       JSDocPropertyTag,
-      // Synthesized list
       SyntaxList,
-      // Transformation nodes
       NotEmittedStatement,
       PartiallyEmittedExpression,
       CommaListExpression,
       MergeDeclarationMarker,
       EndOfDeclarationMarker,
       SyntheticReferenceExpression,
-      // Enum value count
       Count,
-      // Markers
       FirstAssignment = EqualsToken,
       LastAssignment = CaretEqualsToken,
       FirstCompoundAssignment = PlusEqualsToken,
@@ -1779,21 +1723,14 @@ namespace qnr {
       getPromisedTypeOfPromise(promise: Type, errorNode?: Node): Type | undefined;
       getAwaitedType(type: Type): Type | undefined;
       getReturnTypeOfSignature(signature: Signature): Type;
-      /**
-       * Gets the type of a parameter at a given position in a signature.
-       * Returns `any` if the index is not valid.
-       */
       getParameterType(signature: Signature, parameterIndex: number): Type;
       getNullableType(type: Type, flags: TypeFlags): Type;
       getNonNullableType(type: Type): Type;
       getNonOptionalType(type: Type): Type;
       isNullableType(type: Type): boolean;
       getTypeArguments(type: TypeReference): readonly Type[];
-      // TODO: GH#18217 `xToDeclaration` calls are frequently asserted as defined.
-      /** Note that the resulting nodes cannot be checked. */
       typeToTypeNode(type: Type, enclosingDeclaration: Node | undefined, flags: NodeBuilderFlags | undefined): TypeNode | undefined;
       typeToTypeNode(type: Type, enclosingDeclaration: Node | undefined, flags: NodeBuilderFlags | undefined, tracker?: SymbolTracker): TypeNode | undefined; // eslint-disable-line @typescript-eslint/unified-signatures
-      /** Note that the resulting nodes cannot be checked. */
       signatureToSignatureDeclaration(
         signature: Signature,
         kind: Syntax,
@@ -1807,7 +1744,6 @@ namespace qnr {
         flags: NodeBuilderFlags | undefined,
         tracker?: SymbolTracker
       ): (SignatureDeclaration & { typeArguments?: Nodes<TypeNode> }) | undefined; // eslint-disable-line @typescript-eslint/unified-signatures
-      /** Note that the resulting nodes cannot be checked. */
       indexInfoToIndexSignatureDeclaration(indexInfo: IndexInfo, kind: IndexKind, enclosingDeclaration: Node | undefined, flags: NodeBuilderFlags | undefined): IndexSignatureDeclaration | undefined;
       indexInfoToIndexSignatureDeclaration(
         indexInfo: IndexInfo,
@@ -1829,20 +1765,8 @@ namespace qnr {
       getSymbolsInScope(location: Node, meaning: SymbolFlags): Symbol[];
       getSymbolAtLocation(node: Node): Symbol | undefined;
       getSymbolsOfParameterPropertyDeclaration(parameter: ParameterDeclaration, parameterName: string): Symbol[];
-      /**
-       * The function returns the value (local variable) symbol of an identifier in the short-hand property assignment.
-       * This is necessary as an identifier in short-hand property assignment can contains two meaning: property name and property value.
-       */
       getShorthandAssignmentValueSymbol(location: Node): Symbol | undefined;
       getExportSpecifierLocalTargetSymbol(location: ExportSpecifier): Symbol | undefined;
-      /**
-       * If a symbol is a local symbol with an associated exported symbol, returns the exported symbol.
-       * Otherwise returns its input.
-       * For example, at `export type T = number;`:
-       *     - `getSymbolAtLocation` at the location `T` will return the exported symbol for `T`.
-       *     - But the result of `getSymbolsInScope` will contain the *local* symbol for `T`, not the exported symbol.
-       *     - Calling `getExportSymbolOfSymbol` on that local symbol will return the exported symbol.
-       */
       getExportSymbolOfSymbol(symbol: Symbol): Symbol;
       getPropertySymbolOfDestructuringAssignment(location: Identifier): Symbol | undefined;
       getTypeOfAssignmentPattern(pattern: AssignmentPattern): Type;
@@ -1865,11 +1789,6 @@ namespace qnr {
       getContextualTypeForArgumentAtIndex(call: CallLikeExpression, argIndex: number): Type | undefined;
       getContextualTypeForJsxAttribute(attribute: JsxAttribute | JsxSpreadAttribute): Type | undefined;
       isContextSensitive(node: Expression | MethodDeclaration | ObjectLiteralElementLike | JsxAttributeLike): boolean;
-      /**
-       * returns unknownSignature in the case of an error.
-       * returns undefined if the node is not valid.
-       * @param argumentCount Apparent number of arguments, passed in case of a possibly incomplete call. This should come from an ArgumentListInfo. See `signatureHelp.ts`.
-       */
       getResolvedSignature(node: CallLikeExpression, candidatesOutArray?: Signature[], argumentCount?: number): Signature | undefined;
       getResolvedSignatureForSignatureHelp(node: CallLikeExpression, candidatesOutArray?: Signature[], argumentCount?: number): Signature | undefined;
       getExpandedParameters(sig: Signature): readonly (readonly Symbol[])[];
@@ -1895,10 +1814,6 @@ namespace qnr {
       isOptionalParameter(node: ParameterDeclaration): boolean;
       getAmbientModules(): Symbol[];
       tryGetMemberInModuleExports(memberName: string, moduleSymbol: Symbol): Symbol | undefined;
-      /**
-       * Unlike `tryGetMemberInModuleExports`, this includes properties of an `export =` value.
-       * Does *not* return properties of primitive types.
-       */
       tryGetMemberInModuleExportsAndProperties(memberName: string, moduleSymbol: Symbol): Symbol | undefined;
       getApparentType(type: Type): Type;
       getSuggestedSymbolForNonexistentProperty(name: Identifier | PrivateIdentifier | string, containingType: Type): Symbol | undefined;
@@ -1962,28 +1877,10 @@ namespace qnr {
       isArrayType(type: Type): boolean;
       isTupleType(type: Type): boolean;
       isArrayLikeType(type: Type): boolean;
-      /**
-       * True if `contextualType` should not be considered for completions because
-       * e.g. it specifies `kind: "a"` and obj has `kind: "b"`.
-       */
       isTypeInvalidDueToUnionDiscriminant(contextualType: Type, obj: ObjectLiteralExpression | JsxAttributes): boolean;
-      /**
-       * For a union, will include a property if it's defined in *any* of the member types.
-       * So for `{ a } | { b }`, this will include both `a` and `b`.
-       * Does not include properties of primitive types.
-       */
       getAllPossiblePropertiesOfTypes(type: readonly Type[]): Symbol[];
       resolveName(name: string, location: Node | undefined, meaning: SymbolFlags, excludeGlobals: boolean): Symbol | undefined;
       getJsxNamespace(location?: Node): string;
-      /**
-       * Note that this will return undefined in the following case:
-       *     // a.ts
-       *     export namespace N { export class C { } }
-       *     // b.ts
-       *     <<enclosingDeclaration>>
-       * Where `C` is the symbol we're looking for.
-       * This should be called in a loop climbing parents of the symbol, so we'll get `N`.
-       */
       getAccessibleSymbolChain(symbol: Symbol, enclosingDeclaration: Node | undefined, meaning: SymbolFlags, useOnlyExternalAliasing: boolean): Symbol[] | undefined;
       getTypePredicateOfSignature(signature: Signature): TypePredicate | undefined;
       resolveExternalModuleName(moduleSpecifier: Expression): Symbol | undefined;
@@ -2101,11 +1998,10 @@ namespace qnr {
       type: TypeNode;
     }
     export interface TypeParameter extends InstantiableType {
-      /** Retrieve using getConstraintFromTypeParameter */
-      constraint?: Type; // Constraint
+      constraint?: Type;
       default?: Type;
-      target?: TypeParameter; // Instantiation target
-      mapper?: TypeMapper; // Instantiation mapper
+      target?: TypeParameter;
+      mapper?: TypeMapper;
       isThisType?: boolean;
       resolvedDefaultType?: Type;
     }
@@ -2144,33 +2040,17 @@ namespace qnr {
       typeName: EntityName;
     }
     export enum TypeReferenceSerializationKind {
-      // The TypeReferenceNode could not be resolved.
-      // The type name should be emitted using a safe fallback.
       Unknown,
-      // The TypeReferenceNode resolves to a type with a constructor
-      // function that can be reached at runtime (e.g. a `class`
-      // declaration or a `var` declaration for the static side
-      // of a type, such as the global `Promise` type in lib.d.ts).
       TypeWithConstructSignatureAndValue,
-      // The TypeReferenceNode resolves to a Void-like, Nullable, or Never type.
       VoidNullableOrNeverType,
-      // The TypeReferenceNode resolves to a Number-like type.
       NumberLikeType,
-      // The TypeReferenceNode resolves to a BigInt-like type.
       BigIntLikeType,
-      // The TypeReferenceNode resolves to a String-like type.
       StringLikeType,
-      // The TypeReferenceNode resolves to a Boolean-like type.
       BooleanType,
-      // The TypeReferenceNode resolves to an Array-like type.
       ArrayLikeType,
-      // The TypeReferenceNode resolves to the ESSymbol type.
       ESSymbolType,
-      // The TypeReferenceNode resolved to the global Promise constructor symbol.
       Promise,
-      // The TypeReferenceNode resolves to a Function type or a type with call signatures.
       TypeWithCallSignature,
-      // The TypeReferenceNode resolves to any other type.
       ObjectType,
     }
     export type TypeReferenceType = TypeReferenceNode | ExpressionWithTypeArguments;
@@ -2192,7 +2072,6 @@ namespace qnr {
       text: string;
       prologues: readonly UnparsedPrologue[];
       helpers: readonly UnscopedEmitHelper[] | undefined;
-      // References and noDefaultLibAre Dts only
       referencedFiles: readonly FileReference[];
       typeReferenceDirectives: readonly string[] | undefined;
       libReferenceDirectives: readonly FileReference[];
@@ -2203,7 +2082,6 @@ namespace qnr {
       texts: readonly UnparsedSourceText[];
       oldFileOfCurrentEmit?: boolean;
       parsedSourceMap?: RawSourceMap | false | undefined;
-      // Adding this to satisfy services, fix later
       lineAndCharOf(pos: number): LineAndChar;
     }
     export interface UnparsedSyntheticReference extends UnparsedSection {
@@ -2285,8 +2163,8 @@ namespace qnr {
       ReportsMask = ReportsUnmeasurable | ReportsUnreliable,
     }
     export interface JSDocContainer {
-      jsDoc?: JSDoc[]; // JSDoc that directly precedes this node
-      jsDocCache?: readonly JSDocTag[]; // Cache for getJSDocTags
+      jsDoc?: JSDoc[];
+      jsDocCache?: readonly JSDocTag[];
     }
     export type HasJSDoc =
       | ParameterDeclaration
@@ -2666,8 +2544,8 @@ namespace qnr {
       kind: Syntax.JSDocTag;
     }
     export interface IncompleteType {
-      flags: TypeFlags; // No flags set
-      type: Type; // The type marked incomplete
+      flags: TypeFlags;
+      type: Type;
     }
     export interface SourceFileLike {
       readonly text: string;
@@ -2739,10 +2617,6 @@ namespace qnr {
     export interface ParseConfigHost {
       useCaseSensitiveFileNames: boolean;
       readDirectory(rootDir: string, extensions: readonly string[], excludes: readonly string[] | undefined, includes: readonly string[], depth?: number): readonly string[];
-      /**
-       * Gets a value indicating whether the specified path exists and is a file.
-       * @param path The path to test.
-       */
       fileExists(path: string): boolean;
       readFile(path: string): string | undefined;
       trace?(s: string): void;
@@ -2752,7 +2626,6 @@ namespace qnr {
     export class OperationCanceledException {}
     export interface CancellationToken {
       isCancellationRequested(): boolean;
-      /** @throws OperationCanceledException if isCancellationRequested is true */
       throwIfCancellationRequested(): void;
     }
     export enum RefFileKind {
@@ -2768,31 +2641,11 @@ namespace qnr {
     }
     export interface Program extends ScriptReferenceHost {
       getCurrentDirectory(): string;
-      /**
-       * Get a list of root file names that were passed to a 'createProgram'
-       */
       getRootFileNames(): readonly string[];
-      /**
-       * Get a list of files in the program
-       */
       getSourceFiles(): readonly SourceFile[];
-      /**
-       * Get a list of file names that were passed to 'createProgram' or referenced in a
-       * program source file but could not be located.
-       */
       getMissingFilePaths(): readonly Path[];
       getRefFileMap(): MultiMap<RefFile> | undefined;
       getFilesByNameMap(): qa.QMap<SourceFile | false | undefined>;
-      /**
-       * Emits the JavaScript and declaration files.  If targetSourceFile is not specified, then
-       * the JavaScript and declaration files will be produced for all the files in this program.
-       * If targetSourceFile is specified, then only the JavaScript and declaration for that
-       * specific file will be generated.
-       *
-       * If writeFile is not specified then the writeFile callback from the compiler host will be
-       * used for writing the JavaScript and declaration files.  Otherwise, the writeFile parameter
-       * will be invoked when writing the JavaScript and declaration files.
-       */
       emit(targetSourceFile?: SourceFile, writeFile?: WriteFileCallback, cancellationToken?: CancellationToken, emitOnlyDtsFiles?: boolean, customTransformers?: CustomTransformers): EmitResult;
       emit(
         targetSourceFile?: SourceFile,
@@ -2812,9 +2665,6 @@ namespace qnr {
       getSuggestionDiagnostics(sourceFile: SourceFile, cancellationToken?: CancellationToken): readonly DiagnosticWithLocation[];
       getBindAndCheckDiagnostics(sourceFile: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
       getProgramDiagnostics(sourceFile: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
-      /**
-       * Gets a type checker that can be used to semantically analyze source files in the program.
-       */
       getTypeChecker(): TypeChecker;
       getCommonSourceDirectory(): string;
       // For testing purposes only.  Should not be used by any other consumers (including the
@@ -2906,17 +2756,10 @@ namespace qnr {
       sourceMap: RawSourceMap;
     }
     export enum ExitStatus {
-      // Compiler ran successfully.  Either this was a simple do-nothing compilation (for example,
-      // when -version or -help was provided, or this was a normal compilation, no diagnostics
-      // were produced, and all outputs were generated successfully.
       Success = 0,
-      // Diagnostics were produced and because of them no code was generated.
       DiagnosticsPresent_OutputsSkipped = 1,
-      // Diagnostics were produced and outputs were generated in spite of them.
       DiagnosticsPresent_OutputsGenerated = 2,
-      // When build skipped because passed in project is invalid
       InvalidProject_OutputsSkipped = 3,
-      // When build is skipped because project references form cycle
       ProjectReferenceCycle_OutputsSkipped = 4,
       /** @deprecated Use ProjectReferenceCycle_OutputsSkipped instead. */
       ProjectReferenceCycle_OutputsSkupped = 4,
@@ -3678,9 +3521,6 @@ namespace qnr {
       callSignatures: readonly Signature[]; // Call signatures of type
       constructSignatures: readonly Signature[]; // Construct signatures of type
     }
-    // Object literals are initially marked fresh. Freshness disappears following an assignment,
-    // before a type assertion, or when an object literal's type is widened. The regular
-    // version of a fresh type is identical except for the TypeFlags.FreshObjectLiteral flag.
     export interface FreshObjectLiteralType extends ResolvedType {
       regularType: ResolvedType; // Regular version of fresh type
     }
@@ -3689,7 +3529,6 @@ namespace qnr {
       readonly returnType: Type;
       readonly nextType: Type;
     }
-    // Just a place to cache element types of iterables and iterators
     export interface IterableOrIteratorType extends ObjectType, UnionType {
       iterationTypesOfGeneratorReturnType?: IterationTypes;
       iterationTypesOfAsyncGeneratorReturnType?: IterationTypes;
@@ -3712,9 +3551,6 @@ namespace qnr {
       resolvedIndexType?: IndexType;
       resolvedStringIndexType?: IndexType;
     }
-    // Type parameters (TypeFlags.TypeParameter)
-    // Indexed access types (TypeFlags.IndexedAccess)
-    // Possible forms are T[xxx], xxx[T], or xxx[keyof T], where T is a type variable
     export interface IndexedAccessType extends InstantiableType {
       objectType: Type;
       indexType: Type;
@@ -3752,15 +3588,9 @@ namespace qnr {
       mapper?: TypeMapper;
       combinedMapper?: TypeMapper;
     }
-    // Type parameter substitution (TypeFlags.Substitution)
-    // Substitution types are created for type parameters or indexed access types that occur in the
-    // true branch of a conditional type. For example, in 'T extends string ? Foo<T> : Bar<T>', the
-    // reference to T in Foo<T> is resolved as a substitution type that substitutes 'string & T' for T.
-    // Thus, if Foo has a 'string' constraint on its type parameter, T will satisfy it. Substitution
-    // types disappear upon instantiation (just like type parameters).
     export interface SubstitutionType extends InstantiableType {
-      baseType: Type; // Target type
-      substitute: Type; // Type to substitute for type parameter
+      baseType: Type;
+      substitute: Type;
     }
     export const enum JsxReferenceKind {
       Component,
@@ -3952,13 +3782,9 @@ namespace qnr {
       name: string;
     }
     export interface ProjectReference {
-      /** A normalized path on disk */
       path: string;
-      /** The path as the user originally wrote it */
       originalPath?: string;
-      /** True if the output of this reference should be prepended to the output of this project. Only valid for --outFile compilations */
       prepend?: boolean;
-      /** True if it is intended that this reference form a circularity */
       circular?: boolean;
     }
     export enum WatchFileKind {
@@ -4103,9 +3929,6 @@ namespace qnr {
       AMD = 2,
       UMD = 3,
       System = 4,
-      // NOTE: ES module kinds should be contiguous to more easily check whether a module kind is *any* ES module kind.
-      //       Non-ES module kinds should not come between ES2015 (the earliest ES module kind) and ESNext (the last ES
-      //       module kind).
       ES2015 = 5,
       ES2020 = 6,
       ESNext = 99,
@@ -4137,10 +3960,6 @@ namespace qnr {
       TSX = 4,
       External = 5,
       JSON = 6,
-      /**
-       * Used on extensions that doesn't define the ScriptKind but the content defines it.
-       * Deferred extensions are going to be included in all project contexts.
-       */
       Deferred = 7,
     }
     export const enum ScriptTarget {
@@ -4263,26 +4082,12 @@ namespace qnr {
     }
     export interface ResolvedModuleFull extends ResolvedModule {
       readonly originalPath?: string;
-      /**
-       * Extension of resolvedFileName. This must match what's at the end of resolvedFileName.
-       * This is optional for backwards-compatibility, but will be added if not provided.
-       */
       extension: Extension;
       packageId?: PackageId;
     }
     export interface PackageId {
-      /**
-       * Name of the package.
-       * Should not include `@types`.
-       * If accessing a non-index file, this should include its name e.g. "foo/bar".
-       */
       name: string;
-      /**
-       * Name of a submodule within this package.
-       * May be "".
-       */
       subModuleName: string;
-      /** Version of the package, e.g. "1.2.3" */
       version: string;
     }
     export const enum Extension {
@@ -4324,13 +4129,6 @@ namespace qnr {
       useCaseSensitiveFileNames(): boolean;
       getNewLine(): string;
       readDirectory?(rootDir: string, extensions: readonly string[], excludes: readonly string[] | undefined, includes: readonly string[], depth?: number): string[];
-      /*
-       * CompilerHost must either implement resolveModuleNames (in case if it wants to be completely in charge of
-       * module name resolution) or provide implementation for methods from ModuleResolutionHost (in this case compiler
-       * will apply built-in module resolution logic and use members of ModuleResolutionHost to ask host specific questions).
-       * If resolveModuleNames is implemented then implementation for members from ModuleResolutionHost can be just
-       * 'throw new Error("NotImplemented")'
-       */
       resolveModuleNames?(
         moduleNames: string[],
         containingFile: string,
@@ -4338,9 +4136,6 @@ namespace qnr {
         redirectedReference: ResolvedProjectReference | undefined,
         options: CompilerOptions
       ): (ResolvedModule | undefined)[];
-      /**
-       * This method is a companion for 'resolveModuleNames' and is used to resolve 'types' references to actual type declaration files
-       */
       resolveTypeReferenceDirectives?(
         typeReferenceDirectiveNames: string[],
         containingFile: string,
@@ -4616,31 +4411,9 @@ namespace qnr {
     export type Visitor = (node: Node) => VisitResult<Node>;
     export type VisitResult<T extends Node> = T | T[] | undefined;
     export interface Printer {
-      /**
-       * Print a node and its subtree as-is, without any emit transformations.
-       * @param hint A value indicating the purpose of a node. This is primarily used to
-       * distinguish between an `Identifier` used in an expression position, versus an
-       * `Identifier` used as an `IdentifierName` as part of a declaration. For most nodes you
-       * should just pass `Unspecified`.
-       * @param node The node to print. The node and its subtree are printed as-is, without any
-       * emit transformations.
-       * @param sourceFile A source file that provides context for the node. The source text of
-       * the file is used to emit the original source content for literals and identifiers, while
-       * the identifiers of the source file are used when generating unique names to avoid
-       * collisions.
-       */
       printNode(hint: EmitHint, node: Node, sourceFile: SourceFile): string;
-      /**
-       * Prints a list of nodes using the given format flags
-       */
       printList<T extends Node>(format: ListFormat, list: Nodes<T>, sourceFile: SourceFile): string;
-      /**
-       * Prints a source file as-is, without any emit transformations.
-       */
       printFile(sourceFile: SourceFile): string;
-      /**
-       * Prints a bundle of source files as-is, without any emit transformations.
-       */
       printBundle(bundle: Bundle): string;
       writeNode(hint: EmitHint, node: Node, sourceFile: SourceFile | undefined, writer: EmitTextWriter): void;
       writeList<T extends Node>(format: ListFormat, list: Nodes<T> | undefined, sourceFile: SourceFile | undefined, writer: EmitTextWriter): void;
@@ -4658,7 +4431,6 @@ namespace qnr {
       Prepend = 'prepend',
       Text = 'text',
       Internal = 'internal',
-      // comments?
     }
     export interface BundleFileSectionBase extends TextRange {
       kind: BundleFileSectionKind;
@@ -4721,51 +4493,9 @@ namespace qnr {
       version: string;
     }
     export interface PrintHandlers {
-      /**
-       * A hook used by the Printer when generating unique names to avoid collisions with
-       * globally defined names that exist outside of the current source file.
-       */
       hasGlobalName?(name: string): boolean;
-      /**
-       * A hook used by the Printer to provide notifications prior to emitting a node. A
-       * compatible implementation **must** invoke `emitCallback` with the provided `hint` and
-       * `node` values.
-       * @param hint A hint indicating the intended purpose of the node.
-       * @param node The node to emit.
-       * @param emitCallback A callback that, when invoked, will emit the node.
-       * @example
-       * ```ts
-       * var printer = createPrinter(printerOptions, {
-       *   onEmitNode(hint, node, emitCallback) {
-       *     // set up or track state prior to emitting the node...
-       *     emitCallback(hint, node);
-       *     // restore state after emitting the node...
-       *   }
-       * });
-       * ```
-       */
       onEmitNode?(hint: EmitHint, node: Node | undefined, emitCallback: (hint: EmitHint, node: Node | undefined) => void): void;
-      /**
-       * A hook used to check if an emit notification is required for a node.
-       * @param node The node to emit.
-       */
       isEmitNotificationEnabled?(node: Node | undefined): boolean;
-      /**
-       * A hook used by the Printer to perform just-in-time substitution of a node. This is
-       * primarily used by node transformations that need to substitute one node for another,
-       * such as replacing `myExportedVar` with `exports.myExportedVar`.
-       * @param hint A hint indicating the intended purpose of the node.
-       * @param node The node to emit.
-       * @example
-       * ```ts
-       * var printer = createPrinter(printerOptions, {
-       *   substituteNode(hint, node) {
-       *     // perform substitution if necessary...
-       *     return node;
-       *   }
-       * });
-       * ```
-       */
       substituteNode?(hint: EmitHint, node: Node): Node;
       onEmitSourceMapOfNode?: (hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void) => void;
       onEmitSourceMapOfToken?: (
@@ -4812,37 +4542,13 @@ namespace qnr {
     }
     export interface SourceMapGenerator {
       getSources(): readonly string[];
-      /**
-       * Adds a source to the source map.
-       */
       addSource(fileName: string): number;
-      /**
-       * Set the content for a source.
-       */
       setSourceContent(sourceIndex: number, content: string | null): void;
-      /**
-       * Adds a name.
-       */
       addName(name: string): number;
-      /**
-       * Adds a mapping without source information.
-       */
       addMapping(generatedLine: number, generatedCharacter: number): void;
-      /**
-       * Adds a mapping with source information.
-       */
       addMapping(generatedLine: number, generatedCharacter: number, sourceIndex: number, sourceLine: number, sourceCharacter: number, nameIndex?: number): void;
-      /**
-       * Appends a source map.
-       */
       appendSourceMap(generatedLine: number, generatedCharacter: number, sourceMap: RawSourceMap, sourceMapPath: string, start?: LineAndChar, end?: LineAndChar): void;
-      /**
-       * Gets the source map as a `RawSourceMap` object.
-       */
       toJSON(): RawSourceMap;
-      /**
-       * Gets the string representation of the source map.
-       */
       toString(): string;
     }
     export interface DocumentPositionMapperHost {
@@ -5003,22 +4709,8 @@ namespace qnr {
     }
     export const enum PragmaKindFlags {
       None = 0,
-      /**
-       * Triple slash comment of the form
-       * /// <pragma-name argname="value" />
-       */
       TripleSlashXML = 1 << 0,
-      /**
-       * Single line comment of the form
-       * // @pragma-name argval1 argval2
-       * or
-       * /// @pragma-name argval1 argval2
-       */
       SingleLine = 1 << 1,
-      /**
-       * Multiline non-jsdoc pragma of the form
-       * /* @pragma-name argval1 argval2 * /
-       */
       MultiLine = 1 << 2,
       All = TripleSlashXML | SingleLine | MultiLine,
       Default = All,
@@ -5104,7 +4796,6 @@ namespace qnr {
       readonly includeAutomaticOptionalChainCompletions?: boolean;
       readonly includeCompletionsWithInsertText?: boolean;
       readonly importModuleSpecifierPreference?: 'auto' | 'relative' | 'non-relative';
-      /** Determines whether we import `foo/index.ts` as "foo", "foo/index", or "foo/index.js" */
       readonly importModuleSpecifierEnding?: 'auto' | 'minimal' | 'index' | 'js';
       readonly allowTextChangesInNewFiles?: boolean;
       readonly providePrefixAndSuffixTextForRename?: boolean;
