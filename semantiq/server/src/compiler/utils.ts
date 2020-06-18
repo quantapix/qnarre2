@@ -101,6 +101,13 @@ namespace qnr {
     moveEnd(e: number) {
       return new TextRange(this.pos, e);
     }
+    setTextRange<T extends TextRange>(range: T, location: TextRange | undefined): T {
+      if (location) {
+        range.pos = location.pos;
+        range.end = location.end;
+      }
+      return range;
+    }
   }
   export namespace TextRange {
     export function movePastDecorators(n: Node): TextRange {
@@ -115,8 +122,15 @@ namespace qnr {
     export function ofNode(n: Node): TextRange {
       return new TextRange(getTokenPosOfNode(n), n.end);
     }
-    export function ofTypeParams(a: NodeArray<TypeParameterDeclaration>): TextRange {
+    export function ofTypeParams(a: Nodes<TypeParameterDeclaration>): TextRange {
       return new TextRange(a.pos - 1, a.end + 1);
+    }
+    export function mergeTokenSourceMapRanges(sourceRanges: (TextRange | undefined)[], destRanges: (TextRange | undefined)[]) {
+      if (!destRanges) destRanges = [];
+      for (const key in sourceRanges) {
+        destRanges[key] = sourceRanges[key];
+      }
+      return destRanges;
     }
   }
 
@@ -211,7 +225,7 @@ namespace qnr {
     onSingleLine(r: QRange) {
       return this.onSameLine(r.pos, r.end);
     }
-    multiLine(a: NodeArray<Node>) {
+    multiLine(a: Nodes<Node>) {
       return !this.onSameLine(a.pos, a.end);
     }
     startsOnSameLine(r1: QRange, r2: QRange) {

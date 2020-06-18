@@ -949,6 +949,10 @@ namespace qnr {
       typeReferenceType(n: Node): n is TypeReferenceType {
         return n.kind === Syntax.TypeReference || n.kind === Syntax.ExpressionWithTypeArguments;
       }
+      isStringOrNumericLiteral(node: Node): node is StringLiteral | NumericLiteral {
+        const kind = node.kind;
+        return kind === Syntax.StringLiteral || kind === Syntax.NumericLiteral;
+      }
     })();
     export const isJsx = new (class {
       tagName(n: Node) {

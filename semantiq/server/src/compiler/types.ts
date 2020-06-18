@@ -794,14 +794,6 @@ namespace qnr {
 
   export type DeclarationName = Identifier | PrivateIdentifier | StringLiteralLike | NumericLiteral | ComputedPropertyName | ElementAccessExpression | BindingPattern | EntityNameExpression;
 
-  export interface Declaration extends Node {
-    _declarationBrand: any;
-  }
-
-  export interface NamedDeclaration extends Declaration {
-    name?: DeclarationName;
-  }
-
   export interface DynamicNamedDeclaration extends NamedDeclaration {
     name: ComputedPropertyName;
   }
@@ -1025,35 +1017,6 @@ namespace qnr {
   }
 
   export type DestructuringAssignment = ObjectDestructuringAssignment | ArrayDestructuringAssignment;
-
-  export type BindingOrAssignmentElement =
-    | VariableDeclaration
-    | ParameterDeclaration
-    | BindingElement
-    | PropertyAssignment // AssignmentProperty
-    | ShorthandPropertyAssignment // AssignmentProperty
-    | SpreadAssignment // AssignmentRestProperty
-    | OmittedExpression // Elision
-    | SpreadElement // AssignmentRestElement
-    | ArrayLiteralExpression // ArrayAssignmentPattern
-    | ObjectLiteralExpression // ObjectAssignmentPattern
-    | AssignmentExpression<EqualsToken> // AssignmentElement
-    | Identifier // DestructuringAssignmentTarget
-    | PropertyAccessExpression // DestructuringAssignmentTarget
-    | ElementAccessExpression; // DestructuringAssignmentTarget
-
-  export type BindingOrAssignmentElementRestIndicator =
-    | Dot3Token // from BindingElement
-    | SpreadElement // AssignmentRestElement
-    | SpreadAssignment; // AssignmentRestProperty
-
-  export type BindingOrAssignmentElementTarget = BindingOrAssignmentPattern | Identifier | PropertyAccessExpression | ElementAccessExpression | OmittedExpression;
-
-  export type ObjectBindingOrAssignmentPattern = ObjectBindingPattern | ObjectLiteralExpression; // ObjectAssignmentPattern
-
-  export type ArrayBindingOrAssignmentPattern = ArrayBindingPattern | ArrayLiteralExpression; // ArrayAssignmentPattern
-
-  export type BindingOrAssignmentPattern = ObjectBindingOrAssignmentPattern | ArrayBindingOrAssignmentPattern;
 
   export type FunctionBody = Block;
   export type ConciseBody = FunctionBody | Expression;
@@ -4112,123 +4075,6 @@ namespace qnr {
     InParameters = 1 << 0, // currently visiting a parameter list
     VariablesHoistedInParameters = 1 << 1, // a temp variable was hoisted while visiting a parameter list
   }
-
-  export interface TransformationContext {
-    getEmitResolver(): EmitResolver;
-    getEmitHost(): EmitHost;
-
-    /** Gets the compiler options supplied to the transformer. */
-    getCompilerOptions(): CompilerOptions;
-
-    /** Starts a new lexical environment. */
-    startLexicalEnvironment(): void;
-
-    setLexicalEnvironmentFlags(flags: LexicalEnvironmentFlags, value: boolean): void;
-    getLexicalEnvironmentFlags(): LexicalEnvironmentFlags;
-
-    /** Suspends the current lexical environment, usually after visiting a parameter list. */
-    suspendLexicalEnvironment(): void;
-
-    /** Resumes a suspended lexical environment, usually before visiting a function body. */
-    resumeLexicalEnvironment(): void;
-
-    /** Ends a lexical environment, returning any declarations. */
-    endLexicalEnvironment(): Statement[] | undefined;
-
-    /** Hoists a function declaration to the containing scope. */
-    hoistFunctionDeclaration(node: FunctionDeclaration): void;
-
-    /** Hoists a variable declaration to the containing scope. */
-    hoistVariableDeclaration(node: Identifier): void;
-
-    /** Adds an initialization statement to the top of the lexical environment. */
-    addInitializationStatement(node: Statement): void;
-
-    /** Records a request for a non-scoped emit helper in the current context. */
-    requestEmitHelper(helper: EmitHelper): void;
-
-    /** Gets and resets the requested non-scoped emit helpers. */
-    readEmitHelpers(): EmitHelper[] | undefined;
-
-    /** Enables expression substitutions in the pretty printer for the provided Syntax. */
-    enableSubstitution(kind: Syntax): void;
-
-    /** Determines whether expression substitutions are enabled for the provided node. */
-    isSubstitutionEnabled(node: Node): boolean;
-
-    /**
-     * Hook used by transformers to substitute expressions just before they
-     * are emitted by the pretty printer.
-     *
-     * NOTE: Transformation hooks should only be modified during `Transformer` initialization,
-     * before returning the `NodeTransformer` callback.
-     */
-    onSubstituteNode: (hint: EmitHint, node: Node) => Node;
-
-    /**
-     * Enables before/after emit notifications in the pretty printer for the provided
-     * Syntax.
-     */
-    enableEmitNotification(kind: Syntax): void;
-
-    /**
-     * Determines whether before/after emit notifications should be raised in the pretty
-     * printer when it emits a node.
-     */
-    isEmitNotificationEnabled(node: Node): boolean;
-
-    /**
-     * Hook used to allow transformers to capture state before or after
-     * the printer emits a node.
-     *
-     * NOTE: Transformation hooks should only be modified during `Transformer` initialization,
-     * before returning the `NodeTransformer` callback.
-     */
-    onEmitNode: (hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void) => void;
-
-    addDiagnostic(diag: DiagnosticWithLocation): void;
-  }
-
-  export interface TransformationResult<T extends Node> {
-    /** Gets the transformed source files. */
-    transformed: T[];
-
-    /** Gets diagnostics for the transformation. */
-    diagnostics?: DiagnosticWithLocation[];
-
-    /**
-     * Gets a substitute for a node, if one is available; otherwise, returns the original node.
-     *
-     * @param hint A hint as to the intended usage of the node.
-     * @param node The node to substitute.
-     */
-    substituteNode(hint: EmitHint, node: Node): Node;
-
-    /**
-     * Emits a node with possible notification.
-     *
-     * @param hint A hint as to the intended usage of the node.
-     * @param node The node to emit.
-     * @param emitCallback A callback used to emit the node.
-     */
-    emitNodeWithNotification(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void): void;
-
-    /**
-     * Indicates if a given node needs an emit notification
-     *
-     * @param node The node to emit.
-     */
-    isEmitNotificationEnabled?(node: Node): boolean;
-
-    /**
-     * Clean up EmitNode entries on any parse-tree nodes.
-     */
-    dispose(): void;
-  }
-
-  export type TransformerFactory<T extends Node> = (context: TransformationContext) => Transformer<T>;
-
-  export type Transformer<T extends Node> = (node: T) => T;
 
   export type Visitor = (node: Node) => VisitResult<Node>;
 

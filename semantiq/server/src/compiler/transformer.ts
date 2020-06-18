@@ -1,4 +1,65 @@
 namespace qnr {
+  export interface TransformationContext {
+    getEmitResolver(): EmitResolver;
+    getEmitHost(): EmitHost;
+    getCompilerOptions(): CompilerOptions;
+    startLexicalEnvironment(): void;
+    setLexicalEnvironmentFlags(flags: LexicalEnvironmentFlags, value: boolean): void;
+    getLexicalEnvironmentFlags(): LexicalEnvironmentFlags;
+    suspendLexicalEnvironment(): void;
+    resumeLexicalEnvironment(): void;
+    endLexicalEnvironment(): Statement[] | undefined;
+    hoistFunctionDeclaration(node: FunctionDeclaration): void;
+    hoistVariableDeclaration(node: Identifier): void;
+    addInitializationStatement(node: Statement): void;
+    requestEmitHelper(helper: EmitHelper): void;
+    readEmitHelpers(): EmitHelper[] | undefined;
+    enableSubstitution(kind: Syntax): void;
+    isSubstitutionEnabled(node: Node): boolean;
+    onSubstituteNode: (hint: EmitHint, node: Node) => Node;
+    enableEmitNotification(kind: Syntax): void;
+    isEmitNotificationEnabled(node: Node): boolean;
+    onEmitNode: (hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void) => void;
+    addDiagnostic(diag: DiagnosticWithLocation): void;
+  }
+
+  export const nullTransformationContext: TransformationContext = {
+    enableEmitNotification: qa.noop,
+    enableSubstitution: qa.noop,
+    endLexicalEnvironment: () => undefined,
+    getCompilerOptions: () => ({}),
+    getEmitHost: qa.notImplemented,
+    getEmitResolver: qa.notImplemented,
+    setLexicalEnvironmentFlags: qa.noop,
+    getLexicalEnvironmentFlags: () => 0,
+    hoistFunctionDeclaration: qa.noop,
+    hoistVariableDeclaration: qa.noop,
+    addInitializationStatement: qa.noop,
+    isEmitNotificationEnabled: qa.notImplemented,
+    isSubstitutionEnabled: qa.notImplemented,
+    onEmitNode: qa.noop,
+    onSubstituteNode: qa.notImplemented,
+    readEmitHelpers: qa.notImplemented,
+    requestEmitHelper: qa.noop,
+    resumeLexicalEnvironment: qa.noop,
+    startLexicalEnvironment: qa.noop,
+    suspendLexicalEnvironment: qa.noop,
+    addDiagnostic: qa.noop,
+  };
+
+  export interface TransformationResult<T extends Node> {
+    transformed: T[];
+    diagnostics?: DiagnosticWithLocation[];
+    substituteNode(hint: EmitHint, node: Node): Node;
+    emitNodeWithNotification(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void): void;
+    isEmitNotificationEnabled?(node: Node): boolean;
+    dispose(): void;
+  }
+
+  export type TransformerFactory<T extends Node> = (context: TransformationContext) => Transformer<T>;
+
+  export type Transformer<T extends Node> = (node: T) => T;
+
   function getModuleTransformer(moduleKind: ModuleKind): TransformerFactory<SourceFile | Bundle> {
     switch (moduleKind) {
       case ModuleKind.ESNext:
@@ -35,52 +96,36 @@ namespace qnr {
 
   function getScriptTransformers(compilerOptions: CompilerOptions, customTransformers?: CustomTransformers, emitOnlyDtsFiles?: boolean) {
     if (emitOnlyDtsFiles) return emptyArray;
-
     const jsx = compilerOptions.jsx;
     const languageVersion = getEmitScriptTarget(compilerOptions);
     const moduleKind = getEmitModuleKind(compilerOptions);
     const transformers: TransformerFactory<SourceFile | Bundle>[] = [];
-
-    addRange(transformers, customTransformers && map(customTransformers.before, wrapScriptTransformerFactory));
-
+    qa.addRange(transformers, customTransformers && qa.map(customTransformers.before, wrapScriptTransformerFactory));
     transformers.push(transformTypeScript);
     transformers.push(transformClassFields);
+    if (jsx === JsxEmit.React) transformers.push(transformJsx);
 
-    if (jsx === JsxEmit.React) {
-      transformers.push(transformJsx);
-    }
+    if (languageVersion < ScriptTarget.ESNext) transformers.push(transformESNext);
 
-    if (languageVersion < ScriptTarget.ESNext) {
-      transformers.push(transformESNext);
-    }
-
-    if (languageVersion < ScriptTarget.ES2020) {
-      transformers.push(transformES2020);
-    }
+    if (languageVersion < ScriptTarget.ES2020) transformers.push(transformES2020);
 
     transformers.push(getModuleTransformer(moduleKind));
 
-    addRange(transformers, customTransformers && map(customTransformers.after, wrapScriptTransformerFactory));
+    qa.addRange(transformers, customTransformers && qa.map(customTransformers.after, wrapScriptTransformerFactory));
     return transformers;
   }
 
   function getDeclarationTransformers(customTransformers?: CustomTransformers) {
     const transformers: TransformerFactory<SourceFile | Bundle>[] = [];
     transformers.push(transformDeclarations);
-    addRange(transformers, customTransformers && map(customTransformers.afterDeclarations, wrapDeclarationTransformerFactory));
+    qa.addRange(transformers, customTransformers && qa.map(customTransformers.afterDeclarations, wrapDeclarationTransformerFactory));
     return transformers;
   }
 
-  /**
-   * Wrap a custom script or declaration transformer object in a `Transformer` callback with fallback support for transforming bundles.
-   */
   function wrapCustomTransformer(transformer: CustomTransformer): Transformer<Bundle | SourceFile> {
     return (node) => (qn.is.kind(Bundle, node) ? transformer.transformBundle(node) : transformer.transformSourceFile(node));
   }
 
-  /**
-   * Wrap a transformer factory that may return a custom script or declaration transformer object.
-   */
   function wrapCustomTransformerFactory<T extends SourceFile | Bundle>(
     transformer: TransformerFactory<T> | CustomTransformerFactory,
     handleDefault: (node: Transformer<T>) => Transformer<Bundle | SourceFile>
@@ -107,16 +152,6 @@ namespace qnr {
     callback(hint, node);
   }
 
-  /**
-   * Transforms an array of SourceFiles by passing them through each transformer.
-   *
-   * @param resolver The emit resolver provided by the checker.
-   * @param host The emit host object used to interact with the file system.
-   * @param options Compiler options to surface in the `TransformationContext`.
-   * @param nodes An array of nodes to transform.
-   * @param transforms An array of `TransformerFactory` callbacks.
-   * @param allowDtsFiles A value indicating whether to allow the transformation of .d.ts files.
-   */
   export function transformNodes<T extends Node>(
     resolver: EmitResolver | undefined,
     host: EmitHost | undefined,
@@ -141,13 +176,10 @@ namespace qnr {
     let onEmitNode: TransformationContext['onEmitNode'] = noEmitNotification;
     let state = TransformationState.Uninitialized;
     const diagnostics: DiagnosticWithLocation[] = [];
-
-    // The transformation context is provided to each transformer as part of transformer
-    // initialization.
     const context: TransformationContext = {
       getCompilerOptions: () => options,
-      getEmitResolver: () => resolver!, // TODO: GH#18217
-      getEmitHost: () => host!, // TODO: GH#18217
+      getEmitResolver: () => resolver!,
+      getEmitHost: () => host!,
       startLexicalEnvironment,
       suspendLexicalEnvironment,
       resumeLexicalEnvironment,
@@ -167,31 +199,26 @@ namespace qnr {
         return onSubstituteNode;
       },
       set onSubstituteNode(value) {
-        assert(state < TransformationState.Initialized, 'Cannot modify transformation hooks after initialization has completed.');
-        assert(value !== undefined, "Value must not be 'undefined'");
+        qa.assert(state < TransformationState.Initialized, 'Cannot modify transformation hooks after initialization has completed.');
+        qa.assert(value !== undefined, "Value must not be 'undefined'");
         onSubstituteNode = value;
       },
       get onEmitNode() {
         return onEmitNode;
       },
       set onEmitNode(value) {
-        assert(state < TransformationState.Initialized, 'Cannot modify transformation hooks after initialization has completed.');
-        assert(value !== undefined, "Value must not be 'undefined'");
+        qa.assert(state < TransformationState.Initialized, 'Cannot modify transformation hooks after initialization has completed.');
+        qa.assert(value !== undefined, "Value must not be 'undefined'");
         onEmitNode = value;
       },
       addDiagnostic(diag) {
         diagnostics.push(diag);
       },
     };
-
-    // Ensure the parse tree is clean before applying transformations
     for (const node of nodes) {
       disposeEmitNodes(qn.get.sourceFileOf(qn.get.parseTreeOf(node)));
     }
-
     performance.mark('beforeTransform');
-
-    // Chain together and initialize each transformer.
     const transformersWithContext = transformers.map((t) => t(context));
     const transformation = (node: T): T => {
       for (const transform of transformersWithContext) {
@@ -199,19 +226,11 @@ namespace qnr {
       }
       return node;
     };
-
-    // prevent modification of transformation hooks.
     state = TransformationState.Initialized;
-
-    // Transform each node.
-    const transformed = map(nodes, allowDtsFiles ? transformation : transformRoot);
-
-    // prevent modification of the lexical environment.
+    const transformed = qa.map(nodes, allowDtsFiles ? transformation : transformRoot);
     state = TransformationState.Completed;
-
     performance.mark('afterTransform');
     performance.measure('transformTime', 'beforeTransform', 'afterTransform');
-
     return {
       transformed,
       substituteNode,
@@ -225,127 +244,67 @@ namespace qnr {
       return node && (!qn.is.kind(SourceFile, node) || !node.isDeclarationFile) ? transformation(node) : node;
     }
 
-    /**
-     * Enables expression substitutions in the pretty printer for the provided Syntax.
-     */
     function enableSubstitution(kind: Syntax) {
-      assert(state < TransformationState.Completed, 'Cannot modify the transformation context after transformation has completed.');
+      qa.assert(state < TransformationState.Completed, 'Cannot modify the transformation context after transformation has completed.');
       enabledSyntaxKindFeatures[kind] |= SyntaxKindFeatureFlags.Substitution;
     }
 
-    /**
-     * Determines whether expression substitutions are enabled for the provided node.
-     */
     function isSubstitutionEnabled(node: Node) {
       return (enabledSyntaxKindFeatures[node.kind] & SyntaxKindFeatureFlags.Substitution) !== 0 && (qn.get.emitFlags(node) & EmitFlags.NoSubstitution) === 0;
     }
 
-    /**
-     * Emits a node with possible substitution.
-     *
-     * @param hint A hint as to the intended usage of the node.
-     * @param node The node to emit.
-     * @param emitCallback The callback used to emit the node or its substitute.
-     */
     function substituteNode(hint: EmitHint, node: Node) {
-      assert(state < TransformationState.Disposed, 'Cannot substitute a node after the result is disposed.');
+      qa.assert(state < TransformationState.Disposed, 'Cannot substitute a node after the result is disposed.');
       return (node && isSubstitutionEnabled(node) && onSubstituteNode(hint, node)) || node;
     }
 
-    /**
-     * Enables before/after emit notifications in the pretty printer for the provided Syntax.
-     */
     function enableEmitNotification(kind: Syntax) {
-      assert(state < TransformationState.Completed, 'Cannot modify the transformation context after transformation has completed.');
+      qa.assert(state < TransformationState.Completed, 'Cannot modify the transformation context after transformation has completed.');
       enabledSyntaxKindFeatures[kind] |= SyntaxKindFeatureFlags.EmitNotifications;
     }
 
-    /**
-     * Determines whether before/after emit notifications should be raised in the pretty
-     * printer when it emits a node.
-     */
     function isEmitNotificationEnabled(node: Node) {
       return (enabledSyntaxKindFeatures[node.kind] & SyntaxKindFeatureFlags.EmitNotifications) !== 0 || (qn.get.emitFlags(node) & EmitFlags.AdviseOnEmitNode) !== 0;
     }
 
-    /**
-     * Emits a node with possible emit notification.
-     *
-     * @param hint A hint as to the intended usage of the node.
-     * @param node The node to emit.
-     * @param emitCallback The callback used to emit the node.
-     */
     function emitNodeWithNotification(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void) {
-      assert(state < TransformationState.Disposed, 'Cannot invoke TransformationResult callbacks after the result is disposed.');
+      qa.assert(state < TransformationState.Disposed, 'Cannot invoke TransformationResult callbacks after the result is disposed.');
       if (node) {
-        // TODO: Remove check and unconditionally use onEmitNode when API is breakingly changed
-        // (see https://github.com/microsoft/TypeScript/pull/36248/files/5062623f39120171b98870c71344b3242eb03d23#r369766739)
-        if (isEmitNotificationEnabled(node)) {
-          onEmitNode(hint, node, emitCallback);
-        } else {
-          emitCallback(hint, node);
-        }
+        if (isEmitNotificationEnabled(node)) onEmitNode(hint, node, emitCallback);
+        else emitCallback(hint, node);
       }
     }
 
-    /**
-     * Records a hoisted variable declaration for the provided name within a lexical environment.
-     */
     function hoistVariableDeclaration(name: Identifier): void {
-      assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
-      assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
+      qa.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
+      qa.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
       const decl = setEmitFlags(createVariableDeclaration(name), EmitFlags.NoNestedSourceMaps);
-      if (!lexicalEnvironmentVariableDeclarations) {
-        lexicalEnvironmentVariableDeclarations = [decl];
-      } else {
-        lexicalEnvironmentVariableDeclarations.push(decl);
-      }
-      if (lexicalEnvironmentFlags & LexicalEnvironmentFlags.InParameters) {
-        lexicalEnvironmentFlags |= LexicalEnvironmentFlags.VariablesHoistedInParameters;
-      }
+      if (!lexicalEnvironmentVariableDeclarations) lexicalEnvironmentVariableDeclarations = [decl];
+      else lexicalEnvironmentVariableDeclarations.push(decl);
+
+      if (lexicalEnvironmentFlags & LexicalEnvironmentFlags.InParameters) lexicalEnvironmentFlags |= LexicalEnvironmentFlags.VariablesHoistedInParameters;
     }
 
-    /**
-     * Records a hoisted function declaration within a lexical environment.
-     */
     function hoistFunctionDeclaration(func: FunctionDeclaration): void {
-      assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
-      assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
+      qa.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
+      qa.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
       setEmitFlags(func, EmitFlags.CustomPrologue);
-      if (!lexicalEnvironmentFunctionDeclarations) {
-        lexicalEnvironmentFunctionDeclarations = [func];
-      } else {
-        lexicalEnvironmentFunctionDeclarations.push(func);
-      }
+      if (!lexicalEnvironmentFunctionDeclarations) lexicalEnvironmentFunctionDeclarations = [func];
+      else lexicalEnvironmentFunctionDeclarations.push(func);
     }
 
-    /**
-     * Adds an initialization statement to the top of the lexical environment.
-     */
     function addInitializationStatement(node: Statement): void {
-      assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
-      assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
+      qa.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
+      qa.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
       setEmitFlags(node, EmitFlags.CustomPrologue);
-      if (!lexicalEnvironmentStatements) {
-        lexicalEnvironmentStatements = [node];
-      } else {
-        lexicalEnvironmentStatements.push(node);
-      }
+      if (!lexicalEnvironmentStatements) lexicalEnvironmentStatements = [node];
+      else lexicalEnvironmentStatements.push(node);
     }
 
-    /**
-     * Starts a new lexical environment. Any existing hoisted variable or function declarations
-     * are pushed onto a stack, and the related storage variables are reset.
-     */
     function startLexicalEnvironment(): void {
-      assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
-      assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
-      assert(!lexicalEnvironmentSuspended, 'Lexical environment is suspended.');
-
-      // Save the current lexical environment. Rather than resizing the array we adjust the
-      // stack size variable. This allows us to reuse existing array slots we've
-      // already allocated between transformations to avoid allocation and GC overhead during
-      // transformation.
+      qa.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
+      qa.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
+      qa.assert(!lexicalEnvironmentSuspended, 'Lexical environment is suspended.');
       lexicalEnvironmentVariableDeclarationsStack[lexicalEnvironmentStackOffset] = lexicalEnvironmentVariableDeclarations;
       lexicalEnvironmentFunctionDeclarationsStack[lexicalEnvironmentStackOffset] = lexicalEnvironmentFunctionDeclarations;
       lexicalEnvironmentStatementsStack[lexicalEnvironmentStackOffset] = lexicalEnvironmentStatements;
@@ -357,59 +316,38 @@ namespace qnr {
       lexicalEnvironmentFlags = LexicalEnvironmentFlags.None;
     }
 
-    /** Suspends the current lexical environment, usually after visiting a parameter list. */
     function suspendLexicalEnvironment(): void {
-      assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
-      assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
-      assert(!lexicalEnvironmentSuspended, 'Lexical environment is already suspended.');
+      qa.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
+      qa.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
+      qa.assert(!lexicalEnvironmentSuspended, 'Lexical environment is already suspended.');
       lexicalEnvironmentSuspended = true;
     }
 
-    /** Resumes a suspended lexical environment, usually before visiting a function body. */
     function resumeLexicalEnvironment(): void {
-      assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
-      assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
-      assert(lexicalEnvironmentSuspended, 'Lexical environment is not suspended.');
+      qa.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
+      qa.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
+      qa.assert(lexicalEnvironmentSuspended, 'Lexical environment is not suspended.');
       lexicalEnvironmentSuspended = false;
     }
 
-    /**
-     * Ends a lexical environment. The previous set of hoisted declarations are restored and
-     * any hoisted declarations added in this environment are returned.
-     */
     function endLexicalEnvironment(): Statement[] | undefined {
-      assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
-      assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
-      assert(!lexicalEnvironmentSuspended, 'Lexical environment is suspended.');
-
+      qa.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
+      qa.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
+      qa.assert(!lexicalEnvironmentSuspended, 'Lexical environment is suspended.');
       let statements: Statement[] | undefined;
       if (lexicalEnvironmentVariableDeclarations || lexicalEnvironmentFunctionDeclarations || lexicalEnvironmentStatements) {
-        if (lexicalEnvironmentFunctionDeclarations) {
-          statements = [...lexicalEnvironmentFunctionDeclarations];
-        }
-
+        if (lexicalEnvironmentFunctionDeclarations) statements = [...lexicalEnvironmentFunctionDeclarations];
         if (lexicalEnvironmentVariableDeclarations) {
-          const statement = createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList(lexicalEnvironmentVariableDeclarations));
-
+          const statement = createVariableStatement(undefined, createVariableDeclarationList(lexicalEnvironmentVariableDeclarations));
           setEmitFlags(statement, EmitFlags.CustomPrologue);
-
-          if (!statements) {
-            statements = [statement];
-          } else {
-            statements.push(statement);
-          }
+          if (!statements) statements = [statement];
+          else statements.push(statement);
         }
-
         if (lexicalEnvironmentStatements) {
-          if (!statements) {
-            statements = [...lexicalEnvironmentStatements];
-          } else {
-            statements = [...statements, ...lexicalEnvironmentStatements];
-          }
+          if (!statements) statements = [...lexicalEnvironmentStatements];
+          else statements = [...statements, ...lexicalEnvironmentStatements];
         }
       }
-
-      // Restore the previous lexical environment.
       lexicalEnvironmentStackOffset--;
       lexicalEnvironmentVariableDeclarations = lexicalEnvironmentVariableDeclarationsStack[lexicalEnvironmentStackOffset];
       lexicalEnvironmentFunctionDeclarations = lexicalEnvironmentFunctionDeclarationsStack[lexicalEnvironmentStackOffset];
@@ -433,20 +371,20 @@ namespace qnr {
     }
 
     function requestEmitHelper(helper: EmitHelper): void {
-      assert(state > TransformationState.Uninitialized, 'Cannot modify the transformation context during initialization.');
-      assert(state < TransformationState.Completed, 'Cannot modify the transformation context after transformation has completed.');
-      assert(!helper.scoped, 'Cannot request a scoped emit helper.');
+      qa.assert(state > TransformationState.Uninitialized, 'Cannot modify the transformation context during initialization.');
+      qa.assert(state < TransformationState.Completed, 'Cannot modify the transformation context after transformation has completed.');
+      qa.assert(!helper.scoped, 'Cannot request a scoped emit helper.');
       if (helper.dependencies) {
         for (const h of helper.dependencies) {
           requestEmitHelper(h);
         }
       }
-      emitHelpers = append(emitHelpers, helper);
+      emitHelpers = qa.append(emitHelpers, helper);
     }
 
     function readEmitHelpers(): EmitHelper[] | undefined {
-      assert(state > TransformationState.Uninitialized, 'Cannot modify the transformation context during initialization.');
-      assert(state < TransformationState.Completed, 'Cannot modify the transformation context after transformation has completed.');
+      qa.assert(state > TransformationState.Uninitialized, 'Cannot modify the transformation context during initialization.');
+      qa.assert(state < TransformationState.Completed, 'Cannot modify the transformation context after transformation has completed.');
       const helpers = emitHelpers;
       emitHelpers = undefined;
       return helpers;
@@ -454,12 +392,9 @@ namespace qnr {
 
     function dispose() {
       if (state < TransformationState.Disposed) {
-        // Clean up emit nodes on parse tree
         for (const node of nodes) {
           disposeEmitNodes(qn.get.sourceFileOf(qn.get.parseTreeOf(node)));
         }
-
-        // Release references to external entries for GC purposes.
         lexicalEnvironmentVariableDeclarations = undefined!;
         lexicalEnvironmentVariableDeclarationsStack = undefined!;
         lexicalEnvironmentFunctionDeclarations = undefined!;
@@ -467,10 +402,87 @@ namespace qnr {
         onSubstituteNode = undefined!;
         onEmitNode = undefined!;
         emitHelpers = undefined;
-
-        // Prevent further use of the transformation result.
         state = TransformationState.Disposed;
       }
     }
+  }
+  export const valuesHelper: UnscopedEmitHelper = {
+    name: 'typescript:values',
+    importName: '__values',
+    scoped: false,
+    text: `
+            var __values = (this && this.__values) || function(o) {
+                var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
+                if (m) return m.call(o);
+                if (o && typeof o.length === "number") return {
+                    next: function () {
+                        if (o && i >= o.length) o = void 0;
+                        return { value: o && o[i++], done: !o };
+                    }
+                };
+                throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
+            };`,
+  };
+  export function createValuesHelper(context: TransformationContext, expression: Expression, location?: TextRange) {
+    context.requestEmitHelper(valuesHelper);
+    return setTextRange(createCall(getUnscopedHelperName('__values'), /*typeArguments*/ undefined, [expression]), location);
+  }
+  export const readHelper: UnscopedEmitHelper = {
+    name: 'typescript:read',
+    importName: '__read',
+    scoped: false,
+    text: `
+            var __read = (this && this.__read) || function (o, n) {
+                var m = typeof Symbol === "function" && o[Symbol.iterator];
+                if (!m) return o;
+                var i = m.call(o), r, ar = [], e;
+                try {
+                    while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
+                }
+                catch (error) { e = { error: error }; }
+                finally {
+                    try {
+                        if (r && !r.done && (m = i["return"])) m.call(i);
+                    }
+                    finally { if (e) throw e.error; }
+                }
+                return ar;
+            };`,
+  };
+  export function createReadHelper(context: TransformationContext, iteratorRecord: Expression, count: number | undefined, location?: TextRange) {
+    context.requestEmitHelper(readHelper);
+    return setTextRange(createCall(getUnscopedHelperName('__read'), /*typeArguments*/ undefined, count !== undefined ? [iteratorRecord, createLiteral(count)] : [iteratorRecord]), location);
+  }
+  export const spreadHelper: UnscopedEmitHelper = {
+    name: 'typescript:spread',
+    importName: '__spread',
+    scoped: false,
+    dependencies: [readHelper],
+    text: `
+            var __spread = (this && this.__spread) || function () {
+                for (var ar = [], i = 0; i < arguments.length; i++) ar = ar.concat(__read(arguments[i]));
+                return ar;
+            };`,
+  };
+  export function createSpreadHelper(context: TransformationContext, argumentList: readonly Expression[], location?: TextRange) {
+    context.requestEmitHelper(spreadHelper);
+    return setTextRange(createCall(getUnscopedHelperName('__spread'), /*typeArguments*/ undefined, argumentList), location);
+  }
+  export const spreadArraysHelper: UnscopedEmitHelper = {
+    name: 'typescript:spreadArrays',
+    importName: '__spreadArrays',
+    scoped: false,
+    text: `
+            var __spreadArrays = (this && this.__spreadArrays) || function () {
+                for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+                for (var r = Array(s), k = 0, i = 0; i < il; i++)
+                    for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
+                        r[k] = a[j];
+                return r;
+            };`,
+  };
+  export function createSpreadArraysHelper(context: TransformationContext, argumentList: readonly Expression[], location?: TextRange) {
+    context.requestEmitHelper(spreadArraysHelper);
+    return setTextRange(createCall(getUnscopedHelperName('__spreadArrays'), /*typeArguments*/ undefined, argumentList), location);
   }
 }

@@ -236,6 +236,267 @@ namespace qnr {
       }
     }
 
+    export type BindingOrAssignmentElement =
+      | VariableDeclaration
+      | ParameterDeclaration
+      | BindingElement
+      | PropertyAssignment // AssignmentProperty
+      | ShorthandPropertyAssignment // AssignmentProperty
+      | SpreadAssignment // AssignmentRestProperty
+      | OmittedExpression // Elision
+      | SpreadElement // AssignmentRestElement
+      | ArrayLiteralExpression // ArrayAssignmentPattern
+      | ObjectLiteralExpression // ObjectAssignmentPattern
+      | AssignmentExpression<EqualsToken> // AssignmentElement
+      | Identifier // DestructuringAssignmentTarget
+      | PropertyAccessExpression // DestructuringAssignmentTarget
+      | ElementAccessExpression; // DestructuringAssignmentTarget
+    export namespace BindingOrAssignmentElement {
+      export function getInitializerOfBindingOrAssignmentElement(bindingElement: BindingOrAssignmentElement): Expression | undefined {
+        if (isDeclarationBindingElement(bindingElement)) {
+          // `1` in `let { a = 1 } = ...`
+          // `1` in `let { a: b = 1 } = ...`
+          // `1` in `let { a: {b} = 1 } = ...`
+          // `1` in `let { a: [b] = 1 } = ...`
+          // `1` in `let [a = 1] = ...`
+          // `1` in `let [{a} = 1] = ...`
+          // `1` in `let [[a] = 1] = ...`
+          return bindingElement.initializer;
+        }
+        if (qn.is.kind(PropertyAssignment, bindingElement)) {
+          // `1` in `({ a: b = 1 } = ...)`
+          // `1` in `({ a: {b} = 1 } = ...)`
+          // `1` in `({ a: [b] = 1 } = ...)`
+          const initializer = bindingElement.initializer;
+          return isAssignmentExpression(initializer, /*excludeCompoundAssignment*/ true) ? initializer.right : undefined;
+        }
+        if (qn.is.kind(ShorthandPropertyAssignment, bindingElement)) {
+          // `1` in `({ a = 1 } = ...)`
+          return bindingElement.objectAssignmentInitializer;
+        }
+        if (isAssignmentExpression(bindingElement, /*excludeCompoundAssignment*/ true)) {
+          // `1` in `[a = 1] = ...`
+          // `1` in `[{a} = 1] = ...`
+          // `1` in `[[a] = 1] = ...`
+          return bindingElement.right;
+        }
+        if (qn.is.kind(SpreadElement, bindingElement)) {
+          // Recovery consistent with existing emit.
+          return getInitializerOfBindingOrAssignmentElement(<BindingOrAssignmentElement>bindingElement.expression);
+        }
+        return;
+      }
+      export function getTargetOfBindingOrAssignmentElement(bindingElement: BindingOrAssignmentElement): BindingOrAssignmentElementTarget | undefined {
+        if (isDeclarationBindingElement(bindingElement)) {
+          // `a` in `let { a } = ...`
+          // `a` in `let { a = 1 } = ...`
+          // `b` in `let { a: b } = ...`
+          // `b` in `let { a: b = 1 } = ...`
+          // `a` in `let { ...a } = ...`
+          // `{b}` in `let { a: {b} } = ...`
+          // `{b}` in `let { a: {b} = 1 } = ...`
+          // `[b]` in `let { a: [b] } = ...`
+          // `[b]` in `let { a: [b] = 1 } = ...`
+          // `a` in `let [a] = ...`
+          // `a` in `let [a = 1] = ...`
+          // `a` in `let [...a] = ...`
+          // `{a}` in `let [{a}] = ...`
+          // `{a}` in `let [{a} = 1] = ...`
+          // `[a]` in `let [[a]] = ...`
+          // `[a]` in `let [[a] = 1] = ...`
+          return bindingElement.name;
+        }
+        if (qn.is.objectLiteralElementLike(bindingElement)) {
+          switch (bindingElement.kind) {
+            case Syntax.PropertyAssignment:
+              // `b` in `({ a: b } = ...)`
+              // `b` in `({ a: b = 1 } = ...)`
+              // `{b}` in `({ a: {b} } = ...)`
+              // `{b}` in `({ a: {b} = 1 } = ...)`
+              // `[b]` in `({ a: [b] } = ...)`
+              // `[b]` in `({ a: [b] = 1 } = ...)`
+              // `b.c` in `({ a: b.c } = ...)`
+              // `b.c` in `({ a: b.c = 1 } = ...)`
+              // `b[0]` in `({ a: b[0] } = ...)`
+              // `b[0]` in `({ a: b[0] = 1 } = ...)`
+              return getTargetOfBindingOrAssignmentElement(<BindingOrAssignmentElement>bindingElement.initializer);
+            case Syntax.ShorthandPropertyAssignment:
+              // `a` in `({ a } = ...)`
+              // `a` in `({ a = 1 } = ...)`
+              return bindingElement.name;
+            case Syntax.SpreadAssignment:
+              // `a` in `({ ...a } = ...)`
+              return getTargetOfBindingOrAssignmentElement(<BindingOrAssignmentElement>bindingElement.expression);
+          }
+          // no target
+          return;
+        }
+        if (isAssignmentExpression(bindingElement, /*excludeCompoundAssignment*/ true)) {
+          // `a` in `[a = 1] = ...`
+          // `{a}` in `[{a} = 1] = ...`
+          // `[a]` in `[[a] = 1] = ...`
+          // `a.b` in `[a.b = 1] = ...`
+          // `a[0]` in `[a[0] = 1] = ...`
+          return getTargetOfBindingOrAssignmentElement(<BindingOrAssignmentElement>bindingElement.left);
+        }
+        if (qn.is.kind(SpreadElement, bindingElement)) {
+          // `a` in `[...a] = ...`
+          return getTargetOfBindingOrAssignmentElement(<BindingOrAssignmentElement>bindingElement.expression);
+        }
+        // `a` in `[a] = ...`
+        // `{a}` in `[{a}] = ...`
+        // `[a]` in `[[a]] = ...`
+        // `a.b` in `[a.b] = ...`
+        // `a[0]` in `[a[0]] = ...`
+        return bindingElement;
+      }
+      export function getRestIndicatorOfBindingOrAssignmentElement(bindingElement: BindingOrAssignmentElement): BindingOrAssignmentElementRestIndicator | undefined {
+        switch (bindingElement.kind) {
+          case Syntax.Parameter:
+          case Syntax.BindingElement:
+            // `...` in `let [...a] = ...`
+            return bindingElement.dot3Token;
+          case Syntax.SpreadElement:
+          case Syntax.SpreadAssignment:
+            // `...` in `[...a] = ...`
+            return bindingElement;
+        }
+        return;
+      }
+      export function getPropertyNameOfBindingOrAssignmentElement(bindingElement: BindingOrAssignmentElement): Exclude<PropertyName, PrivateIdentifier> | undefined {
+        const propertyName = tryGetPropertyNameOfBindingOrAssignmentElement(bindingElement);
+        assert(!!propertyName || qn.is.kind(SpreadAssignment, bindingElement), 'Invalid property name for binding element.');
+        return propertyName;
+      }
+      export function tryGetPropertyNameOfBindingOrAssignmentElement(bindingElement: BindingOrAssignmentElement): Exclude<PropertyName, PrivateIdentifier> | undefined {
+        switch (bindingElement.kind) {
+          case Syntax.BindingElement:
+            // `a` in `let { a: b } = ...`
+            // `[a]` in `let { [a]: b } = ...`
+            // `"a"` in `let { "a": b } = ...`
+            // `1` in `let { 1: b } = ...`
+            if (bindingElement.propertyName) {
+              const propertyName = bindingElement.propertyName;
+              if (qn.is.kind(PrivateIdentifier, propertyName)) {
+                return Debug.failBadSyntax(propertyName);
+              }
+              return qn.is.kind(ComputedPropertyName, propertyName) && isStringOrNumericLiteral(propertyName.expression) ? propertyName.expression : propertyName;
+            }
+            break;
+          case Syntax.PropertyAssignment:
+            // `a` in `({ a: b } = ...)`
+            // `[a]` in `({ [a]: b } = ...)`
+            // `"a"` in `({ "a": b } = ...)`
+            // `1` in `({ 1: b } = ...)`
+            if (bindingElement.name) {
+              const propertyName = bindingElement.name;
+              if (qn.is.kind(PrivateIdentifier, propertyName)) {
+                return Debug.failBadSyntax(propertyName);
+              }
+              return qn.is.kind(ComputedPropertyName, propertyName) && isStringOrNumericLiteral(propertyName.expression) ? propertyName.expression : propertyName;
+            }
+            break;
+          case Syntax.SpreadAssignment:
+            // `a` in `({ ...a } = ...)`
+            if (bindingElement.name && qn.is.kind(PrivateIdentifier, bindingElement.name)) {
+              return Debug.failBadSyntax(bindingElement.name);
+            }
+            return bindingElement.name;
+        }
+        const target = getTargetOfBindingOrAssignmentElement(bindingElement);
+        if (target && qn.is.propertyName(target)) {
+          return target;
+        }
+        return;
+      }
+      export function convertToArrayAssignmentElement(element: BindingOrAssignmentElement) {
+        if (qn.is.kind(BindingElement, element)) {
+          if (element.dot3Token) {
+            Debug.assertNode(element.name, isIdentifier);
+            return setOriginalNode(setTextRange(createSpread(element.name), element), element);
+          }
+          const expression = convertToAssignmentElementTarget(element.name);
+          return element.initializer ? setOriginalNode(setTextRange(createAssignment(expression, element.initializer), element), element) : expression;
+        }
+        Debug.assertNode(element, isExpression);
+        return <Expression>element;
+      }
+      export function convertToObjectAssignmentElement(element: BindingOrAssignmentElement) {
+        if (qn.is.kind(BindingElement, element)) {
+          if (element.dot3Token) {
+            Debug.assertNode(element.name, isIdentifier);
+            return setOriginalNode(setTextRange(createSpreadAssignment(element.name), element), element);
+          }
+          if (element.propertyName) {
+            const expression = convertToAssignmentElementTarget(element.name);
+            return setOriginalNode(
+              setTextRange(createPropertyAssignment(element.propertyName, element.initializer ? createAssignment(expression, element.initializer) : expression), element),
+              element
+            );
+          }
+          Debug.assertNode(element.name, isIdentifier);
+          return setOriginalNode(setTextRange(createShorthandPropertyAssignment(element.name, element.initializer), element), element);
+        }
+        Debug.assertNode(element, isObjectLiteralElementLike);
+        return <ObjectLiteralElementLike>element;
+      }
+    }
+
+    export type BindingOrAssignmentElementRestIndicator =
+      | Dot3Token // from BindingElement
+      | SpreadElement // AssignmentRestElement
+      | SpreadAssignment; // AssignmentRestProperty
+    export type BindingOrAssignmentElementTarget = BindingOrAssignmentPattern | Identifier | PropertyAccessExpression | ElementAccessExpression | OmittedExpression;
+
+    export type ObjectBindingOrAssignmentPattern = ObjectBindingPattern | ObjectLiteralExpression;
+    export type ArrayBindingOrAssignmentPattern = ArrayBindingPattern | ArrayLiteralExpression;
+    export type BindingOrAssignmentPattern = ObjectBindingOrAssignmentPattern | ArrayBindingOrAssignmentPattern;
+    export namespace BindingOrAssignmentPattern {
+      export function getElementsOfBindingOrAssignmentPattern(name: BindingOrAssignmentPattern): readonly BindingOrAssignmentElement[] {
+        switch (name.kind) {
+          case Syntax.ObjectBindingPattern:
+          case Syntax.ArrayBindingPattern:
+          case Syntax.ArrayLiteralExpression:
+            // `a` in `{a}`
+            // `a` in `[a]`
+            return <readonly BindingOrAssignmentElement[]>name.elements;
+          case Syntax.ObjectLiteralExpression:
+            // `a` in `{a}`
+            return <readonly BindingOrAssignmentElement[]>name.properties;
+        }
+      }
+      export function convertToAssignmentPattern(node: BindingOrAssignmentPattern): AssignmentPattern {
+        switch (node.kind) {
+          case Syntax.ArrayBindingPattern:
+          case Syntax.ArrayLiteralExpression:
+            return convertToArrayAssignmentPattern(node);
+          case Syntax.ObjectBindingPattern:
+          case Syntax.ObjectLiteralExpression:
+            return convertToObjectAssignmentPattern(node);
+        }
+      }
+      export function convertToObjectAssignmentPattern(node: ObjectBindingOrAssignmentPattern) {
+        if (qn.is.kind(ObjectBindingPattern, node)) {
+          return setOriginalNode(setTextRange(createObjectLiteral(map(node.elements, convertToObjectAssignmentElement)), node), node);
+        }
+        Debug.assertNode(node, isObjectLiteralExpression);
+        return node;
+      }
+      export function convertToArrayAssignmentPattern(node: ArrayBindingOrAssignmentPattern) {
+        if (qn.is.kind(ArrayBindingPattern, node)) {
+          return setOriginalNode(setTextRange(createArrayLiteral(map(node.elements, convertToArrayAssignmentElement)), node), node);
+        }
+        Debug.assertNode(node, isArrayLiteralExpression);
+        return node;
+      }
+      export function convertToAssignmentElementTarget(node: BindingOrAssignmentElementTarget): Expression {
+        if (qn.is.kind(BindingPattern, node)) return convertToAssignmentPattern(node);
+
+        Debug.assertNode(node, isExpression);
+        return node;
+      }
+    }
+
     export type BindingPattern = ArrayBindingPattern | ObjectBindingPattern;
     export namespace BindingPattern {
       export const kind = Syntax.ArrayBindingPattern;
@@ -307,6 +568,90 @@ namespace qnr {
       }
     }
 
+    export interface CallBinding {
+      target: LeftHandSideExpression;
+      thisArg: Expression;
+    }
+    export namespace CallBinding {
+      function shouldBeCapturedInTempVariable(node: Expression, cacheIdentifiers: boolean): boolean {
+        const target = skipParentheses(node) as Expression | ArrayLiteralExpression | ObjectLiteralExpression;
+        switch (target.kind) {
+          case Syntax.Identifier:
+            return cacheIdentifiers;
+          case Syntax.ThisKeyword:
+          case Syntax.NumericLiteral:
+          case Syntax.BigIntLiteral:
+          case Syntax.StringLiteral:
+            return false;
+          case Syntax.ArrayLiteralExpression:
+            const elements = target.elements;
+            if (elements.length === 0) {
+              return false;
+            }
+            return true;
+          case Syntax.ObjectLiteralExpression:
+            return (<ObjectLiteralExpression>target).properties.length > 0;
+          default:
+            return true;
+        }
+      }
+      export function createCallBinding(expression: Expression, recordTempVariable: (temp: Identifier) => void, _?: ScriptTarget, cacheIdentifiers = false): CallBinding {
+        const callee = skipOuterExpressions(expression, OuterExpressionKinds.All);
+        let thisArg: Expression;
+        let target: LeftHandSideExpression;
+        if (qn.is.superProperty(callee)) {
+          thisArg = createThis();
+          target = callee;
+        } else if (callee.kind === Syntax.SuperKeyword) {
+          thisArg = createThis();
+          target = <PrimaryExpression>callee;
+        } else if (qn.get.emitFlags(callee) & EmitFlags.HelperName) {
+          thisArg = createVoidZero();
+          target = parenthesizeForAccess(callee);
+        } else {
+          switch (callee.kind) {
+            case Syntax.PropertyAccessExpression: {
+              if (shouldBeCapturedInTempVariable((<PropertyAccessExpression>callee).expression, cacheIdentifiers)) {
+                // for `a.b()` target is `(_a = a).b` and thisArg is `_a`
+                thisArg = createTempVariable(recordTempVariable);
+                target = createPropertyAccess(
+                  setTextRange(createAssignment(thisArg, (<PropertyAccessExpression>callee).expression), (<PropertyAccessExpression>callee).expression),
+                  (<PropertyAccessExpression>callee).name
+                );
+                setTextRange(target, callee);
+              } else {
+                thisArg = (<PropertyAccessExpression>callee).expression;
+                target = <PropertyAccessExpression>callee;
+              }
+              break;
+            }
+            case Syntax.ElementAccessExpression: {
+              if (shouldBeCapturedInTempVariable((<ElementAccessExpression>callee).expression, cacheIdentifiers)) {
+                // for `a[b]()` target is `(_a = a)[b]` and thisArg is `_a`
+                thisArg = createTempVariable(recordTempVariable);
+                target = createElementAccess(
+                  setTextRange(createAssignment(thisArg, (<ElementAccessExpression>callee).expression), (<ElementAccessExpression>callee).expression),
+                  (<ElementAccessExpression>callee).argumentExpression
+                );
+                setTextRange(target, callee);
+              } else {
+                thisArg = (<ElementAccessExpression>callee).expression;
+                target = <ElementAccessExpression>callee;
+              }
+              break;
+            }
+            default: {
+              // for `a()` target is `a` and thisArg is `void 0`
+              thisArg = createVoidZero();
+              target = parenthesizeForAccess(expression);
+              break;
+            }
+          }
+        }
+        return { target, thisArg };
+      }
+    }
+
     export namespace CallChain {
       export function createCallChain(
         expression: Expression,
@@ -365,13 +710,13 @@ namespace qnr {
       export function createImmediatelyInvokedFunctionExpression(statements: readonly Statement[], param?: ParameterDeclaration, paramValue?: Expression) {
         return createCall(
           createFunctionExpression(
-            /*modifiers*/ undefined,
+            undefined,
             /*asteriskToken*/ undefined,
             /*name*/ undefined,
             /*typeParameters*/ undefined,
             /*parameters*/ param ? [param] : [],
             /*type*/ undefined,
-            createBlock(statements, /*multiLine*/ true)
+            createBlock(statements, true)
           ),
           /*typeArguments*/ undefined,
           /*argumentsArray*/ paramValue ? [paramValue] : []
@@ -382,14 +727,7 @@ namespace qnr {
       export function createImmediatelyInvokedArrowFunction(statements: readonly Statement[], param: ParameterDeclaration, paramValue: Expression): CallExpression;
       export function createImmediatelyInvokedArrowFunction(statements: readonly Statement[], param?: ParameterDeclaration, paramValue?: Expression) {
         return createCall(
-          createArrowFunction(
-            /*modifiers*/ undefined,
-            /*typeParameters*/ undefined,
-            /*parameters*/ param ? [param] : [],
-            /*type*/ undefined,
-            /*equalsGreaterThanToken*/ undefined,
-            createBlock(statements, /*multiLine*/ true)
-          ),
+          createArrowFunction(undefined, /*typeParameters*/ undefined, /*parameters*/ param ? [param] : [], /*type*/ undefined, /*equalsGreaterThanToken*/ undefined, createBlock(statements, true)),
           /*typeArguments*/ undefined,
           /*argumentsArray*/ paramValue ? [paramValue] : []
         );
@@ -699,6 +1037,42 @@ namespace qnr {
       }
     }
 
+    export interface Declaration extends Node {
+      _declarationBrand: any;
+    }
+    export namespace Declaration {
+      export function getInternalName(node: Declaration, allowComments?: boolean, allowSourceMaps?: boolean) {
+        return getName(node, allowComments, allowSourceMaps, EmitFlags.LocalName | EmitFlags.InternalName);
+      }
+      export function getLocalName(node: Declaration, allowComments?: boolean, allowSourceMaps?: boolean) {
+        return getName(node, allowComments, allowSourceMaps, EmitFlags.LocalName);
+      }
+      export function getExportName(node: Declaration, allowComments?: boolean, allowSourceMaps?: boolean): Identifier {
+        return getName(node, allowComments, allowSourceMaps, EmitFlags.ExportName);
+      }
+      export function getDeclarationName(node: Declaration, allowComments?: boolean, allowSourceMaps?: boolean) {
+        return getName(node, allowComments, allowSourceMaps);
+      }
+      function getName(node: Declaration, allowComments?: boolean, allowSourceMaps?: boolean, emitFlags: EmitFlags = 0) {
+        const nodeName = getNameOfDeclaration(node);
+        if (nodeName && qn.is.kind(Identifier, nodeName) && !qn.is.generatedIdentifier(nodeName)) {
+          const name = getMutableClone(nodeName);
+          emitFlags |= qn.get.emitFlags(nodeName);
+          if (!allowSourceMaps) emitFlags |= EmitFlags.NoSourceMap;
+          if (!allowComments) emitFlags |= EmitFlags.NoComments;
+          if (emitFlags) setEmitFlags(name, emitFlags);
+          return name;
+        }
+        return getGeneratedNameForNode(node);
+      }
+      export function getExternalModuleOrNamespaceExportName(ns: Identifier | undefined, node: Declaration, allowComments?: boolean, allowSourceMaps?: boolean): Identifier | PropertyAccessExpression {
+        if (ns && hasSyntacticModifier(node, ModifierFlags.Export)) {
+          return getNamespaceMemberName(ns, getName(node), allowComments, allowSourceMaps);
+        }
+        return getExportName(node, allowComments, allowSourceMaps);
+      }
+    }
+
     export interface Decorator extends Node {
       kind: Syntax.Decorator;
       parent: NamedDeclaration;
@@ -917,7 +1291,7 @@ namespace qnr {
         return node;
       }
       export function createExportDefault(expression: Expression) {
-        return createExportAssignment(/*decorators*/ undefined, /*modifiers*/ undefined, /*isExportEquals*/ false, expression);
+        return createExportAssignment(/*decorators*/ undefined, undefined, /*isExportEquals*/ false, expression);
       }
       export function updateExportAssignment(node: ExportAssignment, decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, expression: Expression) {
         return node.decorators !== decorators || node.modifiers !== modifiers || node.expression !== expression
@@ -951,10 +1325,10 @@ namespace qnr {
         return node;
       }
       export function createExternalModuleExport(exportName: Identifier) {
-        return createExportDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createNamedExports([createExportSpecifier(/*propertyName*/ undefined, exportName)]));
+        return createExportDeclaration(/*decorators*/ undefined, undefined, createNamedExports([createExportSpecifier(/*propertyName*/ undefined, exportName)]));
       }
       export function createEmptyExports() {
-        return createExportDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createNamedExports([]), /*moduleSpecifier*/ undefined);
+        return createExportDeclaration(/*decorators*/ undefined, undefined, createNamedExports([]), /*moduleSpecifier*/ undefined);
       }
       export function updateExportDeclaration(
         node: ExportDeclaration,
@@ -1325,6 +1699,24 @@ namespace qnr {
         name.original = node;
         nextAutoGenerateId++;
         return name;
+      }
+      export function isInternalName(node: Identifier) {
+        return (qn.get.emitFlags(node) & EmitFlags.InternalName) !== 0;
+      }
+      export function isLocalName(node: Identifier) {
+        return (qn.get.emitFlags(node) & EmitFlags.LocalName) !== 0;
+      }
+      export function isExportName(node: Identifier) {
+        return (qn.get.emitFlags(node) & EmitFlags.ExportName) !== 0;
+      }
+      export function getNamespaceMemberName(ns: Identifier, name: Identifier, allowComments?: boolean, allowSourceMaps?: boolean): PropertyAccessExpression {
+        const qualifiedName = createPropertyAccess(ns, isSynthesized(name) ? name : getSynthesizedClone(name));
+        setTextRange(qualifiedName, name);
+        let emitFlags: EmitFlags = 0;
+        if (!allowSourceMaps) emitFlags |= EmitFlags.NoSourceMap;
+        if (!allowComments) emitFlags |= EmitFlags.NoComments;
+        if (emitFlags) setEmitFlags(qualifiedName, emitFlags);
+        return qualifiedName;
       }
     }
 
@@ -2399,6 +2791,10 @@ namespace qnr {
           ? updateNode(createModuleDeclaration(decorators, modifiers, name, body, node.flags), node)
           : node;
       }
+    }
+
+    export interface NamedDeclaration extends Declaration {
+      name?: DeclarationName;
     }
 
     export interface NamedExports extends Node {
@@ -4309,7 +4705,7 @@ namespace qnr {
   }
 
   export function appendJSDocToContainer(node: JSDocContainer, jsdoc: JSDoc) {
-    node.jsDoc = append(node.jsDoc, jsdoc);
+    node.jsDoc = qa.append(node.jsDoc, jsdoc);
     return node;
   }
 
@@ -4348,7 +4744,7 @@ namespace qnr {
     return node.elements !== elements ? updateNode(createCommaList(elements), node) : node;
   }
 
-  let allUnscopedEmitHelpers: QReadonlyMap<UnscopedEmitHelper> | undefined;
+  let allUnscopedEmitHelpers: qa.QReadonlyMap<UnscopedEmitHelper> | undefined;
   function getAllUnscopedEmitHelpers() {
     return (
       allUnscopedEmitHelpers ||
@@ -4537,295 +4933,206 @@ namespace qnr {
     return node;
   }
 
-  // Compound nodes
-
-  export function disposeEmitNodes(sourceFile: SourceFile) {
-    // During transformation we may need to annotate a parse tree node with transient
-    // transformation properties. As parse tree nodes live longer than transformation
-    // nodes, we need to make sure we reclaim any memory allocated for custom ranges
-    // from these nodes to ensure we do not hold onto entire subtrees just for position
-    // information. We also need to reset these nodes to a pre-transformation state
-    // for incremental parsing scenarios so that we do not impact later emit.
-    sourceFile = qn.get.sourceFileOf(qn.get.parseTreeOf(sourceFile));
-    const emitNode = sourceFile && sourceFile.emitNode;
-    const annotatedNodes = emitNode && emitNode.annotatedNodes;
-    if (annotatedNodes) {
-      for (const node of annotatedNodes) {
-        node.emitNode = undefined;
-      }
-    }
-  }
-
-  export function getOrCreateEmitNode(node: Node): EmitNode {
-    if (!node.emitNode) {
-      if (qn.is.parseTreeNode(node)) {
-        if (node.kind === Syntax.SourceFile) {
-          return (node.emitNode = { annotatedNodes: [node] } as EmitNode);
-        }
-
-        const sourceFile = qn.get.sourceFileOf(qn.get.parseTreeOf(qn.get.sourceFileOf(node)));
-        getOrCreateEmitNode(sourceFile).annotatedNodes!.push(node);
-      }
-
-      node.emitNode = {} as EmitNode;
-    }
-
-    return node.emitNode;
-  }
-
-  export function removeAllComments<T extends Node>(node: T): T {
-    const emitNode = getOrCreateEmitNode(node);
-    emitNode.flags |= EmitFlags.NoComments;
-    emitNode.leadingComments = undefined;
-    emitNode.trailingComments = undefined;
-    return node;
-  }
-
-  export function setTextRange<T extends TextRange>(range: T, location: TextRange | undefined): T {
-    if (location) {
-      range.pos = location.pos;
-      range.end = location.end;
-    }
-    return range;
-  }
-
-  export function setEmitFlags<T extends Node>(node: T, emitFlags: EmitFlags) {
-    getOrCreateEmitNode(node).flags = emitFlags;
-    return node;
-  }
-
-  export function addEmitFlags<T extends Node>(node: T, emitFlags: EmitFlags) {
-    const emitNode = getOrCreateEmitNode(node);
-    emitNode.flags = emitNode.flags | emitFlags;
-    return node;
-  }
-
-  export function getSourceMapRange(node: Node): SourceMapRange {
-    const emitNode = node.emitNode;
-    return (emitNode && emitNode.sourceMapRange) || node;
-  }
-
-  export function setSourceMapRange<T extends Node>(node: T, range: SourceMapRange | undefined) {
-    getOrCreateEmitNode(node).sourceMapRange = range;
-    return node;
-  }
-
   let SourceMapSource: new (fileName: string, text: string, skipTrivia?: (pos: number) => number) => SourceMapSource;
 
   export function createSourceMapSource(fileName: string, text: string, skipTrivia?: (pos: number) => number): SourceMapSource {
     return new (SourceMapSource || (SourceMapSource = Node.SourceMapSourceObj))(fileName, text, qy.skipTrivia);
   }
 
-  export function getTokenSourceMapRange(node: Node, token: Syntax): SourceMapRange | undefined {
-    const emitNode = node.emitNode;
-    const tokenSourceMapRanges = emitNode && emitNode.tokenSourceMapRanges;
-    return tokenSourceMapRanges && tokenSourceMapRanges[token];
-  }
-
-  export function setTokenSourceMapRange<T extends Node>(node: T, token: Syntax, range: SourceMapRange | undefined) {
-    const emitNode = getOrCreateEmitNode(node);
-    const tokenSourceMapRanges = emitNode.tokenSourceMapRanges || (emitNode.tokenSourceMapRanges = []);
-    tokenSourceMapRanges[token] = range;
-    return node;
-  }
-
-  export function getStartsOnNewLine(node: Node) {
-    const emitNode = node.emitNode;
-    return emitNode && emitNode.startsOnNewLine;
-  }
-
-  export function setStartsOnNewLine<T extends Node>(node: T, newLine: boolean) {
-    getOrCreateEmitNode(node).startsOnNewLine = newLine;
-    return node;
-  }
-
-  export function getCommentRange(node: Node) {
-    const emitNode = node.emitNode;
-    return (emitNode && emitNode.commentRange) || node;
-  }
-
-  export function setCommentRange<T extends Node>(node: T, range: TextRange) {
-    getOrCreateEmitNode(node).commentRange = range;
-    return node;
-  }
-
-  export function getSyntheticLeadingComments(node: Node): SynthesizedComment[] | undefined {
-    const emitNode = node.emitNode;
-    return emitNode && emitNode.leadingComments;
-  }
-
-  export function setSyntheticLeadingComments<T extends Node>(node: T, comments: SynthesizedComment[] | undefined) {
-    getOrCreateEmitNode(node).leadingComments = comments;
-    return node;
-  }
-
-  export function addSyntheticLeadingComment<T extends Node>(node: T, kind: Syntax.SingleLineCommentTrivia | Syntax.MultiLineCommentTrivia, text: string, hasTrailingNewLine?: boolean) {
-    return setSyntheticLeadingComments(
-      node,
-      append<SynthesizedComment>(getSyntheticLeadingComments(node), { kind, pos: -1, end: -1, hasTrailingNewLine, text })
-    );
-  }
-
-  export function getSyntheticTrailingComments(node: Node): SynthesizedComment[] | undefined {
-    const emitNode = node.emitNode;
-    return emitNode && emitNode.trailingComments;
-  }
-
-  export function setSyntheticTrailingComments<T extends Node>(node: T, comments: SynthesizedComment[] | undefined) {
-    getOrCreateEmitNode(node).trailingComments = comments;
-    return node;
-  }
-
-  export function addSyntheticTrailingComment<T extends Node>(node: T, kind: Syntax.SingleLineCommentTrivia | Syntax.MultiLineCommentTrivia, text: string, hasTrailingNewLine?: boolean) {
-    return setSyntheticTrailingComments(
-      node,
-      append<SynthesizedComment>(getSyntheticTrailingComments(node), { kind, pos: -1, end: -1, hasTrailingNewLine, text })
-    );
-  }
-
-  export function moveSyntheticComments<T extends Node>(node: T, original: Node): T {
-    setSyntheticLeadingComments(node, getSyntheticLeadingComments(original));
-    setSyntheticTrailingComments(node, getSyntheticTrailingComments(original));
-    const emit = getOrCreateEmitNode(original);
-    emit.leadingComments = undefined;
-    emit.trailingComments = undefined;
-    return node;
-  }
-
-  export function ignoreSourceNewlines<T extends Node>(node: T): T {
-    getOrCreateEmitNode(node).flags |= EmitFlags.IgnoreSourceNewlines;
-    return node;
-  }
-
-  export function getConstantValue(node: PropertyAccessExpression | ElementAccessExpression): string | number | undefined {
-    const emitNode = node.emitNode;
-    return emitNode && emitNode.constantValue;
-  }
-
-  export function setConstantValue(node: PropertyAccessExpression | ElementAccessExpression, value: string | number): PropertyAccessExpression | ElementAccessExpression {
-    const emitNode = getOrCreateEmitNode(node);
-    emitNode.constantValue = value;
-    return node;
-  }
-
-  export function addEmitHelper<T extends Node>(node: T, helper: EmitHelper): T {
-    const emitNode = getOrCreateEmitNode(node);
-    emitNode.helpers = append(emitNode.helpers, helper);
-    return node;
-  }
-
-  export function addEmitHelpers<T extends Node>(node: T, helpers: EmitHelper[] | undefined): T {
-    if (some(helpers)) {
+  export namespace emit {
+    export function disposeEmitNodes(sourceFile: SourceFile) {
+      sourceFile = qn.get.sourceFileOf(qn.get.parseTreeOf(sourceFile));
+      const emitNode = sourceFile && sourceFile.emitNode;
+      const annotatedNodes = emitNode && emitNode.annotatedNodes;
+      if (annotatedNodes) {
+        for (const node of annotatedNodes) {
+          node.emitNode = undefined;
+        }
+      }
+    }
+    export function getOrCreateEmitNode(node: Node): EmitNode {
+      if (!node.emitNode) {
+        if (qn.is.parseTreeNode(node)) {
+          if (node.kind === Syntax.SourceFile) return (node.emitNode = { annotatedNodes: [node] } as EmitNode);
+          const sourceFile = qn.get.sourceFileOf(qn.get.parseTreeOf(qn.get.sourceFileOf(node)));
+          getOrCreateEmitNode(sourceFile).annotatedNodes!.push(node);
+        }
+        node.emitNode = {} as EmitNode;
+      }
+      return node.emitNode;
+    }
+    export function removeAllComments<T extends Node>(node: T): T {
       const emitNode = getOrCreateEmitNode(node);
-      for (const helper of helpers) {
-        emitNode.helpers = appendIfUnique(emitNode.helpers, helper);
+      emitNode.flags |= EmitFlags.NoComments;
+      emitNode.leadingComments = undefined;
+      emitNode.trailingComments = undefined;
+      return node;
+    }
+    export function setEmitFlags<T extends Node>(node: T, emitFlags: EmitFlags) {
+      getOrCreateEmitNode(node).flags = emitFlags;
+      return node;
+    }
+    export function addEmitFlags<T extends Node>(node: T, emitFlags: EmitFlags) {
+      const emitNode = getOrCreateEmitNode(node);
+      emitNode.flags = emitNode.flags | emitFlags;
+      return node;
+    }
+    export function getSourceMapRange(node: Node): SourceMapRange {
+      const emitNode = node.emitNode;
+      return (emitNode && emitNode.sourceMapRange) || node;
+    }
+    export function setSourceMapRange<T extends Node>(node: T, range: SourceMapRange | undefined) {
+      getOrCreateEmitNode(node).sourceMapRange = range;
+      return node;
+    }
+    export function getTokenSourceMapRange(node: Node, token: Syntax): SourceMapRange | undefined {
+      const emitNode = node.emitNode;
+      const tokenSourceMapRanges = emitNode && emitNode.tokenSourceMapRanges;
+      return tokenSourceMapRanges && tokenSourceMapRanges[token];
+    }
+    export function setTokenSourceMapRange<T extends Node>(node: T, token: Syntax, range: SourceMapRange | undefined) {
+      const emitNode = getOrCreateEmitNode(node);
+      const tokenSourceMapRanges = emitNode.tokenSourceMapRanges || (emitNode.tokenSourceMapRanges = []);
+      tokenSourceMapRanges[token] = range;
+      return node;
+    }
+    export function getStartsOnNewLine(node: Node) {
+      const emitNode = node.emitNode;
+      return emitNode && emitNode.startsOnNewLine;
+    }
+    export function setStartsOnNewLine<T extends Node>(node: T, newLine: boolean) {
+      getOrCreateEmitNode(node).startsOnNewLine = newLine;
+      return node;
+    }
+    export function getCommentRange(node: Node) {
+      const emitNode = node.emitNode;
+      return (emitNode && emitNode.commentRange) || node;
+    }
+    export function setCommentRange<T extends Node>(node: T, range: TextRange) {
+      getOrCreateEmitNode(node).commentRange = range;
+      return node;
+    }
+    export function getSyntheticLeadingComments(node: Node): SynthesizedComment[] | undefined {
+      const emitNode = node.emitNode;
+      return emitNode && emitNode.leadingComments;
+    }
+    export function setSyntheticLeadingComments<T extends Node>(node: T, comments: SynthesizedComment[] | undefined) {
+      getOrCreateEmitNode(node).leadingComments = comments;
+      return node;
+    }
+    export function addSyntheticLeadingComment<T extends Node>(node: T, kind: Syntax.SingleLineCommentTrivia | Syntax.MultiLineCommentTrivia, text: string, hasTrailingNewLine?: boolean) {
+      return setSyntheticLeadingComments(
+        node,
+        qa.append<SynthesizedComment>(getSyntheticLeadingComments(node), { kind, pos: -1, end: -1, hasTrailingNewLine, text })
+      );
+    }
+    export function getSyntheticTrailingComments(node: Node): SynthesizedComment[] | undefined {
+      const emitNode = node.emitNode;
+      return emitNode && emitNode.trailingComments;
+    }
+    export function setSyntheticTrailingComments<T extends Node>(node: T, comments: SynthesizedComment[] | undefined) {
+      getOrCreateEmitNode(node).trailingComments = comments;
+      return node;
+    }
+    export function addSyntheticTrailingComment<T extends Node>(node: T, kind: Syntax.SingleLineCommentTrivia | Syntax.MultiLineCommentTrivia, text: string, hasTrailingNewLine?: boolean) {
+      return setSyntheticTrailingComments(
+        node,
+        qa.append<SynthesizedComment>(getSyntheticTrailingComments(node), { kind, pos: -1, end: -1, hasTrailingNewLine, text })
+      );
+    }
+    export function moveSyntheticComments<T extends Node>(node: T, original: Node): T {
+      setSyntheticLeadingComments(node, getSyntheticLeadingComments(original));
+      setSyntheticTrailingComments(node, getSyntheticTrailingComments(original));
+      const emit = getOrCreateEmitNode(original);
+      emit.leadingComments = undefined;
+      emit.trailingComments = undefined;
+      return node;
+    }
+    export function ignoreSourceNewlines<T extends Node>(node: T): T {
+      getOrCreateEmitNode(node).flags |= EmitFlags.IgnoreSourceNewlines;
+      return node;
+    }
+    export function getConstantValue(node: PropertyAccessExpression | ElementAccessExpression): string | number | undefined {
+      const emitNode = node.emitNode;
+      return emitNode && emitNode.constantValue;
+    }
+    export function setConstantValue(node: PropertyAccessExpression | ElementAccessExpression, value: string | number): PropertyAccessExpression | ElementAccessExpression {
+      const emitNode = getOrCreateEmitNode(node);
+      emitNode.constantValue = value;
+      return node;
+    }
+    export function addEmitHelper<T extends Node>(node: T, helper: EmitHelper): T {
+      const emitNode = getOrCreateEmitNode(node);
+      emitNode.helpers = qa.append(emitNode.helpers, helper);
+      return node;
+    }
+    export function addEmitHelpers<T extends Node>(node: T, helpers: EmitHelper[] | undefined): T {
+      if (qa.some(helpers)) {
+        const emitNode = getOrCreateEmitNode(node);
+        for (const helper of helpers) {
+          emitNode.helpers = qa.appendIfUnique(emitNode.helpers, helper);
+        }
       }
+      return node;
     }
-    return node;
-  }
-
-  export function removeEmitHelper(node: Node, helper: EmitHelper): boolean {
-    const emitNode = node.emitNode;
-    if (emitNode) {
-      const helpers = emitNode.helpers;
-      if (helpers) {
-        return orderedRemoveItem(helpers, helper);
+    export function removeEmitHelper(node: Node, helper: EmitHelper): boolean {
+      const emitNode = node.emitNode;
+      if (emitNode) {
+        const helpers = emitNode.helpers;
+        if (helpers) return orderedRemoveItem(helpers, helper);
       }
+      return false;
     }
-    return false;
-  }
-
-  export function getEmitHelpers(node: Node): EmitHelper[] | undefined {
-    const emitNode = node.emitNode;
-    return emitNode && emitNode.helpers;
-  }
-
-  export function moveEmitHelpers(source: Node, target: Node, predicate: (helper: EmitHelper) => boolean) {
-    const sourceEmitNode = source.emitNode;
-    const sourceEmitHelpers = sourceEmitNode && sourceEmitNode.helpers;
-    if (!some(sourceEmitHelpers)) return;
-
-    const targetEmitNode = getOrCreateEmitNode(target);
-    let helpersRemoved = 0;
-    for (let i = 0; i < sourceEmitHelpers.length; i++) {
-      const helper = sourceEmitHelpers[i];
-      if (predicate(helper)) {
-        helpersRemoved++;
-        targetEmitNode.helpers = appendIfUnique(targetEmitNode.helpers, helper);
-      } else if (helpersRemoved > 0) {
-        sourceEmitHelpers[i - helpersRemoved] = helper;
+    export function getEmitHelpers(node: Node): EmitHelper[] | undefined {
+      const emitNode = node.emitNode;
+      return emitNode && emitNode.helpers;
+    }
+    export function moveEmitHelpers(source: Node, target: Node, predicate: (helper: EmitHelper) => boolean) {
+      const sourceEmitNode = source.emitNode;
+      const sourceEmitHelpers = sourceEmitNode && sourceEmitNode.helpers;
+      if (!some(sourceEmitHelpers)) return;
+      const targetEmitNode = getOrCreateEmitNode(target);
+      let helpersRemoved = 0;
+      for (let i = 0; i < sourceEmitHelpers.length; i++) {
+        const helper = sourceEmitHelpers[i];
+        if (predicate(helper)) {
+          helpersRemoved++;
+          targetEmitNode.helpers = qa.appendIfUnique(targetEmitNode.helpers, helper);
+        } else if (helpersRemoved > 0) sourceEmitHelpers[i - helpersRemoved] = helper;
       }
+      if (helpersRemoved > 0) sourceEmitHelpers.length -= helpersRemoved;
     }
-
-    if (helpersRemoved > 0) {
-      sourceEmitHelpers.length -= helpersRemoved;
+    export function compareEmitHelpers(x: EmitHelper, y: EmitHelper) {
+      if (x === y) return Comparison.EqualTo;
+      if (x.priority === y.priority) return Comparison.EqualTo;
+      if (x.priority === undefined) return Comparison.GreaterThan;
+      if (y.priority === undefined) return Comparison.LessThan;
+      return compareValues(x.priority, y.priority);
+    }
+    export function setOriginalNode<T extends Node>(node: T, original: Node | undefined): T {
+      node.original = original;
+      if (original) {
+        const emitNode = original.emitNode;
+        if (emitNode) node.emitNode = mergeEmitNode(emitNode, node.emitNode);
+      }
+      return node;
+    }
+    function mergeEmitNode(sourceEmitNode: EmitNode, destEmitNode: EmitNode | undefined) {
+      const { flags, leadingComments, trailingComments, commentRange, sourceMapRange, tokenSourceMapRanges, constantValue, helpers, startsOnNewLine } = sourceEmitNode;
+      if (!destEmitNode) destEmitNode = {} as EmitNode;
+      // We are using `.slice()` here in case `destEmitNode.leadingComments` is pushed to later.
+      if (leadingComments) destEmitNode.leadingComments = qa.addRange(leadingComments.slice(), destEmitNode.leadingComments);
+      if (trailingComments) destEmitNode.trailingComments = qa.addRange(trailingComments.slice(), destEmitNode.trailingComments);
+      if (flags) destEmitNode.flags = flags;
+      if (commentRange) destEmitNode.commentRange = commentRange;
+      if (sourceMapRange) destEmitNode.sourceMapRange = sourceMapRange;
+      if (tokenSourceMapRanges) destEmitNode.tokenSourceMapRanges = mergeTokenSourceMapRanges(tokenSourceMapRanges, destEmitNode.tokenSourceMapRanges!);
+      if (constantValue !== undefined) destEmitNode.constantValue = constantValue;
+      if (helpers) destEmitNode.helpers = qa.addRange(destEmitNode.helpers, helpers);
+      if (startsOnNewLine !== undefined) destEmitNode.startsOnNewLine = startsOnNewLine;
+      return destEmitNode;
     }
   }
-
-  export function compareEmitHelpers(x: EmitHelper, y: EmitHelper) {
-    if (x === y) return Comparison.EqualTo;
-    if (x.priority === y.priority) return Comparison.EqualTo;
-    if (x.priority === undefined) return Comparison.GreaterThan;
-    if (y.priority === undefined) return Comparison.LessThan;
-    return compareValues(x.priority, y.priority);
-  }
-
-  export function setOriginalNode<T extends Node>(node: T, original: Node | undefined): T {
-    node.original = original;
-    if (original) {
-      const emitNode = original.emitNode;
-      if (emitNode) node.emitNode = mergeEmitNode(emitNode, node.emitNode);
-    }
-    return node;
-  }
-
-  function mergeEmitNode(sourceEmitNode: EmitNode, destEmitNode: EmitNode | undefined) {
-    const { flags, leadingComments, trailingComments, commentRange, sourceMapRange, tokenSourceMapRanges, constantValue, helpers, startsOnNewLine } = sourceEmitNode;
-    if (!destEmitNode) destEmitNode = {} as EmitNode;
-    // We are using `.slice()` here in case `destEmitNode.leadingComments` is pushed to later.
-    if (leadingComments) destEmitNode.leadingComments = qa.addRange(leadingComments.slice(), destEmitNode.leadingComments);
-    if (trailingComments) destEmitNode.trailingComments = qa.addRange(trailingComments.slice(), destEmitNode.trailingComments);
-    if (flags) destEmitNode.flags = flags;
-    if (commentRange) destEmitNode.commentRange = commentRange;
-    if (sourceMapRange) destEmitNode.sourceMapRange = sourceMapRange;
-    if (tokenSourceMapRanges) destEmitNode.tokenSourceMapRanges = mergeTokenSourceMapRanges(tokenSourceMapRanges, destEmitNode.tokenSourceMapRanges!);
-    if (constantValue !== undefined) destEmitNode.constantValue = constantValue;
-    if (helpers) destEmitNode.helpers = qa.addRange(destEmitNode.helpers, helpers);
-    if (startsOnNewLine !== undefined) destEmitNode.startsOnNewLine = startsOnNewLine;
-    return destEmitNode;
-  }
-
-  function mergeTokenSourceMapRanges(sourceRanges: (TextRange | undefined)[], destRanges: (TextRange | undefined)[]) {
-    if (!destRanges) destRanges = [];
-    for (const key in sourceRanges) {
-      destRanges[key] = sourceRanges[key];
-    }
-    return destRanges;
-  }
-
-  export const nullTransformationContext: TransformationContext = {
-    enableEmitNotification: qa.noop,
-    enableSubstitution: qa.noop,
-    endLexicalEnvironment: () => undefined,
-    getCompilerOptions: () => ({}),
-    getEmitHost: qa.notImplemented,
-    getEmitResolver: qa.notImplemented,
-    setLexicalEnvironmentFlags: qa.noop,
-    getLexicalEnvironmentFlags: () => 0,
-    hoistFunctionDeclaration: qa.noop,
-    hoistVariableDeclaration: qa.noop,
-    addInitializationStatement: qa.noop,
-    isEmitNotificationEnabled: qa.notImplemented,
-    isSubstitutionEnabled: qa.notImplemented,
-    onEmitNode: qa.noop,
-    onSubstituteNode: qa.notImplemented,
-    readEmitHelpers: qa.notImplemented,
-    requestEmitHelper: qa.noop,
-    resumeLexicalEnvironment: qa.noop,
-    startLexicalEnvironment: qa.noop,
-    suspendLexicalEnvironment: qa.noop,
-    addDiagnostic: qa.noop,
-  };
 
   export type TypeOfTag = 'undefined' | 'number' | 'boolean' | 'string' | 'symbol' | 'object' | 'function';
 
@@ -4907,25 +5214,16 @@ namespace qnr {
     location: TextRange
   ): LeftHandSideExpression {
     const argumentsList = [tagName];
-    if (props) {
-      argumentsList.push(props);
-    }
-
+    if (props) argumentsList.push(props);
     if (children && children.length > 0) {
-      if (!props) {
-        argumentsList.push(createNull());
-      }
-
+      if (!props) argumentsList.push(createNull());
       if (children.length > 1) {
         for (const child of children) {
           startOnNewLine(child);
           argumentsList.push(child);
         }
-      } else {
-        argumentsList.push(children[0]);
-      }
+      } else argumentsList.push(children[0]);
     }
-
     return setTextRange(createCall(createJsxFactoryExpression(jsxFactoryEntity, reactNamespace, parentElement), /*typeArguments*/ undefined, argumentsList), location);
   }
 
@@ -4937,128 +5235,31 @@ namespace qnr {
     location: TextRange
   ): LeftHandSideExpression {
     const tagName = createPropertyAccess(createReactNamespace(reactNamespace, parentElement), 'Fragment');
-
     const argumentsList = [<Expression>tagName];
     argumentsList.push(createNull());
-
     if (children && children.length > 0) {
       if (children.length > 1) {
         for (const child of children) {
           startOnNewLine(child);
           argumentsList.push(child);
         }
-      } else {
-        argumentsList.push(children[0]);
-      }
+      } else argumentsList.push(children[0]);
     }
-
     return setTextRange(createCall(createJsxFactoryExpression(jsxFactoryEntity, reactNamespace, parentElement), /*typeArguments*/ undefined, argumentsList), location);
   }
 
-  // Helpers
-
-  /**
-   * Gets an identifier for the name of an *unscoped* emit helper.
-   */
   export function getUnscopedHelperName(name: string) {
     return setEmitFlags(createIdentifier(name), EmitFlags.HelperName | EmitFlags.AdviseOnEmitNode);
-  }
-
-  export const valuesHelper: UnscopedEmitHelper = {
-    name: 'typescript:values',
-    importName: '__values',
-    scoped: false,
-    text: `
-            var __values = (this && this.__values) || function(o) {
-                var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
-                if (m) return m.call(o);
-                if (o && typeof o.length === "number") return {
-                    next: function () {
-                        if (o && i >= o.length) o = void 0;
-                        return { value: o && o[i++], done: !o };
-                    }
-                };
-                throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
-            };`,
-  };
-
-  export function createValuesHelper(context: TransformationContext, expression: Expression, location?: TextRange) {
-    context.requestEmitHelper(valuesHelper);
-    return setTextRange(createCall(getUnscopedHelperName('__values'), /*typeArguments*/ undefined, [expression]), location);
-  }
-
-  export const readHelper: UnscopedEmitHelper = {
-    name: 'typescript:read',
-    importName: '__read',
-    scoped: false,
-    text: `
-            var __read = (this && this.__read) || function (o, n) {
-                var m = typeof Symbol === "function" && o[Symbol.iterator];
-                if (!m) return o;
-                var i = m.call(o), r, ar = [], e;
-                try {
-                    while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
-                }
-                catch (error) { e = { error: error }; }
-                finally {
-                    try {
-                        if (r && !r.done && (m = i["return"])) m.call(i);
-                    }
-                    finally { if (e) throw e.error; }
-                }
-                return ar;
-            };`,
-  };
-
-  export function createReadHelper(context: TransformationContext, iteratorRecord: Expression, count: number | undefined, location?: TextRange) {
-    context.requestEmitHelper(readHelper);
-    return setTextRange(createCall(getUnscopedHelperName('__read'), /*typeArguments*/ undefined, count !== undefined ? [iteratorRecord, createLiteral(count)] : [iteratorRecord]), location);
-  }
-
-  export const spreadHelper: UnscopedEmitHelper = {
-    name: 'typescript:spread',
-    importName: '__spread',
-    scoped: false,
-    dependencies: [readHelper],
-    text: `
-            var __spread = (this && this.__spread) || function () {
-                for (var ar = [], i = 0; i < arguments.length; i++) ar = ar.concat(__read(arguments[i]));
-                return ar;
-            };`,
-  };
-
-  export function createSpreadHelper(context: TransformationContext, argumentList: readonly Expression[], location?: TextRange) {
-    context.requestEmitHelper(spreadHelper);
-    return setTextRange(createCall(getUnscopedHelperName('__spread'), /*typeArguments*/ undefined, argumentList), location);
-  }
-
-  export const spreadArraysHelper: UnscopedEmitHelper = {
-    name: 'typescript:spreadArrays',
-    importName: '__spreadArrays',
-    scoped: false,
-    text: `
-            var __spreadArrays = (this && this.__spreadArrays) || function () {
-                for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-                for (var r = Array(s), k = 0, i = 0; i < il; i++)
-                    for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-                        r[k] = a[j];
-                return r;
-            };`,
-  };
-
-  export function createSpreadArraysHelper(context: TransformationContext, argumentList: readonly Expression[], location?: TextRange) {
-    context.requestEmitHelper(spreadArraysHelper);
-    return setTextRange(createCall(getUnscopedHelperName('__spreadArrays'), /*typeArguments*/ undefined, argumentList), location);
   }
 
   export function createForOfBindingStatement(node: ForInitializer, boundValue: Expression): Statement {
     if (qn.is.kind(VariableDeclarationList, node)) {
       const firstDeclaration = first(node.declarations);
       const updatedDeclaration = updateVariableDeclaration(firstDeclaration, firstDeclaration.name, /*typeNode*/ undefined, boundValue);
-      return setTextRange(createVariableStatement(/*modifiers*/ undefined, updateVariableDeclarationList(node, [updatedDeclaration])), /*location*/ node);
+      return setTextRange(createVariableStatement(undefined, updateVariableDeclarationList(node, [updatedDeclaration])), node);
     } else {
-      const updatedExpression = setTextRange(createAssignment(node, boundValue), /*location*/ node);
-      return setTextRange(createStatement(updatedExpression), /*location*/ node);
+      const updatedExpression = setTextRange(createAssignment(node, boundValue), node);
+      return setTextRange(createStatement(updatedExpression), node);
     }
   }
 
@@ -5066,113 +5267,22 @@ namespace qnr {
     if (qn.is.kind(Block, dest)) {
       return updateBlock(dest, setTextRange(NodeArray.create([source, ...dest.statements]), dest.statements));
     } else {
-      return createBlock(NodeArray.create([dest, source]), /*multiLine*/ true);
+      return createBlock(NodeArray.create([dest, source]), true);
     }
   }
 
   export function restoreEnclosingLabel(node: Statement, outermostLabeledStatement: LabeledStatement | undefined, afterRestoreLabelCallback?: (node: LabeledStatement) => void): Statement {
-    if (!outermostLabeledStatement) {
-      return node;
-    }
+    if (!outermostLabeledStatement) return node;
+
     const updated = updateLabel(
       outermostLabeledStatement,
       outermostLabeledStatement.label,
       outermostLabeledStatement.statement.kind === Syntax.LabeledStatement ? restoreEnclosingLabel(node, <LabeledStatement>outermostLabeledStatement.statement) : node
     );
-    if (afterRestoreLabelCallback) {
-      afterRestoreLabelCallback(outermostLabeledStatement);
-    }
+    if (afterRestoreLabelCallback) afterRestoreLabelCallback(outermostLabeledStatement);
+
     return updated;
   }
-
-  export interface CallBinding {
-    target: LeftHandSideExpression;
-    thisArg: Expression;
-  }
-
-  function shouldBeCapturedInTempVariable(node: Expression, cacheIdentifiers: boolean): boolean {
-    const target = skipParentheses(node) as Expression | ArrayLiteralExpression | ObjectLiteralExpression;
-    switch (target.kind) {
-      case Syntax.Identifier:
-        return cacheIdentifiers;
-      case Syntax.ThisKeyword:
-      case Syntax.NumericLiteral:
-      case Syntax.BigIntLiteral:
-      case Syntax.StringLiteral:
-        return false;
-      case Syntax.ArrayLiteralExpression:
-        const elements = target.elements;
-        if (elements.length === 0) {
-          return false;
-        }
-        return true;
-      case Syntax.ObjectLiteralExpression:
-        return (<ObjectLiteralExpression>target).properties.length > 0;
-      default:
-        return true;
-    }
-  }
-
-  export function createCallBinding(expression: Expression, recordTempVariable: (temp: Identifier) => void, _?: ScriptTarget, cacheIdentifiers = false): CallBinding {
-    const callee = skipOuterExpressions(expression, OuterExpressionKinds.All);
-    let thisArg: Expression;
-    let target: LeftHandSideExpression;
-    if (qn.is.superProperty(callee)) {
-      thisArg = createThis();
-      target = callee;
-    } else if (callee.kind === Syntax.SuperKeyword) {
-      thisArg = createThis();
-      target = <PrimaryExpression>callee;
-    } else if (qn.get.emitFlags(callee) & EmitFlags.HelperName) {
-      thisArg = createVoidZero();
-      target = parenthesizeForAccess(callee);
-    } else {
-      switch (callee.kind) {
-        case Syntax.PropertyAccessExpression: {
-          if (shouldBeCapturedInTempVariable((<PropertyAccessExpression>callee).expression, cacheIdentifiers)) {
-            // for `a.b()` target is `(_a = a).b` and thisArg is `_a`
-            thisArg = createTempVariable(recordTempVariable);
-            target = createPropertyAccess(
-              setTextRange(createAssignment(thisArg, (<PropertyAccessExpression>callee).expression), (<PropertyAccessExpression>callee).expression),
-              (<PropertyAccessExpression>callee).name
-            );
-            setTextRange(target, callee);
-          } else {
-            thisArg = (<PropertyAccessExpression>callee).expression;
-            target = <PropertyAccessExpression>callee;
-          }
-          break;
-        }
-
-        case Syntax.ElementAccessExpression: {
-          if (shouldBeCapturedInTempVariable((<ElementAccessExpression>callee).expression, cacheIdentifiers)) {
-            // for `a[b]()` target is `(_a = a)[b]` and thisArg is `_a`
-            thisArg = createTempVariable(recordTempVariable);
-            target = createElementAccess(
-              setTextRange(createAssignment(thisArg, (<ElementAccessExpression>callee).expression), (<ElementAccessExpression>callee).expression),
-              (<ElementAccessExpression>callee).argumentExpression
-            );
-            setTextRange(target, callee);
-          } else {
-            thisArg = (<ElementAccessExpression>callee).expression;
-            target = <ElementAccessExpression>callee;
-          }
-
-          break;
-        }
-
-        default: {
-          // for `a()` target is `a` and thisArg is `void 0`
-          thisArg = createVoidZero();
-          target = parenthesizeForAccess(expression);
-          break;
-        }
-      }
-    }
-
-    return { target, thisArg };
-  }
-
   export function inlineExpressions(expressions: readonly Expression[]) {
     // Avoid deeply nested comma expressions as traversing them during emit can result in "Maximum call
     // stack size exceeded" errors.
@@ -5267,7 +5377,7 @@ namespace qnr {
           createExpressionForPropertyName(property.name),
           createObjectLiteral(properties, multiLine),
         ]),
-        /*location*/ firstAccessor
+        firstAccessor
       );
 
       return aggregateTransformFlags(expression);
@@ -5278,16 +5388,13 @@ namespace qnr {
 
   function createExpressionForPropertyAssignment(property: PropertyAssignment, receiver: Expression) {
     return aggregateTransformFlags(
-      setOriginalNode(setTextRange(createAssignment(createMemberAccessForPropertyName(receiver, property.name, /*location*/ property.name), property.initializer), property), property)
+      setOriginalNode(setTextRange(createAssignment(createMemberAccessForPropertyName(receiver, property.name, property.name), property.initializer), property), property)
     );
   }
 
   function createExpressionForShorthandPropertyAssignment(property: ShorthandPropertyAssignment, receiver: Expression) {
     return aggregateTransformFlags(
-      setOriginalNode(
-        setTextRange(createAssignment(createMemberAccessForPropertyName(receiver, property.name, /*location*/ property.name), getSynthesizedClone(property.name)), /*location*/ property),
-        /*original*/ property
-      )
+      setOriginalNode(setTextRange(createAssignment(createMemberAccessForPropertyName(receiver, property.name, property.name), getSynthesizedClone(property.name)), property), /*original*/ property)
     );
   }
 
@@ -5296,7 +5403,7 @@ namespace qnr {
       setOriginalNode(
         setTextRange(
           createAssignment(
-            createMemberAccessForPropertyName(receiver, method.name, /*location*/ method.name),
+            createMemberAccessForPropertyName(receiver, method.name, method.name),
             setOriginalNode(
               setTextRange(
                 createFunctionExpression(
@@ -5308,74 +5415,16 @@ namespace qnr {
                   /*type*/ undefined,
                   method.body! // TODO: GH#18217
                 ),
-                /*location*/ method
+                method
               ),
               /*original*/ method
             )
           ),
-          /*location*/ method
+          method
         ),
         /*original*/ method
       )
     );
-  }
-
-  export function getInternalName(node: Declaration, allowComments?: boolean, allowSourceMaps?: boolean) {
-    return getName(node, allowComments, allowSourceMaps, EmitFlags.LocalName | EmitFlags.InternalName);
-  }
-
-  export function isInternalName(node: Identifier) {
-    return (qn.get.emitFlags(node) & EmitFlags.InternalName) !== 0;
-  }
-
-  export function getLocalName(node: Declaration, allowComments?: boolean, allowSourceMaps?: boolean) {
-    return getName(node, allowComments, allowSourceMaps, EmitFlags.LocalName);
-  }
-
-  export function isLocalName(node: Identifier) {
-    return (qn.get.emitFlags(node) & EmitFlags.LocalName) !== 0;
-  }
-
-  export function getExportName(node: Declaration, allowComments?: boolean, allowSourceMaps?: boolean): Identifier {
-    return getName(node, allowComments, allowSourceMaps, EmitFlags.ExportName);
-  }
-
-  export function isExportName(node: Identifier) {
-    return (qn.get.emitFlags(node) & EmitFlags.ExportName) !== 0;
-  }
-
-  export function getDeclarationName(node: Declaration, allowComments?: boolean, allowSourceMaps?: boolean) {
-    return getName(node, allowComments, allowSourceMaps);
-  }
-
-  function getName(node: Declaration, allowComments?: boolean, allowSourceMaps?: boolean, emitFlags: EmitFlags = 0) {
-    const nodeName = getNameOfDeclaration(node);
-    if (nodeName && qn.is.kind(Identifier, nodeName) && !qn.is.generatedIdentifier(nodeName)) {
-      const name = getMutableClone(nodeName);
-      emitFlags |= qn.get.emitFlags(nodeName);
-      if (!allowSourceMaps) emitFlags |= EmitFlags.NoSourceMap;
-      if (!allowComments) emitFlags |= EmitFlags.NoComments;
-      if (emitFlags) setEmitFlags(name, emitFlags);
-      return name;
-    }
-    return getGeneratedNameForNode(node);
-  }
-
-  export function getExternalModuleOrNamespaceExportName(ns: Identifier | undefined, node: Declaration, allowComments?: boolean, allowSourceMaps?: boolean): Identifier | PropertyAccessExpression {
-    if (ns && hasSyntacticModifier(node, ModifierFlags.Export)) {
-      return getNamespaceMemberName(ns, getName(node), allowComments, allowSourceMaps);
-    }
-    return getExportName(node, allowComments, allowSourceMaps);
-  }
-
-  export function getNamespaceMemberName(ns: Identifier, name: Identifier, allowComments?: boolean, allowSourceMaps?: boolean): PropertyAccessExpression {
-    const qualifiedName = createPropertyAccess(ns, isSynthesized(name) ? name : getSynthesizedClone(name));
-    setTextRange(qualifiedName, name);
-    let emitFlags: EmitFlags = 0;
-    if (!allowSourceMaps) emitFlags |= EmitFlags.NoSourceMap;
-    if (!allowComments) emitFlags |= EmitFlags.NoComments;
-    if (emitFlags) setEmitFlags(qualifiedName, emitFlags);
-    return qualifiedName;
   }
 
   export function convertToFunctionBody(node: ConciseBody, multiLine?: boolean): Block {
@@ -5445,7 +5494,7 @@ namespace qnr {
     while (statementOffset !== undefined && statementOffset < numStatements) {
       const statement = source[statementOffset];
       if (qn.get.emitFlags(statement) & EmitFlags.CustomPrologue && filter(statement)) {
-        append(target, visitor ? visitNode(statement, visitor, isStatement) : statement);
+        qa.append(target, visitor ? visitNode(statement, visitor, isStatement) : statement);
       } else {
         break;
       }
@@ -5771,7 +5820,7 @@ namespace qnr {
   }
 
   export function parenthesizeTypeParameters(typeParameters: readonly TypeNode[] | undefined) {
-    if (some(typeParameters)) {
+    if (qa.some(typeParameters)) {
       const params: TypeNode[] = [];
       for (let i = 0; i < typeParameters.length; ++i) {
         const entry = typeParameters[i];
@@ -5946,7 +5995,7 @@ namespace qnr {
               }
             }
           }
-          if (some(helperNames)) {
+          if (qa.some(helperNames)) {
             helperNames.sort(compareStringsCaseSensitive);
             // Alias the imports if the names are used somewhere in the file.
             // NOTE: We don't need to care about global import collisions as this is a module.
@@ -5972,7 +6021,7 @@ namespace qnr {
       if (namedBindings) {
         const externalHelpersImportDeclaration = createImportDeclaration(
           /*decorators*/ undefined,
-          /*modifiers*/ undefined,
+          undefined,
           createImportClause(/*name*/ undefined, namedBindings),
           createLiteral(externalHelpersModuleNameText)
         );
@@ -6065,272 +6114,5 @@ namespace qnr {
 
   function tryGetModuleNameFromDeclaration(declaration: ImportEqualsDeclaration | ImportDeclaration | ExportDeclaration, host: EmitHost, resolver: EmitResolver, compilerOptions: CompilerOptions) {
     return tryGetModuleNameFromFile(resolver.getExternalModuleFileFromDeclaration(declaration), host, compilerOptions);
-  }
-
-  export function getInitializerOfBindingOrAssignmentElement(bindingElement: BindingOrAssignmentElement): Expression | undefined {
-    if (isDeclarationBindingElement(bindingElement)) {
-      // `1` in `let { a = 1 } = ...`
-      // `1` in `let { a: b = 1 } = ...`
-      // `1` in `let { a: {b} = 1 } = ...`
-      // `1` in `let { a: [b] = 1 } = ...`
-      // `1` in `let [a = 1] = ...`
-      // `1` in `let [{a} = 1] = ...`
-      // `1` in `let [[a] = 1] = ...`
-      return bindingElement.initializer;
-    }
-
-    if (qn.is.kind(PropertyAssignment, bindingElement)) {
-      // `1` in `({ a: b = 1 } = ...)`
-      // `1` in `({ a: {b} = 1 } = ...)`
-      // `1` in `({ a: [b] = 1 } = ...)`
-      const initializer = bindingElement.initializer;
-      return isAssignmentExpression(initializer, /*excludeCompoundAssignment*/ true) ? initializer.right : undefined;
-    }
-
-    if (qn.is.kind(ShorthandPropertyAssignment, bindingElement)) {
-      // `1` in `({ a = 1 } = ...)`
-      return bindingElement.objectAssignmentInitializer;
-    }
-
-    if (isAssignmentExpression(bindingElement, /*excludeCompoundAssignment*/ true)) {
-      // `1` in `[a = 1] = ...`
-      // `1` in `[{a} = 1] = ...`
-      // `1` in `[[a] = 1] = ...`
-      return bindingElement.right;
-    }
-
-    if (qn.is.kind(SpreadElement, bindingElement)) {
-      // Recovery consistent with existing emit.
-      return getInitializerOfBindingOrAssignmentElement(<BindingOrAssignmentElement>bindingElement.expression);
-    }
-    return;
-  }
-
-  export function getTargetOfBindingOrAssignmentElement(bindingElement: BindingOrAssignmentElement): BindingOrAssignmentElementTarget | undefined {
-    if (isDeclarationBindingElement(bindingElement)) {
-      // `a` in `let { a } = ...`
-      // `a` in `let { a = 1 } = ...`
-      // `b` in `let { a: b } = ...`
-      // `b` in `let { a: b = 1 } = ...`
-      // `a` in `let { ...a } = ...`
-      // `{b}` in `let { a: {b} } = ...`
-      // `{b}` in `let { a: {b} = 1 } = ...`
-      // `[b]` in `let { a: [b] } = ...`
-      // `[b]` in `let { a: [b] = 1 } = ...`
-      // `a` in `let [a] = ...`
-      // `a` in `let [a = 1] = ...`
-      // `a` in `let [...a] = ...`
-      // `{a}` in `let [{a}] = ...`
-      // `{a}` in `let [{a} = 1] = ...`
-      // `[a]` in `let [[a]] = ...`
-      // `[a]` in `let [[a] = 1] = ...`
-      return bindingElement.name;
-    }
-
-    if (qn.is.objectLiteralElementLike(bindingElement)) {
-      switch (bindingElement.kind) {
-        case Syntax.PropertyAssignment:
-          // `b` in `({ a: b } = ...)`
-          // `b` in `({ a: b = 1 } = ...)`
-          // `{b}` in `({ a: {b} } = ...)`
-          // `{b}` in `({ a: {b} = 1 } = ...)`
-          // `[b]` in `({ a: [b] } = ...)`
-          // `[b]` in `({ a: [b] = 1 } = ...)`
-          // `b.c` in `({ a: b.c } = ...)`
-          // `b.c` in `({ a: b.c = 1 } = ...)`
-          // `b[0]` in `({ a: b[0] } = ...)`
-          // `b[0]` in `({ a: b[0] = 1 } = ...)`
-          return getTargetOfBindingOrAssignmentElement(<BindingOrAssignmentElement>bindingElement.initializer);
-
-        case Syntax.ShorthandPropertyAssignment:
-          // `a` in `({ a } = ...)`
-          // `a` in `({ a = 1 } = ...)`
-          return bindingElement.name;
-
-        case Syntax.SpreadAssignment:
-          // `a` in `({ ...a } = ...)`
-          return getTargetOfBindingOrAssignmentElement(<BindingOrAssignmentElement>bindingElement.expression);
-      }
-
-      // no target
-      return;
-    }
-
-    if (isAssignmentExpression(bindingElement, /*excludeCompoundAssignment*/ true)) {
-      // `a` in `[a = 1] = ...`
-      // `{a}` in `[{a} = 1] = ...`
-      // `[a]` in `[[a] = 1] = ...`
-      // `a.b` in `[a.b = 1] = ...`
-      // `a[0]` in `[a[0] = 1] = ...`
-      return getTargetOfBindingOrAssignmentElement(<BindingOrAssignmentElement>bindingElement.left);
-    }
-
-    if (qn.is.kind(SpreadElement, bindingElement)) {
-      // `a` in `[...a] = ...`
-      return getTargetOfBindingOrAssignmentElement(<BindingOrAssignmentElement>bindingElement.expression);
-    }
-
-    // `a` in `[a] = ...`
-    // `{a}` in `[{a}] = ...`
-    // `[a]` in `[[a]] = ...`
-    // `a.b` in `[a.b] = ...`
-    // `a[0]` in `[a[0]] = ...`
-    return bindingElement;
-  }
-
-  export function getRestIndicatorOfBindingOrAssignmentElement(bindingElement: BindingOrAssignmentElement): BindingOrAssignmentElementRestIndicator | undefined {
-    switch (bindingElement.kind) {
-      case Syntax.Parameter:
-      case Syntax.BindingElement:
-        // `...` in `let [...a] = ...`
-        return bindingElement.dot3Token;
-
-      case Syntax.SpreadElement:
-      case Syntax.SpreadAssignment:
-        // `...` in `[...a] = ...`
-        return bindingElement;
-    }
-
-    return;
-  }
-
-  export function getPropertyNameOfBindingOrAssignmentElement(bindingElement: BindingOrAssignmentElement): Exclude<PropertyName, PrivateIdentifier> | undefined {
-    const propertyName = tryGetPropertyNameOfBindingOrAssignmentElement(bindingElement);
-    assert(!!propertyName || qn.is.kind(SpreadAssignment, bindingElement), 'Invalid property name for binding element.');
-    return propertyName;
-  }
-
-  export function tryGetPropertyNameOfBindingOrAssignmentElement(bindingElement: BindingOrAssignmentElement): Exclude<PropertyName, PrivateIdentifier> | undefined {
-    switch (bindingElement.kind) {
-      case Syntax.BindingElement:
-        // `a` in `let { a: b } = ...`
-        // `[a]` in `let { [a]: b } = ...`
-        // `"a"` in `let { "a": b } = ...`
-        // `1` in `let { 1: b } = ...`
-        if (bindingElement.propertyName) {
-          const propertyName = bindingElement.propertyName;
-          if (qn.is.kind(PrivateIdentifier, propertyName)) {
-            return Debug.failBadSyntax(propertyName);
-          }
-          return qn.is.kind(ComputedPropertyName, propertyName) && isStringOrNumericLiteral(propertyName.expression) ? propertyName.expression : propertyName;
-        }
-
-        break;
-
-      case Syntax.PropertyAssignment:
-        // `a` in `({ a: b } = ...)`
-        // `[a]` in `({ [a]: b } = ...)`
-        // `"a"` in `({ "a": b } = ...)`
-        // `1` in `({ 1: b } = ...)`
-        if (bindingElement.name) {
-          const propertyName = bindingElement.name;
-          if (qn.is.kind(PrivateIdentifier, propertyName)) {
-            return Debug.failBadSyntax(propertyName);
-          }
-          return qn.is.kind(ComputedPropertyName, propertyName) && isStringOrNumericLiteral(propertyName.expression) ? propertyName.expression : propertyName;
-        }
-
-        break;
-
-      case Syntax.SpreadAssignment:
-        // `a` in `({ ...a } = ...)`
-        if (bindingElement.name && qn.is.kind(PrivateIdentifier, bindingElement.name)) {
-          return Debug.failBadSyntax(bindingElement.name);
-        }
-        return bindingElement.name;
-    }
-
-    const target = getTargetOfBindingOrAssignmentElement(bindingElement);
-    if (target && qn.is.propertyName(target)) {
-      return target;
-    }
-    return;
-  }
-
-  function isStringOrNumericLiteral(node: Node): node is StringLiteral | NumericLiteral {
-    const kind = node.kind;
-    return kind === Syntax.StringLiteral || kind === Syntax.NumericLiteral;
-  }
-
-  export function getElementsOfBindingOrAssignmentPattern(name: BindingOrAssignmentPattern): readonly BindingOrAssignmentElement[] {
-    switch (name.kind) {
-      case Syntax.ObjectBindingPattern:
-      case Syntax.ArrayBindingPattern:
-      case Syntax.ArrayLiteralExpression:
-        // `a` in `{a}`
-        // `a` in `[a]`
-        return <readonly BindingOrAssignmentElement[]>name.elements;
-
-      case Syntax.ObjectLiteralExpression:
-        // `a` in `{a}`
-        return <readonly BindingOrAssignmentElement[]>name.properties;
-    }
-  }
-
-  export function convertToArrayAssignmentElement(element: BindingOrAssignmentElement) {
-    if (qn.is.kind(BindingElement, element)) {
-      if (element.dot3Token) {
-        Debug.assertNode(element.name, isIdentifier);
-        return setOriginalNode(setTextRange(createSpread(element.name), element), element);
-      }
-      const expression = convertToAssignmentElementTarget(element.name);
-      return element.initializer ? setOriginalNode(setTextRange(createAssignment(expression, element.initializer), element), element) : expression;
-    }
-    Debug.assertNode(element, isExpression);
-    return <Expression>element;
-  }
-
-  export function convertToObjectAssignmentElement(element: BindingOrAssignmentElement) {
-    if (qn.is.kind(BindingElement, element)) {
-      if (element.dot3Token) {
-        Debug.assertNode(element.name, isIdentifier);
-        return setOriginalNode(setTextRange(createSpreadAssignment(element.name), element), element);
-      }
-      if (element.propertyName) {
-        const expression = convertToAssignmentElementTarget(element.name);
-        return setOriginalNode(setTextRange(createPropertyAssignment(element.propertyName, element.initializer ? createAssignment(expression, element.initializer) : expression), element), element);
-      }
-      Debug.assertNode(element.name, isIdentifier);
-      return setOriginalNode(setTextRange(createShorthandPropertyAssignment(element.name, element.initializer), element), element);
-    }
-    Debug.assertNode(element, isObjectLiteralElementLike);
-    return <ObjectLiteralElementLike>element;
-  }
-
-  export function convertToAssignmentPattern(node: BindingOrAssignmentPattern): AssignmentPattern {
-    switch (node.kind) {
-      case Syntax.ArrayBindingPattern:
-      case Syntax.ArrayLiteralExpression:
-        return convertToArrayAssignmentPattern(node);
-
-      case Syntax.ObjectBindingPattern:
-      case Syntax.ObjectLiteralExpression:
-        return convertToObjectAssignmentPattern(node);
-    }
-  }
-
-  export function convertToObjectAssignmentPattern(node: ObjectBindingOrAssignmentPattern) {
-    if (qn.is.kind(ObjectBindingPattern, node)) {
-      return setOriginalNode(setTextRange(createObjectLiteral(map(node.elements, convertToObjectAssignmentElement)), node), node);
-    }
-    Debug.assertNode(node, isObjectLiteralExpression);
-    return node;
-  }
-
-  export function convertToArrayAssignmentPattern(node: ArrayBindingOrAssignmentPattern) {
-    if (qn.is.kind(ArrayBindingPattern, node)) {
-      return setOriginalNode(setTextRange(createArrayLiteral(map(node.elements, convertToArrayAssignmentElement)), node), node);
-    }
-    Debug.assertNode(node, isArrayLiteralExpression);
-    return node;
-  }
-
-  export function convertToAssignmentElementTarget(node: BindingOrAssignmentElementTarget): Expression {
-    if (qn.is.kind(BindingPattern, node)) {
-      return convertToAssignmentPattern(node);
-    }
-
-    Debug.assertNode(node, isExpression);
-    return node;
   }
 }
