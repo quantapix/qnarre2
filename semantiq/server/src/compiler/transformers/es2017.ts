@@ -121,7 +121,7 @@ namespace qnr {
           return doWithContext(ContextFlags.NonTopLevel, visitArrowFunction, <ArrowFunction>node);
 
         case Syntax.PropertyAccessExpression:
-          if (capturedSuperProperties && qn.is.kind(PropertyAccessExpression, node) && node.expression.kind === Syntax.SuperKeyword) {
+          if (capturedSuperProperties && Node.is.kind(PropertyAccessExpression, node) && node.expression.kind === Syntax.SuperKeyword) {
             capturedSuperProperties.set(node.name.escapedText, true);
           }
           return visitEachChild(node, visitor, context);
@@ -273,7 +273,7 @@ namespace qnr {
       return MethodDeclaration.update(
         node,
         /*decorators*/ undefined,
-        NodeArray.visit(node.modifiers, visitor, isModifier),
+        Nodes.visit(node.modifiers, visitor, isModifier),
         node.asteriskToken,
         node.name,
         /*questionToken*/ undefined,
@@ -296,7 +296,7 @@ namespace qnr {
       return updateFunctionDeclaration(
         node,
         /*decorators*/ undefined,
-        NodeArray.visit(node.modifiers, visitor, isModifier),
+        Nodes.visit(node.modifiers, visitor, isModifier),
         node.asteriskToken,
         node.name,
         /*typeParameters*/ undefined,
@@ -317,7 +317,7 @@ namespace qnr {
     function visitFunctionExpression(node: FunctionExpression): Expression {
       return updateFunctionExpression(
         node,
-        NodeArray.visit(node.modifiers, visitor, isModifier),
+        Nodes.visit(node.modifiers, visitor, isModifier),
         node.asteriskToken,
         node.name,
         /*typeParameters*/ undefined,
@@ -338,7 +338,7 @@ namespace qnr {
     function visitArrowFunction(node: ArrowFunction) {
       return updateArrowFunction(
         node,
-        NodeArray.visit(node.modifiers, visitor, isModifier),
+        Nodes.visit(node.modifiers, visitor, isModifier),
         /*typeParameters*/ undefined,
         visitParameterList(node.parameters, visitor, context),
         /*type*/ undefined,
@@ -348,11 +348,11 @@ namespace qnr {
     }
 
     function recordDeclarationName({ name }: ParameterDeclaration | VariableDeclaration | BindingElement, names: UnderscoreEscapedMap<true>) {
-      if (qn.is.kind(Identifier, name)) {
+      if (Node.is.kind(Identifier, name)) {
         names.set(name.escapedText, true);
       } else {
         for (const element of name.elements) {
-          if (!qn.is.kind(OmittedExpression, element)) {
+          if (!Node.is.kind(OmittedExpression, element)) {
             recordDeclarationName(element, names);
           }
         }
@@ -360,7 +360,7 @@ namespace qnr {
     }
 
     function isVariableDeclarationListWithCollidingName(node: ForInitializer): node is VariableDeclarationList {
-      return !!node && qn.is.kind(VariableDeclarationList, node) && !(node.flags & NodeFlags.BlockScoped) && node.declarations.some(collidesWithParameterName);
+      return !!node && Node.is.kind(VariableDeclarationList, node) && !(node.flags & NodeFlags.BlockScoped) && node.declarations.some(collidesWithParameterName);
     }
 
     function visitVariableDeclarationListWithCollidingNames(node: VariableDeclarationList, hasReceiver: boolean) {
@@ -382,11 +382,11 @@ namespace qnr {
     }
 
     function hoistVariable({ name }: VariableDeclaration | BindingElement) {
-      if (qn.is.kind(Identifier, name)) {
+      if (Node.is.kind(Identifier, name)) {
         hoistVariableDeclaration(name);
       } else {
         for (const element of name.elements) {
-          if (!qn.is.kind(OmittedExpression, element)) {
+          if (!Node.is.kind(OmittedExpression, element)) {
             hoistVariable(element);
           }
         }
@@ -399,11 +399,11 @@ namespace qnr {
     }
 
     function collidesWithParameterName({ name }: VariableDeclaration | BindingElement): boolean {
-      if (qn.is.kind(Identifier, name)) {
+      if (Node.is.kind(Identifier, name)) {
         return enclosingFunctionParameterNames.has(name.escapedText);
       } else {
         for (const element of name.elements) {
-          if (!qn.is.kind(OmittedExpression, element) && collidesWithParameterName(element)) {
+          if (!Node.is.kind(OmittedExpression, element) && collidesWithParameterName(element)) {
             return true;
           }
         }
@@ -416,7 +416,7 @@ namespace qnr {
     function transformAsyncFunctionBody(node: FunctionLikeDeclaration): ConciseBody {
       resumeLexicalEnvironment();
 
-      const original = qn.get.originalOf(node, isFunctionLike);
+      const original = Node.get.originalOf(node, isFunctionLike);
       const nodeType = original.type;
       const promiseConstructor = languageVersion < ScriptTarget.ES2015 ? getPromiseConstructor(nodeType) : undefined;
       const isArrowFunction = node.kind === Syntax.ArrowFunction;
@@ -483,7 +483,7 @@ namespace qnr {
         const declarations = endLexicalEnvironment();
         if (some(declarations)) {
           const block = convertToFunctionBody(expression);
-          result = updateBlock(block, setTextRange(NodeArray.create(concatenate(declarations, block.statements)), block.statements));
+          result = updateBlock(block, setTextRange(Nodes.create(concatenate(declarations, block.statements)), block.statements));
         } else {
           result = expression;
         }
@@ -498,8 +498,8 @@ namespace qnr {
     }
 
     function transformAsyncFunctionBodyWorker(body: ConciseBody, start?: number) {
-      if (qn.is.kind(Block, body)) {
-        return updateBlock(body, NodeArray.visit(body.statements, asyncBodyVisitor, isStatement, start));
+      if (Node.is.kind(Block, body)) {
+        return updateBlock(body, Nodes.visit(body.statements, asyncBodyVisitor, isStatement, start));
       } else {
         return convertToFunctionBody(visitNode(body, asyncBodyVisitor, isConciseBody));
       }
@@ -507,7 +507,7 @@ namespace qnr {
 
     function getPromiseConstructor(type: TypeNode | undefined) {
       const typeName = type && getEntityNameFromTypeNode(type);
-      if (typeName && qn.is.entityName(typeName)) {
+      if (typeName && Node.is.entityName(typeName)) {
         const serializationKind = resolver.getTypeReferenceSerializationKind(typeName);
         if (serializationKind === TypeReferenceSerializationKind.TypeWithConstructSignatureAndValue || serializationKind === TypeReferenceSerializationKind.Unknown) {
           return typeName;
@@ -612,8 +612,8 @@ namespace qnr {
 
     function substituteCallExpression(node: CallExpression): Expression {
       const expression = node.expression;
-      if (qn.is.superProperty(expression)) {
-        const argumentExpression = qn.is.kind(PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
+      if (Node.is.superProperty(expression)) {
+        const argumentExpression = Node.is.kind(PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
         return createCall(createPropertyAccess(argumentExpression, 'call'), /*typeArguments*/ undefined, [createThis(), ...node.arguments]);
       }
       return node;

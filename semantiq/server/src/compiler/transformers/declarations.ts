@@ -14,7 +14,7 @@ namespace qnr {
   }
 
   export function isInternalDeclaration(node: Node, currentSourceFile: SourceFile) {
-    const parseTreeNode = qn.get.parseTreeOf(node);
+    const parseTreeNode = Node.get.parseTreeOf(node);
     if (parseTreeNode && parseTreeNode.kind === Syntax.Parameter) {
       const paramIdx = (parseTreeNode.parent as FunctionLike).parameters.indexOf(parseTreeNode as ParameterDeclaration);
       const previousSibling = paramIdx > 0 ? (parseTreeNode.parent as FunctionLike).parameters[paramIdx - 1] : undefined;
@@ -97,7 +97,7 @@ namespace qnr {
         return recordTypeReferenceDirectivesIfNecessary(directives);
       }
       // Otherwise we should emit a path-based reference
-      const container = qn.get.sourceFileOf(node);
+      const container = Node.get.sourceFileOf(node);
       refs.set('' + getOriginalNodeId(container), container);
     }
 
@@ -124,7 +124,7 @@ namespace qnr {
               createDiagnosticForNode(
                 symbolAccessibilityResult.errorNode || errorInfo.errorNode,
                 errorInfo.diagnosticMessage,
-                qn.get.textOf(errorInfo.typeName),
+                Node.get.textOf(errorInfo.typeName),
                 symbolAccessibilityResult.errorSymbolName,
                 symbolAccessibilityResult.errorModuleName
               )
@@ -196,8 +196,8 @@ namespace qnr {
     }
 
     function reportNonlocalAugmentation(containingFile: SourceFile, parentSymbol: Symbol, symbol: Symbol) {
-      const primaryDeclaration = find(parentSymbol.declarations, (d) => qn.get.sourceFileOf(d) === containingFile)!;
-      const augmentingDeclarations = filter(symbol.declarations, (d) => qn.get.sourceFileOf(d) !== containingFile);
+      const primaryDeclaration = find(parentSymbol.declarations, (d) => Node.get.sourceFileOf(d) === containingFile)!;
+      const augmentingDeclarations = filter(symbol.declarations, (d) => Node.get.sourceFileOf(d) !== containingFile);
       for (const augmentations of augmentingDeclarations) {
         context.addDiagnostic(
           addRelatedInfo(
@@ -251,7 +251,7 @@ namespace qnr {
             if (isExternalOrCommonJsModule(sourceFile) || isJsonSourceFile(sourceFile)) {
               resultHasExternalModuleIndicator = false; // unused in external module bundle emit (all external modules are within module blocks, therefore are known to be modules)
               needsDeclare = false;
-              const statements = isSourceFileJS(sourceFile) ? NodeArray.create(transformDeclarationsForJS(sourceFile, /*bundled*/ true)) : NodeArray.visit(sourceFile.statements, visitDeclarationStatements);
+              const statements = isSourceFileJS(sourceFile) ? Nodes.create(transformDeclarationsForJS(sourceFile, /*bundled*/ true)) : Nodes.visit(sourceFile.statements, visitDeclarationStatements);
               const newFile = qp_updateSourceNode(
                 sourceFile,
                 [
@@ -259,7 +259,7 @@ namespace qnr {
                     [],
                     [createModifier(Syntax.DeclareKeyword)],
                     createLiteral(getResolvedExternalModuleName(context.getEmitHost(), sourceFile)),
-                    createModuleBlock(setTextRange(NodeArray.create(transformAndReplaceLatePaintedStatements(statements)), sourceFile.statements))
+                    createModuleBlock(setTextRange(Nodes.create(transformAndReplaceLatePaintedStatements(statements)), sourceFile.statements))
                   ),
                 ],
                 /*isDeclarationFile*/ true,
@@ -271,7 +271,7 @@ namespace qnr {
               return newFile;
             }
             needsDeclare = true;
-            const updated = isSourceFileJS(sourceFile) ? NodeArray.create(transformDeclarationsForJS(sourceFile)) : NodeArray.visit(sourceFile.statements, visitDeclarationStatements);
+            const updated = isSourceFileJS(sourceFile) ? Nodes.create(transformDeclarationsForJS(sourceFile)) : Nodes.visit(sourceFile.statements, visitDeclarationStatements);
             return qp_updateSourceNode(
               sourceFile,
               transformAndReplaceLatePaintedStatements(updated),
@@ -322,18 +322,18 @@ namespace qnr {
       const references: FileReference[] = [];
       const outputFilePath = getDirectoryPath(normalizeSlashes(getOutputPathsFor(node, host, /*forceDtsPaths*/ true).declarationFilePath!));
       const referenceVisitor = mapReferencesIntoArray(references, outputFilePath);
-      let combinedStatements: NodeArray<Statement>;
+      let combinedStatements: Nodes<Statement>;
       if (isSourceFileJS(currentSourceFile)) {
-        combinedStatements = NodeArray.create(transformDeclarationsForJS(node));
+        combinedStatements = Nodes.create(transformDeclarationsForJS(node));
         refs.forEach(referenceVisitor);
         emittedImports = filter(combinedStatements, isAnyImportSyntax);
       } else {
-        const statements = NodeArray.visit(node.statements, visitDeclarationStatements);
-        combinedStatements = setTextRange(NodeArray.create(transformAndReplaceLatePaintedStatements(statements)), node.statements);
+        const statements = Nodes.visit(node.statements, visitDeclarationStatements);
+        combinedStatements = setTextRange(Nodes.create(transformAndReplaceLatePaintedStatements(statements)), node.statements);
         refs.forEach(referenceVisitor);
         emittedImports = filter(combinedStatements, isAnyImportSyntax);
         if (qp_isExternalModule(node) && (!resultHasExternalModuleIndicator || (needsScopeFixMarker && !resultHasScopeMarker))) {
-          combinedStatements = setTextRange(NodeArray.create([...combinedStatements, createEmptyExports()]), combinedStatements);
+          combinedStatements = setTextRange(Nodes.create([...combinedStatements, createEmptyExports()]), combinedStatements);
         }
       }
       const updated = qp_updateSourceNode(node, combinedStatements, /*isDeclarationFile*/ true, references, getFileReferencesForUsedTypeReferences(), node.hasNoDefaultLib, getLibReferences());
@@ -352,12 +352,12 @@ namespace qnr {
         // Elide type references for which we have imports
         if (emittedImports) {
           for (const importStatement of emittedImports) {
-            if (qn.is.kind(ImportEqualsDeclaration, importStatement) && qp_qn.is.kind(ExternalModuleReference, importStatement.moduleReference)) {
+            if (Node.is.kind(ImportEqualsDeclaration, importStatement) && qp_Node.is.kind(ExternalModuleReference, importStatement.moduleReference)) {
               const expr = importStatement.moduleReference.expression;
               if (StringLiteral.like(expr) && expr.text === typeName) {
                 return;
               }
-            } else if (qn.is.kind(ImportDeclaration, importStatement) && qn.is.kind(StringLiteral, importStatement.moduleSpecifier) && importStatement.moduleSpecifier.text === typeName) {
+            } else if (Node.is.kind(ImportDeclaration, importStatement) && Node.is.kind(StringLiteral, importStatement.moduleSpecifier) && importStatement.moduleSpecifier.text === typeName) {
               return;
             }
           }
@@ -414,7 +414,7 @@ namespace qnr {
     }
 
     function collectReferences(sourceFile: SourceFile | UnparsedSource, ret: Map<SourceFile>) {
-      if (noResolve || (!qn.is.kind(UnparsedSource, sourceFile) && isSourceFileJS(sourceFile))) return ret;
+      if (noResolve || (!Node.is.kind(UnparsedSource, sourceFile) && isSourceFileJS(sourceFile))) return ret;
       forEach(sourceFile.referencedFiles, (f) => {
         const elem = host.getSourceFileFromReference(sourceFile, f);
         if (elem) {
@@ -439,9 +439,9 @@ namespace qnr {
         return name;
       } else {
         if (name.kind === Syntax.ArrayBindingPattern) {
-          return ArrayBindingPattern.update(name, NodeArray.visit(name.elements, visitBindingElement));
+          return ArrayBindingPattern.update(name, Nodes.visit(name.elements, visitBindingElement));
         } else {
-          return ObjectBindingPattern.update(name, NodeArray.visit(name.elements, visitBindingElement));
+          return ObjectBindingPattern.update(name, Nodes.visit(name.elements, visitBindingElement));
         }
       }
 
@@ -477,12 +477,12 @@ namespace qnr {
     }
 
     function shouldPrintWithInitializer(node: Node) {
-      return canHaveLiteralInitializer(node) && resolver.isLiteralConstDeclaration(qn.get.parseTreeOf(node) as CanHaveLiteralInitializer); // TODO: Make safe
+      return canHaveLiteralInitializer(node) && resolver.isLiteralConstDeclaration(Node.get.parseTreeOf(node) as CanHaveLiteralInitializer); // TODO: Make safe
     }
 
     function ensureNoInitializer(node: CanHaveLiteralInitializer) {
       if (shouldPrintWithInitializer(node)) {
-        return resolver.createLiteralConstValue(qn.get.parseTreeOf(node) as CanHaveLiteralInitializer, symbolTracker); // TODO: Make safe
+        return resolver.createLiteralConstValue(Node.get.parseTreeOf(node) as CanHaveLiteralInitializer, symbolTracker); // TODO: Make safe
       }
       return;
     }
@@ -514,7 +514,7 @@ namespace qnr {
       if (type && !shouldUseResolverType) {
         return visitNode(type, visitDeclarationSubtree);
       }
-      if (!qn.get.parseTreeOf(node)) {
+      if (!Node.get.parseTreeOf(node)) {
         return type ? visitNode(type, visitDeclarationSubtree) : KeywordTypeNode.create(Syntax.AnyKeyword);
       }
       if (node.kind === Syntax.SetAccessor) {
@@ -550,7 +550,7 @@ namespace qnr {
     }
 
     function isDeclarationAndNotVisible(node: NamedDeclaration) {
-      node = qn.get.parseTreeOf(node) as NamedDeclaration;
+      node = Node.get.parseTreeOf(node) as NamedDeclaration;
       switch (node.kind) {
         case Syntax.FunctionDeclaration:
         case Syntax.ModuleDeclaration:
@@ -572,10 +572,10 @@ namespace qnr {
     }
 
     function getBindingNameVisible(elem: BindingElement | VariableDeclaration | OmittedExpression): boolean {
-      if (qn.is.kind(OmittedExpression, elem)) {
+      if (Node.is.kind(OmittedExpression, elem)) {
         return false;
       }
-      if (qn.is.kind(BindingPattern, elem.name)) {
+      if (Node.is.kind(BindingPattern, elem.name)) {
         // If any child binding pattern element has been marked visible (usually by collect linked aliases), then this is visible
         return some(elem.name.elements, getBindingNameVisible);
       } else {
@@ -583,7 +583,7 @@ namespace qnr {
       }
     }
 
-    function updateParamsList(node: Node, params: NodeArray<ParameterDeclaration>, modifierMask?: ModifierFlags) {
+    function updateParamsList(node: Node, params: Nodes<ParameterDeclaration>, modifierMask?: ModifierFlags) {
       if (hasEffectiveModifier(node, ModifierFlags.Private)) {
         return undefined!; // TODO: GH#18217
       }
@@ -591,18 +591,18 @@ namespace qnr {
       if (!newParams) {
         return undefined!; // TODO: GH#18217
       }
-      return NodeArray.create(newParams, params.trailingComma);
+      return Nodes.create(newParams, params.trailingComma);
     }
 
     function updateAccessorParamsList(input: AccessorDeclaration, isPrivate: boolean) {
       let newParams: ParameterDeclaration[] | undefined;
       if (!isPrivate) {
-        const thisParameter = getThqn.is.kind(ParameterDeclaration, input);
+        const thisParameter = getThNode.is.kind(ParameterDeclaration, input);
         if (thisParameter) {
           newParams = [ensureParameter(thisParameter)];
         }
       }
-      if (qn.is.kind(SetAccessorDeclaration, input)) {
+      if (Node.is.kind(SetAccessorDeclaration, input)) {
         let newValueParameter: ParameterDeclaration | undefined;
         if (!isPrivate) {
           const valueParameter = getSetAccessorValueParameter(input);
@@ -616,23 +616,23 @@ namespace qnr {
         }
         newParams = append(newParams, newValueParameter);
       }
-      return NodeArray.create(newParams || emptyArray) as NodeArray<ParameterDeclaration>;
+      return Nodes.create(newParams || emptyArray) as Nodes<ParameterDeclaration>;
     }
 
-    function ensureTypeParams(node: Node, params: NodeArray<TypeParameterDeclaration> | undefined) {
-      return hasEffectiveModifier(node, ModifierFlags.Private) ? undefined : NodeArray.visit(params, visitDeclarationSubtree);
+    function ensureTypeParams(node: Node, params: Nodes<TypeParameterDeclaration> | undefined) {
+      return hasEffectiveModifier(node, ModifierFlags.Private) ? undefined : Nodes.visit(params, visitDeclarationSubtree);
     }
 
     function isEnclosingDeclaration(node: Node) {
       return (
-        qn.is.kind(SourceFile, node) ||
-        qn.is.kind(TypeAliasDeclaration, node) ||
-        qn.is.kind(ModuleDeclaration, node) ||
-        qn.is.kind(ClassDeclaration, node) ||
-        qn.is.kind(InterfaceDeclaration, node) ||
-        qn.is.functionLike(node) ||
-        qn.is.kind(IndexSignatureDeclaration, node) ||
-        qn.is.kind(MappedTypeNode, node)
+        Node.is.kind(SourceFile, node) ||
+        Node.is.kind(TypeAliasDeclaration, node) ||
+        Node.is.kind(ModuleDeclaration, node) ||
+        Node.is.kind(ClassDeclaration, node) ||
+        Node.is.kind(InterfaceDeclaration, node) ||
+        Node.is.functionLike(node) ||
+        Node.is.kind(IndexSignatureDeclaration, node) ||
+        Node.is.kind(MappedTypeNode, node)
       );
     }
 
@@ -643,7 +643,7 @@ namespace qnr {
     }
 
     function preserveJsDoc<T extends Node>(updated: T, original: Node): T {
-      if (qn.is.withJSDocNodes(updated) && qn.is.withJSDocNodes(original)) {
+      if (Node.is.withJSDocNodes(updated) && Node.is.withJSDocNodes(original)) {
         updated.jsDoc = original.jsDoc;
       }
       return setCommentRange(updated, getCommentRange(original));
@@ -742,7 +742,7 @@ namespace qnr {
       // Nothing visible
     }
 
-    function transformAndReplaceLatePaintedStatements(statements: NodeArray<Statement>): NodeArray<Statement> {
+    function transformAndReplaceLatePaintedStatements(statements: Nodes<Statement>): Nodes<Statement> {
       // This is a `while` loop because `handleSymbolAccessibilityError` can see additional import aliases marked as visible during
       // error handling which must now be included in the output and themselves checked for errors.
       // For example:
@@ -759,11 +759,11 @@ namespace qnr {
       // dependent imports and allowing a valid declaration file output. Today, this dependent alias marking only happens for internal import aliases.
       while (length(lateMarkedStatements)) {
         const i = lateMarkedStatements!.shift()!;
-        if (!qn.is.lateVisibilityPaintedStatement(i)) {
+        if (!Node.is.lateVisibilityPaintedStatement(i)) {
           return fail(`Late replaced statement was found which is not handled by the declaration transformer!: ${(ts as any).SyntaxKind ? (ts as any).SyntaxKind[(i as any).kind] : (i as any).kind}`);
         }
         const priorNeedsDeclare = needsDeclare;
-        needsDeclare = i.parent && qn.is.kind(SourceFile, i.parent) && !(qp_isExternalModule(i.parent) && isBundledEmit);
+        needsDeclare = i.parent && Node.is.kind(SourceFile, i.parent) && !(qp_isExternalModule(i.parent) && isBundledEmit);
         const result = transformTopLevelDeclaration(i);
         needsDeclare = priorNeedsDeclare;
         lateStatementReplacementMap.set('' + getOriginalNodeId(i), result);
@@ -771,10 +771,10 @@ namespace qnr {
 
       // And lastly, we need to get the final form of all those indetermine import declarations from before and add them to the output list
       // (and remove them from the set to examine for outter declarations)
-      return NodeArray.visit(statements, visitLateVisibilityMarkedStatements);
+      return Nodes.visit(statements, visitLateVisibilityMarkedStatements);
 
       function visitLateVisibilityMarkedStatements(statement: Statement) {
-        if (qn.is.lateVisibilityPaintedStatement(statement)) {
+        if (Node.is.lateVisibilityPaintedStatement(statement)) {
           const key = '' + getOriginalNodeId(statement);
           if (lateStatementReplacementMap.has(key)) {
             const result = lateStatementReplacementMap.get(key);
@@ -784,7 +784,7 @@ namespace qnr {
                 // Top-level declarations in .d.ts files are always considered exported even without a modifier unless there's an export assignment or specifier
                 needsScopeFixMarker = true;
               }
-              if (qn.is.kind(SourceFile, statement.parent) && (isArray(result) ? some(result, qp_isExternalModuleIndicator) : qp_isExternalModuleIndicator(result))) {
+              if (Node.is.kind(SourceFile, statement.parent) && (isArray(result) ? some(result, qp_isExternalModuleIndicator) : qp_isExternalModuleIndicator(result))) {
                 resultHasExternalModuleIndicator = true;
               }
             }
@@ -797,18 +797,18 @@ namespace qnr {
 
     function visitDeclarationSubtree(input: Node): VisitResult<Node> {
       if (shouldStripInternal(input)) return;
-      if (qn.is.declaration(input)) {
+      if (Node.is.declaration(input)) {
         if (isDeclarationAndNotVisible(input)) return;
-        if (hasDynamicName(input) && !resolver.isLateBound(qn.get.parseTreeOf(input) as Declaration)) {
+        if (hasDynamicName(input) && !resolver.isLateBound(Node.get.parseTreeOf(input) as Declaration)) {
           return;
         }
       }
 
       // Elide implementation signatures from overload sets
-      if (qn.is.functionLike(input) && resolver.isImplementationOfOverload(input)) return;
+      if (Node.is.functionLike(input) && resolver.isImplementationOfOverload(input)) return;
 
       // Elide semicolon class statements
-      if (qn.is.kind(SemicolonClassElement, input)) return;
+      if (Node.is.kind(SemicolonClassElement, input)) return;
 
       let previousEnclosingDeclaration: typeof enclosingDeclaration;
       if (isEnclosingDeclaration(input)) {
@@ -824,7 +824,7 @@ namespace qnr {
       let shouldEnterSuppressNewDiagnosticsContextContext = (input.kind === Syntax.TypeLiteral || input.kind === Syntax.MappedType) && input.parent.kind !== Syntax.TypeAliasDeclaration;
 
       // Emit methods which are private as properties with no type information
-      if (qn.is.kind(MethodDeclaration, input) || qn.is.kind(MethodSignature, input)) {
+      if (Node.is.kind(MethodDeclaration, input) || Node.is.kind(MethodSignature, input)) {
         if (hasEffectiveModifier(input, ModifierFlags.Private)) {
           if (input.symbol && input.symbol.declarations && input.symbol.declarations[0] !== input) return; // Elide all but the first overload
           return cleanup(PropertyDeclaration.create(/*decorators*/ undefined, ensureModifiers(input), input.name, /*questionToken*/ undefined, /*type*/ undefined, /*initializer*/ undefined));
@@ -835,7 +835,7 @@ namespace qnr {
         getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(input as DeclarationDiagnosticProducing);
       }
 
-      if (qn.is.kind(TypeQueryNode, input)) {
+      if (Node.is.kind(TypeQueryNode, input)) {
         checkEntityNameVisibility(input.exprName, enclosingDeclaration);
       }
 
@@ -847,7 +847,7 @@ namespace qnr {
       if (isProcessedComponent(input)) {
         switch (input.kind) {
           case Syntax.ExpressionWithTypeArguments: {
-            if (qn.is.entityName(input.expression) || isEntityNameExpression(input.expression)) {
+            if (Node.is.entityName(input.expression) || isEntityNameExpression(input.expression)) {
               checkEntityNameVisibility(input.expression, enclosingDeclaration);
             }
             const node = visitEachChild(input, visitDeclarationSubtree, context);
@@ -868,11 +868,11 @@ namespace qnr {
               updateParamsList(input, input.parameters, ModifierFlags.None),
               /*type*/ undefined
             );
-            ctor.modifiers = NodeArray.create(ensureModifiers(input));
+            ctor.modifiers = Nodes.create(ensureModifiers(input));
             return cleanup(ctor);
           }
           case Syntax.MethodDeclaration: {
-            if (qn.is.kind(PrivateIdentifier, input.name)) {
+            if (Node.is.kind(PrivateIdentifier, input.name)) {
               return cleanup(/*returnValue*/ undefined);
             }
             const sig = SignatureDeclaration.create(
@@ -882,12 +882,12 @@ namespace qnr {
               ensureType(input, input.type)
             ) as MethodSignature;
             sig.name = input.name;
-            sig.modifiers = NodeArray.create(ensureModifiers(input));
+            sig.modifiers = Nodes.create(ensureModifiers(input));
             sig.questionToken = input.questionToken;
             return cleanup(sig);
           }
           case Syntax.GetAccessor: {
-            if (qn.is.kind(PrivateIdentifier, input.name)) {
+            if (Node.is.kind(PrivateIdentifier, input.name)) {
               return cleanup(/*returnValue*/ undefined);
             }
             const accessorType = getTypeAnnotationFromAllAccessorDeclarations(input, resolver.getAllAccessorDeclarations(input));
@@ -904,7 +904,7 @@ namespace qnr {
             );
           }
           case Syntax.SetAccessor: {
-            if (qn.is.kind(PrivateIdentifier, input.name)) {
+            if (Node.is.kind(PrivateIdentifier, input.name)) {
               return cleanup(/*returnValue*/ undefined);
             }
             return cleanup(
@@ -919,19 +919,19 @@ namespace qnr {
             );
           }
           case Syntax.PropertyDeclaration:
-            if (qn.is.kind(PrivateIdentifier, input.name)) {
+            if (Node.is.kind(PrivateIdentifier, input.name)) {
               return cleanup(/*returnValue*/ undefined);
             }
             return cleanup(
               PropertyDeclaration.update(input, /*decorators*/ undefined, ensureModifiers(input), input.name, input.questionToken, ensureType(input, input.type), ensureNoInitializer(input))
             );
           case Syntax.PropertySignature:
-            if (qn.is.kind(PrivateIdentifier, input.name)) {
+            if (Node.is.kind(PrivateIdentifier, input.name)) {
               return cleanup(/*returnValue*/ undefined);
             }
             return cleanup(PropertySignature.update(input, ensureModifiers(input), input.name, input.questionToken, ensureType(input, input.type), ensureNoInitializer(input)));
           case Syntax.MethodSignature: {
-            if (qn.is.kind(PrivateIdentifier, input.name)) {
+            if (Node.is.kind(PrivateIdentifier, input.name)) {
               return cleanup(/*returnValue*/ undefined);
             }
             return cleanup(
@@ -953,7 +953,7 @@ namespace qnr {
             );
           }
           case Syntax.VariableDeclaration: {
-            if (qn.is.kind(BindingPattern, input.name)) {
+            if (Node.is.kind(BindingPattern, input.name)) {
               return recreateBindingPattern(input.name);
             }
             shouldEnterSuppressNewDiagnosticsContextContext = true;
@@ -980,27 +980,27 @@ namespace qnr {
           }
           case Syntax.FunctionType: {
             return cleanup(
-              FunctionTypeNode.update(input, NodeArray.visit(input.typeParameters, visitDeclarationSubtree), updateParamsList(input, input.parameters), visitNode(input.type, visitDeclarationSubtree))
+              FunctionTypeNode.update(input, Nodes.visit(input.typeParameters, visitDeclarationSubtree), updateParamsList(input, input.parameters), visitNode(input.type, visitDeclarationSubtree))
             );
           }
           case Syntax.ConstructorType: {
             return cleanup(
               ConstructorDeclaration.updateTypeNode(
                 input,
-                NodeArray.visit(input.typeParameters, visitDeclarationSubtree),
+                Nodes.visit(input.typeParameters, visitDeclarationSubtree),
                 updateParamsList(input, input.parameters),
                 visitNode(input.type, visitDeclarationSubtree)
               )
             );
           }
           case Syntax.ImportType: {
-            if (!qn.is.literalImportTypeNode(input)) return cleanup(input);
+            if (!Node.is.literalImportTypeNode(input)) return cleanup(input);
             return cleanup(
               ImportTypeNode.update(
                 input,
                 LiteralTypeNode.update(input.argument, rewriteModuleSpecifier(input, input.argument.literal)),
                 input.qualifier,
-                NodeArray.visit(input.typeArguments, visitDeclarationSubtree, isTypeNode),
+                Nodes.visit(input.typeArguments, visitDeclarationSubtree, isTypeNode),
                 input.isTypeOf
               )
             );
@@ -1010,7 +1010,7 @@ namespace qnr {
         }
       }
 
-      if (qn.is.kind(TupleTypeNode, input) && qy.get.lineAndCharOf(currentSourceFile, input.pos).line === qy.get.lineAndCharOf(currentSourceFile, input.end).line) {
+      if (Node.is.kind(TupleTypeNode, input) && qy.get.lineAndCharOf(currentSourceFile, input.pos).line === qy.get.lineAndCharOf(currentSourceFile, input.end).line) {
         setEmitFlags(input, EmitFlags.SingleLine);
       }
 
@@ -1049,7 +1049,7 @@ namespace qnr {
 
       switch (input.kind) {
         case Syntax.ExportDeclaration: {
-          if (qn.is.kind(SourceFile, input.parent)) {
+          if (Node.is.kind(SourceFile, input.parent)) {
             resultHasExternalModuleIndicator = true;
           }
           resultHasScopeMarker = true;
@@ -1059,7 +1059,7 @@ namespace qnr {
         }
         case Syntax.ExportAssignment: {
           // Always visible if the parent node isn't dropped for being not visible
-          if (qn.is.kind(SourceFile, input.parent)) {
+          if (Node.is.kind(SourceFile, input.parent)) {
             resultHasExternalModuleIndicator = true;
           }
           resultHasScopeMarker = true;
@@ -1085,14 +1085,14 @@ namespace qnr {
     }
 
     function stripExportModifiers(statement: Statement): Statement {
-      if (qn.is.kind(ImportEqualsDeclaration, statement) || hasEffectiveModifier(statement, ModifierFlags.Default)) {
+      if (Node.is.kind(ImportEqualsDeclaration, statement) || hasEffectiveModifier(statement, ModifierFlags.Default)) {
         // `export import` statements should remain as-is, as imports are _not_ implicitly exported in an ambient namespace
         // Likewise, `export default` classes and the like and just be `default`, so we preserve their `export` modifiers, too
         return statement;
       }
       const clone = getMutableClone(statement);
       const modifiers = createModifiersFromModifierFlags(getEffectiveModifierFlags(statement) & (ModifierFlags.All ^ ModifierFlags.Export));
-      clone.modifiers = modifiers.length ? NodeArray.create(modifiers) : undefined;
+      clone.modifiers = modifiers.length ? Nodes.create(modifiers) : undefined;
       return clone;
     }
 
@@ -1106,10 +1106,10 @@ namespace qnr {
           return transformImportDeclaration(input);
         }
       }
-      if (qn.is.declaration(input) && isDeclarationAndNotVisible(input)) return;
+      if (Node.is.declaration(input) && isDeclarationAndNotVisible(input)) return;
 
       // Elide implementation signatures from overload sets
-      if (qn.is.functionLike(input) && resolver.isImplementationOfOverload(input)) return;
+      if (Node.is.functionLike(input) && resolver.isImplementationOfOverload(input)) return;
 
       let previousEnclosingDeclaration: typeof enclosingDeclaration;
       if (isEnclosingDeclaration(input)) {
@@ -1132,7 +1132,7 @@ namespace qnr {
               /*decorators*/ undefined,
               ensureModifiers(input),
               input.name,
-              NodeArray.visit(input.typeParameters, visitDeclarationSubtree, isTypeParameterDeclaration),
+              Nodes.visit(input.typeParameters, visitDeclarationSubtree, isTypeParameterDeclaration),
               visitNode(input.type, visitDeclarationSubtree, isTypeNode)
             )
           );
@@ -1145,7 +1145,7 @@ namespace qnr {
               input.name,
               ensureTypeParams(input, input.typeParameters),
               transformHeritageClauses(input.heritageClauses),
-              NodeArray.visit(input.members, visitDeclarationSubtree)
+              Nodes.visit(input.members, visitDeclarationSubtree)
             )
           );
         }
@@ -1172,7 +1172,7 @@ namespace qnr {
             fakespace.locals = new SymbolTable(props);
             fakespace.symbol = props[0].parent!;
             const declarations = mapDefined(props, (p) => {
-              if (!qn.is.kind(PropertyAccessExpression, p.valueDeclaration)) {
+              if (!Node.is.kind(PropertyAccessExpression, p.valueDeclaration)) {
                 return; // TODO GH#33569: Handle element access expressions that created late bound names (rather than silently omitting them)
               }
               getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(p.valueDeclaration);
@@ -1204,7 +1204,7 @@ namespace qnr {
 
             const exportDefaultDeclaration = createExportAssignment(/*decorators*/ undefined, /*modifiers*/ undefined, /*isExportEquals*/ false, namespaceDecl.name);
 
-            if (qn.is.kind(SourceFile, input.parent)) {
+            if (Node.is.kind(SourceFile, input.parent)) {
               resultHasExternalModuleIndicator = true;
             }
             resultHasScopeMarker = true;
@@ -1222,7 +1222,7 @@ namespace qnr {
             const oldHasScopeFix = resultHasScopeMarker;
             resultHasScopeMarker = false;
             needsScopeFixMarker = false;
-            const statements = NodeArray.visit(inner.statements, visitDeclarationStatements);
+            const statements = Nodes.visit(inner.statements, visitDeclarationStatements);
             let lateStatements = transformAndReplaceLatePaintedStatements(statements);
             if (input.flags & NodeFlags.Ambient) {
               needsScopeFixMarker = false; // If it was `declare`'d everything is implicitly exported already, ignore late printed "privates"
@@ -1233,9 +1233,9 @@ namespace qnr {
             // 3. Some things are exported, some are not, and there's no marker - add an empty marker
             if (!isGlobalScopeAugmentation(input) && !hasScopeMarker(lateStatements) && !resultHasScopeMarker) {
               if (needsScopeFixMarker) {
-                lateStatements = NodeArray.create([...lateStatements, createEmptyExports()]);
+                lateStatements = Nodes.create([...lateStatements, createEmptyExports()]);
               } else {
-                lateStatements = NodeArray.visit(lateStatements, stripExportModifiers);
+                lateStatements = Nodes.visit(lateStatements, stripExportModifiers);
               }
             }
             const body = updateModuleBlock(inner, lateStatements);
@@ -1243,7 +1243,7 @@ namespace qnr {
             needsScopeFixMarker = oldNeedsScopeFix;
             resultHasScopeMarker = oldHasScopeFix;
             const mods = ensureModifiers(input);
-            return cleanup(updateModuleDeclaration(input, /*decorators*/ undefined, mods, qn.is.externalModuleAugmentation(input) ? rewriteModuleSpecifier(input, input.name) : input.name, body));
+            return cleanup(updateModuleDeclaration(input, /*decorators*/ undefined, mods, Node.is.externalModuleAugmentation(input) ? rewriteModuleSpecifier(input, input.name) : input.name, body));
           } else {
             needsDeclare = previousNeedsDeclare;
             const mods = ensureModifiers(input);
@@ -1257,7 +1257,7 @@ namespace qnr {
           }
         }
         case Syntax.ClassDeclaration: {
-          const modifiers = NodeArray.create(ensureModifiers(input));
+          const modifiers = Nodes.create(ensureModifiers(input));
           const typeParameters = ensureTypeParams(input, input.typeParameters);
           const ctor = getFirstConstructorWithBody(input);
           let parameterProperties: readonly PropertyDeclaration[] | undefined;
@@ -1280,8 +1280,8 @@ namespace qnr {
                 function walkBindingPattern(pattern: BindingPattern) {
                   let elems: PropertyDeclaration[] | undefined;
                   for (const elem of pattern.elements) {
-                    if (qn.is.kind(OmittedExpression, elem)) continue;
-                    if (qn.is.kind(BindingPattern, elem.name)) {
+                    if (Node.is.kind(OmittedExpression, elem)) continue;
+                    if (Node.is.kind(BindingPattern, elem.name)) {
                       elems = concatenate(elems, walkBindingPattern(elem.name));
                     }
                     elems = elems || [];
@@ -1303,7 +1303,7 @@ namespace qnr {
             getSymbolAccessibilityDiagnostic = oldDiag;
           }
 
-          const hasPrivateIdentifier = some(input.members, (member) => !!member.name && qn.is.kind(PrivateIdentifier, member.name));
+          const hasPrivateIdentifier = some(input.members, (member) => !!member.name && Node.is.kind(PrivateIdentifier, member.name));
           const privateIdentifier = hasPrivateIdentifier
             ? [
                 PropertyDeclaration.create(
@@ -1316,8 +1316,8 @@ namespace qnr {
                 ),
               ]
             : undefined;
-          const memberNodes = concatenate(concatenate(privateIdentifier, parameterProperties), NodeArray.visit(input.members, visitDeclarationSubtree));
-          const members = NodeArray.create(memberNodes);
+          const memberNodes = concatenate(concatenate(privateIdentifier, parameterProperties), Nodes.visit(input.members, visitDeclarationSubtree));
+          const members = Nodes.create(memberNodes);
 
           const extendsClause = getEffectiveBaseTypeNode(input);
           if (extendsClause && !isEntityNameExpression(extendsClause.expression) && extendsClause.expression.kind !== Syntax.NullKeyword) {
@@ -1336,21 +1336,21 @@ namespace qnr {
               /*initializer*/ undefined
             );
             const statement = createVariableStatement(needsDeclare ? [createModifier(Syntax.DeclareKeyword)] : [], createVariableDeclarationList([varDecl], NodeFlags.Const));
-            const heritageClauses = NodeArray.create(
+            const heritageClauses = Nodes.create(
               map(input.heritageClauses, (clause) => {
                 if (clause.token === Syntax.ExtendsKeyword) {
                   const oldDiag = getSymbolAccessibilityDiagnostic;
                   getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(clause.types[0]);
                   const newClause = updateHeritageClause(
                     clause,
-                    map(clause.types, (t) => updateExpressionWithTypeArguments(t, NodeArray.visit(t.typeArguments, visitDeclarationSubtree), newId))
+                    map(clause.types, (t) => updateExpressionWithTypeArguments(t, Nodes.visit(t.typeArguments, visitDeclarationSubtree), newId))
                   );
                   getSymbolAccessibilityDiagnostic = oldDiag;
                   return newClause;
                 }
                 return updateHeritageClause(
                   clause,
-                  NodeArray.visit(NodeArray.create(filter(clause.types, (t) => isEntityNameExpression(t.expression) || t.expression.kind === Syntax.NullKeyword)), visitDeclarationSubtree)
+                  Nodes.visit(Nodes.create(filter(clause.types, (t) => isEntityNameExpression(t.expression) || t.expression.kind === Syntax.NullKeyword)), visitDeclarationSubtree)
                 );
               })
             );
@@ -1368,9 +1368,9 @@ namespace qnr {
             updateEnumDeclaration(
               input,
               /*decorators*/ undefined,
-              NodeArray.create(ensureModifiers(input)),
+              Nodes.create(ensureModifiers(input)),
               input.name,
-              NodeArray.create(
+              Nodes.create(
                 mapDefined(input.members, (m) => {
                   if (shouldStripInternal(m)) return;
                   // Rewrite enum values to their constants, if available
@@ -1404,9 +1404,9 @@ namespace qnr {
 
     function transformVariableStatement(input: VariableStatement) {
       if (!forEach(input.declarationList.declarations, getBindingNameVisible)) return;
-      const nodes = NodeArray.visit(input.declarationList.declarations, visitDeclarationSubtree);
+      const nodes = Nodes.visit(input.declarationList.declarations, visitDeclarationSubtree);
       if (!length(nodes)) return;
-      return updateVariableStatement(input, NodeArray.create(ensureModifiers(input)), updateVariableDeclarationList(input.declarationList, nodes));
+      return updateVariableStatement(input, Nodes.create(ensureModifiers(input)), updateVariableDeclarationList(input.declarationList, nodes));
     }
 
     function recreateBindingPattern(d: BindingPattern): VariableDeclaration[] {
@@ -1419,7 +1419,7 @@ namespace qnr {
       }
       if (e.name) {
         if (!getBindingNameVisible(e)) return;
-        if (qn.is.kind(BindingPattern, e.name)) {
+        if (Node.is.kind(BindingPattern, e.name)) {
           return recreateBindingPattern(e.name);
         } else {
           return createVariableDeclaration(e.name, ensureType(e, /*type*/ undefined), /*initializer*/ undefined);
@@ -1434,7 +1434,7 @@ namespace qnr {
         getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNodeName(node);
       }
       errorNameNode = (node as NamedDeclaration).name;
-      assert(resolver.isLateBound(qn.get.parseTreeOf(node) as Declaration)); // Should only be called with dynamic names
+      assert(resolver.isLateBound(Node.get.parseTreeOf(node) as Declaration)); // Should only be called with dynamic names
       const decl = (node as NamedDeclaration) as LateBoundDeclaration;
       const entityName = decl.name.expression;
       checkEntityNameVisibility(entityName, enclosingDeclaration);
@@ -1448,8 +1448,8 @@ namespace qnr {
       return !!stripInternal && !!node && isInternalDeclaration(node, currentSourceFile);
     }
 
-    function qn.is.scopeMarker(node: Node) {
-      return qn.is.kind(ExportAssignment, node) || qn.is.kind(ExportDeclaration, node);
+    function Node.is.scopeMarker(node: Node) {
+      return Node.is.kind(ExportAssignment, node) || Node.is.kind(ExportDeclaration, node);
     }
 
     function hasScopeMarker(statements: readonly Statement[]) {
@@ -1491,14 +1491,14 @@ namespace qnr {
       return accessorType;
     }
 
-    function transformHeritageClauses(nodes: NodeArray<HeritageClause> | undefined) {
-      return NodeArray.create(
+    function transformHeritageClauses(nodes: Nodes<HeritageClause> | undefined) {
+      return Nodes.create(
         filter(
           map(nodes, (clause) =>
             updateHeritageClause(
               clause,
-              NodeArray.visit(
-                NodeArray.create(
+              Nodes.visit(
+                Nodes.create(
                   filter(clause.types, (t) => {
                     return isEntityNameExpression(t.expression) || (clause.token === Syntax.ExtendsKeyword && t.expression.kind === Syntax.NullKeyword);
                   })

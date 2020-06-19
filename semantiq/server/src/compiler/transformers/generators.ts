@@ -313,7 +313,7 @@ namespace qnr {
         return visitJavaScriptInStatementContainingYield(node);
       } else if (inGeneratorFunctionBody) {
         return visitJavaScriptInGeneratorFunctionBody(node);
-      } else if (qn.is.functionLikeDeclaration(node) && node.asteriskToken) {
+      } else if (Node.is.functionLikeDeclaration(node) && node.asteriskToken) {
         return visitGenerator(node);
       } else if (transformFlags & TransformFlags.ContainsGenerator) {
         return visitEachChild(node, visitor, context);
@@ -612,7 +612,7 @@ namespace qnr {
         return;
       } else {
         // Do not hoist custom prologues.
-        if (qn.get.emitFlags(node) & EmitFlags.CustomPrologue) {
+        if (Node.get.emitFlags(node) & EmitFlags.CustomPrologue) {
           return node;
         }
 
@@ -809,7 +809,7 @@ namespace qnr {
       return inlineExpressions(pendingExpressions);
 
       function visit(node: Expression) {
-        if (qn.is.kind(node, BinaryExpression) && node.operatorToken.kind === Syntax.CommaToken) {
+        if (Node.is.kind(node, BinaryExpression) && node.operatorToken.kind === Syntax.CommaToken) {
           visit(node.left);
           visit(node.right);
         } else {
@@ -874,7 +874,7 @@ namespace qnr {
       const resumeLabel = defineLabel();
       const expression = visitNode(node.expression, visitor, isExpression);
       if (node.asteriskToken) {
-        const iterator = (qn.get.emitFlags(node.expression!) & EmitFlags.Iterator) === 0 ? createValuesHelper(context, expression, /*location*/ node) : expression;
+        const iterator = (Node.get.emitFlags(node.expression!) & EmitFlags.Iterator) === 0 ? createValuesHelper(context, expression, /*location*/ node) : expression;
         emitYieldStar(iterator, /*location*/ node);
       } else {
         emitYield(expression, /*location*/ node);
@@ -900,7 +900,7 @@ namespace qnr {
      * @param elements The elements to visit.
      * @param multiLine Whether array literals created should be emitted on multiple lines.
      */
-    function visitElements(elements: NodeArray<Expression>, leadingElement?: Expression, location?: TextRange, multiLine?: boolean) {
+    function visitElements(elements: Nodes<Expression>, leadingElement?: Expression, location?: TextRange, multiLine?: boolean) {
       // [source]
       //      ar = [1, yield, 2];
       //
@@ -916,7 +916,7 @@ namespace qnr {
       let temp: Identifier | undefined;
       if (numInitialElements > 0) {
         temp = declareLocal();
-        const initialElements = NodeArray.visit(elements, visitor, isExpression, 0, numInitialElements);
+        const initialElements = Nodes.visit(elements, visitor, isExpression, 0, numInitialElements);
         emitAssignment(temp, createArrayLiteral(leadingElement ? [leadingElement, ...initialElements] : initialElements));
         leadingElement = undefined;
       }
@@ -970,7 +970,7 @@ namespace qnr {
       const numInitialProperties = countInitialNodesWithoutYield(properties);
 
       const temp = declareLocal();
-      emitAssignment(temp, createObjectLiteral(NodeArray.visit(properties, visitor, isObjectLiteralElementLike, 0, numInitialProperties), multiLine));
+      emitAssignment(temp, createObjectLiteral(Nodes.visit(properties, visitor, isObjectLiteralElementLike, 0, numInitialProperties), multiLine));
 
       const expressions = reduceLeft(properties, reduceProperty, <Expression[]>[], numInitialProperties);
       expressions.push(multiLine ? startOnNewLine(getMutableClone(temp)) : temp);
@@ -1021,7 +1021,7 @@ namespace qnr {
     }
 
     function visitCallExpression(node: CallExpression) {
-      if (!qn.is.importCall(node) && forEach(node.arguments, containsYield)) {
+      if (!Node.is.importCall(node) && forEach(node.arguments, containsYield)) {
         // [source]
         //      a.b(1, yield, 2);
         //
@@ -1076,7 +1076,7 @@ namespace qnr {
     }
 
     function transformAndEmitEmbeddedStatement(node: Statement) {
-      if (qn.is.kind(Block, node)) {
+      if (Node.is.kind(Block, node)) {
         transformAndEmitStatements(node.statements);
       } else {
         transformAndEmitStatement(node);
@@ -1317,7 +1317,7 @@ namespace qnr {
         const endLabel = beginLoopBlock(incrementLabel);
         if (node.initializer) {
           const initializer = node.initializer;
-          if (qn.is.kind(VariableDeclarationList, initializer)) {
+          if (Node.is.kind(VariableDeclarationList, initializer)) {
             transformAndEmitVariableDeclarationList(initializer);
           } else {
             emitStatement(setTextRange(createExpressionStatement(visitNode(initializer, visitor, isExpression)), initializer));
@@ -1348,7 +1348,7 @@ namespace qnr {
       }
 
       const initializer = node.initializer;
-      if (initializer && qn.is.kind(VariableDeclarationList, initializer)) {
+      if (initializer && Node.is.kind(VariableDeclarationList, initializer)) {
         for (const variable of initializer.declarations) {
           hoistVariableDeclaration(<Identifier>variable.name);
         }
@@ -1417,7 +1417,7 @@ namespace qnr {
         emitBreakWhenFalse(endLabel, createLessThan(keysIndex, createPropertyAccess(keysArray, 'length')));
 
         let variable: Expression;
-        if (qn.is.kind(VariableDeclarationList, initializer)) {
+        if (Node.is.kind(VariableDeclarationList, initializer)) {
           for (const variable of initializer.declarations) {
             hoistVariableDeclaration(<Identifier>variable.name);
           }
@@ -1425,7 +1425,7 @@ namespace qnr {
           variable = <Identifier>getSynthesizedClone(initializer.declarations[0].name);
         } else {
           variable = visitNode(initializer, visitor, isExpression);
-          assert(qn.is.leftHandSideExpression(variable));
+          assert(Node.is.leftHandSideExpression(variable));
         }
 
         emitAssignment(variable, createElementAccess(keysArray, keysIndex));
@@ -1460,7 +1460,7 @@ namespace qnr {
       }
 
       const initializer = node.initializer;
-      if (qn.is.kind(VariableDeclarationList, initializer)) {
+      if (Node.is.kind(VariableDeclarationList, initializer)) {
         for (const variable of initializer.declarations) {
           hoistVariableDeclaration(<Identifier>variable.name);
         }
@@ -1751,7 +1751,7 @@ namespace qnr {
       return !!node && (node.transformFlags & TransformFlags.ContainsYield) !== 0;
     }
 
-    function countInitialNodesWithoutYield(nodes: NodeArray<Node>) {
+    function countInitialNodesWithoutYield(nodes: Nodes<Node>) {
       const numNodes = nodes.length;
       for (let i = 0; i < numNodes; i++) {
         if (containsYield(nodes[i])) {
@@ -1771,16 +1771,16 @@ namespace qnr {
     }
 
     function substituteExpression(node: Expression): Expression {
-      if (qn.is.kind(Identifier, node)) {
+      if (Node.is.kind(Identifier, node)) {
         return substituteExpressionIdentifier(node);
       }
       return node;
     }
 
     function substituteExpressionIdentifier(node: Identifier) {
-      if (!qn.is.generatedIdentifier(node) && renamedCatchVariables && renamedCatchVariables.has(idText(node))) {
-        const original = qn.get.originalOf(node);
-        if (qn.is.kind(Identifier, original) && original.parent) {
+      if (!Node.is.generatedIdentifier(node) && renamedCatchVariables && renamedCatchVariables.has(idText(node))) {
+        const original = Node.get.originalOf(node);
+        if (Node.is.kind(Identifier, original) && original.parent) {
           const declaration = resolver.getReferencedValueDeclaration(original);
           if (declaration) {
             const name = renamedCatchVariableDeclarations[getOriginalNodeId(declaration)];
@@ -1798,7 +1798,7 @@ namespace qnr {
     }
 
     function cacheExpression(node: Expression): Identifier {
-      if (qn.is.generatedIdentifier(node) || qn.get.emitFlags(node) & EmitFlags.HelperName) {
+      if (Node.is.generatedIdentifier(node) || Node.get.emitFlags(node) & EmitFlags.HelperName) {
         return <Identifier>node;
       }
 
@@ -1939,7 +1939,7 @@ namespace qnr {
 
       // generated identifiers should already be unique within a file
       let name: Identifier;
-      if (qn.is.generatedIdentifier(variable.name)) {
+      if (Node.is.generatedIdentifier(variable.name)) {
         name = variable.name;
         hoistVariableDeclaration(variable.name);
       } else {

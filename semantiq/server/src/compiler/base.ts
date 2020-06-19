@@ -905,9 +905,9 @@ namespace qnr {
       }
       return r;
     }
-    export function arrayToMultiMap<T>(values: readonly T[], makeKey: (value: T) => string): MultiMap<T>;
-    export function arrayToMultiMap<T, U>(values: readonly T[], makeKey: (value: T) => string, makeValue: (value: T) => U): MultiMap<U>;
-    export function arrayToMultiMap<T, U>(values: readonly T[], makeKey: (value: T) => string, makeValue: (value: T) => T | U = identity): MultiMap<T | U> {
+    export function arrayToMultiMap<T>(values: readonly T[], makeKey: (value: T) => string): QMultiMap<T>;
+    export function arrayToMultiMap<T, U>(values: readonly T[], makeKey: (value: T) => string, makeValue: (value: T) => U): QMultiMap<U>;
+    export function arrayToMultiMap<T, U>(values: readonly T[], makeKey: (value: T) => string, makeValue: (value: T) => T | U = identity): QMultiMap<T | U> {
       const r = createMultiMap<T | U>();
       for (const value of values) {
         r.add(makeKey(value), makeValue(value));
@@ -951,23 +951,23 @@ namespace qnr {
       map.forEach((t: T, key: string & __String) => r.set(...f(t, key)));
       return r;
     }
-    export interface MultiMap<T> extends QMap<T[]> {
+    export interface QMultiMap<T> extends QMap<T[]> {
       add(key: string, value: T): T[];
       remove(key: string, value: T): void;
     }
-    export function createMultiMap<T>(): MultiMap<T> {
-      const map = QMap.create<T[]>() as MultiMap<T>;
+    export function createMultiMap<T>(): QMultiMap<T> {
+      const map = QMap.create<T[]>() as QMultiMap<T>;
       map.add = multiMapAdd;
       map.remove = multiMapRemove;
       return map;
     }
-    function multiMapAdd<T>(this: MultiMap<T>, key: string, value: T) {
+    function multiMapAdd<T>(this: QMultiMap<T>, key: string, value: T) {
       let values = this.get(key);
       if (values) values.push(value);
       else this.set(key, (values = [value]));
       return values;
     }
-    function multiMapRemove<T>(this: MultiMap<T>, key: string, value: T) {
+    function multiMapRemove<T>(this: QMultiMap<T>, key: string, value: T) {
       const values = this.get(key);
       if (values) {
         unorderedRemoveItem(values, value);

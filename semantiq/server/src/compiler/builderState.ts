@@ -95,7 +95,7 @@ namespace qnr {
      */
     function getReferencedFileFromImportedModuleSymbol(symbol: Symbol) {
       if (symbol.declarations && symbol.declarations[0]) {
-        const declarationSourceFile = qn.get.sourceFileOf(symbol.declarations[0]);
+        const declarationSourceFile = Node.get.sourceFileOf(symbol.declarations[0]);
         return declarationSourceFile && declarationSourceFile.resolvedPath;
       }
     }
@@ -160,7 +160,7 @@ namespace qnr {
       if (sourceFile.moduleAugmentations.length) {
         const checker = program.getTypeChecker();
         for (const moduleName of sourceFile.moduleAugmentations) {
-          if (!qn.is.kind(StringLiteral, moduleName)) {
+          if (!Node.is.kind(StringLiteral, moduleName)) {
             continue;
           }
           const symbol = checker.getSymbolAtLocation(moduleName);
@@ -185,7 +185,7 @@ namespace qnr {
       function addReferenceFromAmbientModule(symbol: Symbol) {
         // Add any file other than our own as reference
         for (const declaration of symbol.declarations) {
-          const declarationSourceFile = qn.get.sourceFileOf(declaration);
+          const declarationSourceFile = Node.get.sourceFileOf(declaration);
           if (declarationSourceFile && declarationSourceFile !== sourceFile) {
             addReferencedFile(declarationSourceFile.resolvedPath);
           }
@@ -496,7 +496,7 @@ namespace qnr {
      */
     function containsOnlyAmbientModules(sourceFile: SourceFile) {
       for (const statement of sourceFile.statements) {
-        if (!qn.is.moduleWithStringLiteralName(statement)) {
+        if (!Node.is.moduleWithStringLiteralName(statement)) {
           return false;
         }
       }

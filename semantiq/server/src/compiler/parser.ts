@@ -58,7 +58,7 @@ namespace qnr {
     True,
     Unknown,
   }
-  interface MissingList<T extends Node> extends NodeArray<T> {
+  interface MissingList<T extends Node> extends Nodes<T> {
     isMissingList: true;
   }
 
@@ -342,7 +342,7 @@ namespace qnr {
           case Syntax.ArrayType:
             return this.objectOrObjectArrayTypeReference((n as ArrayTypeNode).elementType);
           default:
-            return qn.is.kind(TypeReferenceNode, n) && qn.is.kind(Identifier, n.typeName) && n.typeName.escapedText === 'Object' && !n.typeArguments;
+            return Node.is.kind(TypeReferenceNode, n) && Node.is.kind(Identifier, n.typeName) && n.typeName.escapedText === 'Object' && !n.typeArguments;
         }
       }
     })();
@@ -594,11 +594,11 @@ namespace qnr {
       node<T extends Syntax>(k: T, pos?: number): NodeType<T> {
         this.nodeCount++;
         const p = pos! >= 0 ? pos! : scanner.getStartPos();
-        return qn.create<T>(k, p, p);
+        return Node.create<T>(k, p, p);
       }
-      nodeArray<T extends Node>(es: T[], pos: number, end?: number): NodeArray<T> {
+      nodeArray<T extends Node>(es: T[], pos: number, end?: number): Nodes<T> {
         const l = es.length;
-        const r = (l >= 1 && l <= 4 ? es.slice() : es) as MutableNodeArray<T>;
+        const r = (l >= 1 && l <= 4 ? es.slice() : es) as MutableNodes<T>;
         r.pos = pos;
         r.end = end === undefined ? scanner.getStartPos() : end;
         return r;
@@ -681,7 +681,7 @@ namespace qnr {
       init() {
         this.value = 0;
       }
-      parseList<T extends Node>(c: Context, cb: () => T): NodeArray<T> {
+      parseList<T extends Node>(c: Context, cb: () => T): Nodes<T> {
         const o = this.value;
         this.value |= 1 << c;
         const es = [] as T[];
@@ -697,7 +697,7 @@ namespace qnr {
         this.value = o;
         return create.nodeArray(es, p);
       }
-      parseBracketedList<T extends Node>(c: Context, cb: () => T, open: Syntax, close: Syntax): NodeArray<T> {
+      parseBracketedList<T extends Node>(c: Context, cb: () => T, open: Syntax, close: Syntax): Nodes<T> {
         if (parse.expected(open)) {
           const r = this.parseDelimitedList(c, cb);
           parse.expected(close);
@@ -705,7 +705,7 @@ namespace qnr {
         }
         return create.missingList<T>();
       }
-      parseDelimitedList<T extends Node>(c: Context, cb: () => T, semicolon?: boolean): NodeArray<T> {
+      parseDelimitedList<T extends Node>(c: Context, cb: () => T, semicolon?: boolean): Nodes<T> {
         const o = this.value;
         this.value |= 1 << c;
         const es = [] as T[];
@@ -735,7 +735,7 @@ namespace qnr {
         if (s >= 0) r.trailingComma = true;
         return r;
       }
-      parseJsxChildren(tag: JsxOpeningElement | JsxOpeningFragment): NodeArray<JsxChild> {
+      parseJsxChildren(tag: JsxOpeningElement | JsxOpeningFragment): Nodes<JsxChild> {
         const list = [];
         const listPos = getNodePos();
         const o = this.value;
@@ -774,7 +774,7 @@ namespace qnr {
         };
         if (!syntaxCursor || !isReusable() || parseErrorBeforeNextFinishedNode) return;
         const n = syntaxCursor.currentNode(scanner.getStartPos());
-        if (qn.is.missing(n) || n.intersectsChange || containsParseError(n)) return;
+        if (Node.is.missing(n) || n.intersectsChange || containsParseError(n)) return;
         const fs = n.flags & NodeFlags.ContextFlags;
         if (fs !== flags.value) return;
         const canReuse = () => {
@@ -1144,10 +1144,10 @@ namespace qnr {
         source.endOfFileToken = addJSDocComment(parse.tokenNode());
         const getImportMetaIfNecessary = () => {
           const isImportMeta = (n: Node): boolean => {
-            return qn.is.kind(MetaProperty, n) && n.keywordToken === Syntax.ImportKeyword && n.name.escapedText === 'meta';
+            return Node.is.kind(MetaProperty, n) && n.keywordToken === Syntax.ImportKeyword && n.name.escapedText === 'meta';
           };
           const walkTreeForExternalModuleIndicators = (n: Node): Node | undefined => {
-            return isImportMeta(n) ? n : qn.forEach.child(n, walkTreeForExternalModuleIndicators);
+            return isImportMeta(n) ? n : Node.forEach.child(n, walkTreeForExternalModuleIndicators);
           };
           return source.flags & NodeFlags.PossiblyContainsImportMeta ? walkTreeForExternalModuleIndicators(source) : undefined;
         };
@@ -1420,7 +1420,7 @@ namespace qnr {
         if (this.optional(Syntax.EqualsToken)) n.default = this.type();
         return finishNode(n);
       }
-      typeParameters(): NodeArray<TypeParameterDeclaration> | undefined {
+      typeParameters(): Nodes<TypeParameterDeclaration> | undefined {
         if (tok() === Syntax.LessThanToken) {
           return ctx.parseBracketedList(Context.TypeParameters, this.typeParameter, Syntax.LessThanToken, Syntax.GreaterThanToken);
         }
@@ -1441,7 +1441,7 @@ namespace qnr {
         n.modifiers = this.modifiers();
         n.dot3Token = this.optionalToken(Syntax.Dot3Token);
         n.name = this.identifierOrPattern(Diagnostics.Private_identifiers_cannot_be_used_as_parameters);
-        if (qn.get.fullWidth(n.name) === 0 && !n.modifiers && qy.is.modifier(tok())) next.tok();
+        if (Node.get.fullWidth(n.name) === 0 && !n.modifiers && qy.is.modifier(tok())) next.tok();
         n.questionToken = this.optionalToken(Syntax.QuestionToken);
         n.type = parameterType();
         n.initializer = this.initializer();
@@ -1498,8 +1498,8 @@ namespace qnr {
         n.members = this.objectTypeMembers();
         return finishNode(n);
       }
-      objectTypeMembers(): NodeArray<TypeElement> {
-        let es: NodeArray<TypeElement>;
+      objectTypeMembers(): Nodes<TypeElement> {
+        let es: Nodes<TypeElement>;
         if (this.expected(Syntax.OpenBraceToken)) {
           const typeMember = (): TypeElement => {
             if (tok() === Syntax.OpenParenToken || tok() === Syntax.LessThanToken) return this.signatureMember(Syntax.CallSignature);
@@ -1973,7 +1973,7 @@ namespace qnr {
         if (arrow) return arrow;
         const e = this.binaryExpressionOrHigher(0);
         if (e.kind === Syntax.Identifier && tok() === Syntax.EqualsGreaterThanToken) return this.simpleArrowFunctionExpression(e as Identifier);
-        if (qn.is.leftHandSideExpression(e) && qy.is.assignmentOperator(reScanGreaterToken())) return create.binaryExpression(e, this.tokenNode(), this.assignmentExpressionOrHigher());
+        if (Node.is.leftHandSideExpression(e) && qy.is.assignmentOperator(reScanGreaterToken())) return create.binaryExpression(e, this.tokenNode(), this.assignmentExpressionOrHigher());
         return this.conditionalExpressionRest(e);
       }
       yieldExpression(): YieldExpression {
@@ -1986,7 +1986,7 @@ namespace qnr {
         }
         return finishNode(n);
       }
-      simpleArrowFunctionExpression(identifier: Identifier, asyncModifier?: NodeArray<Modifier> | undefined): ArrowFunction {
+      simpleArrowFunctionExpression(identifier: Identifier, asyncModifier?: Nodes<Modifier> | undefined): ArrowFunction {
         qa.assert(tok() === Syntax.EqualsGreaterThanToken, 'this.simpleArrowFunctionExpression should only have been called if we had a =>');
         let n: ArrowFunction;
         if (asyncModifier) {
@@ -2013,7 +2013,7 @@ namespace qnr {
         n.modifiers = this.modifiersForArrowFunction();
         const isAsync = hasModifierOfKind(n, Syntax.AsyncKeyword) ? SignatureFlags.Await : SignatureFlags.None;
         if (!fillSignature(Syntax.ColonToken, isAsync, n) && !allowAmbiguity) return;
-        const hasJSDocFunctionType = n.type && qn.is.kind(JSDocFunctionType, n.type);
+        const hasJSDocFunctionType = n.type && Node.is.kind(JSDocFunctionType, n.type);
         if (!allowAmbiguity && tok() !== Syntax.EqualsGreaterThanToken && (hasJSDocFunctionType || tok() !== Syntax.OpenBraceToken)) return;
         return n;
       }
@@ -2035,7 +2035,7 @@ namespace qnr {
         n.questionToken = t;
         n.whenTrue = flags.withoutContext(withDisallowInDecoratorContext, this.assignmentExpressionOrHigher);
         n.colonToken = this.expectedToken(Syntax.ColonToken);
-        n.whenFalse = qn.is.present(n.colonToken) ? this.assignmentExpressionOrHigher() : create.missingNode(Syntax.Identifier, false, Diagnostics._0_expected, qy.toString(Syntax.ColonToken));
+        n.whenFalse = Node.is.present(n.colonToken) ? this.assignmentExpressionOrHigher() : create.missingNode(Syntax.Identifier, false, Diagnostics._0_expected, qy.toString(Syntax.ColonToken));
         return finishNode(n);
       }
       binaryExpressionOrHigher(precedence: number): Expression {
@@ -2169,7 +2169,7 @@ namespace qnr {
           return parseJsx.elementOrSelfClosingElementOrFragment(true);
         }
         const expression = this.leftHandSideExpressionOrHigher();
-        qa.assert(qn.is.leftHandSideExpression(expression));
+        qa.assert(Node.is.leftHandSideExpression(expression));
         if ((tok() === Syntax.Plus2Token || tok() === Syntax.Minus2Token) && !scanner.hasPrecedingLineBreak()) {
           const n = create.node(Syntax.PostfixUnaryExpression, expression.pos);
           n.operand = expression;
@@ -2235,7 +2235,7 @@ namespace qnr {
         n.name = this.rightSideOfDot(true, true);
         if (questionDotToken || parse.reparseOptionalChain(expression)) {
           n.flags |= NodeFlags.OptionalChain;
-          if (qn.is.kind(PrivateIdentifier, n.name)) this.errorAtRange(n.name, Diagnostics.An_optional_chain_cannot_contain_private_identifiers);
+          if (Node.is.kind(PrivateIdentifier, n.name)) this.errorAtRange(n.name, Diagnostics.An_optional_chain_cannot_contain_private_identifiers);
         }
         return finishNode(n);
       }
@@ -2287,7 +2287,7 @@ namespace qnr {
           return <MemberExpression>expression;
         }
       }
-      taggedTemplateRest(tag: LeftHandSideExpression, questionDotToken: QuestionDotToken | undefined, typeArguments: NodeArray<TypeNode> | undefined) {
+      taggedTemplateRest(tag: LeftHandSideExpression, questionDotToken: QuestionDotToken | undefined, typeArguments: Nodes<TypeNode> | undefined) {
         const n = create.node(Syntax.TaggedTemplateExpression, tag.pos);
         n.tag = tag;
         n.questionDotToken = questionDotToken;
@@ -2991,7 +2991,7 @@ namespace qnr {
         n.body = this.functionBlockOrSemicolon(SignatureFlags.None);
         return finishNode(n);
       }
-      decorators(): NodeArray<Decorator> | undefined {
+      decorators(): Nodes<Decorator> | undefined {
         let list: Decorator[] | undefined;
         const listPos = getNodePos();
         while (true) {
@@ -3004,7 +3004,7 @@ namespace qnr {
         }
         return list && create.nodeArray(list, listPos);
       }
-      modifiers(permitInvalidConstAsModifier?: boolean): NodeArray<Modifier> | undefined {
+      modifiers(permitInvalidConstAsModifier?: boolean): Nodes<Modifier> | undefined {
         let list: Modifier[] | undefined;
         const listPos = getNodePos();
         while (true) {
@@ -3018,8 +3018,8 @@ namespace qnr {
         }
         return list && create.nodeArray(list, listPos);
       }
-      modifiersForArrowFunction(): NodeArray<Modifier> | undefined {
-        let modifiers: NodeArray<Modifier> | undefined;
+      modifiersForArrowFunction(): Nodes<Modifier> | undefined {
+        let modifiers: Nodes<Modifier> | undefined;
         if (tok() === Syntax.AsyncKeyword) {
           const modifierStart = scanner.getStartPos();
           const modifierKind = tok();
@@ -3094,7 +3094,7 @@ namespace qnr {
         const isImplementsClause = () => tok() === Syntax.ImplementsKeyword && lookAhead(next.isIdentifierOrKeyword);
         return is.identifier() && !isImplementsClause() ? this.identifier() : undefined;
       }
-      heritageClauses(): NodeArray<HeritageClause> | undefined {
+      heritageClauses(): Nodes<HeritageClause> | undefined {
         if (is.heritageClause()) return ctx.parseList(Context.HeritageClauses, this.heritageClause);
         return;
       }
@@ -3113,7 +3113,7 @@ namespace qnr {
         n.typeArguments = parse.typeArguments();
         return finishNode(n);
       }
-      classMembers(): NodeArray<ClassElement> {
+      classMembers(): Nodes<ClassElement> {
         return ctx.parseList(Context.ClassMembers, this.classElement);
       }
       interfaceDeclaration(n: InterfaceDeclaration): InterfaceDeclaration {
@@ -3278,7 +3278,7 @@ namespace qnr {
       namedImportsOrExports(kind: Syntax.NamedExports): NamedExports;
       namedImportsOrExports(kind: Syntax): NamedImportsOrExports {
         const n = create.node(kind);
-        n.elements = <NodeArray<ImportSpecifier> | NodeArray<ExportSpecifier>>(
+        n.elements = <Nodes<ImportSpecifier> | Nodes<ExportSpecifier>>(
           ctx.parseBracketedList(Context.ImportOrExportSpecifiers, kind === Syntax.NamedImports ? this.importSpecifier : this.exportSpecifier, Syntax.OpenBraceToken, Syntax.CloseBraceToken)
         );
         return finishNode(n);
@@ -3357,13 +3357,13 @@ namespace qnr {
       }
       reparseOptionalChain(n: Expression) {
         if (n.flags & NodeFlags.OptionalChain) return true;
-        if (qn.is.kind(NonNullExpression, n)) {
+        if (Node.is.kind(NonNullExpression, n)) {
           let expr = n.expression;
-          while (qn.is.kind(NonNullExpression, expr) && !(expr.flags & NodeFlags.OptionalChain)) {
+          while (Node.is.kind(NonNullExpression, expr) && !(expr.flags & NodeFlags.OptionalChain)) {
             expr = expr.expression;
           }
           if (expr.flags & NodeFlags.OptionalChain) {
-            while (qn.is.kind(NonNullExpression, n)) {
+            while (Node.is.kind(NonNullExpression, n)) {
               n.flags |= NodeFlags.OptionalChain;
               n = n.expression;
             }
@@ -3372,7 +3372,7 @@ namespace qnr {
         }
         return false;
       }
-      typeArguments(): NodeArray<TypeNode> | undefined {
+      typeArguments(): Nodes<TypeNode> | undefined {
         return tok() === Syntax.LessThanToken ? ctx.parseBracketedList(Context.TypeArguments, parse.type, Syntax.LessThanToken, Syntax.GreaterThanToken) : undefined;
       }
     })();
@@ -3442,7 +3442,7 @@ namespace qnr {
       child(openingTag: JsxOpeningElement | JsxOpeningFragment, token: JsxTokenSyntax): JsxChild | undefined {
         switch (token) {
           case Syntax.EndOfFileToken:
-            if (qn.is.kind(JsxOpeningFragment, openingTag)) {
+            if (Node.is.kind(JsxOpeningFragment, openingTag)) {
               parse.errorAtRange(openingTag, Diagnostics.JSX_fragment_has_no_corresponding_closing_tag);
             } else {
               const tag = openingTag.tagName;
@@ -4135,7 +4135,7 @@ namespace qnr {
                 if (e) addRelatedInfo(e, createDiagnosticForNode(source, Diagnostics.The_tag_was_first_specified_here));
                 break;
               } else childTypeTag = child;
-            } else n2.jsDocPropertyTags = qa.append(n2.jsDocPropertyTags as MutableNodeArray<JSDocPropertyTag>, child);
+            } else n2.jsDocPropertyTags = qa.append(n2.jsDocPropertyTags as MutableNodes<JSDocPropertyTag>, child);
           }
           if (n2) {
             if (typeExpression && typeExpression.type.kind === Syntax.ArrayType) n2.isArrayType = true;
@@ -4170,7 +4170,7 @@ namespace qnr {
         const n2 = create.node(Syntax.JSDocSignature, start) as JSDocSignature;
         n2.parameters = [];
         while ((child = tryParse(() => this.childParameterOrPropertyTag(PropertyLike.CallbackParameter, indent) as JSDocParameterTag))) {
-          n2.parameters = qa.append(n2.parameters as MutableNodeArray<JSDocParameterTag>, child);
+          n2.parameters = qa.append(n2.parameters as MutableNodes<JSDocParameterTag>, child);
         }
         const returnTag = tryParse(() => {
           if (this.optional(Syntax.AtToken)) {
@@ -4187,7 +4187,7 @@ namespace qnr {
         if (fullName) {
           let rightNode = fullName;
           while (true) {
-            if (qn.is.kind(Identifier, rightNode) || !rightNode.body) return qn.is.kind(Identifier, rightNode) ? rightNode : rightNode.name;
+            if (Node.is.kind(Identifier, rightNode) || !rightNode.body) return Node.is.kind(Identifier, rightNode) ? rightNode : rightNode.name;
             rightNode = rightNode.body;
           }
         }
@@ -4209,7 +4209,7 @@ namespace qnr {
                   (child.kind === Syntax.JSDocParameterTag || child.kind === Syntax.JSDocPropertyTag) &&
                   target !== PropertyLike.CallbackParameter &&
                   name &&
-                  (qn.is.kind(Identifier, child.name) || !escapedTextsEqual(name, child.name.left))
+                  (Node.is.kind(Identifier, child.name) || !escapedTextsEqual(name, child.name.left))
                 ) {
                   return false;
                 }
@@ -4394,11 +4394,11 @@ namespace qnr {
         const hasArrowFunctionBlockingError = (n: TypeNode): boolean => {
           switch (n.kind) {
             case Syntax.TypeReference:
-              return qn.is.missing((n as TypeReferenceNode).typeName);
+              return Node.is.missing((n as TypeReferenceNode).typeName);
             case Syntax.FunctionType:
             case Syntax.ConstructorType: {
               const { parameters, type } = n as FunctionOrConstructorTypeNode;
-              const isMissingList = (ns: NodeArray<Node>) => !!(ns as MissingList<Node>).isMissingList;
+              const isMissingList = (ns: Nodes<Node>) => !!(ns as MissingList<Node>).isMissingList;
               return isMissingList(parameters) || hasArrowFunctionBlockingError(type);
             }
             case Syntax.ParenthesizedType:
@@ -4457,21 +4457,21 @@ namespace qnr {
     }
     function addJSDocComment<T extends HasJSDoc>(n: T): T {
       qa.assert(!n.jsDoc);
-      const jsDoc = mapDefined(qn.getJSDoc.commentRanges(n, source.text), (comment) => parseJSDoc.comment(n, comment.pos, comment.end - comment.pos));
+      const jsDoc = mapDefined(Node.getJSDoc.commentRanges(n, source.text), (comment) => parseJSDoc.comment(n, comment.pos, comment.end - comment.pos));
       if (jsDoc.length) n.jsDoc = jsDoc;
       return n;
     }
     function fixupParentReferences(root: Node) {
       const bindParentToChild = (c: Node, parent: Node) => {
         c.parent = parent;
-        if (qn.is.withJSDocNodes(c)) {
+        if (Node.is.withJSDocNodes(c)) {
           for (const d of c.jsDoc!) {
             bindParentToChild(d, c);
-            qn.forEach.childRecursively(d, bindParentToChild);
+            Node.forEach.childRecursively(d, bindParentToChild);
           }
         }
       };
-      qn.forEach.childRecursively(root, bindParentToChild);
+      Node.forEach.childRecursively(root, bindParentToChild);
     }
     function comment(parent: HasJSDoc, start: number, length: number): JSDoc | undefined {
       const saveToken = currentToken;
@@ -4499,8 +4499,8 @@ namespace qnr {
       return r;
     }
     function escapedTextsEqual(a: EntityName, b: EntityName): boolean {
-      while (!qn.is.kind(Identifier, a) || !qn.is.kind(Identifier, b)) {
-        if (!qn.is.kind(Identifier, a) && !qn.is.kind(Identifier, b) && a.right.escapedText === b.right.escapedText) {
+      while (!Node.is.kind(Identifier, a) || !Node.is.kind(Identifier, b)) {
+        if (!Node.is.kind(Identifier, a) && !Node.is.kind(Identifier, b) && a.right.escapedText === b.right.escapedText) {
           a = a.left;
           b = b.left;
         } else return false;
@@ -4626,7 +4626,7 @@ namespace qnr {
       }
     }
     function moveElementEntirelyPastChangeRange(element: IncrementalElement, isArray: boolean, delta: number, oldText: string, newText: string, aggressiveChecks: boolean) {
-      if (isArray) visitArray(<IncrementalNodeArray>element);
+      if (isArray) visitArray(<IncrementalNodes>element);
       else visitNode(<IncrementalNode>element);
       return;
       function visitNode(n: IncrementalNode) {
@@ -4645,15 +4645,15 @@ namespace qnr {
         n.pos += delta;
         n.end += delta;
         if (aggressiveChecks && shouldCheck(n)) qa.assert(text === newText.substring(n.pos, n.end));
-        qn.forEach.child(n, visitNode, visitArray);
-        if (qn.is.withJSDocNodes(n)) {
+        Node.forEach.child(n, visitNode, visitArray);
+        if (Node.is.withJSDocNodes(n)) {
           for (const jsDocComment of n.jsDoc!) {
             visitNode(<IncrementalNode>(<Node>jsDocComment));
           }
         }
         checkNodePositions(n, aggressiveChecks);
       }
-      function visitArray(array: IncrementalNodeArray) {
+      function visitArray(array: IncrementalNodes) {
         array._children = undefined;
         array.pos += delta;
         array.end += delta;
@@ -4699,8 +4699,8 @@ namespace qnr {
           child.intersectsChange = true;
           child._children = undefined;
           adjustIntersectingElement(child, changeStart, changeRangeOldEnd, changeRangeNewEnd, delta);
-          qn.forEach.child(child, visitNode, visitArray);
-          if (qn.is.withJSDocNodes(child)) {
+          Node.forEach.child(child, visitNode, visitArray);
+          if (Node.is.withJSDocNodes(child)) {
             for (const jsDocComment of child.jsDoc!) {
               visitNode(<IncrementalNode>(<Node>jsDocComment));
             }
@@ -4711,7 +4711,7 @@ namespace qnr {
         qa.assert(fullEnd < changeStart);
       }
 
-      function visitArray(array: IncrementalNodeArray) {
+      function visitArray(array: IncrementalNodes) {
         qa.assert(array.pos <= array.end);
         if (array.pos > changeRangeOldEnd) {
           moveElementEntirelyPastChangeRange(array, /*isArray*/ true, delta, oldText, newText, aggressiveChecks);
@@ -4737,12 +4737,12 @@ namespace qnr {
           qa.assert(c.pos >= pos);
           pos = c.end;
         };
-        if (qn.is.withJSDocNodes(n)) {
+        if (Node.is.withJSDocNodes(n)) {
           for (const jsDocComment of n.jsDoc!) {
             visitNode(jsDocComment);
           }
         }
-        qn.forEach.child(n, visitNode);
+        Node.forEach.child(n, visitNode);
         qa.assert(pos <= n.end);
       }
     }
@@ -4762,7 +4762,7 @@ namespace qnr {
     function findNearestNodeStartingBeforeOrAtPosition(source: SourceFile, position: number): Node {
       let bestResult: Node = source;
       let lastNodeEntirelyBeforePosition: Node | undefined;
-      qn.forEach.child(source, visit);
+      Node.forEach.child(source, visit);
       if (lastNodeEntirelyBeforePosition) {
         const lastChildOfLastEntireNodeBeforePosition = getLastDescendant(lastNodeEntirelyBeforePosition);
         if (lastChildOfLastEntireNodeBeforePosition.pos > bestResult.pos) {
@@ -4778,11 +4778,11 @@ namespace qnr {
         }
       }
       function visit(child: Node) {
-        if (qn.is.missing(child)) return;
+        if (Node.is.missing(child)) return;
         if (child.pos <= position) {
           if (child.pos >= bestResult.pos) bestResult = child;
           if (position < child.end) {
-            qn.forEach.child(child, visit);
+            Node.forEach.child(child, visit);
             return true;
           } else {
             qa.assert(child.end <= position);
@@ -4818,14 +4818,14 @@ namespace qnr {
     export interface IncrementalNode extends Node, IncrementalElement {
       hasBeenIncrementallyParsed: boolean;
     }
-    interface IncrementalNodeArray extends NodeArray<IncrementalNode>, IncrementalElement {
+    interface IncrementalNodes extends Nodes<IncrementalNode>, IncrementalElement {
       length: number;
     }
     export interface SyntaxCursor {
       currentNode(position: number): IncrementalNode;
     }
     function createSyntaxCursor(source: SourceFile): SyntaxCursor {
-      let currentArray: NodeArray<Node> = source.statements;
+      let currentArray: Nodes<Node> = source.statements;
       let currentArrayIndex = 0;
       qa.assert(currentArrayIndex < currentArray.length);
       let current = currentArray[currentArrayIndex];
@@ -4848,16 +4848,16 @@ namespace qnr {
         currentArray = undefined!;
         currentArrayIndex = InvalidPosition.Value;
         current = undefined!;
-        qn.forEach.child(source, visitNode, visitArray);
+        Node.forEach.child(source, visitNode, visitArray);
         return;
         function visitNode(n: Node) {
           if (position >= n.pos && position < n.end) {
-            qn.forEach.child(n, visitNode, visitArray);
+            Node.forEach.child(n, visitNode, visitArray);
             return true;
           }
           return false;
         }
-        function visitArray(array: NodeArray<Node>) {
+        function visitArray(array: Nodes<Node>) {
           if (position >= array.pos && position < array.end) {
             for (let i = 0; i < array.length; i++) {
               const child = array[i];
@@ -4869,7 +4869,7 @@ namespace qnr {
                   return true;
                 } else {
                   if (child.pos < position && position < child.end) {
-                    qn.forEach.child(child, visitNode, visitArray);
+                    Node.forEach.child(child, visitNode, visitArray);
                     return true;
                   }
                 }

@@ -1676,7 +1676,7 @@ namespace qnr {
       return result;
     }
 
-    function convertArrayLiteralExpressionToJson(elements: NodeArray<Expression>, elementOption: CommandLineOption | undefined): any[] | void {
+    function convertArrayLiteralExpressionToJson(elements: Nodes<Expression>, elementOption: CommandLineOption | undefined): any[] | void {
       if (!returnValue) {
         return elements.forEach((element) => convertPropertyValueToJson(element, elementOption));
       }
@@ -1771,7 +1771,7 @@ namespace qnr {
     }
 
     function isDoubleQuotedString(node: Node): boolean {
-      return qn.is.kind(StringLiteral, node) && isStringDoubleQuoted(node, sourceFile);
+      return Node.is.kind(StringLiteral, node) && isStringDoubleQuoted(node, sourceFile);
     }
   }
 

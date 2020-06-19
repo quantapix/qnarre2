@@ -23,7 +23,6 @@
     "syntax.ts",
     "scanner.ts",
     "node.ts",
-    "nodes.ts",
     "utilities.ts",
     "parser.ts",
     "commandLineParser.ts",

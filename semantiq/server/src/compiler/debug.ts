@@ -89,7 +89,7 @@ namespace qnr {
      */
     export const assertDefined = checkDefined;
 
-    export function assertEachIsDefined<T extends Node>(value: NodeArray<T>, message?: string, stackCrawlMark?: AnyFunction): asserts value is NodeArray<T>;
+    export function assertEachIsDefined<T extends Node>(value: Nodes<T>, message?: string, stackCrawlMark?: AnyFunction): asserts value is Nodes<T>;
     export function assertEachIsDefined<T>(value: readonly T[], message?: string, stackCrawlMark?: AnyFunction): asserts value is readonly NonNullable<T>[];
     export function assertEachIsDefined<T>(value: readonly T[], message?: string, stackCrawlMark?: AnyFunction) {
       for (const v of value) {
@@ -114,7 +114,7 @@ namespace qnr {
       return fail(`${message} ${detail}`, stackCrawlMark || assertNever);
     }
 
-    export function assertEachNode<T extends Node, U extends T>(nodes: NodeArray<T>, test: (node: T) => node is U, message?: string, stackCrawlMark?: AnyFunction): asserts nodes is NodeArray<U>;
+    export function assertEachNode<T extends Node, U extends T>(nodes: Nodes<T>, test: (node: T) => node is U, message?: string, stackCrawlMark?: AnyFunction): asserts nodes is Nodes<U>;
     export function assertEachNode<T extends Node, U extends T>(nodes: readonly T[], test: (node: T) => node is U, message?: string, stackCrawlMark?: AnyFunction): asserts nodes is readonly U[];
     export function assertEachNode(nodes: readonly Node[], test: (node: Node) => boolean, message?: string, stackCrawlMark?: AnyFunction): void;
     export function assertEachNode(nodes: readonly Node[], test: (node: Node) => boolean, message?: string, stackCrawlMark?: AnyFunction) {
@@ -387,19 +387,19 @@ namespace qnr {
             },
             __debugIsParseTreeNode: {
               get(this: Node) {
-                return qn.is.parseTreeNode(this);
+                return Node.is.parseTreeNode(this);
               },
             },
             __debugEmitFlags: {
               get(this: Node) {
-                return formatEmitFlags(qn.get.emitFlags(this));
+                return formatEmitFlags(Node.get.emitFlags(this));
               },
             },
             __debugGetText: {
               value(this: Node, includeTrivia?: boolean) {
                 if (isSynthesized(this)) return '';
-                const parseNode = qn.get.parseTreeOf(this);
-                const sourceFile = parseNode && qn.get.sourceFileOf(parseNode);
+                const parseNode = Node.get.parseTreeOf(this);
+                const sourceFile = parseNode && Node.get.sourceFileOf(parseNode);
                 return sourceFile ? getSourceTextOfNodeFromSourceFile(sourceFile, parseNode, includeTrivia) : '';
               },
             },

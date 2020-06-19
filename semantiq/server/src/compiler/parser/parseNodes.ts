@@ -123,7 +123,7 @@ export function extendRange(node: ParseNodeBase, newRange: TextRange) {
   }
 }
 
-export type ParseNodeArray = (ParseNode | undefined)[];
+export type ParseNodes = (ParseNode | undefined)[];
 
 export interface ModuleNode extends ParseNodeBase {
   readonly nodeType: ParseNodeType.Module;
@@ -619,7 +619,7 @@ export type ExpressionNode =
   | ListNode
   | SetNode;
 
-export function qn.is.expressionNode(node: ParseNode) {
+export function Node.is.expressionNode(node: ParseNode) {
   switch (node.nodeType) {
     case ParseNodeType.Error:
     case ParseNodeType.UnaryOperation:

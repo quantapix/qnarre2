@@ -123,7 +123,7 @@ namespace qnr {
   }
 
   function wrapCustomTransformer(transformer: CustomTransformer): Transformer<Bundle | SourceFile> {
-    return (node) => (qn.is.kind(Bundle, node) ? transformer.transformBundle(node) : transformer.transformSourceFile(node));
+    return (node) => (Node.is.kind(Bundle, node) ? transformer.transformBundle(node) : transformer.transformSourceFile(node));
   }
 
   function wrapCustomTransformerFactory<T extends SourceFile | Bundle>(
@@ -216,7 +216,7 @@ namespace qnr {
       },
     };
     for (const node of nodes) {
-      disposeEmitNodes(qn.get.sourceFileOf(qn.get.parseTreeOf(node)));
+      disposeEmitNodes(Node.get.sourceFileOf(Node.get.parseTreeOf(node)));
     }
     performance.mark('beforeTransform');
     const transformersWithContext = transformers.map((t) => t(context));
@@ -241,7 +241,7 @@ namespace qnr {
     };
 
     function transformRoot(node: T) {
-      return node && (!qn.is.kind(SourceFile, node) || !node.isDeclarationFile) ? transformation(node) : node;
+      return node && (!Node.is.kind(SourceFile, node) || !node.isDeclarationFile) ? transformation(node) : node;
     }
 
     function enableSubstitution(kind: Syntax) {
@@ -250,7 +250,7 @@ namespace qnr {
     }
 
     function isSubstitutionEnabled(node: Node) {
-      return (enabledSyntaxKindFeatures[node.kind] & SyntaxKindFeatureFlags.Substitution) !== 0 && (qn.get.emitFlags(node) & EmitFlags.NoSubstitution) === 0;
+      return (enabledSyntaxKindFeatures[node.kind] & SyntaxKindFeatureFlags.Substitution) !== 0 && (Node.get.emitFlags(node) & EmitFlags.NoSubstitution) === 0;
     }
 
     function substituteNode(hint: EmitHint, node: Node) {
@@ -264,7 +264,7 @@ namespace qnr {
     }
 
     function isEmitNotificationEnabled(node: Node) {
-      return (enabledSyntaxKindFeatures[node.kind] & SyntaxKindFeatureFlags.EmitNotifications) !== 0 || (qn.get.emitFlags(node) & EmitFlags.AdviseOnEmitNode) !== 0;
+      return (enabledSyntaxKindFeatures[node.kind] & SyntaxKindFeatureFlags.EmitNotifications) !== 0 || (Node.get.emitFlags(node) & EmitFlags.AdviseOnEmitNode) !== 0;
     }
 
     function emitNodeWithNotification(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void) {
@@ -393,7 +393,7 @@ namespace qnr {
     function dispose() {
       if (state < TransformationState.Disposed) {
         for (const node of nodes) {
-          disposeEmitNodes(qn.get.sourceFileOf(qn.get.parseTreeOf(node)));
+          disposeEmitNodes(Node.get.sourceFileOf(Node.get.parseTreeOf(node)));
         }
         lexicalEnvironmentVariableDeclarations = undefined!;
         lexicalEnvironmentVariableDeclarationsStack = undefined!;

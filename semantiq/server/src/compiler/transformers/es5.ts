@@ -66,9 +66,9 @@ namespace qnr {
       }
 
       node = previousOnSubstituteNode(hint, node);
-      if (qn.is.kind(PropertyAccessExpression, node)) {
+      if (Node.is.kind(PropertyAccessExpression, node)) {
         return substitutePropertyAccessExpression(node);
-      } else if (qn.is.kind(PropertyAssignment, node)) {
+      } else if (Node.is.kind(PropertyAssignment, node)) {
         return substitutePropertyAssignment(node);
       }
       return node;
@@ -80,7 +80,7 @@ namespace qnr {
      * @param node A PropertyAccessExpression
      */
     function substitutePropertyAccessExpression(node: PropertyAccessExpression): Expression {
-      if (qn.is.kind(PrivateIdentifier, node.name)) {
+      if (Node.is.kind(PrivateIdentifier, node.name)) {
         return node;
       }
       const literalName = trySubstituteReservedName(node.name);
@@ -96,7 +96,7 @@ namespace qnr {
      * @param node A PropertyAssignment
      */
     function substitutePropertyAssignment(node: PropertyAssignment): PropertyAssignment {
-      const literalName = qn.is.kind(Identifier, node.name) && trySubstituteReservedName(node.name);
+      const literalName = Node.is.kind(Identifier, node.name) && trySubstituteReservedName(node.name);
       if (literalName) {
         return updatePropertyAssignment(node, literalName, node.initializer);
       }

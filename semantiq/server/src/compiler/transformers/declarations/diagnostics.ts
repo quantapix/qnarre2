@@ -30,32 +30,32 @@ namespace qnr {
 
   export function canProduceDiagnostics(node: Node): node is DeclarationDiagnosticProducing {
     return (
-      qn.is.kind(VariableDeclaration, node) ||
-      qn.is.kind(PropertyDeclaration, node) ||
-      qn.is.kind(PropertySignature, node) ||
-      qn.is.kind(BindingElement, node) ||
-      qn.is.kind(SetAccessorDeclaration, node) ||
-      qn.is.kind(GetAccessorDeclaration, node) ||
-      qn.is.kind(ConstructSignatureDeclaration, node) ||
-      qn.is.kind(CallSignatureDeclaration, node) ||
-      qn.is.kind(MethodDeclaration, node) ||
-      qn.is.kind(MethodSignature, node) ||
-      qn.is.kind(FunctionDeclaration, node) ||
-      qn.is.kind(ParameterDeclaration, node) ||
-      qn.is.kind(TypeParameterDeclaration, node) ||
-      qn.is.kind(ExpressionWithTypeArguments, node) ||
-      qn.is.kind(ImportEqualsDeclaration, node) ||
-      qn.is.kind(TypeAliasDeclaration, node) ||
-      qn.is.kind(ConstructorDeclaration, node) ||
-      qn.is.kind(IndexSignatureDeclaration, node) ||
-      qn.is.kind(PropertyAccessExpression, node)
+      Node.is.kind(VariableDeclaration, node) ||
+      Node.is.kind(PropertyDeclaration, node) ||
+      Node.is.kind(PropertySignature, node) ||
+      Node.is.kind(BindingElement, node) ||
+      Node.is.kind(SetAccessorDeclaration, node) ||
+      Node.is.kind(GetAccessorDeclaration, node) ||
+      Node.is.kind(ConstructSignatureDeclaration, node) ||
+      Node.is.kind(CallSignatureDeclaration, node) ||
+      Node.is.kind(MethodDeclaration, node) ||
+      Node.is.kind(MethodSignature, node) ||
+      Node.is.kind(FunctionDeclaration, node) ||
+      Node.is.kind(ParameterDeclaration, node) ||
+      Node.is.kind(TypeParameterDeclaration, node) ||
+      Node.is.kind(ExpressionWithTypeArguments, node) ||
+      Node.is.kind(ImportEqualsDeclaration, node) ||
+      Node.is.kind(TypeAliasDeclaration, node) ||
+      Node.is.kind(ConstructorDeclaration, node) ||
+      Node.is.kind(IndexSignatureDeclaration, node) ||
+      Node.is.kind(PropertyAccessExpression, node)
     );
   }
 
   export function createGetSymbolAccessibilityDiagnosticForNodeName(node: DeclarationDiagnosticProducing) {
-    if (qn.is.kind(SetAccessorDeclaration, node) || qn.is.kind(GetAccessorDeclaration, node)) {
+    if (Node.is.kind(SetAccessorDeclaration, node) || Node.is.kind(GetAccessorDeclaration, node)) {
       return getAccessorNameVisibilityError;
-    } else if (qn.is.kind(MethodSignature, node) || qn.is.kind(MethodDeclaration, node)) {
+    } else if (Node.is.kind(MethodSignature, node) || Node.is.kind(MethodDeclaration, node)) {
       return getMethodNameVisibilityError;
     } else {
       return createGetSymbolAccessibilityDiagnosticForNode(node);
@@ -127,37 +127,37 @@ namespace qnr {
     node: DeclarationDiagnosticProducing
   ): (symbolAccessibilityResult: SymbolAccessibilityResult) => SymbolAccessibilityDiagnostic | undefined {
     if (
-      qn.is.kind(VariableDeclaration, node) ||
-      qn.is.kind(PropertyDeclaration, node) ||
-      qn.is.kind(PropertySignature, node) ||
-      qn.is.kind(PropertyAccessExpression, node) ||
-      qn.is.kind(BindingElement, node) ||
-      qn.is.kind(ConstructorDeclaration, node)
+      Node.is.kind(VariableDeclaration, node) ||
+      Node.is.kind(PropertyDeclaration, node) ||
+      Node.is.kind(PropertySignature, node) ||
+      Node.is.kind(PropertyAccessExpression, node) ||
+      Node.is.kind(BindingElement, node) ||
+      Node.is.kind(ConstructorDeclaration, node)
     ) {
       return getVariableDeclarationTypeVisibilityError;
-    } else if (qn.is.kind(SetAccessorDeclaration, node) || qn.is.kind(GetAccessorDeclaration, node)) {
+    } else if (Node.is.kind(SetAccessorDeclaration, node) || Node.is.kind(GetAccessorDeclaration, node)) {
       return getAccessorDeclarationTypeVisibilityError;
     } else if (
-      qn.is.kind(ConstructSignatureDeclaration, node) ||
-      qn.is.kind(CallSignatureDeclaration, node) ||
-      qn.is.kind(MethodDeclaration, node) ||
-      qn.is.kind(MethodSignature, node) ||
-      qn.is.kind(FunctionDeclaration, node) ||
-      qn.is.kind(IndexSignatureDeclaration, node)
+      Node.is.kind(ConstructSignatureDeclaration, node) ||
+      Node.is.kind(CallSignatureDeclaration, node) ||
+      Node.is.kind(MethodDeclaration, node) ||
+      Node.is.kind(MethodSignature, node) ||
+      Node.is.kind(FunctionDeclaration, node) ||
+      Node.is.kind(IndexSignatureDeclaration, node)
     ) {
       return getReturnTypeVisibilityError;
-    } else if (qn.is.kind(ParameterDeclaration, node)) {
-      if (qn.is.parameterPropertyDeclaration(node, node.parent) && hasSyntacticModifier(node.parent, ModifierFlags.Private)) {
+    } else if (Node.is.kind(ParameterDeclaration, node)) {
+      if (Node.is.parameterPropertyDeclaration(node, node.parent) && hasSyntacticModifier(node.parent, ModifierFlags.Private)) {
         return getVariableDeclarationTypeVisibilityError;
       }
       return getParameterDeclarationTypeVisibilityError;
-    } else if (qn.is.kind(TypeParameterDeclaration, node)) {
+    } else if (Node.is.kind(TypeParameterDeclaration, node)) {
       return getTypeParameterConstraintVisibilityError;
-    } else if (qn.is.kind(ExpressionWithTypeArguments, node)) {
+    } else if (Node.is.kind(ExpressionWithTypeArguments, node)) {
       return getHeritageClauseVisibilityError;
-    } else if (qn.is.kind(ImportEqualsDeclaration, node)) {
+    } else if (Node.is.kind(ImportEqualsDeclaration, node)) {
       return getImportEntityNameVisibilityError;
-    } else if (qn.is.kind(TypeAliasDeclaration, node)) {
+    } else if (Node.is.kind(TypeAliasDeclaration, node)) {
       return getTypeAliasDeclarationVisibilityError;
     } else {
       return Debug.assertNever(node, `Attempted to set a declaration diagnostic context for unhandled node kind: ${(ts as any).SyntaxKind[(node as any).kind]}`);
@@ -454,7 +454,7 @@ namespace qnr {
       if (node.parent.parent.kind === Syntax.ClassDeclaration) {
         // Class or Interface implemented/extended is inaccessible
         diagnosticMessage =
-          qn.is.kind(HeritageClause, node.parent) && node.parent.token === Syntax.ImplementsKeyword
+          Node.is.kind(HeritageClause, node.parent) && node.parent.token === Syntax.ImplementsKeyword
             ? Diagnostics.Implements_clause_of_exported_class_0_has_or_is_using_private_name_1
             : Diagnostics.extends_clause_of_exported_class_0_has_or_is_using_private_name_1;
       } else {

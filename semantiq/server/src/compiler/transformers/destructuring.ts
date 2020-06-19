@@ -67,7 +67,7 @@ namespace qnr {
     if (value) {
       value = visitNode(value, visitor, isExpression);
 
-      if ((qn.is.kind(Identifier, value) && bindingOrAssignmentElementAssignsToName(node, value.escapedText)) || bindingOrAssignmentElementContainsNonLiteralComputedName(node)) {
+      if ((Node.is.kind(Identifier, value) && bindingOrAssignmentElementAssignsToName(node, value.escapedText)) || bindingOrAssignmentElementContainsNonLiteralComputedName(node)) {
         // If the right-hand value of the assignment is also an assignment target then
         // we need to cache the right-hand value.
         value = ensureIdentifier(flattenContext, value, /*reuseIdentifierExpressions*/ false, location);
@@ -121,7 +121,7 @@ namespace qnr {
     const target = getTargetOfBindingOrAssignmentElement(element)!; // TODO: GH#18217
     if (isBindingOrAssignmentPattern(target)) {
       return bindingOrAssignmentPatternAssignsToName(target, escName);
-    } else if (qn.is.kind(Identifier, target)) {
+    } else if (Node.is.kind(Identifier, target)) {
       return target.escapedText === escName;
     }
     return false;
@@ -139,7 +139,7 @@ namespace qnr {
 
   function bindingOrAssignmentElementContainsNonLiteralComputedName(element: BindingOrAssignmentElement): boolean {
     const propertyName = tryGetPropertyNameOfBindingOrAssignmentElement(element);
-    if (propertyName && qn.is.kind(ComputedPropertyName, propertyName) && !qn.is.literalExpression(propertyName.expression)) {
+    if (propertyName && Node.is.kind(ComputedPropertyName, propertyName) && !Node.is.literalExpression(propertyName.expression)) {
       return true;
     }
     const target = getTargetOfBindingOrAssignmentElement(element);
@@ -192,11 +192,11 @@ namespace qnr {
       visitor,
     };
 
-    if (qn.is.kind(VariableDeclaration, node)) {
+    if (Node.is.kind(VariableDeclaration, node)) {
       let initializer = getInitializerOfBindingOrAssignmentElement(node);
       if (
         initializer &&
-        ((qn.is.kind(Identifier, initializer) && bindingOrAssignmentElementAssignsToName(node, initializer.escapedText)) || bindingOrAssignmentElementContainsNonLiteralComputedName(node))
+        ((Node.is.kind(Identifier, initializer) && bindingOrAssignmentElementAssignsToName(node, initializer.escapedText)) || bindingOrAssignmentElementContainsNonLiteralComputedName(node))
       ) {
         // If the right-hand value of the assignment is also an assignment target then
         // we need to cache the right-hand value.
@@ -310,7 +310,7 @@ namespace qnr {
           flattenContext.level >= FlattenLevel.ObjectRest &&
           !(element.transformFlags & (TransformFlags.ContainsRestOrSpread | TransformFlags.ContainsObjectRestOrSpread)) &&
           !(getTargetOfBindingOrAssignmentElement(element)!.transformFlags & (TransformFlags.ContainsRestOrSpread | TransformFlags.ContainsObjectRestOrSpread)) &&
-          !qn.is.kind(ComputedPropertyName, propertyName)
+          !Node.is.kind(ComputedPropertyName, propertyName)
         ) {
           bindingElements = append(bindingElements, visitNode(element, flattenContext.visitor));
         } else {
@@ -319,7 +319,7 @@ namespace qnr {
             bindingElements = undefined;
           }
           const rhsValue = createDestructuringPropertyAccess(flattenContext, value, propertyName);
-          if (qn.is.kind(ComputedPropertyName, propertyName)) {
+          if (Node.is.kind(ComputedPropertyName, propertyName)) {
             computedTempVariables = append<Expression>(computedTempVariables, (rhsValue as ElementAccessExpression).argumentExpression);
           }
           flattenBindingOrAssignmentElement(flattenContext, element, rhsValue, /*location*/ element);
@@ -392,7 +392,7 @@ namespace qnr {
         } else {
           bindingElements = append(bindingElements, element);
         }
-      } else if (qn.is.kind(OmittedExpression, element)) {
+      } else if (Node.is.kind(OmittedExpression, element)) {
         continue;
       } else if (!getRestIndicatorOfBindingOrAssignmentElement(element)) {
         const rhsValue = createElementAccess(value, i);
@@ -436,7 +436,7 @@ namespace qnr {
    * @param propertyName The destructuring property name.
    */
   function createDestructuringPropertyAccess(flattenContext: FlattenContext, value: Expression, propertyName: PropertyName): LeftHandSideExpression {
-    if (qn.is.kind(ComputedPropertyName, propertyName)) {
+    if (Node.is.kind(ComputedPropertyName, propertyName)) {
       const argumentExpression = ensureIdentifier(flattenContext, visitNode(propertyName.expression, flattenContext.visitor), /*reuseIdentifierExpressions*/ false, /*location*/ propertyName);
       return createElementAccess(value, argumentExpression);
     } else if (StringLiteral.orNumericLiteralLike(propertyName)) {
@@ -461,7 +461,7 @@ namespace qnr {
    * @param location The location to use for source maps and comments.
    */
   function ensureIdentifier(flattenContext: FlattenContext, value: Expression, reuseIdentifierExpressions: boolean, location: TextRange) {
-    if (qn.is.kind(Identifier, value) && reuseIdentifierExpressions) {
+    if (Node.is.kind(Identifier, value) && reuseIdentifierExpressions) {
       return value;
     } else {
       const temp = createTempVariable(/*recordTempVariable*/ undefined);
@@ -535,7 +535,7 @@ namespace qnr {
     for (let i = 0; i < elements.length - 1; i++) {
       const propertyName = getPropertyNameOfBindingOrAssignmentElement(elements[i]);
       if (propertyName) {
-        if (qn.is.kind(ComputedPropertyName, propertyName)) {
+        if (Node.is.kind(ComputedPropertyName, propertyName)) {
           const temp = computedTempVariables[computedTempVariableOffset];
           computedTempVariableOffset++;
           // typeof _tmp === "symbol" ? _tmp : _tmp + ""

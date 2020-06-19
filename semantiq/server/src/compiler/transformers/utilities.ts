@@ -1,6 +1,6 @@
 namespace qnr {
   export function getOriginalNodeId(node: Node) {
-    node = qn.get.originalOf(node);
+    node = Node.get.originalOf(node);
     return node ? getNodeId(node) : 0;
   }
 
@@ -16,7 +16,7 @@ namespace qnr {
 
   function containsDefaultReference(node: NamedImportBindings | undefined) {
     if (!node) return false;
-    if (!qn.is.kind(NamedImports, node)) return false;
+    if (!Node.is.kind(NamedImports, node)) return false;
     return some(node.elements, isNamedDefaultReference);
   }
 
@@ -48,7 +48,7 @@ namespace qnr {
     if (!bindings) {
       return false;
     }
-    if (!qn.is.kind(NamedImports, bindings)) return false;
+    if (!Node.is.kind(NamedImports, bindings)) return false;
     let defaultRefCount = 0;
     for (const binding of bindings.elements) {
       if (isNamedDefaultReference(binding)) {
@@ -63,7 +63,7 @@ namespace qnr {
     // Import default is needed if there's a default import or a default ref and no other refs (meaning an import star helper wasn't requested)
     return (
       !getImportNeedsImportStarHelper(node) &&
-      (isDefaultImport(node) || (!!node.importClause && qn.is.kind(NamedImports, node.importClause.namedBindings!) && containsDefaultReference(node.importClause.namedBindings)))
+      (isDefaultImport(node) || (!!node.importClause && Node.is.kind(NamedImports, node.importClause.namedBindings!) && containsDefaultReference(node.importClause.namedBindings)))
     ); // TODO: GH#18217
   }
 
@@ -208,13 +208,13 @@ namespace qnr {
   }
 
   function collectExportedVariableInfo(decl: VariableDeclaration | BindingElement, uniqueExports: Map<boolean>, exportedNames: Identifier[] | undefined) {
-    if (qn.is.kind(BindingPattern, decl.name)) {
+    if (Node.is.kind(BindingPattern, decl.name)) {
       for (const element of decl.name.elements) {
-        if (!qn.is.kind(OmittedExpression, element)) {
+        if (!Node.is.kind(OmittedExpression, element)) {
           exportedNames = collectExportedVariableInfo(element, uniqueExports, exportedNames);
         }
       }
-    } else if (!qn.is.generatedIdentifier(decl.name)) {
+    } else if (!Node.is.generatedIdentifier(decl.name)) {
       const text = idText(decl.name);
       if (!uniqueExports.get(text)) {
         uniqueExports.set(text, true);
@@ -241,7 +241,7 @@ namespace qnr {
    *  - this is mostly subjective beyond the requirement that the expression not be sideeffecting
    */
   export function isSimpleCopiableExpression(expression: Expression) {
-    return StringLiteral.like(expression) || expression.kind === Syntax.NumericLiteral || qy.is.keyword(expression.kind) || qn.is.kind(Identifier, expression);
+    return StringLiteral.like(expression) || expression.kind === Syntax.NumericLiteral || qy.is.keyword(expression.kind) || Node.is.kind(Identifier, expression);
   }
 
   /**
@@ -250,7 +250,7 @@ namespace qnr {
    * any such locations
    */
   export function isSimpleInlineableExpression(expression: Expression) {
-    return (!qn.is.kind(Identifier, expression) && isSimpleCopiableExpression(expression)) || isWellKnownSymbolSyntactically(expression);
+    return (!Node.is.kind(Identifier, expression) && isSimpleCopiableExpression(expression)) || isWellKnownSymbolSyntactically(expression);
   }
 
   export function isCompoundAssignment(kind: BinaryOperator): kind is CompoundAssignmentOperator {
@@ -304,7 +304,7 @@ namespace qnr {
         return index;
       }
 
-      const superIndex = findIndex(statements, (s) => qn.is.kind(ExpressionStatement, s) && qn.is.superCall(s.expression), index);
+      const superIndex = findIndex(statements, (s) => Node.is.kind(ExpressionStatement, s) && Node.is.superCall(s.expression), index);
       if (superIndex > -1) {
         for (let i = index; i <= superIndex; i++) {
           result.push(visitNode(statements[i], visitor, isStatement));
@@ -351,7 +351,7 @@ namespace qnr {
    * @param isStatic A value indicating whether the member should be a static or instance member.
    */
   function isInitializedOrStaticProperty(member: ClassElement, requireInitializer: boolean, isStatic: boolean) {
-    return qn.is.kind(PropertyDeclaration, member) && (!!member.initializer || !requireInitializer) && hasStaticModifier(member) === isStatic;
+    return Node.is.kind(PropertyDeclaration, member) && (!!member.initializer || !requireInitializer) && hasStaticModifier(member) === isStatic;
   }
 
   /**

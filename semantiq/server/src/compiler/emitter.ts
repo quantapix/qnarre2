@@ -256,7 +256,7 @@ namespace qnr {
 
     function emitSourceFileOrBundle({ jsFilePath, sourceMapFilePath, declarationFilePath, declarationMapPath, buildInfoPath }: EmitFileNames, sourceFileOrBundle: SourceFile | Bundle | undefined) {
       let buildInfoDirectory: string | undefined;
-      if (buildInfoPath && sourceFileOrBundle && qn.is.kind(Bundle, sourceFileOrBundle)) {
+      if (buildInfoPath && sourceFileOrBundle && Node.is.kind(Bundle, sourceFileOrBundle)) {
         buildInfoDirectory = getDirectoryPath(getNormalizedAbsolutePath(buildInfoPath, host.getCurrentDirectory()));
         bundleBuildInfo = {
           commonSourceDirectory: relativeToBuildInfo(host.getCommonSourceDirectory()),
@@ -366,11 +366,11 @@ namespace qnr {
         if (emitOnlyDtsFiles || compilerOptions.emitDeclarationOnly) emitSkipped = true;
         return;
       }
-      const sourceFiles = qn.is.kind(SourceFile, sourceFileOrBundle) ? [sourceFileOrBundle] : sourceFileOrBundle.sourceFiles;
+      const sourceFiles = Node.is.kind(SourceFile, sourceFileOrBundle) ? [sourceFileOrBundle] : sourceFileOrBundle.sourceFiles;
       const filesForEmit = forceDtsEmit ? sourceFiles : filter(sourceFiles, isSourceFileNotJson);
       // Setup and perform the transformation to retrieve declarations from the input files
       const inputListOrBundle =
-        compilerOptions.outFile || compilerOptions.out ? [createBundle(filesForEmit, !qn.is.kind(SourceFile, sourceFileOrBundle) ? sourceFileOrBundle.prepends : undefined)] : filesForEmit;
+        compilerOptions.outFile || compilerOptions.out ? [createBundle(filesForEmit, !Node.is.kind(SourceFile, sourceFileOrBundle) ? sourceFileOrBundle.prepends : undefined)] : filesForEmit;
       if (emitOnlyDtsFiles && !getEmitDeclarations(compilerOptions)) {
         // Checker wont collect the linked aliases since thats only done when declaration is enabled.
         // Do that here when emitting only dts files
@@ -428,16 +428,16 @@ namespace qnr {
     }
 
     function collectLinkedAliases(node: Node) {
-      if (qn.is.kind(ExportAssignment, node)) {
+      if (Node.is.kind(ExportAssignment, node)) {
         if (node.expression.kind === Syntax.Identifier) {
           resolver.collectLinkedAliases(node.expression as Identifier, /*setVisibility*/ true);
         }
         return;
-      } else if (qn.is.kind(ExportSpecifier, node)) {
+      } else if (Node.is.kind(ExportSpecifier, node)) {
         resolver.collectLinkedAliases(node.propertyName || node.name, /*setVisibility*/ true);
         return;
       }
-      qn.forEach.child(node, collectLinkedAliases);
+      Node.forEach.child(node, collectLinkedAliases);
     }
 
     function printSourceFileOrBundle(jsFilePath: string, sourceMapFilePath: string | undefined, sourceFileOrBundle: SourceFile | Bundle, printer: Printer, mapOptions: SourceMapOptions) {
@@ -631,7 +631,7 @@ namespace qnr {
       const sourceFile = createNode(Syntax.SourceFile, 0, 0) as SourceFile;
       sourceFile.fileName = getRelativePathFromDirectory(host.getCurrentDirectory(), getNormalizedAbsolutePath(fileName, buildInfoDirectory), !host.useCaseSensitiveFileNames());
       sourceFile.text = '';
-      sourceFile.statements = NodeArray.create();
+      sourceFile.statements = Nodes.create();
       return sourceFile;
     });
     const jsBundle = Debug.checkDefined(bundle.js);
@@ -639,7 +639,7 @@ namespace qnr {
       const sourceFile = sourceFiles[prologueInfo.file];
       sourceFile.text = prologueInfo.text;
       sourceFile.end = prologueInfo.text.length;
-      sourceFile.statements = NodeArray.create(
+      sourceFile.statements = Nodes.create(
         prologueInfo.directives.map((directive) => {
           const statement = createNode(Syntax.ExpressionStatement, directive.pos, directive.end) as PrologueDirective;
           statement.expression = createNode(Syntax.StringLiteral, directive.expression.pos, directive.expression.end) as StringLiteral;
@@ -763,8 +763,8 @@ namespace qnr {
       onEmitNode = noEmitNotification,
       isEmitNotificationEnabled,
       substituteNode = noEmitSubstitution,
-      onBeforeEmitNodeArray,
-      onAfterEmitNodeArray,
+      onBeforeEmitNodes,
+      onAfterEmitNodes,
       onBeforeEmitToken,
       onAfterEmitToken,
     } = handlers;
@@ -831,13 +831,13 @@ namespace qnr {
     function printNode(hint: EmitHint, node: Node, sourceFile: SourceFile): string {
       switch (hint) {
         case EmitHint.SourceFile:
-          qa.assert(qn.is.kind(SourceFile, node), 'Expected a SourceFile node.');
+          qa.assert(Node.is.kind(SourceFile, node), 'Expected a SourceFile node.');
           break;
         case EmitHint.IdentifierName:
-          qa.assert(qn.is.kind(Identifier, node), 'Expected an Identifier node.');
+          qa.assert(Node.is.kind(Identifier, node), 'Expected an Identifier node.');
           break;
         case EmitHint.Expression:
-          qa.assert(qn.is.expression(node), 'Expected an Expression node.');
+          qa.assert(Node.is.expression(node), 'Expected an Expression node.');
           break;
       }
       switch (node.kind) {
@@ -852,7 +852,7 @@ namespace qnr {
       return endPrint();
     }
 
-    function printList<T extends Node>(format: ListFormat, nodes: NodeArray<T>, sourceFile: SourceFile) {
+    function printList<T extends Node>(format: ListFormat, nodes: Nodes<T>, sourceFile: SourceFile) {
       writeList(format, nodes, sourceFile, beginPrint());
       return endPrint();
     }
@@ -885,7 +885,7 @@ namespace qnr {
       writer = previousWriter;
     }
 
-    function writeList<T extends Node>(format: ListFormat, nodes: NodeArray<T>, sourceFile: SourceFile | undefined, output: EmitTextWriter) {
+    function writeList<T extends Node>(format: ListFormat, nodes: Nodes<T>, sourceFile: SourceFile | undefined, output: EmitTextWriter) {
       const previousWriter = writer;
       setWriter(output, /*_sourceMapGenerator*/ undefined);
       if (sourceFile) {
@@ -914,7 +914,7 @@ namespace qnr {
         recordInternalSection &&
         bundleFileInfo &&
         currentSourceFile &&
-        (qn.is.declaration(node) || qn.is.kind(VariableStatement, node)) &&
+        (Node.is.declaration(node) || Node.is.kind(VariableStatement, node)) &&
         isInternalDeclaration(node, currentSourceFile) &&
         sourceFileTextKind !== BundleFileSectionKind.Internal
       ) {
@@ -1103,7 +1103,7 @@ namespace qnr {
     }
 
     function emitJsxAttributeValue(node: StringLiteral | JsxExpression): Node {
-      return pipelineEmit(qn.is.kind(StringLiteral, node) ? EmitHint.JsxAttributeValue : EmitHint.Unspecified, node);
+      return pipelineEmit(Node.is.kind(StringLiteral, node) ? EmitHint.JsxAttributeValue : EmitHint.Unspecified, node);
     }
 
     function pipelineEmit(emitHint: EmitHint, node: Node) {
@@ -1112,7 +1112,7 @@ namespace qnr {
       const savedPreserveSourceNewlines = preserveSourceNewlines;
       lastNode = node;
       lastSubstitution = undefined;
-      if (preserveSourceNewlines && !!(qn.get.emitFlags(node) & EmitFlags.IgnoreSourceNewlines)) {
+      if (preserveSourceNewlines && !!(Node.get.emitFlags(node) & EmitFlags.IgnoreSourceNewlines)) {
         preserveSourceNewlines = false;
       }
 
@@ -1493,12 +1493,12 @@ namespace qnr {
           // Transformation nodes (ignored)
         }
 
-        if (qn.is.expression(node)) {
+        if (Node.is.expression(node)) {
           hint = EmitHint.Expression;
           if (substituteNode !== noEmitSubstitution) {
             lastSubstitution = node = substituteNode(hint, node);
           }
-        } else if (qn.is.token(node)) {
+        } else if (Node.is.token(node)) {
           return writeTokenNode(node, writePunctuation);
         }
       }
@@ -1648,10 +1648,10 @@ namespace qnr {
       const numNodes = bundle ? bundle.sourceFiles.length + numPrepends : 1;
       for (let i = 0; i < numNodes; i++) {
         const currentNode = bundle ? (i < numPrepends ? bundle.prepends[i] : bundle.sourceFiles[i - numPrepends]) : node;
-        const sourceFile = qn.is.kind(SourceFile, currentNode) ? currentNode : qn.is.kind(UnparsedSource, currentNode) ? undefined : currentSourceFile!;
+        const sourceFile = Node.is.kind(SourceFile, currentNode) ? currentNode : Node.is.kind(UnparsedSource, currentNode) ? undefined : currentSourceFile!;
         const shouldSkip = printerOptions.noEmitHelpers || (!!sourceFile && hasRecordedExternalHelpers(sourceFile));
-        const shouldBundle = (qn.is.kind(SourceFile, currentNode) || qn.is.kind(UnparsedSource, currentNode)) && !isOwnFileEmit;
-        const helpers = qn.is.kind(UnparsedSource, currentNode) ? currentNode.helpers : getSortedEmitHelpers(currentNode);
+        const shouldBundle = (Node.is.kind(SourceFile, currentNode) || Node.is.kind(UnparsedSource, currentNode)) && !isOwnFileEmit;
+        const helpers = Node.is.kind(UnparsedSource, currentNode) ? currentNode.helpers : getSortedEmitHelpers(currentNode);
         if (helpers) {
           for (const helper of helpers) {
             if (!helper.scoped) {
@@ -1764,7 +1764,7 @@ namespace qnr {
 
     function emitIdentifier(node: Identifier) {
       const writeText = node.symbol ? writeSymbol : write;
-      writeText(qn.get.textOf(node, /*includeTrivia*/ false), node.symbol);
+      writeText(Node.get.textOf(node, /*includeTrivia*/ false), node.symbol);
       emitList(node, node.typeArguments, ListFormat.TypeParameters); // Call emitList directly since it could be an array of TypeParameterDeclarations _or_ type arguments
     }
 
@@ -1774,7 +1774,7 @@ namespace qnr {
 
     function emitPrivateIdentifier(node: PrivateIdentifier) {
       const writeText = node.symbol ? writeSymbol : write;
-      writeText(qn.get.textOf(node, /*includeTrivia*/ false), node.symbol);
+      writeText(Node.get.textOf(node, /*includeTrivia*/ false), node.symbol);
     }
 
     function emitQualifiedName(node: QualifiedName) {
@@ -2015,7 +2015,7 @@ namespace qnr {
 
     function emitTypeLiteral(node: TypeLiteralNode) {
       writePunctuation('{');
-      const flags = qn.get.emitFlags(node) & EmitFlags.SingleLine ? ListFormat.SingleLineTypeLiteralMembers : ListFormat.MultiLineTypeLiteralMembers;
+      const flags = Node.get.emitFlags(node) & EmitFlags.SingleLine ? ListFormat.SingleLineTypeLiteralMembers : ListFormat.MultiLineTypeLiteralMembers;
       emitList(node, node.members, flags | ListFormat.NoSpaceIfEmpty);
       writePunctuation('}');
     }
@@ -2033,7 +2033,7 @@ namespace qnr {
 
     function emitTupleType(node: TupleTypeNode) {
       emitTokenWithComment(Syntax.OpenBracketToken, node.pos, writePunctuation, node);
-      const flags = qn.get.emitFlags(node) & EmitFlags.SingleLine ? ListFormat.SingleLineTupleTypeElements : ListFormat.MultiLineTupleTypeElements;
+      const flags = Node.get.emitFlags(node) & EmitFlags.SingleLine ? ListFormat.SingleLineTupleTypeElements : ListFormat.MultiLineTupleTypeElements;
       emitList(node, node.elements, flags | ListFormat.NoSpaceIfEmpty);
       emitTokenWithComment(Syntax.CloseBracketToken, node.elements.end, writePunctuation, node);
     }
@@ -2106,7 +2106,7 @@ namespace qnr {
     }
 
     function emitMappedType(node: MappedTypeNode) {
-      const emitFlags = qn.get.emitFlags(node);
+      const emitFlags = Node.get.emitFlags(node);
       writePunctuation('{');
       if (emitFlags & EmitFlags.SingleLine) {
         writeSpace();
@@ -2205,7 +2205,7 @@ namespace qnr {
     function emitObjectLiteralExpression(node: ObjectLiteralExpression) {
       forEach(node.properties, generateMemberNames);
 
-      const indentedFlag = qn.get.emitFlags(node) & EmitFlags.Indented;
+      const indentedFlag = Node.get.emitFlags(node) & EmitFlags.Indented;
       if (indentedFlag) {
         increaseIndent();
       }
@@ -2247,7 +2247,7 @@ namespace qnr {
     // Also emit a dot if expression is a integer const enum value - it will appear in generated code as numeric literal
     function mayNeedDotDotForPropertyAccess(expression: Expression) {
       expression = skipPartiallyEmittedExpressions(expression);
-      if (qn.is.kind(NumericLiteral, expression)) {
+      if (Node.is.kind(NumericLiteral, expression)) {
         // check if numeric literal is a decimal literal that was originally written with a dot
         const text = getLiteralTextOfNode(<LiteralExpression>expression, /*neverAsciiEscape*/ true, /*jsxAttributeEscape*/ false);
         // If he number will be printed verbatim and it doesn't already contain a dot, add one
@@ -2447,7 +2447,7 @@ namespace qnr {
         lastSubstitution = undefined;
 
         const pipelinePhase = getPipelinePhase(PipelinePhase.Notification, EmitHint.Expression, next);
-        if (pipelinePhase === pipelineEmitWithHint && qn.is.kind(next, BinaryExpression)) {
+        if (pipelinePhase === pipelineEmitWithHint && Node.is.kind(next, BinaryExpression)) {
           // If the target pipeline phase is emit directly, and the next node's also a binary expression,
           // skip all the intermediate indirection and push the expression directly onto the work stack
           stackIndex++;
@@ -2551,7 +2551,7 @@ namespace qnr {
 
     function emitBlockStatements(node: BlockLike, forceSingleLine: boolean) {
       emitTokenWithComment(Syntax.OpenBraceToken, node.pos, writePunctuation, /*contextNode*/ node);
-      const format = forceSingleLine || qn.get.emitFlags(node) & EmitFlags.SingleLine ? ListFormat.SingleLineBlockStatements : ListFormat.MultiLineBlockStatements;
+      const format = forceSingleLine || Node.get.emitFlags(node) & EmitFlags.SingleLine ? ListFormat.SingleLineBlockStatements : ListFormat.MultiLineBlockStatements;
       emitList(node, node.statements, format);
       emitTokenWithComment(Syntax.CloseBraceToken, node.statements.end, writePunctuation, /*contextNode*/ node, /*indentLeading*/ !!(format & ListFormat.MultiLine));
     }
@@ -2611,7 +2611,7 @@ namespace qnr {
     function emitDoStatement(node: DoStatement) {
       emitTokenWithComment(Syntax.DoKeyword, node.pos, writeKeyword, node);
       emitEmbeddedStatement(node, node.statement);
-      if (qn.is.kind(Block, node.statement)) {
+      if (Node.is.kind(Block, node.statement)) {
         writeSpace();
       } else {
         writeLineOrSpace(node);
@@ -2689,7 +2689,7 @@ namespace qnr {
     }
 
     function emitTokenWithComment(token: Syntax, pos: number, writer: (s: string) => void, contextNode: Node, indentLeading?: boolean) {
-      const node = qn.get.parseTreeOf(contextNode);
+      const node = Node.get.parseTreeOf(contextNode);
       const isSimilarNode = node && node.kind === contextNode.kind;
       const startPos = pos;
       if (isSimilarNode && currentSourceFile) {
@@ -2783,7 +2783,7 @@ namespace qnr {
     }
 
     function emitVariableDeclarationList(node: VariableDeclarationList) {
-      writeKeyword(qn.is.aLet(node) ? 'let' : isVarConst(node) ? 'const' : 'var');
+      writeKeyword(Node.is.aLet(node) ? 'let' : isVarConst(node) ? 'const' : 'var');
       writeSpace();
       emitList(node, node.declarations, ListFormat.VariableDeclarationList);
     }
@@ -2809,8 +2809,8 @@ namespace qnr {
     function emitSignatureAndBody(node: FunctionLikeDeclaration, emitSignatureHead: (node: SignatureDeclaration) => void) {
       const body = node.body;
       if (body) {
-        if (qn.is.kind(Block, body)) {
-          const indentedFlag = qn.get.emitFlags(node) & EmitFlags.Indented;
+        if (Node.is.kind(Block, body)) {
+          const indentedFlag = Node.get.emitFlags(node) & EmitFlags.Indented;
           if (indentedFlag) {
             increaseIndent();
           }
@@ -2856,7 +2856,7 @@ namespace qnr {
       // * A non-synthesized body's start and end position are on different lines.
       // * Any statement in the body starts on a new line.
 
-      if (qn.get.emitFlags(body) & EmitFlags.SingleLine) {
+      if (Node.get.emitFlags(body) & EmitFlags.SingleLine) {
         return true;
       }
 
@@ -2934,7 +2934,7 @@ namespace qnr {
         emitIdentifierName(node.name);
       }
 
-      const indentedFlag = qn.get.emitFlags(node) & EmitFlags.Indented;
+      const indentedFlag = Node.get.emitFlags(node) & EmitFlags.Indented;
       if (indentedFlag) {
         increaseIndent();
       }
@@ -3206,7 +3206,7 @@ namespace qnr {
     function emitJsxOpeningElementOrFragment(node: JsxOpeningElement | JsxOpeningFragment) {
       writePunctuation('<');
 
-      if (qn.is.kind(JsxOpeningElement, node)) {
+      if (Node.is.kind(JsxOpeningElement, node)) {
         const indented = writeLineSeparatorsAndIndentBefore(node.tagName, node);
         emitJsxTagName(node.tagName);
         emitTypeArguments(node, node.typeArguments);
@@ -3227,7 +3227,7 @@ namespace qnr {
 
     function emitJsxClosingElementOrFragment(node: JsxClosingElement | JsxClosingFragment) {
       writePunctuation('</');
-      if (qn.is.kind(JsxClosingElement, node)) {
+      if (Node.is.kind(JsxClosingElement, node)) {
         emitJsxTagName(node.tagName);
       }
       writePunctuation('>');
@@ -3282,7 +3282,7 @@ namespace qnr {
       emitCaseOrDefaultClauseRest(node, node.statements, pos);
     }
 
-    function emitCaseOrDefaultClauseRest(parentNode: Node, statements: NodeArray<Statement>, colonPos: number) {
+    function emitCaseOrDefaultClauseRest(parentNode: Node, statements: Nodes<Statement>, colonPos: number) {
       const emitAsSingleStatement =
         statements.length === 1 &&
         // treat synthesized nodes as located on the same line for emit purposes
@@ -3334,7 +3334,7 @@ namespace qnr {
       // "comment1" is not considered to be leading comment for node.initializer
       // but rather a trailing comment on the previous node.
       const initializer = node.initializer;
-      if (emitTrailingCommentsOfPosition && (qn.get.emitFlags(initializer) & EmitFlags.NoLeadingComments) === 0) {
+      if (emitTrailingCommentsOfPosition && (Node.get.emitFlags(initializer) & EmitFlags.NoLeadingComments) === 0) {
         const commentRange = getCommentRange(initializer);
         emitTrailingCommentsOfPosition(commentRange.pos);
       }
@@ -3459,15 +3459,15 @@ namespace qnr {
     }
 
     function emitJSDocTypeLiteral(lit: JSDocTypeLiteral) {
-      emitList(lit, NodeArray.create(lit.jsDocPropertyTags), ListFormat.JSDocComment);
+      emitList(lit, Nodes.create(lit.jsDocPropertyTags), ListFormat.JSDocComment);
     }
 
     function emitJSDocSignature(sig: JSDocSignature) {
       if (sig.typeParameters) {
-        emitList(sig, NodeArray.create(sig.typeParameters), ListFormat.JSDocComment);
+        emitList(sig, Nodes.create(sig.typeParameters), ListFormat.JSDocComment);
       }
       if (sig.parameters) {
-        emitList(sig, NodeArray.create(sig.parameters), ListFormat.JSDocComment);
+        emitList(sig, Nodes.create(sig.parameters), ListFormat.JSDocComment);
       }
       if (sig.type) {
         writeLine();
@@ -3523,7 +3523,7 @@ namespace qnr {
       if (emitBodyWithDetachedComments) {
         // Emit detached comment if there are no prologue directives or if the first node is synthesized.
         // The synthesized node will have no leading comment so some comments may be missed.
-        const shouldEmitDetachedComment = statements.length === 0 || !qn.is.prologueDirective(statements[0]) || isSynthesized(statements[0]);
+        const shouldEmitDetachedComment = statements.length === 0 || !Node.is.prologueDirective(statements[0]) || isSynthesized(statements[0]);
         if (shouldEmitDetachedComment) {
           emitBodyWithDetachedComments(node, statements, emitSourceFileWorker);
           return;
@@ -3535,7 +3535,7 @@ namespace qnr {
     function emitSyntheticTripleSlashReferencesIfNeeded(node: Bundle) {
       emitTripleSlashDirectives(!!node.hasNoDefaultLib, node.syntheticFileReferences || [], node.syntheticTypeReferences || [], node.syntheticLibReferences || []);
       for (const prepend of node.prepends) {
-        if (qn.is.kind(UnparsedSource, prepend) && prepend.syntheticReferences) {
+        if (Node.is.kind(UnparsedSource, prepend) && prepend.syntheticReferences) {
           for (const ref of prepend.syntheticReferences) {
             emit(ref);
             writeLine();
@@ -3594,7 +3594,7 @@ namespace qnr {
       pushNameGenerationScope(node);
       forEach(node.statements, generateNames);
       emitHelpers(node);
-      const index = findIndex(statements, (statement) => !qn.is.prologueDirective(statement));
+      const index = findIndex(statements, (statement) => !Node.is.prologueDirective(statement));
       emitTripleSlashDirectivesIfNeeded(node);
       emitList(node, statements, ListFormat.MultiLine, index === -1 ? statements.length : index);
       popNameGenerationScope(node);
@@ -3618,7 +3618,7 @@ namespace qnr {
       let needsToSetSourceFile = !!sourceFile;
       for (let i = 0; i < statements.length; i++) {
         const statement = statements[i];
-        if (qn.is.prologueDirective(statement)) {
+        if (Node.is.prologueDirective(statement)) {
           const shouldEmitPrologueDirective = seenPrologueDirectives ? !seenPrologueDirectives.has(statement.expression.text) : true;
           if (shouldEmitPrologueDirective) {
             if (needsToSetSourceFile) {
@@ -3657,7 +3657,7 @@ namespace qnr {
     }
 
     function emitPrologueDirectivesIfNeeded(sourceFileOrBundle: Bundle | SourceFile) {
-      if (qn.is.kind(SourceFile, sourceFileOrBundle)) {
+      if (Node.is.kind(SourceFile, sourceFileOrBundle)) {
         emitPrologueDirectives(sourceFileOrBundle.statements, sourceFileOrBundle);
       } else {
         const seenPrologueDirectives = createMap<true>();
@@ -3679,7 +3679,7 @@ namespace qnr {
         let directives: SourceFilePrologueDirective[] | undefined;
         let end = 0;
         for (const statement of sourceFile.statements) {
-          if (!qn.is.prologueDirective(statement)) break;
+          if (!Node.is.prologueDirective(statement)) break;
           if (seenPrologueDirectives.has(statement.expression.text)) continue;
           seenPrologueDirectives.set(statement.expression.text, true);
           (directives || (directives = [])).push({
@@ -3699,7 +3699,7 @@ namespace qnr {
     }
 
     function emitShebangIfNeeded(sourceFileOrBundle: Bundle | SourceFile | UnparsedSource) {
-      if (qn.is.kind(SourceFile, sourceFileOrBundle) || qn.is.kind(UnparsedSource, sourceFileOrBundle)) {
+      if (Node.is.kind(SourceFile, sourceFileOrBundle) || Node.is.kind(UnparsedSource, sourceFileOrBundle)) {
         const shebang = qy.get.shebang(sourceFileOrBundle.text);
         if (shebang) {
           writeComment(shebang);
@@ -3734,7 +3734,7 @@ namespace qnr {
       write = savedWrite;
     }
 
-    function emitModifiers(node: Node, modifiers: NodeArray<Modifier> | undefined) {
+    function emitModifiers(node: Node, modifiers: Nodes<Modifier> | undefined) {
       if (modifiers && modifiers.length) {
         emitList(node, modifiers, ListFormat.Modifiers);
         writeSpace();
@@ -3787,13 +3787,13 @@ namespace qnr {
     }
 
     function emitEmbeddedStatement(parent: Node, node: Statement) {
-      if (qn.is.kind(Block, node) || qn.get.emitFlags(parent) & EmitFlags.SingleLine) {
+      if (Node.is.kind(Block, node) || Node.get.emitFlags(parent) & EmitFlags.SingleLine) {
         writeSpace();
         emit(node);
       } else {
         writeLine();
         increaseIndent();
-        if (qn.is.kind(EmptyStatement, node)) {
+        if (Node.is.kind(EmptyStatement, node)) {
           pipelineEmit(EmitHint.EmbeddedStatement, node);
         } else {
           emit(node);
@@ -3802,35 +3802,35 @@ namespace qnr {
       }
     }
 
-    function emitDecorators(parentNode: Node, decorators: NodeArray<Decorator> | undefined) {
+    function emitDecorators(parentNode: Node, decorators: Nodes<Decorator> | undefined) {
       emitList(parentNode, decorators, ListFormat.Decorators);
     }
 
-    function emitTypeArguments(parentNode: Node, typeArguments: NodeArray<TypeNode> | undefined) {
+    function emitTypeArguments(parentNode: Node, typeArguments: Nodes<TypeNode> | undefined) {
       emitList(parentNode, typeArguments, ListFormat.TypeArguments);
     }
 
     function emitTypeParameters(
       parentNode: SignatureDeclaration | InterfaceDeclaration | TypeAliasDeclaration | ClassDeclaration | ClassExpression,
-      typeParameters: NodeArray<TypeParameterDeclaration> | undefined
+      typeParameters: Nodes<TypeParameterDeclaration> | undefined
     ) {
-      if (qn.is.functionLike(parentNode) && parentNode.typeArguments) {
+      if (Node.is.functionLike(parentNode) && parentNode.typeArguments) {
         // Quick info uses type arguments in place of type parameters on instantiated signatures
         return emitTypeArguments(parentNode, parentNode.typeArguments);
       }
       emitList(parentNode, typeParameters, ListFormat.TypeParameters);
     }
 
-    function emitParameters(parentNode: Node, parameters: NodeArray<ParameterDeclaration>) {
+    function emitParameters(parentNode: Node, parameters: Nodes<ParameterDeclaration>) {
       emitList(parentNode, parameters, ListFormat.Parameters);
     }
 
-    function canEmitSimpleArrowHead(parentNode: FunctionTypeNode | ArrowFunction, parameters: NodeArray<ParameterDeclaration>) {
+    function canEmitSimpleArrowHead(parentNode: FunctionTypeNode | ArrowFunction, parameters: Nodes<ParameterDeclaration>) {
       const parameter = singleOrUndefined(parameters);
       return (
         parameter &&
         parameter.pos === parentNode.pos && // may not have parsed tokens between parent and parameter
-        qn.is.kind(ArrowFunction, parentNode) && // only arrow functions may have simple arrow head
+        Node.is.kind(ArrowFunction, parentNode) && // only arrow functions may have simple arrow head
         !parentNode.type && // arrow function may not have return type annotation
         !some(parentNode.decorators) && // parent may not have decorators
         !some(parentNode.modifiers) && // parent may not have modifiers
@@ -3841,11 +3841,11 @@ namespace qnr {
         !parameter.questionToken && // parameter may not be optional
         !parameter.type && // parameter may not have a type annotation
         !parameter.initializer && // parameter may not have an initializer
-        qn.is.kind(Identifier, parameter.name)
+        Node.is.kind(Identifier, parameter.name)
       ); // parameter name must be identifier
     }
 
-    function emitParametersForArrow(parentNode: FunctionTypeNode | ArrowFunction, parameters: NodeArray<ParameterDeclaration>) {
+    function emitParametersForArrow(parentNode: FunctionTypeNode | ArrowFunction, parameters: Nodes<ParameterDeclaration>) {
       if (canEmitSimpleArrowHead(parentNode, parameters)) {
         emitList(parentNode, parameters, ListFormat.Parameters & ~ListFormat.Parenthesis);
       } else {
@@ -3853,15 +3853,15 @@ namespace qnr {
       }
     }
 
-    function emitParametersForIndexSignature(parentNode: Node, parameters: NodeArray<ParameterDeclaration>) {
+    function emitParametersForIndexSignature(parentNode: Node, parameters: Nodes<ParameterDeclaration>) {
       emitList(parentNode, parameters, ListFormat.IndexSignatureParameters);
     }
 
-    function emitList(parentNode: TextRange, children: NodeArray<Node> | undefined, format: ListFormat, start?: number, count?: number) {
+    function emitList(parentNode: TextRange, children: Nodes<Node> | undefined, format: ListFormat, start?: number, count?: number) {
       emitNodeList(emit, parentNode, children, format, start, count);
     }
 
-    function emitExpressionList(parentNode: TextRange, children: NodeArray<Node> | undefined, format: ListFormat, start?: number, count?: number) {
+    function emitExpressionList(parentNode: TextRange, children: Nodes<Node> | undefined, format: ListFormat, start?: number, count?: number) {
       emitNodeList(emitExpression as (node: Node) => void, parentNode, children, format, start, count); // TODO: GH#18217
     }
 
@@ -3888,7 +3888,7 @@ namespace qnr {
       }
     }
 
-    function emitNodeList(emit: (node: Node) => void, parentNode: TextRange, children: NodeArray<Node> | undefined, format: ListFormat, start = 0, count = children ? children.length - start : 0) {
+    function emitNodeList(emit: (node: Node) => void, parentNode: TextRange, children: Nodes<Node> | undefined, format: ListFormat, start = 0, count = children ? children.length - start : 0) {
       const isUndefined = children === undefined;
       if (isUndefined && format & ListFormat.OptionalIfUndefined) {
         return;
@@ -3896,11 +3896,11 @@ namespace qnr {
 
       const isEmpty = children === undefined || start >= children.length || count === 0;
       if (isEmpty && format & ListFormat.OptionalIfEmpty) {
-        if (onBeforeEmitNodeArray) {
-          onBeforeEmitNodeArray(children);
+        if (onBeforeEmitNodes) {
+          onBeforeEmitNodes(children);
         }
-        if (onAfterEmitNodeArray) {
-          onAfterEmitNodeArray(children);
+        if (onAfterEmitNodes) {
+          onAfterEmitNodes(children);
         }
         return;
       }
@@ -3913,8 +3913,8 @@ namespace qnr {
         }
       }
 
-      if (onBeforeEmitNodeArray) {
-        onBeforeEmitNodeArray(children);
+      if (onBeforeEmitNodes) {
+        onBeforeEmitNodes(children);
       }
 
       if (isEmpty) {
@@ -4016,7 +4016,7 @@ namespace qnr {
         //          2
         //          /* end of element 2 */
         //       ];
-        if (previousSibling && format & ListFormat.DelimitersMask && previousSibling.end !== parentNode.end && !(qn.get.emitFlags(previousSibling) & EmitFlags.NoTrailingComments)) {
+        if (previousSibling && format & ListFormat.DelimitersMask && previousSibling.end !== parentNode.end && !(Node.get.emitFlags(previousSibling) & EmitFlags.NoTrailingComments)) {
           emitLeadingCommentsOfPosition(previousSibling.end);
         }
 
@@ -4036,8 +4036,8 @@ namespace qnr {
         }
       }
 
-      if (onAfterEmitNodeArray) {
-        onAfterEmitNodeArray(children);
+      if (onAfterEmitNodes) {
+        onAfterEmitNodes(children);
       }
 
       if (format & ListFormat.BracketsMask) {
@@ -4136,7 +4136,7 @@ namespace qnr {
     }
 
     function writeLineOrSpace(node: Node) {
-      if (qn.get.emitFlags(node) & EmitFlags.SingleLine) {
+      if (Node.get.emitFlags(node) & EmitFlags.SingleLine) {
         writeSpace();
       } else {
         writeLine();
@@ -4305,7 +4305,7 @@ namespace qnr {
     }
 
     function linesBetweenNodes(parent: Node, node1: Node, node2: Node): number {
-      if (qn.get.emitFlags(parent) & EmitFlags.NoIndentation) {
+      if (Node.get.emitFlags(parent) & EmitFlags.NoIndentation) {
         return 0;
       }
 
@@ -4340,17 +4340,17 @@ namespace qnr {
       return node;
     }
 
-    function qn.get.textOf(node: Node, includeTrivia?: boolean): string {
-      if (qn.is.generatedIdentifier(node)) {
+    function Node.get.textOf(node: Node, includeTrivia?: boolean): string {
+      if (Node.is.generatedIdentifier(node)) {
         return generateName(node);
       } else if (
-        (qn.is.kind(Identifier, node) || qn.is.kind(PrivateIdentifier, node)) &&
-        (isSynthesized(node) || !node.parent || !currentSourceFile || (node.parent && currentSourceFile && qn.get.sourceFileOf(node) !== qn.get.originalOf(currentSourceFile)))
+        (Node.is.kind(Identifier, node) || Node.is.kind(PrivateIdentifier, node)) &&
+        (isSynthesized(node) || !node.parent || !currentSourceFile || (node.parent && currentSourceFile && Node.get.sourceFileOf(node) !== Node.get.originalOf(currentSourceFile)))
       ) {
         return idText(node);
       } else if (node.kind === Syntax.StringLiteral && (<StringLiteral>node).textSourceNode) {
-        return qn.get.textOf((<StringLiteral>node).textSourceNode!, includeTrivia);
-      } else if (qn.is.literalExpression(node) && (isSynthesized(node) || !node.parent)) {
+        return Node.get.textOf((<StringLiteral>node).textSourceNode!, includeTrivia);
+      } else if (Node.is.literalExpression(node) && (isSynthesized(node) || !node.parent)) {
         return node.text;
       }
 
@@ -4360,11 +4360,11 @@ namespace qnr {
     function getLiteralTextOfNode(node: LiteralLikeNode, neverAsciiEscape: boolean | undefined, jsxAttributeEscape: boolean): string {
       if (node.kind === Syntax.StringLiteral && (<StringLiteral>node).textSourceNode) {
         const textSourceNode = (<StringLiteral>node).textSourceNode!;
-        if (qn.is.kind(Identifier, textSourceNode) || qn.is.kind(NumericLiteral, textSourceNode)) {
-          const text = qn.is.kind(NumericLiteral, textSourceNode) ? textSourceNode.text : qn.get.textOf(textSourceNode);
+        if (Node.is.kind(Identifier, textSourceNode) || Node.is.kind(NumericLiteral, textSourceNode)) {
+          const text = Node.is.kind(NumericLiteral, textSourceNode) ? textSourceNode.text : Node.get.textOf(textSourceNode);
           return jsxAttributeEscape
             ? `"${escapeJsxAttributeString(text)}"`
-            : neverAsciiEscape || qn.get.emitFlags(node) & EmitFlags.NoAsciiEscaping
+            : neverAsciiEscape || Node.get.emitFlags(node) & EmitFlags.NoAsciiEscaping
             ? `"${escapeString(text)}"`
             : `"${escapeNonAsciiString(text)}"`;
         } else {
@@ -4372,14 +4372,14 @@ namespace qnr {
         }
       }
 
-      return qn.get.literalText(node, currentSourceFile!, neverAsciiEscape, jsxAttributeEscape);
+      return Node.get.literalText(node, currentSourceFile!, neverAsciiEscape, jsxAttributeEscape);
     }
 
     /**
      * Push a new name generation scope.
      */
     function pushNameGenerationScope(node: Node | undefined) {
-      if (node && qn.get.emitFlags(node) & EmitFlags.ReuseTempVariableScope) {
+      if (node && Node.get.emitFlags(node) & EmitFlags.ReuseTempVariableScope) {
         return;
       }
       tempFlagsStack.push(tempFlags);
@@ -4391,7 +4391,7 @@ namespace qnr {
      * Pop the current name generation scope.
      */
     function popNameGenerationScope(node: Node | undefined) {
-      if (node && qn.get.emitFlags(node) & EmitFlags.ReuseTempVariableScope) {
+      if (node && Node.get.emitFlags(node) & EmitFlags.ReuseTempVariableScope) {
         return;
       }
       tempFlags = tempFlagsStack.pop()!;
@@ -4460,7 +4460,7 @@ namespace qnr {
           break;
         case Syntax.FunctionDeclaration:
           generateNameIfNeeded((<FunctionDeclaration>node).name);
-          if (qn.get.emitFlags(node) & EmitFlags.ReuseTempVariableScope) {
+          if (Node.get.emitFlags(node) & EmitFlags.ReuseTempVariableScope) {
             forEach((<FunctionDeclaration>node).parameters, generateNames);
             generateNames((<FunctionDeclaration>node).body);
           }
@@ -4507,9 +4507,9 @@ namespace qnr {
 
     function generateNameIfNeeded(name: DeclarationName | undefined) {
       if (name) {
-        if (qn.is.generatedIdentifier(name)) {
+        if (Node.is.generatedIdentifier(name)) {
           generateName(name);
-        } else if (qn.is.kind(BindingPattern, name)) {
+        } else if (Node.is.kind(BindingPattern, name)) {
           generateNames(name);
         }
       }
@@ -4555,7 +4555,7 @@ namespace qnr {
      * Returns a value indicating whether a name is unique within a container.
      */
     function isUniqueLocalName(name: string, container: Node): boolean {
-      for (let node = container; qn.is.descendantOf(node, container); node = node.nextContainer!) {
+      for (let node = container; Node.is.descendantOf(node, container); node = node.nextContainer!) {
         if (node.locals) {
           const local = node.locals.get(qy.get.escUnderscores(name));
           // We conservatively include alias symbols to cover cases where they're emitted as locals
@@ -4644,7 +4644,7 @@ namespace qnr {
      * Generates a unique name for a ModuleDeclaration or EnumDeclaration.
      */
     function generateNameForModuleOrEnum(node: ModuleDeclaration | EnumDeclaration) {
-      const name = qn.get.textOf(node.name);
+      const name = Node.get.textOf(node.name);
       // Use module/enum name itself if it is unique, otherwise make a unique variation
       return isUniqueLocalName(name, node) ? name : makeUniqueName(name);
     }
@@ -4654,7 +4654,7 @@ namespace qnr {
      */
     function generateNameForImportOrExportDeclaration(node: ImportDeclaration | ExportDeclaration) {
       const expr = getExternalModuleName(node)!; // TODO: GH#18217
-      const baseName = qn.is.kind(StringLiteral, expr) ? makeIdentifierFromModuleName(expr.text) : 'module';
+      const baseName = Node.is.kind(StringLiteral, expr) ? makeIdentifierFromModuleName(expr.text) : 'module';
       return makeUniqueName(baseName);
     }
 
@@ -4673,7 +4673,7 @@ namespace qnr {
     }
 
     function generateNameForMethodOrAccessor(node: MethodDeclaration | AccessorDeclaration) {
-      if (qn.is.kind(Identifier, node.name)) {
+      if (Node.is.kind(Identifier, node.name)) {
         return generateNameCached(node.name);
       }
       return makeTempVariableName(TempFlags.Auto);
@@ -4685,7 +4685,7 @@ namespace qnr {
     function generateNameForNode(node: Node, flags?: GeneratedIdentifierFlags): string {
       switch (node.kind) {
         case Syntax.Identifier:
-          return makeUniqueName(qn.get.textOf(node), isUniqueName, !!(flags! & GeneratedIdentifierFlags.Optimistic), !!(flags! & GeneratedIdentifierFlags.ReservedInNestedScopes));
+          return makeUniqueName(Node.get.textOf(node), isUniqueName, !!(flags! & GeneratedIdentifierFlags.Optimistic), !!(flags! & GeneratedIdentifierFlags.ReservedInNestedScopes));
         case Syntax.ModuleDeclaration:
         case Syntax.EnumDeclaration:
           return generateNameForModuleOrEnum(<ModuleDeclaration | EnumDeclaration>node);
@@ -4742,7 +4742,7 @@ namespace qnr {
 
         // if "node" is a different generated name (having a different
         // "autoGenerateId"), use it and stop traversing.
-        if (qn.is.kind(Identifier, node) && !!(node.autoGenerateFlags! & GeneratedIdentifierFlags.Node) && node.autoGenerateId !== autoGenerateId) {
+        if (Node.is.kind(Identifier, node) && !!(node.autoGenerateFlags! & GeneratedIdentifierFlags.Node) && node.autoGenerateId !== autoGenerateId) {
           break;
         }
 
@@ -4759,7 +4759,7 @@ namespace qnr {
       qa.assert(lastNode === node || lastSubstitution === node);
       enterComment();
       hasWrittenComment = false;
-      const emitFlags = qn.get.emitFlags(node);
+      const emitFlags = Node.get.emitFlags(node);
       const { pos, end } = getCommentRange(node);
       const isEmittedNode = node.kind !== Syntax.NotEmittedStatement;
 
@@ -4860,7 +4860,7 @@ namespace qnr {
     function emitBodyWithDetachedComments(node: Node, detachedRange: TextRange, emitCallback: (node: Node) => void) {
       enterComment();
       const { pos, end } = detachedRange;
-      const emitFlags = qn.get.emitFlags(node);
+      const emitFlags = Node.get.emitFlags(node);
       const skipLeadingComments = pos < 0 || (emitFlags & EmitFlags.NoLeadingComments) !== 0;
       const skipTrailingComments = commentsDisabled || end < 0 || (emitFlags & EmitFlags.NoTrailingComments) !== 0;
       if (!skipLeadingComments) {
@@ -5060,9 +5060,9 @@ namespace qnr {
     function pipelineEmitWithSourceMap(hint: EmitHint, node: Node) {
       qa.assert(lastNode === node || lastSubstitution === node);
       const pipelinePhase = getNextPipelinePhase(PipelinePhase.SourceMaps, hint, node);
-      if (qn.is.kind(UnparsedSource, node) || qn.is.kind(UnparsedPrepend, node)) {
+      if (Node.is.kind(UnparsedSource, node) || Node.is.kind(UnparsedPrepend, node)) {
         pipelinePhase(hint, node);
-      } else if (qn.is.unparsedNode(node)) {
+      } else if (Node.is.unparsedNode(node)) {
         const parsed = getParsedSourceMap(node.parent);
         if (parsed && sourceMapGenerator) {
           sourceMapGenerator.appendSourceMap(
@@ -5077,7 +5077,7 @@ namespace qnr {
         pipelinePhase(hint, node);
       } else {
         const { pos, end, source = sourceMapSource } = getSourceMapRange(node);
-        const emitFlags = qn.get.emitFlags(node);
+        const emitFlags = Node.get.emitFlags(node);
         if (node.kind !== Syntax.NotEmittedStatement && (emitFlags & EmitFlags.NoLeadingSourceMap) === 0 && pos >= 0) {
           emitSourcePos(source, skipSourceTrivia(source, pos));
         }

@@ -21,7 +21,7 @@ namespace qnr {
         if (!qp_isExternalModule(node) || some(result.statements, qp_isExternalModuleIndicator)) {
           return result;
         }
-        return qp_updateSourceNode(result, setTextRange(NodeArray.create([...result.statements, createEmptyExports()]), result.statements));
+        return qp_updateSourceNode(result, setTextRange(Nodes.create([...result.statements, createEmptyExports()]), result.statements));
       }
 
       return node;
@@ -34,8 +34,8 @@ namespace qnr {
         const statementOffset = addPrologue(statements, node.statements);
         append(statements, externalHelpersImportDeclaration);
 
-        addRange(statements, NodeArray.visit(node.statements, visitor, isStatement, statementOffset));
-        return qp_updateSourceNode(node, setTextRange(NodeArray.create(statements), node.statements));
+        addRange(statements, Nodes.visit(node.statements, visitor, isStatement, statementOffset));
+        return qp_updateSourceNode(node, setTextRange(Nodes.create(statements), node.statements));
       } else {
         return visitEachChild(node, visitor, context);
       }
@@ -68,7 +68,7 @@ namespace qnr {
       }
 
       // Either ill-formed or don't need to be tranformed.
-      if (!node.exportClause || !qn.is.kind(NamespaceExport, node.exportClause) || !node.moduleSpecifier) {
+      if (!node.exportClause || !Node.is.kind(NamespaceExport, node.exportClause) || !node.moduleSpecifier) {
         return node;
       }
 
@@ -95,7 +95,7 @@ namespace qnr {
      * @param emit A callback used to emit the node in the printer.
      */
     function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void): void {
-      if (qn.is.kind(SourceFile, node)) {
+      if (Node.is.kind(SourceFile, node)) {
         if ((qp_isExternalModule(node) || compilerOptions.isolatedModules) && compilerOptions.importHelpers) {
           helperNameSubstitutions = createMap<Identifier>();
         }
@@ -118,7 +118,7 @@ namespace qnr {
      */
     function onSubstituteNode(hint: EmitHint, node: Node) {
       node = previousOnSubstituteNode(hint, node);
-      if (helperNameSubstitutions && qn.is.kind(Identifier, node) && qn.get.emitFlags(node) & EmitFlags.HelperName) {
+      if (helperNameSubstitutions && Node.is.kind(Identifier, node) && Node.get.emitFlags(node) & EmitFlags.HelperName) {
         return substituteHelperName(node);
       }
 

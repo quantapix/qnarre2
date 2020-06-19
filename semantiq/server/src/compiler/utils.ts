@@ -1,26 +1,24 @@
 namespace qnr {
-  export namespace qt {
-    export interface QSpan {
-      start: number;
-      length: number;
-    }
+  export interface QSpan {
+    start: number;
+    length: number;
+  }
 
-    export interface QRange {
-      pos: number;
-      end: number;
+  export interface QRange {
+    pos: number;
+    end: number;
+  }
+  export namespace QRange {
+    export interface Change {
+      span: QSpan;
+      newLength: number;
     }
-    export namespace QRange {
-      export interface Change {
-        span: QSpan;
-        newLength: number;
-      }
-      export interface Comment extends QRange {
-        hasTrailingNewLine?: boolean;
-        kind: CommentKind;
-      }
-      export interface SourceMap extends QRange {
-        source?: SourceMapSource;
-      }
+    export interface Comment extends QRange {
+      hasTrailingNewLine?: boolean;
+      kind: CommentKind;
+    }
+    export interface SourceMap extends QRange {
+      source?: SourceMapSource;
     }
   }
 

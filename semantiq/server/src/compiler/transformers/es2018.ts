@@ -194,7 +194,7 @@ namespace qnr {
         case Syntax.TaggedTemplateExpression:
           return visitTaggedTemplateExpression(node as TaggedTemplateExpression);
         case Syntax.PropertyAccessExpression:
-          if (capturedSuperProperties && qn.is.kind(PropertyAccessExpression, node) && node.expression.kind === Syntax.SuperKeyword) {
+          if (capturedSuperProperties && Node.is.kind(PropertyAccessExpression, node) && node.expression.kind === Syntax.SuperKeyword) {
             capturedSuperProperties.set(node.name.escapedText, true);
           }
           return visitEachChild(node, visitor, context);
@@ -341,7 +341,7 @@ namespace qnr {
         visited.statements,
         taggedTemplateStringDeclarations && [createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList(taggedTemplateStringDeclarations))]
       );
-      const result = qp_updateSourceNode(visited, setTextRange(NodeArray.create(statement), node.statements));
+      const result = qp_updateSourceNode(visited, setTextRange(Nodes.create(statement), node.statements));
       exitSubtree(ancestorFacts);
       return result;
     }
@@ -365,7 +365,7 @@ namespace qnr {
     }
 
     function visitCatchClause(node: CatchClause) {
-      if (node.variableDeclaration && qn.is.kind(BindingPattern, node.variableDeclaration.name) && node.variableDeclaration.name.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
+      if (node.variableDeclaration && Node.is.kind(BindingPattern, node.variableDeclaration.name) && node.variableDeclaration.name.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
         const name = getGeneratedNameForNode(node.variableDeclaration.name);
         const updatedDecl = updateVariableDeclaration(node.variableDeclaration, node.variableDeclaration.name, /*type*/ undefined, name);
         const visitedBindings = flattenDestructuringBinding(updatedDecl, visitor, context, FlattenLevel.ObjectRest);
@@ -407,7 +407,7 @@ namespace qnr {
 
     function visitVariableDeclarationWorker(node: VariableDeclaration, exportedVariableStatement: boolean): VisitResult<VariableDeclaration> {
       // If we are here it is because the name contains a binding pattern with a rest somewhere in it.
-      if (qn.is.kind(BindingPattern, node.name) && node.name.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
+      if (Node.is.kind(BindingPattern, node.name) && node.name.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
         return flattenDestructuringBinding(node, visitor, context, FlattenLevel.ObjectRest, /*rval*/ undefined, exportedVariableStatement);
       }
       return visitEachChild(node, visitor, context);
@@ -446,12 +446,12 @@ namespace qnr {
 
     function transformForOfStatementWithObjectRest(node: ForOfStatement) {
       const initializerWithoutParens = skipParentheses(node.initializer) as ForInitializer;
-      if (qn.is.kind(VariableDeclarationList, initializerWithoutParens) || qn.is.kind(AssignmentPattern, initializerWithoutParens)) {
+      if (Node.is.kind(VariableDeclarationList, initializerWithoutParens) || Node.is.kind(AssignmentPattern, initializerWithoutParens)) {
         let bodyLocation: TextRange | undefined;
         let statementsLocation: TextRange | undefined;
         const temp = createTempVariable(/*recordTempVariable*/ undefined);
         const statements: Statement[] = [createForOfBindingStatement(initializerWithoutParens, temp)];
-        if (qn.is.kind(Block, node.statement)) {
+        if (Node.is.kind(Block, node.statement)) {
           addRange(statements, node.statement.statements);
           bodyLocation = node.statement;
           statementsLocation = node.statement.statements;
@@ -465,7 +465,7 @@ namespace qnr {
           node.awaitModifier,
           setTextRange(createVariableDeclarationList([setTextRange(createVariableDeclaration(temp), node.initializer)], NodeFlags.Let), node.initializer),
           node.expression,
-          setTextRange(createBlock(setTextRange(NodeArray.create(statements), statementsLocation), /*multiLine*/ true), bodyLocation)
+          setTextRange(createBlock(setTextRange(Nodes.create(statements), statementsLocation), /*multiLine*/ true), bodyLocation)
         );
       }
       return node;
@@ -478,7 +478,7 @@ namespace qnr {
       let statementsLocation: TextRange | undefined;
       const statements: Statement[] = [visitNode(binding, visitor, isStatement)];
       const statement = visitNode(node.statement, visitor, isStatement);
-      if (qn.is.kind(Block, statement)) {
+      if (Node.is.kind(Block, statement)) {
         addRange(statements, statement.statements);
         bodyLocation = statement;
         statementsLocation = statement.statements;
@@ -486,10 +486,7 @@ namespace qnr {
         statements.push(statement);
       }
 
-      return setEmitFlags(
-        setTextRange(createBlock(setTextRange(NodeArray.create(statements), statementsLocation), /*multiLine*/ true), bodyLocation),
-        EmitFlags.NoSourceMap | EmitFlags.NoTokenSourceMaps
-      );
+      return setEmitFlags(setTextRange(createBlock(setTextRange(Nodes.create(statements), statementsLocation), /*multiLine*/ true), bodyLocation), EmitFlags.NoSourceMap | EmitFlags.NoTokenSourceMaps);
     }
 
     function createDownlevelAwait(expression: Expression) {
@@ -498,8 +495,8 @@ namespace qnr {
 
     function transformForAwaitOfStatement(node: ForOfStatement, outermostLabeledStatement: LabeledStatement | undefined, ancestorFacts: HierarchyFacts) {
       const expression = visitNode(node.expression, visitor, isExpression);
-      const iterator = qn.is.kind(Identifier, expression) ? getGeneratedNameForNode(expression) : createTempVariable(/*recordTempVariable*/ undefined);
-      const result = qn.is.kind(Identifier, expression) ? getGeneratedNameForNode(iterator) : createTempVariable(/*recordTempVariable*/ undefined);
+      const iterator = Node.is.kind(Identifier, expression) ? getGeneratedNameForNode(expression) : createTempVariable(/*recordTempVariable*/ undefined);
+      const result = Node.is.kind(Identifier, expression) ? getGeneratedNameForNode(iterator) : createTempVariable(/*recordTempVariable*/ undefined);
       const errorRecord = createUniqueName('e');
       const catchVariable = getGeneratedNameForNode(errorRecord);
       const returnMethod = createTempVariable(/*recordTempVariable*/ undefined);
@@ -621,7 +618,7 @@ namespace qnr {
       const updated = MethodDeclaration.update(
         node,
         /*decorators*/ undefined,
-        enclosingFunctionFlags & FunctionFlags.Generator ? NodeArray.visit(node.modifiers, visitorNoAsyncModifier, isModifier) : node.modifiers,
+        enclosingFunctionFlags & FunctionFlags.Generator ? Nodes.visit(node.modifiers, visitorNoAsyncModifier, isModifier) : node.modifiers,
         enclosingFunctionFlags & FunctionFlags.Async ? undefined : node.asteriskToken,
         visitNode(node.name, visitor, isPropertyName),
         visitNode<Token<Syntax.QuestionToken>>(/*questionToken*/ undefined, visitor, isToken),
@@ -640,7 +637,7 @@ namespace qnr {
       const updated = updateFunctionDeclaration(
         node,
         /*decorators*/ undefined,
-        enclosingFunctionFlags & FunctionFlags.Generator ? NodeArray.visit(node.modifiers, visitorNoAsyncModifier, isModifier) : node.modifiers,
+        enclosingFunctionFlags & FunctionFlags.Generator ? Nodes.visit(node.modifiers, visitorNoAsyncModifier, isModifier) : node.modifiers,
         enclosingFunctionFlags & FunctionFlags.Async ? undefined : node.asteriskToken,
         node.name,
         /*typeParameters*/ undefined,
@@ -673,7 +670,7 @@ namespace qnr {
       enclosingFunctionFlags = getFunctionFlags(node);
       const updated = updateFunctionExpression(
         node,
-        enclosingFunctionFlags & FunctionFlags.Generator ? NodeArray.visit(node.modifiers, visitorNoAsyncModifier, isModifier) : node.modifiers,
+        enclosingFunctionFlags & FunctionFlags.Generator ? Nodes.visit(node.modifiers, visitorNoAsyncModifier, isModifier) : node.modifiers,
         enclosingFunctionFlags & FunctionFlags.Async ? undefined : node.asteriskToken,
         node.name,
         /*typeParameters*/ undefined,
@@ -749,7 +746,7 @@ namespace qnr {
       let statementOffset = 0;
       const statements: Statement[] = [];
       const body = visitNode(node.body, visitor, isConciseBody);
-      if (qn.is.kind(Block, body)) {
+      if (Node.is.kind(Block, body)) {
         statementOffset = addPrologue(statements, body.statements, /*ensureUseStrict*/ false, visitor);
       }
       addRange(statements, appendObjectRestAssignmentsIfNeeded(/*statements*/ undefined, node));
@@ -758,7 +755,7 @@ namespace qnr {
         const block = convertToFunctionBody(body, /*multiLine*/ true);
         insertStatementsAfterStandardPrologue(statements, leadingStatements);
         addRange(statements, block.statements.slice(statementOffset));
-        return updateBlock(block, setTextRange(NodeArray.create(statements), block.statements));
+        return updateBlock(block, setTextRange(Nodes.create(statements), block.statements));
       }
       return body;
     }
@@ -873,8 +870,8 @@ namespace qnr {
 
     function substituteCallExpression(node: CallExpression): Expression {
       const expression = node.expression;
-      if (qn.is.superProperty(expression)) {
-        const argumentExpression = qn.is.kind(PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
+      if (Node.is.superProperty(expression)) {
+        const argumentExpression = Node.is.kind(PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
         return createCall(createPropertyAccess(argumentExpression, 'call'), /*typeArguments*/ undefined, [createThis(), ...node.arguments]);
       }
       return node;

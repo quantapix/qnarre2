@@ -1,9 +1,9 @@
 namespace qnr {
   const isTypeNodeOrTypeParameterDeclaration = qa.or(isTypeNode, isTypeParameterDeclaration);
 
-  export function visitNode<T extends Node>(node: T | undefined, visitor: Visitor | undefined, test?: (node: Node) => boolean, lift?: (node: NodeArray<Node>) => T): T;
-  export function visitNode<T extends Node>(node: T | undefined, visitor: Visitor | undefined, test?: (node: Node) => boolean, lift?: (node: NodeArray<Node>) => T): T | undefined;
-  export function visitNode<T extends Node>(node: T | undefined, visitor: Visitor | undefined, test?: (node: Node) => boolean, lift?: (node: NodeArray<Node>) => T): T | undefined {
+  export function visitNode<T extends Node>(node: T | undefined, visitor: Visitor | undefined, test?: (node: Node) => boolean, lift?: (node: Nodes<Node>) => T): T;
+  export function visitNode<T extends Node>(node: T | undefined, visitor: Visitor | undefined, test?: (node: Node) => boolean, lift?: (node: Nodes<Node>) => T): T | undefined;
+  export function visitNode<T extends Node>(node: T | undefined, visitor: Visitor | undefined, test?: (node: Node) => boolean, lift?: (node: Nodes<Node>) => T): T | undefined {
     if (node === undefined || visitor === undefined) {
       return node;
     }
@@ -17,7 +17,7 @@ namespace qnr {
     let visitedNode: Node | undefined;
     if (visited === undefined) {
       return;
-    } else if (isArray(visited)) {
+    } else if (qa.isArray(visited)) {
       visitedNode = (lift || extractSingleNode)(visited);
     } else {
       visitedNode = visited;
@@ -28,14 +28,14 @@ namespace qnr {
     return <T>visitedNode;
   }
 
-  export function visitNodeArray<T extends Node>(nodes: NodeArray<T> | undefined, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number): NodeArray<T>;
-  export function visitNodeArray<T extends Node>(nodes: NodeArray<T> | undefined, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number): NodeArray<T> | undefined;
-  export function visitNodeArray<T extends Node>(nodes: NodeArray<T> | undefined, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number): NodeArray<T> | undefined {
+  export function visitNodes<T extends Node>(nodes: Nodes<T> | undefined, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number): Nodes<T>;
+  export function visitNodes<T extends Node>(nodes: Nodes<T> | undefined, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number): Nodes<T> | undefined;
+  export function visitNodes<T extends Node>(nodes: Nodes<T> | undefined, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number): Nodes<T> | undefined {
     if (nodes === undefined || visitor === undefined) {
       return nodes;
     }
 
-    let updated: MutableNodeArray<T> | undefined;
+    let updated: MutableNodes<T> | undefined;
     const length = nodes.length;
     if (start === undefined || start < 0) {
       start = 0;
@@ -46,7 +46,7 @@ namespace qnr {
     }
 
     if (start > 0 || count < length) {
-      updated = NodeArray.create<T>([], /*trailingComma*/ nodes.trailingComma && start + count === length);
+      updated = Nodes.create<T>([], /*trailingComma*/ nodes.trailingComma && start + count === length);
     }
 
     for (let i = 0; i < count; i++) {
@@ -56,11 +56,11 @@ namespace qnr {
       if (updated !== undefined || visited === undefined || visited !== node) {
         if (updated === undefined) {
           // Ensure we have a copy of `nodes`, up to the current index.
-          updated = NodeArray.create(nodes.slice(0, i), nodes.trailingComma);
+          updated = Nodes.create(nodes.slice(0, i), nodes.trailingComma);
           setTextRange(updated, nodes);
         }
         if (visited) {
-          if (isArray(visited)) {
+          if (qa.isArray(visited)) {
             for (const visitedNode of visited) {
               Debug.assertNode(visitedNode, test);
               aggregateTransformFlags(visitedNode);
@@ -78,27 +78,27 @@ namespace qnr {
     return updated || nodes;
   }
 
-  export function visitLexicalEnvironment(statements: NodeArray<Statement>, visitor: Visitor, context: TransformationContext, start?: number, ensureUseStrict?: boolean) {
+  export function visitLexicalEnvironment(statements: Nodes<Statement>, visitor: Visitor, context: TransformationContext, start?: number, ensureUseStrict?: boolean) {
     context.startLexicalEnvironment();
-    statements = NodeArray.visit(statements, visitor, isStatement, start);
+    statements = Nodes.visit(statements, visitor, isStatement, start);
     if (ensureUseStrict) statements = qnr.ensureUseStrict(statements); // eslint-disable-line @typescript-eslint/no-unnecessary-qualifier
     return mergeLexicalEnvironment(statements, context.endLexicalEnvironment());
   }
 
   export function visitParameterList(
-    nodes: NodeArray<ParameterDeclaration>,
+    nodes: Nodes<ParameterDeclaration>,
     visitor: Visitor,
     context: TransformationContext,
-    nodesVisitor?: <T extends Node>(nodes: NodeArray<T>, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number) => NodeArray<T>
-  ): NodeArray<ParameterDeclaration>;
+    nodesVisitor?: <T extends Node>(nodes: Nodes<T>, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number) => Nodes<T>
+  ): Nodes<ParameterDeclaration>;
   export function visitParameterList(
-    nodes: NodeArray<ParameterDeclaration> | undefined,
+    nodes: Nodes<ParameterDeclaration> | undefined,
     visitor: Visitor,
     context: TransformationContext,
-    nodesVisitor?: <T extends Node>(nodes: NodeArray<T> | undefined, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number) => NodeArray<T> | undefined
-  ): NodeArray<ParameterDeclaration> | undefined;
-  export function visitParameterList(nodes: NodeArray<ParameterDeclaration> | undefined, visitor: Visitor, context: TransformationContext, nodesVisitor = NodeArray.visit) {
-    let updated: NodeArray<ParameterDeclaration> | undefined;
+    nodesVisitor?: <T extends Node>(nodes: Nodes<T> | undefined, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number) => Nodes<T> | undefined
+  ): Nodes<ParameterDeclaration> | undefined;
+  export function visitParameterList(nodes: Nodes<ParameterDeclaration> | undefined, visitor: Visitor, context: TransformationContext, nodesVisitor = Nodes.visit) {
+    let updated: Nodes<ParameterDeclaration> | undefined;
     context.startLexicalEnvironment();
     if (nodes) {
       context.setLexicalEnvironmentFlags(LexicalEnvironmentFlags.InParameters, true);
@@ -112,7 +112,7 @@ namespace qnr {
     return updated;
   }
 
-  function addDefaultValueAssignmentsIfNeeded(parameters: NodeArray<ParameterDeclaration>, context: TransformationContext) {
+  function addDefaultValueAssignmentsIfNeeded(parameters: Nodes<ParameterDeclaration>, context: TransformationContext) {
     let result: ParameterDeclaration[] | undefined;
     for (let i = 0; i < parameters.length; i++) {
       const parameter = parameters[i];
@@ -123,7 +123,7 @@ namespace qnr {
       }
     }
     if (result) {
-      return setTextRange(NodeArray.create(result, parameters.trailingComma), parameters);
+      return setTextRange(Nodes.create(result, parameters.trailingComma), parameters);
     }
     return parameters;
   }
@@ -131,7 +131,7 @@ namespace qnr {
   function addDefaultValueAssignmentIfNeeded(parameter: ParameterDeclaration, context: TransformationContext) {
     return parameter.dot3Token
       ? parameter
-      : qn.is.kind(BindingPattern, parameter.name)
+      : Node.is.kind(BindingPattern, parameter.name)
       ? addDefaultValueAssignmentForBindingPattern(parameter, context)
       : parameter.initializer
       ? addDefaultValueAssignmentForInitializer(parameter, parameter.name, parameter.initializer, context)
@@ -177,7 +177,7 @@ namespace qnr {
                   setTextRange(
                     createAssignment(
                       setEmitFlags(getMutableClone(name), EmitFlags.NoSourceMap),
-                      setEmitFlags(initializer, EmitFlags.NoSourceMap | qn.get.emitFlags(initializer) | EmitFlags.NoComments)
+                      setEmitFlags(initializer, EmitFlags.NoSourceMap | Node.get.emitFlags(initializer) | EmitFlags.NoComments)
                     ),
                     parameter
                   ),
@@ -210,8 +210,8 @@ namespace qnr {
   }
 
   export function visitEachChild<T extends Node>(node: T, visitor: Visitor, context: TransformationContext): T;
-  export function visitEachChild<T extends Node>(node: T | undefined, visitor: Visitor, context: TransformationContext, nodesVisitor?: typeof NodeArray.visit, tokenVisitor?: Visitor): T | undefined;
-  export function visitEachChild(node: Node | undefined, visitor: Visitor, context: TransformationContext, nodesVisitor = NodeArray.visit, tokenVisitor?: Visitor): Node | undefined {
+  export function visitEachChild<T extends Node>(node: T | undefined, visitor: Visitor, context: TransformationContext, nodesVisitor?: typeof Nodes.visit, tokenVisitor?: Visitor): T | undefined;
+  export function visitEachChild(node: Node | undefined, visitor: Visitor, context: TransformationContext, nodesVisitor = Nodes.visit, tokenVisitor?: Visitor): Node | undefined {
     if (node === undefined) {
       return;
     }
@@ -434,7 +434,7 @@ namespace qnr {
           <ImportTypeNode>node,
           visitNode((<ImportTypeNode>node).argument, visitor, isTypeNode),
           visitNode((<ImportTypeNode>node).qualifier, visitor, isEntityName),
-          NodeArray.visit((<ImportTypeNode>node).typeArguments, visitor, isTypeNode),
+          Nodes.visit((<ImportTypeNode>node).typeArguments, visitor, isTypeNode),
           (<ImportTypeNode>node).isTypeOf
         );
 
@@ -554,7 +554,7 @@ namespace qnr {
         return updateTaggedTemplate(
           <TaggedTemplateExpression>node,
           visitNode((<TaggedTemplateExpression>node).tag, visitor, isExpression),
-          NodeArray.visit((<TaggedTemplateExpression>node).typeArguments, visitor, isExpression),
+          Nodes.visit((<TaggedTemplateExpression>node).typeArguments, visitor, isExpression),
           visitNode((<TaggedTemplateExpression>node).template, visitor, isTemplateLiteral)
         );
 
@@ -1016,17 +1016,17 @@ namespace qnr {
     return node ? f(initial, node) : initial;
   }
 
-  function reduceNodeArray<T>(nodes: NodeArray<Node> | undefined, f: (memo: T, nodes: NodeArray<Node>) => T, initial: T) {
+  function reduceNodes<T>(nodes: Nodes<Node> | undefined, f: (memo: T, nodes: Nodes<Node>) => T, initial: T) {
     return nodes ? f(initial, nodes) : initial;
   }
 
-  export function reduceEachChild<T>(node: Node | undefined, initial: T, cbNode: (memo: T, node: Node) => T, cbNodeArray?: (memo: T, nodes: NodeArray<Node>) => T): T {
+  export function reduceEachChild<T>(node: Node | undefined, initial: T, cbNode: (memo: T, node: Node) => T, cbNodes?: (memo: T, nodes: Nodes<Node>) => T): T {
     if (node === undefined) {
       return initial;
     }
 
-    const reduceNodes: (nodes: NodeArray<Node> | undefined, f: ((memo: T, node: Node) => T) | ((memo: T, node: NodeArray<Node>) => T), initial: T) => T = cbNodeArray ? reduceNodeArray : reduceLeft;
-    const cbNodes = cbNodeArray || cbNode;
+    const reduceNodes: (nodes: Nodes<Node> | undefined, f: ((memo: T, node: Node) => T) | ((memo: T, node: Nodes<Node>) => T), initial: T) => T = cbNodes ? reduceNodes : reduceLeft;
+    const cbNodes = cbNodes || cbNode;
     const kind = node.kind;
 
     // No need to visit nodes with no children.
@@ -1536,9 +1536,9 @@ namespace qnr {
     return i;
   }
 
-  export function mergeLexicalEnvironment(statements: NodeArray<Statement>, declarations: readonly Statement[] | undefined): NodeArray<Statement>;
+  export function mergeLexicalEnvironment(statements: Nodes<Statement>, declarations: readonly Statement[] | undefined): Nodes<Statement>;
   export function mergeLexicalEnvironment(statements: Statement[], declarations: readonly Statement[] | undefined): Statement[];
-  export function mergeLexicalEnvironment(statements: Statement[] | NodeArray<Statement>, declarations: readonly Statement[] | undefined) {
+  export function mergeLexicalEnvironment(statements: Statement[] | Nodes<Statement>, declarations: readonly Statement[] | undefined) {
     if (!some(declarations)) {
       return statements;
     }
@@ -1556,7 +1556,7 @@ namespace qnr {
 
     // splice prologues from the right into the left. We do this in reverse order
     // so that we don't need to recompute the index on the left when we insert items.
-    const left = isNodeArray(statements) ? statements.slice() : statements;
+    const left = isNodes(statements) ? statements.slice() : statements;
 
     // splice other custom prologues from right into left
     if (rightCustomPrologueEnd > rightHoistedVariablesEnd) {
@@ -1592,8 +1592,8 @@ namespace qnr {
       }
     }
 
-    if (isNodeArray(statements)) {
-      return setTextRange(NodeArray.create(left, statements.trailingComma), statements);
+    if (isNodes(statements)) {
+      return setTextRange(Nodes.create(left, statements.trailingComma), statements);
     }
 
     return statements;
@@ -1601,7 +1601,7 @@ namespace qnr {
 
   export function liftToBlock(nodes: readonly Node[]): Statement {
     assert(every(nodes, isStatement), 'Cannot lift nodes to a Block.');
-    return <Statement>singleOrUndefined(nodes) || createBlock(<NodeArray<Statement>>nodes);
+    return <Statement>singleOrUndefined(nodes) || createBlock(<Nodes<Statement>>nodes);
   }
 
   export function aggregateTransformFlags<T extends Node>(node: T): T {
@@ -1620,7 +1620,7 @@ namespace qnr {
     return computeTransformFlagsForNode(node, subtreeFlags);
   }
 
-  function aggregateTransformFlagsForNodeArray(nodes: NodeArray<Node>): TransformFlags {
+  function aggregateTransformFlagsForNodes(nodes: Nodes<Node>): TransformFlags {
     if (nodes === undefined) {
       return TransformFlags.None;
     }
@@ -1637,7 +1637,7 @@ namespace qnr {
   function aggregateTransformFlagsForSubtree(node: Node): TransformFlags {
     // We do not transform ambient declarations or types, so there is no need to
     // recursively aggregate transform flags.
-    if (hasSyntacticModifier(node, ModifierFlags.Ambient) || (qn.is.typeNode(node) && node.kind !== Syntax.ExpressionWithTypeArguments)) {
+    if (hasSyntacticModifier(node, ModifierFlags.Ambient) || (Node.is.typeNode(node) && node.kind !== Syntax.ExpressionWithTypeArguments)) {
       return TransformFlags.None;
     }
 
@@ -1649,7 +1649,7 @@ namespace qnr {
     return transformFlags | aggregateTransformFlagsForNode(node);
   }
 
-  function aggregateTransformFlagsForChildNodes(transformFlags: TransformFlags, nodes: NodeArray<Node>): TransformFlags {
-    return transformFlags | aggregateTransformFlagsForNodeArray(nodes);
+  function aggregateTransformFlagsForChildNodes(transformFlags: TransformFlags, nodes: Nodes<Node>): TransformFlags {
+    return transformFlags | aggregateTransformFlagsForNodes(nodes);
   }
 }

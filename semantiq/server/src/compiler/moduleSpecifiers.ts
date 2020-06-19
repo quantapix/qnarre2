@@ -100,7 +100,7 @@ namespace qnr.moduleSpecifiers {
     if (ambient) return [ambient];
 
     const info = getInfo(importingSourceFile.path, host);
-    const moduleSourceFile = qn.get.sourceFileOf(moduleSymbol.valueDeclaration || getNonAugmentationDeclaration(moduleSymbol));
+    const moduleSourceFile = Node.get.sourceFileOf(moduleSymbol.valueDeclaration || getNonAugmentationDeclaration(moduleSymbol));
     const modulePaths = getAllModulePaths(importingSourceFile.path, moduleSourceFile.originalFileName, host);
 
     const preferences = getPreferences(userPreferences, compilerOptions, importingSourceFile);
@@ -257,7 +257,7 @@ namespace qnr.moduleSpecifiers {
   function tryGetModuleNameFromAmbientModule(moduleSymbol: Symbol): string | undefined {
     const decl = find(
       moduleSymbol.declarations,
-      (d) => qn.is.nonGlobalAmbientModule(d) && (!qn.is.externalModuleAugmentation(d) || !qp_isExternalModuleNameRelative(getTextOfIdentifierOrLiteral(d.name)))
+      (d) => Node.is.nonGlobalAmbientModule(d) && (!Node.is.externalModuleAugmentation(d) || !qp_isExternalModuleNameRelative(getTextOfIdentifierOrLiteral(d.name)))
     ) as (ModuleDeclaration & { name: StringLiteral }) | undefined;
     if (decl) {
       return decl.name.text;

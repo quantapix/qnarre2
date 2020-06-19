@@ -177,7 +177,7 @@ namespace qnr {
             // programs may also have an undefined name.
             assert(node.kind === Syntax.ClassDeclaration || hasSyntacticModifier(node, ModifierFlags.Default));
           }
-          if (qn.is.kind(ClassDeclaration, node)) {
+          if (Node.is.kind(ClassDeclaration, node)) {
             // XXX: should probably also cover interfaces and type aliases that can have type variables?
             currentNameScope = node;
           }
@@ -234,7 +234,7 @@ namespace qnr {
     }
 
     function visitEllidableStatement(node: ImportDeclaration | ImportEqualsDeclaration | ExportAssignment | ExportDeclaration): VisitResult<Node> {
-      const parsed = qn.get.parseTreeOf(node);
+      const parsed = Node.get.parseTreeOf(node);
       if (parsed !== node) {
         // If the node has been transformed by a `before` transformer, perform no ellision on it
         // As the type information we would attempt to lookup to perform ellision is potentially unavailable for the synthesized nodes
@@ -345,7 +345,7 @@ namespace qnr {
      * @param node The node to visit.
      */
     function visitTypeScript(node: Node): VisitResult<Node> {
-      if (qn.is.statement(node) && hasSyntacticModifier(node, ModifierFlags.Ambient)) {
+      if (Node.is.statement(node) && hasSyntacticModifier(node, ModifierFlags.Ambient)) {
         // TypeScript ambient declarations are elided, but some comments may be preserved.
         // See the implementation of `getLeadingComments` in comments.ts for more details.
         return createNotEmittedStatement(node);
@@ -680,7 +680,7 @@ namespace qnr {
       if (statements.length > 1) {
         // Add a DeclarationMarker as a marker for the end of the declaration
         statements.push(createEndOfDeclarationMarker(node));
-        setEmitFlags(classStatement, qn.get.emitFlags(classStatement) | EmitFlags.HasEndOfDeclarationMarker);
+        setEmitFlags(classStatement, Node.get.emitFlags(classStatement) | EmitFlags.HasEndOfDeclarationMarker);
       }
 
       return singleOrMany(statements);
@@ -699,20 +699,20 @@ namespace qnr {
       //  }
 
       // we do not emit modifiers on the declaration if we are emitting an IIFE
-      const modifiers = !(facts & ClassFacts.UseImmediatelyInvokedFunctionExpression) ? NodeArray.visit(node.modifiers, modifierVisitor, isModifier) : undefined;
+      const modifiers = !(facts & ClassFacts.UseImmediatelyInvokedFunctionExpression) ? Nodes.visit(node.modifiers, modifierVisitor, isModifier) : undefined;
 
       const classDeclaration = createClassDeclaration(
         /*decorators*/ undefined,
         modifiers,
         name,
         /*typeParameters*/ undefined,
-        NodeArray.visit(node.heritageClauses, visitor, isHeritageClause),
+        Nodes.visit(node.heritageClauses, visitor, isHeritageClause),
         transformClassMembers(node)
       );
 
       // To better align with the old emitter, we should not emit a trailing source map
       // entry if the class has static properties.
-      let emitFlags = qn.get.emitFlags(node);
+      let emitFlags = Node.get.emitFlags(node);
       if (facts & ClassFacts.HasStaticInitializedProperties) {
         emitFlags |= EmitFlags.NoTrailingSourceMap;
       }
@@ -822,7 +822,7 @@ namespace qnr {
       //  ... = class ${name} ${heritageClauses} {
       //      ${members}
       //  }
-      const heritageClauses = NodeArray.visit(node.heritageClauses, visitor, isHeritageClause);
+      const heritageClauses = Nodes.visit(node.heritageClauses, visitor, isHeritageClause);
       const members = transformClassMembers(node);
       const classExpression = createClassExpression(/*modifiers*/ undefined, name, /*typeParameters*/ undefined, heritageClauses, members);
       aggregateTransformFlags(classExpression);
@@ -850,7 +850,7 @@ namespace qnr {
         /*modifiers*/ undefined,
         node.name,
         /*typeParameters*/ undefined,
-        NodeArray.visit(node.heritageClauses, visitor, isHeritageClause),
+        Nodes.visit(node.heritageClauses, visitor, isHeritageClause),
         transformClassMembers(node)
       );
 
@@ -869,11 +869,11 @@ namespace qnr {
     function transformClassMembers(node: ClassDeclaration | ClassExpression) {
       const members: ClassElement[] = [];
       const constructor = getFirstConstructorWithBody(node);
-      const parametersWithPropertyAssignments = constructor && filter(constructor.parameters, (p) => qn.is.parameterPropertyDeclaration(p, constructor));
+      const parametersWithPropertyAssignments = constructor && filter(constructor.parameters, (p) => Node.is.parameterPropertyDeclaration(p, constructor));
 
       if (parametersWithPropertyAssignments) {
         for (const parameter of parametersWithPropertyAssignments) {
-          if (qn.is.kind(Identifier, parameter.name)) {
+          if (Node.is.kind(Identifier, parameter.name)) {
             members.push(
               setOriginalNode(
                 aggregateTransformFlags(
@@ -886,8 +886,8 @@ namespace qnr {
         }
       }
 
-      addRange(members, NodeArray.visit(node.members, classElementVisitor, isClassElement));
-      return setTextRange(NodeArray.create(members), /*location*/ node.members);
+      addRange(members, Nodes.visit(node.members, classElementVisitor, isClassElement));
+      return setTextRange(Nodes.create(members), /*location*/ node.members);
     }
 
     /**
@@ -1395,7 +1395,7 @@ namespace qnr {
      * @param node The node that should have its parameter types serialized.
      */
     function serializeParameterTypesOfNode(node: Node, container: ClassLikeDeclaration): ArrayLiteralExpression {
-      const valueDeclaration = qn.is.classLike(node) ? getFirstConstructorWithBody(node) : qn.is.functionLike(node) && qn.is.present((node as FunctionLikeDeclaration).body) ? node : undefined;
+      const valueDeclaration = Node.is.classLike(node) ? getFirstConstructorWithBody(node) : Node.is.functionLike(node) && Node.is.present((node as FunctionLikeDeclaration).body) ? node : undefined;
 
       const expressions: SerializedTypeNode[] = [];
       if (valueDeclaration) {
@@ -1403,7 +1403,7 @@ namespace qnr {
         const numParameters = parameters.length;
         for (let i = 0; i < numParameters; i++) {
           const parameter = parameters[i];
-          if (i === 0 && qn.is.kind(Identifier, parameter.name) && parameter.name.escapedText === 'this') {
+          if (i === 0 && Node.is.kind(Identifier, parameter.name) && parameter.name.escapedText === 'this') {
             continue;
           }
           if (parameter.dot3Token) {
@@ -1433,9 +1433,9 @@ namespace qnr {
      * @param node The node that should have its return type serialized.
      */
     function serializeReturnTypeOfNode(node: Node): SerializedTypeNode {
-      if (qn.is.functionLike(node) && node.type) {
+      if (Node.is.functionLike(node) && node.type) {
         return serializeTypeNode(node.type);
-      } else if (qn.is.asyncFunction(node)) {
+      } else if (Node.is.asyncFunction(node)) {
         return createIdentifier('Promise');
       }
 
@@ -1584,7 +1584,7 @@ namespace qnr {
         }
         const serializedIndividual = serializeTypeNode(typeNode);
 
-        if (qn.is.kind(Identifier, serializedIndividual) && serializedIndividual.escapedText === 'Object') {
+        if (Node.is.kind(Identifier, serializedIndividual) && serializedIndividual.escapedText === 'Object') {
           // One of the individual is global object, return immediately
           return serializedIndividual;
         }
@@ -1592,7 +1592,7 @@ namespace qnr {
         // anything more complex and we will just default to Object
         else if (serializedUnion) {
           // Different types
-          if (!qn.is.kind(Identifier, serializedUnion) || !qn.is.kind(Identifier, serializedIndividual) || serializedUnion.escapedText !== serializedIndividual.escapedText) {
+          if (!Node.is.kind(Identifier, serializedUnion) || !Node.is.kind(Identifier, serializedIndividual) || serializedUnion.escapedText !== serializedIndividual.escapedText) {
             return createIdentifier('Object');
           }
         } else {
@@ -1616,7 +1616,7 @@ namespace qnr {
       switch (kind) {
         case TypeReferenceSerializationKind.Unknown:
           // From conditional type type reference that cannot be resolved is Similar to any or unknown
-          if (qn.findAncestor(node, (n) => n.parent && qn.is.kind(ConditionalTypeNode, n.parent) && (n.parent.trueType === n || n.parent.falseType === n))) {
+          if (Node.findAncestor(node, (n) => n.parent && Node.is.kind(ConditionalTypeNode, n.parent) && (n.parent.trueType === n || n.parent.falseType === n))) {
             return createIdentifier('Object');
           }
 
@@ -1699,7 +1699,7 @@ namespace qnr {
           const name = getMutableClone(node);
           name.flags &= ~NodeFlags.Synthesized;
           name.original = undefined;
-          name.parent = qn.get.parseTreeOf(currentLexicalScope); // ensure the parent is set to a parse tree node.
+          name.parent = Node.get.parseTreeOf(currentLexicalScope); // ensure the parent is set to a parse tree node.
 
           return name;
 
@@ -1745,11 +1745,11 @@ namespace qnr {
      */
     function getExpressionForPropertyName(member: ClassElement | EnumMember, generateNameForComputedPropertyName: boolean): Expression {
       const name = member.name!;
-      if (qn.is.kind(PrivateIdentifier, name)) {
+      if (Node.is.kind(PrivateIdentifier, name)) {
         return createIdentifier('');
-      } else if (qn.is.kind(ComputedPropertyName, name)) {
+      } else if (Node.is.kind(ComputedPropertyName, name)) {
         return generateNameForComputedPropertyName && !isSimpleInlineableExpression(name.expression) ? getGeneratedNameForNode(name) : name.expression;
-      } else if (qn.is.kind(Identifier, name)) {
+      } else if (Node.is.kind(Identifier, name)) {
         return createLiteral(idText(name));
       } else {
         return getSynthesizedClone(name);
@@ -1769,7 +1769,7 @@ namespace qnr {
       // The names are used more than once when:
       //   - the property is non-static and its initializer is moved to the constructor (when there are parameter property assignments).
       //   - the property has a decorator.
-      if (qn.is.kind(ComputedPropertyName, name) && ((!hasStaticModifier(member) && currentClassHasParameterProperties) || some(member.decorators))) {
+      if (Node.is.kind(ComputedPropertyName, name) && ((!hasStaticModifier(member) && currentClassHasParameterProperties) || some(member.decorators))) {
         const expression = visitNode(name.expression, visitor, isExpression);
         const innerExpression = skipPartiallyEmittedExpressions(expression);
         if (!isSimpleInlineableExpression(innerExpression)) {
@@ -1817,7 +1817,7 @@ namespace qnr {
      * @param node The declaration node.
      */
     function shouldEmitFunctionLikeDeclaration<T extends FunctionLikeDeclaration>(node: T): node is T & { body: NonNullable<T['body']> } {
-      return !qn.is.missing(node.body);
+      return !Node.is.missing(node.body);
     }
 
     function visitPropertyDeclaration(node: PropertyDeclaration) {
@@ -1827,7 +1827,7 @@ namespace qnr {
       const updated = PropertyDeclaration.update(
         node,
         /*decorators*/ undefined,
-        NodeArray.visit(node.modifiers, visitor, isModifier),
+        Nodes.visit(node.modifiers, visitor, isModifier),
         visitPropertyNameOfClassElement(node),
         /*questionOrExclamationToken*/ undefined,
         /*type*/ undefined,
@@ -1851,7 +1851,7 @@ namespace qnr {
     }
 
     function transformConstructorBody(body: Block, constructor: ConstructorDeclaration) {
-      const parametersWithPropertyAssignments = constructor && filter(constructor.parameters, (p) => qn.is.parameterPropertyDeclaration(p, constructor));
+      const parametersWithPropertyAssignments = constructor && filter(constructor.parameters, (p) => Node.is.parameterPropertyDeclaration(p, constructor));
       if (!some(parametersWithPropertyAssignments)) {
         return visitFunctionBody(body, visitor, context);
       }
@@ -1878,11 +1878,11 @@ namespace qnr {
       addRange(statements, map(parametersWithPropertyAssignments, transformParameterWithPropertyAssignment));
 
       // Add the existing statements, skipping the initial super call.
-      addRange(statements, NodeArray.visit(body.statements, visitor, isStatement, indexOfFirstStatement));
+      addRange(statements, Nodes.visit(body.statements, visitor, isStatement, indexOfFirstStatement));
 
       // End the lexical environment.
       statements = mergeLexicalEnvironment(statements, endLexicalEnvironment());
-      const block = createBlock(setTextRange(NodeArray.create(statements), body.statements), /*multiLine*/ true);
+      const block = createBlock(setTextRange(Nodes.create(statements), body.statements), /*multiLine*/ true);
       setTextRange(block, /*location*/ body);
       setOriginalNode(block, body);
       return block;
@@ -1895,7 +1895,7 @@ namespace qnr {
      */
     function transformParameterWithPropertyAssignment(node: ParameterPropertyDeclaration) {
       const name = node.name;
-      if (!qn.is.kind(Identifier, name)) {
+      if (!Node.is.kind(Identifier, name)) {
         return;
       }
 
@@ -1919,7 +1919,7 @@ namespace qnr {
       const updated = MethodDeclaration.update(
         node,
         /*decorators*/ undefined,
-        NodeArray.visit(node.modifiers, modifierVisitor, isModifier),
+        Nodes.visit(node.modifiers, modifierVisitor, isModifier),
         node.asteriskToken,
         visitPropertyNameOfClassElement(node),
         /*questionToken*/ undefined,
@@ -1944,7 +1944,7 @@ namespace qnr {
      * @param node The declaration node.
      */
     function shouldEmitAccessorDeclaration(node: AccessorDeclaration) {
-      return !(qn.is.missing(node.body) && hasSyntacticModifier(node, ModifierFlags.Abstract));
+      return !(Node.is.missing(node.body) && hasSyntacticModifier(node, ModifierFlags.Abstract));
     }
 
     function visitGetAccessor(node: GetAccessorDeclaration) {
@@ -1954,7 +1954,7 @@ namespace qnr {
       const updated = GetAccessorDeclaration.update(
         node,
         /*decorators*/ undefined,
-        NodeArray.visit(node.modifiers, modifierVisitor, isModifier),
+        Nodes.visit(node.modifiers, modifierVisitor, isModifier),
         visitPropertyNameOfClassElement(node),
         visitParameterList(node.parameters, visitor, context),
         /*type*/ undefined,
@@ -1976,7 +1976,7 @@ namespace qnr {
       const updated = SetAccessorDeclaration.update(
         node,
         /*decorators*/ undefined,
-        NodeArray.visit(node.modifiers, modifierVisitor, isModifier),
+        Nodes.visit(node.modifiers, modifierVisitor, isModifier),
         visitPropertyNameOfClassElement(node),
         visitParameterList(node.parameters, visitor, context),
         visitFunctionBody(node.body, visitor, context) || createBlock([])
@@ -1997,7 +1997,7 @@ namespace qnr {
       const updated = updateFunctionDeclaration(
         node,
         /*decorators*/ undefined,
-        NodeArray.visit(node.modifiers, modifierVisitor, isModifier),
+        Nodes.visit(node.modifiers, modifierVisitor, isModifier),
         node.asteriskToken,
         node.name,
         /*typeParameters*/ undefined,
@@ -2019,7 +2019,7 @@ namespace qnr {
       }
       const updated = updateFunctionExpression(
         node,
-        NodeArray.visit(node.modifiers, modifierVisitor, isModifier),
+        Nodes.visit(node.modifiers, modifierVisitor, isModifier),
         node.asteriskToken,
         node.name,
         /*typeParameters*/ undefined,
@@ -2033,7 +2033,7 @@ namespace qnr {
     function visitArrowFunction(node: ArrowFunction) {
       const updated = updateArrowFunction(
         node,
-        NodeArray.visit(node.modifiers, modifierVisitor, isModifier),
+        Nodes.visit(node.modifiers, modifierVisitor, isModifier),
         /*typeParameters*/ undefined,
         visitParameterList(node.parameters, visitor, context),
         /*type*/ undefined,
@@ -2085,7 +2085,7 @@ namespace qnr {
 
     function transformInitializedVariable(node: VariableDeclaration): Expression {
       const name = node.name;
-      if (qn.is.kind(BindingPattern, name)) {
+      if (Node.is.kind(BindingPattern, name)) {
         return flattenDestructuringAssignment(node, visitor, context, FlattenLevel.All, /*needsValue*/ false, createNamespaceExportExpression);
       } else {
         return setTextRange(createAssignment(getNamespaceMemberNameWithSourceMapsAndWithoutComments(name), visitNode(node.initializer, visitor, isExpression)), /*location*/ node);
@@ -2104,7 +2104,7 @@ namespace qnr {
 
     function visitParenthesizedExpression(node: ParenthesizedExpression): Expression {
       const innerExpression = skipOuterExpressions(node.expression, ~OuterExpressionKinds.Assertions);
-      if (qn.is.assertionExpression(innerExpression)) {
+      if (Node.is.assertionExpression(innerExpression)) {
         // Make sure we consider all nested cast expressions, e.g.:
         // (<any><number><any>-A).x;
         const expression = visitNode(node.expression, visitor, isExpression);
@@ -2144,11 +2144,11 @@ namespace qnr {
     }
 
     function visitCallExpression(node: CallExpression) {
-      return updateCall(node, visitNode(node.expression, visitor, isExpression), /*typeArguments*/ undefined, NodeArray.visit(node.arguments, visitor, isExpression));
+      return updateCall(node, visitNode(node.expression, visitor, isExpression), /*typeArguments*/ undefined, Nodes.visit(node.arguments, visitor, isExpression));
     }
 
     function visitNewExpression(node: NewExpression) {
-      return updateNew(node, visitNode(node.expression, visitor, isExpression), /*typeArguments*/ undefined, NodeArray.visit(node.arguments, visitor, isExpression));
+      return updateNew(node, visitNode(node.expression, visitor, isExpression), /*typeArguments*/ undefined, Nodes.visit(node.arguments, visitor, isExpression));
     }
 
     function visitTaggedTemplateExpression(node: TaggedTemplateExpression) {
@@ -2276,7 +2276,7 @@ namespace qnr {
       addRange(statements, members);
 
       currentNamespaceContainerName = savedCurrentNamespaceLocalName;
-      return createBlock(setTextRange(NodeArray.create(statements), /*location*/ node.members), /*multiLine*/ true);
+      return createBlock(setTextRange(Nodes.create(statements), /*location*/ node.members), /*multiLine*/ true);
     }
 
     /**
@@ -2320,7 +2320,7 @@ namespace qnr {
      * @param node The module declaration node.
      */
     function shouldEmitModuleDeclaration(nodeIn: ModuleDeclaration) {
-      const node = qn.get.parseTreeOf(nodeIn, isModuleDeclaration);
+      const node = Node.get.parseTreeOf(nodeIn, isModuleDeclaration);
       if (!node) {
         // If we can't find a parse tree node, assume the node is instantiated.
         return true;
@@ -2379,7 +2379,7 @@ namespace qnr {
       // declaration to avoid static errors in global scripts scripts due to redeclaration.
       // enums in any other scope are emitted as a `let` declaration.
       const statement = createVariableStatement(
-        NodeArray.visit(node.modifiers, modifierVisitor, isModifier),
+        Nodes.visit(node.modifiers, modifierVisitor, isModifier),
         createVariableDeclarationList(
           [createVariableDeclaration(getLocalName(node, /*allowComments*/ false, /*allowSourceMaps*/ true))],
           currentLexicalScope.kind === Syntax.SourceFile ? NodeFlags.None : NodeFlags.Let
@@ -2541,7 +2541,7 @@ namespace qnr {
       let blockLocation: TextRange | undefined;
       if (node.body) {
         if (node.body.kind === Syntax.ModuleBlock) {
-          saveStateAndInvoke(node.body, (body) => addRange(statements, NodeArray.visit((<ModuleBlock>body).statements, namespaceElementVisitor, isStatement)));
+          saveStateAndInvoke(node.body, (body) => addRange(statements, Nodes.visit((<ModuleBlock>body).statements, namespaceElementVisitor, isStatement)));
           statementsLocation = node.body.statements;
           blockLocation = node.body;
         } else {
@@ -2564,7 +2564,7 @@ namespace qnr {
       currentNamespace = savedCurrentNamespace;
       currentScopeFirstDeclarationsOfName = savedCurrentScopeFirstDeclarationsOfName;
 
-      const block = createBlock(setTextRange(NodeArray.create(statements), /*location*/ statementsLocation), /*multiLine*/ true);
+      const block = createBlock(setTextRange(Nodes.create(statements), /*location*/ statementsLocation), /*multiLine*/ true);
       setTextRange(block, blockLocation);
 
       // namespace hello.hi.world {
@@ -2588,7 +2588,7 @@ namespace qnr {
       // })(hello || (hello = {}));
       // We only want to emit comment on the namespace which contains block body itself, not the containing namespaces.
       if (!node.body || node.body.kind !== Syntax.ModuleBlock) {
-        setEmitFlags(block, qn.get.emitFlags(block) | EmitFlags.NoComments);
+        setEmitFlags(block, Node.get.emitFlags(block) | EmitFlags.NoComments);
       }
       return block;
     }
@@ -2649,7 +2649,7 @@ namespace qnr {
         return resolver.isReferencedAliasDeclaration(node) ? node : undefined;
       } else {
         // Elide named imports if all of its import specifiers are elided.
-        const elements = NodeArray.visit(node.elements, visitImportSpecifier, isImportSpecifier);
+        const elements = Nodes.visit(node.elements, visitImportSpecifier, isImportSpecifier);
         return some(elements) ? updateNamedImports(node, elements) : undefined;
       }
     }
@@ -2686,7 +2686,7 @@ namespace qnr {
         return;
       }
 
-      if (!node.exportClause || qn.is.kind(NamespaceExport, node.exportClause)) {
+      if (!node.exportClause || Node.is.kind(NamespaceExport, node.exportClause)) {
         // never elide `export <whatever> from <whereever>` declarations -
         // they should be kept for sideffects/untyped exports, even when the
         // type checker doesn't know about any exports
@@ -2711,7 +2711,7 @@ namespace qnr {
      */
     function visitNamedExports(node: NamedExports): VisitResult<NamedExports> {
       // Elide the named exports if all of its export specifiers were elided.
-      const elements = NodeArray.visit(node.elements, visitExportSpecifier, isExportSpecifier);
+      const elements = Nodes.visit(node.elements, visitExportSpecifier, isExportSpecifier);
       return some(elements) ? updateNamedExports(node, elements) : undefined;
     }
 
@@ -2720,7 +2720,7 @@ namespace qnr {
     }
 
     function visitNamedExportBindings(node: NamedExportBindings): VisitResult<NamedExportBindings> {
-      return qn.is.kind(NamespaceExport, node) ? visitNamespaceExports(node) : visitNamedExports(node);
+      return Node.is.kind(NamespaceExport, node) ? visitNamespaceExports(node) : visitNamedExports(node);
     }
 
     /**
@@ -2751,7 +2751,7 @@ namespace qnr {
      * @param node The import equals declaration node.
      */
     function visitImportEqualsDeclaration(node: ImportEqualsDeclaration): VisitResult<Statement> {
-      if (qn.is.externalModuleImportEqualsDeclaration(node)) {
+      if (Node.is.externalModuleImportEqualsDeclaration(node)) {
         const isReferenced = resolver.isReferencedAliasDeclaration(node);
         // If the alias is unreferenced but we want to keep the import, replace with 'import "mod"'.
         if (!isReferenced && compilerOptions.importsNotUsedAsValues === ImportsNotUsedAsValues.Preserve) {
@@ -2774,7 +2774,7 @@ namespace qnr {
         return setOriginalNode(
           setTextRange(
             createVariableStatement(
-              NodeArray.visit(node.modifiers, modifierVisitor, isModifier),
+              Nodes.visit(node.modifiers, modifierVisitor, isModifier),
               createVariableDeclarationList([setOriginalNode(createVariableDeclaration(node.name, /*type*/ undefined, moduleReference), node)])
             ),
             node
@@ -2879,7 +2879,7 @@ namespace qnr {
     function getClassAliasIfNeeded(node: ClassDeclaration) {
       if (resolver.getNodeCheckFlags(node) & NodeCheckFlags.ClassWithConstructorReference) {
         enableSubstitutionForClassAliases();
-        const classAlias = createUniqueName(node.name && !qn.is.generatedIdentifier(node.name) ? idText(node.name) : 'default');
+        const classAlias = createUniqueName(node.name && !Node.is.generatedIdentifier(node.name) ? idText(node.name) : 'default');
         classAliases[getOriginalNodeId(node)] = classAlias;
         hoistVariableDeclaration(classAlias);
         return classAlias;
@@ -2929,11 +2929,11 @@ namespace qnr {
     }
 
     function isTransformedModuleDeclaration(node: Node): boolean {
-      return qn.get.originalOf(node).kind === Syntax.ModuleDeclaration;
+      return Node.get.originalOf(node).kind === Syntax.ModuleDeclaration;
     }
 
     function isTransformedEnumDeclaration(node: Node): boolean {
-      return qn.get.originalOf(node).kind === Syntax.EnumDeclaration;
+      return Node.get.originalOf(node).kind === Syntax.EnumDeclaration;
     }
 
     /**
@@ -2947,7 +2947,7 @@ namespace qnr {
       const savedApplicableSubstitutions = applicableSubstitutions;
       const savedCurrentSourceFile = currentSourceFile;
 
-      if (qn.is.kind(SourceFile, node)) {
+      if (Node.is.kind(SourceFile, node)) {
         currentSourceFile = node;
       }
 
@@ -2975,7 +2975,7 @@ namespace qnr {
       node = previousOnSubstituteNode(hint, node);
       if (hint === EmitHint.Expression) {
         return substituteExpression(<Expression>node);
-      } else if (qn.is.kind(ShorthandPropertyAssignment, node)) {
+      } else if (Node.is.kind(ShorthandPropertyAssignment, node)) {
         return substituteShorthandPropertyAssignment(node);
       }
 
@@ -3042,7 +3042,7 @@ namespace qnr {
 
     function trySubstituteNamespaceExportedName(node: Identifier): Expression | undefined {
       // If this is explicitly a local name, do not substitute.
-      if (enabledSubstitutions & applicableSubstitutions && !qn.is.generatedIdentifier(node) && !isLocalName(node)) {
+      if (enabledSubstitutions & applicableSubstitutions && !Node.is.generatedIdentifier(node) && !isLocalName(node)) {
         // If we are nested within a namespace declaration, we may need to qualifiy
         // an identifier that is exported from a merged namespace.
         const container = resolver.getReferencedExportContainer(node, /*prefixLocals*/ false);
@@ -3075,8 +3075,8 @@ namespace qnr {
 
         const substitute = createLiteral(constantValue);
         if (!compilerOptions.removeComments) {
-          const originalNode = qn.get.originalOf(node, isAccessExpression);
-          const propertyName = qn.is.kind(PropertyAccessExpression, originalNode) ? declarationNameToString(originalNode.name) : qn.get.textOf(originalNode.argumentExpression);
+          const originalNode = Node.get.originalOf(node, isAccessExpression);
+          const propertyName = Node.is.kind(PropertyAccessExpression, originalNode) ? declarationNameToString(originalNode.name) : Node.get.textOf(originalNode.argumentExpression);
 
           addSyntheticTrailingComment(substitute, Syntax.MultiLineCommentTrivia, ` ${propertyName} `);
         }
@@ -3092,7 +3092,7 @@ namespace qnr {
         return;
       }
 
-      return qn.is.kind(PropertyAccessExpression, node) || qn.is.kind(ElementAccessExpression, node) ? resolver.getConstantValue(node) : undefined;
+      return Node.is.kind(PropertyAccessExpression, node) || Node.is.kind(ElementAccessExpression, node) ? resolver.getConstantValue(node) : undefined;
     }
   }
 

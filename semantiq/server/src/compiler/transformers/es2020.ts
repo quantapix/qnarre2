@@ -41,7 +41,7 @@ namespace qnr {
     function flattenChain(chain: OptionalChain) {
       Debug.assertNotNode(chain, isNonNullChain);
       const links: OptionalChain[] = [chain];
-      while (!chain.questionDotToken && !qn.is.kind(TaggedTemplateExpression, chain)) {
+      while (!chain.questionDotToken && !Node.is.kind(TaggedTemplateExpression, chain)) {
         chain = cast(skipPartiallyEmittedExpressions(chain.expression), isOptionalChain);
         Debug.assertNotNode(chain, isNonNullChain);
         links.unshift(chain);
@@ -51,7 +51,7 @@ namespace qnr {
 
     function visitNonOptionalParenthesizedExpression(node: ParenthesizedExpression, captureThisArg: boolean, isDelete: boolean): Expression {
       const expression = visitNonOptionalExpression(node.expression, captureThisArg, isDelete);
-      if (qn.is.kind(SyntheticReferenceExpression, expression)) {
+      if (Node.is.kind(SyntheticReferenceExpression, expression)) {
         // `(a.b)` -> { expression `((_a = a).b)`, thisArg: `_a` }
         // `(a[b])` -> { expression `((_a = a)[b])`, thisArg: `_a` }
         return createSyntheticReferenceExpression(updateParen(node, expression.expression), expression.thisArg);
@@ -60,7 +60,7 @@ namespace qnr {
     }
 
     function visitNonOptionalPropertyOrElementAccessExpression(node: AccessExpression, captureThisArg: boolean, isDelete: boolean): Expression {
-      if (qn.is.optionalChain(node)) {
+      if (Node.is.optionalChain(node)) {
         // If `node` is an optional chain, then it is the outermost chain of an optional expression.
         return visitOptionalExpression(node, captureThisArg, isDelete);
       }
@@ -87,7 +87,7 @@ namespace qnr {
     }
 
     function visitNonOptionalCallExpression(node: CallExpression, captureThisArg: boolean): Expression {
-      if (qn.is.optionalChain(node)) {
+      if (Node.is.optionalChain(node)) {
         // If `node` is an optional chain, then it is the outermost chain of an optional expression.
         return visitOptionalExpression(node, captureThisArg, /*isDelete*/ false);
       }
@@ -110,9 +110,9 @@ namespace qnr {
 
     function visitOptionalExpression(node: OptionalChain, captureThisArg: boolean, isDelete: boolean): Expression {
       const { expression, chain } = flattenChain(node);
-      const left = visitNonOptionalExpression(expression, qn.is.callChain(chain[0]), /*isDelete*/ false);
-      const leftThisArg = qn.is.kind(SyntheticReferenceExpression, left) ? left.thisArg : undefined;
-      let leftExpression = qn.is.kind(SyntheticReferenceExpression, left) ? left.expression : left;
+      const left = visitNonOptionalExpression(expression, Node.is.callChain(chain[0]), /*isDelete*/ false);
+      const leftThisArg = Node.is.kind(SyntheticReferenceExpression, left) ? left.thisArg : undefined;
+      let leftExpression = Node.is.kind(SyntheticReferenceExpression, left) ? left.expression : left;
       let capturedLeft: Expression = leftExpression;
       if (shouldCaptureInTempVariable(leftExpression)) {
         capturedLeft = createTempVariable(hoistVariableDeclaration);
@@ -142,9 +142,9 @@ namespace qnr {
             break;
           case Syntax.CallExpression:
             if (i === 0 && leftThisArg) {
-              rightExpression = createFunctionCall(rightExpression, leftThisArg.kind === Syntax.SuperKeyword ? createThis() : leftThisArg, NodeArray.visit(segment.arguments, visitor, isExpression));
+              rightExpression = createFunctionCall(rightExpression, leftThisArg.kind === Syntax.SuperKeyword ? createThis() : leftThisArg, Nodes.visit(segment.arguments, visitor, isExpression));
             } else {
-              rightExpression = createCall(rightExpression, /*typeArguments*/ undefined, NodeArray.visit(segment.arguments, visitor, isExpression));
+              rightExpression = createCall(rightExpression, /*typeArguments*/ undefined, Nodes.visit(segment.arguments, visitor, isExpression));
             }
             break;
         }
@@ -179,11 +179,11 @@ namespace qnr {
     function shouldCaptureInTempVariable(expression: Expression): boolean {
       // don't capture identifiers and `this` in a temporary variable
       // `super` cannot be captured as it's no real variable
-      return !qn.is.kind(Identifier, expression) && expression.kind !== Syntax.ThisKeyword && expression.kind !== Syntax.SuperKeyword;
+      return !Node.is.kind(Identifier, expression) && expression.kind !== Syntax.ThisKeyword && expression.kind !== Syntax.SuperKeyword;
     }
 
     function visitDeleteExpression(node: DeleteExpression) {
-      return qn.is.optionalChain(skipParentheses(node.expression))
+      return Node.is.optionalChain(skipParentheses(node.expression))
         ? setOriginalNode(visitNonOptionalExpression(node.expression, /*captureThisArg*/ false, /*isDelete*/ true), node)
         : updateDelete(node, visitNode(node.expression, visitor, isExpression));
     }

@@ -1835,7 +1835,7 @@ namespace qnr {
       return runWithCancellationToken(() => {
         const diagnostics: DiagnosticWithLocation[] = [];
         walk(sourceFile, sourceFile);
-        qn.forEach.childRecursively(sourceFile, walk, walkArray);
+        Node.forEach.childRecursively(sourceFile, walk, walkArray);
 
         return diagnostics;
 
@@ -1924,7 +1924,7 @@ namespace qnr {
           }
         }
 
-        function walkArray(nodes: NodeArray<Node>, parent: Node) {
+        function walkArray(nodes: Nodes<Node>, parent: Node) {
           if (parent.decorators === nodes && !options.experimentalDecorators) {
             diagnostics.push(
               createDiagnosticForNode(
@@ -1946,7 +1946,7 @@ namespace qnr {
             case Syntax.ArrowFunction:
               // Check type parameters
               if (nodes === (<DeclarationWithTypeParameterChildren>parent).typeParameters) {
-                diagnostics.push(createDiagnosticForNodeArray(nodes, Diagnostics.Type_parameter_declarations_can_only_be_used_in_TypeScript_files));
+                diagnostics.push(createDiagnosticForNodes(nodes, Diagnostics.Type_parameter_declarations_can_only_be_used_in_TypeScript_files));
                 return 'skip';
               }
             // falls through
@@ -1961,7 +1961,7 @@ namespace qnr {
             case Syntax.PropertyDeclaration:
               // Check modifiers of property declaration
               if (nodes === (<PropertyDeclaration>parent).modifiers) {
-                for (const modifier of <NodeArray<Modifier>>nodes) {
+                for (const modifier of <Nodes<Modifier>>nodes) {
                   if (modifier.kind !== Syntax.StaticKeyword) {
                     diagnostics.push(createDiagnosticForNode(modifier, Diagnostics.The_0_modifier_can_only_be_used_in_TypeScript_files, Token.toString(modifier.kind)));
                   }
@@ -1972,7 +1972,7 @@ namespace qnr {
             case Syntax.Parameter:
               // Check modifiers of parameter declaration
               if (nodes === (<ParameterDeclaration>parent).modifiers) {
-                diagnostics.push(createDiagnosticForNodeArray(nodes, Diagnostics.Parameter_modifiers_can_only_be_used_in_TypeScript_files));
+                diagnostics.push(createDiagnosticForNodes(nodes, Diagnostics.Parameter_modifiers_can_only_be_used_in_TypeScript_files));
                 return 'skip';
               }
               break;
@@ -1984,14 +1984,14 @@ namespace qnr {
             case Syntax.TaggedTemplateExpression:
               // Check type arguments
               if (nodes === (<NodeWithTypeArguments>parent).typeArguments) {
-                diagnostics.push(createDiagnosticForNodeArray(nodes, Diagnostics.Type_arguments_can_only_be_used_in_TypeScript_files));
+                diagnostics.push(createDiagnosticForNodes(nodes, Diagnostics.Type_arguments_can_only_be_used_in_TypeScript_files));
                 return 'skip';
               }
               break;
           }
         }
 
-        function checkModifiers(modifiers: NodeArray<Modifier>, isConstValid: boolean) {
+        function checkModifiers(modifiers: Nodes<Modifier>, isConstValid: boolean) {
           for (const modifier of modifiers) {
             switch (modifier.kind) {
               case Syntax.ConstKeyword:
@@ -2017,7 +2017,7 @@ namespace qnr {
           }
         }
 
-        function createDiagnosticForNodeArray(nodes: NodeArray<Node>, message: DiagnosticMessage, arg0?: string | number, arg1?: string | number, arg2?: string | number): DiagnosticWithLocation {
+        function createDiagnosticForNodes(nodes: Nodes<Node>, message: DiagnosticMessage, arg0?: string | number, arg1?: string | number, arg2?: string | number): DiagnosticWithLocation {
           const start = nodes.pos;
           return createFileDiagnostic(sourceFile, start, nodes.end - start, message, arg0, arg1, arg2);
         }
@@ -2145,16 +2145,16 @@ namespace qnr {
       return;
 
       function collectModuleReferences(node: Statement, inAmbientModule: boolean): void {
-        if (qn.is.anyImportOrReExport(node)) {
+        if (Node.is.anyImportOrReExport(node)) {
           const moduleNameExpr = getExternalModuleName(node);
           // TypeScript 1.0 spec (April 2014): 12.1.6
           // An ExternalImportDeclaration in an AmbientExternalModuleDeclaration may reference other external modules
           // only through top - level external module names. Relative external module names are not permitted.
-          if (moduleNameExpr && qn.is.kind(StringLiteral, moduleNameExpr) && moduleNameExpr.text && (!inAmbientModule || !qp_isExternalModuleNameRelative(moduleNameExpr.text))) {
+          if (moduleNameExpr && Node.is.kind(StringLiteral, moduleNameExpr) && moduleNameExpr.text && (!inAmbientModule || !qp_isExternalModuleNameRelative(moduleNameExpr.text))) {
             imports = append(imports, moduleNameExpr);
           }
-        } else if (qn.is.kind(ModuleDeclaration, node)) {
-          if (qn.is.ambientModule(node) && (inAmbientModule || hasSyntacticModifier(node, ModifierFlags.Ambient) || file.isDeclarationFile)) {
+        } else if (Node.is.kind(ModuleDeclaration, node)) {
+          if (Node.is.ambientModule(node) && (inAmbientModule || hasSyntacticModifier(node, ModifierFlags.Ambient) || file.isDeclarationFile)) {
             const nameText = getTextOfIdentifierOrLiteral(node.name);
             // Ambient module declarations can be interpreted as augmentations for some existing external modules.
             // This will happen in two cases:
@@ -2194,9 +2194,9 @@ namespace qnr {
             imports = append(imports, node.arguments[0]);
           }
           // we have to check the argument list has length of 1. We will still have to process these even though we have parsing error.
-          else if (qn.is.importCall(node) && node.arguments.length === 1 && StringLiteral.like(node.arguments[0])) {
+          else if (Node.is.importCall(node) && node.arguments.length === 1 && StringLiteral.like(node.arguments[0])) {
             imports = append(imports, node.arguments[0] as StringLiteralLike);
-          } else if (qn.is.literalImportTypeNode(node)) {
+          } else if (Node.is.literalImportTypeNode(node)) {
             imports = append(imports, node.argument.literal);
           }
         }
@@ -2211,7 +2211,7 @@ namespace qnr {
           }
         };
         while (true) {
-          const child = (isJavaScriptFile && qn.is.withJSDocNodes(current) && forEach(current.jsDoc, getContainingChild)) || qn.forEach.child(current, getContainingChild);
+          const child = (isJavaScriptFile && Node.is.withJSDocNodes(current) && forEach(current.jsDoc, getContainingChild)) || Node.forEach.child(current, getContainingChild);
           if (!child) {
             return current;
           }
@@ -3233,7 +3233,7 @@ namespace qnr {
       let needCompilerDiagnostic = true;
       const pathsSyntax = getOptionPathsSyntax();
       for (const pathProp of pathsSyntax) {
-        if (qn.is.kind(ObjectLiteralExpression, pathProp.initializer)) {
+        if (Node.is.kind(ObjectLiteralExpression, pathProp.initializer)) {
           for (const keyProps of getPropertyAssignment(pathProp.initializer, key)) {
             const initializer = keyProps.initializer;
             if (isArrayLiteralExpression(initializer) && initializer.elements.length > valueIndex) {
@@ -3253,7 +3253,7 @@ namespace qnr {
       let needCompilerDiagnostic = true;
       const pathsSyntax = getOptionPathsSyntax();
       for (const pathProp of pathsSyntax) {
-        if (qn.is.kind(ObjectLiteralExpression, pathProp.initializer) && createOptionDiagnosticInObjectLiteralSyntax(pathProp.initializer, onKey, key, /*key2*/ undefined, message, arg0)) {
+        if (Node.is.kind(ObjectLiteralExpression, pathProp.initializer) && createOptionDiagnosticInObjectLiteralSyntax(pathProp.initializer, onKey, key, /*key2*/ undefined, message, arg0)) {
           needCompilerDiagnostic = false;
         }
       }
@@ -3317,7 +3317,7 @@ namespace qnr {
         const jsonObjectLiteral = getTsConfigObjectLiteralExpression(options.configFile);
         if (jsonObjectLiteral) {
           for (const prop of getPropertyAssignment(jsonObjectLiteral, 'compilerOptions')) {
-            if (qn.is.kind(ObjectLiteralExpression, prop.initializer)) {
+            if (Node.is.kind(ObjectLiteralExpression, prop.initializer)) {
               _compilerOptionsObjectLiteralSyntax = prop.initializer;
               break;
             }
