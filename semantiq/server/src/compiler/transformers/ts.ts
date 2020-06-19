@@ -654,7 +654,7 @@ namespace core {
 
         const varStatement = createVariableStatement(
           /*modifiers*/ undefined,
-          createVariableDeclarationList([createVariableDeclaration(getLocalName(node, /*allowComments*/ false, /*allowSourceMaps*/ false), /*type*/ undefined, iife)])
+          createVariableDeclarationList([createVariableDeclaration(getLocalName(node, /*allowComments*/ false, /*allowSourceMaps*/ false), undefined, iife)])
         );
 
         setOriginalNode(varStatement, node);
@@ -701,14 +701,7 @@ namespace core {
       // we do not emit modifiers on the declaration if we are emitting an IIFE
       const modifiers = !(facts & ClassFacts.UseImmediatelyInvokedFunctionExpression) ? Nodes.visit(node.modifiers, modifierVisitor, isModifier) : undefined;
 
-      const classDeclaration = createClassDeclaration(
-        /*decorators*/ undefined,
-        modifiers,
-        name,
-        /*typeParameters*/ undefined,
-        Nodes.visit(node.heritageClauses, visitor, isHeritageClause),
-        transformClassMembers(node)
-      );
+      const classDeclaration = createClassDeclaration(undefined, modifiers, name, undefined, Nodes.visit(node.heritageClauses, visitor, isHeritageClause), transformClassMembers(node));
 
       // To better align with the old emitter, we should not emit a trailing source map
       // entry if the class has static properties.
@@ -718,7 +711,7 @@ namespace core {
       }
 
       aggregateTransformFlags(classDeclaration);
-      setTextRange(classDeclaration, node);
+      setRange(classDeclaration, node);
       setOriginalNode(classDeclaration, node);
       setEmitFlags(classDeclaration, emitFlags);
       return classDeclaration;
@@ -824,19 +817,19 @@ namespace core {
       //  }
       const heritageClauses = Nodes.visit(node.heritageClauses, visitor, isHeritageClause);
       const members = transformClassMembers(node);
-      const classExpression = createClassExpression(/*modifiers*/ undefined, name, /*typeParameters*/ undefined, heritageClauses, members);
+      const classExpression = createClassExpression(/*modifiers*/ undefined, name, undefined, heritageClauses, members);
       aggregateTransformFlags(classExpression);
       setOriginalNode(classExpression, node);
-      setTextRange(classExpression, location);
+      setRange(classExpression, location);
 
       //  let ${name} = ${classExpression} where name is either declaredName if the class doesn't contain self-reference
       //                                         or decoratedClassAlias if the class contain self-reference.
       const statement = createVariableStatement(
         /*modifiers*/ undefined,
-        createVariableDeclarationList([createVariableDeclaration(declName, /*type*/ undefined, classAlias ? createAssignment(classAlias, classExpression) : classExpression)], NodeFlags.Let)
+        createVariableDeclarationList([createVariableDeclaration(declName, undefined, classAlias ? createAssignment(classAlias, classExpression) : classExpression)], NodeFlags.Let)
       );
       setOriginalNode(statement, node);
-      setTextRange(statement, location);
+      setRange(statement, location);
       setCommentRange(statement, node);
       return statement;
     }
@@ -846,17 +839,11 @@ namespace core {
         return visitEachChild(node, visitor, context);
       }
 
-      const classExpression = createClassExpression(
-        /*modifiers*/ undefined,
-        node.name,
-        /*typeParameters*/ undefined,
-        Nodes.visit(node.heritageClauses, visitor, isHeritageClause),
-        transformClassMembers(node)
-      );
+      const classExpression = createClassExpression(/*modifiers*/ undefined, node.name, undefined, Nodes.visit(node.heritageClauses, visitor, isHeritageClause), transformClassMembers(node));
 
       aggregateTransformFlags(classExpression);
       setOriginalNode(classExpression, node);
-      setTextRange(classExpression, node);
+      setRange(classExpression, node);
 
       return classExpression;
     }
@@ -876,9 +863,7 @@ namespace core {
           if (Node.is.kind(Identifier, parameter.name)) {
             members.push(
               setOriginalNode(
-                aggregateTransformFlags(
-                  PropertyDeclaration.create(/*decorators*/ undefined, /*modifiers*/ undefined, parameter.name, /*questionOrExclamationToken*/ undefined, /*type*/ undefined, /*initializer*/ undefined)
-                ),
+                aggregateTransformFlags(PropertyDeclaration.create(undefined, /*modifiers*/ undefined, parameter.name, /*questionOrExclamationToken*/ undefined, undefined, undefined)),
                 parameter
               )
             );
@@ -887,7 +872,7 @@ namespace core {
       }
 
       addRange(members, Nodes.visit(node.members, classElementVisitor, isClassElement));
-      return setTextRange(Nodes.create(members), /*location*/ node.members);
+      return setRange(Nodes.create(members), /*location*/ node.members);
     }
 
     /**
@@ -1281,33 +1266,20 @@ namespace core {
         let properties: ObjectLiteralElementLike[] | undefined;
         if (shouldAddTypeMetadata(node)) {
           (properties || (properties = [])).push(
-            createPropertyAssignment(
-              'type',
-              createArrowFunction(/*modifiers*/ undefined, /*typeParameters*/ undefined, [], /*type*/ undefined, createToken(Syntax.EqualsGreaterThanToken), serializeTypeOfNode(node))
-            )
+            createPropertyAssignment('type', new ArrowFunction(/*modifiers*/ undefined, undefined, [], undefined, createToken(Syntax.EqualsGreaterThanToken), serializeTypeOfNode(node)))
           );
         }
         if (shouldAddParamTypesMetadata(node)) {
           (properties || (properties = [])).push(
             createPropertyAssignment(
               'paramTypes',
-              createArrowFunction(
-                /*modifiers*/ undefined,
-                /*typeParameters*/ undefined,
-                [],
-                /*type*/ undefined,
-                createToken(Syntax.EqualsGreaterThanToken),
-                serializeParameterTypesOfNode(node, container)
-              )
+              new ArrowFunction(/*modifiers*/ undefined, undefined, [], undefined, createToken(Syntax.EqualsGreaterThanToken), serializeParameterTypesOfNode(node, container))
             )
           );
         }
         if (shouldAddReturnTypeMetadata(node)) {
           (properties || (properties = [])).push(
-            createPropertyAssignment(
-              'returnType',
-              createArrowFunction(/*modifiers*/ undefined, /*typeParameters*/ undefined, [], /*type*/ undefined, createToken(Syntax.EqualsGreaterThanToken), serializeReturnTypeOfNode(node))
-            )
+            createPropertyAssignment('returnType', new ArrowFunction(/*modifiers*/ undefined, undefined, [], undefined, createToken(Syntax.EqualsGreaterThanToken), serializeReturnTypeOfNode(node)))
           );
         }
         if (properties) {
@@ -1414,7 +1386,7 @@ namespace core {
         }
       }
 
-      return createArrayLiteral(expressions);
+      return new ArrayLiteralExpression(expressions);
     }
 
     function getParametersOfDecoratedDeclaration(node: SignatureDeclaration, container: ClassLikeDeclaration) {
@@ -1826,11 +1798,11 @@ namespace core {
       }
       const updated = PropertyDeclaration.update(
         node,
-        /*decorators*/ undefined,
+        undefined,
         Nodes.visit(node.modifiers, visitor, isModifier),
         visitPropertyNameOfClassElement(node),
         /*questionOrExclamationToken*/ undefined,
-        /*type*/ undefined,
+        undefined,
         visitNode(node.initializer, visitor)
       );
       if (updated !== node) {
@@ -1847,7 +1819,7 @@ namespace core {
         return;
       }
 
-      return ConstructorDeclaration.update(node, /*decorators*/ undefined, /*modifiers*/ undefined, visitParameterList(node.parameters, visitor, context), transformConstructorBody(node.body, node));
+      return ConstructorDeclaration.update(node, undefined, /*modifiers*/ undefined, visitParameterList(node.parameters, visitor, context), transformConstructorBody(node.body, node));
     }
 
     function transformConstructorBody(body: Block, constructor: ConstructorDeclaration) {
@@ -1882,8 +1854,8 @@ namespace core {
 
       // End the lexical environment.
       statements = mergeLexicalEnvironment(statements, endLexicalEnvironment());
-      const block = createBlock(setTextRange(Nodes.create(statements), body.statements), /*multiLine*/ true);
-      setTextRange(block, /*location*/ body);
+      const block = createBlock(setRange(Nodes.create(statements), body.statements), /*multiLine*/ true);
+      setRange(block, /*location*/ body);
       setOriginalNode(block, body);
       return block;
     }
@@ -1907,7 +1879,7 @@ namespace core {
 
       return startOnNewLine(
         removeAllComments(
-          setTextRange(setOriginalNode(createExpressionStatement(createAssignment(setTextRange(createPropertyAccess(createThis(), propertyName), node.name), localName)), node), moveRangePos(node, -1))
+          setRange(setOriginalNode(createExpressionStatement(createAssignment(setRange(createPropertyAccess(createThis(), propertyName), node.name), localName)), node), moveRangePos(node, -1))
         )
       );
     }
@@ -1918,14 +1890,14 @@ namespace core {
       }
       const updated = MethodDeclaration.update(
         node,
-        /*decorators*/ undefined,
+        undefined,
         Nodes.visit(node.modifiers, modifierVisitor, isModifier),
         node.asteriskToken,
         visitPropertyNameOfClassElement(node),
         /*questionToken*/ undefined,
-        /*typeParameters*/ undefined,
+        undefined,
         visitParameterList(node.parameters, visitor, context),
-        /*type*/ undefined,
+        undefined,
         visitFunctionBody(node.body, visitor, context)
       );
       if (updated !== node) {
@@ -1953,11 +1925,11 @@ namespace core {
       }
       const updated = GetAccessorDeclaration.update(
         node,
-        /*decorators*/ undefined,
+        undefined,
         Nodes.visit(node.modifiers, modifierVisitor, isModifier),
         visitPropertyNameOfClassElement(node),
         visitParameterList(node.parameters, visitor, context),
-        /*type*/ undefined,
+        undefined,
         visitFunctionBody(node.body, visitor, context) || createBlock([])
       );
       if (updated !== node) {
@@ -1975,7 +1947,7 @@ namespace core {
       }
       const updated = SetAccessorDeclaration.update(
         node,
-        /*decorators*/ undefined,
+        undefined,
         Nodes.visit(node.modifiers, modifierVisitor, isModifier),
         visitPropertyNameOfClassElement(node),
         visitParameterList(node.parameters, visitor, context),
@@ -1996,13 +1968,13 @@ namespace core {
       }
       const updated = updateFunctionDeclaration(
         node,
-        /*decorators*/ undefined,
+        undefined,
         Nodes.visit(node.modifiers, modifierVisitor, isModifier),
         node.asteriskToken,
         node.name,
-        /*typeParameters*/ undefined,
+        undefined,
         visitParameterList(node.parameters, visitor, context),
-        /*type*/ undefined,
+        undefined,
         visitFunctionBody(node.body, visitor, context) || createBlock([])
       );
       if (isExportOfNamespace(node)) {
@@ -2022,21 +1994,20 @@ namespace core {
         Nodes.visit(node.modifiers, modifierVisitor, isModifier),
         node.asteriskToken,
         node.name,
-        /*typeParameters*/ undefined,
+        undefined,
         visitParameterList(node.parameters, visitor, context),
-        /*type*/ undefined,
+        undefined,
         visitFunctionBody(node.body, visitor, context) || createBlock([])
       );
       return updated;
     }
 
     function visitArrowFunction(node: ArrowFunction) {
-      const updated = updateArrowFunction(
-        node,
+      const updated = node.update(
         Nodes.visit(node.modifiers, modifierVisitor, isModifier),
-        /*typeParameters*/ undefined,
+        undefined,
         visitParameterList(node.parameters, visitor, context),
-        /*type*/ undefined,
+        undefined,
         node.equalsGreaterThanToken,
         visitFunctionBody(node.body, visitor, context)
       );
@@ -2050,19 +2021,19 @@ namespace core {
 
       const updated = updateParameter(
         node,
-        /*decorators*/ undefined,
+        undefined,
         /*modifiers*/ undefined,
         node.dot3Token,
         visitNode(node.name, visitor, isBindingName),
         /*questionToken*/ undefined,
-        /*type*/ undefined,
+        undefined,
         visitNode(node.initializer, visitor, isExpression)
       );
       if (updated !== node) {
         // While we emit the source map for the node after skipping decorators and modifiers,
         // we need to emit the comments for the original range.
         setCommentRange(updated, node);
-        setTextRange(updated, moveRangePastModifiers(node));
+        setRange(updated, moveRangePastModifiers(node));
         setSourceMapRange(updated, moveRangePastModifiers(node));
         setEmitFlags(updated.name, EmitFlags.NoTrailingSourceMap);
       }
@@ -2077,7 +2048,7 @@ namespace core {
           return;
         }
 
-        return setTextRange(createExpressionStatement(inlineExpressions(map(variables, transformInitializedVariable))), node);
+        return setRange(createExpressionStatement(inlineExpressions(map(variables, transformInitializedVariable))), node);
       } else {
         return visitEachChild(node, visitor, context);
       }
@@ -2088,18 +2059,12 @@ namespace core {
       if (Node.is.kind(BindingPattern, name)) {
         return flattenDestructuringAssignment(node, visitor, context, FlattenLevel.All, /*needsValue*/ false, createNamespaceExportExpression);
       } else {
-        return setTextRange(createAssignment(getNamespaceMemberNameWithSourceMapsAndWithoutComments(name), visitNode(node.initializer, visitor, isExpression)), /*location*/ node);
+        return setRange(createAssignment(getNamespaceMemberNameWithSourceMapsAndWithoutComments(name), visitNode(node.initializer, visitor, isExpression)), /*location*/ node);
       }
     }
 
     function visitVariableDeclaration(node: VariableDeclaration) {
-      return updateTypeScriptVariableDeclaration(
-        node,
-        visitNode(node.name, visitor, isBindingName),
-        /*exclaimationToken*/ undefined,
-        /*type*/ undefined,
-        visitNode(node.initializer, visitor, isExpression)
-      );
+      return updateTypeScriptVariableDeclaration(node, visitNode(node.name, visitor, isBindingName), /*exclaimationToken*/ undefined, undefined, visitNode(node.initializer, visitor, isExpression));
     }
 
     function visitParenthesizedExpression(node: ParenthesizedExpression): Expression {
@@ -2234,9 +2199,9 @@ namespace core {
             /*modifiers*/ undefined,
             /*asteriskToken*/ undefined,
             /*name*/ undefined,
-            /*typeParameters*/ undefined,
-            [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, parameterName)],
-            /*type*/ undefined,
+            undefined,
+            [createParameter(undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, parameterName)],
+            undefined,
             transformEnumBody(node, containerName)
           ),
           /*typeArguments*/ undefined,
@@ -2250,7 +2215,7 @@ namespace core {
         setSyntheticLeadingComments(enumStatement, undefined);
         setSyntheticTrailingComments(enumStatement, undefined);
       }
-      setTextRange(enumStatement, node);
+      setRange(enumStatement, node);
       addEmitFlags(enumStatement, emitFlags);
       statements.push(enumStatement);
 
@@ -2276,7 +2241,7 @@ namespace core {
       addRange(statements, members);
 
       currentNamespaceContainerName = savedCurrentNamespaceLocalName;
-      return createBlock(setTextRange(Nodes.create(statements), /*location*/ node.members), /*multiLine*/ true);
+      return createBlock(setRange(Nodes.create(statements), /*location*/ node.members), /*multiLine*/ true);
     }
 
     /**
@@ -2292,7 +2257,7 @@ namespace core {
       const valueExpression = transformEnumMemberDeclarationValue(member);
       const innerAssignment = createAssignment(createElementAccess(currentNamespaceContainerName, name), valueExpression);
       const outerAssignment = valueExpression.kind === Syntax.StringLiteral ? innerAssignment : createAssignment(createElementAccess(currentNamespaceContainerName, innerAssignment), name);
-      return setTextRange(createExpressionStatement(setTextRange(outerAssignment, member)), member);
+      return setRange(createExpressionStatement(setRange(outerAssignment, member)), member);
     }
 
     /**
@@ -2495,9 +2460,9 @@ namespace core {
             /*modifiers*/ undefined,
             /*asteriskToken*/ undefined,
             /*name*/ undefined,
-            /*typeParameters*/ undefined,
-            [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, parameterName)],
-            /*type*/ undefined,
+            undefined,
+            [createParameter(undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, parameterName)],
+            undefined,
             transformModuleBody(node, containerName)
           ),
           /*typeArguments*/ undefined,
@@ -2511,7 +2476,7 @@ namespace core {
         setSyntheticLeadingComments(moduleStatement, undefined);
         setSyntheticTrailingComments(moduleStatement, undefined);
       }
-      setTextRange(moduleStatement, node);
+      setRange(moduleStatement, node);
       addEmitFlags(moduleStatement, emitFlags);
       statements.push(moduleStatement);
 
@@ -2564,8 +2529,8 @@ namespace core {
       currentNamespace = savedCurrentNamespace;
       currentScopeFirstDeclarationsOfName = savedCurrentScopeFirstDeclarationsOfName;
 
-      const block = createBlock(setTextRange(Nodes.create(statements), /*location*/ statementsLocation), /*multiLine*/ true);
-      setTextRange(block, blockLocation);
+      const block = createBlock(setRange(Nodes.create(statements), /*location*/ statementsLocation), /*multiLine*/ true);
+      setRange(block, blockLocation);
 
       // namespace hello.hi.world {
       //      function foo() {}
@@ -2619,7 +2584,7 @@ namespace core {
       // Elide the declaration if the import clause was elided.
       const importClause = visitNode(node.importClause, visitImportClause, isImportClause);
       return importClause || compilerOptions.importsNotUsedAsValues === ImportsNotUsedAsValues.Preserve || compilerOptions.importsNotUsedAsValues === ImportsNotUsedAsValues.Error
-        ? updateImportDeclaration(node, /*decorators*/ undefined, /*modifiers*/ undefined, importClause, node.moduleSpecifier)
+        ? updateImportDeclaration(node, undefined, /*modifiers*/ undefined, importClause, node.moduleSpecifier)
         : undefined;
     }
 
@@ -2700,7 +2665,7 @@ namespace core {
 
       // Elide the export declaration if all of its named exports are elided.
       const exportClause = visitNode(node.exportClause, visitNamedExportBindings, isNamedExportBindings);
-      return exportClause ? updateExportDeclaration(node, /*decorators*/ undefined, /*modifiers*/ undefined, exportClause, node.moduleSpecifier, node.isTypeOnly) : undefined;
+      return exportClause ? updateExportDeclaration(node, undefined, /*modifiers*/ undefined, exportClause, node.moduleSpecifier, node.isTypeOnly) : undefined;
     }
 
     /**
@@ -2755,7 +2720,7 @@ namespace core {
         const isReferenced = resolver.isReferencedAliasDeclaration(node);
         // If the alias is unreferenced but we want to keep the import, replace with 'import "mod"'.
         if (!isReferenced && compilerOptions.importsNotUsedAsValues === ImportsNotUsedAsValues.Preserve) {
-          return setOriginalNode(setTextRange(createImportDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, /*importClause*/ undefined, node.moduleReference.expression), node), node);
+          return setOriginalNode(setRange(createImportDeclaration(undefined, /*modifiers*/ undefined, /*importClause*/ undefined, node.moduleReference.expression), node), node);
         }
 
         return isReferenced ? visitEachChild(node, visitor, context) : undefined;
@@ -2772,10 +2737,10 @@ namespace core {
         //  export var ${name} = ${moduleReference};
         //  var ${name} = ${moduleReference};
         return setOriginalNode(
-          setTextRange(
+          setRange(
             createVariableStatement(
               Nodes.visit(node.modifiers, modifierVisitor, isModifier),
-              createVariableDeclarationList([setOriginalNode(createVariableDeclaration(node.name, /*type*/ undefined, moduleReference), node)])
+              createVariableDeclarationList([setOriginalNode(createVariableDeclaration(node.name, undefined, moduleReference), node)])
             ),
             node
           ),
@@ -2840,14 +2805,14 @@ namespace core {
     }
 
     function createNamespaceExport(exportName: Identifier, exportValue: Expression, location?: TextRange) {
-      return setTextRange(
+      return setRange(
         createExpressionStatement(createAssignment(getNamespaceMemberName(currentNamespaceContainerName, exportName, /*allowComments*/ false, /*allowSourceMaps*/ true), exportValue)),
         location
       );
     }
 
     function createNamespaceExportExpression(exportName: Identifier, exportValue: Expression, location?: TextRange) {
-      return setTextRange(createAssignment(getNamespaceMemberNameWithSourceMapsAndWithoutComments(exportName), exportValue), location);
+      return setRange(createAssignment(getNamespaceMemberNameWithSourceMapsAndWithoutComments(exportName), exportValue), location);
     }
 
     function getNamespaceMemberNameWithSourceMapsAndWithoutComments(name: Identifier) {
@@ -2991,9 +2956,9 @@ namespace core {
           // destructuring assignment
           if (node.objectAssignmentInitializer) {
             const initializer = createAssignment(exportedName, node.objectAssignmentInitializer);
-            return setTextRange(createPropertyAssignment(name, initializer), node);
+            return setRange(createPropertyAssignment(name, initializer), node);
           }
-          return setTextRange(createPropertyAssignment(name, exportedName), node);
+          return setRange(createPropertyAssignment(name, exportedName), node);
         }
       }
       return node;
@@ -3051,7 +3016,7 @@ namespace core {
             (applicableSubstitutions & TypeScriptSubstitutionFlags.NamespaceExports && container.kind === Syntax.ModuleDeclaration) ||
             (applicableSubstitutions & TypeScriptSubstitutionFlags.NonQualifiedEnumMembers && container.kind === Syntax.EnumDeclaration);
           if (substitute) {
-            return setTextRange(createPropertyAccess(getGeneratedNameForNode(container), node), /*location*/ node);
+            return setRange(createPropertyAccess(getGeneratedNameForNode(container), node), /*location*/ node);
           }
         }
       }
@@ -3098,7 +3063,7 @@ namespace core {
 
   function createDecorateHelper(context: TransformationContext, decoratorExpressions: Expression[], target: Expression, memberName?: Expression, descriptor?: Expression, location?: TextRange) {
     const argumentsArray: Expression[] = [];
-    argumentsArray.push(createArrayLiteral(decoratorExpressions, /*multiLine*/ true));
+    argumentsArray.push(new ArrayLiteralExpression(decoratorExpressions, /*multiLine*/ true));
     argumentsArray.push(target);
     if (memberName) {
       argumentsArray.push(memberName);
@@ -3108,7 +3073,7 @@ namespace core {
     }
 
     context.requestEmitHelper(decorateHelper);
-    return setTextRange(createCall(getUnscopedHelperName('__decorate'), /*typeArguments*/ undefined, argumentsArray), location);
+    return setRange(createCall(getUnscopedHelperName('__decorate'), /*typeArguments*/ undefined, argumentsArray), location);
   }
 
   export const decorateHelper: UnscopedEmitHelper = {
@@ -3143,7 +3108,7 @@ namespace core {
 
   function createParamHelper(context: TransformationContext, expression: Expression, parameterOffset: number, location?: TextRange) {
     context.requestEmitHelper(paramHelper);
-    return setTextRange(createCall(getUnscopedHelperName('__param'), /*typeArguments*/ undefined, [createLiteral(parameterOffset), expression]), location);
+    return setRange(createCall(getUnscopedHelperName('__param'), /*typeArguments*/ undefined, [createLiteral(parameterOffset), expression]), location);
   }
 
   export const paramHelper: UnscopedEmitHelper = {

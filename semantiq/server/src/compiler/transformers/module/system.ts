@@ -82,11 +82,8 @@ namespace core {
         /*asteriskToken*/ undefined,
         /*name*/ undefined,
         /*typeParameters*/ undefined,
-        [
-          createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, exportFunction),
-          createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, contextObject),
-        ],
-        /*type*/ undefined,
+        [createParameter(undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, exportFunction), createParameter(undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, contextObject)],
+        undefined,
         moduleBodyBlock
       );
 
@@ -94,11 +91,11 @@ namespace core {
       // Clear the emit-helpers flag for later passes since we'll have already used it in the module body
       // So the helper will be emit at the correct position instead of at the top of the source-file
       const moduleName = tryGetModuleNameFromFile(node, host, compilerOptions);
-      const dependencies = createArrayLiteral(map(dependencyGroups, (dependencyGroup) => dependencyGroup.name));
+      const dependencies = new ArrayLiteralExpression(map(dependencyGroups, (dependencyGroup) => dependencyGroup.name));
       const updated = setEmitFlags(
         qp_updateSourceNode(
           node,
-          setTextRange(
+          setRange(
             Nodes.create([
               createExpressionStatement(
                 createCall(
@@ -224,7 +221,7 @@ namespace core {
       statements.push(
         createVariableStatement(
           /*modifiers*/ undefined,
-          createVariableDeclarationList([createVariableDeclaration('__moduleName', /*type*/ undefined, createLogicalAnd(contextObject, createPropertyAccess(contextObject, 'id')))])
+          createVariableDeclarationList([createVariableDeclaration('__moduleName', undefined, createLogicalAnd(contextObject, createPropertyAccess(contextObject, 'id')))])
         )
       );
 
@@ -258,7 +255,7 @@ namespace core {
             /*name*/ undefined,
             /*typeParameters*/ undefined,
             /*parameters*/ [],
-            /*type*/ undefined,
+            undefined,
             createBlock(executeStatements, /*multiLine*/ true)
           )
         ),
@@ -340,7 +337,7 @@ namespace core {
       statements.push(
         createVariableStatement(
           /*modifiers*/ undefined,
-          createVariableDeclarationList([createVariableDeclaration(exportedNamesStorageRef, /*type*/ undefined, createObjectLiteral(exportedNames, /*multiline*/ true))])
+          createVariableDeclarationList([createVariableDeclaration(exportedNamesStorageRef, undefined, createObjectLiteral(exportedNames, /*multiline*/ true))])
         )
       );
 
@@ -367,18 +364,18 @@ namespace core {
       }
 
       return createFunctionDeclaration(
-        /*decorators*/ undefined,
+        undefined,
         /*modifiers*/ undefined,
         /*asteriskToken*/ undefined,
         exportStarFunction,
         /*typeParameters*/ undefined,
-        [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, m)],
-        /*type*/ undefined,
+        [createParameter(undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, m)],
+        undefined,
         createBlock(
           [
-            createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([createVariableDeclaration(exports, /*type*/ undefined, createObjectLiteral([]))])),
+            createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([createVariableDeclaration(exports, undefined, createObjectLiteral([]))])),
             createForIn(
-              createVariableDeclarationList([createVariableDeclaration(n, /*type*/ undefined)]),
+              createVariableDeclarationList([createVariableDeclaration(n, undefined)]),
               m,
               createBlock([setEmitFlags(createIf(condition, createExpressionStatement(createAssignment(createElementAccess(exports, n), createElementAccess(m, n)))), EmitFlags.SingleLine)])
             ),
@@ -458,14 +455,14 @@ namespace core {
             /*asteriskToken*/ undefined,
             /*name*/ undefined,
             /*typeParameters*/ undefined,
-            [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, parameterName)],
-            /*type*/ undefined,
+            [createParameter(undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, parameterName)],
+            undefined,
             createBlock(statements, /*multiLine*/ true)
           )
         );
       }
 
-      return createArrayLiteral(setters, /*multiLine*/ true);
+      return new ArrayLiteralExpression(setters, /*multiLine*/ true);
     }
 
     //
@@ -584,7 +581,7 @@ namespace core {
             getDeclarationName(node, /*allowComments*/ true, /*allowSourceMaps*/ true),
             /*typeParameters*/ undefined,
             Nodes.visit(node.parameters, destructuringAndImportCallVisitor, isParameterDeclaration),
-            /*type*/ undefined,
+            undefined,
             visitNode(node.body, destructuringAndImportCallVisitor, isBlock)
           )
         );
@@ -618,11 +615,11 @@ namespace core {
       // Rewrite the class declaration into an assignment of a class expression.
       statements = append(
         statements,
-        setTextRange(
+        setRange(
           createExpressionStatement(
             createAssignment(
               name,
-              setTextRange(
+              setRange(
                 createClassExpression(
                   /*modifiers*/ undefined,
                   node.name,
@@ -673,7 +670,7 @@ namespace core {
 
       let statements: Statement[] | undefined;
       if (expressions) {
-        statements = append(statements, setTextRange(createExpressionStatement(inlineExpressions(expressions)), node));
+        statements = append(statements, setRange(createExpressionStatement(inlineExpressions(expressions)), node));
       }
 
       if (isMarkedDeclaration) {
@@ -762,8 +759,8 @@ namespace core {
     function createVariableAssignment(name: Identifier, value: Expression, location: TextRange | undefined, isExportedDeclaration: boolean) {
       hoistVariableDeclaration(getSynthesizedClone(name));
       return isExportedDeclaration
-        ? createExportExpression(name, preventSubstitution(setTextRange(createAssignment(name, value), location)))
-        : preventSubstitution(setTextRange(createAssignment(name, value), location));
+        ? createExportExpression(name, preventSubstitution(setRange(createAssignment(name, value), location)))
+        : preventSubstitution(setRange(createAssignment(name, value), location));
     }
 
     /**
@@ -1504,12 +1501,12 @@ namespace core {
         const importDeclaration = resolver.getReferencedImportDeclaration(name);
         if (importDeclaration) {
           if (Node.is.kind(ImportClause, importDeclaration)) {
-            return setTextRange(
+            return setRange(
               createPropertyAssignment(getSynthesizedClone(name), createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent), createIdentifier('default'))),
               /*location*/ node
             );
           } else if (Node.is.kind(ImportSpecifier, importDeclaration)) {
-            return setTextRange(
+            return setRange(
               createPropertyAssignment(
                 getSynthesizedClone(name),
                 createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent.parent.parent), getSynthesizedClone(importDeclaration.propertyName || importDeclaration.name))
@@ -1568,9 +1565,9 @@ namespace core {
         const importDeclaration = resolver.getReferencedImportDeclaration(node);
         if (importDeclaration) {
           if (Node.is.kind(ImportClause, importDeclaration)) {
-            return setTextRange(createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent), createIdentifier('default')), /*location*/ node);
+            return setRange(createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent), createIdentifier('default')), /*location*/ node);
           } else if (Node.is.kind(ImportSpecifier, importDeclaration)) {
-            return setTextRange(
+            return setRange(
               createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent.parent.parent), getSynthesizedClone(importDeclaration.propertyName || importDeclaration.name)),
               /*location*/ node
             );
@@ -1641,7 +1638,7 @@ namespace core {
       ) {
         const exportedNames = getExports(node.operand);
         if (exportedNames) {
-          let expression: Expression = node.kind === Syntax.PostfixUnaryExpression ? setTextRange(createPrefix(node.operator, node.operand), node) : node;
+          let expression: Expression = node.kind === Syntax.PostfixUnaryExpression ? setRange(createPrefix(node.operator, node.operand), node) : node;
 
           for (const exportName of exportedNames) {
             expression = createExportExpression(exportName, preventSubstitution(expression));

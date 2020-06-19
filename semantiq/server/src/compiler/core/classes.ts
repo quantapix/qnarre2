@@ -1,44 +1,72 @@
 namespace core {
+  export abstract class Synthesized extends Node {
+    constructor() {
+      super();
+      this.flags |= NodeFlags.Synthesized;
+    }
+  }
+
   export namespace ArrayBindingElement {
     export const also = [Syntax.BindingElement, Syntax.OmittedExpression];
   }
-  export namespace ArrayBindingPattern {
-    export const kind = Syntax.ArrayBindingPattern;
-    export function create(es: readonly ArrayBindingElement[]) {
-      const n = Node.createSynthesized(Syntax.ArrayBindingPattern);
-      n.elements = Nodes.create(es);
-      return n;
+  export class ArrayBindingPattern extends Synthesized {
+    static readonly kind: Syntax.ArrayBindingPattern;
+    parent?: VariableDeclaration | ParameterDeclaration | BindingElement;
+    elements: Nodes<ArrayBindingElement>;
+    constructor(es: readonly ArrayBindingElement[]) {
+      super();
+      this.elements = Nodes.create(es);
     }
-    export function update(n: ArrayBindingPattern, es: readonly ArrayBindingElement[]) {
-      return n.elements !== es ? updateNode(create(es), n) : n;
+    get kind() {
+      return ArrayBindingPattern.kind;
     }
-  }
-  export namespace ArrayLiteralExpression {
-    export const kind = Syntax.ArrayLiteralExpression;
-    export function createArrayLiteral(elements?: readonly Expression[], multiLine?: boolean) {
-      const node = <ArrayLiteralExpression>Node.createSynthesized(Syntax.ArrayLiteralExpression);
-      node.elements = parenthesizeListElements(Nodes.create(elements));
-      if (multiLine) node.multiLine = true;
-      return node;
-    }
-    export function updateArrayLiteral(node: ArrayLiteralExpression, elements: readonly Expression[]) {
-      return node.elements !== elements ? updateNode(createArrayLiteral(elements, node.multiLine), node) : node;
+    update(es: readonly ArrayBindingElement[]): ArrayBindingPattern {
+      return this.elements !== es ? new ArrayBindingPattern(es).updateFrom(this) : this;
     }
   }
-  export namespace ArrayTypeNode {
-    export const kind = Syntax.ArrayType;
-    export function create(t: TypeNode) {
-      const n = Node.createSynthesized(Syntax.ArrayType);
-      n.elementType = parenthesizeArrayTypeMember(t);
-      return n;
+  export class ArrayLiteralExpression extends Synthesized implements PrimaryExpression {
+    static readonly kind: Syntax.ArrayLiteralExpression;
+    elements: Nodes<Expression>;
+    multiLine?: boolean;
+    constructor(es?: readonly Expression[], multiLine?: boolean) {
+      super();
+      this.elements = parenthesizeListElements(Nodes.create(es));
+      if (multiLine) this.multiLine = true;
     }
-    export function update(n: ArrayTypeNode, t: TypeNode) {
-      return n.elementType !== t ? updateNode(create(t), n) : n;
+    get kind() {
+      return ArrayLiteralExpression.kind;
     }
+    update(es: readonly Expression[]): ArrayLiteralExpression {
+      return this.elements !== es ? new ArrayLiteralExpression(es, this.multiLine).updateFrom(this) : this;
+    }
+    _primaryExpressionBrand: any;
+    _memberExpressionBrand: any;
+    _leftHandSideExpressionBrand: any;
+    _updateExpressionBrand: any;
+    _unaryExpressionBrand: any;
+    _expressionBrand: any;
   }
-  export namespace ArrowFunction {
-    export const kind = Syntax.ArrowFunction;
-    export function createArrowFunction(
+  export class ArrayTypeNode extends Synthesized implements TypeNode {
+    static readonly kind: Syntax.ArrayType;
+    elementType: TypeNode;
+    constructor(t: TypeNode) {
+      super();
+      this.elementType = parenthesizeArrayTypeMember(t);
+    }
+    get kind() {
+      return ArrayTypeNode.kind;
+    }
+    update(t: TypeNode): ArrayTypeNode {
+      return this.elementType !== t ? new ArrayTypeNode(t).updateFrom(this) : this;
+    }
+    _typeNodeBrand: any;
+  }
+  export class ArrowFunction extends Synthesized implements Expression, FunctionLikeDeclarationBase, JSDocContainer {
+    static readonly kind: Syntax.ArrowFunction;
+    equalsGreaterThanToken: EqualsGreaterThanToken;
+    body: ConciseBody;
+    name: never;
+    constructor(
       modifiers: readonly Modifier[] | undefined,
       typeParameters: readonly TypeParameterDeclaration[] | undefined,
       parameters: readonly ParameterDeclaration[],
@@ -46,17 +74,18 @@ namespace core {
       equalsGreaterThanToken: EqualsGreaterThanToken | undefined,
       body: ConciseBody
     ) {
-      const node = <ArrowFunction>Node.createSynthesized(Syntax.ArrowFunction);
-      node.modifiers = Nodes.from(modifiers);
-      node.typeParameters = Nodes.from(typeParameters);
-      node.parameters = Nodes.create(parameters);
-      node.type = type;
-      node.equalsGreaterThanToken = equalsGreaterThanToken || createToken(Syntax.EqualsGreaterThanToken);
-      node.body = parenthesizeConciseBody(body);
-      return node;
+      super();
+      this.modifiers = Nodes.from(modifiers);
+      this.typeParameters = Nodes.from(typeParameters);
+      this.parameters = Nodes.create(parameters);
+      this.type = type;
+      this.equalsGreaterThanToken = equalsGreaterThanToken || createToken(Syntax.EqualsGreaterThanToken);
+      this.body = parenthesizeConciseBody(body);
     }
-    export function updateArrowFunction(
-      node: ArrowFunction,
+    get kind() {
+      return ArrowFunction.kind;
+    }
+    update(
       modifiers: readonly Modifier[] | undefined,
       typeParameters: readonly TypeParameterDeclaration[] | undefined,
       parameters: readonly ParameterDeclaration[],
@@ -64,14 +93,14 @@ namespace core {
       equalsGreaterThanToken: Token<Syntax.EqualsGreaterThanToken>,
       body: ConciseBody
     ): ArrowFunction {
-      return node.modifiers !== modifiers ||
-        node.typeParameters !== typeParameters ||
-        node.parameters !== parameters ||
-        node.type !== type ||
-        node.equalsGreaterThanToken !== equalsGreaterThanToken ||
-        node.body !== body
-        ? updateNode(createArrowFunction(modifiers, typeParameters, parameters, type, equalsGreaterThanToken, body), node)
-        : node;
+      return this.modifiers !== modifiers ||
+        this.typeParameters !== typeParameters ||
+        this.parameters !== parameters ||
+        this.type !== type ||
+        this.equalsGreaterThanToken !== equalsGreaterThanToken ||
+        this.body !== body
+        ? new ArrowFunction(modifiers, typeParameters, parameters, type, equalsGreaterThanToken, body).updateFrom(this)
+        : this;
     }
   }
   export namespace AsExpression {
@@ -338,10 +367,10 @@ namespace core {
       if (Node.is.kind(BindingElement, element)) {
         if (element.dot3Token) {
           Debug.assertNode(element.name, isIdentifier);
-          return setOriginalNode(setTextRange(createSpread(element.name), element), element);
+          return setOriginalNode(setRange(createSpread(element.name), element), element);
         }
         const expression = convertToAssignmentElementTarget(element.name);
-        return element.initializer ? setOriginalNode(setTextRange(createAssignment(expression, element.initializer), element), element) : expression;
+        return element.initializer ? setOriginalNode(setRange(createAssignment(expression, element.initializer), element), element) : expression;
       }
       Debug.assertNode(element, isExpression);
       return <Expression>element;
@@ -350,14 +379,14 @@ namespace core {
       if (Node.is.kind(BindingElement, element)) {
         if (element.dot3Token) {
           Debug.assertNode(element.name, isIdentifier);
-          return setOriginalNode(setTextRange(createSpreadAssignment(element.name), element), element);
+          return setOriginalNode(setRange(createSpreadAssignment(element.name), element), element);
         }
         if (element.propertyName) {
           const expression = convertToAssignmentElementTarget(element.name);
-          return setOriginalNode(setTextRange(createPropertyAssignment(element.propertyName, element.initializer ? createAssignment(expression, element.initializer) : expression), element), element);
+          return setOriginalNode(setRange(createPropertyAssignment(element.propertyName, element.initializer ? createAssignment(expression, element.initializer) : expression), element), element);
         }
         Debug.assertNode(element.name, isIdentifier);
-        return setOriginalNode(setTextRange(createShorthandPropertyAssignment(element.name, element.initializer), element), element);
+        return setOriginalNode(setRange(createShorthandPropertyAssignment(element.name, element.initializer), element), element);
       }
       Debug.assertNode(element, isObjectLiteralElementLike);
       return <ObjectLiteralElementLike>element;
@@ -389,14 +418,14 @@ namespace core {
     }
     export function convertToObjectAssignmentPattern(node: ObjectBindingOrAssignmentPattern) {
       if (Node.is.kind(ObjectBindingPattern, node)) {
-        return setOriginalNode(setTextRange(createObjectLiteral(map(node.elements, convertToObjectAssignmentElement)), node), node);
+        return setOriginalNode(setRange(createObjectLiteral(map(node.elements, convertToObjectAssignmentElement)), node), node);
       }
       Debug.assertNode(node, isObjectLiteralExpression);
       return node;
     }
     export function convertToArrayAssignmentPattern(node: ArrayBindingOrAssignmentPattern) {
       if (Node.is.kind(ArrayBindingPattern, node)) {
-        return setOriginalNode(setTextRange(createArrayLiteral(map(node.elements, convertToArrayAssignmentElement)), node), node);
+        return setOriginalNode(setRange(new ArrayLiteralExpression(map(node.elements, convertToArrayAssignmentElement)), node), node);
       }
       Debug.assertNode(node, isArrayLiteralExpression);
       return node;
@@ -497,10 +526,10 @@ namespace core {
               // for `a.b()` target is `(_a = a).b` and thisArg is `_a`
               thisArg = createTempVariable(recordTempVariable);
               target = createPropertyAccess(
-                setTextRange(createAssignment(thisArg, (<PropertyAccessExpression>callee).expression), (<PropertyAccessExpression>callee).expression),
+                setRange(createAssignment(thisArg, (<PropertyAccessExpression>callee).expression), (<PropertyAccessExpression>callee).expression),
                 (<PropertyAccessExpression>callee).name
               );
-              setTextRange(target, callee);
+              setRange(target, callee);
             } else {
               thisArg = (<PropertyAccessExpression>callee).expression;
               target = <PropertyAccessExpression>callee;
@@ -512,10 +541,10 @@ namespace core {
               // for `a[b]()` target is `(_a = a)[b]` and thisArg is `_a`
               thisArg = createTempVariable(recordTempVariable);
               target = createElementAccess(
-                setTextRange(createAssignment(thisArg, (<ElementAccessExpression>callee).expression), (<ElementAccessExpression>callee).expression),
+                setRange(createAssignment(thisArg, (<ElementAccessExpression>callee).expression), (<ElementAccessExpression>callee).expression),
                 (<ElementAccessExpression>callee).argumentExpression
               );
-              setTextRange(target, callee);
+              setRange(target, callee);
             } else {
               thisArg = (<ElementAccessExpression>callee).expression;
               target = <ElementAccessExpression>callee;
@@ -588,7 +617,7 @@ namespace core {
           /*name*/ undefined,
           /*typeParameters*/ undefined,
           /*parameters*/ param ? [param] : [],
-          /*type*/ undefined,
+          undefined,
           createBlock(statements, true)
         ),
         undefined,
@@ -600,7 +629,7 @@ namespace core {
     export function createImmediatelyInvokedArrowFunction(statements: readonly Statement[], param: ParameterDeclaration, paramValue: Expression): CallExpression;
     export function createImmediatelyInvokedArrowFunction(statements: readonly Statement[], param?: ParameterDeclaration, paramValue?: Expression) {
       return createCall(
-        createArrowFunction(undefined, /*typeParameters*/ undefined, /*parameters*/ param ? [param] : [], /*type*/ undefined, /*equalsGreaterThanToken*/ undefined, createBlock(statements, true)),
+        new ArrowFunction(undefined, /*typeParameters*/ undefined, /*parameters*/ param ? [param] : [], undefined, /*equalsGreaterThanToken*/ undefined, createBlock(statements, true)),
         undefined,
         /*argumentsArray*/ paramValue ? [paramValue] : []
       );
@@ -1005,7 +1034,7 @@ namespace core {
       return node;
     }
     export function createExportDefault(expression: Expression) {
-      return createExportAssignment(/*decorators*/ undefined, undefined, /*isExportEquals*/ false, expression);
+      return createExportAssignment(undefined, undefined, /*isExportEquals*/ false, expression);
     }
     export function updateExportAssignment(node: ExportAssignment, decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, expression: Expression) {
       return node.decorators !== decorators || node.modifiers !== modifiers || node.expression !== expression
@@ -1031,10 +1060,10 @@ namespace core {
       return node;
     }
     export function createExternalModuleExport(exportName: Identifier) {
-      return createExportDeclaration(/*decorators*/ undefined, undefined, createNamedExports([createExportSpecifier(/*propertyName*/ undefined, exportName)]));
+      return createExportDeclaration(undefined, undefined, createNamedExports([createExportSpecifier(/*propertyName*/ undefined, exportName)]));
     }
     export function createEmptyExports() {
-      return createExportDeclaration(/*decorators*/ undefined, undefined, createNamedExports([]), /*moduleSpecifier*/ undefined);
+      return createExportDeclaration(undefined, undefined, createNamedExports([]), /*moduleSpecifier*/ undefined);
     }
     export function updateExportDeclaration(
       node: ExportDeclaration,
@@ -1066,7 +1095,7 @@ namespace core {
       if (Node.is.kind(QualifiedName, node)) {
         const left = createExpressionFromEntityName(node.left);
         const right = getMutableClone(node.right);
-        return setTextRange(createPropertyAccess(left, right), node);
+        return setRange(createPropertyAccess(left, right), node);
       } else {
         return getMutableClone(node);
       }
@@ -1100,10 +1129,10 @@ namespace core {
               /*name*/ undefined,
               /*typeParameters*/ undefined,
               getAccessor.parameters,
-              /*type*/ undefined,
+              undefined,
               getAccessor.body! // TODO: GH#18217
             );
-            setTextRange(getterFunction, getAccessor);
+            setRange(getterFunction, getAccessor);
             setOriginalNode(getterFunction, getAccessor);
             const getter = createPropertyAssignment('get', getterFunction);
             properties.push(getter);
@@ -1116,10 +1145,10 @@ namespace core {
               /*name*/ undefined,
               /*typeParameters*/ undefined,
               setAccessor.parameters,
-              /*type*/ undefined,
+              undefined,
               setAccessor.body! // TODO: GH#18217
             );
-            setTextRange(setterFunction, setAccessor);
+            setRange(setterFunction, setAccessor);
             setOriginalNode(setterFunction, setAccessor);
             const setter = createPropertyAssignment('set', setterFunction);
             properties.push(setter);
@@ -1128,7 +1157,7 @@ namespace core {
           properties.push(createPropertyAssignment('enumerable', getAccessor || setAccessor ? createFalse() : createTrue()));
           properties.push(createPropertyAssignment('configurable', createTrue()));
 
-          const expression = setTextRange(
+          const expression = setRange(
             createCall(createPropertyAccess(createIdentifier('Object'), 'defineProperty'), undefined, [
               receiver,
               createExpressionForPropertyName(property.name),
@@ -1144,32 +1173,29 @@ namespace core {
       }
       function createExpressionForPropertyAssignment(property: PropertyAssignment, receiver: Expression) {
         return aggregateTransformFlags(
-          setOriginalNode(setTextRange(createAssignment(createMemberAccessForPropertyName(receiver, property.name, property.name), property.initializer), property), property)
+          setOriginalNode(setRange(createAssignment(createMemberAccessForPropertyName(receiver, property.name, property.name), property.initializer), property), property)
         );
       }
       function createExpressionForShorthandPropertyAssignment(property: ShorthandPropertyAssignment, receiver: Expression) {
         return aggregateTransformFlags(
-          setOriginalNode(
-            setTextRange(createAssignment(createMemberAccessForPropertyName(receiver, property.name, property.name), getSynthesizedClone(property.name)), property),
-            /*original*/ property
-          )
+          setOriginalNode(setRange(createAssignment(createMemberAccessForPropertyName(receiver, property.name, property.name), getSynthesizedClone(property.name)), property), /*original*/ property)
         );
       }
       function createExpressionForMethodDeclaration(method: MethodDeclaration, receiver: Expression) {
         return aggregateTransformFlags(
           setOriginalNode(
-            setTextRange(
+            setRange(
               createAssignment(
                 createMemberAccessForPropertyName(receiver, method.name, method.name),
                 setOriginalNode(
-                  setTextRange(
+                  setRange(
                     createFunctionExpression(
                       method.modifiers,
                       method.asteriskToken,
                       /*name*/ undefined,
                       /*typeParameters*/ undefined,
                       method.parameters,
-                      /*type*/ undefined,
+                      undefined,
                       method.body! // TODO: GH#18217
                     ),
                     method
@@ -1201,9 +1227,9 @@ namespace core {
     }
     export function createMemberAccessForPropertyName(target: Expression, memberName: PropertyName, location?: TextRange): MemberExpression {
       if (Node.is.kind(ComputedPropertyName, memberName)) {
-        return setTextRange(createElementAccess(target, memberName.expression), location);
+        return setRange(createElementAccess(target, memberName.expression), location);
       } else {
-        const expression = setTextRange(
+        const expression = setRange(
           Node.is.kind(Identifier, memberName) || Node.is.kind(PrivateIdentifier, memberName) ? createPropertyAccess(target, memberName) : createElementAccess(target, memberName),
           memberName
         );
@@ -1212,10 +1238,10 @@ namespace core {
       }
     }
     export function createFunctionCall(func: Expression, thisArg: Expression, argumentsList: readonly Expression[], location?: TextRange) {
-      return setTextRange(createCall(createPropertyAccess(func, 'call'), undefined, [thisArg, ...argumentsList]), location);
+      return setRange(createCall(createPropertyAccess(func, 'call'), undefined, [thisArg, ...argumentsList]), location);
     }
     export function createFunctionApply(func: Expression, thisArg: Expression, argumentsExpression: Expression, location?: TextRange) {
-      return setTextRange(createCall(createPropertyAccess(func, 'apply'), undefined, [thisArg, argumentsExpression]), location);
+      return setRange(createCall(createPropertyAccess(func, 'apply'), undefined, [thisArg, argumentsExpression]), location);
     }
     export function createArraySlice(array: Expression, start?: number | Expression) {
       const argumentsList: Expression[] = [];
@@ -1228,7 +1254,7 @@ namespace core {
       return createCall(createPropertyAccess(array, 'concat'), undefined, values);
     }
     export function createMathPow(left: Expression, right: Expression, location?: TextRange) {
-      return setTextRange(createCall(createPropertyAccess(createIdentifier('Math'), 'pow'), undefined, [left, right]), location);
+      return setRange(createCall(createPropertyAccess(createIdentifier('Math'), 'pow'), undefined, [left, right]), location);
     }
 
     export function getLeftmostExpression(node: Expression, stopAtCallExpressions: boolean) {
@@ -1565,7 +1591,7 @@ namespace core {
     }
     export function getNamespaceMemberName(ns: Identifier, name: Identifier, allowComments?: boolean, allowSourceMaps?: boolean): PropertyAccessExpression {
       const qualifiedName = createPropertyAccess(ns, isSynthesized(name) ? name : getSynthesizedClone(name));
-      setTextRange(qualifiedName, name);
+      setRange(qualifiedName, name);
       let emitFlags: EmitFlags = 0;
       if (!allowSourceMaps) emitFlags |= EmitFlags.NoSourceMap;
       if (!allowComments) emitFlags |= EmitFlags.NoComments;
@@ -2146,7 +2172,7 @@ namespace core {
           }
         } else argumentsList.push(children[0]);
       }
-      return setTextRange(createCall(createJsxFactoryExpression(jsxFactoryEntity, reactNamespace, parentElement), undefined, argumentsList), location);
+      return setRange(createCall(createJsxFactoryExpression(jsxFactoryEntity, reactNamespace, parentElement), undefined, argumentsList), location);
     }
     export function createExpressionForJsxFragment(
       jsxFactoryEntity: EntityName | undefined,
@@ -2166,7 +2192,7 @@ namespace core {
           }
         } else argumentsList.push(children[0]);
       }
-      return setTextRange(createCall(createJsxFactoryExpression(jsxFactoryEntity, reactNamespace, parentElement), undefined, argumentsList), location);
+      return setRange(createCall(createJsxFactoryExpression(jsxFactoryEntity, reactNamespace, parentElement), undefined, argumentsList), location);
     }
   }
   export namespace JsxSelfClosingElement {
@@ -2496,7 +2522,7 @@ namespace core {
     export function createNotEmittedStatement(original: Node) {
       const node = <NotEmittedStatement>Node.createSynthesized(Syntax.NotEmittedStatement);
       node.original = original;
-      setTextRange(node, original);
+      setRange(node, original);
       return node;
     }
   }
@@ -2681,7 +2707,7 @@ namespace core {
       const node = <PartiallyEmittedExpression>Node.createSynthesized(Syntax.PartiallyEmittedExpression);
       node.expression = expression;
       node.original = original;
-      setTextRange(node, original);
+      setRange(node, original);
       return node;
     }
     export function updatePartiallyEmittedExpression(node: PartiallyEmittedExpression, expression: Expression) {
@@ -3084,15 +3110,15 @@ namespace core {
       if (Node.is.kind(VariableDeclarationList, node)) {
         const firstDeclaration = first(node.declarations);
         const updatedDeclaration = updateVariableDeclaration(firstDeclaration, firstDeclaration.name, /*typeNode*/ undefined, boundValue);
-        return setTextRange(createVariableStatement(undefined, updateVariableDeclarationList(node, [updatedDeclaration])), node);
+        return setRange(createVariableStatement(undefined, updateVariableDeclarationList(node, [updatedDeclaration])), node);
       } else {
-        const updatedExpression = setTextRange(createAssignment(node, boundValue), node);
-        return setTextRange(createStatement(updatedExpression), node);
+        const updatedExpression = setRange(createAssignment(node, boundValue), node);
+        return setRange(createStatement(updatedExpression), node);
       }
     }
     export function insertLeadingStatement(dest: Statement, source: Statement) {
       if (Node.is.kind(Block, dest)) {
-        return updateBlock(dest, setTextRange(Nodes.create([source, ...dest.statements]), dest.statements));
+        return updateBlock(dest, setRange(Nodes.create([source, ...dest.statements]), dest.statements));
       } else {
         return createBlock(Nodes.create([dest, source]), true);
       }
@@ -3765,6 +3791,7 @@ namespace core {
     }
   }
   export type NodeTypes =
+    | ArrayBindingPattern
     | ArrayLiteralExpression
     | ArrayTypeNode
     | AsExpression
@@ -4037,13 +4064,13 @@ namespace core {
       if (Node.is.leftHandSideExpression(emittedExpression) && (emittedExpression.kind !== Syntax.NewExpression || (<NewExpression>emittedExpression).arguments)) {
         return <LeftHandSideExpression>expression;
       }
-      return setTextRange(createParen(expression), expression);
+      return setRange(createParen(expression), expression);
     }
     export function parenthesizePostfixOperand(operand: Expression) {
-      return Node.is.leftHandSideExpression(operand) ? operand : setTextRange(createParen(operand), operand);
+      return Node.is.leftHandSideExpression(operand) ? operand : setRange(createParen(operand), operand);
     }
     export function parenthesizePrefixOperand(operand: Expression) {
-      return Node.is.unaryExpression(operand) ? operand : setTextRange(createParen(operand), operand);
+      return Node.is.unaryExpression(operand) ? operand : setRange(createParen(operand), operand);
     }
     export function parenthesizeListElements(elements: Nodes<Expression>) {
       let result: Expression[] | undefined;
@@ -4054,14 +4081,14 @@ namespace core {
           result.push(element);
         }
       }
-      if (result !== undefined) return setTextRange(Nodes.create(result, elements.trailingComma), elements);
+      if (result !== undefined) return setRange(Nodes.create(result, elements.trailingComma), elements);
       return elements;
     }
     export function parenthesizeExpressionForList(expression: Expression) {
       const emittedExpression = skipPartiallyEmittedExpressions(expression);
       const expressionPrecedence = getExpressionPrecedence(emittedExpression);
       const commaPrecedence = syntax.get.operatorPrecedence(Syntax.BinaryExpression, Syntax.CommaToken);
-      return expressionPrecedence > commaPrecedence ? expression : setTextRange(createParen(expression), expression);
+      return expressionPrecedence > commaPrecedence ? expression : setRange(createParen(expression), expression);
     }
     export function parenthesizeExpressionForExpressionStatement(expression: Expression) {
       const emittedExpression = skipPartiallyEmittedExpressions(expression);
@@ -4070,13 +4097,13 @@ namespace core {
         const kind = skipPartiallyEmittedExpressions(callee).kind;
         if (kind === Syntax.FunctionExpression || kind === Syntax.ArrowFunction) {
           const mutableCall = getMutableClone(emittedExpression);
-          mutableCall.expression = setTextRange(createParen(callee), callee);
+          mutableCall.expression = setRange(createParen(callee), callee);
           return recreateOuterExpressions(expression, mutableCall, OuterExpressionKinds.PartiallyEmittedExpressions);
         }
       }
       const leftmostExpressionKind = getLeftmostExpression(emittedExpression, false).kind;
       if (leftmostExpressionKind === Syntax.ObjectLiteralExpression || leftmostExpressionKind === Syntax.FunctionExpression) {
-        return setTextRange(createParen(expression), expression);
+        return setRange(createParen(expression), expression);
       }
       return expression;
     }
@@ -4140,7 +4167,7 @@ namespace core {
     }
     export function parenthesizeConciseBody(body: ConciseBody): ConciseBody {
       if (!Node.is.kind(Block, body) && (isCommaSequence(body) || getLeftmostExpression(body, false).kind === Syntax.ObjectLiteralExpression)) {
-        return setTextRange(createParen(body), body);
+        return setRange(createParen(body), body);
       }
       return body;
     }
@@ -4316,14 +4343,6 @@ namespace core {
       if (y.priority === undefined) return Comparison.LessThan;
       return compareValues(x.priority, y.priority);
     }
-    export function setOriginalNode<T extends Node>(node: T, original: Node | undefined): T {
-      node.original = original;
-      if (original) {
-        const emitNode = original.emitNode;
-        if (emitNode) node.emitNode = mergeEmitNode(emitNode, node.emitNode);
-      }
-      return node;
-    }
     function mergeEmitNode(sourceEmitNode: EmitNode, destEmitNode: EmitNode | undefined) {
       const { flags, leadingComments, trailingComments, commentRange, sourceMapRange, tokenSourceMapRanges, constantValue, helpers, startsOnNewLine } = sourceEmitNode;
       if (!destEmitNode) destEmitNode = {} as EmitNode;
@@ -4426,7 +4445,7 @@ namespace core {
         case Syntax.FunctionExpression:
           return createFunctionExpression(declaration.modifiers, declaration.asteriskToken, declaration.name, declaration.typeParameters, declaration.parameters, declaration.type, body);
         case Syntax.ArrowFunction:
-          return createArrowFunction(declaration.modifiers, declaration.typeParameters, declaration.parameters, declaration.type, declaration.equalsGreaterThanToken, body);
+          return new ArrowFunction(declaration.modifiers, declaration.typeParameters, declaration.parameters, declaration.type, declaration.equalsGreaterThanToken, body);
       }
     }
 
@@ -4566,14 +4585,14 @@ namespace core {
     }
 
     export function convertToFunctionBody(node: ConciseBody, multiLine?: boolean): Block {
-      return Node.is.kind(Block, node) ? node : setTextRange(createBlock([setTextRange(createReturn(node), node)], multiLine), node);
+      return Node.is.kind(Block, node) ? node : setRange(createBlock([setRange(createReturn(node), node)], multiLine), node);
     }
 
     export function convertFunctionDeclarationToExpression(node: FunctionDeclaration) {
       if (!node.body) return fail();
       const updated = createFunctionExpression(node.modifiers, node.asteriskToken, node.name, node.typeParameters, node.parameters, node.type, node.body);
       setOriginalNode(updated, node);
-      setTextRange(updated, node);
+      setRange(updated, node);
       if (getStartsOnNewLine(node)) setStartsOnNewLine(updated, true);
 
       aggregateTransformFlags(updated);
@@ -4584,7 +4603,7 @@ namespace core {
       const foundUseStrict = findUseStrictPrologue(statements);
 
       if (!foundUseStrict) {
-        return setTextRange(
+        return setRange(
           Nodes.create<Statement>([startOnNewLine(createStatement(createLiteral('use strict'))), ...statements]),
           statements
         );
@@ -4644,12 +4663,7 @@ namespace core {
           }
         }
         if (namedBindings) {
-          const externalHelpersImportDeclaration = createImportDeclaration(
-            /*decorators*/ undefined,
-            undefined,
-            createImportClause(/*name*/ undefined, namedBindings),
-            createLiteral(externalHelpersModuleNameText)
-          );
+          const externalHelpersImportDeclaration = createImportDeclaration(undefined, undefined, createImportClause(/*name*/ undefined, namedBindings), createLiteral(externalHelpersModuleNameText));
           addEmitFlags(externalHelpersImportDeclaration, EmitFlags.NeverApplyImportHelper);
           return externalHelpersImportDeclaration;
         }

@@ -1,8 +1,8 @@
 namespace core {
   export function getDeclarationDiagnostics(host: EmitHost, resolver: EmitResolver, file: SourceFile | undefined): DiagnosticWithLocation[] | undefined {
-    if (file && isJsonSourceFile(file)) {
-      return []; // No declaration diagnostics for json for now
-    }
+    if (file && isJsonSourceFile(file)) 
+      return []; 
+    
     const compilerOptions = host.getCompilerOptions();
     const result = transformNodes(resolver, host, compilerOptions, file ? [file] : filter(host.getSourceFiles(), isSourceFileNotJson), [transformDeclarations], /*allowDtsFiles*/ false);
     return result.diagnostics;
@@ -27,7 +27,7 @@ namespace core {
         : syntax.get.trailingCommentRanges(text, syntax.skipTrivia(text, node.pos, false, true));
       return commentRanges && commentRanges.length && hasInternalAnnotation(last(commentRanges), currentSourceFile);
     }
-    const leadingCommentRanges = parseTreeNode && syntax.get.leadingCommentRangesOfNode(parseTreeNode, currentSourceFile);
+    const leadingCommentRanges = parseTreeNode && syntax.get.leadingCommentRanges(parseTreeNode, currentSourceFile);
     return !!forEach(leadingCommentRanges, (range) => {
       return hasInternalAnnotation(range, currentSourceFile);
     });
@@ -51,9 +51,9 @@ namespace core {
     let needsScopeFixMarker = false;
     let resultHasScopeMarker = false;
     let enclosingDeclaration: Node;
-    let necessaryTypeReferences: Map<true> | undefined;
+    let necessaryTypeReferences: QMap<true> | undefined;
     let lateMarkedStatements: LateVisibilityPaintedStatement[] | undefined;
-    let lateStatementReplacementMap: Map<VisitResult<LateVisibilityPaintedStatement | ExportAssignment>>;
+    let lateStatementReplacementMap: QMap<VisitResult<LateVisibilityPaintedStatement | ExportAssignment>>;
     let suppressNewDiagnosticContexts: boolean;
     let exportedModulesFromDeclarationEmit: Symbol[] | undefined;
 
@@ -72,8 +72,8 @@ namespace core {
     let errorNameNode: DeclarationName | undefined;
 
     let currentSourceFile: SourceFile;
-    let refs: Map<SourceFile>;
-    let libs: Map<boolean>;
+    let refs: QMap<SourceFile>;
+    let libs: QMap<boolean>;
     let emittedImports: readonly AnyImportSyntax[] | undefined; // must be declared in container so it can be `undefined` while transformer's first pass
     const resolver = context.getEmitResolver();
     const options = context.getCompilerOptions();
@@ -81,22 +81,20 @@ namespace core {
     return transformRoot;
 
     function recordTypeReferenceDirectivesIfNecessary(typeReferenceDirectives: readonly string[] | undefined): void {
-      if (!typeReferenceDirectives) {
+      if (!typeReferenceDirectives) 
         return;
-      }
-      necessaryTypeReferences = necessaryTypeReferences || createMap<true>();
+      
+      necessaryTypeReferences = necessaryTypeReferences || new QMap<true>();
       for (const ref of typeReferenceDirectives) {
         necessaryTypeReferences.set(ref, true);
       }
     }
 
     function trackReferencedAmbientModule(node: ModuleDeclaration, symbol: Symbol) {
-      // If it is visible via `// <reference types="..."/>`, then we should just use that
       const directives = resolver.getTypeReferenceDirectivesForSymbol(symbol, SymbolFlags.All);
-      if (length(directives)) {
+      if (length(directives)) 
         return recordTypeReferenceDirectivesIfNecessary(directives);
-      }
-      // Otherwise we should emit a path-based reference
+      
       const container = Node.get.sourceFileOf(node);
       refs.set('' + getOriginalNodeId(container), container);
     }
@@ -113,10 +111,7 @@ namespace core {
             }
           }
         }
-
-        // TODO: Do all these accessibility checks inside/after the first pass in the checker when declarations are enabled, if possible
       } else {
-        // Report error
         const errorInfo = getSymbolAccessibilityDiagnostic(symbolAccessibilityResult);
         if (errorInfo) {
           if (errorInfo.typeName) {
@@ -231,8 +226,8 @@ namespace core {
 
       if (node.kind === Syntax.Bundle) {
         isBundledEmit = true;
-        refs = createMap<SourceFile>();
-        libs = createMap<boolean>();
+        refs = new QMap<SourceFile>();
+        libs = new QMap<boolean>();
         let hasNoDefaultLib = false;
         const bundle = createBundle(
           map(node.sourceFiles, (sourceFile) => {
@@ -242,7 +237,7 @@ namespace core {
             enclosingDeclaration = sourceFile;
             lateMarkedStatements = undefined;
             suppressNewDiagnosticContexts = false;
-            lateStatementReplacementMap = createMap();
+            lateStatementReplacementMap = new QMap();
             getSymbolAccessibilityDiagnostic = throwDiagnostic;
             needsScopeFixMarker = false;
             resultHasScopeMarker = false;
@@ -259,7 +254,7 @@ namespace core {
                     [],
                     [createModifier(Syntax.DeclareKeyword)],
                     createLiteral(getResolvedExternalModuleName(context.getEmitHost(), sourceFile)),
-                    createModuleBlock(setTextRange(Nodes.create(transformAndReplaceLatePaintedStatements(statements)), sourceFile.statements))
+                    createModuleBlock(setRange(Nodes.create(transformAndReplaceLatePaintedStatements(statements)), sourceFile.statements))
                   ),
                 ],
                 /*isDeclarationFile*/ true,
@@ -315,10 +310,10 @@ namespace core {
       resultHasExternalModuleIndicator = false;
       suppressNewDiagnosticContexts = false;
       lateMarkedStatements = undefined;
-      lateStatementReplacementMap = createMap();
+      lateStatementReplacementMap = new QMap();
       necessaryTypeReferences = undefined;
-      refs = collectReferences(currentSourceFile, createMap());
-      libs = collectLibs(currentSourceFile, createMap());
+      refs = collectReferences(currentSourceFile, new QMap());
+      libs = collectLibs(currentSourceFile, new QMap());
       const references: FileReference[] = [];
       const outputFilePath = getDirectoryPath(normalizeSlashes(getOutputPathsFor(node, host, /*forceDtsPaths*/ true).declarationFilePath!));
       const referenceVisitor = mapReferencesIntoArray(references, outputFilePath);
@@ -329,11 +324,11 @@ namespace core {
         emittedImports = filter(combinedStatements, isAnyImportSyntax);
       } else {
         const statements = Nodes.visit(node.statements, visitDeclarationStatements);
-        combinedStatements = setTextRange(Nodes.create(transformAndReplaceLatePaintedStatements(statements)), node.statements);
+        combinedStatements = setRange(Nodes.create(transformAndReplaceLatePaintedStatements(statements)), node.statements);
         refs.forEach(referenceVisitor);
         emittedImports = filter(combinedStatements, isAnyImportSyntax);
         if (qp_isExternalModule(node) && (!resultHasExternalModuleIndicator || (needsScopeFixMarker && !resultHasScopeMarker))) {
-          combinedStatements = setTextRange(Nodes.create([...combinedStatements, createEmptyExports()]), combinedStatements);
+          combinedStatements = setRange(Nodes.create([...combinedStatements, createEmptyExports()]), combinedStatements);
         }
       }
       const updated = qp_updateSourceNode(node, combinedStatements, /*isDeclarationFile*/ true, references, getFileReferencesForUsedTypeReferences(), node.hasNoDefaultLib, getLibReferences());
@@ -376,7 +371,6 @@ namespace core {
             const paths = getOutputPathsFor(file, host, /*forceDtsPaths*/ true);
             declFileName = paths.declarationFilePath || paths.jsFilePath || file.fileName;
           }
-
           if (declFileName) {
             const specifier = moduleSpecifiers.getModuleSpecifier(
               // We pathify the baseUrl since we pathify the other paths here, so we can still easily check if the other paths are within the baseUrl
@@ -413,7 +407,7 @@ namespace core {
       }
     }
 
-    function collectReferences(sourceFile: SourceFile | UnparsedSource, ret: Map<SourceFile>) {
+    function collectReferences(sourceFile: SourceFile | UnparsedSource, ret: QMap<SourceFile>) {
       if (noResolve || (!Node.is.kind(UnparsedSource, sourceFile) && isSourceFileJS(sourceFile))) return ret;
       forEach(sourceFile.referencedFiles, (f) => {
         const elem = host.getSourceFileFromReference(sourceFile, f);
@@ -424,7 +418,7 @@ namespace core {
       return ret;
     }
 
-    function collectLibs(sourceFile: SourceFile | UnparsedSource, ret: Map<boolean>) {
+    function collectLibs(sourceFile: SourceFile | UnparsedSource, ret: QMap<boolean>) {
       forEach(sourceFile.libReferenceDirectives, (ref) => {
         const lib = host.getLibFileFromReference(ref);
         if (lib) {
@@ -435,15 +429,13 @@ namespace core {
     }
 
     function filterBindingPatternInitializers(name: BindingName) {
-      if (name.kind === Syntax.Identifier) {
+      if (name.kind === Syntax.Identifier) 
         return name;
-      } else {
-        if (name.kind === Syntax.ArrayBindingPattern) {
-          return ArrayBindingPattern.update(name, Nodes.visit(name.elements, visitBindingElement));
-        } else {
+        if (name.is(ArrayBindingPattern)) 
+          return name.update(name, Nodes.visit(name.elements, visitBindingElement));
           return ObjectBindingPattern.update(name, Nodes.visit(name.elements, visitBindingElement));
-        }
-      }
+        
+      
 
       function visitBindingElement<T extends ArrayBindingElement>(elem: T): T;
       function visitBindingElement(elem: ArrayBindingElement): ArrayBindingElement {
@@ -462,7 +454,7 @@ namespace core {
       }
       const newParam = updateParameter(
         p,
-        /*decorators*/ undefined,
+        undefined,
         maskModifiers(p, modifierMask),
         p.dot3Token,
         filterBindingPatternInitializers(p.name),
@@ -612,7 +604,7 @@ namespace core {
           }
         }
         if (!newValueParameter) {
-          newValueParameter = createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, 'value');
+          newValueParameter = createParameter(undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, 'value');
         }
         newParams = append(newParams, newValueParameter);
       }
@@ -676,7 +668,7 @@ namespace core {
       if (decl.moduleReference.kind === Syntax.ExternalModuleReference) {
         // Rewrite external module names if necessary
         const specifier = getExternalModuleImportEqualsDeclarationExpression(decl);
-        return updateImportEqualsDeclaration(decl, /*decorators*/ undefined, decl.modifiers, decl.name, updateExternalModuleReference(decl.moduleReference, rewriteModuleSpecifier(decl, specifier)));
+        return updateImportEqualsDeclaration(decl, undefined, decl.modifiers, decl.name, updateExternalModuleReference(decl.moduleReference, rewriteModuleSpecifier(decl, specifier)));
       } else {
         const oldDiag = getSymbolAccessibilityDiagnostic;
         getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(decl);
@@ -689,7 +681,7 @@ namespace core {
     function transformImportDeclaration(decl: ImportDeclaration) {
       if (!decl.importClause) {
         // import "mod" - possibly needed for side effects? (global interface patches, module augmentations, etc)
-        return updateImportDeclaration(decl, /*decorators*/ undefined, decl.modifiers, decl.importClause, rewriteModuleSpecifier(decl, decl.moduleSpecifier));
+        return updateImportDeclaration(decl, undefined, decl.modifiers, decl.importClause, rewriteModuleSpecifier(decl, decl.moduleSpecifier));
       }
       // The `importClause` visibility corresponds to the default's visibility.
       const visibleDefaultBinding = decl.importClause && decl.importClause.name && resolver.isDeclarationVisible(decl.importClause) ? decl.importClause.name : undefined;
@@ -699,7 +691,7 @@ namespace core {
           visibleDefaultBinding &&
           updateImportDeclaration(
             decl,
-            /*decorators*/ undefined,
+            undefined,
             decl.modifiers,
             updateImportClause(decl.importClause, visibleDefaultBinding, /*namedBindings*/ undefined, decl.importClause.isTypeOnly),
             rewriteModuleSpecifier(decl, decl.moduleSpecifier)
@@ -712,7 +704,7 @@ namespace core {
         return visibleDefaultBinding || namedBindings
           ? updateImportDeclaration(
               decl,
-              /*decorators*/ undefined,
+              undefined,
               decl.modifiers,
               updateImportClause(decl.importClause, visibleDefaultBinding, namedBindings, decl.importClause.isTypeOnly),
               rewriteModuleSpecifier(decl, decl.moduleSpecifier)
@@ -724,7 +716,7 @@ namespace core {
       if ((bindingList && bindingList.length) || visibleDefaultBinding) {
         return updateImportDeclaration(
           decl,
-          /*decorators*/ undefined,
+          undefined,
           decl.modifiers,
           updateImportClause(
             decl.importClause,
@@ -737,7 +729,7 @@ namespace core {
       }
       // Augmentation of export depends on import
       if (resolver.isImportRequiredByAugmentation(decl)) {
-        return updateImportDeclaration(decl, /*decorators*/ undefined, decl.modifiers, /*importClause*/ undefined, rewriteModuleSpecifier(decl, decl.moduleSpecifier));
+        return updateImportDeclaration(decl, undefined, decl.modifiers, /*importClause*/ undefined, rewriteModuleSpecifier(decl, decl.moduleSpecifier));
       }
       // Nothing visible
     }
@@ -827,7 +819,7 @@ namespace core {
       if (Node.is.kind(MethodDeclaration, input) || Node.is.kind(MethodSignature, input)) {
         if (hasEffectiveModifier(input, ModifierFlags.Private)) {
           if (input.symbol && input.symbol.declarations && input.symbol.declarations[0] !== input) return; // Elide all but the first overload
-          return cleanup(PropertyDeclaration.create(/*decorators*/ undefined, ensureModifiers(input), input.name, /*questionToken*/ undefined, /*type*/ undefined, /*initializer*/ undefined));
+          return cleanup(PropertyDeclaration.create(undefined, ensureModifiers(input), input.name, /*questionToken*/ undefined, undefined, undefined));
         }
       }
 
@@ -866,7 +858,7 @@ namespace core {
               Syntax.Constructor,
               ensureTypeParams(input, input.typeParameters),
               updateParamsList(input, input.parameters, ModifierFlags.None),
-              /*type*/ undefined
+              undefined
             );
             ctor.modifiers = Nodes.create(ensureModifiers(input));
             return cleanup(ctor);
@@ -894,7 +886,7 @@ namespace core {
             return cleanup(
               GetAccessorDeclaration.update(
                 input,
-                /*decorators*/ undefined,
+                undefined,
                 ensureModifiers(input),
                 input.name,
                 updateAccessorParamsList(input, hasEffectiveModifier(input, ModifierFlags.Private)),
@@ -910,7 +902,7 @@ namespace core {
             return cleanup(
               SetAccessorDeclaration.update(
                 input,
-                /*decorators*/ undefined,
+                undefined,
                 ensureModifiers(input),
                 input.name,
                 updateAccessorParamsList(input, hasEffectiveModifier(input, ModifierFlags.Private)),
@@ -923,7 +915,7 @@ namespace core {
               return cleanup(/*returnValue*/ undefined);
             }
             return cleanup(
-              PropertyDeclaration.update(input, /*decorators*/ undefined, ensureModifiers(input), input.name, input.questionToken, ensureType(input, input.type), ensureNoInitializer(input))
+              PropertyDeclaration.update(input, undefined, ensureModifiers(input), input.name, input.questionToken, ensureType(input, input.type), ensureNoInitializer(input))
             );
           case Syntax.PropertySignature:
             if (Node.is.kind(PrivateIdentifier, input.name)) {
@@ -945,7 +937,7 @@ namespace core {
             return cleanup(
               IndexSignatureDeclaration.update(
                 input,
-                /*decorators*/ undefined,
+                undefined,
                 ensureModifiers(input),
                 updateParamsList(input, input.parameters),
                 visitNode(input.type, visitDeclarationSubtree) || KeywordTypeNode.create(Syntax.AnyKeyword)
@@ -1055,7 +1047,7 @@ namespace core {
           resultHasScopeMarker = true;
           // Always visible if the parent node isn't dropped for being not visible
           // Rewrite external module names if necessary
-          return updateExportDeclaration(input, /*decorators*/ undefined, input.modifiers, input.exportClause, rewriteModuleSpecifier(input, input.moduleSpecifier), input.isTypeOnly);
+          return updateExportDeclaration(input, undefined, input.modifiers, input.exportClause, rewriteModuleSpecifier(input, input.moduleSpecifier), input.isTypeOnly);
         }
         case Syntax.ExportAssignment: {
           // Always visible if the parent node isn't dropped for being not visible
@@ -1071,7 +1063,7 @@ namespace core {
               diagnosticMessage: Diagnostics.Default_export_of_the_module_has_or_is_using_private_name_0,
               errorNode: input,
             });
-            const varDecl = createVariableDeclaration(newId, resolver.createTypeOfExpression(input.expression, input, declarationEmitNodeBuilderFlags, symbolTracker), /*initializer*/ undefined);
+            const varDecl = createVariableDeclaration(newId, resolver.createTypeOfExpression(input.expression, input, declarationEmitNodeBuilderFlags, symbolTracker), undefined);
             const statement = createVariableStatement(needsDeclare ? [createModifier(Syntax.DeclareKeyword)] : [], createVariableDeclarationList([varDecl], NodeFlags.Const));
             return [statement, updateExportAssignment(input, input.decorators, input.modifiers, newId)];
           }
@@ -1129,7 +1121,7 @@ namespace core {
           return cleanup(
             updateTypeAliasDeclaration(
               input,
-              /*decorators*/ undefined,
+              undefined,
               ensureModifiers(input),
               input.name,
               Nodes.visit(input.typeParameters, visitDeclarationSubtree, isTypeParameterDeclaration),
@@ -1140,7 +1132,7 @@ namespace core {
           return cleanup(
             updateInterfaceDeclaration(
               input,
-              /*decorators*/ undefined,
+              undefined,
               ensureModifiers(input),
               input.name,
               ensureTypeParams(input, input.typeParameters),
@@ -1154,7 +1146,7 @@ namespace core {
           const clean = cleanup(
             updateFunctionDeclaration(
               input,
-              /*decorators*/ undefined,
+              undefined,
               ensureModifiers(input),
               /*asteriskToken*/ undefined,
               input.name,
@@ -1166,7 +1158,7 @@ namespace core {
           );
           if (clean && resolver.isExpandoFunctionDeclaration(input)) {
             const props = resolver.getPropertiesOfContainerFunction(input);
-            const fakespace = createModuleDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, clean.name || createIdentifier('_default'), createModuleBlock([]), NodeFlags.Namespace);
+            const fakespace = createModuleDeclaration(undefined, /*modifiers*/ undefined, clean.name || createIdentifier('_default'), createModuleBlock([]), NodeFlags.Namespace);
             fakespace.flags ^= NodeFlags.Synthesized; // unset synthesized so it is usable as an enclosing declaration
             fakespace.parent = enclosingDeclaration as SourceFile | NamespaceDeclaration;
             fakespace.locals = new SymbolTable(props);
@@ -1178,10 +1170,10 @@ namespace core {
               getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(p.valueDeclaration);
               const type = resolver.createTypeOfDeclaration(p.valueDeclaration, fakespace, declarationEmitNodeBuilderFlags, symbolTracker);
               getSymbolAccessibilityDiagnostic = oldDiag;
-              const varDecl = createVariableDeclaration(syntax.get.unescUnderscores(p.escName), type, /*initializer*/ undefined);
+              const varDecl = createVariableDeclaration(syntax.get.unescUnderscores(p.escName), type, undefined);
               return createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([varDecl]));
             });
-            const namespaceDecl = createModuleDeclaration(/*decorators*/ undefined, ensureModifiers(input), input.name!, createModuleBlock(declarations), NodeFlags.Namespace);
+            const namespaceDecl = createModuleDeclaration(undefined, ensureModifiers(input), input.name!, createModuleBlock(declarations), NodeFlags.Namespace);
 
             if (!hasEffectiveModifier(clean, ModifierFlags.Default)) {
               return [clean, namespaceDecl];
@@ -1190,7 +1182,7 @@ namespace core {
             const modifiers = createModifiersFromModifierFlags((getEffectiveModifierFlags(clean) & ~ModifierFlags.ExportDefault) | ModifierFlags.Ambient);
             const cleanDeclaration = updateFunctionDeclaration(
               clean,
-              /*decorators*/ undefined,
+              undefined,
               modifiers,
               /*asteriskToken*/ undefined,
               clean.name,
@@ -1200,9 +1192,9 @@ namespace core {
               /*body*/ undefined
             );
 
-            const namespaceDeclaration = updateModuleDeclaration(namespaceDecl, /*decorators*/ undefined, modifiers, namespaceDecl.name, namespaceDecl.body);
+            const namespaceDeclaration = updateModuleDeclaration(namespaceDecl, undefined, modifiers, namespaceDecl.name, namespaceDecl.body);
 
-            const exportDefaultDeclaration = createExportAssignment(/*decorators*/ undefined, /*modifiers*/ undefined, /*isExportEquals*/ false, namespaceDecl.name);
+            const exportDefaultDeclaration = createExportAssignment(undefined, /*modifiers*/ undefined, /*isExportEquals*/ false, namespaceDecl.name);
 
             if (Node.is.kind(SourceFile, input.parent)) {
               resultHasExternalModuleIndicator = true;
@@ -1243,7 +1235,7 @@ namespace core {
             needsScopeFixMarker = oldNeedsScopeFix;
             resultHasScopeMarker = oldHasScopeFix;
             const mods = ensureModifiers(input);
-            return cleanup(updateModuleDeclaration(input, /*decorators*/ undefined, mods, Node.is.externalModuleAugmentation(input) ? rewriteModuleSpecifier(input, input.name) : input.name, body));
+            return cleanup(updateModuleDeclaration(input, undefined, mods, Node.is.externalModuleAugmentation(input) ? rewriteModuleSpecifier(input, input.name) : input.name, body));
           } else {
             needsDeclare = previousNeedsDeclare;
             const mods = ensureModifiers(input);
@@ -1253,7 +1245,7 @@ namespace core {
             const id = '' + getOriginalNodeId(inner!); // TODO: GH#18217
             const body = lateStatementReplacementMap.get(id);
             lateStatementReplacementMap.delete(id);
-            return cleanup(updateModuleDeclaration(input, /*decorators*/ undefined, mods, input.name, body as ModuleBody));
+            return cleanup(updateModuleDeclaration(input, undefined, mods, input.name, body as ModuleBody));
           }
         }
         case Syntax.ClassDeclaration: {
@@ -1269,7 +1261,7 @@ namespace core {
                 getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(param);
                 if (param.name.kind === Syntax.Identifier) {
                   return preserveJsDoc(
-                    PropertyDeclaration.create(/*decorators*/ undefined, ensureModifiers(param), param.name, param.questionToken, ensureType(param, param.type), ensureNoInitializer(param)),
+                    PropertyDeclaration.create(undefined, ensureModifiers(param), param.name, param.questionToken, ensureType(param, param.type), ensureNoInitializer(param)),
                     param
                   );
                 } else {
@@ -1287,12 +1279,12 @@ namespace core {
                     elems = elems || [];
                     elems.push(
                       PropertyDeclaration.create(
-                        /*decorators*/ undefined,
+                        undefined,
                         ensureModifiers(param),
                         elem.name as Identifier,
                         /*questionToken*/ undefined,
-                        ensureType(elem, /*type*/ undefined),
-                        /*initializer*/ undefined
+                        ensureType(elem, undefined),
+                        undefined
                       )
                     );
                   }
@@ -1307,12 +1299,12 @@ namespace core {
           const privateIdentifier = hasPrivateIdentifier
             ? [
                 PropertyDeclaration.create(
-                  /*decorators*/ undefined,
+                  undefined,
                   /*modifiers*/ undefined,
                   createPrivateIdentifier('#private'),
                   /*questionToken*/ undefined,
-                  /*type*/ undefined,
-                  /*initializer*/ undefined
+                  undefined,
+                  undefined
                 ),
               ]
             : undefined;
@@ -1333,7 +1325,7 @@ namespace core {
             const varDecl = createVariableDeclaration(
               newId,
               resolver.createTypeOfExpression(extendsClause.expression, input, declarationEmitNodeBuilderFlags, symbolTracker),
-              /*initializer*/ undefined
+              undefined
             );
             const statement = createVariableStatement(needsDeclare ? [createModifier(Syntax.DeclareKeyword)] : [], createVariableDeclarationList([varDecl], NodeFlags.Const));
             const heritageClauses = Nodes.create(
@@ -1354,10 +1346,10 @@ namespace core {
                 );
               })
             );
-            return [statement, cleanup(updateClassDeclaration(input, /*decorators*/ undefined, modifiers, input.name, typeParameters, heritageClauses, members))!]; // TODO: GH#18217
+            return [statement, cleanup(updateClassDeclaration(input, undefined, modifiers, input.name, typeParameters, heritageClauses, members))!]; // TODO: GH#18217
           } else {
             const heritageClauses = transformHeritageClauses(input.heritageClauses);
-            return cleanup(updateClassDeclaration(input, /*decorators*/ undefined, modifiers, input.name, typeParameters, heritageClauses, members));
+            return cleanup(updateClassDeclaration(input, undefined, modifiers, input.name, typeParameters, heritageClauses, members));
           }
         }
         case Syntax.VariableStatement: {
@@ -1367,7 +1359,7 @@ namespace core {
           return cleanup(
             updateEnumDeclaration(
               input,
-              /*decorators*/ undefined,
+              undefined,
               Nodes.create(ensureModifiers(input)),
               input.name,
               Nodes.create(
@@ -1422,7 +1414,7 @@ namespace core {
         if (Node.is.kind(BindingPattern, e.name)) {
           return recreateBindingPattern(e.name);
         } else {
-          return createVariableDeclaration(e.name, ensureType(e, /*type*/ undefined), /*initializer*/ undefined);
+          return createVariableDeclaration(e.name, ensureType(e, undefined), undefined);
         }
       }
     }

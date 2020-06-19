@@ -438,15 +438,15 @@ namespace core {
       // Currently, we only support generators that were originally async functions.
       if (node.asteriskToken) {
         node = setOriginalNode(
-          setTextRange(
+          setRange(
             createFunctionDeclaration(
-              /*decorators*/ undefined,
+              undefined,
               node.modifiers,
               /*asteriskToken*/ undefined,
               node.name,
               /*typeParameters*/ undefined,
               visitParameterList(node.parameters, visitor, context),
-              /*type*/ undefined,
+              undefined,
               transformGeneratorFunctionBody(node.body!)
             ),
             /*location*/ node
@@ -486,14 +486,14 @@ namespace core {
       // Currently, we only support generators that were originally async functions.
       if (node.asteriskToken) {
         node = setOriginalNode(
-          setTextRange(
+          setRange(
             createFunctionExpression(
               /*modifiers*/ undefined,
               /*asteriskToken*/ undefined,
               node.name,
               /*typeParameters*/ undefined,
               visitParameterList(node.parameters, visitor, context),
-              /*type*/ undefined,
+              undefined,
               transformGeneratorFunctionBody(node.body)
             ),
             /*location*/ node
@@ -595,7 +595,7 @@ namespace core {
       operationLocations = savedOperationLocations;
       state = savedState;
 
-      return setTextRange(createBlock(statements, body.multiLine), body);
+      return setRange(createBlock(statements, body.multiLine), body);
     }
 
     /**
@@ -703,8 +703,8 @@ namespace core {
 
         const operator = node.operatorToken.kind;
         if (isCompoundAssignment(operator)) {
-          return setTextRange(
-            createAssignment(target, setTextRange(createBinary(cacheExpression(target), getNonAssignmentOperatorForCompoundAssignment(operator), visitNode(right, visitor, isExpression)), node)),
+          return setRange(
+            createAssignment(target, setRange(createBinary(cacheExpression(target), getNonAssignmentOperatorForCompoundAssignment(operator), visitNode(right, visitor, isExpression)), node)),
             node
           );
         } else {
@@ -917,14 +917,14 @@ namespace core {
       if (numInitialElements > 0) {
         temp = declareLocal();
         const initialElements = Nodes.visit(elements, visitor, isExpression, 0, numInitialElements);
-        emitAssignment(temp, createArrayLiteral(leadingElement ? [leadingElement, ...initialElements] : initialElements));
+        emitAssignment(temp, new ArrayLiteralExpression(leadingElement ? [leadingElement, ...initialElements] : initialElements));
         leadingElement = undefined;
       }
 
       const expressions = reduceLeft(elements, reduceElement, <Expression[]>[], numInitialElements);
       return temp
-        ? createArrayConcat(temp, [createArrayLiteral(expressions, multiLine)])
-        : setTextRange(createArrayLiteral(leadingElement ? [leadingElement, ...expressions] : expressions, multiLine), location);
+        ? createArrayConcat(temp, [new ArrayLiteralExpression(expressions, multiLine)])
+        : setRange(new ArrayLiteralExpression(leadingElement ? [leadingElement, ...expressions] : expressions, multiLine), location);
 
       function reduceElement(expressions: Expression[], element: Expression) {
         if (containsYield(element) && expressions.length > 0) {
@@ -935,7 +935,9 @@ namespace core {
 
           emitAssignment(
             temp,
-            hasAssignedTemp ? createArrayConcat(temp, [createArrayLiteral(expressions, multiLine)]) : createArrayLiteral(leadingElement ? [leadingElement, ...expressions] : expressions, multiLine)
+            hasAssignedTemp
+              ? createArrayConcat(temp, [new ArrayLiteralExpression(expressions, multiLine)])
+              : new ArrayLiteralExpression(leadingElement ? [leadingElement, ...expressions] : expressions, multiLine)
           );
           leadingElement = undefined;
           expressions = [];
@@ -1054,7 +1056,7 @@ namespace core {
 
         const { target, thisArg } = createCallBinding(createPropertyAccess(node.expression, 'bind'), hoistVariableDeclaration);
         return setOriginalNode(
-          setTextRange(
+          setRange(
             createNew(
               createFunctionApply(cacheExpression(visitNode(target, visitor, isExpression)), thisArg, visitElements(node.arguments!, /*leadingElement*/ createVoidZero())),
               /*typeArguments*/ undefined,
@@ -1320,7 +1322,7 @@ namespace core {
           if (Node.is.kind(VariableDeclarationList, initializer)) {
             transformAndEmitVariableDeclarationList(initializer);
           } else {
-            emitStatement(setTextRange(createExpressionStatement(visitNode(initializer, visitor, isExpression)), initializer));
+            emitStatement(setRange(createExpressionStatement(visitNode(initializer, visitor, isExpression)), initializer));
           }
         }
 
@@ -1333,7 +1335,7 @@ namespace core {
 
         markLabel(incrementLabel);
         if (node.incrementor) {
-          emitStatement(setTextRange(createExpressionStatement(visitNode(node.incrementor, visitor, isExpression)), node.incrementor));
+          emitStatement(setRange(createExpressionStatement(visitNode(node.incrementor, visitor, isExpression)), node.incrementor));
         }
         emitBreak(conditionLabel);
         endLoopBlock();
@@ -1401,7 +1403,7 @@ namespace core {
         const keysIndex = createLoopVariable(); // _i
         const initializer = node.initializer;
         hoistVariableDeclaration(keysIndex);
-        emitAssignment(keysArray, createArrayLiteral());
+        emitAssignment(keysArray, new ArrayLiteralExpression());
 
         emitStatement(
           createForIn(key, visitNode(node.expression, visitor, isExpression), createExpressionStatement(createCall(createPropertyAccess(keysArray, 'push'), /*typeArguments*/ undefined, [key])))
@@ -2258,7 +2260,7 @@ namespace core {
      */
     function createInlineBreak(label: Label, location?: TextRange): ReturnStatement {
       Debug.assertLessThan(0, label, 'Invalid label');
-      return setTextRange(createReturn(createArrayLiteral([createInstruction(Instruction.Break), createLabel(label)])), location);
+      return setRange(createReturn(new ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), location);
     }
 
     /**
@@ -2268,14 +2270,14 @@ namespace core {
      * @param location An optional source map location for the statement.
      */
     function createInlineReturn(expression?: Expression, location?: TextRange): ReturnStatement {
-      return setTextRange(createReturn(createArrayLiteral(expression ? [createInstruction(Instruction.Return), expression] : [createInstruction(Instruction.Return)])), location);
+      return setRange(createReturn(new ArrayLiteralExpression(expression ? [createInstruction(Instruction.Return), expression] : [createInstruction(Instruction.Return)])), location);
     }
 
     /**
      * Creates an expression that can be used to resume from a Yield operation.
      */
     function createGeneratorResume(location?: TextRange): LeftHandSideExpression {
-      return setTextRange(createCall(createPropertyAccess(state, 'sent'), /*typeArguments*/ undefined, []), location);
+      return setRange(createCall(createPropertyAccess(state, 'sent'), /*typeArguments*/ undefined, []), location);
     }
 
     /**
@@ -2438,8 +2440,8 @@ namespace core {
             /*asteriskToken*/ undefined,
             /*name*/ undefined,
             /*typeParameters*/ undefined,
-            [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, state)],
-            /*type*/ undefined,
+            [createParameter(undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, state)],
+            undefined,
             createBlock(buildResult, /*multiLine*/ buildResult.length > 0)
           ),
           EmitFlags.ReuseTempVariableScope
@@ -2564,7 +2566,7 @@ namespace core {
           statements.unshift(
             createExpressionStatement(
               createCall(createPropertyAccess(createPropertyAccess(state, 'trys'), 'push'), /*typeArguments*/ undefined, [
-                createArrayLiteral([createLabel(startLabel), createLabel(catchLabel), createLabel(finallyLabel), createLabel(endLabel)]),
+                new ArrayLiteralExpression([createLabel(startLabel), createLabel(catchLabel), createLabel(finallyLabel), createLabel(endLabel)]),
               ])
             )
           );
@@ -2743,7 +2745,7 @@ namespace core {
      * @param operationLocation The source map location for the operation.
      */
     function writeAssign(left: Expression, right: Expression, operationLocation: TextRange | undefined): void {
-      writeStatement(setTextRange(createExpressionStatement(createAssignment(left, right)), operationLocation));
+      writeStatement(setRange(createExpressionStatement(createAssignment(left, right)), operationLocation));
     }
 
     /**
@@ -2755,7 +2757,7 @@ namespace core {
     function writeThrow(expression: Expression, operationLocation: TextRange | undefined): void {
       lastOperationWasAbrupt = true;
       lastOperationWasCompletion = true;
-      writeStatement(setTextRange(createThrow(expression), operationLocation));
+      writeStatement(setRange(createThrow(expression), operationLocation));
     }
 
     /**
@@ -2769,7 +2771,7 @@ namespace core {
       lastOperationWasCompletion = true;
       writeStatement(
         setEmitFlags(
-          setTextRange(createReturn(createArrayLiteral(expression ? [createInstruction(Instruction.Return), expression] : [createInstruction(Instruction.Return)])), operationLocation),
+          setRange(createReturn(new ArrayLiteralExpression(expression ? [createInstruction(Instruction.Return), expression] : [createInstruction(Instruction.Return)])), operationLocation),
           EmitFlags.NoTokenSourceMaps
         )
       );
@@ -2783,7 +2785,7 @@ namespace core {
      */
     function writeBreak(label: Label, operationLocation: TextRange | undefined): void {
       lastOperationWasAbrupt = true;
-      writeStatement(setEmitFlags(setTextRange(createReturn(createArrayLiteral([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps));
+      writeStatement(setEmitFlags(setRange(createReturn(new ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps));
     }
 
     /**
@@ -2796,7 +2798,10 @@ namespace core {
     function writeBreakWhenTrue(label: Label, condition: Expression, operationLocation: TextRange | undefined): void {
       writeStatement(
         setEmitFlags(
-          createIf(condition, setEmitFlags(setTextRange(createReturn(createArrayLiteral([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)),
+          createIf(
+            condition,
+            setEmitFlags(setRange(createReturn(new ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)
+          ),
           EmitFlags.SingleLine
         )
       );
@@ -2814,7 +2819,7 @@ namespace core {
         setEmitFlags(
           createIf(
             createLogicalNot(condition),
-            setEmitFlags(setTextRange(createReturn(createArrayLiteral([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)
+            setEmitFlags(setRange(createReturn(new ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)
           ),
           EmitFlags.SingleLine
         )
@@ -2831,7 +2836,7 @@ namespace core {
       lastOperationWasAbrupt = true;
       writeStatement(
         setEmitFlags(
-          setTextRange(createReturn(createArrayLiteral(expression ? [createInstruction(Instruction.Yield), expression] : [createInstruction(Instruction.Yield)])), operationLocation),
+          setRange(createReturn(new ArrayLiteralExpression(expression ? [createInstruction(Instruction.Yield), expression] : [createInstruction(Instruction.Yield)])), operationLocation),
           EmitFlags.NoTokenSourceMaps
         )
       );
@@ -2845,7 +2850,7 @@ namespace core {
      */
     function writeYieldStar(expression: Expression, operationLocation: TextRange | undefined): void {
       lastOperationWasAbrupt = true;
-      writeStatement(setEmitFlags(setTextRange(createReturn(createArrayLiteral([createInstruction(Instruction.YieldStar), expression])), operationLocation), EmitFlags.NoTokenSourceMaps));
+      writeStatement(setEmitFlags(setRange(createReturn(new ArrayLiteralExpression([createInstruction(Instruction.YieldStar), expression])), operationLocation), EmitFlags.NoTokenSourceMaps));
     }
 
     /**
@@ -2853,7 +2858,7 @@ namespace core {
      */
     function writeEndfinally(): void {
       lastOperationWasAbrupt = true;
-      writeStatement(createReturn(createArrayLiteral([createInstruction(Instruction.Endfinally)])));
+      writeStatement(createReturn(new ArrayLiteralExpression([createInstruction(Instruction.Endfinally)])));
     }
   }
 

@@ -424,7 +424,7 @@ namespace core {
   };
   export function createValuesHelper(context: TransformationContext, expression: Expression, location?: TextRange) {
     context.requestEmitHelper(valuesHelper);
-    return setTextRange(createCall(getUnscopedHelperName('__values'), /*typeArguments*/ undefined, [expression]), location);
+    return setRange(createCall(getUnscopedHelperName('__values'), /*typeArguments*/ undefined, [expression]), location);
   }
   export const readHelper: UnscopedEmitHelper = {
     name: 'typescript:read',
@@ -450,7 +450,7 @@ namespace core {
   };
   export function createReadHelper(context: TransformationContext, iteratorRecord: Expression, count: number | undefined, location?: TextRange) {
     context.requestEmitHelper(readHelper);
-    return setTextRange(createCall(getUnscopedHelperName('__read'), /*typeArguments*/ undefined, count !== undefined ? [iteratorRecord, createLiteral(count)] : [iteratorRecord]), location);
+    return setRange(createCall(getUnscopedHelperName('__read'), /*typeArguments*/ undefined, count !== undefined ? [iteratorRecord, createLiteral(count)] : [iteratorRecord]), location);
   }
   export const spreadHelper: UnscopedEmitHelper = {
     name: 'typescript:spread',
@@ -465,7 +465,7 @@ namespace core {
   };
   export function createSpreadHelper(context: TransformationContext, argumentList: readonly Expression[], location?: TextRange) {
     context.requestEmitHelper(spreadHelper);
-    return setTextRange(createCall(getUnscopedHelperName('__spread'), /*typeArguments*/ undefined, argumentList), location);
+    return setRange(createCall(getUnscopedHelperName('__spread'), /*typeArguments*/ undefined, argumentList), location);
   }
   export const spreadArraysHelper: UnscopedEmitHelper = {
     name: 'typescript:spreadArrays',
@@ -482,6 +482,6 @@ namespace core {
   };
   export function createSpreadArraysHelper(context: TransformationContext, argumentList: readonly Expression[], location?: TextRange) {
     context.requestEmitHelper(spreadArraysHelper);
-    return setTextRange(createCall(getUnscopedHelperName('__spreadArrays'), /*typeArguments*/ undefined, argumentList), location);
+    return setRange(createCall(getUnscopedHelperName('__spreadArrays'), /*typeArguments*/ undefined, argumentList), location);
   }
 }

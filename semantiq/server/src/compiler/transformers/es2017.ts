@@ -258,7 +258,7 @@ namespace core {
       if (inTopLevelContext()) {
         return visitEachChild(node, visitor, context);
       }
-      return setOriginalNode(setTextRange(createYield(/*asteriskToken*/ undefined, visitNode(node.expression, visitor, isExpression)), node), node);
+      return setOriginalNode(setRange(createYield(/*asteriskToken*/ undefined, visitNode(node.expression, visitor, isExpression)), node), node);
     }
 
     /**
@@ -272,14 +272,14 @@ namespace core {
     function visitMethodDeclaration(node: MethodDeclaration) {
       return MethodDeclaration.update(
         node,
-        /*decorators*/ undefined,
+        undefined,
         Nodes.visit(node.modifiers, visitor, isModifier),
         node.asteriskToken,
         node.name,
         /*questionToken*/ undefined,
-        /*typeParameters*/ undefined,
+        undefined,
         visitParameterList(node.parameters, visitor, context),
-        /*type*/ undefined,
+        undefined,
         getFunctionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : visitFunctionBody(node.body, visitor, context)
       );
     }
@@ -295,13 +295,13 @@ namespace core {
     function visitFunctionDeclaration(node: FunctionDeclaration): VisitResult<Statement> {
       return updateFunctionDeclaration(
         node,
-        /*decorators*/ undefined,
+        undefined,
         Nodes.visit(node.modifiers, visitor, isModifier),
         node.asteriskToken,
         node.name,
-        /*typeParameters*/ undefined,
+        undefined,
         visitParameterList(node.parameters, visitor, context),
-        /*type*/ undefined,
+        undefined,
         getFunctionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : visitFunctionBody(node.body, visitor, context)
       );
     }
@@ -320,28 +320,19 @@ namespace core {
         Nodes.visit(node.modifiers, visitor, isModifier),
         node.asteriskToken,
         node.name,
-        /*typeParameters*/ undefined,
+        undefined,
         visitParameterList(node.parameters, visitor, context),
-        /*type*/ undefined,
+        undefined,
         getFunctionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : visitFunctionBody(node.body, visitor, context)
       );
     }
 
-    /**
-     * Visits an ArrowFunction.
-     *
-     * This function will be called when one of the following conditions are met:
-     * - The node is marked async
-     *
-     * @param node The node to visit.
-     */
     function visitArrowFunction(node: ArrowFunction) {
-      return updateArrowFunction(
-        node,
+      return node.update(
         Nodes.visit(node.modifiers, visitor, isModifier),
-        /*typeParameters*/ undefined,
+        undefined,
         visitParameterList(node.parameters, visitor, context),
-        /*type*/ undefined,
+        undefined,
         node.equalsGreaterThanToken,
         getFunctionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : visitFunctionBody(node.body, visitor, context)
       );
@@ -465,7 +456,7 @@ namespace core {
         }
 
         const block = createBlock(statements, /*multiLine*/ true);
-        setTextRange(block, node.body);
+        setRange(block, node.body);
 
         if (emitSuperHelpers && hasSuperElementAccess) {
           // Emit helpers for super element access expressions (`super[x]`).
@@ -483,7 +474,7 @@ namespace core {
         const declarations = endLexicalEnvironment();
         if (some(declarations)) {
           const block = convertToFunctionBody(expression);
-          result = updateBlock(block, setTextRange(Nodes.create(concatenate(declarations, block.statements)), block.statements));
+          result = updateBlock(block, setRange(Nodes.create(concatenate(declarations, block.statements)), block.statements));
         } else {
           result = expression;
         }
@@ -598,7 +589,7 @@ namespace core {
 
     function substitutePropertyAccessExpression(node: PropertyAccessExpression) {
       if (node.expression.kind === Syntax.SuperKeyword) {
-        return setTextRange(createPropertyAccess(createFileLevelUniqueName('_super'), node.name), node);
+        return setRange(createPropertyAccess(createFileLevelUniqueName('_super'), node.name), node);
       }
       return node;
     }
@@ -626,9 +617,9 @@ namespace core {
 
     function createSuperElementAccessInAsyncMethod(argumentExpression: Expression, location: TextRange): LeftHandSideExpression {
       if (enclosingSuperContainerFlags & NodeCheckFlags.AsyncMethodWithSuperBinding) {
-        return setTextRange(createPropertyAccess(createCall(createFileLevelUniqueName('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), 'value'), location);
+        return setRange(createPropertyAccess(createCall(createFileLevelUniqueName('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), 'value'), location);
       } else {
-        return setTextRange(createCall(createFileLevelUniqueName('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), location);
+        return setRange(createCall(createFileLevelUniqueName('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), location);
       }
     }
   }
@@ -645,7 +636,7 @@ namespace core {
       getterAndSetter.push(
         createPropertyAssignment(
           'get',
-          createArrowFunction(
+          new ArrowFunction(
             /* modifiers */ undefined,
             /* typeParameters */ undefined,
             /* parameters */ [],
@@ -659,7 +650,7 @@ namespace core {
         getterAndSetter.push(
           createPropertyAssignment(
             'set',
-            createArrowFunction(
+            new ArrowFunction(
               /* modifiers */ undefined,
               /* typeParameters */ undefined,
               /* parameters */ [
@@ -717,15 +708,7 @@ namespace core {
   function createAwaiterHelper(context: TransformationContext, hasLexicalThis: boolean, hasLexicalArguments: boolean, promiseConstructor: EntityName | Expression | undefined, body: Block) {
     context.requestEmitHelper(awaiterHelper);
 
-    const generatorFunc = createFunctionExpression(
-      /*modifiers*/ undefined,
-      createToken(Syntax.AsteriskToken),
-      /*name*/ undefined,
-      /*typeParameters*/ undefined,
-      /*parameters*/ [],
-      /*type*/ undefined,
-      body
-    );
+    const generatorFunc = createFunctionExpression(/*modifiers*/ undefined, createToken(Syntax.AsteriskToken), /*name*/ undefined, undefined, /*parameters*/ [], undefined, body);
 
     // Mark this node as originally an async function
     (generatorFunc.emitNode || (generatorFunc.emitNode = {} as EmitNode)).flags |= EmitFlags.AsyncFunctionBody | EmitFlags.ReuseTempVariableScope;

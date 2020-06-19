@@ -7,9 +7,9 @@
   "files": [
     "base.ts",
     "types.ts",
-    "factory.ts",
-    "syntax.ts",
     "node.ts",
+    "classes.ts",
+    "syntax.ts",
     "symbol.ts",
     "mapShim.ts"
   ]

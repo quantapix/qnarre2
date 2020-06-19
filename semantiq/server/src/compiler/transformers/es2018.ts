@@ -213,7 +213,7 @@ namespace core {
 
     function visitAwaitExpression(node: AwaitExpression): Expression {
       if (enclosingFunctionFlags & FunctionFlags.Async && enclosingFunctionFlags & FunctionFlags.Generator) {
-        return setOriginalNode(setTextRange(createYield(createAwaitHelper(context, visitNode(node.expression, visitor, isExpression))), /*location*/ node), node);
+        return setOriginalNode(setRange(createYield(createAwaitHelper(context, visitNode(node.expression, visitor, isExpression))), /*location*/ node), node);
       }
       return visitEachChild(node, visitor, context);
     }
@@ -224,7 +224,7 @@ namespace core {
           const expression = visitNode(node.expression, visitor, isExpression);
 
           return setOriginalNode(
-            setTextRange(
+            setRange(
               createYield(createAwaitHelper(context, updateYield(node, node.asteriskToken, createAsyncDelegatorHelper(context, createAsyncValuesHelper(context, expression, expression), expression)))),
               node
             ),
@@ -232,7 +232,7 @@ namespace core {
           );
         }
 
-        return setOriginalNode(setTextRange(createYield(createDownlevelAwait(node.expression ? visitNode(node.expression, visitor, isExpression) : createVoidZero())), node), node);
+        return setOriginalNode(setRange(createYield(createDownlevelAwait(node.expression ? visitNode(node.expression, visitor, isExpression) : createVoidZero())), node), node);
       }
 
       return visitEachChild(node, visitor, context);
@@ -341,7 +341,7 @@ namespace core {
         visited.statements,
         taggedTemplateStringDeclarations && [createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList(taggedTemplateStringDeclarations))]
       );
-      const result = qp_updateSourceNode(visited, setTextRange(Nodes.create(statement), node.statements));
+      const result = qp_updateSourceNode(visited, setRange(Nodes.create(statement), node.statements));
       exitSubtree(ancestorFacts);
       return result;
     }
@@ -367,13 +367,13 @@ namespace core {
     function visitCatchClause(node: CatchClause) {
       if (node.variableDeclaration && Node.is.kind(BindingPattern, node.variableDeclaration.name) && node.variableDeclaration.name.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
         const name = getGeneratedNameForNode(node.variableDeclaration.name);
-        const updatedDecl = updateVariableDeclaration(node.variableDeclaration, node.variableDeclaration.name, /*type*/ undefined, name);
+        const updatedDecl = updateVariableDeclaration(node.variableDeclaration, node.variableDeclaration.name, undefined, name);
         const visitedBindings = flattenDestructuringBinding(updatedDecl, visitor, context, FlattenLevel.ObjectRest);
         let block = visitNode(node.block, visitor, isBlock);
         if (some(visitedBindings)) {
           block = updateBlock(block, [createVariableStatement(/*modifiers*/ undefined, visitedBindings), ...block.statements]);
         }
-        return updateCatchClause(node, updateVariableDeclaration(node.variableDeclaration, name, /*type*/ undefined, /*initializer*/ undefined), block);
+        return updateCatchClause(node, updateVariableDeclaration(node.variableDeclaration, name, undefined, undefined), block);
       }
       return visitEachChild(node, visitor, context);
     }
@@ -463,9 +463,9 @@ namespace core {
         return updateForOf(
           node,
           node.awaitModifier,
-          setTextRange(createVariableDeclarationList([setTextRange(createVariableDeclaration(temp), node.initializer)], NodeFlags.Let), node.initializer),
+          setRange(createVariableDeclarationList([setRange(createVariableDeclaration(temp), node.initializer)], NodeFlags.Let), node.initializer),
           node.expression,
-          setTextRange(createBlock(setTextRange(Nodes.create(statements), statementsLocation), /*multiLine*/ true), bodyLocation)
+          setRange(createBlock(setRange(Nodes.create(statements), statementsLocation), /*multiLine*/ true), bodyLocation)
         );
       }
       return node;
@@ -486,7 +486,7 @@ namespace core {
         statements.push(statement);
       }
 
-      return setEmitFlags(setTextRange(createBlock(setTextRange(Nodes.create(statements), statementsLocation), /*multiLine*/ true), bodyLocation), EmitFlags.NoSourceMap | EmitFlags.NoTokenSourceMaps);
+      return setEmitFlags(setRange(createBlock(setRange(Nodes.create(statements), statementsLocation), /*multiLine*/ true), bodyLocation), EmitFlags.NoSourceMap | EmitFlags.NoTokenSourceMaps);
     }
 
     function createDownlevelAwait(expression: Expression) {
@@ -513,13 +513,10 @@ namespace core {
       const initializer = ancestorFacts & HierarchyFacts.IterationContainer ? inlineExpressions([createAssignment(errorRecord, createVoidZero()), callValues]) : callValues;
 
       const forStatement = setEmitFlags(
-        setTextRange(
+        setRange(
           createFor(
-            /*initializer*/ setEmitFlags(
-              setTextRange(
-                createVariableDeclarationList([setTextRange(createVariableDeclaration(iterator, /*type*/ undefined, initializer), node.expression), createVariableDeclaration(result)]),
-                node.expression
-              ),
+            setEmitFlags(
+              setRange(createVariableDeclarationList([setRange(createVariableDeclaration(iterator, undefined, initializer), node.expression), createVariableDeclaration(result)]), node.expression),
               EmitFlags.NoHoisting
             ),
             /*condition*/ createComma(createAssignment(result, createDownlevelAwait(callNext)), createLogicalNot(getDone)),
@@ -561,12 +558,12 @@ namespace core {
         // evaluated inside the function body.
         return updateParameter(
           node,
-          /*decorators*/ undefined,
+          undefined,
           /*modifiers*/ undefined,
           node.dot3Token,
           getGeneratedNameForNode(node),
           /*questionToken*/ undefined,
-          /*type*/ undefined,
+          undefined,
           visitNode(node.initializer, visitor, isExpression)
         );
       }
@@ -576,7 +573,7 @@ namespace core {
     function visitConstructorDeclaration(node: ConstructorDeclaration) {
       const savedEnclosingFunctionFlags = enclosingFunctionFlags;
       enclosingFunctionFlags = FunctionFlags.Normal;
-      const updated = ConstructorDeclaration.update(node, /*decorators*/ undefined, node.modifiers, visitParameterList(node.parameters, visitor, context), transformFunctionBody(node));
+      const updated = ConstructorDeclaration.update(node, undefined, node.modifiers, visitParameterList(node.parameters, visitor, context), transformFunctionBody(node));
       enclosingFunctionFlags = savedEnclosingFunctionFlags;
       return updated;
     }
@@ -586,11 +583,11 @@ namespace core {
       enclosingFunctionFlags = FunctionFlags.Normal;
       const updated = GetAccessorDeclaration.update(
         node,
-        /*decorators*/ undefined,
+        undefined,
         node.modifiers,
         visitNode(node.name, visitor, isPropertyName),
         visitParameterList(node.parameters, visitor, context),
-        /*type*/ undefined,
+        undefined,
         transformFunctionBody(node)
       );
       enclosingFunctionFlags = savedEnclosingFunctionFlags;
@@ -602,7 +599,7 @@ namespace core {
       enclosingFunctionFlags = FunctionFlags.Normal;
       const updated = SetAccessorDeclaration.update(
         node,
-        /*decorators*/ undefined,
+        undefined,
         node.modifiers,
         visitNode(node.name, visitor, isPropertyName),
         visitParameterList(node.parameters, visitor, context),
@@ -617,14 +614,14 @@ namespace core {
       enclosingFunctionFlags = getFunctionFlags(node);
       const updated = MethodDeclaration.update(
         node,
-        /*decorators*/ undefined,
+        undefined,
         enclosingFunctionFlags & FunctionFlags.Generator ? Nodes.visit(node.modifiers, visitorNoAsyncModifier, isModifier) : node.modifiers,
         enclosingFunctionFlags & FunctionFlags.Async ? undefined : node.asteriskToken,
         visitNode(node.name, visitor, isPropertyName),
         visitNode<Token<Syntax.QuestionToken>>(/*questionToken*/ undefined, visitor, isToken),
-        /*typeParameters*/ undefined,
+        undefined,
         visitParameterList(node.parameters, visitor, context),
-        /*type*/ undefined,
+        undefined,
         enclosingFunctionFlags & FunctionFlags.Async && enclosingFunctionFlags & FunctionFlags.Generator ? transformAsyncGeneratorFunctionBody(node) : transformFunctionBody(node)
       );
       enclosingFunctionFlags = savedEnclosingFunctionFlags;
@@ -636,13 +633,13 @@ namespace core {
       enclosingFunctionFlags = getFunctionFlags(node);
       const updated = updateFunctionDeclaration(
         node,
-        /*decorators*/ undefined,
+        undefined,
         enclosingFunctionFlags & FunctionFlags.Generator ? Nodes.visit(node.modifiers, visitorNoAsyncModifier, isModifier) : node.modifiers,
         enclosingFunctionFlags & FunctionFlags.Async ? undefined : node.asteriskToken,
         node.name,
-        /*typeParameters*/ undefined,
+        undefined,
         visitParameterList(node.parameters, visitor, context),
-        /*type*/ undefined,
+        undefined,
         enclosingFunctionFlags & FunctionFlags.Async && enclosingFunctionFlags & FunctionFlags.Generator ? transformAsyncGeneratorFunctionBody(node) : transformFunctionBody(node)
       );
       enclosingFunctionFlags = savedEnclosingFunctionFlags;
@@ -652,15 +649,7 @@ namespace core {
     function visitArrowFunction(node: ArrowFunction) {
       const savedEnclosingFunctionFlags = enclosingFunctionFlags;
       enclosingFunctionFlags = getFunctionFlags(node);
-      const updated = updateArrowFunction(
-        node,
-        node.modifiers,
-        /*typeParameters*/ undefined,
-        visitParameterList(node.parameters, visitor, context),
-        /*type*/ undefined,
-        node.equalsGreaterThanToken,
-        transformFunctionBody(node)
-      );
+      const updated = node.update(node.modifiers, undefined, visitParameterList(node.parameters, visitor, context), undefined, node.equalsGreaterThanToken, transformFunctionBody(node));
       enclosingFunctionFlags = savedEnclosingFunctionFlags;
       return updated;
     }
@@ -673,9 +662,9 @@ namespace core {
         enclosingFunctionFlags & FunctionFlags.Generator ? Nodes.visit(node.modifiers, visitorNoAsyncModifier, isModifier) : node.modifiers,
         enclosingFunctionFlags & FunctionFlags.Async ? undefined : node.asteriskToken,
         node.name,
-        /*typeParameters*/ undefined,
+        undefined,
         visitParameterList(node.parameters, visitor, context),
-        /*type*/ undefined,
+        undefined,
         enclosingFunctionFlags & FunctionFlags.Async && enclosingFunctionFlags & FunctionFlags.Generator ? transformAsyncGeneratorFunctionBody(node) : transformFunctionBody(node)
       );
       enclosingFunctionFlags = savedEnclosingFunctionFlags;
@@ -700,9 +689,9 @@ namespace core {
             /*modifiers*/ undefined,
             createToken(Syntax.AsteriskToken),
             node.name && getGeneratedNameForNode(node.name),
-            /*typeParameters*/ undefined,
+            undefined,
             /*parameters*/ [],
-            /*type*/ undefined,
+            undefined,
             updateBlock(node.body!, visitLexicalEnvironment(node.body!.statements, visitor, context, statementOffset))
           ),
           !!(hierarchyFacts & HierarchyFacts.HasLexicalThis)
@@ -755,7 +744,7 @@ namespace core {
         const block = convertToFunctionBody(body, /*multiLine*/ true);
         insertStatementsAfterStandardPrologue(statements, leadingStatements);
         addRange(statements, block.statements.slice(statementOffset));
-        return updateBlock(block, setTextRange(Nodes.create(statements), block.statements));
+        return updateBlock(block, setRange(Nodes.create(statements), block.statements));
       }
       return body;
     }
@@ -856,7 +845,7 @@ namespace core {
 
     function substitutePropertyAccessExpression(node: PropertyAccessExpression) {
       if (node.expression.kind === Syntax.SuperKeyword) {
-        return setTextRange(createPropertyAccess(createFileLevelUniqueName('_super'), node.name), node);
+        return setRange(createPropertyAccess(createFileLevelUniqueName('_super'), node.name), node);
       }
       return node;
     }
@@ -884,9 +873,9 @@ namespace core {
 
     function createSuperElementAccessInAsyncMethod(argumentExpression: Expression, location: TextRange): LeftHandSideExpression {
       if (enclosingSuperContainerFlags & NodeCheckFlags.AsyncMethodWithSuperBinding) {
-        return setTextRange(createPropertyAccess(createCall(createIdentifier('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), 'value'), location);
+        return setRange(createPropertyAccess(createCall(createIdentifier('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), 'value'), location);
       } else {
-        return setTextRange(createCall(createIdentifier('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), location);
+        return setRange(createCall(createIdentifier('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), location);
       }
     }
   }
@@ -974,7 +963,7 @@ namespace core {
 
   function createAsyncDelegatorHelper(context: TransformationContext, expression: Expression, location?: TextRange) {
     context.requestEmitHelper(asyncDelegator);
-    return setTextRange(createCall(getUnscopedHelperName('__asyncDelegator'), /*typeArguments*/ undefined, [expression]), location);
+    return setRange(createCall(getUnscopedHelperName('__asyncDelegator'), /*typeArguments*/ undefined, [expression]), location);
   }
 
   export const asyncValues: UnscopedEmitHelper = {
@@ -993,6 +982,6 @@ namespace core {
 
   function createAsyncValuesHelper(context: TransformationContext, expression: Expression, location?: TextRange) {
     context.requestEmitHelper(asyncValues);
-    return setTextRange(createCall(getUnscopedHelperName('__asyncValues'), /*typeArguments*/ undefined, [expression]), location);
+    return setRange(createCall(getUnscopedHelperName('__asyncValues'), /*typeArguments*/ undefined, [expression]), location);
   }
 }

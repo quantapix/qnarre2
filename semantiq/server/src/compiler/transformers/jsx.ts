@@ -163,7 +163,7 @@ namespace core {
         // Need to be escaped to be handled correctly in a normal string
         const literal = createLiteral(tryDecodeEntities(node.text) || node.text);
         literal.singleQuote = node.singleQuote !== undefined ? node.singleQuote : !isStringDoubleQuoted(node, currentSourceFile);
-        return setTextRange(literal, node);
+        return setRange(literal, node);
       } else if (node.kind === Syntax.JsxExpression) {
         if (node.expression === undefined) {
           return createTrue();

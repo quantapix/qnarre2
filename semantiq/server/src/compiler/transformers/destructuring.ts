@@ -111,7 +111,7 @@ namespace core {
       Debug.assertNode(target, createAssignmentCallback ? isIdentifier : isExpression);
       const expression = createAssignmentCallback
         ? createAssignmentCallback(<Identifier>target, value, location)
-        : setTextRange(createAssignment(visitNode(<Expression>target, visitor, isExpression), value), location);
+        : setRange(createAssignment(visitNode(<Expression>target, visitor, isExpression), value), location);
       expression.original = original;
       emitExpression(expression);
     }
@@ -221,9 +221,9 @@ namespace core {
       }
     }
     for (const { pendingExpressions, name, value, location, original } of pendingDeclarations) {
-      const variable = createVariableDeclaration(name, /*type*/ undefined, pendingExpressions ? inlineExpressions(append(pendingExpressions, value)) : value);
+      const variable = createVariableDeclaration(name, undefined, pendingExpressions ? inlineExpressions(append(pendingExpressions, value)) : value);
       variable.original = original;
-      setTextRange(variable, location);
+      setRange(variable, location);
       aggregateTransformFlags(variable);
       declarations.push(variable);
     }
@@ -449,17 +449,6 @@ namespace core {
     }
   }
 
-  /**
-   * Ensures that there exists a declared identifier whose value holds the given expression.
-   * This function is useful to ensure that the expression's value can be read from in subsequent expressions.
-   * Unless 'reuseIdentifierExpressions' is false, 'value' will be returned if it is just an identifier.
-   *
-   * @param flattenContext Options used to control flattening.
-   * @param value the expression whose value needs to be bound.
-   * @param reuseIdentifierExpressions true if identifier expressions can simply be returned;
-   * false if it is necessary to always emit an identifier.
-   * @param location The location to use for source maps and comments.
-   */
   function ensureIdentifier(flattenContext: FlattenContext, value: Expression, reuseIdentifierExpressions: boolean, location: TextRange) {
     if (Node.is.kind(Identifier, value) && reuseIdentifierExpressions) {
       return value;
@@ -467,7 +456,7 @@ namespace core {
       const temp = createTempVariable(/*recordTempVariable*/ undefined);
       if (flattenContext.hoistTempVariables) {
         flattenContext.context.hoistVariableDeclaration(temp);
-        flattenContext.emitExpression(setTextRange(createAssignment(temp, value), location));
+        flattenContext.emitExpression(setRange(createAssignment(temp, value), location));
       } else {
         flattenContext.emitBindingOrAssignment(temp, value, location, /*original*/ undefined);
       }
@@ -477,11 +466,11 @@ namespace core {
 
   function makeArrayBindingPattern(elements: BindingOrAssignmentElement[]) {
     Debug.assertEachNode(elements, isArrayBindingElement);
-    return ArrayBindingPattern.create(<ArrayBindingElement[]>elements);
+    return new ArrayBindingPattern(<ArrayBindingElement[]>elements);
   }
 
   function makeArrayAssignmentPattern(elements: BindingOrAssignmentElement[]) {
-    return createArrayLiteral(map(elements, convertToArrayAssignmentElement));
+    return new ArrayLiteralExpression(map(elements, convertToArrayAssignmentElement));
   }
 
   function makeObjectBindingPattern(elements: BindingOrAssignmentElement[]) {
@@ -545,6 +534,6 @@ namespace core {
         }
       }
     }
-    return createCall(getUnscopedHelperName('__rest'), /*typeArguments*/ undefined, [value, setTextRange(createArrayLiteral(propertyNames), location)]);
+    return createCall(getUnscopedHelperName('__rest'), /*typeArguments*/ undefined, [value, setRange(new ArrayLiteralExpression(propertyNames), location)]);
   }
 }

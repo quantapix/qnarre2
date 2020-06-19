@@ -35,7 +35,7 @@ namespace core {
       if (updated !== undefined || r === undefined || r !== n) {
         if (updated === undefined) {
           updated = Nodes.create(ns.slice(0, i), ns.trailingComma);
-          setTextRange(updated, ns);
+          setRange(updated, ns);
         }
         if (r) {
           if (qa.isArray(r)) {
@@ -94,7 +94,7 @@ namespace core {
         r[i] = updated;
       }
     }
-    if (r) return setTextRange(Nodes.create(r, ps.trailingComma), ps);
+    if (r) return setRange(Nodes.create(r, ps.trailingComma), ps);
     return ps;
   }
   function addValueAssignmentIfNeeded(p: ParameterDeclaration, c: TransformationContext) {
@@ -120,11 +120,11 @@ namespace core {
       createIf(
         createTypeCheck(getSynthesizedClone(name), 'undefined'),
         setEmitFlags(
-          setTextRange(
+          setRange(
             createBlock([
               createExpressionStatement(
                 setEmitFlags(
-                  setTextRange(
+                  setRange(
                     createAssignment(setEmitFlags(getMutableClone(name), EmitFlags.NoSourceMap), setEmitFlags(init, EmitFlags.NoSourceMap | Node.get.emitFlags(init) | EmitFlags.NoComments)),
                     p
                   ),
@@ -296,7 +296,7 @@ namespace core {
       case Syntax.TypeLiteral:
         return TypeLiteralNode.update(n, nodesVisitor(n.members, cb, isTypeElement));
       case Syntax.ArrayType:
-        return ArrayTypeNode.update(n, visitNode(n.elementType, cb, isTypeNode));
+        return n.update(visitNode(n.elementType, cb, isTypeNode));
       case Syntax.TupleType:
         return TupleTypeNode.update(n, nodesVisitor(n.elements, cb, isTypeNode));
       case Syntax.OptionalType:
@@ -340,7 +340,7 @@ namespace core {
       case Syntax.ObjectBindingPattern:
         return ObjectBindingPattern.update(n, nodesVisitor(n.elements, cb, BindingElement.kind));
       case Syntax.ArrayBindingPattern:
-        return ArrayBindingPattern.update(n, nodesVisitor(n.elements, cb, isArrayBindingElement));
+        return n.update(nodesVisitor(n.elements, cb, isArrayBindingElement));
       case Syntax.BindingElement:
         return BindingElement.update(
           n,
@@ -350,7 +350,7 @@ namespace core {
           visitNode(n.initializer, cb, isExpression)
         );
       case Syntax.ArrayLiteralExpression:
-        return updateArrayLiteral(n, nodesVisitor(n.elements, cb, isExpression));
+        return n.update(nodesVisitor(n.elements, cb, isExpression));
       case Syntax.ObjectLiteralExpression:
         return updateObjectLiteral(n, nodesVisitor(n.properties, cb, isObjectLiteralElementLike));
       case Syntax.PropertyAccessExpression:
@@ -394,8 +394,7 @@ namespace core {
           visitFunctionBody(n.body, cb, c)
         );
       case Syntax.ArrowFunction:
-        return updateArrowFunction(
-          n,
+        return n.update(
           nodesVisitor(n.modifiers, cb, isModifier),
           nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration),
           visitParameterList(n.parameters, cb, c, nodesVisitor),
@@ -1101,41 +1100,11 @@ namespace core {
         }
       }
     }
-    if (isNodes(ss)) return setTextRange(Nodes.create(left, ss.trailingComma), ss);
+    if (isNodes(ss)) return setRange(Nodes.create(left, ss.trailingComma), ss);
     return ss;
   }
   export function liftToBlock(ns: readonly Node[]): Statement {
     qa.assert(every(ns, isStatement), 'Cannot lift nodes to a Block.');
     return (qa.singleOrUndefined(ns) as Statement) || createBlock(<Nodes<Statement>>ns);
-  }
-  export function aggregateTransformFlags<T extends Node>(n: T): T {
-    aggregate(n);
-    return n;
-  }
-  function aggregate(n: Node): TransformFlags {
-    if (n === undefined) return TransformFlags.None;
-    if (n.transformFlags & TransformFlags.HasComputedFlags) return n.transformFlags & ~getTransformFlagsSubtreeExclusions(n.kind);
-    return computeTransformFlagsForNode(n, aggregateSubtree(n));
-  }
-  function aggregateNodes(ns: Nodes<Node>): TransformFlags {
-    if (ns === undefined) return TransformFlags.None;
-    let subtree = TransformFlags.None;
-    let f = TransformFlags.None;
-    for (const n of ns) {
-      subtree |= aggregate(n);
-      f |= n.transformFlags & ~TransformFlags.HasComputedFlags;
-    }
-    ns.transformFlags = f | TransformFlags.HasComputedFlags;
-    return subtree;
-  }
-  function aggregateSubtree(n: Node): TransformFlags {
-    if (hasSyntacticModifier(n, ModifierFlags.Ambient) || (Node.is.typeNode(n) && n.kind !== Syntax.ExpressionWithTypeArguments)) return TransformFlags.None;
-    return reduceEachChild(n, TransformFlags.None, aggregateChild, aggregateChildren);
-  }
-  function aggregateChild(f: TransformFlags, n: Node): TransformFlags {
-    return f | aggregate(n);
-  }
-  function aggregateChildren(f: TransformFlags, ns: Nodes<Node>): TransformFlags {
-    return f | aggregateNodes(ns);
   }
 }

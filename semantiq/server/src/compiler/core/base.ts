@@ -1411,4 +1411,191 @@ namespace core {
     }
     return s;
   }
+  export function isSynthesized(x: number): boolean;
+  export function isSynthesized(r: Range): boolean;
+  export function isSynthesized(x: Range | number) {
+    //  x === undefined || x === null || isNaN(x) || x < 0;
+    if (typeof x === 'number') return !(x >= 0);
+    return isSynthesized(x.pos) || isSynthesized(x.end);
+  }
+
+  export class TextSpan implements Span {
+    static from(x: Range): TextSpan;
+    static from(start: number, end: number): TextSpan;
+    static from(x: Range | number, end = 0) {
+      if (typeof x === 'number') return new TextSpan(x, end - x);
+      return new TextSpan(x.pos, x.end - x.pos);
+    }
+    static end(s: Span) {
+      return s.start + s.length;
+    }
+    static intersecting(s1: number, l1: number, s2: number, l2: number) {
+      const e1 = s1 + l1;
+      const e2 = s2 + l2;
+      return s2 <= e1 && e2 >= s1;
+    }
+    static intersection(s1: Span, s2: Span) {
+      const s = Math.max(s1.start, s2.start);
+      const e = Math.min(this.end(s1), this.end(s2));
+      return s <= e ? this.from(s, e) : undefined;
+    }
+    static overlap(s1: Span, s2: Span) {
+      const r = this.intersection(s1, s2);
+      return r?.length === 0 ? undefined : r;
+    }
+    constructor(public start = 0, public length = 0) {
+      assert(start >= 0 && length >= 0);
+    }
+    get end() {
+      return TextSpan.end(this);
+    }
+    isEmpty() {
+      return this.length === 0;
+    }
+    contains(x: number): boolean;
+    contains(x: Span): boolean;
+    contains(x: Span | number) {
+      if (typeof x === 'number') return x >= this.start && x < this.end;
+      return x.start >= this.start && x.start + x.length <= this.end;
+    }
+    intersects(s: Span): boolean;
+    intersects(start: number, length?: number): boolean;
+    intersects(x: Span | number, length?: number) {
+      if (typeof x === 'number') {
+        if (length === undefined) return this.start <= x && x <= this.end;
+        return TextSpan.intersecting(this.start, this.length, x, length);
+      }
+      return TextSpan.intersecting(this.start, this.length, x.start, x.length);
+    }
+    overlaps(s: Span) {
+      return TextSpan.overlap(this, s) !== undefined;
+    }
+  }
+  export class TextRange implements Range {
+    constructor(public pos = -1, public end = -1) {
+      assert(pos <= end || end === -1);
+    }
+    isCollapsed() {
+      return this.pos === this.end;
+    }
+    containsInclusive(p: number) {
+      return p >= this.pos && p <= this.end;
+    }
+    setRange(r?: Range): this {
+      if (r) {
+        this.pos = r.pos;
+        this.end = r.end;
+      }
+      return this;
+    }
+    movePos(p: number) {
+      return new TextRange(p, this.end);
+    }
+    moveEnd(e: number) {
+      return new TextRange(this.pos, e);
+    }
+  }
+  export class TextChange implements Range.Change {
+    static readonly unchanged = new TextChange();
+    static collapse(cs: readonly Range.Change[]) {
+      if (cs.length === 0) return this.unchanged;
+      let c = cs[0];
+      if (cs.length === 1) return new TextChange(c.span, c.newLength);
+      let s = c.span.start;
+      let e = TextSpan.end(c.span);
+      let e2 = s + c.newLength;
+      for (let i = 1; i < cs.length; i++) {
+        c = cs[i];
+        s = Math.min(s, c.span.start);
+        const o = TextSpan.end(c.span);
+        e = Math.max(e, e + (o - e2));
+        const n = c.span.start + c.newLength;
+        e2 = Math.max(n, n + (e2 - o));
+      }
+      return new TextChange(TextSpan.from(s, e), e2 - s);
+    }
+    constructor(public span: Span = new TextSpan(), public newLength = 0) {
+      assert(newLength >= 0);
+    }
+    isUnchanged() {
+      return this.span.length === 0 && this.newLength === 0;
+    }
+    toSpan() {
+      return new TextSpan(this.span.start, this.newLength);
+    }
+  }
+  export class SourceFile2 implements SourceFileLike {
+    text = '';
+    lineMap?: number[];
+    lineStarts(): readonly number[] {
+      return this.lineMap ?? (this.lineMap = syntax.get.lineStarts(this.text));
+    }
+    lineAndCharOf(pos: number) {
+      return syntax.get.lineAndCharOf(this.lineStarts(), pos);
+    }
+    posOf(line: number, char: number): number;
+    posOf(line: number, char: number, edits?: true): number;
+    posOf(line: number, char: number, edits?: true): number {
+      return syntax.get.posOf(this.lineStarts(), line, char, this.text, edits);
+    }
+    linesBetween(p1: number, p2: number): number;
+    linesBetween(r1: Range, r2: Range, comments: boolean): number;
+    linesBetween(x1: Range | number, x2: Range | number, comments = false) {
+      if (typeof x1 === 'number') {
+        if (x1 === x2) return 0;
+        assert(typeof x2 === 'number');
+        const ss = this.lineStarts();
+        const min = Math.min(x1, x2);
+        const isNegative = min === x2;
+        const max = isNegative ? x1 : x2;
+        const lower = syntax.get.lineOf(ss, min);
+        const upper = syntax.get.lineOf(ss, max, lower);
+        return isNegative ? lower - upper : upper - lower;
+      }
+      const s = this.startPos(x2 as Range, comments);
+      return this.linesBetween(x1.end, s);
+    }
+    linesBetweenEnds(r1: Range, r2: Range) {
+      return this.linesBetween(r1.end, r2.end);
+    }
+    linesToPrevNonWhitespace(pos: number, stop: number, comments = false) {
+      const s = syntax.skipTrivia(this.text, pos, false, comments);
+      const p = this.prevNonWhitespacePos(s, stop);
+      return this.linesBetween(p ?? stop, s);
+    }
+    linesToNextNonWhitespace(pos: number, stop: number, comments = false) {
+      const s = syntax.skipTrivia(this.text, pos, false, comments);
+      return this.linesBetween(pos, Math.min(stop, s));
+    }
+    startPos(r: Range, comments = false) {
+      return isSynthesized(r.pos) ? -1 : syntax.skipTrivia(this.text, r.pos, false, comments);
+    }
+    prevNonWhitespacePos(pos: number, stop = 0) {
+      while (pos-- > stop) {
+        if (!syntax.is.whiteSpaceLike(this.text.charCodeAt(pos))) return pos;
+      }
+      return;
+    }
+    onSameLine(p1: number, p2: number) {
+      return this.linesBetween(p1, p2) === 0;
+    }
+    onSingleLine(r: Range) {
+      return this.onSameLine(r.pos, r.end);
+    }
+    multiLine(a: Nodes<Node>) {
+      return !this.onSameLine(a.pos, a.end);
+    }
+    startsOnSameLine(r1: Range, r2: Range) {
+      return this.onSameLine(this.startPos(r1), this.startPos(r2));
+    }
+    endsOnSameLine(r1: Range, r2: Range) {
+      return this.onSameLine(r1.end, r2.end);
+    }
+    startOnSameLineAsEnd(r1: Range, r2: Range) {
+      return this.onSameLine(this.startPos(r1), r2.end);
+    }
+    endOnSameLineAsStart(r1: Range, r2: Range) {
+      return this.onSameLine(r1.end, this.startPos(r2));
+    }
+  }
 }

@@ -40,7 +40,7 @@ namespace core {
       }
     }
 
-    const helperCall = createTemplateObjectHelper(context, createArrayLiteral(cookedStrings), createArrayLiteral(rawStrings));
+    const helperCall = createTemplateObjectHelper(context, new ArrayLiteralExpression(cookedStrings), new ArrayLiteralExpression(rawStrings));
 
     // Create a variable to cache the template object if we're in a module.
     // Do not do this in the global scope, as any variable we currently generate could conflict with
@@ -85,7 +85,7 @@ namespace core {
     // ES6 Spec 11.8.6.1 - Static Semantics of TV's and TRV's
     // <CR><LF> and <CR> LineTerminatorSequences are normalized to <LF> for both TV and TRV.
     text = text.replace(/\r\n?/g, '\n');
-    return setTextRange(createLiteral(text), node);
+    return setRange(createLiteral(text), node);
   }
 
   function createTemplateObjectHelper(context: TransformationContext, cooked: ArrayLiteralExpression, raw: ArrayLiteralExpression) {

@@ -21,7 +21,7 @@ namespace core {
         if (!qp_isExternalModule(node) || some(result.statements, qp_isExternalModuleIndicator)) {
           return result;
         }
-        return qp_updateSourceNode(result, setTextRange(Nodes.create([...result.statements, createEmptyExports()]), result.statements));
+        return qp_updateSourceNode(result, setRange(Nodes.create([...result.statements, createEmptyExports()]), result.statements));
       }
 
       return node;
@@ -35,7 +35,7 @@ namespace core {
         append(statements, externalHelpersImportDeclaration);
 
         addRange(statements, Nodes.visit(node.statements, visitor, isStatement, statementOffset));
-        return qp_updateSourceNode(node, setTextRange(Nodes.create(statements), node.statements));
+        return qp_updateSourceNode(node, setRange(Nodes.create(statements), node.statements));
       } else {
         return visitEachChild(node, visitor, context);
       }
@@ -74,10 +74,10 @@ namespace core {
 
       const oldIdentifier = node.exportClause.name;
       const synthName = getGeneratedNameForNode(oldIdentifier);
-      const importDecl = createImportDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createImportClause(/*name*/ undefined, createNamespaceImport(synthName)), node.moduleSpecifier);
+      const importDecl = createImportDeclaration(undefined, /*modifiers*/ undefined, createImportClause(/*name*/ undefined, createNamespaceImport(synthName)), node.moduleSpecifier);
       setOriginalNode(importDecl, node.exportClause);
 
-      const exportDecl = createExportDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createNamedExports([createExportSpecifier(synthName, oldIdentifier)]));
+      const exportDecl = createExportDeclaration(undefined, /*modifiers*/ undefined, createNamedExports([createExportSpecifier(synthName, oldIdentifier)]));
       setOriginalNode(exportDecl, node);
 
       return [importDecl, exportDecl];

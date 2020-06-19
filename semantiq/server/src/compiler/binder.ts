@@ -3406,12 +3406,6 @@ namespace core {
     return container.symbol && container.symbol.exports && container.symbol.exports.get(name);
   }
 
-  /**
-   * Computes the transform flags for a node, given the transform flags of its subtree
-   *
-   * @param node The node to analyze
-   * @param subtreeFlags Transform flags computed for this node's subtree
-   */
   export function computeTransformFlagsForNode(node: Node, subtreeFlags: TransformFlags): TransformFlags {
     const kind = node.kind;
     switch (kind) {

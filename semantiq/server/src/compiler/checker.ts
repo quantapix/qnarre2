@@ -4624,7 +4624,7 @@ namespace core {
               return TypeReferenceNode.create(type.target === globalArrayType ? 'Array' : 'ReadonlyArray', [typeArgumentNode]);
             }
             const elementType = typeToTypeNodeHelper(typeArguments[0], context);
-            const arrayType = ArrayTypeNode.create(elementType);
+            const arrayType = new ArrayTypeNode(elementType);
             return type.target === globalArrayType ? arrayType : TypeOperatorNode.create(Syntax.ReadonlyKeyword, arrayType);
           } else if (type.target.objectFlags & ObjectFlags.Tuple) {
             if (typeArguments.length > 0) {
@@ -4641,13 +4641,13 @@ namespace core {
                       isRest ? createToken(Syntax.Dot3Token) : undefined,
                       createIdentifier(syntax.get.unescUnderscores(getTupleElementLabel((type.target as TupleType).labeledElementDeclarations![i]))),
                       isOptional ? createToken(Syntax.QuestionToken) : undefined,
-                      isRest ? ArrayTypeNode.create(tupleConstituentNodes[i]) : tupleConstituentNodes[i]
+                      isRest ? new ArrayTypeNode(tupleConstituentNodes[i]) : tupleConstituentNodes[i]
                     );
                   }
                 } else {
                   for (let i = (<TupleType>type.target).minLength; i < Math.min(arity, tupleConstituentNodes.length); i++) {
                     tupleConstituentNodes[i] =
-                      hasRestElement && i === arity - 1 ? RestTypeNode.create(ArrayTypeNode.create(tupleConstituentNodes[i])) : OptionalTypeNode.create(tupleConstituentNodes[i]);
+                      hasRestElement && i === arity - 1 ? RestTypeNode.create(new ArrayTypeNode(tupleConstituentNodes[i])) : OptionalTypeNode.create(tupleConstituentNodes[i]);
                   }
                 }
                 const tupleTypeNode = setEmitFlags(TupleTypeNode.create(tupleConstituentNodes), EmitFlags.SingleLine);
@@ -4746,7 +4746,7 @@ namespace core {
 
         function createTypeNodesFromResolvedType(resolvedType: ResolvedType): TypeElement[] | undefined {
           if (checkTruncationLength(context)) {
-            return [PropertySignature.create(/*modifiers*/ undefined, '...', /*questionToken*/ undefined, /*type*/ undefined, /*initializer*/ undefined)];
+            return [PropertySignature.create(/*modifiers*/ undefined, '...', /*questionToken*/ undefined, undefined, undefined)];
           }
           const typeElements: TypeElement[] = [];
           for (const signature of resolvedType.callSignatures) {
@@ -4790,7 +4790,7 @@ namespace core {
               }
             }
             if (checkTruncationLength(context) && i + 2 < properties.length - 1) {
-              typeElements.push(PropertySignature.create(/*modifiers*/ undefined, `... ${properties.length - i} more ...`, /*questionToken*/ undefined, /*type*/ undefined, /*initializer*/ undefined));
+              typeElements.push(PropertySignature.create(/*modifiers*/ undefined, `... ${properties.length - i} more ...`, /*questionToken*/ undefined, undefined, undefined));
               addPropertyToElementList(properties[properties.length - 1], context, typeElements);
               break;
             }
@@ -4856,7 +4856,7 @@ namespace core {
           if (modifiers) {
             context.approximateLength += 9;
           }
-          const propertySignature = PropertySignature.create(modifiers, propertyName, optionalToken, propertyTypeNode, /*initializer*/ undefined);
+          const propertySignature = PropertySignature.create(modifiers, propertyName, optionalToken, propertyTypeNode, undefined);
 
           typeElements.push(preserveCommentsOn(propertySignature));
         }
@@ -4955,20 +4955,20 @@ namespace core {
         const indexerTypeNode = KeywordTypeNode.create(kind === IndexKind.String ? Syntax.StringKeyword : Syntax.NumberKeyword);
 
         const indexingParameter = createParameter(
-          /*decorators*/ undefined,
+          undefined,
           /*modifiers*/ undefined,
           /*dot3Token*/ undefined,
           name,
           /*questionToken*/ undefined,
           indexerTypeNode,
-          /*initializer*/ undefined
+          undefined
         );
         const typeNode = typeToTypeNodeHelper(indexInfo.type || anyType, context);
         if (!indexInfo.type && !(context.flags & NodeBuilderFlags.AllowEmptyIndexInfoType)) {
           context.encounteredError = true;
         }
         context.approximateLength += name.length + 4;
-        return IndexSignatureDeclaration.create(/*decorators*/ undefined, indexInfo.isReadonly ? [createToken(Syntax.ReadonlyKeyword)] : undefined, [indexingParameter], typeNode);
+        return IndexSignatureDeclaration.create(undefined, indexInfo.isReadonly ? [createToken(Syntax.ReadonlyKeyword)] : undefined, [indexingParameter], typeNode);
       }
 
       function signatureToSignatureDeclarationHelper(
@@ -5068,7 +5068,7 @@ namespace core {
           : symbolName(parameterSymbol);
         const isOptional = (parameterDeclaration && isOptionalParameter(parameterDeclaration)) || getCheckFlags(parameterSymbol) & CheckFlags.OptionalParameter;
         const questionToken = isOptional ? createToken(Syntax.QuestionToken) : undefined;
-        const parameterNode = createParameter(/*decorators*/ undefined, modifiers, dot3Token, name, questionToken, parameterTypeNode, /*initializer*/ undefined);
+        const parameterNode = createParameter(undefined, modifiers, dot3Token, name, questionToken, parameterTypeNode, undefined);
         context.approximateLength += symbolName(parameterSymbol).length + 3;
         return parameterNode;
 
@@ -5673,7 +5673,7 @@ namespace core {
             return visitNode(node.type, visitExistingNodeTreeSymbols);
           }
           if (Node.is.kind(JSDocVariadicType, node)) {
-            return ArrayTypeNode.create(visitNode((node as JSDocVariadicType).type, visitExistingNodeTreeSymbols));
+            return new ArrayTypeNode(visitNode((node as JSDocVariadicType).type, visitExistingNodeTreeSymbols));
           }
           if (Node.is.kind(JSDocTypeLiteral, node)) {
             return TypeLiteralNode.create(
@@ -5687,7 +5687,7 @@ namespace core {
                   name,
                   t.typeExpression && Node.is.kind(JSDocOptionalType, t.typeExpression.type) ? createToken(Syntax.QuestionToken) : undefined,
                   overrideTypeNode || (t.typeExpression && visitNode(t.typeExpression.type, visitExistingNodeTreeSymbols)) || KeywordTypeNode.create(Syntax.AnyKeyword),
-                  /*initializer*/ undefined
+                  undefined
                 );
               })
             );
@@ -5698,11 +5698,11 @@ namespace core {
           if ((Node.is.kind(ExpressionWithTypeArguments, node) || Node.is.kind(TypeReferenceNode, node)) && isJSDocIndexSignature(node)) {
             return TypeLiteralNode.create([
               IndexSignatureDeclaration.create(
-                /*decorators*/ undefined,
+                undefined,
                 /*modifiers*/ undefined,
                 [
                   createParameter(
-                    /*decorators*/ undefined,
+                    undefined,
                     /*modifiers*/ undefined,
                     /*dotdotdotToken*/ undefined,
                     'x',
@@ -5723,13 +5723,13 @@ namespace core {
                   p.name && Node.is.kind(Identifier, p.name) && p.name.escapedText === 'new'
                     ? ((newTypeNode = p.type), undefined)
                     : createParameter(
-                        /*decorators*/ undefined,
+                        undefined,
                         /*modifiers*/ undefined,
                         getEffectiveDotDotDotForParameter(p),
                         p.name || getEffectiveDotDotDotForParameter(p) ? `args` : `arg${i}`,
                         p.questionToken,
                         visitNode(p.type, visitExistingNodeTreeSymbols),
-                        /*initializer*/ undefined
+                        undefined
                       )
                 ),
                 visitNode(newTypeNode || node.type, visitExistingNodeTreeSymbols)
@@ -5739,13 +5739,13 @@ namespace core {
                 Nodes.visit(node.typeParameters, visitExistingNodeTreeSymbols),
                 map(node.parameters, (p, i) =>
                   createParameter(
-                    /*decorators*/ undefined,
+                    undefined,
                     /*modifiers*/ undefined,
                     getEffectiveDotDotDotForParameter(p),
                     p.name || getEffectiveDotDotDotForParameter(p) ? `args` : `arg${i}`,
                     p.questionToken,
                     visitNode(p.type, visitExistingNodeTreeSymbols),
-                    /*initializer*/ undefined
+                    undefined
                   )
                 ),
                 visitNode(node.type, visitExistingNodeTreeSymbols)
@@ -5924,7 +5924,7 @@ namespace core {
               ns.body.statements = Nodes.create([
                 ...ns.body.statements,
                 createExportDeclaration(
-                  /*decorators*/ undefined,
+                  undefined,
                   /*modifiers*/ undefined,
                   createNamedExports(
                     map(
@@ -5957,7 +5957,7 @@ namespace core {
             statements = [
               ...nonExports,
               createExportDeclaration(
-                /*decorators*/ undefined,
+                undefined,
                 /*modifiers*/ undefined,
                 createNamedExports(flatMap(exports, (e) => cast(e.exportClause, isNamedExports).elements)),
                 /*moduleSpecifier*/ undefined
@@ -5975,7 +5975,7 @@ namespace core {
                   statements = [
                     ...filter(statements, (s) => group.indexOf(s as ExportDeclaration) === -1),
                     createExportDeclaration(
-                      /*decorators*/ undefined,
+                      undefined,
                       /*modifiers*/ undefined,
                       createNamedExports(flatMap(group, (e) => cast(e.exportClause, isNamedExports).elements)),
                       group[0].moduleSpecifier
@@ -6168,14 +6168,14 @@ namespace core {
               const resolvedModule = resolveExternalModuleName(node, (node as ExportDeclaration).moduleSpecifier!);
               if (!resolvedModule) continue;
               addResult(
-                createExportDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, /*exportClause*/ undefined, createLiteral(getSpecifierForModuleSymbol(resolvedModule, context))),
+                createExportDeclaration(undefined, /*modifiers*/ undefined, /*exportClause*/ undefined, createLiteral(getSpecifierForModuleSymbol(resolvedModule, context))),
                 ModifierFlags.None
               );
             }
           }
           if (needsPostExportDefault) {
             addResult(
-              createExportAssignment(/*decorators*/ undefined, /*modifiers*/ undefined, /*isExportAssignment*/ false, createIdentifier(getInternalSymbolName(symbol, symbolName))),
+              createExportAssignment(undefined, /*modifiers*/ undefined, /*isExportAssignment*/ false, createIdentifier(getInternalSymbolName(symbol, symbolName))),
               ModifierFlags.None
             );
           }
@@ -6232,7 +6232,7 @@ namespace core {
           context.flags |= NodeBuilderFlags.InTypeAlias;
           addResult(
             setSyntheticLeadingComments(
-              createTypeAliasDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, getInternalSymbolName(symbol, symbolName), typeParamDecls, typeToTypeNodeHelper(aliasType, context)),
+              createTypeAliasDeclaration(undefined, /*modifiers*/ undefined, getInternalSymbolName(symbol, symbolName), typeParamDecls, typeToTypeNodeHelper(aliasType, context)),
               !commentText
                 ? []
                 : [
@@ -6270,7 +6270,7 @@ namespace core {
                 ),
               ];
           addResult(
-            createInterfaceDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, getInternalSymbolName(symbol, symbolName), typeParamDecls, heritageClauses, [
+            createInterfaceDeclaration(undefined, /*modifiers*/ undefined, getInternalSymbolName(symbol, symbolName), typeParamDecls, heritageClauses, [
               ...indexSignatures,
               ...constructSignatures,
               ...callSignatures,
@@ -6306,7 +6306,7 @@ namespace core {
             const localName = getInternalSymbolName(symbol, symbolName);
             const nsBody = createModuleBlock([
               createExportDeclaration(
-                /*decorators*/ undefined,
+                undefined,
                 /*modifiers*/ undefined,
                 createNamedExports(
                   mapDefined(
@@ -6328,14 +6328,14 @@ namespace core {
                 )
               ),
             ]);
-            addResult(createModuleDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createIdentifier(localName), nsBody, NodeFlags.Namespace), ModifierFlags.None);
+            addResult(createModuleDeclaration(undefined, /*modifiers*/ undefined, createIdentifier(localName), nsBody, NodeFlags.Namespace), ModifierFlags.None);
           }
         }
 
         function serializeEnum(symbol: Symbol, symbolName: string, modifierFlags: ModifierFlags) {
           addResult(
             createEnumDeclaration(
-              /*decorators*/ undefined,
+              undefined,
               createModifiersFromModifierFlags(isConstEnumSymbol(symbol) ? ModifierFlags.Const : 0),
               getInternalSymbolName(symbol, symbolName),
               map(
@@ -6379,7 +6379,7 @@ namespace core {
               if (textRange && Node.is.kind(VariableDeclarationList, textRange.parent) && textRange.parent.declarations.length === 1) {
                 textRange = textRange.parent.parent;
               }
-              const statement = setTextRange(
+              const statement = setRange(
                 createVariableStatement(
                   /*modifiers*/ undefined,
                   createVariableDeclarationList([createVariableDeclaration(name, serializeTypeForDeclaration(context, type, symbol, enclosingDeclaration, includePrivateSymbol, bundled))], flags)
@@ -6409,7 +6409,7 @@ namespace core {
                 // export { g_1 as g };
                 // ```
                 // To create an export named `g` that does _not_ shadow the local `g`
-                addResult(createExportDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createNamedExports([createExportSpecifier(name, localName)])), ModifierFlags.None);
+                addResult(createExportDeclaration(undefined, /*modifiers*/ undefined, createNamedExports([createExportSpecifier(name, localName)])), ModifierFlags.None);
               }
             }
           }
@@ -6422,7 +6422,7 @@ namespace core {
             const decl = signatureToSignatureDeclarationHelper(sig, Syntax.FunctionDeclaration, context, includePrivateSymbol, bundled) as FunctionDeclaration;
             decl.name = createIdentifier(localName);
             // for expressions assigned to `var`s, use the `var` as the text range
-            addResult(setTextRange(decl, (sig.declaration && Node.is.kind(VariableDeclaration, sig.declaration.parent) && sig.declaration.parent.parent) || sig.declaration), modifierFlags);
+            addResult(setRange(decl, (sig.declaration && Node.is.kind(VariableDeclaration, sig.declaration.parent) && sig.declaration.parent.parent) || sig.declaration), modifierFlags);
           }
           // Module symbol emit will take care of module-y members, provided it has exports
           if (!(symbol.flags & (SymbolFlags.ValueModule | SymbolFlags.NamespaceModule) && !!symbol.exports && !!symbol.exports.size)) {
@@ -6453,7 +6453,7 @@ namespace core {
             // emit akin to the above would be needed.
 
             // Add a namespace
-            const fakespace = createModuleDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, createIdentifier(localName), createModuleBlock([]), NodeFlags.Namespace);
+            const fakespace = createModuleDeclaration(undefined, /*modifiers*/ undefined, createIdentifier(localName), createModuleBlock([]), NodeFlags.Namespace);
             fakespace.flags ^= NodeFlags.Synthesized; // unset synthesized so it is usable as an enclosing declaration
             fakespace.parent = enclosingDeclaration as SourceFile | NamespaceDeclaration;
             fakespace.locals = new SymbolTable(props);
@@ -6530,12 +6530,12 @@ namespace core {
           const privateProperties = hasPrivateIdentifier
             ? [
                 PropertyDeclaration.create(
-                  /*decorators*/ undefined,
+                  undefined,
                   /*modifiers*/ undefined,
                   createPrivateIdentifier('#private'),
                   /*questionOrExclamationToken*/ undefined,
-                  /*type*/ undefined,
-                  /*initializer*/ undefined
+                  undefined,
+                  undefined
                 ),
               ]
             : emptyArray;
@@ -6550,7 +6550,7 @@ namespace core {
           // created via `new`, we will inject a `private constructor()` declaration to indicate it is not createable.
           const isNonConstructableClassLikeInJsFile = !isClass && !!symbol.valueDeclaration && isInJSFile(symbol.valueDeclaration) && !some(getSignaturesOfType(staticType, SignatureKind.Construct));
           const constructors = isNonConstructableClassLikeInJsFile
-            ? [ConstructorDeclaration.create(/*decorators*/ undefined, createModifiersFromModifierFlags(ModifierFlags.Private), [], /*body*/ undefined)]
+            ? [ConstructorDeclaration.create(undefined, createModifiersFromModifierFlags(ModifierFlags.Private), [], /*body*/ undefined)]
             : (serializeSignatures(SignatureKind.Construct, staticType, baseTypes[0], Syntax.Constructor) as ConstructorDeclaration[]);
           for (const c of constructors) {
             // A constructor's return type and type parameters are supposed to be controlled by the enclosing class declaration
@@ -6560,8 +6560,8 @@ namespace core {
           }
           const indexSignatures = serializeIndexSignatures(classType, baseTypes[0]);
           addResult(
-            setTextRange(
-              createClassDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, localName, typeParamDecls, heritageClauses, [
+            setRange(
+              createClassDeclaration(undefined, /*modifiers*/ undefined, localName, typeParamDecls, heritageClauses, [
                 ...indexSignatures,
                 ...staticMembers,
                 ...constructors,
@@ -6598,7 +6598,7 @@ namespace core {
               const isLocalImport = !(target.flags & SymbolFlags.ValueModule);
               addResult(
                 createImportEqualsDeclaration(
-                  /*decorators*/ undefined,
+                  undefined,
                   /*modifiers*/ undefined,
                   createIdentifier(localName),
                   isLocalImport
@@ -6617,7 +6617,7 @@ namespace core {
             case Syntax.ImportClause:
               addResult(
                 createImportDeclaration(
-                  /*decorators*/ undefined,
+                  undefined,
                   /*modifiers*/ undefined,
                   createImportClause(createIdentifier(localName), /*namedBindings*/ undefined),
                   // We use `target.parent || target` below as `target.parent` is unset when the target is a module which has been export assigned
@@ -6631,7 +6631,7 @@ namespace core {
             case Syntax.NamespaceImport:
               addResult(
                 createImportDeclaration(
-                  /*decorators*/ undefined,
+                  undefined,
                   /*modifiers*/ undefined,
                   createImportClause(/*importClause*/ undefined, createNamespaceImport(createIdentifier(localName))),
                   createLiteral(getSpecifierForModuleSymbol(target, context))
@@ -6642,7 +6642,7 @@ namespace core {
             case Syntax.NamespaceExport:
               addResult(
                 createExportDeclaration(
-                  /*decorators*/ undefined,
+                  undefined,
                   /*modifiers*/ undefined,
                   createNamespaceExport(createIdentifier(localName)),
                   createLiteral(getSpecifierForModuleSymbol(target, context))
@@ -6653,7 +6653,7 @@ namespace core {
             case Syntax.ImportSpecifier:
               addResult(
                 createImportDeclaration(
-                  /*decorators*/ undefined,
+                  undefined,
                   /*modifiers*/ undefined,
                   createImportClause(
                     /*importClause*/ undefined,
@@ -6698,7 +6698,7 @@ namespace core {
         function serializeExportSpecifier(localName: string, targetName: string, specifier?: Expression) {
           addResult(
             createExportDeclaration(
-              /*decorators*/ undefined,
+              undefined,
               /*modifiers*/ undefined,
               createNamedExports([createExportSpecifier(localName !== targetName ? targetName : undefined, localName)]),
               specifier
@@ -6743,7 +6743,7 @@ namespace core {
             const oldTrack = context.tracker.trackSymbol;
             context.tracker.trackSymbol = noop;
             if (isExportAssignment) {
-              results.push(createExportAssignment(/*decorators*/ undefined, /*modifiers*/ undefined, isExportEquals, symbolToExpression(target, context, SymbolFlags.All)));
+              results.push(createExportAssignment(undefined, /*modifiers*/ undefined, isExportEquals, symbolToExpression(target, context, SymbolFlags.All)));
             } else {
               if (first === expr) {
                 // serialize as `export {target as name}`
@@ -6755,7 +6755,7 @@ namespace core {
                 const varName = getUnusedName(name, symbol);
                 addResult(
                   createImportEqualsDeclaration(
-                    /*decorators*/ undefined,
+                    undefined,
                     /*modifiers*/ undefined,
                     createIdentifier(varName),
                     symbolToName(target, context, SymbolFlags.All, /*expectsIdentifier*/ false)
@@ -6786,7 +6786,7 @@ namespace core {
               addResult(statement, name === varName ? ModifierFlags.Export : ModifierFlags.None);
             }
             if (isExportAssignment) {
-              results.push(createExportAssignment(/*decorators*/ undefined, /*modifiers*/ undefined, isExportEquals, createIdentifier(varName)));
+              results.push(createExportAssignment(undefined, /*modifiers*/ undefined, isExportEquals, createIdentifier(varName)));
             } else if (name !== varName) {
               serializeExportSpecifier(name, varName);
             }
@@ -6873,14 +6873,14 @@ namespace core {
               const result: AccessorDeclaration[] = [];
               if (p.flags & SymbolFlags.SetAccessor) {
                 result.push(
-                  setTextRange(
+                  setRange(
                     SetAccessorDeclaration.create(
-                      /*decorators*/ undefined,
+                      undefined,
                       createModifiersFromModifierFlags(flag),
                       name,
                       [
                         createParameter(
-                          /*decorators*/ undefined,
+                          undefined,
                           /*modifiers*/ undefined,
                           /*dot3Token*/ undefined,
                           'arg',
@@ -6897,9 +6897,9 @@ namespace core {
               if (p.flags & SymbolFlags.GetAccessor) {
                 const isPrivate = modifierFlags & ModifierFlags.Private;
                 result.push(
-                  setTextRange(
+                  setRange(
                     GetAccessorDeclaration.create(
-                      /*decorators*/ undefined,
+                      undefined,
                       createModifiersFromModifierFlags(flag),
                       name,
                       [],
@@ -6915,16 +6915,16 @@ namespace core {
             // This is an else/if as accessors and properties can't merge in TS, but might in JS
             // If this happens, we assume the accessor takes priority, as it imposes more constraints
             else if (p.flags & (SymbolFlags.Property | SymbolFlags.Variable)) {
-              return setTextRange(
+              return setRange(
                 createProperty(
-                  /*decorators*/ undefined,
+                  undefined,
                   createModifiersFromModifierFlags((isReadonlySymbol(p) ? ModifierFlags.Readonly : 0) | flag),
                   name,
                   p.flags & SymbolFlags.Optional ? createToken(Syntax.QuestionToken) : undefined,
                   isPrivate ? undefined : serializeTypeForDeclaration(context, getTypeOfSymbol(p), p, enclosingDeclaration, includePrivateSymbol, bundled),
                   // TODO: https://github.com/microsoft/TypeScript/pull/32372#discussion_r328386357
                   // interface members can't have initializers, however class members _can_
-                  /*initializer*/ undefined
+                  undefined
                 ),
                 find(p.declarations, or(PropertyDeclaration.kind, isVariableDeclaration)) || firstPropertyLikeDecl
               );
@@ -6933,14 +6933,14 @@ namespace core {
               const type = getTypeOfSymbol(p);
               const signatures = getSignaturesOfType(type, SignatureKind.Call);
               if (flag & ModifierFlags.Private) {
-                return setTextRange(
+                return setRange(
                   createProperty(
-                    /*decorators*/ undefined,
+                    undefined,
                     createModifiersFromModifierFlags((isReadonlySymbol(p) ? ModifierFlags.Readonly : 0) | flag),
                     name,
                     p.flags & SymbolFlags.Optional ? createToken(Syntax.QuestionToken) : undefined,
-                    /*type*/ undefined,
-                    /*initializer*/ undefined
+                    undefined,
+                    undefined
                   ),
                   find(p.declarations, isFunctionLikeDeclaration) || (signatures[0] && signatures[0].declaration) || p.declarations[0]
                 );
@@ -6957,7 +6957,7 @@ namespace core {
                 if (p.flags & SymbolFlags.Optional) {
                   decl.questionToken = createToken(Syntax.QuestionToken);
                 }
-                results.push(setTextRange(decl, sig.declaration));
+                results.push(setRange(decl, sig.declaration));
               }
               return (results as unknown) as T[];
             }
@@ -7003,8 +7003,8 @@ namespace core {
             }
             if (privateProtected) {
               return [
-                setTextRange(
-                  ConstructorDeclaration.create(/*decorators*/ undefined, createModifiersFromModifierFlags(privateProtected), /*parameters*/ [], /*body*/ undefined),
+                setRange(
+                  ConstructorDeclaration.create(undefined, createModifiersFromModifierFlags(privateProtected), /*parameters*/ [], /*body*/ undefined),
                   signatures[0].declaration
                 ),
               ];
@@ -7015,7 +7015,7 @@ namespace core {
           for (const sig of signatures) {
             // Each overload becomes a separate constructor declaration, in order
             const decl = signatureToSignatureDeclarationHelper(sig, outputKind, context);
-            results.push(setTextRange(decl, sig.declaration));
+            results.push(setRange(decl, sig.declaration));
           }
           return results;
         }
@@ -24016,8 +24016,8 @@ namespace core {
             /*modifiers*/ undefined,
             syntax.get.unescUnderscores(jsxChildrenPropertyName),
             /*questionToken*/ undefined,
-            /*type*/ undefined,
-            /*initializer*/ undefined
+            undefined,
+            undefined
           );
           childrenPropSymbol.valueDeclaration.parent = attributes;
           childrenPropSymbol.valueDeclaration.symbol = childrenPropSymbol;
@@ -26976,7 +26976,7 @@ namespace core {
       const returnNode = typeSymbol && nodeBuilder.symbolToEntityName(typeSymbol, SymbolFlags.Type, node);
       const declaration = FunctionTypeNode.create(
         /*typeParameters*/ undefined,
-        [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dotdotdot*/ undefined, 'props', /*questionMark*/ undefined, nodeBuilder.typeToTypeNode(result, node))],
+        [createParameter(undefined, /*modifiers*/ undefined, /*dotdotdot*/ undefined, 'props', /*questionMark*/ undefined, nodeBuilder.typeToTypeNode(result, node))],
         returnNode ? TypeReferenceNode.create(returnNode, /*typeArguments*/ undefined) : KeywordTypeNode.create(Syntax.AnyKeyword)
       );
       const parameterSymbol = createSymbol(SymbolFlags.FunctionScopedVariable, 'props' as __String);
@@ -27628,7 +27628,7 @@ namespace core {
         const parameter = signature.thisParameter;
         if (!parameter || (parameter.valueDeclaration && !(<ParameterDeclaration>parameter.valueDeclaration).type)) {
           if (!parameter) {
-            signature.thisParameter = createSymbolWithType(context.thisParameter, /*type*/ undefined);
+            signature.thisParameter = createSymbolWithType(context.thisParameter, undefined);
           }
           assignParameterType(signature.thisParameter!, getTypeOfSymbol(context.thisParameter));
         }

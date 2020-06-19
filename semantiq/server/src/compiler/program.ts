@@ -2124,7 +2124,7 @@ namespace core {
       if (options.importHelpers && (options.isolatedModules || qp_isExternalModuleFile) && !file.isDeclarationFile) {
         // synthesize 'import "tslib"' declaration
         const externalHelpersModuleReference = createLiteral(externalHelpersModuleNameText);
-        const importDecl = createImportDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, /*importClause*/ undefined, externalHelpersModuleReference);
+        const importDecl = createImportDeclaration(undefined, /*modifiers*/ undefined, /*importClause*/ undefined, externalHelpersModuleReference);
         addEmitFlags(importDecl, EmitFlags.NeverApplyImportHelper);
         externalHelpersModuleReference.parent = importDecl;
         importDecl.parent = file;

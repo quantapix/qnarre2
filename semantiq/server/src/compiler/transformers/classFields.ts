@@ -1,9 +1,5 @@
 namespace core {
   const enum ClassPropertySubstitutionFlags {
-    /**
-     * Enables substitutions for class expressions with static fields
-     * which have initializers that reference the class name.
-     */
     ClassAliases = 1 << 0,
   }
 
@@ -18,18 +14,8 @@ namespace core {
     weakMapName: Identifier;
   }
 
-  /**
-   * A mapping of private names to information needed for transformation.
-   */
   type PrivateIdentifierEnvironment = UnderscoreEscapedMap<PrivateIdentifierInfo>;
 
-  /**
-   * Transforms ECMAScript Class Syntax.
-   * TypeScript parameter property syntax is transformed in the TypeScript transformer.
-   * For now, this transforms public field declarations using TypeScript class semantics,
-   * where declarations are elided and initializers are transformed as assignments in the constructor.
-   * When --useDefineForClassFields is on, this transforms to ECMAScript semantics, with Object.defineProperty.
-   */
   export function transformClassFields(context: TransformationContext) {
     const { hoistVariableDeclaration, endLexicalEnvironment, resumeLexicalEnvironment } = context;
     const resolver = context.getEmitResolver();
@@ -45,16 +31,8 @@ namespace core {
 
     let classAliases: Identifier[];
 
-    /**
-     * Tracks what computed name expressions originating from elided names must be inlined
-     * at the next execution site, in document order
-     */
     let pendingExpressions: Expression[] | undefined;
 
-    /**
-     * Tracks what computed name expression statements and static property initializers must be
-     * emitted at the next execution site, in document order (for decorated classes).
-     */
     let pendingStatements: Statement[] | undefined;
 
     const privateIdentifierEnvironmentStack: (PrivateIdentifierEnvironment | undefined)[] = [];
@@ -90,7 +68,7 @@ namespace core {
         case Syntax.PrefixUnaryExpression:
           return visitPrefixUnaryExpression(node as PrefixUnaryExpression);
         case Syntax.PostfixUnaryExpression:
-          return visitPostfixUnaryExpression(node as PostfixUnaryExpression, /*valueIsDiscarded*/ false);
+          return visitPostfixUnaryExpression(node as PostfixUnaryExpression, false);
         case Syntax.CallExpression:
           return visitCallExpression(node as CallExpression);
         case Syntax.BinaryExpression:
@@ -117,10 +95,6 @@ namespace core {
       }
     }
 
-    /**
-     * If we visit a private name, this means it is an undeclared private name.
-     * Replace it with an empty identifier to indicate a problem with the code.
-     */
     function visitPrivateIdentifier(node: PrivateIdentifier) {
       if (!shouldTransformPrivateFields) {
         return node;
@@ -128,16 +102,9 @@ namespace core {
       return setOriginalNode(createIdentifier(''), node);
     }
 
-    /**
-     * Visits the members of a class that has fields.
-     *
-     * @param node The node to visit.
-     */
     function classElementVisitor(node: Node): VisitResult<Node> {
       switch (node.kind) {
         case Syntax.Constructor:
-          // Constructors for classes using class fields are transformed in
-          // `visitClassDeclaration` or `visitClassExpression`.
           return;
 
         case Syntax.GetAccessor:
@@ -186,19 +153,8 @@ namespace core {
       assert(!some(node.decorators));
       if (!shouldTransformPrivateFields && Node.is.kind(PrivateIdentifier, node.name)) {
         // Initializer is elided as the field is initialized in transformConstructor.
-        return PropertyDeclaration.update(
-          node,
-          /*decorators*/ undefined,
-          Nodes.visit(node.modifiers, visitor, isModifier),
-          node.name,
-          /*questionOrExclamationToken*/ undefined,
-          /*type*/ undefined,
-          /*initializer*/ undefined
-        );
+        return PropertyDeclaration.update(node, undefined, Nodes.visit(node.modifiers, visitor, isModifier), node.name, /*questionOrExclamationToken*/ undefined, undefined, undefined);
       }
-      // Create a temporary variable to store a computed property name (if necessary).
-      // If it's not inlineable, then we emit an expression after the class which assigns
-      // the property name to the temporary variable.
       const expr = getPropertyNameExpressionIfNeeded(node.name, !!node.initializer || !!context.getCompilerOptions().useDefineForClassFields);
       if (expr && !isSimpleInlineableExpression(expr)) {
         (pendingExpressions || (pendingExpressions = [])).push(expr);
@@ -280,7 +236,7 @@ namespace core {
           node,
           visitNode(node.initializer, visitor, isForInitializer),
           visitNode(node.condition, visitor, isExpression),
-          visitPostfixUnaryExpression(node.incrementor, /*valueIsDiscarded*/ true),
+          visitPostfixUnaryExpression(node.incrementor, true),
           visitNode(node.statement, visitor, isStatement)
         );
       }
@@ -289,7 +245,7 @@ namespace core {
 
     function visitExpressionStatement(node: ExpressionStatement) {
       if (Node.is.kind(PostfixUnaryExpression, node.expression)) {
-        return updateExpressionStatement(node, visitPostfixUnaryExpression(node.expression, /*valueIsDiscarded*/ true));
+        return updateExpressionStatement(node, visitPostfixUnaryExpression(node.expression, true));
       }
       return visitEachChild(node, visitor, context);
     }
@@ -375,9 +331,6 @@ namespace core {
       }
     }
 
-    /**
-     * Set up the environment for a class.
-     */
     function visitClassLike(node: ClassLikeDeclaration) {
       const savedPendingExpressions = pendingExpressions;
       pendingExpressions = undefined;
@@ -409,7 +362,7 @@ namespace core {
       const statements: Statement[] = [
         updateClassDeclaration(
           node,
-          /*decorators*/ undefined,
+          undefined,
           node.modifiers,
           node.name,
           /*typeParameters*/ undefined,
@@ -422,12 +375,6 @@ namespace core {
       if (some(pendingExpressions)) {
         statements.push(createExpressionStatement(inlineExpressions(pendingExpressions)));
       }
-
-      // Emit static property assignment. Because classDeclaration is lexically evaluated,
-      // it is safe to emit static property assignment after classDeclaration
-      // From ES6 specification:
-      //      HasLexicalDeclaration (N) : Determines if the argument identifier has a binding in this environment record that was created using
-      //                                  a lexical declaration such as a LexicalDeclaration or a ClassDeclaration.
       const staticProperties = getProperties(node, /*requireInitializer*/ true, /*isStatic*/ true);
       if (some(staticProperties)) {
         addPropertyStatements(statements, staticProperties, getInternalName(node));
@@ -440,14 +387,6 @@ namespace core {
       if (!forEach(node.members, doesClassElementNeedTransform)) {
         return visitEachChild(node, visitor, context);
       }
-
-      // If this class expression is a transformation of a decorated class declaration,
-      // then we want to output the pendingExpressions as statements, not as inlined
-      // expressions with the class statement.
-      //
-      // In this case, we use pendingStatements to produce the same output as the
-      // class declaration transformation. The VariableStatement visitor will insert
-      // these statements after the class expression variable statement.
       const isDecoratedClassDeclaration = Node.is.kind(ClassDeclaration, Node.get.originalOf(node));
 
       const staticProperties = getProperties(node, /*requireInitializer*/ true, /*isStatic*/ true);
@@ -520,7 +459,7 @@ namespace core {
         members.push(constructor);
       }
       addRange(members, Nodes.visit(node.members, classElementVisitor, isClassElement));
-      return setTextRange(Nodes.create(members), /*location*/ node.members);
+      return setRange(Nodes.create(members), /*location*/ node.members);
     }
 
     function isPropertyDeclarationThatRequiresConstructorStatement(member: ClassElement): member is PropertyDeclaration {
@@ -546,7 +485,7 @@ namespace core {
       if (!body) {
         return;
       }
-      return startOnNewLine(setOriginalNode(setTextRange(ConstructorDeclaration.create(/*decorators*/ undefined, /*modifiers*/ undefined, parameters ?? [], body), constructor || node), constructor));
+      return startOnNewLine(setOriginalNode(setRange(ConstructorDeclaration.create(undefined, /*modifiers*/ undefined, parameters ?? [], body), constructor || node), constructor));
     }
 
     function transformConstructorBody(node: ClassDeclaration | ClassExpression, constructor: ConstructorDeclaration | undefined, isDerivedClass: boolean) {
@@ -567,26 +506,12 @@ namespace core {
       let statements: Statement[] = [];
 
       if (!constructor && isDerivedClass) {
-        // Add a synthetic `super` call:
-        //
-        //  super(...arguments);
-        //
         statements.push(createExpressionStatement(createCall(createSuper(), /*typeArguments*/ undefined, [createSpread(createIdentifier('arguments'))])));
       }
 
       if (constructor) {
         indexOfFirstStatement = addPrologueDirectivesAndInitialSuperCall(constructor, statements, visitor);
       }
-      // Add the property initializers. Transforms this:
-      //
-      //  public x = 1;
-      //
-      // Into this:
-      //
-      //  constructor() {
-      //      this.x = 1;
-      //  }
-      //
       if (constructor?.body) {
         let afterParameterProperties = findIndex(constructor.body.statements, (s) => !Node.is.parameterPropertyDeclaration(Node.get.originalOf(s), constructor), indexOfFirstStatement);
         if (afterParameterProperties === -1) {
@@ -608,18 +533,12 @@ namespace core {
 
       statements = mergeLexicalEnvironment(statements, endLexicalEnvironment());
 
-      return setTextRange(
-        createBlock(setTextRange(Nodes.create(statements), /*location*/ constructor ? constructor.body!.statements : node.members), /*multiLine*/ true),
+      return setRange(
+        createBlock(setRange(Nodes.create(statements), /*location*/ constructor ? constructor.body!.statements : node.members), /*multiLine*/ true),
         /*location*/ constructor ? constructor.body : undefined
       );
     }
 
-    /**
-     * Generates assignment statements for property initializers.
-     *
-     * @param properties An array of property declarations to transform.
-     * @param receiver The receiver on which each property should be assigned.
-     */
     function addPropertyStatements(statements: Statement[], properties: readonly PropertyDeclaration[], receiver: LeftHandSideExpression) {
       for (const property of properties) {
         const expression = transformProperty(property, receiver);
@@ -634,12 +553,6 @@ namespace core {
       }
     }
 
-    /**
-     * Generates assignment expressions for property initializers.
-     *
-     * @param properties An array of property declarations to transform.
-     * @param receiver The receiver on which each property should be assigned.
-     */
     function generateInitializedPropertyExpressions(properties: readonly PropertyDeclaration[], receiver: LeftHandSideExpression) {
       const expressions: Expression[] = [];
       for (const property of properties) {
@@ -657,12 +570,6 @@ namespace core {
       return expressions;
     }
 
-    /**
-     * Transforms a property initializer into an assignment statement.
-     *
-     * @param property The property declaration.
-     * @param receiver The object receiving the property assignment.
-     */
     function transformProperty(property: PropertyDeclaration, receiver: LeftHandSideExpression) {
       // We generate a name here in order to reuse the value cached by the relocated computed name expression (which uses the same generated name)
       const emitAssignment = !context.getCompilerOptions().useDefineForClassFields;
@@ -716,22 +623,11 @@ namespace core {
     function enableSubstitutionForClassAliases() {
       if ((enabledSubstitutions & ClassPropertySubstitutionFlags.ClassAliases) === 0) {
         enabledSubstitutions |= ClassPropertySubstitutionFlags.ClassAliases;
-
-        // We need to enable substitutions for identifiers. This allows us to
-        // substitute class names inside of a class declaration.
         context.enableSubstitution(Syntax.Identifier);
-
-        // Keep track of class aliases.
         classAliases = [];
       }
     }
 
-    /**
-     * Hooks node substitutions.
-     *
-     * @param hint The context for the emitter.
-     * @param node The node to substitute.
-     */
     function onSubstituteNode(hint: EmitHint, node: Node) {
       node = previousOnSubstituteNode(hint, node);
       if (hint === EmitHint.Expression) {
@@ -755,11 +651,6 @@ namespace core {
     function trySubstituteClassAlias(node: Identifier): Expression | undefined {
       if (enabledSubstitutions & ClassPropertySubstitutionFlags.ClassAliases) {
         if (resolver.getNodeCheckFlags(node) & NodeCheckFlags.ConstructorReferenceInClass) {
-          // Due to the emit for class decorators, any reference to the class from inside of the class body
-          // must instead be rewritten to point to a temporary variable to avoid issues with the double-bind
-          // behavior of class names in ES6.
-          // Also, when emitting statics for class expressions, we must substitute a class alias for
-          // constructor references in static property initializers.
           const declaration = resolver.getReferencedValueDeclaration(node);
           if (declaration) {
             const classAlias = classAliases[declaration.id!]; // TODO: GH#18217
@@ -776,11 +667,6 @@ namespace core {
       return;
     }
 
-    /**
-     * If the name is a computed property, this function transforms it, then either returns an expression which caches the
-     * value of the result or the expression itself if the value is either unused or safe to inline into multiple locations
-     * @param shouldHoist Does the expression need to be reused? (ie, for an initializer or a decorator)
-     */
     function getPropertyNameExpressionIfNeeded(name: PropertyName, shouldHoist: boolean): Expression | undefined {
       if (Node.is.kind(ComputedPropertyName, name)) {
         const expression = visitNode(name.expression, visitor, isExpression);
@@ -856,10 +742,10 @@ namespace core {
         createParen(
           createObjectLiteral([
             SetAccessorDeclaration.create(
-              /*decorators*/ undefined,
+              undefined,
               /*modifiers*/ undefined,
               'value',
-              [createParameter(/*decorators*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, parameter, /*questionToken*/ undefined, /*type*/ undefined, /*initializer*/ undefined)],
+              [createParameter(undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, parameter, /*questionToken*/ undefined, undefined, undefined)],
               createBlock([createExpressionStatement(createPrivateIdentifierAssignment(info, receiver, parameter, Syntax.EqualsToken))])
             ),
           ])
@@ -897,23 +783,9 @@ namespace core {
     }
 
     function visitAssignmentPattern(node: AssignmentPattern) {
-      if (isArrayLiteralExpression(node)) {
-        // Transforms private names in destructuring assignment array bindings.
-        //
-        // Source:
-        // ([ this.#myProp ] = [ "hello" ]);
-        //
-        // Transformation:
-        // [ { set value(x) { this.#myProp = x; } }.value ] = [ "hello" ];
-        return updateArrayLiteral(node, Nodes.visit(node.elements, visitArrayAssignmentTarget, isExpression));
+      if (node.is(ArrayLiteralExpression)) {
+        return node.update(Nodes.visit(node.elements, visitArrayAssignmentTarget, isExpression));
       } else {
-        // Transforms private names in destructuring assignment object bindings.
-        //
-        // Source:
-        // ({ stringProperty: this.#myProp } = { stringProperty: "hello" });
-        //
-        // Transformation:
-        // ({ stringProperty: { set value(x) { this.#myProp = x; } }.value }) = { stringProperty: "hello" };
         return updateObjectLiteral(node, Nodes.visit(node.properties, visitObjectAssignmentTarget, isObjectLiteralElementLike));
       }
     }

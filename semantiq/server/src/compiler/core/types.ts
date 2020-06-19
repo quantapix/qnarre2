@@ -17,28 +17,8 @@ namespace core {
     mapper?: TypeMapper;
   }
   export type ArrayBindingElement = BindingElement | OmittedExpression;
-  export interface ArrayBindingPattern extends Node {
-    kind: Syntax.ArrayBindingPattern;
-    parent: VariableDeclaration | ParameterDeclaration | BindingElement;
-    elements: Nodes<ArrayBindingElement>;
-  }
   export interface ArrayDestructuringAssignment extends AssignmentExpression<EqualsToken> {
     left: ArrayLiteralExpression;
-  }
-  export interface ArrayLiteralExpression extends PrimaryExpression {
-    kind: Syntax.ArrayLiteralExpression;
-    elements: Nodes<Expression>;
-    multiLine?: boolean;
-  }
-  export interface ArrayTypeNode extends TypeNode {
-    kind: Syntax.ArrayType;
-    elementType: TypeNode;
-  }
-  export interface ArrowFunction extends Expression, FunctionLikeDeclarationBase, JSDocContainer {
-    kind: Syntax.ArrowFunction;
-    equalsGreaterThanToken: EqualsGreaterThanToken;
-    body: ConciseBody;
-    name: never;
   }
   export interface AsExpression extends Expression {
     kind: Syntax.AsExpression;
@@ -923,26 +903,6 @@ namespace core {
     expression: LeftHandSideExpression;
     typeArguments?: Nodes<TypeNode>;
     arguments?: Nodes<Expression>;
-  }
-  export interface Node extends Range {
-    kind: Syntax;
-    flags: NodeFlags;
-    modifierFlagsCache: ModifierFlags;
-    transformFlags: TransformFlags; // Flags for transforms, possibly undefined
-    decorators?: Nodes<Decorator>; // Array of decorators (in document order)
-    modifiers?: Modifiers; // Array of modifiers
-    id?: number; // Unique id (used to look up NodeLinks)
-    parent: Node; // Parent node (initialized by binding)
-    original?: Node; // The original node if this is an updated node.
-    symbol: Symbol; // Symbol declared by node (initialized by binding)
-    locals?: SymbolTable; // Locals associated with node (initialized by binding)
-    nextContainer?: Node; // Next container in declaration order (initialized by binding)
-    localSymbol?: Symbol; // Local symbol declared by node (initialized by binding only for exported nodes)
-    flowNode?: FlowNode; // Associated FlowNode (initialized by binding)
-    emitNode?: EmitNode; // Associated EmitNode (initialized by transforms)
-    contextualType?: Type; // Used to temporarily assign a contextual type during overload resolution
-    inferenceContext?: InferenceContext; // Inference context for contextual type
-    visit<T>(cb: (n: Node) => T): T | undefined;
   }
   export const enum NodeFlags {
     None = 0,

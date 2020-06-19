@@ -44,25 +44,25 @@ namespace core {
         // Transforms `a[x] **= b` into `(_a = a)[_x = x] = Math.pow(_a[_x], b)`
         const expressionTemp = createTempVariable(hoistVariableDeclaration);
         const argumentExpressionTemp = createTempVariable(hoistVariableDeclaration);
-        target = setTextRange(
+        target = setRange(
           createElementAccess(
-            setTextRange(createAssignment(expressionTemp, left.expression), left.expression),
-            setTextRange(createAssignment(argumentExpressionTemp, left.argumentExpression), left.argumentExpression)
+            setRange(createAssignment(expressionTemp, left.expression), left.expression),
+            setRange(createAssignment(argumentExpressionTemp, left.argumentExpression), left.argumentExpression)
           ),
           left
         );
-        value = setTextRange(createElementAccess(expressionTemp, argumentExpressionTemp), left);
+        value = setRange(createElementAccess(expressionTemp, argumentExpressionTemp), left);
       } else if (Node.is.kind(PropertyAccessExpression, left)) {
         // Transforms `a.x **= b` into `(_a = a).x = Math.pow(_a.x, b)`
         const expressionTemp = createTempVariable(hoistVariableDeclaration);
-        target = setTextRange(createPropertyAccess(setTextRange(createAssignment(expressionTemp, left.expression), left.expression), left.name), left);
-        value = setTextRange(createPropertyAccess(expressionTemp, left.name), left);
+        target = setRange(createPropertyAccess(setRange(createAssignment(expressionTemp, left.expression), left.expression), left.name), left);
+        value = setRange(createPropertyAccess(expressionTemp, left.name), left);
       } else {
         // Transforms `a **= b` into `a = Math.pow(a, b)`
         target = left;
         value = left;
       }
-      return setTextRange(createAssignment(target, createMathPow(value, right, /*location*/ node)), node);
+      return setRange(createAssignment(target, createMathPow(value, right, /*location*/ node)), node);
     }
 
     function visitExponentiationExpression(node: BinaryExpression) {

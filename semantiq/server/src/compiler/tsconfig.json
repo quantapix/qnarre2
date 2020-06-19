@@ -8,7 +8,6 @@
   "references": [{ "path": "./core" }],
 
   "files": [
-    "utils.ts",
     "debug.ts",
     "performanceTimestamp.ts",
     "performance.ts",

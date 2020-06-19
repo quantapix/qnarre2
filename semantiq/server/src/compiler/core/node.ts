@@ -16,7 +16,7 @@ namespace core {
   export function asEmbeddedStatement<T extends Node>(s: T): T | EmptyStatement;
   export function asEmbeddedStatement<T extends Node>(s: T | undefined): T | EmptyStatement | undefined;
   export function asEmbeddedStatement<T extends Node>(s: T | undefined): T | EmptyStatement | undefined {
-    return s && Node.is.kind(NotEmittedStatement, s) ? setTextRange(setOriginalNode(createEmptyStatement(), statement), statement) : statement;
+    return s && Node.is.kind(NotEmittedStatement, s) ? setRange(setOriginalNode(createEmptyStatement(), statement), statement) : statement;
   }
 
   function createMethodCall(object: Expression, methodName: string | Identifier, argumentsList: readonly Expression[]) {
@@ -51,115 +51,96 @@ namespace core {
     return createObjectLiteral(ps, !singleLine);
   }
 
-  export namespace Node {
-    export type NodeType<S extends Syntax> = S extends keyof SynMap ? SynMap[S] : never;
+  export type NodeType<S extends Syntax> = S extends keyof SynMap ? SynMap[S] : never;
 
-    export function create<T extends Syntax>(k: T, pos: number, end: number, parent?: Node): NodeType<T> {
-      const n =
-        is.node(k) || k === Syntax.Unknown
-          ? new NodeObj(k, pos, end)
-          : k === Syntax.SourceFile
-          ? new SourceFileObj(Syntax.SourceFile, pos, end)
-          : k === Syntax.Identifier
-          ? new IdentifierObj(Syntax.Identifier, pos, end)
-          : k === Syntax.PrivateIdentifier
-          ? new PrivateIdentifierObj(Syntax.PrivateIdentifier, pos, end)
-          : new TokenObj<T>(k, pos, end);
-      if (parent) {
-        n.parent = parent;
-        n.flags = parent.flags & NodeFlags.ContextFlags;
-      }
-      return (n as unknown) as NodeType<T>;
+  export abstract class Node extends TextRange {
+    flags = NodeFlags.None;
+    modifierFlagsCache = ModifierFlags.None;
+    transformFlags = TransformFlags.None;
+    decorators?: Nodes<Decorator>;
+    modifiers?: Modifiers;
+    id?: number;
+    original?: Node;
+    symbol?: Symbol;
+    localSymbol?: Symbol;
+    locals?: SymbolTable;
+    nextContainer?: Node;
+    flowNode?: FlowNode;
+    emitNode?: EmitNode;
+    contextualType?: Type;
+    inferenceContext?: InferenceContext;
+    constructor(pos?: number, end?: number, public parent?: Node) {
+      super(pos, end);
+      if (parent) this.flags = parent.flags & NodeFlags.ContextFlags;
     }
-    export function createSynthesized<T extends Syntax>(k: T): NodeType<T> {
-      const n = create<T>(k, -1, -1);
-      n.flags |= NodeFlags.Synthesized;
-      return n;
+    abstract get kind(): Syntax;
+    is<S extends Syntax, T extends { kind: S; also?: Syntax[] }>(t: T): this is NodeType<T['kind']> {
+      return this.kind === t.kind || !!t.also?.includes(this.kind);
     }
-    export function createTemplateLiteralLike(k: TemplateLiteralToken['kind'], t: string, raw?: string) {
-      const n = createSynthesized(k);
-      n.text = t;
-      if (raw === undefined || t === raw) n.rawText = raw;
-      else {
-        const r = qs_process(k, raw);
-        if (typeof r === 'object') return fail('Invalid raw text');
-        assert(t === r, "Expected 'text' to be the normalized version of 'rawText'");
-        n.rawText = raw;
-      }
-      return n;
+    visit<T>(cb: (n: Node) => T | undefined) {
+      return cb(this);
     }
-    /// new
-    export function createToken<TKind extends Syntax>(token: TKind) {
-      return <Token<TKind>>Node.createSynthesized(token);
+    updateFrom(n: Node): this {
+      if (this !== n) return this.setOriginal(n).setRange(n).aggregateTransformFlags();
+      return this;
     }
-    export function createModifier<T extends Modifier['kind']>(kind: T): Token<T> {
-      return createToken(kind);
+    setOriginal(n?: Node): this {
+      this.original = n;
+      if (n) {
+        const e = n.emitNode;
+        if (e) this.emitNode = mergeEmitNode(e, this.emitNode);
+      }
+      return this;
     }
-    export function createModifiersFromModifierFlags(flags: ModifierFlags) {
-      const result: Modifier[] = [];
-      if (flags & ModifierFlags.Export) {
-        result.push(createModifier(Syntax.ExportKeyword));
-      }
-      if (flags & ModifierFlags.Ambient) {
-        result.push(createModifier(Syntax.DeclareKeyword));
-      }
-      if (flags & ModifierFlags.Default) {
-        result.push(createModifier(Syntax.DefaultKeyword));
-      }
-      if (flags & ModifierFlags.Const) {
-        result.push(createModifier(Syntax.ConstKeyword));
-      }
-      if (flags & ModifierFlags.Public) {
-        result.push(createModifier(Syntax.PublicKeyword));
-      }
-      if (flags & ModifierFlags.Private) {
-        result.push(createModifier(Syntax.PrivateKeyword));
-      }
-      if (flags & ModifierFlags.Protected) {
-        result.push(createModifier(Syntax.ProtectedKeyword));
-      }
-      if (flags & ModifierFlags.Abstract) {
-        result.push(createModifier(Syntax.AbstractKeyword));
-      }
-      if (flags & ModifierFlags.Static) {
-        result.push(createModifier(Syntax.StaticKeyword));
-      }
-      if (flags & ModifierFlags.Readonly) {
-        result.push(createModifier(Syntax.ReadonlyKeyword));
-      }
-      if (flags & ModifierFlags.Async) {
-        result.push(createModifier(Syntax.AsyncKeyword));
-      }
-      return result;
+    aggregateTransformFlags(): this {
+      const aggregate = (n: Node): TransformFlags => {
+        if (n === undefined) return TransformFlags.None;
+        if (n.transformFlags & TransformFlags.HasComputedFlags) return n.transformFlags & ~getTransformFlagsSubtreeExclusions(n.kind);
+        return computeTransformFlagsForNode(n, subtree(n));
+      };
+      const nodes = (ns: Nodes<Node>): TransformFlags => {
+        if (ns === undefined) return TransformFlags.None;
+        let sub = TransformFlags.None;
+        let f = TransformFlags.None;
+        for (const n of ns) {
+          sub |= aggregate(n);
+          f |= n.transformFlags & ~TransformFlags.HasComputedFlags;
+        }
+        ns.transformFlags = f | TransformFlags.HasComputedFlags;
+        return sub;
+      };
+      const subtree = (n: Node): TransformFlags => {
+        if (hasSyntacticModifier(n, ModifierFlags.Ambient) || (Node.is.typeNode(n) && n.kind !== Syntax.ExpressionWithTypeArguments)) return TransformFlags.None;
+        return reduceEachChild(n, TransformFlags.None, child, children);
+      };
+      const child = (f: TransformFlags, n: Node): TransformFlags => f | aggregate(n);
+      const children = (f: TransformFlags, ns: Nodes<Node>): TransformFlags => f | nodes(ns);
+      aggregate(this);
+      return this;
     }
-    export function getMutableClone<T extends Node>(node: T): T {
-      const clone = getSynthesizedClone(node);
-      clone.pos = node.pos;
-      clone.end = node.end;
-      clone.parent = node.parent;
-      return clone;
+    static movePastDecorators(n: Node): TextRange {
+      return n.decorators && n.decorators.length > 0 ? n.movePos(n.decorators.end) : n;
     }
-    export function getSynthesizedClone<T extends Node>(node: T): T {
-      if (node === undefined) return node;
-      const clone = Node.createSynthesized(node.kind) as T;
-      clone.flags |= node.flags;
-      setOriginalNode(clone, node);
-      for (const key in node) {
-        if (clone.hasOwnProperty(key) || !node.hasOwnProperty(key)) continue;
-        (<any>clone)[key] = (<any>node)[key];
+    static movePastModifiers(n: Node): TextRange {
+      return n.modifiers && n.modifiers.length > 0 ? n.movePos(n.modifiers.end) : movePastDecorators(n);
+    }
+    static createTokenRange(pos: number, token: Syntax): TextRange {
+      return new TextRange(pos, pos + syntax.toString(token)!.length);
+    }
+    static ofNode(n: Node): TextRange {
+      return new TextRange(getTokenPosOfNode(n), n.end);
+    }
+    static ofTypeParams(a: Nodes<TypeParameterDeclaration>): TextRange {
+      return new TextRange(a.pos - 1, a.end + 1);
+    }
+    static mergeTokenSourceMapRanges(sourceRanges: (TextRange | undefined)[], destRanges: (TextRange | undefined)[]) {
+      if (!destRanges) destRanges = [];
+      for (const key in sourceRanges) {
+        destRanges[key] = sourceRanges[key];
       }
-      return clone;
+      return destRanges;
     }
-    export function updateNode<T extends Node>(updated: T, original: T): T {
-      if (updated !== original) {
-        setOriginalNode(updated, original);
-        setTextRange(updated, original);
-        aggregateTransformFlags(updated);
-      }
-      return updated;
-    }
-    ///
-    export const is = new (class {
+    static readonly is = new (class {
       node(k: Syntax) {
         return k >= Syntax.FirstNode;
       }
@@ -954,7 +935,7 @@ namespace core {
         return kind === Syntax.StringLiteral || kind === Syntax.NumericLiteral;
       }
     })();
-    export const isJsx = new (class {
+    static readonly isJsx = new (class {
       tagName(n: Node) {
         const { parent } = n;
         if (parent.kind === Syntax.JsxOpeningElement || parent.kind === Syntax.JsxSelfClosingElement || parent.kind === Syntax.JsxClosingElement) return (<JsxOpeningLikeElement>parent).tagName === n;
@@ -977,7 +958,7 @@ namespace core {
         return k === Syntax.JsxOpeningElement || k === Syntax.JsxSelfClosingElement;
       }
     })();
-    export const isJSDoc = new (class {
+    static readonly isJSDoc = new (class {
       constructSignature(n: Node) {
         const p = is.kind(JSDocFunctionType, n) ? firstOrUndefined(n.parameters) : undefined;
         const i = tryCast(p && p.name, isIdentifier);
@@ -1003,7 +984,7 @@ namespace core {
         return n.kind >= Syntax.FirstJSDocTagNode && n.kind <= Syntax.LastJSDocTagNode;
       }
     })();
-    export const get = new (class {
+    static readonly get = new (class {
       containingFunction(n: Node): SignatureDeclaration | undefined {
         return findAncestor(n.parent, isFunctionLike);
       }
@@ -1202,7 +1183,7 @@ namespace core {
         return;
       }
     })();
-    export const getJSDoc = new (class {
+    static readonly getJSDoc = new (class {
       augmentsTag(n: Node): JSDocAugmentsTag | undefined {
         return this.firstTag(n, isJSDocAugmentsTag);
       }
@@ -1405,7 +1386,7 @@ namespace core {
         return flags;
       }
     })();
-    export const other = new (class {
+    static readonly other = new (class {
       containsParseError(n: Node) {
         aggregateChildData(n);
         return (n.flags & NodeFlags.ThisNodeOrAnySubNodesHasError) !== 0;
@@ -1694,7 +1675,7 @@ namespace core {
         return skipOuterExpressions(n, OuterExpressionKinds.PartiallyEmittedExpressions);
       }
     })();
-    export const forEach = new (class {
+    static readonly forEach = new (class {
       forEachAncestor<T>(n: Node, cb: (n: Node) => T | undefined | 'quit'): T | undefined {
         while (n) {
           const r = cb(n);
@@ -2070,8 +2051,116 @@ namespace core {
         return;
       }
     })();
+  }
 
-    class NodeObj extends TextRange implements Node {
+  export namespace Node {
+    export function create<T extends Syntax>(k: T, pos: number, end: number, parent?: Node): NodeType<T> {
+      const n =
+        is.node(k) || k === Syntax.Unknown
+          ? new NodeObj(k, pos, end)
+          : k === Syntax.SourceFile
+          ? new SourceFileObj(Syntax.SourceFile, pos, end)
+          : k === Syntax.Identifier
+          ? new IdentifierObj(Syntax.Identifier, pos, end)
+          : k === Syntax.PrivateIdentifier
+          ? new PrivateIdentifierObj(Syntax.PrivateIdentifier, pos, end)
+          : new TokenObj<T>(k, pos, end);
+      if (parent) {
+        n.parent = parent;
+        n.flags = parent.flags & NodeFlags.ContextFlags;
+      }
+      return (n as unknown) as NodeType<T>;
+    }
+    export function createSynthesized<T extends Syntax>(k: T): NodeType<T> {
+      const n = create<T>(k, -1, -1);
+      n.flags |= NodeFlags.Synthesized;
+      return n;
+    }
+    export function createTemplateLiteralLike(k: TemplateLiteralToken['kind'], t: string, raw?: string) {
+      const n = createSynthesized(k);
+      n.text = t;
+      if (raw === undefined || t === raw) n.rawText = raw;
+      else {
+        const r = qs_process(k, raw);
+        if (typeof r === 'object') return fail('Invalid raw text');
+        assert(t === r, "Expected 'text' to be the normalized version of 'rawText'");
+        n.rawText = raw;
+      }
+      return n;
+    }
+    /// new
+    export function createToken<TKind extends Syntax>(token: TKind) {
+      return <Token<TKind>>Node.createSynthesized(token);
+    }
+    export function createModifier<T extends Modifier['kind']>(kind: T): Token<T> {
+      return createToken(kind);
+    }
+    export function createModifiersFromModifierFlags(flags: ModifierFlags) {
+      const result: Modifier[] = [];
+      if (flags & ModifierFlags.Export) {
+        result.push(createModifier(Syntax.ExportKeyword));
+      }
+      if (flags & ModifierFlags.Ambient) {
+        result.push(createModifier(Syntax.DeclareKeyword));
+      }
+      if (flags & ModifierFlags.Default) {
+        result.push(createModifier(Syntax.DefaultKeyword));
+      }
+      if (flags & ModifierFlags.Const) {
+        result.push(createModifier(Syntax.ConstKeyword));
+      }
+      if (flags & ModifierFlags.Public) {
+        result.push(createModifier(Syntax.PublicKeyword));
+      }
+      if (flags & ModifierFlags.Private) {
+        result.push(createModifier(Syntax.PrivateKeyword));
+      }
+      if (flags & ModifierFlags.Protected) {
+        result.push(createModifier(Syntax.ProtectedKeyword));
+      }
+      if (flags & ModifierFlags.Abstract) {
+        result.push(createModifier(Syntax.AbstractKeyword));
+      }
+      if (flags & ModifierFlags.Static) {
+        result.push(createModifier(Syntax.StaticKeyword));
+      }
+      if (flags & ModifierFlags.Readonly) {
+        result.push(createModifier(Syntax.ReadonlyKeyword));
+      }
+      if (flags & ModifierFlags.Async) {
+        result.push(createModifier(Syntax.AsyncKeyword));
+      }
+      return result;
+    }
+    export function getMutableClone<T extends Node>(node: T): T {
+      const clone = getSynthesizedClone(node);
+      clone.pos = node.pos;
+      clone.end = node.end;
+      clone.parent = node.parent;
+      return clone;
+    }
+    export function getSynthesizedClone<T extends Node>(node: T): T {
+      if (node === undefined) return node;
+      const clone = Node.createSynthesized(node.kind) as T;
+      clone.flags |= node.flags;
+      setOriginalNode(clone, node);
+      for (const key in node) {
+        if (clone.hasOwnProperty(key) || !node.hasOwnProperty(key)) continue;
+        (<any>clone)[key] = (<any>node)[key];
+      }
+      return clone;
+    }
+    export function updateNode<T extends Node>(updated: T, original: T): T {
+      if (updated !== original) {
+        setOriginalNode(updated, original);
+        setRange(updated, original);
+        aggregateTransformFlags(updated);
+      }
+      return updated;
+    }
+    ///
+
+    class NodeObj extends Node {
       id = 0;
       flags = NodeFlags.None;
       modifierFlagsCache = ModifierFlags.None;

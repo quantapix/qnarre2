@@ -85,7 +85,7 @@ namespace core {
       }
       const literalName = trySubstituteReservedName(node.name);
       if (literalName) {
-        return setTextRange(createElementAccess(node.expression, literalName), node);
+        return setRange(createElementAccess(node.expression, literalName), node);
       }
       return node;
     }
@@ -111,7 +111,7 @@ namespace core {
     function trySubstituteReservedName(name: Identifier) {
       const token = name.originalKeywordKind || (isSynthesized(name) ? Token.fromString(idText(name)) : undefined);
       if (token !== undefined && token >= Syntax.FirstReservedWord && token <= Syntax.LastReservedWord) {
-        return setTextRange(createLiteral(name), name);
+        return setRange(createLiteral(name), name);
       }
       return;
     }
