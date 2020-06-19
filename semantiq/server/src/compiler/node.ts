@@ -1707,7 +1707,7 @@ namespace qnr {
       }
       child<T extends Node>(node: Node, cb: (n: Node) => T, cbs?: (ns: Nodes<Node>) => T): T | undefined {
         if (node.kind <= Syntax.LastToken) return;
-        const n = node as qf.NodeTypes;
+        const n = node as NodeTypes;
         switch (n.kind) {
           case Syntax.QualifiedName:
             return n.left.visit(cb) || n.right.visit(cb);
