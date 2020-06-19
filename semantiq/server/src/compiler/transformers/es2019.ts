@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   export function transformES2019(context: TransformationContext) {
     return chainBundle(transformSourceFile);
 

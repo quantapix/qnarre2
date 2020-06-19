@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   // https://semver.org/#spec-item-2
   // > A normal version number MUST take the form X.Y.Z where X, Y, and Z are non-negative
   // > integers, and MUST NOT contain leading zeroes. X is the major version, Y is the minor
@@ -81,10 +81,7 @@ namespace qnr {
       if (this === other) return Comparison.EqualTo;
       if (other === undefined) return Comparison.GreaterThan;
       return (
-        compareValues(this.major, other.major) ||
-        compareValues(this.minor, other.minor) ||
-        compareValues(this.patch, other.patch) ||
-        comparePrerelaseIdentifiers(this.prerelease, other.prerelease)
+        compareValues(this.major, other.major) || compareValues(this.minor, other.minor) || compareValues(this.patch, other.patch) || comparePrerelaseIdentifiers(this.prerelease, other.prerelease)
       );
     }
 
@@ -308,12 +305,7 @@ namespace qnr {
           break;
         case '^':
           comparators.push(createComparator('>=', version));
-          comparators.push(
-            createComparator(
-              '<',
-              version.increment(version.major > 0 || isWildcard(minor) ? 'major' : version.minor > 0 || isWildcard(patch) ? 'minor' : 'patch')
-            )
-          );
+          comparators.push(createComparator('<', version.increment(version.major > 0 || isWildcard(minor) ? 'major' : version.minor > 0 || isWildcard(patch) ? 'minor' : 'patch')));
           break;
         case '<':
         case '>=':

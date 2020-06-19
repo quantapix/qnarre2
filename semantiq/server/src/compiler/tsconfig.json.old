@@ -5,9 +5,10 @@
     "outFile": "../../../out/server/compiler.js"
   },
 
-  "references": [{ "path": "./core" }],
+  "references": [{ "path": "../shims" }],
 
   "files": [
+    "base.ts",
     "utils.ts",
     "debug.ts",
     "performanceTimestamp.ts",
@@ -15,17 +16,22 @@
     "perfLogger.ts",
     "semver.ts",
 
+    "types.ts",
     "sys.ts",
     "path.ts",
     "diagnosticInformationMap.generated.ts",
+    "syntax.ts",
     "scanner.ts",
+    "node.ts",
     "utilities.ts",
     "parser.ts",
     "commandLineParser.ts",
     "moduleNameResolver.ts",
 
     "binder.ts",
+    "symbol.ts",
     "checker.ts",
+    "factory.ts",
     "visitor.ts",
     "sourcemap.ts",
     "transformers/utilities.ts",

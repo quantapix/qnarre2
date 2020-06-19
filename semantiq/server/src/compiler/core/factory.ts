@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   export namespace ArrayBindingElement {
     export const also = [Syntax.BindingElement, Syntax.OmittedExpression];
   }
@@ -6,7 +6,7 @@ namespace qnr {
     export const kind = Syntax.ArrayBindingPattern;
     export function create(es: readonly ArrayBindingElement[]) {
       const n = Node.createSynthesized(Syntax.ArrayBindingPattern);
-      n.elements = qns.create(es);
+      n.elements = Nodes.create(es);
       return n;
     }
     export function update(n: ArrayBindingPattern, es: readonly ArrayBindingElement[]) {
@@ -412,7 +412,7 @@ namespace qnr {
     export const kind = Syntax.ArrayBindingPattern;
     export const also = [Syntax.ObjectBindingPattern];
     export function isEmptyBindingPattern(n: BindingName): n is BindingPattern {
-      if (Node.is.kind(BindingPattern, n)) return qa.every(n.elements, isEmptyBindingElement);
+      if (Node.is.kind(BindingPattern, n)) return every(n.elements, isEmptyBindingElement);
       return false;
     }
   }
@@ -441,13 +441,13 @@ namespace qnr {
   }
   export namespace Bundle {
     export const kind = Syntax.Bundle;
-    export function createBundle(sourceFiles: readonly SourceFile[], prepends: readonly (UnparsedSource | InputFiles)[] = emptyArray) {
+    export function createBundle(sourceFiles: readonly SourceFile[], prepends: readonly (UnparsedSource | InputFiles)[] = empty) {
       const node = <Bundle>createNode(Syntax.Bundle);
       node.prepends = prepends;
       node.sourceFiles = sourceFiles;
       return node;
     }
-    export function updateBundle(node: Bundle, sourceFiles: readonly SourceFile[], prepends: readonly (UnparsedSource | InputFiles)[] = emptyArray) {
+    export function updateBundle(node: Bundle, sourceFiles: readonly SourceFile[], prepends: readonly (UnparsedSource | InputFiles)[] = empty) {
       if (node.sourceFiles !== sourceFiles || node.prepends !== prepends) {
         return createBundle(sourceFiles, prepends);
       }
@@ -790,10 +790,10 @@ namespace qnr {
     export const kind = Syntax.Constructor;
     export function create(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, ps: readonly ParameterDeclaration[], b?: Block) {
       const n = Node.createSynthesized(Syntax.Constructor);
-      n.decorators = qns.from(ds);
-      n.modifiers = qns.from(ms);
+      n.decorators = Nodes.from(ds);
+      n.modifiers = Nodes.from(ms);
       n.typeParameters = undefined;
-      n.parameters = qns.create(ps);
+      n.parameters = Nodes.create(ps);
       n.type = undefined;
       n.body = b;
       return n;
@@ -1443,11 +1443,11 @@ namespace qnr {
     export const kind = Syntax.GetAccessor;
     export function create(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: string | PropertyName, ps: readonly ParameterDeclaration[], t?: TypeNode, b?: Block) {
       const n = Node.createSynthesized(Syntax.GetAccessor);
-      n.decorators = qns.from(ds);
-      n.modifiers = qns.from(ms);
+      n.decorators = Nodes.from(ds);
+      n.modifiers = Nodes.from(ms);
       n.name = asName(p);
       n.typeParameters = undefined;
-      n.parameters = qns.create(ps);
+      n.parameters = Nodes.create(ps);
       n.type = t;
       n.body = b;
       return n;
@@ -1485,7 +1485,7 @@ namespace qnr {
     export function createIdentifier(text: string, typeArguments: readonly (TypeNode | TypeParameterDeclaration)[] | undefined): Identifier;
     export function createIdentifier(text: string, typeArguments?: readonly (TypeNode | TypeParameterDeclaration)[]): Identifier {
       const node = <Identifier>Node.createSynthesized(Syntax.Identifier);
-      node.escapedText = qy.get.escUnderscores(text);
+      node.escapedText = syntax.get.escUnderscores(text);
       node.originalKeywordKind = text ? Token.fromString(text) : Syntax.Unknown;
       node.autoGenerateFlags = GeneratedIdentifierFlags.None;
       node.autoGenerateId = 0;
@@ -1711,9 +1711,9 @@ namespace qnr {
     export const kind = Syntax.IndexSignature;
     export function create(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, ps: readonly ParameterDeclaration[], t: TypeNode): IndexSignatureDeclaration {
       const n = Node.createSynthesized(Syntax.IndexSignature);
-      n.decorators = qns.from(ds);
-      n.modifiers = qns.from(ms);
-      n.parameters = qns.create(ps);
+      n.decorators = Nodes.from(ds);
+      n.modifiers = Nodes.from(ms);
+      n.parameters = Nodes.create(ps);
       n.type = t;
       return n;
     }
@@ -2283,13 +2283,13 @@ namespace qnr {
       b?: Block
     ) {
       const n = Node.createSynthesized(Syntax.MethodDeclaration);
-      n.decorators = qns.from(ds);
-      n.modifiers = qns.from(ms);
+      n.decorators = Nodes.from(ds);
+      n.modifiers = Nodes.from(ms);
       n.asteriskToken = a;
       n.name = asName(p);
       n.questionToken = q;
-      n.typeParameters = qns.from(ts);
-      n.parameters = qns.create(ps);
+      n.typeParameters = Nodes.from(ts);
+      n.parameters = Nodes.create(ps);
       n.type = t;
       n.body = b;
       return n;
@@ -2516,7 +2516,7 @@ namespace qnr {
     export const kind = Syntax.ObjectBindingPattern;
     export function create(es: readonly BindingElement[]) {
       const n = Node.createSynthesized(Syntax.ObjectBindingPattern);
-      n.elements = qns.create(es);
+      n.elements = Nodes.create(es);
       return n;
     }
     export function update(n: ObjectBindingPattern, es: readonly BindingElement[]) {
@@ -2728,7 +2728,7 @@ namespace qnr {
         fail('First character of private identifier must be #: ' + text);
       }
       const node = Node.createSynthesized(Syntax.PrivateIdentifier) as PrivateIdentifier;
-      node.escapedText = qy.get.escUnderscores(text);
+      node.escapedText = syntax.get.escUnderscores(text);
       return node;
     }
   }
@@ -2784,8 +2784,8 @@ namespace qnr {
     export const kind = Syntax.PropertyDeclaration;
     export function create(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: string | PropertyName, q?: QuestionToken | ExclamationToken, t?: TypeNode, i?: Expression) {
       const n = Node.createSynthesized(Syntax.PropertyDeclaration);
-      n.decorators = qns.from(ds);
-      n.modifiers = qns.from(ms);
+      n.decorators = Nodes.from(ds);
+      n.modifiers = Nodes.from(ms);
       n.name = asName(p);
       n.questionToken = q !== undefined && q.kind === Syntax.QuestionToken ? q : undefined;
       n.exclamationToken = q !== undefined && q.kind === Syntax.ExclamationToken ? q : undefined;
@@ -2817,7 +2817,7 @@ namespace qnr {
     export const kind = Syntax.PropertySignature;
     export function create(ms: readonly Modifier[] | undefined, p: PropertyName | string, q?: QuestionToken, t?: TypeNode, i?: Expression) {
       const n = Node.createSynthesized(Syntax.PropertySignature);
-      n.modifiers = qns.from(ms);
+      n.modifiers = Nodes.from(ms);
       n.name = asName(p);
       n.questionToken = q;
       n.type = t;
@@ -2880,11 +2880,11 @@ namespace qnr {
     export const kind = Syntax.SetAccessor;
     export function create(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: string | PropertyName, ps: readonly ParameterDeclaration[], b?: Block) {
       const n = Node.createSynthesized(Syntax.SetAccessor);
-      n.decorators = qns.from(ds);
-      n.modifiers = qns.from(ms);
+      n.decorators = Nodes.from(ds);
+      n.modifiers = Nodes.from(ms);
       n.name = asName(p);
       n.typeParameters = undefined;
-      n.parameters = qns.create(ps);
+      n.parameters = Nodes.create(ps);
       n.body = b;
       return n;
     }
@@ -2907,10 +2907,10 @@ namespace qnr {
   export namespace SignatureDeclaration {
     export function create(k: Syntax, ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t?: TypeNode, ta?: readonly TypeNode[]) {
       const n = Node.createSynthesized(k);
-      n.typeParameters = qns.from(ts);
-      n.parameters = qns.from(ps);
+      n.typeParameters = Nodes.from(ts);
+      n.parameters = Nodes.from(ps);
       n.type = t;
-      n.typeArguments = qns.from(ta);
+      n.typeArguments = Nodes.from(ta);
       return n;
     }
     export function update<T extends SignatureDeclaration>(n: T, ts: Nodes<TypeParameterDeclaration> | undefined, ps: Nodes<ParameterDeclaration>, t?: TypeNode): T {
@@ -3056,7 +3056,7 @@ namespace qnr {
       while (statementOffset !== undefined && statementOffset < numStatements) {
         const statement = source[statementOffset];
         if (Node.get.emitFlags(statement) & EmitFlags.CustomPrologue && filter(statement)) {
-          qa.append(target, visitor ? visitNode(statement, visitor, isStatement) : statement);
+          append(target, visitor ? visitNode(statement, visitor, isStatement) : statement);
         } else {
           break;
         }
@@ -3269,7 +3269,7 @@ namespace qnr {
     export const kind = Syntax.TupleType;
     export function create(es: readonly (TypeNode | NamedTupleMember)[]) {
       const n = Node.createSynthesized(Syntax.TupleType);
-      n.elements = qns.create(es);
+      n.elements = Nodes.create(es);
       return n;
     }
     export function update(n: TupleTypeNode, es: readonly (TypeNode | NamedTupleMember)[]) {
@@ -3323,7 +3323,7 @@ namespace qnr {
     export const kind = Syntax.TypeLiteral;
     export function create(ms: readonly TypeElement[] | undefined) {
       const n = Node.createSynthesized(Syntax.TypeLiteral);
-      n.members = qns.create(ms);
+      n.members = Nodes.create(ms);
       return n;
     }
     export function update(n: TypeLiteralNode, ms: Nodes<TypeElement>) {
@@ -3464,10 +3464,10 @@ namespace qnr {
     export const kind = Syntax.UnparsedSource;
     function createUnparsedSource() {
       const node = <UnparsedSource>createNode(Syntax.UnparsedSource);
-      node.prologues = emptyArray;
-      node.referencedFiles = emptyArray;
-      node.libReferenceDirectives = emptyArray;
-      node.lineAndCharOf = (pos) => qy.get.lineAndCharOf(node, pos);
+      node.prologues = empty;
+      node.referencedFiles = empty;
+      node.libReferenceDirectives = empty;
+      node.lineAndCharOf = (pos) => syntax.get.lineAndCharOf(node, pos);
       return node;
     }
     export function createUnparsedSourceFile(text: string): UnparsedSource;
@@ -3514,7 +3514,7 @@ namespace qnr {
       parseUnparsedSourceFile(node, bundleFileInfo, stripInternal);
       return node;
     }
-    let allUnscopedEmitHelpers: qa.QReadonlyMap<UnscopedEmitHelper> | undefined;
+    let allUnscopedEmitHelpers: QReadonlyMap<UnscopedEmitHelper> | undefined;
     function getAllUnscopedEmitHelpers() {
       return (
         allUnscopedEmitHelpers ||
@@ -3556,7 +3556,7 @@ namespace qnr {
       let libReferenceDirectives: FileReference[] | undefined;
       let texts: UnparsedSourceText[] | undefined;
 
-      for (const section of bundleFileInfo ? bundleFileInfo.sections : emptyArray) {
+      for (const section of bundleFileInfo ? bundleFileInfo.sections : empty) {
         switch (section.kind) {
           case BundleFileSectionKind.Prologue:
             (prologues || (prologues = [])).push(createUnparsedNode(section, node) as UnparsedPrologue);
@@ -3584,7 +3584,7 @@ namespace qnr {
                 (prependTexts || (prependTexts = [])).push(createUnparsedNode(text, node) as UnparsedTextLike);
               }
             }
-            prependNode.texts = prependTexts || emptyArray;
+            prependNode.texts = prependTexts || empty;
             (texts || (texts = [])).push(prependNode);
             break;
           case BundleFileSectionKind.Internal:
@@ -3601,11 +3601,11 @@ namespace qnr {
             Debug.assertNever(section);
         }
       }
-      node.prologues = prologues || emptyArray;
+      node.prologues = prologues || empty;
       node.helpers = helpers;
-      node.referencedFiles = referencedFiles || emptyArray;
+      node.referencedFiles = referencedFiles || empty;
       node.typeReferenceDirectives = typeReferenceDirectives;
-      node.libReferenceDirectives = libReferenceDirectives || emptyArray;
+      node.libReferenceDirectives = libReferenceDirectives || empty;
       node.texts = texts || [<UnparsedTextLike>createUnparsedNode({ kind: BundleFileSectionKind.Text, pos: 0, end: node.text.length }, node)];
     }
     function parseOldFileOfCurrentEmit(node: UnparsedSource, bundleFileInfo: BundleFileInfo) {
@@ -3636,7 +3636,7 @@ namespace qnr {
             Debug.assertNever(section);
         }
       }
-      node.texts = texts || emptyArray;
+      node.texts = texts || empty;
       node.helpers = map(bundleFileInfo.sources && bundleFileInfo.sources.helpers, (name) => getAllUnscopedEmitHelpers().get(name)!);
       node.syntheticReferences = syntheticReferences;
       return node;
@@ -3764,7 +3764,6 @@ namespace qnr {
       return node.expression !== expression || node.asteriskToken !== asteriskToken ? updateNode(createYield(asteriskToken, expression), node) : node;
     }
   }
-
   export type NodeTypes =
     | ArrayLiteralExpression
     | ArrayTypeNode
@@ -3895,7 +3894,7 @@ namespace qnr {
     function getLiteralKindOfBinaryPlusOperand(node: Expression): Syntax {
       node = skipPartiallyEmittedExpressions(node);
 
-      if (qy.is.literal(node.kind)) {
+      if (syntax.is.literal(node.kind)) {
         return node.kind;
       }
 
@@ -3905,7 +3904,7 @@ namespace qnr {
         }
 
         const leftKind = getLiteralKindOfBinaryPlusOperand((<BinaryExpression>node).left);
-        const literalKind = qy.is.literal(leftKind) && leftKind === getLiteralKindOfBinaryPlusOperand((<BinaryExpression>node).right) ? leftKind : Syntax.Unknown;
+        const literalKind = syntax.is.literal(leftKind) && leftKind === getLiteralKindOfBinaryPlusOperand((<BinaryExpression>node).right) ? leftKind : Syntax.Unknown;
 
         (<BinaryPlusExpression>node).cachedLiteralKind = literalKind;
         return literalKind;
@@ -3946,8 +3945,8 @@ namespace qnr {
         //
         // If `a ** d` is on the left of operator `**`, we need to parenthesize to preserve
         // the intended order of operations: `(a ** b) ** c`
-        const binaryOperatorPrecedence = qy.get.operatorPrecedence(Syntax.BinaryExpression, binaryOperator);
-        const binaryOperatorAssociativity = qy.get.operatorAssociativity(Syntax.BinaryExpression, binaryOperator);
+        const binaryOperatorPrecedence = syntax.get.operatorPrecedence(Syntax.BinaryExpression, binaryOperator);
+        const binaryOperatorAssociativity = syntax.get.operatorAssociativity(Syntax.BinaryExpression, binaryOperator);
         const emittedOperand = skipPartiallyEmittedExpressions(operand);
         if (!isLeftSideOfBinary && operand.kind === Syntax.ArrowFunction && binaryOperatorPrecedence > 3) {
           // We need to parenthesize arrow functions on the right side to avoid it being
@@ -4000,7 +3999,7 @@ namespace qnr {
                 //  "a"+("b"+"c")   => "a"+"b"+"c"
                 if (binaryOperator === Syntax.PlusToken) {
                   const leftKind = leftOperand ? getLiteralKindOfBinaryPlusOperand(leftOperand) : Syntax.Unknown;
-                  if (qy.is.literal(leftKind) && leftKind === getLiteralKindOfBinaryPlusOperand(emittedOperand)) {
+                  if (syntax.is.literal(leftKind) && leftKind === getLiteralKindOfBinaryPlusOperand(emittedOperand)) {
                     return false;
                   }
                 }
@@ -4023,7 +4022,7 @@ namespace qnr {
       return binaryOperandNeedsParentheses(binaryOperator, operand, isLeftSideOfBinary, leftOperand) ? createParen(operand) : operand;
     }
     export function parenthesizeForConditionalHead(condition: Expression) {
-      const conditionalPrecedence = qy.get.operatorPrecedence(Syntax.ConditionalExpression, Syntax.QuestionToken);
+      const conditionalPrecedence = syntax.get.operatorPrecedence(Syntax.ConditionalExpression, Syntax.QuestionToken);
       const emittedCondition = skipPartiallyEmittedExpressions(condition);
       const conditionPrecedence = getExpressionPrecedence(emittedCondition);
       if (compareValues(conditionPrecedence, conditionalPrecedence) !== Comparison.GreaterThan) return createParen(condition);
@@ -4061,7 +4060,7 @@ namespace qnr {
     export function parenthesizeExpressionForList(expression: Expression) {
       const emittedExpression = skipPartiallyEmittedExpressions(expression);
       const expressionPrecedence = getExpressionPrecedence(emittedExpression);
-      const commaPrecedence = qy.get.operatorPrecedence(Syntax.BinaryExpression, Syntax.CommaToken);
+      const commaPrecedence = syntax.get.operatorPrecedence(Syntax.BinaryExpression, Syntax.CommaToken);
       return expressionPrecedence > commaPrecedence ? expression : setTextRange(createParen(expression), expression);
     }
     export function parenthesizeExpressionForExpressionStatement(expression: Expression) {
@@ -4107,7 +4106,7 @@ namespace qnr {
       return Nodes.create(sameMap(members, parenthesizeElementTypeMember));
     }
     export function parenthesizeTypeParameters(typeParameters: readonly TypeNode[] | undefined) {
-      if (qa.some(typeParameters)) {
+      if (some(typeParameters)) {
         const params: TypeNode[] = [];
         for (let i = 0; i < typeParameters.length; ++i) {
           const entry = typeParameters[i];
@@ -4231,7 +4230,7 @@ namespace qnr {
     export function addSyntheticLeadingComment<T extends Node>(node: T, kind: Syntax.SingleLineCommentTrivia | Syntax.MultiLineCommentTrivia, text: string, hasTrailingNewLine?: boolean) {
       return setSyntheticLeadingComments(
         node,
-        qa.append<SynthesizedComment>(getSyntheticLeadingComments(node), { kind, pos: -1, end: -1, hasTrailingNewLine, text })
+        append<SynthesizedComment>(getSyntheticLeadingComments(node), { kind, pos: -1, end: -1, hasTrailingNewLine, text })
       );
     }
     export function getSyntheticTrailingComments(node: Node): SynthesizedComment[] | undefined {
@@ -4245,7 +4244,7 @@ namespace qnr {
     export function addSyntheticTrailingComment<T extends Node>(node: T, kind: Syntax.SingleLineCommentTrivia | Syntax.MultiLineCommentTrivia, text: string, hasTrailingNewLine?: boolean) {
       return setSyntheticTrailingComments(
         node,
-        qa.append<SynthesizedComment>(getSyntheticTrailingComments(node), { kind, pos: -1, end: -1, hasTrailingNewLine, text })
+        append<SynthesizedComment>(getSyntheticTrailingComments(node), { kind, pos: -1, end: -1, hasTrailingNewLine, text })
       );
     }
     export function moveSyntheticComments<T extends Node>(node: T, original: Node): T {
@@ -4271,14 +4270,14 @@ namespace qnr {
     }
     export function addEmitHelper<T extends Node>(node: T, helper: EmitHelper): T {
       const emitNode = getOrCreateEmitNode(node);
-      emitNode.helpers = qa.append(emitNode.helpers, helper);
+      emitNode.helpers = append(emitNode.helpers, helper);
       return node;
     }
     export function addEmitHelpers<T extends Node>(node: T, helpers: EmitHelper[] | undefined): T {
-      if (qa.some(helpers)) {
+      if (some(helpers)) {
         const emitNode = getOrCreateEmitNode(node);
         for (const helper of helpers) {
-          emitNode.helpers = qa.appendIfUnique(emitNode.helpers, helper);
+          emitNode.helpers = appendIfUnique(emitNode.helpers, helper);
         }
       }
       return node;
@@ -4305,7 +4304,7 @@ namespace qnr {
         const helper = sourceEmitHelpers[i];
         if (predicate(helper)) {
           helpersRemoved++;
-          targetEmitNode.helpers = qa.appendIfUnique(targetEmitNode.helpers, helper);
+          targetEmitNode.helpers = appendIfUnique(targetEmitNode.helpers, helper);
         } else if (helpersRemoved > 0) sourceEmitHelpers[i - helpersRemoved] = helper;
       }
       if (helpersRemoved > 0) sourceEmitHelpers.length -= helpersRemoved;
@@ -4329,14 +4328,14 @@ namespace qnr {
       const { flags, leadingComments, trailingComments, commentRange, sourceMapRange, tokenSourceMapRanges, constantValue, helpers, startsOnNewLine } = sourceEmitNode;
       if (!destEmitNode) destEmitNode = {} as EmitNode;
       // We are using `.slice()` here in case `destEmitNode.leadingComments` is pushed to later.
-      if (leadingComments) destEmitNode.leadingComments = qa.addRange(leadingComments.slice(), destEmitNode.leadingComments);
-      if (trailingComments) destEmitNode.trailingComments = qa.addRange(trailingComments.slice(), destEmitNode.trailingComments);
+      if (leadingComments) destEmitNode.leadingComments = addRange(leadingComments.slice(), destEmitNode.leadingComments);
+      if (trailingComments) destEmitNode.trailingComments = addRange(trailingComments.slice(), destEmitNode.trailingComments);
       if (flags) destEmitNode.flags = flags;
       if (commentRange) destEmitNode.commentRange = commentRange;
       if (sourceMapRange) destEmitNode.sourceMapRange = sourceMapRange;
       if (tokenSourceMapRanges) destEmitNode.tokenSourceMapRanges = mergeTokenSourceMapRanges(tokenSourceMapRanges, destEmitNode.tokenSourceMapRanges!);
       if (constantValue !== undefined) destEmitNode.constantValue = constantValue;
-      if (helpers) destEmitNode.helpers = qa.addRange(destEmitNode.helpers, helpers);
+      if (helpers) destEmitNode.helpers = addRange(destEmitNode.helpers, helpers);
       if (startsOnNewLine !== undefined) destEmitNode.startsOnNewLine = startsOnNewLine;
       return destEmitNode;
     }
@@ -4352,10 +4351,9 @@ namespace qnr {
     }
   }
 
-  export namespace qt {
+  export namespace fixme {
     export function createLiteral(value: string | StringLiteral | NoSubstitutionLiteral | NumericLiteral | Identifier, isSingleQuote: boolean): StringLiteral; // eslint-disable-line @typescript-eslint/unified-signatures
     export function createLiteral(value: string | number, isSingleQuote: boolean): StringLiteral | NumericLiteral;
-    /** If a node is passed, creates a string literal whose source text is read from a source node during emit. */
     export function createLiteral(value: string | StringLiteral | NoSubstitutionLiteral | NumericLiteral | Identifier): StringLiteral;
     export function createLiteral(value: number | PseudoBigInt): NumericLiteral;
     export function createLiteral(value: boolean): BooleanLiteral;
@@ -4433,7 +4431,7 @@ namespace qnr {
     }
 
     export function appendJSDocToContainer(node: JSDocContainer, jsdoc: JSDoc) {
-      node.jsDoc = qa.append(node.jsDoc, jsdoc);
+      node.jsDoc = append(node.jsDoc, jsdoc);
       return node;
     }
 
@@ -4556,7 +4554,7 @@ namespace qnr {
     let SourceMapSource: new (fileName: string, text: string, skipTrivia?: (pos: number) => number) => SourceMapSource;
 
     export function createSourceMapSource(fileName: string, text: string, skipTrivia?: (pos: number) => number): SourceMapSource {
-      return new (SourceMapSource || (SourceMapSource = Node.SourceMapSourceObj))(fileName, text, qy.skipTrivia);
+      return new (SourceMapSource || (SourceMapSource = Node.SourceMapSourceObj))(fileName, text, syntax.skipTrivia);
     }
 
     export function getUnscopedHelperName(name: string) {
@@ -4622,7 +4620,7 @@ namespace qnr {
                 }
               }
             }
-            if (qa.some(helperNames)) {
+            if (some(helperNames)) {
               helperNames.sort(compareStringsCaseSensitive);
               // Alias the imports if the names are used somewhere in the file.
               // NOTE: We don't need to care about global import collisions as this is a module.

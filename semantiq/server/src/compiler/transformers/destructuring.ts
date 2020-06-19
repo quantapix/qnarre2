@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   interface FlattenContext {
     context: TransformationContext;
     level: FlattenLevel;

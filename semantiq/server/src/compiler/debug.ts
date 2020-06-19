@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   export namespace Debug {
     let currentAssertionLevel = AssertionLevel.None;
 
@@ -202,7 +202,7 @@ namespace qnr {
     }
 
     export function formatSymbol(symbol: Symbol): string {
-      return `{ name: ${qy.get.unescUnderscores(symbol.escName)}; flags: ${formatSymbolFlags(symbol.flags)}; declarations: ${map(symbol.declarations, (node) => formatSyntax(node.kind))} }`;
+      return `{ name: ${syntax.get.unescUnderscores(symbol.escName)}; flags: ${formatSymbolFlags(symbol.flags)}; declarations: ${map(symbol.declarations, (node) => formatSyntax(node.kind))} }`;
     }
 
     /**

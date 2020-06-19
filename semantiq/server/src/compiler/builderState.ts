@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   export function getFileEmitOutput(
     program: Program,
     sourceFile: SourceFile,

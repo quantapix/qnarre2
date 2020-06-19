@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   export function transformModule(context: TransformationContext) {
     interface AsynchronousDependencies {
       aliasedModuleNames: Expression[];
@@ -1569,7 +1569,7 @@ namespace qnr {
       //   namespace due to how they are transformed in TypeScript.
       // - We only substitute identifiers that are exported at the top level.
       if (
-        qy.is.assignmentOperator(node.operatorToken.kind) &&
+        syntax.is.assignmentOperator(node.operatorToken.kind) &&
         Node.is.kind(Identifier, node.left) &&
         !Node.is.generatedIdentifier(node.left) &&
         !isLocalName(node.left) &&

@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   export function getOriginalNodeId(node: Node) {
     node = Node.get.originalOf(node);
     return node ? getNodeId(node) : 0;
@@ -69,7 +69,7 @@ namespace qnr {
 
   export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: EmitResolver, compilerOptions: CompilerOptions): ExternalModuleInfo {
     const externalImports: (ImportDeclaration | ImportEqualsDeclaration | ExportDeclaration)[] = [];
-    const exportSpecifiers = createMultiMap<ExportSpecifier>();
+    const exportSpecifiers = new MultiMap<ExportSpecifier>();
     const exportedBindings: Identifier[][] = [];
     const uniqueExports = createMap<boolean>();
     let exportedNames: Identifier[] | undefined;
@@ -241,7 +241,7 @@ namespace qnr {
    *  - this is mostly subjective beyond the requirement that the expression not be sideeffecting
    */
   export function isSimpleCopiableExpression(expression: Expression) {
-    return StringLiteral.like(expression) || expression.kind === Syntax.NumericLiteral || qy.is.keyword(expression.kind) || Node.is.kind(Identifier, expression);
+    return StringLiteral.like(expression) || expression.kind === Syntax.NumericLiteral || syntax.is.keyword(expression.kind) || Node.is.kind(Identifier, expression);
   }
 
   /**

@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   export interface TransformationContext {
     getEmitResolver(): EmitResolver;
     getEmitHost(): EmitHost;
@@ -55,10 +55,9 @@ namespace qnr {
     isEmitNotificationEnabled?(node: Node): boolean;
     dispose(): void;
   }
-
-  export type TransformerFactory<T extends Node> = (context: TransformationContext) => Transformer<T>;
-
   export type Transformer<T extends Node> = (node: T) => T;
+  export interface TransformationContext {}
+  export type TransformerFactory<T extends Node> = (c: TransformationContext) => Transformer<T>;
 
   function getModuleTransformer(moduleKind: ModuleKind): TransformerFactory<SourceFile | Bundle> {
     switch (moduleKind) {

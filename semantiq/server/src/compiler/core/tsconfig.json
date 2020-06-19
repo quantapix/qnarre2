@@ -1,0 +1,16 @@
+{
+  "extends": "../../../../../tsconfig-base",
+  "compilerOptions": {
+    "types": ["node"],
+    "outFile": "../../../../out/server/types.js"
+  },
+  "files": [
+    "base.ts",
+    "types.ts",
+    "factory.ts",
+    "syntax.ts",
+    "node.ts",
+    "symbol.ts",
+    "mapShim.ts"
+  ]
+}

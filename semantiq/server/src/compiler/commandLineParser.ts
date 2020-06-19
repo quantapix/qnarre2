@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   export const compileOnSaveCommandLineOption: CommandLineOption = { name: 'compileOnSave', type: 'boolean' };
 
   // NOTE: The order here is important to default lib ordering as entries will have the same
@@ -1635,7 +1635,7 @@ namespace qnr {
         }
 
         const textOfKey = isComputedNonLiteralName(element.name) ? undefined : getTextOfPropertyName(element.name);
-        const keyText = textOfKey && qy.get.unescUnderscores(textOfKey);
+        const keyText = textOfKey && syntax.get.unescUnderscores(textOfKey);
         const option = keyText && knownOptions ? knownOptions.get(keyText) : undefined;
         if (keyText && extraKeyDiagnostics && !option) {
           if (knownOptions) {
@@ -2000,7 +2000,7 @@ namespace qnr {
 
     function writeConfigurations() {
       // Filter applicable options to place in the file
-      const categorizedOptions = createMultiMap<CommandLineOption>();
+      const categorizedOptions = new MultiMap<CommandLineOption>();
       for (const option of optionDeclarations) {
         const { category } = option;
 

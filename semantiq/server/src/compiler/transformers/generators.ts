@@ -117,7 +117,7 @@
 //  .endtry                       |
 //  .mark END                     | case END:
 
-namespace qnr {
+namespace core {
   type Label = number;
 
   const enum OpCode {
@@ -717,7 +717,7 @@ namespace qnr {
 
     function visitLeftAssociativeBinaryExpression(node: BinaryExpression) {
       if (containsYield(node.right)) {
-        if (qy.is.logicalOperator(node.operatorToken.kind)) {
+        if (syntax.is.logicalOperator(node.operatorToken.kind)) {
           return visitLogicalBinaryExpression(node);
         } else if (node.operatorToken.kind === Syntax.CommaToken) {
           return visitCommaExpression(node);

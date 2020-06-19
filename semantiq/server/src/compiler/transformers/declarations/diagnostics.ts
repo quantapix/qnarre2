@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   export type GetSymbolAccessibilityDiagnostic = (symbolAccessibilityResult: SymbolAccessibilityResult) => SymbolAccessibilityDiagnostic | undefined;
 
   export interface SymbolAccessibilityDiagnostic {

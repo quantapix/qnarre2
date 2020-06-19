@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   export function findConfigFile(searchPath: string, fileExists: (fileName: string) => boolean, configName = 'tsconfig.json'): string | undefined {
     return forEachAncestorDirectory(searchPath, (ancestor) => {
       const fileName = combinePaths(ancestor, configName);
@@ -334,7 +334,7 @@ namespace qnr {
     const errorMessage = `${diagnosticCategoryName(diagnostic)} TS${diagnostic.code}: ${flattenDiagnosticMessageText(diagnostic.messageText, host.getNewLine())}${host.getNewLine()}`;
 
     if (diagnostic.file) {
-      const { line, character } = qy.get.lineAndCharOf(diagnostic.file, diagnostic.start!); // TODO: GH#18217
+      const { line, character } = syntax.get.lineAndCharOf(diagnostic.file, diagnostic.start!); // TODO: GH#18217
       const fileName = diagnostic.file.fileName;
       const relativeFileName = convertToRelativePath(fileName, host.getCurrentDirectory(), (fileName) => host.getCanonicalFileName(fileName));
       return `${relativeFileName}(${line + 1},${character + 1}): ` + errorMessage;
@@ -374,9 +374,9 @@ namespace qnr {
   }
 
   function formatCodeSpan(file: SourceFile, start: number, length: number, indent: string, squiggleColor: ForegroundColorEscapeSequences, host: FormatDiagnosticsHost) {
-    const { line: firstLine, character: firstLineChar } = qy.get.lineAndCharOf(file, start);
-    const { line: lastLine, character: lastLineChar } = qy.get.lineAndCharOf(file, start + length);
-    const lastLineInFile = qy.get.lineAndCharOf(file, file.text.length).line;
+    const { line: firstLine, character: firstLineChar } = syntax.get.lineAndCharOf(file, start);
+    const { line: lastLine, character: lastLineChar } = syntax.get.lineAndCharOf(file, start + length);
+    const lastLineInFile = syntax.get.lineAndCharOf(file, file.text.length).line;
 
     const hasMoreThanFiveLines = lastLine - firstLine >= 4;
     let gutterWidth = (lastLine + 1 + '').length;
@@ -394,8 +394,8 @@ namespace qnr {
         i = lastLine - 1;
       }
 
-      const lineStart = qy.get.posOf(file, i, 0);
-      const lineEnd = i < lastLineInFile ? qy.get.posOf(file, i + 1, 0) : file.text.length;
+      const lineStart = syntax.get.posOf(file, i, 0);
+      const lineEnd = i < lastLineInFile ? syntax.get.posOf(file, i + 1, 0) : file.text.length;
       let lineContent = file.text.slice(lineStart, lineEnd);
       lineContent = lineContent.replace(/\s+$/g, ''); // trim from end
       lineContent = lineContent.replace('\t', ' '); // convert tabs to single spaces
@@ -426,7 +426,7 @@ namespace qnr {
   }
 
   export function formatLocation(file: SourceFile, start: number, host: FormatDiagnosticsHost, color = formatColorAndReset) {
-    const { line: firstLine, character: firstLineChar } = qy.get.lineAndCharOf(file, start); // TODO: GH#18217
+    const { line: firstLine, character: firstLineChar } = syntax.get.lineAndCharOf(file, start); // TODO: GH#18217
     const relativeFileName = host ? convertToRelativePath(file.fileName, host.getCurrentDirectory(), (fileName) => host.getCanonicalFileName(fileName)) : file.fileName;
 
     let output = '';
@@ -758,7 +758,7 @@ namespace qnr {
             return resolved as ResolvedModuleFull;
           }
           const withExtension = clone(resolved) as ResolvedModuleFull;
-          withExtension.extension = qy.get.extensionFromPath(resolved.resolvedFileName);
+          withExtension.extension = syntax.get.extensionFromPath(resolved.resolvedFileName);
           return withExtension;
         });
     } else {
@@ -791,7 +791,7 @@ namespace qnr {
     // Maps from a SourceFile's `.path` to the name of the package it was imported with.
     let sourceFileToPackageName = createMap<string>();
     // Key is a file name. Value is the (non-empty, or undefined) list of files that redirect to it.
-    let redirectTargetsMap = createMultiMap<string>();
+    let redirectTargetsMap = new MultiMap<string>();
 
     /**
      * map with
@@ -1811,8 +1811,8 @@ namespace qnr {
       }
 
       // Start out with the line just before the text
-      const qy.get.lineStarts = qy.get.lineStarts(file);
-      let line = qy.get.lineAndCharOf(qy.get.lineStarts, start!).line - 1; // TODO: GH#18217
+      const syntax.get.lineStarts = syntax.get.lineStarts(file);
+      let line = syntax.get.lineAndCharOf(syntax.get.lineStarts, start!).line - 1; // TODO: GH#18217
       while (line >= 0) {
         // As soon as that line is known to have a comment directive, use that
         if (directives.markUsed(line)) {
@@ -1820,7 +1820,7 @@ namespace qnr {
         }
 
         // Stop searching if the line is not empty and not a comment
-        const lineText = file.text.slice(qy.get.lineStarts[line], qy.get.lineStarts[line + 1]).trim();
+        const lineText = file.text.slice(syntax.get.lineStarts[line], syntax.get.lineStarts[line + 1]).trim();
         if (lineText !== '' && !/^(\s*)\/\/(.*)$/.test(lineText)) {
           return -1;
         }
@@ -2484,7 +2484,7 @@ namespace qnr {
 
     function addFileToRefFileMap(referencedFileName: string, file: SourceFile | undefined, refFile: RefFile | undefined) {
       if (refFile && file) {
-        (refFileMap || (refFileMap = createMultiMap())).add(file.path, {
+        (refFileMap || (refFileMap = new MultiMap())).add(file.path, {
           referencedFileName,
           kind: refFile.kind,
           index: refFile.index,
@@ -2803,7 +2803,7 @@ namespace qnr {
             modulesWithElidedImports.set(file.path, true);
           } else if (shouldAddFile) {
             const path = toPath(resolvedFileName);
-            const pos = qy.skipTrivia(file.text, file.imports[i].pos);
+            const pos = syntax.skipTrivia(file.text, file.imports[i].pos);
             findSourceFile(
               resolvedFileName,
               path,
@@ -3122,7 +3122,7 @@ namespace qnr {
         if (!qp_parseIsolatedEntityName(options.jsxFactory, languageVersion)) {
           createOptionValueDiagnostic('jsxFactory', Diagnostics.Invalid_value_for_jsxFactory_0_is_not_a_valid_identifier_or_qualified_name, options.jsxFactory);
         }
-      } else if (options.reactNamespace && !qy.is.identifierText(options.reactNamespace)) {
+      } else if (options.reactNamespace && !syntax.is.identifierText(options.reactNamespace)) {
         createOptionValueDiagnostic('reactNamespace', Diagnostics.Invalid_value_for_reactNamespace_0_is_not_a_valid_identifier, options.reactNamespace);
       }
 
@@ -3174,7 +3174,7 @@ namespace qnr {
       let pos: number, end: number;
       switch (kind) {
         case RefFileKind.Import:
-          pos = qy.skipTrivia(refFile.text, refFile.imports[index].pos);
+          pos = syntax.skipTrivia(refFile.text, refFile.imports[index].pos);
           end = refFile.imports[index].end;
           break;
         case RefFileKind.ReferenceFile:

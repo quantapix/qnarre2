@@ -502,7 +502,7 @@ namespace qnr.moduleSpecifiers {
   }
 
   function getJSExtensionForFile(fileName: string, options: CompilerOptions): Extension {
-    const ext = qy.get.extensionFromPath(fileName);
+    const ext = syntax.get.extensionFromPath(fileName);
     switch (ext) {
       case Extension.Ts:
       case Extension.Dts:

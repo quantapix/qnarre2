@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   export type AffectedFileResult<T> = { result: T; affected: SourceFile | Program } | undefined;
 
   export interface BuilderProgramHost {
@@ -97,13 +97,7 @@ namespace qnr {
      * The first of writeFile if provided, writeFile of BuilderProgramHost if provided, writeFile of compiler host
      * in that order would be used to write the files
      */
-    emit(
-      targetSourceFile?: SourceFile,
-      writeFile?: WriteFileCallback,
-      cancellationToken?: CancellationToken,
-      emitOnlyDtsFiles?: boolean,
-      customTransformers?: CustomTransformers
-    ): EmitResult;
+    emit(targetSourceFile?: SourceFile, writeFile?: WriteFileCallback, cancellationToken?: CancellationToken, emitOnlyDtsFiles?: boolean, customTransformers?: CustomTransformers): EmitResult;
     /**
      * Get the current directory of the program
      */
@@ -120,10 +114,7 @@ namespace qnr {
      * Gets the semantic diagnostics from the program for the next affected file and caches it
      * Returns undefined if the iteration is complete
      */
-    getSemanticDiagnosticsOfNextAffectedFile(
-      cancellationToken?: CancellationToken,
-      ignoreSourceFile?: (sourceFile: SourceFile) => boolean
-    ): AffectedFileResult<readonly Diagnostic[]>;
+    getSemanticDiagnosticsOfNextAffectedFile(cancellationToken?: CancellationToken, ignoreSourceFile?: (sourceFile: SourceFile) => boolean): AffectedFileResult<readonly Diagnostic[]>;
   }
 
   /**
@@ -136,12 +127,7 @@ namespace qnr {
      * The first of writeFile if provided, writeFile of BuilderProgramHost if provided, writeFile of compiler host
      * in that order would be used to write the files
      */
-    emitNextAffectedFile(
-      writeFile?: WriteFileCallback,
-      cancellationToken?: CancellationToken,
-      emitOnlyDtsFiles?: boolean,
-      customTransformers?: CustomTransformers
-    ): AffectedFileResult<EmitResult>;
+    emitNextAffectedFile(writeFile?: WriteFileCallback, cancellationToken?: CancellationToken, emitOnlyDtsFiles?: boolean, customTransformers?: CustomTransformers): AffectedFileResult<EmitResult>;
   }
 
   /**
@@ -171,14 +157,7 @@ namespace qnr {
   ) {
     return createBuilderProgram(
       BuilderProgramKind.SemanticDiagnosticsBuilderProgram,
-      getBuilderCreationParameters(
-        newProgramOrRootNames,
-        hostOrOptions,
-        oldProgramOrHost,
-        configFileParsingDiagnosticsOrOldProgram,
-        configFileParsingDiagnostics,
-        projectReferences
-      )
+      getBuilderCreationParameters(newProgramOrRootNames, hostOrOptions, oldProgramOrHost, configFileParsingDiagnosticsOrOldProgram, configFileParsingDiagnostics, projectReferences)
     );
   }
 
@@ -210,26 +189,14 @@ namespace qnr {
   ) {
     return createBuilderProgram(
       BuilderProgramKind.EmitAndSemanticDiagnosticsBuilderProgram,
-      getBuilderCreationParameters(
-        newProgramOrRootNames,
-        hostOrOptions,
-        oldProgramOrHost,
-        configFileParsingDiagnosticsOrOldProgram,
-        configFileParsingDiagnostics,
-        projectReferences
-      )
+      getBuilderCreationParameters(newProgramOrRootNames, hostOrOptions, oldProgramOrHost, configFileParsingDiagnosticsOrOldProgram, configFileParsingDiagnostics, projectReferences)
     );
   }
 
   /**
    * Creates a builder thats just abstraction over program and can be used with watch
    */
-  export function createAbstractBuilder(
-    newProgram: Program,
-    host: BuilderProgramHost,
-    oldProgram?: BuilderProgram,
-    configFileParsingDiagnostics?: readonly Diagnostic[]
-  ): BuilderProgram;
+  export function createAbstractBuilder(newProgram: Program, host: BuilderProgramHost, oldProgram?: BuilderProgram, configFileParsingDiagnostics?: readonly Diagnostic[]): BuilderProgram;
   export function createAbstractBuilder(
     rootNames: readonly string[] | undefined,
     options: CompilerOptions | undefined,

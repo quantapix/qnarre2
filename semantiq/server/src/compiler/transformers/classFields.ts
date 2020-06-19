@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   const enum ClassPropertySubstitutionFlags {
     /**
      * Enables substitutions for class expressions with static fields
@@ -706,7 +706,7 @@ namespace qnr {
         const name = Node.is.kind(ComputedPropertyName, propertyName)
           ? propertyName.expression
           : Node.is.kind(Identifier, propertyName)
-          ? StringLiteral.create(qy.get.unescUnderscores(propertyName.escapedText))
+          ? StringLiteral.create(syntax.get.unescUnderscores(propertyName.escapedText))
           : propertyName;
         const descriptor = createPropertyDescriptor({ value: initializer, configurable: true, writable: true, enumerable: true });
         return createObjectDefinePropertyCall(receiver, name, descriptor);

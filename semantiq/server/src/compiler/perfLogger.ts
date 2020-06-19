@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   type PerfLogger = typeof import('@microsoft/typescript-etw');
   const nullLogger: PerfLogger = {
     logEvent: noop,

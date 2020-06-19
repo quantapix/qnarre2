@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   /**
    * Partial interface of the System thats needed to support the caching of directory structure
    */

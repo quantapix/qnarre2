@@ -1,22 +1,22 @@
-namespace qnr {
+namespace core {
   export const dirSeparator = '/';
   const backslashRegExp = /\\/g;
 
   export function isUrl(path: string) {
-    return qy.get.encodedRootLength(path) < 0;
+    return syntax.get.encodedRootLength(path) < 0;
   }
 
   export function isRootedDiskPath(path: string) {
-    return qy.get.encodedRootLength(path) > 0;
+    return syntax.get.encodedRootLength(path) > 0;
   }
 
   export function isDiskPathRoot(path: string) {
-    const rootLength = qy.get.encodedRootLength(path);
+    const rootLength = syntax.get.encodedRootLength(path);
     return rootLength > 0 && rootLength === path.length;
   }
 
   export function pathIsAbsolute(path: string): boolean {
-    return qy.get.encodedRootLength(path) !== 0;
+    return syntax.get.encodedRootLength(path) !== 0;
   }
 
   export function pathIsRelative(path: string): boolean {
@@ -41,11 +41,11 @@ namespace qnr {
   }
 
   export function hasTrailingDirectorySeparator(path: string) {
-    return path.length > 0 && qy.is.dirSeparator(path.charCodeAt(path.length - 1));
+    return path.length > 0 && syntax.is.dirSeparator(path.charCodeAt(path.length - 1));
   }
 
   export function getRootLength(path: string) {
-    const rootLength = qy.get.encodedRootLength(path);
+    const rootLength = syntax.get.encodedRootLength(path);
     return rootLength < 0 ? ~rootLength : rootLength;
   }
 
@@ -78,10 +78,10 @@ namespace qnr {
 
   function getAnyExtensionFromPathWorker(path: string, extensions: string | readonly string[], stringEqualityComparer: (a: string, b: string) => boolean) {
     if (typeof extensions === 'string') {
-      return qy.get.extensionFrom(path, extensions, stringEqualityComparer) || '';
+      return syntax.get.extensionFrom(path, extensions, stringEqualityComparer) || '';
     }
     for (const extension of extensions) {
-      const result = qy.get.extensionFrom(path, extension, stringEqualityComparer);
+      const result = syntax.get.extensionFrom(path, extension, stringEqualityComparer);
       if (result) return result;
     }
     return '';

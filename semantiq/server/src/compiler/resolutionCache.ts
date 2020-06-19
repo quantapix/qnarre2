@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   /** This is the cache of module/typedirectives resolution that can be retained across program */
   export interface ResolutionCache {
     startRecordingFilesWithChangedResolutions(): void;
@@ -141,10 +141,10 @@ namespace qnr {
     let filesWithChangedSetOfUnresolvedImports: Path[] | undefined;
     let filesWithInvalidatedResolutions: Map<true> | undefined;
     let filesWithInvalidatedNonRelativeUnresolvedImports: ReadonlyMap<readonly string[]> | undefined;
-    const nonRelativeExternalModuleResolutions = createMultiMap<ResolutionWithFailedLookupLocations>();
+    const nonRelativeExternalModuleResolutions = new MultiMap<ResolutionWithFailedLookupLocations>();
 
     const resolutionsWithFailedLookups: ResolutionWithFailedLookupLocations[] = [];
-    const resolvedFileToResolution = createMultiMap<ResolutionWithFailedLookupLocations>();
+    const resolvedFileToResolution = new MultiMap<ResolutionWithFailedLookupLocations>();
 
     const getCurrentDirectory = memoize(() => resolutionHost.getCurrentDirectory!()); // TODO: GH#18217
     const cachedDirectoryStructureHost = resolutionHost.getCachedDirectoryStructureHost();

@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   /**
    * Transforms ES5 syntax into ES3 syntax.
    *

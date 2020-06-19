@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   const ambientModuleSymbolRegex = /^".+"$/;
   const anon = '(anonymous)' as __String & string;
 
@@ -227,7 +227,7 @@ namespace qnr {
     EmptyObjectFacts = All,
   }
 
-  const typeofEQFacts: QReadonlyMap<TypeFacts> = QMap.create({
+  const typeofEQFacts: QReadonlyMap<TypeFacts> = new QMap({
     string: TypeFacts.TypeofEQString,
     number: TypeFacts.TypeofEQNumber,
     bigint: TypeFacts.TypeofEQBigInt,
@@ -238,7 +238,7 @@ namespace qnr {
     function: TypeFacts.TypeofEQFunction,
   });
 
-  const typeofNEFacts: QReadonlyMap<TypeFacts> = QMap.create({
+  const typeofNEFacts: QReadonlyMap<TypeFacts> = new QMap({
     string: TypeFacts.TypeofNEString,
     number: TypeFacts.TypeofNENumber,
     bigint: TypeFacts.TypeofNEBigInt,
@@ -369,7 +369,7 @@ namespace qnr {
 
   export function createTypeChecker(host: TypeCheckerHost, produceDiagnostics: boolean): TypeChecker {
     const getPackagesSet: () => QMap<true> = memoize(() => {
-      const set = QMap.create<true>();
+      const set = new QMap<true>();
       host.getSourceFiles().forEach((sf) => {
         if (!sf.resolvedModules) return;
 
@@ -470,21 +470,21 @@ namespace qnr {
       getSymbolsOfParameterPropertyDeclaration: (parameterIn, parameterName) => {
         const parameter = Node.get.parseTreeOf(parameterIn, isParameter);
         if (parameter === undefined) return fail('Cannot get symbols of a synthetic parameter that cannot be resolved to a parse-tree node.');
-        return getSymbolsOfParameterPropertyDeclaration(parameter, qy.get.escUnderscores(parameterName));
+        return getSymbolsOfParameterPropertyDeclaration(parameter, syntax.get.escUnderscores(parameterName));
       },
       getDeclaredTypeOfSymbol,
       getPropertiesOfType,
-      getPropertyOfType: (type, name) => getPropertyOfType(type, qy.get.escUnderscores(name)),
+      getPropertyOfType: (type, name) => getPropertyOfType(type, syntax.get.escUnderscores(name)),
       getPrivateIdentifierPropertyOfType: (leftType: Type, name: string, location: Node) => {
         const node = Node.get.parseTreeOf(location);
         if (!node) {
           return;
         }
-        const propName = qy.get.escUnderscores(name);
+        const propName = syntax.get.escUnderscores(name);
         const lexicallyScopedIdentifier = lookupSymbolForPrivateIdentifierDeclaration(propName, node);
         return lexicallyScopedIdentifier ? getPrivateIdentifierPropertyOfType(leftType, lexicallyScopedIdentifier) : undefined;
       },
-      getTypeOfPropertyOfType: (type, name) => getTypeOfPropertyOfType(type, qy.get.escUnderscores(name)),
+      getTypeOfPropertyOfType: (type, name) => getTypeOfPropertyOfType(type, syntax.get.escUnderscores(name)),
       getIndexInfoOfType,
       getSignaturesOfType,
       getIndexTypeOfType,
@@ -620,7 +620,7 @@ namespace qnr {
       },
       isValidPropertyAccess: (nodeIn, propertyName) => {
         const node = Node.get.parseTreeOf(nodeIn, isPropertyAccessOrQualifiedNameOrImportTypeNode);
-        return !!node && isValidPropertyAccess(node, qy.get.escUnderscores(propertyName));
+        return !!node && isValidPropertyAccess(node, syntax.get.escUnderscores(propertyName));
       },
       isValidPropertyAccessForCompletions: (nodeIn, type, property) => {
         const node = Node.get.parseTreeOf(nodeIn, isPropertyAccessExpression);
@@ -658,8 +658,8 @@ namespace qnr {
         const node = Node.get.parseTreeOf(nodeIn, isParameter);
         return node ? isOptionalParameter(node) : false;
       },
-      tryGetMemberInModuleExports: (name, symbol) => tryGetMemberInModuleExports(qy.get.escUnderscores(name), symbol),
-      tryGetMemberInModuleExportsAndProperties: (name, symbol) => tryGetMemberInModuleExportsAndProperties(qy.get.escUnderscores(name), symbol),
+      tryGetMemberInModuleExports: (name, symbol) => tryGetMemberInModuleExports(syntax.get.escUnderscores(name), symbol),
+      tryGetMemberInModuleExportsAndProperties: (name, symbol) => tryGetMemberInModuleExportsAndProperties(syntax.get.escUnderscores(name), symbol),
       tryFindAmbientModuleWithoutAugmentations: (moduleName) => {
         // we deliberately exclude augmentations
         // since we are only interested in declarations of the module itself
@@ -695,16 +695,16 @@ namespace qnr {
       getAllPossiblePropertiesOfTypes,
       getSuggestedSymbolForNonexistentProperty,
       getSuggestionForNonexistentProperty,
-      getSuggestedSymbolForNonexistentSymbol: (location, name, meaning) => getSuggestedSymbolForNonexistentSymbol(location, qy.get.escUnderscores(name), meaning),
-      getSuggestionForNonexistentSymbol: (location, name, meaning) => getSuggestionForNonexistentSymbol(location, qy.get.escUnderscores(name), meaning),
+      getSuggestedSymbolForNonexistentSymbol: (location, name, meaning) => getSuggestedSymbolForNonexistentSymbol(location, syntax.get.escUnderscores(name), meaning),
+      getSuggestionForNonexistentSymbol: (location, name, meaning) => getSuggestionForNonexistentSymbol(location, syntax.get.escUnderscores(name), meaning),
       getSuggestedSymbolForNonexistentModule,
       getSuggestionForNonexistentExport,
       getBaseConstraintOfType,
       getDefaultFromTypeParameter: (type) => (type && type.flags & TypeFlags.TypeParameter ? getDefaultFromTypeParameter(type as TypeParameter) : undefined),
       resolveName(name, location, meaning, excludeGlobals) {
-        return resolveName(location, qy.get.escUnderscores(name), meaning, /*nameNotFoundMessage*/ undefined, /*nameArg*/ undefined, /*isUse*/ false, excludeGlobals);
+        return resolveName(location, syntax.get.escUnderscores(name), meaning, /*nameNotFoundMessage*/ undefined, /*nameArg*/ undefined, /*isUse*/ false, excludeGlobals);
       },
-      getJsxNamespace: (n) => qy.get.unescUnderscores(getJsxNamespace(n)),
+      getJsxNamespace: (n) => syntax.get.unescUnderscores(getJsxNamespace(n)),
       getAccessibleSymbolChain,
       getTypePredicateOfSignature,
       resolveExternalModuleName: (moduleSpecifier) => {
@@ -769,14 +769,14 @@ namespace qnr {
       return res;
     }
 
-    const tupleTypes = QMap.create<GenericType>();
-    const unionTypes = QMap.create<UnionType>();
-    const intersectionTypes = QMap.create<Type>();
-    const literalTypes = QMap.create<LiteralType>();
-    const indexedAccessTypes = QMap.create<IndexedAccessType>();
-    const substitutionTypes = QMap.create<SubstitutionType>();
+    const tupleTypes = new QMap<GenericType>();
+    const unionTypes = new QMap<UnionType>();
+    const intersectionTypes = new QMap<Type>();
+    const literalTypes = new QMap<LiteralType>();
+    const indexedAccessTypes = new QMap<IndexedAccessType>();
+    const substitutionTypes = new QMap<SubstitutionType>();
     const evolvingArrayTypes: EvolvingArrayType[] = [];
-    const undefinedProperties = QMap.create<Symbol>() as UnderscoreEscapedMap<Symbol>;
+    const undefinedProperties = new QMap<Symbol>() as UnderscoreEscapedMap<Symbol>;
 
     const unknownSymbol = createSymbol(SymbolFlags.Property, 'unknown' as __String);
     const resolvingSymbol = createSymbol(0, InternalSymbolName.Resolving);
@@ -837,7 +837,7 @@ namespace qnr {
     const emptyTypeLiteralType = createAnonymousType(emptyTypeLiteralSymbol, emptySymbols, emptyArray, emptyArray, undefined, undefined);
 
     const emptyGenericType = <GenericType>(<ObjectType>createAnonymousType(undefined, emptySymbols, emptyArray, emptyArray, undefined, undefined));
-    emptyGenericType.instantiations = QMap.create<TypeReference>();
+    emptyGenericType.instantiations = new QMap<TypeReference>();
 
     const anyFunctionType = createAnonymousType(undefined, emptySymbols, emptyArray, emptyArray, undefined, undefined);
     // The anyFunctionType contains the anyFunctionType by definition. The flag is further propagated
@@ -862,7 +862,7 @@ namespace qnr {
 
     const enumNumberIndexInfo = createIndexInfo(stringType, /*isReadonly*/ true);
 
-    const iterationTypesCache = QMap.create<IterationTypes>(); // cache for common IterationTypes instances
+    const iterationTypesCache = new QMap<IterationTypes>(); // cache for common IterationTypes instances
     const noIterationTypes: IterationTypes = {
       get yieldType(): Type {
         return fail('Not supported');
@@ -920,7 +920,7 @@ namespace qnr {
     }
     /** Key is "/path/to/a.ts|/path/to/b.ts". */
     let amalgamatedDuplicates: QMap<DuplicateInfoForFiles> | undefined;
-    const reverseMappedCache = QMap.create<Type | undefined>();
+    const reverseMappedCache = new QMap<Type | undefined>();
     let inInferTypeForHomomorphicMappedType = false;
     let ambientModulesCache: Symbol[] | undefined;
     /**
@@ -973,7 +973,7 @@ namespace qnr {
     let deferredGlobalOmitSymbol: Symbol;
     let deferredGlobalBigIntType: ObjectType;
 
-    const allPotentiallyUnusedIdentifiers = QMap.create<PotentiallyUnusedIdentifier[]>(); // key is file name
+    const allPotentiallyUnusedIdentifiers = new QMap<PotentiallyUnusedIdentifier[]>(); // key is file name
 
     let flowLoopStart = 0;
     let flowLoopCount = 0;
@@ -1013,7 +1013,7 @@ namespace qnr {
     const diagnostics = createDiagnosticCollection();
     const suggestionDiagnostics = createDiagnosticCollection();
 
-    const typeofTypesByName: QReadonlyMap<Type> = QMap.create<Type>({
+    const typeofTypesByName: QReadonlyMap<Type> = new QMap<Type>({
       string: stringType,
       number: numberType,
       bigint: bigintType,
@@ -1027,12 +1027,12 @@ namespace qnr {
     let _jsxFactoryEntity: EntityName | undefined;
     let outofbandVarianceMarkerHandler: ((onlyUnreliable: boolean) => void) | undefined;
 
-    const subtypeRelation = QMap.create<RelationComparisonResult>();
-    const strictSubtypeRelation = QMap.create<RelationComparisonResult>();
-    const assignableRelation = QMap.create<RelationComparisonResult>();
-    const comparableRelation = QMap.create<RelationComparisonResult>();
-    const identityRelation = QMap.create<RelationComparisonResult>();
-    const enumRelation = QMap.create<RelationComparisonResult>();
+    const subtypeRelation = new QMap<RelationComparisonResult>();
+    const strictSubtypeRelation = new QMap<RelationComparisonResult>();
+    const assignableRelation = new QMap<RelationComparisonResult>();
+    const comparableRelation = new QMap<RelationComparisonResult>();
+    const identityRelation = new QMap<RelationComparisonResult>();
+    const enumRelation = new QMap<RelationComparisonResult>();
 
     const builtinGlobals = new SymbolTable();
     builtinGlobals.set(undefinedSymbol.escName, undefinedSymbol);
@@ -1068,11 +1068,11 @@ namespace qnr {
             _jsxNamespace = getFirstIdentifier(_jsxFactoryEntity).escapedText;
           }
         } else if (compilerOptions.reactNamespace) {
-          _jsxNamespace = qy.get.escUnderscores(compilerOptions.reactNamespace);
+          _jsxNamespace = syntax.get.escUnderscores(compilerOptions.reactNamespace);
         }
       }
       if (!_jsxFactoryEntity) {
-        _jsxFactoryEntity = QualifiedName.create(createIdentifier(qy.get.unescUnderscores(_jsxNamespace)), 'createElement');
+        _jsxFactoryEntity = QualifiedName.create(createIdentifier(syntax.get.unescUnderscores(_jsxNamespace)), 'createElement');
       }
       return _jsxNamespace;
 
@@ -1253,7 +1253,7 @@ namespace qnr {
           const filesDuplicates = getOrUpdate<DuplicateInfoForFiles>(amalgamatedDuplicates, `${firstFile.path}|${secondFile.path}`, () => ({
             firstFile,
             secondFile,
-            conflictingSymbols: QMap.create(),
+            conflictingSymbols: new QMap(),
           }));
           const conflictingSymbolInfo = getOrUpdate<DuplicateInfoForSymbol>(filesDuplicates.conflictingSymbols, symbolName, () => ({
             isBlockScoped: isEitherBlockScoped,
@@ -1331,7 +1331,7 @@ namespace qnr {
           if (some(patternAmbientModules, (module) => mainModule === module.symbol)) {
             const merged = mergeSymbol(moduleAugmentation.symbol, mainModule, /*unidirectional*/ true);
             if (!patternAmbientModuleAugmentations) {
-              patternAmbientModuleAugmentations = QMap.create();
+              patternAmbientModuleAugmentations = new QMap();
             }
             // moduleName will be a StringLiteral since this is not `declare global`.
             patternAmbientModuleAugmentations.set((moduleName as StringLiteral).text, merged);
@@ -2055,7 +2055,7 @@ namespace qnr {
               !compilerOptions.allowUmdGlobalAccess,
               errorLocation!,
               Diagnostics._0_refers_to_a_UMD_global_but_the_current_file_is_a_module_Consider_adding_an_import_instead,
-              qy.get.unescUnderscores(name)
+              syntax.get.unescUnderscores(name)
             );
           }
         }
@@ -2099,7 +2099,7 @@ namespace qnr {
             ? Diagnostics._0_cannot_be_used_as_a_value_because_it_was_exported_using_export_type
             : Diagnostics._0_cannot_be_used_as_a_value_because_it_was_imported_using_import_type;
           const relatedMessage = isExport ? Diagnostics._0_was_exported_here : Diagnostics._0_was_imported_here;
-          const unescName = qy.get.unescUnderscores(name);
+          const unescName = syntax.get.unescUnderscores(name);
           addRelatedInfo(error(useSite, message, unescName), createDiagnosticForNode(typeOnlyDeclaration, relatedMessage, unescName));
         }
       }
@@ -2139,7 +2139,7 @@ namespace qnr {
     }
 
     function diagnosticName(nameArg: __String | Identifier | PrivateIdentifier) {
-      return isString(nameArg) ? qy.get.unescUnderscores(nameArg as __String) : declarationNameToString(nameArg as Identifier);
+      return isString(nameArg) ? syntax.get.unescUnderscores(nameArg as __String) : declarationNameToString(nameArg as Identifier);
     }
 
     function isTypeParameterSymbolDeclaredInContainer(symbol: Symbol, container: Node) {
@@ -2233,13 +2233,13 @@ namespace qnr {
               error(
                 parent,
                 Diagnostics.Cannot_access_0_1_because_0_is_a_type_but_not_a_namespace_Did_you_mean_to_retrieve_the_type_of_the_property_1_in_0_with_0_1,
-                qy.get.unescUnderscores(name),
-                qy.get.unescUnderscores(propName)
+                syntax.get.unescUnderscores(name),
+                syntax.get.unescUnderscores(propName)
               );
               return true;
             }
           }
-          error(errorLocation, Diagnostics._0_only_refers_to_a_type_but_is_being_used_as_a_namespace_here, qy.get.unescUnderscores(name));
+          error(errorLocation, Diagnostics._0_only_refers_to_a_type_but_is_being_used_as_a_namespace_here, syntax.get.unescUnderscores(name));
           return true;
         }
       }
@@ -2251,7 +2251,7 @@ namespace qnr {
       if (meaning & (SymbolFlags.Type & ~SymbolFlags.Namespace)) {
         const symbol = resolveSymbol(resolveName(errorLocation, name, ~SymbolFlags.Type & SymbolFlags.Value, /*nameNotFoundMessage*/ undefined, /*nameArg*/ undefined, /*isUse*/ false));
         if (symbol && !(symbol.flags & SymbolFlags.Namespace)) {
-          error(errorLocation, Diagnostics._0_refers_to_a_value_but_is_being_used_as_a_type_here_Did_you_mean_typeof_0, qy.get.unescUnderscores(name));
+          error(errorLocation, Diagnostics._0_refers_to_a_value_but_is_being_used_as_a_type_here_Did_you_mean_typeof_0, syntax.get.unescUnderscores(name));
           return true;
         }
       }
@@ -2273,7 +2273,7 @@ namespace qnr {
     function checkAndReportErrorForUsingTypeAsValue(errorLocation: Node, name: __String, meaning: SymbolFlags): boolean {
       if (meaning & (SymbolFlags.Value & ~SymbolFlags.NamespaceModule)) {
         if (isPrimitiveTypeName(name)) {
-          error(errorLocation, Diagnostics._0_only_refers_to_a_type_but_is_being_used_as_a_value_here, qy.get.unescUnderscores(name));
+          error(errorLocation, Diagnostics._0_only_refers_to_a_type_but_is_being_used_as_a_value_here, syntax.get.unescUnderscores(name));
           return true;
         }
         const symbol = resolveSymbol(resolveName(errorLocation, name, SymbolFlags.Type & ~SymbolFlags.Value, /*nameNotFoundMessage*/ undefined, /*nameArg*/ undefined, /*isUse*/ false));
@@ -2281,7 +2281,7 @@ namespace qnr {
           const message = isES2015OrLaterConstructorName(name)
             ? Diagnostics._0_only_refers_to_a_type_but_is_being_used_as_a_value_here_Do_you_need_to_change_your_target_library_Try_changing_the_lib_compiler_option_to_es2015_or_later
             : Diagnostics._0_only_refers_to_a_type_but_is_being_used_as_a_value_here;
-          error(errorLocation, message, qy.get.unescUnderscores(name));
+          error(errorLocation, message, syntax.get.unescUnderscores(name));
           return true;
         }
       }
@@ -2305,7 +2305,7 @@ namespace qnr {
       if (meaning & (SymbolFlags.Value & ~SymbolFlags.NamespaceModule & ~SymbolFlags.Type)) {
         const symbol = resolveSymbol(resolveName(errorLocation, name, SymbolFlags.NamespaceModule & ~SymbolFlags.Value, /*nameNotFoundMessage*/ undefined, /*nameArg*/ undefined, /*isUse*/ false));
         if (symbol) {
-          error(errorLocation, Diagnostics.Cannot_use_namespace_0_as_a_value, qy.get.unescUnderscores(name));
+          error(errorLocation, Diagnostics.Cannot_use_namespace_0_as_a_value, syntax.get.unescUnderscores(name));
           return true;
         }
       } else if (meaning & (SymbolFlags.Type & ~SymbolFlags.NamespaceModule & ~SymbolFlags.Value)) {
@@ -2313,7 +2313,7 @@ namespace qnr {
           resolveName(errorLocation, name, (SymbolFlags.ValueModule | SymbolFlags.NamespaceModule) & ~SymbolFlags.Type, /*nameNotFoundMessage*/ undefined, /*nameArg*/ undefined, /*isUse*/ false)
         );
         if (symbol) {
-          error(errorLocation, Diagnostics.Cannot_use_namespace_0_as_a_type, qy.get.unescUnderscores(name));
+          error(errorLocation, Diagnostics.Cannot_use_namespace_0_as_a_type, syntax.get.unescUnderscores(name));
           return true;
         }
       }
@@ -2442,7 +2442,7 @@ namespace qnr {
 
         // Non-null assertion is safe because the optionality comes from ImportClause,
         // but if an ImportClause was the typeOnlyDeclaration, it had to have a `name`.
-        const name = qy.get.unescUnderscores(typeOnlyDeclaration.name!.escapedText);
+        const name = syntax.get.unescUnderscores(typeOnlyDeclaration.name!.escapedText);
         addRelatedInfo(error(node.moduleReference, message), createDiagnosticForNode(typeOnlyDeclaration, relatedMessage, name));
       }
     }
@@ -2475,7 +2475,7 @@ namespace qnr {
         }
         // It _might_ still be incorrect to assume there is no __esModule marker on the import at runtime, even if there is no `default` member
         // So we check a bit more,
-        if (resolveExportByName(moduleSymbol, qy.get.escUnderscores('__esModule'), /*sourceNode*/ undefined, dontResolveAlias)) {
+        if (resolveExportByName(moduleSymbol, syntax.get.escUnderscores('__esModule'), /*sourceNode*/ undefined, dontResolveAlias)) {
           // If there is an `__esModule` specified in the declaration (meaning someone explicitly added it or wrote it in their code),
           // it definitely is a module and does not have a synthetic default
           return false;
@@ -2490,7 +2490,7 @@ namespace qnr {
         return hasExportAssignmentSymbol(moduleSymbol);
       }
       // JS files have a synthetic default if they do not contain ES2015+ module syntax (export = is not valid in js) _and_ do not have an __esModule marker
-      return !file.externalModuleIndicator && !resolveExportByName(moduleSymbol, qy.get.escUnderscores('__esModule'), /*sourceNode*/ undefined, dontResolveAlias);
+      return !file.externalModuleIndicator && !resolveExportByName(moduleSymbol, syntax.get.escUnderscores('__esModule'), /*sourceNode*/ undefined, dontResolveAlias);
     }
 
     function getTargetOfImportClause(node: ImportClause, dontResolveAlias: boolean): Symbol | undefined {
@@ -3420,7 +3420,7 @@ namespace qnr {
         const exportStars = symbol.exports.get(InternalSymbolName.ExportStar);
         if (exportStars) {
           const nestedSymbols = new SymbolTable();
-          const lookupTable = QMap.create<ExportCollisionTracker>() as ExportCollisionTrackerTable;
+          const lookupTable = new QMap<ExportCollisionTracker>() as ExportCollisionTrackerTable;
           for (const node of exportStars.declarations) {
             const resolvedModule = resolveExternalModuleName(node, (node as ExportDeclaration).moduleSpecifier!);
             const exportedSymbols = visit(resolvedModule);
@@ -3437,7 +3437,7 @@ namespace qnr {
                   node,
                   Diagnostics.Module_0_has_already_exported_a_member_named_1_Consider_explicitly_re_exporting_to_resolve_the_ambiguity,
                   lookupTable.get(id)!.specifierText,
-                  qy.get.unescUnderscores(id)
+                  syntax.get.unescUnderscores(id)
                 )
               );
             }
@@ -3484,7 +3484,7 @@ namespace qnr {
           results = append(results, resolvedModule);
         }
         if (length(results)) {
-          (links.extendedContainersByFile || (links.extendedContainersByFile = QMap.create())).set(id, results!);
+          (links.extendedContainersByFile || (links.extendedContainersByFile = new QMap())).set(id, results!);
           return results!;
         }
       }
@@ -3651,7 +3651,7 @@ namespace qnr {
     function getNamedMembers(ms: SymbolTable): Symbol[] {
       let r: Symbol[] | undefined;
       ms.forEach((symbol, id) => {
-        if (!qy.is.reservedName(id) && symbolIsValue(symbol)) (r || (r = [])).push(symbol);
+        if (!syntax.is.reservedName(id) && symbolIsValue(symbol)) (r || (r = [])).push(symbol);
       });
       return r || emptyArray;
     }
@@ -3745,7 +3745,7 @@ namespace qnr {
       enclosingDeclaration: Node | undefined,
       meaning: SymbolFlags,
       useOnlyExternalAliasing: boolean,
-      visitedSymbolTablesMap: QMap<SymbolTable[]> = QMap.create()
+      visitedSymbolTablesMap: QMap<SymbolTable[]> = new QMap()
     ): Symbol[] | undefined {
       if (!(symbol && !isPropertyOrMethodDeclarationSymbol(symbol))) {
         return;
@@ -4408,7 +4408,7 @@ namespace qnr {
 
         if (!inTypeAlias && type.aliasSymbol && (context.flags & NodeBuilderFlags.UseAliasDefinedOutsideCurrentScope || isTypeSymbolAccessible(type.aliasSymbol, context.enclosingDeclaration))) {
           const typeArgumentNodes = mapToTypeNodes(type.aliasTypeArguments, context);
-          if (qy.is.reservedName(type.aliasSymbol.escName) && !(type.aliasSymbol.flags & SymbolFlags.Class)) return TypeReferenceNode.create(createIdentifier(''), typeArgumentNodes);
+          if (syntax.is.reservedName(type.aliasSymbol.escName) && !(type.aliasSymbol.flags & SymbolFlags.Class)) return TypeReferenceNode.create(createIdentifier(''), typeArgumentNodes);
           return symbolToTypeNode(type.aliasSymbol, context, SymbolFlags.Type, typeArgumentNodes);
         }
 
@@ -4562,9 +4562,9 @@ namespace qnr {
           // Since instantiations of the same anonymous type have the same symbol, tracking symbols instead
           // of types allows us to catch circular references to instantiations of the same anonymous type
           if (!context.visitedTypes) {
-            context.visitedTypes = QMap.create<true>();
+            context.visitedTypes = new QMap<true>();
           }
-          if (id && !context.symbolDepth) context.symbolDepth = QMap.create<number>();
+          if (id && !context.symbolDepth) context.symbolDepth = new QMap<number>();
           let depth: number | undefined;
           if (id) {
             depth = context.symbolDepth!.get(id) || 0;
@@ -4639,7 +4639,7 @@ namespace qnr {
                     const isOptional = isOptionalOrRest && !isRest;
                     tupleConstituentNodes[i] = NamedTupleMember.create(
                       isRest ? createToken(Syntax.Dot3Token) : undefined,
-                      createIdentifier(qy.get.unescUnderscores(getTupleElementLabel((type.target as TupleType).labeledElementDeclarations![i]))),
+                      createIdentifier(syntax.get.unescUnderscores(getTupleElementLabel((type.target as TupleType).labeledElementDeclarations![i]))),
                       isOptional ? createToken(Syntax.QuestionToken) : undefined,
                       isRest ? ArrayTypeNode.create(tupleConstituentNodes[i]) : tupleConstituentNodes[i]
                     );
@@ -4786,7 +4786,7 @@ namespace qnr {
                 continue;
               }
               if (getDeclarationModifierFlagsFromSymbol(propertySymbol) & (ModifierFlags.Private | ModifierFlags.Protected) && context.tracker.reportPrivateInBaseOfClassExpression) {
-                context.tracker.reportPrivateInBaseOfClassExpression(qy.get.unescUnderscores(propertySymbol.escName));
+                context.tracker.reportPrivateInBaseOfClassExpression(syntax.get.unescUnderscores(propertySymbol.escName));
               }
             }
             if (checkTruncationLength(context) && i + 2 < properties.length - 1) {
@@ -4899,7 +4899,7 @@ namespace qnr {
           }
           const mayHaveNameCollisions = !(context.flags & NodeBuilderFlags.UseFullyQualifiedType);
           /** Map from type reference identifier text to [type, index in `result` where the type node is] */
-          const seenNames = mayHaveNameCollisions ? createUnderscoreEscapedMultiMap<[Type, number]>() : undefined;
+          const seenNames = mayHaveNameCollisions ? createUnderscoredMultiMap<[Type, number]>() : undefined;
           const result: TypeNode[] = [];
           let i = 0;
           for (const type of types) {
@@ -5203,7 +5203,7 @@ namespace qnr {
         if (context.typeParameterSymbolList && context.typeParameterSymbolList.get(symbolId)) {
           return;
         }
-        (context.typeParameterSymbolList || (context.typeParameterSymbolList = QMap.create())).set(symbolId, true);
+        (context.typeParameterSymbolList || (context.typeParameterSymbolList = new QMap())).set(symbolId, true);
         let typeParameterNodes: readonly TypeNode[] | readonly TypeParameterDeclaration[] | undefined;
         if (context.flags & NodeBuilderFlags.WriteTypeParametersInQualifiedName && index < chain.length - 1) {
           const parentSymbol = symbol;
@@ -5279,7 +5279,7 @@ namespace qnr {
               importModuleSpecifierPreference: isBundle ? 'non-relative' : 'relative',
             })
           );
-          links.specifierCache = links.specifierCache || QMap.create();
+          links.specifierCache = links.specifierCache || new QMap();
           links.specifierCache.set(contextFile.path, specifier);
         }
         return specifier;
@@ -5351,7 +5351,7 @@ namespace qnr {
               const exports = getExportsOfSymbol(parent);
               qu.forEachEntry(exports, (ex, name) => {
                 if (getSymbolIfSameReference(ex, symbol) && !isLateBoundName(name) && name !== InternalSymbolName.ExportEquals) {
-                  symbolName = qy.get.unescUnderscores(name);
+                  symbolName = syntax.get.unescUnderscores(name);
                   return true;
                 }
               });
@@ -5425,8 +5425,8 @@ namespace qnr {
           if (text !== rawtext) {
             result = createIdentifier(text, result.typeArguments);
           }
-          (context.typeParameterNames || (context.typeParameterNames = QMap.create())).set('' + getTypeId(type), result);
-          (context.typeParameterNamesByText || (context.typeParameterNamesByText = QMap.create())).set(result.escapedText as string, true);
+          (context.typeParameterNames || (context.typeParameterNames = new QMap())).set('' + getTypeId(type), result);
+          (context.typeParameterNamesByText || (context.typeParameterNamesByText = new QMap())).set(result.escapedText as string, true);
         }
         return result;
       }
@@ -5481,7 +5481,7 @@ namespace qnr {
           if (isSingleOrDoubleQuote(firstChar) && some(symbol.declarations, hasNonGlobalAugmentationExternalModuleSymbol)) {
             return createLiteral(getSpecifierForModuleSymbol(symbol, context));
           }
-          const canUsePropertyAccess = firstChar === Codes.hash ? symbolName.length > 1 && qy.is.identifierStart(symbolName.charCodeAt(1)) : qy.is.identifierStart(firstChar);
+          const canUsePropertyAccess = firstChar === Codes.hash ? symbolName.length > 1 && syntax.is.identifierStart(symbolName.charCodeAt(1)) : syntax.is.identifierStart(firstChar);
           if (index === 0 || canUsePropertyAccess) {
             const identifier = setEmitFlags(createIdentifier(symbolName, typeParameterNodes), EmitFlags.NoAsciiEscaping);
             identifier.symbol = symbol;
@@ -5525,7 +5525,7 @@ namespace qnr {
         if (isKnownSymbol(symbol)) {
           return ComputedPropertyName.create(createPropertyAccess(createIdentifier('Symbol'), (symbol.escName as string).substr(3)));
         }
-        const rawName = qy.get.unescUnderscores(symbol.escName);
+        const rawName = syntax.get.unescUnderscores(symbol.escName);
         return createPropertyNameNodeForIdentifierOrLiteral(rawName, singleQuote);
       }
 
@@ -5535,7 +5535,7 @@ namespace qnr {
         if (nameType) {
           if (nameType.flags & TypeFlags.StringOrNumberLiteral) {
             const name = '' + (<StringLiteralType | NumberLiteralType>nameType).value;
-            if (!qy.is.identifierText(name) && !NumericLiteral.name(name)) {
+            if (!syntax.is.identifierText(name) && !NumericLiteral.name(name)) {
               return createLiteral(name, !!singleQuote);
             }
             if (NumericLiteral.name(name) && startsWith(name, '-')) {
@@ -5550,7 +5550,7 @@ namespace qnr {
       }
 
       function createPropertyNameNodeForIdentifierOrLiteral(name: string, singleQuote?: boolean) {
-        return qy.is.identifierText(name) ? createIdentifier(name) : createLiteral(NumericLiteral.name(name) && +name >= 0 ? +name : name, !!singleQuote);
+        return syntax.is.identifierText(name) ? createIdentifier(name) : createLiteral(NumericLiteral.name(name) && +name >= 0 ? +name : name, !!singleQuote);
       }
 
       function cloneNodeBuilderContext(context: NodeBuilderContext): NodeBuilderContext {
@@ -5796,7 +5796,7 @@ namespace qnr {
             }
           }
 
-          if (file && Node.is.kind(TupleTypeNode, node) && qy.get.lineAndCharOf(file, node.pos).line === qy.get.lineAndCharOf(file, node.end).line) {
+          if (file && Node.is.kind(TupleTypeNode, node) && syntax.get.lineAndCharOf(file, node.pos).line === syntax.get.lineAndCharOf(file, node.end).line) {
             setEmitFlags(node, EmitFlags.SingleLine);
           }
 
@@ -5850,13 +5850,13 @@ namespace qnr {
         // we're trying to emit from later on)
         const enclosingDeclaration = context.enclosingDeclaration!;
         let results: Statement[] = [];
-        const visitedSymbols: QMap<true> = QMap.create();
+        const visitedSymbols: QMap<true> = new QMap();
         let deferredPrivates: QMap<Symbol> | undefined;
         const oldcontext = context;
         context = {
           ...oldcontext,
-          usedSymbolNames: QMap.create(),
-          remappedSymbolNames: QMap.create(),
+          usedSymbolNames: new QMap(),
+          remappedSymbolNames: new QMap(),
           tracker: {
             ...oldcontext.tracker,
             trackSymbol: (sym, decl, meaning) => {
@@ -5879,7 +5879,7 @@ namespace qnr {
           });
         }
         qu.forEachEntry(symbolTable, (symbol, name) => {
-          const baseName = qy.get.unescUnderscores(name);
+          const baseName = syntax.get.unescUnderscores(name);
           void getInternalSymbolName(symbol, baseName); // Called to cache values into `usedSymbolNames` and `remappedSymbolNames`
         });
         let addingDeclare = !bundled;
@@ -6053,7 +6053,7 @@ namespace qnr {
         function visitSymbolTable(symbolTable: SymbolTable, suppressNewPrivateContext?: boolean, propertyAsAlias?: boolean) {
           const oldDeferredPrivates = deferredPrivates;
           if (!suppressNewPrivateContext) {
-            deferredPrivates = QMap.create();
+            deferredPrivates = new QMap();
           }
           symbolTable.forEach((symbol: Symbol) => {
             serializeSymbol(symbol, /*isPrivate*/ false, !!propertyAsAlias);
@@ -6098,9 +6098,9 @@ namespace qnr {
         // If it's a class/interface/function: emit a class/interface/function with a `default` modifier
         // These forms can merge, eg (`export default 12; export default interface A {}`)
         function serializeSymbolWorker(symbol: Symbol, isPrivate: boolean, propertyAsAlias: boolean) {
-          const symbolName = qy.get.unescUnderscores(symbol.escName);
+          const symbolName = syntax.get.unescUnderscores(symbol.escName);
           const isDefault = symbol.escName === InternalSymbolName.Default;
-          if (!(context.flags & NodeBuilderFlags.AllowAnonymousIdentifier) && qy.is.stringANonContextualKeyword(symbolName) && !isDefault) {
+          if (!(context.flags & NodeBuilderFlags.AllowAnonymousIdentifier) && syntax.is.stringANonContextualKeyword(symbolName) && !isDefault) {
             // Oh no. We cannot use this symbol's name as it's name... It's likely some jsdoc had an invalid name like `export` or `default` :(
             context.encounteredError = true;
             // TODO: Issue error via symbol tracker?
@@ -6184,7 +6184,7 @@ namespace qnr {
         function includePrivateSymbol(symbol: Symbol) {
           if (some(symbol.declarations, isParameterDeclaration)) return;
           Debug.assertIsDefined(deferredPrivates);
-          getUnusedName(qy.get.unescUnderscores(symbol.escName), symbol); // Call to cache unique name for symbol
+          getUnusedName(syntax.get.unescUnderscores(symbol.escName), symbol); // Call to cache unique name for symbol
           deferredPrivates.set('' + getSymbolId(symbol), symbol);
         }
 
@@ -6312,7 +6312,7 @@ namespace qnr {
                   mapDefined(
                     filter(mergedMembers, (n) => n.escName !== InternalSymbolName.ExportEquals),
                     (s) => {
-                      const name = qy.get.unescUnderscores(s.escName);
+                      const name = syntax.get.unescUnderscores(s.escName);
                       const localName = getInternalSymbolName(s, name);
                       const aliasDecl = s.declarations && getDeclarationOfAliasSymbol(s);
                       if (containingFile && (aliasDecl ? containingFile !== Node.get.sourceFileOf(aliasDecl) : !some(s.declarations, (d) => Node.get.sourceFileOf(d) === containingFile))) {
@@ -6321,7 +6321,7 @@ namespace qnr {
                       }
                       const target = aliasDecl && getTargetOfAliasDeclaration(aliasDecl, /*dontRecursivelyResolve*/ true);
                       includePrivateSymbol(target || s);
-                      const targetName = target ? getInternalSymbolName(target, qy.get.unescUnderscores(target.escName)) : localName;
+                      const targetName = target ? getInternalSymbolName(target, syntax.get.unescUnderscores(target.escName)) : localName;
                       return createExportSpecifier(name === targetName ? undefined : targetName, name);
                     }
                   )
@@ -6346,7 +6346,7 @@ namespace qnr {
                   // other way to get the possible const value of an enum member that I'm aware of, as the value is cached
                   // _on the declaration_, not on the declaration's symbol...
                   const initializedValue = p.declarations && p.declarations[0] && Node.is.kind(EnumMember, p.declarations[0]) && getConstantValue(p.declarations[0] as EnumMember);
-                  return createEnumMember(qy.get.unescUnderscores(p.escName), initializedValue === undefined ? undefined : createLiteral(initializedValue));
+                  return createEnumMember(syntax.get.unescUnderscores(p.escName), initializedValue === undefined ? undefined : createLiteral(initializedValue));
                 }
               )
             ),
@@ -6584,7 +6584,7 @@ namespace qnr {
           if (!target) {
             return;
           }
-          let verbatimTargetName = qy.get.unescUnderscores(target.escName);
+          let verbatimTargetName = syntax.get.unescUnderscores(target.escName);
           if (verbatimTargetName === InternalSymbolName.ExportEquals && (compilerOptions.esModuleInterop || compilerOptions.allowSyntheticDefaultImports)) {
             // target refers to an `export=` symbol that was hoisted into a synthetic default - rename here to match
             verbatimTargetName = InternalSymbolName.Default;
@@ -6671,7 +6671,7 @@ namespace qnr {
               // targetName is only used when the target is local, as otherwise the target is an alias that points at
               // another file
               serializeExportSpecifier(
-                qy.get.unescUnderscores(symbol.escName),
+                syntax.get.unescUnderscores(symbol.escName),
                 specifier ? verbatimTargetName : targetName,
                 specifier && StringLiteral.like(specifier) ? createLiteral(specifier.text) : undefined
               );
@@ -6711,7 +6711,7 @@ namespace qnr {
           if (symbol.flags & SymbolFlags.Prototype) {
             return;
           }
-          const name = qy.get.unescUnderscores(symbol.escName);
+          const name = syntax.get.unescUnderscores(symbol.escName);
           const isExportEquals = name === InternalSymbolName.ExportEquals;
           const isDefault = name === InternalSymbolName.Default;
           const isExportAssignment = isExportEquals || isDefault;
@@ -6808,7 +6808,7 @@ namespace qnr {
             !(typeToSerialize.symbol && some(typeToSerialize.symbol.declarations, (d) => Node.get.sourceFileOf(d) !== ctxSrc)) &&
             !some(getPropertiesOfType(typeToSerialize), (p) => isLateBoundName(p.escName)) &&
             !some(getPropertiesOfType(typeToSerialize), (p) => some(p.declarations, (d) => Node.get.sourceFileOf(d) !== ctxSrc)) &&
-            every(getPropertiesOfType(typeToSerialize), (p) => qy.is.identifierText(symbolName(p)) && !qy.is.stringAndKeyword(symbolName(p)))
+            every(getPropertiesOfType(typeToSerialize), (p) => syntax.is.identifierText(symbolName(p)) && !syntax.is.stringAndKeyword(symbolName(p)))
           );
         }
 
@@ -7104,7 +7104,7 @@ namespace qnr {
           } else if (localName === InternalSymbolName.ExportEquals) {
             localName = '_exports';
           }
-          localName = qy.is.identifierText(localName) && !qy.is.stringANonContextualKeyword(localName) ? localName : '_' + localName.replace(/[^a-zA-Z0-9]/g, '_');
+          localName = syntax.is.identifierText(localName) && !syntax.is.stringANonContextualKeyword(localName) ? localName : '_' + localName.replace(/[^a-zA-Z0-9]/g, '_');
           return localName;
         }
 
@@ -7220,7 +7220,7 @@ namespace qnr {
       if (nameType) {
         if (nameType.flags & TypeFlags.StringOrNumberLiteral) {
           const name = '' + (<StringLiteralType | NumberLiteralType>nameType).value;
-          if (!qy.is.identifierText(name) && !NumericLiteral.name(name)) {
+          if (!syntax.is.identifierText(name) && !NumericLiteral.name(name)) {
             return `"${escapeString(name, Codes.doubleQuote)}"`;
           }
           if (NumericLiteral.name(name) && startsWith(name, '-')) {
@@ -7410,7 +7410,7 @@ namespace qnr {
       let result: Node[] | undefined;
       let visited: QMap<true> | undefined;
       if (exportSymbol) {
-        visited = QMap.create();
+        visited = new QMap();
         visited.set('' + getSymbolId(exportSymbol), true);
         buildVisibleNodeList(exportSymbol.declarations);
       }
@@ -7917,7 +7917,7 @@ namespace qnr {
     }
 
     function getFlowTypeInConstructor(symbol: Symbol, constructor: ConstructorDeclaration) {
-      const reference = createPropertyAccess(createThis(), qy.get.unescUnderscores(symbol.escName));
+      const reference = createPropertyAccess(createThis(), syntax.get.unescUnderscores(symbol.escName));
       reference.expression.parent = reference;
       reference.parent = constructor;
       reference.flowNode = constructor.returnFlowNode;
@@ -8106,7 +8106,7 @@ namespace qnr {
               // declaring an `export const a: number`. In that case, we issue a duplicate identifier error, because
               // it's unclear what that's supposed to mean, so it's probably a mistake.
               if (Node.get.sourceFileOf(s.valueDeclaration) !== Node.get.sourceFileOf(exportedMember.valueDeclaration)) {
-                const unescName = qy.get.unescUnderscores(s.escName);
+                const unescName = syntax.get.unescUnderscores(s.escName);
                 const exportedMemberName = tryCast(exportedMember.valueDeclaration, isNamedDeclaration)?.name || exportedMember.valueDeclaration;
                 addRelatedInfo(error(s.valueDeclaration, Diagnostics.Duplicate_identifier_0, unescName), createDiagnosticForNode(exportedMemberName, Diagnostics._0_was_also_declared_here, unescName));
                 addRelatedInfo(error(exportedMemberName, Diagnostics.Duplicate_identifier_0, unescName), createDiagnosticForNode(s.valueDeclaration, Diagnostics._0_was_also_declared_here, unescName));
@@ -9089,7 +9089,7 @@ namespace qnr {
           type.typeParameters = concatenate(outerTypeParameters, localTypeParameters);
           type.outerTypeParameters = outerTypeParameters;
           type.localTypeParameters = localTypeParameters;
-          (<GenericType>type).instantiations = QMap.create<TypeReference>();
+          (<GenericType>type).instantiations = new QMap<TypeReference>();
           (<GenericType>type).instantiations.set(getTypeListId(type.typeParameters), <GenericType>type);
           (<GenericType>type).target = <GenericType>type;
           (<GenericType>type).resolvedTypeArguments = type.typeParameters;
@@ -9121,7 +9121,7 @@ namespace qnr {
             // Initialize the instantiation cache for generic type aliases. The declared type corresponds to
             // an instantiation of the type alias with the type parameters supplied as type arguments.
             links.typeParameters = typeParameters;
-            links.instantiations = QMap.create<Type>();
+            links.instantiations = new QMap<Type>();
             links.instantiations.set(getTypeListId(typeParameters), type);
           }
         } else {
@@ -9447,7 +9447,7 @@ namespace qnr {
         return (<UniqueESSymbolType>type).escName;
       }
       if (type.flags & (TypeFlags.StringLiteral | TypeFlags.NumberLiteral)) {
-        return qy.get.escUnderscores('' + (<StringLiteralType | NumberLiteralType>type).value);
+        return syntax.get.escUnderscores('' + (<StringLiteralType | NumberLiteralType>type).value);
       }
       return fail();
     }
@@ -9531,7 +9531,7 @@ namespace qnr {
             // If we have an existing early-bound member, combine its declarations so that we can
             // report an error at each declaration.
             const declarations = earlySymbol ? concatenate(earlySymbol.declarations, lateSymbol.declarations) : lateSymbol.declarations;
-            const name = (!(type.flags & TypeFlags.UniqueESSymbol) && qy.get.unescUnderscores(memberName)) || declarationNameToString(declName);
+            const name = (!(type.flags & TypeFlags.UniqueESSymbol) && syntax.get.unescUnderscores(memberName)) || declarationNameToString(declName);
             forEach(declarations, (declaration) => error(getNameOfDeclaration(declaration) || declaration, Diagnostics.Property_0_was_also_declared_here, name));
             error(declName || decl, Diagnostics.Duplicate_property_0, name);
             lateSymbol = createSymbol(SymbolFlags.None, memberName, CheckFlags.Late);
@@ -10835,7 +10835,7 @@ namespace qnr {
               singleProp = prop;
             } else if (prop !== singleProp) {
               if (!propSet) {
-                propSet = QMap.create<Symbol>();
+                propSet = new QMap<Symbol>();
                 propSet.set('' + getSymbolId(singleProp), singleProp);
               }
               const id = '' + getSymbolId(prop);
@@ -11128,7 +11128,7 @@ namespace qnr {
     function symbolsToArray(symbols: SymbolTable): Symbol[] {
       const result: Symbol[] = [];
       symbols.forEach((symbol, id) => {
-        if (!qy.is.reservedName(id)) {
+        if (!syntax.is.reservedName(id)) {
           result.push(symbol);
         }
       });
@@ -11572,7 +11572,7 @@ namespace qnr {
     }
 
     function getSignatureInstantiationWithoutFillingInTypeArguments(signature: Signature, typeArguments: readonly Type[] | undefined): Signature {
-      const instantiations = signature.instantiations || (signature.instantiations = QMap.create<Signature>());
+      const instantiations = signature.instantiations || (signature.instantiations = new QMap<Signature>());
       const id = getTypeListId(typeArguments);
       let instantiation = instantiations.get(id);
       if (!instantiation) {
@@ -12506,7 +12506,7 @@ namespace qnr {
       type.typeParameters = typeParameters;
       type.outerTypeParameters = undefined;
       type.localTypeParameters = typeParameters;
-      type.instantiations = QMap.create<TypeReference>();
+      type.instantiations = new QMap<TypeReference>();
       type.instantiations.set(getTypeListId(type.typeParameters), <GenericType>type);
       type.target = <GenericType>type;
       type.resolvedTypeArguments = type.typeParameters;
@@ -12964,7 +12964,7 @@ namespace qnr {
     // Also, unlike union types, the order of the constituent types is preserved in order that overload resolution
     // for intersections of types with signatures can be deterministic.
     function getIntersectionType(types: readonly Type[], aliasSymbol?: Symbol, aliasTypeArguments?: readonly Type[]): Type {
-      const typeMembershipMap: QMap<Type> = QMap.create();
+      const typeMembershipMap: QMap<Type> = new QMap();
       const includes = addTypesToIntersection(typeMembershipMap, 0, types);
       const typeSet: Type[] = arrayFrom(typeMembershipMap.values());
       // An intersection type is considered empty if it contains
@@ -13077,7 +13077,7 @@ namespace qnr {
         return neverType;
       }
       return Node.is.kind(Identifier, name)
-        ? getLiteralType(qy.get.unescUnderscores(name.escapedText))
+        ? getLiteralType(syntax.get.unescUnderscores(name.escapedText))
         : getRegularTypeOfLiteralType(Node.is.kind(ComputedPropertyName, name) ? checkComputedPropertyName(name) : checkExpression(name));
     }
 
@@ -13270,9 +13270,9 @@ namespace qnr {
           if (accessNode && everyType(objectType, (t) => !(<TupleTypeReference>t).target.hasRestElement) && !(accessFlags & AccessFlags.NoTupleBoundsCheck)) {
             const indexNode = getIndexNodeForAccessExpression(accessNode);
             if (isTupleType(objectType)) {
-              error(indexNode, Diagnostics.Tuple_type_0_of_length_1_has_no_element_at_index_2, typeToString(objectType), getTypeReferenceArity(objectType), qy.get.unescUnderscores(propName));
+              error(indexNode, Diagnostics.Tuple_type_0_of_length_1_has_no_element_at_index_2, typeToString(objectType), getTypeReferenceArity(objectType), syntax.get.unescUnderscores(propName));
             } else {
-              error(indexNode, Diagnostics.Property_0_does_not_exist_on_type_1, qy.get.unescUnderscores(propName), typeToString(objectType));
+              error(indexNode, Diagnostics.Property_0_does_not_exist_on_type_1, syntax.get.unescUnderscores(propName), typeToString(objectType));
             }
           }
           errorIfWritingToReadonlyIndex(getIndexInfoOfType(objectType, IndexKind.Number));
@@ -13308,7 +13308,7 @@ namespace qnr {
         }
         if (accessExpression && !isConstEnumObjectType(objectType)) {
           if (objectType.symbol === globalThisSymbol && propName !== undefined && globalThisSymbol.exports!.has(propName) && globalThisSymbol.exports!.get(propName)!.flags & SymbolFlags.BlockScoped) {
-            error(accessExpression, Diagnostics.Property_0_does_not_exist_on_type_1, qy.get.unescUnderscores(propName), typeToString(objectType));
+            error(accessExpression, Diagnostics.Property_0_does_not_exist_on_type_1, syntax.get.unescUnderscores(propName), typeToString(objectType));
           } else if (noImplicitAny && !compilerOptions.suppressImplicitAnyIndexErrors && !suppressNoImplicitAnyError) {
             if (propName !== undefined && typeHasStaticProperty(propName, objectType)) {
               error(accessExpression, Diagnostics.Property_0_is_a_static_member_of_type_1, propName as string, typeToString(objectType));
@@ -13763,7 +13763,7 @@ namespace qnr {
         };
         links.resolvedType = getConditionalType(root, /*mapper*/ undefined);
         if (outerTypeParameters) {
-          root.instantiations = QMap.create<Type>();
+          root.instantiations = new QMap<Type>();
           root.instantiations.set(getTypeListId(outerTypeParameters), links.resolvedType);
         }
       }
@@ -14514,7 +14514,7 @@ namespace qnr {
             : typeParameters;
         links.outerTypeParameters = typeParameters;
         if (typeParameters.length) {
-          links.instantiations = QMap.create<Type>();
+          links.instantiations = new QMap<Type>();
           links.instantiations.set(getTypeListId(typeParameters), target);
         }
       }
@@ -14871,7 +14871,7 @@ namespace qnr {
           // If the first parameter is not an explicit 'this' parameter, then the function has
           // an implicit 'this' parameter which is subject to contextual typing.
           const parameter = firstOrUndefined(node.parameters);
-          if (!(parameter && parameterIsThqy.is.keyword(parameter))) {
+          if (!(parameter && parameterIsThsyntax.is.keyword(parameter))) {
             return true;
           }
         }
@@ -15228,7 +15228,7 @@ namespace qnr {
                     createDiagnosticForNode(
                       targetNode,
                       Diagnostics.The_expected_type_comes_from_property_0_which_is_declared_here_on_type_1,
-                      propertyName && !(nameType.flags & TypeFlags.UniqueESSymbol) ? qy.get.unescUnderscores(propertyName) : typeToString(nameType),
+                      propertyName && !(nameType.flags & TypeFlags.UniqueESSymbol) ? syntax.get.unescUnderscores(propertyName) : typeToString(nameType),
                       typeToString(target)
                     )
                   );
@@ -15304,7 +15304,7 @@ namespace qnr {
       if (Node.is.kind(JsxOpeningElement, node.parent) && Node.is.kind(JsxElement, node.parent.parent)) {
         const containingElement = node.parent.parent;
         const childPropName = getJsxElementChildrenPropertyName(getJsxNamespaceAt(node));
-        const childrenPropName = childPropName === undefined ? 'children' : qy.get.unescUnderscores(childPropName);
+        const childrenPropName = childPropName === undefined ? 'children' : syntax.get.unescUnderscores(childPropName);
         const childrenNameType = getLiteralType(childrenPropName);
         const childrenTargetType = getIndexedAccessType(target, childrenNameType);
         const validChildren = getSemanticJsxChildren(containingElement.children);
@@ -15370,7 +15370,7 @@ namespace qnr {
         if (!invalidTextDiagnostic) {
           const tagNameText = Node.get.textOf(node.parent.tagName);
           const childPropName = getJsxElementChildrenPropertyName(getJsxNamespaceAt(node));
-          const childrenPropName = childPropName === undefined ? 'children' : qy.get.unescUnderscores(childPropName);
+          const childrenPropName = childPropName === undefined ? 'children' : syntax.get.unescUnderscores(childPropName);
           const childrenTargetType = getIndexedAccessType(target, getLiteralType(childrenPropName));
           const diagnostic = Diagnostics._0_components_don_t_accept_text_as_child_elements_Text_in_JSX_has_the_type_string_but_the_expected_type_of_1_is_2;
           invalidTextDiagnostic = {
@@ -15618,8 +15618,8 @@ namespace qnr {
           if (reportErrors) {
             errorReporter!(
               Diagnostics.Types_of_parameters_0_and_1_are_incompatible,
-              qy.get.unescUnderscores(getParameterNameAtPosition(source, i)),
-              qy.get.unescUnderscores(getParameterNameAtPosition(target, i))
+              syntax.get.unescUnderscores(getParameterNameAtPosition(source, i)),
+              syntax.get.unescUnderscores(getParameterNameAtPosition(target, i))
             );
           }
           return Ternary.False;
@@ -16035,7 +16035,7 @@ namespace qnr {
                 path = `${str}`;
               }
               // Otherwise write a dotted name if possible
-              else if (qy.is.identifierText(str)) {
+              else if (syntax.is.identifierText(str)) {
                 path = `${path}.${str}`;
               }
               // Failing that, check if the name is already a computed name
@@ -18680,7 +18680,7 @@ namespace qnr {
 
     function getPropertiesOfContext(context: WideningContext): Symbol[] {
       if (!context.resolvedProperties) {
-        const names = QMap.create<Symbol>() as UnderscoreEscapedMap<Symbol>;
+        const names = new QMap<Symbol>() as UnderscoreEscapedMap<Symbol>;
         for (const t of getSiblingsOfContext(context)) {
           if (isObjectLiteralType(t) && !(getObjectFlags(t) & ObjectFlags.ContainsSpread)) {
             for (const prop of getPropertiesOfType(t)) {
@@ -18843,7 +18843,7 @@ namespace qnr {
             (Node.is.kind(CallSignatureDeclaration, param.parent) || Node.is.kind(MethodSignature, param.parent) || Node.is.kind(FunctionTypeNode, param.parent)) &&
             param.parent.parameters.indexOf(param) > -1 &&
             (resolveName(param, param.name.escapedText, SymbolFlags.Type, undefined, param.name.escapedText, /*isUse*/ true) ||
-              (param.name.originalKeywordKind && qy.is.typeNode(param.name.originalKeywordKind)))
+              (param.name.originalKeywordKind && syntax.is.typeNode(param.name.originalKeywordKind)))
           ) {
             const newName = 'arg' + param.parent.parameters.indexOf(param);
             errorOrSuggestion(noImplicitAny, declaration, Diagnostics.Parameter_has_a_name_but_no_type_Did_you_mean_0_Colon_1, newName, declarationNameToString(param.name));
@@ -19075,7 +19075,7 @@ namespace qnr {
         if (!(t.flags & TypeFlags.StringLiteral)) {
           return;
         }
-        const name = qy.get.escUnderscores((t as StringLiteralType).value);
+        const name = syntax.get.escUnderscores((t as StringLiteralType).value);
         const literalProp = createSymbol(SymbolFlags.Property, name);
         literalProp.type = anyType;
         if (t.symbol) {
@@ -19442,7 +19442,7 @@ namespace qnr {
           inferencePriority = Math.min(inferencePriority, status);
           return;
         }
-        (visited || (visited = QMap.create<number>())).set(key, InferencePriority.Circularity);
+        (visited || (visited = new QMap<number>())).set(key, InferencePriority.Circularity);
         const saveInferencePriority = inferencePriority;
         inferencePriority = InferencePriority.MaxValue;
         action(source, target);
@@ -20028,7 +20028,7 @@ namespace qnr {
       return access.kind === Syntax.PropertyAccessExpression
         ? access.name.escapedText
         : StringLiteral.orNumericLiteralLike(access.argumentExpression)
-        ? qy.get.escUnderscores(access.argumentExpression.text)
+        ? syntax.get.escUnderscores(access.argumentExpression.text)
         : undefined;
     }
 
@@ -21185,7 +21185,7 @@ namespace qnr {
         // If we have previously computed the control flow type for the reference at
         // this flow loop junction, return the cached type.
         const id = getFlowNodeId(flow);
-        const cache = flowLoopCaches[id] || (flowLoopCaches[id] = QMap.create<Type>());
+        const cache = flowLoopCaches[id] || (flowLoopCaches[id] = new QMap<Type>());
         const key = getOrSetCacheKey();
         if (!key) {
           // No cache key is generated when binding patterns are in unnarrowable situations
@@ -21318,7 +21318,7 @@ namespace qnr {
 
       function narrowByInKeyword(type: Type, literal: LiteralExpression, assumeTrue: boolean) {
         if (type.flags & (TypeFlags.Union | TypeFlags.Object) || isThisTypeParameter(type)) {
-          const propName = qy.get.escUnderscores(literal.text);
+          const propName = syntax.get.escUnderscores(literal.text);
           return filterType(type, (t) => isTypePresencePossible(t, propName, assumeTrue));
         }
         return type;
@@ -22958,7 +22958,7 @@ namespace qnr {
           if (isGenericMappedType(t)) {
             const constraint = getConstraintTypeFromMappedType(t);
             const constraintOfConstraint = getBaseConstraintOfType(constraint) || constraint;
-            const propertyNameType = getLiteralType(qy.get.unescUnderscores(name));
+            const propertyNameType = getLiteralType(syntax.get.unescUnderscores(name));
             if (isTypeAssignableTo(propertyNameType, constraintOfConstraint)) {
               return substituteIndexedMappedType(t, propertyNameType);
             }
@@ -23381,7 +23381,7 @@ namespace qnr {
       if (!attributesType) {
         // There is no property named 'props' on this instance type
         if (!!forcedLookupLocation && !!length(context.attributes.properties)) {
-          error(context, Diagnostics.JSX_element_class_does_not_support_attributes_because_it_does_not_have_a_0_property, qy.get.unescUnderscores(forcedLookupLocation));
+          error(context, Diagnostics.JSX_element_class_does_not_support_attributes_because_it_does_not_have_a_0_property, syntax.get.unescUnderscores(forcedLookupLocation));
         }
         return unknownType;
       }
@@ -23436,7 +23436,7 @@ namespace qnr {
           break;
         }
       }
-      if (target.parameters.length && parameterIsThqy.is.keyword(target.parameters[0])) {
+      if (target.parameters.length && parameterIsThsyntax.is.keyword(target.parameters[0])) {
         targetParameterCount--;
       }
       return !hasEffectiveRestParameter(signature) && getParameterCount(signature) < targetParameterCount;
@@ -24000,7 +24000,7 @@ namespace qnr {
           // This is because children element will overwrite the value from attributes.
           // Note: we will not warn "children" attribute overwritten if "children" attribute is specified in object spread.
           if (explicitlySpecifyChildrenAttribute) {
-            error(attributes, Diagnostics._0_are_specified_twice_The_attribute_named_0_will_be_overwritten, qy.get.unescUnderscores(jsxChildrenPropertyName));
+            error(attributes, Diagnostics._0_are_specified_twice_The_attribute_named_0_will_be_overwritten, syntax.get.unescUnderscores(jsxChildrenPropertyName));
           }
 
           const contextualType = getApparentTypeOfContextualType(openingLikeElement.attributes);
@@ -24014,7 +24014,7 @@ namespace qnr {
           // Fake up a property declaration for the children
           childrenPropSymbol.valueDeclaration = PropertySignature.create(
             /*modifiers*/ undefined,
-            qy.get.unescUnderscores(jsxChildrenPropertyName),
+            syntax.get.unescUnderscores(jsxChildrenPropertyName),
             /*questionToken*/ undefined,
             /*type*/ undefined,
             /*initializer*/ undefined
@@ -24075,7 +24075,7 @@ namespace qnr {
         const left = props.get(right.escName);
         const rightType = getTypeOfSymbol(right);
         if (left && !maybeTypeOfKind(rightType, TypeFlags.Nullable) && !(maybeTypeOfKind(rightType, TypeFlags.AnyOrUnknown) && right.flags & SymbolFlags.Optional)) {
-          const diagnostic = error(left.valueDeclaration, Diagnostics._0_is_specified_more_than_once_so_this_usage_will_be_overwritten, qy.get.unescUnderscores(left.escName));
+          const diagnostic = error(left.valueDeclaration, Diagnostics._0_is_specified_more_than_once_so_this_usage_will_be_overwritten, syntax.get.unescUnderscores(left.escName));
           addRelatedInfo(diagnostic, createDiagnosticForNode(spread, Diagnostics.This_spread_always_overwrites_this_property));
         }
       }
@@ -24128,7 +24128,7 @@ namespace qnr {
           return (links.resolvedSymbol = unknownSymbol);
         } else {
           if (noImplicitAny) {
-            error(node, Diagnostics.JSX_element_implicitly_has_type_any_because_no_interface_JSX_0_exists, qy.get.unescUnderscores(JsxNames.IntrinsicElements));
+            error(node, Diagnostics.JSX_element_implicitly_has_type_any_because_no_interface_JSX_0_exists, syntax.get.unescUnderscores(JsxNames.IntrinsicElements));
           }
           return (links.resolvedSymbol = unknownSymbol);
         }
@@ -24186,7 +24186,7 @@ namespace qnr {
           return propertiesOfJsxElementAttribPropInterface[0].escName;
         } else if (propertiesOfJsxElementAttribPropInterface.length > 1) {
           // More than one property on ElementAttributesProperty is an error
-          error(jsxElementAttribPropInterfaceSym!.declarations[0], Diagnostics.The_global_type_JSX_0_may_not_have_more_than_one_property, qy.get.unescUnderscores(nameOfAttribPropContainer));
+          error(jsxElementAttribPropInterfaceSym!.declarations[0], Diagnostics.The_global_type_JSX_0_may_not_have_more_than_one_property, syntax.get.unescUnderscores(nameOfAttribPropContainer));
         }
       }
       return;
@@ -24245,7 +24245,7 @@ namespace qnr {
       const intrinsicElementsType = getJsxType(JsxNames.IntrinsicElements, location);
       if (intrinsicElementsType !== errorType) {
         const stringLiteralTypeName = type.value;
-        const intrinsicProp = getPropertyOfType(intrinsicElementsType, qy.get.escUnderscores(stringLiteralTypeName));
+        const intrinsicProp = getPropertyOfType(intrinsicElementsType, syntax.get.escUnderscores(stringLiteralTypeName));
         if (intrinsicProp) {
           return getTypeOfSymbol(intrinsicProp);
         }
@@ -24790,7 +24790,7 @@ namespace qnr {
           }
           if (leftType.symbol === globalThisSymbol) {
             if (globalThisSymbol.exports!.has(right.escapedText) && globalThisSymbol.exports!.get(right.escapedText)!.flags & SymbolFlags.BlockScoped) {
-              error(right, Diagnostics.Property_0_does_not_exist_on_type_1, qy.get.unescUnderscores(right.escapedText), typeToString(leftType));
+              error(right, Diagnostics.Property_0_does_not_exist_on_type_1, syntax.get.unescUnderscores(right.escapedText), typeToString(leftType));
             } else if (noImplicitAny) {
               error(right, Diagnostics.Element_implicitly_has_an_any_type_because_type_0_has_no_index_signature, typeToString(leftType));
             }
@@ -25019,7 +25019,7 @@ namespace qnr {
         // Sometimes the symbol is found when location is a return type of a function: `typeof x` and `x` is declared in the body of the function
         // So the table *contains* `x` but `x` isn't actually in scope.
         // However, resolveNameHelper will continue and call this callback again, so we'll eventually get a correct suggestion.
-        return symbol || getSpellingSuggestionForName(qy.get.unescUnderscores(name), arrayFrom(symbols.values()), meaning);
+        return symbol || getSpellingSuggestionForName(syntax.get.unescUnderscores(name), arrayFrom(symbols.values()), meaning);
       });
       return result;
     }
@@ -26586,7 +26586,7 @@ namespace qnr {
           let relatedInformation: DiagnosticRelatedInformation | undefined;
           if (node.arguments.length === 1) {
             const text = Node.get.sourceFileOf(node).text;
-            if (qy.is.lineBreak(text.charCodeAt(qy.skipTrivia(text, node.expression.end, /* stopAfterLineBreak */ true) - 1))) {
+            if (syntax.is.lineBreak(text.charCodeAt(syntax.skipTrivia(text, node.expression.end, /* stopAfterLineBreak */ true) - 1))) {
               relatedInformation = createDiagnosticForNode(node.expression, Diagnostics.Are_you_missing_a_semicolon);
             }
           }
@@ -27119,7 +27119,7 @@ namespace qnr {
           if (hasEntries(source.members)) {
             inferred.members.merge(source.members);
           }
-          (links.inferredClassSymbol || (links.inferredClassSymbol = QMap.create<TransientSymbol>())).set('' + getSymbolId(inferred), inferred);
+          (links.inferredClassSymbol || (links.inferredClassSymbol = new QMap<TransientSymbol>())).set('' + getSymbolId(inferred), inferred);
           return inferred;
         }
         return links.inferredClassSymbol.get('' + getSymbolId(target));
@@ -28757,7 +28757,7 @@ namespace qnr {
           return isSideEffectFree((node as ConditionalExpression).whenTrue) && isSideEffectFree((node as ConditionalExpression).whenFalse);
 
         case Syntax.BinaryExpression:
-          if (qy.is.assignmentOperator((node as BinaryExpression).operatorToken.kind)) {
+          if (syntax.is.assignmentOperator((node as BinaryExpression).operatorToken.kind)) {
             return false;
           }
           return isSideEffectFree((node as BinaryExpression).left) && isSideEffectFree((node as BinaryExpression).right);
@@ -29109,8 +29109,8 @@ namespace qnr {
               const name = prop.escName;
               const symbol = resolveName(prop.valueDeclaration, name, SymbolFlags.Type, undefined, name, /*isUse*/ false);
               if (symbol && symbol.declarations.some(isJSDocTypedefTag)) {
-                addDuplicateDeclarationErrorsForSymbols(symbol, Diagnostics.Duplicate_identifier_0, qy.get.unescUnderscores(name), prop);
-                addDuplicateDeclarationErrorsForSymbols(prop, Diagnostics.Duplicate_identifier_0, qy.get.unescUnderscores(name), symbol);
+                addDuplicateDeclarationErrorsForSymbols(symbol, Diagnostics.Duplicate_identifier_0, syntax.get.unescUnderscores(name), prop);
+                addDuplicateDeclarationErrorsForSymbols(prop, Diagnostics.Duplicate_identifier_0, syntax.get.unescUnderscores(name), symbol);
               }
             }
           }
@@ -29150,7 +29150,7 @@ namespace qnr {
       }
 
       function checkAssignmentOperator(valueType: Type): void {
-        if (produceDiagnostics && qy.is.assignmentOperator(operator)) {
+        if (produceDiagnostics && syntax.is.assignmentOperator(operator)) {
           // TypeScript 1.0 spec (April 2014): 4.17
           // An assignment of the form
           //    VarExpr = ValueExpr
@@ -29164,7 +29164,7 @@ namespace qnr {
               Diagnostics.The_left_hand_side_of_an_assignment_expression_must_be_a_variable_or_a_property_access,
               Diagnostics.The_left_hand_side_of_an_assignment_expression_may_not_be_an_optional_property_access
             ) &&
-            (!Node.is.kind(Identifier, left) || qy.get.unescUnderscores(left.escapedText) !== 'exports')
+            (!Node.is.kind(Identifier, left) || syntax.get.unescUnderscores(left.escapedText) !== 'exports')
           ) {
             // to avoid cascading errors check assignability only if 'isReference' check succeeded and no errors were reported
             checkTypeAssignableToAndOptionallyElaborate(valueType, leftType, left, right);
@@ -30196,7 +30196,7 @@ namespace qnr {
     }
 
     function checkObjectTypeForDuplicateDeclarations(node: TypeLiteralNode | InterfaceDeclaration) {
-      const names = QMap.create<boolean>();
+      const names = new QMap<boolean>();
       for (const member of node.members) {
         if (member.kind === Syntax.PropertySignature) {
           let memberName: string;
@@ -30595,7 +30595,7 @@ namespace qnr {
         if (propertyName) {
           const propertySymbol = forEachType(apparentObjectType, (t) => getPropertyOfType(t, propertyName));
           if (propertySymbol && getDeclarationModifierFlagsFromSymbol(propertySymbol) & ModifierFlags.NonPublicAccessibilityModifier) {
-            error(accessNode, Diagnostics.Private_or_protected_member_0_cannot_be_accessed_on_a_type_parameter, qy.get.unescUnderscores(propertyName));
+            error(accessNode, Diagnostics.Private_or_protected_member_0_cannot_be_accessed_on_a_type_parameter, syntax.get.unescUnderscores(propertyName));
             return errorType;
           }
         }
@@ -31882,9 +31882,9 @@ namespace qnr {
 
     function checkUnusedLocalsAndParameters(nodeWithLocals: Node, addDiagnostic: AddUnusedDiagnostic): void {
       // Ideally we could use the ImportClause directly as a key, but must wait until we have full ES6 maps. So must store key along with value.
-      const unusedImports = QMap.create<[ImportClause, ImportedDeclaration[]]>();
-      const unusedDestructures = QMap.create<[ObjectBindingPattern, BindingElement[]]>();
-      const unusedVariables = QMap.create<[VariableDeclarationList, VariableDeclaration[]]>();
+      const unusedImports = new QMap<[ImportClause, ImportedDeclaration[]]>();
+      const unusedDestructures = new QMap<[ObjectBindingPattern, BindingElement[]]>();
+      const unusedVariables = new QMap<[VariableDeclarationList, VariableDeclaration[]]>();
       nodeWithLocals.locals!.forEach((local) => {
         // If it's purely a type parameter, ignore, will be checked in `checkUnusedTypeParameters`.
         // If it's a type parameter merged with a parameter, check if the parameter-side is used.
@@ -31911,7 +31911,7 @@ namespace qnr {
             const parameter = local.valueDeclaration && tryGetRootParameterDeclaration(local.valueDeclaration);
             const name = local.valueDeclaration && getNameOfDeclaration(local.valueDeclaration);
             if (parameter && name) {
-              if (!Node.is.parameterPropertyDeclaration(parameter, parameter.parent) && !parameterIsThqy.is.keyword(parameter) && !isIdentifierThatStartsWithUnderscore(name)) {
+              if (!Node.is.parameterPropertyDeclaration(parameter, parameter.parent) && !parameterIsThsyntax.is.keyword(parameter) && !isIdentifierThatStartsWithUnderscore(name)) {
                 addDiagnostic(parameter, UnusedKind.Parameter, createDiagnosticForNode(name, Diagnostics._0_is_declared_but_its_value_is_never_read, symbolName(local)));
               }
             } else {
@@ -34323,7 +34323,7 @@ namespace qnr {
                 if (ex.kind === Syntax.PropertyAccessExpression) {
                   name = ex.name.escapedText;
                 } else {
-                  name = qy.get.escUnderscores(cast(ex.argumentExpression, isLiteralExpression).text);
+                  name = syntax.get.escUnderscores(cast(ex.argumentExpression, isLiteralExpression).text);
                 }
                 return evaluateEnumMember(expr, type.symbol, name);
               }
@@ -34951,7 +34951,7 @@ namespace qnr {
             if (exportedDeclarationsCount > 1) {
               for (const declaration of declarations) {
                 if (isNotOverload(declaration)) {
-                  diagnostics.add(createDiagnosticForNode(declaration, Diagnostics.Cannot_redeclare_exported_variable_0, qy.get.unescUnderscores(id)));
+                  diagnostics.add(createDiagnosticForNode(declaration, Diagnostics.Cannot_redeclare_exported_variable_0, syntax.get.unescUnderscores(id)));
                 }
               }
             }
@@ -35231,7 +35231,7 @@ namespace qnr {
       const enclosingFile = Node.get.sourceFileOf(node);
       const links = getNodeLinks(enclosingFile);
       if (!(links.flags & NodeCheckFlags.TypeChecked)) {
-        links.deferredNodes = links.deferredNodes || QMap.create();
+        links.deferredNodes = links.deferredNodes || new QMap();
         const id = '' + getNodeId(node);
         links.deferredNodes.set(id, node);
       }
@@ -35801,7 +35801,7 @@ namespace qnr {
             : Node.is.kind(LiteralTypeNode, parent) && Node.is.kind(IndexedAccessTypeNode, grandParent)
             ? getTypeFromTypeNode(grandParent.objectType)
             : undefined;
-          return objectType && getPropertyOfType(objectType, qy.get.escUnderscores((node as StringLiteral | NumericLiteral).text));
+          return objectType && getPropertyOfType(objectType, syntax.get.escUnderscores((node as StringLiteral | NumericLiteral).text));
 
         case Syntax.DefaultKeyword:
         case Syntax.FunctionKeyword:
@@ -36456,7 +36456,7 @@ namespace qnr {
     }
 
     function hasGlobalName(name: string): boolean {
-      return globals.has(qy.get.escUnderscores(name));
+      return globals.has(syntax.get.escUnderscores(name));
     }
 
     function getReferencedValueSymbol(reference: Identifier, startInDeclarationContainer?: boolean): Symbol | undefined {
@@ -36525,7 +36525,7 @@ namespace qnr {
       let fileToDirective: QMap<string>;
       if (resolvedTypeReferenceDirectives) {
         // populate reverse mapping: file path -> type reference directive that was resolved to this file
-        fileToDirective = QMap.create<string>();
+        fileToDirective = new QMap<string>();
         resolvedTypeReferenceDirectives.forEach((resolvedDirective, key) => {
           if (!resolvedDirective || !resolvedDirective.resolvedFileName) {
             return;
@@ -36755,7 +36755,7 @@ namespace qnr {
         bindSourceFile(file, compilerOptions);
       }
 
-      amalgamatedDuplicates = QMap.create();
+      amalgamatedDuplicates = new QMap();
 
       // Initialize global symbol table
       let augmentations: (readonly (StringLiteral | Identifier)[])[] | undefined;
@@ -36893,7 +36893,7 @@ namespace qnr {
             for (let helper = ExternalEmitHelpers.FirstEmitHelper; helper <= ExternalEmitHelpers.LastEmitHelper; helper <<= 1) {
               if (uncheckedHelpers & helper) {
                 const name = getHelperName(helper);
-                const symbol = getSymbol(helpersModule.exports!, qy.get.escUnderscores(name), SymbolFlags.Value);
+                const symbol = getSymbol(helpersModule.exports!, syntax.get.escUnderscores(name), SymbolFlags.Value);
                 if (!symbol) {
                   error(location, Diagnostics.This_syntax_requires_an_imported_helper_named_1_which_does_not_exist_in_0_Consider_upgrading_your_version_of_0, externalHelpersModuleNameText, name);
                 }
@@ -37012,7 +37012,7 @@ namespace qnr {
           case Syntax.PublicKeyword:
           case Syntax.ProtectedKeyword:
           case Syntax.PrivateKeyword:
-            const text = visibilityToString(qy.get.modifierFlag(modifier.kind));
+            const text = visibilityToString(syntax.get.modifierFlag(modifier.kind));
 
             if (flags & ModifierFlags.AccessibilityModifier) {
               return grammarErrorOnNode(modifier, Diagnostics.Accessibility_modifier_already_seen);
@@ -37033,7 +37033,7 @@ namespace qnr {
             } else if (Node.is.privateIdentifierPropertyDeclaration(node)) {
               return grammarErrorOnNode(modifier, Diagnostics.An_accessibility_modifier_cannot_be_used_with_a_private_identifier);
             }
-            flags |= qy.get.modifierFlag(modifier.kind);
+            flags |= syntax.get.modifierFlag(modifier.kind);
             break;
 
           case Syntax.StaticKeyword:
@@ -37246,7 +37246,7 @@ namespace qnr {
     function checkGrammarTypeParameterList(typeParameters: Nodes<TypeParameterDeclaration> | undefined, file: SourceFile): boolean {
       if (typeParameters && typeParameters.length === 0) {
         const start = typeParameters.pos - '<'.length;
-        const end = qy.skipTrivia(file.text, typeParameters.end) + '>'.length;
+        const end = syntax.skipTrivia(file.text, typeParameters.end) + '>'.length;
         return grammarErrorAtPos(file, start, end - start, Diagnostics.Type_parameter_list_cannot_be_empty);
       }
       return false;
@@ -37335,8 +37335,8 @@ namespace qnr {
       }
 
       const { equalsGreaterThanToken } = node;
-      const startLine = qy.get.lineAndCharOf(file, equalsGreaterThanToken.pos).line;
-      const endLine = qy.get.lineAndCharOf(file, equalsGreaterThanToken.end).line;
+      const startLine = syntax.get.lineAndCharOf(file, equalsGreaterThanToken.pos).line;
+      const endLine = syntax.get.lineAndCharOf(file, equalsGreaterThanToken.end).line;
       return startLine !== endLine && grammarErrorOnNode(equalsGreaterThanToken, Diagnostics.Line_terminator_not_permitted_before_arrow);
     }
 
@@ -37399,7 +37399,7 @@ namespace qnr {
       if (typeArguments && typeArguments.length === 0) {
         const sourceFile = Node.get.sourceFileOf(node);
         const start = typeArguments.pos - '<'.length;
-        const end = qy.skipTrivia(sourceFile.text, typeArguments.end) + '>'.length;
+        const end = syntax.skipTrivia(sourceFile.text, typeArguments.end) + '>'.length;
         return grammarErrorAtPos(sourceFile, start, end - start, Diagnostics.Type_argument_list_cannot_be_empty);
       }
       return false;
@@ -38157,7 +38157,7 @@ namespace qnr {
       const jsdocTypeParameters = isInJSFile(node) ? Node.getJSDoc.typeParameterDeclarations(node) : undefined;
       const range = node.typeParameters || (jsdocTypeParameters && firstOrUndefined(jsdocTypeParameters));
       if (range) {
-        const pos = range.pos === range.end ? range.pos : qy.skipTrivia(Node.get.sourceFileOf(node).text, range.pos);
+        const pos = range.pos === range.end ? range.pos : syntax.skipTrivia(Node.get.sourceFileOf(node).text, range.pos);
         return grammarErrorAtPos(node, pos, range.end - pos, Diagnostics.Type_parameters_cannot_appear_on_a_constructor_declaration);
       }
     }
@@ -38340,7 +38340,7 @@ namespace qnr {
       if (!ambientModulesCache) {
         ambientModulesCache = [];
         globals.forEach((global, sym) => {
-          // No need to `qy.get.unescUnderscores`, an escaped symbol is never an ambient module.
+          // No need to `syntax.get.unescUnderscores`, an escaped symbol is never an ambient module.
           if (ambientModuleSymbolRegex.test(sym as string)) {
             ambientModulesCache!.push(global);
           }

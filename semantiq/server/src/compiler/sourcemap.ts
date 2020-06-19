@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   export interface SourceMapGeneratorOptions {
     extendedDiagnostics?: boolean;
   }
@@ -273,10 +273,10 @@ namespace qnr {
     getLineText(line: number): string;
   }
 
-  export function getLineInfo(text: string, qy.get.lineStarts: readonly number[]): LineInfo {
+  export function getLineInfo(text: string, syntax.get.lineStarts: readonly number[]): LineInfo {
     return {
-      getLineCount: () => qy.get.lineStarts.length,
-      getLineText: (line) => text.substring(qy.get.lineStarts[line], qy.get.lineStarts[line + 1]),
+      getLineCount: () => syntax.get.lineStarts.length,
+      getLineText: (line) => text.substring(syntax.get.lineStarts[line], syntax.get.lineStarts[line + 1]),
     };
   }
 
@@ -631,13 +631,13 @@ namespace qnr {
     };
 
     function processMapping(mapping: Mapping): MappedPosition {
-      const generatedPosition = generatedFile !== undefined ? qy.get.posOf(generatedFile, mapping.generatedLine, mapping.generatedCharacter, /*allowEdits*/ true) : -1;
+      const generatedPosition = generatedFile !== undefined ? syntax.get.posOf(generatedFile, mapping.generatedLine, mapping.generatedCharacter, /*allowEdits*/ true) : -1;
       let source: string | undefined;
       let sourcePosition: number | undefined;
       if (isSourceMapping(mapping)) {
         const sourceFile = host.getSourceFileLike(sourceFileAbsolutePaths[mapping.sourceIndex]);
         source = map.sources[mapping.sourceIndex];
-        sourcePosition = sourceFile !== undefined ? qy.get.posOf(sourceFile, mapping.sourceLine, mapping.sourceCharacter, /*allowEdits*/ true) : -1;
+        sourcePosition = sourceFile !== undefined ? syntax.get.posOf(sourceFile, mapping.sourceLine, mapping.sourceCharacter, /*allowEdits*/ true) : -1;
       }
       return {
         generatedPosition,

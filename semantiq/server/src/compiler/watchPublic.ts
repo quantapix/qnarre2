@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   export interface ReadBuildProgramHost {
     useCaseSensitiveFileNames(): boolean;
     getCurrentDirectory(): string;

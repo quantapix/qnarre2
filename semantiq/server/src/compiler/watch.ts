@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   const sysFormatDiagnosticsHost: FormatDiagnosticsHost = sys
     ? {
         getCurrentDirectory: () => sys.getCurrentDirectory(),

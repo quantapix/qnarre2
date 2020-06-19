@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   export interface AllAccessorDeclarations {
     firstAccessor: AccessorDeclaration;
     secondAccessor: AccessorDeclaration | undefined;
@@ -924,7 +924,7 @@ namespace qnr {
     typeArguments?: Nodes<TypeNode>;
     arguments?: Nodes<Expression>;
   }
-  export interface Node extends QRange {
+  export interface Node extends Range {
     kind: Syntax;
     flags: NodeFlags;
     modifierFlagsCache: ModifierFlags;
@@ -980,7 +980,7 @@ namespace qnr {
     TypeExcludesFlags = YieldContext | AwaitContext,
     PermanentlySetIncrementalFlags = PossiblyContainsDynamicImport | PossiblyContainsImportMeta,
   }
-  export interface Nodes<T extends Node> extends ReadonlyArray<T>, QRange {
+  export interface Nodes<T extends Node> extends ReadonlyArray<T>, Range {
     trailingComma?: boolean;
     transformFlags: TransformFlags;
     visit<T>(cb: (n: Node) => T, cbs?: (ns: Nodes<Node>) => T | undefined): T | undefined;
@@ -1168,7 +1168,7 @@ namespace qnr {
     libReferenceDirectives: readonly FileReference[];
     languageVariant: LanguageVariant;
     isDeclarationFile: boolean;
-    renamedDependencies?: qa.QReadonlyMap<string>;
+    renamedDependencies?: QReadonlyMap<string>;
     hasNoDefaultLib: boolean;
     languageVersion: ScriptTarget;
     scriptKind: ScriptKind;
@@ -1177,7 +1177,7 @@ namespace qnr {
     commonJsModuleIndicator?: Node;
     // JS identifier-declarations that are intended to merge with globals
     jsGlobalAugmentations?: SymbolTable;
-    identifiers: qa.QMap<string>; // Map from a string to an interned string
+    identifiers: QMap<string>; // Map from a string to an interned string
     nodeCount: number;
     identifierCount: number;
     symbolCount: number;
@@ -1200,8 +1200,8 @@ namespace qnr {
     // Stores a mapping 'external module reference text' -> 'resolved file name' | undefined
     // It is used to resolve module names in the checker.
     // Content of this field should never be used directly - use getResolvedModuleFileName/setResolvedModuleFileName functions instead
-    resolvedModules?: qa.QMap<ResolvedModuleFull | undefined>;
-    resolvedTypeReferenceDirectiveNames: qa.QMap<ResolvedTypeReferenceDirective | undefined>;
+    resolvedModules?: QMap<ResolvedModuleFull | undefined>;
+    resolvedTypeReferenceDirectiveNames: QMap<ResolvedTypeReferenceDirective | undefined>;
     imports: readonly StringLiteralLike[];
     // Identifier only if `declare global`
     moduleAugmentations: readonly (StringLiteral | Identifier)[];
@@ -1909,7 +1909,7 @@ namespace qnr {
     getCompilerOptions(): CompilerOptions;
     getSourceFiles(): readonly SourceFile[];
     getSourceFile(fileName: string): SourceFile | undefined;
-    getResolvedTypeReferenceDirectives(): qa.QReadonlyMap<ResolvedTypeReferenceDirective | undefined>;
+    getResolvedTypeReferenceDirectives(): QReadonlyMap<ResolvedTypeReferenceDirective | undefined>;
     getProjectReferenceRedirect(fileName: string): string | undefined;
     isSourceOfProjectReferenceRedirect(fileName: string): boolean;
     readonly redirectTargetsMap: RedirectTargetsMap;
@@ -2123,6 +2123,8 @@ namespace qnr {
     asteriskToken?: AsteriskToken;
     expression?: Expression;
   }
+  // qpx
+  export interface SymbolTable<S extends Symbol = Symbol> extends Map<__String, S>, UnderscoreEscapedMap<S> {}
   export type DotToken = Token<Syntax.DotToken>;
   export type Dot3Token = Token<Syntax.Dot3Token>;
   export type QuestionToken = Token<Syntax.QuestionToken>;
@@ -2521,7 +2523,7 @@ namespace qnr {
     enabled: boolean;
   }
   export type CommentKind = Syntax.SingleLineCommentTrivia | Syntax.MultiLineCommentTrivia;
-  export interface CommentRange extends QRange {
+  export interface CommentRange extends Range {
     hasTrailingNewLine?: boolean;
     kind: CommentKind;
   }
@@ -2556,7 +2558,7 @@ namespace qnr {
     readonly unredirected: SourceFile;
   }
   export interface CommentDirective {
-    range: QRange;
+    range: Range;
     type: CommentDirectiveType;
   }
   export const enum CommentDirectiveType {
@@ -2638,13 +2640,14 @@ namespace qnr {
     index: number;
     file: Path;
   }
+  export interface ProgramBuildInfo {}
   export interface Program extends ScriptReferenceHost {
     getCurrentDirectory(): string;
     getRootFileNames(): readonly string[];
     getSourceFiles(): readonly SourceFile[];
     getMissingFilePaths(): readonly Path[];
-    getRefFileMap(): qa.QMultiMap<RefFile> | undefined;
-    getFilesByNameMap(): qa.QMap<SourceFile | false | undefined>;
+    getRefFileMap(): MultiMap<RefFile> | undefined;
+    getFilesByNameMap(): QMap<SourceFile | false | undefined>;
     emit(targetSourceFile?: SourceFile, writeFile?: WriteFileCallback, cancellationToken?: CancellationToken, emitOnlyDtsFiles?: boolean, customTransformers?: CustomTransformers): EmitResult;
     emit(
       targetSourceFile?: SourceFile,
@@ -2653,11 +2656,10 @@ namespace qnr {
       emitOnlyDtsFiles?: boolean,
       customTransformers?: CustomTransformers,
       forceDtsEmit?: boolean
-    ): EmitResult; // eslint-disable-line @typescript-eslint/unified-signatures
+    ): EmitResult;
     getOptionsDiagnostics(cancellationToken?: CancellationToken): readonly Diagnostic[];
     getGlobalDiagnostics(cancellationToken?: CancellationToken): readonly Diagnostic[];
     getSyntacticDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly DiagnosticWithLocation[];
-    /** The first time this is called, it will return global diagnostics (no location). */
     getSemanticDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
     getDeclarationDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly DiagnosticWithLocation[];
     getConfigFileParsingDiagnostics(): readonly Diagnostic[];
@@ -2666,8 +2668,6 @@ namespace qnr {
     getProgramDiagnostics(sourceFile: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
     getTypeChecker(): TypeChecker;
     getCommonSourceDirectory(): string;
-    // For testing purposes only.  Should not be used by any other consumers (including the
-    // language service).
     getDiagnosticsProducingTypeChecker(): TypeChecker;
     dropDiagnosticsProducingTypeChecker(): void;
     getClassifiableNames(): UnderscoreEscapedMap<true>;
@@ -2678,7 +2678,7 @@ namespace qnr {
     getInstantiationCount(): number;
     getRelationCacheSizes(): { assignable: number; identity: number; subtype: number; strictSubtype: number };
     getFileProcessingDiagnostics(): DiagnosticCollection;
-    getResolvedTypeReferenceDirectives(): qa.QMap<ResolvedTypeReferenceDirective | undefined>;
+    getResolvedTypeReferenceDirectives(): QMap<ResolvedTypeReferenceDirective | undefined>;
     isSourceFileFromExternalLibrary(file: SourceFile): boolean;
     isSourceFileDefaultLibrary(file: SourceFile): boolean;
     // For testing purposes only.
@@ -2686,9 +2686,9 @@ namespace qnr {
     getSourceFileFromReference(referencingFile: SourceFile | UnparsedSource, ref: FileReference): SourceFile | undefined;
     getLibFileFromReference(ref: FileReference): SourceFile | undefined;
     /** Given a source file, get the name of the package it was imported from. */
-    sourceFileToPackageName: qa.QMap<string>;
+    sourceFileToPackageName: QMap<string>;
     /** Set of all source files that some other source file redirects to. */
-    redirectTargetsMap: qa.QMultiMap<string>;
+    redirectTargetsMap: MultiMap<string>;
     /** Is the file emitted file */
     isEmittedFile(file: string): boolean;
     getResolvedModuleWithFailedLookupLocationsFromCache(moduleName: string, containingFile: string): ResolvedModuleWithFailedLookupLocations | undefined;
@@ -2701,14 +2701,11 @@ namespace qnr {
     isSourceOfProjectReferenceRedirect(fileName: string): boolean;
     getProgramBuildInfo?(): ProgramBuildInfo | undefined;
     emitBuildInfo(writeFile?: WriteFileCallback, cancellationToken?: CancellationToken): EmitResult;
-    getProbableSymlinks(): qa.QReadonlyMap<string>;
-    /**
-     * This implementation handles file exists to be true if file is source of project reference redirect when program is created using useSourceOfProjectReferenceRedirect
-     */
+    getProbableSymlinks(): QReadonlyMap<string>;
     fileExists(fileName: string): boolean;
   }
   export interface Program extends TypeCheckerHost, ModuleSpecifierResolutionHost {}
-  export type RedirectTargetsMap = qa.QReadonlyMap<readonly string[]>;
+  export type RedirectTargetsMap = QReadonlyMap<readonly string[]>;
   export interface ResolvedProjectReference {
     commandLine: ParsedCommandLine;
     sourceFile: SourceFile;
@@ -2719,17 +2716,17 @@ namespace qnr {
     SafeModules = 1 << 0,
     Completely = 1 << 1,
   }
+  export type Transformer<T extends Node> = (node: T) => T;
+  export interface TransformationContext {}
+  export type TransformerFactory<T extends Node> = (c: TransformationContext) => Transformer<T>;
   export type CustomTransformerFactory = (context: TransformationContext) => CustomTransformer;
   export interface CustomTransformer {
     transformSourceFile(node: SourceFile): SourceFile;
     transformBundle(node: Bundle): Bundle;
   }
   export interface CustomTransformers {
-    /** Custom transformers to evaluate before built-in .js transformations. */
     before?: (TransformerFactory<SourceFile> | CustomTransformerFactory)[];
-    /** Custom transformers to evaluate after built-in .js transformations. */
     after?: (TransformerFactory<SourceFile> | CustomTransformerFactory)[];
-    /** Custom transformers to evaluate after built-in .d.ts transformations. */
     afterDeclarations?: (TransformerFactory<Bundle | SourceFile> | CustomTransformerFactory)[];
   }
   export interface EmitTransformers {
@@ -2929,7 +2926,7 @@ namespace qnr {
     isDeclarationVisible(node: Declaration | AnyImportSyntax): boolean;
     isLateBound(node: Declaration): node is LateBoundDeclaration;
     collectLinkedAliases(node: Identifier, setVisibility?: boolean): Node[] | undefined;
-    isImplementationOfOverload(node: FunctionLike): boolean | undefined;
+    isImplementationOfOverload(node: FunctionLikeDeclaration): boolean | undefined;
     isRequiredInitializedParameter(node: ParameterDeclaration): boolean;
     isOptionalUninitializedParameterProperty(node: ParameterDeclaration): boolean;
     isExpandoFunctionDeclaration(node: FunctionDeclaration): boolean;
@@ -3077,7 +3074,7 @@ namespace qnr {
     isReferenced?: SymbolFlags; // True if the symbol is referenced elsewhere. Keeps track of the meaning of a reference in case a symbol is both a type parameter and parameter.
     isReplaceableByMethod?: boolean; // Can this Javascript class property be replaced by a method symbol?
     isAssigned?: boolean; // True if the symbol is a parameter with assignments
-    assignmentDeclarationMembers?: qa.QMap<Declaration>; // detected late-bound assignment declarations associated with the symbol
+    assignmentDeclarationMembers?: QMap<Declaration>; // detected late-bound assignment declarations associated with the symbol
   }
   export interface SymbolLinks {
     immediateTarget?: Symbol; // Immediate target of an alias. May be another alias. Do not access directly, use `checker.getImmediateAliasedSymbol` instead.
@@ -3088,8 +3085,8 @@ namespace qnr {
     declaredType?: Type; // Type of class, interface, enum, type alias, or type parameter
     typeParameters?: TypeParameter[]; // Type parameters of type alias (undefined if non-generic)
     outerTypeParameters?: TypeParameter[]; // Outer type parameters of anonymous object type
-    instantiations?: qa.QMap<Type>; // Instantiations of generic type alias (undefined if non-generic)
-    inferredClassSymbol?: qa.QMap<TransientSymbol>; // Symbol of an inferred ES5 constructor function
+    instantiations?: QMap<Type>; // Instantiations of generic type alias (undefined if non-generic)
+    inferredClassSymbol?: QMap<TransientSymbol>; // Symbol of an inferred ES5 constructor function
     mapper?: TypeMapper; // Type mapper for instantiation alias
     referenced?: boolean; // True if alias symbol has been referenced as a value that can be emitted
     constEnumReferenced?: boolean; // True if alias symbol resolves to a const enum and is referenced as a value ('referenced' will be false)
@@ -3108,9 +3105,9 @@ namespace qnr {
     enumKind?: EnumKind; // Enum declaration classification
     originatingImport?: ImportDeclaration | ImportCall; // Import declaration which produced the symbol, present if the symbol is marked as uncallable but had call signatures in `resolveESModuleSymbol`
     lateSymbol?: Symbol; // Late-bound symbol for a computed property
-    specifierCache?: qa.QMap<string>; // For symbols corresponding to external modules, a cache of incoming path -> module specifier name mappings
+    specifierCache?: QMap<string>; // For symbols corresponding to external modules, a cache of incoming path -> module specifier name mappings
     extendedContainers?: Symbol[]; // Containers (other than the parent) which this symbol is aliased in
-    extendedContainersByFile?: qa.QMap<Symbol[]>; // Containers (other than the parent) which this symbol is aliased in
+    extendedContainersByFile?: QMap<Symbol[]>; // Containers (other than the parent) which this symbol is aliased in
     variances?: VarianceFlags[]; // Alias symbol type argument variance cache
     deferralConstituents?: Type[]; // Calculated list of constituents for a deferred type
     deferralParent?: Type; // Source union/intersection of a deferred type
@@ -3182,48 +3179,6 @@ namespace qnr {
   export type __String = (string & { __escapedIdentifier: void }) | (void & { __escapedIdentifier: void }) | InternalSymbolName;
   export type UnderscoreEscapedMap<T> = Map<__String, T>;
   export type ReadonlyUnderscoreEscapedMap<T> = ReadonlyMap<__String, T>;
-  export class SymbolTable<S extends Symbol = Symbol> extends Map<__String, S> implements UnderscoreEscapedMap<S> {
-    constructor(ss?: readonly S[]) {
-      super();
-      if (ss) {
-        for (const s of ss) {
-          this.set(s.escName, s);
-        }
-      }
-    }
-    add(ss: SymbolTable<S>, m: DiagnosticMessage) {
-      ss.forEach((s, id) => {
-        const t = this.get(id);
-        if (t) qa.forEach(t.declarations, addDeclarationDiagnostic(qy.get.unescUnderscores(id), m));
-        else this.set(id, s);
-      });
-      function addDeclarationDiagnostic(id: string, m: DiagnosticMessage) {
-        return (d: Declaration) => diagnostics.add(createDiagnosticForNode(d, m, id));
-      }
-    }
-    merge(ss: SymbolTable<S>, unidirectional = false) {
-      ss.forEach((s, id) => {
-        const t = this.get(id);
-        this.set(id, t ? mergeSymbol(t, s, unidirectional) : s);
-      });
-    }
-    combine(ss: SymbolTable<S> | undefined): SymbolTable<S> | undefined {
-      if (!hasEntries(this)) return ss;
-      if (!hasEntries(ss)) return this;
-      const t = new SymbolTable<S>();
-      t.merge(this);
-      t.merge(ss);
-      return t;
-    }
-    copy(to: SymbolTable<S>, meaning: SymbolFlags) {
-      if (meaning) {
-        this.forEach((s) => {
-          copySymbol(s, to, meaning);
-        });
-      }
-    }
-  }
-  /** Used to track a `declare module "foo*"`-like declaration. */
   export interface PatternAmbientModule {
     pattern: Pattern;
     symbol: Symbol;
@@ -3272,10 +3227,10 @@ namespace qnr {
     switchTypes?: Type[]; // Cached array of switch case expression types
     jsxNamespace?: Symbol | false; // Resolved jsx namespace symbol for this node
     contextFreeType?: Type; // Cached context-free type used by the first pass of inference; used when a function's return is partially contextually sensitive
-    deferredNodes?: qa.QMap<Node>; // Set of nodes whose checking has been deferred
+    deferredNodes?: QMap<Node>; // Set of nodes whose checking has been deferred
     capturedBlockScopeBindings?: Symbol[]; // Block-scoped bindings captured beneath this part of an IterationStatement
     outerTypeParameters?: TypeParameter[]; // Outer type parameters of anonymous object type
-    instantiations?: qa.QMap<Type>; // Instantiations of generic type alias (undefined if non-generic)
+    instantiations?: QMap<Type>; // Instantiations of generic type alias (undefined if non-generic)
     isExhaustive?: boolean; // Is node an exhaustive switch statement
     skipDirectInference?: true; // Flag set by the API `getContextualType` call on a node when `Completions` is passed to force the checker to skip making inferences to a node's type
     declarationRequiresScopeChange?: boolean; // Set by `useOuterVariableScopeInParameter` in checker when downlevel emit would change the name resolution scope inside of a parameter.
@@ -3477,7 +3432,7 @@ namespace qnr {
     AllowsStructuralFallback = Unmeasurable | Unreliable,
   }
   export interface GenericType extends InterfaceType, TypeReference {
-    instantiations: qa.QMap<TypeReference>; // Generic instantiation cache
+    instantiations: QMap<TypeReference>; // Generic instantiation cache
     variances?: VarianceFlags[]; // Variance of each type parameter
   }
   export interface UnionOrIntersectionType extends Type {
@@ -3571,7 +3526,7 @@ namespace qnr {
     isDistributive: boolean;
     inferTypeParameters?: TypeParameter[];
     outerTypeParameters?: TypeParameter[];
-    instantiations?: qa.QMap<Type>;
+    instantiations?: QMap<Type>;
     aliasSymbol?: Symbol;
     aliasTypeArguments?: Type[];
   }
@@ -3634,7 +3589,7 @@ namespace qnr {
     canonicalSignatureCache?: Signature; // Canonical version of signature (deferred)
     optionalCallSignatureCache?: { inner?: Signature; outer?: Signature }; // Optional chained call version of signature (deferred)
     isolatedSignatureType?: ObjectType; // A manufactured type that just contains the signature for purposes of signature comparison
-    instantiations?: qa.QMap<Signature>; // Generic signature instantiation cache
+    instantiations?: QMap<Signature>; // Generic signature instantiation cache
   }
   export const enum IndexKind {
     String,
@@ -3803,7 +3758,7 @@ namespace qnr {
     PriorityInterval,
     DynamicPriority,
   }
-  export type CompilerOptionsValue = string | number | boolean | (string | number)[] | string[] | qa.MapLike<string[]> | PluginImport[] | ProjectReference[] | null | undefined;
+  export type CompilerOptionsValue = string | number | boolean | (string | number)[] | string[] | MapLike<string[]> | PluginImport[] | ProjectReference[] | null | undefined;
   export interface CompilerOptions {
     all?: boolean;
     allowJs?: boolean;
@@ -3874,7 +3829,7 @@ namespace qnr {
     out?: string;
     outDir?: string;
     outFile?: string;
-    paths?: qa.MapLike<string[]>;
+    paths?: MapLike<string[]>;
     plugins?: PluginImport[];
     preserveConstEnums?: boolean;
     preserveSymlinks?: boolean;
@@ -3981,7 +3936,7 @@ namespace qnr {
     watchOptions?: WatchOptions;
     raw?: any;
     errors: Diagnostic[];
-    wildcardDirectories?: qa.MapLike<WatchDirectoryFlags>;
+    wildcardDirectories?: MapLike<WatchDirectoryFlags>;
     compileOnSave?: boolean;
     configFileSpecs?: ConfigFileSpecs;
   }
@@ -4001,11 +3956,11 @@ namespace qnr {
     excludeSpecs?: readonly string[];
     validatedIncludeSpecs?: readonly string[];
     validatedExcludeSpecs?: readonly string[];
-    wildcardDirectories: qa.MapLike<WatchDirectoryFlags>;
+    wildcardDirectories: MapLike<WatchDirectoryFlags>;
   }
   export interface ExpandResult {
     fileNames: string[];
-    wildcardDirectories: qa.MapLike<WatchDirectoryFlags>;
+    wildcardDirectories: MapLike<WatchDirectoryFlags>;
     spec: ConfigFileSpecs;
   }
   export type RequireResult<T = {}> = { module: T; modulePath?: string; error: undefined } | { module: undefined; modulePath?: undefined; error: { stack?: string; message?: string } };
@@ -4019,7 +3974,7 @@ namespace qnr {
   }
   export interface CommandLineOptionBase {
     name: string;
-    type: 'string' | 'number' | 'boolean' | 'object' | 'list' | qa.QMap<number | string>; // a value of a primitive type, or an object literal mapping named values to actual values
+    type: 'string' | 'number' | 'boolean' | 'object' | 'list' | QMap<number | string>; // a value of a primitive type, or an object literal mapping named values to actual values
     isFilePath?: boolean; // True if option value is a path or fileName
     shortName?: string; // A short mnemonic for convenience - for instance, 'h' can be used in place of 'help'
     description?: DiagnosticMessage; // The message describing what the command line switch does
@@ -4040,7 +3995,7 @@ namespace qnr {
     type: 'string' | 'number' | 'boolean';
   }
   export interface CommandLineOptionOfCustomType extends CommandLineOptionBase {
-    type: qa.QMap<number | string>; // an object literal mapping named values to actual values
+    type: QMap<number | string>; // an object literal mapping named values to actual values
   }
   export interface DidYouMeanOptionsDiagnostics {
     optionDeclarations: CommandLineOption[];
@@ -4049,7 +4004,7 @@ namespace qnr {
   }
   export interface TsConfigOnlyOption extends CommandLineOptionBase {
     type: 'object';
-    elementOptions?: qa.QMap<CommandLineOption>;
+    elementOptions?: QMap<CommandLineOption>;
     extraKeyDiagnostics?: DidYouMeanOptionsDiagnostics;
   }
   export interface CommandLineOptionOfListType extends CommandLineOptionBase {
@@ -4150,7 +4105,7 @@ namespace qnr {
     useSourceOfProjectReferenceRedirect?(): boolean;
     // TODO: later handle this in better way in builder host instead once the api for tsbuild finalizes and doesn't use compilerHost as base
     createDirectory?(directory: string): void;
-    getSymlinks?(): qa.QReadonlyMap<string>;
+    getSymlinks?(): QReadonlyMap<string>;
   }
   export type SourceOfProjectReferenceRedirect = string | true;
   export interface ResolvedProjectReferenceCallbacks {
@@ -4586,7 +4541,7 @@ namespace qnr {
     fileExists(path: string): boolean;
     getCurrentDirectory(): string;
     readFile?(path: string): string | undefined;
-    getProbableSymlinks?(files: readonly SourceFile[]): qa.QReadonlyMap<string>;
+    getProbableSymlinks?(files: readonly SourceFile[]): QReadonlyMap<string>;
     getGlobalTypingsCacheLocation?(): string | undefined;
     getSourceFiles(): readonly SourceFile[];
     readonly redirectTargetsMap: RedirectTargetsMap;
@@ -4771,14 +4726,14 @@ namespace qnr {
   type ConcretePragmaSpecs = typeof commentPragmas;
   export type PragmaPseudoMap = { [K in keyof ConcretePragmaSpecs]: { arguments: PragmaArgumentType<K>; range: CommentRange } };
   export type PragmaPseudoMapEntry = { [K in keyof PragmaPseudoMap]: { name: K; args: PragmaPseudoMap[K] } }[keyof PragmaPseudoMap];
-  export interface ReadonlyPragmaMap extends qa.QReadonlyMap<PragmaPseudoMap[keyof PragmaPseudoMap] | PragmaPseudoMap[keyof PragmaPseudoMap][]> {
-    get<TKey extends keyof PragmaPseudoMap>(key: TKey): PragmaPseudoMap[TKey] | PragmaPseudoMap[TKey][];
-    forEach(action: <TKey extends keyof PragmaPseudoMap>(value: PragmaPseudoMap[TKey] | PragmaPseudoMap[TKey][], key: TKey) => void): void;
+  export interface ReadonlyPragmaMap extends QReadonlyMap<PragmaPseudoMap[keyof PragmaPseudoMap] | PragmaPseudoMap[keyof PragmaPseudoMap][]> {
+    get<K extends keyof PragmaPseudoMap>(k: K): PragmaPseudoMap[K] | PragmaPseudoMap[K][];
+    // qpx-fixme forEach(action: <K extends keyof PragmaPseudoMap>(v: PragmaPseudoMap[K] | PragmaPseudoMap[K][], k: K) => void): void;
   }
-  export interface PragmaMap extends qa.QMap<PragmaPseudoMap[keyof PragmaPseudoMap] | PragmaPseudoMap[keyof PragmaPseudoMap][]>, ReadonlyPragmaMap {
-    set<TKey extends keyof PragmaPseudoMap>(key: TKey, value: PragmaPseudoMap[TKey] | PragmaPseudoMap[TKey][]): this;
-    get<TKey extends keyof PragmaPseudoMap>(key: TKey): PragmaPseudoMap[TKey] | PragmaPseudoMap[TKey][];
-    forEach(action: <TKey extends keyof PragmaPseudoMap>(value: PragmaPseudoMap[TKey] | PragmaPseudoMap[TKey][], key: TKey) => void): void;
+  export interface PragmaMap extends QMap<PragmaPseudoMap[keyof PragmaPseudoMap] | PragmaPseudoMap[keyof PragmaPseudoMap][]>, ReadonlyPragmaMap {
+    set<K extends keyof PragmaPseudoMap>(k: K, v: PragmaPseudoMap[K] | PragmaPseudoMap[K][]): this;
+    get<K extends keyof PragmaPseudoMap>(k: K): PragmaPseudoMap[K] | PragmaPseudoMap[K][];
+    // qpx-fixme forEach(action: <K extends keyof PragmaPseudoMap>(v: PragmaPseudoMap[K] | PragmaPseudoMap[K][], k: K) => void): void;
   }
   export interface CommentDirectivesMap {
     getUnusedExpectations(): CommentDirective[];

@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   export type Visitor = (n: Node) => VisitResult<Node>;
   export type VisitResult<T extends Node> = T | T[] | undefined;
 

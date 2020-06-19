@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   export interface QSpan {
     start: number;
     length: number;
@@ -117,7 +117,7 @@ namespace qnr {
       return n.modifiers && n.modifiers.length > 0 ? n.movePos(n.modifiers.end) : movePastDecorators(n);
     }
     export function createTokenRange(pos: number, token: Syntax): TextRange {
-      return new TextRange(pos, pos + qy.toString(token)!.length);
+      return new TextRange(pos, pos + syntax.toString(token)!.length);
     }
     export function ofNode(n: Node): TextRange {
       return new TextRange(getTokenPosOfNode(n), n.end);
@@ -171,15 +171,15 @@ namespace qnr {
     text = '';
     lineMap?: number[];
     lineStarts(): readonly number[] {
-      return this.lineMap ?? (this.lineMap = qy.get.lineStarts(this.text));
+      return this.lineMap ?? (this.lineMap = syntax.get.lineStarts(this.text));
     }
     lineAndCharOf(pos: number) {
-      return qy.get.lineAndCharOf(this.lineStarts(), pos);
+      return syntax.get.lineAndCharOf(this.lineStarts(), pos);
     }
     posOf(line: number, char: number): number;
     posOf(line: number, char: number, edits?: true): number;
     posOf(line: number, char: number, edits?: true): number {
-      return qy.get.posOf(this.lineStarts(), line, char, this.text, edits);
+      return syntax.get.posOf(this.lineStarts(), line, char, this.text, edits);
     }
     linesBetween(p1: number, p2: number): number;
     linesBetween(r1: QRange, r2: QRange, comments: boolean): number;
@@ -191,8 +191,8 @@ namespace qnr {
         const min = Math.min(x1, x2);
         const isNegative = min === x2;
         const max = isNegative ? x1 : x2;
-        const lower = qy.get.lineOf(ss, min);
-        const upper = qy.get.lineOf(ss, max, lower);
+        const lower = syntax.get.lineOf(ss, min);
+        const upper = syntax.get.lineOf(ss, max, lower);
         return isNegative ? lower - upper : upper - lower;
       }
       const s = this.startPos(x2 as QRange, comments);
@@ -202,20 +202,20 @@ namespace qnr {
       return this.linesBetween(r1.end, r2.end);
     }
     linesToPrevNonWhitespace(pos: number, stop: number, comments = false) {
-      const s = qy.skipTrivia(this.text, pos, false, comments);
+      const s = syntax.skipTrivia(this.text, pos, false, comments);
       const p = this.prevNonWhitespacePos(s, stop);
       return this.linesBetween(p ?? stop, s);
     }
     linesToNextNonWhitespace(pos: number, stop: number, comments = false) {
-      const s = qy.skipTrivia(this.text, pos, false, comments);
+      const s = syntax.skipTrivia(this.text, pos, false, comments);
       return this.linesBetween(pos, Math.min(stop, s));
     }
     startPos(r: QRange, comments = false) {
-      return isSynthesized(r.pos) ? -1 : qy.skipTrivia(this.text, r.pos, false, comments);
+      return isSynthesized(r.pos) ? -1 : syntax.skipTrivia(this.text, r.pos, false, comments);
     }
     prevNonWhitespacePos(pos: number, stop = 0) {
       while (pos-- > stop) {
-        if (!qy.is.whiteSpaceLike(this.text.charCodeAt(pos))) return pos;
+        if (!syntax.is.whiteSpaceLike(this.text.charCodeAt(pos))) return pos;
       }
       return;
     }

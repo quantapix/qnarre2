@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   export enum ProcessLevel {
     LiftRestriction,
     All,

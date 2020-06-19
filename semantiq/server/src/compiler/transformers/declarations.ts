@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   export function getDeclarationDiagnostics(host: EmitHost, resolver: EmitResolver, file: SourceFile | undefined): DiagnosticWithLocation[] | undefined {
     if (file && isJsonSourceFile(file)) {
       return []; // No declaration diagnostics for json for now
@@ -21,13 +21,13 @@ namespace qnr {
       const text = currentSourceFile.text;
       const commentRanges = previousSibling
         ? concatenate(
-            qy.get.trailingCommentRanges(text, qy.skipTrivia(text, previousSibling.end + 1, false, true)),
-            qy.get.leadingCommentRanges(text, node.pos)
+            syntax.get.trailingCommentRanges(text, syntax.skipTrivia(text, previousSibling.end + 1, false, true)),
+            syntax.get.leadingCommentRanges(text, node.pos)
           )
-        : qy.get.trailingCommentRanges(text, qy.skipTrivia(text, node.pos, false, true));
+        : syntax.get.trailingCommentRanges(text, syntax.skipTrivia(text, node.pos, false, true));
       return commentRanges && commentRanges.length && hasInternalAnnotation(last(commentRanges), currentSourceFile);
     }
-    const leadingCommentRanges = parseTreeNode && qy.get.leadingCommentRangesOfNode(parseTreeNode, currentSourceFile);
+    const leadingCommentRanges = parseTreeNode && syntax.get.leadingCommentRangesOfNode(parseTreeNode, currentSourceFile);
     return !!forEach(leadingCommentRanges, (range) => {
       return hasInternalAnnotation(range, currentSourceFile);
     });
@@ -1010,7 +1010,7 @@ namespace qnr {
         }
       }
 
-      if (Node.is.kind(TupleTypeNode, input) && qy.get.lineAndCharOf(currentSourceFile, input.pos).line === qy.get.lineAndCharOf(currentSourceFile, input.end).line) {
+      if (Node.is.kind(TupleTypeNode, input) && syntax.get.lineAndCharOf(currentSourceFile, input.pos).line === syntax.get.lineAndCharOf(currentSourceFile, input.end).line) {
         setEmitFlags(input, EmitFlags.SingleLine);
       }
 
@@ -1178,7 +1178,7 @@ namespace qnr {
               getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(p.valueDeclaration);
               const type = resolver.createTypeOfDeclaration(p.valueDeclaration, fakespace, declarationEmitNodeBuilderFlags, symbolTracker);
               getSymbolAccessibilityDiagnostic = oldDiag;
-              const varDecl = createVariableDeclaration(qy.get.unescUnderscores(p.escName), type, /*initializer*/ undefined);
+              const varDecl = createVariableDeclaration(syntax.get.unescUnderscores(p.escName), type, /*initializer*/ undefined);
               return createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([varDecl]));
             });
             const namespaceDecl = createModuleDeclaration(/*decorators*/ undefined, ensureModifiers(input), input.name!, createModuleBlock(declarations), NodeFlags.Namespace);
@@ -1323,7 +1323,7 @@ namespace qnr {
           if (extendsClause && !isEntityNameExpression(extendsClause.expression) && extendsClause.expression.kind !== Syntax.NullKeyword) {
             // We must add a temporary declaration for the extends clause expression
 
-            const oldId = input.name ? qy.get.unescUnderscores(input.name.escapedText) : 'default';
+            const oldId = input.name ? syntax.get.unescUnderscores(input.name.escapedText) : 'default';
             const newId = createOptimisticUniqueName(`${oldId}_base`);
             getSymbolAccessibilityDiagnostic = () => ({
               diagnosticMessage: Diagnostics.extends_clause_of_exported_class_0_has_or_is_using_private_name_1,

@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   export function transformECMAScriptModule(context: TransformationContext) {
     const compilerOptions = context.getCompilerOptions();
     const previousOnEmitNode = context.onEmitNode;

@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   type SuperContainer = ClassDeclaration | MethodDeclaration | GetAccessorDeclaration | SetAccessorDeclaration | ConstructorDeclaration;
 
   const enum ES2017SubstitutionFlags {
@@ -640,7 +640,7 @@ namespace qnr {
     const hasBinding = (resolver.getNodeCheckFlags(node) & NodeCheckFlags.AsyncMethodWithSuperBinding) !== 0;
     const accessors: PropertyAssignment[] = [];
     names.forEach((_, key) => {
-      const name = qy.get.unescUnderscores(key);
+      const name = syntax.get.unescUnderscores(key);
       const getterAndSetter: PropertyAssignment[] = [];
       getterAndSetter.push(
         createPropertyAssignment(

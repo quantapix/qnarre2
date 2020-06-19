@@ -1,7 +1,7 @@
 declare function setTimeout(handler: (...args: any[]) => void, timeout: number): any;
 declare function clearTimeout(handle: any): void;
 
-namespace qnr {
+namespace core {
   /**
    * djb2 hashing algorithm
    * http://www.cse.yorku.ca/~oz/hash.html
@@ -295,7 +295,7 @@ namespace qnr {
 
   function createUseFsEventsOnParentDirectoryWatchFile(fsWatch: FsWatch, useCaseSensitiveFileNames: boolean): HostWatchFile {
     // One file can have multiple watchers
-    const fileWatcherCallbacks = createMultiMap<FileWatcherCallback>();
+    const fileWatcherCallbacks = new MultiMap<FileWatcherCallback>();
     const dirWatchers = createMap<DirectoryWatcher>();
     const toCanonicalName = createGetCanonicalFileName(useCaseSensitiveFileNames);
     return nonPollingWatchFile;
@@ -353,7 +353,7 @@ namespace qnr {
       refCount: number;
     }
     const cache = createMap<SingleFileWatcher>();
-    const callbacksCache = createMultiMap<FileWatcherCallback>();
+    const callbacksCache = new MultiMap<FileWatcherCallback>();
     const toCanonicalFileName = createGetCanonicalFileName(useCaseSensitiveFileNames);
 
     return (fileName, callback, pollingInterval, options) => {
@@ -438,7 +438,7 @@ namespace qnr {
     }
 
     const cache = createMap<HostDirectoryWatcher>();
-    const callbackCache = createMultiMap<{ dirName: string; callback: DirectoryWatcherCallback }>();
+    const callbackCache = new MultiMap<{ dirName: string; callback: DirectoryWatcherCallback }>();
     const cacheToUpdateChildWatches = createMap<{ dirName: string; options: WatchOptions | undefined }>();
     let timerToUpdateChildWatches: any;
 

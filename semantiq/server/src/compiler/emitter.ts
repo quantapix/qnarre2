@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   const brackets = createBracketsMap();
   const syntheticParent: TextRange = { pos: -1, end: -1 };
 
@@ -743,7 +743,7 @@ namespace qnr {
       useCaseSensitiveFileNames: () => host.useCaseSensitiveFileNames(),
       getProgramBuildInfo: () => undefined,
       getSourceFileFromReference: () => undefined,
-      redirectTargetsMap: createMultiMap(),
+      redirectTargetsMap: new MultiMap(),
     };
     emitFiles(notImplementedResolver, emitHost, /*targetSourceFile*/ undefined, getTransformers(config.options, customTransformers));
     return outputFiles;
@@ -1074,7 +1074,7 @@ namespace qnr {
     }
 
     function getCurrentLineMap() {
-      return currentLineMap || (currentLineMap = qy.get.lineStarts(currentSourceFile!));
+      return currentLineMap || (currentLineMap = syntax.get.lineStarts(currentSourceFile!));
     }
 
     function emit(node: Node): Node;
@@ -1185,7 +1185,7 @@ namespace qnr {
         return emitEmptyStatement(/*isEmbeddedStatement*/ true);
       }
       if (hint === EmitHint.Unspecified) {
-        if (qy.is.keyword(node.kind)) return writeTokenNode(node, writeKeyword);
+        if (syntax.is.keyword(node.kind)) return writeTokenNode(node, writeKeyword);
 
         switch (node.kind) {
           // Pseudo-literals
@@ -1711,7 +1711,7 @@ namespace qnr {
     // Syntax.TemplateTail
     function emitLiteral(node: LiteralLikeNode, jsxAttributeEscape: boolean) {
       const text = getLiteralTextOfNode(node, printerOptions.neverAsciiEscape, jsxAttributeEscape);
-      if ((printerOptions.sourceMap || printerOptions.inlineSourceMap) && (node.kind === Syntax.StringLiteral || qy.is.templateLiteral(node.kind))) {
+      if ((printerOptions.sourceMap || printerOptions.inlineSourceMap) && (node.kind === Syntax.StringLiteral || syntax.is.templateLiteral(node.kind))) {
         writeLiteral(text);
       } else {
         // Quick info expects all literals to be called with writeStringLiteral, as there's no specific type for numberLiterals
@@ -2693,7 +2693,7 @@ namespace qnr {
       const isSimilarNode = node && node.kind === contextNode.kind;
       const startPos = pos;
       if (isSimilarNode && currentSourceFile) {
-        pos = qy.skipTrivia(currentSourceFile.text, pos);
+        pos = syntax.skipTrivia(currentSourceFile.text, pos);
       }
       if (emitLeadingCommentsOfPosition && isSimilarNode && contextNode.pos !== startPos) {
         const needsIndent = indentLeading && currentSourceFile && !onSameLine(startPos, pos, currentSourceFile);
@@ -3700,7 +3700,7 @@ namespace qnr {
 
     function emitShebangIfNeeded(sourceFileOrBundle: Bundle | SourceFile | UnparsedSource) {
       if (Node.is.kind(SourceFile, sourceFileOrBundle) || Node.is.kind(UnparsedSource, sourceFileOrBundle)) {
-        const shebang = qy.get.shebang(sourceFileOrBundle.text);
+        const shebang = syntax.get.shebang(sourceFileOrBundle.text);
         if (shebang) {
           writeComment(shebang);
           writeLine();
@@ -4557,7 +4557,7 @@ namespace qnr {
     function isUniqueLocalName(name: string, container: Node): boolean {
       for (let node = container; Node.is.descendantOf(node, container); node = node.nextContainer!) {
         if (node.locals) {
-          const local = node.locals.get(qy.get.escUnderscores(name));
+          const local = node.locals.get(syntax.get.escUnderscores(name));
           // We conservatively include alias symbols to cover cases where they're emitted as locals
           if (local && local.flags & (SymbolFlags.Value | SymbolFlags.ExportValue | SymbolFlags.Alias)) {
             return false;
@@ -4849,7 +4849,7 @@ namespace qnr {
 
     function writeSynthesizedComment(comment: SynthesizedComment) {
       const text = formatSynthesizedComment(comment);
-      const lineMap = comment.kind === Syntax.MultiLineCommentTrivia ? qy.get.lineStarts(text) : undefined;
+      const lineMap = comment.kind === Syntax.MultiLineCommentTrivia ? syntax.get.lineStarts(text) : undefined;
       writeCommentRange(text, lineMap!, writer, 0, text.length, newLine);
     }
 
@@ -4912,7 +4912,7 @@ namespace qnr {
 
     function shouldWriteComment(text: string, pos: number) {
       if (printerOptions.onlyPrintJsDocStyle) {
-        return qy.is.jsDocLike(text, pos) || isPinnedComment(text, pos);
+        return syntax.is.jsDocLike(text, pos) || isPinnedComment(text, pos);
       }
       return true;
     }
@@ -4993,7 +4993,7 @@ namespace qnr {
         if (hasDetachedComments(pos)) {
           forEachLeadingCommentWithoutDetachedComments(cb);
         } else {
-          qy.forEachLeadingCommentRange(currentSourceFile.text, pos, cb, /*state*/ pos);
+          syntax.forEachLeadingCommentRange(currentSourceFile.text, pos, cb, /*state*/ pos);
         }
       }
     }
@@ -5001,7 +5001,7 @@ namespace qnr {
     function forEachTrailingCommentToEmit(end: number, cb: (commentPos: number, commentEnd: number, kind: Syntax, hasTrailingNewLine: boolean) => void) {
       // Emit the trailing comments only if the container's end doesn't match because the container should take care of emitting these comments
       if (currentSourceFile && (containerEnd === -1 || (end !== containerEnd && end !== declarationListContainerEnd))) {
-        qy.forEachTrailingCommentRange(currentSourceFile.text, end, cb);
+        syntax.forEachTrailingCommentRange(currentSourceFile.text, end, cb);
       }
     }
 
@@ -5018,7 +5018,7 @@ namespace qnr {
         detachedCommentsInfo = undefined;
       }
 
-      qy.forEachLeadingCommentRange(currentSourceFile!.text, pos, cb, /*state*/ pos);
+      syntax.forEachLeadingCommentRange(currentSourceFile!.text, pos, cb, /*state*/ pos);
     }
 
     function emitDetachedCommentsAndUpdateCommentsInfo(range: TextRange) {
@@ -5070,8 +5070,8 @@ namespace qnr {
             writer.getColumn(),
             parsed,
             node.parent.sourceMapPath!,
-            node.parent.qy.get.lineAndCharOf(node.pos),
-            node.parent.qy.get.lineAndCharOf(node.end)
+            node.parent.syntax.get.lineAndCharOf(node.pos),
+            node.parent.syntax.get.lineAndCharOf(node.end)
           );
         }
         pipelinePhase(hint, node);
@@ -5101,7 +5101,7 @@ namespace qnr {
      * Skips trivia such as comments and white-space that can be optionally overridden by the source-map source
      */
     function skipSourceTrivia(source: SourceMapSource, pos: number): number {
-      return source.qy.skipTrivia ? source.qy.skipTrivia(pos) : qy.skipTrivia(source.text, pos);
+      return source.syntax.skipTrivia ? source.syntax.skipTrivia(pos) : syntax.skipTrivia(source.text, pos);
     }
 
     /**
@@ -5117,7 +5117,7 @@ namespace qnr {
         return;
       }
 
-      const { line: sourceLine, character: sourceCharacter } = qy.get.lineAndCharOf(sourceMapSource, pos);
+      const { line: sourceLine, character: sourceCharacter } = syntax.get.lineAndCharOf(sourceMapSource, pos);
       sourceMapGenerator!.addMapping(writer.getLine(), writer.getColumn(), sourceMapSourceIndex, sourceLine, sourceCharacter, /*nameIndex*/ undefined);
     }
 

@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   export function transformES2020(context: TransformationContext) {
     const { hoistVariableDeclaration } = context;
 

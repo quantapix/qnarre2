@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   const enum ES2015SubstitutionFlags {
     /** Enables substitutions for captured `this` */
     CapturedThis = 1 << 0,
@@ -467,7 +467,7 @@ namespace qnr {
           return visitSuperKeyword(/*isExpressionOfCall*/ false);
 
         case Syntax.ThisKeyword:
-          return visitThqy.is.keyword(node);
+          return visitThsyntax.is.keyword(node);
 
         case Syntax.MetaProperty:
           return visitMetaProperty(<MetaProperty>node);
@@ -543,7 +543,7 @@ namespace qnr {
       return visitEachChild(node, visitor, context);
     }
 
-    function visitThqy.is.keyword(node: Node): Node {
+    function visitThsyntax.is.keyword(node: Node): Node {
       if (hierarchyFacts & HierarchyFacts.ArrowFunction) {
         hierarchyFacts |= HierarchyFacts.CapturedLexicalThis;
       }
@@ -743,7 +743,7 @@ namespace qnr {
       setEmitFlags(inner, EmitFlags.NoComments);
 
       const outer = createPartiallyEmittedExpression(inner);
-      outer.end = qy.skipTrivia(currentText, node.pos);
+      outer.end = syntax.skipTrivia(currentText, node.pos);
       setEmitFlags(outer, EmitFlags.NoComments);
 
       const result = createParen(createCall(outer, /*typeArguments*/ undefined, extendsClauseElement ? [visitNode(extendsClauseElement.expression, visitor, isExpression)] : []));
@@ -765,7 +765,7 @@ namespace qnr {
       addClassMembers(statements, node);
 
       // Create a synthetic text range for the return statement.
-      const closingBraceLocation = createTokenRange(qy.skipTrivia(currentText, node.members.end), Syntax.CloseBraceToken);
+      const closingBraceLocation = createTokenRange(syntax.skipTrivia(currentText, node.members.end), Syntax.CloseBraceToken);
       const localName = getInternalName(node);
 
       // The following partially-emitted expression exists purely to align our sourcemap
@@ -1445,7 +1445,7 @@ namespace qnr {
         const name = Node.is.kind(ComputedPropertyName, propertyName)
           ? propertyName.expression
           : Node.is.kind(Identifier, propertyName)
-          ? StringLiteral.create(qy.get.unescUnderscores(propertyName.escapedText))
+          ? StringLiteral.create(syntax.get.unescUnderscores(propertyName.escapedText))
           : propertyName;
         e = createObjectDefinePropertyCall(receiver, name, createPropertyDescriptor({ value: memberFunction, enumerable: false, writable: true, configurable: true }));
       } else {
@@ -3751,7 +3751,7 @@ namespace qnr {
           return substituteExpressionIdentifier(<Identifier>node);
 
         case Syntax.ThisKeyword:
-          return substituteThqy.is.keyword(<PrimaryExpression>node);
+          return substituteThsyntax.is.keyword(<PrimaryExpression>node);
       }
 
       return node;
@@ -3802,7 +3802,7 @@ namespace qnr {
      *
      * @param node The ThisKeyword node.
      */
-    function substituteThqy.is.keyword(node: PrimaryExpression): PrimaryExpression {
+    function substituteThsyntax.is.keyword(node: PrimaryExpression): PrimaryExpression {
       if (enabledSubstitutions & ES2015SubstitutionFlags.CapturedThis && hierarchyFacts & HierarchyFacts.CapturesThis) {
         return setTextRange(createFileLevelUniqueName('_this'), node);
       }

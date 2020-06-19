@@ -1,4 +1,4 @@
-namespace qnr {
+namespace core {
   export interface EmitOutput {
     outputFiles: OutputFile[];
     emitSkipped: boolean;
