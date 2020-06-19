@@ -4407,8 +4407,6 @@ namespace qnr {
     InParameters = 1 << 0, // currently visiting a parameter list
     VariablesHoistedInParameters = 1 << 1, // a temp variable was hoisted while visiting a parameter list
   }
-  export type Visitor = (node: Node) => VisitResult<Node>;
-  export type VisitResult<T extends Node> = T | T[] | undefined;
   export interface Printer {
     printNode(hint: EmitHint, node: Node, sourceFile: SourceFile): string;
     printList<T extends Node>(format: ListFormat, list: Nodes<T>, sourceFile: SourceFile): string;

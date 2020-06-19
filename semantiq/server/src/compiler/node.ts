@@ -390,7 +390,7 @@ namespace qnr {
                 return n === (<TypeAssertion>parent).type;
               case Syntax.CallExpression:
               case Syntax.NewExpression:
-                return contains((<CallExpression>parent).typeArguments, n);
+                return qa.contains((<CallExpression>parent).typeArguments, n);
               case Syntax.TaggedTemplateExpression:
                 return false;
             }

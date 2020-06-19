@@ -1,126 +1,122 @@
 namespace qnr {
+  export type Visitor = (n: Node) => VisitResult<Node>;
+  export type VisitResult<T extends Node> = T | T[] | undefined;
+
   const isTypeNodeOrTypeParameterDeclaration = qa.or(isTypeNode, isTypeParameterDeclaration);
-  export function visitNode<T extends Node>(node: T | undefined, visitor: Visitor | undefined, test?: (node: Node) => boolean, lift?: (node: Nodes<Node>) => T): T;
-  export function visitNode<T extends Node>(node: T | undefined, visitor: Visitor | undefined, test?: (node: Node) => boolean, lift?: (node: Nodes<Node>) => T): T | undefined;
-  export function visitNode<T extends Node>(node: T | undefined, visitor: Visitor | undefined, test?: (node: Node) => boolean, lift?: (node: Nodes<Node>) => T): T | undefined {
-    if (node === undefined || visitor === undefined) return node;
-    aggregateTransformFlags(node);
-    const visited = visitor(node);
-    if (visited === node) return node;
-    let visitedNode: Node | undefined;
-    if (visited === undefined) return;
-    if (qa.isArray(visited)) visitedNode = (lift || extractSingleNode)(visited);
-    else visitedNode = visited;
-    Debug.assertNode(visitedNode, test);
-    aggregateTransformFlags(visitedNode!);
-    return <T>visitedNode;
+
+  export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: (n: Node) => boolean, lift?: (ns: Nodes<Node>) => T): T;
+  export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: (n: Node) => boolean, lift?: (ns: Nodes<Node>) => T): T | undefined;
+  export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: (n: Node) => boolean, lift?: (ns: Nodes<Node>) => T): T | undefined {
+    if (!n || !cb) return n;
+    aggregateTransformFlags(n);
+    const r = cb(n);
+    if (r === n) return n;
+    let n2: Node | undefined;
+    if (!r) return;
+    if (qa.isArray(r)) n2 = (lift || extractSingleNode)(r);
+    else n2 = r;
+    Debug.assertNode(n2, test);
+    aggregateTransformFlags(n2!);
+    return n2 as T;
   }
-  export function visitNodes<T extends Node>(nodes: Nodes<T> | undefined, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number): Nodes<T>;
-  export function visitNodes<T extends Node>(nodes: Nodes<T> | undefined, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number): Nodes<T> | undefined;
-  export function visitNodes<T extends Node>(nodes: Nodes<T> | undefined, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number): Nodes<T> | undefined {
-    if (nodes === undefined || visitor === undefined) return nodes;
+  export function visitNodes<T extends Node>(ns?: Nodes<T>, cb?: Visitor, test?: (n: Node) => boolean, start?: number, count?: number): Nodes<T>;
+  export function visitNodes<T extends Node>(ns?: Nodes<T>, cb?: Visitor, test?: (n: Node) => boolean, start?: number, count?: number): Nodes<T> | undefined;
+  export function visitNodes<T extends Node>(ns?: Nodes<T>, cb?: Visitor, test?: (n: Node) => boolean, start?: number, count?: number): Nodes<T> | undefined {
+    if (!ns || !cb) return ns;
     let updated: MutableNodes<T> | undefined;
-    const length = nodes.length;
+    const length = ns.length;
     if (start === undefined || start < 0) start = 0;
     if (count === undefined || count > length - start) count = length - start;
-    if (start > 0 || count < length) updated = Nodes.create<T>([], nodes.trailingComma && start + count === length);
+    if (start > 0 || count < length) updated = Nodes.create<T>([], ns.trailingComma && start + count === length);
     for (let i = 0; i < count; i++) {
-      const node: T = nodes[i + start];
-      aggregateTransformFlags(node);
-      const visited = node !== undefined ? visitor(node) : undefined;
-      if (updated !== undefined || visited === undefined || visited !== node) {
+      const n: T = ns[i + start];
+      aggregateTransformFlags(n);
+      const r = n ? cb(n) : undefined;
+      if (updated !== undefined || r === undefined || r !== n) {
         if (updated === undefined) {
-          updated = Nodes.create(nodes.slice(0, i), nodes.trailingComma);
-          setTextRange(updated, nodes);
+          updated = Nodes.create(ns.slice(0, i), ns.trailingComma);
+          setTextRange(updated, ns);
         }
-        if (visited) {
-          if (qa.isArray(visited)) {
-            for (const visitedNode of visited) {
-              Debug.assertNode(visitedNode, test);
-              aggregateTransformFlags(visitedNode);
-              updated.push(<T>visitedNode);
+        if (r) {
+          if (qa.isArray(r)) {
+            for (const n2 of r) {
+              Debug.assertNode(n2, test);
+              aggregateTransformFlags(n2);
+              updated.push(n2 as T);
             }
           } else {
-            Debug.assertNode(visited, test);
-            aggregateTransformFlags(visited);
-            updated.push(<T>visited);
+            Debug.assertNode(r, test);
+            aggregateTransformFlags(r);
+            updated.push(r as T);
           }
         }
       }
     }
-    return updated || nodes;
+    return updated || ns;
   }
-  export function visitLexicalEnvironment(statements: Nodes<Statement>, visitor: Visitor, context: TransformationContext, start?: number, ensureUseStrict?: boolean) {
-    context.startLexicalEnvironment();
-    statements = Nodes.visit(statements, visitor, isStatement, start);
-    if (ensureUseStrict) statements = qnr.ensureUseStrict(statements);
-    return mergeLexicalEnvironment(statements, context.endLexicalEnvironment());
+  export function visitLexicalEnvironment(ss: Nodes<Statement>, cb: Visitor, c: TransformationContext, start?: number, strict?: boolean) {
+    c.startLexicalEnvironment();
+    ss = visitNodes(ss, cb, isStatement, start);
+    if (strict) ss = ensureUseStrict(ss);
+    return mergeLexicalEnvironment(ss, c.endLexicalEnvironment());
   }
-  export function visitParameterList(
-    nodes: Nodes,
-    visitor: Visitor,
-    context: TransformationContext,
-    nodesVisitor?: <T extends Node>(nodes: Nodes<T>, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number) => Nodes<T>
-  ): Nodes;
-  export function visitParameterList(
-    nodes: Nodes | undefined,
-    visitor: Visitor,
-    context: TransformationContext,
-    nodesVisitor?: <T extends Node>(nodes: Nodes<T> | undefined, visitor: Visitor, test?: (node: Node) => boolean, start?: number, count?: number) => Nodes<T> | undefined
-  ): Nodes | undefined;
-  export function visitParameterList(nodes: Nodes | undefined, visitor: Visitor, context: TransformationContext, nodesVisitor = Nodes.visit) {
-    let updated: Nodes | undefined;
-    context.startLexicalEnvironment();
-    if (nodes) {
-      context.setLexicalEnvironmentFlags(LexicalEnvironmentFlags.InParameters, true);
-      updated = nodesVisitor(nodes, visitor, isParameterDeclaration);
-      if (context.getLexicalEnvironmentFlags() & LexicalEnvironmentFlags.VariablesHoistedInParameters) updated = addDefaultValueAssignmentsIfNeeded(updated, context);
-      context.setLexicalEnvironmentFlags(LexicalEnvironmentFlags.InParameters, false);
+  export function visitParameterList<T extends Node>(
+    ns: Nodes<T>,
+    cb: Visitor,
+    c: TransformationContext,
+    v?: (ns?: Nodes<T>, cb?: Visitor, test?: (n: Node) => boolean, start?: number, count?: number) => Nodes<T>
+  ): Nodes<T>;
+  export function visitParameterList<T extends Node>(
+    ns: Nodes<T> | undefined,
+    cb: Visitor,
+    c: TransformationContext,
+    v?: (ns?: Nodes<T>, cb?: Visitor, test?: (n: Node) => boolean, start?: number, count?: number) => Nodes<T> | undefined
+  ): Nodes<T> | undefined;
+  export function visitParameterList<T extends Node>(ns: Nodes<T> | undefined, cb: Visitor, c: TransformationContext, v = visitNodes) {
+    let updated: Nodes<ParameterDeclaration> | undefined;
+    c.startLexicalEnvironment();
+    if (ns) {
+      c.setLexicalEnvironmentFlags(LexicalEnvironmentFlags.InParameters, true);
+      updated = v(ns, cb, isParameterDeclaration);
+      if (c.getLexicalEnvironmentFlags() & LexicalEnvironmentFlags.VariablesHoistedInParameters) updated = addValueAssignments(updated!, c);
+      c.setLexicalEnvironmentFlags(LexicalEnvironmentFlags.InParameters, false);
     }
-    context.suspendLexicalEnvironment();
+    c.suspendLexicalEnvironment();
     return updated;
   }
-  function addDefaultValueAssignmentsIfNeeded(parameters: Nodes, context: TransformationContext) {
+  function addValueAssignments(ps: Nodes<ParameterDeclaration>, c: TransformationContext) {
     let r: ParameterDeclaration[] | undefined;
-    for (let i = 0; i < parameters.length; i++) {
-      const parameter = parameters[i];
-      const updated = addDefaultValueAssignmentIfNeeded(parameter, context);
-      if (r || updated !== parameter) {
-        if (!r) r = parameters.slice(0, i);
+    for (let i = 0; i < ps.length; i++) {
+      const p = ps[i];
+      const updated = addValueAssignmentIfNeeded(p, c);
+      if (r || updated !== p) {
+        if (!r) r = ps.slice(0, i);
         r[i] = updated;
       }
     }
-    if (r) return setTextRange(Nodes.create(r, parameters.trailingComma), parameters);
-    return parameters;
+    if (r) return setTextRange(Nodes.create(r, ps.trailingComma), ps);
+    return ps;
   }
-  function addDefaultValueAssignmentIfNeeded(parameter: ParameterDeclaration, context: TransformationContext) {
-    return parameter.dot3Token
-      ? parameter
-      : Node.is.kind(BindingPattern, parameter.name)
-      ? addDefaultValueAssignmentForBindingPattern(parameter, context)
-      : parameter.initializer
-      ? addDefaultValueAssignmentForInitializer(parameter, parameter.name, parameter.initializer, context)
-      : parameter;
+  function addValueAssignmentIfNeeded(p: ParameterDeclaration, c: TransformationContext) {
+    return p.dot3Token ? p : Node.is.kind(BindingPattern, p.name) ? addForBindingPattern(p, c) : p.initializer ? addForInitializer(p, p.name, p.initializer, c) : p;
   }
-  function addDefaultValueAssignmentForBindingPattern(parameter: ParameterDeclaration, context: TransformationContext) {
-    context.addInitializationStatement(
+  function addForBindingPattern(p: ParameterDeclaration, c: TransformationContext) {
+    c.addInitializationStatement(
       createVariableStatement(
         undefined,
         createVariableDeclarationList([
           createVariableDeclaration(
-            parameter.name,
-            parameter.type,
-            parameter.initializer
-              ? createConditional(createStrictEquality(getGeneratedNameForNode(parameter), createVoidZero()), parameter.initializer, getGeneratedNameForNode(parameter))
-              : getGeneratedNameForNode(parameter)
+            p.name,
+            p.type,
+            p.initializer ? createConditional(createStrictEquality(getGeneratedNameForNode(p), createVoidZero()), p.initializer, getGeneratedNameForNode(p)) : getGeneratedNameForNode(p)
           ),
         ])
       )
     );
-    return updateParameter(parameter, parameter.decorators, parameter.modifiers, parameter.dot3Token, getGeneratedNameForNode(parameter), parameter.questionToken, parameter.type, undefined);
+    return updateParameter(p, p.decorators, p.modifiers, p.dot3Token, getGeneratedNameForNode(p), p.questionToken, p.type, undefined);
   }
-  function addDefaultValueAssignmentForInitializer(parameter: ParameterDeclaration, name: Identifier, initializer: Expression, context: TransformationContext) {
-    context.addInitializationStatement(
+  function addForInitializer(p: ParameterDeclaration, name: Identifier, init: Expression, c: TransformationContext) {
+    c.addInitializationStatement(
       createIf(
         createTypeCheck(getSynthesizedClone(name), 'undefined'),
         setEmitFlags(
@@ -129,578 +125,549 @@ namespace qnr {
               createExpressionStatement(
                 setEmitFlags(
                   setTextRange(
-                    createAssignment(
-                      setEmitFlags(getMutableClone(name), EmitFlags.NoSourceMap),
-                      setEmitFlags(initializer, EmitFlags.NoSourceMap | Node.get.emitFlags(initializer) | EmitFlags.NoComments)
-                    ),
-                    parameter
+                    createAssignment(setEmitFlags(getMutableClone(name), EmitFlags.NoSourceMap), setEmitFlags(init, EmitFlags.NoSourceMap | Node.get.emitFlags(init) | EmitFlags.NoComments)),
+                    p
                   ),
                   EmitFlags.NoComments
                 )
               ),
             ]),
-            parameter
+            p
           ),
           EmitFlags.SingleLine | EmitFlags.NoTrailingSourceMap | EmitFlags.NoTokenSourceMaps | EmitFlags.NoComments
         )
       )
     );
-    return updateParameter(parameter, parameter.decorators, parameter.modifiers, parameter.dot3Token, parameter.name, parameter.questionToken, parameter.type, undefined);
+    return updateParameter(p, p.decorators, p.modifiers, p.dot3Token, p.name, p.questionToken, p.type, undefined);
   }
-  export function visitFunctionBody(node: FunctionBody, visitor: Visitor, context: TransformationContext): FunctionBody;
-  export function visitFunctionBody(node: FunctionBody | undefined, visitor: Visitor, context: TransformationContext): FunctionBody | undefined;
-  export function visitFunctionBody(node: ConciseBody, visitor: Visitor, context: TransformationContext): ConciseBody;
-  export function visitFunctionBody(node: ConciseBody | undefined, visitor: Visitor, context: TransformationContext): ConciseBody | undefined {
-    context.resumeLexicalEnvironment();
-    const updated = visitNode(node, visitor, isConciseBody);
-    const declarations = context.endLexicalEnvironment();
-    if (some(declarations)) {
+  export function visitFunctionBody(n: FunctionBody, cb: Visitor, c: TransformationContext): FunctionBody;
+  export function visitFunctionBody(n: FunctionBody | undefined, cb: Visitor, c: TransformationContext): FunctionBody | undefined;
+  export function visitFunctionBody(n: ConciseBody, cb: Visitor, c: TransformationContext): ConciseBody;
+  export function visitFunctionBody(n: ConciseBody | undefined, cb: Visitor, c: TransformationContext): ConciseBody | undefined {
+    c.resumeLexicalEnvironment();
+    const updated = visitNode(n, cb, isConciseBody);
+    const declarations = c.endLexicalEnvironment();
+    if (qa.some(declarations)) {
       const block = convertToFunctionBody(updated);
-      const statements = mergeLexicalEnvironment(block.statements, declarations);
-      return updateBlock(block, statements);
+      const ss = mergeLexicalEnvironment(block.statements, declarations);
+      return updateBlock(block, ss);
     }
     return updated;
   }
-  export function visitEachChild<T extends Node>(node: T, visitor: Visitor, context: TransformationContext): T;
-  export function visitEachChild<T extends Node>(node: T | undefined, visitor: Visitor, context: TransformationContext, nodesVisitor?: typeof Nodes.visit, tokenVisitor?: Visitor): T | undefined;
-  export function visitEachChild(node: Node | undefined, visitor: Visitor, context: TransformationContext, nodesVisitor = Nodes.visit, tokenVisitor?: Visitor): Node | undefined {
+  const isExpression = (n: Node) => Node.is.expressionNode(n);
+  const isTypeNode = (n: Node) => Node.is.typeNode(n);
+  const isDecorator = (n: Node) => Node.is.decorator(n);
+  const isModifier = (n: Node) => Node.is.modifier(n);
+
+  export function visitEachChild<T extends Node>(node: T, cb: Visitor, c: TransformationContext): T;
+  export function visitEachChild<T extends Node>(node: T | undefined, cb: Visitor, c: TransformationContext, nodesVisitor?: typeof Nodes.visit, tokenVisitor?: Visitor): T | undefined;
+  export function visitEachChild(node: Node | undefined, cb: Visitor, c: TransformationContext, nodesVisitor = Nodes.visit, tokenVisitor?: Visitor): Node | undefined {
     if (!node) return;
     const k = node.kind;
     if ((k > Syntax.FirstToken && k <= Syntax.LastToken) || k === Syntax.ThisType) return node;
     const n = node as NodeTypes;
     switch (n.kind) {
       case Syntax.Identifier:
-        return updateIdentifier(n, nodesVisitor(n.typeArguments, visitor, isTypeNodeOrTypeParameterDeclaration));
+        return updateIdentifier(n, nodesVisitor(n.typeArguments, cb, isTypeNodeOrTypeParameterDeclaration));
       case Syntax.QualifiedName:
-        return QualifiedName.update(n, visitNode(n.left, visitor, isEntityName), visitNode(n.right, visitor, isIdentifier));
+        return QualifiedName.update(n, visitNode(n.left, cb, isEntityName), visitNode(n.right, cb, isIdentifier));
       case Syntax.ComputedPropertyName:
-        return ComputedPropertyName.update(n, visitNode(n.expression, visitor, isExpression));
+        return ComputedPropertyName.update(n, visitNode(n.expression, cb, isExpression));
       case Syntax.TypeParameter:
-        return updateTypeParameterDeclaration(n, visitNode(n.name, visitor, isIdentifier), visitNode(n.constraint, visitor, isTypeNode), visitNode(n.default, visitor, isTypeNode));
+        return updateTypeParameterDeclaration(n, visitNode(n.name, cb, isIdentifier), visitNode(n.constraint, cb, isTypeNode), visitNode(n.default, cb, isTypeNode));
       case Syntax.Parameter:
         return updateParameter(
           n,
-          nodesVisitor(n.decorators, visitor, isDecorator),
-          nodesVisitor(n.modifiers, visitor, isModifier),
+          nodesVisitor(n.decorators, cb, isDecorator),
+          nodesVisitor(n.modifiers, cb, isModifier),
           visitNode(n.dot3Token, tokenVisitor, isToken),
-          visitNode(n.name, visitor, isBindingName),
+          visitNode(n.name, cb, isBindingName),
           visitNode(n.questionToken, tokenVisitor, isToken),
-          visitNode(n.type, visitor, isTypeNode),
-          visitNode(n.initializer, visitor, isExpression)
+          visitNode(n.type, cb, isTypeNode),
+          visitNode(n.initializer, cb, isExpression)
         );
       case Syntax.Decorator:
-        return updateDecorator(n, visitNode(n.expression, visitor, isExpression));
+        return updateDecorator(n, visitNode(n.expression, cb, isExpression));
       case Syntax.PropertySignature:
         return PropertySignature.update(
           n,
-          nodesVisitor(n.modifiers, visitor, isToken),
-          visitNode(n.name, visitor, isPropertyName),
+          nodesVisitor(n.modifiers, cb, isToken),
+          visitNode(n.name, cb, isPropertyName),
           visitNode(n.questionToken, tokenVisitor, isToken),
-          visitNode(n.type, visitor, isTypeNode),
-          visitNode(n.initializer, visitor, isExpression)
+          visitNode(n.type, cb, isTypeNode),
+          visitNode(n.initializer, cb, isExpression)
         );
       case Syntax.PropertyDeclaration:
         return PropertyDeclaration.update(
           n,
-          nodesVisitor(n.decorators, visitor, isDecorator),
-          nodesVisitor(n.modifiers, visitor, isModifier),
-          visitNode(n.name, visitor, isPropertyName),
+          nodesVisitor(n.decorators, cb, isDecorator),
+          nodesVisitor(n.modifiers, cb, isModifier),
+          visitNode(n.name, cb, isPropertyName),
           visitNode(n.questionToken || n.exclamationToken, tokenVisitor, isToken),
-          visitNode(n.type, visitor, isTypeNode),
-          visitNode(n.initializer, visitor, isExpression)
+          visitNode(n.type, cb, isTypeNode),
+          visitNode(n.initializer, cb, isExpression)
         );
       case Syntax.MethodSignature:
         return MethodSignature.update(
           n,
-          nodesVisitor(n.typeParameters, visitor, isTypeParameterDeclaration),
-          nodesVisitor(n.parameters, visitor, isParameterDeclaration),
-          visitNode(n.type, visitor, isTypeNode),
-          visitNode(n.name, visitor, isPropertyName),
+          nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration),
+          nodesVisitor(n.parameters, cb, isParameterDeclaration),
+          visitNode(n.type, cb, isTypeNode),
+          visitNode(n.name, cb, isPropertyName),
           visitNode(n.questionToken, tokenVisitor, isToken)
         );
       case Syntax.MethodDeclaration:
         return MethodDeclaration.update(
           n,
-          nodesVisitor(n.decorators, visitor, isDecorator),
-          nodesVisitor(n.modifiers, visitor, isModifier),
+          nodesVisitor(n.decorators, cb, isDecorator),
+          nodesVisitor(n.modifiers, cb, isModifier),
           visitNode(n.asteriskToken, tokenVisitor, isToken),
-          visitNode(n.name, visitor, isPropertyName),
+          visitNode(n.name, cb, isPropertyName),
           visitNode(n.questionToken, tokenVisitor, isToken),
-          nodesVisitor(n.typeParameters, visitor, isTypeParameterDeclaration),
-          visitParameterList(n.parameters, visitor, context, nodesVisitor),
-          visitNode(n.type, visitor, isTypeNode),
-          visitFunctionBody(n.body!, visitor, context)
+          nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration),
+          visitParameterList(n.parameters, cb, c, nodesVisitor),
+          visitNode(n.type, cb, isTypeNode),
+          visitFunctionBody(n.body!, cb, c)
         );
       case Syntax.Constructor:
         return ConstructorDeclaration.update(
           n,
-          nodesVisitor(n.decorators, visitor, isDecorator),
-          nodesVisitor(n.modifiers, visitor, isModifier),
-          visitParameterList(n.parameters, visitor, context, nodesVisitor),
-          visitFunctionBody(n.body!, visitor, context)
+          nodesVisitor(n.decorators, cb, isDecorator),
+          nodesVisitor(n.modifiers, cb, isModifier),
+          visitParameterList(n.parameters, cb, c, nodesVisitor),
+          visitFunctionBody(n.body!, cb, c)
         );
       case Syntax.GetAccessor:
         return GetAccessorDeclaration.update(
           n,
-          nodesVisitor(n.decorators, visitor, isDecorator),
-          nodesVisitor(n.modifiers, visitor, isModifier),
-          visitNode(n.name, visitor, isPropertyName),
-          visitParameterList(n.parameters, visitor, context, nodesVisitor),
-          visitNode(n.type, visitor, isTypeNode),
-          visitFunctionBody(n.body!, visitor, context)
+          nodesVisitor(n.decorators, cb, isDecorator),
+          nodesVisitor(n.modifiers, cb, isModifier),
+          visitNode(n.name, cb, isPropertyName),
+          visitParameterList(n.parameters, cb, c, nodesVisitor),
+          visitNode(n.type, cb, isTypeNode),
+          visitFunctionBody(n.body!, cb, c)
         );
       case Syntax.SetAccessor:
         return SetAccessorDeclaration.update(
           n,
-          nodesVisitor(n.decorators, visitor, isDecorator),
-          nodesVisitor(n.modifiers, visitor, isModifier),
-          visitNode(n.name, visitor, isPropertyName),
-          visitParameterList(n.parameters, visitor, context, nodesVisitor),
-          visitFunctionBody(n.body!, visitor, context)
+          nodesVisitor(n.decorators, cb, isDecorator),
+          nodesVisitor(n.modifiers, cb, isModifier),
+          visitNode(n.name, cb, isPropertyName),
+          visitParameterList(n.parameters, cb, c, nodesVisitor),
+          visitFunctionBody(n.body!, cb, c)
         );
       case Syntax.CallSignature:
         return CallSignatureDeclaration.update(
           n,
-          nodesVisitor(n.typeParameters, visitor, isTypeParameterDeclaration),
-          nodesVisitor(n.parameters, visitor, isParameterDeclaration),
-          visitNode(n.type, visitor, isTypeNode)
+          nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration),
+          nodesVisitor(n.parameters, cb, isParameterDeclaration),
+          visitNode(n.type, cb, isTypeNode)
         );
       case Syntax.ConstructSignature:
         return ConstructSignatureDeclaration.update(
           n,
-          nodesVisitor(n.typeParameters, visitor, isTypeParameterDeclaration),
-          nodesVisitor(n.parameters, visitor, isParameterDeclaration),
-          visitNode(n.type, visitor, isTypeNode)
+          nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration),
+          nodesVisitor(n.parameters, cb, isParameterDeclaration),
+          visitNode(n.type, cb, isTypeNode)
         );
       case Syntax.IndexSignature:
         return IndexSignatureDeclaration.update(
           n,
-          nodesVisitor(n.decorators, visitor, isDecorator),
-          nodesVisitor(n.modifiers, visitor, isModifier),
-          nodesVisitor(n.parameters, visitor, isParameterDeclaration),
-          visitNode(n.type, visitor, isTypeNode)
+          nodesVisitor(n.decorators, cb, isDecorator),
+          nodesVisitor(n.modifiers, cb, isModifier),
+          nodesVisitor(n.parameters, cb, isParameterDeclaration),
+          visitNode(n.type, cb, isTypeNode)
         );
       case Syntax.TypePredicate:
-        return TypePredicateNode.updateWithModifier(n, visitNode(n.assertsModifier, visitor), visitNode(n.parameterName, visitor), visitNode(n.type, visitor, isTypeNode));
+        return TypePredicateNode.updateWithModifier(n, visitNode(n.assertsModifier, cb), visitNode(n.parameterName, cb), visitNode(n.type, cb, isTypeNode));
       case Syntax.TypeReference:
-        return TypeReferenceNode.update(n, visitNode(n.typeName, visitor, isEntityName), nodesVisitor(n.typeArguments, visitor, isTypeNode));
+        return TypeReferenceNode.update(n, visitNode(n.typeName, cb, isEntityName), nodesVisitor(n.typeArguments, cb, isTypeNode));
       case Syntax.FunctionType:
-        return FunctionTypeNode.update(
-          n,
-          nodesVisitor(n.typeParameters, visitor, isTypeParameterDeclaration),
-          nodesVisitor(n.parameters, visitor, isParameterDeclaration),
-          visitNode(n.type, visitor, isTypeNode)
-        );
+        return FunctionTypeNode.update(n, nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration), nodesVisitor(n.parameters, cb, isParameterDeclaration), visitNode(n.type, cb, isTypeNode));
       case Syntax.ConstructorType:
         return ConstructorDeclaration.updateTypeNode(
           n,
-          nodesVisitor(n.typeParameters, visitor, isTypeParameterDeclaration),
-          nodesVisitor(n.parameters, visitor, isParameterDeclaration),
-          visitNode(n.type, visitor, isTypeNode)
+          nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration),
+          nodesVisitor(n.parameters, cb, isParameterDeclaration),
+          visitNode(n.type, cb, isTypeNode)
         );
       case Syntax.TypeQuery:
-        return TypeQueryNode.update(n, visitNode(n.exprName, visitor, isEntityName));
+        return TypeQueryNode.update(n, visitNode(n.exprName, cb, isEntityName));
       case Syntax.TypeLiteral:
-        return TypeLiteralNode.update(n, nodesVisitor(n.members, visitor, isTypeElement));
+        return TypeLiteralNode.update(n, nodesVisitor(n.members, cb, isTypeElement));
       case Syntax.ArrayType:
-        return ArrayTypeNode.update(n, visitNode(n.elementType, visitor, isTypeNode));
+        return ArrayTypeNode.update(n, visitNode(n.elementType, cb, isTypeNode));
       case Syntax.TupleType:
-        return TupleTypeNode.update(n, nodesVisitor(n.elements, visitor, isTypeNode));
+        return TupleTypeNode.update(n, nodesVisitor(n.elements, cb, isTypeNode));
       case Syntax.OptionalType:
-        return OptionalTypeNode.update(n, visitNode(n.type, visitor, isTypeNode));
+        return OptionalTypeNode.update(n, visitNode(n.type, cb, isTypeNode));
       case Syntax.RestType:
-        return RestTypeNode.update(n, visitNode(n.type, visitor, isTypeNode));
+        return RestTypeNode.update(n, visitNode(n.type, cb, isTypeNode));
       case Syntax.UnionType:
-        return UnionTypeNode.update(n, nodesVisitor(n.types, visitor, isTypeNode));
+        return UnionTypeNode.update(n, nodesVisitor(n.types, cb, isTypeNode));
       case Syntax.IntersectionType:
-        return IntersectionTypeNode.update(n, nodesVisitor(n.types, visitor, isTypeNode));
+        return IntersectionTypeNode.update(n, nodesVisitor(n.types, cb, isTypeNode));
       case Syntax.ConditionalType:
         return ConditionalTypeNode.update(
           n,
-          visitNode(n.checkType, visitor, isTypeNode),
-          visitNode(n.extendsType, visitor, isTypeNode),
-          visitNode(n.trueType, visitor, isTypeNode),
-          visitNode(n.falseType, visitor, isTypeNode)
+          visitNode(n.checkType, cb, isTypeNode),
+          visitNode(n.extendsType, cb, isTypeNode),
+          visitNode(n.trueType, cb, isTypeNode),
+          visitNode(n.falseType, cb, isTypeNode)
         );
       case Syntax.InferType:
-        return InferTypeNode.update(n, visitNode(n.typeParameter, visitor, isTypeParameterDeclaration));
+        return InferTypeNode.update(n, visitNode(n.typeParameter, cb, isTypeParameterDeclaration));
       case Syntax.ImportType:
-        return ImportTypeNode.update(n, visitNode(n.argument, visitor, isTypeNode), visitNode(n.qualifier, visitor, isEntityName), Nodes.visit(n.typeArguments, visitor, isTypeNode), n.isTypeOf);
+        return ImportTypeNode.update(n, visitNode(n.argument, cb, isTypeNode), visitNode(n.qualifier, cb, isEntityName), Nodes.visit(n.typeArguments, cb, isTypeNode), n.isTypeOf);
       case Syntax.NamedTupleMember:
-        return NamedTupleMember.update(
-          n,
-          visitNode(n.dot3Token, visitor, isToken),
-          visitNode(n.name, visitor, isIdentifier),
-          visitNode(n.questionToken, visitor, isToken),
-          visitNode(n.type, visitor, isTypeNode)
-        );
+        return NamedTupleMember.update(n, visitNode(n.dot3Token, cb, isToken), visitNode(n.name, cb, isIdentifier), visitNode(n.questionToken, cb, isToken), visitNode(n.type, cb, isTypeNode));
       case Syntax.ParenthesizedType:
-        return ParenthesizedTypeNode.update(n, visitNode(n.type, visitor, isTypeNode));
+        return ParenthesizedTypeNode.update(n, visitNode(n.type, cb, isTypeNode));
       case Syntax.TypeOperator:
-        return TypeOperatorNode.update(n, visitNode(n.type, visitor, isTypeNode));
+        return TypeOperatorNode.update(n, visitNode(n.type, cb, isTypeNode));
       case Syntax.IndexedAccessType:
-        return IndexedAccessTypeNode.update(n, visitNode(n.objectType, visitor, isTypeNode), visitNode(n.indexType, visitor, isTypeNode));
+        return IndexedAccessTypeNode.update(n, visitNode(n.objectType, cb, isTypeNode), visitNode(n.indexType, cb, isTypeNode));
       case Syntax.MappedType:
         return MappedTypeNode.update(
           n,
           visitNode(n.readonlyToken, tokenVisitor, isToken),
-          visitNode(n.typeParameter, visitor, isTypeParameterDeclaration),
+          visitNode(n.typeParameter, cb, isTypeParameterDeclaration),
           visitNode(n.questionToken, tokenVisitor, isToken),
-          visitNode(n.type, visitor, isTypeNode)
+          visitNode(n.type, cb, isTypeNode)
         );
       case Syntax.LiteralType:
-        return LiteralTypeNode.update(n, visitNode(n.literal, visitor, isExpression));
+        return LiteralTypeNode.update(n, visitNode(n.literal, cb, isExpression));
       case Syntax.ObjectBindingPattern:
-        return ObjectBindingPattern.update(n, nodesVisitor(n.elements, visitor, BindingElement.kind));
+        return ObjectBindingPattern.update(n, nodesVisitor(n.elements, cb, BindingElement.kind));
       case Syntax.ArrayBindingPattern:
-        return ArrayBindingPattern.update(n, nodesVisitor(n.elements, visitor, isArrayBindingElement));
+        return ArrayBindingPattern.update(n, nodesVisitor(n.elements, cb, isArrayBindingElement));
       case Syntax.BindingElement:
         return BindingElement.update(
           n,
           visitNode(n.dot3Token, tokenVisitor, isToken),
-          visitNode(n.propertyName, visitor, isPropertyName),
-          visitNode(n.name, visitor, isBindingName),
-          visitNode(n.initializer, visitor, isExpression)
+          visitNode(n.propertyName, cb, isPropertyName),
+          visitNode(n.name, cb, isBindingName),
+          visitNode(n.initializer, cb, isExpression)
         );
       case Syntax.ArrayLiteralExpression:
-        return updateArrayLiteral(n, nodesVisitor(n.elements, visitor, isExpression));
+        return updateArrayLiteral(n, nodesVisitor(n.elements, cb, isExpression));
       case Syntax.ObjectLiteralExpression:
-        return updateObjectLiteral(n, nodesVisitor(n.properties, visitor, isObjectLiteralElementLike));
+        return updateObjectLiteral(n, nodesVisitor(n.properties, cb, isObjectLiteralElementLike));
       case Syntax.PropertyAccessExpression:
         if (node.flags & NodeFlags.OptionalChain) {
-          return updatePropertyAccessChain(n, visitNode(n.expression, visitor, isExpression), visitNode(n.questionDotToken, tokenVisitor, isToken), visitNode(n.name, visitor, isIdentifier));
+          return updatePropertyAccessChain(n, visitNode(n.expression, cb, isExpression), visitNode(n.questionDotToken, tokenVisitor, isToken), visitNode(n.name, cb, isIdentifier));
         }
-        return updatePropertyAccess(n, visitNode(n.expression, visitor, isExpression), visitNode(n.name, visitor, isIdentifierOrPrivateIdentifier));
+        return updatePropertyAccess(n, visitNode(n.expression, cb, isExpression), visitNode(n.name, cb, isIdentifierOrPrivateIdentifier));
       case Syntax.ElementAccessExpression:
         if (node.flags & NodeFlags.OptionalChain) {
-          return updateElementAccessChain(
-            n,
-            visitNode(n.expression, visitor, isExpression),
-            visitNode(n.questionDotToken, tokenVisitor, isToken),
-            visitNode(n.argumentExpression, visitor, isExpression)
-          );
+          return updateElementAccessChain(n, visitNode(n.expression, cb, isExpression), visitNode(n.questionDotToken, tokenVisitor, isToken), visitNode(n.argumentExpression, cb, isExpression));
         }
-        return updateElementAccess(n, visitNode(n.expression, visitor, isExpression), visitNode(n.argumentExpression, visitor, isExpression));
+        return updateElementAccess(n, visitNode(n.expression, cb, isExpression), visitNode(n.argumentExpression, cb, isExpression));
       case Syntax.CallExpression:
         if (node.flags & NodeFlags.OptionalChain) {
           return updateCallChain(
             n,
-            visitNode(n.expression, visitor, isExpression),
+            visitNode(n.expression, cb, isExpression),
             visitNode(n.questionDotToken, tokenVisitor, isToken),
-            nodesVisitor(n.typeArguments, visitor, isTypeNode),
-            nodesVisitor(n.arguments, visitor, isExpression)
+            nodesVisitor(n.typeArguments, cb, isTypeNode),
+            nodesVisitor(n.arguments, cb, isExpression)
           );
         }
-        return updateCall(n, visitNode(n.expression, visitor, isExpression), nodesVisitor(n.typeArguments, visitor, isTypeNode), nodesVisitor(n.arguments, visitor, isExpression));
+        return updateCall(n, visitNode(n.expression, cb, isExpression), nodesVisitor(n.typeArguments, cb, isTypeNode), nodesVisitor(n.arguments, cb, isExpression));
       case Syntax.NewExpression:
-        return updateNew(n, visitNode(n.expression, visitor, isExpression), nodesVisitor(n.typeArguments, visitor, isTypeNode), nodesVisitor(n.arguments, visitor, isExpression));
+        return updateNew(n, visitNode(n.expression, cb, isExpression), nodesVisitor(n.typeArguments, cb, isTypeNode), nodesVisitor(n.arguments, cb, isExpression));
       case Syntax.TaggedTemplateExpression:
-        return updateTaggedTemplate(n, visitNode(n.tag, visitor, isExpression), Nodes.visit(n.typeArguments, visitor, isExpression), visitNode(n.template, visitor, isTemplateLiteral));
+        return updateTaggedTemplate(n, visitNode(n.tag, cb, isExpression), Nodes.visit(n.typeArguments, cb, isExpression), visitNode(n.template, cb, isTemplateLiteral));
       case Syntax.TypeAssertionExpression:
-        return updateTypeAssertion(n, visitNode(n.type, visitor, isTypeNode), visitNode(n.expression, visitor, isExpression));
+        return updateTypeAssertion(n, visitNode(n.type, cb, isTypeNode), visitNode(n.expression, cb, isExpression));
       case Syntax.ParenthesizedExpression:
-        return updateParen(n, visitNode(n.expression, visitor, isExpression));
+        return updateParen(n, visitNode(n.expression, cb, isExpression));
       case Syntax.FunctionExpression:
         return updateFunctionExpression(
           n,
-          nodesVisitor(n.modifiers, visitor, isModifier),
+          nodesVisitor(n.modifiers, cb, isModifier),
           visitNode(n.asteriskToken, tokenVisitor, isToken),
-          visitNode(n.name, visitor, isIdentifier),
-          nodesVisitor(n.typeParameters, visitor, isTypeParameterDeclaration),
-          visitParameterList(n.parameters, visitor, context, nodesVisitor),
-          visitNode(n.type, visitor, isTypeNode),
-          visitFunctionBody(n.body, visitor, context)
+          visitNode(n.name, cb, isIdentifier),
+          nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration),
+          visitParameterList(n.parameters, cb, c, nodesVisitor),
+          visitNode(n.type, cb, isTypeNode),
+          visitFunctionBody(n.body, cb, c)
         );
       case Syntax.ArrowFunction:
         return updateArrowFunction(
           n,
-          nodesVisitor(n.modifiers, visitor, isModifier),
-          nodesVisitor(n.typeParameters, visitor, isTypeParameterDeclaration),
-          visitParameterList(n.parameters, visitor, context, nodesVisitor),
-          visitNode(n.type, visitor, isTypeNode),
+          nodesVisitor(n.modifiers, cb, isModifier),
+          nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration),
+          visitParameterList(n.parameters, cb, c, nodesVisitor),
+          visitNode(n.type, cb, isTypeNode),
           visitNode(n.equalsGreaterThanToken, tokenVisitor, isToken),
-          visitFunctionBody(n.body, visitor, context)
+          visitFunctionBody(n.body, cb, c)
         );
       case Syntax.DeleteExpression:
-        return updateDelete(n, visitNode(n.expression, visitor, isExpression));
+        return updateDelete(n, visitNode(n.expression, cb, isExpression));
       case Syntax.TypeOfExpression:
-        return updateTypeOf(n, visitNode(n.expression, visitor, isExpression));
+        return updateTypeOf(n, visitNode(n.expression, cb, isExpression));
       case Syntax.VoidExpression:
-        return updateVoid(n, visitNode(n.expression, visitor, isExpression));
+        return updateVoid(n, visitNode(n.expression, cb, isExpression));
       case Syntax.AwaitExpression:
-        return updateAwait(n, visitNode(n.expression, visitor, isExpression));
+        return updateAwait(n, visitNode(n.expression, cb, isExpression));
       case Syntax.PrefixUnaryExpression:
-        return updatePrefix(n, visitNode(n.operand, visitor, isExpression));
+        return updatePrefix(n, visitNode(n.operand, cb, isExpression));
       case Syntax.PostfixUnaryExpression:
-        return updatePostfix(n, visitNode(n.operand, visitor, isExpression));
+        return updatePostfix(n, visitNode(n.operand, cb, isExpression));
       case Syntax.BinaryExpression:
-        return updateBinary(n, visitNode(n.left, visitor, isExpression), visitNode(n.right, visitor, isExpression), visitNode(n.operatorToken, tokenVisitor, isToken));
+        return updateBinary(n, visitNode(n.left, cb, isExpression), visitNode(n.right, cb, isExpression), visitNode(n.operatorToken, tokenVisitor, isToken));
       case Syntax.ConditionalExpression:
         return updateConditional(
           n,
-          visitNode(n.condition, visitor, isExpression),
+          visitNode(n.condition, cb, isExpression),
           visitNode(n.questionToken, tokenVisitor, isToken),
-          visitNode(n.whenTrue, visitor, isExpression),
+          visitNode(n.whenTrue, cb, isExpression),
           visitNode(n.colonToken, tokenVisitor, isToken),
-          visitNode(n.whenFalse, visitor, isExpression)
+          visitNode(n.whenFalse, cb, isExpression)
         );
       case Syntax.TemplateExpression:
-        return updateTemplateExpression(n, visitNode(n.head, visitor, TemplateHead.kind), nodesVisitor(n.templateSpans, visitor, isTemplateSpan));
+        return updateTemplateExpression(n, visitNode(n.head, cb, TemplateHead.kind), nodesVisitor(n.templateSpans, cb, isTemplateSpan));
       case Syntax.YieldExpression:
-        return updateYield(n, visitNode(n.asteriskToken, tokenVisitor, isToken), visitNode(n.expression, visitor, isExpression));
+        return updateYield(n, visitNode(n.asteriskToken, tokenVisitor, isToken), visitNode(n.expression, cb, isExpression));
       case Syntax.SpreadElement:
-        return updateSpread(n, visitNode(n.expression, visitor, isExpression));
+        return updateSpread(n, visitNode(n.expression, cb, isExpression));
       case Syntax.ClassExpression:
         return updateClassExpression(
           n,
-          nodesVisitor(n.modifiers, visitor, isModifier),
-          visitNode(n.name, visitor, isIdentifier),
-          nodesVisitor(n.typeParameters, visitor, isTypeParameterDeclaration),
-          nodesVisitor(n.heritageClauses, visitor, isHeritageClause),
-          nodesVisitor(n.members, visitor, isClassElement)
+          nodesVisitor(n.modifiers, cb, isModifier),
+          visitNode(n.name, cb, isIdentifier),
+          nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration),
+          nodesVisitor(n.heritageClauses, cb, isHeritageClause),
+          nodesVisitor(n.members, cb, isClassElement)
         );
       case Syntax.ExpressionWithTypeArguments:
-        return updateExpressionWithTypeArguments(n, nodesVisitor(n.typeArguments, visitor, isTypeNode), visitNode(n.expression, visitor, isExpression));
+        return updateExpressionWithTypeArguments(n, nodesVisitor(n.typeArguments, cb, isTypeNode), visitNode(n.expression, cb, isExpression));
       case Syntax.AsExpression:
-        return updateAsExpression(n, visitNode(n.expression, visitor, isExpression), visitNode(n.type, visitor, isTypeNode));
+        return updateAsExpression(n, visitNode(n.expression, cb, isExpression), visitNode(n.type, cb, isTypeNode));
       case Syntax.NonNullExpression:
-        return updateNonNullExpression(n, visitNode(n.expression, visitor, isExpression));
+        return updateNonNullExpression(n, visitNode(n.expression, cb, isExpression));
       case Syntax.MetaProperty:
-        return updateMetaProperty(n, visitNode(n.name, visitor, isIdentifier));
+        return updateMetaProperty(n, visitNode(n.name, cb, isIdentifier));
       // Misc
       case Syntax.TemplateSpan:
-        return updateTemplateSpan(n, visitNode(n.expression, visitor, isExpression), visitNode(n.literal, visitor, TemplateMiddle.kindOrTemplateTail));
+        return updateTemplateSpan(n, visitNode(n.expression, cb, isExpression), visitNode(n.literal, cb, TemplateMiddle.kindOrTemplateTail));
       // Element
       case Syntax.Block:
-        return updateBlock(n, nodesVisitor(n.statements, visitor, isStatement));
+        return updateBlock(n, nodesVisitor(n.statements, cb, isStatement));
       case Syntax.VariableStatement:
-        return updateVariableStatement(n, nodesVisitor(n.modifiers, visitor, isModifier), visitNode(n.declarationList, visitor, isVariableDeclarationList));
+        return updateVariableStatement(n, nodesVisitor(n.modifiers, cb, isModifier), visitNode(n.declarationList, cb, isVariableDeclarationList));
       case Syntax.ExpressionStatement:
-        return updateExpressionStatement(n, visitNode(n.expression, visitor, isExpression));
+        return updateExpressionStatement(n, visitNode(n.expression, cb, isExpression));
       case Syntax.IfStatement:
-        return updateIf(
-          n,
-          visitNode(n.expression, visitor, isExpression),
-          visitNode(n.thenStatement, visitor, isStatement, liftToBlock),
-          visitNode(n.elseStatement, visitor, isStatement, liftToBlock)
-        );
+        return updateIf(n, visitNode(n.expression, cb, isExpression), visitNode(n.thenStatement, cb, isStatement, liftToBlock), visitNode(n.elseStatement, cb, isStatement, liftToBlock));
       case Syntax.DoStatement:
-        return updateDo(n, visitNode(n.statement, visitor, isStatement, liftToBlock), visitNode(n.expression, visitor, isExpression));
+        return updateDo(n, visitNode(n.statement, cb, isStatement, liftToBlock), visitNode(n.expression, cb, isExpression));
       case Syntax.WhileStatement:
-        return updateWhile(n, visitNode(n.expression, visitor, isExpression), visitNode(n.statement, visitor, isStatement, liftToBlock));
+        return updateWhile(n, visitNode(n.expression, cb, isExpression), visitNode(n.statement, cb, isStatement, liftToBlock));
       case Syntax.ForStatement:
         return updateFor(
           n,
-          visitNode(n.initializer, visitor, isForInitializer),
-          visitNode(n.condition, visitor, isExpression),
-          visitNode(n.incrementor, visitor, isExpression),
-          visitNode(n.statement, visitor, isStatement, liftToBlock)
+          visitNode(n.initializer, cb, isForInitializer),
+          visitNode(n.condition, cb, isExpression),
+          visitNode(n.incrementor, cb, isExpression),
+          visitNode(n.statement, cb, isStatement, liftToBlock)
         );
       case Syntax.ForInStatement:
-        return updateForIn(n, visitNode(n.initializer, visitor, isForInitializer), visitNode(n.expression, visitor, isExpression), visitNode(n.statement, visitor, isStatement, liftToBlock));
+        return updateForIn(n, visitNode(n.initializer, cb, isForInitializer), visitNode(n.expression, cb, isExpression), visitNode(n.statement, cb, isStatement, liftToBlock));
       case Syntax.ForOfStatement:
         return updateForOf(
           n,
           visitNode(n.awaitModifier, tokenVisitor, isToken),
-          visitNode(n.initializer, visitor, isForInitializer),
-          visitNode(n.expression, visitor, isExpression),
-          visitNode(n.statement, visitor, isStatement, liftToBlock)
+          visitNode(n.initializer, cb, isForInitializer),
+          visitNode(n.expression, cb, isExpression),
+          visitNode(n.statement, cb, isStatement, liftToBlock)
         );
       case Syntax.ContinueStatement:
-        return updateContinue(n, visitNode(n.label, visitor, isIdentifier));
+        return updateContinue(n, visitNode(n.label, cb, isIdentifier));
       case Syntax.BreakStatement:
-        return updateBreak(n, visitNode(n.label, visitor, isIdentifier));
+        return updateBreak(n, visitNode(n.label, cb, isIdentifier));
       case Syntax.ReturnStatement:
-        return updateReturn(n, visitNode(n.expression, visitor, isExpression));
+        return updateReturn(n, visitNode(n.expression, cb, isExpression));
       case Syntax.WithStatement:
-        return updateWith(n, visitNode(n.expression, visitor, isExpression), visitNode(n.statement, visitor, isStatement, liftToBlock));
+        return updateWith(n, visitNode(n.expression, cb, isExpression), visitNode(n.statement, cb, isStatement, liftToBlock));
       case Syntax.SwitchStatement:
-        return updateSwitch(n, visitNode(n.expression, visitor, isExpression), visitNode(n.caseBlock, visitor, isCaseBlock));
+        return updateSwitch(n, visitNode(n.expression, cb, isExpression), visitNode(n.caseBlock, cb, isCaseBlock));
       case Syntax.LabeledStatement:
-        return updateLabel(n, visitNode(n.label, visitor, isIdentifier), visitNode(n.statement, visitor, isStatement, liftToBlock));
+        return updateLabel(n, visitNode(n.label, cb, isIdentifier), visitNode(n.statement, cb, isStatement, liftToBlock));
       case Syntax.ThrowStatement:
-        return updateThrow(n, visitNode(n.expression, visitor, isExpression));
+        return updateThrow(n, visitNode(n.expression, cb, isExpression));
       case Syntax.TryStatement:
-        return updateTry(n, visitNode(n.tryBlock, visitor, isBlock), visitNode(n.catchClause, visitor, isCatchClause), visitNode(n.finallyBlock, visitor, isBlock));
+        return updateTry(n, visitNode(n.tryBlock, cb, isBlock), visitNode(n.catchClause, cb, isCatchClause), visitNode(n.finallyBlock, cb, isBlock));
       case Syntax.VariableDeclaration:
         return updateTypeScriptVariableDeclaration(
           n,
-          visitNode(n.name, visitor, isBindingName),
+          visitNode(n.name, cb, isBindingName),
           visitNode(n.exclamationToken, tokenVisitor, isToken),
-          visitNode(n.type, visitor, isTypeNode),
-          visitNode(n.initializer, visitor, isExpression)
+          visitNode(n.type, cb, isTypeNode),
+          visitNode(n.initializer, cb, isExpression)
         );
       case Syntax.VariableDeclarationList:
-        return updateVariableDeclarationList(n, nodesVisitor(n.declarations, visitor, isVariableDeclaration));
+        return updateVariableDeclarationList(n, nodesVisitor(n.declarations, cb, isVariableDeclaration));
       case Syntax.FunctionDeclaration:
         return updateFunctionDeclaration(
           n,
-          nodesVisitor(n.decorators, visitor, isDecorator),
-          nodesVisitor(n.modifiers, visitor, isModifier),
+          nodesVisitor(n.decorators, cb, isDecorator),
+          nodesVisitor(n.modifiers, cb, isModifier),
           visitNode(n.asteriskToken, tokenVisitor, isToken),
-          visitNode(n.name, visitor, isIdentifier),
-          nodesVisitor(n.typeParameters, visitor, isTypeParameterDeclaration),
-          visitParameterList(n.parameters, visitor, context, nodesVisitor),
-          visitNode(n.type, visitor, isTypeNode),
-          visitFunctionBody(n.body, visitor, context)
+          visitNode(n.name, cb, isIdentifier),
+          nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration),
+          visitParameterList(n.parameters, cb, c, nodesVisitor),
+          visitNode(n.type, cb, isTypeNode),
+          visitFunctionBody(n.body, cb, c)
         );
       case Syntax.ClassDeclaration:
         return updateClassDeclaration(
           n,
-          nodesVisitor(n.decorators, visitor, isDecorator),
-          nodesVisitor(n.modifiers, visitor, isModifier),
-          visitNode(n.name, visitor, isIdentifier),
-          nodesVisitor(n.typeParameters, visitor, isTypeParameterDeclaration),
-          nodesVisitor(n.heritageClauses, visitor, isHeritageClause),
-          nodesVisitor(n.members, visitor, isClassElement)
+          nodesVisitor(n.decorators, cb, isDecorator),
+          nodesVisitor(n.modifiers, cb, isModifier),
+          visitNode(n.name, cb, isIdentifier),
+          nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration),
+          nodesVisitor(n.heritageClauses, cb, isHeritageClause),
+          nodesVisitor(n.members, cb, isClassElement)
         );
       case Syntax.InterfaceDeclaration:
         return updateInterfaceDeclaration(
           n,
-          nodesVisitor(n.decorators, visitor, isDecorator),
-          nodesVisitor(n.modifiers, visitor, isModifier),
-          visitNode(n.name, visitor, isIdentifier),
-          nodesVisitor(n.typeParameters, visitor, isTypeParameterDeclaration),
-          nodesVisitor(n.heritageClauses, visitor, isHeritageClause),
-          nodesVisitor(n.members, visitor, isTypeElement)
+          nodesVisitor(n.decorators, cb, isDecorator),
+          nodesVisitor(n.modifiers, cb, isModifier),
+          visitNode(n.name, cb, isIdentifier),
+          nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration),
+          nodesVisitor(n.heritageClauses, cb, isHeritageClause),
+          nodesVisitor(n.members, cb, isTypeElement)
         );
       case Syntax.TypeAliasDeclaration:
         return updateTypeAliasDeclaration(
           n,
-          nodesVisitor(n.decorators, visitor, isDecorator),
-          nodesVisitor(n.modifiers, visitor, isModifier),
-          visitNode(n.name, visitor, isIdentifier),
-          nodesVisitor(n.typeParameters, visitor, isTypeParameterDeclaration),
-          visitNode(n.type, visitor, isTypeNode)
+          nodesVisitor(n.decorators, cb, isDecorator),
+          nodesVisitor(n.modifiers, cb, isModifier),
+          visitNode(n.name, cb, isIdentifier),
+          nodesVisitor(n.typeParameters, cb, isTypeParameterDeclaration),
+          visitNode(n.type, cb, isTypeNode)
         );
       case Syntax.EnumDeclaration:
         return updateEnumDeclaration(
           n,
-          nodesVisitor(n.decorators, visitor, isDecorator),
-          nodesVisitor(n.modifiers, visitor, isModifier),
-          visitNode(n.name, visitor, isIdentifier),
-          nodesVisitor(n.members, visitor, isEnumMember)
+          nodesVisitor(n.decorators, cb, isDecorator),
+          nodesVisitor(n.modifiers, cb, isModifier),
+          visitNode(n.name, cb, isIdentifier),
+          nodesVisitor(n.members, cb, isEnumMember)
         );
       case Syntax.ModuleDeclaration:
         return updateModuleDeclaration(
           n,
-          nodesVisitor(n.decorators, visitor, isDecorator),
-          nodesVisitor(n.modifiers, visitor, isModifier),
-          visitNode(n.name, visitor, isIdentifier),
-          visitNode(n.body, visitor, isModuleBody)
+          nodesVisitor(n.decorators, cb, isDecorator),
+          nodesVisitor(n.modifiers, cb, isModifier),
+          visitNode(n.name, cb, isIdentifier),
+          visitNode(n.body, cb, isModuleBody)
         );
       case Syntax.ModuleBlock:
-        return updateModuleBlock(n, nodesVisitor(n.statements, visitor, isStatement));
+        return updateModuleBlock(n, nodesVisitor(n.statements, cb, isStatement));
       case Syntax.CaseBlock:
-        return updateCaseBlock(n, nodesVisitor(n.clauses, visitor, isCaseOrDefaultClause));
+        return updateCaseBlock(n, nodesVisitor(n.clauses, cb, isCaseOrDefaultClause));
       case Syntax.NamespaceExportDeclaration:
-        return updateNamespaceExportDeclaration(n, visitNode(n.name, visitor, isIdentifier));
+        return updateNamespaceExportDeclaration(n, visitNode(n.name, cb, isIdentifier));
       case Syntax.ImportEqualsDeclaration:
         return updateImportEqualsDeclaration(
           n,
-          nodesVisitor(n.decorators, visitor, isDecorator),
-          nodesVisitor(n.modifiers, visitor, isModifier),
-          visitNode(n.name, visitor, isIdentifier),
-          visitNode(n.moduleReference, visitor, isModuleReference)
+          nodesVisitor(n.decorators, cb, isDecorator),
+          nodesVisitor(n.modifiers, cb, isModifier),
+          visitNode(n.name, cb, isIdentifier),
+          visitNode(n.moduleReference, cb, isModuleReference)
         );
       case Syntax.ImportDeclaration:
         return updateImportDeclaration(
           n,
-          nodesVisitor(n.decorators, visitor, isDecorator),
-          nodesVisitor(n.modifiers, visitor, isModifier),
-          visitNode(n.importClause, visitor, isImportClause),
-          visitNode(n.moduleSpecifier, visitor, isExpression)
+          nodesVisitor(n.decorators, cb, isDecorator),
+          nodesVisitor(n.modifiers, cb, isModifier),
+          visitNode(n.importClause, cb, isImportClause),
+          visitNode(n.moduleSpecifier, cb, isExpression)
         );
       case Syntax.ImportClause:
-        return updateImportClause(n, visitNode(n.name, visitor, isIdentifier), visitNode(n.namedBindings, visitor, isNamedImportBindings), (node as ImportClause).isTypeOnly);
+        return updateImportClause(n, visitNode(n.name, cb, isIdentifier), visitNode(n.namedBindings, cb, isNamedImportBindings), (node as ImportClause).isTypeOnly);
       case Syntax.NamespaceImport:
-        return updateNamespaceImport(n, visitNode(n.name, visitor, isIdentifier));
+        return updateNamespaceImport(n, visitNode(n.name, cb, isIdentifier));
       case Syntax.NamespaceExport:
-        return updateNamespaceExport(n, visitNode(n.name, visitor, isIdentifier));
+        return updateNamespaceExport(n, visitNode(n.name, cb, isIdentifier));
       case Syntax.NamedImports:
-        return updateNamedImports(n, nodesVisitor(n.elements, visitor, isImportSpecifier));
+        return updateNamedImports(n, nodesVisitor(n.elements, cb, isImportSpecifier));
       case Syntax.ImportSpecifier:
-        return updateImportSpecifier(n, visitNode(n.propertyName, visitor, isIdentifier), visitNode(n.name, visitor, isIdentifier));
+        return updateImportSpecifier(n, visitNode(n.propertyName, cb, isIdentifier), visitNode(n.name, cb, isIdentifier));
       case Syntax.ExportAssignment:
-        return updateExportAssignment(n, nodesVisitor(n.decorators, visitor, isDecorator), nodesVisitor(n.modifiers, visitor, isModifier), visitNode(n.expression, visitor, isExpression));
+        return updateExportAssignment(n, nodesVisitor(n.decorators, cb, isDecorator), nodesVisitor(n.modifiers, cb, isModifier), visitNode(n.expression, cb, isExpression));
       case Syntax.ExportDeclaration:
         return updateExportDeclaration(
           n,
-          nodesVisitor(n.decorators, visitor, isDecorator),
-          nodesVisitor(n.modifiers, visitor, isModifier),
-          visitNode(n.exportClause, visitor, isNamedExportBindings),
-          visitNode(n.moduleSpecifier, visitor, isExpression),
+          nodesVisitor(n.decorators, cb, isDecorator),
+          nodesVisitor(n.modifiers, cb, isModifier),
+          visitNode(n.exportClause, cb, isNamedExportBindings),
+          visitNode(n.moduleSpecifier, cb, isExpression),
           (node as ExportDeclaration).isTypeOnly
         );
       case Syntax.NamedExports:
-        return updateNamedExports(n, nodesVisitor(n.elements, visitor, isExportSpecifier));
+        return updateNamedExports(n, nodesVisitor(n.elements, cb, isExportSpecifier));
       case Syntax.ExportSpecifier:
-        return updateExportSpecifier(n, visitNode(n.propertyName, visitor, isIdentifier), visitNode(n.name, visitor, isIdentifier));
+        return updateExportSpecifier(n, visitNode(n.propertyName, cb, isIdentifier), visitNode(n.name, cb, isIdentifier));
       case Syntax.ExternalModuleReference:
-        return updateExternalModuleReference(n, visitNode(n.expression, visitor, isExpression));
+        return updateExternalModuleReference(n, visitNode(n.expression, cb, isExpression));
       case Syntax.JsxElement:
-        return updateJsxElement(n, visitNode(n.openingElement, visitor, isJsxOpeningElement), nodesVisitor(n.children, visitor, isJsxChild), visitNode(n.closingElement, visitor, isJsxClosingElement));
+        return updateJsxElement(n, visitNode(n.openingElement, cb, isJsxOpeningElement), nodesVisitor(n.children, cb, isJsxChild), visitNode(n.closingElement, cb, isJsxClosingElement));
       case Syntax.JsxSelfClosingElement:
-        return updateJsxSelfClosingElement(
-          n,
-          visitNode(n.tagName, visitor, isJsxTagNameExpression),
-          nodesVisitor(n.typeArguments, visitor, isTypeNode),
-          visitNode(n.attributes, visitor, isJsxAttributes)
-        );
+        return updateJsxSelfClosingElement(n, visitNode(n.tagName, cb, isJsxTagNameExpression), nodesVisitor(n.typeArguments, cb, isTypeNode), visitNode(n.attributes, cb, isJsxAttributes));
       case Syntax.JsxOpeningElement:
-        return updateJsxOpeningElement(n, visitNode(n.tagName, visitor, isJsxTagNameExpression), nodesVisitor(n.typeArguments, visitor, isTypeNode), visitNode(n.attributes, visitor, isJsxAttributes));
+        return updateJsxOpeningElement(n, visitNode(n.tagName, cb, isJsxTagNameExpression), nodesVisitor(n.typeArguments, cb, isTypeNode), visitNode(n.attributes, cb, isJsxAttributes));
       case Syntax.JsxClosingElement:
-        return updateJsxClosingElement(n, visitNode(n.tagName, visitor, isJsxTagNameExpression));
+        return updateJsxClosingElement(n, visitNode(n.tagName, cb, isJsxTagNameExpression));
       case Syntax.JsxFragment:
-        return updateJsxFragment(
-          n,
-          visitNode(n.openingFragment, visitor, isJsxOpeningFragment),
-          nodesVisitor(n.children, visitor, isJsxChild),
-          visitNode(n.closingFragment, visitor, isJsxClosingFragment)
-        );
+        return updateJsxFragment(n, visitNode(n.openingFragment, cb, isJsxOpeningFragment), nodesVisitor(n.children, cb, isJsxChild), visitNode(n.closingFragment, cb, isJsxClosingFragment));
       case Syntax.JsxAttribute:
-        return updateJsxAttribute(n, visitNode(n.name, visitor, isIdentifier), visitNode(n.initializer, visitor, StringLiteral.orJsxExpressionKind));
+        return updateJsxAttribute(n, visitNode(n.name, cb, isIdentifier), visitNode(n.initializer, cb, StringLiteral.orJsxExpressionKind));
       case Syntax.JsxAttributes:
-        return updateJsxAttributes(n, nodesVisitor(n.properties, visitor, isJsxAttributeLike));
+        return updateJsxAttributes(n, nodesVisitor(n.properties, cb, isJsxAttributeLike));
       case Syntax.JsxSpreadAttribute:
-        return updateJsxSpreadAttribute(n, visitNode(n.expression, visitor, isExpression));
+        return updateJsxSpreadAttribute(n, visitNode(n.expression, cb, isExpression));
       case Syntax.JsxExpression:
-        return updateJsxExpression(n, visitNode(n.expression, visitor, isExpression));
+        return updateJsxExpression(n, visitNode(n.expression, cb, isExpression));
       case Syntax.CaseClause:
-        return updateCaseClause(n, visitNode(n.expression, visitor, isExpression), nodesVisitor(n.statements, visitor, isStatement));
+        return updateCaseClause(n, visitNode(n.expression, cb, isExpression), nodesVisitor(n.statements, cb, isStatement));
       case Syntax.DefaultClause:
-        return updateDefaultClause(n, nodesVisitor(n.statements, visitor, isStatement));
+        return updateDefaultClause(n, nodesVisitor(n.statements, cb, isStatement));
       case Syntax.HeritageClause:
-        return updateHeritageClause(n, nodesVisitor(n.types, visitor, isExpressionWithTypeArguments));
+        return updateHeritageClause(n, nodesVisitor(n.types, cb, isExpressionWithTypeArguments));
       case Syntax.CatchClause:
-        return updateCatchClause(n, visitNode(n.variableDeclaration, visitor, isVariableDeclaration), visitNode(n.block, visitor, isBlock));
+        return updateCatchClause(n, visitNode(n.variableDeclaration, cb, isVariableDeclaration), visitNode(n.block, cb, isBlock));
       case Syntax.PropertyAssignment:
-        return updatePropertyAssignment(n, visitNode(n.name, visitor, isPropertyName), visitNode(n.initializer, visitor, isExpression));
+        return updatePropertyAssignment(n, visitNode(n.name, cb, isPropertyName), visitNode(n.initializer, cb, isExpression));
       case Syntax.ShorthandPropertyAssignment:
-        return updateShorthandPropertyAssignment(n, visitNode(n.name, visitor, isIdentifier), visitNode(n.objectAssignmentInitializer, visitor, isExpression));
+        return updateShorthandPropertyAssignment(n, visitNode(n.name, cb, isIdentifier), visitNode(n.objectAssignmentInitializer, cb, isExpression));
       case Syntax.SpreadAssignment:
-        return updateSpreadAssignment(n, visitNode(n.expression, visitor, isExpression));
+        return updateSpreadAssignment(n, visitNode(n.expression, cb, isExpression));
       case Syntax.EnumMember:
-        return updateEnumMember(n, visitNode(n.name, visitor, isPropertyName), visitNode(n.initializer, visitor, isExpression));
+        return updateEnumMember(n, visitNode(n.name, cb, isPropertyName), visitNode(n.initializer, cb, isExpression));
       case Syntax.SourceFile:
-        return qp_updateSourceNode(n, visitLexicalEnvironment(n.statements, visitor, context));
+        return qp_updateSourceNode(n, visitLexicalEnvironment(n.statements, cb, c));
       case Syntax.PartiallyEmittedExpression:
-        return updatePartiallyEmittedExpression(n, visitNode(n.expression, visitor, isExpression));
+        return updatePartiallyEmittedExpression(n, visitNode(n.expression, cb, isExpression));
       case Syntax.CommaListExpression:
-        return updateCommaList(n, nodesVisitor(n.elements, visitor, isExpression));
+        return updateCommaList(n, nodesVisitor(n.elements, cb, isExpression));
       default:
         return node;
     }
   }
-  function extractSingleNode(nodes: readonly Node[]): Node | undefined {
-    qa.assert(nodes.length <= 1, 'Too many nodes written to output.');
-    return qa.singleOrUndefined(nodes);
+  function extractSingleNode(ns: readonly Node[]): Node | undefined {
+    qa.assert(ns.length <= 1, 'Too many nodes written to output.');
+    return qa.singleOrUndefined(ns);
   }
   function reduceNode<T>(node: Node | undefined, f: (memo: T, node: Node) => T, initial: T) {
     return node ? f(initial, node) : initial;
   }
-  function reduceNodes<T>(nodes: Nodes<Node> | undefined, f: (memo: T, nodes: Nodes<Node>) => T, initial: T) {
-    return nodes ? f(initial, nodes) : initial;
+  function reduceNodes<T>(ns: Nodes<Node> | undefined, f: (memo: T, ns: Nodes<Node>) => T, initial: T) {
+    return ns ? f(initial, ns) : initial;
   }
   export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo: T, node: Node) => T, cbs?: (memo: T, ns: Nodes<Node>) => T): T {
     if (node === undefined) return initial;
@@ -1102,104 +1069,73 @@ namespace qnr {
     }
     return i;
   }
-  export function mergeLexicalEnvironment(statements: Nodes<Statement>, declarations: readonly Statement[] | undefined): Nodes<Statement>;
-  export function mergeLexicalEnvironment(statements: Statement[], declarations: readonly Statement[] | undefined): Statement[];
-  export function mergeLexicalEnvironment(statements: Statement[] | Nodes<Statement>, declarations: readonly Statement[] | undefined) {
-    if (!some(declarations)) {
-      return statements;
-    }
-    // find standard prologues on left in the following order: standard directives, hoisted functions, hoisted variables, other custom
-    const leftStandardPrologueEnd = findSpanEnd(statements, isPrologueDirective, 0);
-    const leftHoistedFunctionsEnd = findSpanEnd(statements, isHoistedFunction, leftStandardPrologueEnd);
-    const leftHoistedVariablesEnd = findSpanEnd(statements, isHoistedVariableStatement, leftHoistedFunctionsEnd);
-    // find standard prologues on right in the following order: standard directives, hoisted functions, hoisted variables, other custom
-    const rightStandardPrologueEnd = findSpanEnd(declarations, isPrologueDirective, 0);
-    const rightHoistedFunctionsEnd = findSpanEnd(declarations, isHoistedFunction, rightStandardPrologueEnd);
-    const rightHoistedVariablesEnd = findSpanEnd(declarations, isHoistedVariableStatement, rightHoistedFunctionsEnd);
-    const rightCustomPrologueEnd = findSpanEnd(declarations, isCustomPrologue, rightHoistedVariablesEnd);
-    qa.assert(rightCustomPrologueEnd === declarations.length, 'Expected declarations to be valid standard or custom prologues');
-    // splice prologues from the right into the left. We do this in reverse order
-    // so that we don't need to recompute the index on the left when we insert items.
-    const left = isNodes(statements) ? statements.slice() : statements;
-    // splice other custom prologues from right into left
-    if (rightCustomPrologueEnd > rightHoistedVariablesEnd) {
-      left.splice(leftHoistedVariablesEnd, 0, ...declarations.slice(rightHoistedVariablesEnd, rightCustomPrologueEnd));
-    }
-    // splice hoisted variables from right into left
-    if (rightHoistedVariablesEnd > rightHoistedFunctionsEnd) {
-      left.splice(leftHoistedFunctionsEnd, 0, ...declarations.slice(rightHoistedFunctionsEnd, rightHoistedVariablesEnd));
-    }
-    // splice hoisted functions from right into left
-    if (rightHoistedFunctionsEnd > rightStandardPrologueEnd) {
-      left.splice(leftStandardPrologueEnd, 0, ...declarations.slice(rightStandardPrologueEnd, rightHoistedFunctionsEnd));
-    }
-    // splice standard prologues from right into left (that are not already in left)
-    if (rightStandardPrologueEnd > 0) {
-      if (leftStandardPrologueEnd === 0) {
-        left.splice(0, 0, ...declarations.slice(0, rightStandardPrologueEnd));
-      } else {
-        const leftPrologues = createMap<boolean>();
-        for (let i = 0; i < leftStandardPrologueEnd; i++) {
-          const leftPrologue = statements[i] as PrologueDirective;
-          leftPrologues.set(leftPrologue.expression.text, true);
+  export function mergeLexicalEnvironment(ss: Nodes<Statement>, declarations: readonly Statement[] | undefined): Nodes<Statement>;
+  export function mergeLexicalEnvironment(ss: Statement[], declarations: readonly Statement[] | undefined): Statement[];
+  export function mergeLexicalEnvironment(ss: Statement[] | Nodes<Statement>, declarations: readonly Statement[] | undefined) {
+    if (!some(declarations)) return ss;
+    const ls = findSpanEnd(ss, isPrologueDirective, 0);
+    const lf = findSpanEnd(ss, isHoistedFunction, ls);
+    const lv = findSpanEnd(ss, isHoistedVariableStatement, lf);
+    const rs = findSpanEnd(declarations, isPrologueDirective, 0);
+    const rf = findSpanEnd(declarations, isHoistedFunction, rs);
+    const rv = findSpanEnd(declarations, isHoistedVariableStatement, rf);
+    const rc = findSpanEnd(declarations, isCustomPrologue, rv);
+    qa.assert(rc === declarations.length, 'Expected declarations to be valid standard or custom prologues');
+    const left = isNodes(ss) ? ss.slice() : ss;
+    if (rc > rv) left.splice(lv, 0, ...declarations.slice(rv, rc));
+    if (rv > rf) left.splice(lf, 0, ...declarations.slice(rf, rv));
+    if (rf > rs) left.splice(ls, 0, ...declarations.slice(rs, rf));
+    if (rs > 0) {
+      if (ls === 0) left.splice(0, 0, ...declarations.slice(0, rs));
+      else {
+        const lp = createMap<boolean>();
+        for (let i = 0; i < ls; i++) {
+          const lp = ss[i] as PrologueDirective;
+          lp.set(leftPrologue.expression.text, true);
         }
-        for (let i = rightStandardPrologueEnd - 1; i >= 0; i--) {
-          const rightPrologue = declarations[i] as PrologueDirective;
-          if (!leftPrologues.has(rightPrologue.expression.text)) {
-            left.unshift(rightPrologue);
+        for (let i = rs - 1; i >= 0; i--) {
+          const rp = declarations[i] as PrologueDirective;
+          if (!lp.has(rp.expression.text)) {
+            left.unshift(rp);
           }
         }
       }
     }
-    if (isNodes(statements)) {
-      return setTextRange(Nodes.create(left, statements.trailingComma), statements);
+    if (isNodes(ss)) return setTextRange(Nodes.create(left, ss.trailingComma), ss);
+    return ss;
+  }
+  export function liftToBlock(ns: readonly Node[]): Statement {
+    qa.assert(every(ns, isStatement), 'Cannot lift nodes to a Block.');
+    return (qa.singleOrUndefined(ns) as Statement) || createBlock(<Nodes<Statement>>ns);
+  }
+  export function aggregateTransformFlags<T extends Node>(n: T): T {
+    aggregate(n);
+    return n;
+  }
+  function aggregate(n: Node): TransformFlags {
+    if (n === undefined) return TransformFlags.None;
+    if (n.transformFlags & TransformFlags.HasComputedFlags) return n.transformFlags & ~getTransformFlagsSubtreeExclusions(n.kind);
+    return computeTransformFlagsForNode(n, aggregateSubtree(n));
+  }
+  function aggregateNodes(ns: Nodes<Node>): TransformFlags {
+    if (ns === undefined) return TransformFlags.None;
+    let subtree = TransformFlags.None;
+    let f = TransformFlags.None;
+    for (const n of ns) {
+      subtree |= aggregate(n);
+      f |= n.transformFlags & ~TransformFlags.HasComputedFlags;
     }
-    return statements;
+    ns.transformFlags = f | TransformFlags.HasComputedFlags;
+    return subtree;
   }
-  export function liftToBlock(nodes: readonly Node[]): Statement {
-    qa.assert(every(nodes, isStatement), 'Cannot lift nodes to a Block.');
-    return <Statement>qa.singleOrUndefined(nodes) || createBlock(<Nodes<Statement>>nodes);
+  function aggregateSubtree(n: Node): TransformFlags {
+    if (hasSyntacticModifier(n, ModifierFlags.Ambient) || (Node.is.typeNode(n) && n.kind !== Syntax.ExpressionWithTypeArguments)) return TransformFlags.None;
+    return reduceEachChild(n, TransformFlags.None, aggregateChild, aggregateChildren);
   }
-  export function aggregateTransformFlags<T extends Node>(node: T): T {
-    aggregateTransformFlagsForNode(node);
-    return node;
+  function aggregateChild(f: TransformFlags, n: Node): TransformFlags {
+    return f | aggregate(n);
   }
-  function aggregateTransformFlagsForNode(node: Node): TransformFlags {
-    if (node === undefined) {
-      return TransformFlags.None;
-    }
-    if (node.transformFlags & TransformFlags.HasComputedFlags) {
-      return node.transformFlags & ~getTransformFlagsSubtreeExclusions(node.kind);
-    }
-    const subtreeFlags = aggregateTransformFlagsForSubtree(node);
-    return computeTransformFlagsForNode(node, subtreeFlags);
-  }
-  function aggregateTransformFlagsForNodes(nodes: Nodes<Node>): TransformFlags {
-    if (nodes === undefined) {
-      return TransformFlags.None;
-    }
-    let subtreeFlags = TransformFlags.None;
-    let nodeArrayFlags = TransformFlags.None;
-    for (const node of nodes) {
-      subtreeFlags |= aggregateTransformFlagsForNode(node);
-      nodeArrayFlags |= node.transformFlags & ~TransformFlags.HasComputedFlags;
-    }
-    nodes.transformFlags = nodeArrayFlags | TransformFlags.HasComputedFlags;
-    return subtreeFlags;
-  }
-  function aggregateTransformFlagsForSubtree(node: Node): TransformFlags {
-    // We do not transform ambient declarations or types, so there is no need to
-    // recursively aggregate transform flags.
-    if (hasSyntacticModifier(node, ModifierFlags.Ambient) || (Node.is.typeNode(node) && node.kind !== Syntax.ExpressionWithTypeArguments)) {
-      return TransformFlags.None;
-    }
-    // Aggregate the transform flags of each child.
-    return reduceEachChild(node, TransformFlags.None, aggregateTransformFlagsForChildNode, aggregateTransformFlagsForChildNodes);
-  }
-  function aggregateTransformFlagsForChildNode(transformFlags: TransformFlags, node: Node): TransformFlags {
-    return transformFlags | aggregateTransformFlagsForNode(node);
-  }
-  function aggregateTransformFlagsForChildNodes(transformFlags: TransformFlags, nodes: Nodes<Node>): TransformFlags {
-    return transformFlags | aggregateTransformFlagsForNodes(nodes);
+  function aggregateChildren(f: TransformFlags, ns: Nodes<Node>): TransformFlags {
+    return f | aggregateNodes(ns);
   }
 }
