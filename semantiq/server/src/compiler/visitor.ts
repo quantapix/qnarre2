@@ -443,7 +443,7 @@ namespace core {
       case Syntax.ExpressionWithTypeArguments:
         return updateExpressionWithTypeArguments(n, nodesVisitor(n.typeArguments, cb, isTypeNode), visitNode(n.expression, cb, isExpression));
       case Syntax.AsExpression:
-        return updateAsExpression(n, visitNode(n.expression, cb, isExpression), visitNode(n.type, cb, isTypeNode));
+        return n.update(visitNode(n.expression, cb, isExpression), visitNode(n.type, cb, isTypeNode));
       case Syntax.NonNullExpression:
         return updateNonNullExpression(n, visitNode(n.expression, cb, isExpression));
       case Syntax.MetaProperty:

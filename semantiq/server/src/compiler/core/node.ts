@@ -52,7 +52,8 @@ namespace core {
   }
   export type NodeType<S extends Syntax> = S extends keyof SynMap ? SynMap[S] : never;
   export class Node extends TextRange {
-    static readonly kind: Syntax.Unknown;
+    static readonly kind: Syntax = Syntax.Unknown;
+    private readonly _kind?: Syntax;
     id = 0;
     flags = NodeFlags.None;
     modifierFlagsCache = ModifierFlags.None;
@@ -71,12 +72,13 @@ namespace core {
     jsDoc?: JSDoc[];
     private _children?: Node[];
 
-    constructor(private readonly _kind: Syntax, pos?: number, end?: number, public parent?: Node) {
+    constructor(kind?: Syntax, pos?: number, end?: number, public parent?: Node) {
       super(pos, end);
+      if (kind) this._kind = kind;
       if (parent) this.flags = parent.flags & NodeFlags.ContextFlags;
     }
     get kind() {
-      return this._kind;
+      return this._kind!;
     }
     is<S extends Syntax, T extends { kind: S; also?: Syntax[] }>(t: T): this is NodeType<T['kind']> {
       return this.kind === t.kind || !!t.also?.includes(this.kind);
@@ -133,14 +135,14 @@ namespace core {
           const p = scanner.getTextPos();
           if (p <= end) {
             if (t === Syntax.Identifier) fail(`Did not expect ${Debug.formatSyntax(this.kind)} to have an Identifier in its trivia`);
-            ns.push(create(t, pos, p, this));
+            ns.push(Node.create(t, pos, p, this));
           }
           pos = p;
           if (t === Syntax.EndOfFileToken) break;
         }
       };
       const createSyntaxList = (ns: Nodes<Node>) => {
-        const list = create(Syntax.SyntaxList, ns.pos, ns.end, this);
+        const list = Node.create(Syntax.SyntaxList, ns.pos, ns.end, this);
         list._children = [];
         let p = ns.pos;
         for (const n of ns) {
@@ -1512,7 +1514,7 @@ namespace core {
             if (i < paramTags.length) return [paramTags[i]];
           }
         }
-        return emptyArray;
+        return empty;
       }
       parameterTags(param: ParameterDeclaration): readonly JSDocParameterTag[] {
         return this.parameterTagsWorker(param, false);
@@ -1563,7 +1565,7 @@ namespace core {
           }
           n = this.nextCommentLocation(n);
         }
-        return r || emptyArray;
+        return r || empty;
       }
       nextCommentLocation(n: Node) {
         const parent = n.parent;
@@ -1872,7 +1874,7 @@ namespace core {
         );
       }
       getEffectiveTypeParameterDeclarations(n: DeclarationWithTypeParameters): readonly TypeParameterDeclaration[] {
-        if (Node.is.kind(JSDocSignature, n)) return emptyArray;
+        if (Node.is.kind(JSDocSignature, n)) return empty;
         if (Node.isJSDoc.typeAlias(n)) {
           assert(n.parent.kind === Syntax.JSDocComment);
           return flatMap(n.parent.tags, (tag) => (Node.is.kind(JSDocTemplateTag, tag) ? tag.typeParameters : undefined));
@@ -1884,7 +1886,7 @@ namespace core {
           const typeTag = getJSDoc.type(n);
           if (typeTag && Node.is.kind(FunctionTypeNode, typeTag) && typeTag.typeParameters) return typeTag.typeParameters;
         }
-        return emptyArray;
+        return empty;
       }
       getEffectiveConstraintOfTypeParameter(n: TypeParameterDeclaration): TypeNode | undefined {
         return n.constraint ? n.constraint : Node.is.kind(JSDocTemplateTag, n.parent) && n === n.parent.typeParameters[0] ? n.parent.constraint : undefined;
@@ -2309,6 +2311,9 @@ namespace core {
         this.typeArguments = Nodes.create(typeArgs as readonly TypeNode[]);
       }
     }
+    get kind() {
+      return Identifier.kind;
+    }
     get text(): string {
       return idText(this);
     }
@@ -2445,7 +2450,7 @@ namespace core {
     }
     getDocComment(checker: TypeChecker | undefined): SymbolDisplayPart[] {
       if (!this.docComment) {
-        this.docComment = emptyArray;
+        this.docComment = empty;
         if (!this.declarations && ((this as Symbol) as TransientSymbol).target && (((this as Symbol) as TransientSymbol).target as TransientSymbol).tupleLabelDeclaration) {
           const labelDecl = (((this as Symbol) as TransientSymbol).target as TransientSymbol).tupleLabelDeclaration!;
           this.docComment = getDocComment([labelDecl], checker);
@@ -2459,13 +2464,13 @@ namespace core {
       switch (context?.kind) {
         case Syntax.GetAccessor:
           if (!this.getComment) {
-            this.getComment = emptyArray;
+            this.getComment = empty;
             this.getComment = getDocComment(filter(this.declarations, isGetAccessor), checker);
           }
           return this.getComment;
         case Syntax.SetAccessor:
           if (!this.setComment) {
-            this.setComment = emptyArray;
+            this.setComment = empty;
             this.setComment = getDocComment(filter(this.declarations, isSetAccessor), checker);
           }
           return this.setComment;
@@ -2560,7 +2565,7 @@ namespace core {
       return;
     }
   }
-  export class SignatureObj implements Signature {
+  export class Signature implements Signature {
     declaration!: SignatureDeclaration;
     typeParameters?: TypeParameter[];
     parameters!: Symbol[];
@@ -2595,7 +2600,7 @@ namespace core {
       return this.jsDocTags;
     }
   }
-  export class SourceFileObj extends NodeObj implements SourceFile {
+  export class SourceFile extends Node implements SourceFile {
     kind: Syntax.SourceFile = Syntax.SourceFile;
     _declarationBrand: any;
     fileName!: string;
@@ -2896,7 +2901,7 @@ namespace core {
     }
 
     function getDocComment(declarations: readonly Declaration[] | undefined, checker: TypeChecker | undefined): SymbolDisplayPart[] {
-      if (!declarations) return emptyArray;
+      if (!declarations) return empty;
       let doc = JsDoc.getJsDocCommentsFromDeclarations(declarations);
       if (doc.length === 0 || declarations.some(hasJSDocInheritDocTag)) {
         forEachUnique(declarations, (declaration) => {
@@ -2908,7 +2913,7 @@ namespace core {
     }
 
     function findInheritedJSDocComments(declaration: Declaration, propertyName: string, typeChecker: TypeChecker): readonly SymbolDisplayPart[] | undefined {
-      return firstDefined(declaration.parent ? getAllSuperTypeNodes(declaration.parent) : emptyArray, (superTypeNode) => {
+      return firstDefined(declaration.parent ? getAllSuperTypeNodes(declaration.parent) : empty, (superTypeNode) => {
         const superType = typeChecker.getTypeAtLocation(superTypeNode);
         const baseProperty = superType && typeChecker.getPropertyOfType(superType, propertyName);
         const inheritedDocs = baseProperty && baseProperty.getDocComment(typeChecker);
@@ -2917,11 +2922,18 @@ namespace core {
     }
   }
 
+  export interface Nodes<T extends Node> extends ReadonlyArray<T>, Range {
+    trailingComma?: boolean;
+    transformFlags: TransformFlags;
+    visit<T>(cb: (n: Node) => T, cbs?: (ns: Nodes<Node>) => T | undefined): T | undefined;
+  }
+  export type MutableNodes<T extends Node> = Nodes<T> & T[];
+
   export namespace Nodes {
     export function create<T extends Node>(ts?: T[], trailingComma?: boolean): MutableNodes<T>;
     export function create<T extends Node>(ts?: readonly T[], trailingComma?: boolean): Nodes<T>;
     export function create<T extends Node>(ts?: readonly T[], trailingComma?: boolean): Nodes<T> {
-      if (!ts || ts === emptyArray) ts = [];
+      if (!ts || ts === empty) ts = [];
       else if (isNodes(ts)) return ts;
       const ns = ts as Nodes<T>;
       ns.pos = -1;

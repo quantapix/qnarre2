@@ -16,14 +16,8 @@ namespace core {
     target?: AnonymousType;
     mapper?: TypeMapper;
   }
-  export type ArrayBindingElement = BindingElement | OmittedExpression;
   export interface ArrayDestructuringAssignment extends AssignmentExpression<EqualsToken> {
     left: ArrayLiteralExpression;
-  }
-  export interface AsExpression extends Expression {
-    kind: Syntax.AsExpression;
-    expression: Expression;
-    type: TypeNode;
   }
   export interface AssertsIdentifierTypePredicate extends TypePredicateBase {
     kind: TypePredicateKind.AssertsIdentifier;
@@ -40,11 +34,6 @@ namespace core {
   export interface AssignmentExpression<TOperator extends AssignmentOperatorToken> extends BinaryExpression {
     left: LeftHandSideExpression;
     operatorToken: TOperator;
-  }
-  export type AssignmentPattern = ArrayLiteralExpression | ObjectLiteralExpression;
-  export interface AwaitExpression extends UnaryExpression {
-    kind: Syntax.AwaitExpression;
-    expression: UnaryExpression;
   }
   export interface BigIntLiteral extends LiteralExpression {
     kind: Syntax.BigIntLiteral;
@@ -853,7 +842,6 @@ namespace core {
     name: ModuleName;
     body?: ModuleBody | JSDocNamespaceDeclaration;
   }
-  export type MutableNodes<T extends Node> = Nodes<T> & T[];
   export interface NamedDeclaration extends Declaration {
     name?: DeclarationName;
   }
@@ -929,11 +917,6 @@ namespace core {
     ContextFlags = DisallowInContext | YieldContext | DecoratorContext | AwaitContext | JavaScriptFile | InWithStatement | Ambient,
     TypeExcludesFlags = YieldContext | AwaitContext,
     PermanentlySetIncrementalFlags = PossiblyContainsDynamicImport | PossiblyContainsImportMeta,
-  }
-  export interface Nodes<T extends Node> extends ReadonlyArray<T>, Range {
-    trailingComma?: boolean;
-    transformFlags: TransformFlags;
-    visit<T>(cb: (n: Node) => T, cbs?: (ns: Nodes<Node>) => T | undefined): T | undefined;
   }
   export interface NonNullExpression extends LeftHandSideExpression {
     kind: Syntax.NonNullExpression;

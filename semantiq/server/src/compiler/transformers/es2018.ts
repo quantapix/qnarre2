@@ -490,7 +490,7 @@ namespace core {
     }
 
     function createDownlevelAwait(expression: Expression) {
-      return enclosingFunctionFlags & FunctionFlags.Generator ? createYield(/*asteriskToken*/ undefined, createAwaitHelper(context, expression)) : createAwait(expression);
+      return enclosingFunctionFlags & FunctionFlags.Generator ? createYield(/*asteriskToken*/ undefined, createAwaitHelper(context, expression)) : new AwaitExpression(expression);
     }
 
     function transformForAwaitOfStatement(node: ForOfStatement, outermostLabeledStatement: LabeledStatement | undefined, ancestorFacts: HierarchyFacts) {

@@ -6,6 +6,7 @@ namespace core {
     }
   }
 
+  export type ArrayBindingElement = BindingElement | OmittedExpression;
   export namespace ArrayBindingElement {
     export const also = [Syntax.BindingElement, Syntax.OmittedExpression];
   }
@@ -39,12 +40,6 @@ namespace core {
     update(es: readonly Expression[]): ArrayLiteralExpression {
       return this.elements !== es ? new ArrayLiteralExpression(es, this.multiLine).updateFrom(this) : this;
     }
-    _primaryExpressionBrand: any;
-    _memberExpressionBrand: any;
-    _leftHandSideExpressionBrand: any;
-    _updateExpressionBrand: any;
-    _unaryExpressionBrand: any;
-    _expressionBrand: any;
   }
   export class ArrayTypeNode extends Synthesized implements TypeNode {
     static readonly kind: Syntax.ArrayType;
@@ -59,7 +54,6 @@ namespace core {
     update(t: TypeNode): ArrayTypeNode {
       return this.elementType !== t ? new ArrayTypeNode(t).updateFrom(this) : this;
     }
-    _typeNodeBrand: any;
   }
   export class ArrowFunction extends Synthesized implements Expression, FunctionLikeDeclarationBase, JSDocContainer {
     static readonly kind: Syntax.ArrowFunction;
@@ -103,31 +97,39 @@ namespace core {
         : this;
     }
   }
-  export namespace AsExpression {
-    export const kind = Syntax.AsExpression;
-    export function createAsExpression(expression: Expression, type: TypeNode) {
-      const node = <AsExpression>Node.createSynthesized(Syntax.AsExpression);
-      node.expression = expression;
-      node.type = type;
-      return node;
+  export class AsExpression extends Synthesized implements Expression {
+    static readonly kind = Syntax.AsExpression;
+    expression: Expression;
+    type: TypeNode;
+    constructor(e: Expression, t: TypeNode) {
+      super();
+      this.expression = e;
+      this.type = t;
     }
-    export function updateAsExpression(node: AsExpression, expression: Expression, type: TypeNode) {
-      return node.expression !== expression || node.type !== type ? updateNode(createAsExpression(expression, type), node) : node;
+    get kind() {
+      return AsExpression.kind;
+    }
+    update(e: Expression, t: TypeNode) {
+      return this.expression !== e || this.type !== t ? new AsExpression(e, t).updateFrom(this) : this;
     }
   }
+  export type AssignmentPattern = ArrayLiteralExpression | ObjectLiteralExpression;
   export namespace AssignmentPattern {
     export const kind = Syntax.ArrayLiteralExpression;
     export const also = [Syntax.ObjectLiteralExpression];
   }
-  export namespace AwaitExpression {
-    export const kind = Syntax.AwaitExpression;
-    export function createAwait(expression: Expression) {
-      const node = <AwaitExpression>Node.createSynthesized(Syntax.AwaitExpression);
-      node.expression = parenthesizePrefixOperand(expression);
-      return node;
+  export class AwaitExpression extends Synthesized implements UnaryExpression {
+    static readonly kind = Syntax.AwaitExpression;
+    expression: UnaryExpression;
+    constructor(e: Expression) {
+      super();
+      this.expression = parenthesizePrefixOperand(e);
     }
-    export function updateAwait(node: AwaitExpression, expression: Expression) {
-      return node.expression !== expression ? updateNode(createAwait(expression), node) : node;
+    get kind() {
+      return AwaitExpression.kind;
+    }
+    updateAwait(e: Expression) {
+      return this.expression !== e ? updateNode(new AwaitExpression(e), this) : this;
     }
   }
   export namespace BigIntLiteral {
@@ -2505,7 +2507,7 @@ namespace core {
         case Syntax.TypeAssertionExpression:
           return updateTypeAssertion(outerExpression, outerExpression.type, expression);
         case Syntax.AsExpression:
-          return updateAsExpression(outerExpression, expression, outerExpression.type);
+          return outerExpression.update(expression, outerExpression.type);
         case Syntax.NonNullExpression:
           return updateNonNullExpression(outerExpression, expression);
         case Syntax.PartiallyEmittedExpression:
