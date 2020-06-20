@@ -1266,20 +1266,20 @@ namespace core {
         let properties: ObjectLiteralElementLike[] | undefined;
         if (shouldAddTypeMetadata(node)) {
           (properties || (properties = [])).push(
-            createPropertyAssignment('type', new ArrowFunction(/*modifiers*/ undefined, undefined, [], undefined, createToken(Syntax.EqualsGreaterThanToken), serializeTypeOfNode(node)))
+            createPropertyAssignment('type', new ArrowFunction(/*modifiers*/ undefined, undefined, [], undefined, new Token(Syntax.EqualsGreaterThanToken), serializeTypeOfNode(node)))
           );
         }
         if (shouldAddParamTypesMetadata(node)) {
           (properties || (properties = [])).push(
             createPropertyAssignment(
               'paramTypes',
-              new ArrowFunction(/*modifiers*/ undefined, undefined, [], undefined, createToken(Syntax.EqualsGreaterThanToken), serializeParameterTypesOfNode(node, container))
+              new ArrowFunction(/*modifiers*/ undefined, undefined, [], undefined, new Token(Syntax.EqualsGreaterThanToken), serializeParameterTypesOfNode(node, container))
             )
           );
         }
         if (shouldAddReturnTypeMetadata(node)) {
           (properties || (properties = [])).push(
-            createPropertyAssignment('returnType', new ArrowFunction(/*modifiers*/ undefined, undefined, [], undefined, createToken(Syntax.EqualsGreaterThanToken), serializeReturnTypeOfNode(node)))
+            createPropertyAssignment('returnType', new ArrowFunction(/*modifiers*/ undefined, undefined, [], undefined, new Token(Syntax.EqualsGreaterThanToken), serializeReturnTypeOfNode(node)))
           );
         }
         if (properties) {
@@ -1355,7 +1355,7 @@ namespace core {
         case Syntax.ClassDeclaration:
         case Syntax.ClassExpression:
         case Syntax.MethodDeclaration:
-          return createIdentifier('Function');
+          return new Identifier('Function');
         default:
           return createVoidZero();
       }
@@ -1408,7 +1408,7 @@ namespace core {
       if (Node.is.functionLike(node) && node.type) {
         return serializeTypeNode(node.type);
       } else if (Node.is.asyncFunction(node)) {
-        return createIdentifier('Promise');
+        return new Identifier('Promise');
       }
 
       return createVoidZero();
@@ -1434,7 +1434,7 @@ namespace core {
      */
     function serializeTypeNode(node: TypeNode | undefined): SerializedTypeNode {
       if (node === undefined) {
-        return createIdentifier('Object');
+        return new Identifier('Object');
       }
 
       switch (node.kind) {
@@ -1449,50 +1449,50 @@ namespace core {
 
         case Syntax.FunctionType:
         case Syntax.ConstructorType:
-          return createIdentifier('Function');
+          return new Identifier('Function');
 
         case Syntax.ArrayType:
         case Syntax.TupleType:
-          return createIdentifier('Array');
+          return new Identifier('Array');
 
         case Syntax.TypePredicate:
         case Syntax.BooleanKeyword:
-          return createIdentifier('Boolean');
+          return new Identifier('Boolean');
 
         case Syntax.StringKeyword:
-          return createIdentifier('String');
+          return new Identifier('String');
 
         case Syntax.ObjectKeyword:
-          return createIdentifier('Object');
+          return new Identifier('Object');
 
         case Syntax.LiteralType:
           switch ((<LiteralTypeNode>node).literal.kind) {
             case Syntax.StringLiteral:
-              return createIdentifier('String');
+              return new Identifier('String');
 
             case Syntax.PrefixUnaryExpression:
             case Syntax.NumericLiteral:
-              return createIdentifier('Number');
+              return new Identifier('Number');
 
             case Syntax.BigIntLiteral:
               return getGlobalBigIntNameWithFallback();
 
             case Syntax.TrueKeyword:
             case Syntax.FalseKeyword:
-              return createIdentifier('Boolean');
+              return new Identifier('Boolean');
 
             default:
               return Debug.failBadSyntax((<LiteralTypeNode>node).literal);
           }
 
         case Syntax.NumberKeyword:
-          return createIdentifier('Number');
+          return new Identifier('Number');
 
         case Syntax.BigIntKeyword:
           return getGlobalBigIntNameWithFallback();
 
         case Syntax.SymbolKeyword:
-          return languageVersion < ScriptTarget.ES2015 ? getGlobalSymbolNameWithFallback() : createIdentifier('Symbol');
+          return languageVersion < ScriptTarget.ES2015 ? getGlobalSymbolNameWithFallback() : new Identifier('Symbol');
 
         case Syntax.TypeReference:
           return serializeTypeReferenceNode(<TypeReferenceNode>node);
@@ -1537,7 +1537,7 @@ namespace core {
           return Debug.failBadSyntax(node);
       }
 
-      return createIdentifier('Object');
+      return new Identifier('Object');
     }
 
     function serializeTypeList(types: readonly TypeNode[]): SerializedTypeNode {
@@ -1565,7 +1565,7 @@ namespace core {
         else if (serializedUnion) {
           // Different types
           if (!Node.is.kind(Identifier, serializedUnion) || !Node.is.kind(Identifier, serializedIndividual) || serializedUnion.escapedText !== serializedIndividual.escapedText) {
-            return createIdentifier('Object');
+            return new Identifier('Object');
           }
         } else {
           // Initialize the union type
@@ -1589,12 +1589,12 @@ namespace core {
         case TypeReferenceSerializationKind.Unknown:
           // From conditional type type reference that cannot be resolved is Similar to any or unknown
           if (Node.findAncestor(node, (n) => n.parent && Node.is.kind(ConditionalTypeNode, n.parent) && (n.parent.trueType === n || n.parent.falseType === n))) {
-            return createIdentifier('Object');
+            return new Identifier('Object');
           }
 
           const serialized = serializeEntityNameAsExpressionFallback(node.typeName);
           const temp = createTempVariable(hoistVariableDeclaration);
-          return createConditional(createTypeCheck(createAssignment(temp, serialized), 'function'), temp, createIdentifier('Object'));
+          return createConditional(createTypeCheck(createAssignment(temp, serialized), 'function'), temp, new Identifier('Object'));
 
         case TypeReferenceSerializationKind.TypeWithConstructSignatureAndValue:
           return serializeEntityNameAsExpression(node.typeName);
@@ -1606,28 +1606,28 @@ namespace core {
           return getGlobalBigIntNameWithFallback();
 
         case TypeReferenceSerializationKind.BooleanType:
-          return createIdentifier('Boolean');
+          return new Identifier('Boolean');
 
         case TypeReferenceSerializationKind.NumberLikeType:
-          return createIdentifier('Number');
+          return new Identifier('Number');
 
         case TypeReferenceSerializationKind.StringLikeType:
-          return createIdentifier('String');
+          return new Identifier('String');
 
         case TypeReferenceSerializationKind.ArrayLikeType:
-          return createIdentifier('Array');
+          return new Identifier('Array');
 
         case TypeReferenceSerializationKind.ESSymbolType:
-          return languageVersion < ScriptTarget.ES2015 ? getGlobalSymbolNameWithFallback() : createIdentifier('Symbol');
+          return languageVersion < ScriptTarget.ES2015 ? getGlobalSymbolNameWithFallback() : new Identifier('Symbol');
 
         case TypeReferenceSerializationKind.TypeWithCallSignature:
-          return createIdentifier('Function');
+          return new Identifier('Function');
 
         case TypeReferenceSerializationKind.Promise:
-          return createIdentifier('Promise');
+          return new Identifier('Promise');
 
         case TypeReferenceSerializationKind.ObjectType:
-          return createIdentifier('Object');
+          return new Identifier('Object');
         default:
           return Debug.assertNever(kind);
       }
@@ -1696,7 +1696,7 @@ namespace core {
      * available.
      */
     function getGlobalSymbolNameWithFallback(): ConditionalExpression {
-      return createConditional(createTypeCheck(createIdentifier('Symbol'), 'function'), createIdentifier('Symbol'), createIdentifier('Object'));
+      return createConditional(createTypeCheck(new Identifier('Symbol'), 'function'), new Identifier('Symbol'), new Identifier('Object'));
     }
 
     /**
@@ -1705,8 +1705,8 @@ namespace core {
      */
     function getGlobalBigIntNameWithFallback(): SerializedTypeNode {
       return languageVersion < ScriptTarget.ESNext
-        ? createConditional(createTypeCheck(createIdentifier('BigInt'), 'function'), createIdentifier('BigInt'), createIdentifier('Object'))
-        : createIdentifier('BigInt');
+        ? createConditional(createTypeCheck(new Identifier('BigInt'), 'function'), new Identifier('BigInt'), new Identifier('Object'))
+        : new Identifier('BigInt');
     }
 
     /**
@@ -1718,7 +1718,7 @@ namespace core {
     function getExpressionForPropertyName(member: ClassElement | EnumMember, generateNameForComputedPropertyName: boolean): Expression {
       const name = member.name!;
       if (Node.is.kind(PrivateIdentifier, name)) {
-        return createIdentifier('');
+        return new Identifier('');
       } else if (Node.is.kind(ComputedPropertyName, name)) {
         return generateNameForComputedPropertyName && !isSimpleInlineableExpression(name.expression) ? getGeneratedNameForNode(name) : name.expression;
       } else if (Node.is.kind(Identifier, name)) {

@@ -399,16 +399,6 @@ namespace core {
     token: Syntax.ExtendsKeyword | Syntax.ImplementsKeyword;
     types: Nodes<ExpressionWithTypeArguments>;
   }
-  export interface Identifier extends PrimaryExpression, Declaration {
-    kind: Syntax.Identifier;
-    escapedText: __String;
-    originalKeywordKind?: Syntax;
-    autoGenerateFlags?: GeneratedIdentifierFlags;
-    autoGenerateId?: number;
-    isInJSDocNamespace?: boolean;
-    typeArguments?: Nodes<TypeNode | TypeParameterDeclaration>;
-    jsdocDotPos?: number;
-  }
   export interface IfStatement extends Statement {
     kind: Syntax.IfStatement;
     expression: Expression;
@@ -1020,10 +1010,6 @@ namespace core {
     operator: PrefixUnaryOperator;
     operand: UnaryExpression;
   }
-  export interface PrivateIdentifier extends Node {
-    kind: Syntax.PrivateIdentifier;
-    escapedText: __String;
-  }
   export interface PropertyAccessExpression extends MemberExpression, NamedDeclaration {
     kind: Syntax.PropertyAccessExpression;
     expression: LeftHandSideExpression;
@@ -1625,9 +1611,6 @@ namespace core {
   export interface ThrowStatement extends Statement {
     kind: Syntax.ThrowStatement;
     expression?: Expression;
-  }
-  export interface Token<T extends Syntax> extends Node {
-    kind: T;
   }
   export interface TryStatement extends Statement {
     kind: Syntax.TryStatement;

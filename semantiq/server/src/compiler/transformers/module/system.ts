@@ -99,7 +99,7 @@ namespace core {
             Nodes.create([
               createExpressionStatement(
                 createCall(
-                  createPropertyAccess(createIdentifier('System'), 'register'),
+                  createPropertyAccess(new Identifier('System'), 'register'),
                   /*typeArguments*/ undefined,
                   moduleName ? [moduleName, dependencies, moduleBodyFunction] : [dependencies, moduleBodyFunction]
                 )
@@ -355,9 +355,9 @@ namespace core {
      */
     function createExportStarFunction(localNames: Identifier | undefined) {
       const exportStarFunction = createUniqueName('exportStar');
-      const m = createIdentifier('m');
-      const n = createIdentifier('n');
-      const exports = createIdentifier('exports');
+      const m = new Identifier('m');
+      const n = new Identifier('n');
+      const exports = new Identifier('exports');
       let condition: Expression = createStrictInequality(n, createLiteral('default'));
       if (localNames) {
         condition = createLogicalAnd(condition, createLogicalNot(createCall(createPropertyAccess(localNames, 'hasOwnProperty'), /*typeArguments*/ undefined, [n])));
@@ -558,9 +558,9 @@ namespace core {
       if (original && hasAssociatedEndOfDeclarationMarker(original)) {
         // Defer exports until we encounter an EndOfDeclarationMarker node
         const id = getOriginalNodeId(node);
-        deferredExports[id] = appendExportStatement(deferredExports[id], createIdentifier('default'), expression, /*allowComments*/ true);
+        deferredExports[id] = appendExportStatement(deferredExports[id], new Identifier('default'), expression, /*allowComments*/ true);
       } else {
-        return createExportStatement(createIdentifier('default'), expression, /*allowComments*/ true);
+        return createExportStatement(new Identifier('default'), expression, /*allowComments*/ true);
       }
     }
 
@@ -1353,7 +1353,7 @@ namespace core {
       //     };
       // });
       return createCall(
-        createPropertyAccess(contextObject, createIdentifier('import')),
+        createPropertyAccess(contextObject, new Identifier('import')),
         /*typeArguments*/ undefined,
         some(node.arguments) ? [visitNode(node.arguments[0], destructuringAndImportCallVisitor)] : []
       );
@@ -1501,10 +1501,7 @@ namespace core {
         const importDeclaration = resolver.getReferencedImportDeclaration(name);
         if (importDeclaration) {
           if (Node.is.kind(ImportClause, importDeclaration)) {
-            return setRange(
-              createPropertyAssignment(getSynthesizedClone(name), createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent), createIdentifier('default'))),
-              /*location*/ node
-            );
+            return setRange(createPropertyAssignment(getSynthesizedClone(name), createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent), new Identifier('default'))), /*location*/ node);
           } else if (Node.is.kind(ImportSpecifier, importDeclaration)) {
             return setRange(
               createPropertyAssignment(
@@ -1565,7 +1562,7 @@ namespace core {
         const importDeclaration = resolver.getReferencedImportDeclaration(node);
         if (importDeclaration) {
           if (Node.is.kind(ImportClause, importDeclaration)) {
-            return setRange(createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent), createIdentifier('default')), /*location*/ node);
+            return setRange(createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent), new Identifier('default')), /*location*/ node);
           } else if (Node.is.kind(ImportSpecifier, importDeclaration)) {
             return setRange(
               createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent.parent.parent), getSynthesizedClone(importDeclaration.propertyName || importDeclaration.name)),
@@ -1657,7 +1654,7 @@ namespace core {
 
     function substituteMetaProperty(node: MetaProperty) {
       if (Node.is.importMeta(node)) {
-        return createPropertyAccess(contextObject, createIdentifier('meta'));
+        return createPropertyAccess(contextObject, new Identifier('meta'));
       }
       return node;
     }

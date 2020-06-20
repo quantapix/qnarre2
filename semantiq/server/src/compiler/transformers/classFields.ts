@@ -99,7 +99,7 @@ namespace core {
       if (!shouldTransformPrivateFields) {
         return node;
       }
-      return setOriginalNode(createIdentifier(''), node);
+      return setOriginalNode(new Identifier(''), node);
     }
 
     function classElementVisitor(node: Node): VisitResult<Node> {
@@ -506,7 +506,7 @@ namespace core {
       let statements: Statement[] = [];
 
       if (!constructor && isDerivedClass) {
-        statements.push(createExpressionStatement(createCall(createSuper(), /*typeArguments*/ undefined, [createSpread(createIdentifier('arguments'))])));
+        statements.push(createExpressionStatement(createCall(createSuper(), /*typeArguments*/ undefined, [createSpread(new Identifier('arguments'))])));
       }
 
       if (constructor) {
@@ -700,7 +700,7 @@ namespace core {
         placement: PrivateIdentifierPlacement.InstanceField,
         weakMapName,
       });
-      (pendingExpressions || (pendingExpressions = [])).push(createAssignment(weakMapName, createNew(createIdentifier('WeakMap'), /*typeArguments*/ undefined, [])));
+      (pendingExpressions || (pendingExpressions = [])).push(createAssignment(weakMapName, createNew(new Identifier('WeakMap'), /*typeArguments*/ undefined, [])));
     }
 
     function accessPrivateIdentifier(name: PrivateIdentifier) {

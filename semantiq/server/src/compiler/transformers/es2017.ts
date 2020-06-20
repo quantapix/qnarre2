@@ -666,7 +666,7 @@ namespace core {
               ],
               /* type */ undefined,
               /* equalsGreaterThanToken */ undefined,
-              createAssignment(setEmitFlags(createPropertyAccess(setEmitFlags(createSuper(), EmitFlags.NoSubstitution), name), EmitFlags.NoSubstitution), createIdentifier('v'))
+              createAssignment(setEmitFlags(createPropertyAccess(setEmitFlags(createSuper(), EmitFlags.NoSubstitution), name), EmitFlags.NoSubstitution), new Identifier('v'))
             )
           )
         );
@@ -680,7 +680,7 @@ namespace core {
           createVariableDeclaration(
             createFileLevelUniqueName('_super'),
             /* type */ undefined,
-            createCall(createPropertyAccess(createIdentifier('Object'), 'create'), /* typeArguments */ undefined, [createNull(), createObjectLiteral(accessors, /* multiline */ true)])
+            createCall(createPropertyAccess(new Identifier('Object'), 'create'), /* typeArguments */ undefined, [createNull(), createObjectLiteral(accessors, /* multiline */ true)])
           ),
         ],
         NodeFlags.Const
@@ -708,14 +708,14 @@ namespace core {
   function createAwaiterHelper(context: TransformationContext, hasLexicalThis: boolean, hasLexicalArguments: boolean, promiseConstructor: EntityName | Expression | undefined, body: Block) {
     context.requestEmitHelper(awaiterHelper);
 
-    const generatorFunc = createFunctionExpression(/*modifiers*/ undefined, createToken(Syntax.AsteriskToken), /*name*/ undefined, undefined, /*parameters*/ [], undefined, body);
+    const generatorFunc = createFunctionExpression(/*modifiers*/ undefined, new Token(Syntax.AsteriskToken), /*name*/ undefined, undefined, /*parameters*/ [], undefined, body);
 
     // Mark this node as originally an async function
     (generatorFunc.emitNode || (generatorFunc.emitNode = {} as EmitNode)).flags |= EmitFlags.AsyncFunctionBody | EmitFlags.ReuseTempVariableScope;
 
     return createCall(getUnscopedHelperName('__awaiter'), /*typeArguments*/ undefined, [
       hasLexicalThis ? createThis() : createVoidZero(),
-      hasLexicalArguments ? createIdentifier('arguments') : createVoidZero(),
+      hasLexicalArguments ? new Identifier('arguments') : createVoidZero(),
       promiseConstructor ? createExpressionFromEntityName(promiseConstructor) : createVoidZero(),
       generatorFunc,
     ]);

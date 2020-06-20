@@ -444,7 +444,7 @@ namespace core {
       argumentExpression.text = argumentExpression.text;
       return createElementAccess(value, argumentExpression);
     } else {
-      const name = createIdentifier(idText(propertyName));
+      const name = new Identifier(idText(propertyName));
       return createPropertyAccess(value, name);
     }
   }

@@ -458,7 +458,7 @@ namespace core {
         maskModifiers(p, modifierMask),
         p.dot3Token,
         filterBindingPatternInitializers(p.name),
-        resolver.isOptionalParameter(p) ? p.questionToken || createToken(Syntax.QuestionToken) : undefined,
+        resolver.isOptionalParameter(p) ? p.questionToken || new Token(Syntax.QuestionToken) : undefined,
         ensureType(p, type || p.type, /*ignorePrivate*/ true), // Ignore private param props, since this type is going straight back into a param
         ensureNoInitializer(p)
       );
@@ -1158,7 +1158,7 @@ namespace core {
           );
           if (clean && resolver.isExpandoFunctionDeclaration(input)) {
             const props = resolver.getPropertiesOfContainerFunction(input);
-            const fakespace = createModuleDeclaration(undefined, /*modifiers*/ undefined, clean.name || createIdentifier('_default'), createModuleBlock([]), NodeFlags.Namespace);
+            const fakespace = createModuleDeclaration(undefined, /*modifiers*/ undefined, clean.name || new Identifier('_default'), createModuleBlock([]), NodeFlags.Namespace);
             fakespace.flags ^= NodeFlags.Synthesized; // unset synthesized so it is usable as an enclosing declaration
             fakespace.parent = enclosingDeclaration as SourceFile | NamespaceDeclaration;
             fakespace.locals = new SymbolTable(props);
@@ -1301,7 +1301,7 @@ namespace core {
                 PropertyDeclaration.create(
                   undefined,
                   /*modifiers*/ undefined,
-                  createPrivateIdentifier('#private'),
+                  new PrivateIdentifier('#private'),
                   /*questionToken*/ undefined,
                   undefined,
                   undefined

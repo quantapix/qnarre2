@@ -79,7 +79,7 @@ namespace core {
       this.typeParameters = Nodes.from(typeParameters);
       this.parameters = Nodes.create(parameters);
       this.type = type;
-      this.equalsGreaterThanToken = equalsGreaterThanToken || createToken(Syntax.EqualsGreaterThanToken);
+      this.equalsGreaterThanToken = equalsGreaterThanToken || new Token(Syntax.EqualsGreaterThanToken);
       this.body = parenthesizeConciseBody(body);
     }
     get kind() {
@@ -782,9 +782,9 @@ namespace core {
     export function createConditional(condition: Expression, questionTokenOrWhenTrue: QuestionToken | Expression, whenTrueOrWhenFalse: Expression, colonToken?: ColonToken, whenFalse?: Expression) {
       const node = <ConditionalExpression>Node.createSynthesized(Syntax.ConditionalExpression);
       node.condition = parenthesizeForConditionalHead(condition);
-      node.questionToken = whenFalse ? <QuestionToken>questionTokenOrWhenTrue : createToken(Syntax.QuestionToken);
+      node.questionToken = whenFalse ? <QuestionToken>questionTokenOrWhenTrue : new Token(Syntax.QuestionToken);
       node.whenTrue = parenthesizeSubexpressionOfConditionalExpression(whenFalse ? whenTrueOrWhenFalse : <Expression>questionTokenOrWhenTrue);
-      node.colonToken = whenFalse ? colonToken! : createToken(Syntax.ColonToken);
+      node.colonToken = whenFalse ? colonToken! : new Token(Syntax.ColonToken);
       node.whenFalse = parenthesizeSubexpressionOfConditionalExpression(whenFalse ? whenFalse : whenTrueOrWhenFalse);
       return node;
     }
@@ -1158,7 +1158,7 @@ namespace core {
           properties.push(createPropertyAssignment('configurable', createTrue()));
 
           const expression = setRange(
-            createCall(createPropertyAccess(createIdentifier('Object'), 'defineProperty'), undefined, [
+            createCall(createPropertyAccess(new Identifier('Object'), 'defineProperty'), undefined, [
               receiver,
               createExpressionForPropertyName(property.name),
               createObjectLiteral(properties, multiLine),
@@ -1254,7 +1254,7 @@ namespace core {
       return createCall(createPropertyAccess(array, 'concat'), undefined, values);
     }
     export function createMathPow(left: Expression, right: Expression, location?: TextRange) {
-      return setRange(createCall(createPropertyAccess(createIdentifier('Math'), 'pow'), undefined, [left, right]), location);
+      return setRange(createCall(createPropertyAccess(new Identifier('Math'), 'pow'), undefined, [left, right]), location);
     }
 
     export function getLeftmostExpression(node: Expression, stopAtCallExpressions: boolean) {
@@ -1503,114 +1503,6 @@ namespace core {
     }
     export function updateHeritageClause(node: HeritageClause, types: readonly ExpressionWithTypeArguments[]) {
       return node.types !== types ? updateNode(createHeritageClause(node.token, types), node) : node;
-    }
-  }
-  export namespace Identifier {
-    export const kind = Syntax.Identifier;
-    export function createIdentifier(text: string): Identifier;
-    export function createIdentifier(text: string, typeArguments: readonly (TypeNode | TypeParameterDeclaration)[] | undefined): Identifier;
-    export function createIdentifier(text: string, typeArguments?: readonly (TypeNode | TypeParameterDeclaration)[]): Identifier {
-      const node = <Identifier>Node.createSynthesized(Syntax.Identifier);
-      node.escapedText = syntax.get.escUnderscores(text);
-      node.originalKeywordKind = text ? Token.fromString(text) : Syntax.Unknown;
-      node.autoGenerateFlags = GeneratedIdentifierFlags.None;
-      node.autoGenerateId = 0;
-      if (typeArguments) {
-        node.typeArguments = Nodes.create(typeArguments as readonly TypeNode[]);
-      }
-      return node;
-    }
-    export function updateIdentifier(node: Identifier): Identifier;
-    export function updateIdentifier(node: Identifier, typeArguments: Nodes<TypeNode | TypeParameterDeclaration> | undefined): Identifier;
-    export function updateIdentifier(node: Identifier, typeArguments?: Nodes<TypeNode | TypeParameterDeclaration> | undefined): Identifier {
-      return node.typeArguments !== typeArguments ? updateNode(createIdentifier(idText(node), typeArguments), node) : node;
-    }
-
-    let nextAutoGenerateId = 0;
-    export function createTempVariable(recordTempVariable: ((node: Identifier) => void) | undefined): Identifier;
-    export function createTempVariable(recordTempVariable: ((node: Identifier) => void) | undefined, reservedInNestedScopes: boolean): GeneratedIdentifier;
-    export function createTempVariable(recordTempVariable: ((node: Identifier) => void) | undefined, reservedInNestedScopes?: boolean): GeneratedIdentifier {
-      const name = createIdentifier('') as GeneratedIdentifier;
-      name.autoGenerateFlags = GeneratedIdentifierFlags.Auto;
-      name.autoGenerateId = nextAutoGenerateId;
-      nextAutoGenerateId++;
-      if (recordTempVariable) {
-        recordTempVariable(name);
-      }
-      if (reservedInNestedScopes) {
-        name.autoGenerateFlags |= GeneratedIdentifierFlags.ReservedInNestedScopes;
-      }
-      return name;
-    }
-    export function createLoopVariable(): Identifier {
-      const name = createIdentifier('');
-      name.autoGenerateFlags = GeneratedIdentifierFlags.Loop;
-      name.autoGenerateId = nextAutoGenerateId;
-      nextAutoGenerateId++;
-      return name;
-    }
-    export function createUniqueName(text: string): Identifier {
-      const name = createIdentifier(text);
-      name.autoGenerateFlags = GeneratedIdentifierFlags.Unique;
-      name.autoGenerateId = nextAutoGenerateId;
-      nextAutoGenerateId++;
-      return name;
-    }
-    export function createOptimisticUniqueName(text: string): GeneratedIdentifier;
-    export function createOptimisticUniqueName(text: string): Identifier;
-    export function createOptimisticUniqueName(text: string): GeneratedIdentifier {
-      const name = createIdentifier(text) as GeneratedIdentifier;
-      name.autoGenerateFlags = GeneratedIdentifierFlags.Unique | GeneratedIdentifierFlags.Optimistic;
-      name.autoGenerateId = nextAutoGenerateId;
-      nextAutoGenerateId++;
-      return name;
-    }
-    export function createFileLevelUniqueName(text: string): Identifier {
-      const name = createOptimisticUniqueName(text);
-      name.autoGenerateFlags |= GeneratedIdentifierFlags.FileLevel;
-      return name;
-    }
-    export function getGeneratedNameForNode(node: Node | undefined): Identifier;
-    export function getGeneratedNameForNode(node: Node | undefined, flags: GeneratedIdentifierFlags): Identifier;
-    export function getGeneratedNameForNode(node: Node | undefined, flags?: GeneratedIdentifierFlags): Identifier {
-      const name = createIdentifier(node && Node.is.kind(Identifier, node) ? idText(node) : '');
-      name.autoGenerateFlags = GeneratedIdentifierFlags.Node | flags!;
-      name.autoGenerateId = nextAutoGenerateId;
-      name.original = node;
-      nextAutoGenerateId++;
-      return name;
-    }
-    export function isInternalName(node: Identifier) {
-      return (Node.get.emitFlags(node) & EmitFlags.InternalName) !== 0;
-    }
-    export function isLocalName(node: Identifier) {
-      return (Node.get.emitFlags(node) & EmitFlags.LocalName) !== 0;
-    }
-    export function isExportName(node: Identifier) {
-      return (Node.get.emitFlags(node) & EmitFlags.ExportName) !== 0;
-    }
-    export function getNamespaceMemberName(ns: Identifier, name: Identifier, allowComments?: boolean, allowSourceMaps?: boolean): PropertyAccessExpression {
-      const qualifiedName = createPropertyAccess(ns, isSynthesized(name) ? name : getSynthesizedClone(name));
-      setRange(qualifiedName, name);
-      let emitFlags: EmitFlags = 0;
-      if (!allowSourceMaps) emitFlags |= EmitFlags.NoSourceMap;
-      if (!allowComments) emitFlags |= EmitFlags.NoComments;
-      if (emitFlags) setEmitFlags(qualifiedName, emitFlags);
-      return qualifiedName;
-    }
-    export function getLocalNameForExternalImport(node: ImportDeclaration | ExportDeclaration | ImportEqualsDeclaration, sourceFile: SourceFile): Identifier | undefined {
-      const namespaceDeclaration = getNamespaceDeclarationNode(node);
-      if (namespaceDeclaration && !isDefaultImport(node)) {
-        const name = namespaceDeclaration.name;
-        return Node.is.generatedIdentifier(name) ? name : createIdentifier(getSourceTextOfNodeFromSourceFile(sourceFile, name) || idText(name));
-      }
-      if (node.kind === Syntax.ImportDeclaration && node.importClause) {
-        return getGeneratedNameForNode(node);
-      }
-      if (node.kind === Syntax.ExportDeclaration && node.moduleSpecifier) {
-        return getGeneratedNameForNode(node);
-      }
-      return;
     }
   }
   export namespace IfStatement {
@@ -1957,7 +1849,7 @@ namespace core {
   export namespace JSDocTag {
     export function createJSDocTag<T extends JSDocTag>(kind: T['kind'], tagName: string, comment?: string): T {
       const node = Node.createSynthesized(kind) as T;
-      node.tagName = createIdentifier(tagName);
+      node.tagName = new Identifier(tagName);
       node.comment = comment;
       return node;
     }
@@ -2132,7 +2024,7 @@ namespace core {
       // To ensure the emit resolver can properly resolve the namespace, we need to
       // treat this identifier as if it were a source tree node by clearing the `Synthesized`
       // flag and setting a parent node.
-      const react = createIdentifier(reactNamespace || 'React');
+      const react = new Identifier(reactNamespace || 'React');
       react.flags &= ~NodeFlags.Synthesized;
       // Set the parent that is in parse tree
       // this makes sure that parent chain is intact for checker to traverse complete scope tree
@@ -2142,7 +2034,7 @@ namespace core {
     function createJsxFactoryExpressionFromEntityName(jsxFactory: EntityName, parent: JsxOpeningLikeElement | JsxOpeningFragment): Expression {
       if (Node.is.kind(QualifiedName, jsxFactory)) {
         const left = createJsxFactoryExpressionFromEntityName(jsxFactory.left, parent);
-        const right = createIdentifier(idText(jsxFactory.right));
+        const right = new Identifier(idText(jsxFactory.right));
         right.escapedText = jsxFactory.right.escapedText;
         return createPropertyAccess(left, right);
       } else {
@@ -2745,17 +2637,6 @@ namespace core {
     }
     export function createLogicalNot(operand: Expression) {
       return createPrefix(Syntax.ExclamationToken, operand);
-    }
-  }
-  export namespace PrivateIdentifier {
-    export const kind = Syntax.PrivateIdentifier;
-    export function createPrivateIdentifier(text: string): PrivateIdentifier {
-      if (text[0] !== '#') {
-        fail('First character of private identifier must be #: ' + text);
-      }
-      const node = Node.createSynthesized(Syntax.PrivateIdentifier) as PrivateIdentifier;
-      node.escapedText = syntax.get.escUnderscores(text);
-      return node;
     }
   }
   export namespace PropertyAccessChain {
@@ -3828,6 +3709,7 @@ namespace core {
     | ForStatement
     | FunctionLikeDeclaration
     | HeritageClause
+    | Identifier
     | IfStatement
     | ImportClause
     | ImportDeclaration
@@ -4577,7 +4459,7 @@ namespace core {
     }
 
     export function getUnscopedHelperName(name: string) {
-      return setEmitFlags(createIdentifier(name), EmitFlags.HelperName | EmitFlags.AdviseOnEmitNode);
+      return setEmitFlags(new Identifier(name), EmitFlags.HelperName | EmitFlags.AdviseOnEmitNode);
     }
 
     export function inlineExpressions(expressions: readonly Expression[]) {
@@ -4646,8 +4528,8 @@ namespace core {
               namedBindings = createNamedImports(
                 map(helperNames, (name) =>
                   isFileLevelUniqueName(sourceFile, name)
-                    ? createImportSpecifier(/*propertyName*/ undefined, createIdentifier(name))
-                    : createImportSpecifier(createIdentifier(name), getUnscopedHelperName(name))
+                    ? createImportSpecifier(/*propertyName*/ undefined, new Identifier(name))
+                    : createImportSpecifier(new Identifier(name), getUnscopedHelperName(name))
                 )
               );
               const parseNode = Node.get.originalOf(sourceFile, isSourceFile);

@@ -168,7 +168,7 @@ namespace core {
     const n = node as NodeTypes;
     switch (n.kind) {
       case Syntax.Identifier:
-        return updateIdentifier(n, nodesVisitor(n.typeArguments, cb, isTypeNodeOrTypeParameterDeclaration));
+        return n.update(nodesVisitor(n.typeArguments, cb, isTypeNodeOrTypeParameterDeclaration));
       case Syntax.QualifiedName:
         return QualifiedName.update(n, visitNode(n.left, cb, isEntityName), visitNode(n.right, cb, isIdentifier));
       case Syntax.ComputedPropertyName:

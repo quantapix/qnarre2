@@ -536,7 +536,7 @@ namespace core {
         if (isReturnVoidStatementInConstructorWithCapturedSuper(node)) {
           node = returnCapturedThis(node);
         }
-        return createReturn(createObjectLiteral([createPropertyAssignment(createIdentifier('value'), node.expression ? visitNode(node.expression, visitor, isExpression) : createVoidZero())]));
+        return createReturn(createObjectLiteral([createPropertyAssignment(new Identifier('value'), node.expression ? visitNode(node.expression, visitor, isExpression) : createVoidZero())]));
       } else if (isReturnVoidStatementInConstructorWithCapturedSuper(node)) {
         return returnCapturedThis(node);
       }
@@ -1061,7 +1061,7 @@ namespace core {
       return createLogicalOr(
         createLogicalAnd(
           createStrictInequality(createFileLevelUniqueName('_super'), createNull()),
-          createFunctionApply(createFileLevelUniqueName('_super'), createActualThis(), createIdentifier('arguments'))
+          createFunctionApply(createFileLevelUniqueName('_super'), createActualThis(), new Identifier('arguments'))
         ),
         createActualThis()
       );
@@ -1268,13 +1268,13 @@ namespace core {
       // }
       const forStatement = createFor(
         setRange(createVariableDeclarationList([createVariableDeclaration(temp, undefined, createLiteral(restIndex))]), parameter),
-        setRange(createLessThan(temp, createPropertyAccess(createIdentifier('arguments'), 'length')), parameter),
+        setRange(createLessThan(temp, createPropertyAccess(new Identifier('arguments'), 'length')), parameter),
         setRange(createPostfixIncrement(temp), parameter),
         createBlock([
           startOnNewLine(
             setRange(
               createExpressionStatement(
-                createAssignment(createElementAccess(expressionName, restIndex === 0 ? temp : createSubtract(temp, createLiteral(restIndex))), createElementAccess(createIdentifier('arguments'), temp))
+                createAssignment(createElementAccess(expressionName, restIndex === 0 ? temp : createSubtract(temp, createLiteral(restIndex))), createElementAccess(new Identifier('arguments'), temp))
               ),
               /*location*/ parameter
             )
@@ -1529,7 +1529,7 @@ namespace core {
 
       properties.push(createPropertyAssignment('enumerable', getAccessor || setAccessor ? createFalse() : createTrue()), createPropertyAssignment('configurable', createTrue()));
 
-      const call = createCall(createPropertyAccess(createIdentifier('Object'), 'defineProperty'), /*typeArguments*/ undefined, [
+      const call = createCall(createPropertyAccess(new Identifier('Object'), 'defineProperty'), /*typeArguments*/ undefined, [
         target,
         propertyName,
         createObjectLiteral(properties, /*multiLine*/ true),
@@ -2551,7 +2551,7 @@ namespace core {
           outerState.argumentsName = state.argumentsName;
         } else {
           // this is top level converted loop and we need to create an alias for 'arguments' object
-          (extraVariableDeclarations || (extraVariableDeclarations = [])).push(createVariableDeclaration(state.argumentsName, undefined, createIdentifier('arguments')));
+          (extraVariableDeclarations || (extraVariableDeclarations = [])).push(createVariableDeclaration(state.argumentsName, undefined, new Identifier('arguments')));
         }
       }
 
@@ -2565,7 +2565,7 @@ namespace core {
           // NOTE:
           // if converted loops were all nested in arrow function then we'll always emit '_this' so convertedLoopState.thisName will not be set.
           // If it is set this means that all nested loops are not nested in arrow function and it is safe to capture 'this'.
-          (extraVariableDeclarations || (extraVariableDeclarations = [])).push(createVariableDeclaration(state.thisName, undefined, createIdentifier('this')));
+          (extraVariableDeclarations || (extraVariableDeclarations = [])).push(createVariableDeclaration(state.thisName, undefined, new Identifier('this')));
         }
       }
 
@@ -2668,7 +2668,7 @@ namespace core {
               setEmitFlags(
                 createFunctionExpression(
                   /*modifiers*/ undefined,
-                  containsYield ? createToken(Syntax.AsteriskToken) : undefined,
+                  containsYield ? new Token(Syntax.AsteriskToken) : undefined,
                   /*name*/ undefined,
                   /*typeParameters*/ undefined,
                   /*parameters*/ undefined,
@@ -2796,7 +2796,7 @@ namespace core {
               setEmitFlags(
                 createFunctionExpression(
                   /*modifiers*/ undefined,
-                  containsYield ? createToken(Syntax.AsteriskToken) : undefined,
+                  containsYield ? new Token(Syntax.AsteriskToken) : undefined,
                   /*name*/ undefined,
                   /*typeParameters*/ undefined,
                   currentState.loopParameters,
@@ -2831,7 +2831,7 @@ namespace core {
 
     function generateCallToConvertedLoopInitializer(initFunctionExpressionName: Identifier, containsYield: boolean): Statement {
       const call = createCall(initFunctionExpressionName, /*typeArguments*/ undefined, []);
-      const callResult = containsYield ? createYield(createToken(Syntax.AsteriskToken), setEmitFlags(call, EmitFlags.Iterator)) : call;
+      const callResult = containsYield ? createYield(new Token(Syntax.AsteriskToken), setEmitFlags(call, EmitFlags.Iterator)) : call;
       return createStatement(callResult);
     }
 
@@ -2847,7 +2847,7 @@ namespace core {
         /*typeArguments*/ undefined,
         map(state.loopParameters, (p) => <Identifier>p.name)
       );
-      const callResult = containsYield ? createYield(createToken(Syntax.AsteriskToken), setEmitFlags(call, EmitFlags.Iterator)) : call;
+      const callResult = containsYield ? createYield(new Token(Syntax.AsteriskToken), setEmitFlags(call, EmitFlags.Iterator)) : call;
       if (isSimpleLoop) {
         statements.push(createExpressionStatement(callResult));
         copyOutParameters(state.loopOutParameters, LoopOutParameterFlags.Body, CopyDirection.ToOriginal, statements);
@@ -2906,7 +2906,7 @@ namespace core {
         // then emit labeled break\continue
         // otherwise propagate pair 'label -> marker' to outer converted loop and emit 'return labelMarker' so outer loop can later decide what to do
         if (!outerLoop || (outerLoop.labels && outerLoop.labels.get(labelText))) {
-          const label = createIdentifier(labelText);
+          const label = new Identifier(labelText);
           statements.push(isBreak ? createBreak(label) : createContinue(label));
         } else {
           setLabeledJump(outerLoop, isBreak, labelText, labelMarker);

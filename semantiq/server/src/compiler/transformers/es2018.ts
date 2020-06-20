@@ -687,7 +687,7 @@ namespace core {
           context,
           createFunctionExpression(
             /*modifiers*/ undefined,
-            createToken(Syntax.AsteriskToken),
+            new Token(Syntax.AsteriskToken),
             node.name && getGeneratedNameForNode(node.name),
             undefined,
             /*parameters*/ [],
@@ -873,9 +873,9 @@ namespace core {
 
     function createSuperElementAccessInAsyncMethod(argumentExpression: Expression, location: TextRange): LeftHandSideExpression {
       if (enclosingSuperContainerFlags & NodeCheckFlags.AsyncMethodWithSuperBinding) {
-        return setRange(createPropertyAccess(createCall(createIdentifier('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), 'value'), location);
+        return setRange(createPropertyAccess(createCall(new Identifier('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), 'value'), location);
       } else {
-        return setRange(createCall(createIdentifier('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), location);
+        return setRange(createCall(new Identifier('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), location);
       }
     }
   }
@@ -901,7 +901,7 @@ namespace core {
 
   export function createAssignHelper(context: TransformationContext, attributesSegments: Expression[]) {
     if (context.getCompilerOptions().target! >= ScriptTarget.ES2015) {
-      return createCall(createPropertyAccess(createIdentifier('Object'), 'assign'), /*typeArguments*/ undefined, attributesSegments);
+      return createCall(createPropertyAccess(new Identifier('Object'), 'assign'), /*typeArguments*/ undefined, attributesSegments);
     }
     context.requestEmitHelper(assignHelper);
     return createCall(getUnscopedHelperName('__assign'), /*typeArguments*/ undefined, attributesSegments);
@@ -945,7 +945,7 @@ namespace core {
     // Mark this node as originally an async function
     (generatorFunc.emitNode || (generatorFunc.emitNode = {} as EmitNode)).flags |= EmitFlags.AsyncFunctionBody | EmitFlags.ReuseTempVariableScope;
 
-    return createCall(getUnscopedHelperName('__asyncGenerator'), /*typeArguments*/ undefined, [hasLexicalThis ? createThis() : createVoidZero(), createIdentifier('arguments'), generatorFunc]);
+    return createCall(getUnscopedHelperName('__asyncGenerator'), /*typeArguments*/ undefined, [hasLexicalThis ? createThis() : createVoidZero(), new Identifier('arguments'), generatorFunc]);
   }
 
   export const asyncDelegator: UnscopedEmitHelper = {

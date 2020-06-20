@@ -103,7 +103,7 @@ namespace core {
           createExpressionStatement(
             reduceLeft(
               currentModuleInfo.exportedNames,
-              (prev, nextId) => createAssignment(createPropertyAccess(createIdentifier('exports'), createIdentifier(idText(nextId))), prev),
+              (prev, nextId) => createAssignment(createPropertyAccess(new Identifier('exports'), new Identifier(idText(nextId))), prev),
               createVoidZero() as Expression
             )
           )
@@ -126,7 +126,7 @@ namespace core {
      * @param node The SourceFile node.
      */
     function transformAMDModule(node: SourceFile) {
-      const define = createIdentifier('define');
+      const define = new Identifier('define');
       const moduleName = tryGetModuleNameFromFile(node, host, compilerOptions);
       const jsonSourceFile = isJsonSourceFile(node) && node;
 
@@ -220,28 +220,28 @@ namespace core {
           createBlock(
             [
               createIf(
-                createLogicalAnd(createTypeCheck(createIdentifier('module'), 'object'), createTypeCheck(createPropertyAccess(createIdentifier('module'), 'exports'), 'object')),
+                createLogicalAnd(createTypeCheck(new Identifier('module'), 'object'), createTypeCheck(createPropertyAccess(new Identifier('module'), 'exports'), 'object')),
                 createBlock([
                   createVariableStatement(/*modifiers*/ undefined, [
-                    createVariableDeclaration('v', undefined, createCall(createIdentifier('factory'), /*typeArguments*/ undefined, [createIdentifier('require'), createIdentifier('exports')])),
+                    createVariableDeclaration('v', undefined, createCall(new Identifier('factory'), /*typeArguments*/ undefined, [new Identifier('require'), new Identifier('exports')])),
                   ]),
                   setEmitFlags(
                     createIf(
-                      createStrictInequality(createIdentifier('v'), createIdentifier('undefined')),
-                      createExpressionStatement(createAssignment(createPropertyAccess(createIdentifier('module'), 'exports'), createIdentifier('v')))
+                      createStrictInequality(new Identifier('v'), new Identifier('undefined')),
+                      createExpressionStatement(createAssignment(createPropertyAccess(new Identifier('module'), 'exports'), new Identifier('v')))
                     ),
                     EmitFlags.SingleLine
                   ),
                 ]),
                 createIf(
-                  createLogicalAnd(createTypeCheck(createIdentifier('define'), 'function'), createPropertyAccess(createIdentifier('define'), 'amd')),
+                  createLogicalAnd(createTypeCheck(new Identifier('define'), 'function'), createPropertyAccess(new Identifier('define'), 'amd')),
                   createBlock([
                     createExpressionStatement(
-                      createCall(createIdentifier('define'), /*typeArguments*/ undefined, [
+                      createCall(new Identifier('define'), /*typeArguments*/ undefined, [
                         // Add the module name (if provided).
                         ...(moduleName ? [moduleName] : []),
                         new ArrayLiteralExpression([createLiteral('require'), createLiteral('exports'), ...aliasedModuleNames, ...unaliasedModuleNames]),
-                        createIdentifier('factory'),
+                        new Identifier('factory'),
                       ])
                     ),
                   ])
@@ -384,7 +384,7 @@ namespace core {
           createExpressionStatement(
             reduceLeft(
               currentModuleInfo.exportedNames,
-              (prev, nextId) => createAssignment(createPropertyAccess(createIdentifier('exports'), createIdentifier(idText(nextId))), prev),
+              (prev, nextId) => createAssignment(createPropertyAccess(new Identifier('exports'), new Identifier(idText(nextId))), prev),
               createVoidZero() as Expression
             )
           )
@@ -431,7 +431,7 @@ namespace core {
             setEmitFlags(statement, EmitFlags.NoTokenSourceMaps | EmitFlags.NoComments);
             statements.push(statement);
           } else {
-            const statement = createExpressionStatement(createAssignment(createPropertyAccess(createIdentifier('module'), 'exports'), expressionResult));
+            const statement = createExpressionStatement(createAssignment(createPropertyAccess(new Identifier('module'), 'exports'), expressionResult));
 
             setRange(statement, currentModuleInfo.exportEquals);
             setEmitFlags(statement, EmitFlags.NoComments);
@@ -582,7 +582,7 @@ namespace core {
       if (isSimpleCopiableExpression(arg)) {
         const argClone = Node.is.generatedIdentifier(arg) ? arg : Node.is.kind(StringLiteral, arg) ? createLiteral(arg) : setEmitFlags(setRange(getSynthesizedClone(arg), arg), EmitFlags.NoComments);
         return createConditional(
-          /*condition*/ createIdentifier('__syncRequire'),
+          /*condition*/ new Identifier('__syncRequire'),
           /*whenTrue*/ createImportCallExpressionCommonJS(arg, containsLexicalThis),
           /*whenFalse*/ createImportCallExpressionAMD(argClone, containsLexicalThis)
         );
@@ -591,7 +591,7 @@ namespace core {
         return createComma(
           createAssignment(temp, arg),
           createConditional(
-            /*condition*/ createIdentifier('__syncRequire'),
+            /*condition*/ new Identifier('__syncRequire'),
             /*whenTrue*/ createImportCallExpressionCommonJS(temp, containsLexicalThis),
             /*whenFalse*/ createImportCallExpressionAMD(temp, containsLexicalThis)
           )
@@ -613,7 +613,7 @@ namespace core {
         createParameter(/*decorator*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, /*name*/ reject),
       ];
       const body = createBlock([
-        createExpressionStatement(createCall(createIdentifier('require'), /*typeArguments*/ undefined, [new ArrayLiteralExpression([arg || createOmittedExpression()]), resolve, reject])),
+        createExpressionStatement(createCall(new Identifier('require'), /*typeArguments*/ undefined, [new ArrayLiteralExpression([arg || createOmittedExpression()]), resolve, reject])),
       ]);
 
       let func: FunctionExpression | ArrowFunction;
@@ -630,10 +630,10 @@ namespace core {
         }
       }
 
-      const promise = createNew(createIdentifier('Promise'), /*typeArguments*/ undefined, [func]);
+      const promise = createNew(new Identifier('Promise'), /*typeArguments*/ undefined, [func]);
       if (compilerOptions.esModuleInterop) {
         context.requestEmitHelper(importStarHelper);
-        return createCall(createPropertyAccess(promise, createIdentifier('then')), /*typeArguments*/ undefined, [getUnscopedHelperName('__importStar')]);
+        return createCall(createPropertyAccess(promise, new Identifier('then')), /*typeArguments*/ undefined, [getUnscopedHelperName('__importStar')]);
       }
       return promise;
     }
@@ -644,8 +644,8 @@ namespace core {
       // Promise.resolve().then(function () { return require(x); }) /*CommonJs Require*/
       // We have to wrap require in then callback so that require is done in asynchronously
       // if we simply do require in resolve callback in Promise constructor. We will execute the loading immediately
-      const promiseResolveCall = createCall(createPropertyAccess(createIdentifier('Promise'), 'resolve'), /*typeArguments*/ undefined, /*argumentsArray*/ []);
-      let requireCall = createCall(createIdentifier('require'), /*typeArguments*/ undefined, arg ? [arg] : []);
+      const promiseResolveCall = createCall(createPropertyAccess(new Identifier('Promise'), 'resolve'), /*typeArguments*/ undefined, /*argumentsArray*/ []);
+      let requireCall = createCall(new Identifier('require'), /*typeArguments*/ undefined, arg ? [arg] : []);
       if (compilerOptions.esModuleInterop) {
         context.requestEmitHelper(importStarHelper);
         requireCall = createCall(getUnscopedHelperName('__importStar'), /*typeArguments*/ undefined, [requireCall]);
@@ -779,7 +779,7 @@ namespace core {
         args.push(moduleName);
       }
 
-      return createCall(createIdentifier('require'), /*typeArguments*/ undefined, args);
+      return createCall(new Identifier('require'), /*typeArguments*/ undefined, args);
     }
 
     /**
@@ -891,7 +891,7 @@ namespace core {
               createExpressionStatement(
                 createExportExpression(
                   getSynthesizedClone(node.exportClause.name),
-                  moduleKind !== ModuleKind.AMD ? getHelperExpressionForExport(node, createRequireCall(node)) : createIdentifier(idText(node.exportClause.name))
+                  moduleKind !== ModuleKind.AMD ? getHelperExpressionForExport(node, createRequireCall(node)) : new Identifier(idText(node.exportClause.name))
                 )
               ),
               node
@@ -924,13 +924,13 @@ namespace core {
         const id = getOriginalNodeId(node);
         deferredExports[id] = appendExportStatement(
           deferredExports[id],
-          createIdentifier('default'),
+          new Identifier('default'),
           visitNode(node.expression, moduleExpressionElementVisitor),
           /*location*/ node,
           /*allowComments*/ true
         );
       } else {
-        statements = appendExportStatement(statements, createIdentifier('default'), visitNode(node.expression, moduleExpressionElementVisitor), /*location*/ node, /*allowComments*/ true);
+        statements = appendExportStatement(statements, new Identifier('default'), visitNode(node.expression, moduleExpressionElementVisitor), /*location*/ node, /*allowComments*/ true);
       }
 
       return singleOrMany(statements);
@@ -1092,7 +1092,7 @@ namespace core {
         return flattenDestructuringAssignment(visitNode(node, moduleExpressionElementVisitor), /*visitor*/ undefined, context, FlattenLevel.All, /*needsValue*/ false, createAllExportExpressions);
       } else {
         return createAssignment(
-          setRange(createPropertyAccess(createIdentifier('exports'), node.name), /*location*/ node.name),
+          setRange(createPropertyAccess(new Identifier('exports'), node.name), /*location*/ node.name),
           node.initializer ? visitNode(node.initializer, moduleExpressionElementVisitor) : createVoidZero()
         );
       }
@@ -1271,7 +1271,7 @@ namespace core {
       }
 
       if (hasSyntacticModifier(decl, ModifierFlags.Export)) {
-        const exportName = hasSyntacticModifier(decl, ModifierFlags.Default) ? createIdentifier('default') : getDeclarationName(decl);
+        const exportName = hasSyntacticModifier(decl, ModifierFlags.Default) ? new Identifier('default') : getDeclarationName(decl);
         statements = appendExportStatement(statements, exportName, getLocalName(decl), /*location*/ decl);
       }
 
@@ -1328,11 +1328,11 @@ namespace core {
     function createUnderscoreUnderscoreESModule() {
       let statement: Statement;
       if (languageVersion === ScriptTarget.ES3) {
-        statement = createExpressionStatement(createExportExpression(createIdentifier('__esModule'), createLiteral(/*value*/ true)));
+        statement = createExpressionStatement(createExportExpression(new Identifier('__esModule'), createLiteral(/*value*/ true)));
       } else {
         statement = createExpressionStatement(
-          createCall(createPropertyAccess(createIdentifier('Object'), 'defineProperty'), /*typeArguments*/ undefined, [
-            createIdentifier('exports'),
+          createCall(createPropertyAccess(new Identifier('Object'), 'defineProperty'), /*typeArguments*/ undefined, [
+            new Identifier('exports'),
             createLiteral('__esModule'),
             createObjectLiteral([createPropertyAssignment('value', createLiteral(/*value*/ true))]),
           ])
@@ -1370,8 +1370,8 @@ namespace core {
     function createExportExpression(name: Identifier, value: Expression, location?: TextRange, liveBinding?: boolean) {
       return setRange(
         liveBinding && languageVersion !== ScriptTarget.ES3
-          ? createCall(createPropertyAccess(createIdentifier('Object'), 'defineProperty'), /*typeArguments*/ undefined, [
-              createIdentifier('exports'),
+          ? createCall(createPropertyAccess(new Identifier('Object'), 'defineProperty'), /*typeArguments*/ undefined, [
+              new Identifier('exports'),
               createLiteral(name),
               createObjectLiteral([
                 createPropertyAssignment('enumerable', createLiteral(/*value*/ true)),
@@ -1389,7 +1389,7 @@ namespace core {
                 ),
               ]),
             ])
-          : createAssignment(createPropertyAccess(createIdentifier('exports'), getSynthesizedClone(name)), value),
+          : createAssignment(createPropertyAccess(new Identifier('exports'), getSynthesizedClone(name)), value),
         location
       );
     }
@@ -1525,13 +1525,13 @@ namespace core {
       if (!Node.is.generatedIdentifier(node) && !isLocalName(node)) {
         const exportContainer = resolver.getReferencedExportContainer(node, isExportName(node));
         if (exportContainer && exportContainer.kind === Syntax.SourceFile) {
-          return setRange(createPropertyAccess(createIdentifier('exports'), getSynthesizedClone(node)), /*location*/ node);
+          return setRange(createPropertyAccess(new Identifier('exports'), getSynthesizedClone(node)), /*location*/ node);
         }
 
         const importDeclaration = resolver.getReferencedImportDeclaration(node);
         if (importDeclaration) {
           if (Node.is.kind(ImportClause, importDeclaration)) {
-            return setRange(createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent), createIdentifier('default')), /*location*/ node);
+            return setRange(createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent), new Identifier('default')), /*location*/ node);
           } else if (Node.is.kind(ImportSpecifier, importDeclaration)) {
             const name = importDeclaration.propertyName || importDeclaration.name;
             return setRange(createPropertyAccess(getGeneratedNameForNode(importDeclaration.parent.parent.parent), getSynthesizedClone(name)), /*location*/ node);
@@ -1605,7 +1605,7 @@ namespace core {
         if (exportedNames) {
           let expression: Expression =
             node.kind === Syntax.PostfixUnaryExpression
-              ? setRange(createBinary(node.operand, createToken(node.operator === Syntax.Plus2Token ? Syntax.PlusEqualsToken : Syntax.MinusEqualsToken), createLiteral(1)), /*location*/ node)
+              ? setRange(createBinary(node.operand, new Token(node.operator === Syntax.Plus2Token ? Syntax.PlusEqualsToken : Syntax.MinusEqualsToken), createLiteral(1)), /*location*/ node)
               : node;
           for (const exportName of exportedNames) {
             // Mark the node to prevent triggering this rule again.
@@ -1652,7 +1652,7 @@ var __createBinding = (this && this.__createBinding) || (Object.create ? (functi
 
   function createCreateBindingHelper(context: TransformationContext, module: Expression, inputName: Expression, outputName: Expression | undefined) {
     context.requestEmitHelper(createBindingHelper);
-    return createCall(getUnscopedHelperName('__createBinding'), /*typeArguments*/ undefined, [createIdentifier('exports'), module, inputName, ...(outputName ? [outputName] : [])]);
+    return createCall(getUnscopedHelperName('__createBinding'), /*typeArguments*/ undefined, [new Identifier('exports'), module, inputName, ...(outputName ? [outputName] : [])]);
   }
 
   export const setModuleDefaultHelper: UnscopedEmitHelper = {
@@ -1683,7 +1683,7 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 
   function createExportStarHelper(context: TransformationContext, module: Expression) {
     context.requestEmitHelper(exportStarHelper);
-    return createCall(getUnscopedHelperName('__exportStar'), /*typeArguments*/ undefined, [module, createIdentifier('exports')]);
+    return createCall(getUnscopedHelperName('__exportStar'), /*typeArguments*/ undefined, [module, new Identifier('exports')]);
   }
 
   // emit helper for dynamic import

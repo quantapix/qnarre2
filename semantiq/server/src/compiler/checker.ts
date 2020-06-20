@@ -1072,7 +1072,7 @@ namespace core {
         }
       }
       if (!_jsxFactoryEntity) {
-        _jsxFactoryEntity = QualifiedName.create(createIdentifier(syntax.get.unescUnderscores(_jsxNamespace)), 'createElement');
+        _jsxFactoryEntity = QualifiedName.create(new Identifier(syntax.get.unescUnderscores(_jsxNamespace)), 'createElement');
       }
       return _jsxNamespace;
 
@@ -4408,7 +4408,7 @@ namespace core {
 
         if (!inTypeAlias && type.aliasSymbol && (context.flags & NodeBuilderFlags.UseAliasDefinedOutsideCurrentScope || isTypeSymbolAccessible(type.aliasSymbol, context.enclosingDeclaration))) {
           const typeArgumentNodes = mapToTypeNodes(type.aliasTypeArguments, context);
-          if (syntax.is.reservedName(type.aliasSymbol.escName) && !(type.aliasSymbol.flags & SymbolFlags.Class)) return TypeReferenceNode.create(createIdentifier(''), typeArgumentNodes);
+          if (syntax.is.reservedName(type.aliasSymbol.escName) && !(type.aliasSymbol.flags & SymbolFlags.Class)) return TypeReferenceNode.create(new Identifier(''), typeArgumentNodes);
           return symbolToTypeNode(type.aliasSymbol, context, SymbolFlags.Type, typeArgumentNodes);
         }
 
@@ -4426,10 +4426,10 @@ namespace core {
           if (context.flags & NodeBuilderFlags.GenerateNamesForShadowedTypeParams && type.flags & TypeFlags.TypeParameter && !isTypeSymbolAccessible(type.symbol, context.enclosingDeclaration)) {
             const name = typeParameterToName(type, context);
             context.approximateLength += idText(name).length;
-            return TypeReferenceNode.create(createIdentifier(idText(name)), /*typeArguments*/ undefined);
+            return TypeReferenceNode.create(new Identifier(idText(name)), /*typeArguments*/ undefined);
           }
           // Ignore constraint/default when creating a usage (as opposed to declaration) of a type parameter.
-          return type.symbol ? symbolToTypeNode(type.symbol, context, SymbolFlags.Type) : TypeReferenceNode.create(createIdentifier('?'), /*typeArguments*/ undefined);
+          return type.symbol ? symbolToTypeNode(type.symbol, context, SymbolFlags.Type) : TypeReferenceNode.create(new Identifier('?'), /*typeArguments*/ undefined);
         }
         if (type.flags & (TypeFlags.Union | TypeFlags.Intersection)) {
           const types = type.flags & TypeFlags.Union ? formatUnionTypes((<UnionType>type).types) : (<IntersectionType>type).types;
@@ -4483,8 +4483,8 @@ namespace core {
 
         function createMappedTypeNodeFromType(type: MappedType) {
           assert(!!(type.flags & TypeFlags.Object));
-          const readonlyToken = type.declaration.readonlyToken ? <ReadonlyToken | PlusToken | MinusToken>createToken(type.declaration.readonlyToken.kind) : undefined;
-          const questionToken = type.declaration.questionToken ? <QuestionToken | PlusToken | MinusToken>createToken(type.declaration.questionToken.kind) : undefined;
+          const readonlyToken = type.declaration.readonlyToken ? <ReadonlyToken | PlusToken | MinusToken>new Token(type.declaration.readonlyToken.kind) : undefined;
+          const questionToken = type.declaration.questionToken ? <QuestionToken | PlusToken | MinusToken>new Token(type.declaration.questionToken.kind) : undefined;
           let appropriateConstraintTypeNode: TypeNode;
           if (isMappedTypeWithKeyofConstraintDeclaration(type)) {
             // We have a { [P in keyof T]: X }
@@ -4638,9 +4638,9 @@ namespace core {
                     const isRest = isOptionalOrRest && hasRestElement && i === arity - 1;
                     const isOptional = isOptionalOrRest && !isRest;
                     tupleConstituentNodes[i] = NamedTupleMember.create(
-                      isRest ? createToken(Syntax.Dot3Token) : undefined,
-                      createIdentifier(syntax.get.unescUnderscores(getTupleElementLabel((type.target as TupleType).labeledElementDeclarations![i]))),
-                      isOptional ? createToken(Syntax.QuestionToken) : undefined,
+                      isRest ? new Token(Syntax.Dot3Token) : undefined,
+                      new Identifier(syntax.get.unescUnderscores(getTupleElementLabel((type.target as TupleType).labeledElementDeclarations![i]))),
+                      isOptional ? new Token(Syntax.QuestionToken) : undefined,
                       isRest ? new ArrayTypeNode(tupleConstituentNodes[i]) : tupleConstituentNodes[i]
                     );
                   }
@@ -4803,7 +4803,7 @@ namespace core {
       function createElidedInformationPlaceholder(context: NodeBuilderContext) {
         context.approximateLength += 3;
         if (!(context.flags & NodeBuilderFlags.NoTruncation)) {
-          return TypeReferenceNode.create(createIdentifier('...'), /*typeArguments*/ undefined);
+          return TypeReferenceNode.create(new Identifier('...'), /*typeArguments*/ undefined);
         }
         return KeywordTypeNode.create(Syntax.AnyKeyword);
       }
@@ -4829,7 +4829,7 @@ namespace core {
         context.enclosingDeclaration = saveEnclosingDeclaration;
         const propertyName = getPropertyNameNodeForSymbol(propertySymbol, context);
         context.approximateLength += symbolName(propertySymbol).length + 1;
-        const optionalToken = propertySymbol.flags & SymbolFlags.Optional ? createToken(Syntax.QuestionToken) : undefined;
+        const optionalToken = propertySymbol.flags & SymbolFlags.Optional ? new Token(Syntax.QuestionToken) : undefined;
         if (propertySymbol.flags & (SymbolFlags.Function | SymbolFlags.Method) && !getPropertiesOfObjectType(propertyType).length && !isReadonlySymbol(propertySymbol)) {
           const signatures = getSignaturesOfType(
             filterType(propertyType, (t) => !(t.flags & TypeFlags.Undefined)),
@@ -4852,7 +4852,7 @@ namespace core {
           }
           context.flags = savedFlags;
 
-          const modifiers = isReadonlySymbol(propertySymbol) ? [createToken(Syntax.ReadonlyKeyword)] : undefined;
+          const modifiers = isReadonlySymbol(propertySymbol) ? [new Token(Syntax.ReadonlyKeyword)] : undefined;
           if (modifiers) {
             context.approximateLength += 9;
           }
@@ -4968,7 +4968,7 @@ namespace core {
           context.encounteredError = true;
         }
         context.approximateLength += name.length + 4;
-        return IndexSignatureDeclaration.create(undefined, indexInfo.isReadonly ? [createToken(Syntax.ReadonlyKeyword)] : undefined, [indexingParameter], typeNode);
+        return IndexSignatureDeclaration.create(undefined, indexInfo.isReadonly ? [new Token(Syntax.ReadonlyKeyword)] : undefined, [indexingParameter], typeNode);
       }
 
       function signatureToSignatureDeclarationHelper(
@@ -4999,10 +4999,10 @@ namespace core {
         let returnTypeNode: TypeNode | undefined;
         const typePredicate = getTypePredicateOfSignature(signature);
         if (typePredicate) {
-          const assertsModifier = typePredicate.kind === TypePredicateKind.AssertsThis || typePredicate.kind === TypePredicateKind.AssertsIdentifier ? createToken(Syntax.AssertsKeyword) : undefined;
+          const assertsModifier = typePredicate.kind === TypePredicateKind.AssertsThis || typePredicate.kind === TypePredicateKind.AssertsIdentifier ? new Token(Syntax.AssertsKeyword) : undefined;
           const parameterName =
             typePredicate.kind === TypePredicateKind.Identifier || typePredicate.kind === TypePredicateKind.AssertsIdentifier
-              ? setEmitFlags(createIdentifier(typePredicate.parameterName), EmitFlags.NoAsciiEscaping)
+              ? setEmitFlags(new Identifier(typePredicate.parameterName), EmitFlags.NoAsciiEscaping)
               : ThisTypeNode.create();
           const typeNode = typePredicate.type && typeToTypeNodeHelper(typePredicate.type, context);
           returnTypeNode = TypePredicateNode.createWithModifier(assertsModifier, parameterName, typeNode);
@@ -5056,7 +5056,7 @@ namespace core {
             ? parameterDeclaration.modifiers.map(getSynthesizedClone)
             : undefined;
         const isRest = (parameterDeclaration && isRestParameter(parameterDeclaration)) || getCheckFlags(parameterSymbol) & CheckFlags.RestParameter;
-        const dot3Token = isRest ? createToken(Syntax.Dot3Token) : undefined;
+        const dot3Token = isRest ? new Token(Syntax.Dot3Token) : undefined;
         const name = parameterDeclaration
           ? parameterDeclaration.name
             ? parameterDeclaration.name.kind === Syntax.Identifier
@@ -5067,7 +5067,7 @@ namespace core {
             : symbolName(parameterSymbol)
           : symbolName(parameterSymbol);
         const isOptional = (parameterDeclaration && isOptionalParameter(parameterDeclaration)) || getCheckFlags(parameterSymbol) & CheckFlags.OptionalParameter;
-        const questionToken = isOptional ? createToken(Syntax.QuestionToken) : undefined;
+        const questionToken = isOptional ? new Token(Syntax.QuestionToken) : undefined;
         const parameterNode = createParameter(undefined, modifiers, dot3Token, name, questionToken, parameterTypeNode, undefined);
         context.approximateLength += symbolName(parameterSymbol).length + 3;
         return parameterNode;
@@ -5378,7 +5378,7 @@ namespace core {
             }
           }
 
-          const identifier = setEmitFlags(createIdentifier(symbolName, typeParameterNodes), EmitFlags.NoAsciiEscaping);
+          const identifier = setEmitFlags(new Identifier(symbolName, typeParameterNodes), EmitFlags.NoAsciiEscaping);
           identifier.symbol = symbol;
 
           if (index > stopper) {
@@ -5412,7 +5412,7 @@ namespace core {
         }
         let result = symbolToName(type.symbol, context, SymbolFlags.Type, /*expectsIdentifier*/ true);
         if (!(result.kind & Syntax.Identifier)) {
-          return createIdentifier('(Missing type parameter)');
+          return new Identifier('(Missing type parameter)');
         }
         if (context.flags & NodeBuilderFlags.GenerateNamesForShadowedTypeParams) {
           const rawtext = result.escapedText as string;
@@ -5423,7 +5423,7 @@ namespace core {
             text = `${rawtext}_${i}`;
           }
           if (text !== rawtext) {
-            result = createIdentifier(text, result.typeArguments);
+            result = new Identifier(text, result.typeArguments);
           }
           (context.typeParameterNames || (context.typeParameterNames = new QMap())).set('' + getTypeId(type), result);
           (context.typeParameterNamesByText || (context.typeParameterNamesByText = new QMap())).set(result.escapedText as string, true);
@@ -5453,7 +5453,7 @@ namespace core {
             context.flags ^= NodeBuilderFlags.InInitialEntityName;
           }
 
-          const identifier = setEmitFlags(createIdentifier(symbolName, typeParameterNodes), EmitFlags.NoAsciiEscaping);
+          const identifier = setEmitFlags(new Identifier(symbolName, typeParameterNodes), EmitFlags.NoAsciiEscaping);
           identifier.symbol = symbol;
 
           return index > 0 ? QualifiedName.create(createEntityNameFromSymbolChain(chain, index - 1), identifier) : identifier;
@@ -5483,7 +5483,7 @@ namespace core {
           }
           const canUsePropertyAccess = firstChar === Codes.hash ? symbolName.length > 1 && syntax.is.identifierStart(symbolName.charCodeAt(1)) : syntax.is.identifierStart(firstChar);
           if (index === 0 || canUsePropertyAccess) {
-            const identifier = setEmitFlags(createIdentifier(symbolName, typeParameterNodes), EmitFlags.NoAsciiEscaping);
+            const identifier = setEmitFlags(new Identifier(symbolName, typeParameterNodes), EmitFlags.NoAsciiEscaping);
             identifier.symbol = symbol;
 
             return index > 0 ? createPropertyAccess(createExpressionFromSymbolChain(chain, index - 1), identifier) : identifier;
@@ -5500,7 +5500,7 @@ namespace core {
               expression = createLiteral(+symbolName);
             }
             if (!expression) {
-              expression = setEmitFlags(createIdentifier(symbolName, typeParameterNodes), EmitFlags.NoAsciiEscaping);
+              expression = setEmitFlags(new Identifier(symbolName, typeParameterNodes), EmitFlags.NoAsciiEscaping);
               expression.symbol = symbol;
             }
             return createElementAccess(createExpressionFromSymbolChain(chain, index - 1), expression);
@@ -5523,7 +5523,7 @@ namespace core {
           return fromNameType;
         }
         if (isKnownSymbol(symbol)) {
-          return ComputedPropertyName.create(createPropertyAccess(createIdentifier('Symbol'), (symbol.escName as string).substr(3)));
+          return ComputedPropertyName.create(createPropertyAccess(new Identifier('Symbol'), (symbol.escName as string).substr(3)));
         }
         const rawName = syntax.get.unescUnderscores(symbol.escName);
         return createPropertyNameNodeForIdentifierOrLiteral(rawName, singleQuote);
@@ -5550,7 +5550,7 @@ namespace core {
       }
 
       function createPropertyNameNodeForIdentifierOrLiteral(name: string, singleQuote?: boolean) {
-        return syntax.is.identifierText(name) ? createIdentifier(name) : createLiteral(NumericLiteral.name(name) && +name >= 0 ? +name : name, !!singleQuote);
+        return syntax.is.identifierText(name) ? new Identifier(name) : createLiteral(NumericLiteral.name(name) && +name >= 0 ? +name : name, !!singleQuote);
       }
 
       function cloneNodeBuilderContext(context: NodeBuilderContext): NodeBuilderContext {
@@ -5685,7 +5685,7 @@ namespace core {
                 return PropertySignature.create(
                   /*modifiers*/ undefined,
                   name,
-                  t.typeExpression && Node.is.kind(JSDocOptionalType, t.typeExpression.type) ? createToken(Syntax.QuestionToken) : undefined,
+                  t.typeExpression && Node.is.kind(JSDocOptionalType, t.typeExpression.type) ? new Token(Syntax.QuestionToken) : undefined,
                   overrideTypeNode || (t.typeExpression && visitNode(t.typeExpression.type, visitExistingNodeTreeSymbols)) || KeywordTypeNode.create(Syntax.AnyKeyword),
                   undefined
                 );
@@ -5803,7 +5803,7 @@ namespace core {
           return visitEachChild(node, visitExistingNodeTreeSymbols, nullTransformationContext);
 
           function getEffectiveDotDotDotForParameter(p: ParameterDeclaration) {
-            return p.dot3Token || (p.type && Node.is.kind(JSDocVariadicType, p.type) ? createToken(Syntax.Dot3Token) : undefined);
+            return p.dot3Token || (p.type && Node.is.kind(JSDocVariadicType, p.type) ? new Token(Syntax.Dot3Token) : undefined);
           }
 
           function rewriteModuleSpecifier(parent: ImportTypeNode, lit: StringLiteral) {
@@ -6175,7 +6175,7 @@ namespace core {
           }
           if (needsPostExportDefault) {
             addResult(
-              createExportAssignment(undefined, /*modifiers*/ undefined, /*isExportAssignment*/ false, createIdentifier(getInternalSymbolName(symbol, symbolName))),
+              createExportAssignment(undefined, /*modifiers*/ undefined, /*isExportAssignment*/ false, new Identifier(getInternalSymbolName(symbol, symbolName))),
               ModifierFlags.None
             );
           }
@@ -6328,7 +6328,7 @@ namespace core {
                 )
               ),
             ]);
-            addResult(createModuleDeclaration(undefined, /*modifiers*/ undefined, createIdentifier(localName), nsBody, NodeFlags.Namespace), ModifierFlags.None);
+            addResult(createModuleDeclaration(undefined, /*modifiers*/ undefined, new Identifier(localName), nsBody, NodeFlags.Namespace), ModifierFlags.None);
           }
         }
 
@@ -6420,7 +6420,7 @@ namespace core {
           for (const sig of signatures) {
             // Each overload becomes a separate function declaration, in order
             const decl = signatureToSignatureDeclarationHelper(sig, Syntax.FunctionDeclaration, context, includePrivateSymbol, bundled) as FunctionDeclaration;
-            decl.name = createIdentifier(localName);
+            decl.name = new Identifier(localName);
             // for expressions assigned to `var`s, use the `var` as the text range
             addResult(setRange(decl, (sig.declaration && Node.is.kind(VariableDeclaration, sig.declaration.parent) && sig.declaration.parent.parent) || sig.declaration), modifierFlags);
           }
@@ -6453,7 +6453,7 @@ namespace core {
             // emit akin to the above would be needed.
 
             // Add a namespace
-            const fakespace = createModuleDeclaration(undefined, /*modifiers*/ undefined, createIdentifier(localName), createModuleBlock([]), NodeFlags.Namespace);
+            const fakespace = createModuleDeclaration(undefined, /*modifiers*/ undefined, new Identifier(localName), createModuleBlock([]), NodeFlags.Namespace);
             fakespace.flags ^= NodeFlags.Synthesized; // unset synthesized so it is usable as an enclosing declaration
             fakespace.parent = enclosingDeclaration as SourceFile | NamespaceDeclaration;
             fakespace.locals = new SymbolTable(props);
@@ -6532,7 +6532,7 @@ namespace core {
                 PropertyDeclaration.create(
                   undefined,
                   /*modifiers*/ undefined,
-                  createPrivateIdentifier('#private'),
+                  new PrivateIdentifier('#private'),
                   /*questionOrExclamationToken*/ undefined,
                   undefined,
                   undefined
@@ -6600,7 +6600,7 @@ namespace core {
                 createImportEqualsDeclaration(
                   undefined,
                   /*modifiers*/ undefined,
-                  createIdentifier(localName),
+                  new Identifier(localName),
                   isLocalImport
                     ? symbolToName(target, context, SymbolFlags.All, /*expectsIdentifier*/ false)
                     : createExternalModuleReference(createLiteral(getSpecifierForModuleSymbol(symbol, context)))
@@ -6619,7 +6619,7 @@ namespace core {
                 createImportDeclaration(
                   undefined,
                   /*modifiers*/ undefined,
-                  createImportClause(createIdentifier(localName), /*namedBindings*/ undefined),
+                  createImportClause(new Identifier(localName), /*namedBindings*/ undefined),
                   // We use `target.parent || target` below as `target.parent` is unset when the target is a module which has been export assigned
                   // And then made into a default by the `esModuleInterop` or `allowSyntheticDefaultImports` flag
                   // In such cases, the `target` refers to the module itself already
@@ -6633,7 +6633,7 @@ namespace core {
                 createImportDeclaration(
                   undefined,
                   /*modifiers*/ undefined,
-                  createImportClause(/*importClause*/ undefined, createNamespaceImport(createIdentifier(localName))),
+                  createImportClause(/*importClause*/ undefined, createNamespaceImport(new Identifier(localName))),
                   createLiteral(getSpecifierForModuleSymbol(target, context))
                 ),
                 ModifierFlags.None
@@ -6644,7 +6644,7 @@ namespace core {
                 createExportDeclaration(
                   undefined,
                   /*modifiers*/ undefined,
-                  createNamespaceExport(createIdentifier(localName)),
+                  createNamespaceExport(new Identifier(localName)),
                   createLiteral(getSpecifierForModuleSymbol(target, context))
                 ),
                 ModifierFlags.None
@@ -6657,7 +6657,7 @@ namespace core {
                   /*modifiers*/ undefined,
                   createImportClause(
                     /*importClause*/ undefined,
-                    createNamedImports([createImportSpecifier(localName !== verbatimTargetName ? createIdentifier(verbatimTargetName) : undefined, createIdentifier(localName))])
+                    createNamedImports([createImportSpecifier(localName !== verbatimTargetName ? new Identifier(verbatimTargetName) : undefined, new Identifier(localName))])
                   ),
                   createLiteral(getSpecifierForModuleSymbol(target.parent || target, context))
                 ),
@@ -6757,7 +6757,7 @@ namespace core {
                   createImportEqualsDeclaration(
                     undefined,
                     /*modifiers*/ undefined,
-                    createIdentifier(varName),
+                    new Identifier(varName),
                     symbolToName(target, context, SymbolFlags.All, /*expectsIdentifier*/ false)
                   ),
                   ModifierFlags.None
@@ -6786,7 +6786,7 @@ namespace core {
               addResult(statement, name === varName ? ModifierFlags.Export : ModifierFlags.None);
             }
             if (isExportAssignment) {
-              results.push(createExportAssignment(undefined, /*modifiers*/ undefined, isExportEquals, createIdentifier(varName)));
+              results.push(createExportAssignment(undefined, /*modifiers*/ undefined, isExportEquals, new Identifier(varName)));
             } else if (name !== varName) {
               serializeExportSpecifier(name, varName);
             }
@@ -6920,7 +6920,7 @@ namespace core {
                   undefined,
                   createModifiersFromModifierFlags((isReadonlySymbol(p) ? ModifierFlags.Readonly : 0) | flag),
                   name,
-                  p.flags & SymbolFlags.Optional ? createToken(Syntax.QuestionToken) : undefined,
+                  p.flags & SymbolFlags.Optional ? new Token(Syntax.QuestionToken) : undefined,
                   isPrivate ? undefined : serializeTypeForDeclaration(context, getTypeOfSymbol(p), p, enclosingDeclaration, includePrivateSymbol, bundled),
                   // TODO: https://github.com/microsoft/TypeScript/pull/32372#discussion_r328386357
                   // interface members can't have initializers, however class members _can_
@@ -6938,7 +6938,7 @@ namespace core {
                     undefined,
                     createModifiersFromModifierFlags((isReadonlySymbol(p) ? ModifierFlags.Readonly : 0) | flag),
                     name,
-                    p.flags & SymbolFlags.Optional ? createToken(Syntax.QuestionToken) : undefined,
+                    p.flags & SymbolFlags.Optional ? new Token(Syntax.QuestionToken) : undefined,
                     undefined,
                     undefined
                   ),
@@ -6955,7 +6955,7 @@ namespace core {
                   decl.modifiers = Nodes.create(createModifiersFromModifierFlags(flag));
                 }
                 if (p.flags & SymbolFlags.Optional) {
-                  decl.questionToken = createToken(Syntax.QuestionToken);
+                  decl.questionToken = new Token(Syntax.QuestionToken);
                 }
                 results.push(setRange(decl, sig.declaration));
               }
@@ -7050,7 +7050,7 @@ namespace core {
             createVariableDeclarationList([createVariableDeclaration(tempName, typeToTypeNodeHelper(staticType, context))], NodeFlags.Const)
           );
           addResult(statement, ModifierFlags.None);
-          return createExpressionWithTypeArguments(/*typeArgs*/ undefined, createIdentifier(tempName));
+          return createExpressionWithTypeArguments(/*typeArgs*/ undefined, new Identifier(tempName));
         }
 
         function trySerializeAsTypeReference(t: Type) {
@@ -7130,8 +7130,8 @@ namespace core {
 
       function typePredicateToStringWorker(writer: EmitTextWriter) {
         const predicate = TypePredicateNode.createWithModifier(
-          typePredicate.kind === TypePredicateKind.AssertsThis || typePredicate.kind === TypePredicateKind.AssertsIdentifier ? createToken(Syntax.AssertsKeyword) : undefined,
-          typePredicate.kind === TypePredicateKind.Identifier || typePredicate.kind === TypePredicateKind.AssertsIdentifier ? createIdentifier(typePredicate.parameterName) : ThisTypeNode.create(),
+          typePredicate.kind === TypePredicateKind.AssertsThis || typePredicate.kind === TypePredicateKind.AssertsIdentifier ? new Token(Syntax.AssertsKeyword) : undefined,
+          typePredicate.kind === TypePredicateKind.Identifier || typePredicate.kind === TypePredicateKind.AssertsIdentifier ? new Identifier(typePredicate.parameterName) : ThisTypeNode.create(),
           typePredicate.type &&
             nodeBuilder.typeToTypeNode(typePredicate.type, enclosingDeclaration, toNodeBuilderFlags(flags) | NodeBuilderFlags.IgnoreErrors | NodeBuilderFlags.WriteTypeParametersInQualifiedName)! // TODO: GH#18217
         );
@@ -36423,7 +36423,7 @@ namespace core {
     ) {
       const declaration = Node.get.parseTreeOf(declarationIn, isVariableLikeOrAccessor);
       if (!declaration) {
-        return createToken(Syntax.AnyKeyword) as KeywordTypeNode;
+        return new Token(Syntax.AnyKeyword) as KeywordTypeNode;
       }
       // Get type of the symbol if this is the valid symbol otherwise get type at location
       const symbol = getSymbolOfNode(declaration);
@@ -36440,7 +36440,7 @@ namespace core {
     function createReturnTypeOfSignatureDeclaration(signatureDeclarationIn: SignatureDeclaration, enclosingDeclaration: Node, flags: NodeBuilderFlags, tracker: SymbolTracker) {
       const signatureDeclaration = Node.get.parseTreeOf(signatureDeclarationIn, isFunctionLike);
       if (!signatureDeclaration) {
-        return createToken(Syntax.AnyKeyword) as KeywordTypeNode;
+        return new Token(Syntax.AnyKeyword) as KeywordTypeNode;
       }
       const signature = getSignatureFromDeclaration(signatureDeclaration);
       return nodeBuilder.typeToTypeNode(getReturnTypeOfSignature(signature), enclosingDeclaration, flags | NodeBuilderFlags.MultilineObjectLiterals, tracker);
@@ -36449,7 +36449,7 @@ namespace core {
     function createTypeOfExpression(exprIn: Expression, enclosingDeclaration: Node, flags: NodeBuilderFlags, tracker: SymbolTracker) {
       const expr = Node.get.parseTreeOf(exprIn, isExpression);
       if (!expr) {
-        return createToken(Syntax.AnyKeyword) as KeywordTypeNode;
+        return new Token(Syntax.AnyKeyword) as KeywordTypeNode;
       }
       const type = getWidenedType(getRegularTypeOfExpression(expr));
       return nodeBuilder.typeToTypeNode(type, enclosingDeclaration, flags | NodeBuilderFlags.MultilineObjectLiterals, tracker);
