@@ -350,16 +350,11 @@ namespace core {
       return processTaggedTemplateExpression(context, node, visitor, currentSourceFile, recordTaggedTemplateString, ProcessLevel.LiftRestriction);
     }
 
-    /**
-     * Visits a BinaryExpression that contains a destructuring assignment.
-     *
-     * @param node A BinaryExpression node.
-     */
     function visitBinaryExpression(node: BinaryExpression, noDestructuringValue: boolean): Expression {
       if (isDestructuringAssignment(node) && node.left.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
         return flattenDestructuringAssignment(node, visitor, context, FlattenLevel.ObjectRest, !noDestructuringValue);
       } else if (node.operatorToken.kind === Syntax.CommaToken) {
-        return updateBinary(node, visitNode(node.left, visitorNoDestructuringValue, isExpression), visitNode(node.right, noDestructuringValue ? visitorNoDestructuringValue : visitor, isExpression));
+        return node.update(visitNode(node.left, visitorNoDestructuringValue, isExpression), visitNode(node.right, noDestructuringValue ? visitorNoDestructuringValue : visitor, isExpression));
       }
       return visitEachChild(node, visitor, context);
     }
@@ -371,7 +366,7 @@ namespace core {
         const visitedBindings = flattenDestructuringBinding(updatedDecl, visitor, context, FlattenLevel.ObjectRest);
         let block = visitNode(node.block, visitor, isBlock);
         if (some(visitedBindings)) {
-          block = updateBlock(block, [createVariableStatement(/*modifiers*/ undefined, visitedBindings), ...block.statements]);
+          block = block.update([createVariableStatement(/*modifiers*/ undefined, visitedBindings), ...block.statements]);
         }
         return updateCatchClause(node, updateVariableDeclaration(node.variableDeclaration, name, undefined, undefined), block);
       }
@@ -465,7 +460,7 @@ namespace core {
           node.awaitModifier,
           setRange(createVariableDeclarationList([setRange(createVariableDeclaration(temp), node.initializer)], NodeFlags.Let), node.initializer),
           node.expression,
-          setRange(createBlock(setRange(Nodes.create(statements), statementsLocation), /*multiLine*/ true), bodyLocation)
+          setRange(new Block(setRange(Nodes.create(statements), statementsLocation), /*multiLine*/ true), bodyLocation)
         );
       }
       return node;
@@ -486,7 +481,7 @@ namespace core {
         statements.push(statement);
       }
 
-      return setEmitFlags(setRange(createBlock(setRange(Nodes.create(statements), statementsLocation), /*multiLine*/ true), bodyLocation), EmitFlags.NoSourceMap | EmitFlags.NoTokenSourceMaps);
+      return setEmitFlags(setRange(new Block(setRange(Nodes.create(statements), statementsLocation), /*multiLine*/ true), bodyLocation), EmitFlags.NoSourceMap | EmitFlags.NoTokenSourceMaps);
     }
 
     function createDownlevelAwait(expression: Expression) {
@@ -529,14 +524,14 @@ namespace core {
       );
 
       return createTry(
-        createBlock([restoreEnclosingLabel(forStatement, outermostLabeledStatement)]),
+        new Block([restoreEnclosingLabel(forStatement, outermostLabeledStatement)]),
         createCatchClause(
           createVariableDeclaration(catchVariable),
-          setEmitFlags(createBlock([createExpressionStatement(createAssignment(errorRecord, createObjectLiteral([createPropertyAssignment('error', catchVariable)])))]), EmitFlags.SingleLine)
+          setEmitFlags(new Block([createExpressionStatement(createAssignment(errorRecord, createObjectLiteral([createPropertyAssignment('error', catchVariable)])))]), EmitFlags.SingleLine)
         ),
-        createBlock([
+        new Block([
           createTry(
-            /*tryBlock*/ createBlock([
+            /*tryBlock*/ new Block([
               setEmitFlags(
                 createIf(
                   createLogicalAnd(createLogicalAnd(result, createLogicalNot(getDone)), createAssignment(returnMethod, createPropertyAccess(iterator, 'return'))),
@@ -546,7 +541,7 @@ namespace core {
               ),
             ]),
             /*catchClause*/ undefined,
-            /*finallyBlock*/ setEmitFlags(createBlock([setEmitFlags(createIf(errorRecord, createThrow(createPropertyAccess(errorRecord, 'error'))), EmitFlags.SingleLine)]), EmitFlags.SingleLine)
+            /*finallyBlock*/ setEmitFlags(new Block([setEmitFlags(createIf(errorRecord, createThrow(createPropertyAccess(errorRecord, 'error'))), EmitFlags.SingleLine)]), EmitFlags.SingleLine)
           ),
         ])
       );
@@ -692,7 +687,7 @@ namespace core {
             undefined,
             /*parameters*/ [],
             undefined,
-            updateBlock(node.body!, visitLexicalEnvironment(node.body!.statements, visitor, context, statementOffset))
+            node.body!.update(visitLexicalEnvironment(node.body!.statements, visitor, context, statementOffset))
           ),
           !!(hierarchyFacts & HierarchyFacts.HasLexicalThis)
         )
@@ -712,7 +707,7 @@ namespace core {
       statements.push(returnStatement);
 
       insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
-      const block = updateBlock(node.body!, statements);
+      const block = node.body!.update(statements);
 
       if (emitSuperHelpers && hasSuperElementAccess) {
         if (resolver.getNodeCheckFlags(node) & NodeCheckFlags.AsyncMethodWithSuperBinding) {
@@ -744,7 +739,7 @@ namespace core {
         const block = convertToFunctionBody(body, /*multiLine*/ true);
         insertStatementsAfterStandardPrologue(statements, leadingStatements);
         addRange(statements, block.statements.slice(statementOffset));
-        return updateBlock(block, setRange(Nodes.create(statements), block.statements));
+        return block.update(setRange(Nodes.create(statements), block.statements));
       }
       return body;
     }

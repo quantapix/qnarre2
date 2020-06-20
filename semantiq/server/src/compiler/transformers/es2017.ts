@@ -455,7 +455,7 @@ namespace core {
           }
         }
 
-        const block = createBlock(statements, /*multiLine*/ true);
+        const block = new Block(statements, /*multiLine*/ true);
         setRange(block, node.body);
 
         if (emitSuperHelpers && hasSuperElementAccess) {
@@ -474,7 +474,7 @@ namespace core {
         const declarations = endLexicalEnvironment();
         if (some(declarations)) {
           const block = convertToFunctionBody(expression);
-          result = updateBlock(block, setRange(Nodes.create(concatenate(declarations, block.statements)), block.statements));
+          result = block.update(setRange(Nodes.create(concatenate(declarations, block.statements)), block.statements));
         } else {
           result = expression;
         }
@@ -490,7 +490,7 @@ namespace core {
 
     function transformAsyncFunctionBodyWorker(body: ConciseBody, start?: number) {
       if (Node.is.kind(Block, body)) {
-        return updateBlock(body, Nodes.visit(body.statements, asyncBodyVisitor, isStatement, start));
+        return body.update(Nodes.visit(body.statements, asyncBodyVisitor, isStatement, start));
       } else {
         return convertToFunctionBody(visitNode(body, asyncBodyVisitor, isConciseBody));
       }

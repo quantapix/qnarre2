@@ -611,10 +611,10 @@ namespace core {
               if (i === 0) {
                 expr = copyExpr;
               } else {
-                expr = createBinary(expr!, Syntax.CommaToken, copyExpr);
+                expr = new BinaryExpression(expr!, Syntax.CommaToken, copyExpr);
               }
             }
-            returnExpression = createBinary(expr!, Syntax.CommaToken, returnExpression);
+            returnExpression = new BinaryExpression(expr!, Syntax.CommaToken, returnExpression);
           }
           return createReturn(returnExpression);
         }
@@ -781,7 +781,7 @@ namespace core {
 
       insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
 
-      const block = createBlock(setRange(Nodes.create(statements), /*location*/ node.members), /*multiLine*/ true);
+      const block = new Block(setRange(Nodes.create(statements), /*location*/ node.members), /*multiLine*/ true);
       setEmitFlags(block, EmitFlags.NoComments);
       return block;
     }
@@ -865,7 +865,7 @@ namespace core {
       const statementsArray = Nodes.create(statements);
       setRange(statementsArray, node.members);
 
-      const block = createBlock(statementsArray, /*multiLine*/ true);
+      const block = new Block(statementsArray, /*multiLine*/ true);
       setRange(block, node);
       setEmitFlags(block, EmitFlags.NoComments);
       return block;
@@ -1018,7 +1018,7 @@ namespace core {
         insertCaptureThisForNodeIfNeeded(prologue, constructor);
       }
 
-      const block = createBlock(setRange(Nodes.create(concatenate(prologue, statements)), /*location*/ constructor.body.statements), /*multiLine*/ true);
+      const block = new Block(setRange(Nodes.create(concatenate(prologue, statements)), /*location*/ constructor.body.statements), /*multiLine*/ true);
 
       setRange(block, constructor.body);
 
@@ -1192,7 +1192,7 @@ namespace core {
         createTypeCheck(getSynthesizedClone(name), 'undefined'),
         setEmitFlags(
           setRange(
-            createBlock([
+            new Block([
               createExpressionStatement(
                 setEmitFlags(
                   setRange(
@@ -1270,7 +1270,7 @@ namespace core {
         setRange(createVariableDeclarationList([createVariableDeclaration(temp, undefined, createLiteral(restIndex))]), parameter),
         setRange(createLessThan(temp, createPropertyAccess(new Identifier('arguments'), 'length')), parameter),
         setRange(createPostfixIncrement(temp), parameter),
-        createBlock([
+        new Block([
           startOnNewLine(
             setRange(
               createExpressionStatement(
@@ -1355,7 +1355,7 @@ namespace core {
             // Functions can be called or constructed, and may have a `this` due to
             // being a member or when calling an imported function via `other_1.f()`.
             newTarget = createConditional(
-              createLogicalAnd(setEmitFlags(createThis(), EmitFlags.NoSubstitution), createBinary(setEmitFlags(createThis(), EmitFlags.NoSubstitution), Syntax.InstanceOfKeyword, getLocalName(node))),
+              createLogicalAnd(setEmitFlags(createThis(), EmitFlags.NoSubstitution), new BinaryExpression(setEmitFlags(createThis(), EmitFlags.NoSubstitution), Syntax.InstanceOfKeyword, getLocalName(node))),
               createPropertyAccess(setEmitFlags(createThis(), EmitFlags.NoSubstitution), 'constructor'),
               createVoidZero()
             );
@@ -1740,7 +1740,7 @@ namespace core {
         return body;
       }
 
-      const block = createBlock(setRange(Nodes.create(statements), statementsLocation), multiLine);
+      const block = new Block(setRange(Nodes.create(statements), statementsLocation), multiLine);
       setRange(block, node.body);
       if (!multiLine && singleLine) {
         setEmitFlags(block, EmitFlags.SingleLine);
@@ -1843,7 +1843,7 @@ namespace core {
             if (Node.is.kind(BindingPattern, decl.name)) {
               assignment = flattenDestructuringAssignment(decl, visitor, context, FlattenLevel.All);
             } else {
-              assignment = createBinary(decl.name, Syntax.EqualsToken, visitNode(decl.initializer, visitor, isExpression));
+              assignment = new BinaryExpression(decl.name, Syntax.EqualsToken, visitNode(decl.initializer, visitor, isExpression));
               setRange(assignment, decl);
             }
 
@@ -2118,8 +2118,6 @@ namespace core {
           );
         }
       } else {
-        // Initializer is an expression. Emit the expression in the body, so that it's
-        // evaluated on every iteration.
         const assignment = createAssignment(initializer, boundValue);
         if (isDestructuringAssignment(assignment)) {
           aggregateTransformFlags(assignment);
@@ -2134,9 +2132,8 @@ namespace core {
         return createSyntheticBlockForConvertedStatements(addRange(statements, convertedLoopBodyStatements));
       } else {
         const statement = visitNode(node.statement, visitor, isStatement, liftToBlock);
-        if (Node.is.kind(Block, statement)) {
-          return updateBlock(statement, setRange(Nodes.create(concatenate(statements, statement.statements)), statement.statements));
-        } else {
+        if (Node.is.kind(Block, statement)) 
+          return statement.update(setRange(Nodes.create(concatenate(statements, statement.statements)), statement.statements));
           statements.push(statement);
           return createSyntheticBlockForConvertedStatements(statements);
         }
@@ -2144,7 +2141,7 @@ namespace core {
     }
 
     function createSyntheticBlockForConvertedStatements(statements: Statement[]) {
-      return setEmitFlags(createBlock(Nodes.create(statements), /*multiLine*/ true), EmitFlags.NoSourceMap | EmitFlags.NoTokenSourceMaps);
+      return setEmitFlags(new Block(Nodes.create(statements), /*multiLine*/ true), EmitFlags.NoSourceMap | EmitFlags.NoTokenSourceMaps);
     }
 
     function convertForOfStatementForArray(node: ForOfStatement, outermostLabeledStatement: LabeledStatement, convertedLoopBodyStatements: Statement[]): Statement {
@@ -2246,14 +2243,14 @@ namespace core {
       );
 
       return createTry(
-        createBlock([restoreEnclosingLabel(forStatement, outermostLabeledStatement, convertedLoopState && resetLabel)]),
+        new Block([restoreEnclosingLabel(forStatement, outermostLabeledStatement, convertedLoopState && resetLabel)]),
         createCatchClause(
           createVariableDeclaration(catchVariable),
-          setEmitFlags(createBlock([createExpressionStatement(createAssignment(errorRecord, createObjectLiteral([createPropertyAssignment('error', catchVariable)])))]), EmitFlags.SingleLine)
+          setEmitFlags(new Block([createExpressionStatement(createAssignment(errorRecord, createObjectLiteral([createPropertyAssignment('error', catchVariable)])))]), EmitFlags.SingleLine)
         ),
-        createBlock([
+        new Block([
           createTry(
-            /*tryBlock*/ createBlock([
+            /*tryBlock*/ new Block([
               setEmitFlags(
                 createIf(
                   createLogicalAnd(createLogicalAnd(result, createLogicalNot(createPropertyAccess(result, 'done'))), createAssignment(returnMethod, createPropertyAccess(iterator, 'return'))),
@@ -2263,7 +2260,7 @@ namespace core {
               ),
             ]),
             /*catchClause*/ undefined,
-            /*finallyBlock*/ setEmitFlags(createBlock([setEmitFlags(createIf(errorRecord, createThrow(createPropertyAccess(errorRecord, 'error'))), EmitFlags.SingleLine)]), EmitFlags.SingleLine)
+            /*finallyBlock*/ setEmitFlags(new Block([setEmitFlags(createIf(errorRecord, createThrow(createPropertyAccess(errorRecord, 'error'))), EmitFlags.SingleLine)]), EmitFlags.SingleLine)
           ),
         ])
       );
@@ -2435,7 +2432,7 @@ namespace core {
         if (convert) {
           loop = convert(node, outermostLabeledStatement, bodyFunction.part, ancestorFacts);
         } else {
-          const clone = convertIterationStatementCore(node, initializerFunction, createBlock(bodyFunction.part, /*multiLine*/ true));
+          const clone = convertIterationStatementCore(node, initializerFunction, new Block(bodyFunction.part, /*multiLine*/ true));
           aggregateTransformFlags(clone);
           loop = restoreEnclosingLabel(clone, outermostLabeledStatement, convertedLoopState && resetLabel);
         }
@@ -2673,7 +2670,7 @@ namespace core {
                   /*typeParameters*/ undefined,
                   /*parameters*/ undefined,
                   undefined,
-                  visitNode(createBlock(statements, /*multiLine*/ true), visitor, isBlock)
+                  visitNode(new Block(statements, /*multiLine*/ true), visitor, isBlock)
                 ),
                 emitFlags
               )
@@ -2762,7 +2759,7 @@ namespace core {
       copyOutParameters(currentState.loopOutParameters, LoopOutParameterFlags.Body, CopyDirection.ToOutParameter, statements);
       insertStatementsAfterStandardPrologue(statements, lexicalEnvironment);
 
-      const loopBody = createBlock(statements, /*multiLine*/ true);
+      const loopBody = new Block(statements, /*multiLine*/ true);
       if (Node.is.kind(Block, statement)) setOriginalNode(loopBody, statement);
 
       const containsYield = (node.statement.transformFlags & TransformFlags.ContainsYield) !== 0;
@@ -2818,7 +2815,7 @@ namespace core {
     function copyOutParameter(outParam: LoopOutParameter, copyDirection: CopyDirection): BinaryExpression {
       const source = copyDirection === CopyDirection.ToOriginal ? outParam.outParamName : outParam.originalName;
       const target = copyDirection === CopyDirection.ToOriginal ? outParam.originalName : outParam.outParamName;
-      return createBinary(target, Syntax.EqualsToken, source);
+      return new BinaryExpression(target, Syntax.EqualsToken, source);
     }
 
     function copyOutParameters(outParams: LoopOutParameter[], partFlags: LoopOutParameterFlags, copyDirection: CopyDirection, statements: Statement[]): void {
@@ -2865,11 +2862,11 @@ namespace core {
           } else {
             returnStatement = createReturn(createPropertyAccess(loopResultName, 'value'));
           }
-          statements.push(createIf(createBinary(createTypeOf(loopResultName), Syntax.Equals3Token, createLiteral('object')), returnStatement));
+          statements.push(createIf(new BinaryExpression(createTypeOf(loopResultName), Syntax.Equals3Token, createLiteral('object')), returnStatement));
         }
 
         if (state.nonLocalJumps! & Jump.Break) {
-          statements.push(createIf(createBinary(loopResultName, Syntax.Equals3Token, createLiteral('break')), createBreak()));
+          statements.push(createIf(new BinaryExpression(loopResultName, Syntax.Equals3Token, createLiteral('break')), createBreak()));
         }
 
         if (state.labeledNonLocalBreaks || state.labeledNonLocalContinues) {
@@ -3064,7 +3061,7 @@ namespace core {
 
     function addStatementToStartOfBlock(block: Block, statement: Statement): Block {
       const transformedStatements = Nodes.visit(block.statements, visitor, isStatement);
-      return updateBlock(block, [statement, ...transformedStatements]);
+      return block.update([statement, ...transformedStatements]);
     }
 
     /**
@@ -3300,7 +3297,7 @@ namespace core {
                   /*typeParameters*/ undefined,
                   func.parameters,
                   undefined,
-                  updateBlock(func.body, statements)
+                  func.body.update(statements)
                 )
               ),
               /*typeArguments*/ undefined,

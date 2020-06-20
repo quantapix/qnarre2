@@ -595,7 +595,7 @@ namespace core {
       operationLocations = savedOperationLocations;
       state = savedState;
 
-      return setRange(createBlock(statements, body.multiLine), body);
+      return setRange(new Block(statements, body.multiLine), body);
     }
 
     /**
@@ -704,7 +704,7 @@ namespace core {
         const operator = node.operatorToken.kind;
         if (isCompoundAssignment(operator)) {
           return setRange(
-            createAssignment(target, setRange(createBinary(cacheExpression(target), getNonAssignmentOperatorForCompoundAssignment(operator), visitNode(right, visitor, isExpression)), node)),
+            createAssignment(target, setRange(new BinaryExpression(cacheExpression(target), getNonAssignmentOperatorForCompoundAssignment(operator), visitNode(right, visitor, isExpression)), node)),
             node
           );
         } else {
@@ -2442,7 +2442,7 @@ namespace core {
             /*typeParameters*/ undefined,
             [createParameter(undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, state)],
             undefined,
-            createBlock(buildResult, /*multiLine*/ buildResult.length > 0)
+            new Block(buildResult, /*multiLine*/ buildResult.length > 0)
           ),
           EmitFlags.ReuseTempVariableScope
         )
@@ -2554,7 +2554,7 @@ namespace core {
           // surround the statements in generated `with` blocks to create the same environment.
           for (let i = withBlockStack.length - 1; i >= 0; i--) {
             const withBlock = withBlockStack[i];
-            statements = [createWith(withBlock.expression, createBlock(statements))];
+            statements = [createWith(withBlock.expression, new Block(statements))];
           }
         }
 

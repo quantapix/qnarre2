@@ -121,7 +121,7 @@ namespace core {
         createTypeCheck(getSynthesizedClone(name), 'undefined'),
         setEmitFlags(
           setRange(
-            createBlock([
+            new Block([
               createExpressionStatement(
                 setEmitFlags(
                   setRange(
@@ -150,7 +150,7 @@ namespace core {
     if (qa.some(declarations)) {
       const block = convertToFunctionBody(updated);
       const ss = mergeLexicalEnvironment(block.statements, declarations);
-      return updateBlock(block, ss);
+      return block.update(ss);
     }
     return updated;
   }
@@ -342,13 +342,7 @@ namespace core {
       case Syntax.ArrayBindingPattern:
         return n.update(nodesVisitor(n.elements, cb, isArrayBindingElement));
       case Syntax.BindingElement:
-        return BindingElement.update(
-          n,
-          visitNode(n.dot3Token, tokenVisitor, isToken),
-          visitNode(n.propertyName, cb, isPropertyName),
-          visitNode(n.name, cb, isBindingName),
-          visitNode(n.initializer, cb, isExpression)
-        );
+        return n.update(visitNode(n.dot3Token, tokenVisitor, isToken), visitNode(n.propertyName, cb, isPropertyName), visitNode(n.name, cb, isBindingName), visitNode(n.initializer, cb, isExpression));
       case Syntax.ArrayLiteralExpression:
         return n.update(nodesVisitor(n.elements, cb, isExpression));
       case Syntax.ObjectLiteralExpression:
@@ -409,13 +403,13 @@ namespace core {
       case Syntax.VoidExpression:
         return updateVoid(n, visitNode(n.expression, cb, isExpression));
       case Syntax.AwaitExpression:
-        return updateAwait(n, visitNode(n.expression, cb, isExpression));
+        return n.update(visitNode(n.expression, cb, isExpression));
       case Syntax.PrefixUnaryExpression:
         return updatePrefix(n, visitNode(n.operand, cb, isExpression));
       case Syntax.PostfixUnaryExpression:
         return updatePostfix(n, visitNode(n.operand, cb, isExpression));
       case Syntax.BinaryExpression:
-        return updateBinary(n, visitNode(n.left, cb, isExpression), visitNode(n.right, cb, isExpression), visitNode(n.operatorToken, tokenVisitor, isToken));
+        return n.update(visitNode(n.left, cb, isExpression), visitNode(n.right, cb, isExpression), visitNode(n.operatorToken, tokenVisitor, isToken));
       case Syntax.ConditionalExpression:
         return updateConditional(
           n,
@@ -448,12 +442,10 @@ namespace core {
         return updateNonNullExpression(n, visitNode(n.expression, cb, isExpression));
       case Syntax.MetaProperty:
         return updateMetaProperty(n, visitNode(n.name, cb, isIdentifier));
-      // Misc
       case Syntax.TemplateSpan:
         return updateTemplateSpan(n, visitNode(n.expression, cb, isExpression), visitNode(n.literal, cb, TemplateMiddle.kindOrTemplateTail));
-      // Element
       case Syntax.Block:
-        return updateBlock(n, nodesVisitor(n.statements, cb, isStatement));
+        return n.update(nodesVisitor(n.statements, cb, isStatement));
       case Syntax.VariableStatement:
         return updateVariableStatement(n, nodesVisitor(n.modifiers, cb, isModifier), visitNode(n.declarationList, cb, isVariableDeclarationList));
       case Syntax.ExpressionStatement:
@@ -1105,6 +1097,6 @@ namespace core {
   }
   export function liftToBlock(ns: readonly Node[]): Statement {
     qa.assert(every(ns, isStatement), 'Cannot lift nodes to a Block.');
-    return (qa.singleOrUndefined(ns) as Statement) || createBlock(<Nodes<Statement>>ns);
+    return (qa.singleOrUndefined(ns) as Statement) || new Block(<Nodes<Statement>>ns);
   }
 }

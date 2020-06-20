@@ -158,10 +158,10 @@ namespace core {
     }
 
     function createNotNullCondition(left: Expression, right: Expression, invert?: boolean) {
-      return createBinary(
-        createBinary(left, new Token(invert ? Syntax.Equals3Token : Syntax.ExclamationEquals2Token), createNull()),
+      return new BinaryExpression(
+        new BinaryExpression(left, new Token(invert ? Syntax.Equals3Token : Syntax.ExclamationEquals2Token), createNull()),
         new Token(invert ? Syntax.Bar2Token : Syntax.Ampersand2Token),
-        createBinary(right, new Token(invert ? Syntax.Equals3Token : Syntax.ExclamationEquals2Token), createVoidZero())
+        new BinaryExpression(right, new Token(invert ? Syntax.Equals3Token : Syntax.ExclamationEquals2Token), createVoidZero())
       );
     }
 

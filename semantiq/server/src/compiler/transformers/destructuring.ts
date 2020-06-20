@@ -483,7 +483,7 @@ namespace core {
   }
 
   function makeBindingElement(name: Identifier) {
-    return BindingElement.create(/*dot3Token*/ undefined, /*propertyName*/ undefined, name);
+    return new BindingElement(/*dot3Token*/ undefined, /*propertyName*/ undefined, name);
   }
 
   function makeAssignmentElement(name: Identifier) {

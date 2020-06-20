@@ -1854,7 +1854,7 @@ namespace core {
 
       // End the lexical environment.
       statements = mergeLexicalEnvironment(statements, endLexicalEnvironment());
-      const block = createBlock(setRange(Nodes.create(statements), body.statements), /*multiLine*/ true);
+      const block = new Block(setRange(Nodes.create(statements), body.statements), /*multiLine*/ true);
       setRange(block, /*location*/ body);
       setOriginalNode(block, body);
       return block;
@@ -1930,7 +1930,7 @@ namespace core {
         visitPropertyNameOfClassElement(node),
         visitParameterList(node.parameters, visitor, context),
         undefined,
-        visitFunctionBody(node.body, visitor, context) || createBlock([])
+        visitFunctionBody(node.body, visitor, context) || new Block([])
       );
       if (updated !== node) {
         // While we emit the source map for the node after skipping decorators and modifiers,
@@ -1951,7 +1951,7 @@ namespace core {
         Nodes.visit(node.modifiers, modifierVisitor, isModifier),
         visitPropertyNameOfClassElement(node),
         visitParameterList(node.parameters, visitor, context),
-        visitFunctionBody(node.body, visitor, context) || createBlock([])
+        visitFunctionBody(node.body, visitor, context) || new Block([])
       );
       if (updated !== node) {
         // While we emit the source map for the node after skipping decorators and modifiers,
@@ -1975,7 +1975,7 @@ namespace core {
         undefined,
         visitParameterList(node.parameters, visitor, context),
         undefined,
-        visitFunctionBody(node.body, visitor, context) || createBlock([])
+        visitFunctionBody(node.body, visitor, context) || new Block([])
       );
       if (isExportOfNamespace(node)) {
         const statements: Statement[] = [updated];
@@ -1997,7 +1997,7 @@ namespace core {
         undefined,
         visitParameterList(node.parameters, visitor, context),
         undefined,
-        visitFunctionBody(node.body, visitor, context) || createBlock([])
+        visitFunctionBody(node.body, visitor, context) || new Block([])
       );
       return updated;
     }
@@ -2241,7 +2241,7 @@ namespace core {
       addRange(statements, members);
 
       currentNamespaceContainerName = savedCurrentNamespaceLocalName;
-      return createBlock(setRange(Nodes.create(statements), /*location*/ node.members), /*multiLine*/ true);
+      return new Block(setRange(Nodes.create(statements), /*location*/ node.members), /*multiLine*/ true);
     }
 
     /**
@@ -2529,7 +2529,7 @@ namespace core {
       currentNamespace = savedCurrentNamespace;
       currentScopeFirstDeclarationsOfName = savedCurrentScopeFirstDeclarationsOfName;
 
-      const block = createBlock(setRange(Nodes.create(statements), /*location*/ statementsLocation), /*multiLine*/ true);
+      const block = new Block(setRange(Nodes.create(statements), /*location*/ statementsLocation), /*multiLine*/ true);
       setRange(block, blockLocation);
 
       // namespace hello.hi.world {

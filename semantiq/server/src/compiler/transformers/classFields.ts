@@ -192,7 +192,10 @@ namespace core {
 
           const existingValue = createPrefix(Syntax.PlusToken, createPrivateIdentifierAccess(info, readExpression));
 
-          return setOriginalNode(createPrivateIdentifierAssignment(info, initializeExpression || readExpression, createBinary(existingValue, operator, createLiteral(1)), Syntax.EqualsToken), node);
+          return setOriginalNode(
+            createPrivateIdentifierAssignment(info, initializeExpression || readExpression, new BinaryExpression(existingValue, operator, createLiteral(1)), Syntax.EqualsToken),
+            node
+          );
         }
       }
       return visitEachChild(node, visitor, context);
@@ -217,7 +220,7 @@ namespace core {
                 createPrivateIdentifierAssignment(
                   info,
                   initializeExpression || readExpression,
-                  createBinary(returnValue ? createAssignment(returnValue, existingValue) : existingValue, operator, createLiteral(1)),
+                  new BinaryExpression(returnValue ? createAssignment(returnValue, existingValue) : existingValue, operator, createLiteral(1)),
                   Syntax.EqualsToken
                 ),
                 returnValue,
@@ -290,7 +293,7 @@ namespace core {
         if (isDestructuringAssignment(node)) {
           const savedPendingExpressions = pendingExpressions;
           pendingExpressions = undefined!;
-          node = updateBinary(node, visitNode(node.left, visitorDestructuringTarget), visitNode(node.right, visitor), node.operatorToken);
+          node = node.update(visitNode(node.left, visitorDestructuringTarget), visitNode(node.right, visitor), node.operatorToken);
           const expr = some(pendingExpressions) ? inlineExpressions(compact([...pendingExpressions!, node])) : node;
           pendingExpressions = savedPendingExpressions;
           return expr;
@@ -324,7 +327,7 @@ namespace core {
           context,
           initializeExpression || readExpression,
           info.weakMapName,
-          createBinary(createClassPrivateFieldGetHelper(context, readExpression, info.weakMapName), getNonAssignmentOperatorForCompoundAssignment(operator), right)
+          new BinaryExpression(createClassPrivateFieldGetHelper(context, readExpression, info.weakMapName), getNonAssignmentOperatorForCompoundAssignment(operator), right)
         );
       } else {
         return createClassPrivateFieldSetHelper(context, receiver, info.weakMapName, right);
@@ -534,7 +537,7 @@ namespace core {
       statements = mergeLexicalEnvironment(statements, endLexicalEnvironment());
 
       return setRange(
-        createBlock(setRange(Nodes.create(statements), /*location*/ constructor ? constructor.body!.statements : node.members), /*multiLine*/ true),
+        new Block(setRange(Nodes.create(statements), /*location*/ constructor ? constructor.body!.statements : node.members), /*multiLine*/ true),
         /*location*/ constructor ? constructor.body : undefined
       );
     }
@@ -735,7 +738,7 @@ namespace core {
       if (Node.is.thisProperty(node) || Node.is.superProperty(node) || !isSimpleCopiableExpression(node.expression)) {
         receiver = createTempVariable(hoistVariableDeclaration);
         (receiver as Identifier).autoGenerateFlags! |= GeneratedIdentifierFlags.ReservedInNestedScopes;
-        (pendingExpressions || (pendingExpressions = [])).push(createBinary(receiver, Syntax.EqualsToken, node.expression));
+        (pendingExpressions || (pendingExpressions = [])).push(new BinaryExpression(receiver, Syntax.EqualsToken, node.expression));
       }
       return createPropertyAccess(
         // Explicit parens required because of v8 regression (https://bugs.chromium.org/p/v8/issues/detail?id=9560)
@@ -746,7 +749,7 @@ namespace core {
               /*modifiers*/ undefined,
               'value',
               [createParameter(undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, parameter, /*questionToken*/ undefined, undefined, undefined)],
-              createBlock([createExpressionStatement(createPrivateIdentifierAssignment(info, receiver, parameter, Syntax.EqualsToken))])
+              new Block([createExpressionStatement(createPrivateIdentifierAssignment(info, receiver, parameter, Syntax.EqualsToken))])
             ),
           ])
         ),
@@ -759,7 +762,7 @@ namespace core {
       if (target && Node.is.privateIdentifierPropertyAccessExpression(target)) {
         const wrapped = wrapPrivateIdentifierForDestructuringTarget(target);
         if (isAssignmentExpression(node)) {
-          return updateBinary(node, wrapped, visitNode(node.right, visitor, isExpression), node.operatorToken);
+          return node.update(wrapped, visitNode(node.right, visitor, isExpression), node.operatorToken);
         } else if (Node.is.kind(SpreadElement, node)) {
           return updateSpread(node, wrapped);
         } else {

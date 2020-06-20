@@ -35,17 +35,8 @@ namespace core {
     left: LeftHandSideExpression;
     operatorToken: TOperator;
   }
-  export interface BigIntLiteral extends LiteralExpression {
-    kind: Syntax.BigIntLiteral;
-  }
   export interface BigIntLiteralType extends LiteralType {
     value: PseudoBigInt;
-  }
-  export interface BinaryExpression extends Expression, Declaration {
-    kind: Syntax.BinaryExpression;
-    left: Expression;
-    operatorToken: BinaryOperatorToken;
-    right: Expression;
   }
   export interface BindablePropertyAssignmentExpression extends BinaryExpression {
     left: BindableAccessExpression;
@@ -53,42 +44,9 @@ namespace core {
   export interface BindableStaticPropertyAssignmentExpression extends BinaryExpression {
     left: BindableStaticAccessExpression;
   }
-  export interface BindingElement extends NamedDeclaration {
-    kind: Syntax.BindingElement;
-    parent: BindingPattern;
-    propertyName?: PropertyName;
-    dot3Token?: Dot3Token;
-    name: BindingName;
-    initializer?: Expression;
-  }
-  export type BindingOrAssignmentElement =
-    | VariableDeclaration
-    | ParameterDeclaration
-    | BindingElement
-    | PropertyAssignment
-    | ShorthandPropertyAssignment
-    | SpreadAssignment
-    | OmittedExpression
-    | SpreadElement
-    | ArrayLiteralExpression
-    | ObjectLiteralExpression
-    | AssignmentExpression<EqualsToken>
-    | Identifier
-    | PropertyAccessExpression
-    | ElementAccessExpression;
-  export type BindingOrAssignmentElementRestIndicator = Dot3Token | SpreadElement | SpreadAssignment;
-  export type BindingOrAssignmentElementTarget = BindingOrAssignmentPattern | Identifier | PropertyAccessExpression | ElementAccessExpression | OmittedExpression;
   export interface BooleanLiteral extends PrimaryExpression, TypeNode {
     kind: Syntax.TrueKeyword | Syntax.FalseKeyword;
   }
-  export type BindingOrAssignmentPattern = ObjectBindingOrAssignmentPattern | ArrayBindingOrAssignmentPattern;
-  export type BindingPattern = ArrayBindingPattern | ObjectBindingPattern;
-  export interface Block extends Statement {
-    kind: Syntax.Block;
-    statements: Nodes<Statement>;
-    multiLine?: boolean;
-  }
-  export type BlockLike = SourceFile | Block | ModuleBlock | CaseOrDefaultClause;
   export interface BreakStatement extends Statement {
     kind: Syntax.BreakStatement;
     label?: Identifier;

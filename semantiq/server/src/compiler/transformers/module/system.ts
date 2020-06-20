@@ -256,14 +256,14 @@ namespace core {
             /*typeParameters*/ undefined,
             /*parameters*/ [],
             undefined,
-            createBlock(executeStatements, /*multiLine*/ true)
+            new Block(executeStatements, /*multiLine*/ true)
           )
         ),
       ]);
 
       moduleObject.multiLine = true;
       statements.push(createReturn(moduleObject));
-      return createBlock(statements, /*multiLine*/ true);
+      return new Block(statements, /*multiLine*/ true);
     }
 
     /**
@@ -371,13 +371,13 @@ namespace core {
         /*typeParameters*/ undefined,
         [createParameter(undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, m)],
         undefined,
-        createBlock(
+        new Block(
           [
             createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([createVariableDeclaration(exports, undefined, createObjectLiteral([]))])),
             createForIn(
               createVariableDeclarationList([createVariableDeclaration(n, undefined)]),
               m,
-              createBlock([setEmitFlags(createIf(condition, createExpressionStatement(createAssignment(createElementAccess(exports, n), createElementAccess(m, n)))), EmitFlags.SingleLine)])
+              new Block([setEmitFlags(createIf(condition, createExpressionStatement(createAssignment(createElementAccess(exports, n), createElementAccess(m, n)))), EmitFlags.SingleLine)])
             ),
             createExpressionStatement(createCall(exportFunction, /*typeArguments*/ undefined, [exports])),
           ],
@@ -457,7 +457,7 @@ namespace core {
             /*typeParameters*/ undefined,
             [createParameter(undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, parameterName)],
             undefined,
-            createBlock(statements, /*multiLine*/ true)
+            new Block(statements, /*multiLine*/ true)
           )
         );
       }

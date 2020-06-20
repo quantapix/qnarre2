@@ -217,11 +217,11 @@ namespace core {
         [createParameter(undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, 'factory')],
         undefined,
         setRange(
-          createBlock(
+          new Block(
             [
               createIf(
                 createLogicalAnd(createTypeCheck(new Identifier('module'), 'object'), createTypeCheck(createPropertyAccess(new Identifier('module'), 'exports'), 'object')),
-                createBlock([
+                new Block([
                   createVariableStatement(/*modifiers*/ undefined, [
                     createVariableDeclaration('v', undefined, createCall(new Identifier('factory'), /*typeArguments*/ undefined, [new Identifier('require'), new Identifier('exports')])),
                   ]),
@@ -235,7 +235,7 @@ namespace core {
                 ]),
                 createIf(
                   createLogicalAnd(createTypeCheck(new Identifier('define'), 'function'), createPropertyAccess(new Identifier('define'), 'amd')),
-                  createBlock([
+                  new Block([
                     createExpressionStatement(
                       createCall(new Identifier('define'), /*typeArguments*/ undefined, [
                         // Add the module name (if provided).
@@ -405,7 +405,7 @@ namespace core {
       // and merge any new lexical declarations.
       insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
 
-      const body = createBlock(statements, /*multiLine*/ true);
+      const body = new Block(statements, /*multiLine*/ true);
       if (needUMDDynamicImportHelper) {
         addEmitHelper(body, dynamicImportUMDHelper);
       }
@@ -612,7 +612,7 @@ namespace core {
         createParameter(/*decorator*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, /*name*/ resolve),
         createParameter(/*decorator*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, /*name*/ reject),
       ];
-      const body = createBlock([
+      const body = new Block([
         createExpressionStatement(createCall(new Identifier('require'), /*typeArguments*/ undefined, [new ArrayLiteralExpression([arg || createOmittedExpression()]), resolve, reject])),
       ]);
 
@@ -662,7 +662,7 @@ namespace core {
           /*typeParameters*/ undefined,
           /*parameters*/ [],
           undefined,
-          createBlock([createReturn(requireCall)])
+          new Block([createReturn(requireCall)])
         );
 
         // if there is a lexical 'this' in the import call arguments, ensure we indicate
@@ -1384,7 +1384,7 @@ namespace core {
                     /*typeParameters*/ undefined,
                     /*parameters*/ [],
                     undefined,
-                    createBlock([createReturn(value)])
+                    new Block([createReturn(value)])
                   )
                 ),
               ]),
@@ -1605,7 +1605,7 @@ namespace core {
         if (exportedNames) {
           let expression: Expression =
             node.kind === Syntax.PostfixUnaryExpression
-              ? setRange(createBinary(node.operand, new Token(node.operator === Syntax.Plus2Token ? Syntax.PlusEqualsToken : Syntax.MinusEqualsToken), createLiteral(1)), /*location*/ node)
+              ? setRange(new BinaryExpression(node.operand, new Token(node.operator === Syntax.Plus2Token ? Syntax.PlusEqualsToken : Syntax.MinusEqualsToken), createLiteral(1)), /*location*/ node)
               : node;
           for (const exportName of exportedNames) {
             // Mark the node to prevent triggering this rule again.

@@ -5,28 +5,26 @@ namespace core {
       this.flags |= NodeFlags.Synthesized;
     }
   }
-
   export type ArrayBindingElement = BindingElement | OmittedExpression;
   export namespace ArrayBindingElement {
     export const also = [Syntax.BindingElement, Syntax.OmittedExpression];
   }
   export class ArrayBindingPattern extends Synthesized {
-    static readonly kind: Syntax.ArrayBindingPattern;
+    static readonly kind = Syntax.ArrayBindingPattern;
+    readonly kind = ArrayBindingPattern.kind;
     parent?: VariableDeclaration | ParameterDeclaration | BindingElement;
     elements: Nodes<ArrayBindingElement>;
     constructor(es: readonly ArrayBindingElement[]) {
       super();
       this.elements = Nodes.create(es);
     }
-    get kind() {
-      return ArrayBindingPattern.kind;
-    }
     update(es: readonly ArrayBindingElement[]): ArrayBindingPattern {
       return this.elements !== es ? new ArrayBindingPattern(es).updateFrom(this) : this;
     }
   }
   export class ArrayLiteralExpression extends Synthesized implements PrimaryExpression {
-    static readonly kind: Syntax.ArrayLiteralExpression;
+    static readonly kind = Syntax.ArrayLiteralExpression;
+    readonly kind = ArrayLiteralExpression.kind;
     elements: Nodes<Expression>;
     multiLine?: boolean;
     constructor(es?: readonly Expression[], multiLine?: boolean) {
@@ -34,29 +32,25 @@ namespace core {
       this.elements = parenthesizeListElements(Nodes.create(es));
       if (multiLine) this.multiLine = true;
     }
-    get kind() {
-      return ArrayLiteralExpression.kind;
-    }
     update(es: readonly Expression[]): ArrayLiteralExpression {
       return this.elements !== es ? new ArrayLiteralExpression(es, this.multiLine).updateFrom(this) : this;
     }
   }
   export class ArrayTypeNode extends Synthesized implements TypeNode {
-    static readonly kind: Syntax.ArrayType;
+    static readonly kind = Syntax.ArrayType;
+    readonly kind = ArrayTypeNode.kind;
     elementType: TypeNode;
     constructor(t: TypeNode) {
       super();
       this.elementType = parenthesizeArrayTypeMember(t);
-    }
-    get kind() {
-      return ArrayTypeNode.kind;
     }
     update(t: TypeNode): ArrayTypeNode {
       return this.elementType !== t ? new ArrayTypeNode(t).updateFrom(this) : this;
     }
   }
   export class ArrowFunction extends Synthesized implements Expression, FunctionLikeDeclarationBase, JSDocContainer {
-    static readonly kind: Syntax.ArrowFunction;
+    static readonly kind = Syntax.ArrowFunction;
+    readonly kind = ArrowFunction.kind;
     equalsGreaterThanToken: EqualsGreaterThanToken;
     body: ConciseBody;
     name: never;
@@ -75,9 +69,6 @@ namespace core {
       this.type = type;
       this.equalsGreaterThanToken = equalsGreaterThanToken || new Token(Syntax.EqualsGreaterThanToken);
       this.body = parenthesizeConciseBody(body);
-    }
-    get kind() {
-      return ArrowFunction.kind;
     }
     update(
       modifiers: readonly Modifier[] | undefined,
@@ -99,15 +90,13 @@ namespace core {
   }
   export class AsExpression extends Synthesized implements Expression {
     static readonly kind = Syntax.AsExpression;
+    readonly kind = AsExpression.kind;
     expression: Expression;
     type: TypeNode;
     constructor(e: Expression, t: TypeNode) {
       super();
       this.expression = e;
       this.type = t;
-    }
-    get kind() {
-      return AsExpression.kind;
     }
     update(e: Expression, t: TypeNode) {
       return this.expression !== e || this.type !== t ? new AsExpression(e, t).updateFrom(this) : this;
@@ -120,93 +109,120 @@ namespace core {
   }
   export class AwaitExpression extends Synthesized implements UnaryExpression {
     static readonly kind = Syntax.AwaitExpression;
+    readonly kind = AwaitExpression.kind;
     expression: UnaryExpression;
     constructor(e: Expression) {
       super();
       this.expression = parenthesizePrefixOperand(e);
     }
-    get kind() {
-      return AwaitExpression.kind;
-    }
-    updateAwait(e: Expression) {
-      return this.expression !== e ? updateNode(new AwaitExpression(e), this) : this;
+    update(e: Expression) {
+      return this.expression !== e ? new AwaitExpression(e).updateFrom(this) : this;
     }
   }
-  export namespace BigIntLiteral {
-    export const kind = Syntax.BigIntLiteral;
-    export function create(t: string) {
-      const n = Node.createSynthesized(Syntax.BigIntLiteral);
-      n.text = t;
-      return n;
+  export class BigIntLiteral extends Synthesized implements LiteralExpression {
+    static readonly kind: Syntax.BigIntLiteral;
+    readonly kind = BigIntLiteral.kind;
+    text: string;
+    isUnterminated?: boolean;
+    hasExtendedEscape?: boolean;
+    constructor(t: string) {
+      super();
+      this.text = t;
     }
-    export function expression(e: Expression) {
+    expression(e: Expression) {
       return (
         e.kind === Syntax.BigIntLiteral ||
         (e.kind === Syntax.PrefixUnaryExpression && (e as PrefixUnaryExpression).operator === Syntax.MinusToken && (e as PrefixUnaryExpression).operand.kind === Syntax.BigIntLiteral)
       );
     }
   }
-  export namespace BinaryExpression {
-    export const kind = Syntax.BinaryExpression;
-    export function createBinary(left: Expression, operator: BinaryOperator | BinaryOperatorToken, right: Expression) {
-      const node = <BinaryExpression>Node.createSynthesized(Syntax.BinaryExpression);
-      const operatorToken = asToken(operator);
-      const operatorKind = operatorToken.kind;
-      node.left = parenthesizeBinaryOperand(operatorKind, left, true, undefined);
-      node.operatorToken = operatorToken;
-      node.right = parenthesizeBinaryOperand(operatorKind, right, false, node.left);
-      return node;
+  export class BinaryExpression extends Synthesized implements Expression, Declaration {
+    static readonly kind = Syntax.BinaryExpression;
+    readonly kind = BinaryExpression.kind;
+    left: Expression;
+    operatorToken: BinaryOperatorToken;
+    right: Expression;
+    constructor(left: Expression, op: BinaryOperator | BinaryOperatorToken, right: Expression) {
+      super();
+      const t = asToken(op);
+      const k = t.kind;
+      this.left = parenthesizeBinaryOperand(k, left, true, undefined);
+      this.operatorToken = t;
+      this.right = parenthesizeBinaryOperand(k, right, false, this.left);
     }
-    export function updateBinary(node: BinaryExpression, left: Expression, right: Expression, operator: BinaryOperator | BinaryOperatorToken = node.operatorToken) {
-      return node.left !== left || node.right !== right || node.operatorToken !== operator ? updateNode(createBinary(left, operator, right), node) : node;
+    _expressionBrand: any;
+    update(l: Expression, r: Expression, o: BinaryOperator | BinaryOperatorToken = this.operatorToken) {
+      return this.left !== l || this.right !== r || this.operatorToken !== o ? new BinaryExpression(l, o, r).updateFrom(this) : this;
     }
-    export function createStrictEquality(left: Expression, right: Expression) {
-      return createBinary(left, Syntax.Equals3Token, right);
+    static createStrictEquality(left: Expression, right: Expression) {
+      return new BinaryExpression(left, Syntax.Equals3Token, right);
     }
-    export function createStrictInequality(left: Expression, right: Expression) {
-      return createBinary(left, Syntax.ExclamationEquals2Token, right);
+    static createStrictInequality(left: Expression, right: Expression) {
+      return new BinaryExpression(left, Syntax.ExclamationEquals2Token, right);
     }
-    export function createAdd(left: Expression, right: Expression) {
-      return createBinary(left, Syntax.PlusToken, right);
+    static createAdd(left: Expression, right: Expression) {
+      return new BinaryExpression(left, Syntax.PlusToken, right);
     }
-    export function createSubtract(left: Expression, right: Expression) {
-      return createBinary(left, Syntax.MinusToken, right);
+    static createSubtract(left: Expression, right: Expression) {
+      return new BinaryExpression(left, Syntax.MinusToken, right);
     }
-    export function createLogicalAnd(left: Expression, right: Expression) {
-      return createBinary(left, Syntax.Ampersand2Token, right);
+    static createLogicalAnd(left: Expression, right: Expression) {
+      return new BinaryExpression(left, Syntax.Ampersand2Token, right);
     }
-    export function createLogicalOr(left: Expression, right: Expression) {
-      return createBinary(left, Syntax.Bar2Token, right);
+    static createLogicalOr(left: Expression, right: Expression) {
+      return new BinaryExpression(left, Syntax.Bar2Token, right);
     }
-    export function createNullishCoalesce(left: Expression, right: Expression) {
-      return createBinary(left, Syntax.Question2Token, right);
+    static createNullishCoalesce(left: Expression, right: Expression) {
+      return new BinaryExpression(left, Syntax.Question2Token, right);
     }
-    export function createComma(left: Expression, right: Expression) {
-      return <Expression>createBinary(left, Syntax.CommaToken, right);
+    static createComma(left: Expression, right: Expression) {
+      return <Expression>new BinaryExpression(left, Syntax.CommaToken, right);
     }
-    export function createLessThan(left: Expression, right: Expression) {
-      return <Expression>createBinary(left, Syntax.LessThanToken, right);
+    static createLessThan(left: Expression, right: Expression) {
+      return <Expression>new BinaryExpression(left, Syntax.LessThanToken, right);
     }
-    export function createAssignment(left: ObjectLiteralExpression | ArrayLiteralExpression, right: Expression): DestructuringAssignment;
-    export function createAssignment(left: Expression, right: Expression): BinaryExpression;
-    export function createAssignment(left: Expression, right: Expression) {
-      return createBinary(left, Syntax.EqualsToken, right);
-    }
-  }
-  export namespace BindingElement {
-    export const kind = Syntax.BindingElement;
-    export function create(d: Dot3Token | undefined, p: string | PropertyName | undefined, b: string | BindingName, i?: Expression) {
-      const n = Node.createSynthesized(Syntax.BindingElement);
-      n.dot3Token = d;
-      n.propertyName = asName(p);
-      n.name = asName(b);
-      n.initializer = i;
-      return n;
-    }
-    export function update(n: BindingElement, d: Dot3Token | undefined, p: PropertyName | undefined, b: BindingName, i?: Expression) {
-      return n.propertyName !== p || n.dot3Token !== d || n.name !== b || n.initializer !== i ? updateNode(create(d, p, b, i), n) : n;
+    static createAssignment(left: ObjectLiteralExpression | ArrayLiteralExpression, right: Expression): DestructuringAssignment;
+    static createAssignment(left: Expression, right: Expression): BinaryExpression;
+    static createAssignment(left: Expression, right: Expression) {
+      return new BinaryExpression(left, Syntax.EqualsToken, right);
     }
   }
+  export class BindingElement extends Synthesized implements NamedDeclaration {
+    static readonly kind = Syntax.BindingElement;
+    readonly kind = BindingElement.kind;
+    parent: BindingPattern;
+    propertyName?: PropertyName;
+    dot3Token?: Dot3Token;
+    name: BindingName;
+    initializer?: Expression;
+    constructor(d: Dot3Token | undefined, p: string | PropertyName | undefined, b: string | BindingName, i?: Expression) {
+      super();
+      this.dot3Token = d;
+      this.propertyName = asName(p);
+      this.name = asName(b);
+      this.initializer = i;
+    }
+    update(d: Dot3Token | undefined, p: PropertyName | undefined, b: BindingName, i?: Expression) {
+      return this.propertyName !== p || this.dot3Token !== d || this.name !== b || this.initializer !== i ? new BindingElement(d, p, b, i).updateFrom(this) : this;
+    }
+  }
+  export type BindingOrAssignmentElement =
+    | VariableDeclaration
+    | ParameterDeclaration
+    | BindingElement
+    | PropertyAssignment
+    | ShorthandPropertyAssignment
+    | SpreadAssignment
+    | OmittedExpression
+    | SpreadElement
+    | ArrayLiteralExpression
+    | ObjectLiteralExpression
+    | AssignmentExpression<EqualsToken>
+    | Identifier
+    | PropertyAccessExpression
+    | ElementAccessExpression;
+  export type BindingOrAssignmentElementRestIndicator = Dot3Token | SpreadElement | SpreadAssignment;
+  export type BindingOrAssignmentElementTarget = BindingOrAssignmentPattern | Identifier | PropertyAccessExpression | ElementAccessExpression | OmittedExpression;
   export namespace BindingOrAssignmentElement {
     export function getInitializerOfBindingOrAssignmentElement(bindingElement: BindingOrAssignmentElement): Expression | undefined {
       if (isDeclarationBindingElement(bindingElement)) {
@@ -394,6 +410,7 @@ namespace core {
       return <ObjectLiteralElementLike>element;
     }
   }
+  export type BindingOrAssignmentPattern = ObjectBindingOrAssignmentPattern | ArrayBindingOrAssignmentPattern;
   export namespace BindingOrAssignmentPattern {
     export function getElementsOfBindingOrAssignmentPattern(name: BindingOrAssignmentPattern): readonly BindingOrAssignmentElement[] {
       switch (name.kind) {
@@ -439,26 +456,26 @@ namespace core {
       return node;
     }
   }
+  export type BindingPattern = ArrayBindingPattern | ObjectBindingPattern;
   export namespace BindingPattern {
     export const kind = Syntax.ArrayBindingPattern;
     export const also = [Syntax.ObjectBindingPattern];
-    export function isEmptyBindingPattern(n: BindingName): n is BindingPattern {
-      if (Node.is.kind(BindingPattern, n)) return every(n.elements, isEmptyBindingElement);
-      return false;
+  }
+  export class Block extends Synthesized implements Statement {
+    static readonly kind = Syntax.Block;
+    readonly kind = Block.kind;
+    statements: Nodes<Statement>;
+    multiLine?: boolean;
+    constructor(ss: readonly Statement[], multiLine?: boolean) {
+      super();
+      this.statements = Nodes.create(ss);
+      if (multiLine) this.multiLine = multiLine;
+    }
+    update(ss: readonly Statement[]) {
+      return this.statements !== ss ? new Block(ss, this.multiLine).updateFrom(this) : this;
     }
   }
-  export namespace Block {
-    export const kind = Syntax.Block;
-    export function createBlock(statements: readonly Statement[], multiLine?: boolean): Block {
-      const block = <Block>Node.createSynthesized(Syntax.Block);
-      block.statements = Nodes.create(statements);
-      if (multiLine) block.multiLine = multiLine;
-      return block;
-    }
-    export function updateBlock(node: Block, statements: readonly Statement[]) {
-      return node.statements !== statements ? updateNode(createBlock(statements, node.multiLine), node) : node;
-    }
-  }
+  export type BlockLike = SourceFile | Block | ModuleBlock | CaseOrDefaultClause;
   export namespace BreakStatement {
     export const kind = Syntax.BreakStatement;
     export function createBreak(label?: string | Identifier): BreakStatement {
@@ -613,15 +630,7 @@ namespace core {
     export function createImmediatelyInvokedFunctionExpression(statements: readonly Statement[], param: ParameterDeclaration, paramValue: Expression): CallExpression;
     export function createImmediatelyInvokedFunctionExpression(statements: readonly Statement[], param?: ParameterDeclaration, paramValue?: Expression) {
       return createCall(
-        createFunctionExpression(
-          undefined,
-          /*asteriskToken*/ undefined,
-          /*name*/ undefined,
-          /*typeParameters*/ undefined,
-          /*parameters*/ param ? [param] : [],
-          undefined,
-          createBlock(statements, true)
-        ),
+        createFunctionExpression(undefined, /*asteriskToken*/ undefined, /*name*/ undefined, /*typeParameters*/ undefined, /*parameters*/ param ? [param] : [], undefined, new Block(statements, true)),
         undefined,
         /*argumentsArray*/ paramValue ? [paramValue] : []
       );
@@ -631,7 +640,7 @@ namespace core {
     export function createImmediatelyInvokedArrowFunction(statements: readonly Statement[], param: ParameterDeclaration, paramValue: Expression): CallExpression;
     export function createImmediatelyInvokedArrowFunction(statements: readonly Statement[], param?: ParameterDeclaration, paramValue?: Expression) {
       return createCall(
-        new ArrowFunction(undefined, /*typeParameters*/ undefined, /*parameters*/ param ? [param] : [], undefined, /*equalsGreaterThanToken*/ undefined, createBlock(statements, true)),
+        new ArrowFunction(undefined, /*typeParameters*/ undefined, /*parameters*/ param ? [param] : [], undefined, /*equalsGreaterThanToken*/ undefined, new Block(statements, true)),
         undefined,
         /*argumentsArray*/ paramValue ? [paramValue] : []
       );
@@ -3001,9 +3010,9 @@ namespace core {
     }
     export function insertLeadingStatement(dest: Statement, source: Statement) {
       if (Node.is.kind(Block, dest)) {
-        return updateBlock(dest, setRange(Nodes.create([source, ...dest.statements]), dest.statements));
+        return dest.update(setRange(Nodes.create([source, ...dest.statements]), dest.statements));
       } else {
-        return createBlock(Nodes.create([dest, source]), true);
+        return new Block(Nodes.create([dest, source]), true);
       }
     }
     export function restoreEnclosingLabel(node: Statement, outermostLabeledStatement: LabeledStatement | undefined, afterRestoreLabelCallback?: (node: LabeledStatement) => void): Statement {
@@ -4469,7 +4478,7 @@ namespace core {
     }
 
     export function convertToFunctionBody(node: ConciseBody, multiLine?: boolean): Block {
-      return Node.is.kind(Block, node) ? node : setRange(createBlock([setRange(createReturn(node), node)], multiLine), node);
+      return Node.is.kind(Block, node) ? node : setRange(new Block([setRange(createReturn(node), node)], multiLine), node);
     }
 
     export function convertFunctionDeclarationToExpression(node: FunctionDeclaration) {

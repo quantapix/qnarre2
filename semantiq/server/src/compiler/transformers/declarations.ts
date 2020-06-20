@@ -442,7 +442,7 @@ namespace core {
         if (elem.kind === Syntax.OmittedExpression) {
           return elem;
         }
-        return BindingElement.update(elem, elem.dot3Token, elem.propertyName, filterBindingPatternInitializers(elem.name), shouldPrintWithInitializer(elem) ? elem.initializer : undefined);
+        return elem.update(elem.dot3Token, elem.propertyName, filterBindingPatternInitializers(elem.name), shouldPrintWithInitializer(elem) ? elem.initializer : undefined);
       }
     }
 
@@ -1402,10 +1402,10 @@ namespace core {
     }
 
     function recreateBindingPattern(d: BindingPattern): VariableDeclaration[] {
-      return flatten<VariableDeclaration>(mapDefined(d.elements, (e) => reBindingElement.create(e)));
+      return flatten<VariableDeclaration>(mapDefined(d.elements, (e) => renew BindingElement(e)));
     }
 
-    function reBindingElement.create(e: ArrayBindingElement) {
+    function renew BindingElement(e: ArrayBindingElement) {
       if (e.kind === Syntax.OmittedExpression) {
         return;
       }

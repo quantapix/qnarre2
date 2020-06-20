@@ -53,7 +53,7 @@ namespace core {
   export type NodeType<S extends Syntax> = S extends keyof SynMap ? SynMap[S] : never;
   export class Node extends TextRange {
     static readonly kind: Syntax = Syntax.Unknown;
-    private readonly _kind?: Syntax;
+    readonly kind!: Syntax;
     id = 0;
     flags = NodeFlags.None;
     modifierFlagsCache = ModifierFlags.None;
@@ -72,13 +72,10 @@ namespace core {
     jsDoc?: JSDoc[];
     private _children?: Node[];
 
-    constructor(kind?: Syntax, pos?: number, end?: number, public parent?: Node) {
+    constructor(public readonly k?: Syntax, pos?: number, end?: number, public parent?: Node) {
       super(pos, end);
-      if (kind) this._kind = kind;
+      if (k) this.kind = k;
       if (parent) this.flags = parent.flags & NodeFlags.ContextFlags;
-    }
-    get kind() {
-      return this._kind!;
     }
     is<S extends Syntax, T extends { kind: S; also?: Syntax[] }>(t: T): this is NodeType<T['kind']> {
       return this.kind === t.kind || !!t.also?.includes(this.kind);
@@ -1698,6 +1695,10 @@ namespace core {
         if (Node.is.kind(OmittedExpression, n)) return true;
         return this.isEmptyBindingPattern(n.name);
       }
+      isEmptyBindingPattern(n: BindingName): n is BindingPattern {
+        if (Node.is.kind(BindingPattern, n)) return every(n.elements, this.isEmptyBindingElement);
+        return false;
+      }
       isExternalModuleNameRelative(moduleName: string) {
         return pathIsRelative(moduleName) || isRootedDiskPath(moduleName);
       }
@@ -2280,8 +2281,8 @@ namespace core {
     }
   }
   export class Token<T extends Syntax> extends TokenOrIdentifier implements Token<T> {
-    constructor(kind: T, pos?: number, end?: number) {
-      super(kind, pos, end);
+    constructor(k: T, pos?: number, end?: number) {
+      super(k, pos, end);
     }
   }
 
@@ -2292,7 +2293,8 @@ namespace core {
   }
 
   export class Identifier extends TokenOrIdentifier implements PrimaryExpression, Declaration {
-    static readonly kind: Syntax.Identifier;
+    static readonly kind = Syntax.Identifier;
+    readonly kind = Identifier.kind;
     escapedText!: __String;
     autoGenerateFlags = GeneratedIdentifierFlags.None;
     typeArguments?: Nodes<TypeNode | TypeParameterDeclaration>;
@@ -2304,15 +2306,12 @@ namespace core {
     constructor(t: string);
     constructor(t: string, typeArgs: readonly (TypeNode | TypeParameterDeclaration)[] | undefined);
     constructor(t: string, typeArgs?: readonly (TypeNode | TypeParameterDeclaration)[]) {
-      super(Syntax.Identifier);
+      super();
       this.escapedText = syntax.get.escUnderscores(t);
       this.originalKeywordKind = t ? syntax.fromString(t) : Syntax.Unknown;
       if (typeArgs) {
         this.typeArguments = Nodes.create(typeArgs as readonly TypeNode[]);
       }
-    }
-    get kind() {
-      return Identifier.kind;
     }
     get text(): string {
       return idText(this);
@@ -2407,15 +2406,14 @@ namespace core {
     _declarationBrand: any;
   }
   export class PrivateIdentifier extends TokenOrIdentifier {
-    static readonly kind: Syntax.PrivateIdentifier;
+    static readonly kind = Syntax.PrivateIdentifier;
+    readonly kind = PrivateIdentifier.kind;
+
     escapedText!: __String;
     constructor(t: string) {
-      super();
+      super(PrivateIdentifier.kind);
       if (t[0] !== '#') fail('First character of private identifier must be #: ' + t);
       this.escapedText = syntax.get.escUnderscores(t);
-    }
-    get kind() {
-      return PrivateIdentifier.kind;
     }
     get text(): string {
       return idText(this);
