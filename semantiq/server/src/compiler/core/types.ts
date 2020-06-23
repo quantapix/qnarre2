@@ -47,30 +47,6 @@ namespace core {
   export interface BooleanLiteral extends PrimaryExpression, TypeNode {
     kind: Syntax.TrueKeyword | Syntax.FalseKeyword;
   }
-  export interface BreakStatement extends Statement {
-    kind: Syntax.BreakStatement;
-    label?: Identifier;
-  }
-  export interface Bundle extends Node {
-    kind: Syntax.Bundle;
-    prepends: readonly (InputFiles | UnparsedSource)[];
-    sourceFiles: readonly SourceFile[];
-    syntheticFileReferences?: readonly FileReference[];
-    syntheticTypeReferences?: readonly FileReference[];
-    syntheticLibReferences?: readonly FileReference[];
-    hasNoDefaultLib?: boolean;
-  }
-  export interface CallBinding {
-    target: LeftHandSideExpression;
-    thisArg: Expression;
-  }
-  export interface CallExpression extends LeftHandSideExpression, Declaration {
-    kind: Syntax.CallExpression;
-    expression: LeftHandSideExpression;
-    questionDotToken?: QuestionDotToken;
-    typeArguments?: Nodes<TypeNode>;
-    arguments: Nodes<Expression>;
-  }
   export interface CallSignatureDeclaration extends SignatureDeclarationBase, TypeElement {
     kind: Syntax.CallSignature;
   }
@@ -130,88 +106,6 @@ namespace core {
     extendsType: TypeNode;
     trueType: TypeNode;
     falseType: TypeNode;
-  }
-  export interface ConstructorDeclaration extends FunctionLikeDeclarationBase, ClassElement, JSDocContainer {
-    kind: Syntax.Constructor;
-    parent: ClassLikeDeclaration;
-    body?: FunctionBody;
-  }
-  export interface ConstructorTypeNode extends FunctionOrConstructorTypeNodeBase {
-    kind: Syntax.ConstructorType;
-  }
-  export interface ConstructSignatureDeclaration extends SignatureDeclarationBase, TypeElement {
-    kind: Syntax.ConstructSignature;
-  }
-  export interface ContinueStatement extends Statement {
-    kind: Syntax.ContinueStatement;
-    label?: Identifier;
-  }
-  export interface DebuggerStatement extends Statement {
-    kind: Syntax.DebuggerStatement;
-  }
-  export interface Declaration extends Node {
-    _declarationBrand: any;
-  }
-  export interface Decorator extends Node {
-    kind: Syntax.Decorator;
-    parent: NamedDeclaration;
-    expression: LeftHandSideExpression;
-  }
-  export interface DefaultClause extends Node {
-    kind: Syntax.DefaultClause;
-    parent: CaseBlock;
-    statements: Nodes<Statement>;
-    fallthroughFlowNode?: FlowNode;
-  }
-  export interface DeleteExpression extends UnaryExpression {
-    kind: Syntax.DeleteExpression;
-    expression: UnaryExpression;
-  }
-  export interface DoStatement extends IterationStatement {
-    kind: Syntax.DoStatement;
-    expression: Expression;
-  }
-  export interface ElementAccessExpression extends MemberExpression {
-    kind: Syntax.ElementAccessExpression;
-    expression: LeftHandSideExpression;
-    questionDotToken?: QuestionDotToken;
-    argumentExpression: Expression;
-  }
-  export interface EmptyStatement extends Statement {
-    kind: Syntax.EmptyStatement;
-  }
-  export interface EndOfDeclarationMarker extends Statement {
-    kind: Syntax.EndOfDeclarationMarker;
-  }
-  export interface EnumDeclaration extends DeclarationStatement, JSDocContainer {
-    kind: Syntax.EnumDeclaration;
-    name: Identifier;
-    members: Nodes<EnumMember>;
-  }
-  export interface EnumMember extends NamedDeclaration, JSDocContainer {
-    kind: Syntax.EnumMember;
-    parent: EnumDeclaration;
-    name: PropertyName;
-    initializer?: Expression;
-  }
-  export interface ExportAssignment extends DeclarationStatement {
-    kind: Syntax.ExportAssignment;
-    parent: SourceFile;
-    isExportEquals?: boolean;
-    expression: Expression;
-  }
-  export interface ExportDeclaration extends DeclarationStatement, JSDocContainer {
-    kind: Syntax.ExportDeclaration;
-    parent: SourceFile | ModuleBlock;
-    isTypeOnly: boolean;
-    exportClause?: NamedExportBindings;
-    moduleSpecifier?: Expression;
-  }
-  export interface ExportSpecifier extends NamedDeclaration {
-    kind: Syntax.ExportSpecifier;
-    parent: NamedExports;
-    propertyName?: Identifier;
-    name: Identifier;
   }
   export interface Expression extends Node {
     _expressionBrand: any;
@@ -317,15 +211,6 @@ namespace core {
     body: FunctionBody;
   }
   export type FunctionLikeDeclaration = FunctionDeclaration | MethodDeclaration | GetAccessorDeclaration | SetAccessorDeclaration | ConstructorDeclaration | FunctionExpression | ArrowFunction;
-  export interface FunctionLikeDeclarationBase extends SignatureDeclarationBase {
-    _functionLikeDeclarationBrand: any;
-    asteriskToken?: AsteriskToken;
-    questionToken?: QuestionToken;
-    exclamationToken?: ExclamationToken;
-    body?: Block | Expression;
-    endFlowNode?: FlowNode;
-    returnFlowNode?: FlowNode;
-  }
   export type FunctionOrConstructorTypeNode = FunctionTypeNode | ConstructorTypeNode;
   export interface FunctionOrConstructorTypeNodeBase extends TypeNode, SignatureDeclarationBase {
     kind: Syntax.FunctionType | Syntax.ConstructorType;
@@ -800,9 +685,6 @@ namespace core {
     name: ModuleName;
     body?: ModuleBody | JSDocNamespaceDeclaration;
   }
-  export interface NamedDeclaration extends Declaration {
-    name?: DeclarationName;
-  }
   export interface NamedExports extends Node {
     kind: Syntax.NamedExports;
     parent: ExportDeclaration;
@@ -1015,14 +897,6 @@ namespace core {
     exclamationToken?: ExclamationToken;
     equalsToken?: Token<Syntax.EqualsToken>;
     objectAssignmentInitializer?: Expression;
-  }
-  export interface SignatureDeclarationBase extends NamedDeclaration, JSDocContainer {
-    kind: SignatureDeclaration['kind'];
-    name?: PropertyName;
-    typeParameters?: Nodes<TypeParameterDeclaration>;
-    parameters: Nodes<ParameterDeclaration>;
-    type?: TypeNode;
-    typeArguments?: Nodes<TypeNode>;
   }
   export type SignatureDeclaration =
     | CallSignatureDeclaration
@@ -2308,9 +2182,6 @@ namespace core {
     expression: EntityNameExpression;
     name: Identifier;
   }
-  export interface ElementAccessChain extends ElementAccessExpression {
-    _optionalChainBrand: any;
-  }
   export interface ElementAccessChainRoot extends ElementAccessChain {
     questionDotToken: QuestionDotToken;
   }
@@ -2318,9 +2189,6 @@ namespace core {
     expression: SuperExpression;
   }
   export type SuperProperty = SuperPropertyAccessExpression | SuperElementAccessExpression;
-  export interface CallChain extends CallExpression {
-    _optionalChainBrand: any;
-  }
   export interface CallChainRoot extends CallChain {
     questionDotToken: QuestionDotToken;
   }
