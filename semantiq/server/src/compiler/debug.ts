@@ -334,7 +334,7 @@ namespace core {
       if (isDebugInfoEnabled) return;
 
       // Add additional properties in debug mode to assist with debugging.
-      Object.defineProperties(Node.SymbolObj.prototype, {
+      Object.defineProperties(Node.Symbol.prototype, {
         __debugFlags: {
           get(this: Symbol) {
             return formatSymbolFlags(this.flags);

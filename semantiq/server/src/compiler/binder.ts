@@ -241,7 +241,7 @@ namespace core {
       symbolCount = 0;
       skipTransformFlagAggregation = file.isDeclarationFile;
 
-      Symbol = Node.SymbolObj;
+      Symbol = Node.Symbol;
 
       // Attach debugging information if necessary
       Debug.attachFlowNodeDebugInfo(unreachableFlow);

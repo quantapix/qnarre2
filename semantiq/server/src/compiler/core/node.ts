@@ -1153,6 +1153,19 @@ namespace core {
         const kind = node.kind;
         return kind === Syntax.StringLiteral || kind === Syntax.NumericLiteral;
       }
+      isSelfReferenceLocation(n: Node) {
+        switch (n.kind) {
+          case Syntax.FunctionDeclaration:
+          case Syntax.ClassDeclaration:
+          case Syntax.InterfaceDeclaration:
+          case Syntax.EnumDeclaration:
+          case Syntax.TypeAliasDeclaration:
+          case Syntax.ModuleDeclaration:
+            return true;
+          default:
+            return false;
+        }
+      }
     })();
     static readonly isJsx = new (class {
       tagName(n: Node) {
@@ -2417,68 +2430,6 @@ namespace core {
     }
     get text(): string {
       return idText(this);
-    }
-  }
-  interface SymbolDisplayPart {}
-  interface JSDocTagInfo {}
-  export class SymbolObj implements Symbol {
-    declarations!: Declaration[];
-    valueDeclaration!: Declaration;
-    docComment?: SymbolDisplayPart[];
-    getComment?: SymbolDisplayPart[];
-    setComment?: SymbolDisplayPart[];
-    tags?: JSDocTagInfo[];
-
-    constructor(public flags: SymbolFlags, public escName: __String) {}
-
-    get name(): string {
-      return symbolName(this);
-    }
-    getName(): string {
-      return this.name;
-    }
-    getEscName(): __String {
-      return this.escName;
-    }
-    getFlags(): SymbolFlags {
-      return this.flags;
-    }
-    getDeclarations(): Declaration[] | undefined {
-      return this.declarations;
-    }
-    getDocComment(checker: TypeChecker | undefined): SymbolDisplayPart[] {
-      if (!this.docComment) {
-        this.docComment = empty;
-        if (!this.declarations && ((this as Symbol) as TransientSymbol).target && (((this as Symbol) as TransientSymbol).target as TransientSymbol).tupleLabelDeclaration) {
-          const labelDecl = (((this as Symbol) as TransientSymbol).target as TransientSymbol).tupleLabelDeclaration!;
-          this.docComment = getDocComment([labelDecl], checker);
-        } else {
-          this.docComment = getDocComment(this.declarations, checker);
-        }
-      }
-      return this.docComment;
-    }
-    getCtxComment(context: Node | undefined, checker: TypeChecker | undefined): SymbolDisplayPart[] {
-      switch (context?.kind) {
-        case Syntax.GetAccessor:
-          if (!this.getComment) {
-            this.getComment = empty;
-            this.getComment = getDocComment(filter(this.declarations, isGetAccessor), checker);
-          }
-          return this.getComment;
-        case Syntax.SetAccessor:
-          if (!this.setComment) {
-            this.setComment = empty;
-            this.setComment = getDocComment(filter(this.declarations, isSetAccessor), checker);
-          }
-          return this.setComment;
-        default:
-          return this.getDocComment(checker);
-      }
-    }
-    getJsDocTags(): JSDocTagInfo[] {
-      if (this.tags === undefined) this.tags = JsDoc.getJsDocTagsFromDeclarations(this.declarations);
-      return this.tags;
     }
   }
   export class TypeObj implements Type {
