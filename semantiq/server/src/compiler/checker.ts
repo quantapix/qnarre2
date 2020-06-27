@@ -16,7 +16,6 @@ namespace core {
     SpreadFlag = 1 << 5,
     DestructuringFlag = 1 << 6,
 
-    // Spread, Destructuring, Array element assignment
     Element = AllowsSyncIterablesFlag,
     Spread = AllowsSyncIterablesFlag | SpreadFlag,
     Destructuring = AllowsSyncIterablesFlag | DestructuringFlag,
@@ -85,9 +84,6 @@ namespace core {
     Truthy = 1 << 22, // x
     Falsy = 1 << 23, // !x
     All = (1 << 24) - 1,
-    // The following members encode facts about particular kinds of types for use in the getTypeFacts function.
-    // The presence of a particular fact means that the given test is true for some (and possibly all) values
-    // of that kind of type.
     BaseStringStrictFacts = TypeofEQString |
       TypeofNENumber |
       TypeofNEBigInt |
@@ -318,7 +314,6 @@ namespace core {
     Parameter,
   }
 
-  /** @param containingNode Node to check for parse error */
   type AddUnusedDiagnostic = (containingNode: Node, type: UnusedKind, diagnostic: DiagnosticWithLocation) => void;
 
   const isNotOverloadAndNotAccessor = and(isNotOverload, isNotAccessor);
@@ -7480,7 +7475,7 @@ namespace core {
       return -1;
     }
 
-    function Node.is.withType(target: TypeSystemEntity, propertyName: TypeSystemPropertyName): boolean {
+    function isNodewithType(target: TypeSystemEntity, propertyName: TypeSystemPropertyName): boolean {
       switch (propertyName) {
         case TypeSystemPropertyName.Type:
           return !!getSymbolLinks(<Symbol>target).type;
@@ -22185,7 +22180,7 @@ namespace core {
       }
     }
 
-    function checkThNode.is.expression(node: Node): Type {
+    function checkThisNodeIsExpression(node: Node): Type {
       // Stop at the first arrow function so that we can
       // tell whether 'this' needs to be captured.
       let container = Node.get.thisContainer(node, /* includeArrowFunctions */ true);
@@ -29378,7 +29373,7 @@ namespace core {
       return links.resolvedType;
     }
 
-    function Node.is.kind(TypeAssertion, node: Expression) {
+    function isNodekind(TypeAssertion, node: Expression) {
       node = skipParentheses(node);
       return node.kind === Syntax.TypeAssertionExpression || node.kind === Syntax.AsExpression;
     }
