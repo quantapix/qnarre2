@@ -1563,7 +1563,7 @@ namespace core {
     }
 
     function getDiagnosticsProducingTypeChecker() {
-      return diagnosticsProducingTypeChecker || (diagnosticsProducingTypeChecker = createTypeChecker(program, /*produceDiagnostics:*/ true));
+      return diagnosticsProducingTypeChecker || (diagnosticsProducingTypeChecker = qc_create(program, /*produceDiagnostics:*/ true));
     }
 
     function dropDiagnosticsProducingTypeChecker() {
@@ -1571,7 +1571,7 @@ namespace core {
     }
 
     function getTypeChecker() {
-      return noDiagnosticsTypeChecker || (noDiagnosticsTypeChecker = createTypeChecker(program, /*produceDiagnostics:*/ false));
+      return noDiagnosticsTypeChecker || (noDiagnosticsTypeChecker = qc_create(program, /*produceDiagnostics:*/ false));
     }
 
     function emit(

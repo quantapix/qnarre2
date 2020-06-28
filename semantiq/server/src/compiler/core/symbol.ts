@@ -124,12 +124,12 @@ namespace core {
     id?: number;
     mergeId?: number;
     parent?: Symbol;
-    declarations?: Declaration[];
-    valueDeclaration?: Declaration;
     members?: SymbolTable;
     exports?: SymbolTable;
     exportSymbol?: Symbol;
     globalExports?: SymbolTable;
+    declarations?: Declaration[];
+    valueDeclaration?: Declaration;
     isAssigned?: boolean;
     assignmentDeclarationMembers?: QMap<Declaration>;
     isReferenced?: SymbolFlags;
@@ -147,9 +147,7 @@ namespace core {
       if (d?.isPrivateIdentifierPropertyDeclaration()) return idText(d.name);
       return syntax.get.unescUnderscores(this.escName);
     }
-    getId() {
-      return this.id!;
-    }
+    abstract getId(): number;
     getName() {
       return this.name;
     }
@@ -224,7 +222,8 @@ namespace core {
       return (this.flags & SymbolFlags.Transient) !== 0;
     }
     getNonAugmentationDeclaration() {
-      return find(this.declarations!, (d) => !Node.is.externalModuleAugmentation(d) && !(Node.is.kind(ModuleDeclaration, d) && isGlobalScopeAugmentation(d)));
+      const ds = this.declarations;
+      return ds && find(ds, (d) => !Node.is.externalModuleAugmentation(d) && !(Node.is.kind(ModuleDeclaration, d) && isGlobalScopeAugmentation(d)));
     }
     setValueDeclaration(d: Declaration) {
       const v = this.valueDeclaration;
@@ -272,7 +271,8 @@ namespace core {
       return false;
     }
     getClassLikeDeclarationOfSymbol(): ClassLikeDeclaration | undefined {
-      return find(this.declarations!, isClassLike);
+      const ds = this.declarations;
+      return ds && find(ds, isClassLike);
     }
     isUMDExportSymbol() {
       return this.declarations?.[0] && Node.is.kind(NamespaceExportDeclaration, this.declarations[0]);
