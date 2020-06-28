@@ -1,6 +1,12 @@
 namespace core {
   export class Declaration extends Node {
     _declarationBrand: any;
+    isNotAccessor(declaration: Declaration) {
+      return !Node.is.accessor(declaration);
+    }
+    isNotOverload(declaration: Declaration): boolean {
+      return (declaration.kind !== Syntax.FunctionDeclaration && declaration.kind !== Syntax.MethodDeclaration) || !!(declaration as FunctionDeclaration).body;
+    }
     getInternalName(allowComments?: boolean, allowSourceMaps?: boolean) {
       return this.getName(allowComments, allowSourceMaps, EmitFlags.LocalName | EmitFlags.InternalName);
     }
@@ -2833,68 +2839,6 @@ namespace core {
     }
     update<T extends SignatureDeclaration>(n: T, ts: Nodes<TypeParameterDeclaration> | undefined, ps: Nodes<ParameterDeclaration>, t?: TypeNode): T {
       return n.typeParameters !== ts || n.parameters !== ps || n.type !== t ? updateNode(create(n.kind, ts, ps, t) as T, n) : n;
-    }
-  }
-  export class SourceFile {
-    static readonly kind = Syntax.SourceFile;
-
-    qp_updateSourceNode(
-      node: SourceFile,
-      statements: readonly Statement[],
-      isDeclarationFile?: boolean,
-      referencedFiles?: SourceFile['referencedFiles'],
-      typeReferences?: SourceFile['typeReferenceDirectives'],
-      hasNoDefaultLib?: boolean,
-      libReferences?: SourceFile['libReferenceDirectives']
-    ) {
-      if (
-        node.statements !== statements ||
-        (isDeclarationFile !== undefined && node.isDeclarationFile !== isDeclarationFile) ||
-        (referencedFiles !== undefined && node.referencedFiles !== referencedFiles) ||
-        (typeReferences !== undefined && node.typeReferenceDirectives !== typeReferences) ||
-        (libReferences !== undefined && node.libReferenceDirectives !== libReferences) ||
-        (hasNoDefaultLib !== undefined && node.hasNoDefaultLib !== hasNoDefaultLib)
-      ) {
-        const updated = <SourceFile>Node.createSynthesized(Syntax.SourceFile);
-        updated.flags |= node.flags;
-        updated.statements = Nodes.create(statements);
-        updated.endOfFileToken = node.endOfFileToken;
-        updated.fileName = node.fileName;
-        updated.path = node.path;
-        updated.text = node.text;
-        updated.isDeclarationFile = isDeclarationFile === undefined ? node.isDeclarationFile : isDeclarationFile;
-        updated.referencedFiles = referencedFiles === undefined ? node.referencedFiles : referencedFiles;
-        updated.typeReferenceDirectives = typeReferences === undefined ? node.typeReferenceDirectives : typeReferences;
-        updated.hasNoDefaultLib = hasNoDefaultLib === undefined ? node.hasNoDefaultLib : hasNoDefaultLib;
-        updated.libReferenceDirectives = libReferences === undefined ? node.libReferenceDirectives : libReferences;
-        if (node.amdDependencies !== undefined) updated.amdDependencies = node.amdDependencies;
-        if (node.moduleName !== undefined) updated.moduleName = node.moduleName;
-        if (node.languageVariant !== undefined) updated.languageVariant = node.languageVariant;
-        if (node.renamedDependencies !== undefined) updated.renamedDependencies = node.renamedDependencies;
-        if (node.languageVersion !== undefined) updated.languageVersion = node.languageVersion;
-        if (node.scriptKind !== undefined) updated.scriptKind = node.scriptKind;
-        if (node.externalModuleIndicator !== undefined) updated.externalModuleIndicator = node.externalModuleIndicator;
-        if (node.commonJsModuleIndicator !== undefined) updated.commonJsModuleIndicator = node.commonJsModuleIndicator;
-        if (node.identifiers !== undefined) updated.identifiers = node.identifiers;
-        if (node.nodeCount !== undefined) updated.nodeCount = node.nodeCount;
-        if (node.identifierCount !== undefined) updated.identifierCount = node.identifierCount;
-        if (node.symbolCount !== undefined) updated.symbolCount = node.symbolCount;
-        if (node.parseDiagnostics !== undefined) updated.parseDiagnostics = node.parseDiagnostics;
-        if (node.bindDiagnostics !== undefined) updated.bindDiagnostics = node.bindDiagnostics;
-        if (node.bindSuggestionDiagnostics !== undefined) updated.bindSuggestionDiagnostics = node.bindSuggestionDiagnostics;
-        if (node.lineMap !== undefined) updated.lineMap = node.lineMap;
-        if (node.classifiableNames !== undefined) updated.classifiableNames = node.classifiableNames;
-        if (node.resolvedModules !== undefined) updated.resolvedModules = node.resolvedModules;
-        if (node.resolvedTypeReferenceDirectiveNames !== undefined) updated.resolvedTypeReferenceDirectiveNames = node.resolvedTypeReferenceDirectiveNames;
-        if (node.imports !== undefined) updated.imports = node.imports;
-        if (node.moduleAugmentations !== undefined) updated.moduleAugmentations = node.moduleAugmentations;
-        if (node.pragmas !== undefined) updated.pragmas = node.pragmas;
-        if (node.localJsxFactory !== undefined) updated.localJsxFactory = node.localJsxFactory;
-        if (node.localJsxNamespace !== undefined) updated.localJsxNamespace = node.localJsxNamespace;
-        return updateNode(updated, node);
-      }
-
-      return node;
     }
   }
   export class SpreadElement {

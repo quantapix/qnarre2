@@ -80,6 +80,10 @@ namespace core {
     is<S extends Syntax, T extends { kind: S; also?: Syntax[] }>(t: T): this is NodeType<T['kind']> {
       return this.kind === t.kind || !!t.also?.includes(this.kind);
     }
+    isPrivateIdentifierPropertyDeclaration(): this is PrivateIdentifierPropertyDeclaration {
+      return this.is(PropertyDeclaration) && this.name.is(PrivateIdentifier);
+    }
+
     getSourceFile(): SourceFile {
       return Node.get.sourceFileOf(this);
     }
@@ -900,9 +904,6 @@ namespace core {
       generatedIdentifier(n: Node): n is GeneratedIdentifier {
         return this.kind(Identifier, n) && (n.autoGenerateFlags! & GeneratedIdentifierFlags.KindMask) > GeneratedIdentifierFlags.None;
       }
-      privateIdentifierPropertyDeclaration(n: Node): n is PrivateIdentifierPropertyDeclaration {
-        return this.kind(PropertyDeclaration, n) && this.kind(PrivateIdentifier, n.name);
-      }
       privateIdentifierPropertyAccessExpression(n: Node): n is PrivateIdentifierPropertyAccessExpression {
         return this.kind(PropertyAccessExpression, n) && this.kind(PrivateIdentifier, n.name);
       }
@@ -1164,6 +1165,29 @@ namespace core {
             return true;
           default:
             return false;
+        }
+      }
+      isSomeImportDeclaration(decl: Node) {
+        switch (decl.kind) {
+          case Syntax.ImportClause: // For default import
+          case Syntax.ImportEqualsDeclaration:
+          case Syntax.NamespaceImport:
+          case Syntax.ImportSpecifier: // For rename import `x as y`
+            return true;
+          case Syntax.Identifier:
+            // For regular import, `decl` is an Identifier under the ImportSpecifier.
+            return decl.parent.kind === Syntax.ImportSpecifier;
+          default:
+            return false;
+        }
+      }
+      isDeclarationNameOrImportPropertyName(n: Node) {
+        switch (n.parent.kind) {
+          case Syntax.ImportSpecifier:
+          case Syntax.ExportSpecifier:
+            return Node.is.kind(Identifier, n);
+          default:
+            return Node.is.declarationName(n);
         }
       }
     })();
@@ -1797,10 +1821,6 @@ namespace core {
       idText(identifierOrPrivateName: Identifier | PrivateIdentifier): string {
         return syntax.get.unescUnderscores(identifierOrPrivateName.escapedText);
       }
-      symbolName(s: Symbol): string {
-        if (s.valueDeclaration && Node.is.privateIdentifierPropertyDeclaration(s.valueDeclaration)) return idText(s.valueDeclaration.name);
-        return syntax.get.unescUnderscores(s.escName);
-      }
       nameForNamelessJSDocTypedef(declaration: JSDocTypedefTag | JSDocEnumTag): Identifier | PrivateIdentifier | undefined {
         const n = declaration.parent.parent;
         if (!n) return;
@@ -2288,6 +2308,33 @@ namespace core {
       }
     })();
   }
+  export namespace Node {
+    function hasJSDocInheritDocTag(node: Node) {
+      return getJSDoc.tags(node).some((tag) => tag.tagName.text === 'inheritDoc');
+    }
+
+    function getDocComment(declarations: readonly Declaration[] | undefined, checker: TypeChecker | undefined): SymbolDisplayPart[] {
+      if (!declarations) return empty;
+      let doc = JsDoc.getJsDocCommentsFromDeclarations(declarations);
+      if (doc.length === 0 || declarations.some(hasJSDocInheritDocTag)) {
+        forEachUnique(declarations, (declaration) => {
+          const inheritedDocs = findInheritedJSDocComments(declaration, declaration.symbol.name, checker!);
+          if (inheritedDocs) doc = doc.length === 0 ? inheritedDocs.slice() : inheritedDocs.concat(lineBreakPart(), doc);
+        });
+      }
+      return doc;
+    }
+
+    function findInheritedJSDocComments(declaration: Declaration, propertyName: string, typeChecker: TypeChecker): readonly SymbolDisplayPart[] | undefined {
+      return firstDefined(declaration.parent ? getAllSuperTypeNodes(declaration.parent) : empty, (superTypeNode) => {
+        const superType = typeChecker.getTypeAtLocation(superTypeNode);
+        const baseProperty = superType && typeChecker.getPropertyOfType(superType, propertyName);
+        const inheritedDocs = baseProperty && baseProperty.getDocComment(typeChecker);
+        return inheritedDocs && inheritedDocs.length ? inheritedDocs : undefined;
+      });
+    }
+  }
+
   abstract class TokenOrIdentifier extends Node {
     getChildren(): Node[] {
       return this.kind === Syntax.EndOfFileToken ? this.jsDoc || empty : empty;
@@ -2432,11 +2479,23 @@ namespace core {
       return idText(this);
     }
   }
-  export class TypeObj implements Type {
-    id!: number;
-    symbol!: Symbol;
+
+  export class Type {
+    flags: TypeFlags; // Flags
+    id!: number; // Unique ID
+    checker: TypeChecker;
+    symbol!: Symbol; // Symbol associated with type (if any)
+    pattern?: DestructuringPattern; // Destructuring pattern represented by type (if any)
+    aliasSymbol?: Symbol; // Alias associated with type
+    aliasTypeArguments?: readonly Type[]; // Alias type arguments (if any)
+    aliasTypeArgumentsContainsMarker?: boolean; // Alias type arguments (if any)
+    permissiveInstantiation?: Type; // Instantiation with type parameters mapped to wildcard type
+    restrictiveInstantiation?: Type; // Instantiation with type parameters mapped to unconstrained form
+    immediateBaseConstraint?: Type; // Immediate base constraint cache
+    widened?: Type; // Cached widened form of the type
     objectFlags?: ObjectFlags;
     constructor(public checker: TypeChecker, public flags: TypeFlags) {}
+
     getFlags(): TypeFlags {
       return this.flags;
     }
@@ -2514,18 +2573,31 @@ namespace core {
       return;
     }
   }
-  export class Signature implements Signature {
-    declaration!: SignatureDeclaration;
-    typeParameters?: TypeParameter[];
-    parameters!: Symbol[];
-    thisParameter!: Symbol;
-    resolvedReturnType!: Type;
-    resolvedTypePredicate: TypePredicate | undefined;
+  export class Signature {
+    flags: SignatureFlags;
+    checker?: TypeChecker;
+    declaration?: SignatureDeclaration | JSDocSignature; // Originating declaration
+    typeParameters?: readonly TypeParameter[]; // Type parameters (undefined if non-generic)
+    parameters!: readonly Symbol[]; // Parameters
+    thisParameter?: Symbol; // symbol of this-type parameter
+    // See comment in `instantiateSignature` for why these are set lazily.
+    resolvedReturnType?: Type; // Lazily set by `getReturnTypeOfSignature`.
+    // Lazily set by `getTypePredicateOfSignature`.
+    // `undefined` indicates a type predicate that has not yet been computed.
+    // Uses a special `noTypePredicate` sentinel value to indicate that there is no type predicate. This looks like a TypePredicate at runtime to avoid polymorphism.
+    resolvedTypePredicate?: TypePredicate;
+    minArgumentCount!: number; // Number of non-optional parameters
+    target?: Signature; // Instantiation target
+    mapper?: TypeMapper; // Instantiation mapper
+    unionSignatures?: Signature[]; // Underlying signatures of a union signature
+    erasedSignatureCache?: Signature; // Erased version of signature (deferred)
+    canonicalSignatureCache?: Signature; // Canonical version of signature (deferred)
+    optionalCallSignatureCache?: { inner?: Signature; outer?: Signature }; // Optional chained call version of signature (deferred)
+    isolatedSignatureType?: ObjectType; // A manufactured type that just contains the signature for purposes of signature comparison
+    instantiations?: QMap<Signature>; // Generic signature instantiation cache
     minTypeArgumentCount!: number;
-    minArgumentCount!: number;
     docComment?: SymbolDisplayPart[];
     jsDocTags?: JSDocTagInfo[];
-
     constructor(public checker: TypeChecker, public flags: SignatureFlags) {}
     getDeclaration(): SignatureDeclaration {
       return this.declaration;
@@ -2548,8 +2620,77 @@ namespace core {
       }
       return this.jsDocTags;
     }
+    signatureHasRestParameter(s: Signature) {
+      return !!(s.flags & SignatureFlags.HasRestParameter);
+    }
+    signatureHasLiteralTypes(s: Signature) {
+      return !!(s.flags & SignatureFlags.HasLiteralTypes);
+    }
   }
-  export class SourceFile extends Node implements SourceFile {
+  export class SourceFile extends Declaration {
+    static readonly kind = Syntax.SourceFile;
+    kind: Syntax.SourceFile;
+    statements: Nodes<Statement>;
+    endOfFileToken: Token<Syntax.EndOfFileToken>;
+    fileName: string;
+    path: Path;
+    text: string;
+    resolvedPath: Path;
+    originalFileName: string;
+    redirectInfo?: RedirectInfo;
+    amdDependencies: readonly AmdDependency[];
+    moduleName?: string;
+    referencedFiles: readonly FileReference[];
+    typeReferenceDirectives: readonly FileReference[];
+    libReferenceDirectives: readonly FileReference[];
+    languageVariant: LanguageVariant;
+    isDeclarationFile: boolean;
+    renamedDependencies?: QReadonlyMap<string>;
+    hasNoDefaultLib: boolean;
+    languageVersion: ScriptTarget;
+    scriptKind: ScriptKind;
+    externalModuleIndicator?: Node;
+    // The first node that causes this file to be a CommonJS module
+    commonJsModuleIndicator?: Node;
+    // JS identifier-declarations that are intended to merge with globals
+    jsGlobalAugmentations?: SymbolTable;
+    identifiers: QMap<string>; // Map from a string to an interned string
+    nodeCount: number;
+    identifierCount: number;
+    symbolCount: number;
+    // File-level diagnostics reported by the parser (includes diagnostics about /// references
+    // as well as code diagnostics).
+    parseDiagnostics: DiagnosticWithLocation[];
+    // File-level diagnostics reported by the binder.
+    bindDiagnostics: DiagnosticWithLocation[];
+    bindSuggestionDiagnostics?: DiagnosticWithLocation[];
+    // File-level JSDoc diagnostics reported by the JSDoc parser
+    jsDocDiagnostics?: DiagnosticWithLocation[];
+    // Stores additional file-level diagnostics reported by the program
+    additionalSyntacticDiagnostics?: readonly DiagnosticWithLocation[];
+    // Stores a line map for the file.
+    // This field should never be used directly to obtain line map, use getLineMap function instead.
+    lineMap: readonly number[];
+    classifiableNames?: ReadonlyUnderscoreEscapedMap<true>;
+    // Comments containing @ts-* directives, in order.
+    commentDirectives?: CommentDirective[];
+    // Stores a mapping 'external module reference text' -> 'resolved file name' | undefined
+    // It is used to resolve module names in the checker.
+    // Content of this field should never be used directly - use getResolvedModuleFileName/setResolvedModuleFileName functions instead
+    resolvedModules?: QMap<ResolvedModuleFull | undefined>;
+    resolvedTypeReferenceDirectiveNames: QMap<ResolvedTypeReferenceDirective | undefined>;
+    imports: readonly StringLiteralLike[];
+    // Identifier only if `declare global`
+    moduleAugmentations: readonly (StringLiteral | Identifier)[];
+    patternAmbientModules?: PatternAmbientModule[];
+    ambientModuleNames: readonly string[];
+    checkJsDirective?: CheckJsDirective;
+    version: string;
+    pragmas: ReadonlyPragmaMap;
+    localJsxNamespace?: __String;
+    localJsxFactory?: EntityName;
+    exportedModulesFromDeclarationEmit?: ExportedModulesFromDeclarationEmit;
+
     kind: Syntax.SourceFile = Syntax.SourceFile;
     _declarationBrand: any;
     fileName!: string;
@@ -2559,7 +2700,6 @@ namespace core {
     text!: string;
     scriptSnapshot!: IScriptSnapshot;
     lineMap!: readonly number[];
-
     statements!: Nodes<Statement>;
     endOfFileToken!: Token<Syntax.EndOfFileToken>;
 
@@ -2737,6 +2877,65 @@ namespace core {
       return this.namedDeclarations;
     }
 
+    qp_updateSourceNode(
+      node: SourceFile,
+      statements: readonly Statement[],
+      isDeclarationFile?: boolean,
+      referencedFiles?: SourceFile['referencedFiles'],
+      typeReferences?: SourceFile['typeReferenceDirectives'],
+      hasNoDefaultLib?: boolean,
+      libReferences?: SourceFile['libReferenceDirectives']
+    ) {
+      if (
+        node.statements !== statements ||
+        (isDeclarationFile !== undefined && node.isDeclarationFile !== isDeclarationFile) ||
+        (referencedFiles !== undefined && node.referencedFiles !== referencedFiles) ||
+        (typeReferences !== undefined && node.typeReferenceDirectives !== typeReferences) ||
+        (libReferences !== undefined && node.libReferenceDirectives !== libReferences) ||
+        (hasNoDefaultLib !== undefined && node.hasNoDefaultLib !== hasNoDefaultLib)
+      ) {
+        const updated = <SourceFile>Node.createSynthesized(Syntax.SourceFile);
+        updated.flags |= node.flags;
+        updated.statements = Nodes.create(statements);
+        updated.endOfFileToken = node.endOfFileToken;
+        updated.fileName = node.fileName;
+        updated.path = node.path;
+        updated.text = node.text;
+        updated.isDeclarationFile = isDeclarationFile === undefined ? node.isDeclarationFile : isDeclarationFile;
+        updated.referencedFiles = referencedFiles === undefined ? node.referencedFiles : referencedFiles;
+        updated.typeReferenceDirectives = typeReferences === undefined ? node.typeReferenceDirectives : typeReferences;
+        updated.hasNoDefaultLib = hasNoDefaultLib === undefined ? node.hasNoDefaultLib : hasNoDefaultLib;
+        updated.libReferenceDirectives = libReferences === undefined ? node.libReferenceDirectives : libReferences;
+        if (node.amdDependencies !== undefined) updated.amdDependencies = node.amdDependencies;
+        if (node.moduleName !== undefined) updated.moduleName = node.moduleName;
+        if (node.languageVariant !== undefined) updated.languageVariant = node.languageVariant;
+        if (node.renamedDependencies !== undefined) updated.renamedDependencies = node.renamedDependencies;
+        if (node.languageVersion !== undefined) updated.languageVersion = node.languageVersion;
+        if (node.scriptKind !== undefined) updated.scriptKind = node.scriptKind;
+        if (node.externalModuleIndicator !== undefined) updated.externalModuleIndicator = node.externalModuleIndicator;
+        if (node.commonJsModuleIndicator !== undefined) updated.commonJsModuleIndicator = node.commonJsModuleIndicator;
+        if (node.identifiers !== undefined) updated.identifiers = node.identifiers;
+        if (node.nodeCount !== undefined) updated.nodeCount = node.nodeCount;
+        if (node.identifierCount !== undefined) updated.identifierCount = node.identifierCount;
+        if (node.symbolCount !== undefined) updated.symbolCount = node.symbolCount;
+        if (node.parseDiagnostics !== undefined) updated.parseDiagnostics = node.parseDiagnostics;
+        if (node.bindDiagnostics !== undefined) updated.bindDiagnostics = node.bindDiagnostics;
+        if (node.bindSuggestionDiagnostics !== undefined) updated.bindSuggestionDiagnostics = node.bindSuggestionDiagnostics;
+        if (node.lineMap !== undefined) updated.lineMap = node.lineMap;
+        if (node.classifiableNames !== undefined) updated.classifiableNames = node.classifiableNames;
+        if (node.resolvedModules !== undefined) updated.resolvedModules = node.resolvedModules;
+        if (node.resolvedTypeReferenceDirectiveNames !== undefined) updated.resolvedTypeReferenceDirectiveNames = node.resolvedTypeReferenceDirectiveNames;
+        if (node.imports !== undefined) updated.imports = node.imports;
+        if (node.moduleAugmentations !== undefined) updated.moduleAugmentations = node.moduleAugmentations;
+        if (node.pragmas !== undefined) updated.pragmas = node.pragmas;
+        if (node.localJsxFactory !== undefined) updated.localJsxFactory = node.localJsxFactory;
+        if (node.localJsxNamespace !== undefined) updated.localJsxNamespace = node.localJsxNamespace;
+        return updateNode(updated, node);
+      }
+
+      return node;
+    }
+
     private computeNamedDeclarations(): QMap<Declaration[]> {
       const r = new MultiMap<Declaration>();
       this.Node.forEach.child(visit);
@@ -2844,40 +3043,11 @@ namespace core {
     }
   }
 
-  export namespace Node {
-    function hasJSDocInheritDocTag(node: Node) {
-      return getJSDoc.tags(node).some((tag) => tag.tagName.text === 'inheritDoc');
-    }
-
-    function getDocComment(declarations: readonly Declaration[] | undefined, checker: TypeChecker | undefined): SymbolDisplayPart[] {
-      if (!declarations) return empty;
-      let doc = JsDoc.getJsDocCommentsFromDeclarations(declarations);
-      if (doc.length === 0 || declarations.some(hasJSDocInheritDocTag)) {
-        forEachUnique(declarations, (declaration) => {
-          const inheritedDocs = findInheritedJSDocComments(declaration, declaration.symbol.name, checker!);
-          if (inheritedDocs) doc = doc.length === 0 ? inheritedDocs.slice() : inheritedDocs.concat(lineBreakPart(), doc);
-        });
-      }
-      return doc;
-    }
-
-    function findInheritedJSDocComments(declaration: Declaration, propertyName: string, typeChecker: TypeChecker): readonly SymbolDisplayPart[] | undefined {
-      return firstDefined(declaration.parent ? getAllSuperTypeNodes(declaration.parent) : empty, (superTypeNode) => {
-        const superType = typeChecker.getTypeAtLocation(superTypeNode);
-        const baseProperty = superType && typeChecker.getPropertyOfType(superType, propertyName);
-        const inheritedDocs = baseProperty && baseProperty.getDocComment(typeChecker);
-        return inheritedDocs && inheritedDocs.length ? inheritedDocs : undefined;
-      });
-    }
-  }
-
   export interface Nodes<T extends Node> extends ReadonlyArray<T>, Range {
     trailingComma?: boolean;
     transformFlags: TransformFlags;
     visit<T>(cb: (n: Node) => T, cbs?: (ns: Nodes<Node>) => T | undefined): T | undefined;
   }
-  export type MutableNodes<T extends Node> = Nodes<T> & T[];
-
   export namespace Nodes {
     export function create<T extends Node>(ts?: T[], trailingComma?: boolean): MutableNodes<T>;
     export function create<T extends Node>(ts?: readonly T[], trailingComma?: boolean): Nodes<T>;
@@ -2907,4 +3077,5 @@ namespace core {
       return ns.hasOwnProperty('pos') && ns.hasOwnProperty('end');
     }
   }
+  export type MutableNodes<T extends Node> = Nodes<T> & T[];
 }

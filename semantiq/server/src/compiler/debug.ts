@@ -342,7 +342,7 @@ namespace core {
         },
       });
 
-      Object.defineProperties(Node.TypeObj.prototype, {
+      Object.defineProperties(Node.Type.prototype, {
         __debugFlags: {
           get(this: Type) {
             return formatTypeFlags(this.flags);

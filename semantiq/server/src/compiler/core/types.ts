@@ -912,69 +912,6 @@ namespace core {
     | AccessorDeclaration
     | FunctionExpression
     | ArrowFunction;
-  export interface SourceFile extends Declaration {
-    kind: Syntax.SourceFile;
-    statements: Nodes<Statement>;
-    endOfFileToken: Token<Syntax.EndOfFileToken>;
-    fileName: string;
-    path: Path;
-    text: string;
-    resolvedPath: Path;
-    originalFileName: string;
-    redirectInfo?: RedirectInfo;
-    amdDependencies: readonly AmdDependency[];
-    moduleName?: string;
-    referencedFiles: readonly FileReference[];
-    typeReferenceDirectives: readonly FileReference[];
-    libReferenceDirectives: readonly FileReference[];
-    languageVariant: LanguageVariant;
-    isDeclarationFile: boolean;
-    renamedDependencies?: QReadonlyMap<string>;
-    hasNoDefaultLib: boolean;
-    languageVersion: ScriptTarget;
-    scriptKind: ScriptKind;
-    externalModuleIndicator?: Node;
-    // The first node that causes this file to be a CommonJS module
-    commonJsModuleIndicator?: Node;
-    // JS identifier-declarations that are intended to merge with globals
-    jsGlobalAugmentations?: SymbolTable;
-    identifiers: QMap<string>; // Map from a string to an interned string
-    nodeCount: number;
-    identifierCount: number;
-    symbolCount: number;
-    // File-level diagnostics reported by the parser (includes diagnostics about /// references
-    // as well as code diagnostics).
-    parseDiagnostics: DiagnosticWithLocation[];
-    // File-level diagnostics reported by the binder.
-    bindDiagnostics: DiagnosticWithLocation[];
-    bindSuggestionDiagnostics?: DiagnosticWithLocation[];
-    // File-level JSDoc diagnostics reported by the JSDoc parser
-    jsDocDiagnostics?: DiagnosticWithLocation[];
-    // Stores additional file-level diagnostics reported by the program
-    additionalSyntacticDiagnostics?: readonly DiagnosticWithLocation[];
-    // Stores a line map for the file.
-    // This field should never be used directly to obtain line map, use getLineMap function instead.
-    lineMap: readonly number[];
-    classifiableNames?: ReadonlyUnderscoreEscapedMap<true>;
-    // Comments containing @ts-* directives, in order.
-    commentDirectives?: CommentDirective[];
-    // Stores a mapping 'external module reference text' -> 'resolved file name' | undefined
-    // It is used to resolve module names in the checker.
-    // Content of this field should never be used directly - use getResolvedModuleFileName/setResolvedModuleFileName functions instead
-    resolvedModules?: QMap<ResolvedModuleFull | undefined>;
-    resolvedTypeReferenceDirectiveNames: QMap<ResolvedTypeReferenceDirective | undefined>;
-    imports: readonly StringLiteralLike[];
-    // Identifier only if `declare global`
-    moduleAugmentations: readonly (StringLiteral | Identifier)[];
-    patternAmbientModules?: PatternAmbientModule[];
-    ambientModuleNames: readonly string[];
-    checkJsDirective?: CheckJsDirective;
-    version: string;
-    pragmas: ReadonlyPragmaMap;
-    localJsxNamespace?: __String;
-    localJsxFactory?: EntityName;
-    exportedModulesFromDeclarationEmit?: ExportedModulesFromDeclarationEmit;
-  }
   export interface SpreadElement extends Expression {
     kind: Syntax.SpreadElement;
     parent: ArrayLiteralExpression | CallExpression | NewExpression;
@@ -1616,7 +1553,7 @@ namespace core {
       minArgumentCount: number,
       flags: SignatureFlags
     ): Signature;
-    createSymbol(flags: SymbolFlags, name: __String): TransientSymbol;
+    // qpx new QSymbol(flags: SymbolFlags, name: __String): TransientSymbol;
     createIndexInfo(type: Type, isReadonly: boolean, declaration?: SignatureDeclaration): IndexInfo;
     isSymbolAccessible(symbol: Symbol, enclosingDeclaration: Node | undefined, meaning: SymbolFlags, shouldComputeAliasToMarkVisible: boolean): SymbolAccessibilityResult;
     tryFindAmbientModuleWithoutAugmentations(moduleName: string): Symbol | undefined;
@@ -2871,20 +2808,6 @@ namespace core {
     IncludesEmptyObject = Conditional,
   }
   export type DestructuringPattern = BindingPattern | ObjectLiteralExpression | ArrayLiteralExpression;
-  export interface Type {
-    flags: TypeFlags; // Flags
-    id: number; // Unique ID
-    checker: TypeChecker;
-    symbol: Symbol; // Symbol associated with type (if any)
-    pattern?: DestructuringPattern; // Destructuring pattern represented by type (if any)
-    aliasSymbol?: Symbol; // Alias associated with type
-    aliasTypeArguments?: readonly Type[]; // Alias type arguments (if any)
-    aliasTypeArgumentsContainsMarker?: boolean; // Alias type arguments (if any)
-    permissiveInstantiation?: Type; // Instantiation with type parameters mapped to wildcard type
-    restrictiveInstantiation?: Type; // Instantiation with type parameters mapped to unconstrained form
-    immediateBaseConstraint?: Type; // Immediate base constraint cache
-    widened?: Type; // Cached widened form of the type
-  }
   export interface IntrinsicType extends Type {
     intrinsicName: string; // Name of intrinsic type
     objectFlags: ObjectFlags;
@@ -3133,29 +3056,6 @@ namespace core {
     // instantiating the return type.
     PropagatingFlags = HasRestParameter | HasLiteralTypes,
     CallChainFlags = IsInnerCallChain | IsOuterCallChain,
-  }
-  export interface Signature {
-    flags: SignatureFlags;
-    checker?: TypeChecker;
-    declaration?: SignatureDeclaration | JSDocSignature; // Originating declaration
-    typeParameters?: readonly TypeParameter[]; // Type parameters (undefined if non-generic)
-    parameters: readonly Symbol[]; // Parameters
-    thisParameter?: Symbol; // symbol of this-type parameter
-    // See comment in `instantiateSignature` for why these are set lazily.
-    resolvedReturnType?: Type; // Lazily set by `getReturnTypeOfSignature`.
-    // Lazily set by `getTypePredicateOfSignature`.
-    // `undefined` indicates a type predicate that has not yet been computed.
-    // Uses a special `noTypePredicate` sentinel value to indicate that there is no type predicate. This looks like a TypePredicate at runtime to avoid polymorphism.
-    resolvedTypePredicate?: TypePredicate;
-    minArgumentCount: number; // Number of non-optional parameters
-    target?: Signature; // Instantiation target
-    mapper?: TypeMapper; // Instantiation mapper
-    unionSignatures?: Signature[]; // Underlying signatures of a union signature
-    erasedSignatureCache?: Signature; // Erased version of signature (deferred)
-    canonicalSignatureCache?: Signature; // Canonical version of signature (deferred)
-    optionalCallSignatureCache?: { inner?: Signature; outer?: Signature }; // Optional chained call version of signature (deferred)
-    isolatedSignatureType?: ObjectType; // A manufactured type that just contains the signature for purposes of signature comparison
-    instantiations?: QMap<Signature>; // Generic signature instantiation cache
   }
   export const enum IndexKind {
     String,

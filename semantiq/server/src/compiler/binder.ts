@@ -288,7 +288,7 @@ namespace core {
       }
     }
 
-    function createSymbol(flags: SymbolFlags, name: __String): Symbol {
+    function new QSymbol(flags: SymbolFlags, name: __String): Symbol {
       symbolCount++;
       return new Symbol(flags, name);
     }
@@ -421,7 +421,7 @@ namespace core {
 
       let symbol: Symbol | undefined;
       if (name === undefined) {
-        symbol = createSymbol(SymbolFlags.None, InternalSymbolName.Missing);
+        symbol = new QSymbol(SymbolFlags.None, InternalSymbolName.Missing);
       } else {
         // Check and see if the symbol table already has a symbol with this name.  If not,
         // create a new symbol with this name and add it to the table.  Note that we don't
@@ -453,7 +453,7 @@ namespace core {
         }
 
         if (!symbol) {
-          symbolTable.set(name, (symbol = createSymbol(SymbolFlags.None, name)));
+          symbolTable.set(name, (symbol = new QSymbol(SymbolFlags.None, name)));
           if (isReplaceableByMethod) symbol.isReplaceableByMethod = true;
         } else if (isReplaceableByMethod && !symbol.isReplaceableByMethod) {
           // A symbol already exists, so don't add this as a declaration.
@@ -462,7 +462,7 @@ namespace core {
           if (symbol.isReplaceableByMethod) {
             // Javascript constructor-declared symbols can be discarded in favor of
             // prototype symbols like methods.
-            symbolTable.set(name, (symbol = createSymbol(SymbolFlags.None, name)));
+            symbolTable.set(name, (symbol = new QSymbol(SymbolFlags.None, name)));
           } else if (!(includes & SymbolFlags.Variable && symbol.flags & SymbolFlags.Assignment)) {
             // Assignment declarations are allowed to merge with variables, no matter what other flags they have.
             if (Node.is.namedDeclaration(node)) {
@@ -526,7 +526,7 @@ namespace core {
             const diag = createDiagnosticForNode(declarationName, message, messageNeedsName ? getDisplayName(node) : undefined);
             file.bindDiagnostics.push(addRelatedInfo(diag, ...relatedInformation));
 
-            symbol = createSymbol(SymbolFlags.None, name);
+            symbol = new QSymbol(SymbolFlags.None, name);
           }
         }
       }
@@ -1961,10 +1961,10 @@ namespace core {
       // We do that by making an anonymous type literal symbol, and then setting the function
       // symbol as its sole member. To the rest of the system, this symbol will be indistinguishable
       // from an actual type literal symbol you would have gotten had you used the long form.
-      const symbol = createSymbol(SymbolFlags.Signature, getDeclarationName(node)!); // TODO: GH#18217
+      const symbol = new QSymbol(SymbolFlags.Signature, getDeclarationName(node)!); // TODO: GH#18217
       addDeclarationToSymbol(symbol, node, SymbolFlags.Signature);
 
-      const typeLiteralSymbol = createSymbol(SymbolFlags.TypeLiteral, InternalSymbolName.Type);
+      const typeLiteralSymbol = new QSymbol(SymbolFlags.TypeLiteral, InternalSymbolName.Type);
       addDeclarationToSymbol(typeLiteralSymbol, node, SymbolFlags.TypeLiteral);
       typeLiteralSymbol.members = new SymbolTable();
       typeLiteralSymbol.members.set(symbol.escName, symbol);
@@ -2022,7 +2022,7 @@ namespace core {
     }
 
     function bindAnonymousDeclaration(node: Declaration, symbolFlags: SymbolFlags, name: __String) {
-      const symbol = createSymbol(symbolFlags, name);
+      const symbol = new QSymbol(symbolFlags, name);
       if (symbolFlags & (SymbolFlags.EnumMember | SymbolFlags.ClassMember)) {
         symbol.parent = container.symbol;
       }
@@ -3135,23 +3135,13 @@ namespace core {
       }
 
       const { symbol } = node;
-
-      // TypeScript 1.0 spec (April 2014): 8.4
-      // Every class automatically contains a static property member named 'prototype', the
-      // type of which is an instantiation of the class type with type Any supplied as a type
-      // argument for each type parameter. It is an error to explicitly declare a static
-      // property member with the name 'prototype'.
-      //
-      // Note: we check for this here because this class may be merging into a module.  The
-      // module might have an exported variable called 'prototype'.  We can't allow that as
-      // that would clash with the built-in 'prototype' for the class.
-      const prototypeSymbol = createSymbol(SymbolFlags.Property | SymbolFlags.Prototype, 'prototype' as __String);
+      const prototypeSymbol = new QSymbol(SymbolFlags.Property | SymbolFlags.Prototype, 'prototype' as __String);
       const symbolExport = symbol.exports!.get(prototypeSymbol.escName);
       if (symbolExport) {
         if (node.name) {
           node.name.parent = node;
         }
-        file.bindDiagnostics.push(createDiagnosticForNode(symbolExport.declarations[0], Diagnostics.Duplicate_identifier_0, symbolName(prototypeSymbol)));
+        file.bindDiagnostics.push(createDiagnosticForNode(symbolExport.declarations[0], Diagnostics.Duplicate_identifier_0, prototypeSymbol.name));
       }
       symbol.exports!.set(prototypeSymbol.escName, prototypeSymbol);
       prototypeSymbol.parent = symbol;

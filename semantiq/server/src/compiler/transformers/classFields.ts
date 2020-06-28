@@ -446,35 +446,23 @@ namespace core {
       return classExpression;
     }
 
-    function transformClassMembers(node: ClassDeclaration | ClassExpression, isDerivedClass: boolean) {
+    function transformClassMembers(n: ClassDeclaration | ClassExpression, isDerivedClass: boolean) {
       if (shouldTransformPrivateFields) {
-        // Declare private names.
-        for (const member of node.members) {
-          if (Node.is.privateIdentifierPropertyDeclaration(member)) {
-            addPrivateIdentifierToEnvironment(member.name);
-          }
+        for (const m of n.members) {
+          if (m.isPrivateIdentifierPropertyDeclaration()) addPrivateIdentifierToEnvironment(m.name);
         }
       }
-
-      const members: ClassElement[] = [];
-      const constructor = transformConstructor(node, isDerivedClass);
-      if (constructor) {
-        members.push(constructor);
-      }
-      addRange(members, Nodes.visit(node.members, classElementVisitor, isClassElement));
-      return setRange(Nodes.create(members), /*location*/ node.members);
+      const ms: ClassElement[] = [];
+      const constructor = transformConstructor(n, isDerivedClass);
+      if (constructor) ms.push(constructor);
+      addRange(ms, Nodes.visit(n.members, classElementVisitor, isClassElement));
+      return setRange(Nodes.create(ms), n.members);
     }
 
     function isPropertyDeclarationThatRequiresConstructorStatement(member: ClassElement): member is PropertyDeclaration {
-      if (!Node.is.kind(PropertyDeclaration, member) || hasStaticModifier(member)) {
-        return false;
-      }
-      if (context.getCompilerOptions().useDefineForClassFields) {
-        // If we are using define semantics and targeting ESNext or higher,
-        // then we don't need to transform any class properties.
-        return languageVersion < ScriptTarget.ESNext;
-      }
-      return isInitializedProperty(member) || (shouldTransformPrivateFields && Node.is.privateIdentifierPropertyDeclaration(member));
+      if (!Node.is.kind(PropertyDeclaration, member) || hasStaticModifier(member)) return false;
+      if (context.getCompilerOptions().useDefineForClassFields) return languageVersion < ScriptTarget.ESNext;
+      return isInitializedProperty(member) || (shouldTransformPrivateFields && member.isPrivateIdentifierPropertyDeclaration());
     }
 
     function transformConstructor(node: ClassDeclaration | ClassExpression, isDerivedClass: boolean) {
@@ -536,10 +524,7 @@ namespace core {
 
       statements = mergeLexicalEnvironment(statements, endLexicalEnvironment());
 
-      return setRange(
-        new Block(setRange(Nodes.create(statements), /*location*/ constructor ? constructor.body!.statements : node.members), /*multiLine*/ true),
-        /*location*/ constructor ? constructor.body : undefined
-      );
+      return setRange(new Block(setRange(Nodes.create(statements), constructor ? constructor.body!.statements : node.members), /*multiLine*/ true), constructor ? constructor.body : undefined);
     }
 
     function addPropertyStatements(statements: Statement[], properties: readonly PropertyDeclaration[], receiver: LeftHandSideExpression) {
@@ -610,7 +595,7 @@ namespace core {
           : createVoidZero();
 
       if (emitAssignment || Node.is.kind(PrivateIdentifier, propertyName)) {
-        const memberAccess = createMemberAccessForPropertyName(receiver, propertyName, /*location*/ propertyName);
+        const memberAccess = createMemberAccessForPropertyName(receiver, propertyName, propertyName);
         return createAssignment(memberAccess, initializer);
       } else {
         const name = Node.is.kind(ComputedPropertyName, propertyName)
