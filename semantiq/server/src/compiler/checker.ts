@@ -331,6 +331,36 @@ namespace core {
       });
       return set;
     });
+    let cancellationToken: CancellationToken | undefined;
+    let requestedExternalEmitHelpers: ExternalEmitHelpers;
+    let externalHelpersModule: Symbol;
+
+    let enumCount = 0;
+    let totalInstantiationCount = 0;
+    let instantiationCount = 0;
+    let instantiationDepth = 0;
+    let constraintDepth = 0;
+    let currentNode: Node | undefined;
+
+    const emptySymbols = new SymbolTable();
+    const arrayVariances = [VarianceFlags.Covariant];
+
+    const compilerOptions = host.getCompilerOptions();
+    const languageVersion = getEmitScriptTarget(compilerOptions);
+    const moduleKind = getEmitModuleKind(compilerOptions);
+    const allowSyntheticDefaultImports = getAllowSyntheticDefaultImports(compilerOptions);
+    const strictNullChecks = getStrictOptionValue(compilerOptions, 'strictNullChecks');
+    const strictFunctionTypes = getStrictOptionValue(compilerOptions, 'strictFunctionTypes');
+    const strictBindCallApply = getStrictOptionValue(compilerOptions, 'strictBindCallApply');
+    const strictPropertyInitialization = getStrictOptionValue(compilerOptions, 'strictPropertyInitialization');
+    const noImplicitAny = getStrictOptionValue(compilerOptions, 'noImplicitAny');
+    const noImplicitThis = getStrictOptionValue(compilerOptions, 'noImplicitThis');
+    const keyofStringsOnly = !!compilerOptions.keyofStringsOnly;
+    const freshObjectLiteralFlag = compilerOptions.suppressExcessPropertyErrors ? 0 : ObjectFlags.FreshLiteral;
+
+    const emitResolver = createResolver();
+    const nodeBuilder = createNodeBuilder();
+
     const QNode = class QNode extends Node {
       static nextNodeId = 1;
       getNodeId() {
@@ -366,7 +396,7 @@ namespace core {
         QSymbol.count++;
         this.checkFlags = c || 0;
       }
-      getSymbolId(): number {
+      getId() {
         if (!this.id) {
           this.id = QSymbol.nextId;
           QSymbol.nextId++;
@@ -475,10 +505,10 @@ namespace core {
           addDuplicateDeclarationError(node, message, symbolName, source.declarations);
         });
       }
-      getSymbolLinks(s: Symbol): SymbolLinks {
-        if (symbol.flags & SymbolFlags.Transient) return <TransientSymbol>symbol;
-        const id = getSymbolId(symbol);
-        return symbolLinks[id] || (symbolLinks[id] = new (<any>SymbolLinks)());
+      getSymbolLinks(): SymbolLinks {
+        if (this.flags & SymbolFlags.Transient) return this;
+        const i = this.getId();
+        return symbolLinks[i] || (symbolLinks[i] = new (<any>SymbolLinks)());
       }
       isNonLocalAlias(s: Symbol | undefined, excludes = SymbolFlags.Value | SymbolFlags.Type | SymbolFlags.Namespace): symbol is Symbol {
         if (!symbol) return false;
@@ -764,22 +794,17 @@ namespace core {
       symbolValueDeclarationIsContextSensitive(s: Symbol): boolean {
         return symbol && symbol.valueDeclaration && Node.is.expression(symbol.valueDeclaration) && !isContextSensitive(symbol.valueDeclaration);
       }
-      serializeSymbol(s: Symbol, isPrivate: boolean, propertyAsAlias: boolean) {
-        // cache visited list based on merged symbol, since we want to use the unmerged top-level symbol, but
-        // still skip reserializing it if we encounter the merged product later on
-        const visitedSym = getMergedSymbol(symbol);
-        if (visitedSymbols.has('' + getSymbolId(visitedSym))) {
-          return; // Already printed
-        }
-        visitedSymbols.set('' + getSymbolId(visitedSym), true);
-        // Only actually serialize symbols within the correct enclosing declaration, otherwise do nothing with the out-of-context symbol
-        const skipMembershipCheck = !isPrivate; // We only call this on exported symbols when we know they're in the correct scope
-        if (skipMembershipCheck || (!!length(symbol.declarations) && some(symbol.declarations, (d) => !!Node.findAncestor(d, (n) => n === enclosingDeclaration)))) {
-          const oldContext = context;
+      serializeSymbol(isPrivate: boolean, propertyAsAlias: boolean) {
+        const s = this.getMergedSymbol();
+        if (visitedSymbols.has('' + s.getId())) return;
+        visitedSymbols.set('' + s.getId(), true);
+        const skip = !isPrivate;
+        if (skip || (!!length(this.declarations) && some(this.declarations, (d) => !!Node.findAncestor(d, (n) => n === enclosingDeclaration)))) {
+          const o = context;
           context = cloneNodeBuilderContext(context);
-          const result = serializeSymbolWorker(symbol, isPrivate, propertyAsAlias);
-          context = oldContext;
-          return result;
+          const r = serializeSymbolWorker(this, isPrivate, propertyAsAlias);
+          context = o;
+          return r;
         }
       }
       serializeSymbolWorker(s: Symbol, isPrivate: boolean, propertyAsAlias: boolean) {
@@ -2548,36 +2573,6 @@ namespace core {
       }
     };
 
-    let cancellationToken: CancellationToken | undefined;
-    let requestedExternalEmitHelpers: ExternalEmitHelpers;
-    let externalHelpersModule: Symbol;
-
-    let enumCount = 0;
-    let totalInstantiationCount = 0;
-    let instantiationCount = 0;
-    let instantiationDepth = 0;
-    let constraintDepth = 0;
-    let currentNode: Node | undefined;
-
-    const emptySymbols = new SymbolTable();
-    const arrayVariances = [VarianceFlags.Covariant];
-
-    const compilerOptions = host.getCompilerOptions();
-    const languageVersion = getEmitScriptTarget(compilerOptions);
-    const moduleKind = getEmitModuleKind(compilerOptions);
-    const allowSyntheticDefaultImports = getAllowSyntheticDefaultImports(compilerOptions);
-    const strictNullChecks = getStrictOptionValue(compilerOptions, 'strictNullChecks');
-    const strictFunctionTypes = getStrictOptionValue(compilerOptions, 'strictFunctionTypes');
-    const strictBindCallApply = getStrictOptionValue(compilerOptions, 'strictBindCallApply');
-    const strictPropertyInitialization = getStrictOptionValue(compilerOptions, 'strictPropertyInitialization');
-    const noImplicitAny = getStrictOptionValue(compilerOptions, 'noImplicitAny');
-    const noImplicitThis = getStrictOptionValue(compilerOptions, 'noImplicitThis');
-    const keyofStringsOnly = !!compilerOptions.keyofStringsOnly;
-    const freshObjectLiteralFlag = compilerOptions.suppressExcessPropertyErrors ? 0 : ObjectFlags.FreshLiteral;
-
-    const emitResolver = createResolver();
-    const nodeBuilder = createNodeBuilder();
-
     const globals = new SymbolTable();
     const undefinedSymbol = new QSymbol(SymbolFlags.Property, 'undefined' as __String);
     undefinedSymbol.declarations = [];
@@ -2590,14 +2585,8 @@ namespace core {
     const argumentsSymbol = new QSymbol(SymbolFlags.Property, 'arguments' as __String);
     const requireSymbol = new QSymbol(SymbolFlags.Property, 'require' as __String);
 
-    /** This will be set during calls to `getResolvedSignature` where services determines an apparent number of arguments greater than what is actually provided. */
     let apparentArgumentCount: number | undefined;
 
-    // for public members that accept a Node or one of its subtypes, we must guard against
-    // synthetic nodes created during transformations by calling `getParseTreeNode`.
-    // for most of these, we perform the guard only on `checker` to avoid any possible
-    // extra cost of calling `getParseTreeNode` when calling these functions from inside the
-    // checker.
     const checker: TypeChecker = {
       getNodeCount: () => sum(host.getSourceFiles(), 'nodeCount'),
       getIdentifierCount: () => sum(host.getSourceFiles(), 'identifierCount'),
@@ -3100,9 +3089,6 @@ namespace core {
     let anyReadonlyArrayType: Type;
     let deferredGlobalNonNullableTypeAlias: Symbol;
 
-    // The library files are only loaded when the feature is used.
-    // This allows users to just specify library files they want to used through --lib
-    // and they will not get an error from not having unrelated library files
     let deferredGlobalESSymbolConstructorSymbol: Symbol | undefined;
     let deferredGlobalESSymbolType: ObjectType;
     let deferredGlobalTypedPropertyDescriptorType: GenericType;

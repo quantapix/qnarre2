@@ -1,6 +1,6 @@
 namespace core {
   export const resolvingEmptyArray: never[] = [] as never[];
-  export const emptyMap = createMap<never>() as qa.QReadonlyMap<never> & ReadonlyPragmaMap;
+  export const emptyMap = new QMap<never>() as QReadonlyMap<never> & ReadonlyPragmaMap;
   export const emptyUnderscoreEscapedMap: ReadonlyUnderscoreEscapedMap<never> = emptyMap as ReadonlyUnderscoreEscapedMap<never>;
 
   export const externalHelpersModuleNameText = 'tslib';
@@ -8,23 +8,11 @@ namespace core {
   export const defaultMaximumTruncationLength = 160;
   export const noTruncationMaximumTruncationLength = 1_000_000;
 
-  export function getDeclarationOfKind<T extends Declaration>(symbol: Symbol, kind: T['kind']): T | undefined {
-    const declarations = symbol.declarations;
-    if (declarations) {
-      for (const declaration of declarations) {
-        if (declaration.kind === kind) return declaration as T;
-      }
-    }
-    return;
-  }
   export function createUnderscoreEscapedMap<T>(): UnderscoreEscapedMap<T> {
-    return new qa.QMap<T>() as UnderscoreEscapedMap<T>;
+    return new QMap<T>() as UnderscoreEscapedMap<T>;
   }
   export function hasEntries(map: ReadonlyUnderscoreEscapedMap<any> | undefined): map is ReadonlyUnderscoreEscapedMap<any> {
     return !!map && !!map.size;
-  }
-  export function isTransientSymbol(symbol: Symbol): symbol is TransientSymbol {
-    return (symbol.flags & SymbolFlags.Transient) !== 0;
   }
   const stringWriter = createSingleLineStringWriter();
   
@@ -70,15 +58,6 @@ namespace core {
     return moduleResolutionOptionDeclarations.some((o) => !isJsonEqual(getCompilerOptionValue(oldOptions, o), getCompilerOptionValue(newOptions, o)));
   }
 
-  export function cloneMap(map: SymbolTable): SymbolTable;
-  export function cloneMap<T>(map: qa.QReadonlyMap<T>): qa.QMap<T>;
-  export function cloneMap<T>(map: ReadonlyUnderscoreEscapedMap<T>): UnderscoreEscapedMap<T>;
-  export function cloneMap<T>(map: qa.QReadonlyMap<T> | ReadonlyUnderscoreEscapedMap<T> | SymbolTable): qa.QMap<T> | UnderscoreEscapedMap<T> | SymbolTable {
-    const clone = createMap<T>();
-    qu.copyEntries(map as qa.QMap<T>, clone);
-    return clone;
-  }
-
   export function usingSingleLineStringWriter(action: (writer: EmitTextWriter) => void): string {
     const oldString = stringWriter.getText();
     try {
@@ -90,35 +69,34 @@ namespace core {
     }
   }
 
-
   export function getResolvedModule(sourceFile: SourceFile | undefined, moduleNameText: string): ResolvedModuleFull | undefined {
     return sourceFile && sourceFile.resolvedModules && sourceFile.resolvedModules.get(moduleNameText);
   }
   export function setResolvedModule(sourceFile: SourceFile, moduleNameText: string, resolvedModule: ResolvedModuleFull): void {
     if (!sourceFile.resolvedModules) {
-      sourceFile.resolvedModules = createMap<ResolvedModuleFull>();
+      sourceFile.resolvedModules = new QMap<ResolvedModuleFull>();
     }
     sourceFile.resolvedModules.set(moduleNameText, resolvedModule);
   }
   export function setResolvedTypeReferenceDirective(sourceFile: SourceFile, typeReferenceDirectiveName: string, resolvedTypeReferenceDirective?: ResolvedTypeReferenceDirective): void {
     if (!sourceFile.resolvedTypeReferenceDirectiveNames) {
-      sourceFile.resolvedTypeReferenceDirectiveNames = createMap<ResolvedTypeReferenceDirective | undefined>();
+      sourceFile.resolvedTypeReferenceDirectiveNames = new QMap<ResolvedTypeReferenceDirective | undefined>();
     }
     sourceFile.resolvedTypeReferenceDirectiveNames.set(typeReferenceDirectiveName, resolvedTypeReferenceDirective);
   }
   export function getStartPositionOfLine(line: number, sourceFile: SourceFileLike): number {
-    qa.assert(line >= 0);
+    assert(line >= 0);
     return syntax.get.lineStarts(sourceFile)[line];
   }
   export function getEndLinePosition(line: number, sourceFile: SourceFileLike): number {
-    qa.assert(line >= 0);
+    assert(line >= 0);
     const lineStarts = syntax.get.lineStarts(sourceFile);
     const lineIndex = line;
     const sourceText = sourceFile.text;
     if (lineIndex + 1 === syntax.get.lineStarts.length) return sourceText.length - 1;
     const start = lineStarts[lineIndex];
     let pos = lineStarts[lineIndex + 1] - 1;
-    qa.assert(syntax.is.lineBreak(sourceText.charCodeAt(pos)));
+    assert(syntax.is.lineBreak(sourceText.charCodeAt(pos)));
     while (start <= pos && syntax.is.lineBreak(sourceText.charCodeAt(pos))) {
       pos--;
     }
@@ -156,10 +134,10 @@ namespace core {
   export function hasChangesInResolutions<T>(
     names: readonly string[],
     newResolutions: readonly T[],
-    oldResolutions: qa.QReadonlyMap<T> | undefined,
+    oldResolutions: QReadonlyMap<T> | undefined,
     comparer: (oldResolution: T, newResolution: T) => boolean
   ): boolean {
-    qa.assert(names.length === newResolutions.length);
+    assert(names.length === newResolutions.length);
     for (let i = 0; i < names.length; i++) {
       const newResolution = newResolutions[i];
       const oldResolution = oldResolutions && oldResolutions.get(names[i]);
@@ -227,8 +205,8 @@ namespace core {
   }
 
   export function createCommentDirectivesMap(sourceFile: SourceFile, commentDirectives: CommentDirective[]): CommentDirectivesMap {
-    const directivesByLine = qa.new QMap(commentDirectives.map((commentDirective) => [`${syntax.get.lineAndCharOf(sourceFile, commentDirective.range.end).line}`, commentDirective]));
-    const usedLines = createMap<boolean>();
+    const directivesByLine = new QMap(commentDirectives.map((commentDirective) => [`${syntax.get.lineAndCharOf(sourceFile, commentDirective.range.end).line}`, commentDirective]));
+    const usedLines = new QMap<boolean>();
     return { getUnusedExpectations, markUsed };
 
     function getUnusedExpectations() {
@@ -301,9 +279,6 @@ namespace core {
   }
 
 
-  export function isShorthandAmbientModuleSymbol(moduleSymbol: Symbol): boolean {
-    return Node.is.shorthandAmbientModule(moduleSymbol.valueDeclaration);
-  }
 
 
   export function isGlobalScopeAugmentation(module: ModuleDeclaration): boolean {
@@ -311,9 +286,6 @@ namespace core {
   }
 
 
-  export function getNonAugmentationDeclaration(symbol: Symbol) {
-    return find(symbol.declarations, (d) => !Node.is.externalModuleAugmentation(d) && !(Node.is.kind(ModuleDeclaration, d) && isGlobalScopeAugmentation(d)));
-  }
 
   export function isEffectiveExternalModule(node: SourceFile, compilerOptions: CompilerOptions) {
     return qp_isExternalModule(node) || compilerOptions.isolatedModules || (getEmitModuleKind(compilerOptions) === ModuleKind.CommonJS && !!node.commonJsModuleIndicator);
@@ -470,7 +442,7 @@ namespace core {
     let errorNode: Node | undefined = node;
     switch (node.kind) {
       case Syntax.SourceFile:
-        const pos = syntax.skipTrivia(sourceFile.text, 0, /*stopAfterLineBreak*/ false);
+        const pos = syntax.skipTrivia(sourceFile.text, 0, false);
         if (pos === sourceFile.text.length) return new TextSpan();
         return getSpanOfTokenAtPosition(sourceFile, pos);
       case Syntax.VariableDeclaration:
@@ -502,15 +474,15 @@ namespace core {
     if (errorNode === undefined) {
       return getSpanOfTokenAtPosition(sourceFile, node.pos);
     }
-    qa.assert(!Node.is.kind(JSDoc, errorNode));
+    assert(!Node.is.kind(JSDoc, errorNode));
     const isMissing = Node.is.missing(errorNode);
     const pos = isMissing || Node.is.kind(JsxText, node) ? errorNode.pos : syntax.skipTrivia(sourceFile.text, errorNode.pos);
     if (isMissing) {
-      qa.assert(pos === errorNode.pos, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
-      qa.assert(pos === errorNode.end, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
+      assert(pos === errorNode.pos, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
+      assert(pos === errorNode.end, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
     } else {
-      qa.assert(pos >= errorNode.pos, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
-      qa.assert(pos <= errorNode.end, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
+      assert(pos >= errorNode.pos, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
+      assert(pos <= errorNode.end, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
     }
     return TextSpan.from(pos, errorNode.end);
   }
@@ -794,7 +766,7 @@ namespace core {
 
 
   export function getExternalModuleImportEqualsDeclarationExpression(node: Node) {
-    qa.assert(Node.is.externalModuleImportEqualsDeclaration(node));
+    assert(Node.is.externalModuleImportEqualsDeclaration(node));
     return (<ExternalModuleReference>(<ImportEqualsDeclaration>node).moduleReference).expression;
   }
 
@@ -1182,25 +1154,6 @@ namespace core {
     );
   }
 
-  export function setValueDeclaration(symbol: Symbol, node: Declaration): void {
-    const { valueDeclaration } = symbol;
-    if (
-      !valueDeclaration ||
-      (!(node.flags & NodeFlags.Ambient && !(valueDeclaration.flags & NodeFlags.Ambient)) && isAssignmentDeclaration(valueDeclaration) && !isAssignmentDeclaration(node)) ||
-      (valueDeclaration.kind !== node.kind && Node.is.effectiveModuleDeclaration(valueDeclaration))
-    ) {
-      // other kinds of value declarations take precedence over modules and assignment declarations
-      symbol.valueDeclaration = node;
-    }
-  }
-
-  export function isFunctionSymbol(symbol: Symbol | undefined) {
-    if (!symbol || !symbol.valueDeclaration) {
-      return false;
-    }
-    const decl = symbol.valueDeclaration;
-    return decl.kind === Syntax.FunctionDeclaration || (Node.is.kind(VariableDeclaration, decl) && decl.initializer && Node.is.functionLike(decl.initializer));
-  }
 
   export function importFromModuleSpecifier(node: StringLiteralLike): AnyValidImportOrReExport {
     return tryGetImportFromModuleSpecifier(node) || Debug.failBadSyntax(node.parent);
@@ -1216,7 +1169,7 @@ namespace core {
       case Syntax.CallExpression:
         return Node.is.importCall(node.parent) || isRequireCall(node.parent, /*checkArg*/ false) ? (node.parent as RequireOrImportCall) : undefined;
       case Syntax.LiteralType:
-        qa.assert(Node.is.kind(StringLiteral, node));
+        assert(Node.is.kind(StringLiteral, node));
         return tryCast(node.parent.parent, ImportTypeNode.kind) as ValidImportTypeNode | undefined;
       default:
         return;
@@ -1803,21 +1756,10 @@ namespace core {
     return Node.is.identifierOrPrivateIdentifier(node) ? node.escapedText : syntax.get.escUnderscores(node.text);
   }
 
-  export function getPropertyNameForUniqueESSymbol(symbol: Symbol): __String {
-    return `__@${getSymbolId(symbol)}@${symbol.escName}` as __String;
-  }
-
   export function getPropertyNameForKnownSymbolName(symbolName: string): __String {
     return ('__@' + symbolName) as __String;
   }
 
-  export function getSymbolNameForPrivateIdentifier(containingClassSymbol: Symbol, description: __String): __String {
-    return `__#${getSymbolId(containingClassSymbol)}@${description}` as __String;
-  }
-
-  export function isKnownSymbol(symbol: Symbol): boolean {
-    return startsWith(symbol.escName as string, '__@');
-  }
 
   /**
    * Includes the word "Symbol" with unicode escapes
@@ -1893,7 +1835,7 @@ namespace core {
   export function createDiagnosticCollection(): DiagnosticCollection {
     let nonFileDiagnostics = ([] as Diagnostic[]) as SortedArray<Diagnostic>; // See GH#19873
     const filesWithDiagnostics = ([] as string[]) as SortedArray<string>;
-    const fileDiagnostics = createMap<SortedArray<DiagnosticWithLocation>>();
+    const fileDiagnostics = new QMap<SortedArray<DiagnosticWithLocation>>();
     let hasReadNonFileDiagnostics = false;
 
     return {
@@ -1986,7 +1928,7 @@ namespace core {
   const singleQuoteEscapedCharsRegExp = /[\\\'\u0000-\u001f\t\v\f\b\r\n\u2028\u2029\u0085]/g;
   // Template strings should be preserved as much as possible
   const backtickQuoteEscapedCharsRegExp = /[\\`]/g;
-  const escapedCharsMap = createMap({
+  const escapedCharsMap = new QMap({
     '\t': '\\t',
     '\v': '\\v',
     '\f': '\\f',
@@ -2045,7 +1987,7 @@ namespace core {
   // the map below must be updated.
   const jsxDoubleQuoteEscapedCharsRegExp = /[\"\u0000-\u001f\u2028\u2029\u0085]/g;
   const jsxSingleQuoteEscapedCharsRegExp = /[\'\u0000-\u001f\u2028\u2029\u0085]/g;
-  const jsxEscapedCharsMap = createMap({
+  const jsxEscapedCharsMap = new QMap({
     '"': '&quot;',
     "'": '&apos;',
   });
@@ -2472,7 +2414,7 @@ namespace core {
 
   export function getSetAccessorValueParameter(accessor: SetAccessorDeclaration): ParameterDeclaration | undefined {
     if (accessor && accessor.parameters.length > 0) {
-      const hasThis = accessor.parameters.length === 2 && parameterIsThsyntax.is.keyword(accessor.parameters[0]);
+      const hasThis = accessor.parameters.length === 2 && parameterIsThisKeyword(accessor.parameters[0]);
       return accessor.parameters[hasThis ? 1 : 0];
     }
   }
@@ -2483,25 +2425,25 @@ namespace core {
     return parameter && parameter.type;
   }
 
-  export function getThNode.is.kind(ParameterDeclaration, signature: SignatureDeclaration | JSDocSignature): ParameterDeclaration | undefined {
+  export function getThisNodeKind(ParameterDeclaration, signature: SignatureDeclaration | JSDocSignature): ParameterDeclaration | undefined {
     // cb tags do not currently support this parameters
     if (signature.parameters.length && !Node.is.kind(JSDocSignature, signature)) {
       const thisParameter = signature.parameters[0];
-      if (parameterIsThsyntax.is.keyword(thisParameter)) {
+      if (parameterIsThisKeyword(thisParameter)) {
         return thisParameter;
       }
     }
   }
 
-  export function parameterIsThsyntax.is.keyword(parameter: ParameterDeclaration): boolean {
-    return isThNode.is.kind(Identifier, parameter.name);
+  export function parameterIsThisKeyword(parameter: ParameterDeclaration): boolean {
+    return isThisNodeKind(Identifier, parameter.name);
   }
 
-  export function isThNode.is.kind(Identifier, node: Node | undefined): boolean {
-    return !!node && node.kind === Syntax.Identifier && identifierIsThsyntax.is.keyword(node as Identifier);
+  export function isThisNodeKind(Identifier, node: Node | undefined): boolean {
+    return !!node && node.kind === Syntax.Identifier && identifierIsThisKeyword(node as Identifier);
   }
 
-  export function identifierIsThsyntax.is.keyword(id: Identifier): boolean {
+  export function identifierIsThisKeyword(id: Identifier): boolean {
     return id.originalKeywordKind === Syntax.ThisKeyword;
   }
 
@@ -2982,13 +2924,6 @@ namespace core {
     return expression.kind === Syntax.ArrayLiteralExpression && (<ArrayLiteralExpression>expression).elements.length === 0;
   }
 
-  export function getLocalSymbolForExportDefault(symbol: Symbol) {
-    return isExportDefaultSymbol(symbol) ? symbol.declarations[0].localSymbol : undefined;
-  }
-
-  function isExportDefaultSymbol(symbol: Symbol): boolean {
-    return symbol && length(symbol.declarations) > 0 && hasSyntacticModifier(symbol.declarations[0], ModifierFlags.Default);
-  }
 
   /** Return ".ts", ".d.ts", or ".tsx", if that is the extension. */
   export function tryExtractTSExtension(fileName: string): string | undefined {
@@ -3018,7 +2953,7 @@ namespace core {
         output.push(((cc >> 6) & 0b00111111) | 0b10000000);
         output.push((cc & 0b00111111) | 0b10000000);
       } else {
-        qa.assert(false, 'Unexpected code point');
+        assert(false, 'Unexpected code point');
       }
     }
 
@@ -3195,36 +3130,6 @@ namespace core {
     watcher.close();
   }
 
-  export function getCheckFlags(symbol: Symbol): CheckFlags {
-    return symbol.flags & SymbolFlags.Transient ? (<TransientSymbol>symbol).checkFlags : 0;
-  }
-
-  export function getDeclarationModifierFlagsFromSymbol(s: Symbol): ModifierFlags {
-    if (s.valueDeclaration) {
-      const flags = getCombinedModifierFlags(s.valueDeclaration);
-      return s.parent && s.parent.flags & SymbolFlags.Class ? flags : flags & ~ModifierFlags.AccessibilityModifier;
-    }
-    if (getCheckFlags(s) & CheckFlags.Synthetic) {
-      const checkFlags = (<TransientSymbol>s).checkFlags;
-      const accessModifier = checkFlags & CheckFlags.ContainsPrivate ? ModifierFlags.Private : checkFlags & CheckFlags.ContainsPublic ? ModifierFlags.Public : ModifierFlags.Protected;
-      const staticModifier = checkFlags & CheckFlags.ContainsStatic ? ModifierFlags.Static : 0;
-      return accessModifier | staticModifier;
-    }
-    if (s.flags & SymbolFlags.Prototype) {
-      return ModifierFlags.Public | ModifierFlags.Static;
-    }
-    return 0;
-  }
-
-  export function skipAlias(symbol: Symbol, checker: TypeChecker) {
-    return symbol.flags & SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
-  }
-
-  /** See comment on `declareModuleMember` in `binder.ts`. */
-  export function getCombinedLocalAndExportSymbolFlags(symbol: Symbol): SymbolFlags {
-    return symbol.exportSymbol ? symbol.exportSymbol.flags | symbol.flags : symbol.flags;
-  }
-
   export function isWriteOnlyAccess(node: Node) {
     return accessKind(node) === AccessKind.Write;
   }
@@ -3308,7 +3213,7 @@ namespace core {
     return true;
   }
 
-  export function clearMap<T>(map: { forEach: qa.QMap<T>['forEach']; clear: qa.QMap<T>['clear'] }, onDeleteValue: (valueInMap: T, key: string) => void) {
+  export function clearMap<T>(map: { forEach: QMap<T>['forEach']; clear: QMap<T>['clear'] }, onDeleteValue: (valueInMap: T, key: string) => void) {
     // Remove all
     map.forEach(onDeleteValue);
     map.clear();
@@ -3320,7 +3225,7 @@ namespace core {
     onExistingValue?(existingValue: T, valueInNewMap: U, key: string): void;
   }
 
-  export function mutateMapSkippingNewValues<T, U>(map: qa.QMap<T>, newMap: qa.QReadonlyMap<U>, options: MutateMapSkippingNewValuesOptions<T, U>) {
+  export function mutateMapSkippingNewValues<T, U>(map: QMap<T>, newMap: QReadonlyMap<U>, options: MutateMapSkippingNewValuesOptions<T, U>) {
     const { onDeleteValue, onExistingValue } = options;
     // Needs update
     map.forEach((existingValue, key) => {
@@ -3341,7 +3246,7 @@ namespace core {
     createNewValue(key: string, valueInNewMap: U): T;
   }
 
-  export function mutateMap<T, U>(map: qa.QMap<T>, newMap: qa.QReadonlyMap<U>, options: MutateMapOptions<T, U>) {
+  export function mutateMap<T, U>(map: QMap<T>, newMap: QReadonlyMap<U>, options: MutateMapOptions<T, U>) {
     // Needs update
     mutateMapSkippingNewValues(map, newMap, options);
 
@@ -3360,17 +3265,6 @@ namespace core {
     return !!(getObjectFlags(type) & ObjectFlags.Anonymous) && !!type.symbol && isAbstractConstructorSymbol(type.symbol);
   }
 
-  export function isAbstractConstructorSymbol(symbol: Symbol): boolean {
-    if (symbol.flags & SymbolFlags.Class) {
-      const declaration = getClassLikeDeclarationOfSymbol(symbol);
-      return !!declaration && hasSyntacticModifier(declaration, ModifierFlags.Abstract);
-    }
-    return false;
-  }
-
-  export function getClassLikeDeclarationOfSymbol(symbol: Symbol): ClassLikeDeclaration | undefined {
-    return find(symbol.declarations, isClassLike);
-  }
 
   export function getObjectFlags(type: Type): ObjectFlags {
     return type.flags & TypeFlags.ObjectFlagsType ? (<ObjectFlagsType>type).objectFlags : 0;
@@ -3384,9 +3278,6 @@ namespace core {
     return !!forEachAncestorDirectory(directory, (d) => (cb(d) ? true : undefined));
   }
 
-  export function isUMDExportSymbol(symbol: Symbol | undefined): boolean {
-    return !!symbol && !!symbol.declarations && !!symbol.declarations[0] && Node.is.kind(NamespaceExportDeclaration, symbol.declarations[0]);
-  }
 
   export function showModuleSpecifier({ moduleSpecifier }: ImportDeclaration): string {
     return Node.is.kind(StringLiteral, moduleSpecifier) ? moduleSpecifier.text : Node.get.textOf(moduleSpecifier);
@@ -3413,9 +3304,9 @@ namespace core {
   }
 
   /** Add a value to a set, and return true if it wasn't already present. */
-  export function addToSeen(seen: qa.QMap<true>, key: string | number): boolean;
-  export function addToSeen<T>(seen: qa.QMap<T>, key: string | number, value: T): boolean;
-  export function addToSeen<T>(seen: qa.QMap<T>, key: string | number, value: T = true as any): boolean {
+  export function addToSeen(seen: QMap<true>, key: string | number): boolean;
+  export function addToSeen<T>(seen: QMap<T>, key: string | number, value: T): boolean;
+  export function addToSeen<T>(seen: QMap<T>, key: string | number, value: T = true as any): boolean {
     key = String(key);
     if (seen.has(key)) {
       return false;
@@ -3436,7 +3327,7 @@ namespace core {
     if (node.kind === Syntax.PropertyAccessExpression) {
       return node.name;
     }
-    qa.assert(node.kind === Syntax.ElementAccessExpression);
+    assert(node.kind === Syntax.ElementAccessExpression);
     return node.argumentExpression;
   }
 
@@ -3728,8 +3619,8 @@ namespace core {
     return true;
   }
 
-  export function discoverProbableSymlinks(files: readonly SourceFile[], getCanonicalFileName: GetCanonicalFileName, cwd: string): qa.QReadonlyMap<string> {
-    const result = createMap<string>();
+  export function discoverProbableSymlinks(files: readonly SourceFile[], getCanonicalFileName: GetCanonicalFileName, cwd: string): QReadonlyMap<string> {
+    const result = new QMap<string>();
     const symlinks = flatten<readonly [string, string]>(
       mapDefined(
         files,
@@ -4017,7 +3908,7 @@ namespace core {
     // Associate an array of results with each include regex. This keeps results in order of the "include" order.
     // If there are no "includes", then just put everything in results[0].
     const results: string[][] = includeFileRegexes ? includeFileRegexes.map(() => []) : [[]];
-    const visited = createMap<true>();
+    const visited = new QMap<true>();
     const toCanonical = createGetCanonicalFileName(useCaseSensitiveFileNames);
     for (const basePath of patterns.basePaths) {
       visitDirectory(basePath, combinePaths(currentDirectory, basePath), depth);
@@ -4275,7 +4166,7 @@ namespace core {
 
   export function tryParsePattern(pattern: string): Pattern | undefined {
     // This should be verified outside of here and a proper error thrown.
-    qa.assert(hasZeroOrOneAsteriskCharacter(pattern));
+    assert(hasZeroOrOneAsteriskCharacter(pattern));
     const indexOfStar = pattern.indexOf('*');
     return indexOfStar === -1
       ? undefined
@@ -4336,7 +4227,7 @@ namespace core {
 
   export function sliceAfter<T>(arr: readonly T[], value: T): readonly T[] {
     const index = arr.indexOf(value);
-    qa.assert(index !== -1);
+    assert(index !== -1);
     return arr.slice(index);
   }
 
@@ -4352,7 +4243,7 @@ namespace core {
   }
 
   export function minAndMax<T>(arr: readonly T[], getValue: (value: T) => number): { readonly min: number; readonly max: number } {
-    qa.assert(arr.length !== 0);
+    assert(arr.length !== 0);
     let min = getValue(arr[0]);
     let max = min;
     for (let i = 1; i < arr.length; i++) {
@@ -4373,7 +4264,7 @@ namespace core {
   }
 
   export class NodeSet<TNode extends Node> implements ReadonlyNodeSet<TNode> {
-    private map = createMap<TNode>();
+    private map = new QMap<TNode>();
 
     add(node: TNode): void {
       this.map.set(String(getNodeId(node)), node);
@@ -4400,7 +4291,7 @@ namespace core {
   }
 
   export class NodeMap<TNode extends Node, TValue> implements ReadonlyNodeMap<TNode, TValue> {
-    private map = createMap<{ node: TNode; value: TValue }>();
+    private map = new QMap<{ node: TNode; value: TValue }>();
 
     get(node: TNode): TValue | undefined {
       const res = this.map.get(String(getNodeId(node)));
@@ -4443,7 +4334,7 @@ namespace core {
     return a === b || (typeof a === 'object' && a !== null && typeof b === 'object' && b !== null && equalOwnProperties(a as MapLike<unknown>, b as MapLike<unknown>, isJsonEqual));
   }
 
-  export function getOrUpdate<T>(map: qa.QMap<T>, key: string, getDefault: () => T): T {
+  export function getOrUpdate<T>(map: QMap<T>, key: string, getDefault: () => T): T {
     const got = map.get(key);
     if (got === undefined) {
       const value = getDefault();

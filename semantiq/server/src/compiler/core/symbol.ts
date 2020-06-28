@@ -124,7 +124,7 @@ namespace core {
     id?: number;
     mergeId?: number;
     parent?: Symbol;
-    declarations!: Declaration[];
+    declarations?: Declaration[];
     valueDeclaration?: Declaration;
     members?: SymbolTable;
     exports?: SymbolTable;
@@ -147,19 +147,22 @@ namespace core {
       if (d?.isPrivateIdentifierPropertyDeclaration()) return idText(d.name);
       return syntax.get.unescUnderscores(this.escName);
     }
+    getId() {
+      return this.id!;
+    }
     getName() {
       return this.name;
     }
-    getEscName(): __String {
+    getEscName() {
       return this.escName;
     }
-    getFlags(): SymbolFlags {
+    getFlags() {
       return this.flags;
     }
-    getDeclarations(): Declaration[] | undefined {
+    getDeclarations() {
       return this.declarations;
     }
-    getDocComment(checker: TypeChecker | undefined): SymbolDisplayPart[] {
+    getDocComment(checker?: TypeChecker): SymbolDisplayPart[] {
       if (!this.docComment) {
         this.docComment = empty;
         if (!this.declarations && ((this as Symbol) as TransientSymbol).target && (((this as Symbol) as TransientSymbol).target as TransientSymbol).tupleLabelDeclaration) {
@@ -171,7 +174,7 @@ namespace core {
       }
       return this.docComment!;
     }
-    getCtxComment(context: Node | undefined, checker: TypeChecker | undefined): SymbolDisplayPart[] {
+    getCtxComment(context?: Node, checker?: TypeChecker): SymbolDisplayPart[] {
       switch (context?.kind) {
         case Syntax.GetAccessor:
           if (!this.getComment) {
@@ -192,6 +195,90 @@ namespace core {
     getJsDocTags(): JSDocTagInfo[] {
       if (!this.tags) this.tags = JsDoc.getJsDocTagsFromDeclarations(this.declarations);
       return this.tags!;
+    }
+    getPropertyNameForUniqueESSymbol(): __String {
+      return `__@${this.getId()}@${this.escName}` as __String;
+    }
+    getSymbolNameForPrivateIdentifier(description: __String): __String {
+      return `__#${this.getId()}@${description}` as __String;
+    }
+    isKnownSymbol() {
+      return startsWith(this.escName as string, '__@');
+    }
+    getLocalSymbolForExportDefault() {
+      return this.isExportDefaultSymbol() ? this.declarations![0].localSymbol : undefined;
+    }
+    isExportDefaultSymbol() {
+      return length(this.declarations) > 0 && hasSyntacticModifier(this.declarations![0], ModifierFlags.Default);
+    }
+    getDeclarationOfKind<T extends Declaration>(k: T['kind']): T | undefined {
+      const ds = this.declarations;
+      if (ds) {
+        for (const d of ds) {
+          if (d.kind === k) return d as T;
+        }
+      }
+      return;
+    }
+    isTransientSymbol(): this is TransientSymbol {
+      return (this.flags & SymbolFlags.Transient) !== 0;
+    }
+    getNonAugmentationDeclaration() {
+      return find(this.declarations!, (d) => !Node.is.externalModuleAugmentation(d) && !(Node.is.kind(ModuleDeclaration, d) && isGlobalScopeAugmentation(d)));
+    }
+    setValueDeclaration(d: Declaration) {
+      const v = this.valueDeclaration;
+      if (
+        !v ||
+        (!(d.flags & NodeFlags.Ambient && !(v.flags & NodeFlags.Ambient)) && isAssignmentDeclaration(v) && !isAssignmentDeclaration(d)) ||
+        (v.kind !== d.kind && Node.is.effectiveModuleDeclaration(v))
+      ) {
+        this.valueDeclaration = d;
+      }
+    }
+    isFunctionSymbol() {
+      if (!this.valueDeclaration) return false;
+      const v = this.valueDeclaration;
+      return v.kind === Syntax.FunctionDeclaration || (Node.is.kind(VariableDeclaration, v) && v.initializer && Node.is.functionLike(v.initializer));
+    }
+    getCheckFlags(): CheckFlags {
+      return this.isTransientSymbol() ? this.checkFlags : 0;
+    }
+    getDeclarationModifierFlagsFromSymbol(): ModifierFlags {
+      if (this.valueDeclaration) {
+        const f = getCombinedModifierFlags(this.valueDeclaration);
+        return this.parent && this.parent.flags & SymbolFlags.Class ? f : f & ~ModifierFlags.AccessibilityModifier;
+      }
+      if (this.isTransientSymbol() && this.getCheckFlags() & CheckFlags.Synthetic) {
+        const f = this.checkFlags;
+        const a = f & CheckFlags.ContainsPrivate ? ModifierFlags.Private : f & CheckFlags.ContainsPublic ? ModifierFlags.Public : ModifierFlags.Protected;
+        const s = f & CheckFlags.ContainsStatic ? ModifierFlags.Static : 0;
+        return a | s;
+      }
+      if (this.flags & SymbolFlags.Prototype) return ModifierFlags.Public | ModifierFlags.Static;
+      return 0;
+    }
+    skipAlias(c: TypeChecker) {
+      return this.flags & SymbolFlags.Alias ? c.getAliasedSymbol(this) : this;
+    }
+    getCombinedLocalAndExportSymbolFlags(): SymbolFlags {
+      return this.exportSymbol ? this.exportSymbol.flags | this.flags : this.flags;
+    }
+    isAbstractConstructorSymbol() {
+      if (this.flags & SymbolFlags.Class) {
+        const d = this.getClassLikeDeclarationOfSymbol();
+        return !!d && hasSyntacticModifier(d, ModifierFlags.Abstract);
+      }
+      return false;
+    }
+    getClassLikeDeclarationOfSymbol(): ClassLikeDeclaration | undefined {
+      return find(this.declarations!, isClassLike);
+    }
+    isUMDExportSymbol() {
+      return this.declarations?.[0] && Node.is.kind(NamespaceExportDeclaration, this.declarations[0]);
+    }
+    isShorthandAmbientModuleSymbol() {
+      return Node.is.shorthandAmbientModule(this.valueDeclaration);
     }
   }
   export interface SymbolLinks {
@@ -304,6 +391,14 @@ namespace core {
           copySymbol(s, to, meaning);
         });
       }
+    }
+    cloneMap(map: SymbolTable): SymbolTable;
+    cloneMap<T>(map: QReadonlyMap<T>): QMap<T>;
+    cloneMap<T>(map: ReadonlyUnderscoreEscapedMap<T>): UnderscoreEscapedMap<T>;
+    cloneMap<T>(map: QReadonlyMap<T> | ReadonlyUnderscoreEscapedMap<T> | SymbolTable): QMap<T> | UnderscoreEscapedMap<T> | SymbolTable {
+      const c = new QMap<T>();
+      copyEntries(map as QMap<T>, c);
+      return c;
     }
   }
 
@@ -420,16 +515,16 @@ namespace core {
           visitSymbol(p);
         }
       }
-      function visitSymbol(symbol: Symbol | undefined): boolean {
-        if (!symbol) return false;
-        const symbolId = getSymbolId(symbol);
-        if (visitedSymbols[symbolId]) return false;
-        visitedSymbols[symbolId] = symbol;
-        if (!accept(symbol)) return true;
-        const t = getTypeOfSymbol(symbol);
+      function visitSymbol(s?: Symbol): boolean {
+        if (!s) return false;
+        const i = s.getId();
+        if (visitedSymbols[i]) return false;
+        visitedSymbols[i] = s;
+        if (!accept(s)) return true;
+        const t = getTypeOfSymbol(s);
         visitType(t);
-        if (symbol.exports) symbol.exports.forEach(visitSymbol);
-        forEach(symbol.declarations, (d) => {
+        if (s.exports) s.exports.forEach(visitSymbol);
+        forEach(s.declarations, (d) => {
           if ((d as any).type && (d as any).type.kind === Syntax.TypeQuery) {
             const query = (d as any).type as TypeQueryNode;
             const entity = getResolvedSymbol(getFirstIdentifier(query.exprName));
