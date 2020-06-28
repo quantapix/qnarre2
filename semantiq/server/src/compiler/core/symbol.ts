@@ -120,7 +120,7 @@ namespace core {
   interface SymbolDisplayPart {}
   interface JSDocTagInfo {}
 
-  export class Symbol {
+  export abstract class Symbol {
     id?: number;
     mergeId?: number;
     parent?: Symbol;
@@ -280,6 +280,7 @@ namespace core {
     isShorthandAmbientModuleSymbol() {
       return Node.is.shorthandAmbientModule(this.valueDeclaration);
     }
+    abstract merge(t: Symbol, unidirectional?: boolean): Symbol;
   }
   export interface SymbolLinks {
     immediateTarget?: Symbol; // Immediate target of an alias. May be another alias. Do not access directly, use `checker.getImmediateAliasedSymbol` instead.
@@ -372,17 +373,17 @@ namespace core {
       }
     }
     merge(ss: SymbolTable<S>, unidirectional = false) {
-      ss.forEach((s, id) => {
-        const t = this.get(id);
-        this.set(id, t ? mergeSymbol(t, s, unidirectional) : s);
+      ss.forEach((s, i) => {
+        const t = this.get(i);
+        this.set(i, t ? s.merge(t, unidirectional) : s);
       });
     }
-    combine(ss: SymbolTable<S> | undefined): SymbolTable<S> | undefined {
+    combine(ss?: SymbolTable<S>): SymbolTable<S> | undefined {
       if (!hasEntries(this)) return ss;
       if (!hasEntries(ss)) return this;
       const t = new SymbolTable<S>();
       t.merge(this);
-      t.merge(ss);
+      t.merge(ss!);
       return t;
     }
     copy(to: SymbolTable<S>, meaning: SymbolFlags) {
@@ -392,14 +393,15 @@ namespace core {
         });
       }
     }
-    cloneMap(map: SymbolTable): SymbolTable;
-    cloneMap<T>(map: QReadonlyMap<T>): QMap<T>;
-    cloneMap<T>(map: ReadonlyUnderscoreEscapedMap<T>): UnderscoreEscapedMap<T>;
-    cloneMap<T>(map: QReadonlyMap<T> | ReadonlyUnderscoreEscapedMap<T> | SymbolTable): QMap<T> | UnderscoreEscapedMap<T> | SymbolTable {
-      const c = new QMap<T>();
-      copyEntries(map as QMap<T>, c);
-      return c;
-    }
+  }
+
+  export function cloneMap(m: SymbolTable): SymbolTable;
+  export function cloneMap<T>(m: QReadonlyMap<T>): QMap<T>;
+  export function cloneMap<T>(m: ReadonlyUnderscoreEscapedMap<T>): UnderscoreEscapedMap<T>;
+  export function cloneMap<T>(m: QReadonlyMap<T> | ReadonlyUnderscoreEscapedMap<T> | SymbolTable): QMap<T> | UnderscoreEscapedMap<T> | SymbolTable {
+    const c = new QMap<T>();
+    copyEntries(m as QMap<T>, c);
+    return c;
   }
 
   export function createGetSymbolWalker(

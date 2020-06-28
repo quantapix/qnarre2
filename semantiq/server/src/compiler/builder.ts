@@ -173,9 +173,9 @@ namespace core {
     state.compilerOptions = compilerOptions;
     // With --out or --outFile, any change affects all semantic diagnostics so no need to cache them
     if (!compilerOptions.outFile && !compilerOptions.out) {
-      state.semanticDiagnosticsPerFile = createMap<readonly Diagnostic[]>();
+      state.semanticDiagnosticsPerFile = new QMap<readonly Diagnostic[]>();
     }
-    state.changedFilesSet = createMap<true>();
+    state.changedFilesSet = new QMap<true>();
 
     const useOldState = BuilderState.canReuseOldState(state.referencedMap, oldState);
     const oldCompilerOptions = useOldState ? oldState!.compilerOptions : undefined;
@@ -200,7 +200,7 @@ namespace core {
         state.affectedFilesPendingEmit = oldState!.affectedFilesPendingEmit.slice();
         state.affectedFilesPendingEmitKind = cloneMapOrUndefined(oldState!.affectedFilesPendingEmitKind);
         state.affectedFilesPendingEmitIndex = oldState!.affectedFilesPendingEmitIndex;
-        state.seenAffectedFiles = createMap();
+        state.seenAffectedFiles = new QMap();
       }
     }
 
@@ -245,7 +245,7 @@ namespace core {
             oldState!.hasReusableDiagnostic ? convertToDiagnostics(diagnostics as readonly ReusableDiagnostic[], newProgram, getCanonicalFileName) : (diagnostics as readonly Diagnostic[])
           );
           if (!state.semanticDiagnosticsFromOldState) {
-            state.semanticDiagnosticsFromOldState = createMap<true>();
+            state.semanticDiagnosticsFromOldState = new QMap<true>();
           }
           state.semanticDiagnosticsFromOldState.set(sourceFilePath, true);
         }
@@ -259,7 +259,7 @@ namespace core {
       // Add all files to affectedFilesPendingEmit since emit changed
       newProgram.getSourceFiles().forEach((f) => addToAffectedFilesPendingEmit(state, f.resolvedPath, BuilderFileEmit.Full));
       assert(!state.seenAffectedFiles || !state.seenAffectedFiles.size);
-      state.seenAffectedFiles = state.seenAffectedFiles || createMap<true>();
+      state.seenAffectedFiles = state.seenAffectedFiles || new QMap<true>();
     }
 
     state.emittedBuildInfo = !state.changedFilesSet.size && !state.affectedFilesPendingEmit;
@@ -295,17 +295,11 @@ namespace core {
     };
   }
 
-  /**
-   * Releases program and other related not needed properties
-   */
   function releaseCache(state: BuilderProgramState) {
     BuilderState.releaseCache(state);
     state.program = undefined;
   }
 
-  /**
-   * Creates a clone of the state
-   */
   function cloneBuilderProgramState(state: Readonly<BuilderProgramState>): BuilderProgramState {
     const newState = BuilderState.clone(state) as BuilderProgramState;
     newState.semanticDiagnosticsPerFile = cloneMapOrUndefined(state.semanticDiagnosticsPerFile);
@@ -328,19 +322,10 @@ namespace core {
     return newState;
   }
 
-  /**
-   * Verifies that source file is ok to be used in calls that arent handled by next
-   */
   function assertSourceFileOkWithoutNextAffectedCall(state: BuilderProgramState, sourceFile: SourceFile | undefined) {
     assert(!sourceFile || !state.affectedFiles || state.affectedFiles[state.affectedFilesIndex! - 1] !== sourceFile || !state.semanticDiagnosticsPerFile!.has(sourceFile.resolvedPath));
   }
 
-  /**
-   * This function returns the next affected file to be processed.
-   * Note that until doneAffected is called it would keep reporting same result
-   * This is to allow the callers to be able to actually remove affected file only when the operation is complete
-   * eg. if during diagnostics check cancellation token ends up cancelling the request, the affected file should be retained
-   */
   function getNextAffectedFile(state: BuilderProgramState, cancellationToken: CancellationToken | undefined, computeHash: BuilderState.ComputeHash): SourceFile | Program | undefined {
     while (true) {
       const { affectedFiles } = state;
@@ -385,9 +370,9 @@ namespace core {
       }
 
       // Get next batch of affected files
-      state.currentAffectedFilesSignatures = state.currentAffectedFilesSignatures || createMap();
+      state.currentAffectedFilesSignatures = state.currentAffectedFilesSignatures || new QMap();
       if (state.exportedModulesMap) {
-        state.currentAffectedFilesExportedModulesMap = state.currentAffectedFilesExportedModulesMap || createMap<BuilderState.ReferencedSet | false>();
+        state.currentAffectedFilesExportedModulesMap = state.currentAffectedFilesExportedModulesMap || new QMap<BuilderState.ReferencedSet | false>();
       }
       state.affectedFiles = BuilderState.getFilesAffectedBy(
         state,
@@ -400,7 +385,7 @@ namespace core {
       );
       state.currentChangedFilePath = nextKey.value as Path;
       state.affectedFilesIndex = 0;
-      state.seenAffectedFiles = state.seenAffectedFiles || createMap<true>();
+      state.seenAffectedFiles = state.seenAffectedFiles || new QMap<true>();
     }
   }
 
@@ -410,7 +395,7 @@ namespace core {
   function getNextAffectedFilePendingEmit(state: BuilderProgramState) {
     const { affectedFilesPendingEmit } = state;
     if (affectedFilesPendingEmit) {
-      const seenEmittedFiles = state.seenEmittedFiles || (state.seenEmittedFiles = createMap());
+      const seenEmittedFiles = state.seenEmittedFiles || (state.seenEmittedFiles = new QMap());
       for (let i = state.affectedFilesPendingEmitIndex!; i < affectedFilesPendingEmit.length; i++) {
         const affectedFile = Debug.checkDefined(state.program).getSourceFileByPath(affectedFilesPendingEmit[i]);
         if (affectedFile) {
@@ -521,7 +506,7 @@ namespace core {
     // Since isolated modules dont change js files, files affected by change in signature is itself
     // But we need to cleanup semantic diagnostics and queue dts emit for affected files
     if (state.compilerOptions.isolatedModules) {
-      const seenFileNamesMap = createMap<true>();
+      const seenFileNamesMap = new QMap<true>();
       seenFileNamesMap.set(affectedFile.resolvedPath, true);
       const queue = BuilderState.getReferencedByPaths(state, affectedFile.resolvedPath);
       while (queue.length > 0) {
@@ -538,7 +523,7 @@ namespace core {
     }
 
     assert(!!state.currentAffectedFilesExportedModulesMap);
-    const seenFileAndExportsOfFile = createMap<true>();
+    const seenFileAndExportsOfFile = new QMap<true>();
     // Go through exported modules from cache first
     // If exported modules has path, all files referencing file exported from are affected
     if (
@@ -632,7 +617,7 @@ namespace core {
     } else {
       state.seenAffectedFiles!.set((affected as SourceFile).resolvedPath, true);
       if (emitKind !== undefined) {
-        (state.seenEmittedFiles || (state.seenEmittedFiles = createMap())).set((affected as SourceFile).resolvedPath, emitKind);
+        (state.seenEmittedFiles || (state.seenEmittedFiles = new QMap())).set((affected as SourceFile).resolvedPath, emitKind);
       }
       if (isPendingEmit) {
         state.affectedFilesPendingEmitIndex!++;
@@ -1101,7 +1086,7 @@ namespace core {
 
   function addToAffectedFilesPendingEmit(state: BuilderProgramState, affectedFilePendingEmit: Path, kind: BuilderFileEmit) {
     if (!state.affectedFilesPendingEmit) state.affectedFilesPendingEmit = [];
-    if (!state.affectedFilesPendingEmitKind) state.affectedFilesPendingEmitKind = createMap();
+    if (!state.affectedFilesPendingEmitKind) state.affectedFilesPendingEmitKind = new QMap();
 
     const existingKind = state.affectedFilesPendingEmitKind.get(affectedFilePendingEmit);
     state.affectedFilesPendingEmit.push(affectedFilePendingEmit);
@@ -1118,7 +1103,7 @@ namespace core {
 
   function getMapOfReferencedSet(mapLike: MapLike<readonly string[]> | undefined, toPath: (path: string) => Path): ReadonlyMap<BuilderState.ReferencedSet> | undefined {
     if (!mapLike) return;
-    const map = createMap<BuilderState.ReferencedSet>();
+    const map = new QMap<BuilderState.ReferencedSet>();
     // Copies keys/values from template. Note that for..in will not throw if
     // template is undefined, and instead will just exit the loop.
     for (const key in mapLike) {
@@ -1133,7 +1118,7 @@ namespace core {
     const buildInfoDirectory = getDirectoryPath(getNormalizedAbsolutePath(buildInfoPath, host.getCurrentDirectory()));
     const getCanonicalFileName = createGetCanonicalFileName(host.useCaseSensitiveFileNames());
 
-    const fileInfos = createMap<BuilderState.FileInfo>();
+    const fileInfos = new QMap<BuilderState.FileInfo>();
     for (const key in program.fileInfos) {
       if (hasProperty(program.fileInfos, key)) {
         fileInfos.set(toPath(key), program.fileInfos[key]);
