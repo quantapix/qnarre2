@@ -139,75 +139,11 @@ namespace core {
     | Syntax.BacktickToken
     | Syntax.Unknown
     | KeywordSyntax;
-  export interface JsxAttribute extends ObjectLiteralElement {
-    kind: Syntax.JsxAttribute;
-    parent: JsxAttributes;
-    name: Identifier;
-    initializer?: StringLiteral | JsxExpression;
-  }
-  export interface JsxAttributes extends ObjectLiteralExpressionBase<JsxAttributeLike> {
-    kind: Syntax.JsxAttributes;
-    parent: JsxOpeningLikeElement;
-  }
-  export interface JsxClosingElement extends Node {
-    kind: Syntax.JsxClosingElement;
-    parent: JsxElement;
-    tagName: JsxTagNameExpression;
-  }
-  export interface JsxClosingFragment extends Expression {
-    kind: Syntax.JsxClosingFragment;
-    parent: JsxFragment;
-  }
-  export interface JsxElement extends PrimaryExpression {
-    kind: Syntax.JsxElement;
-    openingElement: JsxOpeningElement;
-    children: Nodes<JsxChild>;
-    closingElement: JsxClosingElement;
-  }
-  export interface JsxExpression extends Expression {
-    kind: Syntax.JsxExpression;
-    parent: JsxElement | JsxAttributeLike;
-    dot3Token?: Token<Syntax.Dot3Token>;
-    expression?: Expression;
-  }
   export const enum JsxFlags {
     None = 0,
     IntrinsicNamedElement = 1 << 0,
     IntrinsicIndexedElement = 1 << 1,
     IntrinsicElement = IntrinsicNamedElement | IntrinsicIndexedElement,
-  }
-  export interface JsxFragment extends PrimaryExpression {
-    kind: Syntax.JsxFragment;
-    openingFragment: JsxOpeningFragment;
-    children: Nodes<JsxChild>;
-    closingFragment: JsxClosingFragment;
-  }
-  export interface JsxOpeningElement extends Expression {
-    kind: Syntax.JsxOpeningElement;
-    parent: JsxElement;
-    tagName: JsxTagNameExpression;
-    typeArguments?: Nodes<TypeNode>;
-    attributes: JsxAttributes;
-  }
-  export interface JsxOpeningFragment extends Expression {
-    kind: Syntax.JsxOpeningFragment;
-    parent: JsxFragment;
-  }
-  export interface JsxSelfClosingElement extends PrimaryExpression {
-    kind: Syntax.JsxSelfClosingElement;
-    tagName: JsxTagNameExpression;
-    typeArguments?: Nodes<TypeNode>;
-    attributes: JsxAttributes;
-  }
-  export interface JsxSpreadAttribute extends ObjectLiteralElement {
-    kind: Syntax.JsxSpreadAttribute;
-    parent: JsxAttributes;
-    expression: Expression;
-  }
-  export interface JsxText extends LiteralLikeNode {
-    kind: Syntax.JsxText;
-    onlyTriviaWhitespaces: boolean;
-    parent: JsxElement;
   }
   export type KeywordSyntax =
     | Syntax.AbstractKeyword
@@ -286,61 +222,6 @@ namespace core {
     | Syntax.AsyncKeyword
     | Syntax.AwaitKeyword
     | Syntax.OfKeyword;
-  export interface KeywordTypeNode extends TypeNode {
-    kind:
-      | Syntax.AnyKeyword
-      | Syntax.UnknownKeyword
-      | Syntax.NumberKeyword
-      | Syntax.BigIntKeyword
-      | Syntax.ObjectKeyword
-      | Syntax.BooleanKeyword
-      | Syntax.StringKeyword
-      | Syntax.SymbolKeyword
-      | Syntax.ThisKeyword
-      | Syntax.VoidKeyword
-      | Syntax.UndefinedKeyword
-      | Syntax.NullKeyword
-      | Syntax.NeverKeyword;
-  }
-  export interface LabeledStatement extends Statement, JSDocContainer {
-    kind: Syntax.LabeledStatement;
-    label: Identifier;
-    statement: Statement;
-  }
-  export interface LiteralTypeNode extends TypeNode {
-    kind: Syntax.LiteralType;
-    literal: BooleanLiteral | LiteralExpression | PrefixUnaryExpression;
-  }
-  export interface MappedTypeNode extends TypeNode, Declaration {
-    kind: Syntax.MappedType;
-    readonlyToken?: ReadonlyToken | PlusToken | MinusToken;
-    typeParameter: TypeParameterDeclaration;
-    questionToken?: QuestionToken | PlusToken | MinusToken;
-    type?: TypeNode;
-  }
-  export interface MergeDeclarationMarker extends Statement {
-    kind: Syntax.MergeDeclarationMarker;
-  }
-  export interface MetaProperty extends PrimaryExpression {
-    kind: Syntax.MetaProperty;
-    keywordToken: Syntax.NewKeyword | Syntax.ImportKeyword;
-    name: Identifier;
-  }
-  export interface MethodDeclaration extends FunctionLikeDeclarationBase, ClassElement, ObjectLiteralElement, JSDocContainer {
-    kind: Syntax.MethodDeclaration;
-    parent: ClassLikeDeclaration | ObjectLiteralExpression;
-    name: PropertyName;
-    body?: FunctionBody;
-  }
-  export interface MethodSignature extends SignatureDeclarationBase, TypeElement {
-    kind: Syntax.MethodSignature;
-    parent: ObjectTypeDeclaration;
-    name: PropertyName;
-  }
-  export interface MissingDeclaration extends DeclarationStatement {
-    kind: Syntax.MissingDeclaration;
-    name?: Identifier;
-  }
   export type Modifier =
     | Token<Syntax.AbstractKeyword>
     | Token<Syntax.AsyncKeyword>
@@ -376,17 +257,6 @@ namespace core {
     All = Export | Ambient | Public | Private | Protected | Static | Readonly | Abstract | Async | Default | Const,
   }
   export type Modifiers = Nodes<Modifier>;
-  export interface ModuleBlock extends Node, Statement {
-    kind: Syntax.ModuleBlock;
-    parent: ModuleDeclaration;
-    statements: Nodes<Statement>;
-  }
-  export interface ModuleDeclaration extends DeclarationStatement, JSDocContainer {
-    kind: Syntax.ModuleDeclaration;
-    parent: ModuleBody | SourceFile;
-    name: ModuleName;
-    body?: ModuleBody | JSDocNamespaceDeclaration;
-  }
   export interface NamedExports extends Node {
     kind: Syntax.NamedExports;
     parent: ExportDeclaration;

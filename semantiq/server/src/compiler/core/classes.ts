@@ -2119,11 +2119,12 @@ namespace core {
       return node.type !== type ? updateNode(createJSDocVariadicType(type), node) : node;
     }
   }
-
-
-
-  export class JsxAttribute {
+  export class JsxAttribute extends ObjectLiteralElement {
     static readonly kind = Syntax.JsxAttribute;
+    readonly kind = JsxAttribute.kind;
+    parent: JsxAttributes;
+    name: Identifier;
+    initializer?: StringLiteral | JsxExpression;
     createJsxAttribute(name: Identifier, initializer: StringLiteral | JsxExpression) {
       const node = <JsxAttribute>Node.createSynthesized(Syntax.JsxAttribute);
       node.name = name;
@@ -2134,8 +2135,10 @@ namespace core {
       return node.name !== name || node.initializer !== initializer ? updateNode(createJsxAttribute(name, initializer), node) : node;
     }
   }
-  export class JsxAttributes {
+  export class JsxAttributes extends ObjectLiteralExpressionBase<JsxAttributeLike> {
     static readonly kind = Syntax.JsxAttributes;
+    readonly kind = JsxAttributes.kind;
+    parent: JsxOpeningLikeElement;
     createJsxAttributes(properties: readonly JsxAttributeLike[]) {
       const node = <JsxAttributes>Node.createSynthesized(Syntax.JsxAttributes);
       node.properties = Nodes.create(properties);
@@ -2145,8 +2148,11 @@ namespace core {
       return node.properties !== properties ? updateNode(createJsxAttributes(properties), node) : node;
     }
   }
-  export class JsxClosingElement {
+  export class JsxClosingElement extends Node {
     static readonly kind = Syntax.JsxClosingElement;
+    readonly kind = JsxClosingElement.kind;
+    parent: JsxElement;
+    tagName: JsxTagNameExpression;
     createJsxClosingElement(tagName: JsxTagNameExpression) {
       const node = <JsxClosingElement>Node.createSynthesized(Syntax.JsxClosingElement);
       node.tagName = tagName;
@@ -2156,14 +2162,20 @@ namespace core {
       return node.tagName !== tagName ? updateNode(createJsxClosingElement(tagName), node) : node;
     }
   }
-  export class JsxClosingFragment {
+  export class JsxClosingFragment extends Expression {
     static readonly kind = Syntax.JsxClosingFragment;
+    readonly kind = JsxClosingFragment.kind;
+    parent: JsxFragment;
     createJsxJsxClosingFragment() {
       return <JsxClosingFragment>Node.createSynthesized(Syntax.JsxClosingFragment);
     }
   }
-  export class JsxElement {
+  export class JsxElement extends PrimaryExpression {
     static readonly kind = Syntax.JsxElement;
+    readonly kind = JsxElement.kind;
+    openingElement: JsxOpeningElement;
+    children: Nodes<JsxChild>;
+    closingElement: JsxClosingElement;
     createJsxElement(openingElement: JsxOpeningElement, children: readonly JsxChild[], closingElement: JsxClosingElement) {
       const node = <JsxElement>Node.createSynthesized(Syntax.JsxElement);
       node.openingElement = openingElement;
@@ -2175,76 +2187,6 @@ namespace core {
       return node.openingElement !== openingElement || node.children !== children || node.closingElement !== closingElement
         ? updateNode(createJsxElement(openingElement, children, closingElement), node)
         : node;
-    }
-  }
-  export class JsxExpression {
-    static readonly kind = Syntax.JsxExpression;
-    createJsxExpression(dot3Token: Dot3Token | undefined, expression: Expression | undefined) {
-      const node = <JsxExpression>Node.createSynthesized(Syntax.JsxExpression);
-      node.dot3Token = dot3Token;
-      node.expression = expression;
-      return node;
-    }
-    updateJsxExpression(node: JsxExpression, expression: Expression | undefined) {
-      return node.expression !== expression ? updateNode(createJsxExpression(node.dot3Token, expression), node) : node;
-    }
-  }
-  export class JsxFragment {
-    static readonly kind = Syntax.JsxFragment;
-    createJsxFragment(openingFragment: JsxOpeningFragment, children: readonly JsxChild[], closingFragment: JsxClosingFragment) {
-      const node = <JsxFragment>Node.createSynthesized(Syntax.JsxFragment);
-      node.openingFragment = openingFragment;
-      node.children = Nodes.create(children);
-      node.closingFragment = closingFragment;
-      return node;
-    }
-    updateJsxFragment(node: JsxFragment, openingFragment: JsxOpeningFragment, children: readonly JsxChild[], closingFragment: JsxClosingFragment) {
-      return node.openingFragment !== openingFragment || node.children !== children || node.closingFragment !== closingFragment
-        ? updateNode(createJsxFragment(openingFragment, children, closingFragment), node)
-        : node;
-    }
-  }
-  export class JsxOpeningElement {
-    static readonly kind = Syntax.JsxOpeningElement;
-    createJsxOpeningElement(tagName: JsxTagNameExpression, typeArguments: readonly TypeNode[] | undefined, attributes: JsxAttributes) {
-      const node = <JsxOpeningElement>Node.createSynthesized(Syntax.JsxOpeningElement);
-      node.tagName = tagName;
-      node.typeArguments = Nodes.from(typeArguments);
-      node.attributes = attributes;
-      return node;
-    }
-    updateJsxOpeningElement(node: JsxOpeningElement, tagName: JsxTagNameExpression, typeArguments: readonly TypeNode[] | undefined, attributes: JsxAttributes) {
-      return node.tagName !== tagName || node.typeArguments !== typeArguments || node.attributes !== attributes ? updateNode(createJsxOpeningElement(tagName, typeArguments, attributes), node) : node;
-    }
-  }
-  export class JsxOpeningFragment {
-    static readonly kind = Syntax.JsxOpeningFragment;
-    createJsxOpeningFragment() {
-      return <JsxOpeningFragment>Node.createSynthesized(Syntax.JsxOpeningFragment);
-    }
-    createReactNamespace(reactNamespace: string, parent: JsxOpeningLikeElement | JsxOpeningFragment) {
-      // To ensure the emit resolver can properly resolve the namespace, we need to
-      // treat this identifier as if it were a source tree node by clearing the `Synthesized`
-      // flag and setting a parent node.
-      const react = new Identifier(reactNamespace || 'React');
-      react.flags &= ~NodeFlags.Synthesized;
-      // Set the parent that is in parse tree
-      // this makes sure that parent chain is intact for checker to traverse complete scope tree
-      react.parent = Node.get.parseTreeOf(parent);
-      return react;
-    }
-    createJsxFactoryExpressionFromEntityName(jsxFactory: EntityName, parent: JsxOpeningLikeElement | JsxOpeningFragment): Expression {
-      if (Node.is.kind(QualifiedName, jsxFactory)) {
-        const left = createJsxFactoryExpressionFromEntityName(jsxFactory.left, parent);
-        const right = new Identifier(idText(jsxFactory.right));
-        right.escapedText = jsxFactory.right.escapedText;
-        return createPropertyAccess(left, right);
-      } else {
-        return createReactNamespace(idText(jsxFactory), parent);
-      }
-    }
-    createJsxFactoryExpression(jsxFactoryEntity: EntityName | undefined, reactNamespace: string, parent: JsxOpeningLikeElement | JsxOpeningFragment): Expression {
-      return jsxFactoryEntity ? createJsxFactoryExpressionFromEntityName(jsxFactoryEntity, parent) : createPropertyAccess(createReactNamespace(reactNamespace, parent), 'createElement');
     }
     createExpressionForJsxElement(
       jsxFactoryEntity: EntityName | undefined,
@@ -2268,6 +2210,43 @@ namespace core {
       }
       return setRange(createCall(createJsxFactoryExpression(jsxFactoryEntity, reactNamespace, parentElement), undefined, argumentsList), location);
     }
+
+  }
+  export class JsxExpression extends Expression {
+    static readonly kind = Syntax.JsxExpression;
+    readonly kind = JsxExpression.kind;
+    parent: JsxElement | JsxAttributeLike;
+    dot3Token?: Token<Syntax.Dot3Token>;
+    expression?: Expression;
+    createJsxExpression(dot3Token: Dot3Token | undefined, expression: Expression | undefined) {
+      const node = <JsxExpression>Node.createSynthesized(Syntax.JsxExpression);
+      node.dot3Token = dot3Token;
+      node.expression = expression;
+      return node;
+    }
+    updateJsxExpression(node: JsxExpression, expression: Expression | undefined) {
+      return node.expression !== expression ? updateNode(createJsxExpression(node.dot3Token, expression), node) : node;
+    }
+
+  }
+  export class JsxFragment extends PrimaryExpression {
+    static readonly kind = Syntax.JsxFragment;
+    readonly kind = JsxFragment.kind;
+    openingFragment: JsxOpeningFragment;
+    children: Nodes<JsxChild>;
+    closingFragment: JsxClosingFragment;
+    createJsxFragment(openingFragment: JsxOpeningFragment, children: readonly JsxChild[], closingFragment: JsxClosingFragment) {
+      const node = <JsxFragment>Node.createSynthesized(Syntax.JsxFragment);
+      node.openingFragment = openingFragment;
+      node.children = Nodes.create(children);
+      node.closingFragment = closingFragment;
+      return node;
+    }
+    updateJsxFragment(node: JsxFragment, openingFragment: JsxOpeningFragment, children: readonly JsxChild[], closingFragment: JsxClosingFragment) {
+      return node.openingFragment !== openingFragment || node.children !== children || node.closingFragment !== closingFragment
+        ? updateNode(createJsxFragment(openingFragment, children, closingFragment), node)
+        : node;
+    }
     createExpressionForJsxFragment(
       jsxFactoryEntity: EntityName | undefined,
       reactNamespace: string,
@@ -2288,9 +2267,59 @@ namespace core {
       }
       return setRange(createCall(createJsxFactoryExpression(jsxFactoryEntity, reactNamespace, parentElement), undefined, argumentsList), location);
     }
+
   }
-  export class JsxSelfClosingElement {
+  export class JsxOpeningElement extends Expression {
+    static readonly kind = Syntax.JsxOpeningElement;
+    readonly kind = JsxOpeningElement.kind;
+    parent: JsxElement;
+    tagName: JsxTagNameExpression;
+    typeArguments?: Nodes<TypeNode>;
+    attributes: JsxAttributes;
+    createJsxOpeningElement(tagName: JsxTagNameExpression, typeArguments: readonly TypeNode[] | undefined, attributes: JsxAttributes) {
+      const node = <JsxOpeningElement>Node.createSynthesized(Syntax.JsxOpeningElement);
+      node.tagName = tagName;
+      node.typeArguments = Nodes.from(typeArguments);
+      node.attributes = attributes;
+      return node;
+    }
+    updateJsxOpeningElement(node: JsxOpeningElement, tagName: JsxTagNameExpression, typeArguments: readonly TypeNode[] | undefined, attributes: JsxAttributes) {
+      return node.tagName !== tagName || node.typeArguments !== typeArguments || node.attributes !== attributes ? updateNode(createJsxOpeningElement(tagName, typeArguments, attributes), node) : node;
+    }
+  }
+  export class JsxOpeningFragment extends Expression {
+    static readonly kind = Syntax.JsxOpeningFragment;
+    readonly kind = JsxOpeningFragment.kind;
+    parent: JsxFragment;
+    createJsxOpeningFragment() {
+      return <JsxOpeningFragment>Node.createSynthesized(Syntax.JsxOpeningFragment);
+    }
+    createReactNamespace(reactNamespace: string, parent: JsxOpeningLikeElement | JsxOpeningFragment) {
+      const react = new Identifier(reactNamespace || 'React');
+      react.flags &= ~NodeFlags.Synthesized;
+      react.parent = Node.get.parseTreeOf(parent);
+      return react;
+    }
+    createJsxFactoryExpressionFromEntityName(jsxFactory: EntityName, parent: JsxOpeningLikeElement | JsxOpeningFragment): Expression {
+      if (Node.is.kind(QualifiedName, jsxFactory)) {
+        const left = createJsxFactoryExpressionFromEntityName(jsxFactory.left, parent);
+        const right = new Identifier(idText(jsxFactory.right));
+        right.escapedText = jsxFactory.right.escapedText;
+        return createPropertyAccess(left, right);
+      } else {
+        return createReactNamespace(idText(jsxFactory), parent);
+      }
+    }
+    createJsxFactoryExpression(jsxFactoryEntity: EntityName | undefined, reactNamespace: string, parent: JsxOpeningLikeElement | JsxOpeningFragment): Expression {
+      return jsxFactoryEntity ? createJsxFactoryExpressionFromEntityName(jsxFactoryEntity, parent) : createPropertyAccess(createReactNamespace(reactNamespace, parent), 'createElement');
+    }
+  }
+  export class JsxSelfClosingElement extends PrimaryExpression {
     static readonly kind = Syntax.JsxSelfClosingElement;
+    readonly kind = JsxSelfClosingElement.kind;
+    tagName: JsxTagNameExpression;
+    typeArguments?: Nodes<TypeNode>;
+    attributes: JsxAttributes;
     createJsxSelfClosingElement(tagName: JsxTagNameExpression, typeArguments: readonly TypeNode[] | undefined, attributes: JsxAttributes) {
       const node = <JsxSelfClosingElement>Node.createSynthesized(Syntax.JsxSelfClosingElement);
       node.tagName = tagName;
@@ -2304,8 +2333,11 @@ namespace core {
         : node;
     }
   }
-  export class JsxSpreadAttribute {
+  export class JsxSpreadAttribute extends ObjectLiteralElement {
     static readonly kind = Syntax.JsxSpreadAttribute;
+    readonly kind = JsxSpreadAttribute.kind;
+    parent: JsxAttributes;
+    expression: Expression;
     createJsxSpreadAttribute(expression: Expression) {
       const node = <JsxSpreadAttribute>Node.createSynthesized(Syntax.JsxSpreadAttribute);
       node.expression = expression;
@@ -2315,8 +2347,11 @@ namespace core {
       return node.expression !== expression ? updateNode(createJsxSpreadAttribute(expression), node) : node;
     }
   }
-  export class JsxText {
+  export class JsxText extends LiteralLikeNode {
     static readonly kind = Syntax.JsxText;
+    readonly kind = JsxText.kind;
+    onlyTriviaWhitespaces: boolean;
+    parent: JsxElement;
     create(t: string, onlyTriviaWhitespaces?: boolean) {
       const n = Node.createSynthesized(Syntax.JsxText);
       n.text = t;
@@ -2327,13 +2362,30 @@ namespace core {
       return node.text !== text || node.onlyTriviaWhitespaces !== onlyTriviaWhitespaces ? updateNode(JsxText.create(text, onlyTriviaWhitespaces), node) : node;
     }
   }
-  export class KeywordTypeNode {
+  export class KeywordTypeNode extends TypeNode {
+    kind:
+      | Syntax.AnyKeyword
+      | Syntax.UnknownKeyword
+      | Syntax.NumberKeyword
+      | Syntax.BigIntKeyword
+      | Syntax.ObjectKeyword
+      | Syntax.BooleanKeyword
+      | Syntax.StringKeyword
+      | Syntax.SymbolKeyword
+      | Syntax.ThisKeyword
+      | Syntax.VoidKeyword
+      | Syntax.UndefinedKeyword
+      | Syntax.NullKeyword
+      | Syntax.NeverKeyword;
     create(k: KeywordTypeNode['kind']) {
       return Node.createSynthesized(k) as KeywordTypeNode;
     }
   }
-  export class LabeledStatement {
+  export class LabeledStatement extends Statement, JSDocContainer {
     static readonly kind = Syntax.LabeledStatement;
+    readonly kind = LabeledStatement.kind;
+    label: Identifier;
+    statement: Statement;
     createLabel(label: string | Identifier, statement: Statement) {
       const node = <LabeledStatement>Node.createSynthesized(Syntax.LabeledStatement);
       node.label = asName(label);
@@ -2344,8 +2396,10 @@ namespace core {
       return node.label !== label || node.statement !== statement ? updateNode(createLabel(label, statement), node) : node;
     }
   }
-  export class LiteralTypeNode {
+  export class LiteralTypeNode extends TypeNode {
     static readonly kind = Syntax.LiteralType;
+    readonly kind = LiteralTypeNode.kind;
+    literal: BooleanLiteral | LiteralExpression | PrefixUnaryExpression;
     create(l: LiteralTypeNode['literal']) {
       const n = Node.createSynthesized(Syntax.LiteralType);
       n.literal = l;
@@ -2355,8 +2409,13 @@ namespace core {
       return n.literal !== l ? updateNode(create(l), n) : n;
     }
   }
-  export class MappedTypeNode {
+  export class MappedTypeNode extends TypeNode, Declaration {
     static readonly kind = Syntax.MappedType;
+    readonly kind = MappedTypeNode.kind;
+    readonlyToken?: ReadonlyToken | PlusToken | MinusToken;
+    typeParameter: TypeParameterDeclaration;
+    questionToken?: QuestionToken | PlusToken | MinusToken;
+    type?: TypeNode;
     create(r: ReadonlyToken | PlusToken | MinusToken | undefined, p: TypeParameterDeclaration, q?: QuestionToken | PlusToken | MinusToken, t?: TypeNode) {
       const n = Node.createSynthesized(Syntax.MappedType);
       n.readonlyToken = r;
@@ -2369,7 +2428,9 @@ namespace core {
       return n.readonlyToken !== r || n.typeParameter !== p || n.questionToken !== q || n.type !== t ? updateNode(create(r, p, q, t), n) : n;
     }
   }
-  export class MergeDeclarationMarker {
+  export class MergeDeclarationMarker extends Statement {
+    static readonly kind: Syntax.MergeDeclarationMarker;
+    readonly kind = MergeDeclarationMarker.kind;
     createMergeDeclarationMarker(original: Node) {
       const node = <MergeDeclarationMarker>Node.createSynthesized(Syntax.MergeDeclarationMarker);
       node.emitNode = {} as EmitNode;
@@ -2377,8 +2438,11 @@ namespace core {
       return node;
     }
   }
-  export class MetaProperty {
+  export class MetaProperty extends PrimaryExpression {
     static readonly kind = Syntax.MetaProperty;
+    readonly kind = MetaProperty.kind;
+    keywordToken: Syntax.NewKeyword | Syntax.ImportKeyword;
+    name: Identifier;
     createMetaProperty(keywordToken: MetaProperty['keywordToken'], name: Identifier) {
       const node = <MetaProperty>Node.createSynthesized(Syntax.MetaProperty);
       node.keywordToken = keywordToken;
@@ -2389,8 +2453,12 @@ namespace core {
       return node.name !== name ? updateNode(createMetaProperty(node.keywordToken, name), node) : node;
     }
   }
-  export class MethodDeclaration {
+  export class MethodDeclaration extends FunctionLikeDeclarationBase, ClassElement, ObjectLiteralElement, JSDocContainer {
     static readonly kind = Syntax.MethodDeclaration;
+    readonly kind = MethodDeclaration.kind;
+    parent: ClassLikeDeclaration | ObjectLiteralExpression;
+    name: PropertyName;
+    body?: FunctionBody;
     create(
       ds: readonly Decorator[] | undefined,
       ms: readonly Modifier[] | undefined,
@@ -2439,8 +2507,11 @@ namespace core {
         : n;
     }
   }
-  export class MethodSignature {
+  export class MethodSignature extends SignatureDeclarationBase, TypeElement {
     static readonly kind = Syntax.MethodSignature;
+    readonly kind = MethodSignature.kind;
+    parent: ObjectTypeDeclaration;
+    name: PropertyName;
     create(ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t: TypeNode | undefined, p: string | PropertyName, q?: QuestionToken) {
       const n = SignatureDeclaration.create(Syntax.MethodSignature, ts, ps, t) as MethodSignature;
       n.name = asName(p);
@@ -2451,11 +2522,16 @@ namespace core {
       return n.typeParameters !== ts || n.parameters !== ps || n.type !== t || n.name !== p || n.questionToken !== q ? updateNode(create(ts, ps, t, p, q), n) : n;
     }
   }
-  export class MissingDeclaration {
+  export class MissingDeclaration extends DeclarationStatement {
     static readonly kind = Syntax.MissingDeclaration;
+    readonly kind = MissingDeclaration.kind;
+    name?: Identifier;
   }
-  export class ModuleBlock {
+  export class ModuleBlock extends Node, Statement {
     static readonly kind = Syntax.ModuleBlock;
+    readonly kind = ModuleBlock.kind;
+    parent: ModuleDeclaration;
+    statements: Nodes<Statement>;
     createModuleBlock(statements: readonly Statement[]) {
       const node = <ModuleBlock>Node.createSynthesized(Syntax.ModuleBlock);
       node.statements = Nodes.create(statements);
@@ -2465,8 +2541,12 @@ namespace core {
       return node.statements !== statements ? updateNode(createModuleBlock(statements), node) : node;
     }
   }
-  export class ModuleDeclaration {
+  export class ModuleDeclaration extends DeclarationStatement, JSDocContainer {
     static readonly kind = Syntax.ModuleDeclaration;
+    readonly kind = ModuleDeclaration.kind;
+    parent: ModuleBody | SourceFile;
+    name: ModuleName;
+    body?: ModuleBody | JSDocNamespaceDeclaration;
     createModuleDeclaration(decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, name: ModuleName, body: ModuleBody | undefined, flags = NodeFlags.None) {
       const node = <ModuleDeclaration>Node.createSynthesized(Syntax.ModuleDeclaration);
       node.flags |= flags & (NodeFlags.Namespace | NodeFlags.NestedNamespace | NodeFlags.GlobalAugmentation);
@@ -2482,6 +2562,9 @@ namespace core {
         : node;
     }
   }
+
+
+
   export class NamedExports {
     static readonly kind = Syntax.NamedExports;
     createNamedExports(elements: readonly ExportSpecifier[]) {
