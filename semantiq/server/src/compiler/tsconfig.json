@@ -25,6 +25,7 @@
 
     "binder.ts",
     "checker.ts",
+    "context.ts",
     "visitor.ts",
     "sourcemap.ts",
     "transformers/utilities.ts",
