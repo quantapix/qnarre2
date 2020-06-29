@@ -697,9 +697,9 @@ namespace core {
         : this;
     }
   }
-
-  export class CallSignatureDeclaration {
+  export class CallSignatureDeclaration extends SignatureDeclarationBase, TypeElement {
     static readonly kind = Syntax.CallSignature;
+    readonly kind = CallSignatureDeclaration.kind;
     create(ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t?: TypeNode) {
       return SignatureDeclaration.create(Syntax.CallSignature, ts, ps, t) as CallSignatureDeclaration;
     }
@@ -707,8 +707,11 @@ namespace core {
       return SignatureDeclaration.update(n, ts, ps, t);
     }
   }
-  export class CaseBlock {
+  export class CaseBlock extends Node {
     static readonly kind = Syntax.CaseBlock;
+    readonly kind = CaseBlock.kind;
+    parent: SwitchStatement;
+    clauses: Nodes<CaseOrDefaultClause>;
     createCaseBlock(clauses: readonly CaseOrDefaultClause[]): CaseBlock {
       const node = <CaseBlock>Node.createSynthesized(Syntax.CaseBlock);
       this.clauses = Nodes.create(clauses);
@@ -717,8 +720,13 @@ namespace core {
       return this.clauses !== clauses ? updateNode(createCaseBlock(clauses), this) : this;
     }
   }
-  export class CaseClause {
+  export class CaseClause extends Node {
     static readonly kind = Syntax.CaseClause;
+    readonly kind = CaseClause.kind;
+    parent: CaseBlock;
+    expression: Expression;
+    statements: Nodes<Statement>;
+    fallthroughFlowNode?: FlowNode;
     createCaseClause(expression: Expression, statements: readonly Statement[]) {
       const node = <CaseClause>Node.createSynthesized(Syntax.CaseClause);
       this.expression = parenthesizeExpressionForList(expression);
@@ -728,8 +736,12 @@ namespace core {
       return this.expression !== expression || this.statements !== statements ? updateNode(createCaseClause(expression, statements), this) : this;
     }
   }
-  export class CatchClause {
+  export class CatchClause extends Node {
     static readonly kind = Syntax.CatchClause;
+    readonly kind = CatchClause.kind;
+    parent: TryStatement;
+    variableDeclaration?: VariableDeclaration;
+    block: Block;
     createCatchClause(variableDeclaration: string | VariableDeclaration | undefined, block: Block) {
       const node = <CatchClause>Node.createSynthesized(Syntax.CatchClause);
       this.variableDeclaration = isString(variableDeclaration) ? createVariableDeclaration(variableDeclaration) : variableDeclaration;
@@ -740,8 +752,10 @@ namespace core {
       return this.variableDeclaration !== variableDeclaration || this.block !== block ? updateNode(createCatchClause(variableDeclaration, block), this) : this;
     }
   }
-  export class ClassDeclaration {
+  export class ClassDeclaration extends ClassLikeDeclarationBase, DeclarationStatement {
     static readonly kind = Syntax.ClassDeclaration;
+    readonly kind = ClassDeclaration.kind;
+    name?: Identifier;
     createClassDeclaration(
       decorators: readonly Decorator[] | undefined,
       modifiers: readonly Modifier[] | undefined,
@@ -778,8 +792,9 @@ namespace core {
         : this;
     }
   }
-  export class ClassExpression {
+  export class ClassExpression extends ClassLikeDeclarationBase, PrimaryExpression {
     static readonly kind = Syntax.ClassExpression;
+    readonly kind = ClassExpression.kind;
     createClassExpression(
       modifiers: readonly Modifier[] | undefined,
       name: string | Identifier | undefined,
@@ -809,7 +824,10 @@ namespace core {
         : this;
     }
   }
-  export class CommaListExpression {
+  export class CommaListExpression extends Expression {
+    static readonly kind: Syntax.CommaListExpression;
+    readonly kind = CommaListExpression.kind;
+    elements: Nodes<Expression>;
     flattenCommaElements(this: Expression): Expression | readonly Expression[] {
       if (isSynthesized(this) && !Node.is.parseTreeNode(this) && !this.original && !this.emitNode && !this.id) {
         if (this.kind === Syntax.CommaListExpression) return (<CommaListExpression>this).elements;
@@ -826,8 +844,11 @@ namespace core {
       return this.elements !== elements ? updateNode(createCommaList(elements), this) : this;
     }
   }
-  export class ComputedPropertyName {
+  export class ComputedPropertyName extends Node {
     static readonly kind = Syntax.ComputedPropertyName;
+    readonly kind = ComputedPropertyName.kind;
+    parent: Declaration;
+    expression: Expression;
     create(e: Expression) {
       const n = Node.createSynthesized(Syntax.ComputedPropertyName);
       n.expression = isCommaSequence(e) ? createParen(e) : e;
@@ -837,8 +858,14 @@ namespace core {
       return n.expression !== e ? updateNode(create(e), n) : n;
     }
   }
-  export class ConditionalExpression {
+  export class ConditionalExpression extends Expression {
     static readonly kind = Syntax.ConditionalExpression;
+    readonly kind = ConditionalExpression.kind;
+    condition: Expression;
+    questionToken: QuestionToken;
+    whenTrue: Expression;
+    colonToken: ColonToken;
+    whenFalse: Expression;
     createConditional(condition: Expression, questionToken: QuestionToken, whenTrue: Expression, colonToken: ColonToken, whenFalse: Expression): ConditionalExpression;
     createConditional(condition: Expression, questionTokenOrWhenTrue: QuestionToken | Expression, whenTrueOrWhenFalse: Expression, colonToken?: ColonToken, whenFalse?: Expression) {
       const this = <ConditionalExpression>Node.createSynthesized(Syntax.ConditionalExpression);
@@ -862,8 +889,13 @@ namespace core {
         : this;
     }
   }
-  export class ConditionalTypeNode {
+  export class ConditionalTypeNode extends TypeNode {
     static readonly kind = Syntax.ConditionalType;
+    readonly kind = ConditionalTypeNode.kind;
+    checkType: TypeNode;
+    extendsType: TypeNode;
+    trueType: TypeNode;
+    falseType: TypeNode;
     create(c: TypeNode, e: TypeNode, t: TypeNode, f: TypeNode) {
       const n = Node.createSynthesized(Syntax.ConditionalType);
       n.checkType = parenthesizeConditionalTypeMember(c);
@@ -1130,9 +1162,8 @@ namespace core {
       return this.propertyName !== p || this.name !== n ? updateNode(createExportSpecifier(p, n), this) : this;
     }
   }
-
-
-  export class Expression {
+  export class Expression extends Node {
+    _expressionBrand: any;
     createExpressionFromEntityName(node: EntityName | Expression): Expression {
       if (Node.is.kind(QualifiedName, node)) {
         const left = createExpressionFromEntityName(node.left);
@@ -1331,8 +1362,10 @@ namespace core {
       return (node.kind === Syntax.BinaryExpression && (<BinaryExpression>node).operatorToken.kind === Syntax.CommaToken) || node.kind === Syntax.CommaListExpression;
     }
   }
-  export class ExpressionStatement {
+  export class ExpressionStatement extends Statement, JSDocContainer {
     static readonly kind = Syntax.ExpressionStatement;
+    readonly kind = ExpressionStatement.kind;
+    expression: Expression;
     createExpressionStatement(expression: Expression): ExpressionStatement {
       const node = <ExpressionStatement>Node.createSynthesized(Syntax.ExpressionStatement);
       node.expression = parenthesizeExpressionForExpressionStatement(expression);
@@ -1342,8 +1375,11 @@ namespace core {
       return node.expression !== expression ? updateNode(createExpressionStatement(expression), node) : node;
     }
   }
-  export class ExpressionWithTypeArguments {
+  export class ExpressionWithTypeArguments extends NodeWithTypeArguments {
     static readonly kind = Syntax.ExpressionWithTypeArguments;
+    readonly kind = ExpressionWithTypeArguments.kind;
+    parent: HeritageClause | JSDocAugmentsTag | JSDocImplementsTag;
+    expression: LeftHandSideExpression;
     createExpressionWithTypeArguments(typeArguments: readonly TypeNode[] | undefined, expression: Expression) {
       const node = <ExpressionWithTypeArguments>Node.createSynthesized(Syntax.ExpressionWithTypeArguments);
       node.expression = parenthesizeForAccess(expression);
@@ -1354,8 +1390,11 @@ namespace core {
       return node.typeArguments !== typeArguments || node.expression !== expression ? updateNode(createExpressionWithTypeArguments(typeArguments, expression), node) : node;
     }
   }
-  export class ExternalModuleReference {
+  export class ExternalModuleReference extends Node {
     static readonly kind = Syntax.ExternalModuleReference;
+    readonly kind = ExternalModuleReference.kind;
+    parent: ImportEqualsDeclaration;
+    expression: Expression;
     createExternalModuleReference(expression: Expression) {
       const node = <ExternalModuleReference>Node.createSynthesized(Syntax.ExternalModuleReference);
       node.expression = expression;
@@ -1365,8 +1404,11 @@ namespace core {
       return node.expression !== expression ? updateNode(createExternalModuleReference(expression), node) : node;
     }
   }
-  export class ForInStatement {
+  export class ForInStatement extends IterationStatement {
     static readonly kind = Syntax.ForInStatement;
+    readonly kind = ForInStatement.kind;
+    initializer: ForInitializer;
+    expression: Expression;
     createForIn(initializer: ForInitializer, expression: Expression, statement: Statement) {
       const node = <ForInStatement>Node.createSynthesized(Syntax.ForInStatement);
       node.initializer = initializer;
@@ -1378,8 +1420,12 @@ namespace core {
       return node.initializer !== initializer || node.expression !== expression || node.statement !== statement ? updateNode(createForIn(initializer, expression, statement), node) : node;
     }
   }
-  export class ForOfStatement {
+  export class ForOfStatement extends IterationStatement {
     static readonly kind = Syntax.ForOfStatement;
+    readonly kind = ForOfStatement.kind;
+    awaitModifier?: AwaitKeywordToken;
+    initializer: ForInitializer;
+    expression: Expression;
     createForOf(awaitModifier: AwaitKeywordToken | undefined, initializer: ForInitializer, expression: Expression, statement: Statement) {
       const node = <ForOfStatement>Node.createSynthesized(Syntax.ForOfStatement);
       node.awaitModifier = awaitModifier;
@@ -1394,8 +1440,12 @@ namespace core {
         : node;
     }
   }
-  export class ForStatement {
+  export class ForStatement extends IterationStatement {
     static readonly kind = Syntax.ForStatement;
+    readonly kind = ForStatement.kind;
+    initializer?: ForInitializer;
+    condition?: Expression;
+    incrementor?: Expression;
     createFor(initializer: ForInitializer | undefined, condition: Expression | undefined, incrementor: Expression | undefined, statement: Statement) {
       const node = <ForStatement>Node.createSynthesized(Syntax.ForStatement);
       node.initializer = initializer;
@@ -1410,8 +1460,11 @@ namespace core {
         : node;
     }
   }
-  export class FunctionDeclaration {
+  export class FunctionDeclaration extends FunctionLikeDeclarationBase, DeclarationStatement {
     static readonly kind = Syntax.FunctionDeclaration;
+    readonly kind = FunctionDeclaration.kind;
+    name?: Identifier;
+    body?: FunctionBody;
     createFunctionDeclaration(
       decorators: readonly Decorator[] | undefined,
       modifiers: readonly Modifier[] | undefined,
@@ -1456,8 +1509,11 @@ namespace core {
         : node;
     }
   }
-  export class FunctionExpression {
+  export class FunctionExpression extends PrimaryExpression, FunctionLikeDeclarationBase, JSDocContainer {
     static readonly kind = Syntax.FunctionExpression;
+    readonly kind = FunctionExpression.kind;
+    name?: Identifier;
+    body: FunctionBody;
     createFunctionExpression(
       modifiers: readonly Modifier[] | undefined,
       asteriskToken: AsteriskToken | undefined,
@@ -1498,8 +1554,9 @@ namespace core {
         : node;
     }
   }
-  export class FunctionTypeNode {
+  export class FunctionTypeNode extends FunctionOrConstructorTypeNodeBase {
     static readonly kind = Syntax.FunctionType;
+    readonly kind = FunctionTypeNode.kind;
     create(ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t?: TypeNode) {
       return SignatureDeclaration.create(Syntax.FunctionType, ts, ps, t) as FunctionTypeNode;
     }
@@ -1507,8 +1564,12 @@ namespace core {
       return SignatureDeclaration.update(n, ts, ps, t);
     }
   }
-  export class GetAccessorDeclaration {
+  export class GetAccessorDeclaration extends FunctionLikeDeclarationBase, ClassElement, ObjectLiteralElement, JSDocContainer {
     static readonly kind = Syntax.GetAccessor;
+    readonly kind = GetAccessorDeclaration.kind;
+    parent: ClassLikeDeclaration | ObjectLiteralExpression;
+    name: PropertyName;
+    body?: FunctionBody;
     create(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: string | PropertyName, ps: readonly ParameterDeclaration[], t?: TypeNode, b?: Block) {
       const n = Node.createSynthesized(Syntax.GetAccessor);
       n.decorators = Nodes.from(ds);
@@ -1527,8 +1588,12 @@ namespace core {
       return n.kind === Syntax.SetAccessor || n.kind === Syntax.GetAccessor;
     }
   }
-  export class HeritageClause {
+  export class HeritageClause extends Node {
     static readonly kind = Syntax.HeritageClause;
+    readonly kind = HeritageClause.kind;
+    parent: InterfaceDeclaration | ClassLikeDeclaration;
+    token: Syntax.ExtendsKeyword | Syntax.ImplementsKeyword;
+    types: Nodes<ExpressionWithTypeArguments>;
     createHeritageClause(token: HeritageClause['token'], types: readonly ExpressionWithTypeArguments[]) {
       const node = <HeritageClause>Node.createSynthesized(Syntax.HeritageClause);
       node.token = token;
@@ -1539,8 +1604,12 @@ namespace core {
       return node.types !== types ? updateNode(createHeritageClause(node.token, types), node) : node;
     }
   }
-  export class IfStatement {
+  export class IfStatement extends Statement {
     static readonly kind = Syntax.IfStatement;
+    readonly kind = IfStatement.kind;
+    expression: Expression;
+    thenStatement: Statement;
+    elseStatement?: Statement;
     createIf(expression: Expression, thenStatement: Statement, elseStatement?: Statement) {
       const node = <IfStatement>Node.createSynthesized(Syntax.IfStatement);
       node.expression = expression;
@@ -1554,8 +1623,13 @@ namespace core {
         : node;
     }
   }
-  export class ImportClause {
+  export class ImportClause extends NamedDeclaration {
     static readonly kind = Syntax.ImportClause;
+    readonly kind = ImportClause.kind;
+    parent: ImportDeclaration;
+    isTypeOnly: boolean;
+    name?: Identifier;
+    namedBindings?: NamedImportBindings;
     createImportClause(name: Identifier | undefined, namedBindings: NamedImportBindings | undefined, isTypeOnly = false): ImportClause {
       const node = <ImportClause>Node.createSynthesized(Syntax.ImportClause);
       node.name = name;
@@ -1567,8 +1641,12 @@ namespace core {
       return node.name !== name || node.namedBindings !== namedBindings || node.isTypeOnly !== isTypeOnly ? updateNode(createImportClause(name, namedBindings, isTypeOnly), node) : node;
     }
   }
-  export class ImportDeclaration {
+  export class ImportDeclaration extends Statement {
     static readonly kind = Syntax.ImportDeclaration;
+    readonly kind = ImportDeclaration.kind;
+    parent: SourceFile | ModuleBlock;
+    importClause?: ImportClause;
+    moduleSpecifier: Expression;
     createImportDeclaration(
       decorators: readonly Decorator[] | undefined,
       modifiers: readonly Modifier[] | undefined,
@@ -1594,8 +1672,12 @@ namespace core {
         : node;
     }
   }
-  export class ImportEqualsDeclaration {
+  export class ImportEqualsDeclaration extends DeclarationStatement, JSDocContainer {
     static readonly kind = Syntax.ImportEqualsDeclaration;
+    readonly kind = ImportEqualsDeclaration.kind;
+    parent: SourceFile | ModuleBlock;
+    name: Identifier;
+    moduleReference: ModuleReference;
     createImportEqualsDeclaration(decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, name: string | Identifier, moduleReference: ModuleReference) {
       const node = <ImportEqualsDeclaration>Node.createSynthesized(Syntax.ImportEqualsDeclaration);
       node.decorators = Nodes.from(decorators);
@@ -1616,8 +1698,12 @@ namespace core {
         : node;
     }
   }
-  export class ImportSpecifier {
+  export class ImportSpecifier extends NamedDeclaration {
     static readonly kind = Syntax.ImportSpecifier;
+    readonly kind = ImportSpecifier.kind;
+    parent: NamedImports;
+    propertyName?: Identifier;
+    name: Identifier;
     createImportSpecifier(propertyName: Identifier | undefined, name: Identifier) {
       const node = <ImportSpecifier>Node.createSynthesized(Syntax.ImportSpecifier);
       node.propertyName = propertyName;
@@ -1628,8 +1714,12 @@ namespace core {
       return node.propertyName !== propertyName || node.name !== name ? updateNode(createImportSpecifier(propertyName, name), node) : node;
     }
   }
-  export class ImportTypeNode {
+  export class ImportTypeNode extends NodeWithTypeArguments {
     static readonly kind = Syntax.ImportType;
+    readonly kind = ImportTypeNode.kind;
+    isTypeOf?: boolean;
+    argument: TypeNode;
+    qualifier?: EntityName;
     create(a: TypeNode, q?: EntityName, ts?: readonly TypeNode[], tof?: boolean) {
       const n = Node.createSynthesized(Syntax.ImportType);
       n.argument = a;
@@ -1642,8 +1732,11 @@ namespace core {
       return n.argument !== a || n.qualifier !== q || n.typeArguments !== ts || n.isTypeOf !== tof ? updateNode(create(a, q, ts, tof), n) : n;
     }
   }
-  export class IndexedAccessTypeNode {
+  export class IndexedAccessTypeNode extends TypeNode {
     static readonly kind = Syntax.IndexedAccessType;
+    readonly kind = IndexedAccessTypeNode.kind;
+    objectType: TypeNode;
+    indexType: TypeNode;
     create(o: TypeNode, i: TypeNode) {
       const n = Node.createSynthesized(Syntax.IndexedAccessType);
       n.objectType = parenthesizeElementTypeMember(o);
@@ -1654,8 +1747,10 @@ namespace core {
       return n.objectType !== o || n.indexType !== i ? updateNode(create(o, i), n) : n;
     }
   }
-  export class IndexSignatureDeclaration {
+  export class IndexSignatureDeclaration extends SignatureDeclarationBase, ClassElement, TypeElement {
     static readonly kind = Syntax.IndexSignature;
+    readonly kind = IndexSignatureDeclaration.kind;
+    parent: ObjectTypeDeclaration;
     create(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, ps: readonly ParameterDeclaration[], t: TypeNode): IndexSignatureDeclaration {
       const n = Node.createSynthesized(Syntax.IndexSignature);
       n.decorators = Nodes.from(ds);
@@ -1668,8 +1763,10 @@ namespace core {
       return n.parameters !== ps || n.type !== t || n.decorators !== ds || n.modifiers !== ms ? updateNode(create(ds, ms, ps, t), n) : n;
     }
   }
-  export class InferTypeNode {
+  export class InferTypeNode extends TypeNode {
     static readonly kind = Syntax.InferType;
+    readonly kind = InferTypeNode.kind;
+    typeParameter: TypeParameterDeclaration;
     create(p: TypeParameterDeclaration) {
       const n = Node.createSynthesized(Syntax.InferType);
       n.typeParameter = p;
@@ -1679,8 +1776,13 @@ namespace core {
       return n.typeParameter !== p ? updateNode(create(p), n) : n;
     }
   }
-  export class InterfaceDeclaration {
+  export class InterfaceDeclaration extends DeclarationStatement, JSDocContainer {
     static readonly kind = Syntax.InterfaceDeclaration;
+    readonly kind = InterfaceDeclaration.kind;
+    name: Identifier;
+    typeParameters?: Nodes<TypeParameterDeclaration>;
+    heritageClauses?: Nodes<HeritageClause>;
+    members: Nodes<TypeElement>;
     createInterfaceDeclaration(
       decorators: readonly Decorator[] | undefined,
       modifiers: readonly Modifier[] | undefined,
@@ -1717,8 +1819,10 @@ namespace core {
         : node;
     }
   }
-  export class IntersectionTypeNode {
+  export class IntersectionTypeNode extends TypeNode {
     static readonly kind = Syntax.IntersectionType;
+    readonly kind = IntersectionTypeNode.kind;
+    types: Nodes<TypeNode>;
     create(ts: readonly TypeNode[]) {
       return UnionTypeNode.orIntersectionCreate(Syntax.IntersectionType, ts) as IntersectionTypeNode;
     }
@@ -1726,8 +1830,12 @@ namespace core {
       return UnionTypeNode.orIntersectionUpdate(n, ts);
     }
   }
-  export class JSDoc {
+  export class JSDoc extends Node {
     static readonly kind = Syntax.JSDocComment;
+    readonly kind = JSDoc.kind;
+    parent: HasJSDoc;
+    tags?: Nodes<JSDocTag>;
+    comment?: string;
     createJSDocComment(comment?: string | undefined, tags?: Nodes<JSDocTag> | undefined) {
       const node = Node.createSynthesized(Syntax.JSDocComment) as JSDoc;
       node.comment = comment;
@@ -1735,25 +1843,34 @@ namespace core {
       return node;
     }
   }
-  export class JSDocAllType {
+  export class JSDocAllType extends JSDocType {
     static readonly kind = Syntax.JSDocAllType;
+    readonly kind = JSDocAllType.kind;
   }
-  export class JSDocAugmentsTag {
+  export class JSDocAugmentsTag extends JSDocTag {
     static readonly kind = Syntax.JSDocAugmentsTag;
+    readonly kind = JSDocAugmentsTag.kind;
+    class: ExpressionWithTypeArguments & { expression: Identifier | PropertyAccessEntityNameExpression };
     createJSDocAugmentsTag(classExpression: JSDocAugmentsTag['class'], comment?: string) {
       const tag = createJSDocTag<JSDocAugmentsTag>(Syntax.JSDocAugmentsTag, 'augments', comment);
       tag.class = classExpression;
       return tag;
     }
   }
-  export class JSDocAuthorTag {
+  export class JSDocAuthorTag extends JSDocTag {
     static readonly kind = Syntax.JSDocAuthorTag;
+    readonly kind = JSDocAuthorTag.kind;
     createJSDocAuthorTag(comment?: string) {
       return createJSDocTag<JSDocAuthorTag>(Syntax.JSDocAuthorTag, 'author', comment);
     }
   }
-  export class JSDocCallbackTag {
+  export class JSDocCallbackTag extends JSDocTag, NamedDeclaration {
     static readonly kind = Syntax.JSDocCallbackTag;
+    readonly kind = JSDocCallbackTag.kind;
+    parent: JSDoc;
+    fullName?: JSDocNamespaceDeclaration | Identifier;
+    name?: Identifier;
+    typeExpression: JSDocSignature;
     createJSDocCallbackTag(fullName: JSDocNamespaceDeclaration | Identifier | undefined, name: Identifier | undefined, comment: string | undefined, typeExpression: JSDocSignature) {
       const tag = createJSDocTag<JSDocCallbackTag>(Syntax.JSDocCallbackTag, 'callback', comment);
       tag.fullName = fullName;
@@ -1762,42 +1879,56 @@ namespace core {
       return tag;
     }
   }
-  export class JSDocClassTag {
+  export class JSDocClassTag extends JSDocTag {
     static readonly kind = Syntax.JSDocClassTag;
+    readonly kind = JSDocClassTag.kind;
     createJSDocClassTag(comment?: string): JSDocClassTag {
       return createJSDocTag<JSDocClassTag>(Syntax.JSDocClassTag, 'class', comment);
     }
   }
-  export class JSDocEnumTag {
+  export class JSDocEnumTag extends JSDocTag, Declaration {
     static readonly kind = Syntax.JSDocEnumTag;
+    readonly kind = JSDocEnumTag.kind;
+    parent: JSDoc;
+    typeExpression?: JSDocTypeExpression;
     createJSDocEnumTag(typeExpression?: JSDocTypeExpression, comment?: string) {
       const tag = createJSDocTag<JSDocEnumTag>(Syntax.JSDocEnumTag, 'enum', comment);
       tag.typeExpression = typeExpression;
       return tag;
     }
   }
-  export class JSDocFunctionType {
+  export class JSDocFunctionType extends JSDocType, SignatureDeclarationBase {
     static readonly kind = Syntax.JSDocFunctionType;
+    readonly kind = JSDocFunctionType.kind;
   }
-  export class JSDocImplementsTag {
+  export class JSDocImplementsTag extends JSDocTag {
     static readonly kind = Syntax.JSDocImplementsTag;
+    readonly kind = JSDocImplementsTag.kind;
+    class: ExpressionWithTypeArguments & { expression: Identifier | PropertyAccessEntityNameExpression };
     createJSDocImplementsTag(classExpression: JSDocImplementsTag['class'], comment?: string) {
       const tag = createJSDocTag<JSDocImplementsTag>(Syntax.JSDocImplementsTag, 'implements', comment);
       tag.class = classExpression;
       return tag;
     }
   }
-  export class JSDocNonNullableType {
+  export class JSDocNonNullableType extends JSDocType {
     static readonly kind = Syntax.JSDocNonNullableType;
+    readonly kind = JSDocNonNullableType.kind;
+    type: TypeNode;
   }
-  export class JSDocNullableType {
+  export class JSDocNullableType extends JSDocType {
     static readonly kind = Syntax.JSDocNullableType;
+    readonly kind = JSDocNullableType.kind;
+    type: TypeNode;
   }
-  export class JSDocOptionalType {
+  export class JSDocOptionalType extends JSDocType {
     static readonly kind = Syntax.JSDocOptionalType;
+    readonly kind = JSDocOptionalType.kind;
+    type: TypeNode;
   }
-  export class JSDocParameterTag {
+  export class JSDocParameterTag extends JSDocPropertyLikeTag {
     static readonly kind = Syntax.JSDocParameterTag;
+    readonly kind = JSDocParameterTag.kind;
     createJSDocParamTag(name: EntityName, isBracketed: boolean, typeExpression?: JSDocTypeExpression, comment?: string): JSDocParameterTag {
       const tag = createJSDocTag<JSDocParameterTag>(Syntax.JSDocParameterTag, 'param', comment);
       tag.typeExpression = typeExpression;
@@ -1809,19 +1940,19 @@ namespace core {
       return createJSDocPropertyLikeTag<JSDocParameterTag>(Syntax.JSDocParameterTag, 'param', typeExpression, name, isNameFirst, isBracketed, comment);
     }
   }
-  export class JSDocPrivateTag {
+  export class JSDocPrivateTag extends JSDocTag {
     static readonly kind = Syntax.JSDocPrivateTag;
+    readonly kind = JSDocPrivateTag.kind;
     createJSDocPrivateTag() {
       return createJSDocTag<JSDocPrivateTag>(Syntax.JSDocPrivateTag, 'private');
     }
   }
-  export class JSDocPropertyTag {
-    static readonly kind = Syntax.JSDocPropertyTag;
-    createJSDocPropertyTag(typeExpression: JSDocTypeExpression | undefined, name: EntityName, isNameFirst: boolean, isBracketed: boolean, comment?: string) {
-      return createJSDocPropertyLikeTag<JSDocPropertyTag>(Syntax.JSDocPropertyTag, 'param', typeExpression, name, isNameFirst, isBracketed, comment);
-    }
-  }
-  export class JSDocPropertyLikeTag {
+  export class JSDocPropertyLikeTag extends JSDocTag, Declaration {
+    parent: JSDoc;
+    name: EntityName;
+    typeExpression?: JSDocTypeExpression;
+    isNameFirst: boolean;
+    isBracketed: boolean;
     createJSDocPropertyLikeTag<T extends JSDocPropertyLikeTag>(
       kind: T['kind'],
       tagName: 'arg' | 'argument' | 'param',
@@ -1839,34 +1970,50 @@ namespace core {
       return tag;
     }
   }
-  export class JSDocProtectedTag {
+  export class JSDocPropertyTag extends JSDocPropertyLikeTag {
+    static readonly kind = Syntax.JSDocPropertyTag;
+    readonly kind = JSDocPropertyTag.kind;
+    createJSDocPropertyTag(typeExpression: JSDocTypeExpression | undefined, name: EntityName, isNameFirst: boolean, isBracketed: boolean, comment?: string) {
+      return createJSDocPropertyLikeTag<JSDocPropertyTag>(Syntax.JSDocPropertyTag, 'param', typeExpression, name, isNameFirst, isBracketed, comment);
+    }
+  }
+  export class JSDocProtectedTag extends JSDocTag {
     static readonly kind = Syntax.JSDocProtectedTag;
+    readonly kind = JSDocProtectedTag.kind;
     createJSDocProtectedTag() {
       return createJSDocTag<JSDocProtectedTag>(Syntax.JSDocProtectedTag, 'protected');
     }
   }
-  export class JSDocPublicTag {
+  export class JSDocPublicTag extends JSDocTag {
     static readonly kind = Syntax.JSDocPublicTag;
+    readonly kind = JSDocPublicTag.kind;
     createJSDocPublicTag() {
       return createJSDocTag<JSDocPublicTag>(Syntax.JSDocPublicTag, 'public');
     }
   }
-  export class JSDocReadonlyTag {
+  export class JSDocReadonlyTag extends JSDocTag {
     static readonly kind = Syntax.JSDocReadonlyTag;
+    readonly kind = JSDocReadonlyTag.kind;
     createJSDocReadonlyTag() {
       return createJSDocTag<JSDocReadonlyTag>(Syntax.JSDocReadonlyTag, 'readonly');
     }
   }
-  export class JSDocReturnTag {
+  export class JSDocReturnTag extends JSDocTag {
     static readonly kind = Syntax.JSDocReturnTag;
+    readonly kind = JSDocReturnTag.kind;
+    typeExpression?: JSDocTypeExpression;
     createJSDocReturnTag(typeExpression?: JSDocTypeExpression, comment?: string): JSDocReturnTag {
       const tag = createJSDocTag<JSDocReturnTag>(Syntax.JSDocReturnTag, 'returns', comment);
       tag.typeExpression = typeExpression;
       return tag;
     }
   }
-  export class JSDocSignature {
+  export class JSDocSignature extends JSDocType, Declaration {
     static readonly kind = Syntax.JSDocSignature;
+    readonly kind = JSDocSignature.kind;
+    typeParameters?: readonly JSDocTemplateTag[];
+    parameters: readonly JSDocParameterTag[];
+    type: JSDocReturnTag | undefined;
     createJSDocSignature(typeParameters: readonly JSDocTemplateTag[] | undefined, parameters: readonly JSDocParameterTag[], type?: JSDocReturnTag) {
       const tag = Node.createSynthesized(Syntax.JSDocSignature) as JSDocSignature;
       tag.typeParameters = typeParameters;
@@ -1875,7 +2022,10 @@ namespace core {
       return tag;
     }
   }
-  export class JSDocTag {
+  export class JSDocTag extends Node {
+    parent: JSDoc | JSDocTypeLiteral;
+    tagName: Identifier;
+    comment?: string;
     createJSDocTag<T extends JSDocTag>(kind: T['kind'], tagName: string, comment?: string): T {
       const node = Node.createSynthesized(kind) as T;
       node.tagName = new Identifier(tagName);
@@ -1883,8 +2033,11 @@ namespace core {
       return node;
     }
   }
-  export class JSDocTemplateTag {
+  export class JSDocTemplateTag extends JSDocTag {
     static readonly kind = Syntax.JSDocTemplateTag;
+    readonly kind = JSDocTemplateTag.kind;
+    constraint: JSDocTypeExpression | undefined;
+    typeParameters: Nodes<TypeParameterDeclaration>;
     createJSDocTemplateTag(constraint: JSDocTypeExpression | undefined, typeParameters: readonly TypeParameterDeclaration[], comment?: string) {
       const tag = createJSDocTag<JSDocTemplateTag>(Syntax.JSDocTemplateTag, 'template', comment);
       tag.constraint = constraint;
@@ -1892,16 +2045,23 @@ namespace core {
       return tag;
     }
   }
-  export class JSDocThisTag {
+  export class JSDocThisTag extends JSDocTag {
     static readonly kind = Syntax.JSDocThisTag;
+    readonly kind = JSDocThisTag.kind;
+    typeExpression?: JSDocTypeExpression;
     createJSDocThisTag(typeExpression?: JSDocTypeExpression): JSDocThisTag {
       const tag = createJSDocTag<JSDocThisTag>(Syntax.JSDocThisTag, 'this');
       tag.typeExpression = typeExpression;
       return tag;
     }
   }
-  export class JSDocTypedefTag {
+  export class JSDocTypedefTag extends JSDocTag, NamedDeclaration {
     static readonly kind = Syntax.JSDocTypedefTag;
+    readonly kind = JSDocTypedefTag.kind;
+    parent: JSDoc;
+    fullName?: JSDocNamespaceDeclaration | Identifier;
+    name?: Identifier;
+    typeExpression?: JSDocTypeExpression | JSDocTypeLiteral;
     createJSDocTypedefTag(fullName?: JSDocNamespaceDeclaration | Identifier, name?: Identifier, comment?: string, typeExpression?: JSDocTypeExpression | JSDocTypeLiteral) {
       const tag = createJSDocTag<JSDocTypedefTag>(Syntax.JSDocTypedefTag, 'typedef', comment);
       tag.fullName = fullName;
@@ -1910,16 +2070,21 @@ namespace core {
       return tag;
     }
   }
-  export class JSDocTypeExpression {
+  export class JSDocTypeExpression extends TypeNode {
     static readonly kind = Syntax.JSDocTypeExpression;
+    readonly kind = JSDocTypeExpression.kind;
+    type: TypeNode;
     createJSDocTypeExpression(type: TypeNode): JSDocTypeExpression {
       const node = Node.createSynthesized(Syntax.JSDocTypeExpression) as JSDocTypeExpression;
       node.type = type;
       return node;
     }
   }
-  export class JSDocTypeLiteral {
+  export class JSDocTypeLiteral extends JSDocType {
     static readonly kind = Syntax.JSDocTypeLiteral;
+    readonly kind = JSDocTypeLiteral.kind;
+    jsDocPropertyTags?: readonly JSDocPropertyLikeTag[];
+    isArrayType?: boolean;
     createJSDocTypeLiteral(jsDocPropertyTags?: readonly JSDocPropertyLikeTag[], isArrayType?: boolean) {
       const tag = Node.createSynthesized(Syntax.JSDocTypeLiteral) as JSDocTypeLiteral;
       tag.jsDocPropertyTags = jsDocPropertyTags;
@@ -1927,19 +2092,24 @@ namespace core {
       return tag;
     }
   }
-  export class JSDocTypeTag {
+  export class JSDocTypeTag extends JSDocTag {
     static readonly kind = Syntax.JSDocTypeTag;
+    readonly kind = JSDocTypeTag.kind;
+    typeExpression: JSDocTypeExpression;
     createJSDocTypeTag(typeExpression: JSDocTypeExpression, comment?: string): JSDocTypeTag {
       const tag = createJSDocTag<JSDocTypeTag>(Syntax.JSDocTypeTag, 'type', comment);
       tag.typeExpression = typeExpression;
       return tag;
     }
   }
-  export class JSDocUnknownType {
+  export class JSDocUnknownType extends JSDocType {
     static readonly kind = Syntax.JSDocUnknownType;
+    readonly kind = JSDocUnknownType.kind;
   }
-  export class JSDocVariadicType {
+  export class JSDocVariadicType extends JSDocType {
     static readonly kind = Syntax.JSDocVariadicType;
+    readonly kind = JSDocVariadicType.kind;
+    type: TypeNode;
     createJSDocVariadicType(type: TypeNode): JSDocVariadicType {
       const node = Node.createSynthesized(Syntax.JSDocVariadicType) as JSDocVariadicType;
       node.type = type;
@@ -1949,6 +2119,9 @@ namespace core {
       return node.type !== type ? updateNode(createJSDocVariadicType(type), node) : node;
     }
   }
+
+
+
   export class JsxAttribute {
     static readonly kind = Syntax.JsxAttribute;
     createJsxAttribute(name: Identifier, initializer: StringLiteral | JsxExpression) {

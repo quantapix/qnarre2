@@ -47,34 +47,6 @@ namespace core {
   export interface BooleanLiteral extends PrimaryExpression, TypeNode {
     kind: Syntax.TrueKeyword | Syntax.FalseKeyword;
   }
-  export interface CallSignatureDeclaration extends SignatureDeclarationBase, TypeElement {
-    kind: Syntax.CallSignature;
-  }
-  export interface CaseBlock extends Node {
-    kind: Syntax.CaseBlock;
-    parent: SwitchStatement;
-    clauses: Nodes<CaseOrDefaultClause>;
-  }
-  export interface CaseClause extends Node {
-    kind: Syntax.CaseClause;
-    parent: CaseBlock;
-    expression: Expression;
-    statements: Nodes<Statement>;
-    fallthroughFlowNode?: FlowNode;
-  }
-  export interface CatchClause extends Node {
-    kind: Syntax.CatchClause;
-    parent: TryStatement;
-    variableDeclaration?: VariableDeclaration;
-    block: Block;
-  }
-  export interface ClassDeclaration extends ClassLikeDeclarationBase, DeclarationStatement {
-    kind: Syntax.ClassDeclaration;
-    name?: Identifier;
-  }
-  export interface ClassExpression extends ClassLikeDeclarationBase, PrimaryExpression {
-    kind: Syntax.ClassExpression;
-  }
   export interface ClassLikeDeclarationBase extends NamedDeclaration, JSDocContainer {
     kind: Syntax.ClassDeclaration | Syntax.ClassExpression;
     name?: Identifier;
@@ -83,47 +55,6 @@ namespace core {
     members: Nodes<ClassElement>;
   }
   export type ClassLikeDeclaration = ClassDeclaration | ClassExpression;
-  export interface CommaListExpression extends Expression {
-    kind: Syntax.CommaListExpression;
-    elements: Nodes<Expression>;
-  }
-  export interface ComputedPropertyName extends Node {
-    kind: Syntax.ComputedPropertyName;
-    parent: Declaration;
-    expression: Expression;
-  }
-  export interface ConditionalExpression extends Expression {
-    kind: Syntax.ConditionalExpression;
-    condition: Expression;
-    questionToken: QuestionToken;
-    whenTrue: Expression;
-    colonToken: ColonToken;
-    whenFalse: Expression;
-  }
-  export interface ConditionalTypeNode extends TypeNode {
-    kind: Syntax.ConditionalType;
-    checkType: TypeNode;
-    extendsType: TypeNode;
-    trueType: TypeNode;
-    falseType: TypeNode;
-  }
-  export interface Expression extends Node {
-    _expressionBrand: any;
-  }
-  export interface ExpressionStatement extends Statement, JSDocContainer {
-    kind: Syntax.ExpressionStatement;
-    expression: Expression;
-  }
-  export interface ExpressionWithTypeArguments extends NodeWithTypeArguments {
-    kind: Syntax.ExpressionWithTypeArguments;
-    parent: HeritageClause | JSDocAugmentsTag | JSDocImplementsTag;
-    expression: LeftHandSideExpression;
-  }
-  export interface ExternalModuleReference extends Node {
-    kind: Syntax.ExternalModuleReference;
-    parent: ImportEqualsDeclaration;
-    expression: Expression;
-  }
   export interface FlowArrayMutation extends FlowNodeBase {
     node: CallExpression | BinaryExpression;
     antecedent: FlowNode;
@@ -182,200 +113,12 @@ namespace core {
   export type FlowType = Type | IncompleteType;
   export type ForInitializer = VariableDeclarationList | Expression;
   export type ForInOrOfStatement = ForInStatement | ForOfStatement;
-  export interface ForInStatement extends IterationStatement {
-    kind: Syntax.ForInStatement;
-    initializer: ForInitializer;
-    expression: Expression;
-  }
-  export interface ForOfStatement extends IterationStatement {
-    kind: Syntax.ForOfStatement;
-    awaitModifier?: AwaitKeywordToken;
-    initializer: ForInitializer;
-    expression: Expression;
-  }
-  export interface ForStatement extends IterationStatement {
-    kind: Syntax.ForStatement;
-    initializer?: ForInitializer;
-    condition?: Expression;
-    incrementor?: Expression;
-  }
   export type FunctionBody = Block;
-  export interface FunctionDeclaration extends FunctionLikeDeclarationBase, DeclarationStatement {
-    kind: Syntax.FunctionDeclaration;
-    name?: Identifier;
-    body?: FunctionBody;
-  }
-  export interface FunctionExpression extends PrimaryExpression, FunctionLikeDeclarationBase, JSDocContainer {
-    kind: Syntax.FunctionExpression;
-    name?: Identifier;
-    body: FunctionBody;
-  }
   export type FunctionLikeDeclaration = FunctionDeclaration | MethodDeclaration | GetAccessorDeclaration | SetAccessorDeclaration | ConstructorDeclaration | FunctionExpression | ArrowFunction;
   export type FunctionOrConstructorTypeNode = FunctionTypeNode | ConstructorTypeNode;
   export interface FunctionOrConstructorTypeNodeBase extends TypeNode, SignatureDeclarationBase {
     kind: Syntax.FunctionType | Syntax.ConstructorType;
     type: TypeNode;
-  }
-  export interface FunctionTypeNode extends FunctionOrConstructorTypeNodeBase {
-    kind: Syntax.FunctionType;
-  }
-  export interface GetAccessorDeclaration extends FunctionLikeDeclarationBase, ClassElement, ObjectLiteralElement, JSDocContainer {
-    kind: Syntax.GetAccessor;
-    parent: ClassLikeDeclaration | ObjectLiteralExpression;
-    name: PropertyName;
-    body?: FunctionBody;
-  }
-  export interface HeritageClause extends Node {
-    kind: Syntax.HeritageClause;
-    parent: InterfaceDeclaration | ClassLikeDeclaration;
-    token: Syntax.ExtendsKeyword | Syntax.ImplementsKeyword;
-    types: Nodes<ExpressionWithTypeArguments>;
-  }
-  export interface IfStatement extends Statement {
-    kind: Syntax.IfStatement;
-    expression: Expression;
-    thenStatement: Statement;
-    elseStatement?: Statement;
-  }
-  export interface ImportClause extends NamedDeclaration {
-    kind: Syntax.ImportClause;
-    parent: ImportDeclaration;
-    isTypeOnly: boolean;
-    name?: Identifier;
-    namedBindings?: NamedImportBindings;
-  }
-  export interface ImportDeclaration extends Statement {
-    kind: Syntax.ImportDeclaration;
-    parent: SourceFile | ModuleBlock;
-    importClause?: ImportClause;
-    moduleSpecifier: Expression;
-  }
-  export interface ImportEqualsDeclaration extends DeclarationStatement, JSDocContainer {
-    kind: Syntax.ImportEqualsDeclaration;
-    parent: SourceFile | ModuleBlock;
-    name: Identifier;
-    moduleReference: ModuleReference;
-  }
-  export interface ImportSpecifier extends NamedDeclaration {
-    kind: Syntax.ImportSpecifier;
-    parent: NamedImports;
-    propertyName?: Identifier;
-    name: Identifier;
-  }
-  export interface ImportTypeNode extends NodeWithTypeArguments {
-    kind: Syntax.ImportType;
-    isTypeOf?: boolean;
-    argument: TypeNode;
-    qualifier?: EntityName;
-  }
-  export interface IndexedAccessTypeNode extends TypeNode {
-    kind: Syntax.IndexedAccessType;
-    objectType: TypeNode;
-    indexType: TypeNode;
-  }
-  export interface IndexSignatureDeclaration extends SignatureDeclarationBase, ClassElement, TypeElement {
-    kind: Syntax.IndexSignature;
-    parent: ObjectTypeDeclaration;
-  }
-  export interface InferTypeNode extends TypeNode {
-    kind: Syntax.InferType;
-    typeParameter: TypeParameterDeclaration;
-  }
-  export interface InterfaceDeclaration extends DeclarationStatement, JSDocContainer {
-    kind: Syntax.InterfaceDeclaration;
-    name: Identifier;
-    typeParameters?: Nodes<TypeParameterDeclaration>;
-    heritageClauses?: Nodes<HeritageClause>;
-    members: Nodes<TypeElement>;
-  }
-  export interface IntersectionTypeNode extends TypeNode {
-    kind: Syntax.IntersectionType;
-    types: Nodes<TypeNode>;
-  }
-  export interface JSDoc extends Node {
-    kind: Syntax.JSDocComment;
-    parent: HasJSDoc;
-    tags?: Nodes<JSDocTag>;
-    comment?: string;
-  }
-  export interface JSDocAllType extends JSDocType {
-    kind: Syntax.JSDocAllType;
-  }
-  export interface JSDocAugmentsTag extends JSDocTag {
-    kind: Syntax.JSDocAugmentsTag;
-    class: ExpressionWithTypeArguments & { expression: Identifier | PropertyAccessEntityNameExpression };
-  }
-  export interface JSDocAuthorTag extends JSDocTag {
-    kind: Syntax.JSDocAuthorTag;
-  }
-  export interface JSDocCallbackTag extends JSDocTag, NamedDeclaration {
-    parent: JSDoc;
-    kind: Syntax.JSDocCallbackTag;
-    fullName?: JSDocNamespaceDeclaration | Identifier;
-    name?: Identifier;
-    typeExpression: JSDocSignature;
-  }
-  export interface JSDocClassTag extends JSDocTag {
-    kind: Syntax.JSDocClassTag;
-  }
-  export interface JSDocEnumTag extends JSDocTag, Declaration {
-    parent: JSDoc;
-    kind: Syntax.JSDocEnumTag;
-    typeExpression?: JSDocTypeExpression;
-  }
-  export interface JSDocFunctionType extends JSDocType, SignatureDeclarationBase {
-    kind: Syntax.JSDocFunctionType;
-  }
-  export interface JSDocImplementsTag extends JSDocTag {
-    kind: Syntax.JSDocImplementsTag;
-    class: ExpressionWithTypeArguments & { expression: Identifier | PropertyAccessEntityNameExpression };
-  }
-  export interface JSDocNonNullableType extends JSDocType {
-    kind: Syntax.JSDocNonNullableType;
-    type: TypeNode;
-  }
-  export interface JSDocNullableType extends JSDocType {
-    kind: Syntax.JSDocNullableType;
-    type: TypeNode;
-  }
-  export interface JSDocOptionalType extends JSDocType {
-    kind: Syntax.JSDocOptionalType;
-    type: TypeNode;
-  }
-  export interface JSDocParameterTag extends JSDocPropertyLikeTag {
-    kind: Syntax.JSDocParameterTag;
-  }
-  export interface JSDocPrivateTag extends JSDocTag {
-    kind: Syntax.JSDocPrivateTag;
-  }
-  export interface JSDocPropertyTag extends JSDocPropertyLikeTag {
-    kind: Syntax.JSDocPropertyTag;
-  }
-  export interface JSDocPropertyLikeTag extends JSDocTag, Declaration {
-    parent: JSDoc;
-    name: EntityName;
-    typeExpression?: JSDocTypeExpression;
-    isNameFirst: boolean;
-    isBracketed: boolean;
-  }
-  export interface JSDocProtectedTag extends JSDocTag {
-    kind: Syntax.JSDocProtectedTag;
-  }
-  export interface JSDocPublicTag extends JSDocTag {
-    kind: Syntax.JSDocPublicTag;
-  }
-  export interface JSDocReadonlyTag extends JSDocTag {
-    kind: Syntax.JSDocReadonlyTag;
-  }
-  export interface JSDocReturnTag extends JSDocTag {
-    kind: Syntax.JSDocReturnTag;
-    typeExpression?: JSDocTypeExpression;
-  }
-  export interface JSDocSignature extends JSDocType, Declaration {
-    kind: Syntax.JSDocSignature;
-    typeParameters?: readonly JSDocTemplateTag[];
-    parameters: readonly JSDocParameterTag[];
-    type: JSDocReturnTag | undefined;
   }
   export type JSDocSyntax =
     | Syntax.EndOfFileToken
@@ -396,47 +139,6 @@ namespace core {
     | Syntax.BacktickToken
     | Syntax.Unknown
     | KeywordSyntax;
-  export interface JSDocTag extends Node {
-    parent: JSDoc | JSDocTypeLiteral;
-    tagName: Identifier;
-    comment?: string;
-  }
-  export interface JSDocTemplateTag extends JSDocTag {
-    kind: Syntax.JSDocTemplateTag;
-    constraint: JSDocTypeExpression | undefined;
-    typeParameters: Nodes<TypeParameterDeclaration>;
-  }
-  export interface JSDocThisTag extends JSDocTag {
-    kind: Syntax.JSDocThisTag;
-    typeExpression?: JSDocTypeExpression;
-  }
-  export interface JSDocTypedefTag extends JSDocTag, NamedDeclaration {
-    parent: JSDoc;
-    kind: Syntax.JSDocTypedefTag;
-    fullName?: JSDocNamespaceDeclaration | Identifier;
-    name?: Identifier;
-    typeExpression?: JSDocTypeExpression | JSDocTypeLiteral;
-  }
-  export interface JSDocTypeExpression extends TypeNode {
-    kind: Syntax.JSDocTypeExpression;
-    type: TypeNode;
-  }
-  export interface JSDocTypeLiteral extends JSDocType {
-    kind: Syntax.JSDocTypeLiteral;
-    jsDocPropertyTags?: readonly JSDocPropertyLikeTag[];
-    isArrayType?: boolean;
-  }
-  export interface JSDocTypeTag extends JSDocTag {
-    kind: Syntax.JSDocTypeTag;
-    typeExpression: JSDocTypeExpression;
-  }
-  export interface JSDocUnknownType extends JSDocType {
-    kind: Syntax.JSDocUnknownType;
-  }
-  export interface JSDocVariadicType extends JSDocType {
-    kind: Syntax.JSDocVariadicType;
-    type: TypeNode;
-  }
   export interface JsxAttribute extends ObjectLiteralElement {
     kind: Syntax.JsxAttribute;
     parent: JsxAttributes;
