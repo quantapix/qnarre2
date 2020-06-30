@@ -63,7 +63,7 @@ interface YYY {
 class YYY extends QNode {
   y = 0;
   yyy() {
-    this.y += 1;
+    this.y += 100;
     console.log(`called yyy from ${this}, ${this.y}`);
     return this.y;
   }
@@ -111,6 +111,8 @@ interface CCC extends XXX, YYY {
 }
 class CCC extends QNode {
   static readonly kind = Syntax.CCC;
+  x = 0;
+  y = 0;
 }
 CCC.prototype.kind = CCC.kind;
 addMixins(CCC, [XXX, YYY]);
