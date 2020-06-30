@@ -25,14 +25,14 @@ const enum Syntax {
   XXX,
   YYY,
 }
-export interface SynMap {
+interface SynMap {
   [Syntax.AAA]: AAA;
   [Syntax.BBB]: BBB;
   [Syntax.CCC]: CCC;
   [Syntax.XXX]: XXX;
   [Syntax.YYY]: YYY;
 }
-export type NodeType<S extends Syntax> = S extends keyof SynMap ? SynMap[S] : never;
+type NodeType<S extends Syntax> = S extends keyof SynMap ? SynMap[S] : never;
 abstract class QNode extends Base {
   kind!: Syntax;
   is<S extends Syntax, T extends { kind: S; also?: Syntax[] }>(t: T): this is NodeType<T['kind']> {
@@ -143,7 +143,7 @@ console.log(`should be 0: ${c.xxy()}`);
 c.yyy();
 c.nnn();
 
-class QCC extends CCC implements CCC {}
+//class QCC extends CCC implements CCC {}
 
 /*
 

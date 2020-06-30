@@ -1,0 +1,24 @@
+import * as qc from './classes';
+
+const a = new qc.AAA();
+console.log(`should be true: ${a.is(qc.AAA)}, should be ${qc.AAA.kind}: ${a.kind}`);
+console.log(`should be false: ${a.is(qc.BBB)}`);
+a.base();
+a.aa1();
+a.nn1();
+const b = new qc.BBB();
+console.log(`should be true: ${b.is(qc.BBB)}, should be ${qc.BBB.kind}: ${b.kind}`);
+console.log(`should be false: ${b.is(qc.AAA)}`);
+b.base();
+b.xx1();
+console.log(`should be 0: ${b.xx2()}`);
+b.nn1();
+const c = new qc.CCC();
+console.log(`should be true: ${c.is(qc.CCC)}, should be ${qc.CCC.kind}: ${c.kind}`);
+console.log(`should be false: ${c.is(qc.AAA)}`);
+console.log(`should be false: ${c.is(qc.BBB)}`);
+c.base();
+c.xx1();
+console.log(`should be 0: ${c.xx2()}`);
+c.yy1();
+c.nn1();
