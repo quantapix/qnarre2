@@ -1,3 +1,116 @@
+class Base {
+  b = 0;
+  base() {
+    this.b += 1;
+    console.log(`called base from ${this}, ${this.b}`);
+    return this.b;
+  }
+  toString() {
+    return 'Base';
+  }
+}
+const enum Syntax {
+  AAA,
+  BBB,
+  CCC,
+}
+export interface SynMap {
+  [Syntax.AAA]: AAA;
+  [Syntax.BBB]: BBB;
+  [Syntax.CCC]: CCC;
+}
+export type NodeType<S extends Syntax> = S extends keyof SynMap ? SynMap[S] : never;
+abstract class QNode extends Base {
+  kind!: Syntax;
+  is<S extends Syntax, T extends { kind: S; also?: Syntax[] }>(t: T): this is NodeType<T['kind']> {
+    return this.kind === t.kind || !!t.also?.includes(this.kind);
+  }
+  abstract nnn(): number;
+}
+abstract class XXX extends QNode {
+  x = 0;
+  xxx() {
+    this.x += 10;
+    console.log(`called xxx from ${this}, ${this.x}`);
+    return this.x;
+  }
+  abstract xx2(): number;
+  nnn() {
+    console.log(`XXX.nnn: instance of ${this}`);
+    return 0;
+  }
+}
+class YYY extends QNode {
+  y = 0;
+  yyy() {
+    this.y += 1;
+    console.log(`called yyy from ${this}, ${this.y}`);
+    return this.y;
+  }
+  nnn() {
+    return 0;
+  }
+}
+class AAA extends QNode {
+  static readonly kind = Syntax.AAA;
+  a = 0;
+  aaa() {
+    this.a += 1000;
+    console.log(`called aaa from ${this}, ${this.a}`);
+    return this.a;
+  }
+  toString() {
+    return 'AAA';
+  }
+}
+interface AAA {
+  kind: typeof AAA.kind;
+  nnn(): number;
+}
+AAA.prototype.kind = AAA.kind;
+AAA.prototype.nnn = function () {
+  console.log(`nnn: should be instance of AAA: ${this}`);
+  return 0;
+};
+class BBB extends XXX {
+  static readonly kind = Syntax.BBB;
+  xx2() {
+    return NaN;
+  }
+  toString() {
+    return 'BBB';
+  }
+}
+interface BBB {
+  kind: typeof BBB.kind;
+}
+BBB.prototype.kind = BBB.kind;
+//BBB.prototype.xxx = XXX.prototype.xxx;
+BBB.prototype.xx2 = () => 0;
+//BBB.prototype.nnn = XXX.prototype.nnn;
+
+const a = new AAA();
+console.log(`should be true: ${a.is(AAA)}, should be ${AAA.kind}: ${a.kind}`);
+console.log(`should be false: ${a.is(BBB)}`);
+a.base();
+a.aaa();
+a.nnn();
+const b = new BBB();
+console.log(`should be true: ${b.is(BBB)}, should be ${BBB.kind}: ${b.kind}`);
+console.log(`should be false: ${b.is(AAA)}`);
+b.base();
+b.xxx();
+b.xx2();
+b.nnn();
+
+class CCC extends QNode {
+  static readonly kind = Syntax.CCC;
+}
+interface CCC extends XXX, YYY {
+  kind: typeof CCC.kind;
+}
+CCC.prototype.kind = CCC.kind;
+
 let r = [...Array(5).keys()];
 const enum SymKey {
   AAA,
@@ -23,28 +136,6 @@ let SymNames: { [P in keyof typeof SymKey]: { Name: P; Value: typeof SymKey[P] }
   End: { Value: SymKey.End, Name: 'End' },
 };
 
-interface QNode {
-  kind: SymKey;
-}
-namespace QNode {
-  export function create(kind: SymKey) {
-    return { kind } as QNode;
-  }
-  export interface Aaa extends QNode {
-    kind: SymKey.AAA;
-    aa?: number;
-  }
-  export namespace Aaa {
-    export const kind = SymKey.AAA;
-  }
-  export interface Bbb extends QNode {
-    kind: SymKey.BBB;
-    bb?: number;
-  }
-  export namespace Bbb {
-    export const kind = SymKey.BBB;
-  }
-}
 type NS<T> = T extends QNode ? T : never;
 const nodes = Object.keys(QNode).map((k) => (QNode as any)[k]);
 console.log(nodes);
@@ -67,7 +158,6 @@ type QRecord<C extends keyof typeof SymKey, N extends QNode> = {
 type QI<T extends QRecord<string, keyof MapSchemaTypes>> = {
   -readonly [K in keyof T]: (typeof nodes)[T[K]]
 }
-*/
 interface CMap {
   [SymKey.AAA]: QNode.Aaa;
   [SymKey.BBB]: QNode.Bbb;
@@ -127,3 +217,4 @@ console.log(typeGuard(new B(), A), 'true');
 
 console.log(typeGuard(new A(), B), 'false'); // typeGuard<typeof B>(o: any, className: typeof B): o is B
 console.log(typeGuard(new B(), B), 'true');
+*/
