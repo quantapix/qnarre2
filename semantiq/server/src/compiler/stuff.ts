@@ -108,6 +108,8 @@ BBB.prototype.kind = BBB.kind;
 BBB.prototype.xxy = () => 0;
 interface CCC extends XXX, YYY {
   kind: typeof CCC.kind;
+  nnn(): number;
+  xxy(): number;
 }
 class CCC extends QNode {
   static readonly kind = Syntax.CCC;
@@ -141,6 +143,10 @@ console.log(`should be 0: ${c.xxy()}`);
 c.yyy();
 c.nnn();
 
+class QCC extends CCC implements CCC {}
+
+/*
+
 let r = [...Array(5).keys()];
 const enum SymKey {
   AAA,
@@ -169,7 +175,6 @@ let SymNames: { [P in keyof typeof SymKey]: { Name: P; Value: typeof SymKey[P] }
 type NS<T> = T extends QNode ? T : never;
 const nodes = Object.keys(QNode).map((k) => (QNode as any)[k]);
 console.log(nodes);
-/*
 function cNode<C extends SymKey>(cs: C, n: string): { [P in keyof C]: C[P] }[keyof C] {
     return  (cs as any)[n];
 }
