@@ -1,3 +1,12 @@
+function addMixins(t: any, ss: any[]) {
+  ss.forEach((s: any) => {
+    Object.getOwnPropertyNames(s.prototype).forEach((n) => {
+      if (n == 'constructor') return;
+      console.log(`adding ${s.name}.${n}`);
+      Object.defineProperty(t.prototype, n, Object.getOwnPropertyDescriptor(s.prototype, n)!);
+    });
+  });
+}
 class Base {
   b = 0;
   base() {
@@ -13,11 +22,15 @@ const enum Syntax {
   AAA,
   BBB,
   CCC,
+  XXX,
+  YYY,
 }
 export interface SynMap {
   [Syntax.AAA]: AAA;
   [Syntax.BBB]: BBB;
   [Syntax.CCC]: CCC;
+  [Syntax.XXX]: XXX;
+  [Syntax.YYY]: YYY;
 }
 export type NodeType<S extends Syntax> = S extends keyof SynMap ? SynMap[S] : never;
 abstract class QNode extends Base {
@@ -27,6 +40,10 @@ abstract class QNode extends Base {
   }
   abstract nnn(): number;
 }
+interface XXX {
+  x: number;
+  xyz(): number;
+}
 abstract class XXX extends QNode {
   x = 0;
   xxx() {
@@ -34,11 +51,14 @@ abstract class XXX extends QNode {
     console.log(`called xxx from ${this}, ${this.x}`);
     return this.x;
   }
-  abstract xx2(): number;
+  abstract xxy(): number;
   nnn() {
     console.log(`XXX.nnn: instance of ${this}`);
     return 0;
   }
+}
+interface YYY {
+  y: number;
 }
 class YYY extends QNode {
   y = 0;
@@ -50,6 +70,10 @@ class YYY extends QNode {
   nnn() {
     return 0;
   }
+}
+interface AAA {
+  kind: typeof AAA.kind;
+  nnn(): number;
 }
 class AAA extends QNode {
   static readonly kind = Syntax.AAA;
@@ -63,31 +87,34 @@ class AAA extends QNode {
     return 'AAA';
   }
 }
-interface AAA {
-  kind: typeof AAA.kind;
-  nnn(): number;
-}
 AAA.prototype.kind = AAA.kind;
 AAA.prototype.nnn = function () {
   console.log(`nnn: should be instance of AAA: ${this}`);
   return 0;
 };
+interface BBB extends XXX {
+  kind: typeof BBB.kind;
+}
 class BBB extends XXX {
   static readonly kind = Syntax.BBB;
-  xx2() {
+  xxy() {
     return NaN;
   }
   toString() {
     return 'BBB';
   }
 }
-interface BBB {
-  kind: typeof BBB.kind;
-}
 BBB.prototype.kind = BBB.kind;
-//BBB.prototype.xxx = XXX.prototype.xxx;
-BBB.prototype.xx2 = () => 0;
-//BBB.prototype.nnn = XXX.prototype.nnn;
+BBB.prototype.xxy = () => 0;
+interface CCC extends XXX, YYY {
+  kind: typeof CCC.kind;
+}
+class CCC extends QNode {
+  static readonly kind = Syntax.CCC;
+}
+CCC.prototype.kind = CCC.kind;
+addMixins(CCC, [XXX, YYY]);
+CCC.prototype.xxy = () => 0;
 
 const a = new AAA();
 console.log(`should be true: ${a.is(AAA)}, should be ${AAA.kind}: ${a.kind}`);
@@ -100,16 +127,17 @@ console.log(`should be true: ${b.is(BBB)}, should be ${BBB.kind}: ${b.kind}`);
 console.log(`should be false: ${b.is(AAA)}`);
 b.base();
 b.xxx();
-b.xx2();
+console.log(`should be 0: ${b.xxy()}`);
 b.nnn();
-
-class CCC extends QNode {
-  static readonly kind = Syntax.CCC;
-}
-interface CCC extends XXX, YYY {
-  kind: typeof CCC.kind;
-}
-CCC.prototype.kind = CCC.kind;
+const c = new CCC();
+console.log(`should be true: ${c.is(CCC)}, should be ${CCC.kind}: ${c.kind}`);
+console.log(`should be false: ${c.is(AAA)}`);
+console.log(`should be false: ${c.is(BBB)}`);
+c.base();
+c.xxx();
+console.log(`should be 0: ${c.xxy()}`);
+c.yyy();
+c.nnn();
 
 let r = [...Array(5).keys()];
 const enum SymKey {
