@@ -2278,6 +2278,41 @@ export namespace Node {
     });
   }
 }
+export interface Nodes<T extends Node> extends ReadonlyArray<T>, Range {
+  trailingComma?: boolean;
+  transformFlags: TransformFlags;
+  visit<T>(cb: (n: Node) => T, cbs?: (ns: Nodes<Node>) => T | undefined): T | undefined;
+}
+export namespace Nodes {
+  export function create<T extends Node>(ts?: T[], trailingComma?: boolean): MutableNodes<T>;
+  export function create<T extends Node>(ts?: readonly T[], trailingComma?: boolean): Nodes<T>;
+  export function create<T extends Node>(ts?: readonly T[], trailingComma?: boolean): Nodes<T> {
+    if (!ts || ts === empty) ts = [];
+    else if (isNodes(ts)) return ts;
+    const ns = ts as Nodes<T>;
+    ns.pos = -1;
+    ns.end = -1;
+    ns.trailingComma = trailingComma;
+    ns.visit = function <U>(this: Nodes<T>, cb: (n: Node) => U, cbs?: (ns: Nodes<Node>) => U | undefined): U | undefined {
+      if (cbs) return cbs(this);
+      for (const n of this) {
+        const r = cb(n);
+        if (r) return r;
+      }
+      return;
+    };
+    return ns;
+  }
+  export function from<T extends Node>(ts: readonly T[]): Nodes<T>;
+  export function from<T extends Node>(ts: readonly T[] | undefined): Nodes<T> | undefined;
+  export function from<T extends Node>(ts: readonly T[] | undefined): Nodes<T> | undefined {
+    return ts ? create(ts) : undefined;
+  }
+  export function isNodes<T extends Node>(ns: readonly T[]): ns is Nodes<T> {
+    return ns.hasOwnProperty('pos') && ns.hasOwnProperty('end');
+  }
+}
+export type MutableNodes<T extends Node> = Nodes<T> & T[];
 
 abstract class TokenOrIdentifier extends Node {
   getChildren(): Node[] {
@@ -3061,38 +3096,373 @@ export class SourceFile2 implements SourceFileLike {
   }
 }
 
-export interface Nodes<T extends Node> extends ReadonlyArray<T>, Range {
-  trailingComma?: boolean;
-  transformFlags: TransformFlags;
-  visit<T>(cb: (n: Node) => T, cbs?: (ns: Nodes<Node>) => T | undefined): T | undefined;
+export function getExcludedSymbolFlags(flags: SymbolFlags): SymbolFlags {
+  let result: SymbolFlags = 0;
+  if (flags & SymbolFlags.BlockScopedVariable) result |= SymbolFlags.BlockScopedVariableExcludes;
+  if (flags & SymbolFlags.FunctionScopedVariable) result |= SymbolFlags.FunctionScopedVariableExcludes;
+  if (flags & SymbolFlags.Property) result |= SymbolFlags.PropertyExcludes;
+  if (flags & SymbolFlags.EnumMember) result |= SymbolFlags.EnumMemberExcludes;
+  if (flags & SymbolFlags.Function) result |= SymbolFlags.FunctionExcludes;
+  if (flags & SymbolFlags.Class) result |= SymbolFlags.ClassExcludes;
+  if (flags & SymbolFlags.Interface) result |= SymbolFlags.InterfaceExcludes;
+  if (flags & SymbolFlags.RegularEnum) result |= SymbolFlags.RegularEnumExcludes;
+  if (flags & SymbolFlags.ConstEnum) result |= SymbolFlags.ConstEnumExcludes;
+  if (flags & SymbolFlags.ValueModule) result |= SymbolFlags.ValueModuleExcludes;
+  if (flags & SymbolFlags.Method) result |= SymbolFlags.MethodExcludes;
+  if (flags & SymbolFlags.GetAccessor) result |= SymbolFlags.GetAccessorExcludes;
+  if (flags & SymbolFlags.SetAccessor) result |= SymbolFlags.SetAccessorExcludes;
+  if (flags & SymbolFlags.TypeParameter) result |= SymbolFlags.TypeParameterExcludes;
+  if (flags & SymbolFlags.TypeAlias) result |= SymbolFlags.TypeAliasExcludes;
+  if (flags & SymbolFlags.Alias) result |= SymbolFlags.AliasExcludes;
+  return result;
 }
-export namespace Nodes {
-  export function create<T extends Node>(ts?: T[], trailingComma?: boolean): MutableNodes<T>;
-  export function create<T extends Node>(ts?: readonly T[], trailingComma?: boolean): Nodes<T>;
-  export function create<T extends Node>(ts?: readonly T[], trailingComma?: boolean): Nodes<T> {
-    if (!ts || ts === empty) ts = [];
-    else if (isNodes(ts)) return ts;
-    const ns = ts as Nodes<T>;
-    ns.pos = -1;
-    ns.end = -1;
-    ns.trailingComma = trailingComma;
-    ns.visit = function <U>(this: Nodes<T>, cb: (n: Node) => U, cbs?: (ns: Nodes<Node>) => U | undefined): U | undefined {
-      if (cbs) return cbs(this);
-      for (const n of this) {
-        const r = cb(n);
-        if (r) return r;
+
+interface SymbolDisplayPart {}
+interface JSDocTagInfo {}
+
+export abstract class Symbol {
+  id?: number;
+  mergeId?: number;
+  parent?: Symbol;
+  members?: SymbolTable;
+  exports?: SymbolTable;
+  exportSymbol?: Symbol;
+  globalExports?: SymbolTable;
+  declarations?: Declaration[];
+  valueDeclaration?: Declaration;
+  isAssigned?: boolean;
+  assignmentDeclarationMembers?: QMap<Declaration>;
+  isReferenced?: SymbolFlags;
+  isReplaceableByMethod?: boolean;
+  constEnumOnlyModule?: boolean;
+  docComment?: SymbolDisplayPart[];
+  getComment?: SymbolDisplayPart[];
+  setComment?: SymbolDisplayPart[];
+  tags?: JSDocTagInfo[];
+
+  constructor(public flags: SymbolFlags, public escName: __String) {}
+
+  get name() {
+    const d = this.valueDeclaration;
+    if (d?.isPrivateIdentifierPropertyDeclaration()) return idText(d.name);
+    return syntax.get.unescUnderscores(this.escName);
+  }
+  abstract getId(): number;
+  getName() {
+    return this.name;
+  }
+  getEscName() {
+    return this.escName;
+  }
+  getFlags() {
+    return this.flags;
+  }
+  getDeclarations() {
+    return this.declarations;
+  }
+  getDocComment(checker?: TypeChecker): SymbolDisplayPart[] {
+    if (!this.docComment) {
+      this.docComment = empty;
+      if (!this.declarations && ((this as Symbol) as TransientSymbol).target && (((this as Symbol) as TransientSymbol).target as TransientSymbol).tupleLabelDeclaration) {
+        const labelDecl = (((this as Symbol) as TransientSymbol).target as TransientSymbol).tupleLabelDeclaration!;
+        this.docComment = getDocComment([labelDecl], checker);
+      } else {
+        this.docComment = getDocComment(this.declarations, checker);
       }
-      return;
-    };
-    return ns;
+    }
+    return this.docComment!;
   }
-  export function from<T extends Node>(ts: readonly T[]): Nodes<T>;
-  export function from<T extends Node>(ts: readonly T[] | undefined): Nodes<T> | undefined;
-  export function from<T extends Node>(ts: readonly T[] | undefined): Nodes<T> | undefined {
-    return ts ? create(ts) : undefined;
+  getCtxComment(context?: Node, checker?: TypeChecker): SymbolDisplayPart[] {
+    switch (context?.kind) {
+      case Syntax.GetAccessor:
+        if (!this.getComment) {
+          this.getComment = empty;
+          this.getComment = getDocComment(filter(this.declarations, isGetAccessor), checker);
+        }
+        return this.getComment!;
+      case Syntax.SetAccessor:
+        if (!this.setComment) {
+          this.setComment = empty;
+          this.setComment = getDocComment(filter(this.declarations, isSetAccessor), checker);
+        }
+        return this.setComment!;
+      default:
+        return this.getDocComment(checker);
+    }
   }
-  export function isNodes<T extends Node>(ns: readonly T[]): ns is Nodes<T> {
-    return ns.hasOwnProperty('pos') && ns.hasOwnProperty('end');
+  getJsDocTags(): JSDocTagInfo[] {
+    if (!this.tags) this.tags = JsDoc.getJsDocTagsFromDeclarations(this.declarations);
+    return this.tags!;
+  }
+  getPropertyNameForUniqueESSymbol(): __String {
+    return `__@${this.getId()}@${this.escName}` as __String;
+  }
+  getSymbolNameForPrivateIdentifier(description: __String): __String {
+    return `__#${this.getId()}@${description}` as __String;
+  }
+  isKnownSymbol() {
+    return startsWith(this.escName as string, '__@');
+  }
+  getLocalSymbolForExportDefault() {
+    return this.isExportDefaultSymbol() ? this.declarations![0].localSymbol : undefined;
+  }
+  isExportDefaultSymbol() {
+    return length(this.declarations) > 0 && hasSyntacticModifier(this.declarations![0], ModifierFlags.Default);
+  }
+  getDeclarationOfKind<T extends Declaration>(k: T['kind']): T | undefined {
+    const ds = this.declarations;
+    if (ds) {
+      for (const d of ds) {
+        if (d.kind === k) return d as T;
+      }
+    }
+    return;
+  }
+  isTransientSymbol(): this is TransientSymbol {
+    return (this.flags & SymbolFlags.Transient) !== 0;
+  }
+  getNonAugmentationDeclaration() {
+    const ds = this.declarations;
+    return ds && find(ds, (d) => !Node.is.externalModuleAugmentation(d) && !(Node.is.kind(ModuleDeclaration, d) && isGlobalScopeAugmentation(d)));
+  }
+  setValueDeclaration(d: Declaration) {
+    const v = this.valueDeclaration;
+    if (
+      !v ||
+      (!(d.flags & NodeFlags.Ambient && !(v.flags & NodeFlags.Ambient)) && isAssignmentDeclaration(v) && !isAssignmentDeclaration(d)) ||
+      (v.kind !== d.kind && Node.is.effectiveModuleDeclaration(v))
+    ) {
+      this.valueDeclaration = d;
+    }
+  }
+  isFunctionSymbol() {
+    if (!this.valueDeclaration) return false;
+    const v = this.valueDeclaration;
+    return v.kind === Syntax.FunctionDeclaration || (Node.is.kind(VariableDeclaration, v) && v.initializer && Node.is.functionLike(v.initializer));
+  }
+  getCheckFlags(): CheckFlags {
+    return this.isTransientSymbol() ? this.checkFlags : 0;
+  }
+  getDeclarationModifierFlagsFromSymbol(): ModifierFlags {
+    if (this.valueDeclaration) {
+      const f = getCombinedModifierFlags(this.valueDeclaration);
+      return this.parent && this.parent.flags & SymbolFlags.Class ? f : f & ~ModifierFlags.AccessibilityModifier;
+    }
+    if (this.isTransientSymbol() && this.getCheckFlags() & CheckFlags.Synthetic) {
+      const f = this.checkFlags;
+      const a = f & CheckFlags.ContainsPrivate ? ModifierFlags.Private : f & CheckFlags.ContainsPublic ? ModifierFlags.Public : ModifierFlags.Protected;
+      const s = f & CheckFlags.ContainsStatic ? ModifierFlags.Static : 0;
+      return a | s;
+    }
+    if (this.flags & SymbolFlags.Prototype) return ModifierFlags.Public | ModifierFlags.Static;
+    return 0;
+  }
+  skipAlias(c: TypeChecker) {
+    return this.flags & SymbolFlags.Alias ? c.getAliasedSymbol(this) : this;
+  }
+  getCombinedLocalAndExportSymbolFlags(): SymbolFlags {
+    return this.exportSymbol ? this.exportSymbol.flags | this.flags : this.flags;
+  }
+  isAbstractConstructorSymbol() {
+    if (this.flags & SymbolFlags.Class) {
+      const d = this.getClassLikeDeclarationOfSymbol();
+      return !!d && hasSyntacticModifier(d, ModifierFlags.Abstract);
+    }
+    return false;
+  }
+  getClassLikeDeclarationOfSymbol(): ClassLikeDeclaration | undefined {
+    const ds = this.declarations;
+    return ds && find(ds, isClassLike);
+  }
+  isUMDExportSymbol() {
+    return this.declarations?.[0] && Node.is.kind(NamespaceExportDeclaration, this.declarations[0]);
+  }
+  isShorthandAmbientModuleSymbol() {
+    return Node.is.shorthandAmbientModule(this.valueDeclaration);
+  }
+  abstract merge(t: Symbol, unidirectional?: boolean): Symbol;
+}
+export class SymbolTable<S extends Symbol = Symbol> extends Map<__String, S> implements UnderscoreEscapedMap<S> {
+  constructor(ss?: readonly S[]) {
+    super();
+    if (ss) {
+      for (const s of ss) {
+        this.set(s.escName, s);
+      }
+    }
+  }
+  add(ss: SymbolTable<S>, m: DiagnosticMessage) {
+    ss.forEach((s, id) => {
+      const t = this.get(id);
+      if (t) forEach(t.declarations, addDeclarationDiagnostic(syntax.get.unescUnderscores(id), m));
+      else this.set(id, s);
+    });
+    function addDeclarationDiagnostic(id: string, m: DiagnosticMessage) {
+      return (d: Declaration) => diagnostics.add(createDiagnosticForNode(d, m, id));
+    }
+  }
+  merge(ss: SymbolTable<S>, unidirectional = false) {
+    ss.forEach((s, i) => {
+      const t = this.get(i);
+      this.set(i, t ? s.merge(t, unidirectional) : s);
+    });
+  }
+  combine(ss?: SymbolTable<S>): SymbolTable<S> | undefined {
+    if (!hasEntries(this)) return ss;
+    if (!hasEntries(ss)) return this;
+    const t = new SymbolTable<S>();
+    t.merge(this);
+    t.merge(ss!);
+    return t;
+  }
+  copy(to: SymbolTable<S>, meaning: SymbolFlags) {
+    if (meaning) {
+      this.forEach((s) => {
+        copySymbol(s, to, meaning);
+      });
+    }
   }
 }
-export type MutableNodes<T extends Node> = Nodes<T> & T[];
+
+export function cloneMap(m: SymbolTable): SymbolTable;
+export function cloneMap<T>(m: QReadonlyMap<T>): QMap<T>;
+export function cloneMap<T>(m: ReadonlyUnderscoreEscapedMap<T>): UnderscoreEscapedMap<T>;
+export function cloneMap<T>(m: QReadonlyMap<T> | ReadonlyUnderscoreEscapedMap<T> | SymbolTable): QMap<T> | UnderscoreEscapedMap<T> | SymbolTable {
+  const c = new QMap<T>();
+  copyEntries(m as QMap<T>, c);
+  return c;
+}
+
+export function createGetSymbolWalker(
+  getRestTypeOfSignature: (sig: Signature) => Type,
+  getTypePredicateOfSignature: (sig: Signature) => TypePredicate | undefined,
+  getReturnTypeOfSignature: (sig: Signature) => Type,
+  getBaseTypes: (type: Type) => Type[],
+  resolveStructuredTypeMembers: (type: ObjectType) => ResolvedType,
+  getTypeOfSymbol: (sym: Symbol) => Type,
+  getResolvedSymbol: (node: Node) => Symbol,
+  getIndexTypeOfStructuredType: (type: Type, kind: IndexKind) => Type | undefined,
+  getConstraintOfTypeParameter: (typeParameter: TypeParameter) => Type | undefined,
+  getFirstIdentifier: (node: EntityNameOrEntityNameExpression) => Identifier,
+  getTypeArguments: (type: TypeReference) => readonly Type[]
+) {
+  return getSymbolWalker;
+  function getSymbolWalker(accept: (symbol: Symbol) => boolean = () => true): SymbolWalker {
+    const visitedTypes: Type[] = [];
+    const visitedSymbols: Symbol[] = [];
+    return {
+      walkType: (type) => {
+        try {
+          visitType(type);
+          return { visitedTypes: getOwnValues(visitedTypes), visitedSymbols: getOwnValues(visitedSymbols) };
+        } finally {
+          clear(visitedTypes);
+          clear(visitedSymbols);
+        }
+      },
+      walkSymbol: (symbol) => {
+        try {
+          visitSymbol(symbol);
+          return { visitedTypes: getOwnValues(visitedTypes), visitedSymbols: getOwnValues(visitedSymbols) };
+        } finally {
+          clear(visitedTypes);
+          clear(visitedSymbols);
+        }
+      },
+    };
+    function visitType(type: Type | undefined) {
+      if (!type) return;
+      if (visitedTypes[type.id]) return;
+      visitedTypes[type.id] = type;
+      const shouldBail = visitSymbol(type.symbol);
+      if (shouldBail) return;
+      if (type.flags & TypeFlags.Object) {
+        const objectType = type as ObjectType;
+        const objectFlags = objectType.objectFlags;
+        if (objectFlags & ObjectFlags.Reference) visitTypeReference(type as TypeReference);
+        if (objectFlags & ObjectFlags.Mapped) visitMappedType(type as MappedType);
+        if (objectFlags & (ObjectFlags.Class | ObjectFlags.Interface)) visitInterfaceType(type as InterfaceType);
+        if (objectFlags & (ObjectFlags.Tuple | ObjectFlags.Anonymous)) visitObjectType(objectType);
+      }
+      if (type.flags & TypeFlags.TypeParameter) visitTypeParameter(type as TypeParameter);
+      if (type.flags & TypeFlags.UnionOrIntersection) visitUnionOrIntersectionType(type as UnionOrIntersectionType);
+      if (type.flags & TypeFlags.Index) visitIndexType(type as IndexType);
+      if (type.flags & TypeFlags.IndexedAccess) visitIndexedAccessType(type as IndexedAccessType);
+    }
+    function visitTypeReference(type: TypeReference) {
+      visitType(type.target);
+      forEach(getTypeArguments(type), visitType);
+    }
+    function visitTypeParameter(type: TypeParameter) {
+      visitType(getConstraintOfTypeParameter(type));
+    }
+    function visitUnionOrIntersectionType(type: UnionOrIntersectionType) {
+      forEach(type.types, visitType);
+    }
+    function visitIndexType(type: IndexType) {
+      visitType(type.type);
+    }
+    function visitIndexedAccessType(type: IndexedAccessType) {
+      visitType(type.objectType);
+      visitType(type.indexType);
+      visitType(type.constraint);
+    }
+    function visitMappedType(type: MappedType) {
+      visitType(type.typeParameter);
+      visitType(type.constraintType);
+      visitType(type.templateType);
+      visitType(type.modifiersType);
+    }
+    function visitSignature(signature: Signature) {
+      const typePredicate = getTypePredicateOfSignature(signature);
+      if (typePredicate) visitType(typePredicate.type);
+
+      forEach(signature.typeParameters, visitType);
+      for (const parameter of signature.parameters) {
+        visitSymbol(parameter);
+      }
+      visitType(getRestTypeOfSignature(signature));
+      visitType(getReturnTypeOfSignature(signature));
+    }
+    function visitInterfaceType(interfaceT: InterfaceType) {
+      visitObjectType(interfaceT);
+      forEach(interfaceT.typeParameters, visitType);
+      forEach(getBaseTypes(interfaceT), visitType);
+      visitType(interfaceT.thisType);
+    }
+    function visitObjectType(type: ObjectType) {
+      const stringIndexType = getIndexTypeOfStructuredType(type, IndexKind.String);
+      visitType(stringIndexType);
+      const numberIndexType = getIndexTypeOfStructuredType(type, IndexKind.Number);
+      visitType(numberIndexType);
+      const resolved = resolveStructuredTypeMembers(type);
+      for (const signature of resolved.callSignatures) {
+        visitSignature(signature);
+      }
+      for (const signature of resolved.constructSignatures) {
+        visitSignature(signature);
+      }
+      for (const p of resolved.properties) {
+        visitSymbol(p);
+      }
+    }
+    function visitSymbol(s?: Symbol): boolean {
+      if (!s) return false;
+      const i = s.getId();
+      if (visitedSymbols[i]) return false;
+      visitedSymbols[i] = s;
+      if (!accept(s)) return true;
+      const t = getTypeOfSymbol(s);
+      visitType(t);
+      if (s.exports) s.exports.forEach(visitSymbol);
+      forEach(s.declarations, (d) => {
+        if ((d as any).type && (d as any).type.kind === Syntax.TypeQuery) {
+          const query = (d as any).type as TypeQueryNode;
+          const entity = getResolvedSymbol(getFirstIdentifier(query.exprName));
+          visitSymbol(entity);
+        }
+      });
+      return false;
+    }
+  }
+}

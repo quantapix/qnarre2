@@ -6,5 +6,5 @@
     "outDir": "out",
     "rootDir": "."
   },
-  "files": ["base.ts", "syntax.ts", "types.ts", "core.ts", "classes.ts", "utils.ts", "scanner.ts", "parser.ts"]
+  "include": ["*.ts"]
 }
