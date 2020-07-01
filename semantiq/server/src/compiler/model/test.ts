@@ -33,3 +33,9 @@ console.log(qc.Node.get.a1AndB1(a, b));
 const { aaa, bbb } = qc.create();
 console.log(new aaa().aa2());
 console.log(bbb.xx2());
+
+export class N2 extends qc.Node {
+  nn1() {
+    return 0;
+  }
+}
