@@ -1,10 +1,10 @@
 {
-  "extends": "../../../../../tsconfig-base",
+  "extends": "../../../../tsconfig-base",
   "compilerOptions": {
     "types": ["node"],
     "module": "commonjs",
     "outDir": "out",
-    "rootDir": ".",
+    "rootDir": "."
   },
   "files": ["types.ts", "classes.ts", "groups.ts", "context.ts", "test.ts"]
 }
