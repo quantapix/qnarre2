@@ -1654,7 +1654,6 @@ namespace core {
     return !!originalKeywordKind && !syntax.is.contextualKeyword(originalKeywordKind);
   }
   
-  export type TriviaKind = Syntax.SingleLineCommentTrivia | Syntax.MultiLineCommentTrivia | Syntax.NewLineTrivia | Syntax.WhitespaceTrivia | Syntax.ShebangTrivia | Syntax.ConflictMarkerTrivia;
 
   export const enum FunctionFlags {
     Normal = 0, // Function is a normal function
@@ -1803,10 +1802,6 @@ namespace core {
     return Node.get.parseTreeOf(sourceFile, isSourceFile) || sourceFile;
   }
 
-  export const enum Associativity {
-    Left,
-    Right,
-  }
 
   export function getExpressionAssociativity(expression: Expression) {
     const operator = getOperator(expression);

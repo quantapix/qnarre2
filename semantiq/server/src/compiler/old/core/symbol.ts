@@ -334,25 +334,6 @@ namespace core {
     mappedType: MappedType;
     constraintType: IndexType;
   }
-  export const enum InternalSymbolName {
-    Call = '__call', // Call signatures
-    Constructor = '__constructor', // Constructor implementations
-    New = '__new', // Constructor signatures
-    Index = '__index', // Index signatures
-    ExportStar = '__export', // Module export * declarations
-    Global = '__global', // Global self-reference
-    Missing = '__missing', // Indicates missing symbol
-    Type = '__type', // Anonymous type literal symbol
-    Object = '__object', // Anonymous object literal declaration
-    JSXAttributes = '__jsxAttributes', // Anonymous JSX attributes object literal declaration
-    Class = '__class', // Unnamed class expression
-    Function = '__function', // Unnamed function expression
-    Computed = '__computed', // Computed property name declaration with dynamic name
-    Resolving = '__resolving__', // Indicator symbol used to mark partially resolved type aliases
-    Default = 'default', // Default export symbol (technically not wholly internal, but included here for usability)
-    ExportEquals = 'export=', // Export assignment symbol
-    This = 'this',
-  }
   export class SymbolTable<S extends Symbol = Symbol> extends Map<__String, S> implements UnderscoreEscapedMap<S> {
     constructor(ss?: readonly S[]) {
       super();

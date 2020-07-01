@@ -1,5 +1,4 @@
 namespace core {
-  export const dirSeparator = '/';
   const backslashRegExp = /\\/g;
 
   export function isUrl(path: string) {
