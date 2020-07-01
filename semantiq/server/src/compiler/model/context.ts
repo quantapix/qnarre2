@@ -1,24 +1,24 @@
-import * as qc from './classes';
+import * as qt from './groups';
+export * from './groups';
 
-const a = new qc.AAA();
-console.log(`should be true: ${a.is(qc.AAA)}, should be ${qc.AAA.kind}: ${a.kind}`);
-console.log(`should be false: ${a.is(qc.BBB)}`);
-a.base();
-a.aa1();
-a.nn1();
-const b = new qc.BBB();
-console.log(`should be true: ${b.is(qc.BBB)}, should be ${qc.BBB.kind}: ${b.kind}`);
-console.log(`should be false: ${b.is(qc.AAA)}`);
-b.base();
-b.xx1();
-console.log(`should be 0: ${b.xx2()}`);
-b.nn1();
-const c = new qc.CCC();
-console.log(`should be true: ${c.is(qc.CCC)}, should be ${qc.CCC.kind}: ${c.kind}`);
-console.log(`should be false: ${c.is(qc.AAA)}`);
-console.log(`should be false: ${c.is(qc.BBB)}`);
-c.base();
-c.xx1();
-console.log(`should be 0: ${c.xx2()}`);
-c.yy1();
-c.nn1();
+export function create() {
+  let ctx1 = 0;
+  let ctx2 = 100;
+  const aaa = class AAA extends qt.AAA {
+    aa2() {
+      return ctx1 + this.aa1();
+    }
+  };
+  const bbb = new (class extends qt.BBB {
+    xx2() {
+      return ctx2 + super.xx2() + create.bias + create.extra();
+    }
+  })();
+  return { aaa, bbb };
+}
+export namespace create {
+  export const bias = 91;
+  export function extra() {
+    return 4;
+  }
+}

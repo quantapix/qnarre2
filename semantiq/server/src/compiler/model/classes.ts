@@ -111,29 +111,3 @@ export function addMixins(t: any, ss: any[]) {
     });
   });
 }
-
-/*
-
-const a = new AAA();
-console.log(`should be true: ${a.is(AAA)}, should be ${AAA.kind}: ${a.kind}`);
-console.log(`should be false: ${a.is(BBB)}`);
-a.base();
-a.aa1();
-a.nn1();
-const b = new BBB();
-console.log(`should be true: ${b.is(BBB)}, should be ${BBB.kind}: ${b.kind}`);
-console.log(`should be false: ${b.is(AAA)}`);
-b.base();
-b.xx1();
-console.log(`should be 0: ${b.xx2()}`);
-b.nn1();
-const c = new CCC();
-console.log(`should be true: ${c.is(CCC)}, should be ${CCC.kind}: ${c.kind}`);
-console.log(`should be false: ${c.is(AAA)}`);
-console.log(`should be false: ${c.is(BBB)}`);
-c.base();
-c.xx1();
-console.log(`should be 0: ${c.xx2()}`);
-c.yy1();
-c.nn1();
-*/
