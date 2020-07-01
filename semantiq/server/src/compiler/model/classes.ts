@@ -113,6 +113,7 @@ export function addMixins(t: any, ss: any[]) {
 }
 
 /*
+
 const a = new AAA();
 console.log(`should be true: ${a.is(AAA)}, should be ${AAA.kind}: ${a.kind}`);
 console.log(`should be false: ${a.is(BBB)}`);
