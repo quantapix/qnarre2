@@ -823,23 +823,25 @@ export interface NewExpression extends PrimaryExpression, Declaration {
 }
 
 export interface Node extends qb.Range {
-  readonly kind: Syntax;
+  id?: number;
+  kind: Syntax;
   flags: NodeFlags;
   transformFlags: TransformFlags;
   modifierFlagsCache: qy.ModifierFlags;
   decorators?: Nodes<Decorator>;
   modifiers?: Modifiers;
-  id?: number;
-  parent: Node;
+  parent?: Node;
   original?: Node;
   symbol: Symbol;
+  localSymbol?: Symbol;
   locals?: SymbolTable;
   nextContainer?: Node;
-  localSymbol?: Symbol;
   flowNode?: FlowNode;
   emitNode?: EmitNode;
   contextualType?: Type;
   inferenceContext?: InferenceContext;
+  jsDoc?: JSDoc[];
+  is<S extends Syntax, T extends { kind: S; also?: Syntax[] }>(t: T): this is NodeType<T['kind']>;
 }
 
 export interface Nodes<T extends Node> extends ReadonlyArray<T>, qb.Range {
@@ -1245,6 +1247,25 @@ export const enum SymbolFlags {
   LateBindingContainer = Class | Interface | TypeLiteral | ObjectLiteral | Function,
 }
 
+export interface Symbol {
+  flags: SymbolFlags;
+  escapedName: qb.__String;
+  declarations: Declaration[];
+  valueDeclaration: Declaration;
+  members?: SymbolTable;
+  exports?: SymbolTable;
+  globalExports?: SymbolTable;
+  id?: number;
+  mergeId?: number;
+  parent?: Symbol;
+  exportSymbol?: Symbol;
+  constEnumOnlyModule?: boolean;
+  isReferenced?: SymbolFlags;
+  isReplaceableByMethod?: boolean;
+  isAssigned?: boolean;
+  assignmentDeclarationMembers?: qb.QMap<Declaration>;
+}
+
 export interface SymbolLinks {
   immediateTarget?: Symbol; // Immediate target of an alias. May be another alias. Do not access directly, use `checker.getImmediateAliasedSymbol` instead.
   target?: Symbol; // Resolved (non-alias) target of an alias
@@ -1285,6 +1306,9 @@ export interface SymbolLinks {
   isConstructorDeclaredProperty?: boolean; // Property declared through 'this.x = ...' assignment in constructor
   tupleLabelDeclaration?: NamedTupleMember | ParameterDeclaration; // Declaration associated with the tuple's label
 }
+
+export interface SymbolDisplayPart {}
+export interface JSDocTagInfo {}
 
 export interface SynMap {
   [Syntax.EndOfFileToken]: EndOfFileToken;

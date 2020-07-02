@@ -4,30 +4,59 @@ import * as syntax from './syntax';
 import { NodeFlags, TransformFlags } from './types';
 import { Modifier, ModifierFlags, Syntax } from './syntax';
 
-export class Node extends qb.TextRange implements qt.Node {
-  static readonly kind: Syntax = Syntax.Unknown;
-  readonly kind!: Syntax;
-  id = 0;
+export class Nodes<T extends qt.Node> extends Array<T> implements qt.Nodes<T> {
+  pos = -1;
+  end = -1;
+  trailingComma?: boolean;
+  transformFlags = TransformFlags.None;
+  static isNodes<T extends qt.Node>(ns: readonly T[]): ns is Nodes<T> {
+    return ns.hasOwnProperty('pos') && ns.hasOwnProperty('end');
+  }
+  static from<T extends qt.Node>(ts: readonly T[]): Nodes<T>;
+  static from<T extends qt.Node>(ts?: readonly T[]): Nodes<T> | undefined;
+  static from<T extends qt.Node>(ts?: readonly T[]) {
+    return ts ? new Nodes(ts) : undefined;
+  }
+  constructor(ts?: readonly T[], trailingComma?: boolean) {
+    super(...(!ts || ts === qb.empty ? [] : ts));
+    if (trailingComma) this.trailingComma = trailingComma;
+  }
+  visit<T>(cb: (n: qt.Node) => T | undefined, cbs?: (ns: Nodes<qt.Node>) => T | undefined): T | undefined {
+    if (cbs) return cbs(this);
+    for (const n of this) {
+      const r = cb(n);
+      if (r) return r;
+    }
+    return;
+  }
+}
+export type MutableNodes<T extends qt.Node> = Nodes<T> & T[];
+
+export abstract class Node extends qb.TextRange implements qt.Node {
+  //static readonly kind = Syntax.Unknown;
+  id?: number;
+  kind!: any;
   flags = NodeFlags.None;
   transformFlags = TransformFlags.None;
   modifierFlagsCache = ModifierFlags.None;
   decorators?: qt.Nodes<qt.Decorator>;
   modifiers?: qt.Modifiers;
-  original?: Node;
-  symbol!: Symbol;
-  localSymbol?: Symbol;
-  locals?: SymbolTable;
-  nextContainer?: Node;
+  original?: qt.Node;
+  symbol!: qt.Symbol;
+  localSymbol?: qt.Symbol;
+  locals?: qt.SymbolTable;
+  nextContainer?: qt.Node;
   flowNode?: qt.FlowNode;
   emitNode?: qt.EmitNode;
-  contextualType?: Type;
+  contextualType?: qt.Type;
   inferenceContext?: qt.InferenceContext;
   jsDoc?: qt.JSDoc[];
   private _children?: Node[];
 
-  constructor(public readonly k?: Syntax, pos?: number, end?: number, public parent?: Node) {
+  constructor(synth?: boolean, k?: Syntax, pos?: number, end?: number, public parent?: qt.Node) {
     super(pos, end);
     if (k) this.kind = k;
+    if (synth) this.flags |= NodeFlags.Synthesized;
     if (parent) this.flags = parent.flags & NodeFlags.ContextFlags;
   }
   is<S extends Syntax, T extends { kind: S; also?: Syntax[] }>(t: T): this is qt.NodeType<T['kind']> {
@@ -128,7 +157,7 @@ export class Node extends qb.TextRange implements qt.Node {
           cs.push(createSyntaxList(ns));
           p = ns.end;
         };
-        forEach((this as qt.JSDocContainer).jsDoc, processNode);
+        qb.forEach((this as qt.JSDocContainer).jsDoc, processNode);
         p = this.pos;
         Node.forEach.child(this, processNode, processNodes);
         addSynthetics(cs, p, this.end);
@@ -148,18 +177,18 @@ export class Node extends qb.TextRange implements qt.Node {
   getLastToken(s?: qt.SourceFileLike): Node | undefined {
     qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
     const cs = this.getChildren(s);
-    const c = lastOrUndefined(cs);
+    const c = qb.lastOrUndefined(cs);
     if (!c) return;
     return c.kind < Syntax.FirstNode ? c : c.getLastToken(s);
   }
-  visit<T>(cb: (n: Node) => T | undefined) {
+  visit<T>(cb: (n: qt.Node) => T | undefined) {
     return cb(this);
   }
-  updateFrom(n: Node): this {
+  updateFrom(n: qt.Node): this {
     if (this !== n) return this.setOriginal(n).setRange(n).aggregateTransformFlags();
     return this;
   }
-  setOriginal(n?: Node): this {
+  setOriginal(n?: qt.Node): this {
     this.original = n;
     if (n) {
       const e = n.emitNode;
@@ -193,6 +222,7 @@ export class Node extends qb.TextRange implements qt.Node {
     aggregate(this);
     return this;
   }
+
   static create<T extends Syntax>(k: T, pos: number, end: number, parent?: Node): qt.NodeType<T> {
     const n =
       Node.is.node(k) || k === Syntax.Unknown
@@ -1743,7 +1773,7 @@ export class Node extends qb.TextRange implements qt.Node {
       const language = matchResult[1];
       const territory = matchResult[3];
       if (!trySetLanguageAndTerritory(language, territory, errors)) {
-        trySetLanguageAndTerritory(language, /*territory*/ undefined, errors);
+        trySetLanguageAndTerritory(language, undefined, errors);
       }
       setUILocale(locale);
       function trySetLanguageAndTerritory(language: string, territory: string | undefined, errors?: qb.Push<Diagnostic>) {
@@ -2259,7 +2289,6 @@ export namespace Node {
   function hasJSDocInheritDocTag(node: Node) {
     return getJSDoc.tags(node).some((tag) => tag.tagName.text === 'inheritDoc');
   }
-
   function getDocComment(declarations: readonly Declaration[] | undefined, checker: TypeChecker | undefined): SymbolDisplayPart[] {
     if (!declarations) return empty;
     let doc = JsDoc.getJsDocCommentsFromDeclarations(declarations);
@@ -2271,7 +2300,6 @@ export namespace Node {
     }
     return doc;
   }
-
   function findInheritedJSDocComments(declaration: Declaration, propertyName: string, typeChecker: TypeChecker): readonly SymbolDisplayPart[] | undefined {
     return firstDefined(declaration.parent ? getAllSuperTypeNodes(declaration.parent) : empty, (superTypeNode) => {
       const superType = typeChecker.getTypeAtLocation(superTypeNode);
@@ -2281,36 +2309,7 @@ export namespace Node {
     });
   }
 }
-export class Nodes<T extends qt.Node> extends ReadonlyArray<T> implements qt.Nodes<T> {
-  pos = -1;
-  end = -1;
-  trailingComma?: boolean;
-  transformFlags: TransformFlags;
-  static from<T extends qt.Node>(ts: readonly T[]): Nodes<T>;
-  static from<T extends qt.Node>(ts: readonly T[] | undefined): Nodes<T> | undefined;
-  static from<T extends qt.Node>(ts: readonly T[] | undefined): Nodes<T> | undefined {
-    return ts ? new Nodes(ts) : undefined;
-  }
-  constructor<T extends qt.Node>(ts?: T[], trailingComma?: boolean): MutableNodes<T>;
-  constructor<T extends qt.Node>(ts?: readonly T[], trailingComma?: boolean): Nodes<T>;
-  constructor<T extends qt.Node>(ts?: readonly T[], trailingComma?: boolean): Nodes<T> {
-    if (!ts || ts === empty) ts = [];
-    assert(!isNodes(ts));
-    if (trailingComma) this.trailingComma = trailingComma;
-  }
-  isNodes<T extends qt.Node>(ns: readonly T[]): ns is Nodes<T> {
-    return ns.hasOwnProperty('pos') && ns.hasOwnProperty('end');
-  }
-  visit<T>(cb: (n: qt.Node) => T, cbs?: (ns: Nodes<qt.Node>) => T | undefined): T | undefined {
-    if (cbs) return cbs(this);
-    for (const n of this) {
-      const r = cb(n);
-      if (r) return r;
-    }
-    return;
-  }
-}
-export type MutableNodes<T extends qt.Node> = Nodes<T> & T[];
+//Node.prototype.kind = Node.kind;
 
 abstract class TokenOrIdentifier extends Node {
   getChildren(): Node[] {
@@ -2947,7 +2946,7 @@ export class SourceFile extends Declaration {
           const declarationName = getDeclarationName(functionDeclaration);
           if (declarationName) {
             const declarations = getDeclarations(declarationName);
-            const lastDeclaration = lastOrUndefined(declarations);
+            const lastDeclaration = qb.lastOrUndefined(declarations);
             if (lastDeclaration && functionDeclaration.parent === lastDeclaration.parent && functionDeclaration.symbol === lastDeclaration.symbol) {
               if (functionDeclaration.body && !(<FunctionLikeDeclaration>lastDeclaration).body) declarations[declarations.length - 1] = functionDeclaration;
             } else declarations.push(functionDeclaration);
@@ -3115,10 +3114,7 @@ export function getExcludedSymbolFlags(flags: SymbolFlags): SymbolFlags {
   return result;
 }
 
-interface SymbolDisplayPart {}
-interface JSDocTagInfo {}
-
-export abstract class Symbol {
+export abstract class Symbol implements qt.Symbol {
   id?: number;
   mergeId?: number;
   parent?: Symbol;
