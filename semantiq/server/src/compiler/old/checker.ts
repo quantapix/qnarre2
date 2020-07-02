@@ -22789,13 +22789,13 @@ namespace core {
       }
 
       if (hasRestParameter || hasSpreadArgument) {
-        spanArray = Nodes.create(args);
+        spanArray = new Nodes(args);
         if (hasSpreadArgument && argCount) {
           const nextArg = elementAt(args, getSpreadArgumentIndex(args) + 1) || undefined;
-          spanArray = Nodes.create(args.slice(max > argCount && nextArg ? args.indexOf(nextArg) : Math.min(max, args.length - 1)));
+          spanArray = new Nodes(args.slice(max > argCount && nextArg ? args.indexOf(nextArg) : Math.min(max, args.length - 1)));
         }
       } else {
-        spanArray = Nodes.create(args.slice(max));
+        spanArray = new Nodes(args.slice(max));
       }
 
       spanArray.pos = first(spanArray).pos;

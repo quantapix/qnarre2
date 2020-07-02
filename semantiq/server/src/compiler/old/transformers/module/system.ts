@@ -96,7 +96,7 @@ namespace core {
         qp_updateSourceNode(
           node,
           setRange(
-            Nodes.create([
+            new Nodes([
               createExpressionStatement(
                 createCall(
                   createPropertyAccess(new Identifier('System'), 'register'),

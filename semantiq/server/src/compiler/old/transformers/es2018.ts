@@ -341,7 +341,7 @@ namespace core {
         visited.statements,
         taggedTemplateStringDeclarations && [createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList(taggedTemplateStringDeclarations))]
       );
-      const result = qp_updateSourceNode(visited, setRange(Nodes.create(statement), node.statements));
+      const result = qp_updateSourceNode(visited, setRange(new Nodes(statement), node.statements));
       exitSubtree(ancestorFacts);
       return result;
     }
@@ -460,7 +460,7 @@ namespace core {
           node.awaitModifier,
           setRange(createVariableDeclarationList([setRange(createVariableDeclaration(temp), node.initializer)], NodeFlags.Let), node.initializer),
           node.expression,
-          setRange(new Block(setRange(Nodes.create(statements), statementsLocation), /*multiLine*/ true), bodyLocation)
+          setRange(new Block(setRange(new Nodes(statements), statementsLocation), /*multiLine*/ true), bodyLocation)
         );
       }
       return node;
@@ -481,7 +481,7 @@ namespace core {
         statements.push(statement);
       }
 
-      return setEmitFlags(setRange(new Block(setRange(Nodes.create(statements), statementsLocation), /*multiLine*/ true), bodyLocation), EmitFlags.NoSourceMap | EmitFlags.NoTokenSourceMaps);
+      return setEmitFlags(setRange(new Block(setRange(new Nodes(statements), statementsLocation), /*multiLine*/ true), bodyLocation), EmitFlags.NoSourceMap | EmitFlags.NoTokenSourceMaps);
     }
 
     function createDownlevelAwait(expression: Expression) {
@@ -739,7 +739,7 @@ namespace core {
         const block = convertToFunctionBody(body, /*multiLine*/ true);
         insertStatementsAfterStandardPrologue(statements, leadingStatements);
         addRange(statements, block.statements.slice(statementOffset));
-        return block.update(setRange(Nodes.create(statements), block.statements));
+        return block.update(setRange(new Nodes(statements), block.statements));
       }
       return body;
     }

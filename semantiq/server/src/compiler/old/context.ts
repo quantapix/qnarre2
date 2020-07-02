@@ -265,7 +265,7 @@ namespace core {
       let typeParameterNodes: Nodes<TypeParameterDeclaration> | undefined;
       const targetSymbol = getTargetSymbol(symbol);
       if (targetSymbol.flags & (SymbolFlags.Class | SymbolFlags.Interface | SymbolFlags.TypeAlias)) {
-        typeParameterNodes = Nodes.create(map(this.getLocalTypeParametersOfClassOrInterfaceOrTypeAlias(), (tp) => typeParameterToDeclaration(tp, this)));
+        typeParameterNodes = new Nodes(map(this.getLocalTypeParametersOfClassOrInterfaceOrTypeAlias(), (tp) => typeParameterToDeclaration(tp, this)));
       }
       return typeParameterNodes;
     }
@@ -1563,7 +1563,7 @@ namespace core {
           for (const sig of signatures) {
             const decl = this.signatureToSignatureDeclarationHelper(sig, methodKind) as MethodDeclaration;
             decl.name = name;
-            if (flag) decl.modifiers = Nodes.create(createModifiersFromModifierFlags(flag));
+            if (flag) decl.modifiers = new Nodes(createModifiersFromModifierFlags(flag));
             if (p.flags & SymbolFlags.Optional) decl.questionToken = new Token(Syntax.QuestionToken);
             results.push(setRange(decl, sig.declaration));
           }
@@ -1639,7 +1639,7 @@ namespace core {
               }
               return filter([getNameOfDeclaration(s as DeclarationStatement)], isIdentifierAndNotUndefined);
             };
-            ns.body.statements = Nodes.create([
+            ns.body.statements = new Nodes([
               ...ns.body.statements,
               createExportDeclaration(
                 undefined,
@@ -1695,7 +1695,7 @@ namespace core {
               if (length(associated) && every(associated, canHaveExportModifier)) {
                 const addExportModifier = (s: Statement) => {
                   const f = (getEffectiveModifierFlags(s) | ModifierFlags.Export) & ~ModifierFlags.Ambient;
-                  s.modifiers = Nodes.create(createModifiersFromModifierFlags(f));
+                  s.modifiers = new Nodes(createModifiersFromModifierFlags(f));
                   s.modifierFlagsCache = 0;
                 };
                 forEach(associated, addExportModifier);
@@ -1705,7 +1705,7 @@ namespace core {
             return e;
           });
           if (!length(replacements)) ss = filter(ss, (s) => s !== exportDecl);
-          else exportDecl.exportClause.elements = Nodes.create(replacements);
+          else exportDecl.exportClause.elements = new Nodes(replacements);
         }
         return ss;
       };
@@ -1744,7 +1744,7 @@ namespace core {
           f |= ModifierFlags.Default;
         }
         if (f) {
-          n.modifiers = Nodes.create(createModifiersFromModifierFlags(f | getEffectiveModifierFlags(n)));
+          n.modifiers = new Nodes(createModifiersFromModifierFlags(f | getEffectiveModifierFlags(n)));
           n.modifierFlagsCache = 0;
         }
         results.push(n);

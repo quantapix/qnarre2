@@ -504,7 +504,7 @@ namespace core {
       mergeLexicalEnvironment(prologue, endLexicalEnvironment());
       insertCaptureThisForNodeIfNeeded(prologue, node);
       exitSubtree(ancestorFacts, HierarchyFacts.None, HierarchyFacts.None);
-      return qp_updateSourceNode(node, setRange(Nodes.create(concatenate(prologue, statements)), node.statements));
+      return qp_updateSourceNode(node, setRange(new Nodes(concatenate(prologue, statements)), node.statements));
     }
 
     function visitSwitchStatement(node: SwitchStatement): SwitchStatement {
@@ -781,7 +781,7 @@ namespace core {
 
       insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
 
-      const block = new Block(setRange(Nodes.create(statements), /*location*/ node.members), /*multiLine*/ true);
+      const block = new Block(setRange(new Nodes(statements), /*location*/ node.members), /*multiLine*/ true);
       setEmitFlags(block, EmitFlags.NoComments);
       return block;
     }
@@ -862,7 +862,7 @@ namespace core {
         statements.push(createReturn(createDefaultSuperCallOrThis()));
       }
 
-      const statementsArray = Nodes.create(statements);
+      const statementsArray = new Nodes(statements);
       setRange(statementsArray, node.members);
 
       const block = new Block(statementsArray, /*multiLine*/ true);
@@ -1018,7 +1018,7 @@ namespace core {
         insertCaptureThisForNodeIfNeeded(prologue, constructor);
       }
 
-      const block = new Block(setRange(Nodes.create(concatenate(prologue, statements)), /*location*/ constructor.body.statements), /*multiLine*/ true);
+      const block = new Block(setRange(new Nodes(concatenate(prologue, statements)), /*location*/ constructor.body.statements), /*multiLine*/ true);
 
       setRange(block, constructor.body);
 
@@ -1740,7 +1740,7 @@ namespace core {
         return body;
       }
 
-      const block = new Block(setRange(Nodes.create(statements), statementsLocation), multiLine);
+      const block = new Block(setRange(new Nodes(statements), statementsLocation), multiLine);
       setRange(block, node.body);
       if (!multiLine && singleLine) {
         setEmitFlags(block, EmitFlags.SingleLine);
@@ -2133,7 +2133,7 @@ namespace core {
       } else {
         const statement = visitNode(node.statement, visitor, isStatement, liftToBlock);
         if (Node.is.kind(Block, statement)) 
-          return statement.update(setRange(Nodes.create(concatenate(statements, statement.statements)), statement.statements));
+          return statement.update(setRange(new Nodes(concatenate(statements, statement.statements)), statement.statements));
           statements.push(statement);
           return createSyntheticBlockForConvertedStatements(statements);
         }
@@ -2141,7 +2141,7 @@ namespace core {
     }
 
     function createSyntheticBlockForConvertedStatements(statements: Statement[]) {
-      return setEmitFlags(new Block(Nodes.create(statements), /*multiLine*/ true), EmitFlags.NoSourceMap | EmitFlags.NoTokenSourceMaps);
+      return setEmitFlags(new Block(new Nodes(statements), /*multiLine*/ true), EmitFlags.NoSourceMap | EmitFlags.NoTokenSourceMaps);
     }
 
     function convertForOfStatementForArray(node: ForOfStatement, outermostLabeledStatement: LabeledStatement, convertedLoopBodyStatements: Statement[]): Statement {
@@ -3389,7 +3389,7 @@ namespace core {
           createFunctionApply(
             visitNode(target, visitor, isExpression),
             thisArg,
-            transformAndSpreadElements(Nodes.create([createVoidZero(), ...node.arguments!]), /*needsUniqueCopy*/ false, /*multiLine*/ false, /*trailingComma*/ false)
+            transformAndSpreadElements(new Nodes([createVoidZero(), ...node.arguments!]), /*needsUniqueCopy*/ false, /*multiLine*/ false, /*trailingComma*/ false)
           ),
           /*typeArguments*/ undefined,
           []
@@ -3469,7 +3469,7 @@ namespace core {
     }
 
     function visitSpanOfNonSpreads(chunk: Expression[], multiLine: boolean, trailingComma: boolean): VisitResult<Expression> {
-      return new ArrayLiteralExpression(Nodes.visit(Nodes.create(chunk, trailingComma), visitor, isExpression), multiLine);
+      return new ArrayLiteralExpression(Nodes.visit(new Nodes(chunk, trailingComma), visitor, isExpression), multiLine);
     }
 
     function visitSpreadElement(node: SpreadElement) {

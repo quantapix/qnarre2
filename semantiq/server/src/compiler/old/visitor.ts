@@ -34,7 +34,7 @@ namespace core {
       const r = n ? cb(n) : undefined;
       if (updated !== undefined || r === undefined || r !== n) {
         if (updated === undefined) {
-          updated = Nodes.create(ns.slice(0, i), ns.trailingComma);
+          updated = new Nodes(ns.slice(0, i), ns.trailingComma);
           setRange(updated, ns);
         }
         if (r) {
@@ -94,7 +94,7 @@ namespace core {
         r[i] = updated;
       }
     }
-    if (r) return setRange(Nodes.create(r, ps.trailingComma), ps);
+    if (r) return setRange(new Nodes(r, ps.trailingComma), ps);
     return ps;
   }
   function addValueAssignmentIfNeeded(p: ParameterDeclaration, c: TransformationContext) {
@@ -1092,7 +1092,7 @@ namespace core {
         }
       }
     }
-    if (isNodes(ss)) return setRange(Nodes.create(left, ss.trailingComma), ss);
+    if (isNodes(ss)) return setRange(new Nodes(left, ss.trailingComma), ss);
     return ss;
   }
   export function liftToBlock(ns: readonly Node[]): Statement {

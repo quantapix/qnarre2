@@ -1,16 +1,17 @@
 import * as qb from './base';
 import * as qt from './types';
 import * as syntax from './syntax';
-import {Modifier, ModifierFlags, Syntax} from './syntax';
+import { NodeFlags, TransformFlags } from './types';
+import { Modifier, ModifierFlags, Syntax } from './syntax';
 
-export class Node extends qb.TextRange {
+export class Node extends qb.TextRange implements qt.Node {
   static readonly kind: Syntax = Syntax.Unknown;
   readonly kind!: Syntax;
   id = 0;
-  flags = qt.NodeFlags.None;
+  flags = NodeFlags.None;
+  transformFlags = TransformFlags.None;
   modifierFlagsCache = ModifierFlags.None;
-  transformFlags = qt.TransformFlags.None;
-  decorators?: Nodes<qt.Decorator>;
+  decorators?: qt.Nodes<qt.Decorator>;
   modifiers?: qt.Modifiers;
   original?: Node;
   symbol!: Symbol;
@@ -27,7 +28,7 @@ export class Node extends qb.TextRange {
   constructor(public readonly k?: Syntax, pos?: number, end?: number, public parent?: Node) {
     super(pos, end);
     if (k) this.kind = k;
-    if (parent) this.flags = parent.flags & qt.NodeFlags.ContextFlags;
+    if (parent) this.flags = parent.flags & NodeFlags.ContextFlags;
   }
   is<S extends Syntax, T extends { kind: S; also?: Syntax[] }>(t: T): this is qt.NodeType<T['kind']> {
     return this.kind === t.kind || !!t.also?.includes(this.kind);
@@ -40,35 +41,35 @@ export class Node extends qb.TextRange {
     return Node.get.sourceFileOf(this);
   }
   getStart(s?: qt.SourceFileLike, includeJsDocComment?: boolean) {
-    qb.assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
+    qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
     return getTokenPosOfNode(this, s, includeJsDocComment);
   }
   getFullStart() {
-    qb.assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
+    qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
     return this.pos;
   }
   getEnd() {
-    qb.assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
+    qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
     return this.end;
   }
   getWidth(s?: SourceFile) {
-    qb.assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
+    qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
     return this.getEnd() - this.getStart(s);
   }
   fullWidth() {
-    qb.assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
+    qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
     return this.end - this.pos;
   }
   getLeadingTriviaWidth(s?: SourceFile) {
-    qb.assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
+    qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
     return this.getStart(s) - this.pos;
   }
   getFullText(s?: SourceFile) {
-    qb.assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
+    qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
     return (s || this.getSourceFile()).text.substring(this.pos, this.end);
   }
   getText(s?: SourceFile) {
-    qb.assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
+    qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
     if (!s) s = this.getSourceFile();
     return s.text.substring(this.getStart(s), this.getEnd());
   }
@@ -79,7 +80,7 @@ export class Node extends qb.TextRange {
     return this.getChildren(s)[i];
   }
   getChildren(s?: qt.SourceFileLike) {
-    qb.assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
+    qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
     const scanner = qs_getRaw();
     const addSynthetics = (ns: qb.Push<Node>, pos: number, end: number) => {
       scanner.setTextPos(pos);
@@ -138,14 +139,14 @@ export class Node extends qb.TextRange {
     return this._children || (this._children = createChildren());
   }
   getFirstToken(s?: qt.SourceFileLike): Node | undefined {
-    qb.assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
+    qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
     const cs = this.getChildren(s);
     if (!cs.length) return;
     const c = find(cs, (c) => c.kind < Syntax.FirstJSDocNode || c.kind > Syntax.LastJSDocNode)!;
     return c.kind < Syntax.FirstNode ? c : c.getFirstToken(s);
   }
   getLastToken(s?: qt.SourceFileLike): Node | undefined {
-    qb.assert(!isSynthesized(this.pos) && !isSynthesized(this.end));
+    qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
     const cs = this.getChildren(s);
     const c = lastOrUndefined(cs);
     if (!c) return;
@@ -167,28 +168,28 @@ export class Node extends qb.TextRange {
     return this;
   }
   aggregateTransformFlags(): this {
-    const aggregate = (n: Node): qt.TransformFlags => {
-      if (n === undefined) return qt.TransformFlags.None;
-      if (n.transformFlags & qt.TransformFlags.HasComputedFlags) return n.transformFlags & ~getTransformFlagsSubtreeExclusions(n.kind);
+    const aggregate = (n: Node): TransformFlags => {
+      if (n === undefined) return TransformFlags.None;
+      if (n.transformFlags & TransformFlags.HasComputedFlags) return n.transformFlags & ~getTransformFlagsSubtreeExclusions(n.kind);
       return computeTransformFlagsForNode(n, subtree(n));
     };
-    const nodes = (ns: Nodes<Node>): qt.TransformFlags => {
-      if (ns === undefined) return qt.TransformFlags.None;
-      let sub = qt.TransformFlags.None;
-      let f = qt.TransformFlags.None;
+    const nodes = (ns: Nodes<Node>): TransformFlags => {
+      if (ns === undefined) return TransformFlags.None;
+      let sub = TransformFlags.None;
+      let f = TransformFlags.None;
       for (const n of ns) {
         sub |= aggregate(n);
         f |= n.transformFlags & ~TransformFlags.HasComputedFlags;
       }
-      ns.transformFlags = f | qt.TransformFlags.HasComputedFlags;
+      ns.transformFlags = f | TransformFlags.HasComputedFlags;
       return sub;
     };
-    const subtree = (n: Node): qt.TransformFlags => {
-      if (hasSyntacticModifier(n, ModifierFlags.Ambient) || (Node.is.typeNode(n) && n.kind !== Syntax.ExpressionWithTypeArguments)) return qt.TransformFlags.None;
-      return reduceEachChild(n, qt.TransformFlags.None, child, children);
+    const subtree = (n: Node): TransformFlags => {
+      if (hasSyntacticModifier(n, ModifierFlags.Ambient) || (Node.is.typeNode(n) && n.kind !== Syntax.ExpressionWithTypeArguments)) return TransformFlags.None;
+      return reduceEachChild(n, TransformFlags.None, child, children);
     };
-    const child = (f: qt.TransformFlags, n: Node): qt.TransformFlags => f | aggregate(n);
-    const children = (f: qt.TransformFlags, ns: Nodes<Node>): qt.TransformFlags => f | nodes(ns);
+    const child = (f: TransformFlags, n: Node): TransformFlags => f | aggregate(n);
+    const children = (f: TransformFlags, ns: Nodes<Node>): TransformFlags => f | nodes(ns);
     aggregate(this);
     return this;
   }
@@ -205,13 +206,13 @@ export class Node extends qb.TextRange {
         : new Token<T>(k, pos, end);
     if (parent) {
       n.parent = parent;
-      n.flags = parent.flags & qt.NodeFlags.ContextFlags;
+      n.flags = parent.flags & NodeFlags.ContextFlags;
     }
     return (n as unknown) as qt.NodeType<T>;
   }
   static createSynthesized<T extends Syntax>(k: T): qt.NodeType<T> {
     const n = this.create<T>(k, -1, -1);
-    n.flags |= qt.NodeFlags.Synthesized;
+    n.flags |= NodeFlags.Synthesized;
     return n;
   }
   static createTemplateLiteralLike(k: TemplateLiteralToken['kind'], t: string, raw?: string) {
@@ -608,7 +609,7 @@ export class Node extends qb.TextRange {
       return false;
     }
     aLet(n: Node) {
-      return !!(get.combinedFlagsOf(n) & qt.NodeFlags.Let);
+      return !!(get.combinedFlagsOf(n) & NodeFlags.Let);
     }
     superCall(n: Node): n is SuperCall {
       return n.kind === Syntax.CallExpression && (<CallExpression>n).expression.kind === Syntax.SuperKeyword;
@@ -767,7 +768,7 @@ export class Node extends qb.TextRange {
       return hasSyntacticModifier(n, ModifierFlags.ParameterPropertyModifier) && parent.kind === Syntax.Constructor;
     }
     parseTreeNode(n: Node) {
-      return (n.flags & qt.NodeFlags.Synthesized) === 0;
+      return (n.flags & NodeFlags.Synthesized) === 0;
     }
     withName(n: Node, name: Identifier) {
       if (this.namedDeclaration(n) && this.kind(Identifier, n.name) && idText(n.name as Identifier) === idText(name)) return true;
@@ -802,13 +803,13 @@ export class Node extends qb.TextRange {
       return !!(n as NamedDeclaration).name;
     }
     propertyAccessChain(n: Node): n is PropertyAccessChain {
-      return this.kind(PropertyAccessExpression, n) && !!(n.flags & qt.NodeFlags.OptionalChain);
+      return this.kind(PropertyAccessExpression, n) && !!(n.flags & NodeFlags.OptionalChain);
     }
     elementAccessChain(n: Node): n is ElementAccessChain {
-      return this.kind(ElementAccessExpression, n) && !!(n.flags & qt.NodeFlags.OptionalChain);
+      return this.kind(ElementAccessExpression, n) && !!(n.flags & NodeFlags.OptionalChain);
     }
     callChain(n: Node): n is CallChain {
-      return this.kind(CallExpression, n) && !!(n.flags & qt.NodeFlags.OptionalChain);
+      return this.kind(CallExpression, n) && !!(n.flags & NodeFlags.OptionalChain);
     }
     optionalChainRoot(n: Node): n is OptionalChainRoot {
       return this.optionalChain(n) && !this.kind(NonNullExpression, n) && !!n.questionDotToken;
@@ -823,7 +824,7 @@ export class Node extends qb.TextRange {
       return this.kind(TypeReferenceNode, n) && this.kind(Identifier, n.typeName) && n.typeName.escapedText === 'const' && !n.typeArguments;
     }
     nonNullChain(n: Node): n is NonNullChain {
-      return this.kind(NonNullExpression, n) && !!(n.flags & qt.NodeFlags.OptionalChain);
+      return this.kind(NonNullExpression, n) && !!(n.flags & NodeFlags.OptionalChain);
     }
     unparsedNode(n: Node): n is UnparsedNode {
       return this.unparsedTextLike(n) || n.kind === Syntax.UnparsedPrologue || n.kind === Syntax.UnparsedSyntheticReference;
@@ -1012,7 +1013,7 @@ export class Node extends qb.TextRange {
     }
     optionalChain(n: Node): n is PropertyAccessChain | ElementAccessChain | CallChain | NonNullChain {
       const k = n.kind;
-      return !!(n.flags & qt.NodeFlags.OptionalChain) && (k === Syntax.PropertyAccessExpression || k === Syntax.ElementAccessExpression || k === Syntax.CallExpression || k === Syntax.NonNullExpression);
+      return !!(n.flags & NodeFlags.OptionalChain) && (k === Syntax.PropertyAccessExpression || k === Syntax.ElementAccessExpression || k === Syntax.CallExpression || k === Syntax.NonNullExpression);
     }
     breakOrContinueStatement(n: Node): n is BreakOrContinueStatement {
       return n.kind === Syntax.BreakStatement || n.kind === Syntax.ContinueStatement;
@@ -1300,7 +1301,7 @@ export class Node extends qb.TextRange {
       return (e && e.flags) || 0;
     }
     literalText(n: LiteralLikeNode, sourceFile: SourceFile, neverAsciiEscape: boolean | undefined, jsxAttributeEscape: boolean) {
-      if (!isSynthesized(n) && n.parent && !((Node.is.kind(NumericLiteral, n) && n.numericLiteralFlags & TokenFlags.ContainsSeparator) || Node.is.kind(BigIntLiteral, n))) {
+      if (!qb.isSynthesized(n) && n.parent && !((Node.is.kind(NumericLiteral, n) && n.numericLiteralFlags & TokenFlags.ContainsSeparator) || Node.is.kind(BigIntLiteral, n))) {
         return getSourceTextOfNodeFromSourceFile(sourceFile, n);
       }
       switch (n.kind) {
@@ -1356,7 +1357,7 @@ export class Node extends qb.TextRange {
       if (n && n.kind === Syntax.VariableStatement) flags |= getFlags(n);
       return flags;
     }
-    combinedFlagsOf(n: Node): qt.NodeFlags {
+    combinedFlagsOf(n: Node): NodeFlags {
       return this.combinedFlags(n, (n) => n.flags);
     }
     originalOf(n: Node): Node;
@@ -1595,13 +1596,13 @@ export class Node extends qb.TextRange {
   static readonly other = new (class {
     containsParseError(n: Node) {
       aggregateChildData(n);
-      return (n.flags & qt.NodeFlags.ThisNodeOrAnySubNodesHasError) !== 0;
+      return (n.flags & NodeFlags.ThisNodeOrAnySubNodesHasError) !== 0;
     }
     aggregateChildData(n: Node): void {
-      if (!(n.flags & qt.NodeFlags.HasAggregatedChildData)) {
-        const thisNodeOrAnySubNodesHasError = (n.flags & qt.NodeFlags.ThisNodeHasError) !== 0 || Node.forEach.child(n, containsParseError);
-        if (thisNodeOrAnySubNodesHasError) n.flags |= qt.NodeFlags.ThisNodeOrAnySubNodesHasError;
-        n.flags |= qt.NodeFlags.HasAggregatedChildData;
+      if (!(n.flags & NodeFlags.HasAggregatedChildData)) {
+        const thisNodeOrAnySubNodesHasError = (n.flags & NodeFlags.ThisNodeHasError) !== 0 || Node.forEach.child(n, containsParseError);
+        if (thisNodeOrAnySubNodesHasError) n.flags |= NodeFlags.ThisNodeOrAnySubNodesHasError;
+        n.flags |= NodeFlags.HasAggregatedChildData;
       }
     }
     nPosToString(n: Node): string {
@@ -2280,41 +2281,36 @@ export namespace Node {
     });
   }
 }
-export interface Nodes<T extends Node> extends ReadonlyArray<T>, Range {
+export class Nodes<T extends qt.Node> extends ReadonlyArray<T> implements qt.Nodes<T> {
+  pos = -1;
+  end = -1;
   trailingComma?: boolean;
-  transformFlags: qt.TransformFlags;
-  visit<T>(cb: (n: Node) => T, cbs?: (ns: Nodes<Node>) => T | undefined): T | undefined;
-}
-export namespace Nodes {
-  export function create<T extends Node>(ts?: T[], trailingComma?: boolean): MutableNodes<T>;
-  export function create<T extends Node>(ts?: readonly T[], trailingComma?: boolean): Nodes<T>;
-  export function create<T extends Node>(ts?: readonly T[], trailingComma?: boolean): Nodes<T> {
+  transformFlags: TransformFlags;
+  static from<T extends qt.Node>(ts: readonly T[]): Nodes<T>;
+  static from<T extends qt.Node>(ts: readonly T[] | undefined): Nodes<T> | undefined;
+  static from<T extends qt.Node>(ts: readonly T[] | undefined): Nodes<T> | undefined {
+    return ts ? new Nodes(ts) : undefined;
+  }
+  constructor<T extends qt.Node>(ts?: T[], trailingComma?: boolean): MutableNodes<T>;
+  constructor<T extends qt.Node>(ts?: readonly T[], trailingComma?: boolean): Nodes<T>;
+  constructor<T extends qt.Node>(ts?: readonly T[], trailingComma?: boolean): Nodes<T> {
     if (!ts || ts === empty) ts = [];
-    else if (isNodes(ts)) return ts;
-    const ns = ts as Nodes<T>;
-    ns.pos = -1;
-    ns.end = -1;
-    ns.trailingComma = trailingComma;
-    ns.visit = function <U>(this: Nodes<T>, cb: (n: Node) => U, cbs?: (ns: Nodes<Node>) => U | undefined): U | undefined {
-      if (cbs) return cbs(this);
-      for (const n of this) {
-        const r = cb(n);
-        if (r) return r;
-      }
-      return;
-    };
-    return ns;
+    assert(!isNodes(ts));
+    if (trailingComma) this.trailingComma = trailingComma;
   }
-  export function from<T extends Node>(ts: readonly T[]): Nodes<T>;
-  export function from<T extends Node>(ts: readonly T[] | undefined): Nodes<T> | undefined;
-  export function from<T extends Node>(ts: readonly T[] | undefined): Nodes<T> | undefined {
-    return ts ? create(ts) : undefined;
-  }
-  export function isNodes<T extends Node>(ns: readonly T[]): ns is Nodes<T> {
+  isNodes<T extends qt.Node>(ns: readonly T[]): ns is Nodes<T> {
     return ns.hasOwnProperty('pos') && ns.hasOwnProperty('end');
   }
+  visit<T>(cb: (n: qt.Node) => T, cbs?: (ns: Nodes<qt.Node>) => T | undefined): T | undefined {
+    if (cbs) return cbs(this);
+    for (const n of this) {
+      const r = cb(n);
+      if (r) return r;
+    }
+    return;
+  }
 }
-export type MutableNodes<T extends Node> = Nodes<T> & T[];
+export type MutableNodes<T extends qt.Node> = Nodes<T> & T[];
 
 abstract class TokenOrIdentifier extends Node {
   getChildren(): Node[] {
@@ -2351,7 +2347,7 @@ export class Identifier extends TokenOrIdentifier implements PrimaryExpression, 
     this.escapedText = syntax.get.escUnderscores(t);
     this.originalKeywordKind = t ? syntax.fromString(t) : Syntax.Unknown;
     if (typeArgs) {
-      this.typeArguments = Nodes.create(typeArgs as readonly TypeNode[]);
+      this.typeArguments = new Nodes(typeArgs as readonly TypeNode[]);
     }
   }
   get text(): string {
@@ -2420,7 +2416,7 @@ export class Identifier extends TokenOrIdentifier implements PrimaryExpression, 
     return name;
   }
   static getNamespaceMemberName(ns: Identifier, name: Identifier, allowComments?: boolean, allowSourceMaps?: boolean): PropertyAccessExpression {
-    const qualifiedName = createPropertyAccess(ns, isSynthesized(name) ? name : getSynthesizedClone(name));
+    const qualifiedName = createPropertyAccess(ns, qb.isSynthesized(name) ? name : getSynthesizedClone(name));
     setRange(qualifiedName, name);
     let emitFlags: EmitFlags = 0;
     if (!allowSourceMaps) emitFlags |= EmitFlags.NoSourceMap;
@@ -2735,9 +2731,9 @@ export class SourceFile extends Declaration {
   patternAmbientModules?: PatternAmbientModule[] | undefined;
   exportedModulesFromDeclarationEmit?: ExportedModulesFromDeclarationEmit | undefined;
   id: number;
-  flags: qt.NodeFlags;
+  flags: NodeFlags;
   modifierFlagsCache: ModifierFlags;
-  transformFlags: qt.TransformFlags;
+  transformFlags: TransformFlags;
   decorators?: Nodes<Decorator> | undefined;
   modifiers?: qt.Modifiers | undefined;
   original?: Node | undefined;
@@ -2877,7 +2873,7 @@ export class SourceFile extends Declaration {
     ) {
       const updated = <SourceFile>Node.createSynthesized(Syntax.SourceFile);
       updated.flags |= node.flags;
-      updated.statements = Nodes.create(statements);
+      updated.statements = new Nodes(statements);
       updated.endOfFileToken = node.endOfFileToken;
       updated.fileName = node.fileName;
       updated.path = node.path;
@@ -3067,7 +3063,7 @@ export class SourceFile2 implements qt.SourceFileLike {
     return this.linesBetween(pos, Math.min(stop, s));
   }
   startPos(r: Range, comments = false) {
-    return isSynthesized(r.pos) ? -1 : syntax.skipTrivia(this.text, r.pos, false, comments);
+    return qb.isSynthesized(r.pos) ? -1 : syntax.skipTrivia(this.text, r.pos, false, comments);
   }
   prevNonWhitespacePos(pos: number, stop = 0) {
     while (pos-- > stop) {
@@ -3120,7 +3116,7 @@ export function getExcludedSymbolFlags(flags: SymbolFlags): SymbolFlags {
 }
 
 interface SymbolDisplayPart {}
-interface qt.JSDocTagInfo {}
+interface JSDocTagInfo {}
 
 export abstract class Symbol {
   id?: number;
@@ -3231,7 +3227,7 @@ export abstract class Symbol {
     const v = this.valueDeclaration;
     if (
       !v ||
-      (!(d.flags & qt.NodeFlags.Ambient && !(v.flags & qt.NodeFlags.Ambient)) && isAssignmentDeclaration(v) && !isAssignmentDeclaration(d)) ||
+      (!(d.flags & NodeFlags.Ambient && !(v.flags & NodeFlags.Ambient)) && isAssignmentDeclaration(v) && !isAssignmentDeclaration(d)) ||
       (v.kind !== d.kind && Node.is.effectiveModuleDeclaration(v))
     ) {
       this.valueDeclaration = d;

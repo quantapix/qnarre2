@@ -115,7 +115,7 @@ namespace core {
       addExportEqualsIfNeeded(statements, /*emitAsReturn*/ false);
       insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
 
-      const updated = qp_updateSourceNode(node, setRange(Nodes.create(statements), node.statements));
+      const updated = qp_updateSourceNode(node, setRange(new Nodes(statements), node.statements));
       addEmitHelpers(updated, context.readEmitHelpers());
       return updated;
     }
@@ -159,7 +159,7 @@ namespace core {
       const updated = qp_updateSourceNode(
         node,
         setRange(
-          Nodes.create([
+          new Nodes([
             createExpressionStatement(
               createCall(define, /*typeArguments*/ undefined, [
                 // Add the module name (if provided).
@@ -269,7 +269,7 @@ namespace core {
       const updated = qp_updateSourceNode(
         node,
         setRange(
-          Nodes.create([
+          new Nodes([
             createExpressionStatement(
               createCall(umdHeader, /*typeArguments*/ undefined, [
                 // Add the module body function argument:

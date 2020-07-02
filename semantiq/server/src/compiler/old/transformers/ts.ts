@@ -872,7 +872,7 @@ namespace core {
       }
 
       addRange(members, Nodes.visit(node.members, classElementVisitor, isClassElement));
-      return setRange(Nodes.create(members), /*location*/ node.members);
+      return setRange(new Nodes(members), /*location*/ node.members);
     }
 
     /**
@@ -1854,7 +1854,7 @@ namespace core {
 
       // End the lexical environment.
       statements = mergeLexicalEnvironment(statements, endLexicalEnvironment());
-      const block = new Block(setRange(Nodes.create(statements), body.statements), /*multiLine*/ true);
+      const block = new Block(setRange(new Nodes(statements), body.statements), /*multiLine*/ true);
       setRange(block, /*location*/ body);
       setOriginalNode(block, body);
       return block;
@@ -2241,7 +2241,7 @@ namespace core {
       addRange(statements, members);
 
       currentNamespaceContainerName = savedCurrentNamespaceLocalName;
-      return new Block(setRange(Nodes.create(statements), /*location*/ node.members), /*multiLine*/ true);
+      return new Block(setRange(new Nodes(statements), /*location*/ node.members), /*multiLine*/ true);
     }
 
     /**
@@ -2529,7 +2529,7 @@ namespace core {
       currentNamespace = savedCurrentNamespace;
       currentScopeFirstDeclarationsOfName = savedCurrentScopeFirstDeclarationsOfName;
 
-      const block = new Block(setRange(Nodes.create(statements), /*location*/ statementsLocation), /*multiLine*/ true);
+      const block = new Block(setRange(new Nodes(statements), /*location*/ statementsLocation), /*multiLine*/ true);
       setRange(block, blockLocation);
 
       // namespace hello.hi.world {

@@ -246,7 +246,7 @@ namespace core {
             if (isExternalOrCommonJsModule(sourceFile) || isJsonSourceFile(sourceFile)) {
               resultHasExternalModuleIndicator = false; // unused in external module bundle emit (all external modules are within module blocks, therefore are known to be modules)
               needsDeclare = false;
-              const statements = isSourceFileJS(sourceFile) ? Nodes.create(transformDeclarationsForJS(sourceFile, /*bundled*/ true)) : Nodes.visit(sourceFile.statements, visitDeclarationStatements);
+              const statements = isSourceFileJS(sourceFile) ? new Nodes(transformDeclarationsForJS(sourceFile, /*bundled*/ true)) : Nodes.visit(sourceFile.statements, visitDeclarationStatements);
               const newFile = qp_updateSourceNode(
                 sourceFile,
                 [
@@ -254,7 +254,7 @@ namespace core {
                     [],
                     [createModifier(Syntax.DeclareKeyword)],
                     createLiteral(getResolvedExternalModuleName(context.getEmitHost(), sourceFile)),
-                    createModuleBlock(setRange(Nodes.create(transformAndReplaceLatePaintedStatements(statements)), sourceFile.statements))
+                    createModuleBlock(setRange(new Nodes(transformAndReplaceLatePaintedStatements(statements)), sourceFile.statements))
                   ),
                 ],
                 /*isDeclarationFile*/ true,
@@ -266,7 +266,7 @@ namespace core {
               return newFile;
             }
             needsDeclare = true;
-            const updated = isSourceFileJS(sourceFile) ? Nodes.create(transformDeclarationsForJS(sourceFile)) : Nodes.visit(sourceFile.statements, visitDeclarationStatements);
+            const updated = isSourceFileJS(sourceFile) ? new Nodes(transformDeclarationsForJS(sourceFile)) : Nodes.visit(sourceFile.statements, visitDeclarationStatements);
             return qp_updateSourceNode(
               sourceFile,
               transformAndReplaceLatePaintedStatements(updated),
@@ -319,16 +319,16 @@ namespace core {
       const referenceVisitor = mapReferencesIntoArray(references, outputFilePath);
       let combinedStatements: Nodes<Statement>;
       if (isSourceFileJS(currentSourceFile)) {
-        combinedStatements = Nodes.create(transformDeclarationsForJS(node));
+        combinedStatements = new Nodes(transformDeclarationsForJS(node));
         refs.forEach(referenceVisitor);
         emittedImports = filter(combinedStatements, isAnyImportSyntax);
       } else {
         const statements = Nodes.visit(node.statements, visitDeclarationStatements);
-        combinedStatements = setRange(Nodes.create(transformAndReplaceLatePaintedStatements(statements)), node.statements);
+        combinedStatements = setRange(new Nodes(transformAndReplaceLatePaintedStatements(statements)), node.statements);
         refs.forEach(referenceVisitor);
         emittedImports = filter(combinedStatements, isAnyImportSyntax);
         if (qp_isExternalModule(node) && (!resultHasExternalModuleIndicator || (needsScopeFixMarker && !resultHasScopeMarker))) {
-          combinedStatements = setRange(Nodes.create([...combinedStatements, createEmptyExports()]), combinedStatements);
+          combinedStatements = setRange(new Nodes([...combinedStatements, createEmptyExports()]), combinedStatements);
         }
       }
       const updated = qp_updateSourceNode(node, combinedStatements, /*isDeclarationFile*/ true, references, getFileReferencesForUsedTypeReferences(), node.hasNoDefaultLib, getLibReferences());
@@ -583,7 +583,7 @@ namespace core {
       if (!newParams) {
         return undefined!; // TODO: GH#18217
       }
-      return Nodes.create(newParams, params.trailingComma);
+      return new Nodes(newParams, params.trailingComma);
     }
 
     function updateAccessorParamsList(input: AccessorDeclaration, isPrivate: boolean) {
@@ -608,7 +608,7 @@ namespace core {
         }
         newParams = append(newParams, newValueParameter);
       }
-      return Nodes.create(newParams || emptyArray) as Nodes<ParameterDeclaration>;
+      return new Nodes(newParams || emptyArray) as Nodes<ParameterDeclaration>;
     }
 
     function ensureTypeParams(node: Node, params: Nodes<TypeParameterDeclaration> | undefined) {
@@ -860,7 +860,7 @@ namespace core {
               updateParamsList(input, input.parameters, ModifierFlags.None),
               undefined
             );
-            ctor.modifiers = Nodes.create(ensureModifiers(input));
+            ctor.modifiers = new Nodes(ensureModifiers(input));
             return cleanup(ctor);
           }
           case Syntax.MethodDeclaration: {
@@ -874,7 +874,7 @@ namespace core {
               ensureType(input, input.type)
             ) as MethodSignature;
             sig.name = input.name;
-            sig.modifiers = Nodes.create(ensureModifiers(input));
+            sig.modifiers = new Nodes(ensureModifiers(input));
             sig.questionToken = input.questionToken;
             return cleanup(sig);
           }
@@ -1084,7 +1084,7 @@ namespace core {
       }
       const clone = getMutableClone(statement);
       const modifiers = createModifiersFromModifierFlags(getEffectiveModifierFlags(statement) & (ModifierFlags.All ^ ModifierFlags.Export));
-      clone.modifiers = modifiers.length ? Nodes.create(modifiers) : undefined;
+      clone.modifiers = modifiers.length ? new Nodes(modifiers) : undefined;
       return clone;
     }
 
@@ -1225,7 +1225,7 @@ namespace core {
             // 3. Some things are exported, some are not, and there's no marker - add an empty marker
             if (!isGlobalScopeAugmentation(input) && !hasScopeMarker(lateStatements) && !resultHasScopeMarker) {
               if (needsScopeFixMarker) {
-                lateStatements = Nodes.create([...lateStatements, createEmptyExports()]);
+                lateStatements = new Nodes([...lateStatements, createEmptyExports()]);
               } else {
                 lateStatements = Nodes.visit(lateStatements, stripExportModifiers);
               }
@@ -1249,7 +1249,7 @@ namespace core {
           }
         }
         case Syntax.ClassDeclaration: {
-          const modifiers = Nodes.create(ensureModifiers(input));
+          const modifiers = new Nodes(ensureModifiers(input));
           const typeParameters = ensureTypeParams(input, input.typeParameters);
           const ctor = getFirstConstructorWithBody(input);
           let parameterProperties: readonly PropertyDeclaration[] | undefined;
@@ -1309,7 +1309,7 @@ namespace core {
               ]
             : undefined;
           const memberNodes = concatenate(concatenate(privateIdentifier, parameterProperties), Nodes.visit(input.members, visitDeclarationSubtree));
-          const members = Nodes.create(memberNodes);
+          const members = new Nodes(memberNodes);
 
           const extendsClause = getEffectiveBaseTypeNode(input);
           if (extendsClause && !isEntityNameExpression(extendsClause.expression) && extendsClause.expression.kind !== Syntax.NullKeyword) {
@@ -1328,7 +1328,7 @@ namespace core {
               undefined
             );
             const statement = createVariableStatement(needsDeclare ? [createModifier(Syntax.DeclareKeyword)] : [], createVariableDeclarationList([varDecl], NodeFlags.Const));
-            const heritageClauses = Nodes.create(
+            const heritageClauses = new Nodes(
               map(input.heritageClauses, (clause) => {
                 if (clause.token === Syntax.ExtendsKeyword) {
                   const oldDiag = getSymbolAccessibilityDiagnostic;
@@ -1342,7 +1342,7 @@ namespace core {
                 }
                 return updateHeritageClause(
                   clause,
-                  Nodes.visit(Nodes.create(filter(clause.types, (t) => isEntityNameExpression(t.expression) || t.expression.kind === Syntax.NullKeyword)), visitDeclarationSubtree)
+                  Nodes.visit(new Nodes(filter(clause.types, (t) => isEntityNameExpression(t.expression) || t.expression.kind === Syntax.NullKeyword)), visitDeclarationSubtree)
                 );
               })
             );
@@ -1360,9 +1360,9 @@ namespace core {
             updateEnumDeclaration(
               input,
               undefined,
-              Nodes.create(ensureModifiers(input)),
+              new Nodes(ensureModifiers(input)),
               input.name,
-              Nodes.create(
+              new Nodes(
                 mapDefined(input.members, (m) => {
                   if (shouldStripInternal(m)) return;
                   // Rewrite enum values to their constants, if available
@@ -1398,7 +1398,7 @@ namespace core {
       if (!forEach(input.declarationList.declarations, getBindingNameVisible)) return;
       const nodes = Nodes.visit(input.declarationList.declarations, visitDeclarationSubtree);
       if (!length(nodes)) return;
-      return updateVariableStatement(input, Nodes.create(ensureModifiers(input)), updateVariableDeclarationList(input.declarationList, nodes));
+      return updateVariableStatement(input, new Nodes(ensureModifiers(input)), updateVariableDeclarationList(input.declarationList, nodes));
     }
 
     function recreateBindingPattern(d: BindingPattern): VariableDeclaration[] {
@@ -1484,13 +1484,13 @@ namespace core {
     }
 
     function transformHeritageClauses(nodes: Nodes<HeritageClause> | undefined) {
-      return Nodes.create(
+      return new Nodes(
         filter(
           map(nodes, (clause) =>
             updateHeritageClause(
               clause,
               Nodes.visit(
-                Nodes.create(
+                new Nodes(
                   filter(clause.types, (t) => {
                     return isEntityNameExpression(t.expression) || (clause.token === Syntax.ExtendsKeyword && t.expression.kind === Syntax.NullKeyword);
                   })

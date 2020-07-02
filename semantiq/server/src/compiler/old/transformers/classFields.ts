@@ -456,7 +456,7 @@ namespace core {
       const constructor = transformConstructor(n, isDerivedClass);
       if (constructor) ms.push(constructor);
       addRange(ms, Nodes.visit(n.members, classElementVisitor, isClassElement));
-      return setRange(Nodes.create(ms), n.members);
+      return setRange(new Nodes(ms), n.members);
     }
 
     function isPropertyDeclarationThatRequiresConstructorStatement(member: ClassElement): member is PropertyDeclaration {
@@ -524,7 +524,7 @@ namespace core {
 
       statements = mergeLexicalEnvironment(statements, endLexicalEnvironment());
 
-      return setRange(new Block(setRange(Nodes.create(statements), constructor ? constructor.body!.statements : node.members), /*multiLine*/ true), constructor ? constructor.body : undefined);
+      return setRange(new Block(setRange(new Nodes(statements), constructor ? constructor.body!.statements : node.members), /*multiLine*/ true), constructor ? constructor.body : undefined);
     }
 
     function addPropertyStatements(statements: Statement[], properties: readonly PropertyDeclaration[], receiver: LeftHandSideExpression) {

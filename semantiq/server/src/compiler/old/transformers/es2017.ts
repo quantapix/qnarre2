@@ -474,7 +474,7 @@ namespace core {
         const declarations = endLexicalEnvironment();
         if (some(declarations)) {
           const block = convertToFunctionBody(expression);
-          result = block.update(setRange(Nodes.create(concatenate(declarations, block.statements)), block.statements));
+          result = block.update(setRange(new Nodes(concatenate(declarations, block.statements)), block.statements));
         } else {
           result = expression;
         }

@@ -21,7 +21,7 @@ namespace core {
         if (!qp_isExternalModule(node) || some(result.statements, qp_isExternalModuleIndicator)) {
           return result;
         }
-        return qp_updateSourceNode(result, setRange(Nodes.create([...result.statements, createEmptyExports()]), result.statements));
+        return qp_updateSourceNode(result, setRange(new Nodes([...result.statements, createEmptyExports()]), result.statements));
       }
 
       return node;
@@ -35,7 +35,7 @@ namespace core {
         append(statements, externalHelpersImportDeclaration);
 
         addRange(statements, Nodes.visit(node.statements, visitor, isStatement, statementOffset));
-        return qp_updateSourceNode(node, setRange(Nodes.create(statements), node.statements));
+        return qp_updateSourceNode(node, setRange(new Nodes(statements), node.statements));
       } else {
         return visitEachChild(node, visitor, context);
       }

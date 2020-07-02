@@ -631,7 +631,7 @@ namespace core {
       const sourceFile = createNode(Syntax.SourceFile, 0, 0) as SourceFile;
       sourceFile.fileName = getRelativePathFromDirectory(host.getCurrentDirectory(), getNormalizedAbsolutePath(fileName, buildInfoDirectory), !host.useCaseSensitiveFileNames());
       sourceFile.text = '';
-      sourceFile.statements = Nodes.create();
+      sourceFile.statements = new Nodes();
       return sourceFile;
     });
     const jsBundle = Debug.checkDefined(bundle.js);
@@ -639,7 +639,7 @@ namespace core {
       const sourceFile = sourceFiles[prologueInfo.file];
       sourceFile.text = prologueInfo.text;
       sourceFile.end = prologueInfo.text.length;
-      sourceFile.statements = Nodes.create(
+      sourceFile.statements = new Nodes(
         prologueInfo.directives.map((directive) => {
           const statement = createNode(Syntax.ExpressionStatement, directive.pos, directive.end) as PrologueDirective;
           statement.expression = createNode(Syntax.StringLiteral, directive.expression.pos, directive.expression.end) as StringLiteral;
@@ -3459,15 +3459,15 @@ namespace core {
     }
 
     function emitJSDocTypeLiteral(lit: JSDocTypeLiteral) {
-      emitList(lit, Nodes.create(lit.jsDocPropertyTags), ListFormat.JSDocComment);
+      emitList(lit, new Nodes(lit.jsDocPropertyTags), ListFormat.JSDocComment);
     }
 
     function emitJSDocSignature(sig: JSDocSignature) {
       if (sig.typeParameters) {
-        emitList(sig, Nodes.create(sig.typeParameters), ListFormat.JSDocComment);
+        emitList(sig, new Nodes(sig.typeParameters), ListFormat.JSDocComment);
       }
       if (sig.parameters) {
-        emitList(sig, Nodes.create(sig.parameters), ListFormat.JSDocComment);
+        emitList(sig, new Nodes(sig.parameters), ListFormat.JSDocComment);
       }
       if (sig.type) {
         writeLine();

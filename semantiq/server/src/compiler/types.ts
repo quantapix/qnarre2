@@ -822,11 +822,11 @@ export interface NewExpression extends PrimaryExpression, Declaration {
   arguments?: Nodes<Expression>;
 }
 
-export interface Node extends TextRange {
-  kind: Syntax;
+export interface Node extends qb.Range {
+  readonly kind: Syntax;
   flags: NodeFlags;
-  modifierFlagsCache: qy.ModifierFlags;
   transformFlags: TransformFlags;
+  modifierFlagsCache: qy.ModifierFlags;
   decorators?: Nodes<Decorator>;
   modifiers?: Modifiers;
   id?: number;
@@ -842,8 +842,8 @@ export interface Node extends TextRange {
   inferenceContext?: InferenceContext;
 }
 
-export interface Nodes<T extends Node> extends ReadonlyArray<T>, TextRange {
-  hasTrailingComma?: boolean;
+export interface Nodes<T extends Node> extends ReadonlyArray<T>, qb.Range {
+  trailingComma?: boolean;
   transformFlags: TransformFlags;
 }
 
@@ -2411,10 +2411,6 @@ export type AssertsToken = Token<Syntax.AssertsKeyword>;
 
 export type Path = string & { __pathBrand: any };
 export type MatchingKeys<TRecord, TMatch, K extends keyof TRecord = keyof TRecord> = K extends (TRecord[K] extends TMatch ? K : never) ? K : never;
-export interface TextRange {
-  pos: number;
-  end: number;
-}
 export const enum RelationComparisonResult {
   Succeeded = 1 << 0,
   Failed = 1 << 1,
@@ -2760,10 +2756,10 @@ export type NamedExportBindings = NamespaceExport | NamedExports;
 export type NamedImportBindings = NamespaceImport | NamedImports;
 export type NamedImportsOrExports = NamedImports | NamedExports;
 export type ImportOrExportSpecifier = ImportSpecifier | ExportSpecifier;
-export interface FileReference extends TextRange {
+export interface FileReference extends qb.Range {
   fileName: string;
 }
-export interface CheckJsDirective extends TextRange {
+export interface CheckJsDirective extends qb.Range {
   enabled: boolean;
 }
 export interface CommentRange extends qb.Range {
@@ -4213,7 +4209,7 @@ export const enum TransformFlags {
   // Masks
   // - Additional bitmasks
 }
-export interface SourceMapRange extends TextRange {
+export interface SourceMapRange extends qb.Range {
   source?: SourceMapSource;
 }
 export interface SourceMapSource {
@@ -4227,7 +4223,7 @@ export interface EmitNode {
   flags: EmitFlags; // Flags that customize emit
   leadingComments?: SynthesizedComment[]; // Synthesized leading comments
   trailingComments?: SynthesizedComment[]; // Synthesized trailing comments
-  commentRange?: TextRange; // The text range to use when emitting leading or trailing comments
+  commentRange?: qb.Range; // The text range to use when emitting leading or trailing comments
   sourceMapRange?: SourceMapRange; // The text range to use when emitting leading or trailing source mappings
   tokenSourceMapRanges?: (SourceMapRange | undefined)[]; // The text range to use when emitting source mappings for tokens
   constantValue?: string | number; // The constant value of an expression
@@ -4384,7 +4380,7 @@ export const enum BundleFileSectionKind {
   Text = 'text',
   Internal = 'internal',
 }
-export interface BundleFileSectionBase extends TextRange {
+export interface BundleFileSectionBase extends qb.Range {
   kind: BundleFileSectionKind;
   data?: string;
 }
@@ -4413,10 +4409,10 @@ export interface BundleFileTextLike extends BundleFileSectionBase {
   kind: BundleFileTextLikeKind;
 }
 export type BundleFileSection = BundleFilePrologue | BundleFileEmitHelpers | BundleFileHasNoDefaultLib | BundleFileReference | BundleFilePrepend | BundleFileTextLike;
-export interface SourceFilePrologueDirectiveExpression extends TextRange {
+export interface SourceFilePrologueDirectiveExpression extends qb.Range {
   text: string;
 }
-export interface SourceFilePrologueDirective extends TextRange {
+export interface SourceFilePrologueDirective extends qb.Range {
   expression: SourceFilePrologueDirectiveExpression;
 }
 export interface SourceFilePrologueInfo {

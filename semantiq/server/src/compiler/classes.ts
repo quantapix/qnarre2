@@ -1,6 +1,6 @@
 import * as qb from './base';
 import * as qc from './core';
-import { Node } from './core';
+import { Node, Nodes } from './core';
 import * as qt from './types';
 import * as qy from './syntax';
 import { Syntax } from './syntax';
@@ -352,9 +352,9 @@ export class Statement extends Synthesized {
   }
   insertLeadingStatement(dest: Statement, source: Statement) {
     if (Node.is.kind(Block, dest)) {
-      return dest.update(setRange(Nodes.create([source, ...dest.statements]), dest.statements));
+      return dest.update(setRange(new Nodes([source, ...dest.statements]), dest.statements));
     } else {
-      return new Block(Nodes.create([dest, source]), true);
+      return new Block(new Nodes([dest, source]), true);
     }
   }
   restoreEnclosingLabel(node: Statement, outermostLabeledStatement: LabeledStatement | undefined, afterRestoreLabelCallback?: (node: LabeledStatement) => void): Statement {
@@ -374,6 +374,7 @@ export class DeclarationStatement extends NamedDeclaration implements Statement 
 export class IterationStatement extends Statement {
   statement: Statement;
 }
+
 export namespace ArrayBindingElement {
   export const also = [Syntax.BindingElement, Syntax.OmittedExpression];
 }
@@ -381,12 +382,12 @@ export class ArrayBindingPattern extends Synthesized {
   static readonly kind = Syntax.ArrayBindingPattern;
   readonly kind = ArrayBindingPattern.kind;
   parent?: VariableDeclaration | ParameterDeclaration | BindingElement;
-  elements: Nodes<ArrayBindingElement>;
-  constructor(es: readonly ArrayBindingElement[]) {
+  elements: Nodes<qt.ArrayBindingElement>;
+  constructor(es: readonly qt.ArrayBindingElement[]) {
     super();
-    this.elements = Nodes.create(es);
+    this.elements = new Nodes(es);
   }
-  update(es: readonly ArrayBindingElement[]): ArrayBindingPattern {
+  update(es: readonly qt.ArrayBindingElement[]): ArrayBindingPattern {
     return this.elements !== es ? new ArrayBindingPattern(es).updateFrom(this) : this;
   }
 }
@@ -397,7 +398,7 @@ export class ArrayLiteralExpression extends Synthesized implements PrimaryExpres
   multiLine?: boolean;
   constructor(es?: readonly Expression[], multiLine?: boolean) {
     super();
-    this.elements = parenthesizeListElements(Nodes.create(es));
+    this.elements = parenthesizeListElements(new Nodes(es));
     if (multiLine) this.multiLine = true;
   }
   update(es: readonly Expression[]): ArrayLiteralExpression {
@@ -433,7 +434,7 @@ export class ArrowFunction extends Synthesized implements Expression, FunctionLi
     super();
     this.modifiers = Nodes.from(modifiers);
     this.typeParameters = Nodes.from(typeParameters);
-    this.parameters = Nodes.create(parameters);
+    this.parameters = new Nodes(parameters);
     this.type = type;
     this.equalsGreaterThanToken = equalsGreaterThanToken || new Token(Syntax.EqualsGreaterThanToken);
     this.body = parenthesizeConciseBody(body);
@@ -814,7 +815,7 @@ export class Block extends Synthesized implements Statement {
   multiLine?: boolean;
   constructor(ss: readonly Statement[], multiLine?: boolean) {
     super();
-    this.statements = Nodes.create(ss);
+    this.statements = new Nodes(ss);
     if (multiLine) this.multiLine = multiLine;
   }
   update(ss: readonly Statement[]) {
@@ -941,7 +942,7 @@ export class CallExpression extends Synthesized implements LeftHandSideExpressio
   createCall(e: Expression, targs?: readonly TypeNode[], args?: readonly Expression[]) {
     this.expression = parenthesizeForAccess(e);
     this.typeArguments = Nodes.from(targs);
-    this.arguments = parenthesizeListElements(Nodes.create(args));
+    this.arguments = parenthesizeListElements(new Nodes(args));
   }
   updateCall(e: Expression, targs: readonly TypeNode[] | undefined, args: readonly Expression[]) {
     if (Node.is.optionalChain(this)) return this.updateCallChain(e, this.questionDotToken, targs, args);
@@ -966,7 +967,7 @@ export class CallChain extends CallExpression {
     this.expression = parenthesizeForAccess(expression);
     this.questionDotToken = questionDotToken;
     this.typeArguments = Nodes.from(typeArguments);
-    this.arguments = parenthesizeListElements(Nodes.create(argumentsArray));
+    this.arguments = parenthesizeListElements(new Nodes(argumentsArray));
   }
   updateCallChain(expression: Expression, questionDotToken: QuestionDotToken | undefined, typeArguments: readonly TypeNode[] | undefined, argumentsArray: readonly Expression[]) {
     assert(!!(this.flags & NodeFlags.OptionalChain), 'Cannot update a CallExpression using updateCallChain. Use updateCall instead.');
@@ -992,7 +993,7 @@ export class CaseBlock extends Node {
   clauses: Nodes<CaseOrDefaultClause>;
   createCaseBlock(clauses: readonly CaseOrDefaultClause[]): CaseBlock {
     const node = <CaseBlock>Node.createSynthesized(Syntax.CaseBlock);
-    this.clauses = Nodes.create(clauses);
+    this.clauses = new Nodes(clauses);
   }
   updateCaseBlock(clauses: readonly CaseOrDefaultClause[]) {
     return this.clauses !== clauses ? updateNode(createCaseBlock(clauses), this) : this;
@@ -1008,7 +1009,7 @@ export class CaseClause extends Node {
   createCaseClause(expression: Expression, statements: readonly Statement[]) {
     const node = <CaseClause>Node.createSynthesized(Syntax.CaseClause);
     this.expression = parenthesizeExpressionForList(expression);
-    this.statements = Nodes.create(statements);
+    this.statements = new Nodes(statements);
   }
   updateCaseClause(expression: Expression, statements: readonly Statement[]) {
     return this.expression !== expression || this.statements !== statements ? updateNode(createCaseClause(expression, statements), this) : this;
@@ -1048,7 +1049,7 @@ export class ClassDeclaration extends Synthesized implements ClassLikeDeclaratio
     this.name = asName(name);
     this.typeParameters = Nodes.from(typeParameters);
     this.heritageClauses = Nodes.from(heritageClauses);
-    this.members = Nodes.create(members);
+    this.members = new Nodes(members);
     return this;
   }
   updateClassDeclaration(
@@ -1086,7 +1087,7 @@ export class ClassExpression extends Synthesized implements ClassLikeDeclaration
     this.name = asName(name);
     this.typeParameters = Nodes.from(typeParameters);
     this.heritageClauses = Nodes.from(heritageClauses);
-    this.members = Nodes.create(members);
+    this.members = new Nodes(members);
     return this;
   }
   updateClassExpression(
@@ -1115,7 +1116,7 @@ export class CommaListExpression extends Expression {
   }
   createCommaList(elements: readonly Expression[]) {
     const n = <CommaListExpression>Node.createSynthesized(Syntax.CommaListExpression);
-    this.elements = Nodes.create(sameFlatMap(elements, flattenCommaElements));
+    this.elements = new Nodes(sameFlatMap(elements, flattenCommaElements));
     return this;
   }
   updateCommaList(this: CommaListExpression, elements: readonly Expression[]) {
@@ -1196,7 +1197,7 @@ export class ConstructorDeclaration extends FunctionLikeDeclarationBase implemen
     this.decorators = Nodes.from(ds);
     this.modifiers = Nodes.from(ms);
     this.typeParameters = undefined;
-    this.parameters = Nodes.create(ps);
+    this.parameters = new Nodes(ps);
     this.type = undefined;
     this.body = b;
   }
@@ -1261,7 +1262,7 @@ export class DefaultClause extends Synthesized {
   statements: Nodes<Statement>;
   fallthroughFlowNode?: FlowNode;
   createDefaultClause(ss: readonly Statement[]) {
-    this.statements = Nodes.create(ss);
+    this.statements = new Nodes(ss);
   }
   updateDefaultClause(ss: readonly Statement[]) {
     return this.statements !== ss ? updateNode(createDefaultClause(ss), this) : this;
@@ -1341,7 +1342,7 @@ export class EnumDeclaration extends Synthesized implements DeclarationStatement
     this.decorators = Nodes.from(ds);
     this.modifiers = Nodes.from(ms);
     this.name = asName(n);
-    this.members = Nodes.create(es);
+    this.members = new Nodes(es);
   }
   updateEnumDeclaration(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, n: Identifier, es: readonly EnumMember[]) {
     return this.decorators !== ds || this.modifiers !== ms || this.name !== n || this.members !== es ? updateNode(createEnumDeclaration(ds, ms, n, es), this) : this;
@@ -1539,7 +1540,7 @@ export class FunctionDeclaration extends DeclarationStatement implements Functio
     node.asteriskToken = asteriskToken;
     node.name = asName(name);
     node.typeParameters = Nodes.from(typeParameters);
-    node.parameters = Nodes.create(parameters);
+    node.parameters = new Nodes(parameters);
     node.type = type;
     node.body = body;
     return node;
@@ -1586,7 +1587,7 @@ export class FunctionExpression extends Expression implements PrimaryExpression,
     node.asteriskToken = asteriskToken;
     node.name = asName(name);
     node.typeParameters = Nodes.from(typeParameters);
-    node.parameters = Nodes.create(parameters);
+    node.parameters = new Nodes(parameters);
     node.type = type;
     node.body = body;
     return node;
@@ -1634,7 +1635,7 @@ export class GetAccessorDeclaration extends Node implements FunctionLikeDeclarat
     n.modifiers = Nodes.from(ms);
     n.name = asName(p);
     n.typeParameters = undefined;
-    n.parameters = Nodes.create(ps);
+    n.parameters = new Nodes(ps);
     n.type = t;
     n.body = b;
     return n;
@@ -1655,7 +1656,7 @@ export class HeritageClause extends Node {
   createHeritageClause(token: HeritageClause['token'], types: readonly ExpressionWithTypeArguments[]) {
     const node = <HeritageClause>Node.createSynthesized(Syntax.HeritageClause);
     node.token = token;
-    node.types = Nodes.create(types);
+    node.types = new Nodes(types);
     return node;
   }
   updateHeritageClause(node: HeritageClause, types: readonly ExpressionWithTypeArguments[]) {
@@ -1811,7 +1812,7 @@ export class IndexSignatureDeclaration extends Node implements SignatureDeclarat
     const n = Node.createSynthesized(Syntax.IndexSignature);
     n.decorators = Nodes.from(ds);
     n.modifiers = Nodes.from(ms);
-    n.parameters = Nodes.create(ps);
+    n.parameters = new Nodes(ps);
     n.type = t;
     return n;
   }
@@ -1853,7 +1854,7 @@ export class InterfaceDeclaration extends Node implements DeclarationStatement, 
     node.name = asName(name);
     node.typeParameters = Nodes.from(typeParameters);
     node.heritageClauses = Nodes.from(heritageClauses);
-    node.members = Nodes.create(members);
+    node.members = new Nodes(members);
     return node;
   }
   updateInterfaceDeclaration(
@@ -2203,7 +2204,7 @@ export class JsxAttributes extends ObjectLiteralExpressionBase<JsxAttributeLike>
   parent: JsxOpeningLikeElement;
   createJsxAttributes(properties: readonly JsxAttributeLike[]) {
     const node = <JsxAttributes>Node.createSynthesized(Syntax.JsxAttributes);
-    node.properties = Nodes.create(properties);
+    node.properties = new Nodes(properties);
     return node;
   }
   updateJsxAttributes(node: JsxAttributes, properties: readonly JsxAttributeLike[]) {
@@ -2241,7 +2242,7 @@ export class JsxElement extends PrimaryExpression {
   createJsxElement(openingElement: JsxOpeningElement, children: readonly JsxChild[], closingElement: JsxClosingElement) {
     const node = <JsxElement>Node.createSynthesized(Syntax.JsxElement);
     node.openingElement = openingElement;
-    node.children = Nodes.create(children);
+    node.children = new Nodes(children);
     node.closingElement = closingElement;
     return node;
   }
@@ -2298,7 +2299,7 @@ export class JsxFragment extends PrimaryExpression {
   createJsxFragment(openingFragment: JsxOpeningFragment, children: readonly JsxChild[], closingFragment: JsxClosingFragment) {
     const node = <JsxFragment>Node.createSynthesized(Syntax.JsxFragment);
     node.openingFragment = openingFragment;
-    node.children = Nodes.create(children);
+    node.children = new Nodes(children);
     node.closingFragment = closingFragment;
     return node;
   }
@@ -2540,7 +2541,7 @@ export class MethodDeclaration extends Node {
     n.name = asName(p);
     n.questionToken = q;
     n.typeParameters = Nodes.from(ts);
-    n.parameters = Nodes.create(ps);
+    n.parameters = new Nodes(ps);
     n.type = t;
     n.body = b;
     return n;
@@ -2591,7 +2592,7 @@ export class ModuleBlock extends Node {
   statements: Nodes<Statement>;
   createModuleBlock(statements: readonly Statement[]) {
     const node = <ModuleBlock>Node.createSynthesized(Syntax.ModuleBlock);
-    node.statements = Nodes.create(statements);
+    node.statements = new Nodes(statements);
     return node;
   }
   updateModuleBlock(node: ModuleBlock, statements: readonly Statement[]) {
@@ -2627,7 +2628,7 @@ export class NamedExports extends Node {
   elements: Nodes<ExportSpecifier>;
   createNamedExports(elements: readonly ExportSpecifier[]) {
     const node = <NamedExports>Node.createSynthesized(Syntax.NamedExports);
-    node.elements = Nodes.create(elements);
+    node.elements = new Nodes(elements);
     return node;
   }
   updateNamedExports(node: NamedExports, elements: readonly ExportSpecifier[]) {
@@ -2641,7 +2642,7 @@ export class NamedImports extends Node {
   elements: Nodes<ImportSpecifier>;
   createNamedImports(elements: readonly ImportSpecifier[]): NamedImports {
     const node = <NamedImports>Node.createSynthesized(Syntax.NamedImports);
-    node.elements = Nodes.create(elements);
+    node.elements = new Nodes(elements);
     return node;
   }
   updateNamedImports(node: NamedImports, elements: readonly ImportSpecifier[]) {
@@ -2720,7 +2721,7 @@ export class NewExpression extends PrimaryExpression {
     const node = <NewExpression>Node.createSynthesized(Syntax.NewExpression);
     node.expression = parenthesizeForNew(expression);
     node.typeArguments = Nodes.from(typeArguments);
-    node.arguments = argumentsArray ? parenthesizeListElements(Nodes.create(argumentsArray)) : undefined;
+    node.arguments = argumentsArray ? parenthesizeListElements(new Nodes(argumentsArray)) : undefined;
     return node;
   }
   updateNew(node: NewExpression, expression: Expression, typeArguments: readonly TypeNode[] | undefined, argumentsArray: readonly Expression[] | undefined) {
@@ -2796,7 +2797,7 @@ export class ObjectBindingPattern extends Node {
   elements: Nodes<BindingElement>;
   create(es: readonly BindingElement[]) {
     const n = Node.createSynthesized(Syntax.ObjectBindingPattern);
-    n.elements = Nodes.create(es);
+    n.elements = new Nodes(es);
     return n;
   }
   update(n: ObjectBindingPattern, es: readonly BindingElement[]) {
@@ -2809,7 +2810,7 @@ export class ObjectLiteralExpression extends ObjectLiteralExpressionBase<ObjectL
   multiLine?: boolean;
   createObjectLiteral(properties?: readonly ObjectLiteralElementLike[], multiLine?: boolean) {
     const node = <ObjectLiteralExpression>Node.createSynthesized(Syntax.ObjectLiteralExpression);
-    node.properties = Nodes.create(properties);
+    node.properties = new Nodes(properties);
     if (multiLine) node.multiLine = true;
     return node;
   }
@@ -3218,7 +3219,7 @@ export class SetAccessorDeclaration extends FunctionLikeDeclarationBase {
     n.modifiers = Nodes.from(ms);
     n.name = asName(p);
     n.typeParameters = undefined;
-    n.parameters = Nodes.create(ps);
+    n.parameters = new Nodes(ps);
     n.body = b;
     return n;
   }
@@ -3393,7 +3394,7 @@ export class TemplateExpression extends PrimaryExpression {
   createTemplateExpression(head: TemplateHead, templateSpans: readonly TemplateSpan[]) {
     const node = <TemplateExpression>Node.createSynthesized(Syntax.TemplateExpression);
     node.head = head;
-    node.templateSpans = Nodes.create(templateSpans);
+    node.templateSpans = new Nodes(templateSpans);
     return node;
   }
   updateTemplateExpression(node: TemplateExpression, head: TemplateHead, templateSpans: readonly TemplateSpan[]) {
@@ -3493,7 +3494,7 @@ export class TupleType extends GenericType {
   labeledElementDeclarations?: readonly (NamedTupleMember | ParameterDeclaration)[];
   create(es: readonly (TypeNode | NamedTupleMember)[]) {
     const n = Node.createSynthesized(Syntax.TupleType);
-    n.elements = Nodes.create(es);
+    n.elements = new Nodes(es);
     return n;
   }
   update(n: TupleTypeNode, es: readonly (TypeNode | NamedTupleMember)[]) {
@@ -3558,7 +3559,7 @@ export class TypeLiteralNode extends TypeNode {
   members: Nodes<TypeElement>;
   create(ms: readonly TypeElement[] | undefined) {
     const n = Node.createSynthesized(Syntax.TypeLiteral);
-    n.members = Nodes.create(ms);
+    n.members = new Nodes(ms);
     return n;
   }
   update(n: TypeLiteralNode, ms: Nodes<TypeElement>) {
@@ -3978,7 +3979,7 @@ export class VariableDeclarationList extends Node {
   createVariableDeclarationList(declarations: readonly VariableDeclaration[], flags = NodeFlags.None) {
     const node = <VariableDeclarationList>Node.createSynthesized(Syntax.VariableDeclarationList);
     node.flags |= flags & NodeFlags.BlockScoped;
-    node.declarations = Nodes.create(declarations);
+    node.declarations = new Nodes(declarations);
     return node;
   }
   updateVariableDeclarationList(node: VariableDeclarationList, declarations: readonly VariableDeclaration[]) {
@@ -4230,7 +4231,7 @@ export namespace parenthesize {
         result.push(element);
       }
     }
-    if (result !== undefined) return setRange(Nodes.create(result, elements.trailingComma), elements);
+    if (result !== undefined) return setRange(new Nodes(result, elements.trailingComma), elements);
     return elements;
   }
   export function parenthesizeExpressionForList(expression: Expression) {
@@ -4279,7 +4280,7 @@ export namespace parenthesize {
     return parenthesizeElementTypeMember(member);
   }
   export function parenthesizeElementTypeMembers(members: readonly TypeNode[]) {
-    return Nodes.create(sameMap(members, parenthesizeElementTypeMember));
+    return new Nodes(sameMap(members, parenthesizeElementTypeMember));
   }
   export function arenthesizeTypeParameters(typeParameters: readonly TypeNode[] | undefined) {
     if (some(typeParameters)) {
@@ -4288,7 +4289,7 @@ export namespace parenthesize {
         const entry = typeParameters[i];
         params.push(i === 0 && Node.is.functionOrConstructorTypeNode(entry) && entry.typeParameters ? ParenthesizedTypeNode.create(entry) : entry);
       }
-      return Nodes.create(params);
+      return new Nodes(params);
     }
     return;
   }
