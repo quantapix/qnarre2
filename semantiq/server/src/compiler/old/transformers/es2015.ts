@@ -536,7 +536,7 @@ namespace core {
         if (isReturnVoidStatementInConstructorWithCapturedSuper(node)) {
           node = returnCapturedThis(node);
         }
-        return createReturn(createObjectLiteral([createPropertyAssignment(new Identifier('value'), node.expression ? visitNode(node.expression, visitor, isExpression) : createVoidZero())]));
+        return createReturn(createObjectLiteral([createPropertyAssignment(new Identifier('value'), node.expression ? visitNode(node.expression, visitor, isExpression) : qs.VoidExpression.zero())]));
       } else if (isReturnVoidStatementInConstructorWithCapturedSuper(node)) {
         return returnCapturedThis(node);
       }
@@ -738,15 +738,15 @@ namespace core {
 
       // "inner" and "outer" below are added purely to preserve source map locations from
       // the old emitter
-      const inner = createPartiallyEmittedExpression(classFunction);
+      const inner = new qs.PartiallyEmittedExpression(classFunction);
       inner.end = node.end;
       setEmitFlags(inner, EmitFlags.NoComments);
 
-      const outer = createPartiallyEmittedExpression(inner);
+      const outer = new qs.PartiallyEmittedExpression(inner);
       outer.end = syntax.skipTrivia(currentText, node.pos);
       setEmitFlags(outer, EmitFlags.NoComments);
 
-      const result = createParen(createCall(outer, /*typeArguments*/ undefined, extendsClauseElement ? [visitNode(extendsClauseElement.expression, visitor, isExpression)] : []));
+      const result = createParen(new qs.CallExpression(outer, /*typeArguments*/ undefined, extendsClauseElement ? [visitNode(extendsClauseElement.expression, visitor, isExpression)] : []));
       addSyntheticLeadingComment(result, Syntax.MultiLineCommentTrivia, '* @class ');
       return result;
     }
@@ -770,7 +770,7 @@ namespace core {
 
       // The following partially-emitted expression exists purely to align our sourcemap
       // emit with the original emitter.
-      const outer = createPartiallyEmittedExpression(localName);
+      const outer = new qs.PartiallyEmittedExpression(localName);
       outer.end = closingBraceLocation.end;
       setEmitFlags(outer, EmitFlags.NoComments);
 
@@ -1269,7 +1269,7 @@ namespace core {
       const forStatement = createFor(
         setRange(createVariableDeclarationList([createVariableDeclaration(temp, undefined, createLiteral(restIndex))]), parameter),
         setRange(createLessThan(temp, createPropertyAccess(new Identifier('arguments'), 'length')), parameter),
-        setRange(createPostfixIncrement(temp), parameter),
+        setRange(qs.PostfixUnaryExpression.increment(temp), parameter),
         new Block([
           startOnNewLine(
             setRange(
@@ -1341,7 +1341,7 @@ namespace core {
           case Syntax.SetAccessor:
             // Methods and accessors cannot be constructors, so 'new.target' will
             // always return 'undefined'.
-            newTarget = createVoidZero();
+            newTarget = qs.VoidExpression.zero();
             break;
 
           case Syntax.Constructor:
@@ -1357,7 +1357,7 @@ namespace core {
             newTarget = createConditional(
               createLogicalAnd(setEmitFlags(createThis(), EmitFlags.NoSubstitution), new BinaryExpression(setEmitFlags(createThis(), EmitFlags.NoSubstitution), Syntax.InstanceOfKeyword, getLocalName(node))),
               createPropertyAccess(setEmitFlags(createThis(), EmitFlags.NoSubstitution), 'constructor'),
-              createVoidZero()
+              qs.VoidExpression.zero()
             );
             break;
 
@@ -1529,7 +1529,7 @@ namespace core {
 
       properties.push(createPropertyAssignment('enumerable', getAccessor || setAccessor ? createFalse() : createTrue()), createPropertyAssignment('configurable', createTrue()));
 
-      const call = createCall(createPropertyAccess(new Identifier('Object'), 'defineProperty'), /*typeArguments*/ undefined, [
+      const call = new qs.CallExpression(createPropertyAccess(new Identifier('Object'), 'defineProperty'), /*typeArguments*/ undefined, [
         target,
         propertyName,
         createObjectLiteral(properties, /*multiLine*/ true),
@@ -1982,7 +1982,7 @@ namespace core {
 
       if (!node.initializer && shouldEmitExplicitInitializerForLetDeclaration(node)) {
         const clone = getMutableClone(node);
-        clone.initializer = createVoidZero();
+        clone.initializer = qs.VoidExpression.zero();
         return clone;
       }
 
@@ -2192,7 +2192,7 @@ namespace core {
             EmitFlags.NoHoisting
           ),
           /*condition*/ setRange(createLessThan(counter, createPropertyAccess(rhsReference, 'length')), node.expression),
-          /*incrementor*/ setRange(createPostfixIncrement(counter), node.expression),
+          /*incrementor*/ setRange(qs.PostfixUnaryExpression.increment(counter), node.expression),
           /*statement*/ convertForOfStatementHead(node, createElementAccess(rhsReference, counter), convertedLoopBodyStatements)
         ),
         /*location*/ node
@@ -2212,13 +2212,13 @@ namespace core {
       const catchVariable = getGeneratedNameForNode(errorRecord);
       const returnMethod = createTempVariable(/*recordTempVariable*/ undefined);
       const values = createValuesHelper(context, expression, node.expression);
-      const next = createCall(createPropertyAccess(iterator, 'next'), /*typeArguments*/ undefined, []);
+      const next = new qs.CallExpression(createPropertyAccess(iterator, 'next'), /*typeArguments*/ undefined, []);
 
       hoistVariableDeclaration(errorRecord);
       hoistVariableDeclaration(returnMethod);
 
       // if we are enclosed in an outer loop ensure we reset 'errorRecord' per each iteration
-      const initializer = ancestorFacts & HierarchyFacts.IterationContainer ? inlineExpressions([createAssignment(errorRecord, createVoidZero()), values]) : values;
+      const initializer = ancestorFacts & HierarchyFacts.IterationContainer ? inlineExpressions([createAssignment(errorRecord, qs.VoidExpression.zero()), values]) : values;
 
       const forStatement = setEmitFlags(
         setRange(
@@ -2233,7 +2233,7 @@ namespace core {
               ),
               EmitFlags.NoHoisting
             ),
-            /*condition*/ createLogicalNot(createPropertyAccess(result, 'done')),
+            /*condition*/ qs.PrefixUnaryExpression.logicalNot(createPropertyAccess(result, 'done')),
             /*incrementor*/ createAssignment(result, next),
             /*statement*/ convertForOfStatementHead(node, createPropertyAccess(result, 'value'), convertedLoopBodyStatements)
           ),
@@ -2253,7 +2253,7 @@ namespace core {
             /*tryBlock*/ new Block([
               setEmitFlags(
                 createIf(
-                  createLogicalAnd(createLogicalAnd(result, createLogicalNot(createPropertyAccess(result, 'done'))), createAssignment(returnMethod, createPropertyAccess(iterator, 'return'))),
+                  createLogicalAnd(createLogicalAnd(result, qs.PrefixUnaryExpression.logicalNot(createPropertyAccess(result, 'done'))), createAssignment(returnMethod, createPropertyAccess(iterator, 'return'))),
                   createExpressionStatement(createFunctionCall(returnMethod, iterator, []))
                 ),
                 EmitFlags.SingleLine
@@ -2746,7 +2746,7 @@ namespace core {
         );
 
         if (shouldConvertConditionOfForStatement(node)) {
-          statements.push(createIf(createPrefix(Syntax.ExclamationToken, visitNode(node.condition, visitor, isExpression)), visitNode(createBreak(), visitor, isStatement)));
+          statements.push(createIf(new qs.PrefixUnaryExpression(Syntax.ExclamationToken, visitNode(node.condition, visitor, isExpression)), visitNode(createBreak(), visitor, isStatement)));
         }
       }
 
@@ -2827,7 +2827,7 @@ namespace core {
     }
 
     function generateCallToConvertedLoopInitializer(initFunctionExpressionName: Identifier, containsYield: boolean): Statement {
-      const call = createCall(initFunctionExpressionName, /*typeArguments*/ undefined, []);
+      const call = new qs.CallExpression(initFunctionExpressionName, /*typeArguments*/ undefined, []);
       const callResult = containsYield ? createYield(new Token(Syntax.AsteriskToken), setEmitFlags(call, EmitFlags.Iterator)) : call;
       return createStatement(callResult);
     }
@@ -2839,7 +2839,7 @@ namespace core {
       // NOTE: if loop uses only 'continue' it still will be emitted as simple loop
       const isSimpleLoop = !(state.nonLocalJumps! & ~Jump.Continue) && !state.labeledNonLocalBreaks && !state.labeledNonLocalContinues;
 
-      const call = createCall(
+      const call = new qs.CallExpression(
         loopFunctionExpressionName,
         /*typeArguments*/ undefined,
         map(state.loopParameters, (p) => <Identifier>p.name)
@@ -2862,7 +2862,7 @@ namespace core {
           } else {
             returnStatement = createReturn(createPropertyAccess(loopResultName, 'value'));
           }
-          statements.push(createIf(new BinaryExpression(createTypeOf(loopResultName), Syntax.Equals3Token, createLiteral('object')), returnStatement));
+          statements.push(createIf(new BinaryExpression(new TypeOfExpression(loopResultName), Syntax.Equals3Token, createLiteral('object')), returnStatement));
         }
 
         if (state.nonLocalJumps! & Jump.Break) {
@@ -3389,7 +3389,7 @@ namespace core {
           createFunctionApply(
             visitNode(target, visitor, isExpression),
             thisArg,
-            transformAndSpreadElements(new Nodes([createVoidZero(), ...node.arguments!]), /*needsUniqueCopy*/ false, /*multiLine*/ false, /*trailingComma*/ false)
+            transformAndSpreadElements(new Nodes([qs.VoidExpression.zero(), ...node.arguments!]), /*needsUniqueCopy*/ false, /*multiLine*/ false, /*trailingComma*/ false)
           ),
           /*typeArguments*/ undefined,
           []
@@ -3846,7 +3846,7 @@ namespace core {
 
   function createExtendsHelper(context: TransformationContext, name: Identifier) {
     context.requestEmitHelper(extendsHelper);
-    return createCall(getUnscopedHelperName('__extends'), /*typeArguments*/ undefined, [name, createFileLevelUniqueName('_super')]);
+    return new qs.CallExpression(getUnscopedHelperName('__extends'), /*typeArguments*/ undefined, [name, createFileLevelUniqueName('_super')]);
   }
 
   export const extendsHelper: UnscopedEmitHelper = {

@@ -5,6 +5,19 @@ import * as qt from './types';
 import * as qy from './syntax';
 import { Modifier, Syntax } from './syntax';
 
+export function addMixins(t: any, ss: any[]) {
+  ss.forEach((s: any) => {
+    Object.getOwnPropertyNames(s.prototype).forEach((n) => {
+      if (n == 'constructor') return;
+      console.log(`adding ${s.name}.${n}`);
+      Object.defineProperty(t.prototype, n, Object.getOwnPropertyDescriptor(s.prototype, n)!);
+    });
+  });
+}
+
+// prettier-ignore
+export type NodeTypes = | ArrayBindingPattern | ArrayLiteralExpression | ArrayTypeNode | AsExpression | AwaitExpression | BinaryExpression | BindingElement | BindingPattern | Block | BreakOrContinueStatement | CallExpression | CaseBlock | CaseClause | CatchClause | ClassLikeDeclaration | CommaListExpression | ComputedPropertyName | ConditionalExpression | ConditionalTypeNode | Decorator | DefaultClause | DeleteExpression | DeleteExpression | DoStatement | ElementAccessExpression | EnumDeclaration | EnumMember | ExportAssignment | ExportDeclaration | ExpressionStatement | ExpressionWithTypeArguments | ExternalModuleReference | ForInStatement | ForOfStatement | ForStatement | FunctionLikeDeclaration | HeritageClause | Identifier | IfStatement | ImportClause | ImportDeclaration | ImportEqualsDeclaration | ImportOrExportSpecifier | ImportTypeNode | IndexedAccessTypeNode | InferTypeNode | InterfaceDeclaration | JSDoc | JSDocAugmentsTag | JSDocAuthorTag | JSDocFunctionType | JSDocImplementsTag | JSDocSignature | JSDocTemplateTag | JSDocTypedefTag | JSDocTypeExpression | JSDocTypeLiteral | JSDocTypeReferencingNode | JsxAttribute | JsxAttributes | JsxClosingElement | JsxElement | JsxExpression | JsxFragment | JsxOpeningLikeElement | JsxSpreadAttribute | LabeledStatement | LiteralTypeNode | MappedTypeNode | MetaProperty | MissingDeclaration | ModuleDeclaration | NamedImportsOrExports | NamedTupleMember | NamespaceExport | NamespaceExportDeclaration | NamespaceImport | NonNullExpression | ObjectLiteralExpression | OptionalTypeNode | ParameterDeclaration | ParenthesizedExpression | ParenthesizedTypeNode | PartiallyEmittedExpression | PostfixUnaryExpression | PrefixUnaryExpression | PropertyAccessExpression | PropertyAssignment | PropertyDeclaration | PropertySignature | QualifiedName | RestTypeNode | ReturnStatement | ShorthandPropertyAssignment | SignatureDeclaration | SourceFile | SpreadAssignment | SpreadElement | SwitchStatement | TaggedTemplateExpression | TemplateExpression | TemplateSpan | ThrowStatement | TryStatement | TupleTypeNode | TypeAliasDeclaration | TypeAssertion | TypeLiteralNode | TypeOfExpression | TypeOperatorNode | TypeParameterDeclaration | TypePredicateNode | TypeQueryNode | TypeReferenceNode | UnionOrIntersectionTypeNode | VariableDeclaration | VariableDeclarationList | VariableStatement | VoidExpression | WhileStatement | WithStatement | YieldExpression;
+
 export abstract class Declaration extends Node implements qt.Declaration {
   _declarationBrand: any;
   isNotAccessor(declaration: Declaration) {
@@ -132,7 +145,7 @@ export abstract class Expression extends Node implements qt.Expression {
         properties.push(createPropertyAssignment('configurable', createTrue()));
 
         const expression = setRange(
-          createCall(createPropertyAccess(new Identifier('Object'), 'defineProperty'), undefined, [
+          new CallExpression(createPropertyAccess(new Identifier('Object'), 'defineProperty'), undefined, [
             receiver,
             createExpressionForPropertyName(property.name),
             createObjectLiteral(properties, multiLine),
@@ -195,7 +208,7 @@ export abstract class Expression extends Node implements qt.Expression {
     return;
   }
   createTypeCheck(value: Expression, tag: TypeOfTag) {
-    return tag === 'undefined' ? createStrictEquality(value, createVoidZero()) : createStrictEquality(createTypeOf(value), createLiteral(tag));
+    return tag === 'undefined' ? createStrictEquality(value, VoidExpression.zero()) : createStrictEquality(new TypeOfExpression(value), createLiteral(tag));
   }
   createMemberAccessForPropertyName(target: Expression, memberName: PropertyName, location?: TextRange): MemberExpression {
     if (Node.is.kind(ComputedPropertyName, memberName)) {
@@ -210,23 +223,23 @@ export abstract class Expression extends Node implements qt.Expression {
     }
   }
   createFunctionCall(func: Expression, thisArg: Expression, argumentsList: readonly Expression[], location?: TextRange) {
-    return setRange(createCall(createPropertyAccess(func, 'call'), undefined, [thisArg, ...argumentsList]), location);
+    return setRange(new CallExpression(createPropertyAccess(func, 'call'), undefined, [thisArg, ...argumentsList]), location);
   }
   createFunctionApply(func: Expression, thisArg: Expression, argumentsExpression: Expression, location?: TextRange) {
-    return setRange(createCall(createPropertyAccess(func, 'apply'), undefined, [thisArg, argumentsExpression]), location);
+    return setRange(new CallExpression(createPropertyAccess(func, 'apply'), undefined, [thisArg, argumentsExpression]), location);
   }
   createArraySlice(array: Expression, start?: number | Expression) {
     const argumentsList: Expression[] = [];
     if (start !== undefined) {
       argumentsList.push(typeof start === 'number' ? createLiteral(start) : start);
     }
-    return createCall(createPropertyAccess(array, 'slice'), undefined, argumentsList);
+    return new CallExpression(createPropertyAccess(array, 'slice'), undefined, argumentsList);
   }
   createArrayConcat(array: Expression, values: readonly Expression[]) {
-    return createCall(createPropertyAccess(array, 'concat'), undefined, values);
+    return new CallExpression(createPropertyAccess(array, 'concat'), undefined, values);
   }
   createMathPow(left: Expression, right: Expression, location?: TextRange) {
-    return setRange(createCall(createPropertyAccess(new Identifier('Math'), 'pow'), undefined, [left, right]), location);
+    return setRange(new CallExpression(createPropertyAccess(new Identifier('Math'), 'pow'), undefined, [left, right]), location);
   }
   getLeftmostExpression(node: Expression, stopAtCallExpressions: boolean) {
     while (true) {
@@ -262,6 +275,12 @@ export abstract class Expression extends Node implements qt.Expression {
 }
 export abstract class UnaryExpression extends Expression implements qt.UnaryExpression {
   _unaryExpressionBrand: any;
+}
+export abstract class UpdateExpression extends UnaryExpression implements qt.UpdateExpression {
+  _updateExpressionBrand: any;
+}
+export abstract class LeftHandSideExpression extends UpdateExpression implements qt.LeftHandSideExpression {
+  _leftHandSideExpressionBrand: any;
 }
 export class Statement extends Synthesized {
   //_statementBrand: any;
@@ -384,7 +403,7 @@ export class ArrayBindingPattern extends Node implements qt.ArrayBindingPattern 
     super(true);
     this.elements = new Nodes(es);
   }
-  update(es: readonly qt.ArrayBindingElement[]): ArrayBindingPattern {
+  update(es: readonly qt.ArrayBindingElement[]) {
     return this.elements !== es ? new ArrayBindingPattern(es).updateFrom(this) : this;
   }
 }
@@ -399,7 +418,7 @@ export class ArrayLiteralExpression extends Node implements qt.ArrayLiteralExpre
     this.elements = parenthesize.listElements(new Nodes(es));
     if (multiLine) this.multiLine = true;
   }
-  update(es: readonly Expression[]): ArrayLiteralExpression {
+  update(es: readonly Expression[]) {
     return this.elements !== es ? new ArrayLiteralExpression(es, this.multiLine).updateFrom(this) : this;
   }
   _primaryExpressionBrand: any;
@@ -418,7 +437,7 @@ export class ArrayTypeNode extends Node implements qt.ArrayTypeNode {
     super(true);
     this.elementType = parenthesize.arrayTypeMember(t);
   }
-  update(t: qt.TypeNode): ArrayTypeNode {
+  update(t: qt.TypeNode) {
     return this.elementType !== t ? new ArrayTypeNode(t).updateFrom(this) : this;
   }
   _typeNodeBrand: any;
@@ -453,7 +472,7 @@ export class ArrowFunction extends FunctionLikeDeclarationBase implements qt.Arr
     type: qt.TypeNode | undefined,
     equalsGreaterThanToken: Token<Syntax.EqualsGreaterThanToken>,
     body: qt.ConciseBody
-  ): ArrowFunction {
+  ) {
     return this.modifiers !== modifiers ||
       this.typeParameters !== typeParameters ||
       this.parameters !== parameters ||
@@ -507,7 +526,7 @@ export class BigIntLiteral extends Synthesized implements LiteralExpression {
   isUnterminated?: boolean;
   hasExtendedEscape?: boolean;
   constructor(t: string) {
-    super();
+    super(true);
     this.text = t;
   }
   expression(e: Expression) {
@@ -900,8 +919,8 @@ export class CallBinding {
       thisArg = createThis();
       target = <PrimaryExpression>callee;
     } else if (Node.get.emitFlags(callee) & EmitFlags.HelperName) {
-      thisArg = createVoidZero();
-      target = parenthesizeForAccess(callee);
+      thisArg = VoidExpression.zero();
+      target = parenthesize.forAccess(callee);
     } else {
       switch (callee.kind) {
         case Syntax.PropertyAccessExpression: {
@@ -936,8 +955,8 @@ export class CallBinding {
         }
         default: {
           // for `a()` target is `a` and thisArg is `void 0`
-          thisArg = createVoidZero();
-          target = parenthesizeForAccess(expression);
+          thisArg = VoidExpression.zero();
+          target = parenthesize.forAccess(expression);
           break;
         }
       }
@@ -945,42 +964,46 @@ export class CallBinding {
     return { target, thisArg };
   }
 }
-export class CallExpression extends Synthesized implements LeftHandSideExpression, Declaration {
+export class CallExpression extends LeftHandSideExpression implements qt.CallExpression {
   static readonly kind = Syntax.CallExpression;
-  readonly kind = CallExpression.kind;
   expression: LeftHandSideExpression;
-  questionDotToken?: QuestionDotToken;
+  questionDotToken?: qt.QuestionDotToken;
   typeArguments?: Nodes<TypeNode>;
   arguments: Nodes<Expression>;
-  createCall(e: Expression, targs?: readonly TypeNode[], args?: readonly Expression[]) {
-    this.expression = parenthesizeForAccess(e);
-    this.typeArguments = Nodes.from(targs);
-    this.arguments = parenthesizeListElements(new Nodes(args));
+  constructor(e: Expression, ts?: readonly TypeNode[], es?: readonly Expression[]) {
+    super(true);
+    this.expression = parenthesize.forAccess(e);
+    this.typeArguments = Nodes.from(ts);
+    this.arguments = parenthesize.listElements(new Nodes(es));
   }
-  updateCall(e: Expression, targs: readonly TypeNode[] | undefined, args: readonly Expression[]) {
-    if (Node.is.optionalChain(this)) return this.updateCallChain(e, this.questionDotToken, targs, args);
-    return this.expression !== e || this.typeArguments !== targs || this.arguments !== args ? updateNode(createCall(e, targs, args), this) : this;
+  update(e: Expression, ts: readonly TypeNode[] | undefined, es: readonly Expression[]) {
+    if (Node.is.optionalChain(this)) return this.updateCallChain(e, this.questionDotToken, ts, es);
+    return this.expression !== e || this.typeArguments !== ts || this.arguments !== es ? new CallExpression(e, ts, es).updateFrom(this) : this;
   }
-  createImmediatelyInvokedFunctionExpression(ss: readonly Statement[]): CallExpression;
-  createImmediatelyInvokedFunctionExpression(ss: readonly Statement[], param: ParameterDeclaration, paramValue: Expression): CallExpression;
-  createImmediatelyInvokedFunctionExpression(ss: readonly Statement[], param?: ParameterDeclaration, paramValue?: Expression) {
-    return createCall(createFunctionExpression(undefined, undefined, undefined, undefined, param ? [param] : [], undefined, new Block(ss, true)), undefined, paramValue ? [paramValue] : []);
+  static immediateFunctionExpression(ss: readonly Statement[]): CallExpression;
+  static immediateFunctionExpression(ss: readonly Statement[], param: ParameterDeclaration, paramValue: Expression): CallExpression;
+  static immediateFunctionExpression(ss: readonly Statement[], param?: ParameterDeclaration, paramValue?: Expression) {
+    return new CallExpression(createFunctionExpression(undefined, undefined, undefined, undefined, param ? [param] : [], undefined, new Block(ss, true)), undefined, paramValue ? [paramValue] : []);
   }
-  createImmediatelyInvokedArrowFunction(ss: readonly Statement[]): CallExpression;
-  createImmediatelyInvokedArrowFunction(ss: readonly Statement[], param: ParameterDeclaration, paramValue: Expression): CallExpression;
-  createImmediatelyInvokedArrowFunction(ss: readonly Statement[], param?: ParameterDeclaration, paramValue?: Expression) {
-    return createCall(new ArrowFunction(undefined, undefined, param ? [param] : [], undefined, undefined, new Block(ss, true)), undefined, paramValue ? [paramValue] : []);
+  static immediateArrowFunction(ss: readonly Statement[]): CallExpression;
+  static immediateArrowFunction(ss: readonly Statement[], param: ParameterDeclaration, paramValue: Expression): CallExpression;
+  static immediateArrowFunction(ss: readonly Statement[], param?: ParameterDeclaration, paramValue?: Expression) {
+    return new CallExpression(new ArrowFunction(undefined, undefined, param ? [param] : [], undefined, undefined, new Block(ss, true)), undefined, paramValue ? [paramValue] : []);
   }
+  _declarationBrand: any;
 }
+CallExpression.prototype.kind = CallExpression.kind;
+addMixins(CallExpression, [Declaration]);
+
 export class CallChain extends CallExpression {
   _optionalChainBrand: any;
   createCallChain(expression: Expression, questionDotToken: QuestionDotToken | undefined, typeArguments: readonly TypeNode[] | undefined, argumentsArray: readonly Expression[] | undefined) {
     const node = <CallChain>Node.createSynthesized(Syntax.CallExpression);
     this.flags |= NodeFlags.OptionalChain;
-    this.expression = parenthesizeForAccess(expression);
+    this.expression = parenthesize.forAccess(expression);
     this.questionDotToken = questionDotToken;
     this.typeArguments = Nodes.from(typeArguments);
-    this.arguments = parenthesizeListElements(new Nodes(argumentsArray));
+    this.arguments = parenthesize.listElements(new Nodes(argumentsArray));
   }
   updateCallChain(expression: Expression, questionDotToken: QuestionDotToken | undefined, typeArguments: readonly TypeNode[] | undefined, argumentsArray: readonly Expression[]) {
     assert(!!(this.flags & NodeFlags.OptionalChain), 'Cannot update a CallExpression using updateCallChain. Use updateCall instead.');
@@ -1262,7 +1285,7 @@ export class Decorator extends Synthesized {
   parent: NamedDeclaration;
   expression: LeftHandSideExpression;
   createDecorator(e: Expression) {
-    this.expression = parenthesizeForAccess(e);
+    this.expression = parenthesize.forAccess(e);
   }
   updateDecorator(e: Expression) {
     return this.expression !== e ? updateNode(createDecorator(e), this) : this;
@@ -1281,17 +1304,19 @@ export class DefaultClause extends Synthesized {
     return this.statements !== ss ? updateNode(createDefaultClause(ss), this) : this;
   }
 }
-export class DeleteExpression extends Synthesized implements UnaryExpression {
+export class DeleteExpression extends UnaryExpression implements qt.DeleteExpression {
   static readonly kind = Syntax.DeleteExpression;
-  readonly kind = DeleteExpression.kind;
   expression: UnaryExpression;
-  createDelete(e: Expression) {
+  constructor(e: Expression) {
+    super(true);
     this.expression = parenthesize.prefixOperand(e);
   }
-  updateDelete(e: Expression) {
-    return this.expression !== e ? updateNode(createDelete(e), this) : this;
+  update(e: Expression) {
+    return this.expression !== e ? new DeleteExpression(e).updateFrom(this) : this;
   }
 }
+DeleteExpression.prototype.kind = DeleteExpression.kind;
+
 export class DoStatement extends Synthesized implements IterationStatement {
   static readonly kind = Syntax.DoStatement;
   readonly kind = DoStatement.kind;
@@ -1311,7 +1336,7 @@ export class ElementAccessExpression extends Synthesized implements MemberExpres
   questionDotToken?: QuestionDotToken;
   argumentExpression: Expression;
   createElementAccess(e: Expression, i: number | Expression) {
-    this.expression = parenthesizeForAccess(e);
+    this.expression = parenthesize.forAccess(e);
     this.argumentExpression = asExpression(i);
   }
   updateElementAccess(e: Expression, a: Expression) {
@@ -1324,7 +1349,7 @@ export class ElementAccessChain extends ElementAccessExpression {
   createElementAccessChain(e: Expression, q: QuestionDotToken | undefined, i: number | Expression) {
     const n = <ElementAccessChain>Node.createSynthesized(Syntax.ElementAccessExpression);
     this.flags |= NodeFlags.OptionalChain;
-    this.expression = parenthesizeForAccess(e);
+    this.expression = parenthesize.forAccess(e);
     this.questionDotToken = q;
     this.argumentExpression = asExpression(i);
   }
@@ -1454,7 +1479,7 @@ export class ExpressionWithTypeArguments extends NodeWithTypeArguments {
   expression: LeftHandSideExpression;
   createExpressionWithTypeArguments(typeArguments: readonly TypeNode[] | undefined, expression: Expression) {
     const node = <ExpressionWithTypeArguments>Node.createSynthesized(Syntax.ExpressionWithTypeArguments);
-    node.expression = parenthesizeForAccess(expression);
+    node.expression = parenthesize.forAccess(expression);
     node.typeArguments = Nodes.from(typeArguments);
     return node;
   }
@@ -2284,7 +2309,7 @@ export class JsxElement extends PrimaryExpression {
         }
       } else argumentsList.push(children[0]);
     }
-    return setRange(createCall(createJsxFactoryExpression(jsxFactoryEntity, reactNamespace, parentElement), undefined, argumentsList), location);
+    return setRange(new CallExpression(createJsxFactoryExpression(jsxFactoryEntity, reactNamespace, parentElement), undefined, argumentsList), location);
   }
 }
 export class JsxExpression extends Expression {
@@ -2339,7 +2364,7 @@ export class JsxFragment extends PrimaryExpression {
         }
       } else argumentsList.push(children[0]);
     }
-    return setRange(createCall(createJsxFactoryExpression(jsxFactoryEntity, reactNamespace, parentElement), undefined, argumentsList), location);
+    return setRange(new CallExpression(createJsxFactoryExpression(jsxFactoryEntity, reactNamespace, parentElement), undefined, argumentsList), location);
   }
 }
 export class JsxOpeningElement extends Expression {
@@ -2734,7 +2759,7 @@ export class NewExpression extends PrimaryExpression {
     const node = <NewExpression>Node.createSynthesized(Syntax.NewExpression);
     node.expression = parenthesizeForNew(expression);
     node.typeArguments = Nodes.from(typeArguments);
-    node.arguments = argumentsArray ? parenthesizeListElements(new Nodes(argumentsArray)) : undefined;
+    node.arguments = argumentsArray ? parenthesize.listElements(new Nodes(argumentsArray)) : undefined;
     return node;
   }
   updateNew(node: NewExpression, expression: Expression, typeArguments: readonly TypeNode[] | undefined, argumentsArray: readonly Expression[] | undefined) {
@@ -2745,7 +2770,7 @@ export class NonNullChain {
   createNonNullChain(expression: Expression) {
     const node = <NonNullChain>Node.createSynthesized(Syntax.NonNullExpression);
     node.flags |= NodeFlags.OptionalChain;
-    node.expression = parenthesizeForAccess(expression);
+    node.expression = parenthesize.forAccess(expression);
     return node;
   }
   updateNonNullChain(node: NonNullChain, expression: Expression) {
@@ -2753,22 +2778,20 @@ export class NonNullChain {
     return node.expression !== expression ? updateNode(createNonNullChain(expression), node) : node;
   }
 }
-export class NonNullExpression extends LeftHandSideExpression {
+export class NonNullExpression extends LeftHandSideExpression implements qt.NonNullExpression {
   static readonly kind = Syntax.NonNullExpression;
-  readonly kind = NonNullExpression.kind;
   expression: Expression;
-  createNonNullExpression(expression: Expression) {
-    const node = <NonNullExpression>Node.createSynthesized(Syntax.NonNullExpression);
-    node.expression = parenthesizeForAccess(expression);
-    return node;
+  constructor(e: Expression) {
+    super(true);
+    this.expression = parenthesize.forAccess(e);
   }
-  updateNonNullExpression(node: NonNullExpression, expression: Expression) {
-    if (Node.is.nonNullChain(node)) {
-      return updateNonNullChain(node, expression);
-    }
-    return node.expression !== expression ? updateNode(createNonNullExpression(expression), node) : node;
+  update(e: Expression) {
+    if (Node.is.nonNullChain(this)) return updateNonNullChain(this, e);
+    return this.expression !== e ? new NonNullExpression(e).updateFrom(this) : this;
   }
 }
+NonNullExpression.prototype.kind = NonNullExpression.kind;
+
 export class NoSubstitutionLiteral extends LiteralExpression {
   //, TemplateLiteralLikeNode, Declaration {
   static readonly kind = Syntax.NoSubstitutionLiteral;
@@ -2879,18 +2902,18 @@ export namespace OuterExpression {
   export function skipAssertions(node: Node): Node {
     return skipOuterExpressions(node, OuterExpressionKinds.Assertions);
   }
-  export function updateOuterExpression(outerExpression: OuterExpression, expression: Expression) {
-    switch (outerExpression.kind) {
+  export function updateOuterExpression(o: OuterExpression, e: Expression) {
+    switch (o.kind) {
       case Syntax.ParenthesizedExpression:
-        return updateParen(outerExpression, expression);
+        return updateParen(o, e);
       case Syntax.TypeAssertionExpression:
-        return updateTypeAssertion(outerExpression, outerExpression.type, expression);
+        return o.update(o.type, e);
       case Syntax.AsExpression:
-        return outerExpression.update(expression, outerExpression.type);
+        return o.update(e, o.type);
       case Syntax.NonNullExpression:
-        return updateNonNullExpression(outerExpression, expression);
+        return o.update(e);
       case Syntax.PartiallyEmittedExpression:
-        return updatePartiallyEmittedExpression(outerExpression, expression);
+        return o.update(e);
     }
   }
   export function isIgnorableParen(node: Expression) {
@@ -2987,65 +3010,62 @@ export class ParenthesizedTypeNode extends TypeNode {
     return n.type !== t ? updateNode(create(t), n) : n;
   }
 }
-export class PartiallyEmittedExpression extends LeftHandSideExpression {
+export class PartiallyEmittedExpression extends LeftHandSideExpression implements qt.PartiallyEmittedExpression {
   static readonly kind = Syntax.PartiallyEmittedExpression;
-  readonly kind = PartiallyEmittedExpression.kind;
   expression: Expression;
-  createPartiallyEmittedExpression(expression: Expression, original?: Node) {
-    const node = <PartiallyEmittedExpression>Node.createSynthesized(Syntax.PartiallyEmittedExpression);
-    node.expression = expression;
-    node.original = original;
-    setRange(node, original);
-    return node;
+  constructor(e: Expression, original?: Node) {
+    super(true);
+    this.expression = e;
+    this.original = original;
+    setRange(this, original);
   }
-  updatePartiallyEmittedExpression(node: PartiallyEmittedExpression, expression: Expression) {
-    if (node.expression !== expression) {
-      return updateNode(createPartiallyEmittedExpression(expression, node.original), node);
-    }
-    return node;
+  update(e: Expression) {
+    return this.expression !== e ? new PartiallyEmittedExpression(e, this.original).updateFrom(this) : this;
   }
 }
-export class PostfixUnaryExpression extends UpdateExpression {
+PartiallyEmittedExpression.prototype.kind = PartiallyEmittedExpression.kind;
+
+export class PostfixUnaryExpression extends UpdateExpression implements qt.PostfixUnaryExpression {
   static readonly kind = Syntax.PostfixUnaryExpression;
-  readonly kind = PostfixUnaryExpression.kind;
   operand: LeftHandSideExpression;
   operator: PostfixUnaryOperator;
-  createPostfix(operand: Expression, operator: PostfixUnaryOperator) {
-    const node = <PostfixUnaryExpression>Node.createSynthesized(Syntax.PostfixUnaryExpression);
-    node.operand = parenthesizePostfixOperand(operand);
-    node.operator = operator;
-    return node;
+  static increment(e: Expression) {
+    return new PostfixUnaryExpression(e, Syntax.Plus2Token);
   }
-  updatePostfix(node: PostfixUnaryExpression, operand: Expression) {
-    return node.operand !== operand ? updateNode(createPostfix(operand, node.operator), node) : node;
+  constructor(e: Expression, o: PostfixUnaryOperator) {
+    super(true);
+    node.operand = parenthesize.postfixOperand(e);
+    node.operator = o;
   }
-  createPostfixIncrement(operand: Expression) {
-    return createPostfix(operand, Syntax.Plus2Token);
+  update(e: Expression) {
+    return node.operand !== e ? new PostfixUnaryExpression(e, this.operator).updateFrom(this) : this;
   }
 }
-export class PrefixUnaryExpression extends UpdateExpression {
+PostfixUnaryExpression.prototype.kind = PostfixUnaryExpression.kind;
+
+export class PrefixUnaryExpression extends UpdateExpression implements qt.PrefixUnaryExpression {
   static readonly kind = Syntax.PrefixUnaryExpression;
-  readonly kind = PrefixUnaryExpression.kind;
   operator: PrefixUnaryOperator;
   operand: UnaryExpression;
-  createPrefix(operator: PrefixUnaryOperator, operand: Expression) {
-    const node = <PrefixUnaryExpression>Node.createSynthesized(Syntax.PrefixUnaryExpression);
-    node.operator = operator;
-    node.operand = parenthesize.prefixOperand(operand);
-    return node;
+  static logicalNot(e: Expression) {
+    return new PrefixUnaryExpression(Syntax.ExclamationToken, operand);
   }
-  updatePrefix(node: PrefixUnaryExpression, operand: Expression) {
-    return node.operand !== operand ? updateNode(createPrefix(node.operator, operand), node) : node;
+  constructor(o: PrefixUnaryOperator, e: Expression) {
+    super(true);
+    node.operator = o;
+    node.operand = parenthesize.prefixOperand(e);
   }
-  createLogicalNot(operand: Expression) {
-    return createPrefix(Syntax.ExclamationToken, operand);
+  update(e: Expression) {
+    return this.operand !== e ? new PrefixUnaryExpression(this.operator, e).updateFrom(this) : this;
   }
 }
+PrefixUnaryExpression.prototype.kind = PrefixUnaryExpression.kind;
+
 export class PropertyAccessChain {
   createPropertyAccessChain(expression: Expression, questionDotToken: QuestionDotToken | undefined, name: string | Identifier) {
     const node = <PropertyAccessChain>Node.createSynthesized(Syntax.PropertyAccessExpression);
     node.flags |= NodeFlags.OptionalChain;
-    node.expression = parenthesizeForAccess(expression);
+    node.expression = parenthesize.forAccess(expression);
     node.questionDotToken = questionDotToken;
     node.name = asName(name);
     setEmitFlags(node, EmitFlags.NoIndentation);
@@ -3067,7 +3087,7 @@ export class PropertyAccessExpression extends MemberExpression {
   name: Identifier | PrivateIdentifier;
   createPropertyAccess(expression: Expression, name: string | Identifier | PrivateIdentifier) {
     const node = <PropertyAccessExpression>Node.createSynthesized(Syntax.PropertyAccessExpression);
-    node.expression = parenthesizeForAccess(expression);
+    node.expression = parenthesize.forAccess(expression);
     node.name = asName(name);
     setEmitFlags(node, EmitFlags.NoIndentation);
     return node;
@@ -3382,7 +3402,7 @@ export class TaggedTemplateExpression extends MemberExpression {
   createTaggedTemplate(tag: Expression, typeArgumentsOrTemplate: readonly TypeNode[] | TemplateLiteral | undefined, template?: TemplateLiteral): TaggedTemplateExpression;
   createTaggedTemplate(tag: Expression, typeArgumentsOrTemplate: readonly TypeNode[] | TemplateLiteral | undefined, template?: TemplateLiteral) {
     const node = <TaggedTemplateExpression>Node.createSynthesized(Syntax.TaggedTemplateExpression);
-    node.tag = parenthesizeForAccess(tag);
+    node.tag = parenthesize.forAccess(tag);
     if (template) {
       node.typeArguments = Nodes.from(typeArgumentsOrTemplate as readonly TypeNode[]);
       node.template = template;
@@ -3549,22 +3569,21 @@ export class TypeAliasDeclaration extends DeclarationStatement {
       : node;
   }
 }
-export class TypeAssertion extends UnaryExpression {
+export class TypeAssertion extends UnaryExpression implements qt.TypeAssertion {
   static readonly kind = Syntax.TypeAssertionExpression;
-  readonly kind = TypeAssertion.kind;
   type: TypeNode;
   expression: UnaryExpression;
-  createTypeAssertion(type: TypeNode, expression: Expression) {
-    const node = <TypeAssertion>Node.createSynthesized(Syntax.TypeAssertionExpression);
-    node.type = type;
-    node.expression = parenthesize.prefixOperand(expression);
-    return node;
+  constructor(t: TypeNode, e: Expression) {
+    super(true);
+    this.type = t;
+    this.expression = parenthesize.prefixOperand(e);
   }
-
-  updateTypeAssertion(node: TypeAssertion, type: TypeNode, expression: Expression) {
-    return node.type !== type || node.expression !== expression ? updateNode(createTypeAssertion(type, expression), node) : node;
+  update(t: TypeNode, e: Expression) {
+    return this.type !== t || this.expression !== e ? new TypeAssertion(t, e).updateFrom(this) : this;
   }
 }
+TypeAssertion.prototype.kind = TypeAssertion.kind;
+
 export class TypeLiteralNode extends TypeNode {
   //}, Declaration {
   static readonly kind = Syntax.TypeLiteral;
@@ -3579,19 +3598,19 @@ export class TypeLiteralNode extends TypeNode {
     return n.members !== ms ? updateNode(create(ms), n) : n;
   }
 }
-export class TypeOfExpression extends UnaryExpression {
+export class TypeOfExpression extends UnaryExpression implements qt.TypeOfExpression {
   static readonly kind = Syntax.TypeOfExpression;
-  readonly kind = TypeOfExpression.kind;
   expression: UnaryExpression;
-  createTypeOf(expression: Expression) {
-    const node = <TypeOfExpression>Node.createSynthesized(Syntax.TypeOfExpression);
-    node.expression = parenthesize.prefixOperand(expression);
-    return node;
+  constructor(e: Expression) {
+    super(true);
+    this.expression = parenthesize.prefixOperand(e);
   }
-  updateTypeOf(node: TypeOfExpression, expression: Expression) {
-    return node.expression !== expression ? updateNode(createTypeOf(expression), node) : node;
+  update(e: Expression) {
+    return this.expression !== e ? new TypeOfExpression(e).updateFrom(this) : this;
   }
 }
+TypeOfExpression.prototype.kind = TypeOfExpression.kind;
+
 export class TypeOperatorNode extends TypeNode {
   static readonly kind = Syntax.TypeOperator;
   readonly kind = TypeOperatorNode.kind;
@@ -4014,22 +4033,22 @@ export class VariableStatement extends Statement {
     return node.modifiers !== modifiers || node.declarationList !== declarationList ? updateNode(createVariableStatement(modifiers, declarationList), node) : node;
   }
 }
-export class VoidExpression extends UnaryExpression {
+export class VoidExpression extends UnaryExpression implements qt.VoidExpression {
   static readonly kind = Syntax.VoidExpression;
-  readonly kind = VoidExpression.kind;
   expression: UnaryExpression;
-  createVoid(expression: Expression) {
-    const node = <VoidExpression>Node.createSynthesized(Syntax.VoidExpression);
-    node.expression = parenthesize.prefixOperand(expression);
-    return node;
+  constructor(e: Expression) {
+    super(true);
+    this.expression = parenthesize.prefixOperand(e);
   }
-  updateVoid(node: VoidExpression, expression: Expression) {
-    return node.expression !== expression ? updateNode(createVoid(expression), node) : node;
+  update(e: Expression) {
+    return this.expression !== e ? new VoidExpression(e).updateFrom(this) : this;
   }
-  createVoidZero() {
-    return createVoid(createLiteral(0));
+  static zero() {
+    return new VoidExpression(createLiteral(0));
   }
 }
+VoidExpression.prototype.kind = VoidExpression.kind;
+
 export class WhileStatement extends IterationStatement {
   static readonly kind = Syntax.WhileStatement;
   readonly kind = WhileStatement.kind;
@@ -4221,30 +4240,29 @@ export namespace parenthesize {
     const emittedExpression = skipPartiallyEmittedExpressions(e);
     return isCommaSequence(emittedExpression) ? createParen(e) : e;
   }
-  export function parenthesizeForAccess(expression: Expression): LeftHandSideExpression {
-    const emittedExpression = skipPartiallyEmittedExpressions(expression);
-    if (Node.is.leftHandSideExpression(emittedExpression) && (emittedExpression.kind !== Syntax.NewExpression || (<NewExpression>emittedExpression).arguments)) {
-      return <LeftHandSideExpression>expression;
+  export function forAccess(e: Expression): LeftHandSideExpression {
+    const e2 = skipPartiallyEmittedExpressions(e);
+    if (Node.is.leftHandSideExpression(e2) && (e2.kind !== Syntax.NewExpression || (<NewExpression>e2).arguments)) {
+      return <LeftHandSideExpression>e;
     }
-    return setRange(createParen(expression), expression);
+    return setRange(createParen(e), e);
   }
-  export function parenthesizePostfixOperand(operand: Expression) {
-    return Node.is.leftHandSideExpression(operand) ? operand : setRange(createParen(operand), operand);
+  export function postfixOperand(e: Expression) {
+    return Node.is.leftHandSideExpression(e) ? e : setRange(createParen(e), e);
   }
-  export function prefixOperand(o: Expression) {
-    return Node.is.unaryExpression(o) ? o : setRange(createParen(o), o);
+  export function prefixOperand(e: Expression) {
+    return Node.is.unaryExpression(e) ? e : setRange(createParen(e), e);
   }
-  export function listElements(elements: Nodes<Expression>) {
-    let result: Expression[] | undefined;
-    for (let i = 0; i < elements.length; i++) {
-      const element = parenthesizeExpressionForList(elements[i]);
-      if (result !== undefined || element !== elements[i]) {
-        if (result === undefined) result = elements.slice(0, i);
-        result.push(element);
+  export function listElements(es: Nodes<Expression>) {
+    let r: Expression[] | undefined;
+    for (let i = 0; i < es.length; i++) {
+      const e = parenthesizeExpressionForList(es[i]);
+      if (r || e !== es[i]) {
+        if (!r) r = es.slice(0, i);
+        r.push(e);
       }
     }
-    if (result !== undefined) return setRange(new Nodes(result, elements.trailingComma), elements);
-    return elements;
+    return r ? setRange(new Nodes(r, es.trailingComma), es) : es;
   }
   export function parenthesizeExpressionForList(expression: Expression) {
     const emittedExpression = skipPartiallyEmittedExpressions(expression);
@@ -4325,7 +4343,7 @@ export namespace parenthesize {
       case Syntax.NewExpression:
         return !(leftmostExpr as NewExpression).arguments ? createParen(expression) : <LeftHandSideExpression>expression;
     }
-    return parenthesizeForAccess(expression);
+    return forAccess(expression);
   }
   export function conciseBody(b: qt.ConciseBody): qt.ConciseBody {
     if (!Node.is.kind(Block, b) && (isCommaSequence(b) || getLeftmostExpression(b, false).kind === Syntax.ObjectLiteralExpression)) {
@@ -4754,7 +4772,7 @@ export namespace fixme {
 
     if (!foundUseStrict) {
       return setRange(
-        Nodes.create<Statement>([startOnNewLine(createStatement(createLiteral('use strict'))), ...statements]),
+        new Nodes<Statement>([startOnNewLine(createStatement(createLiteral('use strict'))), ...statements]),
         statements
       );
     }

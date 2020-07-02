@@ -53,11 +53,11 @@ namespace core {
       templateArguments[0] = helperCall;
     }
 
-    return createCall(tag, /*typeArguments*/ undefined, templateArguments);
+    return new qs.CallExpression(tag, /*typeArguments*/ undefined, templateArguments);
   }
 
   function createTemplateCooked(template: TemplateHead | TemplateMiddle | TemplateTail | NoSubstitutionLiteral) {
-    return template.templateFlags ? createVoidZero() : createLiteral(template.text);
+    return template.templateFlags ? qs.VoidExpression.zero() : createLiteral(template.text);
   }
 
   /**
@@ -90,7 +90,7 @@ namespace core {
 
   function createTemplateObjectHelper(context: TransformationContext, cooked: ArrayLiteralExpression, raw: ArrayLiteralExpression) {
     context.requestEmitHelper(templateObjectHelper);
-    return createCall(getUnscopedHelperName('__makeTemplateObject'), /*typeArguments*/ undefined, [cooked, raw]);
+    return new qs.CallExpression(getUnscopedHelperName('__makeTemplateObject'), /*typeArguments*/ undefined, [cooked, raw]);
   }
 
   export const templateObjectHelper: UnscopedEmitHelper = {

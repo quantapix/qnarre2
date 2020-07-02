@@ -605,7 +605,7 @@ namespace core {
       const expression = node.expression;
       if (Node.is.superProperty(expression)) {
         const argumentExpression = Node.is.kind(PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
-        return createCall(createPropertyAccess(argumentExpression, 'call'), /*typeArguments*/ undefined, [createThis(), ...node.arguments]);
+        return new qs.CallExpression(createPropertyAccess(argumentExpression, 'call'), /*typeArguments*/ undefined, [createThis(), ...node.arguments]);
       }
       return node;
     }
@@ -617,9 +617,9 @@ namespace core {
 
     function createSuperElementAccessInAsyncMethod(argumentExpression: Expression, location: TextRange): LeftHandSideExpression {
       if (enclosingSuperContainerFlags & NodeCheckFlags.AsyncMethodWithSuperBinding) {
-        return setRange(createPropertyAccess(createCall(createFileLevelUniqueName('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), 'value'), location);
+        return setRange(createPropertyAccess(new qs.CallExpression(createFileLevelUniqueName('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), 'value'), location);
       } else {
-        return setRange(createCall(createFileLevelUniqueName('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), location);
+        return setRange(new qs.CallExpression(createFileLevelUniqueName('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), location);
       }
     }
   }
@@ -680,7 +680,7 @@ namespace core {
           createVariableDeclaration(
             createFileLevelUniqueName('_super'),
             /* type */ undefined,
-            createCall(createPropertyAccess(new Identifier('Object'), 'create'), /* typeArguments */ undefined, [createNull(), createObjectLiteral(accessors, /* multiline */ true)])
+            new qs.CallExpression(createPropertyAccess(new Identifier('Object'), 'create'), /* typeArguments */ undefined, [createNull(), createObjectLiteral(accessors, /* multiline */ true)])
           ),
         ],
         NodeFlags.Const
@@ -713,10 +713,10 @@ namespace core {
     // Mark this node as originally an async function
     (generatorFunc.emitNode || (generatorFunc.emitNode = {} as EmitNode)).flags |= EmitFlags.AsyncFunctionBody | EmitFlags.ReuseTempVariableScope;
 
-    return createCall(getUnscopedHelperName('__awaiter'), /*typeArguments*/ undefined, [
-      hasLexicalThis ? createThis() : createVoidZero(),
-      hasLexicalArguments ? new Identifier('arguments') : createVoidZero(),
-      promiseConstructor ? createExpressionFromEntityName(promiseConstructor) : createVoidZero(),
+    return new qs.CallExpression(getUnscopedHelperName('__awaiter'), /*typeArguments*/ undefined, [
+      hasLexicalThis ? createThis() : qs.VoidExpression.zero(),
+      hasLexicalArguments ? new Identifier('arguments') : qs.VoidExpression.zero(),
+      promiseConstructor ? createExpressionFromEntityName(promiseConstructor) : qs.VoidExpression.zero(),
       generatorFunc,
     ]);
   }

@@ -261,7 +261,7 @@ namespace core {
         value = value ? createDefaultValueCheck(flattenContext, value, initializer, location) : initializer;
       } else if (!value) {
         // Use 'void 0' in absence of value and initializer
-        value = createVoidZero();
+        value = qs.VoidExpression.zero();
       }
     }
     const bindingTarget = getTargetOfBindingOrAssignmentElement(element)!; // TODO: GH#18217
@@ -534,6 +534,6 @@ namespace core {
         }
       }
     }
-    return createCall(getUnscopedHelperName('__rest'), /*typeArguments*/ undefined, [value, setRange(new ArrayLiteralExpression(propertyNames), location)]);
+    return new qs.CallExpression(getUnscopedHelperName('__rest'), /*typeArguments*/ undefined, [value, setRange(new ArrayLiteralExpression(propertyNames), location)]);
   }
 }

@@ -638,7 +638,7 @@ namespace core {
 
         // The following partially-emitted expression exists purely to align our sourcemap
         // emit with the original emitter.
-        const outer = createPartiallyEmittedExpression(localName);
+        const outer = new qs.PartiallyEmittedExpression(localName);
         outer.end = closingBraceLocation.end;
         setEmitFlags(outer, EmitFlags.NoComments);
 
@@ -649,7 +649,7 @@ namespace core {
 
         insertStatementsAfterStandardPrologue(statements, context.endLexicalEnvironment());
 
-        const iife = createImmediatelyInvokedArrowFunction(statements);
+        const iife = qs.CallExpression.immediateArrowFunction(statements);
         setEmitFlags(iife, EmitFlags.TypeScriptClassWrapper);
 
         const varStatement = createVariableStatement(
@@ -1159,7 +1159,7 @@ namespace core {
           ? member.kind === Syntax.PropertyDeclaration
             ? // We emit `void 0` here to indicate to `__decorate` that it can invoke `Object.defineProperty` directly, but that it
               // should not invoke `Object.getOwnPropertyDescriptor`.
-              createVoidZero()
+              qs.VoidExpression.zero()
             : // We emit `null` here to indicate to `__decorate` that it can invoke `Object.getOwnPropertyDescriptor` directly.
               // We have this extra argument here so that we can inject an explicit property descriptor at a later date.
               createNull()
@@ -1357,7 +1357,7 @@ namespace core {
         case Syntax.MethodDeclaration:
           return new Identifier('Function');
         default:
-          return createVoidZero();
+          return qs.VoidExpression.zero();
       }
     }
 
@@ -1411,7 +1411,7 @@ namespace core {
         return new Identifier('Promise');
       }
 
-      return createVoidZero();
+      return qs.VoidExpression.zero();
     }
 
     /**
@@ -1442,7 +1442,7 @@ namespace core {
         case Syntax.UndefinedKeyword:
         case Syntax.NullKeyword:
         case Syntax.NeverKeyword:
-          return createVoidZero();
+          return qs.VoidExpression.zero();
 
         case Syntax.ParenthesizedType:
           return serializeTypeNode((<ParenthesizedTypeNode>node).type);
@@ -1574,7 +1574,7 @@ namespace core {
       }
 
       // If we were able to find common type, use it
-      return serializedUnion || createVoidZero(); // Fallback is only hit if all union constituients are null/undefined/never
+      return serializedUnion || qs.VoidExpression.zero(); // Fallback is only hit if all union constituients are null/undefined/never
     }
 
     /**
@@ -1600,7 +1600,7 @@ namespace core {
           return serializeEntityNameAsExpression(node.typeName);
 
         case TypeReferenceSerializationKind.VoidNullableOrNeverType:
-          return createVoidZero();
+          return qs.VoidExpression.zero();
 
         case TypeReferenceSerializationKind.BigIntLikeType:
           return getGlobalBigIntNameWithFallback();
@@ -1634,7 +1634,7 @@ namespace core {
     }
 
     function createCheckedValue(left: Expression, right: Expression) {
-      return createLogicalAnd(createStrictInequality(createTypeOf(left), createLiteral('undefined')), right);
+      return createLogicalAnd(createStrictInequality(new TypeOfExpression(left), createLiteral('undefined')), right);
     }
 
     /**
@@ -1655,7 +1655,7 @@ namespace core {
       // A.B.C -> typeof A !== undefined && (_a = A.B) !== void 0 && _a.C
       const left = serializeEntityNameAsExpressionFallback(node.left);
       const temp = createTempVariable(hoistVariableDeclaration);
-      return createLogicalAnd(createLogicalAnd(left.left, createStrictInequality(createAssignment(temp, left.right), createVoidZero())), createPropertyAccess(temp, node.right));
+      return createLogicalAnd(createLogicalAnd(left.left, createStrictInequality(createAssignment(temp, left.right), qs.VoidExpression.zero())), createPropertyAccess(temp, node.right));
     }
 
     /**
@@ -2092,7 +2092,7 @@ namespace core {
         if (length(syntax.get.leadingCommentRangesOfNode(expression, currentSourceFile))) {
           return updateParen(node, expression);
         }
-        return createPartiallyEmittedExpression(expression, node);
+        return new qs.PartiallyEmittedExpression(expression, node);
       }
 
       return visitEachChild(node, visitor, context);
@@ -2100,12 +2100,12 @@ namespace core {
 
     function visitAssertionExpression(node: AssertionExpression): Expression {
       const expression = visitNode(node.expression, visitor, isExpression);
-      return createPartiallyEmittedExpression(expression, node);
+      return new qs.PartiallyEmittedExpression(expression, node);
     }
 
     function visitNonNullExpression(node: NonNullExpression): Expression {
       const expression = visitNode(node.expression, visitor, isLeftHandSideExpression);
-      return createPartiallyEmittedExpression(expression, node);
+      return new qs.PartiallyEmittedExpression(expression, node);
     }
 
     function visitCallExpression(node: CallExpression) {
@@ -2194,7 +2194,7 @@ namespace core {
       //      ...
       //  })(x || (x = {}));
       const enumStatement = createExpressionStatement(
-        createCall(
+        new qs.CallExpression(
           createFunctionExpression(
             /*modifiers*/ undefined,
             /*asteriskToken*/ undefined,
@@ -2274,7 +2274,7 @@ namespace core {
         if (member.initializer) {
           return visitNode(member.initializer, visitor, isExpression);
         } else {
-          return createVoidZero();
+          return qs.VoidExpression.zero();
         }
       }
     }
@@ -2455,7 +2455,7 @@ namespace core {
       //      x_1.y = ...;
       //  })(x || (x = {}));
       const moduleStatement = createExpressionStatement(
-        createCall(
+        new qs.CallExpression(
           createFunctionExpression(
             /*modifiers*/ undefined,
             /*asteriskToken*/ undefined,
@@ -3073,7 +3073,7 @@ namespace core {
     }
 
     context.requestEmitHelper(decorateHelper);
-    return setRange(createCall(getUnscopedHelperName('__decorate'), /*typeArguments*/ undefined, argumentsArray), location);
+    return setRange(new qs.CallExpression(getUnscopedHelperName('__decorate'), /*typeArguments*/ undefined, argumentsArray), location);
   }
 
   export const decorateHelper: UnscopedEmitHelper = {
@@ -3092,7 +3092,7 @@ namespace core {
 
   function createMetadataHelper(context: TransformationContext, metadataKey: string, metadataValue: Expression) {
     context.requestEmitHelper(metadataHelper);
-    return createCall(getUnscopedHelperName('__metadata'), /*typeArguments*/ undefined, [createLiteral(metadataKey), metadataValue]);
+    return new qs.CallExpression(getUnscopedHelperName('__metadata'), /*typeArguments*/ undefined, [createLiteral(metadataKey), metadataValue]);
   }
 
   export const metadataHelper: UnscopedEmitHelper = {
@@ -3108,7 +3108,7 @@ namespace core {
 
   function createParamHelper(context: TransformationContext, expression: Expression, parameterOffset: number, location?: TextRange) {
     context.requestEmitHelper(paramHelper);
-    return setRange(createCall(getUnscopedHelperName('__param'), /*typeArguments*/ undefined, [createLiteral(parameterOffset), expression]), location);
+    return setRange(new qs.CallExpression(getUnscopedHelperName('__param'), /*typeArguments*/ undefined, [createLiteral(parameterOffset), expression]), location);
   }
 
   export const paramHelper: UnscopedEmitHelper = {

@@ -1058,7 +1058,7 @@ namespace core {
         return setOriginalNode(
           setRange(
             createNew(
-              createFunctionApply(cacheExpression(visitNode(target, visitor, isExpression)), thisArg, visitElements(node.arguments!, /*leadingElement*/ createVoidZero())),
+              createFunctionApply(cacheExpression(visitNode(target, visitor, isExpression)), thisArg, visitElements(node.arguments!, /*leadingElement*/ qs.VoidExpression.zero())),
               /*typeArguments*/ undefined,
               []
             ),
@@ -1406,7 +1406,11 @@ namespace core {
         emitAssignment(keysArray, new ArrayLiteralExpression());
 
         emitStatement(
-          createForIn(key, visitNode(node.expression, visitor, isExpression), createExpressionStatement(createCall(createPropertyAccess(keysArray, 'push'), /*typeArguments*/ undefined, [key])))
+          createForIn(
+            key,
+            visitNode(node.expression, visitor, isExpression),
+            createExpressionStatement(new qs.CallExpression(createPropertyAccess(keysArray, 'push'), /*typeArguments*/ undefined, [key]))
+          )
         );
 
         emitAssignment(keysIndex, createLiteral(0));
@@ -1434,7 +1438,7 @@ namespace core {
         transformAndEmitEmbeddedStatement(node.statement);
 
         markLabel(incrementLabel);
-        emitStatement(createExpressionStatement(createPostfixIncrement(keysIndex)));
+        emitStatement(createExpressionStatement(qs.PostfixUnaryExpression.increment(keysIndex)));
 
         emitBreak(conditionLabel);
         endLoopBlock();
@@ -1969,7 +1973,7 @@ namespace core {
       exception.catchVariable = name;
       exception.catchLabel = catchLabel;
 
-      emitAssignment(name, createCall(createPropertyAccess(state, 'sent'), /*typeArguments*/ undefined, []));
+      emitAssignment(name, new qs.CallExpression(createPropertyAccess(state, 'sent'), /*typeArguments*/ undefined, []));
       emitNop();
     }
 
@@ -2277,7 +2281,7 @@ namespace core {
      * Creates an expression that can be used to resume from a Yield operation.
      */
     function createGeneratorResume(location?: TextRange): LeftHandSideExpression {
-      return setRange(createCall(createPropertyAccess(state, 'sent'), /*typeArguments*/ undefined, []), location);
+      return setRange(new qs.CallExpression(createPropertyAccess(state, 'sent'), /*typeArguments*/ undefined, []), location);
     }
 
     /**
@@ -2565,7 +2569,7 @@ namespace core {
           const { startLabel, catchLabel, finallyLabel, endLabel } = currentExceptionBlock;
           statements.unshift(
             createExpressionStatement(
-              createCall(createPropertyAccess(createPropertyAccess(state, 'trys'), 'push'), /*typeArguments*/ undefined, [
+              new qs.CallExpression(createPropertyAccess(createPropertyAccess(state, 'trys'), 'push'), /*typeArguments*/ undefined, [
                 new ArrayLiteralExpression([createLabel(startLabel), createLabel(catchLabel), createLabel(finallyLabel), createLabel(endLabel)]),
               ])
             )
@@ -2818,7 +2822,7 @@ namespace core {
       writeStatement(
         setEmitFlags(
           createIf(
-            createLogicalNot(condition),
+            qs.PrefixUnaryExpression.logicalNot(condition),
             setEmitFlags(setRange(createReturn(new ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)
           ),
           EmitFlags.SingleLine
@@ -2864,7 +2868,7 @@ namespace core {
 
   function createGeneratorHelper(context: TransformationContext, body: FunctionExpression) {
     context.requestEmitHelper(generatorHelper);
-    return createCall(getUnscopedHelperName('__generator'), /*typeArguments*/ undefined, [createThis(), body]);
+    return new qs.CallExpression(getUnscopedHelperName('__generator'), /*typeArguments*/ undefined, [createThis(), body]);
   }
 
   // The __generator helper is used by down-level transformations to emulate the runtime

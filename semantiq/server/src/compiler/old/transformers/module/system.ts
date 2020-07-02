@@ -98,7 +98,7 @@ namespace core {
           setRange(
             new Nodes([
               createExpressionStatement(
-                createCall(
+                new qs.CallExpression(
                   createPropertyAccess(new Identifier('System'), 'register'),
                   /*typeArguments*/ undefined,
                   moduleName ? [moduleName, dependencies, moduleBodyFunction] : [dependencies, moduleBodyFunction]
@@ -360,7 +360,7 @@ namespace core {
       const exports = new Identifier('exports');
       let condition: Expression = createStrictInequality(n, createLiteral('default'));
       if (localNames) {
-        condition = createLogicalAnd(condition, createLogicalNot(createCall(createPropertyAccess(localNames, 'hasOwnProperty'), /*typeArguments*/ undefined, [n])));
+        condition = createLogicalAnd(condition, qs.PrefixUnaryExpression.logicalNot(new qs.CallExpression(createPropertyAccess(localNames, 'hasOwnProperty'), /*typeArguments*/ undefined, [n])));
       }
 
       return createFunctionDeclaration(
@@ -379,7 +379,7 @@ namespace core {
               m,
               new Block([setEmitFlags(createIf(condition, createExpressionStatement(createAssignment(createElementAccess(exports, n), createElementAccess(m, n)))), EmitFlags.SingleLine)])
             ),
-            createExpressionStatement(createCall(exportFunction, /*typeArguments*/ undefined, [exports])),
+            createExpressionStatement(new qs.CallExpression(exportFunction, /*typeArguments*/ undefined, [exports])),
           ],
           /*multiline*/ true
         )
@@ -433,9 +433,9 @@ namespace core {
                     properties.push(createPropertyAssignment(createLiteral(idText(e.name)), createElementAccess(parameterName, createLiteral(idText(e.propertyName || e.name)))));
                   }
 
-                  statements.push(createExpressionStatement(createCall(exportFunction, /*typeArguments*/ undefined, [createObjectLiteral(properties, /*multiline*/ true)])));
+                  statements.push(createExpressionStatement(new qs.CallExpression(exportFunction, /*typeArguments*/ undefined, [createObjectLiteral(properties, /*multiline*/ true)])));
                 } else {
-                  statements.push(createExpressionStatement(createCall(exportFunction, /*typeArguments*/ undefined, [createLiteral(idText(entry.exportClause.name)), parameterName])));
+                  statements.push(createExpressionStatement(new qs.CallExpression(exportFunction, /*typeArguments*/ undefined, [createLiteral(idText(entry.exportClause.name)), parameterName])));
                 }
               } else {
                 //  export * from 'foo'
@@ -443,7 +443,7 @@ namespace core {
                 // emit as:
                 //
                 //  exportStar(foo_1_1);
-                statements.push(createExpressionStatement(createCall(exportStarFunction, /*typeArguments*/ undefined, [parameterName])));
+                statements.push(createExpressionStatement(new qs.CallExpression(exportStarFunction, /*typeArguments*/ undefined, [parameterName])));
               }
               break;
           }
@@ -1034,7 +1034,7 @@ namespace core {
     function createExportExpression(name: Identifier | StringLiteral, value: Expression) {
       const exportName = Node.is.kind(Identifier, name) ? createLiteral(name) : name;
       setEmitFlags(value, Node.get.emitFlags(value) | EmitFlags.NoComments);
-      return setCommentRange(createCall(exportFunction, /*typeArguments*/ undefined, [exportName, value]), value);
+      return setCommentRange(new qs.CallExpression(exportFunction, /*typeArguments*/ undefined, [exportName, value]), value);
     }
 
     //
@@ -1352,7 +1352,7 @@ namespace core {
       //         }
       //     };
       // });
-      return createCall(
+      return new qs.CallExpression(
         createPropertyAccess(contextObject, new Identifier('import')),
         /*typeArguments*/ undefined,
         some(node.arguments) ? [visitNode(node.arguments[0], destructuringAndImportCallVisitor)] : []
@@ -1635,7 +1635,7 @@ namespace core {
       ) {
         const exportedNames = getExports(node.operand);
         if (exportedNames) {
-          let expression: Expression = node.kind === Syntax.PostfixUnaryExpression ? setRange(createPrefix(node.operator, node.operand), node) : node;
+          let expression: Expression = node.kind === Syntax.PostfixUnaryExpression ? setRange(new qs.PrefixUnaryExpression(node.operator, node.operand), node) : node;
 
           for (const exportName of exportedNames) {
             expression = createExportExpression(exportName, preventSubstitution(expression));

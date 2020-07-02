@@ -95,7 +95,7 @@ namespace core {
       if (type.flags & TypeFlags.NumberLiteral) {
         const value = (<NumberLiteralType>type).value;
         this.approximateLength += ('' + value).length;
-        return LiteralTypeNode.create(value < 0 ? createPrefix(Syntax.MinusToken, createLiteral(-value)) : createLiteral(value));
+        return LiteralTypeNode.create(value < 0 ? new qs.PrefixUnaryExpression(Syntax.MinusToken, createLiteral(-value)) : createLiteral(value));
       }
       if (type.flags & TypeFlags.BigIntLiteral) {
         this.approximateLength += pseudoBigIntToString((<BigIntLiteralType>type).value).length + 1;

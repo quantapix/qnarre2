@@ -232,7 +232,7 @@ namespace core {
           );
         }
 
-        return setOriginalNode(setRange(createYield(createDownlevelAwait(node.expression ? visitNode(node.expression, visitor, isExpression) : createVoidZero())), node), node);
+        return setOriginalNode(setRange(createYield(createDownlevelAwait(node.expression ? visitNode(node.expression, visitor, isExpression) : qs.VoidExpression.zero())), node), node);
       }
 
       return visitEachChild(node, visitor, context);
@@ -240,7 +240,7 @@ namespace core {
 
     function visitReturnStatement(node: ReturnStatement) {
       if (enclosingFunctionFlags & FunctionFlags.Async && enclosingFunctionFlags & FunctionFlags.Generator) {
-        return updateReturn(node, createDownlevelAwait(node.expression ? visitNode(node.expression, visitor, isExpression) : createVoidZero()));
+        return updateReturn(node, createDownlevelAwait(node.expression ? visitNode(node.expression, visitor, isExpression) : qs.VoidExpression.zero()));
       }
 
       return visitEachChild(node, visitor, context);
@@ -496,7 +496,7 @@ namespace core {
       const catchVariable = getGeneratedNameForNode(errorRecord);
       const returnMethod = createTempVariable(/*recordTempVariable*/ undefined);
       const callValues = createAsyncValuesHelper(context, expression, /*location*/ node.expression);
-      const callNext = createCall(createPropertyAccess(iterator, 'next'), /*typeArguments*/ undefined, []);
+      const callNext = new qs.CallExpression(createPropertyAccess(iterator, 'next'), /*typeArguments*/ undefined, []);
       const getDone = createPropertyAccess(result, 'done');
       const getValue = createPropertyAccess(result, 'value');
       const callReturn = createFunctionCall(returnMethod, iterator, []);
@@ -505,7 +505,7 @@ namespace core {
       hoistVariableDeclaration(returnMethod);
 
       // if we are enclosed in an outer loop ensure we reset 'errorRecord' per each iteration
-      const initializer = ancestorFacts & HierarchyFacts.IterationContainer ? inlineExpressions([createAssignment(errorRecord, createVoidZero()), callValues]) : callValues;
+      const initializer = ancestorFacts & HierarchyFacts.IterationContainer ? inlineExpressions([createAssignment(errorRecord, qs.VoidExpression.zero()), callValues]) : callValues;
 
       const forStatement = setEmitFlags(
         setRange(
@@ -514,7 +514,7 @@ namespace core {
               setRange(createVariableDeclarationList([setRange(createVariableDeclaration(iterator, undefined, initializer), node.expression), createVariableDeclaration(result)]), node.expression),
               EmitFlags.NoHoisting
             ),
-            /*condition*/ createComma(createAssignment(result, createDownlevelAwait(callNext)), createLogicalNot(getDone)),
+            /*condition*/ createComma(createAssignment(result, createDownlevelAwait(callNext)), qs.PrefixUnaryExpression.logicalNot(getDone)),
             /*incrementor*/ undefined,
             /*statement*/ convertForOfStatementHead(node, getValue)
           ),
@@ -534,7 +534,7 @@ namespace core {
             /*tryBlock*/ new Block([
               setEmitFlags(
                 createIf(
-                  createLogicalAnd(createLogicalAnd(result, createLogicalNot(getDone)), createAssignment(returnMethod, createPropertyAccess(iterator, 'return'))),
+                  createLogicalAnd(createLogicalAnd(result, qs.PrefixUnaryExpression.logicalNot(getDone)), createAssignment(returnMethod, createPropertyAccess(iterator, 'return'))),
                   createExpressionStatement(createDownlevelAwait(callReturn))
                 ),
                 EmitFlags.SingleLine
@@ -856,7 +856,7 @@ namespace core {
       const expression = node.expression;
       if (Node.is.superProperty(expression)) {
         const argumentExpression = Node.is.kind(PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
-        return createCall(createPropertyAccess(argumentExpression, 'call'), /*typeArguments*/ undefined, [createThis(), ...node.arguments]);
+        return new qs.CallExpression(createPropertyAccess(argumentExpression, 'call'), /*typeArguments*/ undefined, [createThis(), ...node.arguments]);
       }
       return node;
     }
@@ -868,9 +868,9 @@ namespace core {
 
     function createSuperElementAccessInAsyncMethod(argumentExpression: Expression, location: TextRange): LeftHandSideExpression {
       if (enclosingSuperContainerFlags & NodeCheckFlags.AsyncMethodWithSuperBinding) {
-        return setRange(createPropertyAccess(createCall(new Identifier('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), 'value'), location);
+        return setRange(createPropertyAccess(new qs.CallExpression(new Identifier('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), 'value'), location);
       } else {
-        return setRange(createCall(new Identifier('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), location);
+        return setRange(new qs.CallExpression(new Identifier('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), location);
       }
     }
   }
@@ -896,10 +896,10 @@ namespace core {
 
   export function createAssignHelper(context: TransformationContext, attributesSegments: Expression[]) {
     if (context.getCompilerOptions().target! >= ScriptTarget.ES2015) {
-      return createCall(createPropertyAccess(new Identifier('Object'), 'assign'), /*typeArguments*/ undefined, attributesSegments);
+      return new qs.CallExpression(createPropertyAccess(new Identifier('Object'), 'assign'), /*typeArguments*/ undefined, attributesSegments);
     }
     context.requestEmitHelper(assignHelper);
-    return createCall(getUnscopedHelperName('__assign'), /*typeArguments*/ undefined, attributesSegments);
+    return new qs.CallExpression(getUnscopedHelperName('__assign'), /*typeArguments*/ undefined, attributesSegments);
   }
 
   export const awaitHelper: UnscopedEmitHelper = {
@@ -912,7 +912,7 @@ namespace core {
 
   function createAwaitHelper(context: TransformationContext, expression: Expression) {
     context.requestEmitHelper(awaitHelper);
-    return createCall(getUnscopedHelperName('__await'), /*typeArguments*/ undefined, [expression]);
+    return new qs.CallExpression(getUnscopedHelperName('__await'), /*typeArguments*/ undefined, [expression]);
   }
 
   export const asyncGeneratorHelper: UnscopedEmitHelper = {
@@ -940,7 +940,11 @@ namespace core {
     // Mark this node as originally an async function
     (generatorFunc.emitNode || (generatorFunc.emitNode = {} as EmitNode)).flags |= EmitFlags.AsyncFunctionBody | EmitFlags.ReuseTempVariableScope;
 
-    return createCall(getUnscopedHelperName('__asyncGenerator'), /*typeArguments*/ undefined, [hasLexicalThis ? createThis() : createVoidZero(), new Identifier('arguments'), generatorFunc]);
+    return new qs.CallExpression(getUnscopedHelperName('__asyncGenerator'), /*typeArguments*/ undefined, [
+      hasLexicalThis ? createThis() : qs.VoidExpression.zero(),
+      new Identifier('arguments'),
+      generatorFunc,
+    ]);
   }
 
   export const asyncDelegator: UnscopedEmitHelper = {
@@ -958,7 +962,7 @@ namespace core {
 
   function createAsyncDelegatorHelper(context: TransformationContext, expression: Expression, location?: TextRange) {
     context.requestEmitHelper(asyncDelegator);
-    return setRange(createCall(getUnscopedHelperName('__asyncDelegator'), /*typeArguments*/ undefined, [expression]), location);
+    return setRange(new qs.CallExpression(getUnscopedHelperName('__asyncDelegator'), /*typeArguments*/ undefined, [expression]), location);
   }
 
   export const asyncValues: UnscopedEmitHelper = {
@@ -977,6 +981,6 @@ namespace core {
 
   function createAsyncValuesHelper(context: TransformationContext, expression: Expression, location?: TextRange) {
     context.requestEmitHelper(asyncValues);
-    return setRange(createCall(getUnscopedHelperName('__asyncValues'), /*typeArguments*/ undefined, [expression]), location);
+    return setRange(new qs.CallExpression(getUnscopedHelperName('__asyncValues'), /*typeArguments*/ undefined, [expression]), location);
   }
 }

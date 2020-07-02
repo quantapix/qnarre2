@@ -104,7 +104,7 @@ namespace core {
             reduceLeft(
               currentModuleInfo.exportedNames,
               (prev, nextId) => createAssignment(createPropertyAccess(new Identifier('exports'), new Identifier(idText(nextId))), prev),
-              createVoidZero() as Expression
+              qs.VoidExpression.zero() as Expression
             )
           )
         );
@@ -161,7 +161,7 @@ namespace core {
         setRange(
           new Nodes([
             createExpressionStatement(
-              createCall(define, /*typeArguments*/ undefined, [
+              new qs.CallExpression(define, /*typeArguments*/ undefined, [
                 // Add the module name (if provided).
                 ...(moduleName ? [moduleName] : []),
 
@@ -223,7 +223,7 @@ namespace core {
                 createLogicalAnd(createTypeCheck(new Identifier('module'), 'object'), createTypeCheck(createPropertyAccess(new Identifier('module'), 'exports'), 'object')),
                 new Block([
                   createVariableStatement(/*modifiers*/ undefined, [
-                    createVariableDeclaration('v', undefined, createCall(new Identifier('factory'), /*typeArguments*/ undefined, [new Identifier('require'), new Identifier('exports')])),
+                    createVariableDeclaration('v', undefined, new qs.CallExpression(new Identifier('factory'), /*typeArguments*/ undefined, [new Identifier('require'), new Identifier('exports')])),
                   ]),
                   setEmitFlags(
                     createIf(
@@ -237,7 +237,7 @@ namespace core {
                   createLogicalAnd(createTypeCheck(new Identifier('define'), 'function'), createPropertyAccess(new Identifier('define'), 'amd')),
                   new Block([
                     createExpressionStatement(
-                      createCall(new Identifier('define'), /*typeArguments*/ undefined, [
+                      new qs.CallExpression(new Identifier('define'), /*typeArguments*/ undefined, [
                         // Add the module name (if provided).
                         ...(moduleName ? [moduleName] : []),
                         new ArrayLiteralExpression([createLiteral('require'), createLiteral('exports'), ...aliasedModuleNames, ...unaliasedModuleNames]),
@@ -271,7 +271,7 @@ namespace core {
         setRange(
           new Nodes([
             createExpressionStatement(
-              createCall(umdHeader, /*typeArguments*/ undefined, [
+              new qs.CallExpression(umdHeader, /*typeArguments*/ undefined, [
                 // Add the module body function argument:
                 //
                 //     function (require, exports) ...
@@ -385,7 +385,7 @@ namespace core {
             reduceLeft(
               currentModuleInfo.exportedNames,
               (prev, nextId) => createAssignment(createPropertyAccess(new Identifier('exports'), new Identifier(idText(nextId))), prev),
-              createVoidZero() as Expression
+              qs.VoidExpression.zero() as Expression
             )
           )
         );
@@ -613,7 +613,7 @@ namespace core {
         createParameter(/*decorator*/ undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, /*name*/ reject),
       ];
       const body = new Block([
-        createExpressionStatement(createCall(new Identifier('require'), /*typeArguments*/ undefined, [new ArrayLiteralExpression([arg || createOmittedExpression()]), resolve, reject])),
+        createExpressionStatement(new qs.CallExpression(new Identifier('require'), /*typeArguments*/ undefined, [new ArrayLiteralExpression([arg || createOmittedExpression()]), resolve, reject])),
       ]);
 
       let func: FunctionExpression | ArrowFunction;
@@ -633,7 +633,7 @@ namespace core {
       const promise = createNew(new Identifier('Promise'), /*typeArguments*/ undefined, [func]);
       if (compilerOptions.esModuleInterop) {
         context.requestEmitHelper(importStarHelper);
-        return createCall(createPropertyAccess(promise, new Identifier('then')), /*typeArguments*/ undefined, [getUnscopedHelperName('__importStar')]);
+        return new qs.CallExpression(createPropertyAccess(promise, new Identifier('then')), /*typeArguments*/ undefined, [getUnscopedHelperName('__importStar')]);
       }
       return promise;
     }
@@ -644,11 +644,11 @@ namespace core {
       // Promise.resolve().then(function () { return require(x); }) /*CommonJs Require*/
       // We have to wrap require in then callback so that require is done in asynchronously
       // if we simply do require in resolve callback in Promise constructor. We will execute the loading immediately
-      const promiseResolveCall = createCall(createPropertyAccess(new Identifier('Promise'), 'resolve'), /*typeArguments*/ undefined, /*argumentsArray*/ []);
-      let requireCall = createCall(new Identifier('require'), /*typeArguments*/ undefined, arg ? [arg] : []);
+      const promiseResolveCall = new qs.CallExpression(createPropertyAccess(new Identifier('Promise'), 'resolve'), /*typeArguments*/ undefined, /*argumentsArray*/ []);
+      let requireCall = new qs.CallExpression(new Identifier('require'), /*typeArguments*/ undefined, arg ? [arg] : []);
       if (compilerOptions.esModuleInterop) {
         context.requestEmitHelper(importStarHelper);
-        requireCall = createCall(getUnscopedHelperName('__importStar'), /*typeArguments*/ undefined, [requireCall]);
+        requireCall = new qs.CallExpression(getUnscopedHelperName('__importStar'), /*typeArguments*/ undefined, [requireCall]);
       }
 
       let func: FunctionExpression | ArrowFunction;
@@ -673,7 +673,7 @@ namespace core {
         }
       }
 
-      return createCall(createPropertyAccess(promiseResolveCall, 'then'), /*typeArguments*/ undefined, [func]);
+      return new qs.CallExpression(createPropertyAccess(promiseResolveCall, 'then'), /*typeArguments*/ undefined, [func]);
     }
 
     function getHelperExpressionForExport(node: ExportDeclaration, innerExpr: Expression) {
@@ -682,7 +682,7 @@ namespace core {
       }
       if (getExportNeedsImportStarHelper(node)) {
         context.requestEmitHelper(importStarHelper);
-        return createCall(getUnscopedHelperName('__importStar'), /*typeArguments*/ undefined, [innerExpr]);
+        return new qs.CallExpression(getUnscopedHelperName('__importStar'), /*typeArguments*/ undefined, [innerExpr]);
       }
       return innerExpr;
     }
@@ -693,11 +693,11 @@ namespace core {
       }
       if (getImportNeedsImportStarHelper(node)) {
         context.requestEmitHelper(importStarHelper);
-        return createCall(getUnscopedHelperName('__importStar'), /*typeArguments*/ undefined, [innerExpr]);
+        return new qs.CallExpression(getUnscopedHelperName('__importStar'), /*typeArguments*/ undefined, [innerExpr]);
       }
       if (getImportNeedsImportDefaultHelper(node)) {
         context.requestEmitHelper(importDefaultHelper);
-        return createCall(getUnscopedHelperName('__importDefault'), /*typeArguments*/ undefined, [innerExpr]);
+        return new qs.CallExpression(getUnscopedHelperName('__importDefault'), /*typeArguments*/ undefined, [innerExpr]);
       }
       return innerExpr;
     }
@@ -779,7 +779,7 @@ namespace core {
         args.push(moduleName);
       }
 
-      return createCall(new Identifier('require'), /*typeArguments*/ undefined, args);
+      return new qs.CallExpression(new Identifier('require'), /*typeArguments*/ undefined, args);
     }
 
     /**
@@ -1093,7 +1093,7 @@ namespace core {
       } else {
         return createAssignment(
           setRange(createPropertyAccess(new Identifier('exports'), node.name), /*location*/ node.name),
-          node.initializer ? visitNode(node.initializer, moduleExpressionElementVisitor) : createVoidZero()
+          node.initializer ? visitNode(node.initializer, moduleExpressionElementVisitor) : qs.VoidExpression.zero()
         );
       }
     }
@@ -1331,7 +1331,7 @@ namespace core {
         statement = createExpressionStatement(createExportExpression(new Identifier('__esModule'), createLiteral(/*value*/ true)));
       } else {
         statement = createExpressionStatement(
-          createCall(createPropertyAccess(new Identifier('Object'), 'defineProperty'), /*typeArguments*/ undefined, [
+          new qs.CallExpression(createPropertyAccess(new Identifier('Object'), 'defineProperty'), /*typeArguments*/ undefined, [
             new Identifier('exports'),
             createLiteral('__esModule'),
             createObjectLiteral([createPropertyAssignment('value', createLiteral(/*value*/ true))]),
@@ -1370,7 +1370,7 @@ namespace core {
     function createExportExpression(name: Identifier, value: Expression, location?: TextRange, liveBinding?: boolean) {
       return setRange(
         liveBinding && languageVersion !== ScriptTarget.ES3
-          ? createCall(createPropertyAccess(new Identifier('Object'), 'defineProperty'), /*typeArguments*/ undefined, [
+          ? new qs.CallExpression(createPropertyAccess(new Identifier('Object'), 'defineProperty'), /*typeArguments*/ undefined, [
               new Identifier('exports'),
               createLiteral(name),
               createObjectLiteral([
@@ -1652,7 +1652,7 @@ var __createBinding = (this && this.__createBinding) || (Object.create ? (functi
 
   function createCreateBindingHelper(context: TransformationContext, module: Expression, inputName: Expression, outputName: Expression | undefined) {
     context.requestEmitHelper(createBindingHelper);
-    return createCall(getUnscopedHelperName('__createBinding'), /*typeArguments*/ undefined, [new Identifier('exports'), module, inputName, ...(outputName ? [outputName] : [])]);
+    return new qs.CallExpression(getUnscopedHelperName('__createBinding'), /*typeArguments*/ undefined, [new Identifier('exports'), module, inputName, ...(outputName ? [outputName] : [])]);
   }
 
   export const setModuleDefaultHelper: UnscopedEmitHelper = {
@@ -1683,7 +1683,7 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 
   function createExportStarHelper(context: TransformationContext, module: Expression) {
     context.requestEmitHelper(exportStarHelper);
-    return createCall(getUnscopedHelperName('__exportStar'), /*typeArguments*/ undefined, [module, new Identifier('exports')]);
+    return new qs.CallExpression(getUnscopedHelperName('__exportStar'), /*typeArguments*/ undefined, [module, new Identifier('exports')]);
   }
 
   // emit helper for dynamic import
