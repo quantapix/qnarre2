@@ -303,7 +303,7 @@ export function getPathComponentsRelativeTo(from: string, to: string, stringEqua
 }
 
 export function getRelativePathFromDirectory(from: string, to: string, ignoreCase: boolean): string;
-export function getRelativePathFromDirectory(fromDirectory: string, to: string, getCanonicalFileName: qb.GetCanonicalFileName): string; // eslint-disable-line @typescript-eslint/unified-signatures
+export function getRelativePathFromDirectory(fromDirectory: string, to: string, getCanonicalFileName: qb.GetCanonicalFileName): string;
 export function getRelativePathFromDirectory(fromDirectory: string, to: string, getCanonicalFileNameOrIgnoreCase: qb.GetCanonicalFileName | boolean) {
   qb.assert(getRootLength(fromDirectory) > 0 === getRootLength(to) > 0, 'Paths must either both be absolute or both be relative');
   const getCanonicalFileName = typeof getCanonicalFileNameOrIgnoreCase === 'function' ? getCanonicalFileNameOrIgnoreCase : qb.identity;
@@ -313,9 +313,7 @@ export function getRelativePathFromDirectory(fromDirectory: string, to: string, 
 }
 
 export function convertToRelativePath(absoluteOrRelativePath: string, basePath: string, getCanonicalFileName: (path: string) => string): string {
-  return !isRootedDiskPath(absoluteOrRelativePath)
-    ? absoluteOrRelativePath
-    : getRelativePathToDirectoryOrUrl(basePath, absoluteOrRelativePath, basePath, getCanonicalFileName, /*isAbsolutePathAnUrl*/ false);
+  return !isRootedDiskPath(absoluteOrRelativePath) ? absoluteOrRelativePath : getRelativePathToDirectoryOrUrl(basePath, absoluteOrRelativePath, basePath, getCanonicalFileName, false);
 }
 
 export function getRelativePathFromFile(from: string, to: string, getCanonicalFileName: qb.GetCanonicalFileName) {

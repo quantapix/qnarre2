@@ -1,12 +1,8 @@
 namespace core {
-  /**
-   * Partial interface of the System thats needed to support the caching of directory structure
-   */
   export interface DirectoryStructureHost {
     fileExists(path: string): boolean;
     readFile(path: string, encoding?: string): string | undefined;
 
-    // TODO: GH#18217 Optional methods are frequently used as non-optional
     directoryExists?(path: string): boolean;
     getDirectories?(path: string): string[];
     readDirectory?(path: string, extensions?: readonly string[], exclude?: readonly string[], include?: readonly string[], depth?: number): string[];
@@ -27,7 +23,6 @@ namespace core {
     getDirectories(path: string): string[];
     readDirectory(path: string, extensions?: readonly string[], exclude?: readonly string[], include?: readonly string[], depth?: number): string[];
 
-    /** Returns the queried result for the file exists and directory exists if at all it was done */
     addOrDeleteFileOrDirectory(fileOrDirectory: string, fileOrDirectoryPath: Path): FileAndDirectoryExistence | undefined;
     addOrDeleteFile(fileName: string, filePath: Path, eventKind: FileWatcherEventKind): void;
     clearCache(): void;
@@ -78,7 +73,7 @@ namespace core {
 
     function createCachedFileSystemEntries(rootDir: string, rootDirPath: Path) {
       const resultFromHost: MutableFileSystemEntries = {
-        files: map(host.readDirectory!(rootDir, /*extensions*/ undefined, /*exclude*/ undefined, /*include*/ ['*.*']), getBaseNameOfFileName) || [],
+        files: map(host.readDirectory!(rootDir, ['*.*']), getBaseNameOfFileName) || [],
         directories: host.getDirectories!(rootDir) || [],
       };
 
@@ -86,11 +81,6 @@ namespace core {
       return resultFromHost;
     }
 
-    /**
-     * If the readDirectory result was already cached, it returns that
-     * Otherwise gets result from host and caches it.
-     * The host request is done under try catch block to avoid caching incorrect result
-     */
     function tryReadDirectory(rootDir: string, rootDirPath: Path): MutableFileSystemEntries | undefined {
       rootDirPath = ensureTrailingDirectorySeparator(rootDirPath);
       const cachedResult = getCachedFileSystemEntries(rootDirPath);
@@ -101,7 +91,6 @@ namespace core {
       try {
         return createCachedFileSystemEntries(rootDir, rootDirPath);
       } catch (_e) {
-        // If there is exception to read directories, dont cache the result and direct the calls to host
         assert(!cachedReadDirectoryResult.has(ensureTrailingDirectorySeparator(rootDirPath)));
         return;
       }
@@ -129,7 +118,7 @@ namespace core {
       const path = toPath(fileName);
       const result = getCachedFileSystemEntriesForBaseDir(path);
       if (result) {
-        updateFilesOfFileSystemEntry(result, getBaseNameOfFileName(fileName), /*fileExists*/ true);
+        updateFilesOfFileSystemEntry(result, getBaseNameOfFileName(fileName), true);
       }
       return host.writeFile!(fileName, data, writeByteOrderMark);
     }
@@ -150,7 +139,7 @@ namespace core {
       const result = getCachedFileSystemEntriesForBaseDir(path);
       const baseFileName = getBaseNameOfFileName(dirPath);
       if (result) {
-        updateFileSystemEntry(result.directories, baseFileName, /*isValid*/ true);
+        updateFileSystemEntry(result.directories, baseFileName, true);
       }
       host.createDirectory!(dirPath);
     }
@@ -188,8 +177,6 @@ namespace core {
     function addOrDeleteFileOrDirectory(fileOrDirectory: string, fileOrDirectoryPath: Path) {
       const existingResult = getCachedFileSystemEntries(fileOrDirectoryPath);
       if (existingResult) {
-        // Just clear the cache for now
-        // For now just clear the cache, since this could mean that multiple level entries might need to be re-evaluated
         clearCache();
         return;
       }
@@ -199,11 +186,7 @@ namespace core {
         return;
       }
 
-      // This was earlier a file (hence not in cached directory contents)
-      // or we never cached the directory containing it
-
       if (!host.directoryExists) {
-        // Since host doesnt support directory exists, clear the cache as otherwise it might not be same
         clearCache();
         return;
       }
@@ -214,10 +197,8 @@ namespace core {
         directoryExists: host.directoryExists(fileOrDirectoryPath),
       };
       if (fsQueryResult.directoryExists || hasEntry(parentResult.directories, baseName)) {
-        // Folder added or removed, clear the cache instead of updating the folder and its structure
         clearCache();
       } else {
-        // No need to update the directory structure, just files
         updateFilesOfFileSystemEntry(parentResult, baseName, fsQueryResult.fileExists);
       }
       return fsQueryResult;
@@ -245,24 +226,19 @@ namespace core {
 
   export enum ConfigFileProgramReloadLevel {
     None,
-    /** Update the file name list from the disk */
+
     Partial,
-    /** Reload completely by re-reading contents of config file from disk and updating program */
+
     Full,
   }
 
-  /**
-   * Updates the existing missing file watches with the new set of missing files after new program is created
-   */
   export function updateMissingFilePathsWatch(program: Program, missingFileWatches: Map<FileWatcher>, createMissingFileWatch: (missingFilePath: Path) => FileWatcher) {
     const missingFilePaths = program.getMissingFilePaths();
     const newMissingFilePathMap = qu.arrayToSet(missingFilePaths);
-    // Update the missing file paths watcher
+
     mutateMap(missingFileWatches, newMissingFilePathMap, {
-      // Watch the missing files
       createNewValue: createMissingFileWatch,
-      // Files that are no longer missing (e.g. because they are no longer required)
-      // should no longer be watched.
+
       onDeleteValue: closeFileWatcher,
     });
   }
@@ -272,28 +248,20 @@ namespace core {
     flags: WatchDirectoryFlags;
   }
 
-  /**
-   * Updates the existing wild card directory watches with the new set of wild card directories from the config file
-   * after new program is created because the config file was reloaded or program was created first time from the config file
-   * Note that there is no need to call this function when the program is updated with additional files without reloading config files,
-   * as wildcard directories wont change unless reloading config file
-   */
   export function updateWatchingWildcardDirectories(
     existingWatchedForWildcards: Map<WildcardDirectoryWatcher>,
     wildcardDirectories: Map<WatchDirectoryFlags>,
     watchDirectory: (directory: string, flags: WatchDirectoryFlags) => FileWatcher
   ) {
     mutateMap(existingWatchedForWildcards, wildcardDirectories, {
-      // Create new watch and recursive info
       createNewValue: createWildcardDirectoryWatcher,
-      // Close existing watch thats not needed any more
+
       onDeleteValue: closeFileWatcherOf,
-      // Close existing watch that doesnt match in the flags
+
       onExistingValue: updateWildcardDirectoryWatcher,
     });
 
     function createWildcardDirectoryWatcher(directory: string, flags: WatchDirectoryFlags): WildcardDirectoryWatcher {
-      // Create new watch and recursive info
       return {
         watcher: watchDirectory(directory, flags),
         flags,
@@ -301,7 +269,6 @@ namespace core {
     }
 
     function updateWildcardDirectoryWatcher(existingWatcher: WildcardDirectoryWatcher, flags: WatchDirectoryFlags, directory: string) {
-      // Watcher needs to be updated if the recursive flags dont match
       if (existingWatcher.flags === flags) {
         return;
       }
@@ -386,11 +353,11 @@ namespace core {
     }
     return {
       watchFile: (host, file, callback, pollingInterval, options, detailInfo1, detailInfo2) =>
-        createFileWatcher(host, file, callback, pollingInterval, options, /*passThrough*/ undefined, detailInfo1, detailInfo2, watchFile, log, 'FileWatcher', getDetailWatchInfo),
+        createFileWatcher(host, file, callback, pollingInterval, options, undefined, detailInfo1, detailInfo2, watchFile, log, 'FileWatcher', getDetailWatchInfo),
       watchFilePath: (host, file, callback, pollingInterval, options, path, detailInfo1, detailInfo2) =>
         createFilePathWatcher(host, file, callback, pollingInterval, options, path, detailInfo1, detailInfo2, watchFile, log, 'FileWatcher', getDetailWatchInfo),
       watchDirectory: (host, directory, callback, flags, options, detailInfo1, detailInfo2) =>
-        createDirectoryWatcher(host, directory, callback, flags, options, /*passThrough*/ undefined, detailInfo1, detailInfo2, watchDirectory, log, 'DirectoryWatcher', getDetailWatchInfo),
+        createDirectoryWatcher(host, directory, callback, flags, options, undefined, detailInfo1, detailInfo2, watchDirectory, log, 'DirectoryWatcher', getDetailWatchInfo),
     };
   }
 

@@ -5,11 +5,8 @@ namespace core {
         getNewLine: () => sys.newLine,
         getCanonicalFileName: createGetCanonicalFileName(sys.useCaseSensitiveFileNames),
       }
-    : undefined!; // TODO: GH#18217
+    : undefined!;
 
-  /**
-   * Create a function that reports error by writing to the system and handles the formating of the diagnostic
-   */
   export function createDiagnosticReporter(system: System, pretty?: boolean): DiagnosticReporter {
     const host: FormatDiagnosticsHost =
       system === sys
@@ -27,13 +24,10 @@ namespace core {
     return (diagnostic) => {
       diagnostics[0] = diagnostic;
       system.write(formatDiagnosticsWithColorAndContext(diagnostics, host) + host.getNewLine());
-      diagnostics[0] = undefined!; // TODO: GH#18217
+      diagnostics[0] = undefined!;
     };
   }
 
-  /**
-   * @returns Whether the screen was cleared.
-   */
   function clearScreenIfNotWatchingForFileChanges(system: System, diagnostic: Diagnostic, options: CompilerOptions): boolean {
     if (system.clearScreen && !options.preserveWatchOutput && !options.extendedDiagnostics && !options.diagnostics && contains(screenStartingMessageCodes, diagnostic.code)) {
       system.clearScreen();
@@ -49,16 +43,10 @@ namespace core {
     return contains(screenStartingMessageCodes, diagnostic.code) ? newLine + newLine : newLine;
   }
 
-  /**
-   * Get locale specific time based on whether we are in test mode
-   */
   export function getLocaleTimeString(system: System) {
     return !system.now ? new Date().toLocaleTimeString() : system.now().toLocaleTimeString('en-US', { timeZone: 'UTC' });
   }
 
-  /**
-   * Create a function that reports watch status by writing to the system and handles the formating of the diagnostic
-   */
   export function createWatchStatusReporter(system: System, pretty?: boolean): WatchStatusReporter {
     return pretty
       ? (diagnostic, newLine, options) => {
@@ -81,7 +69,6 @@ namespace core {
         };
   }
 
-  /** Parses config file using System interface */
   export function parseConfigFileWithSystem(
     configFileName: string,
     optionsToExtend: CompilerOptions,
@@ -91,8 +78,8 @@ namespace core {
   ) {
     const host: ParseConfigFileHost = <any>system;
     host.onUnRecoverableConfigFileDiagnostic = (diagnostic) => reportUnrecoverableDiagnostic(system, reportDiagnostic, diagnostic);
-    const result = getParsedCommandLineOfConfigFile(configFileName, optionsToExtend, host, /*extendedConfigCache*/ undefined, watchOptionsToExtend);
-    host.onUnRecoverableConfigFileDiagnostic = undefined!; // TODO: GH#18217
+    const result = getParsedCommandLineOfConfigFile(configFileName, optionsToExtend, host, undefined, watchOptionsToExtend);
+    host.onUnRecoverableConfigFileDiagnostic = undefined!;
     return result;
   }
 
@@ -110,9 +97,6 @@ namespace core {
     return `${newLine}${flattenDiagnosticMessageText(d.messageText, newLine)}${newLine}${newLine}`;
   }
 
-  /**
-   * Program structure needed to emit the files and report diagnostics
-   */
   export interface ProgramToEmitFilesAndReportErrors {
     getCurrentDirectory(): string;
     getCompilerOptions(): CompilerOptions;
@@ -134,9 +118,6 @@ namespace core {
     }
   }
 
-  /**
-   * Helper that emit files, report diagnostics and lists emitted and/or source files depending on compiler options
-   */
   export function emitFilesAndReportErrors(
     program: ProgramToEmitFilesAndReportErrors,
     reportDiagnostic: DiagnosticReporter,
@@ -149,13 +130,10 @@ namespace core {
   ) {
     const isListFilesOnly = !!program.getCompilerOptions().listFilesOnly;
 
-    // First get and report any syntactic errors.
     const allDiagnostics = program.getConfigFileParsingDiagnostics().slice();
     const configFileParsingDiagnosticsLength = allDiagnostics.length;
-    addRange(allDiagnostics, program.getSyntacticDiagnostics(/*sourceFile*/ undefined, cancellationToken));
+    addRange(allDiagnostics, program.getSyntacticDiagnostics(undefined, cancellationToken));
 
-    // If we didn't have any syntactic errors, then also try getting the global and
-    // semantic errors.
     if (allDiagnostics.length === configFileParsingDiagnosticsLength) {
       addRange(allDiagnostics, program.getOptionsDiagnostics(cancellationToken));
 
@@ -163,15 +141,12 @@ namespace core {
         addRange(allDiagnostics, program.getGlobalDiagnostics(cancellationToken));
 
         if (allDiagnostics.length === configFileParsingDiagnosticsLength) {
-          addRange(allDiagnostics, program.getSemanticDiagnostics(/*sourceFile*/ undefined, cancellationToken));
+          addRange(allDiagnostics, program.getSemanticDiagnostics(undefined, cancellationToken));
         }
       }
     }
 
-    // Emit and report any errors we ran into.
-    const emitResult = isListFilesOnly
-      ? { emitSkipped: true, diagnostics: emptyArray }
-      : program.emit(/*targetSourceFile*/ undefined, writeFile, cancellationToken, emitOnlyDtsFiles, customTransformers);
+    const emitResult = isListFilesOnly ? { emitSkipped: true, diagnostics: emptyArray } : program.emit(undefined, writeFile, cancellationToken, emitOnlyDtsFiles, customTransformers);
     const { emittedFiles, diagnostics: emitDiagnostics } = emitResult;
     addRange(allDiagnostics, emitDiagnostics);
 
@@ -209,11 +184,8 @@ namespace core {
     const { emitResult, diagnostics } = emitFilesAndReportErrors(program, reportDiagnostic, writeFileName, reportSummary, writeFile, cancellationToken, emitOnlyDtsFiles, customTransformers);
 
     if (emitResult.emitSkipped && diagnostics.length > 0) {
-      // If the emitter didn't emit anything, then pass that value along.
       return ExitStatus.DiagnosticsPresent_OutputsSkipped;
     } else if (diagnostics.length > 0) {
-      // The emitter emitted something, inform the caller if that happened in the presence
-      // of diagnostics or not.
       return ExitStatus.DiagnosticsPresent_OutputsGenerated;
     }
     return ExitStatus.Success;
@@ -305,9 +277,6 @@ namespace core {
       try {
         performance.mark('beforeIOWrite');
 
-        // NOTE: If patchWriteFileEnsuringDirectory has been called,
-        // the host.writeFile will do its own directory creation and
-        // the ensureDirectoriesExist call will always be redundant.
         writeFileEnsuringDirectories(
           fileName,
           text,
@@ -339,9 +308,6 @@ namespace core {
     };
   }
 
-  /**
-   * Creates the watch compiler host that can be extended with config file or root file names and options host
-   */
   export function createProgramHost<T extends BuilderProgram = EmitAndSemanticDiagnosticsBuilderProgram>(system: System, createProgram: CreateProgram<T> | undefined): ProgramHost<T> {
     const getDefaultLibLocation = memoize(() => getDirectoryPath(normalizePath(system.getExecutingFilePath())));
     return {
@@ -365,9 +331,6 @@ namespace core {
     };
   }
 
-  /**
-   * Creates the watch compiler host that can be extended with config file or root file names and options host
-   */
   function createWatchCompilerHost<T extends BuilderProgram = EmitAndSemanticDiagnosticsBuilderProgram>(
     system = sys,
     createProgram: CreateProgram<T> | undefined,
@@ -388,9 +351,6 @@ namespace core {
     return result;
   }
 
-  /**
-   * Report error and exit
-   */
   function reportUnrecoverableDiagnostic(system: System, reportDiagnostic: DiagnosticReporter, diagnostic: Diagnostic) {
     reportDiagnostic(diagnostic);
     system.exit(ExitStatus.DiagnosticsPresent_OutputsSkipped);
@@ -409,9 +369,7 @@ namespace core {
     watchOptionsToExtend?: WatchOptions;
     extraFileExtensions?: readonly FileExtensionInfo[];
   }
-  /**
-   * Creates the watch compiler host from system for config file in watch mode
-   */
+
   export function createWatchCompilerHostOfConfigFile<T extends BuilderProgram = EmitAndSemanticDiagnosticsBuilderProgram>({
     configFileName,
     optionsToExtend,
@@ -438,9 +396,7 @@ namespace core {
     watchOptions: WatchOptions | undefined;
     projectReferences?: readonly ProjectReference[];
   }
-  /**
-   * Creates the watch compiler host from system for compiling root files and options in watch mode
-   */
+
   export function createWatchCompilerHostOfFilesAndCompilerOptions<T extends BuilderProgram = EmitAndSemanticDiagnosticsBuilderProgram>({
     rootFiles,
     options,

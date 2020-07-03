@@ -24,7 +24,7 @@ namespace core {
 
     function visitCatchClause(node: CatchClause): CatchClause {
       if (!node.variableDeclaration) {
-        return updateCatchClause(node, createVariableDeclaration(createTempVariable(/*recordTempVariable*/ undefined)), visitNode(node.block, visitor, isBlock));
+        return updateCatchClause(node, createVariableDeclaration(createTempVariable(undefined)), visitNode(node.block, visitor, isBlock));
       }
       return visitEachChild(node, visitor, context);
     }

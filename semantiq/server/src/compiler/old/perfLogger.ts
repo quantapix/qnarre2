@@ -23,17 +23,12 @@ namespace core {
     logStopScheduledOperation: noop,
   };
 
-  // Load optional module to enable Event Tracing for Windows
-  // See https://github.com/microsoft/typescript-etw for more information
   let etwModule;
   try {
-    // require() will throw an exception if the module is not installed
-    // It may also return undefined if not installed properly
     etwModule = require('@microsoft/typescript-etw');
   } catch (e) {
     etwModule = undefined;
   }
 
-  /** Performance logger that will generate ETW events if possible - check for `logEvent` member, as `etwModule` will be `{}` when browserified */
   export const perfLogger: PerfLogger = etwModule && etwModule.logEvent ? etwModule : nullLogger;
 }

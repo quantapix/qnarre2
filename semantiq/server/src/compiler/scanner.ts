@@ -200,7 +200,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
           tokValue = scanString();
           return (token = Syntax.StringLiteral);
         case Codes.backtick:
-          return (token = scanTemplateAndSetTokenValue(/* tagged */ false));
+          return (token = scanTemplateAndSetTokenValue(false));
         case Codes.percent:
           if (text.charCodeAt(pos + 1) === Codes.equals) return (pos += 2), (token = Syntax.PercentEqualsToken);
           pos++;
@@ -306,7 +306,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
             return (token = parseNumber());
           } else if (pos + 2 < end && (text.charCodeAt(pos + 1) === Codes.B || text.charCodeAt(pos + 1) === Codes.b)) {
             pos += 2;
-            tokValue = scanBinOrOctDigits(/* base */ 2);
+            tokValue = scanBinOrOctDigits(2);
             if (!tokValue) {
               error(diags.Binary_digit_expected);
               tokValue = '0';
@@ -316,7 +316,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
             return (token = parseNumber());
           } else if (pos + 2 < end && (text.charCodeAt(pos + 1) === Codes.O || text.charCodeAt(pos + 1) === Codes.o)) {
             pos += 2;
-            tokValue = scanBinOrOctDigits(/* base */ 8);
+            tokValue = scanBinOrOctDigits(8);
             if (!tokValue) {
               error(diags.Octal_digit_expected);
               tokValue = '0';
@@ -931,7 +931,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
         }
         tokFlags |= qt.TokenFlags.UnicodeEscape;
         // '\uDDDD'
-        return scanHexEscape(/*numDigits*/ 4);
+        return scanHexEscape(4);
       case Codes.x:
         if (tagged) {
           if (!syntax.is.hexDigit(text.charCodeAt(pos))) {
@@ -944,7 +944,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
           }
         }
         // '\xDD'
-        return scanHexEscape(/*numDigits*/ 2);
+        return scanHexEscape(2);
       case Codes.carriageReturn:
         if (pos < end && text.charCodeAt(pos) === Codes.lineFeed) pos++;
 

@@ -4,7 +4,7 @@ namespace core {
       return []; 
     
     const compilerOptions = host.getCompilerOptions();
-    const result = transformNodes(resolver, host, compilerOptions, file ? [file] : filter(host.getSourceFiles(), isSourceFileNotJson), [transformDeclarations], /*allowDtsFiles*/ false);
+    const result = transformNodes(resolver, host, compilerOptions, file ? [file] : filter(host.getSourceFiles(), isSourceFileNotJson), [transformDeclarations],  false);
     return result.diagnostics;
   }
 
@@ -74,7 +74,7 @@ namespace core {
     let currentSourceFile: SourceFile;
     let refs: QMap<SourceFile>;
     let libs: QMap<boolean>;
-    let emittedImports: readonly AnyImportSyntax[] | undefined; // must be declared in container so it can be `undefined` while transformer's first pass
+    let emittedImports: readonly AnyImportSyntax[] | undefined; 
     const resolver = context.getEmitResolver();
     const options = context.getCompilerOptions();
     const { noResolve, stripInternal } = options;
@@ -101,7 +101,7 @@ namespace core {
 
     function handleSymbolAccessibilityError(symbolAccessibilityResult: SymbolAccessibilityResult) {
       if (symbolAccessibilityResult.accessibility === SymbolAccessibility.Accessible) {
-        // Add aliases back onto the possible imports list if they're not there so we can try them again with updated visibility info
+        
         if (symbolAccessibilityResult && symbolAccessibilityResult.aliasesToMakeVisible) {
           if (!lateMarkedStatements) {
             lateMarkedStatements = symbolAccessibilityResult.aliasesToMakeVisible;
@@ -146,7 +146,7 @@ namespace core {
 
     function trackSymbol(symbol: Symbol, enclosingDeclaration?: Node, meaning?: SymbolFlags) {
       if (symbol.flags & SymbolFlags.TypeParameter) return;
-      handleSymbolAccessibilityError(resolver.isSymbolAccessible(symbol, enclosingDeclaration, meaning, /*shouldComputeAliasesToMakeVisible*/ true));
+      handleSymbolAccessibilityError(resolver.isSymbolAccessible(symbol, enclosingDeclaration, meaning,  true));
       recordTypeReferenceDirectivesIfNecessary(resolver.getTypeReferenceDirectivesForSymbol(symbol, meaning));
     }
 
@@ -231,7 +231,7 @@ namespace core {
         let hasNoDefaultLib = false;
         const bundle = createBundle(
           map(node.sourceFiles, (sourceFile) => {
-            if (sourceFile.isDeclarationFile) return undefined!; // Omit declaration files from bundle results, too // TODO: GH#18217
+            if (sourceFile.isDeclarationFile) return undefined!; 
             hasNoDefaultLib = hasNoDefaultLib || sourceFile.hasNoDefaultLib;
             currentSourceFile = sourceFile;
             enclosingDeclaration = sourceFile;
@@ -244,9 +244,9 @@ namespace core {
             collectReferences(sourceFile, refs);
             collectLibs(sourceFile, libs);
             if (isExternalOrCommonJsModule(sourceFile) || isJsonSourceFile(sourceFile)) {
-              resultHasExternalModuleIndicator = false; // unused in external module bundle emit (all external modules are within module blocks, therefore are known to be modules)
+              resultHasExternalModuleIndicator = false; 
               needsDeclare = false;
-              const statements = isSourceFileJS(sourceFile) ? new Nodes(transformDeclarationsForJS(sourceFile, /*bundled*/ true)) : Nodes.visit(sourceFile.statements, visitDeclarationStatements);
+              const statements = isSourceFileJS(sourceFile) ? new Nodes(transformDeclarationsForJS(sourceFile,  true)) : Nodes.visit(sourceFile.statements, visitDeclarationStatements);
               const newFile = qp_updateSourceNode(
                 sourceFile,
                 [
@@ -257,11 +257,11 @@ namespace core {
                     createModuleBlock(setRange(new Nodes(transformAndReplaceLatePaintedStatements(statements)), sourceFile.statements))
                   ),
                 ],
-                /*isDeclarationFile*/ true,
-                /*referencedFiles*/ [],
-                /*typeReferences*/ [],
-                /*hasNoDefaultLib*/ false,
-                /*libReferences*/ []
+                 true,
+                 [],
+                 [],
+                 false,
+                 []
               );
               return newFile;
             }
@@ -270,11 +270,11 @@ namespace core {
             return qp_updateSourceNode(
               sourceFile,
               transformAndReplaceLatePaintedStatements(updated),
-              /*isDeclarationFile*/ true,
-              /*referencedFiles*/ [],
-              /*typeReferences*/ [],
-              /*hasNoDefaultLib*/ false,
-              /*libReferences*/ []
+               true,
+               [],
+               [],
+               false,
+               []
             );
           }),
           mapDefined(node.prepends, (prepend) => {
@@ -293,13 +293,13 @@ namespace core {
         bundle.syntheticTypeReferences = getFileReferencesForUsedTypeReferences();
         bundle.syntheticLibReferences = getLibReferences();
         bundle.hasNoDefaultLib = hasNoDefaultLib;
-        const outputFilePath = getDirectoryPath(normalizeSlashes(getOutputPathsFor(node, host, /*forceDtsPaths*/ true).declarationFilePath!));
+        const outputFilePath = getDirectoryPath(normalizeSlashes(getOutputPathsFor(node, host,  true).declarationFilePath!));
         const referenceVisitor = mapReferencesIntoArray(bundle.syntheticFileReferences as FileReference[], outputFilePath);
         refs.forEach(referenceVisitor);
         return bundle;
       }
 
-      // Single source file
+      
       needsDeclare = true;
       needsScopeFixMarker = false;
       resultHasScopeMarker = false;
@@ -315,7 +315,7 @@ namespace core {
       refs = collectReferences(currentSourceFile, new QMap());
       libs = collectLibs(currentSourceFile, new QMap());
       const references: FileReference[] = [];
-      const outputFilePath = getDirectoryPath(normalizeSlashes(getOutputPathsFor(node, host, /*forceDtsPaths*/ true).declarationFilePath!));
+      const outputFilePath = getDirectoryPath(normalizeSlashes(getOutputPathsFor(node, host,  true).declarationFilePath!));
       const referenceVisitor = mapReferencesIntoArray(references, outputFilePath);
       let combinedStatements: Nodes<Statement>;
       if (isSourceFileJS(currentSourceFile)) {
@@ -331,7 +331,7 @@ namespace core {
           combinedStatements = setRange(new Nodes([...combinedStatements, createEmptyExports()]), combinedStatements);
         }
       }
-      const updated = qp_updateSourceNode(node, combinedStatements, /*isDeclarationFile*/ true, references, getFileReferencesForUsedTypeReferences(), node.hasNoDefaultLib, getLibReferences());
+      const updated = qp_updateSourceNode(node, combinedStatements,  true, references, getFileReferencesForUsedTypeReferences(), node.hasNoDefaultLib, getLibReferences());
       updated.exportedModulesFromDeclarationEmit = exportedModulesFromDeclarationEmit;
       return updated;
 
@@ -344,7 +344,7 @@ namespace core {
       }
 
       function getFileReferenceForTypeName(typeName: string): FileReference | undefined {
-        // Elide type references for which we have imports
+        
         if (emittedImports) {
           for (const importStatement of emittedImports) {
             if (Node.is.kind(ImportEqualsDeclaration, importStatement) && qp_Node.is.kind(ExternalModuleReference, importStatement.moduleReference)) {
@@ -364,39 +364,39 @@ namespace core {
         return (file) => {
           let declFileName: string;
           if (file.isDeclarationFile) {
-            // Neither decl files or js should have their refs changed
+            
             declFileName = file.fileName;
           } else {
-            if (isBundledEmit && contains((node as Bundle).sourceFiles, file)) return; // Omit references to files which are being merged
-            const paths = getOutputPathsFor(file, host, /*forceDtsPaths*/ true);
+            if (isBundledEmit && contains((node as Bundle).sourceFiles, file)) return; 
+            const paths = getOutputPathsFor(file, host,  true);
             declFileName = paths.declarationFilePath || paths.jsFilePath || file.fileName;
           }
           if (declFileName) {
             const specifier = moduleSpecifiers.getModuleSpecifier(
-              // We pathify the baseUrl since we pathify the other paths here, so we can still easily check if the other paths are within the baseUrl
-              // TODO: Should we _always_ be pathifying the baseUrl as we read it in?
+              
+              
               { ...options, baseUrl: options.baseUrl && toPath(options.baseUrl, host.getCurrentDirectory(), host.getCanonicalFileName) },
               currentSourceFile,
               toPath(outputFilePath, host.getCurrentDirectory(), host.getCanonicalFileName),
               toPath(declFileName, host.getCurrentDirectory(), host.getCanonicalFileName),
               host,
-              /*preferences*/ undefined
+               undefined
             );
             if (!pathIsRelative(specifier)) {
-              // If some compiler option/symlink/whatever allows access to the file containing the ambient module declaration
-              // via a non-relative name, emit a type reference directive to that non-relative name, rather than
-              // a relative path to the declaration file
+              
+              
+              
               recordTypeReferenceDirectivesIfNecessary([specifier]);
               return;
             }
 
-            let fileName = getRelativePathToDirectoryOrUrl(outputFilePath, declFileName, host.getCurrentDirectory(), host.getCanonicalFileName, /*isAbsolutePathAnUrl*/ false);
+            let fileName = getRelativePathToDirectoryOrUrl(outputFilePath, declFileName, host.getCurrentDirectory(), host.getCanonicalFileName,  false);
             if (startsWith(fileName, './') && hasExtension(fileName)) {
               fileName = fileName.substring(2);
             }
 
-            // omit references to files from node_modules (npm may disambiguate module
-            // references when installing this package, making the path is unreliable).
+            
+            
             if (startsWith(fileName, 'node_modules/') || pathContainsNodeModules(fileName)) {
               return;
             }
@@ -459,7 +459,7 @@ namespace core {
         p.dot3Token,
         filterBindingPatternInitializers(p.name),
         resolver.isOptionalParameter(p) ? p.questionToken || new Token(Syntax.QuestionToken) : undefined,
-        ensureType(p, type || p.type, /*ignorePrivate*/ true), // Ignore private param props, since this type is going straight back into a param
+        ensureType(p, type || p.type,  true), 
         ensureNoInitializer(p)
       );
       if (!suppressNewDiagnosticContexts) {
@@ -469,12 +469,12 @@ namespace core {
     }
 
     function shouldPrintWithInitializer(node: Node) {
-      return canHaveLiteralInitializer(node) && resolver.isLiteralConstDeclaration(Node.get.parseTreeOf(node) as CanHaveLiteralInitializer); // TODO: Make safe
+      return canHaveLiteralInitializer(node) && resolver.isLiteralConstDeclaration(Node.get.parseTreeOf(node) as CanHaveLiteralInitializer); 
     }
 
     function ensureNoInitializer(node: CanHaveLiteralInitializer) {
       if (shouldPrintWithInitializer(node)) {
-        return resolver.createLiteralConstValue(Node.get.parseTreeOf(node) as CanHaveLiteralInitializer, symbolTracker); // TODO: Make safe
+        return resolver.createLiteralConstValue(Node.get.parseTreeOf(node) as CanHaveLiteralInitializer, symbolTracker); 
       }
       return;
     }
@@ -495,11 +495,11 @@ namespace core {
 
     function ensureType(node: HasInferredType, type: TypeNode | undefined, ignorePrivate?: boolean): TypeNode | undefined {
       if (!ignorePrivate && hasEffectiveModifier(node, ModifierFlags.Private)) {
-        // Private nodes emit no types (except private parameter properties, whose parameter types are actually visible)
+        
         return;
       }
       if (shouldPrintWithInitializer(node)) {
-        // Literal const declarations will have an initializer ensured rather than a type
+        
         return;
       }
       const shouldUseResolverType = node.kind === Syntax.Parameter && (resolver.isRequiredInitializedParameter(node) || resolver.isOptionalUninitializedParameterProperty(node));
@@ -510,8 +510,8 @@ namespace core {
         return type ? visitNode(type, visitDeclarationSubtree) : KeywordTypeNode.create(Syntax.AnyKeyword);
       }
       if (node.kind === Syntax.SetAccessor) {
-        // Set accessors with no associated type node (from it's param or get accessor return) are `any` since they are never contextually typed right now
-        // (The inferred type here will be void, but the old declaration emitter printed `any`, so this replicates that)
+        
+        
         return KeywordTypeNode.create(Syntax.AnyKeyword);
       }
       errorNameNode = node.name;
@@ -551,7 +551,7 @@ namespace core {
         case Syntax.TypeAliasDeclaration:
         case Syntax.EnumDeclaration:
           return !resolver.isDeclarationVisible(node);
-        // The following should be doing their own visibility checks based on filtering their members
+        
         case Syntax.VariableDeclaration:
           return !getBindingNameVisible(node as VariableDeclaration);
         case Syntax.ImportEqualsDeclaration:
@@ -568,7 +568,7 @@ namespace core {
         return false;
       }
       if (Node.is.kind(BindingPattern, elem.name)) {
-        // If any child binding pattern element has been marked visible (usually by collect linked aliases), then this is visible
+        
         return some(elem.name.elements, getBindingNameVisible);
       } else {
         return resolver.isDeclarationVisible(elem);
@@ -577,11 +577,11 @@ namespace core {
 
     function updateParamsList(node: Node, params: Nodes<ParameterDeclaration>, modifierMask?: ModifierFlags) {
       if (hasEffectiveModifier(node, ModifierFlags.Private)) {
-        return undefined!; // TODO: GH#18217
+        return undefined!; 
       }
       const newParams = map(params, (p) => ensureParameter(p, modifierMask));
       if (!newParams) {
-        return undefined!; // TODO: GH#18217
+        return undefined!; 
       }
       return new Nodes(newParams, params.trailingComma);
     }
@@ -600,11 +600,11 @@ namespace core {
           const valueParameter = getSetAccessorValueParameter(input);
           if (valueParameter) {
             const accessorType = getTypeAnnotationFromAllAccessorDeclarations(input, resolver.getAllAccessorDeclarations(input));
-            newValueParameter = ensureParameter(valueParameter, /*modifierMask*/ undefined, accessorType);
+            newValueParameter = ensureParameter(valueParameter,  undefined, accessorType);
           }
         }
         if (!newValueParameter) {
-          newValueParameter = createParameter(undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, 'value');
+          newValueParameter = createParameter(undefined,  undefined, 'value');
         }
         newParams = append(newParams, newValueParameter);
       }
@@ -645,7 +645,7 @@ namespace core {
       parent: ImportEqualsDeclaration | ImportDeclaration | ExportDeclaration | ModuleDeclaration | ImportTypeNode,
       input: T | undefined
     ): T | StringLiteral {
-      if (!input) return undefined!; // TODO: GH#18217
+      if (!input) return undefined!; 
       resultHasExternalModuleIndicator = resultHasExternalModuleIndicator || (parent.kind !== Syntax.ModuleDeclaration && parent.kind !== Syntax.ImportType);
       if (StringLiteral.like(input)) {
         if (isBundledEmit) {
@@ -666,7 +666,7 @@ namespace core {
     function transformImportEqualsDeclaration(decl: ImportEqualsDeclaration) {
       if (!resolver.isDeclarationVisible(decl)) return;
       if (decl.moduleReference.kind === Syntax.ExternalModuleReference) {
-        // Rewrite external module names if necessary
+        
         const specifier = getExternalModuleImportEqualsDeclarationExpression(decl);
         return updateImportEqualsDeclaration(decl, undefined, decl.modifiers, decl.name, updateExternalModuleReference(decl.moduleReference, rewriteModuleSpecifier(decl, specifier)));
       } else {
@@ -680,27 +680,27 @@ namespace core {
 
     function transformImportDeclaration(decl: ImportDeclaration) {
       if (!decl.importClause) {
-        // import "mod" - possibly needed for side effects? (global interface patches, module augmentations, etc)
+        
         return updateImportDeclaration(decl, undefined, decl.modifiers, decl.importClause, rewriteModuleSpecifier(decl, decl.moduleSpecifier));
       }
-      // The `importClause` visibility corresponds to the default's visibility.
+      
       const visibleDefaultBinding = decl.importClause && decl.importClause.name && resolver.isDeclarationVisible(decl.importClause) ? decl.importClause.name : undefined;
       if (!decl.importClause.namedBindings) {
-        // No named bindings (either namespace or list), meaning the import is just default or should be elided
+        
         return (
           visibleDefaultBinding &&
           updateImportDeclaration(
             decl,
             undefined,
             decl.modifiers,
-            updateImportClause(decl.importClause, visibleDefaultBinding, /*namedBindings*/ undefined, decl.importClause.isTypeOnly),
+            updateImportClause(decl.importClause, visibleDefaultBinding,  undefined, decl.importClause.isTypeOnly),
             rewriteModuleSpecifier(decl, decl.moduleSpecifier)
           )
         );
       }
       if (decl.importClause.namedBindings.kind === Syntax.NamespaceImport) {
-        // Namespace import (optionally with visible default)
-        const namedBindings = resolver.isDeclarationVisible(decl.importClause.namedBindings) ? decl.importClause.namedBindings : /*namedBindings*/ undefined;
+        
+        const namedBindings = resolver.isDeclarationVisible(decl.importClause.namedBindings) ? decl.importClause.namedBindings :  undefined;
         return visibleDefaultBinding || namedBindings
           ? updateImportDeclaration(
               decl,
@@ -711,7 +711,7 @@ namespace core {
             )
           : undefined;
       }
-      // Named imports (optionally with visible default)
+      
       const bindingList = mapDefined(decl.importClause.namedBindings.elements, (b) => (resolver.isDeclarationVisible(b) ? b : undefined));
       if ((bindingList && bindingList.length) || visibleDefaultBinding) {
         return updateImportDeclaration(
@@ -727,28 +727,28 @@ namespace core {
           rewriteModuleSpecifier(decl, decl.moduleSpecifier)
         );
       }
-      // Augmentation of export depends on import
+      
       if (resolver.isImportRequiredByAugmentation(decl)) {
-        return updateImportDeclaration(decl, undefined, decl.modifiers, /*importClause*/ undefined, rewriteModuleSpecifier(decl, decl.moduleSpecifier));
+        return updateImportDeclaration(decl, undefined, decl.modifiers,  undefined, rewriteModuleSpecifier(decl, decl.moduleSpecifier));
       }
-      // Nothing visible
+      
     }
 
     function transformAndReplaceLatePaintedStatements(statements: Nodes<Statement>): Nodes<Statement> {
-      // This is a `while` loop because `handleSymbolAccessibilityError` can see additional import aliases marked as visible during
-      // error handling which must now be included in the output and themselves checked for errors.
-      // For example:
-      // ```
-      // module A {
-      //   export module Q {}
-      //   import B = Q;
-      //   import C = B;
-      //   export import D = C;
-      // }
-      // ```
-      // In such a scenario, only Q and D are initially visible, but we don't consider imports as private names - instead we say they if they are referenced they must
-      // be recorded. So while checking D's visibility we mark C as visible, then we must check C which in turn marks B, completing the chain of
-      // dependent imports and allowing a valid declaration file output. Today, this dependent alias marking only happens for internal import aliases.
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
       while (length(lateMarkedStatements)) {
         const i = lateMarkedStatements!.shift()!;
         if (!Node.is.lateVisibilityPaintedStatement(i)) {
@@ -761,8 +761,8 @@ namespace core {
         lateStatementReplacementMap.set('' + getOriginalNodeId(i), result);
       }
 
-      // And lastly, we need to get the final form of all those indetermine import declarations from before and add them to the output list
-      // (and remove them from the set to examine for outter declarations)
+      
+      
       return Nodes.visit(statements, visitLateVisibilityMarkedStatements);
 
       function visitLateVisibilityMarkedStatements(statement: Statement) {
@@ -773,7 +773,7 @@ namespace core {
             lateStatementReplacementMap.delete(key);
             if (result) {
               if (isArray(result) ? some(result, needsScopeMarker) : needsScopeMarker(result)) {
-                // Top-level declarations in .d.ts files are always considered exported even without a modifier unless there's an export assignment or specifier
+                
                 needsScopeFixMarker = true;
               }
               if (Node.is.kind(SourceFile, statement.parent) && (isArray(result) ? some(result, qp_isExternalModuleIndicator) : qp_isExternalModuleIndicator(result))) {
@@ -796,10 +796,10 @@ namespace core {
         }
       }
 
-      // Elide implementation signatures from overload sets
+      
       if (Node.is.functionLike(input) && resolver.isImplementationOfOverload(input)) return;
 
-      // Elide semicolon class statements
+      
       if (Node.is.kind(SemicolonClassElement, input)) return;
 
       let previousEnclosingDeclaration: typeof enclosingDeclaration;
@@ -809,17 +809,17 @@ namespace core {
       }
       const oldDiag = getSymbolAccessibilityDiagnostic;
 
-      // Setup diagnostic-related flags before first potential `cleanup` call, otherwise
-      // We'd see a TDZ violation at runtime
+      
+      
       const canProduceDiagnostic = canProduceDiagnostics(input);
       const oldWithinObjectLiteralType = suppressNewDiagnosticContexts;
       let shouldEnterSuppressNewDiagnosticsContextContext = (input.kind === Syntax.TypeLiteral || input.kind === Syntax.MappedType) && input.parent.kind !== Syntax.TypeAliasDeclaration;
 
-      // Emit methods which are private as properties with no type information
+      
       if (Node.is.kind(MethodDeclaration, input) || Node.is.kind(MethodSignature, input)) {
         if (hasEffectiveModifier(input, ModifierFlags.Private)) {
-          if (input.symbol && input.symbol.declarations && input.symbol.declarations[0] !== input) return; // Elide all but the first overload
-          return cleanup(PropertyDeclaration.create(undefined, ensureModifiers(input), input.name, /*questionToken*/ undefined, undefined, undefined));
+          if (input.symbol && input.symbol.declarations && input.symbol.declarations[0] !== input) return; 
+          return cleanup(PropertyDeclaration.create(undefined, ensureModifiers(input), input.name,  undefined, undefined, undefined));
         }
       }
 
@@ -832,7 +832,7 @@ namespace core {
       }
 
       if (shouldEnterSuppressNewDiagnosticsContextContext) {
-        // We stop making new diagnostic contexts within object literal types. Unless it's an object type on the RHS of a type alias declaration. Then we do.
+        
         suppressNewDiagnosticContexts = true;
       }
 
@@ -853,7 +853,7 @@ namespace core {
           case Syntax.ConstructSignature:
             return cleanup(ConstructSignatureDeclaration.update(input, ensureTypeParams(input, input.typeParameters), updateParamsList(input, input.parameters), ensureType(input, input.type)));
           case Syntax.Constructor: {
-            // A constructor declaration may not have a type annotation
+            
             const ctor = SignatureDeclaration.create(
               Syntax.Constructor,
               ensureTypeParams(input, input.typeParameters),
@@ -865,7 +865,7 @@ namespace core {
           }
           case Syntax.MethodDeclaration: {
             if (Node.is.kind(PrivateIdentifier, input.name)) {
-              return cleanup(/*returnValue*/ undefined);
+              return cleanup( undefined);
             }
             const sig = SignatureDeclaration.create(
               Syntax.MethodSignature,
@@ -880,7 +880,7 @@ namespace core {
           }
           case Syntax.GetAccessor: {
             if (Node.is.kind(PrivateIdentifier, input.name)) {
-              return cleanup(/*returnValue*/ undefined);
+              return cleanup( undefined);
             }
             const accessorType = getTypeAnnotationFromAllAccessorDeclarations(input, resolver.getAllAccessorDeclarations(input));
             return cleanup(
@@ -891,13 +891,13 @@ namespace core {
                 input.name,
                 updateAccessorParamsList(input, hasEffectiveModifier(input, ModifierFlags.Private)),
                 ensureType(input, accessorType),
-                /*body*/ undefined
+                 undefined
               )
             );
           }
           case Syntax.SetAccessor: {
             if (Node.is.kind(PrivateIdentifier, input.name)) {
-              return cleanup(/*returnValue*/ undefined);
+              return cleanup( undefined);
             }
             return cleanup(
               SetAccessorDeclaration.update(
@@ -906,25 +906,25 @@ namespace core {
                 ensureModifiers(input),
                 input.name,
                 updateAccessorParamsList(input, hasEffectiveModifier(input, ModifierFlags.Private)),
-                /*body*/ undefined
+                 undefined
               )
             );
           }
           case Syntax.PropertyDeclaration:
             if (Node.is.kind(PrivateIdentifier, input.name)) {
-              return cleanup(/*returnValue*/ undefined);
+              return cleanup( undefined);
             }
             return cleanup(
               PropertyDeclaration.update(input, undefined, ensureModifiers(input), input.name, input.questionToken, ensureType(input, input.type), ensureNoInitializer(input))
             );
           case Syntax.PropertySignature:
             if (Node.is.kind(PrivateIdentifier, input.name)) {
-              return cleanup(/*returnValue*/ undefined);
+              return cleanup( undefined);
             }
             return cleanup(PropertySignature.update(input, ensureModifiers(input), input.name, input.questionToken, ensureType(input, input.type), ensureNoInitializer(input)));
           case Syntax.MethodSignature: {
             if (Node.is.kind(PrivateIdentifier, input.name)) {
-              return cleanup(/*returnValue*/ undefined);
+              return cleanup( undefined);
             }
             return cleanup(
               MethodSignature.update(input, ensureTypeParams(input, input.typeParameters), updateParamsList(input, input.parameters), ensureType(input, input.type), input.name, input.questionToken)
@@ -949,18 +949,18 @@ namespace core {
               return recreateBindingPattern(input.name);
             }
             shouldEnterSuppressNewDiagnosticsContextContext = true;
-            suppressNewDiagnosticContexts = true; // Variable declaration types also suppress new diagnostic contexts, provided the contexts wouldn't be made for binding pattern types
-            return cleanup(updateTypeScriptVariableDeclaration(input, input.name, /*exclaimationToken*/ undefined, ensureType(input, input.type), ensureNoInitializer(input)));
+            suppressNewDiagnosticContexts = true; 
+            return cleanup(updateTypeScriptVariableDeclaration(input, input.name,  undefined, ensureType(input, input.type), ensureNoInitializer(input)));
           }
           case Syntax.TypeParameter: {
             if (isPrivateMethodTypeParameter(input) && (input.default || input.constraint)) {
-              return cleanup(updateTypeParameterDeclaration(input, input.name, /*constraint*/ undefined, /*defaultType*/ undefined));
+              return cleanup(updateTypeParameterDeclaration(input, input.name,  undefined));
             }
             return cleanup(visitEachChild(input, visitDeclarationSubtree, context));
           }
           case Syntax.ConditionalType: {
-            // We have to process conditional types in a special way because for visibility purposes we need to push a new enclosingDeclaration
-            // just for the `infer` types in the true branch. It's an implicit declaration scope that only applies to _part_ of the type.
+            
+            
             const checkType = visitNode(input.checkType, visitDeclarationSubtree);
             const extendsType = visitNode(input.extendsType, visitDeclarationSubtree);
             const oldEnclosingDecl = enclosingDeclaration;
@@ -1034,7 +1034,7 @@ namespace core {
 
     function visitDeclarationStatements(input: Node): VisitResult<Node> {
       if (!isPreservedDeclarationStatement(input)) {
-        // return undefined for unmatched kinds to omit them from the tree
+        
         return;
       }
       if (shouldStripInternal(input)) return;
@@ -1045,12 +1045,12 @@ namespace core {
             resultHasExternalModuleIndicator = true;
           }
           resultHasScopeMarker = true;
-          // Always visible if the parent node isn't dropped for being not visible
-          // Rewrite external module names if necessary
+          
+          
           return updateExportDeclaration(input, undefined, input.modifiers, input.exportClause, rewriteModuleSpecifier(input, input.moduleSpecifier), input.isTypeOnly);
         }
         case Syntax.ExportAssignment: {
-          // Always visible if the parent node isn't dropped for being not visible
+          
           if (Node.is.kind(SourceFile, input.parent)) {
             resultHasExternalModuleIndicator = true;
           }
@@ -1071,15 +1071,15 @@ namespace core {
       }
 
       const result = transformTopLevelDeclaration(input);
-      // Don't actually transform yet; just leave as original node - will be elided/swapped by late pass
+      
       lateStatementReplacementMap.set('' + getOriginalNodeId(input), result);
       return input;
     }
 
     function stripExportModifiers(statement: Statement): Statement {
       if (Node.is.kind(ImportEqualsDeclaration, statement) || hasEffectiveModifier(statement, ModifierFlags.Default)) {
-        // `export import` statements should remain as-is, as imports are _not_ implicitly exported in an ambient namespace
-        // Likewise, `export default` classes and the like and just be `default`, so we preserve their `export` modifiers, too
+        
+        
         return statement;
       }
       const clone = getMutableClone(statement);
@@ -1100,7 +1100,7 @@ namespace core {
       }
       if (Node.is.declaration(input) && isDeclarationAndNotVisible(input)) return;
 
-      // Elide implementation signatures from overload sets
+      
       if (Node.is.functionLike(input) && resolver.isImplementationOfOverload(input)) return;
 
       let previousEnclosingDeclaration: typeof enclosingDeclaration;
@@ -1117,7 +1117,7 @@ namespace core {
 
       const previousNeedsDeclare = needsDeclare;
       switch (input.kind) {
-        case Syntax.TypeAliasDeclaration: // Type aliases get `declare`d if need be (for legacy support), but that's all
+        case Syntax.TypeAliasDeclaration: 
           return cleanup(
             updateTypeAliasDeclaration(
               input,
@@ -1142,36 +1142,36 @@ namespace core {
           );
         }
         case Syntax.FunctionDeclaration: {
-          // Generators lose their generator-ness, excepting their return type
+          
           const clean = cleanup(
             updateFunctionDeclaration(
               input,
               undefined,
               ensureModifiers(input),
-              /*asteriskToken*/ undefined,
+               undefined,
               input.name,
               ensureTypeParams(input, input.typeParameters),
               updateParamsList(input, input.parameters),
               ensureType(input, input.type),
-              /*body*/ undefined
+               undefined
             )
           );
           if (clean && resolver.isExpandoFunctionDeclaration(input)) {
             const props = resolver.getPropertiesOfContainerFunction(input);
-            const fakespace = createModuleDeclaration(undefined, /*modifiers*/ undefined, clean.name || new Identifier('_default'), createModuleBlock([]), NodeFlags.Namespace);
-            fakespace.flags ^= NodeFlags.Synthesized; // unset synthesized so it is usable as an enclosing declaration
+            const fakespace = createModuleDeclaration(undefined,  undefined, clean.name || new Identifier('_default'), createModuleBlock([]), NodeFlags.Namespace);
+            fakespace.flags ^= NodeFlags.Synthesized; 
             fakespace.parent = enclosingDeclaration as SourceFile | NamespaceDeclaration;
             fakespace.locals = new SymbolTable(props);
             fakespace.symbol = props[0].parent!;
             const declarations = mapDefined(props, (p) => {
               if (!Node.is.kind(PropertyAccessExpression, p.valueDeclaration)) {
-                return; // TODO GH#33569: Handle element access expressions that created late bound names (rather than silently omitting them)
+                return; 
               }
               getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(p.valueDeclaration);
               const type = resolver.createTypeOfDeclaration(p.valueDeclaration, fakespace, declarationEmitNodeBuilderFlags, symbolTracker);
               getSymbolAccessibilityDiagnostic = oldDiag;
               const varDecl = createVariableDeclaration(syntax.get.unescUnderscores(p.escName), type, undefined);
-              return createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList([varDecl]));
+              return createVariableStatement( undefined, createVariableDeclarationList([varDecl]));
             });
             const namespaceDecl = createModuleDeclaration(undefined, ensureModifiers(input), input.name!, createModuleBlock(declarations), NodeFlags.Namespace);
 
@@ -1184,17 +1184,17 @@ namespace core {
               clean,
               undefined,
               modifiers,
-              /*asteriskToken*/ undefined,
+               undefined,
               clean.name,
               clean.typeParameters,
               clean.parameters,
               clean.type,
-              /*body*/ undefined
+               undefined
             );
 
             const namespaceDeclaration = updateModuleDeclaration(namespaceDecl, undefined, modifiers, namespaceDecl.name, namespaceDecl.body);
 
-            const exportDefaultDeclaration = createExportAssignment(undefined, /*modifiers*/ undefined, /*isExportEquals*/ false, namespaceDecl.name);
+            const exportDefaultDeclaration = createExportAssignment(undefined,  false, namespaceDecl.name);
 
             if (Node.is.kind(SourceFile, input.parent)) {
               resultHasExternalModuleIndicator = true;
@@ -1217,12 +1217,12 @@ namespace core {
             const statements = Nodes.visit(inner.statements, visitDeclarationStatements);
             let lateStatements = transformAndReplaceLatePaintedStatements(statements);
             if (input.flags & NodeFlags.Ambient) {
-              needsScopeFixMarker = false; // If it was `declare`'d everything is implicitly exported already, ignore late printed "privates"
+              needsScopeFixMarker = false; 
             }
-            // With the final list of statements, there are 3 possibilities:
-            // 1. There's an export assignment or export declaration in the namespace - do nothing
-            // 2. Everything is exported and there are no export assignments or export declarations - strip all export modifiers
-            // 3. Some things are exported, some are not, and there's no marker - add an empty marker
+            
+            
+            
+            
             if (!isGlobalScopeAugmentation(input) && !hasScopeMarker(lateStatements) && !resultHasScopeMarker) {
               if (needsScopeFixMarker) {
                 lateStatements = new Nodes([...lateStatements, createEmptyExports()]);
@@ -1241,8 +1241,8 @@ namespace core {
             const mods = ensureModifiers(input);
             needsDeclare = false;
             visitNode(inner, visitDeclarationStatements);
-            // eagerly transform nested namespaces (the nesting doesn't need any elision or painting done)
-            const id = '' + getOriginalNodeId(inner!); // TODO: GH#18217
+            
+            const id = '' + getOriginalNodeId(inner!); 
             const body = lateStatementReplacementMap.get(id);
             lateStatementReplacementMap.delete(id);
             return cleanup(updateModuleDeclaration(input, undefined, mods, input.name, body as ModuleBody));
@@ -1265,7 +1265,7 @@ namespace core {
                     param
                   );
                 } else {
-                  // Pattern - this is currently an error, but we emit declarations for it somewhat correctly
+                  
                   return walkBindingPattern(param.name);
                 }
 
@@ -1282,7 +1282,7 @@ namespace core {
                         undefined,
                         ensureModifiers(param),
                         elem.name as Identifier,
-                        /*questionToken*/ undefined,
+                         undefined,
                         ensureType(elem, undefined),
                         undefined
                       )
@@ -1300,9 +1300,9 @@ namespace core {
             ? [
                 PropertyDeclaration.create(
                   undefined,
-                  /*modifiers*/ undefined,
+                   undefined,
                   new PrivateIdentifier('#private'),
-                  /*questionToken*/ undefined,
+                   undefined,
                   undefined,
                   undefined
                 ),
@@ -1313,7 +1313,7 @@ namespace core {
 
           const extendsClause = getEffectiveBaseTypeNode(input);
           if (extendsClause && !isEntityNameExpression(extendsClause.expression) && extendsClause.expression.kind !== Syntax.NullKeyword) {
-            // We must add a temporary declaration for the extends clause expression
+            
 
             const oldId = input.name ? syntax.get.unescUnderscores(input.name.escapedText) : 'default';
             const newId = createOptimisticUniqueName(`${oldId}_base`);
@@ -1346,7 +1346,7 @@ namespace core {
                 );
               })
             );
-            return [statement, cleanup(updateClassDeclaration(input, undefined, modifiers, input.name, typeParameters, heritageClauses, members))!]; // TODO: GH#18217
+            return [statement, cleanup(updateClassDeclaration(input, undefined, modifiers, input.name, typeParameters, heritageClauses, members))!]; 
           } else {
             const heritageClauses = transformHeritageClauses(input.heritageClauses);
             return cleanup(updateClassDeclaration(input, undefined, modifiers, input.name, typeParameters, heritageClauses, members));
@@ -1365,7 +1365,7 @@ namespace core {
               new Nodes(
                 mapDefined(input.members, (m) => {
                   if (shouldStripInternal(m)) return;
-                  // Rewrite enum values to their constants, if available
+                  
                   const constValue = resolver.getConstantValue(m);
                   return preserveJsDoc(updateEnumMember(m, m.name, constValue !== undefined ? createLiteral(constValue) : undefined), m);
                 })
@@ -1374,7 +1374,7 @@ namespace core {
           );
         }
       }
-      // Anything left unhandled is an error, so this should be unreachable
+      
       return Debug.assertNever(input, `Unhandled top-level node in declaration emit: ${(ts as any).SyntaxKind[(input as any).kind]}`);
 
       function cleanup<T extends Node>(node: T | undefined): T | undefined {
@@ -1426,7 +1426,7 @@ namespace core {
         getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNodeName(node);
       }
       errorNameNode = (node as NamedDeclaration).name;
-      assert(resolver.isLateBound(Node.get.parseTreeOf(node) as Declaration)); // Should only be called with dynamic names
+      assert(resolver.isLateBound(Node.get.parseTreeOf(node) as Declaration)); 
       const decl = (node as NamedDeclaration) as LateBoundDeclaration;
       const entityName = decl.name.expression;
       checkEntityNameVisibility(entityName, enclosingDeclaration);
@@ -1458,7 +1458,7 @@ namespace core {
     }
 
     function ensureModifierFlags(node: Node): ModifierFlags {
-      let mask = ModifierFlags.All ^ (ModifierFlags.Public | ModifierFlags.Async); // No async modifiers in declaration files
+      let mask = ModifierFlags.All ^ (ModifierFlags.Public | ModifierFlags.Async); 
       let additions = needsDeclare && !isAlwaysType(node) ? ModifierFlags.Ambient : ModifierFlags.None;
       const parentIsFile = node.parent.kind === Syntax.SourceFile;
       if (!parentIsFile || (isBundledEmit && parentIsFile && qp_isExternalModule(node.parent as SourceFile))) {
@@ -1472,12 +1472,12 @@ namespace core {
       let accessorType = getTypeAnnotationFromAccessor(node);
       if (!accessorType && node !== accessors.firstAccessor) {
         accessorType = getTypeAnnotationFromAccessor(accessors.firstAccessor);
-        // If we end up pulling the type from the second accessor, we also need to change the diagnostic context to get the expected error message
+        
         getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(accessors.firstAccessor);
       }
       if (!accessorType && accessors.secondAccessor && node !== accessors.secondAccessor) {
         accessorType = getTypeAnnotationFromAccessor(accessors.secondAccessor);
-        // If we end up pulling the type from the second accessor, we also need to change the diagnostic context to get the expected error message
+        
         getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(accessors.secondAccessor);
       }
       return accessorType;
@@ -1512,7 +1512,7 @@ namespace core {
     return false;
   }
 
-  // Elide "public" modifier, as it is the default
+  
   function maskModifiers(node: Node, modifierMask?: ModifierFlags, modifierAdditions?: ModifierFlags): Modifier[] {
     return createModifiersFromModifierFlags(maskModifierFlags(node, modifierMask, modifierAdditions));
   }
@@ -1520,12 +1520,12 @@ namespace core {
   function maskModifierFlags(node: Node, modifierMask: ModifierFlags = ModifierFlags.All ^ ModifierFlags.Public, modifierAdditions: ModifierFlags = ModifierFlags.None): ModifierFlags {
     let flags = (getEffectiveModifierFlags(node) & modifierMask) | modifierAdditions;
     if (flags & ModifierFlags.Default && !(flags & ModifierFlags.Export)) {
-      // A non-exported default is a nonsequitor - we usually try to remove all export modifiers
-      // from statements in ambient declarations; but a default export must retain its export modifier to be syntactically valid
+      
+      
       flags ^= ModifierFlags.Export;
     }
     if (flags & ModifierFlags.Default && flags & ModifierFlags.Ambient) {
-      flags ^= ModifierFlags.Ambient; // `declare` is never required alongside `default` (and would be an error if printed)
+      flags ^= ModifierFlags.Ambient; 
     }
     return flags;
   }
@@ -1533,9 +1533,9 @@ namespace core {
   function getTypeAnnotationFromAccessor(accessor: AccessorDeclaration): TypeNode | undefined {
     if (accessor) {
       return accessor.kind === Syntax.GetAccessor
-        ? accessor.type // Getter - return type
+        ? accessor.type 
         : accessor.parameters.length > 0
-        ? accessor.parameters[0].type // Setter parameter type
+        ? accessor.parameters[0].type 
         : undefined;
     }
   }

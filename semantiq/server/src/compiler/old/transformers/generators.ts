@@ -57,11 +57,11 @@
 // compilation output looks something like the following:
 //
 //  function f() {
-//      var /*locals*/;
-//      /*functions*/
+//      var ;
+//
 //      return __generator(function (state) {
 //          switch (state.label) {
-//              /*cases per label*/
+//
 //          }
 //      });
 //  }
@@ -72,17 +72,17 @@
 // -------------------------------|----------------------------------------------
 //  .mark LABEL                   | case LABEL:
 // -------------------------------|----------------------------------------------
-//  .br LABEL                     |     return [3 /*break*/, LABEL];
+//  .br LABEL                     |     return [3 , LABEL];
 // -------------------------------|----------------------------------------------
-//  .brtrue LABEL, (x)            |     if (x) return [3 /*break*/, LABEL];
+//  .brtrue LABEL, (x)            |     if (x) return [3 , LABEL];
 // -------------------------------|----------------------------------------------
-//  .brfalse LABEL, (x)           |     if (!(x)) return [3, /*break*/, LABEL];
+//  .brfalse LABEL, (x)           |     if (!(x)) return [3, , LABEL];
 // -------------------------------|----------------------------------------------
-//  .yield (x)                    |     return [4 /*yield*/, x];
+//  .yield (x)                    |     return [4 , x];
 //  .mark RESUME                  | case RESUME:
 //      a = %sent%;               |     a = state.sent();
 // -------------------------------|----------------------------------------------
-//  .yieldstar (x)                |     return [5 /*yield**/, x];
+//  .yieldstar (x)                |     return [5 , x];
 //  .mark RESUME                  | case RESUME:
 //      a = %sent%;               |     a = state.sent();
 // -------------------------------|----------------------------------------------
@@ -104,16 +104,16 @@
 //                                |     state.trys.push([TRY, CATCH, FINALLY, END]);
 //  .nop                          |
 //      a();                      |     a();
-//  .br END                       |     return [3 /*break*/, END];
+//  .br END                       |     return [3 , END];
 //  .catch (e)                    |
 //  .mark CATCH                   | case CATCH:
 //                                |     e = state.sent();
 //      b();                      |     b();
-//  .br END                       |     return [3 /*break*/, END];
+//  .br END                       |     return [3 , END];
 //  .finally                      |
 //  .mark FINALLY                 | case FINALLY:
 //      c();                      |     c();
-//  .endfinally                   |     return [7 /*endfinally*/];
+//  .endfinally                   |     return [7 ];
 //  .endtry                       |
 //  .mark END                     | case END:
 
@@ -302,11 +302,6 @@ namespace core {
       return visited;
     }
 
-    /**
-     * Visits a node.
-     *
-     * @param node The node to visit.
-     */
     function visitor(node: Node): VisitResult<Node> {
       const transformFlags = node.transformFlags;
       if (inStatementContainingYield) {
@@ -322,11 +317,6 @@ namespace core {
       }
     }
 
-    /**
-     * Visits a node that is contained within a statement that contains yield.
-     *
-     * @param node The node to visit.
-     */
     function visitJavaScriptInStatementContainingYield(node: Node): VisitResult<Node> {
       switch (node.kind) {
         case Syntax.DoStatement:
@@ -342,11 +332,6 @@ namespace core {
       }
     }
 
-    /**
-     * Visits a node that is contained within a generator function.
-     *
-     * @param node The node to visit.
-     */
     function visitJavaScriptInGeneratorFunctionBody(node: Node): VisitResult<Node> {
       switch (node.kind) {
         case Syntax.FunctionDeclaration:
@@ -379,11 +364,6 @@ namespace core {
       }
     }
 
-    /**
-     * Visits a node that contains a YieldExpression.
-     *
-     * @param node The node to visit.
-     */
     function visitJavaScriptContainingYield(node: Node): VisitResult<Node> {
       switch (node.kind) {
         case Syntax.BinaryExpression:
@@ -407,11 +387,6 @@ namespace core {
       }
     }
 
-    /**
-     * Visits a generator function.
-     *
-     * @param node The node to visit.
-     */
     function visitGenerator(node: Node): VisitResult<Node> {
       switch (node.kind) {
         case Syntax.FunctionDeclaration:
@@ -425,15 +400,6 @@ namespace core {
       }
     }
 
-    /**
-     * Visits a function declaration.
-     *
-     * This will be called when one of the following conditions are met:
-     * - The function declaration is a generator function.
-     * - The function declaration is contained within the body of a generator function.
-     *
-     * @param node The node to visit.
-     */
     function visitFunctionDeclaration(node: FunctionDeclaration): Statement | undefined {
       // Currently, we only support generators that were originally async functions.
       if (node.asteriskToken) {
@@ -442,14 +408,14 @@ namespace core {
             createFunctionDeclaration(
               undefined,
               node.modifiers,
-              /*asteriskToken*/ undefined,
+              undefined,
               node.name,
-              /*typeParameters*/ undefined,
+              undefined,
               visitParameterList(node.parameters, visitor, context),
               undefined,
               transformGeneratorFunctionBody(node.body!)
             ),
-            /*location*/ node
+            node
           ),
           node
         );
@@ -473,30 +439,13 @@ namespace core {
       }
     }
 
-    /**
-     * Visits a function expression.
-     *
-     * This will be called when one of the following conditions are met:
-     * - The function expression is a generator function.
-     * - The function expression is contained within the body of a generator function.
-     *
-     * @param node The node to visit.
-     */
     function visitFunctionExpression(node: FunctionExpression): Expression {
       // Currently, we only support generators that were originally async functions.
       if (node.asteriskToken) {
         node = setOriginalNode(
           setRange(
-            createFunctionExpression(
-              /*modifiers*/ undefined,
-              /*asteriskToken*/ undefined,
-              node.name,
-              /*typeParameters*/ undefined,
-              visitParameterList(node.parameters, visitor, context),
-              undefined,
-              transformGeneratorFunctionBody(node.body)
-            ),
-            /*location*/ node
+            createFunctionExpression(undefined, undefined, node.name, undefined, visitParameterList(node.parameters, visitor, context), undefined, transformGeneratorFunctionBody(node.body)),
+            node
           ),
           node
         );
@@ -513,14 +462,6 @@ namespace core {
       return node;
     }
 
-    /**
-     * Visits a get or set accessor declaration.
-     *
-     * This will be called when one of the following conditions are met:
-     * - The accessor is contained within the body of a generator function.
-     *
-     * @param node The node to visit.
-     */
     function visitAccessorDeclaration(node: AccessorDeclaration) {
       const savedInGeneratorFunctionBody = inGeneratorFunctionBody;
       const savedInStatementContainingYield = inStatementContainingYield;
@@ -532,11 +473,6 @@ namespace core {
       return node;
     }
 
-    /**
-     * Transforms the body of a generator function declaration.
-     *
-     * @param node The function body to transform.
-     */
     function transformGeneratorFunctionBody(body: Block) {
       // Save existing generator state
       const statements: Statement[] = [];
@@ -567,12 +503,12 @@ namespace core {
       operations = undefined;
       operationArguments = undefined;
       operationLocations = undefined;
-      state = createTempVariable(/*recordTempVariable*/ undefined);
+      state = createTempVariable(undefined);
 
       // Build the generator
       resumeLexicalEnvironment();
 
-      const statementOffset = addPrologue(statements, body.statements, /*ensureUseStrict*/ false, visitor);
+      const statementOffset = addPrologue(statements, body.statements, false, visitor);
 
       transformAndEmitStatements(body.statements, statementOffset);
 
@@ -598,14 +534,6 @@ namespace core {
       return setRange(new Block(statements, body.multiLine), body);
     }
 
-    /**
-     * Visits a variable statement.
-     *
-     * This will be called when one of the following conditions are met:
-     * - The variable statement is contained within the body of a generator function.
-     *
-     * @param node The node to visit.
-     */
     function visitVariableStatement(node: VariableStatement): Statement | undefined {
       if (node.transformFlags & TransformFlags.ContainsYield) {
         transformAndEmitVariableDeclarationList(node.declarationList);
@@ -629,14 +557,6 @@ namespace core {
       }
     }
 
-    /**
-     * Visits a binary expression.
-     *
-     * This will be called when one of the following conditions are met:
-     * - The node contains a YieldExpression.
-     *
-     * @param node The node to visit.
-     */
     function visitBinaryExpression(node: BinaryExpression): Expression {
       const assoc = getExpressionAssociativity(node);
       switch (assoc) {
@@ -649,11 +569,6 @@ namespace core {
       }
     }
 
-    /**
-     * Visits a right-associative binary expression containing `yield`.
-     *
-     * @param node The node to visit.
-     */
     function visitRightAssociativeBinaryExpression(node: BinaryExpression) {
       const { left, right } = node;
       if (containsYield(right)) {
@@ -741,11 +656,6 @@ namespace core {
       return visitEachChild(node, visitor, context);
     }
 
-    /**
-     * Visits a logical binary expression containing `yield`.
-     *
-     * @param node A node to visit.
-     */
     function visitLogicalBinaryExpression(node: BinaryExpression) {
       // Logical binary expressions (`&&` and `||`) are shortcutting expressions and need
       // to be transformed as such:
@@ -779,16 +689,16 @@ namespace core {
       const resultLabel = defineLabel();
       const resultLocal = declareLocal();
 
-      emitAssignment(resultLocal, visitNode(node.left, visitor, isExpression), /*location*/ node.left);
+      emitAssignment(resultLocal, visitNode(node.left, visitor, isExpression), node.left);
       if (node.operatorToken.kind === Syntax.Ampersand2Token) {
         // Logical `&&` shortcuts when the left-hand operand is falsey.
-        emitBreakWhenFalse(resultLabel, resultLocal, /*location*/ node.left);
+        emitBreakWhenFalse(resultLabel, resultLocal, node.left);
       } else {
         // Logical `||` shortcuts when the left-hand operand is truthy.
-        emitBreakWhenTrue(resultLabel, resultLocal, /*location*/ node.left);
+        emitBreakWhenTrue(resultLabel, resultLocal, node.left);
       }
 
-      emitAssignment(resultLocal, visitNode(node.right, visitor, isExpression), /*location*/ node.right);
+      emitAssignment(resultLocal, visitNode(node.right, visitor, isExpression), node.right);
       markLabel(resultLabel);
       return resultLocal;
     }
@@ -845,11 +755,11 @@ namespace core {
         const whenFalseLabel = defineLabel();
         const resultLabel = defineLabel();
         const resultLocal = declareLocal();
-        emitBreakWhenFalse(whenFalseLabel, visitNode(node.condition, visitor, isExpression), /*location*/ node.condition);
-        emitAssignment(resultLocal, visitNode(node.whenTrue, visitor, isExpression), /*location*/ node.whenTrue);
+        emitBreakWhenFalse(whenFalseLabel, visitNode(node.condition, visitor, isExpression), node.condition);
+        emitAssignment(resultLocal, visitNode(node.whenTrue, visitor, isExpression), node.whenTrue);
         emitBreak(resultLabel);
         markLabel(whenFalseLabel);
-        emitAssignment(resultLocal, visitNode(node.whenFalse, visitor, isExpression), /*location*/ node.whenFalse);
+        emitAssignment(resultLocal, visitNode(node.whenFalse, visitor, isExpression), node.whenFalse);
         markLabel(resultLabel);
         return resultLocal;
       }
@@ -857,11 +767,6 @@ namespace core {
       return visitEachChild(node, visitor, context);
     }
 
-    /**
-     * Visits a `yield` expression.
-     *
-     * @param node The node to visit.
-     */
     function visitYieldExpression(node: YieldExpression): LeftHandSideExpression {
       // [source]
       //      x = yield a();
@@ -874,32 +779,20 @@ namespace core {
       const resumeLabel = defineLabel();
       const expression = visitNode(node.expression, visitor, isExpression);
       if (node.asteriskToken) {
-        const iterator = (Node.get.emitFlags(node.expression!) & EmitFlags.Iterator) === 0 ? createValuesHelper(context, expression, /*location*/ node) : expression;
-        emitYieldStar(iterator, /*location*/ node);
+        const iterator = (Node.get.emitFlags(node.expression!) & EmitFlags.Iterator) === 0 ? createValuesHelper(context, expression, node) : expression;
+        emitYieldStar(iterator, node);
       } else {
-        emitYield(expression, /*location*/ node);
+        emitYield(expression, node);
       }
 
       markLabel(resumeLabel);
-      return createGeneratorResume(/*location*/ node);
+      return createGeneratorResume(node);
     }
 
-    /**
-     * Visits an ArrayLiteralExpression that contains a YieldExpression.
-     *
-     * @param node The node to visit.
-     */
     function visitArrayLiteralExpression(node: ArrayLiteralExpression) {
-      return visitElements(node.elements, /*leadingElement*/ undefined, /*location*/ undefined, node.multiLine);
+      return visitElements(node.elements, undefined, node.multiLine);
     }
 
-    /**
-     * Visits an array of expressions containing one or more YieldExpression nodes
-     * and returns an expression for the resulting value.
-     *
-     * @param elements The elements to visit.
-     * @param multiLine Whether array literals created should be emitted on multiple lines.
-     */
     function visitElements(elements: Nodes<Expression>, leadingElement?: Expression, location?: TextRange, multiLine?: boolean) {
       // [source]
       //      ar = [1, yield, 2];
@@ -996,11 +889,6 @@ namespace core {
       }
     }
 
-    /**
-     * Visits an ElementAccessExpression that contains a YieldExpression.
-     *
-     * @param node The node to visit.
-     */
     function visitElementAccessExpression(node: ElementAccessExpression) {
       if (containsYield(node.argumentExpression)) {
         // [source]
@@ -1034,8 +922,8 @@ namespace core {
         //  .yield resumeLabel
         //  .mark resumeLabel
         //      _b.apply(_a, _c.concat([%sent%, 2]));
-        const { target, thisArg } = createCallBinding(node.expression, hoistVariableDeclaration, languageVersion, /*cacheIdentifiers*/ true);
-        return setOriginalNode(createFunctionApply(cacheExpression(visitNode(target, visitor, isLeftHandSideExpression)), thisArg, visitElements(node.arguments), /*location*/ node), node);
+        const { target, thisArg } = createCallBinding(node.expression, hoistVariableDeclaration, languageVersion, true);
+        return setOriginalNode(createFunctionApply(cacheExpression(visitNode(target, visitor, isLeftHandSideExpression)), thisArg, visitElements(node.arguments), node), node);
       }
 
       return visitEachChild(node, visitor, context);
@@ -1056,14 +944,7 @@ namespace core {
 
         const { target, thisArg } = createCallBinding(createPropertyAccess(node.expression, 'bind'), hoistVariableDeclaration);
         return setOriginalNode(
-          setRange(
-            createNew(
-              createFunctionApply(cacheExpression(visitNode(target, visitor, isExpression)), thisArg, visitElements(node.arguments!, /*leadingElement*/ qs.VoidExpression.zero())),
-              /*typeArguments*/ undefined,
-              []
-            ),
-            node
-          ),
+          setRange(createNew(createFunctionApply(cacheExpression(visitNode(target, visitor, isExpression)), thisArg, visitElements(node.arguments!, qs.VoidExpression.zero())), undefined, []), node),
           node
         );
       }
@@ -1183,22 +1064,22 @@ namespace core {
       if (containsYield(node)) {
         // [source]
         //      if (x)
-        //          /*thenStatement*/
+        //
         //      else
-        //          /*elseStatement*/
+        //
         //
         // [intermediate]
         //  .brfalse elseLabel, (x)
-        //      /*thenStatement*/
+        //
         //  .br endLabel
         //  .mark elseLabel
-        //      /*elseStatement*/
+        //
         //  .mark endLabel
 
         if (containsYield(node.thenStatement) || containsYield(node.elseStatement)) {
           const endLabel = defineLabel();
           const elseLabel = node.elseStatement ? defineLabel() : undefined;
-          emitBreakWhenFalse(node.elseStatement ? elseLabel! : endLabel, visitNode(node.expression, visitor, isExpression), /*location*/ node.expression);
+          emitBreakWhenFalse(node.elseStatement ? elseLabel! : endLabel, visitNode(node.expression, visitor, isExpression), node.expression);
           transformAndEmitEmbeddedStatement(node.thenStatement);
           if (node.elseStatement) {
             emitBreak(endLabel);
@@ -1218,14 +1099,14 @@ namespace core {
       if (containsYield(node)) {
         // [source]
         //      do {
-        //          /*body*/
+        //
         //      }
         //      while (i < 10);
         //
         // [intermediate]
         //  .loop conditionLabel, endLabel
         //  .mark loopLabel
-        //      /*body*/
+        //
         //  .mark conditionLabel
         //  .brtrue loopLabel, (i < 10)
         //  .endloop
@@ -1233,7 +1114,7 @@ namespace core {
 
         const conditionLabel = defineLabel();
         const loopLabel = defineLabel();
-        beginLoopBlock(/*continueLabel*/ conditionLabel);
+        beginLoopBlock(conditionLabel);
         markLabel(loopLabel);
         transformAndEmitEmbeddedStatement(node.statement);
         markLabel(conditionLabel);
@@ -1259,14 +1140,14 @@ namespace core {
       if (containsYield(node)) {
         // [source]
         //      while (i < 10) {
-        //          /*body*/
+        //
         //      }
         //
         // [intermediate]
         //  .loop loopLabel, endLabel
         //  .mark loopLabel
         //  .brfalse endLabel, (i < 10)
-        //      /*body*/
+        //
         //  .br loopLabel
         //  .endloop
         //  .mark endLabel
@@ -1298,7 +1179,7 @@ namespace core {
       if (containsYield(node)) {
         // [source]
         //      for (var i = 0; i < 10; i++) {
-        //          /*body*/
+        //
         //      }
         //
         // [intermediate]
@@ -1307,7 +1188,7 @@ namespace core {
         //  .loop incrementLabel, endLoopLabel
         //  .mark conditionLabel
         //  .brfalse endLoopLabel, (i < 10)
-        //      /*body*/
+        //
         //  .mark incrementLabel
         //      i++;
         //  .br conditionLabel
@@ -1379,7 +1260,7 @@ namespace core {
       if (containsYield(node)) {
         // [source]
         //      for (var p in o) {
-        //          /*body*/
+        //
         //      }
         //
         // [intermediate]
@@ -1391,7 +1272,7 @@ namespace core {
         //  .mark conditionLabel
         //  .brfalse endLoopLabel, (_i < _a.length)
         //      p = _a[_i];
-        //      /*body*/
+        //
         //  .mark incrementLabel
         //      _b++;
         //  .br conditionLabel
@@ -1405,13 +1286,7 @@ namespace core {
         hoistVariableDeclaration(keysIndex);
         emitAssignment(keysArray, new ArrayLiteralExpression());
 
-        emitStatement(
-          createForIn(
-            key,
-            visitNode(node.expression, visitor, isExpression),
-            createExpressionStatement(new qs.CallExpression(createPropertyAccess(keysArray, 'push'), /*typeArguments*/ undefined, [key]))
-          )
-        );
+        emitStatement(createForIn(key, visitNode(node.expression, visitor, isExpression), createExpressionStatement(new qs.CallExpression(createPropertyAccess(keysArray, 'push'), undefined, [key]))));
 
         emitAssignment(keysIndex, createLiteral(0));
 
@@ -1450,14 +1325,14 @@ namespace core {
     function visitForInStatement(node: ForInStatement) {
       // [source]
       //      for (var x in a) {
-      //          /*body*/
+      //
       //      }
       //
       // [intermediate]
       //  .local x
       //  .loop
       //      for (x in a) {
-      //          /*body*/
+      //
       //      }
       //  .endloop
 
@@ -1486,7 +1361,7 @@ namespace core {
     function transformAndEmitContinueStatement(node: ContinueStatement): void {
       const label = findContinueTarget(node.label ? idText(node.label) : undefined);
       if (label > 0) {
-        emitBreak(label, /*location*/ node);
+        emitBreak(label, node);
       } else {
         // invalid continue without a containing loop. Leave the node as is, per #17875.
         emitStatement(node);
@@ -1497,7 +1372,7 @@ namespace core {
       if (inStatementContainingYield) {
         const label = findContinueTarget(node.label && idText(node.label));
         if (label > 0) {
-          return createInlineBreak(label, /*location*/ node);
+          return createInlineBreak(label, node);
         }
       }
 
@@ -1507,7 +1382,7 @@ namespace core {
     function transformAndEmitBreakStatement(node: BreakStatement): void {
       const label = findBreakTarget(node.label ? idText(node.label) : undefined);
       if (label > 0) {
-        emitBreak(label, /*location*/ node);
+        emitBreak(label, node);
       } else {
         // invalid break without a containing loop, switch, or labeled statement. Leave the node as is, per #17875.
         emitStatement(node);
@@ -1518,7 +1393,7 @@ namespace core {
       if (inStatementContainingYield) {
         const label = findBreakTarget(node.label && idText(node.label));
         if (label > 0) {
-          return createInlineBreak(label, /*location*/ node);
+          return createInlineBreak(label, node);
         }
       }
 
@@ -1526,23 +1401,23 @@ namespace core {
     }
 
     function transformAndEmitReturnStatement(node: ReturnStatement): void {
-      emitReturn(visitNode(node.expression, visitor, isExpression), /*location*/ node);
+      emitReturn(visitNode(node.expression, visitor, isExpression), node);
     }
 
     function visitReturnStatement(node: ReturnStatement) {
-      return createInlineReturn(visitNode(node.expression, visitor, isExpression), /*location*/ node);
+      return createInlineReturn(visitNode(node.expression, visitor, isExpression), node);
     }
 
     function transformAndEmitWithStatement(node: WithStatement) {
       if (containsYield(node)) {
         // [source]
         //      with (x) {
-        //          /*body*/
+        //
         //      }
         //
         // [intermediate]
         //  .with (x)
-        //      /*body*/
+        //
         //  .endwith
         beginWithBlock(cacheExpression(visitNode(node.expression, visitor, isExpression)));
         transformAndEmitEmbeddedStatement(node.statement);
@@ -1557,11 +1432,11 @@ namespace core {
         // [source]
         //      switch (x) {
         //          case a:
-        //              /*caseStatements*/
+        //
         //          case b:
-        //              /*caseStatements*/
+        //
         //          default:
-        //              /*defaultStatements*/
+        //
         //      }
         //
         // [intermediate]
@@ -1578,11 +1453,11 @@ namespace core {
         //      }
         //  .br clauseLabels[2]
         //  .mark clauseLabels[0]
-        //      /*caseStatements*/
+        //
         //  .mark clauseLabels[1]
-        //      /*caseStatements*/
+        //
         //  .mark clauseLabels[2]
-        //      /*caseStatements*/
+        //
         //  .endswitch
         //  .mark endLabel
 
@@ -1617,7 +1492,7 @@ namespace core {
                 break;
               }
 
-              pendingClauses.push(createCaseClause(visitNode(clause.expression, visitor, isExpression), [createInlineBreak(clauseLabels[i], /*location*/ clause.expression)]));
+              pendingClauses.push(createCaseClause(visitNode(clause.expression, visitor, isExpression), [createInlineBreak(clauseLabels[i], clause.expression)]));
             } else {
               defaultClausesSkipped++;
             }
@@ -1669,12 +1544,12 @@ namespace core {
       if (containsYield(node)) {
         // [source]
         //      x: {
-        //          /*body*/
+        //
         //      }
         //
         // [intermediate]
         //  .labeled "x", endLabel
-        //      /*body*/
+        //
         //  .endlabeled
         //  .mark endLabel
         beginLabeledBlock(idText(node.label));
@@ -1700,20 +1575,20 @@ namespace core {
     }
 
     function transformAndEmitThrowStatement(node: ThrowStatement): void {
-      emitThrow(visitNode(node.expression, visitor, isExpression), /*location*/ node);
+      emitThrow(visitNode(node.expression, visitor, isExpression), node);
     }
 
     function transformAndEmitTryStatement(node: TryStatement) {
       if (containsYield(node)) {
         // [source]
         //      try {
-        //          /*tryBlock*/
+        //
         //      }
         //      catch (e) {
-        //          /*catchBlock*/
+        //
         //      }
         //      finally {
-        //          /*finallyBlock*/
+        //
         //      }
         //
         // [intermediate]
@@ -1721,16 +1596,16 @@ namespace core {
         //  .try tryLabel, catchLabel, finallyLabel, endLabel
         //  .mark tryLabel
         //  .nop
-        //      /*tryBlock*/
+        //
         //  .br endLabel
         //  .catch
         //  .mark catchLabel
         //      _a = %error%;
-        //      /*catchBlock*/
+        //
         //  .br endLabel
         //  .finally
         //  .mark finallyLabel
-        //      /*finallyBlock*/
+        //
         //  .endfinally
         //  .endtry
         //  .mark endLabel
@@ -1809,19 +1684,16 @@ namespace core {
       }
 
       const temp = createTempVariable(hoistVariableDeclaration);
-      emitAssignment(temp, node, /*location*/ node);
+      emitAssignment(temp, node, node);
       return temp;
     }
 
     function declareLocal(name?: string): Identifier {
-      const temp = name ? createUniqueName(name) : createTempVariable(/*recordTempVariable*/ undefined);
+      const temp = name ? createUniqueName(name) : createTempVariable(undefined);
       hoistVariableDeclaration(temp);
       return temp;
     }
 
-    /**
-     * Defines a label, uses as the target of a Break operation.
-     */
     function defineLabel(): Label {
       if (!labelOffsets) {
         labelOffsets = [];
@@ -1833,19 +1705,11 @@ namespace core {
       return label;
     }
 
-    /**
-     * Marks the current operation with the specified label.
-     */
     function markLabel(label: Label): void {
       assert(labelOffsets !== undefined, 'No labels were defined.');
       labelOffsets[label] = operations ? operations.length : 0;
     }
 
-    /**
-     * Begins a block operation (With, Break/Continue, Try/Catch/Finally)
-     *
-     * @param block Information about the block.
-     */
     function beginBlock(block: CodeBlock): number {
       if (!blocks) {
         blocks = [];
@@ -1862,9 +1726,6 @@ namespace core {
       return index;
     }
 
-    /**
-     * Ends the current block operation.
-     */
     function endBlock(): CodeBlock {
       const block = peekBlock();
       if (block === undefined) return fail('beginBlock was never called.');
@@ -1877,26 +1738,15 @@ namespace core {
       return block;
     }
 
-    /**
-     * Gets the current open block.
-     */
     function peekBlock() {
       return lastOrUndefined(blockStack!);
     }
 
-    /**
-     * Gets the kind of the current open block.
-     */
     function peekBlockKind(): CodeBlockKind | undefined {
       const block = peekBlock();
       return block && block.kind;
     }
 
-    /**
-     * Begins a code block for a generated `with` statement.
-     *
-     * @param expression An identifier representing expression for the `with` block.
-     */
     function beginWithBlock(expression: Identifier): void {
       const startLabel = defineLabel();
       const endLabel = defineLabel();
@@ -1909,18 +1759,12 @@ namespace core {
       });
     }
 
-    /**
-     * Ends a code block for a generated `with` statement.
-     */
     function endWithBlock(): void {
       assert(peekBlockKind() === CodeBlockKind.With);
       const block = <WithBlock>endBlock();
       markLabel(block.endLabel);
     }
 
-    /**
-     * Begins a code block for a generated `try` statement.
-     */
     function beginExceptionBlock(): Label {
       const startLabel = defineLabel();
       const endLabel = defineLabel();
@@ -1935,11 +1779,6 @@ namespace core {
       return endLabel;
     }
 
-    /**
-     * Enters the `catch` clause of a generated `try` statement.
-     *
-     * @param variable The catch variable.
-     */
     function beginCatchBlock(variable: VariableDeclaration): void {
       assert(peekBlockKind() === CodeBlockKind.Exception);
 
@@ -1973,13 +1812,10 @@ namespace core {
       exception.catchVariable = name;
       exception.catchLabel = catchLabel;
 
-      emitAssignment(name, new qs.CallExpression(createPropertyAccess(state, 'sent'), /*typeArguments*/ undefined, []));
+      emitAssignment(name, new qs.CallExpression(createPropertyAccess(state, 'sent'), undefined, []));
       emitNop();
     }
 
-    /**
-     * Enters the `finally` block of a generated `try` statement.
-     */
     function beginFinallyBlock(): void {
       assert(peekBlockKind() === CodeBlockKind.Exception);
 
@@ -1995,9 +1831,6 @@ namespace core {
       exception.finallyLabel = finallyLabel;
     }
 
-    /**
-     * Ends the code block for a generated `try` statement.
-     */
     function endExceptionBlock(): void {
       assert(peekBlockKind() === CodeBlockKind.Exception);
       const exception = <ExceptionBlock>endBlock();
@@ -2013,12 +1846,6 @@ namespace core {
       exception.state = ExceptionBlockState.Done;
     }
 
-    /**
-     * Begins a code block that supports `break` or `continue` statements that are defined in
-     * the source tree and not from generated code.
-     *
-     * @param labelText Names from containing labeled statements.
-     */
     function beginScriptLoopBlock(): void {
       beginBlock({
         kind: CodeBlockKind.Loop,
@@ -2028,14 +1855,6 @@ namespace core {
       });
     }
 
-    /**
-     * Begins a code block that supports `break` or `continue` statements that are defined in
-     * generated code. Returns a label used to mark the operation to which to jump when a
-     * `break` statement targets this block.
-     *
-     * @param continueLabel A Label used to mark the operation to which to jump when a
-     *                      `continue` statement targets this block.
-     */
     function beginLoopBlock(continueLabel: Label): Label {
       const breakLabel = defineLabel();
       beginBlock({
@@ -2047,10 +1866,6 @@ namespace core {
       return breakLabel;
     }
 
-    /**
-     * Ends a code block that supports `break` or `continue` statements that are defined in
-     * generated code or in the source tree.
-     */
     function endLoopBlock(): void {
       assert(peekBlockKind() === CodeBlockKind.Loop);
       const block = <SwitchBlock>endBlock();
@@ -2060,11 +1875,6 @@ namespace core {
       }
     }
 
-    /**
-     * Begins a code block that supports `break` statements that are defined in the source
-     * tree and not from generated code.
-     *
-     */
     function beginScriptSwitchBlock(): void {
       beginBlock({
         kind: CodeBlockKind.Switch,
@@ -2073,11 +1883,6 @@ namespace core {
       });
     }
 
-    /**
-     * Begins a code block that supports `break` statements that are defined in generated code.
-     * Returns a label used to mark the operation to which to jump when a `break` statement
-     * targets this block.
-     */
     function beginSwitchBlock(): Label {
       const breakLabel = defineLabel();
       beginBlock({
@@ -2088,9 +1893,6 @@ namespace core {
       return breakLabel;
     }
 
-    /**
-     * Ends a code block that supports `break` statements that are defined in generated code.
-     */
     function endSwitchBlock(): void {
       assert(peekBlockKind() === CodeBlockKind.Switch);
       const block = <SwitchBlock>endBlock();
@@ -2127,29 +1929,14 @@ namespace core {
       }
     }
 
-    /**
-     * Indicates whether the provided block supports `break` statements.
-     *
-     * @param block A code block.
-     */
     function supportsUnlabeledBreak(block: CodeBlock): block is SwitchBlock | LoopBlock {
       return block.kind === CodeBlockKind.Switch || block.kind === CodeBlockKind.Loop;
     }
 
-    /**
-     * Indicates whether the provided block supports `break` statements with labels.
-     *
-     * @param block A code block.
-     */
     function supportsLabeledBreakOrContinue(block: CodeBlock): block is LabeledBlock {
       return block.kind === CodeBlockKind.Labeled;
     }
 
-    /**
-     * Indicates whether the provided block supports `continue` statements.
-     *
-     * @param block A code block.
-     */
     function supportsUnlabeledContinue(block: CodeBlock): block is LoopBlock {
       return block.kind === CodeBlockKind.Loop;
     }
@@ -2169,11 +1956,6 @@ namespace core {
       return false;
     }
 
-    /**
-     * Finds the label that is the target for a `break` statement.
-     *
-     * @param labelText An optional name of a containing labeled statement.
-     */
     function findBreakTarget(labelText?: string): Label {
       if (blockStack) {
         if (labelText) {
@@ -2197,11 +1979,6 @@ namespace core {
       return 0;
     }
 
-    /**
-     * Finds the label that is the target for a `continue` statement.
-     *
-     * @param labelText An optional name of a containing labeled statement.
-     */
     function findContinueTarget(labelText?: string): Label {
       if (blockStack) {
         if (labelText) {
@@ -2223,11 +2000,6 @@ namespace core {
       return 0;
     }
 
-    /**
-     * Creates an expression that can be used to indicate the value for a label.
-     *
-     * @param label A label.
-     */
     function createLabel(label: Label | undefined): Expression {
       if (label !== undefined && label > 0) {
         if (labelExpressions === undefined) {
@@ -2247,55 +2019,29 @@ namespace core {
       return createOmittedExpression();
     }
 
-    /**
-     * Creates a numeric literal for the provided instruction.
-     */
     function createInstruction(instruction: Instruction): NumericLiteral {
       const literal = createLiteral(instruction);
       addSyntheticTrailingComment(literal, Syntax.MultiLineCommentTrivia, getInstructionName(instruction));
       return literal;
     }
 
-    /**
-     * Creates a statement that can be used indicate a Break operation to the provided label.
-     *
-     * @param label A label.
-     * @param location An optional source map location for the statement.
-     */
     function createInlineBreak(label: Label, location?: TextRange): ReturnStatement {
       Debug.assertLessThan(0, label, 'Invalid label');
       return setRange(createReturn(new ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), location);
     }
 
-    /**
-     * Creates a statement that can be used indicate a Return operation.
-     *
-     * @param expression The expression for the return statement.
-     * @param location An optional source map location for the statement.
-     */
     function createInlineReturn(expression?: Expression, location?: TextRange): ReturnStatement {
       return setRange(createReturn(new ArrayLiteralExpression(expression ? [createInstruction(Instruction.Return), expression] : [createInstruction(Instruction.Return)])), location);
     }
 
-    /**
-     * Creates an expression that can be used to resume from a Yield operation.
-     */
     function createGeneratorResume(location?: TextRange): LeftHandSideExpression {
-      return setRange(new qs.CallExpression(createPropertyAccess(state, 'sent'), /*typeArguments*/ undefined, []), location);
+      return setRange(new qs.CallExpression(createPropertyAccess(state, 'sent'), undefined, []), location);
     }
 
-    /**
-     * Emits an empty instruction.
-     */
     function emitNop() {
       emitWorker(OpCode.Nop);
     }
 
-    /**
-     * Emits a Statement.
-     *
-     * @param node A statement.
-     */
     function emitStatement(node: Statement): void {
       if (node) {
         emitWorker(OpCode.Statement, [node]);
@@ -2304,104 +2050,42 @@ namespace core {
       }
     }
 
-    /**
-     * Emits an Assignment operation.
-     *
-     * @param left The left-hand side of the assignment.
-     * @param right The right-hand side of the assignment.
-     * @param location An optional source map location for the assignment.
-     */
     function emitAssignment(left: Expression, right: Expression, location?: TextRange): void {
       emitWorker(OpCode.Assign, [left, right], location);
     }
 
-    /**
-     * Emits a Break operation to the specified label.
-     *
-     * @param label A label.
-     * @param location An optional source map location for the assignment.
-     */
     function emitBreak(label: Label, location?: TextRange): void {
       emitWorker(OpCode.Break, [label], location);
     }
 
-    /**
-     * Emits a Break operation to the specified label when a condition evaluates to a truthy
-     * value at runtime.
-     *
-     * @param label A label.
-     * @param condition The condition.
-     * @param location An optional source map location for the assignment.
-     */
     function emitBreakWhenTrue(label: Label, condition: Expression, location?: TextRange): void {
       emitWorker(OpCode.BreakWhenTrue, [label, condition], location);
     }
 
-    /**
-     * Emits a Break to the specified label when a condition evaluates to a falsey value at
-     * runtime.
-     *
-     * @param label A label.
-     * @param condition The condition.
-     * @param location An optional source map location for the assignment.
-     */
     function emitBreakWhenFalse(label: Label, condition: Expression, location?: TextRange): void {
       emitWorker(OpCode.BreakWhenFalse, [label, condition], location);
     }
 
-    /**
-     * Emits a YieldStar operation for the provided expression.
-     *
-     * @param expression An optional value for the yield operation.
-     * @param location An optional source map location for the assignment.
-     */
     function emitYieldStar(expression?: Expression, location?: TextRange): void {
       emitWorker(OpCode.YieldStar, [expression], location);
     }
 
-    /**
-     * Emits a Yield operation for the provided expression.
-     *
-     * @param expression An optional value for the yield operation.
-     * @param location An optional source map location for the assignment.
-     */
     function emitYield(expression?: Expression, location?: TextRange): void {
       emitWorker(OpCode.Yield, [expression], location);
     }
 
-    /**
-     * Emits a Return operation for the provided expression.
-     *
-     * @param expression An optional value for the operation.
-     * @param location An optional source map location for the assignment.
-     */
     function emitReturn(expression?: Expression, location?: TextRange): void {
       emitWorker(OpCode.Return, [expression], location);
     }
 
-    /**
-     * Emits a Throw operation for the provided expression.
-     *
-     * @param expression A value for the operation.
-     * @param location An optional source map location for the assignment.
-     */
     function emitThrow(expression: Expression, location?: TextRange): void {
       emitWorker(OpCode.Throw, [expression], location);
     }
 
-    /**
-     * Emits an Endfinally operation. This is used to handle `finally` block semantics.
-     */
     function emitEndfinally(): void {
       emitWorker(OpCode.Endfinally);
     }
 
-    /**
-     * Emits an operation.
-     *
-     * @param code The OpCode for the operation.
-     * @param args The optional arguments for the operation.
-     */
     function emitWorker(code: OpCode, args?: OperationArguments, location?: TextRange): void {
       if (operations === undefined) {
         operations = [];
@@ -2420,9 +2104,6 @@ namespace core {
       operationLocations![operationIndex] = location;
     }
 
-    /**
-     * Builds the generator function body.
-     */
     function build() {
       blockIndex = 0;
       labelNumber = 0;
@@ -2439,23 +2120,12 @@ namespace core {
       return createGeneratorHelper(
         context,
         setEmitFlags(
-          createFunctionExpression(
-            /*modifiers*/ undefined,
-            /*asteriskToken*/ undefined,
-            /*name*/ undefined,
-            /*typeParameters*/ undefined,
-            [createParameter(undefined, /*modifiers*/ undefined, /*dot3Token*/ undefined, state)],
-            undefined,
-            new Block(buildResult, /*multiLine*/ buildResult.length > 0)
-          ),
+          createFunctionExpression(undefined, undefined, undefined, undefined, [createParameter(undefined, undefined, state)], undefined, new Block(buildResult, buildResult.length > 0)),
           EmitFlags.ReuseTempVariableScope
         )
       );
     }
 
-    /**
-     * Builds the statements for the generator function body.
-     */
     function buildStatements(): Statement[] {
       if (operations) {
         for (let operationIndex = 0; operationIndex < operations.length; operationIndex++) {
@@ -2480,42 +2150,32 @@ namespace core {
       return [];
     }
 
-    /**
-     * Flush the current label and advance to a new label.
-     */
     function flushLabel(): void {
       if (!statements) {
         return;
       }
 
-      appendLabel(/*markLabelEnd*/ !lastOperationWasAbrupt);
+      appendLabel(!lastOperationWasAbrupt);
 
       lastOperationWasAbrupt = false;
       lastOperationWasCompletion = false;
       labelNumber++;
     }
 
-    /**
-     * Flush the final label of the generator function body.
-     */
     function flushFinalLabel(operationIndex: number): void {
       if (isFinalLabelReachable(operationIndex)) {
         tryEnterLabel(operationIndex);
         withBlockStack = undefined;
-        writeReturn(/*expression*/ undefined, /*operationLocation*/ undefined);
+        writeReturn(undefined);
       }
 
       if (statements && clauses) {
-        appendLabel(/*markLabelEnd*/ false);
+        appendLabel(false);
       }
 
       updateLabelExpressions();
     }
 
-    /**
-     * Tests whether the final label of the generator function body
-     * is reachable by user code.
-     */
     function isFinalLabelReachable(operationIndex: number) {
       // if the last operation was *not* a completion (return/throw) then
       // the final label is reachable.
@@ -2540,13 +2200,6 @@ namespace core {
       return false;
     }
 
-    /**
-     * Appends a case clause for the last label and sets the new label.
-     *
-     * @param markLabelEnd Indicates that the transition between labels was a fall-through
-     *                     from a previous case clause and the change in labels should be
-     *                     reflected on the `state` object.
-     */
     function appendLabel(markLabelEnd: boolean): void {
       if (!clauses) {
         clauses = [];
@@ -2569,7 +2222,7 @@ namespace core {
           const { startLabel, catchLabel, finallyLabel, endLabel } = currentExceptionBlock;
           statements.unshift(
             createExpressionStatement(
-              new qs.CallExpression(createPropertyAccess(createPropertyAccess(state, 'trys'), 'push'), /*typeArguments*/ undefined, [
+              new qs.CallExpression(createPropertyAccess(createPropertyAccess(state, 'trys'), 'push'), undefined, [
                 new ArrayLiteralExpression([createLabel(startLabel), createLabel(catchLabel), createLabel(finallyLabel), createLabel(endLabel)]),
               ])
             )
@@ -2590,9 +2243,6 @@ namespace core {
       statements = undefined;
     }
 
-    /**
-     * Tries to enter into a new label at the current operation index.
-     */
     function tryEnterLabel(operationIndex: number): void {
       if (!labelOffsets) {
         return;
@@ -2613,9 +2263,6 @@ namespace core {
       }
     }
 
-    /**
-     * Updates literal expressions for labels with actual label numbers.
-     */
     function updateLabelExpressions() {
       if (labelExpressions !== undefined && labelNumbers !== undefined) {
         for (let labelNumber = 0; labelNumber < labelNumbers.length; labelNumber++) {
@@ -2634,9 +2281,6 @@ namespace core {
       }
     }
 
-    /**
-     * Tries to enter or leave a code block.
-     */
     function tryEnterOrLeaveBlock(operationIndex: number): void {
       if (blocks) {
         for (; blockIndex < blockActions!.length && blockOffsets![blockIndex] <= operationIndex; blockIndex++) {
@@ -2676,11 +2320,6 @@ namespace core {
       }
     }
 
-    /**
-     * Writes an operation as a statement to the current label's statement list.
-     *
-     * @param operation The OpCode of the operation
-     */
     function writeOperation(operationIndex: number): void {
       tryEnterLabel(operationIndex);
       tryEnterOrLeaveBlock(operationIndex);
@@ -2726,11 +2365,6 @@ namespace core {
       }
     }
 
-    /**
-     * Writes a statement to the current label's statement list.
-     *
-     * @param statement A statement to write.
-     */
     function writeStatement(statement: Statement): void {
       if (statement) {
         if (!statements) {
@@ -2741,35 +2375,16 @@ namespace core {
       }
     }
 
-    /**
-     * Writes an Assign operation to the current label's statement list.
-     *
-     * @param left The left-hand side of the assignment.
-     * @param right The right-hand side of the assignment.
-     * @param operationLocation The source map location for the operation.
-     */
     function writeAssign(left: Expression, right: Expression, operationLocation: TextRange | undefined): void {
       writeStatement(setRange(createExpressionStatement(createAssignment(left, right)), operationLocation));
     }
 
-    /**
-     * Writes a Throw operation to the current label's statement list.
-     *
-     * @param expression The value to throw.
-     * @param operationLocation The source map location for the operation.
-     */
     function writeThrow(expression: Expression, operationLocation: TextRange | undefined): void {
       lastOperationWasAbrupt = true;
       lastOperationWasCompletion = true;
       writeStatement(setRange(createThrow(expression), operationLocation));
     }
 
-    /**
-     * Writes a Return operation to the current label's statement list.
-     *
-     * @param expression The value to return.
-     * @param operationLocation The source map location for the operation.
-     */
     function writeReturn(expression: Expression | undefined, operationLocation: TextRange | undefined): void {
       lastOperationWasAbrupt = true;
       lastOperationWasCompletion = true;
@@ -2781,24 +2396,11 @@ namespace core {
       );
     }
 
-    /**
-     * Writes a Break operation to the current label's statement list.
-     *
-     * @param label The label for the Break.
-     * @param operationLocation The source map location for the operation.
-     */
     function writeBreak(label: Label, operationLocation: TextRange | undefined): void {
       lastOperationWasAbrupt = true;
       writeStatement(setEmitFlags(setRange(createReturn(new ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps));
     }
 
-    /**
-     * Writes a BreakWhenTrue operation to the current label's statement list.
-     *
-     * @param label The label for the Break.
-     * @param condition The condition for the Break.
-     * @param operationLocation The source map location for the operation.
-     */
     function writeBreakWhenTrue(label: Label, condition: Expression, operationLocation: TextRange | undefined): void {
       writeStatement(
         setEmitFlags(
@@ -2811,13 +2413,6 @@ namespace core {
       );
     }
 
-    /**
-     * Writes a BreakWhenFalse operation to the current label's statement list.
-     *
-     * @param label The label for the Break.
-     * @param condition The condition for the Break.
-     * @param operationLocation The source map location for the operation.
-     */
     function writeBreakWhenFalse(label: Label, condition: Expression, operationLocation: TextRange | undefined): void {
       writeStatement(
         setEmitFlags(
@@ -2830,12 +2425,6 @@ namespace core {
       );
     }
 
-    /**
-     * Writes a Yield operation to the current label's statement list.
-     *
-     * @param expression The expression to yield.
-     * @param operationLocation The source map location for the operation.
-     */
     function writeYield(expression: Expression, operationLocation: TextRange | undefined): void {
       lastOperationWasAbrupt = true;
       writeStatement(
@@ -2846,20 +2435,11 @@ namespace core {
       );
     }
 
-    /**
-     * Writes a YieldStar instruction to the current label's statement list.
-     *
-     * @param expression The expression to yield.
-     * @param operationLocation The source map location for the operation.
-     */
     function writeYieldStar(expression: Expression, operationLocation: TextRange | undefined): void {
       lastOperationWasAbrupt = true;
       writeStatement(setEmitFlags(setRange(createReturn(new ArrayLiteralExpression([createInstruction(Instruction.YieldStar), expression])), operationLocation), EmitFlags.NoTokenSourceMaps));
     }
 
-    /**
-     * Writes an Endfinally instruction to the current label's statement list.
-     */
     function writeEndfinally(): void {
       lastOperationWasAbrupt = true;
       writeStatement(createReturn(new ArrayLiteralExpression([createInstruction(Instruction.Endfinally)])));
@@ -2868,7 +2448,7 @@ namespace core {
 
   function createGeneratorHelper(context: TransformationContext, body: FunctionExpression) {
     context.requestEmitHelper(generatorHelper);
-    return new qs.CallExpression(getUnscopedHelperName('__generator'), /*typeArguments*/ undefined, [createThis(), body]);
+    return new qs.CallExpression(getUnscopedHelperName('__generator'), undefined, [createThis(), body]);
   }
 
   // The __generator helper is used by down-level transformations to emulate the runtime

@@ -143,7 +143,7 @@ namespace core {
             if (i === 0 && leftThisArg) {
               rightExpression = createFunctionCall(rightExpression, leftThisArg.kind === Syntax.SuperKeyword ? createThis() : leftThisArg, Nodes.visit(segment.arguments, visitor, isExpression));
             } else {
-              rightExpression = new qs.CallExpression(rightExpression, /*typeArguments*/ undefined, Nodes.visit(segment.arguments, visitor, isExpression));
+              rightExpression = new qs.CallExpression(rightExpression,  undefined, Nodes.visit(segment.arguments, visitor, isExpression));
             }
             break;
         }
@@ -151,8 +151,8 @@ namespace core {
       }
 
       const target = isDelete
-        ? createConditional(createNotNullCondition(leftExpression, capturedLeft, /*invert*/ true), createTrue(), new DeleteExpression(rightExpression))
-        : createConditional(createNotNullCondition(leftExpression, capturedLeft, /*invert*/ true), qs.VoidExpression.zero(), rightExpression);
+        ? createConditional(createNotNullCondition(leftExpression, capturedLeft,  true), createTrue(), new DeleteExpression(rightExpression))
+        : createConditional(createNotNullCondition(leftExpression, capturedLeft,  true), qs.VoidExpression.zero(), rightExpression);
       return thisArg ? new qs.SyntheticReferenceExpression(target, thisArg) : target;
     }
 

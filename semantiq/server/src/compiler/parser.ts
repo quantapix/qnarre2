@@ -20,31 +20,31 @@ const enum SignatureFlags {
   JSDoc = 1 << 5,
 }
 const enum Context {
-  SourceElements, // Elements in source file
-  BlockStatements, // Statements in block
-  SwitchClauses, // Clauses in switch statement
-  SwitchClauseStatements, // Statements in switch clause
-  TypeMembers, // Members in interface or type literal
-  ClassMembers, // Members in class declaration
-  EnumMembers, // Members in enum declaration
-  HeritageClauseElement, // Elements in a heritage clause
-  VariableDeclarations, // Variable declarations in variable statement
-  ObjectBindingElements, // Binding elements in object binding list
-  ArrayBindingElements, // Binding elements in array binding list
-  ArgumentExpressions, // Expressions in argument list
-  ObjectLiteralMembers, // Members in object literal
-  JsxAttributes, // Attributes in jsx element
-  JsxChildren, // Things between opening and closing JSX tags
-  ArrayLiteralMembers, // Members in array literal
-  Parameters, // Parameters in parameter list
-  JSDocParameters, // JSDoc parameters in parameter list of JSDoc function type
-  RestProperties, // Property names in a rest type list
-  TypeParameters, // Type parameters in type parameter list
-  TypeArguments, // Type arguments in type argument list
-  TupleElementTypes, // Element types in tuple element type list
-  HeritageClauses, // Heritage clauses for a class or interface declaration.
-  ImportOrExportSpecifiers, // Named import clause's import specifier list
-  Count, // Number of parsing contexts
+  SourceElements,
+  BlockStatements,
+  SwitchClauses,
+  SwitchClauseStatements,
+  TypeMembers,
+  ClassMembers,
+  EnumMembers,
+  HeritageClauseElement,
+  VariableDeclarations,
+  ObjectBindingElements,
+  ArrayBindingElements,
+  ArgumentExpressions,
+  ObjectLiteralMembers,
+  JsxAttributes,
+  JsxChildren,
+  ArrayLiteralMembers,
+  Parameters,
+  JSDocParameters,
+  RestProperties,
+  TypeParameters,
+  TypeArguments,
+  TupleElementTypes,
+  HeritageClauses,
+  ImportOrExportSpecifiers,
+  Count,
 }
 const enum State {
   BeginningOfLine,
@@ -1031,7 +1031,7 @@ function create() {
         case Context.JSDocParameters:
         case Context.Parameters:
         case Context.RestProperties:
-          return tok() === Syntax.CloseParenToken || tok() === Syntax.CloseBracketToken /*|| token === Syntax.OpenBraceToken*/;
+          return tok() === Syntax.CloseParenToken || tok() === Syntax.CloseBracketToken;
         case Context.TypeArguments:
           return tok() !== Syntax.CommaToken;
         case Context.HeritageClauses:
@@ -1655,7 +1655,7 @@ function create() {
         case Syntax.FalseKeyword:
           return this.literalTypeNode();
         case Syntax.MinusToken:
-          return lookAhead(next.isNumericOrBigIntLiteral) ? this.literalTypeNode(/*negative*/ true) : this.typeReference();
+          return lookAhead(next.isNumericOrBigIntLiteral) ? this.literalTypeNode(true) : this.typeReference();
         case Syntax.VoidKeyword:
         case Syntax.NullKeyword:
           return this.tokenNode<TypeNode>();
@@ -2203,7 +2203,7 @@ function create() {
     }
     memberExpressionOrHigher(): MemberExpression {
       const expression = this.primaryExpression();
-      return this.memberExpressionRest(expression, /*allowOptionalChain*/ true);
+      return this.memberExpressionRest(expression, true);
     }
     superExpression(): MemberExpression {
       const expression = this.tokenNode<PrimaryExpression>();
@@ -2291,13 +2291,13 @@ function create() {
       n.tag = tag;
       n.questionDotToken = questionDotToken;
       n.typeArguments = typeArguments;
-      n.template = tok() === Syntax.NoSubstitutionLiteral ? (reScanHeadOrNoSubstTemplate(), <NoSubstitutionLiteral>this.literalNode()) : this.templateExpression(/*tagged*/ true);
+      n.template = tok() === Syntax.NoSubstitutionLiteral ? (reScanHeadOrNoSubstTemplate(), <NoSubstitutionLiteral>this.literalNode()) : this.templateExpression(true);
       if (questionDotToken || tag.flags & NodeFlags.OptionalChain) n.flags |= NodeFlags.OptionalChain;
       return finishNode(n);
     }
     callExpressionRest(expression: LeftHandSideExpression): LeftHandSideExpression {
       while (true) {
-        expression = this.memberExpressionRest(expression, /*allowOptionalChain*/ true);
+        expression = this.memberExpressionRest(expression, true);
         const questionDotToken = this.optionalToken(Syntax.QuestionDotToken);
         if (tok() === Syntax.LessThanToken || tok() === Syntax.LessThan2Token) {
           const typeArguments = tryParse(this.typeArgumentsInExpression);
@@ -2496,11 +2496,11 @@ function create() {
       let expression: MemberExpression = this.primaryExpression();
       let typeArguments;
       while (true) {
-        expression = this.memberExpressionRest(expression, /*allowOptionalChain*/ false);
+        expression = this.memberExpressionRest(expression, false);
         typeArguments = tryParse(this.typeArgumentsInExpression);
         if (is.templateStartOfTaggedTemplate()) {
           assert(!!typeArguments, "Expected a type argument list; all plain tagged template starts should be consumed in 'this.memberExpressionRest'");
-          expression = this.taggedTemplateRest(expression, /*optionalChain*/ undefined, typeArguments);
+          expression = this.taggedTemplateRest(expression, undefined, typeArguments);
           typeArguments = undefined;
         }
         break;
@@ -4555,7 +4555,7 @@ namespace IncrementalParser {
     checkChangeRange(source, newText, textChangeRange, aggressiveChecks);
     if (textChangeRangeIsUnchanged(textChangeRange)) return source;
     if (source.statements.length === 0) {
-      return Parser.parseSourceFile(source.fileName, newText, source.languageVersion, undefined, /*setParentNodes*/ true, source.scriptKind);
+      return Parser.parseSourceFile(source.fileName, newText, source.languageVersion, undefined, true, source.scriptKind);
     }
     const incrementalSourceFile = <IncrementalNode>(<Node>source);
     assert(!incrementalSourceFile.hasBeenIncrementallyParsed);
@@ -4578,7 +4578,7 @@ namespace IncrementalParser {
       newText,
       aggressiveChecks
     );
-    const r = Parser.parseSourceFile(source.fileName, newText, source.languageVersion, syntaxCursor, /*setParentNodes*/ true, source.scriptKind);
+    const r = Parser.parseSourceFile(source.fileName, newText, source.languageVersion, syntaxCursor, true, source.scriptKind);
     r.commentDirectives = getNewCommentDirectives(source.commentDirectives, r.commentDirectives, changeRange.span.start, textSpanEnd(changeRange.span), delta, oldText, newText, aggressiveChecks);
     return r;
   }
@@ -4690,7 +4690,7 @@ namespace IncrementalParser {
     function visitNode(child: IncrementalNode) {
       assert(child.pos <= child.end);
       if (child.pos > changeRangeOldEnd) {
-        moveElementEntirelyPastChangeRange(child, /*isArray*/ false, delta, oldText, newText, aggressiveChecks);
+        moveElementEntirelyPastChangeRange(child, false, delta, oldText, newText, aggressiveChecks);
         return;
       }
       const fullEnd = child.end;
@@ -4713,7 +4713,7 @@ namespace IncrementalParser {
     function visitArray(array: IncrementalNodes) {
       assert(array.pos <= array.end);
       if (array.pos > changeRangeOldEnd) {
-        moveElementEntirelyPastChangeRange(array, /*isArray*/ true, delta, oldText, newText, aggressiveChecks);
+        moveElementEntirelyPastChangeRange(array, true, delta, oldText, newText, aggressiveChecks);
         return;
       }
       const fullEnd = array.end;

@@ -30,14 +30,8 @@ namespace core {
   enum BuildResultFlags {
     None = 0,
 
-    /**
-     * No errors of any kind occurred during build
-     */
     Success = 1 << 0,
-    /**
-     * None of the .d.ts files emitted by this build were
-     * different from the existing files on disk
-     */
+
     DeclarationOutputUnchanged = 1 << 1,
 
     ConfigFileErrors = 1 << 2,
@@ -93,10 +87,7 @@ namespace core {
 
   export interface SolutionBuilderHostBase<T extends BuilderProgram> extends ProgramHost<T> {
     createDirectory?(path: string): void;
-    /**
-     * Should provide create directory and writeFile if done of invalidatedProjects is not invoked with
-     * writeFileCallback
-     */
+
     writeFile?(path: string, data: string, writeByteOrderMark?: boolean): void;
 
     getModifiedTime(fileName: string): Date | undefined;
@@ -104,15 +95,12 @@ namespace core {
     deleteFile(fileName: string): void;
     getParsedCommandLine?(fileName: string): ParsedCommandLine | undefined;
 
-    reportDiagnostic: DiagnosticReporter; // Technically we want to move it out and allow steps of actions on Solution, but for now just merge stuff in build host here
+    reportDiagnostic: DiagnosticReporter;
     reportSolutionBuilderStatus: DiagnosticReporter;
 
-    // TODO: To do better with watch mode and normal build mode api that creates program and emits files
-    // This currently helps enable --diagnostics and --extendedDiagnostics
     afterProgramEmitAndDiagnostics?(program: T): void;
     afterEmitBundle?(config: ParsedCommandLine): void;
 
-    // For testing
     now?(): Date;
   }
 
@@ -146,10 +134,8 @@ namespace core {
     cleanReferences(project?: string): ExitStatus;
     getNextInvalidatedProject(cancellationToken?: CancellationToken): InvalidatedProject<T> | undefined;
 
-    // Currently used for testing but can be made public if needed:
     getBuildOrder(): AnyBuildOrder;
 
-    // Testing only
     getUpToDateStatusOfProject(project: string): UpToDateStatus;
     invalidateProject(configFilePath: ResolvedConfigFilePath, reloadLevel?: ConfigFileProgramReloadLevel): void;
     buildNextInvalidatedProject(): void;
@@ -157,9 +143,6 @@ namespace core {
     close(): void;
   }
 
-  /**
-   * Create a function that reports watch status by writing to the system and handles the formating of the diagnostic
-   */
   export function createBuilderStatusReporter(system: System, pretty?: boolean): DiagnosticReporter {
     return (diagnostic) => {
       let output = pretty ? `[${formatColorAndReset(getLocaleTimeString(system), ForegroundColorEscapeSequences.Grey)}] ` : `${getLocaleTimeString(system)} - `;
@@ -180,7 +163,7 @@ namespace core {
     host.deleteFile = system.deleteFile ? (path) => system.deleteFile!(path) : noop;
     host.reportDiagnostic = reportDiagnostic || createDiagnosticReporter(system);
     host.reportSolutionBuilderStatus = reportSolutionBuilderStatus || createBuilderStatusReporter(system);
-    host.now = maybeBind(system, system.now); // For testing
+    host.now = maybeBind(system, system.now);
     return host;
   }
 
@@ -218,7 +201,7 @@ namespace core {
   }
 
   export function createSolutionBuilder<T extends BuilderProgram>(host: SolutionBuilderHost<T>, rootNames: readonly string[], defaultOptions: BuildOptions): SolutionBuilder<T> {
-    return createSolutionBuilderWorker(/*watch*/ false, host, rootNames, defaultOptions);
+    return createSolutionBuilderWorker(false, host, rootNames, defaultOptions);
   }
 
   export function createSolutionBuilderWithWatch<T extends BuilderProgram>(
@@ -227,7 +210,7 @@ namespace core {
     defaultOptions: BuildOptions,
     baseWatchOptions?: WatchOptions
   ): SolutionBuilder<T> {
-    return createSolutionBuilderWorker(/*watch*/ true, host, rootNames, defaultOptions, baseWatchOptions);
+    return createSolutionBuilderWorker(true, host, rootNames, defaultOptions, baseWatchOptions);
   }
 
   type ConfigFileCacheEntry = ParsedCommandLine | Diagnostic;
@@ -249,7 +232,6 @@ namespace core {
     readonly parseConfigFileHost: ParseConfigFileHost;
     readonly writeFileName: ((s: string) => void) | undefined;
 
-    // State of solution
     readonly options: BuildOptions;
     readonly baseCompilerOptions: CompilerOptions;
     readonly rootNames: readonly string[];
@@ -257,7 +239,7 @@ namespace core {
 
     readonly resolvedConfigFilePaths: Map<ResolvedConfigFilePath>;
     readonly configFileCache: ConfigFileMap<ConfigFileCacheEntry>;
-    /** Map from config file name to up-to-date status */
+
     readonly projectStatus: ConfigFileMap<UpToDateStatus>;
     readonly buildInfoChecked: ConfigFileMap<true>;
     readonly extendedConfigCache: Map<ExtendedConfigCacheEntry>;
@@ -270,7 +252,6 @@ namespace core {
     readonly compilerHost: CompilerHost;
     readonly moduleResolutionCache: ModuleResolutionCache | undefined;
 
-    // Mutable state
     buildOrder: AnyBuildOrder | undefined;
     readFileWithCache: (f: string) => string | undefined;
     projectCompilerOptions: CompilerOptions;
@@ -280,7 +261,6 @@ namespace core {
     watchAllProjectsPending: boolean;
     currentInvalidatedProject: InvalidatedProject<T> | undefined;
 
-    // Watch state
     readonly watch: boolean;
     readonly allWatchedWildcardDirectories: ConfigFileMap<Map<WildcardDirectoryWatcher>>;
     readonly allWatchedInputFiles: ConfigFileMap<Map<FileWatcher>>;
@@ -306,7 +286,6 @@ namespace core {
     const currentDirectory = host.getCurrentDirectory();
     const getCanonicalFileName = createGetCanonicalFileName(host.useCaseSensitiveFileNames());
 
-    // State of the solution
     const baseCompilerOptions = getCompilerOptionsOfBuildOptions(options);
     const compilerHost = createCompilerHostFromProgramHost(host, () => state.projectCompilerOptions);
     setGetSourceFileAsHashVersioned(compilerHost, host);
@@ -331,7 +310,6 @@ namespace core {
       parseConfigFileHost: parseConfigHostFromCompilerHostLike(host),
       writeFileName: host.trace ? (s: string) => host.trace!(s) : undefined,
 
-      // State of solution
       options,
       baseCompilerOptions,
       rootNames,
@@ -351,7 +329,6 @@ namespace core {
       compilerHost,
       moduleResolutionCache,
 
-      // Mutable state
       buildOrder: undefined,
       readFileWithCache: (f) => host.readFile(f),
       projectCompilerOptions: baseCompilerOptions,
@@ -361,7 +338,6 @@ namespace core {
       watchAllProjectsPending: watch,
       currentInvalidatedProject: undefined,
 
-      // Watch state
       watch,
       allWatchedWildcardDirectories: createConfigFileMap(),
       allWatchedInputFiles: createConfigFileMap(),
@@ -436,9 +412,9 @@ namespace core {
 
     function visit(configFileName: ResolvedConfigFileName, inCircularContext?: boolean) {
       const projPath = toResolvedConfigFilePath(state, configFileName);
-      // Already visited
+
       if (permanentMarks.has(projPath)) return;
-      // Circular
+
       if (temporaryMarks.has(projPath)) {
         if (!inCircularContext) {
           (circularDiagnostics || (circularDiagnostics = [])).push(
@@ -474,12 +450,11 @@ namespace core {
       state.rootNames.map((f) => resolveProjectName(state, f))
     );
 
-    // Clear all to ResolvedConfigFilePaths cache to start fresh
     state.resolvedConfigFilePaths.clear();
     const currentProjects = qu.arrayToSet(getBuildOrderFromAnyBuildOrder(buildOrder), (resolved) => toResolvedConfigFilePath(state, resolved)) as ConfigFileMap<true>;
 
     const noopOnDelete = { onDeleteValue: noop };
-    // Config file cache
+
     mutateMapSkippingNewValues(state.configFileCache, currentProjects, noopOnDelete);
     mutateMapSkippingNewValues(state.projectStatus, currentProjects, noopOnDelete);
     mutateMapSkippingNewValues(state.buildInfoChecked, currentProjects, noopOnDelete);
@@ -488,7 +463,6 @@ namespace core {
     mutateMapSkippingNewValues(state.projectPendingBuild, currentProjects, noopOnDelete);
     mutateMapSkippingNewValues(state.projectErrorsReported, currentProjects, noopOnDelete);
 
-    // Remove watches for the program no longer in the solution
     if (state.watch) {
       mutateMapSkippingNewValues(state.allWatchedConfigFiles, currentProjects, { onDeleteValue: closeFileWatcher });
 
@@ -583,7 +557,6 @@ namespace core {
   }
 
   function setupInitialBuild(state: SolutionBuilderState, cancellationToken: CancellationToken | undefined) {
-    // Set initial build if not already built
     if (!state.allProjectBuildPending) return;
     state.allProjectBuildPending = false;
     if (state.options.watch) {
@@ -609,9 +582,7 @@ namespace core {
     readonly project: ResolvedConfigFileName;
     readonly projectPath: ResolvedConfigFilePath;
     readonly buildOrder: readonly ResolvedConfigFileName[];
-    /**
-     *  To dispose this project and ensure that all the necessary actions are taken and state is updated accordingly
-     */
+
     done(cancellationToken?: CancellationToken, writeFile?: WriteFileCallback, customTransformers?: CustomTransformers): ExitStatus;
     getCompilerOptions(): CompilerOptions;
     getCurrentDirectory(): string;
@@ -624,10 +595,7 @@ namespace core {
 
   export interface BuildInvalidedProject<T extends BuilderProgram> extends InvalidatedProjectBase {
     readonly kind: InvalidatedProjectKind.Build;
-    /*
-     * Emitting with this builder program without the api provided for this project
-     * can result in build system going into invalid state as files written reflect the state of the project
-     */
+
     getBuilderProgram(): T | undefined;
     getProgram(): Program | undefined;
     getSourceFile(fileName: string): SourceFile | undefined;
@@ -639,14 +607,7 @@ namespace core {
     getAllDependencies(sourceFile: SourceFile): readonly string[];
     getSemanticDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
     getSemanticDiagnosticsOfNextAffectedFile(cancellationToken?: CancellationToken, ignoreSourceFile?: (sourceFile: SourceFile) => boolean): AffectedFileResult<readonly Diagnostic[]>;
-    /*
-     * Calling emit directly with targetSourceFile and emitOnlyDtsFiles set to true is not advised since
-     * emit in build system is responsible in updating status of the project
-     * If called with targetSourceFile and emitOnlyDtsFiles set to true, the emit just passes to underlying builder and
-     * wont reflect the status of file as being emitted in the builder
-     * (if that emit of that source file is required it would be emitted again when making sure invalidated project is completed)
-     * This emit is not considered actual emit (and hence uptodate status is not reflected if
-     */
+
     emit(
       targetSourceFile?: SourceFile,
       writeFile?: WriteFileCallback,
@@ -654,8 +615,6 @@ namespace core {
       emitOnlyDtsFiles?: boolean,
       customTransformers?: CustomTransformers
     ): EmitResult | undefined;
-    // TODO(shkamat):: investigate later if we can emit even when there are declaration diagnostics
-    // emitNextAffectedFile(writeFile?: WriteFileCallback, cancellationToken?: CancellationToken, customTransformers?: CustomTransformers): AffectedFileResult<EmitResult>;
   }
 
   export interface UpdateBundleProject<T extends BuilderProgram> extends InvalidatedProjectBase {
@@ -800,7 +759,7 @@ namespace core {
 
       if (config.fileNames.length === 0) {
         reportAndStoreErrors(state, projectPath, getConfigFileParsingDiagnostics(config));
-        // Nothing to build - must be a solution file, basically
+
         buildResult = BuildResultFlags.None;
         step = Step.QueueReferencingProjects;
         return;
@@ -808,10 +767,9 @@ namespace core {
 
       const { host, compilerHost } = state;
       state.projectCompilerOptions = config.options;
-      // Update module resolution cache if needed
+
       updateModuleResolutionCache(state, project, config);
 
-      // Create program
       program = host.createProgram(config.fileNames, config.options, compilerHost, getOldProgram(state, projectPath, config), getConfigFileParsingDiagnostics(config), config.projectReferences);
       step++;
     }
@@ -832,7 +790,7 @@ namespace core {
           ...program.getConfigFileParsingDiagnostics(),
           ...program.getOptionsDiagnostics(cancellationToken),
           ...program.getGlobalDiagnostics(cancellationToken),
-          ...program.getSyntacticDiagnostics(/*sourceFile*/ undefined, cancellationToken),
+          ...program.getSyntacticDiagnostics(undefined, cancellationToken),
         ],
         BuildResultFlags.SyntaxErrors,
         'Syntactic'
@@ -840,13 +798,13 @@ namespace core {
     }
 
     function getSemanticDiagnostics(cancellationToken?: CancellationToken) {
-      handleDiagnostics(Debug.checkDefined(program).getSemanticDiagnostics(/*sourceFile*/ undefined, cancellationToken), BuildResultFlags.TypeErrors, 'Semantic');
+      handleDiagnostics(Debug.checkDefined(program).getSemanticDiagnostics(undefined, cancellationToken), BuildResultFlags.TypeErrors, 'Semantic');
     }
 
     function emit(writeFileCallback?: WriteFileCallback, cancellationToken?: CancellationToken, customTransformers?: CustomTransformers): EmitResult {
       Debug.assertIsDefined(program);
       assert(step === Step.Emit);
-      // Before emitting lets backup state, so we can revert it back if there are declaration errors to handle emit and declaration errors correctly
+
       program.backupState();
       let declDiagnostics: Diagnostic[] | undefined;
       const reportDeclarationDiagnostics = (d: Diagnostic) => (declDiagnostics || (declDiagnostics = [])).push(d);
@@ -854,14 +812,14 @@ namespace core {
       const { emitResult } = emitFilesAndReportErrors(
         program,
         reportDeclarationDiagnostics,
-        /*writeFileName*/ undefined,
-        /*reportSummary*/ undefined,
+        undefined,
+        undefined,
         (name, text, writeByteOrderMark) => outputFiles.push({ name, text, writeByteOrderMark }),
         cancellationToken,
-        /*emitOnlyDts*/ false,
+        false,
         customTransformers
       );
-      // Don't emit .d.ts if there are decl file errors
+
       if (declDiagnostics) {
         program.restoreState();
         buildResult = buildErrors(state, projectPath, program, config, declDiagnostics, BuildResultFlags.DeclarationEmitErrors, 'Declaration file');
@@ -872,7 +830,6 @@ namespace core {
         };
       }
 
-      // Actual Emit
       const { host, compilerHost } = state;
       let resultFlags = BuildResultFlags.DeclarationOutputUnchanged;
       let newestDeclarationFileContentChangedTime = minimumDate;
@@ -882,7 +839,6 @@ namespace core {
       outputFiles.forEach(({ name, text, writeByteOrderMark }) => {
         let priorChangeTime: Date | undefined;
         if (!anyDtsChanged && isDeclarationFile(name)) {
-          // Check for unchanged .d.ts files
           if (host.fileExists(name) && state.readFileWithCache(name) === text) {
             priorChangeTime = host.getModifiedTime(name);
           } else {
@@ -902,7 +858,7 @@ namespace core {
         emitterDiagnostics,
         emittedOutputs,
         newestDeclarationFileContentChangedTime,
-        /*newestDeclarationFileContentChangedTimeIsMaximumDate*/ anyDtsChanged,
+        anyDtsChanged,
         outputFiles.length ? outputFiles[0].name : getFirstProjectOutput(config, !host.useCaseSensitiveFileNames()),
         resultFlags
       );
@@ -929,7 +885,6 @@ namespace core {
         if (program) listFiles(program, state.writeFileName);
       }
 
-      // Update time stamps for rest of the outputs
       const newestDeclarationFileContentChangedTime = updateOutputTimestampsWorker(state, config, priorNewestUpdateTime, Diagnostics.Updating_unchanged_output_timestamps_of_project_0, emittedOutputs);
       state.diagnostics.delete(projectPath);
       state.projectStatus.set(projectPath, {
@@ -955,7 +910,6 @@ namespace core {
 
       if (state.options.verbose) reportStatus(state, Diagnostics.Updating_output_of_project_0, project);
 
-      // Update js, and source map
       const { compilerHost } = state;
       state.projectCompilerOptions = config.options;
       const outputFiles = emitUsingBuildInfo(
@@ -976,7 +930,6 @@ namespace core {
         >);
       }
 
-      // Actual Emit
       assert(!!outputFiles.length);
       const emitterDiagnostics = createDiagnosticCollection();
       const emittedOutputs = createMap() as FileMap<string>;
@@ -985,14 +938,7 @@ namespace core {
         writeFile(writeFileCallback ? { writeFile: writeFileCallback } : compilerHost, emitterDiagnostics, name, text, writeByteOrderMark);
       });
 
-      const emitDiagnostics = finishEmit(
-        emitterDiagnostics,
-        emittedOutputs,
-        minimumDate,
-        /*newestDeclarationFileContentChangedTimeIsMaximumDate*/ false,
-        outputFiles[0].name,
-        BuildResultFlags.DeclarationOutputUnchanged
-      );
+      const emitDiagnostics = finishEmit(emitterDiagnostics, emittedOutputs, minimumDate, false, outputFiles[0].name, BuildResultFlags.DeclarationOutputUnchanged);
       return { emitSkipped: false, diagnostics: emitDiagnostics };
     }
 
@@ -1030,7 +976,6 @@ namespace core {
             step++;
             break;
 
-          // Should never be done
           case Step.Done:
           default:
             assertType<Step.Done>(step);
@@ -1049,7 +994,6 @@ namespace core {
     if (!state.projectPendingBuild.size) return;
     if (isCircularBuildOrder(buildOrder)) return;
     if (state.currentInvalidatedProject) {
-      // Only if same buildOrder the currentInvalidated project can be sent again
       return arrayIsEqualTo(state.currentInvalidatedProject.buildOrder, buildOrder) ? state.currentInvalidatedProject : undefined;
     }
 
@@ -1077,7 +1021,6 @@ namespace core {
         watchWildCardDirectories(state, project, projectPath, config);
         watchInputFiles(state, project, projectPath, config);
       } else if (reloadLevel === ConfigFileProgramReloadLevel.Partial) {
-        // Update file names
         const result = getFileNamesFromConfigSpecs(config.configFileSpecs!, getDirectoryPath(project), config.options, state.parseConfigFileHost);
         updateErrorForNoInputFiles(result, project, config.configFileSpecs!, config.errors, canJsonReportNoInutFiles(config.raw));
         config.fileNames = result.fileNames;
@@ -1090,9 +1033,8 @@ namespace core {
         if (status.type === UpToDateStatusType.UpToDate) {
           reportAndStoreErrors(state, projectPath, getConfigFileParsingDiagnostics(config));
           projectPendingBuild.delete(projectPath);
-          // Up to date, skip
+
           if (options.dry) {
-            // In a dry build, inform the user of this fact
             reportStatus(state, Diagnostics.Project_0_is_up_to_date, project);
           }
           continue;
@@ -1123,7 +1065,7 @@ namespace core {
       if (status.type === UpToDateStatusType.ContainerOnly) {
         reportAndStoreErrors(state, projectPath, getConfigFileParsingDiagnostics(config));
         projectPendingBuild.delete(projectPath);
-        // Do nothing
+
         continue;
       }
 
@@ -1178,7 +1120,7 @@ namespace core {
     errorType: string
   ) {
     reportAndStoreErrors(state, resolvedPath, diagnostics);
-    // List files if any other build error using program (emit errors already report files)
+
     if (program && state.writeFileName) listFiles(program, state.writeFileName);
     state.projectStatus.set(resolvedPath, { type: UpToDateStatusType.Unbuildable, reason: `${errorType} errors` });
     afterProgramDone(state, resolvedPath, program, config);
@@ -1189,16 +1131,13 @@ namespace core {
   function updateModuleResolutionCache(state: SolutionBuilderState, proj: ResolvedConfigFileName, config: ParsedCommandLine) {
     if (!state.moduleResolutionCache) return;
 
-    // Update module resolution cache if needed
     const { moduleResolutionCache } = state;
     const projPath = toPath(state, proj);
     if (moduleResolutionCache.directoryToModuleNameMap.redirectsMap.size === 0) {
-      // The own map will be for projectCompilerOptions
       assert(moduleResolutionCache.moduleNameToDirectoryMap.redirectsMap.size === 0);
       moduleResolutionCache.directoryToModuleNameMap.redirectsMap.set(projPath, moduleResolutionCache.directoryToModuleNameMap.ownMap);
       moduleResolutionCache.moduleNameToDirectoryMap.redirectsMap.set(projPath, moduleResolutionCache.moduleNameToDirectoryMap.ownMap);
     } else {
-      // Set correct own map
       assert(moduleResolutionCache.moduleNameToDirectoryMap.redirectsMap.size > 0);
 
       const ref: ResolvedProjectReference = {
@@ -1213,7 +1152,6 @@ namespace core {
   }
 
   function checkConfigFileUpToDateStatus(state: SolutionBuilderState, configFile: string, oldestOutputFileTime: Date, oldestOutputFileName: string): Status.OutOfDateWithSelf | undefined {
-    // Check tsconfig time
     const tsconfigTime = state.host.getModifiedTime(configFile) || missingFileModifiedTime;
     if (oldestOutputFileTime < tsconfigTime) {
       return {
@@ -1228,7 +1166,7 @@ namespace core {
     let newestInputFileName: string = undefined!;
     let newestInputFileTime = minimumDate;
     const { host } = state;
-    // Get timestamps of input files
+
     for (const inputFile of project.fileNames) {
       if (!host.fileExists(inputFile)) {
         return {
@@ -1244,17 +1182,14 @@ namespace core {
       }
     }
 
-    // Container if no files are specified in the project
     if (!project.fileNames.length && !canJsonReportNoInutFiles(project.raw)) {
       return {
         type: UpToDateStatusType.ContainerOnly,
       };
     }
 
-    // Collect the expected outputs of this project
     const outputs = getAllProjectOutputs(project, !host.useCaseSensitiveFileNames());
 
-    // Now see if all outputs are newer than the newest input
     let oldestOutputFileName = '(none)';
     let oldestOutputFileTime = maximumDate;
     let newestOutputFileName = '(none)';
@@ -1263,8 +1198,6 @@ namespace core {
     let newestDeclarationFileContentChangedTime = minimumDate;
     let isOutOfDateWithInputs = false;
     for (const output of outputs) {
-      // Output is missing; can stop checking
-      // Don't immediately return because we can still be upstream-blocked, which is a higher-priority status
       if (!host.fileExists(output)) {
         missingOutputFileName = output;
         break;
@@ -1276,8 +1209,6 @@ namespace core {
         oldestOutputFileName = output;
       }
 
-      // If an output is older than the newest input, we can stop checking
-      // Don't immediately return because we can still be upstream-blocked, which is a higher-priority status
       if (outputTime < newestInputFileTime) {
         isOutOfDateWithInputs = true;
         break;
@@ -1288,10 +1219,6 @@ namespace core {
         newestOutputFileName = output;
       }
 
-      // Keep track of when the most recent time a .d.ts file was changed.
-      // In addition to file timestamps, we also keep track of when a .d.ts file
-      // had its file touched but not had its contents changed - this allows us
-      // to skip a downstream typecheck
       if (isDeclarationFile(output)) {
         const outputModifiedTime = host.getModifiedTime(output) || missingFileModifiedTime;
         newestDeclarationFileContentChangedTime = newer(newestDeclarationFileContentChangedTime, outputModifiedTime);
@@ -1309,13 +1236,10 @@ namespace core {
         const resolvedRefPath = toResolvedConfigFilePath(state, resolvedRef);
         const refStatus = getUpToDateStatus(state, parseConfigFile(state, resolvedRef, resolvedRefPath), resolvedRefPath);
 
-        // Its a circular reference ignore the status of this project
         if (refStatus.type === UpToDateStatusType.ComputingUpstream || refStatus.type === UpToDateStatusType.ContainerOnly) {
-          // Container only ignore this project
           continue;
         }
 
-        // An upstream project is blocked
         if (refStatus.type === UpToDateStatusType.Unbuildable || refStatus.type === UpToDateStatusType.UpstreamBlocked) {
           return {
             type: UpToDateStatusType.UpstreamBlocked,
@@ -1324,7 +1248,6 @@ namespace core {
           };
         }
 
-        // If the upstream project is out of date, then so are we (someone shouldn't have asked, though?)
         if (refStatus.type !== UpToDateStatusType.UpToDate) {
           return {
             type: UpToDateStatusType.UpstreamOutOfDate,
@@ -1332,23 +1255,17 @@ namespace core {
           };
         }
 
-        // Check oldest output file name only if there is no missing output file name
         if (!missingOutputFileName) {
-          // If the upstream project's newest file is older than our oldest output, we
-          // can't be out of date because of it
           if (refStatus.newestInputFileTime && refStatus.newestInputFileTime <= oldestOutputFileTime) {
             continue;
           }
 
-          // If the upstream project has only change .d.ts files, and we've built
-          // *after* those files, then we're "psuedo up to date" and eligible for a fast rebuild
           if (refStatus.newestDeclarationFileContentChangedTime && refStatus.newestDeclarationFileContentChangedTime <= oldestOutputFileTime) {
             pseudoUpToDate = true;
             upstreamChangedProject = ref.path;
             continue;
           }
 
-          // We have an output older than an upstream output - we are out of date
           assert(oldestOutputFileName !== undefined, 'Should have an oldest output filename here');
           return {
             type: UpToDateStatusType.OutOfDateWithUpstream,
@@ -1373,11 +1290,9 @@ namespace core {
         newerInputFileName: newestInputFileName,
       };
     } else {
-      // Check tsconfig time
       const configStatus = checkConfigFileUpToDateStatus(state, project.options.configFilePath!, oldestOutputFileTime, oldestOutputFileName);
       if (configStatus) return configStatus;
 
-      // Check extended config time
       const extendedConfigStatus = forEach(project.options.configFile!.extendedSourceFiles || emptyArray, (configFile) =>
         checkConfigFileUpToDateStatus(state, configFile, oldestOutputFileTime, oldestOutputFileName)
       );
@@ -1407,7 +1322,6 @@ namespace core {
       };
     }
 
-    // Up to date
     return {
       type: pseudoUpToDate ? UpToDateStatusType.UpToDateWithUpstreamTypes : UpToDateStatusType.UpToDate,
       newestDeclarationFileContentChangedTime,
@@ -1482,11 +1396,10 @@ namespace core {
     buildOrder: readonly ResolvedConfigFileName[],
     buildResult: BuildResultFlags
   ) {
-    // Queue only if there are no errors
     if (buildResult & BuildResultFlags.AnyErrors) return;
-    // Only composite projects can be referenced by other projects
+
     if (!config.options.composite) return;
-    // Always use build order to queue projects
+
     for (let index = projectIndex + 1; index < buildOrder.length; index++) {
       const nextProject = buildOrder[index];
       const nextProjectPath = toResolvedConfigFilePath(state, nextProject);
@@ -1497,9 +1410,7 @@ namespace core {
       for (const ref of nextProjectConfig.projectReferences) {
         const resolvedRefPath = resolveProjectName(state, ref.path);
         if (toResolvedConfigFilePath(state, resolvedRefPath) !== projectPath) continue;
-        // If the project is referenced with prepend, always build downstream projects,
-        // If declaration output is changed, build the project
-        // otherwise mark the project UpToDateWithUpstreamTypes so it updates output time stamps
+
         const status = state.projectStatus.get(nextProjectPath);
         if (status) {
           switch (status.type) {
@@ -1516,7 +1427,6 @@ namespace core {
                 }
                 break;
               }
-            // falls through
 
             case UpToDateStatusType.UpToDateWithUpstreamTypes:
             case UpToDateStatusType.OutOfDateWithPrepend:
@@ -1586,7 +1496,6 @@ namespace core {
       const resolvedPath = toResolvedConfigFilePath(state, proj);
       const parsed = parseConfigFile(state, proj, resolvedPath);
       if (parsed === undefined) {
-        // File has gone missing; fine to ignore here
         reportParseConfigFileDiagnostic(state, resolvedPath);
         continue;
       }
@@ -1611,7 +1520,6 @@ namespace core {
   }
 
   function invalidateProject(state: SolutionBuilderState, resolved: ResolvedConfigFilePath, reloadLevel: ConfigFileProgramReloadLevel) {
-    // If host implements getParsedCommandLine, we cant get list of files from parseConfigFileHost
     if (state.host.getParsedCommandLine && reloadLevel === ConfigFileProgramReloadLevel.Partial) {
       reloadLevel = ConfigFileProgramReloadLevel.Full;
     }
@@ -1650,11 +1558,10 @@ namespace core {
       reportWatchStatus(state, Diagnostics.File_change_detected_Starting_incremental_compilation);
     }
     const buildOrder = getBuildOrder(state);
-    const invalidatedProject = getNextInvalidatedProject(state, buildOrder, /*reportQueue*/ false);
+    const invalidatedProject = getNextInvalidatedProject(state, buildOrder, false);
     if (invalidatedProject) {
       invalidatedProject.done();
       if (state.projectPendingBuild.size) {
-        // Schedule next project for build
         if (state.watch && !state.timerToBuildInvalidatedProject) {
           scheduleBuildInvalidatedProject(state);
         }
@@ -1690,23 +1597,19 @@ namespace core {
   function isOutputFile(state: SolutionBuilderState, fileName: string, configFile: ParsedCommandLine) {
     if (configFile.options.noEmit) return false;
 
-    // ts or tsx files are not output
     if (!fileExtensionIs(fileName, Extension.Dts) && (fileExtensionIs(fileName, Extension.Ts) || fileExtensionIs(fileName, Extension.Tsx))) {
       return false;
     }
 
-    // If options have --outFile or --out, check if its that
     const out = configFile.options.outFile || configFile.options.out;
     if (out && (isSameFile(state, fileName, out) || isSameFile(state, fileName, removeFileExtension(out) + Extension.Dts))) {
       return true;
     }
 
-    // If declarationDir is specified, return if its a file in that directory
     if (configFile.options.declarationDir && containsPath(configFile.options.declarationDir, fileName, state.currentDirectory, !state.host.useCaseSensitiveFileNames())) {
       return true;
     }
 
-    // If --outDir, check if file is in that directory
     if (configFile.options.outDir && containsPath(configFile.options.outDir, fileName, state.currentDirectory, !state.host.useCaseSensitiveFileNames())) {
       return true;
     }
@@ -1770,13 +1673,11 @@ namespace core {
     for (const resolved of getBuildOrderFromAnyBuildOrder(buildOrder)) {
       const resolvedPath = toResolvedConfigFilePath(state, resolved);
       const cfg = parseConfigFile(state, resolved, resolvedPath);
-      // Watch this file
+
       watchConfigFile(state, resolved, resolvedPath, cfg);
       if (cfg) {
-        // Update watchers for wildcard directories
         watchWildCardDirectories(state, resolved, resolvedPath, cfg);
 
-        // Watch input files
         watchInputFiles(state, resolved, resolvedPath, cfg);
       }
     }
@@ -1788,10 +1689,6 @@ namespace core {
     clearMap(state.allWatchedInputFiles, (watchedWildcardDirectories) => clearMap(watchedWildcardDirectories, closeFileWatcher));
   }
 
-  /**
-   * A SolutionBuilder has an immutable set of rootNames that are the "entry point" projects, but
-   * can dynamically add/remove other projects based on changes on the rootNames' references
-   */
   function createSolutionBuilderWorker<T extends BuilderProgram>(watch: false, host: SolutionBuilderHost<T>, rootNames: readonly string[], defaultOptions: BuildOptions): SolutionBuilder<T>;
   function createSolutionBuilderWorker<T extends BuilderProgram>(
     watch: true,
@@ -1811,11 +1708,11 @@ namespace core {
     return {
       build: (project, cancellationToken) => build(state, project, cancellationToken),
       clean: (project) => clean(state, project),
-      buildReferences: (project, cancellationToken) => build(state, project, cancellationToken, /*onlyReferences*/ true),
-      cleanReferences: (project) => clean(state, project, /*onlyReferences*/ true),
+      buildReferences: (project, cancellationToken) => build(state, project, cancellationToken, true),
+      cleanReferences: (project) => clean(state, project, true),
       getNextInvalidatedProject: (cancellationToken) => {
         setupInitialBuild(state, cancellationToken);
-        return getNextInvalidatedProject(state, getBuildOrder(state), /*reportQueue*/ false);
+        return getNextInvalidatedProject(state, getBuildOrder(state), false);
       },
       getBuildOrder: () => getBuildOrder(state),
       getUpToDateStatusOfProject: (project) => {
@@ -1871,7 +1768,6 @@ namespace core {
       reportErrors(state, buildOrder.circularDiagnostics);
       if (canReportSummary) totalErrors += getErrorCountForSummary(buildOrder.circularDiagnostics);
     } else {
-      // Report errors from the other projects
       buildOrder.forEach((project) => {
         const projectPath = toResolvedConfigFilePath(state, project);
         if (!state.projectErrorsReported.has(projectPath)) {
@@ -1888,9 +1784,6 @@ namespace core {
     }
   }
 
-  /**
-   * Report the build ordering inferred from the current project graph if we're in verbose mode
-   */
   function reportBuildQueue(state: SolutionBuilderState, buildQueue: readonly ResolvedConfigFileName[]) {
     if (state.options.verbose) {
       reportStatus(state, Diagnostics.Projects_in_this_build_Colon_0, buildQueue.map((s) => '\r\n    * ' + relName(state, s)).join(''));
@@ -1927,7 +1820,7 @@ namespace core {
             relName(state, status.oldestOutputFileName || '')
           );
         }
-        // Don't report anything for "up to date because it was already built" -- too verbose
+
         break;
       case UpToDateStatusType.OutOfDateWithPrepend:
         return reportStatus(state, Diagnostics.Project_0_is_out_of_date_because_output_of_its_dependency_1_has_changed, relName(state, configFileName), relName(state, status.newerProjectName));
@@ -1953,19 +1846,14 @@ namespace core {
           version
         );
       case UpToDateStatusType.ContainerOnly:
-      // Don't report status on "solution" projects
-      // falls through
+
       case UpToDateStatusType.ComputingUpstream:
-        // Should never leak from getUptoDateStatusWorker
         break;
       default:
         assertType<never>(status);
     }
   }
 
-  /**
-   * Report the up-to-date status of a project if we're in verbose mode
-   */
   function verboseReportProjectStatus(state: SolutionBuilderState, configFileName: string, status: UpToDateStatus) {
     if (state.options.verbose) {
       reportUpToDateStatus(state, configFileName, status);

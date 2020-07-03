@@ -19,7 +19,7 @@ export function asEmbeddedStatement<T extends Node>(s: T | undefined): T | Empty
 }
 
 function createMethodCall(object: Expression, methodName: string | Identifier, argumentsList: readonly Expression[]) {
-  return new qs.CallExpression(createPropertyAccess(object, asName(methodName)), /*typeArguments*/ undefined, argumentsList);
+  return new qs.CallExpression(createPropertyAccess(object, asName(methodName)), undefined, argumentsList);
 }
 
 function createGlobalMethodCall(globalObjectName: string, methodName: string, argumentsList: readonly Expression[]) {

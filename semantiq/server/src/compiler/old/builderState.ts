@@ -72,7 +72,7 @@ namespace core {
       if (sourceFile.resolvedTypeReferenceDirectiveNames) {
         sourceFile.resolvedTypeReferenceDirectiveNames.forEach((resolvedTypeReferenceDirective) => {
           if (!resolvedTypeReferenceDirective) return;
-          const fileName = resolvedTypeReferenceDirective.resolvedFileName!; // TODO: GH#18217
+          const fileName = resolvedTypeReferenceDirective.resolvedFileName!;
           const typeFilePath = getReferencedFileFromFileName(program, fileName, sourceFileDirectory, getCanonicalFileName);
           addReferencedFile(typeFilePath);
         });
@@ -209,7 +209,7 @@ namespace core {
           exportedModulesMapCache.set(sourceFile.resolvedPath, references || false);
         }
       } else {
-        const emitOutput = getFileEmitOutput(programOfThisState, sourceFile, /*emitOnlyDtsFiles*/ true, cancellationToken, /*customTransformers*/ undefined, /*forceDtsEmit*/ true);
+        const emitOutput = getFileEmitOutput(programOfThisState, sourceFile, true);
         const firstDts =
           emitOutput.outputFiles && programOfThisState.getCompilerOptions().declarationMap
             ? emitOutput.outputFiles.length > 1

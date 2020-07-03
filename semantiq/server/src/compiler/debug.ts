@@ -15,7 +15,6 @@ export function setAssertionLevel(level: AssertionLevel) {
   currentAssertionLevel = level;
 
   if (level > prevAssertionLevel) {
-    // restore assertion functions for the current assertion level (see `shouldAssertFunction`).
     for (const key of getOwnKeys(assertionCache) as AssertionKeys[]) {
       const cachedFunc = assertionCache[key];
       if (cachedFunc !== undefined && Debug[key] !== cachedFunc.assertion && level >= cachedFunc.level) {
@@ -69,7 +68,6 @@ export function assertGreaterThanOrEqual(a: number, b: number, stackCrawlMark?: 
 }
 
 export function assertIsDefined<T>(value: T, message?: string, stackCrawlMark?: AnyFunction): asserts value is NonNullable<T> {
-  // eslint-disable-next-line no-null/no-null
   if (value === undefined || value === null) {
     fail(message, stackCrawlMark || assertIsDefined);
   }
@@ -291,7 +289,6 @@ export function formatControlFlowGraph(flowNode: FlowNode) {
 export function attachFlowNodeDebugInfo(flowNode: FlowNode) {
   if (isDebugInfoEnabled) {
     if (!('__debugFlowFlags' in flowNode)) {
-      // eslint-disable-line no-in-operator
       Object.defineProperties(flowNode, {
         __debugFlowFlags: {
           get(this: FlowNode) {
@@ -391,9 +388,7 @@ export function enableDebugInfo() {
         extendedDebugModule = result.module;
       }
     }
-  } catch {
-    // do nothing
-  }
+  } catch {}
 
   isDebugInfoEnabled = true;
 }

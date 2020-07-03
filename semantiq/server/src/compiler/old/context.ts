@@ -188,7 +188,7 @@ namespace core {
           if (!this.encounteredError && !(this.flags & NodeBuilderFlags.AllowEmptyUnionOrIntersection)) {
             this.encounteredError = true;
           }
-          return undefined!; // TODO: GH#18217
+          return undefined!;
         }
       }
       if (objectFlags & (ObjectFlags.Anonymous | ObjectFlags.Mapped)) {
@@ -224,24 +224,22 @@ namespace core {
 
       function appendReferenceToType(root: TypeReferenceNode | ImportTypeNode, ref: TypeReferenceNode): TypeReferenceNode | ImportTypeNode {
         if (Node.is.kind(ImportTypeNode, root)) {
-          // first shift type arguments
           const innerParams = root.typeArguments;
           if (root.qualifier) {
             (Node.is.kind(Identifier, root.qualifier) ? root.qualifier : root.qualifier.right).typeArguments = innerParams;
           }
           root.typeArguments = ref.typeArguments;
-          // then move qualifiers
+
           const ids = getAccessStack(ref);
           for (const id of ids) {
             root.qualifier = root.qualifier ? QualifiedName.create(root.qualifier, id) : id;
           }
           return root;
         } else {
-          // first shift type arguments
           const innerParams = root.typeArguments;
           (Node.is.kind(Identifier, root.typeName) ? root.typeName : root.typeName.right).typeArguments = innerParams;
           root.typeArguments = ref.typeArguments;
-          // then move qualifiers
+
           const ids = getAccessStack(ref);
           for (const id of ids) {
             root.typeName = QualifiedName.create(root.typeName, id);
@@ -981,7 +979,7 @@ namespace core {
             }
           } else {
             if (this.tracker && this.tracker.trackExternalModuleSymbolOfImportTypeNode) {
-              const moduleSym = resolveExternalModuleNameWorker(lit, lit, /*moduleNotFoundError*/ undefined);
+              const moduleSym = resolveExternalModuleNameWorker(lit, lit, undefined);
               if (moduleSym) {
                 this.tracker.trackExternalModuleSymbolOfImportTypeNode(moduleSym);
               }
@@ -1050,7 +1048,7 @@ namespace core {
         for (const s of signatures) {
           if (s.declaration) privateProtected |= getSelectedEffectiveModifierFlags(s.declaration, ModifierFlags.Private | ModifierFlags.Protected);
         }
-        if (privateProtected) return [setRange(ConstructorDeclaration.create(undefined, createModifiersFromModifierFlags(privateProtected), /*parameters*/ [], undefined), signatures[0].declaration)];
+        if (privateProtected) return [setRange(ConstructorDeclaration.create(undefined, createModifiersFromModifierFlags(privateProtected), [], undefined), signatures[0].declaration)];
       }
       const results = [];
       for (const sig of signatures) {
@@ -1078,10 +1076,10 @@ namespace core {
     trySerializeAsTypeReference(t: Type) {
       let typeArgs: TypeNode[] | undefined;
       let reference: Expression | undefined;
-      if ((t as TypeReference).target && getAccessibleSymbolChain((t as TypeReference).target.symbol, enclosingDeclaration, SymbolFlags.Value, /*useOnlyExternalAliasing*/ false)) {
+      if ((t as TypeReference).target && getAccessibleSymbolChain((t as TypeReference).target.symbol, enclosingDeclaration, SymbolFlags.Value, false)) {
         typeArgs = map(getTypeArguments(t as TypeReference), (t) => this.typeToTypeNodeHelper(t));
         reference = this.symbolToExpression((t as TypeReference).target.symbol, SymbolFlags.Type);
-      } else if (t.symbol && getAccessibleSymbolChain(t.symbol, enclosingDeclaration, SymbolFlags.Value, /*useOnlyExternalAliasing*/ false)) {
+      } else if (t.symbol && getAccessibleSymbolChain(t.symbol, enclosingDeclaration, SymbolFlags.Value, false)) {
         reference = this.symbolToExpression(t.symbol, SymbolFlags.Type);
       }
       if (reference) return createExpressionWithTypeArguments(typeArgs, reference);
@@ -1300,7 +1298,7 @@ namespace core {
           return this.symbolToTypeNode(symbol, isInstanceType);
         }
         const shouldWriteTypeOfFunctionSymbol = () => {
-          const isStaticMethodSymbol = !!(symbol.flags & SymbolFlags.Method) && some(symbol.declarations, (declaration) => hasSyntacticModifier(declaration, ModifierFlags.Static)); // typeof static method
+          const isStaticMethodSymbol = !!(symbol.flags & SymbolFlags.Method) && some(symbol.declarations, (declaration) => hasSyntacticModifier(declaration, ModifierFlags.Static));
           const isNonLocalFunctionSymbol =
             !!(symbol.flags & SymbolFlags.Function) && (symbol.parent || forEach(symbol.declarations, (d) => d.parent?.kind === Syntax.SourceFile || d.parent?.kind === Syntax.ModuleBlock));
           if (isStaticMethodSymbol || isNonLocalFunctionSymbol) {

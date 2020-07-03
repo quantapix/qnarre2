@@ -6,7 +6,7 @@ namespace core {
   export function createSourceMapGenerator(host: EmitHost, file: string, sourceRoot: string, sourcesDirectoryPath: string, generatorOptions: SourceMapGeneratorOptions): SourceMapGenerator {
     const { enter, exit } = generatorOptions.extendedDiagnostics ? performance.createTimer('Source Map', 'beforeSourcemap', 'afterSourcemap') : performance.nullTimer;
 
-    // Current source map file and its index in the sources list
+    
     const rawSources: string[] = [];
     const sources: string[] = [];
     const sourceToSourceIndexMap = createMap<number>();
@@ -16,7 +16,7 @@ namespace core {
     let nameToNameIndexMap: Map<number> | undefined;
     let mappings = '';
 
-    // Last recorded and encoded mappings
+    
     let lastGeneratedLine = 0;
     let lastGeneratedCharacter = 0;
     let lastSourceIndex = 0;
@@ -48,7 +48,7 @@ namespace core {
 
     function addSource(fileName: string) {
       enter();
-      const source = getRelativePathToDirectoryOrUrl(sourcesDirectoryPath, fileName, host.getCurrentDirectory(), host.getCanonicalFileName, /*isAbsolutePathAnUrl*/ true);
+      const source = getRelativePathToDirectoryOrUrl(sourcesDirectoryPath, fileName, host.getCurrentDirectory(), host.getCanonicalFileName,  true);
 
       let sourceIndex = sourceToSourceIndexMap.get(source);
       if (sourceIndex === undefined) {
@@ -61,7 +61,7 @@ namespace core {
       return sourceIndex;
     }
 
-    /* eslint-disable boolean-trivia, no-null/no-null */
+    
     function setSourceContent(sourceIndex: number, content: string | null) {
       enter();
       if (content !== null) {
@@ -73,7 +73,7 @@ namespace core {
       }
       exit();
     }
-    /* eslint-enable boolean-trivia, no-null/no-null */
+    
 
     function addName(name: string) {
       enter();
@@ -109,7 +109,7 @@ namespace core {
       assert(sourceLine === undefined || sourceLine >= 0, 'sourceLine cannot be negative');
       assert(sourceCharacter === undefined || sourceCharacter >= 0, 'sourceCharacter cannot be negative');
       enter();
-      // If this location wasn't recorded or the location in source is going backwards, record the mapping
+      
       if (isNewGeneratedPosition(generatedLine, generatedCharacter) || isBacktrackingSourcePosition(sourceIndex, sourceLine, sourceCharacter)) {
         commitPendingMapping();
         pendingGeneratedLine = generatedLine;
@@ -136,7 +136,7 @@ namespace core {
       assert(generatedLine >= pendingGeneratedLine, 'generatedLine cannot backtrack');
       assert(generatedCharacter >= 0, 'generatedCharacter cannot be negative');
       enter();
-      // First, decode the old component sourcemap
+      
       const sourceIndexToNewSourceIndexMap: number[] = [];
       let nameIndexToNewNameIndexMap: number[] | undefined;
       const mappingIterator = decodeMappings(map.mappings);
@@ -149,7 +149,7 @@ namespace core {
         if (start && (raw.generatedLine < start.line || (start.line === raw.generatedLine && raw.generatedCharacter < start.character))) {
           continue;
         }
-        // Then reencode all the updated mappings into the overall map
+        
         let newSourceIndex: number | undefined;
         let newSourceLine: number | undefined;
         let newSourceCharacter: number | undefined;
@@ -157,7 +157,7 @@ namespace core {
         if (raw.sourceIndex !== undefined) {
           newSourceIndex = sourceIndexToNewSourceIndexMap[raw.sourceIndex];
           if (newSourceIndex === undefined) {
-            // Apply offsets to each position and fixup source entries
+            
             const rawPath = map.sources[raw.sourceIndex];
             const relativePath = map.sourceRoot ? combinePaths(map.sourceRoot, rawPath) : rawPath;
             const combinedPath = combinePaths(getDirectoryPath(sourceMapPath), relativePath);
@@ -206,9 +206,9 @@ namespace core {
 
       enter();
 
-      // Line/Comma delimiters
+      
       if (lastGeneratedLine < pendingGeneratedLine) {
-        // Emit line delimiters
+        
         do {
           mappings += ';';
           lastGeneratedLine++;
@@ -216,31 +216,31 @@ namespace core {
         } while (lastGeneratedLine < pendingGeneratedLine);
       } else {
         Debug.assertEqual(lastGeneratedLine, pendingGeneratedLine, 'generatedLine cannot backtrack');
-        // Emit comma to separate the entry
+        
         if (hasLast) {
           mappings += ',';
         }
       }
 
-      // 1. Relative generated character
+      
       mappings += base64VLQFormatEncode(pendingGeneratedCharacter - lastGeneratedCharacter);
       lastGeneratedCharacter = pendingGeneratedCharacter;
 
       if (hasPendingSource) {
-        // 2. Relative sourceIndex
+        
         mappings += base64VLQFormatEncode(pendingSourceIndex - lastSourceIndex);
         lastSourceIndex = pendingSourceIndex;
 
-        // 3. Relative source line
+        
         mappings += base64VLQFormatEncode(pendingSourceLine - lastSourceLine);
         lastSourceLine = pendingSourceLine;
 
-        // 4. Relative source character
+        
         mappings += base64VLQFormatEncode(pendingSourceCharacter - lastSourceCharacter);
         lastSourceCharacter = pendingSourceCharacter;
 
         if (hasPendingName) {
-          // 5. Relative nameIndex
+          
           mappings += base64VLQFormatEncode(pendingNameIndex - lastNameIndex);
           lastNameIndex = pendingNameIndex;
         }
@@ -264,7 +264,7 @@ namespace core {
     }
   }
 
-  // Sometimes tools can see the following line as a source mapping url comment, so we mangle it a bit (the [M])
+  
   const sourceMapCommentRegExp = /^\/\/[@#] source[M]appingURL=(.+)\s*$/;
   const whitespaceOrMapCommentRegExp = /^\s*(\/\/[@#] .*)?$/;
 
@@ -280,9 +280,7 @@ namespace core {
     };
   }
 
-  /**
-   * Tries to find the sourceMappingURL comment at the end of a file.
-   */
+  
   export function tryGetSourceMappingURL(lineInfo: LineInfo) {
     for (let index = lineInfo.getLineCount() - 1; index >= 0; index--) {
       const line = lineInfo.getLineText(index);
@@ -290,14 +288,14 @@ namespace core {
       if (comment) {
         return comment[1];
       }
-      // If we see a non-whitespace/map comment-like line, break, to avoid scanning up the entire file
+      
       else if (!line.match(whitespaceOrMapCommentRegExp)) {
         break;
       }
     }
   }
 
-  /* eslint-disable no-null/no-null */
+  
   function isStringOrNull(x: any) {
     return typeof x === 'string' || x === null;
   }
@@ -316,7 +314,7 @@ namespace core {
       (x.names === undefined || x.names === null || (isArray(x.names) && every(x.names, isString)))
     );
   }
-  /* eslint-enable no-null/no-null */
+  
 
   export function tryParseRawSourceMap(text: string) {
     try {
@@ -325,7 +323,7 @@ namespace core {
         return parsed;
       }
     } catch {
-      // empty
+      
     }
 
     return;
@@ -371,13 +369,13 @@ namespace core {
         return error;
       },
       get state() {
-        return captureMapping(/*hasSource*/ true, /*hasName*/ true);
+        return captureMapping( true);
       },
       next() {
         while (!done && pos < mappings.length) {
           const ch = mappings.charCodeAt(pos);
           if (ch === Codes.semicolon) {
-            // new line
+            
             generatedLine++;
             generatedCharacter = 0;
             pos++;
@@ -385,7 +383,7 @@ namespace core {
           }
 
           if (ch === Codes.comma) {
-            // Next entry is on same line - no action needed
+            
             pos++;
             continue;
           }
@@ -476,24 +474,24 @@ namespace core {
       for (; moreDigits; pos++) {
         if (pos >= mappings.length) return setError('Error in decoding base64VLQFormatDecode, past the mapping string'), -1;
 
-        // 6 digit number
+        
         const currentByte = base64FormatDecode(mappings.charCodeAt(pos));
         if (currentByte === -1) return setError('Invalid character in VLQ'), -1;
 
-        // If msb is set, we still have more bits to continue
+        
         moreDigits = (currentByte & 32) !== 0;
 
-        // least significant 5 bits are the next msbs in the final value.
+        
         value = value | ((currentByte & 31) << shiftCount);
         shiftCount += 5;
       }
 
-      // Least significant bit if 1 represents negative and rest of the msb is actual absolute value
+      
       if ((value & 1) === 0) {
-        // + number
+        
         value = value >> 1;
       } else {
-        // - number
+        
         value = value >> 1;
         value = -value;
       }
@@ -547,24 +545,24 @@ namespace core {
   }
 
   function base64VLQFormatEncode(inValue: number) {
-    // Add a new least significant bit that has the sign of the value.
-    // if negative number the least significant bit that gets added to the number has value 1
-    // else least significant bit value that gets added is 0
-    // eg. -1 changes to binary : 01 [1] => 3
-    //     +1 changes to binary : 01 [0] => 2
+    
+    
+    
+    
+    
     if (inValue < 0) {
       inValue = (-inValue << 1) + 1;
     } else {
       inValue = inValue << 1;
     }
 
-    // Encode 5 bits at a time starting from least significant bits
+    
     let encodedStr = '';
     do {
-      let currentDigit = inValue & 31; // 11111
+      let currentDigit = inValue & 31; 
       inValue = inValue >> 5;
       if (inValue > 0) {
-        // There are still more digits to decode, set the msb (6th bit)
+        
         currentDigit = currentDigit | 32;
       }
       encodedStr = encodedStr + String.fromCharCode(base64FormatEncode(currentDigit));
@@ -596,8 +594,8 @@ namespace core {
   }
 
   function compareSourcePositions(left: SourceMappedPosition, right: SourceMappedPosition) {
-    // Compares sourcePosition without comparing sourceIndex
-    // since the mappings are grouped by sourceIndex
+    
+    
     assert(left.sourceIndex === right.sourceIndex);
     return compareValues(left.sourcePosition, right.sourcePosition);
   }
@@ -631,13 +629,13 @@ namespace core {
     };
 
     function processMapping(mapping: Mapping): MappedPosition {
-      const generatedPosition = generatedFile !== undefined ? syntax.get.posOf(generatedFile, mapping.generatedLine, mapping.generatedCharacter, /*allowEdits*/ true) : -1;
+      const generatedPosition = generatedFile !== undefined ? syntax.get.posOf(generatedFile, mapping.generatedLine, mapping.generatedCharacter,  true) : -1;
       let source: string | undefined;
       let sourcePosition: number | undefined;
       if (isSourceMapping(mapping)) {
         const sourceFile = host.getSourceFileLike(sourceFileAbsolutePaths[mapping.sourceIndex]);
         source = map.sources[mapping.sourceIndex];
-        sourcePosition = sourceFile !== undefined ? syntax.get.posOf(sourceFile, mapping.sourceLine, mapping.sourceCharacter, /*allowEdits*/ true) : -1;
+        sourcePosition = sourceFile !== undefined ? syntax.get.posOf(sourceFile, mapping.sourceLine, mapping.sourceCharacter,  true) : -1;
       }
       return {
         generatedPosition,
@@ -698,7 +696,7 @@ namespace core {
 
       let targetIndex = binarySearchKey(sourceMappings, loc.pos, getSourcePositionOfMapping, compareValues);
       if (targetIndex < 0) {
-        // if no exact match, closest is 2's complement of result
+        
         targetIndex = ~targetIndex;
       }
 
@@ -707,7 +705,7 @@ namespace core {
         return loc;
       }
 
-      return { fileName: generatedAbsoluteFilePath, pos: mapping.generatedPosition }; // Closest pos
+      return { fileName: generatedAbsoluteFilePath, pos: mapping.generatedPosition }; 
     }
 
     function getSourcePosition(loc: DocumentPosition): DocumentPosition {
@@ -716,7 +714,7 @@ namespace core {
 
       let targetIndex = binarySearchKey(generatedMappings, loc.pos, getGeneratedPositionOfMapping, compareValues);
       if (targetIndex < 0) {
-        // if no exact match, closest is 2's complement of result
+        
         targetIndex = ~targetIndex;
       }
 
@@ -725,7 +723,7 @@ namespace core {
         return loc;
       }
 
-      return { fileName: sourceFileAbsolutePaths[mapping.sourceIndex], pos: mapping.sourcePosition }; // Closest pos
+      return { fileName: sourceFileAbsolutePaths[mapping.sourceIndex], pos: mapping.sourcePosition }; 
     }
   }
 

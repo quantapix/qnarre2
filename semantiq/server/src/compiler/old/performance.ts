@@ -1,14 +1,7 @@
-/** Performance measurements for the compiler. */
 namespace qnr.performance {
   declare const onProfilerEvent: { (markName: string): void; profiler: boolean };
 
-  // NOTE: cannot use qnr.noop as core.ts loads after this
-  const profilerEvent: (markName: string) => void =
-    typeof onProfilerEvent === 'function' && onProfilerEvent.profiler === true
-      ? onProfilerEvent
-      : () => {
-          /*empty*/
-        };
+  const profilerEvent: (markName: string) => void = typeof onProfilerEvent === 'function' && onProfilerEvent.profiler === true ? onProfilerEvent : () => {};
 
   let enabled = false;
   let profilerStart = 0;
@@ -50,11 +43,6 @@ namespace qnr.performance {
 
   export const nullTimer: Timer = { enter: noop, exit: noop };
 
-  /**
-   * Marks a performance event.
-   *
-   * @param markName The name of the mark.
-   */
   export function mark(markName: string) {
     if (enabled) {
       marks.set(markName, timestamp());
@@ -63,15 +51,6 @@ namespace qnr.performance {
     }
   }
 
-  /**
-   * Adds a performance measurement with the specified name.
-   *
-   * @param measureName The name of the performance measurement.
-   * @param startMarkName The name of the starting mark. If not supplied, the point at which the
-   *      profiler was enabled is used.
-   * @param endMarkName The name of the ending mark. If not supplied, the current timestamp is
-   *      used.
-   */
   export function measure(measureName: string, startMarkName?: string, endMarkName?: string) {
     if (enabled) {
       const end = (endMarkName && marks.get(endMarkName)) || timestamp();
@@ -80,36 +59,20 @@ namespace qnr.performance {
     }
   }
 
-  /**
-   * Gets the number of times a marker was encountered.
-   *
-   * @param markName The name of the mark.
-   */
   export function getCount(markName: string) {
     return (counts && counts.get(markName)) || 0;
   }
 
-  /**
-   * Gets the total duration of all measurements with the supplied name.
-   *
-   * @param measureName The name of the measure whose durations should be accumulated.
-   */
   export function getDuration(measureName: string) {
     return (measures && measures.get(measureName)) || 0;
   }
 
-  /**
-   * Iterate over each measure, performing some action
-   *
-   * @param cb The action to perform for each measure
-   */
   export function forEachMeasure(cb: (measureName: string, duration: number) => void) {
     measures.forEach((measure, key) => {
       cb(key, measure);
     });
   }
 
-  /** Enables (and resets) performance measurements for the compiler. */
   export function enable() {
     counts = createMap<number>();
     marks = createMap<number>();
@@ -118,7 +81,6 @@ namespace qnr.performance {
     profilerStart = timestamp();
   }
 
-  /** Disables performance measurements for the compiler. */
   export function disable() {
     enabled = false;
   }

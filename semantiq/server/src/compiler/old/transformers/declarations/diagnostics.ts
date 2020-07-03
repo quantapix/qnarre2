@@ -170,16 +170,12 @@ namespace core {
             ? Diagnostics.Exported_variable_0_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
             : Diagnostics.Exported_variable_0_has_or_is_using_name_1_from_private_module_2
           : Diagnostics.Exported_variable_0_has_or_is_using_private_name_1;
-      }
-      // This check is to ensure we don't report error on constructor parameter property as that error would be reported during parameter emit
-      // The only exception here is if the constructor was marked as private. we are not emitting the constructor parameters at all.
-      else if (
+      } else if (
         node.kind === Syntax.PropertyDeclaration ||
         node.kind === Syntax.PropertyAccessExpression ||
         node.kind === Syntax.PropertySignature ||
         (node.kind === Syntax.Parameter && hasSyntacticModifier(node.parent, ModifierFlags.Private))
       ) {
-        // TODO(jfreeman): Deal with computed properties in error reporting.
         if (hasSyntacticModifier(node, ModifierFlags.Static)) {
           return symbolAccessibilityResult.errorModuleName
             ? symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed
@@ -193,7 +189,6 @@ namespace core {
               : Diagnostics.Public_property_0_of_exported_class_has_or_is_using_name_1_from_private_module_2
             : Diagnostics.Public_property_0_of_exported_class_has_or_is_using_private_name_1;
         } else {
-          // Interfaces cannot have types that cannot be named
           return symbolAccessibilityResult.errorModuleName
             ? Diagnostics.Property_0_of_exported_interface_has_or_is_using_name_1_from_private_module_2
             : Diagnostics.Property_0_of_exported_interface_has_or_is_using_private_name_1;
@@ -215,8 +210,6 @@ namespace core {
     function getAccessorDeclarationTypeVisibilityError(symbolAccessibilityResult: SymbolAccessibilityResult): SymbolAccessibilityDiagnostic {
       let diagnosticMessage: DiagnosticMessage;
       if (node.kind === Syntax.SetAccessor) {
-        // Getters can infer the return type from the returned expression, but setters cannot, so the
-        // "_from_external_module_1_but_cannot_be_named" case cannot occur.
         if (hasSyntacticModifier(node, ModifierFlags.Static)) {
           diagnosticMessage = symbolAccessibilityResult.errorModuleName
             ? Diagnostics.Parameter_type_of_public_static_setter_0_from_exported_class_has_or_is_using_name_1_from_private_module_2
@@ -252,21 +245,18 @@ namespace core {
       let diagnosticMessage: DiagnosticMessage;
       switch (node.kind) {
         case Syntax.ConstructSignature:
-          // Interfaces cannot have return types that cannot be named
           diagnosticMessage = symbolAccessibilityResult.errorModuleName
             ? Diagnostics.Return_type_of_constructor_signature_from_exported_interface_has_or_is_using_name_0_from_private_module_1
             : Diagnostics.Return_type_of_constructor_signature_from_exported_interface_has_or_is_using_private_name_0;
           break;
 
         case Syntax.CallSignature:
-          // Interfaces cannot have return types that cannot be named
           diagnosticMessage = symbolAccessibilityResult.errorModuleName
             ? Diagnostics.Return_type_of_call_signature_from_exported_interface_has_or_is_using_name_0_from_private_module_1
             : Diagnostics.Return_type_of_call_signature_from_exported_interface_has_or_is_using_private_name_0;
           break;
 
         case Syntax.IndexSignature:
-          // Interfaces cannot have return types that cannot be named
           diagnosticMessage = symbolAccessibilityResult.errorModuleName
             ? Diagnostics.Return_type_of_index_signature_from_exported_interface_has_or_is_using_name_0_from_private_module_1
             : Diagnostics.Return_type_of_index_signature_from_exported_interface_has_or_is_using_private_name_0;
@@ -287,7 +277,6 @@ namespace core {
                 : Diagnostics.Return_type_of_public_method_from_exported_class_has_or_is_using_name_0_from_private_module_1
               : Diagnostics.Return_type_of_public_method_from_exported_class_has_or_is_using_private_name_0;
           } else {
-            // Interfaces cannot have return types that cannot be named
             diagnosticMessage = symbolAccessibilityResult.errorModuleName
               ? Diagnostics.Return_type_of_method_from_exported_interface_has_or_is_using_name_0_from_private_module_1
               : Diagnostics.Return_type_of_method_from_exported_interface_has_or_is_using_private_name_0;
@@ -334,19 +323,16 @@ namespace core {
 
         case Syntax.ConstructSignature:
         case Syntax.ConstructorType:
-          // Interfaces cannot have parameter types that cannot be named
           return symbolAccessibilityResult.errorModuleName
             ? Diagnostics.Parameter_0_of_constructor_signature_from_exported_interface_has_or_is_using_name_1_from_private_module_2
             : Diagnostics.Parameter_0_of_constructor_signature_from_exported_interface_has_or_is_using_private_name_1;
 
         case Syntax.CallSignature:
-          // Interfaces cannot have parameter types that cannot be named
           return symbolAccessibilityResult.errorModuleName
             ? Diagnostics.Parameter_0_of_call_signature_from_exported_interface_has_or_is_using_name_1_from_private_module_2
             : Diagnostics.Parameter_0_of_call_signature_from_exported_interface_has_or_is_using_private_name_1;
 
         case Syntax.IndexSignature:
-          // Interfaces cannot have parameter types that cannot be named
           return symbolAccessibilityResult.errorModuleName
             ? Diagnostics.Parameter_0_of_index_signature_from_exported_interface_has_or_is_using_name_1_from_private_module_2
             : Diagnostics.Parameter_0_of_index_signature_from_exported_interface_has_or_is_using_private_name_1;
@@ -366,7 +352,6 @@ namespace core {
                 : Diagnostics.Parameter_0_of_public_method_from_exported_class_has_or_is_using_name_1_from_private_module_2
               : Diagnostics.Parameter_0_of_public_method_from_exported_class_has_or_is_using_private_name_1;
           } else {
-            // Interfaces cannot have parameter types that cannot be named
             return symbolAccessibilityResult.errorModuleName
               ? Diagnostics.Parameter_0_of_method_from_exported_interface_has_or_is_using_name_1_from_private_module_2
               : Diagnostics.Parameter_0_of_method_from_exported_interface_has_or_is_using_private_name_1;
@@ -393,7 +378,6 @@ namespace core {
     }
 
     function getTypeParameterConstraintVisibilityError(): SymbolAccessibilityDiagnostic {
-      // Type parameter constraints are named by user so we should always be able to name it
       let diagnosticMessage: DiagnosticMessage;
       switch (node.parent.kind) {
         case Syntax.ClassDeclaration:
@@ -450,15 +434,13 @@ namespace core {
 
     function getHeritageClauseVisibilityError(): SymbolAccessibilityDiagnostic {
       let diagnosticMessage: DiagnosticMessage;
-      // Heritage clause is written by user so it can always be named
+
       if (node.parent.parent.kind === Syntax.ClassDeclaration) {
-        // Class or Interface implemented/extended is inaccessible
         diagnosticMessage =
           Node.is.kind(HeritageClause, node.parent) && node.parent.token === Syntax.ImplementsKeyword
             ? Diagnostics.Implements_clause_of_exported_class_0_has_or_is_using_private_name_1
             : Diagnostics.extends_clause_of_exported_class_0_has_or_is_using_private_name_1;
       } else {
-        // interface is inaccessible
         diagnosticMessage = Diagnostics.extends_clause_of_exported_interface_0_has_or_is_using_private_name_1;
       }
 

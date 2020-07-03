@@ -62,14 +62,14 @@ namespace core {
         target = left;
         value = left;
       }
-      return setRange(createAssignment(target, createMathPow(value, right, /*location*/ node)), node);
+      return setRange(createAssignment(target, createMathPow(value, right, node)), node);
     }
 
     function visitExponentiationExpression(node: BinaryExpression) {
       // Transforms `a ** b` into `Math.pow(a, b)`
       const left = visitNode(node.left, visitor, isExpression);
       const right = visitNode(node.right, visitor, isExpression);
-      return createMathPow(left, right, /*location*/ node);
+      return createMathPow(left, right, node);
     }
   }
 }

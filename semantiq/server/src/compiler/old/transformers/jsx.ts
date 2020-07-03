@@ -5,11 +5,6 @@ namespace core {
 
     return chainBundle(transformSourceFile);
 
-    /**
-     * Transform JSX-specific syntax in a SourceFile.
-     *
-     * @param node A SourceFile node.
-     */
     function transformSourceFile(node: SourceFile) {
       if (node.isDeclarationFile) {
         return node;
@@ -32,13 +27,13 @@ namespace core {
     function visitorWorker(node: Node): VisitResult<Node> {
       switch (node.kind) {
         case Syntax.JsxElement:
-          return visitJsxElement(<JsxElement>node, /*isChild*/ false);
+          return visitJsxElement(<JsxElement>node, false);
 
         case Syntax.JsxSelfClosingElement:
-          return visitJsxSelfClosingElement(<JsxSelfClosingElement>node, /*isChild*/ false);
+          return visitJsxSelfClosingElement(<JsxSelfClosingElement>node, false);
 
         case Syntax.JsxFragment:
-          return visitJsxFragment(<JsxFragment>node, /*isChild*/ false);
+          return visitJsxFragment(<JsxFragment>node, false);
 
         case Syntax.JsxExpression:
           return visitJsxExpression(<JsxExpression>node);
@@ -57,13 +52,13 @@ namespace core {
           return visitJsxExpression(node);
 
         case Syntax.JsxElement:
-          return visitJsxElement(node, /*isChild*/ true);
+          return visitJsxElement(node, true);
 
         case Syntax.JsxSelfClosingElement:
-          return visitJsxSelfClosingElement(node, /*isChild*/ true);
+          return visitJsxSelfClosingElement(node, true);
 
         case Syntax.JsxFragment:
-          return visitJsxFragment(node, /*isChild*/ true);
+          return visitJsxFragment(node, true);
 
         default:
           return Debug.failBadSyntax(node);
@@ -71,15 +66,15 @@ namespace core {
     }
 
     function visitJsxElement(node: JsxElement, isChild: boolean) {
-      return visitJsxOpeningLikeElement(node.openingElement, node.children, isChild, /*location*/ node);
+      return visitJsxOpeningLikeElement(node.openingElement, node.children, isChild, node);
     }
 
     function visitJsxSelfClosingElement(node: JsxSelfClosingElement, isChild: boolean) {
-      return visitJsxOpeningLikeElement(node, /*children*/ undefined, isChild, /*location*/ node);
+      return visitJsxOpeningLikeElement(node, node);
     }
 
     function visitJsxFragment(node: JsxFragment, isChild: boolean) {
-      return visitJsxOpeningFragment(node.openingFragment, node.children, isChild, /*location*/ node);
+      return visitJsxOpeningFragment(node.openingFragment, node.children, isChild, node);
     }
 
     function visitJsxOpeningLikeElement(node: JsxOpeningLikeElement, children: readonly JsxChild[] | undefined, isChild: boolean, location: TextRange) {
@@ -87,11 +82,8 @@ namespace core {
       let objectProperties: Expression | undefined;
       const attrs = node.attributes.properties;
       if (attrs.length === 0) {
-        // When there are no attributes, React wants "null"
         objectProperties = createNull();
       } else {
-        // Map spans of JsxAttribute nodes into object literals and spans
-        // of JsxSpreadAttribute nodes into expressions.
         const segments = flatten<Expression | ObjectLiteralExpression>(
           spanMap(attrs, isJsxSpreadAttribute, (attrs, isSpread) =>
             isSpread ? map(attrs, transformJsxSpreadAttributeToExpression) : createObjectLiteral(map(attrs, transformJsxAttributeToObjectLiteralElement))
@@ -99,13 +91,9 @@ namespace core {
         );
 
         if (Node.is.kind(JsxSpreadAttribute, attrs[0])) {
-          // We must always emit at least one object literal before a spread
-          // argument.
           segments.unshift(createObjectLiteral());
         }
 
-        // Either emit one big object literal (no spread attribs), or
-        // a call to the __assign helper.
         objectProperties = singleOrUndefined(segments);
         if (!objectProperties) {
           objectProperties = createAssignHelper(context, segments);
@@ -114,7 +102,7 @@ namespace core {
 
       const element = createExpressionForJsxElement(
         context.getEmitResolver().getJsxFactoryEntity(currentSourceFile),
-        compilerOptions.reactNamespace!, // TODO: GH#18217
+        compilerOptions.reactNamespace!,
         tagName,
         objectProperties,
         mapDefined(children, transformJsxChildToExpression),
@@ -132,7 +120,7 @@ namespace core {
     function visitJsxOpeningFragment(node: JsxOpeningFragment, children: readonly JsxChild[], isChild: boolean, location: TextRange) {
       const element = createExpressionForJsxFragment(
         context.getEmitResolver().getJsxFactoryEntity(currentSourceFile),
-        compilerOptions.reactNamespace!, // TODO: GH#18217
+        compilerOptions.reactNamespace!,
         mapDefined(children, transformJsxChildToExpression),
         node,
         location
@@ -159,8 +147,6 @@ namespace core {
       if (node === undefined) {
         return createTrue();
       } else if (node.kind === Syntax.StringLiteral) {
-        // Always recreate the literal to escape any escape sequences or newlines which may be in the original jsx string and which
-        // Need to be escaped to be handled correctly in a normal string
         const literal = createLiteral(tryDecodeEntities(node.text) || node.text);
         literal.singleQuote = node.singleQuote !== undefined ? node.singleQuote : !isStringDoubleQuoted(node, currentSourceFile);
         return setRange(literal, node);
@@ -179,42 +165,20 @@ namespace core {
       return fixed === undefined ? undefined : createLiteral(fixed);
     }
 
-    /**
-     * JSX trims whitespace at the end and beginning of lines, except that the
-     * start/end of a tag is considered a start/end of a line only if that line is
-     * on the same line as the closing tag. See examples in
-     * tests/cases/conformance/jsx/tsxReactEmitWhitespace.tsx
-     * See also https://www.w3.org/TR/html4/struct/text.html#h-9.1 and https://www.w3.org/TR/CSS2/text.html#white-space-model
-     *
-     * An equivalent algorithm would be:
-     * - If there is only one line, return it.
-     * - If there is only whitespace (but multiple lines), return `undefined`.
-     * - Split the text into lines.
-     * - 'trimRight' the first line, 'trimLeft' the last line, 'trim' middle lines.
-     * - Decode entities on each line (individually).
-     * - Remove empty lines and join the rest with " ".
-     */
     function fixupWhitespaceAndDecodeEntities(text: string): string | undefined {
       let acc: string | undefined;
-      // First non-whitespace character on this line.
+
       let firstNonWhitespace = 0;
-      // Last non-whitespace character on this line.
+
       let lastNonWhitespace = -1;
-      // These initial values are special because the first line is:
-      // firstNonWhitespace = 0 to indicate that we want leading whitsepace,
-      // but lastNonWhitespace = -1 as a special flag to indicate that we *don't* include the line if it's all whitespace.
 
       for (let i = 0; i < text.length; i++) {
         const c = text.charCodeAt(i);
         if (syntax.is.lineBreak(c)) {
-          // If we've seen any non-whitespace characters on this line, add the 'trim' of the line.
-          // (lastNonWhitespace === -1 is a special flag to detect whether the first line is all whitespace.)
           if (firstNonWhitespace !== -1 && lastNonWhitespace !== -1) {
             acc = addLineOfJsxText(acc, text.substr(firstNonWhitespace, lastNonWhitespace - firstNonWhitespace + 1));
           }
 
-          // Reset firstNonWhitespace for the next line.
-          // Don't bother to reset lastNonWhitespace because we ignore it if firstNonWhitespace = -1.
           firstNonWhitespace = -1;
         } else if (!syntax.is.whiteSpaceSingleLine(c)) {
           lastNonWhitespace = i;
@@ -224,24 +188,14 @@ namespace core {
         }
       }
 
-      return firstNonWhitespace !== -1
-        ? // Last line had a non-whitespace character. Emit the 'trimLeft', meaning keep trailing whitespace.
-          addLineOfJsxText(acc, text.substr(firstNonWhitespace))
-        : // Last line was all whitespace, so ignore it
-          acc;
+      return firstNonWhitespace !== -1 ? addLineOfJsxText(acc, text.substr(firstNonWhitespace)) : acc;
     }
 
     function addLineOfJsxText(acc: string | undefined, trimmedLine: string): string {
-      // We do not escape the string here as that is handled by the printer
-      // when it emits the literal. We do, however, need to decode JSX entities.
       const decoded = decodeEntities(trimmedLine);
       return acc === undefined ? decoded : acc + ' ' + decoded;
     }
 
-    /**
-     * Replace entities like "&nbsp;", "&#123;", and "&#xDEADBEEF;" with the characters they encode.
-     * See https://en.wikipedia.org/wiki/List_of_XML_and_HTML_character_entity_references
-     */
     function decodeEntities(text: string): string {
       return text.replace(/&((#((\d+)|x([\da-fA-F]+)))|(\w+));/g, (match, _all, _number, _digits, decimal, hex, word) => {
         if (decimal) {
@@ -250,13 +204,12 @@ namespace core {
           return String.fromCodePoint(parseInt(hex, 16));
         } else {
           const ch = entities.get(word);
-          // If this is not a valid entity, then just use `match` (replace it with itself, i.e. don't replace)
+
           return ch ? String.fromCodePoint(ch) : match;
         }
       });
     }
 
-    /** Like `decodeEntities` but returns `undefined` if there were no entities to decode. */
     function tryDecodeEntities(text: string): string | undefined {
       const decoded = decodeEntities(text);
       return decoded === text ? undefined : decoded;
@@ -275,11 +228,6 @@ namespace core {
       }
     }
 
-    /**
-     * Emit an attribute name, which is quoted if it needs to be quoted. Because
-     * these emit into an object literal property name, we don't need to be worried
-     * about keywords, just non-identifier characters
-     */
     function getAttributeName(node: JsxAttribute): StringLiteral | Identifier {
       const name = node.name;
       const text = idText(name);

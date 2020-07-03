@@ -1150,13 +1150,12 @@ export abstract class Node extends qb.TextRange implements qt.Node {
     }
     isSomeImportDeclaration(decl: Node) {
       switch (decl.kind) {
-        case Syntax.ImportClause: // For default import
+        case Syntax.ImportClause:
         case Syntax.ImportEqualsDeclaration:
         case Syntax.NamespaceImport:
-        case Syntax.ImportSpecifier: // For rename import `x as y`
+        case Syntax.ImportSpecifier:
           return true;
         case Syntax.Identifier:
-          // For regular import, `decl` is an Identifier under the ImportSpecifier.
           return decl.parent.kind === Syntax.ImportSpecifier;
         default:
           return false;
@@ -1703,11 +1702,7 @@ export abstract class Node extends qb.TextRange implements qt.Node {
       return false;
     }
     isOutermostOptionalChain(n: OptionalChain) {
-      return (
-        !Node.is.optionalChain(n.parent) || // cases 1, 2, and 3
-        Node.is.optionalChainRoot(n.parent) || // case 4
-        n !== n.parent.expression
-      ); // case 5
+      return !Node.is.optionalChain(n.parent) || Node.is.optionalChainRoot(n.parent) || n !== n.parent.expression;
     }
     isEmptyBindingElement(n: BindingElement) {
       if (Node.is.kind(OmittedExpression, n)) return true;
@@ -2457,18 +2452,18 @@ export class PrivateIdentifier extends TokenOrIdentifier {
 }
 
 export class Type {
-  flags: TypeFlags; // Flags
-  id!: number; // Unique ID
+  flags: TypeFlags;
+  id!: number;
   checker: TypeChecker;
-  symbol!: Symbol; // Symbol associated with type (if any)
-  pattern?: DestructuringPattern; // Destructuring pattern represented by type (if any)
-  aliasSymbol?: Symbol; // Alias associated with type
-  aliasTypeArguments?: readonly Type[]; // Alias type arguments (if any)
-  aliasTypeArgumentsContainsMarker?: boolean; // Alias type arguments (if any)
-  permissiveInstantiation?: Type; // Instantiation with type parameters mapped to wildcard type
-  restrictiveInstantiation?: Type; // Instantiation with type parameters mapped to unconstrained form
-  immediateBaseConstraint?: Type; // Immediate base constraint cache
-  widened?: Type; // Cached widened form of the type
+  symbol!: Symbol;
+  pattern?: DestructuringPattern;
+  aliasSymbol?: Symbol;
+  aliasTypeArguments?: readonly Type[];
+  aliasTypeArgumentsContainsMarker?: boolean;
+  permissiveInstantiation?: Type;
+  restrictiveInstantiation?: Type;
+  immediateBaseConstraint?: Type;
+  widened?: Type;
   objectFlags?: ObjectFlags;
   constructor(public checker: TypeChecker, public flags: TypeFlags) {}
 
@@ -2552,25 +2547,23 @@ export class Type {
 export class Signature {
   flags: SignatureFlags;
   checker?: TypeChecker;
-  declaration?: SignatureDeclaration | qt.JSDocSignature; // Originating declaration
-  typeParameters?: readonly TypeParameter[]; // Type parameters (undefined if non-generic)
-  parameters!: readonly Symbol[]; // Parameters
-  thisParameter?: Symbol; // symbol of this-type parameter
-  // See comment in `instantiateSignature` for why these are set lazily.
-  resolvedReturnType?: Type; // Lazily set by `getReturnTypeOfSignature`.
-  // Lazily set by `getTypePredicateOfSignature`.
-  // `undefined` indicates a type predicate that has not yet been computed.
-  // Uses a special `noTypePredicate` sentinel value to indicate that there is no type predicate. This looks like a TypePredicate at runtime to avoid polymorphism.
+  declaration?: SignatureDeclaration | qt.JSDocSignature;
+  typeParameters?: readonly TypeParameter[];
+  parameters!: readonly Symbol[];
+  thisParameter?: Symbol;
+
+  resolvedReturnType?: Type;
+
   resolvedTypePredicate?: TypePredicate;
-  minArgumentCount!: number; // Number of non-optional parameters
-  target?: Signature; // Instantiation target
-  mapper?: TypeMapper; // Instantiation mapper
-  unionSignatures?: Signature[]; // Underlying signatures of a union signature
-  erasedSignatureCache?: Signature; // Erased version of signature (deferred)
-  canonicalSignatureCache?: Signature; // Canonical version of signature (deferred)
-  optionalCallSignatureCache?: { inner?: Signature; outer?: Signature }; // Optional chained call version of signature (deferred)
-  isolatedSignatureType?: ObjectType; // A manufactured type that just contains the signature for purposes of signature comparison
-  instantiations?: QMap<Signature>; // Generic signature instantiation cache
+  minArgumentCount!: number;
+  target?: Signature;
+  mapper?: TypeMapper;
+  unionSignatures?: Signature[];
+  erasedSignatureCache?: Signature;
+  canonicalSignatureCache?: Signature;
+  optionalCallSignatureCache?: { inner?: Signature; outer?: Signature };
+  isolatedSignatureType?: ObjectType;
+  instantiations?: QMap<Signature>;
   minTypeArgumentCount!: number;
   docComment?: SymbolDisplayPart[];
   jsDocTags?: qt.JSDocTagInfo[];
@@ -2626,37 +2619,33 @@ export class SourceFile extends Declaration {
   languageVersion: ScriptTarget;
   scriptKind: ScriptKind;
   externalModuleIndicator?: Node;
-  // The first node that causes this file to be a CommonJS module
+
   commonJsModuleIndicator?: Node;
-  // JS identifier-declarations that are intended to merge with globals
+
   jsGlobalAugmentations?: SymbolTable;
-  identifiers: QMap<string>; // Map from a string to an interned string
+  identifiers: QMap<string>;
   nodeCount: number;
   identifierCount: number;
   symbolCount: number;
-  // File-level diagnostics reported by the parser (includes diagnostics about /// references
-  // as well as code diagnostics).
+
   parseDiagnostics: DiagnosticWithLocation[];
-  // File-level diagnostics reported by the binder.
+
   bindDiagnostics: DiagnosticWithLocation[];
   bindSuggestionDiagnostics?: DiagnosticWithLocation[];
-  // File-level qt.JSDoc diagnostics reported by the qt.JSDoc parser
+
   jsDocDiagnostics?: DiagnosticWithLocation[];
-  // Stores additional file-level diagnostics reported by the program
+
   additionalSyntacticDiagnostics?: readonly DiagnosticWithLocation[];
-  // Stores a line map for the file.
-  // This field should never be used directly to obtain line map, use getLineMap function instead.
+
   lineMap: readonly number[];
   classifiableNames?: ReadonlyUnderscoreEscapedMap<true>;
-  // Comments containing @ts-* directives, in order.
+
   commentDirectives?: CommentDirective[];
-  // Stores a mapping 'external module reference text' -> 'resolved file name' | undefined
-  // It is used to resolve module names in the checker.
-  // Content of this field should never be used directly - use getResolvedModuleFileName/setResolvedModuleFileName functions instead
+
   resolvedModules?: QMap<ResolvedModuleFull | undefined>;
   resolvedTypeReferenceDirectiveNames: QMap<ResolvedTypeReferenceDirective | undefined>;
   imports: readonly StringLiteralLike[];
-  // Identifier only if `declare global`
+
   moduleAugmentations: readonly (StringLiteral | Identifier)[];
   patternAmbientModules?: PatternAmbientModule[];
   ambientModuleNames: readonly string[];
@@ -2693,8 +2682,8 @@ export class SourceFile extends Declaration {
   isDeclarationFile!: boolean;
   isDefaultLib!: boolean;
   hasNoDefaultLib!: boolean;
-  externalModuleIndicator!: Node; // The first node that causes this file to be an external module
-  commonJsModuleIndicator!: Node; // The first node that causes this file to be a CommonJS module
+  externalModuleIndicator!: Node;
+  commonJsModuleIndicator!: Node;
   nodeCount!: number;
   identifierCount!: number;
   symbolCount!: number;
@@ -2842,7 +2831,7 @@ export class SourceFile extends Declaration {
     }
 
     const fullText = this.getFullText();
-    // if the new line is "\r\n", we should return the last non-new-line-character position
+
     return fullText[lastCharPos] === '\n' && fullText[lastCharPos - 1] === '\r' ? lastCharPos - 1 : lastCharPos;
   }
 

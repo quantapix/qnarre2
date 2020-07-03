@@ -1163,32 +1163,32 @@ export const diags = {
     DiagnosticCategory.Error,
     'Call_signature_return_types_0_and_1_are_incompatible_2202',
     "Call signature return types '{0}' and '{1}' are incompatible.",
-    /*reportsUnnecessary*/ undefined,
-    /*elidedInCompatabilityPyramid*/ true
+    undefined,
+    true
   ),
   Construct_signature_return_types_0_and_1_are_incompatible: diag(
     2203,
     DiagnosticCategory.Error,
     'Construct_signature_return_types_0_and_1_are_incompatible_2203',
     "Construct signature return types '{0}' and '{1}' are incompatible.",
-    /*reportsUnnecessary*/ undefined,
-    /*elidedInCompatabilityPyramid*/ true
+    undefined,
+    true
   ),
   Call_signatures_with_no_arguments_have_incompatible_return_types_0_and_1: diag(
     2204,
     DiagnosticCategory.Error,
     'Call_signatures_with_no_arguments_have_incompatible_return_types_0_and_1_2204',
     "Call signatures with no arguments have incompatible return types '{0}' and '{1}'.",
-    /*reportsUnnecessary*/ undefined,
-    /*elidedInCompatabilityPyramid*/ true
+    undefined,
+    true
   ),
   Construct_signatures_with_no_arguments_have_incompatible_return_types_0_and_1: diag(
     2205,
     DiagnosticCategory.Error,
     'Construct_signatures_with_no_arguments_have_incompatible_return_types_0_and_1_2205',
     "Construct signatures with no arguments have incompatible return types '{0}' and '{1}'.",
-    /*reportsUnnecessary*/ undefined,
-    /*elidedInCompatabilityPyramid*/ true
+    undefined,
+    true
   ),
   Duplicate_identifier_0: diag(2300, DiagnosticCategory.Error, 'Duplicate_identifier_0_2300', "Duplicate identifier '{0}'."),
   Initializer_of_instance_member_variable_0_cannot_reference_identifier_1_declared_in_the_constructor: diag(
@@ -2783,7 +2783,7 @@ export const diags = {
     DiagnosticCategory.Error,
     'Left_side_of_comma_operator_is_unused_and_has_no_side_effects_2695',
     'Left side of comma operator is unused and has no side effects.',
-    /*reportsUnnecessary*/ true
+    true
   ),
   The_Object_type_is_assignable_to_very_few_other_types_Did_you_mean_to_use_the_any_type_instead: diag(
     2696,
@@ -4366,13 +4366,7 @@ export const diags = {
     "Cannot compile modules using option '{0}' unless the '--module' flag is 'amd' or 'system'."
   ),
   File_name_0_has_a_1_extension_stripping_it: diag(6132, DiagnosticCategory.Message, 'File_name_0_has_a_1_extension_stripping_it_6132', "File name '{0}' has a '{1}' extension - stripping it."),
-  _0_is_declared_but_its_value_is_never_read: diag(
-    6133,
-    DiagnosticCategory.Error,
-    '_0_is_declared_but_its_value_is_never_read_6133',
-    "'{0}' is declared but its value is never read.",
-    /*reportsUnnecessary*/ true
-  ),
+  _0_is_declared_but_its_value_is_never_read: diag(6133, DiagnosticCategory.Error, '_0_is_declared_but_its_value_is_never_read_6133', "'{0}' is declared but its value is never read.", true),
   Report_errors_on_unused_locals: diag(6134, DiagnosticCategory.Message, 'Report_errors_on_unused_locals_6134', 'Report errors on unused locals.'),
   Report_errors_on_unused_parameters: diag(6135, DiagnosticCategory.Message, 'Report_errors_on_unused_parameters_6135', 'Report errors on unused parameters.'),
   The_maximum_dependency_depth_to_search_under_node_modules_and_load_JavaScript_files: diag(
@@ -4392,7 +4386,7 @@ export const diags = {
     DiagnosticCategory.Error,
     'Property_0_is_declared_but_its_value_is_never_read_6138',
     "Property '{0}' is declared but its value is never read.",
-    /*reportsUnnecessary*/ true
+    true
   ),
   Import_emit_helpers_from_tslib: diag(6139, DiagnosticCategory.Message, 'Import_emit_helpers_from_tslib_6139', "Import emit helpers from 'tslib'."),
   Auto_discovery_for_typings_is_enabled_in_project_0_Running_extra_resolution_pass_for_module_1_using_cache_location_2: diag(
@@ -4595,13 +4589,7 @@ export const diags = {
     'Whether_to_keep_outdated_console_output_in_watch_mode_instead_of_clearing_the_screen_6191',
     'Whether to keep outdated console output in watch mode instead of clearing the screen.'
   ),
-  All_imports_in_import_declaration_are_unused: diag(
-    6192,
-    DiagnosticCategory.Error,
-    'All_imports_in_import_declaration_are_unused_6192',
-    'All imports in import declaration are unused.',
-    /*reportsUnnecessary*/ true
-  ),
+  All_imports_in_import_declaration_are_unused: diag(6192, DiagnosticCategory.Error, 'All_imports_in_import_declaration_are_unused_6192', 'All imports in import declaration are unused.', true),
   Found_1_error_Watching_for_file_changes: diag(6193, DiagnosticCategory.Message, 'Found_1_error_Watching_for_file_changes_6193', 'Found 1 error. Watching for file changes.'),
   Found_0_errors_Watching_for_file_changes: diag(6194, DiagnosticCategory.Message, 'Found_0_errors_Watching_for_file_changes_6194', 'Found {0} errors. Watching for file changes.'),
   Resolve_keyof_to_string_valued_property_names_only_no_numbers_or_symbols: diag(
@@ -4610,10 +4598,10 @@ export const diags = {
     'Resolve_keyof_to_string_valued_property_names_only_no_numbers_or_symbols_6195',
     "Resolve 'keyof' to string valued property names only (no numbers or symbols)."
   ),
-  _0_is_declared_but_never_used: diag(6196, DiagnosticCategory.Error, '_0_is_declared_but_never_used_6196', "'{0}' is declared but never used.", /*reportsUnnecessary*/ true),
+  _0_is_declared_but_never_used: diag(6196, DiagnosticCategory.Error, '_0_is_declared_but_never_used_6196', "'{0}' is declared but never used.", true),
   Include_modules_imported_with_json_extension: diag(6197, DiagnosticCategory.Message, 'Include_modules_imported_with_json_extension_6197', "Include modules imported with '.json' extension"),
-  All_destructured_elements_are_unused: diag(6198, DiagnosticCategory.Error, 'All_destructured_elements_are_unused_6198', 'All destructured elements are unused.', /*reportsUnnecessary*/ true),
-  All_variables_are_unused: diag(6199, DiagnosticCategory.Error, 'All_variables_are_unused_6199', 'All variables are unused.', /*reportsUnnecessary*/ true),
+  All_destructured_elements_are_unused: diag(6198, DiagnosticCategory.Error, 'All_destructured_elements_are_unused_6198', 'All destructured elements are unused.', true),
+  All_variables_are_unused: diag(6199, DiagnosticCategory.Error, 'All_variables_are_unused_6199', 'All variables are unused.', true),
   Definitions_of_the_following_identifiers_conflict_with_those_in_another_file_Colon_0: diag(
     6200,
     DiagnosticCategory.Error,
@@ -5076,8 +5064,8 @@ export const diags = {
     'JSX_element_implicitly_has_type_any_because_no_interface_JSX_0_exists_7026',
     "JSX element implicitly has type 'any' because no interface 'JSX.{0}' exists."
   ),
-  Unreachable_code_detected: diag(7027, DiagnosticCategory.Error, 'Unreachable_code_detected_7027', 'Unreachable code detected.', /*reportsUnnecessary*/ true),
-  Unused_label: diag(7028, DiagnosticCategory.Error, 'Unused_label_7028', 'Unused label.', /*reportsUnnecessary*/ true),
+  Unreachable_code_detected: diag(7027, DiagnosticCategory.Error, 'Unreachable_code_detected_7027', 'Unreachable code detected.', true),
+  Unused_label: diag(7028, DiagnosticCategory.Error, 'Unused_label_7028', 'Unused label.', true),
   Fallthrough_case_in_switch: diag(7029, DiagnosticCategory.Error, 'Fallthrough_case_in_switch_7029', 'Fallthrough case in switch.'),
   Not_all_code_paths_return_a_value: diag(7030, DiagnosticCategory.Error, 'Not_all_code_paths_return_a_value_7030', 'Not all code paths return a value.'),
   Binding_element_0_implicitly_has_an_1_type: diag(7031, DiagnosticCategory.Error, 'Binding_element_0_implicitly_has_an_1_type_7031', "Binding element '{0}' implicitly has an '{1}' type."),

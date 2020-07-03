@@ -1,24 +1,13 @@
 namespace core {
   const enum ESNextSubstitutionFlags {
-    /** Enables substitutions for async methods with `super` calls. */
     AsyncMethodsWithSuper = 1 << 0,
   }
 
-  // Facts we track as we traverse the tree
   const enum HierarchyFacts {
     None = 0,
 
-    //
-    // Ancestor facts
-    //
-
     HasLexicalThis = 1 << 0,
     IterationContainer = 1 << 1,
-    // NOTE: do not add more ancestor flags without also updating AncestorFactsMask below.
-
-    //
-    // Ancestor masks
-    //
 
     AncestorFactsMask = (IterationContainer << 1) - 1,
 
@@ -58,11 +47,10 @@ namespace core {
     let currentSourceFile: SourceFile;
     let taggedTemplateStringDeclarations: VariableDeclaration[];
 
-    /** Keeps track of property names accessed on super (`super.x`) within async functions. */
     let capturedSuperProperties: UnderscoreEscapedMap<true>;
-    /** Whether the async function contains an element access on super (`super[x]`). */
+
     let hasSuperElementAccess: boolean;
-    /** A set of node IDs for generated super accessors. */
+
     const substitutedSuperAccessors: boolean[] = [];
 
     return chainBundle(transformSourceFile);
@@ -71,22 +59,12 @@ namespace core {
       return hierarchyFacts !== ((hierarchyFacts & ~excludeFacts) | includeFacts);
     }
 
-    /**
-     * Sets the `HierarchyFacts` for this node prior to visiting this node's subtree, returning the facts set prior to modification.
-     * @param excludeFacts The existing `HierarchyFacts` to reset before visiting the subtree.
-     * @param includeFacts The new `HierarchyFacts` to set before visiting the subtree.
-     */
     function enterSubtree(excludeFacts: HierarchyFacts, includeFacts: HierarchyFacts) {
       const ancestorFacts = hierarchyFacts;
       hierarchyFacts = ((hierarchyFacts & ~excludeFacts) | includeFacts) & HierarchyFacts.AncestorFactsMask;
       return ancestorFacts;
     }
 
-    /**
-     * Restores the `HierarchyFacts` for this node's ancestor after visiting this node's
-     * subtree.
-     * @param ancestorFacts The `HierarchyFacts` of the ancestor to restore after visiting the subtree.
-     */
     function exitSubtree(ancestorFacts: HierarchyFacts) {
       hierarchyFacts = ancestorFacts;
     }
@@ -110,11 +88,11 @@ namespace core {
     }
 
     function visitor(node: Node): VisitResult<Node> {
-      return visitorWorker(node, /*noDestructuringValue*/ false);
+      return visitorWorker(node, false);
     }
 
     function visitorNoDestructuringValue(node: Node): VisitResult<Node> {
-      return visitorWorker(node, /*noDestructuringValue*/ true);
+      return visitorWorker(node, true);
     }
 
     function visitorNoAsyncModifier(node: Node): VisitResult<Node> {
@@ -166,7 +144,7 @@ namespace core {
         case Syntax.ForInStatement:
           return doWithHierarchyFacts(visitDefault, node, HierarchyFacts.IterationStatementExcludes, HierarchyFacts.IterationStatementIncludes);
         case Syntax.ForOfStatement:
-          return visitForOfStatement(node as ForOfStatement, /*outermostLabeledStatement*/ undefined);
+          return visitForOfStatement(node as ForOfStatement, undefined);
         case Syntax.ForStatement:
           return doWithHierarchyFacts(visitForStatement, node as ForStatement, HierarchyFacts.IterationStatementExcludes, HierarchyFacts.IterationStatementIncludes);
         case Syntax.VoidExpression:
@@ -213,7 +191,7 @@ namespace core {
 
     function visitAwaitExpression(node: AwaitExpression): Expression {
       if (enclosingFunctionFlags & FunctionFlags.Async && enclosingFunctionFlags & FunctionFlags.Generator) {
-        return setOriginalNode(setRange(createYield(createAwaitHelper(context, visitNode(node.expression, visitor, isExpression))), /*location*/ node), node);
+        return setOriginalNode(setRange(createYield(createAwaitHelper(context, visitNode(node.expression, visitor, isExpression))), node), node);
       }
       return visitEachChild(node, visitor, context);
     }
@@ -284,27 +262,6 @@ namespace core {
 
     function visitObjectLiteralExpression(node: ObjectLiteralExpression): Expression {
       if (node.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
-        // spread elements emit like so:
-        // non-spread elements are chunked together into object literals, and then all are passed to __assign:
-        //     { a, ...o, b } => __assign(__assign({a}, o), {b});
-        // If the first element is a spread element, then the first argument to __assign is {}:
-        //     { ...o, a, b, ...o2 } => __assign(__assign(__assign({}, o), {a, b}), o2)
-        //
-        // We cannot call __assign with more than two elements, since any element could cause side effects. For
-        // example:
-        //      var k = { a: 1, b: 2 };
-        //      var o = { a: 3, ...k, b: k.a++ };
-        //      // expected: { a: 1, b: 1 }
-        // If we translate the above to `__assign({ a: 3 }, k, { b: k.a++ })`, the `k.a++` will evaluate before
-        // `k` is spread and we end up with `{ a: 2, b: 1 }`.
-        //
-        // This also occurs for spread elements, not just property assignments:
-        //      var k = { a: 1, get b() { l = { z: 9 }; return 2; } };
-        //      var l = { c: 3 };
-        //      var o = { ...k, ...l };
-        //      // expected: { a: 1, b: 2, z: 9 }
-        // If we translate the above to `__assign({}, k, l)`, the `l` will evaluate before `k` is spread and we
-        // end up with `{ a: 1, b: 2, c: 3 }`
         const objects = chunkObjectLiteralElements(node.properties);
         if (objects.length && objects[0].kind !== Syntax.ObjectLiteralExpression) {
           objects.unshift(createObjectLiteral());
@@ -337,10 +294,7 @@ namespace core {
       );
       exportedVariableStatement = false;
       const visited = visitEachChild(node, visitor, context);
-      const statement = concatenate(
-        visited.statements,
-        taggedTemplateStringDeclarations && [createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList(taggedTemplateStringDeclarations))]
-      );
+      const statement = concatenate(visited.statements, taggedTemplateStringDeclarations && [createVariableStatement(undefined, createVariableDeclarationList(taggedTemplateStringDeclarations))]);
       const result = qp_updateSourceNode(visited, setRange(new Nodes(statement), node.statements));
       exitSubtree(ancestorFacts);
       return result;
@@ -366,7 +320,7 @@ namespace core {
         const visitedBindings = flattenDestructuringBinding(updatedDecl, visitor, context, FlattenLevel.ObjectRest);
         let block = visitNode(node.block, visitor, isBlock);
         if (some(visitedBindings)) {
-          block = block.update([createVariableStatement(/*modifiers*/ undefined, visitedBindings), ...block.statements]);
+          block = block.update([createVariableStatement(undefined, visitedBindings), ...block.statements]);
         }
         return updateCatchClause(node, updateVariableDeclaration(node.variableDeclaration, name, undefined, undefined), block);
       }
@@ -384,26 +338,20 @@ namespace core {
       return visitEachChild(node, visitor, context);
     }
 
-    /**
-     * Visits a VariableDeclaration node with a binding pattern.
-     *
-     * @param node A VariableDeclaration node.
-     */
     function visitVariableDeclaration(node: VariableDeclaration): VisitResult<VariableDeclaration> {
       if (exportedVariableStatement) {
         const savedExportedVariableStatement = exportedVariableStatement;
         exportedVariableStatement = false;
-        const visited = visitVariableDeclarationWorker(node, /*exportedVariableStatement*/ true);
+        const visited = visitVariableDeclarationWorker(node, true);
         exportedVariableStatement = savedExportedVariableStatement;
         return visited;
       }
-      return visitVariableDeclarationWorker(node, /*exportedVariableStatement*/ false);
+      return visitVariableDeclarationWorker(node, false);
     }
 
     function visitVariableDeclarationWorker(node: VariableDeclaration, exportedVariableStatement: boolean): VisitResult<VariableDeclaration> {
-      // If we are here it is because the name contains a binding pattern with a rest somewhere in it.
       if (Node.is.kind(BindingPattern, node.name) && node.name.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
-        return flattenDestructuringBinding(node, visitor, context, FlattenLevel.ObjectRest, /*rval*/ undefined, exportedVariableStatement);
+        return flattenDestructuringBinding(node, visitor, context, FlattenLevel.ObjectRest, undefined, exportedVariableStatement);
       }
       return visitEachChild(node, visitor, context);
     }
@@ -422,11 +370,6 @@ namespace core {
       return visitEachChild(node, visitorNoDestructuringValue, context);
     }
 
-    /**
-     * Visits a ForOfStatement and converts it into a ES2015-compatible ForOfStatement.
-     *
-     * @param node A ForOfStatement.
-     */
     function visitForOfStatement(node: ForOfStatement, outermostLabeledStatement: LabeledStatement | undefined): VisitResult<Statement> {
       const ancestorFacts = enterSubtree(HierarchyFacts.IterationStatementExcludes, HierarchyFacts.IterationStatementIncludes);
       if (node.initializer.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
@@ -444,7 +387,7 @@ namespace core {
       if (Node.is.kind(VariableDeclarationList, initializerWithoutParens) || Node.is.kind(AssignmentPattern, initializerWithoutParens)) {
         let bodyLocation: TextRange | undefined;
         let statementsLocation: TextRange | undefined;
-        const temp = createTempVariable(/*recordTempVariable*/ undefined);
+        const temp = createTempVariable(undefined);
         const statements: Statement[] = [createForOfBindingStatement(initializerWithoutParens, temp)];
         if (Node.is.kind(Block, node.statement)) {
           addRange(statements, node.statement.statements);
@@ -460,7 +403,7 @@ namespace core {
           node.awaitModifier,
           setRange(createVariableDeclarationList([setRange(createVariableDeclaration(temp), node.initializer)], NodeFlags.Let), node.initializer),
           node.expression,
-          setRange(new Block(setRange(new Nodes(statements), statementsLocation), /*multiLine*/ true), bodyLocation)
+          setRange(new Block(setRange(new Nodes(statements), statementsLocation), true), bodyLocation)
         );
       }
       return node;
@@ -481,22 +424,22 @@ namespace core {
         statements.push(statement);
       }
 
-      return setEmitFlags(setRange(new Block(setRange(new Nodes(statements), statementsLocation), /*multiLine*/ true), bodyLocation), EmitFlags.NoSourceMap | EmitFlags.NoTokenSourceMaps);
+      return setEmitFlags(setRange(new Block(setRange(new Nodes(statements), statementsLocation), true), bodyLocation), EmitFlags.NoSourceMap | EmitFlags.NoTokenSourceMaps);
     }
 
     function createDownlevelAwait(expression: Expression) {
-      return enclosingFunctionFlags & FunctionFlags.Generator ? createYield(/*asteriskToken*/ undefined, createAwaitHelper(context, expression)) : new AwaitExpression(expression);
+      return enclosingFunctionFlags & FunctionFlags.Generator ? createYield(undefined, createAwaitHelper(context, expression)) : new AwaitExpression(expression);
     }
 
     function transformForAwaitOfStatement(node: ForOfStatement, outermostLabeledStatement: LabeledStatement | undefined, ancestorFacts: HierarchyFacts) {
       const expression = visitNode(node.expression, visitor, isExpression);
-      const iterator = Node.is.kind(Identifier, expression) ? getGeneratedNameForNode(expression) : createTempVariable(/*recordTempVariable*/ undefined);
-      const result = Node.is.kind(Identifier, expression) ? getGeneratedNameForNode(iterator) : createTempVariable(/*recordTempVariable*/ undefined);
+      const iterator = Node.is.kind(Identifier, expression) ? getGeneratedNameForNode(expression) : createTempVariable(undefined);
+      const result = Node.is.kind(Identifier, expression) ? getGeneratedNameForNode(iterator) : createTempVariable(undefined);
       const errorRecord = createUniqueName('e');
       const catchVariable = getGeneratedNameForNode(errorRecord);
-      const returnMethod = createTempVariable(/*recordTempVariable*/ undefined);
-      const callValues = createAsyncValuesHelper(context, expression, /*location*/ node.expression);
-      const callNext = new qs.CallExpression(createPropertyAccess(iterator, 'next'), /*typeArguments*/ undefined, []);
+      const returnMethod = createTempVariable(undefined);
+      const callValues = createAsyncValuesHelper(context, expression, node.expression);
+      const callNext = new qs.CallExpression(createPropertyAccess(iterator, 'next'), undefined, []);
       const getDone = createPropertyAccess(result, 'done');
       const getValue = createPropertyAccess(result, 'value');
       const callReturn = createFunctionCall(returnMethod, iterator, []);
@@ -504,7 +447,6 @@ namespace core {
       hoistVariableDeclaration(errorRecord);
       hoistVariableDeclaration(returnMethod);
 
-      // if we are enclosed in an outer loop ensure we reset 'errorRecord' per each iteration
       const initializer = ancestorFacts & HierarchyFacts.IterationContainer ? inlineExpressions([createAssignment(errorRecord, qs.VoidExpression.zero()), callValues]) : callValues;
 
       const forStatement = setEmitFlags(
@@ -514,11 +456,11 @@ namespace core {
               setRange(createVariableDeclarationList([setRange(createVariableDeclaration(iterator, undefined, initializer), node.expression), createVariableDeclaration(result)]), node.expression),
               EmitFlags.NoHoisting
             ),
-            /*condition*/ createComma(createAssignment(result, createDownlevelAwait(callNext)), qs.PrefixUnaryExpression.logicalNot(getDone)),
-            /*incrementor*/ undefined,
-            /*statement*/ convertForOfStatementHead(node, getValue)
+            createComma(createAssignment(result, createDownlevelAwait(callNext)), qs.PrefixUnaryExpression.logicalNot(getDone)),
+            undefined,
+            convertForOfStatementHead(node, getValue)
           ),
-          /*location*/ node
+          node
         ),
         EmitFlags.NoTokenTrailingSourceMaps
       );
@@ -531,7 +473,7 @@ namespace core {
         ),
         new Block([
           createTry(
-            /*tryBlock*/ new Block([
+            new Block([
               setEmitFlags(
                 createIf(
                   createLogicalAnd(createLogicalAnd(result, qs.PrefixUnaryExpression.logicalNot(getDone)), createAssignment(returnMethod, createPropertyAccess(iterator, 'return'))),
@@ -540,8 +482,8 @@ namespace core {
                 EmitFlags.SingleLine
               ),
             ]),
-            /*catchClause*/ undefined,
-            /*finallyBlock*/ setEmitFlags(new Block([setEmitFlags(createIf(errorRecord, createThrow(createPropertyAccess(errorRecord, 'error'))), EmitFlags.SingleLine)]), EmitFlags.SingleLine)
+            undefined,
+            setEmitFlags(new Block([setEmitFlags(createIf(errorRecord, createThrow(createPropertyAccess(errorRecord, 'error'))), EmitFlags.SingleLine)]), EmitFlags.SingleLine)
           ),
         ])
       );
@@ -549,18 +491,7 @@ namespace core {
 
     function visitParameter(node: ParameterDeclaration): ParameterDeclaration {
       if (node.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
-        // Binding patterns are converted into a generated name and are
-        // evaluated inside the function body.
-        return updateParameter(
-          node,
-          undefined,
-          /*modifiers*/ undefined,
-          node.dot3Token,
-          getGeneratedNameForNode(node),
-          /*questionToken*/ undefined,
-          undefined,
-          visitNode(node.initializer, visitor, isExpression)
-        );
+        return updateParameter(node, undefined, undefined, node.dot3Token, getGeneratedNameForNode(node), undefined, undefined, visitNode(node.initializer, visitor, isExpression));
       }
       return visitEachChild(node, visitor, context);
     }
@@ -613,7 +544,7 @@ namespace core {
         enclosingFunctionFlags & FunctionFlags.Generator ? Nodes.visit(node.modifiers, visitorNoAsyncModifier, isModifier) : node.modifiers,
         enclosingFunctionFlags & FunctionFlags.Async ? undefined : node.asteriskToken,
         visitNode(node.name, visitor, isPropertyName),
-        visitNode<Token<Syntax.QuestionToken>>(/*questionToken*/ undefined, visitor, isToken),
+        visitNode<Token<Syntax.QuestionToken>>(undefined, visitor, isToken),
         undefined,
         visitParameterList(node.parameters, visitor, context),
         undefined,
@@ -669,7 +600,7 @@ namespace core {
     function transformAsyncGeneratorFunctionBody(node: MethodDeclaration | AccessorDeclaration | FunctionDeclaration | FunctionExpression): FunctionBody {
       resumeLexicalEnvironment();
       const statements: Statement[] = [];
-      const statementOffset = addPrologue(statements, node.body!.statements, /*ensureUseStrict*/ false, visitor);
+      const statementOffset = addPrologue(statements, node.body!.statements, false, visitor);
       appendObjectRestAssignmentsIfNeeded(statements, node);
 
       const savedCapturedSuperProperties = capturedSuperProperties;
@@ -681,11 +612,11 @@ namespace core {
         createAsyncGeneratorHelper(
           context,
           createFunctionExpression(
-            /*modifiers*/ undefined,
+            undefined,
             new Token(Syntax.AsteriskToken),
             node.name && getGeneratedNameForNode(node.name),
             undefined,
-            /*parameters*/ [],
+            [],
             undefined,
             node.body!.update(visitLexicalEnvironment(node.body!.statements, visitor, context, statementOffset))
           ),
@@ -693,8 +624,6 @@ namespace core {
         )
       );
 
-      // Minor optimization, emit `_super` helper to capture `super` access in an arrow.
-      // This step isn't needed if we eventually transform this to ES5.
       const emitSuperHelpers = languageVersion >= ScriptTarget.ES2015 && resolver.getNodeCheckFlags(node) & (NodeCheckFlags.AsyncMethodWithSuperBinding | NodeCheckFlags.AsyncMethodWithSuper);
 
       if (emitSuperHelpers) {
@@ -731,12 +660,12 @@ namespace core {
       const statements: Statement[] = [];
       const body = visitNode(node.body, visitor, isConciseBody);
       if (Node.is.kind(Block, body)) {
-        statementOffset = addPrologue(statements, body.statements, /*ensureUseStrict*/ false, visitor);
+        statementOffset = addPrologue(statements, body.statements, false, visitor);
       }
-      addRange(statements, appendObjectRestAssignmentsIfNeeded(/*statements*/ undefined, node));
+      addRange(statements, appendObjectRestAssignmentsIfNeeded(undefined, node));
       const leadingStatements = endLexicalEnvironment();
       if (statementOffset > 0 || some(statements) || some(leadingStatements)) {
-        const block = convertToFunctionBody(body, /*multiLine*/ true);
+        const block = convertToFunctionBody(body, true);
         insertStatementsAfterStandardPrologue(statements, leadingStatements);
         addRange(statements, block.statements.slice(statementOffset));
         return block.update(setRange(new Nodes(statements), block.statements));
@@ -748,9 +677,9 @@ namespace core {
       for (const parameter of node.parameters) {
         if (parameter.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
           const temp = getGeneratedNameForNode(parameter);
-          const declarations = flattenDestructuringBinding(parameter, visitor, context, FlattenLevel.ObjectRest, temp, /*doNotRecordTempVariablesInLine*/ false, /*skipInitializer*/ true);
+          const declarations = flattenDestructuringBinding(parameter, visitor, context, FlattenLevel.ObjectRest, temp, true);
           if (some(declarations)) {
-            const statement = createVariableStatement(/*modifiers*/ undefined, createVariableDeclarationList(declarations));
+            const statement = createVariableStatement(undefined, createVariableDeclarationList(declarations));
             setEmitFlags(statement, EmitFlags.CustomPrologue);
             statements = append(statements, statement);
           }
@@ -763,33 +692,21 @@ namespace core {
       if ((enabledSubstitutions & ESNextSubstitutionFlags.AsyncMethodsWithSuper) === 0) {
         enabledSubstitutions |= ESNextSubstitutionFlags.AsyncMethodsWithSuper;
 
-        // We need to enable substitutions for call, property access, and element access
-        // if we need to rewrite super calls.
         context.enableSubstitution(Syntax.CallExpression);
         context.enableSubstitution(Syntax.PropertyAccessExpression);
         context.enableSubstitution(Syntax.ElementAccessExpression);
 
-        // We need to be notified when entering and exiting declarations that bind super.
         context.enableEmitNotification(Syntax.ClassDeclaration);
         context.enableEmitNotification(Syntax.MethodDeclaration);
         context.enableEmitNotification(Syntax.GetAccessor);
         context.enableEmitNotification(Syntax.SetAccessor);
         context.enableEmitNotification(Syntax.Constructor);
-        // We need to be notified when entering the generated accessor arrow functions.
+
         context.enableEmitNotification(Syntax.VariableStatement);
       }
     }
 
-    /**
-     * Called by the printer just before a node is printed.
-     *
-     * @param hint A hint as to the intended usage of the node.
-     * @param node The node to be printed.
-     * @param emitCallback The callback used to emit the node.
-     */
     function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void) {
-      // If we need to support substitutions for `super` in an async method,
-      // we should track it here.
       if (enabledSubstitutions & ESNextSubstitutionFlags.AsyncMethodsWithSuper && isSuperContainer(node)) {
         const superContainerFlags = resolver.getNodeCheckFlags(node) & (NodeCheckFlags.AsyncMethodWithSuper | NodeCheckFlags.AsyncMethodWithSuperBinding);
         if (superContainerFlags !== enclosingSuperContainerFlags) {
@@ -799,9 +716,7 @@ namespace core {
           enclosingSuperContainerFlags = savedEnclosingSuperContainerFlags;
           return;
         }
-      }
-      // Disable substitution in the generated super accessor itself.
-      else if (enabledSubstitutions && substitutedSuperAccessors[getNodeId(node)]) {
+      } else if (enabledSubstitutions && substitutedSuperAccessors[getNodeId(node)]) {
         const savedEnclosingSuperContainerFlags = enclosingSuperContainerFlags;
         enclosingSuperContainerFlags = 0 as NodeCheckFlags;
         previousOnEmitNode(hint, node, emitCallback);
@@ -812,12 +727,6 @@ namespace core {
       previousOnEmitNode(hint, node, emitCallback);
     }
 
-    /**
-     * Hooks node substitutions.
-     *
-     * @param hint The context for the emitter.
-     * @param node The node to substitute.
-     */
     function onSubstituteNode(hint: EmitHint, node: Node) {
       node = previousOnSubstituteNode(hint, node);
       if (hint === EmitHint.Expression && enclosingSuperContainerFlags) {
@@ -856,7 +765,7 @@ namespace core {
       const expression = node.expression;
       if (Node.is.superProperty(expression)) {
         const argumentExpression = Node.is.kind(PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
-        return new qs.CallExpression(createPropertyAccess(argumentExpression, 'call'), /*typeArguments*/ undefined, [createThis(), ...node.arguments]);
+        return new qs.CallExpression(createPropertyAccess(argumentExpression, 'call'), undefined, [createThis(), ...node.arguments]);
       }
       return node;
     }
@@ -868,9 +777,9 @@ namespace core {
 
     function createSuperElementAccessInAsyncMethod(argumentExpression: Expression, location: TextRange): LeftHandSideExpression {
       if (enclosingSuperContainerFlags & NodeCheckFlags.AsyncMethodWithSuperBinding) {
-        return setRange(createPropertyAccess(new qs.CallExpression(new Identifier('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), 'value'), location);
+        return setRange(createPropertyAccess(new qs.CallExpression(new Identifier('_superIndex'), undefined, [argumentExpression]), 'value'), location);
       } else {
-        return setRange(new qs.CallExpression(new Identifier('_superIndex'), /*typeArguments*/ undefined, [argumentExpression]), location);
+        return setRange(new qs.CallExpression(new Identifier('_superIndex'), undefined, [argumentExpression]), location);
       }
     }
   }
@@ -896,10 +805,10 @@ namespace core {
 
   export function createAssignHelper(context: TransformationContext, attributesSegments: Expression[]) {
     if (context.getCompilerOptions().target! >= ScriptTarget.ES2015) {
-      return new qs.CallExpression(createPropertyAccess(new Identifier('Object'), 'assign'), /*typeArguments*/ undefined, attributesSegments);
+      return new qs.CallExpression(createPropertyAccess(new Identifier('Object'), 'assign'), undefined, attributesSegments);
     }
     context.requestEmitHelper(assignHelper);
-    return new qs.CallExpression(getUnscopedHelperName('__assign'), /*typeArguments*/ undefined, attributesSegments);
+    return new qs.CallExpression(getUnscopedHelperName('__assign'), undefined, attributesSegments);
   }
 
   export const awaitHelper: UnscopedEmitHelper = {
@@ -912,7 +821,7 @@ namespace core {
 
   function createAwaitHelper(context: TransformationContext, expression: Expression) {
     context.requestEmitHelper(awaitHelper);
-    return new qs.CallExpression(getUnscopedHelperName('__await'), /*typeArguments*/ undefined, [expression]);
+    return new qs.CallExpression(getUnscopedHelperName('__await'), undefined, [expression]);
   }
 
   export const asyncGeneratorHelper: UnscopedEmitHelper = {
@@ -937,14 +846,9 @@ namespace core {
   function createAsyncGeneratorHelper(context: TransformationContext, generatorFunc: FunctionExpression, hasLexicalThis: boolean) {
     context.requestEmitHelper(asyncGeneratorHelper);
 
-    // Mark this node as originally an async function
     (generatorFunc.emitNode || (generatorFunc.emitNode = {} as EmitNode)).flags |= EmitFlags.AsyncFunctionBody | EmitFlags.ReuseTempVariableScope;
 
-    return new qs.CallExpression(getUnscopedHelperName('__asyncGenerator'), /*typeArguments*/ undefined, [
-      hasLexicalThis ? createThis() : qs.VoidExpression.zero(),
-      new Identifier('arguments'),
-      generatorFunc,
-    ]);
+    return new qs.CallExpression(getUnscopedHelperName('__asyncGenerator'), undefined, [hasLexicalThis ? createThis() : qs.VoidExpression.zero(), new Identifier('arguments'), generatorFunc]);
   }
 
   export const asyncDelegator: UnscopedEmitHelper = {
@@ -962,7 +866,7 @@ namespace core {
 
   function createAsyncDelegatorHelper(context: TransformationContext, expression: Expression, location?: TextRange) {
     context.requestEmitHelper(asyncDelegator);
-    return setRange(new qs.CallExpression(getUnscopedHelperName('__asyncDelegator'), /*typeArguments*/ undefined, [expression]), location);
+    return setRange(new qs.CallExpression(getUnscopedHelperName('__asyncDelegator'), undefined, [expression]), location);
   }
 
   export const asyncValues: UnscopedEmitHelper = {
@@ -981,6 +885,6 @@ namespace core {
 
   function createAsyncValuesHelper(context: TransformationContext, expression: Expression, location?: TextRange) {
     context.requestEmitHelper(asyncValues);
-    return setRange(new qs.CallExpression(getUnscopedHelperName('__asyncValues'), /*typeArguments*/ undefined, [expression]), location);
+    return setRange(new qs.CallExpression(getUnscopedHelperName('__asyncValues'), undefined, [expression]), location);
   }
 }

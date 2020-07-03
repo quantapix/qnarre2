@@ -249,7 +249,7 @@ namespace core {
     if (Node.is.missing(node)) return '';
     let text = sourceText.substring(includeTrivia ? node.pos : syntax.skipTrivia(sourceText, node.pos), node.end);
     if (isJSDocTypeExpressionOrChild(node)) {
-      // strip space + asterisk at line start
+      
       text = text.replace(/(^|\r?\n|\r)\s*\*\s*/g, '$1');
     }
     return text;
@@ -478,11 +478,11 @@ namespace core {
     const isMissing = Node.is.missing(errorNode);
     const pos = isMissing || Node.is.kind(JsxText, node) ? errorNode.pos : syntax.skipTrivia(sourceFile.text, errorNode.pos);
     if (isMissing) {
-      assert(pos === errorNode.pos, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
-      assert(pos === errorNode.end, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
+      assert(pos === errorNode.pos, 'This failure could trigger https:
+      assert(pos === errorNode.end, 'This failure could trigger https:
     } else {
-      assert(pos >= errorNode.pos, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
-      assert(pos <= errorNode.end, 'This failure could trigger https://github.com/Microsoft/TypeScript/issues/20809');
+      assert(pos >= errorNode.pos, 'This failure could trigger https:
+      assert(pos <= errorNode.end, 'This failure could trigger https:
     }
     return TextSpan.from(pos, errorNode.end);
   }
@@ -711,21 +711,21 @@ namespace core {
     }
     switch (node.kind) {
       case Syntax.ClassDeclaration:
-        // classes are valid targets
+        
         return true;
 
       case Syntax.PropertyDeclaration:
-        // property declarations are valid if their parent is a class declaration.
+        
         return parent!.kind === Syntax.ClassDeclaration;
 
       case Syntax.GetAccessor:
       case Syntax.SetAccessor:
       case Syntax.MethodDeclaration:
-        // if this method has a body and its parent is a class declaration, this is a valid target.
+        
         return (<FunctionLikeDeclaration>node).body !== undefined && parent!.kind === Syntax.ClassDeclaration;
 
       case Syntax.Parameter:
-        // if the parameter's parent has a body and its grandparent is a class declaration, this is a valid target;
+        
         return (
           (<FunctionLikeDeclaration>parent).body !== undefined &&
           (parent!.kind === Syntax.Constructor || parent!.kind === Syntax.MethodDeclaration || parent!.kind === Syntax.SetAccessor) &&
@@ -740,14 +740,14 @@ namespace core {
   export function nodeIsDecorated(node: ClassElement, parent: Node): boolean;
   export function nodeIsDecorated(node: Node, parent: Node, grandparent: Node): boolean;
   export function nodeIsDecorated(node: Node, parent?: Node, grandparent?: Node): boolean {
-    return node.decorators !== undefined && nodeCanBeDecorated(node, parent!, grandparent!); // TODO: GH#18217
+    return node.decorators !== undefined && nodeCanBeDecorated(node, parent!, grandparent!); 
   }
 
   export function nodeOrChildIsDecorated(node: ClassDeclaration): boolean;
   export function nodeOrChildIsDecorated(node: ClassElement, parent: Node): boolean;
   export function nodeOrChildIsDecorated(node: Node, parent: Node, grandparent: Node): boolean;
   export function nodeOrChildIsDecorated(node: Node, parent?: Node, grandparent?: Node): boolean {
-    return nodeIsDecorated(node, parent!, grandparent!) || childIsDecorated(node, parent!); // TODO: GH#18217
+    return nodeIsDecorated(node, parent!, grandparent!) || childIsDecorated(node, parent!); 
   }
 
   export function childIsDecorated(node: ClassDeclaration): boolean;
@@ -755,10 +755,10 @@ namespace core {
   export function childIsDecorated(node: Node, parent?: Node): boolean {
     switch (node.kind) {
       case Syntax.ClassDeclaration:
-        return some((<ClassDeclaration>node).members, (m) => nodeOrChildIsDecorated(m, node, parent!)); // TODO: GH#18217
+        return some((<ClassDeclaration>node).members, (m) => nodeOrChildIsDecorated(m, node, parent!)); 
       case Syntax.MethodDeclaration:
       case Syntax.SetAccessor:
-        return some((<FunctionLikeDeclaration>node).parameters, (p) => nodeIsDecorated(p, node, parent!)); // TODO: GH#18217
+        return some((<FunctionLikeDeclaration>node).parameters, (p) => nodeIsDecorated(p, node, parent!)); 
       default:
         return false;
     }
@@ -991,7 +991,7 @@ namespace core {
   }
 
   export function getRightMostAssignedExpression(node: Expression): Expression {
-    while (isAssignmentExpression(node, /*excludeCompoundAssignments*/ true)) {
+    while (isAssignmentExpression(node,  true)) {
       node = node.right;
     }
     return node;
@@ -1010,7 +1010,7 @@ namespace core {
       idText(expr.expression.expression) === 'Object' &&
       idText(expr.expression.name) === 'defineProperty' &&
       StringLiteral.orNumericLiteralLike(expr.arguments[1]) &&
-      isBindableStaticNameExpression(expr.arguments[0], /*excludeThisKeyword*/ true)
+      isBindableStaticNameExpression(expr.arguments[0],  true)
     );
   }
 
@@ -1018,18 +1018,18 @@ namespace core {
   export function isBindableStaticAccessExpression(node: Node, excludeThisKeyword?: boolean): node is BindableStaticAccessExpression {
     return (
       (Node.is.kind(PropertyAccessExpression, node) &&
-        ((!excludeThisKeyword && node.expression.kind === Syntax.ThisKeyword) || (Node.is.kind(Identifier, node.name) && isBindableStaticNameExpression(node.expression, /*excludeThisKeyword*/ true)))) ||
+        ((!excludeThisKeyword && node.expression.kind === Syntax.ThisKeyword) || (Node.is.kind(Identifier, node.name) && isBindableStaticNameExpression(node.expression,  true)))) ||
       isBindableStaticElementAccessExpression(node, excludeThisKeyword)
     );
   }
 
-  /** Any series of property and element accesses, ending in a literal element access */
+  
   export function isBindableStaticElementAccessExpression(node: Node, excludeThisKeyword?: boolean): node is BindableStaticElementAccessExpression {
     return (
       Node.is.literalLikeElementAccess(node) &&
       ((!excludeThisKeyword && node.expression.kind === Syntax.ThisKeyword) ||
         isEntityNameExpression(node.expression) ||
-        isBindableStaticAccessExpression(node.expression, /*excludeThisKeyword*/ true))
+        isBindableStaticAccessExpression(node.expression,  true))
     );
   }
 
@@ -1062,11 +1062,11 @@ namespace core {
       return AssignmentDeclarationKind.None;
     }
     if (
-      isBindableStaticNameExpression(expr.left.expression, /*excludeThisKeyword*/ true) &&
+      isBindableStaticNameExpression(expr.left.expression,  true) &&
       getElementOrPropertyAccessName(expr.left) === 'prototype' &&
       Node.is.kind(ObjectLiteralExpression, getInitializerOfBinaryExpression(expr))
     ) {
-      // F.prototype = { ... }
+      
       return AssignmentDeclarationKind.Prototype;
     }
     return getAssignmentDeclarationPropertyAccessKind(expr.left);
@@ -1107,11 +1107,11 @@ namespace core {
     if (lhs.expression.kind === Syntax.ThisKeyword) {
       return AssignmentDeclarationKind.ThisProperty;
     } else if (Node.is.moduleExportsAccessExpression(lhs)) {
-      // module.exports = expr
+      
       return AssignmentDeclarationKind.ModuleExports;
-    } else if (isBindableStaticNameExpression(lhs.expression, /*excludeThisKeyword*/ true)) {
+    } else if (isBindableStaticNameExpression(lhs.expression,  true)) {
       if (isPrototypeAccess(lhs.expression)) {
-        // F.G....prototype.x = expr
+        
         return AssignmentDeclarationKind.PrototypeProperty;
       }
 
@@ -1122,14 +1122,14 @@ namespace core {
       const id = nextToLast.expression;
       if (
         (id.escapedText === 'exports' || (id.escapedText === 'module' && getElementOrPropertyAccessName(nextToLast) === 'exports')) &&
-        // ExportsProperty does not support binding with computed names
+        
         isBindableStaticAccessExpression(lhs)
       ) {
-        // exports.name = expr OR module.exports.name = expr OR exports["name"] = expr ...
+        
         return AssignmentDeclarationKind.ExportsProperty;
       }
-      if (isBindableStaticNameExpression(lhs, /*excludeThisKeyword*/ true) || (Node.is.kind(ElementAccessExpression, lhs) && isDynamicName(lhs))) {
-        // F.G...x = expr
+      if (isBindableStaticNameExpression(lhs,  true) || (Node.is.kind(ElementAccessExpression, lhs) && isDynamicName(lhs))) {
+        
         return AssignmentDeclarationKind.Property;
       }
     }
@@ -1167,7 +1167,7 @@ namespace core {
       case Syntax.ExternalModuleReference:
         return (node.parent as ExternalModuleReference).parent as AnyValidImportOrReExport;
       case Syntax.CallExpression:
-        return Node.is.importCall(node.parent) || isRequireCall(node.parent, /*checkArg*/ false) ? (node.parent as RequireOrImportCall) : undefined;
+        return Node.is.importCall(node.parent) || isRequireCall(node.parent,  false) ? (node.parent as RequireOrImportCall) : undefined;
       case Syntax.LiteralType:
         assert(Node.is.kind(StringLiteral, node));
         return tryCast(node.parent.parent, ImportTypeNode.kind) as ValidImportTypeNode | undefined;
@@ -1461,7 +1461,7 @@ namespace core {
       case Syntax.NoSubstitutionLiteral:
       case Syntax.NumericLiteral:
         if (Node.is.kind(ComputedPropertyName, parent)) return parent.parent;
-      // falls through
+      
       case Syntax.Identifier:
         if (Node.is.declaration(parent)) {
           return parent.name === name ? parent : undefined;
@@ -1485,7 +1485,7 @@ namespace core {
     return StringLiteral.orNumericLiteralLike(node) && node.parent.kind === Syntax.ComputedPropertyName && Node.is.declaration(node.parent.parent);
   }
 
-  // Return true if the given identifier is classified as an IdentifierName
+  
   export function isIdentifierName(node: Identifier): boolean {
     let parent = node.parent;
     switch (parent.kind) {
@@ -1498,10 +1498,10 @@ namespace core {
       case Syntax.EnumMember:
       case Syntax.PropertyAssignment:
       case Syntax.PropertyAccessExpression:
-        // Name in member declaration or property name in property access
+        
         return (<NamedDeclaration | PropertyAccessExpression>parent).name === node;
       case Syntax.QualifiedName:
-        // Name on right hand side of dot in a type query or type reference
+        
         if ((<QualifiedName>parent).right === node) {
           while (parent.kind === Syntax.QualifiedName) {
             parent = parent.parent;
@@ -1511,28 +1511,28 @@ namespace core {
         return false;
       case Syntax.BindingElement:
       case Syntax.ImportSpecifier:
-        // Property name in binding element or import specifier
+        
         return (<BindingElement | ImportSpecifier>parent).propertyName === node;
       case Syntax.ExportSpecifier:
       case Syntax.JsxAttribute:
-        // Any name in an export specifier or JSX Attribute
+        
         return true;
     }
     return false;
   }
 
-  // An alias symbol is created by one of the following declarations:
-  // import <symbol> = ...
-  // import <symbol> from ...
-  // import * as <symbol> from ...
-  // import { x as <symbol> } from ...
-  // export { x as <symbol> } from ...
-  // export * as ns <symbol> from ...
-  // export = <EntityNameExpression>
-  // export default <EntityNameExpression>
-  // module.exports = <EntityNameExpression>
-  // {<Identifier>}
-  // {name: <EntityNameExpression>}
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   export function isAliasSymbolDeclaration(node: Node): boolean {
     return (
       node.kind === Syntax.ImportEqualsDeclaration ||
@@ -1591,7 +1591,7 @@ namespace core {
   export function getEffectiveBaseTypeNode(node: ClassLikeDeclaration | InterfaceDeclaration) {
     const baseType = getClassExtendsHeritageElement(node);
     if (baseType && isInJSFile(node)) {
-      // Prefer an @augments tag because it may have type parameters.
+      
       const tag = Node.getJSDoc.augmentsTag(node);
       if (tag) {
         return tag.class;
@@ -1656,11 +1656,11 @@ namespace core {
   
 
   export const enum FunctionFlags {
-    Normal = 0, // Function is a normal function
-    Generator = 1 << 0, // Function is a generator function or async generator function
-    Async = 1 << 1, // Function is an async function or an async generator function
-    Invalid = 1 << 2, // Function is a signature or overload and does not have a body.
-    AsyncGenerator = Async | Generator, // Function is an async generator function
+    Normal = 0, 
+    Generator = 1 << 0, 
+    Async = 1 << 1, 
+    Invalid = 1 << 2, 
+    AsyncGenerator = Async | Generator, 
   }
 
   export function getFunctionFlags(node: SignatureDeclaration | undefined) {
@@ -1676,7 +1676,7 @@ namespace core {
         if (node.asteriskToken) {
           flags |= FunctionFlags.Generator;
         }
-      // falls through
+      
 
       case Syntax.ArrowFunction:
         if (hasSyntacticModifier(node, ModifierFlags.Async)) {
@@ -1760,9 +1760,7 @@ namespace core {
   }
 
 
-  /**
-   * Includes the word "Symbol" with unicode escapes
-   */
+  
   export function isESSymbolIdentifier(node: Node): boolean {
     return node.kind === Syntax.Identifier && (<Identifier>node).escapedText === 'Symbol';
   }
@@ -1828,7 +1826,7 @@ namespace core {
 
 
   export function createDiagnosticCollection(): DiagnosticCollection {
-    let nonFileDiagnostics = ([] as Diagnostic[]) as SortedArray<Diagnostic>; // See GH#19873
+    let nonFileDiagnostics = ([] as Diagnostic[]) as SortedArray<Diagnostic>; 
     const filesWithDiagnostics = ([] as string[]) as SortedArray<string>;
     const fileDiagnostics = new QMap<SortedArray<DiagnosticWithLocation>>();
     let hasReadNonFileDiagnostics = false;
@@ -1867,12 +1865,12 @@ namespace core {
       if (diagnostic.file) {
         diagnostics = fileDiagnostics.get(diagnostic.file.fileName);
         if (!diagnostics) {
-          diagnostics = ([] as Diagnostic[]) as SortedArray<DiagnosticWithLocation>; // See GH#19873
+          diagnostics = ([] as Diagnostic[]) as SortedArray<DiagnosticWithLocation>; 
           fileDiagnostics.set(diagnostic.file.fileName, diagnostics as SortedArray<DiagnosticWithLocation>);
           insertSorted(filesWithDiagnostics, diagnostic.file.fileName, compareStringsCaseSensitive);
         }
       } else {
-        // If we've already read the non-file diagnostics, do not modify the existing array.
+        
         if (hasReadNonFileDiagnostics) {
           hasReadNonFileDiagnostics = false;
           nonFileDiagnostics = nonFileDiagnostics.slice() as SortedArray<Diagnostic>;
@@ -1914,14 +1912,14 @@ namespace core {
     return template && !!(Node.is.kind(NoSubstitutionLiteral, template) ? template.templateFlags : template.head.templateFlags || some(template.templateSpans, (span) => !!span.literal.templateFlags));
   }
 
-  // This consists of the first 19 unprintable ASCII characters, canonical escapes, lineSeparator,
-  // paragraphSeparator, and nextLine. The latter three are just desirable to suppress new lines in
-  // the language service. These characters should be escaped when printing, and if any characters are added,
-  // the map below must be updated. Note that this regexp *does not* include the 'delete' character.
-  // There is no reason for this other than that JSON.stringify does not handle it either.
+  
+  
+  
+  
+  
   const doubleQuoteEscapedCharsRegExp = /[\\\"\u0000-\u001f\t\v\f\b\r\n\u2028\u2029\u0085]/g;
   const singleQuoteEscapedCharsRegExp = /[\\\'\u0000-\u001f\t\v\f\b\r\n\u2028\u2029\u0085]/g;
-  // Template strings should be preserved as much as possible
+  
   const backtickQuoteEscapedCharsRegExp = /[\\`]/g;
   const escapedCharsMap = new QMap({
     '\t': '\\t',
@@ -1934,9 +1932,9 @@ namespace core {
     '"': '\\"',
     "'": "\\'",
     '`': '\\`',
-    '\u2028': '\\u2028', // lineSeparator
-    '\u2029': '\\u2029', // paragraphSeparator
-    '\u0085': '\\u0085', // nextLine
+    '\u2028': '\\u2028', 
+    '\u2029': '\\u2029', 
+    '\u0085': '\\u0085', 
   });
 
   function encodeUtf16EscapeSequence(cc: number): string {
@@ -1949,20 +1947,16 @@ namespace core {
     if (c.charCodeAt(0) === Codes.nullCharacter) {
       const lookAhead = input.charCodeAt(offset + c.length);
       if (lookAhead >= Codes._0 && lookAhead <= Codes._9) {
-        // If the null character is followed by digits, print as a hex escape to prevent the result from parsing as an octal (which is forbidden in strict mode)
+        
         return '\\x00';
       }
-      // Otherwise, keep printing a literal \0 for the null character
+      
       return '\\0';
     }
     return escapedCharsMap.get(c) || encodeUtf16EscapeSequence(c.charCodeAt(0));
   }
 
-  /**
-   * Based heavily on the abstract 'Quote'/'QuoteJSONString' operation from ECMA-262 (24.3.2.2),
-   * but augmented for a few select characters (e.g. lineSeparator, paragraphSeparator, nextLine)
-   * Note that this doesn't actually wrap the input in double quotes.
-   */
+  
   export function escapeString(s: string, quoteChar?: Codes.doubleQuote | Codes.singleQuote | Codes.backtick): string {
     const escapedCharsRegExp = quoteChar === Codes.backtick ? backtickQuoteEscapedCharsRegExp : quoteChar === Codes.singleQuote ? singleQuoteEscapedCharsRegExp : doubleQuoteEscapedCharsRegExp;
     return s.replace(escapedCharsRegExp, getReplacement);
@@ -1971,15 +1965,15 @@ namespace core {
   const nonAsciiCharacters = /[^\u0000-\u007F]/g;
   export function escapeNonAsciiString(s: string, quoteChar?: Codes.doubleQuote | Codes.singleQuote | Codes.backtick): string {
     s = escapeString(s, quoteChar);
-    // Replace non-ASCII characters with '\uNNNN' escapes if any exist.
-    // Otherwise just return the original string.
+    
+    
     return nonAsciiCharacters.test(s) ? s.replace(nonAsciiCharacters, (c) => encodeUtf16EscapeSequence(c.charCodeAt(0))) : s;
   }
 
-  // This consists of the first 19 unprintable ASCII characters, JSX canonical escapes, lineSeparator,
-  // paragraphSeparator, and nextLine. The latter three are just desirable to suppress new lines in
-  // the language service. These characters should be escaped when printing, and if any characters are added,
-  // the map below must be updated.
+  
+  
+  
+  
   const jsxDoubleQuoteEscapedCharsRegExp = /[\"\u0000-\u001f\u2028\u2029\u0085]/g;
   const jsxSingleQuoteEscapedCharsRegExp = /[\'\u0000-\u001f\u2028\u2029\u0085]/g;
   const jsxEscapedCharsMap = new QMap({
@@ -2004,11 +1998,7 @@ namespace core {
     return s.replace(escapedCharsRegExp, getJsxAttributeStringReplacement);
   }
 
-  /**
-   * Strip off existed surrounding single quotes, double quotes, or backticks from a given string
-   *
-   * @return non-quoted string
-   */
+  
   export function stripQuotes(name: string) {
     const length = name.length;
     if (length >= 2 && name.charCodeAt(0) === name.charCodeAt(length - 1) && isQuoteOrBacktick(name.charCodeAt(0))) {
@@ -2255,14 +2245,12 @@ namespace core {
     return getResolvedExternalModuleName(host, file);
   }
 
-  /**
-   * Resolves a local path to a path which is absolute to the base of the emit
-   */
+  
   export function getExternalModuleNameFromPath(host: ResolveModuleNameResolutionHost, fileName: string, referencePath?: string): string {
     const getCanonicalFileName = (f: string) => host.getCanonicalFileName(f);
     const dir = toPath(referencePath ? getDirectoryPath(referencePath) : host.getCommonSourceDirectory(), host.getCurrentDirectory(), getCanonicalFileName);
     const filePath = getNormalizedAbsolutePath(fileName, host.getCurrentDirectory());
-    const relativePath = getRelativePathToDirectoryOrUrl(dir, filePath, dir, getCanonicalFileName, /*isAbsolutePathAnUrl*/ false);
+    const relativePath = getRelativePathToDirectoryOrUrl(dir, filePath, dir, getCanonicalFileName,  false);
     const extensionless = removeFileExtension(relativePath);
     return referencePath ? ensurePathIsNonModuleName(extensionless) : extensionless;
   }
@@ -2290,7 +2278,7 @@ namespace core {
     commonSourceDirectory: string,
     getCanonicalFileName: GetCanonicalFileName
   ): string {
-    const outputDir = options.declarationDir || options.outDir; // Prefer declaration folder if specified
+    const outputDir = options.declarationDir || options.outDir; 
 
     const path = outputDir ? getSourceFilePathInNewDirWorker(fileName, outputDir, currentDirectory, commonSourceDirectory, getCanonicalFileName) : fileName;
     return removeFileExtension(path) + Extension.Dts;
@@ -2304,21 +2292,13 @@ namespace core {
     buildInfoPath?: string | undefined;
   }
 
-  /**
-   * Gets the source files that are expected to have an emit output.
-   *
-   * Originally part of `forEachExpectedEmitFile`, this functionality was extracted to support
-   * transformations.
-   *
-   * @param host An EmitHost.
-   * @param targetSourceFile An optional target source file to emit.
-   */
+  
   export function getSourceFilesToEmit(host: EmitHost, targetSourceFile?: SourceFile, forceDtsEmit?: boolean): readonly SourceFile[] {
     const options = host.getCompilerOptions();
     if (options.outFile || options.out) {
       const moduleKind = getEmitModuleKind(options);
       const moduleEmitEnabled = options.emitDeclarationOnly || moduleKind === ModuleKind.AMD || moduleKind === ModuleKind.System;
-      // Can emit only sources that are not declaration file and are either non module code or module with --module or --target es6 specified
+      
       return filter(host.getSourceFiles(), (sourceFile) => (moduleEmitEnabled || !qp_isExternalModule(sourceFile)) && sourceFileMayBeEmitted(sourceFile, host, forceDtsEmit));
     } else {
       const sourceFiles = targetSourceFile === undefined ? host.getSourceFiles() : [targetSourceFile];
@@ -2326,7 +2306,7 @@ namespace core {
     }
   }
 
-  /** Don't call this for `--outFile`, just for `--outDir` or plain emit. `--outFile` needs additional checks. */
+  
   export function sourceFileMayBeEmitted(sourceFile: SourceFile, host: SourceFileMayBeEmittedHost, forceDtsEmit?: boolean) {
     const options = host.getCompilerOptions();
     return (
@@ -2384,8 +2364,8 @@ namespace core {
     createDirectory: (path: string) => void,
     directoryExists: (path: string) => boolean
   ): void {
-    // PERF: Checking for directory existence is expensive.  Instead, assume the directory exists
-    // and fall back to creating it if the file write fails.
+    
+    
     try {
       writeFile(path, data, writeByteOrderMark);
     } catch {
@@ -2414,14 +2394,14 @@ namespace core {
     }
   }
 
-  /** Get the type annotation for the value parameter. */
+  
   export function getSetAccessorTypeAnnotationNode(accessor: SetAccessorDeclaration): TypeNode | undefined {
     const parameter = getSetAccessorValueParameter(accessor);
     return parameter && parameter.type;
   }
 
   export function getThisNodeKind(ParameterDeclaration, signature: SignatureDeclaration | JSDocSignature): ParameterDeclaration | undefined {
-    // cb tags do not currently support this parameters
+    
     if (signature.parameters.length && !Node.is.kind(JSDocSignature, signature)) {
       const thisParameter = signature.parameters[0];
       if (parameterIsThisKeyword(thisParameter)) {
@@ -2443,7 +2423,7 @@ namespace core {
   }
 
   export function getAllAccessorDeclarations(declarations: readonly Declaration[], accessor: AccessorDeclaration): AllAccessorDeclarations {
-    // TODO: GH#18217
+    
     let firstAccessor!: AccessorDeclaration;
     let secondAccessor!: AccessorDeclaration;
     let getAccessor!: GetAccessorDeclaration;
@@ -2518,7 +2498,7 @@ namespace core {
   }
 
   export function emitNewLineBeforeLeadingCommentsOfPosition(lineMap: readonly number[], writer: EmitTextWriter, pos: number, leadingComments: readonly CommentRange[] | undefined) {
-    // If the leading comments start on different line than the start of node, write new line
+    
     if (
       leadingComments &&
       leadingComments.length &&
@@ -2530,7 +2510,7 @@ namespace core {
   }
 
   export function emitNewLineBeforeLeadingCommentOfPosition(lineMap: readonly number[], writer: EmitTextWriter, pos: number, commentPos: number) {
-    // If the leading comments start on different line than the start of node, write new line
+    
     if (pos !== commentPos && getLineOfLocalPositionFromLineMap(lineMap, pos) !== getLineOfLocalPositionFromLineMap(lineMap, commentPos)) {
       writer.writeLine();
     }
@@ -2572,10 +2552,7 @@ namespace core {
     }
   }
 
-  /**
-   * Detached comment is a comment at the top of file or function body that is separated from
-   * the next statement by space.
-   */
+  
   export function emitDetachedComments(
     text: string,
     lineMap: readonly number[],
@@ -2588,16 +2565,16 @@ namespace core {
     let leadingComments: CommentRange[] | undefined;
     let currentDetachedCommentInfo: { nodePos: number; detachedCommentEndPos: number } | undefined;
     if (removeComments) {
-      // removeComments is true, only reserve pinned comment at the top of file
-      // For example:
-      //      /*! Pinned Comment */
-      //
-      //      var x = 10;
+      
+      
+      
+      
+      
       if (node.pos === 0) {
         leadingComments = filter(syntax.get.leadingCommentRanges(text, node.pos), isPinnedCommentLocal);
       }
     } else {
-      // removeComments is false, just get detached as normal and bypass the process to filter comment
+      
       leadingComments = syntax.get.leadingCommentRanges(text, node.pos);
     }
 
@@ -2611,9 +2588,9 @@ namespace core {
           const commentLine = getLineOfLocalPositionFromLineMap(lineMap, comment.pos);
 
           if (commentLine >= lastCommentLine + 2) {
-            // There was a blank line between the last comment and this comment.  This
-            // comment is not part of the copyright comments.  Return what we have so
-            // far.
+            
+            
+            
             break;
           }
         }
@@ -2623,15 +2600,15 @@ namespace core {
       }
 
       if (detachedComments.length) {
-        // All comments look like they could have been part of the copyright header.  Make
-        // sure there is at least one blank line between it and the node.  If not, it's not
-        // a copyright header.
+        
+        
+        
         const lastCommentLine = getLineOfLocalPositionFromLineMap(lineMap, last(detachedComments).end);
         const nodeLine = getLineOfLocalPositionFromLineMap(lineMap, syntax.skipTrivia(text, node.pos));
         if (nodeLine >= lastCommentLine + 2) {
-          // Valid detachedComments
+          
           emitNewLineBeforeLeadingComments(lineMap, writer, node, leadingComments);
-          emitComments(text, lineMap, writer, detachedComments, /*leadingSeparator*/ false, /*trailingSeparator*/ true, newLine, writeComment);
+          emitComments(text, lineMap, writer, detachedComments,  true, newLine, writeComment);
           currentDetachedCommentInfo = { nodePos: node.pos, detachedCommentEndPos: last(detachedComments).end };
         }
       }
@@ -2653,54 +2630,54 @@ namespace core {
         const nextLineStart = currentLine + 1 === lineCount ? text.length + 1 : lineMap[currentLine + 1];
 
         if (pos !== commentPos) {
-          // If we are not emitting first line, we need to write the spaces to adjust the alignment
+          
           if (firstCommentLineIndent === undefined) {
             firstCommentLineIndent = calculateIndent(text, lineMap[firstCommentLineAndChar.line], commentPos);
           }
 
-          // These are number of spaces writer is going to write at current indent
+          
           const currentWriterIndentSpacing = writer.getIndent() * getIndentSize();
 
-          // Number of spaces we want to be writing
-          // eg: Assume writer indent
-          // module m {
-          //         /* starts at character 9 this is line 1
-          //    * starts at character pos 4 line                        --1  = 8 - 8 + 3
-          //   More left indented comment */                            --2  = 8 - 8 + 2
-          //     class c { }
-          // }
-          // module m {
-          //     /* this is line 1 -- Assume current writer indent 8
-          //      * line                                                --3 = 8 - 4 + 5
-          //            More right indented comment */                  --4 = 8 - 4 + 11
-          //     class c { }
-          // }
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
           const spacesToEmit = currentWriterIndentSpacing - firstCommentLineIndent + calculateIndent(text, pos, nextLineStart);
           if (spacesToEmit > 0) {
             let numberOfSingleSpacesToEmit = spacesToEmit % getIndentSize();
             const indentSizeSpaceString = getIndentString((spacesToEmit - numberOfSingleSpacesToEmit) / getIndentSize());
 
-            // Write indent size string ( in eg 1: = "", 2: "" , 3: string with 8 spaces 4: string with 12 spaces
+            
             writer.rawWrite(indentSizeSpaceString);
 
-            // Emit the single spaces (in eg: 1: 3 spaces, 2: 2 spaces, 3: 1 space, 4: 3 spaces)
+            
             while (numberOfSingleSpacesToEmit) {
               writer.rawWrite(' ');
               numberOfSingleSpacesToEmit--;
             }
           } else {
-            // No spaces to emit write empty string
+            
             writer.rawWrite('');
           }
         }
 
-        // Write the comment line text
+        
         writeTrimmedCurrentLine(text, commentEnd, writer, newLine, pos, nextLineStart);
 
         pos = nextLineStart;
       }
     } else {
-      // Single line comment of style //....
+      
       writer.writeComment(text.substring(commentPos, commentEnd));
     }
   }
@@ -2709,13 +2686,13 @@ namespace core {
     const end = Math.min(commentEnd, nextLineStart - 1);
     const currentLineText = text.substring(pos, end).replace(/^\s+|\s+$/g, '');
     if (currentLineText) {
-      // trimmed forward and ending spaces text
+      
       writer.writeComment(currentLineText);
       if (end !== commentEnd) {
         writer.writeLine();
       }
     } else {
-      // Empty string - make sure we write empty line
+      
       writer.rawWrite(newLine);
     }
   }
@@ -2724,10 +2701,10 @@ namespace core {
     let currentLineIndent = 0;
     for (; pos < end && syntax.is.whiteSpaceSingleLine(text.charCodeAt(pos)); pos++) {
       if (text.charCodeAt(pos) === Codes.tab) {
-        // Tabs = TabSize = indent size and go to next tabStop
+        
         currentLineIndent += getIndentSize() - (currentLineIndent % getIndentSize());
       } else {
-        // Single space
+        
         currentLineIndent++;
       }
     }
@@ -2784,11 +2761,11 @@ namespace core {
   }
 
   export function getEffectiveModifierFlags(node: Node): ModifierFlags {
-    return getModifierFlagsWorker(node, /*includeJSDoc*/ true);
+    return getModifierFlagsWorker(node,  true);
   }
 
   export function getSyntacticModifierFlags(node: Node): ModifierFlags {
-    return getModifierFlagsWorker(node, /*includeJSDoc*/ false);
+    return getModifierFlagsWorker(node,  false);
   }
 
 
@@ -2816,7 +2793,7 @@ namespace core {
 
 
 
-  /** Get `C` given `N` if `N` is in the position `class C extends N` where `N` is an ExpressionWithTypeArguments. */
+  
   export function tryGetClassExtendingExpressionWithTypeArguments(node: Node): ClassLikeDeclaration | undefined {
     const cls = tryGetClassImplementingOrExtendingExpressionWithTypeArguments(node);
     return cls && !cls.isImplements ? cls.class : undefined;
@@ -2841,7 +2818,7 @@ namespace core {
   }
 
   export function isDestructuringAssignment(node: Node): node is DestructuringAssignment {
-    if (isAssignmentExpression(node, /*excludeCompoundAssignment*/ true)) {
+    if (isAssignmentExpression(node,  true)) {
       const kind = node.left.kind;
       return kind === Syntax.ObjectLiteralExpression || kind === Syntax.ArrayLiteralExpression;
     }
@@ -2920,7 +2897,7 @@ namespace core {
   }
 
 
-  /** Return ".ts", ".d.ts", or ".tsx", if that is the extension. */
+  
   export function tryExtractTSExtension(fileName: string): string | undefined {
     return find(supportedTSExtensionsForExtractExtension, (extension) => fileExtensionIs(fileName, extension));
   }
@@ -2932,7 +2909,7 @@ namespace core {
     for (let i = 0; i < length; i++) {
       const cc = input.charCodeAt(i);
 
-      // handle utf8
+      
       if (cc < 0x80) {
         output.push(cc);
       } else if (cc < 0x800) {
@@ -2965,22 +2942,22 @@ namespace core {
     let byte1: number, byte2: number, byte3: number, byte4: number;
 
     while (i < length) {
-      // Convert every 6-bits in the input 3 character points
-      // into a base64 digit
+      
+      
       byte1 = ccs[i] >> 2;
       byte2 = ((ccs[i] & 0b00000011) << 4) | (ccs[i + 1] >> 4);
       byte3 = ((ccs[i + 1] & 0b00001111) << 2) | (ccs[i + 2] >> 6);
       byte4 = ccs[i + 2] & 0b00111111;
 
-      // We are out of characters in the input, set the extra
-      // digits to 64 (padding character).
+      
+      
       if (i + 1 >= length) {
         byte3 = byte4 = 64;
       } else if (i + 2 >= length) {
         byte4 = 64;
       }
 
-      // Write to the output
+      
       result += base64Digits.charAt(byte1) + base64Digits.charAt(byte2) + base64Digits.charAt(byte3) + base64Digits.charAt(byte4);
 
       i += 3;
@@ -3008,11 +2985,11 @@ namespace core {
           i++;
           nextCode = codes[i];
         }
-        // `value` may be greater than 10FFFF (the maximum unicode codepoint) - JS will just make this into an invalid character for us
+        
         output += String.fromCharCode(value);
       } else {
-        // We don't want to kill the process when decoding fails (due to a following char byte not
-        // following a leading char), so we just print the (bad) value
+        
+        
         output += String.fromCharCode(cc);
         i++;
       }
@@ -3035,11 +3012,11 @@ namespace core {
     const expandedCodes: number[] = [];
     let i = 0;
     while (i < length) {
-      // Stop decoding once padding characters are present
+      
       if (input.charCodeAt(i) === base64Digits.charCodeAt(64)) {
         break;
       }
-      // convert 4 input digits into three characters, ignoring padding characters at the end
+      
       const ch1 = base64Digits.indexOf(input[i]);
       const ch2 = base64Digits.indexOf(input[i + 1]);
       const ch3 = base64Digits.indexOf(input[i + 2]);
@@ -3050,10 +3027,10 @@ namespace core {
       const code3 = ((ch3 & 0b00000011) << 6) | (ch4 & 0b00111111);
 
       if (code2 === 0 && ch3 !== 0) {
-        // code2 decoded to zero, but ch3 was padding - elide code2 and code3
+        
         expandedCodes.push(code1);
       } else if (code3 === 0 && ch4 !== 0) {
-        // code3 decoded to zero, but ch4 was padding, elide code3
+        
         expandedCodes.push(code1, code2);
       } else {
         expandedCodes.push(code1, code2, code3);
@@ -3073,13 +3050,13 @@ namespace core {
       }
       return result.config;
     } catch (e) {
-      // gracefully handle if readFile fails or returns not JSON
+      
       return {};
     }
   }
 
   export function directoryProbablyExists(directoryName: string, host: { directoryExists?: (directoryName: string) => boolean }): boolean {
-    // if host does not support 'directoryExists' assume that directory will exist
+    
     return !host.directoryExists || host.directoryExists(directoryName);
   }
 
@@ -3117,7 +3094,7 @@ namespace core {
   }
 
   export function isWatchSet(options: CompilerOptions) {
-    // Firefox has Object.prototype.watch
+    
     return options.watch && options.hasOwnProperty('watch');
   }
 
@@ -3134,11 +3111,11 @@ namespace core {
   }
 
   const enum AccessKind {
-    /** Only reads from a variable. */
+    
     Read,
-    /** Only writes to a variable without using the result. E.g.: `x++;`. */
+    
     Write,
-    /** Writes to a variable and uses the result as an expression. E.g.: `f(x++);`. */
+    
     ReadWrite,
   }
   function accessKind(node: Node): AccessKind {
@@ -3159,11 +3136,11 @@ namespace core {
         return (parent as PropertyAccessExpression).name !== node ? AccessKind.Read : accessKind(parent);
       case Syntax.PropertyAssignment: {
         const parentAccess = accessKind(parent.parent);
-        // In `({ x: varname }) = { x: 1 }`, the left `x` is a read, the right `x` is a write.
+        
         return node === (parent as PropertyAssignment).name ? reverseAccessKind(parentAccess) : parentAccess;
       }
       case Syntax.ShorthandPropertyAssignment:
-        // Assume it's the local variable being accessed, since we don't check public properties for --noUnusedLocals.
+        
         return node === (parent as ShorthandPropertyAssignment).objectAssignmentInitializer ? AccessKind.Read : accessKind(parent.parent);
       case Syntax.ArrayLiteralExpression:
         return accessKind(parent);
@@ -3172,7 +3149,7 @@ namespace core {
     }
 
     function writeOrReadWrite(): AccessKind {
-      // If grandparent is not an ExpressionStatement, this is used as an expression in addition to having a side effect.
+      
       return parent.parent && skipParenthesesUp(parent.parent).kind === Syntax.ExpressionStatement ? AccessKind.Write : AccessKind.ReadWrite;
     }
   }
@@ -3209,7 +3186,7 @@ namespace core {
   }
 
   export function clearMap<T>(map: { forEach: QMap<T>['forEach']; clear: QMap<T>['clear'] }, onDeleteValue: (valueInMap: T, key: string) => void) {
-    // Remove all
+    
     map.forEach(onDeleteValue);
     map.clear();
   }
@@ -3222,15 +3199,15 @@ namespace core {
 
   export function mutateMapSkippingNewValues<T, U>(map: QMap<T>, newMap: QReadonlyMap<U>, options: MutateMapSkippingNewValuesOptions<T, U>) {
     const { onDeleteValue, onExistingValue } = options;
-    // Needs update
+    
     map.forEach((existingValue, key) => {
       const valueInNewMap = newMap.get(key);
-      // Not present any more in new map, remove it
+      
       if (valueInNewMap === undefined) {
         map.delete(key);
         onDeleteValue(existingValue, key);
       }
-      // If present notify about existing values
+      
       else if (onExistingValue) {
         onExistingValue(existingValue, valueInNewMap, key);
       }
@@ -3242,20 +3219,20 @@ namespace core {
   }
 
   export function mutateMap<T, U>(map: QMap<T>, newMap: QReadonlyMap<U>, options: MutateMapOptions<T, U>) {
-    // Needs update
+    
     mutateMapSkippingNewValues(map, newMap, options);
 
     const { createNewValue } = options;
-    // Add new values that are not already present
+    
     newMap.forEach((valueInNewMap, key) => {
       if (!map.has(key)) {
-        // New values
+        
         map.set(key, createNewValue(key, valueInNewMap));
       }
     });
   }
 
-  // Return true if the given type is the constructor type for an abstract class
+  
   export function isAbstractConstructorType(type: Type): boolean {
     return !!(getObjectFlags(type) & ObjectFlags.Anonymous) && !!type.symbol && isAbstractConstructorSymbol(type.symbol);
   }
@@ -3286,7 +3263,7 @@ namespace core {
         if (Node.is.present(child)) lastChild = child;
       },
       (children) => {
-        // As an optimization, jump straight to the end of the list.
+        
         for (let i = children.length - 1; i >= 0; i--) {
           if (Node.is.present(children[i])) {
             lastChild = children[i];
@@ -3298,7 +3275,7 @@ namespace core {
     return lastChild;
   }
 
-  /** Add a value to a set, and return true if it wasn't already present. */
+  
   export function addToSeen(seen: QMap<true>, key: string | number): boolean;
   export function addToSeen<T>(seen: QMap<T>, key: string | number, value: T): boolean;
   export function addToSeen<T>(seen: QMap<T>, key: string | number, value: T = true as any): boolean {
@@ -3483,7 +3460,7 @@ namespace core {
         compareValues(d1.relatedInformation.length, d2.relatedInformation.length) ||
         forEach(d1.relatedInformation, (d1i, index) => {
           const d2i = d2.relatedInformation![index];
-          return compareDiagnostics(d1i, d2i); // EqualTo is 0, so falsy, and will cause the next item to be compared
+          return compareDiagnostics(d1i, d2i); 
         }) ||
         Comparison.EqualTo
       );
@@ -3606,7 +3583,7 @@ namespace core {
         if (!seenAsterisk) {
           seenAsterisk = true;
         } else {
-          // have already seen asterisk
+          
           return false;
         }
       }
@@ -3651,8 +3628,8 @@ namespace core {
     return [getPathFromPathComponents(aParts), getPathFromPathComponents(bParts)];
   }
 
-  // KLUDGE: Don't assume one 'node_modules' links to another. More likely a single directory inside the node_modules is the symlink.
-  // ALso, don't assume that an `@foo` directory is linked. More likely the contents of that are linked.
+  
+  
   function isNodeModulesOrScopedPackageDirectory(s: string, getCanonicalFileName: GetCanonicalFileName): boolean {
     return getCanonicalFileName(s) === 'node_modules' || startsWith(s, '@');
   }
@@ -3666,9 +3643,9 @@ namespace core {
     return withoutPrefix === undefined ? undefined : stripLeadingDirectorySeparator(withoutPrefix);
   }
 
-  // Reserved characters, forces escaping of any non-word (or digit), non-whitespace character.
-  // It may be inefficient (we could just match (/[-[\]{}()*+?.,\\^$|#\s]/g), but this is future
-  // proof.
+  
+  
+  
   const reservedCharacterPattern = /[^\w\s\/]/g;
 
   export function regExpEscape(text: string) {
@@ -3692,27 +3669,16 @@ namespace core {
   }
 
   const filesMatcher: WildcardMatcher = {
-    /**
-     * Matches any single directory segment unless it is the last segment and a .min.js file
-     * Breakdown:
-     *  [^./]                   # matches everything up to the first . character (excluding directory separators)
-     *  (\\.(?!min\\.js$))?     # matches . characters but not if they are part of the .min.js file extension
-     */
+    
     singleAsteriskRegexFragment: '([^./]|(\\.(?!min\\.js$))?)*',
-    /**
-     * Regex for the ** wildcard. Matches any number of subdirectories. When used for including
-     * files or directories, does not match subdirectories that start with a . character
-     */
+    
     doubleAsteriskRegexFragment: `(/${implicitExcludePathRegexPattern}[^/.][^/]*)*?`,
     replaceWildcardCharacter: (match) => replaceWildcardCharacter(match, filesMatcher.singleAsteriskRegexFragment),
   };
 
   const directoriesMatcher: WildcardMatcher = {
     singleAsteriskRegexFragment: '[^/]*',
-    /**
-     * Regex for the ** wildcard. Matches any number of subdirectories. When used for including
-     * files or directories, does not match subdirectories that start with a . character
-     */
+    
     doubleAsteriskRegexFragment: `(/${implicitExcludePathRegexPattern}[^/.][^/]*)*?`,
     replaceWildcardCharacter: (match) => replaceWildcardCharacter(match, directoriesMatcher.singleAsteriskRegexFragment),
   };
@@ -3736,7 +3702,7 @@ namespace core {
     }
 
     const pattern = patterns.map((pattern) => `(${pattern})`).join('|');
-    // If excluding, match "foo/bar/baz...", but if including, only allow "foo".
+    
     const terminator = usage === 'exclude' ? '($|/)' : '$';
     return `^(${pattern})${terminator}`;
   }
@@ -3749,10 +3715,7 @@ namespace core {
     return flatMap(specs, (spec) => spec && getSubPatternFromSpec(spec, basePath, usage, wildcardMatchers[usage]));
   }
 
-  /**
-   * An "includes" path "foo" is implicitly a glob "foo/** /*" (without the space) if its last component has no extension,
-   * and does not contain any glob characters itself.
-   */
+  
   export function isImplicitGlob(lastPathComponent: string): boolean {
     return !/[.*?]/.test(lastPathComponent);
   }
@@ -3771,8 +3734,8 @@ namespace core {
       return;
     }
 
-    // getNormalizedPathComponents includes the separator for the root component.
-    // We need to remove to create our regex correctly.
+    
+    
     components[0] = removeTrailingDirectorySeparator(components[0]);
 
     if (isImplicitGlob(lastComponent)) {
@@ -3795,9 +3758,9 @@ namespace core {
 
         if (usage !== 'exclude') {
           let componentPattern = '';
-          // The * and ? wildcards should not match directories or files that start with . if they
-          // appear first in a component. Dotted directories and files can be included explicitly
-          // like so: **/.*/.*
+          
+          
+          
           if (component.charCodeAt(0) === Codes.asterisk) {
             componentPattern += '([^./]' + singleAsteriskRegexFragment + ')?';
             component = component.substr(1);
@@ -3808,12 +3771,12 @@ namespace core {
 
           componentPattern += component.replace(reservedCharacterPattern, replaceWildcardCharacter);
 
-          // Patterns should not include subfolders like node_modules unless they are
-          // explicitly included as part of the path.
-          //
-          // As an optimization, if the component pattern is the same as the component,
-          // then there definitely were no wildcard characters and we do not need to
-          // add the exclusion pattern.
+          
+          
+          
+          
+          
+          
           if (componentPattern !== component) {
             subpattern += implicitExcludePathRegexPattern;
           }
@@ -3845,16 +3808,16 @@ namespace core {
   }
 
   export interface FileMatcherPatterns {
-    /** One pattern for each "include" spec. */
+    
     includeFilePatterns: readonly string[] | undefined;
-    /** One pattern matching one of any of the "include" specs. */
+    
     includeFilePattern: string | undefined;
     includeDirectoryPattern: string | undefined;
     excludePattern: string | undefined;
     basePaths: readonly string[];
   }
 
-  /** @param path directory of the tsconfig.json */
+  
   export function getFileMatcherPatterns(
     path: string,
     excludes: readonly string[] | undefined,
@@ -3879,7 +3842,7 @@ namespace core {
     return new RegExp(pattern, useCaseSensitiveFileNames ? '' : 'i');
   }
 
-  /** @param path directory of the tsconfig.json */
+  
   export function matchFiles(
     path: string,
     extensions: readonly string[] | undefined,
@@ -3900,8 +3863,8 @@ namespace core {
     const includeDirectoryRegex = patterns.includeDirectoryPattern && getRegexFromPattern(patterns.includeDirectoryPattern, useCaseSensitiveFileNames);
     const excludeRegex = patterns.excludePattern && getRegexFromPattern(patterns.excludePattern, useCaseSensitiveFileNames);
 
-    // Associate an array of results with each include regex. This keeps results in order of the "include" order.
-    // If there are no "includes", then just put everything in results[0].
+    
+    
     const results: string[][] = includeFileRegexes ? includeFileRegexes.map(() => []) : [[]];
     const visited = new QMap<true>();
     const toCanonical = createGetCanonicalFileName(useCaseSensitiveFileNames);
@@ -3949,29 +3912,27 @@ namespace core {
     }
   }
 
-  /**
-   * Computes the unique non-wildcard base paths amongst the provided include patterns.
-   */
+  
   function getBasePaths(path: string, includes: readonly string[] | undefined, useCaseSensitiveFileNames: boolean): string[] {
-    // Storage for our results in the form of literal paths (e.g. the paths as written by the user).
+    
     const basePaths: string[] = [path];
 
     if (includes) {
-      // Storage for literal base paths amongst the include patterns.
+      
       const includeBasePaths: string[] = [];
       for (const include of includes) {
-        // We also need to check the relative paths by converting them to absolute and normalizing
-        // in case they escape the base path (e.g "..\somedirectory")
+        
+        
         const absolute: string = isRootedDiskPath(include) ? include : normalizePath(combinePaths(path, include));
-        // Append the literal and canonical candidate base paths.
+        
         includeBasePaths.push(getIncludeBasePath(absolute));
       }
 
-      // Sort the offsets array using either the literal or canonical path representations.
+      
       includeBasePaths.sort(getStringComparer(!useCaseSensitiveFileNames));
 
-      // Iterate over each include base path and include unique base paths that are not a
-      // subpath of an existing base path
+      
+      
       for (const includeBasePath of includeBasePaths) {
         if (every(basePaths, (basePath) => !containsPath(basePath, includeBasePath, path, !useCaseSensitiveFileNames))) {
           basePaths.push(includeBasePath);
@@ -3985,19 +3946,19 @@ namespace core {
   function getIncludeBasePath(absolute: string): string {
     const wildcardOffset = indexOfAnyCharCode(absolute, wildcardCodes);
     if (wildcardOffset < 0) {
-      // No "*" or "?" in the path
+      
       return !hasExtension(absolute) ? absolute : removeTrailingDirectorySeparator(getDirectoryPath(absolute));
     }
     return absolute.substring(0, absolute.lastIndexOf(dirSeparator, wildcardOffset));
   }
 
   export function ensureScriptKind(fileName: string, scriptKind: ScriptKind | undefined): ScriptKind {
-    // Using scriptKind as a condition handles both:
-    // - 'scriptKind' is unspecified and thus it is `undefined`
-    // - 'scriptKind' is set and it is `Unknown` (0)
-    // If the 'scriptKind' is 'undefined' or 'Unknown' then we attempt
-    // to get the ScriptKind from the file name. If it cannot be resolved
-    // from the file name then the default 'TS' script kind is returned.
+    
+    
+    
+    
+    
+    
     return scriptKind || getScriptKindFromFileName(fileName) || ScriptKind.TS;
   }
 
@@ -4019,12 +3980,10 @@ namespace core {
     }
   }
 
-  /**
-   *  List of supported extensions in order of file resolution precedence.
-   */
+  
   export const supportedTSExtensions: readonly Extension[] = [Extension.Ts, Extension.Tsx, Extension.Dts];
   export const supportedTSExtensionsWithJson: readonly Extension[] = [Extension.Ts, Extension.Tsx, Extension.Dts, Extension.Json];
-  /** Must have ".d.ts" first because if ".ts" goes first, that will be detected as the extension instead of ".d.ts". */
+  
   export const supportedTSExtensionsForExtractExtension: readonly Extension[] = [Extension.Dts, Extension.Ts, Extension.Tsx];
   export const supportedJSExtensions: readonly Extension[] = [Extension.Js, Extension.Jsx];
   export const supportedJSAndJsonExtensions: readonly Extension[] = [Extension.Js, Extension.Jsx, Extension.Json];
@@ -4087,11 +4046,7 @@ namespace core {
     return false;
   }
 
-  /**
-   * Extension boundaries by priority. Lower numbers indicate higher priorities, and are
-   * aligned to the offset of the highest priority extension in the
-   * allSupportedExtensions array.
-   */
+  
   export const enum ExtensionPriority {
     TypeScriptFiles = 0,
     DeclarationAndJavaScriptFiles = 2,
@@ -4107,14 +4062,12 @@ namespace core {
       }
     }
 
-    // If its not in the list of supported extensions, this is likely a
-    // TypeScript file with a non-ts extension
+    
+    
     return ExtensionPriority.Highest;
   }
 
-  /**
-   * Adjusts an extension priority to be the highest priority within the same range.
-   */
+  
   export function adjustExtensionPriority(extensionPriority: ExtensionPriority, supportedExtensions: readonly string[]): ExtensionPriority {
     if (extensionPriority < ExtensionPriority.DeclarationAndJavaScriptFiles) {
       return ExtensionPriority.TypeScriptFiles;
@@ -4125,9 +4078,7 @@ namespace core {
     }
   }
 
-  /**
-   * Gets the next lowest extension priority for a given priority.
-   */
+  
   export function getNextLowestExtensionPriority(extensionPriority: ExtensionPriority, supportedExtensions: readonly string[]): ExtensionPriority {
     if (extensionPriority < ExtensionPriority.DeclarationAndJavaScriptFiles) {
       return ExtensionPriority.DeclarationAndJavaScriptFiles;
@@ -4156,11 +4107,11 @@ namespace core {
   }
 
   export function changeExtension<T extends string | Path>(path: T, newExtension: string): T {
-    return <T>changeAnyExtension(path, newExtension, extensionsToRemove, /*ignoreCase*/ false);
+    return <T>changeAnyExtension(path, newExtension, extensionsToRemove,  false);
   }
 
   export function tryParsePattern(pattern: string): Pattern | undefined {
-    // This should be verified outside of here and a proper error thrown.
+    
     assert(hasZeroOrOneAsteriskCharacter(pattern));
     const indexOfStar = pattern.indexOf('*');
     return indexOfStar === -1
@@ -4171,7 +4122,7 @@ namespace core {
         };
   }
 
-  /** True if an extension is one of the supported TypeScript extensions. */
+  
   export function extensionIsTS(ext: Extension): boolean {
     return ext === Extension.Ts || ext === Extension.Tsx || ext === Extension.Dts;
   }
@@ -4210,7 +4161,7 @@ namespace core {
       if (pattern) {
         patterns.push(pattern);
       } else if (patternString === candidate) {
-        // pattern was matched as is - no need to search further
+        
         return patternString;
       }
     }
@@ -4318,14 +4269,14 @@ namespace core {
     isSourceOfProjectReferenceRedirect(fileName: string): boolean;
   }
   export function skipTypeChecking(sourceFile: SourceFile, options: CompilerOptions, host: HostWithIsSourceOfProjectReferenceRedirect) {
-    // If skipLibCheck is enabled, skip reporting errors if file is a declaration file.
-    // If skipDefaultLibCheck is enabled, skip reporting errors if file contains a
-    // '/// <reference no-default-lib="true"/>' directive.
+    
+    
+    
     return (options.skipLibCheck && sourceFile.isDeclarationFile) || (options.skipDefaultLibCheck && sourceFile.hasNoDefaultLib) || host.isSourceOfProjectReferenceRedirect(sourceFile.fileName);
   }
 
   export function isJsonEqual(a: unknown, b: unknown): boolean {
-    // eslint-disable-next-line no-null/no-null
+    
     return a === b || (typeof a === 'object' && a !== null && typeof b === 'object' && b !== null && equalOwnProperties(a as MapLike<unknown>, b as MapLike<unknown>, isJsonEqual));
   }
 
@@ -4340,31 +4291,28 @@ namespace core {
     }
   }
 
-  /**
-   * Converts a bigint literal string, e.g. `0x1234n`,
-   * to its decimal string representation, e.g. `4660`.
-   */
+  
   export function parsePseudoBigInt(stringValue: string): string {
     let log2Base: number;
     switch (
-      stringValue.charCodeAt(1) // "x" in "0x123"
+      stringValue.charCodeAt(1) 
     ) {
       case Codes.b:
-      case Codes.B: // 0b or 0B
+      case Codes.B: 
         log2Base = 1;
         break;
       case Codes.o:
-      case Codes.O: // 0o or 0O
+      case Codes.O: 
         log2Base = 3;
         break;
       case Codes.x:
-      case Codes.X: // 0x or 0X
+      case Codes.X: 
         log2Base = 4;
         break;
       default:
-        // already in decimal; omit trailing "n"
+        
         const nIndex = stringValue.length - 1;
-        // Skip leading 0s
+        
         let nonZeroStart = 0;
         while (stringValue.charCodeAt(nonZeroStart) === Codes._0) {
           nonZeroStart++;
@@ -4372,25 +4320,25 @@ namespace core {
         return stringValue.slice(nonZeroStart, nIndex) || '0';
     }
 
-    // Omit leading "0b", "0o", or "0x", and trailing "n"
+    
     const startIndex = 2,
       endIndex = stringValue.length - 1;
     const bitsNeeded = (endIndex - startIndex) * log2Base;
-    // Stores the value specified by the string as a LE array of 16-bit integers
-    // using Uint16 instead of Uint32 so combining steps can use bitwise operators
+    
+    
     const segments = new Uint16Array((bitsNeeded >>> 4) + (bitsNeeded & 15 ? 1 : 0));
-    // Add the digits, one at a time
+    
     for (let i = endIndex - 1, bitOffset = 0; i >= startIndex; i--, bitOffset += log2Base) {
       const segment = bitOffset >>> 4;
       const digitChar = stringValue.charCodeAt(i);
-      // Find character range: 0-9 < A-F < a-f
+      
       const digit = digitChar <= Codes._9 ? digitChar - Codes._0 : 10 + digitChar - (digitChar <= Codes.F ? Codes.A : Codes.a);
       const shiftedDigit = digit << (bitOffset & 15);
       segments[segment] |= shiftedDigit;
       const residual = shiftedDigit >>> 16;
-      if (residual) segments[segment + 1] |= residual; // overflows segment
+      if (residual) segments[segment + 1] |= residual; 
     }
-    // Repeatedly divide segments by 10 and add remainder to base10Value
+    
     let base10Value = '';
     let firstNonzeroSegment = segments.length - 1;
     let segmentsRemaining = true;
@@ -4444,7 +4392,7 @@ namespace core {
     return containerKind === Syntax.InterfaceDeclaration || containerKind === Syntax.TypeLiteral;
   }
 
-  /** Returns true for an identifier in 1) an `implements` clause, and 2) an `extends` clause of an interface. */
+  
   function isIdentifierInNonEmittingHeritageClause(node: Node): boolean {
     if (node.kind !== Syntax.Identifier) return false;
     const heritageClause = Node.findAncestor(node.parent, (parent) => {

@@ -1180,7 +1180,7 @@ export function compareBooleans(a: boolean, b: boolean): Comparison {
 }
 export function getSpellingSuggestion<T>(name: string, candidates: T[], getName: (candidate: T) => string | undefined): T | undefined {
   const maximumLengthDifference = Math.min(2, Math.floor(name.length * 0.34));
-  let bestDistance = Math.floor(name.length * 0.4) + 1; // If the best r isn't better than this, don't bother.
+  let bestDistance = Math.floor(name.length * 0.4) + 1;
   let bestCandidate: T | undefined;
   let justCheckExactMatches = false;
   const nameLowerCase = name.toLowerCase();
@@ -1225,7 +1225,7 @@ function levenshteinWithMax(s1: string, s2: string, max: number): number | undef
       current[j] = big;
     }
     for (let j = minJ; j <= maxJ; j++) {
-      const dist = c1 === s2.charCodeAt(j - 1) ? previous[j - 1] : Math.min(/*delete*/ previous[j] + 1, /*insert*/ current[j - 1] + 1, /*substitute*/ previous[j - 1] + 2);
+      const dist = c1 === s2.charCodeAt(j - 1) ? previous[j - 1] : Math.min(previous[j - 1] + 2);
       current[j] = dist;
       colMin = Math.min(colMin, dist);
     }

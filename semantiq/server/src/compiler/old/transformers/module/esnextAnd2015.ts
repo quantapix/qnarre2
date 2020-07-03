@@ -44,7 +44,7 @@ namespace core {
     function visitor(node: Node): VisitResult<Node> {
       switch (node.kind) {
         case Syntax.ImportEqualsDeclaration:
-          // Elide `import=` as it is not legal with --module ES6
+          
           return;
         case Syntax.ExportAssignment:
           return visitExportAssignment(<ExportAssignment>node);
@@ -57,43 +57,36 @@ namespace core {
     }
 
     function visitExportAssignment(node: ExportAssignment): VisitResult<ExportAssignment> {
-      // Elide `export=` as it is not legal with --module ES6
+      
       return node.isExportEquals ? undefined : node;
     }
 
     function visitExportDeclaration(node: ExportDeclaration) {
-      // `export * as ns` only needs to be transformed in ES2015
+      
       if (compilerOptions.module !== undefined && compilerOptions.module > ModuleKind.ES2015) {
         return node;
       }
 
-      // Either ill-formed or don't need to be tranformed.
+      
       if (!node.exportClause || !Node.is.kind(NamespaceExport, node.exportClause) || !node.moduleSpecifier) {
         return node;
       }
 
       const oldIdentifier = node.exportClause.name;
       const synthName = getGeneratedNameForNode(oldIdentifier);
-      const importDecl = createImportDeclaration(undefined, /*modifiers*/ undefined, createImportClause(/*name*/ undefined, createNamespaceImport(synthName)), node.moduleSpecifier);
+      const importDecl = createImportDeclaration(undefined,  undefined, createNamespaceImport(synthName)), node.moduleSpecifier);
       setOriginalNode(importDecl, node.exportClause);
 
-      const exportDecl = createExportDeclaration(undefined, /*modifiers*/ undefined, createNamedExports([createExportSpecifier(synthName, oldIdentifier)]));
+      const exportDecl = createExportDeclaration(undefined,  undefined, createNamedExports([createExportSpecifier(synthName, oldIdentifier)]));
       setOriginalNode(exportDecl, node);
 
       return [importDecl, exportDecl];
     }
 
-    //
-    // Emit Notification
-    //
+    
+    
+    
 
-    /**
-     * Hook for node emit.
-     *
-     * @param hint A hint as to the intended usage of the node.
-     * @param node The node to emit.
-     * @param emit A callback used to emit the node in the printer.
-     */
     function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void): void {
       if (Node.is.kind(SourceFile, node)) {
         if ((qp_isExternalModule(node) || compilerOptions.isolatedModules) && compilerOptions.importHelpers) {
@@ -106,16 +99,10 @@ namespace core {
       }
     }
 
-    //
-    // Substitutions
-    //
+    
+    
+    
 
-    /**
-     * Hooks node substitutions.
-     *
-     * @param hint A hint as to the intended usage of the node.
-     * @param node The node to substitute.
-     */
     function onSubstituteNode(hint: EmitHint, node: Node) {
       node = previousOnSubstituteNode(hint, node);
       if (helperNameSubstitutions && Node.is.kind(Identifier, node) && Node.get.emitFlags(node) & EmitFlags.HelperName) {

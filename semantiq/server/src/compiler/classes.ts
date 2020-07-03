@@ -110,15 +110,7 @@ export abstract class Expression extends Node implements qt.Expression {
       if (property === firstAccessor) {
         const properties: ObjectLiteralElementLike[] = [];
         if (getAccessor) {
-          const getterFunction = createFunctionExpression(
-            getAccessor.modifiers,
-            undefined,
-            undefined,
-            undefined,
-            getAccessor.parameters,
-            undefined,
-            getAccessor.body! // TODO: GH#18217
-          );
+          const getterFunction = createFunctionExpression(getAccessor.modifiers, undefined, undefined, undefined, getAccessor.parameters, undefined, getAccessor.body!);
           setRange(getterFunction, getAccessor);
           setOriginalNode(getterFunction, getAccessor);
           const getter = createPropertyAssignment('get', getterFunction);
@@ -126,15 +118,7 @@ export abstract class Expression extends Node implements qt.Expression {
         }
 
         if (setAccessor) {
-          const setterFunction = createFunctionExpression(
-            setAccessor.modifiers,
-            undefined,
-            undefined,
-            undefined,
-            setAccessor.parameters,
-            undefined,
-            setAccessor.body! // TODO: GH#18217
-          );
+          const setterFunction = createFunctionExpression(setAccessor.modifiers, undefined, undefined, undefined, setAccessor.parameters, undefined, setAccessor.body!);
           setRange(setterFunction, setAccessor);
           setOriginalNode(setterFunction, setAccessor);
           const setter = createPropertyAssignment('set', setterFunction);
@@ -172,21 +156,7 @@ export abstract class Expression extends Node implements qt.Expression {
           setRange(
             createAssignment(
               createMemberAccessForPropertyName(receiver, method.name, method.name),
-              setOriginalNode(
-                setRange(
-                  createFunctionExpression(
-                    method.modifiers,
-                    method.asteriskToken,
-                    undefined,
-                    undefined,
-                    method.parameters,
-                    undefined,
-                    method.body! // TODO: GH#18217
-                  ),
-                  method
-                ),
-                method
-              )
+              setOriginalNode(setRange(createFunctionExpression(method.modifiers, method.asteriskToken, undefined, undefined, method.parameters, undefined, method.body!), method), method)
             ),
             method
           ),
