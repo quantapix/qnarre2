@@ -3,7 +3,6 @@ import * as qt from './types';
 import { diags } from './diags';
 import * as syntax from './syntax';
 import { Codes, JSDocSyntax, JsxTokenSyntax, KeywordSyntax, LanguageVariant, Syntax } from './syntax';
-
 interface Parser {
   parseSource(fileName: string, t: string, languageVersion: ScriptTarget, syntaxCursor?: IncrementalParser.SyntaxCursor, setParentNodes?: boolean, scriptKind?: ScriptKind): SourceFile;
   parseJsonText(fileName: string, text: string, lang?: ScriptTarget, syntaxCursor?: IncrementalParser.SyntaxCursor, setParentNodes?: boolean): JsonSourceFile;
@@ -11,7 +10,6 @@ interface Parser {
   parseJSDocIsolatedComment(t: string, start?: number, length?: number): { jsDoc: JSDoc; diagnostics: Diagnostic[] } | undefined;
   parseJSDocTypeExpressionForTests(content: string, start: number | undefined, length: number | undefined): { jsDocTypeExpression: JSDocTypeExpression; diagnostics: Diagnostic[] } | undefined;
 }
-
 const enum PropertyLike {
   Property = 1 << 0,
   Parameter = 1 << 1,
@@ -66,14 +64,11 @@ const enum Tristate {
 interface MissingList<T extends Node> extends Nodes<T> {
   isMissingList: true;
 }
-
 function create() {
   const scanner = qs_create(true);
-
   let currentToken: Syntax;
   let identifiers: qb.QMap<string>;
   let privateIdentifiers: qb.QMap<string>;
-
   const withDisallowInDecoratorContext = NodeFlags.DisallowInContext | NodeFlags.DecoratorContext;
   let source: SourceFile;
   let diags: DiagnosticWithLocation[];
@@ -81,10 +76,8 @@ function create() {
   let sourceText: string;
   let notParenthesizedArrow: qb.QMap<true> | undefined;
   let parseErrorBeforeNextFinishedNode = false;
-
   const tok = () => currentToken;
   const getNodePos = () => scanner.getStartPos();
-
   const is = new (class {
     identifier() {
       if (tok() === Syntax.Identifier) return true;
@@ -1517,7 +1510,6 @@ function create() {
         es = ctx.parseList(Context.TypeMembers, typeMember);
         this.expected(Syntax.CloseBraceToken);
       } else es = create.missingList<TypeElement>();
-
       return es;
     }
     mappedTypeParameter() {
@@ -2516,7 +2508,6 @@ function create() {
       n.typeArguments = typeArguments;
       if (tok() === Syntax.OpenParenToken) n.arguments = this.argumentList();
       else if (n.typeArguments) this.errorAt(fullStart, scanner.getStartPos(), Diagnostics.A_new_expression_with_type_arguments_must_always_be_followed_by_a_parenthesized_argument_list);
-
       return finishNode(n);
     }
     block(ignoreMissingOpenBrace: boolean, m?: DiagnosticMessage): Block {
@@ -3164,7 +3155,6 @@ function create() {
         n.statements = ctx.parseList(Context.BlockStatements, this.statement);
         this.expected(Syntax.CloseBraceToken);
       } else n.statements = create.missingList<Statement>();
-
       return finishNode(n);
     }
     moduleOrNamespaceDeclaration(n: ModuleDeclaration, flags: NodeFlags): ModuleDeclaration {
@@ -3342,7 +3332,6 @@ function create() {
       this.semicolon();
       return finishNode(n);
     }
-
     errorAtToken(m: DiagnosticMessage, arg0?: any) {
       this.errorAt(scanner.getTokenPos(), scanner.getTextPos(), m, arg0);
     }
@@ -3580,7 +3569,6 @@ function create() {
     tagsPos = 0;
     tagsEnd = 0;
     comments: string[] = [];
-
     addTag(tag: JSDocTag | undefined): void {
       if (!tag) return;
       if (!this.tags) {
@@ -3613,7 +3601,6 @@ function create() {
         let indent = start - Math.max(content.lastIndexOf('\n', start), 0) + 4;
         const pushComment = (text: string) => {
           if (!margin) margin = indent;
-
           this.comments.push(text);
           indent += text.length;
         };
@@ -3632,7 +3619,6 @@ function create() {
                 state = State.BeginningOfLine;
                 margin = undefined;
               } else pushComment(scanner.getTokenText());
-
               break;
             case Syntax.NewLineTrivia:
               this.comments.push(scanner.getTokenText());
@@ -4306,7 +4292,6 @@ function create() {
       return n;
     }
   })();
-
   function getLanguage(k: ScriptKind) {
     return k === ScriptKind.TSX || k === ScriptKind.JSX || k === ScriptKind.JS || k === ScriptKind.JSON ? LanguageVariant.TX : LanguageVariant.TS;
   }
@@ -4523,12 +4508,10 @@ function create() {
     parseJSDocTypeExpressionForTests: parseJSDoc.typeExpressionForTests.bind(parseJSDoc),
   } as Parser;
 }
-
 let parser: Parser;
 function getParser() {
   return parser || (parser = create());
 }
-
 export function qp_isExternalModule(s: SourceFile) {
   return s.externalModuleIndicator !== undefined;
 }
@@ -4554,7 +4537,6 @@ export function qp_parseIsolatedEntityName(text: string, lang: ScriptTarget): En
 export function qp_parseJsonText(fileName: string, t: string): JsonSourceFile {
   return getParser().parseJsonText(fileName, t);
 }
-
 namespace IncrementalParser {
   export function updateSource(source: SourceFile, newText: string, textChangeRange: TextChangeRange, aggressiveChecks: boolean): SourceFile {
     aggressiveChecks = aggressiveChecks || Debug.shouldAssert(AssertionLevel.Aggressive);
@@ -4619,7 +4601,6 @@ namespace IncrementalParser {
     }
     addNewlyScannedDirectives();
     return commentDirectives;
-
     function addNewlyScannedDirectives() {
       if (addedNewlyScannedDirectives) return;
       addedNewlyScannedDirectives = true;
@@ -4715,7 +4696,6 @@ namespace IncrementalParser {
       }
       assert(fullEnd < changeStart);
     }
-
     function visitArray(array: IncrementalNodes) {
       assert(array.pos <= array.end);
       if (array.pos > changeRangeOldEnd) {
@@ -4889,7 +4869,6 @@ namespace IncrementalParser {
     Value = -1,
   }
 }
-
 interface PragmaContext {
   languageVersion: ScriptTarget;
   pragmas?: PragmaMap;
@@ -4901,7 +4880,6 @@ interface PragmaContext {
   hasNoDefaultLib?: boolean;
   moduleName?: string;
 }
-
 export function processCommentPragmas(ctx: PragmaContext, sourceText: string): void {
   const ps: PragmaPseudoMapEntry[] = [];
   for (const r of syntax.get.leadingCommentRanges(sourceText, 0) || emptyArray) {
@@ -4919,9 +4897,7 @@ export function processCommentPragmas(ctx: PragmaContext, sourceText: string): v
     ctx.pragmas.set(p.name, p.args);
   }
 }
-
 type PragmaDiagnosticReporter = (pos: number, length: number, m: DiagnosticMessage) => void;
-
 export function processPragmasIntoFields(c: PragmaContext, reporter: PragmaDiagnosticReporter): void {
   c.checkJsDirective = undefined;
   c.referencedFiles = [];
@@ -4957,7 +4933,6 @@ export function processPragmasIntoFields(c: PragmaContext, reporter: PragmaDiagn
         if (entryOrList instanceof Array) {
           for (const entry of entryOrList) {
             if (c.moduleName) reporter(entry.range.pos, entry.range.end - entry.range.pos, Diagnostics.An_AMD_module_cannot_have_multiple_name_assignments);
-
             c.moduleName = (entry as PragmaPseudoMap['amd-module']).arguments.name;
           }
         } else c.moduleName = (entryOrList as PragmaPseudoMap['amd-module']).arguments.name;
@@ -4983,13 +4958,10 @@ export function processPragmasIntoFields(c: PragmaContext, reporter: PragmaDiagn
     }
   });
 }
-
 const namedArgRegExCache = new qb.QMap<RegExp>();
-
 const tripleSlashXMLCommentStartRegEx = /^\/\/\/\s*<(\S+)\s.*?\/>/im;
 const singleLinePragmaRegEx = /^\/\/\/?\s*@(\S+)\s*(.*)\s*$/im;
 const multiLinePragmaRegEx = /\s*@(\S+)\s*(.*)\s*$/gim;
-
 function extractPragmas(pragmas: PragmaPseudoMapEntry[], range: CommentRange, text: string) {
   const tripleSlash = range.kind === Syntax.SingleLineCommentTrivia && tripleSlashXMLCommentStartRegEx.exec(text);
   if (tripleSlash) {
