@@ -1,8 +1,9 @@
 import * as qb from './base';
 import * as qt from './types';
-import { diags } from './diags';
+import { Node, NodeFlags } from './types';
+import { diags as qd } from './diags';
 import * as syntax from './syntax';
-import { Codes, JSDocSyntax, JsxTokenSyntax, KeywordSyntax, LanguageVariant, Syntax } from './syntax';
+import { JSDocSyntax, JsxTokenSyntax, LanguageVariant, Modifier, Syntax } from './syntax';
 interface Parser {
   parseSource(fileName: string, t: string, languageVersion: ScriptTarget, syntaxCursor?: IncrementalParser.SyntaxCursor, setParentNodes?: boolean, scriptKind?: ScriptKind): SourceFile;
   parseJsonText(fileName: string, text: string, lang?: ScriptTarget, syntaxCursor?: IncrementalParser.SyntaxCursor, setParentNodes?: boolean): JsonSourceFile;
@@ -392,7 +393,7 @@ function create() {
   const next = new (class {
     tok(check = true): Syntax {
       if (check && syntax.is.keyword(currentToken) && (scanner.hasUnicodeEscape() || scanner.hasExtendedEscape())) {
-        parse.errorAt(scanner.getTokenPos(), scanner.getTextPos(), Diagnostics.Keywords_cannot_contain_escape_characters);
+        parse.errorAt(scanner.getTokenPos(), scanner.getTextPos(), qd.Keywords_cannot_contain_escape_characters);
       }
       return (currentToken = scanner.scan());
     }
@@ -628,13 +629,13 @@ function create() {
         return finishNode(n);
       }
       if (tok() === Syntax.PrivateIdentifier) {
-        parse.errorAtToken(pm || Diagnostics.Private_identifiers_are_not_allowed_outside_class_bodies);
+        parse.errorAtToken(pm || qd.Private_identifiers_are_not_allowed_outside_class_bodies);
         return create.identifier(true);
       }
       const report = tok() === Syntax.EndOfFileToken;
       const r = scanner.isReservedWord();
       const t = scanner.getTokenText();
-      const dm = r ? Diagnostics.Identifier_expected_0_is_a_reserved_word_that_cannot_be_used_here : Diagnostics.Identifier_expected;
+      const dm = r ? qd.Identifier_expected_0_is_a_reserved_word_that_cannot_be_used_here : qd.Identifier_expected;
       return create.missingNode<Identifier>(Syntax.Identifier, report, m || dm, t);
     }
     missingList<T extends Node>(): MissingList<T> {
@@ -710,7 +711,7 @@ function create() {
       const p = getNodePos();
       let s = -1;
       const commaDiag = () => {
-        return c === Context.EnumMembers ? Diagnostics.An_enum_member_name_must_be_followed_by_a_or : undefined;
+        return c === Context.EnumMembers ? qd.An_enum_member_name_must_be_followed_by_a_or : undefined;
       };
       while (true) {
         if (this.isListElement(c, false)) {
@@ -949,7 +950,7 @@ function create() {
           return tok() === Syntax.OpenBracketToken || tok() === Syntax.Dot3Token || is.literalPropertyName();
         case Context.HeritageClauseElement:
           const isHeritageClauseObjectLiteral = () => {
-            assert(tok() === Syntax.OpenBraceToken);
+            qb.assert(tok() === Syntax.OpenBraceToken);
             if (next.tok() === Syntax.CloseBraceToken) {
               const t = next.tok();
               return t === Syntax.CommaToken || t === Syntax.OpenBraceToken || t === Syntax.ExtendsKeyword || t === Syntax.ImplementsKeyword;
@@ -1052,52 +1053,52 @@ function create() {
       const errors = (): DiagnosticMessage => {
         switch (c) {
           case Context.SourceElements:
-            return Diagnostics.Declaration_or_statement_expected;
+            return qd.Declaration_or_statement_expected;
           case Context.BlockStatements:
-            return Diagnostics.Declaration_or_statement_expected;
+            return qd.Declaration_or_statement_expected;
           case Context.SwitchClauses:
-            return Diagnostics.case_or_default_expected;
+            return qd.case_or_default_expected;
           case Context.SwitchClauseStatements:
-            return Diagnostics.Statement_expected;
+            return qd.Statement_expected;
           case Context.RestProperties:
           case Context.TypeMembers:
-            return Diagnostics.Property_or_signature_expected;
+            return qd.Property_or_signature_expected;
           case Context.ClassMembers:
-            return Diagnostics.Unexpected_token_A_constructor_method_accessor_or_property_was_expected;
+            return qd.Unexpected_token_A_constructor_method_accessor_or_property_was_expected;
           case Context.EnumMembers:
-            return Diagnostics.Enum_member_expected;
+            return qd.Enum_member_expected;
           case Context.HeritageClauseElement:
-            return Diagnostics.Expression_expected;
+            return qd.Expression_expected;
           case Context.VariableDeclarations:
-            return Diagnostics.Variable_declaration_expected;
+            return qd.Variable_declaration_expected;
           case Context.ObjectBindingElements:
-            return Diagnostics.Property_destructuring_pattern_expected;
+            return qd.Property_destructuring_pattern_expected;
           case Context.ArrayBindingElements:
-            return Diagnostics.Array_element_destructuring_pattern_expected;
+            return qd.Array_element_destructuring_pattern_expected;
           case Context.ArgumentExpressions:
-            return Diagnostics.Argument_expression_expected;
+            return qd.Argument_expression_expected;
           case Context.ObjectLiteralMembers:
-            return Diagnostics.Property_assignment_expected;
+            return qd.Property_assignment_expected;
           case Context.ArrayLiteralMembers:
-            return Diagnostics.Expression_or_comma_expected;
+            return qd.Expression_or_comma_expected;
           case Context.JSDocParameters:
-            return Diagnostics.Parameter_declaration_expected;
+            return qd.Parameter_declaration_expected;
           case Context.Parameters:
-            return Diagnostics.Parameter_declaration_expected;
+            return qd.Parameter_declaration_expected;
           case Context.TypeParameters:
-            return Diagnostics.Type_parameter_declaration_expected;
+            return qd.Type_parameter_declaration_expected;
           case Context.TypeArguments:
-            return Diagnostics.Type_argument_expected;
+            return qd.Type_argument_expected;
           case Context.TupleElementTypes:
-            return Diagnostics.Type_expected;
+            return qd.Type_expected;
           case Context.HeritageClauses:
-            return Diagnostics.Unexpected_token_expected;
+            return qd.Unexpected_token_expected;
           case Context.ImportOrExportSpecifiers:
-            return Diagnostics.Identifier_expected;
+            return qd.Identifier_expected;
           case Context.JsxAttributes:
-            return Diagnostics.Identifier_expected;
+            return qd.Identifier_expected;
           case Context.JsxChildren:
-            return Diagnostics.Identifier_expected;
+            return qd.Identifier_expected;
           default:
             return undefined!;
         }
@@ -1138,7 +1139,7 @@ function create() {
       };
       processPragmasIntoFields((source as {}) as PragmaContext, reportPragmaDiagnostic);
       source.statements = ctx.parseList(Context.SourceElements, parse.statement);
-      assert(tok() === Syntax.EndOfFileToken);
+      qb.assert(tok() === Syntax.EndOfFileToken);
       source.endOfFileToken = addJSDocComment(parse.tokenNode());
       const getImportMetaIfNecessary = () => {
         const isImportMeta = (n: Node): boolean => {
@@ -1205,7 +1206,7 @@ function create() {
         }
         finishNode(n);
         source.statements = create.nodeArray([n], p);
-        source.endOfFileToken = parse.expectedToken(Syntax.EndOfFileToken, Diagnostics.Unexpected_token);
+        source.endOfFileToken = parse.expectedToken(Syntax.EndOfFileToken, qd.Unexpected_token);
       }
       if (setParentNodes) fixupParentReferences(source);
       source.nodeCount = create.nodeCount;
@@ -1230,12 +1231,12 @@ function create() {
         return true;
       }
       if (m) this.errorAtToken(m);
-      else this.errorAtToken(Diagnostics._0_expected, syntax.toString(t));
+      else this.errorAtToken(qd._0_expected, syntax.toString(t));
       return false;
     }
     expectedToken<T extends Syntax>(t: T, m?: DiagnosticMessage, arg0?: any): Token<T>;
     expectedToken(t: Syntax, m?: DiagnosticMessage, arg0?: any): Node {
-      return this.optionalToken(t) || create.missingNode(t, false, m || Diagnostics._0_expected, arg0 || syntax.toString(t));
+      return this.optionalToken(t) || create.missingNode(t, false, m || qd._0_expected, arg0 || syntax.toString(t));
     }
     optional(t: Syntax): boolean {
       if (tok() === t) {
@@ -1314,11 +1315,11 @@ function create() {
     rightSideOfDot(allow: boolean, privates: boolean): Identifier | PrivateIdentifier {
       if (scanner.hasPrecedingLineBreak() && syntax.is.identifierOrKeyword(tok())) {
         const m = lookAhead(next.isIdentifierOrKeywordOnSameLine);
-        if (m) return create.missingNode<Identifier>(Syntax.Identifier, true, Diagnostics.Identifier_expected);
+        if (m) return create.missingNode<Identifier>(Syntax.Identifier, true, qd.Identifier_expected);
       }
       if (tok() === Syntax.PrivateIdentifier) {
         const n = this.privateIdentifier();
-        return privates ? n : create.missingNode<Identifier>(Syntax.Identifier, true, Diagnostics.Identifier_expected);
+        return privates ? n : create.missingNode<Identifier>(Syntax.Identifier, true, qd.Identifier_expected);
       }
       return allow ? this.identifierName() : this.identifier();
     }
@@ -1327,11 +1328,11 @@ function create() {
       const templateHead = (): TemplateHead => {
         if (tagged) reScanHeadOrNoSubstTemplate();
         const n2 = this.literalLikeNode(tok());
-        assert(n2.kind === Syntax.TemplateHead, 'Template head has wrong token kind');
+        qb.assert(n2.kind === Syntax.TemplateHead, 'Template head has wrong token kind');
         return n2 as TemplateHead;
       };
       n.head = templateHead();
-      assert(n.head.kind === Syntax.TemplateHead, 'Template head has wrong token kind');
+      qb.assert(n.head.kind === Syntax.TemplateHead, 'Template head has wrong token kind');
       const ss = [];
       const p = getNodePos();
       do {
@@ -1348,12 +1349,12 @@ function create() {
         reScanTemplateToken(tagged);
         const middleOrTail = (): TemplateMiddle | TemplateTail => {
           const n2 = this.literalLikeNode(tok());
-          assert(n2.kind === Syntax.TemplateMiddle || n2.kind === Syntax.TemplateTail, 'Template fragment has wrong token kind');
+          qb.assert(n2.kind === Syntax.TemplateMiddle || n2.kind === Syntax.TemplateTail, 'Template fragment has wrong token kind');
           return n2 as TemplateMiddle | TemplateTail;
         };
         l = middleOrTail();
       } else {
-        l = this.expectedToken(Syntax.TemplateTail, Diagnostics._0_expected, syntax.toString(Syntax.CloseBraceToken)) as TemplateTail;
+        l = this.expectedToken(Syntax.TemplateTail, qd._0_expected, syntax.toString(Syntax.CloseBraceToken)) as TemplateTail;
       }
       n.literal = l;
       return finishNode(n);
@@ -1384,7 +1385,7 @@ function create() {
     }
     typeReference(): TypeReferenceNode {
       const n = create.node(Syntax.TypeReference);
-      n.typeName = this.entityName(true, Diagnostics.Type_expected);
+      n.typeName = this.entityName(true, qd.Type_expected);
       if (!scanner.hasPrecedingLineBreak() && reScanLessToken() === Syntax.LessThanToken) {
         n.typeArguments = ctx.parseBracketedList(Context.TypeArguments, this.type, Syntax.LessThanToken, Syntax.GreaterThanToken);
       }
@@ -1438,7 +1439,7 @@ function create() {
       n.decorators = this.decorators();
       n.modifiers = this.modifiers();
       n.dot3Token = this.optionalToken(Syntax.Dot3Token);
-      n.name = this.identifierOrPattern(Diagnostics.Private_identifiers_cannot_be_used_as_parameters);
+      n.name = this.identifierOrPattern(qd.Private_identifiers_cannot_be_used_as_parameters);
       if (Node.get.fullWidth(n.name) === 0 && !n.modifiers && syntax.is.modifier(tok())) next.tok();
       n.questionToken = this.optionalToken(Syntax.QuestionToken);
       n.type = parameterType();
@@ -1614,7 +1615,7 @@ function create() {
       this.expected(Syntax.OpenParenToken);
       n.argument = this.type();
       this.expected(Syntax.CloseParenToken);
-      if (this.optional(Syntax.DotToken)) n.qualifier = this.entityName(true, Diagnostics.Type_expected);
+      if (this.optional(Syntax.DotToken)) n.qualifier = this.entityName(true, qd.Type_expected);
       if (!scanner.hasPrecedingLineBreak() && reScanLessToken() === Syntax.LessThanToken) {
         n.typeArguments = ctx.parseBracketedList(Context.TypeArguments, this.type, Syntax.LessThanToken, Syntax.GreaterThanToken);
       }
@@ -1909,7 +1910,7 @@ function create() {
                 }
                 return Tristate.False;
               } else {
-                assert(first === Syntax.LessThanToken);
+                qb.assert(first === Syntax.LessThanToken);
                 if (!is.identifier()) return Tristate.False;
                 if (source.languageVariant === LanguageVariant.JSX) {
                   const isArrowFunctionInJsx = lookAhead(() => {
@@ -1984,7 +1985,7 @@ function create() {
       return finishNode(n);
     }
     simpleArrowFunctionExpression(identifier: Identifier, asyncModifier?: Nodes<Modifier> | undefined): ArrowFunction {
-      assert(tok() === Syntax.EqualsGreaterThanToken, 'this.simpleArrowFunctionExpression should only have been called if we had a =>');
+      qb.assert(tok() === Syntax.EqualsGreaterThanToken, 'this.simpleArrowFunctionExpression should only have been called if we had a =>');
       let n: ArrowFunction;
       if (asyncModifier) {
         n = create.node(Syntax.ArrowFunction, asyncModifier.pos);
@@ -2032,7 +2033,7 @@ function create() {
       n.questionToken = t;
       n.whenTrue = flags.withoutContext(withDisallowInDecoratorContext, this.assignmentExpressionOrHigher);
       n.colonToken = this.expectedToken(Syntax.ColonToken);
-      n.whenFalse = Node.is.present(n.colonToken) ? this.assignmentExpressionOrHigher() : create.missingNode(Syntax.Identifier, false, Diagnostics._0_expected, syntax.toString(Syntax.ColonToken));
+      n.whenFalse = Node.is.present(n.colonToken) ? this.assignmentExpressionOrHigher() : create.missingNode(Syntax.Identifier, false, qd._0_expected, syntax.toString(Syntax.ColonToken));
       return finishNode(n);
     }
     binaryExpressionOrHigher(precedence: number): Expression {
@@ -2115,12 +2116,12 @@ function create() {
         const pos = syntax.skipTrivia(sourceText, e.pos);
         const { end } = e;
         if (e.kind === Syntax.TypeAssertionExpression) {
-          this.errorAt(pos, end, Diagnostics.A_type_assertion_expression_is_not_allowed_in_the_left_hand_side_of_an_exponentiation_expression_Consider_enclosing_the_expression_in_parentheses);
+          this.errorAt(pos, end, qd.A_type_assertion_expression_is_not_allowed_in_the_left_hand_side_of_an_exponentiation_expression_Consider_enclosing_the_expression_in_parentheses);
         } else {
           this.errorAt(
             pos,
             end,
-            Diagnostics.An_unary_expression_with_the_0_operator_is_not_allowed_in_the_left_hand_side_of_an_exponentiation_expression_Consider_enclosing_the_expression_in_parentheses,
+            qd.An_unary_expression_with_the_0_operator_is_not_allowed_in_the_left_hand_side_of_an_exponentiation_expression_Consider_enclosing_the_expression_in_parentheses,
             syntax.toString(unaryOperator)
           );
         }
@@ -2166,7 +2167,7 @@ function create() {
         return parseJsx.elementOrSelfClosingElementOrFragment(true);
       }
       const expression = this.leftHandSideExpressionOrHigher();
-      assert(Node.is.leftHandSideExpression(expression));
+      qb.assert(Node.is.leftHandSideExpression(expression));
       if ((tok() === Syntax.Plus2Token || tok() === Syntax.Minus2Token) && !scanner.hasPrecedingLineBreak()) {
         const n = create.node(Syntax.PostfixUnaryExpression, expression.pos);
         n.operand = expression;
@@ -2208,12 +2209,12 @@ function create() {
       if (tok() === Syntax.LessThanToken) {
         const startPos = getNodePos();
         const typeArguments = tryParse(this.typeArgumentsInExpression);
-        if (typeArguments !== undefined) this.errorAt(startPos, getNodePos(), Diagnostics.super_may_not_use_type_arguments);
+        if (typeArguments !== undefined) this.errorAt(startPos, getNodePos(), qd.super_may_not_use_type_arguments);
       }
       if (tok() === Syntax.OpenParenToken || tok() === Syntax.DotToken || tok() === Syntax.OpenBracketToken) return expression;
       const n = create.node(Syntax.PropertyAccessExpression, expression.pos);
       n.expression = expression;
-      this.expectedToken(Syntax.DotToken, Diagnostics.super_must_be_followed_by_an_argument_list_or_member_access);
+      this.expectedToken(Syntax.DotToken, qd.super_must_be_followed_by_an_argument_list_or_member_access);
       n.name = this.rightSideOfDot(true, true);
       return finishNode(n);
     }
@@ -2232,7 +2233,7 @@ function create() {
       n.name = this.rightSideOfDot(true, true);
       if (questionDotToken || parse.reparseOptionalChain(expression)) {
         n.flags |= NodeFlags.OptionalChain;
-        if (Node.is.kind(PrivateIdentifier, n.name)) this.errorAtRange(n.name, Diagnostics.An_optional_chain_cannot_contain_private_identifiers);
+        if (Node.is.kind(PrivateIdentifier, n.name)) this.errorAtRange(n.name, qd.An_optional_chain_cannot_contain_private_identifiers);
       }
       return finishNode(n);
     }
@@ -2241,7 +2242,7 @@ function create() {
       n.expression = expression;
       n.questionDotToken = questionDotToken;
       if (tok() === Syntax.CloseBracketToken) {
-        n.argumentExpression = create.missingNode(Syntax.Identifier, true, Diagnostics.An_element_access_expression_should_take_an_argument);
+        n.argumentExpression = create.missingNode(Syntax.Identifier, true, qd.An_element_access_expression_should_take_an_argument);
       } else {
         const argument = flags.withoutDisallowIn(this.expression);
         if (StringLiteral.orNumericLiteralLike(argument)) argument.text = internIdentifier(argument.text);
@@ -2326,7 +2327,7 @@ function create() {
           const n = create.node(Syntax.PropertyAccessExpression, expression.pos) as PropertyAccessExpression;
           n.expression = expression;
           n.questionDotToken = questionDotToken;
-          n.name = create.missingNode(Syntax.Identifier, false, Diagnostics.Identifier_expected);
+          n.name = create.missingNode(Syntax.Identifier, false, qd.Identifier_expected);
           n.flags |= NodeFlags.OptionalChain;
           expression = finishNode(n);
         }
@@ -2382,7 +2383,7 @@ function create() {
         case Syntax.TemplateHead:
           return this.templateExpression(false);
       }
-      return this.identifier(Diagnostics.Expression_expected);
+      return this.identifier(qd.Expression_expected);
     }
     parenthesizedExpression(): ParenthesizedExpression {
       const n = create.nodeWithJSDoc(Syntax.ParenthesizedExpression);
@@ -2451,8 +2452,8 @@ function create() {
       n.properties = ctx.parseDelimitedList(Context.ObjectLiteralMembers, this.objectLiteralElement, true);
       if (!this.expected(Syntax.CloseBraceToken)) {
         const e = lastOrUndefined(diags);
-        if (e && e.code === Diagnostics._0_expected.code) {
-          addRelatedInfo(e, createFileDiagnostic(source, p, 1, Diagnostics.The_parser_expected_to_find_a_to_match_the_token_here));
+        if (e && e.code === qd._0_expected.code) {
+          addRelatedInfo(e, createFileDiagnostic(source, p, 1, qd.The_parser_expected_to_find_a_to_match_the_token_here));
         }
       }
       return finishNode(n);
@@ -2497,7 +2498,7 @@ function create() {
         expression = this.memberExpressionRest(expression, false);
         typeArguments = tryParse(this.typeArgumentsInExpression);
         if (is.templateStartOfTaggedTemplate()) {
-          assert(!!typeArguments, "Expected a type argument list; all plain tagged template starts should be consumed in 'this.memberExpressionRest'");
+          qb.assert(!!typeArguments, "Expected a type argument list; all plain tagged template starts should be consumed in 'this.memberExpressionRest'");
           expression = this.taggedTemplateRest(expression, undefined, typeArguments);
           typeArguments = undefined;
         }
@@ -2507,7 +2508,7 @@ function create() {
       n.expression = expression;
       n.typeArguments = typeArguments;
       if (tok() === Syntax.OpenParenToken) n.arguments = this.argumentList();
-      else if (n.typeArguments) this.errorAt(fullStart, scanner.getStartPos(), Diagnostics.A_new_expression_with_type_arguments_must_always_be_followed_by_a_parenthesized_argument_list);
+      else if (n.typeArguments) this.errorAt(fullStart, scanner.getStartPos(), qd.A_new_expression_with_type_arguments_must_always_be_followed_by_a_parenthesized_argument_list);
       return finishNode(n);
     }
     block(ignoreMissingOpenBrace: boolean, m?: DiagnosticMessage): Block {
@@ -2518,8 +2519,8 @@ function create() {
         n.statements = ctx.parseList(Context.BlockStatements, this.statement);
         if (!this.expected(Syntax.CloseBraceToken)) {
           const e = lastOrUndefined(diags);
-          if (e && e.code === Diagnostics._0_expected.code) {
-            addRelatedInfo(e, createFileDiagnostic(source, openBracePosition, 1, Diagnostics.The_parser_expected_to_find_a_to_match_the_token_here));
+          if (e && e.code === qd._0_expected.code) {
+            addRelatedInfo(e, createFileDiagnostic(source, openBracePosition, 1, qd.The_parser_expected_to_find_a_to_match_the_token_here));
           }
         }
       } else n.statements = create.missingList<Statement>();
@@ -2830,7 +2831,7 @@ function create() {
           }
         default:
           if (n.decorators || n.modifiers) {
-            const missing = create.missingNode<Statement>(Syntax.MissingDeclaration, true, Diagnostics.Declaration_expected);
+            const missing = create.missingNode<Statement>(Syntax.MissingDeclaration, true, qd.Declaration_expected);
             missing.pos = n.pos;
             missing.decorators = n.decorators;
             missing.modifiers = n.modifiers;
@@ -2892,7 +2893,7 @@ function create() {
     }
     variableDeclaration(allowExclamation?: boolean): VariableDeclaration {
       const n = create.node(Syntax.VariableDeclaration);
-      n.name = this.identifierOrPattern(Diagnostics.Private_identifiers_are_not_allowed_in_variable_declarations);
+      n.name = this.identifierOrPattern(qd.Private_identifiers_are_not_allowed_in_variable_declarations);
       if (allowExclamation && n.name.kind === Syntax.Identifier && tok() === Syntax.ExclamationToken && !scanner.hasPrecedingLineBreak()) {
         n.exclamationToken = this.tokenNode<Token<Syntax.ExclamationToken>>();
       }
@@ -2939,7 +2940,7 @@ function create() {
       const isGenerator = n.asteriskToken ? SignatureFlags.Yield : SignatureFlags.None;
       const isAsync = hasModifierOfKind(n, Syntax.AsyncKeyword) ? SignatureFlags.Await : SignatureFlags.None;
       fillSignature(Syntax.ColonToken, isGenerator | isAsync, n);
-      n.body = this.functionBlockOrSemicolon(isGenerator | isAsync, Diagnostics.or_expected);
+      n.body = this.functionBlockOrSemicolon(isGenerator | isAsync, qd.or_expected);
       return finishNode(n);
     }
     constructorName() {
@@ -2976,7 +2977,7 @@ function create() {
       n.name = this.propertyName();
       n.questionToken = this.optionalToken(Syntax.QuestionToken);
       if (asteriskToken || tok() === Syntax.OpenParenToken || tok() === Syntax.LessThanToken) {
-        return this.methodDeclaration(<MethodDeclaration>n, asteriskToken, Diagnostics.or_expected);
+        return this.methodDeclaration(<MethodDeclaration>n, asteriskToken, qd.or_expected);
       }
       return this.propertyDeclaration(<PropertyDeclaration>n);
     }
@@ -3042,7 +3043,7 @@ function create() {
             if (parse.constructorName()) {
               n.kind = Syntax.Constructor;
               fillSignature(Syntax.ColonToken, SignatureFlags.None, n);
-              n.body = parse.functionBlockOrSemicolon(SignatureFlags.None, Diagnostics.or_expected);
+              n.body = parse.functionBlockOrSemicolon(SignatureFlags.None, qd.or_expected);
               return finishNode(n);
             }
             return;
@@ -3063,7 +3064,7 @@ function create() {
         return this.propertyOrMethodDeclaration(n as PropertyDeclaration | MethodDeclaration);
       }
       if (n.decorators || n.modifiers) {
-        n.name = create.missingNode<Identifier>(Syntax.Identifier, true, Diagnostics.Declaration_expected);
+        n.name = create.missingNode<Identifier>(Syntax.Identifier, true, qd.Declaration_expected);
         return this.propertyDeclaration(<PropertyDeclaration>n);
       }
       return fail('Should not have attempted to parse class member declaration.');
@@ -3096,7 +3097,7 @@ function create() {
     }
     heritageClause(): HeritageClause {
       const t = tok();
-      assert(t === Syntax.ExtendsKeyword || t === Syntax.ImplementsKeyword);
+      qb.assert(t === Syntax.ExtendsKeyword || t === Syntax.ImplementsKeyword);
       const n = create.node(Syntax.HeritageClause);
       n.token = t;
       next.tok();
@@ -3232,7 +3233,7 @@ function create() {
       n.moduleReference = this.moduleReference();
       this.semicolon();
       const finished = finishNode(n);
-      if (isTypeOnly) this.errorAtRange(finished, Diagnostics.Only_ECMAScript_imports_may_use_import_type);
+      if (isTypeOnly) this.errorAtRange(finished, qd.Only_ECMAScript_imports_may_use_import_type);
       return finished;
     }
     importClause(identifier: Identifier | undefined, fullStart: number, isTypeOnly: boolean) {
@@ -3298,7 +3299,7 @@ function create() {
         checkIdentifierEnd = scanner.getTextPos();
         n.name = this.identifierName();
       } else n.name = identifierName;
-      if (kind === Syntax.ImportSpecifier && checkIdentifierIsKeyword) this.errorAt(checkIdentifierStart, checkIdentifierEnd, Diagnostics.Identifier_expected);
+      if (kind === Syntax.ImportSpecifier && checkIdentifierIsKeyword) this.errorAt(checkIdentifierStart, checkIdentifierEnd, qd.Identifier_expected);
       return finishNode(n);
     }
     namespaceExport(pos: number): NamespaceExport {
@@ -3398,7 +3399,7 @@ function create() {
           );
         };
         if (!tagNamesEq(n.openingElement.tagName, n.closingElement.tagName)) {
-          parse.errorAtRange(n.closingElement, Diagnostics.Expected_corresponding_JSX_closing_tag_for_0, getTextOfNodeFromSourceText(sourceText, n.openingElement.tagName));
+          parse.errorAtRange(n.closingElement, qd.Expected_corresponding_JSX_closing_tag_for_0, getTextOfNodeFromSourceText(sourceText, n.openingElement.tagName));
         }
         r = finishNode(n);
       } else if (opening.kind === Syntax.JsxOpeningFragment) {
@@ -3408,13 +3409,13 @@ function create() {
         n.closingFragment = this.closingFragment(inExpressionContext);
         r = finishNode(n);
       } else {
-        assert(opening.kind === Syntax.JsxSelfClosingElement);
+        qb.assert(opening.kind === Syntax.JsxSelfClosingElement);
         r = opening;
       }
       if (inExpressionContext && tok() === Syntax.LessThanToken) {
         const invalid = tryParse(() => this.elementOrSelfClosingElementOrFragment(true));
         if (invalid) {
-          parse.errorAtToken(Diagnostics.JSX_expressions_must_have_one_parent_element);
+          parse.errorAtToken(qd.JSX_expressions_must_have_one_parent_element);
           const n2 = create.node(Syntax.BinaryExpression, r.pos);
           n2.end = invalid.end;
           n2.left = r;
@@ -3437,11 +3438,11 @@ function create() {
       switch (token) {
         case Syntax.EndOfFileToken:
           if (Node.is.kind(JsxOpeningFragment, openingTag)) {
-            parse.errorAtRange(openingTag, Diagnostics.JSX_fragment_has_no_corresponding_closing_tag);
+            parse.errorAtRange(openingTag, qd.JSX_fragment_has_no_corresponding_closing_tag);
           } else {
             const tag = openingTag.tagName;
             const start = syntax.skipTrivia(sourceText, tag.pos);
-            parse.errorAt(start, tag.end, Diagnostics.JSX_element_0_has_no_corresponding_closing_tag, getTextOfNodeFromSourceText(sourceText, openingTag.tagName));
+            parse.errorAt(start, tag.end, qd.JSX_element_0_has_no_corresponding_closing_tag, getTextOfNodeFromSourceText(sourceText, openingTag.tagName));
           }
           return;
         case Syntax.LessThanSlashToken:
@@ -3555,7 +3556,7 @@ function create() {
     closingFragment(inExpressionContext: boolean): JsxClosingFragment {
       const n = create.node(Syntax.JsxClosingFragment);
       parse.expected(Syntax.LessThanSlashToken);
-      if (syntax.is.identifierOrKeyword(tok())) parse.errorAtRange(this.elementName(), Diagnostics.Expected_corresponding_closing_tag_for_JSX_fragment);
+      if (syntax.is.identifierOrKeyword(tok())) parse.errorAtRange(this.elementName(), qd.Expected_corresponding_closing_tag_for_JSX_fragment);
       if (inExpressionContext) parse.expected(Syntax.GreaterThanToken);
       else {
         parse.expected(Syntax.GreaterThanToken, undefined, false);
@@ -3591,9 +3592,9 @@ function create() {
       const content = sourceText;
       const end = length === undefined ? content.length : start + length;
       length = end - start;
-      assert(start >= 0);
-      assert(start <= end);
-      assert(end <= content.length);
+      qb.assert(start >= 0);
+      qb.assert(start <= end);
+      qb.assert(end <= content.length);
       if (!syntax.is.jsDocLike(content, start)) return;
       return scanner.scanRange(start + 3, length - 5, () => {
         let state = State.SawAsterisk;
@@ -3662,12 +3663,12 @@ function create() {
         next.tokJSDoc();
         return true;
       }
-      parse.errorAtToken(Diagnostics._0_expected, syntax.toString(t));
+      parse.errorAtToken(qd._0_expected, syntax.toString(t));
       return false;
     }
     expectedToken<T extends JSDocSyntax>(t: T): Token<T>;
     expectedToken(t: JSDocSyntax): Node {
-      return this.optionalToken(t) || create.missingNode(t, false, Diagnostics._0_expected, syntax.toString(t));
+      return this.optionalToken(t) || create.missingNode(t, false, qd._0_expected, syntax.toString(t));
     }
     optional(t: JSDocSyntax): boolean {
       if (tok() === t) {
@@ -3784,7 +3785,7 @@ function create() {
       return jsDocTypeExpression ? { jsDocTypeExpression, diagnostics } : undefined;
     }
     tag(margin: number) {
-      assert(tok() === Syntax.AtToken);
+      qb.assert(tok() === Syntax.AtToken);
       const start = scanner.getTokenPos();
       next.tokJSDoc();
       const tagName = this.identifierName(undefined);
@@ -3990,14 +3991,14 @@ function create() {
       return;
     }
     returnTag(start: number, tagName: Identifier): JSDocReturnTag {
-      if (some(this.tags, isJSDocReturnTag)) parse.errorAt(tagName.pos, scanner.getTokenPos(), Diagnostics._0_tag_already_specified, tagName.escapedText);
+      if (some(this.tags, isJSDocReturnTag)) parse.errorAt(tagName.pos, scanner.getTokenPos(), qd._0_tag_already_specified, tagName.escapedText);
       const n = create.node(Syntax.JSDocReturnTag, start);
       n.tagName = tagName;
       n.typeExpression = this.tryTypeExpression();
       return finishNode(n);
     }
     typeTag(start: number, tagName: Identifier): JSDocTypeTag {
-      if (some(this.tags, isJSDocTypeTag)) parse.errorAt(tagName.pos, scanner.getTokenPos(), Diagnostics._0_tag_already_specified, tagName.escapedText);
+      if (some(this.tags, isJSDocTypeTag)) parse.errorAt(tagName.pos, scanner.getTokenPos(), qd._0_tag_already_specified, tagName.escapedText);
       const n = create.node(Syntax.JSDocTypeTag, start);
       n.tagName = tagName;
       n.typeExpression = this.typeExpression(true);
@@ -4121,9 +4122,9 @@ function create() {
           if (!n2) n2 = create.node(Syntax.JSDocTypeLiteral, start);
           if (child.kind === Syntax.JSDocTypeTag) {
             if (childTypeTag) {
-              parse.errorAtToken(Diagnostics.A_JSDoc_typedef_comment_may_not_contain_multiple_type_tags);
+              parse.errorAtToken(qd.A_JSDoc_typedef_comment_may_not_contain_multiple_type_tags);
               const e = lastOrUndefined(diags);
-              if (e) addRelatedInfo(e, createDiagnosticForNode(source, Diagnostics.The_tag_was_first_specified_here));
+              if (e) addRelatedInfo(e, createDiagnosticForNode(source, qd.The_tag_was_first_specified_here));
               break;
             } else childTypeTag = child;
           } else n2.jsDocPropertyTags = append(n2.jsDocPropertyTags as MutableNodes<JSDocPropertyTag>, child);
@@ -4225,7 +4226,7 @@ function create() {
       }
     }
     tryChildTag(target: PropertyLike, indent: number): JSDocTypeTag | JSDocPropertyTag | JSDocParameterTag | false {
-      assert(tok() === Syntax.AtToken);
+      qb.assert(tok() === Syntax.AtToken);
       const start = scanner.getStartPos();
       next.tokJSDoc();
       const tagName = this.identifierName();
@@ -4257,7 +4258,7 @@ function create() {
       do {
         skipWhitespace();
         const n = create.node(Syntax.TypeParameter);
-        n.name = this.identifierName(Diagnostics.Unexpected_token_A_type_parameter_name_was_expected_without_curly_braces);
+        n.name = this.identifierName(qd.Unexpected_token_A_type_parameter_name_was_expected_without_curly_braces);
         finishNode(n);
         skipWhitespaceOrAsterisk();
         typeParameters.push(n);
@@ -4280,7 +4281,7 @@ function create() {
       return entity;
     }
     identifierName(m?: DiagnosticMessage): Identifier {
-      if (!syntax.is.identifierOrKeyword(tok())) return create.missingNode<Identifier>(Syntax.Identifier, !m, m || Diagnostics.Identifier_expected);
+      if (!syntax.is.identifierOrKeyword(tok())) return create.missingNode<Identifier>(Syntax.Identifier, !m, m || qd.Identifier_expected);
       create.identifierCount++;
       const pos = scanner.getTokenPos();
       const end = scanner.getTextPos();
@@ -4373,7 +4374,7 @@ function create() {
         return true;
       } else if (parse.optional(Syntax.ColonToken)) return true;
       else if (isType && tok() === Syntax.EqualsGreaterThanToken) {
-        parse.errorAtToken(Diagnostics._0_expected, syntax.toString(Syntax.ColonToken));
+        parse.errorAtToken(qd._0_expected, syntax.toString(Syntax.ColonToken));
         next.tok();
         return true;
       }
@@ -4416,7 +4417,7 @@ function create() {
     const saveParseErrorBeforeNextFinishedNode = parseErrorBeforeNextFinishedNode;
     const saveContextFlags = flags.value;
     const r = isLookAhead ? scanner.lookAhead(cb) : scanner.tryScan(cb);
-    assert(saveContextFlags === flags.value);
+    qb.assert(saveContextFlags === flags.value);
     if (!r || isLookAhead) {
       currentToken = saveToken;
       diags.length = saveParseDiagnosticsLength;
@@ -4446,7 +4447,7 @@ function create() {
     return (currentToken = scanner.reScanHeadOrNoSubstTemplate());
   }
   function addJSDocComment<T extends HasJSDoc>(n: T): T {
-    assert(!n.jsDoc);
+    qb.assert(!n.jsDoc);
     const jsDoc = mapDefined(Node.getJSDoc.commentRanges(n, source.text), (comment) => parseJSDoc.comment(n, comment.pos, comment.end - comment.pos));
     if (jsDoc.length) n.jsDoc = jsDoc;
     return n;
@@ -4471,7 +4472,7 @@ function create() {
     if (comment) comment.parent = parent;
     if (flags.value & NodeFlags.JavaScriptFile) {
       if (!source.jsDocDiagnostics) source.jsDocDiagnostics = [];
-      source.jsDocDiagnostics.push(...diags);
+      source.jsDocqd.push(...diags);
     }
     currentToken = saveToken;
     diags.length = saveParseDiagnosticsLength;
@@ -4546,15 +4547,15 @@ namespace IncrementalParser {
       return Parser.parseSourceFile(source.fileName, newText, source.languageVersion, undefined, true, source.scriptKind);
     }
     const incrementalSourceFile = <IncrementalNode>(<Node>source);
-    assert(!incrementalSourceFile.hasBeenIncrementallyParsed);
+    qb.assert(!incrementalSourceFile.hasBeenIncrementallyParsed);
     incrementalSourceFile.hasBeenIncrementallyParsed = true;
     const oldText = source.text;
     const syntaxCursor = createSyntaxCursor(source);
     const changeRange = extendToAffectedRange(source, textChangeRange);
     checkChangeRange(source, newText, changeRange, aggressiveChecks);
-    assert(changeRange.span.start <= textChangeRange.span.start);
-    assert(textSpanEnd(changeRange.span) === textSpanEnd(textChangeRange.span));
-    assert(textSpanEnd(textChangeRangeNewSpan(changeRange)) === textSpanEnd(textChangeRangeNewSpan(textChangeRange)));
+    qb.assert(changeRange.span.start <= textChangeRange.span.start);
+    qb.assert(textSpanEnd(changeRange.span) === textSpanEnd(textChangeRange.span));
+    qb.assert(textSpanEnd(textChangeRangeNewSpan(changeRange)) === textSpanEnd(textChangeRangeNewSpan(textChangeRange)));
     const delta = textChangeRangeNewSpan(changeRange).length - changeRange.span.length;
     updateTokenPositionsAndMarkElements(
       incrementalSourceFile,
@@ -4595,7 +4596,7 @@ namespace IncrementalParser {
         };
         commentDirectives = append(commentDirectives, updatedDirective);
         if (aggressiveChecks) {
-          assert(oldText.substring(range.pos, range.end) === newText.substring(updatedDirective.range.pos, updatedDirective.range.end));
+          qb.assert(oldText.substring(range.pos, range.end) === newText.substring(updatedDirective.range.pos, updatedDirective.range.end));
         }
       }
     }
@@ -4630,7 +4631,7 @@ namespace IncrementalParser {
       if (n._children) n._children = undefined;
       n.pos += delta;
       n.end += delta;
-      if (aggressiveChecks && shouldCheck(n)) assert(text === newText.substring(n.pos, n.end));
+      if (aggressiveChecks && shouldCheck(n)) qb.assert(text === newText.substring(n.pos, n.end));
       Node.forEach.child(n, visitNode, visitArray);
       if (Node.is.withJSDocNodes(n)) {
         for (const jsDocComment of n.jsDoc!) {
@@ -4649,17 +4650,17 @@ namespace IncrementalParser {
     }
   }
   function adjustIntersectingElement(element: IncrementalElement, changeStart: number, changeRangeOldEnd: number, changeRangeNewEnd: number, delta: number) {
-    assert(element.end >= changeStart, 'Adjusting an element that was entirely before the change range');
-    assert(element.pos <= changeRangeOldEnd, 'Adjusting an element that was entirely after the change range');
-    assert(element.pos <= element.end);
+    qb.assert(element.end >= changeStart, 'Adjusting an element that was entirely before the change range');
+    qb.assert(element.pos <= changeRangeOldEnd, 'Adjusting an element that was entirely after the change range');
+    qb.assert(element.pos <= element.end);
     element.pos = Math.min(element.pos, changeRangeNewEnd);
     if (element.end >= changeRangeOldEnd) {
       element.end += delta;
     } else element.end = Math.min(element.end, changeRangeNewEnd);
-    assert(element.pos <= element.end);
+    qb.assert(element.pos <= element.end);
     if (element.parent) {
-      assert(element.pos >= element.parent.pos);
-      assert(element.end <= element.parent.end);
+      qb.assert(element.pos >= element.parent.pos);
+      qb.assert(element.end <= element.parent.end);
     }
   }
   function updateTokenPositionsAndMarkElements(
@@ -4675,7 +4676,7 @@ namespace IncrementalParser {
     visitNode(source);
     return;
     function visitNode(child: IncrementalNode) {
-      assert(child.pos <= child.end);
+      qb.assert(child.pos <= child.end);
       if (child.pos > changeRangeOldEnd) {
         moveElementEntirelyPastChangeRange(child, false, delta, oldText, newText, aggressiveChecks);
         return;
@@ -4694,10 +4695,10 @@ namespace IncrementalParser {
         checkNodePositions(child, aggressiveChecks);
         return;
       }
-      assert(fullEnd < changeStart);
+      qb.assert(fullEnd < changeStart);
     }
     function visitArray(array: IncrementalNodes) {
-      assert(array.pos <= array.end);
+      qb.assert(array.pos <= array.end);
       if (array.pos > changeRangeOldEnd) {
         moveElementEntirelyPastChangeRange(array, true, delta, oldText, newText, aggressiveChecks);
         return;
@@ -4712,14 +4713,14 @@ namespace IncrementalParser {
         }
         return;
       }
-      assert(fullEnd < changeStart);
+      qb.assert(fullEnd < changeStart);
     }
   }
   function checkNodePositions(n: Node, aggressive: boolean) {
     if (aggressive) {
       let pos = n.pos;
       const visitNode = (c: Node) => {
-        assert(c.pos >= pos);
+        qb.assert(c.pos >= pos);
         pos = c.end;
       };
       if (Node.is.withJSDocNodes(n)) {
@@ -4728,7 +4729,7 @@ namespace IncrementalParser {
         }
       }
       Node.forEach.child(n, visitNode);
-      assert(pos <= n.end);
+      qb.assert(pos <= n.end);
     }
   }
   function extendToAffectedRange(source: SourceFile, changeRange: TextChangeRange): TextChangeRange {
@@ -4736,7 +4737,7 @@ namespace IncrementalParser {
     let start = changeRange.span.start;
     for (let i = 0; start > 0 && i <= maxLookahead; i++) {
       const nearestNode = findNearestNodeStartingBeforeOrAtPosition(source, start);
-      assert(nearestNode.pos <= start);
+      qb.assert(nearestNode.pos <= start);
       const position = nearestNode.pos;
       start = Math.max(0, position - 1);
     }
@@ -4770,11 +4771,11 @@ namespace IncrementalParser {
           Node.forEach.child(child, visit);
           return true;
         } else {
-          assert(child.end <= position);
+          qb.assert(child.end <= position);
           lastNodeEntirelyBeforePosition = child;
         }
       } else {
-        assert(child.pos > position);
+        qb.assert(child.pos > position);
         return true;
       }
       return;
@@ -4783,14 +4784,14 @@ namespace IncrementalParser {
   function checkChangeRange(source: SourceFile, newText: string, textChangeRange: TextChangeRange, aggressiveChecks: boolean) {
     const oldText = source.text;
     if (textChangeRange) {
-      assert(oldText.length - textChangeRange.span.length + textChangeRange.newLength === newText.length);
+      qb.assert(oldText.length - textChangeRange.span.length + textChangeRange.newLength === newText.length);
       if (aggressiveChecks || Debug.shouldAssert(AssertionLevel.VeryAggressive)) {
         const oldTextPrefix = oldText.substr(0, textChangeRange.span.start);
         const newTextPrefix = newText.substr(0, textChangeRange.span.start);
-        assert(oldTextPrefix === newTextPrefix);
+        qb.assert(oldTextPrefix === newTextPrefix);
         const oldTextSuffix = oldText.substring(textSpanEnd(textChangeRange.span), oldText.length);
         const newTextSuffix = newText.substring(textSpanEnd(textChangeRangeNewSpan(textChangeRange)), newText.length);
-        assert(oldTextSuffix === newTextSuffix);
+        qb.assert(oldTextSuffix === newTextSuffix);
       }
     }
   }
@@ -4812,7 +4813,7 @@ namespace IncrementalParser {
   function createSyntaxCursor(source: SourceFile): SyntaxCursor {
     let currentArray: Nodes<Node> = source.statements;
     let currentArrayIndex = 0;
-    assert(currentArrayIndex < currentArray.length);
+    qb.assert(currentArrayIndex < currentArray.length);
     let current = currentArray[currentArrayIndex];
     let lastQueriedPosition = InvalidPosition.Value;
     return {
@@ -4825,7 +4826,7 @@ namespace IncrementalParser {
           if (!current || current.pos !== position) findHighestListElementThatStartsAtPosition(position);
         }
         lastQueriedPosition = position;
-        assert(!current || current.pos === position);
+        qb.assert(!current || current.pos === position);
         return <IncrementalNode>current;
       },
     };
@@ -4918,7 +4919,7 @@ export function processPragmasIntoFields(c: PragmaContext, reporter: PragmaDiagn
           } else if (types) typeReferenceDirectives.push({ pos: types.pos, end: types.end, fileName: types.value });
           else if (lib) libReferenceDirectives.push({ pos: lib.pos, end: lib.end, fileName: lib.value });
           else if (path) referencedFiles.push({ pos: path.pos, end: path.end, fileName: path.value });
-          else reporter(arg.range.pos, arg.range.end - arg.range.pos, Diagnostics.Invalid_reference_directive_syntax);
+          else reporter(arg.range.pos, arg.range.end - arg.range.pos, qd.Invalid_reference_directive_syntax);
         });
         break;
       }
@@ -4932,7 +4933,7 @@ export function processPragmasIntoFields(c: PragmaContext, reporter: PragmaDiagn
       case 'amd-module': {
         if (entryOrList instanceof Array) {
           for (const entry of entryOrList) {
-            if (c.moduleName) reporter(entry.range.pos, entry.range.end - entry.range.pos, Diagnostics.An_AMD_module_cannot_have_multiple_name_assignments);
+            if (c.moduleName) reporter(entry.range.pos, entry.range.end - entry.range.pos, qd.An_AMD_module_cannot_have_multiple_name_assignments);
             c.moduleName = (entry as PragmaPseudoMap['amd-module']).arguments.name;
           }
         } else c.moduleName = (entryOrList as PragmaPseudoMap['amd-module']).arguments.name;

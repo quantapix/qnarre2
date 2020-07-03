@@ -255,6 +255,11 @@ export abstract class TokenOrIdentifier extends Node implements qt. {
     return this.kind === Syntax.EndOfFileToken ? this.jsDoc || qb.empty : qb.empty;
   }
 }
+export class Token<T extends Syntax> extends TokenOrIdentifier implements qt.Token<T> {
+  constructor(k: T, pos?: number, end?: number) {
+    super(undefined, k, pos, end);
+  }
+}
 export class Statement extends Node implements qt. {
   //_statementBrand: any;
   isUseStrictPrologue(node: ExpressionStatement): boolean {
@@ -1615,7 +1620,7 @@ export class FunctionExpression extends FunctionLikeDeclarationBase implements q
   }
 }
 FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class FunctionTypeNode extends FunctionOrConstructorTypeNodeBase {
+export class FunctionTypeNode extends FunctionOrConstructorTypeNodeBase implements qt.FunctionTypeNode {
   static readonly kind = Syntax.FunctionType;
   create(ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t?: TypeNode) {
     return SignatureDeclaration.create(Syntax.FunctionType, ts, ps, t) as FunctionTypeNode;
@@ -1624,8 +1629,8 @@ export class FunctionTypeNode extends FunctionOrConstructorTypeNodeBase {
     return SignatureDeclaration.update(n, ts, ps, t);
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class GetAccessorDeclaration extends Node implements FunctionLikeDeclarationBase, ClassElement, ObjectLiteralElement, JSDocContainer {
+FunctionTypeNode.prototype.kind = FunctionTypeNode.kind;
+export class GetAccessorDeclaration extends Node implements qt.GetAccessorDeclaration {
   static readonly kind = Syntax.GetAccessor;
   parent: ClassLikeDeclaration | ObjectLiteralExpression;
   name: PropertyName;
@@ -1648,8 +1653,8 @@ export class GetAccessorDeclaration extends Node implements FunctionLikeDeclarat
     return n.kind === Syntax.SetAccessor || n.kind === Syntax.GetAccessor;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class HeritageClause extends Node implements qt. {
+GetAccessorDeclaration.prototype.kind = GetAccessorDeclaration.kind;
+export class HeritageClause extends Node implements qt.HeritageClause {
   static readonly kind = Syntax.HeritageClause;
   parent: InterfaceDeclaration | ClassLikeDeclaration;
   token: Syntax.ExtendsKeyword | Syntax.ImplementsKeyword;
@@ -1663,7 +1668,7 @@ export class HeritageClause extends Node implements qt. {
     return this.types !== types ? updateNode(createHeritageClause(this.token, types), this) : this;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
+HeritageClause.prototype.kind = HeritageClause.kind;
 export class Identifier extends TokenOrIdentifier implements qt.Identifier {
   static readonly kind = Syntax.Identifier;
   escapedText!: __String;
@@ -1769,7 +1774,7 @@ export class Identifier extends TokenOrIdentifier implements qt.Identifier {
   }
 }
 Identifier.prototype.kind = Identifier.kind;
-export class IfStatement extends Statement {
+export class IfStatement extends Statement implements qt.IfStatement {
   static readonly kind = Syntax.IfStatement;
   expression: Expression;
   thenStatement: Statement;
@@ -1784,8 +1789,8 @@ export class IfStatement extends Statement {
     return this.expression !== expression || this.thenStatement !== thenStatement || this.elseStatement !== elseStatement ? updateNode(createIf(expression, thenStatement, elseStatement), this) : this;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class ImportClause extends NamedDeclaration {
+IfStatement.prototype.kind = IfStatement.kind;
+export class ImportClause extends NamedDeclaration implements qt.ImportClause {
   static readonly kind = Syntax.ImportClause;
   parent: ImportDeclaration;
   isTypeOnly: boolean;
@@ -1801,8 +1806,8 @@ export class ImportClause extends NamedDeclaration {
     return this.name !== name || this.namedBindings !== namedBindings || this.isTypeOnly !== isTypeOnly ? updateNode(createImportClause(name, namedBindings, isTypeOnly), this) : this;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class ImportDeclaration extends Statement {
+ImportClause.prototype.kind = ImportClause.kind;
+export class ImportDeclaration extends Statement implements qt.ImportDeclaration {
   static readonly kind = Syntax.ImportDeclaration;
   parent: SourceFile | ModuleBlock;
   importClause?: ImportClause;
@@ -1831,8 +1836,8 @@ export class ImportDeclaration extends Statement {
       : this;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class ImportEqualsDeclaration extends Node implements DeclarationStatement, JSDocContainer {
+ImportDeclaration.prototype.kind = ImportDeclaration.kind;
+export class ImportEqualsDeclaration extends Node implements qt.ImportEqualsDeclaration {
   static readonly kind = Syntax.ImportEqualsDeclaration;
   parent: SourceFile | ModuleBlock;
   name: Identifier;
@@ -1856,8 +1861,8 @@ export class ImportEqualsDeclaration extends Node implements DeclarationStatemen
       : this;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class ImportSpecifier extends NamedDeclaration {
+ImportEqualsDeclaration.prototype.kind = ImportEqualsDeclaration.kind;
+export class ImportSpecifier extends NamedDeclaration implements qt.ImportSpecifier {
   static readonly kind = Syntax.ImportSpecifier;
   parent: NamedImports;
   propertyName?: Identifier;
@@ -1871,8 +1876,8 @@ export class ImportSpecifier extends NamedDeclaration {
     return this.propertyName !== propertyName || this.name !== name ? updateNode(createImportSpecifier(propertyName, name), this) : this;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class ImportTypeNode extends NodeWithTypeArguments {
+ImportSpecifier.prototype.kind = ImportSpecifier.kind;
+export class ImportTypeNode extends NodeWithTypeArguments implements qt.ImportTypeNode {
   static readonly kind = Syntax.ImportType;
   isTypeOf?: boolean;
   argument: TypeNode;
@@ -1889,8 +1894,8 @@ export class ImportTypeNode extends NodeWithTypeArguments {
     return n.argument !== a || n.qualifier !== q || n.typeArguments !== ts || n.isTypeOf !== tof ? updateNode(create(a, q, ts, tof), n) : n;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class IndexedAccessTypeNode extends TypeNode {
+ImportTypeNode.prototype.kind = ImportTypeNode.kind;
+export class IndexedAccessTypeNode extends TypeNode implements qt.IndexedAccessTypeNode {
   static readonly kind = Syntax.IndexedAccessType;
   objectType: TypeNode;
   indexType: TypeNode;
@@ -1904,8 +1909,8 @@ export class IndexedAccessTypeNode extends TypeNode {
     return n.objectType !== o || n.indexType !== i ? updateNode(create(o, i), n) : n;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class IndexSignatureDeclaration extends Node implements SignatureDeclarationBase, ClassElement, TypeElement {
+IndexedAccessTypeNode.prototype.kind = IndexedAccessTypeNode.kind;
+export class IndexSignatureDeclaration extends Node implements qt.IndexSignatureDeclaration {
   static readonly kind = Syntax.IndexSignature;
   parent: ObjectTypeDeclaration;
   create(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, ps: readonly ParameterDeclaration[], t: TypeNode): IndexSignatureDeclaration {
@@ -1920,8 +1925,8 @@ export class IndexSignatureDeclaration extends Node implements SignatureDeclarat
     return n.parameters !== ps || n.type !== t || n.decorators !== ds || n.modifiers !== ms ? updateNode(create(ds, ms, ps, t), n) : n;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class InferTypeNode extends TypeNode {
+IndexSignatureDeclaration.prototype.kind = IndexSignatureDeclaration.kind;
+export class InferTypeNode extends TypeNode implements qt.InferTypeNode {
   static readonly kind = Syntax.InferType;
   typeParameter: TypeParameterDeclaration;
   create(p: TypeParameterDeclaration) {
@@ -1933,8 +1938,8 @@ export class InferTypeNode extends TypeNode {
     return n.typeParameter !== p ? updateNode(create(p), n) : n;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class InterfaceDeclaration extends Node implements DeclarationStatement, JSDocContainer {
+InferTypeNode.prototype.kind = InferTypeNode.kind;
+export class InterfaceDeclaration extends Node implements qt.InterfaceDeclaration {
   static readonly kind = Syntax.InterfaceDeclaration;
   name: Identifier;
   typeParameters?: Nodes<TypeParameterDeclaration>;
@@ -1975,8 +1980,8 @@ export class InterfaceDeclaration extends Node implements DeclarationStatement, 
       : this;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class IntersectionTypeNode extends TypeNode {
+InterfaceDeclaration.prototype.kind = InterfaceDeclaration.kind;
+export class IntersectionTypeNode extends TypeNode implements qt.IntersectionTypeNode {
   static readonly kind = Syntax.IntersectionType;
   types: Nodes<TypeNode>;
   create(ts: readonly TypeNode[]) {
@@ -1986,8 +1991,8 @@ export class IntersectionTypeNode extends TypeNode {
     return UnionTypeNode.orIntersectionUpdate(n, ts);
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDoc extends Node implements qt. {
+IntersectionTypeNode.prototype.kind = IntersectionTypeNode.kind;
+export class JSDoc extends Node implements qt.JSDoc {
   static readonly kind = Syntax.JSDocComment;
   parent: HasJSDoc;
   tags?: Nodes<JSDocTag>;
@@ -1998,12 +2003,12 @@ export class JSDoc extends Node implements qt. {
     this.tags = tags;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDocAllType extends JSDocType {
+JSDoc.prototype.kind = JSDoc.kind;
+export class JSDocAllType extends JSDocType implements qt.JSDocAllType {
   static readonly kind = Syntax.JSDocAllType;
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDocAugmentsTag extends JSDocTag {
+JSDocAllType.prototype.kind = JSDocAllType.kind;
+export class JSDocAugmentsTag extends JSDocTag implements qt.JSDocAugmentsTag {
   static readonly kind = Syntax.JSDocAugmentsTag;
   class: ExpressionWithTypeArguments & { expression: Identifier | PropertyAccessEntityNameExpression };
   createJSDocAugmentsTag(classExpression: JSDocAugmentsTag['class'], comment?: string) {
@@ -2012,15 +2017,15 @@ export class JSDocAugmentsTag extends JSDocTag {
     return tag;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDocAuthorTag extends JSDocTag {
+JSDocAugmentsTag.prototype.kind = JSDocAugmentsTag.kind;
+export class JSDocAuthorTag extends JSDocTag implements qt.JSDocAuthorTag {
   static readonly kind = Syntax.JSDocAuthorTag;
   createJSDocAuthorTag(comment?: string) {
     return createJSDocTag<JSDocAuthorTag>(Syntax.JSDocAuthorTag, 'author', comment);
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDocCallbackTag extends JSDocTag {
+JSDocAuthorTag.prototype.kind = JSDocAuthorTag.kind;
+export class JSDocCallbackTag extends JSDocTag implements qt.JSDocCallbackTag {
   //}, NamedDeclaration {
   static readonly kind = Syntax.JSDocCallbackTag;
   parent: JSDoc;
@@ -2035,15 +2040,15 @@ export class JSDocCallbackTag extends JSDocTag {
     return tag;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDocClassTag extends JSDocTag {
+JSDocCallbackTag.prototype.kind = JSDocCallbackTag.kind;
+export class JSDocClassTag extends JSDocTag implements qt.JSDocClassTag{
   static readonly kind = Syntax.JSDocClassTag;
   createJSDocClassTag(comment?: string): JSDocClassTag {
     return createJSDocTag<JSDocClassTag>(Syntax.JSDocClassTag, 'class', comment);
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDocEnumTag extends JSDocTag {
+JSDocClassTag.prototype.kind = JSDocClassTag.kind;
+export class JSDocEnumTag extends JSDocTag implements qt.JSDocEnumTag {
   //}, Declaration {
   static readonly kind = Syntax.JSDocEnumTag;
   parent: JSDoc;
@@ -2054,13 +2059,13 @@ export class JSDocEnumTag extends JSDocTag {
     return tag;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDocFunctionType extends JSDocType {
+JSDocEnumTag.prototype.kind = JSDocEnumTag.kind;
+export class JSDocFunctionType extends JSDocType implements qt.JSDocFunctionType {
   // , SignatureDeclarationBase {
   static readonly kind = Syntax.JSDocFunctionType;
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDocImplementsTag extends JSDocTag {
+JSDocFunctionType.prototype.kind = JSDocFunctionType.kind;
+export class JSDocImplementsTag extends JSDocTag implements qt.JSDocImplementsTag {
   static readonly kind = Syntax.JSDocImplementsTag;
   class: ExpressionWithTypeArguments & { expression: Identifier | PropertyAccessEntityNameExpression };
   createJSDocImplementsTag(classExpression: JSDocImplementsTag['class'], comment?: string) {
@@ -2069,23 +2074,23 @@ export class JSDocImplementsTag extends JSDocTag {
     return tag;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDocNonNullableType extends JSDocType {
+JSDocImplementsTag.prototype.kind = JSDocImplementsTag.kind;
+export class JSDocNonNullableType extends JSDocType implements qt.JSDocNonNullableType {
   static readonly kind = Syntax.JSDocNonNullableType;
   type: TypeNode;
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDocNullableType extends JSDocType {
+JSDocNonNullableType.prototype.kind = JSDocNonNullableType.kind;
+export class JSDocNullableType extends JSDocType implements qt.JSDocNullableType {
   static readonly kind = Syntax.JSDocNullableType;
   type: TypeNode;
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDocOptionalType extends JSDocType {
+JSDocNullableType.prototype.kind = JSDocNullableType.kind;
+export class JSDocOptionalType extends JSDocType implements qt.JSDocOptionalType {
   static readonly kind = Syntax.JSDocOptionalType;
   type: TypeNode;
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDocParameterTag extends JSDocPropertyLikeTag {
+JSDocOptionalType.prototype.kind = JSDocOptionalType.kind;
+export class JSDocParameterTag extends JSDocPropertyLikeTag implements qt.JSDocParameterTag {
   static readonly kind = Syntax.JSDocParameterTag;
   createJSDocParamTag(name: EntityName, isBracketed: boolean, typeExpression?: JSDocTypeExpression, comment?: string): JSDocParameterTag {
     const tag = createJSDocTag<JSDocParameterTag>(Syntax.JSDocParameterTag, 'param', comment);
@@ -2098,15 +2103,15 @@ export class JSDocParameterTag extends JSDocPropertyLikeTag {
     return createJSDocPropertyLikeTag<JSDocParameterTag>(Syntax.JSDocParameterTag, 'param', typeExpression, name, isNameFirst, isBracketed, comment);
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDocPrivateTag extends JSDocTag {
+JSDocParameterTag.prototype.kind = JSDocParameterTag.kind;
+export class JSDocPrivateTag extends JSDocTag implements qt.JSDocPrivateTag {
   static readonly kind = Syntax.JSDocPrivateTag;
   createJSDocPrivateTag() {
     return createJSDocTag<JSDocPrivateTag>(Syntax.JSDocPrivateTag, 'private');
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDocPropertyLikeTag extends JSDocTag {
+JSDocPrivateTag.prototype.kind = JSDocPrivateTag.kind;
+export class JSDocPropertyLikeTag extends JSDocTag implements qt.JSDocPropertyLikeTag {
   //}, Declaration {
   parent: JSDoc;
   name: EntityName;
@@ -2130,36 +2135,36 @@ export class JSDocPropertyLikeTag extends JSDocTag {
     return tag;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDocPropertyTag extends JSDocPropertyLikeTag {
+JSDocPropertyLikeTag.prototype.kind = JSDocPropertyLikeTag.kind;
+export class JSDocPropertyTag extends JSDocPropertyLikeTag implements qt.JSDocPropertyTag {
   static readonly kind = Syntax.JSDocPropertyTag;
   createJSDocPropertyTag(typeExpression: JSDocTypeExpression | undefined, name: EntityName, isNameFirst: boolean, isBracketed: boolean, comment?: string) {
     return createJSDocPropertyLikeTag<JSDocPropertyTag>(Syntax.JSDocPropertyTag, 'param', typeExpression, name, isNameFirst, isBracketed, comment);
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDocProtectedTag extends JSDocTag {
+JSDocPropertyTag.prototype.kind = JSDocPropertyTag.kind;
+export class JSDocProtectedTag extends JSDocTag  implements qt.JSDocProtectedTag {
   static readonly kind = Syntax.JSDocProtectedTag;
   createJSDocProtectedTag() {
     return createJSDocTag<JSDocProtectedTag>(Syntax.JSDocProtectedTag, 'protected');
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDocPublicTag extends JSDocTag {
+JSDocProtectedTag.prototype.kind = JSDocProtectedTag.kind;
+export class JSDocPublicTag extends JSDocTag implements qt.JSDocPublicTag {
   static readonly kind = Syntax.JSDocPublicTag;
   createJSDocPublicTag() {
     return createJSDocTag<JSDocPublicTag>(Syntax.JSDocPublicTag, 'public');
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDocReadonlyTag extends JSDocTag {
+JSDocPublicTag.prototype.kind = JSDocPublicTag.kind;
+export class JSDocReadonlyTag extends JSDocTag implements qt.JSDocReadonlyTag {
   static readonly kind = Syntax.JSDocReadonlyTag;
   createJSDocReadonlyTag() {
     return createJSDocTag<JSDocReadonlyTag>(Syntax.JSDocReadonlyTag, 'readonly');
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDocReturnTag extends JSDocTag {
+JSDocReadonlyTag.prototype.kind = JSDocReadonlyTag.kind;
+export class JSDocReturnTag extends JSDocTag implements qt.JSDocReturnTag {
   static readonly kind = Syntax.JSDocReturnTag;
   typeExpression?: JSDocTypeExpression;
   createJSDocReturnTag(typeExpression?: JSDocTypeExpression, comment?: string): JSDocReturnTag {
@@ -2168,8 +2173,8 @@ export class JSDocReturnTag extends JSDocTag {
     return tag;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDocSignature extends JSDocType {
+JSDocReturnTag.prototype.kind = JSDocReturnTag.kind;
+export class JSDocSignature extends JSDocType implements qt.JSDocSignature {
   //}, Declaration {
   static readonly kind = Syntax.JSDocSignature;
   typeParameters?: readonly JSDocTemplateTag[];
@@ -2183,8 +2188,8 @@ export class JSDocSignature extends JSDocType {
     return tag;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDocTag extends Node implements qt. {
+JSDocSignature.prototype.kind = JSDocSignature.kind;
+export class JSDocTag extends Node implements qt.JSDocTag {
   parent: JSDoc | JSDocTypeLiteral;
   tagName: Identifier;
   comment?: string;
@@ -2194,8 +2199,8 @@ export class JSDocTag extends Node implements qt. {
     this.comment = comment;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDocTemplateTag extends JSDocTag {
+JSDocTag.prototype.kind = JSDocTag.kind;
+export class JSDocTemplateTag extends JSDocTag implements qt.JSDocTemplateTag {
   static readonly kind = Syntax.JSDocTemplateTag;
   constraint: JSDocTypeExpression | undefined;
   typeParameters: Nodes<TypeParameterDeclaration>;
@@ -2206,8 +2211,8 @@ export class JSDocTemplateTag extends JSDocTag {
     return tag;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDocThisTag extends JSDocTag {
+JSDocTemplateTag.prototype.kind = JSDocTemplateTag.kind;
+export class JSDocThisTag extends JSDocTag implements qt.JSDocThisTag {
   static readonly kind = Syntax.JSDocThisTag;
   typeExpression?: JSDocTypeExpression;
   createJSDocThisTag(typeExpression?: JSDocTypeExpression): JSDocThisTag {
@@ -2216,8 +2221,8 @@ export class JSDocThisTag extends JSDocTag {
     return tag;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDocTypedefTag extends JSDocTag {
+JSDocThisTag.prototype.kind = JSDocThisTag.kind;
+export class JSDocTypedefTag extends JSDocTag implements qt.JSDocTypedefTag {
   //, NamedDeclaration {
   static readonly kind = Syntax.JSDocTypedefTag;
   parent: JSDoc;
@@ -2232,8 +2237,8 @@ export class JSDocTypedefTag extends JSDocTag {
     return tag;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDocTypeExpression extends TypeNode {
+JSDocTypedefTag.prototype.kind = JSDocTypedefTag.kind;
+export class JSDocTypeExpression extends TypeNode implements qt.JSDocTypeExpression {
   static readonly kind = Syntax.JSDocTypeExpression;
   type: TypeNode;
   createJSDocTypeExpression(type: TypeNode): JSDocTypeExpression {
@@ -2241,8 +2246,8 @@ export class JSDocTypeExpression extends TypeNode {
     this.type = type;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDocTypeLiteral extends JSDocType {
+JSDocTypeExpression.prototype.kind = JSDocTypeExpression.kind;
+export class JSDocTypeLiteral extends JSDocType implements qt.JSDocTypeLiteral {
   static readonly kind = Syntax.JSDocTypeLiteral;
   jsDocPropertyTags?: readonly JSDocPropertyLikeTag[];
   isArrayType?: boolean;
@@ -2253,8 +2258,8 @@ export class JSDocTypeLiteral extends JSDocType {
     return tag;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDocTypeTag extends JSDocTag {
+JSDocTypeLiteral.prototype.kind = JSDocTypeLiteral.kind;
+export class JSDocTypeTag extends JSDocTag implements qt.JSDocTypeTag {
   static readonly kind = Syntax.JSDocTypeTag;
   typeExpression: JSDocTypeExpression;
   createJSDocTypeTag(typeExpression: JSDocTypeExpression, comment?: string): JSDocTypeTag {
@@ -2263,12 +2268,12 @@ export class JSDocTypeTag extends JSDocTag {
     return tag;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDocUnknownType extends JSDocType {
+JSDocTypeTag.prototype.kind = JSDocTypeTag.kind;
+export class JSDocUnknownType extends JSDocType implements qt.JSDocUnknownType{
   static readonly kind = Syntax.JSDocUnknownType;
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JSDocVariadicType extends JSDocType {
+JSDocUnknownType.prototype.kind = JSDocUnknownType.kind;
+export class JSDocVariadicType extends JSDocType implements qt.JSDocVariadicType {
   static readonly kind = Syntax.JSDocVariadicType;
   type: TypeNode;
   createJSDocVariadicType(type: TypeNode): JSDocVariadicType {
@@ -2279,8 +2284,8 @@ export class JSDocVariadicType extends JSDocType {
     return this.type !== type ? updateNode(createJSDocVariadicType(type), this) : this;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JsxAttribute extends ObjectLiteralElement {
+JSDocVariadicType.prototype.kind = JSDocVariadicType.kind;
+export class JsxAttribute extends ObjectLiteralElement implements qt.JsxAttribute {
   static readonly kind = Syntax.JsxAttribute;
   parent: JsxAttributes;
   name: Identifier;
@@ -2294,8 +2299,8 @@ export class JsxAttribute extends ObjectLiteralElement {
     return this.name !== name || this.initializer !== initializer ? updateNode(createJsxAttribute(name, initializer), this) : this;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JsxAttributes extends ObjectLiteralExpressionBase<JsxAttributeLike> {
+JsxAttribute.prototype.kind = JsxAttribute.kind;
+export class JsxAttributes extends Node implements qt.JsxAttributes {
   static readonly kind = Syntax.JsxAttributes;
   parent: JsxOpeningLikeElement;
   createJsxAttributes(properties: readonly JsxAttributeLike[]) {
@@ -2306,8 +2311,8 @@ export class JsxAttributes extends ObjectLiteralExpressionBase<JsxAttributeLike>
     return this.properties !== properties ? updateNode(createJsxAttributes(properties), this) : this;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JsxClosingElement extends Node implements qt. {
+JsxAttributes.prototype.kind = JsxAttributes.kind;
+export class JsxClosingElement extends Node implements qt.JsxClosingElement {
   static readonly kind = Syntax.JsxClosingElement;
   parent: JsxElement;
   tagName: JsxTagNameExpression;
@@ -2319,15 +2324,15 @@ export class JsxClosingElement extends Node implements qt. {
     return this.tagName !== tagName ? updateNode(createJsxClosingElement(tagName), this) : this;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JsxClosingFragment extends Expression {
+JsxClosingElement.prototype.kind = JsxClosingElement.kind;
+export class JsxClosingFragment extends Expression implements qt.JsxClosingFragment {
   static readonly kind = Syntax.JsxClosingFragment;
   parent: JsxFragment;
   createJsxJsxClosingFragment() {
     return <JsxClosingFragment>Node.createSynthesized(Syntax.JsxClosingFragment);
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
+JsxClosingFragment.prototype.kind = JsxClosingFragment.kind;
 export class JsxElement extends PrimaryExpression implements qt.JsxElement {
   static readonly kind = Syntax.JsxElement;
   openingElement: JsxOpeningElement;
@@ -2366,7 +2371,7 @@ export class JsxElement extends PrimaryExpression implements qt.JsxElement {
   }
 }
 JsxElement.prototype.kind = JsxElement.kind;
-export class JsxExpression extends Expression {
+export class JsxExpression extends Expression implements qt.JsxExpression {
   static readonly kind = Syntax.JsxExpression;
   parent: JsxElement | JsxAttributeLike;
   dot3Token?: Token<Syntax.Dot3Token>;
@@ -2380,7 +2385,7 @@ export class JsxExpression extends Expression {
     return this.expression !== expression ? updateNode(createJsxExpression(this.dot3Token, expression), this) : this;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
+JsxExpression.prototype.kind = JsxExpression.kind;
 export class JsxFragment extends PrimaryExpression implements qt.JsxFragment {
   static readonly kind = Syntax.JsxFragment;
   openingFragment: JsxOpeningFragment;
@@ -2419,7 +2424,7 @@ export class JsxFragment extends PrimaryExpression implements qt.JsxFragment {
   }
 }
 JsxFragment.prototype.kind = JsxFragment.kind;
-export class JsxOpeningElement extends Expression {
+export class JsxOpeningElement extends Expression implements qt.JsxOpeningElement {
   static readonly kind = Syntax.JsxOpeningElement;
   parent: JsxElement;
   tagName: JsxTagNameExpression;
@@ -2435,8 +2440,8 @@ export class JsxOpeningElement extends Expression {
     return this.tagName !== tagName || this.typeArguments !== typeArguments || this.attributes !== attributes ? updateNode(createJsxOpeningElement(tagName, typeArguments, attributes), this) : this;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JsxOpeningFragment extends Expression {
+JsxOpeningElement.prototype.kind = JsxOpeningElement.kind;
+export class JsxOpeningFragment extends Expression implements qt.JsxOpeningFragment {
   static readonly kind = Syntax.JsxOpeningFragment;
   parent: JsxFragment;
   createJsxOpeningFragment() {
@@ -2462,8 +2467,8 @@ export class JsxOpeningFragment extends Expression {
     return jsxFactoryEntity ? createJsxFactoryExpressionFromEntityName(jsxFactoryEntity, parent) : createPropertyAccess(createReactNamespace(reactNamespace, parent), 'createElement');
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JsxSelfClosingElement extends PrimaryExpression {
+JsxOpeningFragment.prototype.kind = JsxOpeningFragment.kind;
+export class JsxSelfClosingElement extends PrimaryExpression implements qt.JsxSelfClosingElement {
   static readonly kind = Syntax.JsxSelfClosingElement;
   tagName: JsxTagNameExpression;
   typeArguments?: Nodes<TypeNode>;
@@ -2480,8 +2485,8 @@ export class JsxSelfClosingElement extends PrimaryExpression {
       : this;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JsxSpreadAttribute extends ObjectLiteralElement {
+JsxSelfClosingElement.prototype.kind = JsxSelfClosingElement.kind;
+export class JsxSpreadAttribute extends ObjectLiteralElement implements qt.JsxSpreadAttribute {
   static readonly kind = Syntax.JsxSpreadAttribute;
   parent: JsxAttributes;
   expression: Expression;
@@ -2493,8 +2498,8 @@ export class JsxSpreadAttribute extends ObjectLiteralElement {
     return this.expression !== expression ? updateNode(createJsxSpreadAttribute(expression), this) : this;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class JsxText extends LiteralLikeNode {
+JsxSpreadAttribute.prototype.kind = JsxSpreadAttribute.kind;
+export class JsxText extends LiteralLikeNode implements qt.JsxText {
   static readonly kind = Syntax.JsxText;
   onlyTriviaWhitespaces: boolean;
   parent: JsxElement;
@@ -2508,8 +2513,8 @@ export class JsxText extends LiteralLikeNode {
     return this.text !== text || this.onlyTriviaWhitespaces !== onlyTriviaWhitespaces ? updateNode(JsxText.create(text, onlyTriviaWhitespaces), this) : this;
   }
 }
-FunctionExpression.prototype.kind = FunctionExpression.kind;
-export class KeywordTypeNode extends TypeNode {
+JsxText.prototype.kind = JsxText.kind;
+export class KeywordTypeNode extends TypeNode implements qt.KeywordTypeNode {
   kind:
     | Syntax.AnyKeyword
     | Syntax.UnknownKeyword
@@ -2528,7 +2533,8 @@ export class KeywordTypeNode extends TypeNode {
     return Node.createSynthesized(k) as KeywordTypeNode;
   }
 }
-export class LabeledStatement extends Statement {
+KeywordTypeNode.prototype.kind = KeywordTypeNode.kind;
+export class LabeledStatement extends Statement implements qt.LabeledStatement {
   //, JSDocContainer {
   static readonly kind = Syntax.LabeledStatement;
   label: Identifier;
@@ -2542,7 +2548,8 @@ export class LabeledStatement extends Statement {
     return this.label !== label || this.statement !== statement ? updateNode(createLabel(label, statement), this) : this;
   }
 }
-export class LiteralTypeNode extends TypeNode {
+LabeledStatement.prototype.kind = LabeledStatement.kind;
+export class LiteralTypeNode extends TypeNode implements qt.LiteralTypeNode {
   static readonly kind = Syntax.LiteralType;
   literal: BooleanLiteral | LiteralExpression | PrefixUnaryExpression;
   create(l: LiteralTypeNode['literal']) {
@@ -2554,7 +2561,8 @@ export class LiteralTypeNode extends TypeNode {
     return n.literal !== l ? updateNode(create(l), n) : n;
   }
 }
-export class MappedTypeNode extends TypeNode {
+LiteralTypeNode.prototype.kind = LiteralTypeNode.kind;
+export class MappedTypeNode extends TypeNode implements qt.MappedTypeNode {
   //, Declaration {
   static readonly kind = Syntax.MappedType;
   readonlyToken?: ReadonlyToken | PlusToken | MinusToken;
@@ -2573,7 +2581,8 @@ export class MappedTypeNode extends TypeNode {
     return n.readonlyToken !== r || n.typeParameter !== p || n.questionToken !== q || n.type !== t ? updateNode(create(r, p, q, t), n) : n;
   }
 }
-export class MergeDeclarationMarker extends Statement {
+MappedTypeNode.prototype.kind = MappedTypeNode.kind;
+export class MergeDeclarationMarker extends Statement implements qt.MergeDeclarationMarker {
   static readonly kind: Syntax.MergeDeclarationMarker;
   createMergeDeclarationMarker(original: Node) {
     super(true);
@@ -2581,7 +2590,8 @@ export class MergeDeclarationMarker extends Statement {
     this.original = original;
   }
 }
-export class MetaProperty extends PrimaryExpression {
+MergeDeclarationMarker.prototype.kind = MergeDeclarationMarker.kind;
+export class MetaProperty extends PrimaryExpression implements qt.MetaProperty {
   static readonly kind = Syntax.MetaProperty;
   keywordToken: Syntax.NewKeyword | Syntax.ImportKeyword;
   name: Identifier;
@@ -2594,7 +2604,8 @@ export class MetaProperty extends PrimaryExpression {
     return this.name !== name ? updateNode(createMetaProperty(this.keywordToken, name), this) : this;
   }
 }
-export class MethodDeclaration extends Node implements qt. {
+MetaProperty.prototype.kind = MetaProperty.kind;
+export class MethodDeclaration extends Node implements qt.MethodDeclaration {
   //FunctionLikeDeclarationBase, ClassElement, ObjectLiteralElement, JSDocContainer {
   static readonly kind = Syntax.MethodDeclaration;
   parent: ClassLikeDeclaration | ObjectLiteralExpression;
@@ -2640,7 +2651,8 @@ export class MethodDeclaration extends Node implements qt. {
       : n;
   }
 }
-export class MethodSignature extends Node implements qt. {
+MethodDeclaration.prototype.kind = MethodDeclaration.kind;
+export class MethodSignature extends Node implements qt.MethodSignature {
   //SignatureDeclarationBase, TypeElement {
   static readonly kind = Syntax.MethodSignature;
   parent: ObjectTypeDeclaration;
@@ -2655,11 +2667,13 @@ export class MethodSignature extends Node implements qt. {
     return n.typeParameters !== ts || n.parameters !== ps || n.type !== t || n.name !== p || n.questionToken !== q ? updateNode(create(ts, ps, t, p, q), n) : n;
   }
 }
-export class MissingDeclaration extends DeclarationStatement {
+MethodSignature.prototype.kind = MethodSignature.kind;
+export class MissingDeclaration extends DeclarationStatement implements qt.MissingDeclaration {
   static readonly kind = Syntax.MissingDeclaration;
   name?: Identifier;
 }
-export class ModuleBlock extends Node implements qt. {
+MissingDeclaration.prototype.kind = MissingDeclaration.kind;
+export class ModuleBlock extends Node implements qt.ModuleBlock {
   //}, Statement {
   static readonly kind = Syntax.ModuleBlock;
   parent: ModuleDeclaration;
@@ -2672,7 +2686,8 @@ export class ModuleBlock extends Node implements qt. {
     return this.statements !== statements ? updateNode(createModuleBlock(statements), this) : this;
   }
 }
-export class ModuleDeclaration extends DeclarationStatement {
+ModuleBlock.prototype.kind = ModuleBlock.kind;
+export class ModuleDeclaration extends DeclarationStatement implements qt.ModuleDeclaration {
   //}, JSDocContainer {
   static readonly kind = Syntax.ModuleDeclaration;
   parent: ModuleBody | SourceFile;
@@ -2692,7 +2707,8 @@ export class ModuleDeclaration extends DeclarationStatement {
       : this;
   }
 }
-export class NamedExports extends Node implements qt. {
+ModuleDeclaration.prototype.kind = ModuleDeclaration.kind;
+export class NamedExports extends Node implements qt.NamedExports {
   static readonly kind = Syntax.NamedExports;
   parent: ExportDeclaration;
   elements: Nodes<ExportSpecifier>;
@@ -2704,7 +2720,8 @@ export class NamedExports extends Node implements qt. {
     return this.elements !== elements ? updateNode(createNamedExports(elements), this) : this;
   }
 }
-export class NamedImports extends Node implements qt. {
+NamedExports.prototype.kind = NamedExports.kind;
+export class NamedImports extends Node implements qt.NamedImports {
   static readonly kind = Syntax.NamedImports;
   parent: ImportClause;
   elements: Nodes<ImportSpecifier>;
@@ -2716,7 +2733,8 @@ export class NamedImports extends Node implements qt. {
     return this.elements !== elements ? updateNode(createNamedImports(elements), this) : this;
   }
 }
-export class NamedTupleMember extends TypeNode {
+NamedImports.prototype.kind = NamedImports.kind;
+export class NamedTupleMember extends TypeNode implements qt.NamedTupleMember {
   //, JSDocContainer, Declaration {
   static readonly kind = Syntax.NamedTupleMember;
   dot3Token?: Token<Syntax.Dot3Token>;
@@ -2735,7 +2753,8 @@ export class NamedTupleMember extends TypeNode {
     return n.dot3Token !== d || n.name !== i || n.questionToken !== q || n.type !== t ? updateNode(create(d, i, q, t), n) : n;
   }
 }
-export class NamespaceExport extends NamedDeclaration {
+NamedTupleMember.prototype.kind = NamedTupleMember.kind;
+export class NamespaceExport extends NamedDeclaration implements qt.NamespaceExport {
   static readonly kind = Syntax.NamespaceExport;
   parent: ExportDeclaration;
   name: Identifier;
@@ -2747,7 +2766,8 @@ export class NamespaceExport extends NamedDeclaration {
     return this.name !== name ? updateNode(createNamespaceExport(name), this) : this;
   }
 }
-export class NamespaceExportDeclaration extends DeclarationStatement {
+NamespaceExport.prototype.kind = NamespaceExport.kind;
+export class NamespaceExportDeclaration extends DeclarationStatement implements qt.NamespaceExportDeclaration {
   static readonly kind = Syntax.NamespaceExportDeclaration;
   name: Identifier;
   createNamespaceExportDeclaration(name: string | Identifier) {
@@ -2758,7 +2778,8 @@ export class NamespaceExportDeclaration extends DeclarationStatement {
     return this.name !== name ? updateNode(createNamespaceExportDeclaration(name), this) : this;
   }
 }
-export class NamespaceImport extends NamedDeclaration {
+NamespaceExportDeclaration.prototype.kind = NamespaceExportDeclaration.kind;
+export class NamespaceImport extends NamedDeclaration implements qt.NamespaceImport {
   static readonly kind = Syntax.NamespaceImport;
   parent: ImportClause;
   name: Identifier;
@@ -2770,7 +2791,8 @@ export class NamespaceImport extends NamedDeclaration {
     return this.name !== name ? updateNode(createNamespaceImport(name), this) : this;
   }
 }
-export class NewExpression extends PrimaryExpression {
+NamespaceImport.prototype.kind = NamespaceImport.kind;
+export class NewExpression extends PrimaryExpression implements qt.NewExpression {
   //}, Declaration {
   static readonly kind = Syntax.NewExpression;
   expression: LeftHandSideExpression;
@@ -2786,7 +2808,8 @@ export class NewExpression extends PrimaryExpression {
     return this.expression !== expression || this.typeArguments !== typeArguments || this.arguments !== argumentsArray ? updateNode(createNew(expression, typeArguments, argumentsArray), this) : this;
   }
 }
-export class NonNullChain {
+NewExpression.prototype.kind = NewExpression.kind;
+export class NonNullChain extends Node implements qt.NonNullChain {
   createNonNullChain(expression: Expression) {
     super(true);
     this.flags |= NodeFlags.OptionalChain;
@@ -2797,6 +2820,7 @@ export class NonNullChain {
     return this.expression !== expression ? updateNode(createNonNullChain(expression), this) : this;
   }
 }
+NonNullChain.prototype.kind = NonNullChain.kind;
 export class NonNullExpression extends LeftHandSideExpression implements qt.NonNullExpression {
   static readonly kind = Syntax.NonNullExpression;
   expression: Expression;
@@ -2810,7 +2834,7 @@ export class NonNullExpression extends LeftHandSideExpression implements qt.NonN
   }
 }
 NonNullExpression.prototype.kind = NonNullExpression.kind;
-export class NoSubstitutionLiteral extends LiteralExpression {
+export class NoSubstitutionLiteral extends LiteralExpression implements qt.NoSubstitutionLiteral {
   //, TemplateLiteralLikeNode, Declaration {
   static readonly kind = Syntax.NoSubstitutionLiteral;
   templateFlags?: TokenFlags;
@@ -2818,7 +2842,8 @@ export class NoSubstitutionLiteral extends LiteralExpression {
     return Node.createTemplateLiteralLike(Syntax.NoSubstitutionLiteral, t, raw) as NoSubstitutionLiteral;
   }
 }
-export class NotEmittedStatement extends Statement {
+NoSubstitutionLiteral.prototype.kind = NoSubstitutionLiteral.kind;
+export class NotEmittedStatement extends Statement  implements qt.NotEmittedStatement {
   static readonly kind = Syntax.NotEmittedStatement;
   createNotEmittedStatement(original: Node) {
     super(true);
@@ -2826,7 +2851,8 @@ export class NotEmittedStatement extends Statement {
     setRange(this, original);
   }
 }
-export class NumericLiteral extends LiteralExpression {
+NotEmittedStatement.prototype.kind = NotEmittedStatement.kind;
+export class NumericLiteral extends LiteralExpression implements qt.NumericLiteral {
   //, Declaration {
   static readonly kind = Syntax.NumericLiteral;
   numericLiteralFlags: TokenFlags;
@@ -2840,7 +2866,8 @@ export class NumericLiteral extends LiteralExpression {
     return (+name).toString() === name;
   }
 }
-export class ObjectBindingPattern extends Node implements qt. {
+NumericLiteral.prototype.kind = NumericLiteral.kind;
+export class ObjectBindingPattern extends Node implements qt.ObjectBindingPattern {
   static readonly kind = Syntax.ObjectBindingPattern;
   parent: VariableDeclaration | ParameterDeclaration | BindingElement;
   elements: Nodes<BindingElement>;
@@ -2853,7 +2880,8 @@ export class ObjectBindingPattern extends Node implements qt. {
     return n.elements !== es ? updateNode(create(es), n) : n;
   }
 }
-export class ObjectLiteralExpression extends ObjectLiteralExpressionBase<ObjectLiteralElementLike> {
+ObjectBindingPattern.prototype.kind = ObjectBindingPattern.kind;
+export class ObjectLiteralExpression extends ObjectLiteralExpressionBase<ObjectLiteralElementLike> implements qt.ObjectLiteralExpression {
   static readonly kind = Syntax.ObjectLiteralExpression;
   multiLine?: boolean;
   createObjectLiteral(properties?: readonly ObjectLiteralElementLike[], multiLine?: boolean) {
@@ -2865,13 +2893,15 @@ export class ObjectLiteralExpression extends ObjectLiteralExpressionBase<ObjectL
     return this.properties !== properties ? updateNode(createObjectLiteral(properties, this.multiLine), this) : this;
   }
 }
-export class OmittedExpression extends Expression {
+ObjectLiteralExpression.prototype.kind = ObjectLiteralExpression.kind;
+export class OmittedExpression extends Expression implements qt.OmittedExpression {
   static readonly kind = Syntax.OmittedExpression;
   createOmittedExpression() {
     return <OmittedExpression>Node.createSynthesized(Syntax.OmittedExpression);
   }
 }
-export class OptionalTypeNode extends TypeNode {
+OmittedExpression.prototype.kind = OmittedExpression.kind;
+export class OptionalTypeNode extends TypeNode implements qt.OptionalTypeNode {
   static readonly kind = Syntax.OptionalType;
   type: TypeNode;
   create(t: TypeNode) {
@@ -2883,6 +2913,7 @@ export class OptionalTypeNode extends TypeNode {
     return n.type !== t ? updateNode(create(t), n) : n;
   }
 }
+OptionalTypeNode.prototype.kind = OptionalTypeNode.kind;
 export namespace OuterExpression {
   export function isOuterExpression(this: Node, kinds = OuterExpressionKinds.All): this is OuterExpression {
     switch (this.kind) {
@@ -2990,7 +3021,8 @@ export class ParameterDeclaration extends NamedDeclaration implements qt.Paramet
       : this;
   }
 }
-export class ParenthesizedExpression extends PrimaryExpression {
+ParameterDeclaration.prototype.kind = ParameterDeclaration.kind;
+export class ParenthesizedExpression extends PrimaryExpression implements qt.ParenthesizedExpression {
   //}, JSDocContainer {
   static readonly kind = Syntax.ParenthesizedExpression;
   expression: Expression;
@@ -3002,7 +3034,8 @@ export class ParenthesizedExpression extends PrimaryExpression {
     return this.expression !== expression ? updateNode(createParen(expression), this) : this;
   }
 }
-export class ParenthesizedTypeNode extends TypeNode {
+ParenthesizedExpression.prototype.kind = ParenthesizedExpression.kind;
+export class ParenthesizedTypeNode extends TypeNode implements qt.ParenthesizedTypeNode {
   static readonly kind = Syntax.ParenthesizedType;
   type: TypeNode;
   create(t: TypeNode) {
@@ -3014,6 +3047,7 @@ export class ParenthesizedTypeNode extends TypeNode {
     return n.type !== t ? updateNode(create(t), n) : n;
   }
 }
+ParenthesizedTypeNode.prototype.kind = ParenthesizedTypeNode.kind;
 export class PartiallyEmittedExpression extends LeftHandSideExpression implements qt.PartiallyEmittedExpression {
   static readonly kind = Syntax.PartiallyEmittedExpression;
   expression: Expression;
@@ -3075,7 +3109,7 @@ export class PrivateIdentifier extends TokenOrIdentifier implements qt.PrivateId
   }
 }
 PrivateIdentifier.prototype.kind = PrivateIdentifier.kind;
-export class PropertyAccessChain {
+export class PropertyAccessChain extends Node implements qt.PropertyAccessChain {
   createPropertyAccessChain(expression: Expression, questionDotToken: QuestionDotToken | undefined, name: string | Identifier) {
     super(true);
     this.flags |= NodeFlags.OptionalChain;
@@ -3091,7 +3125,8 @@ export class PropertyAccessChain {
       : this;
   }
 }
-export class PropertyAccessExpression extends MemberExpression {
+PropertyAccessChain.prototype.kind = PropertyAccessChain.kind;
+export class PropertyAccessExpression extends MemberExpression implements qt.PropertyAccessExpression {
   //}, NamedDeclaration {
   static readonly kind = Syntax.PropertyAccessExpression;
   expression: LeftHandSideExpression;
@@ -3110,7 +3145,8 @@ export class PropertyAccessExpression extends MemberExpression {
     return this.expression !== expression || this.name !== name ? updateNode(setEmitFlags(createPropertyAccess(expression, name), Node.get.emitFlags(this)), this) : this;
   }
 }
-export class PropertyAssignment extends ObjectLiteralElement {
+PropertyAccessExpression.prototype.kind = PropertyAccessExpression.kind;
+export class PropertyAssignment extends ObjectLiteralElement implements qt.PropertyAssignment {
   //}, JSDocContainer {
   static readonly kind = Syntax.PropertyAssignment;
   parent: ObjectLiteralExpression;
@@ -3127,7 +3163,8 @@ export class PropertyAssignment extends ObjectLiteralElement {
     return this.name !== name || this.initializer !== initializer ? updateNode(createPropertyAssignment(name, initializer), this) : this;
   }
 }
-export class PropertyDeclaration extends ClassElement {
+PropertyAssignment.prototype.kind = PropertyAssignment.kind;
+export class PropertyDeclaration extends ClassElement implements qt.PropertyDeclaration {
   //}, JSDocContainer {
   static readonly kind = Syntax.PropertyDeclaration;
   parent: ClassLikeDeclaration;
@@ -3167,7 +3204,8 @@ export class PropertyDeclaration extends ClassElement {
       : n;
   }
 }
-export class PropertySignature extends TypeElement {
+PropertyDeclaration.prototype.kind = PropertyDeclaration.kind;
+export class PropertySignature extends TypeElement implements qt.PropertySignature {
   //}, JSDocContainer {
   static readonly kind = Syntax.PropertySignature;
   name: PropertyName;
@@ -3187,7 +3225,8 @@ export class PropertySignature extends TypeElement {
     return n.modifiers !== ms || n.name !== p || n.questionToken !== q || n.type !== t || n.initializer !== i ? updateNode(create(ms, p, q, t, i), n) : n;
   }
 }
-export class QualifiedName extends Node implements qt. {
+PropertySignature.prototype.kind = PropertySignature.kind;
+export class QualifiedName extends Node implements qt.QualifiedName {
   static readonly kind = Syntax.QualifiedName;
   left: EntityName;
   right: Identifier;
@@ -3202,7 +3241,8 @@ export class QualifiedName extends Node implements qt. {
     return n.left !== left || n.right !== right ? updateNode(create(left, right), n) : n;
   }
 }
-export class RegexLiteral extends LiteralExpression {
+QualifiedName.prototype.kind = QualifiedName.kind;
+export class RegexLiteral extends LiteralExpression  implements qt.RegexLiteral{
   static readonly kind = Syntax.RegexLiteral;
   create(t: string) {
     const n = Node.createSynthesized(Syntax.RegexLiteral);
@@ -3210,7 +3250,8 @@ export class RegexLiteral extends LiteralExpression {
     return n;
   }
 }
-export class RestTypeNode extends TypeNode {
+RegexLiteral.prototype.kind = RegexLiteral.kind;
+export class RestTypeNode extends TypeNode implements qt.RestTypeNode {
   static readonly kind = Syntax.RestType;
   type: TypeNode;
   create(t: TypeNode) {
@@ -3222,7 +3263,8 @@ export class RestTypeNode extends TypeNode {
     return n.type !== t ? updateNode(create(t), n) : n;
   }
 }
-export class ReturnStatement extends Statement {
+RestTypeNode.prototype.kind = RestTypeNode.kind;
+export class ReturnStatement extends Statement implements qt.ReturnStatement {
   static readonly kind = Syntax.ReturnStatement;
   expression?: Expression;
   createReturn(expression?: Expression): ReturnStatement {
@@ -3233,14 +3275,16 @@ export class ReturnStatement extends Statement {
     return this.expression !== expression ? updateNode(createReturn(expression), this) : this;
   }
 }
-export class SemicolonClassElement extends ClassElement {
+ReturnStatement.prototype.kind = ReturnStatement.kind;
+export class SemicolonClassElement extends ClassElement implements qt.SemicolonClassElement {
   static readonly kind = Syntax.SemicolonClassElement;
   parent: ClassLikeDeclaration;
   createSemicolonClassElement() {
     return <SemicolonClassElement>Node.createSynthesized(Syntax.SemicolonClassElement);
   }
 }
-export class SetAccessorDeclaration extends FunctionLikeDeclarationBase {
+SemicolonClassElement.prototype.kind = SemicolonClassElement.kind;
+export class SetAccessorDeclaration extends FunctionLikeDeclarationBase implements qt.SetAccessorDeclaration {
   //}, ClassElement, ObjectLiteralElement, JSDocContainer {
   static readonly kind = Syntax.SetAccessor;
   parent: ClassLikeDeclaration | ObjectLiteralExpression;
@@ -3260,7 +3304,8 @@ export class SetAccessorDeclaration extends FunctionLikeDeclarationBase {
     return n.decorators !== ds || n.modifiers !== ms || n.name !== p || n.parameters !== ps || n.body !== b ? updateNode(create(ds, ms, p, ps, b), n) : n;
   }
 }
-export class ShorthandPropertyAssignment extends ObjectLiteralElement {
+SetAccessorDeclaration.prototype.kind = SetAccessorDeclaration.kind;
+export class ShorthandPropertyAssignment extends ObjectLiteralElement implements qt.ShorthandPropertyAssignment {
   //}, JSDocContainer {
   static readonly kind = Syntax.ShorthandPropertyAssignment;
   parent: ObjectLiteralExpression;
@@ -3278,6 +3323,7 @@ export class ShorthandPropertyAssignment extends ObjectLiteralElement {
     return this.name !== name || this.objectAssignmentInitializer !== objectAssignmentInitializer ? updateNode(createShorthandPropertyAssignment(name, objectAssignmentInitializer), this) : this;
   }
 }
+ShorthandPropertyAssignment.prototype.kind = ShorthandPropertyAssignment.kind;
 export namespace SignatureDeclaration {
   export function create(k: Syntax, ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t?: TypeNode, ta?: readonly TypeNode[]) {
     const n = Node.createSynthesized(k);
@@ -3291,7 +3337,7 @@ export namespace SignatureDeclaration {
     return n.typeParameters !== ts || n.parameters !== ps || n.type !== t ? updateNode(create(n.kind, ts, ps, t) as T, n) : n;
   }
 }
-export class SpreadElement extends Expression {
+export class SpreadElement extends Expression implements qt.SpreadElement {
   static readonly kind = Syntax.SpreadElement;
   parent: ArrayLiteralExpression | CallExpression | NewExpression;
   expression: Expression;
@@ -3303,7 +3349,8 @@ export class SpreadElement extends Expression {
     return this.expression !== expression ? updateNode(createSpread(expression), this) : this;
   }
 }
-export class SpreadAssignment extends ObjectLiteralElement {
+SpreadElement.prototype.kind = SpreadElement.kind;
+export class SpreadAssignment extends ObjectLiteralElement implements qt.SpreadAssignment {
   //}, JSDocContainer {
   static readonly kind = Syntax.SpreadAssignment;
   parent: ObjectLiteralExpression;
@@ -3316,7 +3363,8 @@ export class SpreadAssignment extends ObjectLiteralElement {
     return this.expression !== expression ? updateNode(createSpreadAssignment(expression), this) : this;
   }
 }
-export class StringLiteral extends LiteralExpression {
+SpreadAssignment.prototype.kind = SpreadAssignment.kind;
+export class StringLiteral extends LiteralExpression implements qt.StringLiteral {
   //}, Declaration {
   static readonly kind = Syntax.StringLiteral;
   textSourceNode?: Identifier | StringLiteralLike | NumericLiteral;
@@ -3347,7 +3395,8 @@ export class StringLiteral extends LiteralExpression {
     return r;
   }
 }
-export class SwitchStatement extends Statement {
+StringLiteral.prototype.kind = StringLiteral.kind;
+export class SwitchStatement extends Statement implements qt.SwitchStatement {
   static readonly kind = Syntax.SwitchStatement;
   expression: Expression;
   caseBlock: CaseBlock;
@@ -3361,10 +3410,12 @@ export class SwitchStatement extends Statement {
     return this.expression !== expression || this.caseBlock !== caseBlock ? updateNode(createSwitch(expression, caseBlock), this) : this;
   }
 }
-export class SyntaxList extends Node implements qt. {
+SwitchStatement.prototype.kind = SwitchStatement.kind;
+export class SyntaxList extends Node implements qt.SyntaxList {
   static readonly kind = Syntax.SyntaxList;
   _children: Node[];
 }
+SyntaxList.prototype.kind = SyntaxList.kind;
 export class SyntheticReferenceExpression extends LeftHandSideExpression implements qt.SyntheticReferenceExpression {
   static readonly kind = Syntax.SyntheticReferenceExpression;
   expression: Expression;
@@ -3406,7 +3457,7 @@ export class TaggedTemplateExpression extends MemberExpression implements qt.Tag
   }
 }
 TaggedTemplateExpression.prototype.kind = TaggedTemplateExpression.kind;
-export class TemplateExpression extends PrimaryExpression {
+export class TemplateExpression extends PrimaryExpression implements qt.TemplateExpression {
   static readonly kind = Syntax.TemplateExpression;
   head: TemplateHead;
   templateSpans: Nodes<TemplateSpan>;
@@ -3419,7 +3470,8 @@ export class TemplateExpression extends PrimaryExpression {
     return this.head !== head || this.templateSpans !== templateSpans ? updateNode(createTemplateExpression(head, templateSpans), this) : this;
   }
 }
-export class TemplateHead extends TemplateLiteralLikeNode {
+TemplateExpression.prototype.kind = TemplateExpression.kind;
+export class TemplateHead extends TemplateLiteralLikeNode implements qt.TemplateHead {
   static readonly kind = Syntax.TemplateHead;
   parent: TemplateExpression;
   templateFlags?: TokenFlags;
@@ -3427,7 +3479,8 @@ export class TemplateHead extends TemplateLiteralLikeNode {
     return Node.createTemplateLiteralLike(Syntax.TemplateHead, t, raw) as TemplateHead;
   }
 }
-export class TemplateMiddle extends TemplateLiteralLikeNode {
+TemplateHead.prototype.kind = TemplateHead.kind;
+export class TemplateMiddle extends TemplateLiteralLikeNode implements qt.TemplateMiddle {
   static readonly kind = Syntax.TemplateMiddle;
   parent: TemplateSpan;
   templateFlags?: TokenFlags;
@@ -3439,7 +3492,8 @@ export class TemplateMiddle extends TemplateLiteralLikeNode {
     return k === Syntax.TemplateMiddle || k === Syntax.TemplateTail;
   }
 }
-export class TemplateSpan extends Node implements qt. {
+TemplateMiddle.prototype.kind = TemplateMiddle.kind;
+export class TemplateSpan extends Node implements qt.TemplateSpan {
   static readonly kind = Syntax.TemplateSpan;
   parent: TemplateExpression;
   expression: Expression;
@@ -3453,7 +3507,8 @@ export class TemplateSpan extends Node implements qt. {
     return this.expression !== expression || this.literal !== literal ? updateNode(createTemplateSpan(expression, literal), this) : this;
   }
 }
-export class TemplateTail extends TemplateLiteralLikeNode {
+TemplateSpan.prototype.kind = TemplateSpan.kind;
+export class TemplateTail extends TemplateLiteralLikeNode implements qt.TemplateTail {
   static readonly kind = Syntax.TemplateTail;
   parent: TemplateSpan;
   templateFlags?: TokenFlags;
@@ -3461,13 +3516,15 @@ export class TemplateTail extends TemplateLiteralLikeNode {
     return Node.createTemplateLiteralLike(Syntax.TemplateTail, t, raw) as TemplateTail;
   }
 }
-export class ThisTypeNode extends TypeNode {
+TemplateTail.prototype.kind = TemplateTail.kind;
+export class ThisTypeNode extends TypeNode implements qt.ThisTypeNode {
   static readonly kind = Syntax.ThisType;
   create() {
     return Node.createSynthesized(Syntax.ThisType);
   }
 }
-export class ThrowStatement extends Statement {
+ThisTypeNode.prototype.kind = ThisTypeNode.kind;
+export class ThrowStatement extends Statement implements qt.ThrowStatement {
   static readonly kind = Syntax.ThrowStatement;
   expression?: Expression;
   createThrow(expression: Expression) {
@@ -3478,12 +3535,8 @@ export class ThrowStatement extends Statement {
     return this.expression !== expression ? updateNode(createThrow(expression), this) : this;
   }
 }
-export class Token<T extends Syntax> extends TokenOrIdentifier implements qt.Token<T> {
-  constructor(k: T, pos?: number, end?: number) {
-    super(undefined, k, pos, end);
-  }
-}
-export class TryStatement extends Statement {
+ThrowStatement.prototype.kind = ThrowStatement.kind;
+export class TryStatement extends Statement implements qt.TryStatement {
   static readonly kind = Syntax.TryStatement;
   tryBlock: Block;
   catchClause?: CatchClause;
@@ -3498,7 +3551,8 @@ export class TryStatement extends Statement {
     return this.tryBlock !== tryBlock || this.catchClause !== catchClause || this.finallyBlock !== finallyBlock ? updateNode(createTry(tryBlock, catchClause, finallyBlock), this) : this;
   }
 }
-export class TupleType extends GenericType {
+TryStatement.prototype.kind = TryStatement.kind;
+export class TupleType extends GenericType implements qt.TupleType {
   static readonly kind = Syntax.TupleType;
   minLength: number;
   hasRestElement: boolean;
@@ -3513,7 +3567,8 @@ export class TupleType extends GenericType {
     return n.elements !== es ? updateNode(create(es), n) : n;
   }
 }
-export class TypeAliasDeclaration extends DeclarationStatement {
+TupleType.prototype.kind = TupleType.kind;
+export class TypeAliasDeclaration extends DeclarationStatement implements qt.TypeAliasDeclaration {
   //}, JSDocContainer {
   static readonly kind = Syntax.TypeAliasDeclaration;
   name: Identifier;
@@ -3546,6 +3601,7 @@ export class TypeAliasDeclaration extends DeclarationStatement {
       : this;
   }
 }
+TypeAliasDeclaration.prototype.kind = TypeAliasDeclaration.kind;
 export class TypeAssertion extends UnaryExpression implements qt.TypeAssertion {
   static readonly kind = Syntax.TypeAssertionExpression;
   type: TypeNode;
@@ -3560,7 +3616,7 @@ export class TypeAssertion extends UnaryExpression implements qt.TypeAssertion {
   }
 }
 TypeAssertion.prototype.kind = TypeAssertion.kind;
-export class TypeLiteralNode extends TypeNode {
+export class TypeLiteralNode extends TypeNode implements qt.TypeLiteralNode {
   //}, Declaration {
   static readonly kind = Syntax.TypeLiteral;
   members: Nodes<TypeElement>;
@@ -3573,6 +3629,7 @@ export class TypeLiteralNode extends TypeNode {
     return n.members !== ms ? updateNode(create(ms), n) : n;
   }
 }
+TypeLiteralNode.prototype.kind = TypeLiteralNode.kind;
 export class TypeOfExpression extends UnaryExpression implements qt.TypeOfExpression {
   static readonly kind = Syntax.TypeOfExpression;
   expression: UnaryExpression;
@@ -3585,7 +3642,7 @@ export class TypeOfExpression extends UnaryExpression implements qt.TypeOfExpres
   }
 }
 TypeOfExpression.prototype.kind = TypeOfExpression.kind;
-export class TypeOperatorNode extends TypeNode {
+export class TypeOperatorNode extends TypeNode implements qt.TypeOperatorNode {
   static readonly kind = Syntax.TypeOperator;
   operator: Syntax.KeyOfKeyword | Syntax.UniqueKeyword | Syntax.ReadonlyKeyword;
   type: TypeNode;
@@ -3601,7 +3658,8 @@ export class TypeOperatorNode extends TypeNode {
     return n.type !== t ? updateNode(create(n.operator, t), n) : n;
   }
 }
-export class TypeParameterDeclaration extends NamedDeclaration {
+TypeOperatorNode.prototype.kind = TypeOperatorNode.kind;
+export class TypeParameterDeclaration extends NamedDeclaration implements qt.TypeParameterDeclaration {
   static readonly kind = Syntax.TypeParameter;
   parent: DeclarationWithTypeParameterChildren | InferTypeNode;
   name: Identifier;
@@ -3618,7 +3676,8 @@ export class TypeParameterDeclaration extends NamedDeclaration {
     return this.name !== name || this.constraint !== constraint || this.default !== defaultType ? updateNode(createTypeParameterDeclaration(name, constraint, defaultType), this) : this;
   }
 }
-export class TypePredicateNode extends TypeNode {
+TypeParameterDeclaration.prototype.kind = TypeParameterDeclaration.kind;
+export class TypePredicateNode extends TypeNode implements qt.TypePredicateNode {
   static readonly kind = Syntax.TypePredicate;
   parent: SignatureDeclaration | JSDocTypeExpression;
   assertsModifier?: AssertsToken;
@@ -3641,7 +3700,8 @@ export class TypePredicateNode extends TypeNode {
     return n.assertsModifier !== a || n.parameterName !== p || n.type !== t ? updateNode(createWithModifier(a, p, t), n) : n;
   }
 }
-export class TypeQueryNode extends TypeNode {
+TypePredicateNode.prototype.kind = TypePredicateNode.kind;
+export class TypeQueryNode extends TypeNode implements qt.TypeQueryNode {
   static readonly kind = Syntax.TypeQuery;
   exprName: EntityName;
   create(e: EntityName) {
@@ -3653,7 +3713,8 @@ export class TypeQueryNode extends TypeNode {
     return n.exprName !== e ? updateNode(create(e), n) : n;
   }
 }
-export class TypeReferenceNode extends NodeWithTypeArguments {
+TypeQueryNode.prototype.kind = TypeQueryNode.kind;
+export class TypeReferenceNode extends NodeWithTypeArguments implements qt.TypeReferenceNode  {
   static readonly kind = Syntax.TypeReference;
   typeName: EntityName;
   create(t: string | EntityName, ts?: readonly TypeNode[]) {
@@ -3666,7 +3727,8 @@ export class TypeReferenceNode extends NodeWithTypeArguments {
     return n.typeName !== t || n.typeArguments !== ts ? updateNode(create(t, ts), n) : n;
   }
 }
-export class UnionTypeNode extends TypeNode {
+TypeReferenceNode.prototype.kind = TypeReferenceNode.kind;
+export class UnionTypeNode extends TypeNode implements qt.UnionTypeNode {
   static readonly kind = Syntax.UnionType;
   types: Nodes<TypeNode>;
   create(ts: readonly TypeNode[]) {
@@ -3684,6 +3746,7 @@ export class UnionTypeNode extends TypeNode {
     return n.types !== ts ? updateNode(orIntersectionCreate(n.kind, ts) as T, n) : n;
   }
 }
+UnionTypeNode.prototype.kind = UnionTypeNode.kind;
 export namespace UnparsedNode {
   export function createUnparsedNode(section: BundleFileSection, parent: UnparsedSource): UnparsedNode {
     const r = createNode(mapBundleFileSectionKindToSyntax(section.kind), section.pos, section.end) as UnparsedNode;
@@ -3711,14 +3774,15 @@ export namespace UnparsedNode {
     }
   }
 }
-export class UnparsedPrepend extends UnparsedSection {
+export class UnparsedPrepend extends UnparsedSection implements qt.UnparsedPrepend {
   static readonly kind = Syntax.UnparsedPrepend;
   data: string;
   parent: UnparsedSource;
   texts: readonly UnparsedTextLike[];
 }
+UnparsedPrepend.prototype.kind = UnparsedPrepend.kind;
 let allUnscopedEmitHelpers: QReadonlyMap<UnscopedEmitHelper> | undefined;
-export class UnparsedSource extends Node implements qt. {
+export class UnparsedSource extends Node implements qt.UnparsedSource {
   static readonly kind = Syntax.UnparsedSource;
   fileName: string;
   text: string;
@@ -3906,7 +3970,8 @@ export class UnparsedSource extends Node implements qt. {
     return this;
   }
 }
-export class UnparsedSyntheticReference extends UnparsedSection {
+UnparsedSource.prototype.kind = UnparsedSource.kind;
+export class UnparsedSyntheticReference extends UnparsedSection implements qt.UnparsedSyntheticReference {
   static readonly kind: Syntax.UnparsedSyntheticReference;
   parent: UnparsedSource;
   section: BundleFileHasNoDefaultLib | BundleFileReference;
@@ -3917,7 +3982,8 @@ export class UnparsedSyntheticReference extends UnparsedSection {
     this.section = section;
   }
 }
-export class VariableDeclaration extends NamedDeclaration {
+UnparsedSyntheticReference.prototype.kind = UnparsedSyntheticReference.kind;
+export class VariableDeclaration extends NamedDeclaration implements qt.VariableDeclaration {
   static readonly kind = Syntax.VariableDeclaration;
   parent: VariableDeclarationList | CatchClause;
   name: BindingName;
@@ -3952,7 +4018,8 @@ export class VariableDeclaration extends NamedDeclaration {
       : this;
   }
 }
-export class VariableDeclarationList extends Node implements qt. {
+VariableDeclaration.prototype.kind = VariableDeclaration.kind;
+export class VariableDeclarationList extends Node implements qt.VariableDeclarationList {
   static readonly kind = Syntax.VariableDeclarationList;
   parent: VariableStatement | ForStatement | ForOfStatement | ForInStatement;
   declarations: Nodes<VariableDeclaration>;
@@ -3965,7 +4032,8 @@ export class VariableDeclarationList extends Node implements qt. {
     return this.declarations !== declarations ? updateNode(createVariableDeclarationList(declarations, this.flags), this) : this;
   }
 }
-export class VariableStatement extends Statement {
+VariableDeclarationList.prototype.kind = VariableDeclarationList.kind;
+export class VariableStatement extends Statement implements qt.VariableStatement {
   //}, JSDocContainer {
   static readonly kind = Syntax.VariableStatement;
   declarationList: VariableDeclarationList;
@@ -3979,6 +4047,7 @@ export class VariableStatement extends Statement {
     return this.modifiers !== modifiers || this.declarationList !== declarationList ? updateNode(createVariableStatement(modifiers, declarationList), this) : this;
   }
 }
+VariableStatement.prototype.kind = VariableStatement.kind;
 export class VoidExpression extends UnaryExpression implements qt.VoidExpression {
   static readonly kind = Syntax.VoidExpression;
   expression: UnaryExpression;
@@ -3994,7 +4063,7 @@ export class VoidExpression extends UnaryExpression implements qt.VoidExpression
   }
 }
 VoidExpression.prototype.kind = VoidExpression.kind;
-export class WhileStatement extends IterationStatement {
+export class WhileStatement extends IterationStatement implements qt.WhileStatement {
   static readonly kind = Syntax.WhileStatement;
   expression: Expression;
   createWhile(expression: Expression, statement: Statement) {
@@ -4006,7 +4075,8 @@ export class WhileStatement extends IterationStatement {
     return this.expression !== expression || this.statement !== statement ? updateNode(createWhile(expression, statement), this) : this;
   }
 }
-export class WithStatement extends Statement {
+WhileStatement.prototype.kind = WhileStatement.kind;
+export class WithStatement extends Statement implements qt.WithStatement{
   static readonly kind = Syntax.WithStatement;
   expression: Expression;
   statement: Statement;
@@ -4019,7 +4089,8 @@ export class WithStatement extends Statement {
     return this.expression !== expression || this.statement !== statement ? updateNode(createWith(expression, statement), this) : this;
   }
 }
-export class YieldExpression extends Expression {
+WithStatement.prototype.kind = WithStatement.kind;
+export class YieldExpression extends Expression implements qt.YieldExpression{
   static readonly kind = Syntax.YieldExpression;
   asteriskToken?: AsteriskToken;
   expression?: Expression;
@@ -4036,6 +4107,7 @@ export class YieldExpression extends Expression {
     return this.expression !== expression || this.asteriskToken !== asteriskToken ? updateNode(createYield(asteriskToken, expression), this) : this;
   }
 }
+YieldExpression.prototype.kind = YieldExpression.kind;
 export namespace parenthesize {
   interface BinaryPlusExpression extends BinaryExpression {
     cachedLiteralKind: Syntax;

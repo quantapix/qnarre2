@@ -1,9 +1,8 @@
 import * as qb from './base';
 import * as qt from './types';
-import { diags } from './diags';
+import { diags as qd } from './diags';
 import * as syntax from './syntax';
 import { Codes, JSDocSyntax, JsxTokenSyntax, KeywordSyntax, LanguageVariant, Syntax } from './syntax';
-
 export interface Scanner {
   setLanguageVariant(l: LanguageVariant): void;
   setOnError(cb?: qt.ErrorCallback): void;
@@ -43,10 +42,8 @@ export interface Scanner {
   setInJSDocType(inType: boolean): void;
   lookAhead<T>(cb: () => T): T;
 }
-
 const directiveRegExSingleLine = /^\s*\/\/\/?\s*@(ts-expect-error|ts-ignore)/;
 const directiveRegExMultiLine = /^\s*(?:\/|\*)*\s*@(ts-expect-error|ts-ignore)/;
-
 export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError?: qt.ErrorCallback): Scanner {
   let pos: number; // Current position (end position of text of current token)
   let end: number; // end of text
@@ -283,7 +280,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
               }
             }
             directives = appendIfDirective(directives, text.slice(last, pos), directiveRegExMultiLine, last);
-            if (!closed) error(diags.Asterisk_Slash_expected);
+            if (!closed) error(qd.Asterisk_Slash_expected);
             if (skipTrivia) continue;
             else {
               if (!closed) tokFlags |= qt.TokenFlags.Unterminated;
@@ -298,7 +295,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
             pos += 2;
             tokValue = scanHexDigits(1, true, true);
             if (!tokValue) {
-              error(diags.Hexadecimal_digit_expected);
+              error(qd.Hexadecimal_digit_expected);
               tokValue = '0';
             }
             tokValue = '0x' + tokValue;
@@ -308,7 +305,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
             pos += 2;
             tokValue = scanBinOrOctDigits(2);
             if (!tokValue) {
-              error(diags.Binary_digit_expected);
+              error(qd.Binary_digit_expected);
               tokValue = '0';
             }
             tokValue = '0b' + tokValue;
@@ -318,7 +315,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
             pos += 2;
             tokValue = scanBinOrOctDigits(8);
             if (!tokValue) {
-              error(diags.Octal_digit_expected);
+              error(qd.Octal_digit_expected);
               tokValue = '0';
             }
             tokValue = '0o' + tokValue;
@@ -330,7 +327,6 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
             tokFlags |= qt.TokenFlags.Octal;
             return (token = Syntax.NumericLiteral);
           }
-
         case Codes._1:
         case Codes._2:
         case Codes._3:
@@ -443,12 +439,12 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
             tokValue = String.fromCharCode(c3) + scanIdentifierParts();
             return (token = scanIdentifier());
           }
-          error(diags.Invalid_character);
+          error(qd.Invalid_character);
           pos++;
           return (token = Syntax.Unknown);
         case Codes.hash:
           if (pos !== 0 && text[pos + 1] === '!') {
-            error(diags.can_only_be_used_at_the_start_of_a_file);
+            error(qd.can_only_be_used_at_the_start_of_a_file);
             pos++;
             return (token = Syntax.Unknown);
           }
@@ -460,7 +456,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
             if (c === Codes.backslash) tokValue += scanIdentifierParts();
           } else {
             tokValue = '#';
-            error(diags.Invalid_character);
+            error(qd.Invalid_character);
           }
           return (token = Syntax.PrivateIdentifier);
         default:
@@ -478,7 +474,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
             pos += syntax.get.charSize(c);
             continue;
           }
-          error(diags.Invalid_character);
+          error(qd.Invalid_character);
           pos += syntax.get.charSize(c);
           return (token = Syntax.Unknown);
       }
@@ -538,13 +534,13 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
       while (true) {
         if (p >= end) {
           tokFlags |= qt.TokenFlags.Unterminated;
-          error(diags.Unterminated_regular_expression_literal);
+          error(qd.Unterminated_regular_expression_literal);
           break;
         }
         const c = text.charCodeAt(p);
         if (syntax.is.lineBreak(c)) {
           tokFlags |= qt.TokenFlags.Unterminated;
-          error(diags.Unterminated_regular_expression_literal);
+          error(qd.Unterminated_regular_expression_literal);
           break;
         }
         if (esc) esc = false;
@@ -691,8 +687,8 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
             sep = false;
             prev = true;
             r += text.substring(s, pos);
-          } else if (prev) error(diags.Multiple_consecutive_numeric_separators_are_not_permitted, pos, 1);
-          else error(diags.Numeric_separators_are_not_allowed_here, pos, 1);
+          } else if (prev) error(qd.Multiple_consecutive_numeric_separators_are_not_permitted, pos, 1);
+          else error(qd.Numeric_separators_are_not_allowed_here, pos, 1);
           pos++;
           s = pos;
           continue;
@@ -705,7 +701,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
         }
         break;
       }
-      if (text.charCodeAt(pos - 1) === Codes._) error(diags.Numeric_separators_are_not_allowed_here, pos - 1, 1);
+      if (text.charCodeAt(pos - 1) === Codes._) error(qd.Numeric_separators_are_not_allowed_here, pos - 1, 1);
       return r + text.substring(s, pos);
     }
     let r = scanFragment();
@@ -722,7 +718,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
       if (text.charCodeAt(pos) === Codes.plus || text.charCodeAt(pos) === Codes.minus) pos++;
       const p = pos;
       const f = scanFragment();
-      if (!f) error(diags.Digit_expected);
+      if (!f) error(qd.Digit_expected);
       else {
         scientific = text.substring(e, p) + f;
         e = pos;
@@ -737,10 +733,10 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
       const p = pos;
       const l = scanIdentifierParts().length;
       if (l === 1 && text[p] === 'n') {
-        if (scientific) error(diags.A_bigint_literal_cannot_use_exponential_notation, s, p - s + 1);
-        else error(diags.A_bigint_literal_must_be_an_integer, s, p - s + 1);
+        if (scientific) error(qd.A_bigint_literal_cannot_use_exponential_notation, s, p - s + 1);
+        else error(qd.A_bigint_literal_must_be_an_integer, s, p - s + 1);
       } else {
-        error(diags.An_identifier_or_keyword_cannot_immediately_follow_a_numeric_literal, p, l);
+        error(qd.An_identifier_or_keyword_cannot_immediately_follow_a_numeric_literal, p, l);
         pos = p;
       }
     }
@@ -792,8 +788,8 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
         if (sep) {
           sep = false;
           prev = true;
-        } else if (prev) error(diags.Multiple_consecutive_numeric_separators_are_not_permitted, pos, 1);
-        else error(diags.Numeric_separators_are_not_allowed_here, pos, 1);
+        } else if (prev) error(qd.Multiple_consecutive_numeric_separators_are_not_permitted, pos, 1);
+        else error(qd.Numeric_separators_are_not_allowed_here, pos, 1);
         pos++;
         continue;
       }
@@ -805,7 +801,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
       prev = false;
     }
     if (ds.length < min) ds = [];
-    if (text.charCodeAt(pos - 1) === Codes._) error(diags.Numeric_separators_are_not_allowed_here, pos - 1, 1);
+    if (text.charCodeAt(pos - 1) === Codes._) error(qd.Numeric_separators_are_not_allowed_here, pos - 1, 1);
     return String.fromCharCode(...ds);
   }
   function scanBinOrOctDigits(base: 2 | 8): string {
@@ -819,8 +815,8 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
         if (sep) {
           sep = false;
           prev = true;
-        } else if (prev) error(diags.Multiple_consecutive_numeric_separators_are_not_permitted, pos, 1);
-        else error(diags.Numeric_separators_are_not_allowed_here, pos, 1);
+        } else if (prev) error(qd.Multiple_consecutive_numeric_separators_are_not_permitted, pos, 1);
+        else error(qd.Numeric_separators_are_not_allowed_here, pos, 1);
         pos++;
         continue;
       }
@@ -830,7 +826,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
       pos++;
       prev = false;
     }
-    if (text.charCodeAt(pos - 1) === Codes._) error(diags.Numeric_separators_are_not_allowed_here, pos - 1, 1);
+    if (text.charCodeAt(pos - 1) === Codes._) error(qd.Numeric_separators_are_not_allowed_here, pos - 1, 1);
     return r;
   }
   function scanExtEscape(): string {
@@ -838,19 +834,19 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
     const v = vs ? parseInt(vs, 16) : -1;
     let e = false;
     if (v < 0) {
-      error(diags.Hexadecimal_digit_expected);
+      error(qd.Hexadecimal_digit_expected);
       e = true;
     } else if (v > 0x10ffff) {
-      error(diags.An_extended_Unicode_escape_value_must_be_between_0x0_and_0x10FFFF_inclusive);
+      error(qd.An_extended_Unicode_escape_value_must_be_between_0x0_and_0x10FFFF_inclusive);
       e = true;
     }
     if (pos >= end) {
-      error(diags.Unexpected_end_of_text);
+      error(qd.Unexpected_end_of_text);
       e = true;
     } else if (text.charCodeAt(pos) === Codes.closeBrace) {
       pos++;
     } else {
-      error(diags.Unterminated_Unicode_escape_sequence);
+      error(qd.Unterminated_Unicode_escape_sequence);
       e = true;
     }
     if (e) return '';
@@ -860,7 +856,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
     const s = pos;
     pos++;
     if (pos >= end) {
-      error(diags.Unexpected_end_of_text);
+      error(qd.Unexpected_end_of_text);
       return '';
     }
     const c = text.charCodeAt(pos);
@@ -869,7 +865,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
       const vs = scanHexDigits(count, false);
       const v = vs ? parseInt(vs, 16) : -1;
       if (v >= 0) return String.fromCharCode(v);
-      error(diags.Hexadecimal_digit_expected);
+      error(qd.Hexadecimal_digit_expected);
       return '';
     }
     switch (c) {
@@ -947,7 +943,6 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
         return scanHexEscape(2);
       case Codes.carriageReturn:
         if (pos < end && text.charCodeAt(pos) === Codes.lineFeed) pos++;
-
       case Codes.lineFeed:
       case Codes.lineSeparator:
       case Codes.paragraphSeparator:
@@ -965,7 +960,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
       if (pos >= end) {
         r += text.substring(s, pos);
         tokFlags |= qt.TokenFlags.Unterminated;
-        error(diags.Unterminated_string_literal);
+        error(qd.Unterminated_string_literal);
         break;
       }
       const c = text.charCodeAt(pos);
@@ -983,7 +978,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
       if (syntax.is.lineBreak(c) && !jsxAttr) {
         r += text.substring(s, pos);
         tokFlags |= qt.TokenFlags.Unterminated;
-        error(diags.Unterminated_string_literal);
+        error(qd.Unterminated_string_literal);
         break;
       }
       pos++;
@@ -1000,7 +995,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
       if (pos >= end) {
         v += text.substring(s, pos);
         tokFlags |= qt.TokenFlags.Unterminated;
-        error(diags.Unterminated_template_literal);
+        error(qd.Unterminated_template_literal);
         r = backtick ? Syntax.NoSubstitutionLiteral : Syntax.TemplateTail;
         break;
       }
@@ -1086,8 +1081,8 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
         }
         break;
       }
-      if (c === Codes.greaterThan) error(diags.Unexpected_token_Did_you_mean_or_gt, pos, 1);
-      if (c === Codes.closeBrace) error(diags.Unexpected_token_Did_you_mean_or_rbrace, pos, 1);
+      if (c === Codes.greaterThan) error(qd.Unexpected_token_Did_you_mean_or_gt, pos, 1);
+      if (c === Codes.closeBrace) error(qd.Unexpected_token_Did_you_mean_or_rbrace, pos, 1);
       if (last > 0) last++;
       if (syntax.is.lineBreak(c) && first === 0) first = -1;
       else if (!syntax.is.whiteSpaceLike(c)) first = pos;
@@ -1196,12 +1191,10 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
     return (token = Syntax.Unknown);
   }
 }
-
 let raw: Scanner | undefined;
 export function qs_getRaw() {
   return raw || (raw = qs_create(true));
 }
-
 const sentinel: object = {};
 export function qs_process(k: qt.TemplateLiteralToken['kind'], s: string) {
   const r = qs_getRaw();

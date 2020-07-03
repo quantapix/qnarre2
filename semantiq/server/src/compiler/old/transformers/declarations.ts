@@ -589,7 +589,7 @@ namespace core {
     function updateAccessorParamsList(input: AccessorDeclaration, isPrivate: boolean) {
       let newParams: ParameterDeclaration[] | undefined;
       if (!isPrivate) {
-        const thisParameter = getThNode.is.kind(ParameterDeclaration, input);
+        const thisParameter = getThisNode(ParameterDeclaration, input);
         if (thisParameter) {
           newParams = [ensureParameter(thisParameter)];
         }

@@ -3,7 +3,6 @@ import * as qt from './types';
 import * as syntax from './syntax';
 import { NodeFlags, TransformFlags } from './types';
 import { Modifier, ModifierFlags, Syntax } from './syntax';
-
 export class Nodes<T extends qt.Node> extends Array<T> implements qt.Nodes<T> {
   pos = -1;
   end = -1;
@@ -31,7 +30,6 @@ export class Nodes<T extends qt.Node> extends Array<T> implements qt.Nodes<T> {
   }
 }
 export type MutableNodes<T extends qt.Node> = Nodes<T> & T[];
-
 export abstract class Node extends qb.TextRange implements qt.Node {
   //static readonly kind = Syntax.Unknown;
   id?: number;
@@ -52,7 +50,6 @@ export abstract class Node extends qb.TextRange implements qt.Node {
   inferenceContext?: qt.InferenceContext;
   jsDoc?: qt.JSDoc[];
   private _children?: Node[];
-
   constructor(synth?: boolean, k?: Syntax, pos?: number, end?: number, public parent?: qt.Node) {
     super(pos, end);
     if (k) this.kind = k;
@@ -65,7 +62,6 @@ export abstract class Node extends qb.TextRange implements qt.Node {
   isPrivateIdentifierPropertyDeclaration(): this is PrivateIdentifierPropertyDeclaration {
     return this.is(PropertyDeclaration) && this.name.is(PrivateIdentifier);
   }
-
   getSourceFile(): SourceFile {
     return Node.get.sourceFileOf(this);
   }
@@ -222,7 +218,6 @@ export abstract class Node extends qb.TextRange implements qt.Node {
     aggregate(this);
     return this;
   }
-
   static create<T extends Syntax>(k: T, pos: number, end: number, parent?: Node): qt.NodeType<T> {
     const n =
       Node.is.node(k) || k === Syntax.Unknown
@@ -1650,7 +1645,6 @@ export abstract class Node extends qb.TextRange implements qt.Node {
       }
       return;
     }
-
     guessIndentation(lines: string[]) {
       let indentation = MAX_SMI_X86;
       for (const line of lines) {
@@ -2305,13 +2299,10 @@ export namespace Node {
   }
 }
 //Node.prototype.kind = Node.kind;
-
 let nextAutoGenerateId = 0;
-
 export function idText(n: Identifier | PrivateIdentifier): string {
   return syntax.get.unescUnderscores(n.escapedText);
 }
-
 export class Type {
   flags: TypeFlags;
   id!: number;
@@ -2327,7 +2318,6 @@ export class Type {
   widened?: Type;
   objectFlags?: ObjectFlags;
   constructor(public checker: TypeChecker, public flags: TypeFlags) {}
-
   getFlags(): TypeFlags {
     return this.flags;
   }
@@ -2412,9 +2402,7 @@ export class Signature {
   typeParameters?: readonly TypeParameter[];
   parameters!: readonly Symbol[];
   thisParameter?: Symbol;
-
   resolvedReturnType?: Type;
-
   resolvedTypePredicate?: TypePredicate;
   minArgumentCount!: number;
   target?: Signature;
@@ -2480,33 +2468,23 @@ export class SourceFile extends Declaration {
   languageVersion: ScriptTarget;
   scriptKind: ScriptKind;
   externalModuleIndicator?: Node;
-
   commonJsModuleIndicator?: Node;
-
   jsGlobalAugmentations?: SymbolTable;
   identifiers: QMap<string>;
   nodeCount: number;
   identifierCount: number;
   symbolCount: number;
-
   parseDiagnostics: DiagnosticWithLocation[];
-
   bindDiagnostics: DiagnosticWithLocation[];
   bindSuggestionDiagnostics?: DiagnosticWithLocation[];
-
   jsDocDiagnostics?: DiagnosticWithLocation[];
-
   additionalSyntacticDiagnostics?: readonly DiagnosticWithLocation[];
-
   lineMap: readonly number[];
   classifiableNames?: ReadonlyUnderscoreEscapedMap<true>;
-
   commentDirectives?: CommentDirective[];
-
   resolvedModules?: QMap<ResolvedModuleFull | undefined>;
   resolvedTypeReferenceDirectiveNames: QMap<ResolvedTypeReferenceDirective | undefined>;
   imports: readonly StringLiteralLike[];
-
   moduleAugmentations: readonly (StringLiteral | Identifier)[];
   patternAmbientModules?: PatternAmbientModule[];
   ambientModuleNames: readonly string[];
@@ -2516,7 +2494,6 @@ export class SourceFile extends Declaration {
   localJsxNamespace?: __String;
   localJsxFactory?: EntityName;
   exportedModulesFromDeclarationEmit?: ExportedModulesFromDeclarationEmit;
-
   kind: Syntax.SourceFile = Syntax.SourceFile;
   _declarationBrand: any;
   fileName!: string;
@@ -2528,18 +2505,15 @@ export class SourceFile extends Declaration {
   lineMap!: readonly number[];
   statements!: Nodes<Statement>;
   endOfFileToken!: Token<Syntax.EndOfFileToken>;
-
   amdDependencies!: { name: string; path: string }[];
   moduleName!: string;
   referencedFiles!: FileReference[];
   typeReferenceDirectives!: FileReference[];
   libReferenceDirectives!: FileReference[];
-
   syntacticDiagnostics!: DiagnosticWithLocation[];
   parseDiagnostics!: DiagnosticWithLocation[];
   bindDiagnostics!: DiagnosticWithLocation[];
   bindSuggestionDiagnostics?: DiagnosticWithLocation[];
-
   isDeclarationFile!: boolean;
   isDefaultLib!: boolean;
   hasNoDefaultLib!: boolean;
@@ -2566,7 +2540,6 @@ export class SourceFile extends Declaration {
   pragmas!: PragmaMap;
   localJsxFactory: EntityName | undefined;
   localJsxNamespace: __String | undefined;
-
   constructor(kind: Syntax, pos: number, end: number) {
     super(kind, pos, end);
   }
@@ -2682,7 +2655,6 @@ export class SourceFile extends Declaration {
   getLineEndOfPosition(pos: number): number {
     const { line } = this.getLineAndCharacterOfPosition(pos);
     const lineStarts = this.getLineStarts();
-
     let lastCharPos: number | undefined;
     if (line + 1 >= lineStarts.length) {
       lastCharPos = this.getEnd();
@@ -2690,19 +2662,15 @@ export class SourceFile extends Declaration {
     if (!lastCharPos) {
       lastCharPos = lineStarts[line + 1] - 1;
     }
-
     const fullText = this.getFullText();
-
     return fullText[lastCharPos] === '\n' && fullText[lastCharPos - 1] === '\r' ? lastCharPos - 1 : lastCharPos;
   }
-
   getNamedDeclarations(): QMap<Declaration[]> {
     if (!this.namedDeclarations) {
       this.namedDeclarations = this.computeNamedDeclarations();
     }
     return this.namedDeclarations;
   }
-
   qp_updateSourceNode(
     node: SourceFile,
     statements: readonly Statement[],
@@ -2758,26 +2726,21 @@ export class SourceFile extends Declaration {
       if (node.localJsxNamespace !== undefined) updated.localJsxNamespace = node.localJsxNamespace;
       return updateNode(updated, node);
     }
-
     return node;
   }
-
   private computeNamedDeclarations(): QMap<Declaration[]> {
     const r = new MultiMap<Declaration>();
     this.Node.forEach.child(visit);
     return r;
-
     function addDeclaration(declaration: Declaration) {
       const name = getDeclarationName(declaration);
       if (name) r.add(name, declaration);
     }
-
     function getDeclarations(name: string) {
       let declarations = r.get(name);
       if (!declarations) r.set(name, (declarations = []));
       return declarations;
     }
-
     function getDeclarationName(declaration: Declaration) {
       const name = getNonAssignedNameOfDeclaration(declaration);
       return (
@@ -2785,7 +2748,6 @@ export class SourceFile extends Declaration {
         (isComputedPropertyName(name) && Node.is.kind(PropertyAccessExpression, name.expression) ? name.expression.name.text : Node.is.propertyName(name) ? getNameFromPropertyName(name) : undefined)
       );
     }
-
     function visit(node: Node): void {
       switch (node.kind) {
         case Syntax.FunctionDeclaration:
@@ -2942,7 +2904,6 @@ export class SourceFile2 implements qt.SourceFileLike {
     return this.onSameLine(r1.end, this.startPos(r2));
   }
 }
-
 export function getExcludedSymbolFlags(flags: SymbolFlags): SymbolFlags {
   let result: SymbolFlags = 0;
   if (flags & SymbolFlags.BlockScopedVariable) result |= SymbolFlags.BlockScopedVariableExcludes;
@@ -2963,7 +2924,6 @@ export function getExcludedSymbolFlags(flags: SymbolFlags): SymbolFlags {
   if (flags & SymbolFlags.Alias) result |= SymbolFlags.AliasExcludes;
   return result;
 }
-
 export abstract class Symbol implements qt.Symbol {
   id?: number;
   mergeId?: number;
@@ -2983,9 +2943,7 @@ export abstract class Symbol implements qt.Symbol {
   getComment?: SymbolDisplayPart[];
   setComment?: SymbolDisplayPart[];
   tags?: qt.JSDocTagInfo[];
-
   constructor(public flags: SymbolFlags, public escName: __String) {}
-
   get name() {
     const d = this.valueDeclaration;
     if (d?.isPrivateIdentifierPropertyDeclaration()) return idText(d.name);
@@ -3167,7 +3125,6 @@ export class SymbolTable<S extends Symbol = Symbol> extends Map<__String, S> imp
     }
   }
 }
-
 export function cloneMap(m: SymbolTable): SymbolTable;
 export function cloneMap<T>(m: QReadonlyMap<T>): QMap<T>;
 export function cloneMap<T>(m: ReadonlyUnderscoreEscapedMap<T>): UnderscoreEscapedMap<T>;
@@ -3176,7 +3133,6 @@ export function cloneMap<T>(m: QReadonlyMap<T> | ReadonlyUnderscoreEscapedMap<T>
   copyEntries(m as QMap<T>, c);
   return c;
 }
-
 export function createGetSymbolWalker(
   getRestTypeOfSignature: (sig: Signature) => Type,
   getTypePredicateOfSignature: (sig: Signature) => TypePredicate | undefined,
@@ -3260,7 +3216,6 @@ export function createGetSymbolWalker(
     function visitSignature(signature: Signature) {
       const typePredicate = getTypePredicateOfSignature(signature);
       if (typePredicate) visitType(typePredicate.type);
-
       forEach(signature.typeParameters, visitType);
       for (const parameter of signature.parameters) {
         visitSymbol(parameter);

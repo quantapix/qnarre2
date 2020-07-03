@@ -1,660 +1,622 @@
-namespace core {
-  export function findConfigFile(searchPath: string, fileExists: (fileName: string) => boolean, configName = 'tsconfig.json'): string | undefined {
-    return forEachAncestorDirectory(searchPath, (ancestor) => {
-      const fileName = combinePaths(ancestor, configName);
-      return fileExists(fileName) ? fileName : undefined;
-    });
-  }
+export function findConfigFile(searchPath: string, fileExists: (fileName: string) => boolean, configName = 'tsconfig.json'): string | undefined {
+  return forEachAncestorDirectory(searchPath, (ancestor) => {
+    const fileName = combinePaths(ancestor, configName);
+    return fileExists(fileName) ? fileName : undefined;
+  });
+}
 
-  export function resolveTripleslashReference(moduleName: string, containingFile: string): string {
-    const basePath = getDirectoryPath(containingFile);
-    const referencedFileName = isRootedDiskPath(moduleName) ? moduleName : combinePaths(basePath, moduleName);
-    return normalizePath(referencedFileName);
-  }
+export function resolveTripleslashReference(moduleName: string, containingFile: string): string {
+  const basePath = getDirectoryPath(containingFile);
+  const referencedFileName = isRootedDiskPath(moduleName) ? moduleName : combinePaths(basePath, moduleName);
+  return normalizePath(referencedFileName);
+}
 
-  export function computeCommonSourceDirectoryOfFilenames(fileNames: string[], currentDirectory: string, getCanonicalFileName: GetCanonicalFileName): string {
-    let commonPathComponents: string[] | undefined;
-    const failed = forEach(fileNames, (sourceFile) => {
-      
-      const sourcePathComponents = getNormalizedPathComponents(sourceFile, currentDirectory);
-      sourcePathComponents.pop(); 
-
-      if (!commonPathComponents) {
-        
-        commonPathComponents = sourcePathComponents;
-        return;
-      }
-
-      const n = Math.min(commonPathComponents.length, sourcePathComponents.length);
-      for (let i = 0; i < n; i++) {
-        if (getCanonicalFileName(commonPathComponents[i]) !== getCanonicalFileName(sourcePathComponents[i])) {
-          if (i === 0) {
-            
-            return true;
-          }
-
-          
-          commonPathComponents.length = i;
-          break;
-        }
-      }
-
-      
-      if (sourcePathComponents.length < commonPathComponents.length) {
-        commonPathComponents.length = sourcePathComponents.length;
-      }
-    });
-
-    
-    if (failed) {
-      return '';
-    }
+export function computeCommonSourceDirectoryOfFilenames(fileNames: string[], currentDirectory: string, getCanonicalFileName: GetCanonicalFileName): string {
+  let commonPathComponents: string[] | undefined;
+  const failed = forEach(fileNames, (sourceFile) => {
+    const sourcePathComponents = getNormalizedPathComponents(sourceFile, currentDirectory);
+    sourcePathComponents.pop();
 
     if (!commonPathComponents) {
-      
-      return currentDirectory;
+      commonPathComponents = sourcePathComponents;
+      return;
     }
 
-    return getPathFromPathComponents(commonPathComponents);
-  }
-
-  interface OutputFingerprint {
-    hash: string;
-    byteOrderMark: boolean;
-    mtime: Date;
-  }
-
-  export function createCompilerHost(options: CompilerOptions, setParentNodes?: boolean): CompilerHost {
-    return createCompilerHostWorker(options, setParentNodes);
-  }
-
-  
-  export function createCompilerHostWorker(options: CompilerOptions, setParentNodes?: boolean, system = sys): CompilerHost {
-    const existingDirectories = createMap<boolean>();
-    const getCanonicalFileName = createGetCanonicalFileName(system.useCaseSensitiveFileNames);
-    function getSourceFile(fileName: string, languageVersion: ScriptTarget, onError?: (message: string) => void): SourceFile | undefined {
-      let text: string | undefined;
-      try {
-        performance.mark('beforeIORead');
-        text = compilerHost.readFile(fileName);
-        performance.mark('afterIORead');
-        performance.measure('I/O Read', 'beforeIORead', 'afterIORead');
-      } catch (e) {
-        if (onError) {
-          onError(e.message);
-        }
-        text = '';
-      }
-      return text !== undefined ? qp_createSource(fileName, text, languageVersion, setParentNodes) : undefined;
-    }
-
-    function directoryExists(directoryPath: string): boolean {
-      if (existingDirectories.has(directoryPath)) {
-        return true;
-      }
-      if ((compilerHost.directoryExists || system.directoryExists)(directoryPath)) {
-        existingDirectories.set(directoryPath, true);
-        return true;
-      }
-      return false;
-    }
-
-    function writeFile(fileName: string, data: string, writeByteOrderMark: boolean, onError?: (message: string) => void) {
-      try {
-        performance.mark('beforeIOWrite');
-
-        
-        
-        
-        writeFileEnsuringDirectories(
-          fileName,
-          data,
-          writeByteOrderMark,
-          (path, data, writeByteOrderMark) => writeFileWorker(path, data, writeByteOrderMark),
-          (path) => (compilerHost.createDirectory || system.createDirectory)(path),
-          (path) => directoryExists(path)
-        );
-
-        performance.mark('afterIOWrite');
-        performance.measure('I/O Write', 'beforeIOWrite', 'afterIOWrite');
-      } catch (e) {
-        if (onError) {
-          onError(e.message);
-        }
-      }
-    }
-
-    let outputFingerprints: Map<OutputFingerprint>;
-    function writeFileWorker(fileName: string, data: string, writeByteOrderMark: boolean) {
-      if (!isWatchSet(options) || !system.createHash || !system.getModifiedTime) {
-        system.writeFile(fileName, data, writeByteOrderMark);
-        return;
-      }
-
-      if (!outputFingerprints) {
-        outputFingerprints = createMap<OutputFingerprint>();
-      }
-
-      const hash = system.createHash(data);
-      const mtimeBefore = system.getModifiedTime(fileName);
-
-      if (mtimeBefore) {
-        const fingerprint = outputFingerprints.get(fileName);
-        
-        if (fingerprint && fingerprint.byteOrderMark === writeByteOrderMark && fingerprint.hash === hash && fingerprint.mtime.getTime() === mtimeBefore.getTime()) {
-          return;
-        }
-      }
-
-      system.writeFile(fileName, data, writeByteOrderMark);
-
-      const mtimeAfter = system.getModifiedTime(fileName) || missingFileModifiedTime;
-
-      outputFingerprints.set(fileName, {
-        hash,
-        byteOrderMark: writeByteOrderMark,
-        mtime: mtimeAfter,
-      });
-    }
-
-    function getDefaultLibLocation(): string {
-      return getDirectoryPath(normalizePath(system.getExecutingFilePath()));
-    }
-
-    const newLine = getNewLineCharacter(options, () => system.newLine);
-    const realpath = system.realpath && ((path: string) => system.realpath!(path));
-    const compilerHost: CompilerHost = {
-      getSourceFile,
-      getDefaultLibLocation,
-      getDefaultLibFileName: (options) => combinePaths(getDefaultLibLocation(), getDefaultLibFileName(options)),
-      writeFile,
-      getCurrentDirectory: memoize(() => system.getCurrentDirectory()),
-      useCaseSensitiveFileNames: () => system.useCaseSensitiveFileNames,
-      getCanonicalFileName,
-      getNewLine: () => newLine,
-      fileExists: (fileName) => system.fileExists(fileName),
-      readFile: (fileName) => system.readFile(fileName),
-      trace: (s: string) => system.write(s + newLine),
-      directoryExists: (directoryName) => system.directoryExists(directoryName),
-      getEnvironmentVariable: (name) => (system.getEnvironmentVariable ? system.getEnvironmentVariable(name) : ''),
-      getDirectories: (path: string) => system.getDirectories(path),
-      realpath,
-      readDirectory: (path, extensions, include, exclude, depth) => system.readDirectory(path, extensions, include, exclude, depth),
-      createDirectory: (d) => system.createDirectory(d),
-      createHash: maybeBind(system, system.createHash),
-    };
-    return compilerHost;
-  }
-
-  interface CompilerHostLikeForCache {
-    fileExists(fileName: string): boolean;
-    readFile(fileName: string, encoding?: string): string | undefined;
-    directoryExists?(directory: string): boolean;
-    createDirectory?(directory: string): void;
-    writeFile?: WriteFileCallback;
-  }
-
-  export function changeCompilerHostLikeToUseCache(host: CompilerHostLikeForCache, toPath: (fileName: string) => Path, getSourceFile?: CompilerHost['getSourceFile']) {
-    const originalReadFile = host.readFile;
-    const originalFileExists = host.fileExists;
-    const originalDirectoryExists = host.directoryExists;
-    const originalCreateDirectory = host.createDirectory;
-    const originalWriteFile = host.writeFile;
-    const readFileCache = createMap<string | false>();
-    const fileExistsCache = createMap<boolean>();
-    const directoryExistsCache = createMap<boolean>();
-    const sourceFileCache = createMap<SourceFile>();
-
-    const readFileWithCache = (fileName: string): string | undefined => {
-      const key = toPath(fileName);
-      const value = readFileCache.get(key);
-      if (value !== undefined) return value !== false ? value : undefined;
-      return setReadFileCache(key, fileName);
-    };
-    const setReadFileCache = (key: Path, fileName: string) => {
-      const newValue = originalReadFile.call(host, fileName);
-      readFileCache.set(key, newValue !== undefined ? newValue : false);
-      return newValue;
-    };
-    host.readFile = (fileName) => {
-      const key = toPath(fileName);
-      const value = readFileCache.get(key);
-      if (value !== undefined) return value !== false ? value : undefined; 
-      
-      if (!fileExtensionIs(fileName, Extension.Json) && !isBuildInfoFile(fileName)) {
-        return originalReadFile.call(host, fileName);
-      }
-
-      return setReadFileCache(key, fileName);
-    };
-
-    const getSourceFileWithCache: CompilerHost['getSourceFile'] | undefined = getSourceFile
-      ? (fileName, languageVersion, onError, shouldCreateNewSourceFile) => {
-          const key = toPath(fileName);
-          const value = sourceFileCache.get(key);
-          if (value) return value;
-
-          const sourceFile = getSourceFile(fileName, languageVersion, onError, shouldCreateNewSourceFile);
-          if (sourceFile && (isDeclarationFileName(fileName) || fileExtensionIs(fileName, Extension.Json))) {
-            sourceFileCache.set(key, sourceFile);
-          }
-          return sourceFile;
-        }
-      : undefined;
-
-    
-    host.fileExists = (fileName) => {
-      const key = toPath(fileName);
-      const value = fileExistsCache.get(key);
-      if (value !== undefined) return value;
-      const newValue = originalFileExists.call(host, fileName);
-      fileExistsCache.set(key, !!newValue);
-      return newValue;
-    };
-    if (originalWriteFile) {
-      host.writeFile = (fileName, data, writeByteOrderMark, onError, sourceFiles) => {
-        const key = toPath(fileName);
-        fileExistsCache.delete(key);
-
-        const value = readFileCache.get(key);
-        if (value !== undefined && value !== data) {
-          readFileCache.delete(key);
-          sourceFileCache.delete(key);
-        } else if (getSourceFileWithCache) {
-          const sourceFile = sourceFileCache.get(key);
-          if (sourceFile && sourceFile.text !== data) {
-            sourceFileCache.delete(key);
-          }
-        }
-        originalWriteFile.call(host, fileName, data, writeByteOrderMark, onError, sourceFiles);
-      };
-    }
-
-    
-    if (originalDirectoryExists && originalCreateDirectory) {
-      host.directoryExists = (directory) => {
-        const key = toPath(directory);
-        const value = directoryExistsCache.get(key);
-        if (value !== undefined) return value;
-        const newValue = originalDirectoryExists.call(host, directory);
-        directoryExistsCache.set(key, !!newValue);
-        return newValue;
-      };
-      host.createDirectory = (directory) => {
-        const key = toPath(directory);
-        directoryExistsCache.delete(key);
-        originalCreateDirectory.call(host, directory);
-      };
-    }
-
-    return {
-      originalReadFile,
-      originalFileExists,
-      originalDirectoryExists,
-      originalCreateDirectory,
-      originalWriteFile,
-      getSourceFileWithCache,
-      readFileWithCache,
-    };
-  }
-
-  export function getPreEmitDiagnostics(program: Program, sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
-  export function getPreEmitDiagnostics(program: BuilderProgram, sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[]; 
-  export function getPreEmitDiagnostics(program: Program | BuilderProgram, sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[] {
-    let diagnostics: Diagnostic[] | undefined;
-    diagnostics = addRange(diagnostics, program.getConfigFileParsingDiagnostics());
-    diagnostics = addRange(diagnostics, program.getOptionsDiagnostics(cancellationToken));
-    diagnostics = addRange(diagnostics, program.getSyntacticDiagnostics(sourceFile, cancellationToken));
-    diagnostics = addRange(diagnostics, program.getGlobalDiagnostics(cancellationToken));
-    diagnostics = addRange(diagnostics, program.getSemanticDiagnostics(sourceFile, cancellationToken));
-
-    if (getEmitDeclarations(program.getCompilerOptions())) {
-      diagnostics = addRange(diagnostics, program.getDeclarationDiagnostics(sourceFile, cancellationToken));
-    }
-
-    return sortAndDeduplicateDiagnostics(diagnostics || emptyArray);
-  }
-
-  export interface FormatDiagnosticsHost {
-    getCurrentDirectory(): string;
-    getCanonicalFileName(fileName: string): string;
-    getNewLine(): string;
-  }
-
-  export function formatDiagnostics(diagnostics: readonly Diagnostic[], host: FormatDiagnosticsHost): string {
-    let output = '';
-
-    for (const diagnostic of diagnostics) {
-      output += formatDiagnostic(diagnostic, host);
-    }
-    return output;
-  }
-
-  export function formatDiagnostic(diagnostic: Diagnostic, host: FormatDiagnosticsHost): string {
-    const errorMessage = `${diagnosticCategoryName(diagnostic)} TS${diagnostic.code}: ${flattenDiagnosticMessageText(diagnostic.messageText, host.getNewLine())}${host.getNewLine()}`;
-
-    if (diagnostic.file) {
-      const { line, character } = syntax.get.lineAndCharOf(diagnostic.file, diagnostic.start!); 
-      const fileName = diagnostic.file.fileName;
-      const relativeFileName = convertToRelativePath(fileName, host.getCurrentDirectory(), (fileName) => host.getCanonicalFileName(fileName));
-      return `${relativeFileName}(${line + 1},${character + 1}): ` + errorMessage;
-    }
-
-    return errorMessage;
-  }
-
-  export enum ForegroundColorEscapeSequences {
-    Grey = '\u001b[90m',
-    Red = '\u001b[91m',
-    Yellow = '\u001b[93m',
-    Blue = '\u001b[94m',
-    Cyan = '\u001b[96m',
-  }
-  const gutterStyleSequence = '\u001b[7m';
-  const gutterSeparator = ' ';
-  const resetEscapeSequence = '\u001b[0m';
-  const ellipsis = '...';
-  const halfIndent = '  ';
-  const indent = '    ';
-  function getCategoryFormat(category: DiagnosticCategory): ForegroundColorEscapeSequences {
-    switch (category) {
-      case DiagnosticCategory.Error:
-        return ForegroundColorEscapeSequences.Red;
-      case DiagnosticCategory.Warning:
-        return ForegroundColorEscapeSequences.Yellow;
-      case DiagnosticCategory.Suggestion:
-        return fail('Should never get an Info diagnostic on the command line.');
-      case DiagnosticCategory.Message:
-        return ForegroundColorEscapeSequences.Blue;
-    }
-  }
-
-  export function formatColorAndReset(text: string, formatStyle: string) {
-    return formatStyle + text + resetEscapeSequence;
-  }
-
-  function formatCodeSpan(file: SourceFile, start: number, length: number, indent: string, squiggleColor: ForegroundColorEscapeSequences, host: FormatDiagnosticsHost) {
-    const { line: firstLine, character: firstLineChar } = syntax.get.lineAndCharOf(file, start);
-    const { line: lastLine, character: lastLineChar } = syntax.get.lineAndCharOf(file, start + length);
-    const lastLineInFile = syntax.get.lineAndCharOf(file, file.text.length).line;
-
-    const hasMoreThanFiveLines = lastLine - firstLine >= 4;
-    let gutterWidth = (lastLine + 1 + '').length;
-    if (hasMoreThanFiveLines) {
-      gutterWidth = Math.max(ellipsis.length, gutterWidth);
-    }
-
-    let context = '';
-    for (let i = firstLine; i <= lastLine; i++) {
-      context += host.getNewLine();
-      
-      
-      if (hasMoreThanFiveLines && firstLine + 1 < i && i < lastLine - 1) {
-        context += indent + formatColorAndReset(padLeft(ellipsis, gutterWidth), gutterStyleSequence) + gutterSeparator + host.getNewLine();
-        i = lastLine - 1;
-      }
-
-      const lineStart = syntax.get.posOf(file, i, 0);
-      const lineEnd = i < lastLineInFile ? syntax.get.posOf(file, i + 1, 0) : file.text.length;
-      let lineContent = file.text.slice(lineStart, lineEnd);
-      lineContent = lineContent.replace(/\s+$/g, ''); 
-      lineContent = lineContent.replace('\t', ' '); 
-
-      
-      context += indent + formatColorAndReset(padLeft(i + 1 + '', gutterWidth), gutterStyleSequence) + gutterSeparator;
-      context += lineContent + host.getNewLine();
-
-      
-      context += indent + formatColorAndReset(padLeft('', gutterWidth), gutterStyleSequence) + gutterSeparator;
-      context += squiggleColor;
-      if (i === firstLine) {
-        
-        
-        const lastCharForLine = i === lastLine ? lastLineChar : undefined;
-
-        context += lineContent.slice(0, firstLineChar).replace(/\S/g, ' ');
-        context += lineContent.slice(firstLineChar, lastCharForLine).replace(/./g, '~');
-      } else if (i === lastLine) {
-        context += lineContent.slice(0, lastLineChar).replace(/./g, '~');
-      } else {
-        
-        context += lineContent.replace(/./g, '~');
-      }
-      context += resetEscapeSequence;
-    }
-    return context;
-  }
-
-  export function formatLocation(file: SourceFile, start: number, host: FormatDiagnosticsHost, color = formatColorAndReset) {
-    const { line: firstLine, character: firstLineChar } = syntax.get.lineAndCharOf(file, start); 
-    const relativeFileName = host ? convertToRelativePath(file.fileName, host.getCurrentDirectory(), (fileName) => host.getCanonicalFileName(fileName)) : file.fileName;
-
-    let output = '';
-    output += color(relativeFileName, ForegroundColorEscapeSequences.Cyan);
-    output += ':';
-    output += color(`${firstLine + 1}`, ForegroundColorEscapeSequences.Yellow);
-    output += ':';
-    output += color(`${firstLineChar + 1}`, ForegroundColorEscapeSequences.Yellow);
-    return output;
-  }
-
-  export function formatDiagnosticsWithColorAndContext(diagnostics: readonly Diagnostic[], host: FormatDiagnosticsHost): string {
-    let output = '';
-    for (const diagnostic of diagnostics) {
-      if (diagnostic.file) {
-        const { file, start } = diagnostic;
-        output += formatLocation(file, start!, host); 
-        output += ' - ';
-      }
-
-      output += formatColorAndReset(diagnosticCategoryName(diagnostic), getCategoryFormat(diagnostic.category));
-      output += formatColorAndReset(` TS${diagnostic.code}: `, ForegroundColorEscapeSequences.Grey);
-      output += flattenDiagnosticMessageText(diagnostic.messageText, host.getNewLine());
-
-      if (diagnostic.file) {
-        output += host.getNewLine();
-        output += formatCodeSpan(diagnostic.file, diagnostic.start!, diagnostic.length!, '', getCategoryFormat(diagnostic.category), host); 
-        if (diagnostic.relatedInformation) {
-          output += host.getNewLine();
-          for (const { file, start, length, messageText } of diagnostic.relatedInformation) {
-            if (file) {
-              output += host.getNewLine();
-              output += halfIndent + formatLocation(file, start!, host); 
-              output += formatCodeSpan(file, start!, length!, indent, ForegroundColorEscapeSequences.Cyan, host); 
-            }
-            output += host.getNewLine();
-            output += indent + flattenDiagnosticMessageText(messageText, host.getNewLine());
-          }
-        }
-      }
-
-      output += host.getNewLine();
-    }
-    return output;
-  }
-
-  export function flattenDiagnosticMessageText(diag: string | DiagnosticMessageChain | undefined, newLine: string, indent = 0): string {
-    if (isString(diag)) {
-      return diag;
-    } else if (diag === undefined) {
-      return '';
-    }
-    let result = '';
-    if (indent) {
-      result += newLine;
-
-      for (let i = 0; i < indent; i++) {
-        result += '  ';
-      }
-    }
-    result += diag.messageText;
-    indent++;
-    if (diag.next) {
-      for (const kid of diag.next) {
-        result += flattenDiagnosticMessageText(kid, newLine, indent);
-      }
-    }
-    return result;
-  }
-
-  export function loadWithLocalCache<T>(
-    names: string[],
-    containingFile: string,
-    redirectedReference: ResolvedProjectReference | undefined,
-    loader: (name: string, containingFile: string, redirectedReference: ResolvedProjectReference | undefined) => T
-  ): T[] {
-    if (names.length === 0) {
-      return [];
-    }
-    const resolutions: T[] = [];
-    const cache = createMap<T>();
-    for (const name of names) {
-      let result: T;
-      if (cache.has(name)) {
-        result = cache.get(name)!;
-      } else {
-        cache.set(name, (result = loader(name, containingFile, redirectedReference)));
-      }
-      resolutions.push(result);
-    }
-    return resolutions;
-  }
-
-  export const inferredTypesContainingFile = '__inferred type names__.ts';
-
-  interface DiagnosticCache<T extends Diagnostic> {
-    perFile?: Map<readonly T[]>;
-    allDiagnostics?: readonly T[];
-  }
-
-  interface RefFile extends TextRange {
-    kind: RefFileKind;
-    index: number;
-    file: SourceFile;
-  }
-
-  
-  export function isProgramUptoDate(
-    program: Program | undefined,
-    rootFileNames: string[],
-    newOptions: CompilerOptions,
-    getSourceVersion: (path: Path, fileName: string) => string | undefined,
-    fileExists: (fileName: string) => boolean,
-    hasInvalidatedResolution: HasInvalidatedResolution,
-    hasChangedAutomaticTypeDirectiveNames: boolean,
-    projectReferences: readonly ProjectReference[] | undefined
-  ): boolean {
-    
-    if (!program || hasChangedAutomaticTypeDirectiveNames) {
-      return false;
-    }
-
-    
-    if (!arrayIsEqualTo(program.getRootFileNames(), rootFileNames)) {
-      return false;
-    }
-
-    let seenResolvedRefs: ResolvedProjectReference[] | undefined;
-
-    
-    if (!arrayIsEqualTo(program.getProjectReferences(), projectReferences, projectReferenceUptoDate)) {
-      return false;
-    }
-
-    
-    if (program.getSourceFiles().some(sourceFileNotUptoDate)) {
-      return false;
-    }
-
-    
-    if (program.getMissingFilePaths().some(fileExists)) {
-      return false;
-    }
-
-    const currentOptions = program.getCompilerOptions();
-    
-    if (!compareDataObjects(currentOptions, newOptions)) {
-      return false;
-    }
-
-    
-    
-    if (currentOptions.configFile && newOptions.configFile) {
-      return currentOptions.configFile.text === newOptions.configFile.text;
-    }
-
-    return true;
-
-    function sourceFileNotUptoDate(sourceFile: SourceFile) {
-      return !sourceFileVersionUptoDate(sourceFile) || hasInvalidatedResolution(sourceFile.path);
-    }
-
-    function sourceFileVersionUptoDate(sourceFile: SourceFile) {
-      return sourceFile.version === getSourceVersion(sourceFile.resolvedPath, sourceFile.fileName);
-    }
-
-    function projectReferenceUptoDate(oldRef: ProjectReference, newRef: ProjectReference, index: number) {
-      if (!projectReferenceIsEqualTo(oldRef, newRef)) {
-        return false;
-      }
-      return resolvedProjectReferenceUptoDate(program!.getResolvedProjectReferences()![index], oldRef);
-    }
-
-    function resolvedProjectReferenceUptoDate(oldResolvedRef: ResolvedProjectReference | undefined, oldRef: ProjectReference): boolean {
-      if (oldResolvedRef) {
-        if (contains(seenResolvedRefs, oldResolvedRef)) {
-          
+    const n = Math.min(commonPathComponents.length, sourcePathComponents.length);
+    for (let i = 0; i < n; i++) {
+      if (getCanonicalFileName(commonPathComponents[i]) !== getCanonicalFileName(sourcePathComponents[i])) {
+        if (i === 0) {
           return true;
         }
 
-        
-        if (!sourceFileVersionUptoDate(oldResolvedRef.sourceFile)) {
-          return false;
-        }
-
-        
-        (seenResolvedRefs || (seenResolvedRefs = [])).push(oldResolvedRef);
-
-        
-        return !forEach(oldResolvedRef.references, (childResolvedRef, index) => !resolvedProjectReferenceUptoDate(childResolvedRef, oldResolvedRef.commandLine.projectReferences![index]));
+        commonPathComponents.length = i;
+        break;
       }
+    }
 
-      
-      
-      return !fileExists(resolveProjectReferencePath(oldRef));
+    if (sourcePathComponents.length < commonPathComponents.length) {
+      commonPathComponents.length = sourcePathComponents.length;
+    }
+  });
+
+  if (failed) {
+    return '';
+  }
+
+  if (!commonPathComponents) {
+    return currentDirectory;
+  }
+
+  return getPathFromPathComponents(commonPathComponents);
+}
+
+interface OutputFingerprint {
+  hash: string;
+  byteOrderMark: boolean;
+  mtime: Date;
+}
+
+export function createCompilerHost(options: CompilerOptions, setParentNodes?: boolean): CompilerHost {
+  return createCompilerHostWorker(options, setParentNodes);
+}
+
+export function createCompilerHostWorker(options: CompilerOptions, setParentNodes?: boolean, system = sys): CompilerHost {
+  const existingDirectories = createMap<boolean>();
+  const getCanonicalFileName = createGetCanonicalFileName(system.useCaseSensitiveFileNames);
+  function getSourceFile(fileName: string, languageVersion: ScriptTarget, onError?: (message: string) => void): SourceFile | undefined {
+    let text: string | undefined;
+    try {
+      performance.mark('beforeIORead');
+      text = compilerHost.readFile(fileName);
+      performance.mark('afterIORead');
+      performance.measure('I/O Read', 'beforeIORead', 'afterIORead');
+    } catch (e) {
+      if (onError) {
+        onError(e.message);
+      }
+      text = '';
+    }
+    return text !== undefined ? qp_createSource(fileName, text, languageVersion, setParentNodes) : undefined;
+  }
+
+  function directoryExists(directoryPath: string): boolean {
+    if (existingDirectories.has(directoryPath)) {
+      return true;
+    }
+    if ((compilerHost.directoryExists || system.directoryExists)(directoryPath)) {
+      existingDirectories.set(directoryPath, true);
+      return true;
+    }
+    return false;
+  }
+
+  function writeFile(fileName: string, data: string, writeByteOrderMark: boolean, onError?: (message: string) => void) {
+    try {
+      performance.mark('beforeIOWrite');
+
+      writeFileEnsuringDirectories(
+        fileName,
+        data,
+        writeByteOrderMark,
+        (path, data, writeByteOrderMark) => writeFileWorker(path, data, writeByteOrderMark),
+        (path) => (compilerHost.createDirectory || system.createDirectory)(path),
+        (path) => directoryExists(path)
+      );
+
+      performance.mark('afterIOWrite');
+      performance.measure('I/O Write', 'beforeIOWrite', 'afterIOWrite');
+    } catch (e) {
+      if (onError) {
+        onError(e.message);
+      }
     }
   }
 
-  export function getConfigFileParsingDiagnostics(configFileParseResult: ParsedCommandLine): readonly Diagnostic[] {
-    return configFileParseResult.options.configFile ? [...configFileParseResult.options.configFile.parseDiagnostics, ...configFileParseResult.errors] : configFileParseResult.errors;
+  let outputFingerprints: Map<OutputFingerprint>;
+  function writeFileWorker(fileName: string, data: string, writeByteOrderMark: boolean) {
+    if (!isWatchSet(options) || !system.createHash || !system.getModifiedTime) {
+      system.writeFile(fileName, data, writeByteOrderMark);
+      return;
+    }
+
+    if (!outputFingerprints) {
+      outputFingerprints = createMap<OutputFingerprint>();
+    }
+
+    const hash = system.createHash(data);
+    const mtimeBefore = system.getModifiedTime(fileName);
+
+    if (mtimeBefore) {
+      const fingerprint = outputFingerprints.get(fileName);
+
+      if (fingerprint && fingerprint.byteOrderMark === writeByteOrderMark && fingerprint.hash === hash && fingerprint.mtime.getTime() === mtimeBefore.getTime()) {
+        return;
+      }
+    }
+
+    system.writeFile(fileName, data, writeByteOrderMark);
+
+    const mtimeAfter = system.getModifiedTime(fileName) || missingFileModifiedTime;
+
+    outputFingerprints.set(fileName, {
+      hash,
+      byteOrderMark: writeByteOrderMark,
+      mtime: mtimeAfter,
+    });
   }
 
-  
-  function shouldProgramCreateNewSourceFiles(program: Program | undefined, newOptions: CompilerOptions): boolean {
-    if (!program) return false;
-    
-    
-    const oldOptions = program.getCompilerOptions();
-    return !!sourceFileAffectingCompilerOptions.some((option) => !isJsonEqual(getCompilerOptionValue(oldOptions, option), getCompilerOptionValue(newOptions, option)));
+  function getDefaultLibLocation(): string {
+    return getDirectoryPath(normalizePath(system.getExecutingFilePath()));
   }
 
-  function createCreateProgramOptions(
-    rootNames: readonly string[],
-    options: CompilerOptions,
-    host?: CompilerHost,
-    oldProgram?: Program,
-    configFileParsingDiagnostics?: readonly Diagnostic[]
-  ): CreateProgramOptions {
-    return {
-      rootNames,
-      options,
-      host,
-      oldProgram,
-      configFileParsingDiagnostics,
+  const newLine = getNewLineCharacter(options, () => system.newLine);
+  const realpath = system.realpath && ((path: string) => system.realpath!(path));
+  const compilerHost: CompilerHost = {
+    getSourceFile,
+    getDefaultLibLocation,
+    getDefaultLibFileName: (options) => combinePaths(getDefaultLibLocation(), getDefaultLibFileName(options)),
+    writeFile,
+    getCurrentDirectory: memoize(() => system.getCurrentDirectory()),
+    useCaseSensitiveFileNames: () => system.useCaseSensitiveFileNames,
+    getCanonicalFileName,
+    getNewLine: () => newLine,
+    fileExists: (fileName) => system.fileExists(fileName),
+    readFile: (fileName) => system.readFile(fileName),
+    trace: (s: string) => system.write(s + newLine),
+    directoryExists: (directoryName) => system.directoryExists(directoryName),
+    getEnvironmentVariable: (name) => (system.getEnvironmentVariable ? system.getEnvironmentVariable(name) : ''),
+    getDirectories: (path: string) => system.getDirectories(path),
+    realpath,
+    readDirectory: (path, extensions, include, exclude, depth) => system.readDirectory(path, extensions, include, exclude, depth),
+    createDirectory: (d) => system.createDirectory(d),
+    createHash: maybeBind(system, system.createHash),
+  };
+  return compilerHost;
+}
+
+interface CompilerHostLikeForCache {
+  fileExists(fileName: string): boolean;
+  readFile(fileName: string, encoding?: string): string | undefined;
+  directoryExists?(directory: string): boolean;
+  createDirectory?(directory: string): void;
+  writeFile?: WriteFileCallback;
+}
+export function changeCompilerHostLikeToUseCache(host: CompilerHostLikeForCache, toPath: (fileName: string) => Path, getSourceFile?: CompilerHost['getSourceFile']) {
+  const originalReadFile = host.readFile;
+  const originalFileExists = host.fileExists;
+  const originalDirectoryExists = host.directoryExists;
+  const originalCreateDirectory = host.createDirectory;
+  const originalWriteFile = host.writeFile;
+  const readFileCache = createMap<string | false>();
+  const fileExistsCache = createMap<boolean>();
+  const directoryExistsCache = createMap<boolean>();
+  const sourceFileCache = createMap<SourceFile>();
+
+  const readFileWithCache = (fileName: string): string | undefined => {
+    const key = toPath(fileName);
+    const value = readFileCache.get(key);
+    if (value !== undefined) return value !== false ? value : undefined;
+    return setReadFileCache(key, fileName);
+  };
+  const setReadFileCache = (key: Path, fileName: string) => {
+    const newValue = originalReadFile.call(host, fileName);
+    readFileCache.set(key, newValue !== undefined ? newValue : false);
+    return newValue;
+  };
+  host.readFile = (fileName) => {
+    const key = toPath(fileName);
+    const value = readFileCache.get(key);
+    if (value !== undefined) return value !== false ? value : undefined;
+
+    if (!fileExtensionIs(fileName, Extension.Json) && !isBuildInfoFile(fileName)) {
+      return originalReadFile.call(host, fileName);
+    }
+
+    return setReadFileCache(key, fileName);
+  };
+
+  const getSourceFileWithCache: CompilerHost['getSourceFile'] | undefined = getSourceFile
+    ? (fileName, languageVersion, onError, shouldCreateNewSourceFile) => {
+        const key = toPath(fileName);
+        const value = sourceFileCache.get(key);
+        if (value) return value;
+
+        const sourceFile = getSourceFile(fileName, languageVersion, onError, shouldCreateNewSourceFile);
+        if (sourceFile && (isDeclarationFileName(fileName) || fileExtensionIs(fileName, Extension.Json))) {
+          sourceFileCache.set(key, sourceFile);
+        }
+        return sourceFile;
+      }
+    : undefined;
+
+  host.fileExists = (fileName) => {
+    const key = toPath(fileName);
+    const value = fileExistsCache.get(key);
+    if (value !== undefined) return value;
+    const newValue = originalFileExists.call(host, fileName);
+    fileExistsCache.set(key, !!newValue);
+    return newValue;
+  };
+  if (originalWriteFile) {
+    host.writeFile = (fileName, data, writeByteOrderMark, onError, sourceFiles) => {
+      const key = toPath(fileName);
+      fileExistsCache.delete(key);
+
+      const value = readFileCache.get(key);
+      if (value !== undefined && value !== data) {
+        readFileCache.delete(key);
+        sourceFileCache.delete(key);
+      } else if (getSourceFileWithCache) {
+        const sourceFile = sourceFileCache.get(key);
+        if (sourceFile && sourceFile.text !== data) {
+          sourceFileCache.delete(key);
+        }
+      }
+      originalWriteFile.call(host, fileName, data, writeByteOrderMark, onError, sourceFiles);
     };
   }
 
-  
+  if (originalDirectoryExists && originalCreateDirectory) {
+    host.directoryExists = (directory) => {
+      const key = toPath(directory);
+      const value = directoryExistsCache.get(key);
+      if (value !== undefined) return value;
+      const newValue = originalDirectoryExists.call(host, directory);
+      directoryExistsCache.set(key, !!newValue);
+      return newValue;
+    };
+    host.createDirectory = (directory) => {
+      const key = toPath(directory);
+      directoryExistsCache.delete(key);
+      originalCreateDirectory.call(host, directory);
+    };
+  }
+
+  return {
+    originalReadFile,
+    originalFileExists,
+    originalDirectoryExists,
+    originalCreateDirectory,
+    originalWriteFile,
+    getSourceFileWithCache,
+    readFileWithCache,
+  };
+}
+
+export function getPreEmitDiagnostics(program: Program, sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
+export function getPreEmitDiagnostics(program: BuilderProgram, sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
+export function getPreEmitDiagnostics(program: Program | BuilderProgram, sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[] {
+  let diagnostics: Diagnostic[] | undefined;
+  diagnostics = addRange(diagnostics, program.getConfigFileParsingDiagnostics());
+  diagnostics = addRange(diagnostics, program.getOptionsDiagnostics(cancellationToken));
+  diagnostics = addRange(diagnostics, program.getSyntacticDiagnostics(sourceFile, cancellationToken));
+  diagnostics = addRange(diagnostics, program.getGlobalDiagnostics(cancellationToken));
+  diagnostics = addRange(diagnostics, program.getSemanticDiagnostics(sourceFile, cancellationToken));
+
+  if (getEmitDeclarations(program.getCompilerOptions())) {
+    diagnostics = addRange(diagnostics, program.getDeclarationDiagnostics(sourceFile, cancellationToken));
+  }
+
+  return sortAndDeduplicateDiagnostics(diagnostics || emptyArray);
+}
+
+export interface FormatDiagnosticsHost {
+  getCurrentDirectory(): string;
+  getCanonicalFileName(fileName: string): string;
+  getNewLine(): string;
+}
+
+export function formatDiagnostics(diagnostics: readonly Diagnostic[], host: FormatDiagnosticsHost): string {
+  let output = '';
+
+  for (const diagnostic of diagnostics) {
+    output += formatDiagnostic(diagnostic, host);
+  }
+  return output;
+}
+
+export function formatDiagnostic(diagnostic: Diagnostic, host: FormatDiagnosticsHost): string {
+  const errorMessage = `${diagnosticCategoryName(diagnostic)} TS${diagnostic.code}: ${flattenDiagnosticMessageText(diagnostic.messageText, host.getNewLine())}${host.getNewLine()}`;
+
+  if (diagnostic.file) {
+    const { line, character } = syntax.get.lineAndCharOf(diagnostic.file, diagnostic.start!);
+    const fileName = diagnostic.file.fileName;
+    const relativeFileName = convertToRelativePath(fileName, host.getCurrentDirectory(), (fileName) => host.getCanonicalFileName(fileName));
+    return `${relativeFileName}(${line + 1},${character + 1}): ` + errorMessage;
+  }
+
+  return errorMessage;
+}
+
+export enum ForegroundColorEscapeSequences {
+  Grey = '\u001b[90m',
+  Red = '\u001b[91m',
+  Yellow = '\u001b[93m',
+  Blue = '\u001b[94m',
+  Cyan = '\u001b[96m',
+}
+const gutterStyleSequence = '\u001b[7m';
+const gutterSeparator = ' ';
+const resetEscapeSequence = '\u001b[0m';
+const ellipsis = '...';
+const halfIndent = '  ';
+const indent = '    ';
+function getCategoryFormat(category: DiagnosticCategory): ForegroundColorEscapeSequences {
+  switch (category) {
+    case DiagnosticCategory.Error:
+      return ForegroundColorEscapeSequences.Red;
+    case DiagnosticCategory.Warning:
+      return ForegroundColorEscapeSequences.Yellow;
+    case DiagnosticCategory.Suggestion:
+      return fail('Should never get an Info diagnostic on the command line.');
+    case DiagnosticCategory.Message:
+      return ForegroundColorEscapeSequences.Blue;
+  }
+}
+export function formatColorAndReset(text: string, formatStyle: string) {
+  return formatStyle + text + resetEscapeSequence;
+}
+
+function formatCodeSpan(file: SourceFile, start: number, length: number, indent: string, squiggleColor: ForegroundColorEscapeSequences, host: FormatDiagnosticsHost) {
+  const { line: firstLine, character: firstLineChar } = syntax.get.lineAndCharOf(file, start);
+  const { line: lastLine, character: lastLineChar } = syntax.get.lineAndCharOf(file, start + length);
+  const lastLineInFile = syntax.get.lineAndCharOf(file, file.text.length).line;
+
+  const hasMoreThanFiveLines = lastLine - firstLine >= 4;
+  let gutterWidth = (lastLine + 1 + '').length;
+  if (hasMoreThanFiveLines) {
+    gutterWidth = Math.max(ellipsis.length, gutterWidth);
+  }
+
+  let context = '';
+  for (let i = firstLine; i <= lastLine; i++) {
+    context += host.getNewLine();
+
+    if (hasMoreThanFiveLines && firstLine + 1 < i && i < lastLine - 1) {
+      context += indent + formatColorAndReset(padLeft(ellipsis, gutterWidth), gutterStyleSequence) + gutterSeparator + host.getNewLine();
+      i = lastLine - 1;
+    }
+
+    const lineStart = syntax.get.posOf(file, i, 0);
+    const lineEnd = i < lastLineInFile ? syntax.get.posOf(file, i + 1, 0) : file.text.length;
+    let lineContent = file.text.slice(lineStart, lineEnd);
+    lineContent = lineContent.replace(/\s+$/g, '');
+    lineContent = lineContent.replace('\t', ' ');
+
+    context += indent + formatColorAndReset(padLeft(i + 1 + '', gutterWidth), gutterStyleSequence) + gutterSeparator;
+    context += lineContent + host.getNewLine();
+
+    context += indent + formatColorAndReset(padLeft('', gutterWidth), gutterStyleSequence) + gutterSeparator;
+    context += squiggleColor;
+    if (i === firstLine) {
+      const lastCharForLine = i === lastLine ? lastLineChar : undefined;
+
+      context += lineContent.slice(0, firstLineChar).replace(/\S/g, ' ');
+      context += lineContent.slice(firstLineChar, lastCharForLine).replace(/./g, '~');
+    } else if (i === lastLine) {
+      context += lineContent.slice(0, lastLineChar).replace(/./g, '~');
+    } else {
+      context += lineContent.replace(/./g, '~');
+    }
+    context += resetEscapeSequence;
+  }
+  return context;
+}
+
+export function formatLocation(file: SourceFile, start: number, host: FormatDiagnosticsHost, color = formatColorAndReset) {
+  const { line: firstLine, character: firstLineChar } = syntax.get.lineAndCharOf(file, start);
+  const relativeFileName = host ? convertToRelativePath(file.fileName, host.getCurrentDirectory(), (fileName) => host.getCanonicalFileName(fileName)) : file.fileName;
+
+  let output = '';
+  output += color(relativeFileName, ForegroundColorEscapeSequences.Cyan);
+  output += ':';
+  output += color(`${firstLine + 1}`, ForegroundColorEscapeSequences.Yellow);
+  output += ':';
+  output += color(`${firstLineChar + 1}`, ForegroundColorEscapeSequences.Yellow);
+  return output;
+}
+
+export function formatDiagnosticsWithColorAndContext(diagnostics: readonly Diagnostic[], host: FormatDiagnosticsHost): string {
+  let output = '';
+  for (const diagnostic of diagnostics) {
+    if (diagnostic.file) {
+      const { file, start } = diagnostic;
+      output += formatLocation(file, start!, host);
+      output += ' - ';
+    }
+
+    output += formatColorAndReset(diagnosticCategoryName(diagnostic), getCategoryFormat(diagnostic.category));
+    output += formatColorAndReset(` TS${diagnostic.code}: `, ForegroundColorEscapeSequences.Grey);
+    output += flattenDiagnosticMessageText(diagnostic.messageText, host.getNewLine());
+
+    if (diagnostic.file) {
+      output += host.getNewLine();
+      output += formatCodeSpan(diagnostic.file, diagnostic.start!, diagnostic.length!, '', getCategoryFormat(diagnostic.category), host);
+      if (diagnostic.relatedInformation) {
+        output += host.getNewLine();
+        for (const { file, start, length, messageText } of diagnostic.relatedInformation) {
+          if (file) {
+            output += host.getNewLine();
+            output += halfIndent + formatLocation(file, start!, host);
+            output += formatCodeSpan(file, start!, length!, indent, ForegroundColorEscapeSequences.Cyan, host);
+          }
+          output += host.getNewLine();
+          output += indent + flattenDiagnosticMessageText(messageText, host.getNewLine());
+        }
+      }
+    }
+
+    output += host.getNewLine();
+  }
+  return output;
+}
+
+export function flattenDiagnosticMessageText(diag: string | DiagnosticMessageChain | undefined, newLine: string, indent = 0): string {
+  if (isString(diag)) {
+    return diag;
+  } else if (diag === undefined) {
+    return '';
+  }
+  let result = '';
+  if (indent) {
+    result += newLine;
+
+    for (let i = 0; i < indent; i++) {
+      result += '  ';
+    }
+  }
+  result += diag.messageText;
+  indent++;
+  if (diag.next) {
+    for (const kid of diag.next) {
+      result += flattenDiagnosticMessageText(kid, newLine, indent);
+    }
+  }
+  return result;
+}
+
+export function loadWithLocalCache<T>(
+  names: string[],
+  containingFile: string,
+  redirectedReference: ResolvedProjectReference | undefined,
+  loader: (name: string, containingFile: string, redirectedReference: ResolvedProjectReference | undefined) => T
+): T[] {
+  if (names.length === 0) {
+    return [];
+  }
+  const resolutions: T[] = [];
+  const cache = createMap<T>();
+  for (const name of names) {
+    let result: T;
+    if (cache.has(name)) {
+      result = cache.get(name)!;
+    } else {
+      cache.set(name, (result = loader(name, containingFile, redirectedReference)));
+    }
+    resolutions.push(result);
+  }
+  return resolutions;
+}
+
+export const inferredTypesContainingFile = '__inferred type names__.ts';
+
+interface DiagnosticCache<T extends Diagnostic> {
+  perFile?: Map<readonly T[]>;
+  allDiagnostics?: readonly T[];
+}
+
+interface RefFile extends TextRange {
+  kind: RefFileKind;
+  index: number;
+  file: SourceFile;
+}
+
+export function isProgramUptoDate(
+  program: Program | undefined,
+  rootFileNames: string[],
+  newOptions: CompilerOptions,
+  getSourceVersion: (path: Path, fileName: string) => string | undefined,
+  fileExists: (fileName: string) => boolean,
+  hasInvalidatedResolution: HasInvalidatedResolution,
+  hasChangedAutomaticTypeDirectiveNames: boolean,
+  projectReferences: readonly ProjectReference[] | undefined
+): boolean {
+  if (!program || hasChangedAutomaticTypeDirectiveNames) {
+    return false;
+  }
+
+  if (!arrayIsEqualTo(program.getRootFileNames(), rootFileNames)) {
+    return false;
+  }
+
+  let seenResolvedRefs: ResolvedProjectReference[] | undefined;
+
+  if (!arrayIsEqualTo(program.getProjectReferences(), projectReferences, projectReferenceUptoDate)) {
+    return false;
+  }
+
+  if (program.getSourceFiles().some(sourceFileNotUptoDate)) {
+    return false;
+  }
+
+  if (program.getMissingFilePaths().some(fileExists)) {
+    return false;
+  }
+
+  const currentOptions = program.getCompilerOptions();
+
+  if (!compareDataObjects(currentOptions, newOptions)) {
+    return false;
+  }
+
+  if (currentOptions.configFile && newOptions.configFile) {
+    return currentOptions.configFile.text === newOptions.configFile.text;
+  }
+
+  return true;
+
+  function sourceFileNotUptoDate(sourceFile: SourceFile) {
+    return !sourceFileVersionUptoDate(sourceFile) || hasInvalidatedResolution(sourceFile.path);
+  }
+
+  function sourceFileVersionUptoDate(sourceFile: SourceFile) {
+    return sourceFile.version === getSourceVersion(sourceFile.resolvedPath, sourceFile.fileName);
+  }
+
+  function projectReferenceUptoDate(oldRef: ProjectReference, newRef: ProjectReference, index: number) {
+    if (!projectReferenceIsEqualTo(oldRef, newRef)) {
+      return false;
+    }
+    return resolvedProjectReferenceUptoDate(program!.getResolvedProjectReferences()![index], oldRef);
+  }
+
+  function resolvedProjectReferenceUptoDate(oldResolvedRef: ResolvedProjectReference | undefined, oldRef: ProjectReference): boolean {
+    if (oldResolvedRef) {
+      if (contains(seenResolvedRefs, oldResolvedRef)) {
+        return true;
+      }
+
+      if (!sourceFileVersionUptoDate(oldResolvedRef.sourceFile)) {
+        return false;
+      }
+
+      (seenResolvedRefs || (seenResolvedRefs = [])).push(oldResolvedRef);
+
+      return !forEach(oldResolvedRef.references, (childResolvedRef, index) => !resolvedProjectReferenceUptoDate(childResolvedRef, oldResolvedRef.commandLine.projectReferences![index]));
+    }
+
+    return !fileExists(resolveProjectReferencePath(oldRef));
+  }
+}
+
+export function getConfigFileParsingDiagnostics(configFileParseResult: ParsedCommandLine): readonly Diagnostic[] {
+  return configFileParseResult.options.configFile ? [...configFileParseResult.options.configFile.parseDiagnostics, ...configFileParseResult.errors] : configFileParseResult.errors;
+}
+
+function shouldProgramCreateNewSourceFiles(program: Program | undefined, newOptions: CompilerOptions): boolean {
+  if (!program) return false;
+
+  const oldOptions = program.getCompilerOptions();
+  return !!sourceFileAffectingCompilerOptions.some((option) => !isJsonEqual(getCompilerOptionValue(oldOptions, option), getCompilerOptionValue(newOptions, option)));
+}
+
+function createCreateProgramOptions(
+  rootNames: readonly string[],
+  options: CompilerOptions,
+  host?: CompilerHost,
+  oldProgram?: Program,
+  configFileParsingDiagnostics?: readonly Diagnostic[]
+): CreateProgramOptions {
+  return {
+    rootNames,
+    options,
+    host,
+    oldProgram,
+    configFileParsingDiagnostics,
+  };
+}
+/*
+
   export function createProgram(createProgramOptions: CreateProgramOptions): Program;
   
   export function createProgram(rootNames: readonly string[], options: CompilerOptions, host?: CompilerHost, oldProgram?: Program, configFileParsingDiagnostics?: readonly Diagnostic[]): Program;
@@ -967,6 +929,7 @@ namespace core {
       return result;
     }
 
+    
     function resolveTypeReferenceDirectiveNamesWorker(typeDirectiveNames: string[], containingFile: string, redirectedReference?: ResolvedProjectReference) {
       performance.mark('beforeResolveTypeReference');
       const result = actualResolveTypeReferenceDirectiveNamesWorker(typeDirectiveNames, containingFile, redirectedReference);
@@ -1767,8 +1730,8 @@ namespace core {
       }
 
       
-      const syntax.get.lineStarts = syntax.get.lineStarts(file);
-      let line = syntax.get.lineAndCharOf(syntax.get.lineStarts, start!).line - 1; 
+      const s = syntax.get.lineStarts(file);
+      let line = syntax.get.lineAndCharOf(s, start!).line - 1; 
       while (line >= 0) {
         
         if (directives.markUsed(line)) {
@@ -1776,7 +1739,7 @@ namespace core {
         }
 
         
-        const lineText = file.text.slice(syntax.get.lineStarts[line], syntax.get.lineStarts[line + 1]).trim();
+        const lineText = file.text.slice(s[line], s[line + 1]).trim();
         if (lineText !== '' && !/^(\s*)\/\/(.*)$/.test(lineText)) {
           return -1;
         }
@@ -3348,8 +3311,8 @@ namespace core {
       }
       return symlinks || (symlinks = discoverProbableSymlinks(files, getCanonicalFileName, host.getCurrentDirectory()));
     }
+    
   }
-
   interface SymlinkedDirectory {
     real: string;
     realPath: Path;
@@ -3513,127 +3476,120 @@ namespace core {
       );
     }
   }
+  */
 
-  export function handleNoEmitOptions(program: ProgramToEmitFilesAndReportErrors, sourceFile: SourceFile | undefined, cancellationToken: CancellationToken | undefined): EmitResult | undefined {
-    const options = program.getCompilerOptions();
-    if (options.noEmit) {
-      return { diagnostics: emptyArray, sourceMaps: undefined, emittedFiles: undefined, emitSkipped: true };
-    }
-
-    
-    
-    
-    if (!options.noEmitOnError) return;
-    let diagnostics: readonly Diagnostic[] = [
-      ...program.getOptionsDiagnostics(cancellationToken),
-      ...program.getSyntacticDiagnostics(sourceFile, cancellationToken),
-      ...program.getGlobalDiagnostics(cancellationToken),
-      ...program.getSemanticDiagnostics(sourceFile, cancellationToken),
-    ];
-
-    if (diagnostics.length === 0 && getEmitDeclarations(program.getCompilerOptions())) {
-      diagnostics = program.getDeclarationDiagnostics( undefined, cancellationToken);
-    }
-
-    return diagnostics.length > 0 ? { diagnostics, sourceMaps: undefined, emittedFiles: undefined, emitSkipped: true } : undefined;
+export function handleNoEmitOptions(program: ProgramToEmitFilesAndReportErrors, sourceFile: SourceFile | undefined, cancellationToken: CancellationToken | undefined): EmitResult | undefined {
+  const options = program.getCompilerOptions();
+  if (options.noEmit) {
+    return { diagnostics: emptyArray, sourceMaps: undefined, emittedFiles: undefined, emitSkipped: true };
   }
 
-  interface CompilerHostLike {
-    useCaseSensitiveFileNames(): boolean;
-    getCurrentDirectory(): string;
-    fileExists(fileName: string): boolean;
-    readFile(fileName: string): string | undefined;
-    readDirectory?(rootDir: string, extensions: readonly string[], excludes: readonly string[] | undefined, includes: readonly string[], depth?: number): string[];
-    trace?(s: string): void;
-    onUnRecoverableConfigFileDiagnostic?: DiagnosticReporter;
+  if (!options.noEmitOnError) return;
+  let diagnostics: readonly Diagnostic[] = [
+    ...program.getOptionsDiagnostics(cancellationToken),
+    ...program.getSyntacticDiagnostics(sourceFile, cancellationToken),
+    ...program.getGlobalDiagnostics(cancellationToken),
+    ...program.getSemanticDiagnostics(sourceFile, cancellationToken),
+  ];
+
+  if (diagnostics.length === 0 && getEmitDeclarations(program.getCompilerOptions())) {
+    diagnostics = program.getDeclarationDiagnostics(undefined, cancellationToken);
   }
 
-  export function parseConfigHostFromCompilerHostLike(host: CompilerHostLike, directoryStructureHost: DirectoryStructureHost = host): ParseConfigFileHost {
-    return {
-      fileExists: (f) => directoryStructureHost.fileExists(f),
-      readDirectory(root, extensions, excludes, includes, depth) {
-        Debug.assertIsDefined(directoryStructureHost.readDirectory, "'CompilerHost.readDirectory' must be implemented to correctly process 'projectReferences'");
-        return directoryStructureHost.readDirectory(root, extensions, excludes, includes, depth);
-      },
-      readFile: (f) => directoryStructureHost.readFile(f),
-      useCaseSensitiveFileNames: host.useCaseSensitiveFileNames(),
-      getCurrentDirectory: () => host.getCurrentDirectory(),
-      onUnRecoverableConfigFileDiagnostic: host.onUnRecoverableConfigFileDiagnostic || () => undefined,
-      trace: host.trace ? (s) => host.trace!(s) : undefined,
-    };
-  }
+  return diagnostics.length > 0 ? { diagnostics, sourceMaps: undefined, emittedFiles: undefined, emitSkipped: true } : undefined;
+}
 
-  
-   export interface ResolveProjectReferencePathHost {
-    fileExists(fileName: string): boolean;
-  }
+interface CompilerHostLike {
+  useCaseSensitiveFileNames(): boolean;
+  getCurrentDirectory(): string;
+  fileExists(fileName: string): boolean;
+  readFile(fileName: string): string | undefined;
+  readDirectory?(rootDir: string, extensions: readonly string[], excludes: readonly string[] | undefined, includes: readonly string[], depth?: number): string[];
+  trace?(s: string): void;
+  onUnRecoverableConfigFileDiagnostic?: DiagnosticReporter;
+}
 
-  export function createPrependNodes(
-    projectReferences: readonly ProjectReference[] | undefined,
-    getCommandLine: (ref: ProjectReference, index: number) => ParsedCommandLine | undefined,
-    readFile: (path: string) => string | undefined
-  ) {
-    if (!projectReferences) return emptyArray;
-    let nodes: InputFiles[] | undefined;
-    for (let i = 0; i < projectReferences.length; i++) {
-      const ref = projectReferences[i];
-      const resolvedRefOpts = getCommandLine(ref, i);
-      if (ref.prepend && resolvedRefOpts && resolvedRefOpts.options) {
-        const out = resolvedRefOpts.options.outFile || resolvedRefOpts.options.out;
-        
-        if (!out) continue;
+export function parseConfigHostFromCompilerHostLike(host: CompilerHostLike, directoryStructureHost: DirectoryStructureHost = host): ParseConfigFileHost {
+  return {
+    fileExists: (f) => directoryStructureHost.fileExists(f),
+    readDirectory(root, extensions, excludes, includes, depth) {
+      Debug.assertIsDefined(directoryStructureHost.readDirectory, "'CompilerHost.readDirectory' must be implemented to correctly process 'projectReferences'");
+      return directoryStructureHost.readDirectory(root, extensions, excludes, includes, depth);
+    },
+    readFile: (f) => directoryStructureHost.readFile(f),
+    useCaseSensitiveFileNames: host.useCaseSensitiveFileNames(),
+    getCurrentDirectory: () => host.getCurrentDirectory(),
+    onUnRecoverableConfigFileDiagnostic: host.onUnRecoverableConfigFileDiagnostic || (() => undefined),
+    trace: host.trace ? (s) => host.trace!(s) : undefined,
+  };
+}
 
-        const { jsFilePath, sourceMapFilePath, declarationFilePath, declarationMapPath, buildInfoPath } = getOutputPathsForBundle(resolvedRefOpts.options,  true);
-        const node = createInputFiles(readFile, jsFilePath!, sourceMapFilePath, declarationFilePath!, declarationMapPath, buildInfoPath);
-        (nodes || (nodes = [])).push(node);
-      }
-    }
-    return nodes || emptyArray;
-  }
-  
-  export function resolveProjectReferencePath(ref: ProjectReference): ResolvedConfigFileName;
-   export function resolveProjectReferencePath(host: ResolveProjectReferencePathHost, ref: ProjectReference): ResolvedConfigFileName;
-  export function resolveProjectReferencePath(hostOrRef: ResolveProjectReferencePathHost | ProjectReference, ref?: ProjectReference): ResolvedConfigFileName {
-    const passedInRef = ref ? ref : (hostOrRef as ProjectReference);
-    return resolveConfigFileProjectName(passedInRef.path);
-  }
+export interface ResolveProjectReferencePathHost {
+  fileExists(fileName: string): boolean;
+}
 
-  
-  export function getResolutionDiagnostic(options: CompilerOptions, { extension }: ResolvedModuleFull): DiagnosticMessage | undefined {
-    switch (extension) {
-      case Extension.Ts:
-      case Extension.Dts:
-        
-        return;
-      case Extension.Tsx:
-        return needJsx();
-      case Extension.Jsx:
-        return needJsx() || needAllowJs();
-      case Extension.Js:
-        return needAllowJs();
-      case Extension.Json:
-        return needResolveJsonModule();
-    }
+export function createPrependNodes(
+  projectReferences: readonly ProjectReference[] | undefined,
+  getCommandLine: (ref: ProjectReference, index: number) => ParsedCommandLine | undefined,
+  readFile: (path: string) => string | undefined
+) {
+  if (!projectReferences) return emptyArray;
+  let nodes: InputFiles[] | undefined;
+  for (let i = 0; i < projectReferences.length; i++) {
+    const ref = projectReferences[i];
+    const resolvedRefOpts = getCommandLine(ref, i);
+    if (ref.prepend && resolvedRefOpts && resolvedRefOpts.options) {
+      const out = resolvedRefOpts.options.outFile || resolvedRefOpts.options.out;
 
-    function needJsx() {
-      return options.jsx ? undefined : Diagnostics.Module_0_was_resolved_to_1_but_jsx_is_not_set;
-    }
-    function needAllowJs() {
-      return options.allowJs || !getStrictOptionValue(options, 'noImplicitAny') ? undefined : Diagnostics.Could_not_find_a_declaration_file_for_module_0_1_implicitly_has_an_any_type;
-    }
-    function needResolveJsonModule() {
-      return options.resolveJsonModule ? undefined : Diagnostics.Module_0_was_resolved_to_1_but_resolveJsonModule_is_not_used;
+      if (!out) continue;
+
+      const { jsFilePath, sourceMapFilePath, declarationFilePath, declarationMapPath, buildInfoPath } = getOutputPathsForBundle(resolvedRefOpts.options, true);
+      const node = createInputFiles(readFile, jsFilePath!, sourceMapFilePath, declarationFilePath!, declarationMapPath, buildInfoPath);
+      (nodes || (nodes = [])).push(node);
     }
   }
+  return nodes || emptyArray;
+}
 
-  function getModuleNames({ imports, moduleAugmentations }: SourceFile): string[] {
-    const res = imports.map((i) => i.text);
-    for (const aug of moduleAugmentations) {
-      if (aug.kind === Syntax.StringLiteral) {
-        res.push(aug.text);
-      }
-      
-    }
-    return res;
+export function resolveProjectReferencePath(ref: ProjectReference): ResolvedConfigFileName;
+export function resolveProjectReferencePath(host: ResolveProjectReferencePathHost, ref: ProjectReference): ResolvedConfigFileName;
+export function resolveProjectReferencePath(hostOrRef: ResolveProjectReferencePathHost | ProjectReference, ref?: ProjectReference): ResolvedConfigFileName {
+  const passedInRef = ref ? ref : (hostOrRef as ProjectReference);
+  return resolveConfigFileProjectName(passedInRef.path);
+}
+
+export function getResolutionDiagnostic(options: CompilerOptions, { extension }: ResolvedModuleFull): DiagnosticMessage | undefined {
+  switch (extension) {
+    case Extension.Ts:
+    case Extension.Dts:
+      return;
+    case Extension.Tsx:
+      return needJsx();
+    case Extension.Jsx:
+      return needJsx() || needAllowJs();
+    case Extension.Js:
+      return needAllowJs();
+    case Extension.Json:
+      return needResolveJsonModule();
   }
+
+  function needJsx() {
+    return options.jsx ? undefined : Diagnostics.Module_0_was_resolved_to_1_but_jsx_is_not_set;
+  }
+  function needAllowJs() {
+    return options.allowJs || !getStrictOptionValue(options, 'noImplicitAny') ? undefined : Diagnostics.Could_not_find_a_declaration_file_for_module_0_1_implicitly_has_an_any_type;
+  }
+  function needResolveJsonModule() {
+    return options.resolveJsonModule ? undefined : Diagnostics.Module_0_was_resolved_to_1_but_resolveJsonModule_is_not_used;
+  }
+}
+
+function getModuleNames({ imports, moduleAugmentations }: SourceFile): string[] {
+  const res = imports.map((i) => i.text);
+  for (const aug of moduleAugmentations) {
+    if (aug.kind === Syntax.StringLiteral) {
+      res.push(aug.text);
+    }
+  }
+  return res;
 }

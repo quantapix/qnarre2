@@ -1,6 +1,5 @@
 export type AnyFunction = (...args: never[]) => void;
 export type AnyConstructor = new (...args: unknown[]) => unknown;
-
 export function fail(m?: string, mark?: AnyFunction): never {
   debugger;
   const e = new Error(m ? `Failure. ${m}` : 'Failure.');
@@ -32,7 +31,6 @@ export function assertGreaterThanOrEqual(a: number, b: number, mark?: AnyFunctio
 export function assertIsDefined<T>(v: T, m?: string, mark?: AnyFunction): asserts v is NonNullable<T> {
   if (v === undefined || v === null) fail(m, mark || assertIsDefined);
 }
-
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 export interface MapLike<T> {
   [k: string]: T;
@@ -88,7 +86,6 @@ export interface Sorteds<T> extends Array<T> {
 export interface ReadonlySorteds<T> extends ReadonlyArray<T> {
   ' __sortedArrayBrand': any;
 }
-
 export const enum InternalSymbolName {
   Call = '__call',
   Constructor = '__constructor',
@@ -115,7 +112,6 @@ export interface UnderscoredMultiMap<T> extends UnderscoreEscapedMap<T[]> {
   add(key: __String, value: T): T[];
   remove(key: __String, value: T): void;
 }
-
 export function length(xs?: readonly unknown[]) {
   return xs ? xs.length : 0;
 }
@@ -655,7 +651,6 @@ export function memoize<T>(cb: () => T): () => T {
     return v;
   };
 }
-
 function deduplicateSorted<T>(ts: ReadonlySorteds<T>, comparer: EqualityComparer<T> | Comparer<T>): ReadonlySorteds<T> {
   if (ts.length === 0) return (empty as any) as ReadonlySorteds<T>;
   let last = ts[0];
@@ -1423,7 +1418,6 @@ export function isSynthesized(x: Range | number) {
   if (typeof x === 'number') return !(x >= 0);
   return isSynthesized(x.pos) || isSynthesized(x.end);
 }
-
 interface IteratorShim<T> {
   next(): { value: T; done?: false } | { value: never; done: true };
 }
@@ -1549,7 +1543,6 @@ export function createMapShim(): new <T>() => MapShim<T> {
     }
   };
 }
-
 export interface Span {
   start: number;
   length: number;

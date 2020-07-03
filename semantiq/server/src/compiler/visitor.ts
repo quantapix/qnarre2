@@ -5,12 +5,9 @@ import * as qs from './classes';
 import * as qt from './types';
 import * as qy from './syntax';
 import { Modifier, Syntax } from './syntax';
-
 export type Visitor = (n: Node) => VisitResult<Node>;
 export type VisitResult<T extends Node> = T | T[] | undefined;
-
 const isTypeNodeOrTypeParameterDeclaration = qb.or(isTypeNode, isTypeParameterDeclaration);
-
 export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: (n: Node) => boolean, lift?: (ns: Nodes<Node>) => T): T;
 export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: (n: Node) => boolean, lift?: (ns: Nodes<Node>) => T): T | undefined;
 export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: (n: Node) => boolean, lift?: (ns: Nodes<Node>) => T): T | undefined {
@@ -162,7 +159,6 @@ const isExpression = (n: Node) => Node.is.expressionNode(n);
 const isTypeNode = (n: Node) => Node.is.typeNode(n);
 const isDecorator = (n: Node) => Node.is.decorator(n);
 const isModifier = (n: Node) => Node.is.modifier(n);
-
 export function visitEachChild<T extends Node>(node: T, cb: Visitor, c: TransformationContext): T;
 export function visitEachChild<T extends Node>(node: T | undefined, cb: Visitor, c: TransformationContext, nodesVisitor?: typeof Nodes.visit, tokenVisitor?: Visitor): T | undefined;
 export function visitEachChild(node: Node | undefined, cb: Visitor, c: TransformationContext, nodesVisitor = Nodes.visit, tokenVisitor?: Visitor): Node | undefined {
