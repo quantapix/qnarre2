@@ -1,3 +1,9 @@
+import * as qb from './base';
+import * as qt from './types';
+import { diags } from './diags';
+import * as syntax from './syntax';
+import { Codes, JSDocSyntax, JsxTokenSyntax, KeywordSyntax, LanguageVariant, Syntax } from './syntax';
+
 interface Parser {
   parseSource(fileName: string, t: string, languageVersion: ScriptTarget, syntaxCursor?: IncrementalParser.SyntaxCursor, setParentNodes?: boolean, scriptKind?: ScriptKind): SourceFile;
   parseJsonText(fileName: string, text: string, lang?: ScriptTarget, syntaxCursor?: IncrementalParser.SyntaxCursor, setParentNodes?: boolean): JsonSourceFile;
@@ -65,15 +71,15 @@ function create() {
   const scanner = qs_create(true);
 
   let currentToken: Syntax;
-  let identifiers: QMap<string>;
-  let privateIdentifiers: QMap<string>;
+  let identifiers: qb.QMap<string>;
+  let privateIdentifiers: qb.QMap<string>;
 
   const withDisallowInDecoratorContext = NodeFlags.DisallowInContext | NodeFlags.DecoratorContext;
   let source: SourceFile;
   let diags: DiagnosticWithLocation[];
   let syntaxCursor: IncrementalParser.SyntaxCursor | undefined;
   let sourceText: string;
-  let notParenthesizedArrow: QMap<true> | undefined;
+  let notParenthesizedArrow: qb.QMap<true> | undefined;
   let parseErrorBeforeNextFinishedNode = false;
 
   const tok = () => currentToken;
@@ -2004,7 +2010,7 @@ function create() {
       const p = scanner.getTokenPos();
       if (notParenthesizedArrow && notParenthesizedArrow.has(p.toString())) return;
       const result = this.parenthesizedArrowFunctionExpressionHead(false);
-      if (!result) (notParenthesizedArrow || (notParenthesizedArrow = new QMap())).set(p.toString(), true);
+      if (!result) (notParenthesizedArrow || (notParenthesizedArrow = new qb.QMap())).set(p.toString(), true);
       return result;
     }
     parenthesizedArrowFunctionExpressionHead(allowAmbiguity: boolean): ArrowFunction | undefined {
@@ -4309,8 +4315,8 @@ function create() {
     syntaxCursor = _syntaxCursor;
     diags = [];
     ctx.init();
-    identifiers = new QMap<string>();
-    privateIdentifiers = new QMap<string>();
+    identifiers = new qb.QMap<string>();
+    privateIdentifiers = new qb.QMap<string>();
     create.identifierCount = 0;
     create.nodeCount = 0;
     switch (scriptKind) {
@@ -4902,7 +4908,7 @@ export function processCommentPragmas(ctx: PragmaContext, sourceText: string): v
     const comment = sourceText.substring(r.pos, r.end);
     extractPragmas(ps, r, comment);
   }
-  ctx.pragmas = new QMap() as PragmaMap;
+  ctx.pragmas = new qb.QMap() as PragmaMap;
   for (const p of ps) {
     if (ctx.pragmas.has(p.name)) {
       const v = ctx.pragmas.get(p.name);
@@ -4978,7 +4984,7 @@ export function processPragmasIntoFields(c: PragmaContext, reporter: PragmaDiagn
   });
 }
 
-const namedArgRegExCache = new QMap<RegExp>();
+const namedArgRegExCache = new qb.QMap<RegExp>();
 
 const tripleSlashXMLCommentStartRegEx = /^\/\/\/\s*<(\S+)\s.*?\/>/im;
 const singleLinePragmaRegEx = /^\/\/\/?\s*@(\S+)\s*(.*)\s*$/im;

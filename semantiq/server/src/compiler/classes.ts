@@ -110,7 +110,7 @@ export abstract class Expression extends Node implements qt.Expression {
       if (property === firstAccessor) {
         const properties: ObjectLiteralElementLike[] = [];
         if (getAccessor) {
-          const getterFunction = createFunctionExpression(getAccessor.modifiers, undefined, undefined, undefined, getAccessor.parameters, undefined, getAccessor.body!);
+          const getterFunction = new FunctionExpression(getAccessor.modifiers, undefined, undefined, undefined, getAccessor.parameters, undefined, getAccessor.body!);
           setRange(getterFunction, getAccessor);
           setOriginalNode(getterFunction, getAccessor);
           const getter = createPropertyAssignment('get', getterFunction);
@@ -118,7 +118,7 @@ export abstract class Expression extends Node implements qt.Expression {
         }
 
         if (setAccessor) {
-          const setterFunction = createFunctionExpression(setAccessor.modifiers, undefined, undefined, undefined, setAccessor.parameters, undefined, setAccessor.body!);
+          const setterFunction = new FunctionExpression(setAccessor.modifiers, undefined, undefined, undefined, setAccessor.parameters, undefined, setAccessor.body!);
           setRange(setterFunction, setAccessor);
           setOriginalNode(setterFunction, setAccessor);
           const setter = createPropertyAssignment('set', setterFunction);
@@ -156,7 +156,7 @@ export abstract class Expression extends Node implements qt.Expression {
           setRange(
             createAssignment(
               createMemberAccessForPropertyName(receiver, method.name, method.name),
-              setOriginalNode(setRange(createFunctionExpression(method.modifiers, method.asteriskToken, undefined, undefined, method.parameters, undefined, method.body!), method), method)
+              setOriginalNode(setRange(new FunctionExpression(method.modifiers, method.asteriskToken, undefined, undefined, method.parameters, undefined, method.body!), method), method)
             ),
             method
           ),
@@ -385,7 +385,7 @@ export class ArrayBindingPattern extends Node implements qt.ArrayBindingPattern 
 }
 ArrayBindingPattern.prototype.kind = ArrayBindingPattern.kind;
 
-export class ArrayLiteralExpression extends Node implements qt.ArrayLiteralExpression {
+export class ArrayLiteralExpression extends PrimaryExpression implements qt.ArrayLiteralExpression {
   static readonly kind = Syntax.ArrayLiteralExpression;
   elements: Nodes<Expression>;
   multiLine?: boolean;
@@ -397,12 +397,6 @@ export class ArrayLiteralExpression extends Node implements qt.ArrayLiteralExpre
   update(es: readonly Expression[]) {
     return this.elements !== es ? new ArrayLiteralExpression(es, this.multiLine).updateFrom(this) : this;
   }
-  _primaryExpressionBrand: any;
-  _memberExpressionBrand: any;
-  _leftHandSideExpressionBrand: any;
-  _updateExpressionBrand: any;
-  _unaryExpressionBrand: any;
-  _expressionBrand: any;
 }
 ArrayLiteralExpression.prototype.kind = ArrayLiteralExpression.kind;
 
@@ -959,7 +953,7 @@ export class CallExpression extends LeftHandSideExpression implements qt.CallExp
   static immediateFunctionExpression(ss: readonly Statement[]): CallExpression;
   static immediateFunctionExpression(ss: readonly Statement[], param: ParameterDeclaration, paramValue: Expression): CallExpression;
   static immediateFunctionExpression(ss: readonly Statement[], param?: ParameterDeclaration, paramValue?: Expression) {
-    return new CallExpression(createFunctionExpression(undefined, undefined, undefined, undefined, param ? [param] : [], undefined, new Block(ss, true)), undefined, paramValue ? [paramValue] : []);
+    return new CallExpression(new FunctionExpression(undefined, undefined, undefined, undefined, param ? [param] : [], undefined, new Block(ss, true)), undefined, paramValue ? [paramValue] : []);
   }
   static immediateArrowFunction(ss: readonly Statement[]): CallExpression;
   static immediateArrowFunction(ss: readonly Statement[], param: ParameterDeclaration, paramValue: Expression): CallExpression;
@@ -1583,51 +1577,44 @@ export class FunctionDeclaration extends DeclarationStatement implements Functio
       : node;
   }
 }
-export class FunctionExpression extends Expression implements PrimaryExpression, FunctionLikeDeclarationBase, JSDocContainer {
+export class FunctionExpression extends FunctionLikeDeclarationBase implements qt.FunctionExpression {
   static readonly kind = Syntax.FunctionExpression;
-  readonly kind = FunctionExpression.kind;
   name?: Identifier;
   body: FunctionBody;
-  createFunctionExpression(
-    modifiers: readonly Modifier[] | undefined,
-    asteriskToken: AsteriskToken | undefined,
+  constructor(
+    ms: readonly Modifier[] | undefined,
+    a: AsteriskToken | undefined,
     name: string | Identifier | undefined,
-    typeParameters: readonly TypeParameterDeclaration[] | undefined,
-    parameters: readonly ParameterDeclaration[] | undefined,
-    type: TypeNode | undefined,
-    body: Block
+    ts: readonly TypeParameterDeclaration[] | undefined,
+    ps: readonly ParameterDeclaration[] | undefined,
+    t: TypeNode | undefined,
+    b: Block
   ) {
-    const node = <FunctionExpression>Node.createSynthesized(Syntax.FunctionExpression);
-    node.modifiers = Nodes.from(modifiers);
-    node.asteriskToken = asteriskToken;
-    node.name = asName(name);
-    node.typeParameters = Nodes.from(typeParameters);
-    node.parameters = new Nodes(parameters);
-    node.type = type;
-    node.body = body;
-    return node;
+    super(true);
+    this.modifiers = Nodes.from(ms);
+    this.asteriskToken = a;
+    this.name = asName(name);
+    this.typeParameters = Nodes.from(ts);
+    this.parameters = new Nodes(ps);
+    this.type = t;
+    this.body = b;
   }
-  updateFunctionExpression(
-    node: FunctionExpression,
-    modifiers: readonly Modifier[] | undefined,
-    asteriskToken: AsteriskToken | undefined,
+  update(
+    ms: readonly Modifier[] | undefined,
+    a: AsteriskToken | undefined,
     name: Identifier | undefined,
-    typeParameters: readonly TypeParameterDeclaration[] | undefined,
-    parameters: readonly ParameterDeclaration[],
-    type: TypeNode | undefined,
-    body: Block
+    ts: readonly TypeParameterDeclaration[] | undefined,
+    ps: readonly ParameterDeclaration[],
+    t: TypeNode | undefined,
+    b: Block
   ) {
-    return node.name !== name ||
-      node.modifiers !== modifiers ||
-      node.asteriskToken !== asteriskToken ||
-      node.typeParameters !== typeParameters ||
-      node.parameters !== parameters ||
-      node.type !== type ||
-      node.body !== body
-      ? updateNode(createFunctionExpression(modifiers, asteriskToken, name, typeParameters, parameters, type, body), node)
-      : node;
+    return this.name !== name || this.modifiers !== ms || this.asteriskToken !== a || this.typeParameters !== ts || this.parameters !== parameters || this.type !== type || this.body !== body
+      ? new new FunctionExpression(ms, a, name, ts, ps, t, b).updateFrom(this)
+      : this;
   }
 }
+FunctionExpression.prototype.kind = FunctionExpression.kind;
+
 export class FunctionTypeNode extends FunctionOrConstructorTypeNodeBase {
   static readonly kind = Syntax.FunctionType;
   readonly kind = FunctionTypeNode.kind;
@@ -4598,7 +4585,7 @@ export namespace fixme {
       case Syntax.Constructor:
         return ConstructorDeclaration.create(declaration.decorators, declaration.modifiers, declaration.parameters, body);
       case Syntax.FunctionExpression:
-        return createFunctionExpression(declaration.modifiers, declaration.asteriskToken, declaration.name, declaration.typeParameters, declaration.parameters, declaration.type, body);
+        return new FunctionExpression(declaration.modifiers, declaration.asteriskToken, declaration.name, declaration.typeParameters, declaration.parameters, declaration.type, body);
       case Syntax.ArrowFunction:
         return new ArrowFunction(declaration.modifiers, declaration.typeParameters, declaration.parameters, declaration.type, declaration.equalsGreaterThanToken, body);
     }
@@ -4736,7 +4723,7 @@ export namespace fixme {
   }
   export function convertFunctionDeclarationToExpression(node: FunctionDeclaration) {
     if (!node.body) return fail();
-    const updated = createFunctionExpression(node.modifiers, node.asteriskToken, node.name, node.typeParameters, node.parameters, node.type, node.body);
+    const updated = new FunctionExpression(node.modifiers, node.asteriskToken, node.name, node.typeParameters, node.parameters, node.type, node.body);
     setOriginalNode(updated, node);
     setRange(updated, node);
     if (getStartsOnNewLine(node)) setStartsOnNewLine(updated, true);

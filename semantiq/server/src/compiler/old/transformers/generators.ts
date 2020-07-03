@@ -444,7 +444,7 @@ namespace core {
       if (node.asteriskToken) {
         node = setOriginalNode(
           setRange(
-            createFunctionExpression(undefined, undefined, node.name, undefined, visitParameterList(node.parameters, visitor, context), undefined, transformGeneratorFunctionBody(node.body)),
+            new qs.FunctionExpression(undefined, undefined, node.name, undefined, visitParameterList(node.parameters, visitor, context), undefined, transformGeneratorFunctionBody(node.body)),
             node
           ),
           node
@@ -2120,7 +2120,7 @@ namespace core {
       return createGeneratorHelper(
         context,
         setEmitFlags(
-          createFunctionExpression(undefined, undefined, undefined, undefined, [createParameter(undefined, undefined, state)], undefined, new Block(buildResult, buildResult.length > 0)),
+          new qs.FunctionExpression(undefined, undefined, undefined, undefined, [createParameter(undefined, undefined, state)], undefined, new Block(buildResult, buildResult.length > 0)),
           EmitFlags.ReuseTempVariableScope
         )
       );

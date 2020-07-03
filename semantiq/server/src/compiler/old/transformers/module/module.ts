@@ -162,7 +162,7 @@ namespace core {
                   ? jsonSourceFile.statements.length
                     ? jsonSourceFile.statements[0].expression
                     : createObjectLiteral()
-                  : createFunctionExpression(
+                  : new qs.FunctionExpression(
                        undefined,
                        undefined,
                        undefined,
@@ -189,7 +189,7 @@ namespace core {
     function transformUMDModule(node: SourceFile) {
       const { aliasedModuleNames, unaliasedModuleNames, importAliasNames } = collectAsynchronousDependencies(node,  false);
       const moduleName = tryGetModuleNameFromFile(node, host, compilerOptions);
-      const umdHeader = createFunctionExpression(
+      const umdHeader = new qs.FunctionExpression(
          undefined,
          undefined,
          undefined,
@@ -255,7 +255,7 @@ namespace core {
                 
                 
                 
-                createFunctionExpression(
+                new qs.FunctionExpression(
                    undefined,
                    undefined,
                    undefined,
@@ -576,7 +576,7 @@ namespace core {
       if (languageVersion >= ScriptTarget.ES2015) {
         func = new ArrowFunction( undefined, body);
       } else {
-        func = createFunctionExpression( undefined, parameters, undefined, body);
+        func = new qs.FunctionExpression( undefined, parameters, undefined, body);
 
         
         
@@ -611,7 +611,7 @@ namespace core {
       if (languageVersion >= ScriptTarget.ES2015) {
         func = new ArrowFunction( undefined, requireCall);
       } else {
-        func = createFunctionExpression(
+        func = new qs.FunctionExpression(
            undefined,
            undefined,
            undefined,
@@ -1191,7 +1191,7 @@ namespace core {
                 createPropertyAssignment('enumerable', createLiteral( true)),
                 createPropertyAssignment(
                   'get',
-                  createFunctionExpression(
+                  new qs.FunctionExpression(
                      undefined,
                      undefined,
                      undefined,

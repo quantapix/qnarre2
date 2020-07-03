@@ -72,7 +72,7 @@ namespace core {
       
       const dependencyGroups = collectDependencyGroups(moduleInfo.externalImports);
       const moduleBodyBlock = createSystemModuleBody(node, dependencyGroups);
-      const moduleBodyFunction = createFunctionExpression(
+      const moduleBodyFunction = new qs.FunctionExpression(
          undefined,
          undefined,
          undefined,
@@ -233,7 +233,7 @@ namespace core {
         createPropertyAssignment('setters', createSettersArray(exportStarFunction, dependencyGroups)),
         createPropertyAssignment(
           'execute',
-          createFunctionExpression(
+          new qs.FunctionExpression(
             modifiers,
              undefined,
              undefined,
@@ -418,7 +418,7 @@ namespace core {
         }
 
         setters.push(
-          createFunctionExpression(
+          new qs.FunctionExpression(
              undefined,
              undefined,
              undefined,
