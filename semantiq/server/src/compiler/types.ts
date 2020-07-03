@@ -1687,7 +1687,7 @@ export interface TaggedTemplateExpression extends MemberExpression {
   tag: LeftHandSideExpression;
   typeArguments?: Nodes<TypeNode>;
   template: TemplateLiteral;
-  questionDotToken?: QuestionDotToken; // NOTE: Invalid syntax, only used to report a grammar error.
+  questionDotToken?: QuestionDotToken;
 }
 
 export interface TemplateExpression extends PrimaryExpression {

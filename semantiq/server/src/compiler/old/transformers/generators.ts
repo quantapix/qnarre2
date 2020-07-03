@@ -1434,7 +1434,7 @@ namespace core {
           assert(Node.is.leftHandSideExpression(variable));
         }
 
-        emitAssignment(variable, createElementAccess(keysArray, keysIndex));
+        emitAssignment(variable, new qs.ElementAccessExpression(keysArray, keysIndex));
         transformAndEmitEmbeddedStatement(node.statement);
 
         markLabel(incrementLabel);

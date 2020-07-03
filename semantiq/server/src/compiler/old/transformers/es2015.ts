@@ -1274,7 +1274,7 @@ namespace core {
           startOnNewLine(
             setRange(
               createExpressionStatement(
-                createAssignment(createElementAccess(expressionName, restIndex === 0 ? temp : createSubtract(temp, createLiteral(restIndex))), createElementAccess(new Identifier('arguments'), temp))
+                createAssignment(new qs.ElementAccessExpression(expressionName, restIndex === 0 ? temp : createSubtract(temp, createLiteral(restIndex))), new qs.ElementAccessExpression(new Identifier('arguments'), temp))
               ),
               /*location*/ parameter
             )
@@ -2193,7 +2193,7 @@ namespace core {
           ),
           /*condition*/ setRange(createLessThan(counter, createPropertyAccess(rhsReference, 'length')), node.expression),
           /*incrementor*/ setRange(qs.PostfixUnaryExpression.increment(counter), node.expression),
-          /*statement*/ convertForOfStatementHead(node, createElementAccess(rhsReference, counter), convertedLoopBodyStatements)
+          /*statement*/ convertForOfStatementHead(node, new qs.ElementAccessExpression(rhsReference, counter), convertedLoopBodyStatements)
         ),
         /*location*/ node
       );

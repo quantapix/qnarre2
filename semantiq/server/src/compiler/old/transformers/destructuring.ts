@@ -395,7 +395,7 @@ namespace core {
       } else if (Node.is.kind(OmittedExpression, element)) {
         continue;
       } else if (!getRestIndicatorOfBindingOrAssignmentElement(element)) {
-        const rhsValue = createElementAccess(value, i);
+        const rhsValue = new qs.ElementAccessExpression(value, i);
         flattenBindingOrAssignmentElement(flattenContext, element, rhsValue, /*location*/ element);
       } else if (i === numElements - 1) {
         const rhsValue = createArraySlice(value, i);
@@ -438,11 +438,11 @@ namespace core {
   function createDestructuringPropertyAccess(flattenContext: FlattenContext, value: Expression, propertyName: PropertyName): LeftHandSideExpression {
     if (Node.is.kind(ComputedPropertyName, propertyName)) {
       const argumentExpression = ensureIdentifier(flattenContext, visitNode(propertyName.expression, flattenContext.visitor), /*reuseIdentifierExpressions*/ false, /*location*/ propertyName);
-      return createElementAccess(value, argumentExpression);
+      return new qs.ElementAccessExpression(value, argumentExpression);
     } else if (StringLiteral.orNumericLiteralLike(propertyName)) {
       const argumentExpression = getSynthesizedClone(propertyName);
       argumentExpression.text = argumentExpression.text;
-      return createElementAccess(value, argumentExpression);
+      return new qs.ElementAccessExpression(value, argumentExpression);
     } else {
       const name = new Identifier(idText(propertyName));
       return createPropertyAccess(value, name);

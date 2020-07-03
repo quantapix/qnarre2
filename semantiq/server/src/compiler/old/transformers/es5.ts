@@ -85,7 +85,7 @@ namespace core {
       }
       const literalName = trySubstituteReservedName(node.name);
       if (literalName) {
-        return setRange(createElementAccess(node.expression, literalName), node);
+        return setRange(new qs.ElementAccessExpression(node.expression, literalName), node);
       }
       return node;
     }

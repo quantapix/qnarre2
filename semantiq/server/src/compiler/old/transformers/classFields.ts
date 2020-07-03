@@ -272,23 +272,17 @@ export function transformClassFields(context: TransformationContext) {
 
   function visitCallExpression(node: CallExpression) {
     if (shouldTransformPrivateFields && Node.is.privateIdentifierPropertyAccessExpression(node.expression)) {
-      // Transform call expressions of private names to properly bind the `this` parameter.
       const { thisArg, target } = createCallBinding(node.expression, hoistVariableDeclaration, languageVersion);
-      return node.update(createPropertyAccess(visitNode(target, visitor), 'call'), /*typeArguments*/ undefined, [
-        visitNode(thisArg, visitor, isExpression),
-        ...Nodes.visit(node.arguments, visitor, isExpression),
-      ]);
+      return node.update(createPropertyAccess(visitNode(target, visitor), 'call'), undefined, [visitNode(thisArg, visitor, isExpression), ...Nodes.visit(node.arguments, visitor, isExpression)]);
     }
     return visitEachChild(node, visitor, context);
   }
 
   function visitTaggedTemplateExpression(node: TaggedTemplateExpression) {
     if (shouldTransformPrivateFields && Node.is.privateIdentifierPropertyAccessExpression(node.tag)) {
-      // Bind the `this` correctly for tagged template literals when the tag is a private identifier property access.
       const { thisArg, target } = createCallBinding(node.tag, hoistVariableDeclaration, languageVersion);
-      return updateTaggedTemplate(
-        node,
-        new qs.CallExpression(createPropertyAccess(visitNode(target, visitor), 'bind'), /*typeArguments*/ undefined, [visitNode(thisArg, visitor, isExpression)]),
+      return node.update(
+        new qs.CallExpression(createPropertyAccess(visitNode(target, visitor), 'bind'), undefined, [visitNode(thisArg, visitor, isExpression)]),
         visitNode(node.template, visitor, isTemplateLiteral)
       );
     }

@@ -45,13 +45,13 @@ namespace core {
         const expressionTemp = createTempVariable(hoistVariableDeclaration);
         const argumentExpressionTemp = createTempVariable(hoistVariableDeclaration);
         target = setRange(
-          createElementAccess(
+          new qs.ElementAccessExpression(
             setRange(createAssignment(expressionTemp, left.expression), left.expression),
             setRange(createAssignment(argumentExpressionTemp, left.argumentExpression), left.argumentExpression)
           ),
           left
         );
-        value = setRange(createElementAccess(expressionTemp, argumentExpressionTemp), left);
+        value = setRange(new qs.ElementAccessExpression(expressionTemp, argumentExpressionTemp), left);
       } else if (Node.is.kind(PropertyAccessExpression, left)) {
         // Transforms `a.x **= b` into `(_a = a).x = Math.pow(_a.x, b)`
         const expressionTemp = createTempVariable(hoistVariableDeclaration);

@@ -2109,15 +2109,15 @@ namespace core {
     }
 
     function visitCallExpression(node: CallExpression) {
-      return updateCall(node, visitNode(node.expression, visitor, isExpression), /*typeArguments*/ undefined, Nodes.visit(node.arguments, visitor, isExpression));
+      return updateCall(node, visitNode(node.expression, visitor, isExpression), undefined, Nodes.visit(node.arguments, visitor, isExpression));
     }
 
     function visitNewExpression(node: NewExpression) {
-      return updateNew(node, visitNode(node.expression, visitor, isExpression), /*typeArguments*/ undefined, Nodes.visit(node.arguments, visitor, isExpression));
+      return updateNew(node, visitNode(node.expression, visitor, isExpression), undefined, Nodes.visit(node.arguments, visitor, isExpression));
     }
 
     function visitTaggedTemplateExpression(node: TaggedTemplateExpression) {
-      return updateTaggedTemplate(node, visitNode(node.tag, visitor, isExpression), /*typeArguments*/ undefined, visitNode(node.template, visitor, isExpression));
+      return node.update(visitNode(node.tag, visitor, isExpression), undefined, visitNode(node.template, visitor, isExpression));
     }
 
     function visitJsxSelfClosingElement(node: JsxSelfClosingElement) {
@@ -2128,51 +2128,25 @@ namespace core {
       return updateJsxOpeningElement(node, visitNode(node.tagName, visitor, isJsxTagNameExpression), /*typeArguments*/ undefined, visitNode(node.attributes, visitor, isJsxAttributes));
     }
 
-    /**
-     * Determines whether to emit an enum declaration.
-     *
-     * @param node The enum declaration node.
-     */
     function shouldEmitEnumDeclaration(node: EnumDeclaration) {
       return !isEnumConst(node) || compilerOptions.preserveConstEnums || compilerOptions.isolatedModules;
     }
 
-    /**
-     * Visits an enum declaration.
-     *
-     * This function will be called any time a TypeScript enum is encountered.
-     *
-     * @param node The enum declaration node.
-     */
     function visitEnumDeclaration(node: EnumDeclaration): VisitResult<Statement> {
       if (!shouldEmitEnumDeclaration(node)) {
         return createNotEmittedStatement(node);
       }
 
       const statements: Statement[] = [];
-
-      // We request to be advised when the printer is about to print this node. This allows
-      // us to set up the correct state for later substitutions.
       let emitFlags = EmitFlags.AdviseOnEmitNode;
-
-      // If needed, we should emit a variable declaration for the enum. If we emit
-      // a leading variable declaration, we should not emit leading comments for the
-      // enum body.
       const varAdded = addVarForEnumOrModuleDeclaration(statements, node);
       if (varAdded) {
-        // We should still emit the comments if we are emitting a system module.
         if (moduleKind !== ModuleKind.System || currentLexicalScope !== currentSourceFile) {
           emitFlags |= EmitFlags.NoLeadingComments;
         }
       }
-
-      // `parameterName` is the declaration name used inside of the enum.
       const parameterName = getNamespaceParameterName(node);
-
-      // `containerName` is the expression used inside of the enum for assignments.
       const containerName = getNamespaceContainerName(node);
-
-      // `exportName` is the expression used within this node's container for any exported references.
       const exportName = hasSyntacticModifier(node, ModifierFlags.Export)
         ? getExternalModuleOrNamespaceExportName(currentNamespaceContainerName, node, /*allowComments*/ false, /*allowSourceMaps*/ true)
         : getLocalName(node, /*allowComments*/ false, /*allowSourceMaps*/ true);
@@ -2255,8 +2229,8 @@ namespace core {
       // old emitter always generate 'expression' part of the name as-is.
       const name = getExpressionForPropertyName(member, /*generateNameForComputedPropertyName*/ false);
       const valueExpression = transformEnumMemberDeclarationValue(member);
-      const innerAssignment = createAssignment(createElementAccess(currentNamespaceContainerName, name), valueExpression);
-      const outerAssignment = valueExpression.kind === Syntax.StringLiteral ? innerAssignment : createAssignment(createElementAccess(currentNamespaceContainerName, innerAssignment), name);
+      const innerAssignment = createAssignment(new qs.ElementAccessExpression(currentNamespaceContainerName, name), valueExpression);
+      const outerAssignment = valueExpression.kind === Syntax.StringLiteral ? innerAssignment : createAssignment(new qs.ElementAccessExpression(currentNamespaceContainerName, innerAssignment), name);
       return setRange(createExpressionStatement(setRange(outerAssignment, member)), member);
     }
 

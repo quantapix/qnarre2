@@ -54,7 +54,7 @@ namespace core {
       if (Node.is.kind(SyntheticReferenceExpression, expression)) {
         // `(a.b)` -> { expression `((_a = a).b)`, thisArg: `_a` }
         // `(a[b])` -> { expression `((_a = a)[b])`, thisArg: `_a` }
-        return createSyntheticReferenceExpression(updateParen(node, expression.expression), expression.thisArg);
+        return new qs.SyntheticReferenceExpression(updateParen(node, expression.expression), expression.thisArg);
       }
       return updateParen(node, expression);
     }
@@ -81,16 +81,15 @@ namespace core {
 
       expression =
         node.kind === Syntax.PropertyAccessExpression
-          ? updatePropertyAccess(node, expression, visitNode(node.name, visitor, isIdentifier))
-          : updateElementAccess(node, expression, visitNode(node.argumentExpression, visitor, isExpression));
-      return thisArg ? createSyntheticReferenceExpression(expression, thisArg) : expression;
+          ? node.update(, expression, visitNode(node.name, visitor, isIdentifier))
+          : node.update(expression, visitNode(node.argumentExpression, visitor, isExpression));
+      return thisArg ? new qs.SyntheticReferenceExpression(expression, thisArg) : expression;
     }
 
     function visitNonOptionalCallExpression(node: CallExpression, captureThisArg: boolean): Expression {
-      if (Node.is.optionalChain(node)) {
-        // If `node` is an optional chain, then it is the outermost chain of an optional expression.
+      if (Node.is.optionalChain(node)) 
         return visitOptionalExpression(node, captureThisArg, false);
-      }
+      
       return visitEachChild(node, visitor, context);
     }
 
@@ -138,7 +137,7 @@ namespace core {
             rightExpression =
               segment.kind === Syntax.PropertyAccessExpression
                 ? createPropertyAccess(rightExpression, visitNode(segment.name, visitor, isIdentifier))
-                : createElementAccess(rightExpression, visitNode(segment.argumentExpression, visitor, isExpression));
+                : new qs.ElementAccessExpression(rightExpression, visitNode(segment.argumentExpression, visitor, isExpression));
             break;
           case Syntax.CallExpression:
             if (i === 0 && leftThisArg) {
@@ -154,7 +153,7 @@ namespace core {
       const target = isDelete
         ? createConditional(createNotNullCondition(leftExpression, capturedLeft, /*invert*/ true), createTrue(), new DeleteExpression(rightExpression))
         : createConditional(createNotNullCondition(leftExpression, capturedLeft, /*invert*/ true), qs.VoidExpression.zero(), rightExpression);
-      return thisArg ? createSyntheticReferenceExpression(target, thisArg) : target;
+      return thisArg ? new qs.SyntheticReferenceExpression(target, thisArg) : target;
     }
 
     function createNotNullCondition(left: Expression, right: Expression, invert?: boolean) {

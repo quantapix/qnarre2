@@ -377,7 +377,9 @@ namespace core {
             createForIn(
               createVariableDeclarationList([createVariableDeclaration(n, undefined)]),
               m,
-              new Block([setEmitFlags(createIf(condition, createExpressionStatement(createAssignment(createElementAccess(exports, n), createElementAccess(m, n)))), EmitFlags.SingleLine)])
+              new Block([
+                setEmitFlags(createIf(condition, createExpressionStatement(createAssignment(new qs.ElementAccessExpression(exports, n), new qs.ElementAccessExpression(m, n)))), EmitFlags.SingleLine),
+              ])
             ),
             createExpressionStatement(new qs.CallExpression(exportFunction, /*typeArguments*/ undefined, [exports])),
           ],
@@ -430,7 +432,7 @@ namespace core {
                   //  });
                   const properties: PropertyAssignment[] = [];
                   for (const e of entry.exportClause.elements) {
-                    properties.push(createPropertyAssignment(createLiteral(idText(e.name)), createElementAccess(parameterName, createLiteral(idText(e.propertyName || e.name)))));
+                    properties.push(createPropertyAssignment(createLiteral(idText(e.name)), new qs.ElementAccessExpression(parameterName, createLiteral(idText(e.propertyName || e.name)))));
                   }
 
                   statements.push(createExpressionStatement(new qs.CallExpression(exportFunction, /*typeArguments*/ undefined, [createObjectLiteral(properties, /*multiline*/ true)])));

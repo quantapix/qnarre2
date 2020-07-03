@@ -212,10 +212,10 @@ export abstract class Expression extends Node implements qt.Expression {
   }
   createMemberAccessForPropertyName(target: Expression, memberName: PropertyName, location?: TextRange): MemberExpression {
     if (Node.is.kind(ComputedPropertyName, memberName)) {
-      return setRange(createElementAccess(target, memberName.expression), location);
+      return setRange(new ElementAccessExpression(target, memberName.expression), location);
     } else {
       const expression = setRange(
-        Node.is.kind(Identifier, memberName) || Node.is.kind(PrivateIdentifier, memberName) ? createPropertyAccess(target, memberName) : createElementAccess(target, memberName),
+        Node.is.kind(Identifier, memberName) || Node.is.kind(PrivateIdentifier, memberName) ? createPropertyAccess(target, memberName) : new ElementAccessExpression(target, memberName),
         memberName
       );
       getOrCreateEmitNode(expression).flags |= EmitFlags.NoNestedSourceMaps;
@@ -281,6 +281,12 @@ export abstract class UpdateExpression extends UnaryExpression implements qt.Upd
 }
 export abstract class LeftHandSideExpression extends UpdateExpression implements qt.LeftHandSideExpression {
   _leftHandSideExpressionBrand: any;
+}
+export abstract class MemberExpression extends LeftHandSideExpression implements qt.MemberExpression {
+  _memberExpressionBrand: any;
+}
+export abstract class PrimaryExpression extends MemberExpression implements qt.PrimaryExpression {
+  _primaryExpressionBrand: any;
 }
 export class Statement extends Synthesized {
   //_statementBrand: any;
@@ -942,7 +948,7 @@ export class CallBinding {
           if (shouldBeCapturedInTempVariable((<ElementAccessExpression>callee).expression, cacheIdentifiers)) {
             // for `a[b]()` target is `(_a = a)[b]` and thisArg is `_a`
             thisArg = createTempVariable(recordTempVariable);
-            target = createElementAccess(
+            target = new ElementAccessExpression(
               setRange(createAssignment(thisArg, (<ElementAccessExpression>callee).expression), (<ElementAccessExpression>callee).expression),
               (<ElementAccessExpression>callee).argumentExpression
             );
@@ -1329,21 +1335,22 @@ export class DoStatement extends Synthesized implements IterationStatement {
     return this.statement !== s || this.expression !== e ? updateNode(createDo(s, e), this) : this;
   }
 }
-export class ElementAccessExpression extends Synthesized implements MemberExpression {
+export class ElementAccessExpression extends MemberExpression implements qt.ElementAccessExpression {
   static readonly kind = Syntax.ElementAccessExpression;
-  readonly kind = ElementAccessExpression.kind;
   expression: LeftHandSideExpression;
-  questionDotToken?: QuestionDotToken;
+  questionDotToken?: qt.QuestionDotToken;
   argumentExpression: Expression;
-  createElementAccess(e: Expression, i: number | Expression) {
+  constructor(e: Expression, i: number | Expression) {
     this.expression = parenthesize.forAccess(e);
     this.argumentExpression = asExpression(i);
   }
-  updateElementAccess(e: Expression, a: Expression) {
+  update(e: Expression, a: Expression) {
     if (Node.is.optionalChain(this)) return this.updateElementAccessChain(e, this.questionDotToken, a);
-    return this.expression !== e || this.argumentExpression !== a ? updateNode(createElementAccess(e, a), this) : this;
+    return this.expression !== e || this.argumentExpression !== a ? new ElementAccessExpression(e, a).updateFrom(this) : this;
   }
 }
+ElementAccessExpression.prototype.kind = ElementAccessExpression.kind;
+
 export class ElementAccessChain extends ElementAccessExpression {
   _optionalChainBrand: any;
   createElementAccessChain(e: Expression, q: QuestionDotToken | undefined, i: number | Expression) {
@@ -3376,49 +3383,49 @@ export class SyntaxList extends Node {
   readonly kind = SyntaxList.kind;
   _children: Node[];
 }
-export class SyntheticReferenceExpression extends LeftHandSideExpression {
+export class SyntheticReferenceExpression extends LeftHandSideExpression implements qt.SyntheticReferenceExpression {
   static readonly kind = Syntax.SyntheticReferenceExpression;
-  readonly kind = SyntheticReferenceExpression.kind;
   expression: Expression;
   thisArg: Expression;
-  createSyntheticReferenceExpression(expression: Expression, thisArg: Expression) {
-    const node = <SyntheticReferenceExpression>Node.createSynthesized(Syntax.SyntheticReferenceExpression);
-    node.expression = expression;
-    node.thisArg = thisArg;
-    return node;
+  constructor(e: Expression, thisArg: Expression) {
+    super(true);
+    this.expression = e;
+    this.thisArg = thisArg;
   }
-  updateSyntheticReferenceExpression(node: SyntheticReferenceExpression, expression: Expression, thisArg: Expression) {
-    return node.expression !== expression || node.thisArg !== thisArg ? updateNode(createSyntheticReferenceExpression(expression, thisArg), node) : node;
+  update(e: Expression, thisArg: Expression) {
+    return this.expression !== e || this.thisArg !== thisArg ? new SyntheticReferenceExpression(e, thisArg).updateFrom(this) : this;
   }
 }
-export class TaggedTemplateExpression extends MemberExpression {
+SyntheticReferenceExpression.prototype.kind = SyntheticReferenceExpression.kind;
+
+export class TaggedTemplateExpression extends MemberExpression implements qt.TaggedTemplateExpression {
   static readonly kind = Syntax.TaggedTemplateExpression;
-  readonly kind = TaggedTemplateExpression.kind;
   tag: LeftHandSideExpression;
   typeArguments?: Nodes<TypeNode>;
   template: TemplateLiteral;
-  questionDotToken?: QuestionDotToken;
-  createTaggedTemplate(tag: Expression, typeArguments: readonly TypeNode[] | undefined, template: TemplateLiteral): TaggedTemplateExpression;
-  createTaggedTemplate(tag: Expression, typeArgumentsOrTemplate: readonly TypeNode[] | TemplateLiteral | undefined, template?: TemplateLiteral): TaggedTemplateExpression;
-  createTaggedTemplate(tag: Expression, typeArgumentsOrTemplate: readonly TypeNode[] | TemplateLiteral | undefined, template?: TemplateLiteral) {
-    const node = <TaggedTemplateExpression>Node.createSynthesized(Syntax.TaggedTemplateExpression);
-    node.tag = parenthesize.forAccess(tag);
+  questionDotToken?: qt.QuestionDotToken;
+  createTaggedTemplate(tag: Expression, ts: readonly TypeNode[] | undefined, template: TemplateLiteral);
+  createTaggedTemplate(tag: Expression, ts?: readonly TypeNode[] | TemplateLiteral, template?: TemplateLiteral);
+  createTaggedTemplate(tag: Expression, ts?: readonly TypeNode[] | TemplateLiteral, template?: TemplateLiteral) {
+    super(true);
+    this.tag = parenthesize.forAccess(tag);
     if (template) {
-      node.typeArguments = Nodes.from(typeArgumentsOrTemplate as readonly TypeNode[]);
-      node.template = template;
+      this.typeArguments = Nodes.from(ts as readonly TypeNode[]);
+      this.template = template;
     } else {
-      node.typeArguments = undefined;
-      node.template = typeArgumentsOrTemplate as TemplateLiteral;
+      this.typeArguments = undefined;
+      this.template = ts as TemplateLiteral;
     }
-    return node;
   }
-  updateTaggedTemplate(node: TaggedTemplateExpression, tag: Expression, typeArguments: readonly TypeNode[] | undefined, template: TemplateLiteral): TaggedTemplateExpression;
-  updateTaggedTemplate(node: TaggedTemplateExpression, tag: Expression, typeArgumentsOrTemplate: readonly TypeNode[] | TemplateLiteral | undefined, template?: TemplateLiteral) {
-    return node.tag !== tag || (template ? node.typeArguments !== typeArgumentsOrTemplate || node.template !== template : node.typeArguments !== undefined || node.template !== typeArgumentsOrTemplate)
-      ? updateNode(createTaggedTemplate(tag, typeArgumentsOrTemplate, template), node)
-      : node;
+  update(tag: Expression, ts: readonly TypeNode[] | undefined, template: TemplateLiteral): TaggedTemplateExpression;
+  update(tag: Expression, ts?: readonly TypeNode[] | TemplateLiteral, template?: TemplateLiteral) {
+    return this.tag !== tag || (template ? this.typeArguments !== ts || this.template !== template : this.typeArguments || this.template !== ts)
+      ? new createTaggedTemplate(tag, ts, template).updateFrom(this)
+      : this;
   }
 }
+TaggedTemplateExpression.prototype.kind = TaggedTemplateExpression.kind;
+
 export class TemplateExpression extends PrimaryExpression {
   static readonly kind = Syntax.TemplateExpression;
   readonly kind = TemplateExpression.kind;

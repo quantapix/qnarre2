@@ -563,7 +563,7 @@ namespace core {
             expression = setEmitFlags(new Identifier(symbolName, typeParameterNodes), EmitFlags.NoAsciiEscaping);
             expression.symbol = symbol;
           }
-          return createElementAccess(createExpressionFromSymbolChain(chain, index - 1), expression);
+          return new qs.ElementAccessExpression(createExpressionFromSymbolChain(chain, index - 1), expression);
         }
       }
     }
