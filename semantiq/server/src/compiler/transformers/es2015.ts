@@ -1,9 +1,10 @@
-import * as qb from './base';
-import * as qc from './core';
-import { Node, Nodes, Token } from './core';
-import * as qt from './types';
-import * as qy from './syntax';
-import { Modifier, Syntax } from './syntax';
+import * as qb from '../base';
+import * as qc from '../core';
+import { Node, Nodes } from '../core';
+import * as qs from '../classes';
+import * as qt from '../types';
+import * as qy from '../syntax';
+import { Modifier, Syntax } from '../syntax';
 const enum ES2015SubstitutionFlags {
   CapturedThis = 1 << 0,
   BlockScopedBindings = 1 << 1,

@@ -1,9 +1,10 @@
-import * as qb from './base';
-import * as qc from './core';
-import { Node, Nodes, Token } from './core';
-import * as qt from './types';
-import * as qy from './syntax';
-import { Modifier, Syntax } from './syntax';
+import * as qb from '../base';
+import * as qc from '../core';
+import { Node, Nodes } from '../core';
+import * as qs from '../classes';
+import * as qt from '../types';
+import * as qy from '../syntax';
+import { Modifier, Syntax } from '../syntax';
 const USE_NEW_TYPE_METADATA_FORMAT = false;
 const enum TypeScriptSubstitutionFlags {
   ClassAliases = 1 << 0,
