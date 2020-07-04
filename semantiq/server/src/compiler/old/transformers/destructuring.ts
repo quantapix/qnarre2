@@ -409,9 +409,6 @@ namespace core {
             };`,
   };
 
-  /** Given value: o, propName: p, pattern: { a, b, ...p } from the original statement
-   * `{ a, b, ...p } = o`, create `p = __rest(o, ["a", "b"]);`
-   */
   function createRestCall(
     context: TransformationContext,
     value: Expression,

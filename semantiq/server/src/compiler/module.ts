@@ -1,3 +1,8 @@
+import * as qb from './base';
+import * as qt from './types';
+import { Node } from './types';
+import * as syntax from './syntax';
+import { Syntax } from './syntax';
 const enum RelativePreference {
   Relative,
   NonRelative,
