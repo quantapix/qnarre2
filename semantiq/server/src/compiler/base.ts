@@ -31,6 +31,15 @@ export function assertGreaterThanOrEqual(a: number, b: number, mark?: AnyFunctio
 export function assertIsDefined<T>(v: T, m?: string, mark?: AnyFunction): asserts v is NonNullable<T> {
   if (v === undefined || v === null) fail(m, mark || assertIsDefined);
 }
+export function addMixins(t: any, ss: any[]) {
+  ss.forEach((s: any) => {
+    Object.getOwnPropertyNames(s.prototype).forEach((n) => {
+      if (n == 'constructor') return;
+      console.log(`adding ${s.name}.${n}`);
+      Object.defineProperty(t.prototype, n, Object.getOwnPropertyDescriptor(s.prototype, n)!);
+    });
+  });
+}
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 export interface MapLike<T> {
   [k: string]: T;

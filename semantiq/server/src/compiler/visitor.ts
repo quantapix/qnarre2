@@ -88,8 +88,8 @@ export function visitParameterList<T extends Node>(ns: Nodes<T> | undefined, cb:
   c.suspendLexicalEnvironment();
   return updated;
 }
-function addValueAssignments(ps: Nodes<ParameterDeclaration>, c: TransformationContext) {
-  let r: ParameterDeclaration[] | undefined;
+function addValueAssignments(ps: Nodes<qs.ParameterDeclaration>, c: TransformationContext) {
+  let r: qs.ParameterDeclaration[] | undefined;
   for (let i = 0; i < ps.length; i++) {
     const p = ps[i];
     const updated = addValueAssignmentIfNeeded(p, c);
@@ -101,10 +101,10 @@ function addValueAssignments(ps: Nodes<ParameterDeclaration>, c: TransformationC
   if (r) return setRange(new Nodes(r, ps.trailingComma), ps);
   return ps;
 }
-function addValueAssignmentIfNeeded(p: ParameterDeclaration, c: TransformationContext) {
+function addValueAssignmentIfNeeded(p: qs.ParameterDeclaration, c: TransformationContext) {
   return p.dot3Token ? p : Node.is.kind(BindingPattern, p.name) ? addForBindingPattern(p, c) : p.initializer ? addForInitializer(p, p.name, p.initializer, c) : p;
 }
-function addForBindingPattern(p: ParameterDeclaration, c: TransformationContext) {
+function addForBindingPattern(p: qs.ParameterDeclaration, c: TransformationContext) {
   c.addInitializationStatement(
     createVariableStatement(
       undefined,
@@ -119,7 +119,7 @@ function addForBindingPattern(p: ParameterDeclaration, c: TransformationContext)
   );
   return p.update(p.decorators, p.modifiers, p.dot3Token, getGeneratedNameForNode(p), p.questionToken, p.type, undefined);
 }
-function addForInitializer(p: ParameterDeclaration, name: Identifier, init: Expression, c: TransformationContext) {
+function addForInitializer(p: qs.ParameterDeclaration, name: Identifier, init: Expression, c: TransformationContext) {
   c.addInitializationStatement(
     createIf(
       createTypeCheck(getSynthesizedClone(name), 'undefined'),

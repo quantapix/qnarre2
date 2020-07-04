@@ -4,15 +4,6 @@ import { Node, Nodes } from './core';
 import * as qt from './types';
 import * as qy from './syntax';
 import { Modifier, Syntax } from './syntax';
-export function addMixins(t: any, ss: any[]) {
-  ss.forEach((s: any) => {
-    Object.getOwnPropertyNames(s.prototype).forEach((n) => {
-      if (n == 'constructor') return;
-      console.log(`adding ${s.name}.${n}`);
-      Object.defineProperty(t.prototype, n, Object.getOwnPropertyDescriptor(s.prototype, n)!);
-    });
-  });
-}
 // prettier-ignore
 export type NodeTypes = | ArrayBindingPattern | ArrayLiteralExpression | ArrayTypeNode | AsExpression | AwaitExpression | BinaryExpression | BindingElement | BindingPattern | Block | BreakOrContinueStatement | CallExpression | CaseBlock | CaseClause | CatchClause | ClassLikeDeclaration | CommaListExpression | ComputedPropertyName | ConditionalExpression | ConditionalTypeNode | Decorator | DefaultClause | DeleteExpression | DeleteExpression | DoStatement | ElementAccessExpression | EnumDeclaration | EnumMember | ExportAssignment | ExportDeclaration | ExpressionStatement | ExpressionWithTypeArguments | ExternalModuleReference | ForInStatement | ForOfStatement | ForStatement | FunctionLikeDeclaration | HeritageClause | Identifier | IfStatement | ImportClause | ImportDeclaration | ImportEqualsDeclaration | ImportOrExportSpecifier | ImportTypeNode | IndexedAccessTypeNode | InferTypeNode | InterfaceDeclaration | JSDoc | JSDocAugmentsTag | JSDocAuthorTag | JSDocFunctionType | JSDocImplementsTag | JSDocSignature | JSDocTemplateTag | JSDocTypedefTag | JSDocTypeExpression | JSDocTypeLiteral | JSDocTypeReferencingNode | JsxAttribute | JsxAttributes | JsxClosingElement | JsxElement | JsxExpression | JsxFragment | JsxOpeningLikeElement | JsxSpreadAttribute | LabeledStatement | LiteralTypeNode | MappedTypeNode | MetaProperty | MissingDeclaration | ModuleDeclaration | NamedImportsOrExports | NamedTupleMember | NamespaceExport | NamespaceExportDeclaration | NamespaceImport | NonNullExpression | ObjectLiteralExpression | OptionalTypeNode | ParameterDeclaration | ParenthesizedExpression | ParenthesizedTypeNode | PartiallyEmittedExpression | PostfixUnaryExpression | PrefixUnaryExpression | PropertyAccessExpression | PropertyAssignment | PropertyDeclaration | PropertySignature | QualifiedName | RestTypeNode | ReturnStatement | ShorthandPropertyAssignment | SignatureDeclaration | SourceFile | SpreadAssignment | SpreadElement | SwitchStatement | TaggedTemplateExpression | TemplateExpression | TemplateSpan | ThrowStatement | TryStatement | TupleTypeNode | TypeAliasDeclaration | TypeAssertion | TypeLiteralNode | TypeOfExpression | TypeOperatorNode | TypeParameterDeclaration | TypePredicateNode | TypeQueryNode | TypeReferenceNode | UnionOrIntersectionTypeNode | VariableDeclaration | VariableDeclarationList | VariableStatement | VoidExpression | WhileStatement | WithStatement | YieldExpression;
 export abstract class Declaration extends Node implements qt.Declaration {
@@ -54,6 +45,13 @@ export abstract class Declaration extends Node implements qt.Declaration {
 }
 export abstract class NamedDeclaration extends Declaration implements qt.NamedDeclaration {
   name?: qt.DeclarationName;
+}
+export abstract class PropertyLikeDeclaration extends NamedDeclaration {
+  name: qt.PropertyName;
+}
+export abstract class ObjectLiteralElement extends NamedDeclaration {
+  _objectLiteralBrand: any;
+  name?: qt.PropertyName;
 }
 export class SignatureDeclarationBase extends NamedDeclaration implements qt.SignatureDeclarationBase {
   //kind!: qt.SignatureDeclaration['kind'];
@@ -250,7 +248,11 @@ export abstract class MemberExpression extends LeftHandSideExpression implements
 export abstract class PrimaryExpression extends MemberExpression implements qt.PrimaryExpression {
   _primaryExpressionBrand: any;
 }
-export abstract class TokenOrIdentifier extends Node implements qt. {
+export abstract class ObjectLiteralExpressionBase<T extends qt.ObjectLiteralElement> extends PrimaryExpression {
+  properties: Nodes<T>;
+}
+qb.addMixins(ObjectLiteralExpressionBase, [Declaration]);
+export abstract class TokenOrIdentifier extends Node {
   getChildren(): Node[] {
     return this.kind === Syntax.EndOfFileToken ? this.jsDoc || qb.empty : qb.empty;
   }
@@ -260,7 +262,7 @@ export class Token<T extends Syntax> extends TokenOrIdentifier implements qt.Tok
     super(undefined, k, pos, end);
   }
 }
-export class Statement extends Node implements qt. {
+export class Statement extends Node implements qt.Statement {
   //_statementBrand: any;
   isUseStrictPrologue(node: ExpressionStatement): boolean {
     return Node.is.kind(StringLiteral, node.expression) && node.expression.text === 'use strict';
@@ -367,6 +369,10 @@ export class DeclarationStatement extends NamedDeclaration implements Statement 
 }
 export class IterationStatement extends Statement {
   statement: Statement;
+}
+export abstract class JSDocContainer implements JSDocContainer {
+  jsDoc?: JSDoc[];
+  jsDocCache?: readonly JSDocTag[];
 }
 export namespace ArrayBindingElement {
   export const also = [Syntax.BindingElement, Syntax.OmittedExpression];
@@ -966,7 +972,7 @@ export class CallExpression extends LeftHandSideExpression implements qt.CallExp
   _declarationBrand: any;
 }
 CallExpression.prototype.kind = CallExpression.kind;
-addMixins(CallExpression, [Declaration]);
+qb.addMixins(CallExpression, [Declaration]);
 export class CallChain extends CallExpression implements qt.CallChain {
   _optionalChainBrand: any;
   createCallChain(expression: Expression, questionDotToken: QuestionDotToken | undefined, typeArguments: readonly TypeNode[] | undefined, argumentsArray: readonly Expression[] | undefined) {
@@ -1620,6 +1626,7 @@ export class FunctionExpression extends FunctionLikeDeclarationBase implements q
   }
 }
 FunctionExpression.prototype.kind = FunctionExpression.kind;
+qb.addMixins(FunctionExpression, [PrimaryExpression, JSDocContainer]);
 export class FunctionTypeNode extends FunctionOrConstructorTypeNodeBase implements qt.FunctionTypeNode {
   static readonly kind = Syntax.FunctionType;
   create(ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t?: TypeNode) {
@@ -1774,6 +1781,7 @@ export class Identifier extends TokenOrIdentifier implements qt.Identifier {
   }
 }
 Identifier.prototype.kind = Identifier.kind;
+qb.addMixins(Identifier, [Declaration, PrimaryExpression]);
 export class IfStatement extends Statement implements qt.IfStatement {
   static readonly kind = Syntax.IfStatement;
   expression: Expression;
@@ -2041,7 +2049,7 @@ export class JSDocCallbackTag extends JSDocTag implements qt.JSDocCallbackTag {
   }
 }
 JSDocCallbackTag.prototype.kind = JSDocCallbackTag.kind;
-export class JSDocClassTag extends JSDocTag implements qt.JSDocClassTag{
+export class JSDocClassTag extends JSDocTag implements qt.JSDocClassTag {
   static readonly kind = Syntax.JSDocClassTag;
   createJSDocClassTag(comment?: string): JSDocClassTag {
     return createJSDocTag<JSDocClassTag>(Syntax.JSDocClassTag, 'class', comment);
@@ -2143,7 +2151,7 @@ export class JSDocPropertyTag extends JSDocPropertyLikeTag implements qt.JSDocPr
   }
 }
 JSDocPropertyTag.prototype.kind = JSDocPropertyTag.kind;
-export class JSDocProtectedTag extends JSDocTag  implements qt.JSDocProtectedTag {
+export class JSDocProtectedTag extends JSDocTag implements qt.JSDocProtectedTag {
   static readonly kind = Syntax.JSDocProtectedTag;
   createJSDocProtectedTag() {
     return createJSDocTag<JSDocProtectedTag>(Syntax.JSDocProtectedTag, 'protected');
@@ -2269,7 +2277,7 @@ export class JSDocTypeTag extends JSDocTag implements qt.JSDocTypeTag {
   }
 }
 JSDocTypeTag.prototype.kind = JSDocTypeTag.kind;
-export class JSDocUnknownType extends JSDocType implements qt.JSDocUnknownType{
+export class JSDocUnknownType extends JSDocType implements qt.JSDocUnknownType {
   static readonly kind = Syntax.JSDocUnknownType;
 }
 JSDocUnknownType.prototype.kind = JSDocUnknownType.kind;
@@ -2809,6 +2817,7 @@ export class NewExpression extends PrimaryExpression implements qt.NewExpression
   }
 }
 NewExpression.prototype.kind = NewExpression.kind;
+qb.addMixins(NewExpression, [Declaration]);
 export class NonNullChain extends Node implements qt.NonNullChain {
   createNonNullChain(expression: Expression) {
     super(true);
@@ -2843,7 +2852,7 @@ export class NoSubstitutionLiteral extends LiteralExpression implements qt.NoSub
   }
 }
 NoSubstitutionLiteral.prototype.kind = NoSubstitutionLiteral.kind;
-export class NotEmittedStatement extends Statement  implements qt.NotEmittedStatement {
+export class NotEmittedStatement extends Statement implements qt.NotEmittedStatement {
   static readonly kind = Syntax.NotEmittedStatement;
   createNotEmittedStatement(original: Node) {
     super(true);
@@ -3242,7 +3251,7 @@ export class QualifiedName extends Node implements qt.QualifiedName {
   }
 }
 QualifiedName.prototype.kind = QualifiedName.kind;
-export class RegexLiteral extends LiteralExpression  implements qt.RegexLiteral{
+export class RegexLiteral extends LiteralExpression implements qt.RegexLiteral {
   static readonly kind = Syntax.RegexLiteral;
   create(t: string) {
     const n = Node.createSynthesized(Syntax.RegexLiteral);
@@ -3714,7 +3723,7 @@ export class TypeQueryNode extends TypeNode implements qt.TypeQueryNode {
   }
 }
 TypeQueryNode.prototype.kind = TypeQueryNode.kind;
-export class TypeReferenceNode extends NodeWithTypeArguments implements qt.TypeReferenceNode  {
+export class TypeReferenceNode extends NodeWithTypeArguments implements qt.TypeReferenceNode {
   static readonly kind = Syntax.TypeReference;
   typeName: EntityName;
   create(t: string | EntityName, ts?: readonly TypeNode[]) {
@@ -4076,7 +4085,7 @@ export class WhileStatement extends IterationStatement implements qt.WhileStatem
   }
 }
 WhileStatement.prototype.kind = WhileStatement.kind;
-export class WithStatement extends Statement implements qt.WithStatement{
+export class WithStatement extends Statement implements qt.WithStatement {
   static readonly kind = Syntax.WithStatement;
   expression: Expression;
   statement: Statement;
@@ -4090,7 +4099,7 @@ export class WithStatement extends Statement implements qt.WithStatement{
   }
 }
 WithStatement.prototype.kind = WithStatement.kind;
-export class YieldExpression extends Expression implements qt.YieldExpression{
+export class YieldExpression extends Expression implements qt.YieldExpression {
   static readonly kind = Syntax.YieldExpression;
   asteriskToken?: AsteriskToken;
   expression?: Expression;
