@@ -1752,7 +1752,7 @@ export abstract class Node extends qb.TextRange implements qt.Node {
       const matchResult = /^([a-z]+)([_\-]([a-z]+))?$/.exec(locale.toLowerCase());
       if (!matchResult) {
         if (errors) {
-          errors.push(createCompilerDiagnostic(Diagnostics.Locale_must_be_of_the_form_language_or_language_territory_For_example_0_or_1, 'en', 'ja-jp'));
+          errors.push(createCompilerDiagnostic(qd.Locale_must_be_of_the_form_language_or_language_territory_For_example_0_or_1, 'en', 'ja-jp'));
         }
         return;
       }
@@ -1773,13 +1773,13 @@ export abstract class Node extends qb.TextRange implements qt.Node {
         try {
           fileContents = sys.readFile(filePath);
         } catch (e) {
-          if (errors) errors.push(createCompilerDiagnostic(Diagnostics.Unable_to_open_file_0, filePath));
+          if (errors) errors.push(createCompilerDiagnostic(qd.Unable_to_open_file_0, filePath));
           return false;
         }
         try {
           setLocalizedDiagnosticMessages(JSON.parse(fileContents!));
         } catch {
-          if (errors) errors.push(createCompilerDiagnostic(Diagnostics.Corrupted_locale_file_0, filePath));
+          if (errors) errors.push(createCompilerDiagnostic(qd.Corrupted_locale_file_0, filePath));
           return false;
         }
         return true;

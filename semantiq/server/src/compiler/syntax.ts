@@ -1385,7 +1385,7 @@ export function fromString(s: string) {
   return strToTok.get(s);
 }
 export function markerTrivia(s: string, pos: number, e?: (m: DiagnosticMessage, pos?: number, len?: number) => void) {
-  if (e) e(Diagnostics.Merge_conflict_marker_encountered, pos, markerLength);
+  if (e) e(qd.Merge_conflict_marker_encountered, pos, markerLength);
   const c = s.charCodeAt(pos);
   const l = s.length;
   if (c === Codes.lessThan || c === Codes.greaterThan) {

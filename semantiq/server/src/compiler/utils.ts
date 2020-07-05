@@ -1561,12 +1561,12 @@ export function createDiagnosticCollection(): DiagnosticCollection {
     reattachFileDiagnostics,
   };
   function reattachFileDiagnostics(newFile: SourceFile): void {
-    forEach(fileDiagnostics.get(newFile.fileName), (diagnostic) => (diagnostic.file = newFile));
+    forEach(fileqd.get(newFile.fileName), (diagnostic) => (diagnostic.file = newFile));
   }
   function lookup(diagnostic: Diagnostic): Diagnostic | undefined {
     let diagnostics: SortedArray<Diagnostic> | undefined;
     if (diagnostic.file) {
-      diagnostics = fileDiagnostics.get(diagnostic.file.fileName);
+      diagnostics = fileqd.get(diagnostic.file.fileName);
     } else {
       diagnostics = nonFileDiagnostics;
     }
@@ -1580,16 +1580,16 @@ export function createDiagnosticCollection(): DiagnosticCollection {
   function add(diagnostic: Diagnostic): void {
     let diagnostics: SortedArray<Diagnostic> | undefined;
     if (diagnostic.file) {
-      diagnostics = fileDiagnostics.get(diagnostic.file.fileName);
+      diagnostics = fileqd.get(diagnostic.file.fileName);
       if (!diagnostics) {
         diagnostics = ([] as Diagnostic[]) as SortedArray<DiagnosticWithLocation>;
-        fileDiagnostics.set(diagnostic.file.fileName, diagnostics as SortedArray<DiagnosticWithLocation>);
+        fileqd.set(diagnostic.file.fileName, diagnostics as SortedArray<DiagnosticWithLocation>);
         insertSorted(filesWithDiagnostics, diagnostic.file.fileName, compareStringsCaseSensitive);
       }
     } else {
       if (hasReadNonFileDiagnostics) {
         hasReadNonFileDiagnostics = false;
-        nonFileDiagnostics = nonFileDiagnostics.slice() as SortedArray<Diagnostic>;
+        nonFileDiagnostics = nonFileqd.slice() as SortedArray<Diagnostic>;
       }
       diagnostics = nonFileDiagnostics;
     }
@@ -1602,9 +1602,9 @@ export function createDiagnosticCollection(): DiagnosticCollection {
   function getDiagnostics(fileName: string): DiagnosticWithLocation[];
   function getDiagnostics(): Diagnostic[];
   function getDiagnostics(fileName?: string): Diagnostic[] {
-    if (fileName) return fileDiagnostics.get(fileName) || [];
-    const fileDiags: Diagnostic[] = flatMapToMutable(filesWithDiagnostics, (f) => fileDiagnostics.get(f));
-    if (!nonFileDiagnostics.length) return fileDiags;
+    if (fileName) return fileqd.get(fileName) || [];
+    const fileDiags: Diagnostic[] = flatMapToMutable(filesWithDiagnostics, (f) => fileqd.get(f));
+    if (!nonFileqd.length) return fileDiags;
     fileDiags.unshift(...nonFileDiagnostics);
     return fileDiags;
   }
@@ -1968,7 +1968,7 @@ export function writeFile(host: { writeFile: WriteFileCallback }, diagnostics: D
     data,
     writeByteOrderMark,
     (hostErrorMessage) => {
-      diagnostics.add(createCompilerDiagnostic(Diagnostics.Could_not_write_file_0_Colon_1, fileName, hostErrorMessage));
+      diagnostics.add(createCompilerDiagnostic(qd.Could_not_write_file_0_Colon_1, fileName, hostErrorMessage));
     },
     sourceFiles
   );

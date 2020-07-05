@@ -1437,7 +1437,7 @@ namespace ts {
 
     /**
      * Does *not* get *all* suggestion diagnostics, just the ones that were convenient to report in the checker.
-     * Others are added in computeSuggestionDiagnostics.
+     * Others are added in computeSuggestionqd.
      */
     getSuggestionDiagnostics(file: SourceFile, cancellationToken?: CancellationToken): readonly DiagnosticWithLocation[];
 

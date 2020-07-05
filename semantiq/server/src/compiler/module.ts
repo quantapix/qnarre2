@@ -546,14 +546,14 @@ function readPackageJsonField<K extends MatchingKeys<PackageJson, object | undef
 function readPackageJsonField<K extends keyof PackageJson>(jsonContent: PackageJson, fieldName: K, typeOfTag: 'string' | 'object', state: ModuleResolutionState): PackageJson[K] | undefined {
   if (!hasProperty(jsonContent, fieldName)) {
     if (state.traceEnabled) {
-      trace(state.host, Diagnostics.package_json_does_not_have_a_0_field, fieldName);
+      trace(state.host, qd.package_json_does_not_have_a_0_field, fieldName);
     }
     return;
   }
   const value = jsonContent[fieldName];
   if (typeof value !== typeOfTag || value === null) {
     if (state.traceEnabled) {
-      trace(state.host, Diagnostics.Expected_type_of_0_field_in_package_json_to_be_1_got_2, fieldName, typeOfTag, value === null ? 'null' : typeof value);
+      trace(state.host, qd.Expected_type_of_0_field_in_package_json_to_be_1_got_2, fieldName, typeOfTag, value === null ? 'null' : typeof value);
     }
     return;
   }
@@ -571,13 +571,13 @@ function readPackageJsonPathField<K extends 'typings' | 'types' | 'main' | 'tsco
   }
   if (!fileName) {
     if (state.traceEnabled) {
-      trace(state.host, Diagnostics.package_json_had_a_falsy_0_field, fieldName);
+      trace(state.host, qd.package_json_had_a_falsy_0_field, fieldName);
     }
     return;
   }
   const path = normalizePath(combinePaths(baseDirectory, fileName));
   if (state.traceEnabled) {
-    trace(state.host, Diagnostics.package_json_has_0_field_1_that_references_2, fieldName, fileName, path);
+    trace(state.host, qd.package_json_has_0_field_1_that_references_2, fieldName, fileName, path);
   }
   return path;
 }
@@ -594,7 +594,7 @@ function readPackageJsonTypesVersionsField(jsonContent: PackageJson, state: Modu
   const typesVersions = readPackageJsonField(jsonContent, 'typesVersions', 'object', state);
   if (typesVersions === undefined) return;
   if (state.traceEnabled) {
-    trace(state.host, Diagnostics.package_json_has_a_typesVersions_field_with_version_specific_path_mappings);
+    trace(state.host, qd.package_json_has_a_typesVersions_field_with_version_specific_path_mappings);
   }
   return typesVersions;
 }
@@ -608,21 +608,21 @@ function readPackageJsonTypesVersionPaths(jsonContent: PackageJson, state: Modul
   if (state.traceEnabled) {
     for (const key in typesVersions) {
       if (hasProperty(typesVersions, key) && !VersionRange.tryParse(key)) {
-        trace(state.host, Diagnostics.package_json_has_a_typesVersions_entry_0_that_is_not_a_valid_semver_range, key);
+        trace(state.host, qd.package_json_has_a_typesVersions_entry_0_that_is_not_a_valid_semver_range, key);
       }
     }
   }
   const result = getPackageJsonTypesVersionsPaths(typesVersions);
   if (!result) {
     if (state.traceEnabled) {
-      trace(state.host, Diagnostics.package_json_does_not_have_a_typesVersions_entry_that_matches_version_0, versionMajorMinor);
+      trace(state.host, qd.package_json_does_not_have_a_typesVersions_entry_that_matches_version_0, versionMajorMinor);
     }
     return;
   }
   const { version: bestVersionKey, paths: bestVersionPaths } = result;
   if (typeof bestVersionPaths !== 'object') {
     if (state.traceEnabled) {
-      trace(state.host, Diagnostics.Expected_type_of_0_field_in_package_json_to_be_1_got_2, `typesVersions['${bestVersionKey}']`, 'object', typeof bestVersionPaths);
+      trace(state.host, qd.Expected_type_of_0_field_in_package_json_to_be_1_got_2, `typesVersions['${bestVersionKey}']`, 'object', typeof bestVersionPaths);
     }
     return;
   }
@@ -680,19 +680,19 @@ export function resolveTypeReferenceDirective(
   if (traceEnabled) {
     if (containingFile === undefined) {
       if (typeRoots === undefined) {
-        trace(host, Diagnostics.Resolving_type_reference_directive_0_containing_file_not_set_root_directory_not_set, typeReferenceDirectiveName);
+        trace(host, qd.Resolving_type_reference_directive_0_containing_file_not_set_root_directory_not_set, typeReferenceDirectiveName);
       } else {
-        trace(host, Diagnostics.Resolving_type_reference_directive_0_containing_file_not_set_root_directory_1, typeReferenceDirectiveName, typeRoots);
+        trace(host, qd.Resolving_type_reference_directive_0_containing_file_not_set_root_directory_1, typeReferenceDirectiveName, typeRoots);
       }
     } else {
       if (typeRoots === undefined) {
-        trace(host, Diagnostics.Resolving_type_reference_directive_0_containing_file_1_root_directory_not_set, typeReferenceDirectiveName, containingFile);
+        trace(host, qd.Resolving_type_reference_directive_0_containing_file_1_root_directory_not_set, typeReferenceDirectiveName, containingFile);
       } else {
-        trace(host, Diagnostics.Resolving_type_reference_directive_0_containing_file_1_root_directory_2, typeReferenceDirectiveName, containingFile, typeRoots);
+        trace(host, qd.Resolving_type_reference_directive_0_containing_file_1_root_directory_2, typeReferenceDirectiveName, containingFile, typeRoots);
       }
     }
     if (redirectedReference) {
-      trace(host, Diagnostics.Using_compiler_options_of_project_reference_redirect_0, redirectedReference.sourceFile.fileName);
+      trace(host, qd.Using_compiler_options_of_project_reference_redirect_0, redirectedReference.sourceFile.fileName);
     }
   }
   let resolved = primaryLookup();
@@ -709,14 +709,14 @@ export function resolveTypeReferenceDirective(
       if (packageId) {
         trace(
           host,
-          Diagnostics.Type_reference_directive_0_was_successfully_resolved_to_1_with_Package_ID_2_primary_Colon_3,
+          qd.Type_reference_directive_0_was_successfully_resolved_to_1_with_Package_ID_2_primary_Colon_3,
           typeReferenceDirectiveName,
           resolvedFileName,
           packageIdToString(packageId),
           primary
         );
       } else {
-        trace(host, Diagnostics.Type_reference_directive_0_was_successfully_resolved_to_1_primary_Colon_2, typeReferenceDirectiveName, resolvedFileName, primary);
+        trace(host, qd.Type_reference_directive_0_was_successfully_resolved_to_1_primary_Colon_2, typeReferenceDirectiveName, resolvedFileName, primary);
       }
     }
     resolvedTypeReferenceDirective = { primary, resolvedFileName, packageId, isExternalLibraryImport: pathContainsNodeModules(fileName) };
@@ -725,20 +725,20 @@ export function resolveTypeReferenceDirective(
   function primaryLookup(): PathAndPackageId | undefined {
     if (typeRoots && typeRoots.length) {
       if (traceEnabled) {
-        trace(host, Diagnostics.Resolving_with_primary_search_path_0, typeRoots.join(', '));
+        trace(host, qd.Resolving_with_primary_search_path_0, typeRoots.join(', '));
       }
       return firstDefined(typeRoots, (typeRoot) => {
         const candidate = combinePaths(typeRoot, typeReferenceDirectiveName);
         const candidateDirectory = getDirectoryPath(candidate);
         const directoryExists = directoryProbablyExists(candidateDirectory, host);
         if (!directoryExists && traceEnabled) {
-          trace(host, Diagnostics.Directory_0_does_not_exist_skipping_all_lookups_in_it, candidateDirectory);
+          trace(host, qd.Directory_0_does_not_exist_skipping_all_lookups_in_it, candidateDirectory);
         }
         return resolvedTypeScriptOnly(loadNodeModuleFromDirectory(Extensions.DtsOnly, candidate, !directoryExists, moduleResolutionState));
       });
     } else {
       if (traceEnabled) {
-        trace(host, Diagnostics.Root_directory_cannot_be_determined_skipping_primary_search_paths);
+        trace(host, qd.Root_directory_cannot_be_determined_skipping_primary_search_paths);
       }
     }
   }
@@ -746,7 +746,7 @@ export function resolveTypeReferenceDirective(
     const initialLocationForSecondaryLookup = containingFile && getDirectoryPath(containingFile);
     if (initialLocationForSecondaryLookup !== undefined) {
       if (traceEnabled) {
-        trace(host, Diagnostics.Looking_up_in_node_modules_folder_initial_location_0, initialLocationForSecondaryLookup);
+        trace(host, qd.Looking_up_in_node_modules_folder_initial_location_0, initialLocationForSecondaryLookup);
       }
       let result: Resolved | undefined;
       if (!qp_isExternalModuleNameRelative(typeReferenceDirectiveName)) {
@@ -758,12 +758,12 @@ export function resolveTypeReferenceDirective(
       }
       const resolvedFile = resolvedTypeScriptOnly(result);
       if (!resolvedFile && traceEnabled) {
-        trace(host, Diagnostics.Type_reference_directive_0_was_not_resolved, typeReferenceDirectiveName);
+        trace(host, qd.Type_reference_directive_0_was_not_resolved, typeReferenceDirectiveName);
       }
       return resolvedFile;
     } else {
       if (traceEnabled) {
-        trace(host, Diagnostics.Containing_file_is_not_specified_and_root_directory_cannot_be_determined_skipping_lookup_in_node_modules_folder);
+        trace(host, qd.Containing_file_is_not_specified_and_root_directory_cannot_be_determined_skipping_lookup_in_node_modules_folder);
       }
     }
   }
@@ -934,9 +934,9 @@ export function resolveModuleName(
     compilerOptions = redirectedReference.commandLine.options;
   }
   if (traceEnabled) {
-    trace(host, Diagnostics.Resolving_module_0_from_1, moduleName, containingFile);
+    trace(host, qd.Resolving_module_0_from_1, moduleName, containingFile);
     if (redirectedReference) {
-      trace(host, Diagnostics.Using_compiler_options_of_project_reference_redirect_0, redirectedReference.sourceFile.fileName);
+      trace(host, qd.Using_compiler_options_of_project_reference_redirect_0, redirectedReference.sourceFile.fileName);
     }
   }
   const containingDirectory = getDirectoryPath(containingFile);
@@ -944,18 +944,18 @@ export function resolveModuleName(
   let result = perFolderCache && perFolderCache.get(moduleName);
   if (result) {
     if (traceEnabled) {
-      trace(host, Diagnostics.Resolution_for_module_0_was_found_in_cache_from_location_1, moduleName, containingDirectory);
+      trace(host, qd.Resolution_for_module_0_was_found_in_cache_from_location_1, moduleName, containingDirectory);
     }
   } else {
     let moduleResolution = compilerOptions.moduleResolution;
     if (moduleResolution === undefined) {
       moduleResolution = getEmitModuleKind(compilerOptions) === ModuleKind.CommonJS ? ModuleResolutionKind.NodeJs : ModuleResolutionKind.Classic;
       if (traceEnabled) {
-        trace(host, Diagnostics.Module_resolution_kind_is_not_specified_using_0, ModuleResolutionKind[moduleResolution]);
+        trace(host, qd.Module_resolution_kind_is_not_specified_using_0, ModuleResolutionKind[moduleResolution]);
       }
     } else {
       if (traceEnabled) {
-        trace(host, Diagnostics.Explicitly_specified_module_resolution_kind_Colon_0, ModuleResolutionKind[moduleResolution]);
+        trace(host, qd.Explicitly_specified_module_resolution_kind_Colon_0, ModuleResolutionKind[moduleResolution]);
       }
     }
     perfLogger.logStartResolveModule(moduleName);
@@ -981,12 +981,12 @@ export function resolveModuleName(
   if (traceEnabled) {
     if (result.resolvedModule) {
       if (result.resolvedModule.packageId) {
-        trace(host, Diagnostics.Module_name_0_was_successfully_resolved_to_1_with_Package_ID_2, moduleName, result.resolvedModule.resolvedFileName, packageIdToString(result.resolvedModule.packageId));
+        trace(host, qd.Module_name_0_was_successfully_resolved_to_1_with_Package_ID_2, moduleName, result.resolvedModule.resolvedFileName, packageIdToString(result.resolvedModule.packageId));
       } else {
-        trace(host, Diagnostics.Module_name_0_was_successfully_resolved_to_1, moduleName, result.resolvedModule.resolvedFileName);
+        trace(host, qd.Module_name_0_was_successfully_resolved_to_1, moduleName, result.resolvedModule.resolvedFileName);
       }
     } else {
-      trace(host, Diagnostics.Module_name_0_was_not_resolved, moduleName);
+      trace(host, qd.Module_name_0_was_not_resolved, moduleName);
     }
   }
   return result;
@@ -1008,8 +1008,8 @@ function tryLoadModuleUsingPathsIfEligible(extensions: Extensions, moduleName: s
   const { baseUrl, paths } = state.compilerOptions;
   if (baseUrl && paths && !pathIsRelative(moduleName)) {
     if (state.traceEnabled) {
-      trace(state.host, Diagnostics.baseUrl_option_is_set_to_0_using_this_value_to_resolve_non_relative_module_name_1, baseUrl, moduleName);
-      trace(state.host, Diagnostics.paths_option_is_specified_looking_for_a_pattern_to_match_module_name_0, moduleName);
+      trace(state.host, qd.baseUrl_option_is_set_to_0_using_this_value_to_resolve_non_relative_module_name_1, baseUrl, moduleName);
+      trace(state.host, qd.paths_option_is_specified_looking_for_a_pattern_to_match_module_name_0, moduleName);
     }
     return tryLoadModuleUsingPaths(extensions, moduleName, baseUrl, paths, loader, false, state);
   }
@@ -1019,7 +1019,7 @@ function tryLoadModuleUsingRootDirs(extensions: Extensions, moduleName: string, 
     return;
   }
   if (state.traceEnabled) {
-    trace(state.host, Diagnostics.rootDirs_option_is_set_using_it_to_resolve_relative_module_name_0, moduleName);
+    trace(state.host, qd.rootDirs_option_is_set_using_it_to_resolve_relative_module_name_0, moduleName);
   }
   const candidate = normalizePath(combinePaths(containingDirectory, moduleName));
   let matchedRootDir: string | undefined;
@@ -1031,7 +1031,7 @@ function tryLoadModuleUsingRootDirs(extensions: Extensions, moduleName: string, 
     }
     const isLongestMatchingPrefix = startsWith(candidate, normalizedRoot) && (matchedNormalizedPrefix === undefined || matchedNormalizedPrefix.length < normalizedRoot.length);
     if (state.traceEnabled) {
-      trace(state.host, Diagnostics.Checking_if_0_is_the_longest_matching_prefix_for_1_2, normalizedRoot, candidate, isLongestMatchingPrefix);
+      trace(state.host, qd.Checking_if_0_is_the_longest_matching_prefix_for_1_2, normalizedRoot, candidate, isLongestMatchingPrefix);
     }
     if (isLongestMatchingPrefix) {
       matchedNormalizedPrefix = normalizedRoot;
@@ -1040,16 +1040,16 @@ function tryLoadModuleUsingRootDirs(extensions: Extensions, moduleName: string, 
   }
   if (matchedNormalizedPrefix) {
     if (state.traceEnabled) {
-      trace(state.host, Diagnostics.Longest_matching_prefix_for_0_is_1, candidate, matchedNormalizedPrefix);
+      trace(state.host, qd.Longest_matching_prefix_for_0_is_1, candidate, matchedNormalizedPrefix);
     }
     const suffix = candidate.substr(matchedNormalizedPrefix.length);
     if (state.traceEnabled) {
-      trace(state.host, Diagnostics.Loading_0_from_the_root_dir_1_candidate_location_2, suffix, matchedNormalizedPrefix, candidate);
+      trace(state.host, qd.Loading_0_from_the_root_dir_1_candidate_location_2, suffix, matchedNormalizedPrefix, candidate);
     }
     const resolvedFileName = loader(extensions, candidate, !directoryProbablyExists(containingDirectory, state.host), state);
     if (resolvedFileName) return resolvedFileName;
     if (state.traceEnabled) {
-      trace(state.host, Diagnostics.Trying_other_entries_in_rootDirs);
+      trace(state.host, qd.Trying_other_entries_in_rootDirs);
     }
     for (const rootDir of state.compilerOptions.rootDirs) {
       if (rootDir === matchedRootDir) {
@@ -1057,14 +1057,14 @@ function tryLoadModuleUsingRootDirs(extensions: Extensions, moduleName: string, 
       }
       const candidate = combinePaths(normalizePath(rootDir), suffix);
       if (state.traceEnabled) {
-        trace(state.host, Diagnostics.Loading_0_from_the_root_dir_1_candidate_location_2, suffix, rootDir, candidate);
+        trace(state.host, qd.Loading_0_from_the_root_dir_1_candidate_location_2, suffix, rootDir, candidate);
       }
       const baseDirectory = getDirectoryPath(candidate);
       const resolvedFileName = loader(extensions, candidate, !directoryProbablyExists(baseDirectory, state.host), state);
       if (resolvedFileName) return resolvedFileName;
     }
     if (state.traceEnabled) {
-      trace(state.host, Diagnostics.Module_resolution_using_rootDirs_has_failed);
+      trace(state.host, qd.Module_resolution_using_rootDirs_has_failed);
     }
   }
   return;
@@ -1075,11 +1075,11 @@ function tryLoadModuleUsingBaseUrl(extensions: Extensions, moduleName: string, l
     return;
   }
   if (state.traceEnabled) {
-    trace(state.host, Diagnostics.baseUrl_option_is_set_to_0_using_this_value_to_resolve_non_relative_module_name_1, baseUrl, moduleName);
+    trace(state.host, qd.baseUrl_option_is_set_to_0_using_this_value_to_resolve_non_relative_module_name_1, baseUrl, moduleName);
   }
   const candidate = normalizePath(combinePaths(baseUrl, moduleName));
   if (state.traceEnabled) {
-    trace(state.host, Diagnostics.Resolving_module_name_0_relative_to_base_url_1_2, moduleName, baseUrl, candidate);
+    trace(state.host, qd.Resolving_module_name_0_relative_to_base_url_1_2, moduleName, baseUrl, candidate);
   }
   return loader(extensions, candidate, !directoryProbablyExists(getDirectoryPath(candidate), state.host), state);
 }
@@ -1157,7 +1157,7 @@ function nodeModuleNameResolverWorker(
     if (resolved) return toSearchResult({ resolved, isExternalLibraryImport: pathContainsNodeModules(resolved.path) });
     if (!qp_isExternalModuleNameRelative(moduleName)) {
       if (traceEnabled) {
-        trace(host, Diagnostics.Loading_module_0_from_node_modules_folder_target_file_type_1, moduleName, Extensions[extensions]);
+        trace(host, qd.Loading_module_0_from_node_modules_folder_target_file_type_1, moduleName, Extensions[extensions]);
       }
       const resolved = loadModuleFromNearestNodeModulesDirectory(extensions, moduleName, containingDirectory, state, cache, redirectedReference);
       if (!resolved) return;
@@ -1179,21 +1179,21 @@ function realPath(path: string, host: ModuleResolutionHost, traceEnabled: boolea
   if (!host.realpath) return path;
   const real = normalizePath(host.realpath(path));
   if (traceEnabled) {
-    trace(host, Diagnostics.Resolving_real_path_for_0_result_1, path, real);
+    trace(host, qd.Resolving_real_path_for_0_result_1, path, real);
   }
   assert(host.fileExists(real), `${path} linked to nonexistent file ${real}`);
   return real;
 }
 function nodeLoadModuleByRelativeName(extensions: Extensions, candidate: string, onlyRecordFailures: boolean, state: ModuleResolutionState, considerPackageJson: boolean): Resolved | undefined {
   if (state.traceEnabled) {
-    trace(state.host, Diagnostics.Loading_module_as_file_Slash_folder_candidate_module_location_0_target_file_type_1, candidate, Extensions[extensions]);
+    trace(state.host, qd.Loading_module_as_file_Slash_folder_candidate_module_location_0_target_file_type_1, candidate, Extensions[extensions]);
   }
   if (!hasTrailingDirectorySeparator(candidate)) {
     if (!onlyRecordFailures) {
       const parentOfCandidate = getDirectoryPath(candidate);
       if (!directoryProbablyExists(parentOfCandidate, state.host)) {
         if (state.traceEnabled) {
-          trace(state.host, Diagnostics.Directory_0_does_not_exist_skipping_all_lookups_in_it, parentOfCandidate);
+          trace(state.host, qd.Directory_0_does_not_exist_skipping_all_lookups_in_it, parentOfCandidate);
         }
         onlyRecordFailures = true;
       }
@@ -1209,7 +1209,7 @@ function nodeLoadModuleByRelativeName(extensions: Extensions, candidate: string,
     const candidateExists = directoryProbablyExists(candidate, state.host);
     if (!candidateExists) {
       if (state.traceEnabled) {
-        trace(state.host, Diagnostics.Directory_0_does_not_exist_skipping_all_lookups_in_it, candidate);
+        trace(state.host, qd.Directory_0_does_not_exist_skipping_all_lookups_in_it, candidate);
       }
       onlyRecordFailures = true;
     }
@@ -1251,7 +1251,7 @@ function loadModuleFromFile(extensions: Extensions, candidate: string, onlyRecor
     const extensionless = removeFileExtension(candidate);
     if (state.traceEnabled) {
       const extension = candidate.substring(extensionless.length);
-      trace(state.host, Diagnostics.File_name_0_has_a_1_extension_stripping_it, candidate, extension);
+      trace(state.host, qd.File_name_0_has_a_1_extension_stripping_it, candidate, extension);
     }
     return tryAddingExtensions(extensionless, extensions, onlyRecordFailures, state);
   }
@@ -1283,12 +1283,12 @@ function tryFile(fileName: string, onlyRecordFailures: boolean, state: ModuleRes
   if (!onlyRecordFailures) {
     if (state.host.fileExists(fileName)) {
       if (state.traceEnabled) {
-        trace(state.host, Diagnostics.File_0_exist_use_it_as_a_name_resolution_result, fileName);
+        trace(state.host, qd.File_0_exist_use_it_as_a_name_resolution_result, fileName);
       }
       return fileName;
     } else {
       if (state.traceEnabled) {
-        trace(state.host, Diagnostics.File_0_does_not_exist, fileName);
+        trace(state.host, qd.File_0_does_not_exist, fileName);
       }
     }
   }
@@ -1313,13 +1313,13 @@ function getPackageJsonInfo(packageDirectory: string, onlyRecordFailures: boolea
   if (directoryExists && host.fileExists(packageJsonPath)) {
     const packageJsonContent = readJson(packageJsonPath, host) as PackageJson;
     if (traceEnabled) {
-      trace(host, Diagnostics.Found_package_json_at_0, packageJsonPath);
+      trace(host, qd.Found_package_json_at_0, packageJsonPath);
     }
     const versionPaths = readPackageJsonTypesVersionPaths(packageJsonContent, state);
     return { packageDirectory, packageJsonContent, versionPaths };
   } else {
     if (directoryExists && traceEnabled) {
-      trace(host, Diagnostics.File_0_does_not_exist, packageJsonPath);
+      trace(host, qd.File_0_does_not_exist, packageJsonPath);
     }
     state.failedLookupLocations.push(packageJsonPath);
   }
@@ -1358,7 +1358,7 @@ function loadNodeModuleFromDirectoryWorker(
       const resolved = resolvedIfExtensionMatches(extensions, fromFile);
       if (resolved) return noPackageId(resolved);
       if (state.traceEnabled) {
-        trace(state.host, Diagnostics.File_0_has_an_unsupported_extension_so_skipping_it, fromFile);
+        trace(state.host, qd.File_0_has_an_unsupported_extension_so_skipping_it, fromFile);
       }
     }
     const nextExtensions = extensions === Extensions.DtsOnly ? Extensions.TypeScript : extensions;
@@ -1370,7 +1370,7 @@ function loadNodeModuleFromDirectoryWorker(
   if (versionPaths && (!packageFile || containsPath(candidate, packageFile))) {
     const moduleName = getRelativePathFromDirectory(candidate, packageFile || indexPath, false);
     if (state.traceEnabled) {
-      trace(state.host, Diagnostics.package_json_has_a_typesVersions_entry_0_that_matches_compiler_version_1_looking_for_a_pattern_to_match_module_name_2, versionPaths.version, version, moduleName);
+      trace(state.host, qd.package_json_has_a_typesVersions_entry_0_that_matches_compiler_version_1_looking_for_a_pattern_to_match_module_name_2, versionPaths.version, version, moduleName);
     }
     const result = tryLoadModuleUsingPaths(extensions, moduleName, candidate, versionPaths.paths, loader, onlyRecordFailuresForPackageFile || onlyRecordFailuresForIndex, state);
     if (result) return removeIgnoredPackageId(result.value);
@@ -1438,7 +1438,7 @@ function loadModuleFromImmediateNodeModulesDirectory(extensions: Extensions, mod
   const nodeModulesFolder = combinePaths(directory, 'node_modules');
   const nodeModulesFolderExists = directoryProbablyExists(nodeModulesFolder, state.host);
   if (!nodeModulesFolderExists && state.traceEnabled) {
-    trace(state.host, Diagnostics.Directory_0_does_not_exist_skipping_all_lookups_in_it, nodeModulesFolder);
+    trace(state.host, qd.Directory_0_does_not_exist_skipping_all_lookups_in_it, nodeModulesFolder);
   }
   const packageResult = typesScopeOnly ? undefined : loadModuleFromSpecificNodeModulesDirectory(extensions, moduleName, nodeModulesFolder, nodeModulesFolderExists, state);
   if (packageResult) return packageResult;
@@ -1447,7 +1447,7 @@ function loadModuleFromImmediateNodeModulesDirectory(extensions: Extensions, mod
     let nodeModulesAtTypesExists = nodeModulesFolderExists;
     if (nodeModulesFolderExists && !directoryProbablyExists(nodeModulesAtTypes, state.host)) {
       if (state.traceEnabled) {
-        trace(state.host, Diagnostics.Directory_0_does_not_exist_skipping_all_lookups_in_it, nodeModulesAtTypes);
+        trace(state.host, qd.Directory_0_does_not_exist_skipping_all_lookups_in_it, nodeModulesAtTypes);
       }
       nodeModulesAtTypesExists = false;
     }
@@ -1481,13 +1481,7 @@ function loadModuleFromSpecificNodeModulesDirectory(
     packageInfo = getPackageJsonInfo(packageDirectory, !nodeModulesDirectoryExists, state);
     if (packageInfo && packageInfo.versionPaths) {
       if (state.traceEnabled) {
-        trace(
-          state.host,
-          Diagnostics.package_json_has_a_typesVersions_entry_0_that_matches_compiler_version_1_looking_for_a_pattern_to_match_module_name_2,
-          packageInfo.versionPaths.version,
-          version,
-          rest
-        );
+        trace(state.host, qd.package_json_has_a_typesVersions_entry_0_that_matches_compiler_version_1_looking_for_a_pattern_to_match_module_name_2, packageInfo.versionPaths.version, version, rest);
       }
       const packageDirectoryExists = nodeModulesDirectoryExists && directoryProbablyExists(packageDirectory, state.host);
       const fromPaths = tryLoadModuleUsingPaths(extensions, rest, packageDirectory, packageInfo.versionPaths.paths, loader, !packageDirectoryExists, state);
@@ -1510,13 +1504,13 @@ function tryLoadModuleUsingPaths(
     const matchedStar = isString(matchedPattern) ? undefined : matchedText(matchedPattern, moduleName);
     const matchedPatternText = isString(matchedPattern) ? matchedPattern : patternText(matchedPattern);
     if (state.traceEnabled) {
-      trace(state.host, Diagnostics.Module_name_0_matched_pattern_1, moduleName, matchedPatternText);
+      trace(state.host, qd.Module_name_0_matched_pattern_1, moduleName, matchedPatternText);
     }
     const resolved = forEach(paths[matchedPatternText], (subst) => {
       const path = matchedStar ? subst.replace('*', matchedStar) : subst;
       const candidate = normalizePath(combinePaths(baseDirectory, path));
       if (state.traceEnabled) {
-        trace(state.host, Diagnostics.Trying_substitution_0_candidate_module_location_Colon_1, subst, path);
+        trace(state.host, qd.Trying_substitution_0_candidate_module_location_Colon_1, subst, path);
       }
       const extension = tryGetExtensionFromPath(candidate);
       if (extension !== undefined) {
@@ -1532,7 +1526,7 @@ const mangledScopedPackageSeparator = '__';
 function mangleScopedPackageNameWithTrace(packageName: string, state: ModuleResolutionState): string {
   const mangled = mangleScopedPackageName(packageName);
   if (state.traceEnabled && mangled !== packageName) {
-    trace(state.host, Diagnostics.Scoped_package_detected_looking_in_0, mangled);
+    trace(state.host, qd.Scoped_package_detected_looking_in_0, mangled);
   }
   return mangled;
 }
@@ -1558,7 +1552,7 @@ function tryFindNonRelativeModuleNameInCache(cache: PerModuleNameCache | undefin
   const result = cache && cache.get(containingDirectory);
   if (result) {
     if (state.traceEnabled) {
-      trace(state.host, Diagnostics.Resolution_for_module_0_was_found_in_cache_from_location_1, moduleName, containingDirectory);
+      trace(state.host, qd.Resolution_for_module_0_was_found_in_cache_from_location_1, moduleName, containingDirectory);
     }
     state.resultFromCache = result;
     return {
@@ -1613,7 +1607,7 @@ export function loadModuleFromGlobalCache(
 ): ResolvedModuleWithFailedLookupLocations {
   const traceEnabled = isTraceEnabled(compilerOptions, host);
   if (traceEnabled) {
-    trace(host, Diagnostics.Auto_discovery_for_typings_is_enabled_in_project_0_Running_extra_resolution_pass_for_module_1_using_cache_location_2, projectName, moduleName, globalCache);
+    trace(host, qd.Auto_discovery_for_typings_is_enabled_in_project_0_Running_extra_resolution_pass_for_module_1_using_cache_location_2, projectName, moduleName, globalCache);
   }
   const failedLookupLocations: string[] = [];
   const state: ModuleResolutionState = { compilerOptions, host, traceEnabled, failedLookupLocations };

@@ -805,7 +805,7 @@ export function createProgram(
         const oldResolvedModule = oldSourceFile && oldSourceFile.resolvedModules!.get(moduleName);
         if (oldResolvedModule) {
           if (isTraceEnabled(options, host)) {
-            trace(host, Diagnostics.Reusing_resolution_of_module_0_to_file_1_from_old_program, moduleName, containingFile);
+            trace(host, qd.Reusing_resolution_of_module_0_to_file_1_from_old_program, moduleName, containingFile);
           }
           (result || (result = new Array(moduleNames.length)))[i] = oldResolvedModule;
           (reusedNames || (reusedNames = [])).push(moduleName);
@@ -816,7 +816,7 @@ export function createProgram(
       if (contains(file.ambientModuleNames, moduleName)) {
         resolvesToAmbientModuleInNonModifiedFile = true;
         if (isTraceEnabled(options, host)) {
-          trace(host, Diagnostics.Module_0_was_resolved_as_locally_declared_ambient_module_in_file_1, moduleName, containingFile);
+          trace(host, qd.Module_0_was_resolved_as_locally_declared_ambient_module_in_file_1, moduleName, containingFile);
         }
       } else {
         resolvesToAmbientModuleInNonModifiedFile = moduleNameResolvesToAmbientModuleInNonModifiedFile(moduleName);
@@ -855,7 +855,7 @@ export function createProgram(
       const unmodifiedFile = ambientModuleNameToUnmodifiedFileName.get(moduleName);
       if (!unmodifiedFile) return false;
       if (isTraceEnabled(options, host)) {
-        trace(host, Diagnostics.Module_0_was_resolved_as_ambient_module_declared_in_1_since_this_file_was_not_modified, moduleName, unmodifiedFile);
+        trace(host, qd.Module_0_was_resolved_as_ambient_module_declared_in_1_since_this_file_was_not_modified, moduleName, unmodifiedFile);
       }
       return true;
     }
@@ -1011,7 +1011,7 @@ export function createProgram(
     files = newSourceFiles;
     fileProcessingDiagnostics = oldProgram.getFileProcessingDiagnostics();
     for (const modifiedFile of modifiedSourceFiles) {
-      fileProcessingDiagnostics.reattachFileDiagnostics(modifiedFile.newFile);
+      fileProcessingqd.reattachFileDiagnostics(modifiedFile.newFile);
     }
     resolvedTypeReferenceDirectives = oldProgram.getResolvedTypeReferenceDirectives();
     sourceFileToPackageName = oldProgram.sourceFileToPackageName;
@@ -1105,7 +1105,7 @@ export function createProgram(
     return runWithCancellationToken(() => emitWorker(program, sourceFile, writeFileCallback, cancellationToken, emitOnlyDtsFiles, transformers, forceDtsEmit));
   }
   function isEmitBlocked(emitFileName: string): boolean {
-    return hasEmitBlockingDiagnostics.has(toPath(emitFileName));
+    return hasEmitBlockingqd.has(toPath(emitFileName));
   }
   function emitWorker(
     program: Program,
@@ -1159,8 +1159,8 @@ export function createProgram(
   }
   function getProgramDiagnostics(sourceFile: SourceFile): readonly Diagnostic[] {
     if (skipTypeChecking(sourceFile, options, program)) return emptyArray;
-    const fileProcessingDiagnosticsInFile = fileProcessingDiagnostics.getDiagnostics(sourceFile.fileName);
-    const programDiagnosticsInFile = programDiagnostics.getDiagnostics(sourceFile.fileName);
+    const fileProcessingDiagnosticsInFile = fileProcessingqd.getDiagnostics(sourceFile.fileName);
+    const programDiagnosticsInFile = programqd.getDiagnostics(sourceFile.fileName);
     return getMergedProgramDiagnostics(sourceFile, fileProcessingDiagnosticsInFile, programDiagnosticsInFile);
   }
   function getMergedProgramDiagnostics(sourceFile: SourceFile, ...allDiagnostics: (readonly Diagnostic[] | undefined)[]) {
@@ -1223,13 +1223,13 @@ export function createProgram(
     if (!sourceFile.commentDirectives?.length) return flatDiagnostics;
     const { diagnostics, directives } = getDiagnosticsWithPrecedingDirectives(sourceFile, sourceFile.commentDirectives, flatDiagnostics);
     for (const errorExpectation of directives.getUnusedExpectations()) {
-      diagnostics.push(createDiagnosticForRange(sourceFile, errorExpectation.range, Diagnostics.Unused_ts_expect_error_directive));
+      diagnostics.push(createDiagnosticForRange(sourceFile, errorExpectation.range, qd.Unused_ts_expect_error_directive));
     }
     return diagnostics;
   }
   function getDiagnosticsWithPrecedingDirectives(sourceFile: SourceFile, commentDirectives: CommentDirective[], flatDiagnostics: Diagnostic[]) {
     const directives = createCommentDirectivesMap(sourceFile, commentDirectives);
-    const diagnostics = flatDiagnostics.filter((diagnostic) => markPrecedingCommentDirectiveLine(diagnostic, directives) === -1);
+    const diagnostics = flatqd.filter((diagnostic) => markPrecedingCommentDirectiveLine(diagnostic, directives) === -1);
     return { diagnostics, directives };
   }
   function getSuggestionDiagnostics(sourceFile: SourceFile, cancellationToken: CancellationToken): readonly DiagnosticWithLocation[] {
@@ -1262,7 +1262,7 @@ export function createProgram(
           case Syntax.PropertyDeclaration:
           case Syntax.MethodDeclaration:
             if ((<ParameterDeclaration | PropertyDeclaration | MethodDeclaration>parent).questionToken === node) {
-              diagnostics.push(createDiagnosticForNode(node, Diagnostics.The_0_modifier_can_only_be_used_in_TypeScript_files, '?'));
+              diagnostics.push(createDiagnosticForNode(node, qd.The_0_modifier_can_only_be_used_in_TypeScript_files, '?'));
               return 'skip';
             }
           case Syntax.MethodSignature:
@@ -1274,61 +1274,61 @@ export function createProgram(
           case Syntax.ArrowFunction:
           case Syntax.VariableDeclaration:
             if ((<FunctionLikeDeclaration | VariableDeclaration | ParameterDeclaration | PropertyDeclaration>parent).type === node) {
-              diagnostics.push(createDiagnosticForNode(node, Diagnostics.Type_annotations_can_only_be_used_in_TypeScript_files));
+              diagnostics.push(createDiagnosticForNode(node, qd.Type_annotations_can_only_be_used_in_TypeScript_files));
               return 'skip';
             }
         }
         switch (node.kind) {
           case Syntax.ImportClause:
             if ((node as ImportClause).isTypeOnly) {
-              diagnostics.push(createDiagnosticForNode(node.parent, Diagnostics._0_declarations_can_only_be_used_in_TypeScript_files, 'import type'));
+              diagnostics.push(createDiagnosticForNode(node.parent, qd._0_declarations_can_only_be_used_in_TypeScript_files, 'import type'));
               return 'skip';
             }
             break;
           case Syntax.ExportDeclaration:
             if ((node as ExportDeclaration).isTypeOnly) {
-              diagnostics.push(createDiagnosticForNode(node, Diagnostics._0_declarations_can_only_be_used_in_TypeScript_files, 'export type'));
+              diagnostics.push(createDiagnosticForNode(node, qd._0_declarations_can_only_be_used_in_TypeScript_files, 'export type'));
               return 'skip';
             }
             break;
           case Syntax.ImportEqualsDeclaration:
-            diagnostics.push(createDiagnosticForNode(node, Diagnostics.import_can_only_be_used_in_TypeScript_files));
+            diagnostics.push(createDiagnosticForNode(node, qd.import_can_only_be_used_in_TypeScript_files));
             return 'skip';
           case Syntax.ExportAssignment:
             if ((<ExportAssignment>node).isExportEquals) {
-              diagnostics.push(createDiagnosticForNode(node, Diagnostics.export_can_only_be_used_in_TypeScript_files));
+              diagnostics.push(createDiagnosticForNode(node, qd.export_can_only_be_used_in_TypeScript_files));
               return 'skip';
             }
             break;
           case Syntax.HeritageClause:
             const heritageClause = <HeritageClause>node;
             if (heritageClause.token === Syntax.ImplementsKeyword) {
-              diagnostics.push(createDiagnosticForNode(node, Diagnostics.implements_clauses_can_only_be_used_in_TypeScript_files));
+              diagnostics.push(createDiagnosticForNode(node, qd.implements_clauses_can_only_be_used_in_TypeScript_files));
               return 'skip';
             }
             break;
           case Syntax.InterfaceDeclaration:
             const interfaceKeyword = Token.toString(Syntax.InterfaceKeyword);
             Debug.assertIsDefined(interfaceKeyword);
-            diagnostics.push(createDiagnosticForNode(node, Diagnostics._0_declarations_can_only_be_used_in_TypeScript_files, interfaceKeyword));
+            diagnostics.push(createDiagnosticForNode(node, qd._0_declarations_can_only_be_used_in_TypeScript_files, interfaceKeyword));
             return 'skip';
           case Syntax.ModuleDeclaration:
             const moduleKeyword = node.flags & NodeFlags.Namespace ? Token.toString(Syntax.NamespaceKeyword) : Token.toString(Syntax.ModuleKeyword);
             Debug.assertIsDefined(moduleKeyword);
-            diagnostics.push(createDiagnosticForNode(node, Diagnostics._0_declarations_can_only_be_used_in_TypeScript_files, moduleKeyword));
+            diagnostics.push(createDiagnosticForNode(node, qd._0_declarations_can_only_be_used_in_TypeScript_files, moduleKeyword));
             return 'skip';
           case Syntax.TypeAliasDeclaration:
-            diagnostics.push(createDiagnosticForNode(node, Diagnostics.Type_aliases_can_only_be_used_in_TypeScript_files));
+            diagnostics.push(createDiagnosticForNode(node, qd.Type_aliases_can_only_be_used_in_TypeScript_files));
             return 'skip';
           case Syntax.EnumDeclaration:
             const enumKeyword = Debug.checkDefined(Token.toString(Syntax.EnumKeyword));
-            diagnostics.push(createDiagnosticForNode(node, Diagnostics._0_declarations_can_only_be_used_in_TypeScript_files, enumKeyword));
+            diagnostics.push(createDiagnosticForNode(node, qd._0_declarations_can_only_be_used_in_TypeScript_files, enumKeyword));
             return 'skip';
           case Syntax.NonNullExpression:
-            diagnostics.push(createDiagnosticForNode(node, Diagnostics.Non_null_assertions_can_only_be_used_in_TypeScript_files));
+            diagnostics.push(createDiagnosticForNode(node, qd.Non_null_assertions_can_only_be_used_in_TypeScript_files));
             return 'skip';
           case Syntax.AsExpression:
-            diagnostics.push(createDiagnosticForNode((node as AsExpression).type, Diagnostics.Type_assertion_expressions_can_only_be_used_in_TypeScript_files));
+            diagnostics.push(createDiagnosticForNode((node as AsExpression).type, qd.Type_assertion_expressions_can_only_be_used_in_TypeScript_files));
             return 'skip';
           case Syntax.TypeAssertionExpression:
             fail();
@@ -1339,7 +1339,7 @@ export function createProgram(
           diagnostics.push(
             createDiagnosticForNode(
               parent,
-              Diagnostics.Experimental_support_for_decorators_is_a_feature_that_is_subject_to_change_in_a_future_release_Set_the_experimentalDecorators_option_in_your_tsconfig_or_jsconfig_to_remove_this_warning
+              qd.Experimental_support_for_decorators_is_a_feature_that_is_subject_to_change_in_a_future_release_Set_the_experimentalDecorators_option_in_your_tsconfig_or_jsconfig_to_remove_this_warning
             )
           );
         }
@@ -1354,7 +1354,7 @@ export function createProgram(
           case Syntax.FunctionDeclaration:
           case Syntax.ArrowFunction:
             if (nodes === (<DeclarationWithTypeParameterChildren>parent).typeParameters) {
-              diagnostics.push(createDiagnosticForNodes(nodes, Diagnostics.Type_parameter_declarations_can_only_be_used_in_TypeScript_files));
+              diagnostics.push(createDiagnosticForNodes(nodes, qd.Type_parameter_declarations_can_only_be_used_in_TypeScript_files));
               return 'skip';
             }
           case Syntax.VariableStatement:
@@ -1367,7 +1367,7 @@ export function createProgram(
             if (nodes === (<PropertyDeclaration>parent).modifiers) {
               for (const modifier of <Nodes<Modifier>>nodes) {
                 if (modifier.kind !== Syntax.StaticKeyword) {
-                  diagnostics.push(createDiagnosticForNode(modifier, Diagnostics.The_0_modifier_can_only_be_used_in_TypeScript_files, Token.toString(modifier.kind)));
+                  diagnostics.push(createDiagnosticForNode(modifier, qd.The_0_modifier_can_only_be_used_in_TypeScript_files, Token.toString(modifier.kind)));
                 }
               }
               return 'skip';
@@ -1375,7 +1375,7 @@ export function createProgram(
             break;
           case Syntax.Parameter:
             if (nodes === (<ParameterDeclaration>parent).modifiers) {
-              diagnostics.push(createDiagnosticForNodes(nodes, Diagnostics.Parameter_modifiers_can_only_be_used_in_TypeScript_files));
+              diagnostics.push(createDiagnosticForNodes(nodes, qd.Parameter_modifiers_can_only_be_used_in_TypeScript_files));
               return 'skip';
             }
             break;
@@ -1386,7 +1386,7 @@ export function createProgram(
           case Syntax.JsxOpeningElement:
           case Syntax.TaggedTemplateExpression:
             if (nodes === (<NodeWithTypeArguments>parent).typeArguments) {
-              diagnostics.push(createDiagnosticForNodes(nodes, Diagnostics.Type_arguments_can_only_be_used_in_TypeScript_files));
+              diagnostics.push(createDiagnosticForNodes(nodes, qd.Type_arguments_can_only_be_used_in_TypeScript_files));
               return 'skip';
             }
             break;
@@ -1405,7 +1405,7 @@ export function createProgram(
             case Syntax.ReadonlyKeyword:
             case Syntax.DeclareKeyword:
             case Syntax.AbstractKeyword:
-              diagnostics.push(createDiagnosticForNode(modifier, Diagnostics.The_0_modifier_can_only_be_used_in_TypeScript_files, Token.toString(modifier.kind)));
+              diagnostics.push(createDiagnosticForNode(modifier, qd.The_0_modifier_can_only_be_used_in_TypeScript_files, Token.toString(modifier.kind)));
               break;
             case Syntax.StaticKeyword:
             case Syntax.ExportKeyword:
@@ -1454,14 +1454,14 @@ export function createProgram(
     return sourceFile.isDeclarationFile ? [] : getDeclarationDiagnosticsWorker(sourceFile, cancellationToken);
   }
   function getOptionsDiagnostics(): SortedReadonlyArray<Diagnostic> {
-    return sortAndDeduplicateDiagnostics(concatenate(fileProcessingDiagnostics.getGlobalDiagnostics(), concatenate(programDiagnostics.getGlobalDiagnostics(), getOptionsDiagnosticsOfConfigFile())));
+    return sortAndDeduplicateDiagnostics(concatenate(fileProcessingqd.getGlobalDiagnostics(), concatenate(programqd.getGlobalDiagnostics(), getOptionsDiagnosticsOfConfigFile())));
   }
   function getOptionsDiagnosticsOfConfigFile() {
     if (!options.configFile) return emptyArray;
-    let diagnostics = programDiagnostics.getDiagnostics(options.configFile.fileName);
+    let diagnostics = programqd.getDiagnostics(options.configFile.fileName);
     forEachResolvedProjectReference((resolvedRef) => {
       if (resolvedRef) {
-        diagnostics = concatenate(diagnostics, programDiagnostics.getDiagnostics(resolvedRef.sourceFile.fileName));
+        diagnostics = concatenate(diagnostics, programqd.getDiagnostics(resolvedRef.sourceFile.fileName));
       }
     });
     return diagnostics;
@@ -1577,9 +1577,9 @@ export function createProgram(
       if (!options.allowNonTsExtensions && !forEach(supportedExtensionsWithJsonIfResolveJsonModule, (extension) => fileExtensionIs(canonicalFileName, extension))) {
         if (fail) {
           if (hasJSFileExtension(canonicalFileName)) {
-            fail(Diagnostics.File_0_is_a_JavaScript_file_Did_you_mean_to_enable_the_allowJs_option, fileName);
+            fail(qd.File_0_is_a_JavaScript_file_Did_you_mean_to_enable_the_allowJs_option, fileName);
           } else {
-            fail(Diagnostics.File_0_has_an_unsupported_extension_The_only_supported_extensions_are_1, fileName, "'" + supportedExtensions.join("', '") + "'");
+            fail(qd.File_0_has_an_unsupported_extension_The_only_supported_extensions_are_1, fileName, "'" + supportedExtensions.join("', '") + "'");
           }
         }
         return;
@@ -1589,12 +1589,12 @@ export function createProgram(
         if (!sourceFile) {
           const redirect = getProjectReferenceRedirect(fileName);
           if (redirect) {
-            fail(Diagnostics.Output_file_0_has_not_been_built_from_source_file_1, redirect, fileName);
+            fail(qd.Output_file_0_has_not_been_built_from_source_file_1, redirect, fileName);
           } else {
-            fail(Diagnostics.File_0_not_found, fileName);
+            fail(qd.File_0_not_found, fileName);
           }
         } else if (refFile && canonicalFileName === host.getCanonicalFileName(refFile.fileName)) {
-          fail(Diagnostics.A_file_cannot_have_a_reference_to_itself);
+          fail(qd.A_file_cannot_have_a_reference_to_itself);
         }
       }
       return sourceFile;
@@ -1602,11 +1602,11 @@ export function createProgram(
       const sourceFileNoExtension = options.allowNonTsExtensions && getSourceFile(fileName);
       if (sourceFileNoExtension) return sourceFileNoExtension;
       if (fail && options.allowNonTsExtensions) {
-        fail(Diagnostics.File_0_not_found, fileName);
+        fail(qd.File_0_not_found, fileName);
         return;
       }
       const sourceFileWithAddedExtension = forEach(supportedExtensions, (extension) => getSourceFile(fileName + extension));
-      if (fail && !sourceFileWithAddedExtension) fail(Diagnostics.Could_not_resolve_the_path_0_with_the_extensions_Colon_1, fileName, "'" + supportedExtensions.join("', '") + "'");
+      if (fail && !sourceFileWithAddedExtension) fail(qd.Could_not_resolve_the_path_0_with_the_extensions_Colon_1, fileName, "'" + supportedExtensions.join("', '") + "'");
       return sourceFileWithAddedExtension;
     }
   }
@@ -1614,17 +1614,17 @@ export function createProgram(
     getSourceFileFromReferenceWorker(
       fileName,
       (fileName) => findSourceFile(fileName, toPath(fileName), isDefaultLib, ignoreNoDefaultLib, refFile, packageId),
-      (diagnostic, ...args) => fileProcessingDiagnostics.add(createRefFileDiagnostic(refFile, diagnostic, ...args)),
+      (diagnostic, ...args) => fileProcessingqd.add(createRefFileDiagnostic(refFile, diagnostic, ...args)),
       refFile && refFile.file
     );
   }
   function reportFileNamesDifferOnlyInCasingError(fileName: string, existingFile: SourceFile, refFile: RefFile | undefined): void {
     const refs = !refFile ? refFileMap && refFileMap.get(existingFile.path) : undefined;
     const refToReportErrorOn = refs && find(refs, (ref) => ref.referencedFileName === existingFile.fileName);
-    fileProcessingDiagnostics.add(
+    fileProcessingqd.add(
       refToReportErrorOn
-        ? createFileDiagnosticAtReference(refToReportErrorOn, Diagnostics.Already_included_file_name_0_differs_from_file_name_1_only_in_casing, existingFile.fileName, fileName)
-        : createRefFileDiagnostic(refFile, Diagnostics.File_name_0_differs_from_already_included_file_name_1_only_in_casing, fileName, existingFile.fileName)
+        ? createFileDiagnosticAtReference(refToReportErrorOn, qd.Already_included_file_name_0_differs_from_file_name_1_only_in_casing, existingFile.fileName, fileName)
+        : createRefFileDiagnostic(refFile, qd.File_name_0_differs_from_already_included_file_name_1_only_in_casing, fileName, existingFile.fileName)
     );
   }
   function createRedirectSourceFile(redirectTarget: SourceFile, unredirected: SourceFile, fileName: string, path: Path, resolvedPath: Path, originalFileName: string): SourceFile {
@@ -1718,7 +1718,7 @@ export function createProgram(
     const file = host.getSourceFile(
       fileName,
       options.target!,
-      (hostErrorMessage) => fileProcessingDiagnostics.add(createRefFileDiagnostic(refFile, Diagnostics.Cannot_read_file_0_Colon_1, fileName, hostErrorMessage)),
+      (hostErrorMessage) => fileProcessingqd.add(createRefFileDiagnostic(refFile, qd.Cannot_read_file_0_Colon_1, fileName, hostErrorMessage)),
       shouldCreateNewSourceFile
     );
     if (packageId) {
@@ -1934,18 +1934,18 @@ export function createProgram(
             if (otherFileText !== existingFile.text) {
               const refs = !refFile ? refFileMap && refFileMap.get(existingFile.path) : undefined;
               const refToReportErrorOn = refs && find(refs, (ref) => ref.referencedFileName === existingFile.fileName);
-              fileProcessingDiagnostics.add(
+              fileProcessingqd.add(
                 refToReportErrorOn
                   ? createFileDiagnosticAtReference(
                       refToReportErrorOn,
-                      Diagnostics.Conflicting_definitions_for_0_found_at_1_and_2_Consider_installing_a_specific_version_of_this_library_to_resolve_the_conflict,
+                      qd.Conflicting_definitions_for_0_found_at_1_and_2_Consider_installing_a_specific_version_of_this_library_to_resolve_the_conflict,
                       typeReferenceDirective,
                       resolvedTypeReferenceDirective.resolvedFileName,
                       previousResolution.resolvedFileName
                     )
                   : createRefFileDiagnostic(
                       refFile,
-                      Diagnostics.Conflicting_definitions_for_0_found_at_1_and_2_Consider_installing_a_specific_version_of_this_library_to_resolve_the_conflict,
+                      qd.Conflicting_definitions_for_0_found_at_1_and_2_Consider_installing_a_specific_version_of_this_library_to_resolve_the_conflict,
                       typeReferenceDirective,
                       resolvedTypeReferenceDirective.resolvedFileName,
                       previousResolution.resolvedFileName
@@ -1960,7 +1960,7 @@ export function createProgram(
       }
       if (resolvedTypeReferenceDirective.isExternalLibraryImport) currentNodeModulesDepth--;
     } else {
-      fileProcessingDiagnostics.add(createRefFileDiagnostic(refFile, Diagnostics.Cannot_find_type_definition_file_for_0, typeReferenceDirective));
+      fileProcessingqd.add(createRefFileDiagnostic(refFile, qd.Cannot_find_type_definition_file_for_0, typeReferenceDirective));
     }
     if (saveResolution) {
       resolvedTypeReferenceDirectives.set(typeReferenceDirective, resolvedTypeReferenceDirective);
@@ -1975,8 +1975,8 @@ export function createProgram(
       } else {
         const unqualifiedLibName = removeSuffix(removePrefix(libName, 'lib.'), '.d.ts');
         const suggestion = getSpellingSuggestion(unqualifiedLibName, libs, identity);
-        const message = suggestion ? Diagnostics.Cannot_find_lib_definition_for_0_Did_you_mean_1 : Diagnostics.Cannot_find_lib_definition_for_0;
-        fileProcessingDiagnostics.add(createFileDiagnostic(file, libReference.pos, libReference.end - libReference.pos, message, libName, suggestion));
+        const message = suggestion ? qd.Cannot_find_lib_definition_for_0_Did_you_mean_1 : qd.Cannot_find_lib_definition_for_0;
+        fileProcessingqd.add(createFileDiagnostic(file, libReference.pos, libReference.end - libReference.pos, message, libName, suggestion));
       }
     });
   }
@@ -2056,7 +2056,7 @@ export function createProgram(
         const absoluteSourceFilePath = host.getCanonicalFileName(getNormalizedAbsolutePath(sourceFile.fileName, currentDirectory));
         if (absoluteSourceFilePath.indexOf(absoluteRootDirectoryPath) !== 0) {
           if (!rootPaths) rootPaths = qu.arrayToSet(rootNames, toPath);
-          addProgramDiagnosticAtRefPath(sourceFile, rootPaths, Diagnostics.File_0_is_not_under_rootDir_1_rootDir_is_expected_to_contain_all_source_files, sourceFile.fileName, rootDirectory);
+          addProgramDiagnosticAtRefPath(sourceFile, rootPaths, qd.File_0_is_not_under_rootDir_1_rootDir_is_expected_to_contain_all_source_files, sourceFile.fileName, rootDirectory);
           allFilesBelongToPath = false;
         }
       }
@@ -2106,44 +2106,44 @@ export function createProgram(
   }
   function verifyCompilerOptions() {
     if (options.strictPropertyInitialization && !getStrictOptionValue(options, 'strictNullChecks')) {
-      createDiagnosticForOptionName(Diagnostics.Option_0_cannot_be_specified_without_specifying_option_1, 'strictPropertyInitialization', 'strictNullChecks');
+      createDiagnosticForOptionName(qd.Option_0_cannot_be_specified_without_specifying_option_1, 'strictPropertyInitialization', 'strictNullChecks');
     }
     if (options.isolatedModules) {
       if (options.out) {
-        createDiagnosticForOptionName(Diagnostics.Option_0_cannot_be_specified_with_option_1, 'out', 'isolatedModules');
+        createDiagnosticForOptionName(qd.Option_0_cannot_be_specified_with_option_1, 'out', 'isolatedModules');
       }
       if (options.outFile) {
-        createDiagnosticForOptionName(Diagnostics.Option_0_cannot_be_specified_with_option_1, 'outFile', 'isolatedModules');
+        createDiagnosticForOptionName(qd.Option_0_cannot_be_specified_with_option_1, 'outFile', 'isolatedModules');
       }
     }
     if (options.inlineSourceMap) {
       if (options.sourceMap) {
-        createDiagnosticForOptionName(Diagnostics.Option_0_cannot_be_specified_with_option_1, 'sourceMap', 'inlineSourceMap');
+        createDiagnosticForOptionName(qd.Option_0_cannot_be_specified_with_option_1, 'sourceMap', 'inlineSourceMap');
       }
       if (options.mapRoot) {
-        createDiagnosticForOptionName(Diagnostics.Option_0_cannot_be_specified_with_option_1, 'mapRoot', 'inlineSourceMap');
+        createDiagnosticForOptionName(qd.Option_0_cannot_be_specified_with_option_1, 'mapRoot', 'inlineSourceMap');
       }
     }
     if (options.paths && options.baseUrl === undefined) {
-      createDiagnosticForOptionName(Diagnostics.Option_paths_cannot_be_used_without_specifying_baseUrl_option, 'paths');
+      createDiagnosticForOptionName(qd.Option_paths_cannot_be_used_without_specifying_baseUrl_option, 'paths');
     }
     if (options.composite) {
       if (options.declaration === false) {
-        createDiagnosticForOptionName(Diagnostics.Composite_projects_may_not_disable_declaration_emit, 'declaration');
+        createDiagnosticForOptionName(qd.Composite_projects_may_not_disable_declaration_emit, 'declaration');
       }
       if (options.incremental === false) {
-        createDiagnosticForOptionName(Diagnostics.Composite_projects_may_not_disable_incremental_compilation, 'declaration');
+        createDiagnosticForOptionName(qd.Composite_projects_may_not_disable_incremental_compilation, 'declaration');
       }
     }
     if (options.tsBuildInfoFile) {
       if (!isIncrementalCompilation(options)) {
-        createDiagnosticForOptionName(Diagnostics.Option_0_cannot_be_specified_without_specifying_option_1_or_option_2, 'tsBuildInfoFile', 'incremental', 'composite');
+        createDiagnosticForOptionName(qd.Option_0_cannot_be_specified_without_specifying_option_1_or_option_2, 'tsBuildInfoFile', 'incremental', 'composite');
       }
     } else if (options.incremental && !options.outFile && !options.out && !options.configFilePath) {
-      programDiagnostics.add(createCompilerDiagnostic(Diagnostics.Option_incremental_can_only_be_specified_using_tsconfig_emitting_to_single_file_or_when_option_tsBuildInfoFile_is_specified));
+      programqd.add(createCompilerDiagnostic(qd.Option_incremental_can_only_be_specified_using_tsconfig_emitting_to_single_file_or_when_option_tsBuildInfoFile_is_specified));
     }
     if (!options.listFilesOnly && options.noEmit && isIncrementalCompilation(options)) {
-      createDiagnosticForOptionName(Diagnostics.Option_0_cannot_be_specified_with_option_1, 'noEmit', options.incremental ? 'incremental' : 'composite');
+      createDiagnosticForOptionName(qd.Option_0_cannot_be_specified_with_option_1, 'noEmit', options.incremental ? 'incremental' : 'composite');
     }
     verifyProjectReferences();
     if (options.composite) {
@@ -2153,7 +2153,7 @@ export function createProgram(
           addProgramDiagnosticAtRefPath(
             file,
             rootPaths,
-            Diagnostics.File_0_is_not_listed_within_the_file_list_of_project_1_Projects_must_list_all_files_or_use_an_include_pattern,
+            qd.File_0_is_not_listed_within_the_file_list_of_project_1_Projects_must_list_all_files_or_use_an_include_pattern,
             file.fileName,
             options.configFilePath || ''
           );
@@ -2166,59 +2166,59 @@ export function createProgram(
           continue;
         }
         if (!hasZeroOrOneAsteriskCharacter(key)) {
-          createDiagnosticForOptionPaths(true, key, Diagnostics.Pattern_0_can_have_at_most_one_Asterisk_character, key);
+          createDiagnosticForOptionPaths(true, key, qd.Pattern_0_can_have_at_most_one_Asterisk_character, key);
         }
         if (isArray(options.paths[key])) {
           const len = options.paths[key].length;
           if (len === 0) {
-            createDiagnosticForOptionPaths(false, key, Diagnostics.Substitutions_for_pattern_0_shouldn_t_be_an_empty_array, key);
+            createDiagnosticForOptionPaths(false, key, qd.Substitutions_for_pattern_0_shouldn_t_be_an_empty_array, key);
           }
           for (let i = 0; i < len; i++) {
             const subst = options.paths[key][i];
             const typeOfSubst = typeof subst;
             if (typeOfSubst === 'string') {
               if (!hasZeroOrOneAsteriskCharacter(subst)) {
-                createDiagnosticForOptionPathKeyValue(key, i, Diagnostics.Substitution_0_in_pattern_1_can_have_at_most_one_Asterisk_character, subst, key);
+                createDiagnosticForOptionPathKeyValue(key, i, qd.Substitution_0_in_pattern_1_can_have_at_most_one_Asterisk_character, subst, key);
               }
             } else {
-              createDiagnosticForOptionPathKeyValue(key, i, Diagnostics.Substitution_0_for_pattern_1_has_incorrect_type_expected_string_got_2, subst, key, typeOfSubst);
+              createDiagnosticForOptionPathKeyValue(key, i, qd.Substitution_0_for_pattern_1_has_incorrect_type_expected_string_got_2, subst, key, typeOfSubst);
             }
           }
         } else {
-          createDiagnosticForOptionPaths(false, key, Diagnostics.Substitutions_for_pattern_0_should_be_an_array, key);
+          createDiagnosticForOptionPaths(false, key, qd.Substitutions_for_pattern_0_should_be_an_array, key);
         }
       }
     }
     if (!options.sourceMap && !options.inlineSourceMap) {
       if (options.inlineSources) {
-        createDiagnosticForOptionName(Diagnostics.Option_0_can_only_be_used_when_either_option_inlineSourceMap_or_option_sourceMap_is_provided, 'inlineSources');
+        createDiagnosticForOptionName(qd.Option_0_can_only_be_used_when_either_option_inlineSourceMap_or_option_sourceMap_is_provided, 'inlineSources');
       }
       if (options.sourceRoot) {
-        createDiagnosticForOptionName(Diagnostics.Option_0_can_only_be_used_when_either_option_inlineSourceMap_or_option_sourceMap_is_provided, 'sourceRoot');
+        createDiagnosticForOptionName(qd.Option_0_can_only_be_used_when_either_option_inlineSourceMap_or_option_sourceMap_is_provided, 'sourceRoot');
       }
     }
     if (options.out && options.outFile) {
-      createDiagnosticForOptionName(Diagnostics.Option_0_cannot_be_specified_with_option_1, 'out', 'outFile');
+      createDiagnosticForOptionName(qd.Option_0_cannot_be_specified_with_option_1, 'out', 'outFile');
     }
     if (options.mapRoot && !(options.sourceMap || options.declarationMap)) {
-      createDiagnosticForOptionName(Diagnostics.Option_0_cannot_be_specified_without_specifying_option_1_or_option_2, 'mapRoot', 'sourceMap', 'declarationMap');
+      createDiagnosticForOptionName(qd.Option_0_cannot_be_specified_without_specifying_option_1_or_option_2, 'mapRoot', 'sourceMap', 'declarationMap');
     }
     if (options.declarationDir) {
       if (!getEmitDeclarations(options)) {
-        createDiagnosticForOptionName(Diagnostics.Option_0_cannot_be_specified_without_specifying_option_1_or_option_2, 'declarationDir', 'declaration', 'composite');
+        createDiagnosticForOptionName(qd.Option_0_cannot_be_specified_without_specifying_option_1_or_option_2, 'declarationDir', 'declaration', 'composite');
       }
       if (options.out || options.outFile) {
-        createDiagnosticForOptionName(Diagnostics.Option_0_cannot_be_specified_with_option_1, 'declarationDir', options.out ? 'out' : 'outFile');
+        createDiagnosticForOptionName(qd.Option_0_cannot_be_specified_with_option_1, 'declarationDir', options.out ? 'out' : 'outFile');
       }
     }
     if (options.declarationMap && !getEmitDeclarations(options)) {
-      createDiagnosticForOptionName(Diagnostics.Option_0_cannot_be_specified_without_specifying_option_1_or_option_2, 'declarationMap', 'declaration', 'composite');
+      createDiagnosticForOptionName(qd.Option_0_cannot_be_specified_without_specifying_option_1_or_option_2, 'declarationMap', 'declaration', 'composite');
     }
     if (options.lib && options.noLib) {
-      createDiagnosticForOptionName(Diagnostics.Option_0_cannot_be_specified_with_option_1, 'lib', 'noLib');
+      createDiagnosticForOptionName(qd.Option_0_cannot_be_specified_with_option_1, 'lib', 'noLib');
     }
     if (options.noImplicitUseStrict && getStrictOptionValue(options, 'alwaysStrict')) {
-      createDiagnosticForOptionName(Diagnostics.Option_0_cannot_be_specified_with_option_1, 'noImplicitUseStrict', 'alwaysStrict');
+      createDiagnosticForOptionName(qd.Option_0_cannot_be_specified_with_option_1, 'noImplicitUseStrict', 'alwaysStrict');
     }
     const languageVersion = options.target || ScriptTarget.ES2020;
     const outFile = options.outFile || options.out;
@@ -2227,20 +2227,20 @@ export function createProgram(
       const firstNonExternalModuleSourceFile = find(files, (f) => !qp_isExternalModule(f) && !isSourceFileJS(f) && !f.isDeclarationFile && f.scriptKind !== ScriptKind.JSON);
       if (firstNonExternalModuleSourceFile) {
         const span = getErrorSpanForNode(firstNonExternalModuleSourceFile, firstNonExternalModuleSourceFile);
-        programDiagnostics.add(createFileDiagnostic(firstNonExternalModuleSourceFile, span.start, span.length, Diagnostics.All_files_must_be_modules_when_the_isolatedModules_flag_is_provided));
+        programqd.add(createFileDiagnostic(firstNonExternalModuleSourceFile, span.start, span.length, qd.All_files_must_be_modules_when_the_isolatedModules_flag_is_provided));
       }
     }
     if (outFile && !options.emitDeclarationOnly) {
       if (options.module && !(options.module === ModuleKind.AMD || options.module === ModuleKind.System)) {
-        createDiagnosticForOptionName(Diagnostics.Only_amd_and_system_modules_are_supported_alongside_0, options.out ? 'out' : 'outFile', 'module');
+        createDiagnosticForOptionName(qd.Only_amd_and_system_modules_are_supported_alongside_0, options.out ? 'out' : 'outFile', 'module');
       } else if (options.module === undefined && firstNonAmbientExternalModuleSourceFile) {
         const span = getErrorSpanForNode(firstNonAmbientExternalModuleSourceFile, firstNonAmbientExternalModuleSourceFile.externalModuleIndicator!);
-        programDiagnostics.add(
+        programqd.add(
           createFileDiagnostic(
             firstNonAmbientExternalModuleSourceFile,
             span.start,
             span.length,
-            Diagnostics.Cannot_compile_modules_using_option_0_unless_the_module_flag_is_amd_or_system,
+            qd.Cannot_compile_modules_using_option_0_unless_the_module_flag_is_amd_or_system,
             options.out ? 'out' : 'outFile'
           )
         );
@@ -2248,40 +2248,40 @@ export function createProgram(
     }
     if (options.resolveJsonModule) {
       if (getEmitModuleResolutionKind(options) !== ModuleResolutionKind.NodeJs) {
-        createDiagnosticForOptionName(Diagnostics.Option_resolveJsonModule_cannot_be_specified_without_node_module_resolution_strategy, 'resolveJsonModule');
+        createDiagnosticForOptionName(qd.Option_resolveJsonModule_cannot_be_specified_without_node_module_resolution_strategy, 'resolveJsonModule');
       } else if (!hasJsonModuleEmitEnabled(options)) {
-        createDiagnosticForOptionName(Diagnostics.Option_resolveJsonModule_can_only_be_specified_when_module_code_generation_is_commonjs_amd_es2015_or_esNext, 'resolveJsonModule', 'module');
+        createDiagnosticForOptionName(qd.Option_resolveJsonModule_can_only_be_specified_when_module_code_generation_is_commonjs_amd_es2015_or_esNext, 'resolveJsonModule', 'module');
       }
     }
     if (options.outDir || options.sourceRoot || options.mapRoot) {
       const dir = getCommonSourceDirectory();
       if (options.outDir && dir === '' && files.some((file) => getRootLength(file.fileName) > 1)) {
-        createDiagnosticForOptionName(Diagnostics.Cannot_find_the_common_subdirectory_path_for_the_input_files, 'outDir');
+        createDiagnosticForOptionName(qd.Cannot_find_the_common_subdirectory_path_for_the_input_files, 'outDir');
       }
     }
     if (options.checkJs && !options.allowJs) {
-      programDiagnostics.add(createCompilerDiagnostic(Diagnostics.Option_0_cannot_be_specified_without_specifying_option_1, 'checkJs', 'allowJs'));
+      programqd.add(createCompilerDiagnostic(qd.Option_0_cannot_be_specified_without_specifying_option_1, 'checkJs', 'allowJs'));
     }
     if (options.emitDeclarationOnly) {
       if (!getEmitDeclarations(options)) {
-        createDiagnosticForOptionName(Diagnostics.Option_0_cannot_be_specified_without_specifying_option_1_or_option_2, 'emitDeclarationOnly', 'declaration', 'composite');
+        createDiagnosticForOptionName(qd.Option_0_cannot_be_specified_without_specifying_option_1_or_option_2, 'emitDeclarationOnly', 'declaration', 'composite');
       }
       if (options.noEmit) {
-        createDiagnosticForOptionName(Diagnostics.Option_0_cannot_be_specified_with_option_1, 'emitDeclarationOnly', 'noEmit');
+        createDiagnosticForOptionName(qd.Option_0_cannot_be_specified_with_option_1, 'emitDeclarationOnly', 'noEmit');
       }
     }
     if (options.emitDecoratorMetadata && !options.experimentalDecorators) {
-      createDiagnosticForOptionName(Diagnostics.Option_0_cannot_be_specified_without_specifying_option_1, 'emitDecoratorMetadata', 'experimentalDecorators');
+      createDiagnosticForOptionName(qd.Option_0_cannot_be_specified_without_specifying_option_1, 'emitDecoratorMetadata', 'experimentalDecorators');
     }
     if (options.jsxFactory) {
       if (options.reactNamespace) {
-        createDiagnosticForOptionName(Diagnostics.Option_0_cannot_be_specified_with_option_1, 'reactNamespace', 'jsxFactory');
+        createDiagnosticForOptionName(qd.Option_0_cannot_be_specified_with_option_1, 'reactNamespace', 'jsxFactory');
       }
       if (!qp_parseIsolatedEntityName(options.jsxFactory, languageVersion)) {
-        createOptionValueDiagnostic('jsxFactory', Diagnostics.Invalid_value_for_jsxFactory_0_is_not_a_valid_identifier_or_qualified_name, options.jsxFactory);
+        createOptionValueDiagnostic('jsxFactory', qd.Invalid_value_for_jsxFactory_0_is_not_a_valid_identifier_or_qualified_name, options.jsxFactory);
       }
     } else if (options.reactNamespace && !syntax.is.identifierText(options.reactNamespace)) {
-      createOptionValueDiagnostic('reactNamespace', Diagnostics.Invalid_value_for_reactNamespace_0_is_not_a_valid_identifier, options.reactNamespace);
+      createOptionValueDiagnostic('reactNamespace', qd.Invalid_value_for_reactNamespace_0_is_not_a_valid_identifier, options.reactNamespace);
     }
     if (!options.noEmit && !options.suppressOutputPathCheck) {
       const emitHost = getEmitHost();
@@ -2301,15 +2301,15 @@ export function createProgram(
           if (!options.configFilePath) {
             chain = chainDiagnosticMessages(
               undefined,
-              Diagnostics.Adding_a_tsconfig_json_file_will_help_organize_projects_that_contain_both_TypeScript_and_JavaScript_files_Learn_more_at_https_Colon_Slash_Slashaka_ms_Slashtsconfig
+              qd.Adding_a_tsconfig_json_file_will_help_organize_projects_that_contain_both_TypeScript_and_JavaScript_files_Learn_more_at_https_Colon_Slash_Slashaka_ms_Slashtsconfig
             );
           }
-          chain = chainDiagnosticMessages(chain, Diagnostics.Cannot_write_file_0_because_it_would_overwrite_input_file, emitFileName);
+          chain = chainDiagnosticMessages(chain, qd.Cannot_write_file_0_because_it_would_overwrite_input_file, emitFileName);
           blockEmittingOfFile(emitFileName, createCompilerDiagnosticFromMessageChain(chain));
         }
         const emitFileKey = !host.useCaseSensitiveFileNames() ? toFileNameLowerCase(emitFilePath) : emitFilePath;
         if (emitFilesSeen.has(emitFileKey)) {
-          blockEmittingOfFile(emitFileName, createCompilerDiagnostic(Diagnostics.Cannot_write_file_0_because_it_would_be_overwritten_by_multiple_input_files, emitFileName));
+          blockEmittingOfFile(emitFileName, createCompilerDiagnostic(qd.Cannot_write_file_0_because_it_would_be_overwritten_by_multiple_input_files, emitFileName));
         } else {
           emitFilesSeen.set(emitFileKey, true);
         }
@@ -2339,7 +2339,7 @@ export function createProgram(
   function addProgramDiagnosticAtRefPath(file: SourceFile, rootPaths: Map<true>, message: DiagnosticMessage, ...args: (string | number | undefined)[]) {
     const refPaths = refFileMap && refFileMap.get(file.path);
     const refPathToReportErrorOn = forEach(refPaths, (refPath) => (rootPaths.has(refPath.file) ? refPath : undefined)) || elementAt(refPaths, 0);
-    programDiagnostics.add(refPathToReportErrorOn ? createFileDiagnosticAtReference(refPathToReportErrorOn, message, ...args) : createCompilerDiagnostic(message, ...args));
+    programqd.add(refPathToReportErrorOn ? createFileDiagnosticAtReference(refPathToReportErrorOn, message, ...args) : createCompilerDiagnostic(message, ...args));
   }
   function verifyProjectReferences() {
     const buildInfoPath = !options.noEmit && !options.suppressOutputPathCheck ? getTsBuildInfoEmitOutputFilePath(options) : undefined;
@@ -2347,29 +2347,29 @@ export function createProgram(
       const ref = (parent ? parent.commandLine.projectReferences : projectReferences)![index];
       const parentFile = parent && (parent.sourceFile as JsonSourceFile);
       if (!resolvedRef) {
-        createDiagnosticForReference(parentFile, index, Diagnostics.File_0_not_found, ref.path);
+        createDiagnosticForReference(parentFile, index, qd.File_0_not_found, ref.path);
         return;
       }
       const options = resolvedRef.commandLine.options;
       if (!options.composite) {
         const inputs = parent ? parent.commandLine.fileNames : rootNames;
         if (inputs.length) {
-          createDiagnosticForReference(parentFile, index, Diagnostics.Referenced_project_0_must_have_setting_composite_Colon_true, ref.path);
+          createDiagnosticForReference(parentFile, index, qd.Referenced_project_0_must_have_setting_composite_Colon_true, ref.path);
         }
       }
       if (ref.prepend) {
         const out = options.outFile || options.out;
         if (out) {
           if (!host.fileExists(out)) {
-            createDiagnosticForReference(parentFile, index, Diagnostics.Output_file_0_from_project_1_does_not_exist, out, ref.path);
+            createDiagnosticForReference(parentFile, index, qd.Output_file_0_from_project_1_does_not_exist, out, ref.path);
           }
         } else {
-          createDiagnosticForReference(parentFile, index, Diagnostics.Cannot_prepend_project_0_because_it_does_not_have_outFile_set, ref.path);
+          createDiagnosticForReference(parentFile, index, qd.Cannot_prepend_project_0_because_it_does_not_have_outFile_set, ref.path);
         }
       }
       if (!parent && buildInfoPath && buildInfoPath === getTsBuildInfoEmitOutputFilePath(options)) {
-        createDiagnosticForReference(parentFile, index, Diagnostics.Cannot_write_file_0_because_it_will_overwrite_tsbuildinfo_file_generated_by_referenced_project_1, buildInfoPath, ref.path);
-        hasEmitBlockingDiagnostics.set(toPath(buildInfoPath), true);
+        createDiagnosticForReference(parentFile, index, qd.Cannot_write_file_0_because_it_will_overwrite_tsbuildinfo_file_generated_by_referenced_project_1, buildInfoPath, ref.path);
+        hasEmitBlockingqd.set(toPath(buildInfoPath), true);
       }
     });
   }
@@ -2381,14 +2381,14 @@ export function createProgram(
         for (const keyProps of getPropertyAssignment(pathProp.initializer, key)) {
           const initializer = keyProps.initializer;
           if (isArrayLiteralExpression(initializer) && initializer.elements.length > valueIndex) {
-            programDiagnostics.add(createDiagnosticForNodeInSourceFile(options.configFile!, initializer.elements[valueIndex], message, arg0, arg1, arg2));
+            programqd.add(createDiagnosticForNodeInSourceFile(options.configFile!, initializer.elements[valueIndex], message, arg0, arg1, arg2));
             needCompilerDiagnostic = false;
           }
         }
       }
     }
     if (needCompilerDiagnostic) {
-      programDiagnostics.add(createCompilerDiagnostic(message, arg0, arg1, arg2));
+      programqd.add(createCompilerDiagnostic(message, arg0, arg1, arg2));
     }
   }
   function createDiagnosticForOptionPaths(onKey: boolean, key: string, message: DiagnosticMessage, arg0: string | number) {
@@ -2400,7 +2400,7 @@ export function createProgram(
       }
     }
     if (needCompilerDiagnostic) {
-      programDiagnostics.add(createCompilerDiagnostic(message, arg0));
+      programqd.add(createCompilerDiagnostic(message, arg0));
     }
   }
   function getOptionsSyntaxByName(name: string): object | undefined {
@@ -2422,9 +2422,9 @@ export function createProgram(
       isArrayLiteralExpression(property.initializer) ? property.initializer : undefined
     );
     if (referencesSyntax && referencesSyntax.elements.length > index) {
-      programDiagnostics.add(createDiagnosticForNodeInSourceFile(sourceFile || options.configFile!, referencesSyntax.elements[index], message, arg0, arg1));
+      programqd.add(createDiagnosticForNodeInSourceFile(sourceFile || options.configFile!, referencesSyntax.elements[index], message, arg0, arg1));
     } else {
-      programDiagnostics.add(createCompilerDiagnostic(message, arg0, arg1));
+      programqd.add(createCompilerDiagnostic(message, arg0, arg1));
     }
   }
   function createDiagnosticForOption(onKey: boolean, option1: string, option2: string | undefined, message: DiagnosticMessage, arg0: string | number, arg1?: string | number, arg2?: string | number) {
@@ -2432,7 +2432,7 @@ export function createProgram(
     const needCompilerDiagnostic =
       !compilerOptionsObjectLiteralSyntax || !createOptionDiagnosticInObjectLiteralSyntax(compilerOptionsObjectLiteralSyntax, onKey, option1, option2, message, arg0, arg1, arg2);
     if (needCompilerDiagnostic) {
-      programDiagnostics.add(createCompilerDiagnostic(message, arg0, arg1, arg2));
+      programqd.add(createCompilerDiagnostic(message, arg0, arg1, arg2));
     }
   }
   function getCompilerOptionsObjectLiteralSyntax() {
@@ -2462,13 +2462,13 @@ export function createProgram(
   ): boolean {
     const props = getPropertyAssignment(objectLiteral, key1, key2);
     for (const prop of props) {
-      programDiagnostics.add(createDiagnosticForNodeInSourceFile(options.configFile!, onKey ? prop.name : prop.initializer, message, arg0, arg1, arg2));
+      programqd.add(createDiagnosticForNodeInSourceFile(options.configFile!, onKey ? prop.name : prop.initializer, message, arg0, arg1, arg2));
     }
     return !!props.length;
   }
   function blockEmittingOfFile(emitFileName: string, diag: Diagnostic) {
-    hasEmitBlockingDiagnostics.set(toPath(emitFileName), true);
-    programDiagnostics.add(diag);
+    hasEmitBlockingqd.set(toPath(emitFileName), true);
+    programqd.add(diag);
   }
   function isEmittedFile(file: string): boolean {
     if (options.noEmit) return false;
@@ -2691,13 +2691,13 @@ export function getResolutionDiagnostic(options: CompilerOptions, { extension }:
       return needResolveJsonModule();
   }
   function needJsx() {
-    return options.jsx ? undefined : Diagnostics.Module_0_was_resolved_to_1_but_jsx_is_not_set;
+    return options.jsx ? undefined : qd.Module_0_was_resolved_to_1_but_jsx_is_not_set;
   }
   function needAllowJs() {
-    return options.allowJs || !getStrictOptionValue(options, 'noImplicitAny') ? undefined : Diagnostics.Could_not_find_a_declaration_file_for_module_0_1_implicitly_has_an_any_type;
+    return options.allowJs || !getStrictOptionValue(options, 'noImplicitAny') ? undefined : qd.Could_not_find_a_declaration_file_for_module_0_1_implicitly_has_an_any_type;
   }
   function needResolveJsonModule() {
-    return options.resolveJsonModule ? undefined : Diagnostics.Module_0_was_resolved_to_1_but_resolveJsonModule_is_not_used;
+    return options.resolveJsonModule ? undefined : qd.Module_0_was_resolved_to_1_but_resolveJsonModule_is_not_used;
   }
 }
 function getModuleNames({ imports, moduleAugmentations }: SourceFile): string[] {

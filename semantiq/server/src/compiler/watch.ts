@@ -222,7 +222,7 @@ export function createWatchProgram<T extends BuilderProgram>(
     setConfigFileParsingResult(host.configFileParsingResult);
     newLine = updateNewLine();
   }
-  reportWatchDiagnostic(Diagnostics.Starting_compilation_in_watch_mode);
+  reportWatchDiagnostic(qd.Starting_compilation_in_watch_mode);
   if (configFileName && !host.configFileParsingResult) {
     newLine = getNewLineCharacter(optionsToExtendForConfigFile, () => host.getNewLine());
     assert(!rootFileNames);
@@ -454,7 +454,7 @@ export function createWatchProgram<T extends BuilderProgram>(
   }
   function updateProgramWithWatchStatus() {
     timerToUpdateProgram = undefined;
-    reportWatchDiagnostic(Diagnostics.File_change_detected_Starting_incremental_compilation);
+    reportWatchDiagnostic(qd.File_change_detected_Starting_incremental_compilation);
     updateProgram();
   }
   function updateProgram() {
@@ -600,7 +600,7 @@ function clearScreenIfNotWatchingForFileChanges(system: System, diagnostic: Diag
   }
   return false;
 }
-export const screenStartingMessageCodes: number[] = [Diagnostics.Starting_compilation_in_watch_mode.code, Diagnostics.File_change_detected_Starting_incremental_compilation.code];
+export const screenStartingMessageCodes: number[] = [qd.Starting_compilation_in_watch_mode.code, qd.File_change_detected_Starting_incremental_compilation.code];
 function getPlainDiagnosticFollowingNewLines(diagnostic: Diagnostic, newLine: string): string {
   return contains(screenStartingMessageCodes, diagnostic.code) ? newLine + newLine : newLine;
 }
@@ -642,11 +642,11 @@ export function getErrorCountForSummary(diagnostics: readonly Diagnostic[]) {
   return countWhere(diagnostics, (diagnostic) => diagnostic.category === DiagnosticCategory.Error);
 }
 export function getWatchErrorSummaryDiagnosticMessage(errorCount: number) {
-  return errorCount === 1 ? Diagnostics.Found_1_error_Watching_for_file_changes : Diagnostics.Found_0_errors_Watching_for_file_changes;
+  return errorCount === 1 ? qd.Found_1_error_Watching_for_file_changes : qd.Found_0_errors_Watching_for_file_changes;
 }
 export function getErrorSummaryText(errorCount: number, newLine: string) {
   if (errorCount === 0) return '';
-  const d = createCompilerDiagnostic(errorCount === 1 ? Diagnostics.Found_1_error : Diagnostics.Found_0_errors, errorCount);
+  const d = createCompilerDiagnostic(errorCount === 1 ? qd.Found_1_error : qd.Found_0_errors, errorCount);
   return `${newLine}${flattenDiagnosticMessageText(d.messageText, newLine)}${newLine}${newLine}`;
 }
 export interface ProgramToEmitFilesAndReportErrors {
@@ -680,13 +680,13 @@ export function emitFilesAndReportErrors(
 ) {
   const isListFilesOnly = !!program.getCompilerOptions().listFilesOnly;
   const allDiagnostics = program.getConfigFileParsingDiagnostics().slice();
-  const configFileParsingDiagnosticsLength = allDiagnostics.length;
+  const configFileParsingDiagnosticsLength = allqd.length;
   addRange(allDiagnostics, program.getSyntacticDiagnostics(undefined, cancellationToken));
-  if (allDiagnostics.length === configFileParsingDiagnosticsLength) {
+  if (allqd.length === configFileParsingDiagnosticsLength) {
     addRange(allDiagnostics, program.getOptionsDiagnostics(cancellationToken));
     if (!isListFilesOnly) {
       addRange(allDiagnostics, program.getGlobalDiagnostics(cancellationToken));
-      if (allDiagnostics.length === configFileParsingDiagnosticsLength) {
+      if (allqd.length === configFileParsingDiagnosticsLength) {
         addRange(allDiagnostics, program.getSemanticDiagnostics(undefined, cancellationToken));
       }
     }

@@ -69,8 +69,8 @@ export const optionsForWatch: CommandLineOption[] = [
       usefsevents: WatchFileKind.UseFsEvents,
       usefseventsonparentdirectory: WatchFileKind.UseFsEventsOnParentDirectory,
     }),
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Specify_strategy_for_watching_file_Colon_FixedPollingInterval_default_PriorityPollingInterval_DynamicPriorityPolling_UseFsEvents_UseFsEventsOnParentDirectory,
+    category: qd.Advanced_Options,
+    description: qd.Specify_strategy_for_watching_file_Colon_FixedPollingInterval_default_PriorityPollingInterval_DynamicPriorityPolling_UseFsEvents_UseFsEventsOnParentDirectory,
   },
   {
     name: 'watchDirectory',
@@ -79,8 +79,8 @@ export const optionsForWatch: CommandLineOption[] = [
       fixedpollinginterval: WatchDirectoryKind.FixedPollingInterval,
       dynamicprioritypolling: WatchDirectoryKind.DynamicPriorityPolling,
     }),
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Specify_strategy_for_watching_directory_on_platforms_that_don_t_support_recursive_watching_natively_Colon_UseFsEvents_default_FixedPollingInterval_DynamicPriorityPolling,
+    category: qd.Advanced_Options,
+    description: qd.Specify_strategy_for_watching_directory_on_platforms_that_don_t_support_recursive_watching_natively_Colon_UseFsEvents_default_FixedPollingInterval_DynamicPriorityPolling,
   },
   {
     name: 'fallbackPolling',
@@ -89,14 +89,14 @@ export const optionsForWatch: CommandLineOption[] = [
       priorityinterval: PollingWatchKind.PriorityInterval,
       dynamicpriority: PollingWatchKind.DynamicPriority,
     }),
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Specify_strategy_for_creating_a_polling_watch_when_it_fails_to_create_using_file_system_events_Colon_FixedInterval_default_PriorityInterval_DynamicPriority,
+    category: qd.Advanced_Options,
+    description: qd.Specify_strategy_for_creating_a_polling_watch_when_it_fails_to_create_using_file_system_events_Colon_FixedInterval_default_PriorityInterval_DynamicPriority,
   },
   {
     name: 'synchronousWatchDirectory',
     type: 'boolean',
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Synchronously_call_callbacks_and_update_the_state_of_directory_watchers_on_platforms_that_don_t_support_recursive_watching_natively,
+    category: qd.Advanced_Options,
+    description: qd.Synchronously_call_callbacks_and_update_the_state_of_directory_watchers_on_platforms_that_don_t_support_recursive_watching_natively,
   },
 ];
 export const commonOptionsWithBuild: CommandLineOption[] = [
@@ -105,8 +105,8 @@ export const commonOptionsWithBuild: CommandLineOption[] = [
     shortName: 'h',
     type: 'boolean',
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Command_line_Options,
-    description: Diagnostics.Print_this_message,
+    category: qd.Command_line_Options,
+    description: qd.Print_this_message,
   },
   {
     name: 'help',
@@ -118,67 +118,67 @@ export const commonOptionsWithBuild: CommandLineOption[] = [
     shortName: 'w',
     type: 'boolean',
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Command_line_Options,
-    description: Diagnostics.Watch_input_files,
+    category: qd.Command_line_Options,
+    description: qd.Watch_input_files,
   },
   {
     name: 'preserveWatchOutput',
     type: 'boolean',
     showInSimplifiedHelpView: false,
-    category: Diagnostics.Command_line_Options,
-    description: Diagnostics.Whether_to_keep_outdated_console_output_in_watch_mode_instead_of_clearing_the_screen,
+    category: qd.Command_line_Options,
+    description: qd.Whether_to_keep_outdated_console_output_in_watch_mode_instead_of_clearing_the_screen,
   },
   {
     name: 'listFiles',
     type: 'boolean',
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Print_names_of_files_part_of_the_compilation,
+    category: qd.Advanced_Options,
+    description: qd.Print_names_of_files_part_of_the_compilation,
   },
   {
     name: 'listEmittedFiles',
     type: 'boolean',
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Print_names_of_generated_files_part_of_the_compilation,
+    category: qd.Advanced_Options,
+    description: qd.Print_names_of_generated_files_part_of_the_compilation,
   },
   {
     name: 'pretty',
     type: 'boolean',
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Command_line_Options,
-    description: Diagnostics.Stylize_errors_and_messages_using_color_and_context_experimental,
+    category: qd.Command_line_Options,
+    description: qd.Stylize_errors_and_messages_using_color_and_context_experimental,
   },
   {
     name: 'traceResolution',
     type: 'boolean',
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Enable_tracing_of_the_name_resolution_process,
+    category: qd.Advanced_Options,
+    description: qd.Enable_tracing_of_the_name_resolution_process,
   },
   {
     name: 'diagnostics',
     type: 'boolean',
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Show_diagnostic_information,
+    category: qd.Advanced_Options,
+    description: qd.Show_diagnostic_information,
   },
   {
     name: 'extendedDiagnostics',
     type: 'boolean',
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Show_verbose_diagnostic_information,
+    category: qd.Advanced_Options,
+    description: qd.Show_verbose_diagnostic_information,
   },
   {
     name: 'generateCpuProfile',
     type: 'string',
     isFilePath: true,
-    paramType: Diagnostics.FILE_OR_DIRECTORY,
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Generates_a_CPU_profile,
+    paramType: qd.FILE_OR_DIRECTORY,
+    category: qd.Advanced_Options,
+    description: qd.Generates_a_CPU_profile,
   },
   {
     name: 'incremental',
     shortName: 'i',
     type: 'boolean',
-    category: Diagnostics.Basic_Options,
-    description: Diagnostics.Enable_incremental_compilation,
+    category: qd.Basic_Options,
+    description: qd.Enable_incremental_compilation,
     transpileOptionValue: undefined,
   },
   {
@@ -186,14 +186,14 @@ export const commonOptionsWithBuild: CommandLineOption[] = [
     type: 'boolean',
     affectsSemanticDiagnostics: true,
     affectsEmit: true,
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Have_recompiles_in_incremental_and_watch_assume_that_changes_within_a_file_will_only_affect_files_directly_depending_on_it,
+    category: qd.Advanced_Options,
+    description: qd.Have_recompiles_in_incremental_and_watch_assume_that_changes_within_a_file_will_only_affect_files_directly_depending_on_it,
   },
   {
     name: 'locale',
     type: 'string',
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.The_locale_used_when_displaying_messages_to_the_user_e_g_en_us,
+    category: qd.Advanced_Options,
+    description: qd.The_locale_used_when_displaying_messages_to_the_user_e_g_en_us,
   },
 ];
 export const optionDeclarations: CommandLineOption[] = [
@@ -202,23 +202,23 @@ export const optionDeclarations: CommandLineOption[] = [
     name: 'all',
     type: 'boolean',
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Command_line_Options,
-    description: Diagnostics.Show_all_compiler_options,
+    category: qd.Command_line_Options,
+    description: qd.Show_all_compiler_options,
   },
   {
     name: 'version',
     shortName: 'v',
     type: 'boolean',
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Command_line_Options,
-    description: Diagnostics.Print_the_compiler_s_version,
+    category: qd.Command_line_Options,
+    description: qd.Print_the_compiler_s_version,
   },
   {
     name: 'init',
     type: 'boolean',
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Command_line_Options,
-    description: Diagnostics.Initializes_a_TypeScript_project_and_creates_a_tsconfig_json_file,
+    category: qd.Command_line_Options,
+    description: qd.Initializes_a_TypeScript_project_and_creates_a_tsconfig_json_file,
   },
   {
     name: 'project',
@@ -226,33 +226,33 @@ export const optionDeclarations: CommandLineOption[] = [
     type: 'string',
     isFilePath: true,
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Command_line_Options,
-    paramType: Diagnostics.FILE_OR_DIRECTORY,
-    description: Diagnostics.Compile_the_project_given_the_path_to_its_configuration_file_or_to_a_folder_with_a_tsconfig_json,
+    category: qd.Command_line_Options,
+    paramType: qd.FILE_OR_DIRECTORY,
+    description: qd.Compile_the_project_given_the_path_to_its_configuration_file_or_to_a_folder_with_a_tsconfig_json,
   },
   {
     name: 'build',
     type: 'boolean',
     shortName: 'b',
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Command_line_Options,
-    description: Diagnostics.Build_one_or_more_projects_and_their_dependencies_if_out_of_date,
+    category: qd.Command_line_Options,
+    description: qd.Build_one_or_more_projects_and_their_dependencies_if_out_of_date,
   },
   {
     name: 'showConfig',
     type: 'boolean',
-    category: Diagnostics.Command_line_Options,
+    category: qd.Command_line_Options,
     isCommandLineOnly: true,
-    description: Diagnostics.Print_the_final_configuration_instead_of_building,
+    description: qd.Print_the_final_configuration_instead_of_building,
   },
   {
     name: 'listFilesOnly',
     type: 'boolean',
-    category: Diagnostics.Command_line_Options,
+    category: qd.Command_line_Options,
     affectsSemanticDiagnostics: true,
     affectsEmit: true,
     isCommandLineOnly: true,
-    description: Diagnostics.Print_names_of_files_that_are_part_of_the_compilation_and_then_stop_processing,
+    description: qd.Print_names_of_files_that_are_part_of_the_compilation_and_then_stop_processing,
   },
   {
     name: 'target',
@@ -263,10 +263,10 @@ export const optionDeclarations: CommandLineOption[] = [
     affectsSourceFile: true,
     affectsModuleResolution: true,
     affectsEmit: true,
-    paramType: Diagnostics.VERSION,
+    paramType: qd.VERSION,
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Basic_Options,
-    description: Diagnostics.Specify_ECMAScript_target_version_Colon_ES3_default_ES5_ES2015_ES2016_ES2017_ES2018_ES2019_ES2020_or_ESNEXT,
+    category: qd.Basic_Options,
+    description: qd.Specify_ECMAScript_target_version_Colon_ES3_default_ES5_ES2015_ES2016_ES2017_ES2018_ES2019_ES2020_or_ESNEXT,
   },
   {
     name: 'module',
@@ -284,10 +284,10 @@ export const optionDeclarations: CommandLineOption[] = [
     }),
     affectsModuleResolution: true,
     affectsEmit: true,
-    paramType: Diagnostics.KIND,
+    paramType: qd.KIND,
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Basic_Options,
-    description: Diagnostics.Specify_module_code_generation_Colon_none_commonjs_amd_system_umd_es2015_es2020_or_ESNext,
+    category: qd.Basic_Options,
+    description: qd.Specify_module_code_generation_Colon_none_commonjs_amd_system_umd_es2015_es2020_or_ESNext,
   },
   {
     name: 'lib',
@@ -298,8 +298,8 @@ export const optionDeclarations: CommandLineOption[] = [
     },
     affectsModuleResolution: true,
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Basic_Options,
-    description: Diagnostics.Specify_library_files_to_be_included_in_the_compilation,
+    category: qd.Basic_Options,
+    description: qd.Specify_library_files_to_be_included_in_the_compilation,
     transpileOptionValue: undefined,
   },
   {
@@ -307,14 +307,14 @@ export const optionDeclarations: CommandLineOption[] = [
     type: 'boolean',
     affectsModuleResolution: true,
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Basic_Options,
-    description: Diagnostics.Allow_javascript_files_to_be_compiled,
+    category: qd.Basic_Options,
+    description: qd.Allow_javascript_files_to_be_compiled,
   },
   {
     name: 'checkJs',
     type: 'boolean',
-    category: Diagnostics.Basic_Options,
-    description: Diagnostics.Report_errors_in_js_files,
+    category: qd.Basic_Options,
+    description: qd.Report_errors_in_js_files,
   },
   {
     name: 'jsx',
@@ -324,10 +324,10 @@ export const optionDeclarations: CommandLineOption[] = [
       react: JsxEmit.React,
     }),
     affectsSourceFile: true,
-    paramType: Diagnostics.KIND,
+    paramType: qd.KIND,
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Basic_Options,
-    description: Diagnostics.Specify_JSX_code_generation_Colon_preserve_react_native_or_react,
+    category: qd.Basic_Options,
+    description: qd.Specify_JSX_code_generation_Colon_preserve_react_native_or_react,
   },
   {
     name: 'declaration',
@@ -335,8 +335,8 @@ export const optionDeclarations: CommandLineOption[] = [
     type: 'boolean',
     affectsEmit: true,
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Basic_Options,
-    description: Diagnostics.Generates_corresponding_d_ts_file,
+    category: qd.Basic_Options,
+    description: qd.Generates_corresponding_d_ts_file,
     transpileOptionValue: undefined,
   },
   {
@@ -344,16 +344,16 @@ export const optionDeclarations: CommandLineOption[] = [
     type: 'boolean',
     affectsEmit: true,
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Basic_Options,
-    description: Diagnostics.Generates_a_sourcemap_for_each_corresponding_d_ts_file,
+    category: qd.Basic_Options,
+    description: qd.Generates_a_sourcemap_for_each_corresponding_d_ts_file,
     transpileOptionValue: undefined,
   },
   {
     name: 'emitDeclarationOnly',
     type: 'boolean',
     affectsEmit: true,
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Only_emit_d_ts_declaration_files,
+    category: qd.Advanced_Options,
+    description: qd.Only_emit_d_ts_declaration_files,
     transpileOptionValue: undefined,
   },
   {
@@ -361,18 +361,18 @@ export const optionDeclarations: CommandLineOption[] = [
     type: 'boolean',
     affectsEmit: true,
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Basic_Options,
-    description: Diagnostics.Generates_corresponding_map_file,
+    category: qd.Basic_Options,
+    description: qd.Generates_corresponding_map_file,
   },
   {
     name: 'outFile',
     type: 'string',
     affectsEmit: true,
     isFilePath: true,
-    paramType: Diagnostics.FILE,
+    paramType: qd.FILE,
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Basic_Options,
-    description: Diagnostics.Concatenate_and_emit_output_to_single_file,
+    category: qd.Basic_Options,
+    description: qd.Concatenate_and_emit_output_to_single_file,
     transpileOptionValue: undefined,
   },
   {
@@ -380,27 +380,27 @@ export const optionDeclarations: CommandLineOption[] = [
     type: 'string',
     affectsEmit: true,
     isFilePath: true,
-    paramType: Diagnostics.DIRECTORY,
+    paramType: qd.DIRECTORY,
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Basic_Options,
-    description: Diagnostics.Redirect_output_structure_to_the_directory,
+    category: qd.Basic_Options,
+    description: qd.Redirect_output_structure_to_the_directory,
   },
   {
     name: 'rootDir',
     type: 'string',
     affectsEmit: true,
     isFilePath: true,
-    paramType: Diagnostics.LOCATION,
-    category: Diagnostics.Basic_Options,
-    description: Diagnostics.Specify_the_root_directory_of_input_files_Use_to_control_the_output_directory_structure_with_outDir,
+    paramType: qd.LOCATION,
+    category: qd.Basic_Options,
+    description: qd.Specify_the_root_directory_of_input_files_Use_to_control_the_output_directory_structure_with_outDir,
   },
   {
     name: 'composite',
     type: 'boolean',
     affectsEmit: true,
     isTSConfigOnly: true,
-    category: Diagnostics.Basic_Options,
-    description: Diagnostics.Enable_project_compilation,
+    category: qd.Basic_Options,
+    description: qd.Enable_project_compilation,
     transpileOptionValue: undefined,
   },
   {
@@ -408,9 +408,9 @@ export const optionDeclarations: CommandLineOption[] = [
     type: 'string',
     affectsEmit: true,
     isFilePath: true,
-    paramType: Diagnostics.FILE,
-    category: Diagnostics.Basic_Options,
-    description: Diagnostics.Specify_file_to_store_incremental_compilation_information,
+    paramType: qd.FILE,
+    category: qd.Basic_Options,
+    description: qd.Specify_file_to_store_incremental_compilation_information,
     transpileOptionValue: undefined,
   },
   {
@@ -418,24 +418,24 @@ export const optionDeclarations: CommandLineOption[] = [
     type: 'boolean',
     affectsEmit: true,
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Basic_Options,
-    description: Diagnostics.Do_not_emit_comments_to_output,
+    category: qd.Basic_Options,
+    description: qd.Do_not_emit_comments_to_output,
   },
   {
     name: 'noEmit',
     type: 'boolean',
     affectsEmit: true,
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Basic_Options,
-    description: Diagnostics.Do_not_emit_outputs,
+    category: qd.Basic_Options,
+    description: qd.Do_not_emit_outputs,
     transpileOptionValue: undefined,
   },
   {
     name: 'importHelpers',
     type: 'boolean',
     affectsEmit: true,
-    category: Diagnostics.Basic_Options,
-    description: Diagnostics.Import_emit_helpers_from_tslib,
+    category: qd.Basic_Options,
+    description: qd.Import_emit_helpers_from_tslib,
   },
   {
     name: 'importsNotUsedAsValues',
@@ -446,29 +446,29 @@ export const optionDeclarations: CommandLineOption[] = [
     }),
     affectsEmit: true,
     affectsSemanticDiagnostics: true,
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Specify_emit_Slashchecking_behavior_for_imports_that_are_only_used_for_types,
+    category: qd.Advanced_Options,
+    description: qd.Specify_emit_Slashchecking_behavior_for_imports_that_are_only_used_for_types,
   },
   {
     name: 'downlevelIteration',
     type: 'boolean',
     affectsEmit: true,
-    category: Diagnostics.Basic_Options,
-    description: Diagnostics.Provide_full_support_for_iterables_in_for_of_spread_and_destructuring_when_targeting_ES5_or_ES3,
+    category: qd.Basic_Options,
+    description: qd.Provide_full_support_for_iterables_in_for_of_spread_and_destructuring_when_targeting_ES5_or_ES3,
   },
   {
     name: 'isolatedModules',
     type: 'boolean',
-    category: Diagnostics.Basic_Options,
-    description: Diagnostics.Transpile_each_file_as_a_separate_module_similar_to_ts_transpileModule,
+    category: qd.Basic_Options,
+    description: qd.Transpile_each_file_as_a_separate_module_similar_to_ts_transpileModule,
     transpileOptionValue: true,
   },
   {
     name: 'strict',
     type: 'boolean',
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Strict_Type_Checking_Options,
-    description: Diagnostics.Enable_all_strict_type_checking_options,
+    category: qd.Strict_Type_Checking_Options,
+    description: qd.Enable_all_strict_type_checking_options,
   },
   {
     name: 'noImplicitAny',
@@ -476,8 +476,8 @@ export const optionDeclarations: CommandLineOption[] = [
     affectsSemanticDiagnostics: true,
     strictFlag: true,
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Strict_Type_Checking_Options,
-    description: Diagnostics.Raise_error_on_expressions_and_declarations_with_an_implied_any_type,
+    category: qd.Strict_Type_Checking_Options,
+    description: qd.Raise_error_on_expressions_and_declarations_with_an_implied_any_type,
   },
   {
     name: 'strictNullChecks',
@@ -485,8 +485,8 @@ export const optionDeclarations: CommandLineOption[] = [
     affectsSemanticDiagnostics: true,
     strictFlag: true,
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Strict_Type_Checking_Options,
-    description: Diagnostics.Enable_strict_null_checks,
+    category: qd.Strict_Type_Checking_Options,
+    description: qd.Enable_strict_null_checks,
   },
   {
     name: 'strictFunctionTypes',
@@ -494,16 +494,16 @@ export const optionDeclarations: CommandLineOption[] = [
     affectsSemanticDiagnostics: true,
     strictFlag: true,
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Strict_Type_Checking_Options,
-    description: Diagnostics.Enable_strict_checking_of_function_types,
+    category: qd.Strict_Type_Checking_Options,
+    description: qd.Enable_strict_checking_of_function_types,
   },
   {
     name: 'strictBindCallApply',
     type: 'boolean',
     strictFlag: true,
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Strict_Type_Checking_Options,
-    description: Diagnostics.Enable_strict_bind_call_and_apply_methods_on_functions,
+    category: qd.Strict_Type_Checking_Options,
+    description: qd.Enable_strict_bind_call_and_apply_methods_on_functions,
   },
   {
     name: 'strictPropertyInitialization',
@@ -511,8 +511,8 @@ export const optionDeclarations: CommandLineOption[] = [
     affectsSemanticDiagnostics: true,
     strictFlag: true,
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Strict_Type_Checking_Options,
-    description: Diagnostics.Enable_strict_checking_of_property_initialization_in_classes,
+    category: qd.Strict_Type_Checking_Options,
+    description: qd.Enable_strict_checking_of_property_initialization_in_classes,
   },
   {
     name: 'noImplicitThis',
@@ -520,8 +520,8 @@ export const optionDeclarations: CommandLineOption[] = [
     affectsSemanticDiagnostics: true,
     strictFlag: true,
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Strict_Type_Checking_Options,
-    description: Diagnostics.Raise_error_on_this_expressions_with_an_implied_any_type,
+    category: qd.Strict_Type_Checking_Options,
+    description: qd.Raise_error_on_this_expressions_with_an_implied_any_type,
   },
   {
     name: 'alwaysStrict',
@@ -529,32 +529,32 @@ export const optionDeclarations: CommandLineOption[] = [
     affectsSourceFile: true,
     strictFlag: true,
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Strict_Type_Checking_Options,
-    description: Diagnostics.Parse_in_strict_mode_and_emit_use_strict_for_each_source_file,
+    category: qd.Strict_Type_Checking_Options,
+    description: qd.Parse_in_strict_mode_and_emit_use_strict_for_each_source_file,
   },
   {
     name: 'noUnusedLocals',
     type: 'boolean',
     affectsSemanticDiagnostics: true,
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Additional_Checks,
-    description: Diagnostics.Report_errors_on_unused_locals,
+    category: qd.Additional_Checks,
+    description: qd.Report_errors_on_unused_locals,
   },
   {
     name: 'noUnusedParameters',
     type: 'boolean',
     affectsSemanticDiagnostics: true,
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Additional_Checks,
-    description: Diagnostics.Report_errors_on_unused_parameters,
+    category: qd.Additional_Checks,
+    description: qd.Report_errors_on_unused_parameters,
   },
   {
     name: 'noImplicitReturns',
     type: 'boolean',
     affectsSemanticDiagnostics: true,
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Additional_Checks,
-    description: Diagnostics.Report_error_when_not_all_code_paths_in_function_return_a_value,
+    category: qd.Additional_Checks,
+    description: qd.Report_error_when_not_all_code_paths_in_function_return_a_value,
   },
   {
     name: 'noFallthroughCasesInSwitch',
@@ -562,8 +562,8 @@ export const optionDeclarations: CommandLineOption[] = [
     affectsBindDiagnostics: true,
     affectsSemanticDiagnostics: true,
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Additional_Checks,
-    description: Diagnostics.Report_errors_for_fallthrough_cases_in_switch_statement,
+    category: qd.Additional_Checks,
+    description: qd.Report_errors_for_fallthrough_cases_in_switch_statement,
   },
   {
     name: 'moduleResolution',
@@ -572,25 +572,25 @@ export const optionDeclarations: CommandLineOption[] = [
       classic: ModuleResolutionKind.Classic,
     }),
     affectsModuleResolution: true,
-    paramType: Diagnostics.STRATEGY,
-    category: Diagnostics.Module_Resolution_Options,
-    description: Diagnostics.Specify_module_resolution_strategy_Colon_node_Node_js_or_classic_TypeScript_pre_1_6,
+    paramType: qd.STRATEGY,
+    category: qd.Module_Resolution_Options,
+    description: qd.Specify_module_resolution_strategy_Colon_node_Node_js_or_classic_TypeScript_pre_1_6,
   },
   {
     name: 'baseUrl',
     type: 'string',
     affectsModuleResolution: true,
     isFilePath: true,
-    category: Diagnostics.Module_Resolution_Options,
-    description: Diagnostics.Base_directory_to_resolve_non_absolute_module_names,
+    category: qd.Module_Resolution_Options,
+    description: qd.Base_directory_to_resolve_non_absolute_module_names,
   },
   {
     name: 'paths',
     type: 'object',
     affectsModuleResolution: true,
     isTSConfigOnly: true,
-    category: Diagnostics.Module_Resolution_Options,
-    description: Diagnostics.A_series_of_entries_which_re_map_imports_to_lookup_locations_relative_to_the_baseUrl,
+    category: qd.Module_Resolution_Options,
+    description: qd.A_series_of_entries_which_re_map_imports_to_lookup_locations_relative_to_the_baseUrl,
     transpileOptionValue: undefined,
   },
   {
@@ -603,8 +603,8 @@ export const optionDeclarations: CommandLineOption[] = [
       isFilePath: true,
     },
     affectsModuleResolution: true,
-    category: Diagnostics.Module_Resolution_Options,
-    description: Diagnostics.List_of_root_folders_whose_combined_content_represents_the_structure_of_the_project_at_runtime,
+    category: qd.Module_Resolution_Options,
+    description: qd.List_of_root_folders_whose_combined_content_represents_the_structure_of_the_project_at_runtime,
     transpileOptionValue: undefined,
   },
   {
@@ -616,8 +616,8 @@ export const optionDeclarations: CommandLineOption[] = [
       isFilePath: true,
     },
     affectsModuleResolution: true,
-    category: Diagnostics.Module_Resolution_Options,
-    description: Diagnostics.List_of_folders_to_include_type_definitions_from,
+    category: qd.Module_Resolution_Options,
+    description: qd.List_of_folders_to_include_type_definitions_from,
   },
   {
     name: 'types',
@@ -628,16 +628,16 @@ export const optionDeclarations: CommandLineOption[] = [
     },
     affectsModuleResolution: true,
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Module_Resolution_Options,
-    description: Diagnostics.Type_declaration_files_to_be_included_in_compilation,
+    category: qd.Module_Resolution_Options,
+    description: qd.Type_declaration_files_to_be_included_in_compilation,
     transpileOptionValue: undefined,
   },
   {
     name: 'allowSyntheticDefaultImports',
     type: 'boolean',
     affectsSemanticDiagnostics: true,
-    category: Diagnostics.Module_Resolution_Options,
-    description: Diagnostics.Allow_default_imports_from_modules_with_no_default_export_This_does_not_affect_code_emit_just_typechecking,
+    category: qd.Module_Resolution_Options,
+    description: qd.Allow_default_imports_from_modules_with_no_default_export_This_does_not_affect_code_emit_just_typechecking,
   },
   {
     name: 'esModuleInterop',
@@ -645,115 +645,115 @@ export const optionDeclarations: CommandLineOption[] = [
     affectsSemanticDiagnostics: true,
     affectsEmit: true,
     showInSimplifiedHelpView: true,
-    category: Diagnostics.Module_Resolution_Options,
-    description: Diagnostics.Enables_emit_interoperability_between_CommonJS_and_ES_Modules_via_creation_of_namespace_objects_for_all_imports_Implies_allowSyntheticDefaultImports,
+    category: qd.Module_Resolution_Options,
+    description: qd.Enables_emit_interoperability_between_CommonJS_and_ES_Modules_via_creation_of_namespace_objects_for_all_imports_Implies_allowSyntheticDefaultImports,
   },
   {
     name: 'preserveSymlinks',
     type: 'boolean',
-    category: Diagnostics.Module_Resolution_Options,
-    description: Diagnostics.Do_not_resolve_the_real_path_of_symlinks,
+    category: qd.Module_Resolution_Options,
+    description: qd.Do_not_resolve_the_real_path_of_symlinks,
   },
   {
     name: 'allowUmdGlobalAccess',
     type: 'boolean',
     affectsSemanticDiagnostics: true,
-    category: Diagnostics.Module_Resolution_Options,
-    description: Diagnostics.Allow_accessing_UMD_globals_from_modules,
+    category: qd.Module_Resolution_Options,
+    description: qd.Allow_accessing_UMD_globals_from_modules,
   },
   {
     name: 'sourceRoot',
     type: 'string',
     affectsEmit: true,
-    paramType: Diagnostics.LOCATION,
-    category: Diagnostics.Source_Map_Options,
-    description: Diagnostics.Specify_the_location_where_debugger_should_locate_TypeScript_files_instead_of_source_locations,
+    paramType: qd.LOCATION,
+    category: qd.Source_Map_Options,
+    description: qd.Specify_the_location_where_debugger_should_locate_TypeScript_files_instead_of_source_locations,
   },
   {
     name: 'mapRoot',
     type: 'string',
     affectsEmit: true,
-    paramType: Diagnostics.LOCATION,
-    category: Diagnostics.Source_Map_Options,
-    description: Diagnostics.Specify_the_location_where_debugger_should_locate_map_files_instead_of_generated_locations,
+    paramType: qd.LOCATION,
+    category: qd.Source_Map_Options,
+    description: qd.Specify_the_location_where_debugger_should_locate_map_files_instead_of_generated_locations,
   },
   {
     name: 'inlineSourceMap',
     type: 'boolean',
     affectsEmit: true,
-    category: Diagnostics.Source_Map_Options,
-    description: Diagnostics.Emit_a_single_file_with_source_maps_instead_of_having_a_separate_file,
+    category: qd.Source_Map_Options,
+    description: qd.Emit_a_single_file_with_source_maps_instead_of_having_a_separate_file,
   },
   {
     name: 'inlineSources',
     type: 'boolean',
     affectsEmit: true,
-    category: Diagnostics.Source_Map_Options,
-    description: Diagnostics.Emit_the_source_alongside_the_sourcemaps_within_a_single_file_requires_inlineSourceMap_or_sourceMap_to_be_set,
+    category: qd.Source_Map_Options,
+    description: qd.Emit_the_source_alongside_the_sourcemaps_within_a_single_file_requires_inlineSourceMap_or_sourceMap_to_be_set,
   },
   {
     name: 'experimentalDecorators',
     type: 'boolean',
     affectsSemanticDiagnostics: true,
-    category: Diagnostics.Experimental_Options,
-    description: Diagnostics.Enables_experimental_support_for_ES7_decorators,
+    category: qd.Experimental_Options,
+    description: qd.Enables_experimental_support_for_ES7_decorators,
   },
   {
     name: 'emitDecoratorMetadata',
     type: 'boolean',
     affectsSemanticDiagnostics: true,
     affectsEmit: true,
-    category: Diagnostics.Experimental_Options,
-    description: Diagnostics.Enables_experimental_support_for_emitting_type_metadata_for_decorators,
+    category: qd.Experimental_Options,
+    description: qd.Enables_experimental_support_for_emitting_type_metadata_for_decorators,
   },
   {
     name: 'jsxFactory',
     type: 'string',
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Specify_the_JSX_factory_function_to_use_when_targeting_react_JSX_emit_e_g_React_createElement_or_h,
+    category: qd.Advanced_Options,
+    description: qd.Specify_the_JSX_factory_function_to_use_when_targeting_react_JSX_emit_e_g_React_createElement_or_h,
   },
   {
     name: 'resolveJsonModule',
     type: 'boolean',
     affectsModuleResolution: true,
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Include_modules_imported_with_json_extension,
+    category: qd.Advanced_Options,
+    description: qd.Include_modules_imported_with_json_extension,
   },
   {
     name: 'out',
     type: 'string',
     affectsEmit: true,
     isFilePath: false,
-    category: Diagnostics.Advanced_Options,
-    paramType: Diagnostics.FILE,
-    description: Diagnostics.Deprecated_Use_outFile_instead_Concatenate_and_emit_output_to_single_file,
+    category: qd.Advanced_Options,
+    paramType: qd.FILE,
+    description: qd.Deprecated_Use_outFile_instead_Concatenate_and_emit_output_to_single_file,
     transpileOptionValue: undefined,
   },
   {
     name: 'reactNamespace',
     type: 'string',
     affectsEmit: true,
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Deprecated_Use_jsxFactory_instead_Specify_the_object_invoked_for_createElement_when_targeting_react_JSX_emit,
+    category: qd.Advanced_Options,
+    description: qd.Deprecated_Use_jsxFactory_instead_Specify_the_object_invoked_for_createElement_when_targeting_react_JSX_emit,
   },
   {
     name: 'skipDefaultLibCheck',
     type: 'boolean',
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Deprecated_Use_skipLibCheck_instead_Skip_type_checking_of_default_library_declaration_files,
+    category: qd.Advanced_Options,
+    description: qd.Deprecated_Use_skipLibCheck_instead_Skip_type_checking_of_default_library_declaration_files,
   },
   {
     name: 'charset',
     type: 'string',
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.The_character_set_of_the_input_files,
+    category: qd.Advanced_Options,
+    description: qd.The_character_set_of_the_input_files,
   },
   {
     name: 'emitBOM',
     type: 'boolean',
     affectsEmit: true,
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Emit_a_UTF_8_Byte_Order_Mark_BOM_in_the_beginning_of_output_files,
+    category: qd.Advanced_Options,
+    description: qd.Emit_a_UTF_8_Byte_Order_Mark_BOM_in_the_beginning_of_output_files,
   },
   {
     name: 'newLine',
@@ -762,170 +762,170 @@ export const optionDeclarations: CommandLineOption[] = [
       lf: NewLineKind.LineFeed,
     }),
     affectsEmit: true,
-    paramType: Diagnostics.NEWLINE,
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Specify_the_end_of_line_sequence_to_be_used_when_emitting_files_Colon_CRLF_dos_or_LF_unix,
+    paramType: qd.NEWLINE,
+    category: qd.Advanced_Options,
+    description: qd.Specify_the_end_of_line_sequence_to_be_used_when_emitting_files_Colon_CRLF_dos_or_LF_unix,
   },
   {
     name: 'noErrorTruncation',
     type: 'boolean',
     affectsSemanticDiagnostics: true,
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Do_not_truncate_error_messages,
+    category: qd.Advanced_Options,
+    description: qd.Do_not_truncate_error_messages,
   },
   {
     name: 'noLib',
     type: 'boolean',
     affectsModuleResolution: true,
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Do_not_include_the_default_library_file_lib_d_ts,
+    category: qd.Advanced_Options,
+    description: qd.Do_not_include_the_default_library_file_lib_d_ts,
     transpileOptionValue: true,
   },
   {
     name: 'noResolve',
     type: 'boolean',
     affectsModuleResolution: true,
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Do_not_add_triple_slash_references_or_imported_modules_to_the_list_of_compiled_files,
+    category: qd.Advanced_Options,
+    description: qd.Do_not_add_triple_slash_references_or_imported_modules_to_the_list_of_compiled_files,
     transpileOptionValue: true,
   },
   {
     name: 'stripInternal',
     type: 'boolean',
     affectsEmit: true,
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Do_not_emit_declarations_for_code_that_has_an_internal_annotation,
+    category: qd.Advanced_Options,
+    description: qd.Do_not_emit_declarations_for_code_that_has_an_internal_annotation,
   },
   {
     name: 'disableSizeLimit',
     type: 'boolean',
     affectsSourceFile: true,
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Disable_size_limitations_on_JavaScript_projects,
+    category: qd.Advanced_Options,
+    description: qd.Disable_size_limitations_on_JavaScript_projects,
   },
   {
     name: 'disableSourceOfProjectReferenceRedirect',
     type: 'boolean',
     isTSConfigOnly: true,
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Disable_use_of_source_files_instead_of_declaration_files_from_referenced_projects,
+    category: qd.Advanced_Options,
+    description: qd.Disable_use_of_source_files_instead_of_declaration_files_from_referenced_projects,
   },
   {
     name: 'disableSolutionSearching',
     type: 'boolean',
     isTSConfigOnly: true,
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Disable_solution_searching_for_this_project,
+    category: qd.Advanced_Options,
+    description: qd.Disable_solution_searching_for_this_project,
   },
   {
     name: 'noImplicitUseStrict',
     type: 'boolean',
     affectsSemanticDiagnostics: true,
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Do_not_emit_use_strict_directives_in_module_output,
+    category: qd.Advanced_Options,
+    description: qd.Do_not_emit_use_strict_directives_in_module_output,
   },
   {
     name: 'noEmitHelpers',
     type: 'boolean',
     affectsEmit: true,
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Do_not_generate_custom_helper_functions_like_extends_in_compiled_output,
+    category: qd.Advanced_Options,
+    description: qd.Do_not_generate_custom_helper_functions_like_extends_in_compiled_output,
   },
   {
     name: 'noEmitOnError',
     type: 'boolean',
     affectsEmit: true,
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Do_not_emit_outputs_if_any_errors_were_reported,
+    category: qd.Advanced_Options,
+    description: qd.Do_not_emit_outputs_if_any_errors_were_reported,
     transpileOptionValue: undefined,
   },
   {
     name: 'preserveConstEnums',
     type: 'boolean',
     affectsEmit: true,
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Do_not_erase_const_enum_declarations_in_generated_code,
+    category: qd.Advanced_Options,
+    description: qd.Do_not_erase_const_enum_declarations_in_generated_code,
   },
   {
     name: 'declarationDir',
     type: 'string',
     affectsEmit: true,
     isFilePath: true,
-    paramType: Diagnostics.DIRECTORY,
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Output_directory_for_generated_declaration_files,
+    paramType: qd.DIRECTORY,
+    category: qd.Advanced_Options,
+    description: qd.Output_directory_for_generated_declaration_files,
     transpileOptionValue: undefined,
   },
   {
     name: 'skipLibCheck',
     type: 'boolean',
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Skip_type_checking_of_declaration_files,
+    category: qd.Advanced_Options,
+    description: qd.Skip_type_checking_of_declaration_files,
   },
   {
     name: 'allowUnusedLabels',
     type: 'boolean',
     affectsBindDiagnostics: true,
     affectsSemanticDiagnostics: true,
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Do_not_report_errors_on_unused_labels,
+    category: qd.Advanced_Options,
+    description: qd.Do_not_report_errors_on_unused_labels,
   },
   {
     name: 'allowUnreachableCode',
     type: 'boolean',
     affectsBindDiagnostics: true,
     affectsSemanticDiagnostics: true,
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Do_not_report_errors_on_unreachable_code,
+    category: qd.Advanced_Options,
+    description: qd.Do_not_report_errors_on_unreachable_code,
   },
   {
     name: 'suppressExcessPropertyErrors',
     type: 'boolean',
     affectsSemanticDiagnostics: true,
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Suppress_excess_property_checks_for_object_literals,
+    category: qd.Advanced_Options,
+    description: qd.Suppress_excess_property_checks_for_object_literals,
   },
   {
     name: 'suppressImplicitAnyIndexErrors',
     type: 'boolean',
     affectsSemanticDiagnostics: true,
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Suppress_noImplicitAny_errors_for_indexing_objects_lacking_index_signatures,
+    category: qd.Advanced_Options,
+    description: qd.Suppress_noImplicitAny_errors_for_indexing_objects_lacking_index_signatures,
   },
   {
     name: 'forceConsistentCasingInFileNames',
     type: 'boolean',
     affectsModuleResolution: true,
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Disallow_inconsistently_cased_references_to_the_same_file,
+    category: qd.Advanced_Options,
+    description: qd.Disallow_inconsistently_cased_references_to_the_same_file,
   },
   {
     name: 'maxNodeModuleJsDepth',
     type: 'number',
     affectsModuleResolution: true,
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.The_maximum_dependency_depth_to_search_under_node_modules_and_load_JavaScript_files,
+    category: qd.Advanced_Options,
+    description: qd.The_maximum_dependency_depth_to_search_under_node_modules_and_load_JavaScript_files,
   },
   {
     name: 'noStrictGenericChecks',
     type: 'boolean',
     affectsSemanticDiagnostics: true,
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Disable_strict_checking_of_generic_signatures_in_function_types,
+    category: qd.Advanced_Options,
+    description: qd.Disable_strict_checking_of_generic_signatures_in_function_types,
   },
   {
     name: 'useDefineForClassFields',
     type: 'boolean',
     affectsSemanticDiagnostics: true,
     affectsEmit: true,
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Emit_class_fields_with_Define_instead_of_Set,
+    category: qd.Advanced_Options,
+    description: qd.Emit_class_fields_with_Define_instead_of_Set,
   },
   {
     name: 'keyofStringsOnly',
     type: 'boolean',
-    category: Diagnostics.Advanced_Options,
-    description: Diagnostics.Resolve_keyof_to_string_valued_property_names_only_no_numbers_or_symbols,
+    category: qd.Advanced_Options,
+    description: qd.Resolve_keyof_to_string_valued_property_names_only_no_numbers_or_symbols,
   },
   {
     name: 'plugins',
@@ -935,7 +935,7 @@ export const optionDeclarations: CommandLineOption[] = [
       name: 'plugin',
       type: 'object',
     },
-    description: Diagnostics.List_of_language_service_plugins,
+    description: qd.List_of_language_service_plugins,
   },
 ];
 export const semanticDiagnosticsOptionDeclarations: readonly CommandLineOption[] = optionDeclarations.filter((option) => !!option.affectsSemanticDiagnostics);
@@ -950,28 +950,28 @@ export const buildOpts: CommandLineOption[] = [
   {
     name: 'verbose',
     shortName: 'v',
-    category: Diagnostics.Command_line_Options,
-    description: Diagnostics.Enable_verbose_logging,
+    category: qd.Command_line_Options,
+    description: qd.Enable_verbose_logging,
     type: 'boolean',
   },
   {
     name: 'dry',
     shortName: 'd',
-    category: Diagnostics.Command_line_Options,
-    description: Diagnostics.Show_what_would_be_built_or_deleted_if_specified_with_clean,
+    category: qd.Command_line_Options,
+    description: qd.Show_what_would_be_built_or_deleted_if_specified_with_clean,
     type: 'boolean',
   },
   {
     name: 'force',
     shortName: 'f',
-    category: Diagnostics.Command_line_Options,
-    description: Diagnostics.Build_all_projects_including_those_that_appear_to_be_up_to_date,
+    category: qd.Command_line_Options,
+    description: qd.Build_all_projects_including_those_that_appear_to_be_up_to_date,
     type: 'boolean',
   },
   {
     name: 'clean',
-    category: Diagnostics.Command_line_Options,
-    description: Diagnostics.Delete_the_outputs_of_all_projects,
+    category: qd.Command_line_Options,
+    description: qd.Delete_the_outputs_of_all_projects,
     type: 'boolean',
   },
 ];
@@ -1045,7 +1045,7 @@ function createDiagnosticForInvalidCustomType(opt: CommandLineOptionOfCustomType
   const namesOfType = arrayFrom(opt.type.keys())
     .map((key) => `'${key}'`)
     .join(', ');
-  return createDiagnostic(Diagnostics.Argument_for_0_option_must_be_Colon_1, `--${opt.name}`, namesOfType);
+  return createDiagnostic(qd.Argument_for_0_option_must_be_Colon_1, `--${opt.name}`, namesOfType);
 }
 export function parseCustomTypeOption(opt: CommandLineOptionOfCustomType, value: string, errors: Push<Diagnostic>) {
   return convertJsonOptionOfCustomType(opt, trimString(value || ''), errors);
@@ -1112,7 +1112,7 @@ export function parseCommandLineWorker(diagnostics: ParseCommandLineWorkerDiagno
         if (opt) {
           i = parseOptionValue(args, i, diagnostics, opt, options, errors);
         } else {
-          const watchOpt = getOptionDeclarationFromName(watchOptionsDidYouMeanDiagnostics.getOptionsNameMap, inputOptionName, true);
+          const watchOpt = getOptionDeclarationFromName(watchOptionsDidYouMeanqd.getOptionsNameMap, inputOptionName, true);
           if (watchOpt) {
             i = parseOptionValue(args, i, watchOptionsDidYouMeanDiagnostics, watchOpt, watchOptions || (watchOptions = {}), errors);
           } else {
@@ -1143,7 +1143,7 @@ export function parseCommandLineWorker(diagnostics: ParseCommandLineWorkerDiagno
           args.push(text.substring(start + 1, pos));
           pos++;
         } else {
-          errors.push(createCompilerDiagnostic(Diagnostics.Unterminated_quoted_string_in_response_file_0, fileName));
+          errors.push(createCompilerDiagnostic(qd.Unterminated_quoted_string_in_response_file_0, fileName));
         }
       } else {
         while (text.charCodeAt(pos) > Codes.space) pos++;
@@ -1165,10 +1165,10 @@ function parseOptionValue(args: readonly string[], i: number, diagnostics: Parse
         i++;
       } else {
         if (optValue === 'true') i++;
-        errors.push(createCompilerDiagnostic(Diagnostics.Option_0_can_only_be_specified_in_tsconfig_json_file_or_set_to_false_or_null_on_command_line, opt.name));
+        errors.push(createCompilerDiagnostic(qd.Option_0_can_only_be_specified_in_tsconfig_json_file_or_set_to_false_or_null_on_command_line, opt.name));
       }
     } else {
-      errors.push(createCompilerDiagnostic(Diagnostics.Option_0_can_only_be_specified_in_tsconfig_json_file_or_set_to_null_on_command_line, opt.name));
+      errors.push(createCompilerDiagnostic(qd.Option_0_can_only_be_specified_in_tsconfig_json_file_or_set_to_null_on_command_line, opt.name));
       if (optValue && !startsWith(optValue, '-')) i++;
     }
   } else {
@@ -1214,9 +1214,9 @@ function parseOptionValue(args: readonly string[], i: number, diagnostics: Parse
 export const compilerOptionsDidYouMeanDiagnostics: ParseCommandLineWorkerDiagnostics = {
   getOptionsNameMap,
   optionDeclarations,
-  unknownOptionDiagnostic: Diagnostics.Unknown_compiler_option_0,
-  unknownDidYouMeanDiagnostic: Diagnostics.Unknown_compiler_option_0_Did_you_mean_1,
-  optionTypeMismatchDiagnostic: Diagnostics.Compiler_option_0_expects_an_argument,
+  unknownOptionDiagnostic: qd.Unknown_compiler_option_0,
+  unknownDidYouMeanDiagnostic: qd.Unknown_compiler_option_0_Did_you_mean_1,
+  optionTypeMismatchDiagnostic: qd.Compiler_option_0_expects_an_argument,
 };
 export function parseCommandLine(commandLine: readonly string[], readFile?: (path: string) => string | undefined): ParsedCommandLine {
   return parseCommandLineWorker(compilerOptionsDidYouMeanDiagnostics, commandLine, readFile);
@@ -1248,9 +1248,9 @@ function getBuildOptionsNameMap(): OptionsNameMap {
 const buildOptionsDidYouMeanDiagnostics: ParseCommandLineWorkerDiagnostics = {
   getOptionsNameMap: getBuildOptionsNameMap,
   optionDeclarations: buildOpts,
-  unknownOptionDiagnostic: Diagnostics.Unknown_build_option_0,
-  unknownDidYouMeanDiagnostic: Diagnostics.Unknown_build_option_0_Did_you_mean_1,
-  optionTypeMismatchDiagnostic: Diagnostics.Build_option_0_requires_a_value_of_type_1,
+  unknownOptionDiagnostic: qd.Unknown_build_option_0,
+  unknownDidYouMeanDiagnostic: qd.Unknown_build_option_0_Did_you_mean_1,
+  optionTypeMismatchDiagnostic: qd.Build_option_0_requires_a_value_of_type_1,
 };
 export function parseBuildCommand(args: readonly string[]): ParsedBuildCommand {
   const { options, watchOptions, fileNames: projects, errors } = parseCommandLineWorker(buildOptionsDidYouMeanDiagnostics, args);
@@ -1259,16 +1259,16 @@ export function parseBuildCommand(args: readonly string[]): ParsedBuildCommand {
     projects.push('.');
   }
   if (buildOptions.clean && buildOptions.force) {
-    errors.push(createCompilerDiagnostic(Diagnostics.Options_0_and_1_cannot_be_combined, 'clean', 'force'));
+    errors.push(createCompilerDiagnostic(qd.Options_0_and_1_cannot_be_combined, 'clean', 'force'));
   }
   if (buildOptions.clean && buildOptions.verbose) {
-    errors.push(createCompilerDiagnostic(Diagnostics.Options_0_and_1_cannot_be_combined, 'clean', 'verbose'));
+    errors.push(createCompilerDiagnostic(qd.Options_0_and_1_cannot_be_combined, 'clean', 'verbose'));
   }
   if (buildOptions.clean && buildOptions.watch) {
-    errors.push(createCompilerDiagnostic(Diagnostics.Options_0_and_1_cannot_be_combined, 'clean', 'watch'));
+    errors.push(createCompilerDiagnostic(qd.Options_0_and_1_cannot_be_combined, 'clean', 'watch'));
   }
   if (buildOptions.watch && buildOptions.dry) {
-    errors.push(createCompilerDiagnostic(Diagnostics.Options_0_and_1_cannot_be_combined, 'watch', 'dry'));
+    errors.push(createCompilerDiagnostic(qd.Options_0_and_1_cannot_be_combined, 'watch', 'dry'));
   }
   return { buildOptions, watchOptions, projects, errors };
 }
@@ -1321,7 +1321,7 @@ export function parseConfigFileTextToJson(fileName: string, jsonText: string): {
   const jsonSourceFile = qp_parseJsonText(fileName, jsonText);
   return {
     config: convertToObject(jsonSourceFile, jsonSourceFile.parseDiagnostics),
-    error: jsonSourceFile.parseDiagnostics.length ? jsonSourceFile.parseDiagnostics[0] : undefined,
+    error: jsonSourceFile.parseqd.length ? jsonSourceFile.parseDiagnostics[0] : undefined,
   };
 }
 export function readJsonConfigFile(fileName: string, readFile: (path: string) => string | undefined): TsConfigSourceFile {
@@ -1333,17 +1333,17 @@ export function tryReadFile(fileName: string, readFile: (path: string) => string
   try {
     text = readFile(fileName);
   } catch (e) {
-    return createCompilerDiagnostic(Diagnostics.Cannot_read_file_0_Colon_1, fileName, e.message);
+    return createCompilerDiagnostic(qd.Cannot_read_file_0_Colon_1, fileName, e.message);
   }
-  return text === undefined ? createCompilerDiagnostic(Diagnostics.Cannot_read_file_0, fileName) : text;
+  return text === undefined ? createCompilerDiagnostic(qd.Cannot_read_file_0, fileName) : text;
 }
 function commandLineOptionsToMap(options: readonly CommandLineOption[]) {
   return arrayToMap(options, getOptionName);
 }
 const typeAcquisitionDidYouMeanDiagnostics: DidYouMeanOptionsDiagnostics = {
   optionDeclarations: typeAcquisitionDeclarations,
-  unknownOptionDiagnostic: Diagnostics.Unknown_type_acquisition_option_0,
-  unknownDidYouMeanDiagnostic: Diagnostics.Unknown_type_acquisition_option_0_Did_you_mean_1,
+  unknownOptionDiagnostic: qd.Unknown_type_acquisition_option_0,
+  unknownDidYouMeanDiagnostic: qd.Unknown_type_acquisition_option_0_Did_you_mean_1,
 };
 let watchOptionsNameMapCache: OptionsNameMap;
 function getWatchOptionsNameMap(): OptionsNameMap {
@@ -1352,9 +1352,9 @@ function getWatchOptionsNameMap(): OptionsNameMap {
 const watchOptionsDidYouMeanDiagnostics: ParseCommandLineWorkerDiagnostics = {
   getOptionsNameMap: getWatchOptionsNameMap,
   optionDeclarations: optionsForWatch,
-  unknownOptionDiagnostic: Diagnostics.Unknown_watch_option_0,
-  unknownDidYouMeanDiagnostic: Diagnostics.Unknown_watch_option_0_Did_you_mean_1,
-  optionTypeMismatchDiagnostic: Diagnostics.Watch_option_0_requires_a_value_of_type_1,
+  unknownOptionDiagnostic: qd.Unknown_watch_option_0,
+  unknownDidYouMeanDiagnostic: qd.Unknown_watch_option_0_Did_you_mean_1,
+  optionTypeMismatchDiagnostic: qd.Watch_option_0_requires_a_value_of_type_1,
 };
 let commandLineCompilerOptionsMapCache: QMap<CommandLineOption>;
 function getCommandLineCompilerOptionsMap() {
@@ -1470,14 +1470,14 @@ export function convertToObjectWorker(
     const result: any = returnValue ? {} : undefined;
     for (const element of node.properties) {
       if (element.kind !== Syntax.PropertyAssignment) {
-        errors.push(createDiagnosticForNodeInSourceFile(sourceFile, element, Diagnostics.Property_assignment_expected));
+        errors.push(createDiagnosticForNodeInSourceFile(sourceFile, element, qd.Property_assignment_expected));
         continue;
       }
       if (element.questionToken) {
-        errors.push(createDiagnosticForNodeInSourceFile(sourceFile, element.questionToken, Diagnostics.The_0_modifier_can_only_be_used_in_TypeScript_files, '?'));
+        errors.push(createDiagnosticForNodeInSourceFile(sourceFile, element.questionToken, qd.The_0_modifier_can_only_be_used_in_TypeScript_files, '?'));
       }
       if (!isDoubleQuotedString(element.name)) {
-        errors.push(createDiagnosticForNodeInSourceFile(sourceFile, element.name, Diagnostics.String_literal_with_double_quotes_expected));
+        errors.push(createDiagnosticForNodeInSourceFile(sourceFile, element.name, qd.String_literal_with_double_quotes_expected));
       }
       const textOfKey = isComputedNonLiteralName(element.name) ? undefined : getTextOfPropertyName(element.name);
       const keyText = textOfKey && syntax.get.unescUnderscores(textOfKey);
@@ -1486,7 +1486,7 @@ export function convertToObjectWorker(
         if (knownOptions) {
           errors.push(createUnknownOptionError(keyText, extraKeyDiagnostics, (message, arg0, arg1) => createDiagnosticForNodeInSourceFile(sourceFile, element.name, message, arg0, arg1)));
         } else {
-          errors.push(createDiagnosticForNodeInSourceFile(sourceFile, element.name, extraKeyDiagnostics.unknownOptionDiagnostic, keyText));
+          errors.push(createDiagnosticForNodeInSourceFile(sourceFile, element.name, extraKeyqd.unknownOptionDiagnostic, keyText));
         }
       }
       const value = convertPropertyValueToJson(element.initializer, option);
@@ -1532,7 +1532,7 @@ export function convertToObjectWorker(
         return null;
       case Syntax.StringLiteral:
         if (!isDoubleQuotedString(valueExpression)) {
-          errors.push(createDiagnosticForNodeInSourceFile(sourceFile, valueExpression, Diagnostics.String_literal_with_double_quotes_expected));
+          errors.push(createDiagnosticForNodeInSourceFile(sourceFile, valueExpression, qd.String_literal_with_double_quotes_expected));
         }
         reportInvalidOptionValue(option && isString(option.type) && option.type !== 'string');
         const text = (<StringLiteral>valueExpression).text;
@@ -1568,16 +1568,12 @@ export function convertToObjectWorker(
     if (option) {
       reportInvalidOptionValue(true);
     } else {
-      errors.push(
-        createDiagnosticForNodeInSourceFile(sourceFile, valueExpression, Diagnostics.Property_value_can_only_be_string_literal_numeric_literal_true_false_null_object_literal_or_array_literal)
-      );
+      errors.push(createDiagnosticForNodeInSourceFile(sourceFile, valueExpression, qd.Property_value_can_only_be_string_literal_numeric_literal_true_false_null_object_literal_or_array_literal));
     }
     return;
     function reportInvalidOptionValue(isError: boolean | undefined) {
       if (isError) {
-        errors.push(
-          createDiagnosticForNodeInSourceFile(sourceFile, valueExpression, Diagnostics.Compiler_option_0_requires_a_value_of_type_1, option!.name, getCompilerOptionValueTypeString(option!))
-        );
+        errors.push(createDiagnosticForNodeInSourceFile(sourceFile, valueExpression, qd.Compiler_option_0_requires_a_value_of_type_1, option!.name, getCompilerOptionValueTypeString(option!)));
       }
     }
   }
@@ -1695,7 +1691,7 @@ function serializeOptionBaseObject(options: OptionsBase, { optionsNameMap }: Opt
   const getCanonicalFileName = pathOptions && createGetCanonicalFileName(pathOptions.useCaseSensitiveFileNames);
   for (const name in options) {
     if (hasProperty(options, name)) {
-      if (optionsNameMap.has(name) && optionsNameMap.get(name)!.category === Diagnostics.Command_line_Options) {
+      if (optionsNameMap.has(name) && optionsNameMap.get(name)!.category === qd.Command_line_Options) {
         continue;
       }
       const value = <CompilerOptionsValue>options[name];
@@ -1749,7 +1745,7 @@ export function generateTSConfig(options: CompilerOptions, fileNames: readonly s
     return Array(paddingLength + 1).join(' ');
   }
   function isAllowedOption({ category, name }: CommandLineOption): boolean {
-    return category !== undefined && category !== Diagnostics.Command_line_Options && (category !== Diagnostics.Advanced_Options || compilerOptionsMap.has(name));
+    return category !== undefined && category !== qd.Command_line_Options && (category !== qd.Advanced_Options || compilerOptionsMap.has(name));
   }
   function writeConfigurations() {
     const categorizedOptions = new MultiMap<CommandLineOption>();
@@ -1907,11 +1903,11 @@ function parseJsonConfigFileContentWorker(
   }
 }
 function isErrorNoInputFiles(error: Diagnostic) {
-  return error.code === Diagnostics.No_inputs_were_found_in_config_file_0_Specified_include_paths_were_1_and_exclude_paths_were_2.code;
+  return error.code === qd.No_inputs_were_found_in_config_file_0_Specified_include_paths_were_1_and_exclude_paths_were_2.code;
 }
 function getErrorForNoInputFiles({ includeSpecs, excludeSpecs }: ConfigFileSpecs, configFileName: string | undefined) {
   return createCompilerDiagnostic(
-    Diagnostics.No_inputs_were_found_in_config_file_0_Specified_include_paths_were_1_and_exclude_paths_were_2,
+    qd.No_inputs_were_found_in_config_file_0_Specified_include_paths_were_1_and_exclude_paths_were_2,
     configFileName || 'tsconfig.json',
     JSON.stringify(includeSpecs || []),
     JSON.stringify(excludeSpecs || [])
@@ -1924,13 +1920,13 @@ export function canJsonReportNoInutFiles(raw: any) {
   return !hasProperty(raw, 'files') && !hasProperty(raw, 'references');
 }
 export function updateErrorForNoInputFiles(result: ExpandResult, configFileName: string, configFileSpecs: ConfigFileSpecs, configParseDiagnostics: Diagnostic[], canJsonReportNoInutFiles: boolean) {
-  const existingErrors = configParseDiagnostics.length;
+  const existingErrors = configParseqd.length;
   if (shouldReportNoInputFiles(result, canJsonReportNoInutFiles)) {
-    configParseDiagnostics.push(getErrorForNoInputFiles(configFileSpecs, configFileName));
+    configParseqd.push(getErrorForNoInputFiles(configFileSpecs, configFileName));
   } else {
     filterMutate(configParseDiagnostics, (error) => !isErrorNoInputFiles(error));
   }
-  return existingErrors !== configParseDiagnostics.length;
+  return existingErrors !== configParseqd.length;
 }
 export interface ParsedTsconfig {
   raw: any;
@@ -1955,7 +1951,7 @@ function parseConfig(
   basePath = normalizeSlashes(basePath);
   const resolvedPath = getNormalizedAbsolutePath(configFileName || '', basePath);
   if (resolutionStack.indexOf(resolvedPath) >= 0) {
-    errors.push(createCompilerDiagnostic(Diagnostics.Circularity_detected_while_resolving_configuration_Colon_0, [...resolutionStack, resolvedPath].join(' -> ')));
+    errors.push(createCompilerDiagnostic(qd.Circularity_detected_while_resolving_configuration_Colon_0, [...resolutionStack, resolvedPath].join(' -> ')));
     return { raw: json || convertToObject(sourceFile!, errors) };
   }
   const ownConfig = json ? parseOwnConfigOfJson(json, host, basePath, configFileName, errors) : parseOwnConfigOfJsonSourceFile(sourceFile!, host, basePath, configFileName, errors);
@@ -1986,7 +1982,7 @@ function parseConfig(
 }
 function parseOwnConfigOfJson(json: any, host: ParseConfigHost, basePath: string, configFileName: string | undefined, errors: Push<Diagnostic>): ParsedTsconfig {
   if (hasProperty(json, 'excludes')) {
-    errors.push(createCompilerDiagnostic(Diagnostics.Unknown_option_excludes_Did_you_mean_exclude));
+    errors.push(createCompilerDiagnostic(qd.Unknown_option_excludes_Did_you_mean_exclude));
   }
   const options = convertCompilerOptionsFromJsonWorker(json.compilerOptions, basePath, errors, configFileName);
   const typeAcquisition = convertTypeAcquisitionFromJsonWorker(json.typeAcquisition || json.typingOptions, basePath, errors, configFileName);
@@ -1995,7 +1991,7 @@ function parseOwnConfigOfJson(json: any, host: ParseConfigHost, basePath: string
   let extendedConfigPath: string | undefined;
   if (json.extends) {
     if (!isString(json.extends)) {
-      errors.push(createCompilerDiagnostic(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'extends', 'string'));
+      errors.push(createCompilerDiagnostic(qd.Compiler_option_0_requires_a_value_of_type_1, 'extends', 'string'));
     } else {
       const newBase = configFileName ? directoryOfCombinedPath(configFileName, basePath) : basePath;
       extendedConfigPath = getExtendsConfigPath(json.extends, host, newBase, errors, createCompilerDiagnostic);
@@ -2039,7 +2035,7 @@ function parseOwnConfigOfJsonSourceFile(sourceFile: TsConfigSourceFile, host: Pa
     },
     onSetUnknownOptionKeyValueInRoot(key: string, keyNode: PropertyName, _value: CompilerOptionsValue, _valueNode: Expression) {
       if (key === 'excludes') {
-        errors.push(createDiagnosticForNodeInSourceFile(sourceFile, keyNode, Diagnostics.Unknown_option_excludes_Did_you_mean_exclude));
+        errors.push(createDiagnosticForNodeInSourceFile(sourceFile, keyNode, qd.Unknown_option_excludes_Did_you_mean_exclude));
       }
     },
   };
@@ -2067,7 +2063,7 @@ function getExtendsConfigPath(extendedConfig: string, host: ParseConfigHost, bas
     if (!host.fileExists(extendedConfigPath) && !endsWith(extendedConfigPath, Extension.Json)) {
       extendedConfigPath = `${extendedConfigPath}.json`;
       if (!host.fileExists(extendedConfigPath)) {
-        errors.push(createDiagnostic(Diagnostics.File_0_not_found, extendedConfig));
+        errors.push(createDiagnostic(qd.File_0_not_found, extendedConfig));
         return;
       }
     }
@@ -2075,7 +2071,7 @@ function getExtendsConfigPath(extendedConfig: string, host: ParseConfigHost, bas
   }
   const resolved = nodeModuleNameResolver(extendedConfig, combinePaths(basePath, 'tsconfig.json'), { moduleResolution: ModuleResolutionKind.NodeJs }, host, undefined, undefined, true);
   if (resolved.resolvedModule) return resolved.resolvedModule.resolvedFileName;
-  errors.push(createDiagnostic(Diagnostics.File_0_not_found, extendedConfig));
+  errors.push(createDiagnostic(qd.File_0_not_found, extendedConfig));
   return;
 }
 export interface ExtendedConfigCacheEntry {
@@ -2099,7 +2095,7 @@ function getExtendedConfig(
     ({ extendedResult, extendedConfig } = value);
   } else {
     extendedResult = readJsonConfigFile(extendedConfigPath, (path) => host.readFile(path));
-    if (!extendedResult.parseDiagnostics.length) {
+    if (!extendedResult.parseqd.length) {
       const extendedDirname = getDirectoryPath(extendedConfigPath);
       extendedConfig = parseConfig(undefined, extendedResult, host, extendedDirname, getBaseFileName(extendedConfigPath), resolutionStack, errors, extendedConfigCache);
       if (isSuccessfulParsedTsconfig(extendedConfig)) {
@@ -2126,7 +2122,7 @@ function getExtendedConfig(
       sourceFile.extendedSourceFiles.push(...extendedResult.extendedSourceFiles);
     }
   }
-  if (extendedResult.parseDiagnostics.length) {
+  if (extendedResult.parseqd.length) {
     errors.push(...extendedResult.parseDiagnostics);
     return;
   }
@@ -2216,7 +2212,7 @@ function convertJsonOption(opt: CommandLineOption, value: any, basePath: string,
     if (!isString(optType)) return convertJsonOptionOfCustomType(<CommandLineOptionOfCustomType>opt, <string>value, errors);
     return normalizeNonListOptionValue(opt, basePath, value);
   } else {
-    errors.push(createCompilerDiagnostic(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, opt.name, getCompilerOptionValueTypeString(opt)));
+    errors.push(createCompilerDiagnostic(qd.Compiler_option_0_requires_a_value_of_type_1, opt.name, getCompilerOptionValueTypeString(opt)));
   }
   return;
 }
@@ -2362,9 +2358,9 @@ function validateSpecs(specs: readonly string[], errors: Push<Diagnostic>, allow
   }
 }
 function specToDiagnostic(spec: string, allowTrailingRecursion: boolean): DiagnosticMessage | undefined {
-  if (!allowTrailingRecursion && invalidTrailingRecursionPattern.test(spec)) return Diagnostics.File_specification_cannot_end_in_a_recursive_directory_wildcard_Asterisk_Asterisk_Colon_0;
+  if (!allowTrailingRecursion && invalidTrailingRecursionPattern.test(spec)) return qd.File_specification_cannot_end_in_a_recursive_directory_wildcard_Asterisk_Asterisk_Colon_0;
   else if (invalidDotDotAfterRecursiveWildcardPattern.test(spec))
-    return Diagnostics.File_specification_cannot_contain_a_parent_directory_that_appears_after_a_recursive_directory_wildcard_Asterisk_Asterisk_Colon_0;
+    return qd.File_specification_cannot_contain_a_parent_directory_that_appears_after_a_recursive_directory_wildcard_Asterisk_Asterisk_Colon_0;
   return;
 }
 function getWildcardDirectories(include: readonly string[] | undefined, exclude: readonly string[] | undefined, path: string, useCaseSensitiveFileNames: boolean): MapLike<WatchDirectoryFlags> {
@@ -2475,16 +2471,16 @@ function getFileNames(): ExpandResult {
       if (filesSpecs.length === 0 && hasZeroOrNoReferences && !hasExtends) {
         if (sourceFile) {
           const fileName = configFileName || 'tsconfig.json';
-          const diagnosticMessage = Diagnostics.The_files_list_in_config_file_0_is_empty;
+          const diagnosticMessage = qd.The_files_list_in_config_file_0_is_empty;
           const nodeValue = firstDefined(getTsConfigPropArray(sourceFile, 'files'), (property) => property.initializer);
           const error = nodeValue ? createDiagnosticForNodeInSourceFile(sourceFile, nodeValue, diagnosticMessage, fileName) : createCompilerDiagnostic(diagnosticMessage, fileName);
           errors.push(error);
         } else {
-          createCompilerDiagnosticOnlyIfJson(Diagnostics.The_files_list_in_config_file_0_is_empty, configFileName || 'tsconfig.json');
+          createCompilerDiagnosticOnlyIfJson(qd.The_files_list_in_config_file_0_is_empty, configFileName || 'tsconfig.json');
         }
       }
     } else {
-      createCompilerDiagnosticOnlyIfJson(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'files', 'Array');
+      createCompilerDiagnosticOnlyIfJson(qd.Compiler_option_0_requires_a_value_of_type_1, 'files', 'Array');
     }
   }
   let includeSpecs: readonly string[] | undefined;
@@ -2492,7 +2488,7 @@ function getFileNames(): ExpandResult {
     if (isArray(raw.include)) {
       includeSpecs = <readonly string[]>raw.include;
     } else {
-      createCompilerDiagnosticOnlyIfJson(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'include', 'Array');
+      createCompilerDiagnosticOnlyIfJson(qd.Compiler_option_0_requires_a_value_of_type_1, 'include', 'Array');
     }
   }
   let excludeSpecs: readonly string[] | undefined;
@@ -2500,7 +2496,7 @@ function getFileNames(): ExpandResult {
     if (isArray(raw.exclude)) {
       excludeSpecs = <readonly string[]>raw.exclude;
     } else {
-      createCompilerDiagnosticOnlyIfJson(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'exclude', 'Array');
+      createCompilerDiagnosticOnlyIfJson(qd.Compiler_option_0_requires_a_value_of_type_1, 'exclude', 'Array');
     }
   } else if (raw.compilerOptions) {
     const outDir = raw.compilerOptions.outDir;
@@ -2530,7 +2526,7 @@ function getFileNames(): ExpandResult {
     if (isArray(raw.references)) {
       for (const ref of raw.references) {
         if (typeof ref.path !== 'string') {
-          createCompilerDiagnosticOnlyIfJson(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'reference.path', 'string');
+          createCompilerDiagnosticOnlyIfJson(qd.Compiler_option_0_requires_a_value_of_type_1, 'reference.path', 'string');
         } else {
           (projectReferences || (projectReferences = [])).push({
             path: getNormalizedAbsolutePath(ref.path, basePath),
@@ -2541,7 +2537,7 @@ function getFileNames(): ExpandResult {
         }
       }
     } else {
-      createCompilerDiagnosticOnlyIfJson(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, 'references', 'Array');
+      createCompilerDiagnosticOnlyIfJson(qd.Compiler_option_0_requires_a_value_of_type_1, 'references', 'Array');
     }
   }
   return result;

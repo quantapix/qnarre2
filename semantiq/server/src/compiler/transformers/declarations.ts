@@ -131,24 +131,19 @@ export function transformDeclarations(context: TransformationContext) {
     recordTypeReferenceDirectivesIfNecessary(resolver.getTypeReferenceDirectivesForSymbol(symbol, meaning));
   }
   function reportPrivateInBaseOfClassExpression(propertyName: string) {
-    if (errorNameNode) context.addDiagnostic(createDiagnosticForNode(errorNameNode, Diagnostics.Property_0_of_exported_class_expression_may_not_be_private_or_protected, propertyName));
+    if (errorNameNode) context.addDiagnostic(createDiagnosticForNode(errorNameNode, qd.Property_0_of_exported_class_expression_may_not_be_private_or_protected, propertyName));
   }
   function reportInaccessibleUniqueSymbolError() {
     if (errorNameNode) {
       context.addDiagnostic(
-        createDiagnosticForNode(
-          errorNameNode,
-          Diagnostics.The_inferred_type_of_0_references_an_inaccessible_1_type_A_type_annotation_is_necessary,
-          declarationNameToString(errorNameNode),
-          'unique symbol'
-        )
+        createDiagnosticForNode(errorNameNode, qd.The_inferred_type_of_0_references_an_inaccessible_1_type_A_type_annotation_is_necessary, declarationNameToString(errorNameNode), 'unique symbol')
       );
     }
   }
   function reportInaccessibleThisError() {
     if (errorNameNode) {
       context.addDiagnostic(
-        createDiagnosticForNode(errorNameNode, Diagnostics.The_inferred_type_of_0_references_an_inaccessible_1_type_A_type_annotation_is_necessary, declarationNameToString(errorNameNode), 'this')
+        createDiagnosticForNode(errorNameNode, qd.The_inferred_type_of_0_references_an_inaccessible_1_type_A_type_annotation_is_necessary, declarationNameToString(errorNameNode), 'this')
       );
     }
   }
@@ -157,7 +152,7 @@ export function transformDeclarations(context: TransformationContext) {
       context.addDiagnostic(
         createDiagnosticForNode(
           errorNameNode,
-          Diagnostics.The_inferred_type_of_0_cannot_be_named_without_a_reference_to_1_This_is_likely_not_portable_A_type_annotation_is_necessary,
+          qd.The_inferred_type_of_0_cannot_be_named_without_a_reference_to_1_This_is_likely_not_portable_A_type_annotation_is_necessary,
           declarationNameToString(errorNameNode),
           specifier
         )
@@ -170,8 +165,8 @@ export function transformDeclarations(context: TransformationContext) {
     for (const augmentations of augmentingDeclarations) {
       context.addDiagnostic(
         addRelatedInfo(
-          createDiagnosticForNode(augmentations, Diagnostics.Declaration_augments_declaration_in_another_file_This_cannot_be_serialized),
-          createDiagnosticForNode(primaryDeclaration, Diagnostics.This_is_the_declaration_being_augmented_Consider_moving_the_augmenting_declaration_into_the_same_file)
+          createDiagnosticForNode(augmentations, qd.Declaration_augments_declaration_in_another_file_This_cannot_be_serialized),
+          createDiagnosticForNode(primaryDeclaration, qd.This_is_the_declaration_being_augmented_Consider_moving_the_augmenting_declaration_into_the_same_file)
         )
       );
     }
@@ -180,8 +175,8 @@ export function transformDeclarations(context: TransformationContext) {
     const oldDiag = getSymbolAccessibilityDiagnostic;
     getSymbolAccessibilityDiagnostic = (s) => ({
       diagnosticMessage: s.errorModuleName
-        ? Diagnostics.Declaration_emit_for_this_file_requires_using_private_name_0_from_module_1_An_explicit_type_annotation_may_unblock_declaration_emit
-        : Diagnostics.Declaration_emit_for_this_file_requires_using_private_name_0_An_explicit_type_annotation_may_unblock_declaration_emit,
+        ? qd.Declaration_emit_for_this_file_requires_using_private_name_0_from_module_1_An_explicit_type_annotation_may_unblock_declaration_emit
+        : qd.Declaration_emit_for_this_file_requires_using_private_name_0_An_explicit_type_annotation_may_unblock_declaration_emit,
       errorNode: s.errorNode || sourceFile,
     });
     const result = resolver.getDeclarationStatementsForSourceFile(sourceFile, declarationEmitNodeBuilderFlags, symbolTracker, bundled);
@@ -778,7 +773,7 @@ export function transformDeclarations(context: TransformationContext) {
         else {
           const newId = createOptimisticUniqueName('_default');
           getSymbolAccessibilityDiagnostic = () => ({
-            diagnosticMessage: Diagnostics.Default_export_of_the_module_has_or_is_using_private_name_0,
+            diagnosticMessage: qd.Default_export_of_the_module_has_or_is_using_private_name_0,
             errorNode: input,
           });
           const varDecl = createVariableDeclaration(newId, resolver.createTypeOfExpression(input.expression, input, declarationEmitNodeBuilderFlags, symbolTracker), undefined);
@@ -956,7 +951,7 @@ export function transformDeclarations(context: TransformationContext) {
           const oldId = input.name ? syntax.get.unescUnderscores(input.name.escapedText) : 'default';
           const newId = createOptimisticUniqueName(`${oldId}_base`);
           getSymbolAccessibilityDiagnostic = () => ({
-            diagnosticMessage: Diagnostics.extends_clause_of_exported_class_0_has_or_is_using_private_name_1,
+            diagnosticMessage: qd.extends_clause_of_exported_class_0_has_or_is_using_private_name_1,
             errorNode: extendsClause,
             typeName: input.name,
           });

@@ -212,7 +212,7 @@ export function emitFiles(
   exit();
   return {
     emitSkipped,
-    diagnostics: emitterDiagnostics.getDiagnostics(),
+    diagnostics: emitterqd.getDiagnostics(),
     emittedFiles: emittedFilesList,
     sourceMaps: sourceMapDataList,
     exportedModulesFromDeclarationEmit,
@@ -321,7 +321,7 @@ export function emitFiles(
     const declarationTransform = transformNodes(resolver, host, compilerOptions, inputListOrBundle, declarationTransformers, false);
     if (length(declarationTransform.diagnostics)) {
       for (const diagnostic of declarationTransform.diagnostics!) {
-        emitterDiagnostics.add(diagnostic);
+        emitterqd.add(diagnostic);
       }
     }
     const printerOptions: PrinterOptions = {

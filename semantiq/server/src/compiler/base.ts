@@ -1673,9 +1673,9 @@ export namespace perf {
   const profilerEvent: (markName: string) => void = typeof onProfilerEvent === 'function' && onProfilerEvent.profiler === true ? onProfilerEvent : () => {};
   let enabled = false;
   let profilerStart = 0;
-  let counts: Map<number>;
-  let marks: Map<number>;
-  let measures: Map<number>;
+  let counts: QMap<number>;
+  let marks: QMap<number>;
+  let measures: QMap<number>;
   export interface Timer {
     enter(): void;
     exit(): void;
@@ -1728,9 +1728,9 @@ export namespace perf {
     });
   }
   export function enable() {
-    counts = createMap<number>();
-    marks = createMap<number>();
-    measures = createMap<number>();
+    counts = new QMap<number>();
+    marks = new QMap<number>();
+    measures = new QMap<number>();
     enabled = true;
     profilerStart = timestamp();
   }
