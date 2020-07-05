@@ -26,9 +26,7 @@ export function computeCommonSourceDirectoryOfFilenames(fileNames: string[], cur
     const n = Math.min(commonPathComponents.length, sourcePathComponents.length);
     for (let i = 0; i < n; i++) {
       if (getCanonicalFileName(commonPathComponents[i]) !== getCanonicalFileName(sourcePathComponents[i])) {
-        if (i === 0) {
-          return true;
-        }
+        if (i === 0) return true;
         commonPathComponents.length = i;
         break;
       }
@@ -37,12 +35,8 @@ export function computeCommonSourceDirectoryOfFilenames(fileNames: string[], cur
       commonPathComponents.length = sourcePathComponents.length;
     }
   });
-  if (failed) {
-    return '';
-  }
-  if (!commonPathComponents) {
-    return currentDirectory;
-  }
+  if (failed) return '';
+  if (!commonPathComponents) return currentDirectory;
   return getPathFromPathComponents(commonPathComponents);
 }
 interface OutputFingerprint {
@@ -72,9 +66,7 @@ export function createCompilerHostWorker(options: CompilerOptions, setParentNode
     return text !== undefined ? qp_createSource(fileName, text, languageVersion, setParentNodes) : undefined;
   }
   function directoryExists(directoryPath: string): boolean {
-    if (existingDirectories.has(directoryPath)) {
-      return true;
-    }
+    if (existingDirectories.has(directoryPath)) return true;
     if ((compilerHost.directoryExists || system.directoryExists)(directoryPath)) {
       existingDirectories.set(directoryPath, true);
       return true;
@@ -184,9 +176,7 @@ export function changeCompilerHostLikeToUseCache(host: CompilerHostLikeForCache,
     const key = toPath(fileName);
     const value = readFileCache.get(key);
     if (value !== undefined) return value !== false ? value : undefined;
-    if (!fileExtensionIs(fileName, Extension.Json) && !isBuildInfoFile(fileName)) {
-      return originalReadFile.call(host, fileName);
-    }
+    if (!fileExtensionIs(fileName, Extension.Json) && !isBuildInfoFile(fileName)) return originalReadFile.call(host, fileName);
     return setReadFileCache(key, fileName);
   };
   const getSourceFileWithCache: CompilerHost['getSourceFile'] | undefined = getSourceFile
@@ -396,11 +386,8 @@ export function formatDiagnosticsWithColorAndContext(diagnostics: readonly Diagn
   return output;
 }
 export function flattenDiagnosticMessageText(diag: string | DiagnosticMessageChain | undefined, newLine: string, indent = 0): string {
-  if (isString(diag)) {
-    return diag;
-  } else if (diag === undefined) {
-    return '';
-  }
+  if (isString(diag)) return diag;
+  if (diag === undefined) return '';
   let result = '';
   if (indent) {
     result += newLine;
@@ -423,9 +410,7 @@ export function loadWithLocalCache<T>(
   redirectedReference: ResolvedProjectReference | undefined,
   loader: (name: string, containingFile: string, redirectedReference: ResolvedProjectReference | undefined) => T
 ): T[] {
-  if (names.length === 0) {
-    return [];
-  }
+  if (names.length === 0) return [];
   const resolutions: T[] = [];
   const cache = createMap<T>();
   for (const name of names) {
@@ -459,29 +444,15 @@ export function isProgramUptoDate(
   hasChangedAutomaticTypeDirectiveNames: boolean,
   projectReferences: readonly ProjectReference[] | undefined
 ): boolean {
-  if (!program || hasChangedAutomaticTypeDirectiveNames) {
-    return false;
-  }
-  if (!arrayIsEqualTo(program.getRootFileNames(), rootFileNames)) {
-    return false;
-  }
+  if (!program || hasChangedAutomaticTypeDirectiveNames) return false;
+  if (!arrayIsEqualTo(program.getRootFileNames(), rootFileNames)) return false;
   let seenResolvedRefs: ResolvedProjectReference[] | undefined;
-  if (!arrayIsEqualTo(program.getProjectReferences(), projectReferences, projectReferenceUptoDate)) {
-    return false;
-  }
-  if (program.getSourceFiles().some(sourceFileNotUptoDate)) {
-    return false;
-  }
-  if (program.getMissingFilePaths().some(fileExists)) {
-    return false;
-  }
+  if (!arrayIsEqualTo(program.getProjectReferences(), projectReferences, projectReferenceUptoDate)) return false;
+  if (program.getSourceFiles().some(sourceFileNotUptoDate)) return false;
+  if (program.getMissingFilePaths().some(fileExists)) return false;
   const currentOptions = program.getCompilerOptions();
-  if (!compareDataObjects(currentOptions, newOptions)) {
-    return false;
-  }
-  if (currentOptions.configFile && newOptions.configFile) {
-    return currentOptions.configFile.text === newOptions.configFile.text;
-  }
+  if (!compareDataObjects(currentOptions, newOptions)) return false;
+  if (currentOptions.configFile && newOptions.configFile) return currentOptions.configFile.text === newOptions.configFile.text;
   return true;
   function sourceFileNotUptoDate(sourceFile: SourceFile) {
     return !sourceFileVersionUptoDate(sourceFile) || hasInvalidatedResolution(sourceFile.path);
@@ -490,19 +461,13 @@ export function isProgramUptoDate(
     return sourceFile.version === getSourceVersion(sourceFile.resolvedPath, sourceFile.fileName);
   }
   function projectReferenceUptoDate(oldRef: ProjectReference, newRef: ProjectReference, index: number) {
-    if (!projectReferenceIsEqualTo(oldRef, newRef)) {
-      return false;
-    }
+    if (!projectReferenceIsEqualTo(oldRef, newRef)) return false;
     return resolvedProjectReferenceUptoDate(program!.getResolvedProjectReferences()![index], oldRef);
   }
   function resolvedProjectReferenceUptoDate(oldResolvedRef: ResolvedProjectReference | undefined, oldRef: ProjectReference): boolean {
     if (oldResolvedRef) {
-      if (contains(seenResolvedRefs, oldResolvedRef)) {
-        return true;
-      }
-      if (!sourceFileVersionUptoDate(oldResolvedRef.sourceFile)) {
-        return false;
-      }
+      if (contains(seenResolvedRefs, oldResolvedRef)) return true;
+      if (!sourceFileVersionUptoDate(oldResolvedRef.sourceFile)) return false;
       (seenResolvedRefs || (seenResolvedRefs = [])).push(oldResolvedRef);
       return !forEach(oldResolvedRef.references, (childResolvedRef, index) => !resolvedProjectReferenceUptoDate(childResolvedRef, oldResolvedRef.commandLine.projectReferences![index]));
     }
@@ -580,9 +545,7 @@ export function createProgram(
   if (host.resolveModuleNames) {
     actualResolveModuleNamesWorker = (moduleNames, containingFile, reusedNames, redirectedReference) =>
       host.resolveModuleNames!(Debug.checkEachDefined(moduleNames), containingFile, reusedNames, redirectedReference, options).map((resolved) => {
-        if (!resolved || (resolved as ResolvedModuleFull).extension !== undefined) {
-          return resolved as ResolvedModuleFull;
-        }
+        if (!resolved || (resolved as ResolvedModuleFull).extension !== undefined) return resolved as ResolvedModuleFull;
         const withExtension = clone(resolved) as ResolvedModuleFull;
         withExtension.extension = syntax.get.extensionFromPath(resolved.resolvedFileName);
         return withExtension;
@@ -821,9 +784,8 @@ export function createProgram(
     return classifiableNames;
   }
   function resolveModuleNamesReusingOldState(moduleNames: string[], containingFile: string, file: SourceFile) {
-    if (structuralIsReused === StructureIsReused.Not && !file.ambientModuleNames.length) {
+    if (structuralIsReused === StructureIsReused.Not && !file.ambientModuleNames.length)
       return resolveModuleNamesWorker(moduleNames, containingFile, undefined, getResolvedProjectReferenceToRedirect(file.originalFileName));
-    }
     const oldSourceFile = oldProgram && oldProgram.getSourceFile(containingFile);
     if (oldSourceFile !== file && file.resolvedModules) {
       const result: ResolvedModuleFull[] = [];
@@ -889,13 +851,9 @@ export function createProgram(
     function moduleNameResolvesToAmbientModuleInNonModifiedFile(moduleName: string): boolean {
       const resolutionToFile = getResolvedModule(oldSourceFile, moduleName);
       const resolvedFile = resolutionToFile && oldProgram!.getSourceFile(resolutionToFile.resolvedFileName);
-      if (resolutionToFile && resolvedFile) {
-        return false;
-      }
+      if (resolutionToFile && resolvedFile) return false;
       const unmodifiedFile = ambientModuleNameToUnmodifiedFileName.get(moduleName);
-      if (!unmodifiedFile) {
-        return false;
-      }
+      if (!unmodifiedFile) return false;
       if (isTraceEnabled(options, host)) {
         trace(host, Diagnostics.Module_0_was_resolved_as_ambient_module_declared_in_1_since_this_file_was_not_modified, moduleName, unmodifiedFile);
       }
@@ -909,11 +867,8 @@ export function createProgram(
       (oldResolvedRef, index, parent) => {
         const newRef = (parent ? parent.commandLine.projectReferences : projectReferences)![index];
         const newResolvedRef = parseProjectReferenceConfigFile(newRef);
-        if (oldResolvedRef) {
-          return !newResolvedRef || newResolvedRef.sourceFile !== oldResolvedRef.sourceFile;
-        } else {
-          return newResolvedRef !== undefined;
-        }
+        if (oldResolvedRef) return !newResolvedRef || newResolvedRef.sourceFile !== oldResolvedRef.sourceFile;
+        return newResolvedRef !== undefined;
       },
       (oldProjectReferences, parent) => {
         const newReferences = parent ? getResolvedProjectReferenceByPath(parent.sourceFile.path)!.commandLine.projectReferences : projectReferences;
@@ -922,33 +877,21 @@ export function createProgram(
     );
   }
   function tryReuseStructureFromOldProgram(): StructureIsReused {
-    if (!oldProgram) {
-      return StructureIsReused.Not;
-    }
+    if (!oldProgram) return StructureIsReused.Not;
     const oldOptions = oldProgram.getCompilerOptions();
-    if (changesAffectModuleResolution(oldOptions, options)) {
-      return (oldProgram.structureIsReused = StructureIsReused.Not);
-    }
+    if (changesAffectModuleResolution(oldOptions, options)) return (oldProgram.structureIsReused = StructureIsReused.Not);
     assert(!(oldProgram.structureIsReused! & (StructureIsReused.Completely | StructureIsReused.SafeModules)));
     const oldRootNames = oldProgram.getRootFileNames();
-    if (!arrayIsEqualTo(oldRootNames, rootNames)) {
-      return (oldProgram.structureIsReused = StructureIsReused.Not);
-    }
-    if (!arrayIsEqualTo(options.types, oldOptions.types)) {
-      return (oldProgram.structureIsReused = StructureIsReused.Not);
-    }
-    if (!canReuseProjectReferences()) {
-      return (oldProgram.structureIsReused = StructureIsReused.Not);
-    }
+    if (!arrayIsEqualTo(oldRootNames, rootNames)) return (oldProgram.structureIsReused = StructureIsReused.Not);
+    if (!arrayIsEqualTo(options.types, oldOptions.types)) return (oldProgram.structureIsReused = StructureIsReused.Not);
+    if (!canReuseProjectReferences()) return (oldProgram.structureIsReused = StructureIsReused.Not);
     if (projectReferences) {
       resolvedProjectReferences = projectReferences.map(parseProjectReferenceConfigFile);
     }
     const newSourceFiles: SourceFile[] = [];
     const modifiedSourceFiles: { oldFile: SourceFile; newFile: SourceFile }[] = [];
     oldProgram.structureIsReused = StructureIsReused.Completely;
-    if (oldProgram.getMissingFilePaths().some((missingFilePath) => host.fileExists(missingFilePath))) {
-      return (oldProgram.structureIsReused = StructureIsReused.Not);
-    }
+    if (oldProgram.getMissingFilePaths().some((missingFilePath) => host.fileExists(missingFilePath))) return (oldProgram.structureIsReused = StructureIsReused.Not);
     const oldSourceFiles = oldProgram.getSourceFiles();
     const enum SeenPackageName {
       Exists,
@@ -959,21 +902,15 @@ export function createProgram(
       let newSourceFile = host.getSourceFileByPath
         ? host.getSourceFileByPath(oldSourceFile.fileName, oldSourceFile.resolvedPath, options.target!, undefined, shouldCreateNewSourceFile)
         : host.getSourceFile(oldSourceFile.fileName, options.target!, undefined, shouldCreateNewSourceFile);
-      if (!newSourceFile) {
-        return (oldProgram.structureIsReused = StructureIsReused.Not);
-      }
+      if (!newSourceFile) return (oldProgram.structureIsReused = StructureIsReused.Not);
       assert(!newSourceFile.redirectInfo, 'Host should not return a redirect source file from `getSourceFile`');
       let fileChanged: boolean;
       if (oldSourceFile.redirectInfo) {
-        if (newSourceFile !== oldSourceFile.redirectInfo.unredirected) {
-          return (oldProgram.structureIsReused = StructureIsReused.Not);
-        }
+        if (newSourceFile !== oldSourceFile.redirectInfo.unredirected) return (oldProgram.structureIsReused = StructureIsReused.Not);
         fileChanged = false;
         newSourceFile = oldSourceFile;
       } else if (oldProgram.redirectTargetsMap.has(oldSourceFile.path)) {
-        if (newSourceFile !== oldSourceFile) {
-          return (oldProgram.structureIsReused = StructureIsReused.Not);
-        }
+        if (newSourceFile !== oldSourceFile) return (oldProgram.structureIsReused = StructureIsReused.Not);
         fileChanged = false;
       } else {
         fileChanged = newSourceFile !== oldSourceFile;
@@ -986,15 +923,11 @@ export function createProgram(
       if (packageName !== undefined) {
         const prevKind = seenPackageNames.get(packageName);
         const newKind = fileChanged ? SeenPackageName.Modified : SeenPackageName.Exists;
-        if ((prevKind !== undefined && newKind === SeenPackageName.Modified) || prevKind === SeenPackageName.Modified) {
-          return (oldProgram.structureIsReused = StructureIsReused.Not);
-        }
+        if ((prevKind !== undefined && newKind === SeenPackageName.Modified) || prevKind === SeenPackageName.Modified) return (oldProgram.structureIsReused = StructureIsReused.Not);
         seenPackageNames.set(packageName, newKind);
       }
       if (fileChanged) {
-        if (!arrayIsEqualTo(oldSourceFile.libReferenceDirectives, newSourceFile.libReferenceDirectives, fileReferenceIsEqualTo)) {
-          return (oldProgram.structureIsReused = StructureIsReused.Not);
-        }
+        if (!arrayIsEqualTo(oldSourceFile.libReferenceDirectives, newSourceFile.libReferenceDirectives, fileReferenceIsEqualTo)) return (oldProgram.structureIsReused = StructureIsReused.Not);
         if (oldSourceFile.hasNoDefaultLib !== newSourceFile.hasNoDefaultLib) {
           oldProgram.structureIsReused = StructureIsReused.SafeModules;
         }
@@ -1021,9 +954,7 @@ export function createProgram(
       }
       newSourceFiles.push(newSourceFile);
     }
-    if (oldProgram.structureIsReused !== StructureIsReused.Completely) {
-      return oldProgram.structureIsReused;
-    }
+    if (oldProgram.structureIsReused !== StructureIsReused.Completely) return oldProgram.structureIsReused;
     const modifiedFiles = modifiedSourceFiles.map((f) => f.oldFile);
     for (const oldFile of oldSourceFiles) {
       if (!contains(modifiedFiles, oldFile)) {
@@ -1055,12 +986,8 @@ export function createProgram(
         }
       }
     }
-    if (oldProgram.structureIsReused !== StructureIsReused.Completely) {
-      return oldProgram.structureIsReused;
-    }
-    if (host.hasChangedAutomaticTypeDirectiveNames) {
-      return (oldProgram.structureIsReused = StructureIsReused.SafeModules);
-    }
+    if (oldProgram.structureIsReused !== StructureIsReused.Completely) return oldProgram.structureIsReused;
+    if (host.hasChangedAutomaticTypeDirectiveNames) return (oldProgram.structureIsReused = StructureIsReused.SafeModules);
     missingFilePaths = oldProgram.getMissingFilePaths();
     refFileMap = oldProgram.getRefFileMap();
     assert(newSourceFiles.length === oldProgram.getSourceFiles().length);
@@ -1152,18 +1079,11 @@ export function createProgram(
     return !!sourceFilesFoundSearchingNodeModules.get(file.path);
   }
   function isSourceFileDefaultLibrary(file: SourceFile): boolean {
-    if (file.hasNoDefaultLib) {
-      return true;
-    }
-    if (!options.noLib) {
-      return false;
-    }
+    if (file.hasNoDefaultLib) return true;
+    if (!options.noLib) return false;
     const equalityComparer = host.useCaseSensitiveFileNames() ? equateStringsCaseSensitive : equateStringsCaseInsensitive;
-    if (!options.lib) {
-      return equalityComparer(file.fileName, getDefaultLibraryFileName());
-    } else {
-      return some(options.lib, (libFileName) => equalityComparer(file.fileName, combinePaths(defaultLibraryPath, libFileName)));
-    }
+    if (!options.lib) return equalityComparer(file.fileName, getDefaultLibraryFileName());
+    return some(options.lib, (libFileName) => equalityComparer(file.fileName, combinePaths(defaultLibraryPath, libFileName)));
   }
   function getDiagnosticsProducingTypeChecker() {
     return diagnosticsProducingTypeChecker || (diagnosticsProducingTypeChecker = qc_create(program, true));
@@ -1218,9 +1138,7 @@ export function createProgram(
     getDiagnostics: (sourceFile: SourceFile, cancellationToken: CancellationToken | undefined) => readonly T[],
     cancellationToken: CancellationToken | undefined
   ): readonly T[] {
-    if (sourceFile) {
-      return getDiagnostics(sourceFile, cancellationToken);
-    }
+    if (sourceFile) return getDiagnostics(sourceFile, cancellationToken);
     return sortAndDeduplicateDiagnostics(
       flatMap(program.getSourceFiles(), (sourceFile) => {
         if (cancellationToken) {
@@ -1240,27 +1158,20 @@ export function createProgram(
     return getBindAndCheckDiagnosticsForFile(sourceFile, cancellationToken);
   }
   function getProgramDiagnostics(sourceFile: SourceFile): readonly Diagnostic[] {
-    if (skipTypeChecking(sourceFile, options, program)) {
-      return emptyArray;
-    }
+    if (skipTypeChecking(sourceFile, options, program)) return emptyArray;
     const fileProcessingDiagnosticsInFile = fileProcessingDiagnostics.getDiagnostics(sourceFile.fileName);
     const programDiagnosticsInFile = programDiagnostics.getDiagnostics(sourceFile.fileName);
     return getMergedProgramDiagnostics(sourceFile, fileProcessingDiagnosticsInFile, programDiagnosticsInFile);
   }
   function getMergedProgramDiagnostics(sourceFile: SourceFile, ...allDiagnostics: (readonly Diagnostic[] | undefined)[]) {
     const flatDiagnostics = flatten(allDiagnostics);
-    if (!sourceFile.commentDirectives?.length) {
-      return flatDiagnostics;
-    }
+    if (!sourceFile.commentDirectives?.length) return flatDiagnostics;
     return getDiagnosticsWithPrecedingDirectives(sourceFile, sourceFile.commentDirectives, flatDiagnostics).diagnostics;
   }
   function getDeclarationDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly DiagnosticWithLocation[] {
     const options = program.getCompilerOptions();
-    if (!sourceFile || options.out || options.outFile) {
-      return getDeclarationDiagnosticsWorker(sourceFile, cancellationToken);
-    } else {
-      return getDiagnosticsHelper(sourceFile, getDeclarationDiagnosticsForFile, cancellationToken);
-    }
+    if (!sourceFile || options.out || options.outFile) return getDeclarationDiagnosticsWorker(sourceFile, cancellationToken);
+    return getDiagnosticsHelper(sourceFile, getDeclarationDiagnosticsForFile, cancellationToken);
   }
   function getSyntacticDiagnosticsForFile(sourceFile: SourceFile): readonly DiagnosticWithLocation[] {
     if (isSourceFileJS(sourceFile)) {
@@ -1290,9 +1201,7 @@ export function createProgram(
   }
   function getBindAndCheckDiagnosticsForFileNoCache(sourceFile: SourceFile, cancellationToken: CancellationToken | undefined): readonly Diagnostic[] {
     return runWithCancellationToken(() => {
-      if (skipTypeChecking(sourceFile, options, program)) {
-        return emptyArray;
-      }
+      if (skipTypeChecking(sourceFile, options, program)) return emptyArray;
       const typeChecker = getDiagnosticsProducingTypeChecker();
       assert(!!sourceFile.bindDiagnostics);
       const isCheckJs = isCheckJsEnabledForFile(sourceFile, options);
@@ -1311,9 +1220,7 @@ export function createProgram(
   }
   function getMergedBindAndCheckDiagnostics(sourceFile: SourceFile, ...allDiagnostics: (readonly Diagnostic[] | undefined)[]) {
     const flatDiagnostics = flatten(allDiagnostics);
-    if (!sourceFile.commentDirectives?.length) {
-      return flatDiagnostics;
-    }
+    if (!sourceFile.commentDirectives?.length) return flatDiagnostics;
     const { diagnostics, directives } = getDiagnosticsWithPrecedingDirectives(sourceFile, sourceFile.commentDirectives, flatDiagnostics);
     for (const errorExpectation of directives.getUnusedExpectations()) {
       diagnostics.push(createDiagnosticForRange(sourceFile, errorExpectation.range, Diagnostics.Unused_ts_expect_error_directive));
@@ -1332,19 +1239,13 @@ export function createProgram(
   }
   function markPrecedingCommentDirectiveLine(diagnostic: Diagnostic, directives: CommentDirectivesMap) {
     const { file, start } = diagnostic;
-    if (!file) {
-      return -1;
-    }
+    if (!file) return -1;
     const s = syntax.get.lineStarts(file);
     let line = syntax.get.lineAndCharOf(s, start!).line - 1;
     while (line >= 0) {
-      if (directives.markUsed(line)) {
-        return line;
-      }
+      if (directives.markUsed(line)) return line;
       const lineText = file.text.slice(s[line], s[line + 1]).trim();
-      if (lineText !== '' && !/^(\s*)\/\/(.*)$/.test(lineText)) {
-        return -1;
-      }
+      if (lineText !== '' && !/^(\s*)\/\/(.*)$/.test(lineText)) return -1;
       line--;
     }
     return -1;
@@ -1537,9 +1438,7 @@ export function createProgram(
     getDiagnostics: (sourceFile: T, cancellationToken: CancellationToken | undefined) => readonly U[]
   ): readonly U[] {
     const cachedResult = sourceFile ? cache.perFile && cache.perFile.get(sourceFile.path) : cache.allDiagnostics;
-    if (cachedResult) {
-      return cachedResult;
-    }
+    if (cachedResult) return cachedResult;
     const result = getDiagnostics(sourceFile, cancellationToken);
     if (sourceFile) {
       if (!cache.perFile) {
@@ -1558,9 +1457,7 @@ export function createProgram(
     return sortAndDeduplicateDiagnostics(concatenate(fileProcessingDiagnostics.getGlobalDiagnostics(), concatenate(programDiagnostics.getGlobalDiagnostics(), getOptionsDiagnosticsOfConfigFile())));
   }
   function getOptionsDiagnosticsOfConfigFile() {
-    if (!options.configFile) {
-      return emptyArray;
-    }
+    if (!options.configFile) return emptyArray;
     let diagnostics = programDiagnostics.getDiagnostics(options.configFile.fileName);
     forEachResolvedProjectReference((resolvedRef) => {
       if (resolvedRef) {
@@ -1652,15 +1549,11 @@ export function createProgram(
     function getNodeAtPosition(sourceFile: SourceFile, position: number): Node {
       let current: Node = sourceFile;
       const getContainingChild = (child: Node) => {
-        if (child.pos <= position && (position < child.end || (position === child.end && child.kind === Syntax.EndOfFileToken))) {
-          return child;
-        }
+        if (child.pos <= position && (position < child.end || (position === child.end && child.kind === Syntax.EndOfFileToken))) return child;
       };
       while (true) {
         const child = (isJavaScriptFile && Node.is.withJSDocNodes(current) && forEach(current.jsDoc, getContainingChild)) || Node.forEach.child(current, getContainingChild);
-        if (!child) {
-          return current;
-        }
+        if (!child) return current;
         current = child;
       }
     }
@@ -1668,9 +1561,7 @@ export function createProgram(
   function getLibFileFromReference(ref: FileReference) {
     const libName = toFileNameLowerCase(ref.fileName);
     const libFileName = libMap.get(libName);
-    if (libFileName) {
-      return getSourceFile(combinePaths(defaultLibraryPath, libFileName));
-    }
+    if (libFileName) return getSourceFile(combinePaths(defaultLibraryPath, libFileName));
   }
   function getSourceFileFromReference(referencingFile: SourceFile | UnparsedSource, ref: FileReference): SourceFile | undefined {
     return getSourceFileFromReferenceWorker(resolveTripleslashReference(ref.fileName, referencingFile.fileName), (fileName) => filesByName.get(toPath(fileName)) || undefined);
@@ -1973,18 +1864,14 @@ export function createProgram(
     ): T | undefined {
       if (cbRef) {
         const result = cbRef(projectReferences, parent);
-        if (result) {
-          return result;
-        }
+        if (result) return result;
       }
       return forEach(resolvedProjectReferences, (resolvedRef, index) => {
         if (contains(seenResolvedRefs, resolvedRef)) {
           return;
         }
         const result = cbResolvedRef(resolvedRef, index, parent);
-        if (result) {
-          return result;
-        }
+        if (result) return result;
         if (!resolvedRef) return;
         (seenResolvedRefs || (seenResolvedRefs = [])).push(resolvedRef);
         return worker(resolvedRef.commandLine.projectReferences, resolvedRef.references, resolvedRef, cbResolvedRef, cbRef);
@@ -2094,11 +1981,8 @@ export function createProgram(
     });
   }
   function createRefFileDiagnostic(refFile: RefFile | undefined, message: DiagnosticMessage, ...args: any[]): Diagnostic {
-    if (!refFile) {
-      return createCompilerDiagnostic(message, ...args);
-    } else {
-      return createFileDiagnostic(refFile.file, refFile.pos, refFile.end - refFile.pos, message, ...args);
-    }
+    if (!refFile) return createCompilerDiagnostic(message, ...args);
+    return createFileDiagnostic(refFile.file, refFile.pos, refFile.end - refFile.pos, message, ...args);
   }
   function getCanonicalFileName(fileName: string): string {
     return host.getCanonicalFileName(fileName);
@@ -2186,9 +2070,7 @@ export function createProgram(
     const refPath = resolveProjectReferencePath(ref);
     const sourceFilePath = toPath(refPath);
     const fromCache = projectReferenceRedirects.get(sourceFilePath);
-    if (fromCache !== undefined) {
-      return fromCache || undefined;
-    }
+    if (fromCache !== undefined) return fromCache || undefined;
     let commandLine: ParsedCommandLine | undefined;
     let sourceFile: JsonSourceFile | undefined;
     if (host.getParsedCommandLine) {
@@ -2523,9 +2405,7 @@ export function createProgram(
   }
   function getOptionsSyntaxByName(name: string): object | undefined {
     const compilerOptionsObjectLiteralSyntax = getCompilerOptionsObjectLiteralSyntax();
-    if (compilerOptionsObjectLiteralSyntax) {
-      return getPropertyAssignment(compilerOptionsObjectLiteralSyntax, name);
-    }
+    if (compilerOptionsObjectLiteralSyntax) return getPropertyAssignment(compilerOptionsObjectLiteralSyntax, name);
     return;
   }
   function getOptionPathsSyntax(): PropertyAssignment[] {
@@ -2591,23 +2471,13 @@ export function createProgram(
     programDiagnostics.add(diag);
   }
   function isEmittedFile(file: string): boolean {
-    if (options.noEmit) {
-      return false;
-    }
+    if (options.noEmit) return false;
     const filePath = toPath(file);
-    if (getSourceFileByPath(filePath)) {
-      return false;
-    }
+    if (getSourceFileByPath(filePath)) return false;
     const out = options.outFile || options.out;
-    if (out) {
-      return isSameFile(filePath, out) || isSameFile(filePath, removeFileExtension(out) + Extension.Dts);
-    }
-    if (options.declarationDir && containsPath(options.declarationDir, filePath, currentDirectory, !host.useCaseSensitiveFileNames())) {
-      return true;
-    }
-    if (options.outDir) {
-      return containsPath(options.outDir, filePath, currentDirectory, !host.useCaseSensitiveFileNames());
-    }
+    if (out) return isSameFile(filePath, out) || isSameFile(filePath, removeFileExtension(out) + Extension.Dts);
+    if (options.declarationDir && containsPath(options.declarationDir, filePath, currentDirectory, !host.useCaseSensitiveFileNames())) return true;
+    if (options.outDir) return containsPath(options.outDir, filePath, currentDirectory, !host.useCaseSensitiveFileNames());
     if (fileExtensionIsOneOf(filePath, supportedJSExtensions) || fileExtensionIs(filePath, Extension.Dts)) {
       const filePathWithoutExtension = removeFileExtension(filePath);
       return !!getSourceFileByPath((filePathWithoutExtension + Extension.Ts) as Path) || !!getSourceFileByPath((filePathWithoutExtension + Extension.Tsx) as Path);
@@ -2618,9 +2488,7 @@ export function createProgram(
     return comparePaths(file1, file2, currentDirectory, !host.useCaseSensitiveFileNames()) === Comparison.EqualTo;
   }
   function getProbableSymlinks(): QReadonlyMap<string> {
-    if (host.getSymlinks) {
-      return host.getSymlinks();
-    }
+    if (host.getSymlinks) return host.getSymlinks();
     return symlinks || (symlinks = discoverProbableSymlinks(files, getCanonicalFileName, host.getCurrentDirectory()));
   }
 }
@@ -2743,9 +2611,7 @@ function updateHostForUseSourceOfProjectReferenceRedirect(host: HostForUseSource
 }
 export function handleNoEmitOptions(program: ProgramToEmitFilesAndReportErrors, sourceFile: SourceFile | undefined, cancellationToken: CancellationToken | undefined): EmitResult | undefined {
   const options = program.getCompilerOptions();
-  if (options.noEmit) {
-    return { diagnostics: emptyArray, sourceMaps: undefined, emittedFiles: undefined, emitSkipped: true };
-  }
+  if (options.noEmit) return { diagnostics: emptyArray, sourceMaps: undefined, emittedFiles: undefined, emitSkipped: true };
   if (!options.noEmitOnError) return;
   let diagnostics: readonly Diagnostic[] = [
     ...program.getOptionsDiagnostics(cancellationToken),

@@ -37,39 +37,26 @@ export function transformES5(context: TransformationContext) {
     previousOnEmitNode(hint, node, emitCallback);
   }
   function onSubstituteNode(hint: EmitHint, node: Node) {
-    if (node.id && noSubstitution && noSubstitution[node.id]) {
-      return previousOnSubstituteNode(hint, node);
-    }
+    if (node.id && noSubstitution && noSubstitution[node.id]) return previousOnSubstituteNode(hint, node);
     node = previousOnSubstituteNode(hint, node);
-    if (Node.is.kind(PropertyAccessExpression, node)) {
-      return substitutePropertyAccessExpression(node);
-    } else if (Node.is.kind(PropertyAssignment, node)) {
-      return substitutePropertyAssignment(node);
-    }
+    if (Node.is.kind(PropertyAccessExpression, node)) return substitutePropertyAccessExpression(node);
+    if (Node.is.kind(PropertyAssignment, node)) return substitutePropertyAssignment(node);
     return node;
   }
   function substitutePropertyAccessExpression(node: PropertyAccessExpression): Expression {
-    if (Node.is.kind(PrivateIdentifier, node.name)) {
-      return node;
-    }
+    if (Node.is.kind(PrivateIdentifier, node.name)) return node;
     const literalName = trySubstituteReservedName(node.name);
-    if (literalName) {
-      return setRange(new qs.ElementAccessExpression(node.expression, literalName), node);
-    }
+    if (literalName) return setRange(new qs.ElementAccessExpression(node.expression, literalName), node);
     return node;
   }
   function substitutePropertyAssignment(node: PropertyAssignment): PropertyAssignment {
     const literalName = Node.is.kind(Identifier, node.name) && trySubstituteReservedName(node.name);
-    if (literalName) {
-      return updatePropertyAssignment(node, literalName, node.initializer);
-    }
+    if (literalName) return node.update(literalName, node.initializer);
     return node;
   }
   function trySubstituteReservedName(name: Identifier) {
     const token = name.originalKeywordKind || (isSynthesized(name) ? Token.fromString(idText(name)) : undefined);
-    if (token !== undefined && token >= Syntax.FirstReservedWord && token <= Syntax.LastReservedWord) {
-      return setRange(createLiteral(name), name);
-    }
+    if (token !== undefined && token >= Syntax.FirstReservedWord && token <= Syntax.LastReservedWord) return setRange(createLiteral(name), name);
     return;
   }
 }

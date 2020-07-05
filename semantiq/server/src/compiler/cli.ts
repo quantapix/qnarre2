@@ -1055,9 +1055,7 @@ export function parseListTypeOption(opt: CommandLineOptionOfListType, value = ''
   if (startsWith(value, '-')) {
     return;
   }
-  if (value === '') {
-    return [];
-  }
+  if (value === '') return [];
   const values = value.split(',');
   switch (opt.element.type) {
     case 'number':
@@ -1458,9 +1456,7 @@ export function convertToObjectWorker(
   knownRootOptions: CommandLineOption | undefined,
   jsonConversionNotifier: JsonConversionNotifier | undefined
 ): any {
-  if (!sourceFile.statements.length) {
-    return returnValue ? {} : undefined;
-  }
+  if (!sourceFile.statements.length) return returnValue ? {} : undefined;
   return convertPropertyValueToJson(sourceFile.statements[0].expression, knownRootOptions);
   function isRootOptionMap(knownOptions: QMap<CommandLineOption> | undefined) {
     return knownRootOptions && (knownRootOptions as TsConfigOnlyOption).elementOptions === knownOptions;
@@ -1517,9 +1513,7 @@ export function convertToObjectWorker(
     return result;
   }
   function convertArrayLiteralExpressionToJson(elements: Nodes<Expression>, elementOption: CommandLineOption | undefined): any[] | void {
-    if (!returnValue) {
-      return elements.forEach((element) => convertPropertyValueToJson(element, elementOption));
-    }
+    if (!returnValue) return elements.forEach((element) => convertPropertyValueToJson(element, elementOption));
     return filter(
       elements.map((element) => convertPropertyValueToJson(element, elementOption)),
       (v) => v !== undefined
@@ -1597,9 +1591,7 @@ function getCompilerOptionValueTypeString(option: CommandLineOption) {
 function isCompilerOptionsValue(option: CommandLineOption | undefined, value: any): value is CompilerOptionsValue {
   if (option) {
     if (isNullOrUndefined(value)) return true;
-    if (option.type === 'list') {
-      return isArray(value);
-    }
+    if (option.type === 'list') return isArray(value);
     const expectedType = isString(option.type) ? option.type : 'string';
     return typeof value === expectedType;
   }
@@ -1671,14 +1663,10 @@ function matchesSpecs(path: string, includeSpecs: readonly string[] | undefined,
   const excludeRe = patterns.excludePattern && getRegexFromPattern(patterns.excludePattern, host.useCaseSensitiveFileNames);
   const includeRe = patterns.includeFilePattern && getRegexFromPattern(patterns.includeFilePattern, host.useCaseSensitiveFileNames);
   if (includeRe) {
-    if (excludeRe) {
-      return (path) => !(includeRe.test(path) && !excludeRe.test(path));
-    }
+    if (excludeRe) return (path) => !(includeRe.test(path) && !excludeRe.test(path));
     return (path) => !includeRe.test(path);
   }
-  if (excludeRe) {
-    return (path) => excludeRe.test(path);
-  }
+  if (excludeRe) return (path) => excludeRe.test(path);
   return (_) => true;
 }
 function getCustomTypeMapOfCommandLineOption(optionDefinition: CommandLineOption): QMap<string | number> | undefined {
@@ -1692,9 +1680,7 @@ function getCustomTypeMapOfCommandLineOption(optionDefinition: CommandLineOption
 }
 function getNameOfCompilerOptionValue(value: CompilerOptionsValue, customTypeMap: QMap<string | number>): string | undefined {
   return qu.forEachEntry(customTypeMap, (mapValue, key) => {
-    if (mapValue === value) {
-      return key;
-    }
+    if (mapValue === value) return key;
     return;
   });
 }
@@ -1836,9 +1822,7 @@ function convertToOptionValueWithAbsolutePaths(option: CommandLineOption | undef
   if (option && !isNullOrUndefined(value)) {
     if (option.type === 'list') {
       const values = value as readonly (string | number)[];
-      if (option.element.isFilePath && values.length) {
-        return values.map(toAbsolutePath);
-      }
+      if (option.element.isFilePath && values.length) return values.map(toAbsolutePath);
     } else if (option.isFilePath) {
       return toAbsolutePath(value as string);
     }
@@ -2090,9 +2074,7 @@ function getExtendsConfigPath(extendedConfig: string, host: ParseConfigHost, bas
     return extendedConfigPath;
   }
   const resolved = nodeModuleNameResolver(extendedConfig, combinePaths(basePath, 'tsconfig.json'), { moduleResolution: ModuleResolutionKind.NodeJs }, host, undefined, undefined, true);
-  if (resolved.resolvedModule) {
-    return resolved.resolvedModule.resolvedFileName;
-  }
+  if (resolved.resolvedModule) return resolved.resolvedModule.resolvedFileName;
   errors.push(createDiagnostic(Diagnostics.File_0_not_found, extendedConfig));
   return;
 }
@@ -2151,9 +2133,7 @@ function getExtendedConfig(
   return extendedConfig!;
 }
 function convertCompileOnSaveOptionFromJson(jsonOption: any, basePath: string, errors: Push<Diagnostic>): boolean {
-  if (!hasProperty(jsonOption, compileOnSaveCommandLineOption.name)) {
-    return false;
-  }
+  if (!hasProperty(jsonOption, compileOnSaveCommandLineOption.name)) return false;
   const result = convertJsonOption(compileOnSaveCommandLineOption, jsonOption.compileOnSave, basePath, errors);
   return typeof result === 'boolean' && result;
 }
@@ -2232,11 +2212,8 @@ function convertOptionsFromJson(
 function convertJsonOption(opt: CommandLineOption, value: any, basePath: string, errors: Push<Diagnostic>): CompilerOptionsValue {
   if (isCompilerOptionsValue(opt, value)) {
     const optType = opt.type;
-    if (optType === 'list' && isArray(value)) {
-      return convertJsonOptionOfListType(<CommandLineOptionOfListType>opt, value, basePath, errors);
-    } else if (!isString(optType)) {
-      return convertJsonOptionOfCustomType(<CommandLineOptionOfCustomType>opt, <string>value, errors);
-    }
+    if (optType === 'list' && isArray(value)) return convertJsonOptionOfListType(<CommandLineOptionOfListType>opt, value, basePath, errors);
+    if (!isString(optType)) return convertJsonOptionOfCustomType(<CommandLineOptionOfCustomType>opt, <string>value, errors);
     return normalizeNonListOptionValue(opt, basePath, value);
   } else {
     errors.push(createCompilerDiagnostic(Diagnostics.Compiler_option_0_requires_a_value_of_type_1, opt.name, getCompilerOptionValueTypeString(opt)));
@@ -2272,9 +2249,8 @@ function convertJsonOptionOfCustomType(opt: CommandLineOptionOfCustomType, value
   if (isNullOrUndefined(value)) return;
   const key = value.toLowerCase();
   const val = opt.type.get(key);
-  if (val !== undefined) {
-    return val;
-  } else {
+  if (val !== undefined) return val;
+  else {
     errors.push(createCompilerDiagnosticForInvalidCustomType(opt));
   }
   return;
@@ -2386,11 +2362,9 @@ function validateSpecs(specs: readonly string[], errors: Push<Diagnostic>, allow
   }
 }
 function specToDiagnostic(spec: string, allowTrailingRecursion: boolean): DiagnosticMessage | undefined {
-  if (!allowTrailingRecursion && invalidTrailingRecursionPattern.test(spec)) {
-    return Diagnostics.File_specification_cannot_end_in_a_recursive_directory_wildcard_Asterisk_Asterisk_Colon_0;
-  } else if (invalidDotDotAfterRecursiveWildcardPattern.test(spec)) {
+  if (!allowTrailingRecursion && invalidTrailingRecursionPattern.test(spec)) return Diagnostics.File_specification_cannot_end_in_a_recursive_directory_wildcard_Asterisk_Asterisk_Colon_0;
+  else if (invalidDotDotAfterRecursiveWildcardPattern.test(spec))
     return Diagnostics.File_specification_cannot_contain_a_parent_directory_that_appears_after_a_recursive_directory_wildcard_Asterisk_Asterisk_Colon_0;
-  }
   return;
 }
 function getWildcardDirectories(include: readonly string[] | undefined, exclude: readonly string[] | undefined, path: string, useCaseSensitiveFileNames: boolean): MapLike<WatchDirectoryFlags> {
@@ -2436,9 +2410,7 @@ function getWildcardDirectoryFromSpec(spec: string, useCaseSensitiveFileNames: b
       flags: watchRecursivePattern.test(spec) ? WatchDirectoryFlags.Recursive : WatchDirectoryFlags.None,
     };
   }
-  if (isImplicitGlob(spec)) {
-    return { key: spec, flags: WatchDirectoryFlags.Recursive };
-  }
+  if (isImplicitGlob(spec)) return { key: spec, flags: WatchDirectoryFlags.Recursive };
   return;
 }
 function hasFileWithHigherPriorityExtension(file: string, literalFiles: QMap<string>, wildcardFiles: QMap<string>, extensions: readonly string[], keyMapper: (value: string) => string) {
@@ -2447,9 +2419,7 @@ function hasFileWithHigherPriorityExtension(file: string, literalFiles: QMap<str
   for (let i = ExtensionPriority.Highest; i < adjustedExtensionPriority; i++) {
     const higherPriorityExtension = extensions[i];
     const higherPriorityPath = keyMapper(changeExtension(file, higherPriorityExtension));
-    if (literalFiles.has(higherPriorityPath) || wildcardFiles.has(higherPriorityPath)) {
-      return true;
-    }
+    if (literalFiles.has(higherPriorityPath) || wildcardFiles.has(higherPriorityPath)) return true;
   }
   return false;
 }
@@ -2489,9 +2459,7 @@ function getOptionValueWithEmptyStrings(value: any, option: CommandLineOption): 
       return isArray(value) ? value.map((v) => getOptionValueWithEmptyStrings(v, elementType)) : '';
     default:
       return qu.forEachEntry(option.type, (optionEnumValue, optionStringValue) => {
-        if (optionEnumValue === value) {
-          return optionStringValue;
-        }
+        if (optionEnumValue === value) return optionStringValue;
         return;
       })!;
   }

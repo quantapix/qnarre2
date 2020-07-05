@@ -243,9 +243,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
             tokValue = scanNumber().value;
             return (token = Syntax.NumericLiteral);
           }
-          if (text.charCodeAt(pos + 1) === Codes.dot && text.charCodeAt(pos + 2) === Codes.dot) {
-            return (pos += 3), (token = Syntax.Dot3Token);
-          }
+          if (text.charCodeAt(pos + 1) === Codes.dot && text.charCodeAt(pos + 2) === Codes.dot) return (pos += 3), (token = Syntax.Dot3Token);
           pos++;
           return (token = Syntax.DotToken);
         case Codes.slash:
@@ -355,9 +353,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
             return (pos += 2), (token = Syntax.LessThan2Token);
           }
           if (text.charCodeAt(pos + 1) === Codes.equals) return (pos += 2), (token = Syntax.LessThanEqualsToken);
-          if (lang === LanguageVariant.TX && text.charCodeAt(pos + 1) === Codes.slash && text.charCodeAt(pos + 2) !== Codes.asterisk) {
-            return (pos += 2), (token = Syntax.LessThanSlashToken);
-          }
+          if (lang === LanguageVariant.TX && text.charCodeAt(pos + 1) === Codes.slash && text.charCodeAt(pos + 2) !== Codes.asterisk) return (pos += 2), (token = Syntax.LessThanSlashToken);
           pos++;
           return (token = Syntax.LessThanToken);
         case Codes.equals:

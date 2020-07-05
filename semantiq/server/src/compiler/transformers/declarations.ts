@@ -1,7 +1,6 @@
 import * as qb from '../base';
-import * as qc from '../core';
 import { Node, Nodes } from '../core';
-import * as qs from '../classes';
+import * as qc from '../classes';
 import * as qt from '../types';
 import * as qy from '../syntax';
 import { Modifier, Syntax } from '../syntax';
@@ -90,9 +89,8 @@ export function transformDeclarations(context: TransformationContext) {
   function handleSymbolAccessibilityError(symbolAccessibilityResult: SymbolAccessibilityResult) {
     if (symbolAccessibilityResult.accessibility === SymbolAccessibility.Accessible) {
       if (symbolAccessibilityResult && symbolAccessibilityResult.aliasesToMakeVisible) {
-        if (!lateMarkedStatements) {
-          lateMarkedStatements = symbolAccessibilityResult.aliasesToMakeVisible;
-        } else {
+        if (!lateMarkedStatements) lateMarkedStatements = symbolAccessibilityResult.aliasesToMakeVisible;
+        else {
           for (const ref of symbolAccessibilityResult.aliasesToMakeVisible) {
             pushIfUnique(lateMarkedStatements, ref);
           }
@@ -125,9 +123,7 @@ export function transformDeclarations(context: TransformationContext) {
     }
   }
   function trackExternalModuleSymbolOfImportTypeNode(symbol: Symbol) {
-    if (!isBundledEmit) {
-      (exportedModulesFromDeclarationEmit || (exportedModulesFromDeclarationEmit = [])).push(symbol);
-    }
+    if (!isBundledEmit) (exportedModulesFromDeclarationEmit || (exportedModulesFromDeclarationEmit = [])).push(symbol);
   }
   function trackSymbol(symbol: Symbol, enclosingDeclaration?: Node, meaning?: SymbolFlags) {
     if (symbol.flags & SymbolFlags.TypeParameter) return;
@@ -135,9 +131,7 @@ export function transformDeclarations(context: TransformationContext) {
     recordTypeReferenceDirectivesIfNecessary(resolver.getTypeReferenceDirectivesForSymbol(symbol, meaning));
   }
   function reportPrivateInBaseOfClassExpression(propertyName: string) {
-    if (errorNameNode) {
-      context.addDiagnostic(createDiagnosticForNode(errorNameNode, Diagnostics.Property_0_of_exported_class_expression_may_not_be_private_or_protected, propertyName));
-    }
+    if (errorNameNode) context.addDiagnostic(createDiagnosticForNode(errorNameNode, Diagnostics.Property_0_of_exported_class_expression_may_not_be_private_or_protected, propertyName));
   }
   function reportInaccessibleUniqueSymbolError() {
     if (errorNameNode) {
@@ -198,9 +192,7 @@ export function transformDeclarations(context: TransformationContext) {
   function transformRoot(node: SourceFile): SourceFile;
   function transformRoot(node: SourceFile | Bundle): SourceFile | Bundle;
   function transformRoot(node: SourceFile | Bundle) {
-    if (node.kind === Syntax.SourceFile && node.isDeclarationFile) {
-      return node;
-    }
+    if (node.kind === Syntax.SourceFile && node.isDeclarationFile) return node;
     if (node.kind === Syntax.Bundle) {
       isBundledEmit = true;
       refs = new QMap<SourceFile>();
@@ -294,9 +286,8 @@ export function transformDeclarations(context: TransformationContext) {
       combinedStatements = setRange(new Nodes(transformAndReplaceLatePaintedStatements(statements)), node.statements);
       refs.forEach(referenceVisitor);
       emittedImports = filter(combinedStatements, isAnyImportSyntax);
-      if (qp_isExternalModule(node) && (!resultHasExternalModuleIndicator || (needsScopeFixMarker && !resultHasScopeMarker))) {
+      if (qp_isExternalModule(node) && (!resultHasExternalModuleIndicator || (needsScopeFixMarker && !resultHasScopeMarker)))
         combinedStatements = setRange(new Nodes([...combinedStatements, createEmptyExports()]), combinedStatements);
-      }
     }
     const updated = qp_updateSourceNode(node, combinedStatements, true, references, getFileReferencesForUsedTypeReferences(), node.hasNoDefaultLib, getLibReferences());
     updated.exportedModulesFromDeclarationEmit = exportedModulesFromDeclarationEmit;
@@ -312,9 +303,7 @@ export function transformDeclarations(context: TransformationContext) {
         for (const importStatement of emittedImports) {
           if (Node.is.kind(ImportEqualsDeclaration, importStatement) && qp_Node.is.kind(ExternalModuleReference, importStatement.moduleReference)) {
             const expr = importStatement.moduleReference.expression;
-            if (StringLiteral.like(expr) && expr.text === typeName) {
-              return;
-            }
+            if (StringLiteral.like(expr) && expr.text === typeName) return;
           } else if (Node.is.kind(ImportDeclaration, importStatement) && Node.is.kind(StringLiteral, importStatement.moduleSpecifier) && importStatement.moduleSpecifier.text === typeName) {
             return;
           }
@@ -325,9 +314,8 @@ export function transformDeclarations(context: TransformationContext) {
     function mapReferencesIntoArray(references: FileReference[], outputFilePath: string): (file: SourceFile) => void {
       return (file) => {
         let declFileName: string;
-        if (file.isDeclarationFile) {
-          declFileName = file.fileName;
-        } else {
+        if (file.isDeclarationFile) declFileName = file.fileName;
+        else {
           if (isBundledEmit && contains((node as Bundle).sourceFiles, file)) return;
           const paths = getOutputPathsFor(file, host, true);
           declFileName = paths.declarationFilePath || paths.jsFilePath || file.fileName;
@@ -346,12 +334,8 @@ export function transformDeclarations(context: TransformationContext) {
             return;
           }
           let fileName = getRelativePathToDirectoryOrUrl(outputFilePath, declFileName, host.getCurrentDirectory(), host.getCanonicalFileName, false);
-          if (startsWith(fileName, './') && hasExtension(fileName)) {
-            fileName = fileName.substring(2);
-          }
-          if (startsWith(fileName, 'node_modules/') || pathContainsNodeModules(fileName)) {
-            return;
-          }
+          if (startsWith(fileName, './') && hasExtension(fileName)) fileName = fileName.substring(2);
+          if (startsWith(fileName, 'node_modules/') || pathContainsNodeModules(fileName)) return;
           references.push({ pos: -1, end: -1, fileName });
         }
       };
@@ -361,18 +345,14 @@ export function transformDeclarations(context: TransformationContext) {
     if (noResolve || (!Node.is.kind(UnparsedSource, sourceFile) && isSourceFileJS(sourceFile))) return ret;
     forEach(sourceFile.referencedFiles, (f) => {
       const elem = host.getSourceFileFromReference(sourceFile, f);
-      if (elem) {
-        ret.set('' + getOriginalNodeId(elem), elem);
-      }
+      if (elem) ret.set('' + getOriginalNodeId(elem), elem);
     });
     return ret;
   }
   function collectLibs(sourceFile: SourceFile | UnparsedSource, ret: QMap<boolean>) {
     forEach(sourceFile.libReferenceDirectives, (ref) => {
       const lib = host.getLibFileFromReference(ref);
-      if (lib) {
-        ret.set(toFileNameLowerCase(ref.fileName), true);
-      }
+      if (lib) ret.set(toFileNameLowerCase(ref.fileName), true);
     });
     return ret;
   }
@@ -382,9 +362,7 @@ export function transformDeclarations(context: TransformationContext) {
     return name.update(Nodes.visit(name.elements, visitBindingElement));
     function visitBindingElement<T extends ArrayBindingElement>(elem: T): T;
     function visitBindingElement(elem: ArrayBindingElement): ArrayBindingElement {
-      if (elem.kind === Syntax.OmittedExpression) {
-        return elem;
-      }
+      if (elem.kind === Syntax.OmittedExpression) return elem;
       return elem.update(elem.dot3Token, elem.propertyName, filterBindingPatternInitializers(elem.name), shouldPrintWithInitializer(elem) ? elem.initializer : undefined);
     }
   }
@@ -404,18 +382,14 @@ export function transformDeclarations(context: TransformationContext) {
       ensureType(p, type || p.type, true),
       ensureNoInitializer(p)
     );
-    if (!suppressNewDiagnosticContexts) {
-      getSymbolAccessibilityDiagnostic = oldDiag!;
-    }
+    if (!suppressNewDiagnosticContexts) getSymbolAccessibilityDiagnostic = oldDiag!;
     return newParam;
   }
   function shouldPrintWithInitializer(node: Node) {
     return canHaveLiteralInitializer(node) && resolver.isLiteralConstDeclaration(Node.get.parseTreeOf(node) as CanHaveLiteralInitializer);
   }
   function ensureNoInitializer(node: CanHaveLiteralInitializer) {
-    if (shouldPrintWithInitializer(node)) {
-      return resolver.createLiteralConstValue(Node.get.parseTreeOf(node) as CanHaveLiteralInitializer, symbolTracker);
-    }
+    if (shouldPrintWithInitializer(node)) return resolver.createLiteralConstValue(Node.get.parseTreeOf(node) as CanHaveLiteralInitializer, symbolTracker);
     return;
   }
   type HasInferredType =
@@ -432,31 +406,20 @@ export function transformDeclarations(context: TransformationContext) {
     | PropertyDeclaration
     | PropertySignature;
   function ensureType(node: HasInferredType, type: TypeNode | undefined, ignorePrivate?: boolean): TypeNode | undefined {
-    if (!ignorePrivate && hasEffectiveModifier(node, ModifierFlags.Private)) {
-      return;
-    }
-    if (shouldPrintWithInitializer(node)) {
-      return;
-    }
+    if (!ignorePrivate && hasEffectiveModifier(node, ModifierFlags.Private)) return;
+    if (shouldPrintWithInitializer(node)) return;
     const shouldUseResolverType = node.kind === Syntax.Parameter && (resolver.isRequiredInitializedParameter(node) || resolver.isOptionalUninitializedParameterProperty(node));
-    if (type && !shouldUseResolverType) {
-      return visitNode(type, visitDeclarationSubtree);
-    }
-    if (!Node.get.parseTreeOf(node)) {
-      return type ? visitNode(type, visitDeclarationSubtree) : KeywordTypeNode.create(Syntax.AnyKeyword);
-    }
-    if (node.kind === Syntax.SetAccessor) {
-      return KeywordTypeNode.create(Syntax.AnyKeyword);
-    }
+    if (type && !shouldUseResolverType) return visitNode(type, visitDeclarationSubtree);
+    if (!Node.get.parseTreeOf(node)) return type ? visitNode(type, visitDeclarationSubtree) : new qc.KeywordTypeNode(Syntax.AnyKeyword);
+    if (node.kind === Syntax.SetAccessor) return new qc.KeywordTypeNode(Syntax.AnyKeyword);
     errorNameNode = node.name;
     let oldDiag: typeof getSymbolAccessibilityDiagnostic;
     if (!suppressNewDiagnosticContexts) {
       oldDiag = getSymbolAccessibilityDiagnostic;
       getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(node);
     }
-    if (node.kind === Syntax.VariableDeclaration || node.kind === Syntax.BindingElement) {
+    if (node.kind === Syntax.VariableDeclaration || node.kind === Syntax.BindingElement)
       return cleanup(resolver.createTypeOfDeclaration(node, enclosingDeclaration, declarationEmitNodeBuilderFlags, symbolTracker));
-    }
     if (node.kind === Syntax.Parameter || node.kind === Syntax.PropertyDeclaration || node.kind === Syntax.PropertySignature) {
       if (!node.initializer) return cleanup(resolver.createTypeOfDeclaration(node, enclosingDeclaration, declarationEmitNodeBuilderFlags, symbolTracker, shouldUseResolverType));
       return cleanup(
@@ -467,10 +430,8 @@ export function transformDeclarations(context: TransformationContext) {
     return cleanup(resolver.createReturnTypeOfSignatureDeclaration(node, enclosingDeclaration, declarationEmitNodeBuilderFlags, symbolTracker));
     function cleanup(returnValue: TypeNode | undefined) {
       errorNameNode = undefined;
-      if (!suppressNewDiagnosticContexts) {
-        getSymbolAccessibilityDiagnostic = oldDiag;
-      }
-      return returnValue || KeywordTypeNode.create(Syntax.AnyKeyword);
+      if (!suppressNewDiagnosticContexts) getSymbolAccessibilityDiagnostic = oldDiag;
+      return returnValue || new qc.KeywordTypeNode(Syntax.AnyKeyword);
     }
   }
   function isDeclarationAndNotVisible(node: NamedDeclaration) {
@@ -494,32 +455,21 @@ export function transformDeclarations(context: TransformationContext) {
     return false;
   }
   function getBindingNameVisible(elem: BindingElement | VariableDeclaration | OmittedExpression): boolean {
-    if (Node.is.kind(OmittedExpression, elem)) {
-      return false;
-    }
-    if (Node.is.kind(BindingPattern, elem.name)) {
-      return some(elem.name.elements, getBindingNameVisible);
-    } else {
-      return resolver.isDeclarationVisible(elem);
-    }
+    if (Node.is.kind(OmittedExpression, elem)) return false;
+    if (Node.is.kind(BindingPattern, elem.name)) return some(elem.name.elements, getBindingNameVisible);
+    return resolver.isDeclarationVisible(elem);
   }
   function updateParamsList(node: Node, params: Nodes<ParameterDeclaration>, modifierMask?: ModifierFlags) {
-    if (hasEffectiveModifier(node, ModifierFlags.Private)) {
-      return undefined!;
-    }
+    if (hasEffectiveModifier(node, ModifierFlags.Private)) return undefined!;
     const newParams = map(params, (p) => ensureParameter(p, modifierMask));
-    if (!newParams) {
-      return undefined!;
-    }
+    if (!newParams) return undefined!;
     return new Nodes(newParams, params.trailingComma);
   }
   function updateAccessorParamsList(input: AccessorDeclaration, isPrivate: boolean) {
     let newParams: ParameterDeclaration[] | undefined;
     if (!isPrivate) {
       const thisParameter = getThisNode(ParameterDeclaration, input);
-      if (thisParameter) {
-        newParams = [ensureParameter(thisParameter)];
-      }
+      if (thisParameter) newParams = [ensureParameter(thisParameter)];
     }
     if (Node.is.kind(SetAccessorDeclaration, input)) {
       let newValueParameter: ParameterDeclaration | undefined;
@@ -530,9 +480,7 @@ export function transformDeclarations(context: TransformationContext) {
           newValueParameter = ensureParameter(valueParameter, undefined, accessorType);
         }
       }
-      if (!newValueParameter) {
-        newValueParameter = createParameter(undefined, undefined, 'value');
-      }
+      if (!newValueParameter) newValueParameter = createParameter(undefined, undefined, 'value');
       newParams = append(newParams, newValueParameter);
     }
     return new Nodes(newParams || emptyArray) as Nodes<ParameterDeclaration>;
@@ -558,9 +506,7 @@ export function transformDeclarations(context: TransformationContext) {
     recordTypeReferenceDirectivesIfNecessary(resolver.getTypeReferenceDirectivesForEntityName(entityName));
   }
   function preserveJsDoc<T extends Node>(updated: T, original: Node): T {
-    if (Node.is.withJSDocNodes(updated) && Node.is.withJSDocNodes(original)) {
-      updated.jsDoc = original.jsDoc;
-    }
+    if (Node.is.withJSDocNodes(updated) && Node.is.withJSDocNodes(original)) updated.jsDoc = original.jsDoc;
     return setCommentRange(updated, getCommentRange(original));
   }
   function rewriteModuleSpecifier<T extends Node>(
@@ -572,14 +518,10 @@ export function transformDeclarations(context: TransformationContext) {
     if (StringLiteral.like(input)) {
       if (isBundledEmit) {
         const newName = getExternalModuleNameFromDeclaration(context.getEmitHost(), resolver, parent);
-        if (newName) {
-          return createLiteral(newName);
-        }
+        if (newName) return createLiteral(newName);
       } else {
         const symbol = resolver.getSymbolOfExternalModuleSpecifier(input);
-        if (symbol) {
-          (exportedModulesFromDeclarationEmit || (exportedModulesFromDeclarationEmit = [])).push(symbol);
-        }
+        if (symbol) (exportedModulesFromDeclarationEmit || (exportedModulesFromDeclarationEmit = [])).push(symbol);
       }
     }
     return input;
@@ -588,7 +530,7 @@ export function transformDeclarations(context: TransformationContext) {
     if (!resolver.isDeclarationVisible(decl)) return;
     if (decl.moduleReference.kind === Syntax.ExternalModuleReference) {
       const specifier = getExternalModuleImportEqualsDeclarationExpression(decl);
-      return updateImportEqualsDeclaration(decl, undefined, decl.modifiers, decl.name, updateExternalModuleReference(decl.moduleReference, rewriteModuleSpecifier(decl, specifier)));
+      return decl.update(undefined, decl.modifiers, decl.name, updateExternalModuleReference(decl.moduleReference, rewriteModuleSpecifier(decl, specifier)));
     } else {
       const oldDiag = getSymbolAccessibilityDiagnostic;
       getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(decl);
@@ -598,9 +540,7 @@ export function transformDeclarations(context: TransformationContext) {
     }
   }
   function transformImportDeclaration(decl: ImportDeclaration) {
-    if (!decl.importClause) {
-      return updateImportDeclaration(decl, undefined, decl.modifiers, decl.importClause, rewriteModuleSpecifier(decl, decl.moduleSpecifier));
-    }
+    if (!decl.importClause) return decl.update(undefined, decl.modifiers, decl.importClause, rewriteModuleSpecifier(decl, decl.moduleSpecifier));
     const visibleDefaultBinding = decl.importClause && decl.importClause.name && resolver.isDeclarationVisible(decl.importClause) ? decl.importClause.name : undefined;
     if (!decl.importClause.namedBindings) {
       return (
@@ -641,16 +581,13 @@ export function transformDeclarations(context: TransformationContext) {
         rewriteModuleSpecifier(decl, decl.moduleSpecifier)
       );
     }
-    if (resolver.isImportRequiredByAugmentation(decl)) {
-      return updateImportDeclaration(decl, undefined, decl.modifiers, undefined, rewriteModuleSpecifier(decl, decl.moduleSpecifier));
-    }
+    if (resolver.isImportRequiredByAugmentation(decl)) return decl.update(undefined, decl.modifiers, undefined, rewriteModuleSpecifier(decl, decl.moduleSpecifier));
   }
   function transformAndReplaceLatePaintedStatements(statements: Nodes<Statement>): Nodes<Statement> {
     while (length(lateMarkedStatements)) {
       const i = lateMarkedStatements!.shift()!;
-      if (!Node.is.lateVisibilityPaintedStatement(i)) {
+      if (!Node.is.lateVisibilityPaintedStatement(i))
         return fail(`Late replaced statement was found which is not handled by the declaration transformer!: ${(ts as any).SyntaxKind ? (ts as any).SyntaxKind[(i as any).kind] : (i as any).kind}`);
-      }
       const priorNeedsDeclare = needsDeclare;
       needsDeclare = i.parent && Node.is.kind(SourceFile, i.parent) && !(qp_isExternalModule(i.parent) && isBundledEmit);
       const result = transformTopLevelDeclaration(i);
@@ -665,12 +602,9 @@ export function transformDeclarations(context: TransformationContext) {
           const result = lateStatementReplacementMap.get(key);
           lateStatementReplacementMap.delete(key);
           if (result) {
-            if (isArray(result) ? some(result, needsScopeMarker) : needsScopeMarker(result)) {
-              needsScopeFixMarker = true;
-            }
-            if (Node.is.kind(SourceFile, statement.parent) && (isArray(result) ? some(result, qp_isExternalModuleIndicator) : qp_isExternalModuleIndicator(result))) {
+            if (isArray(result) ? some(result, needsScopeMarker) : needsScopeMarker(result)) needsScopeFixMarker = true;
+            if (Node.is.kind(SourceFile, statement.parent) && (isArray(result) ? some(result, qp_isExternalModuleIndicator) : qp_isExternalModuleIndicator(result)))
               resultHasExternalModuleIndicator = true;
-            }
           }
           return result;
         }
@@ -682,9 +616,7 @@ export function transformDeclarations(context: TransformationContext) {
     if (shouldStripInternal(input)) return;
     if (Node.is.declaration(input)) {
       if (isDeclarationAndNotVisible(input)) return;
-      if (hasDynamicName(input) && !resolver.isLateBound(Node.get.parseTreeOf(input) as Declaration)) {
-        return;
-      }
+      if (hasDynamicName(input) && !resolver.isLateBound(Node.get.parseTreeOf(input) as Declaration)) return;
     }
     if (Node.is.functionLike(input) && resolver.isImplementationOfOverload(input)) return;
     if (Node.is.kind(SemicolonClassElement, input)) return;
@@ -703,23 +635,15 @@ export function transformDeclarations(context: TransformationContext) {
         return cleanup(PropertyDeclaration.create(undefined, ensureModifiers(input), input.name, undefined, undefined, undefined));
       }
     }
-    if (canProduceDiagnostic && !suppressNewDiagnosticContexts) {
-      getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(input as DeclarationDiagnosticProducing);
-    }
-    if (Node.is.kind(TypeQueryNode, input)) {
-      checkEntityNameVisibility(input.exprName, enclosingDeclaration);
-    }
-    if (shouldEnterSuppressNewDiagnosticsContextContext) {
-      suppressNewDiagnosticContexts = true;
-    }
+    if (canProduceDiagnostic && !suppressNewDiagnosticContexts) getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(input as DeclarationDiagnosticProducing);
+    if (Node.is.kind(TypeQueryNode, input)) checkEntityNameVisibility(input.exprName, enclosingDeclaration);
+    if (shouldEnterSuppressNewDiagnosticsContextContext) suppressNewDiagnosticContexts = true;
     if (isProcessedComponent(input)) {
       switch (input.kind) {
         case Syntax.ExpressionWithTypeArguments: {
-          if (Node.is.entityName(input.expression) || isEntityNameExpression(input.expression)) {
-            checkEntityNameVisibility(input.expression, enclosingDeclaration);
-          }
+          if (Node.is.entityName(input.expression) || isEntityNameExpression(input.expression)) checkEntityNameVisibility(input.expression, enclosingDeclaration);
           const node = visitEachChild(input, visitDeclarationSubtree, context);
-          return cleanup(updateExpressionWithTypeArguments(node, parenthesizeTypeParameters(node.typeArguments), node.expression));
+          return cleanup(node.update(parenthesizeTypeParameters(node.typeArguments), node.expression));
         }
         case Syntax.TypeReference: {
           checkEntityNameVisibility(input.typeName, enclosingDeclaration);
@@ -734,9 +658,7 @@ export function transformDeclarations(context: TransformationContext) {
           return cleanup(ctor);
         }
         case Syntax.MethodDeclaration: {
-          if (Node.is.kind(PrivateIdentifier, input.name)) {
-            return cleanup(undefined);
-          }
+          if (Node.is.kind(PrivateIdentifier, input.name)) return cleanup(undefined);
           const sig = SignatureDeclaration.create(
             Syntax.MethodSignature,
             ensureTypeParams(input, input.typeParameters),
@@ -749,34 +671,24 @@ export function transformDeclarations(context: TransformationContext) {
           return cleanup(sig);
         }
         case Syntax.GetAccessor: {
-          if (Node.is.kind(PrivateIdentifier, input.name)) {
-            return cleanup(undefined);
-          }
+          if (Node.is.kind(PrivateIdentifier, input.name)) return cleanup(undefined);
           const accessorType = getTypeAnnotationFromAllAccessorDeclarations(input, resolver.getAllAccessorDeclarations(input));
           return cleanup(
             input.update(undefined, ensureModifiers(input), input.name, updateAccessorParamsList(input, hasEffectiveModifier(input, ModifierFlags.Private)), ensureType(input, accessorType), undefined)
           );
         }
         case Syntax.SetAccessor: {
-          if (Node.is.kind(PrivateIdentifier, input.name)) {
-            return cleanup(undefined);
-          }
+          if (Node.is.kind(PrivateIdentifier, input.name)) return cleanup(undefined);
           return cleanup(input.update(undefined, ensureModifiers(input), input.name, updateAccessorParamsList(input, hasEffectiveModifier(input, ModifierFlags.Private)), undefined));
         }
         case Syntax.PropertyDeclaration:
-          if (Node.is.kind(PrivateIdentifier, input.name)) {
-            return cleanup(undefined);
-          }
+          if (Node.is.kind(PrivateIdentifier, input.name)) return cleanup(undefined);
           return cleanup(input.update(undefined, ensureModifiers(input), input.name, input.questionToken, ensureType(input, input.type), ensureNoInitializer(input)));
         case Syntax.PropertySignature:
-          if (Node.is.kind(PrivateIdentifier, input.name)) {
-            return cleanup(undefined);
-          }
+          if (Node.is.kind(PrivateIdentifier, input.name)) return cleanup(undefined);
           return cleanup(input.update(ensureModifiers(input), input.name, input.questionToken, ensureType(input, input.type), ensureNoInitializer(input)));
         case Syntax.MethodSignature: {
-          if (Node.is.kind(PrivateIdentifier, input.name)) {
-            return cleanup(undefined);
-          }
+          if (Node.is.kind(PrivateIdentifier, input.name)) return cleanup(undefined);
           return cleanup(input.update(ensureTypeParams(input, input.typeParameters), updateParamsList(input, input.parameters), ensureType(input, input.type), input.name, input.questionToken));
         }
         case Syntax.CallSignature: {
@@ -784,21 +696,17 @@ export function transformDeclarations(context: TransformationContext) {
         }
         case Syntax.IndexSignature: {
           return cleanup(
-            input.update(undefined, ensureModifiers(input), updateParamsList(input, input.parameters), visitNode(input.type, visitDeclarationSubtree) || KeywordTypeNode.create(Syntax.AnyKeyword))
+            input.update(undefined, ensureModifiers(input), updateParamsList(input, input.parameters), visitNode(input.type, visitDeclarationSubtree) || new qc.KeywordTypeNode(Syntax.AnyKeyword))
           );
         }
         case Syntax.VariableDeclaration: {
-          if (Node.is.kind(BindingPattern, input.name)) {
-            return recreateBindingPattern(input.name);
-          }
+          if (Node.is.kind(BindingPattern, input.name)) return recreateBindingPattern(input.name);
           shouldEnterSuppressNewDiagnosticsContextContext = true;
           suppressNewDiagnosticContexts = true;
           return cleanup(updateTypeScriptVariableDeclaration(input, input.name, undefined, ensureType(input, input.type), ensureNoInitializer(input)));
         }
         case Syntax.TypeParameter: {
-          if (isPrivateMethodTypeParameter(input) && (input.default || input.constraint)) {
-            return cleanup(updateTypeParameterDeclaration(input, input.name, undefined));
-          }
+          if (isPrivateMethodTypeParameter(input) && (input.default || input.constraint)) return cleanup(updateTypeParameterDeclaration(input, input.name, undefined));
           return cleanup(visitEachChild(input, visitDeclarationSubtree, context));
         }
         case Syntax.ConditionalType: {
@@ -839,26 +747,15 @@ export function transformDeclarations(context: TransformationContext) {
           Debug.assertNever(input, `Attempted to process unhandled node kind: ${(ts as any).SyntaxKind[(input as any).kind]}`);
       }
     }
-    if (Node.is.kind(TupleTypeNode, input) && syntax.get.lineAndCharOf(currentSourceFile, input.pos).line === syntax.get.lineAndCharOf(currentSourceFile, input.end).line) {
+    if (Node.is.kind(TupleTypeNode, input) && syntax.get.lineAndCharOf(currentSourceFile, input.pos).line === syntax.get.lineAndCharOf(currentSourceFile, input.end).line)
       setEmitFlags(input, EmitFlags.SingleLine);
-    }
     return cleanup(visitEachChild(input, visitDeclarationSubtree, context));
     function cleanup<T extends Node>(returnValue: T | undefined): T | undefined {
-      if (returnValue && canProduceDiagnostic && hasDynamicName(input as Declaration)) {
-        checkName(input as DeclarationDiagnosticProducing);
-      }
-      if (isEnclosingDeclaration(input)) {
-        enclosingDeclaration = previousEnclosingDeclaration;
-      }
-      if (canProduceDiagnostic && !suppressNewDiagnosticContexts) {
-        getSymbolAccessibilityDiagnostic = oldDiag;
-      }
-      if (shouldEnterSuppressNewDiagnosticsContextContext) {
-        suppressNewDiagnosticContexts = oldWithinObjectLiteralType;
-      }
-      if (returnValue === input) {
-        return returnValue;
-      }
+      if (returnValue && canProduceDiagnostic && hasDynamicName(input as Declaration)) checkName(input as DeclarationDiagnosticProducing);
+      if (isEnclosingDeclaration(input)) enclosingDeclaration = previousEnclosingDeclaration;
+      if (canProduceDiagnostic && !suppressNewDiagnosticContexts) getSymbolAccessibilityDiagnostic = oldDiag;
+      if (shouldEnterSuppressNewDiagnosticsContextContext) suppressNewDiagnosticContexts = oldWithinObjectLiteralType;
+      if (returnValue === input) return returnValue;
       return returnValue && setOriginalNode(preserveJsDoc(returnValue, input), input);
     }
   }
@@ -866,26 +763,19 @@ export function transformDeclarations(context: TransformationContext) {
     return node.parent.kind === Syntax.MethodDeclaration && hasEffectiveModifier(node.parent, ModifierFlags.Private);
   }
   function visitDeclarationStatements(input: Node): VisitResult<Node> {
-    if (!isPreservedDeclarationStatement(input)) {
-      return;
-    }
+    if (!isPreservedDeclarationStatement(input)) return;
     if (shouldStripInternal(input)) return;
     switch (input.kind) {
       case Syntax.ExportDeclaration: {
-        if (Node.is.kind(SourceFile, input.parent)) {
-          resultHasExternalModuleIndicator = true;
-        }
+        if (Node.is.kind(SourceFile, input.parent)) resultHasExternalModuleIndicator = true;
         resultHasScopeMarker = true;
-        return updateExportDeclaration(input, undefined, input.modifiers, input.exportClause, rewriteModuleSpecifier(input, input.moduleSpecifier), input.isTypeOnly);
+        return input.update(undefined, input.modifiers, input.exportClause, rewriteModuleSpecifier(input, input.moduleSpecifier), input.isTypeOnly);
       }
       case Syntax.ExportAssignment: {
-        if (Node.is.kind(SourceFile, input.parent)) {
-          resultHasExternalModuleIndicator = true;
-        }
+        if (Node.is.kind(SourceFile, input.parent)) resultHasExternalModuleIndicator = true;
         resultHasScopeMarker = true;
-        if (input.expression.kind === Syntax.Identifier) {
-          return input;
-        } else {
+        if (input.expression.kind === Syntax.Identifier) return input;
+        else {
           const newId = createOptimisticUniqueName('_default');
           getSymbolAccessibilityDiagnostic = () => ({
             diagnosticMessage: Diagnostics.Default_export_of_the_module_has_or_is_using_private_name_0,
@@ -893,7 +783,7 @@ export function transformDeclarations(context: TransformationContext) {
           });
           const varDecl = createVariableDeclaration(newId, resolver.createTypeOfExpression(input.expression, input, declarationEmitNodeBuilderFlags, symbolTracker), undefined);
           const statement = createVariableStatement(needsDeclare ? [createModifier(Syntax.DeclareKeyword)] : [], createVariableDeclarationList([varDecl], NodeFlags.Const));
-          return [statement, updateExportAssignment(input, input.decorators, input.modifiers, newId)];
+          return [statement, input.update(input.decorators, input.modifiers, newId)];
         }
       }
     }
@@ -902,9 +792,7 @@ export function transformDeclarations(context: TransformationContext) {
     return input;
   }
   function stripExportModifiers(statement: Statement): Statement {
-    if (Node.is.kind(ImportEqualsDeclaration, statement) || hasEffectiveModifier(statement, ModifierFlags.Default)) {
-      return statement;
-    }
+    if (Node.is.kind(ImportEqualsDeclaration, statement) || hasEffectiveModifier(statement, ModifierFlags.Default)) return statement;
     const clone = getMutableClone(statement);
     const modifiers = createModifiersFromModifierFlags(getEffectiveModifierFlags(statement) & (ModifierFlags.All ^ ModifierFlags.Export));
     clone.modifiers = modifiers.length ? new Nodes(modifiers) : undefined;
@@ -929,9 +817,7 @@ export function transformDeclarations(context: TransformationContext) {
     }
     const canProdiceDiagnostic = canProduceDiagnostics(input);
     const oldDiag = getSymbolAccessibilityDiagnostic;
-    if (canProdiceDiagnostic) {
-      getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(input as DeclarationDiagnosticProducing);
-    }
+    if (canProdiceDiagnostic) getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(input as DeclarationDiagnosticProducing);
     const previousNeedsDeclare = needsDeclare;
     switch (input.kind) {
       case Syntax.TypeAliasDeclaration:
@@ -980,9 +866,7 @@ export function transformDeclarations(context: TransformationContext) {
           fakespace.locals = new SymbolTable(props);
           fakespace.symbol = props[0].parent!;
           const declarations = mapDefined(props, (p) => {
-            if (!Node.is.kind(PropertyAccessExpression, p.valueDeclaration)) {
-              return;
-            }
+            if (!Node.is.kind(PropertyAccessExpression, p.valueDeclaration)) return;
             getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(p.valueDeclaration);
             const type = resolver.createTypeOfDeclaration(p.valueDeclaration, fakespace, declarationEmitNodeBuilderFlags, symbolTracker);
             getSymbolAccessibilityDiagnostic = oldDiag;
@@ -990,21 +874,16 @@ export function transformDeclarations(context: TransformationContext) {
             return createVariableStatement(undefined, createVariableDeclarationList([varDecl]));
           });
           const namespaceDecl = createModuleDeclaration(undefined, ensureModifiers(input), input.name!, createModuleBlock(declarations), NodeFlags.Namespace);
-          if (!hasEffectiveModifier(clean, ModifierFlags.Default)) {
-            return [clean, namespaceDecl];
-          }
+          if (!hasEffectiveModifier(clean, ModifierFlags.Default)) return [clean, namespaceDecl];
           const modifiers = createModifiersFromModifierFlags((getEffectiveModifierFlags(clean) & ~ModifierFlags.ExportDefault) | ModifierFlags.Ambient);
-          const cleanDeclaration = updateFunctionDeclaration(clean, undefined, modifiers, undefined, clean.name, clean.typeParameters, clean.parameters, clean.type, undefined);
-          const namespaceDeclaration = updateModuleDeclaration(namespaceDecl, undefined, modifiers, namespaceDecl.name, namespaceDecl.body);
+          const cleanDeclaration = clean.update(undefined, modifiers, undefined, clean.name, clean.typeParameters, clean.parameters, clean.type, undefined);
+          const namespaceDeclaration = namespaceDecl.update(undefined, modifiers, namespaceDecl.name, namespaceDecl.body);
           const exportDefaultDeclaration = createExportAssignment(undefined, false, namespaceDecl.name);
-          if (Node.is.kind(SourceFile, input.parent)) {
-            resultHasExternalModuleIndicator = true;
-          }
+          if (Node.is.kind(SourceFile, input.parent)) resultHasExternalModuleIndicator = true;
           resultHasScopeMarker = true;
           return [cleanDeclaration, namespaceDeclaration, exportDefaultDeclaration];
-        } else {
-          return clean;
         }
+        return clean;
       }
       case Syntax.ModuleDeclaration: {
         needsDeclare = false;
@@ -1016,22 +895,19 @@ export function transformDeclarations(context: TransformationContext) {
           needsScopeFixMarker = false;
           const statements = Nodes.visit(inner.statements, visitDeclarationStatements);
           let lateStatements = transformAndReplaceLatePaintedStatements(statements);
-          if (input.flags & NodeFlags.Ambient) {
-            needsScopeFixMarker = false;
-          }
+          if (input.flags & NodeFlags.Ambient) needsScopeFixMarker = false;
           if (!isGlobalScopeAugmentation(input) && !hasScopeMarker(lateStatements) && !resultHasScopeMarker) {
-            if (needsScopeFixMarker) {
-              lateStatements = new Nodes([...lateStatements, createEmptyExports()]);
-            } else {
+            if (needsScopeFixMarker) lateStatements = new Nodes([...lateStatements, createEmptyExports()]);
+            else {
               lateStatements = Nodes.visit(lateStatements, stripExportModifiers);
             }
           }
-          const body = updateModuleBlock(inner, lateStatements);
+          const body = inner.update(lateStatements);
           needsDeclare = previousNeedsDeclare;
           needsScopeFixMarker = oldNeedsScopeFix;
           resultHasScopeMarker = oldHasScopeFix;
           const mods = ensureModifiers(input);
-          return cleanup(updateModuleDeclaration(input, undefined, mods, Node.is.externalModuleAugmentation(input) ? rewriteModuleSpecifier(input, input.name) : input.name, body));
+          return cleanup(input.update(undefined, mods, Node.is.externalModuleAugmentation(input) ? rewriteModuleSpecifier(input, input.name) : input.name, body));
         } else {
           needsDeclare = previousNeedsDeclare;
           const mods = ensureModifiers(input);
@@ -1040,7 +916,7 @@ export function transformDeclarations(context: TransformationContext) {
           const id = '' + getOriginalNodeId(inner!);
           const body = lateStatementReplacementMap.get(id);
           lateStatementReplacementMap.delete(id);
-          return cleanup(updateModuleDeclaration(input, undefined, mods, input.name, body as ModuleBody));
+          return cleanup(input.update(undefined, mods, input.name, body as ModuleBody));
         }
       }
       case Syntax.ClassDeclaration: {
@@ -1054,18 +930,14 @@ export function transformDeclarations(context: TransformationContext) {
             flatMap(ctor.parameters, (param) => {
               if (!hasSyntacticModifier(param, ModifierFlags.ParameterPropertyModifier) || shouldStripInternal(param)) return;
               getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(param);
-              if (param.name.kind === Syntax.Identifier) {
+              if (param.name.kind === Syntax.Identifier)
                 return preserveJsDoc(PropertyDeclaration.create(undefined, ensureModifiers(param), param.name, param.questionToken, ensureType(param, param.type), ensureNoInitializer(param)), param);
-              } else {
-                return walkBindingPattern(param.name);
-              }
+              return walkBindingPattern(param.name);
               function walkBindingPattern(pattern: BindingPattern) {
                 let elems: PropertyDeclaration[] | undefined;
                 for (const elem of pattern.elements) {
                   if (Node.is.kind(OmittedExpression, elem)) continue;
-                  if (Node.is.kind(BindingPattern, elem.name)) {
-                    elems = concatenate(elems, walkBindingPattern(elem.name));
-                  }
+                  if (Node.is.kind(BindingPattern, elem.name)) elems = concatenate(elems, walkBindingPattern(elem.name));
                   elems = elems || [];
                   elems.push(PropertyDeclaration.create(undefined, ensureModifiers(param), elem.name as Identifier, undefined, ensureType(elem, undefined), undefined));
                 }
@@ -1108,10 +980,10 @@ export function transformDeclarations(context: TransformationContext) {
               );
             })
           );
-          return [statement, cleanup(updateClassDeclaration(input, undefined, modifiers, input.name, typeParameters, heritageClauses, members))!];
+          return [statement, cleanup(input.update(undefined, modifiers, input.name, typeParameters, heritageClauses, members))!];
         } else {
           const heritageClauses = transformHeritageClauses(input.heritageClauses);
-          return cleanup(updateClassDeclaration(input, undefined, modifiers, input.name, typeParameters, heritageClauses, members));
+          return cleanup(input.update(undefined, modifiers, input.name, typeParameters, heritageClauses, members));
         }
       }
       case Syntax.VariableStatement: {
@@ -1128,7 +1000,7 @@ export function transformDeclarations(context: TransformationContext) {
               mapDefined(input.members, (m) => {
                 if (shouldStripInternal(m)) return;
                 const constValue = resolver.getConstantValue(m);
-                return preserveJsDoc(updateEnumMember(m, m.name, constValue !== undefined ? createLiteral(constValue) : undefined), m);
+                return preserveJsDoc(m.update(m.name, constValue !== undefined ? createLiteral(constValue) : undefined), m);
               })
             )
           )
@@ -1137,18 +1009,10 @@ export function transformDeclarations(context: TransformationContext) {
     }
     return Debug.assertNever(input, `Unhandled top-level node in declaration emit: ${(ts as any).SyntaxKind[(input as any).kind]}`);
     function cleanup<T extends Node>(node: T | undefined): T | undefined {
-      if (isEnclosingDeclaration(input)) {
-        enclosingDeclaration = previousEnclosingDeclaration;
-      }
-      if (canProdiceDiagnostic) {
-        getSymbolAccessibilityDiagnostic = oldDiag;
-      }
-      if (input.kind === Syntax.ModuleDeclaration) {
-        needsDeclare = previousNeedsDeclare;
-      }
-      if ((node as Node) === input) {
-        return node;
-      }
+      if (isEnclosingDeclaration(input)) enclosingDeclaration = previousEnclosingDeclaration;
+      if (canProdiceDiagnostic) getSymbolAccessibilityDiagnostic = oldDiag;
+      if (input.kind === Syntax.ModuleDeclaration) needsDeclare = previousNeedsDeclare;
+      if ((node as Node) === input) return node;
       return node && setOriginalNode(preserveJsDoc(node, input), input);
     }
   }
@@ -1156,22 +1020,17 @@ export function transformDeclarations(context: TransformationContext) {
     if (!forEach(input.declarationList.declarations, getBindingNameVisible)) return;
     const nodes = Nodes.visit(input.declarationList.declarations, visitDeclarationSubtree);
     if (!length(nodes)) return;
-    return updateVariableStatement(input, new Nodes(ensureModifiers(input)), updateVariableDeclarationList(input.declarationList, nodes));
+    return input.update(new Nodes(ensureModifiers(input)), updateVariableDeclarationList(input.declarationList, nodes));
   }
   function recreateBindingPattern(d: BindingPattern): VariableDeclaration[] {
     return flatten<VariableDeclaration>(mapDefined(d.elements, (e) => recreateBindingElement(e)));
   }
   function recreateBindingElement(e: ArrayBindingElement) {
-    if (e.kind === Syntax.OmittedExpression) {
-      return;
-    }
+    if (e.kind === Syntax.OmittedExpression) return;
     if (e.name) {
       if (!getBindingNameVisible(e)) return;
-      if (Node.is.kind(BindingPattern, e.name)) {
-        return recreateBindingPattern(e.name);
-      } else {
-        return createVariableDeclaration(e.name, ensureType(e, undefined), undefined);
-      }
+      if (Node.is.kind(BindingPattern, e.name)) return recreateBindingPattern(e.name);
+      return createVariableDeclaration(e.name, ensureType(e, undefined), undefined);
     }
   }
   function checkName(node: DeclarationDiagnosticProducing) {
@@ -1185,9 +1044,7 @@ export function transformDeclarations(context: TransformationContext) {
     const decl = (node as NamedDeclaration) as LateBoundDeclaration;
     const entityName = decl.name.expression;
     checkEntityNameVisibility(entityName, enclosingDeclaration);
-    if (!suppressNewDiagnosticContexts) {
-      getSymbolAccessibilityDiagnostic = oldDiag!;
-    }
+    if (!suppressNewDiagnosticContexts) getSymbolAccessibilityDiagnostic = oldDiag!;
     errorNameNode = undefined;
   }
   function shouldStripInternal(node: Node) {
@@ -1202,9 +1059,7 @@ export function transformDeclarations(context: TransformationContext) {
   function ensureModifiers(node: Node): readonly Modifier[] | undefined {
     const currentFlags = getEffectiveModifierFlags(node);
     const newFlags = ensureModifierFlags(node);
-    if (currentFlags === newFlags) {
-      return node.modifiers;
-    }
+    if (currentFlags === newFlags) return node.modifiers;
     return createModifiersFromModifierFlags(newFlags);
   }
   function ensureModifierFlags(node: Node): ModifierFlags {
@@ -1251,9 +1106,7 @@ export function transformDeclarations(context: TransformationContext) {
   }
 }
 function isAlwaysType(node: Node) {
-  if (node.kind === Syntax.InterfaceDeclaration) {
-    return true;
-  }
+  if (node.kind === Syntax.InterfaceDeclaration) return true;
   return false;
 }
 function maskModifiers(node: Node, modifierMask?: ModifierFlags, modifierAdditions?: ModifierFlags): Modifier[] {
@@ -1261,18 +1114,12 @@ function maskModifiers(node: Node, modifierMask?: ModifierFlags, modifierAdditio
 }
 function maskModifierFlags(node: Node, modifierMask: ModifierFlags = ModifierFlags.All ^ ModifierFlags.Public, modifierAdditions: ModifierFlags = ModifierFlags.None): ModifierFlags {
   let flags = (getEffectiveModifierFlags(node) & modifierMask) | modifierAdditions;
-  if (flags & ModifierFlags.Default && !(flags & ModifierFlags.Export)) {
-    flags ^= ModifierFlags.Export;
-  }
-  if (flags & ModifierFlags.Default && flags & ModifierFlags.Ambient) {
-    flags ^= ModifierFlags.Ambient;
-  }
+  if (flags & ModifierFlags.Default && !(flags & ModifierFlags.Export)) flags ^= ModifierFlags.Export;
+  if (flags & ModifierFlags.Default && flags & ModifierFlags.Ambient) flags ^= ModifierFlags.Ambient;
   return flags;
 }
 function getTypeAnnotationFromAccessor(accessor: AccessorDeclaration): TypeNode | undefined {
-  if (accessor) {
-    return accessor.kind === Syntax.GetAccessor ? accessor.type : accessor.parameters.length > 0 ? accessor.parameters[0].type : undefined;
-  }
+  if (accessor) return accessor.kind === Syntax.GetAccessor ? accessor.type : accessor.parameters.length > 0 ? accessor.parameters[0].type : undefined;
 }
 type CanHaveLiteralInitializer = VariableDeclaration | PropertyDeclaration | PropertySignature | ParameterDeclaration;
 function canHaveLiteralInitializer(node: Node): boolean {

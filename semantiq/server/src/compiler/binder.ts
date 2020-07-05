@@ -23,9 +23,7 @@ export function getModuleInstanceState(node: ModuleDeclaration, visited?: Map<Mo
 }
 function getModuleInstanceStateCached(node: Node, visited = createMap<ModuleInstanceState | undefined>()) {
   const nodeId = '' + getNodeId(node);
-  if (visited.has(nodeId)) {
-    return visited.get(nodeId) || ModuleInstanceState.NonInstantiated;
-  }
+  if (visited.has(nodeId)) return visited.get(nodeId) || ModuleInstanceState.NonInstantiated;
   visited.set(nodeId, undefined);
   const result = getModuleInstanceStateWorker(node, visited);
   visited.set(nodeId, result);
@@ -37,15 +35,11 @@ function getModuleInstanceStateWorker(node: Node, visited: Map<ModuleInstanceSta
     case Syntax.TypeAliasDeclaration:
       return ModuleInstanceState.NonInstantiated;
     case Syntax.EnumDeclaration:
-      if (isEnumConst(node as EnumDeclaration)) {
-        return ModuleInstanceState.ConstEnumOnly;
-      }
+      if (isEnumConst(node as EnumDeclaration)) return ModuleInstanceState.ConstEnumOnly;
       break;
     case Syntax.ImportDeclaration:
     case Syntax.ImportEqualsDeclaration:
-      if (!hasSyntacticModifier(node, ModifierFlags.Export)) {
-        return ModuleInstanceState.NonInstantiated;
-      }
+      if (!hasSyntacticModifier(node, ModifierFlags.Export)) return ModuleInstanceState.NonInstantiated;
       break;
     case Syntax.ExportDeclaration:
       const exportDeclaration = node as ExportDeclaration;
@@ -56,9 +50,7 @@ function getModuleInstanceStateWorker(node: Node, visited: Map<ModuleInstanceSta
           if (specifierState > state) {
             state = specifierState;
           }
-          if (state === ModuleInstanceState.Instantiated) {
-            return state;
-          }
+          if (state === ModuleInstanceState.Instantiated) return state;
         }
         return state;
       }
@@ -85,9 +77,7 @@ function getModuleInstanceStateWorker(node: Node, visited: Map<ModuleInstanceSta
     case Syntax.ModuleDeclaration:
       return getModuleInstanceState(node as ModuleDeclaration, visited);
     case Syntax.Identifier:
-      if ((<Identifier>node).isInJSDocNamespace) {
-        return ModuleInstanceState.NonInstantiated;
-      }
+      if ((<Identifier>node).isInJSDocNamespace) return ModuleInstanceState.NonInstantiated;
   }
   return ModuleInstanceState.Instantiated;
 }
@@ -107,14 +97,10 @@ function getModuleInstanceStateForAliasTarget(specifier: ExportSpecifier, visite
           if (found === undefined || state > found) {
             found = state;
           }
-          if (found === ModuleInstanceState.Instantiated) {
-            return found;
-          }
+          if (found === ModuleInstanceState.Instantiated) return found;
         }
       }
-      if (found !== undefined) {
-        return found;
-      }
+      if (found !== undefined) return found;
     }
     p = p.parent;
   }
@@ -218,11 +204,8 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   }
   return bindSourceFile;
   function bindInStrictMode(file: SourceFile, opts: CompilerOptions): boolean {
-    if (getStrictOptionValue(opts, 'alwaysStrict') && !file.isDeclarationFile) {
-      return true;
-    } else {
-      return !!file.externalModuleIndicator;
-    }
+    if (getStrictOptionValue(opts, 'alwaysStrict') && !file.isDeclarationFile) return true;
+    else return !!file.externalModuleIndicator;
   }
   function newSymbol(flags: SymbolFlags, name: __String): Symbol {
     symbolCount++;
@@ -246,9 +229,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     }
   }
   function getDeclarationName(node: Declaration): __String | undefined {
-    if (node.kind === Syntax.ExportAssignment) {
-      return (<ExportAssignment>node).isExportEquals ? InternalSymbolName.ExportEquals : InternalSymbolName.Default;
-    }
+    if (node.kind === Syntax.ExportAssignment) return (<ExportAssignment>node).isExportEquals ? InternalSymbolName.ExportEquals : InternalSymbolName.Default;
     const name = getNameOfDeclaration(node);
     if (name) {
       if (Node.is.ambientModule(node)) {
@@ -257,18 +238,12 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       }
       if (name.kind === Syntax.ComputedPropertyName) {
         const nameExpression = name.expression;
-        if (StringLiteral.orNumericLiteralLike(nameExpression)) {
-          return syntax.get.escUnderscores(nameExpression.text);
-        }
-        if (Node.is.signedNumericLiteral(nameExpression)) {
-          return (Token.toString(nameExpression.operator) + nameExpression.operand.text) as __String;
-        }
+        if (StringLiteral.orNumericLiteralLike(nameExpression)) return syntax.get.escUnderscores(nameExpression.text);
+        if (Node.is.signedNumericLiteral(nameExpression)) return (Token.toString(nameExpression.operator) + nameExpression.operand.text) as __String;
         assert(isWellKnownSymbolSyntactically(nameExpression));
         return getPropertyNameForKnownSymbolName(idText((<PropertyAccessExpression>nameExpression).name));
       }
-      if (isWellKnownSymbolSyntactically(name)) {
-        return getPropertyNameForKnownSymbolName(idText(name.name));
-      }
+      if (isWellKnownSymbolSyntactically(name)) return getPropertyNameForKnownSymbolName(idText(name.name));
       if (Node.is.kind(PrivateIdentifier, name)) {
         const containingClass = Node.get.containingClass(node);
         if (!containingClass) {
@@ -296,9 +271,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       case Syntax.SourceFile:
         return InternalSymbolName.ExportEquals;
       case Syntax.BinaryExpression:
-        if (getAssignmentDeclarationKind(node as BinaryExpression) === AssignmentDeclarationKind.ModuleExports) {
-          return InternalSymbolName.ExportEquals;
-        }
+        if (getAssignmentDeclarationKind(node as BinaryExpression) === AssignmentDeclarationKind.ModuleExports) return InternalSymbolName.ExportEquals;
         fail('Unknown binary declaration kind');
         break;
       case Syntax.JSDocFunctionType:
@@ -390,33 +363,27 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     addDeclarationToSymbol(symbol, node, includes);
     if (symbol.parent) {
       assert(symbol.parent === parent, 'Existing symbol parent should match new one');
-    } else {
-      symbol.parent = parent;
-    }
+    } else symbol.parent = parent;
     return symbol;
   }
   function declareModuleMember(node: Declaration, symbolFlags: SymbolFlags, symbolExcludes: SymbolFlags): Symbol {
     const hasExportModifier = getCombinedModifierFlags(node) & ModifierFlags.Export;
     if (symbolFlags & SymbolFlags.Alias) {
-      if (node.kind === Syntax.ExportSpecifier || (node.kind === Syntax.ImportEqualsDeclaration && hasExportModifier)) {
+      if (node.kind === Syntax.ExportSpecifier || (node.kind === Syntax.ImportEqualsDeclaration && hasExportModifier))
         return declareSymbol(container.symbol.exports!, container.symbol, node, symbolFlags, symbolExcludes);
-      } else {
-        return declareSymbol(container.locals!, undefined, node, symbolFlags, symbolExcludes);
-      }
+      return declareSymbol(container.locals!, undefined, node, symbolFlags, symbolExcludes);
     } else {
       if (Node.isJSDoc.typeAlias(node)) assert(isInJSFile(node));
       if ((!Node.is.ambientModule(node) && (hasExportModifier || container.flags & NodeFlags.ExportContext)) || Node.isJSDoc.typeAlias(node)) {
-        if (!container.locals || (hasSyntacticModifier(node, ModifierFlags.Default) && !getDeclarationName(node))) {
+        if (!container.locals || (hasSyntacticModifier(node, ModifierFlags.Default) && !getDeclarationName(node)))
           return declareSymbol(container.symbol.exports!, container.symbol, node, symbolFlags, symbolExcludes);
-        }
         const exportKind = symbolFlags & SymbolFlags.Value ? SymbolFlags.ExportValue : 0;
         const local = declareSymbol(container.locals, undefined, node, exportKind, symbolExcludes);
         local.exportSymbol = declareSymbol(container.symbol.exports!, container.symbol, node, symbolFlags, symbolExcludes);
         node.localSymbol = local;
         return local;
-      } else {
-        return declareSymbol(container.locals!, undefined, node, symbolFlags, symbolExcludes);
       }
+      return declareSymbol(container.locals!, undefined, node, symbolFlags, symbolExcludes);
     }
   }
   function bindContainer(node: Node, containerFlags: ContainerFlags) {
@@ -674,14 +641,10 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   function hasNarrowableArgument(expr: CallExpression) {
     if (expr.arguments) {
       for (const argument of expr.arguments) {
-        if (containsNarrowableReference(argument)) {
-          return true;
-        }
+        if (containsNarrowableReference(argument)) return true;
       }
     }
-    if (expr.expression.kind === Syntax.PropertyAccessExpression && containsNarrowableReference((<PropertyAccessExpression>expr.expression).expression)) {
-      return true;
-    }
+    if (expr.expression.kind === Syntax.PropertyAccessExpression && containsNarrowableReference((<PropertyAccessExpression>expr.expression).expression)) return true;
     return false;
   }
   function isNarrowingTypeofOperands(expr1: Expression, expr2: Expression) {
@@ -741,12 +704,8 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     }
   }
   function createFlowCondition(flags: FlowFlags, antecedent: FlowNode, expression: Expression | undefined): FlowNode {
-    if (antecedent.flags & FlowFlags.Unreachable) {
-      return antecedent;
-    }
-    if (!expression) {
-      return flags & FlowFlags.TrueCondition ? antecedent : unreachableFlow;
-    }
+    if (antecedent.flags & FlowFlags.Unreachable) return antecedent;
+    if (!expression) return flags & FlowFlags.TrueCondition ? antecedent : unreachableFlow;
     if (
       ((expression.kind === Syntax.TrueKeyword && flags & FlowFlags.FalseCondition) || (expression.kind === Syntax.FalseKeyword && flags & FlowFlags.TrueCondition)) &&
       !Node.is.expressionOfOptionalChainRoot(expression) &&
@@ -754,9 +713,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     ) {
       return unreachableFlow;
     }
-    if (!isNarrowingExpression(expression)) {
-      return antecedent;
-    }
+    if (!isNarrowingExpression(expression)) return antecedent;
     setFlowNodeReferenced(antecedent);
     return initFlowNode({ flags, antecedent, node: expression });
   }
@@ -778,12 +735,8 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   }
   function finishFlowLabel(flow: FlowLabel): FlowNode {
     const antecedents = flow.antecedents;
-    if (!antecedents) {
-      return unreachableFlow;
-    }
-    if (antecedents.length === 1) {
-      return antecedents[0];
-    }
+    if (!antecedents) return unreachableFlow;
+    if (antecedents.length === 1) return antecedents[0];
     return flow;
   }
   function isStatementCondition(node: Node) {
@@ -936,9 +889,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   }
   function findActiveLabel(name: __String) {
     for (let label = activeLabelList; label; label = label.next) {
-      if (label.name === name) {
-        return label;
-      }
+      if (label.name === name) return label;
     }
     return;
   }
@@ -1419,9 +1370,8 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       case Syntax.SourceFile:
         return ContainerFlags.IsContainer | ContainerFlags.IsControlFlowContainer | ContainerFlags.HasLocals;
       case Syntax.MethodDeclaration:
-        if (Node.is.objectLiteralOrClassExpressionMethod(node)) {
+        if (Node.is.objectLiteralOrClassExpressionMethod(node))
           return ContainerFlags.IsContainer | ContainerFlags.IsControlFlowContainer | ContainerFlags.HasLocals | ContainerFlags.IsFunctionLike | ContainerFlags.IsObjectLiteralOrClassExpressionMethod;
-        }
       case Syntax.Constructor:
       case Syntax.FunctionDeclaration:
       case Syntax.MethodSignature:
@@ -1706,12 +1656,8 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     }
   }
   function getStrictModeIdentifierMessage(node: Node) {
-    if (Node.get.containingClass(node)) {
-      return Diagnostics.Identifier_expected_0_is_a_reserved_word_in_strict_mode_Class_definitions_are_automatically_in_strict_mode;
-    }
-    if (file.externalModuleIndicator) {
-      return Diagnostics.Identifier_expected_0_is_a_reserved_word_in_strict_mode_Modules_are_automatically_in_strict_mode;
-    }
+    if (Node.get.containingClass(node)) return Diagnostics.Identifier_expected_0_is_a_reserved_word_in_strict_mode_Class_definitions_are_automatically_in_strict_mode;
+    if (file.externalModuleIndicator) return Diagnostics.Identifier_expected_0_is_a_reserved_word_in_strict_mode_Modules_are_automatically_in_strict_mode;
     return Diagnostics.Identifier_expected_0_is_a_reserved_word_in_strict_mode;
   }
   function checkPrivateIdentifier(node: PrivateIdentifier) {
@@ -1750,12 +1696,8 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     }
   }
   function getStrictModeEvalOrArgumentsMessage(node: Node) {
-    if (Node.get.containingClass(node)) {
-      return Diagnostics.Invalid_use_of_0_Class_definitions_are_automatically_in_strict_mode;
-    }
-    if (file.externalModuleIndicator) {
-      return Diagnostics.Invalid_use_of_0_Modules_are_automatically_in_strict_mode;
-    }
+    if (Node.get.containingClass(node)) return Diagnostics.Invalid_use_of_0_Class_definitions_are_automatically_in_strict_mode;
+    if (file.externalModuleIndicator) return Diagnostics.Invalid_use_of_0_Modules_are_automatically_in_strict_mode;
     return Diagnostics.Invalid_use_of_0_in_strict_mode;
   }
   function checkStrictModeFunctionName(node: FunctionLikeDeclaration) {
@@ -1764,12 +1706,9 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     }
   }
   function getStrictModeBlockScopeFunctionDeclarationMessage(node: Node) {
-    if (Node.get.containingClass(node)) {
+    if (Node.get.containingClass(node))
       return Diagnostics.Function_declarations_are_not_allowed_inside_blocks_in_strict_mode_when_targeting_ES3_or_ES5_Class_definitions_are_automatically_in_strict_mode;
-    }
-    if (file.externalModuleIndicator) {
-      return Diagnostics.Function_declarations_are_not_allowed_inside_blocks_in_strict_mode_when_targeting_ES3_or_ES5_Modules_are_automatically_in_strict_mode;
-    }
+    if (file.externalModuleIndicator) return Diagnostics.Function_declarations_are_not_allowed_inside_blocks_in_strict_mode_when_targeting_ES3_or_ES5_Modules_are_automatically_in_strict_mode;
     return Diagnostics.Function_declarations_are_not_allowed_inside_blocks_in_strict_mode_when_targeting_ES3_or_ES5;
   }
   function checkStrictModeFunctionDeclaration(node: FunctionDeclaration) {
@@ -2072,9 +2011,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       case Syntax.ModuleBlock:
         return updateStrictModeStatementList((<Block | ModuleBlock>node).statements);
       case Syntax.JSDocParameterTag:
-        if (node.parent.kind === Syntax.JSDocSignature) {
-          return bindParameter(node as JSDocParameterTag);
-        }
+        if (node.parent.kind === Syntax.JSDocSignature) return bindParameter(node as JSDocParameterTag);
         if (node.parent.kind !== Syntax.JSDocTypeLiteral) {
           break;
         }
@@ -2154,9 +2091,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     }
   }
   function setCommonJsModuleIndicator(node: Node) {
-    if (file.externalModuleIndicator) {
-      return false;
-    }
+    if (file.externalModuleIndicator) return false;
     if (!file.commonJsModuleIndicator) {
       file.commonJsModuleIndicator = node;
       bindSourceFileAsExternalModule();
@@ -2402,13 +2337,9 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     bindPotentiallyNewExpandoMemberToNamespace(propertyAccess, namespaceSymbol, isPrototypeProperty);
   }
   function isExpandoSymbol(symbol: Symbol): boolean {
-    if (symbol.flags & (SymbolFlags.Function | SymbolFlags.Class | SymbolFlags.NamespaceModule)) {
-      return true;
-    }
+    if (symbol.flags & (SymbolFlags.Function | SymbolFlags.Class | SymbolFlags.NamespaceModule)) return true;
     const node = symbol.valueDeclaration;
-    if (node && Node.is.kind(CallExpression, node)) {
-      return !!getAssignedExpandoInitializer(node);
-    }
+    if (node && Node.is.kind(CallExpression, node)) return !!getAssignedExpandoInitializer(node);
     let init = !node
       ? undefined
       : Node.is.kind(VariableDeclaration, node)
@@ -2435,9 +2366,8 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     return expr.parent;
   }
   function lookupSymbolForPropertyAccess(node: BindableStaticNameExpression, lookupContainer: Node = container): Symbol | undefined {
-    if (Node.is.kind(Identifier, node)) {
-      return lookupSymbolForNameWorker(lookupContainer, node.escapedText);
-    } else {
+    if (Node.is.kind(Identifier, node)) return lookupSymbolForNameWorker(lookupContainer, node.escapedText);
+    else {
       const symbol = lookupSymbolForPropertyAccess(node.expression);
       return symbol && symbol.exports && symbol.exports.get(getElementOrPropertyAccessName(node));
     }
@@ -2447,11 +2377,9 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     parent: Symbol | undefined,
     action: (e: Declaration, symbol: Symbol | undefined, parent: Symbol | undefined) => Symbol | undefined
   ): Symbol | undefined {
-    if (isExportsOrModuleExportsOrAlias(file, e)) {
-      return file.symbol;
-    } else if (Node.is.kind(Identifier, e)) {
-      return action(e, lookupSymbolForPropertyAccess(e), parent);
-    } else {
+    if (isExportsOrModuleExportsOrAlias(file, e)) return file.symbol;
+    if (Node.is.kind(Identifier, e)) return action(e, lookupSymbolForPropertyAccess(e), parent);
+    else {
       const s = forEachIdentifierInEntityName(e.expression, parent, action);
       const name = getNameOrArgument(e);
       if (Node.is.kind(PrivateIdentifier, name)) {
@@ -2599,9 +2527,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     return instanceState === ModuleInstanceState.Instantiated || (instanceState === ModuleInstanceState.ConstEnumOnly && !!options.preserveConstEnums);
   }
   function checkUnreachable(node: Node): boolean {
-    if (!(currentFlow.flags & FlowFlags.Unreachable)) {
-      return false;
-    }
+    if (!(currentFlow.flags & FlowFlags.Unreachable)) return false;
     if (currentFlow === unreachableFlow) {
       const reportError =
         (Node.is.statementButNotDeclaration(node) && node.kind !== Syntax.EmptyStatement) ||
@@ -2657,9 +2583,8 @@ export function isExportsOrModuleExportsOrAlias(sourceFile: SourceFile, node: Ex
   while (q.length && i < 100) {
     i++;
     node = q.shift()!;
-    if (Node.is.exportsIdentifier(node) || Node.is.moduleExportsAccessExpression(node)) {
-      return true;
-    } else if (Node.is.kind(Identifier, node)) {
+    if (Node.is.exportsIdentifier(node) || Node.is.moduleExportsAccessExpression(node)) return true;
+    else if (Node.is.kind(Identifier, node)) {
       const symbol = lookupSymbolForNameWorker(sourceFile, node.escapedText);
       if (!!symbol && !!symbol.valueDeclaration && Node.is.kind(VariableDeclaration, symbol.valueDeclaration) && !!symbol.valueDeclaration.initializer) {
         const init = symbol.valueDeclaration.initializer;
@@ -2675,12 +2600,8 @@ export function isExportsOrModuleExportsOrAlias(sourceFile: SourceFile, node: Ex
 }
 function lookupSymbolForNameWorker(container: Node, name: __String): Symbol | undefined {
   const local = container.locals && container.locals.get(name);
-  if (local) {
-    return local.exportSymbol || local;
-  }
-  if (Node.is.kind(SourceFile, container) && container.jsGlobalAugmentations && container.jsGlobalAugmentations.has(name)) {
-    return container.jsGlobalAugmentations.get(name);
-  }
+  if (local) return local.exportSymbol || local;
+  if (Node.is.kind(SourceFile, container) && container.jsGlobalAugmentations && container.jsGlobalAugmentations.has(name)) return container.jsGlobalAugmentations.get(name);
   return container.symbol && container.symbol.exports && container.symbol.exports.get(name);
 }
 export function computeTransformFlagsForNode(node: Node, subtreeFlags: TransformFlags): TransformFlags {
@@ -3283,9 +3204,7 @@ function propagatePropertyNameFlags(node: PropertyName, transformFlags: Transfor
   return transformFlags | (node.transformFlags & TransformFlags.PropertyNamePropagatingFlags);
 }
 export function getTransformFlagsSubtreeExclusions(kind: Syntax) {
-  if (kind >= Syntax.FirstTypeNode && kind <= Syntax.LastTypeNode) {
-    return TransformFlags.TypeExcludes;
-  }
+  if (kind >= Syntax.FirstTypeNode && kind <= Syntax.LastTypeNode) return TransformFlags.TypeExcludes;
   switch (kind) {
     case Syntax.CallExpression:
     case Syntax.NewExpression:

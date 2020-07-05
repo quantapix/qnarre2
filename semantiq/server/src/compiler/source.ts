@@ -233,9 +233,8 @@ export function tryGetSourceMappingURL(lineInfo: LineInfo) {
   for (let index = lineInfo.getLineCount() - 1; index >= 0; index--) {
     const line = lineInfo.getLineText(index);
     const comment = sourceMapCommentRegExp.exec(line);
-    if (comment) {
-      return comment[1];
-    } else if (!line.match(whitespaceOrMapCommentRegExp)) {
+    if (comment) return comment[1];
+    else if (!line.match(whitespaceOrMapCommentRegExp)) {
       break;
     }
   }
@@ -260,9 +259,7 @@ export function isRawSourceMap(x: any): x is RawSourceMap {
 export function tryParseRawSourceMap(text: string) {
   try {
     const parsed = JSON.parse(text);
-    if (isRawSourceMap(parsed)) {
-      return parsed;
-    }
+    if (isRawSourceMap(parsed)) return parsed;
   } catch {}
   return;
 }
@@ -567,9 +564,7 @@ export function createDocumentPositionMapper(host: DocumentPositionMapperHost, m
       targetIndex = ~targetIndex;
     }
     const mapping = sourceMappings[targetIndex];
-    if (mapping === undefined || mapping.sourceIndex !== sourceIndex) {
-      return loc;
-    }
+    if (mapping === undefined || mapping.sourceIndex !== sourceIndex) return loc;
     return { fileName: generatedAbsoluteFilePath, pos: mapping.generatedPosition };
   }
   function getSourcePosition(loc: DocumentPosition): DocumentPosition {
@@ -580,9 +575,7 @@ export function createDocumentPositionMapper(host: DocumentPositionMapperHost, m
       targetIndex = ~targetIndex;
     }
     const mapping = generatedMappings[targetIndex];
-    if (mapping === undefined || !isSourceMappedPosition(mapping)) {
-      return loc;
-    }
+    if (mapping === undefined || !isSourceMappedPosition(mapping)) return loc;
     return { fileName: sourceFileAbsolutePaths[mapping.sourceIndex], pos: mapping.sourcePosition };
   }
 }

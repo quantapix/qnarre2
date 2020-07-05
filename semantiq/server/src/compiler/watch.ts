@@ -367,9 +367,7 @@ export function createWatchProgram<T extends BuilderProgram>(
   }
   function fileExists(fileName: string) {
     const path = toPath(fileName);
-    if (isFileMissingOnHost(sourceFilesCache.get(path))) {
-      return false;
-    }
+    if (isFileMissingOnHost(sourceFilesCache.get(path))) return false;
     return directoryStructureHost.fileExists(fileName);
   }
   function getVersionedSourceFileByPath(fileName: string, path: Path, languageVersion: ScriptTarget, onError?: (message: string) => void, shouldCreateNewSourceFile?: boolean): SourceFile | undefined {
@@ -587,9 +585,7 @@ export function createDiagnosticReporter(system: System, pretty?: boolean): Diag
           getNewLine: () => system.newLine,
           getCanonicalFileName: createGetCanonicalFileName(system.useCaseSensitiveFileNames),
         };
-  if (!pretty) {
-    return (diagnostic) => system.write(formatDiagnostic(diagnostic, host));
-  }
+  if (!pretty) return (diagnostic) => system.write(formatDiagnostic(diagnostic, host));
   const diagnostics: Diagnostic[] = new Array(1);
   return (diagnostic) => {
     diagnostics[0] = diagnostic;
@@ -727,11 +723,8 @@ export function emitFilesAndReportErrorsAndGetExitStatus(
   customTransformers?: CustomTransformers
 ) {
   const { emitResult, diagnostics } = emitFilesAndReportErrors(program, reportDiagnostic, writeFileName, reportSummary, writeFile, cancellationToken, emitOnlyDtsFiles, customTransformers);
-  if (emitResult.emitSkipped && diagnostics.length > 0) {
-    return ExitStatus.DiagnosticsPresent_OutputsSkipped;
-  } else if (diagnostics.length > 0) {
-    return ExitStatus.DiagnosticsPresent_OutputsGenerated;
-  }
+  if (emitResult.emitSkipped && diagnostics.length > 0) return ExitStatus.DiagnosticsPresent_OutputsSkipped;
+  if (diagnostics.length > 0) return ExitStatus.DiagnosticsPresent_OutputsGenerated;
   return ExitStatus.Success;
 }
 export const noopFileWatcher: FileWatcher = { close: noop };
@@ -1030,9 +1023,7 @@ export function createCachedDirectoryStructureHost(host: DirectoryStructureHost,
   function tryReadDirectory(rootDir: string, rootDirPath: Path): MutableFileSystemEntries | undefined {
     rootDirPath = ensureTrailingDirectorySeparator(rootDirPath);
     const cachedResult = getCachedFileSystemEntries(rootDirPath);
-    if (cachedResult) {
-      return cachedResult;
-    }
+    if (cachedResult) return cachedResult;
     try {
       return createCachedFileSystemEntries(rootDir, rootDirPath);
     } catch (_e) {
@@ -1048,9 +1039,7 @@ export function createCachedDirectoryStructureHost(host: DirectoryStructureHost,
   }
   function updateFileSystemEntry(entries: string[], baseName: string, isValid: boolean) {
     if (hasEntry(entries, baseName)) {
-      if (!isValid) {
-        return filterMutate(entries, (entry) => !fileNameEqual(entry, baseName));
-      }
+      if (!isValid) return filterMutate(entries, (entry) => !fileNameEqual(entry, baseName));
     } else if (isValid) {
       return entries.push(baseName);
     }
@@ -1084,23 +1073,17 @@ export function createCachedDirectoryStructureHost(host: DirectoryStructureHost,
   function getDirectories(rootDir: string): string[] {
     const rootDirPath = toPath(rootDir);
     const result = tryReadDirectory(rootDir, rootDirPath);
-    if (result) {
-      return result.directories.slice();
-    }
+    if (result) return result.directories.slice();
     return host.getDirectories!(rootDir);
   }
   function readDirectory(rootDir: string, extensions?: readonly string[], excludes?: readonly string[], includes?: readonly string[], depth?: number): string[] {
     const rootDirPath = toPath(rootDir);
     const result = tryReadDirectory(rootDir, rootDirPath);
-    if (result) {
-      return matchFiles(rootDir, extensions, excludes, includes, useCaseSensitiveFileNames, currentDirectory, depth, getFileSystemEntries, realpath);
-    }
+    if (result) return matchFiles(rootDir, extensions, excludes, includes, useCaseSensitiveFileNames, currentDirectory, depth, getFileSystemEntries, realpath);
     return host.readDirectory!(rootDir, extensions, excludes, includes, depth);
     function getFileSystemEntries(dir: string): FileSystemEntries {
       const path = toPath(dir);
-      if (path === rootDirPath) {
-        return result!;
-      }
+      if (path === rootDirPath) return result!;
       return tryReadDirectory(dir, path) || emptyFileSystemEntries;
     }
   }
@@ -1191,9 +1174,7 @@ export function updateWatchingWildcardDirectories(
   }
 }
 export function isEmittedFileOfProgram(program: Program | undefined, file: string) {
-  if (!program) {
-    return false;
-  }
+  if (!program) return false;
   return program.isEmittedFile(file);
 }
 export enum WatchLogLevel {

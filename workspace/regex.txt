@@ -5,3 +5,7 @@
 //.*$
 
 \b([A-Z]\w+)\.update\(   -- $2.update(
+
+^\s*if \((.+)\) \{\n\s+(.*;)\n\s*\} --   if ($1) $2
+
+^\s*else if \((.+)\) \{\n\s+(return .*;)\n\s*\}  --   else if ($1) $2

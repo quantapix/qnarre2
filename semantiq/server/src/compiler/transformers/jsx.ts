@@ -10,20 +10,15 @@ export function transformJsx(context: TransformationContext) {
   let currentSourceFile: SourceFile;
   return chainBundle(transformSourceFile);
   function transformSourceFile(node: SourceFile) {
-    if (node.isDeclarationFile) {
-      return node;
-    }
+    if (node.isDeclarationFile) return node;
     currentSourceFile = node;
     const visited = visitEachChild(node, visitor, context);
     addEmitHelpers(visited, context.readEmitHelpers());
     return visited;
   }
   function visitor(node: Node): VisitResult<Node> {
-    if (node.transformFlags & TransformFlags.ContainsJsx) {
-      return visitorWorker(node);
-    } else {
-      return node;
-    }
+    if (node.transformFlags & TransformFlags.ContainsJsx) return visitorWorker(node);
+    return node;
   }
   function visitorWorker(node: Node): VisitResult<Node> {
     switch (node.kind) {
@@ -120,20 +115,16 @@ export function transformJsx(context: TransformationContext) {
     return createPropertyAssignment(name, expression);
   }
   function transformJsxAttributeInitializer(node: StringLiteral | JsxExpression | undefined): Expression {
-    if (node === undefined) {
-      return createTrue();
-    } else if (node.kind === Syntax.StringLiteral) {
+    if (node === undefined) return createTrue();
+    else if (node.kind === Syntax.StringLiteral) {
       const literal = createLiteral(tryDecodeEntities(node.text) || node.text);
       literal.singleQuote = node.singleQuote !== undefined ? node.singleQuote : !isStringDoubleQuoted(node, currentSourceFile);
       return setRange(literal, node);
     } else if (node.kind === Syntax.JsxExpression) {
-      if (node.expression === undefined) {
-        return createTrue();
-      }
+      if (node.expression === undefined) return createTrue();
       return visitJsxExpression(node);
-    } else {
-      return Debug.failBadSyntax(node);
     }
+    return Debug.failBadSyntax(node);
   }
   function visitJsxText(node: JsxText): StringLiteral | undefined {
     const fixed = fixupWhitespaceAndDecodeEntities(node.text);
@@ -165,14 +156,10 @@ export function transformJsx(context: TransformationContext) {
   }
   function decodeEntities(text: string): string {
     return text.replace(/&((#((\d+)|x([\da-fA-F]+)))|(\w+));/g, (match, _all, _number, _digits, decimal, hex, word) => {
-      if (decimal) {
-        return String.fromCodePoint(parseInt(decimal, 10));
-      } else if (hex) {
-        return String.fromCodePoint(parseInt(hex, 16));
-      } else {
-        const ch = entities.get(word);
-        return ch ? String.fromCodePoint(ch) : match;
-      }
+      if (decimal) return String.fromCodePoint(parseInt(decimal, 10));
+      if (hex) return String.fromCodePoint(parseInt(hex, 16));
+      const ch = entities.get(word);
+      return ch ? String.fromCodePoint(ch) : match;
     });
   }
   function tryDecodeEntities(text: string): string | undefined {
@@ -180,25 +167,18 @@ export function transformJsx(context: TransformationContext) {
     return decoded === text ? undefined : decoded;
   }
   function getTagName(node: JsxElement | JsxOpeningLikeElement): Expression {
-    if (node.kind === Syntax.JsxElement) {
-      return getTagName(node.openingElement);
-    } else {
+    if (node.kind === Syntax.JsxElement) return getTagName(node.openingElement);
+    else {
       const name = node.tagName;
-      if (Node.is.kind(Identifier, name) && isIntrinsicJsxName(name.escapedText)) {
-        return createLiteral(idText(name));
-      } else {
-        return createExpressionFromEntityName(name);
-      }
+      if (Node.is.kind(Identifier, name) && isIntrinsicJsxName(name.escapedText)) return createLiteral(idText(name));
+      return createExpressionFromEntityName(name);
     }
   }
   function getAttributeName(node: JsxAttribute): StringLiteral | Identifier {
     const name = node.name;
     const text = idText(name);
-    if (/^[A-Za-z_]\w*$/.test(text)) {
-      return name;
-    } else {
-      return createLiteral(text);
-    }
+    if (/^[A-Za-z_]\w*$/.test(text)) return name;
+    return createLiteral(text);
   }
   function visitJsxExpression(node: JsxExpression) {
     return visitNode(node.expression, visitor, isExpression);

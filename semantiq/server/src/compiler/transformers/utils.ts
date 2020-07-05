@@ -39,13 +39,9 @@ export function getExportNeedsImportStarHelper(node: ExportDeclaration): boolean
   return !!getNamespaceDeclarationNode(node);
 }
 export function getImportNeedsImportStarHelper(node: ImportDeclaration): boolean {
-  if (!!getNamespaceDeclarationNode(node)) {
-    return true;
-  }
+  if (!!getNamespaceDeclarationNode(node)) return true;
   const bindings = node.importClause && node.importClause.namedBindings;
-  if (!bindings) {
-    return false;
-  }
+  if (!bindings) return false;
   if (!Node.is.kind(NamedImports, bindings)) return false;
   let defaultRefCount = 0;
   for (const binding of bindings.elements) {
@@ -239,9 +235,7 @@ export function addPrologueDirectivesAndInitialSuperCall(ctor: ConstructorDeclar
   if (ctor.body) {
     const statements = ctor.body.statements;
     const index = addPrologue(result, statements, false, visitor);
-    if (index === statements.length) {
-      return index;
-    }
+    if (index === statements.length) return index;
     const superIndex = findIndex(statements, (s) => Node.is.kind(ExpressionStatement, s) && Node.is.superCall(s.expression), index);
     if (superIndex > -1) {
       for (let i = index; i <= superIndex; i++) {

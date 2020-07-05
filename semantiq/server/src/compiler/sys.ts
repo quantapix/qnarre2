@@ -938,9 +938,7 @@ export let sys: System = (() => {
       getFileSize(path) {
         try {
           const stat = _fs.statSync(path);
-          if (stat.isFile()) {
-            return stat.size;
-          }
+          if (stat.isFile()) return stat.size;
         } catch {}
         return 0;
       },
@@ -1048,9 +1046,7 @@ export let sys: System = (() => {
       return Buffer.from && (Buffer.from as Function) !== Int8Array.from ? Buffer.from(input, encoding) : new Buffer(input, encoding);
     }
     function isFileSystemCaseSensitive(): boolean {
-      if (platform === 'win32' || platform === 'win64') {
-        return false;
-      }
+      if (platform === 'win32' || platform === 'win64') return false;
       return !fileExists(swapCase(__filename));
     }
     function swapCase(s: string): string {
@@ -1171,12 +1167,8 @@ export let sys: System = (() => {
         }
         return buffer.toString('utf16le', 2);
       }
-      if (len >= 2 && buffer[0] === 0xff && buffer[1] === 0xfe) {
-        return buffer.toString('utf16le', 2);
-      }
-      if (len >= 3 && buffer[0] === 0xef && buffer[1] === 0xbb && buffer[2] === 0xbf) {
-        return buffer.toString('utf8', 3);
-      }
+      if (len >= 2 && buffer[0] === 0xff && buffer[1] === 0xfe) return buffer.toString('utf16le', 2);
+      if (len >= 3 && buffer[0] === 0xef && buffer[1] === 0xbb && buffer[2] === 0xbf) return buffer.toString('utf8', 3);
       return buffer.toString('utf8');
     }
     function readFile(fileName: string, _encoding?: string): string | undefined {

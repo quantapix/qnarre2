@@ -59,37 +59,25 @@ interface DirectoryOfFailedLookupWatch {
   nonRecursive?: boolean;
 }
 export function removeIgnoredPath(path: Path): Path | undefined {
-  if (endsWith(path, '/node_modules/.staging')) {
-    return removeSuffix(path, '/.staging') as Path;
-  }
+  if (endsWith(path, '/node_modules/.staging')) return removeSuffix(path, '/.staging') as Path;
   return some(ignoredPaths, (searchPath) => stringContains(path, searchPath)) ? undefined : path;
 }
 export function canWatchDirectory(dirPath: Path) {
   const rootLength = getRootLength(dirPath);
-  if (dirPath.length === rootLength) {
-    return false;
-  }
+  if (dirPath.length === rootLength) return false;
   let nextDirectorySeparator = dirPath.indexOf(dirSeparator, rootLength);
-  if (nextDirectorySeparator === -1) {
-    return false;
-  }
+  if (nextDirectorySeparator === -1) return false;
   let pathPartForUserCheck = dirPath.substring(rootLength, nextDirectorySeparator + 1);
   const isNonDirectorySeparatorRoot = rootLength > 1 || dirPath.charCodeAt(0) !== Codes.slash;
   if (isNonDirectorySeparatorRoot && dirPath.search(/[a-zA-Z]:/) !== 0 && pathPartForUserCheck.search(/[a-zA-z]\$\//)) {
     nextDirectorySeparator = dirPath.indexOf(dirSeparator, nextDirectorySeparator + 1);
-    if (nextDirectorySeparator === -1) {
-      return false;
-    }
+    if (nextDirectorySeparator === -1) return false;
     pathPartForUserCheck = dirPath.substring(rootLength + pathPartForUserCheck.length, nextDirectorySeparator + 1);
   }
-  if (isNonDirectorySeparatorRoot && pathPartForUserCheck.search(/users\//)) {
-    return true;
-  }
+  if (isNonDirectorySeparatorRoot && pathPartForUserCheck.search(/users\//)) return true;
   for (let searchIndex = nextDirectorySeparator + 1, searchLevels = 2; searchLevels > 0; searchLevels--) {
     searchIndex = dirPath.indexOf(dirSeparator, searchIndex) + 1;
-    if (searchIndex === 0) {
-      return false;
-    }
+    if (searchIndex === 0) return false;
   }
   return true;
 }
@@ -143,9 +131,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     return resolution.resolvedTypeReferenceDirective;
   }
   function isInDirectoryPath(dir: Path | undefined, file: Path) {
-    if (dir === undefined || file.length <= dir.length) {
-      return false;
-    }
+    if (dir === undefined || file.length <= dir.length) return false;
     return startsWith(file, dir) && file[dir.length] === dirSeparator;
   }
   function clear() {
@@ -168,9 +154,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     return collected;
   }
   function isFileWithInvalidatedNonRelativeUnresolvedImports(path: Path): boolean {
-    if (!filesWithInvalidatedNonRelativeUnresolvedImports) {
-      return false;
-    }
+    if (!filesWithInvalidatedNonRelativeUnresolvedImports) return false;
     const value = filesWithInvalidatedNonRelativeUnresolvedImports.get(path);
     return !!value && !!value.length;
   }
@@ -208,9 +192,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     redirectedReference?: ResolvedProjectReference
   ): CachedResolvedModuleWithFailedLookupLocations {
     const primaryResult = qnr.resolveModuleName(moduleName, containingFile, compilerOptions, host, moduleResolutionCache, redirectedReference);
-    if (!resolutionHost.getGlobalCache) {
-      return primaryResult;
-    }
+    if (!resolutionHost.getGlobalCache) return primaryResult;
     const globalCache = resolutionHost.getGlobalCache();
     if (globalCache !== undefined && !qp_isExternalModuleNameRelative(moduleName) && !(primaryResult.resolvedModule && extensionIsTS(primaryResult.resolvedModule.extension))) {
       const { resolvedModule, failedLookupLocations } = loadModuleFromGlobalCache(
@@ -306,20 +288,12 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     });
     return resolvedModules;
     function resolutionIsEqualTo(oldResolution: T | undefined, newResolution: T | undefined): boolean {
-      if (oldResolution === newResolution) {
-        return true;
-      }
-      if (!oldResolution || !newResolution) {
-        return false;
-      }
+      if (oldResolution === newResolution) return true;
+      if (!oldResolution || !newResolution) return false;
       const oldResult = getResolutionWithResolvedFileName(oldResolution);
       const newResult = getResolutionWithResolvedFileName(newResolution);
-      if (oldResult === newResult) {
-        return true;
-      }
-      if (!oldResult || !newResult) {
-        return false;
-      }
+      if (oldResult === newResult) return true;
+      if (!oldResult || !newResult) return false;
       return oldResult.resolvedFileName === newResult.resolvedFileName;
     }
   }
@@ -382,9 +356,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
       dir = getDirectoryPath(dir);
       dirPath = getDirectoryPath(dirPath);
     }
-    if (isNodeModulesDirectory(dirPath)) {
-      return canWatchDirectory(getDirectoryPath(dirPath)) ? { dir, dirPath } : undefined;
-    }
+    if (isNodeModulesDirectory(dirPath)) return canWatchDirectory(getDirectoryPath(dirPath)) ? { dir, dirPath } : undefined;
     let nonRecursive = true;
     let subDirectoryPath: Path | undefined, subDirectory: string | undefined;
     if (rootPath !== undefined) {
@@ -590,9 +562,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
       const updatedPath = removeIgnoredPath(fileOrDirectoryPath);
       if (!updatedPath) return false;
       fileOrDirectoryPath = updatedPath;
-      if (resolutionHost.fileIsOpen(fileOrDirectoryPath)) {
-        return false;
-      }
+      if (resolutionHost.fileIsOpen(fileOrDirectoryPath)) return false;
       const dirOfFileOrDirectory = getDirectoryPath(fileOrDirectoryPath);
       if (
         isNodeModulesAtTypesDirectory(fileOrDirectoryPath) ||
@@ -605,12 +575,8 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
           return locationPath === fileOrDirectoryPath || startsWith(resolutionHost.toPath(location), fileOrDirectoryPath);
         };
       } else {
-        if (!isPathWithDefaultFailedLookupExtension(fileOrDirectoryPath) && !customFailedLookupPaths.has(fileOrDirectoryPath)) {
-          return false;
-        }
-        if (isEmittedFileOfProgram(resolutionHost.getCurrentProgram(), fileOrDirectoryPath)) {
-          return false;
-        }
+        if (!isPathWithDefaultFailedLookupExtension(fileOrDirectoryPath) && !customFailedLookupPaths.has(fileOrDirectoryPath)) return false;
+        if (isEmittedFileOfProgram(resolutionHost.getCurrentProgram(), fileOrDirectoryPath)) return false;
         isChangedFailedLookupLocation = (location) => resolutionHost.toPath(location) === fileOrDirectoryPath;
       }
     }
@@ -627,9 +593,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     clearMap(typeRootsWatches, closeFileWatcher);
   }
   function getDirectoryToWatchFailedLookupLocationFromTypeRoot(typeRoot: string, typeRootPath: Path): Path | undefined {
-    if (isInDirectoryPath(rootPath, typeRootPath)) {
-      return rootPath;
-    }
+    if (isInDirectoryPath(rootPath, typeRootPath)) return rootPath;
     const toWatch = getDirectoryToWatchFromFailedLookupLocationDirectory(typeRoot, typeRootPath);
     return toWatch && directoryWatchesOfFailedLookups.has(toWatch.dirPath) ? toWatch.dirPath : undefined;
   }

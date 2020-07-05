@@ -31,9 +31,7 @@ export function transformES2017(context: TransformationContext) {
   context.onSubstituteNode = onSubstituteNode;
   return chainBundle(transformSourceFile);
   function transformSourceFile(node: SourceFile) {
-    if (node.isDeclarationFile) {
-      return node;
-    }
+    if (node.isDeclarationFile) return node;
     setContextFlag(ContextFlags.NonTopLevel, false);
     setContextFlag(ContextFlags.HasLexicalThis, !isEffectiveStrictModeSourceFile(node, compilerOptions));
     const visited = visitEachChild(node, visitor, context);
@@ -66,9 +64,7 @@ export function transformES2017(context: TransformationContext) {
     return visitEachChild(node, visitor, context);
   }
   function visitor(node: Node): VisitResult<Node> {
-    if ((node.transformFlags & TransformFlags.ContainsES2017) === 0) {
-      return node;
-    }
+    if ((node.transformFlags & TransformFlags.ContainsES2017) === 0) return node;
     switch (node.kind) {
       case Syntax.AsyncKeyword:
         return;
@@ -151,9 +147,8 @@ export function transformES2017(context: TransformationContext) {
       const result = visitEachChild(node, asyncBodyVisitor, context);
       enclosingFunctionParameterNames = savedEnclosingFunctionParameterNames;
       return result;
-    } else {
-      return visitEachChild(node, asyncBodyVisitor, context);
     }
+    return visitEachChild(node, asyncBodyVisitor, context);
   }
   function visitVariableStatementInAsyncBody(node: VariableStatement) {
     if (isVariableDeclarationListWithCollidingName(node.declarationList)) {
@@ -190,9 +185,7 @@ export function transformES2017(context: TransformationContext) {
     );
   }
   function visitAwaitExpression(node: AwaitExpression): Expression {
-    if (inTopLevelContext()) {
-      return visitEachChild(node, visitor, context);
-    }
+    if (inTopLevelContext()) return visitEachChild(node, visitor, context);
     return setOriginalNode(setRange(createYield(undefined, visitNode(node.expression, visitor, isExpression)), node), node);
   }
   function visitMethodDeclaration(node: MethodDeclaration) {
@@ -259,9 +252,7 @@ export function transformES2017(context: TransformationContext) {
     hoistVariableDeclarationList(node);
     const variables = getInitializedVariables(node);
     if (variables.length === 0) {
-      if (hasReceiver) {
-        return visitNode(convertToAssignmentElementTarget(node.declarations[0].name), visitor, isExpression);
-      }
+      if (hasReceiver) return visitNode(convertToAssignmentElementTarget(node.declarations[0].name), visitor, isExpression);
       return;
     }
     return inlineExpressions(map(variables, transformInitializedVariable));
@@ -285,13 +276,10 @@ export function transformES2017(context: TransformationContext) {
     return visitNode(converted, visitor, isExpression);
   }
   function collidesWithParameterName({ name }: VariableDeclaration | BindingElement): boolean {
-    if (Node.is.kind(Identifier, name)) {
-      return enclosingFunctionParameterNames.has(name.escapedText);
-    } else {
+    if (Node.is.kind(Identifier, name)) return enclosingFunctionParameterNames.has(name.escapedText);
+    else {
       for (const element of name.elements) {
-        if (!Node.is.kind(OmittedExpression, element) && collidesWithParameterName(element)) {
-          return true;
-        }
+        if (!Node.is.kind(OmittedExpression, element) && collidesWithParameterName(element)) return true;
       }
     }
     return false;
@@ -361,19 +349,14 @@ export function transformES2017(context: TransformationContext) {
     return result;
   }
   function transformAsyncFunctionBodyWorker(body: ConciseBody, start?: number) {
-    if (Node.is.kind(Block, body)) {
-      return body.update(Nodes.visit(body.statements, asyncBodyVisitor, isStatement, start));
-    } else {
-      return convertToFunctionBody(visitNode(body, asyncBodyVisitor, isConciseBody));
-    }
+    if (Node.is.kind(Block, body)) return body.update(Nodes.visit(body.statements, asyncBodyVisitor, isStatement, start));
+    return convertToFunctionBody(visitNode(body, asyncBodyVisitor, isConciseBody));
   }
   function getPromiseConstructor(type: TypeNode | undefined) {
     const typeName = type && getEntityNameFromTypeNode(type);
     if (typeName && Node.is.entityName(typeName)) {
       const serializationKind = resolver.getTypeReferenceSerializationKind(typeName);
-      if (serializationKind === TypeReferenceSerializationKind.TypeWithConstructSignatureAndValue || serializationKind === TypeReferenceSerializationKind.Unknown) {
-        return typeName;
-      }
+      if (serializationKind === TypeReferenceSerializationKind.TypeWithConstructSignatureAndValue || serializationKind === TypeReferenceSerializationKind.Unknown) return typeName;
     }
     return;
   }
@@ -412,9 +395,7 @@ export function transformES2017(context: TransformationContext) {
   }
   function onSubstituteNode(hint: EmitHint, node: Node) {
     node = previousOnSubstituteNode(hint, node);
-    if (hint === EmitHint.Expression && enclosingSuperContainerFlags) {
-      return substituteExpression(<Expression>node);
-    }
+    if (hint === EmitHint.Expression && enclosingSuperContainerFlags) return substituteExpression(<Expression>node);
     return node;
   }
   function substituteExpression(node: Expression) {
@@ -429,15 +410,11 @@ export function transformES2017(context: TransformationContext) {
     return node;
   }
   function substitutePropertyAccessExpression(node: PropertyAccessExpression) {
-    if (node.expression.kind === Syntax.SuperKeyword) {
-      return setRange(createPropertyAccess(createFileLevelUniqueName('_super'), node.name), node);
-    }
+    if (node.expression.kind === Syntax.SuperKeyword) return setRange(createPropertyAccess(createFileLevelUniqueName('_super'), node.name), node);
     return node;
   }
   function substituteElementAccessExpression(node: ElementAccessExpression) {
-    if (node.expression.kind === Syntax.SuperKeyword) {
-      return createSuperElementAccessInAsyncMethod(node.argumentExpression, node);
-    }
+    if (node.expression.kind === Syntax.SuperKeyword) return createSuperElementAccessInAsyncMethod(node.argumentExpression, node);
     return node;
   }
   function substituteCallExpression(node: CallExpression): Expression {
@@ -453,11 +430,9 @@ export function transformES2017(context: TransformationContext) {
     return kind === Syntax.ClassDeclaration || kind === Syntax.Constructor || kind === Syntax.MethodDeclaration || kind === Syntax.GetAccessor || kind === Syntax.SetAccessor;
   }
   function createSuperElementAccessInAsyncMethod(argumentExpression: Expression, location: TextRange): LeftHandSideExpression {
-    if (enclosingSuperContainerFlags & NodeCheckFlags.AsyncMethodWithSuperBinding) {
+    if (enclosingSuperContainerFlags & NodeCheckFlags.AsyncMethodWithSuperBinding)
       return setRange(createPropertyAccess(new qs.CallExpression(createFileLevelUniqueName('_superIndex'), undefined, [argumentExpression]), 'value'), location);
-    } else {
-      return setRange(new qs.CallExpression(createFileLevelUniqueName('_superIndex'), undefined, [argumentExpression]), location);
-    }
+    return setRange(new qs.CallExpression(createFileLevelUniqueName('_superIndex'), undefined, [argumentExpression]), location);
   }
 }
 export function createSuperAccessVariableStatement(resolver: EmitResolver, node: FunctionLikeDeclaration, names: UnderscoreEscapedMap<true>) {

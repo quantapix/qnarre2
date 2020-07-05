@@ -1420,9 +1420,7 @@ function create() {
       return finishNode(n);
     }
     typeParameters(): Nodes<TypeParameterDeclaration> | undefined {
-      if (tok() === Syntax.LessThanToken) {
-        return ctx.parseBracketedList(Context.TypeParameters, this.typeParameter, Syntax.LessThanToken, Syntax.GreaterThanToken);
-      }
+      if (tok() === Syntax.LessThanToken) return ctx.parseBracketedList(Context.TypeParameters, this.typeParameter, Syntax.LessThanToken, Syntax.GreaterThanToken);
       return;
     }
     parameter(): ParameterDeclaration {
@@ -2020,9 +2018,8 @@ function create() {
       const isStartOfExpressionStatement = () => {
         return tok() !== Syntax.OpenBraceToken && tok() !== Syntax.FunctionKeyword && tok() !== Syntax.ClassKeyword && tok() !== Syntax.AtToken && is.startOfExpression();
       };
-      if (tok() !== Syntax.SemicolonToken && tok() !== Syntax.FunctionKeyword && tok() !== Syntax.ClassKeyword && is.startOfStatement() && !isStartOfExpressionStatement()) {
+      if (tok() !== Syntax.SemicolonToken && tok() !== Syntax.FunctionKeyword && tok() !== Syntax.ClassKeyword && is.startOfStatement() && !isStartOfExpressionStatement())
         return this.functionBlock(SignatureFlags.IgnoreMissingOpenBrace | (isAsync ? SignatureFlags.Await : SignatureFlags.None));
-      }
       return isAsync ? flags.withAwait(this.assignmentExpressionOrHigher) : flags.withoutAwait(this.assignmentExpressionOrHigher);
     }
     conditionalExpressionRest(leftOperand: Expression): Expression {
@@ -2976,9 +2973,7 @@ function create() {
       const asteriskToken = this.optionalToken(Syntax.AsteriskToken);
       n.name = this.propertyName();
       n.questionToken = this.optionalToken(Syntax.QuestionToken);
-      if (asteriskToken || tok() === Syntax.OpenParenToken || tok() === Syntax.LessThanToken) {
-        return this.methodDeclaration(<MethodDeclaration>n, asteriskToken, qd.or_expected);
-      }
+      if (asteriskToken || tok() === Syntax.OpenParenToken || tok() === Syntax.LessThanToken) return this.methodDeclaration(<MethodDeclaration>n, asteriskToken, qd.or_expected);
       return this.propertyDeclaration(<PropertyDeclaration>n);
     }
     accessorDeclaration(n: AccessorDeclaration, kind: AccessorDeclaration['kind']): AccessorDeclaration {
@@ -3181,9 +3176,8 @@ function create() {
     }
     moduleDeclaration(n: ModuleDeclaration): ModuleDeclaration {
       let flags: NodeFlags = 0;
-      if (tok() === Syntax.GlobalKeyword) {
-        return this.ambientExternalModuleDeclaration(n);
-      } else if (this.optional(Syntax.NamespaceKeyword)) flags |= NodeFlags.Namespace;
+      if (tok() === Syntax.GlobalKeyword) return this.ambientExternalModuleDeclaration(n);
+      else if (this.optional(Syntax.NamespaceKeyword)) flags |= NodeFlags.Namespace;
       else {
         this.expected(Syntax.ModuleKeyword);
         if (tok() === Syntax.StringLiteral) return this.ambientExternalModuleDeclaration(n);
@@ -3214,9 +3208,7 @@ function create() {
       const tokenAfterImportedIdentifierDefinitelyProducesImportDeclaration = () => {
         return tok() === Syntax.CommaToken || tok() === Syntax.FromKeyword;
       };
-      if (identifier && !tokenAfterImportedIdentifierDefinitelyProducesImportDeclaration()) {
-        return this.importEqualsDeclaration(<ImportEqualsDeclaration>n, identifier, isTypeOnly);
-      }
+      if (identifier && !tokenAfterImportedIdentifierDefinitelyProducesImportDeclaration()) return this.importEqualsDeclaration(<ImportEqualsDeclaration>n, identifier, isTypeOnly);
       n.kind = Syntax.ImportDeclaration;
       if (identifier || tok() === Syntax.AsteriskToken || tok() === Syntax.OpenBraceToken) {
         (<ImportDeclaration>n).importClause = this.importClause(identifier, afterImportPos, isTypeOnly);
@@ -4543,9 +4535,7 @@ namespace IncrementalParser {
     aggressiveChecks = aggressiveChecks || Debug.shouldAssert(AssertionLevel.Aggressive);
     checkChangeRange(source, newText, textChangeRange, aggressiveChecks);
     if (textChangeRangeIsUnchanged(textChangeRange)) return source;
-    if (source.statements.length === 0) {
-      return Parser.parseSourceFile(source.fileName, newText, source.languageVersion, undefined, true, source.scriptKind);
-    }
+    if (source.statements.length === 0) return Parser.parseSourceFile(source.fileName, newText, source.languageVersion, undefined, true, source.scriptKind);
     const incrementalSourceFile = <IncrementalNode>(<Node>source);
     qb.assert(!incrementalSourceFile.hasBeenIncrementallyParsed);
     incrementalSourceFile.hasBeenIncrementallyParsed = true;

@@ -53,9 +53,7 @@ export class QMap<T> extends Map<string, T> {
       }
     } else if (es) {
       for (const k in es) {
-        if (hasOwnProperty.call(es, k)) {
-          this.set(k, es[k]);
-        }
+        if (hasOwnProperty.call(es, k)) this.set(k, es[k]);
       }
     }
   }
@@ -411,9 +409,8 @@ export function flatMapToMutable<T, U>(ts: readonly T[] | undefined, cb: (t: T, 
     for (let i = 0; i < ts.length; i++) {
       const v = cb(ts[i], i);
       if (v) {
-        if (isArray(v)) {
-          addRange(r, v);
-        } else {
+        if (isArray(v)) addRange(r, v);
+        else {
           r.push(v);
         }
       }
@@ -972,9 +969,7 @@ export function equalOwnProperties<T>(left: MapLike<T> | undefined, right: MapLi
     }
   }
   for (const key in right) {
-    if (hasOwnProperty.call(right, key)) {
-      if (!hasOwnProperty.call(left, key)) return false;
-    }
+    if (hasOwnProperty.call(right, key)) if (!hasOwnProperty.call(left, key)) return false;
   }
   return true;
 }
@@ -1695,9 +1690,7 @@ export namespace perf {
       exit,
     };
     function enter() {
-      if (++enterCount === 1) {
-        mark(startMarkName);
-      }
+      if (++enterCount === 1) mark(startMarkName);
     }
     function exit() {
       if (--enterCount === 0) {

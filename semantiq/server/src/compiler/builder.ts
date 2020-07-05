@@ -503,9 +503,7 @@ function handleDtsMayChangeOf(state: BuilderProgramState, path: Path, cancellati
 }
 
 function removeSemanticDiagnosticsOf(state: BuilderProgramState, path: Path) {
-  if (!state.semanticDiagnosticsFromOldState) {
-    return true;
-  }
+  if (!state.semanticDiagnosticsFromOldState) return true;
   state.semanticDiagnosticsFromOldState.delete(path);
   state.semanticDiagnosticsPerFile!.delete(path);
   return !state.semanticDiagnosticsFromOldState.size;
@@ -571,13 +569,8 @@ function forEachFilesReferencingPath(state: BuilderProgramState, referencedPath:
 }
 
 function forEachFileAndExportsOfFile(state: BuilderProgramState, filePath: Path, seenFileAndExportsOfFile: Map<true>, fn: (state: BuilderProgramState, filePath: Path) => boolean): boolean {
-  if (!addToSeen(seenFileAndExportsOfFile, filePath)) {
-    return false;
-  }
-
-  if (fn(state, filePath)) {
-    return true;
-  }
+  if (!addToSeen(seenFileAndExportsOfFile, filePath)) return false;
+  if (fn(state, filePath)) return true;
 
   assert(!!state.currentAffectedFilesExportedModulesMap);
 
@@ -652,10 +645,7 @@ function getBinderAndCheckerDiagnosticsOfFile(state: BuilderProgramState, source
   const path = sourceFile.resolvedPath;
   if (state.semanticDiagnosticsPerFile) {
     const cachedDiagnostics = state.semanticDiagnosticsPerFile.get(path);
-
-    if (cachedDiagnostics) {
-      return cachedDiagnostics;
-    }
+    if (cachedDiagnostics) return cachedDiagnostics;
   }
 
   const diagnostics = Debug.checkDefined(state.program).getBindAndCheckDiagnostics(sourceFile, cancellationToken);
@@ -750,9 +740,7 @@ function convertToReusableCompilerOptionValue(option: CommandLineOption | undefi
   if (option) {
     if (option.type === 'list') {
       const values = value as readonly (string | number)[];
-      if (option.element.isFilePath && values.length) {
-        return values.map(relativeToBuildInfo);
-      }
+      if (option.element.isFilePath && values.length) return values.map(relativeToBuildInfo);
     } else if (option.isFilePath) {
       return relativeToBuildInfo(value as string);
     }
@@ -995,10 +983,7 @@ export function createBuilderProgram(kind: BuilderProgramKind, { newProgram, hos
 
       return Debug.checkDefined(state.program).getSemanticDiagnostics(sourceFile, cancellationToken);
     }
-
-    if (sourceFile) {
-      return getSemanticDiagnosticsOfFile(state, sourceFile, cancellationToken);
-    }
+    if (sourceFile) return getSemanticDiagnosticsOfFile(state, sourceFile, cancellationToken);
 
     while (getSemanticDiagnosticsOfNextAffectedFile(cancellationToken)) {}
 

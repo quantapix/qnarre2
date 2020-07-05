@@ -69,9 +69,7 @@ function getAnyExtensionFromPathWorker(path: string, extensions: string | readon
 export function getAnyExtensionFromPath(path: string): string;
 export function getAnyExtensionFromPath(path: string, extensions: string | readonly string[], ignoreCase: boolean): string;
 export function getAnyExtensionFromPath(path: string, extensions?: string | readonly string[], ignoreCase?: boolean): string {
-  if (extensions) {
-    return getAnyExtensionFromPathWorker(removeTrailingDirectorySeparator(path), extensions, ignoreCase ? qb.equateStringsCaseInsensitive : qb.equateStringsCaseSensitive);
-  }
+  if (extensions) return getAnyExtensionFromPathWorker(removeTrailingDirectorySeparator(path), extensions, ignoreCase ? qb.equateStringsCaseInsensitive : qb.equateStringsCaseSensitive);
   const baseFileName = getBaseFileName(path);
   const extensionIndex = baseFileName.lastIndexOf('.');
   if (extensionIndex >= 0) return baseFileName.substring(extensionIndex);

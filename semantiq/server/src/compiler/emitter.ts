@@ -23,17 +23,13 @@ export function forEachEmittedFile<T>(
     if (sourceFiles.length || prepends.length) {
       const bundle = createBundle(sourceFiles, prepends);
       const result = action(getOutputPathsFor(bundle, host, forceDtsEmit), bundle);
-      if (result) {
-        return result;
-      }
+      if (result) return result;
     }
   } else {
     if (!onlyBuildInfo) {
       for (const sourceFile of sourceFiles) {
         const result = action(getOutputPathsFor(sourceFile, host, forceDtsEmit), sourceFile);
-        if (result) {
-          return result;
-        }
+        if (result) return result;
       }
     }
     if (includeBuildInfo) {
@@ -72,9 +68,8 @@ export function getOutputPathsForBundle(options: CompilerOptions, forceDtsPaths:
 }
 export function getOutputPathsFor(sourceFile: SourceFile | Bundle, host: EmitHost, forceDtsPaths: boolean): EmitFileNames {
   const options = host.getCompilerOptions();
-  if (sourceFile.kind === Syntax.Bundle) {
-    return getOutputPathsForBundle(options, forceDtsPaths);
-  } else {
+  if (sourceFile.kind === Syntax.Bundle) return getOutputPathsForBundle(options, forceDtsPaths);
+  else {
     const ownOutputFilePath = getOwnEmitOutputFilePath(sourceFile.fileName, host, getOutputExtension(sourceFile, options));
     const isJsonFile = isJsonSourceFile(sourceFile);
     const isJsonEmittedToSameLocation = isJsonFile && comparePaths(sourceFile.fileName, ownOutputFilePath, host.getCurrentDirectory(), !host.useCaseSensitiveFileNames()) === Comparison.EqualTo;
@@ -89,14 +84,10 @@ function getSourceMapFilePath(jsFilePath: string, options: CompilerOptions) {
   return options.sourceMap && !options.inlineSourceMap ? jsFilePath + '.map' : undefined;
 }
 export function getOutputExtension(sourceFile: SourceFile, options: CompilerOptions): Extension {
-  if (isJsonSourceFile(sourceFile)) {
-    return Extension.Json;
-  }
+  if (isJsonSourceFile(sourceFile)) return Extension.Json;
   if (options.jsx === JsxEmit.Preserve) {
     if (isSourceFileJS(sourceFile)) {
-      if (fileExtensionIs(sourceFile.fileName, Extension.Jsx)) {
-        return Extension.Jsx;
-      }
+      if (fileExtensionIs(sourceFile.fileName, Extension.Jsx)) return Extension.Jsx;
     } else if (sourceFile.languageVariant === LanguageVariant.JSX) {
       return Extension.Jsx;
     }
@@ -191,9 +182,7 @@ export function getFirstProjectOutput(configFile: ParsedCommandLine, ignoreCase:
     const jsFilePath = getOutputJSFileName(inputFileName, configFile, ignoreCase);
     if (jsFilePath) return jsFilePath;
     if (fileExtensionIs(inputFileName, Extension.Json)) continue;
-    if (getEmitDeclarations(configFile.options)) {
-      return getOutputDeclarationFileName(inputFileName, configFile, ignoreCase);
-    }
+    if (getEmitDeclarations(configFile.options)) return getOutputDeclarationFileName(inputFileName, configFile, ignoreCase);
   }
   const buildInfoPath = getTsBuildInfoEmitOutputFilePath(configFile.options);
   if (buildInfoPath) return buildInfoPath;
@@ -974,21 +963,13 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   function getPipelinePhase(phase: PipelinePhase, emitHint: EmitHint, node: Node) {
     switch (phase) {
       case PipelinePhase.Notification:
-        if (onEmitNode !== noEmitNotification && (!isEmitNotificationEnabled || isEmitNotificationEnabled(node))) {
-          return pipelineEmitWithNotification;
-        }
+        if (onEmitNode !== noEmitNotification && (!isEmitNotificationEnabled || isEmitNotificationEnabled(node))) return pipelineEmitWithNotification;
       case PipelinePhase.Substitution:
-        if (substituteNode !== noEmitSubstitution && (lastSubstitution = substituteNode(emitHint, node)) !== node) {
-          return pipelineEmitWithSubstitution;
-        }
+        if (substituteNode !== noEmitSubstitution && (lastSubstitution = substituteNode(emitHint, node)) !== node) return pipelineEmitWithSubstitution;
       case PipelinePhase.Comments:
-        if (!commentsDisabled && node.kind !== Syntax.SourceFile) {
-          return pipelineEmitWithComments;
-        }
+        if (!commentsDisabled && node.kind !== Syntax.SourceFile) return pipelineEmitWithComments;
       case PipelinePhase.SourceMaps:
-        if (!sourceMapsDisabled && node.kind !== Syntax.SourceFile && !isInJsonFile(node)) {
-          return pipelineEmitWithSourceMap;
-        }
+        if (!sourceMapsDisabled && node.kind !== Syntax.SourceFile && !isInJsonFile(node)) return pipelineEmitWithSourceMap;
       case PipelinePhase.Emit:
         return pipelineEmitWithHint;
       default:
@@ -2370,23 +2351,13 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitTypeAnnotation(node.type);
   }
   function shouldEmitBlockFunctionBodyOnSingleLine(body: Block) {
-    if (Node.get.emitFlags(body) & EmitFlags.SingleLine) {
-      return true;
-    }
-    if (body.multiLine) {
-      return false;
-    }
-    if (!isSynthesized(body) && !rangeIsOnSingleLine(body, currentSourceFile!)) {
-      return false;
-    }
-    if (getLeadingLineTerminatorCount(body, body.statements, ListFormat.PreserveLines) || getClosingLineTerminatorCount(body, body.statements, ListFormat.PreserveLines)) {
-      return false;
-    }
+    if (Node.get.emitFlags(body) & EmitFlags.SingleLine) return true;
+    if (body.multiLine) return false;
+    if (!isSynthesized(body) && !rangeIsOnSingleLine(body, currentSourceFile!)) return false;
+    if (getLeadingLineTerminatorCount(body, body.statements, ListFormat.PreserveLines) || getClosingLineTerminatorCount(body, body.statements, ListFormat.PreserveLines)) return false;
     let previousStatement: Statement | undefined;
     for (const statement of body.statements) {
-      if (getSeparatingLineTerminatorCount(previousStatement, statement, ListFormat.PreserveLines) > 0) {
-        return false;
-      }
+      if (getSeparatingLineTerminatorCount(previousStatement, statement, ListFormat.PreserveLines) > 0) return false;
       previousStatement = statement;
     }
     return true;
@@ -3058,14 +3029,10 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     } else {
       for (const prepend of sourceFileOrBundle.prepends) {
         Debug.assertNode(prepend, isUnparsedSource);
-        if (emitShebangIfNeeded(prepend)) {
-          return true;
-        }
+        if (emitShebangIfNeeded(prepend)) return true;
       }
       for (const sourceFile of sourceFileOrBundle.sourceFiles) {
-        if (emitShebangIfNeeded(sourceFile)) {
-          return true;
-        }
+        if (emitShebangIfNeeded(sourceFile)) return true;
       }
     }
   }
@@ -3146,9 +3113,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     parentNode: SignatureDeclaration | InterfaceDeclaration | TypeAliasDeclaration | ClassDeclaration | ClassExpression,
     typeParameters: Nodes<TypeParameterDeclaration> | undefined
   ) {
-    if (Node.is.functionLike(parentNode) && parentNode.typeArguments) {
-      return emitTypeArguments(parentNode, parentNode.typeArguments);
-    }
+    if (Node.is.functionLike(parentNode) && parentNode.typeArguments) return emitTypeArguments(parentNode, parentNode.typeArguments);
     emitList(parentNode, typeParameters, ListFormat.TypeParameters);
   }
   function emitParameters(parentNode: Node, parameters: Nodes<ParameterDeclaration>) {
@@ -3426,39 +3391,24 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
   function getLeadingLineTerminatorCount(parentNode: TextRange, children: readonly Node[], format: ListFormat): number {
     if (format & ListFormat.PreserveLines || preserveSourceNewlines) {
-      if (format & ListFormat.PreferNewLine) {
-        return 1;
-      }
+      if (format & ListFormat.PreferNewLine) return 1;
       const firstChild = children[0];
-      if (firstChild === undefined) {
-        return rangeIsOnSingleLine(parentNode, currentSourceFile!) ? 0 : 1;
-      }
-      if (firstChild.kind === Syntax.JsxText) {
-        return 0;
-      }
+      if (firstChild === undefined) return rangeIsOnSingleLine(parentNode, currentSourceFile!) ? 0 : 1;
+      if (firstChild.kind === Syntax.JsxText) return 0;
       if (!isSynthesized(parentNode.pos) && !isSynthesized(firstChild) && (!firstChild.parent || firstChild.parent === parentNode)) {
-        if (preserveSourceNewlines) {
-          return getEffectiveLines((includeComments) => linesToPrevNonWhitespace(firstChild.pos, parentNode.pos, currentSourceFile!, includeComments));
-        }
+        if (preserveSourceNewlines) return getEffectiveLines((includeComments) => linesToPrevNonWhitespace(firstChild.pos, parentNode.pos, currentSourceFile!, includeComments));
         return startsOnSameLine(parentNode, firstChild, currentSourceFile!) ? 0 : 1;
       }
-      if (synthesizedNodeStartsOnNewLine(firstChild, format)) {
-        return 1;
-      }
+      if (synthesizedNodeStartsOnNewLine(firstChild, format)) return 1;
     }
     return format & ListFormat.MultiLine ? 1 : 0;
   }
   function getSeparatingLineTerminatorCount(previousNode: Node | undefined, nextNode: Node, format: ListFormat): number {
     if (format & ListFormat.PreserveLines || preserveSourceNewlines) {
-      if (previousNode === undefined || nextNode === undefined) {
-        return 0;
-      }
-      if (nextNode.kind === Syntax.JsxText) {
-        return 0;
-      } else if (!isSynthesized(previousNode) && !isSynthesized(nextNode) && previousNode.parent === nextNode.parent) {
-        if (preserveSourceNewlines) {
-          return getEffectiveLines((includeComments) => linesBetween(previousNode, nextNode, currentSourceFile!, includeComments));
-        }
+      if (previousNode === undefined || nextNode === undefined) return 0;
+      if (nextNode.kind === Syntax.JsxText) return 0;
+      else if (!isSynthesized(previousNode) && !isSynthesized(nextNode) && previousNode.parent === nextNode.parent) {
+        if (preserveSourceNewlines) return getEffectiveLines((includeComments) => linesBetween(previousNode, nextNode, currentSourceFile!, includeComments));
         return endOnSameLineAsStart(previousNode, nextNode, currentSourceFile!) ? 0 : 1;
       } else if (synthesizedNodeStartsOnNewLine(previousNode, format) || synthesizedNodeStartsOnNewLine(nextNode, format)) {
         return 1;
@@ -3470,34 +3420,22 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
   function getClosingLineTerminatorCount(parentNode: TextRange, children: readonly Node[], format: ListFormat): number {
     if (format & ListFormat.PreserveLines || preserveSourceNewlines) {
-      if (format & ListFormat.PreferNewLine) {
-        return 1;
-      }
+      if (format & ListFormat.PreferNewLine) return 1;
       const lastChild = lastOrUndefined(children);
-      if (lastChild === undefined) {
-        return rangeIsOnSingleLine(parentNode, currentSourceFile!) ? 0 : 1;
-      }
+      if (lastChild === undefined) return rangeIsOnSingleLine(parentNode, currentSourceFile!) ? 0 : 1;
       if (!isSynthesized(parentNode.pos) && !isSynthesized(lastChild) && (!lastChild.parent || lastChild.parent === parentNode)) {
-        if (preserveSourceNewlines) {
-          return getEffectiveLines((includeComments) => linesToNextNonWhitespace(lastChild.end, parentNode.end, currentSourceFile!, includeComments));
-        }
+        if (preserveSourceNewlines) return getEffectiveLines((includeComments) => linesToNextNonWhitespace(lastChild.end, parentNode.end, currentSourceFile!, includeComments));
         return endsOnSameLine(parentNode, lastChild, currentSourceFile!) ? 0 : 1;
       }
-      if (synthesizedNodeStartsOnNewLine(lastChild, format)) {
-        return 1;
-      }
+      if (synthesizedNodeStartsOnNewLine(lastChild, format)) return 1;
     }
-    if (format & ListFormat.MultiLine && !(format & ListFormat.NoTrailingNewLine)) {
-      return 1;
-    }
+    if (format & ListFormat.MultiLine && !(format & ListFormat.NoTrailingNewLine)) return 1;
     return 0;
   }
   function getEffectiveLines(getLineDifference: (includeComments: boolean) => number) {
     qb.assert(!!preserveSourceNewlines);
     const lines = getLineDifference(true);
-    if (lines === 0) {
-      return getLineDifference(false);
-    }
+    if (lines === 0) return getLineDifference(false);
     return lines;
   }
   function writeLineSeparatorsAndIndentBefore(node: Node, parent: Node): boolean {
@@ -3516,27 +3454,19 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   function synthesizedNodeStartsOnNewLine(node: Node, format: ListFormat) {
     if (isSynthesized(node)) {
       const startsOnNewLine = getStartsOnNewLine(node);
-      if (startsOnNewLine === undefined) {
-        return (format & ListFormat.PreferNewLine) !== 0;
-      }
+      if (startsOnNewLine === undefined) return (format & ListFormat.PreferNewLine) !== 0;
       return startsOnNewLine;
     }
     return (format & ListFormat.PreferNewLine) !== 0;
   }
   function linesBetweenNodes(parent: Node, node1: Node, node2: Node): number {
-    if (Node.get.emitFlags(parent) & EmitFlags.NoIndentation) {
-      return 0;
-    }
+    if (Node.get.emitFlags(parent) & EmitFlags.NoIndentation) return 0;
     parent = skipSynthesizedParentheses(parent);
     node1 = skipSynthesizedParentheses(node1);
     node2 = skipSynthesizedParentheses(node2);
-    if (getStartsOnNewLine(node2)) {
-      return 1;
-    }
+    if (getStartsOnNewLine(node2)) return 1;
     if (!isSynthesized(parent) && !isSynthesized(node1) && !isSynthesized(node2)) {
-      if (preserveSourceNewlines) {
-        return getEffectiveLines((includeComments) => linesBetween(node1, node2, currentSourceFile!, includeComments));
-      }
+      if (preserveSourceNewlines) return getEffectiveLines((includeComments) => linesBetween(node1, node2, currentSourceFile!, includeComments));
       return endOnSameLineAsStart(node1, node2, currentSourceFile!) ? 0 : 1;
     }
     return 0;
@@ -3551,9 +3481,8 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     return node;
   }
   function getTextOfNode(node: Node, includeTrivia?: boolean): string {
-    if (Node.is.generatedIdentifier(node)) {
-      return generateName(node);
-    } else if (
+    if (Node.is.generatedIdentifier(node)) return generateName(node);
+    else if (
       (Node.is.kind(Identifier, node) || Node.is.kind(PrivateIdentifier, node)) &&
       (isSynthesized(node) || !node.parent || !currentSourceFile || (node.parent && currentSourceFile && Node.get.sourceFileOf(node) !== Node.get.originalOf(currentSourceFile)))
     ) {
@@ -3710,9 +3639,8 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     }
   }
   function generateName(name: GeneratedIdentifier) {
-    if ((name.autoGenerateFlags & GeneratedIdentifierFlags.KindMask) === GeneratedIdentifierFlags.Node) {
-      return generateNameCached(getNodeForGeneratedName(name), name.autoGenerateFlags);
-    } else {
+    if ((name.autoGenerateFlags & GeneratedIdentifierFlags.KindMask) === GeneratedIdentifierFlags.Node) return generateNameCached(getNodeForGeneratedName(name), name.autoGenerateFlags);
+    else {
       const autoGenerateId = name.autoGenerateId!;
       return autoGeneratedIdToGeneratedName[autoGenerateId] || (autoGeneratedIdToGeneratedName[autoGenerateId] = makeName(name));
     }
@@ -3731,9 +3659,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     for (let node = container; Node.is.descendantOf(node, container); node = node.nextContainer!) {
       if (node.locals) {
         const local = node.locals.get(syntax.get.escUnderscores(name));
-        if (local && local.flags & (SymbolFlags.Value | SymbolFlags.ExportValue | SymbolFlags.Alias)) {
-          return false;
-        }
+        if (local && local.flags & (SymbolFlags.Value | SymbolFlags.ExportValue | SymbolFlags.Alias)) return false;
       }
     }
     return true;
@@ -3810,9 +3736,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     return makeUniqueName('class');
   }
   function generateNameForMethodOrAccessor(node: MethodDeclaration | AccessorDeclaration) {
-    if (Node.is.kind(Identifier, node.name)) {
-      return generateNameCached(node.name);
-    }
+    if (Node.is.kind(Identifier, node.name)) return generateNameCached(node.name);
     return makeTempVariableName(TempFlags.Auto);
   }
   function generateNameForNode(node: Node, flags?: GeneratedIdentifierFlags): string {
@@ -3987,9 +3911,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     }
   }
   function shouldWriteComment(text: string, pos: number) {
-    if (printerOptions.onlyPrintJsDocStyle) {
-      return syntax.is.jsDocLike(text, pos) || isPinnedComment(text, pos);
-    }
+    if (printerOptions.onlyPrintJsDocStyle) return syntax.is.jsDocLike(text, pos) || isPinnedComment(text, pos);
     return true;
   }
   function emitLeadingComment(commentPos: number, commentEnd: number, kind: Syntax, hasTrailingNewLine: boolean, rangePos: number) {
@@ -4161,9 +4083,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     tokenPos: number,
     emitCallback: (token: Syntax, writer: (s: string) => void, tokenStartPos: number) => number
   ) {
-    if (sourceMapsDisabled || (node && isInJsonFile(node))) {
-      return emitCallback(token, writer, tokenPos);
-    }
+    if (sourceMapsDisabled || (node && isInJsonFile(node))) return emitCallback(token, writer, tokenPos);
     const emitNode = node && node.emitNode;
     const emitFlags = (emitNode && emitNode.flags) || EmitFlags.None;
     const range = emitNode && emitNode.tokenSourceMapRanges && emitNode.tokenSourceMapRanges[token];

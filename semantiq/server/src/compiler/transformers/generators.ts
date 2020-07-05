@@ -274,26 +274,18 @@ export function transformGenerators(context: TransformationContext) {
   let withBlockStack: WithBlock[] | undefined; // A stack containing `with` blocks.
   return chainBundle(transformSourceFile);
   function transformSourceFile(node: SourceFile) {
-    if (node.isDeclarationFile || (node.transformFlags & TransformFlags.ContainsGenerator) === 0) {
-      return node;
-    }
+    if (node.isDeclarationFile || (node.transformFlags & TransformFlags.ContainsGenerator) === 0) return node;
     const visited = visitEachChild(node, visitor, context);
     addEmitHelpers(visited, context.readEmitHelpers());
     return visited;
   }
   function visitor(node: Node): VisitResult<Node> {
     const transformFlags = node.transformFlags;
-    if (inStatementContainingYield) {
-      return visitJavaScriptInStatementContainingYield(node);
-    } else if (inGeneratorFunctionBody) {
-      return visitJavaScriptInGeneratorFunctionBody(node);
-    } else if (Node.is.functionLikeDeclaration(node) && node.asteriskToken) {
-      return visitGenerator(node);
-    } else if (transformFlags & TransformFlags.ContainsGenerator) {
-      return visitEachChild(node, visitor, context);
-    } else {
-      return node;
-    }
+    if (inStatementContainingYield) return visitJavaScriptInStatementContainingYield(node);
+    if (inGeneratorFunctionBody) return visitJavaScriptInGeneratorFunctionBody(node);
+    if (Node.is.functionLikeDeclaration(node) && node.asteriskToken) return visitGenerator(node);
+    if (transformFlags & TransformFlags.ContainsGenerator) return visitEachChild(node, visitor, context);
+    return node;
   }
   function visitJavaScriptInStatementContainingYield(node: Node): VisitResult<Node> {
     switch (node.kind) {
@@ -331,13 +323,9 @@ export function transformGenerators(context: TransformationContext) {
       case Syntax.ReturnStatement:
         return visitReturnStatement(<ReturnStatement>node);
       default:
-        if (node.transformFlags & TransformFlags.ContainsYield) {
-          return visitJavaScriptContainingYield(node);
-        } else if (node.transformFlags & (TransformFlags.ContainsGenerator | TransformFlags.ContainsHoistedDeclarationOrCompletion)) {
-          return visitEachChild(node, visitor, context);
-        } else {
-          return node;
-        }
+        if (node.transformFlags & TransformFlags.ContainsYield) return visitJavaScriptContainingYield(node);
+        if (node.transformFlags & (TransformFlags.ContainsGenerator | TransformFlags.ContainsHoistedDeclarationOrCompletion)) return visitEachChild(node, visitor, context);
+        return node;
     }
   }
   function visitJavaScriptContainingYield(node: Node): VisitResult<Node> {
@@ -405,9 +393,8 @@ export function transformGenerators(context: TransformationContext) {
       // to the top of the lexical scope and elided from the current statement.
       hoistFunctionDeclaration(node);
       return;
-    } else {
-      return node;
     }
+    return node;
   }
   function visitFunctionExpression(node: FunctionExpression): Expression {
     // Currently, we only support generators that were originally async functions.
@@ -499,9 +486,7 @@ export function transformGenerators(context: TransformationContext) {
       return;
     } else {
       // Do not hoist custom prologues.
-      if (Node.get.emitFlags(node) & EmitFlags.CustomPrologue) {
-        return node;
-      }
+      if (Node.get.emitFlags(node) & EmitFlags.CustomPrologue) return node;
       for (const variable of node.declarationList.declarations) {
         hoistVariableDeclaration(<Identifier>variable.name);
       }
@@ -571,19 +556,15 @@ export function transformGenerators(context: TransformationContext) {
           createAssignment(target, setRange(new BinaryExpression(cacheExpression(target), getNonAssignmentOperatorForCompoundAssignment(operator), visitNode(right, visitor, isExpression)), node)),
           node
         );
-      } else {
-        return updateBinary(node, target, visitNode(right, visitor, isExpression));
       }
+      return node.update(target, visitNode(right, visitor, isExpression));
     }
     return visitEachChild(node, visitor, context);
   }
   function visitLeftAssociativeBinaryExpression(node: BinaryExpression) {
     if (containsYield(node.right)) {
-      if (syntax.is.logicalOperator(node.operatorToken.kind)) {
-        return visitLogicalBinaryExpression(node);
-      } else if (node.operatorToken.kind === Syntax.CommaToken) {
-        return visitCommaExpression(node);
-      }
+      if (syntax.is.logicalOperator(node.operatorToken.kind)) return visitLogicalBinaryExpression(node);
+      else if (node.operatorToken.kind === Syntax.CommaToken) return visitCommaExpression(node);
       // [source]
       //      a() + (yield) + c()
       //
@@ -1023,9 +1004,8 @@ export function transformGenerators(context: TransformationContext) {
       node = visitEachChild(node, visitor, context);
       endLoopBlock();
       return node;
-    } else {
-      return visitEachChild(node, visitor, context);
     }
+    return visitEachChild(node, visitor, context);
   }
   function transformAndEmitWhileStatement(node: WhileStatement) {
     if (containsYield(node)) {
@@ -1059,9 +1039,8 @@ export function transformGenerators(context: TransformationContext) {
       node = visitEachChild(node, visitor, context);
       endLoopBlock();
       return node;
-    } else {
-      return visitEachChild(node, visitor, context);
     }
+    return visitEachChild(node, visitor, context);
   }
   function transformAndEmitForStatement(node: ForStatement) {
     if (containsYield(node)) {
@@ -1210,7 +1189,7 @@ export function transformGenerators(context: TransformationContext) {
       for (const variable of initializer.declarations) {
         hoistVariableDeclaration(<Identifier>variable.name);
       }
-      node = updateForIn(node, <Identifier>initializer.declarations[0].name, visitNode(node.expression, visitor, isExpression), visitNode(node.statement, visitor, isStatement, liftToBlock));
+      node = node.update(<Identifier>initializer.declarations[0].name, visitNode(node.expression, visitor, isExpression), visitNode(node.statement, visitor, isStatement, liftToBlock));
     } else {
       node = visitEachChild(node, visitor, context);
     }
@@ -1231,9 +1210,7 @@ export function transformGenerators(context: TransformationContext) {
   function visitContinueStatement(node: ContinueStatement): Statement {
     if (inStatementContainingYield) {
       const label = findContinueTarget(node.label && idText(node.label));
-      if (label > 0) {
-        return createInlineBreak(label, node);
-      }
+      if (label > 0) return createInlineBreak(label, node);
     }
     return visitEachChild(node, visitor, context);
   }
@@ -1249,9 +1226,7 @@ export function transformGenerators(context: TransformationContext) {
   function visitBreakStatement(node: BreakStatement): Statement {
     if (inStatementContainingYield) {
       const label = findBreakTarget(node.label && idText(node.label));
-      if (label > 0) {
-        return createInlineBreak(label, node);
-      }
+      if (label > 0) return createInlineBreak(label, node);
     }
     return visitEachChild(node, visitor, context);
   }
@@ -1462,23 +1437,17 @@ export function transformGenerators(context: TransformationContext) {
   function countInitialNodesWithoutYield(nodes: Nodes<Node>) {
     const numNodes = nodes.length;
     for (let i = 0; i < numNodes; i++) {
-      if (containsYield(nodes[i])) {
-        return i;
-      }
+      if (containsYield(nodes[i])) return i;
     }
     return -1;
   }
   function onSubstituteNode(hint: EmitHint, node: Node): Node {
     node = previousOnSubstituteNode(hint, node);
-    if (hint === EmitHint.Expression) {
-      return substituteExpression(<Expression>node);
-    }
+    if (hint === EmitHint.Expression) return substituteExpression(<Expression>node);
     return node;
   }
   function substituteExpression(node: Expression): Expression {
-    if (Node.is.kind(Identifier, node)) {
-      return substituteExpressionIdentifier(node);
-    }
+    if (Node.is.kind(Identifier, node)) return substituteExpressionIdentifier(node);
     return node;
   }
   function substituteExpressionIdentifier(node: Identifier) {
@@ -1500,9 +1469,7 @@ export function transformGenerators(context: TransformationContext) {
     return node;
   }
   function cacheExpression(node: Expression): Identifier {
-    if (Node.is.generatedIdentifier(node) || Node.get.emitFlags(node) & EmitFlags.HelperName) {
-      return <Identifier>node;
-    }
+    if (Node.is.generatedIdentifier(node) || Node.get.emitFlags(node) & EmitFlags.HelperName) return <Identifier>node;
     const temp = createTempVariable(hoistVariableDeclaration);
     emitAssignment(temp, node, node);
     return temp;
@@ -1726,9 +1693,7 @@ export function transformGenerators(context: TransformationContext) {
     for (let j = start; j >= 0; j--) {
       const containingBlock = blockStack![j];
       if (supportsLabeledBreakOrContinue(containingBlock)) {
-        if (containingBlock.labelText === labelText) {
-          return true;
-        }
+        if (containingBlock.labelText === labelText) return true;
       } else {
         break;
       }
@@ -1740,18 +1705,13 @@ export function transformGenerators(context: TransformationContext) {
       if (labelText) {
         for (let i = blockStack.length - 1; i >= 0; i--) {
           const block = blockStack[i];
-          if (supportsLabeledBreakOrContinue(block) && block.labelText === labelText) {
-            return block.breakLabel;
-          } else if (supportsUnlabeledBreak(block) && hasImmediateContainingLabeledBlock(labelText, i - 1)) {
-            return block.breakLabel;
-          }
+          if (supportsLabeledBreakOrContinue(block) && block.labelText === labelText) return block.breakLabel;
+          else if (supportsUnlabeledBreak(block) && hasImmediateContainingLabeledBlock(labelText, i - 1)) return block.breakLabel;
         }
       } else {
         for (let i = blockStack.length - 1; i >= 0; i--) {
           const block = blockStack[i];
-          if (supportsUnlabeledBreak(block)) {
-            return block.breakLabel;
-          }
+          if (supportsUnlabeledBreak(block)) return block.breakLabel;
         }
       }
     }
@@ -1762,16 +1722,12 @@ export function transformGenerators(context: TransformationContext) {
       if (labelText) {
         for (let i = blockStack.length - 1; i >= 0; i--) {
           const block = blockStack[i];
-          if (supportsUnlabeledContinue(block) && hasImmediateContainingLabeledBlock(labelText, i - 1)) {
-            return block.continueLabel;
-          }
+          if (supportsUnlabeledContinue(block) && hasImmediateContainingLabeledBlock(labelText, i - 1)) return block.continueLabel;
         }
       } else {
         for (let i = blockStack.length - 1; i >= 0; i--) {
           const block = blockStack[i];
-          if (supportsUnlabeledContinue(block)) {
-            return block.continueLabel;
-          }
+          if (supportsUnlabeledContinue(block)) return block.continueLabel;
         }
       }
     }
@@ -1893,9 +1849,7 @@ export function transformGenerators(context: TransformationContext) {
       const switchStatement = createSwitch(labelExpression, createCaseBlock(clauses));
       return [startOnNewLine(switchStatement)];
     }
-    if (statements) {
-      return statements;
-    }
+    if (statements) return statements;
     return [];
   }
   function flushLabel(): void {
@@ -1921,20 +1875,14 @@ export function transformGenerators(context: TransformationContext) {
   function isFinalLabelReachable(operationIndex: number) {
     // if the last operation was *not* a completion (return/throw) then
     // the final label is reachable.
-    if (!lastOperationWasCompletion) {
-      return true;
-    }
+    if (!lastOperationWasCompletion) return true;
     // if there are no labels defined or referenced, then the final label is
     // not reachable.
-    if (!labelOffsets || !labelExpressions) {
-      return false;
-    }
+    if (!labelOffsets || !labelExpressions) return false;
     // if the label for this offset is referenced, then the final label
     // is reachable.
     for (let label = 0; label < labelOffsets.length; label++) {
-      if (labelOffsets[label] === operationIndex && labelExpressions[label]) {
-        return true;
-      }
+      if (labelOffsets[label] === operationIndex && labelExpressions[label]) return true;
     }
     return false;
   }
@@ -2060,9 +2008,7 @@ export function transformGenerators(context: TransformationContext) {
       return writeEndfinally();
     }
     const args = operationArguments![operationIndex]!;
-    if (opcode === OpCode.Statement) {
-      return writeStatement(<Statement>args[0]);
-    }
+    if (opcode === OpCode.Statement) return writeStatement(<Statement>args[0]);
     const location = operationLocations![operationIndex];
     switch (opcode) {
       case OpCode.Assign:

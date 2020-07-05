@@ -55,13 +55,9 @@ export function canProduceDiagnostics(node: Node): node is DeclarationDiagnostic
   );
 }
 export function createGetSymbolAccessibilityDiagnosticForNodeName(node: DeclarationDiagnosticProducing) {
-  if (Node.is.kind(SetAccessorDeclaration, node) || Node.is.kind(GetAccessorDeclaration, node)) {
-    return getAccessorNameVisibilityError;
-  } else if (Node.is.kind(MethodSignature, node) || Node.is.kind(MethodDeclaration, node)) {
-    return getMethodNameVisibilityError;
-  } else {
-    return createGetSymbolAccessibilityDiagnosticForNode(node);
-  }
+  if (Node.is.kind(SetAccessorDeclaration, node) || Node.is.kind(GetAccessorDeclaration, node)) return getAccessorNameVisibilityError;
+  if (Node.is.kind(MethodSignature, node) || Node.is.kind(MethodDeclaration, node)) return getMethodNameVisibilityError;
+  return createGetSymbolAccessibilityDiagnosticForNode(node);
   function getAccessorNameVisibilityError(symbolAccessibilityResult: SymbolAccessibilityResult) {
     const diagnosticMessage = getAccessorNameVisibilityDiagnosticMessage(symbolAccessibilityResult);
     return diagnosticMessage !== undefined
@@ -133,9 +129,9 @@ export function createGetSymbolAccessibilityDiagnosticForNode(
     Node.is.kind(ConstructorDeclaration, node)
   ) {
     return getVariableDeclarationTypeVisibilityError;
-  } else if (Node.is.kind(SetAccessorDeclaration, node) || Node.is.kind(GetAccessorDeclaration, node)) {
-    return getAccessorDeclarationTypeVisibilityError;
-  } else if (
+  }
+  if (Node.is.kind(SetAccessorDeclaration, node) || Node.is.kind(GetAccessorDeclaration, node)) return getAccessorDeclarationTypeVisibilityError;
+  if (
     Node.is.kind(ConstructSignatureDeclaration, node) ||
     Node.is.kind(CallSignatureDeclaration, node) ||
     Node.is.kind(MethodDeclaration, node) ||
@@ -144,22 +140,16 @@ export function createGetSymbolAccessibilityDiagnosticForNode(
     Node.is.kind(IndexSignatureDeclaration, node)
   ) {
     return getReturnTypeVisibilityError;
-  } else if (Node.is.kind(ParameterDeclaration, node)) {
-    if (Node.is.parameterPropertyDeclaration(node, node.parent) && hasSyntacticModifier(node.parent, ModifierFlags.Private)) {
-      return getVariableDeclarationTypeVisibilityError;
-    }
-    return getParameterDeclarationTypeVisibilityError;
-  } else if (Node.is.kind(TypeParameterDeclaration, node)) {
-    return getTypeParameterConstraintVisibilityError;
-  } else if (Node.is.kind(ExpressionWithTypeArguments, node)) {
-    return getHeritageClauseVisibilityError;
-  } else if (Node.is.kind(ImportEqualsDeclaration, node)) {
-    return getImportEntityNameVisibilityError;
-  } else if (Node.is.kind(TypeAliasDeclaration, node)) {
-    return getTypeAliasDeclarationVisibilityError;
-  } else {
-    return Debug.assertNever(node, `Attempted to set a declaration diagnostic context for unhandled node kind: ${(ts as any).SyntaxKind[(node as any).kind]}`);
   }
+  if (Node.is.kind(ParameterDeclaration, node)) {
+    if (Node.is.parameterPropertyDeclaration(node, node.parent) && hasSyntacticModifier(node.parent, ModifierFlags.Private)) return getVariableDeclarationTypeVisibilityError;
+    return getParameterDeclarationTypeVisibilityError;
+  }
+  if (Node.is.kind(TypeParameterDeclaration, node)) return getTypeParameterConstraintVisibilityError;
+  if (Node.is.kind(ExpressionWithTypeArguments, node)) return getHeritageClauseVisibilityError;
+  if (Node.is.kind(ImportEqualsDeclaration, node)) return getImportEntityNameVisibilityError;
+  if (Node.is.kind(TypeAliasDeclaration, node)) return getTypeAliasDeclarationVisibilityError;
+  return Debug.assertNever(node, `Attempted to set a declaration diagnostic context for unhandled node kind: ${(ts as any).SyntaxKind[(node as any).kind]}`);
   function getVariableDeclarationTypeVisibilityDiagnosticMessage(symbolAccessibilityResult: SymbolAccessibilityResult) {
     if (node.kind === Syntax.VariableDeclaration || node.kind === Syntax.BindingElement) {
       return symbolAccessibilityResult.errorModuleName

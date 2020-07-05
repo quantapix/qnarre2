@@ -1325,9 +1325,8 @@ export abstract class Node extends qb.TextRange implements qt.Node {
       return (e && e.flags) || 0;
     }
     literalText(n: LiteralLikeNode, sourceFile: SourceFile, neverAsciiEscape: boolean | undefined, jsxAttributeEscape: boolean) {
-      if (!qb.isSynthesized(n) && n.parent && !((Node.is.kind(NumericLiteral, n) && n.numericLiteralFlags & TokenFlags.ContainsSeparator) || Node.is.kind(BigIntLiteral, n))) {
+      if (!qb.isSynthesized(n) && n.parent && !((Node.is.kind(NumericLiteral, n) && n.numericLiteralFlags & TokenFlags.ContainsSeparator) || Node.is.kind(BigIntLiteral, n)))
         return getSourceTextOfNodeFromSourceFile(sourceFile, n);
-      }
       switch (n.kind) {
         case Syntax.StringLiteral: {
           const esc = jsxAttributeEscape ? escapeJsxAttributeString : neverAsciiEscape || this.emitFlags(n) & EmitFlags.NoAsciiEscaping ? escapeString : escapeNonAsciiString;
@@ -1725,9 +1724,7 @@ export abstract class Node extends qb.TextRange implements qt.Node {
     getTypeParameterOwner(d: Declaration): Declaration | undefined {
       if (d && d.kind === Syntax.TypeParameter) {
         for (let current: Node = d; current; current = current.parent) {
-          if (Node.is.functionLike(current) || Node.is.classLike(current) || current.kind === Syntax.InterfaceDeclaration) {
-            return <Declaration>current;
-          }
+          if (Node.is.functionLike(current) || Node.is.classLike(current) || current.kind === Syntax.InterfaceDeclaration) return <Declaration>current;
         }
       }
       return;
@@ -1797,9 +1794,7 @@ export abstract class Node extends qb.TextRange implements qt.Node {
       if (Node.is.declaration(n)) return getDeclarationIdentifier(n);
       switch (n.kind) {
         case Syntax.VariableStatement:
-          if (n.declarationList && n.declarationList.declarations[0]) {
-            return getDeclarationIdentifier(n.declarationList.declarations[0]);
-          }
+          if (n.declarationList && n.declarationList.declarations[0]) return getDeclarationIdentifier(n.declarationList.declarations[0]);
           break;
         case Syntax.ExpressionStatement:
           let expr = n.expression;
@@ -1835,9 +1830,7 @@ export abstract class Node extends qb.TextRange implements qt.Node {
         case Syntax.JSDocPropertyTag:
         case Syntax.JSDocParameterTag: {
           const { name } = declaration as qt.JSDocPropertyLikeTag;
-          if (name.kind === Syntax.QualifiedName) {
-            return name.right;
-          }
+          if (name.kind === Syntax.QualifiedName) return name.right;
           break;
         }
         case Syntax.CallExpression:
@@ -2724,7 +2717,7 @@ export class SourceFile extends Declaration {
       if (node.pragmas !== undefined) updated.pragmas = node.pragmas;
       if (node.localJsxFactory !== undefined) updated.localJsxFactory = node.localJsxFactory;
       if (node.localJsxNamespace !== undefined) updated.localJsxNamespace = node.localJsxNamespace;
-      return updateNode(updated, node);
+      return updated.updateFrom(node);
     }
     return node;
   }

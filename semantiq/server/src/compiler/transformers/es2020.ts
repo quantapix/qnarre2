@@ -9,15 +9,11 @@ export function transformES2020(context: TransformationContext) {
   const { hoistVariableDeclaration } = context;
   return chainBundle(transformSourceFile);
   function transformSourceFile(node: SourceFile) {
-    if (node.isDeclarationFile) {
-      return node;
-    }
+    if (node.isDeclarationFile) return node;
     return visitEachChild(node, visitor, context);
   }
   function visitor(node: Node): VisitResult<Node> {
-    if ((node.transformFlags & TransformFlags.ContainsES2020) === 0) {
-      return node;
-    }
+    if ((node.transformFlags & TransformFlags.ContainsES2020) === 0) return node;
     switch (node.kind) {
       case Syntax.PropertyAccessExpression:
       case Syntax.ElementAccessExpression:
@@ -29,9 +25,7 @@ export function transformES2020(context: TransformationContext) {
         }
         return visitEachChild(node, visitor, context);
       case Syntax.BinaryExpression:
-        if ((<BinaryExpression>node).operatorToken.kind === Syntax.Question2Token) {
-          return transformNullishCoalescingExpression(<BinaryExpression>node);
-        }
+        if ((<BinaryExpression>node).operatorToken.kind === Syntax.Question2Token) return transformNullishCoalescingExpression(<BinaryExpression>node);
         return visitEachChild(node, visitor, context);
       case Syntax.DeleteExpression:
         return visitDeleteExpression(node as DeleteExpression);
@@ -54,9 +48,9 @@ export function transformES2020(context: TransformationContext) {
     if (Node.is.kind(SyntheticReferenceExpression, expression)) {
       // `(a.b)` -> { expression `((_a = a).b)`, thisArg: `_a` }
       // `(a[b])` -> { expression `((_a = a)[b])`, thisArg: `_a` }
-      return new qs.SyntheticReferenceExpression(updateParen(node, expression.expression), expression.thisArg);
+      return new qs.SyntheticReferenceExpression(node.update(expression.expression), expression.thisArg);
     }
-    return updateParen(node, expression);
+    return node.update(expression);
   }
   function visitNonOptionalPropertyOrElementAccessExpression(node: AccessExpression, captureThisArg: boolean, isDelete: boolean): Expression {
     if (Node.is.optionalChain(node)) {

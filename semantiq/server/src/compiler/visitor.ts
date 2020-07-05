@@ -311,14 +311,11 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: Transform
     case Syntax.ObjectLiteralExpression:
       return n.update(nodesVisitor(n.properties, cb, isObjectLiteralElementLike));
     case Syntax.PropertyAccessExpression:
-      if (node.flags & NodeFlags.OptionalChain) {
-        return n.update(visitNode(n.expression, cb, isExpression), visitNode(n.questionDotToken, tokenVisitor, isToken), visitNode(n.name, cb, isIdentifier));
-      }
+      if (node.flags & NodeFlags.OptionalChain) return n.update(visitNode(n.expression, cb, isExpression), visitNode(n.questionDotToken, tokenVisitor, isToken), visitNode(n.name, cb, isIdentifier));
       return n.update(visitNode(n.expression, cb, isExpression), visitNode(n.name, cb, isIdentifierOrPrivateIdentifier));
     case Syntax.ElementAccessExpression:
-      if (node.flags & NodeFlags.OptionalChain) {
+      if (node.flags & NodeFlags.OptionalChain)
         return n.update(visitNode(n.expression, cb, isExpression), visitNode(n.questionDotToken, tokenVisitor, isToken), visitNode(n.argumentExpression, cb, isExpression));
-      }
       return n.update(visitNode(n.expression, cb, isExpression), visitNode(n.argumentExpression, cb, isExpression));
     case Syntax.CallExpression:
       if (node.flags & NodeFlags.OptionalChain) {

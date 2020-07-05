@@ -313,9 +313,7 @@ function isParsedCommandLine(entry: ConfigFileCacheEntry): entry is ParsedComman
 function parseConfigFile(state: SolutionBuilderState, configFileName: ResolvedConfigFileName, configFilePath: ResolvedConfigFilePath): ParsedCommandLine | undefined {
   const { configFileCache } = state;
   const value = configFileCache.get(configFilePath);
-  if (value) {
-    return isParsedCommandLine(value) ? value : undefined;
-  }
+  if (value) return isParsedCommandLine(value) ? value : undefined;
   let diagnostic: Diagnostic | undefined;
   const { parseConfigFileHost, baseCompilerOptions, baseWatchOptions, extendedConfigCache, host } = state;
   let parsed: ParsedCommandLine | undefined;
@@ -602,9 +600,7 @@ function createBuildOrUpdateInvalidedProject<T extends BuilderProgram>(
               ((program as any) as SemanticDiagnosticsBuilderProgram).getSemanticDiagnosticsOfNextAffectedFile(cancellationToken, ignoreSourceFile)
           ),
         emit: (targetSourceFile, writeFile, cancellationToken, emitOnlyDtsFiles, customTransformers) => {
-          if (targetSourceFile || emitOnlyDtsFiles) {
-            return withProgramOrUndefined((program) => program.emit(targetSourceFile, writeFile, cancellationToken, emitOnlyDtsFiles, customTransformers));
-          }
+          if (targetSourceFile || emitOnlyDtsFiles) return withProgramOrUndefined((program) => program.emit(targetSourceFile, writeFile, cancellationToken, emitOnlyDtsFiles, customTransformers));
           executeSteps(Step.SemanticDiagnostics, cancellationToken);
           if (step !== Step.Emit) return;
           return emit(writeFile, cancellationToken, customTransformers);
@@ -848,9 +844,7 @@ function needsBuild({ options }: SolutionBuilderState, status: UpToDateStatus, c
 function getNextInvalidatedProject<T extends BuilderProgram>(state: SolutionBuilderState<T>, buildOrder: AnyBuildOrder, reportQueue: boolean): InvalidatedProject<T> | undefined {
   if (!state.projectPendingBuild.size) return;
   if (isCircularBuildOrder(buildOrder)) return;
-  if (state.currentInvalidatedProject) {
-    return arrayIsEqualTo(state.currentInvalidatedProject.buildOrder, buildOrder) ? state.currentInvalidatedProject : undefined;
-  }
+  if (state.currentInvalidatedProject) return arrayIsEqualTo(state.currentInvalidatedProject.buildOrder, buildOrder) ? state.currentInvalidatedProject : undefined;
   const { options, projectPendingBuild } = state;
   for (let projectIndex = 0; projectIndex < buildOrder.length; projectIndex++) {
     const project = buildOrder[projectIndex];
@@ -1142,13 +1136,9 @@ function getUpToDateStatusWorker(state: SolutionBuilderState, project: ParsedCom
   };
 }
 function getUpToDateStatus(state: SolutionBuilderState, project: ParsedCommandLine | undefined, resolvedPath: ResolvedConfigFilePath): UpToDateStatus {
-  if (project === undefined) {
-    return { type: UpToDateStatusType.Unbuildable, reason: 'File deleted mid-build' };
-  }
+  if (project === undefined) return { type: UpToDateStatusType.Unbuildable, reason: 'File deleted mid-build' };
   const prior = state.projectStatus.get(resolvedPath);
-  if (prior !== undefined) {
-    return prior;
-  }
+  if (prior !== undefined) return prior;
   const actual = getUpToDateStatusWorker(state, project, resolvedPath);
   state.projectStatus.set(resolvedPath, actual);
   return actual;
@@ -1176,9 +1166,7 @@ function updateOutputTimestampsWorker(state: SolutionBuilderState, proj: ParsedC
   return priorNewestUpdateTime;
 }
 function updateOutputTimestamps(state: SolutionBuilderState, proj: ParsedCommandLine, resolvedPath: ResolvedConfigFilePath) {
-  if (state.options.dry) {
-    return reportStatus(state, Diagnostics.A_non_dry_build_would_update_timestamps_for_output_of_project_0, proj.options.configFilePath!);
-  }
+  if (state.options.dry) return reportStatus(state, Diagnostics.A_non_dry_build_would_update_timestamps_for_output_of_project_0, proj.options.configFilePath!);
   const priorNewestUpdateTime = updateOutputTimestampsWorker(state, proj, minimumDate, Diagnostics.Updating_output_timestamps_of_project_0);
   state.projectStatus.set(resolvedPath, {
     type: UpToDateStatusType.UpToDate,
@@ -1372,19 +1360,11 @@ function isSameFile(state: SolutionBuilderState, file1: string, file2: string) {
 }
 function isOutputFile(state: SolutionBuilderState, fileName: string, configFile: ParsedCommandLine) {
   if (configFile.options.noEmit) return false;
-  if (!fileExtensionIs(fileName, Extension.Dts) && (fileExtensionIs(fileName, Extension.Ts) || fileExtensionIs(fileName, Extension.Tsx))) {
-    return false;
-  }
+  if (!fileExtensionIs(fileName, Extension.Dts) && (fileExtensionIs(fileName, Extension.Ts) || fileExtensionIs(fileName, Extension.Tsx))) return false;
   const out = configFile.options.outFile || configFile.options.out;
-  if (out && (isSameFile(state, fileName, out) || isSameFile(state, fileName, removeFileExtension(out) + Extension.Dts))) {
-    return true;
-  }
-  if (configFile.options.declarationDir && containsPath(configFile.options.declarationDir, fileName, state.currentDirectory, !state.host.useCaseSensitiveFileNames())) {
-    return true;
-  }
-  if (configFile.options.outDir && containsPath(configFile.options.outDir, fileName, state.currentDirectory, !state.host.useCaseSensitiveFileNames())) {
-    return true;
-  }
+  if (out && (isSameFile(state, fileName, out) || isSameFile(state, fileName, removeFileExtension(out) + Extension.Dts))) return true;
+  if (configFile.options.declarationDir && containsPath(configFile.options.declarationDir, fileName, state.currentDirectory, !state.host.useCaseSensitiveFileNames())) return true;
+  if (configFile.options.outDir && containsPath(configFile.options.outDir, fileName, state.currentDirectory, !state.host.useCaseSensitiveFileNames())) return true;
   return !forEach(configFile.fileNames, (inputFile) => isSameFile(state, fileName, inputFile));
 }
 function watchWildCardDirectories(state: SolutionBuilderState, resolved: ResolvedConfigFileName, resolvedPath: ResolvedConfigFilePath, parsed: ParsedCommandLine) {
@@ -1688,8 +1668,6 @@ export namespace Status {
   }
 }
 export function resolveConfigFileProjectName(project: string): ResolvedConfigFileName {
-  if (fileExtensionIs(project, Extension.Json)) {
-    return project as ResolvedConfigFileName;
-  }
+  if (fileExtensionIs(project, Extension.Json)) return project as ResolvedConfigFileName;
   return combinePaths(project, 'tsconfig.json') as ResolvedConfigFileName;
 }

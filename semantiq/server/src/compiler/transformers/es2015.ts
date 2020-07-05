@@ -111,9 +111,7 @@ export function transformES2015(context: TransformationContext) {
   let enabledSubstitutions: ES2015SubstitutionFlags;
   return chainBundle(transformSourceFile);
   function transformSourceFile(node: SourceFile) {
-    if (node.isDeclarationFile) {
-      return node;
-    }
+    if (node.isDeclarationFile) return node;
     currentSourceFile = node;
     currentText = node.text;
     const visited = visitSourceFile(node);
@@ -145,16 +143,11 @@ export function transformES2015(context: TransformationContext) {
     );
   }
   function visitor(node: Node): VisitResult<Node> {
-    if (shouldVisitNode(node)) {
-      return visitJavaScript(node);
-    } else {
-      return node;
-    }
+    if (shouldVisitNode(node)) return visitJavaScript(node);
+    return node;
   }
   function callExpressionVisitor(node: Node): VisitResult<Node> {
-    if (node.kind === Syntax.SuperKeyword) {
-      return visitSuperKeyword(true);
-    }
+    if (node.kind === Syntax.SuperKeyword) return visitSuperKeyword(true);
     return visitor(node);
   }
   function visitJavaScript(node: Node): VisitResult<Node> {
@@ -316,15 +309,9 @@ export function transformES2015(context: TransformationContext) {
     return node;
   }
   function visitIdentifier(node: Identifier): Identifier {
-    if (!convertedLoopState) {
-      return node;
-    }
-    if (Node.is.generatedIdentifier(node)) {
-      return node;
-    }
-    if (node.escapedText !== 'arguments' || !resolver.isArgumentsLocalBinding(node)) {
-      return node;
-    }
+    if (!convertedLoopState) return node;
+    if (Node.is.generatedIdentifier(node)) return node;
+    if (node.escapedText !== 'arguments' || !resolver.isArgumentsLocalBinding(node)) return node;
     return convertedLoopState.argumentsName || (convertedLoopState.argumentsName = createUniqueName('arguments'));
   }
   function visitBreakOrContinueStatement(node: BreakOrContinueStatement): Statement {
@@ -539,18 +526,13 @@ export function transformES2015(context: TransformationContext) {
     return block;
   }
   function isSufficientlyCoveredByReturnStatements(statement: Statement): boolean {
-    if (statement.kind === Syntax.ReturnStatement) {
-      return true;
-    } else if (statement.kind === Syntax.IfStatement) {
+    if (statement.kind === Syntax.ReturnStatement) return true;
+    else if (statement.kind === Syntax.IfStatement) {
       const ifStatement = statement as IfStatement;
-      if (ifStatement.elseStatement) {
-        return isSufficientlyCoveredByReturnStatements(ifStatement.thenStatement) && isSufficientlyCoveredByReturnStatements(ifStatement.elseStatement);
-      }
+      if (ifStatement.elseStatement) return isSufficientlyCoveredByReturnStatements(ifStatement.thenStatement) && isSufficientlyCoveredByReturnStatements(ifStatement.elseStatement);
     } else if (statement.kind === Syntax.Block) {
       const lastStatement = lastOrUndefined((statement as Block).statements);
-      if (lastStatement && isSufficientlyCoveredByReturnStatements(lastStatement)) {
-        return true;
-      }
+      if (lastStatement && isSufficientlyCoveredByReturnStatements(lastStatement)) return true;
     }
     return false;
   }
@@ -573,17 +555,14 @@ export function transformES2015(context: TransformationContext) {
       return setOriginalNode(setRange(createParameter(undefined, undefined, undefined, getGeneratedNameForNode(node), undefined, undefined, undefined), node), node);
     } else if (node.initializer) {
       return setOriginalNode(setRange(createParameter(undefined, undefined, undefined, undefined), node), node);
-    } else {
-      return node;
     }
+    return node;
   }
   function hasDefaultValueOrBindingPattern(node: ParameterDeclaration) {
     return node.initializer !== undefined || Node.is.kind(BindingPattern, node.name);
   }
   function addDefaultValueAssignmentsIfNeeded(statements: Statement[], node: FunctionLikeDeclaration): boolean {
-    if (!some(node.parameters, hasDefaultValueOrBindingPattern)) {
-      return false;
-    }
+    if (!some(node.parameters, hasDefaultValueOrBindingPattern)) return false;
     let added = false;
     for (const parameter of node.parameters) {
       const { name, initializer, dot3Token } = parameter;
@@ -654,9 +633,7 @@ export function transformES2015(context: TransformationContext) {
   function addRestParameterIfNeeded(statements: Statement[], node: FunctionLikeDeclaration, inConstructorWithSynthesizedSuper: boolean): boolean {
     const prologueStatements: Statement[] = [];
     const parameter = lastOrUndefined(node.parameters);
-    if (!shouldAddRestParameter(parameter, inConstructorWithSynthesizedSuper)) {
-      return false;
-    }
+    if (!shouldAddRestParameter(parameter, inConstructorWithSynthesizedSuper)) return false;
     const declarationName = parameter.name.kind === Syntax.Identifier ? getMutableClone(parameter.name) : createTempVariable(undefined);
     setEmitFlags(declarationName, EmitFlags.NoSourceMap);
     const expressionName = parameter.name.kind === Syntax.Identifier ? getSynthesizedClone(parameter.name) : declarationName;
@@ -819,9 +796,7 @@ export function transformES2015(context: TransformationContext) {
     setEmitFlags(target, EmitFlags.NoComments | EmitFlags.NoTrailingSourceMap);
     setSourceMapRange(target, firstAccessor.name);
     const visitedAccessorName = visitNode(firstAccessor.name, visitor, isPropertyName);
-    if (Node.is.kind(PrivateIdentifier, visitedAccessorName)) {
-      return Debug.failBadSyntax(visitedAccessorName, 'Encountered unhandled private identifier while transforming ES2015.');
-    }
+    if (Node.is.kind(PrivateIdentifier, visitedAccessorName)) return Debug.failBadSyntax(visitedAccessorName, 'Encountered unhandled private identifier while transforming ES2015.');
     const propertyName = createExpressionForPropertyName(visitedAccessorName);
     setEmitFlags(propertyName, EmitFlags.NoComments | EmitFlags.NoLeadingSourceMap);
     setSourceMapRange(propertyName, firstAccessor.name);
@@ -958,9 +933,7 @@ export function transformES2015(context: TransformationContext) {
       multiLine = true;
     }
     statements.unshift(...prologue);
-    if (Node.is.kind(Block, body) && arrayIsEqualTo(statements, body.statements)) {
-      return body;
-    }
+    if (Node.is.kind(Block, body) && arrayIsEqualTo(statements, body.statements)) return body;
     const block = new Block(setRange(new Nodes(statements), statementsLocation), multiLine);
     setRange(block, node.body);
     if (!multiLine && singleLine) {
@@ -973,9 +946,7 @@ export function transformES2015(context: TransformationContext) {
     return block;
   }
   function visitBlock(node: Block, isFunctionBody: boolean): Block {
-    if (isFunctionBody) {
-      return visitEachChild(node, visitor, context);
-    }
+    if (isFunctionBody) return visitEachChild(node, visitor, context);
     const ancestorFacts =
       hierarchyFacts & HierarchyFacts.IterationStatement
         ? enterSubtree(HierarchyFacts.IterationStatementBlockExcludes, HierarchyFacts.IterationStatementBlockIncludes)
@@ -987,9 +958,9 @@ export function transformES2015(context: TransformationContext) {
   function visitExpressionStatement(node: ExpressionStatement): Statement {
     switch (node.expression.kind) {
       case Syntax.ParenthesizedExpression:
-        return updateExpressionStatement(node, visitParenthesizedExpression(<ParenthesizedExpression>node.expression, false));
+        return node.update(visitParenthesizedExpression(<ParenthesizedExpression>node.expression, false));
       case Syntax.BinaryExpression:
-        return updateExpressionStatement(node, visitBinaryExpression(<BinaryExpression>node.expression, false));
+        return node.update(visitBinaryExpression(<BinaryExpression>node.expression, false));
     }
     return visitEachChild(node, visitor, context);
   }
@@ -997,17 +968,15 @@ export function transformES2015(context: TransformationContext) {
     if (!needsDestructuringValue) {
       switch (node.expression.kind) {
         case Syntax.ParenthesizedExpression:
-          return updateParen(node, visitParenthesizedExpression(<ParenthesizedExpression>node.expression, false));
+          return node.update(visitParenthesizedExpression(<ParenthesizedExpression>node.expression, false));
         case Syntax.BinaryExpression:
-          return updateParen(node, visitBinaryExpression(<BinaryExpression>node.expression, false));
+          return node.update(visitBinaryExpression(<BinaryExpression>node.expression, false));
       }
     }
     return visitEachChild(node, visitor, context);
   }
   function visitBinaryExpression(node: BinaryExpression, needsDestructuringValue: boolean): Expression {
-    if (isDestructuringAssignment(node)) {
-      return flattenDestructuringAssignment(node, visitor, context, FlattenLevel.All, needsDestructuringValue);
-    }
+    if (isDestructuringAssignment(node)) return flattenDestructuringAssignment(node, visitor, context, FlattenLevel.All, needsDestructuringValue);
     return visitEachChild(node, visitor, context);
   }
   function isVariableStatementOfTypeScriptClassWrapper(node: VariableStatement) {
@@ -1085,9 +1054,7 @@ export function transformES2015(context: TransformationContext) {
   }
   function visitVariableDeclarationInLetDeclarationList(node: VariableDeclaration) {
     const name = node.name;
-    if (Node.is.kind(BindingPattern, name)) {
-      return visitVariableDeclaration(node);
-    }
+    if (Node.is.kind(BindingPattern, name)) return visitVariableDeclaration(node);
     if (!node.initializer && shouldEmitExplicitInitializerForLetDeclaration(node)) {
       const clone = getMutableClone(node);
       clone.initializer = qs.VoidExpression.zero();
@@ -1205,9 +1172,8 @@ export function transformES2015(context: TransformationContext) {
         statements.push(setRange(createExpressionStatement(visitNode(assignment, visitor, isExpression)), moveRangeEnd(initializer, -1)));
       }
     }
-    if (convertedLoopBodyStatements) {
-      return createSyntheticBlockForConvertedStatements(addRange(statements, convertedLoopBodyStatements));
-    } else {
+    if (convertedLoopBodyStatements) return createSyntheticBlockForConvertedStatements(addRange(statements, convertedLoopBodyStatements));
+    else {
       const statement = visitNode(node.statement, visitor, isStatement, liftToBlock);
       if (Node.is.kind(Block, statement)) return statement.update(setRange(new Nodes(concatenate(statements, statement.statements)), statement.statements));
       statements.push(statement);
@@ -1458,16 +1424,16 @@ function convertForStatement(node: ForStatement, initializerFunction: IterationS
   );
 }
 function convertForOfStatement(node: ForOfStatement, convertedLoopBody: Statement) {
-  return updateForOf(node, undefined, visitNode(node.initializer, visitor, isForInitializer), visitNode(node.expression, visitor, isExpression), convertedLoopBody);
+  return node.update(undefined, visitNode(node.initializer, visitor, isForInitializer), visitNode(node.expression, visitor, isExpression), convertedLoopBody);
 }
 function convertForInStatement(node: ForInStatement, convertedLoopBody: Statement) {
-  return updateForIn(node, visitNode(node.initializer, visitor, isForInitializer), visitNode(node.expression, visitor, isExpression), convertedLoopBody);
+  return node.update(visitNode(node.initializer, visitor, isForInitializer), visitNode(node.expression, visitor, isExpression), convertedLoopBody);
 }
 function convertDoStatement(node: DoStatement, convertedLoopBody: Statement) {
-  return updateDo(node, convertedLoopBody, visitNode(node.expression, visitor, isExpression));
+  return node.update(convertedLoopBody, visitNode(node.expression, visitor, isExpression));
 }
 function convertWhileStatement(node: WhileStatement, convertedLoopBody: Statement) {
-  return updateWhile(node, visitNode(node.expression, visitor, isExpression), convertedLoopBody);
+  return node.update(visitNode(node.expression, visitor, isExpression), convertedLoopBody);
 }
 function createConvertedLoopState(node: IterationStatement) {
   let loopInitializer: VariableDeclarationList | undefined;
@@ -1824,7 +1790,7 @@ function visitCatchClause(node: CatchClause): CatchClause {
     const list = createVariableDeclarationList(vars);
     setRange(list, node.variableDeclaration);
     const destructure = createVariableStatement(undefined, list);
-    updated = updateCatchClause(node, newVariableDeclaration, addStatementToStartOfBlock(node.block, destructure));
+    updated = node.update(newVariableDeclaration, addStatementToStartOfBlock(node.block, destructure));
   } else {
     updated = visitEachChild(node, visitor, context);
   }
@@ -1868,20 +1834,14 @@ function visitYieldExpression(node: YieldExpression): Expression {
   return visitEachChild(node, visitor, context);
 }
 function visitArrayLiteralExpression(node: ArrayLiteralExpression): Expression {
-  if (some(node.elements, isSpreadElement)) {
-    return transformAndSpreadElements(node.elements, !!node.elements.trailingComma);
-  }
+  if (some(node.elements, isSpreadElement)) return transformAndSpreadElements(node.elements, !!node.elements.trailingComma);
   return visitEachChild(node, visitor, context);
 }
 function visitCallExpression(node: CallExpression) {
-  if (Node.get.emitFlags(node) & EmitFlags.TypeScriptClassWrapper) {
-    return visitTypeScriptClassWrapper(node);
-  }
+  if (Node.get.emitFlags(node) & EmitFlags.TypeScriptClassWrapper) return visitTypeScriptClassWrapper(node);
   const expression = skipOuterExpressions(node.expression);
-  if (expression.kind === Syntax.SuperKeyword || Node.is.superProperty(expression) || some(node.arguments, isSpreadElement)) {
-    return visitCallExpressionWithPotentialCapturedThisAssignment(node, true);
-  }
-  return updateCall(node, visitNode(node.expression, callExpressionVisitor, isExpression), undefined, Nodes.visit(node.arguments, visitor, isExpression));
+  if (expression.kind === Syntax.SuperKeyword || Node.is.superProperty(expression) || some(node.arguments, isSpreadElement)) return visitCallExpressionWithPotentialCapturedThisAssignment(node, true);
+  return node.update(visitNode(node.expression, callExpressionVisitor, isExpression), undefined, Nodes.visit(node.arguments, visitor, isExpression));
 }
 function visitTypeScriptClassWrapper(node: CallExpression) {
   const body = cast(cast(skipOuterExpressions(node.expression), isArrowFunction).body, isBlock);
@@ -1986,17 +1946,13 @@ function transformAndSpreadElements(elements: Nodes<Expression>, needsUniqueCopy
   if (compilerOptions.downlevelIteration) {
     if (segments.length === 1) {
       const firstSegment = segments[0];
-      if (isCallToHelper(firstSegment, '___spread' as __String)) {
-        return segments[0];
-      }
+      if (isCallToHelper(firstSegment, '___spread' as __String)) return segments[0];
     }
     return createSpreadHelper(context, segments);
   } else {
     if (segments.length === 1) {
       const firstSegment = segments[0];
-      if (!needsUniqueCopy || isPackedArrayLiteral(firstSegment) || isCallToHelper(firstSegment, '___spreadArrays' as __String)) {
-        return segments[0];
-      }
+      if (!needsUniqueCopy || isPackedArrayLiteral(firstSegment) || isCallToHelper(firstSegment, '___spreadArrays' as __String)) return segments[0];
     }
     return createSpreadArraysHelper(context, segments);
   }
@@ -2034,15 +1990,11 @@ function visitTemplateLiteral(node: LiteralExpression): LeftHandSideExpression {
   return setRange(createLiteral(node.text), node);
 }
 function visitStringLiteral(node: StringLiteral) {
-  if (node.hasExtendedEscape) {
-    return setRange(createLiteral(node.text), node);
-  }
+  if (node.hasExtendedEscape) return setRange(createLiteral(node.text), node);
   return node;
 }
 function visitNumericLiteral(node: NumericLiteral) {
-  if (node.numericLiteralFlags & TokenFlags.BinaryOrOctalSpecifier) {
-    return setRange(NumericLiteral.create(node.text), node);
-  }
+  if (node.numericLiteralFlags & TokenFlags.BinaryOrOctalSpecifier) return setRange(NumericLiteral.create(node.text), node);
   return node;
 }
 function visitTaggedTemplateExpression(node: TaggedTemplateExpression) {
@@ -2120,20 +2072,14 @@ function enableSubstitutionsForCapturedThis() {
 }
 function onSubstituteNode(hint: EmitHint, node: Node) {
   node = previousOnSubstituteNode(hint, node);
-  if (hint === EmitHint.Expression) {
-    return substituteExpression(node);
-  }
-  if (Node.is.kind(Identifier, node)) {
-    return substituteIdentifier(node);
-  }
+  if (hint === EmitHint.Expression) return substituteExpression(node);
+  if (Node.is.kind(Identifier, node)) return substituteIdentifier(node);
   return node;
 }
 function substituteIdentifier(node: Identifier) {
   if (enabledSubstitutions & ES2015SubstitutionFlags.BlockScopedBindings && !isInternalName(node)) {
     const original = Node.get.parseTreeOf(node, isIdentifier);
-    if (original && isNameOfDeclarationWithCollidingName(original)) {
-      return setRange(getGeneratedNameForNode(original), node);
-    }
+    if (original && isNameOfDeclarationWithCollidingName(original)) return setRange(getGeneratedNameForNode(original), node);
   }
   return node;
 }
@@ -2159,61 +2105,39 @@ function substituteExpression(node: Node) {
 function substituteExpressionIdentifier(node: Identifier): Identifier {
   if (enabledSubstitutions & ES2015SubstitutionFlags.BlockScopedBindings && !isInternalName(node)) {
     const declaration = resolver.getReferencedDeclarationWithCollidingName(node);
-    if (declaration && !(Node.is.classLike(declaration) && isPartOfClassBody(declaration, node))) {
-      return setRange(getGeneratedNameForNode(getNameOfDeclaration(declaration)), node);
-    }
+    if (declaration && !(Node.is.classLike(declaration) && isPartOfClassBody(declaration, node))) return setRange(getGeneratedNameForNode(getNameOfDeclaration(declaration)), node);
   }
   return node;
 }
 function isPartOfClassBody(declaration: ClassLikeDeclaration, node: Identifier) {
   let currentNode: Node | undefined = Node.get.parseTreeOf(node);
-  if (!currentNode || currentNode === declaration || currentNode.end <= declaration.pos || currentNode.pos >= declaration.end) {
-    return false;
-  }
+  if (!currentNode || currentNode === declaration || currentNode.end <= declaration.pos || currentNode.pos >= declaration.end) return false;
   const blockScope = Node.get.enclosingBlockScopeContainer(declaration);
   while (currentNode) {
-    if (currentNode === blockScope || currentNode === declaration) {
-      return false;
-    }
-    if (Node.is.classElement(currentNode) && currentNode.parent === declaration) {
-      return true;
-    }
+    if (currentNode === blockScope || currentNode === declaration) return false;
+    if (Node.is.classElement(currentNode) && currentNode.parent === declaration) return true;
     currentNode = currentNode.parent;
   }
   return false;
 }
 function substituteThisKeyword(node: PrimaryExpression): PrimaryExpression {
-  if (enabledSubstitutions & ES2015SubstitutionFlags.CapturedThis && hierarchyFacts & HierarchyFacts.CapturesThis) {
-    return setRange(createFileLevelUniqueName('_this'), node);
-  }
+  if (enabledSubstitutions & ES2015SubstitutionFlags.CapturedThis && hierarchyFacts & HierarchyFacts.CapturesThis) return setRange(createFileLevelUniqueName('_this'), node);
   return node;
 }
 function getClassMemberPrefix(node: ClassExpression | ClassDeclaration, member: ClassElement) {
   return hasSyntacticModifier(member, ModifierFlags.Static) ? getInternalName(node) : createPropertyAccess(getInternalName(node), 'prototype');
 }
 function hasSynthesizedDefaultSuperCall(constructor: ConstructorDeclaration | undefined, hasExtendsClause: boolean) {
-  if (!constructor || !hasExtendsClause) {
-    return false;
-  }
-  if (some(constructor.parameters)) {
-    return false;
-  }
+  if (!constructor || !hasExtendsClause) return false;
+  if (some(constructor.parameters)) return false;
   const statement = firstOrUndefined(constructor.body!.statements);
-  if (!statement || !isSynthesized(statement) || statement.kind !== Syntax.ExpressionStatement) {
-    return false;
-  }
+  if (!statement || !isSynthesized(statement) || statement.kind !== Syntax.ExpressionStatement) return false;
   const statementExpression = (<ExpressionStatement>statement).expression;
-  if (!isSynthesized(statementExpression) || statementExpression.kind !== Syntax.CallExpression) {
-    return false;
-  }
+  if (!isSynthesized(statementExpression) || statementExpression.kind !== Syntax.CallExpression) return false;
   const callTarget = (<CallExpression>statementExpression).expression;
-  if (!isSynthesized(callTarget) || callTarget.kind !== Syntax.SuperKeyword) {
-    return false;
-  }
+  if (!isSynthesized(callTarget) || callTarget.kind !== Syntax.SuperKeyword) return false;
   const callArgument = singleOrUndefined((<CallExpression>statementExpression).arguments);
-  if (!callArgument || !isSynthesized(callArgument) || callArgument.kind !== Syntax.SpreadElement) {
-    return false;
-  }
+  if (!callArgument || !isSynthesized(callArgument) || callArgument.kind !== Syntax.SpreadElement) return false;
   const expression = (<SpreadElement>callArgument).expression;
   return Node.is.kind(Identifier, expression) && expression.escapedText === 'arguments';
 }

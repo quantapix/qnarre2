@@ -9,15 +9,11 @@ export function transformES2016(context: TransformationContext) {
   const { hoistVariableDeclaration } = context;
   return chainBundle(transformSourceFile);
   function transformSourceFile(node: SourceFile) {
-    if (node.isDeclarationFile) {
-      return node;
-    }
+    if (node.isDeclarationFile) return node;
     return visitEachChild(node, visitor, context);
   }
   function visitor(node: Node): VisitResult<Node> {
-    if ((node.transformFlags & TransformFlags.ContainsES2016) === 0) {
-      return node;
-    }
+    if ((node.transformFlags & TransformFlags.ContainsES2016) === 0) return node;
     switch (node.kind) {
       case Syntax.BinaryExpression:
         return visitBinaryExpression(<BinaryExpression>node);

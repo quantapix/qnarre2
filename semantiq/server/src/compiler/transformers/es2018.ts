@@ -58,9 +58,7 @@ export function transformES2018(context: TransformationContext) {
     taggedTemplateStringDeclarations = append(taggedTemplateStringDeclarations, createVariableDeclaration(temp));
   }
   function transformSourceFile(node: SourceFile) {
-    if (node.isDeclarationFile) {
-      return node;
-    }
+    if (node.isDeclarationFile) return node;
     currentSourceFile = node;
     const visited = visitSourceFile(node);
     addEmitHelpers(visited, context.readEmitHelpers());
@@ -93,9 +91,7 @@ export function transformES2018(context: TransformationContext) {
     return visitEachChild(node, visitor, context);
   }
   function visitorWorker(node: Node, noDestructuringValue: boolean): VisitResult<Node> {
-    if ((node.transformFlags & TransformFlags.ContainsES2018) === 0) {
-      return node;
-    }
+    if ((node.transformFlags & TransformFlags.ContainsES2018) === 0) return node;
     switch (node.kind) {
       case Syntax.AwaitExpression:
         return visitAwaitExpression(node as AwaitExpression);
@@ -165,9 +161,8 @@ export function transformES2018(context: TransformationContext) {
     }
   }
   function visitAwaitExpression(node: AwaitExpression): Expression {
-    if (enclosingFunctionFlags & FunctionFlags.Async && enclosingFunctionFlags & FunctionFlags.Generator) {
+    if (enclosingFunctionFlags & FunctionFlags.Async && enclosingFunctionFlags & FunctionFlags.Generator)
       return setOriginalNode(setRange(createYield(createAwaitHelper(context, visitNode(node.expression, visitor, isExpression))), node), node);
-    }
     return visitEachChild(node, visitor, context);
   }
   function visitYieldExpression(node: YieldExpression) {
@@ -176,7 +171,7 @@ export function transformES2018(context: TransformationContext) {
         const expression = visitNode(node.expression, visitor, isExpression);
         return setOriginalNode(
           setRange(
-            createYield(createAwaitHelper(context, updateYield(node, node.asteriskToken, createAsyncDelegatorHelper(context, createAsyncValuesHelper(context, expression, expression), expression)))),
+            createYield(createAwaitHelper(context, node.update(node.asteriskToken, createAsyncDelegatorHelper(context, createAsyncValuesHelper(context, expression, expression), expression)))),
             node
           ),
           node
@@ -187,17 +182,14 @@ export function transformES2018(context: TransformationContext) {
     return visitEachChild(node, visitor, context);
   }
   function visitReturnStatement(node: ReturnStatement) {
-    if (enclosingFunctionFlags & FunctionFlags.Async && enclosingFunctionFlags & FunctionFlags.Generator) {
-      return updateReturn(node, createDownlevelAwait(node.expression ? visitNode(node.expression, visitor, isExpression) : qs.VoidExpression.zero()));
-    }
+    if (enclosingFunctionFlags & FunctionFlags.Async && enclosingFunctionFlags & FunctionFlags.Generator)
+      return node.update(createDownlevelAwait(node.expression ? visitNode(node.expression, visitor, isExpression) : qs.VoidExpression.zero()));
     return visitEachChild(node, visitor, context);
   }
   function visitLabeledStatement(node: LabeledStatement) {
     if (enclosingFunctionFlags & FunctionFlags.Async) {
       const statement = unwrapInnermostStatementOfLabel(node);
-      if (statement.kind === Syntax.ForOfStatement && (<ForOfStatement>statement).awaitModifier) {
-        return visitForOfStatement(<ForOfStatement>statement, node);
-      }
+      if (statement.kind === Syntax.ForOfStatement && (<ForOfStatement>statement).awaitModifier) return visitForOfStatement(<ForOfStatement>statement, node);
       return restoreEnclosingLabel(visitNode(statement, visitor, isStatement, liftToBlock), node);
     }
     return visitEachChild(node, visitor, context);
@@ -237,9 +229,8 @@ export function transformES2018(context: TransformationContext) {
           expression = createAssignHelper(context, [expression, objects[i]]);
         }
         return expression;
-      } else {
-        return createAssignHelper(context, objects);
       }
+      return createAssignHelper(context, objects);
     }
     return visitEachChild(node, visitor, context);
   }
@@ -265,11 +256,10 @@ export function transformES2018(context: TransformationContext) {
     return processTaggedTemplateExpression(context, node, visitor, currentSourceFile, recordTaggedTemplateString, ProcessLevel.LiftRestriction);
   }
   function visitBinaryExpression(node: BinaryExpression, noDestructuringValue: boolean): Expression {
-    if (isDestructuringAssignment(node) && node.left.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
+    if (isDestructuringAssignment(node) && node.left.transformFlags & TransformFlags.ContainsObjectRestOrSpread)
       return flattenDestructuringAssignment(node, visitor, context, FlattenLevel.ObjectRest, !noDestructuringValue);
-    } else if (node.operatorToken.kind === Syntax.CommaToken) {
+    if (node.operatorToken.kind === Syntax.CommaToken)
       return node.update(visitNode(node.left, visitorNoDestructuringValue, isExpression), visitNode(node.right, noDestructuringValue ? visitorNoDestructuringValue : visitor, isExpression));
-    }
     return visitEachChild(node, visitor, context);
   }
   function visitCatchClause(node: CatchClause) {
@@ -281,7 +271,7 @@ export function transformES2018(context: TransformationContext) {
       if (some(visitedBindings)) {
         block = block.update([createVariableStatement(undefined, visitedBindings), ...block.statements]);
       }
-      return updateCatchClause(node, updateVariableDeclaration(node.variableDeclaration, name, undefined, undefined), block);
+      return node.update(updateVariableDeclaration(node.variableDeclaration, name, undefined, undefined), block);
     }
     return visitEachChild(node, visitor, context);
   }
@@ -306,9 +296,8 @@ export function transformES2018(context: TransformationContext) {
     return visitVariableDeclarationWorker(node, false);
   }
   function visitVariableDeclarationWorker(node: VariableDeclaration, exportedVariableStatement: boolean): VisitResult<VariableDeclaration> {
-    if (Node.is.kind(BindingPattern, node.name) && node.name.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
+    if (Node.is.kind(BindingPattern, node.name) && node.name.transformFlags & TransformFlags.ContainsObjectRestOrSpread)
       return flattenDestructuringBinding(node, visitor, context, FlattenLevel.ObjectRest, undefined, exportedVariableStatement);
-    }
     return visitEachChild(node, visitor, context);
   }
   function visitForStatement(node: ForStatement): VisitResult<Statement> {
@@ -432,9 +421,8 @@ export function transformES2018(context: TransformationContext) {
     );
   }
   function visitParameter(node: ParameterDeclaration): ParameterDeclaration {
-    if (node.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
-      return updateParameter(node, undefined, undefined, node.dot3Token, getGeneratedNameForNode(node), undefined, undefined, visitNode(node.initializer, visitor, isExpression));
-    }
+    if (node.transformFlags & TransformFlags.ContainsObjectRestOrSpread)
+      return node.update(undefined, undefined, node.dot3Token, getGeneratedNameForNode(node), undefined, undefined, visitNode(node.initializer, visitor, isExpression));
     return visitEachChild(node, visitor, context);
   }
   function visitConstructorDeclaration(node: ConstructorDeclaration) {
@@ -635,9 +623,7 @@ export function transformES2018(context: TransformationContext) {
   }
   function onSubstituteNode(hint: EmitHint, node: Node) {
     node = previousOnSubstituteNode(hint, node);
-    if (hint === EmitHint.Expression && enclosingSuperContainerFlags) {
-      return substituteExpression(<Expression>node);
-    }
+    if (hint === EmitHint.Expression && enclosingSuperContainerFlags) return substituteExpression(<Expression>node);
     return node;
   }
   function substituteExpression(node: Expression) {
@@ -652,15 +638,11 @@ export function transformES2018(context: TransformationContext) {
     return node;
   }
   function substitutePropertyAccessExpression(node: PropertyAccessExpression) {
-    if (node.expression.kind === Syntax.SuperKeyword) {
-      return setRange(createPropertyAccess(createFileLevelUniqueName('_super'), node.name), node);
-    }
+    if (node.expression.kind === Syntax.SuperKeyword) return setRange(createPropertyAccess(createFileLevelUniqueName('_super'), node.name), node);
     return node;
   }
   function substituteElementAccessExpression(node: ElementAccessExpression) {
-    if (node.expression.kind === Syntax.SuperKeyword) {
-      return createSuperElementAccessInAsyncMethod(node.argumentExpression, node);
-    }
+    if (node.expression.kind === Syntax.SuperKeyword) return createSuperElementAccessInAsyncMethod(node.argumentExpression, node);
     return node;
   }
   function substituteCallExpression(node: CallExpression): Expression {
@@ -676,11 +658,9 @@ export function transformES2018(context: TransformationContext) {
     return kind === Syntax.ClassDeclaration || kind === Syntax.Constructor || kind === Syntax.MethodDeclaration || kind === Syntax.GetAccessor || kind === Syntax.SetAccessor;
   }
   function createSuperElementAccessInAsyncMethod(argumentExpression: Expression, location: TextRange): LeftHandSideExpression {
-    if (enclosingSuperContainerFlags & NodeCheckFlags.AsyncMethodWithSuperBinding) {
+    if (enclosingSuperContainerFlags & NodeCheckFlags.AsyncMethodWithSuperBinding)
       return setRange(createPropertyAccess(new qs.CallExpression(new Identifier('_superIndex'), undefined, [argumentExpression]), 'value'), location);
-    } else {
-      return setRange(new qs.CallExpression(new Identifier('_superIndex'), undefined, [argumentExpression]), location);
-    }
+    return setRange(new qs.CallExpression(new Identifier('_superIndex'), undefined, [argumentExpression]), location);
   }
 }
 export const assignHelper: UnscopedEmitHelper = {
@@ -702,9 +682,7 @@ export const assignHelper: UnscopedEmitHelper = {
             };`,
 };
 export function createAssignHelper(context: TransformationContext, attributesSegments: Expression[]) {
-  if (context.getCompilerOptions().target! >= ScriptTarget.ES2015) {
-    return new qs.CallExpression(createPropertyAccess(new Identifier('Object'), 'assign'), undefined, attributesSegments);
-  }
+  if (context.getCompilerOptions().target! >= ScriptTarget.ES2015) return new qs.CallExpression(createPropertyAccess(new Identifier('Object'), 'assign'), undefined, attributesSegments);
   context.requestEmitHelper(assignHelper);
   return new qs.CallExpression(getUnscopedHelperName('__assign'), undefined, attributesSegments);
 }

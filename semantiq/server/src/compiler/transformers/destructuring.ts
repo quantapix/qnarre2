@@ -67,9 +67,7 @@ export function flattenDestructuringAssignment(
   }
   flattenBindingOrAssignmentElement(flattenContext, node, value, location, isDestructuringAssignment(node));
   if (value && needsValue) {
-    if (!some(expressions)) {
-      return value;
-    }
+    if (!some(expressions)) return value;
     expressions.push(value);
   }
   return aggregateTransformFlags(inlineExpressions(expressions!)) || createOmittedExpression();
@@ -88,27 +86,20 @@ export function flattenDestructuringAssignment(
 }
 function bindingOrAssignmentElementAssignsToName(element: BindingOrAssignmentElement, escName: __String): boolean {
   const target = getTargetOfBindingOrAssignmentElement(element)!;
-  if (isBindingOrAssignmentPattern(target)) {
-    return bindingOrAssignmentPatternAssignsToName(target, escName);
-  } else if (Node.is.kind(Identifier, target)) {
-    return target.escapedText === escName;
-  }
+  if (isBindingOrAssignmentPattern(target)) return bindingOrAssignmentPatternAssignsToName(target, escName);
+  if (Node.is.kind(Identifier, target)) return target.escapedText === escName;
   return false;
 }
 function bindingOrAssignmentPatternAssignsToName(pattern: BindingOrAssignmentPattern, escName: __String): boolean {
   const elements = getElementsOfBindingOrAssignmentPattern(pattern);
   for (const element of elements) {
-    if (bindingOrAssignmentElementAssignsToName(element, escName)) {
-      return true;
-    }
+    if (bindingOrAssignmentElementAssignsToName(element, escName)) return true;
   }
   return false;
 }
 function bindingOrAssignmentElementContainsNonLiteralComputedName(element: BindingOrAssignmentElement): boolean {
   const propertyName = tryGetPropertyNameOfBindingOrAssignmentElement(element);
-  if (propertyName && Node.is.kind(ComputedPropertyName, propertyName) && !Node.is.literalExpression(propertyName.expression)) {
-    return true;
-  }
+  if (propertyName && Node.is.kind(ComputedPropertyName, propertyName) && !Node.is.literalExpression(propertyName.expression)) return true;
   const target = getTargetOfBindingOrAssignmentElement(element);
   return !!target && isBindingOrAssignmentPattern(target) && bindingOrAssignmentPatternContainsNonLiteralComputedName(target);
 }
@@ -152,7 +143,7 @@ export function flattenDestructuringBinding(
       ((Node.is.kind(Identifier, initializer) && bindingOrAssignmentElementAssignsToName(node, initializer.escapedText)) || bindingOrAssignmentElementContainsNonLiteralComputedName(node))
     ) {
       initializer = ensureIdentifier(flattenContext, initializer, false, initializer);
-      node = updateVariableDeclaration(node, node.name, node.type, initializer);
+      node = node.update(node.name, node.type, initializer);
     }
   }
   flattenBindingOrAssignmentElement(flattenContext, node, rval, node, skipInitializer);
@@ -324,9 +315,8 @@ function createDestructuringPropertyAccess(flattenContext: FlattenContext, value
   }
 }
 function ensureIdentifier(flattenContext: FlattenContext, value: Expression, reuseIdentifierExpressions: boolean, location: TextRange) {
-  if (Node.is.kind(Identifier, value) && reuseIdentifierExpressions) {
-    return value;
-  } else {
+  if (Node.is.kind(Identifier, value) && reuseIdentifierExpressions) return value;
+  else {
     const temp = createTempVariable(undefined);
     if (flattenContext.hoistTempVariables) {
       flattenContext.context.hoistVariableDeclaration(temp);

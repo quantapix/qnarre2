@@ -150,11 +150,9 @@ export function assertMissingNode(node: Node | undefined, message?: string, stac
   }
 }
 export function getFunctionName(func: AnyFunction) {
-  if (typeof func !== 'function') {
-    return '';
-  } else if (func.hasOwnProperty('name')) {
-    return (<any>func).name;
-  } else {
+  if (typeof func !== 'function') return '';
+  if (func.hasOwnProperty('name')) return (<any>func).name;
+  else {
     const text = Function.prototype.toString.call(func);
     const match = /^function\s+([\w\$]+)\s*\(/.exec(text);
     return match ? match[1] : '';
@@ -165,9 +163,7 @@ export function formatSymbol(symbol: Symbol): string {
 }
 export function formatEnum(value = 0, enumObject: any, isFlags?: boolean) {
   const members = getEnumMembers(enumObject);
-  if (value === 0) {
-    return members.length > 0 && members[0][0] === 0 ? members[0][1] : '0';
-  }
+  if (value === 0) return members.length > 0 && members[0][0] === 0 ? members[0][1] : '0';
   if (isFlags) {
     let result = '';
     let remainingFlags = value;
@@ -180,14 +176,10 @@ export function formatEnum(value = 0, enumObject: any, isFlags?: boolean) {
         remainingFlags &= ~enumValue;
       }
     }
-    if (remainingFlags === 0) {
-      return result;
-    }
+    if (remainingFlags === 0) return result;
   } else {
     for (const [enumValue, enumName] of members) {
-      if (enumValue === value) {
-        return enumName;
-      }
+      if (enumValue === value) return enumName;
     }
   }
   return value.toString();
