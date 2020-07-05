@@ -379,7 +379,7 @@ export function transformDeclarations(context: TransformationContext) {
   function filterBindingPatternInitializers(name: BindingName) {
     if (name.kind === Syntax.Identifier) return name;
     if (name.is(ArrayBindingPattern)) return name.update(name, Nodes.visit(name.elements, visitBindingElement));
-    return ObjectBindingPattern.update(name, Nodes.visit(name.elements, visitBindingElement));
+    return name.update(Nodes.visit(name.elements, visitBindingElement));
     function visitBindingElement<T extends ArrayBindingElement>(elem: T): T;
     function visitBindingElement(elem: ArrayBindingElement): ArrayBindingElement {
       if (elem.kind === Syntax.OmittedExpression) {
@@ -724,10 +724,10 @@ export function transformDeclarations(context: TransformationContext) {
         case Syntax.TypeReference: {
           checkEntityNameVisibility(input.typeName, enclosingDeclaration);
           const node = visitEachChild(input, visitDeclarationSubtree, context);
-          return cleanup(TypeReferenceNode.update(node, node.typeName, parenthesizeTypeParameters(node.typeArguments)));
+          return cleanup(node.update(node.typeName, parenthesizeTypeParameters(node.typeArguments)));
         }
         case Syntax.ConstructSignature:
-          return cleanup(ConstructSignatureDeclaration.update(input, ensureTypeParams(input, input.typeParameters), updateParamsList(input, input.parameters), ensureType(input, input.type)));
+          return cleanup(input.update(ensureTypeParams(input, input.typeParameters), updateParamsList(input, input.parameters), ensureType(input, input.type)));
         case Syntax.Constructor: {
           const ctor = SignatureDeclaration.create(Syntax.Constructor, ensureTypeParams(input, input.typeParameters), updateParamsList(input, input.parameters, ModifierFlags.None), undefined);
           ctor.modifiers = new Nodes(ensureModifiers(input));
@@ -754,55 +754,37 @@ export function transformDeclarations(context: TransformationContext) {
           }
           const accessorType = getTypeAnnotationFromAllAccessorDeclarations(input, resolver.getAllAccessorDeclarations(input));
           return cleanup(
-            GetAccessorDeclaration.update(
-              input,
-              undefined,
-              ensureModifiers(input),
-              input.name,
-              updateAccessorParamsList(input, hasEffectiveModifier(input, ModifierFlags.Private)),
-              ensureType(input, accessorType),
-              undefined
-            )
+            input.update(undefined, ensureModifiers(input), input.name, updateAccessorParamsList(input, hasEffectiveModifier(input, ModifierFlags.Private)), ensureType(input, accessorType), undefined)
           );
         }
         case Syntax.SetAccessor: {
           if (Node.is.kind(PrivateIdentifier, input.name)) {
             return cleanup(undefined);
           }
-          return cleanup(
-            SetAccessorDeclaration.update(input, undefined, ensureModifiers(input), input.name, updateAccessorParamsList(input, hasEffectiveModifier(input, ModifierFlags.Private)), undefined)
-          );
+          return cleanup(input.update(undefined, ensureModifiers(input), input.name, updateAccessorParamsList(input, hasEffectiveModifier(input, ModifierFlags.Private)), undefined));
         }
         case Syntax.PropertyDeclaration:
           if (Node.is.kind(PrivateIdentifier, input.name)) {
             return cleanup(undefined);
           }
-          return cleanup(PropertyDeclaration.update(input, undefined, ensureModifiers(input), input.name, input.questionToken, ensureType(input, input.type), ensureNoInitializer(input)));
+          return cleanup(input.update(undefined, ensureModifiers(input), input.name, input.questionToken, ensureType(input, input.type), ensureNoInitializer(input)));
         case Syntax.PropertySignature:
           if (Node.is.kind(PrivateIdentifier, input.name)) {
             return cleanup(undefined);
           }
-          return cleanup(PropertySignature.update(input, ensureModifiers(input), input.name, input.questionToken, ensureType(input, input.type), ensureNoInitializer(input)));
+          return cleanup(input.update(ensureModifiers(input), input.name, input.questionToken, ensureType(input, input.type), ensureNoInitializer(input)));
         case Syntax.MethodSignature: {
           if (Node.is.kind(PrivateIdentifier, input.name)) {
             return cleanup(undefined);
           }
-          return cleanup(
-            MethodSignature.update(input, ensureTypeParams(input, input.typeParameters), updateParamsList(input, input.parameters), ensureType(input, input.type), input.name, input.questionToken)
-          );
+          return cleanup(input.update(ensureTypeParams(input, input.typeParameters), updateParamsList(input, input.parameters), ensureType(input, input.type), input.name, input.questionToken));
         }
         case Syntax.CallSignature: {
-          return cleanup(CallSignatureDeclaration.update(input, ensureTypeParams(input, input.typeParameters), updateParamsList(input, input.parameters), ensureType(input, input.type)));
+          return cleanup(input.update(ensureTypeParams(input, input.typeParameters), updateParamsList(input, input.parameters), ensureType(input, input.type)));
         }
         case Syntax.IndexSignature: {
           return cleanup(
-            IndexSignatureDeclaration.update(
-              input,
-              undefined,
-              ensureModifiers(input),
-              updateParamsList(input, input.parameters),
-              visitNode(input.type, visitDeclarationSubtree) || KeywordTypeNode.create(Syntax.AnyKeyword)
-            )
+            input.update(undefined, ensureModifiers(input), updateParamsList(input, input.parameters), visitNode(input.type, visitDeclarationSubtree) || KeywordTypeNode.create(Syntax.AnyKeyword))
           );
         }
         case Syntax.VariableDeclaration: {
@@ -827,12 +809,10 @@ export function transformDeclarations(context: TransformationContext) {
           const trueType = visitNode(input.trueType, visitDeclarationSubtree);
           enclosingDeclaration = oldEnclosingDecl;
           const falseType = visitNode(input.falseType, visitDeclarationSubtree);
-          return cleanup(ConditionalTypeNode.update(input, checkType, extendsType, trueType, falseType));
+          return cleanup(input.update(checkType, extendsType, trueType, falseType));
         }
         case Syntax.FunctionType: {
-          return cleanup(
-            FunctionTypeNode.update(input, Nodes.visit(input.typeParameters, visitDeclarationSubtree), updateParamsList(input, input.parameters), visitNode(input.type, visitDeclarationSubtree))
-          );
+          return cleanup(input.update(Nodes.visit(input.typeParameters, visitDeclarationSubtree), updateParamsList(input, input.parameters), visitNode(input.type, visitDeclarationSubtree)));
         }
         case Syntax.ConstructorType: {
           return cleanup(
@@ -847,9 +827,8 @@ export function transformDeclarations(context: TransformationContext) {
         case Syntax.ImportType: {
           if (!Node.is.literalImportTypeNode(input)) return cleanup(input);
           return cleanup(
-            ImportTypeNode.update(
-              input,
-              LiteralTypeNode.update(input.argument, rewriteModuleSpecifier(input, input.argument.literal)),
+            input.update(
+              input.argument.update(rewriteModuleSpecifier(input, input.argument.literal)),
               input.qualifier,
               Nodes.visit(input.typeArguments, visitDeclarationSubtree, isTypeNode),
               input.isTypeOf

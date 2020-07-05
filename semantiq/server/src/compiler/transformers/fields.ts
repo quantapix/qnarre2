@@ -121,14 +121,14 @@ export function transformClassFields(context: TransformationContext) {
       const expressions = pendingExpressions;
       expressions.push(name.expression);
       pendingExpressions = [];
-      node = ComputedPropertyName.update(node, inlineExpressions(expressions));
+      node = node.update(inlineExpressions(expressions));
     }
     return node;
   }
   function visitPropertyDeclaration(node: PropertyDeclaration) {
     assert(!some(node.decorators));
     if (!shouldTransformPrivateFields && Node.is.kind(PrivateIdentifier, node.name)) {
-      return PropertyDeclaration.update(node, undefined, Nodes.visit(node.modifiers, visitor, isModifier), node.name, undefined, undefined, undefined);
+      return node.update(undefined, Nodes.visit(node.modifiers, visitor, isModifier), node.name, undefined, undefined, undefined);
     }
     const expr = getPropertyNameExpressionIfNeeded(node.name, !!node.initializer || !!context.getCompilerOptions().useDefineForClassFields);
     if (expr && !isSimpleInlineableExpression(expr)) {
@@ -462,9 +462,7 @@ export function transformClassFields(context: TransformationContext) {
   function transformProperty(property: PropertyDeclaration, receiver: LeftHandSideExpression) {
     const emitAssignment = !context.getCompilerOptions().useDefineForClassFields;
     const propertyName =
-      Node.is.kind(ComputedPropertyName, property.name) && !isSimpleInlineableExpression(property.name.expression)
-        ? ComputedPropertyName.update(property.name, getGeneratedNameForNode(property.name))
-        : property.name;
+      Node.is.kind(ComputedPropertyName, property.name) && !isSimpleInlineableExpression(property.name.expression) ? property.name.update(getGeneratedNameForNode(property.name)) : property.name;
     if (shouldTransformPrivateFields && Node.is.kind(PrivateIdentifier, propertyName)) {
       const privateIdentifierInfo = accessPrivateIdentifier(propertyName);
       if (privateIdentifierInfo) {

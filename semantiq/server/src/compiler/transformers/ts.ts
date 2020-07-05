@@ -947,7 +947,7 @@ export function transformTypeScript(context: TransformationContext) {
       if (!isSimpleInlineableExpression(innerExpression)) {
         const generatedName = getGeneratedNameForNode(name);
         hoistVariableDeclaration(generatedName);
-        return ComputedPropertyName.update(name, createAssignment(generatedName, expression));
+        return name.update(createAssignment(generatedName, expression));
       }
     }
     return visitNode(name, visitor, isPropertyName);
@@ -968,15 +968,7 @@ export function transformTypeScript(context: TransformationContext) {
     if (node.flags & NodeFlags.Ambient) {
       return;
     }
-    const updated = PropertyDeclaration.update(
-      node,
-      undefined,
-      Nodes.visit(node.modifiers, visitor, isModifier),
-      visitPropertyNameOfClassElement(node),
-      undefined,
-      undefined,
-      visitNode(node.initializer, visitor)
-    );
+    const updated = node.update(undefined, Nodes.visit(node.modifiers, visitor, isModifier), visitPropertyNameOfClassElement(node), undefined, undefined, visitNode(node.initializer, visitor));
     if (updated !== node) {
       setCommentRange(updated, node);
       setSourceMapRange(updated, moveRangePastDecorators(node));
@@ -987,7 +979,7 @@ export function transformTypeScript(context: TransformationContext) {
     if (!shouldEmitFunctionLikeDeclaration(node)) {
       return;
     }
-    return ConstructorDeclaration.update(node, undefined, undefined, visitParameterList(node.parameters, visitor, context), transformConstructorBody(node.body, node));
+    return node.update(undefined, undefined, visitParameterList(node.parameters, visitor, context), transformConstructorBody(node.body, node));
   }
   function transformConstructorBody(body: Block, constructor: ConstructorDeclaration) {
     const parametersWithPropertyAssignments = constructor && filter(constructor.parameters, (p) => Node.is.parameterPropertyDeclaration(p, constructor));
@@ -1025,8 +1017,7 @@ export function transformTypeScript(context: TransformationContext) {
     if (!shouldEmitFunctionLikeDeclaration(node)) {
       return;
     }
-    const updated = MethodDeclaration.update(
-      node,
+    const updated = node.update(
       undefined,
       Nodes.visit(node.modifiers, modifierVisitor, isModifier),
       node.asteriskToken,
@@ -1050,8 +1041,7 @@ export function transformTypeScript(context: TransformationContext) {
     if (!shouldEmitAccessorDeclaration(node)) {
       return;
     }
-    const updated = GetAccessorDeclaration.update(
-      node,
+    const updated = node.update(
       undefined,
       Nodes.visit(node.modifiers, modifierVisitor, isModifier),
       visitPropertyNameOfClassElement(node),
@@ -1069,8 +1059,7 @@ export function transformTypeScript(context: TransformationContext) {
     if (!shouldEmitAccessorDeclaration(node)) {
       return;
     }
-    const updated = SetAccessorDeclaration.update(
-      node,
+    const updated = node.update(
       undefined,
       Nodes.visit(node.modifiers, modifierVisitor, isModifier),
       visitPropertyNameOfClassElement(node),

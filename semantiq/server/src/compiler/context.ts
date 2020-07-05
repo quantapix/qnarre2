@@ -1,6 +1,7 @@
 import * as qb from './base';
+import * as qc from './classes';
 import * as qt from './types';
-import { Node } from './types';
+import { Node, NodeBuilderFlags, ObjectFlags, TypeFlags } from './types';
 import * as syntax from './syntax';
 import { Syntax } from './syntax';
 function isNamespaceMember(p: Symbol) {
@@ -35,9 +36,9 @@ export class QContext {
   createElidedInformationPlaceholder() {
     this.approximateLength += 3;
     if (!(this.flags & NodeBuilderFlags.NoTruncation)) {
-      return TypeReferenceNode.create(new Identifier('...'), undefined);
+      return new qc.TypeReferenceNode(new qc.Identifier('...'), undefined);
     }
-    return KeywordTypeNode.create(Syntax.AnyKeyword);
+    return new qc.KeywordTypeNode(Syntax.AnyKeyword);
   }
   typeToTypeNodeHelper(type: Type): TypeNode {
     if (cancellationToken && cancellationToken.throwIfCancellationRequested) {
@@ -51,39 +52,39 @@ export class QContext {
         return undefined!;
       }
       this.approximateLength += 3;
-      return KeywordTypeNode.create(Syntax.AnyKeyword);
+      return new qc.KeywordTypeNode(Syntax.AnyKeyword);
     }
     if (!(this.flags & NodeBuilderFlags.NoTypeReduction)) {
       type = getReducedType(type);
     }
     if (type.flags & TypeFlags.Any) {
       this.approximateLength += 3;
-      return KeywordTypeNode.create(Syntax.AnyKeyword);
+      return new qc.KeywordTypeNode(Syntax.AnyKeyword);
     }
     if (type.flags & TypeFlags.Unknown) {
-      return KeywordTypeNode.create(Syntax.UnknownKeyword);
+      return new qc.KeywordTypeNode(Syntax.UnknownKeyword);
     }
     if (type.flags & TypeFlags.String) {
       this.approximateLength += 6;
-      return KeywordTypeNode.create(Syntax.StringKeyword);
+      return new qc.KeywordTypeNode(Syntax.StringKeyword);
     }
     if (type.flags & TypeFlags.Number) {
       this.approximateLength += 6;
-      return KeywordTypeNode.create(Syntax.NumberKeyword);
+      return new qc.KeywordTypeNode(Syntax.NumberKeyword);
     }
     if (type.flags & TypeFlags.BigInt) {
       this.approximateLength += 6;
-      return KeywordTypeNode.create(Syntax.BigIntKeyword);
+      return new qc.KeywordTypeNode(Syntax.BigIntKeyword);
     }
     if (type.flags & TypeFlags.Boolean) {
       this.approximateLength += 7;
-      return KeywordTypeNode.create(Syntax.BooleanKeyword);
+      return new qc.KeywordTypeNode(Syntax.BooleanKeyword);
     }
     if (type.flags & TypeFlags.EnumLiteral && !(type.flags & TypeFlags.Union)) {
       const parentSymbol = getParentOfSymbol(type.symbol)!;
       const parentName = this.symbolToTypeNode(parentSymbol, SymbolFlags.Type);
       const enumLiteralName =
-        getDeclaredTypeOfSymbol(parentSymbol) === type ? parentName : appendReferenceToType(parentName as TypeReferenceNode | ImportTypeNode, TypeReferenceNode.create(type.symbol.name, undefined));
+        getDeclaredTypeOfSymbol(parentSymbol) === type ? parentName : appendReferenceToType(parentName as TypeReferenceNode | ImportTypeNode, new qc.TypeReferenceNode(type.symbol.name, undefined));
       return enumLiteralName;
     }
     if (type.flags & TypeFlags.EnumLike) {
@@ -91,16 +92,16 @@ export class QContext {
     }
     if (type.flags & TypeFlags.StringLiteral) {
       this.approximateLength += (<StringLiteralType>type).value.length + 2;
-      return LiteralTypeNode.create(setEmitFlags(createLiteral((<StringLiteralType>type).value, !!(this.flags & NodeBuilderFlags.UseSingleQuotesForStringLiteralType)), EmitFlags.NoAsciiEscaping));
+      return new qc.LiteralTypeNode(setEmitFlags(createLiteral((<StringLiteralType>type).value, !!(this.flags & NodeBuilderFlags.UseSingleQuotesForStringLiteralType)), EmitFlags.NoAsciiEscaping));
     }
     if (type.flags & TypeFlags.NumberLiteral) {
       const value = (<NumberLiteralType>type).value;
       this.approximateLength += ('' + value).length;
-      return LiteralTypeNode.create(value < 0 ? new qs.PrefixUnaryExpression(Syntax.MinusToken, createLiteral(-value)) : createLiteral(value));
+      return new qc.LiteralTypeNode(value < 0 ? new qs.PrefixUnaryExpression(Syntax.MinusToken, createLiteral(-value)) : createLiteral(value));
     }
     if (type.flags & TypeFlags.BigIntLiteral) {
       this.approximateLength += pseudoBigIntToString((<BigIntLiteralType>type).value).length + 1;
-      return LiteralTypeNode.create(createLiteral((<BigIntLiteralType>type).value));
+      return new qc.LiteralTypeNode(createLiteral((<BigIntLiteralType>type).value));
     }
     if (type.flags & TypeFlags.BooleanLiteral) {
       this.approximateLength += (<IntrinsicType>type).intrinsicName.length;
@@ -117,31 +118,31 @@ export class QContext {
         }
       }
       this.approximateLength += 13;
-      return TypeOperatorNode.create(Syntax.UniqueKeyword, KeywordTypeNode.create(Syntax.SymbolKeyword));
+      return new qc.TypeOperatorNode(Syntax.UniqueKeyword, new qc.KeywordTypeNode(Syntax.SymbolKeyword));
     }
     if (type.flags & TypeFlags.Void) {
       this.approximateLength += 4;
-      return KeywordTypeNode.create(Syntax.VoidKeyword);
+      return new qc.KeywordTypeNode(Syntax.VoidKeyword);
     }
     if (type.flags & TypeFlags.Undefined) {
       this.approximateLength += 9;
-      return KeywordTypeNode.create(Syntax.UndefinedKeyword);
+      return new qc.KeywordTypeNode(Syntax.UndefinedKeyword);
     }
     if (type.flags & TypeFlags.Null) {
       this.approximateLength += 4;
-      return KeywordTypeNode.create(Syntax.NullKeyword);
+      return new qc.KeywordTypeNode(Syntax.NullKeyword);
     }
     if (type.flags & TypeFlags.Never) {
       this.approximateLength += 5;
-      return KeywordTypeNode.create(Syntax.NeverKeyword);
+      return new qc.KeywordTypeNode(Syntax.NeverKeyword);
     }
     if (type.flags & TypeFlags.ESSymbol) {
       this.approximateLength += 6;
-      return KeywordTypeNode.create(Syntax.SymbolKeyword);
+      return new qc.KeywordTypeNode(Syntax.SymbolKeyword);
     }
     if (type.flags & TypeFlags.NonPrimitive) {
       this.approximateLength += 6;
-      return KeywordTypeNode.create(Syntax.ObjectKeyword);
+      return new qc.KeywordTypeNode(Syntax.ObjectKeyword);
     }
     if (isThisTypeParameter(type)) {
       if (this.flags & NodeBuilderFlags.InObjectTypeLiteral) {
@@ -157,7 +158,7 @@ export class QContext {
     }
     if (!inTypeAlias && type.aliasSymbol && (this.flags & NodeBuilderFlags.UseAliasDefinedOutsideCurrentScope || isTypeSymbolAccessible(type.aliasSymbol, this.enclosingDeclaration))) {
       const typeArgumentNodes = this.mapToTypeNodes(type.aliasTypeArguments);
-      if (syntax.is.reservedName(type.aliasSymbol.escName) && !(type.aliasSymbol.flags & SymbolFlags.Class)) return TypeReferenceNode.create(new Identifier(''), typeArgumentNodes);
+      if (syntax.is.reservedName(type.aliasSymbol.escName) && !(type.aliasSymbol.flags & SymbolFlags.Class)) return new qc.TypeReferenceNode(new Identifier(''), typeArgumentNodes);
       return this.symbolToTypeNode(type.aliasSymbol, SymbolFlags.Type, typeArgumentNodes);
     }
     const objectFlags = getObjectFlags(type);
@@ -168,14 +169,14 @@ export class QContext {
     if (type.flags & TypeFlags.TypeParameter || objectFlags & ObjectFlags.ClassOrInterface) {
       if (type.flags & TypeFlags.TypeParameter && contains(this.inferTypeParameters, type)) {
         this.approximateLength += type.symbol.name.length + 6;
-        return InferTypeNode.create(this.typeParameterToDeclarationWithConstraint(type as TypeParameter, undefined));
+        return new qc.InferTypeNode(this.typeParameterToDeclarationWithConstraint(type as TypeParameter, undefined));
       }
       if (this.flags & NodeBuilderFlags.GenerateNamesForShadowedTypeParams && type.flags & TypeFlags.TypeParameter && !isTypeSymbolAccessible(type.symbol, this.enclosingDeclaration)) {
         const name = this.typeParameterToName(type);
         this.approximateLength += idText(name).length;
-        return TypeReferenceNode.create(new Identifier(idText(name)), undefined);
+        return new qc.TypeReferenceNode(new Identifier(idText(name)), undefined);
       }
-      return type.symbol ? this.symbolToTypeNode(type.symbol, SymbolFlags.Type) : TypeReferenceNode.create(new Identifier('?'), undefined);
+      return type.symbol ? this.symbolToTypeNode(type.symbol, SymbolFlags.Type) : new qc.TypeReferenceNode(new Identifier('?'), undefined);
     }
     if (type.flags & (TypeFlags.Union | TypeFlags.Intersection)) {
       const types = type.flags & TypeFlags.Union ? formatUnionTypes((<UnionType>type).types) : (<IntersectionType>type).types;
@@ -199,13 +200,13 @@ export class QContext {
       const indexedType = (<IndexType>type).type;
       this.approximateLength += 6;
       const indexTypeNode = this.typeToTypeNodeHelper(indexedType);
-      return TypeOperatorNode.create(indexTypeNode);
+      return new qc.TypeOperatorNode(indexTypeNode);
     }
     if (type.flags & TypeFlags.IndexedAccess) {
       const objectTypeNode = this.typeToTypeNodeHelper((<IndexedAccessType>type).objectType);
       const indexTypeNode = this.typeToTypeNodeHelper((<IndexedAccessType>type).indexType);
       this.approximateLength += 2;
-      return IndexedAccessTypeNode.create(objectTypeNode, indexTypeNode);
+      return new qc.IndexedAccessTypeNode(objectTypeNode, indexTypeNode);
     }
     if (type.flags & TypeFlags.Conditional) {
       const checkTypeNode = this.typeToTypeNodeHelper((<ConditionalType>type).checkType);
@@ -216,7 +217,7 @@ export class QContext {
       const trueTypeNode = this.typeToTypeNodeHelper(getTrueTypeFromConditionalType(<ConditionalType>type));
       const falseTypeNode = this.typeToTypeNodeHelper(getFalseTypeFromConditionalType(<ConditionalType>type));
       this.approximateLength += 15;
-      return ConditionalTypeNode.create(checkTypeNode, extendsTypeNode, trueTypeNode, falseTypeNode);
+      return new qc.ConditionalTypeNode(checkTypeNode, extendsTypeNode, trueTypeNode, falseTypeNode);
     }
     if (type.flags & TypeFlags.Substitution) return this.typeToTypeNodeHelper((<SubstitutionType>type).baseType);
     return fail('Should be unreachable.');
@@ -229,7 +230,7 @@ export class QContext {
         root.typeArguments = ref.typeArguments;
         const ids = getAccessStack(ref);
         for (const id of ids) {
-          root.qualifier = root.qualifier ? QualifiedName.create(root.qualifier, id) : id;
+          root.qualifier = root.qualifier ? new qc.QualifiedName(root.qualifier, id) : id;
         }
         return root;
       } else {
@@ -238,7 +239,7 @@ export class QContext {
         root.typeArguments = ref.typeArguments;
         const ids = getAccessStack(ref);
         for (const id of ids) {
-          root.typeName = QualifiedName.create(root.typeName, id);
+          root.typeName = new qc.QualifiedName(root.typeName, id);
         }
         return root;
       }
@@ -408,15 +409,15 @@ export class QContext {
         getSymbolIfSameReference(getMembersOfSymbol(parent).get(symbol.escName)!, symbol)
       ) {
         const LHS = createAccessFromSymbolChain(chain, index - 1, stopper);
-        if (Node.is.kind(IndexedAccessTypeNode, LHS)) return IndexedAccessTypeNode.create(LHS, LiteralTypeNode.create(createLiteral(symbolName)));
-        return IndexedAccessTypeNode.create(TypeReferenceNode.create(LHS, typeParameterNodes as readonly TypeNode[]), LiteralTypeNode.create(createLiteral(symbolName)));
+        if (Node.is.kind(IndexedAccessTypeNode, LHS)) return new qc.IndexedAccessTypeNode(LHS, new qc.LiteralTypeNode(createLiteral(symbolName)));
+        return new qc.IndexedAccessTypeNode(new qc.TypeReferenceNode(LHS, typeParameterNodes as readonly TypeNode[]), new qc.LiteralTypeNode(createLiteral(symbolName)));
       }
       const identifier = setEmitFlags(new Identifier(symbolName, typeParameterNodes), EmitFlags.NoAsciiEscaping);
       identifier.symbol = symbol;
       if (index > stopper) {
         const LHS = createAccessFromSymbolChain(chain, index - 1, stopper);
         if (!Node.is.entityName(LHS)) return fail('Impossible construct - an export of an indexed access cannot be reachable');
-        return QualifiedName.create(LHS, identifier);
+        return new qc.QualifiedName(LHS, identifier);
       }
       return identifier;
     };
@@ -430,7 +431,7 @@ export class QContext {
           this.tracker.reportLikelyUnsafeImportRequiredError(specifier);
         }
       }
-      const lit = LiteralTypeNode.create(createLiteral(specifier));
+      const lit = new qc.LiteralTypeNode(createLiteral(specifier));
       if (this.tracker.trackExternalModuleSymbolOfImportTypeNode) this.tracker.trackExternalModuleSymbolOfImportTypeNode(chain[0]);
       this.approximateLength += specifier.length + 10;
       if (!nonRootParts || Node.is.entityName(nonRootParts)) {
@@ -438,20 +439,20 @@ export class QContext {
           const lastId = Node.is.kind(Identifier, nonRootParts) ? nonRootParts : nonRootParts.right;
           lastId.typeArguments = undefined;
         }
-        return ImportTypeNode.create(lit, nonRootParts as EntityName, typeParameterNodes as readonly TypeNode[], isTypeOf);
+        return new qc.ImportTypeNode(lit, nonRootParts as EntityName, typeParameterNodes as readonly TypeNode[], isTypeOf);
       } else {
         const splitNode = getTopmostIndexedAccessType(nonRootParts);
         const qualifier = (splitNode.objectType as TypeReferenceNode).typeName;
-        return IndexedAccessTypeNode.create(ImportTypeNode.create(lit, qualifier, typeParameterNodes as readonly TypeNode[], isTypeOf), splitNode.indexType);
+        return qc.IndexedAccessTypeNode(new qc.ImportTypeNode(lit, qualifier, typeParameterNodes as readonly TypeNode[], isTypeOf), splitNode.indexType);
       }
     }
     const entityName = createAccessFromSymbolChain(chain, chain.length - 1, 0);
     if (Node.is.kind(IndexedAccessTypeNode, entityName)) return entityName;
-    if (isTypeOf) return TypeQueryNode.create(entityName);
+    if (isTypeOf) return new qc.TypeQueryNode(entityName);
     const lastId = Node.is.kind(Identifier, entityName) ? entityName : entityName.right;
     const lastTypeArgs = lastId.typeArguments;
     lastId.typeArguments = undefined;
-    return TypeReferenceNode.create(entityName, lastTypeArgs as Nodes<TypeNode>);
+    return new qc.TypeReferenceNode(entityName, lastTypeArgs as Nodes<TypeNode>);
   }
   typeParameterShadowsNameInScope(escName: __String, type: TypeParameter) {
     const result = resolveName(this.enclosingDeclaration, escName, SymbolFlags.Type, undefined, escName, false);
@@ -502,7 +503,7 @@ export class QContext {
       }
       const identifier = setEmitFlags(new Identifier(symbolName, typeParameterNodes), EmitFlags.NoAsciiEscaping);
       identifier.symbol = symbol;
-      return index > 0 ? QualifiedName.create(createEntityNameFromSymbolChain(chain, index - 1), identifier) : identifier;
+      return index > 0 ? new qc.QualifiedName(createEntityNameFromSymbolChain(chain, index - 1), identifier) : identifier;
     }
   }
   symbolToExpression(s: Symbol, meaning: SymbolFlags) {
@@ -554,7 +555,7 @@ export class QContext {
       return fromNameType;
     }
     if (isKnownSymbol(s)) {
-      return ComputedPropertyName.create(createPropertyAccess(new Identifier('Symbol'), (s.escName as string).substr(3)));
+      return new qc.ComputedPropertyName(createPropertyAccess(new Identifier('Symbol'), (s.escName as string).substr(3)));
     }
     const rawName = syntax.get.unescUnderscores(s.escName);
     return createPropertyNameNodeForIdentifierOrLiteral(rawName, singleQuote);
@@ -568,12 +569,12 @@ export class QContext {
           return createLiteral(name, !!singleQuote);
         }
         if (NumericLiteral.name(name) && startsWith(name, '-')) {
-          return ComputedPropertyName.create(createLiteral(+name));
+          return new qc.ComputedPropertyName(createLiteral(+name));
         }
         return createPropertyNameNodeForIdentifierOrLiteral(name);
       }
       if (nameType.flags & TypeFlags.UniqueESSymbol) {
-        return ComputedPropertyName.create(this.symbolToExpression((<UniqueESSymbolType>nameType).symbol, SymbolFlags.Value));
+        return new qc.ComputedPropertyName(this.symbolToExpression((<UniqueESSymbolType>nameType).symbol, SymbolFlags.Value));
       }
     }
   }
@@ -617,12 +618,12 @@ export class QContext {
       if (propertyIsReverseMapped && !!(savedFlags & NodeBuilderFlags.InReverseMappedType)) {
         propertyTypeNode = createElidedInformationPlaceholder(this);
       } else {
-        propertyTypeNode = propertyType ? serializeTypeForDeclaration(this, propertyType, propertySymbol, saveEnclosingDeclaration) : KeywordTypeNode.create(Syntax.AnyKeyword);
+        propertyTypeNode = propertyType ? serializeTypeForDeclaration(this, propertyType, propertySymbol, saveEnclosingDeclaration) : new qc.KeywordTypeNode(Syntax.AnyKeyword);
       }
       this.flags = savedFlags;
       const modifiers = isReadonlySymbol(propertySymbol) ? [new Token(Syntax.ReadonlyKeyword)] : undefined;
       if (modifiers) this.approximateLength += 9;
-      const propertySignature = PropertySignature.create(modifiers, propertyName, optionalToken, propertyTypeNode, undefined);
+      const propertySignature = new qc.PropertySignature(modifiers, propertyName, optionalToken, propertyTypeNode, undefined);
       typeElements.push(preserveCommentsOn(propertySignature));
     }
     function preserveCommentsOn<T extends Node>(node: T) {
@@ -649,8 +650,8 @@ export class QContext {
   mapToTypeNodes(types: readonly Type[] | undefined, isBareList?: boolean): TypeNode[] | undefined {
     if (some(types)) {
       if (this.checkTruncationLength()) {
-        if (!isBareList) return [TypeReferenceNode.create('...', undefined)];
-        if (types.length > 2) return [this.typeToTypeNodeHelper(types[0]), TypeReferenceNode.create(`... ${types.length - 2} more ...`, undefined), this.typeToTypeNodeHelper(types[types.length - 1])];
+        if (!isBareList) return [new qc.TypeReferenceNode('...', undefined)];
+        if (types.length > 2) return [this.typeToTypeNodeHelper(types[0]), new qc.TypeReferenceNode(`... ${types.length - 2} more ...`, undefined), this.typeToTypeNodeHelper(types[types.length - 1])];
       }
       const mayHaveNameCollisions = !(this.flags & NodeBuilderFlags.UseFullyQualifiedType);
       const seenNames = mayHaveNameCollisions ? createUnderscoredMultiMap<[Type, number]>() : undefined;
@@ -659,7 +660,7 @@ export class QContext {
       for (const type of types) {
         i++;
         if (this.checkTruncationLength() && i + 2 < types.length - 1) {
-          result.push(TypeReferenceNode.create(`... ${types.length - i} more ...`, undefined));
+          result.push(new qc.TypeReferenceNode(`... ${types.length - i} more ...`, undefined));
           const typeNode = this.typeToTypeNodeHelper(types[types.length - 1]);
           if (typeNode) result.push(typeNode);
           break;
@@ -691,12 +692,12 @@ export class QContext {
   }
   indexInfoToIndexSignatureDeclarationHelper(indexInfo: IndexInfo, kind: IndexKind): IndexSignatureDeclaration {
     const name = getNameFromIndexInfo(indexInfo) || 'x';
-    const indexerTypeNode = KeywordTypeNode.create(kind === IndexKind.String ? Syntax.StringKeyword : Syntax.NumberKeyword);
+    const indexerTypeNode = new qc.KeywordTypeNode(kind === IndexKind.String ? Syntax.StringKeyword : Syntax.NumberKeyword);
     const indexingParameter = createParameter(undefined, undefined, undefined, name, undefined, indexerTypeNode, undefined);
     const typeNode = this.typeToTypeNodeHelper(indexInfo.type || anyType);
     if (!indexInfo.type && !(this.flags & NodeBuilderFlags.AllowEmptyIndexInfoType)) this.encounteredError = true;
     this.approximateLength += name.length + 4;
-    return IndexSignatureDeclaration.create(undefined, indexInfo.isReadonly ? [new Token(Syntax.ReadonlyKeyword)] : undefined, [indexingParameter], typeNode);
+    return new qc.IndexSignatureDeclaration(undefined, indexInfo.isReadonly ? [new Token(Syntax.ReadonlyKeyword)] : undefined, [indexingParameter], typeNode);
   }
   signatureToSignatureDeclarationHelper(signature: Signature, kind: Syntax, privateSymbolVisitor?: (s: Symbol) => void, bundledImports?: boolean): SignatureDeclaration {
     const suppressAny = this.flags & NodeBuilderFlags.SuppressAnyReturnType;
@@ -720,7 +721,7 @@ export class QContext {
       const parameterName =
         typePredicate.kind === TypePredicateKind.Identifier || typePredicate.kind === TypePredicateKind.AssertsIdentifier
           ? setEmitFlags(new Identifier(typePredicate.parameterName), EmitFlags.NoAsciiEscaping)
-          : ThisTypeNode.create();
+          : new qc.ThisTypeNode();
       const typeNode = typePredicate.type && this.typeToTypeNodeHelper(typePredicate.type);
       returnTypeNode = TypePredicateNode.createWithModifier(assertsModifier, parameterName, typeNode);
     } else {
@@ -728,11 +729,11 @@ export class QContext {
       if (returnType && !(suppressAny && isTypeAny(returnType))) {
         returnTypeNode = this.serializeReturnTypeForSignature(returnType, signature, privateSymbolVisitor, bundledImports);
       } else if (!suppressAny) {
-        returnTypeNode = KeywordTypeNode.create(Syntax.AnyKeyword);
+        returnTypeNode = new qc.KeywordTypeNode(Syntax.AnyKeyword);
       }
     }
     this.approximateLength += 3;
-    return SignatureDeclaration.create(kind, typeParameters, parameters, returnTypeNode, typeArguments);
+    return new qc.SignatureDeclaration(kind, typeParameters, parameters, returnTypeNode, typeArguments);
   }
   typeParameterToDeclarationWithConstraint(type: TypeParameter, constraintNode: TypeNode | undefined): TypeParameterDeclaration {
     const savedContextFlags = this.flags;
@@ -856,34 +857,34 @@ export class QContext {
     return transformed === existing ? getMutableClone(existing) : transformed;
   }
   visitExistingNodeTreeSymbols<T extends Node>(node: T): Node {
-    if (Node.is.kind(JSDocAllType, node) || node.kind === Syntax.JSDocNamepathType) return KeywordTypeNode.create(Syntax.AnyKeyword);
-    if (Node.is.kind(JSDocUnknownType, node)) return KeywordTypeNode.create(Syntax.UnknownKeyword);
-    if (Node.is.kind(JSDocNullableType, node)) return UnionTypeNode.create([visitNode(node.type, this.visitExistingNodeTreeSymbols), KeywordTypeNode.create(Syntax.NullKeyword)]);
-    if (Node.is.kind(JSDocOptionalType, node)) return UnionTypeNode.create([visitNode(node.type, this.visitExistingNodeTreeSymbols), KeywordTypeNode.create(Syntax.UndefinedKeyword)]);
+    if (Node.is.kind(JSDocAllType, node) || node.kind === Syntax.JSDocNamepathType) return new qc.KeywordTypeNode(Syntax.AnyKeyword);
+    if (Node.is.kind(JSDocUnknownType, node)) return new qc.KeywordTypeNode(Syntax.UnknownKeyword);
+    if (Node.is.kind(JSDocNullableType, node)) return new qc.UnionTypeNode([visitNode(node.type, this.visitExistingNodeTreeSymbols), new qc.KeywordTypeNode(Syntax.NullKeyword)]);
+    if (Node.is.kind(JSDocOptionalType, node)) return new qc.UnionTypeNode([visitNode(node.type, this.visitExistingNodeTreeSymbols), new qc.KeywordTypeNode(Syntax.UndefinedKeyword)]);
     if (Node.is.kind(JSDocNonNullableType, node)) return visitNode(node.type, this.visitExistingNodeTreeSymbols);
     if (Node.is.kind(JSDocVariadicType, node)) return new ArrayTypeNode(visitNode((node as JSDocVariadicType).type, this.visitExistingNodeTreeSymbols));
     if (Node.is.kind(JSDocTypeLiteral, node)) {
-      return TypeLiteralNode.create(
+      return new qc.TypeLiteralNode(
         map(node.jsDocPropertyTags, (t) => {
           const name = Node.is.kind(Identifier, t.name) ? t.name : t.name.right;
           const typeViaParent = getTypeOfPropertyOfType(getTypeFromTypeNode(node), name.escapedText);
           const overrideTypeNode = typeViaParent && t.typeExpression && getTypeFromTypeNode(t.typeExpression.type) !== typeViaParent ? this.typeToTypeNodeHelper(typeViaParent) : undefined;
-          return PropertySignature.create(
+          return new qc.PropertySignature(
             undefined,
             name,
             t.typeExpression && Node.is.kind(JSDocOptionalType, t.typeExpression.type) ? new Token(Syntax.QuestionToken) : undefined,
-            overrideTypeNode || (t.typeExpression && visitNode(t.typeExpression.type, this.visitExistingNodeTreeSymbols)) || KeywordTypeNode.create(Syntax.AnyKeyword),
+            overrideTypeNode || (t.typeExpression && visitNode(t.typeExpression.type, this.visitExistingNodeTreeSymbols)) || new qc.KeywordTypeNode(Syntax.AnyKeyword),
             undefined
           );
         })
       );
     }
     if (Node.is.kind(TypeReferenceNode, node) && Node.is.kind(Identifier, node.typeName) && node.typeName.escapedText === '') {
-      return setOriginalNode(KeywordTypeNode.create(Syntax.AnyKeyword), node);
+      return setOriginalNode(new qc.KeywordTypeNode(Syntax.AnyKeyword), node);
     }
     if ((Node.is.kind(ExpressionWithTypeArguments, node) || Node.is.kind(TypeReferenceNode, node)) && isJSDocIndexSignature(node)) {
-      return TypeLiteralNode.create([
-        IndexSignatureDeclaration.create(
+      return new qc.TypeLiteralNode([
+        new qc.IndexSignatureDeclaration(
           undefined,
           undefined,
           [createParameter(undefined, undefined, undefined, 'x', undefined, visitNode(node.typeArguments![0], visitExistingNodeTreeSymbols))],
@@ -915,7 +916,7 @@ export class QContext {
           visitNode(newTypeNode || node.type, this.visitExistingNodeTreeSymbols)
         );
       } else {
-        return FunctionTypeNode.create(
+        return new qc.FunctionTypeNode(
           Nodes.visit(node.typeParameters, this.visitExistingNodeTreeSymbols),
           map(node.parameters, (p, i) =>
             createParameter(
@@ -965,9 +966,8 @@ export class QContext {
         }
         return lit;
       };
-      return ImportTypeNode.update(
-        node,
-        LiteralTypeNode.update(node.argument, rewriteModuleSpecifier(node, node.argument.literal)),
+      return node.update(
+        node.argument.update(rewriteModuleSpecifier(node, node.argument.literal)),
         node.qualifier,
         Nodes.visit(node.typeArguments, this.visitExistingNodeTreeSymbols, isTypeNode),
         node.isTypeOf
@@ -1026,7 +1026,7 @@ export class QContext {
       for (const s of signatures) {
         if (s.declaration) privateProtected |= getSelectedEffectiveModifierFlags(s.declaration, ModifierFlags.Private | ModifierFlags.Protected);
       }
-      if (privateProtected) return [setRange(ConstructorDeclaration.create(undefined, createModifiersFromModifierFlags(privateProtected), [], undefined), signatures[0].declaration)];
+      if (privateProtected) return [setRange(new qc.ConstructorDeclaration(undefined, createModifiersFromModifierFlags(privateProtected), [], undefined), signatures[0].declaration)];
     }
     const results = [];
     for (const sig of signatures) {
@@ -1110,7 +1110,7 @@ export class QContext {
       const valueDecl = s.valueDeclaration;
       return valueDecl && Node.is.namedDeclaration(valueDecl) && Node.is.kind(PrivateIdentifier, valueDecl.name);
     });
-    const privateProperties = hasPrivateIdentifier ? [PropertyDeclaration.create(undefined, undefined, new PrivateIdentifier('#private'), undefined, undefined, undefined)] : empty;
+    const privateProperties = hasPrivateIdentifier ? [new qc.PropertyDeclaration(undefined, undefined, new PrivateIdentifier('#private'), undefined, undefined, undefined)] : empty;
     const publicProperties = flatMap<Symbol, ClassElement>(publicSymbolProps, (p) => serializePropertySymbolForClass(p, false, baseTypes[0]));
     const staticMembers = flatMap(
       filter(getPropertiesOfType(staticType), (p) => !(p.flags & SymbolFlags.Prototype) && p.escName !== 'prototype' && !isNamespaceMember(p)),
@@ -1118,7 +1118,7 @@ export class QContext {
     );
     const isNonConstructableClassLikeInJsFile = !isClass && !!symbol.valueDeclaration && isInJSFile(symbol.valueDeclaration) && !some(getSignaturesOfType(staticType, SignatureKind.Construct));
     const constructors = isNonConstructableClassLikeInJsFile
-      ? [ConstructorDeclaration.create(undefined, createModifiersFromModifierFlags(ModifierFlags.Private), [], undefined)]
+      ? [new qc.ConstructorDeclaration(undefined, createModifiersFromModifierFlags(ModifierFlags.Private), [], undefined)]
       : (serializeSignatures(SignatureKind.Construct, staticType, baseTypes[0], Syntax.Constructor) as ConstructorDeclaration[]);
     for (const c of constructors) {
       c.type = undefined;
@@ -1185,13 +1185,13 @@ export class QContext {
         const questionToken = type.declaration.questionToken ? <QuestionToken | PlusToken | MinusToken>new Token(type.declaration.questionToken.kind) : undefined;
         let appropriateConstraintTypeNode: TypeNode;
         if (isMappedTypeWithKeyofConstraintDeclaration(type)) {
-          appropriateConstraintTypeNode = TypeOperatorNode.create(this.typeToTypeNodeHelper(getModifiersTypeFromMappedType(type)));
+          appropriateConstraintTypeNode = new qc.TypeOperatorNode(this.typeToTypeNodeHelper(getModifiersTypeFromMappedType(type)));
         } else {
           appropriateConstraintTypeNode = this.typeToTypeNodeHelper(getConstraintTypeFromMappedType(type));
         }
         const typeParameterNode = this.typeParameterToDeclarationWithConstraint(getTypeParameterFromMappedType(type), appropriateConstraintTypeNode);
         const templateTypeNode = this.typeToTypeNodeHelper(getTemplateTypeFromMappedType(type));
-        const mappedTypeNode = MappedTypeNode.create(readonlyToken, typeParameterNode, questionToken, templateTypeNode);
+        const mappedTypeNode = new qc.MappedTypeNode(readonlyToken, typeParameterNode, questionToken, templateTypeNode);
         this.approximateLength += 10;
         return setEmitFlags(mappedTypeNode, EmitFlags.SingleLine);
       };
@@ -1200,7 +1200,7 @@ export class QContext {
       if (!resolved.properties.length && !resolved.stringIndexInfo && !resolved.numberIndexInfo) {
         if (!resolved.callSignatures.length && !resolved.constructSignatures.length) {
           this.approximateLength += 2;
-          return setEmitFlags(TypeLiteralNode.create(undefined), EmitFlags.SingleLine);
+          return setEmitFlags(new qc.TypeLiteralNode(undefined), EmitFlags.SingleLine);
         }
         if (resolved.callSignatures.length === 1 && !resolved.constructSignatures.length) {
           const signature = resolved.callSignatures[0];
@@ -1217,7 +1217,7 @@ export class QContext {
       this.flags |= NodeBuilderFlags.InObjectTypeLiteral;
       const createTypeNodesFromResolvedType = (resolvedType: ResolvedType): TypeElement[] | undefined => {
         if (this.checkTruncationLength()) {
-          return [PropertySignature.create(undefined, '...', undefined, undefined, undefined)];
+          return [new qc.PropertySignature(undefined, '...', undefined, undefined, undefined)];
         }
         const typeElements: TypeElement[] = [];
         for (const signature of resolvedType.callSignatures) {
@@ -1255,7 +1255,7 @@ export class QContext {
             }
           }
           if (this.checkTruncationLength() && i + 2 < properties.length - 1) {
-            typeElements.push(PropertySignature.create(undefined, `... ${properties.length - i} more ...`, undefined, undefined, undefined));
+            typeElements.push(new qc.PropertySignature(undefined, `... ${properties.length - i} more ...`, undefined, undefined, undefined));
             this.addPropertyToElementList(properties[properties.length - 1], typeElements);
             break;
           }
@@ -1265,7 +1265,7 @@ export class QContext {
       };
       const members = createTypeNodesFromResolvedType(resolved);
       this.flags = savedFlags;
-      const typeLiteralNode = TypeLiteralNode.create(members);
+      const typeLiteralNode = new qc.TypeLiteralNode(members);
       this.approximateLength += 2;
       return setEmitFlags(typeLiteralNode, this.flags & NodeBuilderFlags.MultilineObjectLiterals ? 0 : EmitFlags.SingleLine);
     };
@@ -1307,11 +1307,11 @@ export class QContext {
     if (type.target === globalArrayType || type.target === globalReadonlyArrayType) {
       if (this.flags & NodeBuilderFlags.WriteArrayAsGenericType) {
         const typeArgumentNode = this.typeToTypeNodeHelper(typeArguments[0]);
-        return TypeReferenceNode.create(type.target === globalArrayType ? 'Array' : 'ReadonlyArray', [typeArgumentNode]);
+        return new qc.TypeReferenceNode(type.target === globalArrayType ? 'Array' : 'ReadonlyArray', [typeArgumentNode]);
       }
       const elementType = this.typeToTypeNodeHelper(typeArguments[0]);
       const arrayType = new ArrayTypeNode(elementType);
-      return type.target === globalArrayType ? arrayType : TypeOperatorNode.create(Syntax.ReadonlyKeyword, arrayType);
+      return type.target === globalArrayType ? arrayType : new qc.TypeOperatorNode(Syntax.ReadonlyKeyword, arrayType);
     } else if (type.target.objectFlags & ObjectFlags.Tuple) {
       if (typeArguments.length > 0) {
         const arity = getTypeReferenceArity(type);
@@ -1323,7 +1323,7 @@ export class QContext {
               const isOptionalOrRest = i >= (<TupleType>type.target).minLength;
               const isRest = isOptionalOrRest && hasRestElement && i === arity - 1;
               const isOptional = isOptionalOrRest && !isRest;
-              tupleConstituentNodes[i] = NamedTupleMember.create(
+              tupleConstituentNodes[i] = new qc.NamedTupleMember(
                 isRest ? new Token(Syntax.Dot3Token) : undefined,
                 new Identifier(syntax.get.unescUnderscores(getTupleElementLabel((type.target as TupleType).labeledElementDeclarations![i]))),
                 isOptional ? new Token(Syntax.QuestionToken) : undefined,
@@ -1332,16 +1332,16 @@ export class QContext {
             }
           } else {
             for (let i = (<TupleType>type.target).minLength; i < Math.min(arity, tupleConstituentNodes.length); i++) {
-              tupleConstituentNodes[i] = hasRestElement && i === arity - 1 ? RestTypeNode.create(new ArrayTypeNode(tupleConstituentNodes[i])) : OptionalTypeNode.create(tupleConstituentNodes[i]);
+              tupleConstituentNodes[i] = hasRestElement && i === arity - 1 ? new qc.RestTypeNode(new ArrayTypeNode(tupleConstituentNodes[i])) : new qc.OptionalTypeNode(tupleConstituentNodes[i]);
             }
           }
-          const tupleTypeNode = setEmitFlags(TupleTypeNode.create(tupleConstituentNodes), EmitFlags.SingleLine);
-          return (<TupleType>type.target).readonly ? TypeOperatorNode.create(Syntax.ReadonlyKeyword, tupleTypeNode) : tupleTypeNode;
+          const tupleTypeNode = setEmitFlags(new qc.TupleTypeNode(tupleConstituentNodes), EmitFlags.SingleLine);
+          return (<TupleType>type.target).readonly ? new qc.TypeOperatorNode(Syntax.ReadonlyKeyword, tupleTypeNode) : tupleTypeNode;
         }
       }
       if (this.encounteredError || this.flags & NodeBuilderFlags.AllowEmptyTuple) {
-        const tupleTypeNode = setEmitFlags(TupleTypeNode.create([]), EmitFlags.SingleLine);
-        return (<TupleType>type.target).readonly ? TypeOperatorNode.create(Syntax.ReadonlyKeyword, tupleTypeNode) : tupleTypeNode;
+        const tupleTypeNode = setEmitFlags(new qc.TupleTypeNode([]), EmitFlags.SingleLine);
+        return (<TupleType>type.target).readonly ? new qc.TypeOperatorNode(Syntax.ReadonlyKeyword, tupleTypeNode) : tupleTypeNode;
       }
       this.encounteredError = true;
       return undefined!;
@@ -1467,7 +1467,7 @@ export class QContext {
         if (p.flags & SymbolFlags.SetAccessor) {
           result.push(
             setRange(
-              SetAccessorDeclaration.create(
+              new qc.SetAccessorDeclaration(
                 undefined,
                 createModifiersFromModifierFlags(flag),
                 name,
@@ -1491,7 +1491,7 @@ export class QContext {
           const isPrivate = modifierFlags & ModifierFlags.Private;
           result.push(
             setRange(
-              GetAccessorDeclaration.create(
+              new qc.GetAccessorDeclaration(
                 undefined,
                 createModifiersFromModifierFlags(flag),
                 name,
@@ -1549,7 +1549,7 @@ export class QContext {
   symbolTableToDeclarationStatements(symbolTable: SymbolTable, bundled?: boolean): Statement[] {
     const serializePropertySymbolForClass = this.makeSerializePropertySymbol<ClassElement>(createProperty, Syntax.MethodDeclaration, true);
     const serializePropertySymbolForInterfaceWorker = this.makeSerializePropertySymbol<TypeElement>(
-      (_decorators, mods, name, question, type, initializer) => PropertySignature.create(mods, name, question, type, initializer),
+      (_decorators, mods, name, question, type, initializer) => new qc.PropertySignature(mods, name, question, type, initializer),
       Syntax.MethodSignature,
       false
     );

@@ -196,8 +196,7 @@ export function transformES2017(context: TransformationContext) {
     return setOriginalNode(setRange(createYield(undefined, visitNode(node.expression, visitor, isExpression)), node), node);
   }
   function visitMethodDeclaration(node: MethodDeclaration) {
-    return MethodDeclaration.update(
-      node,
+    return node.update(
       undefined,
       Nodes.visit(node.modifiers, visitor, isModifier),
       node.asteriskToken,

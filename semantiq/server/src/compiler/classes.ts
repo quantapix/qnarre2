@@ -43,6 +43,9 @@ export abstract class Declaration extends Node implements qt.Declaration {
     return this.getExportName(allowComments, allowSourceMaps);
   }
 }
+export abstract class TypeNode extends Node implements qt.TypeNode {
+  _typeNodeBrand: any;
+}
 export abstract class NamedDeclaration extends Declaration implements qt.NamedDeclaration {
   name?: qt.DeclarationName;
 }
@@ -58,7 +61,7 @@ export class SignatureDeclarationBase extends NamedDeclaration implements qt.Sig
   name?: qt.PropertyName;
   typeParameters?: Nodes<TypeParameterDeclaration>;
   parameters!: Nodes<ParameterDeclaration>;
-  type?: qt.TypeNode;
+  type?: TypeNode;
   typeArguments?: Nodes<qt.TypeNode>;
 }
 export abstract class FunctionLikeDeclarationBase extends SignatureDeclarationBase implements qt.FunctionLikeDeclarationBase {
@@ -404,14 +407,14 @@ export class ArrayLiteralExpression extends PrimaryExpression implements qt.Arra
   }
 }
 ArrayLiteralExpression.prototype.kind = ArrayLiteralExpression.kind;
-export class ArrayTypeNode extends Node implements qt.ArrayTypeNode {
+export class ArrayTypeNode extends TypeNode implements qt.ArrayTypeNode {
   static readonly kind = Syntax.ArrayType;
-  elementType: qt.TypeNode;
-  constructor(t: qt.TypeNode) {
+  elementType: TypeNode;
+  constructor(t: TypeNode) {
     super(true);
     this.elementType = parenthesize.arrayTypeMember(t);
   }
-  update(t: qt.TypeNode) {
+  update(t: TypeNode) {
     return this.elementType !== t ? new ArrayTypeNode(t).updateFrom(this) : this;
   }
   _typeNodeBrand: any;
@@ -1194,16 +1197,15 @@ export class ConditionalTypeNode extends TypeNode implements qt.ConditionalTypeN
   extendsType: TypeNode;
   trueType: TypeNode;
   falseType: TypeNode;
-  create(c: TypeNode, e: TypeNode, t: TypeNode, f: TypeNode) {
-    const n = Node.createSynthesized(Syntax.ConditionalType);
-    n.checkType = parenthesizeConditionalTypeMember(c);
-    n.extendsType = parenthesizeConditionalTypeMember(e);
-    n.trueType = t;
-    n.falseType = f;
-    return n;
+  constructor(c: TypeNode, e: TypeNode, t: TypeNode, f: TypeNode) {
+    super(true);
+    this.checkType = parenthesize.conditionalTypeMember(c);
+    this.extendsType = parenthesize.conditionalTypeMember(e);
+    this.trueType = t;
+    this.falseType = f;
   }
-  update(n: ConditionalTypeNode, c: TypeNode, e: TypeNode, t: TypeNode, f: TypeNode) {
-    return n.checkType !== c || n.extendsType !== e || n.trueType !== t || n.falseType !== f ? updateNode(create(c, e, t, f), n) : n;
+  update(c: TypeNode, e: TypeNode, t: TypeNode, f: TypeNode) {
+    return this.checkType !== c || this.extendsType !== e || this.trueType !== t || this.falseType !== f ? new ConditionalTypeNode(c, e, t, f).updateFrom(this) : this;
   }
 }
 ConditionalTypeNode.prototype.kind = ConditionalTypeNode.kind;
@@ -1907,14 +1909,13 @@ export class IndexedAccessTypeNode extends TypeNode implements qt.IndexedAccessT
   static readonly kind = Syntax.IndexedAccessType;
   objectType: TypeNode;
   indexType: TypeNode;
-  create(o: TypeNode, i: TypeNode) {
-    const n = Node.createSynthesized(Syntax.IndexedAccessType);
-    n.objectType = parenthesizeElementTypeMember(o);
-    n.indexType = i;
-    return n;
+  constructor(o: TypeNode, i: TypeNode) {
+    super(true);
+    this.objectType = parenthesize.elementTypeMember(o);
+    this.indexType = i;
   }
-  update(n: IndexedAccessTypeNode, o: TypeNode, i: TypeNode) {
-    return n.objectType !== o || n.indexType !== i ? updateNode(create(o, i), n) : n;
+  update(o: TypeNode, i: TypeNode) {
+    return this.objectType !== o || this.indexType !== i ? new IndexedAccessTypeNode(o, i).updateFrom(this) : this;
   }
 }
 IndexedAccessTypeNode.prototype.kind = IndexedAccessTypeNode.kind;
@@ -1937,13 +1938,12 @@ IndexSignatureDeclaration.prototype.kind = IndexSignatureDeclaration.kind;
 export class InferTypeNode extends TypeNode implements qt.InferTypeNode {
   static readonly kind = Syntax.InferType;
   typeParameter: TypeParameterDeclaration;
-  create(p: TypeParameterDeclaration) {
-    const n = Node.createSynthesized(Syntax.InferType);
-    n.typeParameter = p;
-    return n;
+  constructor(p: TypeParameterDeclaration) {
+    super(true);
+    this.typeParameter = p;
   }
-  update(n: InferTypeNode, p: TypeParameterDeclaration) {
-    return n.typeParameter !== p ? updateNode(create(p), n) : n;
+  update(p: TypeParameterDeclaration) {
+    return this.typeParameter !== p ? new InferTypeNode(p).updateFrom(this) : this;
   }
 }
 InferTypeNode.prototype.kind = InferTypeNode.kind;
@@ -4275,43 +4275,43 @@ export namespace parenthesize {
     }
     return expression;
   }
-  export function parenthesizeConditionalTypeMember(member: TypeNode) {
-    return member.kind === Syntax.ConditionalType ? ParenthesizedTypeNode.create(member) : member;
+  export function conditionalTypeMember(n: TypeNode) {
+    return n.kind === Syntax.ConditionalType ? ParenthesizedTypeNode.create(n) : n;
   }
-  export function parenthesizeElementTypeMember(member: TypeNode) {
-    switch (member.kind) {
+  export function elementTypeMember(n: TypeNode) {
+    switch (n.kind) {
       case Syntax.UnionType:
       case Syntax.IntersectionType:
       case Syntax.FunctionType:
       case Syntax.ConstructorType:
-        return ParenthesizedTypeNode.create(member);
+        return ParenthesizedTypeNode.create(n);
     }
-    return parenthesizeConditionalTypeMember(member);
+    return conditionalTypeMember(n);
   }
-  export function arrayTypeMember(member: qt.TypeNode) {
-    switch (member.kind) {
+  export function arrayTypeMember(n: qt.TypeNode) {
+    switch (n.kind) {
       case Syntax.TypeQuery:
       case Syntax.TypeOperator:
       case Syntax.InferType:
-        return ParenthesizedTypeNode.create(member);
+        return ParenthesizedTypeNode.create(n);
     }
-    return parenthesizeElementTypeMember(member);
+    return elementTypeMember(n);
   }
-  export function parenthesizeElementTypeMembers(members: readonly TypeNode[]) {
-    return new Nodes(sameMap(members, parenthesizeElementTypeMember));
+  export function elementTypeMembers(ns: readonly TypeNode[]) {
+    return new Nodes(sameMap(ns, elementTypeMember));
   }
-  export function arenthesizeTypeParameters(typeParameters: readonly TypeNode[] | undefined) {
-    if (some(typeParameters)) {
-      const params: TypeNode[] = [];
-      for (let i = 0; i < typeParameters.length; ++i) {
-        const entry = typeParameters[i];
-        params.push(i === 0 && Node.is.functionOrConstructorTypeNode(entry) && entry.typeParameters ? ParenthesizedTypeNode.create(entry) : entry);
+  export function typeParameters(ns?: readonly TypeNode[]) {
+    if (some(ns)) {
+      const ps: TypeNode[] = [];
+      for (let i = 0; i < ns.length; ++i) {
+        const p = ns[i];
+        ps.push(i === 0 && Node.is.functionOrConstructorTypeNode(p) && p.typeParameters ? ParenthesizedTypeNode.create(p) : p);
       }
-      return new Nodes(params);
+      return new Nodes(ps);
     }
     return;
   }
-  export function parenthesizeDefaultExpression(e: Expression) {
+  export function defaultExpression(e: Expression) {
     const check = skipPartiallyEmittedExpressions(e);
     let needsParens = isCommaSequence(check);
     if (!needsParens) {
@@ -4323,15 +4323,15 @@ export namespace parenthesize {
     }
     return needsParens ? createParen(e) : e;
   }
-  export function parenthesizeForNew(expression: Expression): LeftHandSideExpression {
-    const leftmostExpr = getLeftmostExpression(expression, true);
+  export function forNew(e: Expression): LeftHandSideExpression {
+    const leftmostExpr = getLeftmostExpression(e, true);
     switch (leftmostExpr.kind) {
       case Syntax.CallExpression:
-        return createParen(expression);
+        return createParen(e);
       case Syntax.NewExpression:
-        return !(leftmostExpr as NewExpression).arguments ? createParen(expression) : <LeftHandSideExpression>expression;
+        return !(leftmostExpr as NewExpression).arguments ? createParen(e) : <LeftHandSideExpression>e;
     }
-    return forAccess(expression);
+    return forAccess(e);
   }
   export function conciseBody(b: qt.ConciseBody): qt.ConciseBody {
     if (!Node.is.kind(Block, b) && (isCommaSequence(b) || getLeftmostExpression(b, false).kind === Syntax.ObjectLiteralExpression)) {

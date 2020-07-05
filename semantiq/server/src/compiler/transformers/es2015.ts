@@ -1850,9 +1850,9 @@ function visitAccessorDeclaration(node: AccessorDeclaration): AccessorDeclaratio
   const parameters = visitParameterList(node.parameters, visitor, context);
   const body = transformFunctionBody(node);
   if (node.kind === Syntax.GetAccessor) {
-    updated = GetAccessorDeclaration.update(node, node.decorators, node.modifiers, node.name, parameters, node.type, body);
+    updated = node.update(node.decorators, node.modifiers, node.name, parameters, node.type, body);
   } else {
-    updated = SetAccessorDeclaration.update(node, node.decorators, node.modifiers, node.name, parameters, body);
+    updated = node.update(node.decorators, node.modifiers, node.name, parameters, body);
   }
   exitSubtree(ancestorFacts, HierarchyFacts.FunctionSubtreeExcludes, HierarchyFacts.None);
   convertedLoopState = savedConvertedLoopState;

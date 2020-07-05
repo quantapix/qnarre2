@@ -440,15 +440,14 @@ export function transformES2018(context: TransformationContext) {
   function visitConstructorDeclaration(node: ConstructorDeclaration) {
     const savedEnclosingFunctionFlags = enclosingFunctionFlags;
     enclosingFunctionFlags = FunctionFlags.Normal;
-    const updated = ConstructorDeclaration.update(node, undefined, node.modifiers, visitParameterList(node.parameters, visitor, context), transformFunctionBody(node));
+    const updated = node.update(undefined, node.modifiers, visitParameterList(node.parameters, visitor, context), transformFunctionBody(node));
     enclosingFunctionFlags = savedEnclosingFunctionFlags;
     return updated;
   }
   function visitGetAccessorDeclaration(node: GetAccessorDeclaration) {
     const savedEnclosingFunctionFlags = enclosingFunctionFlags;
     enclosingFunctionFlags = FunctionFlags.Normal;
-    const updated = GetAccessorDeclaration.update(
-      node,
+    const updated = node.update(
       undefined,
       node.modifiers,
       visitNode(node.name, visitor, isPropertyName),
@@ -462,22 +461,14 @@ export function transformES2018(context: TransformationContext) {
   function visitSetAccessorDeclaration(node: SetAccessorDeclaration) {
     const savedEnclosingFunctionFlags = enclosingFunctionFlags;
     enclosingFunctionFlags = FunctionFlags.Normal;
-    const updated = SetAccessorDeclaration.update(
-      node,
-      undefined,
-      node.modifiers,
-      visitNode(node.name, visitor, isPropertyName),
-      visitParameterList(node.parameters, visitor, context),
-      transformFunctionBody(node)
-    );
+    const updated = node.update(undefined, node.modifiers, visitNode(node.name, visitor, isPropertyName), visitParameterList(node.parameters, visitor, context), transformFunctionBody(node));
     enclosingFunctionFlags = savedEnclosingFunctionFlags;
     return updated;
   }
   function visitMethodDeclaration(node: MethodDeclaration) {
     const savedEnclosingFunctionFlags = enclosingFunctionFlags;
     enclosingFunctionFlags = getFunctionFlags(node);
-    const updated = MethodDeclaration.update(
-      node,
+    const updated = node.update(
       undefined,
       enclosingFunctionFlags & FunctionFlags.Generator ? Nodes.visit(node.modifiers, visitorNoAsyncModifier, isModifier) : node.modifiers,
       enclosingFunctionFlags & FunctionFlags.Async ? undefined : node.asteriskToken,
