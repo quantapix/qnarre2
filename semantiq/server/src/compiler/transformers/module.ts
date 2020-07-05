@@ -373,12 +373,12 @@ export function transformModule(context: TransformationContext) {
     needUMDDynamicImportHelper = true;
     if (isSimpleCopiableExpression(arg)) {
       const argClone = Node.is.generatedIdentifier(arg) ? arg : Node.is.kind(StringLiteral, arg) ? createLiteral(arg) : setEmitFlags(setRange(getSynthesizedClone(arg), arg), EmitFlags.NoComments);
-      return createConditional(new Identifier('__syncRequire'), createImportCallExpressionCommonJS(arg, containsLexicalThis), createImportCallExpressionAMD(argClone, containsLexicalThis));
+      return new qc.ConditionalExpression(new Identifier('__syncRequire'), createImportCallExpressionCommonJS(arg, containsLexicalThis), createImportCallExpressionAMD(argClone, containsLexicalThis));
     } else {
       const temp = createTempVariable(hoistVariableDeclaration);
       return createComma(
         createAssignment(temp, arg),
-        createConditional(new Identifier('__syncRequire'), createImportCallExpressionCommonJS(temp, containsLexicalThis), createImportCallExpressionAMD(temp, containsLexicalThis))
+        new qc.ConditionalExpression(new Identifier('__syncRequire'), createImportCallExpressionCommonJS(temp, containsLexicalThis), createImportCallExpressionAMD(temp, containsLexicalThis))
       );
     }
   }
@@ -631,7 +631,7 @@ export function transformModule(context: TransformationContext) {
         statements,
         setOriginalNode(
           setRange(
-            createClassDeclaration(
+            new qc.ClassDeclaration(
               undefined,
               Nodes.visit(node.modifiers, modifierVisitor, isModifier),
               getDeclarationName(node, true),
@@ -1462,7 +1462,7 @@ export function transformSystemModule(context: TransformationContext) {
           createAssignment(
             name,
             setRange(
-              createClassExpression(
+              new qc.ClassExpression(
                 undefined,
                 node.name,
                 undefined,

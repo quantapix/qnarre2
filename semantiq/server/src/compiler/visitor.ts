@@ -111,7 +111,9 @@ function addForBindingPattern(p: qc.ParameterDeclaration, c: TransformationConte
         createVariableDeclaration(
           p.name,
           p.type,
-          p.initializer ? createConditional(createStrictEquality(getGeneratedNameForNode(p), qc.VoidExpression.zero()), p.initializer, getGeneratedNameForNode(p)) : getGeneratedNameForNode(p)
+          p.initializer
+            ? new qc.ConditionalExpression(createStrictEquality(getGeneratedNameForNode(p), qc.VoidExpression.zero()), p.initializer, getGeneratedNameForNode(p))
+            : getGeneratedNameForNode(p)
         ),
       ])
     )

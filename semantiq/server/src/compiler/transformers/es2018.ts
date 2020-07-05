@@ -399,7 +399,7 @@ export function transformES2018(context: TransformationContext) {
     );
     return createTry(
       new Block([restoreEnclosingLabel(forStatement, outermostLabeledStatement)]),
-      createCatchClause(
+      new qc.CatchClause(
         createVariableDeclaration(catchVariable),
         setEmitFlags(new Block([createExpressionStatement(createAssignment(errorRecord, createObjectLiteral([createPropertyAssignment('error', catchVariable)])))]), EmitFlags.SingleLine)
       ),

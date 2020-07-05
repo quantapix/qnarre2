@@ -1105,7 +1105,7 @@ export class QContext {
     const indexSignatures = serializeIndexSignatures(classType, baseTypes[0]);
     addResult(
       setRange(
-        createClassDeclaration(undefined, undefined, localName, typeParamDecls, heritageClauses, [...indexSignatures, ...staticMembers, ...constructors, ...publicProperties, ...privateProperties]),
+        new qc.ClassDeclaration(undefined, undefined, localName, typeParamDecls, heritageClauses, [...indexSignatures, ...staticMembers, ...constructors, ...publicProperties, ...privateProperties]),
         symbol.declarations && filter(symbol.declarations, (d) => Node.is.kind(ClassDeclaration, d) || Node.is.kind(ClassExpression, d))[0]
       ),
       modifierFlags

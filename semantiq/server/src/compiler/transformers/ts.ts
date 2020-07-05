@@ -384,7 +384,7 @@ export function transformTypeScript(context: TransformationContext) {
   }
   function createClassDeclarationHeadWithoutDecorators(node: ClassDeclaration, name: Identifier | undefined, facts: ClassFacts) {
     const modifiers = !(facts & ClassFacts.UseImmediatelyInvokedFunctionExpression) ? Nodes.visit(node.modifiers, modifierVisitor, isModifier) : undefined;
-    const classDeclaration = createClassDeclaration(undefined, modifiers, name, undefined, Nodes.visit(node.heritageClauses, visitor, isHeritageClause), transformClassMembers(node));
+    const classDeclaration = new qc.ClassDeclaration(undefined, modifiers, name, undefined, Nodes.visit(node.heritageClauses, visitor, isHeritageClause), transformClassMembers(node));
     let emitFlags = Node.get.emitFlags(node);
     if (facts & ClassFacts.HasStaticInitializedProperties) {
       emitFlags |= EmitFlags.NoTrailingSourceMap;
@@ -401,7 +401,7 @@ export function transformTypeScript(context: TransformationContext) {
     const declName = getLocalName(node, false, true);
     const heritageClauses = Nodes.visit(node.heritageClauses, visitor, isHeritageClause);
     const members = transformClassMembers(node);
-    const classExpression = createClassExpression(undefined, name, undefined, heritageClauses, members);
+    const classExpression = new qc.ClassExpression(undefined, name, undefined, heritageClauses, members);
     aggregateTransformFlags(classExpression);
     setOriginalNode(classExpression, node);
     setRange(classExpression, location);
@@ -416,7 +416,7 @@ export function transformTypeScript(context: TransformationContext) {
   }
   function visitClassExpression(node: ClassExpression): Expression {
     if (!isClassLikeDeclarationWithTypeScriptSyntax(node)) return visitEachChild(node, visitor, context);
-    const classExpression = createClassExpression(undefined, node.name, undefined, Nodes.visit(node.heritageClauses, visitor, isHeritageClause), transformClassMembers(node));
+    const classExpression = new qc.ClassExpression(undefined, node.name, undefined, Nodes.visit(node.heritageClauses, visitor, isHeritageClause), transformClassMembers(node));
     aggregateTransformFlags(classExpression);
     setOriginalNode(classExpression, node);
     setRange(classExpression, node);
@@ -829,7 +829,7 @@ export function transformTypeScript(context: TransformationContext) {
         if (Node.findAncestor(node, (n) => n.parent && Node.is.kind(ConditionalTypeNode, n.parent) && (n.parent.trueType === n || n.parent.falseType === n))) return new Identifier('Object');
         const serialized = serializeEntityNameAsExpressionFallback(node.typeName);
         const temp = createTempVariable(hoistVariableDeclaration);
-        return createConditional(createTypeCheck(createAssignment(temp, serialized), 'function'), temp, new Identifier('Object'));
+        return new qc.ConditionalExpression(createTypeCheck(createAssignment(temp, serialized), 'function'), temp, new Identifier('Object'));
       case TypeReferenceSerializationKind.TypeWithConstructSignatureAndValue:
         return serializeEntityNameAsExpression(node.typeName);
       case TypeReferenceSerializationKind.VoidNullableOrNeverType:
@@ -885,11 +885,11 @@ export function transformTypeScript(context: TransformationContext) {
     return createPropertyAccess(serializeEntityNameAsExpression(node.left), node.right);
   }
   function getGlobalSymbolNameWithFallback(): ConditionalExpression {
-    return createConditional(createTypeCheck(new Identifier('Symbol'), 'function'), new Identifier('Symbol'), new Identifier('Object'));
+    return new qc.ConditionalExpression(createTypeCheck(new Identifier('Symbol'), 'function'), new Identifier('Symbol'), new Identifier('Object'));
   }
   function getGlobalBigIntNameWithFallback(): SerializedTypeNode {
     return languageVersion < ScriptTarget.ESNext
-      ? createConditional(createTypeCheck(new Identifier('BigInt'), 'function'), new Identifier('BigInt'), new Identifier('Object'))
+      ? new qc.ConditionalExpression(createTypeCheck(new Identifier('BigInt'), 'function'), new Identifier('BigInt'), new Identifier('Object'))
       : new Identifier('BigInt');
   }
   function getExpressionForPropertyName(member: ClassElement | EnumMember, generateNameForComputedPropertyName: boolean): Expression {

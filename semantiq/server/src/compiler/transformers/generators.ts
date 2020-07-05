@@ -1314,13 +1314,13 @@ export function transformGenerators(context: TransformationContext) {
             if (containsYield(clause.expression) && pendingClauses.length > 0) {
               break;
             }
-            pendingClauses.push(createCaseClause(visitNode(clause.expression, visitor, isExpression), [createInlineBreak(clauseLabels[i], clause.expression)]));
+            pendingClauses.push(new qc.CaseClause(visitNode(clause.expression, visitor, isExpression), [createInlineBreak(clauseLabels[i], clause.expression)]));
           } else {
             defaultClausesSkipped++;
           }
         }
         if (pendingClauses.length) {
-          emitStatement(createSwitch(expression, createCaseBlock(pendingClauses)));
+          emitStatement(createSwitch(expression, new qc.CaseBlock(pendingClauses)));
           clausesWritten += pendingClauses.length;
           pendingClauses = [];
         }
@@ -1846,7 +1846,7 @@ export function transformGenerators(context: TransformationContext) {
     }
     if (clauses) {
       const labelExpression = createPropertyAccess(state, 'label');
-      const switchStatement = createSwitch(labelExpression, createCaseBlock(clauses));
+      const switchStatement = createSwitch(labelExpression, new qc.CaseBlock(clauses));
       return [startOnNewLine(switchStatement)];
     }
     if (statements) return statements;
@@ -1919,7 +1919,7 @@ export function transformGenerators(context: TransformationContext) {
         statements.push(createExpressionStatement(createAssignment(createPropertyAccess(state, 'label'), createLiteral(labelNumber + 1))));
       }
     }
-    clauses.push(createCaseClause(createLiteral(labelNumber), statements || []));
+    clauses.push(new qc.CaseClause(createLiteral(labelNumber), statements || []));
     statements = undefined;
   }
   function tryEnterLabel(operationIndex: number): void {

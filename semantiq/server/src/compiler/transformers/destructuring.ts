@@ -299,7 +299,7 @@ function flattenArrayBindingOrAssignmentPattern(flattenContext: FlattenContext, 
 }
 function createDefaultValueCheck(flattenContext: FlattenContext, value: Expression, defaultValue: Expression, location: TextRange): Expression {
   value = ensureIdentifier(flattenContext, value, true, location);
-  return createConditional(createTypeCheck(value, 'undefined'), defaultValue, value);
+  return new qc.ConditionalExpression(createTypeCheck(value, 'undefined'), defaultValue, value);
 }
 function createDestructuringPropertyAccess(flattenContext: FlattenContext, value: Expression, propertyName: PropertyName): LeftHandSideExpression {
   if (Node.is.kind(ComputedPropertyName, propertyName)) {
@@ -380,7 +380,7 @@ function createRestCall(
       if (Node.is.kind(ComputedPropertyName, propertyName)) {
         const temp = computedTempVariables[computedTempVariableOffset];
         computedTempVariableOffset++;
-        propertyNames.push(createConditional(createTypeCheck(temp, 'symbol'), temp, createAdd(temp, createLiteral(''))));
+        propertyNames.push(new qc.ConditionalExpression(createTypeCheck(temp, 'symbol'), temp, createAdd(temp, createLiteral(''))));
       } else {
         propertyNames.push(createLiteral(propertyName));
       }

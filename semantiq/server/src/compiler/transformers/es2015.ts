@@ -707,7 +707,7 @@ export function transformES2015(context: TransformationContext) {
           break;
         case Syntax.FunctionDeclaration:
         case Syntax.FunctionExpression:
-          newTarget = createConditional(
+          newTarget = new qc.ConditionalExpression(
             createLogicalAnd(
               setEmitFlags(createThis(), EmitFlags.NoSubstitution),
               new BinaryExpression(setEmitFlags(createThis(), EmitFlags.NoSubstitution), Syntax.InstanceOfKeyword, getLocalName(node))
@@ -1243,7 +1243,7 @@ function convertForOfStatementForIterable(node: ForOfStatement, outermostLabeled
   );
   return createTry(
     new Block([restoreEnclosingLabel(forStatement, outermostLabeledStatement, convertedLoopState && resetLabel)]),
-    createCatchClause(
+    new qc.CatchClause(
       createVariableDeclaration(catchVariable),
       setEmitFlags(new Block([createExpressionStatement(createAssignment(errorRecord, createObjectLiteral([createPropertyAssignment('error', catchVariable)])))]), EmitFlags.SingleLine)
     ),
@@ -1576,7 +1576,7 @@ function createFunctionForBodyOfIterationStatement(
       createIf(currentState.conditionVariable, createStatement(visitNode(node.incrementor, visitor, isExpression)), createStatement(createAssignment(currentState.conditionVariable, createTrue())))
     );
     if (shouldConvertConditionOfForStatement(node)) {
-      statements.push(createIf(new qs.PrefixUnaryExpression(Syntax.ExclamationToken, visitNode(node.condition, visitor, isExpression)), visitNode(createBreak(), visitor, isStatement)));
+      statements.push(createIf(new qs.PrefixUnaryExpression(Syntax.ExclamationToken, visitNode(node.condition, visitor, isExpression)), visitNode(new qc.BreakStatement(), visitor, isStatement)));
     }
   }
   if (Node.is.kind(Block, statement)) {
@@ -1656,13 +1656,13 @@ function generateCallToConvertedLoop(loopFunctionExpressionName: Identifier, sta
       statements.push(createIf(new BinaryExpression(new TypeOfExpression(loopResultName), Syntax.Equals3Token, createLiteral('object')), returnStatement));
     }
     if (state.nonLocalJumps! & Jump.Break) {
-      statements.push(createIf(new BinaryExpression(loopResultName, Syntax.Equals3Token, createLiteral('break')), createBreak()));
+      statements.push(createIf(new BinaryExpression(loopResultName, Syntax.Equals3Token, createLiteral('break')), new qc.BreakStatement()));
     }
     if (state.labeledNonLocalBreaks || state.labeledNonLocalContinues) {
       const caseClauses: CaseClause[] = [];
       processLabeledJumps(state.labeledNonLocalBreaks!, true, loopResultName, outerState, caseClauses);
       processLabeledJumps(state.labeledNonLocalContinues!, false, loopResultName, outerState, caseClauses);
-      statements.push(createSwitch(loopResultName, createCaseBlock(caseClauses)));
+      statements.push(createSwitch(loopResultName, new qc.CaseBlock(caseClauses)));
     }
   }
   return statements;
@@ -1688,12 +1688,12 @@ function processLabeledJumps(table: Map<string>, isBreak: boolean, loopResultNam
     const statements: Statement[] = [];
     if (!outerLoop || (outerLoop.labels && outerLoop.labels.get(labelText))) {
       const label = new Identifier(labelText);
-      statements.push(isBreak ? createBreak(label) : createContinue(label));
+      statements.push(isBreak ? new qc.BreakStatement(label) : createContinue(label));
     } else {
       setLabeledJump(outerLoop, isBreak, labelText, labelMarker);
       statements.push(createReturn(loopResultName));
     }
-    caseClauses.push(createCaseClause(createLiteral(labelMarker), statements));
+    caseClauses.push(new qc.CaseClause(createLiteral(labelMarker), statements));
   });
 }
 function processLoopVariableDeclaration(

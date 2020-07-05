@@ -308,14 +308,7 @@ export function transformClassFields(context: TransformationContext) {
     const staticProperties = getProperties(node, true);
     const extendsClauseElement = getEffectiveBaseTypeNode(node);
     const isDerivedClass = !!(extendsClauseElement && skipOuterExpressions(extendsClauseElement.expression).kind !== Syntax.NullKeyword);
-    const classExpression = updateClassExpression(
-      node,
-      node.modifiers,
-      node.name,
-      undefined,
-      Nodes.visit(node.heritageClauses, visitor, isHeritageClause),
-      transformClassMembers(node, isDerivedClass)
-    );
+    const classExpression = node.update(node.modifiers, node.name, undefined, Nodes.visit(node.heritageClauses, visitor, isHeritageClause), transformClassMembers(node, isDerivedClass));
     if (some(staticProperties) || some(pendingExpressions)) {
       if (isDecoratedClassDeclaration) {
         Debug.assertIsDefined(pendingStatements, 'Decorated classes transformed by TypeScript are expected to be within a variable declaration.');

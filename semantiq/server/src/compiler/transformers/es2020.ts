@@ -135,8 +135,8 @@ export function transformES2020(context: TransformationContext) {
       setOriginalNode(rightExpression, segment);
     }
     const target = isDelete
-      ? createConditional(createNotNullCondition(leftExpression, capturedLeft, true), createTrue(), new DeleteExpression(rightExpression))
-      : createConditional(createNotNullCondition(leftExpression, capturedLeft, true), qs.VoidExpression.zero(), rightExpression);
+      ? new qc.ConditionalExpression(createNotNullCondition(leftExpression, capturedLeft, true), createTrue(), new DeleteExpression(rightExpression))
+      : new qc.ConditionalExpression(createNotNullCondition(leftExpression, capturedLeft, true), qs.VoidExpression.zero(), rightExpression);
     return thisArg ? new qs.SyntheticReferenceExpression(target, thisArg) : target;
   }
   function createNotNullCondition(left: Expression, right: Expression, invert?: boolean) {
@@ -154,7 +154,7 @@ export function transformES2020(context: TransformationContext) {
       left = createAssignment(right, left);
       // if (inParameterInitializer) tempVariableInParameter = true;
     }
-    return createConditional(createNotNullCondition(left, right), right, visitNode(node.right, visitor, isExpression));
+    return new qc.ConditionalExpression(createNotNullCondition(left, right), right, visitNode(node.right, visitor, isExpression));
   }
   function shouldCaptureInTempVariable(expression: Expression): boolean {
     return !Node.is.kind(Identifier, expression) && expression.kind !== Syntax.ThisKeyword && expression.kind !== Syntax.SuperKeyword;

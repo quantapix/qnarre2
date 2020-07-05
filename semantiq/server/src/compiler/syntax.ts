@@ -1,4 +1,5 @@
 import * as qb from './base';
+import { diags as qd } from './diags';
 export const enum Codes {
   nullCharacter = 0,
   maxAsciiCharacter = 0x7f,
