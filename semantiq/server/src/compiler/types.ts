@@ -1,6 +1,28 @@
 import * as qb from './base';
 import * as qy from './syntax';
 import { Syntax } from './syntax';
+
+export type ExponentiationOperator = Syntax.Asterisk2Token;
+export type MultiplicativeOperator = Syntax.AsteriskToken | Syntax.SlashToken | Syntax.PercentToken;
+export type MultiplicativeOperatorOrHigher = ExponentiationOperator | MultiplicativeOperator;
+export type ShiftOperator = Syntax.LessThan2Token | Syntax.GreaterThan2Token | Syntax.GreaterThan3Token;
+export type ShiftOperatorOrHigher = AdditiveOperatorOrHigher | ShiftOperator;
+export type RelationalOperator = Syntax.LessThanToken | Syntax.LessThanEqualsToken | Syntax.GreaterThanToken | Syntax.GreaterThanEqualsToken | Syntax.InstanceOfKeyword | Syntax.InKeyword;
+export type RelationalOperatorOrHigher = ShiftOperatorOrHigher | RelationalOperator;
+export type EqualityOperator = Syntax.Equals2Token | Syntax.Equals3Token | Syntax.ExclamationEquals2Token | Syntax.ExclamationEqualsToken;
+export type EqualityOperatorOrHigher = RelationalOperatorOrHigher | EqualityOperator;
+export type LogicalOperator = Syntax.Ampersand2Token | Syntax.Bar2Token;
+export type LogicalOperatorOrHigher = BitwiseOperatorOrHigher | LogicalOperator;
+// prettier-ignore
+export type CompoundAssignmentOperator = | Syntax.PlusEqualsToken | Syntax.MinusEqualsToken | Syntax.Asterisk2EqualsToken | Syntax.AsteriskEqualsToken | Syntax.SlashEqualsToken | Syntax.AmpersandEqualsToken | Syntax.BarEqualsToken | Syntax.CaretEqualsToken | Syntax.LessThan2EqualsToken | Syntax.GreaterThan3EqualsToken | Syntax.GreaterThan2EqualsToken;
+export interface ObjectDestructuringAssignment extends AssignmentExpression<EqualsToken> {
+  left: ObjectLiteralExpression;
+}
+export type DestructuringAssignment = ObjectDestructuringAssignment | ArrayDestructuringAssignment;
+export type ConciseBody = FunctionBody | Expression;
+
+export type AdditiveOperator = Syntax.PlusToken | Syntax.MinusToken;
+export type AdditiveOperatorOrHigher = MultiplicativeOperatorOrHigher | AdditiveOperator;
 export type ArrayBindingElement = BindingElement | OmittedExpression;
 export interface ArrayBindingPattern extends Node {
   kind: Syntax.ArrayBindingPattern;
@@ -16,7 +38,7 @@ export interface ArrayTypeNode extends TypeNode {
   kind: Syntax.ArrayType;
   elementType: TypeNode;
 }
-export interface ArrowFunction extends Expression, FunctionLikeDeclarationBase, JSDocContainer {
+export interface ArrowFunction extends FunctionLikeDeclarationBase, Expression, JSDocContainer {
   kind: Syntax.ArrowFunction;
   equalsGreaterThanToken: EqualsGreaterThanToken;
   body: ConciseBody;
@@ -27,6 +49,9 @@ export interface AsExpression extends Expression {
   expression: Expression;
   type: TypeNode;
 }
+export type AssignmentOperator = Syntax.EqualsToken | CompoundAssignmentOperator;
+export type AssignmentOperatorOrHigher = Syntax.Question2Token | LogicalOperatorOrHigher | AssignmentOperator;
+export type AssignmentOperatorToken = Token<AssignmentOperator>;
 export type AssignmentPattern = ArrayLiteralExpression | ObjectLiteralExpression;
 export interface AwaitExpression extends UnaryExpression {
   kind: Syntax.AwaitExpression;
@@ -41,9 +66,11 @@ export interface BinaryExpression extends Expression, Declaration {
   operatorToken: BinaryOperatorToken;
   right: Expression;
 }
+export type BinaryOperator = AssignmentOperatorOrHigher | Syntax.CommaToken;
+export type BinaryOperatorToken = Token<BinaryOperator>;
 export interface BindingElement extends NamedDeclaration {
   kind: Syntax.BindingElement;
-  parent: BindingPattern;
+  parent?: BindingPattern;
   propertyName?: PropertyName;
   dotDotDotToken?: Dot3Token;
   name: BindingName;
@@ -55,6 +82,8 @@ export type BindingOrAssignmentElementRestIndicator = Dot3Token | SpreadElement 
 export type BindingOrAssignmentElementTarget = BindingOrAssignmentPattern | Identifier | PropertyAccessExpression | ElementAccessExpression | OmittedExpression;
 export type BindingOrAssignmentPattern = ObjectBindingOrAssignmentPattern | ArrayBindingOrAssignmentPattern;
 export type BindingPattern = ArrayBindingPattern | ObjectBindingPattern;
+export type BitwiseOperator = Syntax.AmpersandToken | Syntax.BarToken | Syntax.CaretToken;
+export type BitwiseOperatorOrHigher = EqualityOperatorOrHigher | BitwiseOperator;
 export interface Block extends Statement {
   kind: Syntax.Block;
   statements: Nodes<Statement>;
@@ -2317,44 +2346,6 @@ export interface SyntheticExpression extends Expression {
   type: Type;
   tupleNameSource?: ParameterDeclaration | NamedTupleMember;
 }
-export type ExponentiationOperator = Syntax.Asterisk2Token;
-export type MultiplicativeOperator = Syntax.AsteriskToken | Syntax.SlashToken | Syntax.PercentToken;
-export type MultiplicativeOperatorOrHigher = ExponentiationOperator | MultiplicativeOperator;
-export type AdditiveOperator = Syntax.PlusToken | Syntax.MinusToken;
-export type AdditiveOperatorOrHigher = MultiplicativeOperatorOrHigher | AdditiveOperator;
-export type ShiftOperator = Syntax.LessThan2Token | Syntax.GreaterThan2Token | Syntax.GreaterThan3Token;
-export type ShiftOperatorOrHigher = AdditiveOperatorOrHigher | ShiftOperator;
-export type RelationalOperator = Syntax.LessThanToken | Syntax.LessThanEqualsToken | Syntax.GreaterThanToken | Syntax.GreaterThanEqualsToken | Syntax.InstanceOfKeyword | Syntax.InKeyword;
-export type RelationalOperatorOrHigher = ShiftOperatorOrHigher | RelationalOperator;
-export type EqualityOperator = Syntax.Equals2Token | Syntax.Equals3Token | Syntax.ExclamationEquals2Token | Syntax.ExclamationEqualsToken;
-export type EqualityOperatorOrHigher = RelationalOperatorOrHigher | EqualityOperator;
-export type BitwiseOperator = Syntax.AmpersandToken | Syntax.BarToken | Syntax.CaretToken;
-export type BitwiseOperatorOrHigher = EqualityOperatorOrHigher | BitwiseOperator;
-export type LogicalOperator = Syntax.Ampersand2Token | Syntax.Bar2Token;
-export type LogicalOperatorOrHigher = BitwiseOperatorOrHigher | LogicalOperator;
-export type CompoundAssignmentOperator =
-  | Syntax.PlusEqualsToken
-  | Syntax.MinusEqualsToken
-  | Syntax.Asterisk2EqualsToken
-  | Syntax.AsteriskEqualsToken
-  | Syntax.SlashEqualsToken
-  | Syntax.PercentEqualsToken
-  | Syntax.AmpersandEqualsToken
-  | Syntax.BarEqualsToken
-  | Syntax.CaretEqualsToken
-  | Syntax.LessThan2EqualsToken
-  | Syntax.GreaterThan3EqualsToken
-  | Syntax.GreaterThan2EqualsToken;
-export type AssignmentOperator = Syntax.EqualsToken | CompoundAssignmentOperator;
-export type AssignmentOperatorOrHigher = Syntax.Question2Token | LogicalOperatorOrHigher | AssignmentOperator;
-export type BinaryOperator = AssignmentOperatorOrHigher | Syntax.CommaToken;
-export type BinaryOperatorToken = Token<BinaryOperator>;
-export type AssignmentOperatorToken = Token<AssignmentOperator>;
-export interface ObjectDestructuringAssignment extends AssignmentExpression<EqualsToken> {
-  left: ObjectLiteralExpression;
-}
-export type DestructuringAssignment = ObjectDestructuringAssignment | ArrayDestructuringAssignment;
-export type ConciseBody = FunctionBody | Expression;
 export interface LiteralLikeNode extends Node {
   text: string;
   isUnterminated?: boolean;
