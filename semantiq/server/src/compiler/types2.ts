@@ -18,115 +18,312 @@ export type QuestionDotToken = Token<Syntax.QuestionDotToken>;
 export type QuestionToken = Token<Syntax.QuestionToken>;
 export type ReadonlyToken = Token<Syntax.ReadonlyKeyword>;
 
-export interface TransientIdentifier extends Identifier {
-  resolvedSymbol: Symbol;
+export type DestructuringPattern = BindingPattern | ObjectLiteralExpression | ArrayLiteralExpression;
+export interface IntrinsicType extends Type {
+  intrinsicName: string;
+  objectFlags: ObjectFlags;
 }
-export interface GeneratedIdentifier extends Identifier {
-  autoGenerateFlags: GeneratedIdentifierFlags;
+export interface NullableType extends IntrinsicType {
+  objectFlags: ObjectFlags;
 }
-export type EntityName = Identifier | QualifiedName;
-export type PropertyName = Identifier | StringLiteral | NumericLiteral | ComputedPropertyName | PrivateIdentifier;
-export type DeclarationName = Identifier | PrivateIdentifier | StringLiteralLike | NumericLiteral | ComputedPropertyName | ElementAccessExpression | BindingPattern | EntityNameExpression;
-export interface DynamicNamedBinaryExpression extends BinaryExpression {
-  left: ElementAccessExpression;
+export interface FreshableIntrinsicType extends IntrinsicType {
+  freshType: IntrinsicType;
+  regularType: IntrinsicType;
 }
-export interface DynamicNamedDeclaration extends NamedDeclaration {
-  name: ComputedPropertyName;
+export type FreshableType = LiteralType | FreshableIntrinsicType;
+export interface LiteralType extends Type {
+  value: string | number | PseudoBigInt;
+  freshType: LiteralType;
+  regularType: LiteralType;
 }
-export interface LateBoundBinaryExpressionDeclaration extends DynamicNamedBinaryExpression {
-  left: LateBoundElementAccessExpression;
+export interface UniqueESSymbolType extends Type {
+  symbol: Symbol;
+  escName: qb.__String;
 }
-export interface LateBoundDeclaration extends DynamicNamedDeclaration {
-  name: LateBoundName;
+export interface StringLiteralType extends LiteralType {
+  value: string;
 }
-export interface LateBoundElementAccessExpression extends ElementAccessExpression {
-  argumentExpression: EntityNameExpression;
+export interface NumberLiteralType extends LiteralType {
+  value: number;
 }
-export interface LateBoundName extends ComputedPropertyName {
-  expression: EntityNameExpression;
+export interface EnumType extends Type {}
+export interface InterfaceType extends ObjectType {
+  typeParameters: TypeParameter[] | undefined;
+  outerTypeParameters: TypeParameter[] | undefined;
+  localTypeParameters: TypeParameter[] | undefined;
+  thisType: TypeParameter | undefined;
+  resolvedBaseConstructorType?: Type;
+  resolvedBaseTypes: BaseType[];
 }
-export type BindingElementGrandparent = BindingElement['parent']['parent'];
-export type BindingName = Identifier | BindingPattern;
-export interface PrivateIdentifierPropertyDeclaration extends PropertyDeclaration {
-  name: PrivateIdentifier;
+export type BaseType = ObjectType | IntersectionType | TypeVariable;
+export interface InterfaceTypeWithDeclaredMembers extends InterfaceType {
+  declaredProperties: Symbol[];
+  declaredCallSignatures: Signature[];
+  declaredConstructSignatures: Signature[];
+  declaredStringIndexInfo?: IndexInfo;
+  declaredNumberIndexInfo?: IndexInfo;
 }
-export interface PropertyLikeDeclaration extends NamedDeclaration {
-  name: PropertyName;
+export interface TypeReference extends ObjectType {
+  target: GenericType;
+  node?: TypeReferenceNode | ArrayTypeNode | TupleTypeNode;
+  mapper?: TypeMapper;
+  resolvedTypeArguments?: readonly Type[];
+  literalType?: TypeReference;
 }
-export interface ObjectLiteralElement extends NamedDeclaration {
-  _objectLiteralBrand: any;
-  name?: PropertyName;
+export interface DeferredTypeReference extends TypeReference {
+  node: TypeReferenceNode | ArrayTypeNode | TupleTypeNode;
+  mapper?: TypeMapper;
 }
-export type ObjectLiteralElementLike = PropertyAssignment | ShorthandPropertyAssignment | SpreadAssignment | MethodDeclaration | AccessorDeclaration;
-export type VariableLikeDeclaration =
-  | VariableDeclaration
-  | ParameterDeclaration
-  | BindingElement
-  | PropertyDeclaration
-  | PropertyAssignment
-  | PropertySignature
-  | JsxAttribute
-  | ShorthandPropertyAssignment
-  | EnumMember
-  | JSDocPropertyTag
-  | JSDocParameterTag;
-export type ObjectBindingOrAssignmentPattern = ObjectBindingPattern | ObjectLiteralExpression;
-export type ArrayBindingOrAssignmentPattern = ArrayBindingPattern | ArrayLiteralExpression;
-export interface ImportExpression extends PrimaryExpression {
-  kind: Syntax.ImportKeyword;
+export const enum VarianceFlags {
+  Invariant = 0,
+  Covariant = 1 << 0,
+  Contravariant = 1 << 1,
+  Bivariant = Covariant | Contravariant,
+  Independent = 1 << 2,
+  VarianceMask = Invariant | Covariant | Contravariant | Independent,
+  Unmeasurable = 1 << 3,
+  Unreliable = 1 << 4,
+  AllowsStructuralFallback = Unmeasurable | Unreliable,
 }
-export interface SyntheticExpression extends Expression {
-  kind: Syntax.SyntheticExpression;
-  isSpread: boolean;
-  type: Type;
-  tupleNameSource?: ParameterDeclaration | NamedTupleMember;
+export interface GenericType extends InterfaceType, TypeReference {
+  instantiations: qb.QMap<TypeReference>;
+  variances?: VarianceFlags[];
 }
-export interface LiteralLikeNode extends Node {
-  text: string;
-  isUnterminated?: boolean;
-  hasExtendedEscape?: boolean;
+export interface UnionOrIntersectionType extends Type {
+  types: Type[];
+  objectFlags: ObjectFlags;
+  propertyCache: SymbolTable;
+  resolvedProperties: Symbol[];
+  resolvedIndexType: IndexType;
+  resolvedStringIndexType: IndexType;
+  resolvedBaseConstraint: Type;
 }
-export interface TemplateLiteralLikeNode extends LiteralLikeNode {
-  rawText?: string;
+export interface UnionType extends UnionOrIntersectionType {
+  resolvedReducedType: Type;
+  regularType: UnionType;
 }
-export interface LiteralExpression extends LiteralLikeNode, PrimaryExpression {
-  _literalExpressionBrand: any;
+export interface IntersectionType extends UnionOrIntersectionType {
+  resolvedApparentType: Type;
 }
-export const enum TokenFlags {
-  None = 0,
-  PrecedingLineBreak = 1 << 0,
-  PrecedingJSDocComment = 1 << 1,
-  Unterminated = 1 << 2,
-  ExtendedEscape = 1 << 3,
-  Scientific = 1 << 4, // e.g. `10e2`
-  Octal = 1 << 5, // e.g. `0777`
-  HexSpecifier = 1 << 6, // e.g. `0x00000000`
-  BinarySpecifier = 1 << 7, // e.g. `0b0110010000000000`
-  OctalSpecifier = 1 << 8, // e.g. `0o777`
-  ContainsSeparator = 1 << 9, // e.g. `0b1100_0101`
-  UnicodeEscape = 1 << 10,
-  ContainsInvalidEscape = 1 << 11, // e.g. `\uhello`
-  BinaryOrOctalSpecifier = BinarySpecifier | OctalSpecifier,
-  NumericLiteralFlags = Scientific | Octal | HexSpecifier | BinaryOrOctalSpecifier | ContainsSeparator,
+export type StructuredType = ObjectType | UnionType | IntersectionType;
+export interface MappedType extends AnonymousType {
+  declaration: MappedTypeNode;
+  typeParameter?: TypeParameter;
+  constraintType?: Type;
+  templateType?: Type;
+  modifiersType?: Type;
+  resolvedApparentType?: Type;
 }
-export type TemplateLiteral = TemplateExpression | NoSubstitutionLiteral;
-export type EntityNameExpression = Identifier | PropertyAccessEntityNameExpression;
-export type EntityNameOrEntityNameExpression = EntityName | EntityNameExpression;
-export type AccessExpression = PropertyAccessExpression | ElementAccessExpression;
-export interface PrivateIdentifierPropertyAccessExpression extends PropertyAccessExpression {
-  name: PrivateIdentifier;
+export interface EvolvingArrayType extends ObjectType {
+  elementType: Type;
+  finalArrayType?: Type;
 }
-export interface PropertyAccessChain extends PropertyAccessExpression {
-  _optionalChainBrand: any;
-  name: Identifier;
+export interface ReverseMappedType extends ObjectType {
+  source: Type;
+  mappedType: MappedType;
+  constraintType: IndexType;
 }
-export interface PropertyAccessChainRoot extends PropertyAccessChain {
-  questionDotToken: QuestionDotToken;
+export interface ResolvedType extends ObjectType, UnionOrIntersectionType {
+  members: SymbolTable;
+  properties: Symbol[];
+  callSignatures: readonly Signature[];
+  constructSignatures: readonly Signature[];
 }
-export interface SuperPropertyAccessExpression extends PropertyAccessExpression {
-  expression: SuperExpression;
+export interface FreshObjectLiteralType extends ResolvedType {
+  regularType: ResolvedType;
+}
+export interface PromiseOrAwaitableType extends ObjectType, UnionType {
+  promiseTypeOfPromiseConstructor?: Type;
+  promisedTypeOfPromise?: Type;
+  awaitedTypeOfType?: Type;
+}
+export interface SyntheticDefaultModuleType extends Type {
+  syntheticType?: Type;
+}
+export interface ConditionalRoot {
+  node: ConditionalTypeNode;
+  checkType: Type;
+  extendsType: Type;
+  trueType: Type;
+  falseType: Type;
+  isDistributive: boolean;
+  inferTypeParameters?: TypeParameter[];
+  outerTypeParameters?: TypeParameter[];
+  instantiations?: qb.QMap<Type>;
+  aliasSymbol?: Symbol;
+  aliasTypeArguments?: Type[];
+}
+export interface ConditionalType extends InstantiableType {
+  root: ConditionalRoot;
+  checkType: Type;
+  extendsType: Type;
+  resolvedTrueType: Type;
+  resolvedFalseType: Type;
+  resolvedInferredTrueType?: Type;
+  resolvedDefaultConstraint?: Type;
+  mapper?: TypeMapper;
+  combinedMapper?: TypeMapper;
+}
+export interface SubstitutionType extends InstantiableType {
+  baseType: Type;
+  substitute: Type;
 }
 
+export interface PropertyAccessEntityNameExpression extends PropertyAccessExpression {
+  _propertyAccessExpressionLikeQualifiedNameBrand?: any;
+  expression: EntityNameExpression;
+  name: Identifier;
+}
+export interface ElementAccessChainRoot extends ElementAccessChain {
+  questionDotToken: QuestionDotToken;
+}
+export interface SuperElementAccessExpression extends ElementAccessExpression {
+  expression: SuperExpression;
+}
+export type SuperProperty = SuperPropertyAccessExpression | SuperElementAccessExpression;
+export interface CallChainRoot extends CallChain {
+  questionDotToken: QuestionDotToken;
+}
+export type OptionalChain = PropertyAccessChain | ElementAccessChain | CallChain | NonNullChain;
+export type OptionalChainRoot = PropertyAccessChainRoot | ElementAccessChainRoot | CallChainRoot;
+export interface WellKnownSymbolExpression extends PropertyAccessExpression {
+  expression: Identifier & { escapedText: 'Symbol' };
+  name: Identifier;
+}
+export type BindableObjectDefinePropertyCall = CallExpression & {
+  arguments: { 0: BindableStaticNameExpression; 1: StringLiteralLike | NumericLiteral; 2: ObjectLiteralExpression };
+};
+export type BindableStaticNameExpression = EntityNameExpression | BindableStaticElementAccessExpression;
+export type LiteralLikeElementAccessExpression = ElementAccessExpression &
+  Declaration & {
+    argumentExpression: StringLiteralLike | NumericLiteral | WellKnownSymbolExpression;
+  };
+export type BindableStaticElementAccessExpression = LiteralLikeElementAccessExpression & {
+  expression: BindableStaticNameExpression;
+};
+export type BindableElementAccessExpression = ElementAccessExpression & {
+  expression: BindableStaticNameExpression;
+};
+export type BindableStaticAccessExpression = PropertyAccessEntityNameExpression | BindableStaticElementAccessExpression;
+export type BindableAccessExpression = PropertyAccessEntityNameExpression | BindableElementAccessExpression;
+export interface SuperCall extends CallExpression {
+  expression: SuperExpression;
+}
+export interface ImportCall extends CallExpression {
+  expression: ImportExpression;
+}
+export type CallLikeExpression = CallExpression | NewExpression | TaggedTemplateExpression | Decorator | JsxOpeningLikeElement;
+export type AssertionExpression = TypeAssertion | AsExpression;
+export interface NonNullChain extends NonNullExpression {
+  _optionalChainBrand: any;
+}
+export interface ImportMetaProperty extends MetaProperty {
+  keywordToken: Syntax.ImportKeyword;
+  name: Identifier & { escapedText: qb.__String & 'meta' };
+}
+export interface JsxTagNamePropertyAccess extends PropertyAccessExpression {
+  expression: JsxTagNameExpression;
+}
+export interface PrologueDirective extends ExpressionStatement {
+  expression: StringLiteral;
+}
+export type ObjectTypeDeclaration = ClassLikeDeclaration | InterfaceDeclaration | TypeLiteralNode;
+export type ModuleBody = NamespaceBody | JSDocNamespaceBody;
+export type ModuleName = Identifier | StringLiteral;
+export type NamespaceBody = ModuleBlock | NamespaceDeclaration;
+export interface NamespaceDeclaration extends ModuleDeclaration {
+  name: Identifier;
+  body: NamespaceBody;
+}
+export type JSDocNamespaceBody = Identifier | JSDocNamespaceDeclaration;
+export interface JSDocNamespaceDeclaration extends ModuleDeclaration {
+  name: Identifier;
+  body?: JSDocNamespaceBody;
+}
+export type ModuleReference = EntityName | ExternalModuleReference;
+export type NamedExportBindings = NamespaceExport | NamedExports;
+export type NamedImportBindings = NamespaceImport | NamedImports;
+export type NamedImportsOrExports = NamedImports | NamedExports;
+export type ImportOrExportSpecifier = ImportSpecifier | ExportSpecifier;
+export interface FileReference extends qb.Range {
+  fileName: string;
+}
+export interface CheckJsDirective extends qb.Range {
+  enabled: boolean;
+}
+export interface CommentRange extends qb.Range {
+  hasTrailingNewLine?: boolean;
+  kind: qy.CommentKind;
+}
+export interface SynthesizedComment extends CommentRange {
+  text: string;
+  pos: -1;
+  end: -1;
+  hasLeadingNewline?: boolean;
+}
+export interface JSDocType extends TypeNode {
+  _jsDocTypeBrand: any;
+}
+export interface JSDocNamepathType extends JSDocType {
+  kind: Syntax.JSDocNamepathType;
+  type: TypeNode;
+}
+export interface JSDocUnknownTag extends JSDocTag {
+  kind: Syntax.JSDocTag;
+}
+export interface IncompleteType {
+  flags: TypeFlags;
+  type: Type;
+}
+export interface SourceFileLike {
+  readonly text: string;
+  lineMap?: readonly number[];
+  posOf?(line: number, char: number, edits?: true): number;
+}
+export interface RedirectInfo {
+  readonly redirectTarget: SourceFile;
+  readonly unredirected: SourceFile;
+}
+export interface CommentDirective {
+  range: qb.Range;
+  type: CommentDirectiveType;
+}
+export const enum CommentDirectiveType {
+  ExpectError,
+  Ignore,
+}
+export type ExportedModulesFromDeclarationEmit = readonly Symbol[];
+export interface InputFiles extends Node {
+  kind: Syntax.InputFiles;
+  javascriptPath?: string;
+  javascriptText: string;
+  javascriptMapPath?: string;
+  javascriptMapText?: string;
+  declarationPath?: string;
+  declarationText: string;
+  declarationMapPath?: string;
+  declarationMapText?: string;
+  buildInfoPath?: string;
+  buildInfo?: BuildInfo;
+  oldFileOfCurrentEmit?: boolean;
+}
+export type UnparsedSourceText = UnparsedPrepend | UnparsedTextLike;
+export interface UnparsedSection extends Node {
+  kind: Syntax;
+  data?: string;
+  parent: UnparsedSource;
+}
+export interface UnparsedPrologue extends UnparsedSection {
+  kind: Syntax.UnparsedPrologue;
+  data: string;
+  parent: UnparsedSource;
+}
+export interface UnparsedTextLike extends UnparsedSection {
+  kind: Syntax.UnparsedText | Syntax.UnparsedInternalText;
+  parent: UnparsedSource;
+}
+
+export type AccessExpression = PropertyAccessExpression | ElementAccessExpression;
 export type AccessorDeclaration = GetAccessorDeclaration | SetAccessorDeclaration;
 export type AdditiveOperator = Syntax.PlusToken | Syntax.MinusToken;
 export type AdditiveOperatorOrHigher = MultiplicativeOperatorOrHigher | AdditiveOperator;
@@ -148,6 +345,7 @@ export interface AnonymousType extends ObjectType {
   mapper?: TypeMapper;
 }
 export type ArrayBindingElement = BindingElement | OmittedExpression;
+export type ArrayBindingOrAssignmentPattern = ArrayBindingPattern | ArrayLiteralExpression;
 export interface ArrayBindingPattern extends Node {
   kind: Syntax.ArrayBindingPattern;
   parent: VariableDeclaration | ParameterDeclaration | BindingElement;
@@ -228,6 +426,8 @@ export interface BindingElement extends NamedDeclaration {
   name: BindingName;
   initializer?: Expression;
 }
+export type BindingElementGrandparent = BindingElement['parent']['parent'];
+export type BindingName = Identifier | BindingPattern;
 // prettier-ignore
 export type BindingOrAssignmentElement = | VariableDeclaration | ParameterDeclaration | BindingElement | PropertyAssignment | ShorthandPropertyAssignment | SpreadAssignment | OmittedExpression | SpreadElement | ArrayLiteralExpression | ObjectLiteralExpression | AssignmentExpression<EqualsToken> | Identifier | PropertyAccessExpression | ElementAccessExpression;
 export type BindingOrAssignmentElementRestIndicator = Dot3Token | SpreadElement | SpreadAssignment;
@@ -368,11 +568,12 @@ export interface DebuggerStatement extends Statement {
 export interface Declaration extends Node {
   _declarationBrand: any;
 }
-export type DeclarationWithTypeParameters = DeclarationWithTypeParameterChildren | JSDocTypedefTag | JSDocCallbackTag | JSDocSignature;
-export type DeclarationWithTypeParameterChildren = SignatureDeclaration | ClassLikeDeclaration | InterfaceDeclaration | TypeAliasDeclaration | JSDocTemplateTag;
+export type DeclarationName = Identifier | PrivateIdentifier | StringLiteralLike | NumericLiteral | ComputedPropertyName | ElementAccessExpression | BindingPattern | EntityNameExpression;
 export interface DeclarationStatement extends NamedDeclaration, Statement {
   name?: Identifier | StringLiteral | NumericLiteral;
 }
+export type DeclarationWithTypeParameters = DeclarationWithTypeParameterChildren | JSDocTypedefTag | JSDocCallbackTag | JSDocSignature;
+export type DeclarationWithTypeParameterChildren = SignatureDeclaration | ClassLikeDeclaration | InterfaceDeclaration | TypeAliasDeclaration | JSDocTemplateTag;
 export interface Decorator extends Node {
   kind: Syntax.Decorator;
   parent: NamedDeclaration;
@@ -393,6 +594,12 @@ export interface DoStatement extends IterationStatement {
   kind: Syntax.DoStatement;
   expression: Expression;
 }
+export interface DynamicNamedBinaryExpression extends BinaryExpression {
+  left: ElementAccessExpression;
+}
+export interface DynamicNamedDeclaration extends NamedDeclaration {
+  name: ComputedPropertyName;
+}
 export interface ElementAccessChain extends ElementAccessExpression {
   _optionalChainBrand: any;
 }
@@ -408,6 +615,9 @@ export interface EmptyStatement extends Statement {
 export interface EndOfDeclarationMarker extends Statement {
   kind: Syntax.EndOfDeclarationMarker;
 }
+export type EntityName = Identifier | QualifiedName;
+export type EntityNameExpression = Identifier | PropertyAccessEntityNameExpression;
+export type EntityNameOrEntityNameExpression = EntityName | EntityNameExpression;
 export interface EnumDeclaration extends DeclarationStatement, JSDocContainer {
   kind: Syntax.EnumDeclaration;
   name: Identifier;
@@ -562,6 +772,20 @@ export interface FunctionOrConstructorTypeNodeBase extends TypeNode, SignatureDe
 export interface FunctionTypeNode extends FunctionOrConstructorTypeNodeBase {
   kind: Syntax.FunctionType;
 }
+export interface GeneratedIdentifier extends Identifier {
+  autoGenerateFlags: GeneratedIdentifierFlags;
+}
+export const enum GeneratedIdentifierFlags {
+  None = 0,
+  Auto = 1,
+  Loop = 2,
+  Unique = 3,
+  Node = 4,
+  KindMask = 7,
+  ReservedInNestedScopes = 1 << 3,
+  Optimistic = 1 << 4,
+  FileLevel = 1 << 5,
+}
 export interface GetAccessorDeclaration extends FunctionLikeDeclarationBase, ClassElement, ObjectLiteralElement, JSDocContainer {
   kind: Syntax.GetAccessor;
   parent: ClassLikeDeclaration | ObjectLiteralExpression;
@@ -603,6 +827,9 @@ export interface ImportDeclaration extends Statement {
   importClause?: ImportClause;
   moduleSpecifier: Expression;
 }
+export interface ImportExpression extends PrimaryExpression {
+  kind: Syntax.ImportKeyword;
+}
 export interface ImportEqualsDeclaration extends DeclarationStatement, JSDocContainer {
   kind: Syntax.ImportEqualsDeclaration;
   parent: SourceFile | ModuleBlock;
@@ -626,13 +853,77 @@ export interface IndexedAccessTypeNode extends TypeNode {
   objectType: TypeNode;
   indexType: TypeNode;
 }
+export interface IndexedAccessType extends InstantiableType {
+  objectType: Type;
+  indexType: Type;
+  constraint?: Type;
+  simplifiedForReading?: Type;
+  simplifiedForWriting?: Type;
+}
+export interface IndexInfo {
+  type: Type;
+  isReadonly: boolean;
+  declaration?: IndexSignatureDeclaration;
+}
+export const enum IndexKind {
+  String,
+  Number,
+}
 export interface IndexSignatureDeclaration extends SignatureDeclarationBase, ClassElement, TypeElement {
   kind: Syntax.IndexSignature;
   parent: ObjectTypeDeclaration;
 }
+export interface IndexType extends InstantiableType {
+  type: InstantiableType | UnionOrIntersectionType;
+  stringsOnly: boolean;
+}
+export interface InferenceContext {
+  inferences: InferenceInfo[];
+  signature?: Signature;
+  flags: InferenceFlags;
+  compareTypes: TypeComparer;
+  mapper: TypeMapper;
+  nonFixingMapper: TypeMapper;
+  returnMapper?: TypeMapper;
+  inferredTypeParameters?: readonly TypeParameter[];
+}
+export interface InferenceInfo {
+  typeParameter: TypeParameter;
+  candidates: Type[] | undefined;
+  contraCandidates: Type[] | undefined;
+  inferredType?: Type;
+  priority?: InferencePriority;
+  topLevel: boolean;
+  isFixed: boolean;
+}
+export const enum InferenceFlags {
+  None = 0,
+  NoDefault = 1 << 0,
+  AnyDefault = 1 << 1,
+  SkippedGenericFunction = 1 << 2,
+}
+export const enum InferencePriority {
+  NakedTypeVariable = 1 << 0,
+  HomomorphicMappedType = 1 << 1,
+  PartialHomomorphicMappedType = 1 << 2,
+  MappedTypeConstraint = 1 << 3,
+  ContravariantConditional = 1 << 4,
+  ReturnType = 1 << 5,
+  LiteralKeyof = 1 << 6,
+  NoConstraints = 1 << 7,
+  AlwaysStrict = 1 << 8,
+  MaxValue = 1 << 9,
+  PriorityImpliesCombination = ReturnType | MappedTypeConstraint | LiteralKeyof,
+  Circularity = -1,
+}
 export interface InferTypeNode extends TypeNode {
   kind: Syntax.InferType;
   typeParameter: TypeParameterDeclaration;
+}
+export interface InstantiableType extends Type {
+  resolvedBaseConstraint?: Type;
+  resolvedIndexType?: IndexType;
+  resolvedStringIndexType?: IndexType;
 }
 export interface InterfaceDeclaration extends DeclarationStatement, JSDocContainer {
   kind: Syntax.InterfaceDeclaration;
@@ -644,6 +935,20 @@ export interface InterfaceDeclaration extends DeclarationStatement, JSDocContain
 export interface IntersectionTypeNode extends TypeNode {
   kind: Syntax.IntersectionType;
   types: Nodes<TypeNode>;
+}
+export interface IterationTypes {
+  readonly yieldType: Type;
+  readonly returnType: Type;
+  readonly nextType: Type;
+}
+export interface IterableOrIteratorType extends ObjectType, UnionType {
+  iterationTypesOfGeneratorReturnType?: IterationTypes;
+  iterationTypesOfAsyncGeneratorReturnType?: IterationTypes;
+  iterationTypesOfIterable?: IterationTypes;
+  iterationTypesOfIterator?: IterationTypes;
+  iterationTypesOfAsyncIterable?: IterationTypes;
+  iterationTypesOfAsyncIterator?: IterationTypes;
+  iterationTypesOfIteratorResult?: IterationTypes;
 }
 export interface IterationStatement extends Statement {
   statement: Statement;
@@ -876,10 +1181,30 @@ export interface LabeledStatement extends Statement, JSDocContainer {
   label: Identifier;
   statement: Statement;
 }
+export interface LateBoundBinaryExpressionDeclaration extends DynamicNamedBinaryExpression {
+  left: LateBoundElementAccessExpression;
+}
+export interface LateBoundDeclaration extends DynamicNamedDeclaration {
+  name: LateBoundName;
+}
+export interface LateBoundElementAccessExpression extends ElementAccessExpression {
+  argumentExpression: EntityNameExpression;
+}
+export interface LateBoundName extends ComputedPropertyName {
+  expression: EntityNameExpression;
+}
 export interface LeftHandSideExpression extends UpdateExpression {
   _leftHandSideExpressionBrand: any;
 }
+export interface LiteralExpression extends LiteralLikeNode, PrimaryExpression {
+  _literalExpressionBrand: any;
+}
 export type LiteralImportTypeNode = ImportTypeNode & { argument: LiteralTypeNode & { literal: StringLiteral } };
+export interface LiteralLikeNode extends Node {
+  text: string;
+  isUnterminated?: boolean;
+  hasExtendedEscape?: boolean;
+}
 export interface LiteralTypeNode extends TypeNode {
   kind: Syntax.LiteralType;
   literal: BooleanLiteral | LiteralExpression | PrefixUnaryExpression;
@@ -1069,15 +1394,67 @@ export interface ObjectBindingPattern extends Node {
   parent: VariableDeclaration | ParameterDeclaration | BindingElement;
   elements: Nodes<BindingElement>;
 }
+export type ObjectBindingOrAssignmentPattern = ObjectBindingPattern | ObjectLiteralExpression;
 export interface ObjectDestructuringAssignment extends AssignmentExpression<EqualsToken> {
   left: ObjectLiteralExpression;
 }
+export const enum ObjectFlags {
+  Class = 1 << 0,
+  Interface = 1 << 1,
+  Reference = 1 << 2,
+  Tuple = 1 << 3,
+  Anonymous = 1 << 4,
+  Mapped = 1 << 5,
+  Instantiated = 1 << 6,
+  ObjectLiteral = 1 << 7,
+  EvolvingArray = 1 << 8,
+  ObjectLiteralPatternWithComputedProperties = 1 << 9,
+  ContainsSpread = 1 << 10,
+  ReverseMapped = 1 << 11,
+  JsxAttributes = 1 << 12,
+  MarkerType = 1 << 13,
+  JSLiteral = 1 << 14,
+  FreshLiteral = 1 << 15,
+  ArrayLiteral = 1 << 16,
+  ObjectRestType = 1 << 17,
+  PrimitiveUnion = 1 << 18,
+  ContainsWideningType = 1 << 19,
+  ContainsObjectOrArrayLiteral = 1 << 20,
+  NonInferrableType = 1 << 21,
+  IsGenericObjectTypeComputed = 1 << 22,
+  IsGenericObjectType = 1 << 23,
+  IsGenericIndexTypeComputed = 1 << 24,
+  IsGenericIndexType = 1 << 25,
+  CouldContainTypeVariablesComputed = 1 << 26,
+  CouldContainTypeVariables = 1 << 27,
+  ContainsIntersections = 1 << 28,
+  IsNeverIntersectionComputed = 1 << 28,
+  IsNeverIntersection = 1 << 29,
+  ClassOrInterface = Class | Interface,
+  RequiresWidening = ContainsWideningType | ContainsObjectOrArrayLiteral,
+  PropagatingFlags = ContainsWideningType | ContainsObjectOrArrayLiteral | NonInferrableType,
+}
+export type ObjectFlagsType = NullableType | ObjectType | UnionType | IntersectionType;
+export interface ObjectLiteralElement extends NamedDeclaration {
+  _objectLiteralBrand: any;
+  name?: PropertyName;
+}
+export type ObjectLiteralElementLike = PropertyAssignment | ShorthandPropertyAssignment | SpreadAssignment | MethodDeclaration | AccessorDeclaration;
 export interface ObjectLiteralExpression extends ObjectLiteralExpressionBase<ObjectLiteralElementLike> {
   kind: Syntax.ObjectLiteralExpression;
   multiLine?: boolean;
 }
 export interface ObjectLiteralExpressionBase<T extends ObjectLiteralElement> extends PrimaryExpression, Declaration {
   properties: Nodes<T>;
+}
+export interface ObjectType extends Type {
+  objectFlags: ObjectFlags;
+  members?: SymbolTable;
+  properties?: Symbol[];
+  callSignatures?: readonly Signature[];
+  constructSignatures?: readonly Signature[];
+  stringIndexInfo?: IndexInfo;
+  numberIndexInfo?: IndexInfo;
 }
 export interface OmittedExpression extends Expression {
   kind: Syntax.OmittedExpression;
@@ -1136,9 +1513,18 @@ export interface PrivateIdentifier extends Node {
   kind: Syntax.PrivateIdentifier;
   escapedText: qb.__String;
 }
+export interface PrivateIdentifierPropertyAccessExpression extends PropertyAccessExpression {
+  name: PrivateIdentifier;
+}
+export interface PrivateIdentifierPropertyDeclaration extends PropertyDeclaration {
+  name: PrivateIdentifier;
+}
 export interface PropertyAccessChain extends PropertyAccessExpression {
   _optionalChainBrand: any;
   name: Identifier;
+}
+export interface PropertyAccessChainRoot extends PropertyAccessChain {
+  questionDotToken: QuestionDotToken;
 }
 export interface PropertyAccessExpression extends MemberExpression, NamedDeclaration {
   kind: Syntax.PropertyAccessExpression;
@@ -1162,12 +1548,20 @@ export interface PropertyDeclaration extends ClassElement, JSDocContainer {
   type?: TypeNode;
   initializer?: Expression;
 }
+export interface PropertyLikeDeclaration extends NamedDeclaration {
+  name: PropertyName;
+}
+export type PropertyName = Identifier | StringLiteral | NumericLiteral | ComputedPropertyName | PrivateIdentifier;
 export interface PropertySignature extends TypeElement, JSDocContainer {
   kind: Syntax.PropertySignature;
   name: PropertyName;
   questionToken?: QuestionToken;
   type?: TypeNode;
   initializer?: Expression;
+}
+export interface PseudoBigInt {
+  negative: boolean;
+  base10Value: string;
 }
 export interface QualifiedName extends Node {
   kind: Syntax.QualifiedName;
@@ -1318,6 +1712,9 @@ export interface StringLiteral extends LiteralExpression, Declaration {
 export type StringLiteralLike = StringLiteral | NoSubstitutionLiteral;
 export interface SuperExpression extends PrimaryExpression {
   kind: Syntax.SuperKeyword;
+}
+export interface SuperPropertyAccessExpression extends PropertyAccessExpression {
+  expression: SuperExpression;
 }
 export interface SwitchStatement extends Statement {
   kind: Syntax.SwitchStatement;
@@ -1683,6 +2080,12 @@ export interface SynMap {
 export interface SyntaxList extends Node {
   _children: Node[];
 }
+export interface SyntheticExpression extends Expression {
+  kind: Syntax.SyntheticExpression;
+  isSpread: boolean;
+  type: Type;
+  tupleNameSource?: ParameterDeclaration | NamedTupleMember;
+}
 export interface SyntheticReferenceExpression extends LeftHandSideExpression {
   kind: Syntax.SyntheticReferenceExpression;
   expression: Expression;
@@ -1704,6 +2107,10 @@ export interface TemplateHead extends TemplateLiteralLikeNode {
   kind: Syntax.TemplateHead;
   parent: TemplateExpression;
   templateFlags?: TokenFlags;
+}
+export type TemplateLiteral = TemplateExpression | NoSubstitutionLiteral;
+export interface TemplateLiteralLikeNode extends LiteralLikeNode {
+  rawText?: string;
 }
 export type TemplateLiteralToken = NoSubstitutionLiteral | TemplateHead | TemplateMiddle | TemplateTail;
 export interface TemplateMiddle extends TemplateLiteralLikeNode {
@@ -1745,6 +2152,23 @@ export interface ThrowStatement extends Statement {
 }
 export interface Token<T extends Syntax> extends Node {
   kind: T;
+}
+export const enum TokenFlags {
+  None = 0,
+  PrecedingLineBreak = 1 << 0,
+  PrecedingJSDocComment = 1 << 1,
+  Unterminated = 1 << 2,
+  ExtendedEscape = 1 << 3,
+  Scientific = 1 << 4, // e.g. `10e2`
+  Octal = 1 << 5, // e.g. `0777`
+  HexSpecifier = 1 << 6, // e.g. `0x00000000`
+  BinarySpecifier = 1 << 7, // e.g. `0b0110010000000000`
+  OctalSpecifier = 1 << 8, // e.g. `0o777`
+  ContainsSeparator = 1 << 9, // e.g. `0b1100_0101`
+  UnicodeEscape = 1 << 10,
+  ContainsInvalidEscape = 1 << 11, // e.g. `\uhello`
+  BinaryOrOctalSpecifier = BinarySpecifier | OctalSpecifier,
+  NumericLiteralFlags = Scientific | Octal | HexSpecifier | BinaryOrOctalSpecifier | ContainsSeparator,
 }
 export const enum TransformFlags {
   None = 0,
@@ -1831,6 +2255,9 @@ export const enum TransformFlags {
   BindingPatternExcludes = NodeExcludes | ContainsRestOrSpread,
   PropertyNamePropagatingFlags = ContainsLexicalThis,
 }
+export interface TransientIdentifier extends Identifier {
+  resolvedSymbol: Symbol;
+}
 export interface TransientSymbol extends Symbol, SymbolLinks {
   checkFlags: CheckFlags;
 }
@@ -1890,6 +2317,71 @@ export interface TypeElement extends NamedDeclaration {
   _typeElementBrand: any;
   name?: PropertyName;
   questionToken?: QuestionToken;
+}
+export const enum TypeFlags {
+  Any = 1 << 0,
+  Unknown = 1 << 1,
+  String = 1 << 2,
+  Number = 1 << 3,
+  Boolean = 1 << 4,
+  Enum = 1 << 5,
+  BigInt = 1 << 6,
+  StringLiteral = 1 << 7,
+  NumberLiteral = 1 << 8,
+  BooleanLiteral = 1 << 9,
+  EnumLiteral = 1 << 10,
+  BigIntLiteral = 1 << 11,
+  ESSymbol = 1 << 12,
+  UniqueESSymbol = 1 << 13,
+  Void = 1 << 14,
+  Undefined = 1 << 15,
+  Null = 1 << 16,
+  Never = 1 << 17,
+  TypeParameter = 1 << 18,
+  Object = 1 << 19,
+  Union = 1 << 20,
+  Intersection = 1 << 21,
+  Index = 1 << 22,
+  IndexedAccess = 1 << 23,
+  Conditional = 1 << 24,
+  Substitution = 1 << 25,
+  NonPrimitive = 1 << 26,
+  AnyOrUnknown = Any | Unknown,
+  Nullable = Undefined | Null,
+  Literal = StringLiteral | NumberLiteral | BigIntLiteral | BooleanLiteral,
+  Unit = Literal | UniqueESSymbol | Nullable,
+  StringOrNumberLiteral = StringLiteral | NumberLiteral,
+  StringOrNumberLiteralOrUnique = StringLiteral | NumberLiteral | UniqueESSymbol,
+  DefinitelyFalsy = StringLiteral | NumberLiteral | BigIntLiteral | BooleanLiteral | Void | Undefined | Null,
+  PossiblyFalsy = DefinitelyFalsy | String | Number | BigInt | Boolean,
+  Intrinsic = Any | Unknown | String | Number | BigInt | Boolean | BooleanLiteral | ESSymbol | Void | Undefined | Null | Never | NonPrimitive,
+  Primitive = String | Number | BigInt | Boolean | Enum | EnumLiteral | ESSymbol | Void | Undefined | Null | Literal | UniqueESSymbol,
+  StringLike = String | StringLiteral,
+  NumberLike = Number | NumberLiteral | Enum,
+  BigIntLike = BigInt | BigIntLiteral,
+  BooleanLike = Boolean | BooleanLiteral,
+  EnumLike = Enum | EnumLiteral,
+  ESSymbolLike = ESSymbol | UniqueESSymbol,
+  VoidLike = Void | Undefined,
+  DisjointDomains = NonPrimitive | StringLike | NumberLike | BigIntLike | BooleanLike | ESSymbolLike | VoidLike | Null,
+  UnionOrIntersection = Union | Intersection,
+  StructuredType = Object | Union | Intersection,
+  TypeVariable = TypeParameter | IndexedAccess,
+  InstantiableNonPrimitive = TypeVariable | Conditional | Substitution,
+  InstantiablePrimitive = Index,
+  Instantiable = InstantiableNonPrimitive | InstantiablePrimitive,
+  StructuredOrInstantiable = StructuredType | Instantiable,
+  ObjectFlagsType = Any | Nullable | Never | Object | Union | Intersection,
+  Simplifiable = IndexedAccess | Conditional,
+  Substructure = Object | Union | Intersection | Index | IndexedAccess | Conditional | Substitution,
+  Narrowable = Any | Unknown | StructuredOrInstantiable | StringLike | NumberLike | BigIntLike | BooleanLike | ESSymbol | UniqueESSymbol | NonPrimitive,
+  NotUnionOrUnit = Any | Unknown | ESSymbol | Object | NonPrimitive,
+  NotPrimitiveUnion = Any | Unknown | Enum | Void | Never | StructuredOrInstantiable,
+  IncludesMask = Any | Unknown | Primitive | Never | Object | Union | Intersection | NonPrimitive,
+  IncludesStructuredOrInstantiable = TypeParameter,
+  IncludesNonWideningType = Index,
+  IncludesWildcard = IndexedAccess,
+  IncludesEmptyObject = Conditional,
 }
 export const enum TypeFormatFlags {
   None = 0,
@@ -2078,6 +2570,8 @@ export interface VariableDeclarationList extends Node {
   parent: VariableStatement | ForStatement | ForOfStatement | ForInStatement;
   declarations: Nodes<VariableDeclaration>;
 }
+// prettier-ignore
+export type VariableLikeDeclaration = | VariableDeclaration | ParameterDeclaration | BindingElement | PropertyDeclaration | PropertyAssignment | PropertySignature | JsxAttribute | ShorthandPropertyAssignment | EnumMember | JSDocPropertyTag | JSDocParameterTag;
 export interface VariableStatement extends Statement, JSDocContainer {
   kind: Syntax.VariableStatement;
   declarationList: VariableDeclarationList;
@@ -2297,224 +2791,11 @@ export const enum RelationComparisonResult {
   ReportsUnreliable = 1 << 4,
   ReportsMask = ReportsUnmeasurable | ReportsUnreliable,
 }
-export type HasJSDoc =
-  | ParameterDeclaration
-  | CallSignatureDeclaration
-  | ConstructSignatureDeclaration
-  | MethodSignature
-  | PropertySignature
-  | ArrowFunction
-  | ParenthesizedExpression
-  | SpreadAssignment
-  | ShorthandPropertyAssignment
-  | PropertyAssignment
-  | FunctionExpression
-  | LabeledStatement
-  | ExpressionStatement
-  | VariableStatement
-  | FunctionDeclaration
-  | ConstructorDeclaration
-  | MethodDeclaration
-  | PropertyDeclaration
-  | AccessorDeclaration
-  | ClassLikeDeclaration
-  | InterfaceDeclaration
-  | TypeAliasDeclaration
-  | EnumMember
-  | EnumDeclaration
-  | ModuleDeclaration
-  | ImportEqualsDeclaration
-  | IndexSignatureDeclaration
-  | FunctionTypeNode
-  | ConstructorTypeNode
-  | JSDocFunctionType
-  | ExportDeclaration
-  | NamedTupleMember
-  | EndOfFileToken;
-export type HasType =
-  | SignatureDeclaration
-  | VariableDeclaration
-  | ParameterDeclaration
-  | PropertySignature
-  | PropertyDeclaration
-  | TypePredicateNode
-  | ParenthesizedTypeNode
-  | TypeOperatorNode
-  | MappedTypeNode
-  | AssertionExpression
-  | TypeAliasDeclaration
-  | JSDocTypeExpression
-  | JSDocNonNullableType
-  | JSDocNullableType
-  | JSDocOptionalType
-  | JSDocVariadicType;
+export type HasJSDoc = | ParameterDeclaration | CallSignatureDeclaration | ConstructSignatureDeclaration | MethodSignature | PropertySignature | ArrowFunction | ParenthesizedExpression | SpreadAssignment | ShorthandPropertyAssignment | PropertyAssignment | FunctionExpression | LabeledStatement | ExpressionStatement | VariableStatement | FunctionDeclaration | ConstructorDeclaration | MethodDeclaration | PropertyDeclaration | AccessorDeclaration | ClassLikeDeclaration | InterfaceDeclaration | TypeAliasDeclaration | EnumMember | EnumDeclaration | ModuleDeclaration | ImportEqualsDeclaration | IndexSignatureDeclaration | FunctionTypeNode | ConstructorTypeNode | JSDocFunctionType | ExportDeclaration | NamedTupleMember | EndOfFileToken;
+export type HasType = | SignatureDeclaration | VariableDeclaration | ParameterDeclaration | PropertySignature | PropertyDeclaration | TypePredicateNode | ParenthesizedTypeNode | TypeOperatorNode | MappedTypeNode | AssertionExpression | TypeAliasDeclaration | JSDocTypeExpression | JSDocNonNullableType | JSDocNullableType | JSDocOptionalType | JSDocVariadicType;
 export type HasExpressionInitializer = VariableDeclaration | ParameterDeclaration | BindingElement | PropertySignature | PropertyDeclaration | PropertyAssignment | EnumMember;
 export type HasInitializer = HasExpressionInitializer | ForStatement | ForInStatement | ForOfStatement | JsxAttribute;
 export type HasTypeArguments = CallExpression | NewExpression | TaggedTemplateExpression | JsxOpeningElement | JsxSelfClosingElement;
-export const enum GeneratedIdentifierFlags {
-  None = 0,
-  Auto = 1,
-  Loop = 2,
-  Unique = 3,
-  Node = 4,
-  KindMask = 7,
-  ReservedInNestedScopes = 1 << 3,
-  Optimistic = 1 << 4,
-  FileLevel = 1 << 5,
-}
-export interface PropertyAccessEntityNameExpression extends PropertyAccessExpression {
-  _propertyAccessExpressionLikeQualifiedNameBrand?: any;
-  expression: EntityNameExpression;
-  name: Identifier;
-}
-export interface ElementAccessChainRoot extends ElementAccessChain {
-  questionDotToken: QuestionDotToken;
-}
-export interface SuperElementAccessExpression extends ElementAccessExpression {
-  expression: SuperExpression;
-}
-export type SuperProperty = SuperPropertyAccessExpression | SuperElementAccessExpression;
-export interface CallChainRoot extends CallChain {
-  questionDotToken: QuestionDotToken;
-}
-export type OptionalChain = PropertyAccessChain | ElementAccessChain | CallChain | NonNullChain;
-export type OptionalChainRoot = PropertyAccessChainRoot | ElementAccessChainRoot | CallChainRoot;
-export interface WellKnownSymbolExpression extends PropertyAccessExpression {
-  expression: Identifier & { escapedText: 'Symbol' };
-  name: Identifier;
-}
-export type BindableObjectDefinePropertyCall = CallExpression & {
-  arguments: { 0: BindableStaticNameExpression; 1: StringLiteralLike | NumericLiteral; 2: ObjectLiteralExpression };
-};
-export type BindableStaticNameExpression = EntityNameExpression | BindableStaticElementAccessExpression;
-export type LiteralLikeElementAccessExpression = ElementAccessExpression &
-  Declaration & {
-    argumentExpression: StringLiteralLike | NumericLiteral | WellKnownSymbolExpression;
-  };
-export type BindableStaticElementAccessExpression = LiteralLikeElementAccessExpression & {
-  expression: BindableStaticNameExpression;
-};
-export type BindableElementAccessExpression = ElementAccessExpression & {
-  expression: BindableStaticNameExpression;
-};
-export type BindableStaticAccessExpression = PropertyAccessEntityNameExpression | BindableStaticElementAccessExpression;
-export type BindableAccessExpression = PropertyAccessEntityNameExpression | BindableElementAccessExpression;
-export interface SuperCall extends CallExpression {
-  expression: SuperExpression;
-}
-export interface ImportCall extends CallExpression {
-  expression: ImportExpression;
-}
-export type CallLikeExpression = CallExpression | NewExpression | TaggedTemplateExpression | Decorator | JsxOpeningLikeElement;
-export type AssertionExpression = TypeAssertion | AsExpression;
-export interface NonNullChain extends NonNullExpression {
-  _optionalChainBrand: any;
-}
-export interface ImportMetaProperty extends MetaProperty {
-  keywordToken: Syntax.ImportKeyword;
-  name: Identifier & { escapedText: qb.__String & 'meta' };
-}
-export interface JsxTagNamePropertyAccess extends PropertyAccessExpression {
-  expression: JsxTagNameExpression;
-}
-export interface PrologueDirective extends ExpressionStatement {
-  expression: StringLiteral;
-}
-export type ObjectTypeDeclaration = ClassLikeDeclaration | InterfaceDeclaration | TypeLiteralNode;
-export type ModuleBody = NamespaceBody | JSDocNamespaceBody;
-export type ModuleName = Identifier | StringLiteral;
-export type NamespaceBody = ModuleBlock | NamespaceDeclaration;
-export interface NamespaceDeclaration extends ModuleDeclaration {
-  name: Identifier;
-  body: NamespaceBody;
-}
-export type JSDocNamespaceBody = Identifier | JSDocNamespaceDeclaration;
-export interface JSDocNamespaceDeclaration extends ModuleDeclaration {
-  name: Identifier;
-  body?: JSDocNamespaceBody;
-}
-export type ModuleReference = EntityName | ExternalModuleReference;
-export type NamedExportBindings = NamespaceExport | NamedExports;
-export type NamedImportBindings = NamespaceImport | NamedImports;
-export type NamedImportsOrExports = NamedImports | NamedExports;
-export type ImportOrExportSpecifier = ImportSpecifier | ExportSpecifier;
-export interface FileReference extends qb.Range {
-  fileName: string;
-}
-export interface CheckJsDirective extends qb.Range {
-  enabled: boolean;
-}
-export interface CommentRange extends qb.Range {
-  hasTrailingNewLine?: boolean;
-  kind: qy.CommentKind;
-}
-export interface SynthesizedComment extends CommentRange {
-  text: string;
-  pos: -1;
-  end: -1;
-  hasLeadingNewline?: boolean;
-}
-export interface JSDocType extends TypeNode {
-  _jsDocTypeBrand: any;
-}
-export interface JSDocNamepathType extends JSDocType {
-  kind: Syntax.JSDocNamepathType;
-  type: TypeNode;
-}
-export interface JSDocUnknownTag extends JSDocTag {
-  kind: Syntax.JSDocTag;
-}
-export interface IncompleteType {
-  flags: TypeFlags;
-  type: Type;
-}
-export interface SourceFileLike {
-  readonly text: string;
-  lineMap?: readonly number[];
-  posOf?(line: number, char: number, edits?: true): number;
-}
-export interface RedirectInfo {
-  readonly redirectTarget: SourceFile;
-  readonly unredirected: SourceFile;
-}
-export interface CommentDirective {
-  range: qb.Range;
-  type: CommentDirectiveType;
-}
-export const enum CommentDirectiveType {
-  ExpectError,
-  Ignore,
-}
-export type ExportedModulesFromDeclarationEmit = readonly Symbol[];
-export interface InputFiles extends Node {
-  kind: Syntax.InputFiles;
-  javascriptPath?: string;
-  javascriptText: string;
-  javascriptMapPath?: string;
-  javascriptMapText?: string;
-  declarationPath?: string;
-  declarationText: string;
-  declarationMapPath?: string;
-  declarationMapText?: string;
-  buildInfoPath?: string;
-  buildInfo?: BuildInfo;
-  oldFileOfCurrentEmit?: boolean;
-}
-export type UnparsedSourceText = UnparsedPrepend | UnparsedTextLike;
-export interface UnparsedSection extends Node {
-  kind: Syntax;
-  data?: string;
-  parent: UnparsedSource;
-}
-export interface UnparsedPrologue extends UnparsedSection {
-  kind: Syntax.UnparsedPrologue;
-  data: string;
-  parent: UnparsedSource;
-}
-export interface UnparsedTextLike extends UnparsedSection {
-  kind: Syntax.UnparsedText | Syntax.UnparsedInternalText;
-  parent: UnparsedSource;
-}
 export interface JsonSourceFile extends SourceFile {
   statements: Nodes<JsonObjectExpressionStatement>;
 }
@@ -2784,24 +3065,12 @@ export type AnyImportOrReExport = AnyImportSyntax | ExportDeclaration;
 export interface ValidImportTypeNode extends ImportTypeNode {
   argument: LiteralTypeNode & { literal: StringLiteral };
 }
-export type AnyValidImportOrReExport =
-  | ((ImportDeclaration | ExportDeclaration) & { moduleSpecifier: StringLiteral })
-  | (ImportEqualsDeclaration & { moduleReference: ExternalModuleReference & { expression: StringLiteral } })
-  | RequireOrImportCall
-  | ValidImportTypeNode;
+export type AnyValidImportOrReExport = | ((ImportDeclaration | ExportDeclaration) & { moduleSpecifier: StringLiteral }) | (ImportEqualsDeclaration & { moduleReference: ExternalModuleReference & { expression: StringLiteral } }) | RequireOrImportCall | ValidImportTypeNode;
 export type RequireOrImportCall = CallExpression & { expression: Identifier; arguments: [StringLiteralLike] };
 export interface RequireVariableDeclaration extends VariableDeclaration {
   initializer: RequireOrImportCall;
 }
-export type LateVisibilityPaintedStatement =
-  | AnyImportSyntax
-  | VariableStatement
-  | ClassDeclaration
-  | FunctionDeclaration
-  | ModuleDeclaration
-  | TypeAliasDeclaration
-  | InterfaceDeclaration
-  | EnumDeclaration;
+export type LateVisibilityPaintedStatement = | AnyImportSyntax | VariableStatement | ClassDeclaration | FunctionDeclaration | ModuleDeclaration | TypeAliasDeclaration | InterfaceDeclaration | EnumDeclaration;
 export interface SymbolVisibilityResult {
   accessibility: SymbolAccessibility;
   aliasesToMakeVisible?: LateVisibilityPaintedStatement[];
@@ -2943,297 +3212,6 @@ export interface NodeLinks {
   skipDirectInference?: true; // Flag set by the API `getContextualType` call on a node when `Completions` is passed to force the checker to skip making inferences to a node's type
   declarationRequiresScopeChange?: boolean; // Set by `useOuterVariableScopeInParameter` in checker when downlevel emit would change the name resolution scope inside of a parameter.
 }
-export const enum TypeFlags {
-  Any = 1 << 0,
-  Unknown = 1 << 1,
-  String = 1 << 2,
-  Number = 1 << 3,
-  Boolean = 1 << 4,
-  Enum = 1 << 5,
-  BigInt = 1 << 6,
-  StringLiteral = 1 << 7,
-  NumberLiteral = 1 << 8,
-  BooleanLiteral = 1 << 9,
-  EnumLiteral = 1 << 10,
-  BigIntLiteral = 1 << 11,
-  ESSymbol = 1 << 12,
-  UniqueESSymbol = 1 << 13,
-  Void = 1 << 14,
-  Undefined = 1 << 15,
-  Null = 1 << 16,
-  Never = 1 << 17,
-  TypeParameter = 1 << 18,
-  Object = 1 << 19,
-  Union = 1 << 20,
-  Intersection = 1 << 21,
-  Index = 1 << 22,
-  IndexedAccess = 1 << 23,
-  Conditional = 1 << 24,
-  Substitution = 1 << 25,
-  NonPrimitive = 1 << 26,
-  AnyOrUnknown = Any | Unknown,
-  Nullable = Undefined | Null,
-  Literal = StringLiteral | NumberLiteral | BigIntLiteral | BooleanLiteral,
-  Unit = Literal | UniqueESSymbol | Nullable,
-  StringOrNumberLiteral = StringLiteral | NumberLiteral,
-  StringOrNumberLiteralOrUnique = StringLiteral | NumberLiteral | UniqueESSymbol,
-  DefinitelyFalsy = StringLiteral | NumberLiteral | BigIntLiteral | BooleanLiteral | Void | Undefined | Null,
-  PossiblyFalsy = DefinitelyFalsy | String | Number | BigInt | Boolean,
-  Intrinsic = Any | Unknown | String | Number | BigInt | Boolean | BooleanLiteral | ESSymbol | Void | Undefined | Null | Never | NonPrimitive,
-  Primitive = String | Number | BigInt | Boolean | Enum | EnumLiteral | ESSymbol | Void | Undefined | Null | Literal | UniqueESSymbol,
-  StringLike = String | StringLiteral,
-  NumberLike = Number | NumberLiteral | Enum,
-  BigIntLike = BigInt | BigIntLiteral,
-  BooleanLike = Boolean | BooleanLiteral,
-  EnumLike = Enum | EnumLiteral,
-  ESSymbolLike = ESSymbol | UniqueESSymbol,
-  VoidLike = Void | Undefined,
-  DisjointDomains = NonPrimitive | StringLike | NumberLike | BigIntLike | BooleanLike | ESSymbolLike | VoidLike | Null,
-  UnionOrIntersection = Union | Intersection,
-  StructuredType = Object | Union | Intersection,
-  TypeVariable = TypeParameter | IndexedAccess,
-  InstantiableNonPrimitive = TypeVariable | Conditional | Substitution,
-  InstantiablePrimitive = Index,
-  Instantiable = InstantiableNonPrimitive | InstantiablePrimitive,
-  StructuredOrInstantiable = StructuredType | Instantiable,
-  ObjectFlagsType = Any | Nullable | Never | Object | Union | Intersection,
-  Simplifiable = IndexedAccess | Conditional,
-  Substructure = Object | Union | Intersection | Index | IndexedAccess | Conditional | Substitution,
-  Narrowable = Any | Unknown | StructuredOrInstantiable | StringLike | NumberLike | BigIntLike | BooleanLike | ESSymbol | UniqueESSymbol | NonPrimitive,
-  NotUnionOrUnit = Any | Unknown | ESSymbol | Object | NonPrimitive,
-  NotPrimitiveUnion = Any | Unknown | Enum | Void | Never | StructuredOrInstantiable,
-  IncludesMask = Any | Unknown | Primitive | Never | Object | Union | Intersection | NonPrimitive,
-  IncludesStructuredOrInstantiable = TypeParameter,
-  IncludesNonWideningType = Index,
-  IncludesWildcard = IndexedAccess,
-  IncludesEmptyObject = Conditional,
-}
-export type DestructuringPattern = BindingPattern | ObjectLiteralExpression | ArrayLiteralExpression;
-export interface IntrinsicType extends Type {
-  intrinsicName: string;
-  objectFlags: ObjectFlags;
-}
-export interface NullableType extends IntrinsicType {
-  objectFlags: ObjectFlags;
-}
-export interface FreshableIntrinsicType extends IntrinsicType {
-  freshType: IntrinsicType;
-  regularType: IntrinsicType;
-}
-export type FreshableType = LiteralType | FreshableIntrinsicType;
-export interface LiteralType extends Type {
-  value: string | number | PseudoBigInt;
-  freshType: LiteralType;
-  regularType: LiteralType;
-}
-export interface UniqueESSymbolType extends Type {
-  symbol: Symbol;
-  escName: qb.__String;
-}
-export interface StringLiteralType extends LiteralType {
-  value: string;
-}
-export interface NumberLiteralType extends LiteralType {
-  value: number;
-}
-export interface EnumType extends Type {}
-export const enum ObjectFlags {
-  Class = 1 << 0,
-  Interface = 1 << 1,
-  Reference = 1 << 2,
-  Tuple = 1 << 3,
-  Anonymous = 1 << 4,
-  Mapped = 1 << 5,
-  Instantiated = 1 << 6,
-  ObjectLiteral = 1 << 7,
-  EvolvingArray = 1 << 8,
-  ObjectLiteralPatternWithComputedProperties = 1 << 9,
-  ContainsSpread = 1 << 10,
-  ReverseMapped = 1 << 11,
-  JsxAttributes = 1 << 12,
-  MarkerType = 1 << 13,
-  JSLiteral = 1 << 14,
-  FreshLiteral = 1 << 15,
-  ArrayLiteral = 1 << 16,
-  ObjectRestType = 1 << 17,
-  PrimitiveUnion = 1 << 18,
-  ContainsWideningType = 1 << 19,
-  ContainsObjectOrArrayLiteral = 1 << 20,
-  NonInferrableType = 1 << 21,
-  IsGenericObjectTypeComputed = 1 << 22,
-  IsGenericObjectType = 1 << 23,
-  IsGenericIndexTypeComputed = 1 << 24,
-  IsGenericIndexType = 1 << 25,
-  CouldContainTypeVariablesComputed = 1 << 26,
-  CouldContainTypeVariables = 1 << 27,
-  ContainsIntersections = 1 << 28,
-  IsNeverIntersectionComputed = 1 << 28,
-  IsNeverIntersection = 1 << 29,
-  ClassOrInterface = Class | Interface,
-  RequiresWidening = ContainsWideningType | ContainsObjectOrArrayLiteral,
-  PropagatingFlags = ContainsWideningType | ContainsObjectOrArrayLiteral | NonInferrableType,
-}
-export type ObjectFlagsType = NullableType | ObjectType | UnionType | IntersectionType;
-export interface ObjectType extends Type {
-  objectFlags: ObjectFlags;
-  members?: SymbolTable;
-  properties?: Symbol[];
-  callSignatures?: readonly Signature[];
-  constructSignatures?: readonly Signature[];
-  stringIndexInfo?: IndexInfo;
-  numberIndexInfo?: IndexInfo;
-}
-export interface InterfaceType extends ObjectType {
-  typeParameters: TypeParameter[] | undefined;
-  outerTypeParameters: TypeParameter[] | undefined;
-  localTypeParameters: TypeParameter[] | undefined;
-  thisType: TypeParameter | undefined;
-  resolvedBaseConstructorType?: Type;
-  resolvedBaseTypes: BaseType[];
-}
-export type BaseType = ObjectType | IntersectionType | TypeVariable;
-export interface InterfaceTypeWithDeclaredMembers extends InterfaceType {
-  declaredProperties: Symbol[];
-  declaredCallSignatures: Signature[];
-  declaredConstructSignatures: Signature[];
-  declaredStringIndexInfo?: IndexInfo;
-  declaredNumberIndexInfo?: IndexInfo;
-}
-export interface TypeReference extends ObjectType {
-  target: GenericType;
-  node?: TypeReferenceNode | ArrayTypeNode | TupleTypeNode;
-  mapper?: TypeMapper;
-  resolvedTypeArguments?: readonly Type[];
-  literalType?: TypeReference;
-}
-export interface DeferredTypeReference extends TypeReference {
-  node: TypeReferenceNode | ArrayTypeNode | TupleTypeNode;
-  mapper?: TypeMapper;
-}
-export const enum VarianceFlags {
-  Invariant = 0,
-  Covariant = 1 << 0,
-  Contravariant = 1 << 1,
-  Bivariant = Covariant | Contravariant,
-  Independent = 1 << 2,
-  VarianceMask = Invariant | Covariant | Contravariant | Independent,
-  Unmeasurable = 1 << 3,
-  Unreliable = 1 << 4,
-  AllowsStructuralFallback = Unmeasurable | Unreliable,
-}
-export interface GenericType extends InterfaceType, TypeReference {
-  instantiations: qb.QMap<TypeReference>;
-  variances?: VarianceFlags[];
-}
-export interface UnionOrIntersectionType extends Type {
-  types: Type[];
-  objectFlags: ObjectFlags;
-  propertyCache: SymbolTable;
-  resolvedProperties: Symbol[];
-  resolvedIndexType: IndexType;
-  resolvedStringIndexType: IndexType;
-  resolvedBaseConstraint: Type;
-}
-export interface UnionType extends UnionOrIntersectionType {
-  resolvedReducedType: Type;
-  regularType: UnionType;
-}
-export interface IntersectionType extends UnionOrIntersectionType {
-  resolvedApparentType: Type;
-}
-export type StructuredType = ObjectType | UnionType | IntersectionType;
-export interface MappedType extends AnonymousType {
-  declaration: MappedTypeNode;
-  typeParameter?: TypeParameter;
-  constraintType?: Type;
-  templateType?: Type;
-  modifiersType?: Type;
-  resolvedApparentType?: Type;
-}
-export interface EvolvingArrayType extends ObjectType {
-  elementType: Type;
-  finalArrayType?: Type;
-}
-export interface ReverseMappedType extends ObjectType {
-  source: Type;
-  mappedType: MappedType;
-  constraintType: IndexType;
-}
-export interface ResolvedType extends ObjectType, UnionOrIntersectionType {
-  members: SymbolTable;
-  properties: Symbol[];
-  callSignatures: readonly Signature[];
-  constructSignatures: readonly Signature[];
-}
-export interface FreshObjectLiteralType extends ResolvedType {
-  regularType: ResolvedType;
-}
-export interface IterationTypes {
-  readonly yieldType: Type;
-  readonly returnType: Type;
-  readonly nextType: Type;
-}
-export interface IterableOrIteratorType extends ObjectType, UnionType {
-  iterationTypesOfGeneratorReturnType?: IterationTypes;
-  iterationTypesOfAsyncGeneratorReturnType?: IterationTypes;
-  iterationTypesOfIterable?: IterationTypes;
-  iterationTypesOfIterator?: IterationTypes;
-  iterationTypesOfAsyncIterable?: IterationTypes;
-  iterationTypesOfAsyncIterator?: IterationTypes;
-  iterationTypesOfIteratorResult?: IterationTypes;
-}
-export interface PromiseOrAwaitableType extends ObjectType, UnionType {
-  promiseTypeOfPromiseConstructor?: Type;
-  promisedTypeOfPromise?: Type;
-  awaitedTypeOfType?: Type;
-}
-export interface SyntheticDefaultModuleType extends Type {
-  syntheticType?: Type;
-}
-export interface InstantiableType extends Type {
-  resolvedBaseConstraint?: Type;
-  resolvedIndexType?: IndexType;
-  resolvedStringIndexType?: IndexType;
-}
-export interface IndexedAccessType extends InstantiableType {
-  objectType: Type;
-  indexType: Type;
-  constraint?: Type;
-  simplifiedForReading?: Type;
-  simplifiedForWriting?: Type;
-}
-export interface IndexType extends InstantiableType {
-  type: InstantiableType | UnionOrIntersectionType;
-  stringsOnly: boolean;
-}
-export interface ConditionalRoot {
-  node: ConditionalTypeNode;
-  checkType: Type;
-  extendsType: Type;
-  trueType: Type;
-  falseType: Type;
-  isDistributive: boolean;
-  inferTypeParameters?: TypeParameter[];
-  outerTypeParameters?: TypeParameter[];
-  instantiations?: qb.QMap<Type>;
-  aliasSymbol?: Symbol;
-  aliasTypeArguments?: Type[];
-}
-export interface ConditionalType extends InstantiableType {
-  root: ConditionalRoot;
-  checkType: Type;
-  extendsType: Type;
-  resolvedTrueType: Type;
-  resolvedFalseType: Type;
-  resolvedInferredTrueType?: Type;
-  resolvedDefaultConstraint?: Type;
-  mapper?: TypeMapper;
-  combinedMapper?: TypeMapper;
-}
-export interface SubstitutionType extends InstantiableType {
-  baseType: Type;
-  substitute: Type;
-}
 export const enum JsxReferenceKind {
   Component,
   Function,
@@ -3252,54 +3230,6 @@ export const enum SignatureFlags {
   IsUntypedSignatureInJSFile = 1 << 4,
   PropagatingFlags = HasRestParameter | HasLiteralTypes,
   CallChainFlags = IsInnerCallChain | IsOuterCallChain,
-}
-export const enum IndexKind {
-  String,
-  Number,
-}
-export interface IndexInfo {
-  type: Type;
-  isReadonly: boolean;
-  declaration?: IndexSignatureDeclaration;
-}
-export const enum InferencePriority {
-  NakedTypeVariable = 1 << 0,
-  HomomorphicMappedType = 1 << 1,
-  PartialHomomorphicMappedType = 1 << 2,
-  MappedTypeConstraint = 1 << 3,
-  ContravariantConditional = 1 << 4,
-  ReturnType = 1 << 5,
-  LiteralKeyof = 1 << 6,
-  NoConstraints = 1 << 7,
-  AlwaysStrict = 1 << 8,
-  MaxValue = 1 << 9,
-  PriorityImpliesCombination = ReturnType | MappedTypeConstraint | LiteralKeyof,
-  Circularity = -1,
-}
-export interface InferenceInfo {
-  typeParameter: TypeParameter;
-  candidates: Type[] | undefined;
-  contraCandidates: Type[] | undefined;
-  inferredType?: Type;
-  priority?: InferencePriority;
-  topLevel: boolean;
-  isFixed: boolean;
-}
-export const enum InferenceFlags {
-  None = 0,
-  NoDefault = 1 << 0,
-  AnyDefault = 1 << 1,
-  SkippedGenericFunction = 1 << 2,
-}
-export interface InferenceContext {
-  inferences: InferenceInfo[];
-  signature?: Signature;
-  flags: InferenceFlags;
-  compareTypes: TypeComparer;
-  mapper: TypeMapper;
-  nonFixingMapper: TypeMapper;
-  returnMapper?: TypeMapper;
-  inferredTypeParameters?: readonly TypeParameter[];
 }
 export interface WideningContext {
   parent?: WideningContext;
@@ -4229,10 +4159,6 @@ export interface UserPreferences {
   readonly importModuleSpecifierEnding?: 'auto' | 'minimal' | 'index' | 'js';
   readonly allowTextChangesInNewFiles?: boolean;
   readonly providePrefixAndSuffixTextForRename?: boolean;
-}
-export interface PseudoBigInt {
-  negative: boolean;
-  base10Value: string;
 }
 export type ErrorCallback = (m: DiagnosticMessage, length: number) => void;
 */
