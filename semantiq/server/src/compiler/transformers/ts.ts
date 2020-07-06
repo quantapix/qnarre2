@@ -55,7 +55,7 @@ export function transformTypeScript(context: TransformationContext) {
     return transformSourceFile(node);
   }
   function transformBundle(node: Bundle) {
-    return createBundle(
+    return new qc.Bundle(
       node.sourceFiles.map(transformSourceFile),
       mapDefined(node.prepends, (prepend) => {
         if (prepend.kind === Syntax.InputFiles) return createUnparsedSourceFile(prepend, 'js');

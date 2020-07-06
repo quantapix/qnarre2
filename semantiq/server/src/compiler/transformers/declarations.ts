@@ -193,7 +193,7 @@ export function transformDeclarations(context: TransformationContext) {
       refs = new QMap<SourceFile>();
       libs = new QMap<boolean>();
       let hasNoDefaultLib = false;
-      const bundle = createBundle(
+      const bundle = new qc.Bundle(
         map(node.sourceFiles, (sourceFile) => {
           if (sourceFile.isDeclarationFile) return undefined!;
           hasNoDefaultLib = hasNoDefaultLib || sourceFile.hasNoDefaultLib;

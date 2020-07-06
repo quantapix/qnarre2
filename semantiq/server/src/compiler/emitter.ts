@@ -21,7 +21,7 @@ export function forEachEmittedFile<T>(
   if (options.outFile || options.out) {
     const prepends = host.getPrependNodes();
     if (sourceFiles.length || prepends.length) {
-      const bundle = createBundle(sourceFiles, prepends);
+      const bundle = new qc.Bundle(sourceFiles, prepends);
       const result = action(getOutputPathsFor(bundle, host, forceDtsEmit), bundle);
       if (result) return result;
     }
@@ -314,7 +314,7 @@ export function emitFiles(
     const sourceFiles = Node.is.kind(SourceFile, sourceFileOrBundle) ? [sourceFileOrBundle] : sourceFileOrBundle.sourceFiles;
     const filesForEmit = forceDtsEmit ? sourceFiles : filter(sourceFiles, isSourceFileNotJson);
     const inputListOrBundle =
-      compilerOptions.outFile || compilerOptions.out ? [createBundle(filesForEmit, !Node.is.kind(SourceFile, sourceFileOrBundle) ? sourceFileOrBundle.prepends : undefined)] : filesForEmit;
+      compilerOptions.outFile || compilerOptions.out ? [new qc.Bundle(filesForEmit, !Node.is.kind(SourceFile, sourceFileOrBundle) ? sourceFileOrBundle.prepends : undefined)] : filesForEmit;
     if (emitOnlyDtsFiles && !getEmitDeclarations(compilerOptions)) {
       filesForEmit.forEach(collectLinkedAliases);
     }

@@ -1688,7 +1688,7 @@ function processLabeledJumps(table: Map<string>, isBreak: boolean, loopResultNam
     const statements: Statement[] = [];
     if (!outerLoop || (outerLoop.labels && outerLoop.labels.get(labelText))) {
       const label = new Identifier(labelText);
-      statements.push(isBreak ? new qc.BreakStatement(label) : createContinue(label));
+      statements.push(isBreak ? new qc.BreakStatement(label) : new qc.ContinueStatement(label));
     } else {
       setLabeledJump(outerLoop, isBreak, labelText, labelMarker);
       statements.push(createReturn(loopResultName));

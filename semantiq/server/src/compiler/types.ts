@@ -14,20 +14,42 @@ export type EqualityOperatorOrHigher = RelationalOperatorOrHigher | EqualityOper
 export type LogicalOperator = Syntax.Ampersand2Token | Syntax.Bar2Token;
 export type LogicalOperatorOrHigher = BitwiseOperatorOrHigher | LogicalOperator;
 // prettier-ignore
-export type CompoundAssignmentOperator = | Syntax.PlusEqualsToken | Syntax.MinusEqualsToken | Syntax.Asterisk2EqualsToken | Syntax.AsteriskEqualsToken | Syntax.SlashEqualsToken | Syntax.AmpersandEqualsToken | Syntax.BarEqualsToken | Syntax.CaretEqualsToken | Syntax.LessThan2EqualsToken | Syntax.GreaterThan3EqualsToken | Syntax.GreaterThan2EqualsToken;
 export interface ObjectDestructuringAssignment extends AssignmentExpression<EqualsToken> {
   left: ObjectLiteralExpression;
 }
-export type DestructuringAssignment = ObjectDestructuringAssignment | ArrayDestructuringAssignment;
-export type ConciseBody = FunctionBody | Expression;
+
+export interface AmdDependency {
+  path: string;
+  name?: string;
+}
+export interface FlowArrayMutation extends FlowNodeBase {
+  node: CallExpression | BinaryExpression;
+  antecedent: FlowNode;
+}
 
 export type AdditiveOperator = Syntax.PlusToken | Syntax.MinusToken;
 export type AdditiveOperatorOrHigher = MultiplicativeOperatorOrHigher | AdditiveOperator;
+export interface AllAccessorDeclarations {
+  firstAccessor: AccessorDeclaration;
+  secondAccessor: AccessorDeclaration | undefined;
+  getAccessor: GetAccessorDeclaration | undefined;
+  setAccessor: SetAccessorDeclaration | undefined;
+}
+export interface AmbientModuleDeclaration extends ModuleDeclaration {
+  body?: ModuleBlock;
+}
+export interface AnonymousType extends ObjectType {
+  target?: AnonymousType;
+  mapper?: TypeMapper;
+}
 export type ArrayBindingElement = BindingElement | OmittedExpression;
 export interface ArrayBindingPattern extends Node {
   kind: Syntax.ArrayBindingPattern;
   parent: VariableDeclaration | ParameterDeclaration | BindingElement;
   elements: Nodes<ArrayBindingElement>;
+}
+export interface ArrayDestructuringAssignment extends AssignmentExpression<EqualsToken> {
+  left: ArrayLiteralExpression;
 }
 export interface ArrayLiteralExpression extends PrimaryExpression {
   kind: Syntax.ArrayLiteralExpression;
@@ -49,6 +71,22 @@ export interface AsExpression extends Expression {
   expression: Expression;
   type: TypeNode;
 }
+export interface AssertsIdentifierTypePredicate extends TypePredicateBase {
+  kind: TypePredicateKind.AssertsIdentifier;
+  parameterName: string;
+  parameterIndex: number;
+  type: Type | undefined;
+}
+export interface AssertsThisTypePredicate extends TypePredicateBase {
+  kind: TypePredicateKind.AssertsThis;
+  parameterName: undefined;
+  parameterIndex: undefined;
+  type: Type | undefined;
+}
+export interface AssignmentExpression<TOperator extends AssignmentOperatorToken> extends BinaryExpression {
+  left: LeftHandSideExpression;
+  operatorToken: TOperator;
+}
 export type AssignmentOperator = Syntax.EqualsToken | CompoundAssignmentOperator;
 export type AssignmentOperatorOrHigher = Syntax.Question2Token | LogicalOperatorOrHigher | AssignmentOperator;
 export type AssignmentOperatorToken = Token<AssignmentOperator>;
@@ -60,6 +98,9 @@ export interface AwaitExpression extends UnaryExpression {
 export interface BigIntLiteral extends LiteralExpression {
   kind: Syntax.BigIntLiteral;
 }
+export interface BigIntLiteralType extends LiteralType {
+  value: PseudoBigInt;
+}
 export interface BinaryExpression extends Expression, Declaration {
   kind: Syntax.BinaryExpression;
   left: Expression;
@@ -68,6 +109,12 @@ export interface BinaryExpression extends Expression, Declaration {
 }
 export type BinaryOperator = AssignmentOperatorOrHigher | Syntax.CommaToken;
 export type BinaryOperatorToken = Token<BinaryOperator>;
+export interface BindablePropertyAssignmentExpression extends BinaryExpression {
+  left: BindableAccessExpression;
+}
+export interface BindableStaticPropertyAssignmentExpression extends BinaryExpression {
+  left: BindableStaticAccessExpression;
+}
 export interface BindingElement extends NamedDeclaration {
   kind: Syntax.BindingElement;
   parent?: BindingPattern;
@@ -90,10 +137,14 @@ export interface Block extends Statement {
   multiLine?: boolean;
 }
 export type BlockLike = SourceFile | Block | ModuleBlock | CaseOrDefaultClause;
+export interface BooleanLiteral extends PrimaryExpression, TypeNode {
+  kind: Syntax.TrueKeyword | Syntax.FalseKeyword;
+}
 export interface BreakStatement extends Statement {
   kind: Syntax.BreakStatement;
   label?: Identifier;
 }
+export type BreakOrContinueStatement = BreakStatement | ContinueStatement;
 export interface Bundle extends Node {
   kind: Syntax.Bundle;
   prepends: readonly (InputFiles | UnparsedSource)[];
@@ -134,22 +185,48 @@ export interface CatchClause extends Node {
   variableDeclaration?: VariableDeclaration;
   block: Block;
 }
+export type CaseOrDefaultClause = CaseClause | DefaultClause;
 export interface ClassDeclaration extends ClassLikeDeclarationBase, DeclarationStatement {
   kind: Syntax.ClassDeclaration;
   name?: Identifier;
 }
+export interface ClassElement extends NamedDeclaration {
+  _classElementBrand: any;
+  name?: PropertyName;
+}
 export interface ClassExpression extends ClassLikeDeclarationBase, PrimaryExpression {
   kind: Syntax.ClassExpression;
+}
+export type ClassLikeDeclaration = ClassDeclaration | ClassExpression;
+export interface ClassLikeDeclarationBase extends NamedDeclaration, JSDocContainer {
+  kind: Syntax.ClassDeclaration | Syntax.ClassExpression;
+  name?: Identifier;
+  typeParameters?: Nodes<TypeParameterDeclaration>;
+  heritageClauses?: Nodes<HeritageClause>;
+  members: Nodes<ClassElement>;
 }
 export interface CommaListExpression extends Expression {
   kind: Syntax.CommaListExpression;
   elements: Nodes<Expression>;
 }
+export type CompoundAssignmentOperator =
+  | Syntax.PlusEqualsToken
+  | Syntax.MinusEqualsToken
+  | Syntax.Asterisk2EqualsToken
+  | Syntax.AsteriskEqualsToken
+  | Syntax.SlashEqualsToken
+  | Syntax.AmpersandEqualsToken
+  | Syntax.BarEqualsToken
+  | Syntax.CaretEqualsToken
+  | Syntax.LessThan2EqualsToken
+  | Syntax.GreaterThan3EqualsToken
+  | Syntax.GreaterThan2EqualsToken;
 export interface ComputedPropertyName extends Node {
   parent: Declaration;
   kind: Syntax.ComputedPropertyName;
   expression: Expression;
 }
+export type ConciseBody = FunctionBody | Expression;
 export interface ConditionalExpression extends Expression {
   kind: Syntax.ConditionalExpression;
   condition: Expression;
@@ -186,6 +263,8 @@ export interface DebuggerStatement extends Statement {
 export interface Declaration extends Node {
   _declarationBrand: any;
 }
+export type DeclarationWithTypeParameters = DeclarationWithTypeParameterChildren | JSDocTypedefTag | JSDocCallbackTag | JSDocSignature;
+export type DeclarationWithTypeParameterChildren = SignatureDeclaration | ClassLikeDeclaration | InterfaceDeclaration | TypeAliasDeclaration | JSDocTemplateTag;
 export interface DeclarationStatement extends NamedDeclaration, Statement {
   name?: Identifier | StringLiteral | NumericLiteral;
 }
@@ -204,6 +283,7 @@ export interface DeleteExpression extends UnaryExpression {
   kind: Syntax.DeleteExpression;
   expression: UnaryExpression;
 }
+export type DestructuringAssignment = ObjectDestructuringAssignment | ArrayDestructuringAssignment;
 export interface DoStatement extends IterationStatement {
   kind: Syntax.DoStatement;
   expression: Expression;
@@ -287,6 +367,7 @@ export interface ForStatement extends IterationStatement {
   condition?: Expression;
   incrementor?: Expression;
 }
+export type FunctionBody = Block;
 export interface FunctionDeclaration extends FunctionLikeDeclarationBase, DeclarationStatement {
   kind: Syntax.FunctionDeclaration;
   name?: Identifier;
@@ -297,6 +378,7 @@ export interface FunctionExpression extends PrimaryExpression, FunctionLikeDecla
   name?: Identifier;
   body: FunctionBody;
 }
+export type FunctionLikeDeclaration = FunctionDeclaration | MethodDeclaration | GetAccessorDeclaration | SetAccessorDeclaration | ConstructorDeclaration | FunctionExpression | ArrowFunction;
 export interface FunctionLikeDeclarationBase extends SignatureDeclarationBase {
   _functionLikeDeclarationBrand: any;
   asteriskToken?: AsteriskToken;
@@ -305,6 +387,11 @@ export interface FunctionLikeDeclarationBase extends SignatureDeclarationBase {
   body?: Block | Expression;
   endFlowNode?: FlowNode;
   returnFlowNode?: FlowNode;
+}
+export type FunctionOrConstructorTypeNode = FunctionTypeNode | ConstructorTypeNode;
+export interface FunctionOrConstructorTypeNodeBase extends TypeNode, SignatureDeclarationBase {
+  kind: Syntax.FunctionType | Syntax.ConstructorType;
+  type: TypeNode;
 }
 export interface FunctionTypeNode extends FunctionOrConstructorTypeNodeBase {
   kind: Syntax.FunctionType;
@@ -1669,66 +1756,6 @@ export interface YieldExpression extends Expression {
   asteriskToken?: AsteriskToken;
   expression?: Expression;
 }
-export interface AllAccessorDeclarations {
-  firstAccessor: AccessorDeclaration;
-  secondAccessor: AccessorDeclaration | undefined;
-  getAccessor: GetAccessorDeclaration | undefined;
-  setAccessor: SetAccessorDeclaration | undefined;
-}
-export interface AmbientModuleDeclaration extends ModuleDeclaration {
-  body?: ModuleBlock;
-}
-export interface AmdDependency {
-  path: string;
-  name?: string;
-}
-export interface AnonymousType extends ObjectType {
-  target?: AnonymousType;
-  mapper?: TypeMapper;
-}
-export interface ArrayDestructuringAssignment extends AssignmentExpression<EqualsToken> {
-  left: ArrayLiteralExpression;
-}
-export interface AssertsIdentifierTypePredicate extends TypePredicateBase {
-  kind: TypePredicateKind.AssertsIdentifier;
-  parameterName: string;
-  parameterIndex: number;
-  type: Type | undefined;
-}
-export interface AssertsThisTypePredicate extends TypePredicateBase {
-  kind: TypePredicateKind.AssertsThis;
-  parameterName: undefined;
-  parameterIndex: undefined;
-  type: Type | undefined;
-}
-export interface AssignmentExpression<TOperator extends AssignmentOperatorToken> extends BinaryExpression {
-  left: LeftHandSideExpression;
-  operatorToken: TOperator;
-}
-export interface BigIntLiteralType extends LiteralType {
-  value: PseudoBigInt;
-}
-export interface BindablePropertyAssignmentExpression extends BinaryExpression {
-  left: BindableAccessExpression;
-}
-export interface BindableStaticPropertyAssignmentExpression extends BinaryExpression {
-  left: BindableStaticAccessExpression;
-}
-export interface BooleanLiteral extends PrimaryExpression, TypeNode {
-  kind: Syntax.TrueKeyword | Syntax.FalseKeyword;
-}
-export interface ClassLikeDeclarationBase extends NamedDeclaration, JSDocContainer {
-  kind: Syntax.ClassDeclaration | Syntax.ClassExpression;
-  name?: Identifier;
-  typeParameters?: Nodes<TypeParameterDeclaration>;
-  heritageClauses?: Nodes<HeritageClause>;
-  members: Nodes<ClassElement>;
-}
-export type ClassLikeDeclaration = ClassDeclaration | ClassExpression;
-export interface FlowArrayMutation extends FlowNodeBase {
-  node: CallExpression | BinaryExpression;
-  antecedent: FlowNode;
-}
 export interface FlowAssignment extends FlowNodeBase {
   node: Expression | VariableDeclaration | BindingElement;
   antecedent: FlowNode;
@@ -1783,13 +1810,6 @@ export interface FlowSwitchClause extends FlowNodeBase {
 export type FlowType = Type | IncompleteType;
 export type ForInitializer = VariableDeclarationList | Expression;
 export type ForInOrOfStatement = ForInStatement | ForOfStatement;
-export type FunctionBody = Block;
-export type FunctionLikeDeclaration = FunctionDeclaration | MethodDeclaration | GetAccessorDeclaration | SetAccessorDeclaration | ConstructorDeclaration | FunctionExpression | ArrowFunction;
-export type FunctionOrConstructorTypeNode = FunctionTypeNode | ConstructorTypeNode;
-export interface FunctionOrConstructorTypeNodeBase extends TypeNode, SignatureDeclarationBase {
-  kind: Syntax.FunctionType | Syntax.ConstructorType;
-  type: TypeNode;
-}
 export const enum JsxFlags {
   None = 0,
   IntrinsicNamedElement = 1 << 0,
@@ -2449,15 +2469,7 @@ export interface JsxTagNamePropertyAccess extends PropertyAccessExpression {
 export interface PrologueDirective extends ExpressionStatement {
   expression: StringLiteral;
 }
-export type BreakOrContinueStatement = BreakStatement | ContinueStatement;
-export type CaseOrDefaultClause = CaseClause | DefaultClause;
 export type ObjectTypeDeclaration = ClassLikeDeclaration | InterfaceDeclaration | TypeLiteralNode;
-export type DeclarationWithTypeParameters = DeclarationWithTypeParameterChildren | JSDocTypedefTag | JSDocCallbackTag | JSDocSignature;
-export type DeclarationWithTypeParameterChildren = SignatureDeclaration | ClassLikeDeclaration | InterfaceDeclaration | TypeAliasDeclaration | JSDocTemplateTag;
-export interface ClassElement extends NamedDeclaration {
-  _classElementBrand: any;
-  name?: PropertyName;
-}
 export type ModuleBody = NamespaceBody | JSDocNamespaceBody;
 export type ModuleName = Identifier | StringLiteral;
 export type NamespaceBody = ModuleBlock | NamespaceDeclaration;

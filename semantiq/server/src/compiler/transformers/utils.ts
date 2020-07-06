@@ -32,7 +32,7 @@ export function chainBundle(transformSourceFile: (x: SourceFile) => SourceFile):
     return node.kind === Syntax.SourceFile ? transformSourceFile(node) : transformBundle(node);
   }
   function transformBundle(node: Bundle) {
-    return createBundle(map(node.sourceFiles, transformSourceFile), node.prepends);
+    return new qc.Bundle(map(node.sourceFiles, transformSourceFile), node.prepends);
   }
 }
 export function getExportNeedsImportStarHelper(node: ExportDeclaration): boolean {
