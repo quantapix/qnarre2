@@ -177,12 +177,10 @@ export class QContext {
       if (length(types) === 1) return this.typeToTypeNodeHelper(types[0]);
       const typeNodes = this.mapToTypeNodes(types, true);
       if (typeNodes && typeNodes.length > 0) {
-        const unionOrIntersectionTypeNode = UnionTypeNode.orIntersectionCreate(type.flags & TypeFlags.Union ? Syntax.UnionType : Syntax.IntersectionType, typeNodes);
+        const unionOrIntersectionTypeNode = new qc.UnionOrIntersectionType(type.flags & TypeFlags.Union ? Syntax.UnionType : Syntax.IntersectionType, typeNodes);
         return unionOrIntersectionTypeNode;
       } else {
-        if (!this.encounteredError && !(this.flags & NodeBuilderFlags.AllowEmptyUnionOrIntersection)) {
-          this.encounteredError = true;
-        }
+        if (!this.encounteredError && !(this.flags & NodeBuilderFlags.AllowEmptyUnionOrIntersection)) this.encounteredError = true;
         return undefined!;
       }
     }
@@ -705,7 +703,7 @@ export class QContext {
           ? setEmitFlags(new Identifier(typePredicate.parameterName), EmitFlags.NoAsciiEscaping)
           : new qc.ThisTypeNode();
       const typeNode = typePredicate.type && this.typeToTypeNodeHelper(typePredicate.type);
-      returnTypeNode = TypePredicateNode.createWithModifier(assertsModifier, parameterName, typeNode);
+      returnTypeNode = new qc.TypePredicateNode(assertsModifier, parameterName, typeNode);
     } else {
       const returnType = getReturnTypeOfSignature(signature);
       if (returnType && !(suppressAny && isTypeAny(returnType))) {

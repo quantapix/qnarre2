@@ -851,27 +851,27 @@ export abstract class Node extends qb.TextRange implements qt.Node {
     nonNullChain(n: Node): n is NonNullChain {
       return this.kind(NonNullExpression, n) && !!(n.flags & NodeFlags.OptionalChain);
     }
-    unparsedNode(n: Node): n is UnparsedNode {
+    unparsedNode(n: qt.Node): n is qt.UnparsedNode {
       return this.unparsedTextLike(n) || n.kind === Syntax.UnparsedPrologue || n.kind === Syntax.UnparsedSyntheticReference;
     }
-    literalExpression(n: Node): n is LiteralExpression {
+    literalExpression(n: qt.Node): n is qt.LiteralExpression {
       return syntax.is.literal(n.kind);
     }
-    templateLiteralToken(n: Node): n is TemplateLiteralToken {
+    templateLiteralToken(n: qt.Node): n is qt.TemplateLiteralToken {
       return syntax.is.templateLiteral(n.kind);
     }
-    importOrExportSpecifier(n: Node): n is ImportSpecifier | ExportSpecifier {
+    importOrExportSpecifier(n: qt.Node): n is qt.ImportSpecifier | qt.ExportSpecifier {
       return this.kind(ImportSpecifier, n) || this.kind(ExportSpecifier, n);
     }
-    typeOnlyImportOrExportDeclaration(n: Node): n is TypeOnlyCompatibleAliasDeclaration {
+    typeOnlyImportOrExportDeclaration(n: qt.Node): n is qt.TypeOnlyCompatibleAliasDeclaration {
       switch (n.kind) {
         case Syntax.ImportSpecifier:
         case Syntax.ExportSpecifier:
-          return (n as ImportOrExportSpecifier).parent.parent.isTypeOnly;
+          return (n as qt.ImportOrExportSpecifier).parent.parent.isTypeOnly;
         case Syntax.NamespaceImport:
-          return (n as NamespaceImport).parent.isTypeOnly;
+          return (n as qt.NamespaceImport).parent.isTypeOnly;
         case Syntax.ImportClause:
-          return (n as ImportClause).isTypeOnly;
+          return (n as qt.ImportClause).isTypeOnly;
         default:
           return false;
       }

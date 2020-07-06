@@ -4316,7 +4316,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   ): string {
     return writer ? typePredicateToStringWorker(writer).getText() : usingSingleLineStringWriter(typePredicateToStringWorker);
     function typePredicateToStringWorker(writer: EmitTextWriter) {
-      const predicate = TypePredicateNode.createWithModifier(
+      const predicate = new qc.TypePredicateNode(
         typePredicate.kind === TypePredicateKind.AssertsThis || typePredicate.kind === TypePredicateKind.AssertsIdentifier ? new Token(Syntax.AssertsKeyword) : undefined,
         typePredicate.kind === TypePredicateKind.Identifier || typePredicate.kind === TypePredicateKind.AssertsIdentifier ? new Identifier(typePredicate.parameterName) : ThisTypeNode.create(),
         typePredicate.type &&

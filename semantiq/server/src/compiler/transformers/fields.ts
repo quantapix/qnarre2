@@ -569,7 +569,7 @@ export function transformClassFields(context: TransformationContext) {
       (pendingExpressions || (pendingExpressions = [])).push(new BinaryExpression(receiver, Syntax.EqualsToken, node.expression));
     }
     return createPropertyAccess(
-      createParen(
+      new qc.ParenthesizedExpression(
         createObjectLiteral([
           SetAccessorDeclaration.create(
             undefined,

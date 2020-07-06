@@ -403,7 +403,7 @@ export function transformES2015(context: TransformationContext) {
     const outer = new qs.PartiallyEmittedExpression(inner);
     outer.end = syntax.skipTrivia(currentText, node.pos);
     setEmitFlags(outer, EmitFlags.NoComments);
-    const result = createParen(new qs.CallExpression(outer, undefined, extendsClauseElement ? [visitNode(extendsClauseElement.expression, visitor, isExpression)] : []));
+    const result = new qc.ParenthesizedExpression(new qs.CallExpression(outer, undefined, extendsClauseElement ? [visitNode(extendsClauseElement.expression, visitor, isExpression)] : []));
     addSyntheticLeadingComment(result, Syntax.MultiLineCommentTrivia, '* @class ');
     return result;
   }
