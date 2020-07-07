@@ -1251,7 +1251,7 @@ export function transformTypeScript(context: TransformationContext) {
       statements.push(statement);
       return true;
     } else {
-      const mergeMarker = createMergeDeclarationMarker(statement);
+      const mergeMarker = new qc.MergeDeclarationMarker(statement);
       setEmitFlags(mergeMarker, EmitFlags.NoComments | EmitFlags.HasEndOfDeclarationMarker);
       statements.push(mergeMarker);
       return false;

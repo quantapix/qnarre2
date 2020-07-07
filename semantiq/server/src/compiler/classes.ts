@@ -7,7 +7,7 @@ import * as qy from './syntax';
 import * as qu from './utils';
 export * from './core';
 // prettier-ignore
-export type NodeTypes = | ArrayBindingPattern | ArrayLiteralExpression | ArrayTypeNode | AsExpression | AwaitExpression | BinaryExpression | BindingElement | BindingPattern | Block | BreakOrContinueStatement | CallExpression | CaseBlock | CaseClause | CatchClause | ClassLikeDeclaration | CommaListExpression | ComputedPropertyName | ConditionalExpression | ConditionalTypeNode | Decorator | DefaultClause | DeleteExpression | DeleteExpression | DoStatement | ElementAccessExpression | EnumDeclaration | EnumMember | ExportAssignment | ExportDeclaration | ExpressionStatement | ExpressionWithTypeArguments | ExternalModuleReference | ForInStatement | ForOfStatement | ForStatement | FunctionLikeDeclaration | HeritageClause | Identifier | IfStatement | ImportClause | ImportDeclaration | ImportEqualsDeclaration | ImportOrExportSpecifier | ImportTypeNode | IndexedAccessTypeNode | InferTypeNode | InterfaceDeclaration | JSDoc | JSDocAugmentsTag | JSDocAuthorTag | JSDocFunctionType | JSDocImplementsTag | JSDocSignature | JSDocTemplateTag | JSDocTypedefTag | JSDocTypeExpression | JSDocTypeLiteral | JSDocTypeReferencingNode | JsxAttribute | JsxAttributes | JsxClosingElement | JsxElement | JsxExpression | JsxFragment | JsxOpeningLikeElement | JsxSpreadAttribute | LabeledStatement | LiteralTypeNode | MappedTypeNode | MetaProperty | MissingDeclaration | ModuleDeclaration | NamedImportsOrExports | NamedTupleMember | NamespaceExport | NamespaceExportDeclaration | NamespaceImport | NonNullExpression | ObjectLiteralExpression | OptionalTypeNode | ParameterDeclaration | ParenthesizedExpression | ParenthesizedTypeNode | PartiallyEmittedExpression | PostfixUnaryExpression | PrefixUnaryExpression | PropertyAccessExpression | PropertyAssignment | PropertyDeclaration | PropertySignature | QualifiedName | RestTypeNode | ReturnStatement | ShorthandPropertyAssignment | SignatureDeclaration | SourceFile | SpreadAssignment | SpreadElement | SwitchStatement | TaggedTemplateExpression | TemplateExpression | TemplateSpan | ThrowStatement | TryStatement | TupleTypeNode | TypeAliasDeclaration | TypeAssertion | TypeLiteralNode | TypeOfExpression | TypeOperatorNode | TypeParameterDeclaration | TypePredicateNode | TypeQueryNode | TypeReferenceNode | UnionOrIntersectionTypeNode | VariableDeclaration | VariableDeclarationList | VariableStatement | VoidExpression | WhileStatement | WithStatement | YieldExpression;
+export type NodeTypes = | ArrayBindingPattern | ArrayLiteralExpression | ArrayTypeNode | AsExpression | AwaitExpression | BinaryExpression | BindingElement | BindingPattern | Block | BreakOrContinueStatement | CallExpression | CaseBlock | CaseClause | CatchClause | ClassLikeDeclaration | CommaListExpression | ComputedPropertyName | ConditionalExpression | ConditionalTypeNode | Decorator | DefaultClause | DeleteExpression | DeleteExpression | DoStatement | ElementAccessExpression | EnumDeclaration | EnumMember | ExportAssignment | ExportDeclaration | ExpressionStatement | ExpressionWithTypeArguments | ExternalModuleReference | ForInStatement | ForOfStatement | ForStatement | FunctionLikeDeclaration | HeritageClause | Identifier | IfStatement | ImportClause | ImportDeclaration | ImportEqualsDeclaration | ImportOrExportSpecifier | ImportTypeNode | IndexedAccessTypeNode | InferTypeNode | InterfaceDeclaration | JSDoc | JSDocAugmentsTag | JSDocAuthorTag | JSDocFunctionType | JSDocImplementsTag | JSDocSignature | JSDocTemplateTag | JSDocTypedefTag | JSDocTypeExpression | JSDocTypeLiteral | JSDocTypeReferencingNode | JsxAttribute | JsxAttributes | JsxClosingElement | JsxElement | JsxExpression | JsxFragment | qc.JsxOpeningLikeElement | JsxSpreadAttribute | LabeledStatement | LiteralTypeNode | MappedTypeNode | MetaProperty | MissingDeclaration | ModuleDeclaration | NamedImportsOrExports | NamedTupleMember | NamespaceExport | NamespaceExportDeclaration | NamespaceImport | NonNullExpression | ObjectLiteralExpression | OptionalTypeNode | ParameterDeclaration | ParenthesizedExpression | ParenthesizedTypeNode | PartiallyEmittedExpression | PostfixUnaryExpression | PrefixUnaryExpression | PropertyAccessExpression | PropertyAssignment | PropertyDeclaration | PropertySignature | QualifiedName | RestTypeNode | ReturnStatement | ShorthandPropertyAssignment | SignatureDeclaration | SourceFile | SpreadAssignment | SpreadElement | SwitchStatement | TaggedTemplateExpression | TemplateExpression | TemplateSpan | ThrowStatement | TryStatement | TupleTypeNode | TypeAliasDeclaration | TypeAssertion | TypeLiteralNode | TypeOfExpression | TypeOperatorNode | TypeParameterDeclaration | TypePredicateNode | TypeQueryNode | TypeReferenceNode | UnionOrIntersectionTypeNode | VariableDeclaration | VariableDeclarationList | VariableStatement | VoidExpression | WhileStatement | WithStatement | YieldExpression;
 ///
 export namespace ArrayBindingElement {
   export const also = [Syntax.BindingElement, Syntax.OmittedExpression];
@@ -77,7 +77,7 @@ export class ArrowFunction extends qc.FunctionLikeDeclarationBase implements qc.
     ts: readonly TypeParameterDeclaration[] | undefined,
     ps: readonly ParameterDeclaration[],
     t: qc.TypeNode | undefined,
-    a: qc.Token<Syntax.EqualsGreaterThanToken>,
+    a: qc.EqualsGreaterThanToken,
     b: qc.ConciseBody
   ) {
     return this.modifiers !== ms || this.typeParameters !== ts || this.parameters !== ps || this.type !== t || this.equalsGreaterThanToken !== a || this.body !== b
@@ -769,7 +769,7 @@ export class ConditionalExpression extends qc.Expression implements qc.Condition
     this.colonToken = f ? s! : new qc.Token(Syntax.ColonToken);
     this.whenFalse = parenthesize.subexpressionOfConditionalExpression(f ? f : t);
   }
-  update(c: qc.Expression, q: qc.Token<Syntax.QuestionToken>, t: qc.Expression, s: qc.Token<Syntax.ColonToken>, f: qc.Expression): ConditionalExpression {
+  update(c: qc.Expression, q: qc.QuestionToken, t: qc.Expression, s: qc.ColonToken, f: qc.Expression): ConditionalExpression {
     return this.condition !== c || this.questionToken !== q || this.whenTrue !== t || this.colonToken !== s || this.whenFalse !== f ? new ConditionalExpression(c, q, t, s, f).updateFrom(this) : this;
   }
 }
@@ -1857,45 +1857,46 @@ export class JsxAttribute extends qc.ObjectLiteralElement implements qc.JsxAttri
   parent: JsxAttributes;
   name: Identifier;
   initializer?: StringLiteral | JsxExpression;
-  createJsxAttribute(name: Identifier, initializer: StringLiteral | JsxExpression) {
+  constructor(n: Identifier, i: StringLiteral | JsxExpression) {
     super(true);
-    this.name = name;
-    this.initializer = initializer;
+    this.name = n;
+    this.initializer = i;
   }
-  update(name: Identifier, initializer: StringLiteral | JsxExpression) {
-    return this.name !== name || this.initializer !== initializer ? new JsxAttribute(name, initializer).updateFrom(this) : this;
+  update(n: Identifier, i: StringLiteral | JsxExpression) {
+    return this.name !== n || this.initializer !== i ? new JsxAttribute(n, i).updateFrom(this) : this;
   }
 }
 JsxAttribute.prototype.kind = JsxAttribute.kind;
-export class JsxAttributes extends Node implements qc.JsxAttributes {
+export class JsxAttributes extends qc.ObjectLiteralExpressionBase<qc.JsxAttributeLike> implements qc.JsxAttributes {
   static readonly kind = Syntax.JsxAttributes;
-  parent: JsxOpeningLikeElement;
-  createJsxAttributes(properties: readonly JsxAttributeLike[]) {
+  parent: qc.JsxOpeningLikeElement;
+  constructor(ps: readonly qc.JsxAttributeLike[]) {
     super(true);
-    this.properties = new Nodes(properties);
+    this.properties = new Nodes(ps);
   }
-  update(properties: readonly JsxAttributeLike[]) {
-    return this.properties !== properties ? new JsxAttributes(properties).updateFrom(this) : this;
+  update(ps: readonly qc.JsxAttributeLike[]) {
+    return this.properties !== ps ? new JsxAttributes(ps).updateFrom(this) : this;
   }
+  _declarationBrand: any;
 }
 JsxAttributes.prototype.kind = JsxAttributes.kind;
 export class JsxClosingElement extends Node implements qc.JsxClosingElement {
   static readonly kind = Syntax.JsxClosingElement;
   parent: JsxElement;
   tagName: qc.JsxTagNameExpression;
-  createJsxClosingElement(tagName: qc.JsxTagNameExpression) {
+  constructor(e: qc.JsxTagNameExpression) {
     super(true);
-    this.tagName = tagName;
+    this.tagName = e;
   }
-  update(tagName: qc.JsxTagNameExpression) {
-    return this.tagName !== tagName ? new JsxClosingElement(tagName).updateFrom(this) : this;
+  update(e: qc.JsxTagNameExpression) {
+    return this.tagName !== e ? new JsxClosingElement(e).updateFrom(this) : this;
   }
 }
 JsxClosingElement.prototype.kind = JsxClosingElement.kind;
 export class JsxClosingFragment extends qc.Expression implements qc.JsxClosingFragment {
   static readonly kind = Syntax.JsxClosingFragment;
   parent: JsxFragment;
-  createJsxJsxClosingFragment() {
+  constructor() {
     super(true);
   }
 }
@@ -1903,34 +1904,34 @@ JsxClosingFragment.prototype.kind = JsxClosingFragment.kind;
 export class JsxElement extends qc.PrimaryExpression implements qc.JsxElement {
   static readonly kind = Syntax.JsxElement;
   openingElement: JsxOpeningElement;
-  children: Nodes<JsxChild>;
+  children: Nodes<qc.JsxChild>;
   closingElement: JsxClosingElement;
-  constructor(o: JsxOpeningElement, children: readonly JsxChild[], c: JsxClosingElement) {
+  constructor(o: JsxOpeningElement, cs: readonly qc.JsxChild[], c: JsxClosingElement) {
     super(true);
     this.openingElement = o;
-    this.children = new Nodes(children);
+    this.children = new Nodes(cs);
     this.closingElement = c;
   }
-  update(o: JsxOpeningElement, children: readonly JsxChild[], c: JsxClosingElement) {
-    return this.openingElement !== o || this.children !== children || this.closingElement !== c ? new JsxElement(o, children, c).updateFrom(this) : this;
+  update(o: JsxOpeningElement, cs: readonly qc.JsxChild[], c: JsxClosingElement) {
+    return this.openingElement !== o || this.children !== cs || this.closingElement !== c ? new JsxElement(o, cs, c).updateFrom(this) : this;
   }
   static createExpression(
-    jsxFactoryEntity: EntityName | undefined,
+    jsxFactoryEntity: qc.EntityName | undefined,
     reactNamespace: string,
     tagName: qc.Expression,
     props: qc.Expression,
     children: readonly qc.Expression[],
-    parentElement: JsxOpeningLikeElement,
-    location: TextRange
+    parentElement: qc.JsxOpeningLikeElement,
+    location: qb.TextRange
   ): qc.LeftHandSideExpression {
     const argumentsList = [tagName];
     if (props) argumentsList.push(props);
     if (children && children.length > 0) {
       if (!props) argumentsList.push(createNull());
       if (children.length > 1) {
-        for (const child of children) {
-          startOnNewLine(child);
-          argumentsList.push(child);
+        for (const c of children) {
+          startOnNewLine(c);
+          argumentsList.push(c);
         }
       } else argumentsList.push(children[0]);
     }
@@ -1940,50 +1941,48 @@ export class JsxElement extends qc.PrimaryExpression implements qc.JsxElement {
 JsxElement.prototype.kind = JsxElement.kind;
 export class JsxExpression extends qc.Expression implements qc.JsxExpression {
   static readonly kind = Syntax.JsxExpression;
-  parent: JsxElement | JsxAttributeLike;
-  dot3Token?: qc.Token<Syntax.qc.Dot3Token>;
+  parent: JsxElement | qc.JsxAttributeLike;
+  dot3Token?: qc.Dot3Token;
   expression?: qc.Expression;
-  createJsxExpression(dot3Token: qc.Dot3Token | undefined, expression: qc.Expression | undefined) {
+  constructor(d3?: qc.Dot3Token, e?: qc.Expression) {
     super(true);
-    this.dot3Token = dot3Token;
-    this.expression = expression;
+    this.dot3Token = d3;
+    this.expression = e;
   }
-  update(expression: qc.Expression | undefined) {
-    return this.expression !== expression ? new JsxExpression(this.dot3Token, expression).updateFrom(this) : this;
+  update(e?: qc.Expression) {
+    return this.expression !== e ? new JsxExpression(this.dot3Token, e).updateFrom(this) : this;
   }
 }
 JsxExpression.prototype.kind = JsxExpression.kind;
 export class JsxFragment extends qc.PrimaryExpression implements qc.JsxFragment {
   static readonly kind = Syntax.JsxFragment;
   openingFragment: JsxOpeningFragment;
-  children: Nodes<JsxChild>;
+  children: Nodes<qc.JsxChild>;
   closingFragment: JsxClosingFragment;
-  createJsxFragment(openingFragment: JsxOpeningFragment, children: readonly JsxChild[], closingFragment: JsxClosingFragment) {
+  constructor(o: JsxOpeningFragment, cs: readonly qc.JsxChild[], c: JsxClosingFragment) {
     super(true);
-    this.openingFragment = openingFragment;
-    this.children = new Nodes(children);
-    this.closingFragment = closingFragment;
+    this.openingFragment = o;
+    this.children = new Nodes(cs);
+    this.closingFragment = c;
   }
-  update(openingFragment: JsxOpeningFragment, children: readonly JsxChild[], closingFragment: JsxClosingFragment) {
-    return this.openingFragment !== openingFragment || this.children !== children || this.closingFragment !== closingFragment
-      ? new JsxFragment(openingFragment, children, closingFragment).updateFrom(this)
-      : this;
+  update(o: JsxOpeningFragment, cs: readonly qc.JsxChild[], c: JsxClosingFragment) {
+    return this.openingFragment !== o || this.children !== cs || this.closingFragment !== c ? new JsxFragment(o, cs, c).updateFrom(this) : this;
   }
   createExpressionForJsxFragment(
-    jsxFactoryEntity: EntityName | undefined,
+    jsxFactoryEntity: qc.EntityName | undefined,
     reactNamespace: string,
     children: readonly qc.Expression[],
     parentElement: JsxOpeningFragment,
-    location: TextRange
+    location: qb.TextRange
   ): qc.LeftHandSideExpression {
     const tagName = createPropertyAccess(createReactNamespace(reactNamespace, parentElement), 'Fragment');
     const argumentsList = [<qc.Expression>tagName];
     argumentsList.push(createNull());
     if (children && children.length > 0) {
       if (children.length > 1) {
-        for (const child of children) {
-          startOnNewLine(child);
-          argumentsList.push(child);
+        for (const c of children) {
+          startOnNewLine(c);
+          argumentsList.push(c);
         }
       } else argumentsList.push(children[0]);
     }
@@ -1997,30 +1996,30 @@ export class JsxOpeningElement extends qc.Expression implements qc.JsxOpeningEle
   tagName: qc.JsxTagNameExpression;
   typeArguments?: Nodes<qc.TypeNode>;
   attributes: JsxAttributes;
-  constructor(n: qc.JsxTagNameExpression, ts: readonly qc.TypeNode[] | undefined, s: JsxAttributes) {
+  constructor(e: qc.JsxTagNameExpression, ts: readonly qc.TypeNode[] | undefined, a: JsxAttributes) {
     super(true);
-    this.tagName = n;
+    this.tagName = e;
     this.typeArguments = Nodes.from(ts);
     this.attributes = a;
   }
-  update(n: qc.JsxTagNameExpression, ts: readonly qc.TypeNode[] | undefined, s: JsxAttributes) {
-    return this.tagName !== n || this.typeArguments !== ts || this.attributes !== s ? new JsxOpeningElement(n, ts, s).updateFrom(this) : this;
+  update(e: qc.JsxTagNameExpression, ts: readonly qc.TypeNode[] | undefined, s: JsxAttributes) {
+    return this.tagName !== e || this.typeArguments !== ts || this.attributes !== s ? new JsxOpeningElement(e, ts, s).updateFrom(this) : this;
   }
 }
 JsxOpeningElement.prototype.kind = JsxOpeningElement.kind;
 export class JsxOpeningFragment extends qc.Expression implements qc.JsxOpeningFragment {
   static readonly kind = Syntax.JsxOpeningFragment;
   parent: JsxFragment;
-  createJsxOpeningFragment() {
+  constructor() {
     super(true);
   }
-  createReactNamespace(reactNamespace: string, parent: JsxOpeningLikeElement | JsxOpeningFragment) {
-    const react = new Identifier(reactNamespace || 'React');
-    react.flags &= ~NodeFlags.Synthesized;
-    react.parent = Node.get.parseTreeOf(parent);
-    return react;
+  createReactNamespace(reactNamespace: string, parent: qc.JsxOpeningLikeElement | JsxOpeningFragment) {
+    const r = new Identifier(reactNamespace || 'React');
+    r.flags &= ~NodeFlags.Synthesized;
+    r.parent = Node.get.parseTreeOf(parent);
+    return r;
   }
-  createJsxFactoryExpressionFromEntityName(jsxFactory: qc.EntityName, parent: JsxOpeningLikeElement | JsxOpeningFragment): qc.Expression {
+  createJsxFactoryExpressionFromEntityName(jsxFactory: qc.EntityName, parent: qc.JsxOpeningLikeElement | JsxOpeningFragment): qc.Expression {
     if (Node.is.kind(QualifiedName, jsxFactory)) {
       const left = createJsxFactoryExpressionFromEntityName(jsxFactory.left, parent);
       const right = new Identifier(qc.idText(jsxFactory.right));
@@ -2029,7 +2028,7 @@ export class JsxOpeningFragment extends qc.Expression implements qc.JsxOpeningFr
     }
     return createReactNamespace(qc.idText(jsxFactory), parent);
   }
-  createJsxFactoryExpression(jsxFactoryEntity: EntityName | undefined, reactNamespace: string, parent: JsxOpeningLikeElement | JsxOpeningFragment): qc.Expression {
+  createJsxFactoryExpression(jsxFactoryEntity: qc.EntityName | undefined, reactNamespace: string, parent: qc.JsxOpeningLikeElement | JsxOpeningFragment): qc.Expression {
     return jsxFactoryEntity ? createJsxFactoryExpressionFromEntityName(jsxFactoryEntity, parent) : createPropertyAccess(createReactNamespace(reactNamespace, parent), 'createElement');
   }
 }
@@ -2039,14 +2038,14 @@ export class JsxSelfClosingElement extends qc.PrimaryExpression implements qc.Js
   tagName: qc.JsxTagNameExpression;
   typeArguments?: Nodes<qc.TypeNode>;
   attributes: JsxAttributes;
-  constructor(n: qc.JsxTagNameExpression, ts: readonly qc.TypeNode[] | undefined, a: JsxAttributes) {
+  constructor(e: qc.JsxTagNameExpression, ts: readonly qc.TypeNode[] | undefined, a: JsxAttributes) {
     super(true);
-    this.tagName = n;
+    this.tagName = e;
     this.typeArguments = Nodes.from(ts);
     this.attributes = a;
   }
-  update(n: qc.JsxTagNameExpression, ts: readonly qc.TypeNode[] | undefined, a: JsxAttributes) {
-    return this.tagName !== n || this.typeArguments !== ts || this.attributes !== a ? new JsxSelfClosingElement(n, ts, s).updateFrom(this) : this;
+  update(e: qc.JsxTagNameExpression, ts: readonly qc.TypeNode[] | undefined, a: JsxAttributes) {
+    return this.tagName !== e || this.typeArguments !== ts || this.attributes !== a ? new JsxSelfClosingElement(e, ts, a).updateFrom(this) : this;
   }
 }
 JsxSelfClosingElement.prototype.kind = JsxSelfClosingElement.kind;
@@ -2063,58 +2062,45 @@ export class JsxSpreadAttribute extends qc.ObjectLiteralElement implements qc.Js
   }
 }
 JsxSpreadAttribute.prototype.kind = JsxSpreadAttribute.kind;
-export class JsxText extends LiteralLikeNode implements qc.JsxText {
+export class JsxText extends qc.LiteralLikeNode implements qc.JsxText {
   static readonly kind = Syntax.JsxText;
-  onlyTriviaWhitespaces: boolean;
+  onlyTriviaWhiteSpaces: boolean;
   parent: JsxElement;
-  constructor(t: string, onlyTriviaWhitespaces?: boolean) {
+  constructor(t: string, whitespaces?: boolean) {
     super(true);
     this.text = t;
-    this.onlyTriviaWhitespaces = !!onlyTriviaWhitespaces;
+    this.onlyTriviaWhiteSpaces = !!whitespaces;
   }
-  update(text: string, onlyTriviaWhitespaces?: boolean) {
-    return this.text !== text || this.onlyTriviaWhitespaces !== onlyTriviaWhitespaces ? new JsxText(text, onlyTriviaWhitespaces).updateFrom(this) : this;
+  update(t: string, whitespaces?: boolean) {
+    return this.text !== t || this.onlyTriviaWhiteSpaces !== whitespaces ? new JsxText(t, whitespaces).updateFrom(this) : this;
   }
 }
 JsxText.prototype.kind = JsxText.kind;
 export class KeywordTypeNode extends qc.TypeNode implements qc.KeywordTypeNode {
-  kind:
-    | Syntax.AnyKeyword
-    | Syntax.UnknownKeyword
-    | Syntax.NumberKeyword
-    | Syntax.BigIntKeyword
-    | Syntax.ObjectKeyword
-    | Syntax.BooleanKeyword
-    | Syntax.StringKeyword
-    | Syntax.SymbolKeyword
-    | Syntax.ThisKeyword
-    | Syntax.VoidKeyword
-    | Syntax.UndefinedKeyword
-    | Syntax.NullKeyword
-    | Syntax.NeverKeyword;
+  // prettier-ignore
+  kind: | Syntax.AnyKeyword | Syntax.UnknownKeyword | Syntax.NumberKeyword | Syntax.BigIntKeyword | Syntax.ObjectKeyword | Syntax.BooleanKeyword | Syntax.StringKeyword | Syntax.SymbolKeyword | Syntax.ThisKeyword | Syntax.VoidKeyword | Syntax.UndefinedKeyword | Syntax.NullKeyword | Syntax.NeverKeyword;
   constructor(k: KeywordTypeNode['kind']) {
     super(true, k);
   }
 }
-KeywordTypeNode.prototype.kind = KeywordTypeNode.kind;
 export class LabeledStatement extends qc.Statement implements qc.LabeledStatement {
-  //, JSDocContainer {
   static readonly kind = Syntax.LabeledStatement;
   label: Identifier;
   statement: qc.Statement;
-  createLabel(label: string | Identifier, statement: qc.Statement) {
+  constructor(l: string | Identifier, s: qc.Statement) {
     super(true);
-    this.label = asName(label);
-    this.statement = asEmbeddedStatement(statement);
+    this.label = asName(l);
+    this.statement = asEmbeddedStatement(s);
   }
-  update(label: Identifier, statement: qc.Statement) {
-    return this.label !== label || this.statement !== statement ? new create(label, statement).updateFrom(this) : this;
+  update(l: Identifier, s: qc.Statement) {
+    return this.label !== l || this.statement !== s ? new LabeledStatement(l, s).updateFrom(this) : this;
   }
 }
 LabeledStatement.prototype.kind = LabeledStatement.kind;
+qb.addMixins(LabeledStatement, [qc.JSDocContainer]);
 export class LiteralTypeNode extends qc.TypeNode implements qc.LiteralTypeNode {
   static readonly kind = Syntax.LiteralType;
-  literal: BooleanLiteral | LiteralExpression | PrefixUnaryExpression;
+  literal: BooleanLiteral | qc.LiteralExpression | PrefixUnaryExpression;
   constructor(l: LiteralTypeNode['literal']) {
     super(true);
     this.literal = l;
@@ -2126,29 +2112,29 @@ export class LiteralTypeNode extends qc.TypeNode implements qc.LiteralTypeNode {
 LiteralTypeNode.prototype.kind = LiteralTypeNode.kind;
 export class MappedTypeNode extends qc.TypeNode implements qc.MappedTypeNode {
   static readonly kind = Syntax.MappedType;
-  readonlyToken?: ReadonlyToken | PlusToken | MinusToken;
+  readonlyToken?: qc.ReadonlyToken | qc.PlusToken | qc.MinusToken;
   typeParameter: TypeParameterDeclaration;
-  questionToken?: qc.QuestionToken | PlusToken | MinusToken;
+  questionToken?: qc.QuestionToken | qc.PlusToken | qc.MinusToken;
   type?: qc.TypeNode;
-  constructor(r: ReadonlyToken | PlusToken | MinusToken | undefined, p: TypeParameterDeclaration, q?: qc.QuestionToken | PlusToken | MinusToken, t?: qc.TypeNode) {
+  constructor(r: qc.ReadonlyToken | qc.PlusToken | qc.MinusToken | undefined, p: TypeParameterDeclaration, q?: qc.QuestionToken | qc.PlusToken | qc.MinusToken, t?: qc.TypeNode) {
     super(true);
     this.readonlyToken = r;
     this.typeParameter = p;
     this.questionToken = q;
     this.type = t;
   }
-  update(r: ReadonlyToken | PlusToken | MinusToken | undefined, p: TypeParameterDeclaration, q?: qc.QuestionToken | PlusToken | MinusToken, t?: qc.TypeNode) {
+  update(r: qc.ReadonlyToken | qc.PlusToken | qc.MinusToken | undefined, p: TypeParameterDeclaration, q?: qc.QuestionToken | qc.PlusToken | qc.MinusToken, t?: qc.TypeNode) {
     return this.readonlyToken !== r || this.typeParameter !== p || this.questionToken !== q || this.type !== t ? new MappedTypeNode(r, p, q, t).updateFrom(this) : this;
   }
 }
 MappedTypeNode.prototype.kind = MappedTypeNode.kind;
-qb.addMixins(MappedTypeNode, [Declaration]);
+qb.addMixins(MappedTypeNode, [qc.Declaration]);
 export class MergeDeclarationMarker extends qc.Statement implements qc.MergeDeclarationMarker {
   static readonly kind: Syntax.MergeDeclarationMarker;
-  createMergeDeclarationMarker(original: Node) {
+  constructor(o: Node) {
     super(true);
-    this.emitNode = {} as EmitNode;
-    this.original = original;
+    this.emitNode = {} as qc.EmitNode;
+    this.original = o;
   }
 }
 MergeDeclarationMarker.prototype.kind = MergeDeclarationMarker.kind;
@@ -2156,13 +2142,13 @@ export class MetaProperty extends qc.PrimaryExpression implements qc.MetaPropert
   static readonly kind = Syntax.MetaProperty;
   keywordToken: Syntax.NewKeyword | Syntax.ImportKeyword;
   name: Identifier;
-  createMetaProperty(keywordToken: MetaProperty['keywordToken'], name: Identifier) {
+  constructor(k: MetaProperty['keywordToken'], n: Identifier) {
     super(true);
-    this.keywordToken = keywordToken;
-    this.name = name;
+    this.keywordToken = k;
+    this.name = n;
   }
-  update(name: Identifier) {
-    return this.name !== name ? new create(this.keywordToken, name).updateFrom(this) : this;
+  update(n: Identifier) {
+    return this.name !== n ? new MetaProperty(this.keywordToken, n).updateFrom(this) : this;
   }
 }
 MetaProperty.prototype.kind = MetaProperty.kind;
@@ -2303,19 +2289,19 @@ export class NamedImports extends Node implements qc.NamedImports {
 NamedImports.prototype.kind = NamedImports.kind;
 export class NamedTupleMember extends qc.TypeNode implements qc.NamedTupleMember {
   static readonly kind = Syntax.NamedTupleMember;
-  dot3Token?: qc.Token<Syntax.Dot3Token>;
+  dot3Token?: qc.Dot3Token;
   name: Identifier;
-  questionToken?: qc.Token<Syntax.QuestionToken>;
+  questionToken?: qc.QuestionToken;
   type: qc.TypeNode;
-  constructor(d: qc.Token<Syntax.Dot3Token> | undefined, i: Identifier, q: qc.Token<Syntax.QuestionToken> | undefined, t: qc.TypeNode) {
+  constructor(d3: qc.Dot3Token | undefined, i: Identifier, q: qc.QuestionToken | undefined, t: qc.TypeNode) {
     super(true);
-    this.dot3Token = d;
+    this.dot3Token = d3;
     this.name = i;
     this.questionToken = q;
     this.type = t;
   }
-  update(d: qc.Token<Syntax.Dot3Token> | undefined, i: Identifier, q: qc.Token<Syntax.QuestionToken> | undefined, t: qc.TypeNode) {
-    return this.dot3Token !== d || this.name !== i || this.questionToken !== q || this.type !== t ? new NamedTupleMember(d, i, q, t).updateFrom(this) : this;
+  update(d3: qc.Dot3Token | undefined, i: Identifier, q: qc.QuestionToken | undefined, t: qc.TypeNode) {
+    return this.dot3Token !== d3 || this.name !== i || this.questionToken !== q || this.type !== t ? new NamedTupleMember(d3, i, q, t).updateFrom(this) : this;
   }
 }
 NamedTupleMember.prototype.kind = NamedTupleMember.kind;
@@ -2867,7 +2853,7 @@ export class ShorthandPropertyAssignment extends qc.ObjectLiteralElement impleme
   name: Identifier;
   questionToken?: qc.QuestionToken;
   exclamationToken?: ExclamationToken;
-  equalsToken?: qc.Token<Syntax.EqualsToken>;
+  equalsToken?: qc.EqualsToken;
   objectAssignmentInitializer?: qc.Expression;
   createShorthandPropertyAssignment(name: string | Identifier, objectAssignmentInitializer?: qc.Expression) {
     super(true);
@@ -3536,7 +3522,7 @@ export class VariableDeclaration extends qc.NamedDeclaration implements qc.Varia
   update(name: qc.BindingName, type: qc.TypeNode | undefined, initializer: qc.Expression | undefined) {
     return this.name !== name || this.type !== type || this.initializer !== initializer ? new create(name, type, initializer).updateFrom(this) : this;
   }
-  createTypeScriptVariableDeclaration(name: string | qc.BindingName, exclaimationToken?: qc.Token<Syntax.ExclamationToken>, type?: qc.TypeNode, initializer?: qc.Expression) {
+  createTypeScriptVariableDeclaration(name: string | qc.BindingName, exclaimationToken?: qc.ExclamationToken, type?: qc.TypeNode, initializer?: qc.Expression) {
     super(true);
     this.name = asName(name);
     this.type = type;
@@ -3546,7 +3532,7 @@ export class VariableDeclaration extends qc.NamedDeclaration implements qc.Varia
   updateTypeScriptVariableDeclaration(
     this: VariableDeclaration,
     name: qc.BindingName,
-    exclaimationToken: qc.Token<Syntax.ExclamationToken> | undefined,
+    exclaimationToken: qc.ExclamationToken | undefined,
     type: qc.TypeNode | undefined,
     initializer: qc.Expression | undefined
   ) {
@@ -3863,14 +3849,14 @@ export namespace emit {
       }
     }
   }
-  export function getOrCreateEmitNode(n: Node): EmitNode {
+  export function getOrCreateEmitNode(n: Node): qc.EmitNode {
     if (!n.emitNode) {
       if (Node.is.parseTreeNode(n)) {
-        if (n.kind === Syntax.SourceFile) return (n.emitNode = { annotatedNodes: [n] } as EmitNode);
+        if (n.kind === Syntax.SourceFile) return (n.emitNode = { annotatedNodes: [n] } as qc.EmitNode);
         const sourceFile = Node.get.sourceFileOf(Node.get.parseTreeOf(Node.get.sourceFileOf(n)));
         getOrCreateEmitNode(sourceFile).annotatedNodes!.push(n);
       }
-      n.emitNode = {} as EmitNode;
+      n.emitNode = {} as qc.EmitNode;
     }
     return n.emitNode;
   }
@@ -4022,9 +4008,9 @@ export namespace emit {
     if (y.priority === undefined) return Comparison.LessThan;
     return compareValues(x.priority, y.priority);
   }
-  function mergeEmitNode(sourceEmitNode: EmitNode, destEmitNode: EmitNode | undefined) {
+  function mergeEmitNode(sourceEmitNode: qc.EmitNode, destEmitNode: qc.EmitNode | undefined) {
     const { flags, leadingComments, trailingComments, commentRange, sourceMapRange, tokenSourceMapRanges, constantValue, helpers, startsOnNewLine } = sourceEmitNode;
-    if (!destEmitNode) destEmitNode = {} as EmitNode;
+    if (!destEmitNode) destEmitNode = {} as qc.EmitNode;
     // We are using `.slice()` here in case `destEmitNode.leadingComments` is pushed to later.
     if (leadingComments) destEmitNode.leadingComments = addRange(leadingComments.slice(), destEmitNode.leadingComments);
     if (trailingComments) destEmitNode.trailingComments = addRange(trailingComments.slice(), destEmitNode.trailingComments);

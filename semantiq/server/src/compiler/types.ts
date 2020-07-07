@@ -1302,7 +1302,7 @@ export interface JsxTagNamePropertyAccess extends PropertyAccessExpression {
 }
 export interface JsxText extends LiteralLikeNode {
   kind: Syntax.JsxText;
-  containsOnlyTriviaWhiteSpaces: boolean;
+  onlyTriviaWhiteSpaces: boolean;
   parent: JsxElement;
 }
 // prettier-ignore
