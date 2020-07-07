@@ -365,7 +365,7 @@ export function transformGenerators(context: TransformationContext) {
     if (node.asteriskToken) {
       node = setOriginalNode(
         setRange(
-          createFunctionDeclaration(
+          new qc.FunctionDeclaration(
             undefined,
             node.modifiers,
             undefined,

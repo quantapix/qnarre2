@@ -841,8 +841,7 @@ export function transformDeclarations(context: TransformationContext) {
       }
       case Syntax.FunctionDeclaration: {
         const clean = cleanup(
-          updateFunctionDeclaration(
-            input,
+          input.update(
             undefined,
             ensureModifiers(input),
             undefined,

@@ -473,8 +473,7 @@ export function transformES2018(context: TransformationContext) {
   function visitFunctionDeclaration(node: FunctionDeclaration) {
     const savedEnclosingFunctionFlags = enclosingFunctionFlags;
     enclosingFunctionFlags = getFunctionFlags(node);
-    const updated = updateFunctionDeclaration(
-      node,
+    const updated = node.update(
       undefined,
       enclosingFunctionFlags & FunctionFlags.Generator ? Nodes.visit(node.modifiers, visitorNoAsyncModifier, isModifier) : node.modifiers,
       enclosingFunctionFlags & FunctionFlags.Async ? undefined : node.asteriskToken,

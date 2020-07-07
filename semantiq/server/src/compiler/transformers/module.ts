@@ -600,7 +600,7 @@ export function transformModule(context: TransformationContext) {
         statements,
         setOriginalNode(
           setRange(
-            createFunctionDeclaration(
+            new qc.FunctionDeclaration(
               undefined,
               Nodes.visit(node.modifiers, modifierVisitor, isModifier),
               node.asteriskToken,
@@ -1308,7 +1308,7 @@ export function transformSystemModule(context: TransformationContext) {
     if (localNames) {
       condition = createLogicalAnd(condition, qs.PrefixUnaryExpression.logicalNot(new qs.CallExpression(createPropertyAccess(localNames, 'hasOwnProperty'), undefined, [n])));
     }
-    return createFunctionDeclaration(
+    return new qc.FunctionDeclaration(
       undefined,
       undefined,
       undefined,
@@ -1430,8 +1430,7 @@ export function transformSystemModule(context: TransformationContext) {
     if (hasSyntacticModifier(node, ModifierFlags.Export)) {
       hoistedStatements = append(
         hoistedStatements,
-        updateFunctionDeclaration(
-          node,
+        node.update(
           node.decorators,
           Nodes.visit(node.modifiers, modifierVisitor, isModifier),
           node.asteriskToken,

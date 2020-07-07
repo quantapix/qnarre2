@@ -438,7 +438,7 @@ export function transformES2015(context: TransformationContext) {
     const ancestorFacts = enterSubtree(HierarchyFacts.ConstructorExcludes, HierarchyFacts.ConstructorIncludes);
     const constructor = getFirstConstructorWithBody(node);
     const hasSynthesizedSuper = hasSynthesizedDefaultSuperCall(constructor, extendsClauseElement !== undefined);
-    const constructorFunction = createFunctionDeclaration(
+    const constructorFunction = new qc.FunctionDeclaration(
       undefined,
       undefined,
       undefined,
