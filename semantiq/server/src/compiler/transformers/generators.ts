@@ -494,7 +494,7 @@ export function transformGenerators(context: TransformationContext) {
       if (variables.length === 0) {
         return;
       }
-      return setSourceMapRange(createExpressionStatement(inlineExpressions(map(variables, transformInitializedVariable))), node);
+      return setSourceMapRange(new qc.ExpressionStatement(inlineExpressions(map(variables, transformInitializedVariable))), node);
     }
   }
   function visitBinaryExpression(node: BinaryExpression): Expression {
@@ -642,7 +642,7 @@ export function transformGenerators(context: TransformationContext) {
         visit(node.right);
       } else {
         if (containsYield(node) && pendingExpressions.length > 0) {
-          emitWorker(OpCode.Statement, [createExpressionStatement(inlineExpressions(pendingExpressions))]);
+          emitWorker(OpCode.Statement, [new qc.ExpressionStatement(inlineExpressions(pendingExpressions))]);
           pendingExpressions = [];
         }
         pendingExpressions.push(visitNode(node, visitor, isExpression));
@@ -772,7 +772,7 @@ export function transformGenerators(context: TransformationContext) {
     return inlineExpressions(expressions);
     function reduceProperty(expressions: Expression[], property: ObjectLiteralElementLike) {
       if (containsYield(property) && expressions.length > 0) {
-        emitStatement(createExpressionStatement(inlineExpressions(expressions)));
+        emitStatement(new qc.ExpressionStatement(inlineExpressions(expressions)));
         expressions = [];
       }
       const expression = createExpressionForObjectLiteralElementLike(node, property, temp);
@@ -927,7 +927,7 @@ export function transformGenerators(context: TransformationContext) {
         pendingExpressions.push(transformInitializedVariable(variable));
       }
       if (pendingExpressions.length) {
-        emitStatement(createExpressionStatement(inlineExpressions(pendingExpressions)));
+        emitStatement(new qc.ExpressionStatement(inlineExpressions(pendingExpressions)));
         variablesWritten += pendingExpressions.length;
         pendingExpressions = [];
       }
@@ -1069,7 +1069,7 @@ export function transformGenerators(context: TransformationContext) {
         if (Node.is.kind(VariableDeclarationList, initializer)) {
           transformAndEmitVariableDeclarationList(initializer);
         } else {
-          emitStatement(setRange(createExpressionStatement(visitNode(initializer, visitor, isExpression)), initializer));
+          emitStatement(setRange(new qc.ExpressionStatement(visitNode(initializer, visitor, isExpression)), initializer));
         }
       }
       markLabel(conditionLabel);
@@ -1079,7 +1079,7 @@ export function transformGenerators(context: TransformationContext) {
       transformAndEmitEmbeddedStatement(node.statement);
       markLabel(incrementLabel);
       if (node.incrementor) {
-        emitStatement(setRange(createExpressionStatement(visitNode(node.incrementor, visitor, isExpression)), node.incrementor));
+        emitStatement(setRange(new qc.ExpressionStatement(visitNode(node.incrementor, visitor, isExpression)), node.incrementor));
       }
       emitBreak(conditionLabel);
       endLoopBlock();
@@ -1141,7 +1141,9 @@ export function transformGenerators(context: TransformationContext) {
       const initializer = node.initializer;
       hoistVariableDeclaration(keysIndex);
       emitAssignment(keysArray, new ArrayLiteralExpression());
-      emitStatement(createForIn(key, visitNode(node.expression, visitor, isExpression), createExpressionStatement(new qs.CallExpression(createPropertyAccess(keysArray, 'push'), undefined, [key]))));
+      emitStatement(
+        new qc.ForInStatement(key, visitNode(node.expression, visitor, isExpression), new qc.ExpressionStatement(new qs.CallExpression(createPropertyAccess(keysArray, 'push'), undefined, [key])))
+      );
       emitAssignment(keysIndex, createLiteral(0));
       const conditionLabel = defineLabel();
       const incrementLabel = defineLabel();
@@ -1161,7 +1163,7 @@ export function transformGenerators(context: TransformationContext) {
       emitAssignment(variable, new qs.ElementAccessExpression(keysArray, keysIndex));
       transformAndEmitEmbeddedStatement(node.statement);
       markLabel(incrementLabel);
-      emitStatement(createExpressionStatement(qs.PostfixUnaryExpression.increment(keysIndex)));
+      emitStatement(new qc.ExpressionStatement(qs.PostfixUnaryExpression.increment(keysIndex)));
       emitBreak(conditionLabel);
       endLoopBlock();
     } else {
@@ -1905,7 +1907,7 @@ export function transformGenerators(context: TransformationContext) {
         // for each block in the protected region.
         const { startLabel, catchLabel, finallyLabel, endLabel } = currentExceptionBlock;
         statements.unshift(
-          createExpressionStatement(
+          new qc.ExpressionStatement(
             new qs.CallExpression(createPropertyAccess(createPropertyAccess(state, 'trys'), 'push'), undefined, [
               new ArrayLiteralExpression([createLabel(startLabel), createLabel(catchLabel), createLabel(finallyLabel), createLabel(endLabel)]),
             ])
@@ -1916,7 +1918,7 @@ export function transformGenerators(context: TransformationContext) {
       if (markLabelEnd) {
         // The case clause for the last label falls through to this label, so we
         // add an assignment statement to reflect the change in labels.
-        statements.push(createExpressionStatement(createAssignment(createPropertyAccess(state, 'label'), createLiteral(labelNumber + 1))));
+        statements.push(new qc.ExpressionStatement(createAssignment(createPropertyAccess(state, 'label'), createLiteral(labelNumber + 1))));
       }
     }
     clauses.push(new qc.CaseClause(createLiteral(labelNumber), statements || []));
@@ -2039,7 +2041,7 @@ export function transformGenerators(context: TransformationContext) {
     }
   }
   function writeAssign(left: Expression, right: Expression, operationLocation: TextRange | undefined): void {
-    writeStatement(setRange(createExpressionStatement(createAssignment(left, right)), operationLocation));
+    writeStatement(setRange(new qc.ExpressionStatement(createAssignment(left, right)), operationLocation));
   }
   function writeThrow(expression: Expression, operationLocation: TextRange | undefined): void {
     lastOperationWasAbrupt = true;

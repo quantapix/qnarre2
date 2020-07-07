@@ -4,20 +4,6 @@ import { Node } from './types';
 import * as syntax from './syntax';
 import { Syntax } from './syntax';
 const MAX_SMI_X86 = 0x3fff_ffff;
-export function asName<T extends Identifier | BindingName | PropertyName | EntityName | ThisTypeNode | undefined>(n: string | T): T | Identifier {
-  return isString(n) ? new Identifier(n) : n;
-}
-export function asExpression<T extends Expression | undefined>(e: string | number | boolean | T): T | StringLiteral | NumericLiteral | BooleanLiteral {
-  return typeof e === 'string' ? StringLiteral.create(e) : typeof e === 'number' ? NumericLiteral.create('' + e) : typeof e === 'boolean' ? (e ? createTrue() : createFalse()) : e;
-}
-export function asToken<TKind extends Syntax>(t: TKind | Token<TKind>): Token<TKind> {
-  return typeof t === 'number' ? new Token(t) : t;
-}
-export function asEmbeddedStatement<T extends Node>(s: T): T | EmptyStatement;
-export function asEmbeddedStatement<T extends Node>(s: T | undefined): T | EmptyStatement | undefined;
-export function asEmbeddedStatement<T extends Node>(s: T | undefined): T | EmptyStatement | undefined {
-  return s && Node.is.kind(NotEmittedStatement, s) ? setRange(setOriginalNode(createEmptyStatement(), statement), statement) : statement;
-}
 function createMethodCall(object: Expression, methodName: string | Identifier, argumentsList: readonly Expression[]) {
   return new qs.CallExpression(createPropertyAccess(object, asName(methodName)), undefined, argumentsList);
 }
@@ -1249,17 +1235,6 @@ export function walkUpParenthesizedTypes(node: Node) {
 }
 export function walkUpParenthesizedExpressions(node: Node) {
   return walkUp(node, Syntax.ParenthesizedExpression);
-}
-export function skipParentheses(node: Expression): Expression;
-export function skipParentheses(node: Node): Node;
-export function skipParentheses(node: Node): Node {
-  return skipOuterExpressions(node, OuterExpressionKinds.Parentheses);
-}
-function skipParenthesesUp(node: Node): Node {
-  while (node.kind === Syntax.ParenthesizedExpression) {
-    node = node.parent;
-  }
-  return node;
 }
 export function getDeclarationFromName(name: Node): Declaration | undefined {
   const parent = name.parent;
@@ -2555,8 +2530,8 @@ const enum AccessKind {
   Write,
   ReadWrite,
 }
-function accessKind(node: Node): AccessKind {
-  const { parent } = node;
+function accessKind(n: Node): AccessKind {
+  const { parent } = n;
   if (!parent) return AccessKind.Read;
   switch (parent.kind) {
     case Syntax.ParenthesizedExpression:
@@ -2567,21 +2542,27 @@ function accessKind(node: Node): AccessKind {
       return operator === Syntax.Plus2Token || operator === Syntax.Minus2Token ? writeOrReadWrite() : AccessKind.Read;
     case Syntax.BinaryExpression:
       const { left, operatorToken } = parent as BinaryExpression;
-      return left === node && syntax.is.assignmentOperator(operatorToken.kind) ? (operatorToken.kind === Syntax.EqualsToken ? AccessKind.Write : writeOrReadWrite()) : AccessKind.Read;
+      return left === n && syntax.is.assignmentOperator(operatorToken.kind) ? (operatorToken.kind === Syntax.EqualsToken ? AccessKind.Write : writeOrReadWrite()) : AccessKind.Read;
     case Syntax.PropertyAccessExpression:
-      return (parent as PropertyAccessExpression).name !== node ? AccessKind.Read : accessKind(parent);
+      return (parent as PropertyAccessExpression).name !== n ? AccessKind.Read : accessKind(parent);
     case Syntax.PropertyAssignment: {
       const parentAccess = accessKind(parent.parent);
-      return node === (parent as PropertyAssignment).name ? reverseAccessKind(parentAccess) : parentAccess;
+      return n === (parent as PropertyAssignment).name ? reverseAccessKind(parentAccess) : parentAccess;
     }
     case Syntax.ShorthandPropertyAssignment:
-      return node === (parent as ShorthandPropertyAssignment).objectAssignmentInitializer ? AccessKind.Read : accessKind(parent.parent);
+      return n === (parent as ShorthandPropertyAssignment).objectAssignmentInitializer ? AccessKind.Read : accessKind(parent.parent);
     case Syntax.ArrayLiteralExpression:
       return accessKind(parent);
     default:
       return AccessKind.Read;
   }
   function writeOrReadWrite(): AccessKind {
+    const skipParenthesesUp = (n: Node) => {
+      while (n.kind === Syntax.ParenthesizedExpression) {
+        n = n.parent;
+      }
+      return n;
+    };
     return parent.parent && skipParenthesesUp(parent.parent).kind === Syntax.ExpressionStatement ? AccessKind.Write : AccessKind.ReadWrite;
   }
 }
@@ -2655,10 +2636,10 @@ export function forSomeAncestorDirectory(directory: string, cb: (directory: stri
 export function showModuleSpecifier({ moduleSpecifier }: ImportDeclaration): string {
   return Node.is.kind(StringLiteral, moduleSpecifier) ? moduleSpecifier.text : Node.get.textOf(moduleSpecifier);
 }
-export function getLastChild(node: Node): Node | undefined {
+export function getLastChild(n: Node): Node | undefined {
   let lastChild: Node | undefined;
   Node.forEach.child(
-    node,
+    n,
     (child) => {
       if (Node.is.present(child)) lastChild = child;
     },
@@ -2681,8 +2662,8 @@ export function addToSeen<T>(seen: QMap<T>, key: string | number, value: T = tru
   seen.set(key, value);
   return true;
 }
-export function isObjectTypeDeclaration(node: Node): node is ObjectTypeDeclaration {
-  return Node.is.classLike(node) || Node.is.kind(InterfaceDeclaration, node) || Node.is.kind(TypeLiteralNode, node);
+export function isObjectTypeDeclaration(n: Node): n is ObjectTypeDeclaration {
+  return Node.is.classLike(n) || Node.is.kind(InterfaceDeclaration, n) || Node.is.kind(TypeLiteralNode, n);
 }
 export function isAccessExpression(node: Node): node is AccessExpression {
   return node.kind === Syntax.PropertyAccessExpression || node.kind === Syntax.ElementAccessExpression;

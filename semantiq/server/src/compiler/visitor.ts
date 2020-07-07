@@ -127,7 +127,7 @@ function addForInitializer(p: qc.ParameterDeclaration, name: Identifier, init: E
       setEmitFlags(
         setRange(
           new Block([
-            createExpressionStatement(
+            new qc.ExpressionStatement(
               setEmitFlags(
                 setRange(createAssignment(setEmitFlags(getMutableClone(name), EmitFlags.NoSourceMap), setEmitFlags(init, EmitFlags.NoSourceMap | Node.get.emitFlags(init) | EmitFlags.NoComments)), p),
                 EmitFlags.NoComments

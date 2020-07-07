@@ -153,7 +153,7 @@ export function transformES2017(context: TransformationContext) {
   function visitVariableStatementInAsyncBody(node: VariableStatement) {
     if (isVariableDeclarationListWithCollidingName(node.declarationList)) {
       const expression = visitVariableDeclarationListWithCollidingNames(node.declarationList, false);
-      return expression ? createExpressionStatement(expression) : undefined;
+      return expression ? new qc.ExpressionStatement(expression) : undefined;
     }
     return visitEachChild(node, visitor, context);
   }

@@ -377,7 +377,7 @@ export function transformTypeScript(context: TransformationContext) {
       }
     }
     if (statements.length > 1) {
-      statements.push(createEndOfDeclarationMarker(node));
+      statements.push(new EndOfDeclarationMarker(node));
       setEmitFlags(classStatement, Node.get.emitFlags(classStatement) | EmitFlags.HasEndOfDeclarationMarker);
     }
     return singleOrMany(statements);
@@ -573,7 +573,7 @@ export function transformTypeScript(context: TransformationContext) {
   function addConstructorDecorationStatement(statements: Statement[], node: ClassDeclaration) {
     const expression = generateConstructorDecorationExpression(node);
     if (expression) {
-      statements.push(setOriginalNode(createExpressionStatement(expression), node));
+      statements.push(setOriginalNode(new qc.ExpressionStatement(expression), node));
     }
   }
   function generateConstructorDecorationExpression(node: ClassExpression | ClassDeclaration) {
@@ -967,7 +967,7 @@ export function transformTypeScript(context: TransformationContext) {
     setEmitFlags(localName, EmitFlags.NoComments);
     return startOnNewLine(
       removeAllComments(
-        setRange(setOriginalNode(createExpressionStatement(createAssignment(setRange(createPropertyAccess(createThis(), propertyName), node.name), localName)), node), moveRangePos(node, -1))
+        setRange(setOriginalNode(new qc.ExpressionStatement(createAssignment(setRange(createPropertyAccess(createThis(), propertyName), node.name), localName)), node), moveRangePos(node, -1))
       )
     );
   }
@@ -1092,7 +1092,7 @@ export function transformTypeScript(context: TransformationContext) {
       if (variables.length === 0) {
         return;
       }
-      return setRange(createExpressionStatement(inlineExpressions(map(variables, transformInitializedVariable))), node);
+      return setRange(new qc.ExpressionStatement(inlineExpressions(map(variables, transformInitializedVariable))), node);
     }
     return visitEachChild(node, visitor, context);
   }
@@ -1157,7 +1157,7 @@ export function transformTypeScript(context: TransformationContext) {
       const localName = getLocalName(node, false, true);
       moduleArg = createAssignment(localName, moduleArg);
     }
-    const enumStatement = createExpressionStatement(
+    const enumStatement = new qc.ExpressionStatement(
       new qs.CallExpression(
         new qs.FunctionExpression(undefined, undefined, undefined, undefined, [createParameter(undefined, undefined, undefined, parameterName)], undefined, transformEnumBody(node, containerName)),
         undefined,
@@ -1172,7 +1172,7 @@ export function transformTypeScript(context: TransformationContext) {
     setRange(enumStatement, node);
     addEmitFlags(enumStatement, emitFlags);
     statements.push(enumStatement);
-    statements.push(createEndOfDeclarationMarker(node));
+    statements.push(new EndOfDeclarationMarker(node));
     return statements;
   }
   function transformEnumBody(node: EnumDeclaration, localName: Identifier): Block {
@@ -1191,7 +1191,7 @@ export function transformTypeScript(context: TransformationContext) {
     const valueExpression = transformEnumMemberDeclarationValue(member);
     const innerAssignment = createAssignment(new qs.ElementAccessExpression(currentNamespaceContainerName, name), valueExpression);
     const outerAssignment = valueExpression.kind === Syntax.StringLiteral ? innerAssignment : createAssignment(new qs.ElementAccessExpression(currentNamespaceContainerName, innerAssignment), name);
-    return setRange(createExpressionStatement(setRange(outerAssignment, member)), member);
+    return setRange(new qc.ExpressionStatement(setRange(outerAssignment, member)), member);
   }
   function transformEnumMemberDeclarationValue(member: EnumMember): Expression {
     const value = resolver.getConstantValue(member);
@@ -1277,7 +1277,7 @@ export function transformTypeScript(context: TransformationContext) {
       const localName = getLocalName(node, false, true);
       moduleArg = createAssignment(localName, moduleArg);
     }
-    const moduleStatement = createExpressionStatement(
+    const moduleStatement = new qc.ExpressionStatement(
       new qs.CallExpression(
         new qs.FunctionExpression(undefined, undefined, undefined, undefined, [createParameter(undefined, undefined, undefined, parameterName)], undefined, transformModuleBody(node, containerName)),
         undefined,
@@ -1292,7 +1292,7 @@ export function transformTypeScript(context: TransformationContext) {
     setRange(moduleStatement, node);
     addEmitFlags(moduleStatement, emitFlags);
     statements.push(moduleStatement);
-    statements.push(createEndOfDeclarationMarker(node));
+    statements.push(new EndOfDeclarationMarker(node));
     return statements;
   }
   function transformModuleBody(node: ModuleDeclaration, namespaceLocalName: Identifier): Block {
@@ -1438,17 +1438,17 @@ export function transformTypeScript(context: TransformationContext) {
     return qp_isExternalModuleExport(node) && hasSyntacticModifier(node, ModifierFlags.Default);
   }
   function expressionToStatement(expression: Expression) {
-    return createExpressionStatement(expression);
+    return new qc.ExpressionStatement(expression);
   }
   function addExportMemberAssignment(statements: Statement[], node: ClassDeclaration | FunctionDeclaration) {
     const expression = createAssignment(getExternalModuleOrNamespaceExportName(currentNamespaceContainerName, node, false, true), getLocalName(node));
     setSourceMapRange(expression, createRange(node.name ? node.name.pos : node.pos, node.end));
-    const statement = createExpressionStatement(expression);
+    const statement = new qc.ExpressionStatement(expression);
     setSourceMapRange(statement, createRange(-1, node.end));
     statements.push(statement);
   }
   function createNamespaceExport(exportName: Identifier, exportValue: Expression, location?: TextRange) {
-    return setRange(createExpressionStatement(createAssignment(getNamespaceMemberName(currentNamespaceContainerName, exportName, false, true), exportValue)), location);
+    return setRange(new qc.ExpressionStatement(createAssignment(getNamespaceMemberName(currentNamespaceContainerName, exportName, false, true), exportValue)), location);
   }
   function createNamespaceExportExpression(exportName: Identifier, exportValue: Expression, location?: TextRange) {
     return setRange(createAssignment(getNamespaceMemberNameWithSourceMapsAndWithoutComments(exportName), exportValue), location);

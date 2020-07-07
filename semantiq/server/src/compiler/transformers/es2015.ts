@@ -374,7 +374,7 @@ export function transformES2015(context: TransformationContext) {
     }
     const emitFlags = Node.get.emitFlags(node);
     if ((emitFlags & EmitFlags.HasEndOfDeclarationMarker) === 0) {
-      statements.push(createEndOfDeclarationMarker(node));
+      statements.push(new EndOfDeclarationMarker(node));
       setEmitFlags(statement, emitFlags | EmitFlags.HasEndOfDeclarationMarker);
     }
     return singleOrMany(statements);
@@ -429,7 +429,7 @@ export function transformES2015(context: TransformationContext) {
   }
   function addExtendsHelperIfNeeded(statements: Statement[], node: ClassExpression | ClassDeclaration, extendsClauseElement: ExpressionWithTypeArguments | undefined): void {
     if (extendsClauseElement) {
-      statements.push(setRange(createExpressionStatement(createExtendsHelper(context, getInternalName(node))), extendsClauseElement));
+      statements.push(setRange(new qc.ExpressionStatement(createExtendsHelper(context, getInternalName(node))), extendsClauseElement));
     }
   }
   function addConstructor(statements: Statement[], node: ClassExpression | ClassDeclaration, extendsClauseElement: ExpressionWithTypeArguments | undefined): void {
@@ -591,7 +591,7 @@ export function transformES2015(context: TransformationContext) {
     } else if (initializer) {
       insertStatementAfterCustomPrologue(
         statements,
-        setEmitFlags(createExpressionStatement(createAssignment(getGeneratedNameForNode(parameter), visitNode(initializer, visitor, isExpression))), EmitFlags.CustomPrologue)
+        setEmitFlags(new qc.ExpressionStatement(createAssignment(getGeneratedNameForNode(parameter), visitNode(initializer, visitor, isExpression))), EmitFlags.CustomPrologue)
       );
       return true;
     }
@@ -604,7 +604,7 @@ export function transformES2015(context: TransformationContext) {
       setEmitFlags(
         setRange(
           new Block([
-            createExpressionStatement(
+            new qc.ExpressionStatement(
               setEmitFlags(
                 setRange(
                   createAssignment(
@@ -645,14 +645,14 @@ export function transformES2015(context: TransformationContext) {
         EmitFlags.CustomPrologue
       )
     );
-    const forStatement = createFor(
+    const forStatement = new qc.ForStatement(
       setRange(createVariableDeclarationList([createVariableDeclaration(temp, undefined, createLiteral(restIndex))]), parameter),
       setRange(createLessThan(temp, createPropertyAccess(new Identifier('arguments'), 'length')), parameter),
       setRange(qs.PostfixUnaryExpression.increment(temp), parameter),
       new Block([
         startOnNewLine(
           setRange(
-            createExpressionStatement(
+            new qc.ExpressionStatement(
               createAssignment(
                 new qs.ElementAccessExpression(expressionName, restIndex === 0 ? temp : createSubtract(temp, createLiteral(restIndex))),
                 new qs.ElementAccessExpression(new Identifier('arguments'), temp)
@@ -774,14 +774,14 @@ export function transformES2015(context: TransformationContext) {
     }
     setEmitFlags(memberFunction, EmitFlags.NoComments);
     setSourceMapRange(memberFunction, sourceMapRange);
-    const statement = setRange(createExpressionStatement(e), member);
+    const statement = setRange(new qc.ExpressionStatement(e), member);
     setOriginalNode(statement, member);
     setCommentRange(statement, commentRange);
     setEmitFlags(statement, EmitFlags.NoSourceMap);
     return statement;
   }
   function transformAccessorsToStatement(receiver: LeftHandSideExpression, accessors: AllAccessorDeclarations, container: Node): Statement {
-    const statement = createExpressionStatement(transformAccessorsToExpression(receiver, accessors, container, false));
+    const statement = new qc.ExpressionStatement(transformAccessorsToExpression(receiver, accessors, container, false));
     setEmitFlags(statement, EmitFlags.NoComments);
     setSourceMapRange(statement, getSourceMapRange(accessors.firstAccessor));
     return statement;
@@ -1005,7 +1005,7 @@ export function transformES2015(context: TransformationContext) {
         }
       }
       if (assignments) {
-        updated = setRange(createExpressionStatement(inlineExpressions(assignments)), node);
+        updated = setRange(new qc.ExpressionStatement(inlineExpressions(assignments)), node);
       } else {
         updated = undefined;
       }
@@ -1166,10 +1166,10 @@ export function transformES2015(context: TransformationContext) {
       const assignment = createAssignment(initializer, boundValue);
       if (isDestructuringAssignment(assignment)) {
         aggregateTransformFlags(assignment);
-        statements.push(createExpressionStatement(visitBinaryExpression(assignment, false)));
+        statements.push(new qc.ExpressionStatement(visitBinaryExpression(assignment, false)));
       } else {
         assignment.end = initializer.end;
-        statements.push(setRange(createExpressionStatement(visitNode(assignment, visitor, isExpression)), moveRangeEnd(initializer, -1)));
+        statements.push(setRange(new qc.ExpressionStatement(visitNode(assignment, visitor, isExpression)), moveRangeEnd(initializer, -1)));
       }
     }
     if (convertedLoopBodyStatements) return createSyntheticBlockForConvertedStatements(addRange(statements, convertedLoopBodyStatements));
@@ -1190,7 +1190,7 @@ function convertForOfStatementForArray(node: ForOfStatement, outermostLabeledSta
   const rhsReference = Node.is.kind(Identifier, expression) ? getGeneratedNameForNode(expression) : createTempVariable(undefined);
   setEmitFlags(expression, EmitFlags.NoSourceMap | Node.get.emitFlags(expression));
   const forStatement = setRange(
-    createFor(
+    new qc.ForStatement(
       setEmitFlags(
         setRange(
           createVariableDeclarationList([
@@ -1225,7 +1225,7 @@ function convertForOfStatementForIterable(node: ForOfStatement, outermostLabeled
   const initializer = ancestorFacts & HierarchyFacts.IterationContainer ? inlineExpressions([createAssignment(errorRecord, qs.VoidExpression.zero()), values]) : values;
   const forStatement = setEmitFlags(
     setRange(
-      createFor(
+      new qc.ForStatement(
         setEmitFlags(
           setRange(
             createVariableDeclarationList([setRange(createVariableDeclaration(iterator, undefined, initializer), node.expression), createVariableDeclaration(result, undefined, next)]),
@@ -1245,7 +1245,7 @@ function convertForOfStatementForIterable(node: ForOfStatement, outermostLabeled
     new Block([restoreEnclosingLabel(forStatement, outermostLabeledStatement, convertedLoopState && resetLabel)]),
     new qc.CatchClause(
       createVariableDeclaration(catchVariable),
-      setEmitFlags(new Block([createExpressionStatement(createAssignment(errorRecord, createObjectLiteral([createPropertyAssignment('error', catchVariable)])))]), EmitFlags.SingleLine)
+      setEmitFlags(new Block([new qc.ExpressionStatement(createAssignment(errorRecord, createObjectLiteral([createPropertyAssignment('error', catchVariable)])))]), EmitFlags.SingleLine)
     ),
     new Block([
       createTry(
@@ -1256,7 +1256,7 @@ function convertForOfStatementForIterable(node: ForOfStatement, outermostLabeled
                 createLogicalAnd(result, qs.PrefixUnaryExpression.logicalNot(createPropertyAccess(result, 'done'))),
                 createAssignment(returnMethod, createPropertyAccess(iterator, 'return'))
               ),
-              createExpressionStatement(createFunctionCall(returnMethod, iterator, []))
+              new qc.ExpressionStatement(createFunctionCall(returnMethod, iterator, []))
             ),
             EmitFlags.SingleLine
           ),
@@ -1619,7 +1619,7 @@ function copyOutParameter(outParam: LoopOutParameter, copyDirection: CopyDirecti
 function copyOutParameters(outParams: LoopOutParameter[], partFlags: LoopOutParameterFlags, copyDirection: CopyDirection, statements: Statement[]): void {
   for (const outParam of outParams) {
     if (outParam.flags & partFlags) {
-      statements.push(createExpressionStatement(copyOutParameter(outParam, copyDirection)));
+      statements.push(new qc.ExpressionStatement(copyOutParameter(outParam, copyDirection)));
     }
   }
 }
@@ -1638,7 +1638,7 @@ function generateCallToConvertedLoop(loopFunctionExpressionName: Identifier, sta
   );
   const callResult = containsYield ? createYield(new Token(Syntax.AsteriskToken), setEmitFlags(call, EmitFlags.Iterator)) : call;
   if (isSimpleLoop) {
-    statements.push(createExpressionStatement(callResult));
+    statements.push(new qc.ExpressionStatement(callResult));
     copyOutParameters(state.loopOutParameters, LoopOutParameterFlags.Body, CopyDirection.ToOriginal, statements);
   } else {
     const loopResultName = createUniqueName('state');
@@ -1870,7 +1870,7 @@ function visitTypeScriptClassWrapper(node: CallExpression) {
     }
     statements.push(funcStatements[classBodyStart]);
     classBodyStart++;
-    statements.push(createExpressionStatement(createAssignment(aliasAssignment.left, cast(variable.name, isIdentifier))));
+    statements.push(new qc.ExpressionStatement(createAssignment(aliasAssignment.left, cast(variable.name, isIdentifier))));
   }
   while (!Node.is.kind(ReturnStatement, elementAt(funcStatements, classBodyEnd)!)) {
     classBodyEnd--;

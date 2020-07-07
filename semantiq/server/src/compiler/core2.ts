@@ -60,7 +60,7 @@ export abstract class Node extends qb.TextRange implements qt.Node {
   is<S extends Syntax, T extends { kind: S; also?: Syntax[] }>(t: T): this is qt.NodeType<T['kind']> {
     return this.kind === t.kind || !!t.also?.includes(this.kind);
   }
-  isPrivateIdentifierPropertyDeclaration(): this is PrivateIdentifierPropertyDeclaration {
+  isPrivateIdentifierPropertyDeclaration(): this is qt.PrivateIdentifierPropertyDeclaration {
     return this.is(PropertyDeclaration) && this.name.is(PrivateIdentifier);
   }
   getSourceFile(): SourceFile {
@@ -168,7 +168,7 @@ export abstract class Node extends qb.TextRange implements qt.Node {
     qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
     const cs = this.getChildren(s);
     if (!cs.length) return;
-    const c = find(cs, (c) => c.kind < Syntax.FirstJSDocNode || c.kind > Syntax.LastJSDocNode)!;
+    const c = qb.find(cs, (c) => c.kind < Syntax.FirstJSDocNode || c.kind > Syntax.LastJSDocNode)!;
     return c.kind < Syntax.FirstNode ? c : c.getFirstToken(s);
   }
   getLastToken(s?: qt.SourceFileLike): Node | undefined {
@@ -241,7 +241,7 @@ export abstract class Node extends qb.TextRange implements qt.Node {
     n.flags |= NodeFlags.Synthesized;
     return n;
   }
-  static createTemplateLiteralLike(k: TemplateLiteralToken['kind'], t: string, raw?: string) {
+  static createTemplateLiteralLike(k: qt.TemplateLiteralToken['kind'], t: string, raw?: string) {
     const n = this.createSynthesized(k);
     n.text = t;
     if (raw === undefined || t === raw) n.rawText = raw;
@@ -260,37 +260,37 @@ export abstract class Node extends qb.TextRange implements qt.Node {
   static createModifiersFromModifierFlags(flags: ModifierFlags) {
     const result: Modifier[] = [];
     if (flags & ModifierFlags.Export) {
-      result.push(createModifier(Syntax.ExportKeyword));
+      result.push(this.createModifier(Syntax.ExportKeyword));
     }
     if (flags & ModifierFlags.Ambient) {
-      result.push(createModifier(Syntax.DeclareKeyword));
+      result.push(this.createModifier(Syntax.DeclareKeyword));
     }
     if (flags & ModifierFlags.Default) {
-      result.push(createModifier(Syntax.DefaultKeyword));
+      result.push(this.createModifier(Syntax.DefaultKeyword));
     }
     if (flags & ModifierFlags.Const) {
-      result.push(createModifier(Syntax.ConstKeyword));
+      result.push(this.createModifier(Syntax.ConstKeyword));
     }
     if (flags & ModifierFlags.Public) {
-      result.push(createModifier(Syntax.PublicKeyword));
+      result.push(this.createModifier(Syntax.PublicKeyword));
     }
     if (flags & ModifierFlags.Private) {
-      result.push(createModifier(Syntax.PrivateKeyword));
+      result.push(this.createModifier(Syntax.PrivateKeyword));
     }
     if (flags & ModifierFlags.Protected) {
-      result.push(createModifier(Syntax.ProtectedKeyword));
+      result.push(this.createModifier(Syntax.ProtectedKeyword));
     }
     if (flags & ModifierFlags.Abstract) {
-      result.push(createModifier(Syntax.AbstractKeyword));
+      result.push(this.createModifier(Syntax.AbstractKeyword));
     }
     if (flags & ModifierFlags.Static) {
-      result.push(createModifier(Syntax.StaticKeyword));
+      result.push(this.createModifier(Syntax.StaticKeyword));
     }
     if (flags & ModifierFlags.Readonly) {
-      result.push(createModifier(Syntax.ReadonlyKeyword));
+      result.push(this.createModifier(Syntax.ReadonlyKeyword));
     }
     if (flags & ModifierFlags.Async) {
-      result.push(createModifier(Syntax.AsyncKeyword));
+      result.push(this.createModifier(Syntax.AsyncKeyword));
     }
     return result;
   }
@@ -2271,6 +2271,9 @@ export abstract class Node extends qb.TextRange implements qt.Node {
 export abstract class TypeNode extends Node implements qt.TypeNode {
   _typeNodeBrand: any;
 }
+export abstract class NodeWithTypeArguments extends TypeNode {
+  typeArguments?: Nodes<TypeNode>;
+}
 export abstract class JSDocType extends TypeNode implements qt.JSDocType {
   _jsDocTypeBrand: any;
 }
@@ -2347,9 +2350,6 @@ export abstract class SignatureDeclarationBase extends NamedDeclaration implemen
   parameters!: Nodes<ParameterDeclaration>;
   type?: TypeNode;
   typeArguments?: Nodes<qt.TypeNode>;
-  update(ts: Nodes<TypeParameterDeclaration> | undefined, ps: Nodes<ParameterDeclaration>, t?: TypeNode): this {
-    return this;
-  }
 }
 export abstract class FunctionLikeDeclarationBase extends SignatureDeclarationBase implements qt.FunctionLikeDeclarationBase {
   jsDocCache?: readonly qt.JSDocTag[] | undefined;
@@ -2513,8 +2513,8 @@ export abstract class Expression extends Node implements qt.Expression {
       return node;
     }
   }
-  isCommaSequence(node: Expression): node is (BinaryExpression & { operatorToken: Token<Syntax.CommaToken> }) | CommaListExpression {
-    return (node.kind === Syntax.BinaryExpression && (<BinaryExpression>node).operatorToken.kind === Syntax.CommaToken) || node.kind === Syntax.CommaListExpression;
+  isCommaSequence(): this is (BinaryExpression & { operatorToken: Token<Syntax.CommaToken> }) | CommaListExpression {
+    return (this.kind === Syntax.BinaryExpression && (<BinaryExpression>this).operatorToken.kind === Syntax.CommaToken) || this.kind === Syntax.CommaListExpression;
   }
 }
 export abstract class UnaryExpression extends Expression implements qt.UnaryExpression {

@@ -1251,7 +1251,7 @@ ContinueStatement.prototype.kind = ContinueStatement.kind;
 
 export class DebuggerStatement extends Node implements qt.DebuggerStatement {
   static readonly kind = Syntax.DebuggerStatement;
-  createDebuggerStatement() {
+  new DebuggerStatement() {
     super(true);
   }
 }
@@ -1261,7 +1261,7 @@ export class Decorator extends Node implements qt.Decorator {
   static readonly kind = Syntax.Decorator;
   parent: NamedDeclaration;
   expression: LeftHandSideExpression;
-  createDecorator(e: Expression) {
+  new Decorator(e: Expression) {
     this.expression = parenthesize.forAccess(e);
   }
   updateDecorator(e: Expression) {
@@ -1274,7 +1274,7 @@ export class DefaultClause extends Node implements qt.DefaultClause {
   parent: CaseBlock;
   statements: Nodes<Statement>;
   fallthroughFlowNode?: FlowNode;
-  createDefaultClause(ss: readonly Statement[]) {
+  new DefaultClause(ss: readonly Statement[]) {
     this.statements = new Nodes(ss);
   }
   updateDefaultClause(ss: readonly Statement[]) {
@@ -1344,7 +1344,7 @@ export class EmptyStatement extends Node implements qt.EmptyStatement {
 EmptyStatement.prototype.kind = EmptyStatement.kind;
 export class EndOfDeclarationMarker extends Node implements qt.EndOfDeclarationMarker {
   static readonly kind = Syntax.EndOfDeclarationMarker;
-  createEndOfDeclarationMarker(o: Node) {
+  new EndOfDeclarationMarker(o: Node) {
     this.emitNode = {} as EmitNode;
     this.original = o;
   }
@@ -1354,7 +1354,7 @@ export class EnumDeclaration extends Node implements qt.EnumDeclaration {
   static readonly kind = Syntax.EnumDeclaration;
   name: Identifier;
   members: Nodes<EnumMember>;
-  createEnumDeclaration(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, n: string | Identifier, es: readonly EnumMember[]) {
+  new qc.EnumDeclaration(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, n: string | Identifier, es: readonly EnumMember[]) {
     this.decorators = Nodes.from(ds);
     this.modifiers = Nodes.from(ms);
     this.name = asName(n);
@@ -1384,14 +1384,14 @@ export class ExportAssignment extends Node implements qt.ExportAssignment {
   parent: SourceFile;
   isExportEquals?: boolean;
   expression: Expression;
-  createExportAssignment(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, eq: boolean | undefined, e: Expression) {
+  new qc.ExportAssignment(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, eq: boolean | undefined, e: Expression) {
     this.decorators = Nodes.from(ds);
     this.modifiers = Nodes.from(ms);
     this.isExportEquals = eq;
     this.expression = eq ? parenthesize.binaryOperand(Syntax.EqualsToken, e, false, undefined) : parenthesizeDefaultExpression(e);
   }
   createExportDefault(e: Expression) {
-    return createExportAssignment(undefined, undefined, false, e);
+    return new qc.ExportAssignment(undefined, undefined, false, e);
   }
   updateExportAssignment(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, e: Expression) {
     return this.decorators !== ds || this.modifiers !== ms || this.expression !== e ? new create(ds, ms, this.isExportEquals, e).updateFrom(this) : this;
@@ -1404,7 +1404,7 @@ export class ExportDeclaration extends Node implements qt.ExportDeclaration {
   isTypeOnly: boolean;
   exportClause?: NamedExportBindings;
   moduleSpecifier?: Expression;
-  createExportDeclaration(ds?: readonly Decorator[], ms?: readonly Modifier[], e?: NamedExportBindings, m?: Expression, t = false) {
+  new qc.ExportDeclaration(ds?: readonly Decorator[], ms?: readonly Modifier[], e?: NamedExportBindings, m?: Expression, t = false) {
     this.decorators = Nodes.from(ds);
     this.modifiers = Nodes.from(ms);
     this.isTypeOnly = t;
@@ -1412,10 +1412,10 @@ export class ExportDeclaration extends Node implements qt.ExportDeclaration {
     this.moduleSpecifier = m;
   }
   createExternalModuleExport(exportName: Identifier) {
-    return createExportDeclaration(undefined, undefined, createNamedExports([createExportSpecifier(undefined, exportName)]));
+    return new qc.ExportDeclaration(undefined, undefined, createNamedExports([new qc.ExportSpecifier(undefined, exportName)]));
   }
   createEmptyExports() {
-    return createExportDeclaration(undefined, undefined, createNamedExports([]), undefined);
+    return new qc.ExportDeclaration(undefined, undefined, createNamedExports([]), undefined);
   }
   updateExportDeclaration(ds?: readonly Decorator[], ms?: readonly Modifier[], e?: NamedExportBindings, m?: Expression, t = false) {
     return this.decorators !== ds || this.modifiers !== ms || this.isTypeOnly !== t || this.exportClause !== e || this.moduleSpecifier !== m ? new create(ds, ms, e, m, t).updateFrom(this) : this;
@@ -1427,7 +1427,7 @@ export class ExportSpecifier extends Node implements qt.ExportSpecifier {
   parent: NamedExports;
   propertyName?: Identifier;
   name: Identifier;
-  createExportSpecifier(p: string | Identifier | undefined, n: string | Identifier) {
+  new qc.ExportSpecifier(p: string | Identifier | undefined, n: string | Identifier) {
     this.propertyName = asName(p);
     this.name = asName(n);
   }
@@ -1439,7 +1439,7 @@ ExportSpecifier.prototype.kind = ExportSpecifier.kind;
 export class ExpressionStatement extends Statement implements qt.ExpressionStatement {
   static readonly kind = Syntax.ExpressionStatement;
   expression: Expression;
-  createExpressionStatement(expression: Expression): ExpressionStatement {
+  new qc.ExpressionStatement(expression: Expression): ExpressionStatement {
     super(true);
     this.expression = parenthesize.expressionForExpressionStatement(expression);
   }
@@ -1452,7 +1452,7 @@ export class ExpressionWithTypeArguments extends NodeWithTypeArguments implement
   static readonly kind = Syntax.ExpressionWithTypeArguments;
   parent: HeritageClause | JSDocAugmentsTag | JSDocImplementsTag;
   expression: LeftHandSideExpression;
-  createExpressionWithTypeArguments(typeArguments: readonly TypeNode[] | undefined, expression: Expression) {
+  new qc.ExpressionWithTypeArguments(typeArguments: readonly TypeNode[] | undefined, expression: Expression) {
     super(true);
     this.expression = parenthesize.forAccess(expression);
     this.typeArguments = Nodes.from(typeArguments);
@@ -1466,7 +1466,7 @@ export class ExternalModuleReference extends Node implements qt.ExternalModuleRe
   static readonly kind = Syntax.ExternalModuleReference;
   parent: ImportEqualsDeclaration;
   expression: Expression;
-  createExternalModuleReference(expression: Expression) {
+  new qc.ExternalModuleReference(expression: Expression) {
     super(true);
     this.expression = expression;
   }
@@ -1479,7 +1479,7 @@ export class ForInStatement extends Node implements qt.ForInStatement {
   static readonly kind = Syntax.ForInStatement;
   initializer: ForInitializer;
   expression: Expression;
-  createForIn(initializer: ForInitializer, expression: Expression, statement: Statement) {
+  new qc.ForInStatement(initializer: ForInitializer, expression: Expression, statement: Statement) {
     super(true);
     this.initializer = initializer;
     this.expression = expression;
@@ -1514,7 +1514,7 @@ export class ForStatement extends Node implements qt.ForStatement {
   initializer?: ForInitializer;
   condition?: Expression;
   incrementor?: Expression;
-  createFor(initializer: ForInitializer | undefined, condition: Expression | undefined, incrementor: Expression | undefined, statement: Statement) {
+  new qc.ForStatement(initializer: ForInitializer | undefined, condition: Expression | undefined, incrementor: Expression | undefined, statement: Statement) {
     super(true);
     this.initializer = initializer;
     this.condition = condition;

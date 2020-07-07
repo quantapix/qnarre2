@@ -384,7 +384,7 @@ export function transformES2018(context: TransformationContext) {
     const initializer = ancestorFacts & HierarchyFacts.IterationContainer ? inlineExpressions([createAssignment(errorRecord, qs.VoidExpression.zero()), callValues]) : callValues;
     const forStatement = setEmitFlags(
       setRange(
-        createFor(
+        new qc.ForStatement(
           setEmitFlags(
             setRange(createVariableDeclarationList([setRange(createVariableDeclaration(iterator, undefined, initializer), node.expression), createVariableDeclaration(result)]), node.expression),
             EmitFlags.NoHoisting
@@ -401,7 +401,7 @@ export function transformES2018(context: TransformationContext) {
       new Block([restoreEnclosingLabel(forStatement, outermostLabeledStatement)]),
       new qc.CatchClause(
         createVariableDeclaration(catchVariable),
-        setEmitFlags(new Block([createExpressionStatement(createAssignment(errorRecord, createObjectLiteral([createPropertyAssignment('error', catchVariable)])))]), EmitFlags.SingleLine)
+        setEmitFlags(new Block([new qc.ExpressionStatement(createAssignment(errorRecord, createObjectLiteral([createPropertyAssignment('error', catchVariable)])))]), EmitFlags.SingleLine)
       ),
       new Block([
         createTry(
@@ -409,7 +409,7 @@ export function transformES2018(context: TransformationContext) {
             setEmitFlags(
               createIf(
                 createLogicalAnd(createLogicalAnd(result, qs.PrefixUnaryExpression.logicalNot(getDone)), createAssignment(returnMethod, createPropertyAccess(iterator, 'return'))),
-                createExpressionStatement(createDownlevelAwait(callReturn))
+                new qc.ExpressionStatement(createDownlevelAwait(callReturn))
               ),
               EmitFlags.SingleLine
             ),

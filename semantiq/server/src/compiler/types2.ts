@@ -387,18 +387,8 @@ export interface CommentRange extends qb.Range {
   hasTrailingNewLine?: boolean;
   kind: qy.CommentKind;
 }
-export type CompoundAssignmentOperator =
-  | Syntax.PlusEqualsToken
-  | Syntax.MinusEqualsToken
-  | Syntax.Asterisk2EqualsToken
-  | Syntax.AsteriskEqualsToken
-  | Syntax.SlashEqualsToken
-  | Syntax.AmpersandEqualsToken
-  | Syntax.BarEqualsToken
-  | Syntax.CaretEqualsToken
-  | Syntax.LessThan2EqualsToken
-  | Syntax.GreaterThan3EqualsToken
-  | Syntax.GreaterThan2EqualsToken;
+// prettier-ignore
+export type CompoundAssignmentOperator = | Syntax.PlusEqualsToken | Syntax.MinusEqualsToken | Syntax.Asterisk2EqualsToken | Syntax.AsteriskEqualsToken | Syntax.SlashEqualsToken | Syntax.AmpersandEqualsToken | Syntax.BarEqualsToken | Syntax.CaretEqualsToken | Syntax.LessThan2EqualsToken | Syntax.GreaterThan3EqualsToken | Syntax.GreaterThan2EqualsToken;
 export interface ComputedPropertyName extends Node {
   parent: Declaration;
   kind: Syntax.ComputedPropertyName;

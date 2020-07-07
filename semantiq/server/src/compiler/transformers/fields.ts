@@ -294,7 +294,7 @@ export function transformClassFields(context: TransformationContext) {
       node.update(undefined, node.modifiers, node.name, undefined, Nodes.visit(node.heritageClauses, visitor, isHeritageClause), transformClassMembers(node, isDerivedClass)),
     ];
     if (some(pendingExpressions)) {
-      statements.push(createExpressionStatement(inlineExpressions(pendingExpressions)));
+      statements.push(new qc.ExpressionStatement(inlineExpressions(pendingExpressions)));
     }
     const staticProperties = getProperties(node, true);
     if (some(staticProperties)) {
@@ -313,7 +313,7 @@ export function transformClassFields(context: TransformationContext) {
       if (isDecoratedClassDeclaration) {
         Debug.assertIsDefined(pendingStatements, 'Decorated classes transformed by TypeScript are expected to be within a variable declaration.');
         if (pendingStatements && pendingExpressions && some(pendingExpressions)) {
-          pendingStatements.push(createExpressionStatement(inlineExpressions(pendingExpressions)));
+          pendingStatements.push(new qc.ExpressionStatement(inlineExpressions(pendingExpressions)));
         }
         if (pendingStatements && some(staticProperties)) {
           addPropertyStatements(pendingStatements, staticProperties, getInternalName(node));
@@ -378,7 +378,7 @@ export function transformClassFields(context: TransformationContext) {
     let indexOfFirstStatement = 0;
     let statements: Statement[] = [];
     if (!constructor && isDerivedClass) {
-      statements.push(createExpressionStatement(new qs.CallExpression(createSuper(), undefined, [createSpread(new Identifier('arguments'))])));
+      statements.push(new qc.ExpressionStatement(new qs.CallExpression(createSuper(), undefined, [createSpread(new Identifier('arguments'))])));
     }
     if (constructor) {
       indexOfFirstStatement = addPrologueDirectivesAndInitialSuperCall(constructor, statements, visitor);
@@ -408,7 +408,7 @@ export function transformClassFields(context: TransformationContext) {
       if (!expression) {
         continue;
       }
-      const statement = createExpressionStatement(expression);
+      const statement = new qc.ExpressionStatement(expression);
       setSourceMapRange(statement, moveRangePastModifiers(property));
       setCommentRange(statement, property);
       setOriginalNode(statement, property);
@@ -576,7 +576,7 @@ export function transformClassFields(context: TransformationContext) {
             undefined,
             'value',
             [createParameter(undefined, undefined, undefined, undefined)],
-            new Block([createExpressionStatement(createPrivateIdentifierAssignment(info, receiver, parameter, Syntax.EqualsToken))])
+            new Block([new qc.ExpressionStatement(createPrivateIdentifierAssignment(info, receiver, parameter, Syntax.EqualsToken))])
           ),
         ])
       ),

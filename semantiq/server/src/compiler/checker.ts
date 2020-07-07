@@ -828,10 +828,10 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         for (const node of this.declarations) {
           const resolvedModule = resolveExternalModuleName(node, (node as ExportDeclaration).moduleSpecifier!);
           if (!resolvedModule) continue;
-          addResult(createExportDeclaration(undefined, undefined, undefined, createLiteral(getSpecifierForModuleSymbol(resolvedModule, context))), ModifierFlags.None);
+          addResult(new qc.ExportDeclaration(undefined, undefined, undefined, createLiteral(getSpecifierForModuleSymbol(resolvedModule, context))), ModifierFlags.None);
         }
       }
-      if (needsPostExportDefault) addResult(createExportAssignment(undefined, undefined, false, new Identifier(this.getInternalSymbolName(symbolName))), ModifierFlags.None);
+      if (needsPostExportDefault) addResult(new qc.ExportAssignment(undefined, undefined, false, new Identifier(this.getInternalSymbolName(symbolName))), ModifierFlags.None);
     }
     includePrivateSymbol() {
       if (some(this.declarations, isParameterDeclaration)) return;
@@ -913,7 +913,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         const containingFile = Node.get.sourceFileOf(context.enclosingDeclaration);
         const localName = this.getInternalSymbolName(symbolName);
         const nsBody = createModuleBlock([
-          createExportDeclaration(
+          new qc.ExportDeclaration(
             undefined,
             undefined,
             createNamedExports(
@@ -930,7 +930,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
                   const target = aliasDecl && getTargetOfAliasDeclaration(aliasDecl, true);
                   includePrivateSymbol(target || s);
                   const targetName = target ? getInternalSymbolName(target, syntax.get.unescUnderscores(target.escName)) : localName;
-                  return createExportSpecifier(name === targetName ? undefined : targetName, name);
+                  return new qc.ExportSpecifier(name === targetName ? undefined : targetName, name);
                 }
               )
             )
@@ -941,7 +941,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     serializeEnum(symbolName: string, modifierFlags: ModifierFlags) {
       addResult(
-        createEnumDeclaration(
+        new qc.EnumDeclaration(
           undefined,
           createModifiersFromModifierFlags(this.isConstEnumSymbol() ? ModifierFlags.Const : 0),
           this.getInternalSymbolName(symbolName),
@@ -975,7 +975,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
             textRange
           );
           addResult(statement, name !== localName ? modifierFlags & ~ModifierFlags.Export : modifierFlags);
-          if (name !== localName && !isPrivate) addResult(createExportDeclaration(undefined, undefined, createNamedExports([createExportSpecifier(name, localName)])), ModifierFlags.None);
+          if (name !== localName && !isPrivate) addResult(new qc.ExportDeclaration(undefined, undefined, createNamedExports([new qc.ExportSpecifier(name, localName)])), ModifierFlags.None);
         }
       }
     }
@@ -996,7 +996,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
               undefined,
               undefined,
               new Identifier(localName),
-              isLocalImport ? symbolToName(target, context, SymbolFlags.All, false) : createExternalModuleReference(createLiteral(getSpecifierForModuleSymbol(symbol, context)))
+              isLocalImport ? symbolToName(target, context, SymbolFlags.All, false) : new qc.ExternalModuleReference(createLiteral(getSpecifierForModuleSymbol(symbol, context)))
             ),
             isLocalImport ? modifierFlags : ModifierFlags.None
           );
@@ -1017,7 +1017,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           );
           break;
         case Syntax.NamespaceExport:
-          addResult(createExportDeclaration(undefined, undefined, createNamespaceExport(new Identifier(localName)), createLiteral(getSpecifierForModuleSymbol(target, context))), ModifierFlags.None);
+          addResult(new qc.ExportDeclaration(undefined, undefined, createNamespaceExport(new Identifier(localName)), createLiteral(getSpecifierForModuleSymbol(target, context))), ModifierFlags.None);
           break;
         case Syntax.ImportSpecifier:
           addResult(
@@ -1069,7 +1069,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         if (referenced || target) includePrivateSymbol(referenced || target);
         const oldTrack = context.tracker.trackSymbol;
         context.tracker.trackSymbol = noop;
-        if (isExportAssignment) results.push(createExportAssignment(undefined, undefined, isExportEquals, symbolToExpression(target, context, SymbolFlags.All)));
+        if (isExportAssignment) results.push(new qc.ExportAssignment(undefined, undefined, isExportEquals, symbolToExpression(target, context, SymbolFlags.All)));
         else {
           if (first === expr) serializeExportSpecifier(name, idText(first));
           else if (Node.is.kind(ClassExpression, expr)) {
@@ -1096,7 +1096,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           );
           addResult(statement, name === varName ? ModifierFlags.Export : ModifierFlags.None);
         }
-        if (isExportAssignment) results.push(createExportAssignment(undefined, undefined, isExportEquals, new Identifier(varName)));
+        if (isExportAssignment) results.push(new qc.ExportAssignment(undefined, undefined, isExportEquals, new Identifier(varName)));
         else if (name !== varName) {
           serializeExportSpecifier(name, varName);
         }

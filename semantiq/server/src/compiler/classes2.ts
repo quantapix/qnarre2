@@ -4,6 +4,7 @@ import { Node, NodeFlags, Nodes, Type } from './core2';
 import * as qg from './debug';
 import * as qy from './syntax';
 import { Modifier, Syntax } from './syntax';
+import * as qu from './utils';
 // prettier-ignore
 export type NodeTypes = | ArrayBindingPattern | ArrayLiteralExpression | ArrayTypeNode | AsExpression | AwaitExpression | BinaryExpression | BindingElement | BindingPattern | Block | BreakOrContinueStatement | CallExpression | CaseBlock | CaseClause | CatchClause | ClassLikeDeclaration | CommaListExpression | ComputedPropertyName | ConditionalExpression | ConditionalTypeNode | Decorator | DefaultClause | DeleteExpression | DeleteExpression | DoStatement | ElementAccessExpression | EnumDeclaration | EnumMember | ExportAssignment | ExportDeclaration | ExpressionStatement | ExpressionWithTypeArguments | ExternalModuleReference | ForInStatement | ForOfStatement | ForStatement | FunctionLikeDeclaration | HeritageClause | Identifier | IfStatement | ImportClause | ImportDeclaration | ImportEqualsDeclaration | ImportOrExportSpecifier | ImportTypeNode | IndexedAccessTypeNode | InferTypeNode | InterfaceDeclaration | JSDoc | JSDocAugmentsTag | JSDocAuthorTag | JSDocFunctionType | JSDocImplementsTag | JSDocSignature | JSDocTemplateTag | JSDocTypedefTag | JSDocTypeExpression | JSDocTypeLiteral | JSDocTypeReferencingNode | JsxAttribute | JsxAttributes | JsxClosingElement | JsxElement | JsxExpression | JsxFragment | JsxOpeningLikeElement | JsxSpreadAttribute | LabeledStatement | LiteralTypeNode | MappedTypeNode | MetaProperty | MissingDeclaration | ModuleDeclaration | NamedImportsOrExports | NamedTupleMember | NamespaceExport | NamespaceExportDeclaration | NamespaceImport | NonNullExpression | ObjectLiteralExpression | OptionalTypeNode | ParameterDeclaration | ParenthesizedExpression | ParenthesizedTypeNode | PartiallyEmittedExpression | PostfixUnaryExpression | PrefixUnaryExpression | PropertyAccessExpression | PropertyAssignment | PropertyDeclaration | PropertySignature | QualifiedName | RestTypeNode | ReturnStatement | ShorthandPropertyAssignment | SignatureDeclaration | SourceFile | SpreadAssignment | SpreadElement | SwitchStatement | TaggedTemplateExpression | TemplateExpression | TemplateSpan | ThrowStatement | TryStatement | TupleTypeNode | TypeAliasDeclaration | TypeAssertion | TypeLiteralNode | TypeOfExpression | TypeOperatorNode | TypeParameterDeclaration | TypePredicateNode | TypeQueryNode | TypeReferenceNode | UnionOrIntersectionTypeNode | VariableDeclaration | VariableDeclarationList | VariableStatement | VoidExpression | WhileStatement | WithStatement | YieldExpression;
 ///
@@ -51,7 +52,7 @@ export class ArrayTypeNode extends qc.TypeNode implements qc.ArrayTypeNode {
 ArrayTypeNode.prototype.kind = ArrayTypeNode.kind;
 export class ArrowFunction extends qc.FunctionLikeDeclarationBase implements qc.ArrowFunction {
   static readonly kind = Syntax.ArrowFunction;
-  equalsGreaterThanToken: Syntax.EqualsGreaterThanToken;
+  equalsGreaterThanToken: qc.EqualsGreaterThanToken;
   body: qc.ConciseBody;
   name: never;
   constructor(
@@ -59,7 +60,7 @@ export class ArrowFunction extends qc.FunctionLikeDeclarationBase implements qc.
     ts: readonly TypeParameterDeclaration[] | undefined,
     ps: readonly ParameterDeclaration[],
     t: qc.TypeNode | undefined,
-    a: Syntax.EqualsGreaterThanToken | undefined,
+    a: qc.EqualsGreaterThanToken | undefined,
     b: qc.ConciseBody
   ) {
     super(true);
@@ -85,7 +86,7 @@ export class ArrowFunction extends qc.FunctionLikeDeclarationBase implements qc.
   _expressionBrand: any;
 }
 ArrowFunction.prototype.kind = ArrowFunction.kind;
-qb.addMixins(ArrowFunction, [Expression, JSDocContainer]);
+qb.addMixins(ArrowFunction, [qc.Expression, qc.JSDocContainer]);
 export class AsExpression extends qc.Expression implements qc.AsExpression {
   static readonly kind = Syntax.AsExpression;
   expression: qc.Expression;
@@ -172,29 +173,30 @@ export class BinaryExpression extends qc.Expression implements qc.BinaryExpressi
   static createLessThan(left: qc.Expression, right: qc.Expression) {
     return <qc.Expression>new BinaryExpression(left, Syntax.LessThanToken, right);
   }
-  static createAssignment(left: ObjectLiteralExpression | ArrayLiteralExpression, right: qc.Expression): DestructuringAssignment;
+  static createAssignment(left: ObjectLiteralExpression | ArrayLiteralExpression, right: qc.Expression): qc.DestructuringAssignment;
   static createAssignment(left: qc.Expression, right: qc.Expression): BinaryExpression;
   static createAssignment(left: qc.Expression, right: qc.Expression) {
     return new BinaryExpression(left, Syntax.EqualsToken, right);
   }
+  _declarationBrand: any;
 }
 BinaryExpression.prototype.kind = BinaryExpression.kind;
-qb.addMixins(BinaryExpression, [Declaration]);
+qb.addMixins(BinaryExpression, [qc.Declaration]);
 export class BindingElement extends qc.NamedDeclaration implements qc.BindingElement {
   static readonly kind = Syntax.BindingElement;
   parent?: qc.BindingPattern;
-  propertyName?: PropertyName;
+  propertyName?: qc.PropertyName;
   dot3Token?: qc.Dot3Token;
-  name: BindingName;
+  name: qc.BindingName;
   initializer?: qc.Expression;
-  constructor(d: qc.Dot3Token | undefined, p: string | PropertyName | undefined, b: string | BindingName, i?: qc.Expression) {
+  constructor(d: qc.Dot3Token | undefined, p: string | qc.PropertyName | undefined, b: string | qc.BindingName, i?: qc.Expression) {
     super();
     this.dot3Token = d;
     this.propertyName = asName(p);
     this.name = asName(b);
     this.initializer = i;
   }
-  update(d: qc.Dot3Token | undefined, p: PropertyName | undefined, b: BindingName, i?: qc.Expression) {
+  update(d: qc.Dot3Token | undefined, p: qc.PropertyName | undefined, b: qc.BindingName, i?: qc.Expression) {
     return this.propertyName !== p || this.dot3Token !== d || this.name !== b || this.initializer !== i ? new BindingElement(d, p, b, i).updateFrom(this) : this;
   }
 }
@@ -308,12 +310,12 @@ export namespace BindingOrAssignmentElement {
     }
     return;
   }
-  export function getPropertyNameOfBindingOrAssignmentElement(bindingElement: qc.BindingOrAssignmentElement): Exclude<PropertyName, PrivateIdentifier> | undefined {
+  export function getPropertyNameOfBindingOrAssignmentElement(bindingElement: qc.BindingOrAssignmentElement): Exclude<qc.PropertyName, PrivateIdentifier> | undefined {
     const propertyName = tryGetPropertyNameOfBindingOrAssignmentElement(bindingElement);
     qb.assert(!!propertyName || Node.is.kind(SpreadAssignment, bindingElement), 'Invalid property name for binding element.');
     return propertyName;
   }
-  export function tryGetPropertyNameOfBindingOrAssignmentElement(bindingElement: qc.BindingOrAssignmentElement): Exclude<PropertyName, PrivateIdentifier> | undefined {
+  export function tryGetPropertyNameOfBindingOrAssignmentElement(bindingElement: qc.BindingOrAssignmentElement): Exclude<qc.PropertyName, PrivateIdentifier> | undefined {
     switch (bindingElement.kind) {
       case Syntax.BindingElement:
         // `a` in `let { a: b } = ...`
@@ -376,43 +378,43 @@ export namespace BindingOrAssignmentElement {
   }
 }
 export namespace BindingOrAssignmentPattern {
-  export function getElementsOfBindingOrAssignmentPattern(name: BindingOrAssignmentPattern): readonly BindingOrAssignmentElement[] {
+  export function getElementsOfBindingOrAssignmentPattern(name: qc.BindingOrAssignmentPattern): readonly qc.BindingOrAssignmentElement[] {
     switch (name.kind) {
       case Syntax.ObjectBindingPattern:
       case Syntax.ArrayBindingPattern:
       case Syntax.ArrayLiteralExpression:
         // `a` in `{a}`
         // `a` in `[a]`
-        return <readonly BindingOrAssignmentElement[]>name.elements;
+        return <readonly qc.BindingOrAssignmentElement[]>name.elements;
       case Syntax.ObjectLiteralExpression:
         // `a` in `{a}`
-        return <readonly BindingOrAssignmentElement[]>name.properties;
+        return <readonly qc.BindingOrAssignmentElement[]>name.properties;
     }
   }
-  export function convertToAssignmentPattern(node: BindingOrAssignmentPattern): AssignmentPattern {
-    switch (node.kind) {
+  export function convertToAssignmentPattern(n: qc.BindingOrAssignmentPattern): qc.AssignmentPattern {
+    switch (n.kind) {
       case Syntax.ArrayBindingPattern:
       case Syntax.ArrayLiteralExpression:
-        return convertToArrayAssignmentPattern(node);
+        return convertToArrayAssignmentPattern(n);
       case Syntax.ObjectBindingPattern:
       case Syntax.ObjectLiteralExpression:
-        return convertToObjectAssignmentPattern(node);
+        return convertToObjectAssignmentPattern(n);
     }
   }
-  export function convertToObjectAssignmentPattern(node: ObjectBindingOrAssignmentPattern) {
-    if (Node.is.kind(ObjectBindingPattern, node)) return setOriginalNode(setRange(createObjectLiteral(map(node.elements, convertToObjectAssignmentElement)), node), node);
-    qg.assertNode(node, isObjectLiteralExpression);
-    return node;
+  export function convertToObjectAssignmentPattern(n: qc.ObjectBindingOrAssignmentPattern) {
+    if (Node.is.kind(ObjectBindingPattern, n)) return setOriginalNode(setRange(createObjectLiteral(map(n.elements, convertToObjectAssignmentElement)), n), n);
+    qg.assertNode(n, isObjectLiteralExpression);
+    return n;
   }
-  export function convertToArrayAssignmentPattern(node: ArrayBindingOrAssignmentPattern) {
-    if (Node.is.kind(ArrayBindingPattern, node)) return setOriginalNode(setRange(new ArrayLiteralExpression(map(node.elements, convertToArrayAssignmentElement)), node), node);
-    qg.assertNode(node, isArrayLiteralExpression);
-    return node;
+  export function convertToArrayAssignmentPattern(n: qc.ArrayBindingOrAssignmentPattern) {
+    if (Node.is.kind(ArrayBindingPattern, n)) return setOriginalNode(setRange(new ArrayLiteralExpression(map(n.elements, convertToArrayAssignmentElement)), n), n);
+    qg.assertNode(n, isArrayLiteralExpression);
+    return n;
   }
-  export function convertToAssignmentElementTarget(node: BindingOrAssignmentElementTarget): qc.Expression {
-    if (Node.is.kind(BindingPattern, node)) return convertToAssignmentPattern(node);
-    qg.assertNode(node, isExpression);
-    return node;
+  export function convertToAssignmentElementTarget(n: qc.BindingOrAssignmentElementTarget): qc.Expression {
+    if (Node.is.kind(BindingPattern, n)) return convertToAssignmentPattern(n);
+    qg.assertNode(n, isExpression);
+    return n;
   }
 }
 export namespace BindingPattern {
@@ -467,8 +469,8 @@ Bundle.prototype.kind = Bundle.kind;
 export class CallBinding extends Node {
   target: qc.LeftHandSideExpression;
   thisArg: qc.Expression;
-  shouldBeCapturedInTempVariable(node: qc.Expression, cacheIdentifiers: boolean): boolean {
-    const target = skipParentheses(node) as qc.Expression | ArrayLiteralExpression | ObjectLiteralExpression;
+  shouldBeCapturedInTempVariable(n: qc.Expression, cacheIdentifiers: boolean): boolean {
+    const target = skipParentheses(n) as qc.Expression | ArrayLiteralExpression | ObjectLiteralExpression;
     switch (target.kind) {
       case Syntax.Identifier:
         return cacheIdentifiers;
@@ -487,7 +489,7 @@ export class CallBinding extends Node {
         return true;
     }
   }
-  createCallBinding(expression: qc.Expression, recordTempVariable: (temp: Identifier) => void, _?: ScriptTarget, cacheIdentifiers = false): CallBinding {
+  createCallBinding(expression: qc.Expression, recordTempVariable: (temp: Identifier) => void, _?: qc.ScriptTarget, cacheIdentifiers = false): CallBinding {
     const callee = skipOuterExpressions(expression, OuterExpressionKinds.All);
     let thisArg: qc.Expression;
     let target: qc.LeftHandSideExpression;
@@ -497,7 +499,7 @@ export class CallBinding extends Node {
     } else if (callee.kind === Syntax.SuperKeyword) {
       thisArg = createThis();
       target = <PrimaryExpression>callee;
-    } else if (Node.get.emitFlags(callee) & EmitFlags.HelperName) {
+    } else if (Node.get.emitFlags(callee) & qc.EmitFlags.HelperName) {
       thisArg = VoidExpression.zero();
       target = parenthesize.forAccess(callee);
     } else {
@@ -555,7 +557,7 @@ export class CallExpression extends qc.LeftHandSideExpression implements qc.Call
     this.typeArguments = Nodes.from(ts);
     this.arguments = parenthesize.listElements(new Nodes(es));
   }
-  update(e: qc.Expression, ts: readonly qc.TypeNode[] | undefined, es: readonly qc.Expression[]) {
+  update(e: qc.Expression, ts: readonly qc.TypeNode[] | undefined, es: readonly qc.Expression[]): CallExpression {
     if (Node.is.optionalChain(this)) return this.update(e, this.questionDotToken, ts, es);
     return this.expression !== e || this.typeArguments !== ts || this.arguments !== es ? new CallExpression(e, ts, es).updateFrom(this) : this;
   }
@@ -572,7 +574,7 @@ export class CallExpression extends qc.LeftHandSideExpression implements qc.Call
   _declarationBrand: any;
 }
 CallExpression.prototype.kind = CallExpression.kind;
-qb.addMixins(CallExpression, [Declaration]);
+qb.addMixins(CallExpression, [qc.Declaration]);
 export class CallChain extends CallExpression implements qc.CallChain {
   _optionalChainBrand: any;
   constructor(e: qc.Expression, q?: qc.QuestionDotToken, ts?: readonly qc.TypeNode[], es?: readonly qc.Expression[]) {
@@ -620,7 +622,7 @@ export class CaseClause extends Node implements qc.CaseClause {
   parent!: CaseBlock;
   expression: qc.Expression;
   statements: Nodes<qc.Statement>;
-  fallthroughFlowNode?: FlowNode;
+  fallthroughFlowNode?: qc.FlowNode;
   constructor(e: qc.Expression, ss: readonly qc.Statement[]) {
     super(true);
     this.expression = parenthesize.expressionForList(e);
@@ -679,9 +681,10 @@ export class ClassDeclaration extends qc.ClassLikeDeclarationBase implements qc.
   }
 }
 ClassDeclaration.prototype.kind = ClassDeclaration.kind;
-qb.addMixins(ClassDeclaration, [DeclarationStatement]);
+qb.addMixins(ClassDeclaration, [qc.DeclarationStatement]);
 export class ClassExpression extends qc.ClassLikeDeclarationBase implements qc.ClassExpression {
   static readonly kind = Syntax.ClassExpression;
+  jsDocCache?: readonly qc.JSDocTag[];
   constructor(
     ms: readonly Modifier[] | undefined,
     name: string | Identifier | undefined,
@@ -708,22 +711,28 @@ export class ClassExpression extends qc.ClassLikeDeclarationBase implements qc.C
       ? new ClassExpression(ms, name, ts, hs, es).updateFrom(this)
       : this;
   }
+  _primaryExpressionBrand: any;
+  _memberExpressionBrand: any;
+  _leftHandSideExpressionBrand: any;
+  _updateExpressionBrand: any;
+  _unaryExpressionBrand: any;
+  _expressionBrand: any;
 }
 ClassExpression.prototype.kind = ClassExpression.kind;
-qb.addMixins(ClassExpression, [PrimaryExpression]);
+qb.addMixins(ClassExpression, [qc.PrimaryExpression]);
 export class CommaListExpression extends qc.Expression implements qc.CommaListExpression {
   static readonly kind: Syntax.CommaListExpression;
   elements: Nodes<qc.Expression>;
-  flattenCommaElements(this: qc.Expression): qc.Expression | readonly qc.Expression[] {
-    if (isSynthesized(this) && !Node.is.parseTreeNode(this) && !this.original && !this.emitNode && !this.id) {
-      if (this.kind === Syntax.CommaListExpression) return (<CommaListExpression>this).elements;
-      if (Node.is.kind(this, BinaryExpression) && this.operatorToken.kind === Syntax.CommaToken) return [this.left, this.right];
-    }
-    return this;
-  }
   constructor(es: readonly qc.Expression[]) {
     super(true);
-    this.elements = new Nodes(sameFlatMap(es, flattenCommaElements));
+    const flatten = (e: qc.Expression): qc.Expression | readonly qc.Expression[] => {
+      if (qb.isSynthesized(e) && !Node.is.parseTreeNode(e) && !e.original && !e.emitNode && !e.id) {
+        if (e.kind === Syntax.CommaListExpression) return (<CommaListExpression>e).elements;
+        if (e.is(BinaryExpression) && e.operatorToken.kind === Syntax.CommaToken) return [e.left, e.right];
+      }
+      return this;
+    };
+    this.elements = new Nodes(qb.sameFlatMap(es, flatten));
   }
   update(es: readonly qc.Expression[]) {
     return this.elements !== es ? new CommaListExpression(es).updateFrom(this) : this;
@@ -736,7 +745,7 @@ export class ComputedPropertyName extends Node implements qc.ComputedPropertyNam
   expression: qc.Expression;
   constructor(e: qc.Expression) {
     super(true);
-    this.expression = isCommaSequence(e) ? new ParenthesizedExpression(e) : e;
+    this.expression = e.isCommaSequence() ? new ParenthesizedExpression(e) : e;
   }
   update(e: qc.Expression) {
     return this.expression !== e ? new ComputedPropertyName(e).updateFrom(this) : this;
@@ -748,10 +757,10 @@ export class ConditionalExpression extends qc.Expression implements qc.Condition
   condition: qc.Expression;
   questionToken: qc.QuestionToken;
   whenTrue: qc.Expression;
-  colonToken: Syntax.ColonToken;
+  colonToken: qc.ColonToken;
   whenFalse: qc.Expression;
-  constructor(c: qc.Expression, q: qc.QuestionToken, t: qc.Expression, s: Syntax.ColonToken, f: qc.Expression);
-  constructor(c: qc.Expression, q: qc.QuestionToken | qc.Expression, t: qc.Expression, s?: Syntax.ColonToken, f?: qc.Expression) {
+  constructor(c: qc.Expression, q: qc.QuestionToken, t: qc.Expression, s: qc.ColonToken, f: qc.Expression);
+  constructor(c: qc.Expression, q: qc.QuestionToken | qc.Expression, t: qc.Expression, s?: qc.ColonToken, f?: qc.Expression) {
     super(true);
     this.condition = parenthesize.forConditionalHead(c);
     this.questionToken = f ? <qc.QuestionToken>q : new qc.Token(Syntax.QuestionToken);
@@ -785,7 +794,7 @@ ConditionalTypeNode.prototype.kind = ConditionalTypeNode.kind;
 export class ConstructorDeclaration extends qc.FunctionLikeDeclarationBase implements qc.ConstructorDeclaration {
   static readonly kind = Syntax.Constructor;
   parent!: qc.ClassLikeDeclaration;
-  body?: FunctionBody;
+  body?: qc.FunctionBody;
   constructor(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, ps: readonly ParameterDeclaration[], b?: Block) {
     super(true);
     this.decorators = Nodes.from(ds);
@@ -801,7 +810,7 @@ export class ConstructorDeclaration extends qc.FunctionLikeDeclarationBase imple
   _classElementBrand: any;
 }
 ConstructorDeclaration.prototype.kind = ConstructorDeclaration.kind;
-qb.addMixins(ConstructorDeclaration, [ClassElement, JSDocContainer]);
+qb.addMixins(ConstructorDeclaration, [qc.ClassElement, qc.JSDocContainer]);
 export class ConstructorTypeNode extends qc.FunctionOrConstructorTypeNodeBase implements qc.ConstructorTypeNode {
   static readonly kind = Syntax.ConstructorType;
   jsDocCache?: readonly qc.JSDocTag[];
@@ -827,7 +836,7 @@ export class ConstructSignatureDeclaration extends qc.SignatureDeclarationBase i
   _typeElementBrand: any;
 }
 ConstructSignatureDeclaration.prototype.kind = ConstructSignatureDeclaration.kind;
-qb.addMixins(ConstructSignatureDeclaration, [TypeElement]);
+qb.addMixins(ConstructSignatureDeclaration, [qc.TypeElement]);
 export class ContinueStatement extends qc.Statement implements qc.ContinueStatement {
   static readonly kind = Syntax.ContinueStatement;
   label?: Identifier;
@@ -836,28 +845,27 @@ export class ContinueStatement extends qc.Statement implements qc.ContinueStatem
     this.label = asName(l);
   }
   update(l: Identifier) {
-    return this.label !== l ? new new ContinueStatement(l).updateFrom(this) : this;
+    return this.label !== l ? new ContinueStatement(l).updateFrom(this) : this;
   }
 }
 ContinueStatement.prototype.kind = ContinueStatement.kind;
-
-export class DebuggerStatement extends Node implements qc.DebuggerStatement {
+export class DebuggerStatement extends qc.Statement implements qc.DebuggerStatement {
   static readonly kind = Syntax.DebuggerStatement;
-  createDebuggerStatement() {
+  constructor() {
     super(true);
   }
 }
 DebuggerStatement.prototype.kind = DebuggerStatement.kind;
-
 export class Decorator extends Node implements qc.Decorator {
   static readonly kind = Syntax.Decorator;
   parent: qc.NamedDeclaration;
   expression: qc.LeftHandSideExpression;
-  createDecorator(e: qc.Expression) {
+  constructor(e: qc.Expression) {
+    super();
     this.expression = parenthesize.forAccess(e);
   }
-  updateDecorator(e: qc.Expression) {
-    return this.expression !== e ? new create(e).updateFrom(this) : this;
+  update(e: qc.Expression) {
+    return this.expression !== e ? new Decorator(e).updateFrom(this) : this;
   }
 }
 Decorator.prototype.kind = Decorator.kind;
@@ -865,12 +873,13 @@ export class DefaultClause extends Node implements qc.DefaultClause {
   static readonly kind = Syntax.DefaultClause;
   parent: CaseBlock;
   statements: Nodes<qc.Statement>;
-  fallthroughFlowNode?: FlowNode;
-  createDefaultClause(ss: readonly qc.Statement[]) {
+  fallthroughFlowNode?: qc.FlowNode;
+  constructor(ss: readonly qc.Statement[]) {
+    super();
     this.statements = new Nodes(ss);
   }
-  updateDefaultClause(ss: readonly qc.Statement[]) {
-    return this.statements !== ss ? new create(ss).updateFrom(this) : this;
+  update(ss: readonly qc.Statement[]) {
+    return this.statements !== ss ? new DefaultClause(ss).updateFrom(this) : this;
   }
 }
 DefaultClause.prototype.kind = DefaultClause.kind;
@@ -886,15 +895,16 @@ export class DeleteExpression extends qc.UnaryExpression implements qc.DeleteExp
   }
 }
 DeleteExpression.prototype.kind = DeleteExpression.kind;
-export class DoStatement extends Node implements qc.DoStatement {
+export class DoStatement extends qc.IterationStatement implements qc.DoStatement {
   static readonly kind = Syntax.DoStatement;
   expression: qc.Expression;
-  createDo(s: Statement, e: qc.Expression) {
+  constructor(s: qc.Statement, e: qc.Expression) {
+    super();
     this.statement = asEmbeddedStatement(s);
     this.expression = e;
   }
-  updateDo(s: Statement, e: qc.Expression) {
-    return this.statement !== s || this.expression !== e ? new create(s, e).updateFrom(this) : this;
+  updateDo(s: qc.Statement, e: qc.Expression) {
+    return this.statement !== s || this.expression !== e ? new DoStatement(s, e).updateFrom(this) : this;
   }
 }
 DoStatement.prototype.kind = DoStatement.kind;
@@ -916,7 +926,7 @@ export class ElementAccessExpression extends qc.MemberExpression implements qc.E
 ElementAccessExpression.prototype.kind = ElementAccessExpression.kind;
 export class ElementAccessChain extends ElementAccessExpression implements qc.ElementAccessChain {
   _optionalChainBrand: any;
-  createElementAccessChain(e: qc.Expression, q: qc.QuestionDotToken | undefined, i: number | qc.Expression) {
+  constructor(e: qc.Expression, q: qc.QuestionDotToken | undefined, i: number | qc.Expression) {
     super(true);
     this.flags |= NodeFlags.OptionalChain;
     this.expression = parenthesize.forAccess(e);
@@ -925,78 +935,85 @@ export class ElementAccessChain extends ElementAccessExpression implements qc.El
   }
   updateElementAccessChain(e: qc.Expression, q: qc.QuestionDotToken | undefined, a: qc.Expression) {
     qb.assert(!!(this.flags & NodeFlags.OptionalChain), 'Cannot update an ElementAccessExpression using updateElementAccessChain. Use updateElementAccess instead.');
-    return this.expression !== e || this.questionDotToken !== q || this.argumentExpression !== a ? new create(e, q, a).updateFrom(this) : this;
+    return this.expression !== e || this.questionDotToken !== q || this.argumentExpression !== a ? new ElementAccessChain(e, q, a).updateFrom(this) : this;
   }
 }
 ElementAccessChain.prototype.kind = ElementAccessChain.kind;
-export class EmptyStatement extends Node implements qc.EmptyStatement {
+export class EmptyStatement extends qc.Statement implements qc.EmptyStatement {
   static readonly kind = Syntax.EmptyStatement;
   createEmptyStatement() {}
 }
 EmptyStatement.prototype.kind = EmptyStatement.kind;
-export class EndOfDeclarationMarker extends Node implements qc.EndOfDeclarationMarker {
+export class EndOfDeclarationMarker extends qc.Statement implements qc.EndOfDeclarationMarker {
   static readonly kind = Syntax.EndOfDeclarationMarker;
-  createEndOfDeclarationMarker(o: Node) {
-    this.emitNode = {} as EmitNode;
+  constructor(o: Node) {
+    super();
+    this.emitNode = {} as qc.EmitNode;
     this.original = o;
   }
 }
 EndOfDeclarationMarker.prototype.kind = EndOfDeclarationMarker.kind;
-export class EnumDeclaration extends Node implements qc.EnumDeclaration {
+export class EnumDeclaration extends qc.DeclarationStatement implements qc.EnumDeclaration {
   static readonly kind = Syntax.EnumDeclaration;
   name: Identifier;
-  members: Nodes<EnumMember>;
-  createEnumDeclaration(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, n: string | Identifier, es: readonly EnumMember[]) {
+  members: Nodes<qc.EnumMember>;
+  constructor(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, n: string | Identifier, es: readonly EnumMember[]) {
+    super();
     this.decorators = Nodes.from(ds);
     this.modifiers = Nodes.from(ms);
     this.name = asName(n);
     this.members = new Nodes(es);
   }
-  updateEnumDeclaration(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, n: Identifier, es: readonly EnumMember[]) {
-    return this.decorators !== ds || this.modifiers !== ms || this.name !== n || this.members !== es ? new create(ds, ms, n, es).updateFrom(this) : this;
+  update(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, n: Identifier, es: readonly EnumMember[]) {
+    return this.decorators !== ds || this.modifiers !== ms || this.name !== n || this.members !== es ? new EnumDeclaration(ds, ms, n, es).updateFrom(this) : this;
   }
 }
 EnumDeclaration.prototype.kind = EnumDeclaration.kind;
-export class EnumMember extends Node implements qc.EnumMember {
+qb.addMixins(EnumDeclaration, [qc.JSDocContainer]);
+export class EnumMember extends qc.NamedDeclaration implements qc.EnumMember {
   static readonly kind = Syntax.EnumMember;
   parent: EnumDeclaration;
-  name: PropertyName;
+  name: qc.PropertyName;
   initializer?: qc.Expression;
-  createEnumMember(n: string | PropertyName, i?: qc.Expression) {
+  createEnumMember(n: string | qc.PropertyName, i?: qc.Expression) {
     this.name = asName(n);
     this.initializer = i && parenthesize.expressionForList(i);
   }
-  updateEnumMember(n: PropertyName, i?: qc.Expression) {
-    return this.name !== n || this.initializer !== i ? new create(n, i).updateFrom(this) : this;
+  updateEnumMember(n: qc.PropertyName, i?: qc.Expression) {
+    return this.name !== n || this.initializer !== i ? new EnumMember(n, i).updateFrom(this) : this;
   }
 }
 EnumMember.prototype.kind = EnumMember.kind;
-export class ExportAssignment extends Node implements qc.ExportAssignment {
+qb.addMixins(EnumMember, [qc.JSDocContainer]);
+export class ExportAssignment extends qc.DeclarationStatement implements qc.ExportAssignment {
   static readonly kind = Syntax.ExportAssignment;
-  parent: SourceFile;
+  parent: qc.SourceFile;
   isExportEquals?: boolean;
   expression: qc.Expression;
-  createExportAssignment(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, eq: boolean | undefined, e: qc.Expression) {
+  constructor(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, eq: boolean | undefined, e: qc.Expression) {
+    super();
     this.decorators = Nodes.from(ds);
     this.modifiers = Nodes.from(ms);
     this.isExportEquals = eq;
-    this.expression = eq ? parenthesize.binaryOperand(Syntax.EqualsToken, e, false, undefined) : parenthesizeDefaultExpression(e);
+    this.expression = eq ? parenthesize.binaryOperand(Syntax.EqualsToken, e, false, undefined) : parenthesize.defaultExpression(e);
   }
   createExportDefault(e: qc.Expression) {
-    return createExportAssignment(undefined, undefined, false, e);
+    return new ExportAssignment(undefined, undefined, false, e);
   }
-  updateExportAssignment(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, e: qc.Expression) {
-    return this.decorators !== ds || this.modifiers !== ms || this.expression !== e ? new create(ds, ms, this.isExportEquals, e).updateFrom(this) : this;
+  update(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, e: qc.Expression) {
+    return this.decorators !== ds || this.modifiers !== ms || this.expression !== e ? new ExportAssignment(ds, ms, this.isExportEquals, e).updateFrom(this) : this;
   }
 }
 ExportAssignment.prototype.kind = ExportAssignment.kind;
-export class ExportDeclaration extends Node implements qc.ExportDeclaration {
+export class ExportDeclaration extends qc.DeclarationStatement implements qc.ExportDeclaration {
   static readonly kind = Syntax.ExportDeclaration;
   parent: SourceFile | ModuleBlock;
   isTypeOnly: boolean;
-  exportClause?: NamedExportBindings;
+  exportClause?: qc.NamedExportBindings;
   moduleSpecifier?: qc.Expression;
-  createExportDeclaration(ds?: readonly Decorator[], ms?: readonly Modifier[], e?: NamedExportBindings, m?: qc.Expression, t = false) {
+  jsDocCache?: readonly qc.JSDocTag[];
+  constructor(ds?: readonly Decorator[], ms?: readonly Modifier[], e?: qc.NamedExportBindings, m?: qc.Expression, t = false) {
+    super();
     this.decorators = Nodes.from(ds);
     this.modifiers = Nodes.from(ms);
     this.isTypeOnly = t;
@@ -1004,53 +1021,59 @@ export class ExportDeclaration extends Node implements qc.ExportDeclaration {
     this.moduleSpecifier = m;
   }
   createExternalModuleExport(exportName: Identifier) {
-    return createExportDeclaration(undefined, undefined, createNamedExports([createExportSpecifier(undefined, exportName)]));
+    return new ExportDeclaration(undefined, undefined, createNamedExports([new qc.ExportSpecifier(undefined, exportName)]));
   }
   createEmptyExports() {
-    return createExportDeclaration(undefined, undefined, createNamedExports([]), undefined);
+    return new ExportDeclaration(undefined, undefined, createNamedExports([]), undefined);
   }
-  updateExportDeclaration(ds?: readonly Decorator[], ms?: readonly Modifier[], e?: NamedExportBindings, m?: qc.Expression, t = false) {
-    return this.decorators !== ds || this.modifiers !== ms || this.isTypeOnly !== t || this.exportClause !== e || this.moduleSpecifier !== m ? new create(ds, ms, e, m, t).updateFrom(this) : this;
+  update(ds?: readonly Decorator[], ms?: readonly Modifier[], e?: qc.NamedExportBindings, m?: qc.Expression, t = false) {
+    return this.decorators !== ds || this.modifiers !== ms || this.isTypeOnly !== t || this.exportClause !== e || this.moduleSpecifier !== m
+      ? new ExportDeclaration(ds, ms, e, m, t).updateFrom(this)
+      : this;
   }
+  _statementBrand: any;
 }
 ExportDeclaration.prototype.kind = ExportDeclaration.kind;
-export class ExportSpecifier extends Node implements qc.ExportSpecifier {
+qb.addMixins(ExportDeclaration, [qc.JSDocContainer]);
+export class ExportSpecifier extends qc.NamedDeclaration implements qc.ExportSpecifier {
   static readonly kind = Syntax.ExportSpecifier;
   parent: NamedExports;
   propertyName?: Identifier;
   name: Identifier;
-  createExportSpecifier(p: string | Identifier | undefined, n: string | Identifier) {
+  constructor(p: string | Identifier | undefined, n: string | Identifier) {
+    super();
     this.propertyName = asName(p);
     this.name = asName(n);
   }
-  updateExportSpecifier(p: Identifier | undefined, n: Identifier) {
-    return this.propertyName !== p || this.name !== n ? new create(p, n).updateFrom(this) : this;
+  update(p: Identifier | undefined, n: Identifier) {
+    return this.propertyName !== p || this.name !== n ? new ExportSpecifier(p, n).updateFrom(this) : this;
   }
 }
 ExportSpecifier.prototype.kind = ExportSpecifier.kind;
-export class ExpressionStatement extends qc.Statement implements ExpressionStatement {
+export class ExpressionStatement extends qc.Statement implements qc.ExpressionStatement {
   static readonly kind = Syntax.ExpressionStatement;
   expression: qc.Expression;
-  createExpressionStatement(expression: qc.Expression): ExpressionStatement {
+  constructor(e: qc.Expression) {
     super(true);
-    this.expression = parenthesize.expressionForExpressionStatement(expression);
+    this.expression = parenthesize.expressionForExpressionStatement(e);
   }
-  update(expression: qc.Expression) {
-    return this.expression !== expression ? new create(expression).updateFrom(this) : this;
+  update(e: qc.Expression) {
+    return this.expression !== e ? new ExpressionStatement(e).updateFrom(this) : this;
   }
 }
 ExpressionStatement.prototype.kind = ExpressionStatement.kind;
-export class ExpressionWithTypeArguments extends NodeWithTypeArguments implements ExpressionWithTypeArguments {
+qb.addMixins(ExpressionStatement, [qc.JSDocContainer]);
+export class ExpressionWithTypeArguments extends qc.NodeWithTypeArguments implements qc.ExpressionWithTypeArguments {
   static readonly kind = Syntax.ExpressionWithTypeArguments;
   parent: HeritageClause | JSDocAugmentsTag | JSDocImplementsTag;
   expression: qc.LeftHandSideExpression;
-  createExpressionWithTypeArguments(typeArguments: readonly qc.TypeNode[] | undefined, expression: qc.Expression) {
+  constructor(ts: readonly qc.TypeNode[] | undefined, e: qc.Expression) {
     super(true);
-    this.expression = parenthesize.forAccess(expression);
-    this.typeArguments = Nodes.from(typeArguments);
+    this.expression = parenthesize.forAccess(e);
+    this.typeArguments = Nodes.from(ts);
   }
-  update(typeArguments: readonly qc.TypeNode[] | undefined, expression: qc.Expression) {
-    return this.typeArguments !== typeArguments || this.expression !== expression ? new create(typeArguments, expression).updateFrom(this) : this;
+  update(ts: readonly qc.TypeNode[] | undefined, e: qc.Expression) {
+    return this.typeArguments !== ts || this.expression !== e ? new ExpressionWithTypeArguments(ts, e).updateFrom(this) : this;
   }
 }
 ExpressionWithTypeArguments.prototype.kind = ExpressionWithTypeArguments.kind;
@@ -1058,97 +1081,93 @@ export class ExternalModuleReference extends Node implements qc.ExternalModuleRe
   static readonly kind = Syntax.ExternalModuleReference;
   parent: ImportEqualsDeclaration;
   expression: qc.Expression;
-  createExternalModuleReference(expression: qc.Expression) {
+  constructor(e: qc.Expression) {
     super(true);
-    this.expression = expression;
+    this.expression = e;
   }
-  update(expression: qc.Expression) {
-    return this.expression !== expression ? new create(expression).updateFrom(this) : this;
+  update(e: qc.Expression) {
+    return this.expression !== e ? new ExternalModuleReference(e).updateFrom(this) : this;
   }
 }
 ExternalModuleReference.prototype.kind = ExternalModuleReference.kind;
-export class ForInStatement extends Node implements qc.ForInStatement {
+export class ForInStatement extends qc.IterationStatement implements qc.ForInStatement {
   static readonly kind = Syntax.ForInStatement;
-  initializer: ForInitializer;
+  initializer: qc.ForInitializer;
   expression: qc.Expression;
-  createForIn(initializer: ForInitializer, expression: qc.Expression, statement: Statement) {
+  constructor(i: qc.ForInitializer, e: qc.Expression, s: qc.Statement) {
     super(true);
-    this.initializer = initializer;
-    this.expression = expression;
-    this.statement = asEmbeddedStatement(statement);
+    this.initializer = i;
+    this.expression = e;
+    this.statement = asEmbeddedStatement(s);
   }
-  update(initializer: ForInitializer, expression: qc.Expression, statement: Statement) {
-    return this.initializer !== initializer || this.expression !== expression || this.statement !== statement ? new create(initializer, expression, statement).updateFrom(this) : this;
+  update(i: qc.ForInitializer, e: qc.Expression, s: qc.Statement) {
+    return this.initializer !== i || this.expression !== e || this.statement !== s ? new ForInStatement(i, e, s).updateFrom(this) : this;
   }
 }
 ForInStatement.prototype.kind = ForInStatement.kind;
-export class ForOfStatement extends Node implements qc.ForOfStatement {
+export class ForOfStatement extends qc.IterationStatement implements qc.ForOfStatement {
   static readonly kind = Syntax.ForOfStatement;
-  awaitModifier?: AwaitKeywordToken;
-  initializer: ForInitializer;
+  awaitModifier?: qc.AwaitKeywordToken;
+  initializer: qc.ForInitializer;
   expression: qc.Expression;
-  createForOf(awaitModifier: AwaitKeywordToken | undefined, initializer: ForInitializer, expression: qc.Expression, statement: Statement) {
+  constructor(a: qc.AwaitKeywordToken | undefined, i: qc.ForInitializer, e: qc.Expression, s: qc.Statement) {
     super(true);
-    this.awaitModifier = awaitModifier;
-    this.initializer = initializer;
-    this.expression = isCommaSequence(expression) ? new ParenthesizedExpression(expression) : expression;
-    this.statement = asEmbeddedStatement(statement);
+    this.awaitModifier = a;
+    this.initializer = i;
+    this.expression = e.isCommaSequence() ? new ParenthesizedExpression(e) : e;
+    this.statement = asEmbeddedStatement(s);
   }
-  update(awaitModifier: AwaitKeywordToken | undefined, initializer: ForInitializer, expression: qc.Expression, statement: Statement) {
-    return this.awaitModifier !== awaitModifier || this.initializer !== initializer || this.expression !== expression || this.statement !== statement
-      ? new create(awaitModifier, initializer, expression, statement).updateFrom(this)
-      : this;
+  update(a: qc.AwaitKeywordToken | undefined, i: qc.ForInitializer, e: qc.Expression, s: qc.Statement) {
+    return this.awaitModifier !== a || this.initializer !== i || this.expression !== e || this.statement !== s ? new ForOfStatement(a, i, e, s).updateFrom(this) : this;
   }
 }
 ForOfStatement.prototype.kind = ForOfStatement.kind;
-export class ForStatement extends Node implements qc.ForStatement {
+export class ForStatement extends qc.IterationStatement implements qc.ForStatement {
   static readonly kind = Syntax.ForStatement;
-  initializer?: ForInitializer;
+  initializer?: qc.ForInitializer;
   condition?: qc.Expression;
   incrementor?: qc.Expression;
-  createFor(initializer: ForInitializer | undefined, condition: qc.Expression | undefined, incrementor: qc.Expression | undefined, statement: Statement) {
+  constructor(i: qc.ForInitializer | undefined, c: qc.Expression | undefined, inc: qc.Expression | undefined, s: qc.Statement) {
     super(true);
-    this.initializer = initializer;
-    this.condition = condition;
-    this.incrementor = incrementor;
-    this.statement = asEmbeddedStatement(statement);
+    this.initializer = i;
+    this.condition = c;
+    this.incrementor = inc;
+    this.statement = asEmbeddedStatement(s);
   }
-  update(initializer: ForInitializer | undefined, condition: qc.Expression | undefined, incrementor: qc.Expression | undefined, statement: Statement) {
-    return this.initializer !== initializer || this.condition !== condition || this.incrementor !== incrementor || this.statement !== statement
-      ? new create(initializer, condition, incrementor, statement).updateFrom(this)
-      : this;
+  update(i: qc.ForInitializer | undefined, c: qc.Expression | undefined, inc: qc.Expression | undefined, s: qc.Statement) {
+    return this.initializer !== i || this.condition !== c || this.incrementor !== inc || this.statement !== s ? new ForStatement(i, c, inc, s).updateFrom(this) : this;
   }
 }
 ForStatement.prototype.kind = ForStatement.kind;
-export class FunctionDeclaration extends DeclarationStatement implements qc.FunctionDeclaration {
+export class FunctionDeclaration extends qc.DeclarationStatement implements qc.FunctionDeclaration {
   static readonly kind = Syntax.FunctionDeclaration;
   name?: Identifier;
-  body?: FunctionBody;
+  body?: qc.FunctionBody;
   createFunctionDeclaration(
-    decorators: readonly Decorator[] | undefined,
-    modifiers: readonly Modifier[] | undefined,
-    asteriskToken: AsteriskToken | undefined,
+    ds: readonly Decorator[] | undefined,
+    ms: readonly Modifier[] | undefined,
+    a: qc.AsteriskToken | undefined,
     name: string | Identifier | undefined,
-    typeParameters: readonly TypeParameterDeclaration[] | undefined,
-    parameters: readonly ParameterDeclaration[],
-    type: qc.TypeNode | undefined,
-    body: Block | undefined
+    ts: readonly TypeParameterDeclaration[] | undefined,
+    ps: readonly ParameterDeclaration[],
+    t?: qc.TypeNode,
+    b?: Block
   ) {
     super(true);
-    this.decorators = Nodes.from(decorators);
-    this.modifiers = Nodes.from(modifiers);
-    this.asteriskToken = asteriskToken;
+    this.decorators = Nodes.from(ds);
+    this.modifiers = Nodes.from(ms);
+    this.asteriskToken = a;
     this.name = asName(name);
-    this.typeParameters = Nodes.from(typeParameters);
-    this.parameters = new Nodes(parameters);
-    this.type = type;
-    this.body = body;
+    this.typeParameters = Nodes.from(ts);
+    this.parameters = new Nodes(ps);
+    this.type = t;
+    this.body = b;
   }
   updateFunctionDeclaration(
     this: FunctionDeclaration,
     decorators: readonly Decorator[] | undefined,
     modifiers: readonly Modifier[] | undefined,
-    asteriskToken: AsteriskToken | undefined,
+    asteriskToken: qc.AsteriskToken | undefined,
     name: Identifier | undefined,
     typeParameters: readonly TypeParameterDeclaration[] | undefined,
     parameters: readonly ParameterDeclaration[],
@@ -1171,10 +1190,10 @@ FunctionDeclaration.prototype.kind = FunctionDeclaration.kind;
 export class FunctionExpression extends qc.FunctionLikeDeclarationBase implements qc.FunctionExpression {
   static readonly kind = Syntax.FunctionExpression;
   name?: Identifier;
-  body: FunctionBody;
+  body: qc.FunctionBody;
   constructor(
     ms: readonly Modifier[] | undefined,
-    a: AsteriskToken | undefined,
+    a: qc.AsteriskToken | undefined,
     name: string | Identifier | undefined,
     ts: readonly TypeParameterDeclaration[] | undefined,
     ps: readonly ParameterDeclaration[] | undefined,
@@ -1192,7 +1211,7 @@ export class FunctionExpression extends qc.FunctionLikeDeclarationBase implement
   }
   update(
     ms: readonly Modifier[] | undefined,
-    a: AsteriskToken | undefined,
+    a: qc.AsteriskToken | undefined,
     name: Identifier | undefined,
     ts: readonly TypeParameterDeclaration[] | undefined,
     ps: readonly ParameterDeclaration[],
@@ -1219,9 +1238,9 @@ FunctionTypeNode.prototype.kind = FunctionTypeNode.kind;
 export class GetAccessorDeclaration extends Node implements qc.GetAccessorDeclaration {
   static readonly kind = Syntax.GetAccessor;
   parent: ClassLikeDeclaration | ObjectLiteralExpression;
-  name: PropertyName;
-  body?: FunctionBody;
-  constructor(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: string | PropertyName, ps: readonly ParameterDeclaration[], t?: qc.TypeNode, b?: Block) {
+  name: qc.PropertyName;
+  body?: qc.FunctionBody;
+  constructor(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: string | qc.PropertyName, ps: readonly ParameterDeclaration[], t?: qc.TypeNode, b?: Block) {
     super(true);
     this.decorators = Nodes.from(ds);
     this.modifiers = Nodes.from(ms);
@@ -1231,7 +1250,7 @@ export class GetAccessorDeclaration extends Node implements qc.GetAccessorDeclar
     this.type = t;
     this.body = b;
   }
-  update(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: PropertyName, ps: readonly ParameterDeclaration[], t?: qc.TypeNode, b?: Block) {
+  update(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: qc.PropertyName, ps: readonly ParameterDeclaration[], t?: qc.TypeNode, b?: Block) {
     return this.decorators !== ds || this.modifiers !== ms || this.name !== p || this.parameters !== ps || this.type !== t || this.body !== b
       ? new GetAccessorDeclaration(ds, ms, p, ps, t, b).updateFrom(this)
       : this;
@@ -1243,7 +1262,7 @@ export class GetAccessorDeclaration extends Node implements qc.GetAccessorDeclar
 GetAccessorDeclaration.prototype.kind = GetAccessorDeclaration.kind;
 export class HeritageClause extends Node implements qc.HeritageClause {
   static readonly kind = Syntax.HeritageClause;
-  parent: InterfaceDeclaration | ClassLikeDeclaration;
+  parent: InterfaceDeclaration | qc.ClassLikeDeclaration;
   token: Syntax.ExtendsKeyword | Syntax.ImplementsKeyword;
   types: Nodes<ExpressionWithTypeArguments>;
   createHeritageClause(token: HeritageClause['token'], types: readonly ExpressionWithTypeArguments[]) {
@@ -1252,26 +1271,26 @@ export class HeritageClause extends Node implements qc.HeritageClause {
     this.types = new Nodes(types);
   }
   update(types: readonly ExpressionWithTypeArguments[]) {
-    return this.types !== types ? new create(this.token, types).updateFrom(this) : this;
+    return this.types !== types ? new HeritageClause(this.token, types).updateFrom(this) : this;
   }
 }
 HeritageClause.prototype.kind = HeritageClause.kind;
-export class Identifier extends TokenOrIdentifier implements qc.Identifier {
+export class Identifier extends qc.TokenOrIdentifier implements qc.Identifier {
   static readonly kind = Syntax.Identifier;
-  escapedText!: __String;
-  autoGenerateFlags = GeneratedIdentifierFlags.None;
-  typeArguments?: Nodes<TypeNode | TypeParameterDeclaration>;
+  escapedText!: qb.__String;
+  autoGenerateFlags = qc.GeneratedIdentifierFlags.None;
+  typeArguments?: Nodes<qc.TypeNode | TypeParameterDeclaration>;
   flowNode = undefined;
   originalKeywordKind?: Syntax;
   autoGenerateId = 0;
   isInJSDocNamespace?: boolean;
   jsdocDotPos?: number;
   constructor(t: string);
-  constructor(t: string, typeArgs: readonly (TypeNode | TypeParameterDeclaration)[] | undefined);
-  constructor(t: string, typeArgs?: readonly (TypeNode | TypeParameterDeclaration)[]) {
+  constructor(t: string, typeArgs: readonly (qc.TypeNode | TypeParameterDeclaration)[] | undefined);
+  constructor(t: string, typeArgs?: readonly (qc.TypeNode | TypeParameterDeclaration)[]) {
     super();
-    this.escapedText = syntax.get.escUnderscores(t);
-    this.originalKeywordKind = t ? syntax.fromString(t) : Syntax.Unknown;
+    this.escapedText = qy.get.escUnderscores(t);
+    this.originalKeywordKind = t ? qy.fromString(t) : Syntax.Unknown;
     if (typeArgs) {
       this.typeArguments = new Nodes(typeArgs as readonly qc.TypeNode[]);
     }
@@ -1280,61 +1299,61 @@ export class Identifier extends TokenOrIdentifier implements qc.Identifier {
     return idText(this);
   }
   isInternalName(this: Identifier) {
-    return (Node.get.emitFlags(this) & EmitFlags.InternalName) !== 0;
+    return (Node.get.emitFlags(this) & qc.EmitFlags.InternalName) !== 0;
   }
   isLocalName(this: Identifier) {
-    return (Node.get.emitFlags(this) & EmitFlags.LocalName) !== 0;
+    return (Node.get.emitFlags(this) & qc.EmitFlags.LocalName) !== 0;
   }
   isExportName(this: Identifier) {
-    return (Node.get.emitFlags(this) & EmitFlags.ExportName) !== 0;
+    return (Node.get.emitFlags(this) & qc.EmitFlags.ExportName) !== 0;
   }
-  update(typeArgs?: Nodes<TypeNode | TypeParameterDeclaration> | undefined): Identifier {
+  update(typeArgs?: Nodes<qc.TypeNode | TypeParameterDeclaration> | undefined): Identifier {
     return this.typeArguments !== typeArgs ? new Identifier(this.text, typeArgs).updateFrom(this) : this;
   }
   static createTempVariable(recordTempVariable: ((this: Identifier) => void) | undefined): Identifier;
-  static createTempVariable(recordTempVariable: ((this: Identifier) => void) | undefined, reservedInNestedScopes: boolean): GeneratedIdentifier;
-  static createTempVariable(recordTempVariable: ((this: Identifier) => void) | undefined, reservedInNestedScopes?: boolean): GeneratedIdentifier {
-    const name = new Identifier('') as GeneratedIdentifier;
-    name.autoGenerateFlags = GeneratedIdentifierFlags.Auto;
+  static createTempVariable(recordTempVariable: ((this: Identifier) => void) | undefined, reservedInNestedScopes: boolean): qc.GeneratedIdentifier;
+  static createTempVariable(recordTempVariable: ((this: Identifier) => void) | undefined, reservedInNestedScopes?: boolean): qc.GeneratedIdentifier {
+    const name = new Identifier('') as qc.GeneratedIdentifier;
+    name.autoGenerateFlags = qc.GeneratedIdentifierFlags.Auto;
     name.autoGenerateId = nextAutoGenerateId;
     nextAutoGenerateId++;
     if (recordTempVariable) recordTempVariable(name);
-    if (reservedInNestedScopes) name.autoGenerateFlags |= GeneratedIdentifierFlags.ReservedInNestedScopes;
+    if (reservedInNestedScopes) name.autoGenerateFlags |= qc.GeneratedIdentifierFlags.ReservedInNestedScopes;
     return name;
   }
   static createLoopVariable(): Identifier {
     const name = new Identifier('');
-    name.autoGenerateFlags = GeneratedIdentifierFlags.Loop;
+    name.autoGenerateFlags = qc.GeneratedIdentifierFlags.Loop;
     name.autoGenerateId = nextAutoGenerateId;
     nextAutoGenerateId++;
     return name;
   }
   static createUniqueName(text: string): Identifier {
     const name = new Identifier(text);
-    name.autoGenerateFlags = GeneratedIdentifierFlags.Unique;
+    name.autoGenerateFlags = qc.GeneratedIdentifierFlags.Unique;
     name.autoGenerateId = nextAutoGenerateId;
     nextAutoGenerateId++;
     return name;
   }
-  static createOptimisticUniqueName(text: string): GeneratedIdentifier;
+  static createOptimisticUniqueName(text: string): qc.GeneratedIdentifier;
   static createOptimisticUniqueName(text: string): Identifier;
-  static createOptimisticUniqueName(text: string): GeneratedIdentifier {
-    const name = new Identifier(text) as GeneratedIdentifier;
-    name.autoGenerateFlags = GeneratedIdentifierFlags.Unique | GeneratedIdentifierFlags.Optimistic;
+  static createOptimisticUniqueName(text: string): qc.GeneratedIdentifier {
+    const name = new Identifier(text) as qc.GeneratedIdentifier;
+    name.autoGenerateFlags = qc.GeneratedIdentifierFlags.Unique | qc.GeneratedIdentifierFlags.Optimistic;
     name.autoGenerateId = nextAutoGenerateId;
     nextAutoGenerateId++;
     return name;
   }
   static createFileLevelUniqueName(text: string): Identifier {
     const name = createOptimisticUniqueName(text);
-    name.autoGenerateFlags |= GeneratedIdentifierFlags.FileLevel;
+    name.autoGenerateFlags |= qc.GeneratedIdentifierFlags.FileLevel;
     return name;
   }
   static getGeneratedNameForNode(this: Node | undefined): Identifier;
-  static getGeneratedNameForNode(this: Node | undefined, flags: GeneratedIdentifierFlags): Identifier;
-  static getGeneratedNameForNode(this: Node | undefined, flags?: GeneratedIdentifierFlags): Identifier {
+  static getGeneratedNameForNode(this: Node | undefined, flags: qc.GeneratedIdentifierFlags): Identifier;
+  static getGeneratedNameForNode(this: Node | undefined, flags?: qc.GeneratedIdentifierFlags): Identifier {
     const name = new Identifier(this && Node.is.kind(Identifier, this) ? idText(this) : '');
-    name.autoGenerateFlags = GeneratedIdentifierFlags.Node | flags!;
+    name.autoGenerateFlags = qc.GeneratedIdentifierFlags.Node | flags!;
     name.autoGenerateId = nextAutoGenerateId;
     name.original = this;
     nextAutoGenerateId++;
@@ -1344,8 +1363,8 @@ export class Identifier extends TokenOrIdentifier implements qc.Identifier {
     const qualifiedName = createPropertyAccess(ns, qb.isSynthesized(name) ? name : getSynthesizedClone(name));
     setRange(qualifiedName, name);
     let emitFlags: EmitFlags = 0;
-    if (!allowSourceMaps) emitFlags |= EmitFlags.NoSourceMap;
-    if (!allowComments) emitFlags |= EmitFlags.NoComments;
+    if (!allowSourceMaps) emitFlags |= qc.EmitFlags.NoSourceMap;
+    if (!allowComments) emitFlags |= qc.EmitFlags.NoComments;
     if (emitFlags) setEmitFlags(qualifiedName, emitFlags);
     return qualifiedName;
   }
@@ -1361,21 +1380,21 @@ export class Identifier extends TokenOrIdentifier implements qc.Identifier {
   }
 }
 Identifier.prototype.kind = Identifier.kind;
-qb.addMixins(Identifier, [Declaration, qc.PrimaryExpression]);
+qb.addMixins(Identifier, [qc.Declaration, qc.PrimaryExpression]);
 export class IfStatement extends qc.Statement implements qc.IfStatement {
   static readonly kind = Syntax.IfStatement;
   expression: qc.Expression;
-  thenStatement: Statement;
-  elseStatement?: Statement;
-  createIf(expression: qc.Expression, thenStatement: Statement, elseStatement?: Statement) {
+  thenStatement: qc.Statement;
+  elseStatement?: qc.Statement;
+  createIf(expression: qc.Expression, thenStatement: qc.Statement, elseStatement?: qc.Statement) {
     super(true);
     this.expression = expression;
     this.thenStatement = asEmbeddedStatement(thenStatement);
     this.elseStatement = asEmbeddedStatement(elseStatement);
   }
-  update(expression: qc.Expression, thenStatement: Statement, elseStatement: Statement | undefined) {
+  update(expression: qc.Expression, thenStatement: qc.Statement, elseStatement?: qc.Statement) {
     return this.expression !== expression || this.thenStatement !== thenStatement || this.elseStatement !== elseStatement
-      ? new create(expression, thenStatement, elseStatement).updateFrom(this)
+      ? new IfStatement(expression, thenStatement, elseStatement).updateFrom(this)
       : this;
   }
 }
@@ -1385,15 +1404,15 @@ export class ImportClause extends qc.NamedDeclaration implements qc.ImportClause
   parent: ImportDeclaration;
   isTypeOnly: boolean;
   name?: Identifier;
-  namedBindings?: NamedImportBindings;
-  createImportClause(name: Identifier | undefined, namedBindings: NamedImportBindings | undefined, isTypeOnly = false): ImportClause {
+  namedBindings?: qc.NamedImportBindings;
+  createImportClause(name: Identifier | undefined, namedBindings: qc.NamedImportBindings | undefined, isTypeOnly = false) {
     super(true);
     this.name = name;
     this.namedBindings = namedBindings;
     this.isTypeOnly = isTypeOnly;
   }
-  update(name: Identifier | undefined, namedBindings: NamedImportBindings | undefined, isTypeOnly: boolean) {
-    return this.name !== name || this.namedBindings !== namedBindings || this.isTypeOnly !== isTypeOnly ? new create(name, namedBindings, isTypeOnly).updateFrom(this) : this;
+  update(name: Identifier | undefined, namedBindings: qc.NamedImportBindings | undefined, isTypeOnly: boolean) {
+    return this.name !== name || this.namedBindings !== namedBindings || this.isTypeOnly !== isTypeOnly ? new ImportClause(name, namedBindings, isTypeOnly).updateFrom(this) : this;
   }
 }
 ImportClause.prototype.kind = ImportClause.kind;
@@ -1422,7 +1441,7 @@ export class ImportDeclaration extends qc.Statement implements qc.ImportDeclarat
     moduleSpecifier: Expression
   ) {
     return this.decorators !== decorators || this.modifiers !== modifiers || this.importClause !== importClause || this.moduleSpecifier !== moduleSpecifier
-      ? new create(decorators, modifiers, importClause, moduleSpecifier).updateFrom(this)
+      ? new ImportDeclaration(decorators, modifiers, importClause, moduleSpecifier).updateFrom(this)
       : this;
   }
 }
@@ -1447,7 +1466,7 @@ export class ImportEqualsDeclaration extends Node implements qc.ImportEqualsDecl
     moduleReference: ModuleReference
   ) {
     return this.decorators !== decorators || this.modifiers !== modifiers || this.name !== name || this.moduleReference !== moduleReference
-      ? new create(decorators, modifiers, name, moduleReference).updateFrom(this)
+      ? new ImportEqualsDeclaration(decorators, modifiers, name, moduleReference).updateFrom(this)
       : this;
   }
 }
@@ -1463,23 +1482,23 @@ export class ImportSpecifier extends qc.NamedDeclaration implements qc.ImportSpe
     this.name = name;
   }
   update(propertyName: Identifier | undefined, name: Identifier) {
-    return this.propertyName !== propertyName || this.name !== name ? new create(propertyName, name).updateFrom(this) : this;
+    return this.propertyName !== propertyName || this.name !== name ? new ImportSpecifier(propertyName, name).updateFrom(this) : this;
   }
 }
 ImportSpecifier.prototype.kind = ImportSpecifier.kind;
-export class ImportTypeNode extends NodeWithTypeArguments implements qc.ImportTypeNode {
+export class ImportTypeNode extends qc.NodeWithTypeArguments implements qc.ImportTypeNode {
   static readonly kind = Syntax.ImportType;
   isTypeOf?: boolean;
   argument: qc.TypeNode;
-  qualifier?: EntityName;
-  constructor(a: qc.TypeNode, q?: EntityName, ts?: readonly qc.TypeNode[], tof?: boolean) {
+  qualifier?: qc.EntityName;
+  constructor(a: qc.TypeNode, q?: qc.EntityName, ts?: readonly qc.TypeNode[], tof?: boolean) {
     super(true);
     this.argument = a;
     this.qualifier = q;
-    this.typeArguments = parenthesizeTypeParameters(ts);
+    this.typeArguments = parenthesize.typeParameters(ts);
     this.isTypeOf = tof;
   }
-  update(a: qc.TypeNode, q?: EntityName, ts?: readonly qc.TypeNode[], tof?: boolean) {
+  update(a: qc.TypeNode, q?: qc.EntityName, ts?: readonly qc.TypeNode[], tof?: boolean) {
     return this.argument !== a || this.qualifier !== q || this.typeArguments !== ts || this.isTypeOf !== tof ? new ImportTypeNode(a, q, ts, tof).updateFrom(this) : this;
   }
 }
@@ -1530,14 +1549,14 @@ export class InterfaceDeclaration extends Node implements qc.InterfaceDeclaratio
   name: Identifier;
   typeParameters?: Nodes<TypeParameterDeclaration>;
   heritageClauses?: Nodes<HeritageClause>;
-  members: Nodes<TypeElement>;
+  members: Nodes<qc.TypeElement>;
   createInterfaceDeclaration(
     decorators: readonly Decorator[] | undefined,
     modifiers: readonly Modifier[] | undefined,
     name: string | Identifier,
     typeParameters: readonly TypeParameterDeclaration[] | undefined,
     heritageClauses: readonly HeritageClause[] | undefined,
-    members: readonly TypeElement[]
+    members: readonly qc.TypeElement[]
   ) {
     super(true);
     this.decorators = Nodes.from(decorators);
@@ -1554,7 +1573,7 @@ export class InterfaceDeclaration extends Node implements qc.InterfaceDeclaratio
     name: Identifier,
     typeParameters: readonly TypeParameterDeclaration[] | undefined,
     heritageClauses: readonly HeritageClause[] | undefined,
-    members: readonly TypeElement[]
+    members: readonly qc.TypeElement[]
   ) {
     return this.decorators !== decorators ||
       this.modifiers !== modifiers ||
@@ -1678,14 +1697,14 @@ export class JSDocOptionalType extends JSDocType implements qc.JSDocOptionalType
 JSDocOptionalType.prototype.kind = JSDocOptionalType.kind;
 export class JSDocParameterTag extends JSDocPropertyLikeTag implements qc.JSDocParameterTag {
   static readonly kind = Syntax.JSDocParameterTag;
-  createJSDocParamTag(name: EntityName, isBracketed: boolean, typeExpression?: JSDocTypeExpression, comment?: string): JSDocParameterTag {
+  createJSDocParamTag(name: qc.EntityName, isBracketed: boolean, typeExpression?: JSDocTypeExpression, comment?: string): JSDocParameterTag {
     const tag = createJSDocTag<JSDocParameterTag>(Syntax.JSDocParameterTag, 'param', comment);
     tag.typeExpression = typeExpression;
     tag.name = name;
     tag.isBracketed = isBracketed;
     return tag;
   }
-  createJSDocParameterTag(typeExpression: JSDocTypeExpression | undefined, name: EntityName, isNameFirst: boolean, isBracketed: boolean, comment?: string) {
+  createJSDocParameterTag(typeExpression: JSDocTypeExpression | undefined, name: qc.EntityName, isNameFirst: boolean, isBracketed: boolean, comment?: string) {
     return createJSDocPropertyLikeTag<JSDocParameterTag>(Syntax.JSDocParameterTag, 'param', typeExpression, name, isNameFirst, isBracketed, comment);
   }
 }
@@ -1700,7 +1719,7 @@ JSDocPrivateTag.prototype.kind = JSDocPrivateTag.kind;
 export class JSDocPropertyLikeTag extends JSDocTag implements qc.JSDocPropertyLikeTag {
   //}, Declaration {
   parent: JSDoc;
-  name: EntityName;
+  name: qc.EntityName;
   typeExpression?: JSDocTypeExpression;
   isNameFirst: boolean;
   isBracketed: boolean;
@@ -1708,7 +1727,7 @@ export class JSDocPropertyLikeTag extends JSDocTag implements qc.JSDocPropertyLi
     kind: T['kind'],
     tagName: 'arg' | 'argument' | 'param',
     typeExpression: JSDocTypeExpression | undefined,
-    name: EntityName,
+    name: qc.EntityName,
     isNameFirst: boolean,
     isBracketed: boolean,
     comment?: string
@@ -1724,7 +1743,7 @@ export class JSDocPropertyLikeTag extends JSDocTag implements qc.JSDocPropertyLi
 JSDocPropertyLikeTag.prototype.kind = JSDocPropertyLikeTag.kind;
 export class JSDocPropertyTag extends JSDocPropertyLikeTag implements qc.JSDocPropertyTag {
   static readonly kind = Syntax.JSDocPropertyTag;
-  createJSDocPropertyTag(typeExpression: JSDocTypeExpression | undefined, name: EntityName, isNameFirst: boolean, isBracketed: boolean, comment?: string) {
+  createJSDocPropertyTag(typeExpression: JSDocTypeExpression | undefined, name: qc.EntityName, isNameFirst: boolean, isBracketed: boolean, comment?: string) {
     return createJSDocPropertyLikeTag<JSDocPropertyTag>(Syntax.JSDocPropertyTag, 'param', typeExpression, name, isNameFirst, isBracketed, comment);
   }
 }
@@ -2039,7 +2058,7 @@ export class JsxOpeningFragment extends qc.Expression implements qc.JsxOpeningFr
     react.parent = Node.get.parseTreeOf(parent);
     return react;
   }
-  createJsxFactoryExpressionFromEntityName(jsxFactory: EntityName, parent: JsxOpeningLikeElement | JsxOpeningFragment): qc.Expression {
+  createJsxFactoryExpressionFromEntityName(jsxFactory: qc.EntityName, parent: JsxOpeningLikeElement | JsxOpeningFragment): qc.Expression {
     if (Node.is.kind(QualifiedName, jsxFactory)) {
       const left = createJsxFactoryExpressionFromEntityName(jsxFactory.left, parent);
       const right = new Identifier(idText(jsxFactory.right));
@@ -2120,13 +2139,13 @@ export class LabeledStatement extends qc.Statement implements qc.LabeledStatemen
   //, JSDocContainer {
   static readonly kind = Syntax.LabeledStatement;
   label: Identifier;
-  statement: Statement;
-  createLabel(label: string | Identifier, statement: Statement) {
+  statement: qc.Statement;
+  createLabel(label: string | Identifier, statement: qc.Statement) {
     super(true);
     this.label = asName(label);
     this.statement = asEmbeddedStatement(statement);
   }
-  update(label: Identifier, statement: Statement) {
+  update(label: Identifier, statement: qc.Statement) {
     return this.label !== label || this.statement !== statement ? new create(label, statement).updateFrom(this) : this;
   }
 }
@@ -2189,13 +2208,13 @@ export class MethodDeclaration extends Node implements qc.MethodDeclaration {
   //FunctionLikeDeclarationBase, qc.ClassElement, ObjectLiteralElement, JSDocContainer {
   static readonly kind = Syntax.MethodDeclaration;
   parent: ClassLikeDeclaration | ObjectLiteralExpression;
-  name: PropertyName;
-  body?: FunctionBody;
+  name: qc.PropertyName;
+  body?: qc.FunctionBody;
   constructor(
     ds: readonly Decorator[] | undefined,
     ms: readonly Modifier[] | undefined,
-    a: AsteriskToken | undefined,
-    p: string | PropertyName,
+    a: qc.AsteriskToken | undefined,
+    p: string | qc.PropertyName,
     q: qc.QuestionToken | undefined,
     ts: readonly TypeParameterDeclaration[] | undefined,
     ps: readonly ParameterDeclaration[],
@@ -2217,8 +2236,8 @@ export class MethodDeclaration extends Node implements qc.MethodDeclaration {
     n: MethodDeclaration,
     ds: readonly Decorator[] | undefined,
     ms: readonly Modifier[] | undefined,
-    a: AsteriskToken | undefined,
-    p: PropertyName,
+    a: qc.AsteriskToken | undefined,
+    p: qc.PropertyName,
     q: qc.QuestionToken | undefined,
     ts: readonly TypeParameterDeclaration[] | undefined,
     ps: readonly ParameterDeclaration[],
@@ -2243,13 +2262,13 @@ export class MethodSignature extends Node implements qc.MethodSignature {
   //qc.SignatureDeclarationBase, TypeElement {
   static readonly kind = Syntax.MethodSignature;
   parent: ObjectTypeDeclaration;
-  name: PropertyName;
-  constructor(ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t: qc.TypeNode | undefined, p: string | PropertyName, q?: qc.QuestionToken) {
+  name: qc.PropertyName;
+  constructor(ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t: qc.TypeNode | undefined, p: string | qc.PropertyName, q?: qc.QuestionToken) {
     const n = SignatureDeclaration.create(Syntax.MethodSignature, ts, ps, t) as MethodSignature;
     this.name = asName(p);
     this.questionToken = q;
   }
-  update(ts: Nodes<TypeParameterDeclaration> | undefined, ps: Nodes<ParameterDeclaration>, t: qc.TypeNode | undefined, p: PropertyName, q?: qc.QuestionToken) {
+  update(ts: Nodes<TypeParameterDeclaration> | undefined, ps: Nodes<ParameterDeclaration>, t: qc.TypeNode | undefined, p: qc.PropertyName, q?: qc.QuestionToken) {
     return this.typeParameters !== ts || this.parameters !== ps || this.type !== t || this.name !== p || this.questionToken !== q ? new MethodSignature(ts, ps, t, p, q).updateFrom(this) : this;
   }
 }
@@ -2338,7 +2357,7 @@ export class NamedTupleMember extends qc.TypeNode implements qc.NamedTupleMember
   }
 }
 NamedTupleMember.prototype.kind = NamedTupleMember.kind;
-qb.addMixins(NamedTupleMember, [Declaration, JSDocContainer]);
+qb.addMixins(NamedTupleMember, [qc.Declaration, JSDocContainer]);
 export class NamespaceExport extends qc.NamedDeclaration implements qc.NamespaceExport {
   static readonly kind = Syntax.NamespaceExport;
   parent: ExportDeclaration;
@@ -2447,7 +2466,7 @@ export class NumericLiteral extends qc.LiteralExpression implements qc.NumericLi
     this.text = t;
     this.numericLiteralFlags = fs;
   }
-  name(name: string | __String) {
+  name(name: string | qb.__String) {
     return (+name).toString() === name;
   }
 }
@@ -2560,7 +2579,7 @@ export class ParameterDeclaration extends qc.NamedDeclaration implements qc.Para
   static readonly kind = Syntax.Parameter;
   parent: SignatureDeclaration;
   dot3Token?: qc.Dot3Token;
-  name: BindingName;
+  name: qc.BindingName;
   questionToken?: qc.QuestionToken;
   type?: qc.TypeNode;
   initializer?: qc.Expression;
@@ -2568,7 +2587,7 @@ export class ParameterDeclaration extends qc.NamedDeclaration implements qc.Para
     decorators: readonly Decorator[] | undefined,
     modifiers: readonly Modifier[] | undefined,
     dot3Token: qc.Dot3Token | undefined,
-    name: string | BindingName,
+    name: string | qc.BindingName,
     questionToken?: qc.QuestionToken,
     type?: qc.TypeNode,
     initializer?: Expression
@@ -2587,7 +2606,7 @@ export class ParameterDeclaration extends qc.NamedDeclaration implements qc.Para
     decorators: readonly Decorator[] | undefined,
     modifiers: readonly Modifier[] | undefined,
     dot3Token: qc.Dot3Token | undefined,
-    name: string | BindingName,
+    name: string | qc.BindingName,
     questionToken: qc.QuestionToken | undefined,
     type: qc.TypeNode | undefined,
     initializer: qc.Expression | undefined
@@ -2679,11 +2698,11 @@ export class PrefixUnaryExpression extends UpdateExpression implements qc.Prefix
 PrefixUnaryExpression.prototype.kind = PrefixUnaryExpression.kind;
 export class PrivateIdentifier extends TokenOrIdentifier implements qc.PrivateIdentifier {
   static readonly kind = Syntax.PrivateIdentifier;
-  escapedText!: __String;
+  escapedText!: qb.__String;
   constructor(t: string) {
     super(PrivateIdentifier.kind);
     if (t[0] !== '#') qb.fail('First character of private identifier must be #: ' + t);
-    this.escapedText = syntax.get.escUnderscores(t);
+    this.escapedText = qy.get.escUnderscores(t);
   }
   get text(): string {
     return idText(this);
@@ -2697,7 +2716,7 @@ export class PropertyAccessChain extends Node implements qc.PropertyAccessChain 
     this.expression = parenthesize.forAccess(expression);
     this.questionDotToken = questionDotToken;
     this.name = asName(name);
-    setEmitFlags(this, EmitFlags.NoIndentation);
+    setEmitFlags(this, qc.EmitFlags.NoIndentation);
   }
   update(expression: qc.Expression, questionDotToken: qc.QuestionDotToken | undefined, name: Identifier) {
     qb.assert(!!(this.flags & NodeFlags.OptionalChain), 'Cannot update a PropertyAccessExpression using updatePropertyAccessChain. Use updatePropertyAccess instead.');
@@ -2717,7 +2736,7 @@ export class PropertyAccessExpression extends qc.MemberExpression implements qc.
     super(true);
     this.expression = parenthesize.forAccess(expression);
     this.name = asName(name);
-    setEmitFlags(this, EmitFlags.NoIndentation);
+    setEmitFlags(this, qc.EmitFlags.NoIndentation);
   }
   update(expression: qc.Expression, name: Identifier | PrivateIdentifier) {
     if (Node.is.propertyAccessChain(this)) return this.update(expression, this.questionDotToken, cast(name, isIdentifier));
@@ -2729,16 +2748,16 @@ export class PropertyAssignment extends ObjectLiteralElement implements qc.Prope
   //}, JSDocContainer {
   static readonly kind = Syntax.PropertyAssignment;
   parent: ObjectLiteralExpression;
-  name: PropertyName;
+  name: qc.PropertyName;
   questionToken?: qc.QuestionToken;
   initializer: qc.Expression;
-  createPropertyAssignment(name: string | PropertyName, initializer: qc.Expression) {
+  createPropertyAssignment(name: string | qc.PropertyName, initializer: qc.Expression) {
     super(true);
     this.name = asName(name);
     this.questionToken = undefined;
     this.initializer = parenthesize.expressionForList(initializer);
   }
-  update(name: PropertyName, initializer: qc.Expression) {
+  update(name: qc.PropertyName, initializer: qc.Expression) {
     return this.name !== name || this.initializer !== initializer ? new create(name, initializer).updateFrom(this) : this;
   }
 }
@@ -2746,13 +2765,13 @@ PropertyAssignment.prototype.kind = PropertyAssignment.kind;
 export class PropertyDeclaration extends qc.ClassElement implements qc.PropertyDeclaration {
   //}, JSDocContainer {
   static readonly kind = Syntax.PropertyDeclaration;
-  parent: ClassLikeDeclaration;
-  name: PropertyName;
+  parent: qc.ClassLikeDeclaration;
+  name: qc.PropertyName;
   questionToken?: qc.QuestionToken;
   exclamationToken?: ExclamationToken;
   type?: qc.TypeNode;
   initializer?: qc.Expression;
-  constructor(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: string | PropertyName, q?: qc.QuestionToken | ExclamationToken, t?: qc.TypeNode, i?: qc.Expression) {
+  constructor(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: string | qc.PropertyName, q?: qc.QuestionToken | ExclamationToken, t?: qc.TypeNode, i?: qc.Expression) {
     super(true);
     this.decorators = Nodes.from(ds);
     this.modifiers = Nodes.from(ms);
@@ -2766,7 +2785,7 @@ export class PropertyDeclaration extends qc.ClassElement implements qc.PropertyD
     n: PropertyDeclaration,
     ds: readonly Decorator[] | undefined,
     ms: readonly Modifier[] | undefined,
-    p: string | PropertyName,
+    p: string | qc.PropertyName,
     q?: qc.QuestionToken | ExclamationToken,
     t?: qc.TypeNode,
     i?: Expression
@@ -2786,11 +2805,11 @@ PropertyDeclaration.prototype.kind = PropertyDeclaration.kind;
 export class PropertySignature extends TypeElement implements qc.PropertySignature {
   //}, JSDocContainer {
   static readonly kind = Syntax.PropertySignature;
-  name: PropertyName;
+  name: qc.PropertyName;
   questionToken?: qc.QuestionToken;
   type?: qc.TypeNode;
   initializer?: qc.Expression;
-  constructor(ms: readonly Modifier[] | undefined, p: PropertyName | string, q?: qc.QuestionToken, t?: qc.TypeNode, i?: qc.Expression) {
+  constructor(ms: readonly Modifier[] | undefined, p: qc.PropertyName | string, q?: qc.QuestionToken, t?: qc.TypeNode, i?: qc.Expression) {
     super(true);
     this.modifiers = Nodes.from(ms);
     this.name = asName(p);
@@ -2798,22 +2817,22 @@ export class PropertySignature extends TypeElement implements qc.PropertySignatu
     this.type = t;
     this.initializer = i;
   }
-  update(ms: readonly Modifier[] | undefined, p: PropertyName, q?: qc.QuestionToken, t?: qc.TypeNode, i?: qc.Expression) {
+  update(ms: readonly Modifier[] | undefined, p: qc.PropertyName, q?: qc.QuestionToken, t?: qc.TypeNode, i?: qc.Expression) {
     return this.modifiers !== ms || this.name !== p || this.questionToken !== q || this.type !== t || this.initializer !== i ? new PropertySignature(ms, p, q, t, i).updateFrom(this) : this;
   }
 }
 PropertySignature.prototype.kind = PropertySignature.kind;
 export class QualifiedName extends Node implements qc.QualifiedName {
   static readonly kind = Syntax.QualifiedName;
-  left: EntityName;
+  left: qc.EntityName;
   right: Identifier;
   jsdocDotPos?: number;
-  constructor(left: EntityName, right: string | Identifier) {
+  constructor(left: qc.EntityName, right: string | Identifier) {
     super(true);
     this.left = left;
     this.right = asName(right);
   }
-  update(left: EntityName, right: Identifier) {
+  update(left: qc.EntityName, right: Identifier) {
     return this.left !== left || this.right !== right ? new QualifiedName(left, right).updateFrom(this) : this;
   }
 }
@@ -2852,7 +2871,7 @@ export class ReturnStatement extends qc.Statement implements qc.ReturnStatement 
 ReturnStatement.prototype.kind = ReturnStatement.kind;
 export class SemicolonClassElement extends qc.ClassElement implements qc.SemicolonClassElement {
   static readonly kind = Syntax.SemicolonClassElement;
-  parent: ClassLikeDeclaration;
+  parent: qc.ClassLikeDeclaration;
   createSemicolonClassElement() {
     super(true);
   }
@@ -2862,9 +2881,9 @@ export class SetAccessorDeclaration extends qc.FunctionLikeDeclarationBase imple
   //}, qc.ClassElement, ObjectLiteralElement, JSDocContainer {
   static readonly kind = Syntax.SetAccessor;
   parent: ClassLikeDeclaration | ObjectLiteralExpression;
-  name: PropertyName;
-  body?: FunctionBody;
-  constructor(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: string | PropertyName, ps: readonly ParameterDeclaration[], b?: Block) {
+  name: qc.PropertyName;
+  body?: qc.FunctionBody;
+  constructor(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: string | qc.PropertyName, ps: readonly ParameterDeclaration[], b?: Block) {
     super(true);
     this.decorators = Nodes.from(ds);
     this.modifiers = Nodes.from(ms);
@@ -2873,7 +2892,7 @@ export class SetAccessorDeclaration extends qc.FunctionLikeDeclarationBase imple
     this.parameters = new Nodes(ps);
     this.body = b;
   }
-  update(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: PropertyName, ps: readonly ParameterDeclaration[], b?: Block) {
+  update(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: qc.PropertyName, ps: readonly ParameterDeclaration[], b?: Block) {
     return this.decorators !== ds || this.modifiers !== ms || this.name !== p || this.parameters !== ps || this.body !== b ? new SetAccessorDeclaration(ds, ms, p, ps, b).updateFrom(this) : this;
   }
 }
@@ -3130,11 +3149,11 @@ export class TupleType extends GenericType implements qc.TupleType {
   hasRestElement: boolean;
   readonly: boolean;
   labeledElementDeclarations?: readonly (NamedTupleMember | ParameterDeclaration)[];
-  constructor(es: readonly (TypeNode | NamedTupleMember)[]) {
+  constructor(es: readonly (qc.TypeNode | NamedTupleMember)[]) {
     super(true);
     this.elements = new Nodes(es);
   }
-  update(es: readonly (TypeNode | NamedTupleMember)[]) {
+  update(es: readonly (qc.TypeNode | NamedTupleMember)[]) {
     return this.elements !== es ? new TupleType(es).updateFrom(this) : this;
   }
 }
@@ -3189,12 +3208,12 @@ export class TypeAssertion extends qc.UnaryExpression implements qc.TypeAssertio
 TypeAssertion.prototype.kind = TypeAssertion.kind;
 export class TypeLiteralNode extends qc.TypeNode implements qc.TypeLiteralNode {
   static readonly kind = Syntax.TypeLiteral;
-  members: Nodes<TypeElement>;
-  constructor(ms?: readonly TypeElement[]) {
+  members: Nodes<qc.TypeElement>;
+  constructor(ms?: readonly qc.TypeElement[]) {
     super(true);
     this.members = new Nodes(ms);
   }
-  update(ms: Nodes<TypeElement>) {
+  update(ms: Nodes<qc.TypeElement>) {
     return this.members !== ms ? new TypeLiteralNode(ms).updateFrom(this) : this;
   }
 }
@@ -3268,7 +3287,7 @@ export class TypePredicateNode extends qc.TypeNode implements qc.TypePredicateNo
 TypePredicateNode.prototype.kind = TypePredicateNode.kind;
 export class TypeQueryNode extends qc.TypeNode implements qc.TypeQueryNode {
   static readonly kind = Syntax.TypeQuery;
-  exprName: EntityName;
+  exprName: qc.EntityName;
   constructor(e: EntityName) {
     super(true);
     this.exprName = e;
@@ -3278,15 +3297,15 @@ export class TypeQueryNode extends qc.TypeNode implements qc.TypeQueryNode {
   }
 }
 TypeQueryNode.prototype.kind = TypeQueryNode.kind;
-export class TypeReferenceNode extends NodeWithTypeArguments implements qc.TypeReferenceNode {
+export class TypeReferenceNode extends qc.NodeWithTypeArguments implements qc.TypeReferenceNode {
   static readonly kind = Syntax.TypeReference;
-  typeName: EntityName;
+  typeName: qc.EntityName;
   constructor(t: string | EntityName, ts?: readonly qc.TypeNode[]) {
     super(true);
     this.typeName = asName(t);
-    this.typeArguments = ts && parenthesizeTypeParameters(ts);
+    this.typeArguments = ts && parenthesize.typeParameters(ts);
   }
-  update(t: EntityName, ts?: Nodes<qc.TypeNode>) {
+  update(t: qc.EntityName, ts?: Nodes<qc.TypeNode>) {
     return this.typeName !== t || this.typeArguments !== ts ? new TypeReferenceNode(t, ts).updateFrom(this) : this;
   }
 }
@@ -3359,7 +3378,7 @@ export class UnparsedSource extends Node implements qc.UnparsedSource {
     this.prologues = empty;
     this.referencedFiles = empty;
     this.libReferenceDirectives = empty;
-    this.lineAndCharOf = (pos) => syntax.get.lineAndCharOf(this, pos);
+    this.lineAndCharOf = (pos) => qy.get.lineAndCharOf(this, pos);
   }
   createUnparsedSourceFile(text: string): UnparsedSource;
   createUnparsedSourceFile(inputFile: InputFiles, type: 'js' | 'dts', stripInternal?: boolean): UnparsedSource;
@@ -3541,20 +3560,20 @@ UnparsedSyntheticReference.prototype.kind = UnparsedSyntheticReference.kind;
 export class VariableDeclaration extends qc.NamedDeclaration implements qc.VariableDeclaration {
   static readonly kind = Syntax.VariableDeclaration;
   parent: VariableDeclarationList | CatchClause;
-  name: BindingName;
+  name: qc.BindingName;
   exclamationToken?: ExclamationToken;
   type?: qc.TypeNode;
   initializer?: qc.Expression;
-  createVariableDeclaration(name: string | BindingName, type?: qc.TypeNode, initializer?: qc.Expression) {
+  createVariableDeclaration(name: string | qc.BindingName, type?: qc.TypeNode, initializer?: qc.Expression) {
     super(true);
     this.name = asName(name);
     this.type = type;
     this.initializer = initializer !== undefined ? parenthesize.expressionForList(initializer) : undefined;
   }
-  update(name: BindingName, type: qc.TypeNode | undefined, initializer: qc.Expression | undefined) {
+  update(name: qc.BindingName, type: qc.TypeNode | undefined, initializer: qc.Expression | undefined) {
     return this.name !== name || this.type !== type || this.initializer !== initializer ? new create(name, type, initializer).updateFrom(this) : this;
   }
-  createTypeScriptVariableDeclaration(name: string | BindingName, exclaimationToken?: qc.Token<Syntax.ExclamationToken>, type?: qc.TypeNode, initializer?: qc.Expression) {
+  createTypeScriptVariableDeclaration(name: string | qc.BindingName, exclaimationToken?: qc.Token<Syntax.ExclamationToken>, type?: qc.TypeNode, initializer?: qc.Expression) {
     super(true);
     this.name = asName(name);
     this.type = type;
@@ -3563,7 +3582,7 @@ export class VariableDeclaration extends qc.NamedDeclaration implements qc.Varia
   }
   updateTypeScriptVariableDeclaration(
     this: VariableDeclaration,
-    name: BindingName,
+    name: qc.BindingName,
     exclaimationToken: qc.Token<Syntax.ExclamationToken> | undefined,
     type: qc.TypeNode | undefined,
     initializer: qc.Expression | undefined
@@ -3621,12 +3640,12 @@ VoidExpression.prototype.kind = VoidExpression.kind;
 export class WhileStatement extends IterationStatement implements qc.WhileStatement {
   static readonly kind = Syntax.WhileStatement;
   expression: qc.Expression;
-  createWhile(expression: qc.Expression, statement: Statement) {
+  createWhile(expression: qc.Expression, statement: qc.Statement) {
     super(true);
     this.expression = expression;
     this.statement = asEmbeddedStatement(statement);
   }
-  update(expression: qc.Expression, statement: Statement) {
+  update(expression: qc.Expression, statement: qc.Statement) {
     return this.expression !== expression || this.statement !== statement ? new create(expression, statement).updateFrom(this) : this;
   }
 }
@@ -3634,13 +3653,13 @@ WhileStatement.prototype.kind = WhileStatement.kind;
 export class WithStatement extends qc.Statement implements qc.WithStatement {
   static readonly kind = Syntax.WithStatement;
   expression: qc.Expression;
-  statement: Statement;
-  createWith(expression: qc.Expression, statement: Statement) {
+  statement: qc.Statement;
+  createWith(expression: qc.Expression, statement: qc.Statement) {
     super(true);
     this.expression = expression;
     this.statement = asEmbeddedStatement(statement);
   }
-  update(expression: qc.Expression, statement: Statement) {
+  update(expression: qc.Expression, statement: qc.Statement) {
     return this.expression !== expression || this.statement !== statement ? new create(expression, statement).updateFrom(this) : this;
   }
 }
@@ -3650,15 +3669,15 @@ export class YieldExpression extends qc.Expression implements qc.YieldExpression
   asteriskToken?: AsteriskToken;
   expression?: qc.Expression;
   createYield(expression?: qc.Expression): YieldExpression;
-  createYield(asteriskToken: AsteriskToken | undefined, expression: qc.Expression): YieldExpression;
-  createYield(asteriskTokenOrExpression?: AsteriskToken | undefined | qc.Expression, expression?: qc.Expression) {
+  createYield(asteriskToken: qc.AsteriskToken | undefined, expression: qc.Expression): YieldExpression;
+  createYield(asteriskTokenOrExpression?: qc.AsteriskToken | undefined | qc.Expression, expression?: qc.Expression) {
     const asteriskToken = asteriskTokenOrExpression && asteriskTokenOrExpression.kind === Syntax.AsteriskToken ? <AsteriskToken>asteriskTokenOrExpression : undefined;
     expression = asteriskTokenOrExpression && asteriskTokenOrExpression.kind !== Syntax.AsteriskToken ? asteriskTokenOrExpression : expression;
     super(true);
     this.asteriskToken = asteriskToken;
     this.expression = expression && parenthesize.expressionForList(expression);
   }
-  update(asteriskToken: AsteriskToken | undefined, expression: qc.Expression) {
+  update(asteriskToken: qc.AsteriskToken | undefined, expression: qc.Expression) {
     return this.expression !== expression || this.asteriskToken !== asteriskToken ? new create(asteriskToken, expression).updateFrom(this) : this;
   }
 }
@@ -3669,11 +3688,11 @@ export namespace parenthesize {
   }
   function getLiteralKindOfBinaryPlusOperand(this: qc.Expression): Syntax {
     this = skipPartiallyEmittedExpressions(this);
-    if (syntax.is.literal(this.kind)) return this.kind;
+    if (qy.is.literal(this.kind)) return this.kind;
     if (this.kind === Syntax.BinaryExpression && (<BinaryExpression>this).operatorToken.kind === Syntax.PlusToken) {
       if ((<BinaryPlusExpression>this).cachedLiteralKind !== undefined) return (<BinaryPlusExpression>this).cachedLiteralKind;
       const leftKind = getLiteralKindOfBinaryPlusOperand((<BinaryExpression>this).left);
-      const literalKind = syntax.is.literal(leftKind) && leftKind === getLiteralKindOfBinaryPlusOperand((<BinaryExpression>this).right) ? leftKind : Syntax.Unknown;
+      const literalKind = qy.is.literal(leftKind) && leftKind === getLiteralKindOfBinaryPlusOperand((<BinaryExpression>this).right) ? leftKind : Syntax.Unknown;
       (<BinaryPlusExpression>this).cachedLiteralKind = literalKind;
       return literalKind;
     }
@@ -3694,8 +3713,8 @@ export namespace parenthesize {
       return binaryOperator === Syntax.AsteriskToken || binaryOperator === Syntax.BarToken || binaryOperator === Syntax.AmpersandToken || binaryOperator === Syntax.CaretToken;
     }
     function binaryOperandNeedsParentheses(binaryOperator: Syntax, operand: qc.Expression, isLeftSideOfBinary: boolean, leftOperand: qc.Expression | undefined) {
-      const binaryOperatorPrecedence = syntax.get.operatorPrecedence(Syntax.BinaryExpression, binaryOperator);
-      const binaryOperatorAssociativity = syntax.get.operatorAssociativity(Syntax.BinaryExpression, binaryOperator);
+      const binaryOperatorPrecedence = qy.get.operatorPrecedence(Syntax.BinaryExpression, binaryOperator);
+      const binaryOperatorAssociativity = qy.get.operatorAssociativity(Syntax.BinaryExpression, binaryOperator);
       const emittedOperand = skipPartiallyEmittedExpressions(operand);
       if (!isLeftSideOfBinary && operand.kind === Syntax.ArrowFunction && binaryOperatorPrecedence > 3) return true;
       const operandPrecedence = getExpressionPrecedence(emittedOperand);
@@ -3734,7 +3753,7 @@ export namespace parenthesize {
               //  "a"+("b"+"c")   => "a"+"b"+"c"
               if (binaryOperator === Syntax.PlusToken) {
                 const leftKind = leftOperand ? getLiteralKindOfBinaryPlusOperand(leftOperand) : Syntax.Unknown;
-                if (syntax.is.literal(leftKind) && leftKind === getLiteralKindOfBinaryPlusOperand(emittedOperand)) return false;
+                if (qy.is.literal(leftKind) && leftKind === getLiteralKindOfBinaryPlusOperand(emittedOperand)) return false;
               }
             }
             // No need to parenthesize the right operand when the operand is right
@@ -3754,7 +3773,7 @@ export namespace parenthesize {
     return binaryOperandNeedsParentheses(binaryOperator, operand, isLeftSideOfBinary, leftOperand) ? new ParenthesizedExpression(operand) : operand;
   }
   export function forConditionalHead(c: qc.Expression) {
-    const conditionalPrecedence = syntax.get.operatorPrecedence(Syntax.ConditionalExpression, qc.QuestionToken);
+    const conditionalPrecedence = qy.get.operatorPrecedence(Syntax.ConditionalExpression, qc.QuestionToken);
     const emittedCondition = skipPartiallyEmittedExpressions(c);
     const conditionPrecedence = getExpressionPrecedence(emittedCondition);
     if (compareValues(conditionPrecedence, conditionalPrecedence) !== Comparison.GreaterThan) return new ParenthesizedExpression(c);
@@ -3789,7 +3808,7 @@ export namespace parenthesize {
   export function expressionForList(e: qc.Expression) {
     const emittedExpression = skipPartiallyEmittedExpressions(e);
     const expressionPrecedence = getExpressionPrecedence(emittedExpression);
-    const commaPrecedence = syntax.get.operatorPrecedence(Syntax.BinaryExpression, Syntax.CommaToken);
+    const commaPrecedence = qy.get.operatorPrecedence(Syntax.BinaryExpression, Syntax.CommaToken);
     return expressionPrecedence > commaPrecedence ? e : setRange(new ParenthesizedExpression(e), e);
   }
   export function expressionForExpressionStatement(expression: qc.Expression) {
@@ -3876,146 +3895,146 @@ export namespace emit {
     const emitNode = sourceFile && sourceFile.emitNode;
     const annotatedNodes = emitNode && emitNode.annotatedNodes;
     if (annotatedNodes) {
-      for (const node of annotatedNodes) {
-        node.emitNode = undefined;
+      for (const n of annotatedNodes) {
+        n.emitNode = undefined;
       }
     }
   }
-  export function getOrCreateEmitNode(node: Node): EmitNode {
-    if (!node.emitNode) {
-      if (Node.is.parseTreeNode(node)) {
-        if (node.kind === Syntax.SourceFile) return (node.emitNode = { annotatedNodes: [node] } as EmitNode);
-        const sourceFile = Node.get.sourceFileOf(Node.get.parseTreeOf(Node.get.sourceFileOf(node)));
-        getOrCreateEmitNode(sourceFile).annotatedNodes!.push(node);
+  export function getOrCreateEmitNode(n: Node): EmitNode {
+    if (!n.emitNode) {
+      if (Node.is.parseTreeNode(n)) {
+        if (n.kind === Syntax.SourceFile) return (n.emitNode = { annotatedNodes: [n] } as EmitNode);
+        const sourceFile = Node.get.sourceFileOf(Node.get.parseTreeOf(Node.get.sourceFileOf(n)));
+        getOrCreateEmitNode(sourceFile).annotatedNodes!.push(n);
       }
-      node.emitNode = {} as EmitNode;
+      n.emitNode = {} as EmitNode;
     }
-    return node.emitNode;
+    return n.emitNode;
   }
-  export function removeAllComments<T extends Node>(node: T): T {
-    const emitNode = getOrCreateEmitNode(node);
-    emitNode.flags |= EmitFlags.NoComments;
+  export function removeAllComments<T extends Node>(n: T): T {
+    const emitNode = getOrCreateEmitNode(n);
+    emitNode.flags |= qc.EmitFlags.NoComments;
     emitNode.leadingComments = undefined;
     emitNode.trailingComments = undefined;
-    return node;
+    return n;
   }
-  export function setEmitFlags<T extends Node>(node: T, emitFlags: EmitFlags) {
-    getOrCreateEmitNode(node).flags = emitFlags;
-    return node;
+  export function setEmitFlags<T extends Node>(n: T, emitFlags: EmitFlags) {
+    getOrCreateEmitNode(n).flags = emitFlags;
+    return n;
   }
-  export function addEmitFlags<T extends Node>(node: T, emitFlags: EmitFlags) {
-    const emitNode = getOrCreateEmitNode(node);
+  export function addEmitFlags<T extends Node>(n: T, emitFlags: EmitFlags) {
+    const emitNode = getOrCreateEmitNode(n);
     emitNode.flags = emitNode.flags | emitFlags;
-    return node;
+    return n;
   }
-  export function getSourceMapRange(node: Node): SourceMapRange {
-    const emitNode = node.emitNode;
-    return (emitNode && emitNode.sourceMapRange) || node;
+  export function getSourceMapRange(n: Node): SourceMapRange {
+    const emitNode = n.emitNode;
+    return (emitNode && emitNode.sourceMapRange) || n;
   }
-  export function setSourceMapRange<T extends Node>(node: T, range: SourceMapRange | undefined) {
-    getOrCreateEmitNode(node).sourceMapRange = range;
-    return node;
+  export function setSourceMapRange<T extends Node>(n: T, range: SourceMapRange | undefined) {
+    getOrCreateEmitNode(n).sourceMapRange = range;
+    return n;
   }
-  export function getTokenSourceMapRange(node: Node, token: Syntax): SourceMapRange | undefined {
-    const emitNode = node.emitNode;
+  export function getTokenSourceMapRange(n: Node, token: Syntax): SourceMapRange | undefined {
+    const emitNode = n.emitNode;
     const tokenSourceMapRanges = emitNode && emitNode.tokenSourceMapRanges;
     return tokenSourceMapRanges && tokenSourceMapRanges[token];
   }
-  export function setTokenSourceMapRange<T extends Node>(node: T, token: Syntax, range: SourceMapRange | undefined) {
-    const emitNode = getOrCreateEmitNode(node);
+  export function setTokenSourceMapRange<T extends Node>(n: T, token: Syntax, range: SourceMapRange | undefined) {
+    const emitNode = getOrCreateEmitNode(n);
     const tokenSourceMapRanges = emitNode.tokenSourceMapRanges || (emitNode.tokenSourceMapRanges = []);
     tokenSourceMapRanges[token] = range;
-    return node;
+    return n;
   }
-  export function getStartsOnNewLine(node: Node) {
-    const emitNode = node.emitNode;
+  export function getStartsOnNewLine(n: Node) {
+    const emitNode = n.emitNode;
     return emitNode && emitNode.startsOnNewLine;
   }
-  export function setStartsOnNewLine<T extends Node>(node: T, newLine: boolean) {
-    getOrCreateEmitNode(node).startsOnNewLine = newLine;
-    return node;
+  export function setStartsOnNewLine<T extends Node>(n: T, newLine: boolean) {
+    getOrCreateEmitNode(n).startsOnNewLine = newLine;
+    return n;
   }
-  export function getCommentRange(node: Node) {
-    const emitNode = node.emitNode;
-    return (emitNode && emitNode.commentRange) || node;
+  export function getCommentRange(n: Node) {
+    const emitNode = n.emitNode;
+    return (emitNode && emitNode.commentRange) || n;
   }
-  export function setCommentRange<T extends Node>(node: T, range: TextRange) {
-    getOrCreateEmitNode(node).commentRange = range;
-    return node;
+  export function setCommentRange<T extends Node>(n: T, range: TextRange) {
+    getOrCreateEmitNode(n).commentRange = range;
+    return n;
   }
-  export function getSyntheticLeadingComments(node: Node): SynthesizedComment[] | undefined {
-    const emitNode = node.emitNode;
+  export function getSyntheticLeadingComments(n: Node): SynthesizedComment[] | undefined {
+    const emitNode = n.emitNode;
     return emitNode && emitNode.leadingComments;
   }
-  export function setSyntheticLeadingComments<T extends Node>(node: T, comments: SynthesizedComment[] | undefined) {
-    getOrCreateEmitNode(node).leadingComments = comments;
-    return node;
+  export function setSyntheticLeadingComments<T extends Node>(n: T, comments: SynthesizedComment[] | undefined) {
+    getOrCreateEmitNode(n).leadingComments = comments;
+    return n;
   }
-  export function addSyntheticLeadingComment<T extends Node>(node: T, kind: Syntax.SingleLineCommentTrivia | Syntax.MultiLineCommentTrivia, text: string, hasTrailingNewLine?: boolean) {
+  export function addSyntheticLeadingComment<T extends Node>(n: T, kind: Syntax.SingleLineCommentTrivia | Syntax.MultiLineCommentTrivia, text: string, hasTrailingNewLine?: boolean) {
     return setSyntheticLeadingComments(
-      node,
-      append<SynthesizedComment>(getSyntheticLeadingComments(node), { kind, pos: -1, end: -1, hasTrailingNewLine, text })
+      n,
+      append<SynthesizedComment>(getSyntheticLeadingComments(n), { kind, pos: -1, end: -1, hasTrailingNewLine, text })
     );
   }
-  export function getSyntheticTrailingComments(node: Node): SynthesizedComment[] | undefined {
-    const emitNode = node.emitNode;
+  export function getSyntheticTrailingComments(n: Node): SynthesizedComment[] | undefined {
+    const emitNode = n.emitNode;
     return emitNode && emitNode.trailingComments;
   }
-  export function setSyntheticTrailingComments<T extends Node>(node: T, comments: SynthesizedComment[] | undefined) {
-    getOrCreateEmitNode(node).trailingComments = comments;
-    return node;
+  export function setSyntheticTrailingComments<T extends Node>(n: T, comments: SynthesizedComment[] | undefined) {
+    getOrCreateEmitNode(n).trailingComments = comments;
+    return n;
   }
-  export function addSyntheticTrailingComment<T extends Node>(node: T, kind: Syntax.SingleLineCommentTrivia | Syntax.MultiLineCommentTrivia, text: string, hasTrailingNewLine?: boolean) {
+  export function addSyntheticTrailingComment<T extends Node>(n: T, kind: Syntax.SingleLineCommentTrivia | Syntax.MultiLineCommentTrivia, text: string, hasTrailingNewLine?: boolean) {
     return setSyntheticTrailingComments(
-      node,
-      append<SynthesizedComment>(getSyntheticTrailingComments(node), { kind, pos: -1, end: -1, hasTrailingNewLine, text })
+      n,
+      append<SynthesizedComment>(getSyntheticTrailingComments(n), { kind, pos: -1, end: -1, hasTrailingNewLine, text })
     );
   }
-  export function moveSyntheticComments<T extends Node>(node: T, original: Node): T {
-    setSyntheticLeadingComments(node, getSyntheticLeadingComments(original));
-    setSyntheticTrailingComments(node, getSyntheticTrailingComments(original));
+  export function moveSyntheticComments<T extends Node>(n: T, original: Node): T {
+    setSyntheticLeadingComments(n, getSyntheticLeadingComments(original));
+    setSyntheticTrailingComments(n, getSyntheticTrailingComments(original));
     const emit = getOrCreateEmitNode(original);
     emit.leadingComments = undefined;
     emit.trailingComments = undefined;
-    return node;
+    return n;
   }
-  export function ignoreSourceNewlines<T extends Node>(node: T): T {
-    getOrCreateEmitNode(node).flags |= EmitFlags.IgnoreSourceNewlines;
-    return node;
+  export function ignoreSourceNewlines<T extends Node>(n: T): T {
+    getOrCreateEmitNode(n).flags |= qc.EmitFlags.IgnoreSourceNewlines;
+    return n;
   }
-  export function getConstantValue(node: PropertyAccessExpression | ElementAccessExpression): string | number | undefined {
-    const emitNode = node.emitNode;
+  export function getConstantValue(n: PropertyAccessExpression | ElementAccessExpression): string | number | undefined {
+    const emitNode = n.emitNode;
     return emitNode && emitNode.constantValue;
   }
-  export function setConstantValue(node: PropertyAccessExpression | ElementAccessExpression, value: string | number): PropertyAccessExpression | ElementAccessExpression {
-    const emitNode = getOrCreateEmitNode(node);
+  export function setConstantValue(n: PropertyAccessExpression | ElementAccessExpression, value: string | number): PropertyAccessExpression | ElementAccessExpression {
+    const emitNode = getOrCreateEmitNode(n);
     emitNode.constantValue = value;
-    return node;
+    return n;
   }
-  export function addEmitHelper<T extends Node>(node: T, helper: EmitHelper): T {
-    const emitNode = getOrCreateEmitNode(node);
+  export function addEmitHelper<T extends Node>(n: T, helper: EmitHelper): T {
+    const emitNode = getOrCreateEmitNode(n);
     emitNode.helpers = append(emitNode.helpers, helper);
-    return node;
+    return n;
   }
-  export function addEmitHelpers<T extends Node>(node: T, helpers: EmitHelper[] | undefined): T {
+  export function addEmitHelpers<T extends Node>(n: T, helpers: EmitHelper[] | undefined): T {
     if (some(helpers)) {
-      const emitNode = getOrCreateEmitNode(node);
+      const emitNode = getOrCreateEmitNode(n);
       for (const helper of helpers) {
         emitNode.helpers = appendIfUnique(emitNode.helpers, helper);
       }
     }
-    return node;
+    return n;
   }
-  export function removeEmitHelper(node: Node, helper: EmitHelper): boolean {
-    const emitNode = node.emitNode;
+  export function removeEmitHelper(n: Node, helper: EmitHelper): boolean {
+    const emitNode = n.emitNode;
     if (emitNode) {
       const helpers = emitNode.helpers;
       if (helpers) return orderedRemoveItem(helpers, helper);
     }
     return false;
   }
-  export function getEmitHelpers(node: Node): EmitHelper[] | undefined {
-    const emitNode = node.emitNode;
+  export function getEmitHelpers(n: Node): EmitHelper[] | undefined {
+    const emitNode = n.emitNode;
     return emitNode && emitNode.helpers;
   }
   export function moveEmitHelpers(source: Node, target: Node, predicate: (helper: EmitHelper) => boolean) {
@@ -4055,8 +4074,8 @@ export namespace emit {
     if (startsOnNewLine !== undefined) destEmitNode.startsOnNewLine = startsOnNewLine;
     return destEmitNode;
   }
-  export function getExternalHelpersModuleName(node: SourceFile) {
-    const parseNode = Node.get.originalOf(node, isSourceFile);
+  export function getExternalHelpersModuleName(n: SourceFile) {
+    const parseNode = Node.get.originalOf(n, isSourceFile);
     const emitNode = parseNode && parseNode.emitNode;
     return emitNode && emitNode.externalHelpersModuleName;
   }
@@ -4136,9 +4155,9 @@ export namespace fixme {
         return new ArrowFunction(declaration.modifiers, declaration.typeParameters, declaration.parameters, declaration.type, declaration.equalsGreaterThanToken, body);
     }
   }
-  export function appendJSDocToContainer(node: JSDocContainer, jsdoc: JSDoc) {
-    node.jsDoc = append(node.jsDoc, jsdoc);
-    return node;
+  export function appendJSDocToContainer(n: JSDocContainer, jsdoc: JSDoc) {
+    n.jsDoc = append(n.jsDoc, jsdoc);
+    return n;
   }
   export function createInputFiles(javascriptText: string, declarationText: string): InputFiles;
   export function createInputFiles(
@@ -4256,10 +4275,10 @@ export namespace fixme {
   }
   let SourceMapSource: new (fileName: string, text: string, skipTrivia?: (pos: number) => number) => SourceMapSource;
   export function createSourceMapSource(fileName: string, text: string, skipTrivia?: (pos: number) => number): SourceMapSource {
-    return new (SourceMapSource || (SourceMapSource = Node.SourceMapSourceObj))(fileName, text, syntax.skipTrivia);
+    return new (SourceMapSource || (SourceMapSource = Node.SourceMapSourceObj))(fileName, text, qy.skipTrivia);
   }
   export function getUnscopedHelperName(name: string) {
-    return setEmitFlags(new Identifier(name), EmitFlags.HelperName | EmitFlags.AdviseOnEmitNode);
+    return setEmitFlags(new Identifier(name), qc.EmitFlags.HelperName | qc.EmitFlags.AdviseOnEmitNode);
   }
   export function inlineExpressions(expressions: readonly qc.Expression[]) {
     return expressions.length > 10 ? new CommaListExpression(expressions) : reduceLeft(expressions, createComma)!;
@@ -4297,7 +4316,7 @@ export namespace fixme {
     hasImportDefault?: boolean
   ) {
     if (compilerOptions.importHelpers && isEffectiveExternalModule(sourceFile, compilerOptions)) {
-      let namedBindings: NamedImportBindings | undefined;
+      let namedBindings: qc.NamedImportBindings | undefined;
       const moduleKind = getEmitModuleKind(compilerOptions);
       if (moduleKind >= ModuleKind.ES2015 && moduleKind <= ModuleKind.ESNext) {
         const helpers = getEmitHelpers(sourceFile);
@@ -4331,7 +4350,7 @@ export namespace fixme {
       }
       if (namedBindings) {
         const externalHelpersImportDeclaration = createImportDeclaration(undefined, undefined, createImportClause(undefined, namedBindings), createLiteral(externalHelpersModuleNameText));
-        addEmitFlags(externalHelpersImportDeclaration, EmitFlags.NeverApplyImportHelper);
+        addEmitFlags(externalHelpersImportDeclaration, qc.EmitFlags.NeverApplyImportHelper);
         return externalHelpersImportDeclaration;
       }
     }
@@ -4392,4 +4411,25 @@ export namespace fixme {
     if (!file.isDeclarationFile && (options.out || options.outFile)) return createLiteral(getExternalModuleNameFromPath(host, file.fileName));
     return;
   }
+}
+
+export function asToken<T extends Syntax>(t: T | Token<T>): Token<T> {
+  return typeof t === 'number' ? new Token(t) : t;
+}
+export function asName<T extends Identifier | BindingName | PropertyName | EntityName | ThisTypeNode | undefined>(n: string | T): T | Identifier {
+  return isString(n) ? new Identifier(n) : n;
+}
+export function asExpression<T extends Expression | undefined>(e: string | number | boolean | T): T | StringLiteral | NumericLiteral | BooleanLiteral {
+  return typeof e === 'string' ? StringLiteral.create(e) : typeof e === 'number' ? NumericLiteral.create('' + e) : typeof e === 'boolean' ? (e ? createTrue() : createFalse()) : e;
+}
+export function asEmbeddedStatement<T extends Node>(s: T): T | EmptyStatement;
+export function asEmbeddedStatement<T extends Node>(s?: T): T | EmptyStatement | undefined;
+export function asEmbeddedStatement<T extends Node>(s?: T): T | EmptyStatement | undefined {
+  return s && Node.is.kind(NotEmittedStatement, s) ? setRange(setOriginalNode(createEmptyStatement(), s), s) : s;
+}
+
+export function skipParentheses(n: Expression): Expression;
+export function skipParentheses(n: Node): Node;
+export function skipParentheses(n: Node): Node {
+  return skipOuterExpressions(n, OuterExpressionKinds.Parentheses);
 }

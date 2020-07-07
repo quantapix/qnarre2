@@ -873,7 +873,7 @@ export function transformDeclarations(context: TransformationContext) {
           const modifiers = createModifiersFromModifierFlags((getEffectiveModifierFlags(clean) & ~ModifierFlags.ExportDefault) | ModifierFlags.Ambient);
           const cleanDeclaration = clean.update(undefined, modifiers, undefined, clean.name, clean.typeParameters, clean.parameters, clean.type, undefined);
           const namespaceDeclaration = namespaceDecl.update(undefined, modifiers, namespaceDecl.name, namespaceDecl.body);
-          const exportDefaultDeclaration = createExportAssignment(undefined, false, namespaceDecl.name);
+          const exportDefaultDeclaration = new qc.ExportAssignment(undefined, false, namespaceDecl.name);
           if (Node.is.kind(SourceFile, input.parent)) resultHasExternalModuleIndicator = true;
           resultHasScopeMarker = true;
           return [cleanDeclaration, namespaceDeclaration, exportDefaultDeclaration];
@@ -986,8 +986,7 @@ export function transformDeclarations(context: TransformationContext) {
       }
       case Syntax.EnumDeclaration: {
         return cleanup(
-          updateEnumDeclaration(
-            input,
+          input.update(
             undefined,
             new Nodes(ensureModifiers(input)),
             input.name,
