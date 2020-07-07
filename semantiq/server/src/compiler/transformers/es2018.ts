@@ -407,7 +407,7 @@ export function transformES2018(context: TransformationContext) {
         createTry(
           new Block([
             setEmitFlags(
-              createIf(
+              new qc.IfStatement(
                 createLogicalAnd(createLogicalAnd(result, qs.PrefixUnaryExpression.logicalNot(getDone)), createAssignment(returnMethod, createPropertyAccess(iterator, 'return'))),
                 new qc.ExpressionStatement(createDownlevelAwait(callReturn))
               ),
@@ -415,7 +415,7 @@ export function transformES2018(context: TransformationContext) {
             ),
           ]),
           undefined,
-          setEmitFlags(new Block([setEmitFlags(createIf(errorRecord, createThrow(createPropertyAccess(errorRecord, 'error'))), EmitFlags.SingleLine)]), EmitFlags.SingleLine)
+          setEmitFlags(new Block([setEmitFlags(new qc.IfStatement(errorRecord, createThrow(createPropertyAccess(errorRecord, 'error'))), EmitFlags.SingleLine)]), EmitFlags.SingleLine)
         ),
       ])
     );

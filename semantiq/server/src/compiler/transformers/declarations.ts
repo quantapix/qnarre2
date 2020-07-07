@@ -540,8 +540,7 @@ export function transformDeclarations(context: TransformationContext) {
     if (!decl.importClause.namedBindings) {
       return (
         visibleDefaultBinding &&
-        updateImportDeclaration(
-          decl,
+        decl.update(
           undefined,
           decl.modifiers,
           updateImportClause(decl.importClause, visibleDefaultBinding, undefined, decl.importClause.isTypeOnly),
@@ -552,8 +551,7 @@ export function transformDeclarations(context: TransformationContext) {
     if (decl.importClause.namedBindings.kind === Syntax.NamespaceImport) {
       const namedBindings = resolver.isDeclarationVisible(decl.importClause.namedBindings) ? decl.importClause.namedBindings : undefined;
       return visibleDefaultBinding || namedBindings
-        ? updateImportDeclaration(
-            decl,
+        ? decl.update(
             undefined,
             decl.modifiers,
             updateImportClause(decl.importClause, visibleDefaultBinding, namedBindings, decl.importClause.isTypeOnly),
@@ -563,8 +561,7 @@ export function transformDeclarations(context: TransformationContext) {
     }
     const bindingList = mapDefined(decl.importClause.namedBindings.elements, (b) => (resolver.isDeclarationVisible(b) ? b : undefined));
     if ((bindingList && bindingList.length) || visibleDefaultBinding) {
-      return updateImportDeclaration(
-        decl,
+      return decl.update(
         undefined,
         decl.modifiers,
         updateImportClause(
@@ -817,8 +814,7 @@ export function transformDeclarations(context: TransformationContext) {
     switch (input.kind) {
       case Syntax.TypeAliasDeclaration:
         return cleanup(
-          updateTypeAliasDeclaration(
-            input,
+          input.update(
             undefined,
             ensureModifiers(input),
             input.name,
@@ -828,8 +824,7 @@ export function transformDeclarations(context: TransformationContext) {
         );
       case Syntax.InterfaceDeclaration: {
         return cleanup(
-          updateInterfaceDeclaration(
-            input,
+          input.update(
             undefined,
             ensureModifiers(input),
             input.name,

@@ -879,13 +879,13 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const heritageClauses = !length(baseTypes)
         ? undefined
         : [
-            createHeritageClause(
+            new qc.HeritageClause(
               Syntax.ExtendsKeyword,
               mapDefined(baseTypes, (b) => trySerializeAsTypeReference(b))
             ),
           ];
       addResult(
-        createInterfaceDeclaration(undefined, undefined, this.getInternalSymbolName(symbolName), typeParamDecls, heritageClauses, [
+        new qc.InterfaceDeclaration(undefined, undefined, this.getInternalSymbolName(symbolName), typeParamDecls, heritageClauses, [
           ...indexSignatures,
           ...constructSignatures,
           ...callSignatures,
@@ -916,7 +916,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           new qc.ExportDeclaration(
             undefined,
             undefined,
-            createNamedExports(
+            new qc.NamedExports(
               mapDefined(
                 filter(mergedMembers, (n) => n.escName !== InternalSymbolName.ExportEquals),
                 (s) => {
@@ -975,7 +975,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
             textRange
           );
           addResult(statement, name !== localName ? modifierFlags & ~ModifierFlags.Export : modifierFlags);
-          if (name !== localName && !isPrivate) addResult(new qc.ExportDeclaration(undefined, undefined, createNamedExports([new qc.ExportSpecifier(name, localName)])), ModifierFlags.None);
+          if (name !== localName && !isPrivate) addResult(new qc.ExportDeclaration(undefined, undefined, new qc.NamedExports([new qc.ExportSpecifier(name, localName)])), ModifierFlags.None);
         }
       }
     }
@@ -992,7 +992,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         case Syntax.ImportEqualsDeclaration:
           const isLocalImport = !(target.flags & SymbolFlags.ValueModule);
           addResult(
-            createImportEqualsDeclaration(
+            new qc.ImportEqualsDeclaration(
               undefined,
               undefined,
               new Identifier(localName),
@@ -1002,29 +1002,37 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           );
           break;
         case Syntax.NamespaceExportDeclaration:
-          addResult(createNamespaceExportDeclaration(idText((node as NamespaceExportDeclaration).name)), ModifierFlags.None);
+          addResult(new qc.NamespaceExportDeclaration(idText((node as NamespaceExportDeclaration).name)), ModifierFlags.None);
           break;
         case Syntax.ImportClause:
           addResult(
-            createImportDeclaration(undefined, undefined, createImportClause(new Identifier(localName), undefined), createLiteral(getSpecifierForModuleSymbol(target.parent || target, context))),
+            new qc.ImportDeclaration(undefined, undefined, new qc.ImportClause(new Identifier(localName), undefined), createLiteral(getSpecifierForModuleSymbol(target.parent || target, context))),
             ModifierFlags.None
           );
           break;
         case Syntax.NamespaceImport:
           addResult(
-            createImportDeclaration(undefined, undefined, createImportClause(undefined, createNamespaceImport(new Identifier(localName))), createLiteral(getSpecifierForModuleSymbol(target, context))),
+            new qc.ImportDeclaration(
+              undefined,
+              undefined,
+              new qc.ImportClause(undefined, new qc.NamespaceImport(new Identifier(localName))),
+              createLiteral(getSpecifierForModuleSymbol(target, context))
+            ),
             ModifierFlags.None
           );
           break;
         case Syntax.NamespaceExport:
-          addResult(new qc.ExportDeclaration(undefined, undefined, createNamespaceExport(new Identifier(localName)), createLiteral(getSpecifierForModuleSymbol(target, context))), ModifierFlags.None);
+          addResult(new qc.ExportDeclaration(undefined, undefined, new qc.NamespaceExport(new Identifier(localName)), createLiteral(getSpecifierForModuleSymbol(target, context))), ModifierFlags.None);
           break;
         case Syntax.ImportSpecifier:
           addResult(
-            createImportDeclaration(
+            new qc.ImportDeclaration(
               undefined,
               undefined,
-              createImportClause(undefined, createNamedImports([createImportSpecifier(localName !== verbatimTargetName ? new Identifier(verbatimTargetName) : undefined, new Identifier(localName))])),
+              new qc.ImportClause(
+                undefined,
+                new qc.NamedImports([new qc.ImportSpecifier(localName !== verbatimTargetName ? new Identifier(verbatimTargetName) : undefined, new Identifier(localName))])
+              ),
               createLiteral(getSpecifierForModuleSymbol(target.parent || target, context))
             ),
             ModifierFlags.None
@@ -1076,7 +1084,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
             serializeExportSpecifier(name, getInternalSymbolName(target, target.name));
           } else {
             const varName = getUnusedName(name, symbol);
-            addResult(createImportEqualsDeclaration(undefined, undefined, new Identifier(varName), symbolToName(target, context, SymbolFlags.All, false)), ModifierFlags.None);
+            addResult(new qc.ImportEqualsDeclaration(undefined, undefined, new Identifier(varName), symbolToName(target, context, SymbolFlags.All, false)), ModifierFlags.None);
             serializeExportSpecifier(name, varName);
           }
         }

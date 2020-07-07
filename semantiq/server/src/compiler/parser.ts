@@ -668,7 +668,7 @@ function create() {
       n.type = r;
       return finishNode(n);
     }
-    createJSDocComment(): JSDoc {
+    new qc.JSDoc(): JSDoc {
       const n = create.node(Syntax.JSDocComment, start);
       n.tags = tags && create.nodeArray(tags, tagsPos, tagsEnd);
       n.comment = comments.length ? comments.join('') : undefined;
@@ -3647,7 +3647,7 @@ function create() {
         }
         this.removeLeadingNewlines(this.comments);
         this.removeTrailingWhitespace(this.comments);
-        return createJSDocComment();
+        return new qc.JSDoc();
       });
     }
     expected(t: JSDocSyntax): boolean {

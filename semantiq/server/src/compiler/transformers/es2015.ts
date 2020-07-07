@@ -599,7 +599,7 @@ export function transformES2015(context: TransformationContext) {
   }
   function insertDefaultValueAssignmentForInitializer(statements: Statement[], parameter: ParameterDeclaration, name: Identifier, initializer: Expression): void {
     initializer = visitNode(initializer, visitor, isExpression);
-    const statement = createIf(
+    const statement = new qc.IfStatement(
       createTypeCheck(getSynthesizedClone(name), 'undefined'),
       setEmitFlags(
         setRange(
@@ -1251,7 +1251,7 @@ function convertForOfStatementForIterable(node: ForOfStatement, outermostLabeled
       createTry(
         new Block([
           setEmitFlags(
-            createIf(
+            new qc.IfStatement(
               createLogicalAnd(
                 createLogicalAnd(result, qs.PrefixUnaryExpression.logicalNot(createPropertyAccess(result, 'done'))),
                 createAssignment(returnMethod, createPropertyAccess(iterator, 'return'))
@@ -1262,7 +1262,7 @@ function convertForOfStatementForIterable(node: ForOfStatement, outermostLabeled
           ),
         ]),
         undefined,
-        setEmitFlags(new Block([setEmitFlags(createIf(errorRecord, createThrow(createPropertyAccess(errorRecord, 'error'))), EmitFlags.SingleLine)]), EmitFlags.SingleLine)
+        setEmitFlags(new Block([setEmitFlags(new qc.IfStatement(errorRecord, createThrow(createPropertyAccess(errorRecord, 'error'))), EmitFlags.SingleLine)]), EmitFlags.SingleLine)
       ),
     ])
   );
@@ -1573,10 +1573,16 @@ function createFunctionForBodyOfIterationStatement(
   if (shouldConvertConditionOfForStatement(node) || shouldConvertIncrementorOfForStatement(node)) {
     currentState.conditionVariable = createUniqueName('inc');
     statements.push(
-      createIf(currentState.conditionVariable, createStatement(visitNode(node.incrementor, visitor, isExpression)), createStatement(createAssignment(currentState.conditionVariable, createTrue())))
+      new qc.IfStatement(
+        currentState.conditionVariable,
+        createStatement(visitNode(node.incrementor, visitor, isExpression)),
+        createStatement(createAssignment(currentState.conditionVariable, createTrue()))
+      )
     );
     if (shouldConvertConditionOfForStatement(node)) {
-      statements.push(createIf(new qs.PrefixUnaryExpression(Syntax.ExclamationToken, visitNode(node.condition, visitor, isExpression)), visitNode(new qc.BreakStatement(), visitor, isStatement)));
+      statements.push(
+        new qc.IfStatement(new qs.PrefixUnaryExpression(Syntax.ExclamationToken, visitNode(node.condition, visitor, isExpression)), visitNode(new qc.BreakStatement(), visitor, isStatement))
+      );
     }
   }
   if (Node.is.kind(Block, statement)) {
@@ -1653,10 +1659,10 @@ function generateCallToConvertedLoop(loopFunctionExpressionName: Identifier, sta
       } else {
         returnStatement = createReturn(createPropertyAccess(loopResultName, 'value'));
       }
-      statements.push(createIf(new BinaryExpression(new TypeOfExpression(loopResultName), Syntax.Equals3Token, createLiteral('object')), returnStatement));
+      statements.push(new qc.IfStatement(new BinaryExpression(new TypeOfExpression(loopResultName), Syntax.Equals3Token, createLiteral('object')), returnStatement));
     }
     if (state.nonLocalJumps! & Jump.Break) {
-      statements.push(createIf(new BinaryExpression(loopResultName, Syntax.Equals3Token, createLiteral('break')), new qc.BreakStatement()));
+      statements.push(new qc.IfStatement(new BinaryExpression(loopResultName, Syntax.Equals3Token, createLiteral('break')), new qc.BreakStatement()));
     }
     if (state.labeledNonLocalBreaks || state.labeledNonLocalContinues) {
       const caseClauses: CaseClause[] = [];
@@ -1932,7 +1938,7 @@ function visitCallExpressionWithPotentialCapturedThisAssignment(node: CallExpres
 function visitNewExpression(node: NewExpression): LeftHandSideExpression {
   if (some(node.arguments, isSpreadElement)) {
     const { target, thisArg } = createCallBinding(createPropertyAccess(node.expression, 'bind'), hoistVariableDeclaration);
-    return createNew(
+    return new qc.NewExpression(
       createFunctionApply(visitNode(target, visitor, isExpression), thisArg, transformAndSpreadElements(new Nodes([qs.VoidExpression.zero(), ...node.arguments!]), false)),
       undefined,
       []

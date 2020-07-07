@@ -1492,7 +1492,7 @@ export function createProgram(
     let ambientModules: string[] | undefined;
     if (options.importHelpers && (options.isolatedModules || qp_isExternalModuleFile) && !file.isDeclarationFile) {
       const externalHelpersModuleReference = createLiteral(externalHelpersModuleNameText);
-      const importDecl = createImportDeclaration(undefined, undefined, externalHelpersModuleReference);
+      const importDecl = new qc.ImportDeclaration(undefined, undefined, externalHelpersModuleReference);
       addEmitFlags(importDecl, EmitFlags.NeverApplyImportHelper);
       externalHelpersModuleReference.parent = importDecl;
       importDecl.parent = file;

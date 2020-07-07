@@ -145,21 +145,21 @@ export function transformModule(context: TransformationContext) {
       setRange(
         new Block(
           [
-            createIf(
+            new qc.IfStatement(
               createLogicalAnd(createTypeCheck(new Identifier('module'), 'object'), createTypeCheck(createPropertyAccess(new Identifier('module'), 'exports'), 'object')),
               new Block([
                 createVariableStatement(undefined, [
                   createVariableDeclaration('v', undefined, new qs.CallExpression(new Identifier('factory'), undefined, [new Identifier('require'), new Identifier('exports')])),
                 ]),
                 setEmitFlags(
-                  createIf(
+                  new qc.IfStatement(
                     createStrictInequality(new Identifier('v'), new Identifier('undefined')),
                     new qc.ExpressionStatement(createAssignment(createPropertyAccess(new Identifier('module'), 'exports'), new Identifier('v')))
                   ),
                   EmitFlags.SingleLine
                 ),
               ]),
-              createIf(
+              new qc.IfStatement(
                 createLogicalAnd(createTypeCheck(new Identifier('define'), 'function'), createPropertyAccess(new Identifier('define'), 'amd')),
                 new Block([
                   new qc.ExpressionStatement(
@@ -398,7 +398,7 @@ export function transformModule(context: TransformationContext) {
         setEmitFlags(func, EmitFlags.CapturesThis);
       }
     }
-    const promise = createNew(new Identifier('Promise'), undefined, [func]);
+    const promise = new qc.NewExpression(new Identifier('Promise'), undefined, [func]);
     if (compilerOptions.esModuleInterop) {
       context.requestEmitHelper(importStarHelper);
       return new qs.CallExpression(createPropertyAccess(promise, new Identifier('then')), undefined, [getUnscopedHelperName('__importStar')]);
@@ -1094,9 +1094,9 @@ export function transformECMAScriptModule(context: TransformationContext) {
     if (!node.exportClause || !Node.is.kind(NamespaceExport, node.exportClause) || !node.moduleSpecifier) return node;
     const oldIdentifier = node.exportClause.name;
     const synthName = getGeneratedNameForNode(oldIdentifier);
-    const importDecl = createImportDeclaration(undefined, undefined, createNamespaceImport(synthName), node.moduleSpecifier);
+    const importDecl = new qc.ImportDeclaration(undefined, undefined, new qc.NamespaceImport(synthName), node.moduleSpecifier);
     setOriginalNode(importDecl, node.exportClause);
-    const exportDecl = new qc.ExportDeclaration(undefined, undefined, createNamedExports([new qc.ExportSpecifier(synthName, oldIdentifier)]));
+    const exportDecl = new qc.ExportDeclaration(undefined, undefined, new qc.NamedExports([new qc.ExportSpecifier(synthName, oldIdentifier)]));
     setOriginalNode(exportDecl, node);
     return [importDecl, exportDecl];
   }
@@ -1323,7 +1323,10 @@ export function transformSystemModule(context: TransformationContext) {
             createVariableDeclarationList([createVariableDeclaration(n, undefined)]),
             m,
             new Block([
-              setEmitFlags(createIf(condition, new qc.ExpressionStatement(createAssignment(new qs.ElementAccessExpression(exports, n), new qs.ElementAccessExpression(m, n)))), EmitFlags.SingleLine),
+              setEmitFlags(
+                new qc.IfStatement(condition, new qc.ExpressionStatement(createAssignment(new qs.ElementAccessExpression(exports, n), new qs.ElementAccessExpression(m, n)))),
+                EmitFlags.SingleLine
+              ),
             ])
           ),
           new qc.ExpressionStatement(new qs.CallExpression(exportFunction, undefined, [exports])),

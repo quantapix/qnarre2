@@ -1022,10 +1022,10 @@ export class ExportDeclaration extends qc.DeclarationStatement implements qc.Exp
     this.moduleSpecifier = m;
   }
   createExternalModuleExport(exportName: Identifier) {
-    return new ExportDeclaration(undefined, undefined, createNamedExports([new qc.ExportSpecifier(undefined, exportName)]));
+    return new ExportDeclaration(undefined, undefined, new qc.NamedExports([new qc.ExportSpecifier(undefined, exportName)]));
   }
   createEmptyExports() {
-    return new ExportDeclaration(undefined, undefined, createNamedExports([]), undefined);
+    return new ExportDeclaration(undefined, undefined, new qc.NamedExports([]), undefined);
   }
   update(ds?: readonly Decorator[], ms?: readonly Modifier[], e?: qc.NamedExportBindings, m?: qc.Expression, t = false) {
     return this.decorators !== ds || this.modifiers !== ms || this.isTypeOnly !== t || this.exportClause !== e || this.moduleSpecifier !== m
@@ -1219,26 +1219,28 @@ export class FunctionExpression extends qc.FunctionLikeDeclarationBase implement
     t: qc.TypeNode | undefined,
     b: Block
   ) {
-    return this.name !== name || this.modifiers !== ms || this.asteriskToken !== a || this.typeParameters !== ts || this.parameters !== parameters || this.type !== type || this.body !== body
-      ? new new FunctionExpression(ms, a, name, ts, ps, t, b).updateFrom(this)
+    return this.name !== name || this.modifiers !== ms || this.asteriskToken !== a || this.typeParameters !== ts || this.parameters !== ps || this.type !== t || this.body !== b
+      ? new FunctionExpression(ms, a, name, ts, ps, t, b).updateFrom(this)
       : this;
   }
 }
 FunctionExpression.prototype.kind = FunctionExpression.kind;
-qb.addMixins(FunctionExpression, [PrimaryExpression, JSDocContainer]);
+qb.addMixins(FunctionExpression, [qc.PrimaryExpression, qc.JSDocContainer]);
 export class FunctionTypeNode extends qc.FunctionOrConstructorTypeNodeBase implements qc.FunctionTypeNode {
   static readonly kind = Syntax.FunctionType;
+  jsDocCache?: readonly qc.JSDocTag[];
   constructor(ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t?: qc.TypeNode) {
-    return SignatureDeclaration.create(Syntax.FunctionType, ts, ps, t) as FunctionTypeNode;
+    super(true, Syntax.FunctionType, ts, ps, t);
   }
   update(ts: Nodes<TypeParameterDeclaration> | undefined, ps: Nodes<ParameterDeclaration>, t?: qc.TypeNode) {
-    return SignatureDeclaration.update(n, ts, ps, t);
+    return super.update(ts, ps, t);
   }
+  _typeNodeBrand: any;
 }
 FunctionTypeNode.prototype.kind = FunctionTypeNode.kind;
-export class GetAccessorDeclaration extends Node implements qc.GetAccessorDeclaration {
+export class GetAccessorDeclaration extends qc.FunctionOrConstructorTypeNodeBase implements qc.GetAccessorDeclaration {
   static readonly kind = Syntax.GetAccessor;
-  parent: ClassLikeDeclaration | ObjectLiteralExpression;
+  parent: qc.ClassLikeDeclaration | ObjectLiteralExpression;
   name: qc.PropertyName;
   body?: qc.FunctionBody;
   constructor(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: string | qc.PropertyName, ps: readonly ParameterDeclaration[], t?: qc.TypeNode, b?: Block) {
@@ -1256,26 +1258,28 @@ export class GetAccessorDeclaration extends Node implements qc.GetAccessorDeclar
       ? new GetAccessorDeclaration(ds, ms, p, ps, t, b).updateFrom(this)
       : this;
   }
-  orSetKind(n: Node): n is AccessorDeclaration {
+  orSetKind(): this is qc.AccessorDeclaration {
     return this.kind === Syntax.SetAccessor || this.kind === Syntax.GetAccessor;
   }
 }
 GetAccessorDeclaration.prototype.kind = GetAccessorDeclaration.kind;
+qb.addMixins(GetAccessorDeclaration, [qc.ClassElement, qc.ObjectLiteralElement, qc.JSDocContainer]);
 export class HeritageClause extends Node implements qc.HeritageClause {
   static readonly kind = Syntax.HeritageClause;
   parent: InterfaceDeclaration | qc.ClassLikeDeclaration;
   token: Syntax.ExtendsKeyword | Syntax.ImplementsKeyword;
-  types: Nodes<ExpressionWithTypeArguments>;
-  createHeritageClause(token: HeritageClause['token'], types: readonly ExpressionWithTypeArguments[]) {
+  types: Nodes<qc.ExpressionWithTypeArguments>;
+  constructor(t: HeritageClause['token'], ts: readonly ExpressionWithTypeArguments[]) {
     super(true);
-    this.token = token;
-    this.types = new Nodes(types);
+    this.token = t;
+    this.types = new Nodes(ts);
   }
-  update(types: readonly ExpressionWithTypeArguments[]) {
-    return this.types !== types ? new HeritageClause(this.token, types).updateFrom(this) : this;
+  update(ts: readonly ExpressionWithTypeArguments[]) {
+    return this.types !== ts ? new HeritageClause(this.token, ts).updateFrom(this) : this;
   }
 }
 HeritageClause.prototype.kind = HeritageClause.kind;
+let nextAutoGenerateId = 0;
 export class Identifier extends qc.TokenOrIdentifier implements qc.Identifier {
   static readonly kind = Syntax.Identifier;
   escapedText!: qb.__String;
@@ -1297,106 +1301,113 @@ export class Identifier extends qc.TokenOrIdentifier implements qc.Identifier {
     }
   }
   get text(): string {
-    return idText(this);
+    return qc.idText(this);
   }
-  isInternalName(this: Identifier) {
+  isInternalName() {
     return (Node.get.emitFlags(this) & qc.EmitFlags.InternalName) !== 0;
   }
-  isLocalName(this: Identifier) {
+  isLocalName() {
     return (Node.get.emitFlags(this) & qc.EmitFlags.LocalName) !== 0;
   }
-  isExportName(this: Identifier) {
+  isExportName() {
     return (Node.get.emitFlags(this) & qc.EmitFlags.ExportName) !== 0;
   }
-  update(typeArgs?: Nodes<qc.TypeNode | TypeParameterDeclaration> | undefined): Identifier {
-    return this.typeArguments !== typeArgs ? new Identifier(this.text, typeArgs).updateFrom(this) : this;
+  update(ts?: Nodes<qc.TypeNode | TypeParameterDeclaration>) {
+    return this.typeArguments !== ts ? new Identifier(this.text, ts).updateFrom(this) : this;
   }
-  static createTempVariable(recordTempVariable: ((this: Identifier) => void) | undefined): Identifier;
-  static createTempVariable(recordTempVariable: ((this: Identifier) => void) | undefined, reservedInNestedScopes: boolean): qc.GeneratedIdentifier;
-  static createTempVariable(recordTempVariable: ((this: Identifier) => void) | undefined, reservedInNestedScopes?: boolean): qc.GeneratedIdentifier {
-    const name = new Identifier('') as qc.GeneratedIdentifier;
-    name.autoGenerateFlags = qc.GeneratedIdentifierFlags.Auto;
-    name.autoGenerateId = nextAutoGenerateId;
+  static createTempVariable(record?: (i: Identifier) => void): Identifier;
+  static createTempVariable(record: ((i: Identifier) => void) | undefined, reserved: boolean): GeneratedIdentifier;
+  static createTempVariable(record?: (i: Identifier) => void, reserved?: boolean): GeneratedIdentifier {
+    const n = new Identifier('') as GeneratedIdentifier;
+    n.autoGenerateFlags = qc.GeneratedIdentifierFlags.Auto;
+    n.autoGenerateId = nextAutoGenerateId;
     nextAutoGenerateId++;
-    if (recordTempVariable) recordTempVariable(name);
-    if (reservedInNestedScopes) name.autoGenerateFlags |= qc.GeneratedIdentifierFlags.ReservedInNestedScopes;
-    return name;
+    if (record) record(n);
+    if (reserved) n.autoGenerateFlags |= qc.GeneratedIdentifierFlags.ReservedInNestedScopes;
+    return n;
   }
   static createLoopVariable(): Identifier {
-    const name = new Identifier('');
-    name.autoGenerateFlags = qc.GeneratedIdentifierFlags.Loop;
-    name.autoGenerateId = nextAutoGenerateId;
+    const n = new Identifier('');
+    n.autoGenerateFlags = qc.GeneratedIdentifierFlags.Loop;
+    n.autoGenerateId = nextAutoGenerateId;
     nextAutoGenerateId++;
-    return name;
+    return n;
   }
-  static createUniqueName(text: string): Identifier {
-    const name = new Identifier(text);
-    name.autoGenerateFlags = qc.GeneratedIdentifierFlags.Unique;
-    name.autoGenerateId = nextAutoGenerateId;
+  static createUniqueName(t: string): Identifier {
+    const n = new Identifier(t);
+    n.autoGenerateFlags = qc.GeneratedIdentifierFlags.Unique;
+    n.autoGenerateId = nextAutoGenerateId;
     nextAutoGenerateId++;
-    return name;
+    return n;
   }
-  static createOptimisticUniqueName(text: string): qc.GeneratedIdentifier;
-  static createOptimisticUniqueName(text: string): Identifier;
-  static createOptimisticUniqueName(text: string): qc.GeneratedIdentifier {
-    const name = new Identifier(text) as qc.GeneratedIdentifier;
-    name.autoGenerateFlags = qc.GeneratedIdentifierFlags.Unique | qc.GeneratedIdentifierFlags.Optimistic;
-    name.autoGenerateId = nextAutoGenerateId;
+  static createOptimisticUniqueName(t: string): Identifier;
+  static createOptimisticUniqueName(t: string): GeneratedIdentifier;
+  static createOptimisticUniqueName(t: string): GeneratedIdentifier {
+    const n = new Identifier(t) as GeneratedIdentifier;
+    n.autoGenerateFlags = qc.GeneratedIdentifierFlags.Unique | qc.GeneratedIdentifierFlags.Optimistic;
+    n.autoGenerateId = nextAutoGenerateId;
     nextAutoGenerateId++;
-    return name;
+    return n;
   }
-  static createFileLevelUniqueName(text: string): Identifier {
-    const name = createOptimisticUniqueName(text);
-    name.autoGenerateFlags |= qc.GeneratedIdentifierFlags.FileLevel;
-    return name;
+  static createFileLevelUniqueName(t: string): Identifier {
+    const n = this.createOptimisticUniqueName(t);
+    n.autoGenerateFlags |= qc.GeneratedIdentifierFlags.FileLevel;
+    return n;
   }
-  static getGeneratedNameForNode(this: Node | undefined): Identifier;
-  static getGeneratedNameForNode(this: Node | undefined, flags: qc.GeneratedIdentifierFlags): Identifier;
-  static getGeneratedNameForNode(this: Node | undefined, flags?: qc.GeneratedIdentifierFlags): Identifier {
-    const name = new Identifier(this && Node.is.kind(Identifier, this) ? idText(this) : '');
-    name.autoGenerateFlags = qc.GeneratedIdentifierFlags.Node | flags!;
-    name.autoGenerateId = nextAutoGenerateId;
-    name.original = this;
+  static getGeneratedNameForNode(o?: Node): Identifier;
+  static getGeneratedNameForNode(o: Node | undefined, f: qc.GeneratedIdentifierFlags): Identifier;
+  static getGeneratedNameForNode(o?: Node, f?: qc.GeneratedIdentifierFlags): Identifier {
+    const n = new Identifier(o && Node.is.kind(Identifier, o) ? qc.idText(o) : '');
+    n.autoGenerateFlags = qc.GeneratedIdentifierFlags.Node | f!;
+    n.autoGenerateId = nextAutoGenerateId;
+    n.original = o;
     nextAutoGenerateId++;
-    return name;
+    return n;
   }
-  static getNamespaceMemberName(ns: Identifier, name: Identifier, allowComments?: boolean, allowSourceMaps?: boolean): PropertyAccessExpression {
-    const qualifiedName = createPropertyAccess(ns, qb.isSynthesized(name) ? name : getSynthesizedClone(name));
-    setRange(qualifiedName, name);
-    let emitFlags: EmitFlags = 0;
-    if (!allowSourceMaps) emitFlags |= qc.EmitFlags.NoSourceMap;
-    if (!allowComments) emitFlags |= qc.EmitFlags.NoComments;
-    if (emitFlags) setEmitFlags(qualifiedName, emitFlags);
-    return qualifiedName;
+  static getNamespaceMemberName(ns: Identifier, i: Identifier, comments?: boolean, sourceMaps?: boolean): PropertyAccessExpression {
+    const n = createPropertyAccess(ns, qb.isSynthesized(i) ? i : getSynthesizedClone(i));
+    setRange(n, i);
+    let f: qc.EmitFlags = 0;
+    if (!sourceMaps) f |= qc.EmitFlags.NoSourceMap;
+    if (!comments) f |= qc.EmitFlags.NoComments;
+    if (f) setEmitFlags(n, f);
+    return n;
   }
-  static getLocalNameForExternalImport(this: ImportDeclaration | ExportDeclaration | ImportEqualsDeclaration, sourceFile: SourceFile): Identifier | undefined {
-    const namespaceDeclaration = getNamespaceDeclarationNode(this);
-    if (namespaceDeclaration && !isDefaultImport(this)) {
-      const name = namespaceDeclaration.name;
-      return Node.is.generatedIdentifier(name) ? name : new Identifier(getSourceTextOfNodeFromSourceFile(sourceFile, name) || idText(name));
+  static getLocalNameForExternalImport(d: ImportDeclaration | ExportDeclaration | ImportEqualsDeclaration, sourceFile: SourceFile): Identifier | undefined {
+    const d2 = getNamespaceDeclarationNode(d);
+    if (d2 && !isDefaultImport(d)) {
+      const n = d2.name;
+      return Node.is.generatedIdentifier(n) ? n : new Identifier(getSourceTextOfNodeFromSourceFile(sourceFile, n) || qc.idText(n));
     }
-    if (this.kind === Syntax.ImportDeclaration && this.importClause) return getGeneratedNameForNode(this);
-    if (this.kind === Syntax.ExportDeclaration && this.moduleSpecifier) return getGeneratedNameForNode(this);
+    if (d.kind === Syntax.ImportDeclaration && d.importClause) return getGeneratedNameForNode(d);
+    if (d.kind === Syntax.ExportDeclaration && d.moduleSpecifier) return getGeneratedNameForNode(d);
     return;
   }
 }
 Identifier.prototype.kind = Identifier.kind;
 qb.addMixins(Identifier, [qc.Declaration, qc.PrimaryExpression]);
+export class GeneratedIdentifier extends Identifier implements qc.GeneratedIdentifier {
+  _primaryExpressionBrand: any;
+  _memberExpressionBrand: any;
+  _leftHandSideExpressionBrand: any;
+  _updateExpressionBrand: any;
+  _unaryExpressionBrand: any;
+  _expressionBrand: any;
+  _declarationBrand: any;
+}
 export class IfStatement extends qc.Statement implements qc.IfStatement {
   static readonly kind = Syntax.IfStatement;
   expression: qc.Expression;
   thenStatement: qc.Statement;
   elseStatement?: qc.Statement;
-  createIf(expression: qc.Expression, thenStatement: qc.Statement, elseStatement?: qc.Statement) {
+  constructor(e: qc.Expression, t: qc.Statement, f?: qc.Statement) {
     super(true);
-    this.expression = expression;
-    this.thenStatement = asEmbeddedStatement(thenStatement);
-    this.elseStatement = asEmbeddedStatement(elseStatement);
+    this.expression = e;
+    this.thenStatement = asEmbeddedStatement(t);
+    this.elseStatement = asEmbeddedStatement(f);
   }
-  update(expression: qc.Expression, thenStatement: qc.Statement, elseStatement?: qc.Statement) {
-    return this.expression !== expression || this.thenStatement !== thenStatement || this.elseStatement !== elseStatement
-      ? new IfStatement(expression, thenStatement, elseStatement).updateFrom(this)
-      : this;
+  update(e: qc.Expression, t: qc.Statement, f?: qc.Statement) {
+    return this.expression !== e || this.thenStatement !== t || this.elseStatement !== f ? new IfStatement(e, t, f).updateFrom(this) : this;
   }
 }
 IfStatement.prototype.kind = IfStatement.kind;
@@ -1406,14 +1417,14 @@ export class ImportClause extends qc.NamedDeclaration implements qc.ImportClause
   isTypeOnly: boolean;
   name?: Identifier;
   namedBindings?: qc.NamedImportBindings;
-  createImportClause(name: Identifier | undefined, namedBindings: qc.NamedImportBindings | undefined, isTypeOnly = false) {
+  constructor(n?: Identifier, b?: qc.NamedImportBindings, isTypeOnly = false) {
     super(true);
-    this.name = name;
-    this.namedBindings = namedBindings;
+    this.name = n;
+    this.namedBindings = b;
     this.isTypeOnly = isTypeOnly;
   }
-  update(name: Identifier | undefined, namedBindings: qc.NamedImportBindings | undefined, isTypeOnly: boolean) {
-    return this.name !== name || this.namedBindings !== namedBindings || this.isTypeOnly !== isTypeOnly ? new ImportClause(name, namedBindings, isTypeOnly).updateFrom(this) : this;
+  update(n?: Identifier, b?: qc.NamedImportBindings, isTypeOnly?: boolean) {
+    return this.name !== n || this.namedBindings !== b || this.isTypeOnly !== isTypeOnly ? new ImportClause(n, b, isTypeOnly).updateFrom(this) : this;
   }
 }
 ImportClause.prototype.kind = ImportClause.kind;
@@ -1422,53 +1433,32 @@ export class ImportDeclaration extends qc.Statement implements qc.ImportDeclarat
   parent: SourceFile | ModuleBlock;
   importClause?: ImportClause;
   moduleSpecifier: qc.Expression;
-  createImportDeclaration(
-    decorators: readonly Decorator[] | undefined,
-    modifiers: readonly Modifier[] | undefined,
-    importClause: ImportClause | undefined,
-    moduleSpecifier: Expression
-  ): ImportDeclaration {
+  constructor(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, c: ImportClause | undefined, s: qc.Expression) {
     super(true);
-    this.decorators = Nodes.from(decorators);
-    this.modifiers = Nodes.from(modifiers);
-    this.importClause = importClause;
-    this.moduleSpecifier = moduleSpecifier;
+    this.decorators = Nodes.from(ds);
+    this.modifiers = Nodes.from(ms);
+    this.importClause = c;
+    this.moduleSpecifier = s;
   }
-  updateImportDeclaration(
-    this: ImportDeclaration,
-    decorators: readonly Decorator[] | undefined,
-    modifiers: readonly Modifier[] | undefined,
-    importClause: ImportClause | undefined,
-    moduleSpecifier: Expression
-  ) {
-    return this.decorators !== decorators || this.modifiers !== modifiers || this.importClause !== importClause || this.moduleSpecifier !== moduleSpecifier
-      ? new ImportDeclaration(decorators, modifiers, importClause, moduleSpecifier).updateFrom(this)
-      : this;
+  update(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, c: ImportClause | undefined, s: qc.Expression) {
+    return this.decorators !== ds || this.modifiers !== ms || this.importClause !== c || this.moduleSpecifier !== s ? new ImportDeclaration(ds, ms, c, s).updateFrom(this) : this;
   }
 }
 ImportDeclaration.prototype.kind = ImportDeclaration.kind;
-export class ImportEqualsDeclaration extends Node implements qc.ImportEqualsDeclaration {
+export class ImportEqualsDeclaration extends qc.DeclarationStatement implements qc.ImportEqualsDeclaration {
   static readonly kind = Syntax.ImportEqualsDeclaration;
   parent: SourceFile | ModuleBlock;
   name: Identifier;
-  moduleReference: ModuleReference;
-  createImportEqualsDeclaration(decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, name: string | Identifier, moduleReference: ModuleReference) {
+  moduleReference: qc.ModuleReference;
+  constructor(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, name: string | Identifier, r: qc.ModuleReference) {
     super(true);
-    this.decorators = Nodes.from(decorators);
-    this.modifiers = Nodes.from(modifiers);
+    this.decorators = Nodes.from(ds);
+    this.modifiers = Nodes.from(ms);
     this.name = asName(name);
-    this.moduleReference = moduleReference;
+    this.moduleReference = r;
   }
-  updateImportEqualsDeclaration(
-    this: ImportEqualsDeclaration,
-    decorators: readonly Decorator[] | undefined,
-    modifiers: readonly Modifier[] | undefined,
-    name: Identifier,
-    moduleReference: ModuleReference
-  ) {
-    return this.decorators !== decorators || this.modifiers !== modifiers || this.name !== name || this.moduleReference !== moduleReference
-      ? new ImportEqualsDeclaration(decorators, modifiers, name, moduleReference).updateFrom(this)
-      : this;
+  update(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, name: Identifier, r: qc.ModuleReference) {
+    return this.decorators !== ds || this.modifiers !== ms || this.name !== name || this.moduleReference !== r ? new ImportEqualsDeclaration(ds, ms, name, r).updateFrom(this) : this;
   }
 }
 ImportEqualsDeclaration.prototype.kind = ImportEqualsDeclaration.kind;
@@ -1477,13 +1467,13 @@ export class ImportSpecifier extends qc.NamedDeclaration implements qc.ImportSpe
   parent: NamedImports;
   propertyName?: Identifier;
   name: Identifier;
-  createImportSpecifier(propertyName: Identifier | undefined, name: Identifier) {
+  constructor(p: Identifier | undefined, name: Identifier) {
     super(true);
-    this.propertyName = propertyName;
+    this.propertyName = p;
     this.name = name;
   }
-  update(propertyName: Identifier | undefined, name: Identifier) {
-    return this.propertyName !== propertyName || this.name !== name ? new ImportSpecifier(propertyName, name).updateFrom(this) : this;
+  update(p: Identifier | undefined, name: Identifier) {
+    return this.propertyName !== p || this.name !== name ? new ImportSpecifier(p, name).updateFrom(this) : this;
   }
 }
 ImportSpecifier.prototype.kind = ImportSpecifier.kind;
@@ -1518,9 +1508,10 @@ export class IndexedAccessTypeNode extends qc.TypeNode implements qc.IndexedAcce
   }
 }
 IndexedAccessTypeNode.prototype.kind = IndexedAccessTypeNode.kind;
-export class IndexSignatureDeclaration extends Node implements qc.IndexSignatureDeclaration {
+export class IndexSignatureDeclaration extends qc.SignatureDeclarationBase implements qc.IndexSignatureDeclaration {
   static readonly kind = Syntax.IndexSignature;
-  parent: ObjectTypeDeclaration;
+  parent: qc.ObjectTypeDeclaration;
+  jsDocCache?: readonly qc.JSDocTag[];
   constructor(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, ps: readonly ParameterDeclaration[], t: qc.TypeNode): IndexSignatureDeclaration {
     super(true);
     this.decorators = Nodes.from(ds);
@@ -1528,11 +1519,15 @@ export class IndexSignatureDeclaration extends Node implements qc.IndexSignature
     this.parameters = new Nodes(ps);
     this.type = t;
   }
+  questionToken?: qc.QuestionToken | undefined;
   update(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, ps: readonly ParameterDeclaration[], t: qc.TypeNode) {
     return this.parameters !== ps || this.type !== t || this.decorators !== ds || this.modifiers !== ms ? new IndexSignatureDeclaration(ds, ms, ps, t).updateFrom(this) : this;
   }
+  _classElementBrand: any;
+  _typeElementBrand: any;
 }
 IndexSignatureDeclaration.prototype.kind = IndexSignatureDeclaration.kind;
+qb.addMixins(IndexSignatureDeclaration, [qc.ClassElement, qc.TypeElement]);
 export class InferTypeNode extends qc.TypeNode implements qc.InferTypeNode {
   static readonly kind = Syntax.InferType;
   typeParameter: TypeParameterDeclaration;
@@ -1545,49 +1540,44 @@ export class InferTypeNode extends qc.TypeNode implements qc.InferTypeNode {
   }
 }
 InferTypeNode.prototype.kind = InferTypeNode.kind;
-export class InterfaceDeclaration extends Node implements qc.InterfaceDeclaration {
+export class InterfaceDeclaration extends qc.DeclarationStatement implements qc.InterfaceDeclaration {
   static readonly kind = Syntax.InterfaceDeclaration;
   name: Identifier;
   typeParameters?: Nodes<TypeParameterDeclaration>;
   heritageClauses?: Nodes<HeritageClause>;
   members: Nodes<qc.TypeElement>;
-  createInterfaceDeclaration(
-    decorators: readonly Decorator[] | undefined,
-    modifiers: readonly Modifier[] | undefined,
+  constructor(
+    ds: readonly Decorator[] | undefined,
+    ms: readonly Modifier[] | undefined,
     name: string | Identifier,
-    typeParameters: readonly TypeParameterDeclaration[] | undefined,
-    heritageClauses: readonly HeritageClause[] | undefined,
+    ts: readonly TypeParameterDeclaration[] | undefined,
+    hs: readonly HeritageClause[] | undefined,
     members: readonly qc.TypeElement[]
   ) {
     super(true);
-    this.decorators = Nodes.from(decorators);
-    this.modifiers = Nodes.from(modifiers);
+    this.decorators = Nodes.from(ds);
+    this.modifiers = Nodes.from(ms);
     this.name = asName(name);
-    this.typeParameters = Nodes.from(typeParameters);
-    this.heritageClauses = Nodes.from(heritageClauses);
+    this.typeParameters = Nodes.from(ts);
+    this.heritageClauses = Nodes.from(hs);
     this.members = new Nodes(members);
   }
-  updateInterfaceDeclaration(
-    this: InterfaceDeclaration,
-    decorators: readonly Decorator[] | undefined,
-    modifiers: readonly Modifier[] | undefined,
+  update(
+    ds: readonly Decorator[] | undefined,
+    ms: readonly Modifier[] | undefined,
     name: Identifier,
-    typeParameters: readonly TypeParameterDeclaration[] | undefined,
-    heritageClauses: readonly HeritageClause[] | undefined,
+    ts: readonly TypeParameterDeclaration[] | undefined,
+    hs: readonly HeritageClause[] | undefined,
     members: readonly qc.TypeElement[]
   ) {
-    return this.decorators !== decorators ||
-      this.modifiers !== modifiers ||
-      this.name !== name ||
-      this.typeParameters !== typeParameters ||
-      this.heritageClauses !== heritageClauses ||
-      this.members !== members
-      ? new create(decorators, modifiers, name, typeParameters, heritageClauses, members).updateFrom(this)
+    return this.decorators !== ds || this.modifiers !== ms || this.name !== name || this.typeParameters !== ts || this.heritageClauses !== hs || this.members !== members
+      ? new InterfaceDeclaration(ds, ms, name, ts, hs, members).updateFrom(this)
       : this;
   }
 }
 InterfaceDeclaration.prototype.kind = InterfaceDeclaration.kind;
-export class IntersectionTypeNode extends UnionOrIntersectionTypeNode implements qc.IntersectionTypeNode {
+qb.addMixins(InterfaceDeclaration, [qc.JSDocContainer]);
+export class IntersectionTypeNode extends qc.UnionOrIntersectionTypeNode implements qc.IntersectionTypeNode {
   static readonly kind = Syntax.IntersectionType;
   types: Nodes<qc.TypeNode>;
   constructor(ts: readonly qc.TypeNode[]) {
@@ -1600,298 +1590,269 @@ export class IntersectionTypeNode extends UnionOrIntersectionTypeNode implements
 IntersectionTypeNode.prototype.kind = IntersectionTypeNode.kind;
 export class JSDoc extends Node implements qc.JSDoc {
   static readonly kind = Syntax.JSDocComment;
-  parent: HasJSDoc;
-  tags?: Nodes<JSDocTag>;
+  parent: qc.HasJSDoc;
+  tags?: Nodes<qc.JSDocTag>;
   comment?: string;
-  createJSDocComment(comment?: string | undefined, tags?: Nodes<JSDocTag> | undefined) {
+  constructor(c?: string, ts?: Nodes<qc.JSDocTag>) {
     super(true);
-    this.comment = comment;
-    this.tags = tags;
+    this.comment = c;
+    this.tags = ts;
   }
 }
 JSDoc.prototype.kind = JSDoc.kind;
-export class JSDocAllType extends JSDocType implements qc.JSDocAllType {
+export class JSDocAllType extends qc.JSDocType implements qc.JSDocAllType {
   static readonly kind = Syntax.JSDocAllType;
 }
 JSDocAllType.prototype.kind = JSDocAllType.kind;
-export class JSDocAugmentsTag extends JSDocTag implements qc.JSDocAugmentsTag {
+export class JSDocAugmentsTag extends qc.JSDocTag implements qc.JSDocAugmentsTag {
   static readonly kind = Syntax.JSDocAugmentsTag;
-  class: ExpressionWithTypeArguments & { expression: Identifier | PropertyAccessEntityNameExpression };
-  createJSDocAugmentsTag(classExpression: JSDocAugmentsTag['class'], comment?: string) {
-    const tag = createJSDocTag<JSDocAugmentsTag>(Syntax.JSDocAugmentsTag, 'augments', comment);
-    tag.class = classExpression;
-    return tag;
+  class: ExpressionWithTypeArguments & { expression: Identifier | qc.PropertyAccessEntityNameExpression };
+  constructor(c: JSDocAugmentsTag['class'], s?: string) {
+    super(Syntax.JSDocAugmentsTag, 'augments', s);
+    this.class = c;
   }
 }
 JSDocAugmentsTag.prototype.kind = JSDocAugmentsTag.kind;
-export class JSDocAuthorTag extends JSDocTag implements qc.JSDocAuthorTag {
+export class JSDocAuthorTag extends qc.JSDocTag implements qc.JSDocAuthorTag {
   static readonly kind = Syntax.JSDocAuthorTag;
-  createJSDocAuthorTag(comment?: string) {
-    return createJSDocTag<JSDocAuthorTag>(Syntax.JSDocAuthorTag, 'author', comment);
+  constructor(c?: string) {
+    super(Syntax.JSDocAuthorTag, 'author', c);
   }
 }
 JSDocAuthorTag.prototype.kind = JSDocAuthorTag.kind;
-export class JSDocCallbackTag extends JSDocTag implements qc.JSDocCallbackTag {
-  //}, NamedDeclaration {
+export class JSDocCallbackTag extends qc.JSDocTag implements qc.JSDocCallbackTag {
   static readonly kind = Syntax.JSDocCallbackTag;
   parent: JSDoc;
   fullName?: JSDocNamespaceDeclaration | Identifier;
   name?: Identifier;
   typeExpression: JSDocSignature;
-  createJSDocCallbackTag(fullName: JSDocNamespaceDeclaration | Identifier | undefined, name: Identifier | undefined, comment: string | undefined, typeExpression: JSDocSignature) {
-    const tag = createJSDocTag<JSDocCallbackTag>(Syntax.JSDocCallbackTag, 'callback', comment);
-    tag.fullName = fullName;
-    tag.name = name;
-    tag.typeExpression = typeExpression;
-    return tag;
+  constructor(f: JSDocNamespaceDeclaration | Identifier | undefined, n: Identifier | undefined, c: string | undefined, s: JSDocSignature) {
+    super(Syntax.JSDocCallbackTag, 'callback', c);
+    this.fullName = f;
+    this.name = n;
+    this.typeExpression = s;
   }
 }
 JSDocCallbackTag.prototype.kind = JSDocCallbackTag.kind;
-export class JSDocClassTag extends JSDocTag implements qc.JSDocClassTag {
+qb.addMixins(JSDocCallbackTag, [qc.NamedDeclaration]);
+export class JSDocClassTag extends qc.JSDocTag implements qc.JSDocClassTag {
   static readonly kind = Syntax.JSDocClassTag;
-  createJSDocClassTag(comment?: string): JSDocClassTag {
-    return createJSDocTag<JSDocClassTag>(Syntax.JSDocClassTag, 'class', comment);
+  constructor(c?: string) {
+    super(Syntax.JSDocClassTag, 'class', c);
   }
 }
 JSDocClassTag.prototype.kind = JSDocClassTag.kind;
-export class JSDocEnumTag extends JSDocTag implements qc.JSDocEnumTag {
-  //}, Declaration {
+export class JSDocEnumTag extends qc.JSDocTag implements qc.JSDocEnumTag {
   static readonly kind = Syntax.JSDocEnumTag;
   parent: JSDoc;
   typeExpression?: JSDocTypeExpression;
-  createJSDocEnumTag(typeExpression?: JSDocTypeExpression, comment?: string) {
-    const tag = createJSDocTag<JSDocEnumTag>(Syntax.JSDocEnumTag, 'enum', comment);
-    tag.typeExpression = typeExpression;
-    return tag;
+  constructor(e?: JSDocTypeExpression, c?: string) {
+    super(Syntax.JSDocEnumTag, 'enum', c);
+    this.typeExpression = e;
   }
+  _declarationBrand: any;
 }
 JSDocEnumTag.prototype.kind = JSDocEnumTag.kind;
-export class JSDocFunctionType extends JSDocType implements qc.JSDocFunctionType {
-  // , qc.SignatureDeclarationBase {
+qb.addMixins(JSDocEnumTag, [qc.Declaration]);
+export class JSDocFunctionType extends qc.SignatureDeclarationBase implements qc.JSDocFunctionType {
+  jsDocCache?: readonly qc.JSDocTag[];
   static readonly kind = Syntax.JSDocFunctionType;
+  _jsDocTypeBrand: any;
+  _typeNodeBrand: any;
 }
 JSDocFunctionType.prototype.kind = JSDocFunctionType.kind;
-export class JSDocImplementsTag extends JSDocTag implements qc.JSDocImplementsTag {
+qb.addMixins(JSDocFunctionType, [qc.JSDocType]);
+export class JSDocImplementsTag extends qc.JSDocTag implements qc.JSDocImplementsTag {
   static readonly kind = Syntax.JSDocImplementsTag;
-  class: ExpressionWithTypeArguments & { expression: Identifier | PropertyAccessEntityNameExpression };
-  createJSDocImplementsTag(classExpression: JSDocImplementsTag['class'], comment?: string) {
-    const tag = createJSDocTag<JSDocImplementsTag>(Syntax.JSDocImplementsTag, 'implements', comment);
-    tag.class = classExpression;
-    return tag;
+  class: ExpressionWithTypeArguments & { expression: Identifier | qc.PropertyAccessEntityNameExpression };
+  constructor(e: JSDocImplementsTag['class'], c?: string) {
+    super(Syntax.JSDocImplementsTag, 'implements', c);
+    this.class = e;
   }
 }
 JSDocImplementsTag.prototype.kind = JSDocImplementsTag.kind;
-export class JSDocNonNullableType extends JSDocType implements qc.JSDocNonNullableType {
+export class JSDocNamespaceDeclaration extends ModuleDeclaration {
+  name: Identifier;
+  body?: qc.JSDocNamespaceBody;
+}
+export class JSDocNonNullableType extends qc.JSDocType implements qc.JSDocNonNullableType {
   static readonly kind = Syntax.JSDocNonNullableType;
-  type: qc.TypeNode;
+  type!: qc.TypeNode;
 }
 JSDocNonNullableType.prototype.kind = JSDocNonNullableType.kind;
-export class JSDocNullableType extends JSDocType implements qc.JSDocNullableType {
+export class JSDocNullableType extends qc.JSDocType implements qc.JSDocNullableType {
   static readonly kind = Syntax.JSDocNullableType;
-  type: qc.TypeNode;
+  type!: qc.TypeNode;
 }
 JSDocNullableType.prototype.kind = JSDocNullableType.kind;
-export class JSDocOptionalType extends JSDocType implements qc.JSDocOptionalType {
+export class JSDocOptionalType extends qc.JSDocType implements qc.JSDocOptionalType {
   static readonly kind = Syntax.JSDocOptionalType;
-  type: qc.TypeNode;
+  type!: qc.TypeNode;
 }
 JSDocOptionalType.prototype.kind = JSDocOptionalType.kind;
-export class JSDocParameterTag extends JSDocPropertyLikeTag implements qc.JSDocParameterTag {
-  static readonly kind = Syntax.JSDocParameterTag;
-  createJSDocParamTag(name: qc.EntityName, isBracketed: boolean, typeExpression?: JSDocTypeExpression, comment?: string): JSDocParameterTag {
-    const tag = createJSDocTag<JSDocParameterTag>(Syntax.JSDocParameterTag, 'param', comment);
-    tag.typeExpression = typeExpression;
-    tag.name = name;
-    tag.isBracketed = isBracketed;
-    return tag;
-  }
-  createJSDocParameterTag(typeExpression: JSDocTypeExpression | undefined, name: qc.EntityName, isNameFirst: boolean, isBracketed: boolean, comment?: string) {
-    return createJSDocPropertyLikeTag<JSDocParameterTag>(Syntax.JSDocParameterTag, 'param', typeExpression, name, isNameFirst, isBracketed, comment);
-  }
-}
-JSDocParameterTag.prototype.kind = JSDocParameterTag.kind;
-export class JSDocPrivateTag extends JSDocTag implements qc.JSDocPrivateTag {
-  static readonly kind = Syntax.JSDocPrivateTag;
-  createJSDocPrivateTag() {
-    return createJSDocTag<JSDocPrivateTag>(Syntax.JSDocPrivateTag, 'private');
-  }
-}
-JSDocPrivateTag.prototype.kind = JSDocPrivateTag.kind;
-export class JSDocPropertyLikeTag extends JSDocTag implements qc.JSDocPropertyLikeTag {
-  //}, Declaration {
+export class JSDocPropertyLikeTag extends qc.JSDocTag implements qc.JSDocPropertyLikeTag {
   parent: JSDoc;
   name: qc.EntityName;
   typeExpression?: JSDocTypeExpression;
   isNameFirst: boolean;
   isBracketed: boolean;
-  createJSDocPropertyLikeTag<T extends JSDocPropertyLikeTag>(
-    kind: T['kind'],
-    tagName: 'arg' | 'argument' | 'param',
-    typeExpression: JSDocTypeExpression | undefined,
-    name: qc.EntityName,
-    isNameFirst: boolean,
-    isBracketed: boolean,
-    comment?: string
-  ) {
-    const tag = createJSDocTag<T>(kind, tagName, comment);
-    tag.typeExpression = typeExpression;
-    tag.name = name;
-    tag.isNameFirst = isNameFirst;
-    tag.isBracketed = isBracketed;
-    return tag;
+  constructor(kind: Syntax, tagName: 'arg' | 'argument' | 'param', e: JSDocTypeExpression | undefined, n: qc.EntityName, isNameFirst: boolean, isBracketed: boolean, c?: string) {
+    super(kind, tagName, c);
+    this.typeExpression = e;
+    this.name = n;
+    this.isNameFirst = isNameFirst;
+    this.isBracketed = isBracketed;
+  }
+  _declarationBrand: any;
+}
+qb.addMixins(JSDocPropertyLikeTag, [qc.Declaration]);
+
+export class JSDocParameterTag extends JSDocPropertyLikeTag implements qc.JSDocParameterTag {
+  static readonly kind = Syntax.JSDocParameterTag;
+  constructor(e: JSDocTypeExpression | undefined, n: qc.EntityName, isNameFirst: boolean, isBracketed: boolean, c?: string) {
+    super(Syntax.JSDocParameterTag, 'param', e, n, isNameFirst, isBracketed, c);
   }
 }
-JSDocPropertyLikeTag.prototype.kind = JSDocPropertyLikeTag.kind;
+JSDocParameterTag.prototype.kind = JSDocParameterTag.kind;
+export class JSDocPrivateTag extends qc.JSDocTag implements qc.JSDocPrivateTag {
+  static readonly kind = Syntax.JSDocPrivateTag;
+  constructor() {
+    super(Syntax.JSDocPrivateTag, 'private');
+  }
+}
+JSDocPrivateTag.prototype.kind = JSDocPrivateTag.kind;
 export class JSDocPropertyTag extends JSDocPropertyLikeTag implements qc.JSDocPropertyTag {
   static readonly kind = Syntax.JSDocPropertyTag;
-  createJSDocPropertyTag(typeExpression: JSDocTypeExpression | undefined, name: qc.EntityName, isNameFirst: boolean, isBracketed: boolean, comment?: string) {
-    return createJSDocPropertyLikeTag<JSDocPropertyTag>(Syntax.JSDocPropertyTag, 'param', typeExpression, name, isNameFirst, isBracketed, comment);
+  constructor(e: JSDocTypeExpression | undefined, n: qc.EntityName, isNameFirst: boolean, isBracketed: boolean, c?: string) {
+    super(Syntax.JSDocPropertyTag, 'param', e, n, isNameFirst, isBracketed, c);
   }
 }
 JSDocPropertyTag.prototype.kind = JSDocPropertyTag.kind;
-export class JSDocProtectedTag extends JSDocTag implements qc.JSDocProtectedTag {
+export class JSDocProtectedTag extends qc.JSDocTag implements qc.JSDocProtectedTag {
   static readonly kind = Syntax.JSDocProtectedTag;
-  createJSDocProtectedTag() {
-    return createJSDocTag<JSDocProtectedTag>(Syntax.JSDocProtectedTag, 'protected');
+  constructor() {
+    super(Syntax.JSDocProtectedTag, 'protected');
   }
 }
 JSDocProtectedTag.prototype.kind = JSDocProtectedTag.kind;
-export class JSDocPublicTag extends JSDocTag implements qc.JSDocPublicTag {
+export class JSDocPublicTag extends qc.JSDocTag implements qc.JSDocPublicTag {
   static readonly kind = Syntax.JSDocPublicTag;
-  createJSDocPublicTag() {
-    return createJSDocTag<JSDocPublicTag>(Syntax.JSDocPublicTag, 'public');
+  constructor() {
+    super(Syntax.JSDocPublicTag, 'public');
   }
 }
 JSDocPublicTag.prototype.kind = JSDocPublicTag.kind;
-export class JSDocReadonlyTag extends JSDocTag implements qc.JSDocReadonlyTag {
+export class JSDocReadonlyTag extends qc.JSDocTag implements qc.JSDocReadonlyTag {
   static readonly kind = Syntax.JSDocReadonlyTag;
-  createJSDocReadonlyTag() {
-    return createJSDocTag<JSDocReadonlyTag>(Syntax.JSDocReadonlyTag, 'readonly');
+  constructor() {
+    super(Syntax.JSDocReadonlyTag, 'readonly');
   }
 }
 JSDocReadonlyTag.prototype.kind = JSDocReadonlyTag.kind;
-export class JSDocReturnTag extends JSDocTag implements qc.JSDocReturnTag {
+export class JSDocReturnTag extends qc.JSDocTag implements qc.JSDocReturnTag {
   static readonly kind = Syntax.JSDocReturnTag;
   typeExpression?: JSDocTypeExpression;
-  createJSDocReturnTag(typeExpression?: JSDocTypeExpression, comment?: string): JSDocReturnTag {
-    const tag = createJSDocTag<JSDocReturnTag>(Syntax.JSDocReturnTag, 'returns', comment);
-    tag.typeExpression = typeExpression;
-    return tag;
+  constructor(e?: JSDocTypeExpression, c?: string) {
+    super(Syntax.JSDocReturnTag, 'returns', c);
+    this.typeExpression = e;
   }
 }
 JSDocReturnTag.prototype.kind = JSDocReturnTag.kind;
-export class JSDocSignature extends JSDocType implements qc.JSDocSignature {
-  //}, Declaration {
+export class JSDocSignature extends qc.JSDocType implements qc.JSDocSignature {
   static readonly kind = Syntax.JSDocSignature;
   typeParameters?: readonly JSDocTemplateTag[];
   parameters: readonly JSDocParameterTag[];
-  type: JSDocReturnTag | undefined;
-  createJSDocSignature(typeParameters: readonly JSDocTemplateTag[] | undefined, parameters: readonly JSDocParameterTag[], type?: JSDocReturnTag) {
+  type?: JSDocReturnTag;
+  constructor(ts: readonly JSDocTemplateTag[] | undefined, ps: readonly JSDocParameterTag[], t?: JSDocReturnTag) {
     super(true);
-    tag.typeParameters = typeParameters;
-    tag.parameters = parameters;
-    tag.type = type;
-    return tag;
+    this.typeParameters = ts;
+    this.parameters = ps;
+    this.type = t;
   }
 }
 JSDocSignature.prototype.kind = JSDocSignature.kind;
-export class JSDocTag extends Node implements qc.JSDocTag {
-  parent: JSDoc | JSDocTypeLiteral;
-  tagName: Identifier;
-  comment?: string;
-  createJSDocTag<T extends JSDocTag>(kind: T['kind'], tagName: string, comment?: string): T {
-    super(true);
-    this.tagName = new Identifier(tagName);
-    this.comment = comment;
-  }
-}
-JSDocTag.prototype.kind = JSDocTag.kind;
-export class JSDocTemplateTag extends JSDocTag implements qc.JSDocTemplateTag {
+qb.addMixins(JSDocSignature, [qc.Declaration]);
+export class JSDocTemplateTag extends qc.JSDocTag implements qc.JSDocTemplateTag {
   static readonly kind = Syntax.JSDocTemplateTag;
-  constraint: JSDocTypeExpression | undefined;
+  constraint?: JSDocTypeExpression;
   typeParameters: Nodes<TypeParameterDeclaration>;
-  createJSDocTemplateTag(constraint: JSDocTypeExpression | undefined, typeParameters: readonly TypeParameterDeclaration[], comment?: string) {
-    const tag = createJSDocTag<JSDocTemplateTag>(Syntax.JSDocTemplateTag, 'template', comment);
-    tag.constraint = constraint;
-    tag.typeParameters = Nodes.from(typeParameters);
-    return tag;
+  constructor(c: JSDocTypeExpression | undefined, ts: readonly TypeParameterDeclaration[], s?: string) {
+    super(Syntax.JSDocTemplateTag, 'template', s);
+    this.constraint = c;
+    this.typeParameters = Nodes.from(ts);
   }
 }
 JSDocTemplateTag.prototype.kind = JSDocTemplateTag.kind;
-export class JSDocThisTag extends JSDocTag implements qc.JSDocThisTag {
+export class JSDocThisTag extends qc.JSDocTag implements qc.JSDocThisTag {
   static readonly kind = Syntax.JSDocThisTag;
   typeExpression?: JSDocTypeExpression;
-  createJSDocThisTag(typeExpression?: JSDocTypeExpression): JSDocThisTag {
-    const tag = createJSDocTag<JSDocThisTag>(Syntax.JSDocThisTag, 'this');
-    tag.typeExpression = typeExpression;
-    return tag;
+  constructor(e?: JSDocTypeExpression) {
+    super(Syntax.JSDocThisTag, 'this');
+    this.typeExpression = e;
   }
 }
 JSDocThisTag.prototype.kind = JSDocThisTag.kind;
-export class JSDocTypedefTag extends JSDocTag implements qc.JSDocTypedefTag {
-  //, NamedDeclaration {
+export class JSDocTypedefTag extends qc.JSDocTag implements qc.JSDocTypedefTag {
   static readonly kind = Syntax.JSDocTypedefTag;
   parent: JSDoc;
   fullName?: JSDocNamespaceDeclaration | Identifier;
   name?: Identifier;
   typeExpression?: JSDocTypeExpression | JSDocTypeLiteral;
-  createJSDocTypedefTag(fullName?: JSDocNamespaceDeclaration | Identifier, name?: Identifier, comment?: string, typeExpression?: JSDocTypeExpression | JSDocTypeLiteral) {
-    const tag = createJSDocTag<JSDocTypedefTag>(Syntax.JSDocTypedefTag, 'typedef', comment);
-    tag.fullName = fullName;
-    tag.name = name;
-    tag.typeExpression = typeExpression;
-    return tag;
+  constructor(f?: JSDocNamespaceDeclaration | Identifier, n?: Identifier, c?: string, t?: JSDocTypeExpression | JSDocTypeLiteral) {
+    super(Syntax.JSDocTypedefTag, 'typedef', c);
+    this.fullName = f;
+    this.name = n;
+    this.typeExpression = t;
   }
 }
 JSDocTypedefTag.prototype.kind = JSDocTypedefTag.kind;
+qb.addMixins(JSDocTypedefTag, [qc.NamedDeclaration]);
 export class JSDocTypeExpression extends qc.TypeNode implements qc.JSDocTypeExpression {
   static readonly kind = Syntax.JSDocTypeExpression;
   type: qc.TypeNode;
-  constructor(t: qc.TypeNode): JSDocTypeExpression {
+  constructor(t: qc.TypeNode) {
     super(true);
     this.type = t;
   }
 }
 JSDocTypeExpression.prototype.kind = JSDocTypeExpression.kind;
-export class JSDocTypeLiteral extends JSDocType implements qc.JSDocTypeLiteral {
+export class JSDocTypeLiteral extends qc.JSDocType implements qc.JSDocTypeLiteral {
   static readonly kind = Syntax.JSDocTypeLiteral;
   jsDocPropertyTags?: readonly JSDocPropertyLikeTag[];
   isArrayType?: boolean;
-  createJSDocTypeLiteral(jsDocPropertyTags?: readonly JSDocPropertyLikeTag[], isArrayType?: boolean) {
+  constructor(ts?: readonly JSDocPropertyLikeTag[], isArray?: boolean) {
     super(true);
-    tag.jsDocPropertyTags = jsDocPropertyTags;
-    tag.isArrayType = isArrayType;
-    return tag;
+    this.jsDocPropertyTags = ts;
+    this.isArrayType = isArray;
   }
 }
 JSDocTypeLiteral.prototype.kind = JSDocTypeLiteral.kind;
-export class JSDocTypeTag extends JSDocTag implements qc.JSDocTypeTag {
+export class JSDocTypeTag extends qc.JSDocTag implements qc.JSDocTypeTag {
   static readonly kind = Syntax.JSDocTypeTag;
   typeExpression: JSDocTypeExpression;
-  createJSDocTypeTag(typeExpression: JSDocTypeExpression, comment?: string): JSDocTypeTag {
-    const tag = createJSDocTag<JSDocTypeTag>(Syntax.JSDocTypeTag, 'type', comment);
-    tag.typeExpression = typeExpression;
-    return tag;
+  constructor(e: JSDocTypeExpression, c?: string) {
+    super(Syntax.JSDocTypeTag, 'type', c);
+    this.typeExpression = e;
   }
 }
 JSDocTypeTag.prototype.kind = JSDocTypeTag.kind;
-export class JSDocUnknownType extends JSDocType implements qc.JSDocUnknownType {
+export class JSDocUnknownType extends qc.JSDocType implements qc.JSDocUnknownType {
   static readonly kind = Syntax.JSDocUnknownType;
 }
 JSDocUnknownType.prototype.kind = JSDocUnknownType.kind;
-export class JSDocVariadicType extends JSDocType implements qc.JSDocVariadicType {
+export class JSDocVariadicType extends qc.JSDocType implements qc.JSDocVariadicType {
   static readonly kind = Syntax.JSDocVariadicType;
   type: qc.TypeNode;
-  createJSDocVariadicType(type: qc.TypeNode): JSDocVariadicType {
+  constructor(t: qc.TypeNode) {
     super(true);
-    this.type = type;
+    this.type = t;
   }
-  update(type: qc.TypeNode): JSDocVariadicType {
-    return this.type !== type ? new create(type).updateFrom(this) : this;
+  update(t: qc.TypeNode): JSDocVariadicType {
+    return this.type !== t ? new JSDocVariadicType(t).updateFrom(this) : this;
   }
 }
 JSDocVariadicType.prototype.kind = JSDocVariadicType.kind;
-export class JsxAttribute extends ObjectLiteralElement implements qc.JsxAttribute {
+export class JsxAttribute extends qc.ObjectLiteralElement implements qc.JsxAttribute {
   static readonly kind = Syntax.JsxAttribute;
   parent: JsxAttributes;
   name: Identifier;
@@ -1902,7 +1863,7 @@ export class JsxAttribute extends ObjectLiteralElement implements qc.JsxAttribut
     this.initializer = initializer;
   }
   update(name: Identifier, initializer: StringLiteral | JsxExpression) {
-    return this.name !== name || this.initializer !== initializer ? new create(name, initializer).updateFrom(this) : this;
+    return this.name !== name || this.initializer !== initializer ? new JsxAttribute(name, initializer).updateFrom(this) : this;
   }
 }
 JsxAttribute.prototype.kind = JsxAttribute.kind;
@@ -1914,20 +1875,20 @@ export class JsxAttributes extends Node implements qc.JsxAttributes {
     this.properties = new Nodes(properties);
   }
   update(properties: readonly JsxAttributeLike[]) {
-    return this.properties !== properties ? new create(properties).updateFrom(this) : this;
+    return this.properties !== properties ? new JsxAttributes(properties).updateFrom(this) : this;
   }
 }
 JsxAttributes.prototype.kind = JsxAttributes.kind;
 export class JsxClosingElement extends Node implements qc.JsxClosingElement {
   static readonly kind = Syntax.JsxClosingElement;
   parent: JsxElement;
-  tagName: JsxTagNameExpression;
-  createJsxClosingElement(tagName: JsxTagNameExpression) {
+  tagName: qc.JsxTagNameExpression;
+  createJsxClosingElement(tagName: qc.JsxTagNameExpression) {
     super(true);
     this.tagName = tagName;
   }
-  update(tagName: JsxTagNameExpression) {
-    return this.tagName !== tagName ? new create(tagName).updateFrom(this) : this;
+  update(tagName: qc.JsxTagNameExpression) {
+    return this.tagName !== tagName ? new JsxClosingElement(tagName).updateFrom(this) : this;
   }
 }
 JsxClosingElement.prototype.kind = JsxClosingElement.kind;
@@ -1988,7 +1949,7 @@ export class JsxExpression extends qc.Expression implements qc.JsxExpression {
     this.expression = expression;
   }
   update(expression: qc.Expression | undefined) {
-    return this.expression !== expression ? new create(this.dot3Token, expression).updateFrom(this) : this;
+    return this.expression !== expression ? new JsxExpression(this.dot3Token, expression).updateFrom(this) : this;
   }
 }
 JsxExpression.prototype.kind = JsxExpression.kind;
@@ -2005,7 +1966,7 @@ export class JsxFragment extends qc.PrimaryExpression implements qc.JsxFragment 
   }
   update(openingFragment: JsxOpeningFragment, children: readonly JsxChild[], closingFragment: JsxClosingFragment) {
     return this.openingFragment !== openingFragment || this.children !== children || this.closingFragment !== closingFragment
-      ? new create(openingFragment, children, closingFragment).updateFrom(this)
+      ? new JsxFragment(openingFragment, children, closingFragment).updateFrom(this)
       : this;
   }
   createExpressionForJsxFragment(
@@ -2033,17 +1994,17 @@ JsxFragment.prototype.kind = JsxFragment.kind;
 export class JsxOpeningElement extends qc.Expression implements qc.JsxOpeningElement {
   static readonly kind = Syntax.JsxOpeningElement;
   parent: JsxElement;
-  tagName: JsxTagNameExpression;
+  tagName: qc.JsxTagNameExpression;
   typeArguments?: Nodes<qc.TypeNode>;
   attributes: JsxAttributes;
-  createJsxOpeningElement(tagName: JsxTagNameExpression, typeArguments: readonly qc.TypeNode[] | undefined, attributes: JsxAttributes) {
+  constructor(n: qc.JsxTagNameExpression, ts: readonly qc.TypeNode[] | undefined, s: JsxAttributes) {
     super(true);
-    this.tagName = tagName;
-    this.typeArguments = Nodes.from(typeArguments);
-    this.attributes = attributes;
+    this.tagName = n;
+    this.typeArguments = Nodes.from(ts);
+    this.attributes = a;
   }
-  update(tagName: JsxTagNameExpression, typeArguments: readonly qc.TypeNode[] | undefined, attributes: JsxAttributes) {
-    return this.tagName !== tagName || this.typeArguments !== typeArguments || this.attributes !== attributes ? new create(tagName, typeArguments, attributes).updateFrom(this) : this;
+  update(n: qc.JsxTagNameExpression, ts: readonly qc.TypeNode[] | undefined, s: JsxAttributes) {
+    return this.tagName !== n || this.typeArguments !== ts || this.attributes !== s ? new JsxOpeningElement(n, ts, s).updateFrom(this) : this;
   }
 }
 JsxOpeningElement.prototype.kind = JsxOpeningElement.kind;
@@ -2062,11 +2023,11 @@ export class JsxOpeningFragment extends qc.Expression implements qc.JsxOpeningFr
   createJsxFactoryExpressionFromEntityName(jsxFactory: qc.EntityName, parent: JsxOpeningLikeElement | JsxOpeningFragment): qc.Expression {
     if (Node.is.kind(QualifiedName, jsxFactory)) {
       const left = createJsxFactoryExpressionFromEntityName(jsxFactory.left, parent);
-      const right = new Identifier(idText(jsxFactory.right));
+      const right = new Identifier(qc.idText(jsxFactory.right));
       right.escapedText = jsxFactory.right.escapedText;
       return createPropertyAccess(left, right);
     }
-    return createReactNamespace(idText(jsxFactory), parent);
+    return createReactNamespace(qc.idText(jsxFactory), parent);
   }
   createJsxFactoryExpression(jsxFactoryEntity: EntityName | undefined, reactNamespace: string, parent: JsxOpeningLikeElement | JsxOpeningFragment): qc.Expression {
     return jsxFactoryEntity ? createJsxFactoryExpressionFromEntityName(jsxFactoryEntity, parent) : createPropertyAccess(createReactNamespace(reactNamespace, parent), 'createElement');
@@ -2075,30 +2036,30 @@ export class JsxOpeningFragment extends qc.Expression implements qc.JsxOpeningFr
 JsxOpeningFragment.prototype.kind = JsxOpeningFragment.kind;
 export class JsxSelfClosingElement extends qc.PrimaryExpression implements qc.JsxSelfClosingElement {
   static readonly kind = Syntax.JsxSelfClosingElement;
-  tagName: JsxTagNameExpression;
+  tagName: qc.JsxTagNameExpression;
   typeArguments?: Nodes<qc.TypeNode>;
   attributes: JsxAttributes;
-  createJsxSelfClosingElement(tagName: JsxTagNameExpression, typeArguments: readonly qc.TypeNode[] | undefined, attributes: JsxAttributes) {
+  constructor(n: qc.JsxTagNameExpression, ts: readonly qc.TypeNode[] | undefined, a: JsxAttributes) {
     super(true);
-    this.tagName = tagName;
-    this.typeArguments = Nodes.from(typeArguments);
-    this.attributes = attributes;
+    this.tagName = n;
+    this.typeArguments = Nodes.from(ts);
+    this.attributes = a;
   }
-  update(tagName: JsxTagNameExpression, typeArguments: readonly qc.TypeNode[] | undefined, attributes: JsxAttributes) {
-    return this.tagName !== tagName || this.typeArguments !== typeArguments || this.attributes !== attributes ? new create(tagName, typeArguments, attributes).updateFrom(this) : this;
+  update(n: qc.JsxTagNameExpression, ts: readonly qc.TypeNode[] | undefined, a: JsxAttributes) {
+    return this.tagName !== n || this.typeArguments !== ts || this.attributes !== a ? new JsxSelfClosingElement(n, ts, s).updateFrom(this) : this;
   }
 }
 JsxSelfClosingElement.prototype.kind = JsxSelfClosingElement.kind;
-export class JsxSpreadAttribute extends ObjectLiteralElement implements qc.JsxSpreadAttribute {
+export class JsxSpreadAttribute extends qc.ObjectLiteralElement implements qc.JsxSpreadAttribute {
   static readonly kind = Syntax.JsxSpreadAttribute;
   parent: JsxAttributes;
   expression: qc.Expression;
-  createJsxSpreadAttribute(expression: qc.Expression) {
+  constructor(e: qc.Expression) {
     super(true);
-    this.expression = expression;
+    this.expression = e;
   }
-  update(expression: qc.Expression) {
-    return this.expression !== expression ? new create(expression).updateFrom(this) : this;
+  update(e: qc.Expression) {
+    return this.expression !== e ? new JsxSpreadAttribute(e).updateFrom(this) : this;
   }
 }
 JsxSpreadAttribute.prototype.kind = JsxSpreadAttribute.kind;
@@ -2262,7 +2223,7 @@ MethodDeclaration.prototype.kind = MethodDeclaration.kind;
 export class MethodSignature extends Node implements qc.MethodSignature {
   //qc.SignatureDeclarationBase, TypeElement {
   static readonly kind = Syntax.MethodSignature;
-  parent: ObjectTypeDeclaration;
+  parent: qc.ObjectTypeDeclaration;
   name: qc.PropertyName;
   constructor(ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t: qc.TypeNode | undefined, p: string | qc.PropertyName, q?: qc.QuestionToken) {
     const n = SignatureDeclaration.create(Syntax.MethodSignature, ts, ps, t) as MethodSignature;
@@ -2274,7 +2235,7 @@ export class MethodSignature extends Node implements qc.MethodSignature {
   }
 }
 MethodSignature.prototype.kind = MethodSignature.kind;
-export class MissingDeclaration extends DeclarationStatement implements qc.MissingDeclaration {
+export class MissingDeclaration extends qc.DeclarationStatement implements qc.MissingDeclaration {
   static readonly kind = Syntax.MissingDeclaration;
   name?: Identifier;
 }
@@ -2293,7 +2254,7 @@ export class ModuleBlock extends Node implements qc.ModuleBlock {
   }
 }
 ModuleBlock.prototype.kind = ModuleBlock.kind;
-export class ModuleDeclaration extends DeclarationStatement implements qc.ModuleDeclaration {
+export class ModuleDeclaration extends qc.DeclarationStatement implements qc.ModuleDeclaration {
   //}, JSDocContainer {
   static readonly kind = Syntax.ModuleDeclaration;
   parent: ModuleBody | SourceFile;
@@ -2318,12 +2279,12 @@ export class NamedExports extends Node implements qc.NamedExports {
   static readonly kind = Syntax.NamedExports;
   parent: ExportDeclaration;
   elements: Nodes<ExportSpecifier>;
-  createNamedExports(elements: readonly ExportSpecifier[]) {
+  constructor(es: readonly ExportSpecifier[]) {
     super(true);
-    this.elements = new Nodes(elements);
+    this.elements = new Nodes(es);
   }
-  update(elements: readonly ExportSpecifier[]) {
-    return this.elements !== elements ? new create(elements).updateFrom(this) : this;
+  update(es: readonly ExportSpecifier[]) {
+    return this.elements !== es ? new NamedExports(es).updateFrom(this) : this;
   }
 }
 NamedExports.prototype.kind = NamedExports.kind;
@@ -2331,56 +2292,56 @@ export class NamedImports extends Node implements qc.NamedImports {
   static readonly kind = Syntax.NamedImports;
   parent: ImportClause;
   elements: Nodes<ImportSpecifier>;
-  createNamedImports(elements: readonly ImportSpecifier[]): NamedImports {
+  constructor(es: readonly ImportSpecifier[]) {
     super(true);
-    this.elements = new Nodes(elements);
+    this.elements = new Nodes(es);
   }
-  update(elements: readonly ImportSpecifier[]) {
-    return this.elements !== elements ? new create(elements).updateFrom(this) : this;
+  update(es: readonly ImportSpecifier[]) {
+    return this.elements !== es ? new NamedImports(es).updateFrom(this) : this;
   }
 }
 NamedImports.prototype.kind = NamedImports.kind;
 export class NamedTupleMember extends qc.TypeNode implements qc.NamedTupleMember {
   static readonly kind = Syntax.NamedTupleMember;
-  dot3Token?: qc.Token<Syntax.qc.Dot3Token>;
+  dot3Token?: qc.Token<Syntax.Dot3Token>;
   name: Identifier;
-  questionToken?: qc.Token<qc.QuestionToken>;
+  questionToken?: qc.Token<Syntax.QuestionToken>;
   type: qc.TypeNode;
-  constructor(d: qc.Token<Syntax.qc.Dot3Token> | undefined, i: Identifier, q: qc.Token<qc.QuestionToken> | undefined, t: qc.TypeNode) {
+  constructor(d: qc.Token<Syntax.Dot3Token> | undefined, i: Identifier, q: qc.Token<Syntax.QuestionToken> | undefined, t: qc.TypeNode) {
     super(true);
     this.dot3Token = d;
     this.name = i;
     this.questionToken = q;
     this.type = t;
   }
-  update(d: qc.Token<Syntax.qc.Dot3Token> | undefined, i: Identifier, q: qc.Token<qc.QuestionToken> | undefined, t: qc.TypeNode) {
+  update(d: qc.Token<Syntax.Dot3Token> | undefined, i: Identifier, q: qc.Token<Syntax.QuestionToken> | undefined, t: qc.TypeNode) {
     return this.dot3Token !== d || this.name !== i || this.questionToken !== q || this.type !== t ? new NamedTupleMember(d, i, q, t).updateFrom(this) : this;
   }
 }
 NamedTupleMember.prototype.kind = NamedTupleMember.kind;
-qb.addMixins(NamedTupleMember, [qc.Declaration, JSDocContainer]);
+qb.addMixins(NamedTupleMember, [qc.Declaration, qc.JSDocContainer]);
 export class NamespaceExport extends qc.NamedDeclaration implements qc.NamespaceExport {
   static readonly kind = Syntax.NamespaceExport;
   parent: ExportDeclaration;
   name: Identifier;
-  createNamespaceExport(name: Identifier): NamespaceExport {
+  constructor(n: Identifier) {
     super(true);
-    this.name = name;
+    this.name = n;
   }
-  update(name: Identifier) {
-    return this.name !== name ? new create(name).updateFrom(this) : this;
+  update(n: Identifier) {
+    return this.name !== n ? new NamespaceExport(n).updateFrom(this) : this;
   }
 }
 NamespaceExport.prototype.kind = NamespaceExport.kind;
-export class NamespaceExportDeclaration extends DeclarationStatement implements qc.NamespaceExportDeclaration {
+export class NamespaceExportDeclaration extends qc.DeclarationStatement implements qc.NamespaceExportDeclaration {
   static readonly kind = Syntax.NamespaceExportDeclaration;
   name: Identifier;
-  createNamespaceExportDeclaration(name: string | Identifier) {
+  constructor(n: string | Identifier) {
     super(true);
-    this.name = asName(name);
+    this.name = asName(n);
   }
-  update(name: Identifier) {
-    return this.name !== name ? new create(name).updateFrom(this) : this;
+  update(n: Identifier) {
+    return this.name !== n ? new NamespaceExportDeclaration(n).updateFrom(this) : this;
   }
 }
 NamespaceExportDeclaration.prototype.kind = NamespaceExportDeclaration.kind;
@@ -2388,45 +2349,33 @@ export class NamespaceImport extends qc.NamedDeclaration implements qc.Namespace
   static readonly kind = Syntax.NamespaceImport;
   parent: ImportClause;
   name: Identifier;
-  createNamespaceImport(name: Identifier): NamespaceImport {
+  constructor(n: Identifier) {
     super(true);
-    this.name = name;
+    this.name = n;
   }
-  update(name: Identifier) {
-    return this.name !== name ? new create(name).updateFrom(this) : this;
+  update(n: Identifier) {
+    return this.name !== n ? new NamespaceImport(n).updateFrom(this) : this;
   }
 }
 NamespaceImport.prototype.kind = NamespaceImport.kind;
 export class NewExpression extends qc.PrimaryExpression implements qc.NewExpression {
-  //}, Declaration {
   static readonly kind = Syntax.NewExpression;
   expression: qc.LeftHandSideExpression;
   typeArguments?: Nodes<qc.TypeNode>;
   arguments?: Nodes<qc.Expression>;
-  createNew(expression: qc.Expression, typeArguments: readonly qc.TypeNode[] | undefined, argumentsArray: readonly qc.Expression[] | undefined) {
+  constructor(e: qc.Expression, ts?: readonly qc.TypeNode[], a?: readonly qc.Expression[]) {
     super(true);
-    this.expression = parenthesizeForNew(expression);
-    this.typeArguments = Nodes.from(typeArguments);
-    this.arguments = argumentsArray ? parenthesize.listElements(new Nodes(argumentsArray)) : undefined;
+    this.expression = parenthesize.forNew(e);
+    this.typeArguments = Nodes.from(ts);
+    this.arguments = a ? parenthesize.listElements(new Nodes(a)) : undefined;
   }
-  update(expression: qc.Expression, typeArguments: readonly qc.TypeNode[] | undefined, argumentsArray: readonly qc.Expression[] | undefined) {
-    return this.expression !== expression || this.typeArguments !== typeArguments || this.arguments !== argumentsArray ? new create(expression, typeArguments, argumentsArray).updateFrom(this) : this;
+  update(e: qc.Expression, ts?: readonly qc.TypeNode[], a?: readonly qc.Expression[]) {
+    return this.expression !== e || this.typeArguments !== ts || this.arguments !== a ? new NewExpression(e, ts, a).updateFrom(this) : this;
   }
+  _declarationBrand: any;
 }
 NewExpression.prototype.kind = NewExpression.kind;
-qb.addMixins(NewExpression, [Declaration]);
-export class NonNullChain extends Node implements qc.NonNullChain {
-  createNonNullChain(expression: qc.Expression) {
-    super(true);
-    this.flags |= NodeFlags.OptionalChain;
-    this.expression = parenthesize.forAccess(expression);
-  }
-  update(expression: qc.Expression) {
-    qb.assert(!!(this.flags & NodeFlags.OptionalChain), 'Cannot update a NonNullExpression using updateNonNullChain. Use updateNonNullExpression instead.');
-    return this.expression !== expression ? new create(expression).updateFrom(this) : this;
-  }
-}
-NonNullChain.prototype.kind = NonNullChain.kind;
+qb.addMixins(NewExpression, [qc.Declaration]);
 export class NonNullExpression extends qc.LeftHandSideExpression implements qc.NonNullExpression {
   static readonly kind = Syntax.NonNullExpression;
   expression: qc.Expression;
@@ -2440,6 +2389,19 @@ export class NonNullExpression extends qc.LeftHandSideExpression implements qc.N
   }
 }
 NonNullExpression.prototype.kind = NonNullExpression.kind;
+export class NonNullChain extends NonNullExpression implements qc.NonNullChain {
+  constructor(e: qc.Expression) {
+    super();
+    this.flags |= NodeFlags.OptionalChain;
+    this.expression = parenthesize.forAccess(e);
+  }
+  update(e: qc.Expression) {
+    qb.assert(!!(this.flags & NodeFlags.OptionalChain));
+    return this.expression !== e ? new NonNullChain(e).updateFrom(this) : this;
+  }
+  _optionalChainBrand: any;
+}
+NonNullChain.prototype.kind = NonNullChain.kind;
 export class NoSubstitutionLiteral extends qc.LiteralExpression implements qc.NoSubstitutionLiteral {
   //, TemplateLiteralLikeNode, Declaration {
   static readonly kind = Syntax.NoSubstitutionLiteral;
@@ -2706,7 +2668,7 @@ export class PrivateIdentifier extends TokenOrIdentifier implements qc.PrivateId
     this.escapedText = qy.get.escUnderscores(t);
   }
   get text(): string {
-    return idText(this);
+    return qc.idText(this);
   }
 }
 PrivateIdentifier.prototype.kind = PrivateIdentifier.kind;
@@ -2745,7 +2707,7 @@ export class PropertyAccessExpression extends qc.MemberExpression implements qc.
   }
 }
 PropertyAccessExpression.prototype.kind = PropertyAccessExpression.kind;
-export class PropertyAssignment extends ObjectLiteralElement implements qc.PropertyAssignment {
+export class PropertyAssignment extends qc.ObjectLiteralElement implements qc.PropertyAssignment {
   //}, JSDocContainer {
   static readonly kind = Syntax.PropertyAssignment;
   parent: ObjectLiteralExpression;
@@ -2898,7 +2860,7 @@ export class SetAccessorDeclaration extends qc.FunctionLikeDeclarationBase imple
   }
 }
 SetAccessorDeclaration.prototype.kind = SetAccessorDeclaration.kind;
-export class ShorthandPropertyAssignment extends ObjectLiteralElement implements qc.ShorthandPropertyAssignment {
+export class ShorthandPropertyAssignment extends qc.ObjectLiteralElement implements qc.ShorthandPropertyAssignment {
   //}, JSDocContainer {
   static readonly kind = Syntax.ShorthandPropertyAssignment;
   parent: ObjectLiteralExpression;
@@ -2942,7 +2904,7 @@ export class SpreadElement extends qc.Expression implements qc.SpreadElement {
   }
 }
 SpreadElement.prototype.kind = SpreadElement.kind;
-export class SpreadAssignment extends ObjectLiteralElement implements qc.SpreadAssignment {
+export class SpreadAssignment extends qc.ObjectLiteralElement implements qc.SpreadAssignment {
   //}, JSDocContainer {
   static readonly kind = Syntax.SpreadAssignment;
   parent: ObjectLiteralExpression;
@@ -3159,7 +3121,7 @@ export class TupleType extends GenericType implements qc.TupleType {
   }
 }
 TupleType.prototype.kind = TupleType.kind;
-export class TypeAliasDeclaration extends DeclarationStatement implements qc.TypeAliasDeclaration {
+export class TypeAliasDeclaration extends qc.DeclarationStatement implements qc.TypeAliasDeclaration {
   //}, JSDocContainer {
   static readonly kind = Syntax.TypeAliasDeclaration;
   name: Identifier;
@@ -4333,9 +4295,9 @@ export namespace fixme {
           }
           if (some(helperNames)) {
             helperNames.sort(compareStringsCaseSensitive);
-            namedBindings = createNamedImports(
+            namedBindings = new qc.NamedImports(
               map(helperNames, (name) =>
-                isFileLevelUniqueName(sourceFile, name) ? createImportSpecifier(undefined, new Identifier(name)) : createImportSpecifier(new Identifier(name), getUnscopedHelperName(name))
+                isFileLevelUniqueName(sourceFile, name) ? new qc.ImportSpecifier(undefined, new Identifier(name)) : new qc.ImportSpecifier(new Identifier(name), getUnscopedHelperName(name))
               )
             );
             const parseNode = Node.get.originalOf(sourceFile, isSourceFile);
@@ -4346,11 +4308,11 @@ export namespace fixme {
       } else {
         const externalHelpersModuleName = getOrCreateExternalHelpersModuleNameIfNeeded(sourceFile, compilerOptions, hasExportStarsToExportValues, hasImportStar || hasImportDefault);
         if (externalHelpersModuleName) {
-          namedBindings = createNamespaceImport(externalHelpersModuleName);
+          namedBindings = new qc.NamespaceImport(externalHelpersModuleName);
         }
       }
       if (namedBindings) {
-        const externalHelpersImportDeclaration = createImportDeclaration(undefined, undefined, createImportClause(undefined, namedBindings), createLiteral(externalHelpersModuleNameText));
+        const externalHelpersImportDeclaration = new qc.ImportDeclaration(undefined, undefined, new qc.ImportClause(undefined, namedBindings), createLiteral(externalHelpersModuleNameText));
         addEmitFlags(externalHelpersImportDeclaration, qc.EmitFlags.NeverApplyImportHelper);
         return externalHelpersImportDeclaration;
       }

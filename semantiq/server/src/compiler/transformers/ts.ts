@@ -1403,7 +1403,7 @@ export function transformTypeScript(context: TransformationContext) {
     if (Node.is.externalModuleImportEqualsDeclaration(node)) {
       const isReferenced = resolver.isReferencedAliasDeclaration(node);
       if (!isReferenced && compilerOptions.importsNotUsedAsValues === ImportsNotUsedAsValues.Preserve)
-        return setOriginalNode(setRange(createImportDeclaration(undefined, undefined, undefined, node.moduleReference.expression), node), node);
+        return setOriginalNode(setRange(new qc.ImportDeclaration(undefined, undefined, undefined, node.moduleReference.expression), node), node);
       return isReferenced ? visitEachChild(node, visitor, context) : undefined;
     }
     if (!shouldEmitImportEqualsDeclaration(node)) {
@@ -1423,7 +1423,7 @@ export function transformTypeScript(context: TransformationContext) {
         node
       );
     }
-    return setOriginalNode(createNamespaceExport(node.name, moduleReference, node), node);
+    return setOriginalNode(new qc.NamespaceExport(node.name, moduleReference, node), node);
   }
   function isExportOfNamespace(node: Node) {
     return currentNamespace !== undefined && hasSyntacticModifier(node, ModifierFlags.Export);
@@ -1447,7 +1447,7 @@ export function transformTypeScript(context: TransformationContext) {
     setSourceMapRange(statement, createRange(-1, node.end));
     statements.push(statement);
   }
-  function createNamespaceExport(exportName: Identifier, exportValue: Expression, location?: TextRange) {
+  function new qc.NamespaceExport(exportName: Identifier, exportValue: Expression, location?: TextRange) {
     return setRange(new qc.ExpressionStatement(createAssignment(getNamespaceMemberName(currentNamespaceContainerName, exportName, false, true), exportValue)), location);
   }
   function createNamespaceExportExpression(exportName: Identifier, exportValue: Expression, location?: TextRange) {

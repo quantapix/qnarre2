@@ -122,7 +122,7 @@ function addForBindingPattern(p: qc.ParameterDeclaration, c: TransformationConte
 }
 function addForInitializer(p: qc.ParameterDeclaration, name: Identifier, init: Expression, c: TransformationContext) {
   c.addInitializationStatement(
-    createIf(
+    new qc.IfStatement(
       createTypeCheck(getSynthesizedClone(name), 'undefined'),
       setEmitFlags(
         setRange(

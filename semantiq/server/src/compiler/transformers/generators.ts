@@ -835,7 +835,10 @@ export function transformGenerators(context: TransformationContext) {
       //      new (_b.apply(_a, _c.concat([%sent%, 2])));
       const { target, thisArg } = createCallBinding(createPropertyAccess(node.expression, 'bind'), hoistVariableDeclaration);
       return setOriginalNode(
-        setRange(createNew(createFunctionApply(cacheExpression(visitNode(target, visitor, isExpression)), thisArg, visitElements(node.arguments!, qs.VoidExpression.zero())), undefined, []), node),
+        setRange(
+          new qc.NewExpression(createFunctionApply(cacheExpression(visitNode(target, visitor, isExpression)), thisArg, visitElements(node.arguments!, qs.VoidExpression.zero())), undefined, []),
+          node
+        ),
         node
       );
     }
@@ -2065,7 +2068,7 @@ export function transformGenerators(context: TransformationContext) {
   function writeBreakWhenTrue(label: Label, condition: Expression, operationLocation: TextRange | undefined): void {
     writeStatement(
       setEmitFlags(
-        createIf(
+        new qc.IfStatement(
           condition,
           setEmitFlags(setRange(createReturn(new ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)
         ),
@@ -2076,7 +2079,7 @@ export function transformGenerators(context: TransformationContext) {
   function writeBreakWhenFalse(label: Label, condition: Expression, operationLocation: TextRange | undefined): void {
     writeStatement(
       setEmitFlags(
-        createIf(
+        new qc.IfStatement(
           qs.PrefixUnaryExpression.logicalNot(condition),
           setEmitFlags(setRange(createReturn(new ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)
         ),

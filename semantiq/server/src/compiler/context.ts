@@ -1063,7 +1063,7 @@ export class QContext {
       ...(!length(baseTypes)
         ? []
         : [
-            createHeritageClause(
+            new qc.HeritageClause(
               Syntax.ExtendsKeyword,
               map(baseTypes, (b) => serializeBaseType(b, staticBaseType, localName))
             ),
@@ -1071,7 +1071,7 @@ export class QContext {
       ...(!length(implementsTypes)
         ? []
         : [
-            createHeritageClause(
+            new qc.HeritageClause(
               Syntax.ImplementsKeyword,
               map(implementsTypes, (b) => serializeBaseType(b, staticBaseType, localName))
             ),
@@ -1590,7 +1590,7 @@ export class QContext {
             new qc.ExportDeclaration(
               undefined,
               undefined,
-              createNamedExports(
+              new qc.NamedExports(
                 map(
                   flatMap(excessExports, (e) => getNamesOfDeclaration(e)),
                   (id) => new qc.ExportSpecifier(undefined, id)
@@ -1614,7 +1614,7 @@ export class QContext {
       const exports = filter(ss, (d) => Node.is.kind(ExportDeclaration, d) && !d.moduleSpecifier && !!d.exportClause && Node.is.kind(NamedExports, d.exportClause)) as ExportDeclaration[];
       if (length(exports) > 1) {
         const nonExports = filter(ss, (d) => !Node.is.kind(ExportDeclaration, d) || !!d.moduleSpecifier || !d.exportClause);
-        ss = [...nonExports, new qc.ExportDeclaration(undefined, undefined, createNamedExports(flatMap(exports, (e) => cast(e.exportClause, isNamedExports).elements)), undefined)];
+        ss = [...nonExports, new qc.ExportDeclaration(undefined, undefined, new qc.NamedExports(flatMap(exports, (e) => cast(e.exportClause, isNamedExports).elements)), undefined)];
       }
       const reexports = filter(ss, (d) => Node.is.kind(ExportDeclaration, d) && !!d.moduleSpecifier && !!d.exportClause && Node.is.kind(NamedExports, d.exportClause)) as ExportDeclaration[];
       if (length(reexports) > 1) {
@@ -1624,7 +1624,7 @@ export class QContext {
             if (g.length > 1) {
               ss = [
                 ...filter(ss, (s) => g.indexOf(s as ExportDeclaration) === -1),
-                new qc.ExportDeclaration(undefined, undefined, createNamedExports(flatMap(g, (e) => cast(e.exportClause, isNamedExports).elements)), g[0].moduleSpecifier),
+                new qc.ExportDeclaration(undefined, undefined, new qc.NamedExports(flatMap(g, (e) => cast(e.exportClause, isNamedExports).elements)), g[0].moduleSpecifier),
               ];
             }
           }
@@ -1727,7 +1727,7 @@ export class QContext {
     }
     function serializeExportSpecifier(localName: string, targetName: string, specifier?: Expression) {
       addResult(
-        new qc.ExportDeclaration(undefined, undefined, createNamedExports([new qc.ExportSpecifier(localName !== targetName ? targetName : undefined, localName)]), specifier),
+        new qc.ExportDeclaration(undefined, undefined, new qc.NamedExports([new qc.ExportSpecifier(localName !== targetName ? targetName : undefined, localName)]), specifier),
         ModifierFlags.None
       );
     }

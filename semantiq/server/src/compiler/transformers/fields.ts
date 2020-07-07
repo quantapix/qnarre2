@@ -541,7 +541,7 @@ export function transformClassFields(context: TransformationContext) {
       placement: PrivateIdentifierPlacement.InstanceField,
       weakMapName,
     });
-    (pendingExpressions || (pendingExpressions = [])).push(createAssignment(weakMapName, createNew(new Identifier('WeakMap'), undefined, [])));
+    (pendingExpressions || (pendingExpressions = [])).push(createAssignment(weakMapName, new qc.NewExpression(new Identifier('WeakMap'), undefined, [])));
   }
   function accessPrivateIdentifier(name: PrivateIdentifier) {
     if (currentPrivateIdentifierEnvironment) {
