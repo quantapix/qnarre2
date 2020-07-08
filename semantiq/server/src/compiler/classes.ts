@@ -130,7 +130,6 @@ export class BigIntLiteral extends qc.LiteralExpression implements qc.BigIntLite
     );
   }
 }
-/*
 BigIntLiteral.prototype.kind = BigIntLiteral.kind;
 export class BinaryExpression extends qc.Expression implements qc.BinaryExpression {
   static readonly kind = Syntax.BinaryExpression;
@@ -184,7 +183,6 @@ export class BinaryExpression extends qc.Expression implements qc.BinaryExpressi
 }
 BinaryExpression.prototype.kind = BinaryExpression.kind;
 qb.addMixins(BinaryExpression, [qc.Declaration]);
-*/
 export class BindingElement extends qc.NamedDeclaration implements qc.BindingElement {
   static readonly kind = Syntax.BindingElement;
   parent?: qc.BindingPattern;
