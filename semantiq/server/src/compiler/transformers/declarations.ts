@@ -475,7 +475,7 @@ export function transformDeclarations(context: TransformationContext) {
           newValueParameter = ensureParameter(valueParameter, undefined, accessorType);
         }
       }
-      if (!newValueParameter) newValueParameter = createParameter(undefined, undefined, 'value');
+      if (!newValueParameter) newValueParameter = new qc.ParameterDeclaration(undefined, undefined, 'value');
       newParams = append(newParams, newValueParameter);
     }
     return new Nodes(newParams || emptyArray) as Nodes<ParameterDeclaration>;
@@ -695,7 +695,7 @@ export function transformDeclarations(context: TransformationContext) {
           if (Node.is.kind(BindingPattern, input.name)) return recreateBindingPattern(input.name);
           shouldEnterSuppressNewDiagnosticsContextContext = true;
           suppressNewDiagnosticContexts = true;
-          return cleanup(updateTypeScriptVariableDeclaration(input, input.name, undefined, ensureType(input, input.type), ensureNoInitializer(input)));
+          return cleanup(input.update(input.name, ensureType(input, input.type), ensureNoInitializer(input)));
         }
         case Syntax.TypeParameter: {
           if (isPrivateMethodTypeParameter(input) && (input.default || input.constraint)) return cleanup(updateTypeParameterDeclaration(input, input.name, undefined));
@@ -773,8 +773,8 @@ export function transformDeclarations(context: TransformationContext) {
             diagnosticMessage: qd.Default_export_of_the_module_has_or_is_using_private_name_0,
             errorNode: input,
           });
-          const varDecl = createVariableDeclaration(newId, resolver.createTypeOfExpression(input.expression, input, declarationEmitNodeBuilderFlags, symbolTracker), undefined);
-          const statement = createVariableStatement(needsDeclare ? [createModifier(Syntax.DeclareKeyword)] : [], createVariableDeclarationList([varDecl], NodeFlags.Const));
+          const varDecl = new qc.VariableDeclaration(newId, resolver.createTypeOfExpression(input.expression, input, declarationEmitNodeBuilderFlags, symbolTracker), undefined);
+          const statement = createVariableStatement(needsDeclare ? [createModifier(Syntax.DeclareKeyword)] : [], new qc.VariableDeclarationList([varDecl], NodeFlags.Const));
           return [statement, input.update(input.decorators, input.modifiers, newId)];
         }
       }
@@ -859,8 +859,8 @@ export function transformDeclarations(context: TransformationContext) {
             getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(p.valueDeclaration);
             const type = resolver.createTypeOfDeclaration(p.valueDeclaration, fakespace, declarationEmitNodeBuilderFlags, symbolTracker);
             getSymbolAccessibilityDiagnostic = oldDiag;
-            const varDecl = createVariableDeclaration(syntax.get.unescUnderscores(p.escName), type, undefined);
-            return createVariableStatement(undefined, createVariableDeclarationList([varDecl]));
+            const varDecl = new qc.VariableDeclaration(syntax.get.unescUnderscores(p.escName), type, undefined);
+            return createVariableStatement(undefined, new qc.VariableDeclarationList([varDecl]));
           });
           const namespaceDecl = createModuleDeclaration(undefined, ensureModifiers(input), input.name!, createModuleBlock(declarations), NodeFlags.Namespace);
           if (!hasEffectiveModifier(clean, ModifierFlags.Default)) return [clean, namespaceDecl];
@@ -949,8 +949,8 @@ export function transformDeclarations(context: TransformationContext) {
             errorNode: extendsClause,
             typeName: input.name,
           });
-          const varDecl = createVariableDeclaration(newId, resolver.createTypeOfExpression(extendsClause.expression, input, declarationEmitNodeBuilderFlags, symbolTracker), undefined);
-          const statement = createVariableStatement(needsDeclare ? [createModifier(Syntax.DeclareKeyword)] : [], createVariableDeclarationList([varDecl], NodeFlags.Const));
+          const varDecl = new qc.VariableDeclaration(newId, resolver.createTypeOfExpression(extendsClause.expression, input, declarationEmitNodeBuilderFlags, symbolTracker), undefined);
+          const statement = createVariableStatement(needsDeclare ? [createModifier(Syntax.DeclareKeyword)] : [], new qc.VariableDeclarationList([varDecl], NodeFlags.Const));
           const heritageClauses = new Nodes(
             map(input.heritageClauses, (clause) => {
               if (clause.token === Syntax.ExtendsKeyword) {
@@ -1018,7 +1018,7 @@ export function transformDeclarations(context: TransformationContext) {
     if (e.name) {
       if (!getBindingNameVisible(e)) return;
       if (Node.is.kind(BindingPattern, e.name)) return recreateBindingPattern(e.name);
-      return createVariableDeclaration(e.name, ensureType(e, undefined), undefined);
+      return new qc.VariableDeclaration(e.name, ensureType(e, undefined), undefined);
     }
   }
   function checkName(node: DeclarationDiagnosticProducing) {

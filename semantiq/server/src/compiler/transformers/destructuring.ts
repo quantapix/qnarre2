@@ -162,7 +162,7 @@ export function flattenDestructuringBinding(
     }
   }
   for (const { pendingExpressions, name, value, location, original } of pendingDeclarations) {
-    const variable = createVariableDeclaration(name, undefined, pendingExpressions ? inlineExpressions(append(pendingExpressions, value)) : value);
+    const variable = new qc.VariableDeclaration(name, undefined, pendingExpressions ? inlineExpressions(append(pendingExpressions, value)) : value);
     variable.original = original;
     setRange(variable, location);
     aggregateTransformFlags(variable);

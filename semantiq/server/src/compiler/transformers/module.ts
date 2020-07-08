@@ -119,7 +119,7 @@ export function transformModule(context: TransformationContext) {
                     undefined,
                     undefined,
                     undefined,
-                    [createParameter(undefined, undefined, 'require'), createParameter(undefined, undefined, 'exports'), ...importAliasNames],
+                    [new qc.ParameterDeclaration(undefined, undefined, 'require'), new qc.ParameterDeclaration(undefined, undefined, 'exports'), ...importAliasNames],
                     undefined,
                     transformAsynchronousModuleBody(node)
                   ),
@@ -140,7 +140,7 @@ export function transformModule(context: TransformationContext) {
       undefined,
       undefined,
       undefined,
-      [createParameter(undefined, undefined, 'factory')],
+      [new qc.ParameterDeclaration(undefined, undefined, 'factory')],
       undefined,
       setRange(
         new Block(
@@ -149,7 +149,7 @@ export function transformModule(context: TransformationContext) {
               createLogicalAnd(createTypeCheck(new Identifier('module'), 'object'), createTypeCheck(createPropertyAccess(new Identifier('module'), 'exports'), 'object')),
               new Block([
                 createVariableStatement(undefined, [
-                  createVariableDeclaration('v', undefined, new qs.CallExpression(new Identifier('factory'), undefined, [new Identifier('require'), new Identifier('exports')])),
+                  new qc.VariableDeclaration('v', undefined, new qs.CallExpression(new Identifier('factory'), undefined, [new Identifier('require'), new Identifier('exports')])),
                 ]),
                 setEmitFlags(
                   new qc.IfStatement(
@@ -189,7 +189,7 @@ export function transformModule(context: TransformationContext) {
                 undefined,
                 undefined,
                 undefined,
-                [createParameter(undefined, undefined, 'require'), createParameter(undefined, undefined, 'exports'), ...importAliasNames],
+                [new qc.ParameterDeclaration(undefined, undefined, 'require'), new qc.ParameterDeclaration(undefined, undefined, 'exports'), ...importAliasNames],
                 undefined,
                 transformAsynchronousModuleBody(node)
               ),
@@ -209,7 +209,7 @@ export function transformModule(context: TransformationContext) {
     for (const amdDependency of node.amdDependencies) {
       if (amdDependency.name) {
         aliasedModuleNames.push(createLiteral(amdDependency.path));
-        importAliasNames.push(createParameter(undefined, undefined, amdDependency.name));
+        importAliasNames.push(new qc.ParameterDeclaration(undefined, undefined, amdDependency.name));
       } else {
         unaliasedModuleNames.push(createLiteral(amdDependency.path));
       }
@@ -221,7 +221,7 @@ export function transformModule(context: TransformationContext) {
         if (includeNonAmdDependencies && importAliasName) {
           setEmitFlags(importAliasName, EmitFlags.NoSubstitution);
           aliasedModuleNames.push(externalModuleName);
-          importAliasNames.push(createParameter(undefined, undefined, importAliasName));
+          importAliasNames.push(new qc.ParameterDeclaration(undefined, undefined, importAliasName));
         } else {
           unaliasedModuleNames.push(externalModuleName);
         }
@@ -385,7 +385,7 @@ export function transformModule(context: TransformationContext) {
   function createImportCallExpressionAMD(arg: Expression | undefined, containsLexicalThis: boolean): Expression {
     const resolve = createUniqueName('resolve');
     const reject = createUniqueName('reject');
-    const parameters = [createParameter(resolve), createParameter(reject)];
+    const parameters = [new qc.ParameterDeclaration(resolve), new qc.ParameterDeclaration(reject)];
     const body = new Block([
       new qc.ExpressionStatement(new qs.CallExpression(new Identifier('require'), undefined, [new ArrayLiteralExpression([arg || createOmittedExpression()]), resolve, reject])),
     ]);
@@ -451,16 +451,19 @@ export function transformModule(context: TransformationContext) {
       else {
         const variables: VariableDeclaration[] = [];
         if (namespaceDeclaration && !isDefaultImport(node)) {
-          variables.push(createVariableDeclaration(getSynthesizedClone(namespaceDeclaration.name), undefined, getHelperExpressionForImport(node, createRequireCall(node))));
+          variables.push(new qc.VariableDeclaration(getSynthesizedClone(namespaceDeclaration.name), undefined, getHelperExpressionForImport(node, createRequireCall(node))));
         } else {
-          variables.push(createVariableDeclaration(getGeneratedNameForNode(node), undefined, getHelperExpressionForImport(node, createRequireCall(node))));
+          variables.push(new qc.VariableDeclaration(getGeneratedNameForNode(node), undefined, getHelperExpressionForImport(node, createRequireCall(node))));
           if (namespaceDeclaration && isDefaultImport(node)) {
-            variables.push(createVariableDeclaration(getSynthesizedClone(namespaceDeclaration.name), undefined, getGeneratedNameForNode(node)));
+            variables.push(new qc.VariableDeclaration(getSynthesizedClone(namespaceDeclaration.name), undefined, getGeneratedNameForNode(node)));
           }
         }
         statements = append(
           statements,
-          setOriginalNode(setRange(createVariableStatement(undefined, createVariableDeclarationList(variables, languageVersion >= ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None)), node), node)
+          setOriginalNode(
+            setRange(createVariableStatement(undefined, new qc.VariableDeclarationList(variables, languageVersion >= ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None)), node),
+            node
+          )
         );
       }
     } else if (namespaceDeclaration && isDefaultImport(node)) {
@@ -468,8 +471,8 @@ export function transformModule(context: TransformationContext) {
         statements,
         createVariableStatement(
           undefined,
-          createVariableDeclarationList(
-            [setOriginalNode(setRange(createVariableDeclaration(getSynthesizedClone(namespaceDeclaration.name), undefined, getGeneratedNameForNode(node)), node))],
+          new qc.VariableDeclarationList(
+            [setOriginalNode(setRange(new qc.VariableDeclaration(getSynthesizedClone(namespaceDeclaration.name), undefined, getGeneratedNameForNode(node)), node))],
             languageVersion >= ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None
           )
         )
@@ -504,8 +507,8 @@ export function transformModule(context: TransformationContext) {
             setRange(
               createVariableStatement(
                 undefined,
-                createVariableDeclarationList(
-                  [createVariableDeclaration(getSynthesizedClone(node.name), undefined, createRequireCall(node))],
+                new qc.VariableDeclarationList(
+                  [new qc.VariableDeclaration(getSynthesizedClone(node.name), undefined, createRequireCall(node))],
                   languageVersion >= ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None
                 )
               ),
@@ -537,7 +540,7 @@ export function transformModule(context: TransformationContext) {
       const statements: Statement[] = [];
       if (moduleKind !== ModuleKind.AMD) {
         statements.push(
-          setOriginalNode(setRange(createVariableStatement(undefined, createVariableDeclarationList([createVariableDeclaration(generatedName, undefined, createRequireCall(node))])), node), node)
+          setOriginalNode(setRange(createVariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(generatedName, undefined, createRequireCall(node))])), node), node)
         );
       }
       for (const specifier of node.exportClause.elements) {
@@ -1169,7 +1172,7 @@ export function transformSystemModule(context: TransformationContext) {
     contextObject = contextObjectMap[id] = createUniqueName('context');
     const dependencyGroups = collectDependencyGroups(moduleInfo.externalImports);
     const moduleBodyBlock = createSystemModuleBody(node, dependencyGroups);
-    const moduleBodyFunction = new qs.FunctionExpression(undefined, undefined, undefined, undefined, [createParameter(undefined, undefined, contextObject)], undefined, moduleBodyBlock);
+    const moduleBodyFunction = new qs.FunctionExpression(undefined, undefined, undefined, undefined, [new qc.ParameterDeclaration(undefined, undefined, contextObject)], undefined, moduleBodyBlock);
     const moduleName = tryGetModuleNameFromFile(node, host, compilerOptions);
     const dependencies = new ArrayLiteralExpression(map(dependencyGroups, (dependencyGroup) => dependencyGroup.name));
     const updated = setEmitFlags(
@@ -1234,7 +1237,7 @@ export function transformSystemModule(context: TransformationContext) {
     statements.push(
       createVariableStatement(
         undefined,
-        createVariableDeclarationList([createVariableDeclaration('__moduleName', undefined, createLogicalAnd(contextObject, createPropertyAccess(contextObject, 'id')))])
+        new qc.VariableDeclarationList([new qc.VariableDeclaration('__moduleName', undefined, createLogicalAnd(contextObject, createPropertyAccess(contextObject, 'id')))])
       )
     );
     visitNode(moduleInfo.externalHelpersImportDeclaration, sourceElementVisitor, isStatement);
@@ -1294,7 +1297,7 @@ export function transformSystemModule(context: TransformationContext) {
       }
     }
     const exportedNamesStorageRef = createUniqueName('exportedNames');
-    statements.push(createVariableStatement(undefined, createVariableDeclarationList([createVariableDeclaration(exportedNamesStorageRef, undefined, createObjectLiteral(exportedNames, true))])));
+    statements.push(createVariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(exportedNamesStorageRef, undefined, createObjectLiteral(exportedNames, true))])));
     const exportStarFunction = createExportStarFunction(exportedNamesStorageRef);
     statements.push(exportStarFunction);
     return exportStarFunction.name;
@@ -1314,13 +1317,13 @@ export function transformSystemModule(context: TransformationContext) {
       undefined,
       exportStarFunction,
       undefined,
-      [createParameter(undefined, undefined, m)],
+      [new qc.ParameterDeclaration(undefined, undefined, m)],
       undefined,
       new Block(
         [
-          createVariableStatement(undefined, createVariableDeclarationList([createVariableDeclaration(exports, undefined, createObjectLiteral([]))])),
+          createVariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(exports, undefined, createObjectLiteral([]))])),
           new qc.ForInStatement(
-            createVariableDeclarationList([createVariableDeclaration(n, undefined)]),
+            new qc.VariableDeclarationList([new qc.VariableDeclaration(n, undefined)]),
             m,
             new Block([
               setEmitFlags(
@@ -1370,7 +1373,7 @@ export function transformSystemModule(context: TransformationContext) {
             break;
         }
       }
-      setters.push(new qs.FunctionExpression(undefined, undefined, undefined, undefined, [createParameter(undefined, undefined, parameterName)], undefined, new Block(statements, true)));
+      setters.push(new qs.FunctionExpression(undefined, undefined, undefined, undefined, [new qc.ParameterDeclaration(undefined, undefined, parameterName)], undefined, new Block(statements, true)));
     }
     return new ArrayLiteralExpression(setters, true);
   }

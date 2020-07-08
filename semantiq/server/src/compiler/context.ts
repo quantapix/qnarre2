@@ -673,7 +673,7 @@ export class QContext {
   indexInfoToIndexSignatureDeclarationHelper(indexInfo: IndexInfo, kind: IndexKind): IndexSignatureDeclaration {
     const name = getNameFromIndexInfo(indexInfo) || 'x';
     const indexerTypeNode = new qc.KeywordTypeNode(kind === IndexKind.String ? Syntax.StringKeyword : Syntax.NumberKeyword);
-    const indexingParameter = createParameter(undefined, undefined, undefined, name, undefined, indexerTypeNode, undefined);
+    const indexingParameter = new qc.ParameterDeclaration(undefined, undefined, undefined, name, undefined, indexerTypeNode, undefined);
     const typeNode = this.typeToTypeNodeHelper(indexInfo.type || anyType);
     if (!indexInfo.type && !(this.flags & NodeBuilderFlags.AllowEmptyIndexInfoType)) this.encounteredError = true;
     this.approximateLength += name.length + 4;
@@ -722,7 +722,7 @@ export class QContext {
     const defaultParameter = getDefaultFromTypeParameter(type);
     const defaultParameterNode = defaultParameter && this.typeToTypeNodeHelper(defaultParameter);
     this.flags = savedContextFlags;
-    return createTypeParameterDeclaration(name, constraintNode, defaultParameterNode);
+    return new qc.TypeParameterDeclaration(name, constraintNode, defaultParameterNode);
   }
   typeParameterToDeclaration(type: TypeParameter, constraint = getConstraintOfTypeParameter(type)): TypeParameterDeclaration {
     const constraintNode = constraint && this.typeToTypeNodeHelper(constraint);
@@ -765,7 +765,7 @@ export class QContext {
       : parameterSymbol.name;
     const isOptional = (parameterDeclaration && isOptionalParameter(parameterDeclaration)) || getCheckFlags(parameterSymbol) & CheckFlags.OptionalParameter;
     const questionToken = isOptional ? new Token(Syntax.QuestionToken) : undefined;
-    const parameterNode = createParameter(undefined, modifiers, dot3Token, name, questionToken, parameterTypeNode, undefined);
+    const parameterNode = new qc.ParameterDeclaration(undefined, modifiers, dot3Token, name, questionToken, parameterTypeNode, undefined);
     this.approximateLength += parameterSymbol.name.length + 3;
     return parameterNode;
   }
@@ -863,7 +863,7 @@ export class QContext {
         new qc.IndexSignatureDeclaration(
           undefined,
           undefined,
-          [createParameter(undefined, undefined, undefined, 'x', undefined, visitNode(node.typeArguments![0], visitExistingNodeTreeSymbols))],
+          [new qc.ParameterDeclaration(undefined, undefined, undefined, 'x', undefined, visitNode(node.typeArguments![0], visitExistingNodeTreeSymbols))],
           visitNode(node.typeArguments![1], this.visitExistingNodeTreeSymbols)
         ),
       ]);
@@ -879,7 +879,7 @@ export class QContext {
           mapDefined(node.parameters, (p, i) =>
             p.name && Node.is.kind(Identifier, p.name) && p.name.escapedText === 'new'
               ? ((newTypeNode = p.type), undefined)
-              : createParameter(
+              : new qc.ParameterDeclaration(
                   undefined,
                   undefined,
                   getEffectiveDotDotDotForParameter(p),
@@ -894,16 +894,18 @@ export class QContext {
       } else {
         return new qc.FunctionTypeNode(
           Nodes.visit(node.typeParameters, this.visitExistingNodeTreeSymbols),
-          map(node.parameters, (p, i) =>
-            createParameter(
-              undefined,
-              undefined,
-              getEffectiveDotDotDotForParameter(p),
-              p.name || getEffectiveDotDotDotForParameter(p) ? `args` : `arg${i}`,
-              p.questionToken,
-              visitNode(p.type, this.visitExistingNodeTreeSymbols),
-              undefined
-            )
+          map(
+            node.parameters,
+            (p, i) =>
+              new qc.ParameterDeclaration(
+                undefined,
+                undefined,
+                getEffectiveDotDotDotForParameter(p),
+                p.name || getEffectiveDotDotDotForParameter(p) ? `args` : `arg${i}`,
+                p.questionToken,
+                visitNode(p.type, this.visitExistingNodeTreeSymbols),
+                undefined
+              )
           ),
           visitNode(node.type, this.visitExistingNodeTreeSymbols)
         );
@@ -1113,7 +1115,7 @@ export class QContext {
     const ref = trySerializeAsTypeReference(t);
     if (ref) return ref;
     const tempName = getUnusedName(`${rootName}_base`);
-    const statement = createVariableStatement(undefined, createVariableDeclarationList([createVariableDeclaration(tempName, this.typeToTypeNodeHelper(staticType))], NodeFlags.Const));
+    const statement = createVariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(tempName, this.typeToTypeNodeHelper(staticType))], NodeFlags.Const));
     addResult(statement, ModifierFlags.None);
     return new qc.ExpressionWithTypeArguments(undefined, new Identifier(tempName));
   }
@@ -1446,7 +1448,7 @@ export class QContext {
                 createModifiersFromModifierFlags(flag),
                 name,
                 [
-                  createParameter(
+                  new qc.ParameterDeclaration(
                     undefined,
                     undefined,
                     undefined,

@@ -276,7 +276,7 @@ export function transformNodes<T extends Node>(
   function hoistVariableDeclaration(name: Identifier): void {
     qa.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
     qa.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
-    const decl = setEmitFlags(createVariableDeclaration(name), EmitFlags.NoNestedSourceMaps);
+    const decl = setEmitFlags(new qc.VariableDeclaration(name), EmitFlags.NoNestedSourceMaps);
     if (!lexicalEnvironmentVariableDeclarations) lexicalEnvironmentVariableDeclarations = [decl];
     else lexicalEnvironmentVariableDeclarations.push(decl);
 
@@ -336,7 +336,7 @@ export function transformNodes<T extends Node>(
     if (lexicalEnvironmentVariableDeclarations || lexicalEnvironmentFunctionDeclarations || lexicalEnvironmentStatements) {
       if (lexicalEnvironmentFunctionDeclarations) statements = [...lexicalEnvironmentFunctionDeclarations];
       if (lexicalEnvironmentVariableDeclarations) {
-        const statement = createVariableStatement(undefined, createVariableDeclarationList(lexicalEnvironmentVariableDeclarations));
+        const statement = createVariableStatement(undefined, new qc.VariableDeclarationList(lexicalEnvironmentVariableDeclarations));
         setEmitFlags(statement, EmitFlags.CustomPrologue);
         if (!statements) statements = [statement];
         else statements.push(statement);

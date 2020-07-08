@@ -575,7 +575,7 @@ export function transformClassFields(context: TransformationContext) {
             undefined,
             undefined,
             'value',
-            [createParameter(undefined, undefined, undefined, undefined)],
+            [new qc.ParameterDeclaration(undefined, undefined, undefined, undefined)],
             new Block([new qc.ExpressionStatement(createPrivateIdentifierAssignment(info, receiver, parameter, Syntax.EqualsToken))])
           ),
         ])

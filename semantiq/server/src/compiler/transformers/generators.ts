@@ -1835,7 +1835,7 @@ export function transformGenerators(context: TransformationContext) {
     return createGeneratorHelper(
       context,
       setEmitFlags(
-        new qs.FunctionExpression(undefined, undefined, undefined, undefined, [createParameter(undefined, undefined, state)], undefined, new Block(buildResult, buildResult.length > 0)),
+        new qs.FunctionExpression(undefined, undefined, undefined, undefined, [new qc.ParameterDeclaration(undefined, undefined, state)], undefined, new Block(buildResult, buildResult.length > 0)),
         EmitFlags.ReuseTempVariableScope
       )
     );

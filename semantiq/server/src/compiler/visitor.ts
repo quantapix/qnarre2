@@ -107,8 +107,8 @@ function addForBindingPattern(p: qc.ParameterDeclaration, c: TransformationConte
   c.addInitializationStatement(
     createVariableStatement(
       undefined,
-      createVariableDeclarationList([
-        createVariableDeclaration(
+      new qc.VariableDeclarationList([
+        new qc.VariableDeclaration(
           p.name,
           p.type,
           p.initializer

@@ -970,7 +970,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           const statement = setRange(
             createVariableStatement(
               undefined,
-              createVariableDeclarationList([createVariableDeclaration(name, serializeTypeForDeclaration(context, type, symbol, enclosingDeclaration, includePrivateSymbol, bundled))], flags)
+              new qc.VariableDeclarationList([new qc.VariableDeclaration(name, serializeTypeForDeclaration(context, type, symbol, enclosingDeclaration, includePrivateSymbol, bundled))], flags)
             ),
             textRange
           );
@@ -1097,8 +1097,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         else {
           const statement = createVariableStatement(
             undefined,
-            createVariableDeclarationList(
-              [createVariableDeclaration(varName, serializeTypeForDeclaration(context, typeToSerialize, symbol, enclosingDeclaration, includePrivateSymbol, bundled))],
+            new qc.VariableDeclarationList(
+              [new qc.VariableDeclaration(varName, serializeTypeForDeclaration(context, typeToSerialize, symbol, enclosingDeclaration, includePrivateSymbol, bundled))],
               NodeFlags.Const
             )
           );
@@ -17577,7 +17577,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const returnNode = typeSymbol && nodeBuilder.symbolToEntityName(typeSymbol, SymbolFlags.Type, node);
     const declaration = FunctionTypeNode.create(
       undefined,
-      [createParameter(undefined, undefined, undefined, 'props', undefined, nodeBuilder.typeToTypeNode(result, node))],
+      [new qc.ParameterDeclaration(undefined, undefined, undefined, 'props', undefined, nodeBuilder.typeToTypeNode(result, node))],
       returnNode ? TypeReferenceNode.create(returnNode, undefined) : new qc.KeywordTypeNode(Syntax.AnyKeyword)
     );
     const parameterSymbol = new QSymbol(SymbolFlags.FunctionScopedVariable, 'props' as __String);

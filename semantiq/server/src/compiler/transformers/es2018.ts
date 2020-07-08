@@ -55,7 +55,7 @@ export function transformES2018(context: TransformationContext) {
     hierarchyFacts = ancestorFacts;
   }
   function recordTaggedTemplateString(temp: Identifier) {
-    taggedTemplateStringDeclarations = append(taggedTemplateStringDeclarations, createVariableDeclaration(temp));
+    taggedTemplateStringDeclarations = append(taggedTemplateStringDeclarations, new qc.VariableDeclaration(temp));
   }
   function transformSourceFile(node: SourceFile) {
     if (node.isDeclarationFile) return node;
@@ -247,7 +247,7 @@ export function transformES2018(context: TransformationContext) {
     );
     exportedVariableStatement = false;
     const visited = visitEachChild(node, visitor, context);
-    const statement = concatenate(visited.statements, taggedTemplateStringDeclarations && [createVariableStatement(undefined, createVariableDeclarationList(taggedTemplateStringDeclarations))]);
+    const statement = concatenate(visited.statements, taggedTemplateStringDeclarations && [createVariableStatement(undefined, new qc.VariableDeclarationList(taggedTemplateStringDeclarations))]);
     const result = qp_updateSourceNode(visited, setRange(new Nodes(statement), node.statements));
     exitSubtree(ancestorFacts);
     return result;
@@ -342,7 +342,7 @@ export function transformES2018(context: TransformationContext) {
       return updateForOf(
         node,
         node.awaitModifier,
-        setRange(createVariableDeclarationList([setRange(createVariableDeclaration(temp), node.initializer)], NodeFlags.Let), node.initializer),
+        setRange(new qc.VariableDeclarationList([setRange(new qc.VariableDeclaration(temp), node.initializer)], NodeFlags.Let), node.initializer),
         node.expression,
         setRange(new Block(setRange(new Nodes(statements), statementsLocation), true), bodyLocation)
       );
@@ -386,7 +386,7 @@ export function transformES2018(context: TransformationContext) {
       setRange(
         new qc.ForStatement(
           setEmitFlags(
-            setRange(createVariableDeclarationList([setRange(createVariableDeclaration(iterator, undefined, initializer), node.expression), createVariableDeclaration(result)]), node.expression),
+            setRange(new qc.VariableDeclarationList([setRange(new qc.VariableDeclaration(iterator, undefined, initializer), node.expression), new qc.VariableDeclaration(result)]), node.expression),
             EmitFlags.NoHoisting
           ),
           createComma(createAssignment(result, createDownlevelAwait(callNext)), qs.PrefixUnaryExpression.logicalNot(getDone)),
@@ -400,7 +400,7 @@ export function transformES2018(context: TransformationContext) {
     return createTry(
       new Block([restoreEnclosingLabel(forStatement, outermostLabeledStatement)]),
       new qc.CatchClause(
-        createVariableDeclaration(catchVariable),
+        new qc.VariableDeclaration(catchVariable),
         setEmitFlags(new Block([new qc.ExpressionStatement(createAssignment(errorRecord, createObjectLiteral([createPropertyAssignment('error', catchVariable)])))]), EmitFlags.SingleLine)
       ),
       new Block([
@@ -579,7 +579,7 @@ export function transformES2018(context: TransformationContext) {
         const temp = getGeneratedNameForNode(parameter);
         const declarations = flattenDestructuringBinding(parameter, visitor, context, FlattenLevel.ObjectRest, temp, true);
         if (some(declarations)) {
-          const statement = createVariableStatement(undefined, createVariableDeclarationList(declarations));
+          const statement = createVariableStatement(undefined, new qc.VariableDeclarationList(declarations));
           setEmitFlags(statement, EmitFlags.CustomPrologue);
           statements = append(statements, statement);
         }

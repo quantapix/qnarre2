@@ -454,7 +454,7 @@ export function createSuperAccessVariableStatement(resolver: EmitResolver, node:
           new ArrowFunction(
             undefined,
             undefined,
-            [createParameter(undefined, undefined, undefined, 'v', undefined, undefined, undefined)],
+            [new qc.ParameterDeclaration(undefined, undefined, undefined, 'v', undefined, undefined, undefined)],
             undefined,
             undefined,
             createAssignment(setEmitFlags(createPropertyAccess(setEmitFlags(createSuper(), EmitFlags.NoSubstitution), name), EmitFlags.NoSubstitution), new Identifier('v'))
@@ -466,8 +466,8 @@ export function createSuperAccessVariableStatement(resolver: EmitResolver, node:
   });
   return createVariableStatement(
     undefined,
-    createVariableDeclarationList(
-      [createVariableDeclaration(createFileLevelUniqueName('_super'), undefined, new qs.CallExpression(createPropertyAccess(new Identifier('Object'), 'create'), true))],
+    new qc.VariableDeclarationList(
+      [new qc.VariableDeclaration(createFileLevelUniqueName('_super'), undefined, new qs.CallExpression(createPropertyAccess(new Identifier('Object'), 'create'), true))],
       NodeFlags.Const
     )
   );

@@ -21,7 +21,7 @@ export function transformES2019(context: TransformationContext) {
     }
   }
   function visitCatchClause(node: CatchClause): CatchClause {
-    if (!node.variableDeclaration) return node.update(createVariableDeclaration(createTempVariable(undefined)), visitNode(node.block, visitor, isBlock));
+    if (!node.variableDeclaration) return node.update(new qc.VariableDeclaration(createTempVariable(undefined)), visitNode(node.block, visitor, isBlock));
     return visitEachChild(node, visitor, context);
   }
 }
