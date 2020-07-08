@@ -766,7 +766,7 @@ export function transformGenerators(context: TransformationContext) {
     const multiLine = node.multiLine;
     const numInitialProperties = countInitialNodesWithoutYield(properties);
     const temp = declareLocal();
-    emitAssignment(temp, createObjectLiteral(Nodes.visit(properties, visitor, isObjectLiteralElementLike, 0, numInitialProperties), multiLine));
+    emitAssignment(temp, new qc.ObjectLiteralExpression(Nodes.visit(properties, visitor, isObjectLiteralElementLike, 0, numInitialProperties), multiLine));
     const expressions = reduceLeft(properties, reduceProperty, <Expression[]>[], numInitialProperties);
     expressions.push(multiLine ? startOnNewLine(getMutableClone(temp)) : temp);
     return inlineExpressions(expressions);

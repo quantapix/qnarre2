@@ -2409,7 +2409,7 @@ export abstract class Expression extends Node implements qt.Expression {
           new CallExpression(createPropertyAccess(new Identifier('Object'), 'defineProperty'), undefined, [
             receiver,
             createExpressionForPropertyName(property.name),
-            createObjectLiteral(properties, multiLine),
+            new qc.ObjectLiteralExpression(properties, multiLine),
           ]),
           firstAccessor
         );
@@ -2530,8 +2530,9 @@ export abstract class MemberExpression extends LeftHandSideExpression implements
 export abstract class PrimaryExpression extends MemberExpression implements qt.PrimaryExpression {
   _primaryExpressionBrand: any;
 }
-export abstract class ObjectLiteralExpressionBase<T extends qt.ObjectLiteralElement> extends PrimaryExpression {
+export abstract class ObjectLiteralExpressionBase<T extends qt.ObjectLiteralElement> extends PrimaryExpression implements qt.ObjectLiteralExpressionBase<T> {
   properties: Nodes<T>;
+  _declarationBrand: any;
 }
 export abstract class TokenOrIdentifier extends Node {
   getChildren(): Node[] {

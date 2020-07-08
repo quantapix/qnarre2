@@ -200,7 +200,7 @@ export function transformES2018(context: TransformationContext) {
     for (const e of elements) {
       if (e.kind === Syntax.SpreadAssignment) {
         if (chunkObject) {
-          objects.push(createObjectLiteral(chunkObject));
+          objects.push(new qc.ObjectLiteralExpression(chunkObject));
           chunkObject = undefined;
         }
         const target = e.expression;
@@ -213,7 +213,7 @@ export function transformES2018(context: TransformationContext) {
       }
     }
     if (chunkObject) {
-      objects.push(createObjectLiteral(chunkObject));
+      objects.push(new qc.ObjectLiteralExpression(chunkObject));
     }
     return objects;
   }
@@ -221,7 +221,7 @@ export function transformES2018(context: TransformationContext) {
     if (node.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
       const objects = chunkObjectLiteralElements(node.properties);
       if (objects.length && objects[0].kind !== Syntax.ObjectLiteralExpression) {
-        objects.unshift(createObjectLiteral());
+        objects.unshift(new qc.ObjectLiteralExpression());
       }
       let expression: Expression = objects[0];
       if (objects.length > 1) {
@@ -401,7 +401,7 @@ export function transformES2018(context: TransformationContext) {
       new Block([restoreEnclosingLabel(forStatement, outermostLabeledStatement)]),
       new qc.CatchClause(
         new qc.VariableDeclaration(catchVariable),
-        setEmitFlags(new Block([new qc.ExpressionStatement(createAssignment(errorRecord, createObjectLiteral([createPropertyAssignment('error', catchVariable)])))]), EmitFlags.SingleLine)
+        setEmitFlags(new Block([new qc.ExpressionStatement(createAssignment(errorRecord, new qc.ObjectLiteralExpression([createPropertyAssignment('error', catchVariable)])))]), EmitFlags.SingleLine)
       ),
       new Block([
         createTry(

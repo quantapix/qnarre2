@@ -113,7 +113,7 @@ export function transformModule(context: TransformationContext) {
               jsonSourceFile
                 ? jsonSourceFile.statements.length
                   ? jsonSourceFile.statements[0].expression
-                  : createObjectLiteral()
+                  : new qc.ObjectLiteralExpression()
                 : new qs.FunctionExpression(
                     undefined,
                     undefined,
@@ -820,7 +820,7 @@ export function transformModule(context: TransformationContext) {
         new qs.CallExpression(createPropertyAccess(new Identifier('Object'), 'defineProperty'), undefined, [
           new Identifier('exports'),
           createLiteral('__esModule'),
-          createObjectLiteral([createPropertyAssignment('value', createLiteral(true))]),
+          new qc.ObjectLiteralExpression([createPropertyAssignment('value', createLiteral(true))]),
         ])
       );
     }
@@ -841,7 +841,7 @@ export function transformModule(context: TransformationContext) {
         ? new qs.CallExpression(createPropertyAccess(new Identifier('Object'), 'defineProperty'), undefined, [
             new Identifier('exports'),
             createLiteral(name),
-            createObjectLiteral([
+            new qc.ObjectLiteralExpression([
               createPropertyAssignment('enumerable', createLiteral(true)),
               createPropertyAssignment('get', new qs.FunctionExpression(undefined, undefined, undefined, undefined, [], undefined, new Block([createReturn(value)]))),
             ]),
@@ -1246,7 +1246,7 @@ export function transformSystemModule(context: TransformationContext) {
     insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
     const exportStarFunction = addExportStarIfNeeded(statements)!;
     const modifiers = node.transformFlags & TransformFlags.ContainsAwait ? createModifiersFromModifierFlags(ModifierFlags.Async) : undefined;
-    const moduleObject = createObjectLiteral([
+    const moduleObject = new qc.ObjectLiteralExpression([
       createPropertyAssignment('setters', createSettersArray(exportStarFunction, dependencyGroups)),
       createPropertyAssignment('execute', new qs.FunctionExpression(modifiers, undefined, undefined, undefined, [], undefined, new Block(executeStatements, true))),
     ]);
@@ -1297,7 +1297,9 @@ export function transformSystemModule(context: TransformationContext) {
       }
     }
     const exportedNamesStorageRef = createUniqueName('exportedNames');
-    statements.push(createVariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(exportedNamesStorageRef, undefined, createObjectLiteral(exportedNames, true))])));
+    statements.push(
+      createVariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(exportedNamesStorageRef, undefined, new qc.ObjectLiteralExpression(exportedNames, true))]))
+    );
     const exportStarFunction = createExportStarFunction(exportedNamesStorageRef);
     statements.push(exportStarFunction);
     return exportStarFunction.name;
@@ -1321,7 +1323,7 @@ export function transformSystemModule(context: TransformationContext) {
       undefined,
       new Block(
         [
-          createVariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(exports, undefined, createObjectLiteral([]))])),
+          createVariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(exports, undefined, new qc.ObjectLiteralExpression([]))])),
           new qc.ForInStatement(
             new qc.VariableDeclarationList([new qc.VariableDeclaration(n, undefined)]),
             m,

@@ -462,7 +462,7 @@ export function createSuperAccessVariableStatement(resolver: EmitResolver, node:
         )
       );
     }
-    accessors.push(createPropertyAssignment(name, createObjectLiteral(getterAndSetter)));
+    accessors.push(createPropertyAssignment(name, new qc.ObjectLiteralExpression(getterAndSetter)));
   });
   return createVariableStatement(
     undefined,

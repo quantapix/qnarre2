@@ -147,37 +147,37 @@ export class BinaryExpression extends qc.Expression implements qc.BinaryExpressi
   update(l: qc.Expression, r: qc.Expression, o: qc.BinaryOperator | qc.BinaryOperatorToken = this.operatorToken) {
     return this.left !== l || this.right !== r || this.operatorToken !== o ? new BinaryExpression(l, o, r).updateFrom(this) : this;
   }
-  static createStrictEquality(left: qc.Expression, right: qc.Expression) {
-    return new BinaryExpression(left, Syntax.Equals3Token, right);
+  static createStrictEquality(l: qc.Expression, r: qc.Expression) {
+    return new BinaryExpression(l, Syntax.Equals3Token, r);
   }
-  static createStrictInequality(left: qc.Expression, right: qc.Expression) {
-    return new BinaryExpression(left, Syntax.ExclamationEquals2Token, right);
+  static createStrictInequality(l: qc.Expression, r: qc.Expression) {
+    return new BinaryExpression(l, Syntax.ExclamationEquals2Token, r);
   }
-  static createAdd(left: qc.Expression, right: qc.Expression) {
-    return new BinaryExpression(left, Syntax.PlusToken, right);
+  static createAdd(l: qc.Expression, r: qc.Expression) {
+    return new BinaryExpression(l, Syntax.PlusToken, r);
   }
-  static createSubtract(left: qc.Expression, right: qc.Expression) {
-    return new BinaryExpression(left, Syntax.MinusToken, right);
+  static createSubtract(l: qc.Expression, r: qc.Expression) {
+    return new BinaryExpression(l, Syntax.MinusToken, r);
   }
-  static createLogicalAnd(left: qc.Expression, right: qc.Expression) {
-    return new BinaryExpression(left, Syntax.Ampersand2Token, right);
+  static createLogicalAnd(l: qc.Expression, r: qc.Expression) {
+    return new BinaryExpression(l, Syntax.Ampersand2Token, r);
   }
-  static createLogicalOr(left: qc.Expression, right: qc.Expression) {
-    return new BinaryExpression(left, Syntax.Bar2Token, right);
+  static createLogicalOr(l: qc.Expression, r: qc.Expression) {
+    return new BinaryExpression(l, Syntax.Bar2Token, r);
   }
-  static createNullishCoalesce(left: qc.Expression, right: qc.Expression) {
-    return new BinaryExpression(left, Syntax.Question2Token, right);
+  static createNullishCoalesce(l: qc.Expression, r: qc.Expression) {
+    return new BinaryExpression(l, Syntax.Question2Token, r);
   }
-  static createComma(left: qc.Expression, right: qc.Expression) {
-    return <qc.Expression>new BinaryExpression(left, Syntax.CommaToken, right);
+  static createComma(l: qc.Expression, r: qc.Expression) {
+    return <qc.Expression>new BinaryExpression(l, Syntax.CommaToken, r);
   }
-  static createLessThan(left: qc.Expression, right: qc.Expression) {
-    return <qc.Expression>new BinaryExpression(left, Syntax.LessThanToken, right);
+  static createLessThan(l: qc.Expression, r: qc.Expression) {
+    return <qc.Expression>new BinaryExpression(l, Syntax.LessThanToken, r);
   }
-  static createAssignment(left: ObjectLiteralExpression | ArrayLiteralExpression, right: qc.Expression): qc.DestructuringAssignment;
-  static createAssignment(left: qc.Expression, right: qc.Expression): BinaryExpression;
-  static createAssignment(left: qc.Expression, right: qc.Expression) {
-    return new BinaryExpression(left, Syntax.EqualsToken, right);
+  static createAssignment(l: ObjectLiteralExpression | ArrayLiteralExpression, r: qc.Expression): qc.DestructuringAssignment;
+  static createAssignment(l: qc.Expression, r: qc.Expression): BinaryExpression;
+  static createAssignment(l: qc.Expression, r: qc.Expression) {
+    return new BinaryExpression(l, Syntax.EqualsToken, r);
   }
   _declarationBrand: any;
 }
@@ -375,8 +375,8 @@ export namespace BindingOrAssignmentElement {
       qg.assertNode(element.name, isIdentifier);
       return setOriginalNode(setRange(createShorthandPropertyAssignment(element.name, element.initializer), element), element);
     }
-    qg.assertNode(element, isObjectLiteralElementLike);
-    return <ObjectLiteralElementLike>element;
+    qg.assertNode(element, isqc.ObjectLiteralElementLike);
+    return <qc.ObjectLiteralElementLike>element;
   }
 }
 export namespace BindingOrAssignmentPattern {
@@ -404,7 +404,7 @@ export namespace BindingOrAssignmentPattern {
     }
   }
   export function convertToObjectAssignmentPattern(n: qc.ObjectBindingOrAssignmentPattern) {
-    if (Node.is.kind(ObjectBindingPattern, n)) return setOriginalNode(setRange(createObjectLiteral(map(n.elements, convertToObjectAssignmentElement)), n), n);
+    if (Node.is.kind(ObjectBindingPattern, n)) return setOriginalNode(setRange(new qc.ObjectLiteralExpression(map(n.elements, convertToObjectAssignmentElement)), n), n);
     qg.assertNode(n, isObjectLiteralExpression);
     return n;
   }
@@ -2434,19 +2434,21 @@ export class ObjectBindingPattern extends Node implements qc.ObjectBindingPatter
   }
 }
 ObjectBindingPattern.prototype.kind = ObjectBindingPattern.kind;
-export class ObjectLiteralExpression extends ObjectLiteralExpressionBase<ObjectLiteralElementLike> implements qc.ObjectLiteralExpression {
+*/
+export class ObjectLiteralExpression extends qc.ObjectLiteralExpressionBase<qc.ObjectLiteralElementLike> implements qc.ObjectLiteralExpression {
   static readonly kind = Syntax.ObjectLiteralExpression;
   multiLine?: boolean;
-  createObjectLiteral(properties?: readonly ObjectLiteralElementLike[], multiLine?: boolean) {
+  constructor(ps?: readonly qc.ObjectLiteralElementLike[], multiLine?: boolean) {
     super(true);
-    this.properties = new Nodes(properties);
+    this.properties = new Nodes(ps);
     if (multiLine) this.multiLine = true;
   }
-  update(properties: readonly ObjectLiteralElementLike[]) {
-    return this.properties !== properties ? new create(properties, this.multiLine).updateFrom(this) : this;
+  update(ps?: readonly qc.ObjectLiteralElementLike[]) {
+    return this.properties !== ps ? new ObjectLiteralExpression(ps, this.multiLine).updateFrom(this) : this;
   }
 }
 ObjectLiteralExpression.prototype.kind = ObjectLiteralExpression.kind;
+/*
 export class OmittedExpression extends qc.Expression implements qc.OmittedExpression {
   static readonly kind = Syntax.OmittedExpression;
   createOmittedExpression() {

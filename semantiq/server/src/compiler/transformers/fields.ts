@@ -570,7 +570,7 @@ export function transformClassFields(context: TransformationContext) {
     }
     return createPropertyAccess(
       new qc.ParenthesizedExpression(
-        createObjectLiteral([
+        new qc.ObjectLiteralExpression([
           SetAccessorDeclaration.create(
             undefined,
             undefined,

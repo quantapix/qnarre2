@@ -29,7 +29,7 @@ export function createPropertyDescriptor(attributes: PropertyDescriptorAttribute
   let isAccessor = tryAddPropertyAssignment(ps, 'get', attributes.get);
   isAccessor = tryAddPropertyAssignment(ps, 'set', attributes.set) || isAccessor;
   assert(!(isData && isAccessor), 'A PropertyDescriptor may not be both an accessor descriptor and a data descriptor.');
-  return createObjectLiteral(ps, !singleLine);
+  return new qc.ObjectLiteralExpression(ps, !singleLine);
 }
 export const resolvingEmptyArray: never[] = [] as never[];
 export const emptyMap = new QMap<never>() as QReadonlyMap<never> & ReadonlyPragmaMap;

@@ -289,7 +289,9 @@ export function transformES2015(context: TransformationContext) {
       if (isReturnVoidStatementInConstructorWithCapturedSuper(node)) {
         node = returnCapturedThis(node);
       }
-      return createReturn(createObjectLiteral([createPropertyAssignment(new Identifier('value'), node.expression ? visitNode(node.expression, visitor, isExpression) : qs.VoidExpression.zero())]));
+      return createReturn(
+        new qc.ObjectLiteralExpression([createPropertyAssignment(new Identifier('value'), node.expression ? visitNode(node.expression, visitor, isExpression) : qs.VoidExpression.zero())])
+      );
     } else if (isReturnVoidStatementInConstructorWithCapturedSuper(node)) {
       return returnCapturedThis(node);
     }
@@ -818,7 +820,7 @@ export function transformES2015(context: TransformationContext) {
       properties.push(setter);
     }
     properties.push(createPropertyAssignment('enumerable', getAccessor || setAccessor ? createFalse() : createTrue()), createPropertyAssignment('configurable', createTrue()));
-    const call = new qs.CallExpression(createPropertyAccess(new Identifier('Object'), 'defineProperty'), undefined, [target, propertyName, createObjectLiteral(properties, true)]);
+    const call = new qs.CallExpression(createPropertyAccess(new Identifier('Object'), 'defineProperty'), undefined, [target, propertyName, new qc.ObjectLiteralExpression(properties, true)]);
     if (startsOnNewLine) {
       startOnNewLine(call);
     }
@@ -1245,7 +1247,7 @@ function convertForOfStatementForIterable(node: ForOfStatement, outermostLabeled
     new Block([restoreEnclosingLabel(forStatement, outermostLabeledStatement, convertedLoopState && resetLabel)]),
     new qc.CatchClause(
       new qc.VariableDeclaration(catchVariable),
-      setEmitFlags(new Block([new qc.ExpressionStatement(createAssignment(errorRecord, createObjectLiteral([createPropertyAssignment('error', catchVariable)])))]), EmitFlags.SingleLine)
+      setEmitFlags(new Block([new qc.ExpressionStatement(createAssignment(errorRecord, new qc.ObjectLiteralExpression([createPropertyAssignment('error', catchVariable)])))]), EmitFlags.SingleLine)
     ),
     new Block([
       createTry(
@@ -1290,7 +1292,7 @@ function visitObjectLiteralExpression(node: ObjectLiteralExpression): Expression
     const expressions: Expression[] = [];
     const assignment = createAssignment(
       temp,
-      setEmitFlags(createObjectLiteral(Nodes.visit(properties, visitor, isObjectLiteralElementLike, 0, numInitialProperties), node.multiLine), EmitFlags.Indented)
+      setEmitFlags(new qc.ObjectLiteralExpression(Nodes.visit(properties, visitor, isObjectLiteralElementLike, 0, numInitialProperties), node.multiLine), EmitFlags.Indented)
     );
     if (node.multiLine) {
       startOnNewLine(assignment);

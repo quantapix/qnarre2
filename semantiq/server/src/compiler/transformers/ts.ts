@@ -644,7 +644,7 @@ export function transformTypeScript(context: TransformationContext) {
         );
       }
       if (properties) {
-        decoratorExpressions.push(createMetadataHelper(context, 'design:typeinfo', createObjectLiteral(properties, true)));
+        decoratorExpressions.push(createMetadataHelper(context, 'design:typeinfo', new qc.ObjectLiteralExpression(properties, true)));
       }
     }
   }
@@ -1152,7 +1152,7 @@ export function transformTypeScript(context: TransformationContext) {
     const parameterName = getNamespaceParameterName(node);
     const containerName = getNamespaceContainerName(node);
     const exportName = hasSyntacticModifier(node, ModifierFlags.Export) ? getExternalModuleOrNamespaceExportName(currentNamespaceContainerName, node, false, true) : getLocalName(node, false, true);
-    let moduleArg = createLogicalOr(exportName, createAssignment(exportName, createObjectLiteral()));
+    let moduleArg = createLogicalOr(exportName, createAssignment(exportName, new qc.ObjectLiteralExpression()));
     if (hasNamespaceQualifiedExportName(node)) {
       const localName = getLocalName(node, false, true);
       moduleArg = createAssignment(localName, moduleArg);
@@ -1272,7 +1272,7 @@ export function transformTypeScript(context: TransformationContext) {
     const parameterName = getNamespaceParameterName(node);
     const containerName = getNamespaceContainerName(node);
     const exportName = hasSyntacticModifier(node, ModifierFlags.Export) ? getExternalModuleOrNamespaceExportName(currentNamespaceContainerName, node, false, true) : getLocalName(node, false, true);
-    let moduleArg = createLogicalOr(exportName, createAssignment(exportName, createObjectLiteral()));
+    let moduleArg = createLogicalOr(exportName, createAssignment(exportName, new qc.ObjectLiteralExpression()));
     if (hasNamespaceQualifiedExportName(node)) {
       const localName = getLocalName(node, false, true);
       moduleArg = createAssignment(localName, moduleArg);

@@ -68,11 +68,11 @@ export function transformJsx(context: TransformationContext) {
     } else {
       const segments = flatten<Expression | ObjectLiteralExpression>(
         spanMap(attrs, isJsxSpreadAttribute, (attrs, isSpread) =>
-          isSpread ? map(attrs, transformJsxSpreadAttributeToExpression) : createObjectLiteral(map(attrs, transformJsxAttributeToObjectLiteralElement))
+          isSpread ? map(attrs, transformJsxSpreadAttributeToExpression) : new qc.ObjectLiteralExpression(map(attrs, transformJsxAttributeToObjectLiteralElement))
         )
       );
       if (Node.is.kind(JsxSpreadAttribute, attrs[0])) {
-        segments.unshift(createObjectLiteral());
+        segments.unshift(new qc.ObjectLiteralExpression());
       }
       objectProperties = singleOrUndefined(segments);
       if (!objectProperties) {

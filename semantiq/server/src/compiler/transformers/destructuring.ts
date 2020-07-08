@@ -339,7 +339,7 @@ function makeObjectBindingPattern(elements: BindingOrAssignmentElement[]) {
   return ObjectBindingPattern.create(<BindingElement[]>elements);
 }
 function makeObjectAssignmentPattern(elements: BindingOrAssignmentElement[]) {
-  return createObjectLiteral(map(elements, convertToObjectAssignmentElement));
+  return new qc.ObjectLiteralExpression(map(elements, convertToObjectAssignmentElement));
 }
 function makeBindingElement(name: Identifier) {
   return new BindingElement(undefined, name);
