@@ -112,7 +112,7 @@ export function transformJsx(context: TransformationContext) {
   function transformJsxAttributeToObjectLiteralElement(node: JsxAttribute) {
     const name = getAttributeName(node);
     const expression = transformJsxAttributeInitializer(node.initializer);
-    return createPropertyAssignment(name, expression);
+    return new qc.PropertyAssignment(name, expression);
   }
   function transformJsxAttributeInitializer(node: StringLiteral | JsxExpression | undefined): Expression {
     if (node === undefined) return new qc.BooleanLiteral(true);

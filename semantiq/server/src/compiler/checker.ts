@@ -4775,7 +4775,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return;
   }
   function getFlowTypeInConstructor(symbol: Symbol, constructor: ConstructorDeclaration) {
-    const reference = createPropertyAccess(new qc.ThisExpression(), syntax.get.unescUnderscores(symbol.escName));
+    const reference = new qc.PropertyAccessExpression(new qc.ThisExpression(), syntax.get.unescUnderscores(symbol.escName));
     reference.expression.parent = reference;
     reference.parent = constructor;
     reference.flowNode = constructor.returnFlowNode;
@@ -22054,7 +22054,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     );
   }
   function isPropertyInitializedInConstructor(propName: Identifier | PrivateIdentifier, propType: Type, constructor: ConstructorDeclaration) {
-    const reference = createPropertyAccess(new qc.ThisExpression(), propName);
+    const reference = new qc.PropertyAccessExpression(new qc.ThisExpression(), propName);
     reference.expression.parent = reference;
     reference.parent = constructor;
     reference.flowNode = constructor.returnFlowNode;

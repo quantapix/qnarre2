@@ -630,17 +630,17 @@ export function transformTypeScript(context: TransformationContext) {
       let properties: ObjectLiteralElementLike[] | undefined;
       if (shouldAddTypeMetadata(node)) {
         (properties || (properties = [])).push(
-          createPropertyAssignment('type', new ArrowFunction(undefined, undefined, [], undefined, new Token(Syntax.EqualsGreaterThanToken), serializeTypeOfNode(node)))
+          new qc.PropertyAssignment('type', new ArrowFunction(undefined, undefined, [], undefined, new Token(Syntax.EqualsGreaterThanToken), serializeTypeOfNode(node)))
         );
       }
       if (shouldAddParamTypesMetadata(node)) {
         (properties || (properties = [])).push(
-          createPropertyAssignment('paramTypes', new ArrowFunction(undefined, undefined, [], undefined, new Token(Syntax.EqualsGreaterThanToken), serializeParameterTypesOfNode(node, container)))
+          new qc.PropertyAssignment('paramTypes', new ArrowFunction(undefined, undefined, [], undefined, new Token(Syntax.EqualsGreaterThanToken), serializeParameterTypesOfNode(node, container)))
         );
       }
       if (shouldAddReturnTypeMetadata(node)) {
         (properties || (properties = [])).push(
-          createPropertyAssignment('returnType', new ArrowFunction(undefined, undefined, [], undefined, new Token(Syntax.EqualsGreaterThanToken), serializeReturnTypeOfNode(node)))
+          new qc.PropertyAssignment('returnType', new ArrowFunction(undefined, undefined, [], undefined, new Token(Syntax.EqualsGreaterThanToken), serializeReturnTypeOfNode(node)))
         );
       }
       if (properties) {
@@ -867,7 +867,7 @@ export function transformTypeScript(context: TransformationContext) {
     if (node.left.kind === Syntax.Identifier) return createCheckedValue(serializeEntityNameAsExpression(node.left), serializeEntityNameAsExpression(node));
     const left = serializeEntityNameAsExpressionFallback(node.left);
     const temp = createTempVariable(hoistVariableDeclaration);
-    return createLogicalAnd(createLogicalAnd(left.left, createStrictInequality(createAssignment(temp, left.right), qs.VoidExpression.zero())), createPropertyAccess(temp, node.right));
+    return createLogicalAnd(createLogicalAnd(left.left, createStrictInequality(createAssignment(temp, left.right), qs.VoidExpression.zero())), new qc.PropertyAccessExpression(temp, node.right));
   }
   function serializeEntityNameAsExpression(node: EntityName): SerializedEntityNameAsExpression {
     switch (node.kind) {
@@ -882,7 +882,7 @@ export function transformTypeScript(context: TransformationContext) {
     }
   }
   function serializeQualifiedNameAsExpression(node: QualifiedName): SerializedEntityNameAsExpression {
-    return createPropertyAccess(serializeEntityNameAsExpression(node.left), node.right);
+    return new qc.PropertyAccessExpression(serializeEntityNameAsExpression(node.left), node.right);
   }
   function getGlobalSymbolNameWithFallback(): ConditionalExpression {
     return new qc.ConditionalExpression(createTypeCheck(new Identifier('Symbol'), 'function'), new Identifier('Symbol'), new Identifier('Object'));
@@ -967,7 +967,7 @@ export function transformTypeScript(context: TransformationContext) {
     setEmitFlags(localName, EmitFlags.NoComments);
     return startOnNewLine(
       removeAllComments(
-        setRange(setOriginalNode(new qc.ExpressionStatement(createAssignment(setRange(createPropertyAccess(new qc.ThisExpression(), propertyName), node.name), localName)), node), moveRangePos(node, -1))
+        setRange(setOriginalNode(new qc.ExpressionStatement(createAssignment(setRange(new qc.PropertyAccessExpression(new qc.ThisExpression(), propertyName), node.name), localName)), node), moveRangePos(node, -1))
       )
     );
   }
@@ -1474,7 +1474,7 @@ export function transformTypeScript(context: TransformationContext) {
     }
   }
   function getClassPrototype(node: ClassExpression | ClassDeclaration) {
-    return createPropertyAccess(getDeclarationName(node), 'prototype');
+    return new qc.PropertyAccessExpression(getDeclarationName(node), 'prototype');
   }
   function getClassMemberPrefix(node: ClassExpression | ClassDeclaration, member: ClassElement) {
     return hasSyntacticModifier(member, ModifierFlags.Static) ? getDeclarationName(node) : getClassPrototype(node);
@@ -1535,9 +1535,9 @@ export function transformTypeScript(context: TransformationContext) {
       if (exportedName) {
         if (node.objectAssignmentInitializer) {
           const initializer = createAssignment(exportedName, node.objectAssignmentInitializer);
-          return setRange(createPropertyAssignment(name, initializer), node);
+          return setRange(new qc.PropertyAssignment(name, initializer), node);
         }
-        return setRange(createPropertyAssignment(name, exportedName), node);
+        return setRange(new qc.PropertyAssignment(name, exportedName), node);
       }
     }
     return node;
@@ -1580,7 +1580,7 @@ export function transformTypeScript(context: TransformationContext) {
         const substitute =
           (applicableSubstitutions & TypeScriptSubstitutionFlags.NamespaceExports && container.kind === Syntax.ModuleDeclaration) ||
           (applicableSubstitutions & TypeScriptSubstitutionFlags.NonQualifiedEnumMembers && container.kind === Syntax.EnumDeclaration);
-        if (substitute) return setRange(createPropertyAccess(getGeneratedNameForNode(container), node), node);
+        if (substitute) return setRange(new qc.PropertyAccessExpression(getGeneratedNameForNode(container), node), node);
       }
     }
     return;

@@ -216,7 +216,10 @@ export function transformClassFields(context: TransformationContext) {
   function visitCallExpression(node: CallExpression) {
     if (shouldTransformPrivateFields && Node.is.privateIdentifierPropertyAccessExpression(node.expression)) {
       const { thisArg, target } = createCallBinding(node.expression, hoistVariableDeclaration, languageVersion);
-      return node.update(createPropertyAccess(visitNode(target, visitor), 'call'), undefined, [visitNode(thisArg, visitor, isExpression), ...Nodes.visit(node.arguments, visitor, isExpression)]);
+      return node.update(new qc.PropertyAccessExpression(visitNode(target, visitor), 'call'), undefined, [
+        visitNode(thisArg, visitor, isExpression),
+        ...Nodes.visit(node.arguments, visitor, isExpression),
+      ]);
     }
     return visitEachChild(node, visitor, context);
   }
@@ -224,7 +227,7 @@ export function transformClassFields(context: TransformationContext) {
     if (shouldTransformPrivateFields && Node.is.privateIdentifierPropertyAccessExpression(node.tag)) {
       const { thisArg, target } = createCallBinding(node.tag, hoistVariableDeclaration, languageVersion);
       return node.update(
-        new qs.CallExpression(createPropertyAccess(visitNode(target, visitor), 'bind'), undefined, [visitNode(thisArg, visitor, isExpression)]),
+        new qs.CallExpression(new qc.PropertyAccessExpression(visitNode(target, visitor), 'bind'), undefined, [visitNode(thisArg, visitor, isExpression)]),
         visitNode(node.template, visitor, isTemplateLiteral)
       );
     }
@@ -378,7 +381,7 @@ export function transformClassFields(context: TransformationContext) {
     let indexOfFirstStatement = 0;
     let statements: Statement[] = [];
     if (!constructor && isDerivedClass) {
-      statements.push(new qc.ExpressionStatement(new qs.CallExpression(new qc.SuperExpression(), undefined, [createSpread(new Identifier('arguments'))])));
+      statements.push(new qc.ExpressionStatement(new qs.CallExpression(new qc.SuperExpression(), undefined, [new qc.SpreadElement(new Identifier('arguments'))])));
     }
     if (constructor) {
       indexOfFirstStatement = addPrologueDirectivesAndInitialSuperCall(constructor, statements, visitor);
@@ -568,7 +571,7 @@ export function transformClassFields(context: TransformationContext) {
       (receiver as Identifier).autoGenerateFlags! |= GeneratedIdentifierFlags.ReservedInNestedScopes;
       (pendingExpressions || (pendingExpressions = [])).push(new BinaryExpression(receiver, Syntax.EqualsToken, node.expression));
     }
-    return createPropertyAccess(
+    return new qc.PropertyAccessExpression(
       new qc.ParenthesizedExpression(
         new qc.ObjectLiteralExpression([
           SetAccessorDeclaration.create(
@@ -611,7 +614,7 @@ export function transformClassFields(context: TransformationContext) {
   }
 }
 function createPrivateInstanceFieldInitializer(receiver: LeftHandSideExpression, initializer: Expression | undefined, weakMapName: Identifier) {
-  return new qs.CallExpression(createPropertyAccess(weakMapName, 'set'), undefined, [receiver, initializer || qs.VoidExpression.zero()]);
+  return new qs.CallExpression(new qc.PropertyAccessExpression(weakMapName, 'set'), undefined, [receiver, initializer || qs.VoidExpression.zero()]);
 }
 export const classPrivateFieldGetHelper: UnscopedEmitHelper = {
   name: 'typescript:classPrivateFieldGet',

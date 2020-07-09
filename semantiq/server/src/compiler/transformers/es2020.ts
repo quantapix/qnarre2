@@ -121,7 +121,7 @@ export function transformES2020(context: TransformationContext) {
           }
           rightExpression =
             segment.kind === Syntax.PropertyAccessExpression
-              ? createPropertyAccess(rightExpression, visitNode(segment.name, visitor, isIdentifier))
+              ? new qc.PropertyAccessExpression(rightExpression, visitNode(segment.name, visitor, isIdentifier))
               : new qs.ElementAccessExpression(rightExpression, visitNode(segment.argumentExpression, visitor, isExpression));
           break;
         case Syntax.CallExpression:

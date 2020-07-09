@@ -311,7 +311,7 @@ function createDestructuringPropertyAccess(flattenContext: FlattenContext, value
     return new qs.ElementAccessExpression(value, argumentExpression);
   } else {
     const name = new Identifier(idText(propertyName));
-    return createPropertyAccess(value, name);
+    return new qc.PropertyAccessExpression(value, name);
   }
 }
 function ensureIdentifier(flattenContext: FlattenContext, value: Expression, reuseIdentifierExpressions: boolean, location: TextRange) {

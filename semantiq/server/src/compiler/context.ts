@@ -517,7 +517,7 @@ export class QContext {
       if (index === 0 || canUsePropertyAccess) {
         const identifier = setEmitFlags(new Identifier(symbolName, typeParameterNodes), EmitFlags.NoAsciiEscaping);
         identifier.symbol = symbol;
-        return index > 0 ? createPropertyAccess(createExpressionFromSymbolChain(chain, index - 1), identifier) : identifier;
+        return index > 0 ? new qc.PropertyAccessExpression(createExpressionFromSymbolChain(chain, index - 1), identifier) : identifier;
       } else {
         if (firstChar === Codes.openBracket) {
           symbolName = symbolName.substring(1, symbolName.length - 1);
@@ -542,7 +542,7 @@ export class QContext {
     const singleQuote = !!length(s.declarations) && every(s.declarations, isSingleQuotedStringNamed);
     const fromNameType = this.getPropertyNameNodeForSymbolFromNameType(s, singleQuote);
     if (fromNameType) return fromNameType;
-    if (isKnownSymbol(s)) return new qc.ComputedPropertyName(createPropertyAccess(new Identifier('Symbol'), (s.escName as string).substr(3)));
+    if (isKnownSymbol(s)) return new qc.ComputedPropertyName(new qc.PropertyAccessExpression(new Identifier('Symbol'), (s.escName as string).substr(3)));
     const rawName = syntax.get.unescUnderscores(s.escName);
     return createPropertyNameNodeForIdentifierOrLiteral(rawName, singleQuote);
   }

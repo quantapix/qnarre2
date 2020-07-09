@@ -2352,12 +2352,18 @@ export abstract class SignatureDeclarationBase extends NamedDeclaration implemen
   parameters!: Nodes<ParameterDeclaration>;
   type?: TypeNode;
   typeArguments?: Nodes<qt.TypeNode>;
-  constructor(s: boolean, k: qt.SignatureDeclaration['kind'], ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t?: TypeNode) {
+  constructor(s: boolean, k: qt.SignatureDeclaration['kind'], ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t?: TypeNode, ta?: readonly qc.TypeNode[]) {
     super(s, k);
     this.typeParameters = Nodes.from(ts);
     this.parameters = new Nodes(ps);
     this.type = t;
+    this.typeArguments = Nodes.from(ta);
   }
+  /*
+  update<T extends SignatureDeclaration>(n: T, ts: Nodes<TypeParameterDeclaration> | undefined, ps: Nodes<ParameterDeclaration>, t?: qc.TypeNode): T {
+    return this.typeParameters !== ts || this.parameters !== ps || this.type !== t ? (new create(this.kind, ts, ps, t) as T).updateFrom(this) : this;
+  }
+  */
 }
 export abstract class FunctionLikeDeclarationBase extends SignatureDeclarationBase implements qt.FunctionLikeDeclarationBase {
   jsDocCache?: readonly qt.JSDocTag[];
@@ -2381,7 +2387,7 @@ export abstract class Expression extends Node implements qt.Expression {
     if (Node.is.kind(QualifiedName, node)) {
       const left = createExpressionFromEntityName(node.left);
       const right = getMutableClone(node.right);
-      return setRange(createPropertyAccess(left, right), node);
+      return setRange(new qc.PropertyAccessExpression(left, right), node);
     }
     return getMutableClone(node);
   }
@@ -2405,20 +2411,20 @@ export abstract class Expression extends Node implements qt.Expression {
           const getterFunction = new FunctionExpression(getAccessor.modifiers, undefined, undefined, undefined, getAccessor.parameters, undefined, getAccessor.body!);
           setRange(getterFunction, getAccessor);
           setOriginalNode(getterFunction, getAccessor);
-          const getter = createPropertyAssignment('get', getterFunction);
+          const getter = new qc.PropertyAssignment('get', getterFunction);
           properties.push(getter);
         }
         if (setAccessor) {
           const setterFunction = new FunctionExpression(setAccessor.modifiers, undefined, undefined, undefined, setAccessor.parameters, undefined, setAccessor.body!);
           setRange(setterFunction, setAccessor);
           setOriginalNode(setterFunction, setAccessor);
-          const setter = createPropertyAssignment('set', setterFunction);
+          const setter = new qc.PropertyAssignment('set', setterFunction);
           properties.push(setter);
         }
-        properties.push(createPropertyAssignment('enumerable', getAccessor || setAccessor ? new qc.BooleanLiteral(false) : new qc.BooleanLiteral(true)));
-        properties.push(createPropertyAssignment('configurable', new qc.BooleanLiteral(true)));
+        properties.push(new qc.PropertyAssignment('enumerable', getAccessor || setAccessor ? new qc.BooleanLiteral(false) : new qc.BooleanLiteral(true)));
+        properties.push(new qc.PropertyAssignment('configurable', new qc.BooleanLiteral(true)));
         const expression = setRange(
-          new CallExpression(createPropertyAccess(new Identifier('Object'), 'defineProperty'), undefined, [
+          new CallExpression(new qc.PropertyAccessExpression(new Identifier('Object'), 'defineProperty'), undefined, [
             receiver,
             createExpressionForPropertyName(property.name),
             new qc.ObjectLiteralExpression(properties, multiLine),
@@ -2471,7 +2477,7 @@ export abstract class Expression extends Node implements qt.Expression {
     if (Node.is.kind(ComputedPropertyName, memberName)) return setRange(new ElementAccessExpression(target, memberName.expression), location);
     else {
       const expression = setRange(
-        Node.is.kind(Identifier, memberName) || Node.is.kind(PrivateIdentifier, memberName) ? createPropertyAccess(target, memberName) : new ElementAccessExpression(target, memberName),
+        Node.is.kind(Identifier, memberName) || Node.is.kind(PrivateIdentifier, memberName) ? new qc.PropertyAccessExpression(target, memberName) : new ElementAccessExpression(target, memberName),
         memberName
       );
       getOrCreateEmitNode(expression).flags |= EmitFlags.NoNestedSourceMaps;
@@ -2479,21 +2485,21 @@ export abstract class Expression extends Node implements qt.Expression {
     }
   }
   createFunctionCall(func: Expression, thisArg: Expression, argumentsList: readonly Expression[], location?: TextRange) {
-    return setRange(new CallExpression(createPropertyAccess(func, 'call'), undefined, [thisArg, ...argumentsList]), location);
+    return setRange(new CallExpression(new qc.PropertyAccessExpression(func, 'call'), undefined, [thisArg, ...argumentsList]), location);
   }
   createFunctionApply(func: Expression, thisArg: Expression, argumentsExpression: Expression, location?: TextRange) {
-    return setRange(new CallExpression(createPropertyAccess(func, 'apply'), undefined, [thisArg, argumentsExpression]), location);
+    return setRange(new CallExpression(new qc.PropertyAccessExpression(func, 'apply'), undefined, [thisArg, argumentsExpression]), location);
   }
   createArraySlice(array: Expression, start?: number | Expression) {
     const argumentsList: Expression[] = [];
     if (start !== undefined) argumentsList.push(typeof start === 'number' ? createLiteral(start) : start);
-    return new CallExpression(createPropertyAccess(array, 'slice'), undefined, argumentsList);
+    return new CallExpression(new qc.PropertyAccessExpression(array, 'slice'), undefined, argumentsList);
   }
   createArrayConcat(array: Expression, values: readonly Expression[]) {
-    return new CallExpression(createPropertyAccess(array, 'concat'), undefined, values);
+    return new CallExpression(new qc.PropertyAccessExpression(array, 'concat'), undefined, values);
   }
   createMathPow(left: Expression, right: Expression, location?: TextRange) {
-    return setRange(new CallExpression(createPropertyAccess(new Identifier('Math'), 'pow'), undefined, [left, right]), location);
+    return setRange(new CallExpression(new qc.PropertyAccessExpression(new Identifier('Math'), 'pow'), undefined, [left, right]), location);
   }
   getLeftmostExpression(node: Expression, stopAtCallExpressions: boolean) {
     while (true) {

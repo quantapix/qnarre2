@@ -5,7 +5,7 @@ import * as syntax from './syntax';
 import { Syntax } from './syntax';
 const MAX_SMI_X86 = 0x3fff_ffff;
 function createMethodCall(object: Expression, methodName: string | Identifier, argumentsList: readonly Expression[]) {
-  return new qs.CallExpression(createPropertyAccess(object, asName(methodName)), undefined, argumentsList);
+  return new qs.CallExpression(new qc.PropertyAccessExpression(object, asName(methodName)), undefined, argumentsList);
 }
 function createGlobalMethodCall(globalObjectName: string, methodName: string, argumentsList: readonly Expression[]) {
   return createMethodCall(new Identifier(globalObjectName), methodName, argumentsList);
@@ -15,7 +15,7 @@ export function createObjectDefinePropertyCall(target: Expression, propertyName:
 }
 function tryAddPropertyAssignment(ps: Push<PropertyAssignment>, p: string, e?: Expression) {
   if (e) {
-    ps.push(createPropertyAssignment(p, e));
+    ps.push(new qc.PropertyAssignment(p, e));
     return true;
   }
   return false;

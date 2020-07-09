@@ -210,7 +210,7 @@ export function transformES2018(context: TransformationContext) {
       } else {
         chunkObject = append(
           chunkObject,
-          e.kind === Syntax.PropertyAssignment ? createPropertyAssignment(e.name, visitNode(e.initializer, visitor, isExpression)) : visitNode(e, visitor, isObjectLiteralElementLike)
+          e.kind === Syntax.PropertyAssignment ? new qc.PropertyAssignment(e.name, visitNode(e.initializer, visitor, isExpression)) : visitNode(e, visitor, isObjectLiteralElementLike)
         );
       }
     }
@@ -377,9 +377,9 @@ export function transformES2018(context: TransformationContext) {
     const catchVariable = getGeneratedNameForNode(errorRecord);
     const returnMethod = createTempVariable(undefined);
     const callValues = createAsyncValuesHelper(context, expression, node.expression);
-    const callNext = new qs.CallExpression(createPropertyAccess(iterator, 'next'), undefined, []);
-    const getDone = createPropertyAccess(result, 'done');
-    const getValue = createPropertyAccess(result, 'value');
+    const callNext = new qs.CallExpression(new qc.PropertyAccessExpression(iterator, 'next'), undefined, []);
+    const getDone = new qc.PropertyAccessExpression(result, 'done');
+    const getValue = new qc.PropertyAccessExpression(result, 'value');
     const callReturn = createFunctionCall(returnMethod, iterator, []);
     hoistVariableDeclaration(errorRecord);
     hoistVariableDeclaration(returnMethod);
@@ -403,21 +403,24 @@ export function transformES2018(context: TransformationContext) {
       new Block([restoreEnclosingLabel(forStatement, outermostLabeledStatement)]),
       new qc.CatchClause(
         new qc.VariableDeclaration(catchVariable),
-        setEmitFlags(new Block([new qc.ExpressionStatement(createAssignment(errorRecord, new qc.ObjectLiteralExpression([createPropertyAssignment('error', catchVariable)])))]), EmitFlags.SingleLine)
+        setEmitFlags(new Block([new qc.ExpressionStatement(createAssignment(errorRecord, new qc.ObjectLiteralExpression([new qc.PropertyAssignment('error', catchVariable)])))]), EmitFlags.SingleLine)
       ),
       new Block([
         new qc.TryStatement(
           new Block([
             setEmitFlags(
               new qc.IfStatement(
-                createLogicalAnd(createLogicalAnd(result, qs.PrefixUnaryExpression.logicalNot(getDone)), createAssignment(returnMethod, createPropertyAccess(iterator, 'return'))),
+                createLogicalAnd(createLogicalAnd(result, qs.PrefixUnaryExpression.logicalNot(getDone)), createAssignment(returnMethod, new qc.PropertyAccessExpression(iterator, 'return'))),
                 new qc.ExpressionStatement(createDownlevelAwait(callReturn))
               ),
               EmitFlags.SingleLine
             ),
           ]),
           undefined,
-          setEmitFlags(new Block([setEmitFlags(new qc.IfStatement(errorRecord, new qc.ThrowStatement(createPropertyAccess(errorRecord, 'error'))), EmitFlags.SingleLine)]), EmitFlags.SingleLine)
+          setEmitFlags(
+            new Block([setEmitFlags(new qc.IfStatement(errorRecord, new qc.ThrowStatement(new qc.PropertyAccessExpression(errorRecord, 'error'))), EmitFlags.SingleLine)]),
+            EmitFlags.SingleLine
+          )
         ),
       ])
     );
@@ -639,7 +642,7 @@ export function transformES2018(context: TransformationContext) {
     return node;
   }
   function substitutePropertyAccessExpression(node: PropertyAccessExpression) {
-    if (node.expression.kind === Syntax.SuperKeyword) return setRange(createPropertyAccess(createFileLevelUniqueName('_super'), node.name), node);
+    if (node.expression.kind === Syntax.SuperKeyword) return setRange(new qc.PropertyAccessExpression(createFileLevelUniqueName('_super'), node.name), node);
     return node;
   }
   function substituteElementAccessExpression(node: ElementAccessExpression) {
@@ -650,7 +653,7 @@ export function transformES2018(context: TransformationContext) {
     const expression = node.expression;
     if (Node.is.superProperty(expression)) {
       const argumentExpression = Node.is.kind(PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
-      return new qs.CallExpression(createPropertyAccess(argumentExpression, 'call'), undefined, [new qc.ThisExpression(), ...node.arguments]);
+      return new qs.CallExpression(new qc.PropertyAccessExpression(argumentExpression, 'call'), undefined, [new qc.ThisExpression(), ...node.arguments]);
     }
     return node;
   }
@@ -660,7 +663,7 @@ export function transformES2018(context: TransformationContext) {
   }
   function createSuperElementAccessInAsyncMethod(argumentExpression: Expression, location: TextRange): LeftHandSideExpression {
     if (enclosingSuperContainerFlags & NodeCheckFlags.AsyncMethodWithSuperBinding)
-      return setRange(createPropertyAccess(new qs.CallExpression(new Identifier('_superIndex'), undefined, [argumentExpression]), 'value'), location);
+      return setRange(new qc.PropertyAccessExpression(new qs.CallExpression(new Identifier('_superIndex'), undefined, [argumentExpression]), 'value'), location);
     return setRange(new qs.CallExpression(new Identifier('_superIndex'), undefined, [argumentExpression]), location);
   }
 }
@@ -683,7 +686,7 @@ export const assignHelper: UnscopedEmitHelper = {
             };`,
 };
 export function createAssignHelper(context: TransformationContext, attributesSegments: Expression[]) {
-  if (context.getCompilerOptions().target! >= ScriptTarget.ES2015) return new qs.CallExpression(createPropertyAccess(new Identifier('Object'), 'assign'), undefined, attributesSegments);
+  if (context.getCompilerOptions().target! >= ScriptTarget.ES2015) return new qs.CallExpression(new qc.PropertyAccessExpression(new Identifier('Object'), 'assign'), undefined, attributesSegments);
   context.requestEmitHelper(assignHelper);
   return new qs.CallExpression(getUnscopedHelperName('__assign'), undefined, attributesSegments);
 }

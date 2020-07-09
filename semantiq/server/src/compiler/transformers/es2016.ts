@@ -51,8 +51,8 @@ export function transformES2016(context: TransformationContext) {
     } else if (Node.is.kind(PropertyAccessExpression, left)) {
       // Transforms `a.x **= b` into `(_a = a).x = Math.pow(_a.x, b)`
       const expressionTemp = createTempVariable(hoistVariableDeclaration);
-      target = setRange(createPropertyAccess(setRange(createAssignment(expressionTemp, left.expression), left.expression), left.name), left);
-      value = setRange(createPropertyAccess(expressionTemp, left.name), left);
+      target = setRange(new qc.PropertyAccessExpression(setRange(createAssignment(expressionTemp, left.expression), left.expression), left.name), left);
+      value = setRange(new qc.PropertyAccessExpression(expressionTemp, left.name), left);
     } else {
       // Transforms `a **= b` into `a = Math.pow(a, b)`
       target = left;

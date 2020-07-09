@@ -290,7 +290,7 @@ export function transformES2015(context: TransformationContext) {
         node = returnCapturedThis(node);
       }
       return new qc.ReturnStatement(
-        new qc.ObjectLiteralExpression([createPropertyAssignment(new Identifier('value'), node.expression ? visitNode(node.expression, visitor, isExpression) : qs.VoidExpression.zero())])
+        new qc.ObjectLiteralExpression([new qc.PropertyAssignment(new Identifier('value'), node.expression ? visitNode(node.expression, visitor, isExpression) : qs.VoidExpression.zero())])
       );
     } else if (isReturnVoidStatementInConstructorWithCapturedSuper(node)) {
       return returnCapturedThis(node);
@@ -649,7 +649,7 @@ export function transformES2015(context: TransformationContext) {
     );
     const forStatement = new qc.ForStatement(
       setRange(new qc.VariableDeclarationList([new qc.VariableDeclaration(temp, undefined, createLiteral(restIndex))]), parameter),
-      setRange(createLessThan(temp, createPropertyAccess(new Identifier('arguments'), 'length')), parameter),
+      setRange(createLessThan(temp, new qc.PropertyAccessExpression(new Identifier('arguments'), 'length')), parameter),
       setRange(qs.PostfixUnaryExpression.increment(temp), parameter),
       new Block([
         startOnNewLine(
@@ -705,7 +705,7 @@ export function transformES2015(context: TransformationContext) {
           newTarget = qs.VoidExpression.zero();
           break;
         case Syntax.Constructor:
-          newTarget = createPropertyAccess(setEmitFlags(new qc.ThisExpression(), EmitFlags.NoSubstitution), 'constructor');
+          newTarget = new qc.PropertyAccessExpression(setEmitFlags(new qc.ThisExpression(), EmitFlags.NoSubstitution), 'constructor');
           break;
         case Syntax.FunctionDeclaration:
         case Syntax.FunctionExpression:
@@ -714,7 +714,7 @@ export function transformES2015(context: TransformationContext) {
               setEmitFlags(new qc.ThisExpression(), EmitFlags.NoSubstitution),
               new BinaryExpression(setEmitFlags(new qc.ThisExpression(), EmitFlags.NoSubstitution), Syntax.InstanceOfKeyword, getLocalName(node))
             ),
-            createPropertyAccess(setEmitFlags(new qc.ThisExpression(), EmitFlags.NoSubstitution), 'constructor'),
+            new qc.PropertyAccessExpression(setEmitFlags(new qc.ThisExpression(), EmitFlags.NoSubstitution), 'constructor'),
             qs.VoidExpression.zero()
           );
           break;
@@ -810,7 +810,7 @@ export function transformES2015(context: TransformationContext) {
       const getterFunction = transformFunctionLikeToExpression(getAccessor, undefined, container);
       setSourceMapRange(getterFunction, getSourceMapRange(getAccessor));
       setEmitFlags(getterFunction, EmitFlags.NoLeadingComments);
-      const getter = createPropertyAssignment('get', getterFunction);
+      const getter = new qc.PropertyAssignment('get', getterFunction);
       setCommentRange(getter, getCommentRange(getAccessor));
       properties.push(getter);
     }
@@ -818,15 +818,19 @@ export function transformES2015(context: TransformationContext) {
       const setterFunction = transformFunctionLikeToExpression(setAccessor, undefined, container);
       setSourceMapRange(setterFunction, getSourceMapRange(setAccessor));
       setEmitFlags(setterFunction, EmitFlags.NoLeadingComments);
-      const setter = createPropertyAssignment('set', setterFunction);
+      const setter = new qc.PropertyAssignment('set', setterFunction);
       setCommentRange(setter, getCommentRange(setAccessor));
       properties.push(setter);
     }
     properties.push(
-      createPropertyAssignment('enumerable', getAccessor || setAccessor ? new qc.BooleanLiteral(false) : new qc.BooleanLiteral(true)),
-      createPropertyAssignment('configurable', new qc.BooleanLiteral(true))
+      new qc.PropertyAssignment('enumerable', getAccessor || setAccessor ? new qc.BooleanLiteral(false) : new qc.BooleanLiteral(true)),
+      new qc.PropertyAssignment('configurable', new qc.BooleanLiteral(true))
     );
-    const call = new qs.CallExpression(createPropertyAccess(new Identifier('Object'), 'defineProperty'), undefined, [target, propertyName, new qc.ObjectLiteralExpression(properties, true)]);
+    const call = new qs.CallExpression(new qc.PropertyAccessExpression(new Identifier('Object'), 'defineProperty'), undefined, [
+      target,
+      propertyName,
+      new qc.ObjectLiteralExpression(properties, true),
+    ]);
     if (startsOnNewLine) {
       startOnNewLine(call);
     }
@@ -1209,7 +1213,7 @@ function convertForOfStatementForArray(node: ForOfStatement, outermostLabeledSta
         ),
         EmitFlags.NoHoisting
       ),
-      setRange(createLessThan(counter, createPropertyAccess(rhsReference, 'length')), node.expression),
+      setRange(createLessThan(counter, new qc.PropertyAccessExpression(rhsReference, 'length')), node.expression),
       setRange(qs.PostfixUnaryExpression.increment(counter), node.expression),
       convertForOfStatementHead(node, new qs.ElementAccessExpression(rhsReference, counter), convertedLoopBodyStatements)
     ),
@@ -1227,7 +1231,7 @@ function convertForOfStatementForIterable(node: ForOfStatement, outermostLabeled
   const catchVariable = getGeneratedNameForNode(errorRecord);
   const returnMethod = createTempVariable(undefined);
   const values = createValuesHelper(context, expression, node.expression);
-  const next = new qs.CallExpression(createPropertyAccess(iterator, 'next'), undefined, []);
+  const next = new qs.CallExpression(new qc.PropertyAccessExpression(iterator, 'next'), undefined, []);
   hoistVariableDeclaration(errorRecord);
   hoistVariableDeclaration(returnMethod);
   const initializer = ancestorFacts & HierarchyFacts.IterationContainer ? inlineExpressions([createAssignment(errorRecord, qs.VoidExpression.zero()), values]) : values;
@@ -1241,9 +1245,9 @@ function convertForOfStatementForIterable(node: ForOfStatement, outermostLabeled
           ),
           EmitFlags.NoHoisting
         ),
-        qs.PrefixUnaryExpression.logicalNot(createPropertyAccess(result, 'done')),
+        qs.PrefixUnaryExpression.logicalNot(new qc.PropertyAccessExpression(result, 'done')),
         createAssignment(result, next),
-        convertForOfStatementHead(node, createPropertyAccess(result, 'value'), convertedLoopBodyStatements)
+        convertForOfStatementHead(node, new qc.PropertyAccessExpression(result, 'value'), convertedLoopBodyStatements)
       ),
       node
     ),
@@ -1253,7 +1257,7 @@ function convertForOfStatementForIterable(node: ForOfStatement, outermostLabeled
     new Block([restoreEnclosingLabel(forStatement, outermostLabeledStatement, convertedLoopState && resetLabel)]),
     new qc.CatchClause(
       new qc.VariableDeclaration(catchVariable),
-      setEmitFlags(new Block([new qc.ExpressionStatement(createAssignment(errorRecord, new qc.ObjectLiteralExpression([createPropertyAssignment('error', catchVariable)])))]), EmitFlags.SingleLine)
+      setEmitFlags(new Block([new qc.ExpressionStatement(createAssignment(errorRecord, new qc.ObjectLiteralExpression([new qc.PropertyAssignment('error', catchVariable)])))]), EmitFlags.SingleLine)
     ),
     new Block([
       new qc.TryStatement(
@@ -1261,8 +1265,8 @@ function convertForOfStatementForIterable(node: ForOfStatement, outermostLabeled
           setEmitFlags(
             new qc.IfStatement(
               createLogicalAnd(
-                createLogicalAnd(result, qs.PrefixUnaryExpression.logicalNot(createPropertyAccess(result, 'done'))),
-                createAssignment(returnMethod, createPropertyAccess(iterator, 'return'))
+                createLogicalAnd(result, qs.PrefixUnaryExpression.logicalNot(new qc.PropertyAccessExpression(result, 'done'))),
+                createAssignment(returnMethod, new qc.PropertyAccessExpression(iterator, 'return'))
               ),
               new qc.ExpressionStatement(createFunctionCall(returnMethod, iterator, []))
             ),
@@ -1270,7 +1274,10 @@ function convertForOfStatementForIterable(node: ForOfStatement, outermostLabeled
           ),
         ]),
         undefined,
-        setEmitFlags(new Block([setEmitFlags(new qc.IfStatement(errorRecord, new qc.ThrowStatement(createPropertyAccess(errorRecord, 'error'))), EmitFlags.SingleLine)]), EmitFlags.SingleLine)
+        setEmitFlags(
+          new Block([setEmitFlags(new qc.IfStatement(errorRecord, new qc.ThrowStatement(new qc.PropertyAccessExpression(errorRecord, 'error'))), EmitFlags.SingleLine)]),
+          EmitFlags.SingleLine
+        )
       ),
     ])
   );
@@ -1665,7 +1672,7 @@ function generateCallToConvertedLoop(loopFunctionExpressionName: Identifier, sta
         outerState.nonLocalJumps! |= Jump.Return;
         returnStatement = new qc.ReturnStatement(loopResultName);
       } else {
-        returnStatement = new qc.ReturnStatement(createPropertyAccess(loopResultName, 'value'));
+        returnStatement = new qc.ReturnStatement(new qc.PropertyAccessExpression(loopResultName, 'value'));
       }
       statements.push(new qc.IfStatement(new BinaryExpression(new TypeOfExpression(loopResultName), Syntax.Equals3Token, createLiteral('object')), returnStatement));
     }
@@ -1819,7 +1826,7 @@ function visitMethodDeclaration(node: MethodDeclaration): ObjectLiteralElementLi
   assert(!Node.is.kind(ComputedPropertyName, node.name));
   const functionExpression = transformFunctionLikeToExpression(node, undefined);
   setEmitFlags(functionExpression, EmitFlags.NoLeadingComments | Node.get.emitFlags(functionExpression));
-  return setRange(createPropertyAssignment(node.name, functionExpression), node);
+  return setRange(new qc.PropertyAssignment(node.name, functionExpression), node);
 }
 function visitAccessorDeclaration(node: AccessorDeclaration): AccessorDeclaration {
   assert(!Node.is.kind(ComputedPropertyName, node.name));
@@ -1839,7 +1846,7 @@ function visitAccessorDeclaration(node: AccessorDeclaration): AccessorDeclaratio
   return updated;
 }
 function visitShorthandPropertyAssignment(node: ShorthandPropertyAssignment): ObjectLiteralElementLike {
-  return setRange(createPropertyAssignment(node.name, getSynthesizedClone(node.name)), node);
+  return setRange(new qc.PropertyAssignment(node.name, getSynthesizedClone(node.name)), node);
 }
 function visitComputedPropertyName(node: ComputedPropertyName) {
   return visitEachChild(node, visitor, context);
@@ -1945,7 +1952,7 @@ function visitCallExpressionWithPotentialCapturedThisAssignment(node: CallExpres
 }
 function visitNewExpression(node: NewExpression): LeftHandSideExpression {
   if (some(node.arguments, isSpreadElement)) {
-    const { target, thisArg } = createCallBinding(createPropertyAccess(node.expression, 'bind'), hoistVariableDeclaration);
+    const { target, thisArg } = createCallBinding(new qc.PropertyAccessExpression(node.expression, 'bind'), hoistVariableDeclaration);
     return new qc.NewExpression(
       createFunctionApply(visitNode(target, visitor, isExpression), thisArg, transformAndSpreadElements(new Nodes([qs.VoidExpression.zero(), ...node.arguments!]), false)),
       undefined,
@@ -2044,7 +2051,9 @@ function addTemplateSpans(expressions: Expression[], node: TemplateExpression): 
   }
 }
 function visitSuperKeyword(isExpressionOfCall: boolean): LeftHandSideExpression {
-  return hierarchyFacts & HierarchyFacts.NonStaticClassElement && !isExpressionOfCall ? createPropertyAccess(createFileLevelUniqueName('_super'), 'prototype') : createFileLevelUniqueName('_super');
+  return hierarchyFacts & HierarchyFacts.NonStaticClassElement && !isExpressionOfCall
+    ? new qc.PropertyAccessExpression(createFileLevelUniqueName('_super'), 'prototype')
+    : createFileLevelUniqueName('_super');
 }
 function visitMetaProperty(node: MetaProperty) {
   if (node.keywordToken === Syntax.NewKeyword && node.name.escapedText === 'target') {
@@ -2139,7 +2148,7 @@ function substituteThisKeyword(node: PrimaryExpression): PrimaryExpression {
   return node;
 }
 function getClassMemberPrefix(node: ClassExpression | ClassDeclaration, member: ClassElement) {
-  return hasSyntacticModifier(member, ModifierFlags.Static) ? getInternalName(node) : createPropertyAccess(getInternalName(node), 'prototype');
+  return hasSyntacticModifier(member, ModifierFlags.Static) ? getInternalName(node) : new qc.PropertyAccessExpression(getInternalName(node), 'prototype');
 }
 function hasSynthesizedDefaultSuperCall(constructor: ConstructorDeclaration | undefined, hasExtendsClause: boolean) {
   if (!constructor || !hasExtendsClause) return false;

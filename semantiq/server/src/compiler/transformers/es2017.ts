@@ -410,7 +410,7 @@ export function transformES2017(context: TransformationContext) {
     return node;
   }
   function substitutePropertyAccessExpression(node: PropertyAccessExpression) {
-    if (node.expression.kind === Syntax.SuperKeyword) return setRange(createPropertyAccess(createFileLevelUniqueName('_super'), node.name), node);
+    if (node.expression.kind === Syntax.SuperKeyword) return setRange(new qc.PropertyAccessExpression(createFileLevelUniqueName('_super'), node.name), node);
     return node;
   }
   function substituteElementAccessExpression(node: ElementAccessExpression) {
@@ -421,7 +421,7 @@ export function transformES2017(context: TransformationContext) {
     const expression = node.expression;
     if (Node.is.superProperty(expression)) {
       const argumentExpression = Node.is.kind(PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
-      return new qs.CallExpression(createPropertyAccess(argumentExpression, 'call'), undefined, [new qc.ThisExpression(), ...node.arguments]);
+      return new qs.CallExpression(new qc.PropertyAccessExpression(argumentExpression, 'call'), undefined, [new qc.ThisExpression(), ...node.arguments]);
     }
     return node;
   }
@@ -431,7 +431,7 @@ export function transformES2017(context: TransformationContext) {
   }
   function createSuperElementAccessInAsyncMethod(argumentExpression: Expression, location: TextRange): LeftHandSideExpression {
     if (enclosingSuperContainerFlags & NodeCheckFlags.AsyncMethodWithSuperBinding)
-      return setRange(createPropertyAccess(new qs.CallExpression(createFileLevelUniqueName('_superIndex'), undefined, [argumentExpression]), 'value'), location);
+      return setRange(new qc.PropertyAccessExpression(new qs.CallExpression(createFileLevelUniqueName('_superIndex'), undefined, [argumentExpression]), 'value'), location);
     return setRange(new qs.CallExpression(createFileLevelUniqueName('_superIndex'), undefined, [argumentExpression]), location);
   }
 }
@@ -442,7 +442,7 @@ export function createSuperAccessVariableStatement(resolver: EmitResolver, node:
     const name = syntax.get.unescUnderscores(key);
     const getterAndSetter: PropertyAssignment[] = [];
     getterAndSetter.push(
-      createPropertyAssignment(
+      new qc.PropertyAssignment(
         'get',
         new ArrowFunction(
           undefined,
@@ -450,13 +450,13 @@ export function createSuperAccessVariableStatement(resolver: EmitResolver, node:
           [],
           undefined,
           undefined,
-          setEmitFlags(createPropertyAccess(setEmitFlags(new qc.SuperExpression(), EmitFlags.NoSubstitution), name), EmitFlags.NoSubstitution)
+          setEmitFlags(new qc.PropertyAccessExpression(setEmitFlags(new qc.SuperExpression(), EmitFlags.NoSubstitution), name), EmitFlags.NoSubstitution)
         )
       )
     );
     if (hasBinding) {
       getterAndSetter.push(
-        createPropertyAssignment(
+        new qc.PropertyAssignment(
           'set',
           new ArrowFunction(
             undefined,
@@ -464,17 +464,17 @@ export function createSuperAccessVariableStatement(resolver: EmitResolver, node:
             [new qc.ParameterDeclaration(undefined, undefined, undefined, 'v', undefined, undefined, undefined)],
             undefined,
             undefined,
-            createAssignment(setEmitFlags(createPropertyAccess(setEmitFlags(new qc.SuperExpression(), EmitFlags.NoSubstitution), name), EmitFlags.NoSubstitution), new Identifier('v'))
+            createAssignment(setEmitFlags(new qc.PropertyAccessExpression(setEmitFlags(new qc.SuperExpression(), EmitFlags.NoSubstitution), name), EmitFlags.NoSubstitution), new Identifier('v'))
           )
         )
       );
     }
-    accessors.push(createPropertyAssignment(name, new qc.ObjectLiteralExpression(getterAndSetter)));
+    accessors.push(new qc.PropertyAssignment(name, new qc.ObjectLiteralExpression(getterAndSetter)));
   });
   return new qc.VariableStatement(
     undefined,
     new qc.VariableDeclarationList(
-      [new qc.VariableDeclaration(createFileLevelUniqueName('_super'), undefined, new qs.CallExpression(createPropertyAccess(new Identifier('Object'), 'create'), true))],
+      [new qc.VariableDeclaration(createFileLevelUniqueName('_super'), undefined, new qs.CallExpression(new qc.PropertyAccessExpression(new Identifier('Object'), 'create'), true))],
       NodeFlags.Const
     )
   );

@@ -833,7 +833,7 @@ export function transformGenerators(context: TransformationContext) {
       //  .yield resumeLabel
       //  .mark resumeLabel
       //      new (_b.apply(_a, _c.concat([%sent%, 2])));
-      const { target, thisArg } = createCallBinding(createPropertyAccess(node.expression, 'bind'), hoistVariableDeclaration);
+      const { target, thisArg } = createCallBinding(new qc.PropertyAccessExpression(node.expression, 'bind'), hoistVariableDeclaration);
       return setOriginalNode(
         setRange(
           new qc.NewExpression(createFunctionApply(cacheExpression(visitNode(target, visitor, isExpression)), thisArg, visitElements(node.arguments!, qs.VoidExpression.zero())), undefined, []),
@@ -1145,14 +1145,18 @@ export function transformGenerators(context: TransformationContext) {
       hoistVariableDeclaration(keysIndex);
       emitAssignment(keysArray, new ArrayLiteralExpression());
       emitStatement(
-        new qc.ForInStatement(key, visitNode(node.expression, visitor, isExpression), new qc.ExpressionStatement(new qs.CallExpression(createPropertyAccess(keysArray, 'push'), undefined, [key])))
+        new qc.ForInStatement(
+          key,
+          visitNode(node.expression, visitor, isExpression),
+          new qc.ExpressionStatement(new qs.CallExpression(new qc.PropertyAccessExpression(keysArray, 'push'), undefined, [key]))
+        )
       );
       emitAssignment(keysIndex, createLiteral(0));
       const conditionLabel = defineLabel();
       const incrementLabel = defineLabel();
       const endLabel = beginLoopBlock(incrementLabel);
       markLabel(conditionLabel);
-      emitBreakWhenFalse(endLabel, createLessThan(keysIndex, createPropertyAccess(keysArray, 'length')));
+      emitBreakWhenFalse(endLabel, createLessThan(keysIndex, new qc.PropertyAccessExpression(keysArray, 'length')));
       let variable: Expression;
       if (Node.is.kind(VariableDeclarationList, initializer)) {
         for (const variable of initializer.declarations) {
@@ -1584,7 +1588,7 @@ export function transformGenerators(context: TransformationContext) {
     exception.state = ExceptionBlockState.Catch;
     exception.catchVariable = name;
     exception.catchLabel = catchLabel;
-    emitAssignment(name, new qs.CallExpression(createPropertyAccess(state, 'sent'), undefined, []));
+    emitAssignment(name, new qs.CallExpression(new qc.PropertyAccessExpression(state, 'sent'), undefined, []));
     emitNop();
   }
   function beginFinallyBlock(): void {
@@ -1766,7 +1770,7 @@ export function transformGenerators(context: TransformationContext) {
     return setRange(new qc.ReturnStatement(new ArrayLiteralExpression(expression ? [createInstruction(Instruction.Return), expression] : [createInstruction(Instruction.Return)])), location);
   }
   function createGeneratorResume(location?: TextRange): LeftHandSideExpression {
-    return setRange(new qs.CallExpression(createPropertyAccess(state, 'sent'), undefined, []), location);
+    return setRange(new qs.CallExpression(new qc.PropertyAccessExpression(state, 'sent'), undefined, []), location);
   }
   function emitNop() {
     emitWorker(OpCode.Nop);
@@ -1850,7 +1854,7 @@ export function transformGenerators(context: TransformationContext) {
       flushFinalLabel(0);
     }
     if (clauses) {
-      const labelExpression = createPropertyAccess(state, 'label');
+      const labelExpression = new qc.PropertyAccessExpression(state, 'label');
       const switchStatement = new qc.SwitchStatement(labelExpression, new qc.CaseBlock(clauses));
       return [startOnNewLine(switchStatement)];
     }
@@ -1911,7 +1915,7 @@ export function transformGenerators(context: TransformationContext) {
         const { startLabel, catchLabel, finallyLabel, endLabel } = currentExceptionBlock;
         statements.unshift(
           new qc.ExpressionStatement(
-            new qs.CallExpression(createPropertyAccess(createPropertyAccess(state, 'trys'), 'push'), undefined, [
+            new qs.CallExpression(new qc.PropertyAccessExpression(new qc.PropertyAccessExpression(state, 'trys'), 'push'), undefined, [
               new ArrayLiteralExpression([createLabel(startLabel), createLabel(catchLabel), createLabel(finallyLabel), createLabel(endLabel)]),
             ])
           )
@@ -1921,7 +1925,7 @@ export function transformGenerators(context: TransformationContext) {
       if (markLabelEnd) {
         // The case clause for the last label falls through to this label, so we
         // add an assignment statement to reflect the change in labels.
-        statements.push(new qc.ExpressionStatement(createAssignment(createPropertyAccess(state, 'label'), createLiteral(labelNumber + 1))));
+        statements.push(new qc.ExpressionStatement(createAssignment(new qc.PropertyAccessExpression(state, 'label'), createLiteral(labelNumber + 1))));
       }
     }
     clauses.push(new qc.CaseClause(createLiteral(labelNumber), statements || []));
