@@ -2971,6 +2971,7 @@ export class StringLiteral extends qc.LiteralExpression implements qc.StringLite
     r.textSourceNode = sourceNode;
     return r;
   }
+  _declarationBrand: any;
 }
 StringLiteral.prototype.kind = StringLiteral.kind;
 qb.addMixins(StringLiteral, [qc.Declaration]);
@@ -3249,7 +3250,7 @@ TypeOperatorNode.prototype.kind = TypeOperatorNode.kind;
 */
 export class TypeParameterDeclaration extends qc.NamedDeclaration implements qc.TypeParameterDeclaration {
   static readonly kind = Syntax.TypeParameter;
-  parent: qc.DeclarationWithTypeParameterChildren | qc.InferTypeNode;
+  parent!: qc.DeclarationWithTypeParameterChildren | qc.InferTypeNode;
   name: Identifier;
   constraint?: qc.TypeNode;
   default?: qc.TypeNode;
@@ -3265,14 +3266,13 @@ export class TypeParameterDeclaration extends qc.NamedDeclaration implements qc.
   }
 }
 TypeParameterDeclaration.prototype.kind = TypeParameterDeclaration.kind;
-/*
 export class TypePredicateNode extends qc.TypeNode implements qc.TypePredicateNode {
   static readonly kind = Syntax.TypePredicate;
-  parent: SignatureDeclaration | JSDocTypeExpression;
-  assertsModifier?: AssertsToken;
+  parent!: qc.SignatureDeclaration | JSDocTypeExpression;
+  assertsModifier?: qc.AssertsToken;
   parameterName: Identifier | ThisTypeNode;
   type?: qc.TypeNode;
-  constructor(a: AssertsToken | undefined, p: Identifier | ThisTypeNode | string, t?: qc.TypeNode) {
+  constructor(a: qc.AssertsToken | undefined, p: Identifier | ThisTypeNode | string, t?: qc.TypeNode) {
     super(true);
     this.assertsModifier = a;
     this.parameterName = asName(p);
@@ -3281,19 +3281,19 @@ export class TypePredicateNode extends qc.TypeNode implements qc.TypePredicateNo
   update(p: Identifier | ThisTypeNode, t: qc.TypeNode) {
     return this.updateWithModifier(this.assertsModifier, p, t);
   }
-  updateWithModifier(a: AssertsToken | undefined, p: Identifier | ThisTypeNode, t?: qc.TypeNode) {
-    return this.assertsModifier !== a || this.parameterName !== p || this.type !== t ? new create(a, p, t).updateFrom(this) : this;
+  updateWithModifier(a: qc.AssertsToken | undefined, p: Identifier | ThisTypeNode, t?: qc.TypeNode) {
+    return this.assertsModifier !== a || this.parameterName !== p || this.type !== t ? new TypePredicateNode(a, p, t).updateFrom(this) : this;
   }
 }
 TypePredicateNode.prototype.kind = TypePredicateNode.kind;
 export class TypeQueryNode extends qc.TypeNode implements qc.TypeQueryNode {
   static readonly kind = Syntax.TypeQuery;
   exprName: qc.EntityName;
-  constructor(e: EntityName) {
+  constructor(e: qc.EntityName) {
     super(true);
     this.exprName = e;
   }
-  update(e: EntityName) {
+  update(e: qc.EntityName) {
     return this.exprName !== e ? new TypeQueryNode(e).updateFrom(this) : this;
   }
 }
@@ -3301,7 +3301,7 @@ TypeQueryNode.prototype.kind = TypeQueryNode.kind;
 export class TypeReferenceNode extends qc.NodeWithTypeArguments implements qc.TypeReferenceNode {
   static readonly kind = Syntax.TypeReference;
   typeName: qc.EntityName;
-  constructor(t: string | EntityName, ts?: readonly qc.TypeNode[]) {
+  constructor(t: string | qc.EntityName, ts?: readonly qc.TypeNode[]) {
     super(true);
     this.typeName = asName(t);
     this.typeArguments = ts && parenthesize.typeParameters(ts);
@@ -3311,7 +3311,7 @@ export class TypeReferenceNode extends qc.NodeWithTypeArguments implements qc.Ty
   }
 }
 TypeReferenceNode.prototype.kind = TypeReferenceNode.kind;
-export class UnionTypeNode extends UnionOrIntersectionTypeNode implements qc.UnionTypeNode {
+export class UnionTypeNode extends qc.UnionOrIntersectionTypeNode implements qc.UnionTypeNode {
   static readonly kind = Syntax.UnionType;
   types: Nodes<qc.TypeNode>;
   constructor(ts: readonly qc.TypeNode[]) {
@@ -3322,6 +3322,7 @@ export class UnionTypeNode extends UnionOrIntersectionTypeNode implements qc.Uni
   }
 }
 UnionTypeNode.prototype.kind = UnionTypeNode.kind;
+/*
 export namespace UnparsedNode {
   export function createUnparsedNode(section: BundleFileSection, parent: UnparsedSource): UnparsedNode {
     const r = createNode(mapBundleFileSectionKindToSyntax(section.kind), section.pos, section.end) as UnparsedNode;
@@ -3561,7 +3562,7 @@ UnparsedSyntheticReference.prototype.kind = UnparsedSyntheticReference.kind;
 */
 export class VariableDeclaration extends qc.NamedDeclaration implements qc.VariableDeclaration {
   static readonly kind = Syntax.VariableDeclaration;
-  parent: VariableDeclarationList | CatchClause;
+  parent!: VariableDeclarationList | CatchClause;
   name: qc.BindingName;
   exclamationToken?: qc.ExclamationToken;
   type?: qc.TypeNode;
@@ -3580,7 +3581,7 @@ export class VariableDeclaration extends qc.NamedDeclaration implements qc.Varia
 VariableDeclaration.prototype.kind = VariableDeclaration.kind;
 export class VariableDeclarationList extends Node implements qc.VariableDeclarationList {
   static readonly kind = Syntax.VariableDeclarationList;
-  parent: VariableStatement | ForStatement | ForOfStatement | ForInStatement;
+  parent!: VariableStatement | ForStatement | ForOfStatement | ForInStatement;
   declarations: Nodes<VariableDeclaration>;
   constructor(ds: readonly VariableDeclaration[], f = NodeFlags.None) {
     super(true);
@@ -3903,7 +3904,7 @@ export namespace emit {
     emitNode.trailingComments = undefined;
     return n;
   }
-  export function setEmitFlags<T extends Node>(n: T, emitFlags: EmitFlags) {
+  export function setEmitFlags<T extends Node>(n: T, emitFlags: qc.EmitFlags) {
     getOrCreateEmitNode(n).flags = emitFlags;
     return n;
   }
@@ -3943,7 +3944,7 @@ export namespace emit {
     const emitNode = n.emitNode;
     return (emitNode && emitNode.commentRange) || n;
   }
-  export function setCommentRange<T extends Node>(n: T, range: TextRange) {
+  export function setCommentRange<T extends Node>(n: T, range: qb.TextRange) {
     getOrCreateEmitNode(n).commentRange = range;
     return n;
   }
