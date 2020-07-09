@@ -378,7 +378,7 @@ export function transformClassFields(context: TransformationContext) {
     let indexOfFirstStatement = 0;
     let statements: Statement[] = [];
     if (!constructor && isDerivedClass) {
-      statements.push(new qc.ExpressionStatement(new qs.CallExpression(createSuper(), undefined, [createSpread(new Identifier('arguments'))])));
+      statements.push(new qc.ExpressionStatement(new qs.CallExpression(new qc.SuperExpression(), undefined, [createSpread(new Identifier('arguments'))])));
     }
     if (constructor) {
       indexOfFirstStatement = addPrologueDirectivesAndInitialSuperCall(constructor, statements, visitor);
@@ -395,7 +395,7 @@ export function transformClassFields(context: TransformationContext) {
         indexOfFirstStatement = afterParameterProperties;
       }
     }
-    addPropertyStatements(statements, properties, createThis());
+    addPropertyStatements(statements, properties, new qc.ThisExpression());
     if (constructor) {
       addRange(statements, Nodes.visit(constructor.body!.statements, visitor, isStatement, indexOfFirstStatement));
     }

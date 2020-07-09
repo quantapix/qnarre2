@@ -277,7 +277,7 @@ export function transformModule(context: TransformationContext) {
       const expressionResult = visitNode(currentModuleInfo.exportEquals.expression, moduleExpressionElementVisitor);
       if (expressionResult) {
         if (emitAsReturn) {
-          const statement = createReturn(expressionResult);
+          const statement = new qc.ReturnStatement(expressionResult);
           setRange(statement, currentModuleInfo.exportEquals);
           setEmitFlags(statement, EmitFlags.NoTokenSourceMaps | EmitFlags.NoComments);
           statements.push(statement);
@@ -416,7 +416,7 @@ export function transformModule(context: TransformationContext) {
     if (languageVersion >= ScriptTarget.ES2015) {
       func = new ArrowFunction(undefined, requireCall);
     } else {
-      func = new qs.FunctionExpression(undefined, undefined, undefined, undefined, [], undefined, new Block([createReturn(requireCall)]));
+      func = new qs.FunctionExpression(undefined, undefined, undefined, undefined, [], undefined, new Block([new qc.ReturnStatement(requireCall)]));
       if (containsLexicalThis) {
         setEmitFlags(func, EmitFlags.CapturesThis);
       }
@@ -843,7 +843,7 @@ export function transformModule(context: TransformationContext) {
             createLiteral(name),
             new qc.ObjectLiteralExpression([
               createPropertyAssignment('enumerable', createLiteral(true)),
-              createPropertyAssignment('get', new qs.FunctionExpression(undefined, undefined, undefined, undefined, [], undefined, new Block([createReturn(value)]))),
+              createPropertyAssignment('get', new qs.FunctionExpression(undefined, undefined, undefined, undefined, [], undefined, new Block([new qc.ReturnStatement(value)]))),
             ]),
           ])
         : createAssignment(createPropertyAccess(new Identifier('exports'), getSynthesizedClone(name)), value),
@@ -1251,7 +1251,7 @@ export function transformSystemModule(context: TransformationContext) {
       createPropertyAssignment('execute', new qs.FunctionExpression(modifiers, undefined, undefined, undefined, [], undefined, new Block(executeStatements, true))),
     ]);
     moduleObject.multiLine = true;
-    statements.push(createReturn(moduleObject));
+    statements.push(new qc.ReturnStatement(moduleObject));
     return new Block(statements, true);
   }
   function addExportStarIfNeeded(statements: Statement[]) {
@@ -1278,7 +1278,7 @@ export function transformSystemModule(context: TransformationContext) {
         if (exportedLocalName.escapedText === 'default') {
           continue;
         }
-        exportedNames.push(createPropertyAssignment(createLiteral(exportedLocalName), createTrue()));
+        exportedNames.push(createPropertyAssignment(createLiteral(exportedLocalName), new qc.BooleanLiteral(true)));
       }
     }
     for (const externalImport of moduleInfo.externalImports) {
@@ -1290,10 +1290,10 @@ export function transformSystemModule(context: TransformationContext) {
       }
       if (Node.is.kind(NamedExports, externalImport.exportClause)) {
         for (const element of externalImport.exportClause.elements) {
-          exportedNames.push(createPropertyAssignment(createLiteral(idText(element.name || element.propertyName)), createTrue()));
+          exportedNames.push(createPropertyAssignment(createLiteral(idText(element.name || element.propertyName)), new qc.BooleanLiteral(true)));
         }
       } else {
-        exportedNames.push(createPropertyAssignment(createLiteral(idText(externalImport.exportClause.name)), createTrue()));
+        exportedNames.push(createPropertyAssignment(createLiteral(idText(externalImport.exportClause.name)), new qc.BooleanLiteral(true)));
       }
     }
     const exportedNamesStorageRef = createUniqueName('exportedNames');

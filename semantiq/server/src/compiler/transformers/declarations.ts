@@ -214,11 +214,11 @@ export function transformDeclarations(context: TransformationContext) {
             const newFile = qp_updateSourceNode(
               sourceFile,
               [
-                createModuleDeclaration(
+                new qc.ModuleDeclaration(
                   [],
                   [createModifier(Syntax.DeclareKeyword)],
                   createLiteral(getResolvedExternalModuleName(context.getEmitHost(), sourceFile)),
-                  createModuleBlock(setRange(new Nodes(transformAndReplaceLatePaintedStatements(statements)), sourceFile.statements))
+                  new qc.ModuleBlock(setRange(new Nodes(transformAndReplaceLatePaintedStatements(statements)), sourceFile.statements))
                 ),
               ],
               true,
@@ -849,7 +849,7 @@ export function transformDeclarations(context: TransformationContext) {
         );
         if (clean && resolver.isExpandoFunctionDeclaration(input)) {
           const props = resolver.getPropertiesOfContainerFunction(input);
-          const fakespace = createModuleDeclaration(undefined, undefined, clean.name || new Identifier('_default'), createModuleBlock([]), NodeFlags.Namespace);
+          const fakespace = new qc.ModuleDeclaration(undefined, undefined, clean.name || new Identifier('_default'), new qc.ModuleBlock([]), NodeFlags.Namespace);
           fakespace.flags ^= NodeFlags.Synthesized;
           fakespace.parent = enclosingDeclaration as SourceFile | NamespaceDeclaration;
           fakespace.locals = new SymbolTable(props);
@@ -862,7 +862,7 @@ export function transformDeclarations(context: TransformationContext) {
             const varDecl = new qc.VariableDeclaration(syntax.get.unescUnderscores(p.escName), type, undefined);
             return new qc.VariableStatement(undefined, new qc.VariableDeclarationList([varDecl]));
           });
-          const namespaceDecl = createModuleDeclaration(undefined, ensureModifiers(input), input.name!, createModuleBlock(declarations), NodeFlags.Namespace);
+          const namespaceDecl = new qc.ModuleDeclaration(undefined, ensureModifiers(input), input.name!, new qc.ModuleBlock(declarations), NodeFlags.Namespace);
           if (!hasEffectiveModifier(clean, ModifierFlags.Default)) return [clean, namespaceDecl];
           const modifiers = createModifiersFromModifierFlags((getEffectiveModifierFlags(clean) & ~ModifierFlags.ExportDefault) | ModifierFlags.Ambient);
           const cleanDeclaration = clean.update(undefined, modifiers, undefined, clean.name, clean.typeParameters, clean.parameters, clean.type, undefined);

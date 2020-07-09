@@ -309,7 +309,7 @@ export function transformES2017(context: TransformationContext) {
       const statements: Statement[] = [];
       const statementOffset = addPrologue(statements, (<Block>node.body).statements, false, visitor);
       statements.push(
-        createReturn(createAwaiterHelper(context, inHasLexicalThisContext(), hasLexicalArguments, promiseConstructor, transformAsyncFunctionBodyWorker(<Block>node.body, statementOffset)))
+        new qc.ReturnStatement(createAwaiterHelper(context, inHasLexicalThisContext(), hasLexicalArguments, promiseConstructor, transformAsyncFunctionBodyWorker(<Block>node.body, statementOffset)))
       );
       insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
       const emitSuperHelpers = languageVersion >= ScriptTarget.ES2015 && resolver.getNodeCheckFlags(node) & (NodeCheckFlags.AsyncMethodWithSuperBinding | NodeCheckFlags.AsyncMethodWithSuper);
@@ -421,7 +421,7 @@ export function transformES2017(context: TransformationContext) {
     const expression = node.expression;
     if (Node.is.superProperty(expression)) {
       const argumentExpression = Node.is.kind(PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
-      return new qs.CallExpression(createPropertyAccess(argumentExpression, 'call'), undefined, [createThis(), ...node.arguments]);
+      return new qs.CallExpression(createPropertyAccess(argumentExpression, 'call'), undefined, [new qc.ThisExpression(), ...node.arguments]);
     }
     return node;
   }
@@ -444,7 +444,14 @@ export function createSuperAccessVariableStatement(resolver: EmitResolver, node:
     getterAndSetter.push(
       createPropertyAssignment(
         'get',
-        new ArrowFunction(undefined, undefined, [], undefined, undefined, setEmitFlags(createPropertyAccess(setEmitFlags(createSuper(), EmitFlags.NoSubstitution), name), EmitFlags.NoSubstitution))
+        new ArrowFunction(
+          undefined,
+          undefined,
+          [],
+          undefined,
+          undefined,
+          setEmitFlags(createPropertyAccess(setEmitFlags(new qc.SuperExpression(), EmitFlags.NoSubstitution), name), EmitFlags.NoSubstitution)
+        )
       )
     );
     if (hasBinding) {
@@ -457,7 +464,7 @@ export function createSuperAccessVariableStatement(resolver: EmitResolver, node:
             [new qc.ParameterDeclaration(undefined, undefined, undefined, 'v', undefined, undefined, undefined)],
             undefined,
             undefined,
-            createAssignment(setEmitFlags(createPropertyAccess(setEmitFlags(createSuper(), EmitFlags.NoSubstitution), name), EmitFlags.NoSubstitution), new Identifier('v'))
+            createAssignment(setEmitFlags(createPropertyAccess(setEmitFlags(new qc.SuperExpression(), EmitFlags.NoSubstitution), name), EmitFlags.NoSubstitution), new Identifier('v'))
           )
         )
       );
@@ -493,7 +500,7 @@ function createAwaiterHelper(context: TransformationContext, hasLexicalThis: boo
   const generatorFunc = new qs.FunctionExpression([], undefined, body);
   (generatorFunc.emitNode || (generatorFunc.emitNode = {} as EmitNode)).flags |= EmitFlags.AsyncFunctionBody | EmitFlags.ReuseTempVariableScope;
   return new qs.CallExpression(getUnscopedHelperName('__awaiter'), undefined, [
-    hasLexicalThis ? createThis() : qs.VoidExpression.zero(),
+    hasLexicalThis ? new qc.ThisExpression() : qs.VoidExpression.zero(),
     hasLexicalArguments ? new Identifier('arguments') : qs.VoidExpression.zero(),
     promiseConstructor ? createExpressionFromEntityName(promiseConstructor) : qs.VoidExpression.zero(),
     generatorFunc,

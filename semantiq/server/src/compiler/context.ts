@@ -99,7 +99,7 @@ export class QContext {
     }
     if (type.flags & TypeFlags.BooleanLiteral) {
       this.approximateLength += (<IntrinsicType>type).intrinsicName.length;
-      return (<IntrinsicType>type).intrinsicName === 'true' ? createTrue() : createFalse();
+      return (<IntrinsicType>type).intrinsicName === 'true' ? new qc.BooleanLiteral(true) : new qc.BooleanLiteral(false);
     }
     if (type.flags & TypeFlags.UniqueESSymbol) {
       if (!(this.flags & NodeBuilderFlags.AllowUniqueESSymbolType)) {
@@ -148,7 +148,7 @@ export class QContext {
         }
       }
       this.approximateLength += 4;
-      return createThis();
+      return new qc.ThisExpression();
     }
     if (!inTypeAlias && type.aliasSymbol && (this.flags & NodeBuilderFlags.UseAliasDefinedOutsideCurrentScope || isTypeSymbolAccessible(type.aliasSymbol, this.enclosingDeclaration))) {
       const typeArgumentNodes = this.mapToTypeNodes(type.aliasTypeArguments);
@@ -1702,7 +1702,7 @@ export class QContext {
           !length(p.declarations) || some(p.declarations, (d) => Node.get.sourceFileOf(d) === Node.get.sourceFileOf(this.enclosingDeclaration!)) ? 'local' : 'remote'
         );
         const localProps = localVsRemoteMap.get('local') || empty;
-        const fakespace = createModuleDeclaration(undefined, undefined, new Identifier(localName), createModuleBlock([]), NodeFlags.Namespace);
+        const fakespace = new qc.ModuleDeclaration(undefined, undefined, new Identifier(localName), new qc.ModuleBlock([]), NodeFlags.Namespace);
         fakespace.flags ^= NodeFlags.Synthesized;
         fakespace.parent = enclosingDeclaration as SourceFile | NamespaceDeclaration;
         fakespace.locals = new SymbolTable(props);
@@ -1723,7 +1723,7 @@ export class QContext {
         fakespace.parent = undefined!;
         fakespace.locals = undefined!;
         fakespace.symbol = undefined!;
-        fakespace.body = createModuleBlock(declarations);
+        fakespace.body = new qc.ModuleBlock(declarations);
         addResult(fakespace, modifierFlags);
       }
     }

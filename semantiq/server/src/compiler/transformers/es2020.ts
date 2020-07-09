@@ -126,7 +126,11 @@ export function transformES2020(context: TransformationContext) {
           break;
         case Syntax.CallExpression:
           if (i === 0 && leftThisArg) {
-            rightExpression = createFunctionCall(rightExpression, leftThisArg.kind === Syntax.SuperKeyword ? createThis() : leftThisArg, Nodes.visit(segment.arguments, visitor, isExpression));
+            rightExpression = createFunctionCall(
+              rightExpression,
+              leftThisArg.kind === Syntax.SuperKeyword ? new qc.ThisExpression() : leftThisArg,
+              Nodes.visit(segment.arguments, visitor, isExpression)
+            );
           } else {
             rightExpression = new qs.CallExpression(rightExpression, undefined, Nodes.visit(segment.arguments, visitor, isExpression));
           }
@@ -135,13 +139,13 @@ export function transformES2020(context: TransformationContext) {
       setOriginalNode(rightExpression, segment);
     }
     const target = isDelete
-      ? new qc.ConditionalExpression(createNotNullCondition(leftExpression, capturedLeft, true), createTrue(), new DeleteExpression(rightExpression))
+      ? new qc.ConditionalExpression(createNotNullCondition(leftExpression, capturedLeft, true), new qc.BooleanLiteral(true), new DeleteExpression(rightExpression))
       : new qc.ConditionalExpression(createNotNullCondition(leftExpression, capturedLeft, true), qs.VoidExpression.zero(), rightExpression);
     return thisArg ? new qs.SyntheticReferenceExpression(target, thisArg) : target;
   }
   function createNotNullCondition(left: Expression, right: Expression, invert?: boolean) {
     return new BinaryExpression(
-      new BinaryExpression(left, new Token(invert ? Syntax.Equals3Token : Syntax.ExclamationEquals2Token), createNull()),
+      new BinaryExpression(left, new Token(invert ? Syntax.Equals3Token : Syntax.ExclamationEquals2Token), new qc.NullLiteral()),
       new Token(invert ? Syntax.Bar2Token : Syntax.Ampersand2Token),
       new BinaryExpression(right, new Token(invert ? Syntax.Equals3Token : Syntax.ExclamationEquals2Token), qs.VoidExpression.zero())
     );

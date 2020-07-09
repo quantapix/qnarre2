@@ -463,7 +463,7 @@ export function transformGenerators(context: TransformationContext) {
     transformAndEmitStatements(body.statements, statementOffset);
     const buildResult = build();
     insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
-    statements.push(createReturn(buildResult));
+    statements.push(new qc.ReturnStatement(buildResult));
     // Restore previous generator state
     inGeneratorFunctionBody = savedInGeneratorFunctionBody;
     inStatementContainingYield = savedInStatementContainingYield;
@@ -1325,7 +1325,7 @@ export function transformGenerators(context: TransformationContext) {
           }
         }
         if (pendingClauses.length) {
-          emitStatement(createSwitch(expression, new qc.CaseBlock(pendingClauses)));
+          emitStatement(new qc.SwitchStatement(expression, new qc.CaseBlock(pendingClauses)));
           clausesWritten += pendingClauses.length;
           pendingClauses = [];
         }
@@ -1760,10 +1760,10 @@ export function transformGenerators(context: TransformationContext) {
   }
   function createInlineBreak(label: Label, location?: TextRange): ReturnStatement {
     Debug.assertLessThan(0, label, 'Invalid label');
-    return setRange(createReturn(new ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), location);
+    return setRange(new qc.ReturnStatement(new ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), location);
   }
   function createInlineReturn(expression?: Expression, location?: TextRange): ReturnStatement {
-    return setRange(createReturn(new ArrayLiteralExpression(expression ? [createInstruction(Instruction.Return), expression] : [createInstruction(Instruction.Return)])), location);
+    return setRange(new qc.ReturnStatement(new ArrayLiteralExpression(expression ? [createInstruction(Instruction.Return), expression] : [createInstruction(Instruction.Return)])), location);
   }
   function createGeneratorResume(location?: TextRange): LeftHandSideExpression {
     return setRange(new qs.CallExpression(createPropertyAccess(state, 'sent'), undefined, []), location);
@@ -1851,7 +1851,7 @@ export function transformGenerators(context: TransformationContext) {
     }
     if (clauses) {
       const labelExpression = createPropertyAccess(state, 'label');
-      const switchStatement = createSwitch(labelExpression, new qc.CaseBlock(clauses));
+      const switchStatement = new qc.SwitchStatement(labelExpression, new qc.CaseBlock(clauses));
       return [startOnNewLine(switchStatement)];
     }
     if (statements) return statements;
@@ -2049,28 +2049,30 @@ export function transformGenerators(context: TransformationContext) {
   function writeThrow(expression: Expression, operationLocation: TextRange | undefined): void {
     lastOperationWasAbrupt = true;
     lastOperationWasCompletion = true;
-    writeStatement(setRange(createThrow(expression), operationLocation));
+    writeStatement(setRange(new qc.ThrowStatement(expression), operationLocation));
   }
   function writeReturn(expression: Expression | undefined, operationLocation: TextRange | undefined): void {
     lastOperationWasAbrupt = true;
     lastOperationWasCompletion = true;
     writeStatement(
       setEmitFlags(
-        setRange(createReturn(new ArrayLiteralExpression(expression ? [createInstruction(Instruction.Return), expression] : [createInstruction(Instruction.Return)])), operationLocation),
+        setRange(new qc.ReturnStatement(new ArrayLiteralExpression(expression ? [createInstruction(Instruction.Return), expression] : [createInstruction(Instruction.Return)])), operationLocation),
         EmitFlags.NoTokenSourceMaps
       )
     );
   }
   function writeBreak(label: Label, operationLocation: TextRange | undefined): void {
     lastOperationWasAbrupt = true;
-    writeStatement(setEmitFlags(setRange(createReturn(new ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps));
+    writeStatement(
+      setEmitFlags(setRange(new qc.ReturnStatement(new ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)
+    );
   }
   function writeBreakWhenTrue(label: Label, condition: Expression, operationLocation: TextRange | undefined): void {
     writeStatement(
       setEmitFlags(
         new qc.IfStatement(
           condition,
-          setEmitFlags(setRange(createReturn(new ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)
+          setEmitFlags(setRange(new qc.ReturnStatement(new ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)
         ),
         EmitFlags.SingleLine
       )
@@ -2081,7 +2083,7 @@ export function transformGenerators(context: TransformationContext) {
       setEmitFlags(
         new qc.IfStatement(
           qs.PrefixUnaryExpression.logicalNot(condition),
-          setEmitFlags(setRange(createReturn(new ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)
+          setEmitFlags(setRange(new qc.ReturnStatement(new ArrayLiteralExpression([createInstruction(Instruction.Break), createLabel(label)])), operationLocation), EmitFlags.NoTokenSourceMaps)
         ),
         EmitFlags.SingleLine
       )
@@ -2091,23 +2093,23 @@ export function transformGenerators(context: TransformationContext) {
     lastOperationWasAbrupt = true;
     writeStatement(
       setEmitFlags(
-        setRange(createReturn(new ArrayLiteralExpression(expression ? [createInstruction(Instruction.Yield), expression] : [createInstruction(Instruction.Yield)])), operationLocation),
+        setRange(new qc.ReturnStatement(new ArrayLiteralExpression(expression ? [createInstruction(Instruction.Yield), expression] : [createInstruction(Instruction.Yield)])), operationLocation),
         EmitFlags.NoTokenSourceMaps
       )
     );
   }
   function writeYieldStar(expression: Expression, operationLocation: TextRange | undefined): void {
     lastOperationWasAbrupt = true;
-    writeStatement(setEmitFlags(setRange(createReturn(new ArrayLiteralExpression([createInstruction(Instruction.YieldStar), expression])), operationLocation), EmitFlags.NoTokenSourceMaps));
+    writeStatement(setEmitFlags(setRange(new qc.ReturnStatement(new ArrayLiteralExpression([createInstruction(Instruction.YieldStar), expression])), operationLocation), EmitFlags.NoTokenSourceMaps));
   }
   function writeEndfinally(): void {
     lastOperationWasAbrupt = true;
-    writeStatement(createReturn(new ArrayLiteralExpression([createInstruction(Instruction.Endfinally)])));
+    writeStatement(new qc.ReturnStatement(new ArrayLiteralExpression([createInstruction(Instruction.Endfinally)])));
   }
 }
 function createGeneratorHelper(context: TransformationContext, body: FunctionExpression) {
   context.requestEmitHelper(generatorHelper);
-  return new qs.CallExpression(getUnscopedHelperName('__generator'), undefined, [createThis(), body]);
+  return new qs.CallExpression(getUnscopedHelperName('__generator'), undefined, [new qc.ThisExpression(), body]);
 }
 // The __generator helper is used by down-level transformations to emulate the runtime
 // semantics of an ES2015 generator function. When called, this helper returns an

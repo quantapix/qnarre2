@@ -242,18 +242,25 @@ export abstract class Node extends qb.TextRange implements qt.Node {
     n.flags |= NodeFlags.Synthesized;
     return n;
   }
-  static createTemplateLiteralLike(k: qt.TemplateLiteralToken['kind'], t: string, raw?: string) {
-    const n = this.createSynthesized(k);
-    n.text = t;
-    if (raw === undefined || t === raw) n.rawText = raw;
-    else {
-      const r = qs_process(k, raw);
-      if (typeof r === 'object') return qb.fail('Invalid raw text');
-      qb.assert(t === r, "Expected 'text' to be the normalized version of 'rawText'");
-      n.rawText = raw;
-    }
-    return n;
+  static getMutableClone<T extends Node>(node: T): T {
+    const clone = getSynthesizedClone(node);
+    clone.pos = node.pos;
+    clone.end = node.end;
+    clone.parent = node.parent;
+    return clone;
   }
+  static getSynthesizedClone<T extends Node>(node: T): T {
+    if (node === undefined) return node;
+    const clone = Node.createSynthesized(node.kind) as T;
+    clone.flags |= node.flags;
+    setOriginalNode(clone, node);
+    for (const key in node) {
+      if (clone.hasOwnProperty(key) || !node.hasOwnProperty(key)) continue;
+      (<any>clone)[key] = (<any>node)[key];
+    }
+    return clone;
+  }
+
   /// new
   static createModifier<T extends Modifier['kind']>(kind: T): Token<T> {
     return new Token(kind);
@@ -294,24 +301,6 @@ export abstract class Node extends qb.TextRange implements qt.Node {
       result.push(this.createModifier(Syntax.AsyncKeyword));
     }
     return result;
-  }
-  static getMutableClone<T extends Node>(node: T): T {
-    const clone = getSynthesizedClone(node);
-    clone.pos = node.pos;
-    clone.end = node.end;
-    clone.parent = node.parent;
-    return clone;
-  }
-  static getSynthesizedClone<T extends Node>(node: T): T {
-    if (node === undefined) return node;
-    const clone = Node.createSynthesized(node.kind) as T;
-    clone.flags |= node.flags;
-    setOriginalNode(clone, node);
-    for (const key in node) {
-      if (clone.hasOwnProperty(key) || !node.hasOwnProperty(key)) continue;
-      (<any>clone)[key] = (<any>node)[key];
-    }
-    return clone;
   }
   static updateNode<T extends Node>(updated: T, original: T): T {
     if (updated !== original) {
@@ -2269,6 +2258,11 @@ export abstract class Node extends qb.TextRange implements qt.Node {
     }
   })();
 }
+export class SyntaxList extends Node implements qc.SyntaxList {
+  static readonly kind = Syntax.SyntaxList;
+  children!: Node[];
+}
+SyntaxList.prototype.kind = SyntaxList.kind;
 export abstract class TypeNode extends Node implements qt.TypeNode {
   _typeNodeBrand: any;
 }
@@ -2323,11 +2317,22 @@ export abstract class ClassElement extends NamedDeclaration implements qt.ClassE
   name?: PropertyName;
 }
 export abstract class ClassLikeDeclarationBase extends NamedDeclaration implements qt.ClassLikeDeclarationBase {
-  //kind!: Syntax.ClassDeclaration | Syntax.ClassExpression;
   name?: Identifier;
   typeParameters?: Nodes<TypeParameterDeclaration>;
   heritageClauses?: Nodes<qt.HeritageClause>;
   members: Nodes<ClassElement>;
+  constructor(
+    s: boolean,
+    k: Syntax.ClassDeclaration | Syntax.ClassExpression,
+    ts: readonly TypeParameterDeclaration[] | undefined,
+    hs: readonly HeritageClause[] | undefined,
+    es: readonly qc.ClassElement[]
+  ) {
+    super(s, k);
+    this.typeParameters = Nodes.from(ts);
+    this.heritageClauses = Nodes.from(hs);
+    this.members = new Nodes(es);
+  }
 }
 export abstract class ObjectLiteralElement extends NamedDeclaration implements qt.ObjectLiteralElement {
   _objectLiteralBrand: any;
@@ -2342,15 +2347,20 @@ export abstract class TypeElement extends NamedDeclaration implements qt.TypeEle
   questionToken?: qt.QuestionToken;
 }
 export abstract class SignatureDeclarationBase extends NamedDeclaration implements qt.SignatureDeclarationBase {
-  //kind!: qt.SignatureDeclaration['kind'];
   name?: qt.PropertyName;
   typeParameters?: Nodes<TypeParameterDeclaration>;
   parameters!: Nodes<ParameterDeclaration>;
   type?: TypeNode;
   typeArguments?: Nodes<qt.TypeNode>;
+  constructor(s: boolean, k: qt.SignatureDeclaration['kind'], ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t?: TypeNode) {
+    super(s, k);
+    this.typeParameters = Nodes.from(ts);
+    this.parameters = new Nodes(ps);
+    this.type = t;
+  }
 }
 export abstract class FunctionLikeDeclarationBase extends SignatureDeclarationBase implements qt.FunctionLikeDeclarationBase {
-  jsDocCache?: readonly qt.JSDocTag[] | undefined;
+  jsDocCache?: readonly qt.JSDocTag[];
   asteriskToken?: qt.AsteriskToken;
   questionToken?: qt.QuestionToken;
   exclamationToken?: qt.ExclamationToken;
@@ -2360,8 +2370,10 @@ export abstract class FunctionLikeDeclarationBase extends SignatureDeclarationBa
   _functionLikeDeclarationBrand: any;
 }
 export abstract class FunctionOrConstructorTypeNodeBase extends SignatureDeclarationBase implements qt.FunctionOrConstructorTypeNodeBase {
-  //kind!: Syntax.FunctionType | Syntax.ConstructorType;
   type: TypeNode;
+  constructor(s: boolean, k: Syntax.FunctionType | Syntax.ConstructorType, ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t?: TypeNode) {
+    super(s, k, ts, ps, t);
+  }
 }
 export abstract class Expression extends Node implements qt.Expression {
   _expressionBrand: any;
@@ -2403,8 +2415,8 @@ export abstract class Expression extends Node implements qt.Expression {
           const setter = createPropertyAssignment('set', setterFunction);
           properties.push(setter);
         }
-        properties.push(createPropertyAssignment('enumerable', getAccessor || setAccessor ? createFalse() : createTrue()));
-        properties.push(createPropertyAssignment('configurable', createTrue()));
+        properties.push(createPropertyAssignment('enumerable', getAccessor || setAccessor ? new qc.BooleanLiteral(false) : new qc.BooleanLiteral(true)));
+        properties.push(createPropertyAssignment('configurable', new qc.BooleanLiteral(true)));
         const expression = setRange(
           new CallExpression(createPropertyAccess(new Identifier('Object'), 'defineProperty'), undefined, [
             receiver,
@@ -2658,6 +2670,17 @@ export abstract class LiteralLikeNode extends Node implements qt.LiteralLikeNode
 }
 export abstract class TemplateLiteralLikeNode extends LiteralLikeNode implements qt.TemplateLiteralLikeNode {
   rawText?: string;
+  constructor(k: qt.TemplateLiteralToken['kind'], t: string, raw?: string) {
+    super(true, k);
+    this.text = t;
+    if (raw === undefined || t === raw) this.rawText = raw;
+    else {
+      const r = qs_process(k, raw);
+      if (typeof r === 'object') return qb.fail('Invalid raw text');
+      qb.assert(t === r, "Expected 'text' to be the normalized version of 'rawText'");
+      this.rawText = raw;
+    }
+  }
 }
 export abstract class LiteralExpression extends PrimaryExpression implements qt.LiteralExpression {
   text!: string;

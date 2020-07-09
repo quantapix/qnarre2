@@ -64,7 +64,7 @@ export function transformJsx(context: TransformationContext) {
     let objectProperties: Expression | undefined;
     const attrs = node.attributes.properties;
     if (attrs.length === 0) {
-      objectProperties = createNull();
+      objectProperties = new qc.NullLiteral();
     } else {
       const segments = flatten<Expression | ObjectLiteralExpression>(
         spanMap(attrs, isJsxSpreadAttribute, (attrs, isSpread) =>
@@ -115,13 +115,13 @@ export function transformJsx(context: TransformationContext) {
     return createPropertyAssignment(name, expression);
   }
   function transformJsxAttributeInitializer(node: StringLiteral | JsxExpression | undefined): Expression {
-    if (node === undefined) return createTrue();
+    if (node === undefined) return new qc.BooleanLiteral(true);
     else if (node.kind === Syntax.StringLiteral) {
       const literal = createLiteral(tryDecodeEntities(node.text) || node.text);
       literal.singleQuote = node.singleQuote !== undefined ? node.singleQuote : !isStringDoubleQuoted(node, currentSourceFile);
       return setRange(literal, node);
     } else if (node.kind === Syntax.JsxExpression) {
-      if (node.expression === undefined) return createTrue();
+      if (node.expression === undefined) return new qc.BooleanLiteral(true);
       return visitJsxExpression(node);
     }
     return Debug.failBadSyntax(node);

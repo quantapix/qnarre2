@@ -399,14 +399,14 @@ export function transformES2018(context: TransformationContext) {
       ),
       EmitFlags.NoTokenTrailingSourceMaps
     );
-    return createTry(
+    return new qc.TryStatement(
       new Block([restoreEnclosingLabel(forStatement, outermostLabeledStatement)]),
       new qc.CatchClause(
         new qc.VariableDeclaration(catchVariable),
         setEmitFlags(new Block([new qc.ExpressionStatement(createAssignment(errorRecord, new qc.ObjectLiteralExpression([createPropertyAssignment('error', catchVariable)])))]), EmitFlags.SingleLine)
       ),
       new Block([
-        createTry(
+        new qc.TryStatement(
           new Block([
             setEmitFlags(
               new qc.IfStatement(
@@ -417,7 +417,7 @@ export function transformES2018(context: TransformationContext) {
             ),
           ]),
           undefined,
-          setEmitFlags(new Block([setEmitFlags(new qc.IfStatement(errorRecord, createThrow(createPropertyAccess(errorRecord, 'error'))), EmitFlags.SingleLine)]), EmitFlags.SingleLine)
+          setEmitFlags(new Block([setEmitFlags(new qc.IfStatement(errorRecord, new qc.ThrowStatement(createPropertyAccess(errorRecord, 'error'))), EmitFlags.SingleLine)]), EmitFlags.SingleLine)
         ),
       ])
     );
@@ -519,7 +519,7 @@ export function transformES2018(context: TransformationContext) {
     const savedHasSuperElementAccess = hasSuperElementAccess;
     capturedSuperProperties = createUnderscoreEscapedMap<true>();
     hasSuperElementAccess = false;
-    const returnStatement = createReturn(
+    const returnStatement = new qc.ReturnStatement(
       createAsyncGeneratorHelper(
         context,
         new qs.FunctionExpression(
@@ -650,7 +650,7 @@ export function transformES2018(context: TransformationContext) {
     const expression = node.expression;
     if (Node.is.superProperty(expression)) {
       const argumentExpression = Node.is.kind(PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
-      return new qs.CallExpression(createPropertyAccess(argumentExpression, 'call'), undefined, [createThis(), ...node.arguments]);
+      return new qs.CallExpression(createPropertyAccess(argumentExpression, 'call'), undefined, [new qc.ThisExpression(), ...node.arguments]);
     }
     return node;
   }
@@ -719,7 +719,7 @@ export const asyncGeneratorHelper: UnscopedEmitHelper = {
 function createAsyncGeneratorHelper(context: TransformationContext, generatorFunc: FunctionExpression, hasLexicalThis: boolean) {
   context.requestEmitHelper(asyncGeneratorHelper);
   (generatorFunc.emitNode || (generatorFunc.emitNode = {} as EmitNode)).flags |= EmitFlags.AsyncFunctionBody | EmitFlags.ReuseTempVariableScope;
-  return new qs.CallExpression(getUnscopedHelperName('__asyncGenerator'), undefined, [hasLexicalThis ? createThis() : qs.VoidExpression.zero(), new Identifier('arguments'), generatorFunc]);
+  return new qs.CallExpression(getUnscopedHelperName('__asyncGenerator'), undefined, [hasLexicalThis ? new qc.ThisExpression() : qs.VoidExpression.zero(), new Identifier('arguments'), generatorFunc]);
 }
 export const asyncDelegator: UnscopedEmitHelper = {
   name: 'typescript:asyncDelegator',

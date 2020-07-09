@@ -281,7 +281,7 @@ export function transformES2015(context: TransformationContext) {
     return updated;
   }
   function returnCapturedThis(node: Node): ReturnStatement {
-    return setOriginalNode(createReturn(createFileLevelUniqueName('_this')), node);
+    return setOriginalNode(new qc.ReturnStatement(createFileLevelUniqueName('_this')), node);
   }
   function visitReturnStatement(node: ReturnStatement): Statement {
     if (convertedLoopState) {
@@ -289,7 +289,7 @@ export function transformES2015(context: TransformationContext) {
       if (isReturnVoidStatementInConstructorWithCapturedSuper(node)) {
         node = returnCapturedThis(node);
       }
-      return createReturn(
+      return new qc.ReturnStatement(
         new qc.ObjectLiteralExpression([createPropertyAssignment(new Identifier('value'), node.expression ? visitNode(node.expression, visitor, isExpression) : qs.VoidExpression.zero())])
       );
     } else if (isReturnVoidStatementInConstructorWithCapturedSuper(node)) {
@@ -355,7 +355,7 @@ export function transformES2015(context: TransformationContext) {
           }
           returnExpression = new BinaryExpression(expr!, Syntax.CommaToken, returnExpression);
         }
-        return createReturn(returnExpression);
+        return new qc.ReturnStatement(returnExpression);
       }
     }
     return visitEachChild(node, visitor, context);
@@ -420,7 +420,7 @@ export function transformES2015(context: TransformationContext) {
     const outer = new qs.PartiallyEmittedExpression(localName);
     outer.end = closingBraceLocation.end;
     setEmitFlags(outer, EmitFlags.NoComments);
-    const statement = createReturn(outer);
+    const statement = new qc.ReturnStatement(outer);
     statement.pos = closingBraceLocation.pos;
     setEmitFlags(statement, EmitFlags.NoComments | EmitFlags.NoTokenSourceMaps);
     statements.push(statement);
@@ -466,7 +466,7 @@ export function transformES2015(context: TransformationContext) {
     resumeLexicalEnvironment();
     mergeLexicalEnvironment(statements, endLexicalEnvironment());
     if (isDerivedClass) {
-      statements.push(createReturn(createDefaultSuperCallOrThis()));
+      statements.push(new qc.ReturnStatement(createDefaultSuperCallOrThis()));
     }
     const statementsArray = new Nodes(statements);
     setRange(statementsArray, node.members);
@@ -510,14 +510,14 @@ export function transformES2015(context: TransformationContext) {
     if (isDerivedClass) {
       if (superCallExpression && statementOffset === constructor.body.statements.length && !(constructor.body.transformFlags & TransformFlags.ContainsLexicalThis)) {
         const superCall = cast(cast(superCallExpression, isBinaryExpression).left, isCallExpression);
-        const returnStatement = createReturn(superCallExpression);
+        const returnStatement = new qc.ReturnStatement(superCallExpression);
         setCommentRange(returnStatement, getCommentRange(superCall));
         setEmitFlags(superCall, EmitFlags.NoComments);
         statements.push(returnStatement);
       } else {
         insertCaptureThisForNode(statements, constructor, superCallExpression || createActualThis());
         if (!isSufficientlyCoveredByReturnStatements(constructor.body)) {
-          statements.push(createReturn(createFileLevelUniqueName('_this')));
+          statements.push(new qc.ReturnStatement(createFileLevelUniqueName('_this')));
         }
       }
     } else {
@@ -539,12 +539,12 @@ export function transformES2015(context: TransformationContext) {
     return false;
   }
   function createActualThis() {
-    return setEmitFlags(createThis(), EmitFlags.NoSubstitution);
+    return setEmitFlags(new qc.ThisExpression(), EmitFlags.NoSubstitution);
   }
   function createDefaultSuperCallOrThis() {
     return createLogicalOr(
       createLogicalAnd(
-        createStrictInequality(createFileLevelUniqueName('_super'), createNull()),
+        createStrictInequality(createFileLevelUniqueName('_super'), new qc.NullLiteral()),
         createFunctionApply(createFileLevelUniqueName('_super'), createActualThis(), new Identifier('arguments'))
       ),
       createActualThis()
@@ -681,7 +681,7 @@ export function transformES2015(context: TransformationContext) {
   }
   function insertCaptureThisForNodeIfNeeded(statements: Statement[], node: Node): boolean {
     if (hierarchyFacts & HierarchyFacts.CapturedLexicalThis && node.kind !== Syntax.ArrowFunction) {
-      insertCaptureThisForNode(statements, node, createThis());
+      insertCaptureThisForNode(statements, node, new qc.ThisExpression());
       return true;
     }
     return false;
@@ -705,16 +705,16 @@ export function transformES2015(context: TransformationContext) {
           newTarget = qs.VoidExpression.zero();
           break;
         case Syntax.Constructor:
-          newTarget = createPropertyAccess(setEmitFlags(createThis(), EmitFlags.NoSubstitution), 'constructor');
+          newTarget = createPropertyAccess(setEmitFlags(new qc.ThisExpression(), EmitFlags.NoSubstitution), 'constructor');
           break;
         case Syntax.FunctionDeclaration:
         case Syntax.FunctionExpression:
           newTarget = new qc.ConditionalExpression(
             createLogicalAnd(
-              setEmitFlags(createThis(), EmitFlags.NoSubstitution),
-              new BinaryExpression(setEmitFlags(createThis(), EmitFlags.NoSubstitution), Syntax.InstanceOfKeyword, getLocalName(node))
+              setEmitFlags(new qc.ThisExpression(), EmitFlags.NoSubstitution),
+              new BinaryExpression(setEmitFlags(new qc.ThisExpression(), EmitFlags.NoSubstitution), Syntax.InstanceOfKeyword, getLocalName(node))
             ),
-            createPropertyAccess(setEmitFlags(createThis(), EmitFlags.NoSubstitution), 'constructor'),
+            createPropertyAccess(setEmitFlags(new qc.ThisExpression(), EmitFlags.NoSubstitution), 'constructor'),
             qs.VoidExpression.zero()
           );
           break;
@@ -822,7 +822,10 @@ export function transformES2015(context: TransformationContext) {
       setCommentRange(setter, getCommentRange(setAccessor));
       properties.push(setter);
     }
-    properties.push(createPropertyAssignment('enumerable', getAccessor || setAccessor ? createFalse() : createTrue()), createPropertyAssignment('configurable', createTrue()));
+    properties.push(
+      createPropertyAssignment('enumerable', getAccessor || setAccessor ? new qc.BooleanLiteral(false) : new qc.BooleanLiteral(true)),
+      createPropertyAssignment('configurable', new qc.BooleanLiteral(true))
+    );
     const call = new qs.CallExpression(createPropertyAccess(new Identifier('Object'), 'defineProperty'), undefined, [target, propertyName, new qc.ObjectLiteralExpression(properties, true)]);
     if (startsOnNewLine) {
       startOnNewLine(call);
@@ -924,7 +927,7 @@ export function transformES2015(context: TransformationContext) {
         }
       }
       const expression = visitNode(body, visitor, isExpression);
-      const returnStatement = createReturn(expression);
+      const returnStatement = new qc.ReturnStatement(expression);
       setRange(returnStatement, body);
       moveSyntheticComments(returnStatement, body);
       setEmitFlags(returnStatement, EmitFlags.NoTokenSourceMaps | EmitFlags.NoTrailingSourceMap | EmitFlags.NoTrailingComments);
@@ -1246,14 +1249,14 @@ function convertForOfStatementForIterable(node: ForOfStatement, outermostLabeled
     ),
     EmitFlags.NoTokenTrailingSourceMaps
   );
-  return createTry(
+  return new qc.TryStatement(
     new Block([restoreEnclosingLabel(forStatement, outermostLabeledStatement, convertedLoopState && resetLabel)]),
     new qc.CatchClause(
       new qc.VariableDeclaration(catchVariable),
       setEmitFlags(new Block([new qc.ExpressionStatement(createAssignment(errorRecord, new qc.ObjectLiteralExpression([createPropertyAssignment('error', catchVariable)])))]), EmitFlags.SingleLine)
     ),
     new Block([
-      createTry(
+      new qc.TryStatement(
         new Block([
           setEmitFlags(
             new qc.IfStatement(
@@ -1267,7 +1270,7 @@ function convertForOfStatementForIterable(node: ForOfStatement, outermostLabeled
           ),
         ]),
         undefined,
-        setEmitFlags(new Block([setEmitFlags(new qc.IfStatement(errorRecord, createThrow(createPropertyAccess(errorRecord, 'error'))), EmitFlags.SingleLine)]), EmitFlags.SingleLine)
+        setEmitFlags(new Block([setEmitFlags(new qc.IfStatement(errorRecord, new qc.ThrowStatement(createPropertyAccess(errorRecord, 'error'))), EmitFlags.SingleLine)]), EmitFlags.SingleLine)
       ),
     ])
   );
@@ -1514,7 +1517,7 @@ function addExtraDeclarationsForConvertedLoop(statements: Statement[], state: Co
     if (!extraVariableDeclarations) {
       extraVariableDeclarations = [];
     }
-    extraVariableDeclarations.push(new qc.VariableDeclaration(state.conditionVariable, undefined, createFalse()));
+    extraVariableDeclarations.push(new qc.VariableDeclaration(state.conditionVariable, undefined, new qc.BooleanLiteral(false)));
   }
   if (extraVariableDeclarations) {
     statements.push(new qc.VariableStatement(undefined, new qc.VariableDeclarationList(extraVariableDeclarations)));
@@ -1581,7 +1584,7 @@ function createFunctionForBodyOfIterationStatement(
       new qc.IfStatement(
         currentState.conditionVariable,
         createStatement(visitNode(node.incrementor, visitor, isExpression)),
-        createStatement(createAssignment(currentState.conditionVariable, createTrue()))
+        createStatement(createAssignment(currentState.conditionVariable, new qc.BooleanLiteral(true)))
       )
     );
     if (shouldConvertConditionOfForStatement(node)) {
@@ -1660,9 +1663,9 @@ function generateCallToConvertedLoop(loopFunctionExpressionName: Identifier, sta
       let returnStatement: ReturnStatement;
       if (outerState) {
         outerState.nonLocalJumps! |= Jump.Return;
-        returnStatement = createReturn(loopResultName);
+        returnStatement = new qc.ReturnStatement(loopResultName);
       } else {
-        returnStatement = createReturn(createPropertyAccess(loopResultName, 'value'));
+        returnStatement = new qc.ReturnStatement(createPropertyAccess(loopResultName, 'value'));
       }
       statements.push(new qc.IfStatement(new BinaryExpression(new TypeOfExpression(loopResultName), Syntax.Equals3Token, createLiteral('object')), returnStatement));
     }
@@ -1673,7 +1676,7 @@ function generateCallToConvertedLoop(loopFunctionExpressionName: Identifier, sta
       const caseClauses: CaseClause[] = [];
       processLabeledJumps(state.labeledNonLocalBreaks!, true, loopResultName, outerState, caseClauses);
       processLabeledJumps(state.labeledNonLocalContinues!, false, loopResultName, outerState, caseClauses);
-      statements.push(createSwitch(loopResultName, new qc.CaseBlock(caseClauses)));
+      statements.push(new qc.SwitchStatement(loopResultName, new qc.CaseBlock(caseClauses)));
     }
   }
   return statements;
@@ -1702,7 +1705,7 @@ function processLabeledJumps(table: Map<string>, isBreak: boolean, loopResultNam
       statements.push(isBreak ? new qc.BreakStatement(label) : new qc.ContinueStatement(label));
     } else {
       setLabeledJump(outerLoop, isBreak, labelText, labelMarker);
-      statements.push(createReturn(loopResultName));
+      statements.push(new qc.ReturnStatement(loopResultName));
     }
     caseClauses.push(new qc.CaseClause(createLiteral(labelMarker), statements));
   });

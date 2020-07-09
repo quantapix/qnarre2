@@ -1399,7 +1399,7 @@ export interface MissingDeclaration extends DeclarationStatement {
   name?: Identifier;
 }
 export type Modifiers = Nodes<qy.Modifier>;
-export interface ModuleBlock extends Node, Statement {
+export interface ModuleBlock extends Statement {
   kind: Syntax.ModuleBlock;
   parent: ModuleDeclaration;
   statements: Nodes<Statement>;

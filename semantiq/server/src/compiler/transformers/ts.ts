@@ -353,7 +353,7 @@ export function transformTypeScript(context: TransformationContext) {
       const outer = new qs.PartiallyEmittedExpression(localName);
       outer.end = closingBraceLocation.end;
       setEmitFlags(outer, EmitFlags.NoComments);
-      const statement = createReturn(outer);
+      const statement = new qc.ReturnStatement(outer);
       statement.pos = closingBraceLocation.pos;
       setEmitFlags(statement, EmitFlags.NoComments | EmitFlags.NoTokenSourceMaps);
       statements.push(statement);
@@ -565,7 +565,7 @@ export function transformTypeScript(context: TransformationContext) {
     }
     const prefix = getClassMemberPrefix(node, member);
     const memberName = getExpressionForPropertyName(member, true);
-    const descriptor = languageVersion > ScriptTarget.ES3 ? (member.kind === Syntax.PropertyDeclaration ? qs.VoidExpression.zero() : createNull()) : undefined;
+    const descriptor = languageVersion > ScriptTarget.ES3 ? (member.kind === Syntax.PropertyDeclaration ? qs.VoidExpression.zero() : new qc.NullLiteral()) : undefined;
     const helper = createDecorateHelper(context, decoratorExpressions, prefix, memberName, descriptor, moveRangePastDecorators(member));
     setEmitFlags(helper, EmitFlags.NoComments);
     return helper;
@@ -967,7 +967,7 @@ export function transformTypeScript(context: TransformationContext) {
     setEmitFlags(localName, EmitFlags.NoComments);
     return startOnNewLine(
       removeAllComments(
-        setRange(setOriginalNode(new qc.ExpressionStatement(createAssignment(setRange(createPropertyAccess(createThis(), propertyName), node.name), localName)), node), moveRangePos(node, -1))
+        setRange(setOriginalNode(new qc.ExpressionStatement(createAssignment(setRange(createPropertyAccess(new qc.ThisExpression(), propertyName), node.name), localName)), node), moveRangePos(node, -1))
       )
     );
   }

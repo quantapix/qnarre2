@@ -912,7 +912,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (length(mergedMembers)) {
         const containingFile = Node.get.sourceFileOf(context.enclosingDeclaration);
         const localName = this.getInternalSymbolName(symbolName);
-        const nsBody = createModuleBlock([
+        const nsBody = new qc.ModuleBlock([
           new qc.ExportDeclaration(
             undefined,
             undefined,
@@ -936,7 +936,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
             )
           ),
         ]);
-        addResult(createModuleDeclaration(undefined, undefined, new Identifier(localName), nsBody, NodeFlags.Namespace), ModifierFlags.None);
+        addResult(new qc.ModuleDeclaration(undefined, undefined, new Identifier(localName), nsBody, NodeFlags.Namespace), ModifierFlags.None);
       }
     }
     serializeEnum(symbolName: string, modifierFlags: ModifierFlags) {
@@ -4775,7 +4775,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return;
   }
   function getFlowTypeInConstructor(symbol: Symbol, constructor: ConstructorDeclaration) {
-    const reference = createPropertyAccess(createThis(), syntax.get.unescUnderscores(symbol.escName));
+    const reference = createPropertyAccess(new qc.ThisExpression(), syntax.get.unescUnderscores(symbol.escName));
     reference.expression.parent = reference;
     reference.parent = constructor;
     reference.flowNode = constructor.returnFlowNode;
@@ -22054,7 +22054,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     );
   }
   function isPropertyInitializedInConstructor(propName: Identifier | PrivateIdentifier, propType: Type, constructor: ConstructorDeclaration) {
-    const reference = createPropertyAccess(createThis(), propName);
+    const reference = createPropertyAccess(new qc.ThisExpression(), propName);
     reference.expression.parent = reference;
     reference.parent = constructor;
     reference.flowNode = constructor.returnFlowNode;
@@ -23612,8 +23612,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       type.flags & TypeFlags.EnumLiteral
         ? nodeBuilder.symbolToExpression(type.symbol, SymbolFlags.Value, enclosing, undefined, tracker)
         : type === trueType
-        ? createTrue()
-        : type === falseType && createFalse();
+        ? new qc.BooleanLiteral(true)
+        : type === falseType && new qc.BooleanLiteral(false);
     return enumResult || createLiteral((type as LiteralType).value);
   }
   function createLiteralConstValue(node: VariableDeclaration | PropertyDeclaration | PropertySignature | ParameterDeclaration, tracker: SymbolTracker) {
