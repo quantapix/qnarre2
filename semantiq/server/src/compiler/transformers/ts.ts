@@ -360,7 +360,7 @@ export function transformTypeScript(context: TransformationContext) {
       insertStatementsAfterStandardPrologue(statements, context.endLexicalEnvironment());
       const iife = qs.CallExpression.immediateArrowFunction(statements);
       setEmitFlags(iife, EmitFlags.TypeScriptClassWrapper);
-      const varStatement = createVariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(getLocalName(node, false, false), undefined, iife)]));
+      const varStatement = new qc.VariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(getLocalName(node, false, false), undefined, iife)]));
       setOriginalNode(varStatement, node);
       setCommentRange(varStatement, node);
       setSourceMapRange(varStatement, moveRangePastDecorators(node));
@@ -405,7 +405,7 @@ export function transformTypeScript(context: TransformationContext) {
     aggregateTransformFlags(classExpression);
     setOriginalNode(classExpression, node);
     setRange(classExpression, location);
-    const statement = createVariableStatement(
+    const statement = new qc.VariableStatement(
       undefined,
       new qc.VariableDeclarationList([new qc.VariableDeclaration(declName, undefined, classAlias ? createAssignment(classAlias, classExpression) : classExpression)], NodeFlags.Let)
     );
@@ -1050,7 +1050,7 @@ export function transformTypeScript(context: TransformationContext) {
     return updated;
   }
   function visitFunctionExpression(node: FunctionExpression): Expression {
-    if (!shouldEmitFunctionLikeDeclaration(node)) return createOmittedExpression();
+    if (!shouldEmitFunctionLikeDeclaration(node)) return new qc.OmittedExpression();
     const updated = node.update(
       Nodes.visit(node.modifiers, modifierVisitor, isModifier),
       node.asteriskToken,
@@ -1234,7 +1234,7 @@ export function transformTypeScript(context: TransformationContext) {
     return node.name.escapedText;
   }
   function addVarForEnumOrModuleDeclaration(statements: Statement[], node: ModuleDeclaration | EnumDeclaration) {
-    const statement = createVariableStatement(
+    const statement = new qc.VariableStatement(
       Nodes.visit(node.modifiers, modifierVisitor, isModifier),
       new qc.VariableDeclarationList([new qc.VariableDeclaration(getLocalName(node, false, true))], currentLexicalScope.kind === Syntax.SourceFile ? NodeFlags.None : NodeFlags.Let)
     );
@@ -1414,7 +1414,7 @@ export function transformTypeScript(context: TransformationContext) {
     if (isNamedExternalModuleExport(node) || !isExportOfNamespace(node)) {
       return setOriginalNode(
         setRange(
-          createVariableStatement(
+          new qc.VariableStatement(
             Nodes.visit(node.modifiers, modifierVisitor, isModifier),
             new qc.VariableDeclarationList([setOriginalNode(new qc.VariableDeclaration(node.name, undefined, moduleReference), node)])
           ),

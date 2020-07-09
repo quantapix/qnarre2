@@ -1115,7 +1115,7 @@ export class QContext {
     const ref = trySerializeAsTypeReference(t);
     if (ref) return ref;
     const tempName = getUnusedName(`${rootName}_base`);
-    const statement = createVariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(tempName, this.typeToTypeNodeHelper(staticType))], NodeFlags.Const));
+    const statement = new qc.VariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(tempName, this.typeToTypeNodeHelper(staticType))], NodeFlags.Const));
     addResult(statement, ModifierFlags.None);
     return new qc.ExpressionWithTypeArguments(undefined, new Identifier(tempName));
   }

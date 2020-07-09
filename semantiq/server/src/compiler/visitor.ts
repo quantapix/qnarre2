@@ -105,7 +105,7 @@ function addValueAssignmentIfNeeded(p: qc.ParameterDeclaration, c: Transformatio
 }
 function addForBindingPattern(p: qc.ParameterDeclaration, c: TransformationContext) {
   c.addInitializationStatement(
-    createVariableStatement(
+    new qc.VariableStatement(
       undefined,
       new qc.VariableDeclarationList([
         new qc.VariableDeclaration(

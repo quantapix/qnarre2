@@ -949,7 +949,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
             filter(getPropertiesOfType(this.getTypeOfSymbol()), (p) => !!(p.flags & SymbolFlags.EnumMember)),
             (p) => {
               const initializedValue = p.declarations && p.declarations[0] && Node.is.kind(EnumMember, p.declarations[0]) && getConstantValue(p.declarations[0] as EnumMember);
-              return createEnumMember(syntax.get.unescUnderscores(p.escName), initializedValue === undefined ? undefined : createLiteral(initializedValue));
+              return new qc.EnumMember(syntax.get.unescUnderscores(p.escName), initializedValue === undefined ? undefined : createLiteral(initializedValue));
             }
           )
         ),
@@ -968,7 +968,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           let textRange: Node | undefined = this.declarations && find(this.declarations, (d) => Node.is.kind(VariableDeclaration, d));
           if (textRange && Node.is.kind(VariableDeclarationList, textRange.parent) && textRange.parent.declarations.length === 1) textRange = textRange.parent.parent;
           const statement = setRange(
-            createVariableStatement(
+            new qc.VariableStatement(
               undefined,
               new qc.VariableDeclarationList([new qc.VariableDeclaration(name, serializeTypeForDeclaration(context, type, symbol, enclosingDeclaration, includePrivateSymbol, bundled))], flags)
             ),
@@ -1095,7 +1095,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         if (isTypeRepresentableAsFunctionNamespaceMerge(typeToSerialize, symbol))
           serializeAsFunctionNamespaceMerge(typeToSerialize, symbol, varName, isExportAssignment ? ModifierFlags.None : ModifierFlags.Export);
         else {
-          const statement = createVariableStatement(
+          const statement = new qc.VariableStatement(
             undefined,
             new qc.VariableDeclarationList(
               [new qc.VariableDeclaration(varName, serializeTypeForDeclaration(context, typeToSerialize, symbol, enclosingDeclaration, includePrivateSymbol, bundled))],

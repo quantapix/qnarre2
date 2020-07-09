@@ -70,7 +70,7 @@ export function flattenDestructuringAssignment(
     if (!some(expressions)) return value;
     expressions.push(value);
   }
-  return aggregateTransformFlags(inlineExpressions(expressions!)) || createOmittedExpression();
+  return aggregateTransformFlags(inlineExpressions(expressions!)) || new qc.OmittedExpression();
   function emitExpression(expression: Expression) {
     aggregateTransformFlags(expression);
     expressions = append(expressions, expression);

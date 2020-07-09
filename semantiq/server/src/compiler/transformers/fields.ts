@@ -466,7 +466,7 @@ export function transformClassFields(context: TransformationContext) {
       const name = Node.is.kind(ComputedPropertyName, propertyName)
         ? propertyName.expression
         : Node.is.kind(Identifier, propertyName)
-        ? StringLiteral.create(syntax.get.unescUnderscores(propertyName.escapedText))
+        ? new qc.StringLiteral(syntax.get.unescUnderscores(propertyName.escapedText))
         : propertyName;
       const descriptor = createPropertyDescriptor({ value: initializer, configurable: true, writable: true, enumerable: true });
       return createObjectDefinePropertyCall(receiver, name, descriptor);

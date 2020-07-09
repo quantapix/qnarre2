@@ -774,7 +774,7 @@ export function transformDeclarations(context: TransformationContext) {
             errorNode: input,
           });
           const varDecl = new qc.VariableDeclaration(newId, resolver.createTypeOfExpression(input.expression, input, declarationEmitNodeBuilderFlags, symbolTracker), undefined);
-          const statement = createVariableStatement(needsDeclare ? [createModifier(Syntax.DeclareKeyword)] : [], new qc.VariableDeclarationList([varDecl], NodeFlags.Const));
+          const statement = new qc.VariableStatement(needsDeclare ? [createModifier(Syntax.DeclareKeyword)] : [], new qc.VariableDeclarationList([varDecl], NodeFlags.Const));
           return [statement, input.update(input.decorators, input.modifiers, newId)];
         }
       }
@@ -860,7 +860,7 @@ export function transformDeclarations(context: TransformationContext) {
             const type = resolver.createTypeOfDeclaration(p.valueDeclaration, fakespace, declarationEmitNodeBuilderFlags, symbolTracker);
             getSymbolAccessibilityDiagnostic = oldDiag;
             const varDecl = new qc.VariableDeclaration(syntax.get.unescUnderscores(p.escName), type, undefined);
-            return createVariableStatement(undefined, new qc.VariableDeclarationList([varDecl]));
+            return new qc.VariableStatement(undefined, new qc.VariableDeclarationList([varDecl]));
           });
           const namespaceDecl = createModuleDeclaration(undefined, ensureModifiers(input), input.name!, createModuleBlock(declarations), NodeFlags.Namespace);
           if (!hasEffectiveModifier(clean, ModifierFlags.Default)) return [clean, namespaceDecl];
@@ -950,7 +950,7 @@ export function transformDeclarations(context: TransformationContext) {
             typeName: input.name,
           });
           const varDecl = new qc.VariableDeclaration(newId, resolver.createTypeOfExpression(extendsClause.expression, input, declarationEmitNodeBuilderFlags, symbolTracker), undefined);
-          const statement = createVariableStatement(needsDeclare ? [createModifier(Syntax.DeclareKeyword)] : [], new qc.VariableDeclarationList([varDecl], NodeFlags.Const));
+          const statement = new qc.VariableStatement(needsDeclare ? [createModifier(Syntax.DeclareKeyword)] : [], new qc.VariableDeclarationList([varDecl], NodeFlags.Const));
           const heritageClauses = new Nodes(
             map(input.heritageClauses, (clause) => {
               if (clause.token === Syntax.ExtendsKeyword) {

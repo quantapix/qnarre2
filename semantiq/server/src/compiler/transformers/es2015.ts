@@ -257,7 +257,7 @@ export function transformES2015(context: TransformationContext) {
     statementOffset = addCustomPrologue(prologue, node.statements, statementOffset, visitor);
     addRange(statements, Nodes.visit(node.statements, visitor, isStatement, statementOffset));
     if (taggedTemplateStringDeclarations) {
-      statements.push(createVariableStatement(undefined, new qc.VariableDeclarationList(taggedTemplateStringDeclarations)));
+      statements.push(new qc.VariableStatement(undefined, new qc.VariableDeclarationList(taggedTemplateStringDeclarations)));
     }
     mergeLexicalEnvironment(prologue, endLexicalEnvironment());
     insertCaptureThisForNodeIfNeeded(prologue, node);
@@ -364,7 +364,7 @@ export function transformES2015(context: TransformationContext) {
     const variable = new qc.VariableDeclaration(getLocalName(node, true), undefined, transformClassLikeDeclarationToExpression(node));
     setOriginalNode(variable, node);
     const statements: Statement[] = [];
-    const statement = createVariableStatement(undefined, new qc.VariableDeclarationList([variable]));
+    const statement = new qc.VariableStatement(undefined, new qc.VariableDeclarationList([variable]));
     setOriginalNode(statement, node);
     setRange(statement, node);
     startOnNewLine(statement);
@@ -585,7 +585,7 @@ export function transformES2015(context: TransformationContext) {
       insertStatementAfterCustomPrologue(
         statements,
         setEmitFlags(
-          createVariableStatement(undefined, new qc.VariableDeclarationList(flattenDestructuringBinding(parameter, visitor, context, FlattenLevel.All, getGeneratedNameForNode(parameter)))),
+          new qc.VariableStatement(undefined, new qc.VariableDeclarationList(flattenDestructuringBinding(parameter, visitor, context, FlattenLevel.All, getGeneratedNameForNode(parameter)))),
           EmitFlags.CustomPrologue
         )
       );
@@ -643,7 +643,7 @@ export function transformES2015(context: TransformationContext) {
     const temp = createLoopVariable();
     prologueStatements.push(
       setEmitFlags(
-        setRange(createVariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(declarationName, undefined, new ArrayLiteralExpression([]))])), parameter),
+        setRange(new qc.VariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(declarationName, undefined, new ArrayLiteralExpression([]))])), parameter),
         EmitFlags.CustomPrologue
       )
     );
@@ -671,7 +671,7 @@ export function transformES2015(context: TransformationContext) {
     if (parameter.name.kind !== Syntax.Identifier) {
       prologueStatements.push(
         setEmitFlags(
-          setRange(createVariableStatement(undefined, new qc.VariableDeclarationList(flattenDestructuringBinding(parameter, visitor, context, FlattenLevel.All, expressionName))), parameter),
+          setRange(new qc.VariableStatement(undefined, new qc.VariableDeclarationList(flattenDestructuringBinding(parameter, visitor, context, FlattenLevel.All, expressionName))), parameter),
           EmitFlags.CustomPrologue
         )
       );
@@ -688,7 +688,7 @@ export function transformES2015(context: TransformationContext) {
   }
   function insertCaptureThisForNode(statements: Statement[], node: Node, initializer: Expression | undefined): void {
     enableSubstitutionsForCapturedThis();
-    const captureThisStatement = createVariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(createFileLevelUniqueName('_this'), undefined, initializer)]));
+    const captureThisStatement = new qc.VariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(createFileLevelUniqueName('_this'), undefined, initializer)]));
     setEmitFlags(captureThisStatement, EmitFlags.NoComments | EmitFlags.CustomPrologue);
     setSourceMapRange(captureThisStatement, node);
     insertStatementAfterCustomPrologue(statements, captureThisStatement);
@@ -721,7 +721,10 @@ export function transformES2015(context: TransformationContext) {
         default:
           return Debug.failBadSyntax(node);
       }
-      const captureNewTargetStatement = createVariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(createFileLevelUniqueName('_newTarget'), undefined, newTarget)]));
+      const captureNewTargetStatement = new qc.VariableStatement(
+        undefined,
+        new qc.VariableDeclarationList([new qc.VariableDeclaration(createFileLevelUniqueName('_newTarget'), undefined, newTarget)])
+      );
       setEmitFlags(captureNewTargetStatement, EmitFlags.NoComments | EmitFlags.CustomPrologue);
       if (copyOnWrite) {
         statements = statements.slice();
@@ -755,7 +758,7 @@ export function transformES2015(context: TransformationContext) {
     }
   }
   function transformSemicolonClassElementToStatement(member: SemicolonClassElement) {
-    return setRange(createEmptyStatement(), member);
+    return setRange(new qc.EmptyStatement(), member);
   }
   function transformClassMethodDeclarationToStatement(receiver: LeftHandSideExpression, member: MethodDeclaration, container: Node) {
     const commentRange = getCommentRange(member);
@@ -767,7 +770,7 @@ export function transformES2015(context: TransformationContext) {
       const name = Node.is.kind(ComputedPropertyName, propertyName)
         ? propertyName.expression
         : Node.is.kind(Identifier, propertyName)
-        ? StringLiteral.create(syntax.get.unescUnderscores(propertyName.escapedText))
+        ? new qc.StringLiteral(syntax.get.unescUnderscores(propertyName.escapedText))
         : propertyName;
       e = createObjectDefinePropertyCall(receiver, name, createPropertyDescriptor({ value: memberFunction, enumerable: false, writable: true, configurable: true }));
     } else {
@@ -1146,11 +1149,11 @@ export function transformES2015(context: TransformationContext) {
         const declarationList = setRange(new qc.VariableDeclarationList(declarations), node.initializer);
         setOriginalNode(declarationList, node.initializer);
         setSourceMapRange(declarationList, createRange(declarations[0].pos, last(declarations).end));
-        statements.push(createVariableStatement(undefined, declarationList));
+        statements.push(new qc.VariableStatement(undefined, declarationList));
       } else {
         statements.push(
           setRange(
-            createVariableStatement(
+            new qc.VariableStatement(
               undefined,
               setOriginalNode(
                 setRange(
@@ -1514,7 +1517,7 @@ function addExtraDeclarationsForConvertedLoop(statements: Statement[], state: Co
     extraVariableDeclarations.push(new qc.VariableDeclaration(state.conditionVariable, undefined, createFalse()));
   }
   if (extraVariableDeclarations) {
-    statements.push(createVariableStatement(undefined, new qc.VariableDeclarationList(extraVariableDeclarations)));
+    statements.push(new qc.VariableStatement(undefined, new qc.VariableDeclarationList(extraVariableDeclarations)));
   }
 }
 interface IterationStatementPartFunction<T> {
@@ -1533,9 +1536,9 @@ function createFunctionForInitializerOfForStatement(node: ForStatementWithConver
   if (currentState.containsLexicalThis) emitFlags |= EmitFlags.CapturesThis;
   if (containsYield && hierarchyFacts & HierarchyFacts.AsyncFunctionBody) emitFlags |= EmitFlags.AsyncFunctionBody;
   const statements: Statement[] = [];
-  statements.push(createVariableStatement(undefined, node.initializer));
+  statements.push(new qc.VariableStatement(undefined, node.initializer));
   copyOutParameters(currentState.loopOutParameters, LoopOutParameterFlags.Initializer, CopyDirection.ToOutParameter, statements);
-  const functionDeclaration = createVariableStatement(
+  const functionDeclaration = new qc.VariableStatement(
     undefined,
     setEmitFlags(
       new qc.VariableDeclarationList([
@@ -1600,7 +1603,7 @@ function createFunctionForBodyOfIterationStatement(
   let emitFlags: EmitFlags = 0;
   if (currentState.containsLexicalThis) emitFlags |= EmitFlags.CapturesThis;
   if (containsYield && (hierarchyFacts & HierarchyFacts.AsyncFunctionBody) !== 0) emitFlags |= EmitFlags.AsyncFunctionBody;
-  const functionDeclaration = createVariableStatement(
+  const functionDeclaration = new qc.VariableStatement(
     undefined,
     setEmitFlags(
       new qc.VariableDeclarationList([
@@ -1633,7 +1636,7 @@ function copyOutParameters(outParams: LoopOutParameter[], partFlags: LoopOutPara
 }
 function generateCallToConvertedLoopInitializer(initFunctionExpressionName: Identifier, containsYield: boolean): Statement {
   const call = new qs.CallExpression(initFunctionExpressionName, undefined, []);
-  const callResult = containsYield ? createYield(new Token(Syntax.AsteriskToken), setEmitFlags(call, EmitFlags.Iterator)) : call;
+  const callResult = containsYield ? new qc.YieldExpression(new Token(Syntax.AsteriskToken), setEmitFlags(call, EmitFlags.Iterator)) : call;
   return createStatement(callResult);
 }
 function generateCallToConvertedLoop(loopFunctionExpressionName: Identifier, state: ConvertedLoopState, outerState: ConvertedLoopState | undefined, containsYield: boolean): Statement[] {
@@ -1644,13 +1647,13 @@ function generateCallToConvertedLoop(loopFunctionExpressionName: Identifier, sta
     undefined,
     map(state.loopParameters, (p) => <Identifier>p.name)
   );
-  const callResult = containsYield ? createYield(new Token(Syntax.AsteriskToken), setEmitFlags(call, EmitFlags.Iterator)) : call;
+  const callResult = containsYield ? new qc.YieldExpression(new Token(Syntax.AsteriskToken), setEmitFlags(call, EmitFlags.Iterator)) : call;
   if (isSimpleLoop) {
     statements.push(new qc.ExpressionStatement(callResult));
     copyOutParameters(state.loopOutParameters, LoopOutParameterFlags.Body, CopyDirection.ToOriginal, statements);
   } else {
     const loopResultName = createUniqueName('state');
-    const stateVariable = createVariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(loopResultName, undefined, callResult)]));
+    const stateVariable = new qc.VariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(loopResultName, undefined, callResult)]));
     statements.push(stateVariable);
     copyOutParameters(state.loopOutParameters, LoopOutParameterFlags.Body, CopyDirection.ToOriginal, statements);
     if (state.nonLocalJumps! & Jump.Return) {
@@ -1797,7 +1800,7 @@ function visitCatchClause(node: CatchClause): CatchClause {
     const vars = flattenDestructuringBinding(node.variableDeclaration, visitor, context, FlattenLevel.All, temp);
     const list = new qc.VariableDeclarationList(vars);
     setRange(list, node.variableDeclaration);
-    const destructure = createVariableStatement(undefined, list);
+    const destructure = new qc.VariableStatement(undefined, list);
     updated = node.update(newVariableDeclaration, addStatementToStartOfBlock(node.block, destructure));
   } else {
     updated = visitEachChild(node, visitor, context);

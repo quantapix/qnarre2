@@ -2611,7 +2611,7 @@ export abstract class Statement extends Node implements qt.Statement {
     if (Node.is.kind(VariableDeclarationList, node)) {
       const firstDeclaration = first(node.declarations);
       const updatedDeclaration = firstDeclaration.update(firstDeclaration.name, undefined, boundValue);
-      return setRange(createVariableStatement(undefined, node.update([updatedDeclaration])), node);
+      return setRange(new qc.VariableStatement(undefined, node.update([updatedDeclaration])), node);
     } else {
       const updatedExpression = setRange(createAssignment(node, boundValue), node);
       return setRange(createStatement(updatedExpression), node);

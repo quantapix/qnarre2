@@ -162,7 +162,7 @@ export function transformES2018(context: TransformationContext) {
   }
   function visitAwaitExpression(node: AwaitExpression): Expression {
     if (enclosingFunctionFlags & FunctionFlags.Async && enclosingFunctionFlags & FunctionFlags.Generator)
-      return setOriginalNode(setRange(createYield(createAwaitHelper(context, visitNode(node.expression, visitor, isExpression))), node), node);
+      return setOriginalNode(setRange(new qc.YieldExpression(createAwaitHelper(context, visitNode(node.expression, visitor, isExpression))), node), node);
     return visitEachChild(node, visitor, context);
   }
   function visitYieldExpression(node: YieldExpression) {
@@ -171,13 +171,15 @@ export function transformES2018(context: TransformationContext) {
         const expression = visitNode(node.expression, visitor, isExpression);
         return setOriginalNode(
           setRange(
-            createYield(createAwaitHelper(context, node.update(node.asteriskToken, createAsyncDelegatorHelper(context, createAsyncValuesHelper(context, expression, expression), expression)))),
+            new qc.YieldExpression(
+              createAwaitHelper(context, node.update(node.asteriskToken, createAsyncDelegatorHelper(context, createAsyncValuesHelper(context, expression, expression), expression)))
+            ),
             node
           ),
           node
         );
       }
-      return setOriginalNode(setRange(createYield(createDownlevelAwait(node.expression ? visitNode(node.expression, visitor, isExpression) : qs.VoidExpression.zero())), node), node);
+      return setOriginalNode(setRange(new qc.YieldExpression(createDownlevelAwait(node.expression ? visitNode(node.expression, visitor, isExpression) : qs.VoidExpression.zero())), node), node);
     }
     return visitEachChild(node, visitor, context);
   }
@@ -247,7 +249,7 @@ export function transformES2018(context: TransformationContext) {
     );
     exportedVariableStatement = false;
     const visited = visitEachChild(node, visitor, context);
-    const statement = concatenate(visited.statements, taggedTemplateStringDeclarations && [createVariableStatement(undefined, new qc.VariableDeclarationList(taggedTemplateStringDeclarations))]);
+    const statement = concatenate(visited.statements, taggedTemplateStringDeclarations && [new qc.VariableStatement(undefined, new qc.VariableDeclarationList(taggedTemplateStringDeclarations))]);
     const result = qp_updateSourceNode(visited, setRange(new Nodes(statement), node.statements));
     exitSubtree(ancestorFacts);
     return result;
@@ -269,7 +271,7 @@ export function transformES2018(context: TransformationContext) {
       const visitedBindings = flattenDestructuringBinding(updatedDecl, visitor, context, FlattenLevel.ObjectRest);
       let block = visitNode(node.block, visitor, isBlock);
       if (some(visitedBindings)) {
-        block = block.update([createVariableStatement(undefined, visitedBindings), ...block.statements]);
+        block = block.update([new qc.VariableStatement(undefined, visitedBindings), ...block.statements]);
       }
       return node.update(updateVariableDeclaration(node.variableDeclaration, name, undefined, undefined), block);
     }
@@ -365,7 +367,7 @@ export function transformES2018(context: TransformationContext) {
     return setEmitFlags(setRange(new Block(setRange(new Nodes(statements), statementsLocation), true), bodyLocation), EmitFlags.NoSourceMap | EmitFlags.NoTokenSourceMaps);
   }
   function createDownlevelAwait(expression: Expression) {
-    return enclosingFunctionFlags & FunctionFlags.Generator ? createYield(undefined, createAwaitHelper(context, expression)) : new AwaitExpression(expression);
+    return enclosingFunctionFlags & FunctionFlags.Generator ? new qc.YieldExpression(undefined, createAwaitHelper(context, expression)) : new AwaitExpression(expression);
   }
   function transformForAwaitOfStatement(node: ForOfStatement, outermostLabeledStatement: LabeledStatement | undefined, ancestorFacts: HierarchyFacts) {
     const expression = visitNode(node.expression, visitor, isExpression);
@@ -579,7 +581,7 @@ export function transformES2018(context: TransformationContext) {
         const temp = getGeneratedNameForNode(parameter);
         const declarations = flattenDestructuringBinding(parameter, visitor, context, FlattenLevel.ObjectRest, temp, true);
         if (some(declarations)) {
-          const statement = createVariableStatement(undefined, new qc.VariableDeclarationList(declarations));
+          const statement = new qc.VariableStatement(undefined, new qc.VariableDeclarationList(declarations));
           setEmitFlags(statement, EmitFlags.CustomPrologue);
           statements = append(statements, statement);
         }

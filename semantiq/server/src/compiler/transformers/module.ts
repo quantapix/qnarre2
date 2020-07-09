@@ -148,7 +148,7 @@ export function transformModule(context: TransformationContext) {
             new qc.IfStatement(
               createLogicalAnd(createTypeCheck(new Identifier('module'), 'object'), createTypeCheck(createPropertyAccess(new Identifier('module'), 'exports'), 'object')),
               new Block([
-                createVariableStatement(undefined, [
+                new qc.VariableStatement(undefined, [
                   new qc.VariableDeclaration('v', undefined, new qs.CallExpression(new Identifier('factory'), undefined, [new Identifier('require'), new Identifier('exports')])),
                 ]),
                 setEmitFlags(
@@ -387,7 +387,7 @@ export function transformModule(context: TransformationContext) {
     const reject = createUniqueName('reject');
     const parameters = [new qc.ParameterDeclaration(resolve), new qc.ParameterDeclaration(reject)];
     const body = new Block([
-      new qc.ExpressionStatement(new qs.CallExpression(new Identifier('require'), undefined, [new ArrayLiteralExpression([arg || createOmittedExpression()]), resolve, reject])),
+      new qc.ExpressionStatement(new qs.CallExpression(new Identifier('require'), undefined, [new ArrayLiteralExpression([arg || new qc.OmittedExpression()]), resolve, reject])),
     ]);
     let func: FunctionExpression | ArrowFunction;
     if (languageVersion >= ScriptTarget.ES2015) {
@@ -461,7 +461,7 @@ export function transformModule(context: TransformationContext) {
         statements = append(
           statements,
           setOriginalNode(
-            setRange(createVariableStatement(undefined, new qc.VariableDeclarationList(variables, languageVersion >= ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None)), node),
+            setRange(new qc.VariableStatement(undefined, new qc.VariableDeclarationList(variables, languageVersion >= ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None)), node),
             node
           )
         );
@@ -469,7 +469,7 @@ export function transformModule(context: TransformationContext) {
     } else if (namespaceDeclaration && isDefaultImport(node)) {
       statements = append(
         statements,
-        createVariableStatement(
+        new qc.VariableStatement(
           undefined,
           new qc.VariableDeclarationList(
             [setOriginalNode(setRange(new qc.VariableDeclaration(getSynthesizedClone(namespaceDeclaration.name), undefined, getGeneratedNameForNode(node)), node))],
@@ -505,7 +505,7 @@ export function transformModule(context: TransformationContext) {
           statements,
           setOriginalNode(
             setRange(
-              createVariableStatement(
+              new qc.VariableStatement(
                 undefined,
                 new qc.VariableDeclarationList(
                   [new qc.VariableDeclaration(getSynthesizedClone(node.name), undefined, createRequireCall(node))],
@@ -540,7 +540,7 @@ export function transformModule(context: TransformationContext) {
       const statements: Statement[] = [];
       if (moduleKind !== ModuleKind.AMD) {
         statements.push(
-          setOriginalNode(setRange(createVariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(generatedName, undefined, createRequireCall(node))])), node), node)
+          setOriginalNode(setRange(new qc.VariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(generatedName, undefined, createRequireCall(node))])), node), node)
         );
       }
       for (const specifier of node.exportClause.elements) {
@@ -1235,7 +1235,7 @@ export function transformSystemModule(context: TransformationContext) {
     const ensureUseStrict = getStrictOptionValue(compilerOptions, 'alwaysStrict') || (!compilerOptions.noImplicitUseStrict && qp_isExternalModule(currentSourceFile));
     const statementOffset = addPrologue(statements, node.statements, ensureUseStrict, sourceElementVisitor);
     statements.push(
-      createVariableStatement(
+      new qc.VariableStatement(
         undefined,
         new qc.VariableDeclarationList([new qc.VariableDeclaration('__moduleName', undefined, createLogicalAnd(contextObject, createPropertyAccess(contextObject, 'id')))])
       )
@@ -1298,7 +1298,7 @@ export function transformSystemModule(context: TransformationContext) {
     }
     const exportedNamesStorageRef = createUniqueName('exportedNames');
     statements.push(
-      createVariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(exportedNamesStorageRef, undefined, new qc.ObjectLiteralExpression(exportedNames, true))]))
+      new qc.VariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(exportedNamesStorageRef, undefined, new qc.ObjectLiteralExpression(exportedNames, true))]))
     );
     const exportStarFunction = createExportStarFunction(exportedNamesStorageRef);
     statements.push(exportStarFunction);
@@ -1323,7 +1323,7 @@ export function transformSystemModule(context: TransformationContext) {
       undefined,
       new Block(
         [
-          createVariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(exports, undefined, new qc.ObjectLiteralExpression([]))])),
+          new qc.VariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(exports, undefined, new qc.ObjectLiteralExpression([]))])),
           new qc.ForInStatement(
             new qc.VariableDeclarationList([new qc.VariableDeclaration(n, undefined)]),
             m,
@@ -1764,7 +1764,7 @@ export function transformSystemModule(context: TransformationContext) {
           hoistBindingElement(variable);
         }
       }
-      return expressions ? inlineExpressions(expressions) : createOmittedExpression();
+      return expressions ? inlineExpressions(expressions) : new qc.OmittedExpression();
     }
     return visitEachChild(node, nestedElementVisitor, context);
   }

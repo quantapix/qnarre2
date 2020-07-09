@@ -1751,7 +1751,7 @@ export function transformGenerators(context: TransformationContext) {
       }
       return expression;
     }
-    return createOmittedExpression();
+    return new qc.OmittedExpression();
   }
   function createInstruction(instruction: Instruction): NumericLiteral {
     const literal = createLiteral(instruction);
@@ -1901,7 +1901,7 @@ export function transformGenerators(context: TransformationContext) {
         // surround the statements in generated `with` blocks to create the same environment.
         for (let i = withBlockStack.length - 1; i >= 0; i--) {
           const withBlock = withBlockStack[i];
-          statements = [createWith(withBlock.expression, new Block(statements))];
+          statements = [new qc.WithStatement(withBlock.expression, new Block(statements))];
         }
       }
       if (currentExceptionBlock) {

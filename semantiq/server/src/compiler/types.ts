@@ -196,7 +196,7 @@ export interface BindingElement extends NamedDeclaration {
   kind: Syntax.BindingElement;
   parent?: BindingPattern;
   propertyName?: PropertyName;
-  dotDotDotToken?: Dot3Token;
+  dot3Token?: Dot3Token;
   name: BindingName;
   initializer?: Expression;
 }
@@ -1187,7 +1187,7 @@ export interface JSDocTag extends Node {
 export interface JSDocTagInfo {}
 export interface JSDocTemplateTag extends JSDocTag {
   kind: Syntax.JSDocTemplateTag;
-  constraint: JSDocTypeExpression | undefined;
+  constraint?: JSDocTypeExpression;
   typeParameters: Nodes<TypeParameterDeclaration>;
 }
 export interface JSDocThisTag extends JSDocTag {
@@ -1258,7 +1258,7 @@ export interface JsxElement extends PrimaryExpression {
 export interface JsxExpression extends Expression {
   kind: Syntax.JsxExpression;
   parent: JsxElement | JsxAttributeLike;
-  dotDotDotToken?: Token<Syntax.Dot3Token>;
+  dot3Token?: Token<Syntax.Dot3Token>;
   expression?: Expression;
 }
 export const enum JsxFlags {
@@ -1428,7 +1428,7 @@ export interface NamedImports extends Node {
 }
 export interface NamedTupleMember extends TypeNode, JSDocContainer, Declaration {
   kind: Syntax.NamedTupleMember;
-  dotDotDotToken?: Token<Syntax.Dot3Token>;
+  dot3Token?: Token<Syntax.Dot3Token>;
   name: Identifier;
   questionToken?: Token<Syntax.QuestionToken>;
   type: TypeNode;
@@ -1636,7 +1636,7 @@ export interface PackageId {
 export interface ParameterDeclaration extends NamedDeclaration, JSDocContainer {
   kind: Syntax.Parameter;
   parent: SignatureDeclaration;
-  dotDotDotToken?: Dot3Token;
+  dot3Token?: Dot3Token;
   name: BindingName;
   questionToken?: QuestionToken;
   type?: TypeNode;

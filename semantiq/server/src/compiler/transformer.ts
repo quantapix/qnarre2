@@ -336,7 +336,7 @@ export function transformNodes<T extends Node>(
     if (lexicalEnvironmentVariableDeclarations || lexicalEnvironmentFunctionDeclarations || lexicalEnvironmentStatements) {
       if (lexicalEnvironmentFunctionDeclarations) statements = [...lexicalEnvironmentFunctionDeclarations];
       if (lexicalEnvironmentVariableDeclarations) {
-        const statement = createVariableStatement(undefined, new qc.VariableDeclarationList(lexicalEnvironmentVariableDeclarations));
+        const statement = new qc.VariableStatement(undefined, new qc.VariableDeclarationList(lexicalEnvironmentVariableDeclarations));
         setEmitFlags(statement, EmitFlags.CustomPrologue);
         if (!statements) statements = [statement];
         else statements.push(statement);

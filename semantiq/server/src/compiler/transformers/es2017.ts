@@ -186,7 +186,7 @@ export function transformES2017(context: TransformationContext) {
   }
   function visitAwaitExpression(node: AwaitExpression): Expression {
     if (inTopLevelContext()) return visitEachChild(node, visitor, context);
-    return setOriginalNode(setRange(createYield(undefined, visitNode(node.expression, visitor, isExpression)), node), node);
+    return setOriginalNode(setRange(new qc.YieldExpression(undefined, visitNode(node.expression, visitor, isExpression)), node), node);
   }
   function visitMethodDeclaration(node: MethodDeclaration) {
     return node.update(
@@ -464,7 +464,7 @@ export function createSuperAccessVariableStatement(resolver: EmitResolver, node:
     }
     accessors.push(createPropertyAssignment(name, new qc.ObjectLiteralExpression(getterAndSetter)));
   });
-  return createVariableStatement(
+  return new qc.VariableStatement(
     undefined,
     new qc.VariableDeclarationList(
       [new qc.VariableDeclaration(createFileLevelUniqueName('_super'), undefined, new qs.CallExpression(createPropertyAccess(new Identifier('Object'), 'create'), true))],
