@@ -449,7 +449,7 @@ export const readHelper: UnscopedEmitHelper = {
 };
 export function createReadHelper(context: TransformationContext, iteratorRecord: Expression, count: number | undefined, location?: TextRange) {
   context.requestEmitHelper(readHelper);
-  return setRange(new qs.CallExpression(getUnscopedHelperName('__read'), undefined, count !== undefined ? [iteratorRecord, createLiteral(count)] : [iteratorRecord]), location);
+  return setRange(new qs.CallExpression(getUnscopedHelperName('__read'), undefined, count !== undefined ? [iteratorRecord, qc.asLiteral(count)] : [iteratorRecord]), location);
 }
 export const spreadHelper: UnscopedEmitHelper = {
   name: 'typescript:spread',

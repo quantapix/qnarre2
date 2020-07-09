@@ -56,7 +56,7 @@ export function transformES5(context: TransformationContext) {
   }
   function trySubstituteReservedName(name: Identifier) {
     const token = name.originalKeywordKind || (isSynthesized(name) ? Token.fromString(idText(name)) : undefined);
-    if (token !== undefined && token >= Syntax.FirstReservedWord && token <= Syntax.LastReservedWord) return setRange(createLiteral(name), name);
+    if (token !== undefined && token >= Syntax.FirstReservedWord && token <= Syntax.LastReservedWord) return setRange(qc.asLiteral(name), name);
     return;
   }
 }

@@ -109,7 +109,7 @@ export function transformModule(context: TransformationContext) {
           new qc.ExpressionStatement(
             new qs.CallExpression(define, undefined, [
               ...(moduleName ? [moduleName] : []),
-              new ArrayLiteralExpression(jsonSourceFile ? emptyArray : [createLiteral('require'), createLiteral('exports'), ...aliasedModuleNames, ...unaliasedModuleNames]),
+              new ArrayLiteralExpression(jsonSourceFile ? emptyArray : [qc.asLiteral('require'), qc.asLiteral('exports'), ...aliasedModuleNames, ...unaliasedModuleNames]),
               jsonSourceFile
                 ? jsonSourceFile.statements.length
                   ? jsonSourceFile.statements[0].expression
@@ -165,7 +165,7 @@ export function transformModule(context: TransformationContext) {
                   new qc.ExpressionStatement(
                     new qs.CallExpression(new Identifier('define'), undefined, [
                       ...(moduleName ? [moduleName] : []),
-                      new ArrayLiteralExpression([createLiteral('require'), createLiteral('exports'), ...aliasedModuleNames, ...unaliasedModuleNames]),
+                      new ArrayLiteralExpression([qc.asLiteral('require'), qc.asLiteral('exports'), ...aliasedModuleNames, ...unaliasedModuleNames]),
                       new Identifier('factory'),
                     ])
                   ),
@@ -208,10 +208,10 @@ export function transformModule(context: TransformationContext) {
     const importAliasNames: ParameterDeclaration[] = [];
     for (const amdDependency of node.amdDependencies) {
       if (amdDependency.name) {
-        aliasedModuleNames.push(createLiteral(amdDependency.path));
+        aliasedModuleNames.push(qc.asLiteral(amdDependency.path));
         importAliasNames.push(new qc.ParameterDeclaration(undefined, undefined, amdDependency.name));
       } else {
-        unaliasedModuleNames.push(createLiteral(amdDependency.path));
+        unaliasedModuleNames.push(qc.asLiteral(amdDependency.path));
       }
     }
     for (const importNode of currentModuleInfo.externalImports) {
@@ -372,7 +372,7 @@ export function transformModule(context: TransformationContext) {
   function createImportCallExpressionUMD(arg: Expression, containsLexicalThis: boolean): Expression {
     needUMDDynamicImportHelper = true;
     if (isSimpleCopiableExpression(arg)) {
-      const argClone = Node.is.generatedIdentifier(arg) ? arg : Node.is.kind(StringLiteral, arg) ? createLiteral(arg) : setEmitFlags(setRange(getSynthesizedClone(arg), arg), EmitFlags.NoComments);
+      const argClone = Node.is.generatedIdentifier(arg) ? arg : Node.is.kind(StringLiteral, arg) ? qc.asLiteral(arg) : setEmitFlags(setRange(getSynthesizedClone(arg), arg), EmitFlags.NoComments);
       return new qc.ConditionalExpression(new Identifier('__syncRequire'), createImportCallExpressionCommonJS(arg, containsLexicalThis), createImportCallExpressionAMD(argClone, containsLexicalThis));
     } else {
       const temp = createTempVariable(hoistVariableDeclaration);
@@ -549,7 +549,7 @@ export function transformModule(context: TransformationContext) {
             setOriginalNode(
               setRange(
                 new qc.ExpressionStatement(
-                  createCreateBindingHelper(context, generatedName, createLiteral(specifier.propertyName || specifier.name), specifier.propertyName ? createLiteral(specifier.name) : undefined)
+                  createCreateBindingHelper(context, generatedName, qc.asLiteral(specifier.propertyName || specifier.name), specifier.propertyName ? qc.asLiteral(specifier.name) : undefined)
                 ),
                 specifier
               ),
@@ -814,13 +814,13 @@ export function transformModule(context: TransformationContext) {
   function createUnderscoreUnderscoreESModule() {
     let statement: Statement;
     if (languageVersion === ScriptTarget.ES3) {
-      statement = new qc.ExpressionStatement(createExportExpression(new Identifier('__esModule'), createLiteral(true)));
+      statement = new qc.ExpressionStatement(createExportExpression(new Identifier('__esModule'), qc.asLiteral(true)));
     } else {
       statement = new qc.ExpressionStatement(
         new qs.CallExpression(new qc.PropertyAccessExpression(new Identifier('Object'), 'defineProperty'), undefined, [
           new Identifier('exports'),
-          createLiteral('__esModule'),
-          new qc.ObjectLiteralExpression([new qc.PropertyAssignment('value', createLiteral(true))]),
+          qc.asLiteral('__esModule'),
+          new qc.ObjectLiteralExpression([new qc.PropertyAssignment('value', qc.asLiteral(true))]),
         ])
       );
     }
@@ -840,9 +840,9 @@ export function transformModule(context: TransformationContext) {
       liveBinding && languageVersion !== ScriptTarget.ES3
         ? new qs.CallExpression(new qc.PropertyAccessExpression(new Identifier('Object'), 'defineProperty'), undefined, [
             new Identifier('exports'),
-            createLiteral(name),
+            qc.asLiteral(name),
             new qc.ObjectLiteralExpression([
-              new qc.PropertyAssignment('enumerable', createLiteral(true)),
+              new qc.PropertyAssignment('enumerable', qc.asLiteral(true)),
               new qc.PropertyAssignment('get', new qs.FunctionExpression(undefined, undefined, undefined, undefined, [], undefined, new Block([new qc.ReturnStatement(value)]))),
             ]),
           ])
@@ -954,7 +954,7 @@ export function transformModule(context: TransformationContext) {
       if (exportedNames) {
         let expression: Expression =
           node.kind === Syntax.PostfixUnaryExpression
-            ? setRange(new BinaryExpression(node.operand, new Token(node.operator === Syntax.Plus2Token ? Syntax.PlusEqualsToken : Syntax.MinusEqualsToken), createLiteral(1)), node)
+            ? setRange(new BinaryExpression(node.operand, new Token(node.operator === Syntax.Plus2Token ? Syntax.PlusEqualsToken : Syntax.MinusEqualsToken), qc.asLiteral(1)), node)
             : node;
         for (const exportName of exportedNames) {
           noSubstitution[getNodeId(expression)] = true;
@@ -1278,7 +1278,7 @@ export function transformSystemModule(context: TransformationContext) {
         if (exportedLocalName.escapedText === 'default') {
           continue;
         }
-        exportedNames.push(new qc.PropertyAssignment(createLiteral(exportedLocalName), new qc.BooleanLiteral(true)));
+        exportedNames.push(new qc.PropertyAssignment(qc.asLiteral(exportedLocalName), new qc.BooleanLiteral(true)));
       }
     }
     for (const externalImport of moduleInfo.externalImports) {
@@ -1290,10 +1290,10 @@ export function transformSystemModule(context: TransformationContext) {
       }
       if (Node.is.kind(NamedExports, externalImport.exportClause)) {
         for (const element of externalImport.exportClause.elements) {
-          exportedNames.push(new qc.PropertyAssignment(createLiteral(idText(element.name || element.propertyName)), new qc.BooleanLiteral(true)));
+          exportedNames.push(new qc.PropertyAssignment(qc.asLiteral(idText(element.name || element.propertyName)), new qc.BooleanLiteral(true)));
         }
       } else {
-        exportedNames.push(new qc.PropertyAssignment(createLiteral(idText(externalImport.exportClause.name)), new qc.BooleanLiteral(true)));
+        exportedNames.push(new qc.PropertyAssignment(qc.asLiteral(idText(externalImport.exportClause.name)), new qc.BooleanLiteral(true)));
       }
     }
     const exportedNamesStorageRef = createUniqueName('exportedNames');
@@ -1309,7 +1309,7 @@ export function transformSystemModule(context: TransformationContext) {
     const m = new Identifier('m');
     const n = new Identifier('n');
     const exports = new Identifier('exports');
-    let condition: Expression = createStrictInequality(n, createLiteral('default'));
+    let condition: Expression = createStrictInequality(n, qc.asLiteral('default'));
     if (localNames) {
       condition = createLogicalAnd(condition, qs.PrefixUnaryExpression.logicalNot(new qs.CallExpression(new qc.PropertyAccessExpression(localNames, 'hasOwnProperty'), undefined, [n])));
     }
@@ -1363,11 +1363,11 @@ export function transformSystemModule(context: TransformationContext) {
               if (Node.is.kind(NamedExports, entry.exportClause)) {
                 const properties: PropertyAssignment[] = [];
                 for (const e of entry.exportClause.elements) {
-                  properties.push(new qc.PropertyAssignment(createLiteral(idText(e.name)), new qs.ElementAccessExpression(parameterName, createLiteral(idText(e.propertyName || e.name)))));
+                  properties.push(new qc.PropertyAssignment(qc.asLiteral(idText(e.name)), new qs.ElementAccessExpression(parameterName, qc.asLiteral(idText(e.propertyName || e.name)))));
                 }
                 statements.push(new qc.ExpressionStatement(new qs.CallExpression(exportFunction, true)));
               } else {
-                statements.push(new qc.ExpressionStatement(new qs.CallExpression(exportFunction, undefined, [createLiteral(idText(entry.exportClause.name)), parameterName])));
+                statements.push(new qc.ExpressionStatement(new qs.CallExpression(exportFunction, undefined, [qc.asLiteral(idText(entry.exportClause.name)), parameterName])));
               }
             } else {
               statements.push(new qc.ExpressionStatement(new qs.CallExpression(exportStarFunction, undefined, [parameterName])));
@@ -1631,7 +1631,7 @@ export function transformSystemModule(context: TransformationContext) {
     if (moduleInfo.exportEquals) return statements;
     let excludeName: string | undefined;
     if (hasSyntacticModifier(decl, ModifierFlags.Export)) {
-      const exportName = hasSyntacticModifier(decl, ModifierFlags.Default) ? createLiteral('default') : decl.name!;
+      const exportName = hasSyntacticModifier(decl, ModifierFlags.Default) ? qc.asLiteral('default') : decl.name!;
       statements = appendExportStatement(statements, exportName, getLocalName(decl));
       excludeName = getTextOfIdentifierOrLiteral(exportName);
     }
@@ -1666,7 +1666,7 @@ export function transformSystemModule(context: TransformationContext) {
     return statement;
   }
   function createExportExpression(name: Identifier | StringLiteral, value: Expression) {
-    const exportName = Node.is.kind(Identifier, name) ? createLiteral(name) : name;
+    const exportName = Node.is.kind(Identifier, name) ? qc.asLiteral(name) : name;
     setEmitFlags(value, Node.get.emitFlags(value) | EmitFlags.NoComments);
     return setCommentRange(new qs.CallExpression(exportFunction, undefined, [exportName, value]), value);
   }
@@ -1974,7 +1974,7 @@ export function transformSystemModule(context: TransformationContext) {
           expression = createExportExpression(exportName, preventSubstitution(expression));
         }
         if (node.kind === Syntax.PostfixUnaryExpression) {
-          expression = node.operator === Syntax.Plus2Token ? createSubtract(preventSubstitution(expression), createLiteral(1)) : createAdd(preventSubstitution(expression), createLiteral(1));
+          expression = node.operator === Syntax.Plus2Token ? createSubtract(preventSubstitution(expression), qc.asLiteral(1)) : createAdd(preventSubstitution(expression), qc.asLiteral(1));
         }
         return expression;
       }

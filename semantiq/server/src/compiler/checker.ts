@@ -828,7 +828,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         for (const node of this.declarations) {
           const resolvedModule = resolveExternalModuleName(node, (node as ExportDeclaration).moduleSpecifier!);
           if (!resolvedModule) continue;
-          addResult(new qc.ExportDeclaration(undefined, undefined, undefined, createLiteral(getSpecifierForModuleSymbol(resolvedModule, context))), ModifierFlags.None);
+          addResult(new qc.ExportDeclaration(undefined, undefined, undefined, qc.asLiteral(getSpecifierForModuleSymbol(resolvedModule, context))), ModifierFlags.None);
         }
       }
       if (needsPostExportDefault) addResult(new qc.ExportAssignment(undefined, undefined, false, new Identifier(this.getInternalSymbolName(symbolName))), ModifierFlags.None);
@@ -849,7 +849,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       context.flags |= NodeBuilderFlags.InTypeAlias;
       addResult(
         setSyntheticLeadingComments(
-          createTypeAliasDeclaration(undefined, undefined, this.getInternalSymbolName(symbolName), typeParamDecls, typeToTypeNodeHelper(aliasType, context)),
+          new qc.TypeAliasDeclaration(undefined, undefined, this.getInternalSymbolName(symbolName), typeParamDecls, typeToTypeNodeHelper(aliasType, context)),
           !commentText
             ? []
             : [
@@ -949,7 +949,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
             filter(getPropertiesOfType(this.getTypeOfSymbol()), (p) => !!(p.flags & SymbolFlags.EnumMember)),
             (p) => {
               const initializedValue = p.declarations && p.declarations[0] && Node.is.kind(EnumMember, p.declarations[0]) && getConstantValue(p.declarations[0] as EnumMember);
-              return new qc.EnumMember(syntax.get.unescUnderscores(p.escName), initializedValue === undefined ? undefined : createLiteral(initializedValue));
+              return new qc.EnumMember(syntax.get.unescUnderscores(p.escName), initializedValue === undefined ? undefined : qc.asLiteral(initializedValue));
             }
           )
         ),
@@ -996,7 +996,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
               undefined,
               undefined,
               new Identifier(localName),
-              isLocalImport ? symbolToName(target, context, SymbolFlags.All, false) : new qc.ExternalModuleReference(createLiteral(getSpecifierForModuleSymbol(symbol, context)))
+              isLocalImport ? symbolToName(target, context, SymbolFlags.All, false) : new qc.ExternalModuleReference(qc.asLiteral(getSpecifierForModuleSymbol(symbol, context)))
             ),
             isLocalImport ? modifierFlags : ModifierFlags.None
           );
@@ -1006,7 +1006,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           break;
         case Syntax.ImportClause:
           addResult(
-            new qc.ImportDeclaration(undefined, undefined, new qc.ImportClause(new Identifier(localName), undefined), createLiteral(getSpecifierForModuleSymbol(target.parent || target, context))),
+            new qc.ImportDeclaration(undefined, undefined, new qc.ImportClause(new Identifier(localName), undefined), qc.asLiteral(getSpecifierForModuleSymbol(target.parent || target, context))),
             ModifierFlags.None
           );
           break;
@@ -1016,13 +1016,13 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
               undefined,
               undefined,
               new qc.ImportClause(undefined, new qc.NamespaceImport(new Identifier(localName))),
-              createLiteral(getSpecifierForModuleSymbol(target, context))
+              qc.asLiteral(getSpecifierForModuleSymbol(target, context))
             ),
             ModifierFlags.None
           );
           break;
         case Syntax.NamespaceExport:
-          addResult(new qc.ExportDeclaration(undefined, undefined, new qc.NamespaceExport(new Identifier(localName)), createLiteral(getSpecifierForModuleSymbol(target, context))), ModifierFlags.None);
+          addResult(new qc.ExportDeclaration(undefined, undefined, new qc.NamespaceExport(new Identifier(localName)), qc.asLiteral(getSpecifierForModuleSymbol(target, context))), ModifierFlags.None);
           break;
         case Syntax.ImportSpecifier:
           addResult(
@@ -1033,7 +1033,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
                 undefined,
                 new qc.NamedImports([new qc.ImportSpecifier(localName !== verbatimTargetName ? new Identifier(verbatimTargetName) : undefined, new Identifier(localName))])
               ),
-              createLiteral(getSpecifierForModuleSymbol(target.parent || target, context))
+              qc.asLiteral(getSpecifierForModuleSymbol(target.parent || target, context))
             ),
             ModifierFlags.None
           );
@@ -1043,7 +1043,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           serializeExportSpecifier(
             syntax.get.unescUnderscores(this.escName),
             specifier ? verbatimTargetName : targetName,
-            specifier && StringLiteral.like(specifier) ? createLiteral(specifier.text) : undefined
+            specifier && StringLiteral.like(specifier) ? qc.asLiteral(specifier.text) : undefined
           );
           break;
         case Syntax.ExportAssignment:
@@ -23614,7 +23614,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         : type === trueType
         ? new qc.BooleanLiteral(true)
         : type === falseType && new qc.BooleanLiteral(false);
-    return enumResult || createLiteral((type as LiteralType).value);
+    return enumResult || qc.asLiteral((type as LiteralType).value);
   }
   function createLiteralConstValue(node: VariableDeclaration | PropertyDeclaration | PropertySignature | ParameterDeclaration, tracker: SymbolTracker) {
     const type = getTypeOfSymbol(getSymbolOfNode(node));

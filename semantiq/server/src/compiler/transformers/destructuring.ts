@@ -380,9 +380,9 @@ function createRestCall(
       if (Node.is.kind(ComputedPropertyName, propertyName)) {
         const temp = computedTempVariables[computedTempVariableOffset];
         computedTempVariableOffset++;
-        propertyNames.push(new qc.ConditionalExpression(createTypeCheck(temp, 'symbol'), temp, createAdd(temp, createLiteral(''))));
+        propertyNames.push(new qc.ConditionalExpression(createTypeCheck(temp, 'symbol'), temp, createAdd(temp, qc.asLiteral(''))));
       } else {
-        propertyNames.push(createLiteral(propertyName));
+        propertyNames.push(qc.asLiteral(propertyName));
       }
     }
   }

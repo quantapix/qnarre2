@@ -1491,7 +1491,7 @@ export function createProgram(
     let moduleAugmentations: (StringLiteral | Identifier)[] | undefined;
     let ambientModules: string[] | undefined;
     if (options.importHelpers && (options.isolatedModules || qp_isExternalModuleFile) && !file.isDeclarationFile) {
-      const externalHelpersModuleReference = createLiteral(externalHelpersModuleNameText);
+      const externalHelpersModuleReference = qc.asLiteral(externalHelpersModuleNameText);
       const importDecl = new qc.ImportDeclaration(undefined, undefined, externalHelpersModuleReference);
       addEmitFlags(importDecl, EmitFlags.NeverApplyImportHelper);
       externalHelpersModuleReference.parent = importDecl;
@@ -2664,7 +2664,7 @@ export function createPrependNodes(
       const out = resolvedRefOpts.options.outFile || resolvedRefOpts.options.out;
       if (!out) continue;
       const { jsFilePath, sourceMapFilePath, declarationFilePath, declarationMapPath, buildInfoPath } = getOutputPathsForBundle(resolvedRefOpts.options, true);
-      const node = createInputFiles(readFile, jsFilePath!, sourceMapFilePath, declarationFilePath!, declarationMapPath, buildInfoPath);
+      const node = new qc.InputFiles(readFile, jsFilePath!, sourceMapFilePath, declarationFilePath!, declarationMapPath, buildInfoPath);
       (nodes || (nodes = [])).push(node);
     }
   }

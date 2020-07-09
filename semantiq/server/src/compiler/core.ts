@@ -2392,7 +2392,7 @@ export abstract class Expression extends Node implements qt.Expression {
     return getMutableClone(node);
   }
   createExpressionForPropertyName(memberName: Exclude<PropertyName, PrivateIdentifier>): Expression {
-    if (Node.is.kind(Identifier, memberName)) return createLiteral(memberName);
+    if (Node.is.kind(Identifier, memberName)) return qc.asLiteral(memberName);
     else if (Node.is.kind(ComputedPropertyName, memberName)) return getMutableClone(memberName.expression);
     return getMutableClone(memberName);
   }
@@ -2471,7 +2471,7 @@ export abstract class Expression extends Node implements qt.Expression {
     return;
   }
   createTypeCheck(value: Expression, tag: TypeOfTag) {
-    return tag === 'undefined' ? createStrictEquality(value, VoidExpression.zero()) : createStrictEquality(new TypeOfExpression(value), createLiteral(tag));
+    return tag === 'undefined' ? createStrictEquality(value, VoidExpression.zero()) : createStrictEquality(new TypeOfExpression(value), qc.asLiteral(tag));
   }
   createMemberAccessForPropertyName(target: Expression, memberName: PropertyName, location?: TextRange): MemberExpression {
     if (Node.is.kind(ComputedPropertyName, memberName)) return setRange(new ElementAccessExpression(target, memberName.expression), location);
@@ -2492,7 +2492,7 @@ export abstract class Expression extends Node implements qt.Expression {
   }
   createArraySlice(array: Expression, start?: number | Expression) {
     const argumentsList: Expression[] = [];
-    if (start !== undefined) argumentsList.push(typeof start === 'number' ? createLiteral(start) : start);
+    if (start !== undefined) argumentsList.push(typeof start === 'number' ? qc.asLiteral(start) : start);
     return new CallExpression(new qc.PropertyAccessExpression(array, 'slice'), undefined, argumentsList);
   }
   createArrayConcat(array: Expression, values: readonly Expression[]) {
@@ -2586,7 +2586,7 @@ export abstract class Statement extends Node implements qt.Statement {
       }
       statementOffset++;
     }
-    if (ensureUseStrict && !foundUseStrict) target.push(startOnNewLine(createStatement(createLiteral('use strict'))));
+    if (ensureUseStrict && !foundUseStrict) target.push(startOnNewLine(createStatement(qc.asLiteral('use strict'))));
     return statementOffset;
   }
   addCustomPrologue(target: Statement[], source: readonly Statement[], statementOffset: number, visitor?: (node: Node) => VisitResult<Node>, filter?: (node: Node) => boolean): number;

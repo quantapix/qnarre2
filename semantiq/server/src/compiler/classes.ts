@@ -1548,6 +1548,135 @@ export class InferTypeNode extends qc.TypeNode implements qc.InferTypeNode {
   }
 }
 InferTypeNode.prototype.kind = InferTypeNode.kind;
+
+export class InputFiles extends Node implements qc.InputFiles {
+  static readonly kind = Syntax.InputFiles;
+  javascriptPath?: string;
+  javascriptText: string;
+  javascriptMapPath?: string;
+  javascriptMapText?: string;
+  declarationPath?: string;
+  declarationText: string;
+  declarationMapPath?: string;
+  declarationMapText?: string;
+  buildInfoPath?: string;
+  buildInfo?: qc.BuildInfo;
+  oldFileOfCurrentEmit?: boolean;
+  constructor(javascriptText: string, declarationText: string);
+  constructor(
+    readFileText: (path: string) => string | undefined,
+    javascriptPath: string,
+    javascriptMapPath: string | undefined,
+    declarationPath: string,
+    declarationMapPath?: string,
+    buildInfoPath?: string
+  );
+  constructor(
+    javascriptText: string,
+    declarationText: string,
+    javascriptMapPath: string | undefined,
+    javascriptMapText: string | undefined,
+    declarationMapPath: string | undefined,
+    declarationMapText: string | undefined
+  );
+  constructor(
+    javascriptText: string,
+    declarationText: string,
+    javascriptMapPath: string | undefined,
+    javascriptMapText: string | undefined,
+    declarationMapPath: string | undefined,
+    declarationMapText: string | undefined,
+    javascriptPath: string | undefined,
+    declarationPath: string | undefined,
+    buildInfoPath?: string | undefined,
+    buildInfo?: qc.BuildInfo,
+    oldFileOfCurrentEmit?: boolean
+  );
+  constructor(
+    javascriptTextOrReadFileText: string | ((path: string) => string | undefined),
+    declarationTextOrJavascriptPath: string,
+    javascriptMapPath?: string,
+    javascriptMapTextOrDeclarationPath?: string,
+    declarationMapPath?: string,
+    declarationMapTextOrBuildInfoPath?: string,
+    javascriptPath?: string | undefined,
+    declarationPath?: string | undefined,
+    buildInfoPath?: string | undefined,
+    buildInfo?: qc.BuildInfo,
+    oldFileOfCurrentEmit?: boolean
+  ) {
+    super();
+    if (!qb.isString(javascriptTextOrReadFileText)) {
+      const cache = new qb.QMap<string | false>();
+      const textGetter = (path: string | undefined) => {
+        if (path === undefined) return;
+        let v = cache.get(path);
+        if (v === undefined) {
+          v = javascriptTextOrReadFileText(path);
+          cache.set(path, v !== undefined ? v : false);
+        }
+        return v !== false ? (v as string) : undefined;
+      };
+      const definedTextGetter = (path: string) => {
+        const result = textGetter(path);
+        return result !== undefined ? result : `Input file ${path} was missing \r\n`;
+      };
+      let buildInfo: qc.BuildInfo | false;
+      const getAndCacheBuildInfo = (getText: () => string | undefined) => {
+        if (buildInfo === undefined) {
+          const r = getText();
+          buildInfo = r !== undefined ? getBuildInfo(r) : false;
+        }
+        return buildInfo || undefined;
+      };
+      this.javascriptPath = declarationTextOrJavascriptPath;
+      this.javascriptMapPath = javascriptMapPath;
+      this.declarationPath = qg.checkDefined(javascriptMapTextOrDeclarationPath);
+      this.declarationMapPath = declarationMapPath;
+      this.buildInfoPath = declarationMapTextOrBuildInfoPath;
+      Object.defineProperties(this, {
+        javascriptText: {
+          get() {
+            return definedTextGetter(declarationTextOrJavascriptPath);
+          },
+        },
+        javascriptMapText: {
+          get() {
+            return textGetter(javascriptMapPath);
+          },
+        },
+        declarationText: {
+          get() {
+            return definedTextGetter(qg.checkDefined(javascriptMapTextOrDeclarationPath));
+          },
+        },
+        declarationMapText: {
+          get() {
+            return textGetter(declarationMapPath);
+          },
+        },
+        buildInfo: {
+          get() {
+            return getAndCacheBuildInfo(() => textGetter(declarationMapTextOrBuildInfoPath));
+          },
+        },
+      });
+    } else {
+      this.javascriptText = javascriptTextOrReadFileText;
+      this.javascriptMapPath = javascriptMapPath;
+      this.javascriptMapText = javascriptMapTextOrDeclarationPath;
+      this.declarationText = declarationTextOrJavascriptPath;
+      this.declarationMapPath = declarationMapPath;
+      this.declarationMapText = declarationMapTextOrBuildInfoPath;
+      this.javascriptPath = javascriptPath;
+      this.declarationPath = declarationPath;
+      this.buildInfoPath = buildInfoPath;
+      this.buildInfo = buildInfo;
+      this.oldFileOfCurrentEmit = oldFileOfCurrentEmit;
+    }
+  }
+}
+InputFiles.prototype.kind = InputFiles.kind;
 export class InterfaceDeclaration extends qc.DeclarationStatement implements qc.InterfaceDeclaration {
   static readonly kind = Syntax.InterfaceDeclaration;
   name: Identifier;
@@ -3117,56 +3246,39 @@ export class TryStatement extends qc.Statement implements qc.TryStatement {
   }
 }
 TryStatement.prototype.kind = TryStatement.kind;
-/*
-export class TupleType extends GenericType implements qc.TupleType {
+export class TupleTypeNode extends qc.TypeNode implements qc.TupleTypeNode {
   static readonly kind = Syntax.TupleType;
-  minLength: number;
-  hasRestElement: boolean;
-  readonly: boolean;
-  labeledElementDeclarations?: readonly (NamedTupleMember | ParameterDeclaration)[];
+  elements: Nodes<qc.TypeNode | NamedTupleMember>;
   constructor(es: readonly (qc.TypeNode | NamedTupleMember)[]) {
     super(true);
     this.elements = new Nodes(es);
   }
   update(es: readonly (qc.TypeNode | NamedTupleMember)[]) {
-    return this.elements !== es ? new TupleType(es).updateFrom(this) : this;
+    return this.elements !== es ? new TupleTypeNode(es).updateFrom(this) : this;
   }
 }
-TupleType.prototype.kind = TupleType.kind;
+TupleTypeNode.prototype.kind = TupleTypeNode.kind;
 export class TypeAliasDeclaration extends qc.DeclarationStatement implements qc.TypeAliasDeclaration {
-  //}, JSDocContainer {
   static readonly kind = Syntax.TypeAliasDeclaration;
   name: Identifier;
   typeParameters?: Nodes<TypeParameterDeclaration>;
   type: qc.TypeNode;
-  createTypeAliasDeclaration(
-    decorators: readonly Decorator[] | undefined,
-    modifiers: readonly Modifier[] | undefined,
-    name: string | Identifier,
-    typeParameters: readonly TypeParameterDeclaration[] | undefined,
-    type: TypeNode
-  ) {
+  jsDocCache?: readonly JSDocTag[] | undefined;
+  constructor(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, n: string | Identifier, ts: readonly TypeParameterDeclaration[] | undefined, t: qc.TypeNode) {
     super(true);
-    this.decorators = Nodes.from(decorators);
-    this.modifiers = Nodes.from(modifiers);
-    this.name = asName(name);
-    this.typeParameters = Nodes.from(typeParameters);
-    this.type = type;
+    this.decorators = Nodes.from(ds);
+    this.modifiers = Nodes.from(ms);
+    this.name = asName(n);
+    this.typeParameters = Nodes.from(ts);
+    this.type = t;
   }
-  updateTypeAliasDeclaration(
-    this: TypeAliasDeclaration,
-    decorators: readonly Decorator[] | undefined,
-    modifiers: readonly Modifier[] | undefined,
-    name: Identifier,
-    typeParameters: readonly TypeParameterDeclaration[] | undefined,
-    type: TypeNode
-  ) {
-    return this.decorators !== decorators || this.modifiers !== modifiers || this.name !== name || this.typeParameters !== typeParameters || this.type !== type
-      ? new create(decorators, modifiers, name, typeParameters, type).updateFrom(this)
-      : this;
+  update(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, n: Identifier, ts: readonly TypeParameterDeclaration[] | undefined, t: qc.TypeNode) {
+    return this.decorators !== ds || this.modifiers !== ms || this.name !== n || this.typeParameters !== ts || this.type !== t ? new TypeAliasDeclaration(ds, ms, n, ts, t).updateFrom(this) : this;
   }
+  _statementBrand: any;
 }
 TypeAliasDeclaration.prototype.kind = TypeAliasDeclaration.kind;
+qb.addMixins(TypeAliasDeclaration, [qc.JSDocContainer]);
 export class TypeAssertion extends qc.UnaryExpression implements qc.TypeAssertion {
   static readonly kind = Syntax.TypeAssertionExpression;
   type: qc.TypeNode;
@@ -3191,9 +3303,10 @@ export class TypeLiteralNode extends qc.TypeNode implements qc.TypeLiteralNode {
   update(ms: Nodes<qc.TypeElement>) {
     return this.members !== ms ? new TypeLiteralNode(ms).updateFrom(this) : this;
   }
+  _declarationBrand: any;
 }
 TypeLiteralNode.prototype.kind = TypeLiteralNode.kind;
-qb.addMixins(TypeLiteralNode, [Declaration]);
+qb.addMixins(TypeLiteralNode, [qc.Declaration]);
 export class TypeOfExpression extends qc.UnaryExpression implements qc.TypeOfExpression {
   static readonly kind = Syntax.TypeOfExpression;
   expression: qc.UnaryExpression;
@@ -3215,14 +3328,13 @@ export class TypeOperatorNode extends qc.TypeNode implements qc.TypeOperatorNode
   constructor(o: Syntax.KeyOfKeyword | Syntax.UniqueKeyword | Syntax.ReadonlyKeyword | qc.TypeNode, t?: qc.TypeNode) {
     super(true);
     this.operator = typeof o === 'number' ? o : Syntax.KeyOfKeyword;
-    this.type = parenthesizeElementTypeMember(typeof o === 'number' ? t! : o);
+    this.type = parenthesize.elementTypeMember(typeof o === 'number' ? t! : o);
   }
   update(t: qc.TypeNode) {
     return this.type !== t ? new TypeOperatorNode(this.operator, t).updateFrom(this) : this;
   }
 }
 TypeOperatorNode.prototype.kind = TypeOperatorNode.kind;
-*/
 export class TypeParameterDeclaration extends qc.NamedDeclaration implements qc.TypeParameterDeclaration {
   static readonly kind = Syntax.TypeParameter;
   parent!: qc.DeclarationWithTypeParameterChildren | qc.InferTypeNode;
@@ -3319,7 +3431,7 @@ export namespace UnparsedNode {
       case BundleFileSectionKind.Reference:
       case BundleFileSectionKind.Type:
       case BundleFileSectionKind.Lib:
-        return fail(`BundleFileSectionKind: ${kind} not yet mapped to SyntaxKind`);
+        return qc.fail(`BundleFileSectionKind: ${kind} not yet mapped to SyntaxKind`);
       default:
         return qg.assertNever(kind);
     }
@@ -3594,7 +3706,7 @@ export class VoidExpression extends qc.UnaryExpression implements qc.VoidExpress
     return this.expression !== e ? new VoidExpression(e).updateFrom(this) : this;
   }
   static zero() {
-    return new VoidExpression(createLiteral(0));
+    return new VoidExpression(asLiteral(0));
   }
 }
 VoidExpression.prototype.kind = VoidExpression.kind;
@@ -3978,7 +4090,7 @@ export namespace emit {
     return n;
   }
   export function addEmitHelpers<T extends Node>(n: T, helpers: EmitHelper[] | undefined): T {
-    if (some(helpers)) {
+    if (qb.some(helpers)) {
       const emitNode = getOrCreateEmitNode(n);
       for (const helper of helpers) {
         emitNode.helpers = appendIfUnique(emitNode.helpers, helper);
@@ -4047,23 +4159,6 @@ export namespace emit {
   }
 }
 export namespace fixme {
-  export function createLiteral(value: string | StringLiteral | NoSubstitutionLiteral | NumericLiteral | Identifier, isSingleQuote: boolean): StringLiteral;
-  export function createLiteral(value: string | number, isSingleQuote: boolean): StringLiteral | NumericLiteral;
-  export function createLiteral(value: string | StringLiteral | NoSubstitutionLiteral | NumericLiteral | Identifier): StringLiteral;
-  export function createLiteral(value: number | PseudoBigInt): NumericLiteral;
-  export function createLiteral(value: boolean): BooleanLiteral;
-  export function createLiteral(value: string | number | PseudoBigInt | boolean): qc.PrimaryExpression;
-  export function createLiteral(value: string | number | PseudoBigInt | boolean | StringLiteral | NoSubstitutionLiteral | NumericLiteral | Identifier, isSingleQuote?: boolean): qc.PrimaryExpression {
-    if (typeof value === 'number') return NumericLiteral.create(value + '');
-    if (typeof value === 'object' && 'base10Value' in value) return BigIntLiteral.create(pseudoBigIntToString(value) + 'n');
-    if (typeof value === 'boolean') return value ? new qc.BooleanLiteral(true) : new qc.BooleanLiteral(false);
-    if (isString(value)) {
-      const res = new qc.StringLiteral(value);
-      if (isSingleQuote) res.singleQuote = true;
-      return res;
-    }
-    return StringLiteral.fromNode(value);
-  }
   export function updateFunctionLikeBody(declaration: FunctionLikeDeclaration, body: Block): FunctionLikeDeclaration {
     switch (declaration.kind) {
       case Syntax.FunctionDeclaration:
@@ -4101,123 +4196,9 @@ export namespace fixme {
         return new ArrowFunction(declaration.modifiers, declaration.typeParameters, declaration.parameters, declaration.type, declaration.equalsGreaterThanToken, body);
     }
   }
-  export function appendJSDocToContainer(n: JSDocContainer, jsdoc: JSDoc) {
-    n.jsDoc = append(n.jsDoc, jsdoc);
+  export function appendJSDocToContainer(n: qc.JSDocContainer, jsdoc: JSDoc) {
+    n.jsDoc = qb.append(n.jsDoc, jsdoc);
     return n;
-  }
-  export function createInputFiles(javascriptText: string, declarationText: string): InputFiles;
-  export function createInputFiles(
-    readFileText: (path: string) => string | undefined,
-    javascriptPath: string,
-    javascriptMapPath: string | undefined,
-    declarationPath: string,
-    declarationMapPath: string | undefined,
-    buildInfoPath: string | undefined
-  ): InputFiles;
-  export function createInputFiles(
-    javascriptText: string,
-    declarationText: string,
-    javascriptMapPath: string | undefined,
-    javascriptMapText: string | undefined,
-    declarationMapPath: string | undefined,
-    declarationMapText: string | undefined
-  ): InputFiles;
-  export function createInputFiles(
-    javascriptText: string,
-    declarationText: string,
-    javascriptMapPath: string | undefined,
-    javascriptMapText: string | undefined,
-    declarationMapPath: string | undefined,
-    declarationMapText: string | undefined,
-    javascriptPath: string | undefined,
-    declarationPath: string | undefined,
-    buildInfoPath?: string | undefined,
-    buildInfo?: BuildInfo,
-    oldFileOfCurrentEmit?: boolean
-  ): InputFiles;
-  export function createInputFiles(
-    javascriptTextOrReadFileText: string | ((path: string) => string | undefined),
-    declarationTextOrJavascriptPath: string,
-    javascriptMapPath?: string,
-    javascriptMapTextOrDeclarationPath?: string,
-    declarationMapPath?: string,
-    declarationMapTextOrBuildInfoPath?: string,
-    javascriptPath?: string | undefined,
-    declarationPath?: string | undefined,
-    buildInfoPath?: string | undefined,
-    buildInfo?: BuildInfo,
-    oldFileOfCurrentEmit?: boolean
-  ): InputFiles {
-    const node = <InputFiles>createNode(Syntax.InputFiles);
-    if (!isString(javascriptTextOrReadFileText)) {
-      const cache = createMap<string | false>();
-      const textGetter = (path: string | undefined) => {
-        if (path === undefined) return;
-        let value = cache.get(path);
-        if (value === undefined) {
-          value = javascriptTextOrReadFileText(path);
-          cache.set(path, value !== undefined ? value : false);
-        }
-        return value !== false ? (value as string) : undefined;
-      };
-      const definedTextGetter = (path: string) => {
-        const result = textGetter(path);
-        return result !== undefined ? result : `Input file ${path} was missing \r\n`;
-      };
-      let buildInfo: BuildInfo | false;
-      const getAndCacheBuildInfo = (getText: () => string | undefined) => {
-        if (buildInfo === undefined) {
-          const result = getText();
-          buildInfo = result !== undefined ? getBuildInfo(result) : false;
-        }
-        return buildInfo || undefined;
-      };
-      node.javascriptPath = declarationTextOrJavascriptPath;
-      node.javascriptMapPath = javascriptMapPath;
-      node.declarationPath = qg.checkDefined(javascriptMapTextOrDeclarationPath);
-      node.declarationMapPath = declarationMapPath;
-      node.buildInfoPath = declarationMapTextOrBuildInfoPath;
-      Object.defineProperties(node, {
-        javascriptText: {
-          get() {
-            return definedTextGetter(declarationTextOrJavascriptPath);
-          },
-        },
-        javascriptMapText: {
-          get() {
-            return textGetter(javascriptMapPath);
-          },
-        },
-        declarationText: {
-          get() {
-            return definedTextGetter(qg.checkDefined(javascriptMapTextOrDeclarationPath));
-          },
-        },
-        declarationMapText: {
-          get() {
-            return textGetter(declarationMapPath);
-          },
-        },
-        buildInfo: {
-          get() {
-            return getAndCacheBuildInfo(() => textGetter(declarationMapTextOrBuildInfoPath));
-          },
-        },
-      });
-    } else {
-      node.javascriptText = javascriptTextOrReadFileText;
-      node.javascriptMapPath = javascriptMapPath;
-      node.javascriptMapText = javascriptMapTextOrDeclarationPath;
-      node.declarationText = declarationTextOrJavascriptPath;
-      node.declarationMapPath = declarationMapPath;
-      node.declarationMapText = declarationMapTextOrBuildInfoPath;
-      node.javascriptPath = javascriptPath;
-      node.declarationPath = declarationPath;
-      node.buildInfoPath = buildInfoPath;
-      node.buildInfo = buildInfo;
-      node.oldFileOfCurrentEmit = oldFileOfCurrentEmit;
-    }
-    return node;
   }
   let SourceMapSource: new (fileName: string, text: string, skipTrivia?: (pos: number) => number) => SourceMapSource;
   export function createSourceMapSource(fileName: string, text: string, skipTrivia?: (pos: number) => number): SourceMapSource {
@@ -4229,11 +4210,11 @@ export namespace fixme {
   export function inlineExpressions(expressions: readonly qc.Expression[]) {
     return expressions.length > 10 ? new CommaListExpression(expressions) : reduceLeft(expressions, createComma)!;
   }
-  export function convertToFunctionBody(node: ConciseBody, multiLine?: boolean): Block {
+  export function convertToFunctionBody(node: qc.ConciseBody, multiLine?: boolean): Block {
     return Node.is.kind(Block, node) ? node : new Block([new qc.ReturnStatement(node).setRange(node)], multiLine).setRange(node);
   }
   export function convertFunctionDeclarationToExpression(node: FunctionDeclaration) {
-    if (!node.body) return fail();
+    if (!node.body) return qc.fail();
     const updated = new FunctionExpression(node.modifiers, node.asteriskToken, node.name, node.typeParameters, node.parameters, node.type, node.body);
     setOriginalNode(updated, node);
     updated.setRange(node);
@@ -4245,7 +4226,7 @@ export namespace fixme {
     const foundUseStrict = findUseStrictPrologue(statements);
     if (!foundUseStrict) {
       return setRange(
-        new Nodes<qc.Statement>([startOnNewLine(createStatement(createLiteral('use strict'))), ...statements]),
+        new Nodes<qc.Statement>([startOnNewLine(createStatement(asLiteral('use strict'))), ...statements]),
         statements
       );
     }
@@ -4272,15 +4253,15 @@ export namespace fixme {
             if (!helper.scoped) {
               const importName = (helper as UnscopedEmitHelper).importName;
               if (importName) {
-                pushIfUnique(helperNames, importName);
+                qb.pushIfUnique(helperNames, importName);
               }
             }
           }
-          if (some(helperNames)) {
+          if (qb.some(helperNames)) {
             helperNames.sort(compareStringsCaseSensitive);
-            namedBindings = new qc.NamedImports(
-              map(helperNames, (name) =>
-                isFileLevelUniqueName(sourceFile, name) ? new qc.ImportSpecifier(undefined, new Identifier(name)) : new qc.ImportSpecifier(new Identifier(name), getUnscopedHelperName(name))
+            namedBindings = new NamedImports(
+              qb.map(helperNames, (name) =>
+                isFileLevelUniqueName(sourceFile, name) ? new ImportSpecifier(undefined, new Identifier(name)) : new qc.ImportSpecifier(new Identifier(name), getUnscopedHelperName(name))
               )
             );
             const parseNode = Node.get.originalOf(sourceFile, isSourceFile);
@@ -4291,11 +4272,11 @@ export namespace fixme {
       } else {
         const externalHelpersModuleName = getOrCreateExternalHelpersModuleNameIfNeeded(sourceFile, compilerOptions, hasExportStarsToExportValues, hasImportStar || hasImportDefault);
         if (externalHelpersModuleName) {
-          namedBindings = new qc.NamespaceImport(externalHelpersModuleName);
+          namedBindings = new NamespaceImport(externalHelpersModuleName);
         }
       }
       if (namedBindings) {
-        const externalHelpersImportDeclaration = new qc.ImportDeclaration(undefined, undefined, new qc.ImportClause(undefined, namedBindings), createLiteral(externalHelpersModuleNameText));
+        const externalHelpersImportDeclaration = new ImportDeclaration(undefined, undefined, new ImportClause(undefined, namedBindings), asLiteral(externalHelpersModuleNameText));
         addEmitFlags(externalHelpersImportDeclaration, qc.EmitFlags.NeverApplyImportHelper);
         return externalHelpersImportDeclaration;
       }
@@ -4338,7 +4319,7 @@ export namespace fixme {
     if (moduleName.kind === Syntax.StringLiteral) {
       function tryRenameExternalModule(moduleName: LiteralExpression, sourceFile: SourceFile) {
         const rename = sourceFile.renamedDependencies && sourceFile.renamedDependencies.get(moduleName.text);
-        return rename && createLiteral(rename);
+        return rename && asLiteral(rename);
       }
       function tryGetModuleNameFromDeclaration(declaration: ImportEqualsDeclaration | ImportDeclaration | ExportDeclaration, host: EmitHost, resolver: EmitResolver, compilerOptions: CompilerOptions) {
         return tryGetModuleNameFromFile(resolver.getExternalModuleFileFromDeclaration(declaration), host, compilerOptions);
@@ -4353,8 +4334,8 @@ export namespace fixme {
     if (!file) {
       return;
     }
-    if (file.moduleName) return createLiteral(file.moduleName);
-    if (!file.isDeclarationFile && (options.out || options.outFile)) return createLiteral(getExternalModuleNameFromPath(host, file.fileName));
+    if (file.moduleName) return asLiteral(file.moduleName);
+    if (!file.isDeclarationFile && (options.out || options.outFile)) return asLiteral(getExternalModuleNameFromPath(host, file.fileName));
     return;
   }
 }
@@ -4365,21 +4346,30 @@ export function asToken<T extends Syntax>(t: T | qc.Token<T>): qc.Token<T> {
 export function asName<T extends Identifier | qc.BindingName | qc.PropertyName | qc.EntityName | ThisTypeNode | undefined>(n: string | T): T | Identifier {
   return qb.isString(n) ? new Identifier(n) : n;
 }
+export function asLiteral(v: string | StringLiteral | NoSubstitutionLiteral | NumericLiteral | Identifier, singleQuote: boolean): StringLiteral;
+export function asLiteral(v: string | number, singleQuote: boolean): StringLiteral | NumericLiteral;
+export function asLiteral(v: string | StringLiteral | NoSubstitutionLiteral | NumericLiteral | Identifier): StringLiteral;
+export function asLiteral(v: number | qc.PseudoBigInt): NumericLiteral;
+export function asLiteral(v: boolean): BooleanLiteral;
+export function asLiteral(v: string | number | qc.PseudoBigInt | boolean): qc.PrimaryExpression;
+export function asLiteral(v: string | number | qc.PseudoBigInt | boolean | StringLiteral | NoSubstitutionLiteral | NumericLiteral | Identifier, singleQuote?: boolean): qc.PrimaryExpression {
+  if (typeof v === 'number') return new NumericLiteral(v + '');
+  if (typeof v === 'object' && 'base10Value' in v) return new BigIntLiteral(pseudoBigIntToString(v) + 'n');
+  if (typeof v === 'boolean') return v ? new BooleanLiteral(true) : new BooleanLiteral(false);
+  if (qb.isString(v)) {
+    const r = new StringLiteral(v);
+    if (singleQuote) r.singleQuote = true;
+    return r;
+  }
+  return StringLiteral.fromNode(v);
+}
 export function asExpression<T extends qc.Expression | undefined>(e: string | number | boolean | T): T | StringLiteral | NumericLiteral | BooleanLiteral {
-  return typeof e === 'string'
-    ? new qc.StringLiteral(e)
-    : typeof e === 'number'
-    ? NumericLiteral.create('' + e)
-    : typeof e === 'boolean'
-    ? e
-      ? new qc.BooleanLiteral(true)
-      : new qc.BooleanLiteral(false)
-    : e;
+  return typeof e === 'string' ? new StringLiteral(e) : typeof e === 'number' ? new NumericLiteral('' + e) : typeof e === 'boolean' ? (e ? new BooleanLiteral(true) : new BooleanLiteral(false)) : e;
 }
 export function asEmbeddedStatement<T extends Node>(s: T): T | EmptyStatement;
 export function asEmbeddedStatement<T extends Node>(s?: T): T | EmptyStatement | undefined;
 export function asEmbeddedStatement<T extends Node>(s?: T): T | EmptyStatement | undefined {
-  return s && Node.is.kind(NotEmittedStatement, s) ? new qc.EmptyStatement().setOriginalNode(s).setRange(s) : s;
+  return s && Node.is.kind(NotEmittedStatement, s) ? new EmptyStatement().setOriginalNode(s).setRange(s) : s;
 }
 
 export function skipParentheses(n: qc.Expression): qc.Expression;
@@ -4388,8 +4378,8 @@ export function skipParentheses(n: Node): Node {
   return skipOuterExpressions(n, qc.OuterExpressionKinds.Parentheses);
 }
 
-export function skipPartiallyEmittedExpressions(node: qc.Expression): qc.Expression;
-export function skipPartiallyEmittedExpressions(node: Node): Node;
-export function skipPartiallyEmittedExpressions(node: Node) {
-  return skipOuterExpressions(node, qc.OuterExpressionKinds.PartiallyEmittedExpressions);
+export function skipPartiallyEmittedExpressions(n: qc.Expression): qc.Expression;
+export function skipPartiallyEmittedExpressions(n: Node): Node;
+export function skipPartiallyEmittedExpressions(n: Node) {
+  return skipOuterExpressions(n, qc.OuterExpressionKinds.PartiallyEmittedExpressions);
 }

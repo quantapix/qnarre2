@@ -1151,7 +1151,7 @@ export function transformGenerators(context: TransformationContext) {
           new qc.ExpressionStatement(new qs.CallExpression(new qc.PropertyAccessExpression(keysArray, 'push'), undefined, [key]))
         )
       );
-      emitAssignment(keysIndex, createLiteral(0));
+      emitAssignment(keysIndex, qc.asLiteral(0));
       const conditionLabel = defineLabel();
       const incrementLabel = defineLabel();
       const endLabel = beginLoopBlock(incrementLabel);
@@ -1747,7 +1747,7 @@ export function transformGenerators(context: TransformationContext) {
       if (labelExpressions === undefined) {
         labelExpressions = [];
       }
-      const expression = createLiteral(-1);
+      const expression = qc.asLiteral(-1);
       if (labelExpressions[label] === undefined) {
         labelExpressions[label] = [expression];
       } else {
@@ -1758,7 +1758,7 @@ export function transformGenerators(context: TransformationContext) {
     return new qc.OmittedExpression();
   }
   function createInstruction(instruction: Instruction): NumericLiteral {
-    const literal = createLiteral(instruction);
+    const literal = qc.asLiteral(instruction);
     addSyntheticTrailingComment(literal, Syntax.MultiLineCommentTrivia, getInstructionName(instruction));
     return literal;
   }
@@ -1925,10 +1925,10 @@ export function transformGenerators(context: TransformationContext) {
       if (markLabelEnd) {
         // The case clause for the last label falls through to this label, so we
         // add an assignment statement to reflect the change in labels.
-        statements.push(new qc.ExpressionStatement(createAssignment(new qc.PropertyAccessExpression(state, 'label'), createLiteral(labelNumber + 1))));
+        statements.push(new qc.ExpressionStatement(createAssignment(new qc.PropertyAccessExpression(state, 'label'), qc.asLiteral(labelNumber + 1))));
       }
     }
-    clauses.push(new qc.CaseClause(createLiteral(labelNumber), statements || []));
+    clauses.push(new qc.CaseClause(qc.asLiteral(labelNumber), statements || []));
     statements = undefined;
   }
   function tryEnterLabel(operationIndex: number): void {

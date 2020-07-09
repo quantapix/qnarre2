@@ -341,7 +341,7 @@ export function transformES2015(context: TransformationContext) {
             setLabeledJump(convertedLoopState, false, idText(label), labelMarker);
           }
         }
-        let returnExpression: Expression = createLiteral(labelMarker);
+        let returnExpression: Expression = qc.asLiteral(labelMarker);
         if (convertedLoopState.loopOutParameters.length) {
           const outParams = convertedLoopState.loopOutParameters;
           let expr: Expression | undefined;
@@ -648,7 +648,7 @@ export function transformES2015(context: TransformationContext) {
       )
     );
     const forStatement = new qc.ForStatement(
-      setRange(new qc.VariableDeclarationList([new qc.VariableDeclaration(temp, undefined, createLiteral(restIndex))]), parameter),
+      setRange(new qc.VariableDeclarationList([new qc.VariableDeclaration(temp, undefined, qc.asLiteral(restIndex))]), parameter),
       setRange(createLessThan(temp, new qc.PropertyAccessExpression(new Identifier('arguments'), 'length')), parameter),
       setRange(qs.PostfixUnaryExpression.increment(temp), parameter),
       new Block([
@@ -656,7 +656,7 @@ export function transformES2015(context: TransformationContext) {
           setRange(
             new qc.ExpressionStatement(
               createAssignment(
-                new qs.ElementAccessExpression(expressionName, restIndex === 0 ? temp : createSubtract(temp, createLiteral(restIndex))),
+                new qs.ElementAccessExpression(expressionName, restIndex === 0 ? temp : createSubtract(temp, qc.asLiteral(restIndex))),
                 new qs.ElementAccessExpression(new Identifier('arguments'), temp)
               )
             ),
@@ -1206,7 +1206,7 @@ function convertForOfStatementForArray(node: ForOfStatement, outermostLabeledSta
       setEmitFlags(
         setRange(
           new qc.VariableDeclarationList([
-            setRange(new qc.VariableDeclaration(counter, undefined, createLiteral(0)), moveRangePos(node.expression, -1)),
+            setRange(new qc.VariableDeclaration(counter, undefined, qc.asLiteral(0)), moveRangePos(node.expression, -1)),
             setRange(new qc.VariableDeclaration(rhsReference, undefined, expression), node.expression),
           ]),
           node.expression
@@ -1674,10 +1674,10 @@ function generateCallToConvertedLoop(loopFunctionExpressionName: Identifier, sta
       } else {
         returnStatement = new qc.ReturnStatement(new qc.PropertyAccessExpression(loopResultName, 'value'));
       }
-      statements.push(new qc.IfStatement(new BinaryExpression(new TypeOfExpression(loopResultName), Syntax.Equals3Token, createLiteral('object')), returnStatement));
+      statements.push(new qc.IfStatement(new BinaryExpression(new TypeOfExpression(loopResultName), Syntax.Equals3Token, qc.asLiteral('object')), returnStatement));
     }
     if (state.nonLocalJumps! & Jump.Break) {
-      statements.push(new qc.IfStatement(new BinaryExpression(loopResultName, Syntax.Equals3Token, createLiteral('break')), new qc.BreakStatement()));
+      statements.push(new qc.IfStatement(new BinaryExpression(loopResultName, Syntax.Equals3Token, qc.asLiteral('break')), new qc.BreakStatement()));
     }
     if (state.labeledNonLocalBreaks || state.labeledNonLocalContinues) {
       const caseClauses: CaseClause[] = [];
@@ -1714,7 +1714,7 @@ function processLabeledJumps(table: Map<string>, isBreak: boolean, loopResultNam
       setLabeledJump(outerLoop, isBreak, labelText, labelMarker);
       statements.push(new qc.ReturnStatement(loopResultName));
     }
-    caseClauses.push(new qc.CaseClause(createLiteral(labelMarker), statements));
+    caseClauses.push(new qc.CaseClause(qc.asLiteral(labelMarker), statements));
   });
 }
 function processLoopVariableDeclaration(
@@ -2008,14 +2008,14 @@ function visitExpressionOfSpread(node: SpreadElement) {
   return visitNode(node.expression, visitor, isExpression);
 }
 function visitTemplateLiteral(node: LiteralExpression): LeftHandSideExpression {
-  return setRange(createLiteral(node.text), node);
+  return setRange(qc.asLiteral(node.text), node);
 }
 function visitStringLiteral(node: StringLiteral) {
-  if (node.hasExtendedEscape) return setRange(createLiteral(node.text), node);
+  if (node.hasExtendedEscape) return setRange(qc.asLiteral(node.text), node);
   return node;
 }
 function visitNumericLiteral(node: NumericLiteral) {
-  if (node.numericLiteralFlags & TokenFlags.BinaryOrOctalSpecifier) return setRange(NumericLiteral.create(node.text), node);
+  if (node.numericLiteralFlags & TokenFlags.BinaryOrOctalSpecifier) return setRange(new qc.NumericLiteral(node.text), node);
   return node;
 }
 function visitTaggedTemplateExpression(node: TaggedTemplateExpression) {
@@ -2040,13 +2040,13 @@ function addTemplateHead(expressions: Expression[], node: TemplateExpression): v
   if (!shouldAddTemplateHead(node)) {
     return;
   }
-  expressions.push(createLiteral(node.head.text));
+  expressions.push(qc.asLiteral(node.head.text));
 }
 function addTemplateSpans(expressions: Expression[], node: TemplateExpression): void {
   for (const span of node.templateSpans) {
     expressions.push(visitNode(span.expression, visitor, isExpression));
     if (span.literal.text.length !== 0) {
-      expressions.push(createLiteral(span.literal.text));
+      expressions.push(qc.asLiteral(span.literal.text));
     }
   }
 }

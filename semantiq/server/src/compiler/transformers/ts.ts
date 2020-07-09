@@ -857,7 +857,7 @@ export function transformTypeScript(context: TransformationContext) {
     }
   }
   function createCheckedValue(left: Expression, right: Expression) {
-    return createLogicalAnd(createStrictInequality(new TypeOfExpression(left), createLiteral('undefined')), right);
+    return createLogicalAnd(createStrictInequality(new TypeOfExpression(left), qc.asLiteral('undefined')), right);
   }
   function serializeEntityNameAsExpressionFallback(node: EntityName): BinaryExpression {
     if (node.kind === Syntax.Identifier) {
@@ -896,7 +896,7 @@ export function transformTypeScript(context: TransformationContext) {
     const name = member.name!;
     if (Node.is.kind(PrivateIdentifier, name)) return new Identifier('');
     if (Node.is.kind(ComputedPropertyName, name)) return generateNameForComputedPropertyName && !isSimpleInlineableExpression(name.expression) ? getGeneratedNameForNode(name) : name.expression;
-    if (Node.is.kind(Identifier, name)) return createLiteral(idText(name));
+    if (Node.is.kind(Identifier, name)) return qc.asLiteral(idText(name));
     return getSynthesizedClone(name);
   }
   function visitPropertyNameOfClassElement(member: ClassElement): PropertyName {
@@ -1195,7 +1195,7 @@ export function transformTypeScript(context: TransformationContext) {
   }
   function transformEnumMemberDeclarationValue(member: EnumMember): Expression {
     const value = resolver.getConstantValue(member);
-    if (value !== undefined) return createLiteral(value);
+    if (value !== undefined) return qc.asLiteral(value);
     else {
       enableSubstitutionForNonQualifiedEnumMembers();
       if (member.initializer) return visitNode(member.initializer, visitor, isExpression);
@@ -1595,7 +1595,7 @@ export function transformTypeScript(context: TransformationContext) {
     const constantValue = tryGetConstEnumValue(node);
     if (constantValue !== undefined) {
       setConstantValue(node, constantValue);
-      const substitute = createLiteral(constantValue);
+      const substitute = qc.asLiteral(constantValue);
       if (!compilerOptions.removeComments) {
         const originalNode = Node.get.originalOf(node, isAccessExpression);
         const propertyName = Node.is.kind(PropertyAccessExpression, originalNode) ? declarationNameToString(originalNode.name) : Node.get.textOf(originalNode.argumentExpression);
@@ -1640,7 +1640,7 @@ export const decorateHelper: UnscopedEmitHelper = {
 };
 function createMetadataHelper(context: TransformationContext, metadataKey: string, metadataValue: Expression) {
   context.requestEmitHelper(metadataHelper);
-  return new qs.CallExpression(getUnscopedHelperName('__metadata'), undefined, [createLiteral(metadataKey), metadataValue]);
+  return new qs.CallExpression(getUnscopedHelperName('__metadata'), undefined, [qc.asLiteral(metadataKey), metadataValue]);
 }
 export const metadataHelper: UnscopedEmitHelper = {
   name: 'typescript:metadata',
@@ -1654,7 +1654,7 @@ export const metadataHelper: UnscopedEmitHelper = {
 };
 function createParamHelper(context: TransformationContext, expression: Expression, parameterOffset: number, location?: TextRange) {
   context.requestEmitHelper(paramHelper);
-  return setRange(new qs.CallExpression(getUnscopedHelperName('__param'), undefined, [createLiteral(parameterOffset), expression]), location);
+  return setRange(new qs.CallExpression(getUnscopedHelperName('__param'), undefined, [qc.asLiteral(parameterOffset), expression]), location);
 }
 export const paramHelper: UnscopedEmitHelper = {
   name: 'typescript:param',

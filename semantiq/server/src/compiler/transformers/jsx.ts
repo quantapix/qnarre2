@@ -117,7 +117,7 @@ export function transformJsx(context: TransformationContext) {
   function transformJsxAttributeInitializer(node: StringLiteral | JsxExpression | undefined): Expression {
     if (node === undefined) return new qc.BooleanLiteral(true);
     else if (node.kind === Syntax.StringLiteral) {
-      const literal = createLiteral(tryDecodeEntities(node.text) || node.text);
+      const literal = qc.asLiteral(tryDecodeEntities(node.text) || node.text);
       literal.singleQuote = node.singleQuote !== undefined ? node.singleQuote : !isStringDoubleQuoted(node, currentSourceFile);
       return setRange(literal, node);
     } else if (node.kind === Syntax.JsxExpression) {
@@ -128,7 +128,7 @@ export function transformJsx(context: TransformationContext) {
   }
   function visitJsxText(node: JsxText): StringLiteral | undefined {
     const fixed = fixupWhitespaceAndDecodeEntities(node.text);
-    return fixed === undefined ? undefined : createLiteral(fixed);
+    return fixed === undefined ? undefined : qc.asLiteral(fixed);
   }
   function fixupWhitespaceAndDecodeEntities(text: string): string | undefined {
     let acc: string | undefined;
@@ -170,7 +170,7 @@ export function transformJsx(context: TransformationContext) {
     if (node.kind === Syntax.JsxElement) return getTagName(node.openingElement);
     else {
       const name = node.tagName;
-      if (Node.is.kind(Identifier, name) && isIntrinsicJsxName(name.escapedText)) return createLiteral(idText(name));
+      if (Node.is.kind(Identifier, name) && isIntrinsicJsxName(name.escapedText)) return qc.asLiteral(idText(name));
       return createExpressionFromEntityName(name);
     }
   }
@@ -178,7 +178,7 @@ export function transformJsx(context: TransformationContext) {
     const name = node.name;
     const text = idText(name);
     if (/^[A-Za-z_]\w*$/.test(text)) return name;
-    return createLiteral(text);
+    return qc.asLiteral(text);
   }
   function visitJsxExpression(node: JsxExpression) {
     return visitNode(node.expression, visitor, isExpression);

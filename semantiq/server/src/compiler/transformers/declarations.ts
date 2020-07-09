@@ -217,7 +217,7 @@ export function transformDeclarations(context: TransformationContext) {
                 new qc.ModuleDeclaration(
                   [],
                   [createModifier(Syntax.DeclareKeyword)],
-                  createLiteral(getResolvedExternalModuleName(context.getEmitHost(), sourceFile)),
+                  qc.asLiteral(getResolvedExternalModuleName(context.getEmitHost(), sourceFile)),
                   new qc.ModuleBlock(setRange(new Nodes(transformAndReplaceLatePaintedStatements(statements)), sourceFile.statements))
                 ),
               ],
@@ -513,7 +513,7 @@ export function transformDeclarations(context: TransformationContext) {
     if (StringLiteral.like(input)) {
       if (isBundledEmit) {
         const newName = getExternalModuleNameFromDeclaration(context.getEmitHost(), resolver, parent);
-        if (newName) return createLiteral(newName);
+        if (newName) return qc.asLiteral(newName);
       } else {
         const symbol = resolver.getSymbolOfExternalModuleSpecifier(input);
         if (symbol) (exportedModulesFromDeclarationEmit || (exportedModulesFromDeclarationEmit = [])).push(symbol);
@@ -988,7 +988,7 @@ export function transformDeclarations(context: TransformationContext) {
               mapDefined(input.members, (m) => {
                 if (shouldStripInternal(m)) return;
                 const constValue = resolver.getConstantValue(m);
-                return preserveJsDoc(m.update(m.name, constValue !== undefined ? createLiteral(constValue) : undefined), m);
+                return preserveJsDoc(m.update(m.name, constValue !== undefined ? qc.asLiteral(constValue) : undefined), m);
               })
             )
           )

@@ -46,7 +46,7 @@ export function processTaggedTemplateExpression(
   return new qs.CallExpression(tag, undefined, templateArguments);
 }
 function createTemplateCooked(template: TemplateHead | TemplateMiddle | TemplateTail | NoSubstitutionLiteral) {
-  return template.templateFlags ? qs.VoidExpression.zero() : createLiteral(template.text);
+  return template.templateFlags ? qs.VoidExpression.zero() : qc.asLiteral(template.text);
 }
 function getRawLiteral(node: TemplateLiteralLikeNode, currentSourceFile: SourceFile) {
   let text = node.rawText;
@@ -56,7 +56,7 @@ function getRawLiteral(node: TemplateLiteralLikeNode, currentSourceFile: SourceF
     text = text.substring(1, text.length - (isLast ? 1 : 2));
   }
   text = text.replace(/\r\n?/g, '\n');
-  return setRange(createLiteral(text), node);
+  return setRange(qc.asLiteral(text), node);
 }
 function createTemplateObjectHelper(context: TransformationContext, cooked: ArrayLiteralExpression, raw: ArrayLiteralExpression) {
   context.requestEmitHelper(templateObjectHelper);

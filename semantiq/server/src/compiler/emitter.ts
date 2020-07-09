@@ -564,7 +564,7 @@ export function emitUsingBuildInfo(
   const buildInfo = getBuildInfo(buildInfoText);
   if (!buildInfo.bundle || !buildInfo.bundle.js || (declarationText && !buildInfo.bundle.dts)) return buildInfoPath!;
   const buildInfoDirectory = getDirectoryPath(getNormalizedAbsolutePath(buildInfoPath!, host.getCurrentDirectory()));
-  const ownPrependInput = createInputFiles(
+  const ownPrependInput = new qc.InputFiles(
     jsFileText,
     declarationText!,
     sourceMapFilePath,

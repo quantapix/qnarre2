@@ -156,7 +156,7 @@ export function transformClassFields(context: TransformationContext) {
         const { readExpression, initializeExpression } = createCopiableReceiverExpr(receiver);
         const existingValue = new qs.PrefixUnaryExpression(Syntax.PlusToken, createPrivateIdentifierAccess(info, readExpression));
         return setOriginalNode(
-          createPrivateIdentifierAssignment(info, initializeExpression || readExpression, new BinaryExpression(existingValue, operator, createLiteral(1)), Syntax.EqualsToken),
+          createPrivateIdentifierAssignment(info, initializeExpression || readExpression, new BinaryExpression(existingValue, operator, qc.asLiteral(1)), Syntax.EqualsToken),
           node
         );
       }
@@ -178,7 +178,7 @@ export function transformClassFields(context: TransformationContext) {
               createPrivateIdentifierAssignment(
                 info,
                 initializeExpression || readExpression,
-                new BinaryExpression(returnValue ? createAssignment(returnValue, existingValue) : existingValue, operator, createLiteral(1)),
+                new BinaryExpression(returnValue ? createAssignment(returnValue, existingValue) : existingValue, operator, qc.asLiteral(1)),
                 Syntax.EqualsToken
               ),
               returnValue,
