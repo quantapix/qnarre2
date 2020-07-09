@@ -83,7 +83,7 @@ export function transformClassFields(context: TransformationContext) {
   }
   function visitPrivateIdentifier(node: PrivateIdentifier) {
     if (!shouldTransformPrivateFields) return node;
-    return setOriginalNode(new Identifier(''), node);
+    return new Identifier('').setOriginal(node);
   }
   function classElementVisitor(node: Node): VisitResult<Node> {
     switch (node.kind) {
@@ -143,7 +143,7 @@ export function transformClassFields(context: TransformationContext) {
   function visitPropertyAccessExpression(node: PropertyAccessExpression) {
     if (shouldTransformPrivateFields && Node.is.kind(PrivateIdentifier, node.name)) {
       const privateIdentifierInfo = accessPrivateIdentifier(node.name);
-      if (privateIdentifierInfo) return setOriginalNode(createPrivateIdentifierAccess(privateIdentifierInfo, node.expression), node);
+      if (privateIdentifierInfo) return createPrivateIdentifierAccess(privateIdentifierInfo, node.expression).setOriginal(node);
     }
     return visitEachChild(node, visitor, context);
   }
@@ -245,7 +245,7 @@ export function transformClassFields(context: TransformationContext) {
       }
       if (isAssignmentExpression(node) && Node.is.privateIdentifierPropertyAccessExpression(node.left)) {
         const info = accessPrivateIdentifier(node.left.name);
-        if (info) return setOriginalNode(createPrivateIdentifierAssignment(info, node.left.expression, node.right, node.operatorToken.kind), node);
+        if (info) return createPrivateIdentifierAssignment(info, node.left.expression, node.right, node.operatorToken.kind).setOriginal(node);
       }
     }
     return visitEachChild(node, visitor, context);
@@ -368,7 +368,7 @@ export function transformClassFields(context: TransformationContext) {
     if (!body) {
       return;
     }
-    return startOnNewLine(setOriginalNode(setRange(ConstructorDeclaration.create(undefined, undefined, parameters ?? [], body), constructor || node), constructor));
+    return startOnNewLine(setRange(new qc.ConstructorDeclaration(undefined, undefined, parameters ?? [], body), constructor || node).setOriginal(constructor));
   }
   function transformConstructorBody(node: ClassDeclaration | ClassExpression, constructor: ConstructorDeclaration | undefined, isDerivedClass: boolean) {
     const useDefineForClassFields = context.getCompilerOptions().useDefineForClassFields;
@@ -414,7 +414,7 @@ export function transformClassFields(context: TransformationContext) {
       const statement = new qc.ExpressionStatement(expression);
       setSourceMapRange(statement, moveRangePastModifiers(property));
       setCommentRange(statement, property);
-      setOriginalNode(statement, property);
+      statement.setOriginal(property);
       statements.push(statement);
     }
   }
@@ -428,7 +428,7 @@ export function transformClassFields(context: TransformationContext) {
       startOnNewLine(expression);
       setSourceMapRange(expression, moveRangePastModifiers(property));
       setCommentRange(expression, property);
-      setOriginalNode(expression, property);
+      expression.setOriginal(property);
       expressions.push(expression);
     }
     return expressions;
@@ -574,7 +574,7 @@ export function transformClassFields(context: TransformationContext) {
     return new qc.PropertyAccessExpression(
       new qc.ParenthesizedExpression(
         new qc.ObjectLiteralExpression([
-          SetAccessorDeclaration.create(
+          new qc.SetAccessorDeclaration(
             undefined,
             undefined,
             'value',

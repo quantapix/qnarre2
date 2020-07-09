@@ -1,7 +1,6 @@
 import * as qb from '../base';
-import * as qc from '../core';
-import { Node, Nodes } from '../core';
-import * as qs from '../classes';
+import { Node, Nodes } from '../classes';
+import * as qc from '../classes';
 import * as qt from '../types';
 import * as qy from '../syntax';
 import { Modifier, Syntax } from '../syntax';
@@ -162,7 +161,7 @@ export function transformES2018(context: TransformationContext) {
   }
   function visitAwaitExpression(node: AwaitExpression): Expression {
     if (enclosingFunctionFlags & FunctionFlags.Async && enclosingFunctionFlags & FunctionFlags.Generator)
-      return setOriginalNode(setRange(new qc.YieldExpression(createAwaitHelper(context, visitNode(node.expression, visitor, isExpression))), node), node);
+      return setRange(new qc.YieldExpression(createAwaitHelper(context, visitNode(node.expression, visitor, isExpression))), node).setOriginal(node);
     return visitEachChild(node, visitor, context);
   }
   function visitYieldExpression(node: YieldExpression) {
@@ -179,7 +178,7 @@ export function transformES2018(context: TransformationContext) {
           node
         );
       }
-      return setOriginalNode(setRange(new qc.YieldExpression(createDownlevelAwait(node.expression ? visitNode(node.expression, visitor, isExpression) : qs.VoidExpression.zero())), node), node);
+      return setRange(new qc.YieldExpression(createDownlevelAwait(node.expression ? visitNode(node.expression, visitor, isExpression) : qs.VoidExpression.zero())), node).setOriginal(node);
     }
     return visitEachChild(node, visitor, context);
   }

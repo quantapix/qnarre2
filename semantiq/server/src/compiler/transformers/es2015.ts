@@ -281,7 +281,7 @@ export function transformES2015(context: TransformationContext) {
     return updated;
   }
   function returnCapturedThis(node: Node): ReturnStatement {
-    return setOriginalNode(new qc.ReturnStatement(createFileLevelUniqueName('_this')), node);
+    return new qc.ReturnStatement(createFileLevelUniqueName('_this')).setOriginal(node);
   }
   function visitReturnStatement(node: ReturnStatement): Statement {
     if (convertedLoopState) {
@@ -362,16 +362,16 @@ export function transformES2015(context: TransformationContext) {
   }
   function visitClassDeclaration(node: ClassDeclaration): VisitResult<Statement> {
     const variable = new qc.VariableDeclaration(getLocalName(node, true), undefined, transformClassLikeDeclarationToExpression(node));
-    setOriginalNode(variable, node);
+    variable.setOriginal(node);
     const statements: Statement[] = [];
     const statement = new qc.VariableStatement(undefined, new qc.VariableDeclarationList([variable]));
-    setOriginalNode(statement, node);
+    statement.setOriginal(node);
     setRange(statement, node);
     startOnNewLine(statement);
     statements.push(statement);
     if (hasSyntacticModifier(node, ModifierFlags.Export)) {
       const exportStatement = hasSyntacticModifier(node, ModifierFlags.Default) ? createExportDefault(getLocalName(node)) : createExternalModuleExport(getLocalName(node));
-      setOriginalNode(exportStatement, statement);
+      exportStatement.setOriginal(statement);
       statements.push(exportStatement);
     }
     const emitFlags = Node.get.emitFlags(node);
@@ -554,9 +554,9 @@ export function transformES2015(context: TransformationContext) {
     if (node.dot3Token) {
       return;
     } else if (Node.is.kind(BindingPattern, node.name)) {
-      return setOriginalNode(setRange(new qc.ParameterDeclaration(undefined, undefined, undefined, getGeneratedNameForNode(node), undefined, undefined, undefined), node), node);
+      return setRange(new qc.ParameterDeclaration(undefined, undefined, undefined, getGeneratedNameForNode(node), undefined, undefined, undefined), node).setOriginal(node);
     } else if (node.initializer) {
-      return setOriginalNode(setRange(new qc.ParameterDeclaration(undefined, undefined, undefined, undefined), node), node);
+      return setRange(new qc.ParameterDeclaration(undefined, undefined, undefined, undefined), node).setOriginal(node);
     }
     return node;
   }
@@ -780,7 +780,7 @@ export function transformES2015(context: TransformationContext) {
     setEmitFlags(memberFunction, EmitFlags.NoComments);
     setSourceMapRange(memberFunction, sourceMapRange);
     const statement = setRange(new qc.ExpressionStatement(e), member);
-    setOriginalNode(statement, member);
+    statement.setOriginal(member);
     setCommentRange(statement, commentRange);
     setEmitFlags(statement, EmitFlags.NoSourceMap);
     return statement;
@@ -845,7 +845,7 @@ export function transformES2015(context: TransformationContext) {
     const ancestorFacts = enterSubtree(HierarchyFacts.ArrowFunctionExcludes, HierarchyFacts.ArrowFunctionIncludes);
     const func = new qs.FunctionExpression(undefined, undefined, undefined, undefined, visitParameterList(node.parameters, visitor, context), undefined, transformFunctionBody(node));
     setRange(func, node);
-    setOriginalNode(func, node);
+    func.setOriginal(node);
     setEmitFlags(func, EmitFlags.CapturesThis);
     if (hierarchyFacts & HierarchyFacts.CapturedLexicalThis) {
       enableSubstitutionsForCapturedThis();
@@ -893,7 +893,7 @@ export function transformES2015(context: TransformationContext) {
     }
     exitSubtree(ancestorFacts, HierarchyFacts.FunctionSubtreeExcludes, HierarchyFacts.None);
     convertedLoopState = savedConvertedLoopState;
-    return setOriginalNode(setRange(new qs.FunctionExpression(undefined, parameters, undefined, body), location), node);
+    return setRange(new qs.FunctionExpression(undefined, parameters, undefined, body), location).setOriginal(node);
   }
   function transformFunctionBody(node: FunctionLikeDeclaration) {
     let multiLine = false;
@@ -954,7 +954,7 @@ export function transformES2015(context: TransformationContext) {
     if (closeBraceLocation) {
       setTokenSourceMapRange(block, Syntax.CloseBraceToken, closeBraceLocation);
     }
-    setOriginalNode(block, node.body);
+    block.setOriginal(node.body);
     return block;
   }
   function visitBlock(node: Block, isFunctionBody: boolean): Block {
@@ -1034,7 +1034,7 @@ export function transformES2015(context: TransformationContext) {
       }
       const declarations = flatMap(node.declarations, node.flags & NodeFlags.Let ? visitVariableDeclarationInLetDeclarationList : visitVariableDeclaration);
       const declarationList = new qc.VariableDeclarationList(declarations);
-      setOriginalNode(declarationList, node);
+      declarationList.setOriginal(node);
       setRange(declarationList, node);
       setCommentRange(declarationList, node);
       if (node.transformFlags & TransformFlags.ContainsBindingPattern && (Node.is.kind(BindingPattern, node.declarations[0].name) || Node.is.kind(BindingPattern, last(node.declarations).name))) {
@@ -1154,7 +1154,7 @@ export function transformES2015(context: TransformationContext) {
       if (firstOriginalDeclaration && Node.is.kind(BindingPattern, firstOriginalDeclaration.name)) {
         const declarations = flattenDestructuringBinding(firstOriginalDeclaration, visitor, context, FlattenLevel.All, boundValue);
         const declarationList = setRange(new qc.VariableDeclarationList(declarations), node.initializer);
-        setOriginalNode(declarationList, node.initializer);
+        declarationList.setOriginal(node.initializer);
         setSourceMapRange(declarationList, createRange(declarations[0].pos, last(declarations).end));
         statements.push(new qc.VariableStatement(undefined, declarationList));
       } else {
@@ -1590,8 +1590,8 @@ function createFunctionForBodyOfIterationStatement(
     statements.push(
       new qc.IfStatement(
         currentState.conditionVariable,
-        createStatement(visitNode(node.incrementor, visitor, isExpression)),
-        createStatement(createAssignment(currentState.conditionVariable, new qc.BooleanLiteral(true)))
+        new qc.ExpressionStatement(visitNode(node.incrementor, visitor, isExpression)),
+        new qc.ExpressionStatement(createAssignment(currentState.conditionVariable, new qc.BooleanLiteral(true)))
       )
     );
     if (shouldConvertConditionOfForStatement(node)) {
@@ -1608,7 +1608,7 @@ function createFunctionForBodyOfIterationStatement(
   copyOutParameters(currentState.loopOutParameters, LoopOutParameterFlags.Body, CopyDirection.ToOutParameter, statements);
   insertStatementsAfterStandardPrologue(statements, lexicalEnvironment);
   const loopBody = new Block(statements, true);
-  if (Node.is.kind(Block, statement)) setOriginalNode(loopBody, statement);
+  if (Node.is.kind(Block, statement)) loopBody.setOriginal(statement);
   const containsYield = (node.statement.transformFlags & TransformFlags.ContainsYield) !== 0;
   let emitFlags: EmitFlags = 0;
   if (currentState.containsLexicalThis) emitFlags |= EmitFlags.CapturesThis;
@@ -1647,7 +1647,7 @@ function copyOutParameters(outParams: LoopOutParameter[], partFlags: LoopOutPara
 function generateCallToConvertedLoopInitializer(initFunctionExpressionName: Identifier, containsYield: boolean): Statement {
   const call = new qs.CallExpression(initFunctionExpressionName, undefined, []);
   const callResult = containsYield ? new qc.YieldExpression(new Token(Syntax.AsteriskToken), setEmitFlags(call, EmitFlags.Iterator)) : call;
-  return createStatement(callResult);
+  return new qc.ExpressionStatement(callResult);
 }
 function generateCallToConvertedLoop(loopFunctionExpressionName: Identifier, state: ConvertedLoopState, outerState: ConvertedLoopState | undefined, containsYield: boolean): Statement[] {
   const statements: Statement[] = [];
@@ -1946,7 +1946,7 @@ function visitCallExpressionWithPotentialCapturedThisAssignment(node: CallExpres
       const initializer = createLogicalOr(resultingCall, createActualThis());
       resultingCall = assignToCapturedThis ? createAssignment(createFileLevelUniqueName('_this'), initializer) : initializer;
     }
-    return setOriginalNode(resultingCall, node);
+    return resultingCall.setOriginal(node);
   }
   return visitEachChild(node, visitor, context);
 }

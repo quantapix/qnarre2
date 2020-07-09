@@ -253,7 +253,7 @@ export abstract class Node extends qb.TextRange implements qt.Node {
     if (node === undefined) return node;
     const clone = Node.createSynthesized(node.kind) as T;
     clone.flags |= node.flags;
-    setOriginalNode(clone, node);
+    clone.setOriginal(node);
     for (const key in node) {
       if (clone.hasOwnProperty(key) || !node.hasOwnProperty(key)) continue;
       (<any>clone)[key] = (<any>node)[key];
@@ -304,7 +304,7 @@ export abstract class Node extends qb.TextRange implements qt.Node {
   }
   static updateNode<T extends Node>(updated: T, original: T): T {
     if (updated !== original) {
-      setOriginalNode(updated, original);
+      updated.setOriginal(original);
       setRange(updated, original);
       aggregateTransformFlags(updated);
     }
@@ -325,7 +325,7 @@ export abstract class Node extends qb.TextRange implements qt.Node {
   static ofTypeParams(a: Nodes<TypeParameterDeclaration>): qb.TextRange {
     return new qb.TextRange(a.pos - 1, a.end + 1);
   }
-  static mergeTokenSourceMapRanges(sourceRanges: (TextRange | undefined)[], destRanges: (TextRange | undefined)[]) {
+  static mergeTokenSourceMapRanges(sourceRanges: (qb.TextRange | undefined)[], destRanges: (qb.TextRange | undefined)[]) {
     if (!destRanges) destRanges = [];
     for (const key in sourceRanges) {
       destRanges[key] = sourceRanges[key];
@@ -2410,14 +2410,14 @@ export abstract class Expression extends Node implements qt.Expression {
         if (getAccessor) {
           const getterFunction = new FunctionExpression(getAccessor.modifiers, undefined, undefined, undefined, getAccessor.parameters, undefined, getAccessor.body!);
           setRange(getterFunction, getAccessor);
-          setOriginalNode(getterFunction, getAccessor);
+          getterFunction.setOriginal(getAccessor);
           const getter = new qc.PropertyAssignment('get', getterFunction);
           properties.push(getter);
         }
         if (setAccessor) {
           const setterFunction = new FunctionExpression(setAccessor.modifiers, undefined, undefined, undefined, setAccessor.parameters, undefined, setAccessor.body!);
           setRange(setterFunction, setAccessor);
-          setOriginalNode(setterFunction, setAccessor);
+          setterFunction.setOriginal(setAccessor);
           const setter = new qc.PropertyAssignment('set', setterFunction);
           properties.push(setter);
         }
@@ -2436,11 +2436,11 @@ export abstract class Expression extends Node implements qt.Expression {
       return;
     }
     function createExpressionForPropertyAssignment(property: PropertyAssignment, receiver: Expression) {
-      return aggregateTransformFlags(setOriginalNode(setRange(createAssignment(createMemberAccessForPropertyName(receiver, property.name, property.name), property.initializer), property), property));
+      return aggregateTransformFlags(setRange(createAssignment(createMemberAccessForPropertyName(receiver, property.name, property.name), property.initializer), property).setOriginal(property));
     }
     function createExpressionForShorthandPropertyAssignment(property: ShorthandPropertyAssignment, receiver: Expression) {
       return aggregateTransformFlags(
-        setOriginalNode(setRange(createAssignment(createMemberAccessForPropertyName(receiver, property.name, property.name), getSynthesizedClone(property.name)), property), property)
+        setRange(createAssignment(createMemberAccessForPropertyName(receiver, property.name, property.name), getSynthesizedClone(property.name)), property).setOriginal(property)
       );
     }
     function createExpressionForMethodDeclaration(method: MethodDeclaration, receiver: Expression) {
@@ -2449,7 +2449,7 @@ export abstract class Expression extends Node implements qt.Expression {
           setRange(
             createAssignment(
               createMemberAccessForPropertyName(receiver, method.name, method.name),
-              setOriginalNode(setRange(new FunctionExpression(method.modifiers, method.asteriskToken, undefined, undefined, method.parameters, undefined, method.body!), method), method)
+              setRange(new FunctionExpression(method.modifiers, method.asteriskToken, undefined, undefined, method.parameters, undefined, method.body!), method).setOriginal(method)
             ),
             method
           ),
@@ -2586,7 +2586,7 @@ export abstract class Statement extends Node implements qt.Statement {
       }
       statementOffset++;
     }
-    if (ensureUseStrict && !foundUseStrict) target.push(startOnNewLine(createStatement(qc.asLiteral('use strict'))));
+    if (ensureUseStrict && !foundUseStrict) target.push(startOnNewLine(new qc.ExpressionStatement(qc.asLiteral('use strict'))));
     return statementOffset;
   }
   addCustomPrologue(target: Statement[], source: readonly Statement[], statementOffset: number, visitor?: (node: Node) => VisitResult<Node>, filter?: (node: Node) => boolean): number;
@@ -2632,7 +2632,7 @@ export abstract class Statement extends Node implements qt.Statement {
       return setRange(new qc.VariableStatement(undefined, node.update([updatedDeclaration])), node);
     } else {
       const updatedExpression = setRange(createAssignment(node, boundValue), node);
-      return setRange(createStatement(updatedExpression), node);
+      return setRange(new qc.ExpressionStatement(updatedExpression), node);
     }
   }
   insertLeadingStatement(dest: Statement, source: Statement) {
@@ -2707,9 +2707,13 @@ export abstract class JSDocTag extends Node implements qt.JSDocTag {
     this.comment = c;
   }
 }
-export abstract class JSDocContainer implements JSDocContainer {
+export abstract class JSDocContainer implements qt.JSDocContainer {
   jsDoc?: JSDoc[];
   jsDocCache?: readonly JSDocTag[];
+  append(d: JSDoc) {
+    this.jsDoc = qb.append(this.jsDoc, d);
+    return this;
+  }
 }
 //Node.prototype.kind = Node.kind;
 export function idText(n: Identifier | PrivateIdentifier): string {

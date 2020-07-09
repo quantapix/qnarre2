@@ -136,7 +136,7 @@ export function transformES2020(context: TransformationContext) {
           }
           break;
       }
-      setOriginalNode(rightExpression, segment);
+      rightExpression.setOriginal(segment);
     }
     const target = isDelete
       ? new qc.ConditionalExpression(createNotNullCondition(leftExpression, capturedLeft, true), new qc.BooleanLiteral(true), new DeleteExpression(rightExpression))
@@ -164,6 +164,6 @@ export function transformES2020(context: TransformationContext) {
     return !Node.is.kind(Identifier, expression) && expression.kind !== Syntax.ThisKeyword && expression.kind !== Syntax.SuperKeyword;
   }
   function visitDeleteExpression(n: DeleteExpression) {
-    return Node.is.optionalChain(skipParentheses(n.expression)) ? setOriginalNode(visitNonOptionalExpression(n.expression, false, true), n) : n.update(visitNode(n.expression, visitor, isExpression));
+    return Node.is.optionalChain(skipParentheses(n.expression)) ? visitNonOptionalExpression(n.expression, false, true).setOriginalNode(n) : n.update(visitNode(n.expression, visitor, isExpression));
   }
 }

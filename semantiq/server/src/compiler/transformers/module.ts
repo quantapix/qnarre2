@@ -447,7 +447,7 @@ export function transformModule(context: TransformationContext) {
     let statements: Statement[] | undefined;
     const namespaceDeclaration = getNamespaceDeclarationNode(node);
     if (moduleKind !== ModuleKind.AMD) {
-      if (!node.importClause) return setOriginalNode(setRange(new qc.ExpressionStatement(createRequireCall(node)), node), node);
+      if (!node.importClause) return setRange(new qc.ExpressionStatement(createRequireCall(node)), node).setOriginal(node);
       else {
         const variables: VariableDeclaration[] = [];
         if (namespaceDeclaration && !isDefaultImport(node)) {
@@ -472,7 +472,7 @@ export function transformModule(context: TransformationContext) {
         new qc.VariableStatement(
           undefined,
           new qc.VariableDeclarationList(
-            [setOriginalNode(setRange(new qc.VariableDeclaration(getSynthesizedClone(namespaceDeclaration.name), undefined, getGeneratedNameForNode(node)), node))],
+            [setRange(new qc.VariableDeclaration(getSynthesizedClone(namespaceDeclaration.name), undefined, getGeneratedNameForNode(node)).setOriginal(node))],
             languageVersion >= ScriptTarget.ES2015 ? NodeFlags.Const : NodeFlags.None
           )
         )
@@ -499,7 +499,7 @@ export function transformModule(context: TransformationContext) {
     let statements: Statement[] | undefined;
     if (moduleKind !== ModuleKind.AMD) {
       if (hasSyntacticModifier(node, ModifierFlags.Export)) {
-        statements = append(statements, setOriginalNode(setRange(new qc.ExpressionStatement(createExportExpression(node.name, createRequireCall(node))), node), node));
+        statements = append(statements, setRange(new qc.ExpressionStatement(createExportExpression(node.name, createRequireCall(node))), node).setOriginal(node));
       } else {
         statements = append(
           statements,
@@ -520,7 +520,7 @@ export function transformModule(context: TransformationContext) {
       }
     } else {
       if (hasSyntacticModifier(node, ModifierFlags.Export)) {
-        statements = append(statements, setOriginalNode(setRange(new qc.ExpressionStatement(createExportExpression(getExportName(node), getLocalName(node))), node), node));
+        statements = append(statements, setRange(new qc.ExpressionStatement(createExportExpression(getExportName(node), getLocalName(node))), node).setOriginal(node));
       }
     }
     if (hasAssociatedEndOfDeclarationMarker(node)) {
@@ -540,7 +540,7 @@ export function transformModule(context: TransformationContext) {
       const statements: Statement[] = [];
       if (moduleKind !== ModuleKind.AMD) {
         statements.push(
-          setOriginalNode(setRange(new qc.VariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(generatedName, undefined, createRequireCall(node))])), node), node)
+          setRange(new qc.VariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(generatedName, undefined, createRequireCall(node))])), node).setOriginal(node)
         );
       }
       for (const specifier of node.exportClause.elements) {
@@ -558,7 +558,7 @@ export function transformModule(context: TransformationContext) {
           );
         } else {
           const exportedValue = new qc.PropertyAccessExpression(generatedName, specifier.propertyName || specifier.name);
-          statements.push(setOriginalNode(setRange(new qc.ExpressionStatement(createExportExpression(getExportName(specifier), exportedValue, true)), specifier), specifier));
+          statements.push(setRange(new qc.ExpressionStatement(createExportExpression(getExportName(specifier), exportedValue, true)), specifier).setOriginal(specifier));
         }
       }
       return singleOrMany(statements);
@@ -580,7 +580,7 @@ export function transformModule(context: TransformationContext) {
       );
       return singleOrMany(statements);
     }
-    return setOriginalNode(setRange(new qc.ExpressionStatement(createExportStarHelper(context, moduleKind !== ModuleKind.AMD ? createRequireCall(node) : generatedName)), node), node);
+    return setRange(new qc.ExpressionStatement(createExportStarHelper(context, moduleKind !== ModuleKind.AMD ? createRequireCall(node) : generatedName)), node).setOriginal(node);
   }
   function visitExportAssignment(node: ExportAssignment): VisitResult<Statement> {
     if (node.isExportEquals) {
@@ -680,7 +680,7 @@ export function transformModule(context: TransformationContext) {
         statements = append(statements, node.update(modifiers, updateVariableDeclarationList(node.declarationList, variables)));
       }
       if (expressions) {
-        statements = append(statements, setOriginalNode(setRange(new qc.ExpressionStatement(inlineExpressions(expressions)), node), node));
+        statements = append(statements, setRange(new qc.ExpressionStatement(inlineExpressions(expressions)), node).setOriginal(node));
       }
     } else {
       statements = append(statements, visitEachChild(node, moduleExpressionElementVisitor, context));
@@ -1098,9 +1098,9 @@ export function transformECMAScriptModule(context: TransformationContext) {
     const oldIdentifier = node.exportClause.name;
     const synthName = getGeneratedNameForNode(oldIdentifier);
     const importDecl = new qc.ImportDeclaration(undefined, undefined, new qc.NamespaceImport(synthName), node.moduleSpecifier);
-    setOriginalNode(importDecl, node.exportClause);
+    importDecl.setOriginal(node.exportClause);
     const exportDecl = new qc.ExportDeclaration(undefined, undefined, new qc.NamedExports([new qc.ExportSpecifier(synthName, oldIdentifier)]));
-    setOriginalNode(exportDecl, node);
+    exportDecl.setOriginal(node);
     return [importDecl, exportDecl];
   }
   function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void): void {

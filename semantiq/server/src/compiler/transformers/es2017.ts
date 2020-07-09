@@ -186,7 +186,7 @@ export function transformES2017(context: TransformationContext) {
   }
   function visitAwaitExpression(node: AwaitExpression): Expression {
     if (inTopLevelContext()) return visitEachChild(node, visitor, context);
-    return setOriginalNode(setRange(new qc.YieldExpression(undefined, visitNode(node.expression, visitor, isExpression)), node), node);
+    return setRange(new qc.YieldExpression(undefined, visitNode(node.expression, visitor, isExpression)), node).setOriginal(node);
   }
   function visitMethodDeclaration(node: MethodDeclaration) {
     return node.update(

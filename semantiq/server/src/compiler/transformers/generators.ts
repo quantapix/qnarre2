@@ -817,7 +817,7 @@ export function transformGenerators(context: TransformationContext) {
       //  .mark resumeLabel
       //      _b.apply(_a, _c.concat([%sent%, 2]));
       const { target, thisArg } = createCallBinding(node.expression, hoistVariableDeclaration, languageVersion, true);
-      return setOriginalNode(createFunctionApply(cacheExpression(visitNode(target, visitor, isLeftHandSideExpression)), thisArg, visitElements(node.arguments), node), node);
+      return createFunctionApply(cacheExpression(visitNode(target, visitor, isLeftHandSideExpression)), thisArg, visitElements(node.arguments), node).setOriginal(node);
     }
     return visitEachChild(node, visitor, context);
   }

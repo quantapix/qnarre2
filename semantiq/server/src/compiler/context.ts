@@ -857,7 +857,7 @@ export class QContext {
         })
       );
     }
-    if (Node.is.kind(TypeReferenceNode, node) && Node.is.kind(Identifier, node.typeName) && node.typeName.escapedText === '') return setOriginalNode(new qc.KeywordTypeNode(Syntax.AnyKeyword), node);
+    if (Node.is.kind(TypeReferenceNode, node) && Node.is.kind(Identifier, node.typeName) && node.typeName.escapedText === '') return new qc.KeywordTypeNode(Syntax.AnyKeyword).setOriginal(node);
     if ((Node.is.kind(ExpressionWithTypeArguments, node) || Node.is.kind(TypeReferenceNode, node)) && isJSDocIndexSignature(node)) {
       return new qc.TypeLiteralNode([
         new qc.IndexSignatureDeclaration(
@@ -916,7 +916,7 @@ export class QContext {
       isInJSDoc(node) &&
       (getIntendedTypeFromJSDocTypeReference(node) || unknownSymbol === resolveTypeReferenceName(getTypeReferenceName(node), SymbolFlags.Type, true))
     ) {
-      return setOriginalNode(this.typeToTypeNodeHelper(getTypeFromTypeNode(node)), node);
+      return this.typeToTypeNodeHelper(getTypeFromTypeNode(node)).setOriginal(node);
     }
     if (Node.is.literalImportTypeNode(node)) {
       const rewriteModuleSpecifier = (parent: ImportTypeNode, lit: StringLiteral) => {
@@ -973,7 +973,7 @@ export class QContext {
         if (Node.is.kind(Identifier, node)) {
           const name = sym.flags & SymbolFlags.TypeParameter ? this.typeParameterToName(getDeclaredTypeOfSymbol(sym)) : getMutableClone(node);
           name.symbol = sym;
-          return setEmitFlags(setOriginalNode(name, node), EmitFlags.NoAsciiEscaping);
+          return setEmitFlags(name.node).setOriginal(EmitFlags.NoAsciiEscaping);
         }
       }
     }

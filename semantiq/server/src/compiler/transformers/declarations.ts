@@ -748,7 +748,7 @@ export function transformDeclarations(context: TransformationContext) {
       if (canProduceDiagnostic && !suppressNewDiagnosticContexts) getSymbolAccessibilityDiagnostic = oldDiag;
       if (shouldEnterSuppressNewDiagnosticsContextContext) suppressNewDiagnosticContexts = oldWithinObjectLiteralType;
       if (returnValue === input) return returnValue;
-      return returnValue && setOriginalNode(preserveJsDoc(returnValue, input), input);
+      return returnValue && preserveJsDoc(returnValue, input).setOriginal(input);
     }
   }
   function isPrivateMethodTypeParameter(node: TypeParameterDeclaration) {
@@ -1001,7 +1001,7 @@ export function transformDeclarations(context: TransformationContext) {
       if (canProdiceDiagnostic) getSymbolAccessibilityDiagnostic = oldDiag;
       if (input.kind === Syntax.ModuleDeclaration) needsDeclare = previousNeedsDeclare;
       if ((node as Node) === input) return node;
-      return node && setOriginalNode(preserveJsDoc(node, input), input);
+      return node && preserveJsDoc(node, input).setOriginal(input);
     }
   }
   function transformVariableStatement(input: VariableStatement) {
