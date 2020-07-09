@@ -612,7 +612,7 @@ export class CallSignatureDeclaration extends qc.SignatureDeclarationBase implem
 CallSignatureDeclaration.prototype.kind = CallSignatureDeclaration.kind;
 export class CaseBlock extends Node implements qc.CaseBlock {
   static readonly kind = Syntax.CaseBlock;
-  parent!: SwitchStatement;
+  parent!: qc.SwitchStatement;
   clauses: Nodes<qc.CaseOrDefaultClause>;
   constructor(cs: readonly qc.CaseOrDefaultClause[]) {
     super(true);
@@ -641,12 +641,12 @@ export class CaseClause extends Node implements qc.CaseClause {
 CaseClause.prototype.kind = CaseClause.kind;
 export class CatchClause extends Node implements qc.CatchClause {
   static readonly kind = Syntax.CatchClause;
-  parent!: TryStatement;
+  parent!: qc.TryStatement;
   variableDeclaration?: VariableDeclaration;
   block: Block;
   constructor(v: string | VariableDeclaration | undefined, b: Block) {
     super(true);
-    this.variableDeclaration = isString(v) ? new qc.VariableDeclaration(v) : v;
+    this.variableDeclaration = qb.isString(v) ? new VariableDeclaration(v) : v;
     this.block = b;
   }
   update(v: VariableDeclaration | undefined, b: Block) {
@@ -657,6 +657,7 @@ CatchClause.prototype.kind = CatchClause.kind;
 export class ClassDeclaration extends qc.ClassLikeDeclarationBase implements qc.ClassDeclaration {
   static readonly kind = Syntax.ClassDeclaration;
   name?: Identifier;
+  jsDocCache?: readonly JSDocTag[];
   constructor(
     ds: readonly Decorator[] | undefined,
     ms: readonly Modifier[] | undefined,
@@ -685,6 +686,7 @@ export class ClassDeclaration extends qc.ClassLikeDeclarationBase implements qc.
       ? new ClassDeclaration(ds, ms, name, ts, hs, es).updateFrom(this)
       : this;
   }
+  _statementBrand: any;
 }
 ClassDeclaration.prototype.kind = ClassDeclaration.kind;
 qb.addMixins(ClassDeclaration, [qc.DeclarationStatement]);
@@ -1029,7 +1031,7 @@ export class ExportDeclaration extends qc.DeclarationStatement implements qc.Exp
     this.moduleSpecifier = m;
   }
   createExternalModuleExport(exportName: Identifier) {
-    return new ExportDeclaration(undefined, undefined, new qc.NamedExports([new qc.ExportSpecifier(undefined, exportName)]));
+    return new ExportDeclaration(undefined, undefined, new NamedExports([new ExportSpecifier(undefined, exportName)]));
   }
   createEmptyExports() {
     return new ExportDeclaration(undefined, undefined, new NamedExports([]), undefined);
@@ -1292,7 +1294,7 @@ export class HeritageClause extends Node implements qc.HeritageClause {
   static readonly kind = Syntax.HeritageClause;
   parent!: InterfaceDeclaration | qc.ClassLikeDeclaration;
   token: Syntax.ExtendsKeyword | Syntax.ImplementsKeyword;
-  types: Nodes<qc.ExpressionWithTypeArguments>;
+  types: Nodes<ExpressionWithTypeArguments>;
   constructor(t: HeritageClause['token'], ts: readonly ExpressionWithTypeArguments[]) {
     super(true);
     this.token = t;
@@ -1735,7 +1737,6 @@ export class JSDocPropertyLikeTag extends qc.JSDocTag implements qc.JSDocPropert
   _declarationBrand: any;
 }
 qb.addMixins(JSDocPropertyLikeTag, [qc.Declaration]);
-
 export class JSDocParameterTag extends JSDocPropertyLikeTag implements qc.JSDocParameterTag {
   static readonly kind = Syntax.JSDocParameterTag;
   constructor(e: JSDocTypeExpression | undefined, n: qc.EntityName, isNameFirst: boolean, isBracketed: boolean, c?: string) {
@@ -1798,6 +1799,7 @@ export class JSDocSignature extends qc.JSDocType implements qc.JSDocSignature {
     this.parameters = ps;
     this.type = t;
   }
+  _declarationBrand: any;
 }
 JSDocSignature.prototype.kind = JSDocSignature.kind;
 qb.addMixins(JSDocSignature, [qc.Declaration]);
@@ -2107,7 +2109,7 @@ export class JsxText extends qc.LiteralLikeNode implements qc.JsxText {
 JsxText.prototype.kind = JsxText.kind;
 export class KeywordTypeNode extends qc.TypeNode implements qc.KeywordTypeNode {
   // prettier-ignore
-  kind: | Syntax.AnyKeyword | Syntax.UnknownKeyword | Syntax.NumberKeyword | Syntax.BigIntKeyword | Syntax.ObjectKeyword | Syntax.BooleanKeyword | Syntax.StringKeyword | Syntax.SymbolKeyword | Syntax.ThisKeyword | Syntax.VoidKeyword | Syntax.UndefinedKeyword | Syntax.NullKeyword | Syntax.NeverKeyword;
+  kind!: | Syntax.AnyKeyword | Syntax.UnknownKeyword | Syntax.NumberKeyword | Syntax.BigIntKeyword | Syntax.ObjectKeyword | Syntax.BooleanKeyword | Syntax.StringKeyword | Syntax.SymbolKeyword | Syntax.ThisKeyword | Syntax.VoidKeyword | Syntax.UndefinedKeyword | Syntax.NullKeyword | Syntax.NeverKeyword;
   constructor(k: KeywordTypeNode['kind']) {
     super(true, k);
   }
@@ -2129,7 +2131,7 @@ LabeledStatement.prototype.kind = LabeledStatement.kind;
 qb.addMixins(LabeledStatement, [qc.JSDocContainer]);
 export class LiteralTypeNode extends qc.TypeNode implements qc.LiteralTypeNode {
   static readonly kind = Syntax.LiteralType;
-  literal: BooleanLiteral | qc.LiteralExpression | PrefixUnaryExpression;
+  literal: qc.BooleanLiteral | qc.LiteralExpression | PrefixUnaryExpression;
   constructor(l: LiteralTypeNode['literal']) {
     super(true);
     this.literal = l;
@@ -2155,6 +2157,7 @@ export class MappedTypeNode extends qc.TypeNode implements qc.MappedTypeNode {
   update(r: qc.ReadonlyToken | qc.PlusToken | qc.MinusToken | undefined, p: TypeParameterDeclaration, q?: qc.QuestionToken | qc.PlusToken | qc.MinusToken, t?: qc.TypeNode) {
     return this.readonlyToken !== r || this.typeParameter !== p || this.questionToken !== q || this.type !== t ? new MappedTypeNode(r, p, q, t).updateFrom(this) : this;
   }
+  _declarationBrand: any;
 }
 MappedTypeNode.prototype.kind = MappedTypeNode.kind;
 qb.addMixins(MappedTypeNode, [qc.Declaration]);
@@ -2253,6 +2256,7 @@ MethodSignature.prototype.kind = MethodSignature.kind;
 export class MissingDeclaration extends qc.DeclarationStatement implements qc.MissingDeclaration {
   static readonly kind = Syntax.MissingDeclaration;
   name?: Identifier;
+  _statementBrand: any;
 }
 MissingDeclaration.prototype.kind = MissingDeclaration.kind;
 export class ModuleBlock extends Node implements qc.ModuleBlock {
@@ -2265,7 +2269,7 @@ export class ModuleBlock extends Node implements qc.ModuleBlock {
     this.statements = new Nodes(statements);
   }
   update(statements: readonly qc.Statement[]) {
-    return this.statements !== statements ? new create(statements).updateFrom(this) : this;
+    return this.statements !== statements ? new ModuleBlock(statements).updateFrom(this) : this;
   }
 }
 ModuleBlock.prototype.kind = ModuleBlock.kind;
@@ -2285,12 +2289,11 @@ export class ModuleDeclaration extends qc.DeclarationStatement implements qc.Mod
   }
   update(decorators: readonly Decorator[] | undefined, modifiers: readonly Modifier[] | undefined, name: ModuleName, body: ModuleBody | undefined) {
     return this.decorators !== decorators || this.modifiers !== modifiers || this.name !== name || this.body !== body
-      ? new create(decorators, modifiers, name, body, this.flags).updateFrom(this)
+      ? new ModuleDeclaration(decorators, modifiers, name, body, this.flags).updateFrom(this)
       : this;
   }
 }
 ModuleDeclaration.prototype.kind = ModuleDeclaration.kind;
-*/
 export class NamedExports extends Node implements qc.NamedExports {
   static readonly kind = Syntax.NamedExports;
   parent!: ExportDeclaration;

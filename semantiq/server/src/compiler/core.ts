@@ -2323,7 +2323,7 @@ export abstract class ClassElement extends NamedDeclaration implements qt.ClassE
   name?: PropertyName;
 }
 export abstract class ClassLikeDeclarationBase extends NamedDeclaration implements qt.ClassLikeDeclarationBase {
-  kind!: Syntax.ClassDeclaration | Syntax.ClassExpression;
+  //kind!: Syntax.ClassDeclaration | Syntax.ClassExpression;
   name?: Identifier;
   typeParameters?: Nodes<TypeParameterDeclaration>;
   heritageClauses?: Nodes<qt.HeritageClause>;

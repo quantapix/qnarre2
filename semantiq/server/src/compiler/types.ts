@@ -1177,7 +1177,7 @@ export interface JSDocSignature extends JSDocType, Declaration {
   kind: Syntax.JSDocSignature;
   typeParameters?: readonly JSDocTemplateTag[];
   parameters: readonly JSDocParameterTag[];
-  type: JSDocReturnTag | undefined;
+  type?: JSDocReturnTag;
 }
 export interface JSDocTag extends Node {
   parent: JSDoc | JSDocTypeLiteral;
