@@ -1,5 +1,5 @@
 import * as qb from './base';
-import { Node, NodeFlags, Nodes } from './core';
+import { NodeFlags, Nodes } from './core';
 import * as qc from './core';
 import * as qg from './debug';
 import { Modifier, Syntax } from './syntax';
@@ -7,9 +7,52 @@ import * as qy from './syntax';
 import * as qu from './utils';
 import { JSDocTag } from './types';
 export * from './core';
-// prettier-ignore
-export type NodeTypes = | ArrayBindingPattern | ArrayLiteralExpression | ArrayTypeNode | AsExpression | AwaitExpression | BinaryExpression | BindingElement | BindingPattern | Block | BreakOrContinueStatement | CallExpression | CaseBlock | CaseClause | CatchClause | qc.ClassLikeDeclaration | CommaListExpression | ComputedPropertyName | ConditionalExpression | ConditionalTypeNode | Decorator | DefaultClause | DeleteExpression | DeleteExpression | DoStatement | ElementAccessExpression | EnumDeclaration | EnumMember | ExportAssignment | ExportDeclaration | ExpressionStatement | ExpressionWithTypeArguments | ExternalModuleReference | ForInStatement | ForOfStatement | ForStatement | qc.FunctionLikeDeclaration | HeritageClause | Identifier | IfStatement | ImportClause | ImportDeclaration | ImportEqualsDeclaration | ImportOrExportSpecifier | ImportTypeNode | IndexedAccessTypeNode | InferTypeNode | InterfaceDeclaration | JSDoc | JSDocAugmentsTag | JSDocAuthorTag | JSDocFunctionType | JSDocImplementsTag | JSDocSignature | JSDocTemplateTag | JSDocTypedefTag | JSDocTypeExpression | JSDocTypeLiteral | JSDocTypeReferencingNode | JsxAttribute | JsxAttributes | JsxClosingElement | JsxElement | JsxExpression | JsxFragment | qc.JsxOpeningLikeElement | JsxSpreadAttribute | LabeledStatement | LiteralTypeNode | MappedTypeNode | MetaProperty | MissingDeclaration | ModuleDeclaration | NamedImportsOrExports | NamedTupleMember | NamespaceExport | NamespaceExportDeclaration | NamespaceImport | NonNullExpression | ObjectLiteralExpression | OptionalTypeNode | ParameterDeclaration | ParenthesizedExpression | ParenthesizedTypeNode | PartiallyEmittedExpression | PostfixUnaryExpression | PrefixUnaryExpression | PropertyAccessExpression | PropertyAssignment | PropertyDeclaration | PropertySignature | QualifiedName | RestTypeNode | ReturnStatement | ShorthandPropertyAssignment | SignatureDeclaration | SourceFile | SpreadAssignment | SpreadElement | SwitchStatement | TaggedTemplateExpression | TemplateExpression | TemplateSpan | ThrowStatement | TryStatement | TupleTypeNode | TypeAliasDeclaration | TypeAssertion | TypeLiteralNode | TypeOfExpression | TypeOperatorNode | TypeParameterDeclaration | TypePredicateNode | TypeQueryNode | TypeReferenceNode | UnionOrIntersectionTypeNode | VariableDeclaration | VariableDeclarationList | VariableStatement | VoidExpression | WhileStatement | WithStatement | YieldExpression;
-
+export type NodeType<S extends Syntax> = S extends keyof SynMap ? SynMap[S] : never;
+export class Node extends qc.Node {
+  is<S extends Syntax, T extends { kind: S; also?: Syntax[] }>(t: T): this is NodeType<T['kind']> {
+    return this.kind === t.kind || !!t.also?.includes(this.kind);
+  }
+  static create<T extends Syntax>(k: T, pos: number, end: number, parent?: Node): NodeType<T> {
+    const n =
+      Node.is.node(k) || k === Syntax.Unknown
+        ? new Node(k, pos, end)
+        : k === Syntax.SourceFile
+        ? new SourceFileObj(Syntax.SourceFile, pos, end)
+        : k === Syntax.Identifier
+        ? new Identifier(Syntax.Identifier, pos, end)
+        : k === Syntax.PrivateIdentifier
+        ? new PrivateIdentifier(Syntax.PrivateIdentifier, pos, end)
+        : new Token<T>(k, pos, end);
+    if (parent) {
+      n.parent = parent;
+      n.flags = parent.flags & NodeFlags.ContextFlags;
+    }
+    return (n as unknown) as qt.NodeType<T>;
+  }
+  static createSynthesized<T extends Syntax>(k: T): qt.NodeType<T> {
+    const n = this.create<T>(k, -1, -1);
+    n.flags |= NodeFlags.Synthesized;
+    return n;
+  }
+  static getMutableClone<T extends Node>(node: T): T {
+    const clone = getSynthesizedClone(node);
+    clone.pos = node.pos;
+    clone.end = node.end;
+    clone.parent = node.parent;
+    return clone;
+  }
+  static getSynthesizedClone<T extends Node>(node: T): T {
+    if (node === undefined) return node;
+    const clone = Node.createSynthesized(node.kind) as T;
+    clone.flags |= node.flags;
+    clone.setOriginal(node);
+    for (const key in node) {
+      if (clone.hasOwnProperty(key) || !node.hasOwnProperty(key)) continue;
+      (<any>clone)[key] = (<any>node)[key];
+    }
+    return clone;
+  }
+}
 export namespace ArrayBindingElement {
   export const also = [Syntax.BindingElement, Syntax.OmittedExpression];
 }
@@ -1551,7 +1594,6 @@ export class InferTypeNode extends qc.TypeNode implements qc.InferTypeNode {
   }
 }
 InferTypeNode.prototype.kind = InferTypeNode.kind;
-
 export class InputFiles extends Node implements qc.InputFiles {
   static readonly kind = Syntax.InputFiles;
   javascriptPath?: string;
@@ -3054,7 +3096,6 @@ export class StringLiteral extends qc.LiteralExpression implements qc.StringLite
     super(true);
     this.text = t;
   }
-  /*
   like(n: Node): n is qc.StringLiteralLike {
     return this.kind === Syntax.StringLiteral || this.kind === Syntax.NoSubstitutionLiteral;
   }
@@ -3071,7 +3112,6 @@ export class StringLiteral extends qc.LiteralExpression implements qc.StringLite
       (e.kind === Syntax.PrefixUnaryExpression && (e as PrefixUnaryExpression).operator === Syntax.MinusToken && (e as PrefixUnaryExpression).operand.kind === Syntax.NumericLiteral)
     );
   }
-  */
   static fromNode(sourceNode: Exclude<PropertyNameLiteral, PrivateIdentifier>): StringLiteral {
     const r = new StringLiteral(getTextOfIdentifierOrLiteral(sourceNode));
     r.textSourceNode = sourceNode;
@@ -3411,7 +3451,6 @@ export class UnionTypeNode extends qc.UnionOrIntersectionTypeNode implements qc.
   }
 }
 UnionTypeNode.prototype.kind = UnionTypeNode.kind;
-/*
 export namespace UnparsedNode {
   export function createUnparsedNode(section: BundleFileSection, parent: UnparsedSource): UnparsedNode {
     const r = createNode(mapBundleFileSectionKindToSyntax(section.kind), section.pos, section.end) as UnparsedNode;
@@ -3648,7 +3687,6 @@ export class UnparsedSyntheticReference extends UnparsedSection implements qc.Un
   }
 }
 UnparsedSyntheticReference.prototype.kind = UnparsedSyntheticReference.kind;
-*/
 export class VariableDeclaration extends qc.NamedDeclaration implements qc.VariableDeclaration {
   static readonly kind = Syntax.VariableDeclaration;
   parent!: VariableDeclarationList | CatchClause;
@@ -3757,6 +3795,8 @@ export class YieldExpression extends qc.Expression implements qc.YieldExpression
   }
 }
 YieldExpression.prototype.kind = YieldExpression.kind;
+// prettier-ignore
+export type NodeTypes = | ArrayBindingPattern | ArrayLiteralExpression | ArrayTypeNode | AsExpression | AwaitExpression | BinaryExpression | BindingElement | BindingPattern | Block | BreakOrContinueStatement | CallExpression | CaseBlock | CaseClause | CatchClause | qc.ClassLikeDeclaration | CommaListExpression | ComputedPropertyName | ConditionalExpression | ConditionalTypeNode | Decorator | DefaultClause | DeleteExpression | DeleteExpression | DoStatement | ElementAccessExpression | EnumDeclaration | EnumMember | ExportAssignment | ExportDeclaration | ExpressionStatement | ExpressionWithTypeArguments | ExternalModuleReference | ForInStatement | ForOfStatement | ForStatement | qc.FunctionLikeDeclaration | HeritageClause | Identifier | IfStatement | ImportClause | ImportDeclaration | ImportEqualsDeclaration | ImportOrExportSpecifier | ImportTypeNode | IndexedAccessTypeNode | InferTypeNode | InterfaceDeclaration | JSDoc | JSDocAugmentsTag | JSDocAuthorTag | JSDocFunctionType | JSDocImplementsTag | JSDocSignature | JSDocTemplateTag | JSDocTypedefTag | JSDocTypeExpression | JSDocTypeLiteral | JSDocTypeReferencingNode | JsxAttribute | JsxAttributes | JsxClosingElement | JsxElement | JsxExpression | JsxFragment | qc.JsxOpeningLikeElement | JsxSpreadAttribute | LabeledStatement | LiteralTypeNode | MappedTypeNode | MetaProperty | MissingDeclaration | ModuleDeclaration | NamedImportsOrExports | NamedTupleMember | NamespaceExport | NamespaceExportDeclaration | NamespaceImport | NonNullExpression | ObjectLiteralExpression | OptionalTypeNode | ParameterDeclaration | ParenthesizedExpression | ParenthesizedTypeNode | PartiallyEmittedExpression | PostfixUnaryExpression | PrefixUnaryExpression | PropertyAccessExpression | PropertyAssignment | PropertyDeclaration | PropertySignature | QualifiedName | RestTypeNode | ReturnStatement | ShorthandPropertyAssignment | SignatureDeclaration | qc.SourceFile | SpreadAssignment | SpreadElement | SwitchStatement | TaggedTemplateExpression | TemplateExpression | TemplateSpan | ThrowStatement | TryStatement | TupleTypeNode | TypeAliasDeclaration | TypeAssertion | TypeLiteralNode | TypeOfExpression | TypeOperatorNode | TypeParameterDeclaration | TypePredicateNode | TypeQueryNode | TypeReferenceNode | UnionOrIntersectionTypeNode | VariableDeclaration | VariableDeclarationList | VariableStatement | VoidExpression | WhileStatement | WithStatement | YieldExpression;
 export namespace parenthesize {
   interface BinaryPlusExpression extends BinaryExpression {
     cachedLiteralKind: Syntax;
@@ -4289,7 +4329,6 @@ export namespace fixme {
     return;
   }
 }
-
 export function asToken<T extends Syntax>(t: T | qc.Token<T>): qc.Token<T> {
   return typeof t === 'number' ? new qc.Token(t) : t;
 }
@@ -4321,19 +4360,16 @@ export function asEmbeddedStatement<T extends Node>(s?: T): T | EmptyStatement |
 export function asEmbeddedStatement<T extends Node>(s?: T): T | EmptyStatement | undefined {
   return s && Node.is.kind(NotEmittedStatement, s) ? new EmptyStatement().setOriginal(s).setRange(s) : s;
 }
-
 export function skipParentheses(n: qc.Expression): qc.Expression;
 export function skipParentheses(n: Node): Node;
 export function skipParentheses(n: Node): Node {
   return skipOuterExpressions(n, qc.OuterExpressionKinds.Parentheses);
 }
-
 export function skipPartiallyEmittedExpressions(n: qc.Expression): qc.Expression;
 export function skipPartiallyEmittedExpressions(n: Node): Node;
 export function skipPartiallyEmittedExpressions(n: Node) {
   return skipOuterExpressions(n, qc.OuterExpressionKinds.PartiallyEmittedExpressions);
 }
-
 export function updateFunctionLikeBody(d: qc.FunctionLikeDeclaration, b: Block): qc.FunctionLikeDeclaration {
   switch (d.kind) {
     case Syntax.FunctionDeclaration:
@@ -4351,4 +4387,209 @@ export function updateFunctionLikeBody(d: qc.FunctionLikeDeclaration, b: Block):
     case Syntax.ArrowFunction:
       return new ArrowFunction(d.modifiers, d.typeParameters, d.parameters, d.type, d.equalsGreaterThanToken, b);
   }
+}
+export interface SynMap {
+  [Syntax.ArrayBindingPattern]: ArrayBindingPattern;
+  [Syntax.ArrayLiteralExpression]: ArrayLiteralExpression;
+  [Syntax.ArrayType]: ArrayTypeNode;
+  [Syntax.ArrowFunction]: ArrowFunction;
+  [Syntax.AsExpression]: AsExpression;
+  [Syntax.AsteriskToken]: qc.AsteriskToken;
+  [Syntax.AwaitExpression]: AwaitExpression;
+  [Syntax.BigIntLiteral]: BigIntLiteral;
+  [Syntax.BinaryExpression]: BinaryExpression;
+  [Syntax.BindingElement]: BindingElement;
+  [Syntax.Block]: Block;
+  [Syntax.BreakStatement]: BreakStatement;
+  [Syntax.Bundle]: Bundle;
+  [Syntax.CallExpression]: CallExpression;
+  [Syntax.CallSignature]: CallSignatureDeclaration;
+  [Syntax.CaseBlock]: CaseBlock;
+  [Syntax.CaseClause]: CaseClause;
+  [Syntax.CatchClause]: CatchClause;
+  [Syntax.ClassDeclaration]: ClassDeclaration;
+  [Syntax.ClassExpression]: ClassExpression;
+  [Syntax.ColonToken]: qc.ColonToken;
+  [Syntax.CommaListExpression]: CommaListExpression;
+  [Syntax.ComputedPropertyName]: ComputedPropertyName;
+  [Syntax.ConditionalExpression]: ConditionalExpression;
+  [Syntax.ConditionalType]: ConditionalTypeNode;
+  [Syntax.Constructor]: ConstructorDeclaration;
+  [Syntax.ConstructorType]: ConstructorTypeNode;
+  [Syntax.ConstructSignature]: ConstructSignatureDeclaration;
+  [Syntax.ContinueStatement]: ContinueStatement;
+  [Syntax.DebuggerStatement]: DebuggerStatement;
+  [Syntax.Decorator]: Decorator;
+  [Syntax.DefaultClause]: DefaultClause;
+  [Syntax.DeleteExpression]: DeleteExpression;
+  [Syntax.DoStatement]: DoStatement;
+  [Syntax.Dot3Token]: qc.Dot3Token;
+  [Syntax.DotToken]: qc.DotToken;
+  [Syntax.ElementAccessExpression]: ElementAccessExpression;
+  [Syntax.EmptyStatement]: EmptyStatement;
+  [Syntax.EndOfDeclarationMarker]: EndOfDeclarationMarker;
+  [Syntax.EndOfFileToken]: qc.EndOfFileToken;
+  [Syntax.EnumDeclaration]: EnumDeclaration;
+  [Syntax.EnumMember]: EnumMember;
+  [Syntax.EqualsGreaterThanToken]: qc.EqualsGreaterThanToken;
+  [Syntax.EqualsToken]: qc.EqualsToken;
+  [Syntax.ExclamationToken]: qc.ExclamationToken;
+  [Syntax.ExportAssignment]: ExportAssignment;
+  [Syntax.ExportDeclaration]: ExportDeclaration;
+  [Syntax.ExportSpecifier]: ExportSpecifier;
+  [Syntax.ExpressionStatement]: ExpressionStatement;
+  [Syntax.ExpressionWithTypeArguments]: ExpressionWithTypeArguments;
+  [Syntax.ExternalModuleReference]: ExternalModuleReference;
+  [Syntax.ForInStatement]: ForInStatement;
+  [Syntax.ForOfStatement]: ForOfStatement;
+  [Syntax.ForStatement]: ForStatement;
+  [Syntax.FunctionDeclaration]: FunctionDeclaration;
+  [Syntax.FunctionExpression]: FunctionExpression;
+  [Syntax.FunctionType]: FunctionTypeNode;
+  [Syntax.GetAccessor]: GetAccessorDeclaration;
+  [Syntax.HeritageClause]: HeritageClause;
+  [Syntax.Identifier]: Identifier;
+  [Syntax.IfStatement]: IfStatement;
+  [Syntax.ImportClause]: ImportClause;
+  [Syntax.ImportDeclaration]: ImportDeclaration;
+  [Syntax.ImportEqualsDeclaration]: ImportEqualsDeclaration;
+  [Syntax.ImportSpecifier]: ImportSpecifier;
+  [Syntax.ImportType]: ImportTypeNode;
+  [Syntax.IndexedAccessType]: IndexedAccessTypeNode;
+  [Syntax.IndexSignature]: IndexSignatureDeclaration;
+  [Syntax.InferType]: InferTypeNode;
+  [Syntax.InputFiles]: InputFiles;
+  [Syntax.InterfaceDeclaration]: InterfaceDeclaration;
+  [Syntax.IntersectionType]: IntersectionTypeNode;
+  [Syntax.JSDocAllType]: JSDocAllType;
+  [Syntax.JSDocAugmentsTag]: JSDocAugmentsTag;
+  [Syntax.JSDocAuthorTag]: JSDocAuthorTag;
+  [Syntax.JSDocCallbackTag]: JSDocCallbackTag;
+  [Syntax.JSDocClassTag]: JSDocClassTag;
+  [Syntax.JSDocComment]: JSDoc;
+  [Syntax.JSDocEnumTag]: JSDocEnumTag;
+  [Syntax.JSDocFunctionType]: JSDocFunctionType;
+  [Syntax.JSDocImplementsTag]: JSDocImplementsTag;
+  [Syntax.JSDocNamepathType]: JSDocNamepathType;
+  [Syntax.JSDocNonNullableType]: JSDocNonNullableType;
+  [Syntax.JSDocNullableType]: JSDocNullableType;
+  [Syntax.JSDocOptionalType]: JSDocOptionalType;
+  [Syntax.JSDocParameterTag]: JSDocParameterTag;
+  [Syntax.JSDocPrivateTag]: JSDocPrivateTag;
+  [Syntax.JSDocPropertyTag]: JSDocPropertyTag;
+  [Syntax.JSDocProtectedTag]: JSDocProtectedTag;
+  [Syntax.JSDocPublicTag]: JSDocPublicTag;
+  [Syntax.JSDocReadonlyTag]: JSDocReadonlyTag;
+  [Syntax.JSDocReturnTag]: JSDocReturnTag;
+  [Syntax.JSDocSignature]: JSDocSignature;
+  [Syntax.JSDocTag]: JSDocTag;
+  [Syntax.JSDocTemplateTag]: JSDocTemplateTag;
+  [Syntax.JSDocThisTag]: JSDocThisTag;
+  [Syntax.JSDocTypedefTag]: JSDocTypedefTag;
+  [Syntax.JSDocTypeExpression]: JSDocTypeExpression;
+  [Syntax.JSDocTypeLiteral]: JSDocTypeLiteral;
+  [Syntax.JSDocTypeTag]: JSDocTypeTag;
+  [Syntax.JSDocUnknownType]: JSDocUnknownType;
+  [Syntax.JSDocVariadicType]: JSDocVariadicType;
+  [Syntax.JsxAttribute]: JsxAttribute;
+  [Syntax.JsxAttributes]: JsxAttributes;
+  [Syntax.JsxClosingElement]: JsxClosingElement;
+  [Syntax.JsxClosingFragment]: JsxClosingFragment;
+  [Syntax.JsxElement]: JsxElement;
+  [Syntax.JsxExpression]: JsxExpression;
+  [Syntax.JsxFragment]: JsxFragment;
+  [Syntax.JsxOpeningElement]: JsxOpeningElement;
+  [Syntax.JsxOpeningFragment]: JsxOpeningFragment;
+  [Syntax.JsxSelfClosingElement]: JsxSelfClosingElement;
+  [Syntax.JsxSpreadAttribute]: JsxSpreadAttribute;
+  [Syntax.JsxText]: JsxText;
+  [Syntax.LabeledStatement]: LabeledStatement;
+  [Syntax.LiteralType]: LiteralTypeNode;
+  [Syntax.MappedType]: MappedTypeNode;
+  [Syntax.MergeDeclarationMarker]: MergeDeclarationMarker;
+  [Syntax.MetaProperty]: MetaProperty;
+  [Syntax.MethodDeclaration]: MethodDeclaration;
+  [Syntax.MethodSignature]: MethodSignature;
+  [Syntax.MinusToken]: qc.MinusToken;
+  [Syntax.MissingDeclaration]: MissingDeclaration;
+  [Syntax.ModuleBlock]: ModuleBlock;
+  [Syntax.ModuleDeclaration]: ModuleDeclaration;
+  [Syntax.NamedExports]: NamedExports;
+  [Syntax.NamedImports]: NamedImports;
+  [Syntax.NamedTupleMember]: NamedTupleMember;
+  [Syntax.NamespaceExport]: NamespaceExport;
+  [Syntax.NamespaceExportDeclaration]: NamespaceExportDeclaration;
+  [Syntax.NamespaceImport]: NamespaceImport;
+  [Syntax.NewExpression]: NewExpression;
+  [Syntax.NonNullExpression]: NonNullExpression;
+  [Syntax.NoSubstitutionLiteral]: NoSubstitutionLiteral;
+  [Syntax.NotEmittedStatement]: NotEmittedStatement;
+  [Syntax.NumericLiteral]: NumericLiteral;
+  [Syntax.ObjectBindingPattern]: ObjectBindingPattern;
+  [Syntax.ObjectLiteralExpression]: ObjectLiteralExpression;
+  [Syntax.OmittedExpression]: OmittedExpression;
+  [Syntax.OptionalType]: OptionalTypeNode;
+  [Syntax.Parameter]: ParameterDeclaration;
+  [Syntax.ParenthesizedExpression]: ParenthesizedExpression;
+  [Syntax.ParenthesizedType]: ParenthesizedTypeNode;
+  [Syntax.PartiallyEmittedExpression]: PartiallyEmittedExpression;
+  [Syntax.PlusToken]: qc.PlusToken;
+  [Syntax.PostfixUnaryExpression]: PostfixUnaryExpression;
+  [Syntax.PrefixUnaryExpression]: PrefixUnaryExpression;
+  [Syntax.PrivateIdentifier]: PrivateIdentifier;
+  [Syntax.PropertyAccessExpression]: PropertyAccessExpression;
+  [Syntax.PropertyAssignment]: PropertyAssignment;
+  [Syntax.PropertyDeclaration]: PropertyDeclaration;
+  [Syntax.PropertySignature]: PropertySignature;
+  [Syntax.QualifiedName]: QualifiedName;
+  [Syntax.QuestionDotToken]: qc.QuestionDotToken;
+  [Syntax.QuestionToken]: qc.QuestionToken;
+  [Syntax.RegexLiteral]: RegexLiteral;
+  [Syntax.RestType]: RestTypeNode;
+  [Syntax.ReturnStatement]: ReturnStatement;
+  [Syntax.SemicolonClassElement]: SemicolonClassElement;
+  [Syntax.SetAccessor]: SetAccessorDeclaration;
+  [Syntax.ShorthandPropertyAssignment]: ShorthandPropertyAssignment;
+  [Syntax.SourceFile]: SourceFile;
+  [Syntax.SpreadAssignment]: SpreadAssignment;
+  [Syntax.SpreadElement]: SpreadElement;
+  [Syntax.StringLiteral]: StringLiteral;
+  [Syntax.SwitchStatement]: SwitchStatement;
+  [Syntax.SyntaxList]: SyntaxList;
+  [Syntax.SyntheticExpression]: SyntheticExpression;
+  [Syntax.SyntheticReferenceExpression]: SyntheticReferenceExpression;
+  [Syntax.TaggedTemplateExpression]: TaggedTemplateExpression;
+  [Syntax.TemplateExpression]: TemplateExpression;
+  [Syntax.TemplateHead]: TemplateHead;
+  [Syntax.TemplateMiddle]: TemplateMiddle;
+  [Syntax.TemplateSpan]: TemplateSpan;
+  [Syntax.TemplateTail]: TemplateTail;
+  [Syntax.ThisType]: ThisTypeNode;
+  [Syntax.ThrowStatement]: ThrowStatement;
+  [Syntax.TryStatement]: TryStatement;
+  [Syntax.TupleType]: TupleTypeNode;
+  [Syntax.TypeAliasDeclaration]: TypeAliasDeclaration;
+  [Syntax.TypeAssertionExpression]: TypeAssertion;
+  [Syntax.TypeLiteral]: TypeLiteralNode;
+  [Syntax.TypeOfExpression]: TypeOfExpression;
+  [Syntax.TypeOperator]: TypeOperatorNode;
+  [Syntax.TypeParameter]: TypeParameterDeclaration;
+  [Syntax.TypePredicate]: TypePredicateNode;
+  [Syntax.TypeQuery]: TypeQueryNode;
+  [Syntax.TypeReference]: TypeReferenceNode;
+  [Syntax.UnionType]: UnionTypeNode;
+  [Syntax.UnparsedInternalText]: UnparsedTextLike;
+  [Syntax.UnparsedPrepend]: UnparsedPrepend;
+  [Syntax.UnparsedPrologue]: UnparsedPrologue;
+  [Syntax.UnparsedSource]: UnparsedSource;
+  [Syntax.UnparsedSyntheticReference]: UnparsedSyntheticReference;
+  [Syntax.UnparsedText]: UnparsedTextLike;
+  [Syntax.VariableDeclaration]: VariableDeclaration;
+  [Syntax.VariableDeclarationList]: VariableDeclarationList;
+  [Syntax.VariableStatement]: VariableStatement;
+  [Syntax.VoidExpression]: VoidExpression;
+  [Syntax.WhileStatement]: WhileStatement;
+  [Syntax.WithStatement]: WithStatement;
+  [Syntax.YieldExpression]: YieldExpression;
+  //[Syntax.Count]: Count;
 }

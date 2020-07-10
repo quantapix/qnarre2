@@ -1,11 +1,10 @@
 import * as qb from './base';
-import * as qt from './types';
-import { Node } from './types';
+import * as qc from './classes';
 import * as syntax from './syntax';
 import { Syntax } from './syntax';
 const MAX_SMI_X86 = 0x3fff_ffff;
 function createMethodCall(object: Expression, methodName: string | Identifier, argumentsList: readonly Expression[]) {
-  return new qs.CallExpression(new qc.PropertyAccessExpression(object, asName(methodName)), undefined, argumentsList);
+  return new qc.CallExpression(new qc.PropertyAccessExpression(object, asName(methodName)), undefined, argumentsList);
 }
 function createGlobalMethodCall(globalObjectName: string, methodName: string, argumentsList: readonly Expression[]) {
   return createMethodCall(new Identifier(globalObjectName), methodName, argumentsList);
