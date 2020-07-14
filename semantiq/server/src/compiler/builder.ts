@@ -1161,7 +1161,7 @@ export namespace BuilderState {
   export type ComputingExportedModulesMap = QMap<ReferencedSet | false>;
   function getReferencedFileFromImportedModuleSymbol(symbol: Symbol) {
     if (symbol.declarations && symbol.declarations[0]) {
-      const declarationSourceFile = Node.get.sourceFileOf(symbol.declarations[0]);
+      const declarationSourceFile = qc.get.sourceFileOf(symbol.declarations[0]);
       return declarationSourceFile && declarationSourceFile.resolvedPath;
     }
     return;
@@ -1200,7 +1200,7 @@ export namespace BuilderState {
     if (sourceFile.moduleAugmentations.length) {
       const checker = program.getTypeChecker();
       for (const moduleName of sourceFile.moduleAugmentations) {
-        if (!Node.is.kind(StringLiteral, moduleName)) continue;
+        if (!qc.is.kind(StringLiteral, moduleName)) continue;
         const symbol = checker.getSymbolAtLocation(moduleName);
         if (!symbol) continue;
         addReferenceFromAmbientModule(symbol);
@@ -1212,7 +1212,7 @@ export namespace BuilderState {
     return referencedFiles;
     function addReferenceFromAmbientModule(symbol: Symbol) {
       for (const declaration of symbol.declarations) {
-        const declarationSourceFile = Node.get.sourceFileOf(declaration);
+        const declarationSourceFile = qc.get.sourceFileOf(declaration);
         if (declarationSourceFile && declarationSourceFile !== sourceFile) addReferencedFile(declarationSourceFile.resolvedPath);
       }
     }
@@ -1417,7 +1417,7 @@ export namespace BuilderState {
 
   function containsOnlyAmbientModules(sourceFile: SourceFile) {
     for (const statement of sourceFile.statements) {
-      if (!Node.is.moduleWithStringLiteralName(statement)) return false;
+      if (!qc.is.moduleWithStringLiteralName(statement)) return false;
     }
     return true;
   }

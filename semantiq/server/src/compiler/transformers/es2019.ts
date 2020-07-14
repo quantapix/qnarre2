@@ -1,7 +1,7 @@
 import * as qb from '../base';
 import * as qc from '../core';
 import { Node, Nodes } from '../core';
-import * as qs from '../classes';
+import * as qs from '../core3';
 import * as qt from '../types';
 import * as qy from '../syntax';
 import { Modifier, Syntax } from '../syntax';

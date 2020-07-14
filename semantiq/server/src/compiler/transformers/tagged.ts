@@ -1,7 +1,7 @@
 import * as qb from '../base';
 import * as qc from '../core';
 import { Node, Nodes } from '../core';
-import * as qs from '../classes';
+import * as qs from '../core3';
 import * as qt from '../types';
 import * as qy from '../syntax';
 import { Modifier, Syntax } from '../syntax';
@@ -23,7 +23,7 @@ export function processTaggedTemplateExpression(
   const rawStrings: Expression[] = [];
   const template = node.template;
   if (level === ProcessLevel.LiftRestriction && !hasInvalidEscape(template)) return visitEachChild(node, visitor, context);
-  if (Node.is.kind(NoSubstitutionLiteral, template)) {
+  if (qc.is.kind(NoSubstitutionLiteral, template)) {
     cookedStrings.push(createTemplateCooked(template));
     rawStrings.push(getRawLiteral(template, currentSourceFile));
   } else {

@@ -1,7 +1,7 @@
 import * as qb from '../base';
 import * as qc from '../core';
 import { Node, Nodes } from '../core';
-import * as qs from '../classes';
+import * as qs from '../core3';
 import * as qt from '../types';
 import * as qy from '../syntax';
 import { Modifier, Syntax } from '../syntax';
@@ -39,18 +39,18 @@ export function transformES5(context: TransformationContext) {
   function onSubstituteNode(hint: EmitHint, node: Node) {
     if (node.id && noSubstitution && noSubstitution[node.id]) return previousOnSubstituteNode(hint, node);
     node = previousOnSubstituteNode(hint, node);
-    if (Node.is.kind(PropertyAccessExpression, node)) return substitutePropertyAccessExpression(node);
-    if (Node.is.kind(PropertyAssignment, node)) return substitutePropertyAssignment(node);
+    if (qc.is.kind(PropertyAccessExpression, node)) return substitutePropertyAccessExpression(node);
+    if (qc.is.kind(PropertyAssignment, node)) return substitutePropertyAssignment(node);
     return node;
   }
   function substitutePropertyAccessExpression(node: PropertyAccessExpression): Expression {
-    if (Node.is.kind(PrivateIdentifier, node.name)) return node;
+    if (qc.is.kind(PrivateIdentifier, node.name)) return node;
     const literalName = trySubstituteReservedName(node.name);
     if (literalName) return setRange(new qs.ElementAccessExpression(node.expression, literalName), node);
     return node;
   }
   function substitutePropertyAssignment(node: PropertyAssignment): PropertyAssignment {
-    const literalName = Node.is.kind(Identifier, node.name) && trySubstituteReservedName(node.name);
+    const literalName = qc.is.kind(Identifier, node.name) && trySubstituteReservedName(node.name);
     if (literalName) return node.update(literalName, node.initializer);
     return node;
   }

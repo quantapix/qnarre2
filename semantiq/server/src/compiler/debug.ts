@@ -307,19 +307,19 @@ export function enableDebugInfo() {
         },
         __debugIsParseTreeNode: {
           get(this: Node) {
-            return Node.is.parseTreeNode(this);
+            return qc.is.parseTreeNode(this);
           },
         },
         __debugEmitFlags: {
           get(this: Node) {
-            return formatEmitFlags(Node.get.emitFlags(this));
+            return formatEmitFlags(qc.get.emitFlags(this));
           },
         },
         __debugGetText: {
           value(this: Node, includeTrivia?: boolean) {
             if (isSynthesized(this)) return '';
-            const parseNode = Node.get.parseTreeOf(this);
-            const sourceFile = parseNode && Node.get.sourceFileOf(parseNode);
+            const parseNode = qc.get.parseTreeOf(this);
+            const sourceFile = parseNode && qc.get.sourceFileOf(parseNode);
             return sourceFile ? getSourceTextOfNodeFromSourceFile(sourceFile, parseNode, includeTrivia) : '';
           },
         },

@@ -1,7 +1,7 @@
 import * as qb from '../base';
 import * as qc from '../core';
 import { Node, Nodes } from '../core';
-import * as qs from '../classes';
+import * as qs from '../core3';
 import * as qt from '../types';
 import * as qy from '../syntax';
 import { Modifier, Syntax } from '../syntax';
@@ -283,7 +283,7 @@ export function transformGenerators(context: TransformationContext) {
     const transformFlags = node.transformFlags;
     if (inStatementContainingYield) return visitJavaScriptInStatementContainingYield(node);
     if (inGeneratorFunctionBody) return visitJavaScriptInGeneratorFunctionBody(node);
-    if (Node.is.functionLikeDeclaration(node) && node.asteriskToken) return visitGenerator(node);
+    if (qc.is.functionLikeDeclaration(node) && node.asteriskToken) return visitGenerator(node);
     if (transformFlags & TransformFlags.ContainsGenerator) return visitEachChild(node, visitor, context);
     return node;
   }
@@ -486,7 +486,7 @@ export function transformGenerators(context: TransformationContext) {
       return;
     } else {
       // Do not hoist custom prologues.
-      if (Node.get.emitFlags(node) & EmitFlags.CustomPrologue) return node;
+      if (qc.get.emitFlags(node) & EmitFlags.CustomPrologue) return node;
       for (const variable of node.declarationList.declarations) {
         hoistVariableDeclaration(<Identifier>variable.name);
       }
@@ -637,7 +637,7 @@ export function transformGenerators(context: TransformationContext) {
     visit(node.right);
     return inlineExpressions(pendingExpressions);
     function visit(node: Expression) {
-      if (Node.is.kind(node, BinaryExpression) && node.operatorToken.kind === Syntax.CommaToken) {
+      if (qc.is.kind(node, BinaryExpression) && node.operatorToken.kind === Syntax.CommaToken) {
         visit(node.left);
         visit(node.right);
       } else {
@@ -692,7 +692,7 @@ export function transformGenerators(context: TransformationContext) {
     const resumeLabel = defineLabel();
     const expression = visitNode(node.expression, visitor, isExpression);
     if (node.asteriskToken) {
-      const iterator = (Node.get.emitFlags(node.expression!) & EmitFlags.Iterator) === 0 ? createValuesHelper(context, expression, node) : expression;
+      const iterator = (qc.get.emitFlags(node.expression!) & EmitFlags.Iterator) === 0 ? createValuesHelper(context, expression, node) : expression;
       emitYieldStar(iterator, node);
     } else {
       emitYield(expression, node);
@@ -805,7 +805,7 @@ export function transformGenerators(context: TransformationContext) {
     return visitEachChild(node, visitor, context);
   }
   function visitCallExpression(node: CallExpression) {
-    if (!Node.is.importCall(node) && forEach(node.arguments, containsYield)) {
+    if (!qc.is.importCall(node) && forEach(node.arguments, containsYield)) {
       // [source]
       //      a.b(1, yield, 2);
       //
@@ -851,7 +851,7 @@ export function transformGenerators(context: TransformationContext) {
     }
   }
   function transformAndEmitEmbeddedStatement(node: Statement) {
-    if (Node.is.kind(Block, node)) {
+    if (qc.is.kind(Block, node)) {
       transformAndEmitStatements(node.statements);
     } else {
       transformAndEmitStatement(node);
@@ -1069,7 +1069,7 @@ export function transformGenerators(context: TransformationContext) {
       const endLabel = beginLoopBlock(incrementLabel);
       if (node.initializer) {
         const initializer = node.initializer;
-        if (Node.is.kind(VariableDeclarationList, initializer)) {
+        if (qc.is.kind(VariableDeclarationList, initializer)) {
           transformAndEmitVariableDeclarationList(initializer);
         } else {
           emitStatement(setRange(new qc.ExpressionStatement(visitNode(initializer, visitor, isExpression)), initializer));
@@ -1095,7 +1095,7 @@ export function transformGenerators(context: TransformationContext) {
       beginScriptLoopBlock();
     }
     const initializer = node.initializer;
-    if (initializer && Node.is.kind(VariableDeclarationList, initializer)) {
+    if (initializer && qc.is.kind(VariableDeclarationList, initializer)) {
       for (const variable of initializer.declarations) {
         hoistVariableDeclaration(<Identifier>variable.name);
       }
@@ -1158,14 +1158,14 @@ export function transformGenerators(context: TransformationContext) {
       markLabel(conditionLabel);
       emitBreakWhenFalse(endLabel, createLessThan(keysIndex, new qc.PropertyAccessExpression(keysArray, 'length')));
       let variable: Expression;
-      if (Node.is.kind(VariableDeclarationList, initializer)) {
+      if (qc.is.kind(VariableDeclarationList, initializer)) {
         for (const variable of initializer.declarations) {
           hoistVariableDeclaration(<Identifier>variable.name);
         }
         variable = <Identifier>getSynthesizedClone(initializer.declarations[0].name);
       } else {
         variable = visitNode(initializer, visitor, isExpression);
-        assert(Node.is.leftHandSideExpression(variable));
+        assert(qc.is.leftHandSideExpression(variable));
       }
       emitAssignment(variable, new qs.ElementAccessExpression(keysArray, keysIndex));
       transformAndEmitEmbeddedStatement(node.statement);
@@ -1194,7 +1194,7 @@ export function transformGenerators(context: TransformationContext) {
       beginScriptLoopBlock();
     }
     const initializer = node.initializer;
-    if (Node.is.kind(VariableDeclarationList, initializer)) {
+    if (qc.is.kind(VariableDeclarationList, initializer)) {
       for (const variable of initializer.declarations) {
         hoistVariableDeclaration(<Identifier>variable.name);
       }
@@ -1456,13 +1456,13 @@ export function transformGenerators(context: TransformationContext) {
     return node;
   }
   function substituteExpression(node: Expression): Expression {
-    if (Node.is.kind(Identifier, node)) return substituteExpressionIdentifier(node);
+    if (qc.is.kind(Identifier, node)) return substituteExpressionIdentifier(node);
     return node;
   }
   function substituteExpressionIdentifier(node: Identifier) {
-    if (!Node.is.generatedIdentifier(node) && renamedCatchVariables && renamedCatchVariables.has(idText(node))) {
-      const original = Node.get.originalOf(node);
-      if (Node.is.kind(Identifier, original) && original.parent) {
+    if (!qc.is.generatedIdentifier(node) && renamedCatchVariables && renamedCatchVariables.has(idText(node))) {
+      const original = qc.get.originalOf(node);
+      if (qc.is.kind(Identifier, original) && original.parent) {
         const declaration = resolver.getReferencedValueDeclaration(original);
         if (declaration) {
           const name = renamedCatchVariableDeclarations[getOriginalNodeId(declaration)];
@@ -1478,7 +1478,7 @@ export function transformGenerators(context: TransformationContext) {
     return node;
   }
   function cacheExpression(node: Expression): Identifier {
-    if (Node.is.generatedIdentifier(node) || Node.get.emitFlags(node) & EmitFlags.HelperName) return <Identifier>node;
+    if (qc.is.generatedIdentifier(node) || qc.get.emitFlags(node) & EmitFlags.HelperName) return <Identifier>node;
     const temp = createTempVariable(hoistVariableDeclaration);
     emitAssignment(temp, node, node);
     return temp;
@@ -1565,7 +1565,7 @@ export function transformGenerators(context: TransformationContext) {
     assert(peekBlockKind() === CodeBlockKind.Exception);
     // generated identifiers should already be unique within a file
     let name: Identifier;
-    if (Node.is.generatedIdentifier(variable.name)) {
+    if (qc.is.generatedIdentifier(variable.name)) {
       name = variable.name;
       hoistVariableDeclaration(variable.name);
     } else {

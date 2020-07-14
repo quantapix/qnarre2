@@ -1,6 +1,6 @@
 import * as qb from './base';
 import { Node, Nodes, Token } from './core';
-import * as qc from './classes';
+import * as qc from './core3';
 import * as qt from './types';
 import * as qy from './syntax';
 import { Modifier, Syntax } from './syntax';
@@ -101,7 +101,7 @@ function addValueAssignments(ps: Nodes<qc.ParameterDeclaration>, c: Transformati
   return ps;
 }
 function addValueAssignmentIfNeeded(p: qc.ParameterDeclaration, c: TransformationContext) {
-  return p.dot3Token ? p : Node.is.kind(BindingPattern, p.name) ? addForBindingPattern(p, c) : p.initializer ? addForInitializer(p, p.name, p.initializer, c) : p;
+  return p.dot3Token ? p : qc.is.kind(BindingPattern, p.name) ? addForBindingPattern(p, c) : p.initializer ? addForInitializer(p, p.name, p.initializer, c) : p;
 }
 function addForBindingPattern(p: qc.ParameterDeclaration, c: TransformationContext) {
   c.addInitializationStatement(
@@ -129,7 +129,7 @@ function addForInitializer(p: qc.ParameterDeclaration, name: Identifier, init: E
           new Block([
             new qc.ExpressionStatement(
               setEmitFlags(
-                setRange(createAssignment(setEmitFlags(getMutableClone(name), EmitFlags.NoSourceMap), setEmitFlags(init, EmitFlags.NoSourceMap | Node.get.emitFlags(init) | EmitFlags.NoComments)), p),
+                setRange(createAssignment(setEmitFlags(getMutableClone(name), EmitFlags.NoSourceMap), setEmitFlags(init, EmitFlags.NoSourceMap | qc.get.emitFlags(init) | EmitFlags.NoComments)), p),
                 EmitFlags.NoComments
               )
             ),
@@ -156,10 +156,10 @@ export function visitFunctionBody(n: ConciseBody | undefined, cb: Visitor, c: Tr
   }
   return updated;
 }
-const isExpression = (n: Node) => Node.is.expressionNode(n);
-const isTypeNode = (n: Node) => Node.is.typeNode(n);
-const isDecorator = (n: Node) => Node.is.decorator(n);
-const isModifier = (n: Node) => Node.is.modifier(n);
+const isExpression = (n: Node) => qc.is.expressionNode(n);
+const isTypeNode = (n: Node) => qc.is.typeNode(n);
+const isDecorator = (n: Node) => qc.is.decorator(n);
+const isModifier = (n: Node) => qc.is.modifier(n);
 export function visitEachChild<T extends Node>(node: T, cb: Visitor, c: TransformationContext): T;
 export function visitEachChild<T extends Node>(node: T | undefined, cb: Visitor, c: TransformationContext, nodesVisitor?: typeof Nodes.visit, tokenVisitor?: Visitor): T | undefined;
 export function visitEachChild(node: Node | undefined, cb: Visitor, c: TransformationContext, nodesVisitor = Nodes.visit, tokenVisitor?: Visitor): Node | undefined {

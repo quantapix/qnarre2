@@ -1,11 +1,11 @@
 import * as qb from './base';
 import { QContext } from './context';
-import { NodeFlags, NodeType, TransformFlags } from './classes';
-import * as qc from './classes';
+import { NodeFlags, NodeType, TransformFlags } from './core2';
+import * as qc from './core2';
 import { Modifier, ModifierFlags, Syntax } from './syntax';
 import * as qy from './syntax';
 import * as qt from './types';
-export * from './classes';
+export * from './core2';
 
 type Node = qt.NodeTypes;
 
@@ -821,14 +821,13 @@ export const is = new (class {
     switch (n.parent.kind) {
       case Syntax.ImportSpecifier:
       case Syntax.ExportSpecifier:
-        return Node.is.kind(qc.Identifier, n);
+        return qc.is.kind(qc.Identifier, n);
       default:
-        return Node.is.declarationName(n);
+        return qc.is.declarationName(n);
     }
   }
 })();
-
-export abstract class NodeIsJsx extends qb.TextRange implements qc.Node {
+export const isJsx = new (class {
   tagName(n: Node) {
     const { parent } = n;
     if (parent.kind === Syntax.JsxOpeningElement || parent.kind === Syntax.JsxSelfClosingElement || parent.kind === Syntax.JsxClosingElement) return (<JsxOpeningLikeElement>parent).tagName === n;
@@ -850,8 +849,8 @@ export abstract class NodeIsJsx extends qb.TextRange implements qc.Node {
     const k = n.kind;
     return k === Syntax.JsxOpeningElement || k === Syntax.JsxSelfClosingElement;
   }
-}
-export abstract class NodeIsJSDoc extends qb.TextRange implements qc.Node {
+})();
+export const isDoc = new (class {
   constructSignature(n: Node) {
     const p = is.kind(JSDocFunctionType, n) ? firstOrUndefined(n.parameters) : undefined;
     const i = tryCast(p && p.name, isIdentifier);
@@ -876,8 +875,8 @@ export abstract class NodeIsJSDoc extends qb.TextRange implements qc.Node {
   tag(n: Node): n is qt.JSDocTag {
     return n.kind >= Syntax.FirstJSDocTagNode && n.kind <= Syntax.LastJSDocTagNode;
   }
-}
-export abstract class NodeGet extends qb.TextRange implements qc.Node {
+})();
+export const get = new (class {
   containingFunction(n: Node): SignatureDeclaration | undefined {
     return findAncestor(n.parent, isFunctionLike);
   }
@@ -894,12 +893,12 @@ export abstract class NodeGet extends qb.TextRange implements qc.Node {
       if (!n) return qb.fail();
       switch (n.kind) {
         case Syntax.ComputedPropertyName:
-          if (Node.is.classLike(n.parent.parent)) return n;
+          if (qc.is.classLike(n.parent.parent)) return n;
           n = n.parent;
           break;
         case Syntax.Decorator:
-          if (n.parent.kind === Syntax.Parameter && Node.is.classElement(n.parent.parent)) n = n.parent.parent;
-          else if (Node.is.classElement(n.parent)) n = n.parent;
+          if (n.parent.kind === Syntax.Parameter && qc.is.classElement(n.parent.parent)) n = n.parent.parent;
+          else if (qc.is.classElement(n.parent)) n = n.parent;
           break;
         case Syntax.ArrowFunction:
           if (!arrowFunctions) continue;
@@ -955,8 +954,8 @@ export abstract class NodeGet extends qb.TextRange implements qc.Node {
         case Syntax.SetAccessor:
           return n;
         case Syntax.Decorator:
-          if (n.parent.kind === Syntax.Parameter && Node.is.classElement(n.parent.parent)) n = n.parent.parent;
-          else if (Node.is.classElement(n.parent)) n = n.parent;
+          if (n.parent.kind === Syntax.Parameter && qc.is.classElement(n.parent.parent)) n = n.parent.parent;
+          else if (qc.is.classElement(n.parent)) n = n.parent;
           break;
       }
     }
@@ -974,7 +973,7 @@ export abstract class NodeGet extends qb.TextRange implements qc.Node {
     return;
   }
   enclosingBlockScopeContainer(n: Node): Node {
-    return Node.findAncestor(n.parent, (x) => Node.is.blockScope(x, x.parent))!;
+    return Node.findAncestor(n.parent, (x) => qc.is.blockScope(x, x.parent))!;
   }
   textOf(n: Node, trivia = false): string {
     return getSourceTextOfNodeFromSourceFile(this.sourceFileOf(n), n, trivia);
@@ -987,7 +986,7 @@ export abstract class NodeGet extends qb.TextRange implements qc.Node {
     return (e && e.flags) || 0;
   }
   literalText(n: LiteralLikeNode, sourceFile: SourceFile, neverAsciiEscape: boolean | undefined, jsxAttributeEscape: boolean) {
-    if (!qb.isSynthesized(n) && n.parent && !((Node.is.kind(NumericLiteral, n) && n.numericLiteralFlags & TokenFlags.ContainsSeparator) || Node.is.kind(BigIntLiteral, n)))
+    if (!qb.isSynthesized(n) && n.parent && !((qc.is.kind(NumericLiteral, n) && n.numericLiteralFlags & TokenFlags.ContainsSeparator) || qc.is.kind(BigIntLiteral, n)))
       return getSourceTextOfNodeFromSourceFile(sourceFile, n);
     switch (n.kind) {
       case Syntax.StringLiteral: {
@@ -1032,7 +1031,7 @@ export abstract class NodeGet extends qb.TextRange implements qc.Node {
     return n as SourceFile;
   }
   combinedFlags(n: Node, getFlags: (n: Node) => number): number {
-    if (Node.is.kind(BindingElement, n)) n = walkUpBindingElementsAndPatterns(n);
+    if (qc.is.kind(BindingElement, n)) n = walkUpBindingElementsAndPatterns(n);
     let flags = getFlags(n);
     if (n.kind === Syntax.VariableDeclaration) n = n.parent;
     if (n && n.kind === Syntax.VariableDeclarationList) {
@@ -1067,15 +1066,15 @@ export abstract class NodeGet extends qb.TextRange implements qc.Node {
   }
   assignedName(n: Node): DeclarationName | undefined {
     if (!n.parent) return;
-    if (Node.is.kind(PropertyAssignment, n.parent) || Node.is.kind(BindingElement, n.parent)) return n.parent.name;
+    if (qc.is.kind(PropertyAssignment, n.parent) || qc.is.kind(BindingElement, n.parent)) return n.parent.name;
     if (is.kind(BinaryExpression, n.parent) && n === n.parent.right) {
-      if (Node.is.kind(qc.Identifier, n.parent.left)) return n.parent.left;
+      if (qc.is.kind(qc.Identifier, n.parent.left)) return n.parent.left;
       if (isAccessExpression(n.parent.left)) return getElementOrPropertyAccessArgumentExpressionOrName(n.parent.left);
-    } else if (Node.is.kind(VariableDeclaration, n.parent) && Node.is.kind(qc.Identifier, n.parent.name)) return n.parent.name;
+    } else if (qc.is.kind(VariableDeclaration, n.parent) && qc.is.kind(qc.Identifier, n.parent.name)) return n.parent.name;
     return;
   }
-}
-export abstract class NodeGetJSDoc extends qb.TextRange implements qc.Node {
+})();
+export const getDoc = new (class {
   augmentsTag(n: Node): qt.JSDocAugmentsTag | undefined {
     return this.firstTag(n, isJSDocAugmentsTag);
   }
@@ -1128,7 +1127,7 @@ export abstract class NodeGetJSDoc extends qb.TextRange implements qc.Node {
   }
   type(n: Node): TypeNode | undefined {
     let tag: qt.JSDocTypeTag | qt.JSDocParameterTag | undefined = this.firstTag(n, isJSDocTypeTag);
-    if (!tag && Node.is.kind(ParameterDeclaration, n)) tag = find(this.parameterTags(n), (tag) => !!tag.typeExpression);
+    if (!tag && qc.is.kind(ParameterDeclaration, n)) tag = find(this.parameterTags(n), (tag) => !!tag.typeExpression);
     return tag && tag.typeExpression && tag.typeExpression.type;
   }
   returnType(n: Node): TypeNode | undefined {
@@ -1137,11 +1136,11 @@ export abstract class NodeGetJSDoc extends qb.TextRange implements qc.Node {
     const typeTag = this.typeTag(n);
     if (typeTag && typeTag.typeExpression) {
       const type = typeTag.typeExpression.type;
-      if (Node.is.kind(TypeLiteralNode, type)) {
+      if (qc.is.kind(TypeLiteralNode, type)) {
         const sig = find(type.members, CallSignatureDeclaration.kind);
         return sig && sig.type;
       }
-      if (Node.is.kind(FunctionTypeNode, type) || Node.is.kind(JSDocFunctionType, type)) return type.type;
+      if (qc.is.kind(FunctionTypeNode, type) || qc.is.kind(JSDocFunctionType, type)) return type.type;
     }
     return;
   }
@@ -1150,7 +1149,7 @@ export abstract class NodeGetJSDoc extends qb.TextRange implements qc.Node {
     if (tags === undefined || noCache) {
       const comments = this.commentsAndTags(n, noCache);
       qb.assert(comments.length < 2 || comments[0] !== comments[1]);
-      tags = flatMap(comments, (j) => (Node.is.kind(JSDoc, j) ? j.tags : j));
+      tags = flatMap(comments, (j) => (qc.is.kind(JSDoc, j) ? j.tags : j));
       if (!noCache) (n as qt.JSDocContainer).jsDocCache = tags;
     }
     return tags;
@@ -1172,11 +1171,11 @@ export abstract class NodeGetJSDoc extends qb.TextRange implements qc.Node {
   }
   parameterTagsWorker(param: ParameterDeclaration, noCache?: boolean): readonly qt.JSDocParameterTag[] {
     if (param.name) {
-      if (Node.is.kind(qc.Identifier, param.name)) {
+      if (qc.is.kind(qc.Identifier, param.name)) {
         const name = param.name.escapedText;
         return Node.getJSDoc
           .tagsWorker(param.parent, noCache)
-          .filter((tag): tag is qt.JSDocParameterTag => Node.is.kind(JSDocParameterTag, tag) && Node.is.kind(qc.Identifier, tag.name) && tag.name.escapedText === name);
+          .filter((tag): tag is qt.JSDocParameterTag => qc.is.kind(JSDocParameterTag, tag) && qc.is.kind(qc.Identifier, tag.name) && tag.name.escapedText === name);
       } else {
         const i = param.parent.parameters.indexOf(param);
         qb.assert(i > -1, "Parameters should always be in their parents' parameter list");
@@ -1196,7 +1195,7 @@ export abstract class NodeGetJSDoc extends qb.TextRange implements qc.Node {
     const name = param.name.escapedText;
     return Node.getJSDoc
       .tagsWorker(param.parent, noCache)
-      .filter((tag): tag is qt.JSDocTemplateTag => Node.is.kind(JSDocTemplateTag, tag) && tag.typeParameters.some((tp) => tp.name.escapedText === name));
+      .filter((tag): tag is qt.JSDocTemplateTag => qc.is.kind(JSDocTemplateTag, tag) && tag.typeParameters.some((tp) => tp.name.escapedText === name));
   }
   typeParameterTags(param: TypeParameterDeclaration): readonly qt.JSDocTemplateTag[] {
     return this.typeParameterTagsWorker(param, false);
@@ -1219,12 +1218,12 @@ export abstract class NodeGetJSDoc extends qb.TextRange implements qc.Node {
   }
   commentsAndTags(host: Node, noCache?: boolean): readonly (JSDoc | qt.JSDocTag)[] {
     let r: (JSDoc | qt.JSDocTag)[] | undefined;
-    if (Node.is.variableLike(host) && Node.is.withInitializer(host) && Node.is.withJSDocNodes(host.initializer!)) {
+    if (qc.is.variableLike(host) && qc.is.withInitializer(host) && qc.is.withJSDocNodes(host.initializer!)) {
       r = append(r, last((host.initializer as HasJSDoc).jsDoc!));
     }
     let n: Node | undefined = host;
     while (n && n.parent) {
-      if (Node.is.withJSDocNodes(n)) r = append(r, last(n.jsDoc!));
+      if (qc.is.withJSDocNodes(n)) r = append(r, last(n.jsDoc!));
       if (n.kind === Syntax.Parameter) {
         r = addRange(r, (noCache ? this.parameterTagsNoCache : this.parameterTags)(n as ParameterDeclaration));
         break;
@@ -1245,10 +1244,10 @@ export abstract class NodeGetJSDoc extends qb.TextRange implements qc.Node {
       parent.kind === Syntax.PropertyDeclaration ||
       (parent.kind === Syntax.ExpressionStatement && n.kind === Syntax.PropertyAccessExpression) ||
       getNestedModuleDeclaration(parent) ||
-      (Node.is.kind(BinaryExpression, n) && n.operatorToken.kind === Syntax.EqualsToken)
+      (qc.is.kind(BinaryExpression, n) && n.operatorToken.kind === Syntax.EqualsToken)
     ) {
       return parent;
-    } else if (parent.parent && (getSingleVariableOfVariableStatement(parent.parent) === n || (Node.is.kind(BinaryExpression, parent) && parent.operatorToken.kind === Syntax.EqualsToken))) {
+    } else if (parent.parent && (getSingleVariableOfVariableStatement(parent.parent) === n || (qc.is.kind(BinaryExpression, parent) && parent.operatorToken.kind === Syntax.EqualsToken))) {
       return parent.parent;
     } else if (
       parent.parent &&
@@ -1269,7 +1268,7 @@ export abstract class NodeGetJSDoc extends qb.TextRange implements qc.Node {
   }
   modifierFlagsNoCache(n: Node): ModifierFlags {
     let flags = ModifierFlags.None;
-    if (isInJSFile(n) && !!n.parent && !Node.is.kind(ParameterDeclaration, n)) {
+    if (isInJSFile(n) && !!n.parent && !qc.is.kind(ParameterDeclaration, n)) {
       if (this.publicTagNoCache(n)) flags |= ModifierFlags.Public;
       if (this.privateTagNoCache(n)) flags |= ModifierFlags.Private;
       if (this.protectedTagNoCache(n)) flags |= ModifierFlags.Protected;
@@ -1277,15 +1276,15 @@ export abstract class NodeGetJSDoc extends qb.TextRange implements qc.Node {
     }
     return flags;
   }
-}
-export abstract class NodeOther extends qb.TextRange implements qc.Node {
+})();
+export const fixme = new (class {
   containsParseError(n: Node) {
     aggregateChildData(n);
     return (n.flags & NodeFlags.ThisNodeOrAnySubNodesHasError) !== 0;
   }
   aggregateChildData(n: Node): void {
     if (!(n.flags & NodeFlags.HasAggregatedChildData)) {
-      const thisNodeOrAnySubNodesHasError = (n.flags & NodeFlags.ThisNodeHasError) !== 0 || Node.forEach.child(n, containsParseError);
+      const thisNodeOrAnySubNodesHasError = (n.flags & NodeFlags.ThisNodeHasError) !== 0 || qc.forEach.child(n, containsParseError);
       if (thisNodeOrAnySubNodesHasError) n.flags |= NodeFlags.ThisNodeOrAnySubNodesHasError;
       n.flags |= NodeFlags.HasAggregatedChildData;
     }
@@ -1323,10 +1322,10 @@ export abstract class NodeOther extends qb.TextRange implements qc.Node {
     return some(ss, isScopeMarker);
   }
   needsScopeMarker(s: Statement) {
-    return !Node.is.anyImportOrReExport(s) && !Node.is.kind(ExportAssignment, s) && !hasSyntacticModifier(s, ModifierFlags.Export) && !Node.is.ambientModule(s);
+    return !qc.is.anyImportOrReExport(s) && !qc.is.kind(ExportAssignment, s) && !hasSyntacticModifier(s, ModifierFlags.Export) && !qc.is.ambientModule(s);
   }
   isExternalModuleIndicator(s: Statement) {
-    return Node.is.anyImportOrReExport(s) || Node.is.kind(ExportAssignment, s) || hasSyntacticModifier(s, ModifierFlags.Export);
+    return qc.is.anyImportOrReExport(s) || qc.is.kind(ExportAssignment, s) || hasSyntacticModifier(s, ModifierFlags.Export);
   }
   isDeclarationBindingElement(e: BindingOrAssignmentElement): e is VariableDeclaration | ParameterDeclaration | BindingElement {
     switch (e.kind) {
@@ -1357,14 +1356,14 @@ export abstract class NodeOther extends qb.TextRange implements qc.Node {
     return false;
   }
   isOutermostOptionalChain(n: OptionalChain) {
-    return !Node.is.optionalChain(n.parent) || Node.is.optionalChainRoot(n.parent) || n !== n.parent.expression;
+    return !qc.is.optionalChain(n.parent) || qc.is.optionalChainRoot(n.parent) || n !== n.parent.expression;
   }
   isEmptyBindingElement(n: BindingElement) {
-    if (Node.is.kind(OmittedExpression, n)) return true;
+    if (qc.is.kind(OmittedExpression, n)) return true;
     return this.isEmptyBindingPattern(n.name);
   }
   isEmptyBindingPattern(n: BindingName): n is BindingPattern {
-    if (Node.is.kind(BindingPattern, n)) return every(n.elements, this.isEmptyBindingElement);
+    if (qc.is.kind(BindingPattern, n)) return every(n.elements, this.isEmptyBindingElement);
     return false;
   }
   isExternalModuleNameRelative(moduleName: string) {
@@ -1386,14 +1385,14 @@ export abstract class NodeOther extends qb.TextRange implements qc.Node {
   getTypeParameterOwner(d: Declaration): Declaration | undefined {
     if (d && d.kind === Syntax.TypeParameter) {
       for (let current: Node = d; current; current = current.parent) {
-        if (Node.is.functionLike(current) || Node.is.classLike(current) || current.kind === Syntax.InterfaceDeclaration) return <Declaration>current;
+        if (qc.is.functionLike(current) || qc.is.classLike(current) || current.kind === Syntax.InterfaceDeclaration) return <Declaration>current;
       }
     }
     return;
   }
   walkUpBindingElementsAndPatterns(binding: BindingElement): VariableDeclaration | ParameterDeclaration {
     let n = binding.parent;
-    while (Node.is.kind(BindingElement, n.parent)) {
+    while (qc.is.kind(BindingElement, n.parent)) {
       n = n.parent.parent;
     }
     return n.parent;
@@ -1453,7 +1452,7 @@ export abstract class NodeOther extends qb.TextRange implements qc.Node {
   nameForNamelessJSDocTypedef(declaration: qt.JSDocTypedefTag | qt.JSDocEnumTag): qc.Identifier | PrivateIdentifier | undefined {
     const n = declaration.parent.parent;
     if (!n) return;
-    if (Node.is.declaration(n)) return getDeclarationIdentifier(n);
+    if (qc.is.declaration(n)) return getDeclarationIdentifier(n);
     switch (n.kind) {
       case Syntax.VariableStatement:
         if (n.declarationList && n.declarationList.declarations[0]) return getDeclarationIdentifier(n.declarationList.declarations[0]);
@@ -1468,14 +1467,14 @@ export abstract class NodeOther extends qb.TextRange implements qc.Node {
             return (expr as qc.PropertyAccessExpression).name;
           case Syntax.ElementAccessExpression:
             const arg = (expr as ElementAccessExpression).argumentExpression;
-            if (Node.is.kind(qc.Identifier, arg)) return arg;
+            if (qc.is.kind(qc.Identifier, arg)) return arg;
         }
         break;
       case Syntax.ParenthesizedExpression: {
         return getDeclarationIdentifier(n.expression);
       }
       case Syntax.LabeledStatement: {
-        if (Node.is.declaration(n.statement) || Node.is.expression(n.statement)) return getDeclarationIdentifier(n.statement);
+        if (qc.is.declaration(n.statement) || qc.is.expression(n.statement)) return getDeclarationIdentifier(n.statement);
         break;
       }
     }
@@ -1483,7 +1482,7 @@ export abstract class NodeOther extends qb.TextRange implements qc.Node {
   }
   getDeclarationIdentifier(n: Declaration | Expression): qc.Identifier | undefined {
     const name = getNameOfDeclaration(n);
-    return name && Node.is.kind(qc.Identifier, name) ? name : undefined;
+    return name && qc.is.kind(qc.Identifier, name) ? name : undefined;
   }
   getNonAssignedNameOfDeclaration(declaration: Declaration | Expression): DeclarationName | undefined {
     switch (declaration.kind) {
@@ -1518,7 +1517,7 @@ export abstract class NodeOther extends qb.TextRange implements qc.Node {
         return nameForNamelessJSDocTypedef(declaration as qt.JSDocEnumTag);
       case Syntax.ExportAssignment: {
         const { expression } = declaration as ExportAssignment;
-        return Node.is.kind(qc.Identifier, expression) ? expression : undefined;
+        return qc.is.kind(qc.Identifier, expression) ? expression : undefined;
       }
       case Syntax.ElementAccessExpression:
         const expr = declaration as ElementAccessExpression;
@@ -1528,39 +1527,39 @@ export abstract class NodeOther extends qb.TextRange implements qc.Node {
   }
   getNameOfDeclaration(declaration: Declaration | Expression): DeclarationName | undefined {
     if (declaration === undefined) return;
-    return getNonAssignedNameOfDeclaration(declaration) || (Node.is.kind(FunctionExpression, declaration) || Node.is.kind(ClassExpression, declaration) ? get.assignedName(declaration) : undefined);
+    return getNonAssignedNameOfDeclaration(declaration) || (qc.is.kind(FunctionExpression, declaration) || qc.is.kind(ClassExpression, declaration) ? get.assignedName(declaration) : undefined);
   }
   getEffectiveTypeParameterDeclarations(n: DeclarationWithTypeParameters): readonly TypeParameterDeclaration[] {
-    if (Node.is.kind(JSDocSignature, n)) return empty;
-    if (Node.isJSDoc.typeAlias(n)) {
+    if (qc.is.kind(JSDocSignature, n)) return empty;
+    if (qc.isDoc.typeAlias(n)) {
       qb.assert(n.parent.kind === Syntax.JSDocComment);
-      return flatMap(n.parent.tags, (tag) => (Node.is.kind(JSDocTemplateTag, tag) ? tag.typeParameters : undefined));
+      return flatMap(n.parent.tags, (tag) => (qc.is.kind(JSDocTemplateTag, tag) ? tag.typeParameters : undefined));
     }
     if (n.typeParameters) return n.typeParameters;
     if (isInJSFile(n)) {
       const decls = this.typeParameterDeclarations(n);
       if (decls.length) return decls;
       const typeTag = getJSDoc.type(n);
-      if (typeTag && Node.is.kind(FunctionTypeNode, typeTag) && typeTag.typeParameters) return typeTag.typeParameters;
+      if (typeTag && qc.is.kind(FunctionTypeNode, typeTag) && typeTag.typeParameters) return typeTag.typeParameters;
     }
     return empty;
   }
   getEffectiveConstraintOfTypeParameter(n: TypeParameterDeclaration): TypeNode | undefined {
-    return n.constraint ? n.constraint : Node.is.kind(JSDocTemplateTag, n.parent) && n === n.parent.typeParameters[0] ? n.parent.constraint : undefined;
+    return n.constraint ? n.constraint : qc.is.kind(JSDocTemplateTag, n.parent) && n === n.parent.typeParameters[0] ? n.parent.constraint : undefined;
   }
   skipPartiallyEmittedExpressions(n: Expression): Expression;
   skipPartiallyEmittedExpressions(n: Node): Node;
   skipPartiallyEmittedExpressions(n: Node) {
     return skipOuterExpressions(n, OuterExpressionKinds.PartiallyEmittedExpressions);
   }
-}
-export abstract class NodeForEach extends qb.TextRange implements qc.Node {
+})();
+export const forEach = new (class {
   ancestor<T>(n: Node, cb: (n: Node) => T | undefined | 'quit'): T | undefined {
     while (n) {
       const r = cb(n);
       if (r === 'quit') return;
       if (r) return r;
-      if (Node.is.kind(SourceFile, n)) return;
+      if (qc.is.kind(SourceFile, n)) return;
       n = n.parent;
     }
     return;
@@ -1925,4 +1924,4 @@ export abstract class NodeForEach extends qb.TextRange implements qc.Node {
     }
     return;
   }
-}
+})();

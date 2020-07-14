@@ -62,7 +62,7 @@ export abstract class Node extends qb.TextRange implements qt.Node {
     return this.is(PropertyDeclaration) && this.name.is(PrivateIdentifier);
   }
   getSourceFile(): SourceFile {
-    return Node.get.sourceFileOf(this);
+    return qc.get.sourceFileOf(this);
   }
   getStart(s?: qt.SourceFileLike, includeJsDocComment?: boolean) {
     qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
@@ -134,8 +134,8 @@ export abstract class Node extends qb.TextRange implements qt.Node {
     const createChildren = () => {
       const cs = [] as Node[];
       if (qy.is.node(this.kind)) {
-        if (Node.isJSDoc.commentContainingNode(this)) {
-          Node.forEach.child(this, (c) => {
+        if (qc.isDoc.commentContainingNode(this)) {
+          qc.forEach.child(this, (c) => {
             cs.push(c);
           });
           return cs;
@@ -154,7 +154,7 @@ export abstract class Node extends qb.TextRange implements qt.Node {
         };
         qb.forEach((this as qt.JSDocContainer).jsDoc, processNode);
         p = this.pos;
-        Node.forEach.child(this, processNode, processNodes);
+        qc.forEach.child(this, processNode, processNodes);
         addSynthetics(cs, p, this.end);
         scanner.setText(undefined);
       }
@@ -209,7 +209,7 @@ export abstract class Node extends qb.TextRange implements qt.Node {
       return sub;
     };
     const subtree = (n: Node): TransformFlags => {
-      if (hasSyntacticModifier(n, ModifierFlags.Ambient) || (Node.is.typeNode(n) && n.kind !== Syntax.ExpressionWithTypeArguments)) return TransformFlags.None;
+      if (hasSyntacticModifier(n, ModifierFlags.Ambient) || (qc.is.typeNode(n) && n.kind !== Syntax.ExpressionWithTypeArguments)) return TransformFlags.None;
       return reduceEachChild(n, TransformFlags.None, child, children);
     };
     const child = (f: TransformFlags, n: Node): TransformFlags => f | aggregate(n);
@@ -305,7 +305,7 @@ export abstract class NodeWithTypeArguments extends TypeNode implements qt.NodeW
 export abstract class Declaration extends Node implements qt.Declaration {
   _declarationBrand: any;
   isNotAccessor(declaration: Declaration) {
-    return !Node.is.accessor(declaration);
+    return !qc.is.accessor(declaration);
   }
   isNotOverload(declaration: Declaration): boolean {
     return (declaration.kind !== Syntax.FunctionDeclaration && declaration.kind !== Syntax.MethodDeclaration) || !!(declaration as FunctionDeclaration).body;
@@ -324,9 +324,9 @@ export abstract class Declaration extends Node implements qt.Declaration {
   }
   getName(allowComments?: boolean, allowSourceMaps?: boolean, emitFlags: EmitFlags = 0) {
     const nodeName = getNameOfDeclaration(this);
-    if (nodeName && Node.is.kind(Identifier, nodeName) && !Node.is.generatedIdentifier(nodeName)) {
+    if (nodeName && qc.is.kind(Identifier, nodeName) && !qc.is.generatedIdentifier(nodeName)) {
       const name = getMutableClone(nodeName);
-      emitFlags |= Node.get.emitFlags(nodeName);
+      emitFlags |= qc.get.emitFlags(nodeName);
       if (!allowSourceMaps) emitFlags |= EmitFlags.NoSourceMap;
       if (!allowComments) emitFlags |= EmitFlags.NoComments;
       if (emitFlags) setEmitFlags(name, emitFlags);
@@ -417,7 +417,7 @@ export abstract class FunctionOrConstructorTypeNodeBase extends SignatureDeclara
 export abstract class Expression extends Node implements qt.Expression {
   _expressionBrand: any;
   createExpressionFromEntityName(node: EntityName | Expression): Expression {
-    if (Node.is.kind(QualifiedName, node)) {
+    if (qc.is.kind(QualifiedName, node)) {
       const left = createExpressionFromEntityName(node.left);
       const right = getMutableClone(node.right);
       return setRange(new qc.PropertyAccessExpression(left, right), node);
@@ -425,12 +425,12 @@ export abstract class Expression extends Node implements qt.Expression {
     return getMutableClone(node);
   }
   createExpressionForPropertyName(memberName: Exclude<PropertyName, PrivateIdentifier>): Expression {
-    if (Node.is.kind(Identifier, memberName)) return qc.asLiteral(memberName);
-    else if (Node.is.kind(ComputedPropertyName, memberName)) return getMutableClone(memberName.expression);
+    if (qc.is.kind(Identifier, memberName)) return qc.asLiteral(memberName);
+    else if (qc.is.kind(ComputedPropertyName, memberName)) return getMutableClone(memberName.expression);
     return getMutableClone(memberName);
   }
   createExpressionForObjectLiteralElementLike(node: ObjectLiteralExpression, property: ObjectLiteralElementLike, receiver: Expression): Expression | undefined {
-    if (property.name && Node.is.kind(PrivateIdentifier, property.name)) qg.failBadSyntax(property.name, 'Private identifiers are not allowed in object literals.');
+    if (property.name && qc.is.kind(PrivateIdentifier, property.name)) qg.failBadSyntax(property.name, 'Private identifiers are not allowed in object literals.');
     function createExpressionForAccessorDeclaration(
       properties: Nodes<Declaration>,
       property: AccessorDeclaration & { name: Exclude<PropertyName, PrivateIdentifier> },
@@ -507,10 +507,10 @@ export abstract class Expression extends Node implements qt.Expression {
     return tag === 'undefined' ? createStrictEquality(value, VoidExpression.zero()) : createStrictEquality(new TypeOfExpression(value), qc.asLiteral(tag));
   }
   createMemberAccessForPropertyName(target: Expression, memberName: PropertyName, location?: TextRange): MemberExpression {
-    if (Node.is.kind(ComputedPropertyName, memberName)) return setRange(new ElementAccessExpression(target, memberName.expression), location);
+    if (qc.is.kind(ComputedPropertyName, memberName)) return setRange(new ElementAccessExpression(target, memberName.expression), location);
     else {
       const expression = setRange(
-        Node.is.kind(Identifier, memberName) || Node.is.kind(PrivateIdentifier, memberName) ? new qc.PropertyAccessExpression(target, memberName) : new ElementAccessExpression(target, memberName),
+        qc.is.kind(Identifier, memberName) || qc.is.kind(PrivateIdentifier, memberName) ? new qc.PropertyAccessExpression(target, memberName) : new ElementAccessExpression(target, memberName),
         memberName
       );
       getOrCreateEmitNode(expression).flags |= EmitFlags.NoNestedSourceMaps;
@@ -598,7 +598,7 @@ export class Token<T extends Syntax> extends TokenOrIdentifier implements qt.Tok
 export abstract class Statement extends Node implements qt.Statement {
   _statementBrand: any;
   isUseStrictPrologue(node: ExpressionStatement): boolean {
-    return Node.is.kind(StringLiteral, node.expression) && node.expression.text === 'use strict';
+    return qc.is.kind(StringLiteral, node.expression) && node.expression.text === 'use strict';
   }
   addPrologue(target: Statement[], source: readonly Statement[], ensureUseStrict?: boolean, visitor?: (node: Node) => VisitResult<Node>): number {
     const offset = addStandardPrologue(target, source, ensureUseStrict);
@@ -611,7 +611,7 @@ export abstract class Statement extends Node implements qt.Statement {
     const numStatements = source.length;
     while (statementOffset < numStatements) {
       const statement = source[statementOffset];
-      if (Node.is.prologueDirective(statement)) {
+      if (qc.is.prologueDirective(statement)) {
         if (isUseStrictPrologue(statement)) foundUseStrict = true;
         target.push(statement);
       } else {
@@ -640,7 +640,7 @@ export abstract class Statement extends Node implements qt.Statement {
     const numStatements = source.length;
     while (statementOffset !== undefined && statementOffset < numStatements) {
       const statement = source[statementOffset];
-      if (Node.get.emitFlags(statement) & EmitFlags.CustomPrologue && filter(statement)) append(target, visitor ? visitNode(statement, visitor, isStatement) : statement);
+      if (qc.get.emitFlags(statement) & EmitFlags.CustomPrologue && filter(statement)) append(target, visitor ? visitNode(statement, visitor, isStatement) : statement);
       else break;
       statementOffset++;
     }
@@ -648,7 +648,7 @@ export abstract class Statement extends Node implements qt.Statement {
   }
   findUseStrictPrologue(statements: readonly Statement[]): Statement | undefined {
     for (const statement of statements) {
-      if (Node.is.prologueDirective(statement)) {
+      if (qc.is.prologueDirective(statement)) {
         if (isUseStrictPrologue(statement)) return statement;
       } else break;
     }
@@ -656,10 +656,10 @@ export abstract class Statement extends Node implements qt.Statement {
   }
   startsWithUseStrict(statements: readonly Statement[]) {
     const firstStatement = firstOrUndefined(statements);
-    return firstStatement !== undefined && Node.is.prologueDirective(firstStatement) && isUseStrictPrologue(firstStatement);
+    return firstStatement !== undefined && qc.is.prologueDirective(firstStatement) && isUseStrictPrologue(firstStatement);
   }
   createForOfBindingStatement(node: ForInitializer, boundValue: Expression): Statement {
-    if (Node.is.kind(VariableDeclarationList, node)) {
+    if (qc.is.kind(VariableDeclarationList, node)) {
       const firstDeclaration = first(node.declarations);
       const updatedDeclaration = firstDeclaration.update(firstDeclaration.name, undefined, boundValue);
       return setRange(new qc.VariableStatement(undefined, node.update([updatedDeclaration])), node);
@@ -669,7 +669,7 @@ export abstract class Statement extends Node implements qt.Statement {
     }
   }
   insertLeadingStatement(dest: Statement, source: Statement) {
-    if (Node.is.kind(Block, dest)) return dest.update(setRange(new Nodes([source, ...dest.statements]), dest.statements));
+    if (qc.is.kind(Block, dest)) return dest.update(setRange(new Nodes([source, ...dest.statements]), dest.statements));
     return new Block(new Nodes([dest, source]), true);
   }
   restoreEnclosingLabel(node: Statement, outermostLabeledStatement: LabeledStatement | undefined, afterRestoreLabelCallback?: (node: LabeledStatement) => void): Statement {
@@ -1178,7 +1178,7 @@ export class SourceFile extends Declaration implements qt.SourceFile {
   }
   private computeNamedDeclarations(): QMap<Declaration[]> {
     const r = new MultiMap<Declaration>();
-    this.Node.forEach.child(visit);
+    this.qc.forEach.child(visit);
     return r;
     function addDeclaration(declaration: Declaration) {
       const name = getDeclarationName(declaration);
@@ -1193,7 +1193,7 @@ export class SourceFile extends Declaration implements qt.SourceFile {
       const name = getNonAssignedNameOfDeclaration(declaration);
       return (
         name &&
-        (isComputedPropertyName(name) && Node.is.kind(PropertyAccessExpression, name.expression) ? name.expression.name.text : Node.is.propertyName(name) ? getNameFromPropertyName(name) : undefined)
+        (isComputedPropertyName(name) && qc.is.kind(PropertyAccessExpression, name.expression) ? name.expression.name.text : qc.is.propertyName(name) ? getNameFromPropertyName(name) : undefined)
       );
     }
     function visit(node: Node): void {
@@ -1235,8 +1235,8 @@ export class SourceFile extends Declaration implements qt.SourceFile {
         case Syntax.VariableDeclaration:
         case Syntax.BindingElement: {
           const decl = <VariableDeclaration>node;
-          if (Node.is.kind(BindingPattern, decl.name)) {
-            Node.forEach.child(decl.name, visit);
+          if (qc.is.kind(BindingPattern, decl.name)) {
+            qc.forEach.child(decl.name, visit);
             break;
           }
           if (decl.initializer) visit(decl.initializer);
@@ -1249,7 +1249,7 @@ export class SourceFile extends Declaration implements qt.SourceFile {
         case Syntax.ExportDeclaration:
           const exportDeclaration = <ExportDeclaration>node;
           if (exportDeclaration.exportClause) {
-            if (Node.is.kind(NamedExports, exportDeclaration.exportClause)) forEach(exportDeclaration.exportClause.elements, visit);
+            if (qc.is.kind(NamedExports, exportDeclaration.exportClause)) forEach(exportDeclaration.exportClause.elements, visit);
             else visit(exportDeclaration.exportClause.name);
           }
           break;
@@ -1266,7 +1266,7 @@ export class SourceFile extends Declaration implements qt.SourceFile {
         case Syntax.BinaryExpression:
           if (getAssignmentDeclarationKind(node as BinaryExpression) !== AssignmentDeclarationKind.None) addDeclaration(node as BinaryExpression);
         default:
-          Node.forEach.child(node, visit);
+          qc.forEach.child(node, visit);
       }
     }
   }
@@ -1473,14 +1473,14 @@ export abstract class Symbol implements qt.Symbol {
   }
   getNonAugmentationDeclaration() {
     const ds = this.declarations;
-    return ds && find(ds, (d) => !Node.is.externalModuleAugmentation(d) && !(Node.is.kind(ModuleDeclaration, d) && isGlobalScopeAugmentation(d)));
+    return ds && find(ds, (d) => !qc.is.externalModuleAugmentation(d) && !(qc.is.kind(ModuleDeclaration, d) && isGlobalScopeAugmentation(d)));
   }
   setValueDeclaration(d: Declaration) {
     const v = this.valueDeclaration;
     if (
       !v ||
       (!(d.flags & NodeFlags.Ambient && !(v.flags & NodeFlags.Ambient)) && isAssignmentDeclaration(v) && !isAssignmentDeclaration(d)) ||
-      (v.kind !== d.kind && Node.is.effectiveModuleDeclaration(v))
+      (v.kind !== d.kind && qc.is.effectiveModuleDeclaration(v))
     ) {
       this.valueDeclaration = d;
     }
@@ -1488,7 +1488,7 @@ export abstract class Symbol implements qt.Symbol {
   isFunctionSymbol() {
     if (!this.valueDeclaration) return false;
     const v = this.valueDeclaration;
-    return v.kind === Syntax.FunctionDeclaration || (Node.is.kind(VariableDeclaration, v) && v.initializer && Node.is.functionLike(v.initializer));
+    return v.kind === Syntax.FunctionDeclaration || (qc.is.kind(VariableDeclaration, v) && v.initializer && qc.is.functionLike(v.initializer));
   }
   getCheckFlags(): CheckFlags {
     return this.isTransientSymbol() ? this.checkFlags : 0;
@@ -1525,10 +1525,10 @@ export abstract class Symbol implements qt.Symbol {
     return ds && find(ds, isClassLike);
   }
   isUMDExportSymbol() {
-    return this.declarations?.[0] && Node.is.kind(NamespaceExportDeclaration, this.declarations[0]);
+    return this.declarations?.[0] && qc.is.kind(NamespaceExportDeclaration, this.declarations[0]);
   }
   isShorthandAmbientModuleSymbol() {
-    return Node.is.shorthandAmbientModule(this.valueDeclaration);
+    return qc.is.shorthandAmbientModule(this.valueDeclaration);
   }
   abstract merge(t: Symbol, unidirectional?: boolean): Symbol;
 }

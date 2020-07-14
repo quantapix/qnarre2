@@ -89,7 +89,7 @@ export function getModuleSpecifiers(
   const ambient = tryGetModuleNameFromAmbientModule(moduleSymbol);
   if (ambient) return [ambient];
   const info = getInfo(importingSourceFile.path, host);
-  const moduleSourceFile = Node.get.sourceFileOf(moduleSymbol.valueDeclaration || getNonAugmentationDeclaration(moduleSymbol));
+  const moduleSourceFile = qc.get.sourceFileOf(moduleSymbol.valueDeclaration || getNonAugmentationDeclaration(moduleSymbol));
   const modulePaths = getAllModulePaths(importingSourceFile.path, moduleSourceFile.originalFileName, host);
   const preferences = getPreferences(userPreferences, compilerOptions, importingSourceFile);
   const global = mapDefined(modulePaths, (moduleFileName) => tryGetModuleNameAsNodeModule(moduleFileName, info, host, compilerOptions));
@@ -211,7 +211,7 @@ function getAllModulePaths(importingFileName: string, importedFileName: string, 
 function tryGetModuleNameFromAmbientModule(moduleSymbol: Symbol): string | undefined {
   const decl = find(
     moduleSymbol.declarations,
-    (d) => Node.is.nonGlobalAmbientModule(d) && (!Node.is.externalModuleAugmentation(d) || !qp_isExternalModuleNameRelative(getTextOfIdentifierOrLiteral(d.name)))
+    (d) => qc.is.nonGlobalAmbientModule(d) && (!qc.is.externalModuleAugmentation(d) || !qp_isExternalModuleNameRelative(getTextOfIdentifierOrLiteral(d.name)))
   ) as (ModuleDeclaration & { name: StringLiteral }) | undefined;
   if (decl) return decl.name.text;
 }

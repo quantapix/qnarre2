@@ -1,7 +1,7 @@
 import * as qb from '../base';
 import * as qc from '../core';
 import { Node, Nodes } from '../core';
-import * as qs from '../classes';
+import * as qs from '../core3';
 import * as qt from '../types';
 import * as qy from '../syntax';
 import { Modifier, Syntax } from '../syntax';
@@ -57,7 +57,7 @@ export function flattenDestructuringAssignment(
   };
   if (value) {
     value = visitNode(value, visitor, isExpression);
-    if ((Node.is.kind(Identifier, value) && bindingOrAssignmentElementAssignsToName(node, value.escapedText)) || bindingOrAssignmentElementContainsNonLiteralComputedName(node)) {
+    if ((qc.is.kind(Identifier, value) && bindingOrAssignmentElementAssignsToName(node, value.escapedText)) || bindingOrAssignmentElementContainsNonLiteralComputedName(node)) {
       value = ensureIdentifier(flattenContext, value, false, location);
     } else if (needsValue) {
       value = ensureIdentifier(flattenContext, value, true, location);
@@ -87,7 +87,7 @@ export function flattenDestructuringAssignment(
 function bindingOrAssignmentElementAssignsToName(element: BindingOrAssignmentElement, escName: __String): boolean {
   const target = getTargetOfBindingOrAssignmentElement(element)!;
   if (isBindingOrAssignmentPattern(target)) return bindingOrAssignmentPatternAssignsToName(target, escName);
-  if (Node.is.kind(Identifier, target)) return target.escapedText === escName;
+  if (qc.is.kind(Identifier, target)) return target.escapedText === escName;
   return false;
 }
 function bindingOrAssignmentPatternAssignsToName(pattern: BindingOrAssignmentPattern, escName: __String): boolean {
@@ -99,7 +99,7 @@ function bindingOrAssignmentPatternAssignsToName(pattern: BindingOrAssignmentPat
 }
 function bindingOrAssignmentElementContainsNonLiteralComputedName(element: BindingOrAssignmentElement): boolean {
   const propertyName = tryGetPropertyNameOfBindingOrAssignmentElement(element);
-  if (propertyName && Node.is.kind(ComputedPropertyName, propertyName) && !Node.is.literalExpression(propertyName.expression)) return true;
+  if (propertyName && qc.is.kind(ComputedPropertyName, propertyName) && !qc.is.literalExpression(propertyName.expression)) return true;
   const target = getTargetOfBindingOrAssignmentElement(element);
   return !!target && isBindingOrAssignmentPattern(target) && bindingOrAssignmentPatternContainsNonLiteralComputedName(target);
 }
@@ -136,11 +136,11 @@ export function flattenDestructuringBinding(
     createArrayBindingOrAssignmentElement: makeBindingElement,
     visitor,
   };
-  if (Node.is.kind(VariableDeclaration, node)) {
+  if (qc.is.kind(VariableDeclaration, node)) {
     let initializer = getInitializerOfBindingOrAssignmentElement(node);
     if (
       initializer &&
-      ((Node.is.kind(Identifier, initializer) && bindingOrAssignmentElementAssignsToName(node, initializer.escapedText)) || bindingOrAssignmentElementContainsNonLiteralComputedName(node))
+      ((qc.is.kind(Identifier, initializer) && bindingOrAssignmentElementAssignsToName(node, initializer.escapedText)) || bindingOrAssignmentElementContainsNonLiteralComputedName(node))
     ) {
       initializer = ensureIdentifier(flattenContext, initializer, false, initializer);
       node = node.update(node.name, node.type, initializer);
@@ -222,7 +222,7 @@ function flattenObjectBindingOrAssignmentPattern(
         flattenContext.level >= FlattenLevel.ObjectRest &&
         !(element.transformFlags & (TransformFlags.ContainsRestOrSpread | TransformFlags.ContainsObjectRestOrSpread)) &&
         !(getTargetOfBindingOrAssignmentElement(element)!.transformFlags & (TransformFlags.ContainsRestOrSpread | TransformFlags.ContainsObjectRestOrSpread)) &&
-        !Node.is.kind(ComputedPropertyName, propertyName)
+        !qc.is.kind(ComputedPropertyName, propertyName)
       ) {
         bindingElements = append(bindingElements, visitNode(element, flattenContext.visitor));
       } else {
@@ -231,7 +231,7 @@ function flattenObjectBindingOrAssignmentPattern(
           bindingElements = undefined;
         }
         const rhsValue = createDestructuringPropertyAccess(flattenContext, value, propertyName);
-        if (Node.is.kind(ComputedPropertyName, propertyName)) {
+        if (qc.is.kind(ComputedPropertyName, propertyName)) {
           computedTempVariables = append<Expression>(computedTempVariables, (rhsValue as ElementAccessExpression).argumentExpression);
         }
         flattenBindingOrAssignmentElement(flattenContext, element, rhsValue, element);
@@ -278,7 +278,7 @@ function flattenArrayBindingOrAssignmentPattern(flattenContext: FlattenContext, 
       } else {
         bindingElements = append(bindingElements, element);
       }
-    } else if (Node.is.kind(OmittedExpression, element)) {
+    } else if (qc.is.kind(OmittedExpression, element)) {
       continue;
     } else if (!getRestIndicatorOfBindingOrAssignmentElement(element)) {
       const rhsValue = new qs.ElementAccessExpression(value, i);
@@ -302,7 +302,7 @@ function createDefaultValueCheck(flattenContext: FlattenContext, value: Expressi
   return new qc.ConditionalExpression(createTypeCheck(value, 'undefined'), defaultValue, value);
 }
 function createDestructuringPropertyAccess(flattenContext: FlattenContext, value: Expression, propertyName: PropertyName): LeftHandSideExpression {
-  if (Node.is.kind(ComputedPropertyName, propertyName)) {
+  if (qc.is.kind(ComputedPropertyName, propertyName)) {
     const argumentExpression = ensureIdentifier(flattenContext, visitNode(propertyName.expression, flattenContext.visitor), propertyName);
     return new qs.ElementAccessExpression(value, argumentExpression);
   } else if (StringLiteral.orNumericLiteralLike(propertyName)) {
@@ -315,7 +315,7 @@ function createDestructuringPropertyAccess(flattenContext: FlattenContext, value
   }
 }
 function ensureIdentifier(flattenContext: FlattenContext, value: Expression, reuseIdentifierExpressions: boolean, location: TextRange) {
-  if (Node.is.kind(Identifier, value) && reuseIdentifierExpressions) return value;
+  if (qc.is.kind(Identifier, value) && reuseIdentifierExpressions) return value;
   else {
     const temp = createTempVariable(undefined);
     if (flattenContext.hoistTempVariables) {
@@ -377,7 +377,7 @@ function createRestCall(
   for (let i = 0; i < elements.length - 1; i++) {
     const propertyName = getPropertyNameOfBindingOrAssignmentElement(elements[i]);
     if (propertyName) {
-      if (Node.is.kind(ComputedPropertyName, propertyName)) {
+      if (qc.is.kind(ComputedPropertyName, propertyName)) {
         const temp = computedTempVariables[computedTempVariableOffset];
         computedTempVariableOffset++;
         propertyNames.push(new qc.ConditionalExpression(createTypeCheck(temp, 'symbol'), temp, createAdd(temp, qc.asLiteral(''))));

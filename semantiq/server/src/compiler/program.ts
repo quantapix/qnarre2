@@ -1254,7 +1254,7 @@ export function createProgram(
     return runWithCancellationToken(() => {
       const diagnostics: DiagnosticWithLocation[] = [];
       walk(sourceFile, sourceFile);
-      Node.forEach.childRecursively(sourceFile, walk, walkArray);
+      qc.forEach.childRecursively(sourceFile, walk, walkArray);
       return diagnostics;
       function walk(node: Node, parent: Node) {
         switch (parent.kind) {
@@ -1509,13 +1509,13 @@ export function createProgram(
     file.ambientModuleNames = ambientModules || emptyArray;
     return;
     function collectModuleReferences(node: Statement, inAmbientModule: boolean): void {
-      if (Node.is.anyImportOrReExport(node)) {
+      if (qc.is.anyImportOrReExport(node)) {
         const moduleNameExpr = getExternalModuleName(node);
-        if (moduleNameExpr && Node.is.kind(StringLiteral, moduleNameExpr) && moduleNameExpr.text && (!inAmbientModule || !qp_isExternalModuleNameRelative(moduleNameExpr.text))) {
+        if (moduleNameExpr && qc.is.kind(StringLiteral, moduleNameExpr) && moduleNameExpr.text && (!inAmbientModule || !qp_isExternalModuleNameRelative(moduleNameExpr.text))) {
           imports = append(imports, moduleNameExpr);
         }
-      } else if (Node.is.kind(ModuleDeclaration, node)) {
-        if (Node.is.ambientModule(node) && (inAmbientModule || hasSyntacticModifier(node, ModifierFlags.Ambient) || file.isDeclarationFile)) {
+      } else if (qc.is.kind(ModuleDeclaration, node)) {
+        if (qc.is.ambientModule(node) && (inAmbientModule || hasSyntacticModifier(node, ModifierFlags.Ambient) || file.isDeclarationFile)) {
           const nameText = getTextOfIdentifierOrLiteral(node.name);
           if (qp_isExternalModuleFile || (inAmbientModule && !qp_isExternalModuleNameRelative(nameText))) {
             (moduleAugmentations || (moduleAugmentations = [])).push(node.name);
@@ -1539,9 +1539,9 @@ export function createProgram(
         const node = getNodeAtPosition(file, r.lastIndex);
         if (isRequireCall(node, true)) {
           imports = append(imports, node.arguments[0]);
-        } else if (Node.is.importCall(node) && node.arguments.length === 1 && StringLiteral.like(node.arguments[0])) {
+        } else if (qc.is.importCall(node) && node.arguments.length === 1 && StringLiteral.like(node.arguments[0])) {
           imports = append(imports, node.arguments[0] as StringLiteralLike);
-        } else if (Node.is.literalImportTypeNode(node)) {
+        } else if (qc.is.literalImportTypeNode(node)) {
           imports = append(imports, node.argument.literal);
         }
       }
@@ -1552,7 +1552,7 @@ export function createProgram(
         if (child.pos <= position && (position < child.end || (position === child.end && child.kind === Syntax.EndOfFileToken))) return child;
       };
       while (true) {
-        const child = (isJavaScriptFile && Node.is.withJSDocNodes(current) && forEach(current.jsDoc, getContainingChild)) || Node.forEach.child(current, getContainingChild);
+        const child = (isJavaScriptFile && qc.is.withJSDocNodes(current) && forEach(current.jsDoc, getContainingChild)) || qc.forEach.child(current, getContainingChild);
         if (!child) return current;
         current = child;
       }
@@ -2377,7 +2377,7 @@ export function createProgram(
     let needCompilerDiagnostic = true;
     const pathsSyntax = getOptionPathsSyntax();
     for (const pathProp of pathsSyntax) {
-      if (Node.is.kind(ObjectLiteralExpression, pathProp.initializer)) {
+      if (qc.is.kind(ObjectLiteralExpression, pathProp.initializer)) {
         for (const keyProps of getPropertyAssignment(pathProp.initializer, key)) {
           const initializer = keyProps.initializer;
           if (isArrayLiteralExpression(initializer) && initializer.elements.length > valueIndex) {
@@ -2395,7 +2395,7 @@ export function createProgram(
     let needCompilerDiagnostic = true;
     const pathsSyntax = getOptionPathsSyntax();
     for (const pathProp of pathsSyntax) {
-      if (Node.is.kind(ObjectLiteralExpression, pathProp.initializer) && createOptionDiagnosticInObjectLiteralSyntax(pathProp.initializer, onKey, key, undefined, message, arg0)) {
+      if (qc.is.kind(ObjectLiteralExpression, pathProp.initializer) && createOptionDiagnosticInObjectLiteralSyntax(pathProp.initializer, onKey, key, undefined, message, arg0)) {
         needCompilerDiagnostic = false;
       }
     }
@@ -2441,7 +2441,7 @@ export function createProgram(
       const jsonObjectLiteral = getTsConfigObjectLiteralExpression(options.configFile);
       if (jsonObjectLiteral) {
         for (const prop of getPropertyAssignment(jsonObjectLiteral, 'compilerOptions')) {
-          if (Node.is.kind(ObjectLiteralExpression, prop.initializer)) {
+          if (qc.is.kind(ObjectLiteralExpression, prop.initializer)) {
             _compilerOptionsObjectLiteralSyntax = prop.initializer;
             break;
           }

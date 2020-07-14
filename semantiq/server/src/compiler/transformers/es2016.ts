@@ -1,7 +1,7 @@
 import * as qb from '../base';
 import * as qc from '../core';
 import { Node, Nodes } from '../core';
-import * as qs from '../classes';
+import * as qs from '../core3';
 import * as qt from '../types';
 import * as qy from '../syntax';
 import { Modifier, Syntax } from '../syntax';
@@ -36,7 +36,7 @@ export function transformES2016(context: TransformationContext) {
     let value: Expression;
     const left = visitNode(node.left, visitor, isExpression);
     const right = visitNode(node.right, visitor, isExpression);
-    if (Node.is.kind(ElementAccessExpression, left)) {
+    if (qc.is.kind(ElementAccessExpression, left)) {
       // Transforms `a[x] **= b` into `(_a = a)[_x = x] = Math.pow(_a[_x], b)`
       const expressionTemp = createTempVariable(hoistVariableDeclaration);
       const argumentExpressionTemp = createTempVariable(hoistVariableDeclaration);
@@ -48,7 +48,7 @@ export function transformES2016(context: TransformationContext) {
         left
       );
       value = setRange(new qs.ElementAccessExpression(expressionTemp, argumentExpressionTemp), left);
-    } else if (Node.is.kind(PropertyAccessExpression, left)) {
+    } else if (qc.is.kind(PropertyAccessExpression, left)) {
       // Transforms `a.x **= b` into `(_a = a).x = Math.pow(_a.x, b)`
       const expressionTemp = createTempVariable(hoistVariableDeclaration);
       target = setRange(new qc.PropertyAccessExpression(setRange(createAssignment(expressionTemp, left.expression), left.expression), left.name), left);

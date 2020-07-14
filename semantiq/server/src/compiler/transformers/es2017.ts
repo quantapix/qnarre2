@@ -1,7 +1,7 @@
 import * as qb from '../base';
 import * as qc from '../core';
 import { Node, Nodes } from '../core';
-import * as qs from '../classes';
+import * as qs from '../core3';
 import * as qt from '../types';
 import * as qy from '../syntax';
 import { Modifier, Syntax } from '../syntax';
@@ -79,7 +79,7 @@ export function transformES2017(context: TransformationContext) {
       case Syntax.ArrowFunction:
         return doWithContext(ContextFlags.NonTopLevel, visitArrowFunction, <ArrowFunction>node);
       case Syntax.PropertyAccessExpression:
-        if (capturedSuperProperties && Node.is.kind(PropertyAccessExpression, node) && node.expression.kind === Syntax.SuperKeyword) {
+        if (capturedSuperProperties && qc.is.kind(PropertyAccessExpression, node) && node.expression.kind === Syntax.SuperKeyword) {
           capturedSuperProperties.set(node.name.escapedText, true);
         }
         return visitEachChild(node, visitor, context);
@@ -235,18 +235,18 @@ export function transformES2017(context: TransformationContext) {
     );
   }
   function recordDeclarationName({ name }: ParameterDeclaration | VariableDeclaration | BindingElement, names: UnderscoreEscapedMap<true>) {
-    if (Node.is.kind(Identifier, name)) {
+    if (qc.is.kind(Identifier, name)) {
       names.set(name.escapedText, true);
     } else {
       for (const element of name.elements) {
-        if (!Node.is.kind(OmittedExpression, element)) {
+        if (!qc.is.kind(OmittedExpression, element)) {
           recordDeclarationName(element, names);
         }
       }
     }
   }
   function isVariableDeclarationListWithCollidingName(node: ForInitializer): node is VariableDeclarationList {
-    return !!node && Node.is.kind(VariableDeclarationList, node) && !(node.flags & NodeFlags.BlockScoped) && node.declarations.some(collidesWithParameterName);
+    return !!node && qc.is.kind(VariableDeclarationList, node) && !(node.flags & NodeFlags.BlockScoped) && node.declarations.some(collidesWithParameterName);
   }
   function visitVariableDeclarationListWithCollidingNames(node: VariableDeclarationList, hasReceiver: boolean) {
     hoistVariableDeclarationList(node);
@@ -261,11 +261,11 @@ export function transformES2017(context: TransformationContext) {
     forEach(node.declarations, hoistVariable);
   }
   function hoistVariable({ name }: VariableDeclaration | BindingElement) {
-    if (Node.is.kind(Identifier, name)) {
+    if (qc.is.kind(Identifier, name)) {
       hoistVariableDeclaration(name);
     } else {
       for (const element of name.elements) {
-        if (!Node.is.kind(OmittedExpression, element)) {
+        if (!qc.is.kind(OmittedExpression, element)) {
           hoistVariable(element);
         }
       }
@@ -276,10 +276,10 @@ export function transformES2017(context: TransformationContext) {
     return visitNode(converted, visitor, isExpression);
   }
   function collidesWithParameterName({ name }: VariableDeclaration | BindingElement): boolean {
-    if (Node.is.kind(Identifier, name)) return enclosingFunctionParameterNames.has(name.escapedText);
+    if (qc.is.kind(Identifier, name)) return enclosingFunctionParameterNames.has(name.escapedText);
     else {
       for (const element of name.elements) {
-        if (!Node.is.kind(OmittedExpression, element) && collidesWithParameterName(element)) return true;
+        if (!qc.is.kind(OmittedExpression, element) && collidesWithParameterName(element)) return true;
       }
     }
     return false;
@@ -288,7 +288,7 @@ export function transformES2017(context: TransformationContext) {
   function transformAsyncFunctionBody(node: ArrowFunction): ConciseBody;
   function transformAsyncFunctionBody(node: FunctionLikeDeclaration): ConciseBody {
     resumeLexicalEnvironment();
-    const original = Node.get.originalOf(node, isFunctionLike);
+    const original = qc.get.originalOf(node, isFunctionLike);
     const nodeType = original.type;
     const promiseConstructor = languageVersion < ScriptTarget.ES2015 ? getPromiseConstructor(nodeType) : undefined;
     const isArrowFunction = node.kind === Syntax.ArrowFunction;
@@ -349,12 +349,12 @@ export function transformES2017(context: TransformationContext) {
     return result;
   }
   function transformAsyncFunctionBodyWorker(body: ConciseBody, start?: number) {
-    if (Node.is.kind(Block, body)) return body.update(Nodes.visit(body.statements, asyncBodyVisitor, isStatement, start));
+    if (qc.is.kind(Block, body)) return body.update(Nodes.visit(body.statements, asyncBodyVisitor, isStatement, start));
     return convertToFunctionBody(visitNode(body, asyncBodyVisitor, isConciseBody));
   }
   function getPromiseConstructor(type: TypeNode | undefined) {
     const typeName = type && getEntityNameFromTypeNode(type);
-    if (typeName && Node.is.entityName(typeName)) {
+    if (typeName && qc.is.entityName(typeName)) {
       const serializationKind = resolver.getTypeReferenceSerializationKind(typeName);
       if (serializationKind === TypeReferenceSerializationKind.TypeWithConstructSignatureAndValue || serializationKind === TypeReferenceSerializationKind.Unknown) return typeName;
     }
@@ -419,8 +419,8 @@ export function transformES2017(context: TransformationContext) {
   }
   function substituteCallExpression(node: CallExpression): Expression {
     const expression = node.expression;
-    if (Node.is.superProperty(expression)) {
-      const argumentExpression = Node.is.kind(PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
+    if (qc.is.superProperty(expression)) {
+      const argumentExpression = qc.is.kind(PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
       return new qs.CallExpression(new qc.PropertyAccessExpression(argumentExpression, 'call'), undefined, [new qc.ThisExpression(), ...node.arguments]);
     }
     return node;

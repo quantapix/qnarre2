@@ -341,7 +341,7 @@ function create() {
         case Syntax.ArrayType:
           return this.objectOrObjectArrayTypeReference((n as ArrayTypeNode).elementType);
         default:
-          return Node.is.kind(TypeReferenceNode, n) && Node.is.kind(Identifier, n.typeName) && n.typeName.escapedText === 'Object' && !n.typeArguments;
+          return qc.is.kind(TypeReferenceNode, n) && qc.is.kind(Identifier, n.typeName) && n.typeName.escapedText === 'Object' && !n.typeArguments;
       }
     }
   })();
@@ -773,7 +773,7 @@ function create() {
       };
       if (!syntaxCursor || !isReusable() || parseErrorBeforeNextFinishedNode) return;
       const n = syntaxCursor.currentNode(scanner.getStartPos());
-      if (Node.is.missing(n) || n.intersectsChange || containsParseError(n)) return;
+      if (qc.is.missing(n) || n.intersectsChange || containsParseError(n)) return;
       const fs = n.flags & NodeFlags.ContextFlags;
       if (fs !== flags.value) return;
       const canReuse = () => {
@@ -1143,10 +1143,10 @@ function create() {
       source.endOfFileToken = addJSDocComment(parse.tokenNode());
       const getImportMetaIfNecessary = () => {
         const isImportMeta = (n: Node): boolean => {
-          return Node.is.kind(MetaProperty, n) && n.keywordToken === Syntax.ImportKeyword && n.name.escapedText === 'meta';
+          return qc.is.kind(MetaProperty, n) && n.keywordToken === Syntax.ImportKeyword && n.name.escapedText === 'meta';
         };
         const walkTreeForExternalModuleIndicators = (n: Node): Node | undefined => {
-          return isImportMeta(n) ? n : Node.forEach.child(n, walkTreeForExternalModuleIndicators);
+          return isImportMeta(n) ? n : qc.forEach.child(n, walkTreeForExternalModuleIndicators);
         };
         return source.flags & NodeFlags.PossiblyContainsImportMeta ? walkTreeForExternalModuleIndicators(source) : undefined;
       };
@@ -1438,7 +1438,7 @@ function create() {
       n.modifiers = this.modifiers();
       n.dot3Token = this.optionalToken(Syntax.Dot3Token);
       n.name = this.identifierOrPattern(qd.Private_identifiers_cannot_be_used_as_parameters);
-      if (Node.get.fullWidth(n.name) === 0 && !n.modifiers && syntax.is.modifier(tok())) next.tok();
+      if (qc.get.fullWidth(n.name) === 0 && !n.modifiers && syntax.is.modifier(tok())) next.tok();
       n.questionToken = this.optionalToken(Syntax.QuestionToken);
       n.type = parameterType();
       n.initializer = this.initializer();
@@ -1969,7 +1969,7 @@ function create() {
       if (arrow) return arrow;
       const e = this.binaryExpressionOrHigher(0);
       if (e.kind === Syntax.Identifier && tok() === Syntax.EqualsGreaterThanToken) return this.simpleArrowFunctionExpression(e as Identifier);
-      if (Node.is.leftHandSideExpression(e) && syntax.is.assignmentOperator(reScanGreaterToken())) return create.binaryExpression(e, this.tokenNode(), this.assignmentExpressionOrHigher());
+      if (qc.is.leftHandSideExpression(e) && syntax.is.assignmentOperator(reScanGreaterToken())) return create.binaryExpression(e, this.tokenNode(), this.assignmentExpressionOrHigher());
       return this.conditionalExpressionRest(e);
     }
     yieldExpression(): YieldExpression {
@@ -2009,7 +2009,7 @@ function create() {
       n.modifiers = this.modifiersForArrowFunction();
       const isAsync = hasModifierOfKind(n, Syntax.AsyncKeyword) ? SignatureFlags.Await : SignatureFlags.None;
       if (!fillSignature(Syntax.ColonToken, isAsync, n) && !allowAmbiguity) return;
-      const hasJSDocFunctionType = n.type && Node.is.kind(JSDocFunctionType, n.type);
+      const hasJSDocFunctionType = n.type && qc.is.kind(JSDocFunctionType, n.type);
       if (!allowAmbiguity && tok() !== Syntax.EqualsGreaterThanToken && (hasJSDocFunctionType || tok() !== Syntax.OpenBraceToken)) return;
       return n;
     }
@@ -2030,7 +2030,7 @@ function create() {
       n.questionToken = t;
       n.whenTrue = flags.withoutContext(withDisallowInDecoratorContext, this.assignmentExpressionOrHigher);
       n.colonToken = this.expectedToken(Syntax.ColonToken);
-      n.whenFalse = Node.is.present(n.colonToken) ? this.assignmentExpressionOrHigher() : create.missingNode(Syntax.Identifier, false, qd._0_expected, syntax.toString(Syntax.ColonToken));
+      n.whenFalse = qc.is.present(n.colonToken) ? this.assignmentExpressionOrHigher() : create.missingNode(Syntax.Identifier, false, qd._0_expected, syntax.toString(Syntax.ColonToken));
       return finishNode(n);
     }
     binaryExpressionOrHigher(precedence: number): Expression {
@@ -2164,7 +2164,7 @@ function create() {
         return parseJsx.elementOrSelfClosingElementOrFragment(true);
       }
       const expression = this.leftHandSideExpressionOrHigher();
-      qb.assert(Node.is.leftHandSideExpression(expression));
+      qb.assert(qc.is.leftHandSideExpression(expression));
       if ((tok() === Syntax.Plus2Token || tok() === Syntax.Minus2Token) && !scanner.hasPrecedingLineBreak()) {
         const n = create.node(Syntax.PostfixUnaryExpression, expression.pos);
         n.operand = expression;
@@ -2230,7 +2230,7 @@ function create() {
       n.name = this.rightSideOfDot(true, true);
       if (questionDotToken || parse.reparseOptionalChain(expression)) {
         n.flags |= NodeFlags.OptionalChain;
-        if (Node.is.kind(PrivateIdentifier, n.name)) this.errorAtRange(n.name, qd.An_optional_chain_cannot_contain_private_identifiers);
+        if (qc.is.kind(PrivateIdentifier, n.name)) this.errorAtRange(n.name, qd.An_optional_chain_cannot_contain_private_identifiers);
       }
       return finishNode(n);
     }
@@ -3344,13 +3344,13 @@ function create() {
     }
     reparseOptionalChain(n: Expression) {
       if (n.flags & NodeFlags.OptionalChain) return true;
-      if (Node.is.kind(NonNullExpression, n)) {
+      if (qc.is.kind(NonNullExpression, n)) {
         let expr = n.expression;
-        while (Node.is.kind(NonNullExpression, expr) && !(expr.flags & NodeFlags.OptionalChain)) {
+        while (qc.is.kind(NonNullExpression, expr) && !(expr.flags & NodeFlags.OptionalChain)) {
           expr = expr.expression;
         }
         if (expr.flags & NodeFlags.OptionalChain) {
-          while (Node.is.kind(NonNullExpression, n)) {
+          while (qc.is.kind(NonNullExpression, n)) {
             n.flags |= NodeFlags.OptionalChain;
             n = n.expression;
           }
@@ -3429,7 +3429,7 @@ function create() {
     child(openingTag: JsxOpeningElement | JsxOpeningFragment, token: JsxTokenSyntax): JsxChild | undefined {
       switch (token) {
         case Syntax.EndOfFileToken:
-          if (Node.is.kind(JsxOpeningFragment, openingTag)) {
+          if (qc.is.kind(JsxOpeningFragment, openingTag)) {
             parse.errorAtRange(openingTag, qd.JSX_fragment_has_no_corresponding_closing_tag);
           } else {
             const tag = openingTag.tagName;
@@ -4171,7 +4171,7 @@ function create() {
       if (fullName) {
         let rightNode = fullName;
         while (true) {
-          if (Node.is.kind(Identifier, rightNode) || !rightNode.body) return Node.is.kind(Identifier, rightNode) ? rightNode : rightNode.name;
+          if (qc.is.kind(Identifier, rightNode) || !rightNode.body) return qc.is.kind(Identifier, rightNode) ? rightNode : rightNode.name;
           rightNode = rightNode.body;
         }
       }
@@ -4193,7 +4193,7 @@ function create() {
                 (child.kind === Syntax.JSDocParameterTag || child.kind === Syntax.JSDocPropertyTag) &&
                 target !== PropertyLike.CallbackParameter &&
                 name &&
-                (Node.is.kind(Identifier, child.name) || !escapedTextsEqual(name, child.name.left))
+                (qc.is.kind(Identifier, child.name) || !escapedTextsEqual(name, child.name.left))
               ) {
                 return false;
               }
@@ -4377,7 +4377,7 @@ function create() {
       const hasArrowFunctionBlockingError = (n: TypeNode): boolean => {
         switch (n.kind) {
           case Syntax.TypeReference:
-            return Node.is.missing((n as TypeReferenceNode).typeName);
+            return qc.is.missing((n as TypeReferenceNode).typeName);
           case Syntax.FunctionType:
           case Syntax.ConstructorType: {
             const { parameters, type } = n as FunctionOrConstructorTypeNode;
@@ -4440,21 +4440,21 @@ function create() {
   }
   function addJSDocComment<T extends HasJSDoc>(n: T): T {
     qb.assert(!n.jsDoc);
-    const jsDoc = mapDefined(Node.getJSDoc.commentRanges(n, source.text), (comment) => parseJSDoc.comment(n, comment.pos, comment.end - comment.pos));
+    const jsDoc = mapDefined(qc.getDoc.commentRanges(n, source.text), (comment) => parseJSDoc.comment(n, comment.pos, comment.end - comment.pos));
     if (jsDoc.length) n.jsDoc = jsDoc;
     return n;
   }
   function fixupParentReferences(root: Node) {
     const bindParentToChild = (c: Node, parent: Node) => {
       c.parent = parent;
-      if (Node.is.withJSDocNodes(c)) {
+      if (qc.is.withJSDocNodes(c)) {
         for (const d of c.jsDoc!) {
           bindParentToChild(d, c);
-          Node.forEach.childRecursively(d, bindParentToChild);
+          qc.forEach.childRecursively(d, bindParentToChild);
         }
       }
     };
-    Node.forEach.childRecursively(root, bindParentToChild);
+    qc.forEach.childRecursively(root, bindParentToChild);
   }
   function comment(parent: HasJSDoc, start: number, length: number): JSDoc | undefined {
     const saveToken = currentToken;
@@ -4482,8 +4482,8 @@ function create() {
     return r;
   }
   function escapedTextsEqual(a: EntityName, b: EntityName): boolean {
-    while (!Node.is.kind(Identifier, a) || !Node.is.kind(Identifier, b)) {
-      if (!Node.is.kind(Identifier, a) && !Node.is.kind(Identifier, b) && a.right.escapedText === b.right.escapedText) {
+    while (!qc.is.kind(Identifier, a) || !qc.is.kind(Identifier, b)) {
+      if (!qc.is.kind(Identifier, a) && !qc.is.kind(Identifier, b) && a.right.escapedText === b.right.escapedText) {
         a = a.left;
         b = b.left;
       } else return false;
@@ -4622,8 +4622,8 @@ namespace IncrementalParser {
       n.pos += delta;
       n.end += delta;
       if (aggressiveChecks && shouldCheck(n)) qb.assert(text === newText.substring(n.pos, n.end));
-      Node.forEach.child(n, visitNode, visitArray);
-      if (Node.is.withJSDocNodes(n)) {
+      qc.forEach.child(n, visitNode, visitArray);
+      if (qc.is.withJSDocNodes(n)) {
         for (const jsDocComment of n.jsDoc!) {
           visitNode(<IncrementalNode>(<Node>jsDocComment));
         }
@@ -4676,8 +4676,8 @@ namespace IncrementalParser {
         child.intersectsChange = true;
         child._children = undefined;
         adjustIntersectingElement(child, changeStart, changeRangeOldEnd, changeRangeNewEnd, delta);
-        Node.forEach.child(child, visitNode, visitArray);
-        if (Node.is.withJSDocNodes(child)) {
+        qc.forEach.child(child, visitNode, visitArray);
+        if (qc.is.withJSDocNodes(child)) {
           for (const jsDocComment of child.jsDoc!) {
             visitNode(<IncrementalNode>(<Node>jsDocComment));
           }
@@ -4713,12 +4713,12 @@ namespace IncrementalParser {
         qb.assert(c.pos >= pos);
         pos = c.end;
       };
-      if (Node.is.withJSDocNodes(n)) {
+      if (qc.is.withJSDocNodes(n)) {
         for (const jsDocComment of n.jsDoc!) {
           visitNode(jsDocComment);
         }
       }
-      Node.forEach.child(n, visitNode);
+      qc.forEach.child(n, visitNode);
       qb.assert(pos <= n.end);
     }
   }
@@ -4738,7 +4738,7 @@ namespace IncrementalParser {
   function findNearestNodeStartingBeforeOrAtPosition(source: SourceFile, position: number): Node {
     let bestResult: Node = source;
     let lastNodeEntirelyBeforePosition: Node | undefined;
-    Node.forEach.child(source, visit);
+    qc.forEach.child(source, visit);
     if (lastNodeEntirelyBeforePosition) {
       const lastChildOfLastEntireNodeBeforePosition = getLastDescendant(lastNodeEntirelyBeforePosition);
       if (lastChildOfLastEntireNodeBeforePosition.pos > bestResult.pos) {
@@ -4754,11 +4754,11 @@ namespace IncrementalParser {
       }
     }
     function visit(child: Node) {
-      if (Node.is.missing(child)) return;
+      if (qc.is.missing(child)) return;
       if (child.pos <= position) {
         if (child.pos >= bestResult.pos) bestResult = child;
         if (position < child.end) {
-          Node.forEach.child(child, visit);
+          qc.forEach.child(child, visit);
           return true;
         } else {
           qb.assert(child.end <= position);
@@ -4824,11 +4824,11 @@ namespace IncrementalParser {
       currentArray = undefined!;
       currentArrayIndex = InvalidPosition.Value;
       current = undefined!;
-      Node.forEach.child(source, visitNode, visitArray);
+      qc.forEach.child(source, visitNode, visitArray);
       return;
       function visitNode(n: Node) {
         if (position >= n.pos && position < n.end) {
-          Node.forEach.child(n, visitNode, visitArray);
+          qc.forEach.child(n, visitNode, visitArray);
           return true;
         }
         return false;
@@ -4845,7 +4845,7 @@ namespace IncrementalParser {
                 return true;
               } else {
                 if (child.pos < position && position < child.end) {
-                  Node.forEach.child(child, visitNode, visitArray);
+                  qc.forEach.child(child, visitNode, visitArray);
                   return true;
                 }
               }
