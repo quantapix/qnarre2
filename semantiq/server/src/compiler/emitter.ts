@@ -1,7 +1,7 @@
 import * as qb from './base';
 import * as qt from './types';
 import { Node } from './types';
-import * as syntax from './syntax';
+import * as qy from './syntax';
 import { Syntax } from './syntax';
 const brackets = createBracketsMap();
 const syntheticParent: TextRange = { pos: -1, end: -1 };
@@ -916,7 +916,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     setWriter(undefined);
   }
   function getCurrentLineMap() {
-    return currentLineMap || (currentLineMap = syntax.get.lineStarts(currentSourceFile!));
+    return currentLineMap || (currentLineMap = qy.get.lineStarts(currentSourceFile!));
   }
   function emit(node: Node): Node;
   function emit(node: Node | undefined): Node | undefined;
@@ -996,7 +996,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       return emitEmptyStatement(true);
     }
     if (hint === EmitHint.Unspecified) {
-      if (syntax.is.keyword(node.kind)) return writeTokenNode(node, writeKeyword);
+      if (qy.is.keyword(node.kind)) return writeTokenNode(node, writeKeyword);
       switch (node.kind) {
         case Syntax.TemplateHead:
         case Syntax.TemplateMiddle:
@@ -1266,7 +1266,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
         if (substituteNode !== noEmitSubstitution) {
           lastSubstitution = node = substituteNode(hint, node);
         }
-      } else if (Node.is.token(node)) {
+      } else if (qy.is.token(node.kind)) {
         return writeTokenNode(node, writePunctuation);
       }
     }
@@ -1437,7 +1437,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
   function emitLiteral(node: LiteralLikeNode, jsxAttributeEscape: boolean) {
     const text = getLiteralTextOfNode(node, printerOptions.neverAsciiEscape, jsxAttributeEscape);
-    if ((printerOptions.sourceMap || printerOptions.inlineSourceMap) && (node.kind === Syntax.StringLiteral || syntax.is.templateLiteral(node.kind))) {
+    if ((printerOptions.sourceMap || printerOptions.inlineSourceMap) && (node.kind === Syntax.StringLiteral || qy.is.templateLiteral(node.kind))) {
       writeLiteral(text);
     } else {
       writeStringLiteral(text);
@@ -2218,7 +2218,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     const isSimilarNode = node && node.kind === contextNode.kind;
     const startPos = pos;
     if (isSimilarNode && currentSourceFile) {
-      pos = syntax.skipTrivia(currentSourceFile.text, pos);
+      pos = qy.skipTrivia(currentSourceFile.text, pos);
     }
     if (emitLeadingCommentsOfPosition && isSimilarNode && contextNode.pos !== startPos) {
       const needsIndent = indentLeading && currentSourceFile && !onSameLine(startPos, pos, currentSourceFile);
@@ -3020,7 +3020,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
   function emitShebangIfNeeded(sourceFileOrBundle: Bundle | SourceFile | UnparsedSource) {
     if (Node.is.kind(SourceFile, sourceFileOrBundle) || Node.is.kind(UnparsedSource, sourceFileOrBundle)) {
-      const shebang = syntax.get.shebang(sourceFileOrBundle.text);
+      const shebang = qy.get.shebang(sourceFileOrBundle.text);
       if (shebang) {
         writeComment(shebang);
         writeLine();
@@ -3658,7 +3658,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   function isUniqueLocalName(name: string, container: Node): boolean {
     for (let node = container; Node.is.descendantOf(node, container); node = node.nextContainer!) {
       if (node.locals) {
-        const local = node.locals.get(syntax.get.escUnderscores(name));
+        const local = node.locals.get(qy.get.escUnderscores(name));
         if (local && local.flags & (SymbolFlags.Value | SymbolFlags.ExportValue | SymbolFlags.Alias)) return false;
       }
     }
@@ -3865,7 +3865,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
   function writeSynthesizedComment(comment: SynthesizedComment) {
     const text = formatSynthesizedComment(comment);
-    const lineMap = comment.kind === Syntax.MultiLineCommentTrivia ? syntax.get.lineStarts(text) : undefined;
+    const lineMap = comment.kind === Syntax.MultiLineCommentTrivia ? qy.get.lineStarts(text) : undefined;
     writeCommentRange(text, lineMap!, writer, 0, text.length, newLine);
   }
   function formatSynthesizedComment(comment: SynthesizedComment) {
@@ -3911,7 +3911,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     }
   }
   function shouldWriteComment(text: string, pos: number) {
-    if (printerOptions.onlyPrintJsDocStyle) return syntax.is.jsDocLike(text, pos) || isPinnedComment(text, pos);
+    if (printerOptions.onlyPrintJsDocStyle) return qy.is.jsDocLike(text, pos) || isPinnedComment(text, pos);
     return true;
   }
   function emitLeadingComment(commentPos: number, commentEnd: number, kind: Syntax, hasTrailingNewLine: boolean, rangePos: number) {
@@ -3973,13 +3973,13 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       if (hasDetachedComments(pos)) {
         forEachLeadingCommentWithoutDetachedComments(cb);
       } else {
-        syntax.forEachLeadingCommentRange(currentSourceFile.text, pos, cb, pos);
+        qy.forEachLeadingCommentRange(currentSourceFile.text, pos, cb, pos);
       }
     }
   }
   function forEachTrailingCommentToEmit(end: number, cb: (commentPos: number, commentEnd: number, kind: Syntax, hasTrailingNewLine: boolean) => void) {
     if (currentSourceFile && (containerEnd === -1 || (end !== containerEnd && end !== declarationListContainerEnd))) {
-      syntax.forEachTrailingCommentRange(currentSourceFile.text, end, cb);
+      qy.forEachTrailingCommentRange(currentSourceFile.text, end, cb);
     }
   }
   function hasDetachedComments(pos: number) {
@@ -3992,7 +3992,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     } else {
       detachedCommentsInfo = undefined;
     }
-    syntax.forEachLeadingCommentRange(currentSourceFile!.text, pos, cb, pos);
+    qy.forEachLeadingCommentRange(currentSourceFile!.text, pos, cb, pos);
   }
   function emitDetachedCommentsAndUpdateCommentsInfo(range: TextRange) {
     const currentDetachedCommentInfo = emitDetachedComments(currentSourceFile!.text, getCurrentLineMap(), writer, emitComment, range, newLine, commentsDisabled);
@@ -4032,8 +4032,8 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
           writer.getColumn(),
           parsed,
           node.parent.sourceMapPath!,
-          node.parent.syntax.get.lineAndCharOf(node.pos),
-          node.parent.syntax.get.lineAndCharOf(node.end)
+          node.parent.qy.get.lineAndCharOf(node.pos),
+          node.parent.qy.get.lineAndCharOf(node.end)
         );
       }
       pipelinePhase(hint, node);
@@ -4057,13 +4057,13 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     qb.assert(lastNode === node || lastSubstitution === node);
   }
   function skipSourceTrivia(source: SourceMapSource, pos: number): number {
-    return source.syntax.skipTrivia ? source.syntax.skipTrivia(pos) : syntax.skipTrivia(source.text, pos);
+    return source.syntax.skipTrivia ? source.syntax.skipTrivia(pos) : qy.skipTrivia(source.text, pos);
   }
   function emitPos(pos: number) {
     if (sourceMapsDisabled || isSynthesized(pos) || isJsonSourceMapSource(sourceMapSource)) {
       return;
     }
-    const { line: sourceLine, character: sourceCharacter } = syntax.get.lineAndCharOf(sourceMapSource, pos);
+    const { line: sourceLine, character: sourceCharacter } = qy.get.lineAndCharOf(sourceMapSource, pos);
     sourceMapGenerator!.addMapping(writer.getLine(), writer.getColumn(), sourceMapSourceIndex, sourceLine, sourceCharacter, undefined);
   }
   function emitSourcePos(source: SourceMapSource, pos: number) {

@@ -133,7 +133,7 @@ export abstract class Node extends qb.TextRange implements qt.Node {
     };
     const createChildren = () => {
       const cs = [] as Node[];
-      if (Node.is.node(this.kind)) {
+      if (qy.is.node(this.kind)) {
         if (Node.isJSDoc.commentContainingNode(this)) {
           Node.forEach.child(this, (c) => {
             cs.push(c);

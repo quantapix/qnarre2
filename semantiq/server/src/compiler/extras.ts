@@ -6,26 +6,19 @@ import { Modifier, ModifierFlags, Syntax } from './syntax';
 import * as qy from './syntax';
 export * from './classes';
 
-export abstract class NodeIs extends qb.TextRange implements qc.Node {
-  kind!: any;
-  node(k: Syntax) {
-    return k >= Syntax.FirstNode;
-  }
-  token() {
-    return this.kind >= Syntax.FirstToken && this.kind <= Syntax.LastToken;
-  }
+export abstract class NodeIs extends qc.Node {
   asyncFunction() {
     switch (this.kind) {
       case Syntax.FunctionDeclaration:
       case Syntax.FunctionExpression:
       case Syntax.ArrowFunction:
       case Syntax.MethodDeclaration:
-        return (<FunctionLikeDeclaration>n).body !== undefined && (<FunctionLikeDeclaration>n).asteriskToken === undefined && hasSyntacticModifier(n, ModifierFlags.Async);
+        return (<FunctionLikeDeclaration>this).body !== undefined && (<FunctionLikeDeclaration>n).asteriskToken === undefined && hasSyntacticModifier(n, ModifierFlags.Async);
     }
     return false;
   }
-  signedNumericLiteral(): this is PrefixUnaryExpression & { operand: NumericLiteral } {
-    return this.kind(PrefixUnaryExpression, n) && (this.operator === Syntax.PlusToken || this.operator === Syntax.MinusToken) && this.kind(NumericLiteral, this.operand);
+  signedNumericLiteral(): this is qc.PrefixUnaryExpression & { operand: qc.NumericLiteral } {
+    return this.kind(qc.PrefixUnaryExpression) && (this.operator === Syntax.PlusToken || this.operator === Syntax.MinusToken) && this.kind(qc.NumericLiteral, this.operand);
   }
   expressionNode() {
     switch (this.kind) {

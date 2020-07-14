@@ -844,6 +844,12 @@ export const is = new (class {
     const k = fromString(s);
     return k !== undefined && this.keyword(k);
   }
+  node(k: Syntax) {
+    return k >= Syntax.FirstNode;
+  }
+  token(k: Syntax) {
+    return k >= Syntax.FirstToken && k <= Syntax.LastToken;
+  }
   literal(k: Syntax) {
     return Syntax.FirstLiteralToken <= k && k <= Syntax.LastLiteralToken;
   }
@@ -1052,30 +1058,30 @@ export const is = new (class {
   assignmentOperator(k: Syntax) {
     return k >= Syntax.FirstAssignment && k <= Syntax.LastAssignment;
   }
-  typeNode(kind: Syntax) {
+  typeNode(k: Syntax) {
     return (
-      (kind >= Syntax.FirstTypeNode && kind <= Syntax.LastTypeNode) ||
-      kind === Syntax.AnyKeyword ||
-      kind === Syntax.UnknownKeyword ||
-      kind === Syntax.NumberKeyword ||
-      kind === Syntax.BigIntKeyword ||
-      kind === Syntax.ObjectKeyword ||
-      kind === Syntax.BooleanKeyword ||
-      kind === Syntax.StringKeyword ||
-      kind === Syntax.SymbolKeyword ||
-      kind === Syntax.ThisKeyword ||
-      kind === Syntax.VoidKeyword ||
-      kind === Syntax.UndefinedKeyword ||
-      kind === Syntax.NullKeyword ||
-      kind === Syntax.NeverKeyword ||
-      kind === Syntax.ExpressionWithTypeArguments ||
-      kind === Syntax.JSDocAllType ||
-      kind === Syntax.JSDocUnknownType ||
-      kind === Syntax.JSDocNullableType ||
-      kind === Syntax.JSDocNonNullableType ||
-      kind === Syntax.JSDocOptionalType ||
-      kind === Syntax.JSDocFunctionType ||
-      kind === Syntax.JSDocVariadicType
+      (k >= Syntax.FirstTypeNode && k <= Syntax.LastTypeNode) ||
+      k === Syntax.AnyKeyword ||
+      k === Syntax.UnknownKeyword ||
+      k === Syntax.NumberKeyword ||
+      k === Syntax.BigIntKeyword ||
+      k === Syntax.ObjectKeyword ||
+      k === Syntax.BooleanKeyword ||
+      k === Syntax.StringKeyword ||
+      k === Syntax.SymbolKeyword ||
+      k === Syntax.ThisKeyword ||
+      k === Syntax.VoidKeyword ||
+      k === Syntax.UndefinedKeyword ||
+      k === Syntax.NullKeyword ||
+      k === Syntax.NeverKeyword ||
+      k === Syntax.ExpressionWithTypeArguments ||
+      k === Syntax.JSDocAllType ||
+      k === Syntax.JSDocUnknownType ||
+      k === Syntax.JSDocNullableType ||
+      k === Syntax.JSDocNonNullableType ||
+      k === Syntax.JSDocOptionalType ||
+      k === Syntax.JSDocFunctionType ||
+      k === Syntax.JSDocVariadicType
     );
   }
 })();

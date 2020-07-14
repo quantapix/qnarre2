@@ -14,7 +14,7 @@ export class Node extends qc.Node {
   }
   static create<T extends Syntax>(k: T, pos: number, end: number, parent?: Node): NodeType<T> {
     const n =
-      Node.is.node(k) || k === Syntax.Unknown
+      qy.is.node(k) || k === Syntax.Unknown
         ? new Node(k, pos, end)
         : k === Syntax.SourceFile
         ? new SourceFileObj(Syntax.SourceFile, pos, end)
