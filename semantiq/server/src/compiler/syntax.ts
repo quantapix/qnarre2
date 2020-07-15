@@ -422,36 +422,36 @@ export const enum Syntax {
   Bundle,
   UnparsedSource,
   InputFiles,
-  JSDocTypeExpression,
-  JSDocAllType,
-  JSDocUnknownType,
-  JSDocNullableType,
-  JSDocNonNullableType,
-  JSDocOptionalType,
-  JSDocFunctionType,
-  JSDocVariadicType,
-  JSDocNamepathType,
-  JSDocComment,
-  JSDocTypeLiteral,
-  JSDocSignature,
-  JSDocTag,
-  JSDocAugmentsTag,
-  JSDocImplementsTag,
-  JSDocAuthorTag,
-  JSDocClassTag,
-  JSDocPublicTag,
-  JSDocPrivateTag,
-  JSDocProtectedTag,
-  JSDocReadonlyTag,
-  JSDocCallbackTag,
-  JSDocEnumTag,
-  JSDocParameterTag,
-  JSDocReturnTag,
-  JSDocThisTag,
-  JSDocTypeTag,
-  JSDocTemplateTag,
-  JSDocTypedefTag,
-  JSDocPropertyTag,
+  DocTypeExpression,
+  DocAllType,
+  DocUnknownType,
+  DocNullableType,
+  DocNonNullableType,
+  DocOptionalType,
+  DocFunctionType,
+  DocVariadicType,
+  DocNamepathType,
+  DocComment,
+  DocTypeLiteral,
+  DocSignature,
+  DocTag,
+  DocAugmentsTag,
+  DocImplementsTag,
+  DocAuthorTag,
+  DocClassTag,
+  DocPublicTag,
+  DocPrivateTag,
+  DocProtectedTag,
+  DocReadonlyTag,
+  DocCallbackTag,
+  DocEnumTag,
+  DocParameterTag,
+  DocReturnTag,
+  DocThisTag,
+  DocTypeTag,
+  DocTemplateTag,
+  DocTypedefTag,
+  DocPropertyTag,
   SyntaxList,
   NotEmittedStatement,
   PartiallyEmittedExpression,
@@ -487,10 +487,10 @@ export const enum Syntax {
   FirstStatement = VariableStatement,
   LastStatement = DebuggerStatement,
   FirstNode = QualifiedName,
-  FirstJSDocNode = JSDocTypeExpression,
-  LastJSDocNode = JSDocPropertyTag,
-  FirstJSDocTagNode = JSDocTag,
-  LastJSDocTagNode = JSDocPropertyTag,
+  FirstDocNode = DocTypeExpression,
+  LastDocNode = DocPropertyTag,
+  FirstDocTagNode = DocTag,
+  LastDocTagNode = DocPropertyTag,
   FirstContextualKeyword = AbstractKeyword,
   LastContextualKeyword = OfKeyword,
 }
@@ -511,7 +511,7 @@ export const enum ModifierFlags {
   Async = 1 << 8,
   Default = 1 << 9,
   Const = 1 << 11,
-  HasComputedJSDocModifiers = 1 << 12,
+  HasComputedDocModifiers = 1 << 12,
   HasComputedFlags = 1 << 29,
   AccessibilityModifier = Public | Private | Protected,
   ParameterPropertyModifier = AccessibilityModifier | Readonly,
@@ -525,7 +525,7 @@ export const enum LanguageVariant { TS, TX, PY, JL }
 // prettier-ignore
 export type KeywordSyntax = | Syntax.AbstractKeyword | Syntax.AnyKeyword | Syntax.AsKeyword | Syntax.AssertsKeyword | Syntax.BigIntKeyword | Syntax.BooleanKeyword | Syntax.BreakKeyword | Syntax.CaseKeyword | Syntax.CatchKeyword | Syntax.ClassKeyword | Syntax.ContinueKeyword | Syntax.ConstKeyword | Syntax.ConstructorKeyword | Syntax.DebuggerKeyword | Syntax.DeclareKeyword | Syntax.DefaultKeyword | Syntax.DeleteKeyword | Syntax.DoKeyword | Syntax.ElseKeyword | Syntax.EnumKeyword | Syntax.ExportKeyword | Syntax.ExtendsKeyword | Syntax.FalseKeyword | Syntax.FinallyKeyword | Syntax.ForKeyword | Syntax.FromKeyword | Syntax.FunctionKeyword | Syntax.GetKeyword | Syntax.IfKeyword | Syntax.ImplementsKeyword | Syntax.ImportKeyword | Syntax.InKeyword | Syntax.InferKeyword | Syntax.InstanceOfKeyword | Syntax.InterfaceKeyword | Syntax.IsKeyword | Syntax.KeyOfKeyword | Syntax.LetKeyword | Syntax.ModuleKeyword | Syntax.NamespaceKeyword | Syntax.NeverKeyword | Syntax.NewKeyword | Syntax.NullKeyword | Syntax.NumberKeyword | Syntax.ObjectKeyword | Syntax.PackageKeyword | Syntax.PrivateKeyword | Syntax.ProtectedKeyword | Syntax.PublicKeyword | Syntax.ReadonlyKeyword | Syntax.RequireKeyword | Syntax.GlobalKeyword | Syntax.ReturnKeyword | Syntax.SetKeyword | Syntax.StaticKeyword | Syntax.StringKeyword | Syntax.SuperKeyword | Syntax.SwitchKeyword | Syntax.SymbolKeyword | Syntax.ThisKeyword | Syntax.ThrowKeyword | Syntax.TrueKeyword | Syntax.TryKeyword | Syntax.TypeKeyword | Syntax.TypeOfKeyword | Syntax.UndefinedKeyword | Syntax.UniqueKeyword | Syntax.UnknownKeyword | Syntax.VarKeyword | Syntax.VoidKeyword | Syntax.WhileKeyword | Syntax.WithKeyword | Syntax.YieldKeyword | Syntax.AsyncKeyword | Syntax.AwaitKeyword | Syntax.OfKeyword;
 // prettier-ignore
-export type JSDocSyntax = | Syntax.EndOfFileToken | Syntax.WhitespaceTrivia | Syntax.AtToken | Syntax.NewLineTrivia | Syntax.AsteriskToken | Syntax.OpenBraceToken | Syntax.CloseBraceToken | Syntax.LessThanToken | Syntax.GreaterThanToken | Syntax.OpenBracketToken | Syntax.CloseBracketToken | Syntax.EqualsToken | Syntax.CommaToken | Syntax.DotToken | Syntax.Identifier | Syntax.BacktickToken | Syntax.Unknown | KeywordSyntax;
+export type DocSyntax = | Syntax.EndOfFileToken | Syntax.WhitespaceTrivia | Syntax.AtToken | Syntax.NewLineTrivia | Syntax.AsteriskToken | Syntax.OpenBraceToken | Syntax.CloseBraceToken | Syntax.LessThanToken | Syntax.GreaterThanToken | Syntax.OpenBracketToken | Syntax.CloseBracketToken | Syntax.EqualsToken | Syntax.CommaToken | Syntax.DotToken | Syntax.Identifier | Syntax.BacktickToken | Syntax.Unknown | KeywordSyntax;
 // prettier-ignore
 export type JsxTokenSyntax = | Syntax.LessThanSlashToken | Syntax.EndOfFileToken | Syntax.ConflictMarkerTrivia | Syntax.JsxText | Syntax.JsxTextAllWhiteSpaces | Syntax.OpenBraceToken | Syntax.LessThanToken;
 export type CommentKind = Syntax.SingleLineCommentTrivia | Syntax.MultiLineCommentTrivia;
@@ -738,7 +738,7 @@ export const is = new (class {
     const n = x as string;
     return n.charCodeAt(0) === Codes._ && n.charCodeAt(1) === Codes._ && n.charCodeAt(2) !== Codes._ && n.charCodeAt(2) !== Codes.at && n.charCodeAt(2) !== Codes.hash;
   }
-  jsDocLike(s: string, i: number) {
+  docLike(s: string, i: number) {
     return s.charCodeAt(i + 1) === Codes.asterisk && s.charCodeAt(i + 2) === Codes.asterisk && s.charCodeAt(i + 3) !== Codes.slash;
   }
   identifierOrKeyword(t: Syntax) {
@@ -897,11 +897,11 @@ export const is = new (class {
     switch (k) {
       case Syntax.MethodSignature:
       case Syntax.CallSignature:
-      case Syntax.JSDocSignature:
+      case Syntax.DocSignature:
       case Syntax.ConstructSignature:
       case Syntax.IndexSignature:
       case Syntax.FunctionType:
-      case Syntax.JSDocFunctionType:
+      case Syntax.DocFunctionType:
       case Syntax.ConstructorType:
         return true;
       default:
@@ -1006,9 +1006,9 @@ export const is = new (class {
       k === Syntax.TypeAliasDeclaration ||
       k === Syntax.TypeParameter ||
       k === Syntax.VariableDeclaration ||
-      k === Syntax.JSDocTypedefTag ||
-      k === Syntax.JSDocCallbackTag ||
-      k === Syntax.JSDocPropertyTag
+      k === Syntax.DocTypedefTag ||
+      k === Syntax.DocCallbackTag ||
+      k === Syntax.DocPropertyTag
     );
   }
   declarationStatement(k: Syntax) {
@@ -1075,13 +1075,13 @@ export const is = new (class {
       k === Syntax.NullKeyword ||
       k === Syntax.NeverKeyword ||
       k === Syntax.ExpressionWithTypeArguments ||
-      k === Syntax.JSDocAllType ||
-      k === Syntax.JSDocUnknownType ||
-      k === Syntax.JSDocNullableType ||
-      k === Syntax.JSDocNonNullableType ||
-      k === Syntax.JSDocOptionalType ||
-      k === Syntax.JSDocFunctionType ||
-      k === Syntax.JSDocVariadicType
+      k === Syntax.DocAllType ||
+      k === Syntax.DocUnknownType ||
+      k === Syntax.DocNullableType ||
+      k === Syntax.DocNonNullableType ||
+      k === Syntax.DocOptionalType ||
+      k === Syntax.DocFunctionType ||
+      k === Syntax.DocVariadicType
     );
   }
 })();

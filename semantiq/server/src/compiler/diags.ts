@@ -772,11 +772,11 @@ export const diags = {
     'Function_declarations_are_not_allowed_inside_blocks_in_strict_mode_when_targeting_ES3_or_ES5_Modules_1252',
     "Function declarations are not allowed inside blocks in strict mode when targeting 'ES3' or 'ES5'. Modules are automatically in strict mode."
   ),
-  _0_tag_cannot_be_used_independently_as_a_top_level_JSDoc_tag: diag(
+  _0_tag_cannot_be_used_independently_as_a_top_level_Doc_tag: diag(
     1253,
     DiagnosticCategory.Error,
-    '_0_tag_cannot_be_used_independently_as_a_top_level_JSDoc_tag_1253',
-    "'{0}' tag cannot be used independently as a top level JSDoc tag."
+    '_0_tag_cannot_be_used_independently_as_a_top_level_Doc_tag_1253',
+    "'{0}' tag cannot be used independently as a top level Doc tag."
   ),
   A_const_initializer_in_an_ambient_context_must_be_a_string_or_numeric_literal_or_literal_enum_reference: diag(
     1254,
@@ -2393,7 +2393,7 @@ export const diags = {
     "'{0}' only refers to a type, but is being used as a value here. Do you need to change your target library? Try changing the `lib` compiler option to es2015 or later."
   ),
   Enum_type_0_circularly_references_itself: diag(2586, DiagnosticCategory.Error, 'Enum_type_0_circularly_references_itself_2586', "Enum type '{0}' circularly references itself."),
-  JSDoc_type_0_circularly_references_itself: diag(2587, DiagnosticCategory.Error, 'JSDoc_type_0_circularly_references_itself_2587', "JSDoc type '{0}' circularly references itself."),
+  Doc_type_0_circularly_references_itself: diag(2587, DiagnosticCategory.Error, 'Doc_type_0_circularly_references_itself_2587', "Doc type '{0}' circularly references itself."),
   Cannot_assign_to_0_because_it_is_a_constant: diag(2588, DiagnosticCategory.Error, 'Cannot_assign_to_0_because_it_is_a_constant_2588', "Cannot assign to '{0}' because it is a constant."),
   Type_instantiation_is_excessively_deep_and_possibly_infinite: diag(
     2589,
@@ -5293,30 +5293,25 @@ export const diags = {
     "Octal literals are not allowed in enums members initializer. Use the syntax '{0}'."
   ),
   Report_errors_in_js_files: diag(8019, DiagnosticCategory.Message, 'Report_errors_in_js_files_8019', 'Report errors in .js files.'),
-  JSDoc_types_can_only_be_used_inside_documentation_comments: diag(
+  Doc_types_can_only_be_used_inside_documentation_comments: diag(
     8020,
     DiagnosticCategory.Error,
-    'JSDoc_types_can_only_be_used_inside_documentation_comments_8020',
-    'JSDoc types can only be used inside documentation comments.'
+    'Doc_types_can_only_be_used_inside_documentation_comments_8020',
+    'Doc types can only be used inside documentation comments.'
   ),
-  JSDoc_typedef_tag_should_either_have_a_type_annotation_or_be_followed_by_property_or_member_tags: diag(
+  Doc_typedef_tag_should_either_have_a_type_annotation_or_be_followed_by_property_or_member_tags: diag(
     8021,
     DiagnosticCategory.Error,
-    'JSDoc_typedef_tag_should_either_have_a_type_annotation_or_be_followed_by_property_or_member_tags_8021',
-    "JSDoc '@typedef' tag should either have a type annotation or be followed by '@property' or '@member' tags."
+    'Doc_typedef_tag_should_either_have_a_type_annotation_or_be_followed_by_property_or_member_tags_8021',
+    "Doc '@typedef' tag should either have a type annotation or be followed by '@property' or '@member' tags."
   ),
-  JSDoc_0_is_not_attached_to_a_class: diag(8022, DiagnosticCategory.Error, 'JSDoc_0_is_not_attached_to_a_class_8022', "JSDoc '@{0}' is not attached to a class."),
-  JSDoc_0_1_does_not_match_the_extends_2_clause: diag(
-    8023,
-    DiagnosticCategory.Error,
-    'JSDoc_0_1_does_not_match_the_extends_2_clause_8023',
-    "JSDoc '@{0} {1}' does not match the 'extends {2}' clause."
-  ),
-  JSDoc_param_tag_has_name_0_but_there_is_no_parameter_with_that_name: diag(
+  Doc_0_is_not_attached_to_a_class: diag(8022, DiagnosticCategory.Error, 'Doc_0_is_not_attached_to_a_class_8022', "Doc '@{0}' is not attached to a class."),
+  Doc_0_1_does_not_match_the_extends_2_clause: diag(8023, DiagnosticCategory.Error, 'Doc_0_1_does_not_match_the_extends_2_clause_8023', "Doc '@{0} {1}' does not match the 'extends {2}' clause."),
+  Doc_param_tag_has_name_0_but_there_is_no_parameter_with_that_name: diag(
     8024,
     DiagnosticCategory.Error,
-    'JSDoc_param_tag_has_name_0_but_there_is_no_parameter_with_that_name_8024',
-    "JSDoc '@param' tag has name '{0}', but there is no parameter with that name."
+    'Doc_param_tag_has_name_0_but_there_is_no_parameter_with_that_name_8024',
+    "Doc '@param' tag has name '{0}', but there is no parameter with that name."
   ),
   Class_declarations_cannot_have_more_than_one_augments_or_extends_tag: diag(
     8025,
@@ -5336,17 +5331,17 @@ export const diags = {
     'Expected_0_1_type_arguments_provide_these_with_an_extends_tag_8027',
     "Expected {0}-{1} type arguments; provide these with an '@extends' tag."
   ),
-  JSDoc_may_only_appear_in_the_last_parameter_of_a_signature: diag(
+  Doc_may_only_appear_in_the_last_parameter_of_a_signature: diag(
     8028,
     DiagnosticCategory.Error,
-    'JSDoc_may_only_appear_in_the_last_parameter_of_a_signature_8028',
-    "JSDoc '...' may only appear in the last parameter of a signature."
+    'Doc_may_only_appear_in_the_last_parameter_of_a_signature_8028',
+    "Doc '...' may only appear in the last parameter of a signature."
   ),
-  JSDoc_param_tag_has_name_0_but_there_is_no_parameter_with_that_name_It_would_match_arguments_if_it_had_an_array_type: diag(
+  Doc_param_tag_has_name_0_but_there_is_no_parameter_with_that_name_It_would_match_arguments_if_it_had_an_array_type: diag(
     8029,
     DiagnosticCategory.Error,
-    'JSDoc_param_tag_has_name_0_but_there_is_no_parameter_with_that_name_It_would_match_arguments_if_it_h_8029',
-    "JSDoc '@param' tag has name '{0}', but there is no parameter with that name. It would match 'arguments' if it had an array type."
+    'Doc_param_tag_has_name_0_but_there_is_no_parameter_with_that_name_It_would_match_arguments_if_it_h_8029',
+    "Doc '@param' tag has name '{0}', but there is no parameter with that name. It would match 'arguments' if it had an array type."
   ),
   The_type_of_a_function_declaration_must_match_the_function_s_signature: diag(
     8030,
@@ -5361,11 +5356,11 @@ export const diags = {
     'Qualified_name_0_is_not_allowed_without_a_leading_param_object_1_8032',
     "Qualified name '{0}' is not allowed without a leading '@param {object} {1}'."
   ),
-  A_JSDoc_typedef_comment_may_not_contain_multiple_type_tags: diag(
+  A_Doc_typedef_comment_may_not_contain_multiple_type_tags: diag(
     8033,
     DiagnosticCategory.Error,
-    'A_JSDoc_typedef_comment_may_not_contain_multiple_type_tags_8033',
-    "A JSDoc '@typedef' comment may not contain multiple '@type' tags."
+    'A_Doc_typedef_comment_may_not_contain_multiple_type_tags_8033',
+    "A Doc '@typedef' comment may not contain multiple '@type' tags."
   ),
   The_tag_was_first_specified_here: diag(8034, DiagnosticCategory.Error, 'The_tag_was_first_specified_here_8034', 'The tag was first specified here.'),
   Only_identifiers_Slashqualified_names_with_optional_type_arguments_are_currently_supported_in_a_class_extends_clause: diag(
@@ -5504,7 +5499,7 @@ export const diags = {
     'This constructor function may be converted to a class declaration.'
   ),
   Import_may_be_converted_to_a_default_import: diag(80003, DiagnosticCategory.Suggestion, 'Import_may_be_converted_to_a_default_import_80003', 'Import may be converted to a default import.'),
-  JSDoc_types_may_be_moved_to_TypeScript_types: diag(80004, DiagnosticCategory.Suggestion, 'JSDoc_types_may_be_moved_to_TypeScript_types_80004', 'JSDoc types may be moved to TypeScript types.'),
+  Doc_types_may_be_moved_to_TypeScript_types: diag(80004, DiagnosticCategory.Suggestion, 'Doc_types_may_be_moved_to_TypeScript_types_80004', 'Doc types may be moved to TypeScript types.'),
   require_call_may_be_converted_to_an_import: diag(80005, DiagnosticCategory.Suggestion, 'require_call_may_be_converted_to_an_import_80005', "'require' call may be converted to an import."),
   This_may_be_converted_to_an_async_function: diag(80006, DiagnosticCategory.Suggestion, 'This_may_be_converted_to_an_async_function_80006', 'This may be converted to an async function.'),
   await_has_no_effect_on_the_type_of_this_expression: diag(
@@ -5580,8 +5575,8 @@ export const diags = {
   Extract_constant: diag(95006, DiagnosticCategory.Message, 'Extract_constant_95006', 'Extract constant'),
   Extract_to_0_in_enclosing_scope: diag(95007, DiagnosticCategory.Message, 'Extract_to_0_in_enclosing_scope_95007', 'Extract to {0} in enclosing scope'),
   Extract_to_0_in_1_scope: diag(95008, DiagnosticCategory.Message, 'Extract_to_0_in_1_scope_95008', 'Extract to {0} in {1} scope'),
-  Annotate_with_type_from_JSDoc: diag(95009, DiagnosticCategory.Message, 'Annotate_with_type_from_JSDoc_95009', 'Annotate with type from JSDoc'),
-  Annotate_with_types_from_JSDoc: diag(95010, DiagnosticCategory.Message, 'Annotate_with_types_from_JSDoc_95010', 'Annotate with types from JSDoc'),
+  Annotate_with_type_from_Doc: diag(95009, DiagnosticCategory.Message, 'Annotate_with_type_from_Doc_95009', 'Annotate with type from Doc'),
+  Annotate_with_types_from_Doc: diag(95010, DiagnosticCategory.Message, 'Annotate_with_types_from_Doc_95010', 'Annotate with types from Doc'),
   Infer_type_of_0_from_usage: diag(95011, DiagnosticCategory.Message, 'Infer_type_of_0_from_usage_95011', "Infer type of '{0}' from usage"),
   Infer_parameter_types_from_usage: diag(95012, DiagnosticCategory.Message, 'Infer_parameter_types_from_usage_95012', 'Infer parameter types from usage'),
   Convert_to_default_import: diag(95013, DiagnosticCategory.Message, 'Convert_to_default_import_95013', 'Convert to default import'),
@@ -5653,7 +5648,7 @@ export const diags = {
   Implement_all_inherited_abstract_classes: diag(95040, DiagnosticCategory.Message, 'Implement_all_inherited_abstract_classes_95040', 'Implement all inherited abstract classes'),
   Add_all_missing_async_modifiers: diag(95041, DiagnosticCategory.Message, 'Add_all_missing_async_modifiers_95041', "Add all missing 'async' modifiers"),
   Add_ts_ignore_to_all_error_messages: diag(95042, DiagnosticCategory.Message, 'Add_ts_ignore_to_all_error_messages_95042', "Add '@ts-ignore' to all error messages"),
-  Annotate_everything_with_types_from_JSDoc: diag(95043, DiagnosticCategory.Message, 'Annotate_everything_with_types_from_JSDoc_95043', 'Annotate everything with types from JSDoc'),
+  Annotate_everything_with_types_from_Doc: diag(95043, DiagnosticCategory.Message, 'Annotate_everything_with_types_from_Doc_95043', 'Annotate everything with types from Doc'),
   Add_to_all_uncalled_decorators: diag(95044, DiagnosticCategory.Message, 'Add_to_all_uncalled_decorators_95044', "Add '()' to all uncalled decorators"),
   Convert_all_constructor_functions_to_classes: diag(95045, DiagnosticCategory.Message, 'Convert_all_constructor_functions_to_classes_95045', 'Convert all constructor functions to classes'),
   Generate_get_and_set_accessors: diag(95046, DiagnosticCategory.Message, 'Generate_get_and_set_accessors_95046', "Generate 'get' and 'set' accessors"),

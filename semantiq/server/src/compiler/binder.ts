@@ -77,7 +77,7 @@ function getModuleInstanceStateWorker(node: Node, visited: Map<ModuleInstanceSta
     case Syntax.ModuleDeclaration:
       return getModuleInstanceState(node as ModuleDeclaration, visited);
     case Syntax.Identifier:
-      if ((<Identifier>node).isInJSDocNamespace) return ModuleInstanceState.NonInstantiated;
+      if ((<Identifier>node).isInDocNamespace) return ModuleInstanceState.NonInstantiated;
   }
   return ModuleInstanceState.Instantiated;
 }
@@ -139,7 +139,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   let thisParentContainer: Node;
   let blockScopeContainer: Node;
   let lastContainer: Node;
-  let delayedTypeAliases: (JSDocTypedefTag | JSDocCallbackTag | JSDocEnumTag)[];
+  let delayedTypeAliases: (DocTypedefTag | DocCallbackTag | DocEnumTag)[];
   let seenThisKeyword: boolean;
   let currentFlow: FlowNode;
   let currentBreakTarget: FlowLabel | undefined;
@@ -178,7 +178,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       bind(file);
       file.symbolCount = symbolCount;
       file.classifiableNames = classifiableNames;
-      delayedBindJSDocTypedefTag();
+      delayedBindDocTypedefTag();
     }
     file = undefined!;
     options = undefined!;
@@ -259,7 +259,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
         return InternalSymbolName.Constructor;
       case Syntax.FunctionType:
       case Syntax.CallSignature:
-      case Syntax.JSDocSignature:
+      case Syntax.DocSignature:
         return InternalSymbolName.Call;
       case Syntax.ConstructorType:
       case Syntax.ConstructSignature:
@@ -274,15 +274,15 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
         if (getAssignmentDeclarationKind(node as BinaryExpression) === AssignmentDeclarationKind.ModuleExports) return InternalSymbolName.ExportEquals;
         fail('Unknown binary declaration kind');
         break;
-      case Syntax.JSDocFunctionType:
+      case Syntax.DocFunctionType:
         return qc.isDoc.constructSignature(node) ? InternalSymbolName.New : InternalSymbolName.Call;
       case Syntax.Parameter:
         assert(
-          node.parent.kind === Syntax.JSDocFunctionType,
+          node.parent.kind === Syntax.DocFunctionType,
           'Impossible parameter parent kind',
-          () => `parent is: ${(ts as any).SyntaxKind ? (ts as any).SyntaxKind[node.parent.kind] : node.parent.kind}, expected JSDocFunctionType`
+          () => `parent is: ${(ts as any).SyntaxKind ? (ts as any).SyntaxKind[node.parent.kind] : node.parent.kind}, expected DocFunctionType`
         );
-        const functionType = <JSDocFunctionType>node.parent;
+        const functionType = <DocFunctionType>node.parent;
         const index = functionType.parameters.indexOf(node as ParameterDeclaration);
         return ('arg' + index) as __String;
     }
@@ -507,7 +507,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   function bindChildrenWorker(node: Node): void {
     if (checkUnreachable(node)) {
       bindEachChild(node);
-      bindJSDoc(node);
+      bindDoc(node);
       return;
     }
     if (node.kind >= Syntax.FirstStatement && node.kind <= Syntax.LastStatement && !options.allowUnreachableCode) {
@@ -584,10 +584,10 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       case Syntax.NonNullExpression:
         bindNonNullExpressionFlow(<NonNullExpression>node);
         break;
-      case Syntax.JSDocTypedefTag:
-      case Syntax.JSDocCallbackTag:
-      case Syntax.JSDocEnumTag:
-        bindJSDocTypeAlias(node as JSDocTypedefTag | JSDocCallbackTag | JSDocEnumTag);
+      case Syntax.DocTypedefTag:
+      case Syntax.DocCallbackTag:
+      case Syntax.DocEnumTag:
+        bindDocTypeAlias(node as DocTypedefTag | DocCallbackTag | DocEnumTag);
         break;
       case Syntax.SourceFile: {
         bindEachFunctionsFirst((node as SourceFile).statements);
@@ -602,7 +602,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
         bindEachChild(node);
         break;
     }
-    bindJSDoc(node);
+    bindDoc(node);
   }
   function isNarrowingExpression(expr: Expression): boolean {
     switch (expr.kind) {
@@ -1254,15 +1254,15 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       bindInitializedVariableFlow(node);
     }
   }
-  function bindJSDocTypeAlias(node: JSDocTypedefTag | JSDocCallbackTag | JSDocEnumTag) {
+  function bindDocTypeAlias(node: DocTypedefTag | DocCallbackTag | DocEnumTag) {
     node.tagName.parent = node;
-    if (node.kind !== Syntax.JSDocEnumTag && node.fullName) {
+    if (node.kind !== Syntax.DocEnumTag && node.fullName) {
       setParentPointers(node, node.fullName);
     }
   }
-  function bindJSDocClassTag(node: JSDocClassTag) {
+  function bindDocClassTag(node: DocClassTag) {
     bindEachChild(node);
-    const host = getHostSignatureFromJSDoc(node);
+    const host = getHostSignatureFromDoc(node);
     if (host && host.kind !== Syntax.MethodDeclaration) {
       addDeclarationToSymbol(host.symbol, host, SymbolFlags.Class);
     }
@@ -1356,7 +1356,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       case Syntax.EnumDeclaration:
       case Syntax.ObjectLiteralExpression:
       case Syntax.TypeLiteral:
-      case Syntax.JSDocTypeLiteral:
+      case Syntax.DocTypeLiteral:
       case Syntax.JsxAttributes:
         return ContainerFlags.IsContainer;
       case Syntax.InterfaceDeclaration:
@@ -1376,8 +1376,8 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       case Syntax.GetAccessor:
       case Syntax.SetAccessor:
       case Syntax.CallSignature:
-      case Syntax.JSDocSignature:
-      case Syntax.JSDocFunctionType:
+      case Syntax.DocSignature:
+      case Syntax.DocFunctionType:
       case Syntax.FunctionType:
       case Syntax.ConstructSignature:
       case Syntax.IndexSignature:
@@ -1419,7 +1419,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       case Syntax.EnumDeclaration:
         return declareSymbol(container.symbol.exports!, container.symbol, node, symbolFlags, symbolExcludes);
       case Syntax.TypeLiteral:
-      case Syntax.JSDocTypeLiteral:
+      case Syntax.DocTypeLiteral:
       case Syntax.ObjectLiteralExpression:
       case Syntax.InterfaceDeclaration:
       case Syntax.JsxAttributes:
@@ -1428,7 +1428,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       case Syntax.ConstructorType:
       case Syntax.CallSignature:
       case Syntax.ConstructSignature:
-      case Syntax.JSDocSignature:
+      case Syntax.DocSignature:
       case Syntax.IndexSignature:
       case Syntax.MethodDeclaration:
       case Syntax.MethodSignature:
@@ -1438,9 +1438,9 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       case Syntax.FunctionDeclaration:
       case Syntax.FunctionExpression:
       case Syntax.ArrowFunction:
-      case Syntax.JSDocFunctionType:
-      case Syntax.JSDocTypedefTag:
-      case Syntax.JSDocCallbackTag:
+      case Syntax.DocFunctionType:
+      case Syntax.DocTypedefTag:
+      case Syntax.DocCallbackTag:
       case Syntax.TypeAliasDeclaration:
       case Syntax.MappedType:
         return declareSymbol(container.locals!, undefined, node, symbolFlags, symbolExcludes);
@@ -1501,7 +1501,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     declareSymbolAndAddToSymbolTable(node, instantiated ? SymbolFlags.ValueModule : SymbolFlags.NamespaceModule, instantiated ? SymbolFlags.ValueModuleExcludes : SymbolFlags.NamespaceModuleExcludes);
     return state;
   }
-  function bindFunctionOrConstructorType(node: SignatureDeclaration | JSDocSignature): void {
+  function bindFunctionOrConstructorType(node: SignatureDeclaration | DocSignature): void {
     const symbol = newSymbol(SymbolFlags.Signature, getDeclarationName(node)!);
     addDeclarationToSymbol(symbol, node, SymbolFlags.Signature);
     const typeLiteralSymbol = newSymbol(SymbolFlags.TypeLiteral, InternalSymbolName.Type);
@@ -1568,7 +1568,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
         declareSymbol(blockScopeContainer.locals, undefined, node, symbolFlags, symbolExcludes);
     }
   }
-  function delayedBindJSDocTypedefTag() {
+  function delayedBindDocTypedefTag() {
     if (!delayedTypeAliases) {
       return;
     }
@@ -1585,7 +1585,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       parent = typeAlias;
       bind(typeAlias.typeExpression);
       const declName = getNameOfDeclaration(typeAlias);
-      if ((qc.is.kind(JSDocEnumTag, typeAlias) || !typeAlias.fullName) && declName && isPropertyAccessEntityNameExpression(declName.parent)) {
+      if ((qc.is.kind(DocEnumTag, typeAlias) || !typeAlias.fullName) && declName && isPropertyAccessEntityNameExpression(declName.parent)) {
         const isTopLevel = isTopLevelNamespaceAssignment(declName.parent);
         if (isTopLevel) {
           bindPotentiallyMissingNamespaces(
@@ -1626,7 +1626,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
           }
           container = oldContainer;
         }
-      } else if (qc.is.kind(JSDocEnumTag, typeAlias) || !typeAlias.fullName || typeAlias.fullName.kind === Syntax.Identifier) {
+      } else if (qc.is.kind(DocEnumTag, typeAlias) || !typeAlias.fullName || typeAlias.fullName.kind === Syntax.Identifier) {
         parent = typeAlias.parent;
         bindBlockScopedDeclaration(typeAlias, SymbolFlags.TypeAlias, SymbolFlags.TypeAliasExcludes);
       } else {
@@ -1646,7 +1646,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       node.originalKeywordKind! <= Syntax.LastFutureReservedWord &&
       !isIdentifierName(node) &&
       !(node.flags & NodeFlags.Ambient) &&
-      !(node.flags & NodeFlags.JSDoc)
+      !(node.flags & NodeFlags.Doc)
     ) {
       if (!file.parseqd.length) {
         file.bindqd.push(createDiagnosticForNode(node, getStrictModeIdentifierMessage(node), declarationNameToString(node)));
@@ -1784,19 +1784,19 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       subtreeTransformFlags |= computeTransformFlagsForNode(node, 0);
       const saveParent = parent;
       if (node.kind === Syntax.EndOfFileToken) parent = node;
-      bindJSDoc(node);
+      bindDoc(node);
       parent = saveParent;
     }
     inStrictMode = saveInStrictMode;
   }
-  function bindJSDoc(node: Node) {
-    if (qc.is.withJSDocNodes(node)) {
+  function bindDoc(node: Node) {
+    if (qc.is.withDocNodes(node)) {
       if (isInJSFile(node)) {
-        for (const j of node.jsDoc!) {
+        for (const j of node.doc!) {
           bind(j);
         }
       } else {
-        for (const j of node.jsDoc!) {
+        for (const j of node.doc!) {
           setParentPointers(node, j);
         }
       }
@@ -1822,7 +1822,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   function bindWorker(node: Node) {
     switch (node.kind) {
       case Syntax.Identifier:
-        if ((<Identifier>node).isInJSDocNamespace) {
+        if ((<Identifier>node).isInDocNamespace) {
           let parentNode = node.parent;
           while (parentNode && !qc.isDoc.typeAlias(parentNode)) {
             parentNode = parentNode.parent;
@@ -1936,16 +1936,16 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       case Syntax.SetAccessor:
         return bindPropertyOrMethodOrAccessor(<Declaration>node, SymbolFlags.SetAccessor, SymbolFlags.SetAccessorExcludes);
       case Syntax.FunctionType:
-      case Syntax.JSDocFunctionType:
-      case Syntax.JSDocSignature:
+      case Syntax.DocFunctionType:
+      case Syntax.DocSignature:
       case Syntax.ConstructorType:
-        return bindFunctionOrConstructorType(<SignatureDeclaration | JSDocSignature>node);
+        return bindFunctionOrConstructorType(<SignatureDeclaration | DocSignature>node);
       case Syntax.TypeLiteral:
-      case Syntax.JSDocTypeLiteral:
+      case Syntax.DocTypeLiteral:
       case Syntax.MappedType:
-        return bindAnonymousTypeWorker(node as TypeLiteralNode | MappedTypeNode | JSDocTypeLiteral);
-      case Syntax.JSDocClassTag:
-        return bindJSDocClassTag(node as JSDocClassTag);
+        return bindAnonymousTypeWorker(node as TypeLiteralNode | MappedTypeNode | DocTypeLiteral);
+      case Syntax.DocClassTag:
+        return bindDocClassTag(node as DocClassTag);
       case Syntax.ObjectLiteralExpression:
         return bindObjectLiteralExpression(<ObjectLiteralExpression>node);
       case Syntax.FunctionExpression:
@@ -2007,26 +2007,26 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
         }
       case Syntax.ModuleBlock:
         return updateStrictModeStatementList((<Block | ModuleBlock>node).statements);
-      case Syntax.JSDocParameterTag:
-        if (node.parent.kind === Syntax.JSDocSignature) return bindParameter(node as JSDocParameterTag);
-        if (node.parent.kind !== Syntax.JSDocTypeLiteral) {
+      case Syntax.DocParameterTag:
+        if (node.parent.kind === Syntax.DocSignature) return bindParameter(node as DocParameterTag);
+        if (node.parent.kind !== Syntax.DocTypeLiteral) {
           break;
         }
-      case Syntax.JSDocPropertyTag:
-        const propTag = node as JSDocPropertyLikeTag;
+      case Syntax.DocPropertyTag:
+        const propTag = node as DocPropertyLikeTag;
         const flags =
-          propTag.isBracketed || (propTag.typeExpression && propTag.typeExpression.type.kind === Syntax.JSDocOptionalType) ? SymbolFlags.Property | SymbolFlags.Optional : SymbolFlags.Property;
+          propTag.isBracketed || (propTag.typeExpression && propTag.typeExpression.type.kind === Syntax.DocOptionalType) ? SymbolFlags.Property | SymbolFlags.Optional : SymbolFlags.Property;
         return declareSymbolAndAddToSymbolTable(propTag, flags, SymbolFlags.PropertyExcludes);
-      case Syntax.JSDocTypedefTag:
-      case Syntax.JSDocCallbackTag:
-      case Syntax.JSDocEnumTag:
-        return (delayedTypeAliases || (delayedTypeAliases = [])).push(node as JSDocTypedefTag | JSDocCallbackTag | JSDocEnumTag);
+      case Syntax.DocTypedefTag:
+      case Syntax.DocCallbackTag:
+      case Syntax.DocEnumTag:
+        return (delayedTypeAliases || (delayedTypeAliases = [])).push(node as DocTypedefTag | DocCallbackTag | DocEnumTag);
     }
   }
   function bindPropertyWorker(node: PropertyDeclaration | PropertySignature) {
     return bindPropertyOrMethodOrAccessor(node, SymbolFlags.Property | (node.questionToken ? SymbolFlags.Optional : SymbolFlags.None), SymbolFlags.PropertyExcludes);
   }
-  function bindAnonymousTypeWorker(node: TypeLiteralNode | MappedTypeNode | JSDocTypeLiteral) {
+  function bindAnonymousTypeWorker(node: TypeLiteralNode | MappedTypeNode | DocTypeLiteral) {
     return bindAnonymousDeclaration(<Declaration>node, SymbolFlags.TypeLiteral, InternalSymbolName.Type);
   }
   function bindSourceFileIfExternalModule() {
@@ -2431,8 +2431,8 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       }
     }
   }
-  function bindParameter(node: ParameterDeclaration | JSDocParameterTag) {
-    if (node.kind === Syntax.JSDocParameterTag && container.kind !== Syntax.JSDocSignature) {
+  function bindParameter(node: ParameterDeclaration | DocParameterTag) {
+    if (node.kind === Syntax.DocParameterTag && container.kind !== Syntax.DocSignature) {
       return;
     }
     if (inStrictMode && !(node.flags & NodeFlags.Ambient)) {
@@ -2495,8 +2495,8 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     return extendsType && (extendsType.parent as ConditionalTypeNode);
   }
   function bindTypeParameter(node: TypeParameterDeclaration) {
-    if (qc.is.kind(JSDocTemplateTag, node.parent)) {
-      const container = find((node.parent.parent as JSDoc).tags!, isJSDocTypeAlias) || getHostSignatureFromJSDoc(node.parent);
+    if (qc.is.kind(DocTemplateTag, node.parent)) {
+      const container = find((node.parent.parent as Doc).tags!, isDocTypeAlias) || getHostSignatureFromDoc(node.parent);
       if (container) {
         if (!container.locals) {
           container.locals = new SymbolTable();

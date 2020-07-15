@@ -783,16 +783,16 @@ export function transformTypeScript(context: TransformationContext) {
       case Syntax.ThisType:
       case Syntax.ImportType:
         break;
-      case Syntax.JSDocAllType:
-      case Syntax.JSDocUnknownType:
-      case Syntax.JSDocFunctionType:
-      case Syntax.JSDocVariadicType:
-      case Syntax.JSDocNamepathType:
+      case Syntax.DocAllType:
+      case Syntax.DocUnknownType:
+      case Syntax.DocFunctionType:
+      case Syntax.DocVariadicType:
+      case Syntax.DocNamepathType:
         break;
-      case Syntax.JSDocNullableType:
-      case Syntax.JSDocNonNullableType:
-      case Syntax.JSDocOptionalType:
-        return serializeTypeNode((<JSDocNullableType | JSDocNonNullableType | JSDocOptionalType>node).type);
+      case Syntax.DocNullableType:
+      case Syntax.DocNonNullableType:
+      case Syntax.DocOptionalType:
+        return serializeTypeNode((<DocNullableType | DocNonNullableType | DocOptionalType>node).type);
       default:
         return Debug.failBadSyntax(node);
     }

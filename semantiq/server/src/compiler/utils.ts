@@ -229,11 +229,11 @@ export function createCommentDirectivesMap(sourceFile: SourceFile, commentDirect
     return true;
   }
 }
-export function getTokenPosOfNode(node: Node, sourceFile?: SourceFileLike, includeJsDoc?: boolean): number {
+export function getTokenPosOfNode(node: Node, sourceFile?: SourceFileLike, includeDoc?: boolean): number {
   if (qc.is.missing(node)) return node.pos;
   if (qc.isDoc.node(node)) return syntax.skipTrivia((sourceFile || qc.get.sourceFileOf(node)).text, node.pos, false, true);
-  if (includeJsDoc && qc.is.withJSDocNodes(node)) return getTokenPosOfNode(node.jsDoc![0], sourceFile);
-  if (node.kind === Syntax.SyntaxList && (<SyntaxList>node)._children.length > 0) return getTokenPosOfNode((<SyntaxList>node)._children[0], sourceFile, includeJsDoc);
+  if (includeDoc && qc.is.withDocNodes(node)) return getTokenPosOfNode(node.doc![0], sourceFile);
+  if (node.kind === Syntax.SyntaxList && (<SyntaxList>node)._children.length > 0) return getTokenPosOfNode((<SyntaxList>node)._children[0], sourceFile, includeDoc);
   return syntax.skipTrivia((sourceFile || qc.get.sourceFileOf(node)).text, node.pos);
 }
 export function getNonDecoratorTokenPosOfNode(node: Node, sourceFile?: SourceFileLike): number {
@@ -243,8 +243,8 @@ export function getNonDecoratorTokenPosOfNode(node: Node, sourceFile?: SourceFil
 export function getSourceTextOfNodeFromSourceFile(sourceFile: SourceFile, node: Node, includeTrivia = false): string {
   return getTextOfNodeFromSourceText(sourceFile.text, node, includeTrivia);
 }
-function isJSDocTypeExpressionOrChild(node: Node): boolean {
-  return !!Node.findAncestor(node, isJSDocTypeExpression);
+function isDocTypeExpressionOrChild(node: Node): boolean {
+  return !!Node.findAncestor(node, isDocTypeExpression);
 }
 export function indexOfNode(nodeArray: readonly Node[], node: Node) {
   return binarySearch(nodeArray, node, getPos, compareValues);
@@ -436,7 +436,7 @@ export function getErrorSpanForNode(sourceFile: SourceFile, node: Node): TextSpa
       return TextSpan.from(start, end);
   }
   if (errorNode === undefined) return getSpanOfTokenAtPosition(sourceFile, node.pos);
-  assert(!qc.is.kind(JSDoc, errorNode));
+  assert(!qc.is.kind(Doc, errorNode));
   const isMissing = qc.is.missing(errorNode);
   const pos = isMissing || qc.is.kind(JsxText, node) ? errorNode.pos : syntax.skipTrivia(sourceFile.text, errorNode.pos);
   if (isMissing) {
@@ -704,10 +704,10 @@ export function isInJsonFile(node: Node | undefined): boolean {
 export function isSourceFileNotJson(file: SourceFile) {
   return !isJsonSourceFile(file);
 }
-export function isInJSDoc(node: Node | undefined): boolean {
-  return !!node && !!(node.flags & NodeFlags.JSDoc);
+export function isInDoc(node: Node | undefined): boolean {
+  return !!node && !!(node.flags & NodeFlags.Doc);
 }
-export function isJSDocIndexSignature(node: TypeReferenceNode | ExpressionWithTypeArguments) {
+export function isDocIndexSignature(node: TypeReferenceNode | ExpressionWithTypeArguments) {
   return (
     qc.is.kind(TypeReferenceNode, node) &&
     qc.is.kind(Identifier, node.typeName) &&
@@ -1083,24 +1083,24 @@ function getSingleVariableOfVariableStatement(node: Node): VariableDeclaration |
 function getNestedModuleDeclaration(node: Node): Node | undefined {
   return qc.is.kind(ModuleDeclaration, node) && node.body && node.body.kind === Syntax.ModuleDeclaration ? node.body : undefined;
 }
-export function getParameterSymbolFromJSDoc(node: JSDocParameterTag): Symbol | undefined {
+export function getParameterSymbolFromDoc(node: DocParameterTag): Symbol | undefined {
   if (node.symbol) return node.symbol;
   if (!qc.is.kind(Identifier, node.name)) {
     return;
   }
   const name = node.name.escapedText;
-  const decl = getHostSignatureFromJSDoc(node);
+  const decl = getHostSignatureFromDoc(node);
   if (!decl) {
     return;
   }
   const parameter = find(decl.parameters, (p) => p.name.kind === Syntax.Identifier && p.name.escapedText === name);
   return parameter && parameter.symbol;
 }
-export function getHostSignatureFromJSDoc(node: Node): SignatureDeclaration | undefined {
-  const host = getEffectiveJSDocHost(node);
+export function getHostSignatureFromDoc(node: Node): SignatureDeclaration | undefined {
+  const host = getEffectiveDocHost(node);
   return host && qc.is.functionLike(host) ? host : undefined;
 }
-export function getEffectiveJSDocHost(node: Node): Node | undefined {
+export function getEffectiveDocHost(node: Node): Node | undefined {
   const host = qc.getDoc.host(node);
   const decl =
     getSourceOfDefaultedAssignment(host) ||
@@ -1111,18 +1111,18 @@ export function getEffectiveJSDocHost(node: Node): Node | undefined {
     host;
   return decl;
 }
-export function getTypeParameterFromJsDoc(node: TypeParameterDeclaration & { parent: JSDocTemplateTag }): TypeParameterDeclaration | undefined {
+export function getTypeParameterFromDoc(node: TypeParameterDeclaration & { parent: DocTemplateTag }): TypeParameterDeclaration | undefined {
   const name = node.name.escapedText;
   const { typeParameters } = node.parent.parent.parent as SignatureDeclaration | InterfaceDeclaration | ClassDeclaration;
   return typeParameters && find(typeParameters, (p) => p.name.escapedText === name);
 }
-export function hasRestParameter(s: SignatureDeclaration | JSDocSignature): boolean {
-  const last = lastOrUndefined<ParameterDeclaration | JSDocParameterTag>(s.parameters);
+export function hasRestParameter(s: SignatureDeclaration | DocSignature): boolean {
+  const last = lastOrUndefined<ParameterDeclaration | DocParameterTag>(s.parameters);
   return !!last && isRestParameter(last);
 }
-export function isRestParameter(node: ParameterDeclaration | JSDocParameterTag): boolean {
-  const type = qc.is.kind(JSDocParameterTag, node) ? node.typeExpression && node.typeExpression.type : node.type;
-  return (node as ParameterDeclaration).dot3Token !== undefined || (!!type && type.kind === Syntax.JSDocVariadicType);
+export function isRestParameter(node: ParameterDeclaration | DocParameterTag): boolean {
+  const type = qc.is.kind(DocParameterTag, node) ? node.typeExpression && node.typeExpression.type : node.type;
+  return (node as ParameterDeclaration).dot3Token !== undefined || (!!type && type.kind === Syntax.DocVariadicType);
 }
 export function hasTypeArguments(node: Node): node is HasTypeArguments {
   return !!(node as HasTypeArguments).typeArguments;
@@ -1239,7 +1239,7 @@ export function getDeclarationFromName(name: Node): Declaration | undefined {
       if (qc.is.declaration(parent)) return parent.name === name ? parent : undefined;
       else if (qc.is.kind(QualifiedName, parent)) {
         const tag = parent.parent;
-        return qc.is.kind(JSDocParameterTag, tag) && tag.name === parent ? tag : undefined;
+        return qc.is.kind(DocParameterTag, tag) && tag.name === parent ? tag : undefined;
       } else {
         const binExp = parent.parent;
         return qc.is.kind(BinaryExpression, binExp) &&
@@ -1982,8 +1982,8 @@ export function getSetAccessorTypeAnnotationNode(accessor: SetAccessorDeclaratio
   const parameter = getSetAccessorValueParameter(accessor);
   return parameter && parameter.type;
 }
-export function getThisNodeKind(ParameterDeclaration, signature: SignatureDeclaration | JSDocSignature): ParameterDeclaration | undefined {
-  if (signature.parameters.length && !qc.is.kind(JSDocSignature, signature)) {
+export function getThisNodeKind(ParameterDeclaration, signature: SignatureDeclaration | DocSignature): ParameterDeclaration | undefined {
+  if (signature.parameters.length && !qc.is.kind(DocSignature, signature)) {
     const thisParameter = signature.parameters[0];
     if (parameterIsThisKeyword(thisParameter)) return thisParameter;
   }
@@ -2048,11 +2048,11 @@ export function getEffectiveTypeAnnotationNode(node: Node): TypeNode | undefined
 export function getTypeAnnotationNode(node: Node): TypeNode | undefined {
   return (node as HasType).type;
 }
-export function getEffectiveReturnTypeNode(node: SignatureDeclaration | JSDocSignature): TypeNode | undefined {
-  return qc.is.kind(JSDocSignature, node) ? node.type && node.type.typeExpression && node.type.typeExpression.type : node.type || (isInJSFile(node) ? qc.getDoc.returnType(node) : undefined);
+export function getEffectiveReturnTypeNode(node: SignatureDeclaration | DocSignature): TypeNode | undefined {
+  return qc.is.kind(DocSignature, node) ? node.type && node.type.typeExpression && node.type.typeExpression.type : node.type || (isInJSFile(node) ? qc.getDoc.returnType(node) : undefined);
 }
-function isNonTypeAliasTemplate(tag: JSDocTag): tag is JSDocTemplateTag {
-  return qc.is.kind(JSDocTemplateTag, tag) && !(tag.parent.kind === Syntax.JSDocComment && tag.parent.tags!.some(isJSDocTypeAlias));
+function isNonTypeAliasTemplate(tag: DocTag): tag is DocTemplateTag {
+  return qc.is.kind(DocTemplateTag, tag) && !(tag.parent.kind === Syntax.DocComment && tag.parent.tags!.some(isDocTypeAlias));
 }
 export function getEffectiveSetAccessorTypeAnnotationNode(node: SetAccessorDeclaration): TypeNode | undefined {
   const parameter = getSetAccessorValueParameter(node);
@@ -2234,15 +2234,15 @@ export function getSelectedEffectiveModifierFlags(node: Node, flags: ModifierFla
 export function getSelectedSyntacticModifierFlags(node: Node, flags: ModifierFlags): ModifierFlags {
   return getSyntacticModifierFlags(node) & flags;
 }
-function getModifierFlagsWorker(node: Node, includeJSDoc: boolean): ModifierFlags {
+function getModifierFlagsWorker(node: Node, includeDoc: boolean): ModifierFlags {
   if (node.kind >= Syntax.FirstToken && node.kind <= Syntax.LastToken) return ModifierFlags.None;
   if (!(node.modifierFlagsCache & ModifierFlags.HasComputedFlags)) {
     node.modifierFlagsCache = getSyntacticModifierFlagsNoCache(node) | ModifierFlags.HasComputedFlags;
   }
-  if (includeJSDoc && !(node.modifierFlagsCache & ModifierFlags.HasComputedJSDocModifiers) && isInJSFile(node) && node.parent) {
-    node.modifierFlagsCache |= qc.getDoc.modifierFlagsNoCache(node) | ModifierFlags.HasComputedJSDocModifiers;
+  if (includeDoc && !(node.modifierFlagsCache & ModifierFlags.HasComputedDocModifiers) && isInJSFile(node) && node.parent) {
+    node.modifierFlagsCache |= qc.getDoc.modifierFlagsNoCache(node) | ModifierFlags.HasComputedDocModifiers;
   }
-  return node.modifierFlagsCache & ~(ModifierFlags.HasComputedFlags | ModifierFlags.HasComputedJSDocModifiers);
+  return node.modifierFlagsCache & ~(ModifierFlags.HasComputedFlags | ModifierFlags.HasComputedDocModifiers);
 }
 export function getEffectiveModifierFlags(node: Node): ModifierFlags {
   return getModifierFlagsWorker(node, true);
@@ -2255,7 +2255,7 @@ export function getEffectiveModifierFlagsNoCache(node: Node): ModifierFlags {
 }
 export function getSyntacticModifierFlagsNoCache(node: Node): ModifierFlags {
   let flags = modifiersToFlags(node.modifiers);
-  if (node.flags & NodeFlags.NestedNamespace || (node.kind === Syntax.Identifier && (<Identifier>node).isInJSDocNamespace)) {
+  if (node.flags & NodeFlags.NestedNamespace || (node.kind === Syntax.Identifier && (<Identifier>node).isInDocNamespace)) {
     flags |= ModifierFlags.Export;
   }
   return flags;
@@ -3503,7 +3503,7 @@ export function arrayIsHomogeneous<T>(array: readonly T[], comparer: EqualityCom
 export function getTextOfNodeFromSourceText(sourceText: string, node: Node, includeTrivia = false): string {
   if (qc.is.missing(node)) return '';
   let text = sourceText.substring(includeTrivia ? node.pos : syntax.skipTrivia(sourceText, node.pos), node.end);
-  if (isJSDocTypeExpressionOrChild(node)) {
+  if (isDocTypeExpressionOrChild(node)) {
     text = text.replace(/(^|\r?\n|\r)\s*\*\s*/g, '$1');
   }
   return text;

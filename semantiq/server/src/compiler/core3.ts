@@ -7,7 +7,7 @@ import * as qy from './syntax';
 import * as qt from './types';
 export * from './core2';
 
-type Node = qt.NodeTypes;
+type Node = qt.Node;
 
 const MAX_SMI_X86 = 0x3fff_ffff;
 
@@ -66,7 +66,7 @@ export const is = new (class {
       case Syntax.QualifiedName:
         let n2 = n as Node | undefined;
         while (n2?.parent?.kind === Syntax.QualifiedName) {
-          n2 = n2.parent as Node | undefined;
+          n2 = n2.parent;
         }
         return n2?.kind === Syntax.TypeQuery || isJsx.tagName(n);
       case Syntax.Identifier:
@@ -131,7 +131,7 @@ export const is = new (class {
     let n2 = n as Node | undefined;
     while (n2) {
       if (n2 === ancestor) return true;
-      n2 = n2.parent as Node | undefined;
+      n2 = n2.parent;
     }
     return false;
   }
@@ -148,7 +148,7 @@ export const is = new (class {
   declarationName(n: Node) {
     return !this.kind(qc.SourceFile, n) && !this.kind(qc.BindingPattern, n) && this.declaration(n.parent) && n.parent.name === n;
   }
-  typeAlias(n: Node): n is qc.JSDocTypedefTag | qc.JSDocCallbackTag | qc.JSDocEnumTag | qc.TypeAliasDeclaration {
+  typeAlias(n: Node): n is qc.DocTypedefTag | qc.DocCallbackTag | qc.DocEnumTag | qc.TypeAliasDeclaration {
     return isDoc.typeAlias(n) || this.kind(qc.TypeAliasDeclaration, n);
   }
   literalLikeAccess(n: Node): n is qc.LiteralLikeElementAccessExpression | qc.PropertyAccessExpression {
@@ -168,7 +168,7 @@ export const is = new (class {
   }
   partOfTypeQuery(n?: Node) {
     while (n?.kind === Syntax.QualifiedName || n?.kind === Syntax.Identifier) {
-      n = n?.parent as Node | undefined;
+      n = n?.parent;
     }
     return n?.kind === Syntax.TypeQuery;
   }
@@ -214,8 +214,8 @@ export const is = new (class {
             return !isExpressionWithTypeArgumentsInClassExtendsClause(parent);
           case Syntax.TypeParameter:
             return n === (<TypeParameterDeclaration>parent).constraint;
-          case Syntax.JSDocTemplateTag:
-            return n === (<JSDocTemplateTag>parent).constraint;
+          case Syntax.DocTemplateTag:
+            return n === (<DocTemplateTag>parent).constraint;
           case Syntax.PropertyDeclaration:
           case Syntax.PropertySignature:
           case Syntax.Parameter:
@@ -292,7 +292,7 @@ export const is = new (class {
   childOfNodeWithKind(n: Node | undefined, k: Syntax) {
     while (n) {
       if (n.kind === k) return true;
-      n = n.parent as Node | undefined;
+      n = n.parent;
     }
     return false;
   }
@@ -338,9 +338,9 @@ export const is = new (class {
   }
   declarationWithTypeParameters(n: Node): n is qc.DeclarationWithTypeParameters {
     switch (n.kind) {
-      case Syntax.JSDocCallbackTag:
-      case Syntax.JSDocTypedefTag:
-      case Syntax.JSDocSignature:
+      case Syntax.DocCallbackTag:
+      case Syntax.DocTypedefTag:
+      case Syntax.DocSignature:
         return true;
       default:
         assertType<DeclarationWithTypeParameterChildren>(n);
@@ -355,12 +355,12 @@ export const is = new (class {
       case Syntax.IndexSignature:
       case Syntax.FunctionType:
       case Syntax.ConstructorType:
-      case Syntax.JSDocFunctionType:
+      case Syntax.DocFunctionType:
       case Syntax.ClassDeclaration:
       case Syntax.ClassExpression:
       case Syntax.InterfaceDeclaration:
       case Syntax.TypeAliasDeclaration:
-      case Syntax.JSDocTemplateTag:
+      case Syntax.DocTemplateTag:
       case Syntax.FunctionDeclaration:
       case Syntax.MethodDeclaration:
       case Syntax.Constructor:
@@ -461,9 +461,9 @@ export const is = new (class {
     if (this.kind(qc.VariableStatement, n) && qb.some(n.declarationList.declarations, (d) => this.withName(d, name))) return true;
     return false;
   }
-  withJSDocNodes(n: Node): n is qc.HasJSDoc {
-    const { jsDoc } = n as qc.JSDocContainer;
-    return !!jsDoc && jsDoc.length > 0;
+  withDocNodes(n: Node): n is qc.HasDoc {
+    const { doc } = n as qc.DocContainer;
+    return !!doc && doc.length > 0;
   }
   withType(n: Node): n is qc.HasType {
     return !!(n as HasType).type;
@@ -674,7 +674,7 @@ export const is = new (class {
     return this.kind(VariableDeclarationList, n) || this.expression(n);
   }
   declaration(n: Node): n is NamedDeclaration {
-    if (this.kind(qc.TypeParameter, n)) return (n.parent && n.parent.kind !== Syntax.JSDocTemplateTag) || isInJSFile(n);
+    if (this.kind(qc.TypeParameter, n)) return (n.parent && n.parent.kind !== Syntax.DocTemplateTag) || isInJSFile(n);
     return qy.is.declaration(n.kind);
   }
   declarationStatement(n: Node): n is DeclarationStatement {
@@ -852,28 +852,28 @@ export const isJsx = new (class {
 })();
 export const isDoc = new (class {
   constructSignature(n: Node) {
-    const p = is.kind(JSDocFunctionType, n) ? firstOrUndefined(n.parameters) : undefined;
+    const p = is.kind(DocFunctionType, n) ? firstOrUndefined(n.parameters) : undefined;
     const i = tryCast(p && p.name, isIdentifier);
     return !!i && i.escapedText === 'new';
   }
-  typeAlias(n: Node): n is qt.JSDocTypedefTag | qt.JSDocCallbackTag | qt.JSDocEnumTag {
-    return is.kind(qc.JSDocTypedefTag, n) || is.kind(qc.JSDocCallbackTag, n) || is.kind(qc.JSDocEnumTag, n);
+  typeAlias(n: Node): n is qt.DocTypedefTag | qt.DocCallbackTag | qt.DocEnumTag {
+    return is.kind(qc.DocTypedefTag, n) || is.kind(qc.DocCallbackTag, n) || is.kind(qc.DocEnumTag, n);
   }
-  namespaceBody(n: Node): n is qt.JSDocNamespaceBody {
+  namespaceBody(n: Node): n is qt.DocNamespaceBody {
     const k = n.kind;
     return k === Syntax.Identifier || k === Syntax.ModuleDeclaration;
   }
-  propertyLikeTag(n: Node): n is qt.JSDocPropertyLikeTag {
-    return is.kind(qc.JSDocPropertyTag, n) || is.kind(qc.JSDocParameterTag, n);
+  propertyLikeTag(n: Node): n is qt.DocPropertyLikeTag {
+    return is.kind(qc.DocPropertyTag, n) || is.kind(qc.DocParameterTag, n);
   }
   node(n: Node) {
-    return n.kind >= Syntax.FirstJSDocNode && n.kind <= Syntax.LastJSDocNode;
+    return n.kind >= Syntax.FirstDocNode && n.kind <= Syntax.LastDocNode;
   }
   commentContainingNode(n: Node) {
-    return is.kind(qc.JSDocComment, n) || is.kind(qc.JSDocNamepathType, n) || this.tag(n) || is.kind(JSDocTypeLiteral, n) || is.kind(JSDocSignature, n);
+    return is.kind(qc.DocComment, n) || is.kind(qc.DocNamepathType, n) || this.tag(n) || is.kind(DocTypeLiteral, n) || is.kind(DocSignature, n);
   }
-  tag(n: Node): n is qt.JSDocTag {
-    return n.kind >= Syntax.FirstJSDocTagNode && n.kind <= Syntax.LastJSDocTagNode;
+  tag(n: Node): n is qt.DocTag {
+    return n.kind >= Syntax.FirstDocTagNode && n.kind <= Syntax.LastDocTagNode;
   }
 })();
 export const get = new (class {
@@ -1075,58 +1075,58 @@ export const get = new (class {
   }
 })();
 export const getDoc = new (class {
-  augmentsTag(n: Node): qt.JSDocAugmentsTag | undefined {
-    return this.firstTag(n, (n) => is.kind(JSDocAugmentsTag, n));
+  augmentsTag(n: Node): qt.DocAugmentsTag | undefined {
+    return this.firstTag(n, (n) => is.kind(DocAugmentsTag, n));
   }
-  implementsTags(n: Node): readonly qt.JSDocImplementsTag[] {
-    return this.allTags(n, isJSDocImplementsTag);
+  implementsTags(n: Node): readonly qt.DocImplementsTag[] {
+    return this.allTags(n, isDocImplementsTag);
   }
-  classTag(n: Node): qt.JSDocClassTag | undefined {
-    return this.firstTag(n, isJSDocClassTag);
+  classTag(n: Node): qt.DocClassTag | undefined {
+    return this.firstTag(n, isDocClassTag);
   }
-  publicTag(n: Node): qt.JSDocPublicTag | undefined {
-    return this.firstTag(n, isJSDocPublicTag);
+  publicTag(n: Node): qt.DocPublicTag | undefined {
+    return this.firstTag(n, isDocPublicTag);
   }
-  publicTagNoCache(n: Node): qt.JSDocPublicTag | undefined {
-    return this.firstTag(n, isJSDocPublicTag, true);
+  publicTagNoCache(n: Node): qt.DocPublicTag | undefined {
+    return this.firstTag(n, isDocPublicTag, true);
   }
-  privateTag(n: Node): qt.JSDocPrivateTag | undefined {
-    return this.firstTag(n, isJSDocPrivateTag);
+  privateTag(n: Node): qt.DocPrivateTag | undefined {
+    return this.firstTag(n, isDocPrivateTag);
   }
-  privateTagNoCache(n: Node): qt.JSDocPrivateTag | undefined {
-    return this.firstTag(n, isJSDocPrivateTag, true);
+  privateTagNoCache(n: Node): qt.DocPrivateTag | undefined {
+    return this.firstTag(n, isDocPrivateTag, true);
   }
-  protectedTag(n: Node): qt.JSDocProtectedTag | undefined {
-    return this.firstTag(n, isJSDocProtectedTag);
+  protectedTag(n: Node): qt.DocProtectedTag | undefined {
+    return this.firstTag(n, isDocProtectedTag);
   }
-  protectedTagNoCache(n: Node): qt.JSDocProtectedTag | undefined {
-    return this.firstTag(n, isJSDocProtectedTag, true);
+  protectedTagNoCache(n: Node): qt.DocProtectedTag | undefined {
+    return this.firstTag(n, isDocProtectedTag, true);
   }
-  readonlyTag(n: Node): qt.JSDocReadonlyTag | undefined {
-    return this.firstTag(n, isJSDocReadonlyTag);
+  readonlyTag(n: Node): qt.DocReadonlyTag | undefined {
+    return this.firstTag(n, isDocReadonlyTag);
   }
-  readonlyTagNoCache(n: Node): qt.JSDocReadonlyTag | undefined {
-    return this.firstTag(n, isJSDocReadonlyTag, true);
+  readonlyTagNoCache(n: Node): qt.DocReadonlyTag | undefined {
+    return this.firstTag(n, isDocReadonlyTag, true);
   }
-  enumTag(n: Node): qt.JSDocEnumTag | undefined {
-    return this.firstTag(n, isJSDocEnumTag);
+  enumTag(n: Node): qt.DocEnumTag | undefined {
+    return this.firstTag(n, isDocEnumTag);
   }
-  thisTag(n: Node): qt.JSDocThisTag | undefined {
-    return this.firstTag(n, isJSDocThisTag);
+  thisTag(n: Node): qt.DocThisTag | undefined {
+    return this.firstTag(n, isDocThisTag);
   }
-  returnTag(n: Node): qt.JSDocReturnTag | undefined {
-    return this.firstTag(n, isJSDocReturnTag);
+  returnTag(n: Node): qt.DocReturnTag | undefined {
+    return this.firstTag(n, isDocReturnTag);
   }
-  templateTag(n: Node): qt.JSDocTemplateTag | undefined {
-    return this.firstTag(n, isJSDocTemplateTag);
+  templateTag(n: Node): qt.DocTemplateTag | undefined {
+    return this.firstTag(n, isDocTemplateTag);
   }
-  typeTag(n: Node): qt.JSDocTypeTag | undefined {
-    const tag = this.firstTag(n, isJSDocTypeTag);
+  typeTag(n: Node): qt.DocTypeTag | undefined {
+    const tag = this.firstTag(n, isDocTypeTag);
     if (tag && tag.typeExpression && tag.typeExpression.type) return tag;
     return;
   }
   type(n: Node): qc.TypeNode | undefined {
-    let tag: qt.JSDocTypeTag | qt.JSDocParameterTag | undefined = this.firstTag(n, isJSDocTypeTag);
+    let tag: qt.DocTypeTag | qt.DocParameterTag | undefined = this.firstTag(n, isDocTypeTag);
     if (!tag && is.kind(ParameterDeclaration, n)) tag = qb.find(this.parameterTags(n), (tag) => !!tag.typeExpression);
     return tag && tag.typeExpression && tag.typeExpression.type;
   }
@@ -1140,72 +1140,72 @@ export const getDoc = new (class {
         const sig = qb.find(type.members, CallSignatureDeclaration.kind);
         return sig && sig.type;
       }
-      if (is.kind(FunctionTypeNode, type) || is.kind(JSDocFunctionType, type)) return type.type;
+      if (is.kind(FunctionTypeNode, type) || is.kind(DocFunctionType, type)) return type.type;
     }
     return;
   }
-  tagsWorker(n: Node, noCache?: boolean): readonly qt.JSDocTag[] {
-    let tags = (n as qt.JSDocContainer).jsDocCache;
+  tagsWorker(n: Node, noCache?: boolean): readonly qt.DocTag[] {
+    let tags = (n as qt.DocContainer).docCache;
     if (tags === undefined || noCache) {
       const comments = this.commentsAndTags(n, noCache);
       qb.assert(comments.length < 2 || comments[0] !== comments[1]);
-      tags = qb.flatMap(comments, (j) => (is.kind(JSDoc, j) ? j.tags : j));
-      if (!noCache) (n as qt.JSDocContainer).jsDocCache = tags;
+      tags = qb.flatMap(comments, (j) => (is.kind(Doc, j) ? j.tags : j));
+      if (!noCache) (n as qt.DocContainer).docCache = tags;
     }
     return tags;
   }
-  tags(n: Node): readonly qt.JSDocTag[] {
+  tags(n: Node): readonly qt.DocTag[] {
     return this.tagsWorker(n, false);
   }
-  tagsNoCache(n: Node): readonly qt.JSDocTag[] {
+  tagsNoCache(n: Node): readonly qt.DocTag[] {
     return this.tagsWorker(n, true);
   }
-  firstTag<T extends qt.JSDocTag>(n: Node, cb: (t: qt.JSDocTag) => t is T, noCache?: boolean): T | undefined {
+  firstTag<T extends qt.DocTag>(n: Node, cb: (t: qt.DocTag) => t is T, noCache?: boolean): T | undefined {
     return qb.find(this.tagsWorker(n, noCache), cb);
   }
-  allTags<T extends qt.JSDocTag>(n: Node, cb: (t: qt.JSDocTag) => t is T): readonly T[] {
+  allTags<T extends qt.DocTag>(n: Node, cb: (t: qt.DocTag) => t is T): readonly T[] {
     return this.tags(n).filter(cb);
   }
-  allTagsOfKind(n: Node, k: Syntax): readonly qt.JSDocTag[] {
+  allTagsOfKind(n: Node, k: Syntax): readonly qt.DocTag[] {
     return this.tags(n).filter((t) => t.kind === k);
   }
-  parameterTagsWorker(param: qc.ParameterDeclaration, noCache?: boolean): readonly qt.JSDocParameterTag[] {
+  parameterTagsWorker(param: qc.ParameterDeclaration, noCache?: boolean): readonly qt.DocParameterTag[] {
     if (param.name) {
       if (is.kind(qc.Identifier, param.name)) {
         const name = param.name.escapedText;
-        return Node.getJSDoc
+        return Node.getDoc
           .tagsWorker(param.parent, noCache)
-          .filter((tag): tag is qt.JSDocParameterTag => is.kind(JSDocParameterTag, tag) && is.kind(qc.Identifier, tag.name) && tag.name.escapedText === name);
+          .filter((tag): tag is qt.DocParameterTag => is.kind(DocParameterTag, tag) && is.kind(qc.Identifier, tag.name) && tag.name.escapedText === name);
       } else {
         const i = param.parent.parameters.indexOf(param);
         qb.assert(i > -1, "Parameters should always be in their parents' parameter list");
-        const paramTags = this.tagsWorker(param.parent, noCache).filter(isJSDocParameterTag);
+        const paramTags = this.tagsWorker(param.parent, noCache).filter(isDocParameterTag);
         if (i < paramTags.length) return [paramTags[i]];
       }
     }
     return qb.empty;
   }
-  parameterTags(param: qc.ParameterDeclaration): readonly qt.JSDocParameterTag[] {
+  parameterTags(param: qc.ParameterDeclaration): readonly qt.DocParameterTag[] {
     return this.parameterTagsWorker(param, false);
   }
-  parameterTagsNoCache(param: qc.ParameterDeclaration): readonly qt.JSDocParameterTag[] {
+  parameterTagsNoCache(param: qc.ParameterDeclaration): readonly qt.DocParameterTag[] {
     return this.parameterTagsWorker(param, true);
   }
-  typeParameterTagsWorker(param: qc.TypeParameterDeclaration, noCache?: boolean): readonly qt.JSDocTemplateTag[] {
+  typeParameterTagsWorker(param: qc.TypeParameterDeclaration, noCache?: boolean): readonly qt.DocTemplateTag[] {
     const name = param.name.escapedText;
-    return Node.getJSDoc.tagsWorker(param.parent, noCache).filter((tag): tag is qt.JSDocTemplateTag => is.kind(JSDocTemplateTag, tag) && tag.typeParameters.some((tp) => tp.name.escapedText === name));
+    return Node.getDoc.tagsWorker(param.parent, noCache).filter((tag): tag is qt.DocTemplateTag => is.kind(DocTemplateTag, tag) && tag.typeParameters.some((tp) => tp.name.escapedText === name));
   }
-  typeParameterTags(param: qc.TypeParameterDeclaration): readonly qt.JSDocTemplateTag[] {
+  typeParameterTags(param: qc.TypeParameterDeclaration): readonly qt.DocTemplateTag[] {
     return this.typeParameterTagsWorker(param, false);
   }
-  typeParameterTagsNoCache(param: qc.TypeParameterDeclaration): readonly qt.JSDocTemplateTag[] {
+  typeParameterTagsNoCache(param: qc.TypeParameterDeclaration): readonly qt.DocTemplateTag[] {
     return this.typeParameterTagsWorker(param, true);
   }
   withParameterTags(n: qc.FunctionLikeDeclaration | qc.SignatureDeclaration) {
-    return !!this.firstTag(n, isJSDocParameterTag);
+    return !!this.firstTag(n, isDocParameterTag);
   }
-  nameOfTypedef(declaration: qt.JSDocTypedefTag): qc.Identifier | qc.PrivateIdentifier | undefined {
-    return declaration.name || nameForNamelessJSDocTypedef(declaration);
+  nameOfTypedef(declaration: qt.DocTypedefTag): qc.Identifier | qc.PrivateIdentifier | undefined {
+    return declaration.name || nameForNamelessDocTypedef(declaration);
   }
   commentRanges(n: Node, text: string) {
     const commentRanges =
@@ -1214,14 +1214,14 @@ export const getDoc = new (class {
         : qy.get.leadingCommentRanges(text, n.pos);
     return filter(commentRanges, (c) => text.charCodeAt(c.pos + 1) === Codes.asterisk && text.charCodeAt(c.pos + 2) === Codes.asterisk && text.charCodeAt(c.pos + 3) !== Codes.slash);
   }
-  commentsAndTags(host: Node, noCache?: boolean): readonly (JSDoc | qt.JSDocTag)[] {
-    let r: (JSDoc | qt.JSDocTag)[] | undefined;
-    if (is.variableLike(host) && is.withInitializer(host) && is.withJSDocNodes(host.initializer!)) {
-      r = append(r, last((host.initializer as HasJSDoc).jsDoc!));
+  commentsAndTags(host: Node, noCache?: boolean): readonly (Doc | qt.DocTag)[] {
+    let r: (Doc | qt.DocTag)[] | undefined;
+    if (is.variableLike(host) && is.withInitializer(host) && is.withDocNodes(host.initializer!)) {
+      r = append(r, last((host.initializer as HasDoc).doc!));
     }
     let n: Node | undefined = host;
     while (n && n.parent) {
-      if (is.withJSDocNodes(n)) r = append(r, last(n.jsDoc!));
+      if (is.withDocNodes(n)) r = append(r, last(n.doc!));
       if (is.kind(qc.Parameter, n)) {
         r = addRange(r, (noCache ? this.parameterTagsNoCache : this.parameterTags)(n as ParameterDeclaration));
         break;
@@ -1258,8 +1258,8 @@ export const getDoc = new (class {
     }
     return;
   }
-  host(n: Node): HasJSDoc {
-    return Debug.checkDefined(Node.findAncestor(n.parent, isJSDoc)).parent;
+  host(n: Node): HasDoc {
+    return Debug.checkDefined(Node.findAncestor(n.parent, isDoc)).parent;
   }
   typeParameterDeclarations(n: DeclarationWithTypeParameters): readonly TypeParameterDeclaration[] {
     return qb.flatMap(this.tags(n), (tag) => (isNonTypeAliasTemplate(tag) ? tag.typeParameters : undefined));
@@ -1299,7 +1299,7 @@ export const fixme = new (class {
       const r = cb(n);
       if (r === 'quit') return;
       if (r) return n;
-      n = n.parent as Node | undefined;
+      n = n.parent;
     }
     return;
   }
@@ -1447,7 +1447,7 @@ export const fixme = new (class {
   idText(identifierOrPrivateName: qc.Identifier | PrivateIdentifier): string {
     return qy.get.unescUnderscores(identifierOrPrivateName.escapedText);
   }
-  nameForNamelessJSDocTypedef(declaration: qt.JSDocTypedefTag | qt.JSDocEnumTag): qc.Identifier | qc.PrivateIdentifier | undefined {
+  nameForNamelessDocTypedef(declaration: qt.DocTypedefTag | qt.DocEnumTag): qc.Identifier | qc.PrivateIdentifier | undefined {
     const n = declaration.parent.parent;
     if (!n) return;
     if (is.declaration(n)) return getDeclarationIdentifier(n);
@@ -1486,9 +1486,9 @@ export const fixme = new (class {
     switch (declaration.kind) {
       case Syntax.Identifier:
         return declaration as qc.Identifier;
-      case Syntax.JSDocPropertyTag:
-      case Syntax.JSDocParameterTag: {
-        const { name } = declaration as qt.JSDocPropertyLikeTag;
+      case Syntax.DocPropertyTag:
+      case Syntax.DocParameterTag: {
+        const { name } = declaration as qt.DocPropertyLikeTag;
         if (name.kind === Syntax.QualifiedName) return name.right;
         break;
       }
@@ -1509,10 +1509,10 @@ export const fixme = new (class {
             return;
         }
       }
-      case Syntax.JSDocTypedefTag:
-        return getJSDoc.nameOfTypedef(declaration as qt.JSDocTypedefTag);
-      case Syntax.JSDocEnumTag:
-        return nameForNamelessJSDocTypedef(declaration as qt.JSDocEnumTag);
+      case Syntax.DocTypedefTag:
+        return getDoc.nameOfTypedef(declaration as qt.DocTypedefTag);
+      case Syntax.DocEnumTag:
+        return nameForNamelessDocTypedef(declaration as qt.DocEnumTag);
       case Syntax.ExportAssignment: {
         const { expression } = declaration as ExportAssignment;
         return is.kind(qc.Identifier, expression) ? expression : undefined;
@@ -1528,22 +1528,22 @@ export const fixme = new (class {
     return getNonAssignedNameOfDeclaration(declaration) || (is.kind(FunctionExpression, declaration) || is.kind(ClassExpression, declaration) ? get.assignedName(declaration) : undefined);
   }
   getEffectiveTypeParameterDeclarations(n: DeclarationWithTypeParameters): readonly TypeParameterDeclaration[] {
-    if (is.kind(JSDocSignature, n)) return empty;
+    if (is.kind(DocSignature, n)) return empty;
     if (isDoc.typeAlias(n)) {
-      qb.assert(is.kind(qc.JSDocComment, n.parent));
-      return qb.flatMap(n.parent.tags, (tag) => (is.kind(JSDocTemplateTag, tag) ? tag.typeParameters : undefined));
+      qb.assert(is.kind(qc.DocComment, n.parent));
+      return qb.flatMap(n.parent.tags, (tag) => (is.kind(DocTemplateTag, tag) ? tag.typeParameters : undefined));
     }
     if (n.typeParameters) return n.typeParameters;
     if (isInJSFile(n)) {
       const decls = this.typeParameterDeclarations(n);
       if (decls.length) return decls;
-      const typeTag = getJSDoc.type(n);
+      const typeTag = getDoc.type(n);
       if (typeTag && is.kind(FunctionTypeNode, typeTag) && typeTag.typeParameters) return typeTag.typeParameters;
     }
     return empty;
   }
   getEffectiveConstraintOfTypeParameter(n: qc.TypeParameterDeclaration): qc.TypeNode | undefined {
-    return n.constraint ? n.constraint : is.kind(JSDocTemplateTag, n.parent) && n === n.parent.typeParameters[0] ? n.parent.constraint : undefined;
+    return n.constraint ? n.constraint : is.kind(DocTemplateTag, n.parent) && n === n.parent.typeParameters[0] ? n.parent.constraint : undefined;
   }
   skipPartiallyEmittedExpressions(n: Expression): Expression;
   skipPartiallyEmittedExpressions(n: Node): Node;
@@ -1825,51 +1825,51 @@ export const forEach = new (class {
         return n.tagName.visit(cb);
       case Syntax.OptionalType:
       case Syntax.RestType:
-      case Syntax.JSDocTypeExpression:
-      case Syntax.JSDocNonNullableType:
-      case Syntax.JSDocNullableType:
-      case Syntax.JSDocOptionalType:
-      case Syntax.JSDocVariadicType:
+      case Syntax.DocTypeExpression:
+      case Syntax.DocNonNullableType:
+      case Syntax.DocNullableType:
+      case Syntax.DocOptionalType:
+      case Syntax.DocVariadicType:
         return n.type.visit(cb);
-      case Syntax.JSDocFunctionType:
+      case Syntax.DocFunctionType:
         return n.parameters.visit(cb, cbs) || n.type?.visit(cb);
-      case Syntax.JSDocComment:
+      case Syntax.DocComment:
         return n.tags?.visit(cb, cbs);
-      case Syntax.JSDocParameterTag:
-      case Syntax.JSDocPropertyTag:
+      case Syntax.DocParameterTag:
+      case Syntax.DocPropertyTag:
         return n.tagName.visit(cb) || (n.isNameFirst ? n.name.visit(cb) || n.typeExpression?.visit(cb) : n.typeExpression?.visit(cb) || n.name.visit(cb));
-      case Syntax.JSDocAuthorTag:
+      case Syntax.DocAuthorTag:
         return n.tagName.visit(cb);
-      case Syntax.JSDocImplementsTag:
+      case Syntax.DocImplementsTag:
         return n.tagName.visit(cb) || n.class.visit(cb);
-      case Syntax.JSDocAugmentsTag:
+      case Syntax.DocAugmentsTag:
         return n.tagName.visit(cb) || n.class.visit(cb);
-      case Syntax.JSDocTemplateTag:
+      case Syntax.DocTemplateTag:
         return n.tagName.visit(cb) || n.constraint?.visit(cb) || n.typeParameters?.visit(cb, cbs);
-      case Syntax.JSDocTypedefTag:
+      case Syntax.DocTypedefTag:
         return (
           n.tagName.visit(cb) ||
-          (n.typeExpression && n.typeExpression!.kind === Syntax.JSDocTypeExpression ? n.typeExpression.visit(cb) || n.fullName?.visit(cb) : n.fullName?.visit(cb) || n.typeExpression?.visit(cb))
+          (n.typeExpression && n.typeExpression!.kind === Syntax.DocTypeExpression ? n.typeExpression.visit(cb) || n.fullName?.visit(cb) : n.fullName?.visit(cb) || n.typeExpression?.visit(cb))
         );
-      case Syntax.JSDocCallbackTag:
-        const n2 = n as qt.JSDocCallbackTag;
+      case Syntax.DocCallbackTag:
+        const n2 = n as qt.DocCallbackTag;
         return n2.tagName.visit(cb) || n2.fullName?.visit(cb) || n2.typeExpression?.visit(cb);
-      case Syntax.JSDocReturnTag:
-      case Syntax.JSDocTypeTag:
-      case Syntax.JSDocThisTag:
-      case Syntax.JSDocEnumTag:
-        const n3 = n as qt.JSDocReturnTag | qt.JSDocTypeTag | qt.JSDocThisTag | qt.JSDocEnumTag;
+      case Syntax.DocReturnTag:
+      case Syntax.DocTypeTag:
+      case Syntax.DocThisTag:
+      case Syntax.DocEnumTag:
+        const n3 = n as qt.DocReturnTag | qt.DocTypeTag | qt.DocThisTag | qt.DocEnumTag;
         return n3.tagName.visit(cb) || n3.typeExpression?.visit(cb);
-      case Syntax.JSDocSignature:
+      case Syntax.DocSignature:
         return forEach(n.typeParameters, cb) || forEach(n.parameters, cb) || n.type?.visit(cb);
-      case Syntax.JSDocTypeLiteral:
-        return forEach(n.jsDocPropertyTags, cb);
-      case Syntax.JSDocTag:
-      case Syntax.JSDocClassTag:
-      case Syntax.JSDocPublicTag:
-      case Syntax.JSDocPrivateTag:
-      case Syntax.JSDocProtectedTag:
-      case Syntax.JSDocReadonlyTag:
+      case Syntax.DocTypeLiteral:
+        return forEach(n.docPropertyTags, cb);
+      case Syntax.DocTag:
+      case Syntax.DocClassTag:
+      case Syntax.DocPublicTag:
+      case Syntax.DocPrivateTag:
+      case Syntax.DocProtectedTag:
+      case Syntax.DocReadonlyTag:
         return n.tagName.visit(cb);
       case Syntax.PartiallyEmittedExpression:
         return n.expression.visit(cb);

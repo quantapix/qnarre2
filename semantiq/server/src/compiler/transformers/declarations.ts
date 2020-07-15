@@ -500,8 +500,8 @@ export function transformDeclarations(context: TransformationContext) {
     handleSymbolAccessibilityError(visibilityResult);
     recordTypeReferenceDirectivesIfNecessary(resolver.getTypeReferenceDirectivesForEntityName(entityName));
   }
-  function preserveJsDoc<T extends Node>(updated: T, original: Node): T {
-    if (qc.is.withJSDocNodes(updated) && qc.is.withJSDocNodes(original)) updated.jsDoc = original.jsDoc;
+  function preserveDoc<T extends Node>(updated: T, original: Node): T {
+    if (qc.is.withDocNodes(updated) && qc.is.withDocNodes(original)) updated.doc = original.doc;
     return setCommentRange(updated, getCommentRange(original));
   }
   function rewriteModuleSpecifier<T extends Node>(
@@ -748,7 +748,7 @@ export function transformDeclarations(context: TransformationContext) {
       if (canProduceDiagnostic && !suppressNewDiagnosticContexts) getSymbolAccessibilityDiagnostic = oldDiag;
       if (shouldEnterSuppressNewDiagnosticsContextContext) suppressNewDiagnosticContexts = oldWithinObjectLiteralType;
       if (returnValue === input) return returnValue;
-      return returnValue && preserveJsDoc(returnValue, input).setOriginal(input);
+      return returnValue && preserveDoc(returnValue, input).setOriginal(input);
     }
   }
   function isPrivateMethodTypeParameter(node: TypeParameterDeclaration) {
@@ -920,7 +920,7 @@ export function transformDeclarations(context: TransformationContext) {
               if (!hasSyntacticModifier(param, ModifierFlags.ParameterPropertyModifier) || shouldStripInternal(param)) return;
               getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(param);
               if (param.name.kind === Syntax.Identifier)
-                return preserveJsDoc(PropertyDeclaration.create(undefined, ensureModifiers(param), param.name, param.questionToken, ensureType(param, param.type), ensureNoInitializer(param)), param);
+                return preserveDoc(PropertyDeclaration.create(undefined, ensureModifiers(param), param.name, param.questionToken, ensureType(param, param.type), ensureNoInitializer(param)), param);
               return walkBindingPattern(param.name);
               function walkBindingPattern(pattern: BindingPattern) {
                 let elems: PropertyDeclaration[] | undefined;
@@ -988,7 +988,7 @@ export function transformDeclarations(context: TransformationContext) {
               mapDefined(input.members, (m) => {
                 if (shouldStripInternal(m)) return;
                 const constValue = resolver.getConstantValue(m);
-                return preserveJsDoc(m.update(m.name, constValue !== undefined ? qc.asLiteral(constValue) : undefined), m);
+                return preserveDoc(m.update(m.name, constValue !== undefined ? qc.asLiteral(constValue) : undefined), m);
               })
             )
           )
@@ -1001,7 +1001,7 @@ export function transformDeclarations(context: TransformationContext) {
       if (canProdiceDiagnostic) getSymbolAccessibilityDiagnostic = oldDiag;
       if (input.kind === Syntax.ModuleDeclaration) needsDeclare = previousNeedsDeclare;
       if ((node as Node) === input) return node;
-      return node && preserveJsDoc(node, input).setOriginal(input);
+      return node && preserveDoc(node, input).setOriginal(input);
     }
   }
   function transformVariableStatement(input: VariableStatement) {

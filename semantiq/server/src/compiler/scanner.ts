@@ -2,7 +2,7 @@ import * as qb from './base';
 import * as qt from './types';
 import { diags as qd } from './diags';
 import * as syntax from './syntax';
-import { Codes, JSDocSyntax, JsxTokenSyntax, KeywordSyntax, LanguageVariant, Syntax } from './syntax';
+import { Codes, DocSyntax, JsxTokenSyntax, KeywordSyntax, LanguageVariant, Syntax } from './syntax';
 export interface Scanner {
   setLanguageVariant(l: LanguageVariant): void;
   setOnError(cb?: qt.ErrorCallback): void;
@@ -25,7 +25,7 @@ export interface Scanner {
   isReservedWord(): boolean;
   isUnterminated(): boolean;
   scan(): Syntax;
-  scanJsDocToken(): JSDocSyntax;
+  scanDocToken(): DocSyntax;
   scanJsxAttributeValue(): Syntax;
   scanJsxIdentifier(): Syntax;
   scanJsxToken(): JsxTokenSyntax;
@@ -39,7 +39,7 @@ export interface Scanner {
   reScanHeadOrNoSubstTemplate(): Syntax;
   reScanTemplateToken(tagged: boolean): Syntax;
   tryScan<T>(cb: () => T): T;
-  setInJSDocType(inType: boolean): void;
+  setInDocType(inType: boolean): void;
   lookAhead<T>(cb: () => T): T;
 }
 const directiveRegExSingleLine = /^\s*\/\/\/?\s*@(ts-expect-error|ts-ignore)/;
@@ -54,7 +54,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
   let tokValue: string;
   let tokFlags: qt.TokenFlags;
   let directives: qt.CommentDirective[] | undefined;
-  let inJSDocType = 0;
+  let inDocType = 0;
   const scanner: Scanner = {
     setLanguageVariant: (l) => {
       lang = l;
@@ -62,8 +62,8 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
     setOnError: (cb) => {
       onError = cb;
     },
-    setInJSDocType: (t) => {
-      inJSDocType += t ? 1 : -1;
+    setInDocType: (t) => {
+      inDocType += t ? 1 : -1;
     },
     getText: () => text,
     setText,
@@ -93,7 +93,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
     lookAhead: <T>(cb: () => T): T => {
       return speculate(cb, true);
     },
-    scanJsDocToken,
+    scanDocToken,
     scanJsxAttributeValue,
     scanJsxIdentifier,
     scanJsxToken,
@@ -220,7 +220,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
             return (pos += 2), (token = Syntax.Asterisk2Token);
           }
           pos++;
-          if (inJSDocType && !asterisk && tokFlags & qt.TokenFlags.PrecedingLineBreak) {
+          if (inDocType && !asterisk && tokFlags & qt.TokenFlags.PrecedingLineBreak) {
             asterisk = true;
             continue;
           }
@@ -260,7 +260,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
           if (text.charCodeAt(pos + 1) === Codes.asterisk) {
             pos += 2;
             if (text.charCodeAt(pos) === Codes.asterisk && text.charCodeAt(pos + 1) !== Codes.slash) {
-              tokFlags |= qt.TokenFlags.PrecedingJSDocComment;
+              tokFlags |= qt.TokenFlags.PrecedingDocComment;
             }
             let closed = false;
             let last = tokPos;
@@ -1115,7 +1115,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
         return scan();
     }
   }
-  function scanJsDocToken(): JSDocSyntax {
+  function scanDocToken(): DocSyntax {
     startPos = tokPos = pos;
     tokFlags = qt.TokenFlags.None;
     if (pos >= end) return (token = Syntax.EndOfFileToken);

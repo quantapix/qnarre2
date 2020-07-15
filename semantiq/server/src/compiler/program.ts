@@ -1215,7 +1215,7 @@ export function createProgram(
           sourceFile.scriptKind === ScriptKind.Deferred);
       const bindDiagnostics: readonly Diagnostic[] = includeBindAndCheckDiagnostics ? sourceFile.bindDiagnostics : emptyArray;
       const checkDiagnostics = includeBindAndCheckDiagnostics ? typeChecker.getDiagnostics(sourceFile, cancellationToken) : emptyArray;
-      return getMergedBindAndCheckDiagnostics(sourceFile, bindDiagnostics, checkDiagnostics, isCheckJs ? sourceFile.jsDocDiagnostics : undefined);
+      return getMergedBindAndCheckDiagnostics(sourceFile, bindDiagnostics, checkDiagnostics, isCheckJs ? sourceFile.docDiagnostics : undefined);
     });
   }
   function getMergedBindAndCheckDiagnostics(sourceFile: SourceFile, ...allDiagnostics: (readonly Diagnostic[] | undefined)[]) {
@@ -1552,7 +1552,7 @@ export function createProgram(
         if (child.pos <= position && (position < child.end || (position === child.end && child.kind === Syntax.EndOfFileToken))) return child;
       };
       while (true) {
-        const child = (isJavaScriptFile && qc.is.withJSDocNodes(current) && forEach(current.jsDoc, getContainingChild)) || qc.forEach.child(current, getContainingChild);
+        const child = (isJavaScriptFile && qc.is.withDocNodes(current) && forEach(current.doc, getContainingChild)) || qc.forEach.child(current, getContainingChild);
         if (!child) return current;
         current = child;
       }
@@ -2014,7 +2014,7 @@ export function createProgram(
           i < file.imports.length &&
           !elideImport &&
           !(isJsFile && !options.allowJs) &&
-          (isInJSFile(file.imports[i]) || !(file.imports[i].flags & NodeFlags.JSDoc));
+          (isInJSFile(file.imports[i]) || !(file.imports[i].flags & NodeFlags.Doc));
         if (elideImport) {
           modulesWithElidedImports.set(file.path, true);
         } else if (shouldAddFile) {

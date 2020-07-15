@@ -32,7 +32,7 @@ export class Nodes<T extends qt.Node> extends Array<T> implements qt.Nodes<T> {
   }
 }
 export type MutableNodes<T extends qt.Node> = Nodes<T> & T[];
-export abstract class Node extends qb.TextRange implements qt.Node {
+export abstract class Node extends qb.TextRange implements qt.NodeBase {
   //static readonly kind = Syntax.Unknown;
   id?: number;
   kind!: any;
@@ -50,7 +50,7 @@ export abstract class Node extends qb.TextRange implements qt.Node {
   emitNode?: qt.EmitNode;
   contextualType?: qt.Type;
   inferenceContext?: qt.InferenceContext;
-  jsDoc?: qt.JSDoc[];
+  doc?: qt.Doc[];
   private _children?: Node[];
   constructor(synth?: boolean, k?: Syntax, pos?: number, end?: number, public parent?: qt.Node) {
     super(pos, end);
@@ -64,9 +64,9 @@ export abstract class Node extends qb.TextRange implements qt.Node {
   getSourceFile(): SourceFile {
     return qc.get.sourceFileOf(this);
   }
-  getStart(s?: qt.SourceFileLike, includeJsDocComment?: boolean) {
+  getStart(s?: qt.SourceFileLike, includeDocComment?: boolean) {
     qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
-    return getTokenPosOfNode(this, s, includeJsDocComment);
+    return getTokenPosOfNode(this, s, includeDocComment);
   }
   getFullStart() {
     qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
@@ -152,7 +152,7 @@ export abstract class Node extends qb.TextRange implements qt.Node {
           cs.push(createSyntaxList(ns));
           p = ns.end;
         };
-        qb.forEach((this as qt.JSDocContainer).jsDoc, processNode);
+        qb.forEach((this as qt.DocContainer).doc, processNode);
         p = this.pos;
         qc.forEach.child(this, processNode, processNodes);
         addSynthetics(cs, p, this.end);
@@ -166,7 +166,7 @@ export abstract class Node extends qb.TextRange implements qt.Node {
     qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
     const cs = this.getChildren(s);
     if (!cs.length) return;
-    const c = qb.find(cs, (c) => c.kind < Syntax.FirstJSDocNode || c.kind > Syntax.LastJSDocNode)!;
+    const c = qb.find(cs, (c) => c.kind < Syntax.FirstDocNode || c.kind > Syntax.LastDocNode)!;
     return c.kind < Syntax.FirstNode ? c : c.getFirstToken(s);
   }
   getLastToken(s?: qt.SourceFileLike): Node | undefined {
@@ -399,7 +399,7 @@ export abstract class SignatureDeclarationBase extends NamedDeclaration implemen
   */
 }
 export abstract class FunctionLikeDeclarationBase extends SignatureDeclarationBase implements qt.FunctionLikeDeclarationBase {
-  jsDocCache?: readonly qt.JSDocTag[];
+  docCache?: readonly qt.DocTag[];
   asteriskToken?: qt.AsteriskToken;
   questionToken?: qt.QuestionToken;
   exclamationToken?: qt.ExclamationToken;
@@ -587,7 +587,7 @@ export abstract class ObjectLiteralExpressionBase<T extends qt.ObjectLiteralElem
 }
 export abstract class TokenOrIdentifier extends Node {
   getChildren(): Node[] {
-    return this.kind === Syntax.EndOfFileToken ? this.jsDoc || qb.empty : qb.empty;
+    return this.kind === Syntax.EndOfFileToken ? this.doc || qb.empty : qb.empty;
   }
 }
 export class Token<T extends Syntax> extends TokenOrIdentifier implements qt.Token<T> {
@@ -727,11 +727,11 @@ export abstract class LiteralExpression extends PrimaryExpression implements qt.
   hasExtendedEscape?: boolean;
   _literalExpressionBrand: any;
 }
-export abstract class JSDocType extends TypeNode implements qt.JSDocType {
-  _jsDocTypeBrand: any;
+export abstract class DocType extends TypeNode implements qt.DocType {
+  _docTypeBrand: any;
 }
-export abstract class JSDocTag extends Node implements qt.JSDocTag {
-  parent: qt.JSDoc | qt.JSDocTypeLiteral;
+export abstract class DocTag extends Node implements qt.DocTag {
+  parent: qt.Doc | qt.DocTypeLiteral;
   tagName: qt.Identifier;
   comment?: string;
   constructor(k: Syntax, n: string, c?: string) {
@@ -740,11 +740,11 @@ export abstract class JSDocTag extends Node implements qt.JSDocTag {
     this.comment = c;
   }
 }
-export abstract class JSDocContainer implements qt.JSDocContainer {
-  jsDoc?: JSDoc[];
-  jsDocCache?: readonly JSDocTag[];
-  append(d: JSDoc) {
-    this.jsDoc = qb.append(this.jsDoc, d);
+export abstract class DocContainer implements qt.DocContainer {
+  doc?: Doc[];
+  docCache?: readonly DocTag[];
+  append(d: Doc) {
+    this.doc = qb.append(this.doc, d);
     return this;
   }
 }
@@ -846,7 +846,7 @@ export class Type implements qt.Type {
 export class Signature implements qt.Signature {
   flags: SignatureFlags;
   checker?: TypeChecker;
-  declaration?: SignatureDeclaration | qt.JSDocSignature;
+  declaration?: SignatureDeclaration | qt.DocSignature;
   typeParameters?: readonly TypeParameter[];
   parameters!: readonly Symbol[];
   thisParameter?: Symbol;
@@ -863,7 +863,7 @@ export class Signature implements qt.Signature {
   instantiations?: QMap<Signature>;
   minTypeArgumentCount!: number;
   docComment?: SymbolDisplayPart[];
-  jsDocTags?: qt.JSDocTagInfo[];
+  docTags?: qt.DocTagInfo[];
   constructor(public checker: TypeChecker, public flags: SignatureFlags) {}
   getDeclaration(): SignatureDeclaration {
     return this.declaration;
@@ -880,11 +880,11 @@ export class Signature implements qt.Signature {
   getDocComment(): SymbolDisplayPart[] {
     return this.docComment || (this.docComment = getDocComment(singleElementArray(this.declaration), this.checker));
   }
-  getJsDocTags(): qt.JSDocTagInfo[] {
-    if (this.jsDocTags === undefined) {
-      this.jsDocTags = this.declaration ? JsDoc.getJsDocTagsFromDeclarations([this.declaration]) : [];
+  getDocTags(): qt.DocTagInfo[] {
+    if (this.docTags === undefined) {
+      this.docTags = this.declaration ? Doc.getDocTagsFromDeclarations([this.declaration]) : [];
     }
-    return this.jsDocTags;
+    return this.docTags;
   }
   signatureHasRestParameter(s: Signature) {
     return !!(s.flags & SignatureFlags.HasRestParameter);
@@ -925,7 +925,7 @@ export class SourceFile extends Declaration implements qt.SourceFile {
   parseDiagnostics: DiagnosticWithLocation[];
   bindDiagnostics: DiagnosticWithLocation[];
   bindSuggestionDiagnostics?: DiagnosticWithLocation[];
-  jsDocDiagnostics?: DiagnosticWithLocation[];
+  docDiagnostics?: DiagnosticWithLocation[];
   additionalSyntacticDiagnostics?: readonly DiagnosticWithLocation[];
   lineMap: readonly number[];
   classifiableNames?: ReadonlyUnderscoreEscapedMap<true>;
@@ -994,7 +994,7 @@ export class SourceFile extends Declaration implements qt.SourceFile {
   redirectInfo?: RedirectInfo | undefined;
   renamedDependencies?: QReadonlyMap<string> | undefined;
   jsGlobalAugmentations?: SymbolTable<Symbol> | undefined;
-  jsDocDiagnostics?: DiagnosticWithLocation[] | undefined;
+  docDiagnostics?: DiagnosticWithLocation[] | undefined;
   additionalSyntacticDiagnostics?: readonly DiagnosticWithLocation[] | undefined;
   classifiableNames?: ReadonlyUnderscoreEscapedMap<true> | undefined;
   commentDirectives?: CommentDirective[] | undefined;
@@ -1015,14 +1015,14 @@ export class SourceFile extends Declaration implements qt.SourceFile {
   emitNode?: qt.EmitNode | undefined;
   contextualType?: Type | undefined;
   inferenceContext?: qt.InferenceContext | undefined;
-  jsDoc?: qt.JSDoc[] | undefined;
+  doc?: qt.Doc[] | undefined;
   is<S extends Syntax, T extends { kind: S; also?: Syntax[] | undefined }>(t: T): this is qt.NodeType<T['kind']> {
     throw new Error('Method not implemented.');
   }
   getSourceFile(): SourceFile {
     throw new Error('Method not implemented.');
   }
-  getStart(s?: qt.SourceFileLike | undefined, includeJsDocComment?: boolean | undefined) {
+  getStart(s?: qt.SourceFileLike | undefined, includeDocComment?: boolean | undefined) {
     throw new Error('Method not implemented.');
   }
   getFullStart(): number {
@@ -1390,7 +1390,7 @@ export abstract class Symbol implements qt.Symbol {
   docComment?: SymbolDisplayPart[];
   getComment?: SymbolDisplayPart[];
   setComment?: SymbolDisplayPart[];
-  tags?: qt.JSDocTagInfo[];
+  tags?: qt.DocTagInfo[];
   constructor(public flags: SymbolFlags, public escName: __String) {}
   get name() {
     const d = this.valueDeclaration;
@@ -1440,8 +1440,8 @@ export abstract class Symbol implements qt.Symbol {
         return this.getDocComment(checker);
     }
   }
-  getJsDocTags(): qt.JSDocTagInfo[] {
-    if (!this.tags) this.tags = JsDoc.getJsDocTagsFromDeclarations(this.declarations);
+  getDocTags(): qt.DocTagInfo[] {
+    if (!this.tags) this.tags = Doc.getDocTagsFromDeclarations(this.declarations);
     return this.tags!;
   }
   getPropertyNameForUniqueESSymbol(): __String {
@@ -1714,21 +1714,21 @@ export function createGetSymbolWalker(
   }
 }
 export namespace Node {
-  function hasJSDocInheritDocTag(node: Node) {
-    return getJSDoc.tags(node).some((tag) => tag.tagName.text === 'inheritDoc');
+  function hasDocInheritDocTag(node: Node) {
+    return getDoc.tags(node).some((tag) => tag.tagName.text === 'inheritDoc');
   }
   function getDocComment(declarations: readonly Declaration[] | undefined, checker: TypeChecker | undefined): SymbolDisplayPart[] {
     if (!declarations) return empty;
-    let doc = JsDoc.getJsDocCommentsFromDeclarations(declarations);
-    if (doc.length === 0 || declarations.some(hasJSDocInheritDocTag)) {
+    let doc = Doc.getDocCommentsFromDeclarations(declarations);
+    if (doc.length === 0 || declarations.some(hasDocInheritDocTag)) {
       forEachUnique(declarations, (declaration) => {
-        const inheritedDocs = findInheritedJSDocComments(declaration, declaration.symbol.name, checker!);
+        const inheritedDocs = findInheritedDocComments(declaration, declaration.symbol.name, checker!);
         if (inheritedDocs) doc = doc.length === 0 ? inheritedDocs.slice() : inheritedDocs.concat(lineBreakPart(), doc);
       });
     }
     return doc;
   }
-  function findInheritedJSDocComments(declaration: Declaration, propertyName: string, typeChecker: TypeChecker): readonly SymbolDisplayPart[] | undefined {
+  function findInheritedDocComments(declaration: Declaration, propertyName: string, typeChecker: TypeChecker): readonly SymbolDisplayPart[] | undefined {
     return firstDefined(declaration.parent ? getAllSuperTypeNodes(declaration.parent) : empty, (superTypeNode) => {
       const superType = typeChecker.getTypeAtLocation(superTypeNode);
       const baseProperty = superType && typeChecker.getPropertyOfType(superType, propertyName);
@@ -1737,7 +1737,7 @@ export namespace Node {
     });
   }
 }
-qb.addMixins(ClassLikeDeclarationBase, [JSDocContainer]);
+qb.addMixins(ClassLikeDeclarationBase, [DocContainer]);
 qb.addMixins(FunctionOrConstructorTypeNodeBase, [TypeNode]);
 qb.addMixins(ObjectLiteralExpressionBase, [Declaration]);
 qb.addMixins(LiteralExpression, [LiteralLikeNode]);

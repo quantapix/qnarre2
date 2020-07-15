@@ -333,7 +333,7 @@ export function emitFiles(
       sourceMap: compilerOptions.sourceMap,
       inlineSourceMap: compilerOptions.inlineSourceMap,
       extendedDiagnostics: compilerOptions.extendedDiagnostics,
-      onlyPrintJsDocStyle: true,
+      onlyPrintDocStyle: true,
       writeBundleFileInfo: !!bundleBuildInfo,
       recordInternalSection: !!bundleBuildInfo,
       relativeToBuildInfo,
@@ -1051,8 +1051,8 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
           return emitTypeReference(<TypeReferenceNode>node);
         case Syntax.FunctionType:
           return emitFunctionType(<FunctionTypeNode>node);
-        case Syntax.JSDocFunctionType:
-          return emitJSDocFunctionType(node as JSDocFunctionType);
+        case Syntax.DocFunctionType:
+          return emitDocFunctionType(node as DocFunctionType);
         case Syntax.ConstructorType:
           return emitConstructorType(<ConstructorTypeNode>node);
         case Syntax.TypeQuery:
@@ -1089,21 +1089,21 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
           return emitLiteralType(<LiteralTypeNode>node);
         case Syntax.ImportType:
           return emitImportTypeNode(<ImportTypeNode>node);
-        case Syntax.JSDocAllType:
+        case Syntax.DocAllType:
           writePunctuation('*');
           return;
-        case Syntax.JSDocUnknownType:
+        case Syntax.DocUnknownType:
           writePunctuation('?');
           return;
-        case Syntax.JSDocNullableType:
-          return emitJSDocNullableType(node as JSDocNullableType);
-        case Syntax.JSDocNonNullableType:
-          return emitJSDocNonNullableType(node as JSDocNonNullableType);
-        case Syntax.JSDocOptionalType:
-          return emitJSDocOptionalType(node as JSDocOptionalType);
+        case Syntax.DocNullableType:
+          return emitDocNullableType(node as DocNullableType);
+        case Syntax.DocNonNullableType:
+          return emitDocNonNullableType(node as DocNonNullableType);
+        case Syntax.DocOptionalType:
+          return emitDocOptionalType(node as DocOptionalType);
         case Syntax.RestType:
-        case Syntax.JSDocVariadicType:
-          return emitRestOrJSDocVariadicType(node as RestTypeNode | JSDocVariadicType);
+        case Syntax.DocVariadicType:
+          return emitRestOrDocVariadicType(node as RestTypeNode | DocVariadicType);
         case Syntax.NamedTupleMember:
           return emitNamedTupleMember(node as NamedTupleMember);
         case Syntax.ObjectBindingPattern:
@@ -1234,32 +1234,32 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
           return emitSpreadAssignment(node as SpreadAssignment);
         case Syntax.EnumMember:
           return emitEnumMember(<EnumMember>node);
-        case Syntax.JSDocParameterTag:
-        case Syntax.JSDocPropertyTag:
-          return emitJSDocPropertyLikeTag(node as JSDocPropertyLikeTag);
-        case Syntax.JSDocReturnTag:
-        case Syntax.JSDocTypeTag:
-        case Syntax.JSDocThisTag:
-        case Syntax.JSDocEnumTag:
-          return emitJSDocSimpleTypedTag(node as JSDocTypeTag);
-        case Syntax.JSDocImplementsTag:
-        case Syntax.JSDocAugmentsTag:
-          return emitJSDocHeritageTag(node as JSDocImplementsTag | JSDocAugmentsTag);
-        case Syntax.JSDocTemplateTag:
-          return emitJSDocTemplateTag(node as JSDocTemplateTag);
-        case Syntax.JSDocTypedefTag:
-          return emitJSDocTypedefTag(node as JSDocTypedefTag);
-        case Syntax.JSDocCallbackTag:
-          return emitJSDocCallbackTag(node as JSDocCallbackTag);
-        case Syntax.JSDocSignature:
-          return emitJSDocSignature(node as JSDocSignature);
-        case Syntax.JSDocTypeLiteral:
-          return emitJSDocTypeLiteral(node as JSDocTypeLiteral);
-        case Syntax.JSDocClassTag:
-        case Syntax.JSDocTag:
-          return emitJSDocSimpleTag(node as JSDocTag);
-        case Syntax.JSDocComment:
-          return emitJSDoc(node as JSDoc);
+        case Syntax.DocParameterTag:
+        case Syntax.DocPropertyTag:
+          return emitDocPropertyLikeTag(node as DocPropertyLikeTag);
+        case Syntax.DocReturnTag:
+        case Syntax.DocTypeTag:
+        case Syntax.DocThisTag:
+        case Syntax.DocEnumTag:
+          return emitDocSimpleTypedTag(node as DocTypeTag);
+        case Syntax.DocImplementsTag:
+        case Syntax.DocAugmentsTag:
+          return emitDocHeritageTag(node as DocImplementsTag | DocAugmentsTag);
+        case Syntax.DocTemplateTag:
+          return emitDocTemplateTag(node as DocTemplateTag);
+        case Syntax.DocTypedefTag:
+          return emitDocTypedefTag(node as DocTypedefTag);
+        case Syntax.DocCallbackTag:
+          return emitDocCallbackTag(node as DocCallbackTag);
+        case Syntax.DocSignature:
+          return emitDocSignature(node as DocSignature);
+        case Syntax.DocTypeLiteral:
+          return emitDocTypeLiteral(node as DocTypeLiteral);
+        case Syntax.DocClassTag:
+        case Syntax.DocTag:
+          return emitDocSimpleTag(node as DocTag);
+        case Syntax.DocComment:
+          return emitDoc(node as Doc);
       }
       if (qc.is.expression(node)) {
         hint = EmitHint.Expression;
@@ -1516,7 +1516,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emit(node.dot3Token);
     emitNodeWithWriter(node.name, writeParameter);
     emit(node.questionToken);
-    if (node.parent && node.parent.kind === Syntax.JSDocFunctionType && !node.name) {
+    if (node.parent && node.parent.kind === Syntax.DocFunctionType && !node.name) {
       emit(node.type);
     } else {
       emitTypeAnnotation(node.type);
@@ -1641,21 +1641,21 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emit(node.type);
     popNameGenerationScope(node);
   }
-  function emitJSDocFunctionType(node: JSDocFunctionType) {
+  function emitDocFunctionType(node: DocFunctionType) {
     writeKeyword('function');
     emitParameters(node, node.parameters);
     writePunctuation(':');
     emit(node.type);
   }
-  function emitJSDocNullableType(node: JSDocNullableType) {
+  function emitDocNullableType(node: DocNullableType) {
     writePunctuation('?');
     emit(node.type);
   }
-  function emitJSDocNonNullableType(node: JSDocNonNullableType) {
+  function emitDocNonNullableType(node: DocNonNullableType) {
     writePunctuation('!');
     emit(node.type);
   }
-  function emitJSDocOptionalType(node: JSDocOptionalType) {
+  function emitDocOptionalType(node: DocOptionalType) {
     emit(node.type);
     writePunctuation('=');
   }
@@ -1687,7 +1687,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     writePunctuation('[');
     writePunctuation(']');
   }
-  function emitRestOrJSDocVariadicType(node: RestTypeNode | JSDocVariadicType) {
+  function emitRestOrDocVariadicType(node: RestTypeNode | DocVariadicType) {
     writePunctuation('...');
     emit(node.type);
   }
@@ -2751,31 +2751,31 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emit(node.name);
     emitInitializer(node.initializer, node.name.end, node);
   }
-  function emitJSDocSimpleTypedTag(tag: JSDocTypeTag | JSDocThisTag | JSDocEnumTag | JSDocReturnTag) {
-    emitJSDocTagName(tag.tagName);
-    emitJSDocTypeExpression(tag.typeExpression);
-    emitJSDocComment(tag.comment);
+  function emitDocSimpleTypedTag(tag: DocTypeTag | DocThisTag | DocEnumTag | DocReturnTag) {
+    emitDocTagName(tag.tagName);
+    emitDocTypeExpression(tag.typeExpression);
+    emitDocComment(tag.comment);
   }
-  function emitJSDocHeritageTag(tag: JSDocImplementsTag | JSDocAugmentsTag) {
-    emitJSDocTagName(tag.tagName);
+  function emitDocHeritageTag(tag: DocImplementsTag | DocAugmentsTag) {
+    emitDocTagName(tag.tagName);
     writeSpace();
     writePunctuation('{');
     emit(tag.class);
     writePunctuation('}');
-    emitJSDocComment(tag.comment);
+    emitDocComment(tag.comment);
   }
-  function emitJSDocTemplateTag(tag: JSDocTemplateTag) {
-    emitJSDocTagName(tag.tagName);
-    emitJSDocTypeExpression(tag.constraint);
+  function emitDocTemplateTag(tag: DocTemplateTag) {
+    emitDocTagName(tag.tagName);
+    emitDocTypeExpression(tag.constraint);
     writeSpace();
     emitList(tag, tag.typeParameters, ListFormat.CommaListElements);
-    emitJSDocComment(tag.comment);
+    emitDocComment(tag.comment);
   }
-  function emitJSDocTypedefTag(tag: JSDocTypedefTag) {
-    emitJSDocTagName(tag.tagName);
+  function emitDocTypedefTag(tag: DocTypedefTag) {
+    emitDocTagName(tag.tagName);
     if (tag.typeExpression) {
-      if (tag.typeExpression.kind === Syntax.JSDocTypeExpression) {
-        emitJSDocTypeExpression(tag.typeExpression);
+      if (tag.typeExpression.kind === Syntax.DocTypeExpression) {
+        emitDocTypeExpression(tag.typeExpression);
       } else {
         writeSpace();
         writePunctuation('{');
@@ -2791,33 +2791,33 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       writeSpace();
       emit(tag.fullName);
     }
-    emitJSDocComment(tag.comment);
-    if (tag.typeExpression && tag.typeExpression.kind === Syntax.JSDocTypeLiteral) {
-      emitJSDocTypeLiteral(tag.typeExpression);
+    emitDocComment(tag.comment);
+    if (tag.typeExpression && tag.typeExpression.kind === Syntax.DocTypeLiteral) {
+      emitDocTypeLiteral(tag.typeExpression);
     }
   }
-  function emitJSDocCallbackTag(tag: JSDocCallbackTag) {
-    emitJSDocTagName(tag.tagName);
+  function emitDocCallbackTag(tag: DocCallbackTag) {
+    emitDocTagName(tag.tagName);
     if (tag.name) {
       writeSpace();
       emit(tag.name);
     }
-    emitJSDocComment(tag.comment);
-    emitJSDocSignature(tag.typeExpression);
+    emitDocComment(tag.comment);
+    emitDocSignature(tag.typeExpression);
   }
-  function emitJSDocSimpleTag(tag: JSDocTag) {
-    emitJSDocTagName(tag.tagName);
-    emitJSDocComment(tag.comment);
+  function emitDocSimpleTag(tag: DocTag) {
+    emitDocTagName(tag.tagName);
+    emitDocComment(tag.comment);
   }
-  function emitJSDocTypeLiteral(lit: JSDocTypeLiteral) {
-    emitList(lit, new Nodes(lit.jsDocPropertyTags), ListFormat.JSDocComment);
+  function emitDocTypeLiteral(lit: DocTypeLiteral) {
+    emitList(lit, new Nodes(lit.docPropertyTags), ListFormat.DocComment);
   }
-  function emitJSDocSignature(sig: JSDocSignature) {
+  function emitDocSignature(sig: DocSignature) {
     if (sig.typeParameters) {
-      emitList(sig, new Nodes(sig.typeParameters), ListFormat.JSDocComment);
+      emitList(sig, new Nodes(sig.typeParameters), ListFormat.DocComment);
     }
     if (sig.parameters) {
-      emitList(sig, new Nodes(sig.parameters), ListFormat.JSDocComment);
+      emitList(sig, new Nodes(sig.parameters), ListFormat.DocComment);
     }
     if (sig.type) {
       writeLine();
@@ -2827,9 +2827,9 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       emit(sig.type);
     }
   }
-  function emitJSDocPropertyLikeTag(param: JSDocPropertyLikeTag) {
-    emitJSDocTagName(param.tagName);
-    emitJSDocTypeExpression(param.typeExpression);
+  function emitDocPropertyLikeTag(param: DocPropertyLikeTag) {
+    emitDocTagName(param.tagName);
+    emitDocTypeExpression(param.typeExpression);
     writeSpace();
     if (param.isBracketed) {
       writePunctuation('[');
@@ -2838,19 +2838,19 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     if (param.isBracketed) {
       writePunctuation(']');
     }
-    emitJSDocComment(param.comment);
+    emitDocComment(param.comment);
   }
-  function emitJSDocTagName(tagName: Identifier) {
+  function emitDocTagName(tagName: Identifier) {
     writePunctuation('@');
     emit(tagName);
   }
-  function emitJSDocComment(comment: string | undefined) {
+  function emitDocComment(comment: string | undefined) {
     if (comment) {
       writeSpace();
       write(comment);
     }
   }
-  function emitJSDocTypeExpression(typeExpression: JSDocTypeExpression | undefined) {
+  function emitDocTypeExpression(typeExpression: DocTypeExpression | undefined) {
     if (typeExpression) {
       writeSpace();
       writePunctuation('{');
@@ -3911,7 +3911,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     }
   }
   function shouldWriteComment(text: string, pos: number) {
-    if (printerOptions.onlyPrintJsDocStyle) return qy.is.jsDocLike(text, pos) || isPinnedComment(text, pos);
+    if (printerOptions.onlyPrintDocStyle) return qy.is.docLike(text, pos) || isPinnedComment(text, pos);
     return true;
   }
   function emitLeadingComment(commentPos: number, commentEnd: number, kind: Syntax, hasTrailingNewLine: boolean, rangePos: number) {
@@ -4130,7 +4130,7 @@ function getOpeningBracket(format: ListFormat) {
 function getClosingBracket(format: ListFormat) {
   return brackets[format & ListFormat.BracketsMask][1];
 }
-function emitJSDoc(node: JSDoc) {
+function emitDoc(node: Doc) {
   write('/**');
   if (node.comment) {
     const lines = node.comment.split(/\r\n?|\n/g);
@@ -4143,11 +4143,11 @@ function emitJSDoc(node: JSDoc) {
     }
   }
   if (node.tags) {
-    if (node.tags.length === 1 && node.tags[0].kind === Syntax.JSDocTypeTag && !node.comment) {
+    if (node.tags.length === 1 && node.tags[0].kind === Syntax.DocTypeTag && !node.comment) {
       writeSpace();
       emit(node.tags[0]);
     } else {
-      emitList(node, node.tags, ListFormat.JSDocComment);
+      emitList(node, node.tags, ListFormat.DocComment);
     }
   }
   writeSpace();

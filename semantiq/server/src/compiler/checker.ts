@@ -843,7 +843,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const aliasType = this.getDeclaredTypeOfTypeAlias();
       const typeParams = this.getLinks().typeParameters;
       const typeParamDecls = map(typeParams, (p) => typeParameterToDeclaration(p, context));
-      const jsdocAliasDecl = find(this.declarations, isJSDocTypeAlias);
+      const jsdocAliasDecl = find(this.declarations, isDocTypeAlias);
       const commentText = jsdocAliasDecl ? jsdocAliasDecl.comment || jsdocAliasDecl.parent.comment : undefined;
       const oldFlags = context.flags;
       context.flags |= NodeBuilderFlags.InTypeAlias;
@@ -1246,8 +1246,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const getter = getDeclarationOfKind<AccessorDeclaration>(this, Syntax.GetAccessor);
       const setter = getDeclarationOfKind<AccessorDeclaration>(this, Syntax.SetAccessor);
       if (getter && isInJSFile(getter)) {
-        const jsDocType = getTypeForDeclarationFromJSDocComment(getter);
-        if (jsDocType) return jsDocType;
+        const docType = getTypeForDeclarationFromDocComment(getter);
+        if (docType) return docType;
       }
       const getterReturnType = getAnnotatedAccessorType(getter);
       if (getterReturnType) return getterReturnType;
@@ -1371,7 +1371,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       let r: TypeParameter[] | undefined;
       for (const d of this.declarations ?? []) {
         if (d.kind === Syntax.InterfaceDeclaration || d.kind === Syntax.ClassDeclaration || d.kind === Syntax.ClassExpression || isJSConstructor(d) || qc.is.typeAlias(d)) {
-          const d2 = d as InterfaceDeclaration | TypeAliasDeclaration | JSDocTypedefTag | JSDocCallbackTag;
+          const d2 = d as InterfaceDeclaration | TypeAliasDeclaration | DocTypedefTag | DocCallbackTag;
           r = appendTypeParameters(r, getEffectiveTypeParameterDeclarations(d2));
         }
       }
@@ -1933,8 +1933,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     isTypeParameterSymbolDeclaredInContainer(container: Node) {
       for (const d of this.declarations) {
         if (d.kind === Syntax.TypeParameter) {
-          const p = qc.is.kind(JSDocTemplateTag, d.parent) ? qc.getDoc.host(d.parent) : d.parent;
-          if (p === container) return !(qc.is.kind(JSDocTemplateTag, d.parent) && find((d.parent.parent as JSDoc).tags!, isJSDocTypeAlias));
+          const p = qc.is.kind(DocTemplateTag, d.parent) ? qc.getDoc.host(d.parent) : d.parent;
+          if (p === container) return !(qc.is.kind(DocTemplateTag, d.parent) && find((d.parent.parent as Doc).tags!, isDocTypeAlias));
         }
       }
       return false;
@@ -2807,7 +2807,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     if (usage.parent.kind === Syntax.ExportSpecifier || (usage.parent.kind === Syntax.ExportAssignment && (usage.parent as ExportAssignment).isExportEquals)) return true;
     if (usage.kind === Syntax.ExportAssignment && (usage as ExportAssignment).isExportEquals) return true;
-    if (!!(usage.flags & NodeFlags.JSDoc) || isInTypeQuery(usage) || usageInTypeDeclaration()) return true;
+    if (!!(usage.flags & NodeFlags.Doc) || isInTypeQuery(usage) || usageInTypeDeclaration()) return true;
     if (isUsedInFunctionOrInstanceProperty(usage, declaration)) {
       if (
         compilerOptions.target === ScriptTarget.ESNext &&
@@ -2957,7 +2957,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         if ((result = lookup(location.locals, name, meaning))) {
           let useResult = true;
           if (qc.is.functionLike(location) && lastLocation && lastLocation !== (<FunctionLikeDeclaration>location).body) {
-            if (meaning & result.flags & SymbolFlags.Type && lastLocation.kind !== Syntax.JSDocComment) {
+            if (meaning & result.flags & SymbolFlags.Type && lastLocation.kind !== Syntax.DocComment) {
               useResult =
                 result.flags & SymbolFlags.TypeParameter
                   ? lastLocation === (<FunctionLikeDeclaration>location).type || lastLocation.kind === Syntax.Parameter || lastLocation.kind === Syntax.TypeParameter
@@ -3001,7 +3001,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
             }
           }
           if (name !== InternalSymbolName.Default && (result = lookup(moduleExports, name, meaning & SymbolFlags.ModuleMember))) {
-            if (qc.is.kind(SourceFile, location) && location.commonJsModuleIndicator && !result.declarations.some(isJSDocTypeAlias)) result = undefined;
+            if (qc.is.kind(SourceFile, location) && location.commonJsModuleIndicator && !result.declarations.some(isDocTypeAlias)) result = undefined;
             else {
               break loop;
             }
@@ -3087,9 +3087,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           if (location.parent && location.parent.kind === Syntax.Parameter) location = location.parent;
           if (location.parent && (qc.is.classElement(location.parent) || location.parent.kind === Syntax.ClassDeclaration)) location = location.parent;
           break;
-        case Syntax.JSDocTypedefTag:
-        case Syntax.JSDocCallbackTag:
-        case Syntax.JSDocEnumTag:
+        case Syntax.DocTypedefTag:
+        case Syntax.DocCallbackTag:
+        case Syntax.DocEnumTag:
           location = qc.getDoc.host(location);
           break;
         case Syntax.Parameter:
@@ -3164,7 +3164,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         if (exportOrLocalSymbol.flags & SymbolFlags.BlockScopedVariable || exportOrLocalSymbol.flags & SymbolFlags.Class || exportOrLocalSymbol.flags & SymbolFlags.Enum)
           checkResolvedBlockScopedVariable(exportOrLocalSymbol, errorLocation);
       }
-      if (result && isInExternalModule && (meaning & SymbolFlags.Value) === SymbolFlags.Value && !(originalLocation!.flags & NodeFlags.JSDoc)) {
+      if (result && isInExternalModule && (meaning & SymbolFlags.Value) === SymbolFlags.Value && !(originalLocation!.flags & NodeFlags.Doc)) {
         const merged = getMergedSymbol(result);
         if (length(merged.declarations) && every(merged.declarations, (d) => qc.is.kind(NamespaceExportDeclaration, d) || (qc.is.kind(SourceFile, d) && !!d.symbol.globalExports))) {
           errorOrSuggestion(
@@ -3755,13 +3755,13 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return symbol.flags & meaning || dontResolveAlias ? symbol : symbol.resolveAlias();
   }
   function resolveEntityNameFromAssignmentDeclaration(name: Identifier, meaning: SymbolFlags) {
-    if (isJSDocTypeReference(name.parent)) {
+    if (isDocTypeReference(name.parent)) {
       const secondaryLocation = getAssignmentDeclarationLocation(name.parent);
       if (secondaryLocation) return resolveName(secondaryLocation, name.escapedText, meaning, undefined, name, true);
     }
   }
   function getAssignmentDeclarationLocation(node: TypeReferenceNode): Node | undefined {
-    const typeAlias = Node.findAncestor(node, (node) => (!(qc.isDoc.node(node) || node.flags & NodeFlags.JSDoc) ? 'quit' : qc.isDoc.typeAlias(node)));
+    const typeAlias = Node.findAncestor(node, (node) => (!(qc.isDoc.node(node) || node.flags & NodeFlags.Doc) ? 'quit' : qc.isDoc.typeAlias(node)));
     if (typeAlias) return;
     const host = qc.getDoc.host(node);
     if (qc.is.kind(ExpressionStatement, host) && qc.is.kind(BinaryExpression, host.expression) && getAssignmentDeclarationKind(host.expression) === AssignmentDeclarationKind.PrototypeProperty) {
@@ -3776,7 +3776,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const s = getSymbolOfNode(host.parent.parent.left);
       if (s) return s.getDeclarationOfJSPrototypeContainer();
     }
-    const sig = getEffectiveJSDocHost(node);
+    const sig = getEffectiveDocHost(node);
     if (sig && qc.is.functionLike(sig)) {
       const s = getSymbolOfNode(sig);
       return s && s.valueDeclaration;
@@ -4388,9 +4388,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return false;
     function determineIfDeclarationIsVisible() {
       switch (node.kind) {
-        case Syntax.JSDocCallbackTag:
-        case Syntax.JSDocTypedefTag:
-        case Syntax.JSDocEnumTag:
+        case Syntax.DocCallbackTag:
+        case Syntax.DocTypedefTag:
+        case Syntax.DocEnumTag:
           return !!(node.parent && node.parent.parent && node.parent.parent.parent && qc.is.kind(SourceFile, node.parent.parent.parent));
         case Syntax.BindingElement:
           return isDeclarationVisible(node.parent.parent);
@@ -4513,7 +4513,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       case TypeSystemPropertyName.Type:
         return !!s.getLinks(<Symbol>target).type;
       case TypeSystemPropertyName.EnumTagType:
-        return !!getNodeLinks(target as JSDocEnumTag).resolvedEnumType;
+        return !!getNodeLinks(target as DocEnumTag).resolvedEnumType;
       case TypeSystemPropertyName.DeclaredType:
         return !!s.getLinks(<Symbol>target).declaredType;
       case TypeSystemPropertyName.ResolvedBaseConstructorType:
@@ -4688,7 +4688,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       return strictNullChecks && !(getFalsyFlags(checkDeclarationInitializer(declaration)) & TypeFlags.Undefined) ? getTypeWithFacts(type, TypeFacts.NEUndefined) : type;
     return widenTypeInferredFromInitializer(declaration, getUnionType([getTypeWithFacts(type, TypeFacts.NEUndefined), checkDeclarationInitializer(declaration)], UnionReduction.Subtype));
   }
-  function getTypeForDeclarationFromJSDocComment(declaration: Node) {
+  function getTypeForDeclarationFromDocComment(declaration: Node) {
     const jsdocType = qc.getDoc.type(declaration);
     if (jsdocType) return getTypeFromTypeNode(jsdocType);
     return;
@@ -4719,7 +4719,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (qc.is.kind(BindingPattern, declaration.parent)) return getTypeForBindingElement(<BindingElement>declaration);
     const isOptional =
       includeOptionality &&
-      ((qc.is.kind(ParameterDeclaration, declaration) && isJSDocOptionalParameter(declaration)) ||
+      ((qc.is.kind(ParameterDeclaration, declaration) && isDocOptionalParameter(declaration)) ||
         (!qc.is.kind(BindingElement, declaration) && !qc.is.kind(VariableDeclaration, declaration) && !!declaration.questionToken));
     const declaredType = tryGetTypeFromEffectiveTypeNode(declaration);
     if (declaredType) return addOptionality(declaredType, isOptional);
@@ -5106,16 +5106,16 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         case Syntax.MethodSignature:
         case Syntax.FunctionType:
         case Syntax.ConstructorType:
-        case Syntax.JSDocFunctionType:
+        case Syntax.DocFunctionType:
         case Syntax.FunctionDeclaration:
         case Syntax.MethodDeclaration:
         case Syntax.FunctionExpression:
         case Syntax.ArrowFunction:
         case Syntax.TypeAliasDeclaration:
-        case Syntax.JSDocTemplateTag:
-        case Syntax.JSDocTypedefTag:
-        case Syntax.JSDocEnumTag:
-        case Syntax.JSDocCallbackTag:
+        case Syntax.DocTemplateTag:
+        case Syntax.DocTypedefTag:
+        case Syntax.DocEnumTag:
+        case Syntax.DocCallbackTag:
         case Syntax.MappedType:
         case Syntax.ConditionalType:
           const outerTypeParameters = getOuterTypeParameters(node, includeThisTypes);
@@ -5577,7 +5577,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     resolveObjectTypeMembers(type, source, typeParameters, paddedTypeArguments);
   }
   function createSignature(
-    declaration: SignatureDeclaration | JSDocSignature | undefined,
+    declaration: SignatureDeclaration | DocSignature | undefined,
     typeParameters: readonly TypeParameter[] | undefined,
     thisParameter: Symbol | undefined,
     parameters: readonly Symbol[],
@@ -6625,11 +6625,11 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     });
     return result;
   }
-  function isJSDocOptionalParameter(node: ParameterDeclaration) {
+  function isDocOptionalParameter(node: ParameterDeclaration) {
     return (
       isInJSFile(node) &&
-      ((node.type && node.type.kind === Syntax.JSDocOptionalType) ||
-        qc.getDoc.parameterTags(node).some(({ isBracketed, typeExpression }) => isBracketed || (!!typeExpression && typeExpression.type.kind === Syntax.JSDocOptionalType)))
+      ((node.type && node.type.kind === Syntax.DocOptionalType) ||
+        qc.getDoc.parameterTags(node).some(({ isBracketed, typeExpression }) => isBracketed || (!!typeExpression && typeExpression.type.kind === Syntax.DocOptionalType)))
     );
   }
   function tryFindAmbientModule(moduleName: string, withAugmentations: boolean) {
@@ -6637,8 +6637,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const symbol = getSymbol(globals, ('"' + moduleName + '"') as __String, SymbolFlags.ValueModule);
     return symbol && withAugmentations ? getMergedSymbol(symbol) : symbol;
   }
-  function isOptionalParameter(node: ParameterDeclaration | JSDocParameterTag) {
-    if (hasQuestionToken(node) || isOptionalJSDocParameterTag(node) || isJSDocOptionalParameter(node)) return true;
+  function isOptionalParameter(node: ParameterDeclaration | DocParameterTag) {
+    if (hasQuestionToken(node) || isOptionalDocParameterTag(node) || isDocOptionalParameter(node)) return true;
     if (node.initializer) {
       const signature = getSignatureFromDeclaration(node.parent);
       const parameterIndex = node.parent.parameters.indexOf(node);
@@ -6649,10 +6649,10 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (iife) return !node.type && !node.dot3Token && node.parent.parameters.indexOf(node) >= iife.arguments.length;
     return false;
   }
-  function isOptionalJSDocParameterTag(node: Node): node is JSDocParameterTag {
-    if (!qc.is.kind(JSDocParameterTag, node)) return false;
+  function isOptionalDocParameterTag(node: Node): node is DocParameterTag {
+    if (!qc.is.kind(DocParameterTag, node)) return false;
     const { isBracketed, typeExpression } = node;
-    return isBracketed || (!!typeExpression && typeExpression.type.kind === Syntax.JSDocOptionalType);
+    return isBracketed || (!!typeExpression && typeExpression.type.kind === Syntax.DocOptionalType);
   }
   function createTypePredicate(kind: TypePredicateKind, parameterName: string | undefined, parameterIndex: number | undefined, type: Type | undefined): TypePredicate {
     return { kind, parameterName, parameterIndex, type } as TypePredicate;
@@ -6693,7 +6693,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return typeArguments && typeArguments.slice();
   }
-  function getSignatureFromDeclaration(declaration: SignatureDeclaration | JSDocSignature): Signature {
+  function getSignatureFromDeclaration(declaration: SignatureDeclaration | DocSignature): Signature {
     const links = getNodeLinks(declaration);
     if (!links.resolvedSignature) {
       const parameters: Symbol[] = [];
@@ -6708,7 +6708,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       for (let i = isJSConstructSignature ? 1 : 0; i < declaration.parameters.length; i++) {
         const param = declaration.parameters[i];
         let paramSymbol = param.symbol;
-        const type = qc.is.kind(JSDocParameterTag, param) ? param.typeExpression && param.typeExpression.type : param.type;
+        const type = qc.is.kind(DocParameterTag, param) ? param.typeExpression && param.typeExpression.type : param.type;
         if (paramSymbol && !!(paramSymbol.flags & SymbolFlags.Property) && !qc.is.kind(BindingPattern, param.name)) {
           const resolvedSymbol = resolveName(param, paramSymbol.escName, SymbolFlags.Value, undefined, undefined, false);
           paramSymbol = resolvedSymbol!;
@@ -6721,12 +6721,12 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         }
         if (type && type.kind === Syntax.LiteralType) flags |= SignatureFlags.HasLiteralTypes;
         const isOptionalParameter =
-          isOptionalJSDocParameterTag(param) ||
+          isOptionalDocParameterTag(param) ||
           param.initializer ||
           param.questionToken ||
           param.dot3Token ||
           (iife && parameters.length > iife.arguments.length && !type) ||
-          isJSDocOptionalParameter(param);
+          isDocOptionalParameter(param);
         if (!isOptionalParameter) minArgumentCount = parameters.length;
       }
       if ((declaration.kind === Syntax.GetAccessor || declaration.kind === Syntax.SetAccessor) && !hasNonBindableDynamicName(declaration) && (!hasThisParameter || !thisParameter)) {
@@ -6741,24 +6741,24 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return links.resolvedSignature;
   }
-  function maybeAddJsSyntheticRestParameter(declaration: SignatureDeclaration | JSDocSignature, parameters: Symbol[]): boolean {
-    if (qc.is.kind(JSDocSignature, declaration) || !containsArgumentsReference(declaration)) return false;
+  function maybeAddJsSyntheticRestParameter(declaration: SignatureDeclaration | DocSignature, parameters: Symbol[]): boolean {
+    if (qc.is.kind(DocSignature, declaration) || !containsArgumentsReference(declaration)) return false;
     const lastParam = lastOrUndefined(declaration.parameters);
-    const lastParamTags = lastParam ? qc.getDoc.parameterTags(lastParam) : qc.getDoc.tags(declaration).filter(isJSDocParameterTag);
-    const lastParamVariadicType = firstDefined(lastParamTags, (p) => (p.typeExpression && qc.is.kind(JSDocVariadicType, p.typeExpression.type) ? p.typeExpression.type : undefined));
+    const lastParamTags = lastParam ? qc.getDoc.parameterTags(lastParam) : qc.getDoc.tags(declaration).filter(isDocParameterTag);
+    const lastParamVariadicType = firstDefined(lastParamTags, (p) => (p.typeExpression && qc.is.kind(DocVariadicType, p.typeExpression.type) ? p.typeExpression.type : undefined));
     const syntheticArgsSymbol = new QSymbol(SymbolFlags.Variable, 'args' as __String, CheckFlags.RestParameter);
     syntheticArgsSymbol.type = lastParamVariadicType ? createArrayType(getTypeFromTypeNode(lastParamVariadicType.type)) : anyArrayType;
     if (lastParamVariadicType) parameters.pop();
     parameters.push(syntheticArgsSymbol);
     return true;
   }
-  function getSignatureOfTypeTag(node: SignatureDeclaration | JSDocSignature) {
+  function getSignatureOfTypeTag(node: SignatureDeclaration | DocSignature) {
     if (!(isInJSFile(node) && qc.is.functionLikeDeclaration(node))) return;
     const typeTag = qc.getDoc.typeTag(node);
     const signature = typeTag && typeTag.typeExpression && getSingleCallSignature(getTypeFromTypeNode(typeTag.typeExpression));
     return signature && getErasedSignature(signature);
   }
-  function getReturnTypeOfTypeTag(node: SignatureDeclaration | JSDocSignature) {
+  function getReturnTypeOfTypeTag(node: SignatureDeclaration | DocSignature) {
     const signature = getSignatureOfTypeTag(node);
     return signature && getReturnTypeOfSignature(signature);
   }
@@ -6883,14 +6883,14 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return signature.resolvedReturnType;
   }
-  function getReturnTypeFromAnnotation(declaration: SignatureDeclaration | JSDocSignature) {
+  function getReturnTypeFromAnnotation(declaration: SignatureDeclaration | DocSignature) {
     if (declaration.kind === Syntax.Constructor) return getDeclaredTypeOfClassOrInterface(getMergedSymbol((<ClassDeclaration>declaration.parent).symbol));
     if (qc.isDoc.constructSignature(declaration)) return getTypeFromTypeNode((declaration.parameters[0] as ParameterDeclaration).type!);
     const typeNode = getEffectiveReturnTypeNode(declaration);
     if (typeNode) return getTypeFromTypeNode(typeNode);
     if (declaration.kind === Syntax.GetAccessor && !hasNonBindableDynamicName(declaration)) {
-      const jsDocType = isInJSFile(declaration) && getTypeForDeclarationFromJSDocComment(declaration);
-      if (jsDocType) return jsDocType;
+      const docType = isInJSFile(declaration) && getTypeForDeclarationFromDocComment(declaration);
+      if (docType) return docType;
       const setter = getDeclarationOfKind<AccessorDeclaration>(getSymbolOfNode(declaration), Syntax.SetAccessor);
       const setterType = getAnnotatedAccessorType(setter);
       if (setterType) return setterType;
@@ -7032,7 +7032,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function getParentSymbolOfTypeParameter(typeParameter: TypeParameter): Symbol | undefined {
     const tp = getDeclarationOfKind<TypeParameterDeclaration>(typeParameter.symbol, Syntax.TypeParameter)!;
-    const host = qc.is.kind(JSDocTemplateTag, tp.parent) ? getHostSignatureFromJSDoc(tp.parent) : tp.parent;
+    const host = qc.is.kind(DocTemplateTag, tp.parent) ? getHostSignatureFromDoc(tp.parent) : tp.parent;
     return host && getSymbolOfNode(host);
   }
   function getTypeListId(types: readonly Type[] | undefined) {
@@ -7127,7 +7127,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const isJs = isInJSFile(node);
       const isJsImplicitAny = !noImplicitAny && isJs;
       if (!isJsImplicitAny && (numTypeArguments < minTypeArgumentCount || numTypeArguments > typeParameters.length)) {
-        const missingAugmentsTag = isJs && qc.is.kind(ExpressionWithTypeArguments, node) && !qc.is.kind(JSDocAugmentsTag, node.parent);
+        const missingAugmentsTag = isJs && qc.is.kind(ExpressionWithTypeArguments, node) && !qc.is.kind(DocAugmentsTag, node.parent);
         const diag =
           minTypeArgumentCount === typeParameters.length
             ? missingAugmentsTag
@@ -7205,17 +7205,17 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (symbol.flags & SymbolFlags.TypeAlias) return getTypeFromTypeAliasReference(node, symbol);
     const res = tryGetDeclaredTypeOfSymbol(symbol);
     if (res) return checkNoTypeArguments(node, symbol) ? getRegularTypeOfLiteralType(res) : errorType;
-    if (symbol.flags & SymbolFlags.Value && isJSDocTypeReference(node)) {
-      const jsdocType = getTypeFromJSDocValueReference(node, symbol);
+    if (symbol.flags & SymbolFlags.Value && isDocTypeReference(node)) {
+      const jsdocType = getTypeFromDocValueReference(node, symbol);
       if (jsdocType) return jsdocType;
       resolveTypeReferenceName(getTypeReferenceName(node), SymbolFlags.Type);
       return this.getTypeOfSymbol();
     }
     return errorType;
   }
-  function getTypeFromJSDocValueReference(node: NodeWithTypeArguments, symbol: Symbol): Type | undefined {
+  function getTypeFromDocValueReference(node: NodeWithTypeArguments, symbol: Symbol): Type | undefined {
     const links = getNodeLinks(node);
-    if (!links.resolvedJSDocType) {
+    if (!links.resolvedDocType) {
       const valueType = this.getTypeOfSymbol();
       let typeType = valueType;
       if (symbol.valueDeclaration) {
@@ -7231,9 +7231,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         const isImportTypeWithQualifier = node.kind === Syntax.ImportType && (node as ImportTypeNode).qualifier;
         if (valueType.symbol && (isRequireAlias || isImportTypeWithQualifier)) typeType = getTypeReferenceType(node, valueType.symbol);
       }
-      links.resolvedJSDocType = typeType;
+      links.resolvedDocType = typeType;
     }
-    return links.resolvedJSDocType;
+    return links.resolvedDocType;
   }
   function getSubstitutionType(baseType: Type, substitute: Type) {
     if (substitute.flags & TypeFlags.AnyOrUnknown || substitute === baseType) return baseType;
@@ -7258,7 +7258,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function getConditionalFlowTypeOfType(type: Type, node: Node) {
     let constraints: Type[] | undefined;
-    while (node && !qc.is.statement(node) && node.kind !== Syntax.JSDocComment) {
+    while (node && !qc.is.statement(node) && node.kind !== Syntax.DocComment) {
       const parent = node.parent;
       if (parent.kind === Syntax.ConditionalType && node === (<ConditionalTypeNode>parent).trueType) {
         const constraint = getImpliedConstraint(type, (<ConditionalTypeNode>parent).checkType, (<ConditionalTypeNode>parent).extendsType);
@@ -7268,8 +7268,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return constraints ? getSubstitutionType(type, getIntersectionType(append(constraints, type))) : type;
   }
-  function isJSDocTypeReference(node: Node): node is TypeReferenceNode {
-    return !!(node.flags & NodeFlags.JSDoc) && (node.kind === Syntax.TypeReference || node.kind === Syntax.ImportType);
+  function isDocTypeReference(node: Node): node is TypeReferenceNode {
+    return !!(node.flags & NodeFlags.Doc) && (node.kind === Syntax.TypeReference || node.kind === Syntax.ImportType);
   }
   function checkNoTypeArguments(node: NodeWithTypeArguments, symbol?: Symbol) {
     if (node.typeArguments) {
@@ -7278,7 +7278,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return true;
   }
-  function getIntendedTypeFromJSDocTypeReference(node: TypeReferenceNode): Type | undefined {
+  function getIntendedTypeFromDocTypeReference(node: TypeReferenceNode): Type | undefined {
     if (qc.is.kind(Identifier, node.typeName)) {
       const typeArgs = node.typeArguments;
       switch (node.typeName.escapedText) {
@@ -7310,7 +7310,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           return (!typeArgs || !typeArgs.length) && !noImplicitAny ? createPromiseType(anyType) : undefined;
         case 'Object':
           if (typeArgs && typeArgs.length === 2) {
-            if (isJSDocIndexSignature(node)) {
+            if (isDocIndexSignature(node)) {
               const indexed = getTypeFromTypeNode(typeArgs[0]);
               const target = getTypeFromTypeNode(typeArgs[1]);
               const index = createIndexInfo(target, false);
@@ -7323,7 +7323,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
     }
   }
-  function getTypeFromJSDocNullableTypeNode(node: JSDocNullableType) {
+  function getTypeFromDocNullableTypeNode(node: DocNullableType) {
     const type = getTypeFromTypeNode(node.type);
     return strictNullChecks ? getNullableType(type, TypeFlags.Null) : type;
   }
@@ -7337,8 +7337,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       let symbol: Symbol | undefined;
       let type: Type | undefined;
       const meaning = SymbolFlags.Type;
-      if (isJSDocTypeReference(node)) {
-        type = getIntendedTypeFromJSDocTypeReference(node);
+      if (isDocTypeReference(node)) {
+        type = getIntendedTypeFromDocTypeReference(node);
         if (!type) {
           symbol = resolveTypeReferenceName(getTypeReferenceName(node), meaning, true);
           if (symbol === unknownSymbol) symbol = resolveTypeReferenceName(getTypeReferenceName(node), meaning | SymbolFlags.Value);
@@ -7534,7 +7534,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function mayResolveTypeAlias(node: Node): boolean {
     switch (node.kind) {
       case Syntax.TypeReference:
-        return isJSDocTypeReference(node) || !!(resolveTypeReferenceName((<TypeReferenceNode>node).typeName, SymbolFlags.Type).flags & SymbolFlags.TypeAlias);
+        return isDocTypeReference(node) || !!(resolveTypeReferenceName((<TypeReferenceNode>node).typeName, SymbolFlags.Type).flags & SymbolFlags.TypeAlias);
       case Syntax.TypeQuery:
         return true;
       case Syntax.TypeOperator:
@@ -7542,11 +7542,11 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       case Syntax.ParenthesizedType:
       case Syntax.OptionalType:
       case Syntax.NamedTupleMember:
-      case Syntax.JSDocOptionalType:
-      case Syntax.JSDocNullableType:
-      case Syntax.JSDocNonNullableType:
-      case Syntax.JSDocTypeExpression:
-        return mayResolveTypeAlias((<ParenthesizedTypeNode | OptionalTypeNode | JSDocTypeReferencingNode | NamedTupleMember>node).type);
+      case Syntax.DocOptionalType:
+      case Syntax.DocNullableType:
+      case Syntax.DocNonNullableType:
+      case Syntax.DocTypeExpression:
+        return mayResolveTypeAlias((<ParenthesizedTypeNode | OptionalTypeNode | DocTypeReferencingNode | NamedTupleMember>node).type);
       case Syntax.RestType:
         return (<RestTypeNode>node).type.kind !== Syntax.ArrayType || mayResolveTypeAlias((<ArrayTypeNode>(<RestTypeNode>node).type).elementType);
       case Syntax.UnionType:
@@ -8540,7 +8540,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         links.resolvedSymbol = unknownSymbol;
         return (links.resolvedType = errorType);
       }
-      const targetMeaning = node.isTypeOf ? SymbolFlags.Value : node.flags & NodeFlags.JSDoc ? SymbolFlags.Value | SymbolFlags.Type : SymbolFlags.Type;
+      const targetMeaning = node.isTypeOf ? SymbolFlags.Value : node.flags & NodeFlags.Doc ? SymbolFlags.Value | SymbolFlags.Type : SymbolFlags.Type;
       const innerModuleSymbol = resolveExternalModuleName(node, node.argument.literal);
       if (!innerModuleSymbol) {
         links.resolvedSymbol = unknownSymbol;
@@ -8593,7 +8593,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         let type = createObjectType(ObjectFlags.Anonymous, node.symbol);
         type.aliasSymbol = aliasSymbol;
         type.aliasTypeArguments = getTypeArgumentsForAliasSymbol(aliasSymbol);
-        if (qc.is.kind(JSDocTypeLiteral, node) && node.isArrayType) type = createArrayType(type);
+        if (qc.is.kind(DocTypeLiteral, node) && node.isArrayType) type = createArrayType(type);
         links.resolvedType = type;
       }
     }
@@ -8813,7 +8813,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (parent && qc.is.kind(ObjectLiteralExpression, parent) && qc.is.kind(BinaryExpression, parent.parent) && getAssignmentDeclarationKind(parent.parent) === AssignmentDeclarationKind.Prototype) {
       return getDeclaredTypeOfClassOrInterface(getSymbolOfNode(parent.parent.left)!.parent!).thisType!;
     }
-    const host = node.flags & NodeFlags.JSDoc ? getHostSignatureFromJSDoc(node) : undefined;
+    const host = node.flags & NodeFlags.Doc ? getHostSignatureFromDoc(node) : undefined;
     if (host && qc.is.kind(FunctionExpression, host) && qc.is.kind(BinaryExpression, host.parent) && getAssignmentDeclarationKind(host.parent) === AssignmentDeclarationKind.PrototypeProperty)
       return getDeclaredTypeOfClassOrInterface(getSymbolOfNode(host.parent.left)!.parent!).thisType!;
     if (isJSConstructor(container) && qc.is.descendantOf(node, container.body)) return getDeclaredTypeOfClassOrInterface(getSymbolOfNode(container)).thisType!;
@@ -8841,8 +8841,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function getTypeFromTypeNodeWorker(node: TypeNode): Type {
     switch (node.kind) {
       case Syntax.AnyKeyword:
-      case Syntax.JSDocAllType:
-      case Syntax.JSDocUnknownType:
+      case Syntax.DocAllType:
+      case Syntax.DocUnknownType:
         return anyType;
       case Syntax.UnknownKeyword:
         return unknownType;
@@ -8888,26 +8888,26 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         return getTypeFromUnionTypeNode(<UnionTypeNode>node);
       case Syntax.IntersectionType:
         return getTypeFromIntersectionTypeNode(<IntersectionTypeNode>node);
-      case Syntax.JSDocNullableType:
-        return getTypeFromJSDocNullableTypeNode(<JSDocNullableType>node);
-      case Syntax.JSDocOptionalType:
-        return addOptionality(getTypeFromTypeNode((node as JSDocOptionalType).type));
+      case Syntax.DocNullableType:
+        return getTypeFromDocNullableTypeNode(<DocNullableType>node);
+      case Syntax.DocOptionalType:
+        return addOptionality(getTypeFromTypeNode((node as DocOptionalType).type));
       case Syntax.NamedTupleMember:
         return getTypeFromNamedTupleTypeNode(node as NamedTupleMember);
       case Syntax.ParenthesizedType:
-      case Syntax.JSDocNonNullableType:
-      case Syntax.JSDocTypeExpression:
-        return getTypeFromTypeNode((<ParenthesizedTypeNode | JSDocTypeReferencingNode | JSDocTypeExpression | NamedTupleMember>node).type);
+      case Syntax.DocNonNullableType:
+      case Syntax.DocTypeExpression:
+        return getTypeFromTypeNode((<ParenthesizedTypeNode | DocTypeReferencingNode | DocTypeExpression | NamedTupleMember>node).type);
       case Syntax.RestType:
         return getElementTypeOfArrayType(getTypeFromTypeNode((<RestTypeNode>node).type)) || errorType;
-      case Syntax.JSDocVariadicType:
-        return getTypeFromJSDocVariadicType(node as JSDocVariadicType);
+      case Syntax.DocVariadicType:
+        return getTypeFromDocVariadicType(node as DocVariadicType);
       case Syntax.FunctionType:
       case Syntax.ConstructorType:
       case Syntax.TypeLiteral:
-      case Syntax.JSDocTypeLiteral:
-      case Syntax.JSDocFunctionType:
-      case Syntax.JSDocSignature:
+      case Syntax.DocTypeLiteral:
+      case Syntax.DocFunctionType:
+      case Syntax.DocSignature:
         return getTypeFromTypeLiteralOrFunctionOrConstructorTypeNode(node);
       case Syntax.TypeOperator:
         return getTypeFromTypeOperatorNode(<TypeOperatorNode>node);
@@ -9073,9 +9073,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (!typeParameters) {
       let declaration = node;
       if (isInJSFile(declaration)) {
-        const paramTag = Node.findAncestor(declaration, isJSDocParameterTag);
+        const paramTag = Node.findAncestor(declaration, isDocParameterTag);
         if (paramTag) {
-          const paramSymbol = getParameterSymbolFromJSDoc(paramTag);
+          const paramSymbol = getParameterSymbolFromDoc(paramTag);
           if (paramSymbol) declaration = paramSymbol.valueDeclaration;
         }
       }
@@ -9348,7 +9348,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function isContextSensitiveFunctionLikeDeclaration(node: FunctionLikeDeclaration): boolean {
     return (
-      (!qc.is.kind(FunctionDeclaration, node) || (isInJSFile(node) && !!getTypeForDeclarationFromJSDocComment(node))) &&
+      (!qc.is.kind(FunctionDeclaration, node) || (isInJSFile(node) && !!getTypeForDeclarationFromDocComment(node))) &&
       (hasContextSensitiveParameters(node) || hasContextSensitiveReturnExpression(node))
     );
   }
@@ -12118,7 +12118,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         diagnostic = qd.Binding_element_0_implicitly_has_an_1_type;
         if (!noImplicitAny) return;
         break;
-      case Syntax.JSDocFunctionType:
+      case Syntax.DocFunctionType:
         error(declaration, qd.Function_type_which_lacks_return_type_annotation_implicitly_has_an_0_return_type, typeAsString);
         return;
       case Syntax.FunctionDeclaration:
@@ -14501,7 +14501,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       return getFlowTypeOfReference(node, type);
     }
     if (isInJS) {
-      const type = getTypeForThisExpressionFromJSDoc(container);
+      const type = getTypeForThisExpressionFromDoc(container);
       if (type && type !== errorType) return getFlowTypeOfReference(node, type);
     }
     if (qc.is.kind(SourceFile, container)) {
@@ -14571,12 +14571,12 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       return (container.parent.parent.arguments[0] as PropertyAccessExpression).expression;
     }
   }
-  function getTypeForThisExpressionFromJSDoc(node: Node) {
+  function getTypeForThisExpressionFromDoc(node: Node) {
     const jsdocType = qc.getDoc.type(node);
-    if (jsdocType && jsdocType.kind === Syntax.JSDocFunctionType) {
-      const jsDocFunctionType = <JSDocFunctionType>jsdocType;
-      if (jsDocFunctionType.parameters.length > 0 && jsDocFunctionType.parameters[0].name && (jsDocFunctionType.parameters[0].name as Identifier).escapedText === InternalSymbolName.This)
-        return getTypeFromTypeNode(jsDocFunctionType.parameters[0].type!);
+    if (jsdocType && jsdocType.kind === Syntax.DocFunctionType) {
+      const docFunctionType = <DocFunctionType>jsdocType;
+      if (docFunctionType.parameters.length > 0 && docFunctionType.parameters[0].name && (docFunctionType.parameters[0].name as Identifier).escapedText === InternalSymbolName.This)
+        return getTypeFromTypeNode(docFunctionType.parameters[0].type!);
     }
     const thisTag = qc.getDoc.thisTag(node);
     if (thisTag && thisTag.typeExpression) return getTypeFromTypeNode(thisTag.typeExpression);
@@ -15244,7 +15244,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     let targetParameterCount = 0;
     for (; targetParameterCount < target.parameters.length; targetParameterCount++) {
       const param = target.parameters[targetParameterCount];
-      if (param.initializer || param.questionToken || param.dot3Token || isJSDocOptionalParameter(param)) break;
+      if (param.initializer || param.questionToken || param.dot3Token || isDocOptionalParameter(param)) break;
     }
     if (target.parameters.length && parameterIsThsyntax.is.keyword(target.parameters[0])) targetParameterCount--;
     return !hasEffectiveRestParameter(signature) && getParameterCount(signature) < targetParameterCount;
@@ -15428,10 +15428,10 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
             ? checkExpressionForMutableLocation(memberDecl.name, checkMode)
             : checkObjectLiteralMethod(memberDecl, checkMode);
         if (isInJavascript) {
-          const jsDocType = getTypeForDeclarationFromJSDocComment(memberDecl);
-          if (jsDocType) {
-            checkTypeAssignableTo(type, jsDocType, memberDecl);
-            type = jsDocType;
+          const docType = getTypeForDeclarationFromDocComment(memberDecl);
+          if (docType) {
+            checkTypeAssignableTo(type, docType, memberDecl);
+            type = docType;
           } else if (enumTag && enumTag.typeExpression) {
             checkTypeAssignableTo(type, getTypeFromTypeNode(enumTag.typeExpression), memberDecl);
           }
@@ -19044,7 +19044,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           if (propType.symbol && propType.symbol.flags & SymbolFlags.Class) {
             const name = prop.escName;
             const symbol = resolveName(prop.valueDeclaration, name, SymbolFlags.Type, undefined, name, false);
-            if (symbol && symbol.declarations.some(isJSDocTypedefTag)) {
+            if (symbol && symbol.declarations.some(isDocTypedefTag)) {
               addDuplicateDeclarationErrorsForSymbols(symbol, qd.Duplicate_identifier_0, syntax.get.unescUnderscores(name), prop);
               addDuplicateDeclarationErrorsForSymbols(prop, qd.Duplicate_identifier_0, syntax.get.unescUnderscores(name), symbol);
             }
@@ -19756,7 +19756,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           checkAsyncFunctionReturnType(<FunctionLikeDeclaration>node, returnTypeNode);
         }
       }
-      if (node.kind !== Syntax.IndexSignature && node.kind !== Syntax.JSDocFunctionType) registerForUnusedIdentifiersCheck(node);
+      if (node.kind !== Syntax.IndexSignature && node.kind !== Syntax.DocFunctionType) registerForUnusedIdentifiersCheck(node);
     }
   }
   function checkClassForDuplicateDeclarations(node: ClassLikeDeclaration) {
@@ -20015,8 +20015,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function checkTypeReferenceNode(node: TypeReferenceNode | ExpressionWithTypeArguments) {
     checkGrammarTypeArguments(node, node.typeArguments);
-    if (node.kind === Syntax.TypeReference && node.typeName.jsdocDotPos !== undefined && !isInJSFile(node) && !isInJSDoc(node))
-      grammarErrorAtPos(node, node.typeName.jsdocDotPos, 1, qd.JSDoc_types_can_only_be_used_inside_documentation_comments);
+    if (node.kind === Syntax.TypeReference && node.typeName.jsdocDotPos !== undefined && !isInJSFile(node) && !isInDoc(node))
+      grammarErrorAtPos(node, node.typeName.jsdocDotPos, 1, qd.Doc_types_can_only_be_used_inside_documentation_comments);
     forEach(node.typeArguments, checkSourceElement);
     const type = getTypeFromTypeReference(node);
     if (type !== errorType) {
@@ -20204,9 +20204,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       switch (d.kind) {
         case Syntax.InterfaceDeclaration:
         case Syntax.TypeAliasDeclaration:
-        case Syntax.JSDocTypedefTag:
-        case Syntax.JSDocCallbackTag:
-        case Syntax.JSDocEnumTag:
+        case Syntax.DocTypedefTag:
+        case Syntax.DocCallbackTag:
+        case Syntax.DocEnumTag:
           return DeclarationSpaces.ExportType;
         case Syntax.ModuleDeclaration:
           return qc.is.ambientModule(d as ModuleDeclaration) || getModuleInstanceState(d as ModuleDeclaration) !== ModuleInstanceState.NonInstantiated
@@ -20457,68 +20457,68 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       checkCollisionWithGlobalPromiseInGeneratedCode(node, node.name!);
     }
   }
-  function checkJSDocTypeAliasTag(node: JSDocTypedefTag | JSDocCallbackTag) {
-    if (!node.typeExpression) error(node.name, qd.JSDoc_typedef_tag_should_either_have_a_type_annotation_or_be_followed_by_property_or_member_tags);
+  function checkDocTypeAliasTag(node: DocTypedefTag | DocCallbackTag) {
+    if (!node.typeExpression) error(node.name, qd.Doc_typedef_tag_should_either_have_a_type_annotation_or_be_followed_by_property_or_member_tags);
     if (node.name) checkTypeNameIsReserved(node.name, qd.Type_alias_name_cannot_be_0);
     checkSourceElement(node.typeExpression);
   }
-  function checkJSDocTemplateTag(node: JSDocTemplateTag): void {
+  function checkDocTemplateTag(node: DocTemplateTag): void {
     checkSourceElement(node.constraint);
     for (const tp of node.typeParameters) {
       checkSourceElement(tp);
     }
   }
-  function checkJSDocTypeTag(node: JSDocTypeTag) {
+  function checkDocTypeTag(node: DocTypeTag) {
     checkSourceElement(node.typeExpression);
   }
-  function checkJSDocParameterTag(node: JSDocParameterTag) {
+  function checkDocParameterTag(node: DocParameterTag) {
     checkSourceElement(node.typeExpression);
-    if (!getParameterSymbolFromJSDoc(node)) {
-      const decl = getHostSignatureFromJSDoc(node);
+    if (!getParameterSymbolFromDoc(node)) {
+      const decl = getHostSignatureFromDoc(node);
       if (decl) {
-        const i = qc.getDoc.tags(decl).filter(isJSDocParameterTag).indexOf(node);
+        const i = qc.getDoc.tags(decl).filter(isDocParameterTag).indexOf(node);
         if (i > -1 && i < decl.parameters.length && qc.is.kind(BindingPattern, decl.parameters[i].name)) return;
         if (!containsArgumentsReference(decl)) {
           if (qc.is.kind(QualifiedName, node.name))
             error(node.name, qd.Qualified_name_0_is_not_allowed_without_a_leading_param_object_1, entityNameToString(node.name), entityNameToString(node.name.left));
           else {
-            error(node.name, qd.JSDoc_param_tag_has_name_0_but_there_is_no_parameter_with_that_name, idText(node.name));
+            error(node.name, qd.Doc_param_tag_has_name_0_but_there_is_no_parameter_with_that_name, idText(node.name));
           }
-        } else if (findLast(qc.getDoc.tags(decl), isJSDocParameterTag) === node && node.typeExpression && node.typeExpression.type && !isArrayType(getTypeFromTypeNode(node.typeExpression.type))) {
+        } else if (findLast(qc.getDoc.tags(decl), isDocParameterTag) === node && node.typeExpression && node.typeExpression.type && !isArrayType(getTypeFromTypeNode(node.typeExpression.type))) {
           error(
             node.name,
-            qd.JSDoc_param_tag_has_name_0_but_there_is_no_parameter_with_that_name_It_would_match_arguments_if_it_had_an_array_type,
+            qd.Doc_param_tag_has_name_0_but_there_is_no_parameter_with_that_name_It_would_match_arguments_if_it_had_an_array_type,
             idText(node.name.kind === Syntax.QualifiedName ? node.name.right : node.name)
           );
         }
       }
     }
   }
-  function checkJSDocPropertyTag(node: JSDocPropertyTag) {
+  function checkDocPropertyTag(node: DocPropertyTag) {
     checkSourceElement(node.typeExpression);
   }
-  function checkJSDocFunctionType(node: JSDocFunctionType): void {
+  function checkDocFunctionType(node: DocFunctionType): void {
     if (produceDiagnostics && !node.type && !qc.isDoc.constructSignature(node)) reportImplicitAny(node, anyType);
     checkSignatureDeclaration(node);
   }
-  function checkJSDocImplementsTag(node: JSDocImplementsTag): void {
-    const classLike = getEffectiveJSDocHost(node);
-    if (!classLike || (!qc.is.kind(ClassDeclaration, classLike) && !qc.is.kind(ClassExpression, classLike))) error(classLike, qd.JSDoc_0_is_not_attached_to_a_class, idText(node.tagName));
+  function checkDocImplementsTag(node: DocImplementsTag): void {
+    const classLike = getEffectiveDocHost(node);
+    if (!classLike || (!qc.is.kind(ClassDeclaration, classLike) && !qc.is.kind(ClassExpression, classLike))) error(classLike, qd.Doc_0_is_not_attached_to_a_class, idText(node.tagName));
   }
-  function checkJSDocAugmentsTag(node: JSDocAugmentsTag): void {
-    const classLike = getEffectiveJSDocHost(node);
+  function checkDocAugmentsTag(node: DocAugmentsTag): void {
+    const classLike = getEffectiveDocHost(node);
     if (!classLike || (!qc.is.kind(ClassDeclaration, classLike) && !qc.is.kind(ClassExpression, classLike))) {
-      error(classLike, qd.JSDoc_0_is_not_attached_to_a_class, idText(node.tagName));
+      error(classLike, qd.Doc_0_is_not_attached_to_a_class, idText(node.tagName));
       return;
     }
-    const augmentsTags = qc.getDoc.tags(classLike).filter(isJSDocAugmentsTag);
+    const augmentsTags = qc.getDoc.tags(classLike).filter(isDocAugmentsTag);
     assert(augmentsTags.length > 0);
     if (augmentsTags.length > 1) error(augmentsTags[1], qd.Class_declarations_cannot_have_more_than_one_augments_or_extends_tag);
     const name = getIdentifierFromEntityNameExpression(node.class.expression);
     const extend = getClassExtendsHeritageElement(classLike);
     if (extend) {
       const className = getIdentifierFromEntityNameExpression(extend.expression);
-      if (className && name.escapedText !== className.escapedText) error(name, qd.JSDoc_0_1_does_not_match_the_extends_2_clause, idText(node.tagName), idText(name), idText(className));
+      if (className && name.escapedText !== className.escapedText) error(name, qd.Doc_0_1_does_not_match_the_extends_2_clause, idText(node.tagName), idText(name), idText(className));
     }
   }
   function getIdentifierFromEntityNameExpression(node: Identifier | PropertyAccessExpression): Identifier | PrivateIdentifier;
@@ -20581,7 +20581,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     | ForStatement
     | ForInStatement
     | ForOfStatement
-    | Exclude<SignatureDeclaration, IndexSignatureDeclaration | JSDocFunctionType>
+    | Exclude<SignatureDeclaration, IndexSignatureDeclaration | DocFunctionType>
     | TypeAliasDeclaration
     | InferTypeNode;
   function checkUnusedIdentifiers(potentiallyUnusedIdentifiers: readonly PotentiallyUnusedIdentifier[], addDiagnostic: AddUnusedDiagnostic) {
@@ -20681,7 +20681,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const { parent } = typeParameter;
       if (parent.kind !== Syntax.InferType && parent.typeParameters!.every(isTypeParameterUnused)) {
         if (seenParentsWithEveryUnused.tryAdd(parent)) {
-          const range = qc.is.kind(JSDocTemplateTag, parent) ? rangeOfNode(parent) : rangeOfTypeParameters(parent.typeParameters!);
+          const range = qc.is.kind(DocTemplateTag, parent) ? rangeOfNode(parent) : rangeOfTypeParameters(parent.typeParameters!);
           const only = parent.typeParameters!.length === 1;
           const message = only ? qd._0_is_declared_but_its_value_is_never_read : qd.All_type_parameters_are_unused;
           const arg0 = only ? name : undefined;
@@ -22634,7 +22634,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
   }
   function checkSourceElementWorker(node: Node): void {
-    if (isInJSFile(node)) forEach((node as JSDocContainer).jsDoc, ({ tags }) => forEach(tags, checkSourceElement));
+    if (isInJSFile(node)) forEach((node as DocContainer).doc, ({ tags }) => forEach(tags, checkSourceElement));
     const kind = node.kind;
     if (cancellationToken) {
       switch (kind) {
@@ -22701,37 +22701,37 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         return checkImportType(<ImportTypeNode>node);
       case Syntax.NamedTupleMember:
         return checkNamedTupleMember(<NamedTupleMember>node);
-      case Syntax.JSDocAugmentsTag:
-        return checkJSDocAugmentsTag(node as JSDocAugmentsTag);
-      case Syntax.JSDocImplementsTag:
-        return checkJSDocImplementsTag(node as JSDocImplementsTag);
-      case Syntax.JSDocTypedefTag:
-      case Syntax.JSDocCallbackTag:
-      case Syntax.JSDocEnumTag:
-        return checkJSDocTypeAliasTag(node as JSDocTypedefTag);
-      case Syntax.JSDocTemplateTag:
-        return checkJSDocTemplateTag(node as JSDocTemplateTag);
-      case Syntax.JSDocTypeTag:
-        return checkJSDocTypeTag(node as JSDocTypeTag);
-      case Syntax.JSDocParameterTag:
-        return checkJSDocParameterTag(node as JSDocParameterTag);
-      case Syntax.JSDocPropertyTag:
-        return checkJSDocPropertyTag(node as JSDocPropertyTag);
-      case Syntax.JSDocFunctionType:
-        checkJSDocFunctionType(node as JSDocFunctionType);
-      case Syntax.JSDocNonNullableType:
-      case Syntax.JSDocNullableType:
-      case Syntax.JSDocAllType:
-      case Syntax.JSDocUnknownType:
-      case Syntax.JSDocTypeLiteral:
-        checkJSDocTypeIsInJsFile(node);
+      case Syntax.DocAugmentsTag:
+        return checkDocAugmentsTag(node as DocAugmentsTag);
+      case Syntax.DocImplementsTag:
+        return checkDocImplementsTag(node as DocImplementsTag);
+      case Syntax.DocTypedefTag:
+      case Syntax.DocCallbackTag:
+      case Syntax.DocEnumTag:
+        return checkDocTypeAliasTag(node as DocTypedefTag);
+      case Syntax.DocTemplateTag:
+        return checkDocTemplateTag(node as DocTemplateTag);
+      case Syntax.DocTypeTag:
+        return checkDocTypeTag(node as DocTypeTag);
+      case Syntax.DocParameterTag:
+        return checkDocParameterTag(node as DocParameterTag);
+      case Syntax.DocPropertyTag:
+        return checkDocPropertyTag(node as DocPropertyTag);
+      case Syntax.DocFunctionType:
+        checkDocFunctionType(node as DocFunctionType);
+      case Syntax.DocNonNullableType:
+      case Syntax.DocNullableType:
+      case Syntax.DocAllType:
+      case Syntax.DocUnknownType:
+      case Syntax.DocTypeLiteral:
+        checkDocTypeIsInJsFile(node);
         qc.forEach.child(node, checkSourceElement);
         return;
-      case Syntax.JSDocVariadicType:
-        checkJSDocVariadicType(node as JSDocVariadicType);
+      case Syntax.DocVariadicType:
+        checkDocVariadicType(node as DocVariadicType);
         return;
-      case Syntax.JSDocTypeExpression:
-        return checkSourceElement((node as JSDocTypeExpression).type);
+      case Syntax.DocTypeExpression:
+        return checkSourceElement((node as DocTypeExpression).type);
       case Syntax.IndexedAccessType:
         return checkIndexedAccessType(<IndexedAccessTypeNode>node);
       case Syntax.MappedType:
@@ -22802,41 +22802,41 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         return checkMissingDeclaration(node);
     }
   }
-  function checkJSDocTypeIsInJsFile(node: Node): void {
-    if (!isInJSFile(node)) grammarErrorOnNode(node, qd.JSDoc_types_can_only_be_used_inside_documentation_comments);
+  function checkDocTypeIsInJsFile(node: Node): void {
+    if (!isInJSFile(node)) grammarErrorOnNode(node, qd.Doc_types_can_only_be_used_inside_documentation_comments);
   }
-  function checkJSDocVariadicType(node: JSDocVariadicType): void {
-    checkJSDocTypeIsInJsFile(node);
+  function checkDocVariadicType(node: DocVariadicType): void {
+    checkDocTypeIsInJsFile(node);
     checkSourceElement(node.type);
     const { parent } = node;
-    if (qc.is.kind(ParameterDeclaration, parent) && qc.is.kind(JSDocFunctionType, parent.parent)) {
+    if (qc.is.kind(ParameterDeclaration, parent) && qc.is.kind(DocFunctionType, parent.parent)) {
       if (last(parent.parent.parameters) !== parent) error(node, qd.A_rest_parameter_must_be_last_in_a_parameter_list);
       return;
     }
-    if (!qc.is.kind(JSDocTypeExpression, parent)) error(node, qd.JSDoc_may_only_appear_in_the_last_parameter_of_a_signature);
+    if (!qc.is.kind(DocTypeExpression, parent)) error(node, qd.Doc_may_only_appear_in_the_last_parameter_of_a_signature);
     const paramTag = node.parent.parent;
-    if (!qc.is.kind(JSDocParameterTag, paramTag)) {
-      error(node, qd.JSDoc_may_only_appear_in_the_last_parameter_of_a_signature);
+    if (!qc.is.kind(DocParameterTag, paramTag)) {
+      error(node, qd.Doc_may_only_appear_in_the_last_parameter_of_a_signature);
       return;
     }
-    const param = getParameterSymbolFromJSDoc(paramTag);
+    const param = getParameterSymbolFromDoc(paramTag);
     if (!param) return;
-    const host = getHostSignatureFromJSDoc(paramTag);
+    const host = getHostSignatureFromDoc(paramTag);
     if (!host || last(host.parameters).symbol !== param) error(node, qd.A_rest_parameter_must_be_last_in_a_parameter_list);
   }
-  function getTypeFromJSDocVariadicType(node: JSDocVariadicType): Type {
+  function getTypeFromDocVariadicType(node: DocVariadicType): Type {
     const type = getTypeFromTypeNode(node.type);
     const { parent } = node;
     const paramTag = node.parent.parent;
-    if (qc.is.kind(JSDocTypeExpression, node.parent) && qc.is.kind(JSDocParameterTag, paramTag)) {
-      const host = getHostSignatureFromJSDoc(paramTag);
+    if (qc.is.kind(DocTypeExpression, node.parent) && qc.is.kind(DocParameterTag, paramTag)) {
+      const host = getHostSignatureFromDoc(paramTag);
       if (host) {
         const lastParamDeclaration = lastOrUndefined(host.parameters);
-        const symbol = getParameterSymbolFromJSDoc(paramTag);
+        const symbol = getParameterSymbolFromDoc(paramTag);
         if (!lastParamDeclaration || (symbol && lastParamDeclaration.symbol === symbol && isRestParameter(lastParamDeclaration))) return createArrayType(type);
       }
     }
-    if (qc.is.kind(ParameterDeclaration, parent) && qc.is.kind(JSDocFunctionType, parent.parent)) return createArrayType(type);
+    if (qc.is.kind(ParameterDeclaration, parent) && qc.is.kind(DocFunctionType, parent.parent)) return createArrayType(type);
     return addOptionality(type);
   }
   function checkNodeDeferred(node: Node) {
@@ -23122,10 +23122,10 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const entityNameSymbol = isEntityNameExpression(name) ? resolveEntityName(name, meaning) : undefined;
       if (entityNameSymbol) return entityNameSymbol;
     }
-    if (name.parent.kind === Syntax.JSDocParameterTag) return getParameterSymbolFromJSDoc(name.parent as JSDocParameterTag);
-    if (name.parent.kind === Syntax.TypeParameter && name.parent.parent.kind === Syntax.JSDocTemplateTag) {
+    if (name.parent.kind === Syntax.DocParameterTag) return getParameterSymbolFromDoc(name.parent as DocParameterTag);
+    if (name.parent.kind === Syntax.TypeParameter && name.parent.parent.kind === Syntax.DocTemplateTag) {
       assert(!isInJSFile(name));
-      const typeParameter = getTypeParameterFromJsDoc(name.parent as TypeParameterDeclaration & { parent: JSDocTemplateTag });
+      const typeParameter = getTypeParameterFromDoc(name.parent as TypeParameterDeclaration & { parent: DocTemplateTag });
       return typeParameter && typeParameter.symbol;
     }
     if (qc.is.expressionNode(name)) {
@@ -23461,11 +23461,11 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return false;
   }
-  function isRequiredInitializedParameter(parameter: ParameterDeclaration | JSDocParameterTag): boolean {
+  function isRequiredInitializedParameter(parameter: ParameterDeclaration | DocParameterTag): boolean {
     return (
       !!strictNullChecks &&
       !isOptionalParameter(parameter) &&
-      !qc.is.kind(JSDocParameterTag, parameter) &&
+      !qc.is.kind(DocParameterTag, parameter) &&
       !!parameter.initializer &&
       !hasSyntacticModifier(parameter, ModifierFlags.ParameterPropertyModifier)
     );
@@ -24447,9 +24447,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (node.operator === Syntax.UniqueKeyword) {
       if (node.type.kind !== Syntax.SymbolKeyword) return grammarErrorOnNode(node.type, qd._0_expected, Token.toString(Syntax.SymbolKeyword));
       let parent = walkUpParenthesizedTypes(node.parent);
-      if (isInJSFile(parent) && qc.is.kind(JSDocTypeExpression, parent)) {
+      if (isInJSFile(parent) && qc.is.kind(DocTypeExpression, parent)) {
         parent = parent.parent;
-        if (qc.is.kind(JSDocTypeTag, parent)) parent = parent.parent.parent;
+        if (qc.is.kind(DocTypeTag, parent)) parent = parent.parent.parent;
       }
       switch (parent.kind) {
         case Syntax.VariableDeclaration:

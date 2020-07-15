@@ -607,8 +607,8 @@ export class QContext {
       typeElements.push(preserveCommentsOn(propertySignature));
     }
     function preserveCommentsOn<T extends Node>(node: T) {
-      if (some(propertySymbol.declarations, (d) => d.kind === Syntax.JSDocPropertyTag)) {
-        const d = find(propertySymbol.declarations, (d) => d.kind === Syntax.JSDocPropertyTag)! as JSDocPropertyTag;
+      if (some(propertySymbol.declarations, (d) => d.kind === Syntax.DocPropertyTag)) {
+        const d = find(propertySymbol.declarations, (d) => d.kind === Syntax.DocPropertyTag)! as DocPropertyTag;
         const commentText = d.comment;
         if (commentText) {
           setSyntheticLeadingComments(node, [
@@ -729,9 +729,9 @@ export class QContext {
     return this.typeParameterToDeclarationWithConstraint(type, constraintNode);
   }
   symbolToParameterDeclaration(parameterSymbol: Symbol, preserveModifierFlags?: boolean, privateSymbolVisitor?: (s: Symbol) => void, bundledImports?: boolean): ParameterDeclaration {
-    let parameterDeclaration: ParameterDeclaration | JSDocParameterTag | undefined = getDeclarationOfKind<ParameterDeclaration>(parameterSymbol, Syntax.Parameter);
+    let parameterDeclaration: ParameterDeclaration | DocParameterTag | undefined = getDeclarationOfKind<ParameterDeclaration>(parameterSymbol, Syntax.Parameter);
     if (!parameterDeclaration && !isTransientSymbol(parameterSymbol)) {
-      parameterDeclaration = getDeclarationOfKind<JSDocParameterTag>(parameterSymbol, Syntax.JSDocParameterTag);
+      parameterDeclaration = getDeclarationOfKind<DocParameterTag>(parameterSymbol, Syntax.DocParameterTag);
     }
     let parameterType = getTypeOfSymbol(parameterSymbol);
     if (parameterDeclaration && isRequiredInitializedParameter(parameterDeclaration)) parameterType = getOptionalType(parameterType);
@@ -835,22 +835,22 @@ export class QContext {
     return transformed === existing ? getMutableClone(existing) : transformed;
   }
   visitExistingNodeTreeSymbols<T extends Node>(node: T): Node {
-    if (qc.is.kind(JSDocAllType, node) || node.kind === Syntax.JSDocNamepathType) return new qc.KeywordTypeNode(Syntax.AnyKeyword);
-    if (qc.is.kind(JSDocUnknownType, node)) return new qc.KeywordTypeNode(Syntax.UnknownKeyword);
-    if (qc.is.kind(JSDocNullableType, node)) return new qc.UnionTypeNode([visitNode(node.type, this.visitExistingNodeTreeSymbols), new qc.KeywordTypeNode(Syntax.NullKeyword)]);
-    if (qc.is.kind(JSDocOptionalType, node)) return new qc.UnionTypeNode([visitNode(node.type, this.visitExistingNodeTreeSymbols), new qc.KeywordTypeNode(Syntax.UndefinedKeyword)]);
-    if (qc.is.kind(JSDocNonNullableType, node)) return visitNode(node.type, this.visitExistingNodeTreeSymbols);
-    if (qc.is.kind(JSDocVariadicType, node)) return new ArrayTypeNode(visitNode((node as JSDocVariadicType).type, this.visitExistingNodeTreeSymbols));
-    if (qc.is.kind(JSDocTypeLiteral, node)) {
+    if (qc.is.kind(DocAllType, node) || node.kind === Syntax.DocNamepathType) return new qc.KeywordTypeNode(Syntax.AnyKeyword);
+    if (qc.is.kind(DocUnknownType, node)) return new qc.KeywordTypeNode(Syntax.UnknownKeyword);
+    if (qc.is.kind(DocNullableType, node)) return new qc.UnionTypeNode([visitNode(node.type, this.visitExistingNodeTreeSymbols), new qc.KeywordTypeNode(Syntax.NullKeyword)]);
+    if (qc.is.kind(DocOptionalType, node)) return new qc.UnionTypeNode([visitNode(node.type, this.visitExistingNodeTreeSymbols), new qc.KeywordTypeNode(Syntax.UndefinedKeyword)]);
+    if (qc.is.kind(DocNonNullableType, node)) return visitNode(node.type, this.visitExistingNodeTreeSymbols);
+    if (qc.is.kind(DocVariadicType, node)) return new ArrayTypeNode(visitNode((node as DocVariadicType).type, this.visitExistingNodeTreeSymbols));
+    if (qc.is.kind(DocTypeLiteral, node)) {
       return new qc.TypeLiteralNode(
-        map(node.jsDocPropertyTags, (t) => {
+        map(node.docPropertyTags, (t) => {
           const name = qc.is.kind(Identifier, t.name) ? t.name : t.name.right;
           const typeViaParent = getTypeOfPropertyOfType(getTypeFromTypeNode(node), name.escapedText);
           const overrideTypeNode = typeViaParent && t.typeExpression && getTypeFromTypeNode(t.typeExpression.type) !== typeViaParent ? this.typeToTypeNodeHelper(typeViaParent) : undefined;
           return new qc.PropertySignature(
             undefined,
             name,
-            t.typeExpression && qc.is.kind(JSDocOptionalType, t.typeExpression.type) ? new Token(Syntax.QuestionToken) : undefined,
+            t.typeExpression && qc.is.kind(DocOptionalType, t.typeExpression.type) ? new Token(Syntax.QuestionToken) : undefined,
             overrideTypeNode || (t.typeExpression && visitNode(t.typeExpression.type, this.visitExistingNodeTreeSymbols)) || new qc.KeywordTypeNode(Syntax.AnyKeyword),
             undefined
           );
@@ -858,7 +858,7 @@ export class QContext {
       );
     }
     if (qc.is.kind(TypeReferenceNode, node) && qc.is.kind(Identifier, node.typeName) && node.typeName.escapedText === '') return new qc.KeywordTypeNode(Syntax.AnyKeyword).setOriginal(node);
-    if ((qc.is.kind(ExpressionWithTypeArguments, node) || qc.is.kind(TypeReferenceNode, node)) && isJSDocIndexSignature(node)) {
+    if ((qc.is.kind(ExpressionWithTypeArguments, node) || qc.is.kind(TypeReferenceNode, node)) && isDocIndexSignature(node)) {
       return new qc.TypeLiteralNode([
         new qc.IndexSignatureDeclaration(
           undefined,
@@ -868,9 +868,9 @@ export class QContext {
         ),
       ]);
     }
-    if (qc.is.kind(JSDocFunctionType, node)) {
+    if (qc.is.kind(DocFunctionType, node)) {
       const getEffectiveDotDotDotForParameter = (p: ParameterDeclaration) => {
-        return p.dot3Token || (p.type && qc.is.kind(JSDocVariadicType, p.type) ? new Token(Syntax.Dot3Token) : undefined);
+        return p.dot3Token || (p.type && qc.is.kind(DocVariadicType, p.type) ? new Token(Syntax.Dot3Token) : undefined);
       };
       if (qc.isDoc.constructSignature(node)) {
         let newTypeNode: TypeNode | undefined;
@@ -913,8 +913,8 @@ export class QContext {
     }
     if (
       qc.is.kind(TypeReferenceNode, node) &&
-      isInJSDoc(node) &&
-      (getIntendedTypeFromJSDocTypeReference(node) || unknownSymbol === resolveTypeReferenceName(getTypeReferenceName(node), SymbolFlags.Type, true))
+      isInDoc(node) &&
+      (getIntendedTypeFromDocTypeReference(node) || unknownSymbol === resolveTypeReferenceName(getTypeReferenceName(node), SymbolFlags.Type, true))
     ) {
       return this.typeToTypeNodeHelper(getTypeFromTypeNode(node)).setOriginal(node);
     }

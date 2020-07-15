@@ -1,11 +1,11 @@
 import * as qb from './base';
-import { NodeFlags, Nodes } from './core';
+import { NodeFlags, Nodes, Token } from './core';
 import * as qc from './core';
 import * as qg from './debug';
 import { Modifier, Syntax } from './syntax';
 import * as qy from './syntax';
 import * as qu from './utils';
-import { JSDocTag } from './types';
+import { DocTag } from './types';
 export * from './core';
 export type NodeType<S extends Syntax> = S extends keyof SynMap ? SynMap[S] : never;
 export class Node extends qc.Node {
@@ -128,7 +128,7 @@ export class ArrowFunction extends qc.FunctionLikeDeclarationBase implements qc.
   _expressionBrand: any;
 }
 ArrowFunction.prototype.kind = ArrowFunction.kind;
-qb.addMixins(ArrowFunction, [qc.Expression, qc.JSDocContainer]);
+qb.addMixins(ArrowFunction, [qc.Expression, qc.DocContainer]);
 export class AsExpression extends qc.Expression implements qc.AsExpression {
   static readonly kind = Syntax.AsExpression;
   expression: qc.Expression;
@@ -640,7 +640,7 @@ export class CallChain extends CallExpression implements qc.CallChain {
 CallChain.prototype.kind = CallChain.kind;
 export class CallSignatureDeclaration extends qc.SignatureDeclarationBase implements qc.CallSignatureDeclaration {
   static readonly kind = Syntax.CallSignature;
-  jsDocCache?: readonly qc.JSDocTag[];
+  docCache?: readonly qc.DocTag[];
   questionToken?: qc.QuestionToken;
   constructor(ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t?: qc.TypeNode) {
     super(true, Syntax.CallSignature, ts, ps, t);
@@ -698,7 +698,7 @@ CatchClause.prototype.kind = CatchClause.kind;
 export class ClassDeclaration extends qc.ClassLikeDeclarationBase implements qc.ClassDeclaration {
   static readonly kind = Syntax.ClassDeclaration;
   name?: Identifier;
-  jsDocCache?: readonly JSDocTag[];
+  docCache?: readonly DocTag[];
   constructor(
     ds: readonly Decorator[] | undefined,
     ms: readonly Modifier[] | undefined,
@@ -730,7 +730,7 @@ ClassDeclaration.prototype.kind = ClassDeclaration.kind;
 qb.addMixins(ClassDeclaration, [qc.DeclarationStatement]);
 export class ClassExpression extends qc.ClassLikeDeclarationBase implements qc.ClassExpression {
   static readonly kind = Syntax.ClassExpression;
-  jsDocCache?: readonly qc.JSDocTag[];
+  docCache?: readonly qc.DocTag[];
   constructor(
     ms: readonly Modifier[] | undefined,
     name: string | Identifier | undefined,
@@ -850,10 +850,10 @@ export class ConstructorDeclaration extends qc.FunctionLikeDeclarationBase imple
   _classElementBrand: any;
 }
 ConstructorDeclaration.prototype.kind = ConstructorDeclaration.kind;
-qb.addMixins(ConstructorDeclaration, [qc.ClassElement, qc.JSDocContainer]);
+qb.addMixins(ConstructorDeclaration, [qc.ClassElement, qc.DocContainer]);
 export class ConstructorTypeNode extends qc.FunctionOrConstructorTypeNodeBase implements qc.ConstructorTypeNode {
   static readonly kind = Syntax.ConstructorType;
-  jsDocCache?: readonly qc.JSDocTag[];
+  docCache?: readonly qc.DocTag[];
   constructor(ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t?: qc.TypeNode) {
     super(true, Syntax.ConstructorType, ts, ps, t);
   }
@@ -866,7 +866,7 @@ ConstructorTypeNode.prototype.kind = ConstructorTypeNode.kind;
 export class ConstructSignatureDeclaration extends qc.SignatureDeclarationBase implements qc.ConstructSignatureDeclaration {
   static readonly kind = Syntax.ConstructSignature;
   questionToken?: qc.QuestionToken;
-  jsDocCache?: readonly qc.JSDocTag[];
+  docCache?: readonly qc.DocTag[];
   constructor(ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t?: qc.TypeNode) {
     super(true, Syntax.ConstructSignature, ts, ps, t);
   }
@@ -1001,14 +1001,14 @@ export class EnumDeclaration extends qc.DeclarationStatement implements qc.EnumD
     this.name = asName(n);
     this.members = new Nodes(es);
   }
-  jsDocCache?: readonly JSDocTag[] | undefined;
+  docCache?: readonly DocTag[] | undefined;
   update(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, n: Identifier, es: readonly qc.EnumMember[]) {
     return this.decorators !== ds || this.modifiers !== ms || this.name !== n || this.members !== es ? new EnumDeclaration(ds, ms, n, es).updateFrom(this) : this;
   }
   _statementBrand: any;
 }
 EnumDeclaration.prototype.kind = EnumDeclaration.kind;
-qb.addMixins(EnumDeclaration, [qc.JSDocContainer]);
+qb.addMixins(EnumDeclaration, [qc.DocContainer]);
 export class EnumMember extends qc.NamedDeclaration implements qc.EnumMember {
   static readonly kind = Syntax.EnumMember;
   parent!: EnumDeclaration;
@@ -1024,7 +1024,7 @@ export class EnumMember extends qc.NamedDeclaration implements qc.EnumMember {
   }
 }
 EnumMember.prototype.kind = EnumMember.kind;
-qb.addMixins(EnumMember, [qc.JSDocContainer]);
+qb.addMixins(EnumMember, [qc.DocContainer]);
 export class ExportAssignment extends qc.DeclarationStatement implements qc.ExportAssignment {
   static readonly kind = Syntax.ExportAssignment;
   parent: qc.SourceFile;
@@ -1051,7 +1051,7 @@ export class ExportDeclaration extends qc.DeclarationStatement implements qc.Exp
   isTypeOnly: boolean;
   exportClause?: qc.NamedExportBindings;
   moduleSpecifier?: qc.Expression;
-  jsDocCache?: readonly qc.JSDocTag[];
+  docCache?: readonly qc.DocTag[];
   constructor(ds?: readonly Decorator[], ms?: readonly Modifier[], e?: qc.NamedExportBindings, m?: qc.Expression, t = false) {
     super();
     this.decorators = Nodes.from(ds);
@@ -1074,7 +1074,7 @@ export class ExportDeclaration extends qc.DeclarationStatement implements qc.Exp
   _statementBrand: any;
 }
 ExportDeclaration.prototype.kind = ExportDeclaration.kind;
-qb.addMixins(ExportDeclaration, [qc.JSDocContainer]);
+qb.addMixins(ExportDeclaration, [qc.DocContainer]);
 export class ExportSpecifier extends qc.NamedDeclaration implements qc.ExportSpecifier {
   static readonly kind = Syntax.ExportSpecifier;
   parent!: NamedExports;
@@ -1102,10 +1102,10 @@ export class ExpressionStatement extends qc.Statement implements qc.ExpressionSt
   }
 }
 ExpressionStatement.prototype.kind = ExpressionStatement.kind;
-qb.addMixins(ExpressionStatement, [qc.JSDocContainer]);
+qb.addMixins(ExpressionStatement, [qc.DocContainer]);
 export class ExpressionWithTypeArguments extends qc.NodeWithTypeArguments implements qc.ExpressionWithTypeArguments {
   static readonly kind = Syntax.ExpressionWithTypeArguments;
-  parent!: HeritageClause | JSDocAugmentsTag | JSDocImplementsTag;
+  parent!: HeritageClause | DocAugmentsTag | DocImplementsTag;
   expression: qc.LeftHandSideExpression;
   constructor(ts: readonly qc.TypeNode[] | undefined, e: qc.Expression) {
     super(true);
@@ -1274,10 +1274,10 @@ export class FunctionExpression extends qc.FunctionLikeDeclarationBase implement
   _expressionBrand: any;
 }
 FunctionExpression.prototype.kind = FunctionExpression.kind;
-qb.addMixins(FunctionExpression, [qc.PrimaryExpression, qc.JSDocContainer]);
+qb.addMixins(FunctionExpression, [qc.PrimaryExpression, qc.DocContainer]);
 export class FunctionTypeNode extends qc.FunctionOrConstructorTypeNodeBase implements qc.FunctionTypeNode {
   static readonly kind = Syntax.FunctionType;
-  jsDocCache?: readonly qc.JSDocTag[];
+  docCache?: readonly qc.DocTag[];
   constructor(ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t?: qc.TypeNode) {
     super(true, Syntax.FunctionType, ts, ps, t);
   }
@@ -1297,7 +1297,7 @@ export class GetAccessorDeclaration extends qc.FunctionLikeDeclarationBase imple
   exclamationToken?: qc.ExclamationToken;
   endFlowNode?: qc.FlowStart | qc.FlowLabel | qc.FlowAssignment | qc.FlowCall | qc.FlowCondition | qc.FlowSwitchClause | qc.FlowArrayMutation | qc.FlowReduceLabel;
   returnFlowNode?: qc.FlowStart | qc.FlowLabel | qc.FlowAssignment | qc.FlowCall | qc.FlowCondition | qc.FlowSwitchClause | qc.FlowArrayMutation | qc.FlowReduceLabel;
-  jsDocCache?: readonly JSDocTag[];
+  docCache?: readonly DocTag[];
   constructor(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: string | qc.PropertyName, ps: readonly ParameterDeclaration[], t?: qc.TypeNode, b?: Block) {
     super(true, Syntax.GetAccessor, undefined, ps, t);
     this.decorators = Nodes.from(ds);
@@ -1318,7 +1318,7 @@ export class GetAccessorDeclaration extends qc.FunctionLikeDeclarationBase imple
   _objectLiteralBrand: any;
 }
 GetAccessorDeclaration.prototype.kind = GetAccessorDeclaration.kind;
-qb.addMixins(GetAccessorDeclaration, [qc.ClassElement, qc.ObjectLiteralElement, qc.JSDocContainer]);
+qb.addMixins(GetAccessorDeclaration, [qc.ClassElement, qc.ObjectLiteralElement, qc.DocContainer]);
 export class HeritageClause extends Node implements qc.HeritageClause {
   static readonly kind = Syntax.HeritageClause;
   parent!: InterfaceDeclaration | qc.ClassLikeDeclaration;
@@ -1343,7 +1343,7 @@ export class Identifier extends qc.TokenOrIdentifier implements qc.Identifier {
   flowNode = undefined;
   originalKeywordKind?: Syntax;
   autoGenerateId = 0;
-  isInJSDocNamespace?: boolean;
+  isInDocNamespace?: boolean;
   jsdocDotPos?: number;
   constructor(t: string);
   constructor(t: string, typeArgs: readonly (qc.TypeNode | TypeParameterDeclaration)[] | undefined);
@@ -1504,7 +1504,7 @@ export class ImportEqualsDeclaration extends qc.DeclarationStatement implements 
   parent: SourceFile | ModuleBlock;
   name: Identifier;
   moduleReference: qc.ModuleReference;
-  jsDocCache?: readonly JSDocTag[] | undefined;
+  docCache?: readonly DocTag[] | undefined;
   constructor(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, name: string | Identifier, r: qc.ModuleReference) {
     super(true);
     this.decorators = Nodes.from(ds);
@@ -1567,7 +1567,7 @@ IndexedAccessTypeNode.prototype.kind = IndexedAccessTypeNode.kind;
 export class IndexSignatureDeclaration extends qc.SignatureDeclarationBase implements qc.IndexSignatureDeclaration {
   static readonly kind = Syntax.IndexSignature;
   parent!: qc.ObjectTypeDeclaration;
-  jsDocCache?: readonly qc.JSDocTag[];
+  docCache?: readonly qc.DocTag[];
   constructor(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, ps: readonly ParameterDeclaration[], t: qc.TypeNode) {
     super(true, Syntax.IndexSignature, undefined, ps, t);
     this.decorators = Nodes.from(ds);
@@ -1728,7 +1728,7 @@ export class InterfaceDeclaration extends qc.DeclarationStatement implements qc.
   typeParameters?: Nodes<TypeParameterDeclaration>;
   heritageClauses?: Nodes<qc.HeritageClause>;
   members: Nodes<qc.TypeElement>;
-  jsDocCache?: readonly JSDocTag[] | undefined;
+  docCache?: readonly DocTag[] | undefined;
   constructor(
     ds: readonly Decorator[] | undefined,
     ms: readonly Modifier[] | undefined,
@@ -1760,7 +1760,7 @@ export class InterfaceDeclaration extends qc.DeclarationStatement implements qc.
   _statementBrand: any;
 }
 InterfaceDeclaration.prototype.kind = InterfaceDeclaration.kind;
-qb.addMixins(InterfaceDeclaration, [qc.JSDocContainer]);
+qb.addMixins(InterfaceDeclaration, [qc.DocContainer]);
 export class IntersectionTypeNode extends qc.UnionOrIntersectionTypeNode implements qc.IntersectionTypeNode {
   static readonly kind = Syntax.IntersectionType;
   types: Nodes<qc.TypeNode>;
@@ -1772,112 +1772,112 @@ export class IntersectionTypeNode extends qc.UnionOrIntersectionTypeNode impleme
   }
 }
 IntersectionTypeNode.prototype.kind = IntersectionTypeNode.kind;
-export class JSDoc extends Node implements qc.JSDoc {
-  static readonly kind = Syntax.JSDocComment;
-  parent!: qc.HasJSDoc;
-  tags?: Nodes<qc.JSDocTag>;
+export class Doc extends Node implements qc.Doc {
+  static readonly kind = Syntax.DocComment;
+  parent!: qc.HasDoc;
+  tags?: Nodes<qc.DocTag>;
   comment?: string;
-  constructor(c?: string, ts?: Nodes<qc.JSDocTag>) {
+  constructor(c?: string, ts?: Nodes<qc.DocTag>) {
     super(true);
     this.comment = c;
     this.tags = ts;
   }
 }
-JSDoc.prototype.kind = JSDoc.kind;
-export class JSDocAllType extends qc.JSDocType implements qc.JSDocAllType {
-  static readonly kind = Syntax.JSDocAllType;
+Doc.prototype.kind = Doc.kind;
+export class DocAllType extends qc.DocType implements qc.DocAllType {
+  static readonly kind = Syntax.DocAllType;
 }
-JSDocAllType.prototype.kind = JSDocAllType.kind;
-export class JSDocAugmentsTag extends qc.JSDocTag implements qc.JSDocAugmentsTag {
-  static readonly kind = Syntax.JSDocAugmentsTag;
+DocAllType.prototype.kind = DocAllType.kind;
+export class DocAugmentsTag extends qc.DocTag implements qc.DocAugmentsTag {
+  static readonly kind = Syntax.DocAugmentsTag;
   class: ExpressionWithTypeArguments & { expression: Identifier | qc.PropertyAccessEntityNameExpression };
-  constructor(c: JSDocAugmentsTag['class'], s?: string) {
-    super(Syntax.JSDocAugmentsTag, 'augments', s);
+  constructor(c: DocAugmentsTag['class'], s?: string) {
+    super(Syntax.DocAugmentsTag, 'augments', s);
     this.class = c;
   }
 }
-JSDocAugmentsTag.prototype.kind = JSDocAugmentsTag.kind;
-export class JSDocAuthorTag extends qc.JSDocTag implements qc.JSDocAuthorTag {
-  static readonly kind = Syntax.JSDocAuthorTag;
+DocAugmentsTag.prototype.kind = DocAugmentsTag.kind;
+export class DocAuthorTag extends qc.DocTag implements qc.DocAuthorTag {
+  static readonly kind = Syntax.DocAuthorTag;
   constructor(c?: string) {
-    super(Syntax.JSDocAuthorTag, 'author', c);
+    super(Syntax.DocAuthorTag, 'author', c);
   }
 }
-JSDocAuthorTag.prototype.kind = JSDocAuthorTag.kind;
-export class JSDocCallbackTag extends qc.JSDocTag implements qc.JSDocCallbackTag {
-  static readonly kind = Syntax.JSDocCallbackTag;
-  parent!: JSDoc;
-  fullName?: JSDocNamespaceDeclaration | Identifier;
+DocAuthorTag.prototype.kind = DocAuthorTag.kind;
+export class DocCallbackTag extends qc.DocTag implements qc.DocCallbackTag {
+  static readonly kind = Syntax.DocCallbackTag;
+  parent!: Doc;
+  fullName?: DocNamespaceDeclaration | Identifier;
   name?: Identifier;
-  typeExpression: JSDocSignature;
-  constructor(f: JSDocNamespaceDeclaration | Identifier | undefined, n: Identifier | undefined, c: string | undefined, s: JSDocSignature) {
-    super(Syntax.JSDocCallbackTag, 'callback', c);
+  typeExpression: DocSignature;
+  constructor(f: DocNamespaceDeclaration | Identifier | undefined, n: Identifier | undefined, c: string | undefined, s: DocSignature) {
+    super(Syntax.DocCallbackTag, 'callback', c);
     this.fullName = f;
     this.name = n;
     this.typeExpression = s;
   }
   _declarationBrand: any;
 }
-JSDocCallbackTag.prototype.kind = JSDocCallbackTag.kind;
-qb.addMixins(JSDocCallbackTag, [qc.NamedDeclaration]);
-export class JSDocClassTag extends qc.JSDocTag implements qc.JSDocClassTag {
-  static readonly kind = Syntax.JSDocClassTag;
+DocCallbackTag.prototype.kind = DocCallbackTag.kind;
+qb.addMixins(DocCallbackTag, [qc.NamedDeclaration]);
+export class DocClassTag extends qc.DocTag implements qc.DocClassTag {
+  static readonly kind = Syntax.DocClassTag;
   constructor(c?: string) {
-    super(Syntax.JSDocClassTag, 'class', c);
+    super(Syntax.DocClassTag, 'class', c);
   }
 }
-JSDocClassTag.prototype.kind = JSDocClassTag.kind;
-export class JSDocEnumTag extends qc.JSDocTag implements qc.JSDocEnumTag {
-  static readonly kind = Syntax.JSDocEnumTag;
-  parent!: JSDoc;
-  typeExpression?: JSDocTypeExpression;
-  constructor(e?: JSDocTypeExpression, c?: string) {
-    super(Syntax.JSDocEnumTag, 'enum', c);
+DocClassTag.prototype.kind = DocClassTag.kind;
+export class DocEnumTag extends qc.DocTag implements qc.DocEnumTag {
+  static readonly kind = Syntax.DocEnumTag;
+  parent!: Doc;
+  typeExpression?: DocTypeExpression;
+  constructor(e?: DocTypeExpression, c?: string) {
+    super(Syntax.DocEnumTag, 'enum', c);
     this.typeExpression = e;
   }
   _declarationBrand: any;
 }
-JSDocEnumTag.prototype.kind = JSDocEnumTag.kind;
-qb.addMixins(JSDocEnumTag, [qc.Declaration]);
-export class JSDocFunctionType extends qc.SignatureDeclarationBase implements qc.JSDocFunctionType {
-  jsDocCache?: readonly qc.JSDocTag[];
-  static readonly kind = Syntax.JSDocFunctionType;
-  _jsDocTypeBrand: any;
+DocEnumTag.prototype.kind = DocEnumTag.kind;
+qb.addMixins(DocEnumTag, [qc.Declaration]);
+export class DocFunctionType extends qc.SignatureDeclarationBase implements qc.DocFunctionType {
+  docCache?: readonly qc.DocTag[];
+  static readonly kind = Syntax.DocFunctionType;
+  _docTypeBrand: any;
   _typeNodeBrand: any;
 }
-JSDocFunctionType.prototype.kind = JSDocFunctionType.kind;
-qb.addMixins(JSDocFunctionType, [qc.JSDocType]);
-export class JSDocImplementsTag extends qc.JSDocTag implements qc.JSDocImplementsTag {
-  static readonly kind = Syntax.JSDocImplementsTag;
+DocFunctionType.prototype.kind = DocFunctionType.kind;
+qb.addMixins(DocFunctionType, [qc.DocType]);
+export class DocImplementsTag extends qc.DocTag implements qc.DocImplementsTag {
+  static readonly kind = Syntax.DocImplementsTag;
   class: ExpressionWithTypeArguments & { expression: Identifier | qc.PropertyAccessEntityNameExpression };
-  constructor(e: JSDocImplementsTag['class'], c?: string) {
-    super(Syntax.JSDocImplementsTag, 'implements', c);
+  constructor(e: DocImplementsTag['class'], c?: string) {
+    super(Syntax.DocImplementsTag, 'implements', c);
     this.class = e;
   }
 }
-JSDocImplementsTag.prototype.kind = JSDocImplementsTag.kind;
-export class JSDocNonNullableType extends qc.JSDocType implements qc.JSDocNonNullableType {
-  static readonly kind = Syntax.JSDocNonNullableType;
+DocImplementsTag.prototype.kind = DocImplementsTag.kind;
+export class DocNonNullableType extends qc.DocType implements qc.DocNonNullableType {
+  static readonly kind = Syntax.DocNonNullableType;
   type!: qc.TypeNode;
 }
-JSDocNonNullableType.prototype.kind = JSDocNonNullableType.kind;
-export class JSDocNullableType extends qc.JSDocType implements qc.JSDocNullableType {
-  static readonly kind = Syntax.JSDocNullableType;
+DocNonNullableType.prototype.kind = DocNonNullableType.kind;
+export class DocNullableType extends qc.DocType implements qc.DocNullableType {
+  static readonly kind = Syntax.DocNullableType;
   type!: qc.TypeNode;
 }
-JSDocNullableType.prototype.kind = JSDocNullableType.kind;
-export class JSDocOptionalType extends qc.JSDocType implements qc.JSDocOptionalType {
-  static readonly kind = Syntax.JSDocOptionalType;
+DocNullableType.prototype.kind = DocNullableType.kind;
+export class DocOptionalType extends qc.DocType implements qc.DocOptionalType {
+  static readonly kind = Syntax.DocOptionalType;
   type!: qc.TypeNode;
 }
-JSDocOptionalType.prototype.kind = JSDocOptionalType.kind;
-export class JSDocPropertyLikeTag extends qc.JSDocTag implements qc.JSDocPropertyLikeTag {
-  parent!: JSDoc;
+DocOptionalType.prototype.kind = DocOptionalType.kind;
+export class DocPropertyLikeTag extends qc.DocTag implements qc.DocPropertyLikeTag {
+  parent!: Doc;
   name: qc.EntityName;
-  typeExpression?: JSDocTypeExpression;
+  typeExpression?: DocTypeExpression;
   isNameFirst: boolean;
   isBracketed: boolean;
-  constructor(kind: Syntax, tagName: 'arg' | 'argument' | 'param', e: JSDocTypeExpression | undefined, n: qc.EntityName, isNameFirst: boolean, isBracketed: boolean, c?: string) {
+  constructor(kind: Syntax, tagName: 'arg' | 'argument' | 'param', e: DocTypeExpression | undefined, n: qc.EntityName, isNameFirst: boolean, isBracketed: boolean, c?: string) {
     super(kind, tagName, c);
     this.typeExpression = e;
     this.name = n;
@@ -1886,64 +1886,64 @@ export class JSDocPropertyLikeTag extends qc.JSDocTag implements qc.JSDocPropert
   }
   _declarationBrand: any;
 }
-qb.addMixins(JSDocPropertyLikeTag, [qc.Declaration]);
-export class JSDocParameterTag extends JSDocPropertyLikeTag implements qc.JSDocParameterTag {
-  static readonly kind = Syntax.JSDocParameterTag;
-  constructor(e: JSDocTypeExpression | undefined, n: qc.EntityName, isNameFirst: boolean, isBracketed: boolean, c?: string) {
-    super(Syntax.JSDocParameterTag, 'param', e, n, isNameFirst, isBracketed, c);
+qb.addMixins(DocPropertyLikeTag, [qc.Declaration]);
+export class DocParameterTag extends DocPropertyLikeTag implements qc.DocParameterTag {
+  static readonly kind = Syntax.DocParameterTag;
+  constructor(e: DocTypeExpression | undefined, n: qc.EntityName, isNameFirst: boolean, isBracketed: boolean, c?: string) {
+    super(Syntax.DocParameterTag, 'param', e, n, isNameFirst, isBracketed, c);
   }
 }
-JSDocParameterTag.prototype.kind = JSDocParameterTag.kind;
-export class JSDocPrivateTag extends qc.JSDocTag implements qc.JSDocPrivateTag {
-  static readonly kind = Syntax.JSDocPrivateTag;
+DocParameterTag.prototype.kind = DocParameterTag.kind;
+export class DocPrivateTag extends qc.DocTag implements qc.DocPrivateTag {
+  static readonly kind = Syntax.DocPrivateTag;
   constructor() {
-    super(Syntax.JSDocPrivateTag, 'private');
+    super(Syntax.DocPrivateTag, 'private');
   }
 }
-JSDocPrivateTag.prototype.kind = JSDocPrivateTag.kind;
-export class JSDocPropertyTag extends JSDocPropertyLikeTag implements qc.JSDocPropertyTag {
-  static readonly kind = Syntax.JSDocPropertyTag;
-  constructor(e: JSDocTypeExpression | undefined, n: qc.EntityName, isNameFirst: boolean, isBracketed: boolean, c?: string) {
-    super(Syntax.JSDocPropertyTag, 'param', e, n, isNameFirst, isBracketed, c);
+DocPrivateTag.prototype.kind = DocPrivateTag.kind;
+export class DocPropertyTag extends DocPropertyLikeTag implements qc.DocPropertyTag {
+  static readonly kind = Syntax.DocPropertyTag;
+  constructor(e: DocTypeExpression | undefined, n: qc.EntityName, isNameFirst: boolean, isBracketed: boolean, c?: string) {
+    super(Syntax.DocPropertyTag, 'param', e, n, isNameFirst, isBracketed, c);
   }
 }
-JSDocPropertyTag.prototype.kind = JSDocPropertyTag.kind;
-export class JSDocProtectedTag extends qc.JSDocTag implements qc.JSDocProtectedTag {
-  static readonly kind = Syntax.JSDocProtectedTag;
+DocPropertyTag.prototype.kind = DocPropertyTag.kind;
+export class DocProtectedTag extends qc.DocTag implements qc.DocProtectedTag {
+  static readonly kind = Syntax.DocProtectedTag;
   constructor() {
-    super(Syntax.JSDocProtectedTag, 'protected');
+    super(Syntax.DocProtectedTag, 'protected');
   }
 }
-JSDocProtectedTag.prototype.kind = JSDocProtectedTag.kind;
-export class JSDocPublicTag extends qc.JSDocTag implements qc.JSDocPublicTag {
-  static readonly kind = Syntax.JSDocPublicTag;
+DocProtectedTag.prototype.kind = DocProtectedTag.kind;
+export class DocPublicTag extends qc.DocTag implements qc.DocPublicTag {
+  static readonly kind = Syntax.DocPublicTag;
   constructor() {
-    super(Syntax.JSDocPublicTag, 'public');
+    super(Syntax.DocPublicTag, 'public');
   }
 }
-JSDocPublicTag.prototype.kind = JSDocPublicTag.kind;
-export class JSDocReadonlyTag extends qc.JSDocTag implements qc.JSDocReadonlyTag {
-  static readonly kind = Syntax.JSDocReadonlyTag;
+DocPublicTag.prototype.kind = DocPublicTag.kind;
+export class DocReadonlyTag extends qc.DocTag implements qc.DocReadonlyTag {
+  static readonly kind = Syntax.DocReadonlyTag;
   constructor() {
-    super(Syntax.JSDocReadonlyTag, 'readonly');
+    super(Syntax.DocReadonlyTag, 'readonly');
   }
 }
-JSDocReadonlyTag.prototype.kind = JSDocReadonlyTag.kind;
-export class JSDocReturnTag extends qc.JSDocTag implements qc.JSDocReturnTag {
-  static readonly kind = Syntax.JSDocReturnTag;
-  typeExpression?: JSDocTypeExpression;
-  constructor(e?: JSDocTypeExpression, c?: string) {
-    super(Syntax.JSDocReturnTag, 'returns', c);
+DocReadonlyTag.prototype.kind = DocReadonlyTag.kind;
+export class DocReturnTag extends qc.DocTag implements qc.DocReturnTag {
+  static readonly kind = Syntax.DocReturnTag;
+  typeExpression?: DocTypeExpression;
+  constructor(e?: DocTypeExpression, c?: string) {
+    super(Syntax.DocReturnTag, 'returns', c);
     this.typeExpression = e;
   }
 }
-JSDocReturnTag.prototype.kind = JSDocReturnTag.kind;
-export class JSDocSignature extends qc.JSDocType implements qc.JSDocSignature {
-  static readonly kind = Syntax.JSDocSignature;
-  typeParameters?: readonly JSDocTemplateTag[];
-  parameters: readonly JSDocParameterTag[];
-  type?: JSDocReturnTag;
-  constructor(ts: readonly JSDocTemplateTag[] | undefined, ps: readonly JSDocParameterTag[], t?: JSDocReturnTag) {
+DocReturnTag.prototype.kind = DocReturnTag.kind;
+export class DocSignature extends qc.DocType implements qc.DocSignature {
+  static readonly kind = Syntax.DocSignature;
+  typeParameters?: readonly DocTemplateTag[];
+  parameters: readonly DocParameterTag[];
+  type?: DocReturnTag;
+  constructor(ts: readonly DocTemplateTag[] | undefined, ps: readonly DocParameterTag[], t?: DocReturnTag) {
     super(true);
     this.typeParameters = ts;
     this.parameters = ps;
@@ -1951,89 +1951,89 @@ export class JSDocSignature extends qc.JSDocType implements qc.JSDocSignature {
   }
   _declarationBrand: any;
 }
-JSDocSignature.prototype.kind = JSDocSignature.kind;
-qb.addMixins(JSDocSignature, [qc.Declaration]);
-export class JSDocTemplateTag extends qc.JSDocTag implements qc.JSDocTemplateTag {
-  static readonly kind = Syntax.JSDocTemplateTag;
-  constraint?: JSDocTypeExpression;
+DocSignature.prototype.kind = DocSignature.kind;
+qb.addMixins(DocSignature, [qc.Declaration]);
+export class DocTemplateTag extends qc.DocTag implements qc.DocTemplateTag {
+  static readonly kind = Syntax.DocTemplateTag;
+  constraint?: DocTypeExpression;
   typeParameters: Nodes<TypeParameterDeclaration>;
-  constructor(c: JSDocTypeExpression | undefined, ts: readonly TypeParameterDeclaration[], s?: string) {
-    super(Syntax.JSDocTemplateTag, 'template', s);
+  constructor(c: DocTypeExpression | undefined, ts: readonly TypeParameterDeclaration[], s?: string) {
+    super(Syntax.DocTemplateTag, 'template', s);
     this.constraint = c;
     this.typeParameters = Nodes.from(ts);
   }
 }
-JSDocTemplateTag.prototype.kind = JSDocTemplateTag.kind;
-export class JSDocThisTag extends qc.JSDocTag implements qc.JSDocThisTag {
-  static readonly kind = Syntax.JSDocThisTag;
-  typeExpression?: JSDocTypeExpression;
-  constructor(e?: JSDocTypeExpression) {
-    super(Syntax.JSDocThisTag, 'this');
+DocTemplateTag.prototype.kind = DocTemplateTag.kind;
+export class DocThisTag extends qc.DocTag implements qc.DocThisTag {
+  static readonly kind = Syntax.DocThisTag;
+  typeExpression?: DocTypeExpression;
+  constructor(e?: DocTypeExpression) {
+    super(Syntax.DocThisTag, 'this');
     this.typeExpression = e;
   }
 }
-JSDocThisTag.prototype.kind = JSDocThisTag.kind;
-export class JSDocTypedefTag extends qc.JSDocTag implements qc.JSDocTypedefTag {
-  static readonly kind = Syntax.JSDocTypedefTag;
-  parent!: JSDoc;
-  fullName?: JSDocNamespaceDeclaration | Identifier;
+DocThisTag.prototype.kind = DocThisTag.kind;
+export class DocTypedefTag extends qc.DocTag implements qc.DocTypedefTag {
+  static readonly kind = Syntax.DocTypedefTag;
+  parent!: Doc;
+  fullName?: DocNamespaceDeclaration | Identifier;
   name?: Identifier;
-  typeExpression?: JSDocTypeExpression | JSDocTypeLiteral;
-  constructor(f?: JSDocNamespaceDeclaration | Identifier, n?: Identifier, c?: string, t?: JSDocTypeExpression | JSDocTypeLiteral) {
-    super(Syntax.JSDocTypedefTag, 'typedef', c);
+  typeExpression?: DocTypeExpression | DocTypeLiteral;
+  constructor(f?: DocNamespaceDeclaration | Identifier, n?: Identifier, c?: string, t?: DocTypeExpression | DocTypeLiteral) {
+    super(Syntax.DocTypedefTag, 'typedef', c);
     this.fullName = f;
     this.name = n;
     this.typeExpression = t;
   }
   _declarationBrand: any;
 }
-JSDocTypedefTag.prototype.kind = JSDocTypedefTag.kind;
-qb.addMixins(JSDocTypedefTag, [qc.NamedDeclaration]);
-export class JSDocTypeExpression extends qc.TypeNode implements qc.JSDocTypeExpression {
-  static readonly kind = Syntax.JSDocTypeExpression;
+DocTypedefTag.prototype.kind = DocTypedefTag.kind;
+qb.addMixins(DocTypedefTag, [qc.NamedDeclaration]);
+export class DocTypeExpression extends qc.TypeNode implements qc.DocTypeExpression {
+  static readonly kind = Syntax.DocTypeExpression;
   type: qc.TypeNode;
   constructor(t: qc.TypeNode) {
     super(true);
     this.type = t;
   }
 }
-JSDocTypeExpression.prototype.kind = JSDocTypeExpression.kind;
-export class JSDocTypeLiteral extends qc.JSDocType implements qc.JSDocTypeLiteral {
-  static readonly kind = Syntax.JSDocTypeLiteral;
-  jsDocPropertyTags?: readonly JSDocPropertyLikeTag[];
+DocTypeExpression.prototype.kind = DocTypeExpression.kind;
+export class DocTypeLiteral extends qc.DocType implements qc.DocTypeLiteral {
+  static readonly kind = Syntax.DocTypeLiteral;
+  docPropertyTags?: readonly DocPropertyLikeTag[];
   isArrayType?: boolean;
-  constructor(ts?: readonly JSDocPropertyLikeTag[], isArray?: boolean) {
+  constructor(ts?: readonly DocPropertyLikeTag[], isArray?: boolean) {
     super(true);
-    this.jsDocPropertyTags = ts;
+    this.docPropertyTags = ts;
     this.isArrayType = isArray;
   }
 }
-JSDocTypeLiteral.prototype.kind = JSDocTypeLiteral.kind;
-export class JSDocTypeTag extends qc.JSDocTag implements qc.JSDocTypeTag {
-  static readonly kind = Syntax.JSDocTypeTag;
-  typeExpression: JSDocTypeExpression;
-  constructor(e: JSDocTypeExpression, c?: string) {
-    super(Syntax.JSDocTypeTag, 'type', c);
+DocTypeLiteral.prototype.kind = DocTypeLiteral.kind;
+export class DocTypeTag extends qc.DocTag implements qc.DocTypeTag {
+  static readonly kind = Syntax.DocTypeTag;
+  typeExpression: DocTypeExpression;
+  constructor(e: DocTypeExpression, c?: string) {
+    super(Syntax.DocTypeTag, 'type', c);
     this.typeExpression = e;
   }
 }
-JSDocTypeTag.prototype.kind = JSDocTypeTag.kind;
-export class JSDocUnknownType extends qc.JSDocType implements qc.JSDocUnknownType {
-  static readonly kind = Syntax.JSDocUnknownType;
+DocTypeTag.prototype.kind = DocTypeTag.kind;
+export class DocUnknownType extends qc.DocType implements qc.DocUnknownType {
+  static readonly kind = Syntax.DocUnknownType;
 }
-JSDocUnknownType.prototype.kind = JSDocUnknownType.kind;
-export class JSDocVariadicType extends qc.JSDocType implements qc.JSDocVariadicType {
-  static readonly kind = Syntax.JSDocVariadicType;
+DocUnknownType.prototype.kind = DocUnknownType.kind;
+export class DocVariadicType extends qc.DocType implements qc.DocVariadicType {
+  static readonly kind = Syntax.DocVariadicType;
   type: qc.TypeNode;
   constructor(t: qc.TypeNode) {
     super(true);
     this.type = t;
   }
-  update(t: qc.TypeNode): JSDocVariadicType {
-    return this.type !== t ? new JSDocVariadicType(t).updateFrom(this) : this;
+  update(t: qc.TypeNode): DocVariadicType {
+    return this.type !== t ? new DocVariadicType(t).updateFrom(this) : this;
   }
 }
-JSDocVariadicType.prototype.kind = JSDocVariadicType.kind;
+DocVariadicType.prototype.kind = DocVariadicType.kind;
 export class JsxAttribute extends qc.ObjectLiteralElement implements qc.JsxAttribute {
   static readonly kind = Syntax.JsxAttribute;
   parent!: JsxAttributes;
@@ -2279,7 +2279,7 @@ export class LabeledStatement extends qc.Statement implements qc.LabeledStatemen
   }
 }
 LabeledStatement.prototype.kind = LabeledStatement.kind;
-qb.addMixins(LabeledStatement, [qc.JSDocContainer]);
+qb.addMixins(LabeledStatement, [qc.DocContainer]);
 export class LiteralTypeNode extends qc.TypeNode implements qc.LiteralTypeNode {
   static readonly kind = Syntax.LiteralType;
   literal: qc.BooleanLiteral | qc.LiteralExpression | PrefixUnaryExpression;
@@ -2386,13 +2386,13 @@ export class MethodDeclaration extends qc.FunctionLikeDeclarationBase implements
   _objectLiteralBrand: any;
 }
 MethodDeclaration.prototype.kind = MethodDeclaration.kind;
-qb.addMixins(MethodDeclaration, [qc.ClassElement, qc.ObjectLiteralElement, qc.JSDocContainer]);
+qb.addMixins(MethodDeclaration, [qc.ClassElement, qc.ObjectLiteralElement, qc.DocContainer]);
 export class MethodSignature extends qc.SignatureDeclarationBase implements qc.MethodSignature {
   static readonly kind = Syntax.MethodSignature;
   parent!: qc.ObjectTypeDeclaration;
   name: qc.PropertyName;
   questionToken?: qc.QuestionToken;
-  jsDocCache?: readonly JSDocTag[];
+  docCache?: readonly DocTag[];
   constructor(ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t: qc.TypeNode | undefined, p: string | qc.PropertyName, q?: qc.QuestionToken) {
     super(false, Syntax.MethodSignature, ts, ps, t);
     this.name = asName(p);
@@ -2428,8 +2428,8 @@ export class ModuleDeclaration extends qc.DeclarationStatement implements qc.Mod
   static readonly kind = Syntax.ModuleDeclaration;
   parent: qc.ModuleBody | SourceFile;
   name: qc.ModuleName;
-  body?: qc.ModuleBody | qc.JSDocNamespaceDeclaration;
-  jsDocCache?: readonly JSDocTag[] | undefined;
+  body?: qc.ModuleBody | qc.DocNamespaceDeclaration;
+  docCache?: readonly DocTag[] | undefined;
   constructor(decorators: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, name: qc.ModuleName, b?: qc.ModuleBody, flags = NodeFlags.None) {
     super(true);
     this.flags |= flags & (NodeFlags.Namespace | NodeFlags.NestedNamespace | NodeFlags.GlobalAugmentation);
@@ -2444,10 +2444,10 @@ export class ModuleDeclaration extends qc.DeclarationStatement implements qc.Mod
   _statementBrand: any;
 }
 ModuleDeclaration.prototype.kind = ModuleDeclaration.kind;
-qb.addMixins(ModuleDeclaration, [qc.JSDocContainer]);
-export class JSDocNamespaceDeclaration extends ModuleDeclaration {
+qb.addMixins(ModuleDeclaration, [qc.DocContainer]);
+export class DocNamespaceDeclaration extends ModuleDeclaration {
   name!: Identifier;
-  body?: qc.JSDocNamespaceBody;
+  body?: qc.DocNamespaceBody;
 }
 export class NamedExports extends Node implements qc.NamedExports {
   static readonly kind = Syntax.NamedExports;
@@ -2481,7 +2481,7 @@ export class NamedTupleMember extends qc.TypeNode implements qc.NamedTupleMember
   name: Identifier;
   questionToken?: qc.QuestionToken;
   type: qc.TypeNode;
-  jsDocCache?: readonly JSDocTag[] | undefined;
+  docCache?: readonly DocTag[] | undefined;
   constructor(d3: qc.Dot3Token | undefined, i: Identifier, q: qc.QuestionToken | undefined, t: qc.TypeNode) {
     super(true);
     this.dot3Token = d3;
@@ -2495,7 +2495,7 @@ export class NamedTupleMember extends qc.TypeNode implements qc.NamedTupleMember
   _declarationBrand: any;
 }
 NamedTupleMember.prototype.kind = NamedTupleMember.kind;
-qb.addMixins(NamedTupleMember, [qc.Declaration, qc.JSDocContainer]);
+qb.addMixins(NamedTupleMember, [qc.Declaration, qc.DocContainer]);
 export class NamespaceExport extends qc.NamedDeclaration implements qc.NamespaceExport {
   static readonly kind = Syntax.NamespaceExport;
   parent!: ExportDeclaration;
@@ -2770,7 +2770,7 @@ export class ParameterDeclaration extends qc.NamedDeclaration implements qc.Para
   }
 }
 ParameterDeclaration.prototype.kind = ParameterDeclaration.kind;
-qb.addMixins(ParameterDeclaration, [qc.JSDocContainer]);
+qb.addMixins(ParameterDeclaration, [qc.DocContainer]);
 export class ParenthesizedExpression extends qc.PrimaryExpression implements qc.ParenthesizedExpression {
   static readonly kind = Syntax.ParenthesizedExpression;
   expression: qc.Expression;
@@ -2782,7 +2782,7 @@ export class ParenthesizedExpression extends qc.PrimaryExpression implements qc.
     return this.expression !== e ? new ParenthesizedExpression(e).updateFrom(this) : this;
   }
 }
-qb.addMixins(ParenthesizedExpression, [qc.JSDocContainer]);
+qb.addMixins(ParenthesizedExpression, [qc.DocContainer]);
 ParenthesizedExpression.prototype.kind = ParenthesizedExpression.kind;
 export class ParenthesizedTypeNode extends qc.TypeNode implements qc.ParenthesizedTypeNode {
   static readonly kind = Syntax.ParenthesizedType;
@@ -2905,7 +2905,7 @@ export class PropertyAssignment extends qc.ObjectLiteralElement implements qc.Pr
   }
 }
 PropertyAssignment.prototype.kind = PropertyAssignment.kind;
-qb.addMixins(PropertyAssignment, [qc.JSDocContainer]);
+qb.addMixins(PropertyAssignment, [qc.DocContainer]);
 export class PropertyDeclaration extends qc.ClassElement implements qc.PropertyDeclaration {
   static readonly kind = Syntax.PropertyDeclaration;
   parent!: qc.ClassLikeDeclaration;
@@ -2945,7 +2945,7 @@ export class PropertyDeclaration extends qc.ClassElement implements qc.PropertyD
   }
 }
 PropertyDeclaration.prototype.kind = PropertyDeclaration.kind;
-qb.addMixins(PropertyDeclaration, [qc.JSDocContainer]);
+qb.addMixins(PropertyDeclaration, [qc.DocContainer]);
 export class PropertySignature extends qc.TypeElement implements qc.PropertySignature {
   static readonly kind = Syntax.PropertySignature;
   name: qc.PropertyName;
@@ -2965,7 +2965,7 @@ export class PropertySignature extends qc.TypeElement implements qc.PropertySign
   }
 }
 PropertySignature.prototype.kind = PropertySignature.kind;
-qb.addMixins(PropertySignature, [qc.JSDocContainer]);
+qb.addMixins(PropertySignature, [qc.DocContainer]);
 export class QualifiedName extends Node implements qc.QualifiedName {
   static readonly kind = Syntax.QualifiedName;
   left: qc.EntityName;
@@ -3041,7 +3041,7 @@ export class SetAccessorDeclaration extends qc.FunctionLikeDeclarationBase imple
   _objectLiteralBrand: any;
 }
 SetAccessorDeclaration.prototype.kind = SetAccessorDeclaration.kind;
-qb.addMixins(SetAccessorDeclaration, [qc.ClassElement, qc.ObjectLiteralElement, qc.JSDocContainer]);
+qb.addMixins(SetAccessorDeclaration, [qc.ClassElement, qc.ObjectLiteralElement, qc.DocContainer]);
 export class ShorthandPropertyAssignment extends qc.ObjectLiteralElement implements qc.ShorthandPropertyAssignment {
   static readonly kind = Syntax.ShorthandPropertyAssignment;
   parent!: ObjectLiteralExpression;
@@ -3060,7 +3060,7 @@ export class ShorthandPropertyAssignment extends qc.ObjectLiteralElement impleme
   }
 }
 ShorthandPropertyAssignment.prototype.kind = ShorthandPropertyAssignment.kind;
-qb.addMixins(ShorthandPropertyAssignment, [qc.JSDocContainer]);
+qb.addMixins(ShorthandPropertyAssignment, [qc.DocContainer]);
 export class SpreadElement extends qc.Expression implements qc.SpreadElement {
   static readonly kind = Syntax.SpreadElement;
   parent!: ArrayLiteralExpression | CallExpression | NewExpression;
@@ -3087,7 +3087,7 @@ export class SpreadAssignment extends qc.ObjectLiteralElement implements qc.Spre
   }
 }
 SpreadAssignment.prototype.kind = SpreadAssignment.kind;
-qb.addMixins(SpreadAssignment, [qc.JSDocContainer]);
+qb.addMixins(SpreadAssignment, [qc.DocContainer]);
 export class StringLiteral extends qc.LiteralExpression implements qc.StringLiteral {
   static readonly kind = Syntax.StringLiteral;
   textSourceNode?: Identifier | qc.StringLiteralLike | NumericLiteral;
@@ -3305,7 +3305,7 @@ export class TypeAliasDeclaration extends qc.DeclarationStatement implements qc.
   name: Identifier;
   typeParameters?: Nodes<TypeParameterDeclaration>;
   type: qc.TypeNode;
-  jsDocCache?: readonly JSDocTag[] | undefined;
+  docCache?: readonly DocTag[] | undefined;
   constructor(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, n: string | Identifier, ts: readonly TypeParameterDeclaration[] | undefined, t: qc.TypeNode) {
     super(true);
     this.decorators = Nodes.from(ds);
@@ -3320,7 +3320,7 @@ export class TypeAliasDeclaration extends qc.DeclarationStatement implements qc.
   _statementBrand: any;
 }
 TypeAliasDeclaration.prototype.kind = TypeAliasDeclaration.kind;
-qb.addMixins(TypeAliasDeclaration, [qc.JSDocContainer]);
+qb.addMixins(TypeAliasDeclaration, [qc.DocContainer]);
 export class TypeAssertion extends qc.UnaryExpression implements qc.TypeAssertion {
   static readonly kind = Syntax.TypeAssertionExpression;
   type: qc.TypeNode;
@@ -3397,7 +3397,7 @@ export class TypeParameterDeclaration extends qc.NamedDeclaration implements qc.
 TypeParameterDeclaration.prototype.kind = TypeParameterDeclaration.kind;
 export class TypePredicateNode extends qc.TypeNode implements qc.TypePredicateNode {
   static readonly kind = Syntax.TypePredicate;
-  parent!: qc.SignatureDeclaration | JSDocTypeExpression;
+  parent!: qc.SignatureDeclaration | DocTypeExpression;
   assertsModifier?: qc.AssertsToken;
   parameterName: Identifier | ThisTypeNode;
   type?: qc.TypeNode;
@@ -3734,7 +3734,7 @@ export class VariableStatement extends qc.Statement implements qc.VariableStatem
   }
 }
 VariableStatement.prototype.kind = VariableStatement.kind;
-qb.addMixins(VariableStatement, [qc.JSDocContainer]);
+qb.addMixins(VariableStatement, [qc.DocContainer]);
 export class VoidExpression extends qc.UnaryExpression implements qc.VoidExpression {
   static readonly kind = Syntax.VoidExpression;
   expression: qc.UnaryExpression;
@@ -3840,16 +3840,16 @@ export type NodeTypes =
   | IndexedAccessTypeNode
   | InferTypeNode
   | InterfaceDeclaration
-  | JSDoc
-  | JSDocAugmentsTag
-  | JSDocAuthorTag
-  | JSDocFunctionType
-  | JSDocImplementsTag
-  | JSDocSignature
-  | JSDocTemplateTag
-  | JSDocTypedefTag
-  | JSDocTypeExpression
-  | JSDocTypeLiteral
+  | Doc
+  | DocAugmentsTag
+  | DocAuthorTag
+  | DocFunctionType
+  | DocImplementsTag
+  | DocSignature
+  | DocTemplateTag
+  | DocTypedefTag
+  | DocTypeExpression
+  | DocTypeLiteral
   | JsxAttribute
   | JsxAttributes
   | JsxClosingElement
@@ -4573,36 +4573,36 @@ export interface SynMap {
   [Syntax.InputFiles]: InputFiles;
   [Syntax.InterfaceDeclaration]: InterfaceDeclaration;
   [Syntax.IntersectionType]: IntersectionTypeNode;
-  [Syntax.JSDocAllType]: JSDocAllType;
-  [Syntax.JSDocAugmentsTag]: JSDocAugmentsTag;
-  [Syntax.JSDocAuthorTag]: JSDocAuthorTag;
-  [Syntax.JSDocCallbackTag]: JSDocCallbackTag;
-  [Syntax.JSDocClassTag]: JSDocClassTag;
-  [Syntax.JSDocComment]: JSDoc;
-  [Syntax.JSDocEnumTag]: JSDocEnumTag;
-  [Syntax.JSDocFunctionType]: JSDocFunctionType;
-  [Syntax.JSDocImplementsTag]: JSDocImplementsTag;
-  [Syntax.JSDocNamepathType]: JSDocNamepathType;
-  [Syntax.JSDocNonNullableType]: JSDocNonNullableType;
-  [Syntax.JSDocNullableType]: JSDocNullableType;
-  [Syntax.JSDocOptionalType]: JSDocOptionalType;
-  [Syntax.JSDocParameterTag]: JSDocParameterTag;
-  [Syntax.JSDocPrivateTag]: JSDocPrivateTag;
-  [Syntax.JSDocPropertyTag]: JSDocPropertyTag;
-  [Syntax.JSDocProtectedTag]: JSDocProtectedTag;
-  [Syntax.JSDocPublicTag]: JSDocPublicTag;
-  [Syntax.JSDocReadonlyTag]: JSDocReadonlyTag;
-  [Syntax.JSDocReturnTag]: JSDocReturnTag;
-  [Syntax.JSDocSignature]: JSDocSignature;
-  [Syntax.JSDocTag]: JSDocTag;
-  [Syntax.JSDocTemplateTag]: JSDocTemplateTag;
-  [Syntax.JSDocThisTag]: JSDocThisTag;
-  [Syntax.JSDocTypedefTag]: JSDocTypedefTag;
-  [Syntax.JSDocTypeExpression]: JSDocTypeExpression;
-  [Syntax.JSDocTypeLiteral]: JSDocTypeLiteral;
-  [Syntax.JSDocTypeTag]: JSDocTypeTag;
-  [Syntax.JSDocUnknownType]: JSDocUnknownType;
-  [Syntax.JSDocVariadicType]: JSDocVariadicType;
+  [Syntax.DocAllType]: DocAllType;
+  [Syntax.DocAugmentsTag]: DocAugmentsTag;
+  [Syntax.DocAuthorTag]: DocAuthorTag;
+  [Syntax.DocCallbackTag]: DocCallbackTag;
+  [Syntax.DocClassTag]: DocClassTag;
+  [Syntax.DocComment]: Doc;
+  [Syntax.DocEnumTag]: DocEnumTag;
+  [Syntax.DocFunctionType]: DocFunctionType;
+  [Syntax.DocImplementsTag]: DocImplementsTag;
+  [Syntax.DocNamepathType]: DocNamepathType;
+  [Syntax.DocNonNullableType]: DocNonNullableType;
+  [Syntax.DocNullableType]: DocNullableType;
+  [Syntax.DocOptionalType]: DocOptionalType;
+  [Syntax.DocParameterTag]: DocParameterTag;
+  [Syntax.DocPrivateTag]: DocPrivateTag;
+  [Syntax.DocPropertyTag]: DocPropertyTag;
+  [Syntax.DocProtectedTag]: DocProtectedTag;
+  [Syntax.DocPublicTag]: DocPublicTag;
+  [Syntax.DocReadonlyTag]: DocReadonlyTag;
+  [Syntax.DocReturnTag]: DocReturnTag;
+  [Syntax.DocSignature]: DocSignature;
+  [Syntax.DocTag]: DocTag;
+  [Syntax.DocTemplateTag]: DocTemplateTag;
+  [Syntax.DocThisTag]: DocThisTag;
+  [Syntax.DocTypedefTag]: DocTypedefTag;
+  [Syntax.DocTypeExpression]: DocTypeExpression;
+  [Syntax.DocTypeLiteral]: DocTypeLiteral;
+  [Syntax.DocTypeTag]: DocTypeTag;
+  [Syntax.DocUnknownType]: DocUnknownType;
+  [Syntax.DocVariadicType]: DocVariadicType;
   [Syntax.JsxAttribute]: JsxAttribute;
   [Syntax.JsxAttributes]: JsxAttributes;
   [Syntax.JsxClosingElement]: JsxClosingElement;
