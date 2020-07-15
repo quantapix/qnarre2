@@ -1,11 +1,10 @@
 import * as qb from './base';
-import { QContext } from './context';
-import { NodeFlags, TransformFlags } from './types';
+import { NodeBase, NodeFlags, ObjectFlags, TransformFlags, TypeFlags } from './types';
 import * as qt from './types';
 import { Modifier, ModifierFlags, Syntax } from './syntax';
 import * as qy from './syntax';
 export * from './types';
-export class Nodes<T extends qt.Node> extends Array<T> implements qt.Nodes<T> {
+export class Nodes<T extends NodeBase> extends Array<T> implements qt.Nodes<T> {
   pos = -1;
   end = -1;
   trailingComma?: boolean;
@@ -22,7 +21,7 @@ export class Nodes<T extends qt.Node> extends Array<T> implements qt.Nodes<T> {
     super(...(!ts || ts === qb.empty ? [] : ts));
     if (trailingComma) this.trailingComma = trailingComma;
   }
-  visit<T>(cb: (n: qt.Node) => T | undefined, cbs?: (ns: Nodes<qt.Node>) => T | undefined): T | undefined {
+  visit<T>(cb: (n: NodeBase) => T | undefined, cbs?: (ns: Nodes<NodeBase>) => T | undefined): T | undefined {
     if (cbs) return cbs(this);
     for (const n of this) {
       const r = cb(n);
@@ -31,9 +30,8 @@ export class Nodes<T extends qt.Node> extends Array<T> implements qt.Nodes<T> {
     return;
   }
 }
-export type MutableNodes<T extends qt.Node> = Nodes<T> & T[];
-export abstract class Node extends qb.TextRange implements qt.NodeBase {
-  //static readonly kind = Syntax.Unknown;
+export type MutableNodes<T extends NodeBase> = Nodes<T> & T[];
+export abstract class Node extends qb.TextRange implements NodeBase {
   id?: number;
   kind!: any;
   flags = NodeFlags.None;
@@ -290,8 +288,7 @@ export abstract class Node extends qb.TextRange implements qt.NodeBase {
     return destRanges;
   }
 }
-
-export class SyntaxList extends Node implements qc.SyntaxList {
+export class SyntaxList extends Node implements qt.SyntaxList {
   static readonly kind = Syntax.SyntaxList;
   children!: Node[];
 }
@@ -316,7 +313,7 @@ export abstract class Declaration extends Node implements qt.Declaration {
   getLocalName(allowComments?: boolean, allowSourceMaps?: boolean) {
     return this.getName(allowComments, allowSourceMaps, EmitFlags.LocalName);
   }
-  getExportName(allowComments?: boolean, allowSourceMaps?: boolean): Identifier {
+  getExportName(allowComments?: boolean, allowSourceMaps?: boolean): qt.Identifier {
     return this.getName(allowComments, allowSourceMaps, EmitFlags.ExportName);
   }
   getDeclarationName(allowComments?: boolean, allowSourceMaps?: boolean) {
@@ -334,7 +331,7 @@ export abstract class Declaration extends Node implements qt.Declaration {
     }
     return getGeneratedNameForNode(this);
   }
-  getExternalModuleOrNamespaceExportName(s: Identifier | undefined, allowComments?: boolean, allowSourceMaps?: boolean): Identifier | PropertyAccessExpression {
+  getExternalModuleOrNamespaceExportName(s: qt.Identifier | undefined, allowComments?: boolean, allowSourceMaps?: boolean): qt.Identifier | qt.PropertyAccessExpression {
     if (s && hasSyntacticModifier(this, ModifierFlags.Export)) return getNamespaceMemberName(s, getName(this), allowComments, allowSourceMaps);
     return this.getExportName(allowComments, allowSourceMaps);
   }
@@ -343,23 +340,24 @@ export abstract class NamedDeclaration extends Declaration implements qt.NamedDe
   name?: qt.DeclarationName;
 }
 export abstract class DeclarationStatement extends NamedDeclaration implements qt.DeclarationStatement {
-  name?: Identifier | StringLiteral | NumericLiteral;
+  name?: qt.Identifier | qt.StringLiteral | qt.NumericLiteral;
+  _statementBrand: any;
 }
 export abstract class ClassElement extends NamedDeclaration implements qt.ClassElement {
+  name?: qt.PropertyName;
   _classElementBrand: any;
-  name?: PropertyName;
 }
 export abstract class ClassLikeDeclarationBase extends NamedDeclaration implements qt.ClassLikeDeclarationBase {
-  name?: Identifier;
-  typeParameters?: Nodes<TypeParameterDeclaration>;
+  name?: qt.Identifier;
+  typeParameters?: Nodes<qt.TypeParameterDeclaration>;
   heritageClauses?: Nodes<qt.HeritageClause>;
   members: Nodes<ClassElement>;
   constructor(
     s: boolean,
     k: Syntax.ClassDeclaration | Syntax.ClassExpression,
-    ts: readonly TypeParameterDeclaration[] | undefined,
-    hs: readonly HeritageClause[] | undefined,
-    es: readonly qc.ClassElement[]
+    ts: readonly qt.TypeParameterDeclaration[] | undefined,
+    hs: readonly qt.HeritageClause[] | undefined,
+    es: readonly ClassElement[]
   ) {
     super(s, k);
     this.typeParameters = Nodes.from(ts);
@@ -368,24 +366,24 @@ export abstract class ClassLikeDeclarationBase extends NamedDeclaration implemen
   }
 }
 export abstract class ObjectLiteralElement extends NamedDeclaration implements qt.ObjectLiteralElement {
-  _objectLiteralBrand: any;
   name?: qt.PropertyName;
+  _objectLiteralBrand: any;
 }
 export abstract class PropertyLikeDeclaration extends NamedDeclaration implements qt.PropertyLikeDeclaration {
-  name: qt.PropertyName;
+  name!: qt.PropertyName;
 }
 export abstract class TypeElement extends NamedDeclaration implements qt.TypeElement {
-  _typeElementBrand: any;
-  name?: PropertyName;
+  name?: qt.PropertyName;
   questionToken?: qt.QuestionToken;
+  _typeElementBrand: any;
 }
 export abstract class SignatureDeclarationBase extends NamedDeclaration implements qt.SignatureDeclarationBase {
   name?: qt.PropertyName;
-  typeParameters?: Nodes<TypeParameterDeclaration>;
-  parameters!: Nodes<ParameterDeclaration>;
+  typeParameters?: Nodes<qt.TypeParameterDeclaration>;
+  parameters!: Nodes<qt.ParameterDeclaration>;
   type?: TypeNode;
   typeArguments?: Nodes<qt.TypeNode>;
-  constructor(s: boolean, k: qt.SignatureDeclaration['kind'], ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t?: TypeNode, ta?: readonly qc.TypeNode[]) {
+  constructor(s: boolean, k: qt.SignatureDeclaration['kind'], ts: readonly qt.TypeParameterDeclaration[] | undefined, ps: readonly qt.ParameterDeclaration[], t?: TypeNode, ta?: readonly TypeNode[]) {
     super(s, k);
     this.typeParameters = Nodes.from(ts);
     this.parameters = new Nodes(ps);
@@ -409,10 +407,12 @@ export abstract class FunctionLikeDeclarationBase extends SignatureDeclarationBa
   _functionLikeDeclarationBrand: any;
 }
 export abstract class FunctionOrConstructorTypeNodeBase extends SignatureDeclarationBase implements qt.FunctionOrConstructorTypeNodeBase {
-  type: TypeNode;
-  constructor(s: boolean, k: Syntax.FunctionType | Syntax.ConstructorType, ts: readonly TypeParameterDeclaration[] | undefined, ps: readonly ParameterDeclaration[], t?: TypeNode) {
+  type!: TypeNode;
+  docCache?: readonly qt.DocTag[];
+  constructor(s: boolean, k: Syntax.FunctionType | Syntax.ConstructorType, ts: readonly qt.TypeParameterDeclaration[] | undefined, ps: readonly qt.ParameterDeclaration[], t?: TypeNode) {
     super(s, k, ts, ps, t);
   }
+  _typeNodeBrand: any;
 }
 export abstract class Expression extends Node implements qt.Expression {
   _expressionBrand: any;
@@ -420,20 +420,20 @@ export abstract class Expression extends Node implements qt.Expression {
     if (qc.is.kind(QualifiedName, node)) {
       const left = createExpressionFromEntityName(node.left);
       const right = getMutableClone(node.right);
-      return setRange(new qc.PropertyAccessExpression(left, right), node);
+      return setRange(new qt.PropertyAccessExpression(left, right), node);
     }
     return getMutableClone(node);
   }
-  createExpressionForPropertyName(memberName: Exclude<PropertyName, PrivateIdentifier>): Expression {
+  createExpressionForPropertyName(memberName: Exclude<qt.PropertyName, qt.PrivateIdentifier>): Expression {
     if (qc.is.kind(Identifier, memberName)) return qc.asLiteral(memberName);
     else if (qc.is.kind(ComputedPropertyName, memberName)) return getMutableClone(memberName.expression);
     return getMutableClone(memberName);
   }
-  createExpressionForObjectLiteralElementLike(node: ObjectLiteralExpression, property: ObjectLiteralElementLike, receiver: Expression): Expression | undefined {
+  createExpressionForObjectLiteralElementLike(node: qt.ObjectLiteralExpression, property: qt.ObjectLiteralElementLike, receiver: Expression): Expression | undefined {
     if (property.name && qc.is.kind(PrivateIdentifier, property.name)) qg.failBadSyntax(property.name, 'Private identifiers are not allowed in object literals.');
     function createExpressionForAccessorDeclaration(
       properties: Nodes<Declaration>,
-      property: AccessorDeclaration & { name: Exclude<PropertyName, PrivateIdentifier> },
+      property: AccessorDeclaration & { name: Exclude<PropertyName, qt.PrivateIdentifier> },
       receiver: Expression,
       multiLine: boolean
     ) {
@@ -457,7 +457,7 @@ export abstract class Expression extends Node implements qt.Expression {
         properties.push(new qc.PropertyAssignment('enumerable', getAccessor || setAccessor ? new qc.BooleanLiteral(false) : new qc.BooleanLiteral(true)));
         properties.push(new qc.PropertyAssignment('configurable', new qc.BooleanLiteral(true)));
         const expression = setRange(
-          new CallExpression(new qc.PropertyAccessExpression(new Identifier('Object'), 'defineProperty'), undefined, [
+          new CallExpression(new qt.PropertyAccessExpression(new Identifier('Object'), 'defineProperty'), undefined, [
             receiver,
             createExpressionForPropertyName(property.name),
             new qc.ObjectLiteralExpression(properties, multiLine),
@@ -493,7 +493,7 @@ export abstract class Expression extends Node implements qt.Expression {
     switch (property.kind) {
       case Syntax.GetAccessor:
       case Syntax.SetAccessor:
-        return createExpressionForAccessorDeclaration(node.properties, property as typeof property & { name: Exclude<PropertyName, PrivateIdentifier> }, receiver, !!node.multiLine);
+        return createExpressionForAccessorDeclaration(node.properties, property as typeof property & { name: Exclude<PropertyName, qt.PrivateIdentifier> }, receiver, !!node.multiLine);
       case Syntax.PropertyAssignment:
         return createExpressionForPropertyAssignment(property, receiver);
       case Syntax.ShorthandPropertyAssignment:
@@ -506,11 +506,11 @@ export abstract class Expression extends Node implements qt.Expression {
   createTypeCheck(value: Expression, tag: TypeOfTag) {
     return tag === 'undefined' ? createStrictEquality(value, VoidExpression.zero()) : createStrictEquality(new TypeOfExpression(value), qc.asLiteral(tag));
   }
-  createMemberAccessForPropertyName(target: Expression, memberName: PropertyName, location?: TextRange): MemberExpression {
+  createMemberAccessForPropertyName(target: Expression, memberName: qt.PropertyName, location?: TextRange): MemberExpression {
     if (qc.is.kind(ComputedPropertyName, memberName)) return setRange(new ElementAccessExpression(target, memberName.expression), location);
     else {
       const expression = setRange(
-        qc.is.kind(Identifier, memberName) || qc.is.kind(PrivateIdentifier, memberName) ? new qc.PropertyAccessExpression(target, memberName) : new ElementAccessExpression(target, memberName),
+        qc.is.kind(Identifier, memberName) || qc.is.kind(PrivateIdentifier, memberName) ? new qt.PropertyAccessExpression(target, memberName) : new ElementAccessExpression(target, memberName),
         memberName
       );
       getOrCreateEmitNode(expression).flags |= EmitFlags.NoNestedSourceMaps;
@@ -518,21 +518,21 @@ export abstract class Expression extends Node implements qt.Expression {
     }
   }
   createFunctionCall(func: Expression, thisArg: Expression, argumentsList: readonly Expression[], location?: TextRange) {
-    return setRange(new CallExpression(new qc.PropertyAccessExpression(func, 'call'), undefined, [thisArg, ...argumentsList]), location);
+    return setRange(new CallExpression(new qt.PropertyAccessExpression(func, 'call'), undefined, [thisArg, ...argumentsList]), location);
   }
   createFunctionApply(func: Expression, thisArg: Expression, argumentsExpression: Expression, location?: TextRange) {
-    return setRange(new CallExpression(new qc.PropertyAccessExpression(func, 'apply'), undefined, [thisArg, argumentsExpression]), location);
+    return setRange(new CallExpression(new qt.PropertyAccessExpression(func, 'apply'), undefined, [thisArg, argumentsExpression]), location);
   }
   createArraySlice(array: Expression, start?: number | Expression) {
     const argumentsList: Expression[] = [];
     if (start !== undefined) argumentsList.push(typeof start === 'number' ? qc.asLiteral(start) : start);
-    return new CallExpression(new qc.PropertyAccessExpression(array, 'slice'), undefined, argumentsList);
+    return new CallExpression(new qt.PropertyAccessExpression(array, 'slice'), undefined, argumentsList);
   }
   createArrayConcat(array: Expression, values: readonly Expression[]) {
-    return new CallExpression(new qc.PropertyAccessExpression(array, 'concat'), undefined, values);
+    return new CallExpression(new qt.PropertyAccessExpression(array, 'concat'), undefined, values);
   }
   createMathPow(left: Expression, right: Expression, location?: TextRange) {
-    return setRange(new CallExpression(new qc.PropertyAccessExpression(new Identifier('Math'), 'pow'), undefined, [left, right]), location);
+    return setRange(new CallExpression(new qt.PropertyAccessExpression(new Identifier('Math'), 'pow'), undefined, [left, right]), location);
   }
   getLeftmostExpression(node: Expression, stopAtCallExpressions: boolean) {
     while (true) {
@@ -582,7 +582,7 @@ export abstract class PrimaryExpression extends MemberExpression implements qt.P
   _primaryExpressionBrand: any;
 }
 export abstract class ObjectLiteralExpressionBase<T extends qt.ObjectLiteralElement> extends PrimaryExpression implements qt.ObjectLiteralExpressionBase<T> {
-  properties: Nodes<T>;
+  properties!: Nodes<T>;
   _declarationBrand: any;
 }
 export abstract class TokenOrIdentifier extends Node {
@@ -597,7 +597,7 @@ export class Token<T extends Syntax> extends TokenOrIdentifier implements qt.Tok
 }
 export abstract class Statement extends Node implements qt.Statement {
   _statementBrand: any;
-  isUseStrictPrologue(node: ExpressionStatement): boolean {
+  isUseStrictPrologue(node: qt.ExpressionStatement): boolean {
     return qc.is.kind(StringLiteral, node.expression) && node.expression.text === 'use strict';
   }
   addPrologue(target: Statement[], source: readonly Statement[], ensureUseStrict?: boolean, visitor?: (node: Node) => VisitResult<Node>): number {
@@ -619,7 +619,7 @@ export abstract class Statement extends Node implements qt.Statement {
       }
       statementOffset++;
     }
-    if (ensureUseStrict && !foundUseStrict) target.push(startOnNewLine(new qc.ExpressionStatement(qc.asLiteral('use strict'))));
+    if (ensureUseStrict && !foundUseStrict) target.push(startOnNewLine(new qt.ExpressionStatement(qc.asLiteral('use strict'))));
     return statementOffset;
   }
   addCustomPrologue(target: Statement[], source: readonly Statement[], statementOffset: number, visitor?: (node: Node) => VisitResult<Node>, filter?: (node: Node) => boolean): number;
@@ -665,7 +665,7 @@ export abstract class Statement extends Node implements qt.Statement {
       return setRange(new qc.VariableStatement(undefined, node.update([updatedDeclaration])), node);
     } else {
       const updatedExpression = setRange(createAssignment(node, boundValue), node);
-      return setRange(new qc.ExpressionStatement(updatedExpression), node);
+      return setRange(new qt.ExpressionStatement(updatedExpression), node);
     }
   }
   insertLeadingStatement(dest: Statement, source: Statement) {
@@ -683,8 +683,8 @@ export abstract class Statement extends Node implements qt.Statement {
     return updated;
   }
 }
-export abstract class IterationStatement extends Statement implements qc.IterationStatement {
-  statement: Statement;
+export abstract class IterationStatement extends Statement implements qt.IterationStatement {
+  statement!: Statement;
 }
 export abstract class UnionOrIntersectionTypeNode extends TypeNode implements qt.UnionOrIntersectionType {
   types: Type[];
@@ -748,16 +748,14 @@ export abstract class DocContainer implements qt.DocContainer {
     return this;
   }
 }
-export function idText(n: Identifier | PrivateIdentifier): string {
+export function idText(n: qt.Identifier | qt.PrivateIdentifier): string {
   return qy.get.unescUnderscores(n.escapedText);
 }
 export class Type implements qt.Type {
-  flags: TypeFlags;
   id!: number;
-  checker: TypeChecker;
   symbol!: Symbol;
-  pattern?: DestructuringPattern;
   aliasSymbol?: Symbol;
+  pattern?: qt.DestructuringPattern;
   aliasTypeArguments?: readonly Type[];
   aliasTypeArgumentsContainsMarker?: boolean;
   permissiveInstantiation?: Type;
@@ -782,16 +780,16 @@ export class Type implements qt.Type {
     return this.checker.getAugmentedPropertiesOfType(this);
   }
   getCallSignatures(): readonly Signature[] {
-    return this.checker.getSignaturesOfType(this, SignatureKind.Call);
+    return this.checker.getSignaturesOfType(this, qt.SignatureKind.Call);
   }
   getConstructSignatures(): readonly Signature[] {
-    return this.checker.getSignaturesOfType(this, SignatureKind.Construct);
+    return this.checker.getSignaturesOfType(this, qt.SignatureKind.Construct);
   }
   getStringIndexType(): Type | undefined {
-    return this.checker.getIndexTypeOfType(this, IndexKind.String);
+    return this.checker.getIndexTypeOfType(this, qt.IndexKind.String);
   }
   getNumberIndexType(): Type | undefined {
-    return this.checker.getIndexTypeOfType(this, IndexKind.Number);
+    return this.checker.getIndexTypeOfType(this, qt.IndexKind.Number);
   }
   getBaseTypes(): BaseType[] | undefined {
     return this.isClassOrInterface() ? this.checker.getBaseTypes(this) : undefined;
@@ -811,35 +809,35 @@ export class Type implements qt.Type {
   getDefault(): Type | undefined {
     return this.checker.getDefaultFromTypeParameter(this);
   }
-  isUnion(): this is UnionType {
+  isUnion(): this is qt.UnionType {
     return !!(this.flags & TypeFlags.Union);
   }
-  isIntersection(): this is IntersectionType {
+  isIntersection(): this is qt.IntersectionType {
     return !!(this.flags & TypeFlags.Intersection);
   }
-  isUnionOrIntersection(): this is UnionOrIntersectionType {
+  isUnionOrIntersection(): this is qt.UnionOrIntersectionType {
     return !!(this.flags & TypeFlags.UnionOrIntersection);
   }
-  isLiteral(): this is LiteralType {
+  isLiteral(): this is qt.LiteralType {
     return !!(this.flags & TypeFlags.StringOrNumberLiteral);
   }
-  isStringLiteral(): this is StringLiteralType {
+  isStringLiteral(): this is qt.StringLiteralType {
     return !!(this.flags & TypeFlags.StringLiteral);
   }
-  isNumberLiteral(): this is NumberLiteralType {
+  isNumberLiteral(): this is qt.NumberLiteralType {
     return !!(this.flags & TypeFlags.NumberLiteral);
   }
-  isTypeParameter(): this is TypeParameter {
+  isTypeParameter(): this is qt.TypeParameter {
     return !!(this.flags & TypeFlags.TypeParameter);
   }
-  isClassOrInterface(): this is InterfaceType {
+  isClassOrInterface(): this is qt.InterfaceType {
     return !!(getObjectFlags(this) & ObjectFlags.ClassOrInterface);
   }
-  isClass(): this is InterfaceType {
+  isClass(): this is qt.InterfaceType {
     return !!(getObjectFlags(this) & ObjectFlags.Class);
   }
   get typeArguments() {
-    if (getObjectFlags(this) & ObjectFlags.Reference) return this.checker.getTypeArguments((this as Type) as TypeReference);
+    if (getObjectFlags(this) & ObjectFlags.Reference) return this.checker.getTypeArguments((this as Type) as qt.TypeReference);
     return;
   }
 }
@@ -1585,23 +1583,23 @@ export function createGetSymbolWalker(
   getRestTypeOfSignature: (sig: Signature) => Type,
   getTypePredicateOfSignature: (sig: Signature) => TypePredicate | undefined,
   getReturnTypeOfSignature: (sig: Signature) => Type,
-  getBaseTypes: (type: Type) => Type[],
-  resolveStructuredTypeMembers: (type: ObjectType) => ResolvedType,
+  getBaseTypes: (t: Type) => Type[],
+  resolveStructuredTypeMembers: (t: ObjectType) => ResolvedType,
   getTypeOfSymbol: (sym: Symbol) => Type,
   getResolvedSymbol: (node: Node) => Symbol,
-  getIndexTypeOfStructuredType: (type: Type, kind: IndexKind) => Type | undefined,
+  getIndexTypeOfStructuredType: (t: Type, kind: qt.IndexKind) => Type | undefined,
   getConstraintOfTypeParameter: (typeParameter: TypeParameter) => Type | undefined,
   getFirstIdentifier: (node: EntityNameOrEntityNameExpression) => Identifier,
-  getTypeArguments: (type: TypeReference) => readonly Type[]
+  getTypeArguments: (t: TypeReference) => readonly Type[]
 ) {
   return getSymbolWalker;
   function getSymbolWalker(accept: (symbol: Symbol) => boolean = () => true): SymbolWalker {
     const visitedTypes: Type[] = [];
     const visitedSymbols: Symbol[] = [];
     return {
-      walkType: (type) => {
+      walkType: (t) => {
         try {
-          visitType(type);
+          visitType(t);
           return { visitedTypes: getOwnValues(visitedTypes), visitedSymbols: getOwnValues(visitedSymbols) };
         } finally {
           clear(visitedTypes);
@@ -1618,48 +1616,48 @@ export function createGetSymbolWalker(
         }
       },
     };
-    function visitType(type: Type | undefined) {
-      if (!type) return;
-      if (visitedTypes[type.id]) return;
-      visitedTypes[type.id] = type;
-      const shouldBail = visitSymbol(type.symbol);
+    function visitType(t: Type | undefined) {
+      if (!t) return;
+      if (visitedTypes[t.id]) return;
+      visitedTypes[t.id] = t;
+      const shouldBail = visitSymbol(t.symbol);
       if (shouldBail) return;
-      if (type.flags & TypeFlags.Object) {
-        const objectType = type as ObjectType;
+      if (t.flags & TypeFlags.Object) {
+        const objectType = t as ObjectType;
         const objectFlags = objectType.objectFlags;
-        if (objectFlags & ObjectFlags.Reference) visitTypeReference(type as TypeReference);
-        if (objectFlags & ObjectFlags.Mapped) visitMappedType(type as MappedType);
-        if (objectFlags & (ObjectFlags.Class | ObjectFlags.Interface)) visitInterfaceType(type as InterfaceType);
+        if (objectFlags & ObjectFlags.Reference) visitTypeReference(t as TypeReference);
+        if (objectFlags & ObjectFlags.Mapped) visitMappedType(t as MappedType);
+        if (objectFlags & (ObjectFlags.Class | ObjectFlags.Interface)) visitInterfaceType(t as InterfaceType);
         if (objectFlags & (ObjectFlags.Tuple | ObjectFlags.Anonymous)) visitObjectType(objectType);
       }
-      if (type.flags & TypeFlags.TypeParameter) visitTypeParameter(type as TypeParameter);
-      if (type.flags & TypeFlags.UnionOrIntersection) visitUnionOrIntersectionType(type as UnionOrIntersectionType);
-      if (type.flags & TypeFlags.Index) visitIndexType(type as IndexType);
-      if (type.flags & TypeFlags.IndexedAccess) visitIndexedAccessType(type as IndexedAccessType);
+      if (t.flags & TypeFlags.TypeParameter) visitTypeParameter(t as TypeParameter);
+      if (t.flags & TypeFlags.UnionOrIntersection) visitUnionOrIntersectionType(t as UnionOrIntersectionType);
+      if (t.flags & TypeFlags.Index) visitIndexType(t as IndexType);
+      if (t.flags & TypeFlags.IndexedAccess) visitIndexedAccessType(t as IndexedAccessType);
     }
-    function visitTypeReference(type: TypeReference) {
-      visitType(type.target);
-      forEach(getTypeArguments(type), visitType);
+    function visitTypeReference(t: TypeReference) {
+      visitType(t.target);
+      forEach(getTypeArguments(t), visitType);
     }
-    function visitTypeParameter(type: TypeParameter) {
-      visitType(getConstraintOfTypeParameter(type));
+    function visitTypeParameter(t: TypeParameter) {
+      visitType(getConstraintOfTypeParameter(t));
     }
-    function visitUnionOrIntersectionType(type: UnionOrIntersectionType) {
-      forEach(type.types, visitType);
+    function visitUnionOrIntersectionType(t: UnionOrIntersectionType) {
+      forEach(t.types, visitType);
     }
-    function visitIndexType(type: IndexType) {
-      visitType(type.type);
+    function visitIndexType(t: IndexType) {
+      visitType(t.type);
     }
-    function visitIndexedAccessType(type: IndexedAccessType) {
-      visitType(type.objectType);
-      visitType(type.indexType);
-      visitType(type.constraint);
+    function visitIndexedAccessType(t: IndexedAccessType) {
+      visitType(t.objectType);
+      visitType(t.indexType);
+      visitType(t.constraint);
     }
-    function visitMappedType(type: MappedType) {
-      visitType(type.typeParameter);
-      visitType(type.constraintType);
-      visitType(type.templateType);
-      visitType(type.modifiersType);
+    function visitMappedType(t: MappedType) {
+      visitType(t.typeParameter);
+      visitType(t.constraintType);
+      visitType(t.templateType);
+      visitType(t.modifiersType);
     }
     function visitSignature(signature: Signature) {
       const typePredicate = getTypePredicateOfSignature(signature);
@@ -1677,12 +1675,12 @@ export function createGetSymbolWalker(
       forEach(getBaseTypes(interfaceT), visitType);
       visitType(interfaceT.thisType);
     }
-    function visitObjectType(type: ObjectType) {
-      const stringIndexType = getIndexTypeOfStructuredType(type, IndexKind.String);
+    function visitObjectType(t: ObjectType) {
+      const stringIndexType = getIndexTypeOfStructuredType(t, qt.IndexKind.String);
       visitType(stringIndexType);
-      const numberIndexType = getIndexTypeOfStructuredType(type, IndexKind.Number);
+      const numberIndexType = getIndexTypeOfStructuredType(t, qt.IndexKind.Number);
       visitType(numberIndexType);
-      const resolved = resolveStructuredTypeMembers(type);
+      const resolved = resolveStructuredTypeMembers(t);
       for (const signature of resolved.callSignatures) {
         visitSignature(signature);
       }

@@ -2136,7 +2136,7 @@ export interface SymbolLinks {
 export interface SymbolDisplayPart {}
 export interface SymbolTable<S extends Symbol = Symbol> extends Map<qb.__String, S>, qb.UnderscoreEscapedMap<S> {}
 export interface SyntaxList extends NodeBase {
-  _children: Node[];
+  children: Node[];
 }
 export interface SynthesizedComment extends CommentRange {
   text: string;
