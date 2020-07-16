@@ -3653,7 +3653,6 @@ export class YieldExpression extends qc.Expression implements qc.YieldExpression
 }
 YieldExpression.prototype.kind = YieldExpression.kind;
 // prettier-ignore
-const aa =0;
 export type NodeTypes =
   | ArrayBindingPattern
   | ArrayLiteralExpression

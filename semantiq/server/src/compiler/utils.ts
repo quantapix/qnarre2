@@ -1052,7 +1052,6 @@ export function getPropertyNameForPropertyNameNode(name: PropertyName): __String
       return Debug.assertNever(name);
   }
 }
-export type PropertyNameLiteral = Identifier | StringLiteralLike | NumericLiteral;
 export function getTextOfIdentifierOrLiteral(node: PropertyNameLiteral): string {
   return qc.is.identifierOrPrivateIdentifier(node) ? idText(node) : node.text;
 }
