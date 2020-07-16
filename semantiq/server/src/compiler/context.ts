@@ -568,7 +568,7 @@ export class QContext {
       if (hasLateBindableName(decl)) {
         if (qc.is.kind(BinaryExpression, decl)) {
           const name = getNameOfDeclaration(decl);
-          if (name && qc.is.kind(ElementAccessExpression, name) && isPropertyAccessEntityNameExpression(name.argumentExpression)) {
+          if (name && qc.is.kind(ElementAccessExpression, name) && qc.is.propertyAccessEntityNameExpression(name.argumentExpression)) {
             this.trackComputedName(name.argumentExpression, saveEnclosingDeclaration);
           }
         } else {
@@ -951,7 +951,7 @@ export class QContext {
         node.isTypeOf
       );
     }
-    if (qc.is.entityName(node) || isEntityNameExpression(node)) {
+    if (qc.is.entityName(node) || qc.is.entityNameExpression(node)) {
       const leftmost = getFirstIdentifier(node);
       if (
         isInJSFile(node) &&

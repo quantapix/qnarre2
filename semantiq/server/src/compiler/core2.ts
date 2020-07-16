@@ -53,9 +53,9 @@ export class Nobj extends qc.Nobj {
     return clone;
   }
 }
-export namespace ArrayBindingElement {
-  export const also = [Syntax.BindingElement, Syntax.OmittedExpression];
-}
+//export namespace ArrayBindingElement {
+//  export const also = [Syntax.BindingElement, Syntax.OmittedExpression];
+//}
 export class ArrayBindingPattern extends Nobj implements qc.ArrayBindingPattern {
   static readonly kind = Syntax.ArrayBindingPattern;
   parent!: VariableDeclaration | ParameterDeclaration | BindingElement;
@@ -1370,6 +1370,59 @@ export class Identifier extends qc.TokenOrIdentifier implements qc.Identifier {
   update(ts?: Nodes<qc.TypeNode | TypeParameterDeclaration>) {
     return this.typeArguments !== ts ? new Identifier(this.text, ts).updateFrom(this) : this;
   }
+  isIdentifierName(node: Identifier): boolean {
+    let parent = node.parent;
+    switch (parent.kind) {
+      case Syntax.PropertyDeclaration:
+      case Syntax.PropertySignature:
+      case Syntax.MethodDeclaration:
+      case Syntax.MethodSignature:
+      case Syntax.GetAccessor:
+      case Syntax.SetAccessor:
+      case Syntax.EnumMember:
+      case Syntax.PropertyAssignment:
+      case Syntax.PropertyAccessExpression:
+        return (<NamedDeclaration | PropertyAccessExpression>parent).name === node;
+      case Syntax.QualifiedName:
+        if ((<QualifiedName>parent).right === node) {
+          while (parent.kind === Syntax.QualifiedName) {
+            parent = parent.parent;
+          }
+          return parent.kind === Syntax.TypeQuery || parent.kind === Syntax.TypeReference;
+        }
+        return false;
+      case Syntax.BindingElement:
+      case Syntax.ImportSpecifier:
+        return (<BindingElement | ImportSpecifier>parent).propertyName === node;
+      case Syntax.ExportSpecifier:
+      case Syntax.JsxAttribute:
+        return true;
+    }
+    return false;
+  }
+  isIdentifierANonContextualKeyword({ originalKeywordKind }: Identifier): boolean {
+    return !!originalKeywordKind && !syntax.is.contextualKeyword(originalKeywordKind);
+  }
+  isPushOrUnshiftIdentifier(node: Identifier) {
+    return node.escapedText === 'push' || node.escapedText === 'unshift';
+  }
+  isThisNodeKind(Identifier, node: Node | undefined): boolean {
+    return !!node && node.kind === Syntax.Identifier && identifierIsThisKeyword(node as Identifier);
+  }
+  identifierIsThisKeyword(id: Identifier): boolean {
+    return id.originalKeywordKind === Syntax.ThisKeyword;
+  }
+  isDeclarationNameOfEnumOrNamespace(node: Identifier) {
+    const parseNode = qc.get.parseTreeOf(node);
+    if (parseNode) {
+      switch (parseNode.parent.kind) {
+        case Syntax.EnumDeclaration:
+        case Syntax.ModuleDeclaration:
+          return parseNode === (<EnumDeclaration | ModuleDeclaration>parseNode.parent).name;
+      }
+    }
+    return false;
+  }
   static createTempVariable(record?: (i: Identifier) => void): Identifier;
   static createTempVariable(record: ((i: Identifier) => void) | undefined, reserved: boolean): GeneratedIdentifier;
   static createTempVariable(record?: (i: Identifier) => void, reserved?: boolean): GeneratedIdentifier {
@@ -2437,6 +2490,9 @@ export class ModuleDeclaration extends qc.DeclarationStatement implements qc.Mod
     this.modifiers = Nodes.from(ms);
     this.name = name;
     this.body = b;
+  }
+  isGlobalScopeAugmentation() {
+    return !!(this.flags & NodeFlags.GlobalAugmentation);
   }
   update(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, name: qc.ModuleName, b?: qc.ModuleBody) {
     return this.decorators !== ds || this.modifiers !== ms || this.name !== name || this.body !== b ? new ModuleDeclaration(ds, ms, name, b, this.flags).updateFrom(this) : this;

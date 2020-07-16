@@ -240,10 +240,10 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
         const nameExpression = name.expression;
         if (StringLiteral.orNumericLiteralLike(nameExpression)) return syntax.get.escUnderscores(nameExpression.text);
         if (qc.is.signedNumericLiteral(nameExpression)) return (Token.toString(nameExpression.operator) + nameExpression.operand.text) as __String;
-        assert(isWellKnownSymbolSyntactically(nameExpression));
+        assert(qc.is.wellKnownSymbolSyntactically(nameExpression));
         return getPropertyNameForKnownSymbolName(idText((<PropertyAccessExpression>nameExpression).name));
       }
-      if (isWellKnownSymbolSyntactically(name)) return getPropertyNameForKnownSymbolName(idText(name.name));
+      if (qc.is.wellKnownSymbolSyntactically(name)) return getPropertyNameForKnownSymbolName(idText(name.name));
       if (qc.is.kind(PrivateIdentifier, name)) {
         const containingClass = qc.get.containingClass(node);
         if (!containingClass) {
@@ -1585,7 +1585,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       parent = typeAlias;
       bind(typeAlias.typeExpression);
       const declName = getNameOfDeclaration(typeAlias);
-      if ((qc.is.kind(DocEnumTag, typeAlias) || !typeAlias.fullName) && declName && isPropertyAccessEntityNameExpression(declName.parent)) {
+      if ((qc.is.kind(DocEnumTag, typeAlias) || !typeAlias.fullName) && declName && qc.is.propertyAccessEntityNameExpression(declName.parent)) {
         const isTopLevel = isTopLevelNamespaceAssignment(declName.parent);
         if (isTopLevel) {
           bindPotentiallyMissingNamespaces(

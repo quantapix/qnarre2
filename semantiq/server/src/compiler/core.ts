@@ -301,40 +301,6 @@ export abstract class NodeWithTypeArguments extends TypeNode implements qt.NodeW
 }
 export abstract class Declaration extends Nobj implements qt.Declaration {
   _declarationBrand: any;
-  isNotAccessor(declaration: Declaration) {
-    return !qc.is.accessor(declaration);
-  }
-  isNotOverload(declaration: Declaration): boolean {
-    return (declaration.kind !== Syntax.FunctionDeclaration && declaration.kind !== Syntax.MethodDeclaration) || !!(declaration as FunctionDeclaration).body;
-  }
-  getInternalName(allowComments?: boolean, allowSourceMaps?: boolean) {
-    return this.getName(allowComments, allowSourceMaps, EmitFlags.LocalName | EmitFlags.InternalName);
-  }
-  getLocalName(allowComments?: boolean, allowSourceMaps?: boolean) {
-    return this.getName(allowComments, allowSourceMaps, EmitFlags.LocalName);
-  }
-  getExportName(allowComments?: boolean, allowSourceMaps?: boolean): qt.Identifier {
-    return this.getName(allowComments, allowSourceMaps, EmitFlags.ExportName);
-  }
-  getDeclarationName(allowComments?: boolean, allowSourceMaps?: boolean) {
-    return this.getName(allowComments, allowSourceMaps);
-  }
-  getName(allowComments?: boolean, allowSourceMaps?: boolean, emitFlags: EmitFlags = 0) {
-    const nodeName = getNameOfDeclaration(this);
-    if (nodeName && qc.is.kind(Identifier, nodeName) && !qc.is.generatedIdentifier(nodeName)) {
-      const name = getMutableClone(nodeName);
-      emitFlags |= qc.get.emitFlags(nodeName);
-      if (!allowSourceMaps) emitFlags |= EmitFlags.NoSourceMap;
-      if (!allowComments) emitFlags |= EmitFlags.NoComments;
-      if (emitFlags) setEmitFlags(name, emitFlags);
-      return name;
-    }
-    return getGeneratedNameForNode(this);
-  }
-  getExternalModuleOrNamespaceExportName(s: qt.Identifier | undefined, allowComments?: boolean, allowSourceMaps?: boolean): qt.Identifier | qt.PropertyAccessExpression {
-    if (s && hasSyntacticModifier(this, ModifierFlags.Export)) return getNamespaceMemberName(s, getName(this), allowComments, allowSourceMaps);
-    return this.getExportName(allowComments, allowSourceMaps);
-  }
 }
 export abstract class NamedDeclaration extends Declaration implements qt.NamedDeclaration {
   name?: qt.DeclarationName;

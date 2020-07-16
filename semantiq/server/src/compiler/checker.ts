@@ -702,7 +702,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           qc.is.kind(BinaryExpression, d.parent) &&
           d.parent.operatorToken.kind === Syntax.EqualsToken &&
           isAccessExpression(d.parent.left) &&
-          isEntityNameExpression(d.parent.left.expression)
+          qc.is.entityNameExpression(d.parent.left.expression)
         ) {
           if (qc.is.moduleExportsAccessExpression(d.parent.left) || qc.is.exportsIdentifier(d.parent.left.expression)) return getSymbolOfNode(qc.get.sourceFileOf(d));
           checkExpressionCached(d.parent.left.expression);
@@ -1072,7 +1072,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         const expr = isExportAssignment
           ? getExportAssignmentExpression(aliasDecl as ExportAssignment | BinaryExpression)
           : getPropertyAssignmentAliasLikeExpression(aliasDecl as ShorthandPropertyAssignment | PropertyAssignment | PropertyAccessExpression);
-        const first = isEntityNameExpression(expr) ? getFirstNonModuleExportsIdentifier(expr) : undefined;
+        const first = qc.is.entityNameExpression(expr) ? getFirstNonModuleExportsIdentifier(expr) : undefined;
         const referenced = first && resolveEntityName(first, SymbolFlags.All, true, true, enclosingDeclaration);
         if (referenced || target) includePrivateSymbol(referenced || target);
         const oldTrack = context.tracker.trackSymbol;
@@ -1389,7 +1389,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
             const ns = getInterfaceBaseTypeNodes(<InterfaceDeclaration>d);
             if (ns) {
               for (const n of ns) {
-                if (isEntityNameExpression(n.expression)) {
+                if (qc.is.entityNameExpression(n.expression)) {
                   const s = resolveEntityName(n.expression, SymbolFlags.Type, true);
                   if (!s || !(s.flags & SymbolFlags.Interface) || s.getDeclaredTypeOfClassOrInterface().thisType) return false;
                 }
@@ -3252,7 +3252,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       case Syntax.PropertyAccessExpression:
         return node.parent ? getEntityNameForExtendingInterface(node.parent) : undefined;
       case Syntax.ExpressionWithTypeArguments:
-        if (isEntityNameExpression((<ExpressionWithTypeArguments>node).expression)) return <EntityNameExpression>(<ExpressionWithTypeArguments>node).expression;
+        if (qc.is.entityNameExpression((<ExpressionWithTypeArguments>node).expression)) return <EntityNameExpression>(<ExpressionWithTypeArguments>node).expression;
       default:
         return;
     }
@@ -3635,7 +3635,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function getTargetOfAliasLikeExpression(expression: Expression, dontResolveAlias: boolean) {
     if (qc.is.kind(ClassExpression, expression)) return checkExpressionCached(expression).symbol;
-    if (!qc.is.entityName(expression) && !isEntityNameExpression(expression)) return;
+    if (!qc.is.entityName(expression) && !qc.is.entityNameExpression(expression)) return;
     const aliasLike = resolveEntityName(expression, SymbolFlags.Value | SymbolFlags.Type | SymbolFlags.Namespace, true, dontResolveAlias);
     if (aliasLike) return aliasLike;
     checkExpressionCached(expression);
@@ -4246,7 +4246,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function isEntityNameVisible(entityName: EntityNameOrEntityNameExpression, enclosingDeclaration: Node): SymbolVisibilityResult {
     let meaning: SymbolFlags;
-    if (entityName.parent.kind === Syntax.TypeQuery || isExpressionWithTypeArgumentsInClassExtendsClause(entityName.parent) || entityName.parent.kind === Syntax.ComputedPropertyName)
+    if (entityName.parent.kind === Syntax.TypeQuery || qc.is.expressionWithTypeArgumentsInClassExtendsClause(entityName.parent) || entityName.parent.kind === Syntax.ComputedPropertyName)
       meaning = SymbolFlags.Value | SymbolFlags.ExportValue;
     else if (entityName.kind === Syntax.QualifiedName || entityName.kind === Syntax.PropertyAccessExpression || entityName.parent.kind === Syntax.ImportEqualsDeclaration) {
       meaning = SymbolFlags.Namespace;
@@ -5416,7 +5416,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function isLateBindableName(node: DeclarationName): node is LateBoundName {
     if (!qc.is.kind(ComputedPropertyName, node) && !qc.is.kind(ElementAccessExpression, node)) return false;
     const expr = qc.is.kind(ComputedPropertyName, node) ? node.expression : node.argumentExpression;
-    return isEntityNameExpression(expr) && isTypeUsableAsPropertyName(qc.is.kind(ComputedPropertyName, node) ? checkComputedPropertyName(node) : checkExpressionCached(expr));
+    return qc.is.entityNameExpression(expr) && isTypeUsableAsPropertyName(qc.is.kind(ComputedPropertyName, node) ? checkComputedPropertyName(node) : checkExpressionCached(expr));
   }
   function isLateBoundName(name: __String): boolean {
     return (name as string).charCodeAt(0) === Codes._ && (name as string).charCodeAt(1) === Codes._ && (name as string).charCodeAt(2) === Codes.at;
@@ -7190,7 +7190,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         return node.typeName;
       case Syntax.ExpressionWithTypeArguments:
         const expr = node.expression;
-        if (isEntityNameExpression(expr)) return expr;
+        if (qc.is.entityNameExpression(expr)) return expr;
     }
     return;
   }
@@ -14269,7 +14269,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return type;
   }
   function isExportOrExportExpression(location: Node) {
-    return !!Node.findAncestor(location, (e) => e.parent && qc.is.kind(ExportAssignment, e.parent) && e.parent.expression === e && isEntityNameExpression(e));
+    return !!Node.findAncestor(location, (e) => e.parent && qc.is.kind(ExportAssignment, e.parent) && e.parent.expression === e && qc.is.entityNameExpression(e));
   }
   function markAliasReferenced(symbol: Symbol, location: Node) {
     if (symbol.isNonLocalAlias(SymbolFlags.Value) && !isInTypeQuery(location) && !this.getTypeOnlyAliasDeclaration()) {
@@ -15412,14 +15412,16 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     let hasComputedStringProperty = false;
     let hasComputedNumberProperty = false;
     for (const elem of node.properties) {
-      if (elem.name && qc.is.kind(ComputedPropertyName, elem.name) && !isWellKnownSymbolSyntactically(elem.name)) checkComputedPropertyName(elem.name);
+      if (elem.name && qc.is.kind(ComputedPropertyName, elem.name) && !qc.is.wellKnownSymbolSyntactically(elem.name)) checkComputedPropertyName(elem.name);
     }
     let offset = 0;
     for (let i = 0; i < node.properties.length; i++) {
       const memberDecl = node.properties[i];
       let member = getSymbolOfNode(memberDecl);
       const computedNameType =
-        memberDecl.name && memberDecl.name.kind === Syntax.ComputedPropertyName && !isWellKnownSymbolSyntactically(memberDecl.name.expression) ? checkComputedPropertyName(memberDecl.name) : undefined;
+        memberDecl.name && memberDecl.name.kind === Syntax.ComputedPropertyName && !qc.is.wellKnownSymbolSyntactically(memberDecl.name.expression)
+          ? checkComputedPropertyName(memberDecl.name)
+          : undefined;
       if (memberDecl.kind === Syntax.PropertyAssignment || memberDecl.kind === Syntax.ShorthandPropertyAssignment || qc.is.objectLiteralMethod(memberDecl)) {
         let type =
           memberDecl.kind === Syntax.PropertyAssignment
@@ -16428,7 +16430,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function checkThatExpressionIsProperSymbolReference(expression: Expression, expressionType: Type, reportError: boolean): boolean {
     if (expressionType === errorType) return false;
-    if (!isWellKnownSymbolSyntactically(expression)) return false;
+    if (!qc.is.wellKnownSymbolSyntactically(expression)) return false;
     if ((expressionType.flags & TypeFlags.ESSymbolLike) === 0) {
       if (reportError) error(expression, qd.A_computed_property_name_of_the_form_0_must_be_of_type_symbol, qc.get.textOf(expression));
       return false;
@@ -20219,7 +20221,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         case Syntax.SourceFile:
           return DeclarationSpaces.ExportType | DeclarationSpaces.ExportValue | DeclarationSpaces.ExportNamespace;
         case Syntax.ExportAssignment:
-          if (!isEntityNameExpression((d as ExportAssignment).expression)) return DeclarationSpaces.ExportValue;
+          if (!qc.is.entityNameExpression((d as ExportAssignment).expression)) return DeclarationSpaces.ExportValue;
           d = (d as ExportAssignment).expression;
         case Syntax.ImportEqualsDeclaration:
         case Syntax.NamespaceImport:
@@ -21829,7 +21831,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const implementedTypeNodes = getEffectiveImplementsTypeNodes(node);
     if (implementedTypeNodes) {
       for (const typeRefNode of implementedTypeNodes) {
-        if (!isEntityNameExpression(typeRefNode.expression)) error(typeRefNode.expression, qd.A_class_can_only_implement_an_identifier_Slashqualified_name_with_optional_type_arguments);
+        if (!qc.is.entityNameExpression(typeRefNode.expression)) error(typeRefNode.expression, qd.A_class_can_only_implement_an_identifier_Slashqualified_name_with_optional_type_arguments);
         checkTypeReferenceNode(typeRefNode);
         if (produceDiagnostics) {
           const t = getReducedType(getTypeFromTypeNode(typeRefNode));
@@ -22074,7 +22076,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       checkObjectTypeForDuplicateDeclarations(node);
     }
     forEach(getInterfaceBaseTypeNodes(node), (heritageElement) => {
-      if (!isEntityNameExpression(heritageElement.expression)) error(heritageElement.expression, qd.An_interface_can_only_extend_an_identifier_Slashqualified_name_with_optional_type_arguments);
+      if (!qc.is.entityNameExpression(heritageElement.expression)) error(heritageElement.expression, qd.An_interface_can_only_extend_an_identifier_Slashqualified_name_with_optional_type_arguments);
       checkTypeReferenceNode(heritageElement);
     });
     forEach(node.members, checkSourceElement);
@@ -22585,7 +22587,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       checkExpressionCached(node.expression);
     }
     checkExternalModuleExports(container);
-    if (node.flags & NodeFlags.Ambient && !isEntityNameExpression(node.expression))
+    if (node.flags & NodeFlags.Ambient && !qc.is.entityNameExpression(node.expression))
       grammarErrorOnNode(node.expression, qd.The_expression_of_an_export_assignment_must_be_an_identifier_or_qualified_name_in_an_ambient_context);
     if (node.isExportEquals && !(node.flags & NodeFlags.Ambient)) {
       if (moduleKind >= ModuleKind.ES2015)
@@ -23091,7 +23093,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         if (specialPropertyAssignmentSymbol) return specialPropertyAssignmentSymbol;
       }
     }
-    if (name.parent.kind === Syntax.ExportAssignment && isEntityNameExpression(name)) {
+    if (name.parent.kind === Syntax.ExportAssignment && qc.is.entityNameExpression(name)) {
       const success = resolveEntityName(name, SymbolFlags.Value | SymbolFlags.Type | SymbolFlags.Namespace | SymbolFlags.Alias, true);
       if (success && success !== unknownSymbol) return success;
     } else if (!qc.is.kind(PropertyAccessExpression, name) && !qc.is.kind(PrivateIdentifier, name) && isInRightSideOfImportOrExportAssignment(name)) {
@@ -23114,12 +23116,12 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       let meaning = SymbolFlags.None;
       if (name.parent.kind === Syntax.ExpressionWithTypeArguments) {
         meaning = SymbolFlags.Type;
-        if (isExpressionWithTypeArgumentsInClassExtendsClause(name.parent)) meaning |= SymbolFlags.Value;
+        if (qc.is.expressionWithTypeArgumentsInClassExtendsClause(name.parent)) meaning |= SymbolFlags.Value;
       } else {
         meaning = SymbolFlags.Namespace;
       }
       meaning |= SymbolFlags.Alias;
-      const entityNameSymbol = isEntityNameExpression(name) ? resolveEntityName(name, meaning) : undefined;
+      const entityNameSymbol = qc.is.entityNameExpression(name) ? resolveEntityName(name, meaning) : undefined;
       if (entityNameSymbol) return entityNameSymbol;
     }
     if (name.parent.kind === Syntax.DocParameterTag) return getParameterSymbolFromDoc(name.parent as DocParameterTag);
@@ -24548,7 +24550,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function isSimpleLiteralEnumReference(expr: Expression) {
     if (
       (qc.is.kind(PropertyAccessExpression, expr) || (qc.is.kind(ElementAccessExpression, expr) && StringLiteral.orNumberLiteralExpression(expr.argumentExpression))) &&
-      isEntityNameExpression(expr.expression)
+      qc.is.entityNameExpression(expr.expression)
     ) {
       return !!(checkExpressionCached(expr).flags & TypeFlags.EnumLiteral);
     }

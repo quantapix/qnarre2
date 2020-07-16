@@ -198,7 +198,7 @@ export function isSimpleCopiableExpression(expression: Expression) {
   return StringLiteral.like(expression) || expression.kind === Syntax.NumericLiteral || syntax.is.keyword(expression.kind) || qc.is.kind(Identifier, expression);
 }
 export function isSimpleInlineableExpression(expression: Expression) {
-  return (!qc.is.kind(Identifier, expression) && isSimpleCopiableExpression(expression)) || isWellKnownSymbolSyntactically(expression);
+  return (!qc.is.kind(Identifier, expression) && isSimpleCopiableExpression(expression)) || qc.is.wellKnownSymbolSyntactically(expression);
 }
 export function isCompoundAssignment(kind: BinaryOperator): kind is CompoundAssignmentOperator {
   return kind >= Syntax.FirstCompoundAssignment && kind <= Syntax.LastCompoundAssignment;

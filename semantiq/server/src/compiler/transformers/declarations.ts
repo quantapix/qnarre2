@@ -633,7 +633,7 @@ export function transformDeclarations(context: TransformationContext) {
     if (isProcessedComponent(input)) {
       switch (input.kind) {
         case Syntax.ExpressionWithTypeArguments: {
-          if (qc.is.entityName(input.expression) || isEntityNameExpression(input.expression)) checkEntityNameVisibility(input.expression, enclosingDeclaration);
+          if (qc.is.entityName(input.expression) || qc.is.entityNameExpression(input.expression)) checkEntityNameVisibility(input.expression, enclosingDeclaration);
           const node = visitEachChild(input, visitDeclarationSubtree, context);
           return cleanup(node.update(parenthesizeTypeParameters(node.typeArguments), node.expression));
         }
@@ -941,7 +941,7 @@ export function transformDeclarations(context: TransformationContext) {
         const memberNodes = concatenate(concatenate(privateIdentifier, parameterProperties), Nodes.visit(input.members, visitDeclarationSubtree));
         const members = new Nodes(memberNodes);
         const extendsClause = getEffectiveBaseTypeNode(input);
-        if (extendsClause && !isEntityNameExpression(extendsClause.expression) && extendsClause.expression.kind !== Syntax.NullKeyword) {
+        if (extendsClause && !qc.is.entityNameExpression(extendsClause.expression) && extendsClause.expression.kind !== Syntax.NullKeyword) {
           const oldId = input.name ? syntax.get.unescUnderscores(input.name.escapedText) : 'default';
           const newId = createOptimisticUniqueName(`${oldId}_base`);
           getSymbolAccessibilityDiagnostic = () => ({
@@ -965,7 +965,7 @@ export function transformDeclarations(context: TransformationContext) {
               }
               return updateHeritageClause(
                 clause,
-                Nodes.visit(new Nodes(filter(clause.types, (t) => isEntityNameExpression(t.expression) || t.expression.kind === Syntax.NullKeyword)), visitDeclarationSubtree)
+                Nodes.visit(new Nodes(filter(clause.types, (t) => qc.is.entityNameExpression(t.expression) || t.expression.kind === Syntax.NullKeyword)), visitDeclarationSubtree)
               );
             })
           );
@@ -1081,7 +1081,7 @@ export function transformDeclarations(context: TransformationContext) {
             Nodes.visit(
               new Nodes(
                 filter(clause.types, (t) => {
-                  return isEntityNameExpression(t.expression) || (clause.token === Syntax.ExtendsKeyword && t.expression.kind === Syntax.NullKeyword);
+                  return qc.is.entityNameExpression(t.expression) || (clause.token === Syntax.ExtendsKeyword && t.expression.kind === Syntax.NullKeyword);
                 })
               ),
               visitDeclarationSubtree
