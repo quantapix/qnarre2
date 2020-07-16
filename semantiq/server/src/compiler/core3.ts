@@ -6,9 +6,17 @@ import * as qy from './syntax';
 import { Node } from './types';
 import * as qt from './types';
 export * from './core2';
-
 const MAX_SMI_X86 = 0x3fff_ffff;
-
+const enum AccessKind {
+  Read,
+  Write,
+  ReadWrite,
+}
+export const enum AssignmentKind {
+  None,
+  Definite,
+  Compound,
+}
 export const is = new (class {
   kind<S extends Syntax, T extends { kind: S; also?: Syntax[] }>(t: T, n?: Node): n is NodeType<T['kind']> {
     if (n) return n.kind === t.kind || !!t.also?.includes(n.kind);
@@ -831,6 +839,295 @@ export const is = new (class {
         return is.declarationName(n);
     }
   }
+  isAliasSymbolDeclaration(n: Node) {
+    return (
+      n.kind === Syntax.ImportEqualsDeclaration ||
+      n.kind === Syntax.NamespaceExportDeclaration ||
+      (n.kind === Syntax.ImportClause && !!(<ImportClause>node).name) ||
+      n.kind === Syntax.NamespaceImport ||
+      n.kind === Syntax.NamespaceExport ||
+      n.kind === Syntax.ImportSpecifier ||
+      n.kind === Syntax.ExportSpecifier ||
+      (n.kind === Syntax.ExportAssignment && exportAssignmentIsAlias(<ExportAssignment>node)) ||
+      (is.kind(BinaryExpression, node) && getAssignmentDeclarationKind(node) === AssignmentDeclarationKind.ModuleExports && exportAssignmentIsAlias(node)) ||
+      (is.kind(PropertyAccessExpression, node) &&
+        is.kind(BinaryExpression, node.parent) &&
+        node.parent.left === node &&
+        node.parent.operatorToken.kind === Syntax.EqualsToken &&
+        isAliasableExpression(node.parent.right)) ||
+      n.kind === Syntax.ShorthandPropertyAssignment ||
+      (n.kind === Syntax.PropertyAssignment && isAliasableExpression((node as PropertyAssignment).initializer))
+    );
+  }
+  isValueSignatureDeclaration(n: Node): n is ValueSignatureDeclaration {
+    return is.kind(FunctionExpression, node) || is.kind(ArrowFunction, node) || is.methodOrAccessor(node) || is.kind(FunctionDeclaration, node) || is.kind(ConstructorDeclaration, node);
+  }
+  isObjectTypeDeclaration(n: Node): n is ObjectTypeDeclaration {
+    return is.classLike(n) || is.kind(InterfaceDeclaration, n) || is.kind(TypeLiteralNode, n);
+  }
+  isAccessExpression(n: Node): n is AccessExpression {
+    return n.kind === Syntax.PropertyAccessExpression || n.kind === Syntax.ElementAccessExpression;
+  }
+  isNamedImportsOrExports(n: Node): n is NamedImportsOrExports {
+    return n.kind === Syntax.NamedImports || n.kind === Syntax.NamedExports;
+  }
+  isWriteOnlyAccess(n: Node) {
+    return accessKind(node) === AccessKind.Write;
+  }
+  isWriteAccess(n: Node) {
+    return accessKind(node) !== AccessKind.Read;
+  }
+  accessKind(n: Node): AccessKind {
+    const { parent } = n;
+    if (!parent) return AccessKind.Read;
+    switch (parent.kind) {
+      case Syntax.ParenthesizedExpression:
+        return accessKind(parent);
+      case Syntax.PostfixUnaryExpression:
+      case Syntax.PrefixUnaryExpression:
+        const { operator } = parent as PrefixUnaryExpression | PostfixUnaryExpression;
+        return operator === Syntax.Plus2Token || operator === Syntax.Minus2Token ? writeOrReadWrite() : AccessKind.Read;
+      case Syntax.BinaryExpression:
+        const { left, operatorToken } = parent as BinaryExpression;
+        return left === n && syntax.is.assignmentOperator(operatorToken.kind) ? (operatorToken.kind === Syntax.EqualsToken ? AccessKind.Write : writeOrReadWrite()) : AccessKind.Read;
+      case Syntax.PropertyAccessExpression:
+        return (parent as PropertyAccessExpression).name !== n ? AccessKind.Read : accessKind(parent);
+      case Syntax.PropertyAssignment: {
+        const parentAccess = accessKind(parent.parent);
+        return n === (parent as PropertyAssignment).name ? reverseAccessKind(parentAccess) : parentAccess;
+      }
+      case Syntax.ShorthandPropertyAssignment:
+        return n === (parent as ShorthandPropertyAssignment).objectAssignmentInitializer ? AccessKind.Read : accessKind(parent.parent);
+      case Syntax.ArrayLiteralExpression:
+        return accessKind(parent);
+      default:
+        return AccessKind.Read;
+    }
+    function writeOrReadWrite(): AccessKind {
+      const skipParenthesesUp = (n: Node) => {
+        while (n.kind === Syntax.ParenthesizedExpression) {
+          n = n.parent;
+        }
+        return n;
+      };
+      return parent.parent && skipParenthesesUp(parent.parent).kind === Syntax.ExpressionStatement ? AccessKind.Write : AccessKind.ReadWrite;
+    }
+  }
+  reverseAccessKind(a: AccessKind): AccessKind {
+    switch (a) {
+      case AccessKind.Read:
+        return AccessKind.Write;
+      case AccessKind.Write:
+        return AccessKind.Read;
+      case AccessKind.ReadWrite:
+        return AccessKind.ReadWrite;
+      default:
+        return Debug.assertNever(a);
+    }
+  }
+  isValidTypeOnlyAliasUseSite(useSite: Node): boolean {
+    return (
+      !!(useSite.flags & NodeFlags.Ambient) ||
+      is.partOfTypeQuery(useSite) ||
+      isIdentifierInNonEmittingHeritageClause(useSite) ||
+      isPartOfPossiblyValidTypeOrAbstractComputedPropertyName(useSite) ||
+      !is.expressionNode(useSite)
+    );
+  }
+  isPartOfPossiblyValidTypeOrAbstractComputedPropertyName(n: Node) {
+    while (n.kind === Syntax.Identifier || n.kind === Syntax.PropertyAccessExpression) {
+      node = node.parent;
+    }
+    if (n.kind !== Syntax.ComputedPropertyName) return false;
+    if (hasSyntacticModifier(node.parent, ModifierFlags.Abstract)) return true;
+    const containerKind = node.parent.parent.kind;
+    return containerKind === Syntax.InterfaceDeclaration || containerKind === Syntax.TypeLiteral;
+  }
+  isIdentifierInNonEmittingHeritageClause(n: Node): boolean {
+    if (n.kind !== Syntax.Identifier) return false;
+    const heritageClause = Node.findAncestor(node.parent, (parent) => {
+      switch (parent.kind) {
+        case Syntax.HeritageClause:
+          return true;
+        case Syntax.PropertyAccessExpression:
+        case Syntax.ExpressionWithTypeArguments:
+          return false;
+        default:
+          return 'quit';
+      }
+    }) as HeritageClause | undefined;
+    return heritageClause?.token === Syntax.ImplementsKeyword || heritageClause?.parent.kind === Syntax.InterfaceDeclaration;
+  }
+  isIdentifierTypeReference(n: Node): n is TypeReferenceNode & { typeName: Identifier } {
+    return is.kind(TypeReferenceNode, node) && is.kind(Identifier, node.typeName);
+  }
+  isPrototypeAccess(n: Node): n is BindableStaticAccessExpression {
+    return isBindableStaticAccessExpression(node) && getElementOrPropertyAccessName(node) === 'prototype';
+  }
+  isRightSideOfQualifiedNameOrPropertyAccess(n: Node) {
+    return (
+      (node.parent.kind === Syntax.QualifiedName && (<QualifiedName>node.parent).right === node) ||
+      (node.parent.kind === Syntax.PropertyAccessExpression && (<PropertyAccessExpression>node.parent).name === node)
+    );
+  }
+  isEmptyObjectLiteral(expression: Node): boolean {
+    return expression.kind === Syntax.ObjectLiteralExpression && (<ObjectLiteralExpression>expression).properties.length === 0;
+  }
+  isEmptyArrayLiteral(expression: Node): boolean {
+    return expression.kind === Syntax.ArrayLiteralExpression && (<ArrayLiteralExpression>expression).elements.length === 0;
+  }
+  isPropertyNameLiteral(n: Node): n is PropertyNameLiteral {
+    switch (n.kind) {
+      case Syntax.Identifier:
+      case Syntax.StringLiteral:
+      case Syntax.NoSubstitutionLiteral:
+      case Syntax.NumericLiteral:
+        return true;
+      default:
+        return false;
+    }
+  }
+  isAssignmentTarget(n: Node): boolean {
+    return getAssignmentTargetKind(node) !== AssignmentKind.None;
+  }
+  isLiteralComputedPropertyDeclarationName(n: Node) {
+    return StringLiteral.orNumericLiteralLike(node) && node.parent.kind === Syntax.ComputedPropertyName && is.declaration(node.parent.parent);
+  }
+  isPrototypePropertyAssignment(n: Node): boolean {
+    return is.kind(BinaryExpression, node) && getAssignmentDeclarationKind(node) === AssignmentDeclarationKind.PrototypeProperty;
+  }
+  isDocTypeExpressionOrChild(n: Node): boolean {
+    return !!Node.findAncestor(node, isDocTypeExpression);
+  }
+  isInternalModuleImportEqualsDeclaration(n: Node): n is ImportEqualsDeclaration {
+    return n.kind === Syntax.ImportEqualsDeclaration && (<ImportEqualsDeclaration>node).moduleReference.kind !== Syntax.ExternalModuleReference;
+  }
+  isInJSFile(n: Node | undefined): boolean {
+    return !!node && !!(node.flags & NodeFlags.JavaScriptFile);
+  }
+  isInJsonFile(n: Node | undefined): boolean {
+    return !!node && !!(node.flags & NodeFlags.JsonFile);
+  }
+  isInDoc(n: Node | undefined): boolean {
+    return !!node && !!(node.flags & NodeFlags.Doc);
+  }
+  isBindableStaticAccessExpression(n: Node, excludeThisKeyword?: boolean): n is BindableStaticAccessExpression {
+    return (
+      (is.kind(PropertyAccessExpression, node) &&
+        ((!excludeThisKeyword && node.expression.kind === Syntax.ThisKeyword) || (is.kind(Identifier, node.name) && isBindableStaticNameExpression(node.expression, true)))) ||
+      isBindableStaticElementAccessExpression(node, excludeThisKeyword)
+    );
+  }
+  isBindableStaticElementAccessExpression(n: Node, excludeThisKeyword?: boolean): n is BindableStaticElementAccessExpression {
+    return (
+      is.literalLikeElementAccess(node) &&
+      ((!excludeThisKeyword && node.expression.kind === Syntax.ThisKeyword) || is.entityNameExpression(node.expression) || isBindableStaticAccessExpression(node.expression, true))
+    );
+  }
+  isBindableStaticNameExpression(n: Node, excludeThisKeyword?: boolean): n is BindableStaticNameExpression {
+    return is.entityNameExpression(node) || isBindableStaticAccessExpression(node, excludeThisKeyword);
+  }
+  isAssignmentExpression(n: Node, noCompound: true): n is qc.AssignmentExpression<qc.EqualsToken>;
+  isAssignmentExpression(n: Node, noCompound?: false): n is qc.AssignmentExpression<qc.AssignmentOperatorToken>;
+  isAssignmentExpression(n: Node, noCompound?: boolean): n is qc.AssignmentExpression<qc.AssignmentOperatorToken> {
+    return is.kind(qc.BinaryExpression, n) && (noCompound ? n.operatorToken.kind === Syntax.EqualsToken : qy.is.assignmentOperator(n.operatorToken.kind)) && is.leftHandSideExpression(n.left);
+  }
+  isDestructuringAssignment(n: Node): n is qc.DestructuringAssignment {
+    if (this.isAssignmentExpression(n, true)) {
+      const k = n.left.kind;
+      return k === Syntax.ObjectLiteralExpression || k === Syntax.ArrayLiteralExpression;
+    }
+    return false;
+  }
+  isNodeWithPossibleHoistedDeclaration(n: Node): n is qc.NodeWithPossibleHoistedDeclaration {
+    switch (n.kind) {
+      case Syntax.Block:
+      case Syntax.CaseBlock:
+      case Syntax.CaseClause:
+      case Syntax.CatchClause:
+      case Syntax.DefaultClause:
+      case Syntax.DoStatement:
+      case Syntax.ForInStatement:
+      case Syntax.ForOfStatement:
+      case Syntax.ForStatement:
+      case Syntax.IfStatement:
+      case Syntax.LabeledStatement:
+      case Syntax.SwitchStatement:
+      case Syntax.TryStatement:
+      case Syntax.VariableStatement:
+      case Syntax.WhileStatement:
+      case Syntax.WithStatement:
+        return true;
+    }
+    return false;
+  }
+  typeOnlyDeclarationIsExport(n: Node) {
+    return n.kind === Syntax.ExportSpecifier;
+  }
+  nodeStartsNewLexicalEnvironment(n: Node) {
+    switch (n.kind) {
+      case Syntax.ArrowFunction:
+      case Syntax.Constructor:
+      case Syntax.FunctionDeclaration:
+      case Syntax.FunctionExpression:
+      case Syntax.GetAccessor:
+      case Syntax.MethodDeclaration:
+      case Syntax.ModuleDeclaration:
+      case Syntax.SetAccessor:
+      case Syntax.SourceFile:
+        return true;
+    }
+    return false;
+  }
+  introducesArgumentsExoticObject(n: Node) {
+    switch (n.kind) {
+      case Syntax.Constructor:
+      case Syntax.FunctionDeclaration:
+      case Syntax.FunctionExpression:
+      case Syntax.GetAccessor:
+      case Syntax.MethodDeclaration:
+      case Syntax.MethodSignature:
+      case Syntax.SetAccessor:
+        return true;
+    }
+    return false;
+  }
+})();
+export const has = new (class {
+  hasTypeArguments(n: Node): n is qc.HasTypeArguments {
+    return !!(n as qc.HasTypeArguments).typeArguments;
+  }
+  hasQuestionToken(n: Node) {
+    switch (n.kind) {
+      case Syntax.MethodDeclaration:
+      case Syntax.MethodSignature:
+      case Syntax.Parameter:
+      case Syntax.PropertyAssignment:
+      case Syntax.PropertyDeclaration:
+      case Syntax.PropertySignature:
+      case Syntax.ShorthandPropertyAssignment:
+        return n.questionToken !== undefined;
+    }
+    return false;
+  }
+  hasEffectiveModifiers(n: Node) {
+    return getEffectiveModifierFlags(n) !== ModifierFlags.None;
+  }
+  hasSyntacticModifiers(n: Node) {
+    return getSyntacticModifierFlags(n) !== ModifierFlags.None;
+  }
+  hasEffectiveModifier(n: Node, f: ModifierFlags) {
+    return !!getSelectedEffectiveModifierFlags(n, f);
+  }
+  hasSyntacticModifier(n: Node, f: ModifierFlags) {
+    return !!getSelectedSyntacticModifierFlags(n, f);
+  }
+  hasStaticModifier(n: Node) {
+    return this.hasSyntacticModifier(n, ModifierFlags.Static);
+  }
+  hasEffectiveReadonlyModifier(n: Node) {
+    return this.hasEffectiveModifier(n, ModifierFlags.Readonly);
+  }
 })();
 export const isJsx = new (class {
   tagName(n: Node) {
@@ -1077,6 +1374,236 @@ export const get = new (class {
       if (isAccessExpression(n.parent.left)) return getElementOrPropertyAccessArgumentExpressionOrName(n.parent.left);
     } else if (is.kind(VariableDeclaration, n.parent) && is.kind(qc.Identifier, n.parent.name)) return n.parent.name;
     return;
+  }
+  getLastChild(n: Node): Node | undefined {
+    let lastChild: Node | undefined;
+    qc.forEach.child(
+      n,
+      (child) => {
+        if (is.present(child)) lastChild = child;
+      },
+      (children) => {
+        for (let i = children.length - 1; i >= 0; i--) {
+          if (is.present(children[i])) {
+            lastChild = children[i];
+            break;
+          }
+        }
+      }
+    );
+    return lastChild;
+  }
+  getRootDeclaration(n: Node): Node {
+    while (n.kind === Syntax.BindingElement) {
+      node = node.parent.parent;
+    }
+    return node;
+  }
+  getSelectedEffectiveModifierFlags(n: Node, flags: ModifierFlags): ModifierFlags {
+    return getEffectiveModifierFlags(node) & flags;
+  }
+  getSelectedSyntacticModifierFlags(n: Node, flags: ModifierFlags): ModifierFlags {
+    return getSyntacticModifierFlags(node) & flags;
+  }
+  getModifierFlagsWorker(n: Node, includeDoc: boolean): ModifierFlags {
+    if (n.kind >= Syntax.FirstToken && n.kind <= Syntax.LastToken) return ModifierFlags.None;
+    if (!(node.modifierFlagsCache & ModifierFlags.HasComputedFlags)) {
+      node.modifierFlagsCache = getSyntacticModifierFlagsNoCache(node) | ModifierFlags.HasComputedFlags;
+    }
+    if (includeDoc && !(node.modifierFlagsCache & ModifierFlags.HasComputedDocModifiers) && isInJSFile(node) && node.parent) {
+      node.modifierFlagsCache |= qc.getDoc.modifierFlagsNoCache(node) | ModifierFlags.HasComputedDocModifiers;
+    }
+    return node.modifierFlagsCache & ~(ModifierFlags.HasComputedFlags | ModifierFlags.HasComputedDocModifiers);
+  }
+  getEffectiveModifierFlags(n: Node): ModifierFlags {
+    return getModifierFlagsWorker(node, true);
+  }
+  getSyntacticModifierFlags(n: Node): ModifierFlags {
+    return getModifierFlagsWorker(node, false);
+  }
+  getEffectiveModifierFlagsNoCache(n: Node): ModifierFlags {
+    return getSyntacticModifierFlagsNoCache(node) | qc.getDoc.modifierFlagsNoCache(node);
+  }
+  getSyntacticModifierFlagsNoCache(n: Node): ModifierFlags {
+    let flags = modifiersToFlags(node.modifiers);
+    if (node.flags & NodeFlags.NestedNamespace || (n.kind === Syntax.Identifier && (<Identifier>node).isInDocNamespace)) {
+      flags |= ModifierFlags.Export;
+    }
+    return flags;
+  }
+  getEffectiveTypeAnnotationNode(n: Node): TypeNode | undefined {
+    if (!isInJSFile(node) && is.kind(FunctionDeclaration, node)) return;
+    const type = (node as HasType).type;
+    if (type || !isInJSFile(node)) return type;
+    return qc.isDoc.propertyLikeTag(node) ? node.typeExpression && node.typeExpression.type : qc.getDoc.type(node);
+  }
+  getTypeAnnotationNode(n: Node): TypeNode | undefined {
+    return (node as HasType).type;
+  }
+  getDeclarationFromName(name: Node): Declaration | undefined {
+    const parent = name.parent;
+    switch (name.kind) {
+      case Syntax.StringLiteral:
+      case Syntax.NoSubstitutionLiteral:
+      case Syntax.NumericLiteral:
+        if (is.kind(ComputedPropertyName, parent)) return parent.parent;
+      case Syntax.Identifier:
+        if (is.declaration(parent)) return parent.name === name ? parent : undefined;
+        else if (is.kind(QualifiedName, parent)) {
+          const tag = parent.parent;
+          return is.kind(DocParameterTag, tag) && tag.name === parent ? tag : undefined;
+        } else {
+          const binExp = parent.parent;
+          return is.kind(BinaryExpression, binExp) &&
+            getAssignmentDeclarationKind(binExp) !== AssignmentDeclarationKind.None &&
+            (binExp.left.symbol || binExp.symbol) &&
+            getNameOfDeclaration(binExp) === name
+            ? binExp
+            : undefined;
+        }
+      case Syntax.PrivateIdentifier:
+        return is.declaration(parent) && parent.name === name ? parent : undefined;
+      default:
+        return;
+    }
+  }
+  getAssignmentTargetKind(n: Node): AssignmentKind {
+    let parent = node.parent;
+    while (true) {
+      switch (parent.kind) {
+        case Syntax.BinaryExpression:
+          const binaryOperator = (<BinaryExpression>parent).operatorToken.kind;
+          return syntax.is.assignmentOperator(binaryOperator) && (<BinaryExpression>parent).left === node
+            ? binaryOperator === Syntax.EqualsToken
+              ? AssignmentKind.Definite
+              : AssignmentKind.Compound
+            : AssignmentKind.None;
+        case Syntax.PrefixUnaryExpression:
+        case Syntax.PostfixUnaryExpression:
+          const unaryOperator = (<PrefixUnaryExpression | PostfixUnaryExpression>parent).operator;
+          return unaryOperator === Syntax.Plus2Token || unaryOperator === Syntax.Minus2Token ? AssignmentKind.Compound : AssignmentKind.None;
+        case Syntax.ForInStatement:
+        case Syntax.ForOfStatement:
+          return (<ForInOrOfStatement>parent).initializer === node ? AssignmentKind.Definite : AssignmentKind.None;
+        case Syntax.ParenthesizedExpression:
+        case Syntax.ArrayLiteralExpression:
+        case Syntax.SpreadElement:
+        case Syntax.NonNullExpression:
+          node = parent;
+          break;
+        case Syntax.ShorthandPropertyAssignment:
+          if ((parent as ShorthandPropertyAssignment).name !== node) return AssignmentKind.None;
+          node = parent.parent;
+          break;
+        case Syntax.PropertyAssignment:
+          if ((parent as ShorthandPropertyAssignment).name === node) return AssignmentKind.None;
+          node = parent.parent;
+          break;
+        default:
+          return AssignmentKind.None;
+      }
+      parent = node.parent;
+    }
+  }
+  getHostSignatureFromDoc(n: Node): SignatureDeclaration | undefined {
+    const host = getEffectiveDocHost(node);
+    return host && is.functionLike(host) ? host : undefined;
+  }
+  getEffectiveDocHost(n: Node): Node | undefined {
+    const host = qc.getDoc.host(node);
+    const decl =
+      getSourceOfDefaultedAssignment(host) ||
+      getSourceOfAssignment(host) ||
+      getSingleInitializerOfVariableStatementOrPropertyDeclaration(host) ||
+      getSingleVariableOfVariableStatement(host) ||
+      getNestedModuleDeclaration(host) ||
+      host;
+    return decl;
+  }
+  getSourceOfAssignment(n: Node): Node | undefined {
+    return is.kind(ExpressionStatement, node) && is.kind(BinaryExpression, node.expression) && node.expression.operatorToken.kind === Syntax.EqualsToken
+      ? getRightMostAssignedExpression(node.expression)
+      : undefined;
+  }
+  getSourceOfDefaultedAssignment(n: Node): Node | undefined {
+    return is.kind(ExpressionStatement, node) &&
+      is.kind(BinaryExpression, node.expression) &&
+      getAssignmentDeclarationKind(node.expression) !== AssignmentDeclarationKind.None &&
+      is.kind(BinaryExpression, node.expression.right) &&
+      (node.expression.right.operatorToken.kind === Syntax.Bar2Token || node.expression.right.operatorToken.kind === Syntax.Question2Token)
+      ? node.expression.right.right
+      : undefined;
+  }
+  getSingleInitializerOfVariableStatementOrPropertyDeclaration(n: Node): Expression | undefined {
+    switch (n.kind) {
+      case Syntax.VariableStatement:
+        const v = getSingleVariableOfVariableStatement(node);
+        return v && v.initializer;
+      case Syntax.PropertyDeclaration:
+        return (node as PropertyDeclaration).initializer;
+      case Syntax.PropertyAssignment:
+        return (node as PropertyAssignment).initializer;
+    }
+  }
+  getSingleVariableOfVariableStatement(n: Node): VariableDeclaration | undefined {
+    return is.kind(VariableStatement, node) ? firstOrUndefined(node.declarationList.declarations) : undefined;
+  }
+  getNestedModuleDeclaration(n: Node): Node | undefined {
+    return is.kind(ModuleDeclaration, node) && node.body && node.body.kind === Syntax.ModuleDeclaration ? node.body : undefined;
+  }
+  getAncestor(n: Node | undefined, kind: Syntax): Node | undefined {
+    while (node) {
+      if (n.kind === kind) return node;
+      node = node.parent;
+    }
+    return;
+  }
+  getAllSuperTypeNodes(n: Node): readonly TypeNode[] {
+    return is.kind(InterfaceDeclaration, node)
+      ? getInterfaceBaseTypeNodes(node) || emptyArray
+      : is.classLike(node)
+      ? concatenate(singleElementArray(getEffectiveBaseTypeNode(node)), getEffectiveImplementsTypeNodes(node)) || emptyArray
+      : emptyArray;
+  }
+  getExternalModuleImportEqualsDeclarationExpression(n: Node) {
+    assert(is.externalModuleImportEqualsDeclaration(node));
+    return (<ExternalModuleReference>(<ImportEqualsDeclaration>node).moduleReference).expression;
+  }
+  getDeclarationOfExpando(n: Node): Node | undefined {
+    if (!node.parent) {
+      return;
+    }
+    let name: Expression | BindingName | undefined;
+    let decl: Node | undefined;
+    if (is.kind(VariableDeclaration, node.parent) && node.parent.initializer === node) {
+      if (!isInJSFile(node) && !isVarConst(node.parent)) {
+        return;
+      }
+      name = node.parent.name;
+      decl = node.parent;
+    } else if (is.kind(node.parent, BinaryExpression)) {
+      const parentNode = node.parent;
+      const parentNodeOperator = node.parent.operatorToken.kind;
+      if (parentNodeOperator === Syntax.EqualsToken && parentNode.right === node) {
+        name = parentNode.left;
+        decl = name;
+      } else if (parentNodeOperator === Syntax.Bar2Token || parentNodeOperator === Syntax.Question2Token) {
+        if (is.kind(VariableDeclaration, parentNode.parent) && parentNode.parent.initializer === parentNode) {
+          name = parentNode.parent.name;
+          decl = parentNode.parent;
+        } else if (is.kind(parentNode.parent, BinaryExpression) && parentNode.parent.operatorToken.kind === Syntax.EqualsToken && parentNode.parent.right === parentNode) {
+          name = parentNode.parent.left;
+          decl = name;
+        }
+        if (!name || !isBindableStaticNameExpression(name) || !isSameEntityName(name, parentNode.left)) {
+          return;
+        }
+      }
+    }
+    if (!name || !getExpandoInitializer(node, isPrototypeAccess(name))) {
+      return;
+    }
+    return decl;
   }
 })();
 export const getDoc = new (class {
@@ -1568,7 +2095,7 @@ export const forEach = new (class {
     return;
   }
   child<T extends Node>(node: Node, cb: (n: Node) => T, cbs?: (ns: Nodes<Node>) => T): T | undefined {
-    if (node.kind <= Syntax.LastToken) return;
+    if (n.kind <= Syntax.LastToken) return;
     const n = node as qt.NodeTypes;
     switch (n.kind) {
       case Syntax.QualifiedName:
@@ -1928,7 +2455,6 @@ export const forEach = new (class {
     return;
   }
 })();
-
 export abstract class Declaration extends qc.Declaration {
   isBlockOrCatchScoped() {
     return (get.combinedFlagsOf(this) & NodeFlags.BlockScoped) !== 0 || isCatchClauseVariableDeclarationOrBindingElement(this);
@@ -1969,7 +2495,7 @@ export abstract class Declaration extends qc.Declaration {
   }
   isCatchClauseVariableDeclarationOrBindingElement(this: Declaration) {
     const node = getRootDeclaration(this);
-    return node.kind === Syntax.VariableDeclaration && node.parent.kind === Syntax.CatchClause;
+    return n.kind === Syntax.VariableDeclaration && node.parent.kind === Syntax.CatchClause;
   }
   isNotAccessor(this: Declaration) {
     return !is.accessor(this);
@@ -2127,7 +2653,7 @@ export abstract class Expression extends qc.Expression {
   }
   getLeftmostExpression(node: Expression, stopAtCallExpressions: boolean) {
     while (true) {
-      switch (node.kind) {
+      switch (n.kind) {
         case Syntax.PostfixUnaryExpression:
           node = (<PostfixUnaryExpression>node).operand;
           continue;
@@ -2460,600 +2986,24 @@ export namespace BindingOrAssignmentPattern {
     return n;
   }
 }
-
-export function isAssignmentExpression(node: Node, excludeCompoundAssignment: true): node is AssignmentExpression<EqualsToken>;
-export function isAssignmentExpression(node: Node, excludeCompoundAssignment?: false): node is AssignmentExpression<AssignmentOperatorToken>;
-export function isAssignmentExpression(node: Node, excludeCompoundAssignment?: boolean): node is AssignmentExpression<AssignmentOperatorToken> {
-  return (
-    is.kind(BinaryExpression, node) &&
-    (excludeCompoundAssignment ? node.operatorToken.kind === Syntax.EqualsToken : syntax.is.assignmentOperator(node.operatorToken.kind)) &&
-    is.leftHandSideExpression(node.left)
-  );
-}
-export function isDestructuringAssignment(node: Node): node is DestructuringAssignment {
-  if (isAssignmentExpression(node, true)) {
-    const kind = node.left.kind;
-    return kind === Syntax.ObjectLiteralExpression || kind === Syntax.ArrayLiteralExpression;
-  }
-  return false;
-}
-
-export interface ClassImplementingOrExtendingExpressionWithTypeArguments {
-  readonly class: ClassLikeDeclaration;
-  readonly isImplements: boolean;
-}
-export function tryGetClassImplementingOrExtendingExpressionWithTypeArguments(node: Node): ClassImplementingOrExtendingExpressionWithTypeArguments | undefined {
-  return is.kind(ExpressionWithTypeArguments, node) && is.kind(HeritageClause, node.parent) && is.classLike(node.parent.parent)
-    ? { class: node.parent.parent, isImplements: node.parent.token === Syntax.ImplementsKeyword }
+export function tryGetClassImplementingOrExtendingExpressionWithTypeArguments(n: Node): ClassImplementingOrExtendingExpressionWithTypeArguments | undefined {
+  return is.kind(qc.ExpressionWithTypeArguments, n) && is.kind(qc.HeritageClause, n.parent) && is.classLike(n.parent.parent)
+    ? { class: n.parent.parent, isImplements: n.parent.token === Syntax.ImplementsKeyword }
     : undefined;
 }
-
-export function tryGetClassExtendingExpressionWithTypeArguments(node: Node): ClassLikeDeclaration | undefined {
-  const cls = tryGetClassImplementingOrExtendingExpressionWithTypeArguments(node);
-  return cls && !cls.isImplements ? cls.class : undefined;
+export function tryGetClassExtendingExpressionWithTypeArguments(n: Node): ClassLikeDeclaration | undefined {
+  const c = tryGetClassImplementingOrExtendingExpressionWithTypeArguments(n);
+  return c && !c.isImplements ? c.class : undefined;
 }
-
-export function isAliasSymbolDeclaration(node: Node): boolean {
-  return (
-    node.kind === Syntax.ImportEqualsDeclaration ||
-    node.kind === Syntax.NamespaceExportDeclaration ||
-    (node.kind === Syntax.ImportClause && !!(<ImportClause>node).name) ||
-    node.kind === Syntax.NamespaceImport ||
-    node.kind === Syntax.NamespaceExport ||
-    node.kind === Syntax.ImportSpecifier ||
-    node.kind === Syntax.ExportSpecifier ||
-    (node.kind === Syntax.ExportAssignment && exportAssignmentIsAlias(<ExportAssignment>node)) ||
-    (is.kind(BinaryExpression, node) && getAssignmentDeclarationKind(node) === AssignmentDeclarationKind.ModuleExports && exportAssignmentIsAlias(node)) ||
-    (is.kind(PropertyAccessExpression, node) &&
-      is.kind(BinaryExpression, node.parent) &&
-      node.parent.left === node &&
-      node.parent.operatorToken.kind === Syntax.EqualsToken &&
-      isAliasableExpression(node.parent.right)) ||
-    node.kind === Syntax.ShorthandPropertyAssignment ||
-    (node.kind === Syntax.PropertyAssignment && isAliasableExpression((node as PropertyAssignment).initializer))
-  );
+export function walkUpParenthesizedTypes(n: Node) {
+  return walkUp(n, Syntax.ParenthesizedType);
 }
-
-export type NodeWithPossibleHoistedDeclaration =
-  | Block
-  | VariableStatement
-  | WithStatement
-  | IfStatement
-  | SwitchStatement
-  | CaseBlock
-  | CaseClause
-  | DefaultClause
-  | LabeledStatement
-  | ForStatement
-  | ForInStatement
-  | ForOfStatement
-  | DoStatement
-  | WhileStatement
-  | TryStatement
-  | CatchClause;
-export function isNodeWithPossibleHoistedDeclaration(node: Node): node is NodeWithPossibleHoistedDeclaration {
-  switch (node.kind) {
-    case Syntax.Block:
-    case Syntax.VariableStatement:
-    case Syntax.WithStatement:
-    case Syntax.IfStatement:
-    case Syntax.SwitchStatement:
-    case Syntax.CaseBlock:
-    case Syntax.CaseClause:
-    case Syntax.DefaultClause:
-    case Syntax.LabeledStatement:
-    case Syntax.ForStatement:
-    case Syntax.ForInStatement:
-    case Syntax.ForOfStatement:
-    case Syntax.DoStatement:
-    case Syntax.WhileStatement:
-    case Syntax.TryStatement:
-    case Syntax.CatchClause:
-      return true;
+export function walkUpParenthesizedExpressions(n: Node) {
+  return walkUp(n, Syntax.ParenthesizedExpression);
+}
+function walkUp(n: Node, k: Syntax) {
+  while (n && n.kind === k) {
+    n = n.parent;
   }
-  return false;
-}
-export type ValueSignatureDeclaration = FunctionDeclaration | MethodDeclaration | ConstructorDeclaration | AccessorDeclaration | FunctionExpression | ArrowFunction;
-export function isValueSignatureDeclaration(node: Node): node is ValueSignatureDeclaration {
-  return is.kind(FunctionExpression, node) || is.kind(ArrowFunction, node) || is.methodOrAccessor(node) || is.kind(FunctionDeclaration, node) || is.kind(ConstructorDeclaration, node);
-}
-
-export function isObjectTypeDeclaration(n: Node): n is ObjectTypeDeclaration {
-  return is.classLike(n) || is.kind(InterfaceDeclaration, n) || is.kind(TypeLiteralNode, n);
-}
-export function isAccessExpression(node: Node): node is AccessExpression {
-  return node.kind === Syntax.PropertyAccessExpression || node.kind === Syntax.ElementAccessExpression;
-}
-export function isNamedImportsOrExports(node: Node): node is NamedImportsOrExports {
-  return node.kind === Syntax.NamedImports || node.kind === Syntax.NamedExports;
-}
-
-export function isValidTypeOnlyAliasUseSite(useSite: Node): boolean {
-  return (
-    !!(useSite.flags & NodeFlags.Ambient) ||
-    is.partOfTypeQuery(useSite) ||
-    isIdentifierInNonEmittingHeritageClause(useSite) ||
-    isPartOfPossiblyValidTypeOrAbstractComputedPropertyName(useSite) ||
-    !is.expressionNode(useSite)
-  );
-}
-export function typeOnlyDeclarationIsExport(typeOnlyDeclaration: Node) {
-  return typeOnlyDeclaration.kind === Syntax.ExportSpecifier;
-}
-function isPartOfPossiblyValidTypeOrAbstractComputedPropertyName(node: Node) {
-  while (node.kind === Syntax.Identifier || node.kind === Syntax.PropertyAccessExpression) {
-    node = node.parent;
-  }
-  if (node.kind !== Syntax.ComputedPropertyName) return false;
-  if (hasSyntacticModifier(node.parent, ModifierFlags.Abstract)) return true;
-  const containerKind = node.parent.parent.kind;
-  return containerKind === Syntax.InterfaceDeclaration || containerKind === Syntax.TypeLiteral;
-}
-function isIdentifierInNonEmittingHeritageClause(node: Node): boolean {
-  if (node.kind !== Syntax.Identifier) return false;
-  const heritageClause = Node.findAncestor(node.parent, (parent) => {
-    switch (parent.kind) {
-      case Syntax.HeritageClause:
-        return true;
-      case Syntax.PropertyAccessExpression:
-      case Syntax.ExpressionWithTypeArguments:
-        return false;
-      default:
-        return 'quit';
-    }
-  }) as HeritageClause | undefined;
-  return heritageClause?.token === Syntax.ImplementsKeyword || heritageClause?.parent.kind === Syntax.InterfaceDeclaration;
-}
-export function isIdentifierTypeReference(node: Node): node is TypeReferenceNode & { typeName: Identifier } {
-  return is.kind(TypeReferenceNode, node) && is.kind(Identifier, node.typeName);
-}
-
-export function getLastChild(n: Node): Node | undefined {
-  let lastChild: Node | undefined;
-  qc.forEach.child(
-    n,
-    (child) => {
-      if (is.present(child)) lastChild = child;
-    },
-    (children) => {
-      for (let i = children.length - 1; i >= 0; i--) {
-        if (is.present(children[i])) {
-          lastChild = children[i];
-          break;
-        }
-      }
-    }
-  );
-  return lastChild;
-}
-
-export function isWriteOnlyAccess(node: Node) {
-  return accessKind(node) === AccessKind.Write;
-}
-export function isWriteAccess(node: Node) {
-  return accessKind(node) !== AccessKind.Read;
-}
-const enum AccessKind {
-  Read,
-  Write,
-  ReadWrite,
-}
-function accessKind(n: Node): AccessKind {
-  const { parent } = n;
-  if (!parent) return AccessKind.Read;
-  switch (parent.kind) {
-    case Syntax.ParenthesizedExpression:
-      return accessKind(parent);
-    case Syntax.PostfixUnaryExpression:
-    case Syntax.PrefixUnaryExpression:
-      const { operator } = parent as PrefixUnaryExpression | PostfixUnaryExpression;
-      return operator === Syntax.Plus2Token || operator === Syntax.Minus2Token ? writeOrReadWrite() : AccessKind.Read;
-    case Syntax.BinaryExpression:
-      const { left, operatorToken } = parent as BinaryExpression;
-      return left === n && syntax.is.assignmentOperator(operatorToken.kind) ? (operatorToken.kind === Syntax.EqualsToken ? AccessKind.Write : writeOrReadWrite()) : AccessKind.Read;
-    case Syntax.PropertyAccessExpression:
-      return (parent as PropertyAccessExpression).name !== n ? AccessKind.Read : accessKind(parent);
-    case Syntax.PropertyAssignment: {
-      const parentAccess = accessKind(parent.parent);
-      return n === (parent as PropertyAssignment).name ? reverseAccessKind(parentAccess) : parentAccess;
-    }
-    case Syntax.ShorthandPropertyAssignment:
-      return n === (parent as ShorthandPropertyAssignment).objectAssignmentInitializer ? AccessKind.Read : accessKind(parent.parent);
-    case Syntax.ArrayLiteralExpression:
-      return accessKind(parent);
-    default:
-      return AccessKind.Read;
-  }
-  function writeOrReadWrite(): AccessKind {
-    const skipParenthesesUp = (n: Node) => {
-      while (n.kind === Syntax.ParenthesizedExpression) {
-        n = n.parent;
-      }
-      return n;
-    };
-    return parent.parent && skipParenthesesUp(parent.parent).kind === Syntax.ExpressionStatement ? AccessKind.Write : AccessKind.ReadWrite;
-  }
-}
-function reverseAccessKind(a: AccessKind): AccessKind {
-  switch (a) {
-    case AccessKind.Read:
-      return AccessKind.Write;
-    case AccessKind.Write:
-      return AccessKind.Read;
-    case AccessKind.ReadWrite:
-      return AccessKind.ReadWrite;
-    default:
-      return Debug.assertNever(a);
-  }
-}
-
-export function isPrototypeAccess(node: Node): node is BindableStaticAccessExpression {
-  return isBindableStaticAccessExpression(node) && getElementOrPropertyAccessName(node) === 'prototype';
-}
-export function isRightSideOfQualifiedNameOrPropertyAccess(node: Node) {
-  return (
-    (node.parent.kind === Syntax.QualifiedName && (<QualifiedName>node.parent).right === node) ||
-    (node.parent.kind === Syntax.PropertyAccessExpression && (<PropertyAccessExpression>node.parent).name === node)
-  );
-}
-export function isEmptyObjectLiteral(expression: Node): boolean {
-  return expression.kind === Syntax.ObjectLiteralExpression && (<ObjectLiteralExpression>expression).properties.length === 0;
-}
-export function isEmptyArrayLiteral(expression: Node): boolean {
-  return expression.kind === Syntax.ArrayLiteralExpression && (<ArrayLiteralExpression>expression).elements.length === 0;
-}
-
-export function hasEffectiveModifiers(node: Node) {
-  return getEffectiveModifierFlags(node) !== ModifierFlags.None;
-}
-export function hasSyntacticModifiers(node: Node) {
-  return getSyntacticModifierFlags(node) !== ModifierFlags.None;
-}
-export function hasEffectiveModifier(node: Node, flags: ModifierFlags): boolean {
-  return !!getSelectedEffectiveModifierFlags(node, flags);
-}
-export function hasSyntacticModifier(node: Node, flags: ModifierFlags): boolean {
-  return !!getSelectedSyntacticModifierFlags(node, flags);
-}
-export function hasStaticModifier(node: Node): boolean {
-  return hasSyntacticModifier(node, ModifierFlags.Static);
-}
-export function hasEffectiveReadonlyModifier(node: Node): boolean {
-  return hasEffectiveModifier(node, ModifierFlags.Readonly);
-}
-export function getSelectedEffectiveModifierFlags(node: Node, flags: ModifierFlags): ModifierFlags {
-  return getEffectiveModifierFlags(node) & flags;
-}
-export function getSelectedSyntacticModifierFlags(node: Node, flags: ModifierFlags): ModifierFlags {
-  return getSyntacticModifierFlags(node) & flags;
-}
-function getModifierFlagsWorker(node: Node, includeDoc: boolean): ModifierFlags {
-  if (node.kind >= Syntax.FirstToken && node.kind <= Syntax.LastToken) return ModifierFlags.None;
-  if (!(node.modifierFlagsCache & ModifierFlags.HasComputedFlags)) {
-    node.modifierFlagsCache = getSyntacticModifierFlagsNoCache(node) | ModifierFlags.HasComputedFlags;
-  }
-  if (includeDoc && !(node.modifierFlagsCache & ModifierFlags.HasComputedDocModifiers) && isInJSFile(node) && node.parent) {
-    node.modifierFlagsCache |= qc.getDoc.modifierFlagsNoCache(node) | ModifierFlags.HasComputedDocModifiers;
-  }
-  return node.modifierFlagsCache & ~(ModifierFlags.HasComputedFlags | ModifierFlags.HasComputedDocModifiers);
-}
-export function getEffectiveModifierFlags(node: Node): ModifierFlags {
-  return getModifierFlagsWorker(node, true);
-}
-export function getSyntacticModifierFlags(node: Node): ModifierFlags {
-  return getModifierFlagsWorker(node, false);
-}
-export function getEffectiveModifierFlagsNoCache(node: Node): ModifierFlags {
-  return getSyntacticModifierFlagsNoCache(node) | qc.getDoc.modifierFlagsNoCache(node);
-}
-export function getSyntacticModifierFlagsNoCache(node: Node): ModifierFlags {
-  let flags = modifiersToFlags(node.modifiers);
-  if (node.flags & NodeFlags.NestedNamespace || (node.kind === Syntax.Identifier && (<Identifier>node).isInDocNamespace)) {
-    flags |= ModifierFlags.Export;
-  }
-  return flags;
-}
-
-export function getEffectiveTypeAnnotationNode(node: Node): TypeNode | undefined {
-  if (!isInJSFile(node) && is.kind(FunctionDeclaration, node)) return;
-  const type = (node as HasType).type;
-  if (type || !isInJSFile(node)) return type;
-  return qc.isDoc.propertyLikeTag(node) ? node.typeExpression && node.typeExpression.type : qc.getDoc.type(node);
-}
-export function getTypeAnnotationNode(node: Node): TypeNode | undefined {
-  return (node as HasType).type;
-}
-
-export function isPropertyNameLiteral(node: Node): node is PropertyNameLiteral {
-  switch (node.kind) {
-    case Syntax.Identifier:
-    case Syntax.StringLiteral:
-    case Syntax.NoSubstitutionLiteral:
-    case Syntax.NumericLiteral:
-      return true;
-    default:
-      return false;
-  }
-}
-export function getRootDeclaration(node: Node): Node {
-  while (node.kind === Syntax.BindingElement) {
-    node = node.parent.parent;
-  }
-  return node;
-}
-export function nodeStartsNewLexicalEnvironment(node: Node): boolean {
-  const kind = node.kind;
-  return (
-    kind === Syntax.Constructor ||
-    kind === Syntax.FunctionExpression ||
-    kind === Syntax.FunctionDeclaration ||
-    kind === Syntax.ArrowFunction ||
-    kind === Syntax.MethodDeclaration ||
-    kind === Syntax.GetAccessor ||
-    kind === Syntax.SetAccessor ||
-    kind === Syntax.ModuleDeclaration ||
-    kind === Syntax.SourceFile
-  );
-}
-
-export function getAncestor(node: Node | undefined, kind: Syntax): Node | undefined {
-  while (node) {
-    if (node.kind === kind) return node;
-    node = node.parent;
-  }
-  return;
-}
-
-export function getAllSuperTypeNodes(node: Node): readonly TypeNode[] {
-  return is.kind(InterfaceDeclaration, node)
-    ? getInterfaceBaseTypeNodes(node) || emptyArray
-    : is.classLike(node)
-    ? concatenate(singleElementArray(getEffectiveBaseTypeNode(node)), getEffectiveImplementsTypeNodes(node)) || emptyArray
-    : emptyArray;
-}
-
-export function walkUpParenthesizedTypes(node: Node) {
-  return walkUp(node, Syntax.ParenthesizedType);
-}
-export function walkUpParenthesizedExpressions(node: Node) {
-  return walkUp(node, Syntax.ParenthesizedExpression);
-}
-function walkUp(node: Node, kind: Syntax) {
-  while (node && node.kind === kind) {
-    node = node.parent;
-  }
-  return node;
-}
-
-export function getDeclarationFromName(name: Node): Declaration | undefined {
-  const parent = name.parent;
-  switch (name.kind) {
-    case Syntax.StringLiteral:
-    case Syntax.NoSubstitutionLiteral:
-    case Syntax.NumericLiteral:
-      if (is.kind(ComputedPropertyName, parent)) return parent.parent;
-    case Syntax.Identifier:
-      if (is.declaration(parent)) return parent.name === name ? parent : undefined;
-      else if (is.kind(QualifiedName, parent)) {
-        const tag = parent.parent;
-        return is.kind(DocParameterTag, tag) && tag.name === parent ? tag : undefined;
-      } else {
-        const binExp = parent.parent;
-        return is.kind(BinaryExpression, binExp) &&
-          getAssignmentDeclarationKind(binExp) !== AssignmentDeclarationKind.None &&
-          (binExp.left.symbol || binExp.symbol) &&
-          getNameOfDeclaration(binExp) === name
-          ? binExp
-          : undefined;
-      }
-    case Syntax.PrivateIdentifier:
-      return is.declaration(parent) && parent.name === name ? parent : undefined;
-    default:
-      return;
-  }
-}
-export function isLiteralComputedPropertyDeclarationName(node: Node) {
-  return StringLiteral.orNumericLiteralLike(node) && node.parent.kind === Syntax.ComputedPropertyName && is.declaration(node.parent.parent);
-}
-
-export function hasTypeArguments(node: Node): node is HasTypeArguments {
-  return !!(node as HasTypeArguments).typeArguments;
-}
-export const enum AssignmentKind {
-  None,
-  Definite,
-  Compound,
-}
-export function getAssignmentTargetKind(node: Node): AssignmentKind {
-  let parent = node.parent;
-  while (true) {
-    switch (parent.kind) {
-      case Syntax.BinaryExpression:
-        const binaryOperator = (<BinaryExpression>parent).operatorToken.kind;
-        return syntax.is.assignmentOperator(binaryOperator) && (<BinaryExpression>parent).left === node
-          ? binaryOperator === Syntax.EqualsToken
-            ? AssignmentKind.Definite
-            : AssignmentKind.Compound
-          : AssignmentKind.None;
-      case Syntax.PrefixUnaryExpression:
-      case Syntax.PostfixUnaryExpression:
-        const unaryOperator = (<PrefixUnaryExpression | PostfixUnaryExpression>parent).operator;
-        return unaryOperator === Syntax.Plus2Token || unaryOperator === Syntax.Minus2Token ? AssignmentKind.Compound : AssignmentKind.None;
-      case Syntax.ForInStatement:
-      case Syntax.ForOfStatement:
-        return (<ForInOrOfStatement>parent).initializer === node ? AssignmentKind.Definite : AssignmentKind.None;
-      case Syntax.ParenthesizedExpression:
-      case Syntax.ArrayLiteralExpression:
-      case Syntax.SpreadElement:
-      case Syntax.NonNullExpression:
-        node = parent;
-        break;
-      case Syntax.ShorthandPropertyAssignment:
-        if ((parent as ShorthandPropertyAssignment).name !== node) return AssignmentKind.None;
-        node = parent.parent;
-        break;
-      case Syntax.PropertyAssignment:
-        if ((parent as ShorthandPropertyAssignment).name === node) return AssignmentKind.None;
-        node = parent.parent;
-        break;
-      default:
-        return AssignmentKind.None;
-    }
-    parent = node.parent;
-  }
-}
-export function isAssignmentTarget(node: Node): boolean {
-  return getAssignmentTargetKind(node) !== AssignmentKind.None;
-}
-
-export function getHostSignatureFromDoc(node: Node): SignatureDeclaration | undefined {
-  const host = getEffectiveDocHost(node);
-  return host && is.functionLike(host) ? host : undefined;
-}
-export function getEffectiveDocHost(node: Node): Node | undefined {
-  const host = qc.getDoc.host(node);
-  const decl =
-    getSourceOfDefaultedAssignment(host) ||
-    getSourceOfAssignment(host) ||
-    getSingleInitializerOfVariableStatementOrPropertyDeclaration(host) ||
-    getSingleVariableOfVariableStatement(host) ||
-    getNestedModuleDeclaration(host) ||
-    host;
-  return decl;
-}
-
-export function hasQuestionToken(node: Node) {
-  if (node) {
-    switch (node.kind) {
-      case Syntax.Parameter:
-      case Syntax.MethodDeclaration:
-      case Syntax.MethodSignature:
-      case Syntax.ShorthandPropertyAssignment:
-      case Syntax.PropertyAssignment:
-      case Syntax.PropertyDeclaration:
-      case Syntax.PropertySignature:
-        return (<ParameterDeclaration | MethodDeclaration | PropertyDeclaration>node).questionToken !== undefined;
-    }
-  }
-  return false;
-}
-function getSourceOfAssignment(node: Node): Node | undefined {
-  return is.kind(ExpressionStatement, node) && is.kind(BinaryExpression, node.expression) && node.expression.operatorToken.kind === Syntax.EqualsToken
-    ? getRightMostAssignedExpression(node.expression)
-    : undefined;
-}
-function getSourceOfDefaultedAssignment(node: Node): Node | undefined {
-  return is.kind(ExpressionStatement, node) &&
-    is.kind(BinaryExpression, node.expression) &&
-    getAssignmentDeclarationKind(node.expression) !== AssignmentDeclarationKind.None &&
-    is.kind(BinaryExpression, node.expression.right) &&
-    (node.expression.right.operatorToken.kind === Syntax.Bar2Token || node.expression.right.operatorToken.kind === Syntax.Question2Token)
-    ? node.expression.right.right
-    : undefined;
-}
-export function getSingleInitializerOfVariableStatementOrPropertyDeclaration(node: Node): Expression | undefined {
-  switch (node.kind) {
-    case Syntax.VariableStatement:
-      const v = getSingleVariableOfVariableStatement(node);
-      return v && v.initializer;
-    case Syntax.PropertyDeclaration:
-      return (node as PropertyDeclaration).initializer;
-    case Syntax.PropertyAssignment:
-      return (node as PropertyAssignment).initializer;
-  }
-}
-function getSingleVariableOfVariableStatement(node: Node): VariableDeclaration | undefined {
-  return is.kind(VariableStatement, node) ? firstOrUndefined(node.declarationList.declarations) : undefined;
-}
-function getNestedModuleDeclaration(node: Node): Node | undefined {
-  return is.kind(ModuleDeclaration, node) && node.body && node.body.kind === Syntax.ModuleDeclaration ? node.body : undefined;
-}
-
-export function isPrototypePropertyAssignment(node: Node): boolean {
-  return is.kind(BinaryExpression, node) && getAssignmentDeclarationKind(node) === AssignmentDeclarationKind.PrototypeProperty;
-}
-
-function isDocTypeExpressionOrChild(node: Node): boolean {
-  return !!Node.findAncestor(node, isDocTypeExpression);
-}
-export function introducesArgumentsExoticObject(node: Node) {
-  switch (node.kind) {
-    case Syntax.MethodDeclaration:
-    case Syntax.MethodSignature:
-    case Syntax.Constructor:
-    case Syntax.GetAccessor:
-    case Syntax.SetAccessor:
-    case Syntax.FunctionDeclaration:
-    case Syntax.FunctionExpression:
-      return true;
-  }
-  return false;
-}
-export function getExternalModuleImportEqualsDeclarationExpression(node: Node) {
-  assert(is.externalModuleImportEqualsDeclaration(node));
-  return (<ExternalModuleReference>(<ImportEqualsDeclaration>node).moduleReference).expression;
-}
-export function isInternalModuleImportEqualsDeclaration(node: Node): node is ImportEqualsDeclaration {
-  return node.kind === Syntax.ImportEqualsDeclaration && (<ImportEqualsDeclaration>node).moduleReference.kind !== Syntax.ExternalModuleReference;
-}
-export function isInJSFile(node: Node | undefined): boolean {
-  return !!node && !!(node.flags & NodeFlags.JavaScriptFile);
-}
-export function isInJsonFile(node: Node | undefined): boolean {
-  return !!node && !!(node.flags & NodeFlags.JsonFile);
-}
-export function isInDoc(node: Node | undefined): boolean {
-  return !!node && !!(node.flags & NodeFlags.Doc);
-}
-export function getDeclarationOfExpando(node: Node): Node | undefined {
-  if (!node.parent) {
-    return;
-  }
-  let name: Expression | BindingName | undefined;
-  let decl: Node | undefined;
-  if (is.kind(VariableDeclaration, node.parent) && node.parent.initializer === node) {
-    if (!isInJSFile(node) && !isVarConst(node.parent)) {
-      return;
-    }
-    name = node.parent.name;
-    decl = node.parent;
-  } else if (is.kind(node.parent, BinaryExpression)) {
-    const parentNode = node.parent;
-    const parentNodeOperator = node.parent.operatorToken.kind;
-    if (parentNodeOperator === Syntax.EqualsToken && parentNode.right === node) {
-      name = parentNode.left;
-      decl = name;
-    } else if (parentNodeOperator === Syntax.Bar2Token || parentNodeOperator === Syntax.Question2Token) {
-      if (is.kind(VariableDeclaration, parentNode.parent) && parentNode.parent.initializer === parentNode) {
-        name = parentNode.parent.name;
-        decl = parentNode.parent;
-      } else if (is.kind(parentNode.parent, BinaryExpression) && parentNode.parent.operatorToken.kind === Syntax.EqualsToken && parentNode.parent.right === parentNode) {
-        name = parentNode.parent.left;
-        decl = name;
-      }
-      if (!name || !isBindableStaticNameExpression(name) || !isSameEntityName(name, parentNode.left)) {
-        return;
-      }
-    }
-  }
-  if (!name || !getExpandoInitializer(node, isPrototypeAccess(name))) {
-    return;
-  }
-  return decl;
-}
-export function isBindableStaticAccessExpression(node: Node, excludeThisKeyword?: boolean): node is BindableStaticAccessExpression {
-  return (
-    (is.kind(PropertyAccessExpression, node) &&
-      ((!excludeThisKeyword && node.expression.kind === Syntax.ThisKeyword) || (is.kind(Identifier, node.name) && isBindableStaticNameExpression(node.expression, true)))) ||
-    isBindableStaticElementAccessExpression(node, excludeThisKeyword)
-  );
-}
-export function isBindableStaticElementAccessExpression(node: Node, excludeThisKeyword?: boolean): node is BindableStaticElementAccessExpression {
-  return (
-    is.literalLikeElementAccess(node) &&
-    ((!excludeThisKeyword && node.expression.kind === Syntax.ThisKeyword) || is.entityNameExpression(node.expression) || isBindableStaticAccessExpression(node.expression, true))
-  );
-}
-export function isBindableStaticNameExpression(node: Node, excludeThisKeyword?: boolean): node is BindableStaticNameExpression {
-  return is.entityNameExpression(node) || isBindableStaticAccessExpression(node, excludeThisKeyword);
+  return n;
 }

@@ -3934,3 +3934,10 @@ export interface UserPreferences {
   readonly providePrefixAndSuffixTextForRename?: boolean;
 }
 export type ErrorCallback = (m: DiagnosticMessage, length: number) => void;
+// prettier-ignore
+export type NodeWithPossibleHoistedDeclaration = | Block | VariableStatement | WithStatement | IfStatement | SwitchStatement | CaseBlock | CaseClause | DefaultClause | LabeledStatement | ForStatement | ForInStatement | ForOfStatement | DoStatement | WhileStatement | TryStatement | CatchClause;
+export type ValueSignatureDeclaration = FunctionDeclaration | MethodDeclaration | ConstructorDeclaration | AccessorDeclaration | FunctionExpress;
+export interface ClassImplementingOrExtendingExpressionWithTypeArguments {
+  readonly class: ClassLikeDeclaration;
+  readonly isImplements: boolean;
+}
