@@ -4,16 +4,16 @@ import { NodeFlags, NodeType, TransformFlags } from './core2';
 import * as qc from './core2';
 import { Modifier, ModifierFlags, Syntax } from './syntax';
 import * as qy from './syntax';
+import { Node } from './types';
 import * as qt from './types';
 export * from './core2';
-
-type Node = qt.Node;
 
 const MAX_SMI_X86 = 0x3fff_ffff;
 
 export const is = new (class {
-  kind<S extends Syntax, T extends { kind: S; also?: Syntax[] }>(t: T, n: Node): n is NodeType<T['kind']> {
-    return n.kind === t.kind || !!t.also?.includes(n.kind);
+  kind<S extends Syntax, T extends { kind: S; also?: Syntax[] }>(t: T, n?: Node): n is NodeType<T['kind']> {
+    if (n) return n.kind === t.kind || !!t.also?.includes(n.kind);
+    return false;
   }
   asyncFunction(n: Node) {
     switch (n.kind) {
@@ -190,7 +190,7 @@ export const is = new (class {
       case Syntax.NeverKeyword:
         return true;
       case Syntax.VoidKeyword:
-        return n.parent.kind !== Syntax.VoidExpression;
+        return n?.parent.kind !== Syntax.VoidExpression;
       case Syntax.ExpressionWithTypeArguments:
         return !isExpressionWithTypeArgumentsInClassExtendsClause(n);
       case Syntax.TypeParameter:
@@ -206,8 +206,8 @@ export const is = new (class {
       case Syntax.PropertyAccessExpression:
       case Syntax.ThisKeyword: {
         const { parent } = n;
-        if (this.kind(qc.TypeQuery, parent)) return false;
-        if (this.kind(qc.ImportType, parent)) return !parent.isTypeOf;
+        if (this.kind(qc.TypeQueryNode, parent)) return false;
+        if (this.kind(qc.ImportTypeNode, parent)) return !parent.isTypeOf;
         if (Syntax.FirstTypeNode <= parent.kind && parent.kind <= Syntax.LastTypeNode) return true;
         switch (parent?.kind) {
           case Syntax.ExpressionWithTypeArguments:

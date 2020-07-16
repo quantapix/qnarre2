@@ -1,27 +1,27 @@
 import * as qb from './base';
-import { NodeBase, NodeFlags, ObjectFlags, TransformFlags, TypeFlags } from './types';
+import { NodeFlags, ObjectFlags, TransformFlags, TypeFlags } from './types';
 import * as qt from './types';
 import { Modifier, ModifierFlags, Syntax } from './syntax';
 import * as qy from './syntax';
 export * from './types';
-export class Nodes<T extends NodeBase> extends Array<T> implements qt.Nodes<T> {
+export class Nodes<T extends qt.Nobj> extends Array<T> implements qt.Nodes<T> {
   pos = -1;
   end = -1;
   trailingComma?: boolean;
   transformFlags = TransformFlags.None;
-  static isNodes<T extends qt.Node>(ns: readonly T[]): ns is Nodes<T> {
+  static isNodes<T extends qt.Nobj>(ns: readonly T[]): ns is Nodes<T> {
     return ns.hasOwnProperty('pos') && ns.hasOwnProperty('end');
   }
-  static from<T extends qt.Node>(ts: readonly T[]): Nodes<T>;
-  static from<T extends qt.Node>(ts?: readonly T[]): Nodes<T> | undefined;
-  static from<T extends qt.Node>(ts?: readonly T[]) {
+  static from<T extends qt.Nobj>(ts: readonly T[]): Nodes<T>;
+  static from<T extends qt.Nobj>(ts?: readonly T[]): Nodes<T> | undefined;
+  static from<T extends qt.Nobj>(ts?: readonly T[]) {
     return ts ? new Nodes(ts) : undefined;
   }
   constructor(ts?: readonly T[], trailingComma?: boolean) {
     super(...(!ts || ts === qb.empty ? [] : ts));
     if (trailingComma) this.trailingComma = trailingComma;
   }
-  visit<T>(cb: (n: NodeBase) => T | undefined, cbs?: (ns: Nodes<NodeBase>) => T | undefined): T | undefined {
+  visit<T>(cb: (n: qt.Nobj) => T | undefined, cbs?: (ns: Nodes<qt.Nobj>) => T | undefined): T | undefined {
     if (cbs) return cbs(this);
     for (const n of this) {
       const r = cb(n);
@@ -30,27 +30,27 @@ export class Nodes<T extends NodeBase> extends Array<T> implements qt.Nodes<T> {
     return;
   }
 }
-export type MutableNodes<T extends NodeBase> = Nodes<T> & T[];
-export abstract class Node extends qb.TextRange implements NodeBase {
+export type MutableNodes<T extends qt.Nobj> = Nodes<T> & T[];
+export abstract class Nobj extends qb.TextRange implements qt.Nobj {
   id?: number;
   kind!: any;
   flags = NodeFlags.None;
   transformFlags = TransformFlags.None;
   modifierFlagsCache = ModifierFlags.None;
-  decorators?: qt.Nodes<qt.Decorator>;
+  decorators?: Nodes<qt.Decorator>;
   modifiers?: qt.Modifiers;
-  original?: qt.Node;
+  original?: Nobj;
   symbol!: qt.Symbol;
   localSymbol?: qt.Symbol;
   locals?: qt.SymbolTable;
-  nextContainer?: qt.Node;
+  nextContainer?: Nobj;
   flowNode?: qt.FlowNode;
   emitNode?: qt.EmitNode;
   contextualType?: qt.Type;
   inferenceContext?: qt.InferenceContext;
   doc?: qt.Doc[];
-  private _children?: Node[];
-  constructor(synth?: boolean, k?: Syntax, pos?: number, end?: number, public parent?: qt.Node) {
+  private _children?: Nobj[];
+  constructor(synth?: boolean, k?: Syntax, pos?: number, end?: number, public parent?: Nobj) {
     super(pos, end);
     if (k) this.kind = k;
     if (synth) this.flags |= NodeFlags.Synthesized;
@@ -104,7 +104,7 @@ export abstract class Node extends qb.TextRange implements NodeBase {
   getChildren(s?: qt.SourceFileLike) {
     qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
     const scanner = qs_getRaw();
-    const addSynthetics = (ns: qb.Push<Node>, pos: number, end: number) => {
+    const addSynthetics = (ns: qb.Push<Nobj>, pos: number, end: number) => {
       scanner.setTextPos(pos);
       while (pos < end) {
         const t = scanner.scan();
@@ -117,7 +117,7 @@ export abstract class Node extends qb.TextRange implements NodeBase {
         if (t === Syntax.EndOfFileToken) break;
       }
     };
-    const createSyntaxList = (ns: Nodes<Node>) => {
+    const createSyntaxList = (ns: Nodes<Nobj>) => {
       const list = Node.create(Syntax.SyntaxList, ns.pos, ns.end, this);
       list._children = [];
       let p = ns.pos;
@@ -130,7 +130,7 @@ export abstract class Node extends qb.TextRange implements NodeBase {
       return list;
     };
     const createChildren = () => {
-      const cs = [] as Node[];
+      const cs = [] as Nobj[];
       if (qy.is.node(this.kind)) {
         if (qc.isDoc.commentContainingNode(this)) {
           qc.forEach.child(this, (c) => {
@@ -140,12 +140,12 @@ export abstract class Node extends qb.TextRange implements NodeBase {
         }
         scanner.setText((s || this.getSourceFile()).text);
         let p = this.pos;
-        const processNode = (c: Node) => {
+        const processNode = (c: Nobj) => {
           addSynthetics(cs, p, c.pos);
           cs.push(c);
           p = c.end;
         };
-        const processNodes = (ns: Nodes<Node>) => {
+        const processNodes = (ns: Nodes<Nobj>) => {
           addSynthetics(cs, p, ns.pos);
           cs.push(createSyntaxList(ns));
           p = ns.end;
@@ -160,28 +160,28 @@ export abstract class Node extends qb.TextRange implements NodeBase {
     };
     return this._children || (this._children = createChildren());
   }
-  getFirstToken(s?: qt.SourceFileLike): Node | undefined {
+  getFirstToken(s?: qt.SourceFileLike): Nobj | undefined {
     qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
     const cs = this.getChildren(s);
     if (!cs.length) return;
     const c = qb.find(cs, (c) => c.kind < Syntax.FirstDocNode || c.kind > Syntax.LastDocNode)!;
     return c.kind < Syntax.FirstNode ? c : c.getFirstToken(s);
   }
-  getLastToken(s?: qt.SourceFileLike): Node | undefined {
+  getLastToken(s?: qt.SourceFileLike): Nobj | undefined {
     qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
     const cs = this.getChildren(s);
     const c = qb.lastOrUndefined(cs);
     if (!c) return;
     return c.kind < Syntax.FirstNode ? c : c.getLastToken(s);
   }
-  visit<T>(cb: (n: qt.Node) => T | undefined) {
+  visit<T>(cb: (n: Nobj) => T | undefined) {
     return cb(this);
   }
-  updateFrom(n: qt.Node): this {
+  updateFrom(n: Nobj): this {
     if (this !== n) return this.setOriginal(n).setRange(n).aggregateTransformFlags();
     return this;
   }
-  setOriginal(n?: qt.Node): this {
+  setOriginal(n?: Nobj): this {
     this.original = n;
     if (n) {
       const e = n.emitNode;
@@ -190,12 +190,12 @@ export abstract class Node extends qb.TextRange implements NodeBase {
     return this;
   }
   aggregateTransformFlags(): this {
-    const aggregate = (n: Node): TransformFlags => {
+    const aggregate = (n: Nobj): TransformFlags => {
       if (n === undefined) return TransformFlags.None;
       if (n.transformFlags & TransformFlags.HasComputedFlags) return n.transformFlags & ~getTransformFlagsSubtreeExclusions(n.kind);
       return computeTransformFlagsForNode(n, subtree(n));
     };
-    const nodes = (ns: Nodes<Node>): TransformFlags => {
+    const nodes = (ns: Nodes<Nobj>): TransformFlags => {
       if (ns === undefined) return TransformFlags.None;
       let sub = TransformFlags.None;
       let f = TransformFlags.None;
@@ -206,12 +206,12 @@ export abstract class Node extends qb.TextRange implements NodeBase {
       ns.transformFlags = f | TransformFlags.HasComputedFlags;
       return sub;
     };
-    const subtree = (n: Node): TransformFlags => {
+    const subtree = (n: Nobj): TransformFlags => {
       if (hasSyntacticModifier(n, ModifierFlags.Ambient) || (qc.is.typeNode(n) && n.kind !== Syntax.ExpressionWithTypeArguments)) return TransformFlags.None;
       return reduceEachChild(n, TransformFlags.None, child, children);
     };
-    const child = (f: TransformFlags, n: Node): TransformFlags => f | aggregate(n);
-    const children = (f: TransformFlags, ns: Nodes<Node>): TransformFlags => f | nodes(ns);
+    const child = (f: TransformFlags, n: Nobj): TransformFlags => f | aggregate(n);
+    const children = (f: TransformFlags, ns: Nodes<Nobj>): TransformFlags => f | nodes(ns);
     aggregate(this);
     return this;
   }
@@ -257,7 +257,7 @@ export abstract class Node extends qb.TextRange implements NodeBase {
     }
     return result;
   }
-  static updateNode<T extends Node>(updated: T, original: T): T {
+  static updateNode<T extends Nobj>(updated: T, original: T): T {
     if (updated !== original) {
       updated.setOriginal(original);
       setRange(updated, original);
@@ -265,16 +265,16 @@ export abstract class Node extends qb.TextRange implements NodeBase {
     }
     return updated;
   }
-  static movePastDecorators(n: Node): qb.TextRange {
+  static movePastDecorators(n: Nobj): qb.TextRange {
     return n.decorators && n.decorators.length > 0 ? n.movePos(n.decorators.end) : n;
   }
-  static movePastModifiers(n: Node): qb.TextRange {
+  static movePastModifiers(n: Nobj): qb.TextRange {
     return n.modifiers && n.modifiers.length > 0 ? n.movePos(n.modifiers.end) : movePastDecorators(n);
   }
   static createTokenRange(pos: number, token: Syntax): qb.TextRange {
     return new qb.TextRange(pos, pos + qy.toString(token)!.length);
   }
-  static ofNode(n: Node): qb.TextRange {
+  static ofNode(n: Nobj): qb.TextRange {
     return new qb.TextRange(getTokenPosOfNode(n), n.end);
   }
   static ofTypeParams(a: Nodes<TypeParameterDeclaration>): qb.TextRange {
@@ -288,18 +288,18 @@ export abstract class Node extends qb.TextRange implements NodeBase {
     return destRanges;
   }
 }
-export class SyntaxList extends Node implements qt.SyntaxList {
+export class SyntaxList extends Nobj implements qt.SyntaxList {
   static readonly kind = Syntax.SyntaxList;
-  children!: Node[];
+  children!: Nobj[];
 }
 SyntaxList.prototype.kind = SyntaxList.kind;
-export abstract class TypeNode extends Node implements qt.TypeNode {
+export abstract class TypeNode extends Nobj implements qt.TypeNode {
   _typeNodeBrand: any;
 }
 export abstract class NodeWithTypeArguments extends TypeNode implements qt.NodeWithTypeArguments {
   typeArguments?: Nodes<TypeNode>;
 }
-export abstract class Declaration extends Node implements qt.Declaration {
+export abstract class Declaration extends Nobj implements qt.Declaration {
   _declarationBrand: any;
   isNotAccessor(declaration: Declaration) {
     return !qc.is.accessor(declaration);
@@ -406,7 +406,7 @@ export abstract class FunctionLikeDeclarationBase extends SignatureDeclarationBa
   returnFlowNode?: qt.FlowNode;
   _functionLikeDeclarationBrand: any;
 }
-export abstract class FunctionOrConstructorTypeNodeBase extends SignatureDeclarationBase implements qt.FunctionOrConstructorTypeNodeBase {
+export abstract class FunctionOrConstructorTypeNobj extends SignatureDeclarationBase implements qt.FunctionOrConstructorTypeNobj {
   type!: TypeNode;
   docCache?: readonly qt.DocTag[];
   constructor(s: boolean, k: Syntax.FunctionType | Syntax.ConstructorType, ts: readonly qt.TypeParameterDeclaration[] | undefined, ps: readonly qt.ParameterDeclaration[], t?: TypeNode) {
@@ -414,7 +414,7 @@ export abstract class FunctionOrConstructorTypeNodeBase extends SignatureDeclara
   }
   _typeNodeBrand: any;
 }
-export abstract class Expression extends Node implements qt.Expression {
+export abstract class Expression extends Nobj implements qt.Expression {
   _expressionBrand: any;
   createExpressionFromEntityName(node: EntityName | Expression): Expression {
     if (qc.is.kind(QualifiedName, node)) {
@@ -585,8 +585,8 @@ export abstract class ObjectLiteralExpressionBase<T extends qt.ObjectLiteralElem
   properties!: Nodes<T>;
   _declarationBrand: any;
 }
-export abstract class TokenOrIdentifier extends Node {
-  getChildren(): Node[] {
+export abstract class TokenOrIdentifier extends Nobj {
+  getChildren(): Nobj[] {
     return this.kind === Syntax.EndOfFileToken ? this.doc || qb.empty : qb.empty;
   }
 }
@@ -595,12 +595,12 @@ export class Token<T extends Syntax> extends TokenOrIdentifier implements qt.Tok
     super(undefined, k, pos, end);
   }
 }
-export abstract class Statement extends Node implements qt.Statement {
+export abstract class Statement extends Nobj implements qt.Statement {
   _statementBrand: any;
   isUseStrictPrologue(node: qt.ExpressionStatement): boolean {
     return qc.is.kind(StringLiteral, node.expression) && node.expression.text === 'use strict';
   }
-  addPrologue(target: Statement[], source: readonly Statement[], ensureUseStrict?: boolean, visitor?: (node: Node) => VisitResult<Node>): number {
+  addPrologue(target: Statement[], source: readonly Statement[], ensureUseStrict?: boolean, visitor?: (node: Nobj) => VisitResult<Nobj>): number {
     const offset = addStandardPrologue(target, source, ensureUseStrict);
     return addCustomPrologue(target, source, offset, visitor);
   }
@@ -622,20 +622,20 @@ export abstract class Statement extends Node implements qt.Statement {
     if (ensureUseStrict && !foundUseStrict) target.push(startOnNewLine(new qt.ExpressionStatement(qc.asLiteral('use strict'))));
     return statementOffset;
   }
-  addCustomPrologue(target: Statement[], source: readonly Statement[], statementOffset: number, visitor?: (node: Node) => VisitResult<Node>, filter?: (node: Node) => boolean): number;
+  addCustomPrologue(target: Statement[], source: readonly Statement[], statementOffset: number, visitor?: (node: Nobj) => VisitResult<Nobj>, filter?: (node: Nobj) => boolean): number;
   addCustomPrologue(
     target: Statement[],
     source: readonly Statement[],
     statementOffset: number | undefined,
-    visitor?: (node: Node) => VisitResult<Node>,
-    filter?: (node: Node) => boolean
+    visitor?: (node: Nobj) => VisitResult<Nobj>,
+    filter?: (node: Nobj) => boolean
   ): number | undefined;
   addCustomPrologue(
     target: Statement[],
     source: readonly Statement[],
     statementOffset: number | undefined,
-    visitor?: (node: Node) => VisitResult<Node>,
-    filter: (node: Node) => boolean = () => true
+    visitor?: (node: Nobj) => VisitResult<Nobj>,
+    filter: (node: Nobj) => boolean = () => true
   ): number | undefined {
     const numStatements = source.length;
     while (statementOffset !== undefined && statementOffset < numStatements) {
@@ -702,7 +702,7 @@ export abstract class UnionOrIntersectionTypeNode extends TypeNode implements qt
     return this.types !== ts ? (new UnionOrIntersectionTypeNode(this.kind, ts) as T).updateFrom(this) : this;
   }
 }
-export abstract class LiteralLikeNode extends Node implements qt.LiteralLikeNode {
+export abstract class LiteralLikeNode extends Nobj implements qt.LiteralLikeNode {
   text!: string;
   isUnterminated?: boolean;
   hasExtendedEscape?: boolean;
@@ -730,7 +730,7 @@ export abstract class LiteralExpression extends PrimaryExpression implements qt.
 export abstract class DocType extends TypeNode implements qt.DocType {
   _docTypeBrand: any;
 }
-export abstract class DocTag extends Node implements qt.DocTag {
+export abstract class DocTag extends Nobj implements qt.DocTag {
   parent: qt.Doc | qt.DocTypeLiteral;
   tagName: qt.Identifier;
   comment?: string;
@@ -913,8 +913,8 @@ export class SourceFile extends Declaration implements qt.SourceFile {
   hasNoDefaultLib: boolean;
   languageVersion: ScriptTarget;
   scriptKind: ScriptKind;
-  externalModuleIndicator?: Node;
-  commonJsModuleIndicator?: Node;
+  externalModuleIndicator?: Nobj;
+  commonJsModuleIndicator?: Nobj;
   jsGlobalAugmentations?: SymbolTable;
   identifiers: QMap<string>;
   nodeCount: number;
@@ -963,8 +963,8 @@ export class SourceFile extends Declaration implements qt.SourceFile {
   isDeclarationFile!: boolean;
   isDefaultLib!: boolean;
   hasNoDefaultLib!: boolean;
-  externalModuleIndicator!: Node;
-  commonJsModuleIndicator!: Node;
+  externalModuleIndicator!: Nobj;
+  commonJsModuleIndicator!: Nobj;
   nodeCount!: number;
   identifierCount!: number;
   symbolCount!: number;
@@ -1004,11 +1004,11 @@ export class SourceFile extends Declaration implements qt.SourceFile {
   transformFlags: TransformFlags;
   decorators?: Nodes<Decorator> | undefined;
   modifiers?: qt.Modifiers | undefined;
-  original?: Node | undefined;
+  original?: Nobj | undefined;
   symbol: Symbol;
   localSymbol?: Symbol | undefined;
   locals?: SymbolTable<Symbol> | undefined;
-  nextContainer?: Node | undefined;
+  nextContainer?: Nobj | undefined;
   flowNode?: FlowStart | FlowLabel | FlowAssignment | FlowCall | FlowCondition | FlowSwitchClause | FlowArrayMutation | FlowReduceLabel | undefined;
   emitNode?: qt.EmitNode | undefined;
   contextualType?: Type | undefined;
@@ -1047,25 +1047,25 @@ export class SourceFile extends Declaration implements qt.SourceFile {
   getChildCount(s?: SourceFile | undefined): number {
     throw new Error('Method not implemented.');
   }
-  getChildAt(i: number, s?: SourceFile | undefined): Node {
+  getChildAt(i: number, s?: SourceFile | undefined): Nobj {
     throw new Error('Method not implemented.');
   }
-  getChildren(s?: qt.SourceFileLike | undefined): Node[] {
+  getChildren(s?: qt.SourceFileLike | undefined): Nobj[] {
     throw new Error('Method not implemented.');
   }
-  getFirstToken(s?: qt.SourceFileLike | undefined): Node | undefined {
+  getFirstToken(s?: qt.SourceFileLike | undefined): Nobj | undefined {
     throw new Error('Method not implemented.');
   }
-  getLastToken(s?: qt.SourceFileLike | undefined): Node | undefined {
+  getLastToken(s?: qt.SourceFileLike | undefined): Nobj | undefined {
     throw new Error('Method not implemented.');
   }
-  visit<T>(cb: (n: Node) => T | undefined): T | undefined {
+  visit<T>(cb: (n: Nobj) => T | undefined): T | undefined {
     throw new Error('Method not implemented.');
   }
-  updateFrom(n: Node): this {
+  updateFrom(n: Nobj): this {
     throw new Error('Method not implemented.');
   }
-  setOriginal(n?: Node | undefined): this {
+  setOriginal(n?: Nobj | undefined): this {
     throw new Error('Method not implemented.');
   }
   aggregateTransformFlags(): this {
@@ -1736,6 +1736,6 @@ export namespace Node {
   }
 }
 qb.addMixins(ClassLikeDeclarationBase, [DocContainer]);
-qb.addMixins(FunctionOrConstructorTypeNodeBase, [TypeNode]);
+qb.addMixins(FunctionOrConstructorTypeNobj, [TypeNode]);
 qb.addMixins(ObjectLiteralExpressionBase, [Declaration]);
 qb.addMixins(LiteralExpression, [LiteralLikeNode]);

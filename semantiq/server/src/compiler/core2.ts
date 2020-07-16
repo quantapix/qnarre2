@@ -8,14 +8,14 @@ import * as qu from './utils';
 import { DocTag } from './types';
 export * from './core';
 export type NodeType<S extends Syntax> = S extends keyof SynMap ? SynMap[S] : never;
-export class Node extends qc.Node {
+export class Nobj extends qc.Nobj {
   is<S extends Syntax, T extends { kind: S; also?: Syntax[] }>(t: T): this is NodeType<T['kind']> {
     return this.kind === t.kind || !!t.also?.includes(this.kind);
   }
-  static create<T extends Syntax>(k: T, pos: number, end: number, parent?: Node): NodeType<T> {
+  static create<T extends Syntax>(k: T, pos: number, end: number, parent?: Nobj): NodeType<T> {
     const n =
       qy.is.node(k) || k === Syntax.Unknown
-        ? new Node(k, pos, end)
+        ? new Nobj(k, pos, end)
         : k === Syntax.SourceFile
         ? new SourceFileObj(Syntax.SourceFile, pos, end)
         : k === Syntax.Identifier
@@ -27,21 +27,21 @@ export class Node extends qc.Node {
       n.parent = parent;
       n.flags = parent.flags & NodeFlags.ContextFlags;
     }
-    return (n as unknown) as qt.NodeType<T>;
+    return (n as unknown) as qc.NodeType<T>;
   }
-  static createSynthesized<T extends Syntax>(k: T): qt.NodeType<T> {
+  static createSynthesized<T extends Syntax>(k: T): qc.NodeType<T> {
     const n = this.create<T>(k, -1, -1);
     n.flags |= NodeFlags.Synthesized;
     return n;
   }
-  static getMutableClone<T extends Node>(node: T): T {
+  static getMutableClone<T extends Nobj>(node: T): T {
     const clone = getSynthesizedClone(node);
     clone.pos = node.pos;
     clone.end = node.end;
     clone.parent = node.parent;
     return clone;
   }
-  static getSynthesizedClone<T extends Node>(node: T): T {
+  static getSynthesizedClone<T extends Nobj>(node: T): T {
     if (node === undefined) return node;
     const clone = Node.createSynthesized(node.kind) as T;
     clone.flags |= node.flags;
@@ -56,7 +56,7 @@ export class Node extends qc.Node {
 export namespace ArrayBindingElement {
   export const also = [Syntax.BindingElement, Syntax.OmittedExpression];
 }
-export class ArrayBindingPattern extends Node implements qc.ArrayBindingPattern {
+export class ArrayBindingPattern extends Nobj implements qc.ArrayBindingPattern {
   static readonly kind = Syntax.ArrayBindingPattern;
   parent!: VariableDeclaration | ParameterDeclaration | BindingElement;
   elements: Nodes<qc.ArrayBindingElement>;
@@ -497,7 +497,7 @@ export class BreakStatement extends qc.Statement implements qc.BreakStatement {
   }
 }
 BreakStatement.prototype.kind = BreakStatement.kind;
-export class Bundle extends Node implements qc.Bundle {
+export class Bundle extends Nobj implements qc.Bundle {
   static readonly kind = Syntax.Bundle;
   prepends: readonly (InputFiles | UnparsedSource)[];
   sourceFiles: readonly SourceFile[];
@@ -516,7 +516,7 @@ export class Bundle extends Node implements qc.Bundle {
   }
 }
 Bundle.prototype.kind = Bundle.kind;
-export class CallBinding extends Node {
+export class CallBinding extends Nobj {
   target: qc.LeftHandSideExpression;
   thisArg: qc.Expression;
   shouldBeCapturedInTempVariable(n: qc.Expression, cacheIdentifiers: boolean): boolean {
@@ -651,7 +651,7 @@ export class CallSignatureDeclaration extends qc.SignatureDeclarationBase implem
   _typeElementBrand: any;
 }
 CallSignatureDeclaration.prototype.kind = CallSignatureDeclaration.kind;
-export class CaseBlock extends Node implements qc.CaseBlock {
+export class CaseBlock extends Nobj implements qc.CaseBlock {
   static readonly kind = Syntax.CaseBlock;
   parent!: qc.SwitchStatement;
   clauses: Nodes<qc.CaseOrDefaultClause>;
@@ -664,7 +664,7 @@ export class CaseBlock extends Node implements qc.CaseBlock {
   }
 }
 CaseBlock.prototype.kind = CaseBlock.kind;
-export class CaseClause extends Node implements qc.CaseClause {
+export class CaseClause extends Nobj implements qc.CaseClause {
   static readonly kind = Syntax.CaseClause;
   parent!: CaseBlock;
   expression: qc.Expression;
@@ -680,7 +680,7 @@ export class CaseClause extends Node implements qc.CaseClause {
   }
 }
 CaseClause.prototype.kind = CaseClause.kind;
-export class CatchClause extends Node implements qc.CatchClause {
+export class CatchClause extends Nobj implements qc.CatchClause {
   static readonly kind = Syntax.CatchClause;
   parent!: qc.TryStatement;
   variableDeclaration?: VariableDeclaration;
@@ -782,7 +782,7 @@ export class CommaListExpression extends qc.Expression implements qc.CommaListEx
   }
 }
 CommaListExpression.prototype.kind = CommaListExpression.kind;
-export class ComputedPropertyName extends Node implements qc.ComputedPropertyName {
+export class ComputedPropertyName extends Nobj implements qc.ComputedPropertyName {
   static readonly kind = Syntax.ComputedPropertyName;
   parent!: qc.Declaration;
   expression: qc.Expression;
@@ -896,7 +896,7 @@ export class DebuggerStatement extends qc.Statement implements qc.DebuggerStatem
   }
 }
 DebuggerStatement.prototype.kind = DebuggerStatement.kind;
-export class Decorator extends Node implements qc.Decorator {
+export class Decorator extends Nobj implements qc.Decorator {
   static readonly kind = Syntax.Decorator;
   parent!: qc.NamedDeclaration;
   expression: qc.LeftHandSideExpression;
@@ -909,7 +909,7 @@ export class Decorator extends Node implements qc.Decorator {
   }
 }
 Decorator.prototype.kind = Decorator.kind;
-export class DefaultClause extends Node implements qc.DefaultClause {
+export class DefaultClause extends Nobj implements qc.DefaultClause {
   static readonly kind = Syntax.DefaultClause;
   parent!: CaseBlock;
   statements: Nodes<qc.Statement>;
@@ -1117,7 +1117,7 @@ export class ExpressionWithTypeArguments extends qc.NodeWithTypeArguments implem
   }
 }
 ExpressionWithTypeArguments.prototype.kind = ExpressionWithTypeArguments.kind;
-export class ExternalModuleReference extends Node implements qc.ExternalModuleReference {
+export class ExternalModuleReference extends Nobj implements qc.ExternalModuleReference {
   static readonly kind = Syntax.ExternalModuleReference;
   parent!: ImportEqualsDeclaration;
   expression: qc.Expression;
@@ -1319,7 +1319,7 @@ export class GetAccessorDeclaration extends qc.FunctionLikeDeclarationBase imple
 }
 GetAccessorDeclaration.prototype.kind = GetAccessorDeclaration.kind;
 qb.addMixins(GetAccessorDeclaration, [qc.ClassElement, qc.ObjectLiteralElement, qc.DocContainer]);
-export class HeritageClause extends Node implements qc.HeritageClause {
+export class HeritageClause extends Nobj implements qc.HeritageClause {
   static readonly kind = Syntax.HeritageClause;
   parent!: InterfaceDeclaration | qc.ClassLikeDeclaration;
   token: Syntax.ExtendsKeyword | Syntax.ImplementsKeyword;
@@ -1594,7 +1594,7 @@ export class InferTypeNode extends qc.TypeNode implements qc.InferTypeNode {
   }
 }
 InferTypeNode.prototype.kind = InferTypeNode.kind;
-export class InputFiles extends Node implements qc.InputFiles {
+export class InputFiles extends Nobj implements qc.InputFiles {
   static readonly kind = Syntax.InputFiles;
   javascriptPath?: string;
   javascriptText: string;
@@ -1772,7 +1772,7 @@ export class IntersectionTypeNode extends qc.UnionOrIntersectionTypeNode impleme
   }
 }
 IntersectionTypeNode.prototype.kind = IntersectionTypeNode.kind;
-export class Doc extends Node implements qc.Doc {
+export class Doc extends Nobj implements qc.Doc {
   static readonly kind = Syntax.DocComment;
   parent!: qc.HasDoc;
   tags?: Nodes<qc.DocTag>;
@@ -2062,7 +2062,7 @@ export class JsxAttributes extends qc.ObjectLiteralExpressionBase<qc.JsxAttribut
   _declarationBrand: any;
 }
 JsxAttributes.prototype.kind = JsxAttributes.kind;
-export class JsxClosingElement extends Node implements qc.JsxClosingElement {
+export class JsxClosingElement extends Nobj implements qc.JsxClosingElement {
   static readonly kind = Syntax.JsxClosingElement;
   parent!: JsxElement;
   tagName: qc.JsxTagNameExpression;
@@ -2449,7 +2449,7 @@ export class DocNamespaceDeclaration extends ModuleDeclaration {
   name!: Identifier;
   body?: qc.DocNamespaceBody;
 }
-export class NamedExports extends Node implements qc.NamedExports {
+export class NamedExports extends Nobj implements qc.NamedExports {
   static readonly kind = Syntax.NamedExports;
   parent!: ExportDeclaration;
   elements: Nodes<ExportSpecifier>;
@@ -2462,7 +2462,7 @@ export class NamedExports extends Node implements qc.NamedExports {
   }
 }
 NamedExports.prototype.kind = NamedExports.kind;
-export class NamedImports extends Node implements qc.NamedImports {
+export class NamedImports extends Nobj implements qc.NamedImports {
   static readonly kind = Syntax.NamedImports;
   parent!: ImportClause;
   elements: Nodes<ImportSpecifier>;
@@ -2627,7 +2627,7 @@ export class NullLiteral extends qc.PrimaryExpression implements qc.NullLiteral 
 NullLiteral.prototype.kind = NullLiteral.kind;
 NumericLiteral.prototype.kind = NumericLiteral.kind;
 qb.addMixins(NumericLiteral, [qc.Declaration]);
-export class ObjectBindingPattern extends Node implements qc.ObjectBindingPattern {
+export class ObjectBindingPattern extends Nobj implements qc.ObjectBindingPattern {
   static readonly kind = Syntax.ObjectBindingPattern;
   parent!: VariableDeclaration | ParameterDeclaration | BindingElement;
   elements: Nodes<BindingElement>;
@@ -2966,7 +2966,7 @@ export class PropertySignature extends qc.TypeElement implements qc.PropertySign
 }
 PropertySignature.prototype.kind = PropertySignature.kind;
 qb.addMixins(PropertySignature, [qc.DocContainer]);
-export class QualifiedName extends Node implements qc.QualifiedName {
+export class QualifiedName extends Nobj implements qc.QualifiedName {
   static readonly kind = Syntax.QualifiedName;
   left: qc.EntityName;
   right: Identifier;
@@ -3220,7 +3220,7 @@ export class TemplateMiddle extends qc.TemplateLiteralLikeNode implements qc.Tem
   }
 }
 TemplateMiddle.prototype.kind = TemplateMiddle.kind;
-export class TemplateSpan extends Node implements qc.TemplateSpan {
+export class TemplateSpan extends Nobj implements qc.TemplateSpan {
   static readonly kind = Syntax.TemplateSpan;
   parent!: TemplateExpression;
   expression: qc.Expression;
@@ -3486,7 +3486,7 @@ export class UnparsedPrepend extends UnparsedSection implements qc.UnparsedPrepe
 }
 UnparsedPrepend.prototype.kind = UnparsedPrepend.kind;
 let allUnscopedEmitHelpers: QReadonlyMap<UnscopedEmitHelper> | undefined;
-export class UnparsedSource extends Node implements qc.UnparsedSource {
+export class UnparsedSource extends Nobj implements qc.UnparsedSource {
   static readonly kind = Syntax.UnparsedSource;
   fileName: string;
   text: string;
@@ -3706,7 +3706,7 @@ export class VariableDeclaration extends qc.NamedDeclaration implements qc.Varia
   }
 }
 VariableDeclaration.prototype.kind = VariableDeclaration.kind;
-export class VariableDeclarationList extends Node implements qc.VariableDeclarationList {
+export class VariableDeclarationList extends Nobj implements qc.VariableDeclarationList {
   static readonly kind = Syntax.VariableDeclarationList;
   parent!: VariableStatement | ForStatement | ForOfStatement | ForInStatement;
   declarations: Nodes<VariableDeclaration>;
@@ -4139,18 +4139,18 @@ export namespace emit {
     }
     return n.emitNode;
   }
-  export function removeAllComments<T extends Node>(n: T): T {
+  export function removeAllComments<T extends Nobj>(n: T): T {
     const emitNode = getOrCreateEmitNode(n);
     emitNode.flags |= qc.EmitFlags.NoComments;
     emitNode.leadingComments = undefined;
     emitNode.trailingComments = undefined;
     return n;
   }
-  export function setEmitFlags<T extends Node>(n: T, emitFlags: qc.EmitFlags) {
+  export function setEmitFlags<T extends Nobj>(n: T, emitFlags: qc.EmitFlags) {
     getOrCreateEmitNode(n).flags = emitFlags;
     return n;
   }
-  export function addEmitFlags<T extends Node>(n: T, emitFlags: EmitFlags) {
+  export function addEmitFlags<T extends Nobj>(n: T, emitFlags: EmitFlags) {
     const emitNode = getOrCreateEmitNode(n);
     emitNode.flags = emitNode.flags | emitFlags;
     return n;
@@ -4159,7 +4159,7 @@ export namespace emit {
     const emitNode = n.emitNode;
     return (emitNode && emitNode.sourceMapRange) || n;
   }
-  export function setSourceMapRange<T extends Node>(n: T, range: SourceMapRange | undefined) {
+  export function setSourceMapRange<T extends Nobj>(n: T, range: SourceMapRange | undefined) {
     getOrCreateEmitNode(n).sourceMapRange = range;
     return n;
   }
@@ -4168,7 +4168,7 @@ export namespace emit {
     const tokenSourceMapRanges = emitNode && emitNode.tokenSourceMapRanges;
     return tokenSourceMapRanges && tokenSourceMapRanges[token];
   }
-  export function setTokenSourceMapRange<T extends Node>(n: T, token: Syntax, range: SourceMapRange | undefined) {
+  export function setTokenSourceMapRange<T extends Nobj>(n: T, token: Syntax, range: SourceMapRange | undefined) {
     const emitNode = getOrCreateEmitNode(n);
     const tokenSourceMapRanges = emitNode.tokenSourceMapRanges || (emitNode.tokenSourceMapRanges = []);
     tokenSourceMapRanges[token] = range;
@@ -4178,7 +4178,7 @@ export namespace emit {
     const emitNode = n.emitNode;
     return emitNode && emitNode.startsOnNewLine;
   }
-  export function setStartsOnNewLine<T extends Node>(n: T, newLine: boolean) {
+  export function setStartsOnNewLine<T extends Nobj>(n: T, newLine: boolean) {
     getOrCreateEmitNode(n).startsOnNewLine = newLine;
     return n;
   }
@@ -4186,7 +4186,7 @@ export namespace emit {
     const emitNode = n.emitNode;
     return (emitNode && emitNode.commentRange) || n;
   }
-  export function setCommentRange<T extends Node>(n: T, range: qb.TextRange) {
+  export function setCommentRange<T extends Nobj>(n: T, range: qb.TextRange) {
     getOrCreateEmitNode(n).commentRange = range;
     return n;
   }
@@ -4194,11 +4194,11 @@ export namespace emit {
     const emitNode = n.emitNode;
     return emitNode && emitNode.leadingComments;
   }
-  export function setSyntheticLeadingComments<T extends Node>(n: T, comments: SynthesizedComment[] | undefined) {
+  export function setSyntheticLeadingComments<T extends Nobj>(n: T, comments: SynthesizedComment[] | undefined) {
     getOrCreateEmitNode(n).leadingComments = comments;
     return n;
   }
-  export function addSyntheticLeadingComment<T extends Node>(n: T, kind: Syntax.SingleLineCommentTrivia | Syntax.MultiLineCommentTrivia, text: string, hasTrailingNewLine?: boolean) {
+  export function addSyntheticLeadingComment<T extends Nobj>(n: T, kind: Syntax.SingleLineCommentTrivia | Syntax.MultiLineCommentTrivia, text: string, hasTrailingNewLine?: boolean) {
     return setSyntheticLeadingComments(
       n,
       append<SynthesizedComment>(getSyntheticLeadingComments(n), { kind, pos: -1, end: -1, hasTrailingNewLine, text })
@@ -4208,17 +4208,17 @@ export namespace emit {
     const emitNode = n.emitNode;
     return emitNode && emitNode.trailingComments;
   }
-  export function setSyntheticTrailingComments<T extends Node>(n: T, comments: SynthesizedComment[] | undefined) {
+  export function setSyntheticTrailingComments<T extends Nobj>(n: T, comments: SynthesizedComment[] | undefined) {
     getOrCreateEmitNode(n).trailingComments = comments;
     return n;
   }
-  export function addSyntheticTrailingComment<T extends Node>(n: T, kind: Syntax.SingleLineCommentTrivia | Syntax.MultiLineCommentTrivia, text: string, hasTrailingNewLine?: boolean) {
+  export function addSyntheticTrailingComment<T extends Nobj>(n: T, kind: Syntax.SingleLineCommentTrivia | Syntax.MultiLineCommentTrivia, text: string, hasTrailingNewLine?: boolean) {
     return setSyntheticTrailingComments(
       n,
       append<SynthesizedComment>(getSyntheticTrailingComments(n), { kind, pos: -1, end: -1, hasTrailingNewLine, text })
     );
   }
-  export function moveSyntheticComments<T extends Node>(n: T, original: Node): T {
+  export function moveSyntheticComments<T extends Nobj>(n: T, original: Node): T {
     setSyntheticLeadingComments(n, getSyntheticLeadingComments(original));
     setSyntheticTrailingComments(n, getSyntheticTrailingComments(original));
     const emit = getOrCreateEmitNode(original);
@@ -4226,7 +4226,7 @@ export namespace emit {
     emit.trailingComments = undefined;
     return n;
   }
-  export function ignoreSourceNewlines<T extends Node>(n: T): T {
+  export function ignoreSourceNewlines<T extends Nobj>(n: T): T {
     getOrCreateEmitNode(n).flags |= qc.EmitFlags.IgnoreSourceNewlines;
     return n;
   }
@@ -4239,12 +4239,12 @@ export namespace emit {
     emitNode.constantValue = value;
     return n;
   }
-  export function addEmitHelper<T extends Node>(n: T, helper: EmitHelper): T {
+  export function addEmitHelper<T extends Nobj>(n: T, helper: EmitHelper): T {
     const emitNode = getOrCreateEmitNode(n);
     emitNode.helpers = append(emitNode.helpers, helper);
     return n;
   }
-  export function addEmitHelpers<T extends Node>(n: T, helpers: EmitHelper[] | undefined): T {
+  export function addEmitHelpers<T extends Nobj>(n: T, helpers: EmitHelper[] | undefined): T {
     if (qb.some(helpers)) {
       const emitNode = getOrCreateEmitNode(n);
       for (const helper of helpers) {
@@ -4334,7 +4334,7 @@ export namespace fixme {
     }
     return statements;
   }
-  export function startOnNewLine<T extends Node>(node: T): T {
+  export function startOnNewLine<T extends Nobj>(node: T): T {
     return setStartsOnNewLine(node, true);
   }
   export function createExternalHelpersImportDeclarationIfNeeded(
@@ -4467,9 +4467,9 @@ export function asLiteral(v: string | number | qc.PseudoBigInt | boolean | Strin
 export function asExpression<T extends qc.Expression | undefined>(e: string | number | boolean | T): T | StringLiteral | NumericLiteral | BooleanLiteral {
   return typeof e === 'string' ? new StringLiteral(e) : typeof e === 'number' ? new NumericLiteral('' + e) : typeof e === 'boolean' ? (e ? new BooleanLiteral(true) : new BooleanLiteral(false)) : e;
 }
-export function asEmbeddedStatement<T extends Node>(s: T): T | EmptyStatement;
-export function asEmbeddedStatement<T extends Node>(s?: T): T | EmptyStatement | undefined;
-export function asEmbeddedStatement<T extends Node>(s?: T): T | EmptyStatement | undefined {
+export function asEmbeddedStatement<T extends Nobj>(s: T): T | EmptyStatement;
+export function asEmbeddedStatement<T extends Nobj>(s?: T): T | EmptyStatement | undefined;
+export function asEmbeddedStatement<T extends Nobj>(s?: T): T | EmptyStatement | undefined {
   return s && qc.is.kind(NotEmittedStatement, s) ? new EmptyStatement().setOriginal(s).setRange(s) : s;
 }
 export function skipParentheses(n: qc.Expression): qc.Expression;
