@@ -1,7 +1,7 @@
 import * as qb from './base';
 import * as qc from './core3';
 import * as syntax from './syntax';
-import { Syntax } from './syntax';
+import { ModifierFlags, Syntax } from './syntax';
 function createMethodCall(object: Expression, methodName: string | Identifier, argumentsList: readonly Expression[]) {
   return new qc.CallExpression(new qc.PropertyAccessExpression(object, asName(methodName)), undefined, argumentsList);
 }
@@ -1016,7 +1016,7 @@ export function getFunctionFlags(node: SignatureDeclaration | undefined) {
         flags |= FunctionFlags.Generator;
       }
     case Syntax.ArrowFunction:
-      if (hasSyntacticModifier(node, ModifierFlags.Async)) {
+      if (qc.has.syntacticModifier(node, ModifierFlags.Async)) {
         flags |= FunctionFlags.Async;
       }
       break;
@@ -1575,7 +1575,7 @@ export function getAllAccessorDeclarations(declarations: readonly Declaration[],
     }
   } else {
     forEach(declarations, (member) => {
-      if (qc.is.accessor(member) && hasSyntacticModifier(member, ModifierFlags.Static) === hasSyntacticModifier(accessor, ModifierFlags.Static)) {
+      if (qc.is.accessor(member) && qc.has.syntacticModifier(member, ModifierFlags.Static) === qc.has.syntacticModifier(accessor, ModifierFlags.Static)) {
         const memberName = getPropertyNameForPropertyNameNode(member.name);
         const accessorName = getPropertyNameForPropertyNameNode(accessor.name);
         if (memberName === accessorName) {

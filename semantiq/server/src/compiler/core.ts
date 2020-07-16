@@ -207,7 +207,7 @@ export abstract class Nobj extends qb.TextRange implements qt.Nobj {
       return sub;
     };
     const subtree = (n: Nobj): TransformFlags => {
-      if (hasSyntacticModifier(n, ModifierFlags.Ambient) || (qc.is.typeNode(n) && n.kind !== Syntax.ExpressionWithTypeArguments)) return TransformFlags.None;
+      if (qc.has.syntacticModifier(n, ModifierFlags.Ambient) || (qc.is.typeNode(n) && n.kind !== Syntax.ExpressionWithTypeArguments)) return TransformFlags.None;
       return reduceEachChild(n, TransformFlags.None, child, children);
     };
     const child = (f: TransformFlags, n: Nobj): TransformFlags => f | aggregate(n);
@@ -945,7 +945,7 @@ export class SourceFile extends Declaration implements qt.SourceFile {
           forEach.child(node, visit);
           break;
         case Syntax.Parameter:
-          if (!hasSyntacticModifier(node, ModifierFlags.ParameterPropertyModifier)) break;
+          if (!qc.has.syntacticModifier(node, ModifierFlags.ParameterPropertyModifier)) break;
         case Syntax.VariableDeclaration:
         case Syntax.BindingElement: {
           const decl = <VariableDeclaration>node;
@@ -1171,7 +1171,7 @@ export abstract class Symbol implements qt.Symbol {
     return this.isExportDefaultSymbol() ? this.declarations![0].localSymbol : undefined;
   }
   isExportDefaultSymbol() {
-    return length(this.declarations) > 0 && hasSyntacticModifier(this.declarations![0], ModifierFlags.Default);
+    return length(this.declarations) > 0 && qc.has.syntacticModifier(this.declarations![0], ModifierFlags.Default);
   }
   getDeclarationOfKind<T extends Declaration>(k: T['kind']): T | undefined {
     const ds = this.declarations;
@@ -1230,7 +1230,7 @@ export abstract class Symbol implements qt.Symbol {
   isAbstractConstructorSymbol() {
     if (this.flags & SymbolFlags.Class) {
       const d = this.getClassLikeDeclarationOfSymbol();
-      return !!d && hasSyntacticModifier(d, ModifierFlags.Abstract);
+      return !!d && qc.has.syntacticModifier(d, ModifierFlags.Abstract);
     }
     return false;
   }

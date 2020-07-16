@@ -5,7 +5,7 @@ import { Node, Nodes } from '../core';
 import * as qs from '../core3';
 import * as qt from '../types';
 import * as qy from '../syntax';
-import { Modifier, Syntax } from '../syntax';
+import { Modifier, ModifierFlags, Syntax } from '../syntax';
 export type GetSymbolAccessibilityDiagnostic = (symbolAccessibilityResult: SymbolAccessibilityResult) => SymbolAccessibilityDiagnostic | undefined;
 export interface SymbolAccessibilityDiagnostic {
   errorNode: Node;
@@ -70,7 +70,7 @@ export function createGetSymbolAccessibilityDiagnosticForNodeName(node: Declarat
       : undefined;
   }
   function getAccessorNameVisibilityDiagnosticMessage(symbolAccessibilityResult: SymbolAccessibilityResult) {
-    if (hasSyntacticModifier(node, ModifierFlags.Static)) {
+    if (qc.has.syntacticModifier(node, ModifierFlags.Static)) {
       return symbolAccessibilityResult.errorModuleName
         ? symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed
           ? qd.Public_static_property_0_of_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
@@ -99,7 +99,7 @@ export function createGetSymbolAccessibilityDiagnosticForNodeName(node: Declarat
       : undefined;
   }
   function getMethodNameVisibilityDiagnosticMessage(symbolAccessibilityResult: SymbolAccessibilityResult) {
-    if (hasSyntacticModifier(node, ModifierFlags.Static)) {
+    if (qc.has.syntacticModifier(node, ModifierFlags.Static)) {
       return symbolAccessibilityResult.errorModuleName
         ? symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed
           ? qd.Public_static_method_0_of_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
@@ -143,7 +143,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(
     return getReturnTypeVisibilityError;
   }
   if (qc.is.kind(ParameterDeclaration, node)) {
-    if (qc.is.parameterPropertyDeclaration(node, node.parent) && hasSyntacticModifier(node.parent, ModifierFlags.Private)) return getVariableDeclarationTypeVisibilityError;
+    if (qc.is.parameterPropertyDeclaration(node, node.parent) && qc.has.syntacticModifier(node.parent, ModifierFlags.Private)) return getVariableDeclarationTypeVisibilityError;
     return getParameterDeclarationTypeVisibilityError;
   }
   if (qc.is.kind(TypeParameterDeclaration, node)) return getTypeParameterConstraintVisibilityError;
@@ -162,9 +162,9 @@ export function createGetSymbolAccessibilityDiagnosticForNode(
       node.kind === Syntax.PropertyDeclaration ||
       node.kind === Syntax.PropertyAccessExpression ||
       node.kind === Syntax.PropertySignature ||
-      (node.kind === Syntax.Parameter && hasSyntacticModifier(node.parent, ModifierFlags.Private))
+      (node.kind === Syntax.Parameter && qc.has.syntacticModifier(node.parent, ModifierFlags.Private))
     ) {
-      if (hasSyntacticModifier(node, ModifierFlags.Static)) {
+      if (qc.has.syntacticModifier(node, ModifierFlags.Static)) {
         return symbolAccessibilityResult.errorModuleName
           ? symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed
             ? qd.Public_static_property_0_of_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
@@ -196,7 +196,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(
   function getAccessorDeclarationTypeVisibilityError(symbolAccessibilityResult: SymbolAccessibilityResult): SymbolAccessibilityDiagnostic {
     let diagnosticMessage: DiagnosticMessage;
     if (node.kind === Syntax.SetAccessor) {
-      if (hasSyntacticModifier(node, ModifierFlags.Static)) {
+      if (qc.has.syntacticModifier(node, ModifierFlags.Static)) {
         diagnosticMessage = symbolAccessibilityResult.errorModuleName
           ? qd.Parameter_type_of_public_static_setter_0_from_exported_class_has_or_is_using_name_1_from_private_module_2
           : qd.Parameter_type_of_public_static_setter_0_from_exported_class_has_or_is_using_private_name_1;
@@ -206,7 +206,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(
           : qd.Parameter_type_of_public_setter_0_from_exported_class_has_or_is_using_private_name_1;
       }
     } else {
-      if (hasSyntacticModifier(node, ModifierFlags.Static)) {
+      if (qc.has.syntacticModifier(node, ModifierFlags.Static)) {
         diagnosticMessage = symbolAccessibilityResult.errorModuleName
           ? symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed
             ? qd.Return_type_of_public_static_getter_0_from_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
@@ -246,7 +246,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(
         break;
       case Syntax.MethodDeclaration:
       case Syntax.MethodSignature:
-        if (hasSyntacticModifier(node, ModifierFlags.Static)) {
+        if (qc.has.syntacticModifier(node, ModifierFlags.Static)) {
           diagnosticMessage = symbolAccessibilityResult.errorModuleName
             ? symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed
               ? qd.Return_type_of_public_static_method_from_exported_class_has_or_is_using_name_0_from_external_module_1_but_cannot_be_named
@@ -312,7 +312,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(
           : qd.Parameter_0_of_index_signature_from_exported_interface_has_or_is_using_private_name_1;
       case Syntax.MethodDeclaration:
       case Syntax.MethodSignature:
-        if (hasSyntacticModifier(node.parent, ModifierFlags.Static)) {
+        if (qc.has.syntacticModifier(node.parent, ModifierFlags.Static)) {
           return symbolAccessibilityResult.errorModuleName
             ? symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed
               ? qd.Parameter_0_of_public_static_method_from_exported_class_has_or_is_using_name_1_from_external_module_2_but_cannot_be_named
@@ -368,7 +368,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(
         break;
       case Syntax.MethodDeclaration:
       case Syntax.MethodSignature:
-        if (hasSyntacticModifier(node.parent, ModifierFlags.Static)) {
+        if (qc.has.syntacticModifier(node.parent, ModifierFlags.Static)) {
           diagnosticMessage = qd.Type_parameter_0_of_public_static_method_from_exported_class_has_or_is_using_private_name_1;
         } else if (node.parent.parent.kind === Syntax.ClassDeclaration) {
           diagnosticMessage = qd.Type_parameter_0_of_public_method_from_exported_class_has_or_is_using_private_name_1;

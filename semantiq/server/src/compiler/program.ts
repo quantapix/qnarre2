@@ -1,8 +1,9 @@
 import * as qb from './base';
 import * as qt from './types';
+import * as qc from './core3';
 import { Node } from './types';
 import * as syntax from './syntax';
-import { Syntax } from './syntax';
+import { ModifierFlags, Syntax } from './syntax';
 export function findConfigFile(searchPath: string, fileExists: (fileName: string) => boolean, configName = 'tsconfig.json'): string | undefined {
   return forEachAncestorDirectory(searchPath, (ancestor) => {
     const fileName = combinePaths(ancestor, configName);
@@ -1515,7 +1516,7 @@ export function createProgram(
           imports = append(imports, moduleNameExpr);
         }
       } else if (qc.is.kind(ModuleDeclaration, node)) {
-        if (qc.is.ambientModule(node) && (inAmbientModule || hasSyntacticModifier(node, ModifierFlags.Ambient) || file.isDeclarationFile)) {
+        if (qc.is.ambientModule(node) && (inAmbientModule || qc.has.syntacticModifier(node, ModifierFlags.Ambient) || file.isDeclarationFile)) {
           const nameText = getTextOfIdentifierOrLiteral(node.name);
           if (qp_isExternalModuleFile || (inAmbientModule && !qp_isExternalModuleNameRelative(nameText))) {
             (moduleAugmentations || (moduleAugmentations = [])).push(node.name);

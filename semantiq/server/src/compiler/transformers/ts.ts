@@ -3,7 +3,7 @@ import { Node, Nodes } from '../core3';
 import * as qc from '../core3';
 import * as qt from '../types';
 import * as qy from '../syntax';
-import { Modifier, Syntax } from '../syntax';
+import { Modifier, ModifierFlags, Syntax } from '../syntax';
 const USE_NEW_TYPE_METADATA_FORMAT = false;
 const enum TypeScriptSubstitutionFlags {
   ClassAliases = 1 << 0,
@@ -97,13 +97,13 @@ export function transformTypeScript(context: TransformationContext) {
         break;
       case Syntax.ClassDeclaration:
       case Syntax.FunctionDeclaration:
-        if (hasSyntacticModifier(node, ModifierFlags.Ambient)) {
+        if (qc.has.syntacticModifier(node, ModifierFlags.Ambient)) {
           break;
         }
         if ((node as ClassDeclaration | FunctionDeclaration).name) {
           recordEmittedDeclarationInScope(node as ClassDeclaration | FunctionDeclaration);
         } else {
-          assert(node.kind === Syntax.ClassDeclaration || hasSyntacticModifier(node, ModifierFlags.Default));
+          assert(node.kind === Syntax.ClassDeclaration || qc.has.syntacticModifier(node, ModifierFlags.Default));
         }
         if (qc.is.kind(ClassDeclaration, node)) {
           currentNameScope = node;
@@ -162,7 +162,7 @@ export function transformTypeScript(context: TransformationContext) {
       (node.kind === Syntax.ImportEqualsDeclaration && (<ImportEqualsDeclaration>node).moduleReference.kind === Syntax.ExternalModuleReference)
     ) {
       return;
-    } else if (node.transformFlags & TransformFlags.ContainsTypeScript || hasSyntacticModifier(node, ModifierFlags.Export)) {
+    } else if (node.transformFlags & TransformFlags.ContainsTypeScript || qc.has.syntacticModifier(node, ModifierFlags.Export)) {
       return visitTypeScript(node);
     }
     return node;
@@ -196,7 +196,7 @@ export function transformTypeScript(context: TransformationContext) {
     return node;
   }
   function visitTypeScript(node: Node): VisitResult<Node> {
-    if (qc.is.statement(node) && hasSyntacticModifier(node, ModifierFlags.Ambient)) return new qc.NotEmittedStatement(node);
+    if (qc.is.statement(node) && qc.has.syntacticModifier(node, ModifierFlags.Ambient)) return new qc.NotEmittedStatement(node);
     switch (node.kind) {
       case Syntax.ExportKeyword:
       case Syntax.DefaultKeyword:
@@ -334,7 +334,7 @@ export function transformTypeScript(context: TransformationContext) {
     return some(node.decorators) || some(node.typeParameters) || some(node.heritageClauses, hasTypeScriptClassSyntax) || some(node.members, hasTypeScriptClassSyntax);
   }
   function visitClassDeclaration(node: ClassDeclaration): VisitResult<Statement> {
-    if (!isClassLikeDeclarationWithTypeScriptSyntax(node) && !(currentNamespace && hasSyntacticModifier(node, ModifierFlags.Export))) return visitEachChild(node, visitor, context);
+    if (!isClassLikeDeclarationWithTypeScriptSyntax(node) && !(currentNamespace && qc.has.syntacticModifier(node, ModifierFlags.Export))) return visitEachChild(node, visitor, context);
     const staticProperties = getProperties(node, true);
     const facts = getClassFacts(node, staticProperties);
     if (facts & ClassFacts.UseImmediatelyInvokedFunctionExpression) {
@@ -445,7 +445,7 @@ export function transformTypeScript(context: TransformationContext) {
     return isDecoratedClassElement(member, false, parent);
   }
   function isDecoratedClassElement(member: ClassElement, isStatic: boolean, parent: ClassLikeDeclaration) {
-    return nodeOrChildIsDecorated(member, parent) && isStatic === hasSyntacticModifier(member, ModifierFlags.Static);
+    return nodeOrChildIsDecorated(member, parent) && isStatic === qc.has.syntacticModifier(member, ModifierFlags.Static);
   }
   interface AllDecorators {
     decorators: readonly Decorator[] | undefined;
@@ -900,7 +900,7 @@ export function transformTypeScript(context: TransformationContext) {
   }
   function visitPropertyNameOfClassElement(member: ClassElement): PropertyName {
     const name = member.name!;
-    if (qc.is.kind(ComputedPropertyName, name) && ((!hasStaticModifier(member) && currentClassHasParameterProperties) || some(member.decorators))) {
+    if (qc.is.kind(ComputedPropertyName, name) && ((!qc.has.staticModifier(member) && currentClassHasParameterProperties) || some(member.decorators))) {
       const expression = visitNode(name.expression, visitor, isExpression);
       const innerExpression = skipPartiallyEmittedExpressions(expression);
       if (!isSimpleInlineableExpression(innerExpression)) {
@@ -992,7 +992,7 @@ export function transformTypeScript(context: TransformationContext) {
     return updated;
   }
   function shouldEmitAccessorDeclaration(node: AccessorDeclaration) {
-    return !(qc.is.missing(node.body) && hasSyntacticModifier(node, ModifierFlags.Abstract));
+    return !(qc.is.missing(node.body) && qc.has.syntacticModifier(node, ModifierFlags.Abstract));
   }
   function visitGetAccessor(node: GetAccessorDeclaration) {
     if (!shouldEmitAccessorDeclaration(node)) {
@@ -1150,7 +1150,7 @@ export function transformTypeScript(context: TransformationContext) {
     }
     const parameterName = getNamespaceParameterName(node);
     const containerName = getNamespaceContainerName(node);
-    const exportName = hasSyntacticModifier(node, ModifierFlags.Export) ? getExternalModuleOrNamespaceExportName(currentNamespaceContainerName, node, false, true) : getLocalName(node, false, true);
+    const exportName = qc.has.syntacticModifier(node, ModifierFlags.Export) ? getExternalModuleOrNamespaceExportName(currentNamespaceContainerName, node, false, true) : getLocalName(node, false, true);
     let moduleArg = createLogicalOr(exportName, createAssignment(exportName, new qc.ObjectLiteralExpression()));
     if (hasNamespaceQualifiedExportName(node)) {
       const localName = getLocalName(node, false, true);
@@ -1270,7 +1270,7 @@ export function transformTypeScript(context: TransformationContext) {
     }
     const parameterName = getNamespaceParameterName(node);
     const containerName = getNamespaceContainerName(node);
-    const exportName = hasSyntacticModifier(node, ModifierFlags.Export) ? getExternalModuleOrNamespaceExportName(currentNamespaceContainerName, node, false, true) : getLocalName(node, false, true);
+    const exportName = qc.has.syntacticModifier(node, ModifierFlags.Export) ? getExternalModuleOrNamespaceExportName(currentNamespaceContainerName, node, false, true) : getLocalName(node, false, true);
     let moduleArg = createLogicalOr(exportName, createAssignment(exportName, new qc.ObjectLiteralExpression()));
     if (hasNamespaceQualifiedExportName(node)) {
       const localName = getLocalName(node, false, true);
@@ -1425,16 +1425,16 @@ export function transformTypeScript(context: TransformationContext) {
     return new qc.NamespaceExport(node.name, moduleReference, node).setOriginal(node);
   }
   function isExportOfNamespace(node: Node) {
-    return currentNamespace !== undefined && hasSyntacticModifier(node, ModifierFlags.Export);
+    return currentNamespace !== undefined && qc.has.syntacticModifier(node, ModifierFlags.Export);
   }
   function qp_isExternalModuleExport(node: Node) {
-    return currentNamespace === undefined && hasSyntacticModifier(node, ModifierFlags.Export);
+    return currentNamespace === undefined && qc.has.syntacticModifier(node, ModifierFlags.Export);
   }
   function isNamedExternalModuleExport(node: Node) {
-    return qp_isExternalModuleExport(node) && !hasSyntacticModifier(node, ModifierFlags.Default);
+    return qp_isExternalModuleExport(node) && !qc.has.syntacticModifier(node, ModifierFlags.Default);
   }
   function isDefaultExternalModuleExport(node: Node) {
-    return qp_isExternalModuleExport(node) && hasSyntacticModifier(node, ModifierFlags.Default);
+    return qp_isExternalModuleExport(node) && qc.has.syntacticModifier(node, ModifierFlags.Default);
   }
   function expressionToStatement(expression: Expression) {
     return new qc.ExpressionStatement(expression);
@@ -1476,7 +1476,7 @@ export function transformTypeScript(context: TransformationContext) {
     return new qc.PropertyAccessExpression(getDeclarationName(node), 'prototype');
   }
   function getClassMemberPrefix(node: ClassExpression | ClassDeclaration, member: ClassElement) {
-    return hasSyntacticModifier(member, ModifierFlags.Static) ? getDeclarationName(node) : getClassPrototype(node);
+    return qc.has.syntacticModifier(member, ModifierFlags.Static) ? getDeclarationName(node) : getClassPrototype(node);
   }
   function enableSubstitutionForNonQualifiedEnumMembers() {
     if ((enabledSubstitutions & TypeScriptSubstitutionFlags.NonQualifiedEnumMembers) === 0) {

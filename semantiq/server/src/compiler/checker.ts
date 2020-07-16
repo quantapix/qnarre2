@@ -1,8 +1,9 @@
 import * as qb from './base';
 import * as qt from './types';
+import * as qc from './core3';
 import { Node } from './types';
 import * as syntax from './syntax';
-import { Syntax } from './syntax';
+import { ModifierFlags, Syntax } from './syntax';
 import { diags as qd } from './diags';
 function isTypeDeclaration(
   n: Node
@@ -1572,7 +1573,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     getIndexInfoOfSymbol(k: IndexKind): IndexInfo | undefined {
       const d = this.getIndexDeclarationOfSymbol(k);
-      if (d) return createIndexInfo(d.type ? getTypeFromTypeNode(d.type) : anyType, hasEffectiveModifier(d, ModifierFlags.Readonly), d);
+      if (d) return createIndexInfo(d.type ? getTypeFromTypeNode(d.type) : anyType, qc.has.effectiveModifier(d, ModifierFlags.Readonly), d);
       return;
     }
     createUniqueESSymbolType() {
@@ -1681,9 +1682,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         allHaveQuestionToken: boolean
       ): void {
         if (someHaveQuestionToken !== allHaveQuestionToken) {
-          const canonicalHasQuestionToken = hasQuestionToken(getCanonicalOverload(overloads, implementation));
+          const canonicalHasQuestionToken = qc.has.questionToken(getCanonicalOverload(overloads, implementation));
           forEach(overloads, (o) => {
-            const deviation = hasQuestionToken(o) !== canonicalHasQuestionToken;
+            const deviation = qc.has.questionToken(o) !== canonicalHasQuestionToken;
             if (deviation) error(getNameOfDeclaration(o), qd.Overload_signatures_must_all_be_optional_or_required);
           });
         }
@@ -1719,9 +1720,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
             ) {
               const reportError =
                 (node.kind === Syntax.MethodDeclaration || node.kind === Syntax.MethodSignature) &&
-                hasSyntacticModifier(node, ModifierFlags.Static) !== hasSyntacticModifier(subsequentNode, ModifierFlags.Static);
+                qc.has.syntacticModifier(node, ModifierFlags.Static) !== qc.has.syntacticModifiers(ubsequentNode, ModifierFlags.Static);
               if (reportError) {
-                const diagnostic = hasSyntacticModifier(node, ModifierFlags.Static) ? qd.Function_overload_must_be_static : qd.Function_overload_must_not_be_static;
+                const diagnostic = qc.has.syntacticModifier(node, ModifierFlags.Static) ? qd.Function_overload_must_be_static : qd.Function_overload_must_not_be_static;
                 error(errorNode, diagnostic);
               }
               return;
@@ -1735,7 +1736,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         const errorNode: Node = node.name || node;
         if (isConstructor) error(errorNode, qd.Constructor_implementation_is_missing);
         else {
-          if (hasSyntacticModifier(node, ModifierFlags.Abstract)) error(errorNode, qd.All_declarations_of_an_abstract_method_must_be_consecutive);
+          if (qc.has.syntacticModifier(node, ModifierFlags.Abstract)) error(errorNode, qd.All_declarations_of_an_abstract_method_must_be_consecutive);
           else error(errorNode, qd.Function_implementation_is_missing_or_not_immediately_following_the_declaration);
         }
       }
@@ -1752,8 +1753,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           const currentNodeFlags = getEffectiveDeclarationFlags(node, flagsToCheck);
           someNodeFlags |= currentNodeFlags;
           allNodeFlags &= currentNodeFlags;
-          someHaveQuestionToken = someHaveQuestionToken || hasQuestionToken(node);
-          allHaveQuestionToken = allHaveQuestionToken && hasQuestionToken(node);
+          someHaveQuestionToken = someHaveQuestionToken || qc.has.questionToken(node);
+          allHaveQuestionToken = allHaveQuestionToken && qc.has.questionToken(node);
           if (qc.is.present((node as FunctionLikeDeclaration).body) && bodyDeclaration) {
             if (isConstructor) multipleConstructorImplementation = true;
             else duplicateFunctionDeclaration = true;
@@ -1785,7 +1786,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (
         lastSeenNonAmbientDeclaration &&
         !lastSeenNonAmbientDeclaration.body &&
-        !hasSyntacticModifier(lastSeenNonAmbientDeclaration, ModifierFlags.Abstract) &&
+        !qc.has.syntacticModifier(lastSeenNonAmbientDeclaration, ModifierFlags.Abstract) &&
         !lastSeenNonAmbientDeclaration.questionToken
       ) {
         reportImplementationExpectedError(lastSeenNonAmbientDeclaration);
@@ -1986,15 +1987,15 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       function getIsDeclarationVisible(declaration: Declaration) {
         if (!isDeclarationVisible(declaration)) {
           const anyImportSyntax = getAnyImportSyntax(declaration);
-          if (anyImportSyntax && !hasSyntacticModifier(anyImportSyntax, ModifierFlags.Export) && isDeclarationVisible(anyImportSyntax.parent)) return addVisibleAlias(declaration, anyImportSyntax);
+          if (anyImportSyntax && !qc.has.syntacticModifier(anyImportSyntax, ModifierFlags.Export) && isDeclarationVisible(anyImportSyntax.parent)) return addVisibleAlias(declaration, anyImportSyntax);
           else if (
             qc.is.kind(VariableDeclaration, declaration) &&
             qc.is.kind(VariableStatement, declaration.parent.parent) &&
-            !hasSyntacticModifier(declaration.parent.parent, ModifierFlags.Export) &&
+            !qc.has.syntacticModifier(declaration.parent.parent, ModifierFlags.Export) &&
             isDeclarationVisible(declaration.parent.parent.parent)
           ) {
             return addVisibleAlias(declaration, declaration.parent.parent);
-          } else if (qc.is.lateVisibilityPaintedStatement(declaration) && !hasSyntacticModifier(declaration, ModifierFlags.Export) && isDeclarationVisible(declaration.parent)) {
+          } else if (qc.is.lateVisibilityPaintedStatement(declaration) && !qc.has.syntacticModifier(declaration, ModifierFlags.Export) && isDeclarationVisible(declaration.parent)) {
             return addVisibleAlias(declaration, declaration);
           }
           return false;
@@ -2840,10 +2841,10 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         if (qc.is.functionLike(current)) return true;
         const initializerOfProperty = current.parent && current.parent.kind === Syntax.PropertyDeclaration && (<PropertyDeclaration>current.parent).initializer === current;
         if (initializerOfProperty) {
-          if (hasSyntacticModifier(current.parent, ModifierFlags.Static)) {
+          if (qc.has.syntacticModifier(current.parent, ModifierFlags.Static)) {
             if (declaration.kind === Syntax.MethodDeclaration) return true;
           } else {
-            const isDeclarationInstanceProperty = declaration.kind === Syntax.PropertyDeclaration && !hasSyntacticModifier(declaration, ModifierFlags.Static);
+            const isDeclarationInstanceProperty = declaration.kind === Syntax.PropertyDeclaration && !qc.has.syntacticModifier(declaration, ModifierFlags.Static);
             if (!isDeclarationInstanceProperty || qc.get.containingClass(usage) !== qc.get.containingClass(declaration)) return true;
           }
         }
@@ -2909,7 +2910,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         case Syntax.PropertyAssignment:
           return requiresScopeChangeWorker((node as MethodDeclaration | AccessorDeclaration | PropertyAssignment).name);
         case Syntax.PropertyDeclaration:
-          if (hasStaticModifier(node)) return target < ScriptTarget.ESNext || !compilerOptions.useDefineForClassFields;
+          if (qc.has.staticModifier(node)) return target < ScriptTarget.ESNext || !compilerOptions.useDefineForClassFields;
           return requiresScopeChangeWorker((node as PropertyDeclaration).name);
         default:
           if (qc.is.nullishCoalesce(node) || qc.is.optionalChain(node)) return false;
@@ -3011,7 +3012,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           if ((result = lookup(getSymbolOfNode(location)!.exports!, name, meaning & SymbolFlags.EnumMember))) break loop;
           break;
         case Syntax.PropertyDeclaration:
-          if (!hasSyntacticModifier(location, ModifierFlags.Static)) {
+          if (!qc.has.syntacticModifier(location, ModifierFlags.Static)) {
             const ctor = findConstructorDeclaration(location.parent as ClassLikeDeclaration);
             if (ctor && ctor.locals) {
               if (lookup(ctor.locals, name, meaning & SymbolFlags.Value)) propertyWithInvalidInitializer = location;
@@ -3026,7 +3027,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
               result = undefined;
               break;
             }
-            if (lastLocation && hasSyntacticModifier(lastLocation, ModifierFlags.Static)) {
+            if (lastLocation && qc.has.syntacticModifier(lastLocation, ModifierFlags.Static)) {
               error(errorLocation, qd.Static_members_cannot_reference_class_type_parameters);
               return;
             }
@@ -3202,12 +3203,12 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (location.kind !== Syntax.ArrowFunction && location.kind !== Syntax.FunctionExpression) {
       return (
         qc.is.kind(TypeQueryNode, location) ||
-        ((qc.is.functionLikeDeclaration(location) || (location.kind === Syntax.PropertyDeclaration && !hasSyntacticModifier(location, ModifierFlags.Static))) &&
+        ((qc.is.functionLikeDeclaration(location) || (location.kind === Syntax.PropertyDeclaration && !qc.has.syntacticModifier(location, ModifierFlags.Static))) &&
           (!lastLocation || lastLocation !== (location as FunctionLike | PropertyDeclaration).name))
       );
     }
     if (lastLocation && lastLocation === (location as FunctionExpression | ArrowFunction).name) return false;
-    if ((location as FunctionExpression | ArrowFunction).asteriskToken || hasSyntacticModifier(location, ModifierFlags.Async)) return true;
+    if ((location as FunctionExpression | ArrowFunction).asteriskToken || qc.has.syntacticModifier(location, ModifierFlags.Async)) return true;
     return !qc.get.immediatelyInvokedFunctionExpression(location);
   }
   function diagnosticName(nameArg: __String | Identifier | PrivateIdentifier) {
@@ -3226,7 +3227,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           error(errorLocation, qd.Cannot_find_name_0_Did_you_mean_the_static_member_1_0, diagnosticName(nameArg), classSymbol.symbolToString());
           return true;
         }
-        if (location === container && !hasSyntacticModifier(location, ModifierFlags.Static)) {
+        if (location === container && !qc.has.syntacticModifier(location, ModifierFlags.Static)) {
           const instanceType = (<InterfaceType>getDeclaredTypeOfSymbol(classSymbol)).thisType!;
           if (getPropertyOfType(instanceType, name)) {
             error(errorLocation, qd.Cannot_find_name_0_Did_you_mean_the_instance_member_this_0, diagnosticName(nameArg));
@@ -3444,7 +3445,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return resolved;
   }
   function isSyntacticDefault(node: Node) {
-    return (qc.is.kind(ExportAssignment, node) && !node.isExportEquals) || hasSyntacticModifier(node, ModifierFlags.Default) || qc.is.kind(ExportSpecifier, node);
+    return (qc.is.kind(ExportAssignment, node) && !node.isExportEquals) || qc.has.syntacticModifier(node, ModifierFlags.Default) || qc.is.kind(ExportSpecifier, node);
   }
   function canHaveSyntheticDefault(file: SourceFile | undefined, moduleSymbol: Symbol, dontResolveAlias: boolean) {
     if (!allowSyntheticDefaultImports) return false;
@@ -4418,7 +4419,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         case Syntax.SetAccessor:
         case Syntax.MethodDeclaration:
         case Syntax.MethodSignature:
-          if (hasEffectiveModifier(node, ModifierFlags.Private | ModifierFlags.Protected)) return false;
+          if (qc.has.effectiveModifier(node, ModifierFlags.Private | ModifierFlags.Protected)) return false;
         case Syntax.Constructor:
         case Syntax.ConstructSignature:
         case Syntax.CallSignature:
@@ -5394,7 +5395,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
   }
   function isStaticPrivateIdentifierProperty(s: Symbol): boolean {
-    return s.valueDeclaration?.isPrivateIdentifierPropertyDeclaration() && hasSyntacticModifier(s.valueDeclaration, ModifierFlags.Static);
+    return s.valueDeclaration?.isPrivateIdentifierPropertyDeclaration() && qc.has.syntacticModifiers(.valueDeclaration, ModifierFlags.Static);
   }
   function resolveDeclaredMembers(type: InterfaceType): InterfaceTypeWithDeclaredMembers {
     if (!(<InterfaceTypeWithDeclaredMembers>type).declaredProperties) {
@@ -5495,7 +5496,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         const members = getMembersOfDeclaration(decl);
         if (members) {
           for (const member of members) {
-            if (isStatic === hasStaticModifier(member) && hasLateBindableName(member)) lateBindMember(symbol, earlySymbols, lateSymbols, member);
+            if (isStatic === qc.has.staticModifier(member) && hasLateBindableName(member)) lateBindMember(symbol, earlySymbols, lateSymbols, member);
           }
         }
       }
@@ -6638,7 +6639,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return symbol && withAugmentations ? getMergedSymbol(symbol) : symbol;
   }
   function isOptionalParameter(node: ParameterDeclaration | DocParameterTag) {
-    if (hasQuestionToken(node) || isOptionalDocParameterTag(node) || isDocOptionalParameter(node)) return true;
+    if (qc.has.questionToken(node) || isOptionalDocParameterTag(node) || isDocOptionalParameter(node)) return true;
     if (node.initializer) {
       const signature = getSignatureFromDeclaration(node.parent);
       const parameterIndex = node.parent.parameters.indexOf(node);
@@ -8807,7 +8808,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const container = qc.get.thisContainer(node, false);
     const parent = container && container.parent;
     if (parent && (qc.is.classLike(parent) || parent.kind === Syntax.InterfaceDeclaration)) {
-      if (!hasSyntacticModifier(container, ModifierFlags.Static) && (!qc.is.kind(ConstructorDeclaration, container) || qc.is.descendantOf(node, container.body)))
+      if (!qc.has.syntacticModifier(container, ModifierFlags.Static) && (!qc.is.kind(ConstructorDeclaration, container) || qc.is.descendantOf(node, container.body)))
         return getDeclaredTypeOfClassOrInterface(getSymbolOfNode(parent as ClassLikeDeclaration | InterfaceDeclaration)).thisType!;
     }
     if (parent && qc.is.kind(ObjectLiteralExpression, parent) && qc.is.kind(BinaryExpression, parent.parent) && getAssignmentDeclarationKind(parent.parent) === AssignmentDeclarationKind.Prototype) {
@@ -14303,7 +14304,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         let container = qc.get.thisContainer(node, false);
         while (container.kind !== Syntax.SourceFile) {
           if (container.parent === declaration) {
-            if (container.kind === Syntax.PropertyDeclaration && hasSyntacticModifier(container, ModifierFlags.Static)) {
+            if (container.kind === Syntax.PropertyDeclaration && qc.has.syntacticModifier(container, ModifierFlags.Static)) {
               getNodeLinks(declaration).flags |= NodeCheckFlags.ClassWithConstructorReference;
               getNodeLinks(node).flags |= NodeCheckFlags.ConstructorReferenceInClass;
             }
@@ -14457,7 +14458,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         break;
       case Syntax.PropertyDeclaration:
       case Syntax.PropertySignature:
-        if (hasSyntacticModifier(container, ModifierFlags.Static) && !(compilerOptions.target === ScriptTarget.ESNext && compilerOptions.useDefineForClassFields))
+        if (qc.has.syntacticModifier(container, ModifierFlags.Static) && !(compilerOptions.target === ScriptTarget.ESNext && compilerOptions.useDefineForClassFields))
           error(node, qd.this_cannot_be_referenced_in_a_static_property_initializer);
         break;
       case Syntax.ComputedPropertyName:
@@ -14497,7 +14498,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     if (qc.is.classLike(container.parent)) {
       const symbol = getSymbolOfNode(container.parent);
-      const type = hasSyntacticModifier(container, ModifierFlags.Static) ? this.getTypeOfSymbol() : (getDeclaredTypeOfSymbol(symbol) as InterfaceType).thisType!;
+      const type = qc.has.syntacticModifier(container, ModifierFlags.Static) ? this.getTypeOfSymbol() : (getDeclaredTypeOfSymbol(symbol) as InterfaceType).thisType!;
       return getFlowTypeOfReference(node, type);
     }
     if (isInJS) {
@@ -14523,7 +14524,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     if (qc.is.classLike(container.parent)) {
       const symbol = getSymbolOfNode(container.parent);
-      return hasSyntacticModifier(container, ModifierFlags.Static) ? this.getTypeOfSymbol() : (getDeclaredTypeOfSymbol(symbol) as InterfaceType).thisType!;
+      return qc.has.syntacticModifier(container, ModifierFlags.Static) ? this.getTypeOfSymbol() : (getDeclaredTypeOfSymbol(symbol) as InterfaceType).thisType!;
     }
   }
   function getClassNameFromPrototypeMethod(container: Node) {
@@ -14611,12 +14612,12 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     if (!isCallExpression && immediateContainer.kind === Syntax.Constructor)
       checkThisBeforeSuper(node, container, qd.super_must_be_called_before_accessing_a_property_of_super_in_the_constructor_of_a_derived_class);
-    if (hasSyntacticModifier(container, ModifierFlags.Static) || isCallExpression) nodeCheckFlag = NodeCheckFlags.SuperStatic;
+    if (qc.has.syntacticModifier(container, ModifierFlags.Static) || isCallExpression) nodeCheckFlag = NodeCheckFlags.SuperStatic;
     else {
       nodeCheckFlag = NodeCheckFlags.SuperInstance;
     }
     getNodeLinks(node).flags |= nodeCheckFlag;
-    if (container.kind === Syntax.MethodDeclaration && hasSyntacticModifier(container, ModifierFlags.Async)) {
+    if (container.kind === Syntax.MethodDeclaration && qc.has.syntacticModifier(container, ModifierFlags.Async)) {
       if (qc.is.superProperty(node.parent) && isAssignmentTarget(node.parent)) getNodeLinks(container).flags |= NodeCheckFlags.AsyncMethodWithSuperBinding;
       else {
         getNodeLinks(container).flags |= NodeCheckFlags.AsyncMethodWithSuper;
@@ -14642,7 +14643,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (isCallExpression) return container.kind === Syntax.Constructor;
       else {
         if (qc.is.classLike(container.parent) || container.parent.kind === Syntax.ObjectLiteralExpression) {
-          if (hasSyntacticModifier(container, ModifierFlags.Static))
+          if (qc.has.syntacticModifier(container, ModifierFlags.Static))
             return container.kind === Syntax.MethodDeclaration || container.kind === Syntax.MethodSignature || container.kind === Syntax.GetAccessor || container.kind === Syntax.SetAccessor;
           else {
             return (
@@ -16272,7 +16273,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function typeHasStaticProperty(propName: __String, containingType: Type): boolean {
     const prop = containingType.symbol && getPropertyOfType(getTypeOfSymbol(containingType.symbol), propName);
-    return prop !== undefined && prop.valueDeclaration && hasSyntacticModifier(prop.valueDeclaration, ModifierFlags.Static);
+    return prop !== undefined && prop.valueDeclaration && qc.has.syntacticModifier(prop.valueDeclaration, ModifierFlags.Static);
   }
   function getSuggestedSymbolForNonexistentProperty(name: Identifier | PrivateIdentifier | string, containingType: Type): Symbol | undefined {
     return getSpellingSuggestionForName(isString(name) ? name : idText(name), getPropertiesOfType(containingType), SymbolFlags.Value);
@@ -16335,7 +16336,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function markPropertyAsReferenced(prop: Symbol, nodeForCheckWriteOnly: Node | undefined, isThisAccess: boolean) {
     const valueDeclaration = prop && prop.flags & SymbolFlags.ClassMember && prop.valueDeclaration;
     if (!valueDeclaration) return;
-    const hasPrivateModifier = hasEffectiveModifier(valueDeclaration, ModifierFlags.Private);
+    const hasPrivateModifier = qc.has.effectiveModifier(valueDeclaration, ModifierFlags.Private);
     const hasPrivateIdentifier = qc.is.namedDeclaration(prop.valueDeclaration) && qc.is.kind(PrivateIdentifier, prop.valueDeclaration.name);
     if (!hasPrivateModifier && !hasPrivateIdentifier) return;
     if (nodeForCheckWriteOnly && isWriteOnlyAccess(nodeForCheckWriteOnly) && !(prop.flags & SymbolFlags.SetAccessor)) return;
@@ -17378,7 +17379,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (constructSignatures.length) {
       if (!isConstructorAccessible(node, constructSignatures[0])) return resolveErrorCall(node);
       const valueDecl = expressionType.symbol && getClassLikeDeclarationOfSymbol(expressionType.symbol);
-      if (valueDecl && hasSyntacticModifier(valueDecl, ModifierFlags.Abstract)) {
+      if (valueDecl && qc.has.syntacticModifier(valueDecl, ModifierFlags.Abstract)) {
         error(node, qd.Cannot_create_an_instance_of_an_abstract_class);
         return resolveErrorCall(node);
       }
@@ -19635,7 +19636,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     checkGrammarDecoratorsAndModifiers(node);
     checkVariableLikeDeclaration(node);
     const func = qc.get.containingFunction(node)!;
-    if (hasSyntacticModifier(node, ModifierFlags.ParameterPropertyModifier)) {
+    if (qc.has.syntacticModifier(node, ModifierFlags.ParameterPropertyModifier)) {
       if (!(func.kind === Syntax.Constructor && qc.is.present(func.body))) error(node, qd.A_parameter_property_is_only_allowed_in_a_constructor_implementation);
       if (func.kind === Syntax.Constructor && qc.is.kind(Identifier, node.name) && node.name.escapedText === 'constructor')
         error(node.name, qd.constructor_cannot_be_used_as_a_parameter_property_name);
@@ -19772,7 +19773,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
             addName(instanceNames, param.name, param.name.escapedText, DeclarationMeaning.GetOrSetAccessor);
         }
       } else {
-        const isStatic = hasSyntacticModifier(member, ModifierFlags.Static);
+        const isStatic = qc.has.syntacticModifier(member, ModifierFlags.Static);
         const name = member.name;
         if (!name) return;
         const names = qc.is.kind(PrivateIdentifier, name) ? privateIdentifiers : isStatic ? staticNames : instanceNames;
@@ -19813,7 +19814,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function checkClassForStaticPropertyNameConflicts(node: ClassLikeDeclaration) {
     for (const member of node.members) {
       const memberNameNode = member.name;
-      const isStatic = hasSyntacticModifier(member, ModifierFlags.Static);
+      const isStatic = qc.has.syntacticModifier(member, ModifierFlags.Static);
       if (isStatic && memberNameNode) {
         const memberName = getPropertyNameForPropertyNameNode(memberNameNode);
         switch (memberName) {
@@ -19903,7 +19904,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (!checkGrammarMethod(node)) checkGrammarComputedPropertyName(node.name);
     if (qc.is.kind(PrivateIdentifier, node.name)) error(node, qd.A_method_cannot_be_named_with_a_private_identifier);
     checkFunctionOrMethodDeclaration(node);
-    if (hasSyntacticModifier(node, ModifierFlags.Abstract) && node.kind === Syntax.MethodDeclaration && node.body)
+    if (qc.has.syntacticModifier(node, ModifierFlags.Abstract) && node.kind === Syntax.MethodDeclaration && node.body)
       error(node, qd.Method_0_cannot_have_an_implementation_because_it_is_marked_abstract, declarationNameToString(node.name));
   }
   function checkConstructorDeclaration(node: ConstructorDeclaration) {
@@ -19917,7 +19918,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (!produceDiagnostics) return;
     function isInstancePropertyWithInitializerOrPrivateIdentifierProperty(n: Node) {
       if (n.isPrivateIdentifierPropertyDeclaration()) return true;
-      return n.kind === Syntax.PropertyDeclaration && !hasSyntacticModifier(n, ModifierFlags.Static) && !!(<PropertyDeclaration>n).initializer;
+      return n.kind === Syntax.PropertyDeclaration && !qc.has.syntacticModifier(n, ModifierFlags.Static) && !!(<PropertyDeclaration>n).initializer;
     }
     const containingClassDecl = <ClassDeclaration>node.parent;
     if (getClassExtendsHeritageElement(containingClassDecl)) {
@@ -19929,7 +19930,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         const superCallShouldBeFirst =
           (compilerOptions.target !== ScriptTarget.ESNext || !compilerOptions.useDefineForClassFields) &&
           (some((<ClassDeclaration>node.parent).members, isInstancePropertyWithInitializerOrPrivateIdentifierProperty) ||
-            some(node.parameters, (p) => hasSyntacticModifier(p, ModifierFlags.ParameterPropertyModifier)));
+            some(node.parameters, (p) => qc.has.syntacticModifier(p, ModifierFlags.ParameterPropertyModifier)));
         if (superCallShouldBeFirst) {
           const statements = node.body!.statements;
           let superCallStatement: ExpressionStatement | undefined;
@@ -20153,7 +20154,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     getTypeFromTypeNode(node);
   }
   function isPrivateWithinAmbient(node: Node): boolean {
-    return (hasEffectiveModifier(node, ModifierFlags.Private) || node.isPrivateIdentifierPropertyDeclaration()) && !!(node.flags & NodeFlags.Ambient);
+    return (qc.has.effectiveModifier(node, ModifierFlags.Private) || node.isPrivateIdentifierPropertyDeclaration()) && !!(node.flags & NodeFlags.Ambient);
   }
   function getEffectiveDeclarationFlags(n: Declaration, flagsToCheck: ModifierFlags): ModifierFlags {
     let flags = getCombinedModifierFlags(n);
@@ -20649,7 +20650,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           const symbol = getSymbolOfNode(member);
           if (
             !symbol.isReferenced &&
-            (hasEffectiveModifier(member, ModifierFlags.Private) || (qc.is.namedDeclaration(member) && qc.is.kind(PrivateIdentifier, member.name))) &&
+            (qc.has.effectiveModifier(member, ModifierFlags.Private) || (qc.is.namedDeclaration(member) && qc.is.kind(PrivateIdentifier, member.name))) &&
             !(member.flags & NodeFlags.Ambient)
           ) {
             addDiagnostic(member, UnusedKind.Local, createDiagnosticForNode(member.name!, qd._0_is_declared_but_its_value_is_never_read, symbol.symbolToString()));
@@ -20657,7 +20658,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           break;
         case Syntax.Constructor:
           for (const parameter of (<ConstructorDeclaration>member).parameters) {
-            if (!parameter.symbol.isReferenced && hasSyntacticModifier(parameter, ModifierFlags.Private))
+            if (!parameter.symbol.isReferenced && qc.has.syntacticModifier(parameter, ModifierFlags.Private))
               addDiagnostic(parameter, UnusedKind.Local, createDiagnosticForNode(parameter.name, qd.Property_0_is_declared_but_its_value_is_never_read, parameter.symbol.name));
           }
           break;
@@ -21013,7 +21014,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function areDeclarationFlagsIdentical(left: Declaration, right: Declaration) {
     if ((left.kind === Syntax.Parameter && right.kind === Syntax.VariableDeclaration) || (left.kind === Syntax.VariableDeclaration && right.kind === Syntax.Parameter)) return true;
-    if (hasQuestionToken(left) !== hasQuestionToken(right)) return false;
+    if (qc.has.questionToken(left) !== qc.has.questionToken(right)) return false;
     const interestingFlags = ModifierFlags.Private | ModifierFlags.Protected | ModifierFlags.Async | ModifierFlags.Abstract | ModifierFlags.Readonly | ModifierFlags.Static;
     return getSelectedEffectiveModifierFlags(left, interestingFlags) === getSelectedEffectiveModifierFlags(right, interestingFlags);
   }
@@ -21641,7 +21642,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const classDeclaration = type.symbol.valueDeclaration;
       if (getObjectFlags(type) & ObjectFlags.Class && qc.is.classLike(classDeclaration)) {
         for (const member of classDeclaration.members) {
-          if (!hasSyntacticModifier(member, ModifierFlags.Static) && hasNonBindableDynamicName(member)) {
+          if (!qc.has.syntacticModifier(member, ModifierFlags.Static) && hasNonBindableDynamicName(member)) {
             const symbol = getSymbolOfNode(member);
             const propType = this.getTypeOfSymbol();
             checkIndexConstraintForProperty(symbol, propType, type, declaredStringIndexer, stringIndexType, IndexKind.String);
@@ -21772,7 +21773,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     registerForUnusedIdentifiersCheck(node);
   }
   function checkClassDeclaration(node: ClassDeclaration) {
-    if (!node.name && !hasSyntacticModifier(node, ModifierFlags.Default)) grammarErrorOnFirstToken(node, qd.A_class_declaration_without_the_default_modifier_must_have_a_name);
+    if (!node.name && !qc.has.syntacticModifier(node, ModifierFlags.Default)) grammarErrorOnFirstToken(node, qd.A_class_declaration_without_the_default_modifier_must_have_a_name);
     checkClassLikeDeclaration(node);
     forEach(node.members, checkSourceElement);
     registerForUnusedIdentifiersCheck(node);
@@ -21859,7 +21860,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function issueMemberSpecificError(node: ClassLikeDeclaration, typeWithThis: Type, baseWithThis: Type, broadDiag: DiagnosticMessage) {
     let issuedMemberError = false;
     for (const member of node.members) {
-      if (hasStaticModifier(member)) continue;
+      if (qc.has.staticModifier(member)) continue;
       const declaredProp = (member.name && getSymbolAtLocation(member.name)) || getSymbolAtLocation(member);
       if (declaredProp) {
         const prop = getPropertyOfType(typeWithThis, declaredProp.escName);
@@ -21883,7 +21884,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const signatures = getSignaturesOfType(type, SignatureKind.Construct);
     if (signatures.length) {
       const declaration = signatures[0].declaration;
-      if (declaration && hasEffectiveModifier(declaration, ModifierFlags.Private)) {
+      if (declaration && qc.has.effectiveModifier(declaration, ModifierFlags.Private)) {
         const typeClassDeclaration = getClassLikeDeclarationOfSymbol(type.symbol)!;
         if (!isNodeWithinClass(node, typeClassDeclaration)) error(node, qd.Cannot_extend_a_class_0_Class_constructor_is_marked_as_private, getFullyQualifiedName(type.symbol));
       }
@@ -21901,7 +21902,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       assert(!!derived, "derived should point to something, even if it is the base class' declaration.");
       if (derived === base) {
         const derivedClassDecl = getClassLikeDeclarationOfSymbol(type.symbol)!;
-        if (baseDeclarationFlags & ModifierFlags.Abstract && (!derivedClassDecl || !hasSyntacticModifier(derivedClassDecl, ModifierFlags.Abstract))) {
+        if (baseDeclarationFlags & ModifierFlags.Abstract && (!derivedClassDecl || !qc.has.syntacticModifier(derivedClassDecl, ModifierFlags.Abstract))) {
           for (const otherBaseType of getBaseTypes(type)) {
             if (otherBaseType === baseType) continue;
             const baseSymbol = getPropertyOfObjectType(otherBaseType, base.escName);
@@ -22041,7 +22042,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function isInstancePropertyWithoutInitializer(node: Node) {
     return (
       node.kind === Syntax.PropertyDeclaration &&
-      !hasSyntacticModifier(node, ModifierFlags.Static | ModifierFlags.Abstract) &&
+      !qc.has.syntacticModifier(node, ModifierFlags.Static | ModifierFlags.Abstract) &&
       !(<PropertyDeclaration>node).exclamationToken &&
       !(<PropertyDeclaration>node).initializer
     );
@@ -22453,7 +22454,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function checkImportDeclaration(node: ImportDeclaration) {
     if (checkGrammarModuleElementContext(node, qd.An_import_declaration_can_only_be_used_in_a_namespace_or_module)) return;
-    if (!checkGrammarDecoratorsAndModifiers(node) && hasEffectiveModifiers(node)) grammarErrorOnFirstToken(node, qd.An_import_declaration_cannot_have_modifiers);
+    if (!checkGrammarDecoratorsAndModifiers(node) && qc.has.effectiveModifiers(node)) grammarErrorOnFirstToken(node, qd.An_import_declaration_cannot_have_modifiers);
     if (checkExternalImportOrExportDeclaration(node)) {
       const importClause = node.importClause;
       if (importClause && !checkGrammarImportClause(importClause)) {
@@ -22473,7 +22474,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     checkGrammarDecoratorsAndModifiers(node);
     if (isInternalModuleImportEqualsDeclaration(node) || checkExternalImportOrExportDeclaration(node)) {
       checkImportBinding(node);
-      if (hasSyntacticModifier(node, ModifierFlags.Export)) markExportAsReferenced(node);
+      if (qc.has.syntacticModifier(node, ModifierFlags.Export)) markExportAsReferenced(node);
       if (node.moduleReference.kind !== Syntax.ExternalModuleReference) {
         const target = getSymbolOfNode(node).resolveAlias();
         if (target !== unknownSymbol) {
@@ -22496,7 +22497,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function checkExportDeclaration(node: ExportDeclaration) {
     if (checkGrammarModuleElementContext(node, qd.An_export_declaration_can_only_be_used_in_a_module)) return;
-    if (!checkGrammarDecoratorsAndModifiers(node) && hasEffectiveModifiers(node)) grammarErrorOnFirstToken(node, qd.An_export_declaration_cannot_have_modifiers);
+    if (!checkGrammarDecoratorsAndModifiers(node) && qc.has.effectiveModifiers(node)) grammarErrorOnFirstToken(node, qd.An_export_declaration_cannot_have_modifiers);
     checkGrammarExportDeclaration(node);
     if (!node.moduleSpecifier || checkExternalImportOrExportDeclaration(node)) {
       if (node.exportClause && !qc.is.kind(NamespaceExport, node.exportClause)) {
@@ -22573,7 +22574,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
       return;
     }
-    if (!checkGrammarDecoratorsAndModifiers(node) && hasEffectiveModifiers(node)) grammarErrorOnFirstToken(node, qd.An_export_assignment_cannot_have_modifiers);
+    if (!checkGrammarDecoratorsAndModifiers(node) && qc.has.effectiveModifiers(node)) grammarErrorOnFirstToken(node, qd.An_export_assignment_cannot_have_modifiers);
     if (node.expression.kind === Syntax.Identifier) {
       const id = node.expression as Identifier;
       const sym = resolveEntityName(id, SymbolFlags.All, true, true, node);
@@ -23008,7 +23009,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
             break;
         }
         if (introducesArgumentsExoticObject(location)) copySymbol(argumentsSymbol, symbols, meaning);
-        isStatic = hasSyntacticModifier(location, ModifierFlags.Static);
+        isStatic = qc.has.syntacticModifier(location, ModifierFlags.Static);
         location = location.parent;
       }
       globals.copy(symbols, meaning);
@@ -23308,7 +23309,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function getParentTypeOfClassElement(node: ClassElement) {
     const classSymbol = getSymbolOfNode(node.parent)!;
-    return hasSyntacticModifier(node, ModifierFlags.Static) ? getTypeOfSymbol(classSymbol) : getDeclaredTypeOfSymbol(classSymbol);
+    return qc.has.syntacticModifier(node, ModifierFlags.Static) ? getTypeOfSymbol(classSymbol) : getDeclaredTypeOfSymbol(classSymbol);
   }
   function getClassElementPropertyKeyType(element: ClassElement) {
     const name = element.name!;
@@ -23469,11 +23470,11 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       !isOptionalParameter(parameter) &&
       !qc.is.kind(DocParameterTag, parameter) &&
       !!parameter.initializer &&
-      !hasSyntacticModifier(parameter, ModifierFlags.ParameterPropertyModifier)
+      !qc.has.syntacticModifier(parameter, ModifierFlags.ParameterPropertyModifier)
     );
   }
   function isOptionalUninitializedParameterProperty(parameter: ParameterDeclaration) {
-    return strictNullChecks && isOptionalParameter(parameter) && !parameter.initializer && hasSyntacticModifier(parameter, ModifierFlags.ParameterPropertyModifier);
+    return strictNullChecks && isOptionalParameter(parameter) && !parameter.initializer && qc.has.syntacticModifier(parameter, ModifierFlags.ParameterPropertyModifier);
   }
   function isExpandoFunctionDeclaration(node: Declaration): boolean {
     const declaration = qc.get.parseTreeOf(node, isFunctionDeclaration);
@@ -24015,7 +24016,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           if (node.kind !== Syntax.ClassDeclaration) {
             if (node.kind !== Syntax.MethodDeclaration && node.kind !== Syntax.PropertyDeclaration && node.kind !== Syntax.GetAccessor && node.kind !== Syntax.SetAccessor)
               return grammarErrorOnNode(modifier, qd.abstract_modifier_can_only_appear_on_a_class_method_or_property_declaration);
-            if (!(node.parent.kind === Syntax.ClassDeclaration && hasSyntacticModifier(node.parent, ModifierFlags.Abstract)))
+            if (!(node.parent.kind === Syntax.ClassDeclaration && qc.has.syntacticModifier(node.parent, ModifierFlags.Abstract)))
               return grammarErrorOnNode(modifier, qd.Abstract_methods_can_only_appear_within_an_abstract_class);
             if (flags & ModifierFlags.Static) return grammarErrorOnNode(modifier, qd._0_modifier_cannot_be_used_with_1_modifier, 'static', 'abstract');
             if (flags & ModifierFlags.Private) return grammarErrorOnNode(modifier, qd._0_modifier_cannot_be_used_with_1_modifier, 'private', 'abstract');
@@ -24181,7 +24182,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     checkGrammarForDisallowedTrailingComma(node.parameters, qd.An_index_signature_cannot_have_a_trailing_comma);
     if (parameter.dot3Token) return grammarErrorOnNode(parameter.dot3Token, qd.An_index_signature_cannot_have_a_rest_parameter);
-    if (hasEffectiveModifiers(parameter)) return grammarErrorOnNode(parameter.name, qd.An_index_signature_parameter_cannot_have_an_accessibility_modifier);
+    if (qc.has.effectiveModifiers(parameter)) return grammarErrorOnNode(parameter.name, qd.An_index_signature_parameter_cannot_have_an_accessibility_modifier);
     if (parameter.questionToken) return grammarErrorOnNode(parameter.questionToken, qd.An_index_signature_parameter_cannot_have_a_question_mark);
     if (parameter.initializer) return grammarErrorOnNode(parameter.name, qd.An_index_signature_parameter_cannot_have_an_initializer);
     if (!parameter.type) return grammarErrorOnNode(parameter.name, qd.An_index_signature_parameter_must_have_a_type_annotation);
@@ -24424,9 +24425,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function checkGrammarAccessor(accessor: AccessorDeclaration): boolean {
     if (!(accessor.flags & NodeFlags.Ambient)) {
-      if (accessor.body === undefined && !hasSyntacticModifier(accessor, ModifierFlags.Abstract)) return grammarErrorAtPos(accessor, accessor.end - 1, ';'.length, qd._0_expected, '{');
+      if (accessor.body === undefined && !qc.has.syntacticModifier(accessor, ModifierFlags.Abstract)) return grammarErrorAtPos(accessor, accessor.end - 1, ';'.length, qd._0_expected, '{');
     }
-    if (accessor.body && hasSyntacticModifier(accessor, ModifierFlags.Abstract)) return grammarErrorOnNode(accessor, qd.An_abstract_accessor_cannot_have_an_implementation);
+    if (accessor.body && qc.has.syntacticModifier(accessor, ModifierFlags.Abstract)) return grammarErrorOnNode(accessor, qd.An_abstract_accessor_cannot_have_an_implementation);
     if (accessor.typeParameters) return grammarErrorOnNode(accessor.name, qd.An_accessor_cannot_have_type_parameters);
     if (!doesAccessorHaveCorrectParameterCount(accessor))
       return grammarErrorOnNode(accessor.name, accessor.kind === Syntax.GetAccessor ? qd.A_get_accessor_cannot_have_parameters : qd.A_set_accessor_must_have_exactly_one_parameter);
@@ -24461,11 +24462,11 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           if (!(decl.parent.flags & NodeFlags.Const)) return grammarErrorOnNode((<VariableDeclaration>parent).name, qd.A_variable_whose_type_is_a_unique_symbol_type_must_be_const);
           break;
         case Syntax.PropertyDeclaration:
-          if (!hasSyntacticModifier(parent, ModifierFlags.Static) || !hasEffectiveModifier(parent, ModifierFlags.Readonly))
+          if (!qc.has.syntacticModifier(parent, ModifierFlags.Static) || !qc.has.effectiveModifier(parent, ModifierFlags.Readonly))
             return grammarErrorOnNode((<PropertyDeclaration>parent).name, qd.A_property_of_a_class_whose_type_is_a_unique_symbol_type_must_be_both_static_and_readonly);
           break;
         case Syntax.PropertySignature:
-          if (!hasSyntacticModifier(parent, ModifierFlags.Readonly))
+          if (!qc.has.syntacticModifier(parent, ModifierFlags.Readonly))
             return grammarErrorOnNode((<PropertySignature>parent).name, qd.A_property_of_an_interface_or_type_literal_whose_type_is_a_unique_symbol_type_must_be_readonly);
           break;
         default:
@@ -24591,7 +24592,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       moduleKind !== ModuleKind.System &&
       !compilerOptions.noEmit &&
       !(node.parent.parent.flags & NodeFlags.Ambient) &&
-      hasSyntacticModifier(node.parent.parent, ModifierFlags.Export)
+      qc.has.syntacticModifier(node.parent.parent, ModifierFlags.Export)
     ) {
       checkESModuleMarker(node.name);
     }
@@ -24717,7 +24718,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (
       qc.is.kind(PropertyDeclaration, node) &&
       node.exclamationToken &&
-      (!qc.is.classLike(node.parent) || !node.type || node.initializer || node.flags & NodeFlags.Ambient || hasSyntacticModifier(node, ModifierFlags.Static | ModifierFlags.Abstract))
+      (!qc.is.classLike(node.parent) || !node.type || node.initializer || node.flags & NodeFlags.Ambient || qc.has.syntacticModifier(node, ModifierFlags.Static | ModifierFlags.Abstract))
     ) {
       return grammarErrorOnNode(node.exclamationToken, qd.A_definite_assignment_assertion_is_not_permitted_in_this_context);
     }
@@ -24731,7 +24732,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       node.kind === Syntax.ExportDeclaration ||
       node.kind === Syntax.ExportAssignment ||
       node.kind === Syntax.NamespaceExportDeclaration ||
-      hasSyntacticModifier(node, ModifierFlags.Ambient | ModifierFlags.Export | ModifierFlags.Default)
+      qc.has.syntacticModifier(node, ModifierFlags.Ambient | ModifierFlags.Export | ModifierFlags.Default)
     ) {
       return false;
     }

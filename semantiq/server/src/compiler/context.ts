@@ -3,7 +3,7 @@ import * as qc from './core3';
 import * as qt from './types';
 import { Node, NodeBuilderFlags, ObjectFlags, TypeFlags } from './types';
 import * as syntax from './syntax';
-import { Syntax } from './syntax';
+import { ModifierFlags, Syntax } from './syntax';
 function isNamespaceMember(p: Symbol) {
   return !(p.flags & SymbolFlags.Prototype || p.escName === 'prototype' || (p.valueDeclaration?.parent && qc.is.classLike(p.valueDeclaration.parent)));
 }
@@ -19,16 +19,16 @@ export class QContext {
   flags: NodeBuilderFlags;
   tracker: SymbolTracker;
   encounteredError: boolean;
-  visitedTypes?: QMap<true>;
-  symbolDepth?: QMap<number>;
+  visitedTypes?: qb.QMap<true>;
+  symbolDepth?: qb.QMap<number>;
   inferTypeParameters?: TypeParameter[];
   approximateLength: number;
   truncating?: boolean;
-  typeParameterSymbolList?: QMap<true>;
-  typeParameterNames?: QMap<Identifier>;
-  typeParameterNamesByText?: QMap<true>;
-  usedSymbolNames?: QMap<true>;
-  remappedSymbolNames?: QMap<string>;
+  typeParameterSymbolList?: qb.QMap<true>;
+  typeParameterNames?: qb.QMap<Identifier>;
+  typeParameterNamesByText?: qb.QMap<true>;
+  usedSymbolNames?: qb.QMap<true>;
+  remappedSymbolNames?: qb.QMap<string>;
   checkTruncationLength(): boolean {
     if (this.truncating) return this.truncating;
     return (this.truncating = this.approximateLength > (this.flags & NodeBuilderFlags.NoTruncation ? noTruncationMaximumTruncationLength : defaultMaximumTruncationLength));
@@ -1251,7 +1251,7 @@ export class QContext {
         return this.symbolToTypeNode(symbol, isInstanceType);
       }
       const shouldWriteTypeOfFunctionSymbol = () => {
-        const isStaticMethodSymbol = !!(symbol.flags & SymbolFlags.Method) && some(symbol.declarations, (declaration) => hasSyntacticModifier(declaration, ModifierFlags.Static));
+        const isStaticMethodSymbol = !!(symbol.flags & SymbolFlags.Method) && some(symbol.declarations, (declaration) => qc.has.syntacticModifier(declaration, ModifierFlags.Static));
         const isNonLocalFunctionSymbol =
           !!(symbol.flags & SymbolFlags.Function) && (symbol.parent || forEach(symbol.declarations, (d) => d.parent?.kind === Syntax.SourceFile || d.parent?.kind === Syntax.ModuleBlock));
         if (isStaticMethodSymbol || isNonLocalFunctionSymbol) {
@@ -1371,8 +1371,8 @@ export class QContext {
         : type.symbol
         ? (isConstructorObject ? '+' : '') + type.symbol.getId()
         : undefined;
-    if (!this.visitedTypes) this.visitedTypes = new QMap<true>();
-    if (id && !this.symbolDepth) this.symbolDepth = new QMap<number>();
+    if (!this.visitedTypes) this.visitedTypes = new qb.QMap<true>();
+    if (id && !this.symbolDepth) this.symbolDepth = new qb.QMap<number>();
     let depth: number | undefined;
     if (id) {
       depth = this.symbolDepth!.get(id) || 0;
@@ -1531,8 +1531,8 @@ export class QContext {
     );
     const enclosingDeclaration = this.enclosingDeclaration!;
     let results: Statement[] = [];
-    const visitedSymbols: QMap<true> = new QMap();
-    let deferredPrivates: QMap<Symbol> | undefined;
+    const visitedSymbols: qb.QMap<true> = new QMap();
+    let deferredPrivates: qb.QMap<Symbol> | undefined;
     const oldcontext = context;
     context = {
       ...oldcontext,

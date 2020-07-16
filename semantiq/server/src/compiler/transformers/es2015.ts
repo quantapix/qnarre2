@@ -1,10 +1,9 @@
 import * as qb from '../base';
-import * as qc from '../core';
 import { Node, Nodes } from '../core';
-import * as qs from '../core3';
+import * as qc from '../core3';
 import * as qt from '../types';
 import * as qy from '../syntax';
-import { Modifier, Syntax } from '../syntax';
+import { Modifier, ModifierFlags, Syntax } from '../syntax';
 const enum ES2015SubstitutionFlags {
   CapturedThis = 1 << 0,
   BlockScopedBindings = 1 << 1,
@@ -369,8 +368,8 @@ export function transformES2015(context: TransformationContext) {
     setRange(statement, node);
     startOnNewLine(statement);
     statements.push(statement);
-    if (hasSyntacticModifier(node, ModifierFlags.Export)) {
-      const exportStatement = hasSyntacticModifier(node, ModifierFlags.Default) ? createExportDefault(getLocalName(node)) : createExternalModuleExport(getLocalName(node));
+    if (qc.has.syntacticModifier(node, ModifierFlags.Export)) {
+      const exportStatement = qc.has.syntacticModifier(node, ModifierFlags.Default) ? createExportDefault(getLocalName(node)) : createExternalModuleExport(getLocalName(node));
       exportStatement.setOriginal(statement);
       statements.push(exportStatement);
     }
@@ -880,7 +879,7 @@ export function transformES2015(context: TransformationContext) {
     const savedConvertedLoopState = convertedLoopState;
     convertedLoopState = undefined;
     const ancestorFacts =
-      container && qc.is.classLike(container) && !hasSyntacticModifier(node, ModifierFlags.Static)
+      container && qc.is.classLike(container) && !qc.has.syntacticModifier(node, ModifierFlags.Static)
         ? enterSubtree(HierarchyFacts.FunctionExcludes, HierarchyFacts.FunctionIncludes | HierarchyFacts.NonStaticClassElement)
         : enterSubtree(HierarchyFacts.FunctionExcludes, HierarchyFacts.FunctionIncludes);
     const parameters = visitParameterList(node.parameters, visitor, context);
@@ -996,7 +995,7 @@ export function transformES2015(context: TransformationContext) {
     );
   }
   function visitVariableStatement(node: VariableStatement): Statement | undefined {
-    const ancestorFacts = enterSubtree(HierarchyFacts.None, hasSyntacticModifier(node, ModifierFlags.Export) ? HierarchyFacts.ExportedVariableStatement : HierarchyFacts.None);
+    const ancestorFacts = enterSubtree(HierarchyFacts.None, qc.has.syntacticModifier(node, ModifierFlags.Export) ? HierarchyFacts.ExportedVariableStatement : HierarchyFacts.None);
     let updated: Statement | undefined;
     if (convertedLoopState && (node.declarationList.flags & NodeFlags.BlockScoped) === 0 && !isVariableStatementOfTypeScriptClassWrapper(node)) {
       let assignments: Expression[] | undefined;
@@ -2145,7 +2144,7 @@ function substituteThisKeyword(node: PrimaryExpression): PrimaryExpression {
   return node;
 }
 function getClassMemberPrefix(node: ClassExpression | ClassDeclaration, member: ClassElement) {
-  return hasSyntacticModifier(member, ModifierFlags.Static) ? getInternalName(node) : new qc.PropertyAccessExpression(getInternalName(node), 'prototype');
+  return qc.has.syntacticModifier(member, ModifierFlags.Static) ? getInternalName(node) : new qc.PropertyAccessExpression(getInternalName(node), 'prototype');
 }
 function hasSynthesizedDefaultSuperCall(constructor: ConstructorDeclaration | undefined, hasExtendsClause: boolean) {
   if (!constructor || !hasExtendsClause) return false;

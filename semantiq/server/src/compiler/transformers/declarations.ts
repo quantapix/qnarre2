@@ -3,7 +3,7 @@ import { Node, Nodes } from '../core';
 import * as qc from '../core3';
 import * as qt from '../types';
 import * as qy from '../syntax';
-import { Modifier, Syntax } from '../syntax';
+import { Modifier, ModifierFlags, Syntax } from '../syntax';
 export function getDeclarationDiagnostics(host: EmitHost, resolver: EmitResolver, file: SourceFile | undefined): DiagnosticWithLocation[] | undefined {
   if (file && isJsonSourceFile(file)) return [];
   const compilerOptions = host.getCompilerOptions();
@@ -401,7 +401,7 @@ export function transformDeclarations(context: TransformationContext) {
     | PropertyDeclaration
     | PropertySignature;
   function ensureType(node: HasInferredType, type: TypeNode | undefined, ignorePrivate?: boolean): TypeNode | undefined {
-    if (!ignorePrivate && hasEffectiveModifier(node, ModifierFlags.Private)) return;
+    if (!ignorePrivate && qc.has.effectiveModifier(node, ModifierFlags.Private)) return;
     if (shouldPrintWithInitializer(node)) return;
     const shouldUseResolverType = node.kind === Syntax.Parameter && (resolver.isRequiredInitializedParameter(node) || resolver.isOptionalUninitializedParameterProperty(node));
     if (type && !shouldUseResolverType) return visitNode(type, visitDeclarationSubtree);
@@ -455,7 +455,7 @@ export function transformDeclarations(context: TransformationContext) {
     return resolver.isDeclarationVisible(elem);
   }
   function updateParamsList(node: Node, params: Nodes<ParameterDeclaration>, modifierMask?: ModifierFlags) {
-    if (hasEffectiveModifier(node, ModifierFlags.Private)) return undefined!;
+    if (qc.has.effectiveModifier(node, ModifierFlags.Private)) return undefined!;
     const newParams = map(params, (p) => ensureParameter(p, modifierMask));
     if (!newParams) return undefined!;
     return new Nodes(newParams, params.trailingComma);
@@ -481,7 +481,7 @@ export function transformDeclarations(context: TransformationContext) {
     return new Nodes(newParams || emptyArray) as Nodes<ParameterDeclaration>;
   }
   function ensureTypeParams(node: Node, params: Nodes<TypeParameterDeclaration> | undefined) {
-    return hasEffectiveModifier(node, ModifierFlags.Private) ? undefined : Nodes.visit(params, visitDeclarationSubtree);
+    return qc.has.effectiveModifier(node, ModifierFlags.Private) ? undefined : Nodes.visit(params, visitDeclarationSubtree);
   }
   function isEnclosingDeclaration(node: Node) {
     return (
@@ -622,7 +622,7 @@ export function transformDeclarations(context: TransformationContext) {
     const oldWithinObjectLiteralType = suppressNewDiagnosticContexts;
     let shouldEnterSuppressNewDiagnosticsContextContext = (input.kind === Syntax.TypeLiteral || input.kind === Syntax.MappedType) && input.parent.kind !== Syntax.TypeAliasDeclaration;
     if (qc.is.kind(MethodDeclaration, input) || qc.is.kind(MethodSignature, input)) {
-      if (hasEffectiveModifier(input, ModifierFlags.Private)) {
+      if (qc.has.effectiveModifier(input, ModifierFlags.Private)) {
         if (input.symbol && input.symbol.declarations && input.symbol.declarations[0] !== input) return;
         return cleanup(PropertyDeclaration.create(undefined, ensureModifiers(input), input.name, undefined, undefined, undefined));
       }
@@ -666,12 +666,19 @@ export function transformDeclarations(context: TransformationContext) {
           if (qc.is.kind(PrivateIdentifier, input.name)) return cleanup(undefined);
           const accessorType = getTypeAnnotationFromAllAccessorDeclarations(input, resolver.getAllAccessorDeclarations(input));
           return cleanup(
-            input.update(undefined, ensureModifiers(input), input.name, updateAccessorParamsList(input, hasEffectiveModifier(input, ModifierFlags.Private)), ensureType(input, accessorType), undefined)
+            input.update(
+              undefined,
+              ensureModifiers(input),
+              input.name,
+              updateAccessorParamsList(input, qc.has.effectiveModifier(input, ModifierFlags.Private)),
+              ensureType(input, accessorType),
+              undefined
+            )
           );
         }
         case Syntax.SetAccessor: {
           if (qc.is.kind(PrivateIdentifier, input.name)) return cleanup(undefined);
-          return cleanup(input.update(undefined, ensureModifiers(input), input.name, updateAccessorParamsList(input, hasEffectiveModifier(input, ModifierFlags.Private)), undefined));
+          return cleanup(input.update(undefined, ensureModifiers(input), input.name, updateAccessorParamsList(input, qc.has.effectiveModifier(input, ModifierFlags.Private)), undefined));
         }
         case Syntax.PropertyDeclaration:
           if (qc.is.kind(PrivateIdentifier, input.name)) return cleanup(undefined);
@@ -752,7 +759,7 @@ export function transformDeclarations(context: TransformationContext) {
     }
   }
   function isPrivateMethodTypeParameter(node: TypeParameterDeclaration) {
-    return node.parent.kind === Syntax.MethodDeclaration && hasEffectiveModifier(node.parent, ModifierFlags.Private);
+    return node.parent.kind === Syntax.MethodDeclaration && qc.has.effectiveModifier(node.parent, ModifierFlags.Private);
   }
   function visitDeclarationStatements(input: Node): VisitResult<Node> {
     if (!isPreservedDeclarationStatement(input)) return;
@@ -784,7 +791,7 @@ export function transformDeclarations(context: TransformationContext) {
     return input;
   }
   function stripExportModifiers(statement: Statement): Statement {
-    if (qc.is.kind(ImportEqualsDeclaration, statement) || hasEffectiveModifier(statement, ModifierFlags.Default)) return statement;
+    if (qc.is.kind(ImportEqualsDeclaration, statement) || qc.has.effectiveModifier(statement, ModifierFlags.Default)) return statement;
     const clone = getMutableClone(statement);
     const modifiers = createModifiersFromModifierFlags(getEffectiveModifierFlags(statement) & (ModifierFlags.All ^ ModifierFlags.Export));
     clone.modifiers = modifiers.length ? new Nodes(modifiers) : undefined;
@@ -863,7 +870,7 @@ export function transformDeclarations(context: TransformationContext) {
             return new qc.VariableStatement(undefined, new qc.VariableDeclarationList([varDecl]));
           });
           const namespaceDecl = new qc.ModuleDeclaration(undefined, ensureModifiers(input), input.name!, new qc.ModuleBlock(declarations), NodeFlags.Namespace);
-          if (!hasEffectiveModifier(clean, ModifierFlags.Default)) return [clean, namespaceDecl];
+          if (!qc.has.effectiveModifier(clean, ModifierFlags.Default)) return [clean, namespaceDecl];
           const modifiers = createModifiersFromModifierFlags((getEffectiveModifierFlags(clean) & ~ModifierFlags.ExportDefault) | ModifierFlags.Ambient);
           const cleanDeclaration = clean.update(undefined, modifiers, undefined, clean.name, clean.typeParameters, clean.parameters, clean.type, undefined);
           const namespaceDeclaration = namespaceDecl.update(undefined, modifiers, namespaceDecl.name, namespaceDecl.body);
@@ -917,7 +924,7 @@ export function transformDeclarations(context: TransformationContext) {
           const oldDiag = getSymbolAccessibilityDiagnostic;
           parameterProperties = compact(
             flatMap(ctor.parameters, (param) => {
-              if (!hasSyntacticModifier(param, ModifierFlags.ParameterPropertyModifier) || shouldStripInternal(param)) return;
+              if (!qc.has.syntacticModifier(param, ModifierFlags.ParameterPropertyModifier) || shouldStripInternal(param)) return;
               getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(param);
               if (param.name.kind === Syntax.Identifier)
                 return preserveDoc(PropertyDeclaration.create(undefined, ensureModifiers(param), param.name, param.questionToken, ensureType(param, param.type), ensureNoInitializer(param)), param);
@@ -1114,7 +1121,7 @@ function canHaveLiteralInitializer(node: Node): boolean {
   switch (node.kind) {
     case Syntax.PropertyDeclaration:
     case Syntax.PropertySignature:
-      return !hasEffectiveModifier(node, ModifierFlags.Private);
+      return !qc.has.effectiveModifier(node, ModifierFlags.Private);
     case Syntax.Parameter:
     case Syntax.VariableDeclaration:
       return true;

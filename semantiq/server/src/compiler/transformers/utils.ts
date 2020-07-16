@@ -1,10 +1,9 @@
 import * as qb from '../base';
-import * as qc from '../core';
-import { Node, Nodes } from '../core';
-import * as qs from '../core3';
+import { Node, Nodes } from '../core3';
+import * as qc from '../core3';
 import * as qt from '../types';
 import * as qy from '../syntax';
-import { Modifier, Syntax } from '../syntax';
+import { Modifier, ModifierFlags, Syntax } from '../syntax';
 export function getOriginalNodeId(node: Node) {
   node = qc.get.originalOf(node);
   return node ? getNodeId(node) : 0;
@@ -113,15 +112,15 @@ export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: Emit
         }
         break;
       case Syntax.VariableStatement:
-        if (hasSyntacticModifier(node, ModifierFlags.Export)) {
+        if (qc.has.syntacticModifier(node, ModifierFlags.Export)) {
           for (const decl of (<VariableStatement>node).declarationList.declarations) {
             exportedNames = collectExportedVariableInfo(decl, uniqueExports, exportedNames);
           }
         }
         break;
       case Syntax.FunctionDeclaration:
-        if (hasSyntacticModifier(node, ModifierFlags.Export)) {
-          if (hasSyntacticModifier(node, ModifierFlags.Default)) {
+        if (qc.has.syntacticModifier(node, ModifierFlags.Export)) {
+          if (qc.has.syntacticModifier(node, ModifierFlags.Default)) {
             if (!hasExportDefault) {
               multiMapSparseArrayAdd(exportedBindings, getOriginalNodeId(node), getDeclarationName(<FunctionDeclaration>node));
               hasExportDefault = true;
@@ -137,8 +136,8 @@ export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: Emit
         }
         break;
       case Syntax.ClassDeclaration:
-        if (hasSyntacticModifier(node, ModifierFlags.Export)) {
-          if (hasSyntacticModifier(node, ModifierFlags.Default)) {
+        if (qc.has.syntacticModifier(node, ModifierFlags.Export)) {
+          if (qc.has.syntacticModifier(node, ModifierFlags.Default)) {
             if (!hasExportDefault) {
               multiMapSparseArrayAdd(exportedBindings, getOriginalNodeId(node), getDeclarationName(<ClassDeclaration>node));
               hasExportDefault = true;
@@ -262,7 +261,7 @@ export function getProperties(node: ClassExpression | ClassDeclaration, requireI
   return filter(node.members, (m) => isInitializedOrStaticProperty(m, requireInitializer, isStatic)) as PropertyDeclaration[];
 }
 function isInitializedOrStaticProperty(member: ClassElement, requireInitializer: boolean, isStatic: boolean) {
-  return qc.is.kind(PropertyDeclaration, member) && (!!member.initializer || !requireInitializer) && hasStaticModifier(member) === isStatic;
+  return qc.is.kind(PropertyDeclaration, member) && (!!member.initializer || !requireInitializer) && qc.has.staticModifier(member) === isStatic;
 }
 export function isInitializedProperty(member: ClassElement): member is PropertyDeclaration & { initializer: Expression } {
   return member.kind === Syntax.PropertyDeclaration && (<PropertyDeclaration>member).initializer !== undefined;

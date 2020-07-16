@@ -1,8 +1,9 @@
 import * as qb from './base';
 import * as qt from './types';
+import * as qc from './core3';
 import { Node } from './types';
 import * as syntax from './syntax';
-import { Syntax } from './syntax';
+import { ModifierFlags, Syntax } from './syntax';
 export const enum ModuleInstanceState {
   NonInstantiated = 0,
   Instantiated = 1,
@@ -39,7 +40,7 @@ function getModuleInstanceStateWorker(node: Node, visited: Map<ModuleInstanceSta
       break;
     case Syntax.ImportDeclaration:
     case Syntax.ImportEqualsDeclaration:
-      if (!hasSyntacticModifier(node, ModifierFlags.Export)) return ModuleInstanceState.NonInstantiated;
+      if (!qc.has.syntacticModifier(node, ModifierFlags.Export)) return ModuleInstanceState.NonInstantiated;
       break;
     case Syntax.ExportDeclaration:
       const exportDeclaration = node as ExportDeclaration;
@@ -292,7 +293,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   }
   function declareSymbol(symbolTable: SymbolTable, parent: Symbol | undefined, node: Declaration, includes: SymbolFlags, excludes: SymbolFlags, isReplaceableByMethod?: boolean): Symbol {
     assert(!hasDynamicName(node));
-    const isDefaultExport = hasSyntacticModifier(node, ModifierFlags.Default) || (qc.is.kind(ExportSpecifier, node) && node.name.escapedText === 'default');
+    const isDefaultExport = qc.has.syntacticModifier(node, ModifierFlags.Default) || (qc.is.kind(ExportSpecifier, node) && node.name.escapedText === 'default');
     const name = isDefaultExport && parent ? InternalSymbolName.Default : getDeclarationName(node);
     let symbol: Symbol | undefined;
     if (name === undefined) {
@@ -338,7 +339,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
           if (
             qc.is.kind(TypeAliasDeclaration, node) &&
             qc.is.missing(node.type) &&
-            hasSyntacticModifier(node, ModifierFlags.Export) &&
+            qc.has.syntacticModifier(node, ModifierFlags.Export) &&
             symbol.flags & (SymbolFlags.Alias | SymbolFlags.Type | SymbolFlags.Namespace)
           ) {
             relatedInformation.push(createDiagnosticForNode(node, qd.Did_you_mean_0, `export type { ${syntax.get.unescUnderscores(node.name.escapedText)} }`));
@@ -373,7 +374,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     } else {
       if (qc.isDoc.typeAlias(node)) assert(isInJSFile(node));
       if ((!qc.is.ambientModule(node) && (hasExportModifier || container.flags & NodeFlags.ExportContext)) || qc.isDoc.typeAlias(node)) {
-        if (!container.locals || (hasSyntacticModifier(node, ModifierFlags.Default) && !getDeclarationName(node)))
+        if (!container.locals || (qc.has.syntacticModifier(node, ModifierFlags.Default) && !getDeclarationName(node)))
           return declareSymbol(container.symbol.exports!, container.symbol, node, symbolFlags, symbolExcludes);
         const exportKind = symbolFlags & SymbolFlags.Value ? SymbolFlags.ExportValue : 0;
         const local = declareSymbol(container.locals, undefined, node, exportKind, symbolExcludes);
@@ -411,7 +412,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       const saveHasExplicitReturn = hasExplicitReturn;
       const isIIFE =
         containerFlags & ContainerFlags.IsFunctionExpression &&
-        !hasSyntacticModifier(node, ModifierFlags.Async) &&
+        !qc.has.syntacticModifier(node, ModifierFlags.Async) &&
         !(<FunctionLikeDeclaration>node).asteriskToken &&
         !!qc.get.immediatelyInvokedFunctionExpression(node);
       if (!isIIFE) {
@@ -1447,7 +1448,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     }
   }
   function declareClassMember(node: Declaration, symbolFlags: SymbolFlags, symbolExcludes: SymbolFlags) {
-    return hasSyntacticModifier(node, ModifierFlags.Static)
+    return qc.has.syntacticModifier(node, ModifierFlags.Static)
       ? declareSymbol(container.symbol.exports!, container.symbol, node, symbolFlags, symbolExcludes)
       : declareSymbol(container.symbol.members!, container.symbol, node, symbolFlags, symbolExcludes);
   }
@@ -1468,7 +1469,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   function bindModuleDeclaration(node: ModuleDeclaration) {
     setExportContextFlag(node);
     if (qc.is.ambientModule(node)) {
-      if (hasSyntacticModifier(node, ModifierFlags.Export)) {
+      if (qc.has.syntacticModifier(node, ModifierFlags.Export)) {
         errorOnFirstToken(node, qd.export_modifier_cannot_be_applied_to_ambient_modules_and_module_augmentations_since_they_are_always_visible);
       }
       if (qc.is.moduleAugmentationExternal(node)) {
@@ -2172,7 +2173,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       case Syntax.GetAccessor:
       case Syntax.SetAccessor:
         const containingClass = thisContainer.parent;
-        const symbolTable = hasSyntacticModifier(thisContainer, ModifierFlags.Static) ? containingClass.symbol.exports! : containingClass.symbol.members!;
+        const symbolTable = qc.has.syntacticModifier(thisContainer, ModifierFlags.Static) ? containingClass.symbol.exports! : containingClass.symbol.members!;
         if (hasDynamicName(node)) {
           bindDynamicallyNamedThisNode(PropertyAssignment, node, containingClass.symbol);
         } else {
@@ -2569,7 +2570,7 @@ function isPurelyTypeDeclaration(s: Statement): boolean {
     case Syntax.ModuleDeclaration:
       return getModuleInstanceState(s as ModuleDeclaration) !== ModuleInstanceState.Instantiated;
     case Syntax.EnumDeclaration:
-      return hasSyntacticModifier(s, ModifierFlags.Const);
+      return qc.has.syntacticModifiers(, ModifierFlags.Const);
     default:
       return false;
   }
@@ -2729,7 +2730,7 @@ function computeParameter(node: ParameterDeclaration, subtreeFlags: TransformFla
   if (node.questionToken || node.type || (subtreeFlags & TransformFlags.ContainsTypeScriptClassSyntax && some(node.decorators)) || isThisNode(Identifier, name)) {
     transformFlags |= TransformFlags.AssertTypeScript;
   }
-  if (hasSyntacticModifier(node, ModifierFlags.ParameterPropertyModifier)) {
+  if (qc.has.syntacticModifier(node, ModifierFlags.ParameterPropertyModifier)) {
     transformFlags |= TransformFlags.AssertTypeScript | TransformFlags.ContainsTypeScriptClassSyntax;
   }
   if (subtreeFlags & TransformFlags.ContainsObjectRestOrSpread) {
@@ -2753,7 +2754,7 @@ function computeParenthesizedExpression(node: ParenthesizedExpression, subtreeFl
 }
 function computeClassDeclaration(node: ClassDeclaration, subtreeFlags: TransformFlags) {
   let transformFlags: TransformFlags;
-  if (hasSyntacticModifier(node, ModifierFlags.Ambient)) {
+  if (qc.has.syntacticModifier(node, ModifierFlags.Ambient)) {
     transformFlags = TransformFlags.AssertTypeScript;
   } else {
     transformFlags = subtreeFlags | TransformFlags.AssertES2015;
@@ -2808,7 +2809,7 @@ function computeExpressionWithTypeArguments(node: ExpressionWithTypeArguments, s
 }
 function computeConstructor(node: ConstructorDeclaration, subtreeFlags: TransformFlags) {
   let transformFlags = subtreeFlags;
-  if (hasSyntacticModifier(node, ModifierFlags.TypeScriptModifier) || !node.body) {
+  if (qc.has.syntacticModifier(node, ModifierFlags.TypeScriptModifier) || !node.body) {
     transformFlags |= TransformFlags.AssertTypeScript;
   }
   if (subtreeFlags & TransformFlags.ContainsObjectRestOrSpread) {
@@ -2819,13 +2820,13 @@ function computeConstructor(node: ConstructorDeclaration, subtreeFlags: Transfor
 }
 function computeMethod(node: MethodDeclaration, subtreeFlags: TransformFlags) {
   let transformFlags = subtreeFlags | TransformFlags.AssertES2015;
-  if (node.decorators || hasSyntacticModifier(node, ModifierFlags.TypeScriptModifier) || node.typeParameters || node.type || !node.body || node.questionToken) {
+  if (node.decorators || qc.has.syntacticModifier(node, ModifierFlags.TypeScriptModifier) || node.typeParameters || node.type || !node.body || node.questionToken) {
     transformFlags |= TransformFlags.AssertTypeScript;
   }
   if (subtreeFlags & TransformFlags.ContainsObjectRestOrSpread) {
     transformFlags |= TransformFlags.AssertES2018;
   }
-  if (hasSyntacticModifier(node, ModifierFlags.Async)) {
+  if (qc.has.syntacticModifier(node, ModifierFlags.Async)) {
     transformFlags |= node.asteriskToken ? TransformFlags.AssertES2018 : TransformFlags.AssertES2017;
   }
   if (node.asteriskToken) {
@@ -2836,7 +2837,7 @@ function computeMethod(node: MethodDeclaration, subtreeFlags: TransformFlags) {
 }
 function computeAccessor(node: AccessorDeclaration, subtreeFlags: TransformFlags) {
   let transformFlags = subtreeFlags;
-  if (node.decorators || hasSyntacticModifier(node, ModifierFlags.TypeScriptModifier) || node.type || !node.body) {
+  if (node.decorators || qc.has.syntacticModifier(node, ModifierFlags.TypeScriptModifier) || node.type || !node.body) {
     transformFlags |= TransformFlags.AssertTypeScript;
   }
   if (subtreeFlags & TransformFlags.ContainsObjectRestOrSpread) {
@@ -2847,10 +2848,10 @@ function computeAccessor(node: AccessorDeclaration, subtreeFlags: TransformFlags
 }
 function computePropertyDeclaration(node: PropertyDeclaration, subtreeFlags: TransformFlags) {
   let transformFlags = subtreeFlags | TransformFlags.ContainsClassFields;
-  if (some(node.decorators) || hasSyntacticModifier(node, ModifierFlags.TypeScriptModifier) || node.type || node.questionToken || node.exclamationToken) {
+  if (some(node.decorators) || qc.has.syntacticModifier(node, ModifierFlags.TypeScriptModifier) || node.type || node.questionToken || node.exclamationToken) {
     transformFlags |= TransformFlags.AssertTypeScript;
   }
-  if (qc.is.kind(ComputedPropertyName, node.name) || (hasStaticModifier(node) && node.initializer)) {
+  if (qc.is.kind(ComputedPropertyName, node.name) || (qc.has.staticModifier(node) && node.initializer)) {
     transformFlags |= TransformFlags.ContainsTypeScriptClassSyntax;
   }
   node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
@@ -2882,10 +2883,10 @@ function computeFunctionDeclaration(node: FunctionDeclaration, subtreeFlags: Tra
 }
 function computeFunctionExpression(node: FunctionExpression, subtreeFlags: TransformFlags) {
   let transformFlags = subtreeFlags;
-  if (hasSyntacticModifier(node, ModifierFlags.TypeScriptModifier) || node.typeParameters || node.type) {
+  if (qc.has.syntacticModifier(node, ModifierFlags.TypeScriptModifier) || node.typeParameters || node.type) {
     transformFlags |= TransformFlags.AssertTypeScript;
   }
-  if (hasSyntacticModifier(node, ModifierFlags.Async)) {
+  if (qc.has.syntacticModifier(node, ModifierFlags.Async)) {
     transformFlags |= node.asteriskToken ? TransformFlags.AssertES2018 : TransformFlags.AssertES2017;
   }
   if (subtreeFlags & TransformFlags.ContainsObjectRestOrSpread) {
@@ -2899,10 +2900,10 @@ function computeFunctionExpression(node: FunctionExpression, subtreeFlags: Trans
 }
 function computeArrowFunction(node: ArrowFunction, subtreeFlags: TransformFlags) {
   let transformFlags = subtreeFlags | TransformFlags.AssertES2015;
-  if (hasSyntacticModifier(node, ModifierFlags.TypeScriptModifier) || node.typeParameters || node.type) {
+  if (qc.has.syntacticModifier(node, ModifierFlags.TypeScriptModifier) || node.typeParameters || node.type) {
     transformFlags |= TransformFlags.AssertTypeScript;
   }
-  if (hasSyntacticModifier(node, ModifierFlags.Async)) {
+  if (qc.has.syntacticModifier(node, ModifierFlags.Async)) {
     transformFlags |= TransformFlags.AssertES2017;
   }
   if (subtreeFlags & TransformFlags.ContainsObjectRestOrSpread) {
@@ -2948,7 +2949,7 @@ function computeVariableDeclaration(node: VariableDeclaration, subtreeFlags: Tra
 function computeVariableStatement(node: VariableStatement, subtreeFlags: TransformFlags) {
   let transformFlags: TransformFlags;
   const declarationListTransformFlags = node.declarationList.transformFlags;
-  if (hasSyntacticModifier(node, ModifierFlags.Ambient)) {
+  if (qc.has.syntacticModifier(node, ModifierFlags.Ambient)) {
     transformFlags = TransformFlags.AssertTypeScript;
   } else {
     transformFlags = subtreeFlags;

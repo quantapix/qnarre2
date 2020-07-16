@@ -3,7 +3,7 @@ import { Node, Nodes } from '../core3';
 import * as qc from '../core3';
 import * as qt from '../types';
 import * as qy from '../syntax';
-import { Modifier, Syntax } from '../syntax';
+import { Modifier, ModifierFlags, Syntax } from '../syntax';
 const enum ESNextSubstitutionFlags {
   AsyncMethodsWithSuper = 1 << 0,
 }
@@ -277,7 +277,7 @@ export function transformES2018(context: TransformationContext) {
     return visitEachChild(node, visitor, context);
   }
   function visitVariableStatement(node: VariableStatement): VisitResult<VariableStatement> {
-    if (hasSyntacticModifier(node, ModifierFlags.Export)) {
+    if (qc.has.syntacticModifier(node, ModifierFlags.Export)) {
       const savedExportedVariableStatement = exportedVariableStatement;
       exportedVariableStatement = true;
       const visited = visitEachChild(node, visitor, context);

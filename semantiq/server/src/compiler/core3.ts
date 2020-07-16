@@ -80,7 +80,7 @@ export const is = new (class {
       case Syntax.FunctionExpression:
       case Syntax.ArrowFunction:
       case Syntax.MethodDeclaration:
-        return n.body !== undefined && n.asteriskToken === undefined && hasSyntacticModifier(n, ModifierFlags.Async);
+        return n.body !== undefined && n.asteriskToken === undefined && has.syntacticModifier(n, ModifierFlags.Async);
     }
     return false;
   }
@@ -206,10 +206,10 @@ export const is = new (class {
   signedNumericLiteral(n: Node): n is qc.PrefixUnaryExpression & { operand: qc.NumericLiteral } {
     return this.kind(qc.PrefixUnaryExpression, n) && (n.operator === Syntax.PlusToken || n.operator === Syntax.MinusToken) && n.operand.kind === Syntax.NumericLiteral;
   }
-  deleteTarget(n: Node) {
+  deleteTarget(n?: Node) {
     if (this.kind(qc.PropertyAccessExpression, n) || this.kind(qc.ElementAccessExpression, n)) {
-      n = walkUpParenthesizedExpressions(n.parent);
-      return n.kind === Syntax.DeleteExpression;
+      n = walkUpParenthesizedExpressions(n.parent as Node | undefined);
+      return n?.kind === Syntax.DeleteExpression;
     }
     return false;
   }
@@ -252,10 +252,9 @@ export const is = new (class {
     return this.kind(qc.ImportEqualsDeclaration, n) && n.moduleReference.kind === Syntax.ExternalModuleReference;
   }
   partOfTypeNode(n: Node) {
-    const k = n.kind;
-    if (Syntax.FirstTypeNode <= k && k <= Syntax.LastTypeNode) return true;
+    if (Syntax.FirstTypeNode <= n.kind && n.kind <= Syntax.LastTypeNode) return true;
     const p = n.parent as Node | undefined;
-    switch (k) {
+    switch (n.kind) {
       case Syntax.AnyKeyword:
       case Syntax.BigIntKeyword:
       case Syntax.BooleanKeyword:
@@ -276,6 +275,7 @@ export const is = new (class {
       case Syntax.Identifier:
         if (this.kind(qc.QualifiedName, p) && p.right === n) n = p;
         else if (this.kind(qc.PropertyAccessExpression, p) && p.name === n) n = p;
+        const k = n.kind;
         qb.assert(k === Syntax.Identifier || k === Syntax.QualifiedName || k === Syntax.PropertyAccessExpression);
       case Syntax.PropertyAccessExpression:
       case Syntax.QualifiedName:
@@ -283,6 +283,7 @@ export const is = new (class {
         if (p?.kind === Syntax.TypeQuery) return false;
         if (this.kind(qc.ImportTypeNode, p)) return !p.isTypeOf;
         if (p && Syntax.FirstTypeNode <= p.kind && p.kind <= Syntax.LastTypeNode) return true;
+        console.log(n);
         switch (p?.kind) {
           case Syntax.ExpressionWithTypeArguments:
             return !this.expressionWithTypeArgumentsInClassExtendsClause(p);
@@ -516,7 +517,7 @@ export const is = new (class {
     return false;
   }
   parameterPropertyDeclaration(n: Node, parent: Node): n is qc.ParameterPropertyDeclaration {
-    return hasSyntacticModifier(n, ModifierFlags.ParameterPropertyModifier) && parent.kind === Syntax.Constructor;
+    return has.syntacticModifier(n, ModifierFlags.ParameterPropertyModifier) && parent.kind === Syntax.Constructor;
   }
   parseTreeNode(n: Node) {
     return (n.flags & NodeFlags.Synthesized) === 0;
@@ -967,7 +968,7 @@ export const is = new (class {
     }
     if (n?.kind !== Syntax.ComputedPropertyName) return false;
     const p = n?.parent as Node | undefined;
-    if (p && has.hasSyntacticModifier(p, ModifierFlags.Abstract)) return true;
+    if (p && has.syntacticModifier(p, ModifierFlags.Abstract)) return true;
     const k = p?.parent?.kind;
     return k === Syntax.InterfaceDeclaration || k === Syntax.TypeLiteral;
   }
@@ -1118,10 +1119,10 @@ export const is = new (class {
   }
 })();
 export const has = new (class {
-  hasTypeArguments(n: Node): n is qc.HasTypeArguments {
+  typeArguments(n: Node): n is qc.HasTypeArguments {
     return !!(n as qc.HasTypeArguments).typeArguments;
   }
-  hasQuestionToken(n: Node) {
+  questionToken(n: Node) {
     switch (n.kind) {
       case Syntax.MethodDeclaration:
       case Syntax.MethodSignature:
@@ -1134,23 +1135,23 @@ export const has = new (class {
     }
     return false;
   }
-  hasEffectiveModifiers(n: Node) {
+  effectiveModifiers(n: Node) {
     return getEffectiveModifierFlags(n) !== ModifierFlags.None;
   }
-  hasSyntacticModifiers(n: Node) {
+  syntacticModifiers(n: Node) {
     return getSyntacticModifierFlags(n) !== ModifierFlags.None;
   }
-  hasEffectiveModifier(n: Node, f: ModifierFlags) {
+  effectiveModifier(n: Node, f: ModifierFlags) {
     return !!getSelectedEffectiveModifierFlags(n, f);
   }
-  hasSyntacticModifier(n: Node, f: ModifierFlags) {
+  syntacticModifier(n: Node, f: ModifierFlags) {
     return !!getSelectedSyntacticModifierFlags(n, f);
   }
-  hasStaticModifier(n: Node) {
-    return this.hasSyntacticModifier(n, ModifierFlags.Static);
+  staticModifier(n: Node) {
+    return this.syntacticModifier(n, ModifierFlags.Static);
   }
-  hasEffectiveReadonlyModifier(n: Node) {
-    return this.hasEffectiveModifier(n, ModifierFlags.Readonly);
+  effectiveReadonlyModifier(n: Node) {
+    return this.effectiveModifier(n, ModifierFlags.Readonly);
   }
 })();
 export const isJsx = new (class {
@@ -1475,7 +1476,7 @@ export const get = new (class {
     if (!isInJSFile(node) && is.kind(FunctionDeclaration, node)) return;
     const type = (node as HasType).type;
     if (type || !isInJSFile(node)) return type;
-    return qc.isDoc.propertyLikeTag(node) ? node.typeExpression && node.typeExpression.type : qc.getDoc.type(node);
+    return isDoc.propertyLikeTag(node) ? node.typeExpression && node.typeExpression.type : qc.getDoc.type(node);
   }
   getTypeAnnotationNode(n: Node): TypeNode | undefined {
     return (node as HasType).type;
@@ -1892,10 +1893,10 @@ export const fixme = new (class {
     return qb.some(ss, isScopeMarker);
   }
   needsScopeMarker(s: qc.Statement) {
-    return !is.anyImportOrReExport(s) && !is.kind(qc.ExportAssignment, s) && !hasSyntacticModifier(s, ModifierFlags.Export) && !is.ambientModule(s);
+    return !is.anyImportOrReExport(s) && !is.kind(qc.ExportAssignment, s) && !has.syntacticModifiers(, ModifierFlags.Export) && !is.ambientModule(s);
   }
   isExternalModuleIndicator(s: qc.Statement) {
-    return is.anyImportOrReExport(s) || is.kind(qc.ExportAssignment, s) || hasSyntacticModifier(s, ModifierFlags.Export);
+    return is.anyImportOrReExport(s) || is.kind(qc.ExportAssignment, s) || has.syntacticModifiers(, ModifierFlags.Export);
   }
   isDeclarationBindingElement(e: qc.BindingOrAssignmentElement): e is qc.VariableDeclaration | qc.ParameterDeclaration | qc.BindingElement {
     switch (e.kind) {
@@ -2568,7 +2569,7 @@ export abstract class Declaration extends qc.Declaration {
     return getGeneratedNameForNode(this);
   }
   getExternalModuleOrNamespaceExportName(s: qt.Identifier | undefined, allowComments?: boolean, allowSourceMaps?: boolean): qt.Identifier | qt.PropertyAccessExpression {
-    if (s && hasSyntacticModifier(this, ModifierFlags.Export)) return getNamespaceMemberName(s, getName(this), allowComments, allowSourceMaps);
+    if (s && has.syntacticModifier(this, ModifierFlags.Export)) return getNamespaceMemberName(s, getName(this), allowComments, allowSourceMaps);
     return this.getExportName(allowComments, allowSourceMaps);
   }
 }
@@ -2822,14 +2823,14 @@ export namespace BindingOrAssignmentElement {
       // `1` in `let [[a] = 1] = ...`
       return e.initializer;
     }
-    if (qc.is.kind(PropertyAssignment, e)) {
+    if (is.kind(PropertyAssignment, e)) {
       // `1` in `({ a: b = 1 } = ...)`
       // `1` in `({ a: {b} = 1 } = ...)`
       // `1` in `({ a: [b] = 1 } = ...)`
       const i = e.initializer;
       return isAssignmentExpression(i, true) ? i.right : undefined;
     }
-    if (qc.is.kind(ShorthandPropertyAssignment, e)) {
+    if (is.kind(ShorthandPropertyAssignment, e)) {
       // `1` in `({ a = 1 } = ...)`
       return e.objectAssignmentInitializer;
     }
@@ -2839,7 +2840,7 @@ export namespace BindingOrAssignmentElement {
       // `1` in `[[a] = 1] = ...`
       return e.right;
     }
-    if (qc.is.kind(SpreadElement, e)) return getInitializerOfBindingOrAssignmentElement(<qc.BindingOrAssignmentElement>e.expression);
+    if (is.kind(SpreadElement, e)) return getInitializerOfBindingOrAssignmentElement(<qc.BindingOrAssignmentElement>e.expression);
     return;
   }
   export function getTargetOfBindingOrAssignmentElement(e: qc.BindingOrAssignmentElement): qc.BindingOrAssignmentElementTarget | undefined {
@@ -2862,7 +2863,7 @@ export namespace BindingOrAssignmentElement {
       // `[a]` in `let [[a] = 1] = ...`
       return e.name;
     }
-    if (qc.is.objectLiteralElementLike(e)) {
+    if (is.objectLiteralElementLike(e)) {
       switch (e.kind) {
         case Syntax.PropertyAssignment:
           // `b` in `({ a: b } = ...)`
@@ -2895,7 +2896,7 @@ export namespace BindingOrAssignmentElement {
       // `a[0]` in `[a[0] = 1] = ...`
       return getTargetOfBindingOrAssignmentElement(<qc.BindingOrAssignmentElement>e.left);
     }
-    if (qc.is.kind(SpreadElement, e)) {
+    if (is.kind(SpreadElement, e)) {
       // `a` in `[...a] = ...`
       return getTargetOfBindingOrAssignmentElement(<qc.BindingOrAssignmentElement>e.expression);
     }
@@ -2921,7 +2922,7 @@ export namespace BindingOrAssignmentElement {
   }
   export function getPropertyNameOfBindingOrAssignmentElement(e: qc.BindingOrAssignmentElement): Exclude<qc.PropertyName, PrivateIdentifier> | undefined {
     const propertyName = tryGetPropertyNameOfBindingOrAssignmentElement(e);
-    qb.assert(!!propertyName || qc.is.kind(SpreadAssignment, e));
+    qb.assert(!!propertyName || is.kind(SpreadAssignment, e));
     return propertyName;
   }
   export function tryGetPropertyNameOfBindingOrAssignmentElement(e: qc.BindingOrAssignmentElement): Exclude<qc.PropertyName, PrivateIdentifier> | undefined {
@@ -2933,8 +2934,8 @@ export namespace BindingOrAssignmentElement {
         // `1` in `let { 1: b } = ...`
         if (e.propertyName) {
           const propertyName = e.propertyName;
-          if (qc.is.kind(PrivateIdentifier, propertyName)) return qg.failBadSyntax(propertyName);
-          return qc.is.kind(ComputedPropertyName, propertyName) && isStringOrNumericLiteral(propertyName.expression) ? propertyName.expression : propertyName;
+          if (is.kind(PrivateIdentifier, propertyName)) return qg.failBadSyntax(propertyName);
+          return is.kind(ComputedPropertyName, propertyName) && isStringOrNumericLiteral(propertyName.expression) ? propertyName.expression : propertyName;
         }
         break;
       case Syntax.PropertyAssignment:
@@ -2944,21 +2945,21 @@ export namespace BindingOrAssignmentElement {
         // `1` in `({ 1: b } = ...)`
         if (e.name) {
           const propertyName = e.name;
-          if (qc.is.kind(PrivateIdentifier, propertyName)) return qg.failBadSyntax(propertyName);
-          return qc.is.kind(ComputedPropertyName, propertyName) && isStringOrNumericLiteral(propertyName.expression) ? propertyName.expression : propertyName;
+          if (is.kind(PrivateIdentifier, propertyName)) return qg.failBadSyntax(propertyName);
+          return is.kind(ComputedPropertyName, propertyName) && isStringOrNumericLiteral(propertyName.expression) ? propertyName.expression : propertyName;
         }
         break;
       case Syntax.SpreadAssignment:
         // `a` in `({ ...a } = ...)`
-        if (e.name && qc.is.kind(PrivateIdentifier, e.name)) return qg.failBadSyntax(e.name);
+        if (e.name && is.kind(PrivateIdentifier, e.name)) return qg.failBadSyntax(e.name);
         return e.name;
     }
     const target = getTargetOfBindingOrAssignmentElement(e);
-    if (target && qc.is.propertyName(target)) return target;
+    if (target && is.propertyName(target)) return target;
     return;
   }
   export function convertToArrayAssignmentElement(e: qc.BindingOrAssignmentElement) {
-    if (qc.is.kind(BindingElement, e)) {
+    if (is.kind(BindingElement, e)) {
       if (e.dot3Token) {
         qg.assertNode(e.name, isIdentifier);
         return new SpreadElement(e.name).setRange(e).setOriginal(e);
@@ -2970,7 +2971,7 @@ export namespace BindingOrAssignmentElement {
     return <qc.Expression>e;
   }
   export function convertToObjectAssignmentElement(e: qc.BindingOrAssignmentElement) {
-    if (qc.is.kind(BindingElement, e)) {
+    if (is.kind(BindingElement, e)) {
       if (e.dot3Token) {
         qg.assertNode(e.name, isIdentifier);
         return new SpreadAssignment(e.name).setRange(e).setOriginal(e);
@@ -3011,17 +3012,17 @@ export namespace BindingOrAssignmentPattern {
     }
   }
   export function convertToObjectAssignmentPattern(n: qc.ObjectBindingOrAssignmentPattern) {
-    if (qc.is.kind(ObjectBindingPattern, n)) return new ObjectLiteralExpression(qb.map(n.elements, convertToObjectAssignmentElement)).setOriginal(n).setRange(n);
+    if (is.kind(ObjectBindingPattern, n)) return new ObjectLiteralExpression(qb.map(n.elements, convertToObjectAssignmentElement)).setOriginal(n).setRange(n);
     qg.assertNode(n, isObjectLiteralExpression);
     return n;
   }
   export function convertToArrayAssignmentPattern(n: qc.ArrayBindingOrAssignmentPattern) {
-    if (qc.is.kind(ArrayBindingPattern, n)) return new ArrayLiteralExpression(qb.map(n.elements, convertToArrayAssignmentElement)).setOriginal(n).setRange(n);
+    if (is.kind(ArrayBindingPattern, n)) return new ArrayLiteralExpression(qb.map(n.elements, convertToArrayAssignmentElement)).setOriginal(n).setRange(n);
     qg.assertNode(n, isArrayLiteralExpression);
     return n;
   }
   export function convertToAssignmentElementTarget(n: qc.BindingOrAssignmentElementTarget): qc.Expression {
-    if (qc.is.kind(BindingPattern, n)) return convertToAssignmentPattern(n);
+    if (is.kind(BindingPattern, n)) return convertToAssignmentPattern(n);
     qg.assertNode(n, isExpression);
     return n;
   }
@@ -3035,15 +3036,15 @@ export function tryGetClassExtendingExpressionWithTypeArguments(n: Node): ClassL
   const c = tryGetClassImplementingOrExtendingExpressionWithTypeArguments(n);
   return c && !c.isImplements ? c.class : undefined;
 }
-export function walkUpParenthesizedTypes(n: Node) {
+export function walkUpParenthesizedTypes(n?: Node) {
   return walkUp(n, Syntax.ParenthesizedType);
 }
-export function walkUpParenthesizedExpressions(n: Node) {
+export function walkUpParenthesizedExpressions(n?: Node) {
   return walkUp(n, Syntax.ParenthesizedExpression);
 }
-function walkUp(n: Node, k: Syntax) {
-  while (n && n.kind === k) {
-    n = n.parent;
+function walkUp(n?: Node, k: Syntax) {
+  while (n?.kind === k) {
+    n = n.parent as Node | undefined;
   }
   return n;
 }

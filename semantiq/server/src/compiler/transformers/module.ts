@@ -1,10 +1,9 @@
 import * as qb from '../base';
-import * as qc from '../core';
-import { Node, Nodes } from '../core';
-import * as qs from '../core3';
+import * as qc from '../core3';
+import { Node, Nodes } from '../core3';
 import * as qt from '../types';
 import * as qy from '../syntax';
-import { Modifier, Syntax } from '../syntax';
+import { Modifier, ModifierFlags, Syntax } from '../syntax';
 export function transformModule(context: TransformationContext) {
   interface AsynchronousDependencies {
     aliasedModuleNames: Expression[];
@@ -498,7 +497,7 @@ export function transformModule(context: TransformationContext) {
     assert(qc.is.externalModuleImportEqualsDeclaration(node), 'import= for internal module references should be handled in an earlier transformer.');
     let statements: Statement[] | undefined;
     if (moduleKind !== ModuleKind.AMD) {
-      if (hasSyntacticModifier(node, ModifierFlags.Export)) {
+      if (qc.has.syntacticModifier(node, ModifierFlags.Export)) {
         statements = append(statements, setRange(new qc.ExpressionStatement(createExportExpression(node.name, createRequireCall(node))), node).setOriginal(node));
       } else {
         statements = append(
@@ -519,7 +518,7 @@ export function transformModule(context: TransformationContext) {
         );
       }
     } else {
-      if (hasSyntacticModifier(node, ModifierFlags.Export)) {
+      if (qc.has.syntacticModifier(node, ModifierFlags.Export)) {
         statements = append(statements, setRange(new qc.ExpressionStatement(createExportExpression(getExportName(node), getLocalName(node))), node).setOriginal(node));
       }
     }
@@ -598,7 +597,7 @@ export function transformModule(context: TransformationContext) {
   }
   function visitFunctionDeclaration(node: FunctionDeclaration): VisitResult<Statement> {
     let statements: Statement[] | undefined;
-    if (hasSyntacticModifier(node, ModifierFlags.Export)) {
+    if (qc.has.syntacticModifier(node, ModifierFlags.Export)) {
       statements = append(
         statements,
         setOriginalNode(
@@ -631,7 +630,7 @@ export function transformModule(context: TransformationContext) {
   }
   function visitClassDeclaration(node: ClassDeclaration): VisitResult<Statement> {
     let statements: Statement[] | undefined;
-    if (hasSyntacticModifier(node, ModifierFlags.Export)) {
+    if (qc.has.syntacticModifier(node, ModifierFlags.Export)) {
       statements = append(
         statements,
         setOriginalNode(
@@ -664,7 +663,7 @@ export function transformModule(context: TransformationContext) {
     let statements: Statement[] | undefined;
     let variables: VariableDeclaration[] | undefined;
     let expressions: Expression[] | undefined;
-    if (hasSyntacticModifier(node, ModifierFlags.Export)) {
+    if (qc.has.syntacticModifier(node, ModifierFlags.Export)) {
       let modifiers: Nodes<Modifier> | undefined;
       for (const variable of node.declarationList.declarations) {
         if (qc.is.kind(Identifier, variable.name) && isLocalName(variable.name)) {
@@ -781,8 +780,8 @@ export function transformModule(context: TransformationContext) {
   }
   function appendExportsOfHoistedDeclaration(statements: Statement[] | undefined, decl: ClassDeclaration | FunctionDeclaration): Statement[] | undefined {
     if (currentModuleInfo.exportEquals) return statements;
-    if (hasSyntacticModifier(decl, ModifierFlags.Export)) {
-      const exportName = hasSyntacticModifier(decl, ModifierFlags.Default) ? new Identifier('default') : getDeclarationName(decl);
+    if (qc.has.syntacticModifier(decl, ModifierFlags.Export)) {
+      const exportName = qc.has.syntacticModifier(decl, ModifierFlags.Default) ? new Identifier('default') : getDeclarationName(decl);
       statements = appendExportStatement(statements, exportName, getLocalName(decl), decl);
     }
     if (decl.name) {
@@ -1435,7 +1434,7 @@ export function transformSystemModule(context: TransformationContext) {
     return createExportStatement(new Identifier('default'), expression, true);
   }
   function visitFunctionDeclaration(node: FunctionDeclaration): VisitResult<Statement> {
-    if (hasSyntacticModifier(node, ModifierFlags.Export)) {
+    if (qc.has.syntacticModifier(node, ModifierFlags.Export)) {
       hoistedStatements = append(
         hoistedStatements,
         node.update(
@@ -1496,7 +1495,7 @@ export function transformSystemModule(context: TransformationContext) {
   function visitVariableStatement(node: VariableStatement): VisitResult<Statement> {
     if (!shouldHoistVariableDeclarationList(node.declarationList)) return visitNode(node, destructuringAndImportCallVisitor, isStatement);
     let expressions: Expression[] | undefined;
-    const isExportedDeclaration = hasSyntacticModifier(node, ModifierFlags.Export);
+    const isExportedDeclaration = qc.has.syntacticModifier(node, ModifierFlags.Export);
     const isMarkedDeclaration = hasAssociatedEndOfDeclarationMarker(node);
     for (const variable of node.declarationList.declarations) {
       if (variable.initializer) {
@@ -1554,7 +1553,7 @@ export function transformSystemModule(context: TransformationContext) {
   function visitMergeDeclarationMarker(node: MergeDeclarationMarker): VisitResult<Statement> {
     if (hasAssociatedEndOfDeclarationMarker(node) && node.original!.kind === Syntax.VariableStatement) {
       const id = getOriginalNodeId(node);
-      const isExportedDeclaration = hasSyntacticModifier(node.original!, ModifierFlags.Export);
+      const isExportedDeclaration = qc.has.syntacticModifier(node.original!, ModifierFlags.Export);
       deferredExports[id] = appendExportsOfVariableStatement(deferredExports[id], <VariableStatement>node.original, isExportedDeclaration);
     }
     return node;
@@ -1630,8 +1629,8 @@ export function transformSystemModule(context: TransformationContext) {
   function appendExportsOfHoistedDeclaration(statements: Statement[] | undefined, decl: ClassDeclaration | FunctionDeclaration): Statement[] | undefined {
     if (moduleInfo.exportEquals) return statements;
     let excludeName: string | undefined;
-    if (hasSyntacticModifier(decl, ModifierFlags.Export)) {
-      const exportName = hasSyntacticModifier(decl, ModifierFlags.Default) ? qc.asLiteral('default') : decl.name!;
+    if (qc.has.syntacticModifier(decl, ModifierFlags.Export)) {
+      const exportName = qc.has.syntacticModifier(decl, ModifierFlags.Default) ? qc.asLiteral('default') : decl.name!;
       statements = appendExportStatement(statements, exportName, getLocalName(decl));
       excludeName = getTextOfIdentifierOrLiteral(exportName);
     }

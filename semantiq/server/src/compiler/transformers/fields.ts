@@ -355,7 +355,7 @@ export function transformClassFields(context: TransformationContext) {
     return setRange(new Nodes(ms), n.members);
   }
   function isPropertyDeclarationThatRequiresConstructorStatement(member: ClassElement): member is PropertyDeclaration {
-    if (!qc.is.kind(PropertyDeclaration, member) || hasStaticModifier(member)) return false;
+    if (!qc.is.kind(PropertyDeclaration, member) || qc.has.staticModifier(member)) return false;
     if (context.getCompilerOptions().useDefineForClassFields) return languageVersion < ScriptTarget.ESNext;
     return isInitializedProperty(member) || (shouldTransformPrivateFields && member.isPrivateIdentifierPropertyDeclaration());
   }
