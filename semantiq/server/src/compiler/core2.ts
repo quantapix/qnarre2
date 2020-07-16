@@ -56,6 +56,23 @@ export class Nobj extends qc.Nobj {
 //export namespace ArrayBindingElement {
 //  export const also = [Syntax.BindingElement, Syntax.OmittedExpression];
 //}
+export abstract class UnionOrIntersectionTypeNode extends qc.TypeNode implements qc.UnionOrIntersectionType {
+  types: Nodes<qc.TypeNode>;
+  objectFlags: qc.ObjectFlags;
+  propertyCache: qc.SymbolTable;
+  resolvedProperties: qc.Symbol[];
+  resolvedIndexType: qc.IndexType;
+  resolvedStringIndexType: qc.IndexType;
+  resolvedBaseConstraint: qc.Type;
+  constructor(k: Syntax.UnionType | Syntax.IntersectionType, ts: readonly qc.TypeNode[]) {
+    super(true, k);
+    this.types = parenthesize.elementTypeMembers(ts);
+  }
+  update(ts: Nodes<qc.TypeNode>) {
+    return this.types !== ts ? new UnionOrIntersectionTypeNode(this.kind, ts).updateFrom(this) : this;
+  }
+}
+
 export class ArrayBindingPattern extends Nobj implements qc.ArrayBindingPattern {
   static readonly kind = Syntax.ArrayBindingPattern;
   parent!: VariableDeclaration | ParameterDeclaration | BindingElement;
@@ -210,10 +227,10 @@ export class BinaryExpression extends qc.Expression implements qc.BinaryExpressi
     return new BinaryExpression(l, Syntax.Question2Token, r);
   }
   static createComma(l: qc.Expression, r: qc.Expression) {
-    return <qc.Expression>new BinaryExpression(l, Syntax.CommaToken, r);
+    return new BinaryExpression(l, Syntax.CommaToken, r);
   }
   static createLessThan(l: qc.Expression, r: qc.Expression) {
-    return <qc.Expression>new BinaryExpression(l, Syntax.LessThanToken, r);
+    return new BinaryExpression(l, Syntax.LessThanToken, r);
   }
   static createAssignment(l: ObjectLiteralExpression | ArrayLiteralExpression, r: qc.Expression): qc.DestructuringAssignment;
   static createAssignment(l: qc.Expression, r: qc.Expression): BinaryExpression;
@@ -243,222 +260,6 @@ export class BindingElement extends qc.NamedDeclaration implements qc.BindingEle
   }
 }
 BindingElement.prototype.kind = BindingElement.kind;
-export namespace BindingOrAssignmentElement {
-  export function getInitializerOfBindingOrAssignmentElement(e: qc.BindingOrAssignmentElement): qc.Expression | undefined {
-    if (isDeclarationBindingElement(e)) {
-      // `1` in `let { a = 1 } = ...`
-      // `1` in `let { a: b = 1 } = ...`
-      // `1` in `let { a: {b} = 1 } = ...`
-      // `1` in `let { a: [b] = 1 } = ...`
-      // `1` in `let [a = 1] = ...`
-      // `1` in `let [{a} = 1] = ...`
-      // `1` in `let [[a] = 1] = ...`
-      return e.initializer;
-    }
-    if (qc.is.kind(PropertyAssignment, e)) {
-      // `1` in `({ a: b = 1 } = ...)`
-      // `1` in `({ a: {b} = 1 } = ...)`
-      // `1` in `({ a: [b] = 1 } = ...)`
-      const i = e.initializer;
-      return isAssignmentExpression(i, true) ? i.right : undefined;
-    }
-    if (qc.is.kind(ShorthandPropertyAssignment, e)) {
-      // `1` in `({ a = 1 } = ...)`
-      return e.objectAssignmentInitializer;
-    }
-    if (isAssignmentExpression(e, true)) {
-      // `1` in `[a = 1] = ...`
-      // `1` in `[{a} = 1] = ...`
-      // `1` in `[[a] = 1] = ...`
-      return e.right;
-    }
-    if (qc.is.kind(SpreadElement, e)) return getInitializerOfBindingOrAssignmentElement(<qc.BindingOrAssignmentElement>e.expression);
-    return;
-  }
-  export function getTargetOfBindingOrAssignmentElement(e: qc.BindingOrAssignmentElement): qc.BindingOrAssignmentElementTarget | undefined {
-    if (isDeclarationBindingElement(e)) {
-      // `a` in `let { a } = ...`
-      // `a` in `let { a = 1 } = ...`
-      // `b` in `let { a: b } = ...`
-      // `b` in `let { a: b = 1 } = ...`
-      // `a` in `let { ...a } = ...`
-      // `{b}` in `let { a: {b} } = ...`
-      // `{b}` in `let { a: {b} = 1 } = ...`
-      // `[b]` in `let { a: [b] } = ...`
-      // `[b]` in `let { a: [b] = 1 } = ...`
-      // `a` in `let [a] = ...`
-      // `a` in `let [a = 1] = ...`
-      // `a` in `let [...a] = ...`
-      // `{a}` in `let [{a}] = ...`
-      // `{a}` in `let [{a} = 1] = ...`
-      // `[a]` in `let [[a]] = ...`
-      // `[a]` in `let [[a] = 1] = ...`
-      return e.name;
-    }
-    if (qc.is.objectLiteralElementLike(e)) {
-      switch (e.kind) {
-        case Syntax.PropertyAssignment:
-          // `b` in `({ a: b } = ...)`
-          // `b` in `({ a: b = 1 } = ...)`
-          // `{b}` in `({ a: {b} } = ...)`
-          // `{b}` in `({ a: {b} = 1 } = ...)`
-          // `[b]` in `({ a: [b] } = ...)`
-          // `[b]` in `({ a: [b] = 1 } = ...)`
-          // `b.c` in `({ a: b.c } = ...)`
-          // `b.c` in `({ a: b.c = 1 } = ...)`
-          // `b[0]` in `({ a: b[0] } = ...)`
-          // `b[0]` in `({ a: b[0] = 1 } = ...)`
-          return getTargetOfBindingOrAssignmentElement(<qc.BindingOrAssignmentElement>e.initializer);
-        case Syntax.ShorthandPropertyAssignment:
-          // `a` in `({ a } = ...)`
-          // `a` in `({ a = 1 } = ...)`
-          return e.name;
-        case Syntax.SpreadAssignment:
-          // `a` in `({ ...a } = ...)`
-          return getTargetOfBindingOrAssignmentElement(<qc.BindingOrAssignmentElement>e.expression);
-      }
-      // no target
-      return;
-    }
-    if (isAssignmentExpression(e, true)) {
-      // `a` in `[a = 1] = ...`
-      // `{a}` in `[{a} = 1] = ...`
-      // `[a]` in `[[a] = 1] = ...`
-      // `a.b` in `[a.b = 1] = ...`
-      // `a[0]` in `[a[0] = 1] = ...`
-      return getTargetOfBindingOrAssignmentElement(<qc.BindingOrAssignmentElement>e.left);
-    }
-    if (qc.is.kind(SpreadElement, e)) {
-      // `a` in `[...a] = ...`
-      return getTargetOfBindingOrAssignmentElement(<qc.BindingOrAssignmentElement>e.expression);
-    }
-    // `a` in `[a] = ...`
-    // `{a}` in `[{a}] = ...`
-    // `[a]` in `[[a]] = ...`
-    // `a.b` in `[a.b] = ...`
-    // `a[0]` in `[a[0]] = ...`
-    return e;
-  }
-  export function getRestIndicatorOfBindingOrAssignmentElement(e: qc.BindingOrAssignmentElement): qc.BindingOrAssignmentElementRestIndicator | undefined {
-    switch (e.kind) {
-      case Syntax.Parameter:
-      case Syntax.BindingElement:
-        // `...` in `let [...a] = ...`
-        return e.dot3Token;
-      case Syntax.SpreadElement:
-      case Syntax.SpreadAssignment:
-        // `...` in `[...a] = ...`
-        return e;
-    }
-    return;
-  }
-  export function getPropertyNameOfBindingOrAssignmentElement(e: qc.BindingOrAssignmentElement): Exclude<qc.PropertyName, PrivateIdentifier> | undefined {
-    const propertyName = tryGetPropertyNameOfBindingOrAssignmentElement(e);
-    qb.assert(!!propertyName || qc.is.kind(SpreadAssignment, e));
-    return propertyName;
-  }
-  export function tryGetPropertyNameOfBindingOrAssignmentElement(e: qc.BindingOrAssignmentElement): Exclude<qc.PropertyName, PrivateIdentifier> | undefined {
-    switch (e.kind) {
-      case Syntax.BindingElement:
-        // `a` in `let { a: b } = ...`
-        // `[a]` in `let { [a]: b } = ...`
-        // `"a"` in `let { "a": b } = ...`
-        // `1` in `let { 1: b } = ...`
-        if (e.propertyName) {
-          const propertyName = e.propertyName;
-          if (qc.is.kind(PrivateIdentifier, propertyName)) return qg.failBadSyntax(propertyName);
-          return qc.is.kind(ComputedPropertyName, propertyName) && isStringOrNumericLiteral(propertyName.expression) ? propertyName.expression : propertyName;
-        }
-        break;
-      case Syntax.PropertyAssignment:
-        // `a` in `({ a: b } = ...)`
-        // `[a]` in `({ [a]: b } = ...)`
-        // `"a"` in `({ "a": b } = ...)`
-        // `1` in `({ 1: b } = ...)`
-        if (e.name) {
-          const propertyName = e.name;
-          if (qc.is.kind(PrivateIdentifier, propertyName)) return qg.failBadSyntax(propertyName);
-          return qc.is.kind(ComputedPropertyName, propertyName) && isStringOrNumericLiteral(propertyName.expression) ? propertyName.expression : propertyName;
-        }
-        break;
-      case Syntax.SpreadAssignment:
-        // `a` in `({ ...a } = ...)`
-        if (e.name && qc.is.kind(PrivateIdentifier, e.name)) return qg.failBadSyntax(e.name);
-        return e.name;
-    }
-    const target = getTargetOfBindingOrAssignmentElement(e);
-    if (target && qc.is.propertyName(target)) return target;
-    return;
-  }
-  export function convertToArrayAssignmentElement(e: qc.BindingOrAssignmentElement) {
-    if (qc.is.kind(BindingElement, e)) {
-      if (e.dot3Token) {
-        qg.assertNode(e.name, isIdentifier);
-        return new SpreadElement(e.name).setRange(e).setOriginal(e);
-      }
-      const e2 = convertToAssignmentElementTarget(e.name);
-      return e.initializer ? createAssignment(e2, e.initializer).setRange(e).setOriginal(e) : e2;
-    }
-    qg.assertNode(e, isExpression);
-    return <qc.Expression>e;
-  }
-  export function convertToObjectAssignmentElement(e: qc.BindingOrAssignmentElement) {
-    if (qc.is.kind(BindingElement, e)) {
-      if (e.dot3Token) {
-        qg.assertNode(e.name, isIdentifier);
-        return new SpreadAssignment(e.name).setRange(e).setOriginal(e);
-      }
-      if (e.propertyName) {
-        const e2 = convertToAssignmentElementTarget(e.name);
-        return new PropertyAssignment(e.propertyName, e.initializer ? createAssignment(e2, e.initializer) : e2).setRange(e).setOriginal(e);
-      }
-      qg.assertNode(e.name, isIdentifier);
-      return new ShorthandPropertyAssignment(e.name, e.initializer).setRange(e).setOriginal(e);
-    }
-    qg.assertNode(e, isObjectLiteralElementLike);
-    return <qc.ObjectLiteralElementLike>e;
-  }
-}
-export namespace BindingOrAssignmentPattern {
-  export function getElementsOfBindingOrAssignmentPattern(name: qc.BindingOrAssignmentPattern): readonly qc.BindingOrAssignmentElement[] {
-    switch (name.kind) {
-      case Syntax.ObjectBindingPattern:
-      case Syntax.ArrayBindingPattern:
-      case Syntax.ArrayLiteralExpression:
-        // `a` in `{a}`
-        // `a` in `[a]`
-        return <readonly qc.BindingOrAssignmentElement[]>name.elements;
-      case Syntax.ObjectLiteralExpression:
-        // `a` in `{a}`
-        return <readonly qc.BindingOrAssignmentElement[]>name.properties;
-    }
-  }
-  export function convertToAssignmentPattern(n: qc.BindingOrAssignmentPattern): qc.AssignmentPattern {
-    switch (n.kind) {
-      case Syntax.ArrayBindingPattern:
-      case Syntax.ArrayLiteralExpression:
-        return convertToArrayAssignmentPattern(n);
-      case Syntax.ObjectBindingPattern:
-      case Syntax.ObjectLiteralExpression:
-        return convertToObjectAssignmentPattern(n);
-    }
-  }
-  export function convertToObjectAssignmentPattern(n: qc.ObjectBindingOrAssignmentPattern) {
-    if (qc.is.kind(ObjectBindingPattern, n)) return new ObjectLiteralExpression(qb.map(n.elements, convertToObjectAssignmentElement)).setOriginal(n).setRange(n);
-    qg.assertNode(n, isObjectLiteralExpression);
-    return n;
-  }
-  export function convertToArrayAssignmentPattern(n: qc.ArrayBindingOrAssignmentPattern) {
-    if (qc.is.kind(ArrayBindingPattern, n)) return new ArrayLiteralExpression(qb.map(n.elements, convertToArrayAssignmentElement)).setOriginal(n).setRange(n);
-    qg.assertNode(n, isArrayLiteralExpression);
-    return n;
-  }
-  export function convertToAssignmentElementTarget(n: qc.BindingOrAssignmentElementTarget): qc.Expression {
-    if (qc.is.kind(BindingPattern, n)) return convertToAssignmentPattern(n);
-    qg.assertNode(n, isExpression);
-    return n;
-  }
-}
 export namespace BindingPattern {
   export const kind = Syntax.ArrayBindingPattern;
   export const also = [Syntax.ObjectBindingPattern];
@@ -1814,7 +1615,7 @@ export class InterfaceDeclaration extends qc.DeclarationStatement implements qc.
 }
 InterfaceDeclaration.prototype.kind = InterfaceDeclaration.kind;
 qb.addMixins(InterfaceDeclaration, [qc.DocContainer]);
-export class IntersectionTypeNode extends qc.UnionOrIntersectionTypeNode implements qc.IntersectionTypeNode {
+export class IntersectionTypeNode extends UnionOrIntersectionTypeNode implements qc.IntersectionTypeNode {
   static readonly kind = Syntax.IntersectionType;
   types: Nodes<qc.TypeNode>;
   constructor(ts: readonly qc.TypeNode[]) {
@@ -3496,7 +3297,7 @@ export class TypeReferenceNode extends qc.NodeWithTypeArguments implements qc.Ty
   }
 }
 TypeReferenceNode.prototype.kind = TypeReferenceNode.kind;
-export class UnionTypeNode extends qc.UnionOrIntersectionTypeNode implements qc.UnionTypeNode {
+export class UnionTypeNode extends UnionOrIntersectionTypeNode implements qc.UnionTypeNode {
   static readonly kind = Syntax.UnionType;
   types: Nodes<qc.TypeNode>;
   constructor(ts: readonly qc.TypeNode[]) {
