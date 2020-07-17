@@ -1,4 +1,5 @@
 import * as qb from './base';
+import * as qd from './diags';
 import { Syntax } from './syntax';
 import * as qy from './syntax';
 export type AssertsToken = Token<Syntax.AssertsKeyword>;
@@ -486,28 +487,14 @@ export interface Diagnostic extends DiagnosticRelatedInformation {
   source?: string;
   relatedInformation?: DiagnosticRelatedInformation[];
 }
-export enum DiagnosticCategory {
-  Warning,
-  Error,
-  Suggestion,
-  Message,
-}
-export interface DiagnosticMessage {
-  key: string;
-  category: DiagnosticCategory;
-  code: number;
-  message: string;
-  reportsUnnecessary?: {};
-  elidedInCompatabilityPyramid?: boolean;
-}
 export interface DiagnosticMessageChain {
   messageText: string;
-  category: DiagnosticCategory;
+  category: qd.Category;
   code: number;
   next?: DiagnosticMessageChain[];
 }
 export interface DiagnosticRelatedInformation {
-  category: DiagnosticCategory;
+  category: qd.Category;
   code: number;
   file: SourceFile | undefined;
   start: number | undefined;
@@ -3306,8 +3293,8 @@ export interface FileExtensionInfo {
   isMixedContent: boolean;
   scriptKind?: ScriptKind;
 }
-export function diagnosticCategoryName(d: { category: DiagnosticCategory }, lowerCase = true): string {
-  const name = DiagnosticCategory[d.category];
+export function diagnosticCategoryName(d: { category: qd.Category }, lowerCase = true): string {
+  const name = qd.Category[d.category];
   return lowerCase ? name.toLowerCase() : name;
 }
 export enum ModuleResolutionKind {
@@ -3524,12 +3511,12 @@ export interface CommandLineOptionBase {
   type: 'string' | 'number' | 'boolean' | 'object' | 'list' | qb.QMap<number | string>;
   isFilePath?: boolean;
   shortName?: string;
-  description?: DiagnosticMessage;
-  paramType?: DiagnosticMessage;
+  description?: qd.Message;
+  paramType?: qd.Message;
   isTSConfigOnly?: boolean;
   isCommandLineOnly?: boolean;
   showInSimplifiedHelpView?: boolean;
-  category?: DiagnosticMessage;
+  category?: qd.Message;
   strictFlag?: true;
   affectsSourceFile?: true;
   affectsModuleResolution?: true;
@@ -3546,8 +3533,8 @@ export interface CommandLineOptionOfCustomType extends CommandLineOptionBase {
 }
 export interface DidYouMeanOptionsDiagnostics {
   optionDeclarations: CommandLineOption[];
-  unknownOptionDiagnostic: DiagnosticMessage;
-  unknownDidYouMeanDiagnostic: DiagnosticMessage;
+  unknownOptionDiagnostic: qd.Message;
+  unknownDidYouMeanDiagnostic: qd.Message;
 }
 export interface TsConfigOnlyOption extends CommandLineOptionBase {
   type: 'object';
@@ -3933,7 +3920,7 @@ export interface UserPreferences {
   readonly allowTextChangesInNewFiles?: boolean;
   readonly providePrefixAndSuffixTextForRename?: boolean;
 }
-export type ErrorCallback = (m: DiagnosticMessage, length: number) => void;
+export type ErrorCallback = (m: qd.Message, length: number) => void;
 // prettier-ignore
 export type NodeWithPossibleHoistedDeclaration = | Block | VariableStatement | WithStatement | IfStatement | SwitchStatement | CaseBlock | CaseClause | DefaultClause | LabeledStatement | ForStatement | ForInStatement | ForOfStatement | DoStatement | WhileStatement | TryStatement | CatchClause;
 export type ValueSignatureDeclaration = FunctionDeclaration | MethodDeclaration | ConstructorDeclaration | AccessorDeclaration | FunctionExpress;

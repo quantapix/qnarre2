@@ -420,10 +420,6 @@ export function getErrorSpanForNode(sourceFile: SourceFile, node: Node): TextSpa
 export function getLeadingCommentRangesOfNode(node: Node, sourceFileOfNode: SourceFile) {
   return node.kind !== Syntax.JsxText ? syntax.get.leadingCommentRanges(sourceFileOfNode.text, node.pos) : undefined;
 }
-export const fullTripleSlashReferencePathRegEx = /^(\/\/\/\s*<reference\s+path\s*=\s*)('|")(.+?)\2.*?\/>/;
-const fullTripleSlashReferenceTypeReferenceDirectiveRegEx = /^(\/\/\/\s*<reference\s+types\s*=\s*)('|")(.+?)\2.*?\/>/;
-export const fullTripleSlashAMDReferencePathRegEx = /^(\/\/\/\s*<amd-dependency\s+path\s*=\s*)('|")(.+?)\2.*?\/>/;
-const defaultLibReferenceRegEx = /^(\/\/\/\s*<reference\s+no-default-lib\s*=\s*)('|")(.+?)\2\s*\/>/;
 export function forEachReturnStatement<T>(body: Block, visitor: (stmt: ReturnStatement) => T): T | undefined {
   return traverse(body);
   function traverse(node: Node): T | undefined {

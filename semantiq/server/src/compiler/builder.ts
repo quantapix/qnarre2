@@ -151,7 +151,7 @@ export interface ReusableDiagnostic extends ReusableDiagnosticRelatedInformation
 }
 
 export interface ReusableDiagnosticRelatedInformation {
-  category: DiagnosticCategory;
+  category: qd.Category;
   code: number;
   file: string | undefined;
   start: number | undefined;

@@ -591,28 +591,28 @@ export function zipToMap<T>(ks: readonly string[], ts: readonly T[]): QMap<T> {
 }
 export function mapDefinedMap<T, U>(ts: QReadonlyMap<T>, mv: (t: T, k: string) => U | undefined, mk: (k: string) => string = identity): QMap<U> {
   const us = new QMap<U>();
-  ts.forEach((t, k) => {
-    const u = mv(t, k);
+  ts.forEach((v, k) => {
+    const u = mv(v, k);
     if (u !== undefined) us.set(mk(k), u);
   });
   return us;
 }
-export function mapEntries<T, U>(map: QReadonlyMap<T>, f: (key: string, value: T) => [string, U]): QMap<U>;
-export function mapEntries<T, U>(map: QReadonlyMap<T> | undefined, f: (key: string, value: T) => [string, U]): QMap<U> | undefined;
-export function mapEntries<T, U>(map: QReadonlyMap<T> | undefined, f: (key: string, value: T) => [string, U]): QMap<U> | undefined {
+export function mapEntries<T, U>(map: QReadonlyMap<T>, f: (k: string, t: T) => [string, U]): QMap<U>;
+export function mapEntries<T, U>(map: QReadonlyMap<T> | undefined, f: (k: string, t: T) => [string, U]): QMap<U> | undefined;
+export function mapEntries<T, U>(map: QReadonlyMap<T> | undefined, f: (k: string, t: T) => [string, U]): QMap<U> | undefined {
   if (!map) return;
   const us = new QMap<U>();
-  map.forEach((value, key) => {
-    const [newKey, newValue] = f(key, value);
-    us.set(newKey, newValue);
+  map.forEach((v, k) => {
+    const [k2, v2] = f(k, v);
+    us.set(k2, v2);
   });
   return us;
 }
-export function mapMap<T, U>(map: QMap<T>, f: (t: T, key: string) => [string, U]): QMap<U>;
-export function mapMap<T, U>(map: UnderscoreEscapedMap<T>, f: (t: T, key: __String) => [string, U]): QMap<U>;
-export function mapMap<T, U>(map: QMap<T> | UnderscoreEscapedMap<T>, f: ((t: T, key: string) => [string, U]) | ((t: T, key: __String) => [string, U])): QMap<U> {
+export function mapMap<T, U>(map: QMap<T>, f: (t: T, k: string) => [string, U]): QMap<U>;
+export function mapMap<T, U>(map: UnderscoreEscapedMap<T>, f: (t: T, k: __String) => [string, U]): QMap<U>;
+export function mapMap<T, U>(map: QMap<T> | UnderscoreEscapedMap<T>, f: ((t: T, k: string) => [string, U]) | ((t: T, k: __String) => [string, U])): QMap<U> {
   const r = new QMap<U>();
-  map.forEach((t: T, key: string & __String) => r.set(...f(t, key)));
+  map.forEach((t: T, k: string & __String) => r.set(...f(t, k)));
   return r;
 }
 export function createUnderscoredMultiMap<T>(): UnderscoredMultiMap<T> {
@@ -624,14 +624,14 @@ export function isString(text: unknown): text is string {
 export function isNumber(x: unknown): x is number {
   return typeof x === 'number';
 }
-export function tryCast<TOut extends TIn, TIn = any>(value: TIn | undefined, test: (value: TIn) => value is TOut): TOut | undefined;
-export function tryCast<T>(value: T, test: (value: T) => boolean): T | undefined;
-export function tryCast<T>(value: T, test: (value: T) => boolean): T | undefined {
-  return value !== undefined && test(value) ? value : undefined;
+export function tryCast<TOut extends TIn, TIn = any>(t: TIn | undefined, test: (t: TIn) => t is TOut): TOut | undefined;
+export function tryCast<T>(t: T, test: (t: T) => boolean): T | undefined;
+export function tryCast<T>(t: T, test: (t: T) => boolean): T | undefined {
+  return t !== undefined && test(t) ? t : undefined;
 }
-export function cast<TOut extends TIn, TIn = any>(value: TIn | undefined, test: (value: TIn) => value is TOut): TOut {
-  if (value !== undefined && test(value)) return value;
-  return fail(`Invalid cast. The supplied value ${value} did not pass the test.`); // '${Debug.getFunctionName(test)}'.`);
+export function cast<TOut extends TIn, TIn = any>(t: TIn | undefined, test: (t: TIn) => t is TOut): TOut {
+  if (t !== undefined && test(t)) return t;
+  return fail(`Invalid cast`);
 }
 export function noop(_?: {} | null | undefined): void {}
 export function identity<T>(x: T) {

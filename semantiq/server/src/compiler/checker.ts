@@ -2379,7 +2379,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         diagnostics = addRange(diagnostics, suggestionqd.getDiagnostics(file.fileName));
         checkUnusedIdentifiers(getPotentiallyUnusedIdentifiers(file), (containingNode, kind, diag) => {
           if (!containsParseError(containingNode) && !unusedIsError(kind, !!(containingNode.flags & NodeFlags.Ambient)))
-            (diagnostics || (diagnostics = [])).push({ ...diag, category: DiagnosticCategory.Suggestion });
+            (diagnostics || (diagnostics = [])).push({ ...diag, category: qd.Category.Suggestion });
         });
         return diagnostics || empty;
       } finally {
@@ -2683,7 +2683,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function addErrorOrSuggestion(isError: boolean, diagnostic: DiagnosticWithLocation) {
     if (isError) diagnostics.add(diagnostic);
     else {
-      suggestionqd.add({ ...diagnostic, category: DiagnosticCategory.Suggestion });
+      suggestionqd.add({ ...diagnostic, category: qd.Category.Suggestion });
     }
   }
   function errorOrSuggestion(

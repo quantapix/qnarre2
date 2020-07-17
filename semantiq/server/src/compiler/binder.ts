@@ -1761,7 +1761,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     if (isError) {
       file.bindqd.push(diag);
     } else {
-      file.bindSuggestionDiagnostics = append(file.bindSuggestionDiagnostics, { ...diag, category: DiagnosticCategory.Suggestion });
+      file.bindSuggestionDiagnostics = append(file.bindSuggestionDiagnostics, { ...diag, category: qd.Category.Suggestion });
     }
   }
   function bind(node: Node | undefined): void {

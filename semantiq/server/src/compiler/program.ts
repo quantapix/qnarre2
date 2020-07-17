@@ -291,15 +291,15 @@ const resetEscapeSequence = '\u001b[0m';
 const ellipsis = '...';
 const halfIndent = '  ';
 const indent = '    ';
-function getCategoryFormat(category: DiagnosticCategory): ForegroundColorEscapeSequences {
+function getCategoryFormat(category: qd.Category): ForegroundColorEscapeSequences {
   switch (category) {
-    case DiagnosticCategory.Error:
+    case qd.Category.Error:
       return ForegroundColorEscapeSequences.Red;
-    case DiagnosticCategory.Warning:
+    case qd.Category.Warning:
       return ForegroundColorEscapeSequences.Yellow;
-    case DiagnosticCategory.Suggestion:
+    case qd.Category.Suggestion:
       return fail('Should never get an Info diagnostic on the command line.');
-    case DiagnosticCategory.Message:
+    case qd.Category.Message:
       return ForegroundColorEscapeSequences.Blue;
   }
 }

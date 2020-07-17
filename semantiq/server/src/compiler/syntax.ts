@@ -1,5 +1,6 @@
 import * as qb from './base';
-import { diags as qd } from './diags';
+import * as qd from './diags';
+import { Token } from './types';
 export const enum Codes {
   nullCharacter = 0,
   maxAsciiCharacter = 0x7f,
@@ -691,6 +692,10 @@ export namespace Range {
     kind: CommentKind;
   }
 }
+const slash3Ref = /^(\/\/\/\s*<reference\s+path\s*=\s*)('|")(.+?)\2.*?\/>/;
+const slash3TypeRef = /^(\/\/\/\s*<reference\s+types\s*=\s*)('|")(.+?)\2.*?\/>/;
+const slash3AMDRef = /^(\/\/\/\s*<amd-dependency\s+path\s*=\s*)('|")(.+?)\2.*?\/>/;
+const defaultLibRef = /^(\/\/\/\s*<reference\s+no-default-lib\s*=\s*)('|")(.+?)\2\s*\/>/;
 export const is = new (class {
   lineBreak(c: number) {
     return c === Codes.lineFeed || c === Codes.carriageReturn || c === Codes.lineSeparator || c === Codes.paragraphSeparator;
@@ -1087,12 +1092,7 @@ export const is = new (class {
   isRecognizedTripleSlashComment(s: string, pos: number, end: number) {
     if (s.charCodeAt(pos + 1) === Codes.slash && pos + 2 < end && s.charCodeAt(pos + 2) === Codes.slash) {
       const ss = s.substring(pos, end);
-      return ss.match(fullTripleSlashReferencePathRegEx) ||
-        ss.match(fullTripleSlashAMDReferencePathRegEx) ||
-        ss.match(fullTripleSlashReferenceTypeReferenceDirectiveRegEx) ||
-        ss.match(defaultLibReferenceRegEx)
-        ? true
-        : false;
+      return ss.match(slash3Ref) || ss.match(slash3AMDRef) || ss.match(slash3TypeRef) || ss.match(defaultLibRef) ? true : false;
     }
     return false;
   }
@@ -1413,8 +1413,8 @@ export function toString(t: Syntax) {
 export function fromString(s: string) {
   return strToTok.get(s);
 }
-export function markerTrivia(s: string, pos: number, e?: (m: DiagnosticMessage, pos?: number, len?: number) => void) {
-  if (e) e(qd.Merge_conflict_marker_encountered, pos, markerLength);
+export function markerTrivia(s: string, pos: number, e?: (m: qd.Message, pos?: number, len?: number) => void) {
+  if (e) e(qd.msgs.Merge_conflict_marker_encountered, pos, markerLength);
   const c = s.charCodeAt(pos);
   const l = s.length;
   if (c === Codes.lessThan || c === Codes.greaterThan) {

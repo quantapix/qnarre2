@@ -639,7 +639,7 @@ export function parseConfigFileWithSystem(
   return result;
 }
 export function getErrorCountForSummary(diagnostics: readonly Diagnostic[]) {
-  return countWhere(diagnostics, (diagnostic) => diagnostic.category === DiagnosticCategory.Error);
+  return countWhere(diagnostics, (diagnostic) => diagnostic.category === qd.Category.Error);
 }
 export function getWatchErrorSummaryDiagnosticMessage(errorCount: number) {
   return errorCount === 1 ? qd.Found_1_error_Watching_for_file_changes : qd.Found_0_errors_Watching_for_file_changes;

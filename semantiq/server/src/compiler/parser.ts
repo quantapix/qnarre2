@@ -1,14 +1,14 @@
 import * as qb from './base';
 import * as qc from './core3';
-import { Nobj, NodeFlags, Nodes } from './core3';
-import { diags as qd } from './diags';
-import { DiagnosticMessage, TokenFlags } from './types';
+import * as qd from './diags';
+import { Nobj, Nodes, Token } from './core3';
+import { Node, NodeFlags, TokenFlags } from './types';
 import * as qy from './syntax';
 import { DocSyntax, JsxTokenSyntax, LanguageVariant, Modifier, Syntax } from './syntax';
 interface Parser {
   parseSource(fileName: string, t: string, languageVersion: ScriptTarget, syntaxCursor?: IncrementalParser.SyntaxCursor, setParentNodes?: boolean, scriptKind?: ScriptKind): SourceFile;
   parseJsonText(fileName: string, text: string, lang?: ScriptTarget, syntaxCursor?: IncrementalParser.SyntaxCursor, setParentNodes?: boolean): JsonSourceFile;
-  parseIsolatedEntityName(s: string, languageVersion: ScriptTarget): EntityName | undefined;
+  parseIsolatedEntityName(s: string, languageVersion: ScriptTarget): qc.EntityName | undefined;
   parseDocIsolatedComment(t: string, start?: number, length?: number): { doc: Doc; diagnostics: Diagnostic[] } | undefined;
   parseDocTypeExpressionForTests(content: string, start: number | undefined, length: number | undefined): { docTypeExpression: DocTypeExpression; diagnostics: Diagnostic[] } | undefined;
 }
@@ -27,16 +27,16 @@ const enum SignatureFlags {
 }
 const enum Context {
   SourceElements,
-  BlockStatements,
+  qc.BlockStatements,
   SwitchClauses,
   SwitchClauseStatements,
   TypeMembers,
   ClassMembers,
   EnumMembers,
-  HeritageClauseElement,
-  VariableDeclarations,
+  qc.HeritageClauseElement,
+  qc.VariableDeclarations,
   ObjectBindingElements,
-  ArrayBindingElements,
+  qc.ArrayBindingElements,
   ArgumentExpressions,
   ObjectLiteralMembers,
   JsxAttributes,
@@ -48,7 +48,7 @@ const enum Context {
   TypeParameters,
   TypeArguments,
   TupleElementTypes,
-  HeritageClauses,
+  qc.HeritageClauses,
   ImportOrExportSpecifiers,
   Count,
 }
@@ -335,14 +335,14 @@ function create() {
     templateStartOfTaggedTemplate() {
       return tok() === Syntax.NoSubstitutionLiteral || tok() === Syntax.TemplateHead;
     }
-    objectOrObjectArrayTypeReference(n: TypeNode): boolean {
+    objectOrObjectArrayTypeReference(n: qc.TypeNode): boolean {
       switch (n.kind) {
         case Syntax.ObjectKeyword:
           return true;
         case Syntax.ArrayType:
-          return this.objectOrObjectArrayTypeReference((n as ArrayTypeNode).elementType);
+          return this.objectOrObjectArrayTypeReference((n as qc.ArrayTypeNode).elementType);
         default:
-          return qc.is.kind(TypeReferenceNode, n) && qc.is.kind(Identifier, n.typeName) && n.typeName.escapedText === 'Object' && !n.typeArguments;
+          return qc.is.kind(qc.TypeReferenceNode, n) && qc.is.kind(qc.Identifier, n.typeName) && n.typeName.escapedText === 'Object' && !n.typeArguments;
       }
     }
   })();
@@ -394,7 +394,7 @@ function create() {
   const next = new (class {
     tok(check = true): Syntax {
       if (check && qy.is.keyword(currentToken) && (scanner.hasUnicodeEscape() || scanner.hasExtendedEscape())) {
-        parse.errorAt(scanner.getTokenPos(), scanner.getTextPos(), qd.Keywords_cannot_contain_escape_characters);
+        parse.errorAt(scanner.getTokenPos(), scanner.getTextPos(), qd.msgs.Keywords_cannot_contain_escape_characters);
       }
       return (currentToken = scanner.scan());
     }
@@ -603,9 +603,9 @@ function create() {
       r.end = end === undefined ? scanner.getStartPos() : end;
       return r;
     }
-    missingNode<T extends Node>(k: T['kind'], report: false, m?: DiagnosticMessage, arg0?: any): T;
-    missingNode<T extends Node>(k: T['kind'], report: true, m: DiagnosticMessage, arg0?: any): T;
-    missingNode<T extends Node>(k: T['kind'], report: boolean, m?: DiagnosticMessage, arg0?: any): T {
+    missingNode<T extends Nobj>(k: T['kind'], report: false, m?: qd.Message, arg0?: any): T;
+    missingNode<T extends Nobj>(k: T['kind'], report: true, m: qd.Message, arg0?: any): T;
+    missingNode<T extends Nobj>(k: T['kind'], report: boolean, m?: qd.Message, arg0?: any): T {
       if (report) parse.errorAtPosition(scanner.getStartPos(), 0, m!, arg0);
       else if (m) parse.errorAtToken(m, arg0);
       const r = this.node(k);
@@ -620,7 +620,7 @@ function create() {
       }
       return n;
     }
-    identifier(isIdentifier: boolean, m?: DiagnosticMessage, pm?: DiagnosticMessage): qc.Identifier {
+    identifier(isIdentifier: boolean, m?: qd.Message, pm?: qd.Message): qc.Identifier {
       this.identifierCount++;
       if (isIdentifier) {
         const n = this.node(Syntax.Identifier);
@@ -630,40 +630,40 @@ function create() {
         return finishNode(n);
       }
       if (tok() === Syntax.PrivateIdentifier) {
-        parse.errorAtToken(pm || qd.Private_identifiers_are_not_allowed_outside_class_bodies);
+        parse.errorAtToken(pm || qd.msgs.Private_identifiers_are_not_allowed_outside_class_bodies);
         return this.identifier(true);
       }
       const report = tok() === Syntax.EndOfFileToken;
       const r = scanner.isReservedWord();
       const t = scanner.getTokenText();
-      const dm = r ? qd.Identifier_expected_0_is_a_reserved_word_that_cannot_be_used_here : qd.Identifier_expected;
-      return this.missingNode<Identifier>(Syntax.Identifier, report, m || dm, t);
+      const dm = r ? qd.msgs.Identifier_expected_0_is_a_reserved_word_that_cannot_be_used_here : qd.msgs.Identifier_expected;
+      return this.missingNode<qc.Identifier>(Syntax.Identifier, report, m || dm, t);
     }
-    missingList<T extends Node>(): MissingList<T> {
+    missingList<T extends Nobj>(): MissingList<T> {
       const l = this.nodes<T>([], getNodePos()) as MissingList<T>;
       l.isMissingList = true;
       return l;
     }
-    qualifiedName(e: EntityName, name: qc.Identifier): QualifiedName {
+    qualifiedName(e: qc.EntityName, name: qc.Identifier): qc.QualifiedName {
       const n = this.node(Syntax.QualifiedName, e.pos);
       n.left = e;
       n.right = name;
       return finishNode(n);
     }
-    postfixType(k: Syntax, type: TypeNode) {
+    postfixType(k: Syntax, type: qc.TypeNode) {
       next.tok();
       const n = this.node(k, type.pos) as OptionalTypeNode | DocOptionalType | DocNonNullableType | DocNullableType;
       n.type = type;
       return finishNode(n);
     }
-    binaryExpression(l: Expression, o: BinaryOperatorToken, r: Expression): BinaryExpression {
+    binaryExpression(l: qc.Expression, o: qc.BinaryOperatorToken, r: qc.Expression): qc.BinaryExpression {
       const n = this.node(Syntax.BinaryExpression, l.pos);
       n.left = l;
       n.operatorToken = o;
       n.right = r;
       return finishNode(n);
     }
-    asExpression(l: Expression, r: TypeNode): AsExpression {
+    asExpression(l: qc.Expression, r: qc.TypeNode): qc.AsExpression {
       const n = this.node(Syntax.AsExpression, l.pos);
       n.expression = l;
       n.type = r;
@@ -681,7 +681,7 @@ function create() {
     init() {
       this.value = 0;
     }
-    parseList<T extends Node>(c: Context, cb: () => T): Nodes<T> {
+    parseList<T extends Nobj>(c: Context, cb: () => T): Nodes<T> {
       const o = this.value;
       this.value |= 1 << c;
       const es = [] as T[];
@@ -697,7 +697,7 @@ function create() {
       this.value = o;
       return create.nodes(es, p);
     }
-    parseBracketedList<T extends Node>(c: Context, cb: () => T, open: Syntax, close: Syntax): Nodes<T> {
+    parseBracketedList<T extends Nobj>(c: Context, cb: () => T, open: Syntax, close: Syntax): Nodes<T> {
       if (parse.expected(open)) {
         const r = this.parseDelimitedList(c, cb);
         parse.expected(close);
@@ -705,14 +705,14 @@ function create() {
       }
       return create.missingList<T>();
     }
-    parseDelimitedList<T extends Node>(c: Context, cb: () => T, semicolon?: boolean): Nodes<T> {
+    parseDelimitedList<T extends Nobj>(c: Context, cb: () => T, semicolon?: boolean): Nodes<T> {
       const o = this.value;
       this.value |= 1 << c;
       const es = [] as T[];
       const p = getNodePos();
       let s = -1;
       const commaDiag = () => {
-        return c === Context.EnumMembers ? qd.An_enum_member_name_must_be_followed_by_a_or : undefined;
+        return c === Context.EnumMembers ? qd.msgs.An_enum_member_name_must_be_followed_by_a_or : undefined;
       };
       while (true) {
         if (this.isListElement(c, false)) {
@@ -748,10 +748,10 @@ function create() {
       this.value = o;
       return create.nodes(list, listPos);
     }
-    tryReuseAmbientDeclaration(): Statement | undefined {
+    tryReuseAmbientDeclaration(): qc.Statement | undefined {
       return flags.withContext(NodeFlags.Ambient, () => {
         const n = this.nodeFor(this.value);
-        if (n) return this.consumeNode(n) as Statement;
+        if (n) return this.consumeNode(n) as qc.Statement;
         return;
       });
     }
@@ -789,7 +789,7 @@ function create() {
               case Syntax.SemicolonClassElement:
                 return true;
               case Syntax.MethodDeclaration:
-                const n2 = n as MethodDeclaration;
+                const n2 = n as qc.MethodDeclaration;
                 return !(n2.name.kind === Syntax.Identifier && n2.name.originalKeywordKind === Syntax.ConstructorKeyword);
             }
             break;
@@ -849,11 +849,11 @@ function create() {
             }
             break;
           case Context.VariableDeclarations:
-            if (n.kind === Syntax.VariableDeclaration) return (n as VariableDeclaration).initializer === undefined;
+            if (n.kind === Syntax.VariableDeclaration) return (n as qc.VariableDeclaration).initializer === undefined;
             break;
           case Context.DocParameters:
           case Context.Parameters:
-            if (n.kind === Syntax.Parameter) return (n as ParameterDeclaration).initializer === undefined;
+            if (n.kind === Syntax.Parameter) return (n as qc.ParameterDeclaration).initializer === undefined;
         }
         return false;
       };
@@ -995,7 +995,7 @@ function create() {
         case Context.JsxChildren:
           return true;
       }
-      return fail("Non-exhaustive case in 'isListElement'.");
+      return qb.fail("Non-exhaustive case in 'isListElement'.");
     }
     private isListTerminator(c: Context) {
       if (tok() === Syntax.EndOfFileToken) return true;
@@ -1051,55 +1051,55 @@ function create() {
       return cb();
     }
     private abort(c: Context) {
-      const errors = (): DiagnosticMessage => {
+      const errors = (): qd.Message => {
         switch (c) {
           case Context.SourceElements:
-            return qd.Declaration_or_statement_expected;
+            return qd.msgs.Declaration_or_statement_expected;
           case Context.BlockStatements:
-            return qd.Declaration_or_statement_expected;
+            return qd.msgs.Declaration_or_statement_expected;
           case Context.SwitchClauses:
-            return qd.case_or_default_expected;
+            return qd.msgs.case_or_default_expected;
           case Context.SwitchClauseStatements:
-            return qd.Statement_expected;
+            return qd.msgs.Statement_expected;
           case Context.RestProperties:
           case Context.TypeMembers:
-            return qd.Property_or_signature_expected;
+            return qd.msgs.Property_or_signature_expected;
           case Context.ClassMembers:
-            return qd.Unexpected_token_A_constructor_method_accessor_or_property_was_expected;
+            return qd.msgs.Unexpected_token_A_constructor_method_accessor_or_property_was_expected;
           case Context.EnumMembers:
-            return qd.Enum_member_expected;
+            return qd.msgs.Enum_member_expected;
           case Context.HeritageClauseElement:
-            return qd.Expression_expected;
+            return qd.msgs.Expression_expected;
           case Context.VariableDeclarations:
-            return qd.Variable_declaration_expected;
+            return qd.msgs.Variable_declaration_expected;
           case Context.ObjectBindingElements:
-            return qd.Property_destructuring_pattern_expected;
+            return qd.msgs.Property_destructuring_pattern_expected;
           case Context.ArrayBindingElements:
-            return qd.Array_element_destructuring_pattern_expected;
+            return qd.msgs.Array_element_destructuring_pattern_expected;
           case Context.ArgumentExpressions:
-            return qd.Argument_expression_expected;
+            return qd.msgs.Argument_expression_expected;
           case Context.ObjectLiteralMembers:
-            return qd.Property_assignment_expected;
+            return qd.msgs.Property_assignment_expected;
           case Context.ArrayLiteralMembers:
-            return qd.Expression_or_comma_expected;
+            return qd.msgs.Expression_or_comma_expected;
           case Context.DocParameters:
-            return qd.Parameter_declaration_expected;
+            return qd.msgs.Parameter_declaration_expected;
           case Context.Parameters:
-            return qd.Parameter_declaration_expected;
+            return qd.msgs.Parameter_declaration_expected;
           case Context.TypeParameters:
-            return qd.Type_parameter_declaration_expected;
+            return qd.msgs.Type_parameter_declaration_expected;
           case Context.TypeArguments:
-            return qd.Type_argument_expected;
+            return qd.msgs.Type_argument_expected;
           case Context.TupleElementTypes:
-            return qd.Type_expected;
+            return qd.msgs.Type_expected;
           case Context.HeritageClauses:
-            return qd.Unexpected_token_expected;
+            return qd.msgs.Unexpected_token_expected;
           case Context.ImportOrExportSpecifiers:
-            return qd.Identifier_expected;
+            return qd.msgs.Identifier_expected;
           case Context.JsxAttributes:
-            return qd.Identifier_expected;
+            return qd.msgs.Identifier_expected;
           case Context.JsxChildren:
-            return qd.Identifier_expected;
+            return qd.msgs.Identifier_expected;
           default:
             return undefined!;
         }
@@ -1135,7 +1135,7 @@ function create() {
       source.flags = flags.value;
       next.tok();
       processCommentPragmas((source as {}) as PragmaContext, t);
-      const reportPragmaDiagnostic = (pos: number, end: number, diagnostic: DiagnosticMessage) => {
+      const reportPragmaDiagnostic = (pos: number, end: number, diagnostic: qd.Message) => {
         diags.push(createFileDiagnostic(source, pos, end, diagnostic));
       };
       processPragmasIntoFields((source as {}) as PragmaContext, reportPragmaDiagnostic);
@@ -1144,7 +1144,7 @@ function create() {
       source.endOfFileToken = addDocComment(parse.tokenNode());
       const getImportMetaIfNecessary = () => {
         const isImportMeta = (n: Node): boolean => {
-          return qc.is.kind(MetaProperty, n) && n.keywordToken === Syntax.ImportKeyword && n.name.escapedText === 'meta';
+          return qc.is.kind(qc.MetaProperty, n) && n.keywordToken === Syntax.ImportKeyword && n.name.escapedText === 'meta';
         };
         const walkTreeForExternalModuleIndicators = (n: Node): Node | undefined => {
           return isImportMeta(n) ? n : qc.forEach.child(n, walkTreeForExternalModuleIndicators);
@@ -1198,7 +1198,7 @@ function create() {
           case Syntax.NumericLiteral:
           case Syntax.StringLiteral:
             if (lookAhead(() => next.tok() !== Syntax.ColonToken)) {
-              n.expression = parse.literalNode() as StringLiteral | NumericLiteral;
+              n.expression = parse.literalNode() as qc.StringLiteral | qc.NumericLiteral;
               break;
             }
           default:
@@ -1207,7 +1207,7 @@ function create() {
         }
         finishNode(n);
         source.statements = create.nodes([n], p);
-        source.endOfFileToken = parse.expectedToken(Syntax.EndOfFileToken, qd.Unexpected_token);
+        source.endOfFileToken = parse.expectedToken(Syntax.EndOfFileToken, qd.msgs.Unexpected_token);
       }
       if (setParentNodes) fixupParentReferences(source);
       source.nodeCount = create.nodeCount;
@@ -1218,7 +1218,7 @@ function create() {
       clearState();
       return r;
     }
-    isolatedEntityName(s: string, languageVersion: ScriptTarget): EntityName | undefined {
+    isolatedEntityName(s: string, languageVersion: ScriptTarget): qc.EntityName | undefined {
       initializeState(s, languageVersion, undefined, ScriptKind.JS);
       next.tok();
       const n = parse.entityName(true);
@@ -1226,18 +1226,18 @@ function create() {
       clearState();
       return invalid ? n : undefined;
     }
-    expected(t: Syntax, m?: DiagnosticMessage, advance = true): boolean {
+    expected(t: Syntax, m?: qd.Message, advance = true): boolean {
       if (tok() === t) {
         if (advance) next.tok();
         return true;
       }
       if (m) this.errorAtToken(m);
-      else this.errorAtToken(qd._0_expected, qy.toString(t));
+      else this.errorAtToken(qd.msgs._0_expected, qy.toString(t));
       return false;
     }
-    expectedToken<T extends Syntax>(t: T, m?: DiagnosticMessage, arg0?: any): Token<T>;
-    expectedToken(t: Syntax, m?: DiagnosticMessage, arg0?: any): Node {
-      return this.optionalToken(t) || create.missingNode(t, false, m || qd._0_expected, arg0 || qy.toString(t));
+    expectedToken<T extends Syntax>(t: T, m?: qd.Message, arg0?: any): Token<T>;
+    expectedToken(t: Syntax, m?: qd.Message, arg0?: any): Node {
+      return this.optionalToken(t) || create.missingNode(t, false, m || qd.msgs._0_expected, arg0 || qy.toString(t));
     }
     optional(t: Syntax): boolean {
       if (tok() === t) {
@@ -1263,15 +1263,15 @@ function create() {
       }
       return this.expected(Syntax.SemicolonToken);
     }
-    identifier(m?: DiagnosticMessage, pm?: DiagnosticMessage): qc.Identifier {
+    identifier(m?: qd.Message, pm?: qd.Message): qc.Identifier {
       return create.identifier(is.identifier(), m, pm);
     }
-    identifierName(m?: DiagnosticMessage): qc.Identifier {
+    identifierName(m?: qd.Message): qc.Identifier {
       return create.identifier(qy.is.identifierOrKeyword(tok()), m);
     }
-    propertyName(computed = true): PropertyName {
+    propertyName(computed = true): qc.PropertyName {
       if (tok() === Syntax.StringLiteral || tok() === Syntax.NumericLiteral) {
-        const n = this.literalNode() as StringLiteral | NumericLiteral;
+        const n = this.literalNode() as qc.StringLiteral | qc.NumericLiteral;
         n.text = internIdentifier(n.text);
         return n;
       }
@@ -1279,14 +1279,14 @@ function create() {
       if (tok() === Syntax.PrivateIdentifier) return this.privateIdentifier();
       return this.identifierName();
     }
-    computedPropertyName(): ComputedPropertyName {
+    computedPropertyName(): qc.ComputedPropertyName {
       const n = create.node(Syntax.ComputedPropertyName);
       this.expected(Syntax.OpenBracketToken);
       n.expression = flags.withoutDisallowIn(this.expression);
       this.expected(Syntax.CloseBracketToken);
       return finishNode(n);
     }
-    privateIdentifier(): PrivateIdentifier {
+    privateIdentifier(): qc.PrivateIdentifier {
       const n = create.node(Syntax.PrivateIdentifier);
       const internPrivateIdentifier = (s: string): string => {
         let i = privateIdentifiers.get(s);
@@ -1300,8 +1300,8 @@ function create() {
     contextualModifier(t: Syntax): boolean {
       return tok() === t && tryParse(next.canFollowModifier);
     }
-    entityName(reserved: boolean, m?: DiagnosticMessage): EntityName {
-      let e: EntityName = reserved ? this.identifierName(m) : this.identifier(m);
+    entityName(reserved: boolean, m?: qd.Message): qc.EntityName {
+      let e: qc.EntityName = reserved ? this.identifierName(m) : this.identifier(m);
       let p = scanner.getStartPos();
       while (this.optional(Syntax.DotToken)) {
         if (tok() === Syntax.LessThanToken) {
@@ -1313,24 +1313,24 @@ function create() {
       }
       return e;
     }
-    rightSideOfDot(allow: boolean, privates: boolean): qc.Identifier | PrivateIdentifier {
+    rightSideOfDot(allow: boolean, privates: boolean): qc.Identifier | qc.PrivateIdentifier {
       if (scanner.hasPrecedingLineBreak() && qy.is.identifierOrKeyword(tok())) {
         const m = lookAhead(next.isIdentifierOrKeywordOnSameLine);
-        if (m) return create.missingNode<Identifier>(Syntax.Identifier, true, qd.Identifier_expected);
+        if (m) return create.missingNode<qc.Identifier>(Syntax.Identifier, true, qd.msgs.Identifier_expected);
       }
       if (tok() === Syntax.PrivateIdentifier) {
         const n = this.privateIdentifier();
-        return privates ? n : create.missingNode<Identifier>(Syntax.Identifier, true, qd.Identifier_expected);
+        return privates ? n : create.missingNode<qc.Identifier>(Syntax.Identifier, true, qd.msgs.Identifier_expected);
       }
       return allow ? this.identifierName() : this.identifier();
     }
-    templateExpression(tagged: boolean): TemplateExpression {
+    templateExpression(tagged: boolean): qc.TemplateExpression {
       const n = create.node(Syntax.TemplateExpression);
-      const templateHead = (): TemplateHead => {
+      const templateHead = (): qc.TemplateHead => {
         if (tagged) reScanHeadOrNoSubstTemplate();
         const n2 = this.literalLikeNode(tok());
         qb.assert(n2.kind === Syntax.TemplateHead, 'Template head has wrong token kind');
-        return n2 as TemplateHead;
+        return n2 as qc.TemplateHead;
       };
       n.head = templateHead();
       qb.assert(n.head.kind === Syntax.TemplateHead, 'Template head has wrong token kind');
@@ -1342,26 +1342,26 @@ function create() {
       n.templateSpans = create.nodes(ss, p);
       return finishNode(n);
     }
-    templateSpan(tagged: boolean): TemplateSpan {
+    templateSpan(tagged: boolean): qc.TemplateSpan {
       const n = create.node(Syntax.TemplateSpan);
       n.expression = flags.withoutDisallowIn(this.expression);
-      let l: TemplateMiddle | TemplateTail;
+      let l: qc.TemplateMiddle | qc.TemplateTail;
       if (tok() === Syntax.CloseBraceToken) {
         reScanTemplateToken(tagged);
-        const middleOrTail = (): TemplateMiddle | TemplateTail => {
+        const middleOrTail = (): qc.TemplateMiddle | qc.TemplateTail => {
           const n2 = this.literalLikeNode(tok());
           qb.assert(n2.kind === Syntax.TemplateMiddle || n2.kind === Syntax.TemplateTail, 'Template fragment has wrong token kind');
-          return n2 as TemplateMiddle | TemplateTail;
+          return n2 as qc.TemplateMiddle | qc.TemplateTail;
         };
         l = middleOrTail();
       } else {
-        l = this.expectedToken(Syntax.TemplateTail, qd._0_expected, qy.toString(Syntax.CloseBraceToken)) as TemplateTail;
+        l = this.expectedToken(Syntax.TemplateTail, qd.msgs._0_expected, qy.toString(Syntax.CloseBraceToken)) as qc.TemplateTail;
       }
       n.literal = l;
       return finishNode(n);
     }
-    literalNode(): LiteralExpression {
-      return this.literalLikeNode(tok()) as LiteralExpression;
+    literalNode(): qc.LiteralExpression {
+      return this.literalLikeNode(tok()) as qc.LiteralExpression;
     }
     literalLikeNode(k: Syntax): qc.LiteralLikeNode {
       const n = create.node(k);
@@ -1379,38 +1379,38 @@ function create() {
       if (scanner.hasExtendedEscape()) n.hasExtendedEscape = true;
       if (scanner.isUnterminated()) n.isUnterminated = true;
       if (n.kind === Syntax.NumericLiteral) (<NumericLiteral>n).numericLiteralFlags = scanner.getTokenFlags() & TokenFlags.NumericLiteralFlags;
-      if (qy.is.templateLiteral(n.kind)) (<TemplateHead | TemplateMiddle | TemplateTail | NoSubstitutionLiteral>n).templateFlags = scanner.getTokenFlags() & TokenFlags.ContainsInvalidEscape;
+      if (qy.is.templateLiteral(n.kind)) (<TemplateHead | qc.TemplateMiddle | qc.TemplateTail | NoSubstitutionLiteral>n).templateFlags = scanner.getTokenFlags() & TokenFlags.ContainsInvalidEscape;
       next.tok();
       finishNode(n);
       return n;
     }
-    typeReference(): TypeReferenceNode {
+    typeReference(): qc.TypeReferenceNode {
       const n = create.node(Syntax.TypeReference);
-      n.typeName = this.entityName(true, qd.Type_expected);
+      n.typeName = this.entityName(true, qd.msgs.Type_expected);
       if (!scanner.hasPrecedingLineBreak() && reScanLessToken() === Syntax.LessThanToken) {
         n.typeArguments = ctx.parseBracketedList(Context.TypeArguments, this.type, Syntax.LessThanToken, Syntax.GreaterThanToken);
       }
       return finishNode(n);
     }
-    thisTypePredicate(lhs: ThisTypeNode): TypePredicateNode {
+    thisTypePredicate(lhs: qc.ThisTypeNode): qc.TypePredicateNode {
       next.tok();
       const n = create.node(Syntax.TypePredicate, lhs.pos);
       n.parameterName = lhs;
       n.type = this.type();
       return finishNode(n);
     }
-    thisTypeNode(): ThisTypeNode {
+    thisTypeNode(): qc.ThisTypeNode {
       const n = create.node(Syntax.ThisType);
       next.tok();
       return finishNode(n);
     }
-    typeQuery(): TypeQueryNode {
+    typeQuery(): qc.TypeQueryNode {
       const n = create.node(Syntax.TypeQuery);
       this.expected(Syntax.TypeOfKeyword);
       n.exprName = this.entityName(true);
       return finishNode(n);
     }
-    typeParameter(): TypeParameterDeclaration {
+    typeParameter(): qc.TypeParameterDeclaration {
       const n = create.node(Syntax.TypeParameter);
       n.name = this.identifier();
       if (this.optional(Syntax.ExtendsKeyword)) {
@@ -1420,13 +1420,13 @@ function create() {
       if (this.optional(Syntax.EqualsToken)) n.default = this.type();
       return finishNode(n);
     }
-    typeParameters(): Nodes<TypeParameterDeclaration> | undefined {
+    typeParameters(): Nodes<qc.TypeParameterDeclaration> | undefined {
       if (tok() === Syntax.LessThanToken) return ctx.parseBracketedList(Context.TypeParameters, this.typeParameter, Syntax.LessThanToken, Syntax.GreaterThanToken);
       return;
     }
-    parameter(): ParameterDeclaration {
+    parameter(): qc.ParameterDeclaration {
       const n = create.nodeWithDoc(Syntax.Parameter);
-      const parameterType = (): TypeNode | undefined => {
+      const parameterType = (): qc.TypeNode | undefined => {
         if (this.optional(Syntax.ColonToken)) return this.type();
         return;
       };
@@ -1438,16 +1438,16 @@ function create() {
       n.decorators = this.decorators();
       n.modifiers = this.modifiers();
       n.dot3Token = this.optionalToken(Syntax.Dot3Token);
-      n.name = this.identifierOrPattern(qd.Private_identifiers_cannot_be_used_as_parameters);
+      n.name = this.identifierOrPattern(qd.msgs.Private_identifiers_cannot_be_used_as_parameters);
       if (qc.get.fullWidth(n.name) === 0 && !n.modifiers && qy.is.modifier(tok())) next.tok();
       n.questionToken = this.optionalToken(Syntax.QuestionToken);
       n.type = parameterType();
       n.initializer = this.initializer();
       return finishNode(n);
     }
-    parameterList(s: SignatureDeclaration, f: SignatureFlags): boolean {
+    parameterList(s: qc.SignatureDeclaration, f: SignatureFlags): boolean {
       if (!this.expected(Syntax.OpenParenToken)) {
-        s.parameters = create.missingList<ParameterDeclaration>();
+        s.parameters = create.missingList<qc.ParameterDeclaration>();
         return false;
       }
       const yf = flags.inContext(NodeFlags.YieldContext);
@@ -1463,14 +1463,14 @@ function create() {
       if (this.optional(Syntax.CommaToken)) return;
       this.semicolon();
     }
-    signatureMember(k: Syntax.CallSignature | Syntax.ConstructSignature): CallSignatureDeclaration | ConstructSignatureDeclaration {
+    signatureMember(k: Syntax.CallSignature | Syntax.ConstructSignature): qc.CallSignatureDeclaration | ConstructSignatureDeclaration {
       const n = create.nodeWithDoc(k);
       if (k === Syntax.ConstructSignature) this.expected(Syntax.NewKeyword);
       fillSignature(Syntax.ColonToken, SignatureFlags.Type, n);
       this.typeMemberSemicolon();
       return finishNode(n);
     }
-    indexSignatureDeclaration(n: IndexSignatureDeclaration): IndexSignatureDeclaration {
+    indexSignatureDeclaration(n: qc.IndexSignatureDeclaration): qc.IndexSignatureDeclaration {
       n.kind = Syntax.IndexSignature;
       n.parameters = ctx.parseBracketedList(Context.Parameters, this.parameter, Syntax.OpenBracketToken, Syntax.CloseBracketToken);
       n.type = this.typeAnnotation();
@@ -1491,25 +1491,25 @@ function create() {
       this.typeMemberSemicolon();
       return finishNode(n);
     }
-    typeLiteral(): TypeLiteralNode {
+    typeLiteral(): qc.TypeLiteralNode {
       const n = create.node(Syntax.TypeLiteral);
       n.members = this.objectTypeMembers();
       return finishNode(n);
     }
-    objectTypeMembers(): Nodes<TypeElement> {
-      let es: Nodes<TypeElement>;
+    objectTypeMembers(): Nodes<qc.TypeElement> {
+      let es: Nodes<qc.TypeElement>;
       if (this.expected(Syntax.OpenBraceToken)) {
-        const typeMember = (): TypeElement => {
+        const typeMember = (): qc.TypeElement => {
           if (tok() === Syntax.OpenParenToken || tok() === Syntax.LessThanToken) return this.signatureMember(Syntax.CallSignature);
           if (tok() === Syntax.NewKeyword && lookAhead(next.isOpenParenOrLessThan)) return this.signatureMember(Syntax.ConstructSignature);
           const n = create.nodeWithDoc(Syntax.Unknown);
           n.modifiers = this.modifiers();
-          if (is.indexSignature()) return this.indexSignatureDeclaration(<IndexSignatureDeclaration>n);
-          return this.propertyOrMethodSignature(<PropertySignature | MethodSignature>n);
+          if (is.indexSignature()) return this.indexSignatureDeclaration(<qc.IndexSignatureDeclaration>n);
+          return this.propertyOrMethodSignature(<qc.PropertySignature | qc.MethodSignature>n);
         };
         es = ctx.parseList(Context.TypeMembers, typeMember);
         this.expected(Syntax.CloseBraceToken);
-      } else es = create.missingList<TypeElement>();
+      } else es = create.missingList<qc.TypeElement>();
       return es;
     }
     mappedTypeParameter() {
@@ -1523,14 +1523,14 @@ function create() {
       const n = create.node(Syntax.MappedType);
       this.expected(Syntax.OpenBraceToken);
       if (tok() === Syntax.ReadonlyKeyword || tok() === Syntax.PlusToken || tok() === Syntax.MinusToken) {
-        n.readonlyToken = this.tokenNode<ReadonlyToken | PlusToken | MinusToken>();
+        n.readonlyToken = this.tokenNode<qc.ReadonlyToken | qc.PlusToken | qc.MinusToken>();
         if (n.readonlyToken.kind !== Syntax.ReadonlyKeyword) this.expectedToken(Syntax.ReadonlyKeyword);
       }
       this.expected(Syntax.OpenBracketToken);
       n.typeParameter = this.mappedTypeParameter();
       this.expected(Syntax.CloseBracketToken);
       if (tok() === Syntax.QuestionToken || tok() === Syntax.PlusToken || tok() === Syntax.MinusToken) {
-        n.questionToken = this.tokenNode<QuestionToken | PlusToken | MinusToken>();
+        n.questionToken = this.tokenNode<qc.QuestionToken | qc.PlusToken | qc.MinusToken>();
         if (n.questionToken.kind !== Syntax.QuestionToken) this.expectedToken(Syntax.QuestionToken);
       }
       n.type = this.typeAnnotation();
@@ -1549,7 +1549,7 @@ function create() {
       if (!(flags.value & NodeFlags.Doc) && t.kind === Syntax.DocNullableType && t.pos === (<DocNullableType>t).type.pos) t.kind = Syntax.OptionalType;
       return t;
     }
-    tupleType(): TupleTypeNode {
+    tupleType(): qc.TupleTypeNode {
       const n = create.node(Syntax.TupleType);
       const nameOrType = () => {
         const isTupleElementName = () => {
@@ -1570,34 +1570,34 @@ function create() {
       n.elements = ctx.parseBracketedList(Context.TupleElementTypes, nameOrType, Syntax.OpenBracketToken, Syntax.CloseBracketToken);
       return finishNode(n);
     }
-    parenthesizedType(): TypeNode {
+    parenthesizedType(): qc.TypeNode {
       const n = create.node(Syntax.ParenthesizedType);
       this.expected(Syntax.OpenParenToken);
       n.type = this.type();
       this.expected(Syntax.CloseParenToken);
       return finishNode(n);
     }
-    functionOrConstructorType(): TypeNode {
+    functionOrConstructorType(): qc.TypeNode {
       const p = getNodePos();
       const k = this.optional(Syntax.NewKeyword) ? Syntax.ConstructorType : Syntax.FunctionType;
       const n = create.nodeWithDoc(k, p);
       fillSignature(Syntax.EqualsGreaterThanToken, SignatureFlags.Type, n);
       return finishNode(n);
     }
-    keywordAndNoDot(): TypeNode | undefined {
+    keywordAndNoDot(): qc.TypeNode | undefined {
       const n = this.tokenNode<TypeNode>();
       return tok() === Syntax.DotToken ? undefined : n;
     }
-    literalTypeNode(negative?: boolean): LiteralTypeNode {
+    literalTypeNode(negative?: boolean): qc.LiteralTypeNode {
       const n = create.node(Syntax.LiteralType);
-      let m!: PrefixUnaryExpression;
+      let m!: qc.PrefixUnaryExpression;
       if (negative) {
         m = create.node(Syntax.PrefixUnaryExpression);
         m.operator = Syntax.MinusToken;
         next.tok();
       }
-      let e: BooleanLiteral | LiteralExpression | PrefixUnaryExpression =
-        tok() === Syntax.TrueKeyword || tok() === Syntax.FalseKeyword ? this.tokenNode<BooleanLiteral>() : (this.literalLikeNode(tok()) as LiteralExpression);
+      let e: BooleanLiteral | qc.LiteralExpression | qc.PrefixUnaryExpression =
+        tok() === Syntax.TrueKeyword || tok() === Syntax.FalseKeyword ? this.tokenNode<BooleanLiteral>() : (this.literalLikeNode(tok()) as qc.LiteralExpression);
       if (negative) {
         m.operand = e;
         finishNode(m);
@@ -1606,7 +1606,7 @@ function create() {
       n.literal = e;
       return finishNode(n);
     }
-    importType(): ImportTypeNode {
+    importType(): qc.ImportTypeNode {
       source.flags |= NodeFlags.PossiblyContainsDynamicImport;
       const n = create.node(Syntax.ImportType);
       if (this.optional(Syntax.TypeOfKeyword)) n.isTypeOf = true;
@@ -1614,13 +1614,13 @@ function create() {
       this.expected(Syntax.OpenParenToken);
       n.argument = this.type();
       this.expected(Syntax.CloseParenToken);
-      if (this.optional(Syntax.DotToken)) n.qualifier = this.entityName(true, qd.Type_expected);
+      if (this.optional(Syntax.DotToken)) n.qualifier = this.entityName(true, qd.msgs.Type_expected);
       if (!scanner.hasPrecedingLineBreak() && reScanLessToken() === Syntax.LessThanToken) {
         n.typeArguments = ctx.parseBracketedList(Context.TypeArguments, this.type, Syntax.LessThanToken, Syntax.GreaterThanToken);
       }
       return finishNode(n);
     }
-    nonArrayType(): TypeNode {
+    nonArrayType(): qc.TypeNode {
       switch (tok()) {
         case Syntax.AnyKeyword:
         case Syntax.UnknownKeyword:
@@ -1656,7 +1656,7 @@ function create() {
           return lookAhead(next.isNumericOrBigIntLiteral) ? this.literalTypeNode(true) : this.typeReference();
         case Syntax.VoidKeyword:
         case Syntax.NullKeyword:
-          return this.tokenNode<TypeNode>();
+          return this.tokenNode<qc.TypeNode>();
         case Syntax.ThisKeyword: {
           const thisKeyword = this.thisTypeNode();
           if (tok() === Syntax.IsKeyword && !scanner.hasPrecedingLineBreak()) return this.thisTypePredicate(thisKeyword);
@@ -1688,7 +1688,7 @@ function create() {
           return this.typeReference();
       }
     }
-    postfixTypeOrHigher(): TypeNode {
+    postfixTypeOrHigher(): qc.TypeNode {
       let type = this.nonArrayType();
       while (!scanner.hasPrecedingLineBreak()) {
         switch (tok()) {
@@ -1727,7 +1727,7 @@ function create() {
       n.type = this.typeOperatorOrHigher();
       return finishNode(n);
     }
-    inferType(): InferTypeNode {
+    inferType(): qc.InferTypeNode {
       const n = create.node(Syntax.InferType);
       this.expected(Syntax.InferKeyword);
       const p = create.node(Syntax.TypeParameter);
@@ -1735,7 +1735,7 @@ function create() {
       n.typeParameter = finishNode(p);
       return finishNode(n);
     }
-    typeOperatorOrHigher(): TypeNode {
+    typeOperatorOrHigher(): qc.TypeNode {
       const operator = tok();
       switch (operator) {
         case Syntax.KeyOfKeyword:
@@ -1747,7 +1747,7 @@ function create() {
       }
       return this.postfixTypeOrHigher();
     }
-    unionOrIntersectionType(k: Syntax.UnionType | Syntax.IntersectionType, cb: () => TypeNode, o: Syntax.BarToken | Syntax.AmpersandToken): TypeNode {
+    unionOrIntersectionType(k: Syntax.UnionType | Syntax.IntersectionType, cb: () => qc.TypeNode, o: Syntax.BarToken | Syntax.AmpersandToken): qc.TypeNode {
       const start = scanner.getStartPos();
       const hasLeadingOperator = this.optional(o);
       let type = cb();
@@ -1762,13 +1762,13 @@ function create() {
       }
       return type;
     }
-    intersectionTypeOrHigher(): TypeNode {
+    intersectionTypeOrHigher(): qc.TypeNode {
       return this.unionOrIntersectionType(Syntax.IntersectionType, this.typeOperatorOrHigher, Syntax.AmpersandToken);
     }
-    unionTypeOrHigher(): TypeNode {
+    unionTypeOrHigher(): qc.TypeNode {
       return this.unionOrIntersectionType(Syntax.UnionType, this.intersectionTypeOrHigher, Syntax.BarToken);
     }
-    typeOrTypePredicate(): TypeNode {
+    typeOrTypePredicate(): qc.TypeNode {
       const typePredicateVariable = is.identifier() && tryParse(this.typePredicatePrefix);
       const type = this.type();
       if (typePredicateVariable) {
@@ -1788,17 +1788,17 @@ function create() {
       }
       return;
     }
-    assertsTypePredicate(): TypeNode {
+    assertsTypePredicate(): qc.TypeNode {
       const n = create.node(Syntax.TypePredicate);
       n.assertsModifier = this.expectedToken(Syntax.AssertsKeyword);
       n.parameterName = tok() === Syntax.ThisKeyword ? this.thisTypeNode() : this.identifier();
       n.type = this.optional(Syntax.IsKeyword) ? this.type() : undefined;
       return finishNode(n);
     }
-    type(): TypeNode {
+    type(): qc.TypeNode {
       return flags.withoutContext(NodeFlags.TypeExcludesFlags, this.typeWorker);
     }
-    typeWorker(noConditionalTypes?: boolean): TypeNode {
+    typeWorker(noConditionalTypes?: boolean): qc.TypeNode {
       const isStartOfFunctionType = () => {
         if (tok() === Syntax.LessThanToken) return true;
         const isUnambiguouslyStartOfFunctionType = () => {
@@ -1842,24 +1842,24 @@ function create() {
       }
       return type;
     }
-    typeAnnotation(): TypeNode | undefined {
+    typeAnnotation(): qc.TypeNode | undefined {
       return this.optional(Syntax.ColonToken) ? this.type() : undefined;
     }
-    expression(): Expression {
+    expression(): qc.Expression {
       const dc = flags.inContext(NodeFlags.DecoratorContext);
       if (dc) flags.set(false, NodeFlags.DecoratorContext);
       let expr = this.assignmentExpressionOrHigher();
-      let operatorToken: BinaryOperatorToken;
+      let operatorToken: qc.BinaryOperatorToken;
       while ((operatorToken = this.optionalToken(Syntax.CommaToken))) {
         expr = create.binaryExpression(expr, operatorToken, this.assignmentExpressionOrHigher());
       }
       if (dc) flags.set(true, NodeFlags.DecoratorContext);
       return expr;
     }
-    initializer(): Expression | undefined {
+    initializer(): qc.Expression | undefined {
       return this.optional(Syntax.EqualsToken) ? this.assignmentExpressionOrHigher() : undefined;
     }
-    assignmentExpressionOrHigher(): Expression {
+    assignmentExpressionOrHigher(): qc.Expression {
       const isYieldExpression = () => {
         if (tok() === Syntax.YieldKeyword) {
           if (flags.inContext(NodeFlags.YieldContext)) return true;
@@ -1973,7 +1973,7 @@ function create() {
       if (qc.is.leftHandSideExpression(e) && qy.is.assignmentOperator(reScanGreaterToken())) return create.binaryExpression(e, this.tokenNode(), this.assignmentExpressionOrHigher());
       return this.conditionalExpressionRest(e);
     }
-    yieldExpression(): YieldExpression {
+    yieldExpression(): qc.YieldExpression {
       const n = create.node(Syntax.YieldExpression);
       next.tok();
       if (!scanner.hasPrecedingLineBreak() && (tok() === Syntax.AsteriskToken || is.startOfExpression())) {
@@ -1983,9 +1983,9 @@ function create() {
       }
       return finishNode(n);
     }
-    simpleArrowFunctionExpression(identifier: qc.Identifier, asyncModifier?: Nodes<Modifier> | undefined): ArrowFunction {
+    simpleArrowFunctionExpression(identifier: qc.Identifier, asyncModifier?: Nodes<Modifier> | undefined): qc.ArrowFunction {
       qb.assert(tok() === Syntax.EqualsGreaterThanToken, 'this.simpleArrowFunctionExpression should only have been called if we had a =>');
-      let n: ArrowFunction;
+      let n: qc.ArrowFunction;
       if (asyncModifier) {
         n = create.node(Syntax.ArrowFunction, asyncModifier.pos);
         n.modifiers = asyncModifier;
@@ -1993,19 +1993,19 @@ function create() {
       const n2 = create.node(Syntax.Parameter, identifier.pos);
       n2.name = identifier;
       finishNode(n);
-      n.parameters = create.nodes<ParameterDeclaration>([n2], n2.pos, n2.end);
+      n.parameters = create.nodes<qc.ParameterDeclaration>([n2], n2.pos, n2.end);
       n.equalsGreaterThanToken = this.expectedToken(Syntax.EqualsGreaterThanToken);
       n.body = this.arrowFunctionExpressionBody(!!asyncModifier);
       return addDocComment(finishNode(n));
     }
-    possibleParenthesizedArrowFunctionExpressionHead(): ArrowFunction | undefined {
+    possibleParenthesizedArrowFunctionExpressionHead(): qc.ArrowFunction | undefined {
       const p = scanner.getTokenPos();
       if (notParenthesizedArrow && notParenthesizedArrow.has(p.toString())) return;
       const result = this.parenthesizedArrowFunctionExpressionHead(false);
       if (!result) (notParenthesizedArrow || (notParenthesizedArrow = new qb.QMap())).set(p.toString(), true);
       return result;
     }
-    parenthesizedArrowFunctionExpressionHead(allowAmbiguity: boolean): ArrowFunction | undefined {
+    parenthesizedArrowFunctionExpressionHead(allowAmbiguity: boolean): qc.ArrowFunction | undefined {
       const n = create.nodeWithDoc(Syntax.ArrowFunction);
       n.modifiers = this.modifiersForArrowFunction();
       const isAsync = hasModifierOfKind(n, Syntax.AsyncKeyword) ? SignatureFlags.Await : SignatureFlags.None;
@@ -2014,7 +2014,7 @@ function create() {
       if (!allowAmbiguity && tok() !== Syntax.EqualsGreaterThanToken && (hasDocFunctionType || tok() !== Syntax.OpenBraceToken)) return;
       return n;
     }
-    arrowFunctionExpressionBody(isAsync: boolean): Block | Expression {
+    arrowFunctionExpressionBody(isAsync: boolean): qc.Block | qc.Expression {
       if (tok() === Syntax.OpenBraceToken) return this.functionBlock(isAsync ? SignatureFlags.Await : SignatureFlags.None);
       const isStartOfExpressionStatement = () => {
         return tok() !== Syntax.OpenBraceToken && tok() !== Syntax.FunctionKeyword && tok() !== Syntax.ClassKeyword && tok() !== Syntax.AtToken && is.startOfExpression();
@@ -2023,7 +2023,7 @@ function create() {
         return this.functionBlock(SignatureFlags.IgnoreMissingOpenBrace | (isAsync ? SignatureFlags.Await : SignatureFlags.None));
       return isAsync ? flags.withAwait(this.assignmentExpressionOrHigher) : flags.withoutAwait(this.assignmentExpressionOrHigher);
     }
-    conditionalExpressionRest(leftOperand: Expression): Expression {
+    conditionalExpressionRest(leftOperand: qc.Expression): qc.Expression {
       const t = this.optionalToken(Syntax.QuestionToken);
       if (!t) return leftOperand;
       const n = create.node(Syntax.ConditionalExpression, leftOperand.pos);
@@ -2031,14 +2031,14 @@ function create() {
       n.questionToken = t;
       n.whenTrue = flags.withoutContext(withDisallowInDecoratorContext, this.assignmentExpressionOrHigher);
       n.colonToken = this.expectedToken(Syntax.ColonToken);
-      n.whenFalse = qc.is.present(n.colonToken) ? this.assignmentExpressionOrHigher() : create.missingNode(Syntax.Identifier, false, qd._0_expected, qy.toString(Syntax.ColonToken));
+      n.whenFalse = qc.is.present(n.colonToken) ? this.assignmentExpressionOrHigher() : create.missingNode(Syntax.Identifier, false, qd.msgs._0_expected, qy.toString(Syntax.ColonToken));
       return finishNode(n);
     }
-    binaryExpressionOrHigher(precedence: number): Expression {
+    binaryExpressionOrHigher(precedence: number): qc.Expression {
       const leftOperand = this.unaryExpressionOrHigher();
       return this.binaryExpressionRest(precedence, leftOperand);
     }
-    binaryExpressionRest(precedence: number, leftOperand: Expression): Expression {
+    binaryExpressionRest(precedence: number, leftOperand: qc.Expression): qc.Expression {
       while (true) {
         reScanGreaterToken();
         const newPrecedence = qy.get.binaryOperatorPrecedence(tok());
@@ -2057,7 +2057,7 @@ function create() {
     }
     prefixUnaryExpression() {
       const n = create.node(Syntax.PrefixUnaryExpression);
-      n.operator = tok() as PrefixUnaryOperator;
+      n.operator = tok() as qc.PrefixUnaryOperator;
       next.tok();
       n.operand = this.simpleUnaryExpression();
       return finishNode(n);
@@ -2086,7 +2086,7 @@ function create() {
       n.expression = this.simpleUnaryExpression();
       return finishNode(n);
     }
-    unaryExpressionOrHigher(): UnaryExpression | BinaryExpression {
+    unaryExpressionOrHigher(): qc.UnaryExpression | qc.BinaryExpression {
       const isUpdateExpression = () => {
         switch (tok()) {
           case Syntax.PlusToken:
@@ -2114,19 +2114,19 @@ function create() {
         const pos = qy.skipTrivia(sourceText, e.pos);
         const { end } = e;
         if (e.kind === Syntax.TypeAssertionExpression) {
-          this.errorAt(pos, end, qd.A_type_assertion_expression_is_not_allowed_in_the_left_hand_side_of_an_exponentiation_expression_Consider_enclosing_the_expression_in_parentheses);
+          this.errorAt(pos, end, qd.msgs.A_type_assertion_expression_is_not_allowed_in_the_left_hand_side_of_an_exponentiation_expression_Consider_enclosing_the_expression_in_parentheses);
         } else {
           this.errorAt(
             pos,
             end,
-            qd.An_unary_expression_with_the_0_operator_is_not_allowed_in_the_left_hand_side_of_an_exponentiation_expression_Consider_enclosing_the_expression_in_parentheses,
+            qd.msgs.An_unary_expression_with_the_0_operator_is_not_allowed_in_the_left_hand_side_of_an_exponentiation_expression_Consider_enclosing_the_expression_in_parentheses,
             qy.toString(unaryOperator)
           );
         }
       }
       return e;
     }
-    simpleUnaryExpression(): UnaryExpression {
+    simpleUnaryExpression(): qc.UnaryExpression {
       switch (tok()) {
         case Syntax.PlusToken:
         case Syntax.MinusToken:
@@ -2175,8 +2175,8 @@ function create() {
       }
       return expression;
     }
-    leftHandSideExpressionOrHigher(): LeftHandSideExpression {
-      let expression: MemberExpression;
+    leftHandSideExpressionOrHigher(): qc.LeftHandSideExpression {
+      let expression: qc.MemberExpression;
       if (tok() === Syntax.ImportKeyword) {
         if (lookAhead(next.isOpenParenOrLessThan)) {
           source.flags |= NodeFlags.PossiblyContainsDynamicImport;
@@ -2198,25 +2198,25 @@ function create() {
       }
       return this.callExpressionRest(expression);
     }
-    memberExpressionOrHigher(): MemberExpression {
+    memberExpressionOrHigher(): qc.MemberExpression {
       const expression = this.primaryExpression();
       return this.memberExpressionRest(expression, true);
     }
-    superExpression(): MemberExpression {
+    superExpression(): qc.MemberExpression {
       const expression = this.tokenNode<PrimaryExpression>();
       if (tok() === Syntax.LessThanToken) {
         const startPos = getNodePos();
         const typeArguments = tryParse(this.typeArgumentsInExpression);
-        if (typeArguments !== undefined) this.errorAt(startPos, getNodePos(), qd.super_may_not_use_type_arguments);
+        if (typeArguments !== undefined) this.errorAt(startPos, getNodePos(), qd.msgs.super_may_not_use_type_arguments);
       }
       if (tok() === Syntax.OpenParenToken || tok() === Syntax.DotToken || tok() === Syntax.OpenBracketToken) return expression;
       const n = create.node(Syntax.PropertyAccessExpression, expression.pos);
       n.expression = expression;
-      this.expectedToken(Syntax.DotToken, qd.super_must_be_followed_by_an_argument_list_or_member_access);
+      this.expectedToken(Syntax.DotToken, qd.msgs.super_must_be_followed_by_an_argument_list_or_member_access);
       n.name = this.rightSideOfDot(true, true);
       return finishNode(n);
     }
-    typeAssertion(): TypeAssertion {
+    typeAssertion(): qc.TypeAssertion {
       const n = create.node(Syntax.TypeAssertionExpression);
       this.expected(Syntax.LessThanToken);
       n.type = this.type();
@@ -2224,23 +2224,23 @@ function create() {
       n.expression = this.simpleUnaryExpression();
       return finishNode(n);
     }
-    propertyAccessExpressionRest(expression: LeftHandSideExpression, questionDotToken: QuestionDotToken | undefined) {
+    propertyAccessExpressionRest(expression: qc.LeftHandSideExpression, questionDotToken: qc.QuestionDotToken | undefined) {
       const n = create.node(Syntax.PropertyAccessExpression, expression.pos);
       n.expression = expression;
       n.questionDotToken = questionDotToken;
       n.name = this.rightSideOfDot(true, true);
       if (questionDotToken || parse.reparseOptionalChain(expression)) {
         n.flags |= NodeFlags.OptionalChain;
-        if (qc.is.kind(PrivateIdentifier, n.name)) this.errorAtRange(n.name, qd.An_optional_chain_cannot_contain_private_identifiers);
+        if (qc.is.kind(PrivateIdentifier, n.name)) this.errorAtRange(n.name, qd.msgs.An_optional_chain_cannot_contain_private_identifiers);
       }
       return finishNode(n);
     }
-    elementAccessExpressionRest(expression: LeftHandSideExpression, questionDotToken: QuestionDotToken | undefined) {
+    elementAccessExpressionRest(expression: qc.LeftHandSideExpression, questionDotToken: qc.QuestionDotToken | undefined) {
       const n = create.node(Syntax.ElementAccessExpression, expression.pos);
       n.expression = expression;
       n.questionDotToken = questionDotToken;
       if (tok() === Syntax.CloseBracketToken) {
-        n.argumentExpression = create.missingNode(Syntax.Identifier, true, qd.An_element_access_expression_should_take_an_argument);
+        n.argumentExpression = create.missingNode(Syntax.Identifier, true, qd.msgs.An_element_access_expression_should_take_an_argument);
       } else {
         const argument = flags.withoutDisallowIn(this.expression);
         if (StringLiteral.orNumericLiteralLike(argument)) argument.text = internIdentifier(argument.text);
@@ -2250,9 +2250,9 @@ function create() {
       if (questionDotToken || parse.reparseOptionalChain(expression)) n.flags |= NodeFlags.OptionalChain;
       return finishNode(n);
     }
-    memberExpressionRest(expression: LeftHandSideExpression, allowOptionalChain: boolean): MemberExpression {
+    memberExpressionRest(expression: qc.LeftHandSideExpression, allowOptionalChain: boolean): qc.MemberExpression {
       while (true) {
-        let questionDotToken: QuestionDotToken | undefined;
+        let questionDotToken: qc.QuestionDotToken | undefined;
         let isPropertyAccess = false;
         const isStartOfChain = () => {
           return tok() === Syntax.QuestionDotToken && lookAhead(next.isIdentifierOrKeywordOrOpenBracketOrTemplate);
@@ -2283,7 +2283,7 @@ function create() {
         return <MemberExpression>expression;
       }
     }
-    taggedTemplateRest(tag: LeftHandSideExpression, questionDotToken: QuestionDotToken | undefined, typeArguments: Nodes<TypeNode> | undefined) {
+    taggedTemplateRest(tag: qc.LeftHandSideExpression, questionDotToken: qc.QuestionDotToken | undefined, typeArguments: Nodes<TypeNode> | undefined) {
       const n = create.node(Syntax.TaggedTemplateExpression, tag.pos);
       n.tag = tag;
       n.questionDotToken = questionDotToken;
@@ -2292,7 +2292,7 @@ function create() {
       if (questionDotToken || tag.flags & NodeFlags.OptionalChain) n.flags |= NodeFlags.OptionalChain;
       return finishNode(n);
     }
-    callExpressionRest(expression: LeftHandSideExpression): LeftHandSideExpression {
+    callExpressionRest(expression: qc.LeftHandSideExpression): qc.LeftHandSideExpression {
       while (true) {
         expression = this.memberExpressionRest(expression, true);
         const questionDotToken = this.optionalToken(Syntax.QuestionDotToken);
@@ -2325,7 +2325,7 @@ function create() {
           const n = create.node(Syntax.PropertyAccessExpression, expression.pos) as PropertyAccessExpression;
           n.expression = expression;
           n.questionDotToken = questionDotToken;
-          n.name = create.missingNode(Syntax.Identifier, false, qd.Identifier_expected);
+          n.name = create.missingNode(Syntax.Identifier, false, qd.msgs.Identifier_expected);
           n.flags |= NodeFlags.OptionalChain;
           expression = finishNode(n);
         }
@@ -2346,7 +2346,7 @@ function create() {
       if (!this.expected(Syntax.GreaterThanToken)) return;
       return typeArguments && can.followTypeArgumentsInExpression() ? typeArguments : undefined;
     }
-    primaryExpression(): PrimaryExpression {
+    primaryExpression(): qc.PrimaryExpression {
       switch (tok()) {
         case Syntax.NumericLiteral:
         case Syntax.BigIntLiteral:
@@ -2381,28 +2381,28 @@ function create() {
         case Syntax.TemplateHead:
           return this.templateExpression(false);
       }
-      return this.identifier(qd.Expression_expected);
+      return this.identifier(qd.msgs.Expression_expected);
     }
-    parenthesizedExpression(): ParenthesizedExpression {
+    parenthesizedExpression(): qc.ParenthesizedExpression {
       const n = create.nodeWithDoc(Syntax.ParenthesizedExpression);
       this.expected(Syntax.OpenParenToken);
       n.expression = flags.withoutDisallowIn(this.expression);
       this.expected(Syntax.CloseParenToken);
       return finishNode(n);
     }
-    spreadElement(): Expression {
+    spreadElement(): qc.Expression {
       const n = create.node(Syntax.SpreadElement);
       this.expected(Syntax.Dot3Token);
       n.expression = this.assignmentExpressionOrHigher();
       return finishNode(n);
     }
-    argumentOrArrayLiteralElement(): Expression {
+    argumentOrArrayLiteralElement(): qc.Expression {
       return tok() === Syntax.Dot3Token ? this.spreadElement() : tok() === Syntax.CommaToken ? create.node(Syntax.OmittedExpression) : this.assignmentExpressionOrHigher();
     }
-    argumentExpression(): Expression {
+    argumentExpression(): qc.Expression {
       return flags.withoutContext(withDisallowInDecoratorContext, this.argumentOrArrayLiteralElement);
     }
-    arrayLiteralExpression(): ArrayLiteralExpression {
+    arrayLiteralExpression(): qc.ArrayLiteralExpression {
       const n = create.node(Syntax.ArrayLiteralExpression);
       this.expected(Syntax.OpenBracketToken);
       if (scanner.hasPrecedingLineBreak()) n.multiLine = true;
@@ -2410,7 +2410,7 @@ function create() {
       this.expected(Syntax.CloseBracketToken);
       return finishNode(n);
     }
-    objectLiteralElement(): ObjectLiteralElementLike {
+    objectLiteralElement(): qc.ObjectLiteralElementLike {
       const n = create.nodeWithDoc(Syntax.Unknown);
       if (this.optionalToken(Syntax.Dot3Token)) {
         n.kind = Syntax.SpreadAssignment;
@@ -2419,21 +2419,21 @@ function create() {
       }
       n.decorators = this.decorators();
       n.modifiers = this.modifiers();
-      if (this.contextualModifier(Syntax.GetKeyword)) return this.accessorDeclaration(n as AccessorDeclaration, Syntax.GetAccessor);
-      if (this.contextualModifier(Syntax.SetKeyword)) return this.accessorDeclaration(n as AccessorDeclaration, Syntax.SetAccessor);
+      if (this.contextualModifier(Syntax.GetKeyword)) return this.accessorDeclaration(n as qc.AccessorDeclaration, Syntax.GetAccessor);
+      if (this.contextualModifier(Syntax.SetKeyword)) return this.accessorDeclaration(n as qc.AccessorDeclaration, Syntax.SetAccessor);
       const asteriskToken = this.optionalToken(Syntax.AsteriskToken);
       const tokenIsIdentifier = is.identifier();
       n.name = this.propertyName();
-      (n as MethodDeclaration).questionToken = this.optionalToken(Syntax.QuestionToken);
-      (n as MethodDeclaration).exclamationToken = this.optionalToken(Syntax.ExclamationToken);
+      (n as qc.MethodDeclaration).questionToken = this.optionalToken(Syntax.QuestionToken);
+      (n as qc.MethodDeclaration).exclamationToken = this.optionalToken(Syntax.ExclamationToken);
       if (asteriskToken || tok() === Syntax.OpenParenToken || tok() === Syntax.LessThanToken) return this.methodDeclaration(<MethodDeclaration>n, asteriskToken);
       const isShorthandPropertyAssignment = tokenIsIdentifier && tok() !== Syntax.ColonToken;
       if (isShorthandPropertyAssignment) {
         n.kind = Syntax.ShorthandPropertyAssignment;
         const equalsToken = this.optionalToken(Syntax.EqualsToken);
         if (equalsToken) {
-          (n as ShorthandPropertyAssignment).equalsToken = equalsToken;
-          (n as ShorthandPropertyAssignment).objectAssignmentInitializer = flags.withoutDisallowIn(this.assignmentExpressionOrHigher);
+          (n as qc.ShorthandPropertyAssignment).equalsToken = equalsToken;
+          (n as qc.ShorthandPropertyAssignment).objectAssignmentInitializer = flags.withoutDisallowIn(this.assignmentExpressionOrHigher);
         }
       } else {
         n.kind = Syntax.PropertyAssignment;
@@ -2442,7 +2442,7 @@ function create() {
       }
       return finishNode(n);
     }
-    objectLiteralExpression(): ObjectLiteralExpression {
+    objectLiteralExpression(): qc.ObjectLiteralExpression {
       const n = create.node(Syntax.ObjectLiteralExpression);
       const p = scanner.getTokenPos();
       this.expected(Syntax.OpenBraceToken);
@@ -2450,13 +2450,13 @@ function create() {
       n.properties = ctx.parseDelimitedList(Context.ObjectLiteralMembers, this.objectLiteralElement, true);
       if (!this.expected(Syntax.CloseBraceToken)) {
         const e = lastOrUndefined(diags);
-        if (e && e.code === qd._0_expected.code) {
-          addRelatedInfo(e, createFileDiagnostic(source, p, 1, qd.The_parser_expected_to_find_a_to_match_the_token_here));
+        if (e && e.code === qd.msgs._0_expected.code) {
+          addRelatedInfo(e, createFileDiagnostic(source, p, 1, qd.msgs.The_parser_expected_to_find_a_to_match_the_token_here));
         }
       }
       return finishNode(n);
     }
-    functionExpression(): FunctionExpression {
+    functionExpression(): qc.FunctionExpression {
       const dc = flags.inContext(NodeFlags.DecoratorContext);
       if (dc) flags.set(false, NodeFlags.DecoratorContext);
       const n = create.nodeWithDoc(Syntax.FunctionExpression);
@@ -2481,7 +2481,7 @@ function create() {
     optionalIdentifier(): qc.Identifier | undefined {
       return is.identifier() ? this.identifier() : undefined;
     }
-    newExpressionOrNewDotTarget(): NewExpression | MetaProperty {
+    newExpressionOrNewDotTarget(): qc.NewExpression | qc.MetaProperty {
       const fullStart = scanner.getStartPos();
       this.expected(Syntax.NewKeyword);
       if (this.optional(Syntax.DotToken)) {
@@ -2490,7 +2490,7 @@ function create() {
         n.name = this.identifierName();
         return finishNode(n);
       }
-      let expression: MemberExpression = this.primaryExpression();
+      let expression: qc.MemberExpression = this.primaryExpression();
       let typeArguments;
       while (true) {
         expression = this.memberExpressionRest(expression, false);
@@ -2506,10 +2506,10 @@ function create() {
       n.expression = expression;
       n.typeArguments = typeArguments;
       if (tok() === Syntax.OpenParenToken) n.arguments = this.argumentList();
-      else if (n.typeArguments) this.errorAt(fullStart, scanner.getStartPos(), qd.A_new_expression_with_type_arguments_must_always_be_followed_by_a_parenthesized_argument_list);
+      else if (n.typeArguments) this.errorAt(fullStart, scanner.getStartPos(), qd.msgs.A_new_expression_with_type_arguments_must_always_be_followed_by_a_parenthesized_argument_list);
       return finishNode(n);
     }
-    block(ignoreMissingOpenBrace: boolean, m?: DiagnosticMessage): Block {
+    block(ignoreMissingOpenBrace: boolean, m?: qd.Message): qc.Block {
       const n = create.node(Syntax.Block);
       const openBracePosition = scanner.getTokenPos();
       if (this.expected(Syntax.OpenBraceToken, m) || ignoreMissingOpenBrace) {
@@ -2517,14 +2517,14 @@ function create() {
         n.statements = ctx.parseList(Context.BlockStatements, this.statement);
         if (!this.expected(Syntax.CloseBraceToken)) {
           const e = lastOrUndefined(diags);
-          if (e && e.code === qd._0_expected.code) {
-            addRelatedInfo(e, createFileDiagnostic(source, openBracePosition, 1, qd.The_parser_expected_to_find_a_to_match_the_token_here));
+          if (e && e.code === qd.msgs._0_expected.code) {
+            addRelatedInfo(e, createFileDiagnostic(source, openBracePosition, 1, qd.msgs.The_parser_expected_to_find_a_to_match_the_token_here));
           }
         }
       } else n.statements = create.missingList<Statement>();
       return finishNode(n);
     }
-    functionBlock(f: SignatureFlags, m?: DiagnosticMessage): Block {
+    functionBlock(f: SignatureFlags, m?: qd.Message): qc.Block {
       const yf = flags.inContext(NodeFlags.YieldContext);
       flags.set(!!(f & SignatureFlags.Yield), NodeFlags.YieldContext);
       const af = flags.inContext(NodeFlags.AwaitContext);
@@ -2537,12 +2537,12 @@ function create() {
       flags.set(af, NodeFlags.AwaitContext);
       return block;
     }
-    emptyStatement(): Statement {
+    emptyStatement(): qc.Statement {
       const n = create.node(Syntax.EmptyStatement);
       this.expected(Syntax.SemicolonToken);
       return finishNode(n);
     }
-    ifStatement(): IfStatement {
+    ifStatement(): qc.IfStatement {
       const n = create.node(Syntax.IfStatement);
       this.expected(Syntax.IfKeyword);
       this.expected(Syntax.OpenParenToken);
@@ -2552,7 +2552,7 @@ function create() {
       n.elseStatement = this.optional(Syntax.ElseKeyword) ? this.statement() : undefined;
       return finishNode(n);
     }
-    doStatement(): DoStatement {
+    doStatement(): qc.DoStatement {
       const n = create.node(Syntax.DoStatement);
       this.expected(Syntax.DoKeyword);
       n.statement = this.statement();
@@ -2563,7 +2563,7 @@ function create() {
       this.optional(Syntax.SemicolonToken);
       return finishNode(n);
     }
-    whileStatement(): WhileStatement {
+    whileStatement(): qc.WhileStatement {
       const n = create.node(Syntax.WhileStatement);
       this.expected(Syntax.WhileKeyword);
       this.expected(Syntax.OpenParenToken);
@@ -2572,17 +2572,17 @@ function create() {
       n.statement = this.statement();
       return finishNode(n);
     }
-    forOrForInOrForOfStatement(): Statement {
+    forOrForInOrForOfStatement(): qc.Statement {
       const pos = getNodePos();
       this.expected(Syntax.ForKeyword);
       const awaitToken = this.optionalToken(Syntax.AwaitKeyword);
       this.expected(Syntax.OpenParenToken);
-      let initializer!: VariableDeclarationList | Expression;
+      let initializer!: qc.VariableDeclarationList | qc.Expression;
       if (tok() !== Syntax.SemicolonToken) {
         if (tok() === Syntax.VarKeyword || tok() === Syntax.LetKeyword || tok() === Syntax.ConstKeyword) initializer = this.variableDeclarationList(true);
         else initializer = flags.withDisallowIn(this.expression);
       }
-      let n: IterationStatement;
+      let n: qc.IterationStatement;
       if (awaitToken ? this.expected(Syntax.OfKeyword) : this.optional(Syntax.OfKeyword)) {
         const n2 = create.node(Syntax.ForOfStatement, pos);
         n2.awaitModifier = awaitToken;
@@ -2609,21 +2609,21 @@ function create() {
       n.statement = this.statement();
       return finishNode(n);
     }
-    breakOrContinueStatement(kind: Syntax): BreakOrContinueStatement {
+    breakOrContinueStatement(kind: Syntax): qc.BreakOrContinueStatement {
       const n = create.node(kind);
       this.expected(kind === Syntax.BreakStatement ? Syntax.BreakKeyword : Syntax.ContinueKeyword);
       if (!can.parseSemicolon()) n.label = this.identifier();
       this.semicolon();
       return finishNode(n);
     }
-    returnStatement(): ReturnStatement {
+    returnStatement(): qc.ReturnStatement {
       const n = create.node(Syntax.ReturnStatement);
       this.expected(Syntax.ReturnKeyword);
       if (!can.parseSemicolon()) n.expression = flags.withoutDisallowIn(this.expression);
       this.semicolon();
       return finishNode(n);
     }
-    withStatement(): WithStatement {
+    withStatement(): qc.WithStatement {
       const n = create.node(Syntax.WithStatement);
       this.expected(Syntax.WithKeyword);
       this.expected(Syntax.OpenParenToken);
@@ -2632,7 +2632,7 @@ function create() {
       n.statement = flags.withContext(NodeFlags.InWithStatement, this.statement);
       return finishNode(n);
     }
-    caseClause(): CaseClause {
+    caseClause(): qc.CaseClause {
       const n = create.node(Syntax.CaseClause);
       this.expected(Syntax.CaseKeyword);
       n.expression = flags.withoutDisallowIn(this.expression);
@@ -2640,17 +2640,17 @@ function create() {
       n.statements = ctx.parseList(Context.SwitchClauseStatements, this.statement);
       return finishNode(n);
     }
-    defaultClause(): DefaultClause {
+    defaultClause(): qc.DefaultClause {
       const n = create.node(Syntax.DefaultClause);
       this.expected(Syntax.DefaultKeyword);
       this.expected(Syntax.ColonToken);
       n.statements = ctx.parseList(Context.SwitchClauseStatements, this.statement);
       return finishNode(n);
     }
-    caseOrDefaultClause(): CaseOrDefaultClause {
+    caseOrDefaultClause(): qc.CaseOrDefaultClause {
       return tok() === Syntax.CaseKeyword ? this.caseClause() : this.defaultClause();
     }
-    switchStatement(): SwitchStatement {
+    switchStatement(): qc.SwitchStatement {
       const n = create.node(Syntax.SwitchStatement);
       this.expected(Syntax.SwitchKeyword);
       this.expected(Syntax.OpenParenToken);
@@ -2663,14 +2663,14 @@ function create() {
       n.caseBlock = finishNode(n2);
       return finishNode(n);
     }
-    throwStatement(): ThrowStatement {
+    throwStatement(): qc.ThrowStatement {
       const n = create.node(Syntax.ThrowStatement);
       this.expected(Syntax.ThrowKeyword);
       n.expression = scanner.hasPrecedingLineBreak() ? undefined : flags.withoutDisallowIn(this.expression);
       this.semicolon();
       return finishNode(n);
     }
-    tryStatement(): TryStatement {
+    tryStatement(): qc.TryStatement {
       const n = create.node(Syntax.TryStatement);
       this.expected(Syntax.TryKeyword);
       n.tryBlock = this.block(false);
@@ -2681,7 +2681,7 @@ function create() {
       }
       return finishNode(n);
     }
-    catchClause(): CatchClause {
+    catchClause(): qc.CatchClause {
       const result = create.node(Syntax.CatchClause);
       this.expected(Syntax.CatchKeyword);
       if (this.optional(Syntax.OpenParenToken)) {
@@ -2691,27 +2691,27 @@ function create() {
       result.block = this.block(false);
       return finishNode(result);
     }
-    debuggerStatement(): Statement {
+    debuggerStatement(): qc.Statement {
       const n = create.node(Syntax.DebuggerStatement);
       this.expected(Syntax.DebuggerKeyword);
       this.semicolon();
       return finishNode(n);
     }
-    expressionOrLabeledStatement(): ExpressionStatement | LabeledStatement {
+    expressionOrLabeledStatement(): qc.ExpressionStatement | qc.LabeledStatement {
       const n = create.nodeWithDoc(tok() === Syntax.Identifier ? Syntax.Unknown : Syntax.ExpressionStatement);
       const expression = flags.withoutDisallowIn(this.expression);
       if (expression.kind === Syntax.Identifier && this.optional(Syntax.ColonToken)) {
         n.kind = Syntax.LabeledStatement;
-        (n as LabeledStatement).label = <Identifier>expression;
-        (n as LabeledStatement).statement = this.statement();
+        (n as qc.LabeledStatement).label = <qc.Identifier>expression;
+        (n as qc.LabeledStatement).statement = this.statement();
       } else {
         n.kind = Syntax.ExpressionStatement;
-        (n as ExpressionStatement).expression = expression;
+        (n as qc.ExpressionStatement).expression = expression;
         this.semicolon();
       }
       return finishNode(n);
     }
-    statement(): Statement {
+    statement(): qc.Statement {
       switch (tok()) {
         case Syntax.SemicolonToken:
           return this.emptyStatement();
@@ -2777,7 +2777,7 @@ function create() {
       }
       return this.expressionOrLabeledStatement();
     }
-    declaration(): Statement {
+    declaration(): qc.Statement {
       const modifiers = lookAhead(() => (this.decorators(), this.modifiers()));
       const isAmbient = some(modifiers, is.declareModifier);
       if (isAmbient) {
@@ -2794,7 +2794,7 @@ function create() {
         return flags.withContext(NodeFlags.Ambient, () => this.declarationWorker(n));
       } else return this.declarationWorker(n);
     }
-    declarationWorker(n: Statement): Statement {
+    declarationWorker(n: qc.Statement): qc.Statement {
       switch (tok()) {
         case Syntax.VarKeyword:
         case Syntax.LetKeyword:
@@ -2829,7 +2829,7 @@ function create() {
           }
         default:
           if (n.decorators || n.modifiers) {
-            const missing = create.missingNode<Statement>(Syntax.MissingDeclaration, true, qd.Declaration_expected);
+            const missing = create.missingNode<Statement>(Syntax.MissingDeclaration, true, qd.msgs.Declaration_expected);
             missing.pos = n.pos;
             missing.decorators = n.decorators;
             missing.modifiers = n.modifiers;
@@ -2838,14 +2838,14 @@ function create() {
           return undefined!;
       }
     }
-    functionBlockOrSemicolon(flags: SignatureFlags, m?: DiagnosticMessage): Block | undefined {
+    functionBlockOrSemicolon(flags: SignatureFlags, m?: qd.Message): qc.Block | undefined {
       if (tok() !== Syntax.OpenBraceToken && can.parseSemicolon()) {
         this.semicolon();
         return;
       }
       return this.functionBlock(flags, m);
     }
-    arrayBindingElement(): ArrayBindingElement {
+    arrayBindingElement(): qc.ArrayBindingElement {
       if (tok() === Syntax.CommaToken) return create.node(Syntax.OmittedExpression);
       const n = create.node(Syntax.BindingElement);
       n.dot3Token = this.optionalToken(Syntax.Dot3Token);
@@ -2853,12 +2853,12 @@ function create() {
       n.initializer = this.initializer();
       return finishNode(n);
     }
-    objectBindingElement(): BindingElement {
+    objectBindingElement(): qc.BindingElement {
       const n = create.node(Syntax.BindingElement);
       n.dot3Token = this.optionalToken(Syntax.Dot3Token);
       const tokenIsIdentifier = is.identifier();
       const propertyName = this.propertyName();
-      if (tokenIsIdentifier && tok() !== Syntax.ColonToken) n.name = <Identifier>propertyName;
+      if (tokenIsIdentifier && tok() !== Syntax.ColonToken) n.name = <qc.Identifier>propertyName;
       else {
         this.expected(Syntax.ColonToken);
         n.propertyName = propertyName;
@@ -2867,31 +2867,31 @@ function create() {
       n.initializer = this.initializer();
       return finishNode(n);
     }
-    objectBindingPattern(): ObjectBindingPattern {
+    objectBindingPattern(): qc.ObjectBindingPattern {
       const n = create.node(Syntax.ObjectBindingPattern);
       this.expected(Syntax.OpenBraceToken);
       n.elements = ctx.parseDelimitedList(Context.ObjectBindingElements, this.objectBindingElement);
       this.expected(Syntax.CloseBraceToken);
       return finishNode(n);
     }
-    arrayBindingPattern(): ArrayBindingPattern {
+    arrayBindingPattern(): qc.ArrayBindingPattern {
       const n = create.node(Syntax.ArrayBindingPattern);
       this.expected(Syntax.OpenBracketToken);
       n.elements = ctx.parseDelimitedList(Context.ArrayBindingElements, this.arrayBindingElement);
       this.expected(Syntax.CloseBracketToken);
       return finishNode(n);
     }
-    identifierOrPattern(privateIdentifierDiagnosticMessage?: DiagnosticMessage): qc.Identifier | BindingPattern {
+    identifierOrPattern(m?: qd.Message): qc.Identifier | qc.BindingPattern {
       if (tok() === Syntax.OpenBracketToken) return this.arrayBindingPattern();
       if (tok() === Syntax.OpenBraceToken) return this.objectBindingPattern();
-      return this.identifier(undefined, privateIdentifierDiagnosticMessage);
+      return this.identifier(undefined, m);
     }
     variableDeclarationAllowExclamation() {
       return this.variableDeclaration(true);
     }
-    variableDeclaration(allowExclamation?: boolean): VariableDeclaration {
+    variableDeclaration(allowExclamation?: boolean): qc.VariableDeclaration {
       const n = create.node(Syntax.VariableDeclaration);
-      n.name = this.identifierOrPattern(qd.Private_identifiers_are_not_allowed_in_variable_declarations);
+      n.name = this.identifierOrPattern(qd.msgs.Private_identifiers_are_not_allowed_in_variable_declarations);
       if (allowExclamation && n.name.kind === Syntax.Identifier && tok() === Syntax.ExclamationToken && !scanner.hasPrecedingLineBreak()) {
         n.exclamationToken = this.tokenNode<Token<Syntax.ExclamationToken>>();
       }
@@ -2899,7 +2899,7 @@ function create() {
       if (!is.inOrOfKeyword(tok())) n.initializer = this.initializer();
       return finishNode(n);
     }
-    variableDeclarationList(inForStatementInitializer: boolean): VariableDeclarationList {
+    variableDeclarationList(inForStatementInitializer: boolean): qc.VariableDeclarationList {
       const n = create.node(Syntax.VariableDeclarationList);
       switch (tok()) {
         case Syntax.VarKeyword:
@@ -2911,7 +2911,7 @@ function create() {
           n.flags |= NodeFlags.Const;
           break;
         default:
-          fail();
+          qb.fail();
       }
       next.tok();
       if (tok() === Syntax.OfKeyword && lookAhead(can.followContextualOfKeyword)) {
@@ -2924,13 +2924,13 @@ function create() {
       }
       return finishNode(n);
     }
-    variableStatement(n: VariableStatement): VariableStatement {
+    variableStatement(n: qc.VariableStatement): qc.VariableStatement {
       n.kind = Syntax.VariableStatement;
       n.declarationList = this.variableDeclarationList(false);
       this.semicolon();
       return finishNode(n);
     }
-    functionDeclaration(n: FunctionDeclaration): FunctionDeclaration {
+    functionDeclaration(n: qc.FunctionDeclaration): qc.FunctionDeclaration {
       n.kind = Syntax.FunctionDeclaration;
       this.expected(Syntax.FunctionKeyword);
       n.asteriskToken = this.optionalToken(Syntax.AsteriskToken);
@@ -2938,7 +2938,7 @@ function create() {
       const isGenerator = n.asteriskToken ? SignatureFlags.Yield : SignatureFlags.None;
       const isAsync = hasModifierOfKind(n, Syntax.AsyncKeyword) ? SignatureFlags.Await : SignatureFlags.None;
       fillSignature(Syntax.ColonToken, isGenerator | isAsync, n);
-      n.body = this.functionBlockOrSemicolon(isGenerator | isAsync, qd.or_expected);
+      n.body = this.functionBlockOrSemicolon(isGenerator | isAsync, qd.msgs.or_expected);
       return finishNode(n);
     }
     constructorName() {
@@ -2951,7 +2951,7 @@ function create() {
       }
       return;
     }
-    methodDeclaration(n: MethodDeclaration, asteriskToken: AsteriskToken, m?: DiagnosticMessage): MethodDeclaration {
+    methodDeclaration(n: qc.MethodDeclaration, asteriskToken: qc.AsteriskToken, m?: qd.Message): qc.MethodDeclaration {
       n.kind = Syntax.MethodDeclaration;
       n.asteriskToken = asteriskToken;
       const isGenerator = asteriskToken ? SignatureFlags.Yield : SignatureFlags.None;
@@ -2960,7 +2960,7 @@ function create() {
       n.body = this.functionBlockOrSemicolon(isGenerator | isAsync, m);
       return finishNode(n);
     }
-    propertyDeclaration(n: PropertyDeclaration): PropertyDeclaration {
+    propertyDeclaration(n: qc.PropertyDeclaration): qc.PropertyDeclaration {
       n.kind = Syntax.PropertyDeclaration;
       if (!n.questionToken && tok() === Syntax.ExclamationToken && !scanner.hasPrecedingLineBreak()) {
         n.exclamationToken = this.tokenNode<Token<Syntax.ExclamationToken>>();
@@ -2970,14 +2970,14 @@ function create() {
       this.semicolon();
       return finishNode(n);
     }
-    propertyOrMethodDeclaration(n: PropertyDeclaration | MethodDeclaration): PropertyDeclaration | MethodDeclaration {
+    propertyOrMethodDeclaration(n: qc.PropertyDeclaration | qc.MethodDeclaration): qc.PropertyDeclaration | qc.MethodDeclaration {
       const asteriskToken = this.optionalToken(Syntax.AsteriskToken);
       n.name = this.propertyName();
       n.questionToken = this.optionalToken(Syntax.QuestionToken);
-      if (asteriskToken || tok() === Syntax.OpenParenToken || tok() === Syntax.LessThanToken) return this.methodDeclaration(<MethodDeclaration>n, asteriskToken, qd.or_expected);
+      if (asteriskToken || tok() === Syntax.OpenParenToken || tok() === Syntax.LessThanToken) return this.methodDeclaration(<MethodDeclaration>n, asteriskToken, qd.msgs.or_expected);
       return this.propertyDeclaration(<PropertyDeclaration>n);
     }
-    accessorDeclaration(n: AccessorDeclaration, kind: AccessorDeclaration['kind']): AccessorDeclaration {
+    accessorDeclaration(n: qc.AccessorDeclaration, kind: qc.AccessorDeclaration['kind']): qc.AccessorDeclaration {
       n.kind = kind;
       n.name = this.propertyName();
       fillSignature(Syntax.ColonToken, SignatureFlags.None, n);
@@ -3022,7 +3022,7 @@ function create() {
       }
       return modifiers;
     }
-    classElement(): ClassElement {
+    classElement(): qc.ClassElement {
       if (tok() === Syntax.SemicolonToken) {
         const n = create.node(Syntax.SemicolonClassElement);
         next.tok();
@@ -3034,18 +3034,18 @@ function create() {
       if (this.contextualModifier(Syntax.GetKeyword)) return this.accessorDeclaration(<AccessorDeclaration>n, Syntax.GetAccessor);
       if (this.contextualModifier(Syntax.SetKeyword)) return this.accessorDeclaration(<AccessorDeclaration>n, Syntax.SetAccessor);
       if (tok() === Syntax.ConstructorKeyword || tok() === Syntax.StringLiteral) {
-        const tryConstructorDeclaration = (n: ConstructorDeclaration) => {
+        const tryConstructorDeclaration = (n: qc.ConstructorDeclaration) => {
           return tryParse(() => {
             if (parse.constructorName()) {
               n.kind = Syntax.Constructor;
               fillSignature(Syntax.ColonToken, SignatureFlags.None, n);
-              n.body = parse.functionBlockOrSemicolon(SignatureFlags.None, qd.or_expected);
+              n.body = parse.functionBlockOrSemicolon(SignatureFlags.None, qd.msgs.or_expected);
               return finishNode(n);
             }
             return;
           });
         };
-        const d = tryConstructorDeclaration(n as ConstructorDeclaration);
+        const d = tryConstructorDeclaration(n as qc.ConstructorDeclaration);
         if (d) return d;
       }
       if (is.indexSignature()) return this.indexSignatureDeclaration(<IndexSignatureDeclaration>n);
@@ -3055,17 +3055,17 @@ function create() {
           for (const m of n.modifiers!) {
             m.flags |= NodeFlags.Ambient;
           }
-          return flags.withContext(NodeFlags.Ambient, () => this.propertyOrMethodDeclaration(n as PropertyDeclaration | MethodDeclaration));
+          return flags.withContext(NodeFlags.Ambient, () => this.propertyOrMethodDeclaration(n as qc.PropertyDeclaration | qc.MethodDeclaration));
         }
-        return this.propertyOrMethodDeclaration(n as PropertyDeclaration | MethodDeclaration);
+        return this.propertyOrMethodDeclaration(n as qc.PropertyDeclaration | qc.MethodDeclaration);
       }
       if (n.decorators || n.modifiers) {
-        n.name = create.missingNode<Identifier>(Syntax.Identifier, true, qd.Declaration_expected);
+        n.name = create.missingNode<qc.Identifier>(Syntax.Identifier, true, qd.msgs.Declaration_expected);
         return this.propertyDeclaration(<PropertyDeclaration>n);
       }
-      return fail('Should not have attempted to parse class member declaration.');
+      return qb.fail('Should not have attempted to parse class member declaration.');
     }
-    classExpression(): ClassExpression {
+    classExpression(): qc.ClassExpression {
       return <ClassExpression>this.classDeclarationOrExpression(create.nodeWithDoc(Syntax.Unknown), Syntax.ClassExpression);
     }
     classDeclaration(n: ClassLikeDeclaration): ClassDeclaration {
@@ -3091,7 +3091,7 @@ function create() {
       if (is.heritageClause()) return ctx.parseList(Context.HeritageClauses, this.heritageClause);
       return;
     }
-    heritageClause(): HeritageClause {
+    heritageClause(): qc.HeritageClause {
       const t = tok();
       qb.assert(t === Syntax.ExtendsKeyword || t === Syntax.ImplementsKeyword);
       const n = create.node(Syntax.HeritageClause);
@@ -3100,7 +3100,7 @@ function create() {
       n.types = ctx.parseDelimitedList(Context.HeritageClauseElement, this.expressionWithTypeArguments);
       return finishNode(n);
     }
-    expressionWithTypeArguments(): ExpressionWithTypeArguments {
+    expressionWithTypeArguments(): qc.ExpressionWithTypeArguments {
       const n = create.node(Syntax.ExpressionWithTypeArguments);
       n.expression = this.leftHandSideExpressionOrHigher();
       n.typeArguments = parse.typeArguments();
@@ -3226,7 +3226,7 @@ function create() {
       n.moduleReference = this.moduleReference();
       this.semicolon();
       const finished = finishNode(n);
-      if (isTypeOnly) this.errorAtRange(finished, qd.Only_ECMAScript_imports_may_use_import_type);
+      if (isTypeOnly) this.errorAtRange(finished, qd.msgs.Only_ECMAScript_imports_may_use_import_type);
       return finished;
     }
     importClause(identifier: qc.Identifier | undefined, fullStart: number, isTypeOnly: boolean) {
@@ -3248,7 +3248,7 @@ function create() {
       this.expected(Syntax.CloseParenToken);
       return finishNode(n);
     }
-    moduleSpecifier(): Expression {
+    moduleSpecifier(): qc.Expression {
       if (tok() === Syntax.StringLiteral) {
         const result = this.literalNode();
         result.text = internIdentifier(result.text);
@@ -3292,7 +3292,7 @@ function create() {
         checkIdentifierEnd = scanner.getTextPos();
         n.name = this.identifierName();
       } else n.name = identifierName;
-      if (kind === Syntax.ImportSpecifier && checkIdentifierIsKeyword) this.errorAt(checkIdentifierStart, checkIdentifierEnd, qd.Identifier_expected);
+      if (kind === Syntax.ImportSpecifier && checkIdentifierIsKeyword) this.errorAt(checkIdentifierStart, checkIdentifierEnd, qd.msgs.Identifier_expected);
       return finishNode(n);
     }
     namespaceExport(pos: number): NamespaceExport {
@@ -3326,24 +3326,24 @@ function create() {
       this.semicolon();
       return finishNode(n);
     }
-    errorAtToken(m: DiagnosticMessage, arg0?: any) {
+    errorAtToken(m: qd.Message, arg0?: any) {
       this.errorAt(scanner.getTokenPos(), scanner.getTextPos(), m, arg0);
     }
-    errorAtPosition(start: number, length: number, m: DiagnosticMessage, arg0?: any) {
+    errorAtPosition(start: number, length: number, m: qd.Message, arg0?: any) {
       const l = lastOrUndefined(diags);
       if (!l || start !== l.start) diags.push(createFileDiagnostic(source, start, length, m, arg0));
       parseErrorBeforeNextFinishedNode = true;
     }
-    errorAt(start: number, end: number, m: DiagnosticMessage, arg0?: any) {
+    errorAt(start: number, end: number, m: qd.Message, arg0?: any) {
       this.errorAtPosition(start, end - start, m, arg0);
     }
-    errorAtRange(r: TextRange, m: DiagnosticMessage, arg0?: any) {
+    errorAtRange(r: TextRange, m: qd.Message, arg0?: any) {
       this.errorAt(r.pos, r.end, m, arg0);
     }
-    scanError(m: DiagnosticMessage, length: number) {
+    scanError(m: qd.Message, length: number) {
       this.errorAtPosition(scanner.getTextPos(), length, m);
     }
-    reparseOptionalChain(n: Expression) {
+    reparseOptionalChain(n: qc.Expression) {
       if (n.flags & NodeFlags.OptionalChain) return true;
       if (qc.is.kind(NonNullExpression, n)) {
         let expr = n.expression;
@@ -3384,7 +3384,7 @@ function create() {
         n.closingElement = this.closingElement(inExpressionContext);
         const tagNamesEq = (a: JsxTagNameExpression, b: JsxTagNameExpression): boolean => {
           if (a.kind !== b.kind) return false;
-          if (a.kind === Syntax.Identifier) return a.escapedText === (<Identifier>b).escapedText;
+          if (a.kind === Syntax.Identifier) return a.escapedText === (<qc.Identifier>b).escapedText;
           if (a.kind === Syntax.ThisKeyword) return true;
           return (
             (a as PropertyAccessExpression).name.escapedText === (b as PropertyAccessExpression).name.escapedText &&
@@ -3392,7 +3392,7 @@ function create() {
           );
         };
         if (!tagNamesEq(n.openingElement.tagName, n.closingElement.tagName)) {
-          parse.errorAtRange(n.closingElement, qd.Expected_corresponding_JSX_closing_tag_for_0, getTextOfNodeFromSourceText(sourceText, n.openingElement.tagName));
+          parse.errorAtRange(n.closingElement, qd.msgs.Expected_corresponding_JSX_closing_tag_for_0, getTextOfNodeFromSourceText(sourceText, n.openingElement.tagName));
         }
         r = finishNode(n);
       } else if (opening.kind === Syntax.JsxOpeningFragment) {
@@ -3408,7 +3408,7 @@ function create() {
       if (inExpressionContext && tok() === Syntax.LessThanToken) {
         const invalid = tryParse(() => this.elementOrSelfClosingElementOrFragment(true));
         if (invalid) {
-          parse.errorAtToken(qd.JSX_expressions_must_have_one_parent_element);
+          parse.errorAtToken(qd.msgs.JSX_expressions_must_have_one_parent_element);
           const n2 = create.node(Syntax.BinaryExpression, r.pos);
           n2.end = invalid.end;
           n2.left = r;
@@ -3431,11 +3431,11 @@ function create() {
       switch (token) {
         case Syntax.EndOfFileToken:
           if (qc.is.kind(JsxOpeningFragment, openingTag)) {
-            parse.errorAtRange(openingTag, qd.JSX_fragment_has_no_corresponding_closing_tag);
+            parse.errorAtRange(openingTag, qd.msgs.JSX_fragment_has_no_corresponding_closing_tag);
           } else {
             const tag = openingTag.tagName;
             const start = qy.skipTrivia(sourceText, tag.pos);
-            parse.errorAt(start, tag.end, qd.JSX_element_0_has_no_corresponding_closing_tag, getTextOfNodeFromSourceText(sourceText, openingTag.tagName));
+            parse.errorAt(start, tag.end, qd.msgs.JSX_element_0_has_no_corresponding_closing_tag, getTextOfNodeFromSourceText(sourceText, openingTag.tagName));
           }
           return;
         case Syntax.LessThanSlashToken:
@@ -3549,7 +3549,7 @@ function create() {
     closingFragment(inExpressionContext: boolean): JsxClosingFragment {
       const n = create.node(Syntax.JsxClosingFragment);
       parse.expected(Syntax.LessThanSlashToken);
-      if (qy.is.identifierOrKeyword(tok())) parse.errorAtRange(this.elementName(), qd.Expected_corresponding_closing_tag_for_JSX_fragment);
+      if (qy.is.identifierOrKeyword(tok())) parse.errorAtRange(this.elementName(), qd.msgs.Expected_corresponding_closing_tag_for_JSX_fragment);
       if (inExpressionContext) parse.expected(Syntax.GreaterThanToken);
       else {
         parse.expected(Syntax.GreaterThanToken, undefined, false);
@@ -3656,12 +3656,12 @@ function create() {
         next.tokDoc();
         return true;
       }
-      parse.errorAtToken(qd._0_expected, qy.toString(t));
+      parse.errorAtToken(qd.msgs._0_expected, qy.toString(t));
       return false;
     }
     expectedToken<T extends DocSyntax>(t: T): Token<T>;
     expectedToken(t: DocSyntax): Node {
-      return this.optionalToken(t) || create.missingNode(t, false, qd._0_expected, qy.toString(t));
+      return this.optionalToken(t) || create.missingNode(t, false, qd.msgs._0_expected, qy.toString(t));
     }
     optional(t: DocSyntax): boolean {
       if (tok() === t) {
@@ -3685,7 +3685,7 @@ function create() {
       next.tok();
       return finishNode(n);
     }
-    nonNullableType(): TypeNode {
+    nonNullableType(): qc.TypeNode {
       const n = create.node(Syntax.DocNonNullableType);
       next.tok();
       n.type = parse.nonArrayType();
@@ -3709,7 +3709,7 @@ function create() {
       n.type = parse.type();
       return finishNode(n);
     }
-    functionType(): DocFunctionType | TypeReferenceNode {
+    functionType(): DocFunctionType | qc.TypeReferenceNode {
       if (lookAhead(next.isOpenParen)) {
         const n = create.nodeWithDoc(Syntax.DocFunctionType);
         next.tok();
@@ -3720,7 +3720,7 @@ function create() {
       n.typeName = parse.identifierName();
       return finishNode(n);
     }
-    parameter(): ParameterDeclaration {
+    parameter(): qc.ParameterDeclaration {
       const n = create.node(Syntax.Parameter);
       if (tok() === Syntax.ThisKeyword || tok() === Syntax.NewKeyword) {
         n.name = parse.identifierName();
@@ -3729,7 +3729,7 @@ function create() {
       n.type = this.type();
       return finishNode(n);
     }
-    type(): TypeNode {
+    type(): qc.TypeNode {
       scanner.setInDocType(true);
       const m = parse.optionalToken(Syntax.ModuleKeyword);
       if (m) {
@@ -3928,7 +3928,7 @@ function create() {
       skipWhitespaceOrAsterisk();
       return tok() === Syntax.OpenBraceToken ? this.typeExpression() : undefined;
     }
-    bracketNameInPropertyAndParamTag(): { name: EntityName; isBracketed: boolean } {
+    bracketNameInPropertyAndParamTag(): { name: qc.EntityName; isBracketed: boolean } {
       const isBracketed = this.optional(Syntax.OpenBracketToken);
       if (isBracketed) skipWhitespace();
       const isBackquoted = this.optional(Syntax.BacktickToken);
@@ -3963,7 +3963,7 @@ function create() {
       n.comment = comment;
       return finishNode(n);
     }
-    nestedTypeLiteral(typeExpression: DocTypeExpression | undefined, name: EntityName, target: PropertyLike, indent: number) {
+    nestedTypeLiteral(typeExpression: DocTypeExpression | undefined, name: qc.EntityName, target: PropertyLike, indent: number) {
       if (typeExpression && is.objectOrObjectArrayTypeReference(typeExpression.type)) {
         const n = create.node(Syntax.DocTypeExpression, scanner.getTokenPos());
         let child: DocPropertyLikeTag | DocTypeTag | false;
@@ -3984,14 +3984,14 @@ function create() {
       return;
     }
     returnTag(start: number, tagName: qc.Identifier): DocReturnTag {
-      if (some(this.tags, isDocReturnTag)) parse.errorAt(tagName.pos, scanner.getTokenPos(), qd._0_tag_already_specified, tagName.escapedText);
+      if (some(this.tags, isDocReturnTag)) parse.errorAt(tagName.pos, scanner.getTokenPos(), qd.msgs._0_tag_already_specified, tagName.escapedText);
       const n = create.node(Syntax.DocReturnTag, start);
       n.tagName = tagName;
       n.typeExpression = this.tryTypeExpression();
       return finishNode(n);
     }
     typeTag(start: number, tagName: qc.Identifier): DocTypeTag {
-      if (some(this.tags, isDocTypeTag)) parse.errorAt(tagName.pos, scanner.getTokenPos(), qd._0_tag_already_specified, tagName.escapedText);
+      if (some(this.tags, isDocTypeTag)) parse.errorAt(tagName.pos, scanner.getTokenPos(), qd.msgs._0_tag_already_specified, tagName.escapedText);
       const n = create.node(Syntax.DocTypeTag, start);
       n.tagName = tagName;
       n.typeExpression = this.typeExpression(true);
@@ -4054,11 +4054,11 @@ function create() {
       n.class = this.expressionWithTypeArgumentsForAugments();
       return finishNode(n);
     }
-    expressionWithTypeArgumentsForAugments(): ExpressionWithTypeArguments & {
+    expressionWithTypeArgumentsForAugments(): qc.ExpressionWithTypeArguments & {
       expression: qc.Identifier | PropertyAccessEntityNameExpression;
     } {
       const usedBrace = parse.optional(Syntax.OpenBraceToken);
-      const n = create.node(Syntax.ExpressionWithTypeArguments) as ExpressionWithTypeArguments & {
+      const n = create.node(Syntax.ExpressionWithTypeArguments) as qc.ExpressionWithTypeArguments & {
         expression: qc.Identifier | PropertyAccessEntityNameExpression;
       };
       n.expression = this.propertyAccessEntityNameExpression();
@@ -4115,9 +4115,9 @@ function create() {
           if (!n2) n2 = create.node(Syntax.DocTypeLiteral, start);
           if (child.kind === Syntax.DocTypeTag) {
             if (childTypeTag) {
-              parse.errorAtToken(qd.A_Doc_typedef_comment_may_not_contain_multiple_type_tags);
+              parse.errorAtToken(qd.msgs.A_Doc_typedef_comment_may_not_contain_multiple_type_tags);
               const e = lastOrUndefined(diags);
-              if (e) addRelatedInfo(e, createDiagnosticForNode(source, qd.The_tag_was_first_specified_here));
+              if (e) addRelatedInfo(e, createDiagnosticForNode(source, qd.msgs.The_tag_was_first_specified_here));
               break;
             } else childTypeTag = child;
           } else n2.docPropertyTags = append(n2.docPropertyTags as MutableNodes<DocPropertyTag>, child);
@@ -4172,7 +4172,7 @@ function create() {
       if (fullName) {
         let rightNode = fullName;
         while (true) {
-          if (qc.is.kind(Identifier, rightNode) || !rightNode.body) return qc.is.kind(Identifier, rightNode) ? rightNode : rightNode.name;
+          if (qc.is.kind(qc.Identifier, rightNode) || !rightNode.body) return qc.is.kind(qc.Identifier, rightNode) ? rightNode : rightNode.name;
           rightNode = rightNode.body;
         }
       }
@@ -4181,7 +4181,7 @@ function create() {
     childPropertyTag(indent: number) {
       return this.childParameterOrPropertyTag(PropertyLike.Property, indent) as DocTypeTag | DocPropertyTag | false;
     }
-    childParameterOrPropertyTag(target: PropertyLike, indent: number, name?: EntityName): DocTypeTag | DocPropertyTag | DocParameterTag | false {
+    childParameterOrPropertyTag(target: PropertyLike, indent: number, name?: qc.EntityName): DocTypeTag | DocPropertyTag | DocParameterTag | false {
       let canParseTag = true;
       let seenAsterisk = false;
       while (true) {
@@ -4194,7 +4194,7 @@ function create() {
                 (child.kind === Syntax.DocParameterTag || child.kind === Syntax.DocPropertyTag) &&
                 target !== PropertyLike.CallbackParameter &&
                 name &&
-                (qc.is.kind(Identifier, child.name) || !escapedTextsEqual(name, child.name.left))
+                (qc.is.kind(qc.Identifier, child.name) || !escapedTextsEqual(name, child.name.left))
               ) {
                 return false;
               }
@@ -4251,7 +4251,7 @@ function create() {
       do {
         skipWhitespace();
         const n = create.node(Syntax.TypeParameter);
-        n.name = this.identifierName(qd.Unexpected_token_A_type_parameter_name_was_expected_without_curly_braces);
+        n.name = this.identifierName(qd.msgs.Unexpected_token_A_type_parameter_name_was_expected_without_curly_braces);
         finishNode(n);
         skipWhitespaceOrAsterisk();
         typeParameters.push(n);
@@ -4263,8 +4263,8 @@ function create() {
       finishNode(n);
       return n;
     }
-    entityName(): EntityName {
-      let entity: EntityName = this.identifierName();
+    entityName(): qc.EntityName {
+      let entity: qc.EntityName = this.identifierName();
       if (parse.optional(Syntax.OpenBracketToken)) parse.expected(Syntax.CloseBracketToken);
       while (parse.optional(Syntax.DotToken)) {
         const name = this.identifierName();
@@ -4273,8 +4273,8 @@ function create() {
       }
       return entity;
     }
-    identifierName(m?: DiagnosticMessage): qc.Identifier {
-      if (!qy.is.identifierOrKeyword(tok())) return create.missingNode<Identifier>(Syntax.Identifier, !m, m || qd.Identifier_expected);
+    identifierName(m?: qd.Message): qc.Identifier {
+      if (!qy.is.identifierOrKeyword(tok())) return create.missingNode<qc.Identifier>(Syntax.Identifier, !m, m || qd.msgs.Identifier_expected);
       create.identifierCount++;
       const pos = scanner.getTokenPos();
       const end = scanner.getTextPos();
@@ -4358,7 +4358,7 @@ function create() {
     if (i === undefined) identifiers.set(s, (i = s));
     return i;
   }
-  function fillSignature(t: Syntax.ColonToken | Syntax.EqualsGreaterThanToken, f: SignatureFlags, s: SignatureDeclaration): boolean {
+  function fillSignature(t: Syntax.ColonToken | Syntax.EqualsGreaterThanToken, f: SignatureFlags, s: qc.SignatureDeclaration): boolean {
     if (!(f & SignatureFlags.Doc)) s.typeParameters = parse.typeParameters();
     const r = parse.parameterList(s, f);
     const shouldParseReturnType = (isType: boolean) => {
@@ -4367,7 +4367,7 @@ function create() {
         return true;
       } else if (parse.optional(Syntax.ColonToken)) return true;
       else if (isType && tok() === Syntax.EqualsGreaterThanToken) {
-        parse.errorAtToken(qd._0_expected, qy.toString(Syntax.ColonToken));
+        parse.errorAtToken(qd.msgs._0_expected, qy.toString(Syntax.ColonToken));
         next.tok();
         return true;
       }
@@ -4375,10 +4375,10 @@ function create() {
     };
     if (shouldParseReturnType(!!(f & SignatureFlags.Type))) {
       s.type = parse.typeOrTypePredicate();
-      const hasArrowFunctionBlockingError = (n: TypeNode): boolean => {
+      const hasArrowFunctionBlockingError = (n: qc.TypeNode): boolean => {
         switch (n.kind) {
           case Syntax.TypeReference:
-            return qc.is.missing((n as TypeReferenceNode).typeName);
+            return qc.is.missing((n as qc.TypeReferenceNode).typeName);
           case Syntax.FunctionType:
           case Syntax.ConstructorType: {
             const { parameters, type } = n as FunctionOrConstructorTypeNode;
@@ -4465,7 +4465,7 @@ function create() {
     if (comment) comment.parent = parent;
     if (flags.value & NodeFlags.JavaScriptFile) {
       if (!source.docDiagnostics) source.docDiagnostics = [];
-      source.docqd.push(...diags);
+      source.docqd.msgs.push(...diags);
     }
     currentToken = saveToken;
     diags.length = saveParseDiagnosticsLength;
@@ -4482,9 +4482,9 @@ function create() {
     if (r && r.doc) fixupParentReferences(r.doc);
     return r;
   }
-  function escapedTextsEqual(a: EntityName, b: EntityName): boolean {
-    while (!qc.is.kind(Identifier, a) || !qc.is.kind(Identifier, b)) {
-      if (!qc.is.kind(Identifier, a) && !qc.is.kind(Identifier, b) && a.right.escapedText === b.right.escapedText) {
+  function escapedTextsEqual(a: qc.EntityName, b: qc.EntityName): boolean {
+    while (!qc.is.kind(qc.Identifier, a) || !qc.is.kind(qc.Identifier, b)) {
+      if (!qc.is.kind(qc.Identifier, a) && !qc.is.kind(qc.Identifier, b) && a.right.escapedText === b.right.escapedText) {
         a = a.left;
         b = b.left;
       } else return false;
@@ -4525,7 +4525,7 @@ export function qp_updateSource(s: SourceFile, newText: string, r: TextChangeRan
   s2.flags |= s.flags & NodeFlags.PermanentlySetIncrementalFlags;
   return s2;
 }
-export function qp_parseIsolatedEntityName(text: string, lang: ScriptTarget): EntityName | undefined {
+export function qp_parseIsolatedEntityName(text: string, lang: ScriptTarget): qc.EntityName | undefined {
   return getParser().parseIsolatedEntityName(text, lang);
 }
 export function qp_parseJsonText(fileName: string, t: string): JsonSourceFile {
@@ -4889,7 +4889,7 @@ export function processCommentPragmas(ctx: PragmaContext, sourceText: string): v
     ctx.pragmas.set(p.name, p.args);
   }
 }
-type PragmaDiagnosticReporter = (pos: number, length: number, m: DiagnosticMessage) => void;
+type PragmaDiagnosticReporter = (pos: number, length: number, m: qd.Message) => void;
 export function processPragmasIntoFields(c: PragmaContext, reporter: PragmaDiagnosticReporter): void {
   c.checkJsDirective = undefined;
   c.referencedFiles = [];
@@ -4910,7 +4910,7 @@ export function processPragmasIntoFields(c: PragmaContext, reporter: PragmaDiagn
           } else if (types) typeReferenceDirectives.push({ pos: types.pos, end: types.end, fileName: types.value });
           else if (lib) libReferenceDirectives.push({ pos: lib.pos, end: lib.end, fileName: lib.value });
           else if (path) referencedFiles.push({ pos: path.pos, end: path.end, fileName: path.value });
-          else reporter(arg.range.pos, arg.range.end - arg.range.pos, qd.Invalid_reference_directive_syntax);
+          else reporter(arg.range.pos, arg.range.end - arg.range.pos, qd.msgs.Invalid_reference_directive_syntax);
         });
         break;
       }
@@ -4924,7 +4924,7 @@ export function processPragmasIntoFields(c: PragmaContext, reporter: PragmaDiagn
       case 'amd-module': {
         if (entryOrList instanceof Array) {
           for (const entry of entryOrList) {
-            if (c.moduleName) reporter(entry.range.pos, entry.range.end - entry.range.pos, qd.An_AMD_module_cannot_have_multiple_name_assignments);
+            if (c.moduleName) reporter(entry.range.pos, entry.range.end - entry.range.pos, qd.msgs.An_AMD_module_cannot_have_multiple_name_assignments);
             c.moduleName = (entry as PragmaPseudoMap['amd-module']).arguments.name;
           }
         } else c.moduleName = (entryOrList as PragmaPseudoMap['amd-module']).arguments.name;
@@ -4946,7 +4946,7 @@ export function processPragmasIntoFields(c: PragmaContext, reporter: PragmaDiagn
       case 'jsx':
         return;
       default:
-        fail('Unhandled pragma kind');
+        qb.fail('Unhandled pragma kind');
     }
   });
 }
@@ -5001,7 +5001,7 @@ function extractPragmas(pragmas: PragmaPseudoMapEntry[], range: CommentRange, te
       for (let i = 0; i < p.args.length; i++) {
         const a = p.args[i];
         if (!args[i] && !a.optional) return 'fail';
-        if (a.captureSpan) return fail('Capture spans not yet implemented for non-xml pragmas');
+        if (a.captureSpan) return qb.fail('Capture spans not yet implemented for non-xml pragmas');
         m[a.name] = args[i];
       }
       return m;
