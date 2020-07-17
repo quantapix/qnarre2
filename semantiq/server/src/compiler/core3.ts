@@ -2136,6 +2136,28 @@ export const fixme = new (class {
     }
     return;
   }
+  hasDocInheritDocTag(node: Node) {
+    return getDoc.tags(node).some((tag) => tag.tagName.text === 'inheritDoc');
+  }
+  getDocComment(declarations: readonly Declaration[] | undefined, checker: TypeChecker | undefined): SymbolDisplayPart[] {
+    if (!declarations) return qb.empty;
+    let doc = Doc.getDocCommentsFromDeclarations(declarations);
+    if (doc.length === 0 || declarations.some(hasDocInheritDocTag)) {
+      forEachUnique(declarations, (declaration) => {
+        const inheritedDocs = findInheritedDocComments(declaration, declaration.symbol.name, checker!);
+        if (inheritedDocs) doc = doc.length === 0 ? inheritedDocs.slice() : inheritedDocs.concat(lineBreakPart(), doc);
+      });
+    }
+    return doc;
+  }
+  findInheritedDocComments(declaration: Declaration, propertyName: string, typeChecker: TypeChecker): readonly SymbolDisplayPart[] | undefined {
+    return firstDefined(declaration.parent ? getAllSuperTypeNodes(declaration.parent) : qb.empty, (superTypeNode) => {
+      const superType = typeChecker.getTypeAtLocation(superTypeNode);
+      const baseProperty = superType && typeChecker.getPropertyOfType(superType, propertyName);
+      const inheritedDocs = baseProperty && baseProperty.getDocComment(typeChecker);
+      return inheritedDocs && inheritedDocs.length ? inheritedDocs : undefined;
+    });
+  }
 })();
 export const forEach = new (class {
   ancestor<T>(n: Node, cb: (n: Node) => T | undefined | 'quit'): T | undefined {

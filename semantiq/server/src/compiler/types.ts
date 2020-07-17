@@ -1,6 +1,6 @@
 import * as qb from './base';
 import * as qd from './diags';
-import { Syntax } from './syntax';
+import { SourceFileLike, Syntax } from './syntax';
 import * as qy from './syntax';
 export type AssertsToken = Token<Syntax.AssertsKeyword>;
 export type AsteriskToken = Token<Syntax.AsteriskToken>;
@@ -104,7 +104,7 @@ export type ArrayBindingElement = BindingElement | OmittedExpression;
 export type ArrayBindingOrAssignmentPattern = ArrayBindingPattern | ArrayLiteralExpression;
 export interface ArrayBindingPattern extends Nobj {
   kind: Syntax.ArrayBindingPattern;
-  parent: VariableDeclaration | ParameterDeclaration | BindingElement;
+  parent?: VariableDeclaration | ParameterDeclaration | BindingElement;
   elements: Nodes<ArrayBindingElement>;
 }
 export interface ArrayDestructuringAssignment extends AssignmentExpression<EqualsToken> {
@@ -306,19 +306,19 @@ export interface CallSignatureDeclaration extends SignatureDeclarationBase, Type
 }
 export interface CaseBlock extends Nobj {
   kind: Syntax.CaseBlock;
-  parent: SwitchStatement;
+  parent?: SwitchStatement;
   clauses: Nodes<CaseOrDefaultClause>;
 }
 export interface CaseClause extends Nobj {
   kind: Syntax.CaseClause;
-  parent: CaseBlock;
+  parent?: CaseBlock;
   expression: Expression;
   statements: Nodes<Statement>;
   fallthroughFlowNode?: FlowNode;
 }
 export interface CatchClause extends Nobj {
   kind: Syntax.CatchClause;
-  parent: TryStatement;
+  parent?: TryStatement;
   variableDeclaration?: VariableDeclaration;
   block: Block;
 }
@@ -387,7 +387,7 @@ export interface CommentRange extends qb.Range {
 export type CompoundAssignmentOperator = | Syntax.AmpersandEqualsToken | Syntax.Asterisk2EqualsToken | Syntax.AsteriskEqualsToken | Syntax.BarEqualsToken | Syntax.CaretEqualsToken | Syntax.GreaterThan2EqualsToken | Syntax.GreaterThan3EqualsToken | Syntax.LessThan2EqualsToken | Syntax.MinusEqualsToken | Syntax.PlusEqualsToken | Syntax.SlashEqualsToken;
 export interface ComputedPropertyName extends Nobj {
   kind: Syntax.ComputedPropertyName;
-  parent: Declaration;
+  //parent?: Declaration;
   expression: Expression;
 }
 export type ConciseBody = FunctionBody | Expression;
@@ -432,7 +432,7 @@ export interface ConditionalTypeNode extends TypeNode {
 }
 export interface ConstructorDeclaration extends FunctionLikeDeclarationBase, ClassElement, DocContainer {
   kind: Syntax.Constructor;
-  parent: ClassLikeDeclaration;
+  parent?: ClassLikeDeclaration;
   body?: FunctionBody;
 }
 export interface ConstructorTypeNode extends FunctionOrConstructorTypeNobj {
@@ -459,12 +459,12 @@ export type DeclarationWithTypeParameters = DeclarationWithTypeParameterChildren
 export type DeclarationWithTypeParameterChildren = SignatureDeclaration | ClassLikeDeclaration | InterfaceDeclaration | TypeAliasDeclaration | DocTemplateTag;
 export interface Decorator extends Nobj {
   kind: Syntax.Decorator;
-  parent: NamedDeclaration;
+  //parent?: NamedDeclaration;
   expression: LeftHandSideExpression;
 }
 export interface DefaultClause extends Nobj {
   kind: Syntax.DefaultClause;
-  parent: CaseBlock;
+  parent?: CaseBlock;
   statements: Nodes<Statement>;
   fallthroughFlowNode?: FlowNode;
 }
@@ -639,7 +639,7 @@ export const enum EnumKind {
 }
 export interface EnumMember extends NamedDeclaration, DocContainer {
   kind: Syntax.EnumMember;
-  parent: EnumDeclaration;
+  parent?: EnumDeclaration;
   name: PropertyName;
   initializer?: Expression;
 }
@@ -649,13 +649,13 @@ export type EqualityOperatorOrHigher = RelationalOperatorOrHigher | EqualityOper
 export type ExponentiationOperator = Syntax.Asterisk2Token;
 export interface ExportAssignment extends DeclarationStatement {
   kind: Syntax.ExportAssignment;
-  parent: SourceFile;
+  parent?: SourceFile;
   isExportEquals?: boolean;
   expression: Expression;
 }
 export interface ExportDeclaration extends DeclarationStatement, DocContainer {
   kind: Syntax.ExportDeclaration;
-  parent: SourceFile | ModuleBlock;
+  parent?: SourceFile | ModuleBlock;
   isTypeOnly: boolean;
   exportClause?: NamedExportBindings;
   moduleSpecifier?: Expression;
@@ -663,7 +663,7 @@ export interface ExportDeclaration extends DeclarationStatement, DocContainer {
 export type ExportedModulesFromDeclarationEmit = readonly Symbol[];
 export interface ExportSpecifier extends NamedDeclaration {
   kind: Syntax.ExportSpecifier;
-  parent: NamedExports;
+  parent?: NamedExports;
   propertyName?: Identifier;
   name: Identifier;
 }
@@ -676,7 +676,7 @@ export interface ExpressionStatement extends Statement, DocContainer {
 }
 export interface ExpressionWithTypeArguments extends NodeWithTypeArguments {
   kind: Syntax.ExpressionWithTypeArguments;
-  parent: HeritageClause | DocAugmentsTag | DocImplementsTag;
+  parent?: HeritageClause | DocAugmentsTag | DocImplementsTag;
   expression: LeftHandSideExpression;
 }
 export const enum Extension {
@@ -690,7 +690,7 @@ export const enum Extension {
 }
 export interface ExternalModuleReference extends Nobj {
   kind: Syntax.ExternalModuleReference;
-  parent: ImportEqualsDeclaration;
+  parent?: ImportEqualsDeclaration;
   expression: Expression;
 }
 export interface EvolvingArrayType extends ObjectType {
@@ -836,7 +836,7 @@ export interface GenericType extends InterfaceType, TypeReference {
 }
 export interface GetAccessorDeclaration extends FunctionLikeDeclarationBase, ClassElement, ObjectLiteralElement, DocContainer {
   kind: Syntax.GetAccessor;
-  parent: ClassLikeDeclaration | ObjectLiteralExpression;
+  parent?: ClassLikeDeclaration | ObjectLiteralExpression;
   name: PropertyName;
   body?: FunctionBody;
 }
@@ -849,7 +849,7 @@ export type HasType = | SignatureDeclaration | VariableDeclaration | ParameterDe
 export type HasTypeArguments = CallExpression | NewExpression | TaggedTemplateExpression | JsxOpeningElement | JsxSelfClosingElement;
 export interface HeritageClause extends Nobj {
   kind: Syntax.HeritageClause;
-  parent: InterfaceDeclaration | ClassLikeDeclaration;
+  parent?: InterfaceDeclaration | ClassLikeDeclaration;
   token: Syntax.ExtendsKeyword | Syntax.ImplementsKeyword;
   types: Nodes<ExpressionWithTypeArguments>;
 }
@@ -880,14 +880,14 @@ export interface ImportCall extends CallExpression {
 }
 export interface ImportClause extends NamedDeclaration {
   kind: Syntax.ImportClause;
-  parent: ImportDeclaration;
+  parent?: ImportDeclaration;
   isTypeOnly: boolean;
   name?: Identifier;
   namedBindings?: NamedImportBindings;
 }
 export interface ImportDeclaration extends Statement {
   kind: Syntax.ImportDeclaration;
-  parent: SourceFile | ModuleBlock;
+  parent?: SourceFile | ModuleBlock;
   importClause?: ImportClause;
   moduleSpecifier: Expression;
 }
@@ -896,7 +896,7 @@ export interface ImportExpression extends PrimaryExpression {
 }
 export interface ImportEqualsDeclaration extends DeclarationStatement, DocContainer {
   kind: Syntax.ImportEqualsDeclaration;
-  parent: SourceFile | ModuleBlock;
+  parent?: SourceFile | ModuleBlock;
   name: Identifier;
   moduleReference: ModuleReference;
 }
@@ -907,7 +907,7 @@ export interface ImportMetaProperty extends MetaProperty {
 export type ImportOrExportSpecifier = ImportSpecifier | ExportSpecifier;
 export interface ImportSpecifier extends NamedDeclaration {
   kind: Syntax.ImportSpecifier;
-  parent: NamedImports;
+  parent?: NamedImports;
   propertyName?: Identifier;
   name: Identifier;
 }
@@ -944,7 +944,7 @@ export const enum IndexKind {
 }
 export interface IndexSignatureDeclaration extends SignatureDeclarationBase, ClassElement, TypeElement {
   kind: Syntax.IndexSignature;
-  parent: ObjectTypeDeclaration;
+  parent?: ObjectTypeDeclaration;
 }
 export interface IndexType extends InstantiableType {
   type: InstantiableType | UnionOrIntersectionType;
@@ -1064,7 +1064,7 @@ export interface IterationStatement extends Statement {
 }
 export interface Doc extends Nobj {
   kind: Syntax.DocComment;
-  parent: HasDoc;
+  parent?: HasDoc;
   tags?: Nodes<DocTag>;
   comment?: string;
 }
@@ -1079,7 +1079,7 @@ export interface DocAuthorTag extends DocTag {
   kind: Syntax.DocAuthorTag;
 }
 export interface DocCallbackTag extends DocTag, NamedDeclaration {
-  parent: Doc;
+  parent?: Doc;
   kind: Syntax.DocCallbackTag;
   fullName?: DocNamespaceDeclaration | Identifier;
   name?: Identifier;
@@ -1093,7 +1093,7 @@ export interface DocContainer {
   docCache?: readonly DocTag[];
 }
 export interface DocEnumTag extends DocTag, Declaration {
-  parent: Doc;
+  parent?: Doc;
   kind: Syntax.DocEnumTag;
   typeExpression?: DocTypeExpression;
 }
@@ -1132,7 +1132,7 @@ export interface DocPrivateTag extends DocTag {
   kind: Syntax.DocPrivateTag;
 }
 export interface DocPropertyLikeTag extends DocTag, Declaration {
-  parent: Doc;
+  parent?: Doc;
   name: EntityName;
   typeExpression?: DocTypeExpression;
   isNameFirst: boolean;
@@ -1161,7 +1161,7 @@ export interface DocSignature extends DocType, Declaration {
   type?: DocReturnTag;
 }
 export interface DocTag extends Nobj {
-  parent: Doc | DocTypeLiteral;
+  parent?: Doc | DocTypeLiteral;
   tagName: Identifier;
   comment?: string;
 }
@@ -1179,7 +1179,7 @@ export interface DocType extends TypeNode {
   _docTypeBrand: any;
 }
 export interface DocTypedefTag extends DocTag, NamedDeclaration {
-  parent: Doc;
+  parent?: Doc;
   kind: Syntax.DocTypedefTag;
   fullName?: DocNamespaceDeclaration | Identifier;
   name?: Identifier;
@@ -1211,24 +1211,24 @@ export interface DocVariadicType extends DocType {
 }
 export interface JsxAttribute extends ObjectLiteralElement {
   kind: Syntax.JsxAttribute;
-  parent: JsxAttributes;
+  parent?: JsxAttributes;
   name: Identifier;
   initializer?: StringLiteral | JsxExpression;
 }
 export type JsxAttributeLike = JsxAttribute | JsxSpreadAttribute;
 export interface JsxAttributes extends ObjectLiteralExpressionBase<JsxAttributeLike> {
   kind: Syntax.JsxAttributes;
-  parent: JsxOpeningLikeElement;
+  parent?: JsxOpeningLikeElement;
 }
 export type JsxChild = JsxText | JsxExpression | JsxElement | JsxSelfClosingElement | JsxFragment;
 export interface JsxClosingElement extends Nobj {
   kind: Syntax.JsxClosingElement;
-  parent: JsxElement;
+  parent?: JsxElement;
   tagName: JsxTagNameExpression;
 }
 export interface JsxClosingFragment extends Expression {
   kind: Syntax.JsxClosingFragment;
-  parent: JsxFragment;
+  parent?: JsxFragment;
 }
 export interface JsxElement extends PrimaryExpression {
   kind: Syntax.JsxElement;
@@ -1238,7 +1238,7 @@ export interface JsxElement extends PrimaryExpression {
 }
 export interface JsxExpression extends Expression {
   kind: Syntax.JsxExpression;
-  parent: JsxElement | JsxAttributeLike;
+  parent?: JsxElement | JsxAttributeLike;
   dot3Token?: Token<Syntax.Dot3Token>;
   expression?: Expression;
 }
@@ -1256,7 +1256,7 @@ export interface JsxFragment extends PrimaryExpression {
 }
 export interface JsxOpeningElement extends Expression {
   kind: Syntax.JsxOpeningElement;
-  parent: JsxElement;
+  parent?: JsxElement;
   tagName: JsxTagNameExpression;
   typeArguments?: Nodes<TypeNode>;
   attributes: JsxAttributes;
@@ -1264,7 +1264,7 @@ export interface JsxOpeningElement extends Expression {
 export type JsxOpeningLikeElement = JsxSelfClosingElement | JsxOpeningElement;
 export interface JsxOpeningFragment extends Expression {
   kind: Syntax.JsxOpeningFragment;
-  parent: JsxFragment;
+  parent?: JsxFragment;
 }
 export interface JsxSelfClosingElement extends PrimaryExpression {
   kind: Syntax.JsxSelfClosingElement;
@@ -1274,7 +1274,7 @@ export interface JsxSelfClosingElement extends PrimaryExpression {
 }
 export interface JsxSpreadAttribute extends ObjectLiteralElement {
   kind: Syntax.JsxSpreadAttribute;
-  parent: JsxAttributes;
+  parent?: JsxAttributes;
   expression: Expression;
 }
 export type JsxTagNameExpression = Identifier | ThisExpression | JsxTagNamePropertyAccess;
@@ -1284,7 +1284,7 @@ export interface JsxTagNamePropertyAccess extends PropertyAccessExpression {
 export interface JsxText extends LiteralLikeNode {
   kind: Syntax.JsxText;
   onlyTriviaWhiteSpaces: boolean;
-  parent: JsxElement;
+  parent?: JsxElement;
 }
 export interface KeywordTypeNode extends TypeNode {
   // prettier-ignore
@@ -1366,13 +1366,13 @@ export interface MetaProperty extends PrimaryExpression {
 }
 export interface MethodDeclaration extends FunctionLikeDeclarationBase, ClassElement, ObjectLiteralElement, DocContainer {
   kind: Syntax.MethodDeclaration;
-  parent: ClassLikeDeclaration | ObjectLiteralExpression;
+  parent?: ClassLikeDeclaration | ObjectLiteralExpression;
   name: PropertyName;
   body?: FunctionBody;
 }
 export interface MethodSignature extends SignatureDeclarationBase, TypeElement {
   kind: Syntax.MethodSignature;
-  parent: ObjectTypeDeclaration;
+  parent?: ObjectTypeDeclaration;
   name: PropertyName;
 }
 export interface MissingDeclaration extends DeclarationStatement {
@@ -1382,12 +1382,12 @@ export interface MissingDeclaration extends DeclarationStatement {
 export type Modifiers = Nodes<qy.Modifier>;
 export interface ModuleBlock extends Statement {
   kind: Syntax.ModuleBlock;
-  parent: ModuleDeclaration;
+  parent?: ModuleDeclaration;
   statements: Nodes<Statement>;
 }
 export interface ModuleDeclaration extends DeclarationStatement, DocContainer {
   kind: Syntax.ModuleDeclaration;
-  parent: ModuleBody | SourceFile;
+  parent?: ModuleBody | SourceFile;
   name: ModuleName;
   body?: ModuleBody | DocNamespaceDeclaration;
 }
@@ -1399,12 +1399,12 @@ export interface NamedDeclaration extends Declaration {
 }
 export interface NamedExports extends Nobj {
   kind: Syntax.NamedExports;
-  parent: ExportDeclaration;
+  parent?: ExportDeclaration;
   elements: Nodes<ExportSpecifier>;
 }
 export interface NamedImports extends Nobj {
   kind: Syntax.NamedImports;
-  parent: ImportClause;
+  parent?: ImportClause;
   elements: Nodes<ImportSpecifier>;
 }
 export interface NamedTupleMember extends TypeNode, DocContainer, Declaration {
@@ -1416,7 +1416,7 @@ export interface NamedTupleMember extends TypeNode, DocContainer, Declaration {
 }
 export interface NamespaceExport extends NamedDeclaration {
   kind: Syntax.NamespaceExport;
-  parent: ExportDeclaration;
+  parent?: ExportDeclaration;
   name: Identifier;
 }
 export interface NamespaceExportDeclaration extends DeclarationStatement {
@@ -1425,7 +1425,7 @@ export interface NamespaceExportDeclaration extends DeclarationStatement {
 }
 export interface NamespaceImport extends NamedDeclaration {
   kind: Syntax.NamespaceImport;
-  parent: ImportClause;
+  parent?: ImportClause;
   name: Identifier;
 }
 export interface NewExpression extends PrimaryExpression, Declaration {
@@ -1442,7 +1442,7 @@ export interface Nobj extends qb.Range {
   modifierFlagsCache: qy.ModifierFlags;
   decorators?: Nodes<Decorator>;
   modifiers?: Modifiers;
-  parent?: Nobj;
+  parent?: Node;
   original?: Nobj;
   symbol: Symbol;
   localSymbol?: Symbol;
@@ -1526,7 +1526,7 @@ export interface NumberLiteralType extends LiteralType {
 }
 export interface ObjectBindingPattern extends Nobj {
   kind: Syntax.ObjectBindingPattern;
-  parent: VariableDeclaration | ParameterDeclaration | BindingElement;
+  parent?: VariableDeclaration | ParameterDeclaration | BindingElement;
   elements: Nodes<BindingElement>;
 }
 export type ObjectBindingOrAssignmentPattern = ObjectBindingPattern | ObjectLiteralExpression;
@@ -1614,14 +1614,14 @@ export interface PackageId {
 }
 export interface ParameterDeclaration extends NamedDeclaration, DocContainer {
   kind: Syntax.Parameter;
-  parent: SignatureDeclaration;
+  parent?: SignatureDeclaration;
   dot3Token?: Dot3Token;
   name: BindingName;
   questionToken?: QuestionToken;
   type?: TypeNode;
   initializer?: Expression;
 }
-export type ParameterPropertyDeclaration = ParameterDeclaration & { parent: ConstructorDeclaration; name: Identifier };
+export type ParameterPropertyDeclaration = ParameterDeclaration & { parent?: ConstructorDeclaration; name: Identifier };
 export interface ParenthesizedExpression extends PrimaryExpression, DocContainer {
   kind: Syntax.ParenthesizedExpression;
   expression: Expression;
@@ -1679,7 +1679,7 @@ export interface PropertyAccessExpression extends MemberExpression, NamedDeclara
   name: Identifier | PrivateIdentifier;
 }
 export interface PropertyAssignment extends ObjectLiteralElement, DocContainer {
-  parent: ObjectLiteralExpression;
+  parent?: ObjectLiteralExpression;
   kind: Syntax.PropertyAssignment;
   name: PropertyName;
   questionToken?: QuestionToken;
@@ -1687,7 +1687,7 @@ export interface PropertyAssignment extends ObjectLiteralElement, DocContainer {
 }
 export interface PropertyDeclaration extends ClassElement, DocContainer {
   kind: Syntax.PropertyDeclaration;
-  parent: ClassLikeDeclaration;
+  parent?: ClassLikeDeclaration;
   name: PropertyName;
   questionToken?: QuestionToken;
   exclamationToken?: ExclamationToken;
@@ -1791,18 +1791,18 @@ export const enum ScriptTarget {
 }
 export interface SemicolonClassElement extends ClassElement {
   kind: Syntax.SemicolonClassElement;
-  parent: ClassLikeDeclaration;
+  parent?: ClassLikeDeclaration;
 }
 export interface SetAccessorDeclaration extends FunctionLikeDeclarationBase, ClassElement, ObjectLiteralElement, DocContainer {
   kind: Syntax.SetAccessor;
-  parent: ClassLikeDeclaration | ObjectLiteralExpression;
+  parent?: ClassLikeDeclaration | ObjectLiteralExpression;
   name: PropertyName;
   body?: FunctionBody;
 }
 export type ShiftOperator = Syntax.LessThan2Token | Syntax.GreaterThan2Token | Syntax.GreaterThan3Token;
 export type ShiftOperatorOrHigher = AdditiveOperatorOrHigher | ShiftOperator;
 export interface ShorthandPropertyAssignment extends ObjectLiteralElement, DocContainer {
-  parent: ObjectLiteralExpression;
+  parent?: ObjectLiteralExpression;
   kind: Syntax.ShorthandPropertyAssignment;
   name: Identifier;
   questionToken?: QuestionToken;
@@ -1906,11 +1906,6 @@ export interface SourceFileInfo {
   helpers?: string[];
   prologues?: SourceFilePrologueInfo[];
 }
-export interface SourceFileLike {
-  readonly text: string;
-  lineMap?: readonly number[];
-  posOf?(line: number, char: number, edits?: true): number;
-}
 export interface SourceFilePrologueInfo {
   file: number;
   text: string;
@@ -1932,13 +1927,13 @@ export interface SourceMapSource {
   skipTrivia?: (pos: number) => number;
 }
 export interface SpreadAssignment extends ObjectLiteralElement, DocContainer {
-  parent: ObjectLiteralExpression;
+  parent?: ObjectLiteralExpression;
   kind: Syntax.SpreadAssignment;
   expression: Expression;
 }
 export interface SpreadElement extends Expression {
   kind: Syntax.SpreadElement;
-  parent: ArrayLiteralExpression | CallExpression | NewExpression;
+  parent?: ArrayLiteralExpression | CallExpression | NewExpression;
   expression: Expression;
 }
 export interface Statement extends Nobj {
@@ -2150,7 +2145,7 @@ export interface TemplateExpression extends PrimaryExpression {
 }
 export interface TemplateHead extends TemplateLiteralLikeNode {
   kind: Syntax.TemplateHead;
-  parent: TemplateExpression;
+  parent?: TemplateExpression;
   templateFlags?: TokenFlags;
 }
 export type TemplateLiteral = TemplateExpression | NoSubstitutionLiteral;
@@ -2160,18 +2155,18 @@ export interface TemplateLiteralLikeNode extends LiteralLikeNode {
 export type TemplateLiteralToken = NoSubstitutionLiteral | TemplateHead | TemplateMiddle | TemplateTail;
 export interface TemplateMiddle extends TemplateLiteralLikeNode {
   kind: Syntax.TemplateMiddle;
-  parent: TemplateSpan;
+  parent?: TemplateSpan;
   templateFlags?: TokenFlags;
 }
 export interface TemplateSpan extends Nobj {
   kind: Syntax.TemplateSpan;
-  parent: TemplateExpression;
+  parent?: TemplateExpression;
   expression: Expression;
   literal: TemplateMiddle | TemplateTail;
 }
 export interface TemplateTail extends TemplateLiteralLikeNode {
   kind: Syntax.TemplateTail;
-  parent: TemplateSpan;
+  parent?: TemplateSpan;
   templateFlags?: TokenFlags;
 }
 export const enum Ternary {
@@ -2510,7 +2505,7 @@ export interface TypeParameter extends InstantiableType {
 }
 export interface TypeParameterDeclaration extends NamedDeclaration {
   kind: Syntax.TypeParameter;
-  parent: DeclarationWithTypeParameterChildren | InferTypeNode;
+  parent?: DeclarationWithTypeParameterChildren | InferTypeNode;
   name: Identifier;
   constraint?: TypeNode;
   default?: TypeNode;
@@ -2529,7 +2524,7 @@ export const enum TypePredicateKind {
 }
 export interface TypePredicateNode extends TypeNode {
   kind: Syntax.TypePredicate;
-  parent: SignatureDeclaration | DocTypeExpression;
+  parent?: SignatureDeclaration | DocTypeExpression;
   assertsModifier?: AssertsToken;
   parameterName: Identifier | ThisTypeNode;
   type?: TypeNode;
@@ -2593,18 +2588,18 @@ export type UnparsedNode = UnparsedPrologue | UnparsedSourceText | UnparsedSynth
 export interface UnparsedPrepend extends UnparsedSection {
   kind: Syntax.UnparsedPrepend;
   data: string;
-  parent: UnparsedSource;
+  parent?: UnparsedSource;
   texts: readonly UnparsedTextLike[];
 }
 export interface UnparsedPrologue extends UnparsedSection {
   kind: Syntax.UnparsedPrologue;
   data: string;
-  parent: UnparsedSource;
+  parent?: UnparsedSource;
 }
 export interface UnparsedSection extends Nobj {
   kind: Syntax;
   data?: string;
-  parent: UnparsedSource;
+  parent?: UnparsedSource;
 }
 export interface UnparsedSource extends Nobj {
   kind: Syntax.UnparsedSource;
@@ -2627,12 +2622,12 @@ export interface UnparsedSource extends Nobj {
 export type UnparsedSourceText = UnparsedPrepend | UnparsedTextLike;
 export interface UnparsedSyntheticReference extends UnparsedSection {
   kind: Syntax.UnparsedSyntheticReference;
-  parent: UnparsedSource;
+  parent?: UnparsedSource;
   section: BundleFileHasNoDefaultLib | BundleFileReference;
 }
 export interface UnparsedTextLike extends UnparsedSection {
   kind: Syntax.UnparsedText | Syntax.UnparsedInternalText;
-  parent: UnparsedSource;
+  parent?: UnparsedSource;
 }
 export interface UnscopedEmitHelper extends EmitHelper {
   readonly scoped: false;
@@ -2647,7 +2642,7 @@ export interface ValidImportTypeNode extends ImportTypeNode {
 }
 export interface VariableDeclaration extends NamedDeclaration {
   kind: Syntax.VariableDeclaration;
-  parent: VariableDeclarationList | CatchClause;
+  parent?: VariableDeclarationList | CatchClause;
   name: BindingName;
   exclamationToken?: ExclamationToken;
   type?: TypeNode;
@@ -2655,7 +2650,7 @@ export interface VariableDeclaration extends NamedDeclaration {
 }
 export interface VariableDeclarationList extends Nobj {
   kind: Syntax.VariableDeclarationList;
-  parent: VariableStatement | ForStatement | ForOfStatement | ForInStatement;
+  parent?: VariableStatement | ForStatement | ForOfStatement | ForInStatement;
   declarations: Nodes<VariableDeclaration>;
 }
 // prettier-ignore

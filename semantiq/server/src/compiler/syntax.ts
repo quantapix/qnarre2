@@ -1636,6 +1636,85 @@ export function hasAsterisks(s: string) {
   }
   return true;
 }
+export interface SourceFileLike {
+  readonly text: string;
+  lineMap?: readonly number[];
+  posOf?(line: number, char: number, edits?: true): number;
+}
+export class SourceFile implements SourceFileLike {
+  text = '';
+  lineMap?: number[];
+  lineStarts(): readonly number[] {
+    return this.lineMap ?? (this.lineMap = get.lineStarts(this.text));
+  }
+  lineAndCharOf(pos: number) {
+    return get.lineAndCharOf(this.lineStarts(), pos);
+  }
+  posOf(line: number, char: number): number;
+  posOf(line: number, char: number, edits?: true): number;
+  posOf(line: number, char: number, edits?: true): number {
+    return get.posOf(this.lineStarts(), line, char, this.text, edits);
+  }
+  linesBetween(p1: number, p2: number): number;
+  linesBetween(r1: qb.Range, r2: qb.Range, comments: boolean): number;
+  linesBetween(x1: qb.Range | number, x2: qb.Range | number, comments = false) {
+    if (typeof x1 === 'number') {
+      if (x1 === x2) return 0;
+      qb.assert(typeof x2 === 'number');
+      const ss = this.lineStarts();
+      const min = Math.min(x1, x2);
+      const isNegative = min === x2;
+      const max = isNegative ? x1 : x2;
+      const lower = get.lineOf(ss, min);
+      const upper = get.lineOf(ss, max, lower);
+      return isNegative ? lower - upper : upper - lower;
+    }
+    const s = this.startPos(x2 as qb.Range, comments);
+    return this.linesBetween(x1.end, s);
+  }
+  linesBetweenEnds(r1: qb.Range, r2: qb.Range) {
+    return this.linesBetween(r1.end, r2.end);
+  }
+  linesToPrevNonWhitespace(pos: number, stop: number, comments = false) {
+    const s = skipTrivia(this.text, pos, false, comments);
+    const p = this.prevNonWhitespacePos(s, stop);
+    return this.linesBetween(p ?? stop, s);
+  }
+  linesToNextNonWhitespace(pos: number, stop: number, comments = false) {
+    const s = skipTrivia(this.text, pos, false, comments);
+    return this.linesBetween(pos, Math.min(stop, s));
+  }
+  startPos(r: qb.Range, comments = false) {
+    return qb.isSynthesized(r.pos) ? -1 : skipTrivia(this.text, r.pos, false, comments);
+  }
+  prevNonWhitespacePos(pos: number, stop = 0) {
+    while (pos-- > stop) {
+      if (!is.whiteSpaceLike(this.text.charCodeAt(pos))) return pos;
+    }
+    return;
+  }
+  onSameLine(p1: number, p2: number) {
+    return this.linesBetween(p1, p2) === 0;
+  }
+  onSingleLine(r: qb.Range) {
+    return this.onSameLine(r.pos, r.end);
+  }
+  multiLine(r: qb.Range) {
+    return !this.onSameLine(r.pos, r.end);
+  }
+  startsOnSameLine(r1: qb.Range, r2: qb.Range) {
+    return this.onSameLine(this.startPos(r1), this.startPos(r2));
+  }
+  endsOnSameLine(r1: qb.Range, r2: qb.Range) {
+    return this.onSameLine(r1.end, r2.end);
+  }
+  startOnSameLineAsEnd(r1: qb.Range, r2: qb.Range) {
+    return this.onSameLine(this.startPos(r1), r2.end);
+  }
+  endOnSameLineAsStart(r1: qb.Range, r2: qb.Range) {
+    return this.onSameLine(r1.end, this.startPos(r2));
+  }
+}
 const escMap = new qb.QMap({
   '\t': '\\t',
   '\v': '\\v',
