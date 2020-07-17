@@ -1126,23 +1126,66 @@ export const is = new (class {
   isExternalOrCommonJsModule(f: qc.SourceFile) {
     return (f.externalModuleIndicator || f.commonJsModuleIndicator) !== undefined;
   }
-  isJsonSourceFile(f: SourceFile): f is qc.JsonSourceFile {
+  isJsonSourceFile(f: qc.SourceFile): f is qc.JsonSourceFile {
     return f.scriptKind === qc.ScriptKind.JSON;
   }
-  isCustomPrologue(n: Statement) {
-    return !!(get.emitFlags(n) & EmitFlags.CustomPrologue);
+  isCustomPrologue(s: Statement) {
+    return !!(get.emitFlags(s) & EmitFlags.CustomPrologue);
   }
-  isHoistedFunction(n: Statement) {
-    return isCustomPrologue(n) && this.kind(qc.FunctionDeclaration, n);
+  isHoistedFunction(s: Statement) {
+    return this.isCustomPrologue(s) && s.kind === Syntax.FunctionDeclaration;
   }
-  isHoistedVariable(n: qc.VariableDeclaration) {
-    return this.kind(qc.Identifier, n.name) && !n.initializer;
+  isHoistedVariable(d: qc.VariableDeclaration) {
+    return this.kind(qc.Identifier, d.name) && !d.initializer;
   }
-  isHoistedVariableStatement(n: Statement) {
-    return isCustomPrologue(n) && this.kind(qc.VariableStatement, n) && qb.every(n.declarationList.declarations, isHoistedVariable);
+  isHoistedVariableStatement(s: Statement) {
+    return this.isCustomPrologue(s) && this.kind(qc.VariableStatement, s) && qb.every(s.declarationList.declarations, this.isHoistedVariable);
   }
   isAnyPrologueDirective(n: Node) {
     return this.prologueDirective(n) || !!(get.emitFlags(n) & EmitFlags.CustomPrologue);
+  }
+  isExternalModuleIndicator(s: qc.Statement) {
+    return is.anyImportOrReExport(s) || s.kind === Syntax.ExportAssignment || has.syntacticModifier(s, ModifierFlags.Export);
+  }
+  isDeclarationBindingElement(e: qc.BindingOrAssignmentElement): e is qc.VariableDeclaration | qc.ParameterDeclaration | qc.BindingElement {
+    switch (e.kind) {
+      case Syntax.BindingElement:
+      case Syntax.Parameter:
+      case Syntax.VariableDeclaration:
+        return true;
+    }
+    return false;
+  }
+  isBindingOrAssignmentPattern(t: qc.BindingOrAssignmentElementTarget): t is qc.BindingOrAssignmentPattern {
+    return this.isObjectBindingOrAssignmentPattern(t) || this.isArrayBindingOrAssignmentPattern(t);
+  }
+  isObjectBindingOrAssignmentPattern(t: qc.BindingOrAssignmentElementTarget): t is qc.ObjectBindingOrAssignmentPattern {
+    switch (t.kind) {
+      case Syntax.ObjectBindingPattern:
+      case Syntax.ObjectLiteralExpression:
+        return true;
+    }
+    return false;
+  }
+  isArrayBindingOrAssignmentPattern(t: qc.BindingOrAssignmentElementTarget): t is qc.ArrayBindingOrAssignmentPattern {
+    switch (t.kind) {
+      case Syntax.ArrayBindingPattern:
+      case Syntax.ArrayLiteralExpression:
+        return true;
+    }
+    return false;
+  }
+  isOutermostOptionalChain(c: qc.OptionalChain) {
+    const p = c.parent;
+    return !this.optionalChain(p) || this.optionalChainRoot(p) || c !== p.expression;
+  }
+  isEmptyBindingElement(e: qc.BindingElement) {
+    if (e.kind === Syntax.OmittedExpression) return true;
+    return this.isEmptyBindingPattern(e.name);
+  }
+  isEmptyBindingPattern(n: qc.BindingName): n is qc.BindingPattern {
+    if (is.kind(qc.BindingPattern, n)) return qb.every(n.elements, this.isEmptyBindingElement);
+    return false;
   }
 })();
 export const has = new (class {
@@ -1184,7 +1227,6 @@ export const has = new (class {
     return t && !!(is.kind(qc.NoSubstitutionLiteral, t) ? t.templateFlags : t.head.templateFlags || qb.some(t.templateSpans, (s) => !!s.literal.templateFlags));
   }
 })();
-
 export const isJsx = new (class {
   tagName(n: Node) {
     const p = n.parent as Node | undefined;
@@ -1678,6 +1720,94 @@ export const get = new (class {
     }
     return decl;
   }
+  getDeclarationIdentifier(n: Declaration | Expression): qc.Identifier | undefined {
+    const name = getNameOfDeclaration(n);
+    return name && is.kind(qc.Identifier, name) ? name : undefined;
+  }
+  getNonAssignedNameOfDeclaration(declaration: Declaration | Expression): DeclarationName | undefined {
+    switch (declaration.kind) {
+      case Syntax.Identifier:
+        return declaration as qc.Identifier;
+      case Syntax.DocPropertyTag:
+      case Syntax.DocParameterTag: {
+        const { name } = declaration as qt.DocPropertyLikeTag;
+        if (name.kind === Syntax.QualifiedName) return name.right;
+        break;
+      }
+      case Syntax.CallExpression:
+      case Syntax.BinaryExpression: {
+        const expr = declaration as BinaryExpression | CallExpression;
+        switch (getAssignmentDeclarationKind(expr)) {
+          case AssignmentDeclarationKind.ExportsProperty:
+          case AssignmentDeclarationKind.ThisProperty:
+          case AssignmentDeclarationKind.Property:
+          case AssignmentDeclarationKind.PrototypeProperty:
+            return getElementOrPropertyAccessArgumentExpressionOrName((expr as BinaryExpression).left as AccessExpression);
+          case AssignmentDeclarationKind.ObjectDefinePropertyValue:
+          case AssignmentDeclarationKind.ObjectDefinePropertyExports:
+          case AssignmentDeclarationKind.ObjectDefinePrototypeProperty:
+            return (expr as BindableObjectDefinePropertyCall).arguments[1];
+          default:
+            return;
+        }
+      }
+      case Syntax.DocTypedefTag:
+        return getDoc.nameOfTypedef(declaration as qt.DocTypedefTag);
+      case Syntax.DocEnumTag:
+        return nameForNamelessDocTypedef(declaration as qt.DocEnumTag);
+      case Syntax.ExportAssignment: {
+        const { expression } = declaration as ExportAssignment;
+        return is.kind(qc.Identifier, expression) ? expression : undefined;
+      }
+      case Syntax.ElementAccessExpression:
+        const expr = declaration as ElementAccessExpression;
+        if (isBindableStaticElementAccessExpression(expr)) return expr.argumentExpression;
+    }
+    return (declaration as NamedDeclaration).name;
+  }
+  getNameOfDeclaration(declaration: Declaration | Expression): DeclarationName | undefined {
+    if (declaration === undefined) return;
+    return getNonAssignedNameOfDeclaration(declaration) || (is.kind(FunctionExpression, declaration) || is.kind(ClassExpression, declaration) ? get.assignedName(declaration) : undefined);
+  }
+  getEffectiveTypeParameterDeclarations(n: DeclarationWithTypeParameters): readonly TypeParameterDeclaration[] {
+    if (is.kind(DocSignature, n)) return empty;
+    if (isDoc.typeAlias(n)) {
+      qb.assert(is.kind(qc.DocComment, n.parent));
+      return qb.flatMap(n.parent.tags, (tag) => (is.kind(DocTemplateTag, tag) ? tag.typeParameters : undefined));
+    }
+    if (n.typeParameters) return n.typeParameters;
+    if (isInJSFile(n)) {
+      const decls = this.typeParameterDeclarations(n);
+      if (decls.length) return decls;
+      const typeTag = getDoc.type(n);
+      if (typeTag && is.kind(FunctionTypeNode, typeTag) && typeTag.typeParameters) return typeTag.typeParameters;
+    }
+    return empty;
+  }
+  getEffectiveConstraintOfTypeParameter(n: qc.TypeParameterDeclaration): qc.TypeNode | undefined {
+    return n.constraint ? n.constraint : is.kind(DocTemplateTag, n.parent) && n === n.parent.typeParameters[0] ? n.parent.constraint : undefined;
+  }
+  getDefaultLibFileName(options: CompilerOptions): string {
+    switch (options.target) {
+      case ScriptTarget.ESNext:
+        return 'lib.esnext.full.d.ts';
+      case ScriptTarget.ES2020:
+        return 'lib.es2020.full.d.ts';
+      default:
+        return 'lib.d.ts';
+    }
+  }
+  getTypeParameterOwner(d: Declaration): Declaration | undefined {
+    if (d && d.kind === Syntax.TypeParameter) {
+      for (let current: Node = d; current; current = current.parent) {
+        if (is.functionLike(current) || is.classLike(current) || current.kind === Syntax.InterfaceDeclaration) return <Declaration>current;
+      }
+    }
+    return;
+  }
+  getCombinedModifierFlags(n: Declaration): ModifierFlags {
+    return this.combinedFlags(n, getEffectiveModifierFlags);
+  }
 })();
 export const getDoc = new (class {
   augmentsTag(n: Node): qt.DocAugmentsTag | undefined {
@@ -1911,76 +2041,13 @@ export const fixme = new (class {
     return indentation === MAX_SMI_X86 ? undefined : indentation;
   }
   hasScopeMarker(ss: readonly qc.Statement[]) {
-    return qb.some(ss, isScopeMarker);
+    return qb.some(ss, is.scopeMarker);
   }
   needsScopeMarker(s: qc.Statement) {
     return !is.anyImportOrReExport(s) && !is.kind(qc.ExportAssignment, s) && !has.syntacticModifier(s, ModifierFlags.Export) && !is.ambientModule(s);
   }
-  isExternalModuleIndicator(s: qc.Statement) {
-    return is.anyImportOrReExport(s) || is.kind(qc.ExportAssignment, s) || has.syntacticModifier(s, ModifierFlags.Export);
-  }
-  isDeclarationBindingElement(e: qc.BindingOrAssignmentElement): e is qc.VariableDeclaration | qc.ParameterDeclaration | qc.BindingElement {
-    switch (e.kind) {
-      case Syntax.VariableDeclaration:
-      case Syntax.Parameter:
-      case Syntax.BindingElement:
-        return true;
-    }
-    return false;
-  }
-  isBindingOrAssignmentPattern(n: qc.BindingOrAssignmentElementTarget): n is qc.BindingOrAssignmentPattern {
-    return isObjectBindingOrAssignmentPattern(n) || isArrayBindingOrAssignmentPattern(n);
-  }
-  isObjectBindingOrAssignmentPattern(n: qc.BindingOrAssignmentElementTarget): n is qc.ObjectBindingOrAssignmentPattern {
-    switch (n.kind) {
-      case Syntax.ObjectBindingPattern:
-      case Syntax.ObjectLiteralExpression:
-        return true;
-    }
-    return false;
-  }
-  isArrayBindingOrAssignmentPattern(n: qc.BindingOrAssignmentElementTarget): n is qc.ArrayBindingOrAssignmentPattern {
-    switch (n.kind) {
-      case Syntax.ArrayBindingPattern:
-      case Syntax.ArrayLiteralExpression:
-        return true;
-    }
-    return false;
-  }
-  isOutermostOptionalChain(n: qc.OptionalChain) {
-    return !is.optionalChain(n.parent) || is.optionalChainRoot(n.parent) || n !== n.parent.expression;
-  }
-  isEmptyBindingElement(n: qc.BindingElement) {
-    if (is.kind(qc.OmittedExpression, n)) return true;
-    return this.isEmptyBindingPattern(n.name);
-  }
-  isEmptyBindingPattern(n: qc.BindingName): n is qc.BindingPattern {
-    if (is.kind(qc.BindingPattern, n)) return qb.every(n.elements, this.isEmptyBindingElement);
-    return false;
-  }
-  isExternalModuleNameRelative(moduleName: string) {
-    return pathIsRelative(moduleName) || isRootedDiskPath(moduleName);
-  }
   sortAndDeduplicateDiagnostics<T extends Diagnostic>(diagnostics: readonly T[]): SortedReadonlyArray<T> {
     return sortAndDeduplicate<T>(diagnostics, compareDiagnostics);
-  }
-  getDefaultLibFileName(options: CompilerOptions): string {
-    switch (options.target) {
-      case ScriptTarget.ESNext:
-        return 'lib.esnext.full.d.ts';
-      case ScriptTarget.ES2020:
-        return 'lib.es2020.full.d.ts';
-      default:
-        return 'lib.d.ts';
-    }
-  }
-  getTypeParameterOwner(d: Declaration): Declaration | undefined {
-    if (d && d.kind === Syntax.TypeParameter) {
-      for (let current: Node = d; current; current = current.parent) {
-        if (is.functionLike(current) || is.classLike(current) || current.kind === Syntax.InterfaceDeclaration) return <Declaration>current;
-      }
-    }
-    return;
   }
   walkUpBindingElementsAndPatterns(binding: qc.BindingElement): VariableDeclaration | ParameterDeclaration {
     let n = binding.parent;
@@ -1988,9 +2055,6 @@ export const fixme = new (class {
       n = n.parent.parent;
     }
     return n.parent;
-  }
-  getCombinedModifierFlags(n: Declaration): ModifierFlags {
-    return get.combinedFlags(n, getEffectiveModifierFlags);
   }
   validateLocaleAndSetLanguage(
     locale: string,
@@ -2071,78 +2135,6 @@ export const fixme = new (class {
       }
     }
     return;
-  }
-  getDeclarationIdentifier(n: Declaration | Expression): qc.Identifier | undefined {
-    const name = getNameOfDeclaration(n);
-    return name && is.kind(qc.Identifier, name) ? name : undefined;
-  }
-  getNonAssignedNameOfDeclaration(declaration: Declaration | Expression): DeclarationName | undefined {
-    switch (declaration.kind) {
-      case Syntax.Identifier:
-        return declaration as qc.Identifier;
-      case Syntax.DocPropertyTag:
-      case Syntax.DocParameterTag: {
-        const { name } = declaration as qt.DocPropertyLikeTag;
-        if (name.kind === Syntax.QualifiedName) return name.right;
-        break;
-      }
-      case Syntax.CallExpression:
-      case Syntax.BinaryExpression: {
-        const expr = declaration as BinaryExpression | CallExpression;
-        switch (getAssignmentDeclarationKind(expr)) {
-          case AssignmentDeclarationKind.ExportsProperty:
-          case AssignmentDeclarationKind.ThisProperty:
-          case AssignmentDeclarationKind.Property:
-          case AssignmentDeclarationKind.PrototypeProperty:
-            return getElementOrPropertyAccessArgumentExpressionOrName((expr as BinaryExpression).left as AccessExpression);
-          case AssignmentDeclarationKind.ObjectDefinePropertyValue:
-          case AssignmentDeclarationKind.ObjectDefinePropertyExports:
-          case AssignmentDeclarationKind.ObjectDefinePrototypeProperty:
-            return (expr as BindableObjectDefinePropertyCall).arguments[1];
-          default:
-            return;
-        }
-      }
-      case Syntax.DocTypedefTag:
-        return getDoc.nameOfTypedef(declaration as qt.DocTypedefTag);
-      case Syntax.DocEnumTag:
-        return nameForNamelessDocTypedef(declaration as qt.DocEnumTag);
-      case Syntax.ExportAssignment: {
-        const { expression } = declaration as ExportAssignment;
-        return is.kind(qc.Identifier, expression) ? expression : undefined;
-      }
-      case Syntax.ElementAccessExpression:
-        const expr = declaration as ElementAccessExpression;
-        if (isBindableStaticElementAccessExpression(expr)) return expr.argumentExpression;
-    }
-    return (declaration as NamedDeclaration).name;
-  }
-  getNameOfDeclaration(declaration: Declaration | Expression): DeclarationName | undefined {
-    if (declaration === undefined) return;
-    return getNonAssignedNameOfDeclaration(declaration) || (is.kind(FunctionExpression, declaration) || is.kind(ClassExpression, declaration) ? get.assignedName(declaration) : undefined);
-  }
-  getEffectiveTypeParameterDeclarations(n: DeclarationWithTypeParameters): readonly TypeParameterDeclaration[] {
-    if (is.kind(DocSignature, n)) return empty;
-    if (isDoc.typeAlias(n)) {
-      qb.assert(is.kind(qc.DocComment, n.parent));
-      return qb.flatMap(n.parent.tags, (tag) => (is.kind(DocTemplateTag, tag) ? tag.typeParameters : undefined));
-    }
-    if (n.typeParameters) return n.typeParameters;
-    if (isInJSFile(n)) {
-      const decls = this.typeParameterDeclarations(n);
-      if (decls.length) return decls;
-      const typeTag = getDoc.type(n);
-      if (typeTag && is.kind(FunctionTypeNode, typeTag) && typeTag.typeParameters) return typeTag.typeParameters;
-    }
-    return empty;
-  }
-  getEffectiveConstraintOfTypeParameter(n: qc.TypeParameterDeclaration): qc.TypeNode | undefined {
-    return n.constraint ? n.constraint : is.kind(DocTemplateTag, n.parent) && n === n.parent.typeParameters[0] ? n.parent.constraint : undefined;
-  }
-  skipPartiallyEmittedExpressions(n: Expression): Expression;
-  skipPartiallyEmittedExpressions(n: Node): Node;
-  skipPartiallyEmittedExpressions(n: Node) {
-    return skipOuterExpressions(n, OuterExpressionKinds.PartiallyEmittedExpressions);
   }
 })();
 export const forEach = new (class {

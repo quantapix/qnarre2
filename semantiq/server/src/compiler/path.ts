@@ -1,20 +1,23 @@
 import * as qb from './base';
-import * as syntax from './syntax';
+import * as qy from './syntax';
 import { Path } from './types';
 import { dirSeparator } from './syntax';
 const backslashRegExp = /\\/g;
-export function isUrl(path: string) {
-  return syntax.get.encodedRootLength(path) < 0;
+export function isUrl(p: string) {
+  return qy.get.encodedRootLength(p) < 0;
 }
-export function isRootedDiskPath(path: string) {
-  return syntax.get.encodedRootLength(path) > 0;
+export function isRootedDiskPath(p: string) {
+  return qy.get.encodedRootLength(p) > 0;
+}
+export function isExternalModuleNameRelative(p: string) {
+  return pathIsRelative(p) || isRootedDiskPath(p);
 }
 export function isDiskPathRoot(path: string) {
-  const rootLength = syntax.get.encodedRootLength(path);
+  const rootLength = qy.get.encodedRootLength(path);
   return rootLength > 0 && rootLength === path.length;
 }
 export function pathIsAbsolute(path: string): boolean {
-  return syntax.get.encodedRootLength(path) !== 0;
+  return qy.get.encodedRootLength(path) !== 0;
 }
 export function pathIsRelative(path: string): boolean {
   return /^\.\.?($|[\\/])/.test(path);
@@ -32,10 +35,10 @@ export function fileExtensionIsOneOf(path: string, extensions: readonly string[]
   return false;
 }
 export function hasTrailingDirectorySeparator(path: string) {
-  return path.length > 0 && syntax.is.dirSeparator(path.charCodeAt(path.length - 1));
+  return path.length > 0 && qy.is.dirSeparator(path.charCodeAt(path.length - 1));
 }
 export function getRootLength(path: string) {
-  const rootLength = syntax.get.encodedRootLength(path);
+  const rootLength = qy.get.encodedRootLength(path);
   return rootLength < 0 ? ~rootLength : rootLength;
 }
 export function getDirectoryPath(path: Path): Path;
@@ -59,9 +62,9 @@ export function getBaseFileName(path: string, extensions?: string | readonly str
   return extension ? name.slice(0, name.length - extension.length) : name;
 }
 function getAnyExtensionFromPathWorker(path: string, extensions: string | readonly string[], stringEqualityComparer: (a: string, b: string) => boolean) {
-  if (typeof extensions === 'string') return syntax.get.extensionFrom(path, extensions, stringEqualityComparer) || '';
+  if (typeof extensions === 'string') return qy.get.extensionFrom(path, extensions, stringEqualityComparer) || '';
   for (const extension of extensions) {
-    const result = syntax.get.extensionFrom(path, extension, stringEqualityComparer);
+    const result = qy.get.extensionFrom(path, extension, stringEqualityComparer);
     if (result) return result;
   }
   return '';
@@ -321,13 +324,13 @@ function isNodeModulesOrScopedPackageDirectory(s: string, getCanonicalFileName: 
   return getCanonicalFileName(s) === 'node_modules' || qb.startsWith(s, '@');
 }
 function stripLeadingDirectorySeparator(s: string): string | undefined {
-  return syntax.is.dirSeparator(s.charCodeAt(0)) ? s.slice(1) : undefined;
+  return qy.is.dirSeparator(s.charCodeAt(0)) ? s.slice(1) : undefined;
 }
 export function tryRemoveDirectoryPrefix(path: string, dirPath: string, getCanonicalFileName: qb.GetCanonicalFileName): string | undefined {
   const withoutPrefix = tryRemovePrefix(path, dirPath, getCanonicalFileName);
   return withoutPrefix === undefined ? undefined : stripLeadingDirectorySeparator(withoutPrefix);
 }
-const wildcardCodes = [Codes.asterisk, Codes.question];
+const wildcardCodes = [qy.Codes.asterisk, qy.Codes.question];
 export const commonPackageFolders: readonly string[] = ['node_modules', 'bower_components', 'jspm_packages'];
 const implicitExcludePathRegexPattern = `(?!(${commonPackageFolders.join('|')})(/|$))`;
 interface WildcardMatcher {
@@ -393,10 +396,10 @@ function getSubPatternFromSpec(
       if (hasWrittenComponent) sub += dirSeparator;
       if (usage !== 'exclude') {
         let componentPattern = '';
-        if (component.charCodeAt(0) === Codes.asterisk) {
+        if (component.charCodeAt(0) === qy.Codes.asterisk) {
           componentPattern += '([^./]' + singleAsteriskRegexFragment + ')?';
           component = component.substr(1);
-        } else if (component.charCodeAt(0) === Codes.question) {
+        } else if (component.charCodeAt(0) === qy.Codes.question) {
           componentPattern += '[^./]';
           component = component.substr(1);
         }
