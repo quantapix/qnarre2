@@ -1,7 +1,9 @@
 import * as qb from './base';
-import * as qt from './types';
 import { diags as qd } from './diags';
-import * as syntax from './syntax';
+import * as qg from './debug';
+import * as qt from './types';
+import { TokenFlags } from './types';
+import * as qy from './syntax';
 import { Codes, DocSyntax, JsxTokenSyntax, KeywordSyntax, LanguageVariant, Syntax } from './syntax';
 export interface Scanner {
   setLanguageVariant(l: LanguageVariant): void;
@@ -15,7 +17,7 @@ export interface Scanner {
   getTokenPos(): number;
   getTokenText(): string;
   getTokenValue(): string;
-  getTokenFlags(): qt.TokenFlags;
+  getTokenFlags(): TokenFlags;
   getDirectives(): qt.CommentDirective[] | undefined;
   clearDirectives(): void;
   hasUnicodeEscape(): boolean;
@@ -52,7 +54,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
   let tokPos: number; // Start position of text of current token
   let startPos: number; // Start position of whitespace before current token
   let tokValue: string;
-  let tokFlags: qt.TokenFlags;
+  let tokFlags: TokenFlags;
   let directives: qt.CommentDirective[] | undefined;
   let inDocType = 0;
   const scanner: Scanner = {
@@ -79,12 +81,12 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
     clearDirectives: () => {
       directives = undefined;
     },
-    hasUnicodeEscape: () => (tokFlags & qt.TokenFlags.UnicodeEscape) !== 0,
-    hasExtendedEscape: () => (tokFlags & qt.TokenFlags.ExtendedEscape) !== 0,
-    hasPrecedingLineBreak: () => (tokFlags & qt.TokenFlags.PrecedingLineBreak) !== 0,
+    hasUnicodeEscape: () => (tokFlags & TokenFlags.UnicodeEscape) !== 0,
+    hasExtendedEscape: () => (tokFlags & TokenFlags.ExtendedEscape) !== 0,
+    hasPrecedingLineBreak: () => (tokFlags & TokenFlags.PrecedingLineBreak) !== 0,
     isIdentifier: () => token === Syntax.Identifier || token > Syntax.LastReservedWord,
     isReservedWord: () => token >= Syntax.FirstReservedWord && token <= Syntax.LastReservedWord,
-    isUnterminated: () => (tokFlags & qt.TokenFlags.Unterminated) !== 0,
+    isUnterminated: () => (tokFlags & TokenFlags.Unterminated) !== 0,
     scan,
     scanRange,
     tryScan: <T>(cb: () => T): T => {
@@ -106,7 +108,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
     reScanHeadOrNoSubstTemplate,
     reScanTemplateToken,
   };
-  if (Debug.isDebugging) {
+  if (qg.isDebugging) {
     Object.defineProperty(scanner, '__debugShowCurrentPositionInText', {
       get: () => {
         const t = scanner.getText();
@@ -127,25 +129,25 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
     tokPos = p;
     token = Syntax.Unknown;
     tokValue = undefined!;
-    tokFlags = qt.TokenFlags.None;
+    tokFlags = TokenFlags.None;
   }
   function scan(): Syntax {
     startPos = pos;
-    tokFlags = qt.TokenFlags.None;
+    tokFlags = TokenFlags.None;
     let asterisk = false;
     while (true) {
       tokPos = pos;
       if (pos >= end) return (token = Syntax.EndOfFileToken);
       let c = text.codePointAt(pos)!;
-      if (c === Codes.hash && pos === 0 && syntax.is.shebangTrivia(text, pos)) {
-        pos = syntax.shebangTrivia(text, pos);
+      if (c === Codes.hash && pos === 0 && qy.is.shebangTrivia(text, pos)) {
+        pos = qy.shebangTrivia(text, pos);
         if (skipTrivia) continue;
         else return (token = Syntax.ShebangTrivia);
       }
       switch (c) {
         case Codes.lineFeed:
         case Codes.carriageReturn:
-          tokFlags |= qt.TokenFlags.PrecedingLineBreak;
+          tokFlags |= TokenFlags.PrecedingLineBreak;
           if (skipTrivia) {
             pos++;
             continue;
@@ -180,7 +182,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
             pos++;
             continue;
           } else {
-            while (pos < end && syntax.is.whiteSpaceSingleLine(text.charCodeAt(pos))) {
+            while (pos < end && qy.is.whiteSpaceSingleLine(text.charCodeAt(pos))) {
               pos++;
             }
             return (token = Syntax.WhitespaceTrivia);
@@ -220,7 +222,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
             return (pos += 2), (token = Syntax.Asterisk2Token);
           }
           pos++;
-          if (inDocType && !asterisk && tokFlags & qt.TokenFlags.PrecedingLineBreak) {
+          if (inDocType && !asterisk && tokFlags & TokenFlags.PrecedingLineBreak) {
             asterisk = true;
             continue;
           }
@@ -239,7 +241,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
           pos++;
           return (token = Syntax.MinusToken);
         case Codes.dot:
-          if (syntax.is.digit(text.charCodeAt(pos + 1))) {
+          if (qy.is.digit(text.charCodeAt(pos + 1))) {
             tokValue = scanNumber().value;
             return (token = Syntax.NumericLiteral);
           }
@@ -250,7 +252,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
           if (text.charCodeAt(pos + 1) === Codes.slash) {
             pos += 2;
             while (pos < end) {
-              if (syntax.is.lineBreak(text.charCodeAt(pos))) break;
+              if (qy.is.lineBreak(text.charCodeAt(pos))) break;
               pos++;
             }
             directives = appendIfDirective(directives, text.slice(tokPos, pos), directiveRegExSingleLine, tokPos);
@@ -260,7 +262,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
           if (text.charCodeAt(pos + 1) === Codes.asterisk) {
             pos += 2;
             if (text.charCodeAt(pos) === Codes.asterisk && text.charCodeAt(pos + 1) !== Codes.slash) {
-              tokFlags |= qt.TokenFlags.PrecedingDocComment;
+              tokFlags |= TokenFlags.PrecedingDocComment;
             }
             let closed = false;
             let last = tokPos;
@@ -272,16 +274,16 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
                 break;
               }
               pos++;
-              if (syntax.is.lineBreak(c2)) {
+              if (qy.is.lineBreak(c2)) {
                 last = pos;
-                tokFlags |= qt.TokenFlags.PrecedingLineBreak;
+                tokFlags |= TokenFlags.PrecedingLineBreak;
               }
             }
             directives = appendIfDirective(directives, text.slice(last, pos), directiveRegExMultiLine, last);
             if (!closed) error(qd.Asterisk_Slash_expected);
             if (skipTrivia) continue;
             else {
-              if (!closed) tokFlags |= qt.TokenFlags.Unterminated;
+              if (!closed) tokFlags |= TokenFlags.Unterminated;
               return (token = Syntax.MultiLineCommentTrivia);
             }
           }
@@ -297,7 +299,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
               tokValue = '0';
             }
             tokValue = '0x' + tokValue;
-            tokFlags |= qt.TokenFlags.HexSpecifier;
+            tokFlags |= TokenFlags.HexSpecifier;
             return (token = parseNumber());
           } else if (pos + 2 < end && (text.charCodeAt(pos + 1) === Codes.B || text.charCodeAt(pos + 1) === Codes.b)) {
             pos += 2;
@@ -307,7 +309,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
               tokValue = '0';
             }
             tokValue = '0b' + tokValue;
-            tokFlags |= qt.TokenFlags.BinarySpecifier;
+            tokFlags |= TokenFlags.BinarySpecifier;
             return (token = parseNumber());
           } else if (pos + 2 < end && (text.charCodeAt(pos + 1) === Codes.O || text.charCodeAt(pos + 1) === Codes.o)) {
             pos += 2;
@@ -317,12 +319,12 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
               tokValue = '0';
             }
             tokValue = '0o' + tokValue;
-            tokFlags |= qt.TokenFlags.OctalSpecifier;
+            tokFlags |= TokenFlags.OctalSpecifier;
             return (token = parseNumber());
           }
-          if (pos + 1 < end && syntax.is.octalDigit(text.charCodeAt(pos + 1))) {
+          if (pos + 1 < end && qy.is.octalDigit(text.charCodeAt(pos + 1))) {
             tokValue = '' + scanOctDigits();
-            tokFlags |= qt.TokenFlags.Octal;
+            tokFlags |= TokenFlags.Octal;
             return (token = Syntax.NumericLiteral);
           }
         case Codes._1:
@@ -343,8 +345,8 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
           pos++;
           return (token = Syntax.SemicolonToken);
         case Codes.lessThan:
-          if (syntax.is.markerTrivia(text, pos)) {
-            pos = syntax.markerTrivia(text, pos, error);
+          if (qy.is.markerTrivia(text, pos)) {
+            pos = qy.markerTrivia(text, pos, error);
             if (skipTrivia) continue;
             else return (token = Syntax.ConflictMarkerTrivia);
           }
@@ -357,8 +359,8 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
           pos++;
           return (token = Syntax.LessThanToken);
         case Codes.equals:
-          if (syntax.is.markerTrivia(text, pos)) {
-            pos = syntax.markerTrivia(text, pos, error);
+          if (qy.is.markerTrivia(text, pos)) {
+            pos = qy.markerTrivia(text, pos, error);
             if (skipTrivia) continue;
             else return (token = Syntax.ConflictMarkerTrivia);
           }
@@ -370,8 +372,8 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
           pos++;
           return (token = Syntax.EqualsToken);
         case Codes.greaterThan:
-          if (syntax.is.markerTrivia(text, pos)) {
-            pos = syntax.markerTrivia(text, pos, error);
+          if (qy.is.markerTrivia(text, pos)) {
+            pos = qy.markerTrivia(text, pos, error);
             if (skipTrivia) continue;
             else return (token = Syntax.ConflictMarkerTrivia);
           }
@@ -379,7 +381,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
           return (token = Syntax.GreaterThanToken);
         case Codes.question:
           pos++;
-          if (text.charCodeAt(pos) === Codes.dot && !syntax.is.digit(text.charCodeAt(pos + 1))) {
+          if (text.charCodeAt(pos) === Codes.dot && !qy.is.digit(text.charCodeAt(pos + 1))) {
             pos++;
             return (token = Syntax.QuestionDotToken);
           }
@@ -402,8 +404,8 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
           pos++;
           return (token = Syntax.OpenBraceToken);
         case Codes.bar:
-          if (syntax.is.markerTrivia(text, pos)) {
-            pos = syntax.markerTrivia(text, pos, error);
+          if (qy.is.markerTrivia(text, pos)) {
+            pos = qy.markerTrivia(text, pos, error);
             if (skipTrivia) continue;
             else return (token = Syntax.ConflictMarkerTrivia);
           }
@@ -422,16 +424,16 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
           return (token = Syntax.AtToken);
         case Codes.backslash:
           const c2 = peekExtEscape();
-          if (c2 >= 0 && syntax.is.identifierStart(c2)) {
+          if (c2 >= 0 && qy.is.identifierStart(c2)) {
             pos += 3;
-            tokFlags |= qt.TokenFlags.ExtendedEscape;
+            tokFlags |= TokenFlags.ExtendedEscape;
             tokValue = scanExtEscape() + scanIdentifierParts();
             return (token = scanIdentifier());
           }
           const c3 = peekUniEscape();
-          if (c3 >= 0 && syntax.is.identifierStart(c3)) {
+          if (c3 >= 0 && qy.is.identifierStart(c3)) {
             pos += 6;
-            tokFlags |= qt.TokenFlags.UnicodeEscape;
+            tokFlags |= TokenFlags.UnicodeEscape;
             tokValue = String.fromCharCode(c3) + scanIdentifierParts();
             return (token = scanIdentifier());
           }
@@ -445,9 +447,9 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
             return (token = Syntax.Unknown);
           }
           pos++;
-          if (syntax.is.identifierStart((c = text.charCodeAt(pos)))) {
+          if (qy.is.identifierStart((c = text.charCodeAt(pos)))) {
             pos++;
-            while (pos < end && syntax.is.identifierPart((c = text.charCodeAt(pos)))) pos++;
+            while (pos < end && qy.is.identifierPart((c = text.charCodeAt(pos)))) pos++;
             tokValue = text.substring(tokPos, pos);
             if (c === Codes.backslash) tokValue += scanIdentifierParts();
           } else {
@@ -456,22 +458,22 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
           }
           return (token = Syntax.PrivateIdentifier);
         default:
-          if (syntax.is.identifierStart(c)) {
-            pos += syntax.get.charSize(c);
-            while (pos < end && syntax.is.identifierPart((c = text.codePointAt(pos)!))) pos += syntax.get.charSize(c);
+          if (qy.is.identifierStart(c)) {
+            pos += qy.get.charSize(c);
+            while (pos < end && qy.is.identifierPart((c = text.codePointAt(pos)!))) pos += qy.get.charSize(c);
             tokValue = text.substring(tokPos, pos);
             if (c === Codes.backslash) tokValue += scanIdentifierParts();
             return (token = scanIdentifier());
-          } else if (syntax.is.whiteSpaceSingleLine(c)) {
-            pos += syntax.get.charSize(c);
+          } else if (qy.is.whiteSpaceSingleLine(c)) {
+            pos += qy.get.charSize(c);
             continue;
-          } else if (syntax.is.lineBreak(c)) {
-            tokFlags |= qt.TokenFlags.PrecedingLineBreak;
-            pos += syntax.get.charSize(c);
+          } else if (qy.is.lineBreak(c)) {
+            tokFlags |= TokenFlags.PrecedingLineBreak;
+            pos += qy.get.charSize(c);
             continue;
           }
           error(qd.Invalid_character);
-          pos += syntax.get.charSize(c);
+          pos += qy.get.charSize(c);
           return (token = Syntax.Unknown);
       }
     }
@@ -529,13 +531,13 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
       let cls = false;
       while (true) {
         if (p >= end) {
-          tokFlags |= qt.TokenFlags.Unterminated;
+          tokFlags |= TokenFlags.Unterminated;
           error(qd.Unterminated_regular_expression_literal);
           break;
         }
         const c = text.charCodeAt(p);
-        if (syntax.is.lineBreak(c)) {
-          tokFlags |= qt.TokenFlags.Unterminated;
+        if (qy.is.lineBreak(c)) {
+          tokFlags |= TokenFlags.Unterminated;
           error(qd.Unterminated_regular_expression_literal);
           break;
         }
@@ -548,7 +550,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
         else if (c === Codes.closeBracket) cls = false;
         p++;
       }
-      while (p < end && syntax.is.identifierPart(text.charCodeAt(p))) {
+      while (p < end && qy.is.identifierPart(text.charCodeAt(p))) {
         p++;
       }
       pos = p;
@@ -612,7 +614,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
     if (l >= 2 && l <= 11) {
       const c = tokValue.charCodeAt(0);
       if (c >= Codes.a && c <= Codes.z) {
-        const w = syntax.strToKey.get(tokValue);
+        const w = qy.strToKey.get(tokValue);
         if (w !== undefined) return (token = w);
       }
     }
@@ -645,20 +647,20 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
     let s = pos;
     while (pos < end) {
       let c = text.codePointAt(pos)!;
-      if (syntax.is.identifierPart(c)) {
-        pos += syntax.get.charSize(c);
+      if (qy.is.identifierPart(c)) {
+        pos += qy.get.charSize(c);
       } else if (c === Codes.backslash) {
         c = peekExtEscape();
-        if (c >= 0 && syntax.is.identifierPart(c)) {
+        if (c >= 0 && qy.is.identifierPart(c)) {
           pos += 3;
-          tokFlags |= qt.TokenFlags.ExtendedEscape;
+          tokFlags |= TokenFlags.ExtendedEscape;
           r += scanExtEscape();
           s = pos;
           continue;
         }
         c = peekUniEscape();
-        if (!(c >= 0 && syntax.is.identifierPart(c))) break;
-        tokFlags |= qt.TokenFlags.UnicodeEscape;
+        if (!(c >= 0 && qy.is.identifierPart(c))) break;
+        tokFlags |= TokenFlags.UnicodeEscape;
         r += text.substring(s, pos);
         r += String.fromCodePoint(c);
         pos += 6;
@@ -678,7 +680,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
       while (true) {
         const c = text.charCodeAt(pos);
         if (c === Codes._) {
-          tokFlags |= qt.TokenFlags.ContainsSeparator;
+          tokFlags |= TokenFlags.ContainsSeparator;
           if (sep) {
             sep = false;
             prev = true;
@@ -689,7 +691,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
           s = pos;
           continue;
         }
-        if (syntax.is.digit(c)) {
+        if (qy.is.digit(c)) {
           sep = true;
           prev = false;
           pos++;
@@ -710,7 +712,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
     let e = pos;
     if (text.charCodeAt(pos) === Codes.E || text.charCodeAt(pos) === Codes.e) {
       pos++;
-      tokFlags |= qt.TokenFlags.Scientific;
+      tokFlags |= TokenFlags.Scientific;
       if (text.charCodeAt(pos) === Codes.plus || text.charCodeAt(pos) === Codes.minus) pos++;
       const p = pos;
       const f = scanFragment();
@@ -720,12 +722,12 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
         e = pos;
       }
     }
-    if (tokFlags & qt.TokenFlags.ContainsSeparator) {
+    if (tokFlags & TokenFlags.ContainsSeparator) {
       if (decimal) r += '.' + decimal;
       if (scientific) r += scientific;
     } else r = text.substring(s, e);
     function checkForIdentifier(scientific = false) {
-      if (!syntax.is.identifierStart(text.codePointAt(pos)!)) return;
+      if (!qy.is.identifierStart(text.codePointAt(pos)!)) return;
       const p = pos;
       const l = scanIdentifierParts().length;
       if (l === 1 && text[p] === 'n') {
@@ -736,8 +738,8 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
         pos = p;
       }
     }
-    if (decimal !== undefined || tokFlags & qt.TokenFlags.Scientific) {
-      checkForIdentifier(decimal === undefined && !!(tokFlags & qt.TokenFlags.Scientific));
+    if (decimal !== undefined || tokFlags & TokenFlags.Scientific) {
+      checkForIdentifier(decimal === undefined && !!(tokFlags & TokenFlags.Scientific));
       return {
         type: Syntax.NumericLiteral,
         value: '' + +r,
@@ -752,14 +754,14 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
   function parseNumber(): Syntax {
     if (text.charCodeAt(pos) === Codes.n) {
       tokValue += 'n';
-      if (tokFlags & qt.TokenFlags.BinaryOrOctalSpecifier) tokValue = parsePseudoBigInt(tokValue) + 'n';
+      if (tokFlags & TokenFlags.BinaryOrOctalSpecifier) tokValue = qy.parsePseudoBigInt(tokValue) + 'n';
       pos++;
       return Syntax.BigIntLiteral;
     } else {
       const v =
-        tokFlags & qt.TokenFlags.BinarySpecifier
+        tokFlags & TokenFlags.BinarySpecifier
           ? parseInt(tokValue.slice(2), 2) // skip "0b"
-          : tokFlags & qt.TokenFlags.OctalSpecifier
+          : tokFlags & TokenFlags.OctalSpecifier
           ? parseInt(tokValue.slice(2), 8) // skip "0o"
           : +tokValue;
       tokValue = '' + v;
@@ -768,7 +770,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
   }
   function scanOctDigits(): number {
     const s = pos;
-    while (syntax.is.octalDigit(text.charCodeAt(pos))) {
+    while (qy.is.octalDigit(text.charCodeAt(pos))) {
       pos++;
     }
     return +text.substring(s, pos);
@@ -780,7 +782,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
     while (ds.length < min || greedy) {
       let d = text.charCodeAt(pos);
       if (seps && d === Codes._) {
-        tokFlags |= qt.TokenFlags.ContainsSeparator;
+        tokFlags |= TokenFlags.ContainsSeparator;
         if (sep) {
           sep = false;
           prev = true;
@@ -807,7 +809,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
     while (true) {
       const c = text.charCodeAt(pos);
       if (c === Codes._) {
-        tokFlags |= qt.TokenFlags.ContainsSeparator;
+        tokFlags |= TokenFlags.ContainsSeparator;
         if (sep) {
           sep = false;
           prev = true;
@@ -817,7 +819,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
         continue;
       }
       sep = true;
-      if (!syntax.is.digit(c) || c - Codes._0 >= base) break;
+      if (!qy.is.digit(c) || c - Codes._0 >= base) break;
       r += text[pos];
       pos++;
       prev = false;
@@ -867,9 +869,9 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
     switch (c) {
       case Codes._0:
         // '\01'
-        if (tagged && pos < end && syntax.is.digit(text.charCodeAt(pos))) {
+        if (tagged && pos < end && qy.is.digit(text.charCodeAt(pos))) {
           pos++;
-          tokFlags |= qt.TokenFlags.ContainsInvalidEscape;
+          tokFlags |= TokenFlags.ContainsInvalidEscape;
           return text.substring(s, pos);
         }
         return '\0';
@@ -893,9 +895,9 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
         if (tagged) {
           // '\u' or '\u0' or '\u00' or '\u000'
           for (let p = pos; p < pos + 4; p++) {
-            if (p < end && !syntax.is.hexDigit(text.charCodeAt(p)) && text.charCodeAt(p) !== Codes.openBrace) {
+            if (p < end && !qy.is.hexDigit(text.charCodeAt(p)) && text.charCodeAt(p) !== Codes.openBrace) {
               pos = p;
-              tokFlags |= qt.TokenFlags.ContainsInvalidEscape;
+              tokFlags |= TokenFlags.ContainsInvalidEscape;
               return text.substring(s, pos);
             }
           }
@@ -904,8 +906,8 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
         if (pos < end && text.charCodeAt(pos) === Codes.openBrace) {
           pos++;
           // '\u{'
-          if (tagged && !syntax.is.hexDigit(text.charCodeAt(pos))) {
-            tokFlags |= qt.TokenFlags.ContainsInvalidEscape;
+          if (tagged && !qy.is.hexDigit(text.charCodeAt(pos))) {
+            tokFlags |= TokenFlags.ContainsInvalidEscape;
             return text.substring(s, pos);
           }
           if (tagged) {
@@ -913,25 +915,25 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
             const vs = scanHexDigits(1);
             const v = vs ? parseInt(vs, 16) : -1;
             // '\u{Not Code Point' or '\u{CodePoint'
-            if (!syntax.is.codePoint(v) || text.charCodeAt(pos) !== Codes.closeBrace) {
-              tokFlags |= qt.TokenFlags.ContainsInvalidEscape;
+            if (!qy.is.codePoint(v) || text.charCodeAt(pos) !== Codes.closeBrace) {
+              tokFlags |= TokenFlags.ContainsInvalidEscape;
               return text.substring(s, pos);
             } else pos = p;
           }
-          tokFlags |= qt.TokenFlags.ExtendedEscape;
+          tokFlags |= TokenFlags.ExtendedEscape;
           return scanExtEscape();
         }
-        tokFlags |= qt.TokenFlags.UnicodeEscape;
+        tokFlags |= TokenFlags.UnicodeEscape;
         // '\uDDDD'
         return scanHexEscape(4);
       case Codes.x:
         if (tagged) {
-          if (!syntax.is.hexDigit(text.charCodeAt(pos))) {
-            tokFlags |= qt.TokenFlags.ContainsInvalidEscape;
+          if (!qy.is.hexDigit(text.charCodeAt(pos))) {
+            tokFlags |= TokenFlags.ContainsInvalidEscape;
             return text.substring(s, pos);
-          } else if (!syntax.is.hexDigit(text.charCodeAt(pos + 1))) {
+          } else if (!qy.is.hexDigit(text.charCodeAt(pos + 1))) {
             pos++;
-            tokFlags |= qt.TokenFlags.ContainsInvalidEscape;
+            tokFlags |= TokenFlags.ContainsInvalidEscape;
             return text.substring(s, pos);
           }
         }
@@ -955,7 +957,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
     while (true) {
       if (pos >= end) {
         r += text.substring(s, pos);
-        tokFlags |= qt.TokenFlags.Unterminated;
+        tokFlags |= TokenFlags.Unterminated;
         error(qd.Unterminated_string_literal);
         break;
       }
@@ -971,9 +973,9 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
         s = pos;
         continue;
       }
-      if (syntax.is.lineBreak(c) && !jsxAttr) {
+      if (qy.is.lineBreak(c) && !jsxAttr) {
         r += text.substring(s, pos);
-        tokFlags |= qt.TokenFlags.Unterminated;
+        tokFlags |= TokenFlags.Unterminated;
         error(qd.Unterminated_string_literal);
         break;
       }
@@ -990,7 +992,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
     while (true) {
       if (pos >= end) {
         v += text.substring(s, pos);
-        tokFlags |= qt.TokenFlags.Unterminated;
+        tokFlags |= TokenFlags.Unterminated;
         error(qd.Unterminated_template_literal);
         r = backtick ? Syntax.NoSubstitutionLiteral : Syntax.TemplateTail;
         break;
@@ -1067,12 +1069,12 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
     let first = 0;
     let last = -1;
     while (pos < end) {
-      if (!syntax.is.whiteSpaceSingleLine(c)) last = pos;
+      if (!qy.is.whiteSpaceSingleLine(c)) last = pos;
       c = text.charCodeAt(pos);
       if (c === Codes.openBrace) break;
       if (c === Codes.lessThan) {
-        if (syntax.is.markerTrivia(text, pos)) {
-          pos = syntax.markerTrivia(text, pos, error);
+        if (qy.is.markerTrivia(text, pos)) {
+          pos = qy.markerTrivia(text, pos, error);
           return (token = Syntax.ConflictMarkerTrivia);
         }
         break;
@@ -1080,8 +1082,8 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
       if (c === Codes.greaterThan) error(qd.Unexpected_token_Did_you_mean_or_gt, pos, 1);
       if (c === Codes.closeBrace) error(qd.Unexpected_token_Did_you_mean_or_rbrace, pos, 1);
       if (last > 0) last++;
-      if (syntax.is.lineBreak(c) && first === 0) first = -1;
-      else if (!syntax.is.whiteSpaceLike(c)) first = pos;
+      if (qy.is.lineBreak(c) && first === 0) first = -1;
+      else if (!qy.is.whiteSpaceLike(c)) first = pos;
       pos++;
     }
     const p = last === -1 ? pos : last;
@@ -1089,7 +1091,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
     return first === -1 ? Syntax.JsxTextAllWhiteSpaces : Syntax.JsxText;
   }
   function scanJsxIdentifier(): Syntax {
-    if (syntax.is.identifierOrKeyword(token)) {
+    if (qy.is.identifierOrKeyword(token)) {
       while (pos < end) {
         const c = text.charCodeAt(pos);
         if (c === Codes.minus) {
@@ -1117,16 +1119,16 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
   }
   function scanDocToken(): DocSyntax {
     startPos = tokPos = pos;
-    tokFlags = qt.TokenFlags.None;
+    tokFlags = TokenFlags.None;
     if (pos >= end) return (token = Syntax.EndOfFileToken);
     const c = text.codePointAt(pos)!;
-    pos += syntax.get.charSize(c);
+    pos += qy.get.charSize(c);
     switch (c) {
       case Codes.tab:
       case Codes.verticalTab:
       case Codes.formFeed:
       case Codes.space:
-        while (pos < end && syntax.is.whiteSpaceSingleLine(text.charCodeAt(pos))) {
+        while (pos < end && qy.is.whiteSpaceSingleLine(text.charCodeAt(pos))) {
           pos++;
         }
         return (token = Syntax.WhitespaceTrivia);
@@ -1134,7 +1136,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
         return (token = Syntax.AtToken);
       case Codes.lineFeed:
       case Codes.carriageReturn:
-        tokFlags |= qt.TokenFlags.PrecedingLineBreak;
+        tokFlags |= TokenFlags.PrecedingLineBreak;
         return (token = Syntax.NewLineTrivia);
       case Codes.asterisk:
         return (token = Syntax.AsteriskToken);
@@ -1161,25 +1163,25 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
       case Codes.backslash:
         pos--;
         const c2 = peekExtEscape();
-        if (c2 >= 0 && syntax.is.identifierStart(c2)) {
+        if (c2 >= 0 && qy.is.identifierStart(c2)) {
           pos += 3;
-          tokFlags |= qt.TokenFlags.ExtendedEscape;
+          tokFlags |= TokenFlags.ExtendedEscape;
           tokValue = scanExtEscape() + scanIdentifierParts();
           return (token = scanIdentifier());
         }
         const c3 = peekUniEscape();
-        if (c3 >= 0 && syntax.is.identifierStart(c3)) {
+        if (c3 >= 0 && qy.is.identifierStart(c3)) {
           pos += 6;
-          tokFlags |= qt.TokenFlags.UnicodeEscape;
+          tokFlags |= TokenFlags.UnicodeEscape;
           tokValue = String.fromCharCode(c3) + scanIdentifierParts();
           return (token = scanIdentifier());
         }
         pos++;
         return (token = Syntax.Unknown);
     }
-    if (syntax.is.identifierStart(c)) {
+    if (qy.is.identifierStart(c)) {
       let c2 = c;
-      while ((pos < end && syntax.is.identifierPart((c2 = text.codePointAt(pos)!))) || text.charCodeAt(pos) === Codes.minus) pos += syntax.get.charSize(c2);
+      while ((pos < end && qy.is.identifierPart((c2 = text.codePointAt(pos)!))) || text.charCodeAt(pos) === Codes.minus) pos += qy.get.charSize(c2);
       tokValue = text.substring(tokPos, pos);
       if (c2 === Codes.backslash) tokValue += scanIdentifierParts();
       return (token = scanIdentifier());

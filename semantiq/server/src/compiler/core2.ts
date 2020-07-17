@@ -4,7 +4,6 @@ import * as qc from './core';
 import * as qg from './debug';
 import { Modifier, Syntax } from './syntax';
 import * as qy from './syntax';
-import * as qu from './utils';
 import { DocTag } from './types';
 export * from './core';
 export type NodeType<S extends Syntax> = S extends keyof SynMap ? SynMap[S] : never;
@@ -27,9 +26,9 @@ export class Nobj extends qc.Nobj {
       n.parent = parent;
       n.flags = parent.flags & NodeFlags.ContextFlags;
     }
-    return (n as unknown) as qc.NodeType<T>;
+    return (n as unknown) as NodeType<T>;
   }
-  static createSynthesized<T extends Syntax>(k: T): qc.NodeType<T> {
+  static createSynthesized<T extends Syntax>(k: T): NodeType<T> {
     const n = this.create<T>(k, -1, -1);
     n.flags |= NodeFlags.Synthesized;
     return n;
