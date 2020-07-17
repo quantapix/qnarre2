@@ -134,7 +134,7 @@ function numberOfDirectorySeparators(str: string) {
   return match ? match.length : 0;
 }
 function comparePathsByNumberOfDirectorySeparators(a: string, b: string) {
-  return compareValues(numberOfDirectorySeparators(a), numberOfDirectorySeparators(b));
+  return compareNumbers(numberOfDirectorySeparators(a), numberOfDirectorySeparators(b));
 }
 export function forEachFileNameOfModule<T>(
   importingFileName: string,
@@ -154,7 +154,7 @@ export function forEachFileNameOfModule<T>(
     if (result) return result;
   }
   const links = host.getProbableSymlinks ? host.getProbableSymlinks(host.getSourceFiles()) : discoverProbableSymlinks(host.getSourceFiles(), getCanonicalFileName, cwd);
-  const compareStrings = !host.useCaseSensitiveFileNames || host.useCaseSensitiveFileNames() ? compareStringsCaseSensitive : compareStringsCaseInsensitive;
+  const compareStrings = !host.useCaseSensitiveFileNames || host.useCaseSensitiveFileNames() ? compareCaseSensitive : compareCaseInsensitive;
   const result = qu.forEachEntry(links, (resolved, path) => {
     if (startsWithDirectory(importingFileName, resolved, getCanonicalFileName)) {
       return;

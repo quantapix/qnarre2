@@ -335,7 +335,7 @@ export class QContext {
             for (const parent of sortedParents) {
               const parentChain = getSymbolChain(parent, getQualifiedLeftMeaning(meaning), false);
               if (parentChain) {
-                if (parent.exports && parent.exports.get(InternalSymbolName.ExportEquals) && getSymbolIfSameReference(parent.exports.get(InternalSymbolName.ExportEquals)!, s)) {
+                if (parent.exports && parent.exports.get(InternalSymbol.ExportEquals) && getSymbolIfSameReference(parent.exports.get(InternalSymbol.ExportEquals)!, s)) {
                   accessibleSymbolChain = parentChain;
                   break;
                 }
@@ -384,7 +384,7 @@ export class QContext {
         if (parent && parent.getExportsOfSymbol()) {
           const exports = parent.getExportsOfSymbol();
           forEachEntry(exports, (ex, name) => {
-            if (getSymbolIfSameReference(ex, symbol) && !isLateBoundName(name) && name !== InternalSymbolName.ExportEquals) {
+            if (getSymbolIfSameReference(ex, symbol) && !isLateBoundName(name) && name !== InternalSymbol.ExportEquals) {
               symbolName = syntax.get.unescUnderscores(name);
               return true;
             }
@@ -634,7 +634,7 @@ export class QContext {
         if (types.length > 2) return [this.typeToTypeNodeHelper(types[0]), new qc.TypeReferenceNode(`... ${types.length - 2} more ...`, undefined), this.typeToTypeNodeHelper(types[types.length - 1])];
       }
       const mayHaveNameCollisions = !(this.flags & NodeBuilderFlags.UseFullyQualifiedType);
-      const seenNames = mayHaveNameCollisions ? createUnderscoredMultiMap<[Type, number]>() : undefined;
+      const seenNames = mayHaveNameCollisions ? createEscapedMultiMap<[Type, number]>() : undefined;
       const result: TypeNode[] = [];
       let i = 0;
       for (const type of types) {
@@ -1119,22 +1119,22 @@ export class QContext {
     addResult(statement, ModifierFlags.None);
     return new qc.ExpressionWithTypeArguments(undefined, new Identifier(tempName));
   }
-  getInternalSymbolName(symbol: Symbol, localName: string) {
+  getInternalSymbol(symbol: Symbol, localName: string) {
     if (this.remappedSymbolNames!.has('' + symbol.getId())) return this.remappedSymbolNames!.get('' + symbol.getId())!;
     localName = getNameCandidateWorker(symbol, localName);
     this.remappedSymbolNames!.set('' + symbol.getId(), localName);
     return localName;
   }
   getNameCandidateWorker(symbol: Symbol, localName: string) {
-    if (localName === InternalSymbolName.Default || localName === InternalSymbolName.Class || localName === InternalSymbolName.Function) {
+    if (localName === InternalSymbol.Default || localName === InternalSymbol.Class || localName === InternalSymbol.Function) {
       const flags = this.flags;
       this.flags |= NodeBuilderFlags.InInitialEntityName;
       const nameCandidate = symbol.getNameOfSymbolAsWritten(this);
       this.flags = flags;
       localName = nameCandidate.length > 0 && isSingleOrDoubleQuote(nameCandidate.charCodeAt(0)) ? stripQuotes(nameCandidate) : nameCandidate;
     }
-    if (localName === InternalSymbolName.Default) localName = '_default';
-    else if (localName === InternalSymbolName.ExportEquals) localName = '_exports';
+    if (localName === InternalSymbol.Default) localName = '_default';
+    else if (localName === InternalSymbol.ExportEquals) localName = '_exports';
     localName = syntax.is.identifierText(localName) && !syntax.is.stringANonContextualKeyword(localName) ? localName : '_' + localName.replace(/[^a-zA-Z0-9]/g, '_');
     return localName;
   }
@@ -1558,13 +1558,13 @@ export class QContext {
     }
     forEachEntry(symbolTable, (symbol, name) => {
       const baseName = syntax.get.unescUnderscores(name);
-      void this.getInternalSymbolName(baseName);
+      void this.getInternalSymbol(baseName);
     });
     let addingDeclare = !bundled;
-    const exportEquals = symbolTable.get(InternalSymbolName.ExportEquals);
+    const exportEquals = symbolTable.get(InternalSymbol.ExportEquals);
     if (exportEquals && symbolTable.size > 1 && exportEquals.flags & SymbolFlags.Alias) {
       symbolTable = new SymbolTable();
-      symbolTable.set(InternalSymbolName.ExportEquals, exportEquals);
+      symbolTable.set(InternalSymbol.ExportEquals, exportEquals);
     }
     visitSymbolTable(symbolTable);
     const flattenExportAssignedNamespace = (ss: Statement[]) => {

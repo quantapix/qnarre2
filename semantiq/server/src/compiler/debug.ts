@@ -192,7 +192,7 @@ function getEnumMembers(enumObject: any) {
       result.push([value, name]);
     }
   }
-  return stableSort<[number, string]>(result, (x, y) => compareValues(x[0], y[0]));
+  return stableSort<[number, string]>(result, (x, y) => compareNumbers(x[0], y[0]));
 }
 export function formatSyntax(kind: Syntax | undefined): string {
   return formatEnum(kind, (<any>ts).SyntaxKind, false);

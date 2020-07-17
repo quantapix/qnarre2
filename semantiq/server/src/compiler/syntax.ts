@@ -1195,7 +1195,7 @@ export const get = new (class {
     return ss;
   }
   lineOf(starts: readonly number[], pos: number, lowerBound?: number): number {
-    let l = qb.binarySearch(starts, pos, qb.identity, qb.compareValues, lowerBound);
+    let l = qb.binarySearch(starts, pos, qb.identity, qb.compareNumbers, lowerBound);
     if (l < 0) {
       l = ~l - 1;
       qb.assert(l !== -1, 'position before beginning of file');

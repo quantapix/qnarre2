@@ -20,8 +20,8 @@ export function transformES2017(context: TransformationContext) {
   const languageVersion = getEmitScriptTarget(compilerOptions);
   let enabledSubstitutions: ES2017SubstitutionFlags;
   let enclosingSuperContainerFlags: NodeCheckFlags = 0;
-  let enclosingFunctionParameterNames: UnderscoreEscapedMap<true>;
-  let capturedSuperProperties: UnderscoreEscapedMap<true>;
+  let enclosingFunctionParameterNames: EscapedMap<true>;
+  let capturedSuperProperties: EscapedMap<true>;
   let hasSuperElementAccess: boolean;
   const substitutedSuperAccessors: boolean[] = [];
   let contextFlags: ContextFlags = 0;
@@ -130,9 +130,9 @@ export function transformES2017(context: TransformationContext) {
     return visitor(node);
   }
   function visitCatchClauseInAsyncBody(node: CatchClause) {
-    const catchClauseNames = createUnderscoreEscapedMap<true>();
+    const catchClauseNames = createEscapedMap<true>();
     recordDeclarationName(node.variableDeclaration!, catchClauseNames);
-    let catchClauseUnshadowedNames: UnderscoreEscapedMap<true> | undefined;
+    let catchClauseUnshadowedNames: EscapedMap<true> | undefined;
     catchClauseNames.forEach((_, escName) => {
       if (enclosingFunctionParameterNames.has(escName)) {
         if (!catchClauseUnshadowedNames) {
@@ -234,7 +234,7 @@ export function transformES2017(context: TransformationContext) {
       getFunctionFlags(node) & FunctionFlags.Async ? transformAsyncFunctionBody(node) : visitFunctionBody(node.body, visitor, context)
     );
   }
-  function recordDeclarationName({ name }: ParameterDeclaration | VariableDeclaration | BindingElement, names: UnderscoreEscapedMap<true>) {
+  function recordDeclarationName({ name }: ParameterDeclaration | VariableDeclaration | BindingElement, names: EscapedMap<true>) {
     if (qc.is.kind(Identifier, name)) {
       names.set(name.escapedText, true);
     } else {
@@ -294,14 +294,14 @@ export function transformES2017(context: TransformationContext) {
     const isArrowFunction = node.kind === Syntax.ArrowFunction;
     const hasLexicalArguments = (resolver.getNodeCheckFlags(node) & NodeCheckFlags.CaptureArguments) !== 0;
     const savedEnclosingFunctionParameterNames = enclosingFunctionParameterNames;
-    enclosingFunctionParameterNames = createUnderscoreEscapedMap<true>();
+    enclosingFunctionParameterNames = createEscapedMap<true>();
     for (const parameter of node.parameters) {
       recordDeclarationName(parameter, enclosingFunctionParameterNames);
     }
     const savedCapturedSuperProperties = capturedSuperProperties;
     const savedHasSuperElementAccess = hasSuperElementAccess;
     if (!isArrowFunction) {
-      capturedSuperProperties = createUnderscoreEscapedMap<true>();
+      capturedSuperProperties = createEscapedMap<true>();
       hasSuperElementAccess = false;
     }
     let result: ConciseBody;
@@ -435,7 +435,7 @@ export function transformES2017(context: TransformationContext) {
     return setRange(new qs.CallExpression(createFileLevelUniqueName('_superIndex'), undefined, [argumentExpression]), location);
   }
 }
-export function createSuperAccessVariableStatement(resolver: EmitResolver, node: FunctionLikeDeclaration, names: UnderscoreEscapedMap<true>) {
+export function createSuperAccessVariableStatement(resolver: EmitResolver, node: FunctionLikeDeclaration, names: EscapedMap<true>) {
   const hasBinding = (resolver.getNodeCheckFlags(node) & NodeCheckFlags.AsyncMethodWithSuperBinding) !== 0;
   const accessors: PropertyAssignment[] = [];
   names.forEach((_, key) => {

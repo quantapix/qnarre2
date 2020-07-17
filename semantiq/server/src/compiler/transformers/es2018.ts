@@ -38,7 +38,7 @@ export function transformES2018(context: TransformationContext) {
   let hierarchyFacts: HierarchyFacts = 0;
   let currentSourceFile: SourceFile;
   let taggedTemplateStringDeclarations: VariableDeclaration[];
-  let capturedSuperProperties: UnderscoreEscapedMap<true>;
+  let capturedSuperProperties: EscapedMap<true>;
   let hasSuperElementAccess: boolean;
   const substitutedSuperAccessors: boolean[] = [];
   return chainBundle(transformSourceFile);
@@ -519,7 +519,7 @@ export function transformES2018(context: TransformationContext) {
     appendObjectRestAssignmentsIfNeeded(statements, node);
     const savedCapturedSuperProperties = capturedSuperProperties;
     const savedHasSuperElementAccess = hasSuperElementAccess;
-    capturedSuperProperties = createUnderscoreEscapedMap<true>();
+    capturedSuperProperties = createEscapedMap<true>();
     hasSuperElementAccess = false;
     const returnStatement = new qc.ReturnStatement(
       createAsyncGeneratorHelper(

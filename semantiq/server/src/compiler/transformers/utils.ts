@@ -23,7 +23,7 @@ function containsDefaultReference(node: NamedImportBindings | undefined) {
   return some(node.elements, isNamedDefaultReference);
 }
 function isNamedDefaultReference(e: ImportSpecifier): boolean {
-  return e.propertyName !== undefined && e.propertyName.escapedText === InternalSymbolName.Default;
+  return e.propertyName !== undefined && e.propertyName.escapedText === InternalSymbol.Default;
 }
 export function chainBundle(transformSourceFile: (x: SourceFile) => SourceFile): (x: SourceFile | Bundle) => SourceFile | Bundle {
   return transformSourceFileOrBundle;

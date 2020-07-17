@@ -480,10 +480,10 @@ function sameMappedPosition(left: MappedPosition, right: MappedPosition) {
 }
 function compareSourcePositions(left: SourceMappedPosition, right: SourceMappedPosition) {
   qb.assert(left.sourceIndex === right.sourceIndex);
-  return compareValues(left.sourcePosition, right.sourcePosition);
+  return compareNumbers(left.sourcePosition, right.sourcePosition);
 }
 function compareGeneratedPositions(left: MappedPosition, right: MappedPosition) {
-  return compareValues(left.generatedPosition, right.generatedPosition);
+  return compareNumbers(left.generatedPosition, right.generatedPosition);
 }
 function getSourcePositionOfMapping(value: SourceMappedPosition) {
   return value.sourcePosition;
@@ -565,7 +565,7 @@ export function createDocumentPositionMapper(host: DocumentPositionMapperHost, m
     if (sourceIndex === undefined) return loc;
     const sourceMappings = getSourceMappings(sourceIndex);
     if (!some(sourceMappings)) return loc;
-    let targetIndex = binarySearchKey(sourceMappings, loc.pos, getSourcePositionOfMapping, compareValues);
+    let targetIndex = binarySearchKey(sourceMappings, loc.pos, getSourcePositionOfMapping, compareNumbers);
     if (targetIndex < 0) {
       targetIndex = ~targetIndex;
     }
@@ -576,7 +576,7 @@ export function createDocumentPositionMapper(host: DocumentPositionMapperHost, m
   function getSourcePosition(loc: DocumentPosition): DocumentPosition {
     const generatedMappings = getGeneratedMappings();
     if (!some(generatedMappings)) return loc;
-    let targetIndex = binarySearchKey(generatedMappings, loc.pos, getGeneratedPositionOfMapping, compareValues);
+    let targetIndex = binarySearchKey(generatedMappings, loc.pos, getGeneratedPositionOfMapping, compareNumbers);
     if (targetIndex < 0) {
       targetIndex = ~targetIndex;
     }

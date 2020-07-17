@@ -43,7 +43,7 @@ export function transformTypeScript(context: TransformationContext) {
   let currentNamespaceContainerName: Identifier;
   let currentLexicalScope: SourceFile | Block | ModuleBlock | CaseBlock;
   let currentNameScope: ClassDeclaration | undefined;
-  let currentScopeFirstDeclarationsOfName: UnderscoreEscapedMap<Node> | undefined;
+  let currentScopeFirstDeclarationsOfName: EscapedMap<Node> | undefined;
   let currentClassHasParameterProperties: boolean | undefined;
   let enabledSubstitutions: TypeScriptSubstitutionFlags;
   let classAliases: Identifier[];
@@ -1214,7 +1214,7 @@ export function transformTypeScript(context: TransformationContext) {
   }
   function recordEmittedDeclarationInScope(node: FunctionDeclaration | ClassDeclaration | ModuleDeclaration | EnumDeclaration) {
     if (!currentScopeFirstDeclarationsOfName) {
-      currentScopeFirstDeclarationsOfName = createUnderscoreEscapedMap<Node>();
+      currentScopeFirstDeclarationsOfName = createEscapedMap<Node>();
     }
     const name = declaredNameInScope(node);
     if (!currentScopeFirstDeclarationsOfName.has(name)) {

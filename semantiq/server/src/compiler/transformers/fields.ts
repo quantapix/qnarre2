@@ -16,7 +16,7 @@ interface PrivateIdentifierInstanceField {
   placement: PrivateIdentifierPlacement.InstanceField;
   weakMapName: Identifier;
 }
-type PrivateIdentifierEnvironment = UnderscoreEscapedMap<PrivateIdentifierInfo>;
+type PrivateIdentifierEnvironment = EscapedMap<PrivateIdentifierInfo>;
 export function transformClassFields(context: TransformationContext) {
   const { hoistVariableDeclaration, endLexicalEnvironment, resumeLexicalEnvironment } = context;
   const resolver = context.getEmitResolver();
@@ -540,7 +540,7 @@ export function transformClassFields(context: TransformationContext) {
     const weakMapName = createOptimisticUniqueName('_' + text.substring(1));
     weakMapName.autoGenerateFlags |= GeneratedIdentifierFlags.ReservedInNestedScopes;
     hoistVariableDeclaration(weakMapName);
-    (currentPrivateIdentifierEnvironment || (currentPrivateIdentifierEnvironment = createUnderscoreEscapedMap())).set(name.escapedText, {
+    (currentPrivateIdentifierEnvironment || (currentPrivateIdentifierEnvironment = createEscapedMap())).set(name.escapedText, {
       placement: PrivateIdentifierPlacement.InstanceField,
       weakMapName,
     });

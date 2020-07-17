@@ -93,7 +93,7 @@ export interface Sorteds<T> extends Array<T> {
 export interface ReadonlySorteds<T> extends ReadonlyArray<T> {
   ' __sortedArrayBrand': any;
 }
-export const enum InternalSymbolName {
+export const enum InternalSymbol {
   Call = '__call',
   Constructor = '__constructor',
   New = '__new',
@@ -112,10 +112,10 @@ export const enum InternalSymbolName {
   ExportEquals = 'export=',
   This = 'this',
 }
-export type __String = (string & { __escapedIdentifier: void }) | (void & { __escapedIdentifier: void }) | InternalSymbolName;
-export type UnderscoreEscapedMap<T> = Map<__String, T>;
-export type ReadonlyUnderscoreEscapedMap<T> = ReadonlyMap<__String, T>;
-export interface UnderscoredMultiMap<T> extends UnderscoreEscapedMap<T[]> {
+export type __String = (string & { __escapedIdentifier: void }) | (void & { __escapedIdentifier: void }) | InternalSymbol;
+export type EscapedMap<T> = Map<__String, T>;
+export type ReadonlyEscapedMap<T> = ReadonlyMap<__String, T>;
+export interface EscapedMultiMap<T> extends EscapedMap<T[]> {
   add(key: __String, value: T): T[];
   remove(key: __String, value: T): void;
 }
@@ -207,8 +207,8 @@ export function forEachRight<T, U>(ts: readonly T[] | undefined, cb: (t: T, i: n
 }
 export function arrayToSet(ts: readonly string[]): QMap<true>;
 export function arrayToSet<T>(ts: readonly T[], key: (t: T) => string | undefined): QMap<true>;
-export function arrayToSet<T>(ts: readonly T[], key: (t: T) => __String | undefined): UnderscoreEscapedMap<true>;
-export function arrayToSet(ts: readonly any[], key?: (t: any) => string | __String | undefined): QMap<true> | UnderscoreEscapedMap<true> {
+export function arrayToSet<T>(ts: readonly T[], key: (t: T) => __String | undefined): EscapedMap<true>;
+export function arrayToSet(ts: readonly any[], key?: (t: any) => string | __String | undefined): QMap<true> | EscapedMap<true> {
   return arrayToMap<any, true>(ts, key || ((t) => t), () => true);
 }
 export function firstDefined<T, U>(ts: readonly T[] | undefined, cb: (t: T, i: number) => U | undefined): U | undefined {
@@ -284,13 +284,13 @@ export function mapIterator<T, U>(ts: Iterator<T>, cb: (t: T) => U): Iterator<U>
     },
   };
 }
-export type EqualityComparer<T> = (a: T, b: T) => boolean;
-export type Comparer<T> = (a: T, b: T) => Comparison;
 export const enum Comparison {
   LessThan = -1,
   EqualTo = 0,
   GreaterThan = 1,
 }
+export type EqComparer<T> = (a: T, b: T) => boolean;
+export type Comparer<T> = (a: T, b: T) => Comparison;
 export function equateValues<T>(a: T, b: T) {
   return a === b;
 }
@@ -310,7 +310,7 @@ export function countWhere<T>(ts: readonly T[], cb: (t: T, i: number) => boolean
   }
   return r;
 }
-export function contains<T>(ts: readonly T[] | undefined, x: T, eq: EqualityComparer<T> = equateValues): boolean {
+export function contains<T>(ts: readonly T[] | undefined, x: T, eq: EqComparer<T> = equateValues): boolean {
   if (ts) {
     for (const t of ts) {
       if (eq(t, x)) return true;
@@ -349,7 +349,7 @@ export function zipToIterator<T, U>(ts: readonly T[], us: readonly U[]): Iterato
     },
   };
 }
-export function arraysEqual<T>(a: readonly T[], b: readonly T[], eq: EqualityComparer<T> = equateValues): boolean {
+export function arraysEqual<T>(a: readonly T[], b: readonly T[], eq: EqComparer<T> = equateValues): boolean {
   return a.length === b.length && a.every((x, i) => eq(x, b[i]));
 }
 export function indexOfAnyCharCode(s: string, cs: readonly number[], start?: number): number {
@@ -555,7 +555,7 @@ function selectIndex(_: unknown, i: number) {
 export function indicesOf(ts: readonly unknown[]): number[] {
   return ts.map(selectIndex);
 }
-function deduplicateRelational<T>(ts: readonly T[], eq: EqualityComparer<T>, comparer: Comparer<T>) {
+function deduplicateRelational<T>(ts: readonly T[], eq: EqComparer<T>, comparer: Comparer<T>) {
   const indices = indicesOf(ts);
   stableSortIndices(ts, indices, comparer);
   let last = ts[indices[0]];
@@ -571,14 +571,14 @@ function deduplicateRelational<T>(ts: readonly T[], eq: EqualityComparer<T>, com
   deduplicated.sort();
   return deduplicated.map((i) => ts[i]);
 }
-function deduplicateEquality<T>(ts: readonly T[], eq: EqualityComparer<T>) {
+function deduplicateEquality<T>(ts: readonly T[], eq: EqComparer<T>) {
   const r: T[] = [];
   for (const item of ts) {
     pushIfUnique(r, item, eq);
   }
   return r;
 }
-export function deduplicate<T>(ts: readonly T[], eq: EqualityComparer<T>, comparer?: Comparer<T>): T[] {
+export function deduplicate<T>(ts: readonly T[], eq: EqComparer<T>, comparer?: Comparer<T>): T[] {
   return ts.length === 0 ? [] : ts.length === 1 ? ts.slice() : comparer ? deduplicateRelational(ts, eq, comparer) : deduplicateEquality(ts, eq);
 }
 export function zipToMap<T>(ks: readonly string[], ts: readonly T[]): QMap<T> {
@@ -597,26 +597,26 @@ export function mapDefinedMap<T, U>(ts: QReadonlyMap<T>, mv: (t: T, k: string) =
   });
   return us;
 }
-export function mapEntries<T, U>(map: QReadonlyMap<T>, f: (k: string, t: T) => [string, U]): QMap<U>;
-export function mapEntries<T, U>(map: QReadonlyMap<T> | undefined, f: (k: string, t: T) => [string, U]): QMap<U> | undefined;
-export function mapEntries<T, U>(map: QReadonlyMap<T> | undefined, f: (k: string, t: T) => [string, U]): QMap<U> | undefined {
-  if (!map) return;
+export function mapEntries<T, U>(m: QReadonlyMap<T>, f: (k: string, t: T) => [string, U]): QMap<U>;
+export function mapEntries<T, U>(m: QReadonlyMap<T> | undefined, f: (k: string, t: T) => [string, U]): QMap<U> | undefined;
+export function mapEntries<T, U>(m: QReadonlyMap<T> | undefined, f: (k: string, t: T) => [string, U]): QMap<U> | undefined {
+  if (!m) return;
   const us = new QMap<U>();
-  map.forEach((v, k) => {
+  m.forEach((v, k) => {
     const [k2, v2] = f(k, v);
     us.set(k2, v2);
   });
   return us;
 }
-export function mapMap<T, U>(map: QMap<T>, f: (t: T, k: string) => [string, U]): QMap<U>;
-export function mapMap<T, U>(map: UnderscoreEscapedMap<T>, f: (t: T, k: __String) => [string, U]): QMap<U>;
-export function mapMap<T, U>(map: QMap<T> | UnderscoreEscapedMap<T>, f: ((t: T, k: string) => [string, U]) | ((t: T, k: __String) => [string, U])): QMap<U> {
+export function mapMap<T, U>(m: QMap<T>, f: (t: T, k: string) => [string, U]): QMap<U>;
+export function mapMap<T, U>(m: EscapedMap<T>, f: (t: T, k: __String) => [string, U]): QMap<U>;
+export function mapMap<T, U>(m: QMap<T> | EscapedMap<T>, f: ((t: T, k: string) => [string, U]) | ((t: T, k: __String) => [string, U])): QMap<U> {
   const r = new QMap<U>();
-  map.forEach((t: T, k: string & __String) => r.set(...f(t, k)));
+  m.forEach((t: T, k: string & __String) => r.set(...f(t, k)));
   return r;
 }
-export function createUnderscoredMultiMap<T>(): UnderscoredMultiMap<T> {
-  return new MultiMap<T>() as UnderscoredMultiMap<T>;
+export function createEscapedMultiMap<T>(): EscapedMultiMap<T> {
+  return new MultiMap<T>() as EscapedMultiMap<T>;
 }
 export function isString(text: unknown): text is string {
   return typeof text === 'string';
@@ -657,7 +657,7 @@ export function memoize<T>(cb: () => T): () => T {
     return v;
   };
 }
-function deduplicateSorted<T>(ts: ReadonlySorteds<T>, comparer: EqualityComparer<T> | Comparer<T>): ReadonlySorteds<T> {
+function deduplicateSorted<T>(ts: ReadonlySorteds<T>, comparer: EqComparer<T> | Comparer<T>): ReadonlySorteds<T> {
   if (ts.length === 0) return (empty as any) as ReadonlySorteds<T>;
   let last = ts[0];
   const deduplicated: T[] = [last];
@@ -683,9 +683,9 @@ export function insertSorted<T>(ts: Sorteds<T>, insert: T, compare: Comparer<T>)
   if (insertIndex < 0) ts.splice(~insertIndex, 0, insert);
 }
 export function sortAndDeduplicate<T>(ts: readonly string[]): ReadonlySorteds<string>;
-export function sortAndDeduplicate<T>(ts: readonly T[], comparer: Comparer<T>, eq?: EqualityComparer<T>): ReadonlySorteds<T>;
-export function sortAndDeduplicate<T>(ts: readonly T[], comparer?: Comparer<T>, eq?: EqualityComparer<T>): ReadonlySorteds<T> {
-  return deduplicateSorted(sort(ts, comparer), eq || comparer || ((compareStringsCaseSensitive as any) as Comparer<T>));
+export function sortAndDeduplicate<T>(ts: readonly T[], comparer: Comparer<T>, eq?: EqComparer<T>): ReadonlySorteds<T>;
+export function sortAndDeduplicate<T>(ts: readonly T[], comparer?: Comparer<T>, eq?: EqComparer<T>): ReadonlySorteds<T> {
+  return deduplicateSorted(sort(ts, comparer), eq || comparer || ((compareCaseSensitive as any) as Comparer<T>));
 }
 export function arrayIsEqualTo<T>(a: readonly T[] | undefined, b: readonly T[] | undefined, eq: (a: T, b: T, index: number) => boolean = equateValues): boolean {
   if (!a || !b) return a === b;
@@ -776,12 +776,12 @@ export function addRange<T>(to: T[] | undefined, from: readonly T[] | undefined,
   }
   return to;
 }
-export function pushIfUnique<T>(ts: T[], toAdd: T, eq?: EqualityComparer<T>): boolean {
+export function pushIfUnique<T>(ts: T[], toAdd: T, eq?: EqComparer<T>): boolean {
   if (contains(ts, toAdd, eq)) return false;
   ts.push(toAdd);
   return true;
 }
-export function appendIfUnique<T>(ts: T[] | undefined, toAdd: T, eq?: EqualityComparer<T>): T[] {
+export function appendIfUnique<T>(ts: T[] | undefined, toAdd: T, eq?: EqComparer<T>): T[] {
   if (ts) {
     pushIfUnique(ts, toAdd, eq);
     return ts;
@@ -789,7 +789,7 @@ export function appendIfUnique<T>(ts: T[] | undefined, toAdd: T, eq?: EqualityCo
   return [toAdd];
 }
 function stableSortIndices<T>(ts: readonly T[], indices: number[], comparer: Comparer<T>) {
-  indices.sort((x, y) => comparer(ts[x], ts[y]) || compareValues(x, y));
+  indices.sort((x, y) => comparer(ts[x], ts[y]) || compareNumbers(x, y));
 }
 export function sort<T>(ts: readonly T[], comparer?: Comparer<T>): ReadonlySorteds<T> {
   return (ts.length === 0 ? ts : ts.slice().sort(comparer)) as ReadonlySorteds<T>;
@@ -959,7 +959,7 @@ export function assign<T extends object>(t: T, ...args: (T | undefined)[]) {
   }
   return t;
 }
-export function equalOwnProperties<T>(left: MapLike<T> | undefined, right: MapLike<T> | undefined, eq: EqualityComparer<T> = equateValues) {
+export function equalOwnProperties<T>(left: MapLike<T> | undefined, right: MapLike<T> | undefined, eq: EqComparer<T> = equateValues) {
   if (left === right) return true;
   if (!left || !right) return false;
   for (const key in left) {
@@ -1031,9 +1031,9 @@ export function copyProperties<T1 extends T2, T2>(to: T1, from: T2) {
 export function maybeBind<T, A extends unknown, R>(t: T, cb: ((this: T, ...args: A[]) => R) | undefined): ((...args: A[]) => R) | undefined {
   return cb ? cb.bind(t) : undefined;
 }
-export function forEachEntry<T, U>(m: ReadonlyUnderscoreEscapedMap<T>, cb: (t: T, k: __String) => U | undefined): U | undefined;
+export function forEachEntry<T, U>(m: ReadonlyEscapedMap<T>, cb: (t: T, k: __String) => U | undefined): U | undefined;
 export function forEachEntry<T, U>(m: QReadonlyMap<T>, cb: (t: T, k: string) => U | undefined): U | undefined;
-export function forEachEntry<T, U>(m: ReadonlyUnderscoreEscapedMap<T> | QReadonlyMap<T>, cb: (t: T, k: string & __String) => U | undefined): U | undefined {
+export function forEachEntry<T, U>(m: ReadonlyEscapedMap<T> | QReadonlyMap<T>, cb: (t: T, k: string & __String) => U | undefined): U | undefined {
   const ts = m.entries();
   for (let i = ts.next(); !i.done; i = ts.next()) {
     const [k, t] = i.value;
@@ -1042,9 +1042,9 @@ export function forEachEntry<T, U>(m: ReadonlyUnderscoreEscapedMap<T> | QReadonl
   }
   return;
 }
-export function forEachKey<T>(m: ReadonlyUnderscoreEscapedMap<{}>, cb: (k: __String) => T | undefined): T | undefined;
+export function forEachKey<T>(m: ReadonlyEscapedMap<{}>, cb: (k: __String) => T | undefined): T | undefined;
 export function forEachKey<T>(m: QReadonlyMap<{}>, cb: (k: string) => T | undefined): T | undefined;
-export function forEachKey<T>(m: ReadonlyUnderscoreEscapedMap<{}> | QReadonlyMap<{}>, cb: (k: string & __String) => T | undefined): T | undefined {
+export function forEachKey<T>(m: ReadonlyEscapedMap<{}> | QReadonlyMap<{}>, cb: (k: string & __String) => T | undefined): T | undefined {
   const ks = m.keys();
   for (let i = ks.next(); !i.done; i = ks.next()) {
     const t = cb(i.value as string & __String);
@@ -1052,9 +1052,9 @@ export function forEachKey<T>(m: ReadonlyUnderscoreEscapedMap<{}> | QReadonlyMap
   }
   return;
 }
-export function copyEntries<T>(s: ReadonlyUnderscoreEscapedMap<T>, t: UnderscoreEscapedMap<T>): void;
+export function copyEntries<T>(s: ReadonlyEscapedMap<T>, t: EscapedMap<T>): void;
 export function copyEntries<T>(s: QReadonlyMap<T>, t: QMap<T>): void;
-export function copyEntries<T, U extends UnderscoreEscapedMap<T> | QMap<T>>(s: U, t: U): void {
+export function copyEntries<T, U extends EscapedMap<T> | QMap<T>>(s: U, t: U): void {
   (s as QMap<T>).forEach((v, k) => {
     (t as QMap<T>).set(k, v);
   });
@@ -1085,21 +1085,21 @@ export const enum AssertionLevel {
   Aggressive = 2,
   VeryAggressive = 3,
 }
-function compareComparableValues(a: string | undefined, b: string | undefined): Comparison;
-function compareComparableValues(a: number | undefined, b: number | undefined): Comparison;
-function compareComparableValues(a: string | number | undefined, b: string | number | undefined) {
+export function min<T>(a: T, b: T, c: Comparer<T>): T {
+  return c(a, b) === Comparison.LessThan ? a : b;
+}
+function compare(a?: string, b?: string): Comparison;
+function compare(a?: number, b?: number): Comparison;
+function compare(a?: string | number, b?: string | number) {
   return a === b ? Comparison.EqualTo : a === undefined ? Comparison.LessThan : b === undefined ? Comparison.GreaterThan : a < b ? Comparison.LessThan : Comparison.GreaterThan;
 }
-export function compareValues(a: number | undefined, b: number | undefined): Comparison {
-  return compareComparableValues(a, b);
+export function compareNumbers(a?: number, b?: number) {
+  return compare(a, b);
 }
-export function compareTextSpans(a: Partial<Span> | undefined, b: Partial<Span> | undefined): Comparison {
-  return compareValues(a?.start, b?.start) || compareValues(a?.length, b?.length);
+export function compareSpans(a?: Partial<Span>, b?: Partial<Span>) {
+  return compareNumbers(a?.start, b?.start) || compareNumbers(a?.length, b?.length);
 }
-export function min<T>(a: T, b: T, compare: Comparer<T>): T {
-  return compare(a, b) === Comparison.LessThan ? a : b;
-}
-export function compareStringsCaseInsensitive(a: string, b: string) {
+export function compareCaseInsensitive(a?: string, b?: string) {
   if (a === b) return Comparison.EqualTo;
   if (a === undefined) return Comparison.LessThan;
   if (b === undefined) return Comparison.GreaterThan;
@@ -1107,11 +1107,11 @@ export function compareStringsCaseInsensitive(a: string, b: string) {
   b = b.toUpperCase();
   return a < b ? Comparison.LessThan : a > b ? Comparison.GreaterThan : Comparison.EqualTo;
 }
-export function compareStringsCaseSensitive(a: string | undefined, b: string | undefined): Comparison {
-  return compareComparableValues(a, b);
+export function compareCaseSensitive(a?: string, b?: string) {
+  return compare(a, b);
 }
 export function getStringComparer(ignoreCase?: boolean) {
-  return ignoreCase ? compareStringsCaseInsensitive : compareStringsCaseSensitive;
+  return ignoreCase ? compareCaseInsensitive : compareCaseSensitive;
 }
 const createUIStringComparer = (() => {
   let defaultComparer: Comparer<string> | undefined;
@@ -1167,7 +1167,7 @@ export function setUILocale(v: string | undefined) {
     uiComparerCaseSensitive = undefined;
   }
 }
-export function compareStringsCaseSensitiveUI(a: string, b: string) {
+export function compareCaseSensitiveUI(a: string, b: string) {
   const comparer = uiComparerCaseSensitive || (uiComparerCaseSensitive = createUIStringComparer(uiLocale));
   return comparer(a, b);
 }
@@ -1175,7 +1175,7 @@ export function compareProperties<T, K extends keyof T>(a: T | undefined, b: T |
   return a === b ? Comparison.EqualTo : a === undefined ? Comparison.LessThan : b === undefined ? Comparison.GreaterThan : comparer(a[key], b[key]);
 }
 export function compareBooleans(a: boolean, b: boolean): Comparison {
-  return compareValues(a ? 1 : 0, b ? 1 : 0);
+  return compareNumbers(a ? 1 : 0, b ? 1 : 0);
 }
 export function getSpellingSuggestion<T>(name: string, candidates: T[], getName: (candidate: T) => string | undefined): T | undefined {
   const maximumLengthDifference = Math.min(2, Math.floor(name.length * 0.34));
@@ -1239,18 +1239,18 @@ function levenshteinWithMax(s1: string, s2: string, max: number): number | undef
   const res = previous[s2.length];
   return res > max ? undefined : res;
 }
-export function endsWith(str: string, suffix: string): boolean {
-  const expectedPos = str.length - suffix.length;
-  return expectedPos >= 0 && str.indexOf(suffix, expectedPos) === expectedPos;
+export function endsWith(s: string, suff: string): boolean {
+  const expectedPos = s.length - suff.length;
+  return expectedPos >= 0 && s.indexOf(suff, expectedPos) === expectedPos;
 }
-export function removeSuffix(str: string, suffix: string): string {
-  return endsWith(str, suffix) ? str.slice(0, str.length - suffix.length) : str;
+export function removeSuffix(s: string, suff: string): string {
+  return endsWith(s, suff) ? s.slice(0, s.length - suff.length) : s;
 }
-export function tryRemoveSuffix(str: string, suffix: string): string | undefined {
-  return endsWith(str, suffix) ? str.slice(0, str.length - suffix.length) : undefined;
+export function tryRemoveSuffix(s: string, suff: string): string | undefined {
+  return endsWith(s, suff) ? s.slice(0, s.length - suff.length) : undefined;
 }
-export function stringContains(str: string, substring: string): boolean {
-  return str.indexOf(substring) !== -1;
+export function stringContains(s: string, substring: string): boolean {
+  return s.indexOf(substring) !== -1;
 }
 const indents: string[] = ['', '    '];
 export function getIndentString(level: number) {
@@ -1331,14 +1331,14 @@ export function findBestPatternMatch<T>(values: readonly T[], getPattern: (value
   }
   return matchedValue;
 }
-export function startsWith(str: string, prefix: string): boolean {
-  return str.lastIndexOf(prefix, 0) === 0;
+export function startsWith(s: string, pre: string): boolean {
+  return s.lastIndexOf(pre, 0) === 0;
 }
-export function removePrefix(str: string, prefix: string): string {
-  return startsWith(str, prefix) ? str.substr(prefix.length) : str;
+export function removePrefix(s: string, pre: string): string {
+  return startsWith(s, pre) ? s.substr(pre.length) : s;
 }
-export function tryRemovePrefix(str: string, prefix: string, getCanonicalFileName: GetCanonicalFileName = identity): string | undefined {
-  return startsWith(getCanonicalFileName(str), getCanonicalFileName(prefix)) ? str.substring(prefix.length) : undefined;
+export function tryRemovePrefix(s: string, pre: string, getCanonicalFileName: GetCanonicalFileName = identity): string | undefined {
+  return startsWith(getCanonicalFileName(s), getCanonicalFileName(pre)) ? s.substring(pre.length) : undefined;
 }
 function isPatternMatch({ prefix, suffix }: Pattern, candidate: string) {
   return candidate.length >= prefix.length + suffix.length && startsWith(candidate, prefix) && endsWith(candidate, suffix);
@@ -1404,21 +1404,21 @@ export function fill<T>(length: number, cb: (index: number) => T): T[] {
   }
   return r;
 }
-export function cartesianProduct<T>(arrays: readonly T[][]) {
+export function cartesianProduct<T>(ts: readonly T[][]) {
   const r: T[][] = [];
-  cartesianProductWorker(arrays, r, undefined, 0);
+  const worker = (ts: readonly (readonly T[])[], outer: readonly T[] | undefined, i: number) => {
+    for (const t of ts[i]) {
+      let inner: T[];
+      if (outer) {
+        inner = outer.slice();
+        inner.push(t);
+      } else inner = [t];
+      if (i === ts.length - 1) r.push(inner);
+      else worker(ts, inner, i + 1);
+    }
+  };
+  worker(ts, undefined, 0);
   return r;
-}
-function cartesianProductWorker<T>(arrays: readonly (readonly T[])[], result: (readonly T[])[], outer: readonly T[] | undefined, index: number) {
-  for (const element of arrays[index]) {
-    let inner: T[];
-    if (outer) {
-      inner = outer.slice();
-      inner.push(element);
-    } else inner = [element];
-    if (index === arrays.length - 1) result.push(inner);
-    else cartesianProductWorker(arrays, result, inner, index + 1);
-  }
 }
 export function padLeft(s: string, length: number) {
   while (s.length < length) {

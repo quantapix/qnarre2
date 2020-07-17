@@ -680,26 +680,26 @@ function getProgramBuildInfo(state: Readonly<ReusableBuilderProgramState>, getCa
   };
   if (state.referencedMap) {
     const referencedMap: MapLike<string[]> = {};
-    for (const key of arrayFrom(state.referencedMap.keys()).sort(compareStringsCaseSensitive)) {
-      referencedMap[relativeToBuildInfo(key)] = arrayFrom(state.referencedMap.get(key)!.keys(), relativeToBuildInfo).sort(compareStringsCaseSensitive);
+    for (const key of arrayFrom(state.referencedMap.keys()).sort(compareCaseSensitive)) {
+      referencedMap[relativeToBuildInfo(key)] = arrayFrom(state.referencedMap.get(key)!.keys(), relativeToBuildInfo).sort(compareCaseSensitive);
     }
     result.referencedMap = referencedMap;
   }
 
   if (state.exportedModulesMap) {
     const exportedModulesMap: MapLike<string[]> = {};
-    for (const key of arrayFrom(state.exportedModulesMap.keys()).sort(compareStringsCaseSensitive)) {
+    for (const key of arrayFrom(state.exportedModulesMap.keys()).sort(compareCaseSensitive)) {
       const newValue = state.currentAffectedFilesExportedModulesMap && state.currentAffectedFilesExportedModulesMap.get(key);
 
-      if (newValue === undefined) exportedModulesMap[relativeToBuildInfo(key)] = arrayFrom(state.exportedModulesMap.get(key)!.keys(), relativeToBuildInfo).sort(compareStringsCaseSensitive);
-      else if (newValue) exportedModulesMap[relativeToBuildInfo(key)] = arrayFrom(newValue.keys(), relativeToBuildInfo).sort(compareStringsCaseSensitive);
+      if (newValue === undefined) exportedModulesMap[relativeToBuildInfo(key)] = arrayFrom(state.exportedModulesMap.get(key)!.keys(), relativeToBuildInfo).sort(compareCaseSensitive);
+      else if (newValue) exportedModulesMap[relativeToBuildInfo(key)] = arrayFrom(newValue.keys(), relativeToBuildInfo).sort(compareCaseSensitive);
     }
     result.exportedModulesMap = exportedModulesMap;
   }
 
   if (state.semanticDiagnosticsPerFile) {
     const semanticDiagnosticsPerFile: ProgramBuildInfoDiagnostic[] = [];
-    for (const key of arrayFrom(state.semanticDiagnosticsPerFile.keys()).sort(compareStringsCaseSensitive)) {
+    for (const key of arrayFrom(state.semanticDiagnosticsPerFile.keys()).sort(compareCaseSensitive)) {
       const value = state.semanticDiagnosticsPerFile.get(key)!;
       semanticDiagnosticsPerFile.push(
         value.length

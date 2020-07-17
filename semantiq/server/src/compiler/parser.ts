@@ -4520,7 +4520,7 @@ export function qp_createSource(fileName: string, t: string, lang: ScriptTarget,
   performance.measure('Parse', 'beforeParse', 'afterParse');
   return r;
 }
-export function qp_updateSource(s: SourceFile, newText: string, r: TextChangeRange, aggressive = false): SourceFile {
+export function qp_updateSource(s: SourceFile, newText: string, r: qb.TextChange, aggressive = false): SourceFile {
   const s2 = IncrementalParser.updateSource(s, newText, r, aggressive);
   s2.flags |= s.flags & NodeFlags.PermanentlySetIncrementalFlags;
   return s2;
@@ -4532,7 +4532,7 @@ export function qp_parseJsonText(fileName: string, t: string): JsonSourceFile {
   return getParser().parseJsonText(fileName, t);
 }
 namespace IncrementalParser {
-  export function updateSource(source: SourceFile, newText: string, textChangeRange: TextChangeRange, aggressiveChecks: boolean): SourceFile {
+  export function updateSource(source: SourceFile, newText: string, textChangeRange: qb.TextChange, aggressiveChecks: boolean): SourceFile {
     aggressiveChecks = aggressiveChecks || Debug.shouldAssert(AssertionLevel.Aggressive);
     checkChangeRange(source, newText, textChangeRange, aggressiveChecks);
     if (textChangeRangeIsUnchanged(textChangeRange)) return source;
@@ -4723,7 +4723,7 @@ namespace IncrementalParser {
       qb.assert(pos <= n.end);
     }
   }
-  function extendToAffectedRange(source: SourceFile, changeRange: TextChangeRange): TextChangeRange {
+  function extendToAffectedRange(source: SourceFile, changeRange: qb.TextChange): qb.TextChange {
     const maxLookahead = 1;
     let start = changeRange.span.start;
     for (let i = 0; start > 0 && i <= maxLookahead; i++) {
@@ -4734,7 +4734,7 @@ namespace IncrementalParser {
     }
     const finalSpan = TextSpan.from(start, textSpanEnd(changeRange.span));
     const finalLength = changeRange.newLength + (changeRange.span.start - start);
-    return createTextChangeRange(finalSpan, finalLength);
+    return createqb.TextChange(finalSpan, finalLength);
   }
   function findNearestNodeStartingBeforeOrAtPosition(source: SourceFile, position: number): Node {
     let bestResult: Node = source;
@@ -4772,7 +4772,7 @@ namespace IncrementalParser {
       return;
     }
   }
-  function checkChangeRange(source: SourceFile, newText: string, textChangeRange: TextChangeRange, aggressiveChecks: boolean) {
+  function checkChangeRange(source: SourceFile, newText: string, textChangeRange: qb.TextChange, aggressiveChecks: boolean) {
     const oldText = source.text;
     if (textChangeRange) {
       qb.assert(oldText.length - textChangeRange.span.length + textChangeRange.newLength === newText.length);

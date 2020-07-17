@@ -517,7 +517,7 @@ export function createProgram(
   let commonSourceDirectory: string;
   let diagnosticsProducingTypeChecker: TypeChecker;
   let noDiagnosticsTypeChecker: TypeChecker;
-  let classifiableNames: UnderscoreEscapedMap<true>;
+  let classifiableNames: EscapedMap<true>;
   const ambientModuleNameToUnmodifiedFileName = createMap<string>();
   let refFileMap: MultiMap<ts.RefFile> | undefined;
   const cachedBindAndCheckDiagnosticsForFile: DiagnosticCache<Diagnostic> = {};
@@ -739,7 +739,7 @@ export function createProgram(
     return result;
   }
   function compareDefaultLibFiles(a: SourceFile, b: SourceFile) {
-    return compareValues(getDefaultLibFilePriority(a), getDefaultLibFilePriority(b));
+    return compareNumbers(getDefaultLibFilePriority(a), getDefaultLibFilePriority(b));
   }
   function getDefaultLibFilePriority(a: SourceFile) {
     if (containsPath(defaultLibraryPath, a.fileName, false)) {
@@ -777,7 +777,7 @@ export function createProgram(
   function getClassifiableNames() {
     if (!classifiableNames) {
       getTypeChecker();
-      classifiableNames = createUnderscoreEscapedMap<true>();
+      classifiableNames = createEscapedMap<true>();
       for (const sourceFile of files) {
         qu.copyEntries(sourceFile.classifiableNames!, classifiableNames);
       }

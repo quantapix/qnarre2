@@ -619,7 +619,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       function visit(s: Symbol | undefined): SymbolTable | undefined {
         if (!(s && s.exports && pushIfUnique(visitedSymbols, s))) return;
         const symbols = cloneMap(s.exports);
-        const exportStars = s.exports.get(InternalSymbolName.ExportStar);
+        const exportStars = s.exports.get(InternalSymbol.ExportStar);
         if (exportStars) {
           const nestedSymbols = new SymbolTable();
           const lookupTable = new qb.QMap<ExportCollisionTracker>() as ExportCollisionTrackerTable;
@@ -784,7 +784,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     serializeSymbolWorker(isPrivate: boolean, propertyAsAlias: boolean) {
       const symbolName = syntax.get.unescUnderscores(this.escName);
-      const isDefault = this.escName === InternalSymbolName.Default;
+      const isDefault = this.escName === InternalSymbol.Default;
       if (!(context.flags & NodeBuilderFlags.AllowAnonymousIdentifier) && syntax.is.stringANonContextualKeyword(symbolName) && !isDefault) {
         context.encounteredError = true;
         return;
@@ -798,14 +798,14 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const isConstMergedWithNS =
         this.flags & SymbolFlags.Module &&
         this.flags & (SymbolFlags.BlockScopedVariable | SymbolFlags.FunctionScopedVariable | SymbolFlags.Property) &&
-        this.escName !== InternalSymbolName.ExportEquals;
+        this.escName !== InternalSymbol.ExportEquals;
       const isConstMergedWithNSPrintableAsSignatureMerge = isConstMergedWithNS && isTypeRepresentableAsFunctionNamespaceMerge(this.getTypeOfSymbol(), this);
       if (this.flags & (SymbolFlags.Function | SymbolFlags.Method) || isConstMergedWithNSPrintableAsSignatureMerge)
-        serializeAsFunctionNamespaceMerge(this.getTypeOfSymbol(), this, getInternalSymbolName(symbolName), modifierFlags);
+        serializeAsFunctionNamespaceMerge(this.getTypeOfSymbol(), this, getInternalSymbol(symbolName), modifierFlags);
       if (this.flags & SymbolFlags.TypeAlias) this.serializeTypeAlias(symbolName, modifierFlags);
       if (
         this.flags & (SymbolFlags.BlockScopedVariable | SymbolFlags.FunctionScopedVariable | SymbolFlags.Property) &&
-        this.escName !== InternalSymbolName.ExportEquals &&
+        this.escName !== InternalSymbol.ExportEquals &&
         !(this.flags & SymbolFlags.Prototype) &&
         !(this.flags & SymbolFlags.Class) &&
         !isConstMergedWithNSPrintableAsSignatureMerge
@@ -815,16 +815,16 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (this.flags & SymbolFlags.Enum) this.serializeEnum(symbolName, modifierFlags);
       if (this.flags & SymbolFlags.Class) {
         if (this.flags & SymbolFlags.Property && qc.is.kind(BinaryExpression, this.valueDeclaration.parent) && qc.is.kind(ClassExpression, this.valueDeclaration.parent.right))
-          this.serializeAsAlias(this.getInternalSymbolName(symbolName), modifierFlags);
+          this.serializeAsAlias(this.getInternalSymbol(symbolName), modifierFlags);
         else {
-          this.serializeAsClass(this.getInternalSymbolName(symbolName), modifierFlags);
+          this.serializeAsClass(this.getInternalSymbol(symbolName), modifierFlags);
         }
       }
       if ((this.flags & (SymbolFlags.ValueModule | SymbolFlags.NamespaceModule) && (!isConstMergedWithNS || isTypeOnlyNamespace(symbol))) || isConstMergedWithNSPrintableAsSignatureMerge)
         this.serializeModule(symbolName, modifierFlags);
       if (this.flags & SymbolFlags.Interface) this.serializeInterface(symbolName, modifierFlags);
-      if (this.flags & SymbolFlags.Alias) this.serializeAsAlias(this.getInternalSymbolName(symbolName), modifierFlags);
-      if (this.flags & SymbolFlags.Property && this.escName === InternalSymbolName.ExportEquals) serializeMaybeAliasAssignment(symbol);
+      if (this.flags & SymbolFlags.Alias) this.serializeAsAlias(this.getInternalSymbol(symbolName), modifierFlags);
+      if (this.flags & SymbolFlags.Property && this.escName === InternalSymbol.ExportEquals) serializeMaybeAliasAssignment(symbol);
       if (this.flags & SymbolFlags.ExportStar) {
         for (const node of this.declarations) {
           const resolvedModule = resolveExternalModuleName(node, (node as ExportDeclaration).moduleSpecifier!);
@@ -832,7 +832,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           addResult(new qc.ExportDeclaration(undefined, undefined, undefined, qc.asLiteral(getSpecifierForModuleSymbol(resolvedModule, context))), ModifierFlags.None);
         }
       }
-      if (needsPostExportDefault) addResult(new qc.ExportAssignment(undefined, undefined, false, new Identifier(this.getInternalSymbolName(symbolName))), ModifierFlags.None);
+      if (needsPostExportDefault) addResult(new qc.ExportAssignment(undefined, undefined, false, new Identifier(this.getInternalSymbol(symbolName))), ModifierFlags.None);
     }
     includePrivateSymbol() {
       if (some(this.declarations, isParameterDeclaration)) return;
@@ -850,7 +850,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       context.flags |= NodeBuilderFlags.InTypeAlias;
       addResult(
         setSyntheticLeadingComments(
-          new qc.TypeAliasDeclaration(undefined, undefined, this.getInternalSymbolName(symbolName), typeParamDecls, typeToTypeNodeHelper(aliasType, context)),
+          new qc.TypeAliasDeclaration(undefined, undefined, this.getInternalSymbol(symbolName), typeParamDecls, typeToTypeNodeHelper(aliasType, context)),
           !commentText
             ? []
             : [
@@ -886,7 +886,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
             ),
           ];
       addResult(
-        new qc.InterfaceDeclaration(undefined, undefined, this.getInternalSymbolName(symbolName), typeParamDecls, heritageClauses, [
+        new qc.InterfaceDeclaration(undefined, undefined, this.getInternalSymbol(symbolName), typeParamDecls, heritageClauses, [
           ...indexSignatures,
           ...constructSignatures,
           ...callSignatures,
@@ -907,22 +907,22 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const realMembers = locationMap.get('real') || empty;
       const mergedMembers = locationMap.get('merged') || empty;
       if (length(realMembers)) {
-        const localName = this.getInternalSymbolName(symbolName);
+        const localName = this.getInternalSymbol(symbolName);
         serializeAsNamespaceDeclaration(realMembers, localName, modifierFlags, !!(this.flags & (SymbolFlags.Function | SymbolFlags.Assignment)));
       }
       if (length(mergedMembers)) {
         const containingFile = qc.get.sourceFileOf(context.enclosingDeclaration);
-        const localName = this.getInternalSymbolName(symbolName);
+        const localName = this.getInternalSymbol(symbolName);
         const nsBody = new qc.ModuleBlock([
           new qc.ExportDeclaration(
             undefined,
             undefined,
             new qc.NamedExports(
               mapDefined(
-                filter(mergedMembers, (n) => n.escName !== InternalSymbolName.ExportEquals),
+                filter(mergedMembers, (n) => n.escName !== InternalSymbol.ExportEquals),
                 (s) => {
                   const name = syntax.get.unescUnderscores(s.escName);
-                  const localName = getInternalSymbolName(s, name);
+                  const localName = getInternalSymbol(s, name);
                   const aliasDecl = s.declarations && s.getDeclarationOfAliasSymbol();
                   if (containingFile && (aliasDecl ? containingFile !== qc.get.sourceFileOf(aliasDecl) : !some(s.declarations, (d) => qc.get.sourceFileOf(d) === containingFile))) {
                     context.tracker?.reportNonlocalAugmentation?.(containingFile, symbol, s);
@@ -930,7 +930,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
                   }
                   const target = aliasDecl && getTargetOfAliasDeclaration(aliasDecl, true);
                   includePrivateSymbol(target || s);
-                  const targetName = target ? getInternalSymbolName(target, syntax.get.unescUnderscores(target.escName)) : localName;
+                  const targetName = target ? getInternalSymbol(target, syntax.get.unescUnderscores(target.escName)) : localName;
                   return new qc.ExportSpecifier(name === targetName ? undefined : targetName, name);
                 }
               )
@@ -945,7 +945,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         new qc.EnumDeclaration(
           undefined,
           createModifiersFromModifierFlags(this.isConstEnumSymbol() ? ModifierFlags.Const : 0),
-          this.getInternalSymbolName(symbolName),
+          this.getInternalSymbol(symbolName),
           map(
             filter(getPropertiesOfType(this.getTypeOfSymbol()), (p) => !!(p.flags & SymbolFlags.EnumMember)),
             (p) => {
@@ -961,7 +961,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (propertyAsAlias) serializeMaybeAliasAssignment(this);
       else {
         const type = getTypeOfSymbol(this);
-        const localName = getInternalSymbolName(this, symbolName);
+        const localName = getInternalSymbol(this, symbolName);
         if (!(this.flags & SymbolFlags.Function) && isTypeRepresentableAsFunctionNamespaceMerge(type, symbol)) serializeAsFunctionNamespaceMerge(type, symbol, localName, modifierFlags);
         else {
           const flags = !(this.flags & SymbolFlags.BlockScopedVariable) ? undefined : isConstVariable(symbol) ? NodeFlags.Const : NodeFlags.Let;
@@ -986,8 +986,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const target = getMergedSymbol(getTargetOfAliasDeclaration(node, true));
       if (!target) return;
       let verbatimTargetName = syntax.get.unescUnderscores(target.escName);
-      if (verbatimTargetName === InternalSymbolName.ExportEquals && (compilerOptions.esModuleInterop || compilerOptions.allowSyntheticDefaultImports)) verbatimTargetName = InternalSymbolName.Default;
-      const targetName = getInternalSymbolName(target, verbatimTargetName);
+      if (verbatimTargetName === InternalSymbol.ExportEquals && (compilerOptions.esModuleInterop || compilerOptions.allowSyntheticDefaultImports)) verbatimTargetName = InternalSymbol.Default;
+      const targetName = getInternalSymbol(target, verbatimTargetName);
       includePrivateSymbol(target);
       switch (node.kind) {
         case Syntax.ImportEqualsDeclaration:
@@ -1052,7 +1052,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           break;
         case Syntax.BinaryExpression:
         case Syntax.PropertyAccessExpression:
-          if (this.escName === InternalSymbolName.Default || this.escName === InternalSymbolName.ExportEquals) serializeMaybeAliasAssignment(symbol);
+          if (this.escName === InternalSymbol.Default || this.escName === InternalSymbol.ExportEquals) serializeMaybeAliasAssignment(symbol);
           else {
             serializeExportSpecifier(localName, targetName);
           }
@@ -1064,8 +1064,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     serializeMaybeAliasAssignment() {
       if (this.flags & SymbolFlags.Prototype) return;
       const name = syntax.get.unescUnderscores(this.escName);
-      const isExportEquals = name === InternalSymbolName.ExportEquals;
-      const isDefault = name === InternalSymbolName.Default;
+      const isExportEquals = name === InternalSymbol.ExportEquals;
+      const isDefault = name === InternalSymbol.Default;
       const isExportAssignment = isExportEquals || isDefault;
       const aliasDecl = this.declarations && this.getDeclarationOfAliasSymbol();
       const target = aliasDecl && getTargetOfAliasDeclaration(aliasDecl, true);
@@ -1082,7 +1082,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         else {
           if (first === expr) serializeExportSpecifier(name, idText(first));
           else if (qc.is.kind(ClassExpression, expr)) {
-            serializeExportSpecifier(name, getInternalSymbolName(target, target.name));
+            serializeExportSpecifier(name, getInternalSymbol(target, target.name));
           } else {
             const varName = getUnusedName(name, symbol);
             addResult(new qc.ImportEqualsDeclaration(undefined, undefined, new Identifier(varName), symbolToName(target, context, SymbolFlags.All, false)), ModifierFlags.None);
@@ -1295,7 +1295,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         const resolvedModule = resolveExternalModuleSymbol(symbol);
         if (resolvedModule !== symbol) {
           if (!pushTypeResolution(symbol, TypeSystemPropertyName.Type)) return errorType;
-          const exportEquals = getMergedSymbol(symbol.exports!.get(InternalSymbolName.ExportEquals)!);
+          const exportEquals = getMergedSymbol(symbol.exports!.get(InternalSymbol.ExportEquals)!);
           const type = getWidenedTypeForAssignmentDeclaration(exportEquals, exportEquals === resolvedModule ? undefined : resolvedModule);
           if (!popTypeResolution()) return reportCircularityError(symbol);
           return type;
@@ -1543,7 +1543,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       return this.flags & SymbolFlags.LateBindingContainer ? getResolvedMembersOrExportsOfSymbol(this, MembersOrExportsResolutionKind.resolvedMembers) : this.members || emptySymbols;
     }
     getLateBoundSymbol(): QSymbol {
-      if (this.flags & SymbolFlags.ClassMember && this.escName === InternalSymbolName.Computed) {
+      if (this.flags & SymbolFlags.ClassMember && this.escName === InternalSymbol.Computed) {
         const ls = this.getLinks();
         if (!ls.lateSymbol && some(this.declarations, hasLateBindableName)) {
           const parent = this.parent?.getMergedSymbol()!;
@@ -1555,7 +1555,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       return this;
     }
     getIndexSymbol() {
-      return this.members!.get(InternalSymbolName.Index);
+      return this.members!.get(InternalSymbol.Index);
     }
     getIndexDeclarationOfSymbol(k: IndexKind): IndexSignatureDeclaration | undefined {
       const syntaxKind = k === IndexKind.Number ? Syntax.NumberKeyword : Syntax.StringKeyword;
@@ -1964,7 +1964,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     getAliasForSymbolInContainer(container: Symbol) {
       if (container === this.getParentOfSymbol()) return this;
-      const exportEquals = container.exports && container.exports.get(InternalSymbolName.ExportEquals);
+      const exportEquals = container.exports && container.exports.get(InternalSymbol.ExportEquals);
       if (exportEquals && getSymbolIfSameReference(exportEquals, this)) return container;
       const exports = container.getExportsOfSymbol();
       const quick = exports.get(this.escName);
@@ -2028,7 +2028,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     getNameOfSymbolAsWritten(c?: QContext): string {
       if (
         c &&
-        this.escName === InternalSymbolName.Default &&
+        this.escName === InternalSymbol.Default &&
         !(c.flags & NodeBuilderFlags.UseAliasDefinedOutsideCurrentScope) &&
         (!(c.flags & NodeBuilderFlags.InInitialEntityName) ||
           !this.declarations ||
@@ -2411,9 +2411,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   const indexedAccessTypes = new qb.QMap<IndexedAccessType>();
   const substitutionTypes = new qb.QMap<SubstitutionType>();
   const evolvingArrayTypes: EvolvingArrayType[] = [];
-  const undefinedProperties = new qb.QMap<Symbol>() as UnderscoreEscapedMap<Symbol>;
+  const undefinedProperties = new qb.QMap<Symbol>() as EscapedMap<Symbol>;
   const unknownSymbol = new QSymbol(SymbolFlags.Property, 'unknown' as __String);
-  const resolvingSymbol = new QSymbol(0, InternalSymbolName.Resolving);
+  const resolvingSymbol = new QSymbol(0, InternalSymbol.Resolving);
   const anyType = createIntrinsicType(TypeFlags.Any, 'any');
   const autoType = createIntrinsicType(TypeFlags.Any, 'any');
   const wildcardType = createIntrinsicType(TypeFlags.Any, 'any');
@@ -2460,7 +2460,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   const emptyObjectType = createAnonymousType(undefined, emptySymbols, empty, empty, undefined, undefined);
   const emptyJsxObjectType = createAnonymousType(undefined, emptySymbols, empty, empty, undefined, undefined);
   emptyJsxObjectType.objectFlags |= ObjectFlags.JsxAttributes;
-  const emptyTypeLiteralSymbol = new QSymbol(SymbolFlags.TypeLiteral, InternalSymbolName.Type);
+  const emptyTypeLiteralSymbol = new QSymbol(SymbolFlags.TypeLiteral, InternalSymbol.Type);
   emptyTypeLiteralSymbol.members = new SymbolTable();
   const emptyTypeLiteralType = createAnonymousType(emptyTypeLiteralSymbol, emptySymbols, empty, empty, undefined, undefined);
   const emptyGenericType = <GenericType>(<ObjectType>createAnonymousType(undefined, emptySymbols, empty, empty, undefined, undefined));
@@ -2748,7 +2748,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           if (!patternAmbientModuleAugmentations) patternAmbientModuleAugmentations = new qb.QMap();
           patternAmbientModuleAugmentations.set((moduleName as StringLiteral).text, merged);
         } else {
-          if (mainModule.exports?.get(InternalSymbolName.ExportStar) && moduleAugmentation.symbol.exports?.size) {
+          if (mainModule.exports?.get(InternalSymbol.ExportStar) && moduleAugmentation.symbol.exports?.size) {
             const resolvedExports = getResolvedMembersOrExportsOfSymbol(mainModule, MembersOrExportsResolutionKind.resolvedExports);
             for (const [key, value] of arrayFrom(moduleAugmentation.symbol.exports.entries())) {
               if (resolvedExports.has(key) && !mainModule.exports.has(key)) value.merge(resolvedExports.get(key)!);
@@ -2987,7 +2987,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         case Syntax.ModuleDeclaration:
           const moduleExports = getSymbolOfNode(location as SourceFile | ModuleDeclaration).exports || emptySymbols;
           if (location.kind === Syntax.SourceFile || (qc.is.kind(ModuleDeclaration, location) && location.flags & NodeFlags.Ambient && !isGlobalScopeAugmentation(location))) {
-            if ((result = moduleExports.get(InternalSymbolName.Default))) {
+            if ((result = moduleExports.get(InternalSymbol.Default))) {
               const localSymbol = getLocalSymbolForExportDefault(result);
               if (localSymbol && result.flags & meaning && localSymbol.escName === name) break loop;
               result = undefined;
@@ -3001,7 +3001,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
               break;
             }
           }
-          if (name !== InternalSymbolName.Default && (result = lookup(moduleExports, name, meaning & SymbolFlags.ModuleMember))) {
+          if (name !== InternalSymbol.Default && (result = lookup(moduleExports, name, meaning & SymbolFlags.ModuleMember))) {
             if (qc.is.kind(SourceFile, location) && location.commonJsModuleIndicator && !result.declarations.some(isDocTypeAlias)) result = undefined;
             else {
               break loop;
@@ -3437,7 +3437,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
   }
   function resolveExportByName(moduleSymbol: Symbol, name: __String, sourceNode: TypeOnlyCompatibleAliasDeclaration | undefined, dontResolveAlias: boolean) {
-    const exportValue = moduleSymbol.exports!.get(InternalSymbolName.ExportEquals);
+    const exportValue = moduleSymbol.exports!.get(InternalSymbol.ExportEquals);
     if (exportValue) return getPropertyOfType(getTypeOfSymbol(exportValue), name);
     const exportSymbol = moduleSymbol.exports!.get(name);
     const resolved = exportSymbol.resolveSymbol(dontResolveAlias);
@@ -3450,7 +3450,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function canHaveSyntheticDefault(file: SourceFile | undefined, moduleSymbol: Symbol, dontResolveAlias: boolean) {
     if (!allowSyntheticDefaultImports) return false;
     if (!file || file.isDeclarationFile) {
-      const defaultExportSymbol = resolveExportByName(moduleSymbol, InternalSymbolName.Default, undefined, true);
+      const defaultExportSymbol = resolveExportByName(moduleSymbol, InternalSymbol.Default, undefined, true);
       if (defaultExportSymbol && some(defaultExportSymbol.declarations, isSyntacticDefault)) return false;
       if (resolveExportByName(moduleSymbol, syntax.get.escUnderscores('__esModule'), undefined, dontResolveAlias)) return false;
       return true;
@@ -3464,14 +3464,14 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       let exportDefaultSymbol: Symbol | undefined;
       if (isShorthandAmbientModuleSymbol(moduleSymbol)) exportDefaultSymbol = moduleSymbol;
       else {
-        exportDefaultSymbol = resolveExportByName(moduleSymbol, InternalSymbolName.Default, node, dontResolveAlias);
+        exportDefaultSymbol = resolveExportByName(moduleSymbol, InternalSymbol.Default, node, dontResolveAlias);
       }
       const file = find(moduleSymbol.declarations, isSourceFile);
       const hasSyntheticDefault = canHaveSyntheticDefault(file, moduleSymbol, dontResolveAlias);
       if (!exportDefaultSymbol && !hasSyntheticDefault) {
         if (hasExportAssignmentSymbol(moduleSymbol)) {
           const compilerOptionName = moduleKind >= ModuleKind.ES2015 ? 'allowSyntheticDefaultImports' : 'esModuleInterop';
-          const exportEqualsSymbol = moduleSymbol.exports!.get(InternalSymbolName.ExportEquals);
+          const exportEqualsSymbol = moduleSymbol.exports!.get(InternalSymbol.ExportEquals);
           const exportAssignment = exportEqualsSymbol!.valueDeclaration;
           const err = error(node.name, qd.Module_0_can_only_be_default_imported_using_the_1_flag, moduleSymbol.symbolToString(), compilerOptionName);
           addRelatedInfo(
@@ -3495,11 +3495,11 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       error(node.name, qd.Module_0_has_no_default_export_Did_you_mean_to_use_import_1_from_0_instead, moduleSymbol.symbolToString(), node.symbol.symbolToString());
     else {
       const diagnostic = error(node.name, qd.Module_0_has_no_default_export, moduleSymbol.symbolToString());
-      const exportStar = moduleSymbol.exports?.get(InternalSymbolName.ExportStar);
+      const exportStar = moduleSymbol.exports?.get(InternalSymbol.ExportStar);
       if (exportStar) {
         const defaultExport = find(
           exportStar.declarations,
-          (decl) => !!(qc.is.kind(ExportDeclaration, decl) && decl.moduleSpecifier && resolveExternalModuleName(decl, decl.moduleSpecifier)?.exports?.has(InternalSymbolName.Default))
+          (decl) => !!(qc.is.kind(ExportDeclaration, decl) && decl.moduleSpecifier && resolveExternalModuleName(decl, decl.moduleSpecifier)?.exports?.has(InternalSymbol.Default))
         );
         if (defaultExport) addRelatedInfo(diagnostic, createDiagnosticForNode(defaultExport, qd.export_Asterisk_does_not_re_export_a_default));
       }
@@ -3533,19 +3533,19 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function getExternalModuleMember(node: ImportDeclaration | ExportDeclaration, specifier: ImportOrExportSpecifier, dontResolveAlias = false): Symbol | undefined {
     const moduleSymbol = resolveExternalModuleName(node, node.moduleSpecifier!)!;
     const name = specifier.propertyName || specifier.name;
-    const suppressInteropError = name.escapedText === InternalSymbolName.Default && !!(compilerOptions.allowSyntheticDefaultImports || compilerOptions.esModuleInterop);
+    const suppressInteropError = name.escapedText === InternalSymbol.Default && !!(compilerOptions.allowSyntheticDefaultImports || compilerOptions.esModuleInterop);
     const targetSymbol = resolveESModuleSymbol(moduleSymbol, node.moduleSpecifier!, dontResolveAlias, suppressInteropError);
     if (targetSymbol) {
       if (name.escapedText) {
         if (isShorthandAmbientModuleSymbol(moduleSymbol)) return moduleSymbol;
         let symbolFromVariable: Symbol | undefined;
-        if (moduleSymbol && moduleSymbol.exports && moduleSymbol.exports.get(InternalSymbolName.ExportEquals)) symbolFromVariable = getPropertyOfType(getTypeOfSymbol(targetSymbol), name.escapedText);
+        if (moduleSymbol && moduleSymbol.exports && moduleSymbol.exports.get(InternalSymbol.ExportEquals)) symbolFromVariable = getPropertyOfType(getTypeOfSymbol(targetSymbol), name.escapedText);
         else {
           symbolFromVariable = getPropertyOfVariable(targetSymbol, name.escapedText);
         }
         symbolFromVariable = symbolFromVariable.resolveSymbol(dontResolveAlias);
         let symbolFromModule = getExportOfModule(targetSymbol, specifier, dontResolveAlias);
-        if (symbolFromModule === undefined && name.escapedText === InternalSymbolName.Default) {
+        if (symbolFromModule === undefined && name.escapedText === InternalSymbol.Default) {
           const file = find(moduleSymbol.declarations, isSourceFile);
           if (canHaveSyntheticDefault(file, moduleSymbol, dontResolveAlias))
             symbolFromModule = resolveExternalModuleSymbol(moduleSymbol, dontResolveAlias) || moduleSymbol.resolveSymbol(dontResolveAlias);
@@ -3561,7 +3561,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
             const diagnostic = error(name, qd.Module_0_has_no_exported_member_1_Did_you_mean_2, moduleName, declarationName, suggestionName);
             if (suggestion.valueDeclaration) addRelatedInfo(diagnostic, createDiagnosticForNode(suggestion.valueDeclaration, qd._0_is_declared_here, suggestionName));
           } else {
-            if (moduleSymbol.exports?.has(InternalSymbolName.Default)) error(name, qd.Module_0_has_no_exported_member_1_Did_you_mean_to_use_import_1_from_0_instead, moduleName, declarationName);
+            if (moduleSymbol.exports?.has(InternalSymbol.Default)) error(name, qd.Module_0_has_no_exported_member_1_Did_you_mean_to_use_import_1_from_0_instead, moduleName, declarationName);
             else {
               reportNonExportedMember(node, name, declarationName, moduleSymbol, moduleName);
             }
@@ -3575,7 +3575,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const localSymbol = moduleSymbol.valueDeclaration.locals?.get(name.escapedText);
     const exports = moduleSymbol.exports;
     if (localSymbol) {
-      const exportedEqualsSymbol = exports?.get(InternalSymbolName.ExportEquals);
+      const exportedEqualsSymbol = exports?.get(InternalSymbol.ExportEquals);
       if (exportedEqualsSymbol) {
         getSymbolIfSameReference(exportedEqualsSymbol, localSymbol)
           ? reportInvalidImportEqualsExportMember(node, name, declarationName, moduleName)
@@ -3692,7 +3692,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function markSymbolOfAliasDeclarationIfTypeOnlyWorker(aliasDeclarationLinks: SymbolLinks, target: Symbol | undefined, overwriteEmpty: boolean): boolean {
     if (target && (aliasDeclarationLinks.typeOnlyDeclaration === undefined || (overwriteEmpty && aliasDeclarationLinks.typeOnlyDeclaration === false))) {
-      const exportSymbol = target.exports?.get(InternalSymbolName.ExportEquals) ?? target;
+      const exportSymbol = target.exports?.get(InternalSymbol.ExportEquals) ?? target;
       const typeOnly = exportSymbol.declarations && find(exportSymbol.declarations, isTypeOnlyImportOrExportDeclaration);
       aliasDeclarationLinks.typeOnlyDeclaration = typeOnly ?? s.getLinks(exportSymbol).typeOnlyDeclaration ?? false;
     }
@@ -3885,7 +3885,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function resolveExternalModuleSymbol(moduleSymbol: Symbol | undefined, dontResolveAlias?: boolean): Symbol | undefined;
   function resolveExternalModuleSymbol(moduleSymbol: Symbol, dontResolveAlias?: boolean): Symbol {
     if (moduleSymbol?.exports) {
-      const exportEquals = moduleSymbol.exports.get(InternalSymbolName.ExportEquals)?.resolveSymbol(dontResolveAlias);
+      const exportEquals = moduleSymbol.exports.get(InternalSymbol.ExportEquals)?.resolveSymbol(dontResolveAlias);
       const exported = getCommonJsExportEquals(getMergedSymbol(exportEquals), getMergedSymbol(moduleSymbol));
       return getMergedSymbol(exported) || moduleSymbol;
     }
@@ -3899,7 +3899,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     merged.flags = merged.flags | SymbolFlags.ValueModule;
     if (merged.exports === undefined) merged.exports = new SymbolTable();
     moduleSymbol.exports!.forEach((s, name) => {
-      if (name === InternalSymbolName.ExportEquals) return;
+      if (name === InternalSymbol.ExportEquals) return;
       merged.exports!.set(name, merged.exports!.has(name) ? s.merge(merged.exports!.get(name)!) : s);
     });
     merged.getLinks().cjsExportMerged = merged;
@@ -3940,7 +3940,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return symbol;
   }
   function hasExportAssignmentSymbol(moduleSymbol: Symbol): boolean {
-    return moduleSymbol.exports!.get(InternalSymbolName.ExportEquals) !== undefined;
+    return moduleSymbol.exports!.get(InternalSymbol.ExportEquals) !== undefined;
   }
   function getExportsOfModuleAsArray(moduleSymbol: Symbol): Symbol[] {
     return symbolsToArray(getExportsOfModule(moduleSymbol));
@@ -3967,11 +3967,11 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     specifierText: string;
     exportsWithDuplicate: ExportDeclaration[];
   }
-  type ExportCollisionTrackerTable = UnderscoreEscapedMap<ExportCollisionTracker>;
+  type ExportCollisionTrackerTable = EscapedMap<ExportCollisionTracker>;
   function extendExportSymbols(target: SymbolTable, source: SymbolTable | undefined, lookupTable?: ExportCollisionTrackerTable, exportNode?: ExportDeclaration) {
     if (!source) return;
     source.forEach((sourceSymbol, id) => {
-      if (id === InternalSymbolName.Default) return;
+      if (id === InternalSymbol.Default) return;
       const targetSymbol = target.get(id);
       if (!targetSymbol) {
         target.set(id, sourceSymbol);
@@ -3996,7 +3996,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function getFileSymbolIfFileSymbolExportEqualsContainer(d: Declaration, container: Symbol) {
     const fileSymbol = getExternalModuleContainer(d);
-    const exported = fileSymbol && fileSymbol.exports && fileSymbol.exports.get(InternalSymbolName.ExportEquals);
+    const exported = fileSymbol && fileSymbol.exports && fileSymbol.exports.get(InternalSymbol.ExportEquals);
     return exported && getSymbolIfSameReference(exported, container) ? fileSymbol : undefined;
   }
   function getSymbolIfSameReference(s1: Symbol, s2: Symbol) {
@@ -4087,7 +4087,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         case Syntax.ClassDeclaration:
         case Syntax.ClassExpression:
         case Syntax.InterfaceDeclaration:
-          let table: UnderscoreEscapedMap<Symbol> | undefined;
+          let table: EscapedMap<Symbol> | undefined;
           (getSymbolOfNode(location as ClassLikeDeclaration | InterfaceDeclaration).members || emptySymbols).forEach((memberSymbol, key) => {
             if (memberSymbol.flags & (SymbolFlags.Type & ~SymbolFlags.Assignment)) (table || (table = new SymbolTable())).set(key, memberSymbol);
           });
@@ -4136,8 +4136,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const result = forEachEntry(symbols, (symbolFromSymbolTable) => {
         if (
           symbolFromSymbolTable.flags & SymbolFlags.Alias &&
-          symbolFromSymbolTable.escName !== InternalSymbolName.ExportEquals &&
-          symbolFromSymbolTable.escName !== InternalSymbolName.Default &&
+          symbolFromSymbolTable.escName !== InternalSymbol.ExportEquals &&
+          symbolFromSymbolTable.escName !== InternalSymbol.Default &&
           !(isUMDExportSymbol(symbolFromSymbolTable) && enclosingDeclaration && qp_isExternalModule(qc.get.sourceFileOf(enclosingDeclaration))) &&
           (!useOnlyExternalAliasing || some(symbolFromSymbolTable.declarations, qp_isExternalModuleImportEqualsDeclaration)) &&
           (ignoreQualification || !getDeclarationOfKind(symbolFromSymbolTable, Syntax.ExportSpecifier))
@@ -4752,7 +4752,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         const typeTag = qc.getDoc.type(func);
         if (typeTag && qc.is.kind(FunctionTypeNode, typeTag)) return getTypeAtPosition(getSignatureFromDeclaration(typeTag), func.parameters.indexOf(declaration));
       }
-      const type = declaration.symbol.escName === InternalSymbolName.This ? getContextualThisParameterType(func) : getContextuallyTypedParameterType(declaration);
+      const type = declaration.symbol.escName === InternalSymbol.This ? getContextualThisParameterType(func) : getContextuallyTypedParameterType(declaration);
       if (type) return addOptionality(type, isOptional);
     } else if (isInJSFile(declaration)) {
       const containerObjectType = getJSContainerObjectType(declaration, getSymbolOfNode(declaration), getDeclaredExpandoInitializer(declaration));
@@ -4898,7 +4898,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     if (containsSameNamedThisProperty(expression.left, expression.right)) return anyType;
     const type = resolvedSymbol ? getTypeOfSymbol(resolvedSymbol) : getWidenedLiteralType(checkExpressionCached(expression.right));
-    if (type.flags & TypeFlags.Object && kind === AssignmentDeclarationKind.ModuleExports && symbol.escName === InternalSymbolName.ExportEquals) {
+    if (type.flags & TypeFlags.Object && kind === AssignmentDeclarationKind.ModuleExports && symbol.escName === InternalSymbol.ExportEquals) {
       const exportedType = resolveStructuredTypeMembers(type as ObjectType);
       const members = new SymbolTable();
       copyEntries(exportedType.members, members);
@@ -5404,8 +5404,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       (<InterfaceTypeWithDeclaredMembers>type).declaredProperties = getNamedMembers(members);
       (<InterfaceTypeWithDeclaredMembers>type).declaredCallSignatures = empty;
       (<InterfaceTypeWithDeclaredMembers>type).declaredConstructSignatures = empty;
-      (<InterfaceTypeWithDeclaredMembers>type).declaredCallSignatures = getSignaturesOfSymbol(members.get(InternalSymbolName.Call));
-      (<InterfaceTypeWithDeclaredMembers>type).declaredConstructSignatures = getSignaturesOfSymbol(members.get(InternalSymbolName.New));
+      (<InterfaceTypeWithDeclaredMembers>type).declaredCallSignatures = getSignaturesOfSymbol(members.get(InternalSymbol.Call));
+      (<InterfaceTypeWithDeclaredMembers>type).declaredConstructSignatures = getSignaturesOfSymbol(members.get(InternalSymbol.New));
       (<InterfaceTypeWithDeclaredMembers>type).declaredStringIndexInfo = getIndexInfoOfSymbol(symbol, IndexKind.String);
       (<InterfaceTypeWithDeclaredMembers>type).declaredNumberIndexInfo = getIndexInfoOfSymbol(symbol, IndexKind.Number);
     }
@@ -5452,7 +5452,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function lateBindMember(
     parent: Symbol,
     earlySymbols: SymbolTable | undefined,
-    lateSymbols: UnderscoreEscapedMap<TransientSymbol>,
+    lateSymbols: EscapedMap<TransientSymbol>,
     decl: LateBoundDeclaration | LateBoundBinaryExpressionDeclaration
   ) {
     assert(!!decl.symbol, 'The member is expected to have a symbol.');
@@ -5485,7 +5485,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return ls.resolvedSymbol;
   }
-  function getResolvedMembersOrExportsOfSymbol(symbol: QSymbol, resolutionKind: MembersOrExportsResolutionKind): UnderscoreEscapedMap<Symbol> {
+  function getResolvedMembersOrExportsOfSymbol(symbol: QSymbol, resolutionKind: MembersOrExportsResolutionKind): EscapedMap<Symbol> {
     const ls = symbol.getLinks();
     if (!ls[resolutionKind]) {
       const isStatic = resolutionKind === MembersOrExportsResolutionKind.resolvedExports;
@@ -5885,8 +5885,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     } else if (symbol.flags & SymbolFlags.TypeLiteral) {
       setStructuredTypeMembers(type, emptySymbols, empty, empty, undefined, undefined);
       const members = getMembersOfSymbol(symbol);
-      const callSignatures = getSignaturesOfSymbol(members.get(InternalSymbolName.Call));
-      const constructSignatures = getSignaturesOfSymbol(members.get(InternalSymbolName.New));
+      const callSignatures = getSignaturesOfSymbol(members.get(InternalSymbol.Call));
+      const constructSignatures = getSignaturesOfSymbol(members.get(InternalSymbol.New));
       const stringIndexInfo = getIndexInfoOfSymbol(symbol, IndexKind.String);
       const numberIndexInfo = getIndexInfoOfSymbol(symbol, IndexKind.Number);
       setStructuredTypeMembers(type, members, callSignatures, constructSignatures, stringIndexInfo, numberIndexInfo);
@@ -5922,7 +5922,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (symbol.flags & (SymbolFlags.Function | SymbolFlags.Method)) type.callSignatures = getSignaturesOfSymbol(symbol);
       if (symbol.flags & SymbolFlags.Class) {
         const classType = this.getDeclaredTypeOfClassOrInterface();
-        let constructSignatures = symbol.members ? getSignaturesOfSymbol(symbol.members.get(InternalSymbolName.Constructor)) : empty;
+        let constructSignatures = symbol.members ? getSignaturesOfSymbol(symbol.members.get(InternalSymbol.Constructor)) : empty;
         if (symbol.flags & SymbolFlags.Function) {
           constructSignatures = addRange(
             constructSignatures.slice(),
@@ -6714,7 +6714,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           const resolvedSymbol = resolveName(param, paramSymbol.escName, SymbolFlags.Value, undefined, undefined, false);
           paramSymbol = resolvedSymbol!;
         }
-        if (i === 0 && paramSymbol.escName === InternalSymbolName.This) {
+        if (i === 0 && paramSymbol.escName === InternalSymbol.This) {
           hasThisParameter = true;
           thisParameter = param.symbol;
         } else {
@@ -7679,10 +7679,10 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return type.id;
   }
   function containsType(types: readonly Type[], type: Type): boolean {
-    return binarySearch(types, type, getTypeId, compareValues) >= 0;
+    return binarySearch(types, type, getTypeId, compareNumbers) >= 0;
   }
   function insertType(types: Type[], type: Type): boolean {
-    const index = binarySearch(types, type, getTypeId, compareValues);
+    const index = binarySearch(types, type, getTypeId, compareNumbers);
     if (index < 0) {
       types.splice(~index, 0, type);
       return true;
@@ -7700,7 +7700,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         if (!(getObjectFlags(type) & ObjectFlags.ContainsWideningType)) includes |= TypeFlags.IncludesNonWideningType;
         else {
           const len = typeSet.length;
-          const index = len && type.id > typeSet[len - 1].id ? ~len : binarySearch(typeSet, type, getTypeId, compareValues);
+          const index = len && type.id > typeSet[len - 1].id ? ~len : binarySearch(typeSet, type, getTypeId, compareNumbers);
           if (index < 0) typeSet.splice(~index, 0, type);
         }
     }
@@ -8036,7 +8036,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (!(getDeclarationModifierFlagsFromSymbol(prop) & ModifierFlags.NonPublicAccessibilityModifier)) {
       let type = s.getLinks(getLateBoundSymbol(prop)).nameType;
       if (!type && !isKnownSymbol(prop)) {
-        if (prop.escName === InternalSymbolName.Default) type = getLiteralType('default');
+        if (prop.escName === InternalSymbol.Default) type = getLiteralType('default');
         else {
           const name = prop.valueDeclaration && (getNameOfDeclaration(prop.valueDeclaration) as PropertyName);
           type = (name && getLiteralTypeFromPropertyName(name)) || getLiteralType(prop.name);
@@ -8692,7 +8692,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       return getIntersectionType([left, right]);
     }
     const members = new SymbolTable();
-    const skippedPrivateMembers = createUnderscoreEscapedMap<boolean>();
+    const skippedPrivateMembers = createEscapedMap<boolean>();
     let stringIndexInfo: IndexInfo | undefined;
     let numberIndexInfo: IndexInfo | undefined;
     if (left === emptyObjectType) {
@@ -10977,7 +10977,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         if (numCombinations > 25) return Ternary.False;
       }
       const sourceDiscriminantTypes: Type[][] = new Array<Type[]>(sourcePropertiesFiltered.length);
-      const excludedProperties = createUnderscoreEscapedMap<true>();
+      const excludedProperties = createEscapedMap<true>();
       for (let i = 0; i < sourcePropertiesFiltered.length; i++) {
         const sourceProperty = sourcePropertiesFiltered[i];
         const sourcePropertyType = getTypeOfSymbol(sourceProperty);
@@ -11028,7 +11028,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
       return result;
     }
-    function excludeProperties(properties: Symbol[], excludedProperties: UnderscoreEscapedMap<true> | undefined) {
+    function excludeProperties(properties: Symbol[], excludedProperties: EscapedMap<true> | undefined) {
       if (!excludedProperties || properties.length === 0) return properties;
       let result: Symbol[] | undefined;
       for (let i = 0; i < properties.length; i++) {
@@ -11171,7 +11171,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         if (shouldSkipElaboration && errorInfo) overrideNextErrorInfo++;
       }
     }
-    function propertiesRelatedTo(source: Type, target: Type, reportErrors: boolean, excludedProperties: UnderscoreEscapedMap<true> | undefined, intersectionState: IntersectionState): Ternary {
+    function propertiesRelatedTo(source: Type, target: Type, reportErrors: boolean, excludedProperties: EscapedMap<true> | undefined, intersectionState: IntersectionState): Ternary {
       if (relation === identityRelation) return propertiesIdenticalTo(source, target, excludedProperties);
       const requireOptionalProperties =
         (relation === subtypeRelation || relation === strictSubtypeRelation) && !isObjectLiteralType(source) && !isEmptyArrayLiteralType(source) && !isTupleType(source);
@@ -11229,7 +11229,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
       return result;
     }
-    function propertiesIdenticalTo(source: Type, target: Type, excludedProperties: UnderscoreEscapedMap<true> | undefined): Ternary {
+    function propertiesIdenticalTo(source: Type, target: Type, excludedProperties: EscapedMap<true> | undefined): Ternary {
       if (!(source.flags & TypeFlags.Object && target.flags & TypeFlags.Object)) return Ternary.False;
       const sourceProperties = excludeProperties(getPropertiesOfObjectType(source), excludedProperties);
       const targetProperties = excludeProperties(getPropertiesOfObjectType(target), excludedProperties);
@@ -11982,7 +11982,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function getPropertiesOfContext(context: WideningContext): Symbol[] {
     if (!context.resolvedProperties) {
-      const names = new qb.QMap<Symbol>() as UnderscoreEscapedMap<Symbol>;
+      const names = new qb.QMap<Symbol>() as EscapedMap<Symbol>;
       for (const t of getSiblingsOfContext(context)) {
         if (isObjectLiteralType(t) && !(getObjectFlags(t) & ObjectFlags.ContainsSpread)) {
           for (const prop of getPropertiesOfType(t)) {
@@ -14576,7 +14576,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const jsdocType = qc.getDoc.type(node);
     if (jsdocType && jsdocType.kind === Syntax.DocFunctionType) {
       const docFunctionType = <DocFunctionType>jsdocType;
-      if (docFunctionType.parameters.length > 0 && docFunctionType.parameters[0].name && (docFunctionType.parameters[0].name as Identifier).escapedText === InternalSymbolName.This)
+      if (docFunctionType.parameters.length > 0 && docFunctionType.parameters[0].name && (docFunctionType.parameters[0].name as Identifier).escapedText === InternalSymbol.This)
         return getTypeFromTypeNode(docFunctionType.parameters[0].type!);
     }
     const thisTag = qc.getDoc.thisTag(node);
@@ -17761,11 +17761,11 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         const hasSyntheticDefault = canHaveSyntheticDefault(file, originalSymbol, false);
         if (hasSyntheticDefault) {
           const memberTable = new SymbolTable();
-          const newSymbol = new QSymbol(SymbolFlags.Alias, InternalSymbolName.Default);
+          const newSymbol = new QSymbol(SymbolFlags.Alias, InternalSymbol.Default);
           newSymbol.nameType = getLiteralType('default');
           newSymbol.target = symbol.resolveSymbol();
-          memberTable.set(InternalSymbolName.Default, newSymbol);
-          const anonymousSymbol = new QSymbol(SymbolFlags.TypeLiteral, InternalSymbolName.Type);
+          memberTable.set(InternalSymbol.Default, newSymbol);
+          const anonymousSymbol = new QSymbol(SymbolFlags.TypeLiteral, InternalSymbol.Type);
           const defaultContainingObject = createAnonymousType(anonymousSymbol, memberTable, empty, empty, undefined);
           anonymousSymbol.type = defaultContainingObject;
           synthType.syntheticType = isValidSpreadType(type) ? getSpreadType(type, defaultContainingObject, anonymousSymbol, false) : defaultContainingObject;
@@ -19763,9 +19763,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
   }
   function checkClassForDuplicateDeclarations(node: ClassLikeDeclaration) {
-    const instanceNames = createUnderscoreEscapedMap<DeclarationMeaning>();
-    const staticNames = createUnderscoreEscapedMap<DeclarationMeaning>();
-    const privateIdentifiers = createUnderscoreEscapedMap<DeclarationMeaning>();
+    const instanceNames = createEscapedMap<DeclarationMeaning>();
+    const staticNames = createEscapedMap<DeclarationMeaning>();
+    const privateIdentifiers = createEscapedMap<DeclarationMeaning>();
     for (const member of node.members) {
       if (member.kind === Syntax.Constructor) {
         for (const param of (member as ConstructorDeclaration).parameters) {
@@ -19796,7 +19796,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         }
       }
     }
-    function addName(names: UnderscoreEscapedMap<DeclarationMeaning>, location: Node, name: __String, meaning: DeclarationMeaning) {
+    function addName(names: EscapedMap<DeclarationMeaning>, location: Node, name: __String, meaning: DeclarationMeaning) {
       const prev = names.get(name);
       if (prev) {
         if (prev & DeclarationMeaning.Method) {
@@ -21977,7 +21977,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function getNonInterhitedProperties(type: InterfaceType, baseTypes: BaseType[], properties: Symbol[]) {
     if (!length(baseTypes)) return properties;
-    const seen = createUnderscoreEscapedMap<Symbol>();
+    const seen = createEscapedMap<Symbol>();
     forEach(properties, (p) => {
       seen.set(p.escName, p);
     });
@@ -21997,7 +21997,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       prop: Symbol;
       containingType: Type;
     }
-    const seen = createUnderscoreEscapedMap<InheritanceInfoMap>();
+    const seen = createEscapedMap<InheritanceInfoMap>();
     forEach(resolveDeclaredMembers(type).declaredProperties, (p) => {
       seen.set(p.escName, { prop: p, containingType: type });
     });
@@ -22982,7 +22982,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const symbols = new SymbolTable();
     let isStatic = false;
     populateSymbols();
-    symbols.delete(InternalSymbolName.This);
+    symbols.delete(InternalSymbol.This);
     return symbolsToArray(symbols);
     function populateSymbols() {
       while (location) {
@@ -24302,7 +24302,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return !!exclamationToken && grammarErrorOnNode(exclamationToken, message);
   }
   function checkGrammarObjectLiteralExpression(node: ObjectLiteralExpression, inDestructuring: boolean) {
-    const seen = createUnderscoreEscapedMap<DeclarationMeaning>();
+    const seen = createEscapedMap<DeclarationMeaning>();
     for (const prop of node.properties) {
       if (prop.kind === Syntax.SpreadAssignment) {
         if (inDestructuring) {
@@ -24361,7 +24361,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function checkGrammarJsxElement(node: JsxOpeningLikeElement) {
     checkGrammarTypeArguments(node, node.typeArguments);
-    const seen = createUnderscoreEscapedMap<boolean>();
+    const seen = createEscapedMap<boolean>();
     for (const attr of node.attributes.properties) {
       if (attr.kind === Syntax.JsxSpreadAttribute) continue;
       const { name, initializer } = attr;

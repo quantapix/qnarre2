@@ -31,14 +31,14 @@ export function createPropertyDescriptor(attributes: PropertyDescriptorAttribute
 }
 export const resolvingEmptyArray: never[] = [] as never[];
 export const emptyMap = new QMap<never>() as QReadonlyMap<never> & ReadonlyPragmaMap;
-export const emptyUnderscoreEscapedMap: ReadonlyUnderscoreEscapedMap<never> = emptyMap as ReadonlyUnderscoreEscapedMap<never>;
+export const emptyEscapedMap: ReadonlyEscapedMap<never> = emptyMap as ReadonlyEscapedMap<never>;
 export const externalHelpersModuleNameText = 'tslib';
 export const defaultMaximumTruncationLength = 160;
 export const noTruncationMaximumTruncationLength = 1_000_000;
-export function createUnderscoreEscapedMap<T>(): UnderscoreEscapedMap<T> {
-  return new QMap<T>() as UnderscoreEscapedMap<T>;
+export function createEscapedMap<T>(): EscapedMap<T> {
+  return new QMap<T>() as EscapedMap<T>;
 }
-export function hasEntries(map: ReadonlyUnderscoreEscapedMap<any> | undefined): map is ReadonlyUnderscoreEscapedMap<any> {
+export function hasEntries(map: ReadonlyEscapedMap<any> | undefined): map is ReadonlyEscapedMap<any> {
   return !!map && !!map.size;
 }
 const stringWriter = createSingleLineStringWriter();
@@ -226,7 +226,7 @@ export function getSourceTextOfNodeFromSourceFile(sourceFile: SourceFile, node: 
   return getTextOfNodeFromSourceText(sourceFile.text, node, includeTrivia);
 }
 export function indexOfNode(nodeArray: readonly Node[], node: Node) {
-  return binarySearch(nodeArray, node, getPos, compareValues);
+  return binarySearch(nodeArray, node, getPos, compareNumbers);
 }
 export function getTextOfConstantValue(value: string | number) {
   return isString(value) ? '"' + escapeNonAsciiString(value) + '"' : '' + value;
@@ -1070,7 +1070,7 @@ export function createDiagnosticCollection(): DiagnosticCollection {
       if (!diagnostics) {
         diagnostics = ([] as Diagnostic[]) as SortedArray<DiagnosticWithLocation>;
         fileqd.set(diagnostic.file.fileName, diagnostics as SortedArray<DiagnosticWithLocation>);
-        insertSorted(filesWithDiagnostics, diagnostic.file.fileName, compareStringsCaseSensitive);
+        insertSorted(filesWithDiagnostics, diagnostic.file.fileName, compareCaseSensitive);
       }
     } else {
       if (hasReadNonFileDiagnostics) {
@@ -1877,10 +1877,10 @@ export function compareDiagnostics(d1: Diagnostic, d2: Diagnostic): Comparison {
 }
 export function compareDiagnosticsSkipRelatedInformation(d1: Diagnostic, d2: Diagnostic): Comparison {
   return (
-    compareStringsCaseSensitive(getDiagnosticFilePath(d1), getDiagnosticFilePath(d2)) ||
-    compareValues(d1.start, d2.start) ||
-    compareValues(d1.length, d2.length) ||
-    compareValues(d1.code, d2.code) ||
+    compareCaseSensitive(getDiagnosticFilePath(d1), getDiagnosticFilePath(d2)) ||
+    compareNumbers(d1.start, d2.start) ||
+    compareNumbers(d1.length, d2.length) ||
+    compareNumbers(d1.code, d2.code) ||
     compareMessageText(d1.messageText, d2.messageText) ||
     Comparison.EqualTo
   );
@@ -1889,7 +1889,7 @@ function compareRelatedInformation(d1: Diagnostic, d2: Diagnostic): Comparison {
   if (!d1.relatedInformation && !d2.relatedInformation) return Comparison.EqualTo;
   if (d1.relatedInformation && d2.relatedInformation) {
     return (
-      compareValues(d1.relatedInformation.length, d2.relatedInformation.length) ||
+      compareNumbers(d1.relatedInformation.length, d2.relatedInformation.length) ||
       forEach(d1.relatedInformation, (d1i, index) => {
         const d2i = d2.relatedInformation![index];
         return compareDiagnostics(d1i, d2i);
@@ -1900,10 +1900,10 @@ function compareRelatedInformation(d1: Diagnostic, d2: Diagnostic): Comparison {
   return d1.relatedInformation ? Comparison.LessThan : Comparison.GreaterThan;
 }
 function compareMessageText(t1: string | DiagnosticMessageChain, t2: string | DiagnosticMessageChain): Comparison {
-  if (typeof t1 === 'string' && typeof t2 === 'string') return compareStringsCaseSensitive(t1, t2);
+  if (typeof t1 === 'string' && typeof t2 === 'string') return compareCaseSensitive(t1, t2);
   if (typeof t1 === 'string') return Comparison.LessThan;
   if (typeof t2 === 'string') return Comparison.GreaterThan;
-  let res = compareStringsCaseSensitive(t1.messageText, t2.messageText);
+  let res = compareCaseSensitive(t1.messageText, t2.messageText);
   if (res) return res;
   if (!t1.next && !t2.next) return Comparison.EqualTo;
   if (!t1.next) return Comparison.LessThan;
@@ -2055,7 +2055,7 @@ export function matchFiles(
     if (visited.has(canonicalPath)) return;
     visited.set(canonicalPath, true);
     const { files, directories } = getFileSystemEntries(path);
-    for (const current of sort<string>(files, compareStringsCaseSensitive)) {
+    for (const current of sort<string>(files, compareCaseSensitive)) {
       const name = combinePaths(path, current);
       const absoluteName = combinePaths(absolutePath, current);
       if (extensions && !fileExtensionIsOneOf(name, extensions)) continue;
@@ -2075,7 +2075,7 @@ export function matchFiles(
         return;
       }
     }
-    for (const current of sort<string>(directories, compareStringsCaseSensitive)) {
+    for (const current of sort<string>(directories, compareCaseSensitive)) {
       const name = combinePaths(path, current);
       const absoluteName = combinePaths(absolutePath, current);
       if ((!includeDirectoryRegex || includeDirectoryRegex.test(absoluteName)) && (!excludeRegex || !excludeRegex.test(absoluteName))) {
@@ -2142,7 +2142,7 @@ export function getSupportedExtensions(options?: CompilerOptions, extraFileExten
     ...(needJsExtensions ? allSupportedExtensions : supportedTSExtensions),
     ...mapDefined(extraFileExtensions, (x) => (x.scriptKind === ScriptKind.Deferred || (needJsExtensions && isJSLike(x.scriptKind)) ? x.extension : undefined)),
   ];
-  return deduplicate<string>(extensions, equateStringsCaseSensitive, compareStringsCaseSensitive);
+  return deduplicate<string>(extensions, equateStringsCaseSensitive, compareCaseSensitive);
 }
 export function getSuppoertedExtensionsWithJsonIfResolveJsonModule(options: CompilerOptions | undefined, supportedExtensions: readonly string[]): readonly string[] {
   if (!options || !options.resolveJsonModule) return supportedExtensions;
@@ -2349,7 +2349,7 @@ export function getOrUpdate<T>(map: QMap<T>, key: string, getDefault: () => T): 
   }
   return got;
 }
-export function arrayIsHomogeneous<T>(array: readonly T[], comparer: EqualityComparer<T> = equateValues) {
+export function arrayIsHomogeneous<T>(array: readonly T[], comparer: EqComparer<T> = equateValues) {
   if (array.length < 2) return true;
   const first = array[0];
   for (let i = 1, length = array.length; i < length; i++) {
@@ -2406,7 +2406,7 @@ export namespace semver {
       if (this === other) return Comparison.EqualTo;
       if (other === undefined) return Comparison.GreaterThan;
       return (
-        compareValues(this.major, other.major) || compareValues(this.minor, other.minor) || compareValues(this.patch, other.patch) || comparePrerelaseIdentifiers(this.prerelease, other.prerelease)
+        compareNumbers(this.major, other.major) || compareNumbers(this.minor, other.minor) || compareNumbers(this.patch, other.patch) || comparePrerelaseIdentifiers(this.prerelease, other.prerelease)
       );
     }
     increment(field: 'major' | 'minor' | 'patch') {
@@ -2455,14 +2455,14 @@ export namespace semver {
       const rightIsNumeric = numericIdentifierRegExp.test(rightIdentifier);
       if (leftIsNumeric || rightIsNumeric) {
         if (leftIsNumeric !== rightIsNumeric) return leftIsNumeric ? Comparison.LessThan : Comparison.GreaterThan;
-        const result = compareValues(+leftIdentifier, +rightIdentifier);
+        const result = compareNumbers(+leftIdentifier, +rightIdentifier);
         if (result) return result;
       } else {
-        const result = compareStringsCaseSensitive(leftIdentifier, rightIdentifier);
+        const result = compareCaseSensitive(leftIdentifier, rightIdentifier);
         if (result) return result;
       }
     }
-    return compareValues(left.length, right.length);
+    return compareNumbers(left.length, right.length);
   }
   export class VersionRange {
     private _alternatives: readonly (readonly Comparator[])[];

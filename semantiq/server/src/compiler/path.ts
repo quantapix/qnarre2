@@ -61,10 +61,10 @@ export function getBaseFileName(path: string, extensions?: string | readonly str
   const extension = extensions !== undefined && ignoreCase !== undefined ? getAnyExtensionFromPath(name, extensions, ignoreCase) : undefined;
   return extension ? name.slice(0, name.length - extension.length) : name;
 }
-function getAnyExtensionFromPathWorker(path: string, extensions: string | readonly string[], stringEqualityComparer: (a: string, b: string) => boolean) {
-  if (typeof extensions === 'string') return qy.get.extensionFrom(path, extensions, stringEqualityComparer) || '';
+function getAnyExtensionFromPathWorker(path: string, extensions: string | readonly string[], stringEqComparer: (a: string, b: string) => boolean) {
+  if (typeof extensions === 'string') return qy.get.extensionFrom(path, extensions, stringEqComparer) || '';
   for (const extension of extensions) {
-    const result = qy.get.extensionFrom(path, extension, stringEqualityComparer);
+    const result = qy.get.extensionFrom(path, extension, stringEqComparer);
     if (result) return result;
   }
   return '';
@@ -187,7 +187,7 @@ function comparePathsWorker(a: string, b: string, componentComparer: (a: string,
   if (b === undefined) return qb.Comparison.GreaterThan;
   const aRoot = a.substring(0, getRootLength(a));
   const bRoot = b.substring(0, getRootLength(b));
-  const result = qb.compareStringsCaseInsensitive(aRoot, bRoot);
+  const result = qb.compareCaseInsensitive(aRoot, bRoot);
   if (result !== qb.Comparison.EqualTo) return result;
   const aRest = a.substring(aRoot.length);
   const bRest = b.substring(bRoot.length);
@@ -199,13 +199,13 @@ function comparePathsWorker(a: string, b: string, componentComparer: (a: string,
     const result = componentComparer(aComponents[i], bComponents[i]);
     if (result !== qb.Comparison.EqualTo) return result;
   }
-  return qb.compareValues(aComponents.length, bComponents.length);
+  return qb.compareNumbers(aComponents.length, bComponents.length);
 }
 export function comparePathsCaseSensitive(a: string, b: string) {
-  return comparePathsWorker(a, b, qb.compareStringsCaseSensitive);
+  return comparePathsWorker(a, b, qb.compareCaseSensitive);
 }
 export function comparePathsCaseInsensitive(a: string, b: string) {
-  return comparePathsWorker(a, b, qb.compareStringsCaseInsensitive);
+  return comparePathsWorker(a, b, qb.compareCaseInsensitive);
 }
 export function comparePaths(a: string, b: string, ignoreCase?: boolean): qb.Comparison;
 export function comparePaths(a: string, b: string, currentDirectory: string, ignoreCase?: boolean): qb.Comparison;
@@ -228,9 +228,9 @@ export function containsPath(parent: string, child: string, currentDirectory?: s
   const parentComponents = reducePathComponents(getPathComponents(parent));
   const childComponents = reducePathComponents(getPathComponents(child));
   if (childComponents.length < parentComponents.length) return false;
-  const componentEqualityComparer = ignoreCase ? qb.equateStringsCaseInsensitive : qb.equateStringsCaseSensitive;
+  const componentEqComparer = ignoreCase ? qb.equateStringsCaseInsensitive : qb.equateStringsCaseSensitive;
   for (let i = 0; i < parentComponents.length; i++) {
-    const equalityComparer = i === 0 ? qb.equateStringsCaseInsensitive : componentEqualityComparer;
+    const equalityComparer = i === 0 ? qb.equateStringsCaseInsensitive : componentEqComparer;
     if (!equalityComparer(parentComponents[i], childComponents[i])) return false;
   }
   return true;
@@ -240,14 +240,14 @@ export function startsWithDirectory(fileName: string, directoryName: string, get
   const canonicalDirectoryName = getCanonicalFileName(directoryName);
   return qb.startsWith(canonicalFileName, canonicalDirectoryName + '/') || qb.startsWith(canonicalFileName, canonicalDirectoryName + '\\');
 }
-export function getPathComponentsRelativeTo(from: string, to: string, stringEqualityComparer: (a: string, b: string) => boolean, getCanonicalFileName: qb.GetCanonicalFileName) {
+export function getPathComponentsRelativeTo(from: string, to: string, stringEqComparer: (a: string, b: string) => boolean, getCanonicalFileName: qb.GetCanonicalFileName) {
   const fromComponents = reducePathComponents(getPathComponents(from));
   const toComponents = reducePathComponents(getPathComponents(to));
   let start: number;
   for (start = 0; start < fromComponents.length && start < toComponents.length; start++) {
     const fromComponent = getCanonicalFileName(fromComponents[start]);
     const toComponent = getCanonicalFileName(toComponents[start]);
-    const comparer = start === 0 ? qb.equateStringsCaseInsensitive : stringEqualityComparer;
+    const comparer = start === 0 ? qb.equateStringsCaseInsensitive : stringEqComparer;
     if (!comparer(fromComponent, toComponent)) break;
   }
   if (start === 0) return toComponents;

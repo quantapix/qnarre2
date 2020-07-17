@@ -1,4 +1,5 @@
 import * as qb from './base';
+import * as qd from './diags';
 import { is, get } from './core3';
 import { NodeFlags, ObjectFlags, SymbolFlags, TransformFlags, TypeFlags } from './types';
 import * as qt from './types';
@@ -373,7 +374,7 @@ export abstract class FunctionLikeDeclarationBase extends SignatureDeclarationBa
   returnFlowNode?: qt.FlowNode;
   _functionLikeDeclarationBrand: any;
 }
-export abstract class FunctionOrConstructorTypeNobj extends SignatureDeclarationBase implements qt.FunctionOrConstructorTypeNobj {
+export abstract class FunctionOrConstructorTypeNodeBase extends SignatureDeclarationBase implements qt.FunctionOrConstructorTypeNodeBase {
   type!: TypeNode;
   docCache?: readonly qt.DocTag[];
   constructor(s: boolean, k: Syntax.FunctionType | Syntax.ConstructorType, ts: readonly qt.TypeParameterDeclaration[] | undefined, ps: readonly qt.ParameterDeclaration[], t?: TypeNode) {
@@ -468,6 +469,207 @@ export abstract class DocContainer implements qt.DocContainer {
 export function idText(n: qt.Identifier | qt.PrivateIdentifier): string {
   return qy.get.unescUnderscores(n.escapedText);
 }
+export abstract class Symbol implements qt.Symbol {
+  id?: number;
+  mergeId?: number;
+  parent?: Symbol;
+  members?: SymbolTable;
+  exports?: SymbolTable;
+  exportSymbol?: Symbol;
+  globalExports?: SymbolTable;
+  declarations?: Declaration[];
+  valueDeclaration?: Declaration;
+  isAssigned?: boolean;
+  assignmentDeclarationMembers?: qb.QMap<Declaration>;
+  isReferenced?: SymbolFlags;
+  isReplaceableByMethod?: boolean;
+  constEnumOnlyModule?: boolean;
+  docComment?: SymbolDisplayPart[];
+  getComment?: SymbolDisplayPart[];
+  setComment?: SymbolDisplayPart[];
+  tags?: qt.DocTagInfo[];
+  constructor(public flags: SymbolFlags, public escName: qb.__String) {}
+  get name() {
+    const d = this.valueDeclaration;
+    if (d?.isPrivateIdentifierPropertyDeclaration()) return idText(d.name);
+    return qy.get.unescUnderscores(this.escName);
+  }
+  abstract getId(): number;
+  getName() {
+    return this.name;
+  }
+  getEscName() {
+    return this.escName;
+  }
+  getFlags() {
+    return this.flags;
+  }
+  getDeclarations() {
+    return this.declarations;
+  }
+  getDocComment(checker?: TypeChecker): SymbolDisplayPart[] {
+    if (!this.docComment) {
+      this.docComment = qb.empty;
+      if (!this.declarations && ((this as Symbol) as TransientSymbol).target && (((this as Symbol) as TransientSymbol).target as TransientSymbol).tupleLabelDeclaration) {
+        const labelDecl = (((this as Symbol) as TransientSymbol).target as TransientSymbol).tupleLabelDeclaration!;
+        this.docComment = getDocComment([labelDecl], checker);
+      } else {
+        this.docComment = getDocComment(this.declarations, checker);
+      }
+    }
+    return this.docComment!;
+  }
+  getCtxComment(context?: Node, checker?: TypeChecker): SymbolDisplayPart[] {
+    switch (context?.kind) {
+      case Syntax.GetAccessor:
+        if (!this.getComment) {
+          this.getComment = qb.empty;
+          this.getComment = getDocComment(filter(this.declarations, isGetAccessor), checker);
+        }
+        return this.getComment!;
+      case Syntax.SetAccessor:
+        if (!this.setComment) {
+          this.setComment = qb.empty;
+          this.setComment = getDocComment(filter(this.declarations, isSetAccessor), checker);
+        }
+        return this.setComment!;
+      default:
+        return this.getDocComment(checker);
+    }
+  }
+  getDocTags(): qt.DocTagInfo[] {
+    if (!this.tags) this.tags = Doc.getDocTagsFromDeclarations(this.declarations);
+    return this.tags!;
+  }
+  getPropertyNameForUniqueESSymbol(): qb.__String {
+    return `__@${this.getId()}@${this.escName}` as qb.__String;
+  }
+  getSymbolNameForPrivateIdentifier(description: qb.__String): qb.__String {
+    return `__#${this.getId()}@${description}` as qb.__String;
+  }
+  isKnownSymbol() {
+    return startsWith(this.escName as string, '__@');
+  }
+  getLocalSymbolForExportDefault() {
+    return this.isExportDefaultSymbol() ? this.declarations![0].localSymbol : undefined;
+  }
+  isExportDefaultSymbol() {
+    return length(this.declarations) > 0 && qc.has.syntacticModifier(this.declarations![0], ModifierFlags.Default);
+  }
+  getDeclarationOfKind<T extends Declaration>(k: T['kind']): T | undefined {
+    const ds = this.declarations;
+    if (ds) {
+      for (const d of ds) {
+        if (d.kind === k) return d as T;
+      }
+    }
+    return;
+  }
+  isTransientSymbol(): this is TransientSymbol {
+    return (this.flags & SymbolFlags.Transient) !== 0;
+  }
+  getNonAugmentationDeclaration() {
+    const ds = this.declarations;
+    return ds && find(ds, (d) => !is.externalModuleAugmentation(d) && !(is.kind(ModuleDeclaration, d) && isGlobalScopeAugmentation(d)));
+  }
+  setValueDeclaration(d: Declaration) {
+    const v = this.valueDeclaration;
+    if (
+      !v ||
+      (!(d.flags & NodeFlags.Ambient && !(v.flags & NodeFlags.Ambient)) && isAssignmentDeclaration(v) && !isAssignmentDeclaration(d)) ||
+      (v.kind !== d.kind && is.effectiveModuleDeclaration(v))
+    ) {
+      this.valueDeclaration = d;
+    }
+  }
+  isFunctionSymbol() {
+    if (!this.valueDeclaration) return false;
+    const v = this.valueDeclaration;
+    return v.kind === Syntax.FunctionDeclaration || (is.kind(VariableDeclaration, v) && v.initializer && is.functionLike(v.initializer));
+  }
+  getCheckFlags(): CheckFlags {
+    return this.isTransientSymbol() ? this.checkFlags : 0;
+  }
+  getDeclarationModifierFlagsFromSymbol(): ModifierFlags {
+    if (this.valueDeclaration) {
+      const f = getCombinedModifierFlags(this.valueDeclaration);
+      return this.parent && this.parent.flags & SymbolFlags.Class ? f : f & ~ModifierFlags.AccessibilityModifier;
+    }
+    if (this.isTransientSymbol() && this.getCheckFlags() & CheckFlags.Synthetic) {
+      const f = this.checkFlags;
+      const a = f & CheckFlags.ContainsPrivate ? ModifierFlags.Private : f & CheckFlags.ContainsPublic ? ModifierFlags.Public : ModifierFlags.Protected;
+      const s = f & CheckFlags.ContainsStatic ? ModifierFlags.Static : 0;
+      return a | s;
+    }
+    if (this.flags & SymbolFlags.Prototype) return ModifierFlags.Public | ModifierFlags.Static;
+    return 0;
+  }
+  skipAlias(c: TypeChecker) {
+    return this.flags & SymbolFlags.Alias ? c.getAliasedSymbol(this) : this;
+  }
+  getCombinedLocalAndExportSymbolFlags(): SymbolFlags {
+    return this.exportSymbol ? this.exportSymbol.flags | this.flags : this.flags;
+  }
+  isAbstractConstructorSymbol() {
+    if (this.flags & SymbolFlags.Class) {
+      const d = this.getClassLikeDeclarationOfSymbol();
+      return !!d && qc.has.syntacticModifier(d, ModifierFlags.Abstract);
+    }
+    return false;
+  }
+  getClassLikeDeclarationOfSymbol(): ClassLikeDeclaration | undefined {
+    const ds = this.declarations;
+    return ds && find(ds, isClassLike);
+  }
+  isUMDExportSymbol() {
+    return this.declarations?.[0] && is.kind(NamespaceExportDeclaration, this.declarations[0]);
+  }
+  isShorthandAmbientModuleSymbol() {
+    return is.shorthandAmbientModule(this.valueDeclaration);
+  }
+  abstract merge(t: Symbol, unidirectional?: boolean): Symbol;
+}
+export class SymbolTable<S extends Symbol = Symbol> extends Map<qb.__String, S> implements qb.EscapedMap<S> {
+  constructor(ss?: readonly S[]) {
+    super();
+    if (ss) {
+      for (const s of ss) {
+        this.set(s.escName, s);
+      }
+    }
+  }
+  add(ss: SymbolTable<S>, m: qd.Message) {
+    ss.forEach((s, id) => {
+      const t = this.get(id);
+      if (t) qb.forEach(t.declarations, addDeclarationDiagnostic(qy.get.unescUnderscores(id), m));
+      else this.set(id, s);
+    });
+    function addDeclarationDiagnostic(id: string, m: qd.Message) {
+      return (d: Declaration) => diagnostics.add(createDiagnosticForNode(d, m, id));
+    }
+  }
+  merge(ss: SymbolTable<S>, unidirectional = false) {
+    ss.forEach((s, i) => {
+      const t = this.get(i);
+      this.set(i, t ? s.merge(t, unidirectional) : s);
+    });
+  }
+  combine(ss?: SymbolTable<S>): SymbolTable<S> | undefined {
+    if (!hasEntries(this)) return ss;
+    if (!hasEntries(ss)) return this;
+    const t = new SymbolTable<S>();
+    t.merge(this);
+    t.merge(ss!);
+    return t;
+  }
+  copy(to: SymbolTable<S>, f: SymbolFlags) {
+    if (f) {
+      this.forEach((s) => {
+        copySymbol(s, to, f);
+      });
+    }
+  }
+}
 export class Type implements qt.Type {
   id!: number;
   symbol!: Symbol;
@@ -480,7 +682,7 @@ export class Type implements qt.Type {
   immediateBaseConstraint?: Type;
   widened?: Type;
   objectFlags?: ObjectFlags;
-  constructor(public checker: TypeChecker, public flags: TypeFlags) {}
+  constructor(public checker: qt.TypeChecker, public flags: TypeFlags) {}
   getFlags(): TypeFlags {
     return this.flags;
   }
@@ -626,7 +828,7 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
   libReferenceDirectives: readonly FileReference[];
   languageVariant: LanguageVariant;
   isDeclarationFile: boolean;
-  renamedDependencies?: QReadonlyMap<string>;
+  renamedDependencies?: qb.QReadonlyMap<string>;
   hasNoDefaultLib: boolean;
   languageVersion: ScriptTarget;
   scriptKind: ScriptKind;
@@ -643,7 +845,7 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
   docDiagnostics?: DiagnosticWithLocation[];
   additionalSyntacticDiagnostics?: readonly DiagnosticWithLocation[];
   lineMap: readonly number[];
-  classifiableNames?: ReadonlyUnderscoreEscapedMap<true>;
+  classifiableNames?: qb.ReadonlyEscapedMap<true>;
   commentDirectives?: CommentDirective[];
   resolvedModules?: qb.QMap<ResolvedModuleFull | undefined>;
   resolvedTypeReferenceDirectiveNames: qb.QMap<ResolvedTypeReferenceDirective | undefined>;
@@ -690,7 +892,7 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
   languageVersion!: ScriptTarget;
   languageVariant!: LanguageVariant;
   identifiers!: qb.QMap<string>;
-  nameTable: UnderscoreEscapedMap<number> | undefined;
+  nameTable: qb.EscapedMap<number> | undefined;
   resolvedModules: qb.QMap<ResolvedModuleFull> | undefined;
   resolvedTypeReferenceDirectiveNames!: qb.QMap<ResolvedTypeReferenceDirective>;
   imports!: readonly StringLiteralLike[];
@@ -707,11 +909,11 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
     super(kind, pos, end);
   }
   redirectInfo?: RedirectInfo | undefined;
-  renamedDependencies?: QReadonlyMap<string> | undefined;
+  renamedDependencies?: qb.QReadonlyMap<string> | undefined;
   jsGlobalAugmentations?: SymbolTable<Symbol> | undefined;
   docDiagnostics?: DiagnosticWithLocation[] | undefined;
   additionalSyntacticDiagnostics?: readonly DiagnosticWithLocation[] | undefined;
-  classifiableNames?: ReadonlyUnderscoreEscapedMap<true> | undefined;
+  classifiableNames?: qb.ReadonlyEscapedMap<true> | undefined;
   commentDirectives?: CommentDirective[] | undefined;
   patternAmbientModules?: PatternAmbientModule[] | undefined;
   exportedModulesFromDeclarationEmit?: ExportedModulesFromDeclarationEmit | undefined;
@@ -803,11 +1005,11 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
   moveEnd(e: number): qb.TextRange {
     throw new Error('Method not implemented.');
   }
-  update(newText: string, textChangeRange: TextChangeRange): SourceFile {
-    return qp_updateSource(this, newText, textChangeRange);
+  update(t: string, c: qb.TextChange): SourceFile {
+    return qp_updateSource(this, t, c);
   }
-  getLineAndCharacterOfPosition(position: number): LineAndCharacter {
-    return getLineAndCharacterOfPosition(this, position);
+  getLineAndCharacterOfPosition(pos: number): qy.LineAndChar {
+    return getLineAndCharacterOfPosition(this, pos);
   }
   getLineStarts(): readonly number[] {
     return getLineStarts(this);
@@ -988,7 +1190,7 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
 export class SourceMapSource implements qt.SourceMapSource {
   lineMap!: number[];
   constructor(public fileName: string, public text: string, public skipTrivia = (pos: number) => pos) {}
-  getLineAndCharacterOfPosition(pos: number): LineAndCharacter {
+  getLineAndCharacterOfPosition(pos: number): qy.LineAndChar {
     return getLineAndCharacterOfPosition(this, pos);
   }
 }
@@ -1012,211 +1214,10 @@ export function getExcludedSymbolFlags(flags: SymbolFlags): SymbolFlags {
   if (flags & SymbolFlags.Alias) result |= SymbolFlags.AliasExcludes;
   return result;
 }
-export abstract class Symbol implements qt.Symbol {
-  id?: number;
-  mergeId?: number;
-  parent?: Symbol;
-  members?: SymbolTable;
-  exports?: SymbolTable;
-  exportSymbol?: Symbol;
-  globalExports?: SymbolTable;
-  declarations?: Declaration[];
-  valueDeclaration?: Declaration;
-  isAssigned?: boolean;
-  assignmentDeclarationMembers?: qb.QMap<Declaration>;
-  isReferenced?: SymbolFlags;
-  isReplaceableByMethod?: boolean;
-  constEnumOnlyModule?: boolean;
-  docComment?: SymbolDisplayPart[];
-  getComment?: SymbolDisplayPart[];
-  setComment?: SymbolDisplayPart[];
-  tags?: qt.DocTagInfo[];
-  constructor(public flags: SymbolFlags, public escName: qb.__String) {}
-  get name() {
-    const d = this.valueDeclaration;
-    if (d?.isPrivateIdentifierPropertyDeclaration()) return idText(d.name);
-    return qy.get.unescUnderscores(this.escName);
-  }
-  abstract getId(): number;
-  getName() {
-    return this.name;
-  }
-  getEscName() {
-    return this.escName;
-  }
-  getFlags() {
-    return this.flags;
-  }
-  getDeclarations() {
-    return this.declarations;
-  }
-  getDocComment(checker?: TypeChecker): SymbolDisplayPart[] {
-    if (!this.docComment) {
-      this.docComment = qb.empty;
-      if (!this.declarations && ((this as Symbol) as TransientSymbol).target && (((this as Symbol) as TransientSymbol).target as TransientSymbol).tupleLabelDeclaration) {
-        const labelDecl = (((this as Symbol) as TransientSymbol).target as TransientSymbol).tupleLabelDeclaration!;
-        this.docComment = getDocComment([labelDecl], checker);
-      } else {
-        this.docComment = getDocComment(this.declarations, checker);
-      }
-    }
-    return this.docComment!;
-  }
-  getCtxComment(context?: Node, checker?: TypeChecker): SymbolDisplayPart[] {
-    switch (context?.kind) {
-      case Syntax.GetAccessor:
-        if (!this.getComment) {
-          this.getComment = qb.empty;
-          this.getComment = getDocComment(filter(this.declarations, isGetAccessor), checker);
-        }
-        return this.getComment!;
-      case Syntax.SetAccessor:
-        if (!this.setComment) {
-          this.setComment = qb.empty;
-          this.setComment = getDocComment(filter(this.declarations, isSetAccessor), checker);
-        }
-        return this.setComment!;
-      default:
-        return this.getDocComment(checker);
-    }
-  }
-  getDocTags(): qt.DocTagInfo[] {
-    if (!this.tags) this.tags = Doc.getDocTagsFromDeclarations(this.declarations);
-    return this.tags!;
-  }
-  getPropertyNameForUniqueESSymbol(): qb.__String {
-    return `__@${this.getId()}@${this.escName}` as qb.__String;
-  }
-  getSymbolNameForPrivateIdentifier(description: qb.__String): qb.__String {
-    return `__#${this.getId()}@${description}` as qb.__String;
-  }
-  isKnownSymbol() {
-    return startsWith(this.escName as string, '__@');
-  }
-  getLocalSymbolForExportDefault() {
-    return this.isExportDefaultSymbol() ? this.declarations![0].localSymbol : undefined;
-  }
-  isExportDefaultSymbol() {
-    return length(this.declarations) > 0 && qc.has.syntacticModifier(this.declarations![0], ModifierFlags.Default);
-  }
-  getDeclarationOfKind<T extends Declaration>(k: T['kind']): T | undefined {
-    const ds = this.declarations;
-    if (ds) {
-      for (const d of ds) {
-        if (d.kind === k) return d as T;
-      }
-    }
-    return;
-  }
-  isTransientSymbol(): this is TransientSymbol {
-    return (this.flags & SymbolFlags.Transient) !== 0;
-  }
-  getNonAugmentationDeclaration() {
-    const ds = this.declarations;
-    return ds && find(ds, (d) => !is.externalModuleAugmentation(d) && !(is.kind(ModuleDeclaration, d) && isGlobalScopeAugmentation(d)));
-  }
-  setValueDeclaration(d: Declaration) {
-    const v = this.valueDeclaration;
-    if (
-      !v ||
-      (!(d.flags & NodeFlags.Ambient && !(v.flags & NodeFlags.Ambient)) && isAssignmentDeclaration(v) && !isAssignmentDeclaration(d)) ||
-      (v.kind !== d.kind && is.effectiveModuleDeclaration(v))
-    ) {
-      this.valueDeclaration = d;
-    }
-  }
-  isFunctionSymbol() {
-    if (!this.valueDeclaration) return false;
-    const v = this.valueDeclaration;
-    return v.kind === Syntax.FunctionDeclaration || (is.kind(VariableDeclaration, v) && v.initializer && is.functionLike(v.initializer));
-  }
-  getCheckFlags(): CheckFlags {
-    return this.isTransientSymbol() ? this.checkFlags : 0;
-  }
-  getDeclarationModifierFlagsFromSymbol(): ModifierFlags {
-    if (this.valueDeclaration) {
-      const f = getCombinedModifierFlags(this.valueDeclaration);
-      return this.parent && this.parent.flags & SymbolFlags.Class ? f : f & ~ModifierFlags.AccessibilityModifier;
-    }
-    if (this.isTransientSymbol() && this.getCheckFlags() & CheckFlags.Synthetic) {
-      const f = this.checkFlags;
-      const a = f & CheckFlags.ContainsPrivate ? ModifierFlags.Private : f & CheckFlags.ContainsPublic ? ModifierFlags.Public : ModifierFlags.Protected;
-      const s = f & CheckFlags.ContainsStatic ? ModifierFlags.Static : 0;
-      return a | s;
-    }
-    if (this.flags & SymbolFlags.Prototype) return ModifierFlags.Public | ModifierFlags.Static;
-    return 0;
-  }
-  skipAlias(c: TypeChecker) {
-    return this.flags & SymbolFlags.Alias ? c.getAliasedSymbol(this) : this;
-  }
-  getCombinedLocalAndExportSymbolFlags(): SymbolFlags {
-    return this.exportSymbol ? this.exportSymbol.flags | this.flags : this.flags;
-  }
-  isAbstractConstructorSymbol() {
-    if (this.flags & SymbolFlags.Class) {
-      const d = this.getClassLikeDeclarationOfSymbol();
-      return !!d && qc.has.syntacticModifier(d, ModifierFlags.Abstract);
-    }
-    return false;
-  }
-  getClassLikeDeclarationOfSymbol(): ClassLikeDeclaration | undefined {
-    const ds = this.declarations;
-    return ds && find(ds, isClassLike);
-  }
-  isUMDExportSymbol() {
-    return this.declarations?.[0] && is.kind(NamespaceExportDeclaration, this.declarations[0]);
-  }
-  isShorthandAmbientModuleSymbol() {
-    return is.shorthandAmbientModule(this.valueDeclaration);
-  }
-  abstract merge(t: Symbol, unidirectional?: boolean): Symbol;
-}
-export class SymbolTable<S extends Symbol = Symbol> extends Map<__String, S> implements UnderscoreEscapedMap<S> {
-  constructor(ss?: readonly S[]) {
-    super();
-    if (ss) {
-      for (const s of ss) {
-        this.set(s.escName, s);
-      }
-    }
-  }
-  add(ss: SymbolTable<S>, m: DiagnosticMessage) {
-    ss.forEach((s, id) => {
-      const t = this.get(id);
-      if (t) forEach(t.declarations, addDeclarationDiagnostic(qy.get.unescUnderscores(id), m));
-      else this.set(id, s);
-    });
-    function addDeclarationDiagnostic(id: string, m: DiagnosticMessage) {
-      return (d: Declaration) => diagnostics.add(createDiagnosticForNode(d, m, id));
-    }
-  }
-  merge(ss: SymbolTable<S>, unidirectional = false) {
-    ss.forEach((s, i) => {
-      const t = this.get(i);
-      this.set(i, t ? s.merge(t, unidirectional) : s);
-    });
-  }
-  combine(ss?: SymbolTable<S>): SymbolTable<S> | undefined {
-    if (!hasEntries(this)) return ss;
-    if (!hasEntries(ss)) return this;
-    const t = new SymbolTable<S>();
-    t.merge(this);
-    t.merge(ss!);
-    return t;
-  }
-  copy(to: SymbolTable<S>, meaning: SymbolFlags) {
-    if (meaning) {
-      this.forEach((s) => {
-        copySymbol(s, to, meaning);
-      });
-    }
-  }
-}
 export function cloneMap(m: SymbolTable): SymbolTable;
-export function cloneMap<T>(m: QReadonlyMap<T>): qb.QMap<T>;
-export function cloneMap<T>(m: ReadonlyUnderscoreEscapedMap<T>): UnderscoreEscapedMap<T>;
-export function cloneMap<T>(m: QReadonlyMap<T> | ReadonlyUnderscoreEscapedMap<T> | SymbolTable): qb.QMap<T> | UnderscoreEscapedMap<T> | SymbolTable {
+export function cloneMap<T>(m: qb.QReadonlyMap<T>): qb.QMap<T>;
+export function cloneMap<T>(m: qb.ReadonlyEscapedMap<T>): qb.EscapedMap<T>;
+export function cloneMap<T>(m: qb.QReadonlyMap<T> | qb.ReadonlyEscapedMap<T> | SymbolTable): qb.QMap<T> | qb.EscapedMap<T> | SymbolTable {
   const c = new qb.QMap<T>();
   copyEntries(m as qb.QMap<T>, c);
   return c;
@@ -1354,6 +1355,6 @@ export function createGetSymbolWalker(
   }
 }
 qb.addMixins(ClassLikeDeclarationBase, [DocContainer]);
-qb.addMixins(FunctionOrConstructorTypeNobj, [TypeNode]);
+qb.addMixins(FunctionOrConstructorTypeNodeBase, [TypeNode]);
 qb.addMixins(ObjectLiteralExpressionBase, [Declaration]);
 qb.addMixins(LiteralExpression, [LiteralLikeNode]);

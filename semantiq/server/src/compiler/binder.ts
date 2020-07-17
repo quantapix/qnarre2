@@ -156,7 +156,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   let inStrictMode: boolean;
   let symbolCount = 0;
   let Symbol: new (flags: SymbolFlags, name: __String) => Symbol;
-  let classifiableNames: UnderscoreEscapedMap<true>;
+  let classifiableNames: EscapedMap<true>;
   const unreachableFlow: FlowNode = { flags: FlowFlags.Unreachable };
   const reportedUnreachableFlow: FlowNode = { flags: FlowFlags.Unreachable };
   let subtreeTransformFlags: TransformFlags = TransformFlags.None;
@@ -169,7 +169,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     options = opts;
     languageVersion = getEmitScriptTarget(options);
     inStrictMode = bindInStrictMode(file, opts);
-    classifiableNames = createUnderscoreEscapedMap<true>();
+    classifiableNames = createEscapedMap<true>();
     symbolCount = 0;
     skipTransformFlagAggregation = file.isDeclarationFile;
     Symbol = Node.Symbol;
@@ -230,7 +230,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     }
   }
   function getDeclarationName(node: Declaration): __String | undefined {
-    if (node.kind === Syntax.ExportAssignment) return (<ExportAssignment>node).isExportEquals ? InternalSymbolName.ExportEquals : InternalSymbolName.Default;
+    if (node.kind === Syntax.ExportAssignment) return (<ExportAssignment>node).isExportEquals ? InternalSymbol.ExportEquals : InternalSymbol.Default;
     const name = getNameOfDeclaration(node);
     if (name) {
       if (qc.is.ambientModule(node)) {
@@ -257,26 +257,26 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     }
     switch (node.kind) {
       case Syntax.Constructor:
-        return InternalSymbolName.Constructor;
+        return InternalSymbol.Constructor;
       case Syntax.FunctionType:
       case Syntax.CallSignature:
       case Syntax.DocSignature:
-        return InternalSymbolName.Call;
+        return InternalSymbol.Call;
       case Syntax.ConstructorType:
       case Syntax.ConstructSignature:
-        return InternalSymbolName.New;
+        return InternalSymbol.New;
       case Syntax.IndexSignature:
-        return InternalSymbolName.Index;
+        return InternalSymbol.Index;
       case Syntax.ExportDeclaration:
-        return InternalSymbolName.ExportStar;
+        return InternalSymbol.ExportStar;
       case Syntax.SourceFile:
-        return InternalSymbolName.ExportEquals;
+        return InternalSymbol.ExportEquals;
       case Syntax.BinaryExpression:
-        if (getAssignmentDeclarationKind(node as BinaryExpression) === AssignmentDeclarationKind.ModuleExports) return InternalSymbolName.ExportEquals;
+        if (getAssignmentDeclarationKind(node as BinaryExpression) === AssignmentDeclarationKind.ModuleExports) return InternalSymbol.ExportEquals;
         fail('Unknown binary declaration kind');
         break;
       case Syntax.DocFunctionType:
-        return qc.isDoc.constructSignature(node) ? InternalSymbolName.New : InternalSymbolName.Call;
+        return qc.isDoc.constructSignature(node) ? InternalSymbol.New : InternalSymbol.Call;
       case Syntax.Parameter:
         assert(
           node.parent.kind === Syntax.DocFunctionType,
@@ -294,10 +294,10 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   function declareSymbol(symbolTable: SymbolTable, parent: Symbol | undefined, node: Declaration, includes: SymbolFlags, excludes: SymbolFlags, isReplaceableByMethod?: boolean): Symbol {
     assert(!hasDynamicName(node));
     const isDefaultExport = qc.has.syntacticModifier(node, ModifierFlags.Default) || (qc.is.kind(ExportSpecifier, node) && node.name.escapedText === 'default');
-    const name = isDefaultExport && parent ? InternalSymbolName.Default : getDeclarationName(node);
+    const name = isDefaultExport && parent ? InternalSymbol.Default : getDeclarationName(node);
     let symbol: Symbol | undefined;
     if (name === undefined) {
-      symbol = newSymbol(SymbolFlags.None, InternalSymbolName.Missing);
+      symbol = newSymbol(SymbolFlags.None, InternalSymbol.Missing);
     } else {
       symbol = symbolTable.get(name);
       if (includes & SymbolFlags.Classifiable) {
@@ -1505,7 +1505,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   function bindFunctionOrConstructorType(node: SignatureDeclaration | DocSignature): void {
     const symbol = newSymbol(SymbolFlags.Signature, getDeclarationName(node)!);
     addDeclarationToSymbol(symbol, node, SymbolFlags.Signature);
-    const typeLiteralSymbol = newSymbol(SymbolFlags.TypeLiteral, InternalSymbolName.Type);
+    const typeLiteralSymbol = newSymbol(SymbolFlags.TypeLiteral, InternalSymbol.Type);
     addDeclarationToSymbol(typeLiteralSymbol, node, SymbolFlags.TypeLiteral);
     typeLiteralSymbol.members = new SymbolTable();
     typeLiteralSymbol.members.set(symbol.escName, symbol);
@@ -1516,7 +1516,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       Accessor = 2,
     }
     if (inStrictMode && !isAssignmentTarget(node)) {
-      const seen = createUnderscoreEscapedMap<ElementKind>();
+      const seen = createEscapedMap<ElementKind>();
       for (const prop of node.properties) {
         if (prop.kind === Syntax.SpreadAssignment || prop.name.kind !== Syntax.Identifier) {
           continue;
@@ -1535,10 +1535,10 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
         }
       }
     }
-    return bindAnonymousDeclaration(node, SymbolFlags.ObjectLiteral, InternalSymbolName.Object);
+    return bindAnonymousDeclaration(node, SymbolFlags.ObjectLiteral, InternalSymbol.Object);
   }
   function bindJsxAttributes(node: JsxAttributes) {
-    return bindAnonymousDeclaration(node, SymbolFlags.ObjectLiteral, InternalSymbolName.JSXAttributes);
+    return bindAnonymousDeclaration(node, SymbolFlags.ObjectLiteral, InternalSymbol.JSXAttributes);
   }
   function bindJsxAttribute(node: JsxAttribute, symbolFlags: SymbolFlags, symbolExcludes: SymbolFlags) {
     return declareSymbolAndAddToSymbolTable(node, symbolFlags, symbolExcludes);
@@ -2028,7 +2028,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     return bindPropertyOrMethodOrAccessor(node, SymbolFlags.Property | (node.questionToken ? SymbolFlags.Optional : SymbolFlags.None), SymbolFlags.PropertyExcludes);
   }
   function bindAnonymousTypeWorker(node: TypeLiteralNode | MappedTypeNode | DocTypeLiteral) {
-    return bindAnonymousDeclaration(<Declaration>node, SymbolFlags.TypeLiteral, InternalSymbolName.Type);
+    return bindAnonymousDeclaration(<Declaration>node, SymbolFlags.TypeLiteral, InternalSymbol.Type);
   }
   function bindSourceFileIfExternalModule() {
     setExportContextFlag(file);
@@ -2194,7 +2194,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     }
   }
   function bindDynamicallyNamedThisNode(PropertyAssignment, node: BinaryExpression | DynamicNamedDeclaration, symbol: Symbol) {
-    bindAnonymousDeclaration(node, SymbolFlags.Property, InternalSymbolName.Computed);
+    bindAnonymousDeclaration(node, SymbolFlags.Property, InternalSymbol.Computed);
     addLateBoundAssignmentDeclarationToSymbol(node, symbol);
   }
   function addLateBoundAssignmentDeclarationToSymbol(node: BinaryExpression | DynamicNamedDeclaration, symbol: Symbol | undefined) {
@@ -2250,7 +2250,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     if (qc.is.kind(Identifier, node.left.expression) && container === file && isExportsOrModuleExportsOrAlias(file, node.left.expression)) {
       bindExportsPropertyAssignment(node as BindableStaticPropertyAssignmentExpression);
     } else if (hasDynamicName(node)) {
-      bindAnonymousDeclaration(node, SymbolFlags.Property | SymbolFlags.Assignment, InternalSymbolName.Computed);
+      bindAnonymousDeclaration(node, SymbolFlags.Property | SymbolFlags.Assignment, InternalSymbol.Computed);
       const sym = bindPotentiallyMissingNamespaces(parentSymbol, node.left.expression, isTopLevelNamespaceAssignment(node.left), false);
       addLateBoundAssignmentDeclarationToSymbol(node, sym);
     } else {
@@ -2395,7 +2395,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     if (node.kind === Syntax.ClassDeclaration) {
       bindBlockScopedDeclaration(node, SymbolFlags.Class, SymbolFlags.ClassExcludes);
     } else {
-      const bindingName = node.name ? node.name.escapedText : InternalSymbolName.Class;
+      const bindingName = node.name ? node.name.escapedText : InternalSymbol.Class;
       bindAnonymousDeclaration(node, SymbolFlags.Class, bindingName);
       if (node.name) {
         classifiableNames.set(node.name.escapedText, true);
@@ -2479,7 +2479,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       node.flowNode = currentFlow;
     }
     checkStrictModeFunctionName(node);
-    const bindingName = node.name ? node.name.escapedText : InternalSymbolName.Function;
+    const bindingName = node.name ? node.name.escapedText : InternalSymbol.Function;
     return bindAnonymousDeclaration(node, SymbolFlags.Function, bindingName);
   }
   function bindPropertyOrMethodOrAccessor(node: Declaration, symbolFlags: SymbolFlags, symbolExcludes: SymbolFlags) {
@@ -2489,7 +2489,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     if (currentFlow && qc.is.objectLiteralOrClassExpressionMethod(node)) {
       node.flowNode = currentFlow;
     }
-    return hasDynamicName(node) ? bindAnonymousDeclaration(node, symbolFlags, InternalSymbolName.Computed) : declareSymbolAndAddToSymbolTable(node, symbolFlags, symbolExcludes);
+    return hasDynamicName(node) ? bindAnonymousDeclaration(node, symbolFlags, InternalSymbol.Computed) : declareSymbolAndAddToSymbolTable(node, symbolFlags, symbolExcludes);
   }
   function getInferTypeContainer(node: Node): ConditionalTypeNode | undefined {
     const extendsType = qc.findAncestor(node, (n) => n.parent && qc.is.kind(ConditionalTypeNode, n.parent) && n.parent.extendsType === n);

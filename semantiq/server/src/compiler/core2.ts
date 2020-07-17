@@ -3802,7 +3802,7 @@ export namespace parenthesize {
       const emittedOperand = skipPartiallyEmittedExpressions(operand);
       if (!isLeftSideOfBinary && operand.kind === Syntax.ArrowFunction && binaryOperatorPrecedence > 3) return true;
       const operandPrecedence = getExpressionPrecedence(emittedOperand);
-      switch (compareValues(operandPrecedence, binaryOperatorPrecedence)) {
+      switch (compareNumbers(operandPrecedence, binaryOperatorPrecedence)) {
         case Comparison.LessThan:
           if (!isLeftSideOfBinary && binaryOperatorAssociativity === Associativity.Right && operand.kind === Syntax.YieldExpression) return false;
           return true;
@@ -3860,7 +3860,7 @@ export namespace parenthesize {
     const conditionalPrecedence = qy.get.operatorPrecedence(Syntax.ConditionalExpression, qc.QuestionToken);
     const emittedCondition = skipPartiallyEmittedExpressions(c);
     const conditionPrecedence = getExpressionPrecedence(emittedCondition);
-    if (compareValues(conditionPrecedence, conditionalPrecedence) !== Comparison.GreaterThan) return new ParenthesizedExpression(c);
+    if (compareNumbers(conditionPrecedence, conditionalPrecedence) !== Comparison.GreaterThan) return new ParenthesizedExpression(c);
     return c;
   }
   export function subexpressionOfConditionalExpression(e: qc.Expression): qc.Expression {
@@ -4141,7 +4141,7 @@ export namespace emit {
     if (x.priority === y.priority) return Comparison.EqualTo;
     if (x.priority === undefined) return Comparison.GreaterThan;
     if (y.priority === undefined) return Comparison.LessThan;
-    return compareValues(x.priority, y.priority);
+    return compareNumbers(x.priority, y.priority);
   }
   function mergeEmitNode(sourceEmitNode: qc.EmitNode, destEmitNode: qc.EmitNode | undefined) {
     const { flags, leadingComments, trailingComments, commentRange, sourceMapRange, tokenSourceMapRanges, constantValue, helpers, startsOnNewLine } = sourceEmitNode;
@@ -4216,7 +4216,7 @@ export namespace fixme {
             }
           }
           if (qb.some(helperNames)) {
-            helperNames.sort(compareStringsCaseSensitive);
+            helperNames.sort(compareCaseSensitive);
             namedBindings = new NamedImports(
               qb.map(helperNames, (name) =>
                 isFileLevelUniqueName(sourceFile, name) ? new ImportSpecifier(undefined, new Identifier(name)) : new qc.ImportSpecifier(new Identifier(name), getUnscopedHelperName(name))

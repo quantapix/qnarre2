@@ -435,7 +435,7 @@ export interface ConstructorDeclaration extends FunctionLikeDeclarationBase, Cla
   parent?: ClassLikeDeclaration;
   body?: FunctionBody;
 }
-export interface ConstructorTypeNode extends FunctionOrConstructorTypeNobj {
+export interface ConstructorTypeNode extends FunctionOrConstructorTypeNodeBase {
   kind: Syntax.ConstructorType;
 }
 export interface ConstructSignatureDeclaration extends SignatureDeclarationBase, TypeElement {
@@ -809,11 +809,11 @@ export interface FunctionLikeDeclarationBase extends SignatureDeclarationBase {
   returnFlowNode?: FlowNode;
 }
 export type FunctionOrConstructorTypeNode = FunctionTypeNode | ConstructorTypeNode;
-export interface FunctionOrConstructorTypeNobj extends TypeNode, SignatureDeclarationBase {
+export interface FunctionOrConstructorTypeNodeBase extends TypeNode, SignatureDeclarationBase {
   kind: Syntax.FunctionType | Syntax.ConstructorType;
   type: TypeNode;
 }
-export interface FunctionTypeNode extends FunctionOrConstructorTypeNobj {
+export interface FunctionTypeNode extends FunctionOrConstructorTypeNodeBase {
   kind: Syntax.FunctionType;
 }
 export interface GeneratedIdentifier extends Identifier {
@@ -1887,7 +1887,7 @@ export interface SourceFile extends Declaration {
   docDiagnostics?: DiagnosticWithLocation[];
   additionalSyntacticDiagnostics?: readonly DiagnosticWithLocation[];
   lineMap: readonly number[];
-  classifiableNames?: qb.ReadonlyUnderscoreEscapedMap<true>;
+  classifiableNames?: qb.ReadonlyEscapedMap<true>;
   commentDirectives?: CommentDirective[];
   resolvedModules?: qb.QMap<ResolvedModuleFull | undefined>;
   resolvedTypeReferenceDirectiveNames: qb.QMap<ResolvedTypeReferenceDirective | undefined>;
@@ -2110,7 +2110,7 @@ export interface SymbolLinks {
   tupleLabelDeclaration?: NamedTupleMember | ParameterDeclaration;
 }
 export interface SymbolDisplayPart {}
-export interface SymbolTable<S extends Symbol = Symbol> extends Map<qb.__String, S>, qb.UnderscoreEscapedMap<S> {}
+export interface SymbolTable<S extends Symbol = Symbol> extends Map<qb.__String, S>, qb.EscapedMap<S> {}
 export interface SyntaxList extends Nobj {
   children: Node[];
 }
@@ -2327,9 +2327,9 @@ export interface TypeAliasDeclaration extends DeclarationStatement, DocContainer
   type: TypeNode;
 }
 export interface Type {
-  flags: TypeFlags;
   id: number;
   checker: TypeChecker;
+  flags: TypeFlags;
   symbol: Symbol;
   pattern?: DestructuringPattern;
   aliasSymbol?: Symbol;
@@ -2960,7 +2960,7 @@ export interface Program extends ScriptReferenceHost {
   getCommonSourceDirectory(): string;
   getDiagnosticsProducingTypeChecker(): TypeChecker;
   dropDiagnosticsProducingTypeChecker(): void;
-  getClassifiableNames(): qb.UnderscoreEscapedMap<true>;
+  getClassifiableNames(): qb.EscapedMap<true>;
   getNodeCount(): number;
   getIdentifierCount(): number;
   getSymbolCount(): number;
@@ -3747,7 +3747,7 @@ export interface TextSpan {
   start: number;
   length: number;
 }
-export interface TextChangeRange {
+export interface qb.TextChange {
   span: TextSpan;
   newLength: number;
 }
