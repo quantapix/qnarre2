@@ -2166,7 +2166,7 @@ export function createProgram(
         if (!hasProperty(options.paths, key)) {
           continue;
         }
-        if (!hasZeroOrOneAsteriskCharacter(key)) {
+        if (!qy.hasAsterisks(key)) {
           createDiagnosticForOptionPaths(true, key, qd.Pattern_0_can_have_at_most_one_Asterisk_character, key);
         }
         if (isArray(options.paths[key])) {
@@ -2178,7 +2178,7 @@ export function createProgram(
             const subst = options.paths[key][i];
             const typeOfSubst = typeof subst;
             if (typeOfSubst === 'string') {
-              if (!hasZeroOrOneAsteriskCharacter(subst)) {
+              if (!qy.hasAsterisks(subst)) {
                 createDiagnosticForOptionPathKeyValue(key, i, qd.Substitution_0_in_pattern_1_can_have_at_most_one_Asterisk_character, subst, key);
               }
             } else {

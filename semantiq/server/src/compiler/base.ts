@@ -1252,6 +1252,23 @@ export function tryRemoveSuffix(str: string, suffix: string): string | undefined
 export function stringContains(str: string, substring: string): boolean {
   return str.indexOf(substring) !== -1;
 }
+const indents: string[] = ['', '    '];
+export function getIndentString(level: number) {
+  if (indents[level] === undefined) {
+    indents[level] = getIndentString(level - 1) + indents[1];
+  }
+  return indents[level];
+}
+export function getIndentSize() {
+  return indents[1].length;
+}
+export const reservedPattern = /[^\w\s\/]/g;
+export function regExpEscape(s: string) {
+  const escape = (m: string) => {
+    return '\\' + m;
+  };
+  return s.replace(reservedPattern, escape);
+}
 export function removeMinAndVersionNumbers(fileName: string) {
   const trailingMinOrVersion = /[.-]((min)|(\d+(\.\d+)*))$/;
   return fileName.replace(trailingMinOrVersion, '').replace(trailingMinOrVersion, '');

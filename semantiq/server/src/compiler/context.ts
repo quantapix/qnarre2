@@ -815,7 +815,7 @@ export class QContext {
     if (type !== errorType && this.enclosingDeclaration) {
       const annotation = signature.declaration && getEffectiveReturnTypeNode(signature.declaration);
       if (
-        !!Node.findAncestor(annotation, (n) => n === this.enclosingDeclaration) &&
+        !!qc.findAncestor(annotation, (n) => n === this.enclosingDeclaration) &&
         annotation &&
         instantiateType(getTypeFromTypeNode(annotation), signature.mapper) === type &&
         existingTypeNodeIsNotReferenceOrIsReferenceWithCompatibleTypeArgumentCount(annotation, type)

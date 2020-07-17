@@ -774,7 +774,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (visitedSymbols.has('' + s.getId())) return;
       visitedSymbols.set('' + s.getId(), true);
       const skip = !isPrivate;
-      if (skip || (!!length(this.declarations) && some(this.declarations, (d) => !!Node.findAncestor(d, (n) => n === enclosingDeclaration)))) {
+      if (skip || (!!length(this.declarations) && some(this.declarations, (d) => !!qc.findAncestor(d, (n) => n === enclosingDeclaration)))) {
         const o = context;
         context = cloneQContext(context);
         const r = serializeSymbolWorker(this, isPrivate, propertyAsAlias);
@@ -2011,7 +2011,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
     }
     getDeclarationWithTypeAnnotation(enclosingDeclaration: Node | undefined) {
-      return this.declarations && find(this.declarations, (s) => !!getEffectiveTypeAnnotationNode(s) && (!enclosingDeclaration || !!Node.findAncestor(s, (n) => n === enclosingDeclaration)));
+      return this.declarations && find(this.declarations, (s) => !!getEffectiveTypeAnnotationNode(s) && (!enclosingDeclaration || !!qc.findAncestor(s, (n) => n === enclosingDeclaration)));
     }
     getNameOfSymbolFromNameType(c?: QContext) {
       const nameType = this.getLinks().nameType;
@@ -2032,7 +2032,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         !(c.flags & NodeBuilderFlags.UseAliasDefinedOutsideCurrentScope) &&
         (!(c.flags & NodeBuilderFlags.InInitialEntityName) ||
           !this.declarations ||
-          (c.enclosingDeclaration && Node.findAncestor(this.declarations[0], isDefaultBindingContext) !== Node.findAncestor(c.enclosingDeclaration, isDefaultBindingContext)))
+          (c.enclosingDeclaration && qc.findAncestor(this.declarations[0], isDefaultBindingContext) !== qc.findAncestor(c.enclosingDeclaration, isDefaultBindingContext)))
       ) {
         return 'default';
       }
@@ -2227,7 +2227,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     getContextualType: (nodeIn: Expression, contextFlags?: ContextFlags) => {
       const node = qc.get.parseTreeOf(nodeIn, isExpression);
       if (!node) return;
-      const containingCall = Node.findAncestor(node, isCallLikeExpression);
+      const containingCall = qc.findAncestor(node, isCallLikeExpression);
       const containingCallResolvedSignature = containingCall && getNodeLinks(containingCall).resolvedSignature;
       if (contextFlags! & ContextFlags.Completions && containingCall) {
         let toMarkSkip = node as Node;
@@ -2788,12 +2788,12 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (declaration.kind === Syntax.BindingElement) {
         const errorBindingElement = getAncestor(usage, Syntax.BindingElement) as BindingElement;
         if (errorBindingElement)
-          return Node.findAncestor(errorBindingElement, BindingElement.kind) !== Node.findAncestor(declaration, BindingElement.kind) || declaration.pos < errorBindingElement.pos;
+          return qc.findAncestor(errorBindingElement, BindingElement.kind) !== qc.findAncestor(declaration, BindingElement.kind) || declaration.pos < errorBindingElement.pos;
         return isBlockScopedNameDeclaredBeforeUse(getAncestor(declaration, Syntax.VariableDeclaration) as Declaration, usage);
       } else if (declaration.kind === Syntax.VariableDeclaration) {
         return !isImmediatelyUsedInInitializerOfBlockScopedVariable(declaration as VariableDeclaration, usage);
       } else if (qc.is.kind(ClassDeclaration, declaration)) {
-        return !Node.findAncestor(usage, (n) => qc.is.kind(ComputedPropertyName, n) && n.parent.parent === declaration);
+        return !qc.findAncestor(usage, (n) => qc.is.kind(ComputedPropertyName, n) && n.parent.parent === declaration);
       } else if (qc.is.kind(PropertyDeclaration, declaration)) {
         return !isPropertyImmediatelyReferencedWithinDeclaration(declaration, usage, false);
       } else if (qc.is.parameterPropertyDeclaration(declaration, declaration.parent)) {
@@ -2822,7 +2822,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return false;
     function usageInTypeDeclaration() {
-      return !!Node.findAncestor(usage, (node) => qc.is.kind(InterfaceDeclaration, node) || qc.is.kind(TypeAliasDeclaration, node));
+      return !!qc.findAncestor(usage, (node) => qc.is.kind(InterfaceDeclaration, node) || qc.is.kind(TypeAliasDeclaration, node));
     }
     function isImmediatelyUsedInInitializerOfBlockScopedVariable(declaration: VariableDeclaration, usage: Node): boolean {
       switch (declaration.parent.parent.kind) {
@@ -2836,7 +2836,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       return qc.is.forInOrOfStatement(grandparent) && isSameScopeDescendentOf(usage, grandparent.expression, declContainer);
     }
     function isUsedInFunctionOrInstanceProperty(usage: Node, declaration: Node): boolean {
-      return !!Node.findAncestor(usage, (current) => {
+      return !!qc.findAncestor(usage, (current) => {
         if (current === declContainer) return 'quit';
         if (qc.is.functionLike(current)) return true;
         const initializerOfProperty = current.parent && current.parent.kind === Syntax.PropertyDeclaration && (<PropertyDeclaration>current.parent).initializer === current;
@@ -2853,7 +2853,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     function isPropertyImmediatelyReferencedWithinDeclaration(declaration: PropertyDeclaration | ParameterPropertyDeclaration, usage: Node, stopAtAnyPropertyDeclaration: boolean) {
       if (usage.end > declaration.end) return false;
-      const ancestorChangingReferenceScope = Node.findAncestor(usage, (node: Node) => {
+      const ancestorChangingReferenceScope = qc.findAncestor(usage, (node: Node) => {
         if (node === declaration) return 'quit';
         switch (node.kind) {
           case Syntax.ArrowFunction:
@@ -2967,7 +2967,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
             if (meaning & result.flags & SymbolFlags.Variable) {
               if (useOuterVariableScopeInParameter(result, location, lastLocation)) useResult = false;
               else if (result.flags & SymbolFlags.FunctionScopedVariable) {
-                useResult = lastLocation.kind === Syntax.Parameter || (lastLocation === (<FunctionLikeDeclaration>location).type && !!Node.findAncestor(result.valueDeclaration, isParameter));
+                useResult = lastLocation.kind === Syntax.Parameter || (lastLocation === (<FunctionLikeDeclaration>location).type && !!qc.findAncestor(result.valueDeclaration, isParameter));
               }
             }
           } else if (location.kind === Syntax.ConditionalType) {
@@ -3374,7 +3374,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
   }
   function isSameScopeDescendentOf(initial: Node, parent: Node | undefined, stopAt: Node): boolean {
-    return !!parent && !!Node.findAncestor(initial, (n) => (n === stopAt || qc.is.functionLike(n) ? 'quit' : n === parent));
+    return !!parent && !!qc.findAncestor(initial, (n) => (n === stopAt || qc.is.functionLike(n) ? 'quit' : n === parent));
   }
   function getAnyImportSyntax(node: Node): AnyImportSyntax | undefined {
     switch (node.kind) {
@@ -3762,7 +3762,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
   }
   function getAssignmentDeclarationLocation(node: TypeReferenceNode): Node | undefined {
-    const typeAlias = Node.findAncestor(node, (node) => (!(qc.isDoc.node(node) || node.flags & NodeFlags.Doc) ? 'quit' : qc.isDoc.typeAlias(node)));
+    const typeAlias = qc.findAncestor(node, (node) => (!(qc.isDoc.node(node) || node.flags & NodeFlags.Doc) ? 'quit' : qc.isDoc.typeAlias(node)));
     if (typeAlias) return;
     const host = qc.getDoc.host(node);
     if (qc.is.kind(ExpressionStatement, host) && qc.is.kind(BinaryExpression, host.expression) && getAssignmentDeclarationKind(host.expression) === AssignmentDeclarationKind.PrototypeProperty) {
@@ -4236,7 +4236,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return { accessibility: SymbolAccessibility.Accessible };
   }
   function getExternalModuleContainer(declaration: Node) {
-    const node = Node.findAncestor(declaration, hasExternalModuleSymbol);
+    const node = qc.findAncestor(declaration, hasExternalModuleSymbol);
     return node && getSymbolOfNode(node);
   }
   function hasExternalModuleSymbol(declaration: Node) {
@@ -4534,7 +4534,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return resolutionResults.pop()!;
   }
   function getDeclarationContainer(node: Node): Node {
-    return Node.findAncestor(getRootDeclaration(node), (node) => {
+    return qc.findAncestor(getRootDeclaration(node), (node) => {
       switch (node.kind) {
         case Syntax.VariableDeclaration:
         case Syntax.VariableDeclarationList:
@@ -5093,7 +5093,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         const assignmentKind = getAssignmentDeclarationKind(node);
         if (assignmentKind === AssignmentDeclarationKind.Prototype || assignmentKind === AssignmentDeclarationKind.PrototypeProperty) {
           const symbol = getSymbolOfNode(node.left);
-          if (symbol && symbol.parent && !Node.findAncestor(symbol.parent.valueDeclaration, (d) => node === d)) node = symbol.parent.valueDeclaration;
+          if (symbol && symbol.parent && !qc.findAncestor(symbol.parent.valueDeclaration, (d) => node === d)) node = symbol.parent.valueDeclaration;
         }
       }
       if (!node) return;
@@ -9074,7 +9074,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (!typeParameters) {
       let declaration = node;
       if (isInJSFile(declaration)) {
-        const paramTag = Node.findAncestor(declaration, isDocParameterTag);
+        const paramTag = qc.findAncestor(declaration, isDocParameterTag);
         if (paramTag) {
           const paramSymbol = getParameterSymbolFromDoc(paramTag);
           if (paramSymbol) declaration = paramSymbol.valueDeclaration;
@@ -10519,7 +10519,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
                 let suggestion;
                 if (
                   prop.valueDeclaration &&
-                  Node.findAncestor(prop.valueDeclaration, (d) => d === objectLiteralDeclaration) &&
+                  qc.findAncestor(prop.valueDeclaration, (d) => d === objectLiteralDeclaration) &&
                   qc.get.sourceFileOf(objectLiteralDeclaration) === qc.get.sourceFileOf(errorNode)
                 ) {
                   const propDeclaration = prop.valueDeclaration as ObjectLiteralElementLike;
@@ -12273,7 +12273,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function isNonGenericTopLevelType(type: Type) {
     if (type.aliasSymbol && !type.aliasTypeArguments) {
       const declaration = getDeclarationOfKind(type.aliasSymbol, Syntax.TypeAliasDeclaration);
-      return !!(declaration && Node.findAncestor(declaration.parent, (n) => (n.kind === Syntax.SourceFile ? true : n.kind === Syntax.ModuleDeclaration ? false : 'quit')));
+      return !!(declaration && qc.findAncestor(declaration.parent, (n) => (n.kind === Syntax.SourceFile ? true : n.kind === Syntax.ModuleDeclaration ? false : 'quit')));
     }
     return false;
   }
@@ -12928,7 +12928,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return links.resolvedSymbol;
   }
   function isInTypeQuery(node: Node): boolean {
-    return !!Node.findAncestor(node, (n) => (n.kind === Syntax.TypeQuery ? true : n.kind === Syntax.Identifier || n.kind === Syntax.QualifiedName ? false : 'quit'));
+    return !!qc.findAncestor(node, (n) => (n.kind === Syntax.TypeQuery ? true : n.kind === Syntax.Identifier || n.kind === Syntax.QualifiedName ? false : 'quit'));
   }
   function getFlowCacheKey(node: Node, declaredType: Type, initialType: Type, flowContainer: Node | undefined): string | undefined {
     switch (node.kind) {
@@ -13494,7 +13494,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return isAccessExpression(invokedExpression) ? skipParentheses(invokedExpression.expression) : undefined;
   }
   function reportFlowControlError(node: Node) {
-    const block = <Block | ModuleBlock | SourceFile>Node.findAncestor(node, isFunctionOrModuleBlock);
+    const block = <Block | ModuleBlock | SourceFile>qc.findAncestor(node, isFunctionOrModuleBlock);
     const sourceFile = qc.get.sourceFileOf(node);
     const span = getSpanOfTokenAtPosition(sourceFile, block.statements.pos);
     diagnostics.add(createFileDiagnostic(sourceFile, span.start, span.length, qd.The_containing_function_or_module_body_is_too_large_for_control_flow_analysis));
@@ -14214,7 +14214,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return this.getTypeOfSymbol();
   }
   function getControlFlowContainer(node: Node): Node {
-    return Node.findAncestor(
+    return qc.findAncestor(
       node.parent,
       (node) =>
         (qc.is.functionLike(node) && !qc.get.immediatelyInvokedFunctionExpression(node)) ||
@@ -14224,7 +14224,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     )!;
   }
   function hasParentWithAssignmentsMarked(node: Node) {
-    return !!Node.findAncestor(node.parent, (node) => qc.is.functionLike(node) && !!(getNodeLinks(node).flags & NodeCheckFlags.AssignmentsMarked));
+    return !!qc.findAncestor(node.parent, (node) => qc.is.functionLike(node) && !!(getNodeLinks(node).flags & NodeCheckFlags.AssignmentsMarked));
   }
   function markParameterAssignments(node: Node) {
     if (node.kind === Syntax.Identifier) {
@@ -14270,7 +14270,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return type;
   }
   function isExportOrExportExpression(location: Node) {
-    return !!Node.findAncestor(location, (e) => e.parent && qc.is.kind(ExportAssignment, e.parent) && e.parent.expression === e && qc.is.entityNameExpression(e));
+    return !!qc.findAncestor(location, (e) => e.parent && qc.is.kind(ExportAssignment, e.parent) && e.parent.expression === e && qc.is.entityNameExpression(e));
   }
   function markAliasReferenced(symbol: Symbol, location: Node) {
     if (symbol.isNonLocalAlias(SymbolFlags.Value) && !isInTypeQuery(location) && !this.getTypeOnlyAliasDeclaration()) {
@@ -14387,10 +14387,10 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return assignmentKind ? getBaseTypeOfLiteralType(flowType) : flowType;
   }
   function isInsideFunction(node: Node, threshold: Node): boolean {
-    return !!Node.findAncestor(node, (n) => (n === threshold ? 'quit' : qc.is.functionLike(n)));
+    return !!qc.findAncestor(node, (n) => (n === threshold ? 'quit' : qc.is.functionLike(n)));
   }
   function getPartOfForStatementContainingNode(node: Node, container: ForStatement) {
-    return Node.findAncestor(node, (n) => (n === container ? 'quit' : n === container.initializer || n === container.condition || n === container.incrementor || n === container.statement));
+    return qc.findAncestor(node, (n) => (n === container ? 'quit' : n === container.initializer || n === container.condition || n === container.incrementor || n === container.statement));
   }
   function checkNestedBlockScopedBinding(node: Identifier, symbol: Symbol): void {
     return;
@@ -14411,7 +14411,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       isAssigned = expr.operator === Syntax.Plus2Token || expr.operator === Syntax.Minus2Token;
     }
     if (!isAssigned) return false;
-    return !!Node.findAncestor(current, (n) => (n === container ? 'quit' : n === container.statement));
+    return !!qc.findAncestor(current, (n) => (n === container ? 'quit' : n === container.statement));
   }
   function captureLexicalThis(node: Node, container: Node): void {
     getNodeLinks(node).flags |= NodeCheckFlags.LexicalThis;
@@ -14583,7 +14583,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (thisTag && thisTag.typeExpression) return getTypeFromTypeNode(thisTag.typeExpression);
   }
   function isInConstructorArgumentInitializer(node: Node, constructorDecl: Node): boolean {
-    return !!Node.findAncestor(node, (n) => (qc.is.functionLikeDeclaration(n) ? 'quit' : n.kind === Syntax.Parameter && n.parent === constructorDecl));
+    return !!qc.findAncestor(node, (n) => (qc.is.functionLikeDeclaration(n) ? 'quit' : n.kind === Syntax.Parameter && n.parent === constructorDecl));
   }
   function checkSuperExpression(node: Node): Type {
     const isCallExpression = node.parent.kind === Syntax.CallExpression && (<CallExpression>node.parent).expression === node;
@@ -14599,7 +14599,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const canUseSuperExpression = isLegalUsageOfSuperExpression(container);
     let nodeCheckFlag: NodeCheckFlags = 0;
     if (!canUseSuperExpression) {
-      const current = Node.findAncestor(node, (n) => (n === container ? 'quit' : n.kind === Syntax.ComputedPropertyName));
+      const current = qc.findAncestor(node, (n) => (n === container ? 'quit' : n.kind === Syntax.ComputedPropertyName));
       if (current && current.kind === Syntax.ComputedPropertyName) error(node, qd.super_cannot_be_referenced_in_a_computed_property_name);
       else if (isCallExpression) {
         error(node, qd.Super_calls_are_not_permitted_outside_constructors_or_in_nested_functions_inside_constructors);
@@ -15138,7 +15138,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return;
   }
   function getInferenceContext(node: Node) {
-    const ancestor = Node.findAncestor(node, (n) => !!n.inferenceContext);
+    const ancestor = qc.findAncestor(node, (n) => !!n.inferenceContext);
     return ancestor && ancestor.inferenceContext!;
   }
   function getContextualJsxElementAttributesType(node: JsxOpeningLikeElement, contextFlags?: ContextFlags) {
@@ -16054,7 +16054,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         const lexicalValueDecl = lexicallyScopedIdentifier.valueDeclaration;
         const lexicalClass = qc.get.containingClass(lexicalValueDecl);
         assert(!!lexicalClass);
-        if (Node.findAncestor(lexicalClass, (n) => typeClass === n)) {
+        if (qc.findAncestor(lexicalClass, (n) => typeClass === n)) {
           const diagnostic = error(
             right,
             qd.The_property_0_cannot_be_accessed_on_type_1_within_this_class_because_it_is_shadowed_by_another_private_identifier_with_the_same_spelling,
@@ -16194,7 +16194,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (diagnosticMessage) addRelatedInfo(diagnosticMessage, createDiagnosticForNode(valueDeclaration, qd._0_is_declared_here, declarationName));
   }
   function isInPropertyInitializer(node: Node): boolean {
-    return !!Node.findAncestor(node, (node) => {
+    return !!qc.findAncestor(node, (node) => {
       switch (node.kind) {
         case Syntax.PropertyDeclaration:
           return true;
@@ -16341,7 +16341,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (!hasPrivateModifier && !hasPrivateIdentifier) return;
     if (nodeForCheckWriteOnly && isWriteOnlyAccess(nodeForCheckWriteOnly) && !(prop.flags & SymbolFlags.SetAccessor)) return;
     if (isThisAccess) {
-      const containingMethod = Node.findAncestor(nodeForCheckWriteOnly, isFunctionLikeDeclaration);
+      const containingMethod = qc.findAncestor(nodeForCheckWriteOnly, isFunctionLikeDeclaration);
       if (containingMethod && containingMethod.symbol === prop) return;
     }
     (getCheckFlags(prop) & CheckFlags.Instantiated ? s.getLinks(prop).target : prop)!.isReferenced = SymbolFlags.All;
@@ -16365,7 +16365,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (prop) {
       if (qc.is.kind(PropertyAccessExpression, node) && prop.valueDeclaration?.isPrivateIdentifierPropertyDeclaration()) {
         const declClass = qc.get.containingClass(prop.valueDeclaration);
-        return !qc.is.optionalChain(node) && !!Node.findAncestor(node, (parent) => parent === declClass);
+        return !qc.is.optionalChain(node) && !!qc.findAncestor(node, (parent) => parent === declClass);
       }
       return checkPropertyAccessibility(node, isSuper, type, prop);
     }
@@ -20136,7 +20136,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     qc.forEach.child(node, checkSourceElement);
   }
   function checkInferType(node: InferTypeNode) {
-    if (!Node.findAncestor(node, (n) => n.parent && n.parent.kind === Syntax.ConditionalType && (<ConditionalTypeNode>n.parent).extendsType === n))
+    if (!qc.findAncestor(node, (n) => n.parent && n.parent.kind === Syntax.ConditionalType && (<ConditionalTypeNode>n.parent).extendsType === n))
       grammarErrorOnNode(node, qd.infer_declarations_are_only_permitted_in_the_extends_clause_of_a_conditional_type);
     checkSourceElement(node.typeParameter);
     registerForUnusedIdentifiersCheck(node);
@@ -20711,7 +20711,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function isValidUnusedLocalDeclaration(declaration: Declaration): boolean {
     if (qc.is.kind(BindingElement, declaration) && isIdentifierThatStartsWithUnderscore(declaration.name)) {
-      return !!Node.findAncestor(declaration.parent, (ancestor) =>
+      return !!qc.findAncestor(declaration.parent, (ancestor) =>
         qc.is.kind(ArrayBindingPattern, ancestor) || qc.is.kind(VariableDeclaration, ancestor) || qc.is.kind(VariableDeclarationList, ancestor)
           ? false
           : qc.is.kind(ForOfStatement, ancestor)
@@ -20853,7 +20853,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return true;
   }
   function checkIfThisIsCapturedInEnclosingScope(node: Node): void {
-    Node.findAncestor(node, (current) => {
+    qc.findAncestor(node, (current) => {
       if (getNodeCheckFlags(current) & NodeCheckFlags.CaptureThis) {
         const isDeclaration = node.kind !== Syntax.Identifier;
         if (isDeclaration) error(getNameOfDeclaration(<Declaration>node), qd.Duplicate_identifier_this_Compiler_uses_variable_declaration_this_to_capture_this_reference);
@@ -20866,7 +20866,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     });
   }
   function checkIfNewTargetIsCapturedInEnclosingScope(node: Node): void {
-    Node.findAncestor(node, (current) => {
+    qc.findAncestor(node, (current) => {
       if (getNodeCheckFlags(current) & NodeCheckFlags.CaptureNewTarget) {
         const isDeclaration = node.kind !== Syntax.Identifier;
         if (isDeclaration) error(getNameOfDeclaration(<Declaration>node), qd.Duplicate_identifier_newTarget_Compiler_uses_variable_declaration_newTarget_to_capture_new_target_meta_property_reference);
@@ -21587,7 +21587,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function checkLabeledStatement(node: LabeledStatement) {
     if (!checkGrammarStatementInAmbientContext(node)) {
-      Node.findAncestor(node.parent, (current) => {
+      qc.findAncestor(node.parent, (current) => {
         if (qc.is.functionLike(current)) return 'quit';
         if (current.kind === Syntax.LabeledStatement && (<LabeledStatement>current).label.escapedText === node.label.escapedText) {
           grammarErrorOnNode(node.label, qd.Duplicate_label_0, qc.get.textOf(node.label));
@@ -23043,7 +23043,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return result;
   }
   function isNodeUsedDuringClassInitialization(node: Node) {
-    return !!Node.findAncestor(node, (element) => {
+    return !!qc.findAncestor(node, (element) => {
       if ((qc.is.kind(ConstructorDeclaration, element) && qc.is.present(element.body)) || qc.is.kind(PropertyDeclaration, element)) return true;
       else if (qc.is.classLike(element) || qc.is.functionLikeDeclaration(element)) return 'quit';
       return false;
@@ -23389,7 +23389,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
             const symbolIsUmdExport = symbolFile !== referenceFile;
             return symbolIsUmdExport ? undefined : symbolFile;
           }
-          return Node.findAncestor(node.parent, (n): n is ModuleDeclaration | EnumDeclaration => qc.is.moduleOrEnumDeclaration(n) && getSymbolOfNode(n) === parentSymbol);
+          return qc.findAncestor(node.parent, (n): n is ModuleDeclaration | EnumDeclaration => qc.is.moduleOrEnumDeclaration(n) && getSymbolOfNode(n) === parentSymbol);
         }
       }
     }

@@ -184,9 +184,6 @@ function insertStatementAfterPrologue<T extends Statement>(to: T[], statement: T
   to.splice(statementIndex, 0, statement);
   return to;
 }
-function isAnyPrologueDirective(node: Node) {
-  return qc.is.prologueDirective(node) || !!(qc.get.emitFlags(node) & EmitFlags.CustomPrologue);
-}
 export function insertStatementsAfterStandardPrologue<T extends Statement>(to: T[], from: readonly T[] | undefined): T[] {
   return insertStatementsAfterPrologue(to, from, isPrologueDirective);
 }
@@ -198,21 +195,6 @@ export function insertStatementAfterStandardPrologue<T extends Statement>(to: T[
 }
 export function insertStatementAfterCustomPrologue<T extends Statement>(to: T[], statement: T | undefined): T[] {
   return insertStatementAfterPrologue(to, statement, isAnyPrologueDirective);
-}
-export function isRecognizedTripleSlashComment(text: string, commentPos: number, commentEnd: number) {
-  if (text.charCodeAt(commentPos + 1) === Codes.slash && commentPos + 2 < commentEnd && text.charCodeAt(commentPos + 2) === Codes.slash) {
-    const textSubStr = text.substring(commentPos, commentEnd);
-    return textSubStr.match(fullTripleSlashReferencePathRegEx) ||
-      textSubStr.match(fullTripleSlashAMDReferencePathRegEx) ||
-      textSubStr.match(fullTripleSlashReferenceTypeReferenceDirectiveRegEx) ||
-      textSubStr.match(defaultLibReferenceRegEx)
-      ? true
-      : false;
-  }
-  return false;
-}
-export function isPinnedComment(text: string, start: number) {
-  return text.charCodeAt(start + 1) === Codes.asterisk && text.charCodeAt(start + 2) === Codes.exclamation;
 }
 export function createCommentDirectivesMap(sourceFile: SourceFile, commentDirectives: CommentDirective[]): CommentDirectivesMap {
   const directivesByLine = new QMap(commentDirectives.map((commentDirective) => [`${syntax.get.lineAndCharOf(sourceFile, commentDirective.range.end).line}`, commentDirective]));
@@ -435,30 +417,6 @@ export function getErrorSpanForNode(sourceFile: SourceFile, node: Node): TextSpa
   }
   return TextSpan.from(pos, errorNode.end);
 }
-export function isExternalOrCommonJsModule(file: SourceFile): boolean {
-  return (file.externalModuleIndicator || file.commonJsModuleIndicator) !== undefined;
-}
-export function isJsonSourceFile(file: SourceFile): file is JsonSourceFile {
-  return file.scriptKind === ScriptKind.JSON;
-}
-export function isEnumConst(node: EnumDeclaration): boolean {
-  return !!(getCombinedModifierFlags(node) & ModifierFlags.Const);
-}
-export function isVarConst(node: VariableDeclaration | VariableDeclarationList): boolean {
-  return !!(qc.get.combinedFlagsOf(node) & NodeFlags.Const);
-}
-export function isCustomPrologue(node: Statement) {
-  return !!(qc.get.emitFlags(node) & EmitFlags.CustomPrologue);
-}
-export function isHoistedFunction(node: Statement) {
-  return isCustomPrologue(node) && qc.is.kind(FunctionDeclaration, node);
-}
-function isHoistedVariable(node: VariableDeclaration) {
-  return qc.is.kind(Identifier, node.name) && !node.initializer;
-}
-export function isHoistedVariableStatement(node: Statement) {
-  return isCustomPrologue(node) && qc.is.kind(VariableStatement, node) && every(node.declarationList.declarations, isHoistedVariable);
-}
 export function getLeadingCommentRangesOfNode(node: Node, sourceFileOfNode: SourceFile) {
   return node.kind !== Syntax.JsxText ? syntax.get.leadingCommentRanges(sourceFileOfNode.text, node.pos) : undefined;
 }
@@ -678,9 +636,6 @@ export function isRequireVariableDeclaration(node: Node, requireStringLiteralLik
 }
 export function isRequireVariableDeclarationStatement(node: Node, requireStringLiteralLikeArgument = true): node is VariableStatement {
   return qc.is.kind(VariableStatement, node) && every(node.declarationList.declarations, (decl) => isRequireVariableDeclaration(decl, requireStringLiteralLikeArgument));
-}
-export function isSingleOrDoubleQuote(cc: number) {
-  return cc === Codes.singleQuote || cc === Codes.doubleQuote;
 }
 export function isStringDoubleQuoted(str: StringLiteralLike, sourceFile: SourceFile): boolean {
   return getSourceTextOfNodeFromSourceFile(sourceFile, str).charCodeAt(0) === Codes.doubleQuote;
@@ -1143,93 +1098,6 @@ export function createDiagnosticCollection(): DiagnosticCollection {
     fileDiags.unshift(...nonFileDiagnostics);
     return fileDiags;
   }
-}
-const templateSubstitutionRegExp = /\$\{/g;
-function escapeTemplateSubstitution(str: string): string {
-  return str.replace(templateSubstitutionRegExp, '\\${');
-}
-export function hasInvalidEscape(template: TemplateLiteral): boolean {
-  return template && !!(qc.is.kind(NoSubstitutionLiteral, template) ? template.templateFlags : template.head.templateFlags || some(template.templateSpans, (span) => !!span.literal.templateFlags));
-}
-const doubleQuoteEscapedCharsRegExp = /[\\\"\u0000-\u001f\t\v\f\b\r\n\u2028\u2029\u0085]/g;
-const singleQuoteEscapedCharsRegExp = /[\\\'\u0000-\u001f\t\v\f\b\r\n\u2028\u2029\u0085]/g;
-const backtickQuoteEscapedCharsRegExp = /[\\`]/g;
-const escapedCharsMap = new QMap({
-  '\t': '\\t',
-  '\v': '\\v',
-  '\f': '\\f',
-  '\b': '\\b',
-  '\r': '\\r',
-  '\n': '\\n',
-  '\\': '\\\\',
-  '"': '\\"',
-  "'": "\\'",
-  '`': '\\`',
-  '\u2028': '\\u2028',
-  '\u2029': '\\u2029',
-  '\u0085': '\\u0085',
-});
-function encodeUtf16EscapeSequence(cc: number): string {
-  const hexCharCode = cc.toString(16).toUpperCase();
-  const paddedHexCode = ('0000' + hexCharCode).slice(-4);
-  return '\\u' + paddedHexCode;
-}
-function getReplacement(c: string, offset: number, input: string) {
-  if (c.charCodeAt(0) === Codes.nullCharacter) {
-    const lookAhead = input.charCodeAt(offset + c.length);
-    if (lookAhead >= Codes._0 && lookAhead <= Codes._9) return '\\x00';
-    return '\\0';
-  }
-  return escapedCharsMap.get(c) || encodeUtf16EscapeSequence(c.charCodeAt(0));
-}
-export function escapeString(s: string, quoteChar?: Codes.doubleQuote | Codes.singleQuote | Codes.backtick): string {
-  const escapedCharsRegExp = quoteChar === Codes.backtick ? backtickQuoteEscapedCharsRegExp : quoteChar === Codes.singleQuote ? singleQuoteEscapedCharsRegExp : doubleQuoteEscapedCharsRegExp;
-  return s.replace(escapedCharsRegExp, getReplacement);
-}
-const nonAsciiCharacters = /[^\u0000-\u007F]/g;
-export function escapeNonAsciiString(s: string, quoteChar?: Codes.doubleQuote | Codes.singleQuote | Codes.backtick): string {
-  s = escapeString(s, quoteChar);
-  return nonAsciiCharacters.test(s) ? s.replace(nonAsciiCharacters, (c) => encodeUtf16EscapeSequence(c.charCodeAt(0))) : s;
-}
-const jsxDoubleQuoteEscapedCharsRegExp = /[\"\u0000-\u001f\u2028\u2029\u0085]/g;
-const jsxSingleQuoteEscapedCharsRegExp = /[\'\u0000-\u001f\u2028\u2029\u0085]/g;
-const jsxEscapedCharsMap = new QMap({
-  '"': '&quot;',
-  "'": '&apos;',
-});
-function encodeJsxCharacterEntity(cc: number): string {
-  const hexCharCode = cc.toString(16).toUpperCase();
-  return '&#x' + hexCharCode + ';';
-}
-function getJsxAttributeStringReplacement(c: string) {
-  if (c.charCodeAt(0) === Codes.nullCharacter) return '&#0;';
-  return jsxEscapedCharsMap.get(c) || encodeJsxCharacterEntity(c.charCodeAt(0));
-}
-export function escapeJsxAttributeString(s: string, quoteChar?: Codes.doubleQuote | Codes.singleQuote) {
-  const escapedCharsRegExp = quoteChar === Codes.singleQuote ? jsxSingleQuoteEscapedCharsRegExp : jsxDoubleQuoteEscapedCharsRegExp;
-  return s.replace(escapedCharsRegExp, getJsxAttributeStringReplacement);
-}
-export function stripQuotes(name: string) {
-  const length = name.length;
-  if (length >= 2 && name.charCodeAt(0) === name.charCodeAt(length - 1) && isQuoteOrBacktick(name.charCodeAt(0))) return name.substring(1, length - 1);
-  return name;
-}
-function isQuoteOrBacktick(cc: number) {
-  return cc === Codes.singleQuote || cc === Codes.doubleQuote || cc === Codes.backtick;
-}
-export function isIntrinsicJsxName(name: __String | string) {
-  const ch = (name as string).charCodeAt(0);
-  return (ch >= Codes.a && ch <= Codes.z) || stringContains(name as string, '-');
-}
-const indentStrings: string[] = ['', '    '];
-export function getIndentString(level: number) {
-  if (indentStrings[level] === undefined) {
-    indentStrings[level] = getIndentString(level - 1) + indentStrings[1];
-  }
-  return indentStrings[level];
-}
-export function getIndentSize() {
-  return indentStrings[1].length;
 }
 export function createTextWriter(newLine: string): EmitTextWriter {
   let output: string;
@@ -1752,17 +1620,6 @@ function writeTrimmedCurrentLine(text: string, commentEnd: number, writer: EmitT
     writer.rawWrite(newLine);
   }
 }
-function calculateIndent(text: string, pos: number, end: number) {
-  let currentLineIndent = 0;
-  for (; pos < end && syntax.is.whiteSpaceSingleLine(text.charCodeAt(pos)); pos++) {
-    if (text.charCodeAt(pos) === Codes.tab) {
-      currentLineIndent += getIndentSize() - (currentLineIndent % getIndentSize());
-    } else {
-      currentLineIndent++;
-    }
-  }
-  return currentLineIndent;
-}
 export function modifiersToFlags(modifiers: Nodes<Modifier> | undefined) {
   let flags = ModifierFlags.None;
   if (modifiers) {
@@ -1808,110 +1665,6 @@ export function tryGetPropertyAccessOrIdentifierToString(expr: Expression): stri
 }
 export function tryExtractTSExtension(fileName: string): string | undefined {
   return find(supportedTSExtensionsForExtractExtension, (extension) => fileExtensionIs(fileName, extension));
-}
-function getExpandedCodes(input: string): number[] {
-  const output: number[] = [];
-  const length = input.length;
-  for (let i = 0; i < length; i++) {
-    const cc = input.charCodeAt(i);
-    if (cc < 0x80) {
-      output.push(cc);
-    } else if (cc < 0x800) {
-      output.push((cc >> 6) | 0b11000000);
-      output.push((cc & 0b00111111) | 0b10000000);
-    } else if (cc < 0x10000) {
-      output.push((cc >> 12) | 0b11100000);
-      output.push(((cc >> 6) & 0b00111111) | 0b10000000);
-      output.push((cc & 0b00111111) | 0b10000000);
-    } else if (cc < 0x20000) {
-      output.push((cc >> 18) | 0b11110000);
-      output.push(((cc >> 12) & 0b00111111) | 0b10000000);
-      output.push(((cc >> 6) & 0b00111111) | 0b10000000);
-      output.push((cc & 0b00111111) | 0b10000000);
-    } else {
-      assert(false, 'Unexpected code point');
-    }
-  }
-  return output;
-}
-const base64Digits = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
-export function convertToBase64(input: string): string {
-  let result = '';
-  const ccs = getExpandedCodes(input);
-  let i = 0;
-  const length = ccs.length;
-  let byte1: number, byte2: number, byte3: number, byte4: number;
-  while (i < length) {
-    byte1 = ccs[i] >> 2;
-    byte2 = ((ccs[i] & 0b00000011) << 4) | (ccs[i + 1] >> 4);
-    byte3 = ((ccs[i + 1] & 0b00001111) << 2) | (ccs[i + 2] >> 6);
-    byte4 = ccs[i + 2] & 0b00111111;
-    if (i + 1 >= length) {
-      byte3 = byte4 = 64;
-    } else if (i + 2 >= length) {
-      byte4 = 64;
-    }
-    result += base64Digits.charAt(byte1) + base64Digits.charAt(byte2) + base64Digits.charAt(byte3) + base64Digits.charAt(byte4);
-    i += 3;
-  }
-  return result;
-}
-function getStringFromExpandedCodes(codes: number[]): string {
-  let output = '';
-  let i = 0;
-  const length = codes.length;
-  while (i < length) {
-    const cc = codes[i];
-    if (cc < 0x80) {
-      output += String.fromCharCode(cc);
-      i++;
-    } else if ((cc & 0b11000000) === 0b11000000) {
-      let value = cc & 0b00111111;
-      i++;
-      let nextCode: number = codes[i];
-      while ((nextCode & 0b11000000) === 0b10000000) {
-        value = (value << 6) | (nextCode & 0b00111111);
-        i++;
-        nextCode = codes[i];
-      }
-      output += String.fromCharCode(value);
-    } else {
-      output += String.fromCharCode(cc);
-      i++;
-    }
-  }
-  return output;
-}
-export function base64encode(host: { base64encode?(input: string): string } | undefined, input: string): string {
-  if (host && host.base64encode) return host.base64encode(input);
-  return convertToBase64(input);
-}
-export function base64decode(host: { base64decode?(input: string): string } | undefined, input: string): string {
-  if (host && host.base64decode) return host.base64decode(input);
-  const length = input.length;
-  const expandedCodes: number[] = [];
-  let i = 0;
-  while (i < length) {
-    if (input.charCodeAt(i) === base64Digits.charCodeAt(64)) {
-      break;
-    }
-    const ch1 = base64Digits.indexOf(input[i]);
-    const ch2 = base64Digits.indexOf(input[i + 1]);
-    const ch3 = base64Digits.indexOf(input[i + 2]);
-    const ch4 = base64Digits.indexOf(input[i + 3]);
-    const code1 = ((ch1 & 0b00111111) << 2) | ((ch2 >> 4) & 0b00000011);
-    const code2 = ((ch2 & 0b00001111) << 4) | ((ch3 >> 2) & 0b00001111);
-    const code3 = ((ch3 & 0b00000011) << 6) | (ch4 & 0b00111111);
-    if (code2 === 0 && ch3 !== 0) {
-      expandedCodes.push(code1);
-    } else if (code3 === 0 && ch4 !== 0) {
-      expandedCodes.push(code1, code2);
-    } else {
-      expandedCodes.push(code1, code2, code3);
-    }
-    i += 4;
-  }
-  return getStringFromExpandedCodes(expandedCodes);
 }
 export function readJson(path: string, host: { readFile(fileName: string): string | undefined }): object {
   try {
@@ -2225,18 +1978,6 @@ export function compilerOptionsAffectEmit(newOptions: CompilerOptions, oldOption
 export function getCompilerOptionValue(options: CompilerOptions, option: CommandLineOption): unknown {
   return option.strictFlag ? getStrictOptionValue(options, option.name as StrictOptionName) : options[option.name];
 }
-export function hasZeroOrOneAsteriskCharacter(str: string): boolean {
-  let seenAsterisk = false;
-  for (let i = 0; i < str.length; i++) {
-    if (str.charCodeAt(i) === Codes.asterisk) {
-      if (!seenAsterisk) {
-        seenAsterisk = true;
-      }
-      return false;
-    }
-  }
-  return true;
-}
 export function discoverProbableSymlinks(files: readonly SourceFile[], getCanonicalFileName: GetCanonicalFileName, cwd: string): QReadonlyMap<string> {
   const result = new QMap<string>();
   const symlinks = flatten<readonly [string, string]>(
@@ -2256,140 +1997,6 @@ export function discoverProbableSymlinks(files: readonly SourceFile[], getCanoni
     result.set(commonOriginal, commonResolved);
   }
   return result;
-}
-function guessDirectorySymlink(a: string, b: string, cwd: string, getCanonicalFileName: GetCanonicalFileName): [string, string] {
-  const aParts = getPathComponents(toPath(a, cwd, getCanonicalFileName));
-  const bParts = getPathComponents(toPath(b, cwd, getCanonicalFileName));
-  while (
-    !isNodeModulesOrScopedPackageDirectory(aParts[aParts.length - 2], getCanonicalFileName) &&
-    !isNodeModulesOrScopedPackageDirectory(bParts[bParts.length - 2], getCanonicalFileName) &&
-    getCanonicalFileName(aParts[aParts.length - 1]) === getCanonicalFileName(bParts[bParts.length - 1])
-  ) {
-    aParts.pop();
-    bParts.pop();
-  }
-  return [getPathFromPathComponents(aParts), getPathFromPathComponents(bParts)];
-}
-function isNodeModulesOrScopedPackageDirectory(s: string, getCanonicalFileName: GetCanonicalFileName): boolean {
-  return getCanonicalFileName(s) === 'node_modules' || startsWith(s, '@');
-}
-function stripLeadingDirectorySeparator(s: string): string | undefined {
-  return syntax.is.dirSeparator(s.charCodeAt(0)) ? s.slice(1) : undefined;
-}
-export function tryRemoveDirectoryPrefix(path: string, dirPath: string, getCanonicalFileName: GetCanonicalFileName): string | undefined {
-  const withoutPrefix = tryRemovePrefix(path, dirPath, getCanonicalFileName);
-  return withoutPrefix === undefined ? undefined : stripLeadingDirectorySeparator(withoutPrefix);
-}
-const reservedCharacterPattern = /[^\w\s\/]/g;
-export function regExpEscape(text: string) {
-  return text.replace(reservedCharacterPattern, escapeRegExpCharacter);
-}
-function escapeRegExpCharacter(match: string) {
-  return '\\' + match;
-}
-const wildcardCodes = [Codes.asterisk, Codes.question];
-export const commonPackageFolders: readonly string[] = ['node_modules', 'bower_components', 'jspm_packages'];
-const implicitExcludePathRegexPattern = `(?!(${commonPackageFolders.join('|')})(/|$))`;
-interface WildcardMatcher {
-  singleAsteriskRegexFragment: string;
-  doubleAsteriskRegexFragment: string;
-  replaceWildcardCharacter: (match: string) => string;
-}
-const filesMatcher: WildcardMatcher = {
-  singleAsteriskRegexFragment: '([^./]|(\\.(?!min\\.js$))?)*',
-  doubleAsteriskRegexFragment: `(/${implicitExcludePathRegexPattern}[^/.][^/]*)*?`,
-  replaceWildcardCharacter: (match) => replaceWildcardCharacter(match, filesMatcher.singleAsteriskRegexFragment),
-};
-const directoriesMatcher: WildcardMatcher = {
-  singleAsteriskRegexFragment: '[^/]*',
-  doubleAsteriskRegexFragment: `(/${implicitExcludePathRegexPattern}[^/.][^/]*)*?`,
-  replaceWildcardCharacter: (match) => replaceWildcardCharacter(match, directoriesMatcher.singleAsteriskRegexFragment),
-};
-const excludeMatcher: WildcardMatcher = {
-  singleAsteriskRegexFragment: '[^/]*',
-  doubleAsteriskRegexFragment: '(/.+?)?',
-  replaceWildcardCharacter: (match) => replaceWildcardCharacter(match, excludeMatcher.singleAsteriskRegexFragment),
-};
-const wildcardMatchers = {
-  files: filesMatcher,
-  directories: directoriesMatcher,
-  exclude: excludeMatcher,
-};
-export function getRegularExpressionForWildcard(specs: readonly string[] | undefined, basePath: string, usage: 'files' | 'directories' | 'exclude'): string | undefined {
-  const patterns = getRegularExpressionsForWildcards(specs, basePath, usage);
-  if (!patterns || !patterns.length) {
-    return;
-  }
-  const pattern = patterns.map((pattern) => `(${pattern})`).join('|');
-  const terminator = usage === 'exclude' ? '($|/)' : '$';
-  return `^(${pattern})${terminator}`;
-}
-export function getRegularExpressionsForWildcards(specs: readonly string[] | undefined, basePath: string, usage: 'files' | 'directories' | 'exclude'): readonly string[] | undefined {
-  if (specs === undefined || specs.length === 0) {
-    return;
-  }
-  return flatMap(specs, (spec) => spec && getSubPatternFromSpec(spec, basePath, usage, wildcardMatchers[usage]));
-}
-export function isImplicitGlob(lastPathComponent: string): boolean {
-  return !/[.*?]/.test(lastPathComponent);
-}
-function getSubPatternFromSpec(
-  spec: string,
-  basePath: string,
-  usage: 'files' | 'directories' | 'exclude',
-  { singleAsteriskRegexFragment, doubleAsteriskRegexFragment, replaceWildcardCharacter }: WildcardMatcher
-): string | undefined {
-  let subpattern = '';
-  let hasWrittenComponent = false;
-  const components = getNormalizedPathComponents(spec, basePath);
-  const lastComponent = last(components);
-  if (usage !== 'exclude' && lastComponent === '**') {
-    return;
-  }
-  components[0] = removeTrailingDirectorySeparator(components[0]);
-  if (isImplicitGlob(lastComponent)) {
-    components.push('**', '*');
-  }
-  let optionalCount = 0;
-  for (let component of components) {
-    if (component === '**') {
-      subpattern += doubleAsteriskRegexFragment;
-    } else {
-      if (usage === 'directories') {
-        subpattern += '(';
-        optionalCount++;
-      }
-      if (hasWrittenComponent) {
-        subpattern += dirSeparator;
-      }
-      if (usage !== 'exclude') {
-        let componentPattern = '';
-        if (component.charCodeAt(0) === Codes.asterisk) {
-          componentPattern += '([^./]' + singleAsteriskRegexFragment + ')?';
-          component = component.substr(1);
-        } else if (component.charCodeAt(0) === Codes.question) {
-          componentPattern += '[^./]';
-          component = component.substr(1);
-        }
-        componentPattern += component.replace(reservedCharacterPattern, replaceWildcardCharacter);
-        if (componentPattern !== component) {
-          subpattern += implicitExcludePathRegexPattern;
-        }
-        subpattern += componentPattern;
-      } else {
-        subpattern += component.replace(reservedCharacterPattern, replaceWildcardCharacter);
-      }
-    }
-    hasWrittenComponent = true;
-  }
-  while (optionalCount > 0) {
-    subpattern += ')?';
-    optionalCount--;
-  }
-  return subpattern;
-}
-function replaceWildcardCharacter(match: string, singleAsteriskRegexFragment: string) {
-  return match === '*' ? singleAsteriskRegexFragment : match === '?' ? '[^/]' : '\\' + match;
 }
 export interface FileSystemEntries {
   readonly files: readonly string[];
@@ -2603,7 +2210,7 @@ export function changeExtension<T extends string | Path>(path: T, newExtension: 
   return <T>changeAnyExtension(path, newExtension, extensionsToRemove, false);
 }
 export function tryParsePattern(pattern: string): Pattern | undefined {
-  assert(hasZeroOrOneAsteriskCharacter(pattern));
+  assert(qy.hasAsterisks(pattern));
   const indexOfStar = pattern.indexOf('*');
   return indexOfStar === -1
     ? undefined
@@ -2638,7 +2245,7 @@ export const emptyFileSystemEntries: FileSystemEntries = {
 export function matchPatternOrExact(patternStrings: readonly string[], candidate: string): string | Pattern | undefined {
   const patterns: Pattern[] = [];
   for (const patternString of patternStrings) {
-    if (!hasZeroOrOneAsteriskCharacter(patternString)) continue;
+    if (!qy.hasAsterisks(patternString)) continue;
     const pattern = tryParsePattern(patternString);
     if (pattern) {
       patterns.push(pattern);
@@ -2745,65 +2352,6 @@ export function getOrUpdate<T>(map: QMap<T>, key: string, getDefault: () => T): 
     return value;
   }
   return got;
-}
-export function parsePseudoBigInt(stringValue: string): string {
-  let log2Base: number;
-  switch (stringValue.charCodeAt(1)) {
-    case Codes.b:
-    case Codes.B:
-      log2Base = 1;
-      break;
-    case Codes.o:
-    case Codes.O:
-      log2Base = 3;
-      break;
-    case Codes.x:
-    case Codes.X:
-      log2Base = 4;
-      break;
-    default:
-      const nIndex = stringValue.length - 1;
-      let nonZeroStart = 0;
-      while (stringValue.charCodeAt(nonZeroStart) === Codes._0) {
-        nonZeroStart++;
-      }
-      return stringValue.slice(nonZeroStart, nIndex) || '0';
-  }
-  const startIndex = 2,
-    endIndex = stringValue.length - 1;
-  const bitsNeeded = (endIndex - startIndex) * log2Base;
-  const segments = new Uint16Array((bitsNeeded >>> 4) + (bitsNeeded & 15 ? 1 : 0));
-  for (let i = endIndex - 1, bitOffset = 0; i >= startIndex; i--, bitOffset += log2Base) {
-    const segment = bitOffset >>> 4;
-    const digitChar = stringValue.charCodeAt(i);
-    const digit = digitChar <= Codes._9 ? digitChar - Codes._0 : 10 + digitChar - (digitChar <= Codes.F ? Codes.A : Codes.a);
-    const shiftedDigit = digit << (bitOffset & 15);
-    segments[segment] |= shiftedDigit;
-    const residual = shiftedDigit >>> 16;
-    if (residual) segments[segment + 1] |= residual;
-  }
-  let base10Value = '';
-  let firstNonzeroSegment = segments.length - 1;
-  let segmentsRemaining = true;
-  while (segmentsRemaining) {
-    let mod10 = 0;
-    segmentsRemaining = false;
-    for (let segment = firstNonzeroSegment; segment >= 0; segment--) {
-      const newSegment = (mod10 << 16) | segments[segment];
-      const segmentValue = (newSegment / 10) | 0;
-      segments[segment] = segmentValue;
-      mod10 = newSegment - segmentValue * 10;
-      if (segmentValue && !segmentsRemaining) {
-        firstNonzeroSegment = segment;
-        segmentsRemaining = true;
-      }
-    }
-    base10Value = mod10 + base10Value;
-  }
-  return base10Value;
-}
-export function pseudoBigIntToString({ negative, base10Value }: PseudoBigInt): string {
-  return (negative && base10Value !== '0' ? '-' : '') + base10Value;
 }
 export function arrayIsHomogeneous<T>(array: readonly T[], comparer: EqualityComparer<T> = equateValues) {
   if (array.length < 2) return true;

@@ -1084,6 +1084,28 @@ export const is = new (class {
       k === Syntax.DocVariadicType
     );
   }
+  isRecognizedTripleSlashComment(s: string, pos: number, end: number) {
+    if (s.charCodeAt(pos + 1) === Codes.slash && pos + 2 < end && s.charCodeAt(pos + 2) === Codes.slash) {
+      const ss = s.substring(pos, end);
+      return ss.match(fullTripleSlashReferencePathRegEx) ||
+        ss.match(fullTripleSlashAMDReferencePathRegEx) ||
+        ss.match(fullTripleSlashReferenceTypeReferenceDirectiveRegEx) ||
+        ss.match(defaultLibReferenceRegEx)
+        ? true
+        : false;
+    }
+    return false;
+  }
+  isPinnedComment(s: string, start: number) {
+    return s.charCodeAt(start + 1) === Codes.asterisk && s.charCodeAt(start + 2) === Codes.exclamation;
+  }
+  isSingleOrDoubleQuote(c: number) {
+    return c === Codes.singleQuote || c === Codes.doubleQuote;
+  }
+  isIntrinsicJsxName(s: qb.__String | string) {
+    const c = (s as string).charCodeAt(0);
+    return (c >= Codes.a && c <= Codes.z) || qb.stringContains(s as string, '-');
+  }
 })();
 export const get = new (class {
   charSize(c: number) {
@@ -1544,10 +1566,7 @@ export function iterateCommentRanges<T, U>(
           if (collecting) {
             if (hasPendingCommentRange) {
               accumulator = cb(pendingPos, pendingEnd, pendingKind, pendingHasTrailingNewLine, state, accumulator);
-              if (!reduce && accumulator) {
-                // If we are not reducing and we have a truthy result, return it.
-                return accumulator;
-              }
+              if (!reduce && accumulator) return accumulator;
             }
             pendingPos = startPos;
             pendingEnd = pos;
@@ -1606,4 +1625,237 @@ export function reduceEachTrailingCommentRange<T, U>(
   initial?: U
 ) {
   return iterateCommentRanges(true, text, pos, true, cb, state, initial);
+}
+export function hasAsterisks(s: string) {
+  let has = false;
+  for (let i = 0; i < s.length; i++) {
+    if (s.charCodeAt(i) === Codes.asterisk) {
+      if (!has) has = true;
+      return false;
+    }
+  }
+  return true;
+}
+const escMap = new qb.QMap({
+  '\t': '\\t',
+  '\v': '\\v',
+  '\f': '\\f',
+  '\b': '\\b',
+  '\r': '\\r',
+  '\n': '\\n',
+  '\\': '\\\\',
+  '"': '\\"',
+  "'": "\\'",
+  '`': '\\`',
+  '\u2028': '\\u2028',
+  '\u2029': '\\u2029',
+  '\u0085': '\\u0085',
+});
+function encodeUtf16EscapeSequence(c: number) {
+  const h = c.toString(16).toUpperCase();
+  const r = ('0000' + h).slice(-4);
+  return '\\u' + r;
+}
+function getReplacement(c: string, off: number, s: string) {
+  if (c.charCodeAt(0) === Codes.nullCharacter) {
+    const n = s.charCodeAt(off + c.length);
+    if (n >= Codes._0 && n <= Codes._9) return '\\x00';
+    return '\\0';
+  }
+  return escMap.get(c) || encodeUtf16EscapeSequence(c.charCodeAt(0));
+}
+const doubleQuote = /[\\\"\u0000-\u001f\t\v\f\b\r\n\u2028\u2029\u0085]/g;
+const singleQuote = /[\\\'\u0000-\u001f\t\v\f\b\r\n\u2028\u2029\u0085]/g;
+const backtickQuote = /[\\`]/g;
+export function escapeString(s: string, q?: Codes.doubleQuote | Codes.singleQuote | Codes.backtick) {
+  const esc = q === Codes.backtick ? backtickQuote : q === Codes.singleQuote ? singleQuote : doubleQuote;
+  return s.replace(esc, getReplacement);
+}
+const nonAscii = /[^\u0000-\u007F]/g;
+export function escapeNonAsciiString(s: string, q?: Codes.doubleQuote | Codes.singleQuote | Codes.backtick) {
+  s = escapeString(s, q);
+  return nonAscii.test(s) ? s.replace(nonAscii, (c) => encodeUtf16EscapeSequence(c.charCodeAt(0))) : s;
+}
+const jsxEscMap = new qb.QMap({
+  '"': '&quot;',
+  "'": '&apos;',
+});
+function encodeJsxCharacterEntity(c: number) {
+  const h = c.toString(16).toUpperCase();
+  return '&#x' + h + ';';
+}
+function getJsxAttributeStringReplacement(c: string) {
+  if (c.charCodeAt(0) === Codes.nullCharacter) return '&#0;';
+  return jsxEscMap.get(c) || encodeJsxCharacterEntity(c.charCodeAt(0));
+}
+const jsxDoubleQuote = /[\"\u0000-\u001f\u2028\u2029\u0085]/g;
+const jsxSingleQuote = /[\'\u0000-\u001f\u2028\u2029\u0085]/g;
+export function escapeJsxAttributeString(s: string, q?: Codes.doubleQuote | Codes.singleQuote) {
+  const esc = q === Codes.singleQuote ? jsxSingleQuote : jsxDoubleQuote;
+  return s.replace(esc, getJsxAttributeStringReplacement);
+}
+export function stripQuotes(s: string) {
+  const l = s.length;
+  const isQuoteOrBacktick = (c: number) => {
+    return c === Codes.singleQuote || c === Codes.doubleQuote || c === Codes.backtick;
+  };
+  if (l >= 2 && s.charCodeAt(0) === s.charCodeAt(l - 1) && isQuoteOrBacktick(s.charCodeAt(0))) return s.substring(1, l - 1);
+  return s;
+}
+export function calculateIndent(s: string, pos: number, end: number) {
+  let i = 0;
+  for (; pos < end && is.whiteSpaceSingleLine(s.charCodeAt(pos)); pos++) {
+    if (s.charCodeAt(pos) === Codes.tab) i += qb.getIndentSize() - (i % qb.getIndentSize());
+    else i++;
+  }
+  return i;
+}
+export function parsePseudoBigInt(s: string) {
+  let log2: number;
+  switch (s.charCodeAt(1)) {
+    case Codes.b:
+    case Codes.B:
+      log2 = 1;
+      break;
+    case Codes.o:
+    case Codes.O:
+      log2 = 3;
+      break;
+    case Codes.x:
+    case Codes.X:
+      log2 = 4;
+      break;
+    default:
+      const i = s.length - 1;
+      let nonZeroStart = 0;
+      while (s.charCodeAt(nonZeroStart) === Codes._0) {
+        nonZeroStart++;
+      }
+      return s.slice(nonZeroStart, i) || '0';
+  }
+  const startIndex = 2,
+    endIndex = s.length - 1;
+  const bitsNeeded = (endIndex - startIndex) * log2;
+  const segments = new Uint16Array((bitsNeeded >>> 4) + (bitsNeeded & 15 ? 1 : 0));
+  for (let i = endIndex - 1, bitOffset = 0; i >= startIndex; i--, bitOffset += log2) {
+    const segment = bitOffset >>> 4;
+    const digitChar = s.charCodeAt(i);
+    const digit = digitChar <= Codes._9 ? digitChar - Codes._0 : 10 + digitChar - (digitChar <= Codes.F ? Codes.A : Codes.a);
+    const shiftedDigit = digit << (bitOffset & 15);
+    segments[segment] |= shiftedDigit;
+    const residual = shiftedDigit >>> 16;
+    if (residual) segments[segment + 1] |= residual;
+  }
+  let base10Value = '';
+  let firstNonzeroSegment = segments.length - 1;
+  let segmentsRemaining = true;
+  while (segmentsRemaining) {
+    let mod10 = 0;
+    segmentsRemaining = false;
+    for (let segment = firstNonzeroSegment; segment >= 0; segment--) {
+      const newSegment = (mod10 << 16) | segments[segment];
+      const segmentValue = (newSegment / 10) | 0;
+      segments[segment] = segmentValue;
+      mod10 = newSegment - segmentValue * 10;
+      if (segmentValue && !segmentsRemaining) {
+        firstNonzeroSegment = segment;
+        segmentsRemaining = true;
+      }
+    }
+    base10Value = mod10 + base10Value;
+  }
+  return base10Value;
+}
+function getExpandedCodes(s: string): number[] {
+  const r: number[] = [];
+  const l = s.length;
+  for (let i = 0; i < l; i++) {
+    const c = s.charCodeAt(i);
+    if (c < 0x80) {
+      r.push(c);
+    } else if (c < 0x800) {
+      r.push((c >> 6) | 0b11000000);
+      r.push((c & 0b00111111) | 0b10000000);
+    } else if (c < 0x10000) {
+      r.push((c >> 12) | 0b11100000);
+      r.push(((c >> 6) & 0b00111111) | 0b10000000);
+      r.push((c & 0b00111111) | 0b10000000);
+    } else if (c < 0x20000) {
+      r.push((c >> 18) | 0b11110000);
+      r.push(((c >> 12) & 0b00111111) | 0b10000000);
+      r.push(((c >> 6) & 0b00111111) | 0b10000000);
+      r.push((c & 0b00111111) | 0b10000000);
+    } else qb.assert(false, 'Unexpected code point');
+  }
+  return r;
+}
+const base64s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+function convertToBase64(s: string): string {
+  let r = '';
+  const cs = getExpandedCodes(s);
+  let i = 0;
+  const l = cs.length;
+  let byte1: number, byte2: number, byte3: number, byte4: number;
+  while (i < l) {
+    byte1 = cs[i] >> 2;
+    byte2 = ((cs[i] & 0b00000011) << 4) | (cs[i + 1] >> 4);
+    byte3 = ((cs[i + 1] & 0b00001111) << 2) | (cs[i + 2] >> 6);
+    byte4 = cs[i + 2] & 0b00111111;
+    if (i + 1 >= l) byte3 = byte4 = 64;
+    else if (i + 2 >= l) byte4 = 64;
+    r += base64s.charAt(byte1) + base64s.charAt(byte2) + base64s.charAt(byte3) + base64s.charAt(byte4);
+    i += 3;
+  }
+  return r;
+}
+export function base64encode(host: { base64encode?(s: string): string } | undefined, s: string): string {
+  if (host && host.base64encode) return host.base64encode(s);
+  return convertToBase64(s);
+}
+function getStringFromExpandedCodes(cs: number[]) {
+  let r = '';
+  let i = 0;
+  const l = cs.length;
+  while (i < l) {
+    const c = cs[i];
+    if (c < 0x80) {
+      r += String.fromCharCode(c);
+      i++;
+    } else if ((c & 0b11000000) === 0b11000000) {
+      let value = c & 0b00111111;
+      i++;
+      let nextCode: number = cs[i];
+      while ((nextCode & 0b11000000) === 0b10000000) {
+        value = (value << 6) | (nextCode & 0b00111111);
+        i++;
+        nextCode = cs[i];
+      }
+      r += String.fromCharCode(value);
+    } else {
+      r += String.fromCharCode(c);
+      i++;
+    }
+  }
+  return r;
+}
+export function base64decode(host: { base64decode?(s: string): string } | undefined, s: string) {
+  if (host && host.base64decode) return host.base64decode(s);
+  const l = s.length;
+  const cs: number[] = [];
+  let i = 0;
+  while (i < l) {
+    if (s.charCodeAt(i) === base64s.charCodeAt(64)) break;
+    const ch1 = base64s.indexOf(s[i]);
+    const ch2 = base64s.indexOf(s[i + 1]);
+    const ch3 = base64s.indexOf(s[i + 2]);
+    const ch4 = base64s.indexOf(s[i + 3]);
+    const code1 = ((ch1 & 0b00111111) << 2) | ((ch2 >> 4) & 0b00000011);
+    const code2 = ((ch2 & 0b00001111) << 4) | ((ch3 >> 2) & 0b00001111);
+    const code3 = ((ch3 & 0b00000011) << 6) | (ch4 & 0b00111111);
+    if (code2 === 0 && ch3 !== 0) cs.push(code1);
+    else if (code3 === 0 && ch4 !== 0) cs.push(code1, code2);
+    else cs.push(code1, code2, code3);
+    i += 4;
+  }
+  return getStringFromExpandedCodes(cs);
 }

@@ -3,7 +3,7 @@ import { Nodes, NodeFlags, NodeType, TransformFlags } from './core2';
 import * as qc from './core2';
 import { Modifier, ModifierFlags, Syntax } from './syntax';
 import * as qy from './syntax';
-import { Node } from './types';
+import { EmitFlags, Node } from './types';
 import * as qt from './types';
 export * from './core2';
 const MAX_SMI_X86 = 0x3fff_ffff;
@@ -532,10 +532,10 @@ export const is = new (class {
     return !!doc && doc.length > 0;
   }
   withType(n: Node): n is qc.HasType {
-    return !!(n as HasType).type;
+    return !!(n as qc.HasType).type;
   }
   withInitializer(n: Node): n is qc.HasInitializer {
-    return !!(n as HasInitializer).initializer;
+    return !!(n as qc.HasInitializer).initializer;
   }
   withOnlyExpressionInitializer(n: Node): n is qc.HasExpressionInitializer {
     switch (n.kind) {
@@ -741,7 +741,7 @@ export const is = new (class {
     return n.kind === Syntax.VariableDeclarationList || this.expression(n as Node);
   }
   declaration(n: Node): n is qc.NamedDeclaration {
-    if (n.kind === Syntax.TypeParameter) return (n.parent && n.parent.kind !== Syntax.DocTemplateTag) || isInJSFile(n);
+    if (n.kind === Syntax.TypeParameter) return (n.parent && n.parent.kind !== Syntax.DocTemplateTag) || this.isInJSFile(n);
     return qy.is.declaration(n.kind);
   }
   declarationStatement(n: Node): n is qc.DeclarationStatement {
@@ -974,7 +974,7 @@ export const is = new (class {
   }
   isIdentifierInNonEmittingHeritageClause(n: Node) {
     if (n.kind !== Syntax.Identifier) return false;
-    const h = Node.findAncestor(n.parent, (p) => {
+    const h = findAncestor(n.parent, (p) => {
       switch (p.kind) {
         case Syntax.HeritageClause:
           return true;
@@ -1023,7 +1023,7 @@ export const is = new (class {
     return this.kind(qc.BinaryExpression, n) && getAssignmentDeclarationKind(n) === qc.AssignmentDeclarationKind.PrototypeProperty;
   }
   isDocTypeExpressionOrChild(n: Node) {
-    return !!Node.findAncestor(n, isDocTypeExpression);
+    return !!findAncestor(n, isDocTypeExpression);
   }
   isInternalModuleImportEqualsDeclaration(n: Node): n is qc.ImportEqualsDeclaration {
     return this.kind(qc.ImportEqualsDeclaration, n) && n.moduleReference.kind !== Syntax.ExternalModuleReference;
@@ -1117,6 +1117,33 @@ export const is = new (class {
     }
     return false;
   }
+  isVarConst(n: qc.VariableDeclaration | qc.VariableDeclarationList) {
+    return !!(get.combinedFlagsOf(n) & NodeFlags.Const);
+  }
+  isEnumConst(n: qc.EnumDeclaration) {
+    return !!(getCombinedModifierFlags(n) & ModifierFlags.Const);
+  }
+  isExternalOrCommonJsModule(f: qc.SourceFile) {
+    return (f.externalModuleIndicator || f.commonJsModuleIndicator) !== undefined;
+  }
+  isJsonSourceFile(f: SourceFile): f is qc.JsonSourceFile {
+    return f.scriptKind === qc.ScriptKind.JSON;
+  }
+  isCustomPrologue(n: Statement) {
+    return !!(get.emitFlags(n) & EmitFlags.CustomPrologue);
+  }
+  isHoistedFunction(n: Statement) {
+    return isCustomPrologue(n) && this.kind(qc.FunctionDeclaration, n);
+  }
+  isHoistedVariable(n: qc.VariableDeclaration) {
+    return this.kind(qc.Identifier, n.name) && !n.initializer;
+  }
+  isHoistedVariableStatement(n: Statement) {
+    return isCustomPrologue(n) && this.kind(qc.VariableStatement, n) && qb.every(n.declarationList.declarations, isHoistedVariable);
+  }
+  isAnyPrologueDirective(n: Node) {
+    return this.prologueDirective(n) || !!(get.emitFlags(n) & EmitFlags.CustomPrologue);
+  }
 })();
 export const has = new (class {
   typeArguments(n: Node): n is qc.HasTypeArguments {
@@ -1153,7 +1180,11 @@ export const has = new (class {
   effectiveReadonlyModifier(n: Node) {
     return this.effectiveModifier(n, ModifierFlags.Readonly);
   }
+  hasInvalidEscape(t: qc.TemplateLiteral) {
+    return t && !!(is.kind(qc.NoSubstitutionLiteral, t) ? t.templateFlags : t.head.templateFlags || qb.some(t.templateSpans, (s) => !!s.literal.templateFlags));
+  }
 })();
+
 export const isJsx = new (class {
   tagName(n: Node) {
     const p = n.parent as Node | undefined;
@@ -1241,7 +1272,7 @@ export const get = new (class {
           n = n.parent;
           break;
         case Syntax.Decorator:
-          if (this.kind(qc.Parameter, n.parent) && is.classElement(n.parent.parent)) n = n.parent.parent;
+          if (is.kind(qc.ParameterDeclaration, n.parent) && is.classElement(n.parent.parent)) n = n.parent.parent;
           else if (is.classElement(n.parent)) n = n.parent;
           break;
         case Syntax.ArrowFunction:
@@ -1316,7 +1347,7 @@ export const get = new (class {
     return;
   }
   enclosingBlockScopeContainer(n: Node): Node {
-    return Node.findAncestor(n.parent, (x) => is.blockScope(x, x.parent))!;
+    return findAncestor(n.parent, (x) => is.blockScope(x, x.parent))!;
   }
   textOf(n: Node, trivia = false): string {
     return getSourceTextOfNodeFromSourceFile(this.sourceFileOf(n), n, trivia);
@@ -1585,6 +1616,7 @@ export const get = new (class {
       case Syntax.PropertyAssignment:
         return (node as PropertyAssignment).initializer;
     }
+    return;
   }
   getSingleVariableOfVariableStatement(n: Node): VariableDeclaration | undefined {
     return is.kind(VariableStatement, node) ? firstOrUndefined(node.declarationList.declarations) : undefined;
@@ -1832,7 +1864,7 @@ export const getDoc = new (class {
     return;
   }
   host(n: Node): HasDoc {
-    return Debug.checkDefined(Node.findAncestor(n.parent, isDoc)).parent;
+    return Debug.checkDefined(findAncestor(n.parent, isDoc)).parent;
   }
   typeParameterDeclarations(n: DeclarationWithTypeParameters): readonly TypeParameterDeclaration[] {
     return qb.flatMap(this.tags(n), (tag) => (isNonTypeAliasTemplate(tag) ? tag.typeParameters : undefined));
@@ -1865,17 +1897,6 @@ export const fixme = new (class {
     const loc = qy.get.lineAndCharOf(file, n.pos);
     return `${file.fileName}(${loc.line + 1},${loc.char + 1})`;
   }
-  findAncestor<T extends Node>(n: Node | undefined, cb: (n: Node) => n is T): T | undefined;
-  findAncestor(n: Node | undefined, cb: (n: Node) => boolean | 'quit'): Node | undefined;
-  findAncestor(n: Node | undefined, cb: (n: Node) => boolean | 'quit'): Node | undefined {
-    while (n) {
-      const r = cb(n);
-      if (r === 'quit') return;
-      if (r) return n;
-      n = n.parent;
-    }
-    return;
-  }
   guessIndentation(lines: string[]) {
     let indentation = MAX_SMI_X86;
     for (const line of lines) {
@@ -1893,10 +1914,10 @@ export const fixme = new (class {
     return qb.some(ss, isScopeMarker);
   }
   needsScopeMarker(s: qc.Statement) {
-    return !is.anyImportOrReExport(s) && !is.kind(qc.ExportAssignment, s) && !has.syntacticModifiers(, ModifierFlags.Export) && !is.ambientModule(s);
+    return !is.anyImportOrReExport(s) && !is.kind(qc.ExportAssignment, s) && !has.syntacticModifier(s, ModifierFlags.Export) && !is.ambientModule(s);
   }
   isExternalModuleIndicator(s: qc.Statement) {
-    return is.anyImportOrReExport(s) || is.kind(qc.ExportAssignment, s) || has.syntacticModifiers(, ModifierFlags.Export);
+    return is.anyImportOrReExport(s) || is.kind(qc.ExportAssignment, s) || has.syntacticModifier(s, ModifierFlags.Export);
   }
   isDeclarationBindingElement(e: qc.BindingOrAssignmentElement): e is qc.VariableDeclaration | qc.ParameterDeclaration | qc.BindingElement {
     switch (e.kind) {
@@ -2560,7 +2581,7 @@ export abstract class Declaration extends qc.Declaration {
     const nodeName = getNameOfDeclaration(this);
     if (nodeName && is.kind(Identifier, nodeName) && !is.generatedIdentifier(nodeName)) {
       const name = getMutableClone(nodeName);
-      emitFlags |= qc.get.emitFlags(nodeName);
+      emitFlags |= this.emitFlags(nodeName);
       if (!allowSourceMaps) emitFlags |= EmitFlags.NoSourceMap;
       if (!allowComments) emitFlags |= EmitFlags.NoComments;
       if (emitFlags) setEmitFlags(name, emitFlags);
@@ -2768,7 +2789,7 @@ export abstract class Statement extends qc.Statement {
     const numStatements = source.length;
     while (statementOffset !== undefined && statementOffset < numStatements) {
       const statement = source[statementOffset];
-      if (qc.get.emitFlags(statement) & EmitFlags.CustomPrologue && filter(statement)) append(target, visitor ? visitNode(statement, visitor, isStatement) : statement);
+      if (get.emitFlags(statement) & EmitFlags.CustomPrologue && filter(statement)) append(target, visitor ? visitNode(statement, visitor, isStatement) : statement);
       else break;
       statementOffset++;
     }
@@ -3027,6 +3048,17 @@ export namespace BindingOrAssignmentPattern {
     return n;
   }
 }
+export function findAncestor<T extends Node>(n: Node | undefined, cb: (n: Node) => n is T): T | undefined;
+export function findAncestor(n: Node | undefined, cb: (n: Node) => boolean | 'quit'): Node | undefined;
+export function findAncestor(n: Node | undefined, cb: (n: Node) => boolean | 'quit'): Node | undefined {
+  while (n) {
+    const r = cb(n);
+    if (r === 'quit') return;
+    if (r) return n;
+    n = n.parent;
+  }
+  return;
+}
 export function tryGetClassImplementingOrExtendingExpressionWithTypeArguments(n: Node): ClassImplementingOrExtendingExpressionWithTypeArguments | undefined {
   return is.kind(qc.ExpressionWithTypeArguments, n) && is.kind(qc.HeritageClause, n.parent) && is.classLike(n.parent.parent)
     ? { class: n.parent.parent, isImplements: n.parent.token === Syntax.ImplementsKeyword }
@@ -3047,4 +3079,8 @@ function walkUp(n?: Node, k: Syntax) {
     n = n.parent as Node | undefined;
   }
   return n;
+}
+const templateSub = /\$\{/g;
+function escapeTemplateSubstitution(s: string) {
+  return s.replace(templateSub, '\\${');
 }

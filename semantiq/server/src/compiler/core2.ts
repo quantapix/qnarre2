@@ -4303,6 +4303,9 @@ export function asToken<T extends Syntax>(t: T | qc.Token<T>): qc.Token<T> {
 export function asName<T extends Identifier | qc.BindingName | qc.PropertyName | qc.EntityName | ThisTypeNode | undefined>(n: string | T): T | Identifier {
   return qb.isString(n) ? new Identifier(n) : n;
 }
+export function pseudoBigIntToString({ negative, base10Value }: PseudoBigInt) {
+  return (negative && base10Value !== '0' ? '-' : '') + base10Value;
+}
 export function asLiteral(v: string | StringLiteral | NoSubstitutionLiteral | NumericLiteral | Identifier, singleQuote: boolean): StringLiteral;
 export function asLiteral(v: string | number, singleQuote: boolean): StringLiteral | NumericLiteral;
 export function asLiteral(v: string | StringLiteral | NoSubstitutionLiteral | NumericLiteral | Identifier): StringLiteral;

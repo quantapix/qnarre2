@@ -304,3 +304,115 @@ export function forEachAncestorDirectory<T>(directory: Path, callback: (_: Path)
 export function isNodeModulesDirectory(dirPath: Path) {
   return qb.endsWith(dirPath, '/node_modules');
 }
+function guessDirectorySymlink(a: string, b: string, cwd: string, getCanonicalFileName: qb.GetCanonicalFileName): [string, string] {
+  const aParts = getPathComponents(toPath(a, cwd, getCanonicalFileName));
+  const bParts = getPathComponents(toPath(b, cwd, getCanonicalFileName));
+  while (
+    !isNodeModulesOrScopedPackageDirectory(aParts[aParts.length - 2], getCanonicalFileName) &&
+    !isNodeModulesOrScopedPackageDirectory(bParts[bParts.length - 2], getCanonicalFileName) &&
+    getCanonicalFileName(aParts[aParts.length - 1]) === getCanonicalFileName(bParts[bParts.length - 1])
+  ) {
+    aParts.pop();
+    bParts.pop();
+  }
+  return [getPathFromPathComponents(aParts), getPathFromPathComponents(bParts)];
+}
+function isNodeModulesOrScopedPackageDirectory(s: string, getCanonicalFileName: qb.GetCanonicalFileName): boolean {
+  return getCanonicalFileName(s) === 'node_modules' || qb.startsWith(s, '@');
+}
+function stripLeadingDirectorySeparator(s: string): string | undefined {
+  return syntax.is.dirSeparator(s.charCodeAt(0)) ? s.slice(1) : undefined;
+}
+export function tryRemoveDirectoryPrefix(path: string, dirPath: string, getCanonicalFileName: qb.GetCanonicalFileName): string | undefined {
+  const withoutPrefix = tryRemovePrefix(path, dirPath, getCanonicalFileName);
+  return withoutPrefix === undefined ? undefined : stripLeadingDirectorySeparator(withoutPrefix);
+}
+const wildcardCodes = [Codes.asterisk, Codes.question];
+export const commonPackageFolders: readonly string[] = ['node_modules', 'bower_components', 'jspm_packages'];
+const implicitExcludePathRegexPattern = `(?!(${commonPackageFolders.join('|')})(/|$))`;
+interface WildcardMatcher {
+  singleAsteriskRegexFragment: string;
+  doubleAsteriskRegexFragment: string;
+  replaceWildcardCharacter: (match: string) => string;
+}
+const filesMatcher: WildcardMatcher = {
+  singleAsteriskRegexFragment: '([^./]|(\\.(?!min\\.js$))?)*',
+  doubleAsteriskRegexFragment: `(/${implicitExcludePathRegexPattern}[^/.][^/]*)*?`,
+  replaceWildcardCharacter: (match) => replaceWildcardCharacter(match, filesMatcher.singleAsteriskRegexFragment),
+};
+const directoriesMatcher: WildcardMatcher = {
+  singleAsteriskRegexFragment: '[^/]*',
+  doubleAsteriskRegexFragment: `(/${implicitExcludePathRegexPattern}[^/.][^/]*)*?`,
+  replaceWildcardCharacter: (match) => replaceWildcardCharacter(match, directoriesMatcher.singleAsteriskRegexFragment),
+};
+const excludeMatcher: WildcardMatcher = {
+  singleAsteriskRegexFragment: '[^/]*',
+  doubleAsteriskRegexFragment: '(/.+?)?',
+  replaceWildcardCharacter: (match) => replaceWildcardCharacter(match, excludeMatcher.singleAsteriskRegexFragment),
+};
+const wildcardMatchers = {
+  files: filesMatcher,
+  directories: directoriesMatcher,
+  exclude: excludeMatcher,
+};
+export function getRegularExpressionForWildcard(specs: readonly string[] | undefined, basePath: string, usage: 'files' | 'directories' | 'exclude'): string | undefined {
+  const patterns = getRegularExpressionsForWildcards(specs, basePath, usage);
+  if (!patterns || !patterns.length) return;
+  const pattern = patterns.map((pattern) => `(${pattern})`).join('|');
+  const terminator = usage === 'exclude' ? '($|/)' : '$';
+  return `^(${pattern})${terminator}`;
+}
+export function getRegularExpressionsForWildcards(specs: readonly string[] | undefined, basePath: string, usage: 'files' | 'directories' | 'exclude'): readonly string[] | undefined {
+  if (specs === undefined || specs.length === 0) return;
+  return qb.flatMap(specs, (spec) => spec && getSubPatternFromSpec(spec, basePath, usage, wildcardMatchers[usage]));
+}
+export function isImplicitGlob(lastPathComponent: string): boolean {
+  return !/[.*?]/.test(lastPathComponent);
+}
+function getSubPatternFromSpec(
+  spec: string,
+  basePath: string,
+  usage: 'files' | 'directories' | 'exclude',
+  { singleAsteriskRegexFragment, doubleAsteriskRegexFragment, replaceWildcardCharacter }: WildcardMatcher
+): string | undefined {
+  let sub = '';
+  let hasWrittenComponent = false;
+  const components = getNormalizedPathComponents(spec, basePath);
+  const lastComponent = qb.last(components);
+  if (usage !== 'exclude' && lastComponent === '**') return;
+  components[0] = removeTrailingDirectorySeparator(components[0]);
+  if (isImplicitGlob(lastComponent)) components.push('**', '*');
+  let optionalCount = 0;
+  for (let component of components) {
+    if (component === '**') sub += doubleAsteriskRegexFragment;
+    else {
+      if (usage === 'directories') {
+        sub += '(';
+        optionalCount++;
+      }
+      if (hasWrittenComponent) sub += dirSeparator;
+      if (usage !== 'exclude') {
+        let componentPattern = '';
+        if (component.charCodeAt(0) === Codes.asterisk) {
+          componentPattern += '([^./]' + singleAsteriskRegexFragment + ')?';
+          component = component.substr(1);
+        } else if (component.charCodeAt(0) === Codes.question) {
+          componentPattern += '[^./]';
+          component = component.substr(1);
+        }
+        componentPattern += component.replace(qb.reservedPattern, replaceWildcardCharacter);
+        if (componentPattern !== component) sub += implicitExcludePathRegexPattern;
+        sub += componentPattern;
+      } else sub += component.replace(qb.reservedPattern, replaceWildcardCharacter);
+    }
+    hasWrittenComponent = true;
+  }
+  while (optionalCount > 0) {
+    sub += ')?';
+    optionalCount--;
+  }
+  return sub;
+}
+function replaceWildcardCharacter(match: string, singleAsteriskRegexFragment: string) {
+  return match === '*' ? singleAsteriskRegexFragment : match === '?' ? '[^/]' : '\\' + match;
+}

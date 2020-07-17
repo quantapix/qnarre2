@@ -1478,7 +1478,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
         let pattern: Pattern | undefined;
         if (node.name.kind === Syntax.StringLiteral) {
           const { text } = node.name;
-          if (hasZeroOrOneAsteriskCharacter(text)) {
+          if (qy.hasAsterisks(text)) {
             pattern = tryParsePattern(text);
           } else {
             errorOnFirstToken(node.name, qd.Pattern_0_can_have_at_most_one_Asterisk_character, text);
@@ -1580,7 +1580,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     const saveCurrentFlow = currentFlow;
     for (const typeAlias of delayedTypeAliases) {
       const host = qc.getDoc.host(typeAlias);
-      container = Node.findAncestor(host.parent, (n) => !!(getContainerFlags(n) & ContainerFlags.IsContainer)) || file;
+      container = qc.findAncestor(host.parent, (n) => !!(getContainerFlags(n) & ContainerFlags.IsContainer)) || file;
       blockScopeContainer = qc.get.enclosingBlockScopeContainer(host) || file;
       currentFlow = initFlowNode({ flags: FlowFlags.Start });
       parent = typeAlias;
@@ -1593,7 +1593,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
             file.symbol,
             declName.parent,
             isTopLevel,
-            !!Node.findAncestor(declName, (d) => qc.is.kind(PropertyAccessExpression, d) && d.name.escapedText === 'prototype'),
+            !!qc.findAncestor(declName, (d) => qc.is.kind(PropertyAccessExpression, d) && d.name.escapedText === 'prototype'),
             false
           );
           const oldContainer = container;
@@ -2492,7 +2492,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     return hasDynamicName(node) ? bindAnonymousDeclaration(node, symbolFlags, InternalSymbolName.Computed) : declareSymbolAndAddToSymbolTable(node, symbolFlags, symbolExcludes);
   }
   function getInferTypeContainer(node: Node): ConditionalTypeNode | undefined {
-    const extendsType = Node.findAncestor(node, (n) => n.parent && qc.is.kind(ConditionalTypeNode, n.parent) && n.parent.extendsType === n);
+    const extendsType = qc.findAncestor(node, (n) => n.parent && qc.is.kind(ConditionalTypeNode, n.parent) && n.parent.extendsType === n);
     return extendsType && (extendsType.parent as ConditionalTypeNode);
   }
   function bindTypeParameter(node: TypeParameterDeclaration) {
