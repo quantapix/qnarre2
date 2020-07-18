@@ -1,7 +1,7 @@
 import * as qb from './base';
 import * as qd from './diags';
 import { is, get } from './core3';
-import { NodeFlags, ObjectFlags, SymbolFlags, TransformFlags, TypeFlags } from './types';
+import { NodeFlags, ObjectFlags, SignatureFlags, SymbolFlags, TransformFlags, TypeFlags } from './types';
 import * as qt from './types';
 import { Modifier, ModifierFlags, Syntax } from './syntax';
 import * as qy from './syntax';
@@ -345,7 +345,7 @@ export abstract class TypeElement extends NamedDeclaration implements qt.TypeEle
   questionToken?: qt.QuestionToken;
   _typeElementBrand: any;
 }
-export abstract class SignatureDeclarationBase extends NamedDeclaration implements qt.SignatureDeclarationBase {
+export abstract class qt.SignatureDeclarationBase extends NamedDeclaration implements qt.SignatureDeclarationBase {
   name?: qt.PropertyName;
   typeParameters?: Nodes<qt.TypeParameterDeclaration>;
   parameters!: Nodes<qt.ParameterDeclaration>;
@@ -359,12 +359,12 @@ export abstract class SignatureDeclarationBase extends NamedDeclaration implemen
     this.typeArguments = Nodes.from(ta);
   }
   /*
-  update<T extends SignatureDeclaration>(n: T, ts: Nodes<TypeParameterDeclaration> | undefined, ps: Nodes<ParameterDeclaration>, t?: qc.TypeNode): T {
+  update<T extends qt.SignatureDeclaration>(n: T, ts: Nodes<TypeParameterDeclaration> | undefined, ps: Nodes<ParameterDeclaration>, t?: qc.TypeNode): T {
     return this.typeParameters !== ts || this.parameters !== ps || this.type !== t ? (new create(this.kind, ts, ps, t) as T).updateFrom(this) : this;
   }
   */
 }
-export abstract class FunctionLikeDeclarationBase extends SignatureDeclarationBase implements qt.FunctionLikeDeclarationBase {
+export abstract class FunctionLikeDeclarationBase extends qt.SignatureDeclarationBase implements qt.FunctionLikeDeclarationBase {
   docCache?: readonly qt.DocTag[];
   asteriskToken?: qt.AsteriskToken;
   questionToken?: qt.QuestionToken;
@@ -374,7 +374,7 @@ export abstract class FunctionLikeDeclarationBase extends SignatureDeclarationBa
   returnFlowNode?: qt.FlowNode;
   _functionLikeDeclarationBrand: any;
 }
-export abstract class FunctionOrConstructorTypeNodeBase extends SignatureDeclarationBase implements qt.FunctionOrConstructorTypeNodeBase {
+export abstract class FunctionOrConstructorTypeNodeBase extends qt.SignatureDeclarationBase implements qt.FunctionOrConstructorTypeNodeBase {
   type!: TypeNode;
   docCache?: readonly qt.DocTag[];
   constructor(s: boolean, k: Syntax.FunctionType | Syntax.ConstructorType, ts: readonly qt.TypeParameterDeclaration[] | undefined, ps: readonly qt.ParameterDeclaration[], t?: TypeNode) {
@@ -484,9 +484,9 @@ export abstract class Symbol implements qt.Symbol {
   isReferenced?: SymbolFlags;
   isReplaceableByMethod?: boolean;
   constEnumOnlyModule?: boolean;
-  docComment?: SymbolDisplayPart[];
-  getComment?: SymbolDisplayPart[];
-  setComment?: SymbolDisplayPart[];
+  docComment?: qt.SymbolDisplayPart[];
+  getComment?: qt.SymbolDisplayPart[];
+  setComment?: qt.SymbolDisplayPart[];
   tags?: qt.DocTagInfo[];
   constructor(public flags: SymbolFlags, public escName: qb.__String) {}
   get name() {
@@ -629,7 +629,7 @@ export abstract class Symbol implements qt.Symbol {
   }
   abstract merge(t: Symbol, unidirectional?: boolean): Symbol;
 }
-export class SymbolTable<S extends Symbol = Symbol> extends Map<qb.__String, S> implements qb.EscapedMap<S> {
+export class SymbolTable<S extends qt.Symbol = Symbol> extends Map<qb.__String, S> implements qb.EscapedMap<S>, qt.SymbolTable<S> {
   constructor(ss?: readonly S[]) {
     super();
     if (ss) {
@@ -761,40 +761,29 @@ export class Type implements qt.Type {
   }
 }
 export class Signature implements qt.Signature {
-  flags: SignatureFlags;
-  checker?: TypeChecker;
-  declaration?: SignatureDeclaration | qt.DocSignature;
-  typeParameters?: readonly TypeParameter[];
+  declaration?: qt.SignatureDeclaration | qt.DocSignature;
+  typeParameters?: readonly qt.TypeParameter[];
   parameters!: readonly Symbol[];
   thisParameter?: Symbol;
   resolvedReturnType?: Type;
-  resolvedTypePredicate?: TypePredicate;
+  resolvedTypePredicate?: qt.TypePredicate;
   minArgumentCount!: number;
   target?: Signature;
-  mapper?: TypeMapper;
+  mapper?: qt.TypeMapper;
   unionSignatures?: Signature[];
   erasedSignatureCache?: Signature;
   canonicalSignatureCache?: Signature;
   optionalCallSignatureCache?: { inner?: Signature; outer?: Signature };
-  isolatedSignatureType?: ObjectType;
+  isolatedSignatureType?: qt.ObjectType;
   instantiations?: qb.QMap<Signature>;
   minTypeArgumentCount!: number;
-  docComment?: SymbolDisplayPart[];
+  docComment?: qt.SymbolDisplayPart[];
   docTags?: qt.DocTagInfo[];
-  constructor(public checker: TypeChecker, public flags: SignatureFlags) {}
-  getDeclaration(): SignatureDeclaration {
-    return this.declaration;
-  }
-  getTypeParameters(): TypeParameter[] | undefined {
-    return this.typeParameters;
-  }
-  getParameters(): Symbol[] {
-    return this.parameters;
-  }
+  constructor(public checker: qt.TypeChecker, public flags: SignatureFlags) {}
   getReturnType(): Type {
     return this.checker.getReturnTypeOfSignature(this);
   }
-  getDocComment(): SymbolDisplayPart[] {
+  getDocComment(): qt.SymbolDisplayPart[] {
     return this.docComment || (this.docComment = getDocComment(singleElementArray(this.declaration), this.checker));
   }
   getDocTags(): qt.DocTagInfo[] {

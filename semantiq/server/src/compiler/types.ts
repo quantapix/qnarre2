@@ -1811,8 +1811,8 @@ export interface ShorthandPropertyAssignment extends ObjectLiteralElement, DocCo
   objectAssignmentInitializer?: Expression;
 }
 export interface Signature {
+  checker: TypeChecker;
   flags: SignatureFlags;
-  checker?: TypeChecker;
   declaration?: SignatureDeclaration | DocSignature;
   typeParameters?: readonly TypeParameter[];
   parameters: readonly Symbol[];
@@ -2053,21 +2053,21 @@ export const enum SymbolFlags {
 }
 export interface Symbol {
   flags: SymbolFlags;
-  escapedName: qb.__String;
-  declarations: Declaration[];
-  valueDeclaration: Declaration;
-  members?: SymbolTable;
-  exports?: SymbolTable;
-  globalExports?: SymbolTable;
+  escName: qb.__String;
   id?: number;
   mergeId?: number;
+  members?: SymbolTable;
   parent?: Symbol;
+  exports?: SymbolTable;
   exportSymbol?: Symbol;
-  constEnumOnlyModule?: boolean;
-  isReferenced?: SymbolFlags;
-  isReplaceableByMethod?: boolean;
+  globalExports?: SymbolTable;
+  declarations?: Declaration[];
+  valueDeclaration?: Declaration;
   isAssigned?: boolean;
   assignmentDeclarationMembers?: qb.QMap<Declaration>;
+  isReferenced?: SymbolFlags;
+  isReplaceableByMethod?: boolean;
+  constEnumOnlyModule?: boolean;
 }
 export interface SymbolLinks {
   immediateTarget?: Symbol;
@@ -3742,14 +3742,6 @@ export interface SymbolTracker {
   trackReferencedAmbientModule?(decl: ModuleDeclaration, symbol: Symbol): void;
   trackExternalModuleSymbolOfImportTypeNode?(symbol: Symbol): void;
   reportNonlocalAugmentation?(containingFile: SourceFile, parentSymbol: Symbol, augmentingSymbol: Symbol): void;
-}
-export interface TextSpan {
-  start: number;
-  length: number;
-}
-export interface qb.TextChange {
-  span: TextSpan;
-  newLength: number;
 }
 export interface DiagnosticCollection {
   add(diagnostic: Diagnostic): void;
