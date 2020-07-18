@@ -1631,6 +1631,13 @@ export class TextSpan implements Span {
   }
 }
 export class TextRange implements Range {
+  static merge(src: (TextRange | undefined)[], dst?: (TextRange | undefined)[]) {
+    if (!dst) dst = [];
+    for (const k in src) {
+      dst[k] = src[k];
+    }
+    return dst;
+  }
   constructor(public pos = -1, public end = -1) {
     assert(pos <= end || end === -1);
   }

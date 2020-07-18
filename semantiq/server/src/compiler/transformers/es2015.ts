@@ -414,7 +414,7 @@ export function transformES2015(context: TransformationContext) {
     addExtendsHelperIfNeeded(statements, node, extendsClauseElement);
     addConstructor(statements, node, extendsClauseElement);
     addClassMembers(statements, node);
-    const closingBraceLocation = createTokenRange(syntax.skipTrivia(currentText, node.members.end), Syntax.CloseBraceToken);
+    const closingBraceLocation = qc.create.tokenRange(syntax.skipTrivia(currentText, node.members.end), Syntax.CloseBraceToken);
     const localName = getInternalName(node);
     const outer = new qs.PartiallyEmittedExpression(localName);
     outer.end = closingBraceLocation.end;

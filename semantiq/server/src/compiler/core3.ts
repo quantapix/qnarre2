@@ -69,7 +69,29 @@ export namespace access {
     }
   }
 }
-
+export const create = new (class {
+  modifier<T extends Modifier['kind']>(k: T): qc.Token<T> {
+    return new qc.Token(k);
+  }
+  modifiersFromFlags(f: ModifierFlags) {
+    const r: Modifier[] = [];
+    if (f & ModifierFlags.Export) r.push(this.modifier(Syntax.ExportKeyword));
+    if (f & ModifierFlags.Ambient) r.push(this.modifier(Syntax.DeclareKeyword));
+    if (f & ModifierFlags.Default) r.push(this.modifier(Syntax.DefaultKeyword));
+    if (f & ModifierFlags.Const) r.push(this.modifier(Syntax.ConstKeyword));
+    if (f & ModifierFlags.Public) r.push(this.modifier(Syntax.PublicKeyword));
+    if (f & ModifierFlags.Private) r.push(this.modifier(Syntax.PrivateKeyword));
+    if (f & ModifierFlags.Protected) r.push(this.modifier(Syntax.ProtectedKeyword));
+    if (f & ModifierFlags.Abstract) r.push(this.modifier(Syntax.AbstractKeyword));
+    if (f & ModifierFlags.Static) r.push(this.modifier(Syntax.StaticKeyword));
+    if (f & ModifierFlags.Readonly) r.push(this.modifier(Syntax.ReadonlyKeyword));
+    if (f & ModifierFlags.Async) r.push(this.modifier(Syntax.AsyncKeyword));
+    return r;
+  }
+  tokenRange(pos: number, k: Syntax): qb.TextRange {
+    return new qb.TextRange(pos, pos + qy.toString(k)!.length);
+  }
+})();
 export const is = new (class {
   kind<S extends Syntax, T extends { kind: S; also?: Syntax[] }>(t: T, n?: Node): n is NodeType<T['kind']> {
     if (n) return n.kind === t.kind || !!t.also?.includes(n.kind);
@@ -1059,7 +1081,7 @@ export const is = new (class {
   isAssignmentExpression(n: Node, noCompound?: boolean): n is qc.AssignmentExpression<qc.AssignmentOperatorToken> {
     return this.kind(qc.BinaryExpression, n) && (noCompound ? n.operatorToken.kind === Syntax.EqualsToken : qy.is.assignmentOperator(n.operatorToken.kind)) && this.leftHandSideExpression(n.left);
   }
-  isPrivateIdentifierPropertyDeclaration(n: Node): n is qt.PrivateIdentifierPropertyDeclaration {
+  isPrivateIdentifierPropertyDeclaration(n?: Node): n is qt.PrivateIdentifierPropertyDeclaration {
     return this.kind(qc.PropertyDeclaration, n) && n.name.kind === Syntax.PrivateIdentifier;
   }
   isDestructuringAssignment(n: Node): n is qc.DestructuringAssignment {

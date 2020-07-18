@@ -347,9 +347,9 @@ export function transformTypeScript(context: TransformationContext) {
     addClassElementDecorationStatements(statements, node, true);
     addConstructorDecorationStatement(statements, node);
     if (facts & ClassFacts.UseImmediatelyInvokedFunctionExpression) {
-      const closingBraceLocation = createTokenRange(syntax.skipTrivia(currentSourceFile.text, node.members.end), Syntax.CloseBraceToken);
+      const closingBraceLocation = qc.create.tokenRange(syntax.skipTrivia(currentSourceFile.text, node.members.end), Syntax.CloseBraceToken);
       const localName = getInternalName(node);
-      const outer = new qs.PartiallyEmittedExpression(localName);
+      const outer = new qc.PartiallyEmittedExpression(localName);
       outer.end = closingBraceLocation.end;
       setEmitFlags(outer, EmitFlags.NoComments);
       const statement = new qc.ReturnStatement(outer);
@@ -357,12 +357,12 @@ export function transformTypeScript(context: TransformationContext) {
       setEmitFlags(statement, EmitFlags.NoComments | EmitFlags.NoTokenSourceMaps);
       statements.push(statement);
       insertStatementsAfterStandardPrologue(statements, context.endLexicalEnvironment());
-      const iife = qs.CallExpression.immediateArrowFunction(statements);
+      const iife = qc.CallExpression.immediateArrowFunction(statements);
       setEmitFlags(iife, EmitFlags.TypeScriptClassWrapper);
       const varStatement = new qc.VariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(getLocalName(node, false, false), undefined, iife)]));
       varStatement.setOriginal(node);
       setCommentRange(varStatement, node);
-      setSourceMapRange(varStatement, moveRangePastDecorators(node));
+      setSourceMapRange(varStatement, node.movePastDecorators());
       startOnNewLine(varStatement);
       statements = [varStatement];
     }
@@ -395,7 +395,7 @@ export function transformTypeScript(context: TransformationContext) {
     return classDeclaration;
   }
   function createClassDeclarationHeadWithDecorators(node: ClassDeclaration, name: Identifier | undefined) {
-    const location = moveRangePastDecorators(node);
+    const location = node.movePastDecorators();
     const classAlias = getClassAliasIfNeeded(node);
     const declName = getLocalName(node, false, true);
     const heritageClauses = Nodes.visit(node.heritageClauses, visitor, isHeritageClause);
@@ -564,8 +564,8 @@ export function transformTypeScript(context: TransformationContext) {
     }
     const prefix = getClassMemberPrefix(node, member);
     const memberName = getExpressionForPropertyName(member, true);
-    const descriptor = languageVersion > ScriptTarget.ES3 ? (member.kind === Syntax.PropertyDeclaration ? qs.VoidExpression.zero() : new qc.NullLiteral()) : undefined;
-    const helper = createDecorateHelper(context, decoratorExpressions, prefix, memberName, descriptor, moveRangePastDecorators(member));
+    const descriptor = languageVersion > ScriptTarget.ES3 ? (member.kind === Syntax.PropertyDeclaration ? qc.VoidExpression.zero() : new qc.NullLiteral()) : undefined;
+    const helper = createDecorateHelper(context, decoratorExpressions, prefix, memberName, descriptor, member.movePastDecorators());
     setEmitFlags(helper, EmitFlags.NoComments);
     return helper;
   }
@@ -586,7 +586,7 @@ export function transformTypeScript(context: TransformationContext) {
     const decorate = createDecorateHelper(context, decoratorExpressions, localName);
     const expression = createAssignment(localName, classAlias ? createAssignment(classAlias, decorate) : decorate);
     setEmitFlags(expression, EmitFlags.NoComments);
-    setSourceMapRange(expression, moveRangePastDecorators(node));
+    setSourceMapRange(expression, node.movePastDecorators());
     return expression;
   }
   function transformDecorator(decorator: Decorator) {
@@ -685,7 +685,7 @@ export function transformTypeScript(context: TransformationContext) {
       case Syntax.MethodDeclaration:
         return new Identifier('Function');
       default:
-        return qs.VoidExpression.zero();
+        return qc.VoidExpression.zero();
     }
   }
   function serializeParameterTypesOfNode(node: Node, container: ClassLikeDeclaration): ArrayLiteralExpression {
@@ -718,7 +718,7 @@ export function transformTypeScript(context: TransformationContext) {
   function serializeReturnTypeOfNode(node: Node): SerializedTypeNode {
     if (qc.is.functionLike(node) && node.type) return serializeTypeNode(node.type);
     else if (qc.is.asyncFunction(node)) return new Identifier('Promise');
-    return qs.VoidExpression.zero();
+    return qc.VoidExpression.zero();
   }
   function serializeTypeNode(node: TypeNode | undefined): SerializedTypeNode {
     if (node === undefined) return new Identifier('Object');
@@ -727,7 +727,7 @@ export function transformTypeScript(context: TransformationContext) {
       case Syntax.UndefinedKeyword:
       case Syntax.NullKeyword:
       case Syntax.NeverKeyword:
-        return qs.VoidExpression.zero();
+        return qc.VoidExpression.zero();
       case Syntax.ParenthesizedType:
         return serializeTypeNode((<ParenthesizedTypeNode>node).type);
       case Syntax.FunctionType:
@@ -819,7 +819,7 @@ export function transformTypeScript(context: TransformationContext) {
         serializedUnion = serializedIndividual;
       }
     }
-    return serializedUnion || qs.VoidExpression.zero();
+    return serializedUnion || qc.VoidExpression.zero();
   }
   function serializeTypeReferenceNode(node: TypeReferenceNode): SerializedTypeNode {
     const kind = resolver.getTypeReferenceSerializationKind(node.typeName, currentNameScope || currentLexicalScope);
@@ -832,7 +832,7 @@ export function transformTypeScript(context: TransformationContext) {
       case TypeReferenceSerializationKind.TypeWithConstructSignatureAndValue:
         return serializeEntityNameAsExpression(node.typeName);
       case TypeReferenceSerializationKind.VoidNullableOrNeverType:
-        return qs.VoidExpression.zero();
+        return qc.VoidExpression.zero();
       case TypeReferenceSerializationKind.BigIntLikeType:
         return getGlobalBigIntNameWithFallback();
       case TypeReferenceSerializationKind.BooleanType:
@@ -866,7 +866,7 @@ export function transformTypeScript(context: TransformationContext) {
     if (node.left.kind === Syntax.Identifier) return createCheckedValue(serializeEntityNameAsExpression(node.left), serializeEntityNameAsExpression(node));
     const left = serializeEntityNameAsExpressionFallback(node.left);
     const temp = createTempVariable(hoistVariableDeclaration);
-    return createLogicalAnd(createLogicalAnd(left.left, createStrictInequality(createAssignment(temp, left.right), qs.VoidExpression.zero())), new qc.PropertyAccessExpression(temp, node.right));
+    return createLogicalAnd(createLogicalAnd(left.left, createStrictInequality(createAssignment(temp, left.right), qc.VoidExpression.zero())), new qc.PropertyAccessExpression(temp, node.right));
   }
   function serializeEntityNameAsExpression(node: EntityName): SerializedEntityNameAsExpression {
     switch (node.kind) {
@@ -930,7 +930,7 @@ export function transformTypeScript(context: TransformationContext) {
     const updated = node.update(undefined, Nodes.visit(node.modifiers, visitor, isModifier), visitPropertyNameOfClassElement(node), undefined, undefined, visitNode(node.initializer, visitor));
     if (updated !== node) {
       setCommentRange(updated, node);
-      setSourceMapRange(updated, moveRangePastDecorators(node));
+      setSourceMapRange(updated, node.movePastDecorators());
     }
     return updated;
   }
@@ -966,7 +966,8 @@ export function transformTypeScript(context: TransformationContext) {
     setEmitFlags(localName, EmitFlags.NoComments);
     return startOnNewLine(
       removeAllComments(
-        setRange(new qc.ExpressionStatement(createAssignment(setRange(new qc.PropertyAccessExpression(new qc.ThisExpression(), propertyName), node.name), localName)), node), moveRangePos(node.setOriginal(-1))
+        setRange(new qc.ExpressionStatement(createAssignment(setRange(new qc.PropertyAccessExpression(new qc.ThisExpression(), propertyName), node.name), localName)), node),
+        moveRangePos(node.setOriginal(-1))
       )
     );
   }
@@ -987,7 +988,7 @@ export function transformTypeScript(context: TransformationContext) {
     );
     if (updated !== node) {
       setCommentRange(updated, node);
-      setSourceMapRange(updated, moveRangePastDecorators(node));
+      setSourceMapRange(updated, node.movePastDecorators());
     }
     return updated;
   }
@@ -1008,7 +1009,7 @@ export function transformTypeScript(context: TransformationContext) {
     );
     if (updated !== node) {
       setCommentRange(updated, node);
-      setSourceMapRange(updated, moveRangePastDecorators(node));
+      setSourceMapRange(updated, node.movePastDecorators());
     }
     return updated;
   }
@@ -1025,7 +1026,7 @@ export function transformTypeScript(context: TransformationContext) {
     );
     if (updated !== node) {
       setCommentRange(updated, node);
-      setSourceMapRange(updated, moveRangePastDecorators(node));
+      setSourceMapRange(updated, node.movePastDecorators());
     }
     return updated;
   }
@@ -1073,14 +1074,13 @@ export function transformTypeScript(context: TransformationContext) {
     return updated;
   }
   function visitParameter(node: ParameterDeclaration) {
-    if (parameterIsThsyntax.is.keyword(node)) {
-      return;
-    }
+    if (parameterIsThsyntax.is.keyword(node)) return;
+
     const updated = node.update(undefined, undefined, node.dot3Token, visitNode(node.name, visitor, isBindingName), undefined, undefined, visitNode(node.initializer, visitor, isExpression));
     if (updated !== node) {
       setCommentRange(updated, node);
-      setRange(updated, moveRangePastModifiers(node));
-      setSourceMapRange(updated, moveRangePastModifiers(node));
+      setRange(updated, node.movePastModifiers());
+      setSourceMapRange(updated, node.movePastModifiers());
       setEmitFlags(updated.name, EmitFlags.NoTrailingSourceMap);
     }
     return updated;
@@ -1088,9 +1088,8 @@ export function transformTypeScript(context: TransformationContext) {
   function visitVariableStatement(node: VariableStatement): Statement | undefined {
     if (isExportOfNamespace(node)) {
       const variables = getInitializedVariables(node.declarationList);
-      if (variables.length === 0) {
-        return;
-      }
+      if (variables.length === 0) return;
+
       return setRange(new qc.ExpressionStatement(inlineExpressions(map(variables, transformInitializedVariable))), node);
     }
     return visitEachChild(node, visitor, context);
@@ -1108,17 +1107,17 @@ export function transformTypeScript(context: TransformationContext) {
     if (qc.is.assertionExpression(innerExpression)) {
       const expression = visitNode(node.expression, visitor, isExpression);
       if (length(syntax.get.leadingCommentRangesOfNode(expression, currentSourceFile))) return node.update(expression);
-      return new qs.PartiallyEmittedExpression(expression, node);
+      return new qc.PartiallyEmittedExpression(expression, node);
     }
     return visitEachChild(node, visitor, context);
   }
   function visitAssertionExpression(node: AssertionExpression): Expression {
     const expression = visitNode(node.expression, visitor, isExpression);
-    return new qs.PartiallyEmittedExpression(expression, node);
+    return new qc.PartiallyEmittedExpression(expression, node);
   }
   function visitNonNullExpression(node: NonNullExpression): Expression {
     const expression = visitNode(node.expression, visitor, isLeftHandSideExpression);
-    return new qs.PartiallyEmittedExpression(expression, node);
+    return new qc.PartiallyEmittedExpression(expression, node);
   }
   function visitCallExpression(node: CallExpression) {
     return node.update(visitNode(node.expression, visitor, isExpression), undefined, Nodes.visit(node.arguments, visitor, isExpression));
@@ -1150,15 +1149,25 @@ export function transformTypeScript(context: TransformationContext) {
     }
     const parameterName = getNamespaceParameterName(node);
     const containerName = getNamespaceContainerName(node);
-    const exportName = qc.has.syntacticModifier(node, ModifierFlags.Export) ? getExternalModuleOrNamespaceExportName(currentNamespaceContainerName, node, false, true) : getLocalName(node, false, true);
+    const exportName = qc.has.syntacticModifier(node, ModifierFlags.Export)
+      ? getExternalModuleOrNamespaceExportName(currentNamespaceContainerName, node, false, true)
+      : getLocalName(node, false, true);
     let moduleArg = createLogicalOr(exportName, createAssignment(exportName, new qc.ObjectLiteralExpression()));
     if (hasNamespaceQualifiedExportName(node)) {
       const localName = getLocalName(node, false, true);
       moduleArg = createAssignment(localName, moduleArg);
     }
     const enumStatement = new qc.ExpressionStatement(
-      new qs.CallExpression(
-        new qs.FunctionExpression(undefined, undefined, undefined, undefined, [new qc.ParameterDeclaration(undefined, undefined, undefined, parameterName)], undefined, transformEnumBody(node, containerName)),
+      new qc.CallExpression(
+        new qc.FunctionExpression(
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          [new qc.ParameterDeclaration(undefined, undefined, undefined, parameterName)],
+          undefined,
+          transformEnumBody(node, containerName)
+        ),
         undefined,
         [moduleArg]
       )
@@ -1188,8 +1197,8 @@ export function transformTypeScript(context: TransformationContext) {
   function transformEnumMember(member: EnumMember): Statement {
     const name = getExpressionForPropertyName(member, false);
     const valueExpression = transformEnumMemberDeclarationValue(member);
-    const innerAssignment = createAssignment(new qs.ElementAccessExpression(currentNamespaceContainerName, name), valueExpression);
-    const outerAssignment = valueExpression.kind === Syntax.StringLiteral ? innerAssignment : createAssignment(new qs.ElementAccessExpression(currentNamespaceContainerName, innerAssignment), name);
+    const innerAssignment = createAssignment(new qc.ElementAccessExpression(currentNamespaceContainerName, name), valueExpression);
+    const outerAssignment = valueExpression.kind === Syntax.StringLiteral ? innerAssignment : createAssignment(new qc.ElementAccessExpression(currentNamespaceContainerName, innerAssignment), name);
     return setRange(new qc.ExpressionStatement(setRange(outerAssignment, member)), member);
   }
   function transformEnumMemberDeclarationValue(member: EnumMember): Expression {
@@ -1198,7 +1207,7 @@ export function transformTypeScript(context: TransformationContext) {
     else {
       enableSubstitutionForNonQualifiedEnumMembers();
       if (member.initializer) return visitNode(member.initializer, visitor, isExpression);
-      return qs.VoidExpression.zero();
+      return qc.VoidExpression.zero();
     }
   }
   function shouldEmitModuleDeclaration(nodeIn: ModuleDeclaration) {
@@ -1270,15 +1279,25 @@ export function transformTypeScript(context: TransformationContext) {
     }
     const parameterName = getNamespaceParameterName(node);
     const containerName = getNamespaceContainerName(node);
-    const exportName = qc.has.syntacticModifier(node, ModifierFlags.Export) ? getExternalModuleOrNamespaceExportName(currentNamespaceContainerName, node, false, true) : getLocalName(node, false, true);
+    const exportName = qc.has.syntacticModifier(node, ModifierFlags.Export)
+      ? getExternalModuleOrNamespaceExportName(currentNamespaceContainerName, node, false, true)
+      : getLocalName(node, false, true);
     let moduleArg = createLogicalOr(exportName, createAssignment(exportName, new qc.ObjectLiteralExpression()));
     if (hasNamespaceQualifiedExportName(node)) {
       const localName = getLocalName(node, false, true);
       moduleArg = createAssignment(localName, moduleArg);
     }
     const moduleStatement = new qc.ExpressionStatement(
-      new qs.CallExpression(
-        new qs.FunctionExpression(undefined, undefined, undefined, undefined, [new qc.ParameterDeclaration(undefined, undefined, undefined, parameterName)], undefined, transformModuleBody(node, containerName)),
+      new qc.CallExpression(
+        new qc.FunctionExpression(
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          [new qc.ParameterDeclaration(undefined, undefined, undefined, parameterName)],
+          undefined,
+          transformModuleBody(node, containerName)
+        ),
         undefined,
         [moduleArg]
       )
@@ -1446,7 +1465,7 @@ export function transformTypeScript(context: TransformationContext) {
     setSourceMapRange(statement, createRange(-1, node.end));
     statements.push(statement);
   }
-  function new qc.NamespaceExport(exportName: Identifier, exportValue: Expression, location?: TextRange) {
+  function createNamespaceExport(exportName: Identifier, exportValue: Expression, location?: TextRange) {
     return setRange(new qc.ExpressionStatement(createAssignment(getNamespaceMemberName(currentNamespaceContainerName, exportName, false, true), exportValue)), location);
   }
   function createNamespaceExportExpression(exportName: Identifier, exportValue: Expression, location?: TextRange) {
@@ -1622,7 +1641,7 @@ function createDecorateHelper(context: TransformationContext, decoratorExpressio
     }
   }
   context.requestEmitHelper(decorateHelper);
-  return setRange(new qs.CallExpression(getUnscopedHelperName('__decorate'), undefined, argumentsArray), location);
+  return setRange(new qc.CallExpression(getUnscopedHelperName('__decorate'), undefined, argumentsArray), location);
 }
 export const decorateHelper: UnscopedEmitHelper = {
   name: 'typescript:decorate',
@@ -1639,7 +1658,7 @@ export const decorateHelper: UnscopedEmitHelper = {
 };
 function createMetadataHelper(context: TransformationContext, metadataKey: string, metadataValue: Expression) {
   context.requestEmitHelper(metadataHelper);
-  return new qs.CallExpression(getUnscopedHelperName('__metadata'), undefined, [qc.asLiteral(metadataKey), metadataValue]);
+  return new qc.CallExpression(getUnscopedHelperName('__metadata'), undefined, [qc.asLiteral(metadataKey), metadataValue]);
 }
 export const metadataHelper: UnscopedEmitHelper = {
   name: 'typescript:metadata',
@@ -1653,7 +1672,7 @@ export const metadataHelper: UnscopedEmitHelper = {
 };
 function createParamHelper(context: TransformationContext, expression: Expression, parameterOffset: number, location?: TextRange) {
   context.requestEmitHelper(paramHelper);
-  return setRange(new qs.CallExpression(getUnscopedHelperName('__param'), undefined, [qc.asLiteral(parameterOffset), expression]), location);
+  return setRange(new qc.CallExpression(getUnscopedHelperName('__param'), undefined, [qc.asLiteral(parameterOffset), expression]), location);
 }
 export const paramHelper: UnscopedEmitHelper = {
   name: 'typescript:param',

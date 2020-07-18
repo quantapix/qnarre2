@@ -4152,7 +4152,7 @@ export namespace emit {
     if (flags) destEmitNode.flags = flags;
     if (commentRange) destEmitNode.commentRange = commentRange;
     if (sourceMapRange) destEmitNode.sourceMapRange = sourceMapRange;
-    if (tokenSourceMapRanges) destEmitNode.tokenSourceMapRanges = mergeTokenSourceMapRanges(tokenSourceMapRanges, destEmitNode.tokenSourceMapRanges!);
+    if (tokenSourceMapRanges) destEmitNode.tokenSourceMapRanges = qb.TextRange.merge(tokenSourceMapRanges, destEmitNode.tokenSourceMapRanges!);
     if (constantValue !== undefined) destEmitNode.constantValue = constantValue;
     if (helpers) destEmitNode.helpers = addRange(destEmitNode.helpers, helpers);
     if (startsOnNewLine !== undefined) destEmitNode.startsOnNewLine = startsOnNewLine;

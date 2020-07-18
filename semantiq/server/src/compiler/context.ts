@@ -1004,7 +1004,7 @@ export class QContext {
       for (const s of signatures) {
         if (s.declaration) privateProtected |= qc.get.selectedEffectiveModifierFlags(s.declaration, ModifierFlags.Private | ModifierFlags.Protected);
       }
-      if (privateProtected) return [setRange(new qc.ConstructorDeclaration(undefined, createModifiersFromModifierFlags(privateProtected), [], undefined), signatures[0].declaration)];
+      if (privateProtected) return [setRange(new qc.ConstructorDeclaration(undefined, qc.create.modifiersFromFlags(privateProtected), [], undefined), signatures[0].declaration)];
     }
     const results = [];
     for (const sig of signatures) {
@@ -1096,7 +1096,7 @@ export class QContext {
     );
     const isNonConstructableClassLikeInJsFile = !isClass && !!symbol.valueDeclaration && isInJSFile(symbol.valueDeclaration) && !some(getSignaturesOfType(staticType, SignatureKind.Construct));
     const constructors = isNonConstructableClassLikeInJsFile
-      ? [new qc.ConstructorDeclaration(undefined, createModifiersFromModifierFlags(ModifierFlags.Private), [], undefined)]
+      ? [new qc.ConstructorDeclaration(undefined, qc.create.modifiersFromFlags(ModifierFlags.Private), [], undefined)]
       : (serializeSignatures(SignatureKind.Construct, staticType, baseTypes[0], Syntax.Constructor) as ConstructorDeclaration[]);
     for (const c of constructors) {
       c.type = undefined;
@@ -1445,7 +1445,7 @@ export class QContext {
             setRange(
               new qc.SetAccessorDeclaration(
                 undefined,
-                createModifiersFromModifierFlags(flag),
+                qc.create.modifiersFromFlags(flag),
                 name,
                 [
                   new qc.ParameterDeclaration(
@@ -1469,7 +1469,7 @@ export class QContext {
             setRange(
               new qc.GetAccessorDeclaration(
                 undefined,
-                createModifiersFromModifierFlags(flag),
+                qc.create.modifiersFromFlags(flag),
                 name,
                 [],
                 isPrivate ? undefined : this.serializeTypeForDeclaration(getTypeOfSymbol(p), p, enclosingDeclaration, includePrivateSymbol, bundled),
@@ -1484,7 +1484,7 @@ export class QContext {
         return setRange(
           createProperty(
             undefined,
-            createModifiersFromModifierFlags((isReadonlySymbol(p) ? ModifierFlags.Readonly : 0) | flag),
+            qc.create.modifiersFromFlags((isReadonlySymbol(p) ? ModifierFlags.Readonly : 0) | flag),
             name,
             p.flags & SymbolFlags.Optional ? new Token(Syntax.QuestionToken) : undefined,
             isPrivate ? undefined : this.serializeTypeForDeclaration(getTypeOfSymbol(p), p, enclosingDeclaration, includePrivateSymbol, bundled),
@@ -1500,7 +1500,7 @@ export class QContext {
           return setRange(
             createProperty(
               undefined,
-              createModifiersFromModifierFlags((isReadonlySymbol(p) ? ModifierFlags.Readonly : 0) | flag),
+              qc.create.modifiersFromFlags((isReadonlySymbol(p) ? ModifierFlags.Readonly : 0) | flag),
               name,
               p.flags & SymbolFlags.Optional ? new Token(Syntax.QuestionToken) : undefined,
               undefined,
@@ -1513,7 +1513,7 @@ export class QContext {
         for (const sig of signatures) {
           const decl = this.signatureToSignatureDeclarationHelper(sig, methodKind) as MethodDeclaration;
           decl.name = name;
-          if (flag) decl.modifiers = new Nodes(createModifiersFromModifierFlags(flag));
+          if (flag) decl.modifiers = new Nodes(qc.create.modifiersFromFlags(flag));
           if (p.flags & SymbolFlags.Optional) decl.questionToken = new Token(Syntax.QuestionToken);
           results.push(setRange(decl, sig.declaration));
         }
@@ -1643,7 +1643,7 @@ export class QContext {
             if (length(associated) && every(associated, canHaveExportModifier)) {
               const addExportModifier = (s: Statement) => {
                 const f = (qc.get.effectiveModifierFlags(s) | ModifierFlags.Export) & ~ModifierFlags.Ambient;
-                s.modifiers = new Nodes(createModifiersFromModifierFlags(f));
+                s.modifiers = new Nodes(qc.create.modifiersFromFlags(f));
                 s.modifierFlagsCache = 0;
               };
               forEach(associated, addExportModifier);
@@ -1691,7 +1691,7 @@ export class QContext {
         f |= ModifierFlags.Default;
       }
       if (f) {
-        n.modifiers = new Nodes(createModifiersFromModifierFlags(f | qc.get.effectiveModifierFlags(n)));
+        n.modifiers = new Nodes(qc.create.modifiersFromFlags(f | qc.get.effectiveModifierFlags(n)));
         n.modifierFlagsCache = 0;
       }
       results.push(n);

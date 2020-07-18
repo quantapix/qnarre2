@@ -1,7 +1,6 @@
 import * as qb from '../base';
-import * as qc from '../core';
-import { Node, Nodes } from '../core';
-import * as qs from '../core3';
+import { Node, Nodes } from '../core3';
+import * as qc from '../core3';
 import * as qt from '../types';
 import * as qy from '../syntax';
 import { Modifier, Syntax } from '../syntax';
@@ -408,11 +407,9 @@ export function transformClassFields(context: TransformationContext) {
   function addPropertyStatements(statements: Statement[], properties: readonly PropertyDeclaration[], receiver: LeftHandSideExpression) {
     for (const property of properties) {
       const expression = transformProperty(property, receiver);
-      if (!expression) {
-        continue;
-      }
+      if (!expression) continue;
       const statement = new qc.ExpressionStatement(expression);
-      setSourceMapRange(statement, moveRangePastModifiers(property));
+      setSourceMapRange(statement, property.movePastModifiers());
       setCommentRange(statement, property);
       statement.setOriginal(property);
       statements.push(statement);
@@ -422,11 +419,9 @@ export function transformClassFields(context: TransformationContext) {
     const expressions: Expression[] = [];
     for (const property of properties) {
       const expression = transformProperty(property, receiver);
-      if (!expression) {
-        continue;
-      }
+      if (!expression) continue;
       startOnNewLine(expression);
-      setSourceMapRange(expression, moveRangePastModifiers(property));
+      setSourceMapRange(expression, property.movePastModifiers());
       setCommentRange(expression, property);
       expression.setOriginal(property);
       expressions.push(expression);

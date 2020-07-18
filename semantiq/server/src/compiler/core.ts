@@ -1,5 +1,5 @@
 import * as qb from './base';
-import { is, isDoc, get } from './core3';
+import { is, isDoc, get, has } from './core3';
 import * as qd from './diags';
 import { NodeFlags, ObjectFlags, SignatureFlags, SymbolFlags, TransformFlags, TypeFlags } from './types';
 import * as qt from './types';
@@ -22,6 +22,9 @@ export class Nodes<T extends qt.Nobj> extends Array<T> implements qt.Nodes<T> {
   constructor(ts?: readonly T[], trailingComma?: boolean) {
     super(...(!ts || ts === qb.empty ? [] : ts));
     if (trailingComma) this.trailingComma = trailingComma;
+  }
+  getRange() {
+    return new qb.TextRange(this.pos - 1, this.end + 1);
   }
   visit<T>(cb: (n: qt.Nobj) => T | undefined, cbs?: (ns: Nodes<qt.Nobj>) => T | undefined): T | undefined {
     if (cbs) return cbs(this);
@@ -170,7 +173,7 @@ export abstract class Nobj extends qb.TextRange implements qt.Nobj {
     qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
     const cs = this.getChildren(s);
     if (!cs.length) return;
-    const c = qb.find(cs, (c) => c.kind < Syntax.FirstDocNode || c.kind > Syntax.LastDocNode)!;
+    const c = qb.qb.find(cs, (c) => c.kind < Syntax.FirstDocNode || c.kind > Syntax.LastDocNode)!;
     return c.kind < Syntax.FirstNode ? c : c.getFirstToken(s);
   }
   getLastToken(s?: qy.SourceFileLike): Nobj | undefined {
@@ -213,7 +216,7 @@ export abstract class Nobj extends qb.TextRange implements qt.Nobj {
       return sub;
     };
     const subtree = (n: Nobj): TransformFlags => {
-      if (qc.has.syntacticModifier(n, ModifierFlags.Ambient) || (is.typeNode(n) && n.kind !== Syntax.ExpressionWithTypeArguments)) return TransformFlags.None;
+      if (has.syntacticModifier(n, ModifierFlags.Ambient) || (is.typeNode(n) && n.kind !== Syntax.ExpressionWithTypeArguments)) return TransformFlags.None;
       return reduceEachChild(n, TransformFlags.None, child, children);
     };
     const child = (f: TransformFlags, n: Nobj): TransformFlags => f | aggregate(n);
@@ -221,77 +224,14 @@ export abstract class Nobj extends qb.TextRange implements qt.Nobj {
     aggregate(this);
     return this;
   }
-
-  /// new
-  static createModifier<T extends Modifier['kind']>(kind: T): Token<T> {
-    return new Token(kind);
+  movePastDecorators(): qb.TextRange {
+    return this.decorators && this.decorators.length > 0 ? this.movePos(this.decorators.end) : this;
   }
-  static createModifiersFromModifierFlags(flags: ModifierFlags) {
-    const result: Modifier[] = [];
-    if (flags & ModifierFlags.Export) {
-      result.push(this.createModifier(Syntax.ExportKeyword));
-    }
-    if (flags & ModifierFlags.Ambient) {
-      result.push(this.createModifier(Syntax.DeclareKeyword));
-    }
-    if (flags & ModifierFlags.Default) {
-      result.push(this.createModifier(Syntax.DefaultKeyword));
-    }
-    if (flags & ModifierFlags.Const) {
-      result.push(this.createModifier(Syntax.ConstKeyword));
-    }
-    if (flags & ModifierFlags.Public) {
-      result.push(this.createModifier(Syntax.PublicKeyword));
-    }
-    if (flags & ModifierFlags.Private) {
-      result.push(this.createModifier(Syntax.PrivateKeyword));
-    }
-    if (flags & ModifierFlags.Protected) {
-      result.push(this.createModifier(Syntax.ProtectedKeyword));
-    }
-    if (flags & ModifierFlags.Abstract) {
-      result.push(this.createModifier(Syntax.AbstractKeyword));
-    }
-    if (flags & ModifierFlags.Static) {
-      result.push(this.createModifier(Syntax.StaticKeyword));
-    }
-    if (flags & ModifierFlags.Readonly) {
-      result.push(this.createModifier(Syntax.ReadonlyKeyword));
-    }
-    if (flags & ModifierFlags.Async) {
-      result.push(this.createModifier(Syntax.AsyncKeyword));
-    }
-    return result;
+  movePastModifiers(): qb.TextRange {
+    return this.modifiers && this.modifiers.length > 0 ? this.movePos(this.modifiers.end) : this.movePastDecorators();
   }
-  static updateNode<T extends Nobj>(updated: T, original: T): T {
-    if (updated !== original) {
-      updated.setOriginal(original);
-      setRange(updated, original);
-      aggregateTransformFlags(updated);
-    }
-    return updated;
-  }
-  static movePastDecorators(n: Nobj): qb.TextRange {
-    return n.decorators && n.decorators.length > 0 ? n.movePos(n.decorators.end) : n;
-  }
-  static movePastModifiers(n: Nobj): qb.TextRange {
-    return n.modifiers && n.modifiers.length > 0 ? n.movePos(n.modifiers.end) : movePastDecorators(n);
-  }
-  static createTokenRange(pos: number, token: Syntax): qb.TextRange {
-    return new qb.TextRange(pos, pos + qy.toString(token)!.length);
-  }
-  static ofNode(n: Nobj): qb.TextRange {
-    return new qb.TextRange(n.getTokenPos(), n.end);
-  }
-  static ofTypeParams(a: Nodes<TypeParameterDeclaration>): qb.TextRange {
-    return new qb.TextRange(a.pos - 1, a.end + 1);
-  }
-  static mergeTokenSourceMapRanges(sourceRanges: (qb.TextRange | undefined)[], destRanges: (qb.TextRange | undefined)[]) {
-    if (!destRanges) destRanges = [];
-    for (const key in sourceRanges) {
-      destRanges[key] = sourceRanges[key];
-    }
-    return destRanges;
+  getRange() {
+    return new qb.TextRange(this.getTokenPos(), this.end);
   }
 }
 export class SyntaxList extends Nobj implements qt.SyntaxList {
@@ -494,8 +434,8 @@ export abstract class Symbol implements qt.Symbol {
   tags?: qt.DocTagInfo[];
   constructor(public flags: SymbolFlags, public escName: qb.__String) {}
   get name() {
-    const d = this.valueDeclaration;
-    if (d?.isPrivateIdentifierPropertyDeclaration()) return idText(d.name);
+    const n = this.valueDeclaration;
+    if (is.isPrivateIdentifierPropertyDeclaration(n)) return idText(n.name);
     return qy.get.unescUnderscores(this.escName);
   }
   abstract getId(): number;
@@ -511,11 +451,11 @@ export abstract class Symbol implements qt.Symbol {
   getDeclarations() {
     return this.declarations;
   }
-  getDocComment(checker?: TypeChecker): SymbolDisplayPart[] {
+  getDocComment(checker?: qt.TypeChecker): qt.SymbolDisplayPart[] {
     if (!this.docComment) {
       this.docComment = qb.empty;
-      if (!this.declarations && ((this as Symbol) as TransientSymbol).target && (((this as Symbol) as TransientSymbol).target as TransientSymbol).tupleLabelDeclaration) {
-        const labelDecl = (((this as Symbol) as TransientSymbol).target as TransientSymbol).tupleLabelDeclaration!;
+      if (!this.declarations && ((this as Symbol) as qt.TransientSymbol).target && (((this as Symbol) as qt.TransientSymbol).target as qt.TransientSymbol).tupleLabelDeclaration) {
+        const labelDecl = (((this as Symbol) as qt.TransientSymbol).target as qt.TransientSymbol).tupleLabelDeclaration!;
         this.docComment = getDocComment([labelDecl], checker);
       } else {
         this.docComment = getDocComment(this.declarations, checker);
@@ -523,7 +463,7 @@ export abstract class Symbol implements qt.Symbol {
     }
     return this.docComment!;
   }
-  getCtxComment(context?: Node, checker?: TypeChecker): SymbolDisplayPart[] {
+  getCtxComment(context?: Node, checker?: qt.TypeChecker): qt.SymbolDisplayPart[] {
     switch (context?.kind) {
       case Syntax.GetAccessor:
         if (!this.getComment) {
@@ -552,13 +492,13 @@ export abstract class Symbol implements qt.Symbol {
     return `__#${this.getId()}@${description}` as qb.__String;
   }
   isKnownSymbol() {
-    return startsWith(this.escName as string, '__@');
+    return qb.startsWith(this.escName as string, '__@');
   }
   getLocalSymbolForExportDefault() {
     return this.isExportDefaultSymbol() ? this.declarations![0].localSymbol : undefined;
   }
   isExportDefaultSymbol() {
-    return length(this.declarations) > 0 && qc.has.syntacticModifier(this.declarations![0], ModifierFlags.Default);
+    return qb.length(this.declarations) > 0 && has.syntacticModifier(this.declarations![0], ModifierFlags.Default);
   }
   getDeclarationOfKind<T extends Declaration>(k: T['kind']): T | undefined {
     const ds = this.declarations;
@@ -569,12 +509,12 @@ export abstract class Symbol implements qt.Symbol {
     }
     return;
   }
-  isTransientSymbol(): this is TransientSymbol {
+  isTransientSymbol(): this is qt.TransientSymbol {
     return (this.flags & SymbolFlags.Transient) !== 0;
   }
   getNonAugmentationDeclaration() {
     const ds = this.declarations;
-    return ds && find(ds, (d) => !is.externalModuleAugmentation(d) && !(is.kind(ModuleDeclaration, d) && isGlobalScopeAugmentation(d)));
+    return ds && qb.find(ds, (d) => !is.externalModuleAugmentation(d) && !(is.kind(ModuleDeclaration, d) && isGlobalScopeAugmentation(d)));
   }
   setValueDeclaration(d: Declaration) {
     const v = this.valueDeclaration;
@@ -608,7 +548,7 @@ export abstract class Symbol implements qt.Symbol {
     if (this.flags & SymbolFlags.Prototype) return ModifierFlags.Public | ModifierFlags.Static;
     return 0;
   }
-  skipAlias(c: TypeChecker) {
+  skipAlias(c: qt.TypeChecker) {
     return this.flags & SymbolFlags.Alias ? c.getAliasedSymbol(this) : this;
   }
   getCombinedLocalAndExportSymbolFlags(): SymbolFlags {
@@ -617,13 +557,13 @@ export abstract class Symbol implements qt.Symbol {
   isAbstractConstructorSymbol() {
     if (this.flags & SymbolFlags.Class) {
       const d = this.getClassLikeDeclarationOfSymbol();
-      return !!d && qc.has.syntacticModifier(d, ModifierFlags.Abstract);
+      return !!d && has.syntacticModifier(d, ModifierFlags.Abstract);
     }
     return false;
   }
-  getClassLikeDeclarationOfSymbol(): ClassLikeDeclaration | undefined {
+  getClassLikeDeclarationOfSymbol(): qt.ClassLikeDeclaration | undefined {
     const ds = this.declarations;
-    return ds && find(ds, isClassLike);
+    return ds && qb.find(ds, is.classLike);
   }
   isUMDExportSymbol() {
     return this.declarations?.[0] && is.kind(NamespaceExportDeclaration, this.declarations[0]);
@@ -1140,7 +1080,7 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
           forEach.child(node, visit);
           break;
         case Syntax.Parameter:
-          if (!qc.has.syntacticModifier(node, ModifierFlags.ParameterPropertyModifier)) break;
+          if (!has.syntacticModifier(node, ModifierFlags.ParameterPropertyModifier)) break;
         case Syntax.VariableDeclaration:
         case Syntax.BindingElement: {
           const decl = <VariableDeclaration>node;

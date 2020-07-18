@@ -944,7 +944,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       addResult(
         new qc.EnumDeclaration(
           undefined,
-          createModifiersFromModifierFlags(this.isConstEnumSymbol() ? ModifierFlags.Const : 0),
+          qc.create.modifiersFromFlags(this.isConstEnumSymbol() ? ModifierFlags.Const : 0),
           this.getInternalSymbol(symbolName),
           map(
             filter(getPropertiesOfType(this.getTypeOfSymbol()), (p) => !!(p.flags & SymbolFlags.EnumMember)),
@@ -20684,7 +20684,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const { parent } = typeParameter;
       if (parent.kind !== Syntax.InferType && parent.typeParameters!.every(isTypeParameterUnused)) {
         if (seenParentsWithEveryUnused.tryAdd(parent)) {
-          const range = qc.is.kind(DocTemplateTag, parent) ? rangeOfNode(parent) : rangeOfTypeParameters(parent.typeParameters!);
+          const range = qc.is.kind(DocTemplateTag, parent) ? parent.getRange() : parent.typeParameters!.getRange();
           const only = parent.typeParameters!.length === 1;
           const message = only ? qd._0_is_declared_but_its_value_is_never_read : qd.All_type_parameters_are_unused;
           const arg0 = only ? name : undefined;

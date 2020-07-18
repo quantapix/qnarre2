@@ -1244,7 +1244,7 @@ export function transformSystemModule(context: TransformationContext) {
     addRange(statements, hoistedStatements);
     insertStatementsAfterStandardPrologue(statements, endLexicalEnvironment());
     const exportStarFunction = addExportStarIfNeeded(statements)!;
-    const modifiers = node.transformFlags & TransformFlags.ContainsAwait ? createModifiersFromModifierFlags(ModifierFlags.Async) : undefined;
+    const modifiers = node.transformFlags & TransformFlags.ContainsAwait ? qc.create.modifiersFromFlags(ModifierFlags.Async) : undefined;
     const moduleObject = new qc.ObjectLiteralExpression([
       new qc.PropertyAssignment('setters', createSettersArray(exportStarFunction, dependencyGroups)),
       new qc.PropertyAssignment('execute', new qs.FunctionExpression(modifiers, undefined, undefined, undefined, [], undefined, new Block(executeStatements, true))),
