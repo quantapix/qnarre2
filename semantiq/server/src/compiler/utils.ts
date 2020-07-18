@@ -211,15 +211,8 @@ export function createCommentDirectivesMap(sourceFile: SourceFile, commentDirect
     return true;
   }
 }
-export function getTokenPosOfNode(node: Node, sourceFile?: SourceFileLike, includeDoc?: boolean): number {
-  if (qc.is.missing(node)) return node.pos;
-  if (qc.isDoc.node(node)) return syntax.skipTrivia((sourceFile || qc.get.sourceFileOf(node)).text, node.pos, false, true);
-  if (includeDoc && qc.is.withDocNodes(node)) return getTokenPosOfNode(node.doc![0], sourceFile);
-  if (node.kind === Syntax.SyntaxList && (<SyntaxList>node)._children.length > 0) return getTokenPosOfNode((<SyntaxList>node)._children[0], sourceFile, includeDoc);
-  return syntax.skipTrivia((sourceFile || qc.get.sourceFileOf(node)).text, node.pos);
-}
 export function getNonDecoratorTokenPosOfNode(node: Node, sourceFile?: SourceFileLike): number {
-  if (qc.is.missing(node) || !node.decorators) return getTokenPosOfNode(node, sourceFile);
+  if (qc.is.missing(node) || !node.decorators) return node.getTokenPos(sourceFile);
   return syntax.skipTrivia((sourceFile || qc.get.sourceFileOf(node)).text, node.decorators.end);
 }
 export function getSourceTextOfNodeFromSourceFile(sourceFile: SourceFile, node: Node, includeTrivia = false): string {

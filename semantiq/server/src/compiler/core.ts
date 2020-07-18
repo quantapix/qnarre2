@@ -1,6 +1,6 @@
 import * as qb from './base';
 import * as qd from './diags';
-import { is, get } from './core3';
+import { is, isDoc, get } from './core3';
 import { NodeFlags, ObjectFlags, SignatureFlags, SymbolFlags, TransformFlags, TypeFlags } from './types';
 import * as qt from './types';
 import { Modifier, ModifierFlags, Syntax } from './syntax';
@@ -58,15 +58,19 @@ export abstract class Nobj extends qb.TextRange implements qt.Nobj {
     if (synth) this.flags |= NodeFlags.Synthesized;
     if (parent) this.flags = parent.flags & NodeFlags.ContextFlags;
   }
-  isPrivateIdentifierPropertyDeclaration(): this is qt.PrivateIdentifierPropertyDeclaration {
-    return this.is(PropertyDeclaration) && this.name.is(PrivateIdentifier);
-  }
   getSourceFile(): SourceFile {
     return get.sourceFileOf(this);
   }
-  getStart(s?: qy.SourceFileLike, includeDocComment?: boolean) {
+  getTokenPos(s?: qy.SourceFileLike, doc?: boolean): number {
+    if (is.missing(this)) return this.pos;
+    if (isDoc.node(this)) return qy.skipTrivia((s || get.sourceFileOf(this)).text, this.pos, false, true);
+    if (doc && is.withDocNodes(this)) return this.doc![0].getTokenPos(s);
+    if (is.kind(SyntaxList, this) && this._children?.length) return this._children![0].getTokenPos(s, doc);
+    return qy.skipTrivia((s || get.sourceFileOf(this)).text, this.pos);
+  }
+  getStart(s?: qy.SourceFileLike, doc?: boolean) {
     qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
-    return getTokenPosOfNode(this, s, includeDocComment);
+    return this.getTokenPos(s, doc);
   }
   getFullStart() {
     qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
@@ -277,7 +281,7 @@ export abstract class Nobj extends qb.TextRange implements qt.Nobj {
     return new qb.TextRange(pos, pos + qy.toString(token)!.length);
   }
   static ofNode(n: Nobj): qb.TextRange {
-    return new qb.TextRange(getTokenPosOfNode(n), n.end);
+    return new qb.TextRange(n.getTokenPos(), n.end);
   }
   static ofTypeParams(a: Nodes<TypeParameterDeclaration>): qb.TextRange {
     return new qb.TextRange(a.pos - 1, a.end + 1);
@@ -345,7 +349,7 @@ export abstract class TypeElement extends NamedDeclaration implements qt.TypeEle
   questionToken?: qt.QuestionToken;
   _typeElementBrand: any;
 }
-export abstract class qt.SignatureDeclarationBase extends NamedDeclaration implements qt.SignatureDeclarationBase {
+export abstract class SignatureDeclarationBase extends NamedDeclaration implements qt.SignatureDeclarationBase {
   name?: qt.PropertyName;
   typeParameters?: Nodes<qt.TypeParameterDeclaration>;
   parameters!: Nodes<qt.ParameterDeclaration>;
@@ -364,7 +368,7 @@ export abstract class qt.SignatureDeclarationBase extends NamedDeclaration imple
   }
   */
 }
-export abstract class FunctionLikeDeclarationBase extends qt.SignatureDeclarationBase implements qt.FunctionLikeDeclarationBase {
+export abstract class FunctionLikeDeclarationBase extends SignatureDeclarationBase implements qt.FunctionLikeDeclarationBase {
   docCache?: readonly qt.DocTag[];
   asteriskToken?: qt.AsteriskToken;
   questionToken?: qt.QuestionToken;
@@ -374,7 +378,7 @@ export abstract class FunctionLikeDeclarationBase extends qt.SignatureDeclaratio
   returnFlowNode?: qt.FlowNode;
   _functionLikeDeclarationBrand: any;
 }
-export abstract class FunctionOrConstructorTypeNodeBase extends qt.SignatureDeclarationBase implements qt.FunctionOrConstructorTypeNodeBase {
+export abstract class FunctionOrConstructorTypeNodeBase extends SignatureDeclarationBase implements qt.FunctionOrConstructorTypeNodeBase {
   type!: TypeNode;
   docCache?: readonly qt.DocTag[];
   constructor(s: boolean, k: Syntax.FunctionType | Syntax.ConstructorType, ts: readonly qt.TypeParameterDeclaration[] | undefined, ps: readonly qt.ParameterDeclaration[], t?: TypeNode) {

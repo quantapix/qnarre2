@@ -988,7 +988,7 @@ export const is = new (class {
     return h?.token === Syntax.ImplementsKeyword || h?.parent.kind === Syntax.InterfaceDeclaration;
   }
   isIdentifierTypeReference(n: Node): n is qc.TypeReferenceNode & { typeName: qc.Identifier } {
-    return is.kind(qc.TypeReferenceNode, n) && n.typeName.kind === Syntax.Identifier;
+    return this.kind(qc.TypeReferenceNode, n) && n.typeName.kind === Syntax.Identifier;
   }
   isPrototypeAccess(n: Node): n is qc.BindableStaticAccessExpression {
     return this.isBindableStaticAccessExpression(n) && getElementOrPropertyAccessName(n) === 'prototype';
@@ -1039,23 +1039,27 @@ export const is = new (class {
   }
   isBindableStaticAccessExpression(n: Node, noThis?: boolean): n is qc.BindableStaticAccessExpression {
     return (
-      (is.kind(qc.PropertyAccessExpression, n) &&
-        ((!noThis && n.expression.kind === Syntax.ThisKeyword) || (is.kind(qc.Identifier, n.name) && this.isBindableStaticNameExpression(n.expression, true)))) ||
+      (this.kind(qc.PropertyAccessExpression, n) &&
+        ((!noThis && n.expression.kind === Syntax.ThisKeyword) || (this.kind(qc.Identifier, n.name) && this.isBindableStaticNameExpression(n.expression, true)))) ||
       this.isBindableStaticElementAccessExpression(n, noThis)
     );
   }
   isBindableStaticElementAccessExpression(n: Node, noThis?: boolean): n is qc.BindableStaticElementAccessExpression {
     return (
-      is.literalLikeElementAccess(n) && ((!noThis && n.expression.kind === Syntax.ThisKeyword) || is.entityNameExpression(n.expression) || this.isBindableStaticAccessExpression(n.expression, true))
+      this.literalLikeElementAccess(n) &&
+      ((!noThis && n.expression.kind === Syntax.ThisKeyword) || this.entityNameExpression(n.expression) || this.isBindableStaticAccessExpression(n.expression, true))
     );
   }
   isBindableStaticNameExpression(n: Node, noThis?: boolean): n is qc.BindableStaticNameExpression {
-    return is.entityNameExpression(n) || this.isBindableStaticAccessExpression(n, noThis);
+    return this.entityNameExpression(n) || this.isBindableStaticAccessExpression(n, noThis);
   }
   isAssignmentExpression(n: Node, noCompound: true): n is qc.AssignmentExpression<qc.EqualsToken>;
   isAssignmentExpression(n: Node, noCompound?: false): n is qc.AssignmentExpression<qc.AssignmentOperatorToken>;
   isAssignmentExpression(n: Node, noCompound?: boolean): n is qc.AssignmentExpression<qc.AssignmentOperatorToken> {
-    return is.kind(qc.BinaryExpression, n) && (noCompound ? n.operatorToken.kind === Syntax.EqualsToken : qy.is.assignmentOperator(n.operatorToken.kind)) && is.leftHandSideExpression(n.left);
+    return this.kind(qc.BinaryExpression, n) && (noCompound ? n.operatorToken.kind === Syntax.EqualsToken : qy.is.assignmentOperator(n.operatorToken.kind)) && this.leftHandSideExpression(n.left);
+  }
+  isPrivateIdentifierPropertyDeclaration(n: Node): n is qt.PrivateIdentifierPropertyDeclaration {
+    return this.kind(qc.PropertyDeclaration, n) && n.name.kind === Syntax.PrivateIdentifier;
   }
   isDestructuringAssignment(n: Node): n is qc.DestructuringAssignment {
     if (this.isAssignmentExpression(n, true)) {
@@ -1145,7 +1149,7 @@ export const is = new (class {
     return this.prologueDirective(n) || !!(get.emitFlags(n) & EmitFlags.CustomPrologue);
   }
   isExternalModuleIndicator(s: qc.Statement) {
-    return is.anyImportOrReExport(s) || s.kind === Syntax.ExportAssignment || has.syntacticModifier(s, ModifierFlags.Export);
+    return this.anyImportOrReExport(s) || s.kind === Syntax.ExportAssignment || has.syntacticModifier(s, ModifierFlags.Export);
   }
   isDeclarationBindingElement(e: qc.BindingOrAssignmentElement): e is qc.VariableDeclaration | qc.ParameterDeclaration | qc.BindingElement {
     switch (e.kind) {
@@ -1184,7 +1188,7 @@ export const is = new (class {
     return this.isEmptyBindingPattern(e.name);
   }
   isEmptyBindingPattern(n: qc.BindingName): n is qc.BindingPattern {
-    if (is.kind(qc.BindingPattern, n)) return qb.every(n.elements, this.isEmptyBindingElement);
+    if (this.kind(qc.BindingPattern, n)) return qb.every(n.elements, this.isEmptyBindingElement);
     return false;
   }
 })();

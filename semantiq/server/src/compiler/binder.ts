@@ -1754,7 +1754,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     errorOrSuggestionOnRange(isError, node, node, message);
   }
   function errorOrSuggestionOnRange(isError: boolean, startNode: Node, endNode: Node, message: DiagnosticMessage): void {
-    addErrorOrSuggestionDiagnostic(isError, { pos: getTokenPosOfNode(startNode, file), end: endNode.end }, message);
+    addErrorOrSuggestionDiagnostic(isError, { pos: startNode.getTokenPos(file), end: endNode.end }, message);
   }
   function addErrorOrSuggestionDiagnostic(isError: boolean, range: TextRange, message: DiagnosticMessage): void {
     const diag = createFileDiagnostic(file, range.pos, range.end - range.pos, message);
