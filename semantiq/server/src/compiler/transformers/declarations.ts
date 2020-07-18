@@ -793,7 +793,7 @@ export function transformDeclarations(context: TransformationContext) {
   function stripExportModifiers(statement: Statement): Statement {
     if (qc.is.kind(ImportEqualsDeclaration, statement) || qc.has.effectiveModifier(statement, ModifierFlags.Default)) return statement;
     const clone = getMutableClone(statement);
-    const modifiers = createModifiersFromModifierFlags(getEffectiveModifierFlags(statement) & (ModifierFlags.All ^ ModifierFlags.Export));
+    const modifiers = createModifiersFromModifierFlags(qc.get.effectiveModifierFlags(statement) & (ModifierFlags.All ^ ModifierFlags.Export));
     clone.modifiers = modifiers.length ? new Nodes(modifiers) : undefined;
     return clone;
   }
@@ -871,7 +871,7 @@ export function transformDeclarations(context: TransformationContext) {
           });
           const namespaceDecl = new qc.ModuleDeclaration(undefined, ensureModifiers(input), input.name!, new qc.ModuleBlock(declarations), NodeFlags.Namespace);
           if (!qc.has.effectiveModifier(clean, ModifierFlags.Default)) return [clean, namespaceDecl];
-          const modifiers = createModifiersFromModifierFlags((getEffectiveModifierFlags(clean) & ~ModifierFlags.ExportDefault) | ModifierFlags.Ambient);
+          const modifiers = createModifiersFromModifierFlags((qc.get.effectiveModifierFlags(clean) & ~ModifierFlags.ExportDefault) | ModifierFlags.Ambient);
           const cleanDeclaration = clean.update(undefined, modifiers, undefined, clean.name, clean.typeParameters, clean.parameters, clean.type, undefined);
           const namespaceDeclaration = namespaceDecl.update(undefined, modifiers, namespaceDecl.name, namespaceDecl.body);
           const exportDefaultDeclaration = new qc.ExportAssignment(undefined, false, namespaceDecl.name);
@@ -1052,7 +1052,7 @@ export function transformDeclarations(context: TransformationContext) {
     return some(statements, isScopeMarker);
   }
   function ensureModifiers(node: Node): readonly Modifier[] | undefined {
-    const currentFlags = getEffectiveModifierFlags(node);
+    const currentFlags = qc.get.effectiveModifierFlags(node);
     const newFlags = ensureModifierFlags(node);
     if (currentFlags === newFlags) return node.modifiers;
     return createModifiersFromModifierFlags(newFlags);
@@ -1108,7 +1108,7 @@ function maskModifiers(node: Node, modifierMask?: ModifierFlags, modifierAdditio
   return createModifiersFromModifierFlags(maskModifierFlags(node, modifierMask, modifierAdditions));
 }
 function maskModifierFlags(node: Node, modifierMask: ModifierFlags = ModifierFlags.All ^ ModifierFlags.Public, modifierAdditions: ModifierFlags = ModifierFlags.None): ModifierFlags {
-  let flags = (getEffectiveModifierFlags(node) & modifierMask) | modifierAdditions;
+  let flags = (qc.get.effectiveModifierFlags(node) & modifierMask) | modifierAdditions;
   if (flags & ModifierFlags.Default && !(flags & ModifierFlags.Export)) flags ^= ModifierFlags.Export;
   if (flags & ModifierFlags.Default && flags & ModifierFlags.Ambient) flags ^= ModifierFlags.Ambient;
   return flags;

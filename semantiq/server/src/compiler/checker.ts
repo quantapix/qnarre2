@@ -1591,7 +1591,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       });
     }
     isParameterAssigned() {
-      const f = getRootDeclaration(this.valueDeclaration).parent as FunctionLikeDeclaration;
+      const f = qc.get.rootDeclaration(this.valueDeclaration).parent as FunctionLikeDeclaration;
       const ls = getNodeLinks(f);
       if (!(ls.flags & NodeCheckFlags.AssignmentsMarked)) {
         ls.flags |= NodeCheckFlags.AssignmentsMarked;
@@ -3103,7 +3103,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           break;
         case Syntax.BindingElement:
           if (lastLocation && (lastLocation === (location as BindingElement).initializer || (lastLocation === (location as BindingElement).name && qc.is.kind(BindingPattern, lastLocation)))) {
-            const root = getRootDeclaration(location);
+            const root = qc.get.rootDeclaration(location);
             if (root.kind === Syntax.Parameter) {
               if (!associatedDeclarationForContainingInitializerOrBindingName) associatedDeclarationForContainingInitializerOrBindingName = location as BindingElement;
             }
@@ -3178,7 +3178,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
       if (result && associatedDeclarationForContainingInitializerOrBindingName && !withinDeferredContext && (meaning & SymbolFlags.Value) === SymbolFlags.Value) {
         const candidate = getMergedSymbol(getLateBoundSymbol(result));
-        const root = getRootDeclaration(associatedDeclarationForContainingInitializerOrBindingName) as ParameterDeclaration;
+        const root = qc.get.rootDeclaration(associatedDeclarationForContainingInitializerOrBindingName) as ParameterDeclaration;
         if (candidate === getSymbolOfNode(associatedDeclarationForContainingInitializerOrBindingName))
           error(errorLocation, qd.Parameter_0_cannot_reference_itself, declarationNameToString(associatedDeclarationForContainingInitializerOrBindingName.name));
         else if (
@@ -4534,7 +4534,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return resolutionResults.pop()!;
   }
   function getDeclarationContainer(node: Node): Node {
-    return qc.findAncestor(getRootDeclaration(node), (node) => {
+    return qc.findAncestor(qc.get.rootDeclaration(node), (node) => {
       switch (node.kind) {
         case Syntax.VariableDeclaration:
         case Syntax.VariableDeclarationList:
@@ -4766,7 +4766,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const constructor = findConstructorDeclaration(declaration.parent);
       const type = constructor
         ? getFlowTypeInConstructor(declaration.symbol, constructor)
-        : getEffectiveModifierFlags(declaration) & ModifierFlags.Ambient
+        : qc.get.effectiveModifierFlags(declaration) & ModifierFlags.Ambient
         ? getTypeOfPropertyInBaseClass(declaration.symbol)
         : undefined;
       return type && addOptionality(type, isOptional);
@@ -4785,7 +4785,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return everyType(flowType, isNullableType) ? undefined : convertAutoToAny(flowType);
   }
   function getFlowTypeOfProperty(reference: Node, prop: Symbol | undefined) {
-    const initialType = (prop && (!isAutoTypedProperty(prop) || getEffectiveModifierFlags(prop.valueDeclaration) & ModifierFlags.Ambient) && getTypeOfPropertyInBaseClass(prop)) || undefinedType;
+    const initialType = (prop && (!isAutoTypedProperty(prop) || qc.get.effectiveModifierFlags(prop.valueDeclaration) & ModifierFlags.Ambient) && getTypeOfPropertyInBaseClass(prop)) || undefinedType;
     return getFlowTypeOfReference(reference, autoType, initialType);
   }
   function getWidenedTypeForAssignmentDeclaration(symbol: Symbol, resolvedSymbol?: Symbol) {
@@ -5031,7 +5031,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return type;
   }
   function declarationBelongsToPrivateAmbientMember(declaration: VariableLikeDeclaration) {
-    const root = getRootDeclaration(declaration);
+    const root = qc.get.rootDeclaration(declaration);
     const memberDeclaration = root.kind === Syntax.Parameter ? root.parent : root;
     return isPrivateWithinAmbient(memberDeclaration);
   }
@@ -7220,7 +7220,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const valueType = this.getTypeOfSymbol();
       let typeType = valueType;
       if (symbol.valueDeclaration) {
-        const decl = getRootDeclaration(symbol.valueDeclaration);
+        const decl = qc.get.rootDeclaration(symbol.valueDeclaration);
         let isRequireAlias = false;
         if (qc.is.kind(VariableDeclaration, decl) && decl.initializer) {
           let expr = decl.initializer;
@@ -11374,8 +11374,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     function constructorVisibilitiesAreCompatible(sourceSignature: Signature, targetSignature: Signature, reportErrors: boolean) {
       if (!sourceSignature.declaration || !targetSignature.declaration) return true;
-      const sourceAccessibility = getSelectedEffectiveModifierFlags(sourceSignature.declaration, ModifierFlags.NonPublicAccessibilityModifier);
-      const targetAccessibility = getSelectedEffectiveModifierFlags(targetSignature.declaration, ModifierFlags.NonPublicAccessibilityModifier);
+      const sourceAccessibility = qc.get.selectedEffectiveModifierFlags(sourceSignature.declaration, ModifierFlags.NonPublicAccessibilityModifier);
+      const targetAccessibility = qc.get.selectedEffectiveModifierFlags(targetSignature.declaration, ModifierFlags.NonPublicAccessibilityModifier);
       if (targetAccessibility === ModifierFlags.Private) return true;
       if (targetAccessibility === ModifierFlags.Protected && sourceAccessibility !== ModifierFlags.Private) return true;
       if (targetAccessibility !== ModifierFlags.Protected && !sourceAccessibility) return true;
@@ -14230,7 +14230,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (node.kind === Syntax.Identifier) {
       if (isAssignmentTarget(node)) {
         const symbol = getResolvedSymbol(<Identifier>node);
-        if (symbol.valueDeclaration && getRootDeclaration(symbol.valueDeclaration).kind === Syntax.Parameter) symbol.isAssigned = true;
+        if (symbol.valueDeclaration && qc.get.rootDeclaration(symbol.valueDeclaration).kind === Syntax.Parameter) symbol.isAssigned = true;
       }
     } else {
       qc.forEach.child(node, markParameterAssignments);
@@ -14338,7 +14338,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return type;
     if (!declaration) return type;
-    const isParameter = getRootDeclaration(declaration).kind === Syntax.Parameter;
+    const isParameter = qc.get.rootDeclaration(declaration).kind === Syntax.Parameter;
     const declarationContainer = getControlFlowContainer(declaration);
     let flowContainer = getControlFlowContainer(node);
     const isOuterVariable = flowContainer !== declarationContainer;
@@ -17423,7 +17423,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function isConstructorAccessible(node: NewExpression, signature: Signature) {
     if (!signature || !signature.declaration) return true;
     const declaration = signature.declaration;
-    const modifiers = getSelectedEffectiveModifierFlags(declaration, ModifierFlags.NonPublicAccessibilityModifier);
+    const modifiers = qc.get.selectedEffectiveModifierFlags(declaration, ModifierFlags.NonPublicAccessibilityModifier);
     if (!modifiers || declaration.kind !== Syntax.Constructor) return true;
     const declaringClassDeclaration = getClassLikeDeclarationOfSymbol(declaration.parent.symbol)!;
     const declaringClass = <InterfaceType>getDeclaredTypeOfSymbol(declaration.parent.symbol);
@@ -19964,8 +19964,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         const otherKind = node.kind === Syntax.GetAccessor ? Syntax.SetAccessor : Syntax.GetAccessor;
         const otherAccessor = getDeclarationOfKind<AccessorDeclaration>(getSymbolOfNode(node), otherKind);
         if (otherAccessor) {
-          const nodeFlags = getEffectiveModifierFlags(node);
-          const otherFlags = getEffectiveModifierFlags(otherAccessor);
+          const nodeFlags = qc.get.effectiveModifierFlags(node);
+          const otherFlags = qc.get.effectiveModifierFlags(otherAccessor);
           if ((nodeFlags & ModifierFlags.AccessibilityModifier) !== (otherFlags & ModifierFlags.AccessibilityModifier)) error(node.name, qd.Getter_and_setter_accessors_do_not_agree_in_visibility);
           if ((nodeFlags & ModifierFlags.Abstract) !== (otherFlags & ModifierFlags.Abstract)) error(node.name, qd.Accessors_must_both_be_abstract_or_non_abstract);
           checkAccessorDeclarationTypesIdentical(node, otherAccessor, getAnnotatedAccessorType, qd.get_and_set_accessor_must_have_the_same_type);
@@ -20707,7 +20707,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
   }
   function tryGetRootParameterDeclaration(node: Node): ParameterDeclaration | undefined {
-    return tryCast(getRootDeclaration(node), isParameter);
+    return tryCast(qc.get.rootDeclaration(node), isParameter);
   }
   function isValidUnusedLocalDeclaration(declaration: Declaration): boolean {
     if (qc.is.kind(BindingElement, declaration) && isIdentifierThatStartsWithUnderscore(declaration.name)) {
@@ -20848,7 +20848,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       return false;
     }
     if (node.flags & NodeFlags.Ambient) return false;
-    const root = getRootDeclaration(node);
+    const root = qc.get.rootDeclaration(node);
     if (root.kind === Syntax.Parameter && qc.is.missing((<FunctionLikeDeclaration>root.parent).body)) return false;
     return true;
   }
@@ -20948,7 +20948,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
     }
     if (qc.is.kind(BindingPattern, node.name)) forEach(node.name.elements, checkSourceElement);
-    if (node.initializer && getRootDeclaration(node).kind === Syntax.Parameter && qc.is.missing((qc.get.containingFunction(node) as FunctionLikeDeclaration).body)) {
+    if (node.initializer && qc.get.rootDeclaration(node).kind === Syntax.Parameter && qc.is.missing((qc.get.containingFunction(node) as FunctionLikeDeclaration).body)) {
       error(node, qd.A_parameter_initializer_is_only_allowed_in_a_function_or_constructor_implementation);
       return;
     }
@@ -21016,7 +21016,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if ((left.kind === Syntax.Parameter && right.kind === Syntax.VariableDeclaration) || (left.kind === Syntax.VariableDeclaration && right.kind === Syntax.Parameter)) return true;
     if (qc.has.questionToken(left) !== qc.has.questionToken(right)) return false;
     const interestingFlags = ModifierFlags.Private | ModifierFlags.Protected | ModifierFlags.Async | ModifierFlags.Abstract | ModifierFlags.Readonly | ModifierFlags.Static;
-    return getSelectedEffectiveModifierFlags(left, interestingFlags) === getSelectedEffectiveModifierFlags(right, interestingFlags);
+    return qc.get.selectedEffectiveModifierFlags(left, interestingFlags) === qc.get.selectedEffectiveModifierFlags(right, interestingFlags);
   }
   function checkVariableDeclaration(node: VariableDeclaration) {
     checkGrammarVariableDeclaration(node);
@@ -22026,7 +22026,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (!strictNullChecks || !strictPropertyInitialization || node.flags & NodeFlags.Ambient) return;
     const constructor = findConstructorDeclaration(node);
     for (const member of node.members) {
-      if (getEffectiveModifierFlags(member) & ModifierFlags.Ambient) continue;
+      if (qc.get.effectiveModifierFlags(member) & ModifierFlags.Ambient) continue;
       if (isInstancePropertyWithoutInitializer(member)) {
         const propName = (<PropertyDeclaration>member).name;
         if (qc.is.kind(Identifier, propName) || qc.is.kind(PrivateIdentifier, propName)) {
@@ -23449,7 +23449,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const symbol = getSymbolOfNode(node);
       if (symbol && s.getLinks(symbol).referenced) return true;
       const target = s.getLinks(symbol!).target;
-      if (target && getEffectiveModifierFlags(node) & ModifierFlags.Export && target.flags & SymbolFlags.Value && (compilerOptions.preserveConstEnums || !isConstEnumOrConstEnumOnlyModule(target)))
+      if (target && qc.get.effectiveModifierFlags(node) & ModifierFlags.Export && target.flags & SymbolFlags.Value && (compilerOptions.preserveConstEnums || !isConstEnumOrConstEnumOnlyModule(target)))
         return true;
     }
     if (checkChildren) return !!qc.forEach.child(node, (node) => isReferencedAliasDeclaration(node, checkChildren));

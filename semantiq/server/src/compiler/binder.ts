@@ -2859,7 +2859,7 @@ function computePropertyDeclaration(node: PropertyDeclaration, subtreeFlags: Tra
 }
 function computeFunctionDeclaration(node: FunctionDeclaration, subtreeFlags: TransformFlags) {
   let transformFlags: TransformFlags;
-  const modifierFlags = getSyntacticModifierFlags(node);
+  const modifierFlags = qc.get.syntacticModifierFlags(node);
   const body = node.body;
   if (!body || modifierFlags & ModifierFlags.Ambient) {
     transformFlags = TransformFlags.AssertTypeScript;
@@ -2983,7 +2983,7 @@ function computeExpressionStatement(node: ExpressionStatement, subtreeFlags: Tra
 }
 function computeModuleDeclaration(node: ModuleDeclaration, subtreeFlags: TransformFlags) {
   let transformFlags = TransformFlags.AssertTypeScript;
-  const modifierFlags = getSyntacticModifierFlags(node);
+  const modifierFlags = qc.get.syntacticModifierFlags(node);
   if ((modifierFlags & ModifierFlags.Ambient) === 0) {
     transformFlags |= subtreeFlags;
   }

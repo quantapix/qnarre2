@@ -1002,7 +1002,7 @@ export class QContext {
       }
       let privateProtected: ModifierFlags = 0;
       for (const s of signatures) {
-        if (s.declaration) privateProtected |= getSelectedEffectiveModifierFlags(s.declaration, ModifierFlags.Private | ModifierFlags.Protected);
+        if (s.declaration) privateProtected |= qc.get.selectedEffectiveModifierFlags(s.declaration, ModifierFlags.Private | ModifierFlags.Protected);
       }
       if (privateProtected) return [setRange(new qc.ConstructorDeclaration(undefined, createModifiersFromModifierFlags(privateProtected), [], undefined), signatures[0].declaration)];
     }
@@ -1580,7 +1580,7 @@ export class QContext {
         ns.body &&
         qc.is.kind(ModuleBlock, ns.body)
       ) {
-        const excessExports = filter(ss, (s) => !!(getEffectiveModifierFlags(s) & ModifierFlags.Export));
+        const excessExports = filter(ss, (s) => !!(qc.get.effectiveModifierFlags(s) & ModifierFlags.Export));
         if (length(excessExports)) {
           const getNamesOfDeclaration = (s: Statement): Identifier[] => {
             const isIdentifierAndNotUndefined = (n?: Node): n is Identifier => n?.kind === Syntax.Identifier;
@@ -1642,7 +1642,7 @@ export class QContext {
             const associated = filter(ss, (s) => qc.is.withName(s, e.name));
             if (length(associated) && every(associated, canHaveExportModifier)) {
               const addExportModifier = (s: Statement) => {
-                const f = (getEffectiveModifierFlags(s) | ModifierFlags.Export) & ~ModifierFlags.Ambient;
+                const f = (qc.get.effectiveModifierFlags(s) | ModifierFlags.Export) & ~ModifierFlags.Ambient;
                 s.modifiers = new Nodes(createModifiersFromModifierFlags(f));
                 s.modifierFlagsCache = 0;
               };
@@ -1691,7 +1691,7 @@ export class QContext {
         f |= ModifierFlags.Default;
       }
       if (f) {
-        n.modifiers = new Nodes(createModifiersFromModifierFlags(f | getEffectiveModifierFlags(n)));
+        n.modifiers = new Nodes(createModifiersFromModifierFlags(f | qc.get.effectiveModifierFlags(n)));
         n.modifierFlagsCache = 0;
       }
       results.push(n);

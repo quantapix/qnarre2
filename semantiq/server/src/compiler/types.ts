@@ -1443,7 +1443,7 @@ export interface Nobj extends qb.Range {
   decorators?: Nodes<Decorator>;
   modifiers?: Modifiers;
   parent?: Node;
-  original?: Nobj;
+  original?: Node;
   symbol: Symbol;
   localSymbol?: Symbol;
   locals?: SymbolTable;

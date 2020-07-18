@@ -978,7 +978,7 @@ export const is = new (class {
         return this.unaryExpression(k);
     }
   }
-  declaration(k: Syntax) {
+  declaration(k?: Syntax) {
     return (
       k === Syntax.ArrowFunction ||
       k === Syntax.BindingElement ||
@@ -1063,9 +1063,9 @@ export const is = new (class {
   assignmentOperator(k: Syntax) {
     return k >= Syntax.FirstAssignment && k <= Syntax.LastAssignment;
   }
-  typeNode(k: Syntax) {
+  typeNode(k?: Syntax) {
     return (
-      (k >= Syntax.FirstTypeNode && k <= Syntax.LastTypeNode) ||
+      (k && k >= Syntax.FirstTypeNode && k <= Syntax.LastTypeNode) ||
       k === Syntax.AnyKeyword ||
       k === Syntax.UnknownKeyword ||
       k === Syntax.NumberKeyword ||
@@ -1713,6 +1713,24 @@ export class SourceFile implements SourceFileLike {
   }
   endOnSameLineAsStart(r1: qb.Range, r2: qb.Range) {
     return this.onSameLine(r1.end, this.startPos(r2));
+  }
+  getStartPositionOfLine(line: number) {
+    qb.assert(line >= 0);
+    return get.lineStarts(this.text)[line];
+  }
+  getEndLinePosition(line: number) {
+    qb.assert(line >= 0);
+    const lineStarts = get.lineStarts(this.text);
+    const lineIndex = line;
+    const sourceText = this.text;
+    if (lineIndex + 1 === lineStarts.length) return sourceText.length - 1;
+    const start = lineStarts[lineIndex];
+    let pos = lineStarts[lineIndex + 1] - 1;
+    qb.assert(is.lineBreak(sourceText.charCodeAt(pos)));
+    while (start <= pos && is.lineBreak(sourceText.charCodeAt(pos))) {
+      pos--;
+    }
+    return pos;
   }
 }
 const escMap = new qb.QMap({

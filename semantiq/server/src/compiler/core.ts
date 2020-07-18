@@ -1,6 +1,6 @@
 import * as qb from './base';
-import * as qd from './diags';
 import { is, isDoc, get } from './core3';
+import * as qd from './diags';
 import { NodeFlags, ObjectFlags, SignatureFlags, SymbolFlags, TransformFlags, TypeFlags } from './types';
 import * as qt from './types';
 import { Modifier, ModifierFlags, Syntax } from './syntax';

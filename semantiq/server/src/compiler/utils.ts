@@ -108,24 +108,6 @@ export function setResolvedTypeReferenceDirective(sourceFile: SourceFile, typeRe
   }
   sourceFile.resolvedTypeReferenceDirectiveNames.set(typeReferenceDirectiveName, resolvedTypeReferenceDirective);
 }
-export function getStartPositionOfLine(line: number, sourceFile: SourceFileLike): number {
-  assert(line >= 0);
-  return syntax.get.lineStarts(sourceFile)[line];
-}
-export function getEndLinePosition(line: number, sourceFile: SourceFileLike): number {
-  assert(line >= 0);
-  const lineStarts = syntax.get.lineStarts(sourceFile);
-  const lineIndex = line;
-  const sourceText = sourceFile.text;
-  if (lineIndex + 1 === syntax.get.lineStarts.length) return sourceText.length - 1;
-  const start = lineStarts[lineIndex];
-  let pos = lineStarts[lineIndex + 1] - 1;
-  assert(syntax.is.lineBreak(sourceText.charCodeAt(pos)));
-  while (start <= pos && syntax.is.lineBreak(sourceText.charCodeAt(pos))) {
-    pos--;
-  }
-  return pos;
-}
 export function isFileLevelUniqueName(sourceFile: SourceFile, name: string, hasGlobalName?: PrintHandlers['hasGlobalName']): boolean {
   return !(hasGlobalName && hasGlobalName(name)) && !sourceFile.identifiers.has(name);
 }
@@ -211,10 +193,6 @@ export function createCommentDirectivesMap(sourceFile: SourceFile, commentDirect
     return true;
   }
 }
-export function getNonDecoratorTokenPosOfNode(node: Node, sourceFile?: SourceFileLike): number {
-  if (qc.is.missing(node) || !node.decorators) return node.getTokenPos(sourceFile);
-  return syntax.skipTrivia((sourceFile || qc.get.sourceFileOf(node)).text, node.decorators.end);
-}
 export function getSourceTextOfNodeFromSourceFile(sourceFile: SourceFile, node: Node, includeTrivia = false): string {
   return getTextOfNodeFromSourceText(sourceFile.text, node, includeTrivia);
 }
@@ -257,22 +235,6 @@ export function getNameFromIndexInfo(info: IndexInfo): string | undefined {
 }
 export function isComputedNonLiteralName(name: PropertyName): boolean {
   return name.kind === Syntax.ComputedPropertyName && !StringLiteral.orNumericLiteralLike(name.expression);
-}
-export function getTextOfPropertyName(name: PropertyName | NoSubstitutionLiteral): __String {
-  switch (name.kind) {
-    case Syntax.Identifier:
-    case Syntax.PrivateIdentifier:
-      return name.escapedText;
-    case Syntax.StringLiteral:
-    case Syntax.NumericLiteral:
-    case Syntax.NoSubstitutionLiteral:
-      return syntax.get.escUnderscores(name.text);
-    case Syntax.ComputedPropertyName:
-      if (StringLiteral.orNumericLiteralLike(name.expression)) return syntax.get.escUnderscores(name.expression.text);
-      return fail('Text of property name cannot be read from non-literal-valued ComputedPropertyNames');
-    default:
-      return Debug.assertNever(name);
-  }
 }
 export function entityNameToString(name: EntityNameOrEntityNameExpression | JsxTagNameExpression | PrivateIdentifier): string {
   switch (name.kind) {
@@ -1006,7 +968,7 @@ export function getPropertyNameForKnownSymbolName(symbolName: string): __String 
   return ('__@' + symbolName) as __String;
 }
 export function isParameterDeclaration(node: VariableLikeDeclaration) {
-  const root = getRootDeclaration(node);
+  const root = qc.get.rootDeclaration(node);
   return root.kind === Syntax.Parameter;
 }
 export function getOriginalSourceFile(sourceFile: SourceFile) {
@@ -1608,15 +1570,6 @@ function writeTrimmedCurrentLine(text: string, commentEnd: number, writer: EmitT
   } else {
     writer.rawWrite(newLine);
   }
-}
-export function modifiersToFlags(modifiers: Nodes<Modifier> | undefined) {
-  let flags = ModifierFlags.None;
-  if (modifiers) {
-    for (const modifier of modifiers) {
-      flags |= syntax.get.modifierFlag(modifier.kind);
-    }
-  }
-  return flags;
 }
 export function getFirstIdentifier(node: EntityNameOrEntityNameExpression): Identifier {
   switch (node.kind) {
