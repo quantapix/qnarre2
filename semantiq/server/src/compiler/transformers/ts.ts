@@ -927,7 +927,7 @@ export function transformTypeScript(context: TransformationContext) {
     if (node.flags & NodeFlags.Ambient) {
       return;
     }
-    const updated = node.update(undefined, Nodes.visit(node.modifiers, visitor, isModifier), visitPropertyNameOfClassElement(node), undefined, undefined, visitNode(node.initializer, visitor));
+    const updated = node.update(undefined, Nodes.visit(node.modifiers, visitor, isModifier), visitPropertyNameOfClassElement(node), undefined, undefined, visitNode(node.initer, visitor));
     if (updated !== node) {
       setCommentRange(updated, node);
       setSourceMapRange(updated, node.movePastDecorators());
@@ -1076,7 +1076,7 @@ export function transformTypeScript(context: TransformationContext) {
   function visitParameter(node: ParameterDeclaration) {
     if (parameterIsThsyntax.is.keyword(node)) return;
 
-    const updated = node.update(undefined, undefined, node.dot3Token, visitNode(node.name, visitor, isBindingName), undefined, undefined, visitNode(node.initializer, visitor, isExpression));
+    const updated = node.update(undefined, undefined, node.dot3Token, visitNode(node.name, visitor, isBindingName), undefined, undefined, visitNode(node.initer, visitor, isExpression));
     if (updated !== node) {
       setCommentRange(updated, node);
       setRange(updated, node.movePastModifiers());
@@ -1097,10 +1097,10 @@ export function transformTypeScript(context: TransformationContext) {
   function transformInitializedVariable(node: VariableDeclaration): Expression {
     const name = node.name;
     if (qc.is.kind(BindingPattern, name)) return flattenDestructuringAssignment(node, visitor, context, FlattenLevel.All, false, createNamespaceExportExpression);
-    return setRange(createAssignment(getNamespaceMemberNameWithSourceMapsAndWithoutComments(name), visitNode(node.initializer, visitor, isExpression)), node);
+    return setRange(createAssignment(getNamespaceMemberNameWithSourceMapsAndWithoutComments(name), visitNode(node.initer, visitor, isExpression)), node);
   }
   function visitVariableDeclaration(node: VariableDeclaration) {
-    return node.update(visitNode(node.name, visitor, isBindingName), undefined, undefined, visitNode(node.initializer, visitor, isExpression));
+    return node.update(visitNode(node.name, visitor, isBindingName), undefined, undefined, visitNode(node.initer, visitor, isExpression));
   }
   function visitParenthesizedExpression(node: ParenthesizedExpression): Expression {
     const innerExpression = skipOuterExpressions(node.expression, ~OuterExpressionKinds.Assertions);
@@ -1206,7 +1206,7 @@ export function transformTypeScript(context: TransformationContext) {
     if (value !== undefined) return qc.asLiteral(value);
     else {
       enableSubstitutionForNonQualifiedEnumMembers();
-      if (member.initializer) return visitNode(member.initializer, visitor, isExpression);
+      if (member.initer) return visitNode(member.initer, visitor, isExpression);
       return qc.VoidExpression.zero();
     }
   }
@@ -1551,9 +1551,9 @@ export function transformTypeScript(context: TransformationContext) {
       const name = node.name;
       const exportedName = trySubstituteNamespaceExportedName(name);
       if (exportedName) {
-        if (node.objectAssignmentInitializer) {
-          const initializer = createAssignment(exportedName, node.objectAssignmentInitializer);
-          return setRange(new qc.PropertyAssignment(name, initializer), node);
+        if (node.objectAssignmentIniter) {
+          const initer = createAssignment(exportedName, node.objectAssignmentIniter);
+          return setRange(new qc.PropertyAssignment(name, initer), node);
         }
         return setRange(new qc.PropertyAssignment(name, exportedName), node);
       }

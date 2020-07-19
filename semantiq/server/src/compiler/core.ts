@@ -528,7 +528,7 @@ export abstract class Symbol implements qt.Symbol {
   isFunctionSymbol() {
     if (!this.valueDeclaration) return false;
     const v = this.valueDeclaration;
-    return v.kind === Syntax.FunctionDeclaration || (is.kind(VariableDeclaration, v) && v.initializer && is.functionLike(v.initializer));
+    return v.kind === Syntax.FunctionDeclaration || (is.kind(VariableDeclaration, v) && v.initer && is.functionLike(v.initer));
   }
   getCheckFlags(): CheckFlags {
     return this.isTransientSymbol() ? this.checkFlags : 0;
@@ -1087,7 +1087,7 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
             qc.forEach.child(decl.name, visit);
             break;
           }
-          if (decl.initializer) visit(decl.initializer);
+          if (decl.initer) visit(decl.initer);
         }
         case Syntax.EnumMember:
         case Syntax.PropertyDeclaration:

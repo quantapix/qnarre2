@@ -45,7 +45,7 @@ export function canProduceDiagnostics(node: Node): node is DeclarationDiagnostic
     qc.is.kind(MethodDeclaration, node) ||
     qc.is.kind(MethodSignature, node) ||
     qc.is.kind(FunctionDeclaration, node) ||
-    qc.is.kind(ParameterDeclaration, node) ||
+    qc.is.kind(qc.ParameterDeclaration, node) ||
     qc.is.kind(TypeParameterDeclaration, node) ||
     qc.is.kind(ExpressionWithTypeArguments, node) ||
     qc.is.kind(ImportEqualsDeclaration, node) ||
@@ -142,7 +142,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(
   ) {
     return getReturnTypeVisibilityError;
   }
-  if (qc.is.kind(ParameterDeclaration, node)) {
+  if (qc.is.kind(qc.ParameterDeclaration, node)) {
     if (qc.is.parameterPropertyDeclaration(node, node.parent) && qc.has.syntacticModifier(node.parent, ModifierFlags.Private)) return getVariableDeclarationTypeVisibilityError;
     return getParameterDeclarationTypeVisibilityError;
   }

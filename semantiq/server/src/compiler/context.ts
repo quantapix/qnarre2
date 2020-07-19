@@ -743,16 +743,16 @@ export class QContext {
     const isRest = (parameterDeclaration && isRestParameter(parameterDeclaration)) || getCheckFlags(parameterSymbol) & CheckFlags.RestParameter;
     const dot3Token = isRest ? new Token(Syntax.Dot3Token) : undefined;
     const cloneBindingName = (node: BindingName): BindingName => {
-      const elideInitializerAndSetEmitFlags = (node: Node): Node => {
+      const elideIniterAndSetEmitFlags = (node: Node): Node => {
         if (this.tracker.trackSymbol && qc.is.kind(ComputedPropertyName, node) && isLateBindableName(node)) {
           this.trackComputedName(node.expression, this.enclosingDeclaration);
         }
-        const visited = visitEachChild(node, elideInitializerAndSetEmitFlags, nullTransformationContext, undefined, elideInitializerAndSetEmitFlags)!;
+        const visited = visitEachChild(node, elideIniterAndSetEmitFlags, nullTransformationContext, undefined, elideIniterAndSetEmitFlags)!;
         const clone = isSynthesized(visited) ? visited : getSynthesizedClone(visited);
-        if (clone.kind === Syntax.BindingElement) (<BindingElement>clone).initializer = undefined;
+        if (clone.kind === Syntax.BindingElement) (<BindingElement>clone).initer = undefined;
         return setEmitFlags(clone, EmitFlags.SingleLine | EmitFlags.NoAsciiEscaping);
       };
-      return <BindingName>elideInitializerAndSetEmitFlags(node as Node);
+      return <BindingName>elideIniterAndSetEmitFlags(node as Node);
     };
     const name = parameterDeclaration
       ? parameterDeclaration.name
@@ -868,7 +868,7 @@ export class QContext {
         ),
       ]);
     }
-    if (qc.is.kind(DocFunctionType, node)) {
+    if (qc.is.kind(qc.DocFunctionType, node)) {
       const getEffectiveDotDotDotForParameter = (p: ParameterDeclaration) => {
         return p.dot3Token || (p.type && qc.is.kind(DocVariadicType, p.type) ? new Token(Syntax.Dot3Token) : undefined);
       };
@@ -1392,7 +1392,7 @@ export class QContext {
       name: string | PropertyName,
       questionOrExclamationToken: QuestionToken | undefined,
       type: TypeNode | undefined,
-      initializer: Expression | undefined
+      initer: Expression | undefined
     ) => T,
     methodKind: Syntax,
     useAccessors: true
@@ -1404,7 +1404,7 @@ export class QContext {
       name: string | PropertyName,
       questionOrExclamationToken: QuestionToken | undefined,
       type: TypeNode | undefined,
-      initializer: Expression | undefined
+      initer: Expression | undefined
     ) => T,
     methodKind: Syntax,
     useAccessors: false
@@ -1416,7 +1416,7 @@ export class QContext {
       name: string | PropertyName,
       questionOrExclamationToken: QuestionToken | undefined,
       type: TypeNode | undefined,
-      initializer: Expression | undefined
+      initer: Expression | undefined
     ) => T,
     methodKind: Syntax,
     useAccessors: boolean
@@ -1525,7 +1525,7 @@ export class QContext {
   symbolTableToDeclarationStatements(symbolTable: SymbolTable, bundled?: boolean): Statement[] {
     const serializePropertySymbolForClass = this.makeSerializePropertySymbol<ClassElement>(createProperty, Syntax.MethodDeclaration, true);
     const serializePropertySymbolForInterfaceWorker = this.makeSerializePropertySymbol<TypeElement>(
-      (_decorators, mods, name, question, type, initializer) => new qc.PropertySignature(mods, name, question, type, initializer),
+      (_decorators, mods, name, question, type, initer) => new qc.PropertySignature(mods, name, question, type, initer),
       Syntax.MethodSignature,
       false
     );

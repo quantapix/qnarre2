@@ -101,7 +101,7 @@ function addValueAssignments(ps: Nodes<qc.ParameterDeclaration>, c: Transformati
   return ps;
 }
 function addValueAssignmentIfNeeded(p: qc.ParameterDeclaration, c: TransformationContext) {
-  return p.dot3Token ? p : qc.is.kind(BindingPattern, p.name) ? addForBindingPattern(p, c) : p.initializer ? addForInitializer(p, p.name, p.initializer, c) : p;
+  return p.dot3Token ? p : qc.is.kind(BindingPattern, p.name) ? addForBindingPattern(p, c) : p.initer ? addForIniter(p, p.name, p.initer, c) : p;
 }
 function addForBindingPattern(p: qc.ParameterDeclaration, c: TransformationContext) {
   c.addInitializationStatement(
@@ -111,16 +111,14 @@ function addForBindingPattern(p: qc.ParameterDeclaration, c: TransformationConte
         new qc.VariableDeclaration(
           p.name,
           p.type,
-          p.initializer
-            ? new qc.ConditionalExpression(createStrictEquality(getGeneratedNameForNode(p), qc.VoidExpression.zero()), p.initializer, getGeneratedNameForNode(p))
-            : getGeneratedNameForNode(p)
+          p.initer ? new qc.ConditionalExpression(createStrictEquality(getGeneratedNameForNode(p), qc.VoidExpression.zero()), p.initer, getGeneratedNameForNode(p)) : getGeneratedNameForNode(p)
         ),
       ])
     )
   );
   return p.update(p.decorators, p.modifiers, p.dot3Token, getGeneratedNameForNode(p), p.questionToken, p.type, undefined);
 }
-function addForInitializer(p: qc.ParameterDeclaration, name: Identifier, init: Expression, c: TransformationContext) {
+function addForIniter(p: qc.ParameterDeclaration, name: Identifier, init: Expression, c: TransformationContext) {
   c.addInitializationStatement(
     new qc.IfStatement(
       createTypeCheck(getSynthesizedClone(name), 'undefined'),
@@ -184,7 +182,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: Transform
         visitNode(n.name, cb, isBindingName),
         visitNode(n.questionToken, tokenVisitor, isToken),
         visitNode(n.type, cb, isTypeNode),
-        visitNode(n.initializer, cb, isExpression)
+        visitNode(n.initer, cb, isExpression)
       );
     case Syntax.Decorator:
       return n.update(visitNode(n.expression, cb, isExpression));
@@ -194,7 +192,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: Transform
         visitNode(n.name, cb, isPropertyName),
         visitNode(n.questionToken, tokenVisitor, isToken),
         visitNode(n.type, cb, isTypeNode),
-        visitNode(n.initializer, cb, isExpression)
+        visitNode(n.initer, cb, isExpression)
       );
     case Syntax.PropertyDeclaration:
       return n.update(
@@ -203,7 +201,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: Transform
         visitNode(n.name, cb, isPropertyName),
         visitNode(n.questionToken || n.exclamationToken, tokenVisitor, isToken),
         visitNode(n.type, cb, isTypeNode),
-        visitNode(n.initializer, cb, isExpression)
+        visitNode(n.initer, cb, isExpression)
       );
     case Syntax.MethodSignature:
       return n.update(
@@ -307,7 +305,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: Transform
     case Syntax.ArrayBindingPattern:
       return n.update(nodesVisitor(n.elements, cb, isArrayBindingElement));
     case Syntax.BindingElement:
-      return n.update(visitNode(n.dot3Token, tokenVisitor, isToken), visitNode(n.propertyName, cb, isPropertyName), visitNode(n.name, cb, isBindingName), visitNode(n.initializer, cb, isExpression));
+      return n.update(visitNode(n.dot3Token, tokenVisitor, isToken), visitNode(n.propertyName, cb, isPropertyName), visitNode(n.name, cb, isBindingName), visitNode(n.initer, cb, isExpression));
     case Syntax.ArrayLiteralExpression:
       return n.update(nodesVisitor(n.elements, cb, isExpression));
     case Syntax.ObjectLiteralExpression:
@@ -415,18 +413,13 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: Transform
     case Syntax.WhileStatement:
       return n.update(visitNode(n.expression, cb, isExpression), visitNode(n.statement, cb, isStatement, liftToBlock));
     case Syntax.ForStatement:
-      return n.update(
-        visitNode(n.initializer, cb, isForInitializer),
-        visitNode(n.condition, cb, isExpression),
-        visitNode(n.incrementor, cb, isExpression),
-        visitNode(n.statement, cb, isStatement, liftToBlock)
-      );
+      return n.update(visitNode(n.initer, cb, isForIniter), visitNode(n.condition, cb, isExpression), visitNode(n.incrementor, cb, isExpression), visitNode(n.statement, cb, isStatement, liftToBlock));
     case Syntax.ForInStatement:
-      return n.update(visitNode(n.initializer, cb, isForInitializer), visitNode(n.expression, cb, isExpression), visitNode(n.statement, cb, isStatement, liftToBlock));
+      return n.update(visitNode(n.initer, cb, isForIniter), visitNode(n.expression, cb, isExpression), visitNode(n.statement, cb, isStatement, liftToBlock));
     case Syntax.ForOfStatement:
       return n.update(
         visitNode(n.awaitModifier, tokenVisitor, isToken),
-        visitNode(n.initializer, cb, isForInitializer),
+        visitNode(n.initer, cb, isForIniter),
         visitNode(n.expression, cb, isExpression),
         visitNode(n.statement, cb, isStatement, liftToBlock)
       );
@@ -447,7 +440,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: Transform
     case Syntax.TryStatement:
       return n.update(visitNode(n.tryBlock, cb, isBlock), visitNode(n.catchClause, cb, isCatchClause), visitNode(n.finallyBlock, cb, isBlock));
     case Syntax.VariableDeclaration:
-      return n.update(visitNode(n.name, cb, isBindingName), visitNode(n.exclamationToken, tokenVisitor, isToken), visitNode(n.type, cb, isTypeNode), visitNode(n.initializer, cb, isExpression));
+      return n.update(visitNode(n.name, cb, isBindingName), visitNode(n.exclamationToken, tokenVisitor, isToken), visitNode(n.type, cb, isTypeNode), visitNode(n.initer, cb, isExpression));
     case Syntax.VariableDeclarationList:
       return n.update(nodesVisitor(n.declarations, cb, isVariableDeclaration));
     case Syntax.FunctionDeclaration:
@@ -543,7 +536,7 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: Transform
     case Syntax.JsxFragment:
       return n.update(visitNode(n.openingFragment, cb, isJsxOpeningFragment), nodesVisitor(n.children, cb, isJsxChild), visitNode(n.closingFragment, cb, isJsxClosingFragment));
     case Syntax.JsxAttribute:
-      return n.update(visitNode(n.name, cb, isIdentifier), visitNode(n.initializer, cb, StringLiteral.orJsxExpressionKind));
+      return n.update(visitNode(n.name, cb, isIdentifier), visitNode(n.initer, cb, StringLiteral.orJsxExpressionKind));
     case Syntax.JsxAttributes:
       return n.update(nodesVisitor(n.properties, cb, isJsxAttributeLike));
     case Syntax.JsxSpreadAttribute:
@@ -559,13 +552,13 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: Transform
     case Syntax.CatchClause:
       return n.update(visitNode(n.variableDeclaration, cb, isVariableDeclaration), visitNode(n.block, cb, isBlock));
     case Syntax.PropertyAssignment:
-      return n.update(visitNode(n.name, cb, isPropertyName), visitNode(n.initializer, cb, isExpression));
+      return n.update(visitNode(n.name, cb, isPropertyName), visitNode(n.initer, cb, isExpression));
     case Syntax.ShorthandPropertyAssignment:
-      return n.update(visitNode(n.name, cb, isIdentifier), visitNode(n.objectAssignmentInitializer, cb, isExpression));
+      return n.update(visitNode(n.name, cb, isIdentifier), visitNode(n.objectAssignmentIniter, cb, isExpression));
     case Syntax.SpreadAssignment:
       return n.update(visitNode(n.expression, cb, isExpression));
     case Syntax.EnumMember:
-      return n.update(visitNode(n.name, cb, isPropertyName), visitNode(n.initializer, cb, isExpression));
+      return n.update(visitNode(n.name, cb, isPropertyName), visitNode(n.initer, cb, isExpression));
     case Syntax.SourceFile:
       return qp_update(visitLexicalEnvironment(n.statements, cb, c));
     case Syntax.PartiallyEmittedExpression:
@@ -614,7 +607,7 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo
       r = reduceNodes(n.modifiers, cbs, r);
       r = reduceNode(n.name, cb, r);
       r = reduceNode(n.type, cb, r);
-      r = reduceNode(n.initializer, cb, r);
+      r = reduceNode(n.initer, cb, r);
       break;
     case Syntax.Decorator:
       r = reduceNode(n.expression, cb, r);
@@ -624,14 +617,14 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo
       r = reduceNode(n.name, cb, r);
       r = reduceNode(n.questionToken, cb, r);
       r = reduceNode(n.type, cb, r);
-      r = reduceNode(n.initializer, cb, r);
+      r = reduceNode(n.initer, cb, r);
       break;
     case Syntax.PropertyDeclaration:
       r = reduceNodes(n.decorators, cbs, r);
       r = reduceNodes(n.modifiers, cbs, r);
       r = reduceNode(n.name, cb, r);
       r = reduceNode(n.type, cb, r);
-      r = reduceNode(n.initializer, cb, r);
+      r = reduceNode(n.initer, cb, r);
       break;
     case Syntax.MethodDeclaration:
       r = reduceNodes(n.decorators, cbs, r);
@@ -669,7 +662,7 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo
     case Syntax.BindingElement:
       r = reduceNode(n.propertyName, cb, r);
       r = reduceNode(n.name, cb, r);
-      r = reduceNode(n.initializer, cb, r);
+      r = reduceNode(n.initer, cb, r);
       break;
     case Syntax.ArrayLiteralExpression:
       r = reduceNodes(n.elements, cbs, r);
@@ -790,14 +783,14 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo
       r = reduceNode(n.statement, cb, r);
       break;
     case Syntax.ForStatement:
-      r = reduceNode(n.initializer, cb, r);
+      r = reduceNode(n.initer, cb, r);
       r = reduceNode(n.condition, cb, r);
       r = reduceNode(n.incrementor, cb, r);
       r = reduceNode(n.statement, cb, r);
       break;
     case Syntax.ForInStatement:
     case Syntax.ForOfStatement:
-      r = reduceNode(n.initializer, cb, r);
+      r = reduceNode(n.initer, cb, r);
       r = reduceNode(n.expression, cb, r);
       r = reduceNode(n.statement, cb, r);
       break;
@@ -821,7 +814,7 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo
     case Syntax.VariableDeclaration:
       r = reduceNode(n.name, cb, r);
       r = reduceNode(n.type, cb, r);
-      r = reduceNode(n.initializer, cb, r);
+      r = reduceNode(n.initer, cb, r);
       break;
     case Syntax.VariableDeclarationList:
       r = reduceNodes(n.declarations, cbs, r);
@@ -930,7 +923,7 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo
       break;
     case Syntax.JsxAttribute:
       r = reduceNode(n.name, cb, r);
-      r = reduceNode(n.initializer, cb, r);
+      r = reduceNode(n.initer, cb, r);
       break;
     case Syntax.JsxSpreadAttribute:
       r = reduceNode(n.expression, cb, r);
@@ -952,18 +945,18 @@ export function reduceEachChild<T>(node: Node | undefined, initial: T, cb: (memo
       break;
     case Syntax.PropertyAssignment:
       r = reduceNode(n.name, cb, r);
-      r = reduceNode(n.initializer, cb, r);
+      r = reduceNode(n.initer, cb, r);
       break;
     case Syntax.ShorthandPropertyAssignment:
       r = reduceNode(n.name, cb, r);
-      r = reduceNode(n.objectAssignmentInitializer, cb, r);
+      r = reduceNode(n.objectAssignmentIniter, cb, r);
       break;
     case Syntax.SpreadAssignment:
       r = reduceNode(n.expression, cb, r);
       break;
     case Syntax.EnumMember:
       r = reduceNode(n.name, cb, r);
-      r = reduceNode(n.initializer, cb, r);
+      r = reduceNode(n.initer, cb, r);
       break;
     case Syntax.SourceFile:
       r = reduceNodes(n.statements, cbs, r);

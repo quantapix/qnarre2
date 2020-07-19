@@ -160,7 +160,7 @@ export function transformES2017(context: TransformationContext) {
   function visitForInStatementInAsyncBody(node: ForInStatement) {
     return updateForIn(
       node,
-      isVariableDeclarationListWithCollidingName(node.initializer) ? visitVariableDeclarationListWithCollidingNames(node.initializer, true)! : visitNode(node.initializer, visitor, isForInitializer),
+      isVariableDeclarationListWithCollidingName(node.initer) ? visitVariableDeclarationListWithCollidingNames(node.initer, true)! : visitNode(node.initer, visitor, isForIniter),
       visitNode(node.expression, visitor, isExpression),
       visitNode(node.statement, asyncBodyVisitor, isStatement, liftToBlock)
     );
@@ -169,16 +169,16 @@ export function transformES2017(context: TransformationContext) {
     return updateForOf(
       node,
       visitNode(node.awaitModifier, visitor, isToken),
-      isVariableDeclarationListWithCollidingName(node.initializer) ? visitVariableDeclarationListWithCollidingNames(node.initializer, true)! : visitNode(node.initializer, visitor, isForInitializer),
+      isVariableDeclarationListWithCollidingName(node.initer) ? visitVariableDeclarationListWithCollidingNames(node.initer, true)! : visitNode(node.initer, visitor, isForIniter),
       visitNode(node.expression, visitor, isExpression),
       visitNode(node.statement, asyncBodyVisitor, isStatement, liftToBlock)
     );
   }
   function visitForStatementInAsyncBody(node: ForStatement) {
-    const initializer = node.initializer!;
+    const initer = node.initer!;
     return updateFor(
       node,
-      isVariableDeclarationListWithCollidingName(initializer) ? visitVariableDeclarationListWithCollidingNames(initializer, false) : visitNode(node.initializer, visitor, isForInitializer),
+      isVariableDeclarationListWithCollidingName(initer) ? visitVariableDeclarationListWithCollidingNames(initer, false) : visitNode(node.initer, visitor, isForIniter),
       visitNode(node.condition, visitor, isExpression),
       visitNode(node.incrementor, visitor, isExpression),
       visitNode(node.statement, asyncBodyVisitor, isStatement, liftToBlock)
@@ -245,7 +245,7 @@ export function transformES2017(context: TransformationContext) {
       }
     }
   }
-  function isVariableDeclarationListWithCollidingName(node: ForInitializer): node is VariableDeclarationList {
+  function isVariableDeclarationListWithCollidingName(node: ForIniter): node is VariableDeclarationList {
     return !!node && qc.is.kind(VariableDeclarationList, node) && !(node.flags & NodeFlags.BlockScoped) && node.declarations.some(collidesWithParameterName);
   }
   function visitVariableDeclarationListWithCollidingNames(node: VariableDeclarationList, hasReceiver: boolean) {
@@ -272,7 +272,7 @@ export function transformES2017(context: TransformationContext) {
     }
   }
   function transformInitializedVariable(node: VariableDeclaration) {
-    const converted = setSourceMapRange(createAssignment(convertToAssignmentElementTarget(node.name), node.initializer!), node);
+    const converted = setSourceMapRange(createAssignment(convertToAssignmentElementTarget(node.name), node.initer!), node);
     return visitNode(converted, visitor, isExpression);
   }
   function collidesWithParameterName({ name }: VariableDeclaration | BindingElement): boolean {

@@ -257,12 +257,12 @@ export function helperString(input: TemplateStringsArray, ...args: string[]) {
     return result;
   };
 }
-export function getProperties(node: ClassExpression | ClassDeclaration, requireInitializer: boolean, isStatic: boolean): readonly PropertyDeclaration[] {
-  return filter(node.members, (m) => isInitializedOrStaticProperty(m, requireInitializer, isStatic)) as PropertyDeclaration[];
+export function getProperties(node: ClassExpression | ClassDeclaration, requireIniter: boolean, isStatic: boolean): readonly PropertyDeclaration[] {
+  return filter(node.members, (m) => isInitializedOrStaticProperty(m, requireIniter, isStatic)) as PropertyDeclaration[];
 }
-function isInitializedOrStaticProperty(member: ClassElement, requireInitializer: boolean, isStatic: boolean) {
-  return qc.is.kind(PropertyDeclaration, member) && (!!member.initializer || !requireInitializer) && qc.has.staticModifier(member) === isStatic;
+function isInitializedOrStaticProperty(member: ClassElement, requireIniter: boolean, isStatic: boolean) {
+  return qc.is.kind(PropertyDeclaration, member) && (!!member.initer || !requireIniter) && qc.has.staticModifier(member) === isStatic;
 }
-export function isInitializedProperty(member: ClassElement): member is PropertyDeclaration & { initializer: Expression } {
-  return member.kind === Syntax.PropertyDeclaration && (<PropertyDeclaration>member).initializer !== undefined;
+export function isInitializedProperty(member: ClassElement): member is PropertyDeclaration & { initer: Expression } {
+  return member.kind === Syntax.PropertyDeclaration && (<PropertyDeclaration>member).initer !== undefined;
 }

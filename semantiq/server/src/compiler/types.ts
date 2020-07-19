@@ -194,7 +194,7 @@ export interface BindingElement extends NamedDeclaration {
   propertyName?: PropertyName;
   dot3Token?: Dot3Token;
   name: BindingName;
-  initializer?: Expression;
+  initer?: Expression;
 }
 export type BindingElementGrandparent = BindingElement['parent']['parent'];
 export type BindingName = Identifier | BindingPattern;
@@ -641,7 +641,7 @@ export interface EnumMember extends NamedDeclaration, DocContainer {
   kind: Syntax.EnumMember;
   parent?: EnumDeclaration;
   name: PropertyName;
-  initializer?: Expression;
+  initer?: Expression;
 }
 export interface EnumType extends Type {}
 export type EqualityOperator = Syntax.Equals2Token | Syntax.Equals3Token | Syntax.ExclamationEquals2Token | Syntax.ExclamationEqualsToken;
@@ -758,20 +758,20 @@ export interface FlowSwitchClause extends FlowNobj {
 export type FlowType = Type | IncompleteType;
 export interface ForInStatement extends IterationStatement {
   kind: Syntax.ForInStatement;
-  initializer: ForInitializer;
+  initer: ForIniter;
   expression: Expression;
 }
-export type ForInitializer = VariableDeclarationList | Expression;
+export type ForIniter = VariableDeclarationList | Expression;
 export type ForInOrOfStatement = ForInStatement | ForOfStatement;
 export interface ForOfStatement extends IterationStatement {
   kind: Syntax.ForOfStatement;
   awaitModifier?: AwaitKeywordToken;
-  initializer: ForInitializer;
+  initer: ForIniter;
   expression: Expression;
 }
 export interface ForStatement extends IterationStatement {
   kind: Syntax.ForStatement;
-  initializer?: ForInitializer;
+  initer?: ForIniter;
   condition?: Expression;
   incrementor?: Expression;
 }
@@ -840,8 +840,8 @@ export interface GetAccessorDeclaration extends FunctionLikeDeclarationBase, Cla
   name: PropertyName;
   body?: FunctionBody;
 }
-export type HasExpressionInitializer = VariableDeclaration | ParameterDeclaration | BindingElement | PropertySignature | PropertyDeclaration | PropertyAssignment | EnumMember;
-export type HasInitializer = HasExpressionInitializer | ForStatement | ForInStatement | ForOfStatement | JsxAttribute;
+export type HasExpressionIniter = VariableDeclaration | ParameterDeclaration | BindingElement | PropertySignature | PropertyDeclaration | PropertyAssignment | EnumMember;
+export type HasIniter = HasExpressionIniter | ForStatement | ForInStatement | ForOfStatement | JsxAttribute;
 // prettier-ignore
 export type HasDoc = | ParameterDeclaration | CallSignatureDeclaration | ConstructSignatureDeclaration | MethodSignature | PropertySignature | ArrowFunction | ParenthesizedExpression | SpreadAssignment | ShorthandPropertyAssignment | PropertyAssignment | FunctionExpression | LabeledStatement | ExpressionStatement | VariableStatement | FunctionDeclaration | ConstructorDeclaration | MethodDeclaration | PropertyDeclaration | AccessorDeclaration | ClassLikeDeclaration | InterfaceDeclaration | TypeAliasDeclaration | EnumMember | EnumDeclaration | ModuleDeclaration | ImportEqualsDeclaration | IndexSignatureDeclaration | FunctionTypeNode | ConstructorTypeNode | DocFunctionType | ExportDeclaration | NamedTupleMember | EndOfFileToken;
 // prettier-ignore
@@ -1213,7 +1213,7 @@ export interface JsxAttribute extends ObjectLiteralElement {
   kind: Syntax.JsxAttribute;
   parent?: JsxAttributes;
   name: Identifier;
-  initializer?: StringLiteral | JsxExpression;
+  initer?: StringLiteral | JsxExpression;
 }
 export type JsxAttributeLike = JsxAttribute | JsxSpreadAttribute;
 export interface JsxAttributes extends ObjectLiteralExpressionBase<JsxAttributeLike> {
@@ -1621,7 +1621,7 @@ export interface ParameterDeclaration extends NamedDeclaration, DocContainer {
   name: BindingName;
   questionToken?: QuestionToken;
   type?: TypeNode;
-  initializer?: Expression;
+  initer?: Expression;
 }
 export type ParameterPropertyDeclaration = ParameterDeclaration & { parent?: ConstructorDeclaration; name: Identifier };
 export interface ParenthesizedExpression extends PrimaryExpression, DocContainer {
@@ -1685,7 +1685,7 @@ export interface PropertyAssignment extends ObjectLiteralElement, DocContainer {
   kind: Syntax.PropertyAssignment;
   name: PropertyName;
   questionToken?: QuestionToken;
-  initializer: Expression;
+  initer: Expression;
 }
 export interface PropertyDeclaration extends ClassElement, DocContainer {
   kind: Syntax.PropertyDeclaration;
@@ -1694,7 +1694,7 @@ export interface PropertyDeclaration extends ClassElement, DocContainer {
   questionToken?: QuestionToken;
   exclamationToken?: ExclamationToken;
   type?: TypeNode;
-  initializer?: Expression;
+  initer?: Expression;
 }
 export interface PropertyLikeDeclaration extends NamedDeclaration {
   name: PropertyName;
@@ -1705,7 +1705,7 @@ export interface PropertySignature extends TypeElement, DocContainer {
   name: PropertyName;
   questionToken?: QuestionToken;
   type?: TypeNode;
-  initializer?: Expression;
+  initer?: Expression;
 }
 export interface PseudoBigInt {
   negative: boolean;
@@ -1742,7 +1742,7 @@ export interface RestTypeNode extends TypeNode {
 }
 export type RequireOrImportCall = CallExpression & { expression: Identifier; arguments: [StringLiteralLike] };
 export interface RequireVariableDeclaration extends VariableDeclaration {
-  initializer: RequireOrImportCall;
+  initer: RequireOrImportCall;
 }
 export interface ResolvedModule {
   resolvedFileName: string;
@@ -1810,7 +1810,7 @@ export interface ShorthandPropertyAssignment extends ObjectLiteralElement, DocCo
   questionToken?: QuestionToken;
   exclamationToken?: ExclamationToken;
   equalsToken?: Token<Syntax.EqualsToken>;
-  objectAssignmentInitializer?: Expression;
+  objectAssignmentIniter?: Expression;
 }
 export interface Signature {
   checker: TypeChecker;
@@ -2648,7 +2648,7 @@ export interface VariableDeclaration extends NamedDeclaration {
   name: BindingName;
   exclamationToken?: ExclamationToken;
   type?: TypeNode;
-  initializer?: Expression;
+  initer?: Expression;
 }
 export interface VariableDeclarationList extends Nobj {
   kind: Syntax.VariableDeclarationList;

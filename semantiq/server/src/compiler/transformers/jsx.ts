@@ -111,10 +111,10 @@ export function transformJsx(context: TransformationContext) {
   }
   function transformJsxAttributeToObjectLiteralElement(node: JsxAttribute) {
     const name = getAttributeName(node);
-    const expression = transformJsxAttributeInitializer(node.initializer);
+    const expression = transformJsxAttributeIniter(node.initer);
     return new qc.PropertyAssignment(name, expression);
   }
-  function transformJsxAttributeInitializer(node: StringLiteral | JsxExpression | undefined): Expression {
+  function transformJsxAttributeIniter(node: StringLiteral | JsxExpression | undefined): Expression {
     if (node === undefined) return new qc.BooleanLiteral(true);
     else if (node.kind === Syntax.StringLiteral) {
       const literal = qc.asLiteral(tryDecodeEntities(node.text) || node.text);

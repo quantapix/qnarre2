@@ -15,7 +15,7 @@ interface LoopOutParameter {
 }
 const enum LoopOutParameterFlags {
   Body = 1 << 0,
-  Initializer = 1 << 1,
+  Initer = 1 << 1,
 }
 const enum CopyDirection {
   ToOriginal,
@@ -554,32 +554,32 @@ export function transformES2015(context: TransformationContext) {
       return;
     } else if (qc.is.kind(BindingPattern, node.name)) {
       return setRange(new qc.ParameterDeclaration(undefined, undefined, undefined, getGeneratedNameForNode(node), undefined, undefined, undefined), node).setOriginal(node);
-    } else if (node.initializer) {
+    } else if (node.initer) {
       return setRange(new qc.ParameterDeclaration(undefined, undefined, undefined, undefined), node).setOriginal(node);
     }
     return node;
   }
   function hasDefaultValueOrBindingPattern(node: ParameterDeclaration) {
-    return node.initializer !== undefined || qc.is.kind(BindingPattern, node.name);
+    return node.initer !== undefined || qc.is.kind(BindingPattern, node.name);
   }
   function addDefaultValueAssignmentsIfNeeded(statements: Statement[], node: FunctionLikeDeclaration): boolean {
     if (!some(node.parameters, hasDefaultValueOrBindingPattern)) return false;
     let added = false;
     for (const parameter of node.parameters) {
-      const { name, initializer, dot3Token } = parameter;
+      const { name, initer, dot3Token } = parameter;
       if (dot3Token) {
         continue;
       }
       if (qc.is.kind(BindingPattern, name)) {
-        added = insertDefaultValueAssignmentForBindingPattern(statements, parameter, name, initializer) || added;
-      } else if (initializer) {
-        insertDefaultValueAssignmentForInitializer(statements, parameter, name, initializer);
+        added = insertDefaultValueAssignmentForBindingPattern(statements, parameter, name, initer) || added;
+      } else if (initer) {
+        insertDefaultValueAssignmentForIniter(statements, parameter, name, initer);
         added = true;
       }
     }
     return added;
   }
-  function insertDefaultValueAssignmentForBindingPattern(statements: Statement[], parameter: ParameterDeclaration, name: BindingPattern, initializer: Expression | undefined): boolean {
+  function insertDefaultValueAssignmentForBindingPattern(statements: Statement[], parameter: ParameterDeclaration, name: BindingPattern, initer: Expression | undefined): boolean {
     if (name.elements.length > 0) {
       insertStatementAfterCustomPrologue(
         statements,
@@ -589,17 +589,17 @@ export function transformES2015(context: TransformationContext) {
         )
       );
       return true;
-    } else if (initializer) {
+    } else if (initer) {
       insertStatementAfterCustomPrologue(
         statements,
-        setEmitFlags(new qc.ExpressionStatement(createAssignment(getGeneratedNameForNode(parameter), visitNode(initializer, visitor, isExpression))), EmitFlags.CustomPrologue)
+        setEmitFlags(new qc.ExpressionStatement(createAssignment(getGeneratedNameForNode(parameter), visitNode(initer, visitor, isExpression))), EmitFlags.CustomPrologue)
       );
       return true;
     }
     return false;
   }
-  function insertDefaultValueAssignmentForInitializer(statements: Statement[], parameter: ParameterDeclaration, name: Identifier, initializer: Expression): void {
-    initializer = visitNode(initializer, visitor, isExpression);
+  function insertDefaultValueAssignmentForIniter(statements: Statement[], parameter: ParameterDeclaration, name: Identifier, initer: Expression): void {
+    initer = visitNode(initer, visitor, isExpression);
     const statement = new qc.IfStatement(
       createTypeCheck(getSynthesizedClone(name), 'undefined'),
       setEmitFlags(
@@ -608,7 +608,7 @@ export function transformES2015(context: TransformationContext) {
             new qc.ExpressionStatement(
               setEmitFlags(
                 setRange(
-                  createAssignment(setEmitFlags(getMutableClone(name), EmitFlags.NoSourceMap), setEmitFlags(initializer, EmitFlags.NoSourceMap | qc.get.emitFlags(initializer) | EmitFlags.NoComments)),
+                  createAssignment(setEmitFlags(getMutableClone(name), EmitFlags.NoSourceMap), setEmitFlags(initer, EmitFlags.NoSourceMap | qc.get.emitFlags(initer) | EmitFlags.NoComments)),
                   parameter
                 ),
                 EmitFlags.NoComments
@@ -682,9 +682,9 @@ export function transformES2015(context: TransformationContext) {
     }
     return false;
   }
-  function insertCaptureThisForNode(statements: Statement[], node: Node, initializer: Expression | undefined): void {
+  function insertCaptureThisForNode(statements: Statement[], node: Node, initer: Expression | undefined): void {
     enableSubstitutionsForCapturedThis();
-    const captureThisStatement = new qc.VariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(createFileLevelUniqueName('_this'), undefined, initializer)]));
+    const captureThisStatement = new qc.VariableStatement(undefined, new qc.VariableDeclarationList([new qc.VariableDeclaration(createFileLevelUniqueName('_this'), undefined, initer)]));
     setEmitFlags(captureThisStatement, EmitFlags.NoComments | EmitFlags.CustomPrologue);
     setSourceMapRange(captureThisStatement, node);
     insertStatementAfterCustomPrologue(statements, captureThisStatement);
@@ -990,8 +990,8 @@ export function transformES2015(context: TransformationContext) {
   function isVariableStatementOfTypeScriptClassWrapper(node: VariableStatement) {
     return (
       node.declarationList.declarations.length === 1 &&
-      !!node.declarationList.declarations[0].initializer &&
-      !!(qc.get.emitFlags(node.declarationList.declarations[0].initializer) & EmitFlags.TypeScriptClassWrapper)
+      !!node.declarationList.declarations[0].initer &&
+      !!(qc.get.emitFlags(node.declarationList.declarations[0].initer) & EmitFlags.TypeScriptClassWrapper)
     );
   }
   function visitVariableStatement(node: VariableStatement): Statement | undefined {
@@ -1001,12 +1001,12 @@ export function transformES2015(context: TransformationContext) {
       let assignments: Expression[] | undefined;
       for (const decl of node.declarationList.declarations) {
         hoistVariableDeclarationDeclaredInConvertedLoop(convertedLoopState, decl);
-        if (decl.initializer) {
+        if (decl.initer) {
           let assignment: Expression;
           if (qc.is.kind(BindingPattern, decl.name)) {
             assignment = flattenDestructuringAssignment(decl, visitor, context, FlattenLevel.All);
           } else {
-            assignment = new BinaryExpression(decl.name, Syntax.EqualsToken, visitNode(decl.initializer, visitor, isExpression));
+            assignment = new BinaryExpression(decl.name, Syntax.EqualsToken, visitNode(decl.initer, visitor, isExpression));
             setRange(assignment, decl);
           }
           assignments = append(assignments, assignment);
@@ -1049,23 +1049,23 @@ export function transformES2015(context: TransformationContext) {
     }
     return createRange(pos, end);
   }
-  function shouldEmitExplicitInitializerForLetDeclaration(node: VariableDeclaration) {
+  function shouldEmitExplicitIniterForLetDeclaration(node: VariableDeclaration) {
     const flags = resolver.getNodeCheckFlags(node);
     const isCapturedInFunction = flags & NodeCheckFlags.CapturedBlockScopedBinding;
     const isDeclaredInLoop = flags & NodeCheckFlags.BlockScopedBindingInLoop;
     const emittedAsTopLevel = (hierarchyFacts & HierarchyFacts.TopLevel) !== 0 || (isCapturedInFunction && isDeclaredInLoop && (hierarchyFacts & HierarchyFacts.IterationStatementBlock) !== 0);
-    const emitExplicitInitializer =
+    const emitExplicitIniter =
       !emittedAsTopLevel &&
       (hierarchyFacts & HierarchyFacts.ForInOrForOfStatement) === 0 &&
       (!resolver.isDeclarationWithCollidingName(node) || (isDeclaredInLoop && !isCapturedInFunction && (hierarchyFacts & (HierarchyFacts.ForStatement | HierarchyFacts.ForInOrForOfStatement)) === 0));
-    return emitExplicitInitializer;
+    return emitExplicitIniter;
   }
   function visitVariableDeclarationInLetDeclarationList(node: VariableDeclaration) {
     const name = node.name;
     if (qc.is.kind(BindingPattern, name)) return visitVariableDeclaration(node);
-    if (!node.initializer && shouldEmitExplicitInitializerForLetDeclaration(node)) {
+    if (!node.initer && shouldEmitExplicitIniterForLetDeclaration(node)) {
       const clone = getMutableClone(node);
-      clone.initializer = qs.VoidExpression.zero();
+      clone.initer = qs.VoidExpression.zero();
       return clone;
     }
     return visitEachChild(node, visitor, context);
@@ -1141,16 +1141,16 @@ export function transformES2015(context: TransformationContext) {
   }
   function convertForOfStatementHead(node: ForOfStatement, boundValue: Expression, convertedLoopBodyStatements: Statement[]) {
     const statements: Statement[] = [];
-    const initializer = node.initializer;
-    if (qc.is.kind(VariableDeclarationList, initializer)) {
-      if (node.initializer.flags & NodeFlags.BlockScoped) {
+    const initer = node.initer;
+    if (qc.is.kind(VariableDeclarationList, initer)) {
+      if (node.initer.flags & NodeFlags.BlockScoped) {
         enableSubstitutionsForBlockScopedBindings();
       }
-      const firstOriginalDeclaration = firstOrUndefined(initializer.declarations);
+      const firstOriginalDeclaration = firstOrUndefined(initer.declarations);
       if (firstOriginalDeclaration && qc.is.kind(BindingPattern, firstOriginalDeclaration.name)) {
         const declarations = flattenDestructuringBinding(firstOriginalDeclaration, visitor, context, FlattenLevel.All, boundValue);
-        const declarationList = setRange(new qc.VariableDeclarationList(declarations), node.initializer);
-        declarationList.setOriginal(node.initializer);
+        const declarationList = setRange(new qc.VariableDeclarationList(declarations), node.initer);
+        declarationList.setOriginal(node.initer);
         setSourceMapRange(declarationList, createRange(declarations[0].pos, last(declarations).end));
         statements.push(new qc.VariableStatement(undefined, declarationList));
       } else {
@@ -1161,23 +1161,23 @@ export function transformES2015(context: TransformationContext) {
               setOriginalNode(
                 setRange(
                   new qc.VariableDeclarationList([new qc.VariableDeclaration(firstOriginalDeclaration ? firstOriginalDeclaration.name : createTempVariable(undefined), undefined, boundValue)]),
-                  moveRangePos(initializer, -1)
+                  moveRangePos(initer, -1)
                 ),
-                initializer
+                initer
               )
             ),
-            moveRangeEnd(initializer, -1)
+            moveRangeEnd(initer, -1)
           )
         );
       }
     } else {
-      const assignment = createAssignment(initializer, boundValue);
+      const assignment = createAssignment(initer, boundValue);
       if (qc.is.destructuringAssignment(assignment)) {
         aggregateTransformFlags(assignment);
         statements.push(new qc.ExpressionStatement(visitBinaryExpression(assignment, false)));
       } else {
-        assignment.end = initializer.end;
-        statements.push(setRange(new qc.ExpressionStatement(visitNode(assignment, visitor, isExpression)), moveRangeEnd(initializer, -1)));
+        assignment.end = initer.end;
+        statements.push(setRange(new qc.ExpressionStatement(visitNode(assignment, visitor, isExpression)), moveRangeEnd(initer, -1)));
       }
     }
     if (convertedLoopBodyStatements) return createSyntheticBlockForConvertedStatements(addRange(statements, convertedLoopBodyStatements));
@@ -1230,13 +1230,13 @@ function convertForOfStatementForIterable(node: ForOfStatement, outermostLabeled
   const next = new qs.CallExpression(new qc.PropertyAccessExpression(iterator, 'next'), undefined, []);
   hoistVariableDeclaration(errorRecord);
   hoistVariableDeclaration(returnMethod);
-  const initializer = ancestorFacts & HierarchyFacts.IterationContainer ? inlineExpressions([createAssignment(errorRecord, qs.VoidExpression.zero()), values]) : values;
+  const initer = ancestorFacts & HierarchyFacts.IterationContainer ? inlineExpressions([createAssignment(errorRecord, qs.VoidExpression.zero()), values]) : values;
   const forStatement = setEmitFlags(
     setRange(
       new qc.ForStatement(
         setEmitFlags(
           setRange(
-            new qc.VariableDeclarationList([setRange(new qc.VariableDeclaration(iterator, undefined, initializer), node.expression), new qc.VariableDeclaration(result, undefined, next)]),
+            new qc.VariableDeclarationList([setRange(new qc.VariableDeclaration(iterator, undefined, initer), node.expression), new qc.VariableDeclaration(result, undefined, next)]),
             node.expression
           ),
           EmitFlags.NoHoisting
@@ -1313,8 +1313,8 @@ function visitObjectLiteralExpression(node: ObjectLiteralExpression): Expression
   }
   return visitEachChild(node, visitor, context);
 }
-interface ForStatementWithConvertibleInitializer extends ForStatement {
-  initializer: VariableDeclarationList;
+interface ForStatementWithConvertibleIniter extends ForStatement {
+  initer: VariableDeclarationList;
 }
 interface ForStatementWithConvertibleCondition extends ForStatement {
   condition: Expression;
@@ -1325,8 +1325,8 @@ interface ForStatementWithConvertibleIncrementor extends ForStatement {
 function shouldConvertPartOfIterationStatement(node: Node) {
   return (resolver.getNodeCheckFlags(node) & NodeCheckFlags.ContainsCapturedBlockScopeBinding) !== 0;
 }
-function shouldConvertInitializerOfForStatement(node: IterationStatement): node is ForStatementWithConvertibleInitializer {
-  return qc.is.kind(ForStatement, node) && !!node.initializer && shouldConvertPartOfIterationStatement(node.initializer);
+function shouldConvertIniterOfForStatement(node: IterationStatement): node is ForStatementWithConvertibleIniter {
+  return qc.is.kind(ForStatement, node) && !!node.initer && shouldConvertPartOfIterationStatement(node.initer);
 }
 function shouldConvertConditionOfForStatement(node: IterationStatement): node is ForStatementWithConvertibleCondition {
   return qc.is.kind(ForStatement, node) && !!node.condition && shouldConvertPartOfIterationStatement(node.condition);
@@ -1335,7 +1335,7 @@ function shouldConvertIncrementorOfForStatement(node: IterationStatement): node 
   return qc.is.kind(ForStatement, node) && !!node.incrementor && shouldConvertPartOfIterationStatement(node.incrementor);
 }
 function shouldConvertIterationStatement(node: IterationStatement) {
-  return shouldConvertBodyOfIterationStatement(node) || shouldConvertInitializerOfForStatement(node);
+  return shouldConvertBodyOfIterationStatement(node) || shouldConvertIniterOfForStatement(node);
 }
 function shouldConvertBodyOfIterationStatement(node: IterationStatement): boolean {
   return (resolver.getNodeCheckFlags(node) & NodeCheckFlags.LoopWithCapturedBlockScopedBinding) !== 0;
@@ -1381,36 +1381,36 @@ function convertIterationStatementBodyIfNecessary(
   const statements: Statement[] = [];
   const outerConvertedLoopState = convertedLoopState;
   convertedLoopState = currentState;
-  const initializerFunction = shouldConvertInitializerOfForStatement(node) ? createFunctionForInitializerOfForStatement(node, currentState) : undefined;
+  const initerFunction = shouldConvertIniterOfForStatement(node) ? createFunctionForIniterOfForStatement(node, currentState) : undefined;
   const bodyFunction = shouldConvertBodyOfIterationStatement(node) ? createFunctionForBodyOfIterationStatement(node, currentState, outerConvertedLoopState) : undefined;
   convertedLoopState = outerConvertedLoopState;
-  if (initializerFunction) statements.push(initializerFunction.functionDeclaration);
+  if (initerFunction) statements.push(initerFunction.functionDeclaration);
   if (bodyFunction) statements.push(bodyFunction.functionDeclaration);
   addExtraDeclarationsForConvertedLoop(statements, currentState, outerConvertedLoopState);
-  if (initializerFunction) {
-    statements.push(generateCallToConvertedLoopInitializer(initializerFunction.functionName, initializerFunction.containsYield));
+  if (initerFunction) {
+    statements.push(generateCallToConvertedLoopIniter(initerFunction.functionName, initerFunction.containsYield));
   }
   let loop: Statement;
   if (bodyFunction) {
     if (convert) {
       loop = convert(node, outermostLabeledStatement, bodyFunction.part, ancestorFacts);
     } else {
-      const clone = convertIterationStatementCore(node, initializerFunction, new Block(bodyFunction.part, true));
+      const clone = convertIterationStatementCore(node, initerFunction, new Block(bodyFunction.part, true));
       aggregateTransformFlags(clone);
       loop = restoreEnclosingLabel(clone, outermostLabeledStatement, convertedLoopState && resetLabel);
     }
   } else {
-    const clone = convertIterationStatementCore(node, initializerFunction, visitNode(node.statement, visitor, isStatement, liftToBlock));
+    const clone = convertIterationStatementCore(node, initerFunction, visitNode(node.statement, visitor, isStatement, liftToBlock));
     aggregateTransformFlags(clone);
     loop = restoreEnclosingLabel(clone, outermostLabeledStatement, convertedLoopState && resetLabel);
   }
   statements.push(loop);
   return statements;
 }
-function convertIterationStatementCore(node: IterationStatement, initializerFunction: IterationStatementPartFunction<VariableDeclarationList> | undefined, convertedLoopBody: Statement) {
+function convertIterationStatementCore(node: IterationStatement, initerFunction: IterationStatementPartFunction<VariableDeclarationList> | undefined, convertedLoopBody: Statement) {
   switch (node.kind) {
     case Syntax.ForStatement:
-      return convertForStatement(node as ForStatement, initializerFunction, convertedLoopBody);
+      return convertForStatement(node as ForStatement, initerFunction, convertedLoopBody);
     case Syntax.ForInStatement:
       return convertForInStatement(node as ForInStatement, convertedLoopBody);
     case Syntax.ForOfStatement:
@@ -1423,22 +1423,22 @@ function convertIterationStatementCore(node: IterationStatement, initializerFunc
       return Debug.failBadSyntax(node, 'IterationStatement expected');
   }
 }
-function convertForStatement(node: ForStatement, initializerFunction: IterationStatementPartFunction<VariableDeclarationList> | undefined, convertedLoopBody: Statement) {
+function convertForStatement(node: ForStatement, initerFunction: IterationStatementPartFunction<VariableDeclarationList> | undefined, convertedLoopBody: Statement) {
   const shouldConvertCondition = node.condition && shouldConvertPartOfIterationStatement(node.condition);
   const shouldConvertIncrementor = shouldConvertCondition || (node.incrementor && shouldConvertPartOfIterationStatement(node.incrementor));
   return updateFor(
     node,
-    visitNode(initializerFunction ? initializerFunction.part : node.initializer, visitor, isForInitializer),
+    visitNode(initerFunction ? initerFunction.part : node.initer, visitor, isForIniter),
     visitNode(shouldConvertCondition ? undefined : node.condition, visitor, isExpression),
     visitNode(shouldConvertIncrementor ? undefined : node.incrementor, visitor, isExpression),
     convertedLoopBody
   );
 }
 function convertForOfStatement(node: ForOfStatement, convertedLoopBody: Statement) {
-  return node.update(undefined, visitNode(node.initializer, visitor, isForInitializer), visitNode(node.expression, visitor, isExpression), convertedLoopBody);
+  return node.update(undefined, visitNode(node.initer, visitor, isForIniter), visitNode(node.expression, visitor, isExpression), convertedLoopBody);
 }
 function convertForInStatement(node: ForInStatement, convertedLoopBody: Statement) {
-  return node.update(visitNode(node.initializer, visitor, isForInitializer), visitNode(node.expression, visitor, isExpression), convertedLoopBody);
+  return node.update(visitNode(node.initer, visitor, isForIniter), visitNode(node.expression, visitor, isExpression), convertedLoopBody);
 }
 function convertDoStatement(node: DoStatement, convertedLoopBody: Statement) {
   return node.update(convertedLoopBody, visitNode(node.expression, visitor, isExpression));
@@ -1447,23 +1447,23 @@ function convertWhileStatement(node: WhileStatement, convertedLoopBody: Statemen
   return node.update(visitNode(node.expression, visitor, isExpression), convertedLoopBody);
 }
 function createConvertedLoopState(node: IterationStatement) {
-  let loopInitializer: VariableDeclarationList | undefined;
+  let loopIniter: VariableDeclarationList | undefined;
   switch (node.kind) {
     case Syntax.ForStatement:
     case Syntax.ForInStatement:
     case Syntax.ForOfStatement:
-      const initializer = (<ForStatement | ForInStatement | ForOfStatement>node).initializer;
-      if (initializer && initializer.kind === Syntax.VariableDeclarationList) {
-        loopInitializer = <VariableDeclarationList>initializer;
+      const initer = (<ForStatement | ForInStatement | ForOfStatement>node).initer;
+      if (initer && initer.kind === Syntax.VariableDeclarationList) {
+        loopIniter = <VariableDeclarationList>initer;
       }
       break;
   }
   const loopParameters: ParameterDeclaration[] = [];
   const loopOutParameters: LoopOutParameter[] = [];
-  if (loopInitializer && qc.get.combinedFlagsOf(loopInitializer) & NodeFlags.BlockScoped) {
-    const hasCapturedBindingsInForInitializer = shouldConvertInitializerOfForStatement(node);
-    for (const decl of loopInitializer.declarations) {
-      processLoopVariableDeclaration(node, decl, loopParameters, loopOutParameters, hasCapturedBindingsInForInitializer);
+  if (loopIniter && qc.get.combinedFlagsOf(loopIniter) & NodeFlags.BlockScoped) {
+    const hasCapturedBindingsInForIniter = shouldConvertIniterOfForStatement(node);
+    for (const decl of loopIniter.declarations) {
+      processLoopVariableDeclaration(node, decl, loopParameters, loopOutParameters, hasCapturedBindingsInForIniter);
     }
   }
   const currentState: ConvertedLoopState = { loopParameters, loopOutParameters };
@@ -1535,15 +1535,15 @@ interface IterationStatementPartFunction<T> {
 function createOutVariable(p: LoopOutParameter) {
   return new qc.VariableDeclaration(p.originalName, undefined, p.outParamName);
 }
-function createFunctionForInitializerOfForStatement(node: ForStatementWithConvertibleInitializer, currentState: ConvertedLoopState): IterationStatementPartFunction<VariableDeclarationList> {
+function createFunctionForIniterOfForStatement(node: ForStatementWithConvertibleIniter, currentState: ConvertedLoopState): IterationStatementPartFunction<VariableDeclarationList> {
   const functionName = createUniqueName('_loop_init');
-  const containsYield = (node.initializer.transformFlags & TransformFlags.ContainsYield) !== 0;
+  const containsYield = (node.initer.transformFlags & TransformFlags.ContainsYield) !== 0;
   let emitFlags = EmitFlags.None;
   if (currentState.containsLexicalThis) emitFlags |= EmitFlags.CapturesThis;
   if (containsYield && hierarchyFacts & HierarchyFacts.AsyncFunctionBody) emitFlags |= EmitFlags.AsyncFunctionBody;
   const statements: Statement[] = [];
-  statements.push(new qc.VariableStatement(undefined, node.initializer));
-  copyOutParameters(currentState.loopOutParameters, LoopOutParameterFlags.Initializer, CopyDirection.ToOutParameter, statements);
+  statements.push(new qc.VariableStatement(undefined, node.initer));
+  copyOutParameters(currentState.loopOutParameters, LoopOutParameterFlags.Initer, CopyDirection.ToOutParameter, statements);
   const functionDeclaration = new qc.VariableStatement(
     undefined,
     setEmitFlags(
@@ -1640,7 +1640,7 @@ function copyOutParameters(outParams: LoopOutParameter[], partFlags: LoopOutPara
     }
   }
 }
-function generateCallToConvertedLoopInitializer(initFunctionExpressionName: Identifier, containsYield: boolean): Statement {
+function generateCallToConvertedLoopIniter(initFunctionExpressionName: Identifier, containsYield: boolean): Statement {
   const call = new qs.CallExpression(initFunctionExpressionName, undefined, []);
   const callResult = containsYield ? new qc.YieldExpression(new Token(Syntax.AsteriskToken), setEmitFlags(call, EmitFlags.Iterator)) : call;
   return new qc.ExpressionStatement(callResult);
@@ -1718,26 +1718,26 @@ function processLoopVariableDeclaration(
   decl: VariableDeclaration | BindingElement,
   loopParameters: ParameterDeclaration[],
   loopOutParameters: LoopOutParameter[],
-  hasCapturedBindingsInForInitializer: boolean
+  hasCapturedBindingsInForIniter: boolean
 ) {
   const name = decl.name;
   if (qc.is.kind(BindingPattern, name)) {
     for (const element of name.elements) {
       if (!qc.is.kind(OmittedExpression, element)) {
-        processLoopVariableDeclaration(container, element, loopParameters, loopOutParameters, hasCapturedBindingsInForInitializer);
+        processLoopVariableDeclaration(container, element, loopParameters, loopOutParameters, hasCapturedBindingsInForIniter);
       }
     }
   } else {
     loopParameters.push(new qc.ParameterDeclaration(undefined, undefined, name));
     const checkFlags = resolver.getNodeCheckFlags(decl);
-    if (checkFlags & NodeCheckFlags.NeedsLoopOutParameter || hasCapturedBindingsInForInitializer) {
+    if (checkFlags & NodeCheckFlags.NeedsLoopOutParameter || hasCapturedBindingsInForIniter) {
       const outParamName = createUniqueName('out_' + idText(name));
       let flags: LoopOutParameterFlags = 0;
       if (checkFlags & NodeCheckFlags.NeedsLoopOutParameter) {
         flags |= LoopOutParameterFlags.Body;
       }
-      if (qc.is.kind(ForStatement, container) && container.initializer && resolver.isBindingCapturedByNode(container.initializer, decl)) {
-        flags |= LoopOutParameterFlags.Initializer;
+      if (qc.is.kind(ForStatement, container) && container.initer && resolver.isBindingCapturedByNode(container.initer, decl)) {
+        flags |= LoopOutParameterFlags.Initer;
       }
       loopOutParameters.push({ flags, originalName: name, outParamName });
     }
@@ -1772,7 +1772,7 @@ function addObjectLiteralMembers(expressions: Expression[], node: ObjectLiteralE
   }
 }
 function transformPropertyAssignmentToExpression(property: PropertyAssignment, receiver: Expression, startsOnNewLine: boolean) {
-  const expression = createAssignment(createMemberAccessForPropertyName(receiver, visitNode(property.name, visitor, isPropertyName)), visitNode(property.initializer, visitor, isExpression));
+  const expression = createAssignment(createMemberAccessForPropertyName(receiver, visitNode(property.name, visitor, isPropertyName)), visitNode(property.initer, visitor, isExpression));
   setRange(expression, property);
   if (startsOnNewLine) {
     startOnNewLine(expression);
@@ -1862,18 +1862,18 @@ function visitCallExpression(node: CallExpression) {
 }
 function visitTypeScriptClassWrapper(node: CallExpression) {
   const body = cast(cast(skipOuterExpressions(node.expression), isArrowFunction).body, isBlock);
-  const isVariableStatementWithInitializer = (stmt: Statement) => qc.is.kind(VariableStatement, stmt) && !!first(stmt.declarationList.declarations).initializer;
+  const isVariableStatementWithIniter = (stmt: Statement) => qc.is.kind(VariableStatement, stmt) && !!first(stmt.declarationList.declarations).initer;
   const savedConvertedLoopState = convertedLoopState;
   convertedLoopState = undefined;
   const bodyStatements = Nodes.visit(body.statements, visitor, isStatement);
   convertedLoopState = savedConvertedLoopState;
-  const classStatements = filter(bodyStatements, isVariableStatementWithInitializer);
-  const remainingStatements = filter(bodyStatements, (stmt) => !isVariableStatementWithInitializer(stmt));
+  const classStatements = filter(bodyStatements, isVariableStatementWithIniter);
+  const remainingStatements = filter(bodyStatements, (stmt) => !isVariableStatementWithIniter(stmt));
   const varStatement = cast(first(classStatements), isVariableStatement);
   const variable = varStatement.declarationList.declarations[0];
-  const initializer = skipOuterExpressions(variable.initializer!);
-  const aliasAssignment = tryCast(initializer, isAssignmentExpression);
-  const call = cast(aliasAssignment ? skipOuterExpressions(aliasAssignment.right) : initializer, isCallExpression);
+  const initer = skipOuterExpressions(variable.initer!);
+  const aliasAssignment = tryCast(initer, isAssignmentExpression);
+  const call = cast(aliasAssignment ? skipOuterExpressions(aliasAssignment.right) : initer, isCallExpression);
   const func = cast(skipOuterExpressions(call.expression), isFunctionExpression);
   const funcStatements = func.body.statements;
   let classBodyStart = 0;
@@ -1901,7 +1901,7 @@ function visitTypeScriptClassWrapper(node: CallExpression) {
   return recreateOuterExpressions(
     node.expression,
     recreateOuterExpressions(
-      variable.initializer,
+      variable.initer,
       recreateOuterExpressions(
         aliasAssignment && aliasAssignment.right,
         updateCall(
@@ -1939,8 +1939,8 @@ function visitCallExpressionWithPotentialCapturedThisAssignment(node: CallExpres
       );
     }
     if (node.expression.kind === Syntax.SuperKeyword) {
-      const initializer = createLogicalOr(resultingCall, createActualThis());
-      resultingCall = assignToCapturedThis ? createAssignment(createFileLevelUniqueName('_this'), initializer) : initializer;
+      const initer = createLogicalOr(resultingCall, createActualThis());
+      resultingCall = assignToCapturedThis ? createAssignment(createFileLevelUniqueName('_this'), initer) : initer;
     }
     return resultingCall.setOriginal(node);
   }

@@ -739,18 +739,15 @@ export function sum<T extends Record<K, number>, K extends string>(ts: readonly 
   }
   return r;
 }
-export function append<TArray extends any[] | undefined, TValue extends NonNullable<TArray>[number] | undefined>(
-  to: TArray,
-  value: TValue
-): [undefined, undefined] extends [TArray, TValue] ? TArray : NonNullable<TArray>[number][];
-export function append<T>(to: T[], v?: T): T[];
-export function append<T>(to: T[] | undefined, v: T): T[];
+export function append<T, V extends NonNullable<T[]>[number] | undefined>(ts: T[] | undefined, v: V): [undefined, undefined] extends [T[], V] ? T : NonNullable<T[]>[number][];
+export function append<T>(ts: T[], v?: T): T[];
+export function append<T>(ts: T[] | undefined, v: T): T[];
 //export function append<T>(to: Push<T>, v?: T): Push<T>;
-export function append<T>(to?: T[], v?: T): T[] | undefined {
-  if (v === undefined) return to;
-  if (to === undefined) return [v];
-  to.push(v);
-  return to;
+export function append<T>(ts?: T[], v?: T): T[] | undefined {
+  if (v === undefined) return ts;
+  if (ts === undefined) return [v];
+  ts.push(v);
+  return ts;
 }
 export function combine<T>(a: T | readonly T[] | undefined, b: T | readonly T[] | undefined): T | readonly T[] | undefined;
 export function combine<T>(a: T | T[] | undefined, b: T | T[] | undefined): T | T[] | undefined;

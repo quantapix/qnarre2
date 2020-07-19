@@ -209,7 +209,7 @@ export function transformES2018(context: TransformationContext) {
       } else {
         chunkObject = append(
           chunkObject,
-          e.kind === Syntax.PropertyAssignment ? new qc.PropertyAssignment(e.name, visitNode(e.initializer, visitor, isExpression)) : visitNode(e, visitor, isObjectLiteralElementLike)
+          e.kind === Syntax.PropertyAssignment ? new qc.PropertyAssignment(e.name, visitNode(e.initer, visitor, isExpression)) : visitNode(e, visitor, isObjectLiteralElementLike)
         );
       }
     }
@@ -304,7 +304,7 @@ export function transformES2018(context: TransformationContext) {
   function visitForStatement(node: ForStatement): VisitResult<Statement> {
     return updateFor(
       node,
-      visitNode(node.initializer, visitorNoDestructuringValue, isForInitializer),
+      visitNode(node.initer, visitorNoDestructuringValue, isForIniter),
       visitNode(node.condition, visitor, isExpression),
       visitNode(node.incrementor, visitor, isExpression),
       visitNode(node.statement, visitor, isStatement)
@@ -315,7 +315,7 @@ export function transformES2018(context: TransformationContext) {
   }
   function visitForOfStatement(node: ForOfStatement, outermostLabeledStatement: LabeledStatement | undefined): VisitResult<Statement> {
     const ancestorFacts = enterSubtree(HierarchyFacts.IterationStatementExcludes, HierarchyFacts.IterationStatementIncludes);
-    if (node.initializer.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
+    if (node.initer.transformFlags & TransformFlags.ContainsObjectRestOrSpread) {
       node = transformForOfStatementWithObjectRest(node);
     }
     const result = node.awaitModifier
@@ -325,12 +325,12 @@ export function transformES2018(context: TransformationContext) {
     return result;
   }
   function transformForOfStatementWithObjectRest(node: ForOfStatement) {
-    const initializerWithoutParens = skipParentheses(node.initializer) as ForInitializer;
-    if (qc.is.kind(VariableDeclarationList, initializerWithoutParens) || qc.is.kind(AssignmentPattern, initializerWithoutParens)) {
+    const initerWithoutParens = skipParentheses(node.initer) as ForIniter;
+    if (qc.is.kind(VariableDeclarationList, initerWithoutParens) || qc.is.kind(AssignmentPattern, initerWithoutParens)) {
       let bodyLocation: TextRange | undefined;
       let statementsLocation: TextRange | undefined;
       const temp = createTempVariable(undefined);
-      const statements: Statement[] = [createForOfBindingStatement(initializerWithoutParens, temp)];
+      const statements: Statement[] = [createForOfBindingStatement(initerWithoutParens, temp)];
       if (qc.is.kind(Block, node.statement)) {
         addRange(statements, node.statement.statements);
         bodyLocation = node.statement;
@@ -343,7 +343,7 @@ export function transformES2018(context: TransformationContext) {
       return updateForOf(
         node,
         node.awaitModifier,
-        setRange(new qc.VariableDeclarationList([setRange(new qc.VariableDeclaration(temp), node.initializer)], NodeFlags.Let), node.initializer),
+        setRange(new qc.VariableDeclarationList([setRange(new qc.VariableDeclaration(temp), node.initer)], NodeFlags.Let), node.initer),
         node.expression,
         setRange(new Block(setRange(new Nodes(statements), statementsLocation), true), bodyLocation)
       );
@@ -351,7 +351,7 @@ export function transformES2018(context: TransformationContext) {
     return node;
   }
   function convertForOfStatementHead(node: ForOfStatement, boundValue: Expression) {
-    const binding = createForOfBindingStatement(node.initializer, boundValue);
+    const binding = createForOfBindingStatement(node.initer, boundValue);
     let bodyLocation: TextRange | undefined;
     let statementsLocation: TextRange | undefined;
     const statements: Statement[] = [visitNode(binding, visitor, isStatement)];
@@ -382,12 +382,12 @@ export function transformES2018(context: TransformationContext) {
     const callReturn = createFunctionCall(returnMethod, iterator, []);
     hoistVariableDeclaration(errorRecord);
     hoistVariableDeclaration(returnMethod);
-    const initializer = ancestorFacts & HierarchyFacts.IterationContainer ? inlineExpressions([createAssignment(errorRecord, qs.VoidExpression.zero()), callValues]) : callValues;
+    const initer = ancestorFacts & HierarchyFacts.IterationContainer ? inlineExpressions([createAssignment(errorRecord, qs.VoidExpression.zero()), callValues]) : callValues;
     const forStatement = setEmitFlags(
       setRange(
         new qc.ForStatement(
           setEmitFlags(
-            setRange(new qc.VariableDeclarationList([setRange(new qc.VariableDeclaration(iterator, undefined, initializer), node.expression), new qc.VariableDeclaration(result)]), node.expression),
+            setRange(new qc.VariableDeclarationList([setRange(new qc.VariableDeclaration(iterator, undefined, initer), node.expression), new qc.VariableDeclaration(result)]), node.expression),
             EmitFlags.NoHoisting
           ),
           createComma(createAssignment(result, createDownlevelAwait(callNext)), qs.PrefixUnaryExpression.logicalNot(getDone)),
@@ -426,7 +426,7 @@ export function transformES2018(context: TransformationContext) {
   }
   function visitParameter(node: ParameterDeclaration): ParameterDeclaration {
     if (node.transformFlags & TransformFlags.ContainsObjectRestOrSpread)
-      return node.update(undefined, undefined, node.dot3Token, getGeneratedNameForNode(node), undefined, undefined, visitNode(node.initializer, visitor, isExpression));
+      return node.update(undefined, undefined, node.dot3Token, getGeneratedNameForNode(node), undefined, undefined, visitNode(node.initer, visitor, isExpression));
     return visitEachChild(node, visitor, context);
   }
   function visitConstructorDeclaration(node: ConstructorDeclaration) {

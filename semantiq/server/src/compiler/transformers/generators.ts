@@ -924,7 +924,7 @@ export function transformGenerators(context: TransformationContext) {
     while (variablesWritten < numVariables) {
       for (let i = variablesWritten; i < numVariables; i++) {
         const variable = variables[i];
-        if (containsYield(variable.initializer) && pendingExpressions.length > 0) {
+        if (containsYield(variable.initer) && pendingExpressions.length > 0) {
           break;
         }
         pendingExpressions.push(transformInitializedVariable(variable));
@@ -938,7 +938,7 @@ export function transformGenerators(context: TransformationContext) {
     return;
   }
   function transformInitializedVariable(node: VariableDeclaration) {
-    return setSourceMapRange(createAssignment(setSourceMapRange(<Identifier>getSynthesizedClone(node.name), node.name), visitNode(node.initializer, visitor, isExpression)), node);
+    return setSourceMapRange(createAssignment(setSourceMapRange(<Identifier>getSynthesizedClone(node.name), node.name), visitNode(node.initer, visitor, isExpression)), node);
   }
   function transformAndEmitIfStatement(node: IfStatement) {
     if (containsYield(node)) {
@@ -1067,12 +1067,12 @@ export function transformGenerators(context: TransformationContext) {
       const conditionLabel = defineLabel();
       const incrementLabel = defineLabel();
       const endLabel = beginLoopBlock(incrementLabel);
-      if (node.initializer) {
-        const initializer = node.initializer;
-        if (qc.is.kind(VariableDeclarationList, initializer)) {
-          transformAndEmitVariableDeclarationList(initializer);
+      if (node.initer) {
+        const initer = node.initer;
+        if (qc.is.kind(VariableDeclarationList, initer)) {
+          transformAndEmitVariableDeclarationList(initer);
         } else {
-          emitStatement(setRange(new qc.ExpressionStatement(visitNode(initializer, visitor, isExpression)), initializer));
+          emitStatement(setRange(new qc.ExpressionStatement(visitNode(initer, visitor, isExpression)), initer));
         }
       }
       markLabel(conditionLabel);
@@ -1094,12 +1094,12 @@ export function transformGenerators(context: TransformationContext) {
     if (inStatementContainingYield) {
       beginScriptLoopBlock();
     }
-    const initializer = node.initializer;
-    if (initializer && qc.is.kind(VariableDeclarationList, initializer)) {
-      for (const variable of initializer.declarations) {
+    const initer = node.initer;
+    if (initer && qc.is.kind(VariableDeclarationList, initer)) {
+      for (const variable of initer.declarations) {
         hoistVariableDeclaration(<Identifier>variable.name);
       }
-      const variables = getInitializedVariables(initializer);
+      const variables = getInitializedVariables(initer);
       node = updateFor(
         node,
         variables.length > 0 ? inlineExpressions(map(variables, transformInitializedVariable)) : undefined,
@@ -1141,7 +1141,7 @@ export function transformGenerators(context: TransformationContext) {
       const keysArray = declareLocal(); // _a
       const key = declareLocal(); // _b
       const keysIndex = createLoopVariable(); // _i
-      const initializer = node.initializer;
+      const initer = node.initer;
       hoistVariableDeclaration(keysIndex);
       emitAssignment(keysArray, new ArrayLiteralExpression());
       emitStatement(
@@ -1158,13 +1158,13 @@ export function transformGenerators(context: TransformationContext) {
       markLabel(conditionLabel);
       emitBreakWhenFalse(endLabel, createLessThan(keysIndex, new qc.PropertyAccessExpression(keysArray, 'length')));
       let variable: Expression;
-      if (qc.is.kind(VariableDeclarationList, initializer)) {
-        for (const variable of initializer.declarations) {
+      if (qc.is.kind(VariableDeclarationList, initer)) {
+        for (const variable of initer.declarations) {
           hoistVariableDeclaration(<Identifier>variable.name);
         }
-        variable = <Identifier>getSynthesizedClone(initializer.declarations[0].name);
+        variable = <Identifier>getSynthesizedClone(initer.declarations[0].name);
       } else {
-        variable = visitNode(initializer, visitor, isExpression);
+        variable = visitNode(initer, visitor, isExpression);
         assert(qc.is.leftHandSideExpression(variable));
       }
       emitAssignment(variable, new qs.ElementAccessExpression(keysArray, keysIndex));
@@ -1193,12 +1193,12 @@ export function transformGenerators(context: TransformationContext) {
     if (inStatementContainingYield) {
       beginScriptLoopBlock();
     }
-    const initializer = node.initializer;
-    if (qc.is.kind(VariableDeclarationList, initializer)) {
-      for (const variable of initializer.declarations) {
+    const initer = node.initer;
+    if (qc.is.kind(VariableDeclarationList, initer)) {
+      for (const variable of initer.declarations) {
         hoistVariableDeclaration(<Identifier>variable.name);
       }
-      node = node.update(<Identifier>initializer.declarations[0].name, visitNode(node.expression, visitor, isExpression), visitNode(node.statement, visitor, isStatement, liftToBlock));
+      node = node.update(<Identifier>initer.declarations[0].name, visitNode(node.expression, visitor, isExpression), visitNode(node.statement, visitor, isStatement, liftToBlock));
     } else {
       node = visitEachChild(node, visitor, context);
     }

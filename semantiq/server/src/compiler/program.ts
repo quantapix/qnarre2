@@ -2378,11 +2378,11 @@ export function createProgram(
     let needCompilerDiagnostic = true;
     const pathsSyntax = getOptionPathsSyntax();
     for (const pathProp of pathsSyntax) {
-      if (qc.is.kind(ObjectLiteralExpression, pathProp.initializer)) {
-        for (const keyProps of getPropertyAssignment(pathProp.initializer, key)) {
-          const initializer = keyProps.initializer;
-          if (isArrayLiteralExpression(initializer) && initializer.elements.length > valueIndex) {
-            programqd.add(createDiagnosticForNodeInSourceFile(options.configFile!, initializer.elements[valueIndex], message, arg0, arg1, arg2));
+      if (qc.is.kind(ObjectLiteralExpression, pathProp.initer)) {
+        for (const keyProps of getPropertyAssignment(pathProp.initer, key)) {
+          const initer = keyProps.initer;
+          if (isArrayLiteralExpression(initer) && initer.elements.length > valueIndex) {
+            programqd.add(createDiagnosticForNodeInSourceFile(options.configFile!, initer.elements[valueIndex], message, arg0, arg1, arg2));
             needCompilerDiagnostic = false;
           }
         }
@@ -2396,7 +2396,7 @@ export function createProgram(
     let needCompilerDiagnostic = true;
     const pathsSyntax = getOptionPathsSyntax();
     for (const pathProp of pathsSyntax) {
-      if (qc.is.kind(ObjectLiteralExpression, pathProp.initializer) && createOptionDiagnosticInObjectLiteralSyntax(pathProp.initializer, onKey, key, undefined, message, arg0)) {
+      if (qc.is.kind(ObjectLiteralExpression, pathProp.initer) && createOptionDiagnosticInObjectLiteralSyntax(pathProp.initer, onKey, key, undefined, message, arg0)) {
         needCompilerDiagnostic = false;
       }
     }
@@ -2420,7 +2420,7 @@ export function createProgram(
   }
   function createDiagnosticForReference(sourceFile: JsonSourceFile | undefined, index: number, message: DiagnosticMessage, arg0?: string | number, arg1?: string | number) {
     const referencesSyntax = firstDefined(getTsConfigPropArray(sourceFile || options.configFile, 'references'), (property) =>
-      isArrayLiteralExpression(property.initializer) ? property.initializer : undefined
+      isArrayLiteralExpression(property.initer) ? property.initer : undefined
     );
     if (referencesSyntax && referencesSyntax.elements.length > index) {
       programqd.add(createDiagnosticForNodeInSourceFile(sourceFile || options.configFile!, referencesSyntax.elements[index], message, arg0, arg1));
@@ -2442,8 +2442,8 @@ export function createProgram(
       const jsonObjectLiteral = getTsConfigObjectLiteralExpression(options.configFile);
       if (jsonObjectLiteral) {
         for (const prop of getPropertyAssignment(jsonObjectLiteral, 'compilerOptions')) {
-          if (qc.is.kind(ObjectLiteralExpression, prop.initializer)) {
-            _compilerOptionsObjectLiteralSyntax = prop.initializer;
+          if (qc.is.kind(ObjectLiteralExpression, prop.initer)) {
+            _compilerOptionsObjectLiteralSyntax = prop.initer;
             break;
           }
         }
@@ -2463,7 +2463,7 @@ export function createProgram(
   ): boolean {
     const props = getPropertyAssignment(objectLiteral, key1, key2);
     for (const prop of props) {
-      programqd.add(createDiagnosticForNodeInSourceFile(options.configFile!, onKey ? prop.name : prop.initializer, message, arg0, arg1, arg2));
+      programqd.add(createDiagnosticForNodeInSourceFile(options.configFile!, onKey ? prop.name : prop.initer, message, arg0, arg1, arg2));
     }
     return !!props.length;
   }

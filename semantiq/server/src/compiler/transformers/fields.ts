@@ -124,7 +124,7 @@ export function transformClassFields(context: TransformationContext) {
     assert(!some(node.decorators));
     if (!shouldTransformPrivateFields && qc.is.kind(PrivateIdentifier, node.name))
       return node.update(undefined, Nodes.visit(node.modifiers, visitor, isModifier), node.name, undefined, undefined, undefined);
-    const expr = getPropertyNameExpressionIfNeeded(node.name, !!node.initializer || !!context.getCompilerOptions().useDefineForClassFields);
+    const expr = getPropertyNameExpressionIfNeeded(node.name, !!node.initer || !!context.getCompilerOptions().useDefineForClassFields);
     if (expr && !isSimpleInlineableExpression(expr)) {
       (pendingExpressions || (pendingExpressions = [])).push(expr);
     }
@@ -193,7 +193,7 @@ export function transformClassFields(context: TransformationContext) {
     if (node.incrementor && qc.is.kind(PostfixUnaryExpression, node.incrementor)) {
       return updateFor(
         node,
-        visitNode(node.initializer, visitor, isForInitializer),
+        visitNode(node.initer, visitor, isForIniter),
         visitNode(node.condition, visitor, isExpression),
         visitPostfixUnaryExpression(node.incrementor, true),
         visitNode(node.statement, visitor, isStatement)
@@ -373,7 +373,7 @@ export function transformClassFields(context: TransformationContext) {
     const useDefineForClassFields = context.getCompilerOptions().useDefineForClassFields;
     let properties = getProperties(node, false);
     if (!useDefineForClassFields) {
-      properties = filter(properties, (property) => !!property.initializer || qc.is.kind(PrivateIdentifier, property.name));
+      properties = filter(properties, (property) => !!property.initer || qc.is.kind(PrivateIdentifier, property.name));
     }
     if (!constructor && !some(properties)) return visitFunctionBody(undefined, visitor, context);
     resumeLexicalEnvironment();
@@ -437,36 +437,36 @@ export function transformClassFields(context: TransformationContext) {
       if (privateIdentifierInfo) {
         switch (privateIdentifierInfo.placement) {
           case PrivateIdentifierPlacement.InstanceField: {
-            return createPrivateInstanceFieldInitializer(receiver, visitNode(property.initializer, visitor, isExpression), privateIdentifierInfo.weakMapName);
+            return createPrivateInstanceFieldIniter(receiver, visitNode(property.initer, visitor, isExpression), privateIdentifierInfo.weakMapName);
           }
         }
       } else {
         fail('Undeclared private name for property declaration.');
       }
     }
-    if (qc.is.kind(PrivateIdentifier, propertyName) && !property.initializer) {
+    if (qc.is.kind(PrivateIdentifier, propertyName) && !property.initer) {
       return;
     }
-    if (qc.is.kind(PrivateIdentifier, propertyName) && !property.initializer) {
+    if (qc.is.kind(PrivateIdentifier, propertyName) && !property.initer) {
       return;
     }
     const propertyOriginalNode = qc.get.originalOf(property);
-    const initializer =
-      property.initializer || emitAssignment
-        ? visitNode(property.initializer, visitor, isExpression)
+    const initer =
+      property.initer || emitAssignment
+        ? visitNode(property.initer, visitor, isExpression)
         : qc.is.parameterPropertyDeclaration(propertyOriginalNode, propertyOriginalNode.parent) && qc.is.kind(Identifier, propertyName)
         ? propertyName
         : qs.VoidExpression.zero();
     if (emitAssignment || qc.is.kind(PrivateIdentifier, propertyName)) {
       const memberAccess = createMemberAccessForPropertyName(receiver, propertyName, propertyName);
-      return createAssignment(memberAccess, initializer);
+      return createAssignment(memberAccess, initer);
     } else {
       const name = qc.is.kind(ComputedPropertyName, propertyName)
         ? propertyName.expression
         : qc.is.kind(Identifier, propertyName)
         ? new qc.StringLiteral(syntax.get.unescUnderscores(propertyName.escapedText))
         : propertyName;
-      const descriptor = createPropertyDescriptor({ value: initializer, configurable: true, writable: true, enumerable: true });
+      const descriptor = createPropertyDescriptor({ value: initer, configurable: true, writable: true, enumerable: true });
       return createObjectDefinePropertyCall(receiver, name, descriptor);
     }
   }
@@ -595,11 +595,11 @@ export function transformClassFields(context: TransformationContext) {
     if (qc.is.kind(PropertyAssignment, node)) {
       const target = getTargetOfBindingOrAssignmentElement(node);
       if (target && qc.is.privateIdentifierPropertyAccessExpression(target)) {
-        const initializer = getInitializerOfBindingOrAssignmentElement(node);
+        const initer = getIniterOfBindingOrAssignmentElement(node);
         const wrapped = wrapPrivateIdentifierForDestructuringTarget(target);
-        return node.update(visitNode(node.name, visitor), initializer ? createAssignment(wrapped, visitNode(initializer, visitor)) : wrapped);
+        return node.update(visitNode(node.name, visitor), initer ? createAssignment(wrapped, visitNode(initer, visitor)) : wrapped);
       }
-      return node.update(visitNode(node.name, visitor), visitNode(node.initializer, visitorDestructuringTarget));
+      return node.update(visitNode(node.name, visitor), visitNode(node.initer, visitorDestructuringTarget));
     }
     return visitNode(node, visitor);
   }
@@ -608,8 +608,8 @@ export function transformClassFields(context: TransformationContext) {
     return node.update(Nodes.visit(node.properties, visitObjectAssignmentTarget, isObjectLiteralElementLike));
   }
 }
-function createPrivateInstanceFieldInitializer(receiver: LeftHandSideExpression, initializer: Expression | undefined, weakMapName: Identifier) {
-  return new qs.CallExpression(new qc.PropertyAccessExpression(weakMapName, 'set'), undefined, [receiver, initializer || qs.VoidExpression.zero()]);
+function createPrivateInstanceFieldIniter(receiver: LeftHandSideExpression, initer: Expression | undefined, weakMapName: Identifier) {
+  return new qs.CallExpression(new qc.PropertyAccessExpression(weakMapName, 'set'), undefined, [receiver, initer || qs.VoidExpression.zero()]);
 }
 export const classPrivateFieldGetHelper: UnscopedEmitHelper = {
   name: 'typescript:classPrivateFieldGet',

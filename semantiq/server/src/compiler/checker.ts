@@ -589,13 +589,13 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     getDeclarationOfJSPrototypeContainer() {
       const v = this.parent!.valueDeclaration;
       if (!v) return;
-      const i = isAssignmentDeclaration(v) ? getAssignedExpandoInitializer(v) : qc.is.withOnlyExpressionInitializer(v) ? getDeclaredExpandoInitializer(v) : undefined;
+      const i = isAssignmentDeclaration(v) ? getAssignedExpandoIniter(v) : qc.is.withOnlyExpressionIniter(v) ? getDeclaredExpandoIniter(v) : undefined;
       return i || v;
     }
     getExpandoSymbol(): Symbol | undefined {
       const v = this.valueDeclaration;
-      if (!v || !qc.is.inJSFile(v) || this.flags & SymbolFlags.TypeAlias || getExpandoInitializer(v, false)) return;
-      const i = qc.is.kind(VariableDeclaration, v) ? getDeclaredExpandoInitializer(v) : getAssignedExpandoInitializer(v);
+      if (!v || !qc.is.inJSFile(v) || this.flags & SymbolFlags.TypeAlias || getExpandoIniter(v, false)) return;
+      const i = qc.is.kind(VariableDeclaration, v) ? getDeclaredExpandoIniter(v) : getAssignedExpandoIniter(v);
       if (i) {
         const s = getSymbolOfNode(i);
         if (s) return mergeJSSymbols(s, this);
@@ -1132,7 +1132,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     isAutoTypedProperty() {
       const v = this.valueDeclaration;
-      return v && qc.is.kind(PropertyDeclaration, v) && !qc.get.effectiveTypeAnnotationNode(v) && !v.initializer && (noImplicitAny || qc.is.inJSFile(v));
+      return v && qc.is.kind(PropertyDeclaration, v) && !qc.get.effectiveTypeAnnotationNode(v) && !v.initer && (noImplicitAny || qc.is.inJSFile(v));
     }
     getDeclaringConstructor() {
       const ds = this.declarations;
@@ -1203,7 +1203,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       } else if (qc.is.objectLiteralMethod(declaration)) {
         type = tryGetTypeFromEffectiveTypeNode(declaration) || checkObjectLiteralMethod(declaration, CheckMode.Normal);
       } else if (
-        qc.is.kind(ParameterDeclaration, declaration) ||
+        qc.is.kind(qc.ParameterDeclaration, declaration) ||
         qc.is.kind(PropertyDeclaration, declaration) ||
         qc.is.kind(PropertySignature, declaration) ||
         qc.is.kind(VariableDeclaration, declaration) ||
@@ -1336,8 +1336,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         error(this.valueDeclaration, qd._0_is_referenced_directly_or_indirectly_in_its_own_type_annotation, this.symbolToString());
         return errorType;
       }
-      if (noImplicitAny && (declaration.kind !== Syntax.Parameter || (<HasInitializer>declaration).initializer)) {
-        error(this.valueDeclaration, qd._0_implicitly_has_type_any_because_it_does_not_have_a_type_annotation_and_is_referenced_directly_or_indirectly_in_its_own_initializer, this.symbolToString());
+      if (noImplicitAny && (declaration.kind !== Syntax.Parameter || (<HasIniter>declaration).initer)) {
+        error(this.valueDeclaration, qd._0_implicitly_has_type_any_because_it_does_not_have_a_type_annotation_and_is_referenced_directly_or_indirectly_in_its_own_initer, this.symbolToString());
       }
       return anyType;
     }
@@ -1456,7 +1456,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       for (const d of this.declarations ?? []) {
         if (d.kind === Syntax.EnumDeclaration) {
           for (const m of (<EnumDeclaration>d).members) {
-            if (m.initializer && StringLiteral.like(m.initializer)) return (ls.enumKind = EnumKind.Literal);
+            if (m.initer && StringLiteral.like(m.initer)) return (ls.enumKind = EnumKind.Literal);
             if (!isLiteralEnumMember(m)) hasNonLiteralMember = true;
           }
         }
@@ -1629,7 +1629,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const t = this.getTypeOfSymbol();
       if (strictNullChecks) {
         const d = this.valueDeclaration;
-        if (d && qc.is.withInitializer(d)) return getOptionalType(t);
+        if (d && qc.is.withIniter(d)) return getOptionalType(t);
       }
       return t;
     }
@@ -1870,9 +1870,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
             if (resolveName(container.parent, this.escName, SymbolFlags.Value, undefined, undefined, false)) ls.isDeclarationWithCollidingName = true;
             else if (nodeLinks.flags & NodeCheckFlags.CapturedBlockScopedBinding) {
               const isDeclaredInLoop = nodeLinks.flags & NodeCheckFlags.BlockScopedBindingInLoop;
-              const inLoopInitializer = qc.is.iterationStatement(container, false);
+              const inLoopIniter = qc.is.iterationStatement(container, false);
               const inLoopBodyBlock = container.kind === Syntax.Block && qc.is.iterationStatement(container.parent, false);
-              ls.isDeclarationWithCollidingName = !qc.is.blockScopedContainerTopLevel(container) && (!isDeclaredInLoop || (!inLoopInitializer && !inLoopBodyBlock));
+              ls.isDeclarationWithCollidingName = !qc.is.blockScopedContainerTopLevel(container) && (!isDeclaredInLoop || (!inLoopIniter && !inLoopBodyBlock));
             } else {
               ls.isDeclarationWithCollidingName = false;
             }
@@ -1934,8 +1934,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     isTypeParameterSymbolDeclaredInContainer(container: Node) {
       for (const d of this.declarations) {
         if (d.kind === Syntax.TypeParameter) {
-          const p = qc.is.kind(DocTemplateTag, d.parent) ? qc.getDoc.host(d.parent) : d.parent;
-          if (p === container) return !(qc.is.kind(DocTemplateTag, d.parent) && find((d.parent.parent as Doc).tags!, isDocTypeAlias));
+          const p = qc.is.kind(qc.DocTemplateTag, d.parent) ? qc.getDoc.host(d.parent) : d.parent;
+          if (p === container) return !(qc.is.kind(qc.DocTemplateTag, d.parent) && find((d.parent.parent as Doc).tags!, isDocTypeAlias));
         }
       }
       return false;
@@ -2714,10 +2714,10 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return diagnostic;
   }
   function addDuplicateDeclarationError(node: Declaration, message: DiagnosticMessage, symbolName: string, relatedNodes: readonly Declaration[] | undefined) {
-    const errorNode = (getExpandoInitializer(node, false) ? getNameOfExpando(node) : qc.get.nameOfDeclaration(node)) || node;
+    const errorNode = (getExpandoIniter(node, false) ? getNameOfExpando(node) : qc.get.nameOfDeclaration(node)) || node;
     const err = lookupOrIssueError(errorNode, message, symbolName);
     for (const relatedNode of relatedNodes || empty) {
-      const adjustedNode = (getExpandoInitializer(relatedNode, false) ? getNameOfExpando(relatedNode) : qc.get.nameOfDeclaration(relatedNode)) || relatedNode;
+      const adjustedNode = (getExpandoIniter(relatedNode, false) ? getNameOfExpando(relatedNode) : qc.get.nameOfDeclaration(relatedNode)) || relatedNode;
       if (adjustedNode === errorNode) continue;
       err.relatedInformation = err.relatedInformation || [];
       const leadingMessage = createDiagnosticForNode(adjustedNode, qd._0_was_also_declared_here, symbolName);
@@ -2784,14 +2784,14 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const sourceFiles = host.getSourceFiles();
       return sourceFiles.indexOf(declarationFile) <= sourceFiles.indexOf(useFile);
     }
-    if (declaration.pos <= usage.pos && !(qc.is.kind(PropertyDeclaration, declaration) && qc.is.thisProperty(usage.parent) && !declaration.initializer && !declaration.exclamationToken)) {
+    if (declaration.pos <= usage.pos && !(qc.is.kind(PropertyDeclaration, declaration) && qc.is.thisProperty(usage.parent) && !declaration.initer && !declaration.exclamationToken)) {
       if (declaration.kind === Syntax.BindingElement) {
         const errorBindingElement = qc.get.ancestor(usage, Syntax.BindingElement) as BindingElement;
         if (errorBindingElement)
           return qc.findAncestor(errorBindingElement, BindingElement.kind) !== qc.findAncestor(declaration, BindingElement.kind) || declaration.pos < errorBindingElement.pos;
         return isBlockScopedNameDeclaredBeforeUse(qc.get.ancestor(declaration, Syntax.VariableDeclaration) as Declaration, usage);
       } else if (declaration.kind === Syntax.VariableDeclaration) {
-        return !isImmediatelyUsedInInitializerOfBlockScopedVariable(declaration as VariableDeclaration, usage);
+        return !isImmediatelyUsedInIniterOfBlockScopedVariable(declaration as VariableDeclaration, usage);
       } else if (qc.is.kind(ClassDeclaration, declaration)) {
         return !qc.findAncestor(usage, (n) => qc.is.kind(ComputedPropertyName, n) && n.parent.parent === declaration);
       } else if (qc.is.kind(PropertyDeclaration, declaration)) {
@@ -2824,7 +2824,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     function usageInTypeDeclaration() {
       return !!qc.findAncestor(usage, (node) => qc.is.kind(InterfaceDeclaration, node) || qc.is.kind(TypeAliasDeclaration, node));
     }
-    function isImmediatelyUsedInInitializerOfBlockScopedVariable(declaration: VariableDeclaration, usage: Node): boolean {
+    function isImmediatelyUsedInIniterOfBlockScopedVariable(declaration: VariableDeclaration, usage: Node): boolean {
       switch (declaration.parent.parent.kind) {
         case Syntax.VariableStatement:
         case Syntax.ForStatement:
@@ -2839,8 +2839,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       return !!qc.findAncestor(usage, (current) => {
         if (current === declContainer) return 'quit';
         if (qc.is.functionLike(current)) return true;
-        const initializerOfProperty = current.parent && current.parent.kind === Syntax.PropertyDeclaration && (<PropertyDeclaration>current.parent).initializer === current;
-        if (initializerOfProperty) {
+        const initerOfProperty = current.parent && current.parent.kind === Syntax.PropertyDeclaration && (<PropertyDeclaration>current.parent).initer === current;
+        if (initerOfProperty) {
           if (qc.has.syntacticModifier(current.parent, ModifierFlags.Static)) {
             if (declaration.kind === Syntax.MethodDeclaration) return true;
           } else {
@@ -2884,7 +2884,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const target = getEmitScriptTarget(compilerOptions);
     const functionLocation = <FunctionLikeDeclaration>location;
     if (
-      qc.is.kind(ParameterDeclaration, lastLocation) &&
+      qc.is.kind(qc.ParameterDeclaration, lastLocation) &&
       functionLocation.body &&
       result.valueDeclaration.pos >= functionLocation.body.pos &&
       result.valueDeclaration.end <= functionLocation.body.end
@@ -2895,7 +2895,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return false;
     function requiresScopeChange(node: ParameterDeclaration): boolean {
-      return requiresScopeChangeWorker(node.name) || (!!node.initializer && requiresScopeChangeWorker(node.initializer));
+      return requiresScopeChangeWorker(node.name) || (!!node.initer && requiresScopeChangeWorker(node.initer));
     }
     function requiresScopeChangeWorker(node: Node): boolean {
       switch (node.kind) {
@@ -2947,8 +2947,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     let result: Symbol | undefined;
     let lastLocation: Node | undefined;
     let lastSelfReferenceLocation: Node | undefined;
-    let propertyWithInvalidInitializer: Node | undefined;
-    let associatedDeclarationForContainingInitializerOrBindingName: ParameterDeclaration | BindingElement | undefined;
+    let propertyWithInvalidIniter: Node | undefined;
+    let associatedDeclarationForContainingIniterOrBindingName: ParameterDeclaration | BindingElement | undefined;
     let withinDeferredContext = false;
     const errorLocation = location;
     let grandparent: Node;
@@ -3015,7 +3015,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           if (!qc.has.syntacticModifier(location, ModifierFlags.Static)) {
             const ctor = findConstructorDeclaration(location.parent as ClassLikeDeclaration);
             if (ctor && ctor.locals) {
-              if (lookup(ctor.locals, name, meaning & SymbolFlags.Value)) propertyWithInvalidInitializer = location;
+              if (lookup(ctor.locals, name, meaning & SymbolFlags.Value)) propertyWithInvalidIniter = location;
             }
           }
           break;
@@ -3096,16 +3096,16 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         case Syntax.Parameter:
           if (
             lastLocation &&
-            (lastLocation === (location as ParameterDeclaration).initializer || (lastLocation === (location as ParameterDeclaration).name && qc.is.kind(BindingPattern, lastLocation)))
+            (lastLocation === (location as ParameterDeclaration).initer || (lastLocation === (location as ParameterDeclaration).name && qc.is.kind(BindingPattern, lastLocation)))
           ) {
-            if (!associatedDeclarationForContainingInitializerOrBindingName) associatedDeclarationForContainingInitializerOrBindingName = location as ParameterDeclaration;
+            if (!associatedDeclarationForContainingIniterOrBindingName) associatedDeclarationForContainingIniterOrBindingName = location as ParameterDeclaration;
           }
           break;
         case Syntax.BindingElement:
-          if (lastLocation && (lastLocation === (location as BindingElement).initializer || (lastLocation === (location as BindingElement).name && qc.is.kind(BindingPattern, lastLocation)))) {
+          if (lastLocation && (lastLocation === (location as BindingElement).initer || (lastLocation === (location as BindingElement).name && qc.is.kind(BindingPattern, lastLocation)))) {
             const root = qc.get.rootDeclaration(location);
             if (root.kind === Syntax.Parameter) {
-              if (!associatedDeclarationForContainingInitializerOrBindingName) associatedDeclarationForContainingInitializerOrBindingName = location as BindingElement;
+              if (!associatedDeclarationForContainingIniterOrBindingName) associatedDeclarationForContainingIniterOrBindingName = location as BindingElement;
             }
           }
           break;
@@ -3155,9 +3155,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       return;
     }
     if (nameNotFoundMessage) {
-      if (propertyWithInvalidInitializer && !(compilerOptions.target === ScriptTarget.ESNext && compilerOptions.useDefineForClassFields)) {
-        const propertyName = (<PropertyDeclaration>propertyWithInvalidInitializer).name;
-        error(errorLocation, qd.Initializer_of_instance_member_variable_0_cannot_reference_identifier_1_declared_in_the_constructor, declarationNameToString(propertyName), diagnosticName(nameArg!));
+      if (propertyWithInvalidIniter && !(compilerOptions.target === ScriptTarget.ESNext && compilerOptions.useDefineForClassFields)) {
+        const propertyName = (<PropertyDeclaration>propertyWithInvalidIniter).name;
+        error(errorLocation, qd.Initer_of_instance_member_variable_0_cannot_reference_identifier_1_declared_in_the_constructor, declarationNameToString(propertyName), diagnosticName(nameArg!));
         return;
       }
       if (errorLocation && (meaning & SymbolFlags.BlockScopedVariable || ((meaning & SymbolFlags.Class || meaning & SymbolFlags.Enum) && (meaning & SymbolFlags.Value) === SymbolFlags.Value))) {
@@ -3176,21 +3176,21 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           );
         }
       }
-      if (result && associatedDeclarationForContainingInitializerOrBindingName && !withinDeferredContext && (meaning & SymbolFlags.Value) === SymbolFlags.Value) {
+      if (result && associatedDeclarationForContainingIniterOrBindingName && !withinDeferredContext && (meaning & SymbolFlags.Value) === SymbolFlags.Value) {
         const candidate = getMergedSymbol(getLateBoundSymbol(result));
-        const root = qc.get.rootDeclaration(associatedDeclarationForContainingInitializerOrBindingName) as ParameterDeclaration;
-        if (candidate === getSymbolOfNode(associatedDeclarationForContainingInitializerOrBindingName))
-          error(errorLocation, qd.Parameter_0_cannot_reference_itself, declarationNameToString(associatedDeclarationForContainingInitializerOrBindingName.name));
+        const root = qc.get.rootDeclaration(associatedDeclarationForContainingIniterOrBindingName) as ParameterDeclaration;
+        if (candidate === getSymbolOfNode(associatedDeclarationForContainingIniterOrBindingName))
+          error(errorLocation, qd.Parameter_0_cannot_reference_itself, declarationNameToString(associatedDeclarationForContainingIniterOrBindingName.name));
         else if (
           candidate.valueDeclaration &&
-          candidate.valueDeclaration.pos > associatedDeclarationForContainingInitializerOrBindingName.pos &&
+          candidate.valueDeclaration.pos > associatedDeclarationForContainingIniterOrBindingName.pos &&
           root.parent.locals &&
           lookup(root.parent.locals, candidate.escName, meaning) === candidate
         ) {
           error(
             errorLocation,
             qd.Parameter_0_cannot_reference_identifier_1_declared_after_it,
-            declarationNameToString(associatedDeclarationForContainingInitializerOrBindingName.name),
+            declarationNameToString(associatedDeclarationForContainingIniterOrBindingName.name),
             declarationNameToString(<Identifier>errorLocation)
           );
         }
@@ -3407,11 +3407,11 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         node.parent.operatorToken.kind === Syntax.EqualsToken &&
         isAliasableOrJsExpression(node.parent.right)) ||
       node.kind === Syntax.ShorthandPropertyAssignment ||
-      (node.kind === Syntax.PropertyAssignment && isAliasableOrJsExpression((node as PropertyAssignment).initializer))
+      (node.kind === Syntax.PropertyAssignment && isAliasableOrJsExpression((node as PropertyAssignment).initer))
     );
   }
   function isAliasableOrJsExpression(e: Expression) {
-    return isAliasableExpression(e) || (qc.is.kind(FunctionExpression, e) && isJSConstructor(e));
+    return isAliasableExpression(e) || (qc.is.kind(qc.FunctionExpression, e) && isJSConstructor(e));
   }
   function getTargetOfImportEqualsDeclaration(node: ImportEqualsDeclaration, dontResolveAlias: boolean): Symbol | undefined {
     if (node.moduleReference.kind === Syntax.ExternalModuleReference) {
@@ -3643,7 +3643,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return getNodeLinks(expression).resolvedSymbol;
   }
   function getTargetOfPropertyAssignment(node: PropertyAssignment, dontRecursivelyResolve: boolean): Symbol | undefined {
-    const expression = node.initializer;
+    const expression = node.initer;
     return getTargetOfAliasLikeExpression(expression, dontRecursivelyResolve);
   }
   function getTargetOfPropertyAccessExpression(node: PropertyAccessExpression, dontRecursivelyResolve: boolean): Symbol | undefined {
@@ -3733,10 +3733,10 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         if (
           namespace.valueDeclaration &&
           qc.is.kind(VariableDeclaration, namespace.valueDeclaration) &&
-          namespace.valueDeclaration.initializer &&
-          isCommonJsRequire(namespace.valueDeclaration.initializer)
+          namespace.valueDeclaration.initer &&
+          isCommonJsRequire(namespace.valueDeclaration.initer)
         ) {
-          const moduleName = (namespace.valueDeclaration.initializer as CallExpression).arguments[0] as StringLiteral;
+          const moduleName = (namespace.valueDeclaration.initer as CallExpression).arguments[0] as StringLiteral;
           const moduleSym = resolveExternalModuleName(moduleName, moduleName);
           if (moduleSym) {
             const resolvedModuleSymbol = resolveExternalModuleSymbol(moduleSym);
@@ -4189,7 +4189,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       let containers = getContainersOfSymbol(symbol, enclosingDeclaration);
       const firstDecl: Node | false = !!length(symbol.declarations) && first(symbol.declarations);
       if (!length(containers) && meaning & SymbolFlags.Value && firstDecl && qc.is.kind(ObjectLiteralExpression, firstDecl)) {
-        if (firstDecl.parent && qc.is.kind(VariableDeclaration, firstDecl.parent) && firstDecl === firstDecl.parent.initializer) containers = [getSymbolOfNode(firstDecl.parent)];
+        if (firstDecl.parent && qc.is.kind(VariableDeclaration, firstDecl.parent) && firstDecl === firstDecl.parent.initer) containers = [getSymbolOfNode(firstDecl.parent)];
       }
       const parentResult = isAnySymbolAccessible(
         containers,
@@ -4628,7 +4628,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       case Syntax.ArrayLiteralExpression:
         return getSyntheticElementAccess(<Expression>node.parent);
       case Syntax.VariableDeclaration:
-        return (<VariableDeclaration>ancestor).initializer;
+        return (<VariableDeclaration>ancestor).initer;
       case Syntax.BinaryExpression:
         return (<BinaryExpression>ancestor).right;
     }
@@ -4649,7 +4649,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     let parentType = getTypeForBindingElementParent(pattern.parent);
     if (!parentType || isTypeAny(parentType)) return parentType;
     if (strictNullChecks && declaration.flags & NodeFlags.Ambient && isParameterDeclaration(declaration)) parentType = getNonNullableType(parentType);
-    else if (strictNullChecks && pattern.parent.initializer && !(getTypeFacts(getTypeOfInitializer(pattern.parent.initializer)) & TypeFacts.EQUndefined)) {
+    else if (strictNullChecks && pattern.parent.initer && !(getTypeFacts(getTypeOfIniter(pattern.parent.initer)) & TypeFacts.EQUndefined)) {
       parentType = getTypeWithFacts(parentType, TypeFacts.NEUndefined);
     }
     let type: Type | undefined;
@@ -4684,10 +4684,10 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         type = elementType;
       }
     }
-    if (!declaration.initializer) return type;
+    if (!declaration.initer) return type;
     if (qc.get.effectiveTypeAnnotationNode(walkUpBindingElementsAndPatterns(declaration)))
-      return strictNullChecks && !(getFalsyFlags(checkDeclarationInitializer(declaration)) & TypeFlags.Undefined) ? getTypeWithFacts(type, TypeFacts.NEUndefined) : type;
-    return widenTypeInferredFromInitializer(declaration, getUnionType([getTypeWithFacts(type, TypeFacts.NEUndefined), checkDeclarationInitializer(declaration)], UnionReduction.Subtype));
+      return strictNullChecks && !(getFalsyFlags(checkDeclarationIniter(declaration)) & TypeFlags.Undefined) ? getTypeWithFacts(type, TypeFacts.NEUndefined) : type;
+    return widenTypeInferredFromIniter(declaration, getUnionType([getTypeWithFacts(type, TypeFacts.NEUndefined), checkDeclarationIniter(declaration)], UnionReduction.Subtype));
   }
   function getTypeForDeclarationFromDocComment(declaration: Node) {
     const jsdocType = qc.getDoc.type(declaration);
@@ -4720,7 +4720,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (qc.is.kind(BindingPattern, declaration.parent)) return getTypeForBindingElement(<BindingElement>declaration);
     const isOptional =
       includeOptionality &&
-      ((qc.is.kind(ParameterDeclaration, declaration) && isDocOptionalParameter(declaration)) ||
+      ((qc.is.kind(qc.ParameterDeclaration, declaration) && isDocOptionalParameter(declaration)) ||
         (!qc.is.kind(BindingElement, declaration) && !qc.is.kind(VariableDeclaration, declaration) && !!declaration.questionToken));
     const declaredType = tryGetTypeFromEffectiveTypeNode(declaration);
     if (declaredType) return addOptionality(declaredType, isOptional);
@@ -4731,8 +4731,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       !(qc.get.combinedModifierFlags(declaration) & ModifierFlags.Export) &&
       !(declaration.flags & NodeFlags.Ambient)
     ) {
-      if (!(qc.get.combinedFlagsOf(declaration) & NodeFlags.Const) && (!declaration.initializer || isNullOrUndefined(declaration.initializer))) return autoType;
-      if (declaration.initializer && qc.is.emptyArrayLiteral(declaration.initializer)) return autoArrayType;
+      if (!(qc.get.combinedFlagsOf(declaration) & NodeFlags.Const) && (!declaration.initer || isNullOrUndefined(declaration.initer))) return autoType;
+      if (declaration.initer && qc.is.emptyArrayLiteral(declaration.initer)) return autoArrayType;
     }
     if (declaration.kind === Syntax.Parameter) {
       const func = <FunctionLikeDeclaration>declaration.parent;
@@ -4750,16 +4750,16 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
       if (qc.is.inJSFile(declaration)) {
         const typeTag = qc.getDoc.type(func);
-        if (typeTag && qc.is.kind(FunctionTypeNode, typeTag)) return getTypeAtPosition(getSignatureFromDeclaration(typeTag), func.parameters.indexOf(declaration));
+        if (typeTag && qc.is.kind(qc.FunctionTypeNode, typeTag)) return getTypeAtPosition(getSignatureFromDeclaration(typeTag), func.parameters.indexOf(declaration));
       }
       const type = declaration.symbol.escName === InternalSymbol.This ? getContextualThisParameterType(func) : getContextuallyTypedParameterType(declaration);
       if (type) return addOptionality(type, isOptional);
     } else if (qc.is.inJSFile(declaration)) {
-      const containerObjectType = getJSContainerObjectType(declaration, getSymbolOfNode(declaration), getDeclaredExpandoInitializer(declaration));
+      const containerObjectType = getJSContainerObjectType(declaration, getSymbolOfNode(declaration), getDeclaredExpandoIniter(declaration));
       if (containerObjectType) return containerObjectType;
     }
-    if (declaration.initializer) {
-      const type = widenTypeInferredFromInitializer(declaration, checkDeclarationInitializer(declaration));
+    if (declaration.initer) {
+      const type = widenTypeInferredFromIniter(declaration, checkDeclarationIniter(declaration));
       return addOptionality(type, isOptional);
     }
     if (qc.is.kind(PropertyDeclaration, declaration) && (noImplicitAny || qc.is.inJSFile(declaration))) {
@@ -4789,7 +4789,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return getFlowTypeOfReference(reference, autoType, initialType);
   }
   function getWidenedTypeForAssignmentDeclaration(symbol: Symbol, resolvedSymbol?: Symbol) {
-    const container = getAssignedExpandoInitializer(symbol.valueDeclaration);
+    const container = getAssignedExpandoIniter(symbol.valueDeclaration);
     if (container) {
       const tag = qc.getDoc.typeTag(container);
       if (tag && tag.typeExpression) return getTypeFromTypeNode(tag.typeExpression);
@@ -4823,7 +4823,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         if (!qc.is.kind(CallExpression, expression)) jsdocType = getAnnotatedTypeForAssignmentDeclaration(jsdocType, expression, symbol, declaration);
         if (!jsdocType) {
           (types || (types = [])).push(
-            qc.is.kind(BinaryExpression, expression) || qc.is.kind(CallExpression, expression) ? getInitializerTypeFromAssignmentDeclaration(symbol, resolvedSymbol, expression, kind) : neverType
+            qc.is.kind(BinaryExpression, expression) || qc.is.kind(CallExpression, expression) ? getIniterTypeFromAssignmentDeclaration(symbol, resolvedSymbol, expression, kind) : neverType
           );
         }
       }
@@ -4878,7 +4878,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return declaredType;
   }
-  function getInitializerTypeFromAssignmentDeclaration(symbol: Symbol, resolvedSymbol: Symbol | undefined, expression: BinaryExpression | CallExpression, kind: AssignmentDeclarationKind) {
+  function getIniterTypeFromAssignmentDeclaration(symbol: Symbol, resolvedSymbol: Symbol | undefined, expression: BinaryExpression | CallExpression, kind: AssignmentDeclarationKind) {
     if (qc.is.kind(CallExpression, expression)) {
       if (resolvedSymbol) return getTypeOfSymbol(resolvedSymbol);
       const objectLitType = checkExpressionCached((expression as BindableObjectDefinePropertyCall).arguments[2]);
@@ -4957,9 +4957,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     });
   }
   function getTypeFromBindingElement(element: BindingElement, includePatternInType?: boolean, reportErrors?: boolean): Type {
-    if (element.initializer) {
+    if (element.initer) {
       const contextualType = qc.is.kind(BindingPattern, element.name) ? getTypeFromBindingPattern(element.name, true, false) : unknownType;
-      return addOptionality(widenTypeInferredFromInitializer(element, checkDeclarationInitializer(element, contextualType)));
+      return addOptionality(widenTypeInferredFromIniter(element, checkDeclarationIniter(element, contextualType)));
     }
     if (qc.is.kind(BindingPattern, element.name)) return getTypeFromBindingPattern(element.name, includePatternInType, reportErrors);
     if (reportErrors && !declarationBelongsToPrivateAmbientMember(element)) reportImplicitAny(element, anyType);
@@ -4981,7 +4981,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         return;
       }
       const text = getPropertyNameFromType(exprType);
-      const flags = SymbolFlags.Property | (e.initializer ? SymbolFlags.Optional : 0);
+      const flags = SymbolFlags.Property | (e.initer ? SymbolFlags.Optional : 0);
       const symbol = new QSymbol(flags, text);
       symbol.type = getTypeFromBindingElement(e, includePatternInType, reportErrors);
       symbol.bindingElement = e;
@@ -5024,7 +5024,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (type.flags & TypeFlags.UniqueESSymbol && (qc.is.kind(BindingElement, declaration) || !declaration.type) && type.symbol !== getSymbolOfNode(declaration)) type = esSymbolType;
       return getWidenedType(type);
     }
-    type = qc.is.kind(ParameterDeclaration, declaration) && declaration.dot3Token ? anyArrayType : anyType;
+    type = qc.is.kind(qc.ParameterDeclaration, declaration) && declaration.dot3Token ? anyArrayType : anyType;
     if (reportErrors) {
       if (!declarationBelongsToPrivateAmbientMember(declaration)) reportImplicitAny(declaration, type);
     }
@@ -5324,7 +5324,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return false;
   }
   function isLiteralEnumMember(member: EnumMember) {
-    const expr = member.initializer;
+    const expr = member.initer;
     if (!expr) return !(member.flags & NodeFlags.Ambient);
     switch (expr.kind) {
       case Syntax.StringLiteral:
@@ -5373,7 +5373,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function isThislessVariableLikeDeclaration(node: VariableLikeDeclaration): boolean {
     const typeNode = qc.get.effectiveTypeAnnotationNode(node);
-    return typeNode ? isThislessType(typeNode) : !qc.is.withInitializer(node);
+    return typeNode ? isThislessType(typeNode) : !qc.is.withIniter(node);
   }
   function isThislessFunctionLikeDeclaration(node: FunctionLikeDeclaration): boolean {
     const returnType = getEffectiveReturnTypeNode(node);
@@ -6640,7 +6640,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function isOptionalParameter(node: ParameterDeclaration | DocParameterTag) {
     if (qc.has.questionToken(node) || isOptionalDocParameterTag(node) || isDocOptionalParameter(node)) return true;
-    if (node.initializer) {
+    if (node.initer) {
       const signature = getSignatureFromDeclaration(node.parent);
       const parameterIndex = node.parent.parameters.indexOf(node);
       assert(parameterIndex >= 0);
@@ -6651,7 +6651,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return false;
   }
   function isOptionalDocParameterTag(node: Node): node is DocParameterTag {
-    if (!qc.is.kind(DocParameterTag, node)) return false;
+    if (!qc.is.kind(qc.DocParameterTag, node)) return false;
     const { isBracketed, typeExpression } = node;
     return isBracketed || (!!typeExpression && typeExpression.type.kind === Syntax.DocOptionalType);
   }
@@ -6709,7 +6709,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       for (let i = isJSConstructSignature ? 1 : 0; i < declaration.parameters.length; i++) {
         const param = declaration.parameters[i];
         let paramSymbol = param.symbol;
-        const type = qc.is.kind(DocParameterTag, param) ? param.typeExpression && param.typeExpression.type : param.type;
+        const type = qc.is.kind(qc.DocParameterTag, param) ? param.typeExpression && param.typeExpression.type : param.type;
         if (paramSymbol && !!(paramSymbol.flags & SymbolFlags.Property) && !qc.is.kind(BindingPattern, param.name)) {
           const resolvedSymbol = resolveName(param, paramSymbol.escName, SymbolFlags.Value, undefined, undefined, false);
           paramSymbol = resolvedSymbol!;
@@ -6723,7 +6723,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         if (type && type.kind === Syntax.LiteralType) flags |= SignatureFlags.HasLiteralTypes;
         const isOptionalParameter =
           isOptionalDocParameterTag(param) ||
-          param.initializer ||
+          param.initer ||
           param.questionToken ||
           param.dot3Token ||
           (iife && parameters.length > iife.arguments.length && !type) ||
@@ -7033,7 +7033,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function getParentSymbolOfTypeParameter(typeParameter: TypeParameter): Symbol | undefined {
     const tp = getDeclarationOfKind<TypeParameterDeclaration>(typeParameter.symbol, Syntax.TypeParameter)!;
-    const host = qc.is.kind(DocTemplateTag, tp.parent) ? qc.get.hostSignatureFromDoc(tp.parent) : tp.parent;
+    const host = qc.is.kind(qc.DocTemplateTag, tp.parent) ? qc.get.hostSignatureFromDoc(tp.parent) : tp.parent;
     return host && getSymbolOfNode(host);
   }
   function getTypeListId(types: readonly Type[] | undefined) {
@@ -7222,8 +7222,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (symbol.valueDeclaration) {
         const decl = qc.get.rootDeclaration(symbol.valueDeclaration);
         let isRequireAlias = false;
-        if (qc.is.kind(VariableDeclaration, decl) && decl.initializer) {
-          let expr = decl.initializer;
+        if (qc.is.kind(VariableDeclaration, decl) && decl.initer) {
+          let expr = decl.initer;
           while (qc.is.kind(PropertyAccessExpression, expr)) {
             expr = expr.expression;
           }
@@ -8815,7 +8815,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       return getDeclaredTypeOfClassOrInterface(getSymbolOfNode(parent.parent.left)!.parent!).thisType!;
     }
     const host = node.flags & NodeFlags.Doc ? qc.get.hostSignatureFromDoc(node) : undefined;
-    if (host && qc.is.kind(FunctionExpression, host) && qc.is.kind(BinaryExpression, host.parent) && getAssignmentDeclarationKind(host.parent) === AssignmentDeclarationKind.PrototypeProperty)
+    if (host && qc.is.kind(qc.FunctionExpression, host) && qc.is.kind(BinaryExpression, host.parent) && getAssignmentDeclarationKind(host.parent) === AssignmentDeclarationKind.PrototypeProperty)
       return getDeclaredTypeOfClassOrInterface(getSymbolOfNode(host.parent.left)!.parent!).thisType!;
     if (isJSConstructor(container) && qc.is.descendantOf(node, container.body)) return getDeclaredTypeOfClassOrInterface(getSymbolOfNode(container)).thisType!;
     error(node, qd.A_this_type_is_available_only_in_a_non_static_member_of_a_class_or_interface);
@@ -9331,14 +9331,14 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           (isContextSensitive((<BinaryExpression>node).left) || isContextSensitive((<BinaryExpression>node).right))
         );
       case Syntax.PropertyAssignment:
-        return isContextSensitive((<PropertyAssignment>node).initializer);
+        return isContextSensitive((<PropertyAssignment>node).initer);
       case Syntax.ParenthesizedExpression:
         return isContextSensitive((<ParenthesizedExpression>node).expression);
       case Syntax.JsxAttributes:
         return some((<JsxAttributes>node).properties, isContextSensitive) || (qc.is.kind(JsxOpeningElement, node.parent) && some(node.parent.parent.children, isContextSensitive));
       case Syntax.JsxAttribute: {
-        const { initializer } = node as JsxAttribute;
-        return !!initializer && isContextSensitive(initializer);
+        const { initer } = node as JsxAttribute;
+        return !!initer && isContextSensitive(initer);
       }
       case Syntax.JsxExpression: {
         const { expression } = node as JsxExpression;
@@ -9642,7 +9642,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (!length(node.properties)) return;
     for (const prop of node.properties) {
       if (qc.is.kind(JsxSpreadAttribute, prop)) continue;
-      yield { errorNode: prop.name, innerExpression: prop.initializer, nameType: getLiteralType(idText(prop.name)) };
+      yield { errorNode: prop.name, innerExpression: prop.initer, nameType: getLiteralType(idText(prop.name)) };
     }
   }
   function* generateJsxChildren(node: JsxElement, getInvalidTextDiagnostic: () => DiagnosticMessage): ElaborationIterator {
@@ -9807,7 +9807,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         case Syntax.PropertyAssignment:
           yield {
             errorNode: prop.name,
-            innerExpression: prop.initializer,
+            innerExpression: prop.initer,
             nameType: type,
             errorMessage: isComputedNonLiteralName(prop.name) ? qd.Type_of_computed_property_s_value_is_0_which_is_not_assignable_to_type_1 : undefined,
           };
@@ -12098,7 +12098,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         const param = declaration as ParameterDeclaration;
         if (
           qc.is.kind(Identifier, param.name) &&
-          (qc.is.kind(CallSignatureDeclaration, param.parent) || qc.is.kind(MethodSignature, param.parent) || qc.is.kind(FunctionTypeNode, param.parent)) &&
+          (qc.is.kind(CallSignatureDeclaration, param.parent) || qc.is.kind(MethodSignature, param.parent) || qc.is.kind(qc.FunctionTypeNode, param.parent)) &&
           param.parent.parameters.indexOf(param) > -1 &&
           (resolveName(param, param.name.escapedText, SymbolFlags.Type, undefined, param.name.escapedText, true) ||
             (param.name.originalKeywordKind && syntax.is.typeNode(param.name.originalKeywordKind)))
@@ -12904,7 +12904,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       case 'AsyncIterator':
         return qd.Cannot_find_name_0_Do_you_need_to_change_your_target_library_Try_changing_the_lib_compiler_option_to_es2015_or_later;
       default:
-        if (node.parent.kind === Syntax.ShorthandPropertyAssignment) return qd.No_value_exists_in_scope_for_the_shorthand_property_0_Either_declare_one_or_provide_an_initializer;
+        if (node.parent.kind === Syntax.ShorthandPropertyAssignment) return qd.No_value_exists_in_scope_for_the_shorthand_property_0_Either_declare_one_or_provide_an_initer;
         return qd.Cannot_find_name_0;
     }
   }
@@ -13168,7 +13168,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function isDestructuringAssignmentTarget(parent: Node) {
     return (
       (parent.parent.kind === Syntax.BinaryExpression && (parent.parent as BinaryExpression).left === parent) ||
-      (parent.parent.kind === Syntax.ForOfStatement && (parent.parent as ForOfStatement).initializer === parent)
+      (parent.parent.kind === Syntax.ForOfStatement && (parent.parent as ForOfStatement).initer === parent)
     );
   }
   function getAssignedTypeOfArrayLiteralElement(node: ArrayLiteralExpression, element: Expression): Type {
@@ -13181,7 +13181,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return getTypeOfDestructuredProperty(getAssignedType(node.parent), node.name);
   }
   function getAssignedTypeOfShorthandPropertyAssignment(node: ShorthandPropertyAssignment): Type {
-    return getTypeWithDefault(getAssignedTypeOfPropertyAssignment(node), node.objectAssignmentInitializer!);
+    return getTypeWithDefault(getAssignedTypeOfPropertyAssignment(node), node.objectAssignmentIniter!);
   }
   function getAssignedType(node: Expression): Type {
     const { parent } = node;
@@ -13214,14 +13214,14 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         : !node.dot3Token
         ? getTypeOfDestructuredArrayElement(parentType, pattern.elements.indexOf(node))
         : getTypeOfDestructuredSpreadExpression(parentType);
-    return getTypeWithDefault(type, node.initializer!);
+    return getTypeWithDefault(type, node.initer!);
   }
-  function getTypeOfInitializer(node: Expression) {
+  function getTypeOfIniter(node: Expression) {
     const links = getNodeLinks(node);
     return links.resolvedType || getTypeOfExpression(node);
   }
   function getInitialTypeOfVariableDeclaration(node: VariableDeclaration) {
-    if (node.initializer) return getTypeOfInitializer(node.initializer);
+    if (node.initer) return getTypeOfIniter(node.initer);
     if (node.parent.parent.kind === Syntax.ForInStatement) return stringType;
     if (node.parent.parent.kind === Syntax.ForOfStatement) return checkRightHandSideOfForOf(node.parent.parent) || errorType;
     return errorType;
@@ -13231,7 +13231,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function isEmptyArrayAssignment(node: VariableDeclaration | BindingElement | Expression) {
     return (
-      (node.kind === Syntax.VariableDeclaration && (<VariableDeclaration>node).initializer && qc.is.emptyArrayLiteral((<VariableDeclaration>node).initializer!)) ||
+      (node.kind === Syntax.VariableDeclaration && (<VariableDeclaration>node).initer && qc.is.emptyArrayLiteral((<VariableDeclaration>node).initer!)) ||
       (node.kind !== Syntax.BindingElement && node.parent.kind === Syntax.BinaryExpression && qc.is.emptyArrayLiteral((<BinaryExpression>node.parent).right))
     );
   }
@@ -13714,7 +13714,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (containsMatchingReference(reference, node)) {
         if (!isReachableFlowNode(flow)) return unreachableNeverType;
         if (qc.is.kind(VariableDeclaration, node) && (qc.is.inJSFile(node) || qc.is.varConst(node))) {
-          const init = getDeclaredExpandoInitializer(node);
+          const init = getDeclaredExpandoIniter(node);
           if (init && (init.kind === Syntax.FunctionExpression || init.kind === Syntax.ArrowFunction)) return getTypeAtFlowNode(flow.antecedent);
         }
         return declaredType;
@@ -14241,9 +14241,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const annotationIncludesUndefined =
         strictNullChecks &&
         declaration.kind === Syntax.Parameter &&
-        declaration.initializer &&
+        declaration.initer &&
         getFalsyFlags(declaredType) & TypeFlags.Undefined &&
-        !(getFalsyFlags(checkExpression(declaration.initializer)) & TypeFlags.Undefined);
+        !(getFalsyFlags(checkExpression(declaration.initer)) & TypeFlags.Undefined);
       popTypeResolution();
       return annotationIncludesUndefined ? getTypeWithFacts(declaredType, TypeFacts.NEUndefined) : declaredType;
     } else {
@@ -14257,7 +14257,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       parent.kind === Syntax.PropertyAccessExpression ||
       (parent.kind === Syntax.CallExpression && (<CallExpression>parent).expression === node) ||
       (parent.kind === Syntax.ElementAccessExpression && (<ElementAccessExpression>parent).expression === node) ||
-      (parent.kind === Syntax.BindingElement && (<BindingElement>parent).name === node && !!(<BindingElement>parent).initializer)
+      (parent.kind === Syntax.BindingElement && (<BindingElement>parent).name === node && !!(<BindingElement>parent).initer)
     );
   }
   function typeHasNullableConstraint(type: Type) {
@@ -14390,7 +14390,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return !!qc.findAncestor(node, (n) => (n === threshold ? 'quit' : qc.is.functionLike(n)));
   }
   function getPartOfForStatementContainingNode(node: Node, container: ForStatement) {
-    return qc.findAncestor(node, (n) => (n === container ? 'quit' : n === container.initializer || n === container.condition || n === container.incrementor || n === container.statement));
+    return qc.findAncestor(node, (n) => (n === container ? 'quit' : n === container.initer || n === container.condition || n === container.incrementor || n === container.statement));
   }
   function checkNestedBlockScopedBinding(node: Identifier, symbol: Symbol): void {
     return;
@@ -14454,12 +14454,12 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         error(node, qd.this_cannot_be_referenced_in_current_location);
         break;
       case Syntax.Constructor:
-        if (isInConstructorArgumentInitializer(node, container)) error(node, qd.this_cannot_be_referenced_in_constructor_arguments);
+        if (isInConstructorArgumentIniter(node, container)) error(node, qd.this_cannot_be_referenced_in_constructor_arguments);
         break;
       case Syntax.PropertyDeclaration:
       case Syntax.PropertySignature:
         if (qc.has.syntacticModifier(container, ModifierFlags.Static) && !(compilerOptions.target === ScriptTarget.ESNext && compilerOptions.useDefineForClassFields))
-          error(node, qd.this_cannot_be_referenced_in_a_static_property_initializer);
+          error(node, qd.this_cannot_be_referenced_in_a_static_property_initer);
         break;
       case Syntax.ComputedPropertyName:
         error(node, qd.this_cannot_be_referenced_in_a_computed_property_name);
@@ -14481,7 +14481,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function tryGetThisTypeAt(node: Node, includeGlobalThis = true, container = qc.get.thisContainer(node, false)): Type | undefined {
     const isInJS = qc.is.inJSFile(node);
-    if (qc.is.functionLike(container) && (!isInParameterInitializerBeforeContainingFunction(node) || getThisNodeKind(ParameterDeclaration, container))) {
+    if (qc.is.functionLike(container) && (!isInParameterIniterBeforeContainingFunction(node) || getThisNodeKind(ParameterDeclaration, container))) {
       const className = getClassNameFromPrototypeMethod(container);
       if (isInJS && className) {
         const classSymbol = checkExpression(className).symbol;
@@ -14582,7 +14582,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const thisTag = qc.getDoc.thisTag(node);
     if (thisTag && thisTag.typeExpression) return getTypeFromTypeNode(thisTag.typeExpression);
   }
-  function isInConstructorArgumentInitializer(node: Node, constructorDecl: Node): boolean {
+  function isInConstructorArgumentIniter(node: Node, constructorDecl: Node): boolean {
     return !!qc.findAncestor(node, (n) => (qc.is.functionLikeDeclaration(n) ? 'quit' : n.kind === Syntax.Parameter && n.parent === constructorDecl));
   }
   function checkSuperExpression(node: Node): Type {
@@ -14633,7 +14633,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const classType = <InterfaceType>getDeclaredTypeOfSymbol(getSymbolOfNode(classLikeDeclaration));
     const baseClassType = classType && getBaseTypes(classType)[0];
     if (!baseClassType) return errorType;
-    if (container.kind === Syntax.Constructor && isInConstructorArgumentInitializer(node, container)) {
+    if (container.kind === Syntax.Constructor && isInConstructorArgumentIniter(node, container)) {
       error(node, qd.super_cannot_be_referenced_in_constructor_arguments);
       return errorType;
     }
@@ -14727,7 +14727,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const links = getNodeLinks(iife);
       const cached = links.resolvedSignature;
       links.resolvedSignature = anySignature;
-      const type = indexOfParameter < args.length ? getWidenedLiteralType(checkExpression(args[indexOfParameter])) : parameter.initializer ? undefined : undefinedWideningType;
+      const type = indexOfParameter < args.length ? getWidenedLiteralType(checkExpression(args[indexOfParameter])) : parameter.initer ? undefined : undefinedWideningType;
       links.resolvedSignature = cached;
       return type;
     }
@@ -14750,7 +14750,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function getContextualTypeForBindingElement(declaration: BindingElement): Type | undefined {
     const parent = declaration.parent.parent;
     const name = declaration.propertyName || declaration.name;
-    const parentType = getContextualTypeForVariableLikeDeclaration(parent) || (parent.kind !== Syntax.BindingElement && parent.initializer && checkDeclarationInitializer(parent));
+    const parentType = getContextualTypeForVariableLikeDeclaration(parent) || (parent.kind !== Syntax.BindingElement && parent.initer && checkDeclarationIniter(parent));
     if (parentType && !qc.is.kind(BindingPattern, name) && !isComputedNonLiteralName(name)) {
       const nameType = getLiteralTypeFromPropertyName(name);
       if (isTypeUsableAsPropertyName(nameType)) {
@@ -14759,9 +14759,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
     }
   }
-  function getContextualTypeForInitializerExpression(node: Expression): Type | undefined {
+  function getContextualTypeForIniterExpression(node: Expression): Type | undefined {
     const declaration = <VariableLikeDeclaration>node.parent;
-    if (qc.is.withInitializer(declaration) && node === declaration.initializer) {
+    if (qc.is.withIniter(declaration) && node === declaration.initer) {
       const result = getContextualTypeForVariableLikeDeclaration(declaration);
       if (result) return result;
       if (qc.is.kind(BindingPattern, declaration.name)) return getTypeFromBindingPattern(declaration.name, true, false);
@@ -14802,11 +14802,11 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return;
   }
-  function isInParameterInitializerBeforeContainingFunction(node: Node) {
-    let inBindingInitializer = false;
+  function isInParameterIniterBeforeContainingFunction(node: Node) {
+    let inBindingIniter = false;
     while (node.parent && !qc.is.functionLike(node.parent)) {
-      if (qc.is.kind(ParameterDeclaration, node.parent) && (inBindingInitializer || node.parent.initializer === node)) return true;
-      if (qc.is.kind(BindingElement, node.parent) && node.parent.initializer === node) inBindingInitializer = true;
+      if (qc.is.kind(qc.ParameterDeclaration, node.parent) && (inBindingIniter || node.parent.initer === node)) return true;
+      if (qc.is.kind(BindingElement, node.parent) && node.parent.initer === node) inBindingIniter = true;
       node = node.parent;
     }
     return false;
@@ -14850,7 +14850,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       case Syntax.Bar2Token:
       case Syntax.Question2Token:
         const type = getContextualType(binaryExpression, contextFlags);
-        return node === right && ((type && type.pattern) || (!type && !isDefaultedExpandoInitializer(binaryExpression))) ? getTypeOfExpression(left) : type;
+        return node === right && ((type && type.pattern) || (!type && !isDefaultedExpandoIniter(binaryExpression))) ? getTypeOfExpression(left) : type;
       case Syntax.Ampersand2Token:
       case Syntax.CommaToken:
         return node === right ? getContextualType(binaryExpression, contextFlags) : undefined;
@@ -15026,8 +15026,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return discriminateTypeByDiscriminableItems(
       contextualType,
       map(
-        filter(node.properties, (p) => !!p.symbol && p.kind === Syntax.PropertyAssignment && isPossiblyDiscriminantValue(p.initializer) && isDiscriminantProperty(contextualType, p.symbol.escName)),
-        (prop) => [() => checkExpression((prop as PropertyAssignment).initializer), prop.symbol.escName] as [() => Type, __String]
+        filter(node.properties, (p) => !!p.symbol && p.kind === Syntax.PropertyAssignment && isPossiblyDiscriminantValue(p.initer) && isDiscriminantProperty(contextualType, p.symbol.escName)),
+        (prop) => [() => checkExpression((prop as PropertyAssignment).initer), prop.symbol.escName] as [() => Type, __String]
       ),
       isTypeAssignableTo,
       contextualType
@@ -15039,9 +15039,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       map(
         filter(
           node.properties,
-          (p) => !!p.symbol && p.kind === Syntax.JsxAttribute && isDiscriminantProperty(contextualType, p.symbol.escName) && (!p.initializer || isPossiblyDiscriminantValue(p.initializer))
+          (p) => !!p.symbol && p.kind === Syntax.JsxAttribute && isDiscriminantProperty(contextualType, p.symbol.escName) && (!p.initer || isPossiblyDiscriminantValue(p.initer))
         ),
-        (prop) => [!(prop as JsxAttribute).initializer ? () => trueType : () => checkExpression((prop as JsxAttribute).initializer!), prop.symbol.escName] as [() => Type, __String]
+        (prop) => [!(prop as JsxAttribute).initer ? () => trueType : () => checkExpression((prop as JsxAttribute).initer!), prop.symbol.escName] as [() => Type, __String]
       ),
       isTypeAssignableTo,
       contextualType
@@ -15090,7 +15090,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       case Syntax.PropertyDeclaration:
       case Syntax.PropertySignature:
       case Syntax.BindingElement:
-        return getContextualTypeForInitializerExpression(node);
+        return getContextualTypeForIniterExpression(node);
       case Syntax.ArrowFunction:
       case Syntax.ReturnStatement:
         return getContextualTypeForReturnExpression(node);
@@ -15245,7 +15245,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     let targetParameterCount = 0;
     for (; targetParameterCount < target.parameters.length; targetParameterCount++) {
       const param = target.parameters[targetParameterCount];
-      if (param.initializer || param.questionToken || param.dot3Token || isDocOptionalParameter(param)) break;
+      if (param.initer || param.questionToken || param.dot3Token || isDocOptionalParameter(param)) break;
     }
     if (target.parameters.length && parameterIsThsyntax.is.keyword(target.parameters[0])) targetParameterCount--;
     return !hasEffectiveRestParameter(signature) && getParameterCount(signature) < targetParameterCount;
@@ -15284,7 +15284,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function hasDefaultValue(node: BindingElement | Expression): boolean {
     return (
-      (node.kind === Syntax.BindingElement && !!(<BindingElement>node).initializer) || (node.kind === Syntax.BinaryExpression && (<BinaryExpression>node).operatorToken.kind === Syntax.EqualsToken)
+      (node.kind === Syntax.BindingElement && !!(<BindingElement>node).initer) || (node.kind === Syntax.BinaryExpression && (<BinaryExpression>node).operatorToken.kind === Syntax.EqualsToken)
     );
   }
   function checkArrayLiteral(node: ArrayLiteralExpression, checkMode: CheckMode | undefined, forceTuple: boolean | undefined): Type {
@@ -15447,8 +15447,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         if (nameType) prop.nameType = nameType;
         if (inDestructuringPattern) {
           const isOptional =
-            (memberDecl.kind === Syntax.PropertyAssignment && hasDefaultValue(memberDecl.initializer)) ||
-            (memberDecl.kind === Syntax.ShorthandPropertyAssignment && memberDecl.objectAssignmentInitializer);
+            (memberDecl.kind === Syntax.PropertyAssignment && hasDefaultValue(memberDecl.initer)) ||
+            (memberDecl.kind === Syntax.ShorthandPropertyAssignment && memberDecl.objectAssignmentIniter);
           if (isOptional) prop.flags |= SymbolFlags.Optional;
         } else if (contextualTypeHasPattern && !(getObjectFlags(contextualType!) & ObjectFlags.ObjectLiteralPatternWithComputedProperties)) {
           const impliedProp = getPropertyOfType(contextualType!, member.escName);
@@ -15502,7 +15502,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       for (const prop of getPropertiesOfType(contextualType!)) {
         if (!propertiesTable.get(prop.escName) && !getPropertyOfType(spread, prop.escName)) {
           if (!(prop.flags & SymbolFlags.Optional))
-            error(prop.valueDeclaration || (<TransientSymbol>prop).bindingElement, qd.Initializer_provides_no_value_for_this_binding_element_and_the_binding_element_has_no_default_value);
+            error(prop.valueDeclaration || (<TransientSymbol>prop).bindingElement, qd.Initer_provides_no_value_for_this_binding_element_and_the_binding_element_has_no_default_value);
           propertiesTable.set(prop.escName, prop);
           propertiesArray.push(prop);
         }
@@ -15575,7 +15575,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return tagName.kind === Syntax.Identifier && isIntrinsicJsxName(tagName.escapedText);
   }
   function checkJsxAttribute(node: JsxAttribute, checkMode?: CheckMode) {
-    return node.initializer ? checkExpressionForMutableLocation(node.initializer, checkMode) : trueType;
+    return node.initer ? checkExpressionForMutableLocation(node.initer, checkMode) : trueType;
   }
   function createJsxAttributesTypeFromAttributesProperty(openingLikeElement: JsxOpeningLikeElement, checkMode: CheckMode | undefined) {
     const attributes = openingLikeElement.attributes;
@@ -16150,7 +16150,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     let assumeUninitialized = false;
     if (strictNullChecks && strictPropertyInitialization && node.expression.kind === Syntax.ThisKeyword) {
       const declaration = prop && prop.valueDeclaration;
-      if (declaration && isInstancePropertyWithoutInitializer(declaration)) {
+      if (declaration && isInstancePropertyWithoutIniter(declaration)) {
         const flowContainer = getControlFlowContainer(node);
         if (flowContainer.kind === Syntax.Constructor && flowContainer.parent === declaration.parent && !(declaration.flags & NodeFlags.Ambient)) assumeUninitialized = true;
       }
@@ -16177,7 +16177,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     let diagnosticMessage;
     const declarationName = idText(right);
     if (
-      isInPropertyInitializer(node) &&
+      isInPropertyIniter(node) &&
       !(qc.is.accessExpression(node) && qc.is.accessExpression(node.expression)) &&
       !isBlockScopedNameDeclaredBeforeUse(valueDeclaration, right) &&
       !isPropertyDeclaredInAncestorClass(prop)
@@ -16193,7 +16193,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     if (diagnosticMessage) addRelatedInfo(diagnosticMessage, createDiagnosticForNode(valueDeclaration, qd._0_is_declared_here, declarationName));
   }
-  function isInPropertyInitializer(node: Node): boolean {
+  function isInPropertyIniter(node: Node): boolean {
     return !!qc.findAncestor(node, (node) => {
       switch (node.kind) {
         case Syntax.PropertyDeclaration:
@@ -16372,12 +16372,12 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return qc.is.inJSFile(node) && (type.flags & TypeFlags.Union) !== 0 && (<UnionType>type).types.some((elementType) => isValidPropertyAccessWithType(node, isSuper, propertyName, elementType));
   }
   function getForInVariableSymbol(node: ForInStatement): Symbol | undefined {
-    const initializer = node.initializer;
-    if (initializer.kind === Syntax.VariableDeclarationList) {
-      const variable = (<VariableDeclarationList>initializer).declarations[0];
+    const initer = node.initer;
+    if (initer.kind === Syntax.VariableDeclarationList) {
+      const variable = (<VariableDeclarationList>initer).declarations[0];
       if (variable && !qc.is.kind(BindingPattern, variable.name)) return getSymbolOfNode(variable);
-    } else if (initializer.kind === Syntax.Identifier) {
-      return getResolvedSymbol(<Identifier>initializer);
+    } else if (initer.kind === Syntax.Identifier) {
+      return getResolvedSymbol(<Identifier>initer);
     }
     return;
   }
@@ -17635,10 +17635,10 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function isJSConstructor(node: Node | undefined): node is FunctionDeclaration | FunctionExpression {
     if (!node || !qc.is.inJSFile(node)) return false;
     const func =
-      qc.is.kind(FunctionDeclaration, node) || qc.is.kind(FunctionExpression, node)
+      qc.is.kind(FunctionDeclaration, node) || qc.is.kind(qc.FunctionExpression, node)
         ? node
-        : qc.is.kind(VariableDeclaration, node) && node.initializer && qc.is.kind(FunctionExpression, node.initializer)
-        ? node.initializer
+        : qc.is.kind(VariableDeclaration, node) && node.initer && qc.is.kind(qc.FunctionExpression, node.initer)
+        ? node.initer
         : undefined;
     if (func) {
       if (qc.getDoc.classTag(node)) return true;
@@ -17681,7 +17681,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       parent = parent.parent;
     }
     if (parent && qc.is.kind(BinaryExpression, parent) && qc.is.prototypeAccess(parent.left) && parent.operatorToken.kind === Syntax.EqualsToken) {
-      const right = getInitializerOfBinaryExpression(parent);
+      const right = getIniterOfBinaryExpression(parent);
       return qc.is.kind(ObjectLiteralExpression, right) && right;
     }
   }
@@ -17899,7 +17899,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return restParameter.escName;
   }
   function isValidDeclarationForTupleLabel(d: Declaration): d is NamedTupleMember | (ParameterDeclaration & { name: Identifier }) {
-    return d.kind === Syntax.NamedTupleMember || (qc.is.kind(ParameterDeclaration, d) && d.name && qc.is.kind(Identifier, d.name));
+    return d.kind === Syntax.NamedTupleMember || (qc.is.kind(qc.ParameterDeclaration, d) && d.name && qc.is.kind(Identifier, d.name));
   }
   function getNameableDeclarationAtPosition(signature: Signature, pos: number) {
     const paramCount = signature.parameters.length - (signatureHasRestParameter(signature) ? 1 : 0);
@@ -18385,8 +18385,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const writableType = writableProp && getTypeOfSymbol(writableProp);
       if (!writableType || writableType === falseType || writableType === regularFalseType) return true;
       if (writableProp && writableProp.valueDeclaration && qc.is.kind(PropertyAssignment, writableProp.valueDeclaration)) {
-        const initializer = writableProp.valueDeclaration.initializer;
-        const rawOriginalType = checkExpression(initializer);
+        const initer = writableProp.valueDeclaration.initer;
+        const rawOriginalType = checkExpression(initer);
         if (rawOriginalType === falseType || rawOriginalType === regularFalseType) return true;
       }
       return false;
@@ -18510,7 +18510,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           }
         }
       }
-      if (isInParameterInitializerBeforeContainingFunction(node)) error(node, qd.await_expressions_cannot_be_used_in_a_parameter_initializer);
+      if (isInParameterIniterBeforeContainingFunction(node)) error(node, qd.await_expressions_cannot_be_used_in_a_parameter_initer);
     }
     const operandType = checkExpression(node.expression);
     const awaitedType = checkAwaitedType(operandType, node, qd.Type_of_await_operand_must_either_be_a_valid_promise_or_must_not_contain_a_callable_then_member);
@@ -18668,7 +18668,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
       const elementType = getIndexedAccessType(objectLiteralType, exprType, name);
       const type = getFlowTypeOfDestructuring(property, elementType);
-      return checkDestructuringAssignment(property.kind === Syntax.ShorthandPropertyAssignment ? property : property.initializer, type);
+      return checkDestructuringAssignment(property.kind === Syntax.ShorthandPropertyAssignment ? property : property.initer, type);
     } else if (property.kind === Syntax.SpreadAssignment) {
       if (propertyIndex < properties.length - 1) error(property, qd.A_rest_element_must_be_last_in_a_destructuring_pattern);
       else {
@@ -18714,7 +18714,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       else {
         const restExpression = (<SpreadElement>element).expression;
         if (restExpression.kind === Syntax.BinaryExpression && (<BinaryExpression>restExpression).operatorToken.kind === Syntax.EqualsToken)
-          error((<BinaryExpression>restExpression).operatorToken, qd.A_rest_element_cannot_have_an_initializer);
+          error((<BinaryExpression>restExpression).operatorToken, qd.A_rest_element_cannot_have_an_initer);
         else {
           checkGrammarForDisallowedTrailingComma(node.elements, qd.A_rest_parameter_or_binding_pattern_may_not_have_a_trailing_comma);
           const type = everyType(sourceType, isTupleType) ? mapType(sourceType, (t) => sliceTupleType(<TupleTypeReference>t, elementIndex)) : createArrayType(elementType);
@@ -18728,9 +18728,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     let target: Expression;
     if (exprOrAssignment.kind === Syntax.ShorthandPropertyAssignment) {
       const prop = <ShorthandPropertyAssignment>exprOrAssignment;
-      if (prop.objectAssignmentInitializer) {
-        if (strictNullChecks && !(getFalsyFlags(checkExpression(prop.objectAssignmentInitializer)) & TypeFlags.Undefined)) sourceType = getTypeWithFacts(sourceType, TypeFacts.NEUndefined);
-        checkBinaryLikeExpression(prop.name, prop.equalsToken!, prop.objectAssignmentInitializer, checkMode);
+      if (prop.objectAssignmentIniter) {
+        if (strictNullChecks && !(getFalsyFlags(checkExpression(prop.objectAssignmentIniter)) & TypeFlags.Undefined)) sourceType = getTypeWithFacts(sourceType, TypeFacts.NEUndefined);
+        checkBinaryLikeExpression(prop.name, prop.equalsToken!, prop.objectAssignmentIniter, checkMode);
       }
       target = (<ShorthandPropertyAssignment>exprOrAssignment).name;
     } else {
@@ -18829,7 +18829,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       node = workStacks.expr[stackIndex];
       switch (workStacks.state[stackIndex]) {
         case CheckBinaryExpressionState.MaybeCheckLeft: {
-          if (qc.is.inJSFile(node) && getAssignedExpandoInitializer(node)) {
+          if (qc.is.inJSFile(node) && getAssignedExpandoIniter(node)) {
             finishInvocation(checkExpression(node.right, checkMode));
             break;
           }
@@ -19105,7 +19105,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         case AssignmentDeclarationKind.PrototypeProperty:
         case AssignmentDeclarationKind.ThisProperty:
           const symbol = getSymbolOfNode(left);
-          const init = getAssignedExpandoInitializer(right);
+          const init = getAssignedExpandoIniter(right);
           return init && qc.is.kind(ObjectLiteralExpression, init) && symbol && hasEntries(symbol.exports);
         default:
           return false;
@@ -19162,7 +19162,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function checkYieldExpression(node: YieldExpression): Type {
     if (produceDiagnostics) {
       if (!(node.flags & NodeFlags.YieldContext)) grammarErrorOnFirstToken(node, qd.A_yield_expression_is_only_allowed_in_a_generator_body);
-      if (isInParameterInitializerBeforeContainingFunction(node)) error(node, qd.yield_expressions_cannot_be_used_in_a_parameter_initializer);
+      if (isInParameterIniterBeforeContainingFunction(node)) error(node, qd.yield_expressions_cannot_be_used_in_a_parameter_initer);
     }
     const func = qc.get.containingFunction(node);
     if (!func) return anyType;
@@ -19239,11 +19239,11 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     node = skipParentheses(node);
     return node.kind === Syntax.TypeAssertionExpression || node.kind === Syntax.AsExpression;
   }
-  function checkDeclarationInitializer(declaration: HasExpressionInitializer, contextualType?: Type | undefined) {
-    const initializer = getEffectiveInitializer(declaration)!;
+  function checkDeclarationIniter(declaration: HasExpressionIniter, contextualType?: Type | undefined) {
+    const initer = getEffectiveIniter(declaration)!;
     const type =
-      getQuickTypeOfExpression(initializer) || (contextualType ? checkExpressionWithContextualType(initializer, contextualType, undefined, CheckMode.Normal) : checkExpressionCached(initializer));
-    return qc.is.kind(ParameterDeclaration, declaration) &&
+      getQuickTypeOfExpression(initer) || (contextualType ? checkExpressionWithContextualType(initer, contextualType, undefined, CheckMode.Normal) : checkExpressionCached(initer));
+    return qc.is.kind(qc.ParameterDeclaration, declaration) &&
       declaration.name.kind === Syntax.ArrayBindingPattern &&
       isTupleType(type) &&
       !type.target.hasRestElement &&
@@ -19264,7 +19264,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return createTupleType(elementTypes, type.target.minLength, false, type.target.readonly);
   }
-  function widenTypeInferredFromInitializer(declaration: HasExpressionInitializer, type: Type) {
+  function widenTypeInferredFromIniter(declaration: HasExpressionIniter, type: Type) {
     const widened = qc.get.combinedFlagsOf(declaration) & NodeFlags.Const || isDeclarationReadonly(declaration) ? type : getWidenedLiteralType(type);
     if (qc.is.inJSFile(declaration)) {
       if (widened.flags & TypeFlags.Nullable) {
@@ -19321,7 +19321,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function checkPropertyAssignment(node: PropertyAssignment, checkMode?: CheckMode): Type {
     if (node.name.kind === Syntax.ComputedPropertyName) checkComputedPropertyName(node.name);
-    return checkExpressionForMutableLocation(node.initializer, checkMode);
+    return checkExpressionForMutableLocation(node.initer, checkMode);
   }
   function checkObjectLiteralMethod(node: MethodDeclaration, checkMode?: CheckMode): Type {
     checkGrammarMethod(node);
@@ -19916,9 +19916,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (node === firstDeclaration) checkFunctionOrConstructorSymbol(symbol);
     if (qc.is.missing(node.body)) return;
     if (!produceDiagnostics) return;
-    function isInstancePropertyWithInitializerOrPrivateIdentifierProperty(n: Node) {
+    function isInstancePropertyWithIniterOrPrivateIdentifierProperty(n: Node) {
       if (n.qc.is.privateIdentifierPropertyDeclaration()) return true;
-      return n.kind === Syntax.PropertyDeclaration && !qc.has.syntacticModifier(n, ModifierFlags.Static) && !!(<PropertyDeclaration>n).initializer;
+      return n.kind === Syntax.PropertyDeclaration && !qc.has.syntacticModifier(n, ModifierFlags.Static) && !!(<PropertyDeclaration>n).initer;
     }
     const containingClassDecl = <ClassDeclaration>node.parent;
     if (getClassExtendsHeritageElement(containingClassDecl)) {
@@ -19929,7 +19929,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         if (classExtendsNull) error(superCall, qd.A_constructor_cannot_contain_a_super_call_when_its_class_extends_null);
         const superCallShouldBeFirst =
           (compilerOptions.target !== ScriptTarget.ESNext || !compilerOptions.useDefineForClassFields) &&
-          (some((<ClassDeclaration>node.parent).members, isInstancePropertyWithInitializerOrPrivateIdentifierProperty) ||
+          (some((<ClassDeclaration>node.parent).members, isInstancePropertyWithIniterOrPrivateIdentifierProperty) ||
             some(node.parameters, (p) => qc.has.syntacticModifier(p, ModifierFlags.ParameterPropertyModifier)));
         if (superCallShouldBeFirst) {
           const statements = node.body!.statements;
@@ -20028,7 +20028,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         if (typeParameters) checkTypeArgumentConstraints(node, typeParameters);
       }
       if (type.flags & TypeFlags.Enum && getNodeLinks(node).resolvedSymbol!.flags & SymbolFlags.EnumMember)
-        error(node, qd.Enum_type_0_has_members_with_initializers_that_are_not_literals, typeToString(type));
+        error(node, qd.Enum_type_0_has_members_with_initers_that_are_not_literals, typeToString(type));
     }
   }
   function getTypeArgumentConstraint(node: TypeNode): Type | undefined {
@@ -20684,7 +20684,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const { parent } = typeParameter;
       if (parent.kind !== Syntax.InferType && parent.typeParameters!.every(isTypeParameterUnused)) {
         if (seenParentsWithEveryUnused.tryAdd(parent)) {
-          const range = qc.is.kind(DocTemplateTag, parent) ? parent.getRange() : parent.typeParameters!.getRange();
+          const range = qc.is.kind(qc.DocTemplateTag, parent) ? parent.getRange() : parent.typeParameters!.getRange();
           const only = parent.typeParameters!.length === 1;
           const message = only ? qd._0_is_declared_but_its_value_is_never_read : qd.All_type_parameters_are_unused;
           const arg0 = only ? name : undefined;
@@ -20895,7 +20895,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function checkVarDeclaredNamesNotShadowed(node: VariableDeclaration | BindingElement) {
     if ((qc.get.combinedFlagsOf(node) & NodeFlags.BlockScoped) !== 0 || isParameterDeclaration(node)) return;
-    if (node.kind === Syntax.VariableDeclaration && !node.initializer) return;
+    if (node.kind === Syntax.VariableDeclaration && !node.initer) return;
     const symbol = getSymbolOfNode(node);
     if (symbol.flags & SymbolFlags.FunctionScopedVariable) {
       if (!qc.is.kind(Identifier, node.name)) return fail();
@@ -20927,7 +20927,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (!node.name) return;
     if (node.name.kind === Syntax.ComputedPropertyName) {
       checkComputedPropertyName(node.name);
-      if (node.initializer) checkExpressionCached(node.initializer);
+      if (node.initer) checkExpressionCached(node.initer);
     }
     if (node.kind === Syntax.BindingElement) {
       if (node.parent.kind === Syntax.ObjectBindingPattern && languageVersion < ScriptTarget.ESNext) checkExternalEmitHelpers(node, ExternalEmitHelpers.Rest);
@@ -20942,26 +20942,26 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           const property = getPropertyOfType(parentType, nameText);
           if (property) {
             markPropertyAsReferenced(property, false);
-            checkPropertyAccessibility(parent, !!parent.initializer && parent.initializer.kind === Syntax.SuperKeyword, parentType, property);
+            checkPropertyAccessibility(parent, !!parent.initer && parent.initer.kind === Syntax.SuperKeyword, parentType, property);
           }
         }
       }
     }
     if (qc.is.kind(BindingPattern, node.name)) forEach(node.name.elements, checkSourceElement);
-    if (node.initializer && qc.get.rootDeclaration(node).kind === Syntax.Parameter && qc.is.missing((qc.get.containingFunction(node) as FunctionLikeDeclaration).body)) {
-      error(node, qd.A_parameter_initializer_is_only_allowed_in_a_function_or_constructor_implementation);
+    if (node.initer && qc.get.rootDeclaration(node).kind === Syntax.Parameter && qc.is.missing((qc.get.containingFunction(node) as FunctionLikeDeclaration).body)) {
+      error(node, qd.A_parameter_initer_is_only_allowed_in_a_function_or_constructor_implementation);
       return;
     }
     if (qc.is.kind(BindingPattern, node.name)) {
-      const needCheckInitializer = node.initializer && node.parent.parent.kind !== Syntax.ForInStatement;
+      const needCheckIniter = node.initer && node.parent.parent.kind !== Syntax.ForInStatement;
       const needCheckWidenedType = node.name.elements.length === 0;
-      if (needCheckInitializer || needCheckWidenedType) {
+      if (needCheckIniter || needCheckWidenedType) {
         const widenedType = getWidenedTypeForVariableLikeDeclaration(node);
-        if (needCheckInitializer) {
-          const initializerType = checkExpressionCached(node.initializer!);
-          if (strictNullChecks && needCheckWidenedType) checkNonNullNonVoidType(initializerType, node);
+        if (needCheckIniter) {
+          const initerType = checkExpressionCached(node.initer!);
+          if (strictNullChecks && needCheckWidenedType) checkNonNullNonVoidType(initerType, node);
           else {
-            checkTypeAssignableToAndOptionallyElaborate(initializerType, getWidenedTypeForVariableLikeDeclaration(node), node, node.initializer);
+            checkTypeAssignableToAndOptionallyElaborate(initerType, getWidenedTypeForVariableLikeDeclaration(node), node, node.initer);
           }
         }
         if (needCheckWidenedType) {
@@ -20976,12 +20976,12 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const symbol = getSymbolOfNode(node);
     const type = convertAutoToAny(this.getTypeOfSymbol());
     if (node === symbol.valueDeclaration) {
-      const initializer = getEffectiveInitializer(node);
-      if (initializer) {
-        const isJSObjectLiteralInitializer =
-          qc.is.inJSFile(node) && qc.is.kind(ObjectLiteralExpression, initializer) && (initializer.properties.length === 0 || qc.is.prototypeAccess(node.name)) && hasEntries(symbol.exports);
-        if (!isJSObjectLiteralInitializer && node.parent.parent.kind !== Syntax.ForInStatement)
-          checkTypeAssignableToAndOptionallyElaborate(checkExpressionCached(initializer), type, node, initializer, undefined);
+      const initer = getEffectiveIniter(node);
+      if (initer) {
+        const isJSObjectLiteralIniter =
+          qc.is.inJSFile(node) && qc.is.kind(ObjectLiteralExpression, initer) && (initer.properties.length === 0 || qc.is.prototypeAccess(node.name)) && hasEntries(symbol.exports);
+        if (!isJSObjectLiteralIniter && node.parent.parent.kind !== Syntax.ForInStatement)
+          checkTypeAssignableToAndOptionallyElaborate(checkExpressionCached(initer), type, node, initer, undefined);
       }
       if (symbol.declarations.length > 1) {
         if (some(symbol.declarations, (d) => d !== node && qc.is.variableLike(d) && !areDeclarationFlagsIdentical(d, node)))
@@ -20991,7 +20991,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const declarationType = convertAutoToAny(getWidenedTypeForVariableLikeDeclaration(node));
       if (type !== errorType && declarationType !== errorType && !isTypeIdenticalTo(type, declarationType) && !(symbol.flags & SymbolFlags.Assignment))
         errorNextVariableOrPropertyDeclarationMustHaveSameType(symbol.valueDeclaration, type, node, declarationType);
-      if (node.initializer) checkTypeAssignableToAndOptionallyElaborate(checkExpressionCached(node.initializer), declarationType, node, node.initializer, undefined);
+      if (node.initer) checkTypeAssignableToAndOptionallyElaborate(checkExpressionCached(node.initer), declarationType, node, node.initer, undefined);
       if (!areDeclarationFlagsIdentical(node, symbol.valueDeclaration)) error(node.name, qd.All_declarations_of_0_must_have_identical_modifiers, declarationNameToString(node.name));
     }
     if (node.kind !== Syntax.PropertyDeclaration && node.kind !== Syntax.PropertySignature) {
@@ -21098,12 +21098,12 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function checkForStatement(node: ForStatement) {
     if (!checkGrammarStatementInAmbientContext(node)) {
-      if (node.initializer && node.initializer.kind === Syntax.VariableDeclarationList) checkGrammarVariableDeclarationList(<VariableDeclarationList>node.initializer);
+      if (node.initer && node.initer.kind === Syntax.VariableDeclarationList) checkGrammarVariableDeclarationList(<VariableDeclarationList>node.initer);
     }
-    if (node.initializer) {
-      if (node.initializer.kind === Syntax.VariableDeclarationList) forEach((<VariableDeclarationList>node.initializer).declarations, checkVariableDeclaration);
+    if (node.initer) {
+      if (node.initer.kind === Syntax.VariableDeclarationList) forEach((<VariableDeclarationList>node.initer).declarations, checkVariableDeclaration);
       else {
-        checkExpression(node.initializer);
+        checkExpression(node.initer);
       }
     }
     if (node.condition) checkTruthinessExpression(node.condition);
@@ -21118,9 +21118,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if ((functionFlags & (FunctionFlags.Invalid | FunctionFlags.Async)) === FunctionFlags.Async && languageVersion < ScriptTarget.ESNext)
         checkExternalEmitHelpers(node, ExternalEmitHelpers.ForAwaitOfIncludes);
     }
-    if (node.initializer.kind === Syntax.VariableDeclarationList) checkForInOrForOfVariableDeclaration(node);
+    if (node.initer.kind === Syntax.VariableDeclarationList) checkForInOrForOfVariableDeclaration(node);
     else {
-      const varExpr = node.initializer;
+      const varExpr = node.initer;
       const iteratedType = checkRightHandSideOfForOf(node);
       if (varExpr.kind === Syntax.ArrayLiteralExpression || varExpr.kind === Syntax.ObjectLiteralExpression) checkDestructuringAssignment(varExpr, iteratedType || errorType);
       else {
@@ -21139,12 +21139,12 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function checkForInStatement(node: ForInStatement) {
     checkGrammarForInOrForOfStatement(node);
     const rightType = getNonNullableTypeIfNeeded(checkExpression(node.expression));
-    if (node.initializer.kind === Syntax.VariableDeclarationList) {
-      const variable = (<VariableDeclarationList>node.initializer).declarations[0];
+    if (node.initer.kind === Syntax.VariableDeclarationList) {
+      const variable = (<VariableDeclarationList>node.initer).declarations[0];
       if (variable && qc.is.kind(BindingPattern, variable.name)) error(variable.name, qd.The_left_hand_side_of_a_for_in_statement_cannot_be_a_destructuring_pattern);
       checkForInOrForOfVariableDeclaration(node);
     } else {
-      const varExpr = node.initializer;
+      const varExpr = node.initer;
       const leftType = checkExpression(varExpr);
       if (varExpr.kind === Syntax.ArrayLiteralExpression || varExpr.kind === Syntax.ObjectLiteralExpression)
         error(varExpr, qd.The_left_hand_side_of_a_for_in_statement_cannot_be_a_destructuring_pattern);
@@ -21164,7 +21164,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (node.locals) registerForUnusedIdentifiersCheck(node);
   }
   function checkForInOrForOfVariableDeclaration(iterationStatement: ForInOrOfStatement): void {
-    const variableDeclarationList = <VariableDeclarationList>iterationStatement.initializer;
+    const variableDeclarationList = <VariableDeclarationList>iterationStatement.initer;
     if (variableDeclarationList.declarations.length >= 1) {
       const decl = variableDeclarationList.declarations[0];
       checkVariableDeclaration(decl);
@@ -21611,8 +21611,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (catchClause) {
       if (catchClause.variableDeclaration) {
         if (catchClause.variableDeclaration.type) grammarErrorOnFirstToken(catchClause.variableDeclaration.type, qd.Catch_clause_variable_cannot_have_a_type_annotation);
-        else if (catchClause.variableDeclaration.initializer) {
-          grammarErrorOnFirstToken(catchClause.variableDeclaration.initializer, qd.Catch_clause_variable_cannot_have_an_initializer);
+        else if (catchClause.variableDeclaration.initer) {
+          grammarErrorOnFirstToken(catchClause.variableDeclaration.initer, qd.Catch_clause_variable_cannot_have_an_initer);
         } else {
           const blockLocals = catchClause.block.locals;
           if (blockLocals) {
@@ -21923,7 +21923,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         const derivedPropertyFlags = derived.flags & SymbolFlags.PropertyOrAccessor;
         if (basePropertyFlags && derivedPropertyFlags) {
           if (
-            (baseDeclarationFlags & ModifierFlags.Abstract && !(base.valueDeclaration && qc.is.kind(PropertyDeclaration, base.valueDeclaration) && base.valueDeclaration.initializer)) ||
+            (baseDeclarationFlags & ModifierFlags.Abstract && !(base.valueDeclaration && qc.is.kind(PropertyDeclaration, base.valueDeclaration) && base.valueDeclaration.initer)) ||
             (base.valueDeclaration && base.valueDeclaration.parent.kind === Syntax.InterfaceDeclaration) ||
             (derived.valueDeclaration && qc.is.kind(BinaryExpression, derived.valueDeclaration))
           ) {
@@ -21937,7 +21937,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
               : qd._0_is_defined_as_a_property_in_class_1_but_is_overridden_here_in_2_as_an_accessor;
             error(qc.get.nameOfDeclaration(derived.valueDeclaration) || derived.valueDeclaration, errorMessage, base.symbolToString(), typeToString(baseType), typeToString(type));
           } else if (compilerOptions.useDefineForClassFields) {
-            const uninitialized = find(derived.declarations, (d) => d.kind === Syntax.PropertyDeclaration && !(d as PropertyDeclaration).initializer);
+            const uninitialized = find(derived.declarations, (d) => d.kind === Syntax.PropertyDeclaration && !(d as PropertyDeclaration).initer);
             if (
               uninitialized &&
               !(derived.flags & SymbolFlags.Transient) &&
@@ -21954,7 +21954,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
                 !strictNullChecks ||
                 !isPropertyInitializedInConstructor(propName, type, constructor)
               ) {
-                const errorMessage = qd.Property_0_will_overwrite_the_base_property_in_1_If_this_is_intentional_add_an_initializer_Otherwise_add_a_declare_modifier_or_remove_the_redundant_declaration;
+                const errorMessage = qd.Property_0_will_overwrite_the_base_property_in_1_If_this_is_intentional_add_an_initer_Otherwise_add_a_declare_modifier_or_remove_the_redundant_declaration;
                 error(qc.get.nameOfDeclaration(derived.valueDeclaration) || derived.valueDeclaration, errorMessage, base.symbolToString(), typeToString(baseType));
               }
             }
@@ -22027,24 +22027,24 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const constructor = findConstructorDeclaration(node);
     for (const member of node.members) {
       if (qc.get.effectiveModifierFlags(member) & ModifierFlags.Ambient) continue;
-      if (isInstancePropertyWithoutInitializer(member)) {
+      if (isInstancePropertyWithoutIniter(member)) {
         const propName = (<PropertyDeclaration>member).name;
         if (qc.is.kind(Identifier, propName) || qc.is.kind(PrivateIdentifier, propName)) {
           const type = getTypeOfSymbol(getSymbolOfNode(member));
           if (!(type.flags & TypeFlags.AnyOrUnknown || getFalsyFlags(type) & TypeFlags.Undefined)) {
             if (!constructor || !isPropertyInitializedInConstructor(propName, type, constructor))
-              error(member.name, qd.Property_0_has_no_initializer_and_is_not_definitely_assigned_in_the_constructor, declarationNameToString(propName));
+              error(member.name, qd.Property_0_has_no_initer_and_is_not_definitely_assigned_in_the_constructor, declarationNameToString(propName));
           }
         }
       }
     }
   }
-  function isInstancePropertyWithoutInitializer(node: Node) {
+  function isInstancePropertyWithoutIniter(node: Node) {
     return (
       node.kind === Syntax.PropertyDeclaration &&
       !qc.has.syntacticModifier(node, ModifierFlags.Static | ModifierFlags.Abstract) &&
       !(<PropertyDeclaration>node).exclamationToken &&
-      !(<PropertyDeclaration>node).initializer
+      !(<PropertyDeclaration>node).initer
     );
   }
   function isPropertyInitializedInConstructor(propName: Identifier | PrivateIdentifier, propType: Type, constructor: ConstructorDeclaration) {
@@ -22112,38 +22112,38 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const text = qc.get.textOfPropertyName(member.name);
       if (NumericLiteral.name(text) && !isInfinityOrNaNString(text)) error(member.name, qd.An_enum_member_cannot_have_a_numeric_name);
     }
-    if (member.initializer) return computeConstantValue(member);
+    if (member.initer) return computeConstantValue(member);
     if (member.parent.flags & NodeFlags.Ambient && !qc.is.enumConst(member.parent) && getEnumKind(getSymbolOfNode(member.parent)) === EnumKind.Numeric) return;
     if (autoValue !== undefined) return autoValue;
-    error(member.name, qd.Enum_member_must_have_initializer);
+    error(member.name, qd.Enum_member_must_have_initer);
     return;
   }
   function computeConstantValue(member: EnumMember): string | number | undefined {
     const enumKind = getEnumKind(getSymbolOfNode(member.parent));
     const isConstEnum = qc.is.enumConst(member.parent);
-    const initializer = member.initializer!;
-    const value = enumKind === EnumKind.Literal && !isLiteralEnumMember(member) ? undefined : evaluate(initializer);
+    const initer = member.initer!;
+    const value = enumKind === EnumKind.Literal && !isLiteralEnumMember(member) ? undefined : evaluate(initer);
     if (value !== undefined) {
       if (isConstEnum && typeof value === 'number' && !isFinite(value)) {
-        error(initializer, isNaN(value) ? qd.const_enum_member_initializer_was_evaluated_to_disallowed_value_NaN : qd.const_enum_member_initializer_was_evaluated_to_a_non_finite_value);
+        error(initer, isNaN(value) ? qd.const_enum_member_initer_was_evaluated_to_disallowed_value_NaN : qd.const_enum_member_initer_was_evaluated_to_a_non_finite_value);
       }
     } else if (enumKind === EnumKind.Literal) {
-      error(initializer, qd.Computed_values_are_not_permitted_in_an_enum_with_string_valued_members);
+      error(initer, qd.Computed_values_are_not_permitted_in_an_enum_with_string_valued_members);
       return 0;
     } else if (isConstEnum) {
-      error(initializer, qd.const_enum_member_initializers_can_only_contain_literal_values_and_other_computed_enum_values);
+      error(initer, qd.const_enum_member_initers_can_only_contain_literal_values_and_other_computed_enum_values);
     } else if (member.parent.flags & NodeFlags.Ambient) {
-      error(initializer, qd.In_ambient_enum_declarations_member_initializer_must_be_constant_expression);
+      error(initer, qd.In_ambient_enum_declarations_member_initer_must_be_constant_expression);
     } else {
-      const source = checkExpression(initializer);
+      const source = checkExpression(initer);
       if (!isTypeAssignableToKind(source, TypeFlags.NumberLike)) {
         error(
-          initializer,
+          initer,
           qd.Only_numeric_enums_can_have_computed_members_but_this_expression_has_type_0_If_you_do_not_need_exhaustiveness_checks_consider_using_an_object_literal_instead,
           typeToString(source)
         );
       } else {
-        checkTypeAssignableTo(source, getDeclaredTypeOfSymbol(getSymbolOfNode(member.parent)), initializer, undefined);
+        checkTypeAssignableTo(source, getDeclaredTypeOfSymbol(getSymbolOfNode(member.parent)), initer, undefined);
       }
     }
     return value;
@@ -22232,7 +22232,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         const declaration = memberSymbol.valueDeclaration;
         if (declaration !== member) {
           if (isBlockScopedNameDeclaredBeforeUse(declaration, member)) return getEnumMemberValue(declaration as EnumMember);
-          error(expr, qd.A_member_initializer_in_a_enum_declaration_cannot_reference_members_declared_after_it_including_members_defined_in_other_enums);
+          error(expr, qd.A_member_initer_in_a_enum_declaration_cannot_reference_members_declared_after_it_including_members_defined_in_other_enums);
           return 0;
         } else {
           error(expr, qd.Property_0_is_used_before_being_assigned, memberSymbol.symbolToString());
@@ -22266,16 +22266,16 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           if (qc.is.kind(EnumDeclaration, decl) && qc.is.enumConst(decl) !== enumIsConst) error(qc.get.nameOfDeclaration(decl), qd.Enum_declarations_must_all_be_const_or_non_const);
         });
       }
-      let seenEnumMissingInitialInitializer = false;
+      let seenEnumMissingInitialIniter = false;
       forEach(enumSymbol.declarations, (declaration) => {
         if (declaration.kind !== Syntax.EnumDeclaration) return false;
         const enumDeclaration = <EnumDeclaration>declaration;
         if (!enumDeclaration.members.length) return false;
         const firstEnumMember = enumDeclaration.members[0];
-        if (!firstEnumMember.initializer) {
-          if (seenEnumMissingInitialInitializer) error(firstEnumMember.name, qd.In_an_enum_with_multiple_declarations_only_one_declaration_can_omit_an_initializer_for_its_first_enum_element);
+        if (!firstEnumMember.initer) {
+          if (seenEnumMissingInitialIniter) error(firstEnumMember.name, qd.In_an_enum_with_multiple_declarations_only_one_declaration_can_omit_an_initer_for_its_first_enum_element);
           else {
-            seenEnumMissingInitialInitializer = true;
+            seenEnumMissingInitialIniter = true;
           }
         }
       });
@@ -22812,13 +22812,13 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     checkDocTypeIsInJsFile(node);
     checkSourceElement(node.type);
     const { parent } = node;
-    if (qc.is.kind(ParameterDeclaration, parent) && qc.is.kind(DocFunctionType, parent.parent)) {
+    if (qc.is.kind(qc.ParameterDeclaration, parent) && qc.is.kind(qc.DocFunctionType, parent.parent)) {
       if (last(parent.parent.parameters) !== parent) error(node, qd.A_rest_parameter_must_be_last_in_a_parameter_list);
       return;
     }
     if (!qc.is.kind(DocTypeExpression, parent)) error(node, qd.Doc_may_only_appear_in_the_last_parameter_of_a_signature);
     const paramTag = node.parent.parent;
-    if (!qc.is.kind(DocParameterTag, paramTag)) {
+    if (!qc.is.kind(qc.DocParameterTag, paramTag)) {
       error(node, qd.Doc_may_only_appear_in_the_last_parameter_of_a_signature);
       return;
     }
@@ -22831,7 +22831,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const type = getTypeFromTypeNode(node.type);
     const { parent } = node;
     const paramTag = node.parent.parent;
-    if (qc.is.kind(DocTypeExpression, node.parent) && qc.is.kind(DocParameterTag, paramTag)) {
+    if (qc.is.kind(DocTypeExpression, node.parent) && qc.is.kind(qc.DocParameterTag, paramTag)) {
       const host = qc.get.hostSignatureFromDoc(paramTag);
       if (host) {
         const lastParamDeclaration = lastOrUndefined(host.parameters);
@@ -22839,7 +22839,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         if (!lastParamDeclaration || (symbol && lastParamDeclaration.symbol === symbol && isRestParameter(lastParamDeclaration))) return createArrayType(type);
       }
     }
-    if (qc.is.kind(ParameterDeclaration, parent) && qc.is.kind(DocFunctionType, parent.parent)) return createArrayType(type);
+    if (qc.is.kind(qc.ParameterDeclaration, parent) && qc.is.kind(qc.DocFunctionType, parent.parent)) return createArrayType(type);
     return addOptionality(type);
   }
   function checkNodeDeferred(node: Node) {
@@ -23468,13 +23468,13 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return (
       !!strictNullChecks &&
       !isOptionalParameter(parameter) &&
-      !qc.is.kind(DocParameterTag, parameter) &&
-      !!parameter.initializer &&
+      !qc.is.kind(qc.DocParameterTag, parameter) &&
+      !!parameter.initer &&
       !qc.has.syntacticModifier(parameter, ModifierFlags.ParameterPropertyModifier)
     );
   }
   function isOptionalUninitializedParameterProperty(parameter: ParameterDeclaration) {
-    return strictNullChecks && isOptionalParameter(parameter) && !parameter.initializer && qc.has.syntacticModifier(parameter, ModifierFlags.ParameterPropertyModifier);
+    return strictNullChecks && isOptionalParameter(parameter) && !parameter.initer && qc.has.syntacticModifier(parameter, ModifierFlags.ParameterPropertyModifier);
   }
   function isExpandoFunctionDeclaration(node: Declaration): boolean {
     const declaration = qc.get.parseTreeOf(node, isFunctionDeclaration);
@@ -24124,17 +24124,17 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         if (i !== parameterCount - 1) return grammarErrorOnNode(parameter.dot3Token, qd.A_rest_parameter_must_be_last_in_a_parameter_list);
         if (!(parameter.flags & NodeFlags.Ambient)) checkGrammarForDisallowedTrailingComma(parameters, qd.A_rest_parameter_or_binding_pattern_may_not_have_a_trailing_comma);
         if (parameter.questionToken) return grammarErrorOnNode(parameter.questionToken, qd.A_rest_parameter_cannot_be_optional);
-        if (parameter.initializer) return grammarErrorOnNode(parameter.name, qd.A_rest_parameter_cannot_have_an_initializer);
+        if (parameter.initer) return grammarErrorOnNode(parameter.name, qd.A_rest_parameter_cannot_have_an_initer);
       } else if (isOptionalParameter(parameter)) {
         seenOptionalParameter = true;
-        if (parameter.questionToken && parameter.initializer) return grammarErrorOnNode(parameter.name, qd.Parameter_cannot_have_question_mark_and_initializer);
-      } else if (seenOptionalParameter && !parameter.initializer) {
+        if (parameter.questionToken && parameter.initer) return grammarErrorOnNode(parameter.name, qd.Parameter_cannot_have_question_mark_and_initer);
+      } else if (seenOptionalParameter && !parameter.initer) {
         return grammarErrorOnNode(parameter.name, qd.A_required_parameter_cannot_follow_an_optional_parameter);
       }
     }
   }
   function getNonSimpleParameters(parameters: readonly ParameterDeclaration[]): readonly ParameterDeclaration[] {
-    return filter(parameters, (parameter) => !!parameter.initializer || qc.is.kind(BindingPattern, parameter.name) || isRestParameter(parameter));
+    return filter(parameters, (parameter) => !!parameter.initer || qc.is.kind(BindingPattern, parameter.name) || isRestParameter(parameter));
   }
   function checkGrammarForUseStrictSimpleParameterList(node: FunctionLikeDeclaration): boolean {
     const useStrictDirective = node.body && qc.is.kind(Block, node.body) && findUseStrictPrologue(node.body.statements);
@@ -24184,7 +24184,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (parameter.dot3Token) return grammarErrorOnNode(parameter.dot3Token, qd.An_index_signature_cannot_have_a_rest_parameter);
     if (qc.has.effectiveModifiers(parameter)) return grammarErrorOnNode(parameter.name, qd.An_index_signature_parameter_cannot_have_an_accessibility_modifier);
     if (parameter.questionToken) return grammarErrorOnNode(parameter.questionToken, qd.An_index_signature_parameter_cannot_have_a_question_mark);
-    if (parameter.initializer) return grammarErrorOnNode(parameter.name, qd.An_index_signature_parameter_cannot_have_an_initializer);
+    if (parameter.initer) return grammarErrorOnNode(parameter.name, qd.An_index_signature_parameter_cannot_have_an_initer);
     if (!parameter.type) return grammarErrorOnNode(parameter.name, qd.An_index_signature_parameter_must_have_a_type_annotation);
     if (parameter.type.kind !== Syntax.StringKeyword && parameter.type.kind !== Syntax.NumberKeyword) {
       const type = getTypeFromTypeNode(parameter.type);
@@ -24313,7 +24313,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
       const name = prop.name;
       if (name.kind === Syntax.ComputedPropertyName) checkGrammarComputedPropertyName(name);
-      if (prop.kind === Syntax.ShorthandPropertyAssignment && !inDestructuring && prop.objectAssignmentInitializer)
+      if (prop.kind === Syntax.ShorthandPropertyAssignment && !inDestructuring && prop.objectAssignmentIniter)
         return grammarErrorOnNode(prop.equalsToken!, qd.can_only_be_used_in_an_object_literal_property_inside_a_destructuring_assignment);
       if (name.kind === Syntax.PrivateIdentifier) return grammarErrorOnNode(name, qd.Private_identifiers_are_not_allowed_outside_class_bodies);
       if (prop.modifiers) {
@@ -24364,10 +24364,10 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const seen = createEscapedMap<boolean>();
     for (const attr of node.attributes.properties) {
       if (attr.kind === Syntax.JsxSpreadAttribute) continue;
-      const { name, initializer } = attr;
+      const { name, initer } = attr;
       if (!seen.get(name.escapedText)) seen.set(name.escapedText, true);
       return grammarErrorOnNode(name, qd.JSX_elements_cannot_have_multiple_attributes_with_the_same_name);
-      if (initializer && initializer.kind === Syntax.JsxExpression && !initializer.expression) return grammarErrorOnNode(initializer, qd.JSX_attributes_must_only_be_assigned_a_non_empty_expression);
+      if (initer && initer.kind === Syntax.JsxExpression && !initer.expression) return grammarErrorOnNode(initer, qd.JSX_attributes_must_only_be_assigned_a_non_empty_expression);
     }
   }
   function checkGrammarJsxExpression(node: JsxExpression) {
@@ -24392,8 +24392,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         return false;
       }
     }
-    if (forInOrOfStatement.initializer.kind === Syntax.VariableDeclarationList) {
-      const variableList = <VariableDeclarationList>forInOrOfStatement.initializer;
+    if (forInOrOfStatement.initer.kind === Syntax.VariableDeclarationList) {
+      const variableList = <VariableDeclarationList>forInOrOfStatement.initer;
       if (!checkGrammarVariableDeclarationList(variableList)) {
         const declarations = variableList.declarations;
         if (!declarations.length) return false;
@@ -24405,11 +24405,11 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           return grammarErrorOnFirstToken(variableList.declarations[1], diagnostic);
         }
         const firstDeclaration = declarations[0];
-        if (firstDeclaration.initializer) {
+        if (firstDeclaration.initer) {
           const diagnostic =
             forInOrOfStatement.kind === Syntax.ForInStatement
-              ? qd.The_variable_declaration_of_a_for_in_statement_cannot_have_an_initializer
-              : qd.The_variable_declaration_of_a_for_of_statement_cannot_have_an_initializer;
+              ? qd.The_variable_declaration_of_a_for_in_statement_cannot_have_an_initer
+              : qd.The_variable_declaration_of_a_for_of_statement_cannot_have_an_initer;
           return grammarErrorOnNode(firstDeclaration.name, diagnostic);
         }
         if (firstDeclaration.type) {
@@ -24436,7 +24436,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const parameter = Debug.checkDefined(getSetAccessorValueParameter(accessor), 'Return value does not match parameter count assertion.');
       if (parameter.dot3Token) return grammarErrorOnNode(parameter.dot3Token, qd.A_set_accessor_cannot_have_rest_parameter);
       if (parameter.questionToken) return grammarErrorOnNode(parameter.questionToken, qd.A_set_accessor_cannot_have_an_optional_parameter);
-      if (parameter.initializer) return grammarErrorOnNode(accessor.name, qd.A_set_accessor_parameter_cannot_have_an_initializer);
+      if (parameter.initer) return grammarErrorOnNode(accessor.name, qd.A_set_accessor_parameter_cannot_have_an_initer);
     }
     return false;
   }
@@ -24544,7 +24544,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (node !== last(elements)) return grammarErrorOnNode(node, qd.A_rest_element_must_be_last_in_a_destructuring_pattern);
       checkGrammarForDisallowedTrailingComma(elements, qd.A_rest_parameter_or_binding_pattern_may_not_have_a_trailing_comma);
       if (node.propertyName) return grammarErrorOnNode(node.name, qd.A_rest_element_cannot_have_a_property_name);
-      if (node.initializer) return grammarErrorAtPos(node, node.initializer.pos - 1, 1, qd.A_rest_element_cannot_have_an_initializer);
+      if (node.initer) return grammarErrorAtPos(node, node.initer.pos - 1, 1, qd.A_rest_element_cannot_have_an_initer);
     }
     return;
   }
@@ -24557,34 +24557,34 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return;
   }
-  function checkAmbientInitializer(node: VariableDeclaration | PropertyDeclaration | PropertySignature) {
-    const { initializer } = node;
-    if (initializer) {
-      const isInvalidInitializer = !(
-        StringLiteral.orNumberLiteralExpression(initializer) ||
-        isSimpleLiteralEnumReference(initializer) ||
-        initializer.kind === Syntax.TrueKeyword ||
-        initializer.kind === Syntax.FalseKeyword ||
-        BigIntLiteral.expression(initializer)
+  function checkAmbientIniter(node: VariableDeclaration | PropertyDeclaration | PropertySignature) {
+    const { initer } = node;
+    if (initer) {
+      const isInvalidIniter = !(
+        StringLiteral.orNumberLiteralExpression(initer) ||
+        isSimpleLiteralEnumReference(initer) ||
+        initer.kind === Syntax.TrueKeyword ||
+        initer.kind === Syntax.FalseKeyword ||
+        BigIntLiteral.expression(initer)
       );
       const isConstOrReadonly = isDeclarationReadonly(node) || (qc.is.kind(VariableDeclaration, node) && qc.is.varConst(node));
       if (isConstOrReadonly && !node.type) {
-        if (isInvalidInitializer) return grammarErrorOnNode(initializer, qd.A_const_initializer_in_an_ambient_context_must_be_a_string_or_numeric_literal_or_literal_enum_reference);
+        if (isInvalidIniter) return grammarErrorOnNode(initer, qd.A_const_initer_in_an_ambient_context_must_be_a_string_or_numeric_literal_or_literal_enum_reference);
       }
-      return grammarErrorOnNode(initializer, qd.Initializers_are_not_allowed_in_ambient_contexts);
-      if (!isConstOrReadonly || isInvalidInitializer) return grammarErrorOnNode(initializer, qd.Initializers_are_not_allowed_in_ambient_contexts);
+      return grammarErrorOnNode(initer, qd.Initers_are_not_allowed_in_ambient_contexts);
+      if (!isConstOrReadonly || isInvalidIniter) return grammarErrorOnNode(initer, qd.Initers_are_not_allowed_in_ambient_contexts);
     }
     return;
   }
   function checkGrammarVariableDeclaration(node: VariableDeclaration) {
     if (node.parent.parent.kind !== Syntax.ForInStatement && node.parent.parent.kind !== Syntax.ForOfStatement) {
-      if (node.flags & NodeFlags.Ambient) checkAmbientInitializer(node);
-      else if (!node.initializer) {
-        if (qc.is.kind(BindingPattern, node.name) && !qc.is.kind(BindingPattern, node.parent)) return grammarErrorOnNode(node, qd.A_destructuring_declaration_must_have_an_initializer);
+      if (node.flags & NodeFlags.Ambient) checkAmbientIniter(node);
+      else if (!node.initer) {
+        if (qc.is.kind(BindingPattern, node.name) && !qc.is.kind(BindingPattern, node.parent)) return grammarErrorOnNode(node, qd.A_destructuring_declaration_must_have_an_initer);
         if (qc.is.varConst(node)) return grammarErrorOnNode(node, qd.const_declarations_must_be_initialized);
       }
     }
-    if (node.exclamationToken && (node.parent.parent.kind !== Syntax.VariableStatement || !node.type || node.initializer || node.flags & NodeFlags.Ambient))
+    if (node.exclamationToken && (node.parent.parent.kind !== Syntax.VariableStatement || !node.type || node.initer || node.flags & NodeFlags.Ambient))
       return grammarErrorOnNode(node.exclamationToken, qd.Definite_assignment_assertions_can_only_be_used_along_with_a_type_annotation);
     const moduleKind = getEmitModuleKind(compilerOptions);
     if (
@@ -24709,16 +24709,16 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
     } else if (node.parent.kind === Syntax.InterfaceDeclaration) {
       if (checkGrammarForInvalidDynamicName(node.name, qd.A_computed_property_name_in_an_interface_must_refer_to_an_expression_whose_type_is_a_literal_type_or_a_unique_symbol_type)) return true;
-      if (node.initializer) return grammarErrorOnNode(node.initializer, qd.An_interface_property_cannot_have_an_initializer);
+      if (node.initer) return grammarErrorOnNode(node.initer, qd.An_interface_property_cannot_have_an_initer);
     } else if (node.parent.kind === Syntax.TypeLiteral) {
       if (checkGrammarForInvalidDynamicName(node.name, qd.A_computed_property_name_in_a_type_literal_must_refer_to_an_expression_whose_type_is_a_literal_type_or_a_unique_symbol_type)) return true;
-      if (node.initializer) return grammarErrorOnNode(node.initializer, qd.A_type_literal_property_cannot_have_an_initializer);
+      if (node.initer) return grammarErrorOnNode(node.initer, qd.A_type_literal_property_cannot_have_an_initer);
     }
-    if (node.flags & NodeFlags.Ambient) checkAmbientInitializer(node);
+    if (node.flags & NodeFlags.Ambient) checkAmbientIniter(node);
     if (
       qc.is.kind(PropertyDeclaration, node) &&
       node.exclamationToken &&
-      (!qc.is.classLike(node.parent) || !node.type || node.initializer || node.flags & NodeFlags.Ambient || qc.has.syntacticModifier(node, ModifierFlags.Static | ModifierFlags.Abstract))
+      (!qc.is.classLike(node.parent) || !node.type || node.initer || node.flags & NodeFlags.Ambient || qc.has.syntacticModifier(node, ModifierFlags.Static | ModifierFlags.Abstract))
     ) {
       return grammarErrorOnNode(node.exclamationToken, qd.A_definite_assignment_assertion_is_not_permitted_in_this_context);
     }

@@ -64,7 +64,7 @@ export function transformES2020(context: TransformationContext) {
       if (shouldCaptureInTempVariable(expression)) {
         thisArg = createTempVariable(hoistVariableDeclaration);
         expression = createAssignment(thisArg, expression);
-        // if (inParameterInitializer) tempVariableInParameter = true;
+        // if (inParameterIniter) tempVariableInParameter = true;
       } else {
         thisArg = expression;
       }
@@ -101,7 +101,7 @@ export function transformES2020(context: TransformationContext) {
     if (shouldCaptureInTempVariable(leftExpression)) {
       capturedLeft = createTempVariable(hoistVariableDeclaration);
       leftExpression = createAssignment(capturedLeft, leftExpression);
-      // if (inParameterInitializer) tempVariableInParameter = true;
+      // if (inParameterIniter) tempVariableInParameter = true;
     }
     let rightExpression = capturedLeft;
     let thisArg: Expression | undefined;
@@ -114,7 +114,7 @@ export function transformES2020(context: TransformationContext) {
             if (shouldCaptureInTempVariable(rightExpression)) {
               thisArg = createTempVariable(hoistVariableDeclaration);
               rightExpression = createAssignment(thisArg, rightExpression);
-              // if (inParameterInitializer) tempVariableInParameter = true;
+              // if (inParameterIniter) tempVariableInParameter = true;
             } else {
               thisArg = rightExpression;
             }
@@ -156,7 +156,7 @@ export function transformES2020(context: TransformationContext) {
     if (shouldCaptureInTempVariable(left)) {
       right = createTempVariable(hoistVariableDeclaration);
       left = createAssignment(right, left);
-      // if (inParameterInitializer) tempVariableInParameter = true;
+      // if (inParameterIniter) tempVariableInParameter = true;
     }
     return new qc.ConditionalExpression(createNotNullCondition(left, right), right, visitNode(node.right, visitor, isExpression));
   }

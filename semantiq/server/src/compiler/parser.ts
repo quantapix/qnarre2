@@ -849,11 +849,11 @@ function create() {
             }
             break;
           case Context.VariableDeclarations:
-            if (n.kind === Syntax.VariableDeclaration) return (n as qc.VariableDeclaration).initializer === undefined;
+            if (n.kind === Syntax.VariableDeclaration) return (n as qc.VariableDeclaration).initer === undefined;
             break;
           case Context.DocParameters:
           case Context.Parameters:
-            if (n.kind === Syntax.Parameter) return (n as qc.ParameterDeclaration).initializer === undefined;
+            if (n.kind === Syntax.Parameter) return (n as qc.ParameterDeclaration).initer === undefined;
         }
         return false;
       };
@@ -1442,7 +1442,7 @@ function create() {
       if (qc.get.fullWidth(n.name) === 0 && !n.modifiers && qy.is.modifier(tok())) next.tok();
       n.questionToken = this.optionalToken(Syntax.QuestionToken);
       n.type = parameterType();
-      n.initializer = this.initializer();
+      n.initer = this.initer();
       return finishNode(n);
     }
     parameterList(s: qc.SignatureDeclaration, f: SignatureFlags): boolean {
@@ -1486,7 +1486,7 @@ function create() {
       } else {
         n.kind = Syntax.PropertySignature;
         n.type = this.typeAnnotation();
-        if (tok() === Syntax.EqualsToken) (<PropertySignature>n).initializer = this.initializer();
+        if (tok() === Syntax.EqualsToken) (<PropertySignature>n).initer = this.initer();
       }
       this.typeMemberSemicolon();
       return finishNode(n);
@@ -1856,7 +1856,7 @@ function create() {
       if (dc) flags.set(true, NodeFlags.DecoratorContext);
       return expr;
     }
-    initializer(): qc.Expression | undefined {
+    initer(): qc.Expression | undefined {
       return this.optional(Syntax.EqualsToken) ? this.assignmentExpressionOrHigher() : undefined;
     }
     assignmentExpressionOrHigher(): qc.Expression {
@@ -2010,7 +2010,7 @@ function create() {
       n.modifiers = this.modifiersForArrowFunction();
       const isAsync = hasModifierOfKind(n, Syntax.AsyncKeyword) ? SignatureFlags.Await : SignatureFlags.None;
       if (!fillSignature(Syntax.ColonToken, isAsync, n) && !allowAmbiguity) return;
-      const hasDocFunctionType = n.type && qc.is.kind(DocFunctionType, n.type);
+      const hasDocFunctionType = n.type && qc.is.kind(qc.DocFunctionType, n.type);
       if (!allowAmbiguity && tok() !== Syntax.EqualsGreaterThanToken && (hasDocFunctionType || tok() !== Syntax.OpenBraceToken)) return;
       return n;
     }
@@ -2433,12 +2433,12 @@ function create() {
         const equalsToken = this.optionalToken(Syntax.EqualsToken);
         if (equalsToken) {
           (n as qc.ShorthandPropertyAssignment).equalsToken = equalsToken;
-          (n as qc.ShorthandPropertyAssignment).objectAssignmentInitializer = flags.withoutDisallowIn(this.assignmentExpressionOrHigher);
+          (n as qc.ShorthandPropertyAssignment).objectAssignmentIniter = flags.withoutDisallowIn(this.assignmentExpressionOrHigher);
         }
       } else {
         n.kind = Syntax.PropertyAssignment;
         this.expected(Syntax.ColonToken);
-        (n as PropertyAssignment).initializer = flags.withoutDisallowIn(this.assignmentExpressionOrHigher);
+        (n as PropertyAssignment).initer = flags.withoutDisallowIn(this.assignmentExpressionOrHigher);
       }
       return finishNode(n);
     }
@@ -2577,28 +2577,28 @@ function create() {
       this.expected(Syntax.ForKeyword);
       const awaitToken = this.optionalToken(Syntax.AwaitKeyword);
       this.expected(Syntax.OpenParenToken);
-      let initializer!: qc.VariableDeclarationList | qc.Expression;
+      let initer!: qc.VariableDeclarationList | qc.Expression;
       if (tok() !== Syntax.SemicolonToken) {
-        if (tok() === Syntax.VarKeyword || tok() === Syntax.LetKeyword || tok() === Syntax.ConstKeyword) initializer = this.variableDeclarationList(true);
-        else initializer = flags.withDisallowIn(this.expression);
+        if (tok() === Syntax.VarKeyword || tok() === Syntax.LetKeyword || tok() === Syntax.ConstKeyword) initer = this.variableDeclarationList(true);
+        else initer = flags.withDisallowIn(this.expression);
       }
       let n: qc.IterationStatement;
       if (awaitToken ? this.expected(Syntax.OfKeyword) : this.optional(Syntax.OfKeyword)) {
         const n2 = create.node(Syntax.ForOfStatement, pos);
         n2.awaitModifier = awaitToken;
-        n2.initializer = initializer;
+        n2.initer = initer;
         n2.expression = flags.withoutDisallowIn(this.assignmentExpressionOrHigher);
         this.expected(Syntax.CloseParenToken);
         n = n2;
       } else if (this.optional(Syntax.InKeyword)) {
         const n2 = create.node(Syntax.ForInStatement, pos);
-        n2.initializer = initializer;
+        n2.initer = initer;
         n2.expression = flags.withoutDisallowIn(this.expression);
         this.expected(Syntax.CloseParenToken);
         n = n2;
       } else {
         const n2 = create.node(Syntax.ForStatement, pos);
-        n2.initializer = initializer;
+        n2.initer = initer;
         this.expected(Syntax.SemicolonToken);
         if (tok() !== Syntax.SemicolonToken && tok() !== Syntax.CloseParenToken) n2.condition = flags.withoutDisallowIn(this.expression);
         this.expected(Syntax.SemicolonToken);
@@ -2850,7 +2850,7 @@ function create() {
       const n = create.node(Syntax.BindingElement);
       n.dot3Token = this.optionalToken(Syntax.Dot3Token);
       n.name = this.identifierOrPattern();
-      n.initializer = this.initializer();
+      n.initer = this.initer();
       return finishNode(n);
     }
     objectBindingElement(): qc.BindingElement {
@@ -2864,7 +2864,7 @@ function create() {
         n.propertyName = propertyName;
         n.name = this.identifierOrPattern();
       }
-      n.initializer = this.initializer();
+      n.initer = this.initer();
       return finishNode(n);
     }
     objectBindingPattern(): qc.ObjectBindingPattern {
@@ -2896,10 +2896,10 @@ function create() {
         n.exclamationToken = this.tokenNode<Token<Syntax.ExclamationToken>>();
       }
       n.type = this.typeAnnotation();
-      if (!is.inOrOfKeyword(tok())) n.initializer = this.initializer();
+      if (!is.inOrOfKeyword(tok())) n.initer = this.initer();
       return finishNode(n);
     }
-    variableDeclarationList(inForStatementInitializer: boolean): qc.VariableDeclarationList {
+    variableDeclarationList(inForStatementIniter: boolean): qc.VariableDeclarationList {
       const n = create.node(Syntax.VariableDeclarationList);
       switch (tok()) {
         case Syntax.VarKeyword:
@@ -2918,8 +2918,8 @@ function create() {
         n.declarations = create.missingList<VariableDeclaration>();
       } else {
         const f = flags.inContext(NodeFlags.DisallowInContext);
-        flags.set(inForStatementInitializer, NodeFlags.DisallowInContext);
-        n.declarations = ctx.parseDelimitedList(Context.VariableDeclarations, inForStatementInitializer ? this.variableDeclaration : this.variableDeclarationAllowExclamation);
+        flags.set(inForStatementIniter, NodeFlags.DisallowInContext);
+        n.declarations = ctx.parseDelimitedList(Context.VariableDeclarations, inForStatementIniter ? this.variableDeclaration : this.variableDeclarationAllowExclamation);
         flags.set(f, NodeFlags.DisallowInContext);
       }
       return finishNode(n);
@@ -2966,7 +2966,7 @@ function create() {
         n.exclamationToken = this.tokenNode<Token<Syntax.ExclamationToken>>();
       }
       n.type = this.typeAnnotation();
-      n.initializer = flags.withoutContext(NodeFlags.YieldContext | NodeFlags.AwaitContext | NodeFlags.DisallowInContext, this.initializer);
+      n.initer = flags.withoutContext(NodeFlags.YieldContext | NodeFlags.AwaitContext | NodeFlags.DisallowInContext, this.initer);
       this.semicolon();
       return finishNode(n);
     }
@@ -3131,7 +3131,7 @@ function create() {
     enumMember(): EnumMember {
       const n = create.nodeWithDoc(Syntax.EnumMember);
       n.name = this.propertyName();
-      n.initializer = flags.withoutDisallowIn(this.initializer);
+      n.initer = flags.withoutDisallowIn(this.initer);
       return finishNode(n);
     }
     enumDeclaration(n: EnumDeclaration): EnumDeclaration {
@@ -3518,10 +3518,10 @@ function create() {
       if (tok() === Syntax.EqualsToken) {
         switch (this.scanAttributeValue()) {
           case Syntax.StringLiteral:
-            n.initializer = <StringLiteral>parse.literalNode();
+            n.initer = <StringLiteral>parse.literalNode();
             break;
           default:
-            n.initializer = this.expression(true);
+            n.initer = this.expression(true);
             break;
         }
       }

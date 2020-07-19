@@ -835,7 +835,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     const preLoopLabel = setContinueTarget(node, createLoopLabel());
     const preBodyLabel = createBranchLabel();
     const postLoopLabel = createBranchLabel();
-    bind(node.initializer);
+    bind(node.initer);
     addAntecedent(preLoopLabel, currentFlow);
     currentFlow = preLoopLabel;
     bindCondition(node.condition, preBodyLabel, postLoopLabel);
@@ -855,9 +855,9 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       bind(node.awaitModifier);
     }
     addAntecedent(postLoopLabel, currentFlow);
-    bind(node.initializer);
-    if (node.initializer.kind !== Syntax.VariableDeclarationList) {
-      bindAssignmentTargetFlow(node.initializer);
+    bind(node.initer);
+    if (node.initer.kind !== Syntax.VariableDeclarationList) {
+      bindAssignmentTargetFlow(node.initer);
     }
     bindIterativeStatement(node.statement, postLoopLabel, preLoopLabel);
     addAntecedent(preLoopLabel, currentFlow);
@@ -1050,7 +1050,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     } else if (node.kind === Syntax.ObjectLiteralExpression) {
       for (const p of (<ObjectLiteralExpression>node).properties) {
         if (p.kind === Syntax.PropertyAssignment) {
-          bindDestructuringTargetFlow(p.initializer);
+          bindDestructuringTargetFlow(p.initer);
         } else if (p.kind === Syntax.ShorthandPropertyAssignment) {
           bindAssignmentTargetFlow(p.name);
         } else if (p.kind === Syntax.SpreadAssignment) {
@@ -1251,7 +1251,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   }
   function bindVariableDeclarationFlow(node: VariableDeclaration) {
     bindEachChild(node);
-    if (node.initializer || qc.is.forInOrOfStatement(node.parent.parent)) {
+    if (node.initer || qc.is.forInOrOfStatement(node.parent.parent)) {
       bindInitializedVariableFlow(node);
     }
   }
@@ -1390,7 +1390,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       case Syntax.ModuleBlock:
         return ContainerFlags.IsControlFlowContainer;
       case Syntax.PropertyDeclaration:
-        return (<PropertyDeclaration>node).initializer ? ContainerFlags.IsControlFlowContainer : 0;
+        return (<PropertyDeclaration>node).initer ? ContainerFlags.IsControlFlowContainer : 0;
       case Syntax.CatchClause:
       case Syntax.ForStatement:
       case Syntax.ForInStatement:
@@ -2294,7 +2294,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     const symbolTable = isPrototypeProperty ? namespaceSymbol.members || (namespaceSymbol.members = new SymbolTable()) : namespaceSymbol.exports || (namespaceSymbol.exports = new SymbolTable());
     let includes = SymbolFlags.None;
     let excludes = SymbolFlags.None;
-    if (qc.is.functionLikeDeclaration(getAssignedExpandoInitializer(declaration)!)) {
+    if (qc.is.functionLikeDeclaration(getAssignedExpandoIniter(declaration)!)) {
       includes = SymbolFlags.Method;
       excludes = SymbolFlags.MethodExcludes;
     } else if (qc.is.kind(CallExpression, declaration) && isBindableObjectDefinePropertyCall(declaration)) {
@@ -2337,11 +2337,11 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   function isExpandoSymbol(symbol: Symbol): boolean {
     if (symbol.flags & (SymbolFlags.Function | SymbolFlags.Class | SymbolFlags.NamespaceModule)) return true;
     const node = symbol.valueDeclaration;
-    if (node && qc.is.kind(CallExpression, node)) return !!getAssignedExpandoInitializer(node);
+    if (node && qc.is.kind(CallExpression, node)) return !!getAssignedExpandoIniter(node);
     let init = !node
       ? undefined
       : qc.is.kind(VariableDeclaration, node)
-      ? node.initializer
+      ? node.initer
       : qc.is.kind(BinaryExpression, node)
       ? node.right
       : qc.is.kind(PropertyAccessExpression, node) && qc.is.kind(BinaryExpression, node.parent)
@@ -2350,7 +2350,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     init = init && getRightMostAssignedExpression(init);
     if (init) {
       const isPrototypeAssignment = qc.is.prototypeAccess(qc.is.kind(VariableDeclaration, node) ? node.name : qc.is.kind(BinaryExpression, node) ? node.left : node);
-      return !!getExpandoInitializer(
+      return !!getExpandoIniter(
         qc.is.kind(BinaryExpression, init) && (init.operatorToken.kind === Syntax.Bar2Token || init.operatorToken.kind === Syntax.Question2Token) ? init.right : init,
         isPrototypeAssignment
       );
@@ -2496,7 +2496,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     return extendsType && (extendsType.parent as ConditionalTypeNode);
   }
   function bindTypeParameter(node: TypeParameterDeclaration) {
-    if (qc.is.kind(DocTemplateTag, node.parent)) {
+    if (qc.is.kind(qc.DocTemplateTag, node.parent)) {
       const container = find((node.parent.parent as Doc).tags!, isDocTypeAlias) || qc.get.hostSignatureFromDoc(node.parent);
       if (container) {
         if (!container.locals) {
@@ -2537,7 +2537,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
           const isError =
             unreachableCodeIsError(options) &&
             !(node.flags & NodeFlags.Ambient) &&
-            (!qc.is.kind(VariableStatement, node) || !!(qc.get.combinedFlagsOf(node.declarationList) & NodeFlags.BlockScoped) || node.declarationList.declarations.some((d) => !!d.initializer));
+            (!qc.is.kind(VariableStatement, node) || !!(qc.get.combinedFlagsOf(node.declarationList) & NodeFlags.BlockScoped) || node.declarationList.declarations.some((d) => !!d.initer));
           eachUnreachableRange(node, (start, end) => errorOrSuggestionOnRange(isError, start, end, qd.Unreachable_code_detected));
         }
       }
@@ -2559,7 +2559,7 @@ function isExecutableStatement(s: Statement): boolean {
     !qc.is.kind(FunctionDeclaration, s) &&
     !isPurelyTypeDeclaration(s) &&
     !qc.is.kind(EnumDeclaration, s) &&
-    !(qc.is.kind(VariableStatement, s) && !(qc.get.combinedFlagsOf(s) & (NodeFlags.Let | NodeFlags.Const)) && s.declarationList.declarations.some((d) => !d.initializer))
+    !(qc.is.kind(VariableStatement, s) && !(qc.get.combinedFlagsOf(s) & (NodeFlags.Let | NodeFlags.Const)) && s.declarationList.declarations.some((d) => !d.initer))
   );
 }
 function isPurelyTypeDeclaration(s: Statement): boolean {
@@ -2584,8 +2584,8 @@ export function isExportsOrModuleExportsOrAlias(sourceFile: SourceFile, node: Ex
     if (qc.is.exportsIdentifier(node) || qc.is.moduleExportsAccessExpression(node)) return true;
     else if (qc.is.kind(Identifier, node)) {
       const symbol = lookupSymbolForNameWorker(sourceFile, node.escapedText);
-      if (!!symbol && !!symbol.valueDeclaration && qc.is.kind(VariableDeclaration, symbol.valueDeclaration) && !!symbol.valueDeclaration.initializer) {
-        const init = symbol.valueDeclaration.initializer;
+      if (!!symbol && !!symbol.valueDeclaration && qc.is.kind(VariableDeclaration, symbol.valueDeclaration) && !!symbol.valueDeclaration.initer) {
+        const init = symbol.valueDeclaration.initer;
         q.push(init);
         if (qc.is.assignmentExpression(init, true)) {
           q.push(init.left);
@@ -2725,7 +2725,7 @@ function computeBinaryExpression(node: BinaryExpression, subtreeFlags: Transform
 function computeParameter(node: ParameterDeclaration, subtreeFlags: TransformFlags) {
   let transformFlags = subtreeFlags;
   const name = node.name;
-  const initializer = node.initializer;
+  const initer = node.initer;
   const dot3Token = node.dot3Token;
   if (node.questionToken || node.type || (subtreeFlags & TransformFlags.ContainsTypeScriptClassSyntax && some(node.decorators)) || isThisNode(Identifier, name)) {
     transformFlags |= TransformFlags.AssertTypeScript;
@@ -2736,7 +2736,7 @@ function computeParameter(node: ParameterDeclaration, subtreeFlags: TransformFla
   if (subtreeFlags & TransformFlags.ContainsObjectRestOrSpread) {
     transformFlags |= TransformFlags.AssertES2018;
   }
-  if (subtreeFlags & TransformFlags.ContainsBindingPattern || initializer || dot3Token) {
+  if (subtreeFlags & TransformFlags.ContainsBindingPattern || initer || dot3Token) {
     transformFlags |= TransformFlags.AssertES2015;
   }
   node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;
@@ -2851,7 +2851,7 @@ function computePropertyDeclaration(node: PropertyDeclaration, subtreeFlags: Tra
   if (some(node.decorators) || qc.has.syntacticModifier(node, ModifierFlags.TypeScriptModifier) || node.type || node.questionToken || node.exclamationToken) {
     transformFlags |= TransformFlags.AssertTypeScript;
   }
-  if (qc.is.kind(ComputedPropertyName, node.name) || (qc.has.staticModifier(node) && node.initializer)) {
+  if (qc.is.kind(ComputedPropertyName, node.name) || (qc.has.staticModifier(node) && node.initer)) {
     transformFlags |= TransformFlags.ContainsTypeScriptClassSyntax;
   }
   node.transformFlags = transformFlags | TransformFlags.HasComputedFlags;

@@ -1521,8 +1521,8 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     } else {
       emitTypeAnnotation(node.type);
     }
-    emitInitializer(
-      node.initializer,
+    emitIniter(
+      node.initer,
       node.type ? node.type.end : node.questionToken ? node.questionToken.end : node.name ? node.name.end : node.modifiers ? node.modifiers.end : node.decorators ? node.decorators.end : node.pos,
       node
     );
@@ -1546,7 +1546,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emit(node.questionToken);
     emit(node.exclamationToken);
     emitTypeAnnotation(node.type);
-    emitInitializer(node.initializer, node.type ? node.type.end : node.questionToken ? node.questionToken.end : node.name.end, node);
+    emitIniter(node.initer, node.type ? node.type.end : node.questionToken ? node.questionToken.end : node.name.end, node);
     writeTrailingSemicolon();
   }
   function emitMethodSignature(node: MethodSignature) {
@@ -1827,7 +1827,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       writeSpace();
     }
     emit(node.name);
-    emitInitializer(node.initializer, node.name.end, node);
+    emitIniter(node.initer, node.name.end, node);
   }
   function emitArrayLiteralExpression(node: ArrayLiteralExpression) {
     const elements = node.elements;
@@ -2161,8 +2161,8 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     const openParenPos = emitTokenWithComment(Syntax.ForKeyword, node.pos, writeKeyword, node);
     writeSpace();
     let pos = emitTokenWithComment(Syntax.OpenParenToken, openParenPos, writePunctuation, node);
-    emitForBinding(node.initializer);
-    pos = emitTokenWithComment(Syntax.SemicolonToken, node.initializer ? node.initializer.end : pos, writePunctuation, node);
+    emitForBinding(node.initer);
+    pos = emitTokenWithComment(Syntax.SemicolonToken, node.initer ? node.initer.end : pos, writePunctuation, node);
     emitExpressionWithLeadingSpace(node.condition);
     pos = emitTokenWithComment(Syntax.SemicolonToken, node.condition ? node.condition.end : pos, writePunctuation, node);
     emitExpressionWithLeadingSpace(node.incrementor);
@@ -2173,9 +2173,9 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     const openParenPos = emitTokenWithComment(Syntax.ForKeyword, node.pos, writeKeyword, node);
     writeSpace();
     emitTokenWithComment(Syntax.OpenParenToken, openParenPos, writePunctuation, node);
-    emitForBinding(node.initializer);
+    emitForBinding(node.initer);
     writeSpace();
-    emitTokenWithComment(Syntax.InKeyword, node.initializer.end, writeKeyword, node);
+    emitTokenWithComment(Syntax.InKeyword, node.initer.end, writeKeyword, node);
     writeSpace();
     emitExpression(node.expression);
     emitTokenWithComment(Syntax.CloseParenToken, node.expression.end, writePunctuation, node);
@@ -2186,9 +2186,9 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     writeSpace();
     emitWithTrailingSpace(node.awaitModifier);
     emitTokenWithComment(Syntax.OpenParenToken, openParenPos, writePunctuation, node);
-    emitForBinding(node.initializer);
+    emitForBinding(node.initer);
     writeSpace();
-    emitTokenWithComment(Syntax.OfKeyword, node.initializer.end, writeKeyword, node);
+    emitTokenWithComment(Syntax.OfKeyword, node.initer.end, writeKeyword, node);
     writeSpace();
     emitExpression(node.expression);
     emitTokenWithComment(Syntax.CloseParenToken, node.expression.end, writePunctuation, node);
@@ -2292,7 +2292,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emit(node.name);
     emit(node.exclamationToken);
     emitTypeAnnotation(node.type);
-    emitInitializer(node.initializer, node.type ? node.type.end : node.name.end, node);
+    emitIniter(node.initer, node.type ? node.type.end : node.name.end, node);
   }
   function emitVariableDeclarationList(node: VariableDeclarationList) {
     writeKeyword(qc.is.aLet(node) ? 'let' : qc.is.varConst(node) ? 'const' : 'var');
@@ -2660,7 +2660,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
   function emitJsxAttribute(node: JsxAttribute) {
     emit(node.name);
-    emitNodeWithPrefix('=', writePunctuation, node.initializer, emitJsxAttributeValue);
+    emitNodeWithPrefix('=', writePunctuation, node.initer, emitJsxAttributeValue);
   }
   function emitJsxSpreadAttribute(node: JsxSpreadAttribute) {
     writePunctuation('{...');
@@ -2725,20 +2725,20 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emit(node.name);
     writePunctuation(':');
     writeSpace();
-    const initializer = node.initializer;
-    if (emitTrailingCommentsOfPosition && (qc.get.emitFlags(initializer) & EmitFlags.NoLeadingComments) === 0) {
-      const commentRange = getCommentRange(initializer);
+    const initer = node.initer;
+    if (emitTrailingCommentsOfPosition && (qc.get.emitFlags(initer) & EmitFlags.NoLeadingComments) === 0) {
+      const commentRange = getCommentRange(initer);
       emitTrailingCommentsOfPosition(commentRange.pos);
     }
-    emitExpression(initializer);
+    emitExpression(initer);
   }
   function emitShorthandPropertyAssignment(node: ShorthandPropertyAssignment) {
     emit(node.name);
-    if (node.objectAssignmentInitializer) {
+    if (node.objectAssignmentIniter) {
       writeSpace();
       writePunctuation('=');
       writeSpace();
-      emitExpression(node.objectAssignmentInitializer);
+      emitExpression(node.objectAssignmentIniter);
     }
   }
   function emitSpreadAssignment(node: SpreadAssignment) {
@@ -2749,7 +2749,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
   function emitEnumMember(node: EnumMember) {
     emit(node.name);
-    emitInitializer(node.initializer, node.name.end, node);
+    emitIniter(node.initer, node.name.end, node);
   }
   function emitDocSimpleTypedTag(tag: DocTypeTag | DocThisTag | DocEnumTag | DocReturnTag) {
     emitDocTagName(tag.tagName);
@@ -3056,7 +3056,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       emit(node);
     }
   }
-  function emitInitializer(node: Expression | undefined, equalCommentStartPos: number, container: Node) {
+  function emitIniter(node: Expression | undefined, equalCommentStartPos: number, container: Node) {
     if (node) {
       writeSpace();
       emitTokenWithComment(Syntax.EqualsToken, equalCommentStartPos, writeOperator, container);
@@ -3134,7 +3134,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       !parameter.dot3Token &&
       !parameter.questionToken &&
       !parameter.type &&
-      !parameter.initializer &&
+      !parameter.initer &&
       qc.is.kind(Identifier, parameter.name)
     );
   }
@@ -3550,7 +3550,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       case Syntax.ForStatement:
       case Syntax.ForOfStatement:
       case Syntax.ForInStatement:
-        generateNames((<ForStatement | ForInOrOfStatement>node).initializer);
+        generateNames((<ForStatement | ForInOrOfStatement>node).initer);
         generateNames((<ForStatement | ForInOrOfStatement>node).statement);
         break;
       case Syntax.SwitchStatement:

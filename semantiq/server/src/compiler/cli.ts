@@ -1489,7 +1489,7 @@ export function convertToObjectWorker(
           errors.push(createDiagnosticForNodeInSourceFile(sourceFile, element.name, extraKeyqd.unknownOptionDiagnostic, keyText));
         }
       }
-      const value = convertPropertyValueToJson(element.initializer, option);
+      const value = convertPropertyValueToJson(element.initer, option);
       if (typeof keyText !== 'undefined') {
         if (returnValue) {
           result[keyText] = value;
@@ -1502,9 +1502,9 @@ export function convertToObjectWorker(
             }
           } else if (isRootOptionMap(knownOptions)) {
             if (isValidOptionValue) {
-              jsonConversionNotifier.onSetValidOptionKeyValueInRoot(keyText, element.name, value, element.initializer);
+              jsonConversionNotifier.onSetValidOptionKeyValueInRoot(keyText, element.name, value, element.initer);
             } else if (!option) {
-              jsonConversionNotifier.onSetUnknownOptionKeyValueInRoot(keyText, element.name, value, element.initializer);
+              jsonConversionNotifier.onSetUnknownOptionKeyValueInRoot(keyText, element.name, value, element.initer);
             }
           }
         }
@@ -2472,7 +2472,7 @@ function getFileNames(): ExpandResult {
         if (sourceFile) {
           const fileName = configFileName || 'tsconfig.json';
           const diagnosticMessage = qd.The_files_list_in_config_file_0_is_empty;
-          const nodeValue = firstDefined(getTsConfigPropArray(sourceFile, 'files'), (property) => property.initializer);
+          const nodeValue = firstDefined(getTsConfigPropArray(sourceFile, 'files'), (property) => property.initer);
           const error = nodeValue ? createDiagnosticForNodeInSourceFile(sourceFile, nodeValue, diagnosticMessage, fileName) : createCompilerDiagnostic(diagnosticMessage, fileName);
           errors.push(error);
         } else {

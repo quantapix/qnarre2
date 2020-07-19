@@ -35,12 +35,7 @@ export const msgs = {
     'A rest parameter or binding pattern may not have a trailing comma.'
   ),
   A_rest_parameter_must_be_last_in_a_parameter_list: new Message(1014, Category.Error, 'A_rest_parameter_must_be_last_in_a_parameter_list_1014', 'A rest parameter must be last in a parameter list.'),
-  Parameter_cannot_have_question_mark_and_initializer: new Message(
-    1015,
-    Category.Error,
-    'Parameter_cannot_have_question_mark_and_initializer_1015',
-    'Parameter cannot have question mark and initializer.'
-  ),
+  Parameter_cannot_have_question_mark_and_initer: new Message(1015, Category.Error, 'Parameter_cannot_have_question_mark_and_initer_1015', 'Parameter cannot have question mark and initer.'),
   A_required_parameter_cannot_follow_an_optional_parameter: new Message(
     1016,
     Category.Error,
@@ -60,11 +55,11 @@ export const msgs = {
     'An_index_signature_parameter_cannot_have_a_question_mark_1019',
     'An index signature parameter cannot have a question mark.'
   ),
-  An_index_signature_parameter_cannot_have_an_initializer: new Message(
+  An_index_signature_parameter_cannot_have_an_initer: new Message(
     1020,
     Category.Error,
-    'An_index_signature_parameter_cannot_have_an_initializer_1020',
-    'An index signature parameter cannot have an initializer.'
+    'An_index_signature_parameter_cannot_have_an_initer_1020',
+    'An index signature parameter cannot have an initer.'
   ),
   An_index_signature_must_have_a_type_annotation: new Message(1021, Category.Error, 'An_index_signature_must_have_a_type_annotation_1021', 'An index signature must have a type annotation.'),
   An_index_signature_parameter_must_have_a_type_annotation: new Message(
@@ -104,7 +99,7 @@ export const msgs = {
     'A_declare_modifier_cannot_be_used_in_an_already_ambient_context_1038',
     "A 'declare' modifier cannot be used in an already ambient context."
   ),
-  Initializers_are_not_allowed_in_ambient_contexts: new Message(1039, Category.Error, 'Initializers_are_not_allowed_in_ambient_contexts_1039', 'Initializers are not allowed in ambient contexts.'),
+  Initers_are_not_allowed_in_ambient_contexts: new Message(1039, Category.Error, 'Initers_are_not_allowed_in_ambient_contexts_1039', 'Initers are not allowed in ambient contexts.'),
   _0_modifier_cannot_be_used_in_an_ambient_context: new Message(1040, Category.Error, '_0_modifier_cannot_be_used_in_an_ambient_context_1040', "'{0}' modifier cannot be used in an ambient context."),
   _0_modifier_cannot_be_used_with_a_class_declaration: new Message(
     1041,
@@ -133,15 +128,10 @@ export const msgs = {
     "Top-level declarations in .d.ts files must start with either a 'declare' or 'export' modifier."
   ),
   A_rest_parameter_cannot_be_optional: new Message(1047, Category.Error, 'A_rest_parameter_cannot_be_optional_1047', 'A rest parameter cannot be optional.'),
-  A_rest_parameter_cannot_have_an_initializer: new Message(1048, Category.Error, 'A_rest_parameter_cannot_have_an_initializer_1048', 'A rest parameter cannot have an initializer.'),
+  A_rest_parameter_cannot_have_an_initer: new Message(1048, Category.Error, 'A_rest_parameter_cannot_have_an_initer_1048', 'A rest parameter cannot have an initer.'),
   A_set_accessor_must_have_exactly_one_parameter: new Message(1049, Category.Error, 'A_set_accessor_must_have_exactly_one_parameter_1049', "A 'set' accessor must have exactly one parameter."),
   A_set_accessor_cannot_have_an_optional_parameter: new Message(1051, Category.Error, 'A_set_accessor_cannot_have_an_optional_parameter_1051', "A 'set' accessor cannot have an optional parameter."),
-  A_set_accessor_parameter_cannot_have_an_initializer: new Message(
-    1052,
-    Category.Error,
-    'A_set_accessor_parameter_cannot_have_an_initializer_1052',
-    "A 'set' accessor parameter cannot have an initializer."
-  ),
+  A_set_accessor_parameter_cannot_have_an_initer: new Message(1052, Category.Error, 'A_set_accessor_parameter_cannot_have_an_initer_1052', "A 'set' accessor parameter cannot have an initer."),
   A_set_accessor_cannot_have_rest_parameter: new Message(1053, Category.Error, 'A_set_accessor_cannot_have_rest_parameter_1053', "A 'set' accessor cannot have rest parameter."),
   A_get_accessor_cannot_have_parameters: new Message(1054, Category.Error, 'A_get_accessor_cannot_have_parameters_1054', "A 'get' accessor cannot have parameters."),
   Type_0_is_not_a_valid_async_function_return_type_in_ES5_SlashES3_because_it_does_not_refer_to_a_Promise_compatible_constructor_value: new Message(
@@ -175,7 +165,7 @@ export const msgs = {
     'The_first_parameter_of_the_then_method_of_a_promise_must_be_a_callback_1060',
     "The first parameter of the 'then' method of a promise must be a callback."
   ),
-  Enum_member_must_have_initializer: new Message(1061, Category.Error, 'Enum_member_must_have_initializer_1061', 'Enum member must have initializer.'),
+  Enum_member_must_have_initer: new Message(1061, Category.Error, 'Enum_member_must_have_initer_1061', 'Enum member must have initer.'),
   Type_is_referenced_directly_or_indirectly_in_the_fulfillment_callback_of_its_own_then_method: new Message(
     1062,
     Category.Error,
@@ -194,11 +184,11 @@ export const msgs = {
     'The_return_type_of_an_async_function_or_method_must_be_the_global_Promise_T_type_Did_you_mean_to_wri_1064',
     "The return type of an async function or method must be the global Promise<T> type. Did you mean to write 'Promise<{0}>'?"
   ),
-  In_ambient_enum_declarations_member_initializer_must_be_constant_expression: new Message(
+  In_ambient_enum_declarations_member_initer_must_be_constant_expression: new Message(
     1066,
     Category.Error,
-    'In_ambient_enum_declarations_member_initializer_must_be_constant_expression_1066',
-    'In ambient enum declarations member initializer must be constant expression.'
+    'In_ambient_enum_declarations_member_initer_must_be_constant_expression_1066',
+    'In ambient enum declarations member initer must be constant expression.'
   ),
   Unexpected_token_A_constructor_method_accessor_or_property_was_expected: new Message(
     1068,
@@ -455,12 +445,7 @@ export const msgs = {
   Unexpected_token_expected: new Message(1179, Category.Error, 'Unexpected_token_expected_1179', "Unexpected token. '{' expected."),
   Property_destructuring_pattern_expected: new Message(1180, Category.Error, 'Property_destructuring_pattern_expected_1180', 'Property destructuring pattern expected.'),
   Array_element_destructuring_pattern_expected: new Message(1181, Category.Error, 'Array_element_destructuring_pattern_expected_1181', 'Array element destructuring pattern expected.'),
-  A_destructuring_declaration_must_have_an_initializer: new Message(
-    1182,
-    Category.Error,
-    'A_destructuring_declaration_must_have_an_initializer_1182',
-    'A destructuring declaration must have an initializer.'
-  ),
+  A_destructuring_declaration_must_have_an_initer: new Message(1182, Category.Error, 'A_destructuring_declaration_must_have_an_initer_1182', 'A destructuring declaration must have an initer.'),
   An_implementation_cannot_be_declared_in_ambient_contexts: new Message(
     1183,
     Category.Error,
@@ -469,7 +454,7 @@ export const msgs = {
   ),
   Modifiers_cannot_appear_here: new Message(1184, Category.Error, 'Modifiers_cannot_appear_here_1184', 'Modifiers cannot appear here.'),
   Merge_conflict_marker_encountered: new Message(1185, Category.Error, 'Merge_conflict_marker_encountered_1185', 'Merge conflict marker encountered.'),
-  A_rest_element_cannot_have_an_initializer: new Message(1186, Category.Error, 'A_rest_element_cannot_have_an_initializer_1186', 'A rest element cannot have an initializer.'),
+  A_rest_element_cannot_have_an_initer: new Message(1186, Category.Error, 'A_rest_element_cannot_have_an_initer_1186', 'A rest element cannot have an initer.'),
   A_parameter_property_may_not_be_declared_using_a_binding_pattern: new Message(
     1187,
     Category.Error,
@@ -482,17 +467,17 @@ export const msgs = {
     'Only_a_single_variable_declaration_is_allowed_in_a_for_of_statement_1188',
     "Only a single variable declaration is allowed in a 'for...of' statement."
   ),
-  The_variable_declaration_of_a_for_in_statement_cannot_have_an_initializer: new Message(
+  The_variable_declaration_of_a_for_in_statement_cannot_have_an_initer: new Message(
     1189,
     Category.Error,
-    'The_variable_declaration_of_a_for_in_statement_cannot_have_an_initializer_1189',
-    "The variable declaration of a 'for...in' statement cannot have an initializer."
+    'The_variable_declaration_of_a_for_in_statement_cannot_have_an_initer_1189',
+    "The variable declaration of a 'for...in' statement cannot have an initer."
   ),
-  The_variable_declaration_of_a_for_of_statement_cannot_have_an_initializer: new Message(
+  The_variable_declaration_of_a_for_of_statement_cannot_have_an_initer: new Message(
     1190,
     Category.Error,
-    'The_variable_declaration_of_a_for_of_statement_cannot_have_an_initializer_1190',
-    "The variable declaration of a 'for...of' statement cannot have an initializer."
+    'The_variable_declaration_of_a_for_of_statement_cannot_have_an_initer_1190',
+    "The variable declaration of a 'for...of' statement cannot have an initer."
   ),
   An_import_declaration_cannot_have_modifiers: new Message(1191, Category.Error, 'An_import_declaration_cannot_have_modifiers_1191', 'An import declaration cannot have modifiers.'),
   Module_0_has_no_default_export: new Message(1192, Category.Error, 'Module_0_has_no_default_export_1192', "Module '{0}' has no default export."),
@@ -510,7 +495,7 @@ export const msgs = {
     'Catch_clause_variable_cannot_have_a_type_annotation_1196',
     'Catch clause variable cannot have a type annotation.'
   ),
-  Catch_clause_variable_cannot_have_an_initializer: new Message(1197, Category.Error, 'Catch_clause_variable_cannot_have_an_initializer_1197', 'Catch clause variable cannot have an initializer.'),
+  Catch_clause_variable_cannot_have_an_initer: new Message(1197, Category.Error, 'Catch_clause_variable_cannot_have_an_initer_1197', 'Catch clause variable cannot have an initer.'),
   An_extended_Unicode_escape_value_must_be_between_0x0_and_0x10FFFF_inclusive: new Message(
     1198,
     Category.Error,
@@ -725,13 +710,8 @@ export const msgs = {
     'Method_0_cannot_have_an_implementation_because_it_is_marked_abstract_1245',
     "Method '{0}' cannot have an implementation because it is marked abstract."
   ),
-  An_interface_property_cannot_have_an_initializer: new Message(1246, Category.Error, 'An_interface_property_cannot_have_an_initializer_1246', 'An interface property cannot have an initializer.'),
-  A_type_literal_property_cannot_have_an_initializer: new Message(
-    1247,
-    Category.Error,
-    'A_type_literal_property_cannot_have_an_initializer_1247',
-    'A type literal property cannot have an initializer.'
-  ),
+  An_interface_property_cannot_have_an_initer: new Message(1246, Category.Error, 'An_interface_property_cannot_have_an_initer_1246', 'An interface property cannot have an initer.'),
+  A_type_literal_property_cannot_have_an_initer: new Message(1247, Category.Error, 'A_type_literal_property_cannot_have_an_initer_1247', 'A type literal property cannot have an initer.'),
   A_class_member_cannot_have_the_0_keyword: new Message(1248, Category.Error, 'A_class_member_cannot_have_the_0_keyword_1248', "A class member cannot have the '{0}' keyword."),
   A_decorator_can_only_decorate_a_method_implementation_not_an_overload: new Message(
     1249,
@@ -763,11 +743,11 @@ export const msgs = {
     '_0_tag_cannot_be_used_independently_as_a_top_level_Doc_tag_1253',
     "'{0}' tag cannot be used independently as a top level Doc tag."
   ),
-  A_const_initializer_in_an_ambient_context_must_be_a_string_or_numeric_literal_or_literal_enum_reference: new Message(
+  A_const_initer_in_an_ambient_context_must_be_a_string_or_numeric_literal_or_literal_enum_reference: new Message(
     1254,
     Category.Error,
-    'A_const_initializer_in_an_ambient_context_must_be_a_string_or_numeric_literal_or_literal_enum_refere_1254',
-    "A 'const' initializer in an ambient context must be a string or numeric literal or literal enum reference."
+    'A_const_initer_in_an_ambient_context_must_be_a_string_or_numeric_literal_or_literal_enum_refere_1254',
+    "A 'const' initer in an ambient context must be a string or numeric literal or literal enum reference."
   ),
   A_definite_assignment_assertion_is_not_permitted_in_this_context: new Message(
     1255,
@@ -1169,11 +1149,11 @@ export const msgs = {
     true
   ),
   Duplicate_identifier_0: new Message(2300, Category.Error, 'Duplicate_identifier_0_2300', "Duplicate identifier '{0}'."),
-  Initializer_of_instance_member_variable_0_cannot_reference_identifier_1_declared_in_the_constructor: new Message(
+  Initer_of_instance_member_variable_0_cannot_reference_identifier_1_declared_in_the_constructor: new Message(
     2301,
     Category.Error,
-    'Initializer_of_instance_member_variable_0_cannot_reference_identifier_1_declared_in_the_constructor_2301',
-    "Initializer of instance member variable '{0}' cannot reference identifier '{1}' declared in the constructor."
+    'Initer_of_instance_member_variable_0_cannot_reference_identifier_1_declared_in_the_constructor_2301',
+    "Initer of instance member variable '{0}' cannot reference identifier '{1}' declared in the constructor."
   ),
   Static_members_cannot_reference_class_type_parameters: new Message(
     2302,
@@ -1267,11 +1247,11 @@ export const msgs = {
     'this_cannot_be_referenced_in_constructor_arguments_2333',
     "'this' cannot be referenced in constructor arguments."
   ),
-  this_cannot_be_referenced_in_a_static_property_initializer: new Message(
+  this_cannot_be_referenced_in_a_static_property_initer: new Message(
     2334,
     Category.Error,
-    'this_cannot_be_referenced_in_a_static_property_initializer_2334',
-    "'this' cannot be referenced in a static property initializer."
+    'this_cannot_be_referenced_in_a_static_property_initer_2334',
+    "'this' cannot be referenced in a static property initer."
   ),
   super_can_only_be_referenced_in_a_derived_class: new Message(2335, Category.Error, 'super_can_only_be_referenced_in_a_derived_class_2335', "'super' can only be referenced in a derived class."),
   super_cannot_be_referenced_in_constructor_arguments: new Message(
@@ -1444,11 +1424,11 @@ export const msgs = {
     'A parameter property is only allowed in a constructor implementation.'
   ),
   A_rest_parameter_must_be_of_an_array_type: new Message(2370, Category.Error, 'A_rest_parameter_must_be_of_an_array_type_2370', 'A rest parameter must be of an array type.'),
-  A_parameter_initializer_is_only_allowed_in_a_function_or_constructor_implementation: new Message(
+  A_parameter_initer_is_only_allowed_in_a_function_or_constructor_implementation: new Message(
     2371,
     Category.Error,
-    'A_parameter_initializer_is_only_allowed_in_a_function_or_constructor_implementation_2371',
-    'A parameter initializer is only allowed in a function or constructor implementation.'
+    'A_parameter_initer_is_only_allowed_in_a_function_or_constructor_implementation_2371',
+    'A parameter initer is only allowed in a function or constructor implementation.'
   ),
   Parameter_0_cannot_reference_itself: new Message(2372, Category.Error, 'Parameter_0_cannot_reference_itself_2372', "Parameter '{0}' cannot reference itself."),
   Parameter_0_cannot_reference_identifier_1_declared_after_it: new Message(
@@ -1701,11 +1681,11 @@ export const msgs = {
   ),
   Interface_0_incorrectly_extends_interface_1: new Message(2430, Category.Error, 'Interface_0_incorrectly_extends_interface_1_2430', "Interface '{0}' incorrectly extends interface '{1}'."),
   Enum_name_cannot_be_0: new Message(2431, Category.Error, 'Enum_name_cannot_be_0_2431', "Enum name cannot be '{0}'."),
-  In_an_enum_with_multiple_declarations_only_one_declaration_can_omit_an_initializer_for_its_first_enum_element: new Message(
+  In_an_enum_with_multiple_declarations_only_one_declaration_can_omit_an_initer_for_its_first_enum_element: new Message(
     2432,
     Category.Error,
-    'In_an_enum_with_multiple_declarations_only_one_declaration_can_omit_an_initializer_for_its_first_enu_2432',
-    'In an enum with multiple declarations, only one declaration can omit an initializer for its first enum element.'
+    'In_an_enum_with_multiple_declarations_only_one_declaration_can_omit_an_initer_for_its_first_enu_2432',
+    'In an enum with multiple declarations, only one declaration can omit an initer for its first enum element.'
   ),
   A_namespace_declaration_cannot_be_in_a_different_file_from_a_class_or_function_with_which_it_is_merged: new Message(
     2433,
@@ -1893,11 +1873,11 @@ export const msgs = {
     "Spread operator in 'new' expressions is only available when targeting ECMAScript 5 and higher."
   ),
   Enum_declarations_must_all_be_const_or_non_const: new Message(2473, Category.Error, 'Enum_declarations_must_all_be_const_or_non_const_2473', 'Enum declarations must all be const or non-const.'),
-  const_enum_member_initializers_can_only_contain_literal_values_and_other_computed_enum_values: new Message(
+  const_enum_member_initers_can_only_contain_literal_values_and_other_computed_enum_values: new Message(
     2474,
     Category.Error,
-    'const_enum_member_initializers_can_only_contain_literal_values_and_other_computed_enum_values_2474',
-    'const enum member initializers can only contain literal values and other computed enum values.'
+    'const_enum_member_initers_can_only_contain_literal_values_and_other_computed_enum_values_2474',
+    'const enum member initers can only contain literal values and other computed enum values.'
   ),
   const_enums_can_only_be_used_in_property_or_index_access_expressions_or_the_right_hand_side_of_an_import_declaration_or_export_assignment_or_type_query: new Message(
     2475,
@@ -1911,17 +1891,17 @@ export const msgs = {
     'A_const_enum_member_can_only_be_accessed_using_a_string_literal_2476',
     'A const enum member can only be accessed using a string literal.'
   ),
-  const_enum_member_initializer_was_evaluated_to_a_non_finite_value: new Message(
+  const_enum_member_initer_was_evaluated_to_a_non_finite_value: new Message(
     2477,
     Category.Error,
-    'const_enum_member_initializer_was_evaluated_to_a_non_finite_value_2477',
-    "'const' enum member initializer was evaluated to a non-finite value."
+    'const_enum_member_initer_was_evaluated_to_a_non_finite_value_2477',
+    "'const' enum member initer was evaluated to a non-finite value."
   ),
-  const_enum_member_initializer_was_evaluated_to_disallowed_value_NaN: new Message(
+  const_enum_member_initer_was_evaluated_to_disallowed_value_NaN: new Message(
     2478,
     Category.Error,
-    'const_enum_member_initializer_was_evaluated_to_disallowed_value_NaN_2478',
-    "'const' enum member initializer was evaluated to disallowed value 'NaN'."
+    'const_enum_member_initer_was_evaluated_to_disallowed_value_NaN_2478',
+    "'const' enum member initer was evaluated to disallowed value 'NaN'."
   ),
   Property_0_does_not_exist_on_const_enum_1: new Message(2479, Category.Error, 'Property_0_does_not_exist_on_const_enum_1_2479', "Property '{0}' does not exist on 'const' enum '{1}'."),
   let_is_not_allowed_to_be_used_as_a_name_in_let_or_const_declarations: new Message(
@@ -2119,23 +2099,23 @@ export const msgs = {
     'The_arguments_object_cannot_be_referenced_in_an_async_function_or_method_in_ES3_and_ES5_Consider_usi_2522',
     "The 'arguments' object cannot be referenced in an async function or method in ES3 and ES5. Consider using a standard function or method."
   ),
-  yield_expressions_cannot_be_used_in_a_parameter_initializer: new Message(
+  yield_expressions_cannot_be_used_in_a_parameter_initer: new Message(
     2523,
     Category.Error,
-    'yield_expressions_cannot_be_used_in_a_parameter_initializer_2523',
-    "'yield' expressions cannot be used in a parameter initializer."
+    'yield_expressions_cannot_be_used_in_a_parameter_initer_2523',
+    "'yield' expressions cannot be used in a parameter initer."
   ),
-  await_expressions_cannot_be_used_in_a_parameter_initializer: new Message(
+  await_expressions_cannot_be_used_in_a_parameter_initer: new Message(
     2524,
     Category.Error,
-    'await_expressions_cannot_be_used_in_a_parameter_initializer_2524',
-    "'await' expressions cannot be used in a parameter initializer."
+    'await_expressions_cannot_be_used_in_a_parameter_initer_2524',
+    "'await' expressions cannot be used in a parameter initer."
   ),
-  Initializer_provides_no_value_for_this_binding_element_and_the_binding_element_has_no_default_value: new Message(
+  Initer_provides_no_value_for_this_binding_element_and_the_binding_element_has_no_default_value: new Message(
     2525,
     Category.Error,
-    'Initializer_provides_no_value_for_this_binding_element_and_the_binding_element_has_no_default_value_2525',
-    'Initializer provides no value for this binding element and the binding element has no default value.'
+    'Initer_provides_no_value_for_this_binding_element_and_the_binding_element_has_no_default_value_2525',
+    'Initer provides no value for this binding element and the binding element has no default value.'
   ),
   A_this_type_is_available_only_in_a_non_static_member_of_a_class_or_interface: new Message(
     2526,
@@ -2166,11 +2146,11 @@ export const msgs = {
     'A_function_returning_never_cannot_have_a_reachable_end_point_2534',
     "A function returning 'never' cannot have a reachable end point."
   ),
-  Enum_type_0_has_members_with_initializers_that_are_not_literals: new Message(
+  Enum_type_0_has_members_with_initers_that_are_not_literals: new Message(
     2535,
     Category.Error,
-    'Enum_type_0_has_members_with_initializers_that_are_not_literals_2535',
-    "Enum type '{0}' has members with initializers that are not literals."
+    'Enum_type_0_has_members_with_initers_that_are_not_literals_2535',
+    "Enum type '{0}' has members with initers that are not literals."
   ),
   Type_0_cannot_be_used_to_index_type_1: new Message(2536, Category.Error, 'Type_0_cannot_be_used_to_index_type_1_2536', "Type '{0}' cannot be used to index type '{1}'."),
   Type_0_has_no_matching_index_signature_for_type_1: new Message(
@@ -2273,11 +2253,11 @@ export const msgs = {
     'The_containing_function_or_module_body_is_too_large_for_control_flow_analysis_2563',
     'The containing function or module body is too large for control flow analysis.'
   ),
-  Property_0_has_no_initializer_and_is_not_definitely_assigned_in_the_constructor: new Message(
+  Property_0_has_no_initer_and_is_not_definitely_assigned_in_the_constructor: new Message(
     2564,
     Category.Error,
-    'Property_0_has_no_initializer_and_is_not_definitely_assigned_in_the_constructor_2564',
-    "Property '{0}' has no initializer and is not definitely assigned in the constructor."
+    'Property_0_has_no_initer_and_is_not_definitely_assigned_in_the_constructor_2564',
+    "Property '{0}' has no initer and is not definitely assigned in the constructor."
   ),
   Property_0_is_used_before_being_assigned: new Message(2565, Category.Error, 'Property_0_is_used_before_being_assigned_2565', "Property '{0}' is used before being assigned."),
   A_rest_element_cannot_have_a_property_name: new Message(2566, Category.Error, 'A_rest_element_cannot_have_a_property_name_2566', 'A rest element cannot have a property name.'),
@@ -2482,11 +2462,11 @@ export const msgs = {
     '_0_is_defined_as_a_property_in_class_1_but_is_overridden_here_in_2_as_an_accessor_2611',
     "'{0}' is defined as a property in class '{1}', but is overridden here in '{2}' as an accessor."
   ),
-  Property_0_will_overwrite_the_base_property_in_1_If_this_is_intentional_add_an_initializer_Otherwise_add_a_declare_modifier_or_remove_the_redundant_declaration: new Message(
+  Property_0_will_overwrite_the_base_property_in_1_If_this_is_intentional_add_an_initer_Otherwise_add_a_declare_modifier_or_remove_the_redundant_declaration: new Message(
     2612,
     Category.Error,
-    'Property_0_will_overwrite_the_base_property_in_1_If_this_is_intentional_add_an_initializer_Otherwise_2612',
-    "Property '{0}' will overwrite the base property in '{1}'. If this is intentional, add an initializer. Otherwise, add a 'declare' modifier or remove the redundant declaration."
+    'Property_0_will_overwrite_the_base_property_in_1_If_this_is_intentional_add_an_initer_Otherwise_2612',
+    "Property '{0}' will overwrite the base property in '{1}'. If this is intentional, add an initer. Otherwise, add a 'declare' modifier or remove the redundant declaration."
   ),
   Module_0_has_no_default_export_Did_you_mean_to_use_import_1_from_0_instead: new Message(
     2613,
@@ -2524,11 +2504,11 @@ export const msgs = {
     'Cannot_augment_module_0_with_value_exports_because_it_resolves_to_a_non_module_entity_2649',
     "Cannot augment module '{0}' with value exports because it resolves to a non-module entity."
   ),
-  A_member_initializer_in_a_enum_declaration_cannot_reference_members_declared_after_it_including_members_defined_in_other_enums: new Message(
+  A_member_initer_in_a_enum_declaration_cannot_reference_members_declared_after_it_including_members_defined_in_other_enums: new Message(
     2651,
     Category.Error,
-    'A_member_initializer_in_a_enum_declaration_cannot_reference_members_declared_after_it_including_memb_2651',
-    'A member initializer in a enum declaration cannot reference members declared after it, including members defined in other enums.'
+    'A_member_initer_in_a_enum_declaration_cannot_reference_members_declared_after_it_including_memb_2651',
+    'A member initer in a enum declaration cannot reference members declared after it, including members defined in other enums.'
   ),
   Merged_declaration_0_cannot_include_a_default_export_declaration_Consider_adding_a_separate_export_default_0_declaration_instead: new Message(
     2652,
@@ -4947,11 +4927,11 @@ export const msgs = {
     'Call_signature_which_lacks_return_type_annotation_implicitly_has_an_any_return_type_7020',
     "Call signature, which lacks return-type annotation, implicitly has an 'any' return type."
   ),
-  _0_implicitly_has_type_any_because_it_does_not_have_a_type_annotation_and_is_referenced_directly_or_indirectly_in_its_own_initializer: new Message(
+  _0_implicitly_has_type_any_because_it_does_not_have_a_type_annotation_and_is_referenced_directly_or_indirectly_in_its_own_initer: new Message(
     7022,
     Category.Error,
     '_0_implicitly_has_type_any_because_it_does_not_have_a_type_annotation_and_is_referenced_directly_or__7022',
-    "'{0}' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer."
+    "'{0}' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initer."
   ),
   _0_implicitly_has_return_type_any_because_it_does_not_have_a_return_type_annotation_and_is_referenced_directly_or_indirectly_in_one_of_its_return_expressions: new Message(
     7023,
@@ -5196,11 +5176,11 @@ export const msgs = {
     'Octal_literal_types_must_use_ES2015_syntax_Use_the_syntax_0_8017',
     "Octal literal types must use ES2015 syntax. Use the syntax '{0}'."
   ),
-  Octal_literals_are_not_allowed_in_enums_members_initializer_Use_the_syntax_0: new Message(
+  Octal_literals_are_not_allowed_in_enums_members_initer_Use_the_syntax_0: new Message(
     8018,
     Category.Error,
-    'Octal_literals_are_not_allowed_in_enums_members_initializer_Use_the_syntax_0_8018',
-    "Octal literals are not allowed in enums members initializer. Use the syntax '{0}'."
+    'Octal_literals_are_not_allowed_in_enums_members_initer_Use_the_syntax_0_8018',
+    "Octal literals are not allowed in enums members initer. Use the syntax '{0}'."
   ),
   Report_errors_in_js_files: new Message(8019, Category.Message, 'Report_errors_in_js_files_8019', 'Report errors in .js files.'),
   Doc_types_can_only_be_used_inside_documentation_comments: new Message(
@@ -5495,7 +5475,7 @@ export const msgs = {
   Use_synthetic_default_member: new Message(95016, Category.Message, 'Use_synthetic_default_member_95016', "Use synthetic 'default' member."),
   Convert_to_ES6_module: new Message(95017, Category.Message, 'Convert_to_ES6_module_95017', 'Convert to ES6 module'),
   Add_undefined_type_to_property_0: new Message(95018, Category.Message, 'Add_undefined_type_to_property_0_95018', "Add 'undefined' type to property '{0}'"),
-  Add_initializer_to_property_0: new Message(95019, Category.Message, 'Add_initializer_to_property_0_95019', "Add initializer to property '{0}'"),
+  Add_initer_to_property_0: new Message(95019, Category.Message, 'Add_initer_to_property_0_95019', "Add initer to property '{0}'"),
   Add_definite_assignment_assertion_to_property_0: new Message(95020, Category.Message, 'Add_definite_assignment_assertion_to_property_0_95020', "Add definite assignment assertion to property '{0}'"),
   Add_all_missing_members: new Message(95022, Category.Message, 'Add_all_missing_members_95022', 'Add all missing members'),
   Infer_all_types_from_usage: new Message(95023, Category.Message, 'Infer_all_types_from_usage_95023', 'Infer all types from usage'),
@@ -5507,7 +5487,7 @@ export const msgs = {
     "Prefix all unused declarations with '_' where possible"
   ),
   Fix_all_detected_spelling_errors: new Message(95026, Category.Message, 'Fix_all_detected_spelling_errors_95026', 'Fix all detected spelling errors'),
-  Add_initializers_to_all_uninitialized_properties: new Message(95027, Category.Message, 'Add_initializers_to_all_uninitialized_properties_95027', 'Add initializers to all uninitialized properties'),
+  Add_initers_to_all_uninitialized_properties: new Message(95027, Category.Message, 'Add_initers_to_all_uninitialized_properties_95027', 'Add initers to all uninitialized properties'),
   Add_definite_assignment_assertions_to_all_uninitialized_properties: new Message(
     95028,
     Category.Message,
@@ -5604,12 +5584,12 @@ export const msgs = {
   Add_const_to_unresolved_variable: new Message(95081, Category.Message, 'Add_const_to_unresolved_variable_95081', "Add 'const' to unresolved variable"),
   Add_const_to_all_unresolved_variables: new Message(95082, Category.Message, 'Add_const_to_all_unresolved_variables_95082', "Add 'const' to all unresolved variables"),
   Add_await: new Message(95083, Category.Message, 'Add_await_95083', "Add 'await'"),
-  Add_await_to_initializer_for_0: new Message(95084, Category.Message, 'Add_await_to_initializer_for_0_95084', "Add 'await' to initializer for '{0}'"),
+  Add_await_to_initer_for_0: new Message(95084, Category.Message, 'Add_await_to_initer_for_0_95084', "Add 'await' to initer for '{0}'"),
   Fix_all_expressions_possibly_missing_await: new Message(95085, Category.Message, 'Fix_all_expressions_possibly_missing_await_95085', "Fix all expressions possibly missing 'await'"),
   Remove_unnecessary_await: new Message(95086, Category.Message, 'Remove_unnecessary_await_95086', "Remove unnecessary 'await'"),
   Remove_all_unnecessary_uses_of_await: new Message(95087, Category.Message, 'Remove_all_unnecessary_uses_of_await_95087', "Remove all unnecessary uses of 'await'"),
   Enable_the_jsx_flag_in_your_configuration_file: new Message(95088, Category.Message, 'Enable_the_jsx_flag_in_your_configuration_file_95088', "Enable the '--jsx' flag in your configuration file"),
-  Add_await_to_initializers: new Message(95089, Category.Message, 'Add_await_to_initializers_95089', "Add 'await' to initializers"),
+  Add_await_to_initers: new Message(95089, Category.Message, 'Add_await_to_initers_95089', "Add 'await' to initers"),
   Extract_to_interface: new Message(95090, Category.Message, 'Extract_to_interface_95090', 'Extract to interface'),
   Convert_to_a_bigint_numeric_literal: new Message(95091, Category.Message, 'Convert_to_a_bigint_numeric_literal_95091', 'Convert to a bigint numeric literal'),
   Convert_all_to_bigint_numeric_literals: new Message(95092, Category.Message, 'Convert_all_to_bigint_numeric_literals_95092', 'Convert all to bigint numeric literals'),
@@ -5700,11 +5680,11 @@ export const msgs = {
     'Generate_get_and_set_accessors_for_all_overriding_properties_95119',
     "Generate 'get' and 'set' accessors for all overriding properties"
   ),
-  No_value_exists_in_scope_for_the_shorthand_property_0_Either_declare_one_or_provide_an_initializer: new Message(
+  No_value_exists_in_scope_for_the_shorthand_property_0_Either_declare_one_or_provide_an_initer: new Message(
     18004,
     Category.Error,
-    'No_value_exists_in_scope_for_the_shorthand_property_0_Either_declare_one_or_provide_an_initializer_18004',
-    "No value exists in scope for the shorthand property '{0}'. Either declare one or provide an initializer."
+    'No_value_exists_in_scope_for_the_shorthand_property_0_Either_declare_one_or_provide_an_initer_18004',
+    "No value exists in scope for the shorthand property '{0}'. Either declare one or provide an initer."
   ),
   Classes_may_not_have_a_field_named_constructor: new Message(18006, Category.Error, 'Classes_may_not_have_a_field_named_constructor_18006', "Classes may not have a field named 'constructor'."),
   JSX_expressions_may_not_use_the_comma_operator_Did_you_mean_to_write_an_array: new Message(

@@ -247,16 +247,16 @@ export class BindingElement extends qc.NamedDeclaration implements qc.BindingEle
   propertyName?: qc.PropertyName;
   dot3Token?: qc.Dot3Token;
   name: qc.BindingName;
-  initializer?: qc.Expression;
+  initer?: qc.Expression;
   constructor(d: qc.Dot3Token | undefined, p: string | qc.PropertyName | undefined, b: string | qc.BindingName, i?: qc.Expression) {
     super();
     this.dot3Token = d;
     this.propertyName = asName(p);
     this.name = asName(b);
-    this.initializer = i;
+    this.initer = i;
   }
   update(d: qc.Dot3Token | undefined, p: qc.PropertyName | undefined, b: qc.BindingName, i?: qc.Expression) {
-    return this.propertyName !== p || this.dot3Token !== d || this.name !== b || this.initializer !== i ? new BindingElement(d, p, b, i).updateFrom(this) : this;
+    return this.propertyName !== p || this.dot3Token !== d || this.name !== b || this.initer !== i ? new BindingElement(d, p, b, i).updateFrom(this) : this;
   }
 }
 BindingElement.prototype.kind = BindingElement.kind;
@@ -1002,14 +1002,14 @@ export class JsxAttribute extends qc.ObjectLiteralElement implements qc.JsxAttri
   static readonly kind = Syntax.JsxAttribute;
   parent?: JsxAttributes;
   name: Identifier;
-  initializer?: StringLiteral | JsxExpression;
+  initer?: StringLiteral | JsxExpression;
   constructor(n: Identifier, i: StringLiteral | JsxExpression) {
     super(true);
     this.name = n;
-    this.initializer = i;
+    this.initer = i;
   }
   update(n: Identifier, i: StringLiteral | JsxExpression) {
-    return this.name !== n || this.initializer !== i ? new JsxAttribute(n, i).updateFrom(this) : this;
+    return this.name !== n || this.initer !== i ? new JsxAttribute(n, i).updateFrom(this) : this;
   }
 }
 export class DoStatement extends qc.IterationStatement implements qc.DoStatement {
@@ -1090,14 +1090,14 @@ export class EnumMember extends qc.NamedDeclaration implements qc.EnumMember {
   static readonly kind = Syntax.EnumMember;
   parent?: EnumDeclaration;
   name: qc.PropertyName;
-  initializer?: qc.Expression;
+  initer?: qc.Expression;
   constructor(n: string | qc.PropertyName, i?: qc.Expression) {
     super();
     this.name = asName(n);
-    this.initializer = i && parenthesize.expressionForList(i);
+    this.initer = i && parenthesize.expressionForList(i);
   }
   updateEnumMember(n: qc.PropertyName, i?: qc.Expression) {
-    return this.name !== n || this.initializer !== i ? new EnumMember(n, i).updateFrom(this) : this;
+    return this.name !== n || this.initer !== i ? new EnumMember(n, i).updateFrom(this) : this;
   }
 }
 EnumMember.prototype.kind = EnumMember.kind;
@@ -1209,50 +1209,50 @@ export class ExternalModuleReference extends Nobj implements qc.ExternalModuleRe
 ExternalModuleReference.prototype.kind = ExternalModuleReference.kind;
 export class ForInStatement extends qc.IterationStatement implements qc.ForInStatement {
   static readonly kind = Syntax.ForInStatement;
-  initializer: qc.ForInitializer;
+  initer: qc.ForIniter;
   expression: qc.Expression;
-  constructor(i: qc.ForInitializer, e: qc.Expression, s: qc.Statement) {
+  constructor(i: qc.ForIniter, e: qc.Expression, s: qc.Statement) {
     super(true);
-    this.initializer = i;
+    this.initer = i;
     this.expression = e;
     this.statement = asEmbeddedStatement(s);
   }
-  update(i: qc.ForInitializer, e: qc.Expression, s: qc.Statement) {
-    return this.initializer !== i || this.expression !== e || this.statement !== s ? new ForInStatement(i, e, s).updateFrom(this) : this;
+  update(i: qc.ForIniter, e: qc.Expression, s: qc.Statement) {
+    return this.initer !== i || this.expression !== e || this.statement !== s ? new ForInStatement(i, e, s).updateFrom(this) : this;
   }
 }
 ForInStatement.prototype.kind = ForInStatement.kind;
 export class ForOfStatement extends qc.IterationStatement implements qc.ForOfStatement {
   static readonly kind = Syntax.ForOfStatement;
   awaitModifier?: qc.AwaitKeywordToken;
-  initializer: qc.ForInitializer;
+  initer: qc.ForIniter;
   expression: qc.Expression;
-  constructor(a: qc.AwaitKeywordToken | undefined, i: qc.ForInitializer, e: qc.Expression, s: qc.Statement) {
+  constructor(a: qc.AwaitKeywordToken | undefined, i: qc.ForIniter, e: qc.Expression, s: qc.Statement) {
     super(true);
     this.awaitModifier = a;
-    this.initializer = i;
+    this.initer = i;
     this.expression = e.isCommaSequence() ? new ParenthesizedExpression(e) : e;
     this.statement = asEmbeddedStatement(s);
   }
-  update(a: qc.AwaitKeywordToken | undefined, i: qc.ForInitializer, e: qc.Expression, s: qc.Statement) {
-    return this.awaitModifier !== a || this.initializer !== i || this.expression !== e || this.statement !== s ? new ForOfStatement(a, i, e, s).updateFrom(this) : this;
+  update(a: qc.AwaitKeywordToken | undefined, i: qc.ForIniter, e: qc.Expression, s: qc.Statement) {
+    return this.awaitModifier !== a || this.initer !== i || this.expression !== e || this.statement !== s ? new ForOfStatement(a, i, e, s).updateFrom(this) : this;
   }
 }
 ForOfStatement.prototype.kind = ForOfStatement.kind;
 export class ForStatement extends qc.IterationStatement implements qc.ForStatement {
   static readonly kind = Syntax.ForStatement;
-  initializer?: qc.ForInitializer;
+  initer?: qc.ForIniter;
   condition?: qc.Expression;
   incrementor?: qc.Expression;
-  constructor(i: qc.ForInitializer | undefined, c: qc.Expression | undefined, inc: qc.Expression | undefined, s: qc.Statement) {
+  constructor(i: qc.ForIniter | undefined, c: qc.Expression | undefined, inc: qc.Expression | undefined, s: qc.Statement) {
     super(true);
-    this.initializer = i;
+    this.initer = i;
     this.condition = c;
     this.incrementor = inc;
     this.statement = asEmbeddedStatement(s);
   }
-  update(i: qc.ForInitializer | undefined, c: qc.Expression | undefined, inc: qc.Expression | undefined, s: qc.Statement) {
-    return this.initializer !== i || this.condition !== c || this.incrementor !== inc || this.statement !== s ? new ForStatement(i, c, inc, s).updateFrom(this) : this;
+  update(i: qc.ForIniter | undefined, c: qc.Expression | undefined, inc: qc.Expression | undefined, s: qc.Statement) {
+    return this.initer !== i || this.condition !== c || this.incrementor !== inc || this.statement !== s ? new ForStatement(i, c, inc, s).updateFrom(this) : this;
   }
 }
 ForStatement.prototype.kind = ForStatement.kind;
@@ -2593,7 +2593,7 @@ export class ParameterDeclaration extends qc.NamedDeclaration implements qc.Para
   name: qc.BindingName;
   questionToken?: qc.QuestionToken;
   type?: qc.TypeNode;
-  initializer?: qc.Expression;
+  initer?: qc.Expression;
   constructor(
     ds: readonly Decorator[] | undefined,
     ms: readonly Modifier[] | undefined,
@@ -2610,7 +2610,7 @@ export class ParameterDeclaration extends qc.NamedDeclaration implements qc.Para
     this.name = asName(name);
     this.questionToken = q;
     this.type = t;
-    this.initializer = i ? parenthesize.expressionForList(i) : undefined;
+    this.initer = i ? parenthesize.expressionForList(i) : undefined;
   }
   updateParameter(
     ds: readonly Decorator[] | undefined,
@@ -2621,7 +2621,7 @@ export class ParameterDeclaration extends qc.NamedDeclaration implements qc.Para
     t?: qc.TypeNode,
     i?: qc.Expression
   ) {
-    return this.decorators !== ds || this.modifiers !== ms || this.dot3Token !== d3 || this.name !== name || this.questionToken !== q || this.type !== t || this.initializer !== i
+    return this.decorators !== ds || this.modifiers !== ms || this.dot3Token !== d3 || this.name !== name || this.questionToken !== q || this.type !== t || this.initer !== i
       ? new ParameterDeclaration(ds, ms, d3, name, q, t, i).updateFrom(this)
       : this;
   }
@@ -2751,14 +2751,14 @@ export class PropertyAssignment extends qc.ObjectLiteralElement implements qc.Pr
   parent?: ObjectLiteralExpression;
   name: qc.PropertyName;
   questionToken?: qc.QuestionToken;
-  initializer: qc.Expression;
+  initer: qc.Expression;
   constructor(n: string | qc.PropertyName, i: qc.Expression) {
     super(true);
     this.name = asName(n);
-    this.initializer = parenthesize.expressionForList(i);
+    this.initer = parenthesize.expressionForList(i);
   }
   update(n: qc.PropertyName, i: qc.Expression) {
-    return this.name !== n || this.initializer !== i ? new PropertyAssignment(n, i).updateFrom(this) : this;
+    return this.name !== n || this.initer !== i ? new PropertyAssignment(n, i).updateFrom(this) : this;
   }
 }
 PropertyAssignment.prototype.kind = PropertyAssignment.kind;
@@ -2770,7 +2770,7 @@ export class PropertyDeclaration extends qc.ClassElement implements qc.PropertyD
   questionToken?: qc.QuestionToken;
   exclamationToken?: qc.ExclamationToken;
   type?: qc.TypeNode;
-  initializer?: qc.Expression;
+  initer?: qc.Expression;
   constructor(ds: readonly Decorator[] | undefined, ms: readonly Modifier[] | undefined, p: string | qc.PropertyName, q?: qc.QuestionToken | qc.ExclamationToken, t?: qc.TypeNode, i?: qc.Expression) {
     super(true);
     this.decorators = Nodes.from(ds);
@@ -2779,7 +2779,7 @@ export class PropertyDeclaration extends qc.ClassElement implements qc.PropertyD
     this.questionToken = q !== undefined && q.kind === Syntax.QuestionToken ? q : undefined;
     this.exclamationToken = q !== undefined && q.kind === Syntax.ExclamationToken ? q : undefined;
     this.type = t;
-    this.initializer = i;
+    this.initer = i;
   }
   update(
     n: PropertyDeclaration,
@@ -2796,7 +2796,7 @@ export class PropertyDeclaration extends qc.ClassElement implements qc.PropertyD
       this.questionToken !== (q !== undefined && q.kind === Syntax.QuestionToken ? q : undefined) ||
       this.exclamationToken !== (q !== undefined && q.kind === Syntax.ExclamationToken ? q : undefined) ||
       this.type !== t ||
-      this.initializer !== i
+      this.initer !== i
       ? new PropertyDeclaration(ds, ms, p, q, t, i).updateFrom(n)
       : n;
   }
@@ -2808,17 +2808,17 @@ export class PropertySignature extends qc.TypeElement implements qc.PropertySign
   name: qc.PropertyName;
   questionToken?: qc.QuestionToken;
   type?: qc.TypeNode;
-  initializer?: qc.Expression;
+  initer?: qc.Expression;
   constructor(ms: readonly Modifier[] | undefined, p: qc.PropertyName | string, q?: qc.QuestionToken, t?: qc.TypeNode, i?: qc.Expression) {
     super(true);
     this.modifiers = Nodes.from(ms);
     this.name = asName(p);
     this.questionToken = q;
     this.type = t;
-    this.initializer = i;
+    this.initer = i;
   }
   update(ms: readonly Modifier[] | undefined, p: qc.PropertyName, q?: qc.QuestionToken, t?: qc.TypeNode, i?: qc.Expression) {
-    return this.modifiers !== ms || this.name !== p || this.questionToken !== q || this.type !== t || this.initializer !== i ? new PropertySignature(ms, p, q, t, i).updateFrom(this) : this;
+    return this.modifiers !== ms || this.name !== p || this.questionToken !== q || this.type !== t || this.initer !== i ? new PropertySignature(ms, p, q, t, i).updateFrom(this) : this;
   }
 }
 PropertySignature.prototype.kind = PropertySignature.kind;
@@ -2906,14 +2906,14 @@ export class ShorthandPropertyAssignment extends qc.ObjectLiteralElement impleme
   questionToken?: qc.QuestionToken;
   exclamationToken?: qc.ExclamationToken;
   equalsToken?: qc.EqualsToken;
-  objectAssignmentInitializer?: qc.Expression;
+  objectAssignmentIniter?: qc.Expression;
   constructor(n: string | Identifier, i?: qc.Expression) {
     super(true);
     this.name = asName(n);
-    this.objectAssignmentInitializer = i ? parenthesize.expressionForList(i) : undefined;
+    this.objectAssignmentIniter = i ? parenthesize.expressionForList(i) : undefined;
   }
   update(n: Identifier, i: qc.Expression | undefined) {
-    return this.name !== n || this.objectAssignmentInitializer !== i ? new ShorthandPropertyAssignment(n, i).updateFrom(this) : this;
+    return this.name !== n || this.objectAssignmentIniter !== i ? new ShorthandPropertyAssignment(n, i).updateFrom(this) : this;
   }
 }
 ShorthandPropertyAssignment.prototype.kind = ShorthandPropertyAssignment.kind;
@@ -3550,16 +3550,16 @@ export class VariableDeclaration extends qc.NamedDeclaration implements qc.Varia
   name: qc.BindingName;
   exclamationToken?: qc.ExclamationToken;
   type?: qc.TypeNode;
-  initializer?: qc.Expression;
+  initer?: qc.Expression;
   constructor(n: string | qc.BindingName, t?: qc.TypeNode, i?: qc.Expression, e?: qc.ExclamationToken) {
     super(true);
     this.name = asName(n);
     this.type = t;
-    this.initializer = i !== undefined ? parenthesize.expressionForList(i) : undefined;
+    this.initer = i !== undefined ? parenthesize.expressionForList(i) : undefined;
     this.exclamationToken = e;
   }
   update(n: qc.BindingName, t?: qc.TypeNode, i?: qc.Expression, e?: qc.ExclamationToken) {
-    return this.name !== n || this.type !== t || this.initializer !== i || this.exclamationToken !== e ? new VariableDeclaration(n, t, i, e).updateFrom(this) : this;
+    return this.name !== n || this.type !== t || this.initer !== i || this.exclamationToken !== e ? new VariableDeclaration(n, t, i, e).updateFrom(this) : this;
   }
 }
 VariableDeclaration.prototype.kind = VariableDeclaration.kind;

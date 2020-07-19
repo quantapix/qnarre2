@@ -51,7 +51,7 @@ export function transformES5(context: TransformationContext) {
   }
   function substitutePropertyAssignment(node: PropertyAssignment): PropertyAssignment {
     const literalName = qc.is.kind(Identifier, node.name) && trySubstituteReservedName(node.name);
-    if (literalName) return node.update(literalName, node.initializer);
+    if (literalName) return node.update(literalName, node.initer);
     return node;
   }
   function trySubstituteReservedName(name: Identifier) {

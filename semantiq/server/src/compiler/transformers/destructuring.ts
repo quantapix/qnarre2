@@ -113,7 +113,7 @@ export function flattenDestructuringBinding(
   level: FlattenLevel,
   rval?: Expression,
   hoistTempVariables = false,
-  skipInitializer?: boolean
+  skipIniter?: boolean
 ): VariableDeclaration[] {
   let pendingExpressions: Expression[] | undefined;
   const pendingDeclarations: {
@@ -137,16 +137,13 @@ export function flattenDestructuringBinding(
     visitor,
   };
   if (qc.is.kind(VariableDeclaration, node)) {
-    let initializer = getInitializerOfBindingOrAssignmentElement(node);
-    if (
-      initializer &&
-      ((qc.is.kind(Identifier, initializer) && bindingOrAssignmentElementAssignsToName(node, initializer.escapedText)) || bindingOrAssignmentElementContainsNonLiteralComputedName(node))
-    ) {
-      initializer = ensureIdentifier(flattenContext, initializer, false, initializer);
-      node = node.update(node.name, node.type, initializer);
+    let initer = getIniterOfBindingOrAssignmentElement(node);
+    if (initer && ((qc.is.kind(Identifier, initer) && bindingOrAssignmentElementAssignsToName(node, initer.escapedText)) || bindingOrAssignmentElementContainsNonLiteralComputedName(node))) {
+      initer = ensureIdentifier(flattenContext, initer, false, initer);
+      node = node.update(node.name, node.type, initer);
     }
   }
-  flattenBindingOrAssignmentElement(flattenContext, node, rval, node, skipInitializer);
+  flattenBindingOrAssignmentElement(flattenContext, node, rval, node, skipIniter);
   if (pendingExpressions) {
     const temp = createTempVariable(undefined);
     if (hoistTempVariables) {
@@ -181,11 +178,11 @@ export function flattenDestructuringBinding(
     pendingDeclarations.push({ pendingExpressions, name: target, value, location, original });
   }
 }
-function flattenBindingOrAssignmentElement(flattenContext: FlattenContext, element: BindingOrAssignmentElement, value: Expression | undefined, location: TextRange, skipInitializer?: boolean) {
-  if (!skipInitializer) {
-    const initializer = visitNode(getInitializerOfBindingOrAssignmentElement(element), flattenContext.visitor, isExpression);
-    if (initializer) {
-      value = value ? createDefaultValueCheck(flattenContext, value, initializer, location) : initializer;
+function flattenBindingOrAssignmentElement(flattenContext: FlattenContext, element: BindingOrAssignmentElement, value: Expression | undefined, location: TextRange, skipIniter?: boolean) {
+  if (!skipIniter) {
+    const initer = visitNode(getIniterOfBindingOrAssignmentElement(element), flattenContext.visitor, isExpression);
+    if (initer) {
+      value = value ? createDefaultValueCheck(flattenContext, value, initer, location) : initer;
     } else if (!value) {
       value = qs.VoidExpression.zero();
     }

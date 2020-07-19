@@ -351,14 +351,14 @@ export function transformDeclarations(context: TransformationContext) {
     });
     return ret;
   }
-  function filterBindingPatternInitializers(name: BindingName) {
+  function filterBindingPatternIniters(name: BindingName) {
     if (name.kind === Syntax.Identifier) return name;
     if (name.is(ArrayBindingPattern)) return name.update(name, Nodes.visit(name.elements, visitBindingElement));
     return name.update(Nodes.visit(name.elements, visitBindingElement));
     function visitBindingElement<T extends ArrayBindingElement>(elem: T): T;
     function visitBindingElement(elem: ArrayBindingElement): ArrayBindingElement {
       if (elem.kind === Syntax.OmittedExpression) return elem;
-      return elem.update(elem.dot3Token, elem.propertyName, filterBindingPatternInitializers(elem.name), shouldPrintWithInitializer(elem) ? elem.initializer : undefined);
+      return elem.update(elem.dot3Token, elem.propertyName, filterBindingPatternIniters(elem.name), shouldPrintWithIniter(elem) ? elem.initer : undefined);
     }
   }
   function ensureParameter(p: ParameterDeclaration, modifierMask?: ModifierFlags, type?: TypeNode): ParameterDeclaration {
@@ -372,19 +372,19 @@ export function transformDeclarations(context: TransformationContext) {
       undefined,
       maskModifiers(p, modifierMask),
       p.dot3Token,
-      filterBindingPatternInitializers(p.name),
+      filterBindingPatternIniters(p.name),
       resolver.isOptionalParameter(p) ? p.questionToken || new Token(Syntax.QuestionToken) : undefined,
       ensureType(p, type || p.type, true),
-      ensureNoInitializer(p)
+      ensureNoIniter(p)
     );
     if (!suppressNewDiagnosticContexts) getSymbolAccessibilityDiagnostic = oldDiag!;
     return newParam;
   }
-  function shouldPrintWithInitializer(node: Node) {
-    return canHaveLiteralInitializer(node) && resolver.isLiteralConstDeclaration(qc.get.parseTreeOf(node) as CanHaveLiteralInitializer);
+  function shouldPrintWithIniter(node: Node) {
+    return canHaveLiteralIniter(node) && resolver.isLiteralConstDeclaration(qc.get.parseTreeOf(node) as CanHaveLiteralIniter);
   }
-  function ensureNoInitializer(node: CanHaveLiteralInitializer) {
-    if (shouldPrintWithInitializer(node)) return resolver.createLiteralConstValue(qc.get.parseTreeOf(node) as CanHaveLiteralInitializer, symbolTracker);
+  function ensureNoIniter(node: CanHaveLiteralIniter) {
+    if (shouldPrintWithIniter(node)) return resolver.createLiteralConstValue(qc.get.parseTreeOf(node) as CanHaveLiteralIniter, symbolTracker);
     return;
   }
   type HasInferredType =
@@ -402,7 +402,7 @@ export function transformDeclarations(context: TransformationContext) {
     | PropertySignature;
   function ensureType(node: HasInferredType, type: TypeNode | undefined, ignorePrivate?: boolean): TypeNode | undefined {
     if (!ignorePrivate && qc.has.effectiveModifier(node, ModifierFlags.Private)) return;
-    if (shouldPrintWithInitializer(node)) return;
+    if (shouldPrintWithIniter(node)) return;
     const shouldUseResolverType = node.kind === Syntax.Parameter && (resolver.isRequiredInitializedParameter(node) || resolver.isOptionalUninitializedParameterProperty(node));
     if (type && !shouldUseResolverType) return visitNode(type, visitDeclarationSubtree);
     if (!qc.get.parseTreeOf(node)) return type ? visitNode(type, visitDeclarationSubtree) : new qc.KeywordTypeNode(Syntax.AnyKeyword);
@@ -416,10 +416,10 @@ export function transformDeclarations(context: TransformationContext) {
     if (node.kind === Syntax.VariableDeclaration || node.kind === Syntax.BindingElement)
       return cleanup(resolver.createTypeOfDeclaration(node, enclosingDeclaration, declarationEmitNodeBuilderFlags, symbolTracker));
     if (node.kind === Syntax.Parameter || node.kind === Syntax.PropertyDeclaration || node.kind === Syntax.PropertySignature) {
-      if (!node.initializer) return cleanup(resolver.createTypeOfDeclaration(node, enclosingDeclaration, declarationEmitNodeBuilderFlags, symbolTracker, shouldUseResolverType));
+      if (!node.initer) return cleanup(resolver.createTypeOfDeclaration(node, enclosingDeclaration, declarationEmitNodeBuilderFlags, symbolTracker, shouldUseResolverType));
       return cleanup(
         resolver.createTypeOfDeclaration(node, enclosingDeclaration, declarationEmitNodeBuilderFlags, symbolTracker, shouldUseResolverType) ||
-          resolver.createTypeOfExpression(node.initializer, enclosingDeclaration, declarationEmitNodeBuilderFlags, symbolTracker)
+          resolver.createTypeOfExpression(node.initer, enclosingDeclaration, declarationEmitNodeBuilderFlags, symbolTracker)
       );
     }
     return cleanup(resolver.createReturnTypeOfSignatureDeclaration(node, enclosingDeclaration, declarationEmitNodeBuilderFlags, symbolTracker));
@@ -682,10 +682,10 @@ export function transformDeclarations(context: TransformationContext) {
         }
         case Syntax.PropertyDeclaration:
           if (qc.is.kind(PrivateIdentifier, input.name)) return cleanup(undefined);
-          return cleanup(input.update(undefined, ensureModifiers(input), input.name, input.questionToken, ensureType(input, input.type), ensureNoInitializer(input)));
+          return cleanup(input.update(undefined, ensureModifiers(input), input.name, input.questionToken, ensureType(input, input.type), ensureNoIniter(input)));
         case Syntax.PropertySignature:
           if (qc.is.kind(PrivateIdentifier, input.name)) return cleanup(undefined);
-          return cleanup(input.update(ensureModifiers(input), input.name, input.questionToken, ensureType(input, input.type), ensureNoInitializer(input)));
+          return cleanup(input.update(ensureModifiers(input), input.name, input.questionToken, ensureType(input, input.type), ensureNoIniter(input)));
         case Syntax.MethodSignature: {
           if (qc.is.kind(PrivateIdentifier, input.name)) return cleanup(undefined);
           return cleanup(input.update(ensureTypeParams(input, input.typeParameters), updateParamsList(input, input.parameters), ensureType(input, input.type), input.name, input.questionToken));
@@ -702,7 +702,7 @@ export function transformDeclarations(context: TransformationContext) {
           if (qc.is.kind(BindingPattern, input.name)) return recreateBindingPattern(input.name);
           shouldEnterSuppressNewDiagnosticsContextContext = true;
           suppressNewDiagnosticContexts = true;
-          return cleanup(input.update(input.name, ensureType(input, input.type), ensureNoInitializer(input)));
+          return cleanup(input.update(input.name, ensureType(input, input.type), ensureNoIniter(input)));
         }
         case Syntax.TypeParameter: {
           if (isPrivateMethodTypeParameter(input) && (input.default || input.constraint)) return cleanup(updateTypeParameterDeclaration(input, input.name, undefined));
@@ -927,7 +927,7 @@ export function transformDeclarations(context: TransformationContext) {
               if (!qc.has.syntacticModifier(param, ModifierFlags.ParameterPropertyModifier) || shouldStripInternal(param)) return;
               getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(param);
               if (param.name.kind === Syntax.Identifier)
-                return preserveDoc(PropertyDeclaration.create(undefined, ensureModifiers(param), param.name, param.questionToken, ensureType(param, param.type), ensureNoInitializer(param)), param);
+                return preserveDoc(PropertyDeclaration.create(undefined, ensureModifiers(param), param.name, param.questionToken, ensureType(param, param.type), ensureNoIniter(param)), param);
               return walkBindingPattern(param.name);
               function walkBindingPattern(pattern: BindingPattern) {
                 let elems: PropertyDeclaration[] | undefined;
@@ -1116,8 +1116,8 @@ function maskModifierFlags(node: Node, modifierMask: ModifierFlags = ModifierFla
 function getTypeAnnotationFromAccessor(accessor: AccessorDeclaration): TypeNode | undefined {
   if (accessor) return accessor.kind === Syntax.GetAccessor ? accessor.type : accessor.parameters.length > 0 ? accessor.parameters[0].type : undefined;
 }
-type CanHaveLiteralInitializer = VariableDeclaration | PropertyDeclaration | PropertySignature | ParameterDeclaration;
-function canHaveLiteralInitializer(node: Node): boolean {
+type CanHaveLiteralIniter = VariableDeclaration | PropertyDeclaration | PropertySignature | ParameterDeclaration;
+function canHaveLiteralIniter(node: Node): boolean {
   switch (node.kind) {
     case Syntax.PropertyDeclaration:
     case Syntax.PropertySignature:
