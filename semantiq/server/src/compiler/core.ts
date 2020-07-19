@@ -1,12 +1,13 @@
 import * as qb from './base';
 import { is, isDoc, get, has } from './core3';
 import * as qd from './diags';
-import { NodeFlags, ObjectFlags, SignatureFlags, SymbolFlags, TransformFlags, TypeFlags } from './types';
+import { Node } from './types';
+import { CheckFlags, NodeFlags, ObjectFlags, SignatureFlags, SymbolFlags, TransformFlags, TypeFlags } from './types';
 import * as qt from './types';
 import { Modifier, ModifierFlags, Syntax } from './syntax';
 import * as qy from './syntax';
 export * from './types';
-export class Nodes<T extends qt.Nobj> extends Array<T> implements qt.Nodes<T> {
+export class Nodes<T extends qt.Nobj = qt.Nobj> extends Array<T> implements qt.Nodes<T> {
   pos = -1;
   end = -1;
   trailingComma?: boolean;
@@ -26,10 +27,10 @@ export class Nodes<T extends qt.Nobj> extends Array<T> implements qt.Nodes<T> {
   getRange() {
     return new qb.TextRange(this.pos - 1, this.end + 1);
   }
-  visit<T>(cb: (n: qt.Nobj) => T | undefined, cbs?: (ns: Nodes<qt.Nobj>) => T | undefined): T | undefined {
+  visit<V>(cb: (n?: Node) => V | undefined, cbs?: (ns: qt.Nodes) => V | undefined): V | undefined {
     if (cbs) return cbs(this);
     for (const n of this) {
-      const r = cb(n);
+      const r = cb(n as Node);
       if (r) return r;
     }
     return;
@@ -183,7 +184,7 @@ export abstract class Nobj extends qb.TextRange implements qt.Nobj {
     if (!c) return;
     return c.kind < Syntax.FirstNode ? c : c.getLastToken(s);
   }
-  visit<T>(cb: (n: Nobj) => T | undefined) {
+  visit<T>(cb: (n?: Node) => T | undefined): T | undefined {
     return cb(this);
   }
   updateFrom(n: Nobj): this {
@@ -435,7 +436,7 @@ export abstract class Symbol implements qt.Symbol {
   constructor(public flags: SymbolFlags, public escName: qb.__String) {}
   get name() {
     const n = this.valueDeclaration;
-    if (is.isPrivateIdentifierPropertyDeclaration(n)) return idText(n.name);
+    if (is.qc.is.privateIdentifierPropertyDeclaration(n)) return idText(n.name);
     return qy.get.unescUnderscores(this.escName);
   }
   abstract getId(): number;
@@ -451,34 +452,32 @@ export abstract class Symbol implements qt.Symbol {
   getDeclarations() {
     return this.declarations;
   }
-  getDocComment(checker?: qt.TypeChecker): qt.SymbolDisplayPart[] {
+  getDocComment(tc?: qt.TypeChecker): qt.SymbolDisplayPart[] {
     if (!this.docComment) {
       this.docComment = qb.empty;
-      if (!this.declarations && ((this as Symbol) as qt.TransientSymbol).target && (((this as Symbol) as qt.TransientSymbol).target as qt.TransientSymbol).tupleLabelDeclaration) {
-        const labelDecl = (((this as Symbol) as qt.TransientSymbol).target as qt.TransientSymbol).tupleLabelDeclaration!;
-        this.docComment = getDocComment([labelDecl], checker);
-      } else {
-        this.docComment = getDocComment(this.declarations, checker);
-      }
+      if (!this.declarations && (this as qt.TransientSymbol).target && ((this as qt.TransientSymbol).target as qt.TransientSymbol).tupleLabelDeclaration) {
+        const labelDecl = ((this as qt.TransientSymbol).target as qt.TransientSymbol).tupleLabelDeclaration!;
+        this.docComment = getDocComment([labelDecl], tc);
+      } else this.docComment = getDocComment(this.declarations, tc);
     }
     return this.docComment!;
   }
-  getCtxComment(context?: Node, checker?: qt.TypeChecker): qt.SymbolDisplayPart[] {
-    switch (context?.kind) {
+  getCtxComment(ctx?: Node, tc?: qt.TypeChecker): qt.SymbolDisplayPart[] {
+    switch (ctx?.kind) {
       case Syntax.GetAccessor:
         if (!this.getComment) {
           this.getComment = qb.empty;
-          this.getComment = getDocComment(filter(this.declarations, isGetAccessor), checker);
+          this.getComment = getDocComment(qb.filter(this.declarations, is.getAccessor), tc);
         }
         return this.getComment!;
       case Syntax.SetAccessor:
         if (!this.setComment) {
           this.setComment = qb.empty;
-          this.setComment = getDocComment(filter(this.declarations, isSetAccessor), checker);
+          this.setComment = getDocComment(qb.filter(this.declarations, isSetAccessor), tc);
         }
         return this.setComment!;
       default:
-        return this.getDocComment(checker);
+        return this.getDocComment(tc);
     }
   }
   getDocTags(): qt.DocTagInfo[] {
@@ -536,7 +535,7 @@ export abstract class Symbol implements qt.Symbol {
   }
   getDeclarationModifierFlagsFromSymbol(): ModifierFlags {
     if (this.valueDeclaration) {
-      const f = getCombinedModifierFlags(this.valueDeclaration);
+      const f = get.combinedModifierFlags(this.valueDeclaration);
       return this.parent && this.parent.flags & SymbolFlags.Class ? f : f & ~ModifierFlags.AccessibilityModifier;
     }
     if (this.isTransientSymbol() && this.getCheckFlags() & CheckFlags.Synthetic) {
@@ -1040,7 +1039,7 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
       return declarations;
     }
     function getDeclarationName(declaration: Declaration) {
-      const name = getNonAssignedNameOfDeclaration(declaration);
+      const name = qc.get.nonAssignedNameOfDeclaration(declaration);
       return (
         name && (isComputedPropertyName(name) && is.kind(PropertyAccessExpression, name.expression) ? name.expression.name.text : is.propertyName(name) ? getNameFromPropertyName(name) : undefined)
       );
@@ -1286,6 +1285,25 @@ export function createGetSymbolWalker(
       return false;
     }
   }
+}
+function getDocComment(ds?: readonly Declaration[], tc?: qt.TypeChecker): qt.SymbolDisplayPart[] {
+  if (!ds) return qb.empty;
+  let c = Doc.getDocCommentsFromDeclarations(ds);
+  const findInherited = (d: Declaration, pName: string): readonly qt.SymbolDisplayPart[] | undefined => {
+    return qb.firstDefined(d.parent ? qc.get.allSuperTypeNodes(d.parent) : qb.empty, (n) => {
+      const superType = tc?.getTypeAtLocation(n);
+      const baseProperty = superType && tc?.getPropertyOfType(superType, pName);
+      const inheritedDocs = baseProperty && baseProperty.getDocComment(tc);
+      return inheritedDocs && inheritedDocs.length ? inheritedDocs : undefined;
+    });
+  };
+  if (c.length === 0 || ds.some(hasDocInheritDocTag)) {
+    forEachUnique(ds, (d) => {
+      const inheritedDocs = findInherited(d, d.symbol.name);
+      if (inheritedDocs) c = c.length === 0 ? inheritedDocs.slice() : inheritedDocs.concat(lineBreakPart(), c);
+    });
+  }
+  return c;
 }
 qb.addMixins(ClassLikeDeclarationBase, [DocContainer]);
 qb.addMixins(FunctionOrConstructorTypeNodeBase, [TypeNode]);

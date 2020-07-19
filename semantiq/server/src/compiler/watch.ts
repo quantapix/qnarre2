@@ -68,7 +68,7 @@ export interface ProgramHost<T extends BuilderProgram> {
   useCaseSensitiveFileNames(): boolean;
   getNewLine(): string;
   getCurrentDirectory(): string;
-  getDefaultLibFileName(options: CompilerOptions): string;
+  qc.get.defaultLibFileName(options: CompilerOptions): string;
   getDefaultLibLocation?(): string;
   createHash?(data: string): string;
   fileExists(path: string): boolean;
@@ -785,7 +785,7 @@ export function createCompilerHostFromProgramHost(host: ProgramHost<any>, getCom
       return text !== undefined ? qp_createSource(fileName, text, languageVersion) : undefined;
     },
     getDefaultLibLocation: maybeBind(host, host.getDefaultLibLocation),
-    getDefaultLibFileName: (options) => host.getDefaultLibFileName(options),
+    getDefaultLibFileName: (options) => host.qc.get.defaultLibFileName(options),
     writeFile,
     getCurrentDirectory: memoize(() => host.getCurrentDirectory()),
     useCaseSensitiveFileNames: () => useCaseSensitiveFileNames,
@@ -839,7 +839,7 @@ export function createProgramHost<T extends BuilderProgram = EmitAndSemanticDiag
     getNewLine: () => system.newLine,
     getCurrentDirectory: memoize(() => system.getCurrentDirectory()),
     getDefaultLibLocation,
-    getDefaultLibFileName: (options) => combinePaths(getDefaultLibLocation(), getDefaultLibFileName(options)),
+    getDefaultLibFileName: (options) => combinePaths(getDefaultLibLocation(), qc.get.defaultLibFileName(options)),
     fileExists: (path) => system.fileExists(path),
     readFile: (path, encoding) => system.readFile(path, encoding),
     directoryExists: (path) => system.directoryExists(path),

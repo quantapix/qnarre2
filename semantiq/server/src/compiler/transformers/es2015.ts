@@ -984,7 +984,7 @@ export function transformES2015(context: TransformationContext) {
     return visitEachChild(node, visitor, context);
   }
   function visitBinaryExpression(node: BinaryExpression, needsDestructuringValue: boolean): Expression {
-    if (isDestructuringAssignment(node)) return flattenDestructuringAssignment(node, visitor, context, FlattenLevel.All, needsDestructuringValue);
+    if (qc.is.destructuringAssignment(node)) return flattenDestructuringAssignment(node, visitor, context, FlattenLevel.All, needsDestructuringValue);
     return visitEachChild(node, visitor, context);
   }
   function isVariableStatementOfTypeScriptClassWrapper(node: VariableStatement) {
@@ -1172,7 +1172,7 @@ export function transformES2015(context: TransformationContext) {
       }
     } else {
       const assignment = createAssignment(initializer, boundValue);
-      if (isDestructuringAssignment(assignment)) {
+      if (qc.is.destructuringAssignment(assignment)) {
         aggregateTransformFlags(assignment);
         statements.push(new qc.ExpressionStatement(visitBinaryExpression(assignment, false)));
       } else {
@@ -2124,7 +2124,7 @@ function substituteExpression(node: Node) {
 function substituteExpressionIdentifier(node: Identifier): Identifier {
   if (enabledSubstitutions & ES2015SubstitutionFlags.BlockScopedBindings && !isInternalName(node)) {
     const declaration = resolver.getReferencedDeclarationWithCollidingName(node);
-    if (declaration && !(qc.is.classLike(declaration) && isPartOfClassBody(declaration, node))) return setRange(getGeneratedNameForNode(getNameOfDeclaration(declaration)), node);
+    if (declaration && !(qc.is.classLike(declaration) && isPartOfClassBody(declaration, node))) return setRange(getGeneratedNameForNode(qc.get.nameOfDeclaration(declaration)), node);
   }
   return node;
 }

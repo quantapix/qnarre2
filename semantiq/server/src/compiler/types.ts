@@ -1453,6 +1453,7 @@ export interface Nobj extends qb.Range {
   contextualType?: Type;
   inferenceContext?: InferenceContext;
   doc?: Doc[];
+  visit<T>(cb: (n?: Node) => T | undefined): T | undefined;
 }
 export const enum NodeFlags {
   None = 0,
@@ -1490,9 +1491,10 @@ export const enum NodeFlags {
   TypeExcludesFlags = YieldContext | AwaitContext,
   PermanentlySetIncrementalFlags = PossiblyContainsDynamicImport | PossiblyContainsImportMeta,
 }
-export interface Nodes<T extends Nobj> extends ReadonlyArray<T>, qb.Range {
+export interface Nodes<T extends Nobj = Nobj> extends ReadonlyArray<T>, qb.Range {
   trailingComma?: boolean;
   transformFlags: TransformFlags;
+  visit<V>(cb: (n?: Node) => V | undefined, cbs?: (ns: Nodes) => V | undefined): V | undefined;
 }
 export interface NodeWithTypeArguments extends TypeNode {
   typeArguments?: Nodes<TypeNode>;
@@ -3555,7 +3557,7 @@ export interface CompilerHost extends ModuleResolutionHost {
   getSourceFile(fileName: string, languageVersion: ScriptTarget, onError?: (message: string) => void, shouldCreateNewSourceFile?: boolean): SourceFile | undefined;
   getSourceFileByPath?(fileName: string, path: Path, languageVersion: ScriptTarget, onError?: (message: string) => void, shouldCreateNewSourceFile?: boolean): SourceFile | undefined;
   getCancellationToken?(): CancellationToken;
-  getDefaultLibFileName(options: CompilerOptions): string;
+  qc.get.defaultLibFileName(options: CompilerOptions): string;
   getDefaultLibLocation?(): string;
   writeFile: WriteFileCallback;
   getCurrentDirectory(): string;

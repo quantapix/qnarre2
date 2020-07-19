@@ -257,7 +257,7 @@ export function transformES2018(context: TransformationContext) {
     return processTaggedTemplateExpression(context, node, visitor, currentSourceFile, recordTaggedTemplateString, ProcessLevel.LiftRestriction);
   }
   function visitBinaryExpression(node: BinaryExpression, noDestructuringValue: boolean): Expression {
-    if (isDestructuringAssignment(node) && node.left.transformFlags & TransformFlags.ContainsObjectRestOrSpread)
+    if (qc.is.destructuringAssignment(node) && node.left.transformFlags & TransformFlags.ContainsObjectRestOrSpread)
       return flattenDestructuringAssignment(node, visitor, context, FlattenLevel.ObjectRest, !noDestructuringValue);
     if (node.operatorToken.kind === Syntax.CommaToken)
       return node.update(visitNode(node.left, visitorNoDestructuringValue, isExpression), visitNode(node.right, noDestructuringValue ? visitorNoDestructuringValue : visitor, isExpression));

@@ -1479,7 +1479,7 @@ export function convertToObjectWorker(
       if (!isDoubleQuotedString(element.name)) {
         errors.push(createDiagnosticForNodeInSourceFile(sourceFile, element.name, qd.String_literal_with_double_quotes_expected));
       }
-      const textOfKey = isComputedNonLiteralName(element.name) ? undefined : getTextOfPropertyName(element.name);
+      const textOfKey = isComputedNonLiteralName(element.name) ? undefined : qc.get.textOfPropertyName(element.name);
       const keyText = textOfKey && syntax.get.unescUnderscores(textOfKey);
       const option = keyText && knownOptions ? knownOptions.get(keyText) : undefined;
       if (keyText && extraKeyDiagnostics && !option) {

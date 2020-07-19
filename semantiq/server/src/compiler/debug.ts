@@ -297,7 +297,7 @@ export function enableDebugInfo() {
         },
         __debugModifierFlags: {
           get(this: Node) {
-            return formatModifierFlags(getEffectiveModifierFlagsNoCache(this));
+            return formatModifierFlags(qc.get.effectiveModifierFlagsNoCache(this));
           },
         },
         __debugTransformFlags: {

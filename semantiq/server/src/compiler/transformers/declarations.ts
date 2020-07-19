@@ -5,7 +5,7 @@ import * as qt from '../types';
 import * as qy from '../syntax';
 import { Modifier, ModifierFlags, Syntax } from '../syntax';
 export function getDeclarationDiagnostics(host: EmitHost, resolver: EmitResolver, file: SourceFile | undefined): DiagnosticWithLocation[] | undefined {
-  if (file && isJsonSourceFile(file)) return [];
+  if (file && qc.is.jsonSourceFile(file)) return [];
   const compilerOptions = host.getCompilerOptions();
   const result = transformNodes(resolver, host, compilerOptions, file ? [file] : filter(host.getSourceFiles(), isSourceFileNotJson), [transformDeclarations], false);
   return result.diagnostics;
@@ -207,7 +207,7 @@ export function transformDeclarations(context: TransformationContext) {
           resultHasScopeMarker = false;
           collectReferences(sourceFile, refs);
           collectLibs(sourceFile, libs);
-          if (isExternalOrCommonJsModule(sourceFile) || isJsonSourceFile(sourceFile)) {
+          if (qc.is.externalOrCommonJsModule(sourceFile) || qc.is.jsonSourceFile(sourceFile)) {
             resultHasExternalModuleIndicator = false;
             needsDeclare = false;
             const statements = isSourceFileJS(sourceFile) ? new Nodes(transformDeclarationsForJS(sourceFile, true)) : Nodes.visit(sourceFile.statements, visitDeclarationStatements);
@@ -524,7 +524,7 @@ export function transformDeclarations(context: TransformationContext) {
   function transformImportEqualsDeclaration(decl: ImportEqualsDeclaration) {
     if (!resolver.isDeclarationVisible(decl)) return;
     if (decl.moduleReference.kind === Syntax.ExternalModuleReference) {
-      const specifier = getExternalModuleImportEqualsDeclarationExpression(decl);
+      const specifier = qc.get.externalModuleImportEqualsDeclarationExpression(decl);
       return decl.update(undefined, decl.modifiers, decl.name, updateExternalModuleReference(decl.moduleReference, rewriteModuleSpecifier(decl, specifier)));
     } else {
       const oldDiag = getSymbolAccessibilityDiagnostic;
@@ -595,7 +595,7 @@ export function transformDeclarations(context: TransformationContext) {
           lateStatementReplacementMap.delete(key);
           if (result) {
             if (isArray(result) ? some(result, needsScopeMarker) : needsScopeMarker(result)) needsScopeFixMarker = true;
-            if (qc.is.kind(SourceFile, statement.parent) && (isArray(result) ? some(result, qp_isExternalModuleIndicator) : qp_isExternalModuleIndicator(result)))
+            if (qc.is.kind(SourceFile, statement.parent) && (isArray(result) ? some(result, qp_isExternalModuleIndicator) : qp_qc.is.externalModuleIndicator(result)))
               resultHasExternalModuleIndicator = true;
           }
           return result;

@@ -567,7 +567,7 @@ export class QContext {
       const decl = first(propertySymbol.declarations);
       if (hasLateBindableName(decl)) {
         if (qc.is.kind(BinaryExpression, decl)) {
-          const name = getNameOfDeclaration(decl);
+          const name = qc.get.nameOfDeclaration(decl);
           if (name && qc.is.kind(ElementAccessExpression, name) && qc.is.propertyAccessEntityNameExpression(name.argumentExpression)) {
             this.trackComputedName(name.argumentExpression, saveEnclosingDeclaration);
           }
@@ -649,7 +649,7 @@ export class QContext {
         const typeNode = this.typeToTypeNodeHelper(type);
         if (typeNode) {
           result.push(typeNode);
-          if (seenNames && isIdentifierTypeReference(typeNode)) seenNames.add(typeNode.typeName.escapedText, [type, result.length - 1]);
+          if (seenNames && qc.is.identifierTypeReference(typeNode)) seenNames.add(typeNode.typeName.escapedText, [type, result.length - 1]);
         }
       }
       if (seenNames) {
@@ -780,7 +780,7 @@ export class QContext {
     return top;
   }
   isSingleQuotedStringNamed(d: Declaration) {
-    const name = getNameOfDeclaration(d);
+    const name = qc.get.nameOfDeclaration(d);
     if (name && qc.is.kind(StringLiteral, name) && (name.singleQuote || (!isSynthesized(name) && startsWith(qc.get.textOf(name, false), "'")))) return true;
     return false;
   }
@@ -798,7 +798,7 @@ export class QContext {
     if (type !== errorType && enclosingDeclaration) {
       const declWithExistingAnnotation = getDeclarationWithTypeAnnotation(symbol, enclosingDeclaration);
       if (declWithExistingAnnotation && !qc.is.functionLikeDeclaration(declWithExistingAnnotation)) {
-        const existing = getEffectiveTypeAnnotationNode(declWithExistingAnnotation)!;
+        const existing = qc.get.effectiveTypeAnnotationNode(declWithExistingAnnotation)!;
         if (getTypeFromTypeNode(existing) === type && existingTypeNodeIsNotReferenceOrIsReferenceWithCompatibleTypeArgumentCount(existing, type)) {
           const result = this.serializeExistingTypeNode(existing, includePrivateSymbol, bundled);
           if (result) return result;
@@ -913,7 +913,7 @@ export class QContext {
     }
     if (
       qc.is.kind(TypeReferenceNode, node) &&
-      isInDoc(node) &&
+      qc.is.inDoc(node) &&
       (getIntendedTypeFromDocTypeReference(node) || unknownSymbol === resolveTypeReferenceName(getTypeReferenceName(node), SymbolFlags.Type, true))
     ) {
       return this.typeToTypeNodeHelper(getTypeFromTypeNode(node)).setOriginal(node);
@@ -954,7 +954,7 @@ export class QContext {
     if (qc.is.entityName(node) || qc.is.entityNameExpression(node)) {
       const leftmost = getFirstIdentifier(node);
       if (
-        isInJSFile(node) &&
+        qc.is.inJSFile(node) &&
         (qc.is.exportsIdentifier(leftmost) ||
           qc.is.moduleExportsAccessExpression(leftmost.parent) ||
           (qc.is.kind(QualifiedName, leftmost.parent) && qc.is.moduleIdentifier(leftmost.parent.left) && qc.is.exportsIdentifier(leftmost.parent.right)))
@@ -1094,7 +1094,7 @@ export class QContext {
       filter(getPropertiesOfType(staticType), (p) => !(p.flags & SymbolFlags.Prototype) && p.escName !== 'prototype' && !isNamespaceMember(p)),
       (p) => serializePropertySymbolForClass(p, true, staticBaseType)
     );
-    const isNonConstructableClassLikeInJsFile = !isClass && !!symbol.valueDeclaration && isInJSFile(symbol.valueDeclaration) && !some(getSignaturesOfType(staticType, SignatureKind.Construct));
+    const isNonConstructableClassLikeInJsFile = !isClass && !!symbol.valueDeclaration && qc.is.inJSFile(symbol.valueDeclaration) && !some(getSignaturesOfType(staticType, SignatureKind.Construct));
     const constructors = isNonConstructableClassLikeInJsFile
       ? [new qc.ConstructorDeclaration(undefined, qc.create.modifiersFromFlags(ModifierFlags.Private), [], undefined)]
       : (serializeSignatures(SignatureKind.Construct, staticType, baseTypes[0], Syntax.Constructor) as ConstructorDeclaration[]);
@@ -1585,7 +1585,7 @@ export class QContext {
           const getNamesOfDeclaration = (s: Statement): Identifier[] => {
             const isIdentifierAndNotUndefined = (n?: Node): n is Identifier => n?.kind === Syntax.Identifier;
             if (qc.is.kind(VariableStatement, s)) return filter(map(s.declarationList.declarations, getNameOfDeclaration), isIdentifierAndNotUndefined);
-            return filter([getNameOfDeclaration(s as DeclarationStatement)], isIdentifierAndNotUndefined);
+            return filter([qc.get.nameOfDeclaration(s as DeclarationStatement)], isIdentifierAndNotUndefined);
           };
           ns.body.statements = new Nodes([
             ...ns.body.statements,
@@ -1663,7 +1663,7 @@ export class QContext {
       ss = inlineExportModifiers(ss);
       if (
         enclosingDeclaration &&
-        ((qc.is.kind(SourceFile, enclosingDeclaration) && isExternalOrCommonJsModule(enclosingDeclaration)) || qc.is.kind(ModuleDeclaration, enclosingDeclaration)) &&
+        ((qc.is.kind(SourceFile, enclosingDeclaration) && qc.is.externalOrCommonJsModule(enclosingDeclaration)) || qc.is.kind(ModuleDeclaration, enclosingDeclaration)) &&
         (!some(ss, qp_isExternalModuleIndicator) || (!hasScopeMarker(ss) && some(ss, needsScopeMarker)))
       ) {
         ss.push(createEmptyExports());
@@ -1674,7 +1674,7 @@ export class QContext {
     function addResult(n: Statement, flags: ModifierFlags) {
       let f: ModifierFlags = ModifierFlags.None;
       const isExportingScope = (n: Node) => {
-        return (qc.is.kind(SourceFile, n) && (isExternalOrCommonJsModule(n) || isJsonSourceFile(n))) || (qc.is.ambientModule(n) && !isGlobalScopeAugmentation(n));
+        return (qc.is.kind(SourceFile, n) && (qc.is.externalOrCommonJsModule(n) || qc.is.jsonSourceFile(n))) || (qc.is.ambientModule(n) && !isGlobalScopeAugmentation(n));
       };
       if (flags & ModifierFlags.Export && enclosingDeclaration && isExportingScope(enclosingDeclaration) && canHaveExportModifier(n)) {
         f |= ModifierFlags.Export;

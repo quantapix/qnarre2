@@ -71,10 +71,10 @@ export function getOutputPathsFor(sourceFile: SourceFile | Bundle, host: EmitHos
   if (sourceFile.kind === Syntax.Bundle) return getOutputPathsForBundle(options, forceDtsPaths);
   else {
     const ownOutputFilePath = getOwnEmitOutputFilePath(sourceFile.fileName, host, getOutputExtension(sourceFile, options));
-    const isJsonFile = isJsonSourceFile(sourceFile);
+    const isJsonFile = qc.is.jsonSourceFile(sourceFile);
     const isJsonEmittedToSameLocation = isJsonFile && comparePaths(sourceFile.fileName, ownOutputFilePath, host.getCurrentDirectory(), !host.useCaseSensitiveFileNames()) === Comparison.EqualTo;
     const jsFilePath = options.emitDeclarationOnly || isJsonEmittedToSameLocation ? undefined : ownOutputFilePath;
-    const sourceMapFilePath = !jsFilePath || isJsonSourceFile(sourceFile) ? undefined : getSourceMapFilePath(jsFilePath, options);
+    const sourceMapFilePath = !jsFilePath || qc.is.jsonSourceFile(sourceFile) ? undefined : getSourceMapFilePath(jsFilePath, options);
     const declarationFilePath = forceDtsPaths || (getEmitDeclarations(options) && !isJsonFile) ? getDeclarationEmitOutputFilePath(sourceFile.fileName, host) : undefined;
     const declarationMapPath = declarationFilePath && getAreDeclarationMapsEnabled(options) ? declarationFilePath + '.map' : undefined;
     return { jsFilePath, sourceMapFilePath, declarationFilePath, declarationMapPath, buildInfoPath: undefined };
@@ -84,7 +84,7 @@ function getSourceMapFilePath(jsFilePath: string, options: CompilerOptions) {
   return options.sourceMap && !options.inlineSourceMap ? jsFilePath + '.map' : undefined;
 }
 export function getOutputExtension(sourceFile: SourceFile, options: CompilerOptions): Extension {
-  if (isJsonSourceFile(sourceFile)) return Extension.Json;
+  if (qc.is.jsonSourceFile(sourceFile)) return Extension.Json;
   if (options.jsx === JsxEmit.Preserve) {
     if (isSourceFileJS(sourceFile)) {
       if (fileExtensionIs(sourceFile.fileName, Extension.Jsx)) return Extension.Jsx;
@@ -969,7 +969,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       case PipelinePhase.Comments:
         if (!commentsDisabled && node.kind !== Syntax.SourceFile) return pipelineEmitWithComments;
       case PipelinePhase.SourceMaps:
-        if (!sourceMapsDisabled && node.kind !== Syntax.SourceFile && !isInJsonFile(node)) return pipelineEmitWithSourceMap;
+        if (!sourceMapsDisabled && node.kind !== Syntax.SourceFile && !qc.is.inJsonFile(node)) return pipelineEmitWithSourceMap;
       case PipelinePhase.Emit:
         return pipelineEmitWithHint;
       default:
@@ -1841,7 +1841,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       increaseIndent();
     }
     const preferNewLine = node.multiLine ? ListFormat.PreferNewLine : ListFormat.None;
-    const allowTrailingComma = !isJsonSourceFile(currentSourceFile!) ? ListFormat.AllowTrailingComma : ListFormat.None;
+    const allowTrailingComma = !qc.is.jsonSourceFile(currentSourceFile!) ? ListFormat.AllowTrailingComma : ListFormat.None;
     emitList(node, node.properties, ListFormat.ObjectLiteralExpressionProperties | allowTrailingComma | preferNewLine);
     if (indentedFlag) {
       decreaseIndent();
@@ -1871,7 +1871,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     if (qc.is.kind(NumericLiteral, expression)) {
       const text = getLiteralTextOfNode(<LiteralExpression>expression, false);
       return !expression.numericLiteralFlags && !stringContains(text, Token.toString(Syntax.DotToken)!);
-    } else if (isAccessExpression(expression)) {
+    } else if (qc.is.accessExpression(expression)) {
       const constantValue = getConstantValue(expression);
       return typeof constantValue === 'number' && isFinite(constantValue) && Math.floor(constantValue) === constantValue;
     }
@@ -2113,7 +2113,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
   }
   function emitExpressionStatement(node: ExpressionStatement) {
     emitExpression(node.expression);
-    if (!isJsonSourceFile(currentSourceFile!) || isSynthesized(node.expression)) {
+    if (!qc.is.jsonSourceFile(currentSourceFile!) || isSynthesized(node.expression)) {
       writeTrailingSemicolon();
     }
   }
@@ -2295,7 +2295,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitInitializer(node.initializer, node.type ? node.type.end : node.name.end, node);
   }
   function emitVariableDeclarationList(node: VariableDeclarationList) {
-    writeKeyword(qc.is.aLet(node) ? 'let' : isVarConst(node) ? 'const' : 'var');
+    writeKeyword(qc.is.aLet(node) ? 'let' : qc.is.varConst(node) ? 'const' : 'var');
     writeSpace();
     emitList(node, node.declarations, ListFormat.VariableDeclarationList);
   }
@@ -4083,7 +4083,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     tokenPos: number,
     emitCallback: (token: Syntax, writer: (s: string) => void, tokenStartPos: number) => number
   ) {
-    if (sourceMapsDisabled || (node && isInJsonFile(node))) return emitCallback(token, writer, tokenPos);
+    if (sourceMapsDisabled || (node && qc.is.inJsonFile(node))) return emitCallback(token, writer, tokenPos);
     const emitNode = node && node.emitNode;
     const emitFlags = (emitNode && emitNode.flags) || EmitFlags.None;
     const range = emitNode && emitNode.tokenSourceMapRanges && emitNode.tokenSourceMapRanges[token];

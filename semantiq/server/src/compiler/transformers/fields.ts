@@ -234,7 +234,7 @@ export function transformClassFields(context: TransformationContext) {
   }
   function visitBinaryExpression(node: BinaryExpression) {
     if (shouldTransformPrivateFields) {
-      if (isDestructuringAssignment(node)) {
+      if (qc.is.destructuringAssignment(node)) {
         const savedPendingExpressions = pendingExpressions;
         pendingExpressions = undefined!;
         node = node.update(visitNode(node.left, visitorDestructuringTarget), visitNode(node.right, visitor), node.operatorToken);
@@ -242,7 +242,7 @@ export function transformClassFields(context: TransformationContext) {
         pendingExpressions = savedPendingExpressions;
         return expr;
       }
-      if (isAssignmentExpression(node) && qc.is.privateIdentifierPropertyAccessExpression(node.left)) {
+      if (qc.is.assignmentExpression(node) && qc.is.privateIdentifierPropertyAccessExpression(node.left)) {
         const info = accessPrivateIdentifier(node.left.name);
         if (info) return createPrivateIdentifierAssignment(info, node.left.expression, node.right, node.operatorToken.kind).setOriginal(node);
       }
@@ -344,7 +344,7 @@ export function transformClassFields(context: TransformationContext) {
   function transformClassMembers(n: ClassDeclaration | ClassExpression, isDerivedClass: boolean) {
     if (shouldTransformPrivateFields) {
       for (const m of n.members) {
-        if (m.isPrivateIdentifierPropertyDeclaration()) addPrivateIdentifierToEnvironment(m.name);
+        if (m.qc.is.privateIdentifierPropertyDeclaration()) addPrivateIdentifierToEnvironment(m.name);
       }
     }
     const ms: ClassElement[] = [];
@@ -356,7 +356,7 @@ export function transformClassFields(context: TransformationContext) {
   function isPropertyDeclarationThatRequiresConstructorStatement(member: ClassElement): member is PropertyDeclaration {
     if (!qc.is.kind(PropertyDeclaration, member) || qc.has.staticModifier(member)) return false;
     if (context.getCompilerOptions().useDefineForClassFields) return languageVersion < ScriptTarget.ESNext;
-    return isInitializedProperty(member) || (shouldTransformPrivateFields && member.isPrivateIdentifierPropertyDeclaration());
+    return isInitializedProperty(member) || (shouldTransformPrivateFields && member.qc.is.privateIdentifierPropertyDeclaration());
   }
   function transformConstructor(node: ClassDeclaration | ClassExpression, isDerivedClass: boolean) {
     const constructor = visitNode(getFirstConstructorWithBody(node), visitor, ConstructorDeclaration.kind);
@@ -514,7 +514,7 @@ export function transformClassFields(context: TransformationContext) {
       const expression = visitNode(name.expression, visitor, isExpression);
       const innerExpression = skipPartiallyEmittedExpressions(expression);
       const inlinable = isSimpleInlineableExpression(innerExpression);
-      const alreadyTransformed = isAssignmentExpression(innerExpression) && qc.is.generatedIdentifier(innerExpression.left);
+      const alreadyTransformed = qc.is.assignmentExpression(innerExpression) && qc.is.generatedIdentifier(innerExpression.left);
       if (!alreadyTransformed && !inlinable && shouldHoist) {
         const generatedName = getGeneratedNameForNode(name);
         hoistVariableDeclaration(generatedName);
@@ -531,7 +531,7 @@ export function transformClassFields(context: TransformationContext) {
     currentPrivateIdentifierEnvironment = privateIdentifierEnvironmentStack.pop();
   }
   function addPrivateIdentifierToEnvironment(name: PrivateIdentifier) {
-    const text = getTextOfPropertyName(name) as string;
+    const text = qc.get.textOfPropertyName(name) as string;
     const weakMapName = createOptimisticUniqueName('_' + text.substring(1));
     weakMapName.autoGenerateFlags |= GeneratedIdentifierFlags.ReservedInNestedScopes;
     hoistVariableDeclaration(weakMapName);
@@ -585,7 +585,7 @@ export function transformClassFields(context: TransformationContext) {
     const target = getTargetOfBindingOrAssignmentElement(node);
     if (target && qc.is.privateIdentifierPropertyAccessExpression(target)) {
       const wrapped = wrapPrivateIdentifierForDestructuringTarget(target);
-      if (isAssignmentExpression(node)) return node.update(wrapped, visitNode(node.right, visitor, isExpression), node.operatorToken);
+      if (qc.is.assignmentExpression(node)) return node.update(wrapped, visitNode(node.right, visitor, isExpression), node.operatorToken);
       if (qc.is.kind(SpreadElement, node)) return node.update(wrapped);
       return wrapped;
     }

@@ -302,7 +302,7 @@ export function transformTypeScript(context: TransformationContext) {
     }
   }
   function visitSourceFile(node: SourceFile) {
-    const alwaysStrict = getStrictOptionValue(compilerOptions, 'alwaysStrict') && !(qp_isExternalModule(node) && moduleKind >= ModuleKind.ES2015) && !isJsonSourceFile(node);
+    const alwaysStrict = getStrictOptionValue(compilerOptions, 'alwaysStrict') && !(qp_isExternalModule(node) && moduleKind >= ModuleKind.ES2015) && !qc.is.jsonSourceFile(node);
     return qp_updateSourceNode(node, visitLexicalEnvironment(node.statements, sourceElementVisitor, context, 0, alwaysStrict));
   }
   function shouldEmitDecorateCallForClass(node: ClassDeclaration) {
@@ -1135,7 +1135,7 @@ export function transformTypeScript(context: TransformationContext) {
     return node.update(visitNode(node.tagName, visitor, isJsxTagNameExpression), undefined, visitNode(node.attributes, visitor, isJsxAttributes));
   }
   function shouldEmitEnumDeclaration(node: EnumDeclaration) {
-    return !isEnumConst(node) || compilerOptions.preserveConstEnums || compilerOptions.isolatedModules;
+    return !qc.is.enumConst(node) || compilerOptions.preserveConstEnums || compilerOptions.isolatedModules;
   }
   function visitEnumDeclaration(node: EnumDeclaration): VisitResult<Statement> {
     if (!shouldEmitEnumDeclaration(node)) return new qc.NotEmittedStatement(node);

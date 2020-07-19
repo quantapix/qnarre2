@@ -22,7 +22,7 @@ export function processTaggedTemplateExpression(
   const cookedStrings: Expression[] = [];
   const rawStrings: Expression[] = [];
   const template = node.template;
-  if (level === ProcessLevel.LiftRestriction && !hasInvalidEscape(template)) return visitEachChild(node, visitor, context);
+  if (level === ProcessLevel.LiftRestriction && !qc.has.invalidEscape(template)) return visitEachChild(node, visitor, context);
   if (qc.is.kind(NoSubstitutionLiteral, template)) {
     cookedStrings.push(createTemplateCooked(template));
     rawStrings.push(getRawLiteral(template, currentSourceFile));

@@ -49,7 +49,7 @@ export function transformModule(context: TransformationContext) {
       !(
         isEffectiveExternalModule(node, compilerOptions) ||
         node.transformFlags & TransformFlags.ContainsDynamicImport ||
-        (isJsonSourceFile(node) && hasJsonModuleEmitEnabled(compilerOptions) && (compilerOptions.out || compilerOptions.outFile))
+        (qc.is.jsonSourceFile(node) && hasJsonModuleEmitEnabled(compilerOptions) && (compilerOptions.out || compilerOptions.outFile))
       )
     ) {
       return node;
@@ -72,7 +72,7 @@ export function transformModule(context: TransformationContext) {
     startLexicalEnvironment();
     const statements: Statement[] = [];
     const ensureUseStrict = getStrictOptionValue(compilerOptions, 'alwaysStrict') || (!compilerOptions.noImplicitUseStrict && qp_isExternalModule(currentSourceFile));
-    const statementOffset = addPrologue(statements, node.statements, ensureUseStrict && !isJsonSourceFile(node), sourceElementVisitor);
+    const statementOffset = addPrologue(statements, node.statements, ensureUseStrict && !qc.is.jsonSourceFile(node), sourceElementVisitor);
     if (shouldEmitUnderscoreUnderscoreESModule()) {
       append(statements, createUnderscoreUnderscoreESModule());
     }
@@ -99,7 +99,7 @@ export function transformModule(context: TransformationContext) {
   function transformAMDModule(node: SourceFile) {
     const define = new Identifier('define');
     const moduleName = tryGetModuleNameFromFile(node, host, compilerOptions);
-    const jsonSourceFile = isJsonSourceFile(node) && node;
+    const jsonSourceFile = qc.is.jsonSourceFile(node) && node;
     const { aliasedModuleNames, unaliasedModuleNames, importAliasNames } = collectAsynchronousDependencies(node, true);
     const updated = qp_updateSourceNode(
       node,
@@ -316,7 +316,7 @@ export function transformModule(context: TransformationContext) {
   function moduleExpressionElementVisitor(node: Expression): VisitResult<Expression> {
     if (!(node.transformFlags & TransformFlags.ContainsDynamicImport) && !(node.transformFlags & TransformFlags.ContainsDestructuringAssignment)) return node;
     if (qc.is.importCall(node)) return visitImportCallExpression(node);
-    if (isDestructuringAssignment(node)) return visitDestructuringAssignment(node);
+    if (qc.is.destructuringAssignment(node)) return visitDestructuringAssignment(node);
     return visitEachChild(node, moduleExpressionElementVisitor, context);
   }
   function destructuringNeedsFlattening(node: Expression): boolean {
@@ -1813,7 +1813,7 @@ export function transformSystemModule(context: TransformationContext) {
     return node;
   }
   function destructuringAndImportCallVisitor(node: Node): VisitResult<Node> {
-    if (isDestructuringAssignment(node)) return visitDestructuringAssignment(node);
+    if (qc.is.destructuringAssignment(node)) return visitDestructuringAssignment(node);
     else if (qc.is.importCall(node)) return visitImportCallExpression(node);
     else if (node.transformFlags & TransformFlags.ContainsDestructuringAssignment || node.transformFlags & TransformFlags.ContainsDynamicImport)
       return visitEachChild(node, destructuringAndImportCallVisitor, context);
@@ -1831,7 +1831,7 @@ export function transformSystemModule(context: TransformationContext) {
     return visitEachChild(node, destructuringAndImportCallVisitor, context);
   }
   function hasExportedReferenceInDestructuringTarget(node: Expression | ObjectLiteralElementLike): boolean {
-    if (isAssignmentExpression(node, true)) return hasExportedReferenceInDestructuringTarget(node.left);
+    if (qc.is.assignmentExpression(node, true)) return hasExportedReferenceInDestructuringTarget(node.left);
     if (qc.is.kind(SpreadElement, node)) return hasExportedReferenceInDestructuringTarget(node.expression);
     if (qc.is.kind(ObjectLiteralExpression, node)) return some(node.properties, hasExportedReferenceInDestructuringTarget);
     if (isArrayLiteralExpression(node)) return some(node.elements, hasExportedReferenceInDestructuringTarget);

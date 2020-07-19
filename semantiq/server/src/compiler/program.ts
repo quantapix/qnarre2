@@ -126,7 +126,7 @@ export function createCompilerHostWorker(options: CompilerOptions, setParentNode
   const compilerHost: CompilerHost = {
     getSourceFile,
     getDefaultLibLocation,
-    getDefaultLibFileName: (options) => combinePaths(getDefaultLibLocation(), getDefaultLibFileName(options)),
+    getDefaultLibFileName: (options) => combinePaths(getDefaultLibLocation(), qc.get.defaultLibFileName(options)),
     writeFile,
     getCurrentDirectory: memoize(() => system.getCurrentDirectory()),
     useCaseSensitiveFileNames: () => system.useCaseSensitiveFileNames,
@@ -532,7 +532,7 @@ export function createProgram(
   const host = createProgramOptions.host || createCompilerHost(options);
   const configParsingHost = parseConfigHostFromCompilerHostLike(host);
   let skipDefaultLib = options.noLib;
-  const getDefaultLibraryFileName = memoize(() => host.getDefaultLibFileName(options));
+  const getDefaultLibraryFileName = memoize(() => host.qc.get.defaultLibFileName(options));
   const defaultLibraryPath = host.getDefaultLibLocation ? host.getDefaultLibLocation() : getDirectoryPath(getDefaultLibraryFileName());
   const programDiagnostics = createDiagnosticCollection();
   const currentDirectory = host.getCurrentDirectory();
@@ -2015,7 +2015,7 @@ export function createProgram(
           i < file.imports.length &&
           !elideImport &&
           !(isJsFile && !options.allowJs) &&
-          (isInJSFile(file.imports[i]) || !(file.imports[i].flags & NodeFlags.Doc));
+          (qc.is.inJSFile(file.imports[i]) || !(file.imports[i].flags & NodeFlags.Doc));
         if (elideImport) {
           modulesWithElidedImports.set(file.path, true);
         } else if (shouldAddFile) {

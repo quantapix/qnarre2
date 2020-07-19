@@ -99,7 +99,7 @@ export function transformES2017(context: TransformationContext) {
     }
   }
   function asyncBodyVisitor(node: Node): VisitResult<Node> {
-    if (isNodeWithPossibleHoistedDeclaration(node)) {
+    if (qc.is.nodeWithPossibleHoistedDeclaration(node)) {
       switch (node.kind) {
         case Syntax.VariableStatement:
           return visitVariableStatementInAsyncBody(node);
