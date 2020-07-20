@@ -637,15 +637,6 @@ export function isWatchSet(options: CompilerOptions) {
 export function closeFileWatcher(watcher: FileWatcher) {
   watcher.close();
 }
-export function isAbstractConstructorType(type: Type): boolean {
-  return !!(getObjectFlags(type) & ObjectFlags.Anonymous) && !!type.symbol && isAbstractConstructorSymbol(type.symbol);
-}
-export function getObjectFlags(type: Type): ObjectFlags {
-  return type.flags & TypeFlags.ObjectFlagsType ? (<ObjectFlagsType>type).objectFlags : 0;
-}
-export function typeHasCallOrConstructSignatures(type: Type, checker: TypeChecker) {
-  return checker.getSignaturesOfType(type, SignatureKind.Call).length !== 0 || checker.getSignaturesOfType(type, SignatureKind.Construct).length !== 0;
-}
 export function forSomeAncestorDirectory(directory: string, cb: (directory: string) => boolean): boolean {
   return !!forEachAncestorDirectory(directory, (d) => (cb(d) ? true : undefined));
 }

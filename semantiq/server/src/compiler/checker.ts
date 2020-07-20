@@ -4,42 +4,9 @@ import * as qc from './core3';
 import { Node } from './types';
 import * as syntax from './syntax';
 import { ModifierFlags, Syntax } from './syntax';
-import { diags as qd } from './diags';
-function isTypeDeclaration(
-  n: Node
-): n is TypeParameterDeclaration | ClassDeclaration | InterfaceDeclaration | TypeAliasDeclaration | EnumDeclaration | ImportClause | ImportSpecifier | ExportSpecifier {
-  switch (n.kind) {
-    case Syntax.TypeParameter:
-    case Syntax.ClassDeclaration:
-    case Syntax.InterfaceDeclaration:
-    case Syntax.TypeAliasDeclaration:
-    case Syntax.EnumDeclaration:
-      return true;
-    case Syntax.ImportClause:
-      return (n as ImportClause).isTypeOnly;
-    case Syntax.ImportSpecifier:
-    case Syntax.ExportSpecifier:
-      return (n as ImportSpecifier | ExportSpecifier).parent.parent.isTypeOnly;
-    default:
-      return false;
-  }
-}
-function isTypeDeclarationName(n: Node) {
-  return n.kind === Syntax.Identifier && n.parent && isTypeDeclaration(n.parent) && n.parent.name === n;
-}
-export function canHaveExportModifier(n: Statement) {
-  return (
-    qc.is.kind(qc.EnumDeclaration, n) ||
-    qc.is.kind(qc.VariableStatement, n) ||
-    qc.is.kind(qc.FunctionDeclaration, n) ||
-    qc.is.kind(qc.ClassDeclaration, n) ||
-    (qc.is.kind(qc.ModuleDeclaration, n) && !qc.is.externalModuleAugmentation(n) && !isGlobalScopeAugmentation(n)) ||
-    qc.is.kind(qc.InterfaceDeclaration, n) ||
-    isTypeDeclaration(n)
-  );
-}
+import * as qd from './diags';
 const ambientModuleSymbolRegex = /^".+"$/;
-const anon = '(anonymous)' as __String & string;
+const anon = '(anonymous)' as qb.__String & string;
 let nextMergeId = 1;
 let nextFlowId = 1;
 const enum IterationUse {
@@ -388,7 +355,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   const freshObjectLiteralFlag = compilerOptions.suppressExcessPropertyErrors ? 0 : ObjectFlags.FreshLiteral;
   const emitResolver = createResolver();
   const nodeBuilder = createNodeBuilder();
-  class QNode extends Node {
+  class QNode extends qc.Nobj {
     static nextNodeId = 1;
     getNodeId() {
       if (!this.id) {
@@ -405,7 +372,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       return this.kind === Syntax.SourceFile && !qc.is.externalOrCommonJsModule(this as xSourceFile);
     }
   }
-  class QType extends Type {
+  class QType extends qc.Type {
     static typeCount = 0;
     createType(flags: TypeFlags): Type {
       const result = new Type(checker, flags);
@@ -414,11 +381,11 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       return result;
     }
   }
-  class QSymbol extends Symbol implements TransientSymbol {
+  class QSymbol extends qc.Symbol implements TransientSymbol {
     static nextId = 1;
     static count = 0;
     checkFlags: CheckFlags;
-    constructor(f: SymbolFlags, name: __String, c?: CheckFlags) {
+    constructor(f: SymbolFlags, name: qb.__String, c?: CheckFlags) {
       super(f | SymbolFlags.Transient, name);
       QSymbol.count++;
       this.checkFlags = c || 0;
@@ -1157,7 +1124,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (symbol.flags & SymbolFlags.ModuleExports) {
         const fileSymbol = getSymbolOfNode(qc.get.sourceFileOf(symbol.valueDeclaration));
         const members = new SymbolTable();
-        members.set('exports' as __String, fileSymbol);
+        members.set('exports' as qb.__String, fileSymbol);
         return createAnonymousType(symbol, members, empty, empty, undefined, undefined);
       }
       const declaration = symbol.valueDeclaration;
@@ -1579,7 +1546,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     createUniqueESSymbolType() {
       const type = <UniqueESSymbolType>createType(TypeFlags.UniqueESSymbol);
       type.symbol = this;
-      type.escName = `__@${this.escName}@${this.getId()}` as __String;
+      type.escName = `__@${this.escName}@${this.getId()}` as qb.__String;
       return type;
     }
     getAliasVariances() {
@@ -1919,7 +1886,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
       return false;
     }
-    checkSymbolUsageInExpressionContext(name: __String, useSite: Node) {
+    checkSymbolUsageInExpressionContext(name: qb.__String, useSite: Node) {
       if (!qc.is.validTypeOnlyAliasUseSite(useSite)) {
         const typeOnlyDeclaration = this.getTypeOnlyAliasDeclaration();
         if (typeOnlyDeclaration) {
@@ -1950,7 +1917,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
       return;
     }
-    getPropertyOfVariable(name: __String): Symbol | undefined {
+    getPropertyOfVariable(name: qb.__String): Symbol | undefined {
       if (this.flags & SymbolFlags.Variable) {
         const typeAnnotation = (<VariableDeclaration>this.valueDeclaration).type;
         if (typeAnnotation) return getPropertyOfType(getTypeFromTypeNode(typeAnnotation), name)?.resolveSymbol();
@@ -2065,7 +2032,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
   }
   class QSymbolTable extends SymbolTable<QSymbol> {
-    getSymbol(symbols: SymbolTable, name: __String, meaning: SymbolFlags): Symbol | undefined {
+    getSymbol(symbols: SymbolTable, name: qb.__String, meaning: SymbolFlags): Symbol | undefined {
       if (meaning) {
         const symbol = getMergedSymbol(symbols.get(name));
         if (symbol) {
@@ -2093,14 +2060,14 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
   }
   const globals = new QSymbolTable();
-  const undefinedSymbol = new QSymbol(SymbolFlags.Property, 'undefined' as __String);
+  const undefinedSymbol = new QSymbol(SymbolFlags.Property, 'undefined' as qb.__String);
   undefinedSymbol.declarations = [];
-  const globalThisSymbol = new QSymbol(SymbolFlags.Module, 'globalThis' as __String, CheckFlags.Readonly);
+  const globalThisSymbol = new QSymbol(SymbolFlags.Module, 'globalThis' as qb.__String, CheckFlags.Readonly);
   globalThisSymbol.exports = globals;
   globalThisSymbol.declarations = [];
   globals.set(globalThisSymbol.escName, globalThisSymbol);
-  const argumentsSymbol = new QSymbol(SymbolFlags.Property, 'arguments' as __String);
-  const requireSymbol = new QSymbol(SymbolFlags.Property, 'require' as __String);
+  const argumentsSymbol = new QSymbol(SymbolFlags.Property, 'arguments' as qb.__String);
+  const requireSymbol = new QSymbol(SymbolFlags.Property, 'require' as qb.__String);
   let apparentArgumentCount: number | undefined;
   const checker: TypeChecker = {
     getNodeCount: () => sum(host.getSourceFiles(), 'nodeCount'),
@@ -2412,7 +2379,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   const substitutionTypes = new qb.QMap<SubstitutionType>();
   const evolvingArrayTypes: EvolvingArrayType[] = [];
   const undefinedProperties = new qb.QMap<Symbol>() as EscapedMap<Symbol>;
-  const unknownSymbol = new QSymbol(SymbolFlags.Property, 'unknown' as __String);
+  const unknownSymbol = new QSymbol(SymbolFlags.Property, 'unknown' as qb.__String);
   const resolvingSymbol = new QSymbol(0, InternalSymbol.Resolving);
   const anyType = createIntrinsicType(TypeFlags.Any, 'any');
   const autoType = createIntrinsicType(TypeFlags.Any, 'any');
@@ -2617,7 +2584,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     undefined: undefinedType,
   });
   const typeofType = createTypeofType();
-  let _jsxNamespace: __String;
+  let _jsxNamespace: qb.__String;
   let _jsxFactoryEntity: EntityName | undefined;
   let outofbandVarianceMarkerHandler: ((onlyUnreliable: boolean) => void) | undefined;
   const subtypeRelation = new qb.QMap<RelationComparisonResult>();
@@ -2630,7 +2597,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   builtinGlobals.set(undefinedSymbol.escName, undefinedSymbol);
   initializeTypeChecker();
   return checker;
-  function getJsxNamespace(location: Node | undefined): __String {
+  function getJsxNamespace(location: Node | undefined): qb.__String {
     if (location) {
       const file = qc.get.sourceFileOf(location);
       if (file) {
@@ -2645,7 +2612,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
     }
     if (!_jsxNamespace) {
-      _jsxNamespace = 'React' as __String;
+      _jsxNamespace = 'React' as qb.__String;
       if (compilerOptions.jsxFactory) {
         _jsxFactoryEntity = qp_parseIsolatedEntityName(compilerOptions.jsxFactory, languageVersion);
         visitNode(_jsxFactoryEntity, markAsSynthetic);
@@ -2759,7 +2726,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       } else error(moduleName, qd.Cannot_augment_module_0_because_it_resolves_to_a_non_module_entity, (moduleName as StringLiteral).text);
     }
   }
-  function getSymbolsOfParameterPropertyDeclaration(parameter: ParameterDeclaration, parameterName: __String): [Symbol, Symbol] {
+  function getSymbolsOfParameterPropertyDeclaration(parameter: ParameterDeclaration, parameterName: qb.__String): [Symbol, Symbol] {
     const constructorDeclaration = parameter.parent;
     const classDeclaration = parameter.parent.parent;
     const parameterSymbol = getSymbol(constructorDeclaration.locals!, parameterName, SymbolFlags.Value);
@@ -2922,10 +2889,10 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function resolveName(
     location: Node | undefined,
-    name: __String,
+    name: qb.__String,
     meaning: SymbolFlags,
     nameNotFoundMessage: qd.Message | undefined,
-    nameArg: __String | Identifier | undefined,
+    nameArg: qb.__String | Identifier | undefined,
     isUse: boolean,
     excludeGlobals = false,
     suggestedNameNotFoundMessage?: qd.Message
@@ -2934,10 +2901,10 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function resolveNameHelper(
     location: Node | undefined,
-    name: __String,
+    name: qb.__String,
     meaning: SymbolFlags,
     nameNotFoundMessage: qd.Message | undefined,
-    nameArg: __String | Identifier | undefined,
+    nameArg: qb.__String | Identifier | undefined,
     isUse: boolean,
     excludeGlobals: boolean,
     lookup: typeof getSymbol,
@@ -3211,10 +3178,10 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if ((location as FunctionExpression | ArrowFunction).asteriskToken || qc.has.syntacticModifier(location, ModifierFlags.Async)) return true;
     return !qc.get.immediatelyInvokedFunctionExpression(location);
   }
-  function diagnosticName(nameArg: __String | Identifier | PrivateIdentifier) {
-    return isString(nameArg) ? syntax.get.unescUnderscores(nameArg as __String) : declarationNameToString(nameArg as Identifier);
+  function diagnosticName(nameArg: qb.__String | Identifier | PrivateIdentifier) {
+    return isString(nameArg) ? syntax.get.unescUnderscores(nameArg as qb.__String) : declarationNameToString(nameArg as Identifier);
   }
-  function checkAndReportErrorForMissingPrefix(errorLocation: Node, name: __String, nameArg: __String | Identifier): boolean {
+  function checkAndReportErrorForMissingPrefix(errorLocation: Node, name: qb.__String, nameArg: qb.__String | Identifier): boolean {
     if (!qc.is.kind(qc.Identifier, errorLocation) || errorLocation.escapedText !== name || isTypeReferenceIdentifier(errorLocation) || isInTypeQuery(errorLocation)) return false;
     const container = qc.get.thisContainer(errorLocation, false);
     let location = container;
@@ -3258,7 +3225,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         return;
     }
   }
-  function checkAndReportErrorForUsingTypeAsNamespace(errorLocation: Node, name: __String, meaning: SymbolFlags): boolean {
+  function checkAndReportErrorForUsingTypeAsNamespace(errorLocation: Node, name: qb.__String, meaning: SymbolFlags): boolean {
     const namespaceMeaning = SymbolFlags.Namespace | (qc.is.inJSFile(errorLocation) ? SymbolFlags.Value : 0);
     if (meaning === namespaceMeaning) {
       const symbol = resolveSymbol(resolveName(errorLocation, name, SymbolFlags.Type & ~namespaceMeaning, undefined, undefined, false));
@@ -3284,7 +3251,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return false;
   }
-  function checkAndReportErrorForUsingValueAsType(errorLocation: Node, name: __String, meaning: SymbolFlags): boolean {
+  function checkAndReportErrorForUsingValueAsType(errorLocation: Node, name: qb.__String, meaning: SymbolFlags): boolean {
     if (meaning & (SymbolFlags.Type & ~SymbolFlags.Namespace)) {
       const n = resolveName(errorLocation, name, ~SymbolFlags.Type & SymbolFlags.Value, undefined, undefined, false);
       const symbol = resolveSymbol(n);
@@ -3295,17 +3262,17 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return false;
   }
-  function isPrimitiveTypeName(name: __String) {
+  function isPrimitiveTypeName(name: qb.__String) {
     return name === 'any' || name === 'string' || name === 'number' || name === 'boolean' || name === 'never' || name === 'unknown';
   }
-  function checkAndReportErrorForExportingPrimitiveType(errorLocation: Node, name: __String): boolean {
+  function checkAndReportErrorForExportingPrimitiveType(errorLocation: Node, name: qb.__String): boolean {
     if (isPrimitiveTypeName(name) && errorLocation.parent.kind === Syntax.ExportSpecifier) {
       error(errorLocation, qd.Cannot_export_0_Only_local_declarations_can_be_exported_from_a_module, name as string);
       return true;
     }
     return false;
   }
-  function checkAndReportErrorForUsingTypeAsValue(errorLocation: Node, name: __String, meaning: SymbolFlags): boolean {
+  function checkAndReportErrorForUsingTypeAsValue(errorLocation: Node, name: qb.__String, meaning: SymbolFlags): boolean {
     if (meaning & (SymbolFlags.Value & ~SymbolFlags.NamespaceModule)) {
       if (isPrimitiveTypeName(name)) {
         error(errorLocation, qd._0_only_refers_to_a_type_but_is_being_used_as_a_value_here, syntax.get.unescUnderscores(name));
@@ -3323,7 +3290,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return false;
   }
-  function isES2015OrLaterConstructorName(n: __String) {
+  function isES2015OrLaterConstructorName(n: qb.__String) {
     switch (n) {
       case 'Promise':
       case 'Symbol':
@@ -3335,7 +3302,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return false;
   }
-  function checkAndReportErrorForUsingNamespaceModuleAsValue(errorLocation: Node, name: __String, meaning: SymbolFlags): boolean {
+  function checkAndReportErrorForUsingNamespaceModuleAsValue(errorLocation: Node, name: qb.__String, meaning: SymbolFlags): boolean {
     if (meaning & (SymbolFlags.Value & ~SymbolFlags.NamespaceModule & ~SymbolFlags.Type)) {
       const n = resolveName(errorLocation, name, SymbolFlags.NamespaceModule & ~SymbolFlags.Value, undefined, undefined, false);
       const symbol = resolveSymbol(n);
@@ -3436,7 +3403,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       addRelatedInfo(error(node.moduleReference, message), createDiagnosticForNode(typeOnlyDeclaration, relatedMessage, name));
     }
   }
-  function resolveExportByName(moduleSymbol: Symbol, name: __String, sourceNode: TypeOnlyCompatibleAliasDeclaration | undefined, dontResolveAlias: boolean) {
+  function resolveExportByName(moduleSymbol: Symbol, name: qb.__String, sourceNode: TypeOnlyCompatibleAliasDeclaration | undefined, dontResolveAlias: boolean) {
     const exportValue = moduleSymbol.exports!.get(InternalSymbol.ExportEquals);
     if (exportValue) return getPropertyOfType(getTypeOfSymbol(exportValue), name);
     const exportSymbol = moduleSymbol.exports!.get(name);
@@ -3951,11 +3918,11 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (exportEquals !== moduleSymbol) addRange(exports, getPropertiesOfType(getTypeOfSymbol(exportEquals)));
     return exports;
   }
-  function tryGetMemberInModuleExports(memberName: __String, moduleSymbol: Symbol): Symbol | undefined {
+  function tryGetMemberInModuleExports(memberName: qb.__String, moduleSymbol: Symbol): Symbol | undefined {
     const symbolTable = getExportsOfModule(moduleSymbol);
     if (symbolTable) return symbolTable.get(memberName);
   }
-  function tryGetMemberInModuleExportsAndProperties(memberName: __String, moduleSymbol: Symbol): Symbol | undefined {
+  function tryGetMemberInModuleExportsAndProperties(memberName: qb.__String, moduleSymbol: Symbol): Symbol | undefined {
     const symbol = tryGetMemberInModuleExports(memberName, moduleSymbol);
     if (symbol) return symbol;
     const exportEquals = resolveExternalModuleSymbol(moduleSymbol);
@@ -4557,11 +4524,11 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         )
       : classType;
   }
-  function getTypeOfPropertyOfType(type: Type, name: __String): Type | undefined {
+  function getTypeOfPropertyOfType(type: Type, name: qb.__String): Type | undefined {
     const prop = getPropertyOfType(type, name);
     return prop ? getTypeOfSymbol(prop) : undefined;
   }
-  function getTypeOfPropertyOrIndexSignature(type: Type, name: __String): Type {
+  function getTypeOfPropertyOrIndexSignature(type: Type, name: qb.__String): Type {
     return getTypeOfPropertyOfType(type, name) || (NumericLiteral.name(name) && getIndexTypeOfType(type, IndexKind.Number)) || getIndexTypeOfType(type, IndexKind.String) || unknownType;
   }
   function isTypeAny(type: Type | undefined) {
@@ -4882,14 +4849,14 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (qc.is.kind(qc.CallExpression, expression)) {
       if (resolvedSymbol) return getTypeOfSymbol(resolvedSymbol);
       const objectLitType = checkExpressionCached((expression as BindableObjectDefinePropertyCall).arguments[2]);
-      const valueType = getTypeOfPropertyOfType(objectLitType, 'value' as __String);
+      const valueType = getTypeOfPropertyOfType(objectLitType, 'value' as qb.__String);
       if (valueType) return valueType;
-      const getFunc = getTypeOfPropertyOfType(objectLitType, 'get' as __String);
+      const getFunc = getTypeOfPropertyOfType(objectLitType, 'get' as qb.__String);
       if (getFunc) {
         const getSig = getSingleCallSignature(getFunc);
         if (getSig) return getReturnTypeOfSignature(getSig);
       }
-      const setFunc = getTypeOfPropertyOfType(objectLitType, 'set' as __String);
+      const setFunc = getTypeOfPropertyOfType(objectLitType, 'set' as qb.__String);
       if (setFunc) {
         const setSig = getSingleCallSignature(setFunc);
         if (setSig) return getTypeOfFirstParameterOfSignature(setSig);
@@ -5419,7 +5386,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const expr = qc.is.kind(qc.ComputedPropertyName, node) ? node.expression : node.argumentExpression;
     return qc.is.entityNameExpression(expr) && isTypeUsableAsPropertyName(qc.is.kind(qc.ComputedPropertyName, node) ? checkComputedPropertyName(node) : checkExpressionCached(expr));
   }
-  function isLateBoundName(name: __String): boolean {
+  function isLateBoundName(name: qb.__String): boolean {
     return (name as string).charCodeAt(0) === Codes._ && (name as string).charCodeAt(1) === Codes._ && (name as string).charCodeAt(2) === Codes.at;
   }
   function hasLateBindableName(node: Declaration): node is LateBoundDeclaration | LateBoundBinaryExpressionDeclaration {
@@ -5432,7 +5399,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function isNonBindableDynamicName(node: DeclarationName) {
     return isDynamicName(node) && !isLateBindableName(node);
   }
-  function getPropertyNameFromType(type: StringLiteralType | NumberLiteralType | UniqueESSymbolType): __String {
+  function getPropertyNameFromType(type: StringLiteralType | NumberLiteralType | UniqueESSymbolType): qb.__String {
     if (type.flags & TypeFlags.UniqueESSymbol) return (<UniqueESSymbolType>type).escName;
     if (type.flags & (TypeFlags.StringLiteral | TypeFlags.NumberLiteral)) return syntax.get.escUnderscores('' + (<StringLiteralType | NumberLiteralType>type).value);
     return fail();
@@ -5762,12 +5729,12 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const leftName = i >= leftCount ? undefined : getParameterNameAtPosition(left, i);
       const rightName = i >= rightCount ? undefined : getParameterNameAtPosition(right, i);
       const paramName = leftName === rightName ? leftName : !leftName ? rightName : !rightName ? leftName : undefined;
-      const paramSymbol = new QSymbol(SymbolFlags.FunctionScopedVariable | (isOptional && !isRestParam ? SymbolFlags.Optional : 0), paramName || (`arg${i}` as __String));
+      const paramSymbol = new QSymbol(SymbolFlags.FunctionScopedVariable | (isOptional && !isRestParam ? SymbolFlags.Optional : 0), paramName || (`arg${i}` as qb.__String));
       paramSymbol.type = isRestParam ? createArrayType(unionParamType) : unionParamType;
       params[i] = paramSymbol;
     }
     if (needsExtraRestElement) {
-      const restParamSymbol = new QSymbol(SymbolFlags.FunctionScopedVariable, 'args' as __String);
+      const restParamSymbol = new QSymbol(SymbolFlags.FunctionScopedVariable, 'args' as qb.__String);
       restParamSymbol.type = createArrayType(getTypeAtPosition(shorter, longestCount));
       params[longestCount] = restParamSymbol;
     }
@@ -6125,7 +6092,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (type.flags & TypeFlags.Object) return resolveStructuredTypeMembers(<ObjectType>type).properties;
     return empty;
   }
-  function getPropertyOfObjectType(type: Type, name: __String): Symbol | undefined {
+  function getPropertyOfObjectType(type: Type, name: qb.__String): Symbol | undefined {
     if (type.flags & TypeFlags.Object) {
       const resolved = resolveStructuredTypeMembers(<ObjectType>type);
       const symbol = resolved.members.get(name);
@@ -6402,7 +6369,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function getReducedApparentType(type: Type): Type {
     return getReducedType(getApparentType(getReducedType(type)));
   }
-  function createUnionOrIntersectionProperty(containingType: UnionOrIntersectionType, name: __String): Symbol | undefined {
+  function createUnionOrIntersectionProperty(containingType: UnionOrIntersectionType, name: qb.__String): Symbol | undefined {
     let singleProp: Symbol | undefined;
     let propSet: qb.QMap<Symbol> | undefined;
     let indexTypes: Type[] | undefined;
@@ -6490,7 +6457,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return result;
   }
-  function getUnionOrIntersectionProperty(type: UnionOrIntersectionType, name: __String): Symbol | undefined {
+  function getUnionOrIntersectionProperty(type: UnionOrIntersectionType, name: qb.__String): Symbol | undefined {
     const properties = type.propertyCache || (type.propertyCache = new SymbolTable());
     let property = properties.get(name);
     if (!property) {
@@ -6499,7 +6466,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return property;
   }
-  function getPropertyOfUnionOrIntersectionType(type: UnionOrIntersectionType, name: __String): Symbol | undefined {
+  function getPropertyOfUnionOrIntersectionType(type: UnionOrIntersectionType, name: qb.__String): Symbol | undefined {
     const property = getUnionOrIntersectionProperty(type, name);
     return property && !(getCheckFlags(property) & CheckFlags.ReadPartial) ? property : undefined;
   }
@@ -6558,7 +6525,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return errorInfo;
   }
-  function getPropertyOfType(type: Type, name: __String): Symbol | undefined {
+  function getPropertyOfType(type: Type, name: qb.__String): Symbol | undefined {
     type = getReducedApparentType(type);
     if (type.flags & TypeFlags.Object) {
       const resolved = resolveStructuredTypeMembers(<ObjectType>type);
@@ -6635,7 +6602,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function tryFindAmbientModule(moduleName: string, withAugmentations: boolean) {
     if (isExternalModuleNameRelative(moduleName)) return;
-    const symbol = getSymbol(globals, ('"' + moduleName + '"') as __String, SymbolFlags.ValueModule);
+    const symbol = getSymbol(globals, ('"' + moduleName + '"') as qb.__String, SymbolFlags.ValueModule);
     return symbol && withAugmentations ? getMergedSymbol(symbol) : symbol;
   }
   function isOptionalParameter(node: ParameterDeclaration | DocParameterTag) {
@@ -6747,7 +6714,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const lastParam = lastOrUndefined(declaration.parameters);
     const lastParamTags = lastParam ? qc.getDoc.parameterTags(lastParam) : qc.getDoc.tags(declaration).filter(isDocParameterTag);
     const lastParamVariadicType = firstDefined(lastParamTags, (p) => (p.typeExpression && qc.is.kind(qc.DocVariadicType, p.typeExpression.type) ? p.typeExpression.type : undefined));
-    const syntheticArgsSymbol = new QSymbol(SymbolFlags.Variable, 'args' as __String, CheckFlags.RestParameter);
+    const syntheticArgsSymbol = new QSymbol(SymbolFlags.Variable, 'args' as qb.__String, CheckFlags.RestParameter);
     syntheticArgsSymbol.type = lastParamVariadicType ? createArrayType(getTypeFromTypeNode(lastParamVariadicType.type)) : anyArrayType;
     if (lastParamVariadicType) parameters.pop();
     parameters.push(syntheticArgsSymbol);
@@ -7390,90 +7357,90 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return <ObjectType>type;
   }
-  function getGlobalValueSymbol(name: __String, reportErrors: boolean): Symbol | undefined {
+  function getGlobalValueSymbol(name: qb.__String, reportErrors: boolean): Symbol | undefined {
     return getGlobalSymbol(name, SymbolFlags.Value, reportErrors ? qd.Cannot_find_global_value_0 : undefined);
   }
-  function getGlobalTypeSymbol(name: __String, reportErrors: boolean): Symbol | undefined {
+  function getGlobalTypeSymbol(name: qb.__String, reportErrors: boolean): Symbol | undefined {
     return getGlobalSymbol(name, SymbolFlags.Type, reportErrors ? qd.Cannot_find_global_type_0 : undefined);
   }
-  function getGlobalSymbol(name: __String, meaning: SymbolFlags, diagnostic: qd.Message | undefined): Symbol | undefined {
+  function getGlobalSymbol(name: qb.__String, meaning: SymbolFlags, diagnostic: qd.Message | undefined): Symbol | undefined {
     return resolveName(undefined, name, meaning, diagnostic, name, false);
   }
-  function getGlobalType(name: __String, arity: 0, reportErrors: boolean): ObjectType;
-  function getGlobalType(name: __String, arity: number, reportErrors: boolean): GenericType;
-  function getGlobalType(name: __String, arity: number, reportErrors: boolean): ObjectType | undefined {
+  function getGlobalType(name: qb.__String, arity: 0, reportErrors: boolean): ObjectType;
+  function getGlobalType(name: qb.__String, arity: number, reportErrors: boolean): GenericType;
+  function getGlobalType(name: qb.__String, arity: number, reportErrors: boolean): ObjectType | undefined {
     const symbol = getGlobalTypeSymbol(name, reportErrors);
     return symbol || reportErrors ? getTypeOfGlobalSymbol(symbol, arity) : undefined;
   }
   function getGlobalTypedPropertyDescriptorType() {
-    return deferredGlobalTypedPropertyDescriptorType || (deferredGlobalTypedPropertyDescriptorType = getGlobalType('TypedPropertyDescriptor' as __String, 1, true)) || emptyGenericType;
+    return deferredGlobalTypedPropertyDescriptorType || (deferredGlobalTypedPropertyDescriptorType = getGlobalType('TypedPropertyDescriptor' as qb.__String, 1, true)) || emptyGenericType;
   }
   function getGlobalTemplateStringsArrayType() {
-    return deferredGlobalTemplateStringsArrayType || (deferredGlobalTemplateStringsArrayType = getGlobalType('TemplateStringsArray' as __String, 0, true)) || emptyObjectType;
+    return deferredGlobalTemplateStringsArrayType || (deferredGlobalTemplateStringsArrayType = getGlobalType('TemplateStringsArray' as qb.__String, 0, true)) || emptyObjectType;
   }
   function getGlobalImportMetaType() {
-    return deferredGlobalImportMetaType || (deferredGlobalImportMetaType = getGlobalType('ImportMeta' as __String, 0, true)) || emptyObjectType;
+    return deferredGlobalImportMetaType || (deferredGlobalImportMetaType = getGlobalType('ImportMeta' as qb.__String, 0, true)) || emptyObjectType;
   }
   function getGlobalESSymbolConstructorSymbol(reportErrors: boolean) {
-    return deferredGlobalESSymbolConstructorSymbol || (deferredGlobalESSymbolConstructorSymbol = getGlobalValueSymbol('Symbol' as __String, reportErrors));
+    return deferredGlobalESSymbolConstructorSymbol || (deferredGlobalESSymbolConstructorSymbol = getGlobalValueSymbol('Symbol' as qb.__String, reportErrors));
   }
   function getGlobalESSymbolType(reportErrors: boolean) {
-    return deferredGlobalESSymbolType || (deferredGlobalESSymbolType = getGlobalType('Symbol' as __String, 0, reportErrors)) || emptyObjectType;
+    return deferredGlobalESSymbolType || (deferredGlobalESSymbolType = getGlobalType('Symbol' as qb.__String, 0, reportErrors)) || emptyObjectType;
   }
   function getGlobalPromiseType(reportErrors: boolean) {
-    return deferredGlobalPromiseType || (deferredGlobalPromiseType = getGlobalType('Promise' as __String, 1, reportErrors)) || emptyGenericType;
+    return deferredGlobalPromiseType || (deferredGlobalPromiseType = getGlobalType('Promise' as qb.__String, 1, reportErrors)) || emptyGenericType;
   }
   function getGlobalPromiseLikeType(reportErrors: boolean) {
-    return deferredGlobalPromiseLikeType || (deferredGlobalPromiseLikeType = getGlobalType('PromiseLike' as __String, 1, reportErrors)) || emptyGenericType;
+    return deferredGlobalPromiseLikeType || (deferredGlobalPromiseLikeType = getGlobalType('PromiseLike' as qb.__String, 1, reportErrors)) || emptyGenericType;
   }
   function getGlobalPromiseConstructorSymbol(reportErrors: boolean): Symbol | undefined {
-    return deferredGlobalPromiseConstructorSymbol || (deferredGlobalPromiseConstructorSymbol = getGlobalValueSymbol('Promise' as __String, reportErrors));
+    return deferredGlobalPromiseConstructorSymbol || (deferredGlobalPromiseConstructorSymbol = getGlobalValueSymbol('Promise' as qb.__String, reportErrors));
   }
   function getGlobalPromiseConstructorLikeType(reportErrors: boolean) {
-    return deferredGlobalPromiseConstructorLikeType || (deferredGlobalPromiseConstructorLikeType = getGlobalType('PromiseConstructorLike' as __String, 0, reportErrors)) || emptyObjectType;
+    return deferredGlobalPromiseConstructorLikeType || (deferredGlobalPromiseConstructorLikeType = getGlobalType('PromiseConstructorLike' as qb.__String, 0, reportErrors)) || emptyObjectType;
   }
   function getGlobalAsyncIterableType(reportErrors: boolean) {
-    return deferredGlobalAsyncIterableType || (deferredGlobalAsyncIterableType = getGlobalType('AsyncIterable' as __String, 1, reportErrors)) || emptyGenericType;
+    return deferredGlobalAsyncIterableType || (deferredGlobalAsyncIterableType = getGlobalType('AsyncIterable' as qb.__String, 1, reportErrors)) || emptyGenericType;
   }
   function getGlobalAsyncIteratorType(reportErrors: boolean) {
-    return deferredGlobalAsyncIteratorType || (deferredGlobalAsyncIteratorType = getGlobalType('AsyncIterator' as __String, 3, reportErrors)) || emptyGenericType;
+    return deferredGlobalAsyncIteratorType || (deferredGlobalAsyncIteratorType = getGlobalType('AsyncIterator' as qb.__String, 3, reportErrors)) || emptyGenericType;
   }
   function getGlobalAsyncIterableIteratorType(reportErrors: boolean) {
-    return deferredGlobalAsyncIterableIteratorType || (deferredGlobalAsyncIterableIteratorType = getGlobalType('AsyncIterableIterator' as __String, 1, reportErrors)) || emptyGenericType;
+    return deferredGlobalAsyncIterableIteratorType || (deferredGlobalAsyncIterableIteratorType = getGlobalType('AsyncIterableIterator' as qb.__String, 1, reportErrors)) || emptyGenericType;
   }
   function getGlobalAsyncGeneratorType(reportErrors: boolean) {
-    return deferredGlobalAsyncGeneratorType || (deferredGlobalAsyncGeneratorType = getGlobalType('AsyncGenerator' as __String, 3, reportErrors)) || emptyGenericType;
+    return deferredGlobalAsyncGeneratorType || (deferredGlobalAsyncGeneratorType = getGlobalType('AsyncGenerator' as qb.__String, 3, reportErrors)) || emptyGenericType;
   }
   function getGlobalIterableType(reportErrors: boolean) {
-    return deferredGlobalIterableType || (deferredGlobalIterableType = getGlobalType('Iterable' as __String, 1, reportErrors)) || emptyGenericType;
+    return deferredGlobalIterableType || (deferredGlobalIterableType = getGlobalType('Iterable' as qb.__String, 1, reportErrors)) || emptyGenericType;
   }
   function getGlobalIteratorType(reportErrors: boolean) {
-    return deferredGlobalIteratorType || (deferredGlobalIteratorType = getGlobalType('Iterator' as __String, 3, reportErrors)) || emptyGenericType;
+    return deferredGlobalIteratorType || (deferredGlobalIteratorType = getGlobalType('Iterator' as qb.__String, 3, reportErrors)) || emptyGenericType;
   }
   function getGlobalIterableIteratorType(reportErrors: boolean) {
-    return deferredGlobalIterableIteratorType || (deferredGlobalIterableIteratorType = getGlobalType('IterableIterator' as __String, 1, reportErrors)) || emptyGenericType;
+    return deferredGlobalIterableIteratorType || (deferredGlobalIterableIteratorType = getGlobalType('IterableIterator' as qb.__String, 1, reportErrors)) || emptyGenericType;
   }
   function getGlobalGeneratorType(reportErrors: boolean) {
-    return deferredGlobalGeneratorType || (deferredGlobalGeneratorType = getGlobalType('Generator' as __String, 3, reportErrors)) || emptyGenericType;
+    return deferredGlobalGeneratorType || (deferredGlobalGeneratorType = getGlobalType('Generator' as qb.__String, 3, reportErrors)) || emptyGenericType;
   }
   function getGlobalIteratorYieldResultType(reportErrors: boolean) {
-    return deferredGlobalIteratorYieldResultType || (deferredGlobalIteratorYieldResultType = getGlobalType('IteratorYieldResult' as __String, 1, reportErrors)) || emptyGenericType;
+    return deferredGlobalIteratorYieldResultType || (deferredGlobalIteratorYieldResultType = getGlobalType('IteratorYieldResult' as qb.__String, 1, reportErrors)) || emptyGenericType;
   }
   function getGlobalIteratorReturnResultType(reportErrors: boolean) {
-    return deferredGlobalIteratorReturnResultType || (deferredGlobalIteratorReturnResultType = getGlobalType('IteratorReturnResult' as __String, 1, reportErrors)) || emptyGenericType;
+    return deferredGlobalIteratorReturnResultType || (deferredGlobalIteratorReturnResultType = getGlobalType('IteratorReturnResult' as qb.__String, 1, reportErrors)) || emptyGenericType;
   }
-  function getGlobalTypeOrUndefined(name: __String, arity = 0): ObjectType | undefined {
+  function getGlobalTypeOrUndefined(name: qb.__String, arity = 0): ObjectType | undefined {
     const symbol = getGlobalSymbol(name, SymbolFlags.Type, undefined);
     return symbol && <GenericType>getTypeOfGlobalSymbol(symbol, arity);
   }
   function getGlobalExtractSymbol(): Symbol {
-    return deferredGlobalExtractSymbol || (deferredGlobalExtractSymbol = getGlobalSymbol('Extract' as __String, SymbolFlags.TypeAlias, qd.Cannot_find_global_type_0)!);
+    return deferredGlobalExtractSymbol || (deferredGlobalExtractSymbol = getGlobalSymbol('Extract' as qb.__String, SymbolFlags.TypeAlias, qd.Cannot_find_global_type_0)!);
   }
   function getGlobalOmitSymbol(): Symbol {
-    return deferredGlobalOmitSymbol || (deferredGlobalOmitSymbol = getGlobalSymbol('Omit' as __String, SymbolFlags.TypeAlias, qd.Cannot_find_global_type_0)!);
+    return deferredGlobalOmitSymbol || (deferredGlobalOmitSymbol = getGlobalSymbol('Omit' as qb.__String, SymbolFlags.TypeAlias, qd.Cannot_find_global_type_0)!);
   }
   function getGlobalBigIntType(reportErrors: boolean) {
-    return deferredGlobalBigIntType || (deferredGlobalBigIntType = getGlobalType('BigInt' as __String, 0, reportErrors)) || emptyObjectType;
+    return deferredGlobalBigIntType || (deferredGlobalBigIntType = getGlobalType('BigInt' as qb.__String, 0, reportErrors)) || emptyObjectType;
   }
   function createTypeFromGenericGlobalType(genericGlobalType: GenericType, typeArguments: readonly Type[]): ObjectType {
     return genericGlobalType !== emptyGenericType ? createTypeReference(genericGlobalType, typeArguments) : emptyObjectType;
@@ -7597,7 +7564,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       for (let i = 0; i < arity; i++) {
         const typeParameter = (typeParameters[i] = createTypeParameter());
         if (i < maxLength) {
-          const property = new QSymbol(SymbolFlags.Property | (i >= minLength ? SymbolFlags.Optional : 0), ('' + i) as __String, readonly ? CheckFlags.Readonly : 0);
+          const property = new QSymbol(SymbolFlags.Property | (i >= minLength ? SymbolFlags.Optional : 0), ('' + i) as qb.__String, readonly ? CheckFlags.Readonly : 0);
           property.tupleLabelDeclaration = namedMemberDeclarations?.[i];
           property.type = typeParameter;
           properties.push(property);
@@ -7606,7 +7573,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     const literalTypes = [];
     for (let i = minLength; i <= maxLength; i++) literalTypes.push(getLiteralType(i));
-    const lengthSymbol = new QSymbol(SymbolFlags.Property, 'length' as __String);
+    const lengthSymbol = new QSymbol(SymbolFlags.Property, 'length' as qb.__String);
     lengthSymbol.type = hasRestElement ? numberType : getUnionType(literalTypes);
     properties.push(lengthSymbol);
     const type = <TupleType & InterfaceTypeWithDeclaredMembers>createObjectType(ObjectFlags.Tuple | ObjectFlags.Reference);
@@ -9532,7 +9499,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     errorOutputContainer: { errors?: Diagnostic[]; skipLogging?: boolean } | undefined
   ): boolean {
     if (qc.is.kind(qc.Block, node.body)) return false;
-    if (some(node.parameters, qnr.hasType)) return false;
+    if (some(node.parameters, qc.hasType)) return false;
     const sourceSig = getSingleCallSignature(source);
     if (!sourceSig) return false;
     const targetSignatures = getSignaturesOfType(target, SignatureKind.Call);
@@ -9551,7 +9518,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         }
         if (
           (getFunctionFlags(node) & FunctionFlags.Async) === 0 &&
-          !getTypeOfPropertyOfType(sourceReturn, 'then' as __String) &&
+          !getTypeOfPropertyOfType(sourceReturn, 'then' as qb.__String) &&
           checkTypeRelatedTo(createPromiseType(sourceReturn), targetReturn, relation, undefined)
         ) {
           addRelatedInfo(resultObj.errors[resultObj.errors.length - 1], createDiagnosticForNode(node, qd.Did_you_mean_to_mark_this_function_as_async));
@@ -9763,7 +9730,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const len = length(node.elements);
     if (!len) return;
     for (let i = 0; i < len; i++) {
-      if (isTupleLikeType(target) && !getPropertyOfType(target, ('' + i) as __String)) continue;
+      if (isTupleLikeType(target) && !getPropertyOfType(target, ('' + i) as qb.__String)) continue;
       const elem = node.elements[i];
       if (qc.is.kind(qc.OmittedExpression, elem)) continue;
       const nameType = getLiteralType(i);
@@ -10485,7 +10452,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
       return recursiveTypeRelatedTo(source, target, false, IntersectionState.None);
     }
-    function getTypeOfPropertyInTypes(types: Type[], name: __String) {
+    function getTypeOfPropertyInTypes(types: Type[], name: qb.__String) {
       const appendPropType = (propTypes: Type[] | undefined, type: Type) => {
         type = getApparentType(type);
         const prop = type.flags & TypeFlags.UnionOrIntersection ? getPropertyOfUnionOrIntersectionType(<UnionOrIntersectionType>type, name) : getPropertyOfObjectType(type, name);
@@ -11402,21 +11369,21 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function discriminateTypeByDiscriminableItems(
     target: UnionType,
-    discriminators: [() => Type, __String][],
+    discriminators: [() => Type, qb.__String][],
     related: (source: Type, target: Type) => boolean | Ternary,
     defaultValue?: undefined,
     skipPartial?: boolean
   ): Type | undefined;
   function discriminateTypeByDiscriminableItems(
     target: UnionType,
-    discriminators: [() => Type, __String][],
+    discriminators: [() => Type, qb.__String][],
     related: (source: Type, target: Type) => boolean | Ternary,
     defaultValue: Type,
     skipPartial?: boolean
   ): Type;
   function discriminateTypeByDiscriminableItems(
     target: UnionType,
-    discriminators: [() => Type, __String][],
+    discriminators: [() => Type, qb.__String][],
     related: (source: Type, target: Type) => boolean | Ternary,
     defaultValue?: Type,
     skipPartial?: boolean
@@ -11745,13 +11712,13 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return elementType === undefinedWideningType || elementType === implicitNeverType;
   }
   function isTupleLikeType(type: Type): boolean {
-    return isTupleType(type) || !!getPropertyOfType(type, '0' as __String);
+    return isTupleType(type) || !!getPropertyOfType(type, '0' as qb.__String);
   }
   function isArrayOrTupleLikeType(type: Type): boolean {
     return isArrayLikeType(type) || isTupleLikeType(type);
   }
   function getTupleElementType(type: Type, index: number) {
-    const propType = getTypeOfPropertyOfType(type, ('' + index) as __String);
+    const propType = getTypeOfPropertyOfType(type, ('' + index) as qb.__String);
     if (propType) return propType;
     if (everyType(type, isTupleType)) return mapType(type, (t) => getRestTypeOfTupleType(<TupleTypeReference>t) || undefinedType);
     return;
@@ -11897,7 +11864,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return type.flags & TypeFlags.Undefined ? type : getUnionType([type, undefinedType]);
   }
   function getGlobalNonNullableTypeInstantiation(type: Type) {
-    if (!deferredGlobalNonNullableTypeAlias) deferredGlobalNonNullableTypeAlias = getGlobalSymbol('NonNullable' as __String, SymbolFlags.TypeAlias, undefined) || unknownSymbol;
+    if (!deferredGlobalNonNullableTypeAlias) deferredGlobalNonNullableTypeAlias = getGlobalSymbol('NonNullable' as qb.__String, SymbolFlags.TypeAlias, undefined) || unknownSymbol;
     if (deferredGlobalNonNullableTypeAlias !== unknownSymbol) return getTypeAliasInstantiation(deferredGlobalNonNullableTypeAlias, [type]);
     return getTypeWithFacts(type, TypeFacts.NEUndefinedOrNull);
   }
@@ -11960,7 +11927,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     (<FreshObjectLiteralType>type).regularType = regularNew;
     return regularNew;
   }
-  function createWideningContext(parent: WideningContext | undefined, propertyName: __String | undefined, siblings: Type[] | undefined): WideningContext {
+  function createWideningContext(parent: WideningContext | undefined, propertyName: qb.__String | undefined, siblings: Type[] | undefined): WideningContext {
     return { parent, propertyName, siblings, resolvedProperties: undefined };
   }
   function getSiblingsOfContext(context: WideningContext): Type[] {
@@ -12990,7 +12957,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         (containsTruthyCheck(source, (<BinaryExpression>target).left) || containsTruthyCheck(source, (<BinaryExpression>target).right)))
     );
   }
-  function getAccessedPropertyName(access: AccessExpression): __String | undefined {
+  function getAccessedPropertyName(access: AccessExpression): qb.__String | undefined {
     return access.kind === Syntax.PropertyAccessExpression
       ? access.name.escapedText
       : StringLiteral.orNumericLiteralLike(access.argumentExpression)
@@ -13011,7 +12978,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return false;
   }
-  function isDiscriminantProperty(type: Type | undefined, name: __String) {
+  function isDiscriminantProperty(type: Type | undefined, name: qb.__String) {
     if (type && type.flags & TypeFlags.Union) {
       const prop = getUnionOrIntersectionProperty(<UnionType>type, name);
       if (prop && getCheckFlags(prop) & CheckFlags.SyntheticProperty) {
@@ -13081,7 +13048,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function isFunctionObjectType(type: ObjectType): boolean {
     const resolved = resolveStructuredTypeMembers(type);
-    return !!(resolved.callSignatures.length || resolved.constructSignatures.length || (resolved.members.get('bind' as __String) && isTypeSubtypeOf(type, globalFunctionType)));
+    return !!(resolved.callSignatures.length || resolved.constructSignatures.length || (resolved.members.get('bind' as qb.__String) && isTypeSubtypeOf(type, globalFunctionType)));
   }
   function getTypeFacts(type: Type): TypeFacts {
     const flags = type.flags;
@@ -13906,7 +13873,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (isMatchingReferenceDiscriminant(expr, type)) return narrowTypeByDiscriminant(type, <AccessExpression>expr, (t) => getTypeWithFacts(t, assumeTrue ? TypeFacts.Truthy : TypeFacts.Falsy));
       return type;
     }
-    function isTypePresencePossible(type: Type, propName: __String, assumeTrue: boolean) {
+    function isTypePresencePossible(type: Type, propName: qb.__String, assumeTrue: boolean) {
       if (getIndexInfoOfType(type, IndexKind.String)) return true;
       const prop = getPropertyOfType(type, propName);
       if (prop) return prop.flags & SymbolFlags.Optional ? true : assumeTrue;
@@ -14110,7 +14077,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (assumeTrue ? operator !== Syntax.Equals2Token && operator !== Syntax.Equals3Token : operator !== Syntax.ExclamationEqualsToken && operator !== Syntax.ExclamationEquals2Token) return type;
       const identifierType = getTypeOfExpression(identifier);
       if (!isFunctionType(identifierType) && !isConstructorType(identifierType)) return type;
-      const prototypeProperty = getPropertyOfType(identifierType, 'prototype' as __String);
+      const prototypeProperty = getPropertyOfType(identifierType, 'prototype' as qb.__String);
       if (!prototypeProperty) return type;
       const prototypeType = getTypeOfSymbol(prototypeProperty);
       const candidate = !isTypeAny(prototypeType) ? prototypeType : undefined;
@@ -14132,7 +14099,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const rightType = getTypeOfExpression(expr.right);
       if (!isTypeDerivedFrom(rightType, globalFunctionType)) return type;
       let targetType: Type | undefined;
-      const prototypeProperty = getPropertyOfType(rightType, 'prototype' as __String);
+      const prototypeProperty = getPropertyOfType(rightType, 'prototype' as qb.__String);
       if (prototypeProperty) {
         const prototypePropertyType = getTypeOfSymbol(prototypeProperty);
         if (!isTypeAny(prototypePropertyType)) targetType = prototypePropertyType;
@@ -14915,7 +14882,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         return Debug.assertNever(kind);
     }
   }
-  function getTypeOfPropertyOfContextualType(type: Type, name: __String) {
+  function getTypeOfPropertyOfContextualType(type: Type, name: qb.__String) {
     return mapType(
       type,
       (t) => {
@@ -14962,7 +14929,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function getContextualTypeForElementExpression(arrayContextualType: Type | undefined, index: number): Type | undefined {
     return (
       arrayContextualType &&
-      (getTypeOfPropertyOfContextualType(arrayContextualType, ('' + index) as __String) || getIteratedTypeOrElementType(IterationUse.Element, arrayContextualType, undefinedType, undefined, false))
+      (getTypeOfPropertyOfContextualType(arrayContextualType, ('' + index) as qb.__String) || getIteratedTypeOrElementType(IterationUse.Element, arrayContextualType, undefinedType, undefined, false))
     );
   }
   function getContextualTypeForConditionalOperand(node: Expression, contextFlags?: ContextFlags): Type | undefined {
@@ -15027,7 +14994,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       contextualType,
       map(
         filter(node.properties, (p) => !!p.symbol && p.kind === Syntax.PropertyAssignment && isPossiblyDiscriminantValue(p.initer) && isDiscriminantProperty(contextualType, p.symbol.escName)),
-        (prop) => [() => checkExpression((prop as PropertyAssignment).initer), prop.symbol.escName] as [() => Type, __String]
+        (prop) => [() => checkExpression((prop as PropertyAssignment).initer), prop.symbol.escName] as [() => Type, qb.__String]
       ),
       isTypeAssignableTo,
       contextualType
@@ -15041,7 +15008,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           node.properties,
           (p) => !!p.symbol && p.kind === Syntax.JsxAttribute && isDiscriminantProperty(contextualType, p.symbol.escName) && (!p.initer || isPossiblyDiscriminantValue(p.initer))
         ),
-        (prop) => [!(prop as JsxAttribute).initer ? () => trueType : () => checkExpression((prop as JsxAttribute).initer!), prop.symbol.escName] as [() => Type, __String]
+        (prop) => [!(prop as JsxAttribute).initer ? () => trueType : () => checkExpression((prop as JsxAttribute).initer!), prop.symbol.escName] as [() => Type, qb.__String]
       ),
       isTypeAssignableTo,
       contextualType
@@ -15155,7 +15122,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (intrinsicAttribs !== errorType) propsType = intersectTypes(intrinsicAttribs, propsType);
     return propsType;
   }
-  function getJsxPropsTypeForSignatureFromMember(sig: Signature, forcedLookupLocation: __String) {
+  function getJsxPropsTypeForSignatureFromMember(sig: Signature, forcedLookupLocation: qb.__String) {
     if (sig.unionSignatures) {
       const results: Type[] = [];
       for (const signature of sig.unionSignatures) {
@@ -15367,7 +15334,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function isNumericComputedName(name: ComputedPropertyName): boolean {
     return isTypeAssignableToKind(checkComputedPropertyName(name), TypeFlags.NumberLike);
   }
-  function isInfinityOrNaNString(name: string | __String): boolean {
+  function isInfinityOrNaNString(name: string | qb.__String): boolean {
     return name === 'Infinity' || name === '-Infinity' || name === 'NaN';
   }
   function checkComputedPropertyName(node: ComputedPropertyName): Type {
@@ -15568,7 +15535,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     checkJsxChildren(node);
     return getJsxElementTypeAt(node) || anyType;
   }
-  function isUnhyphenatedJsxName(name: string | __String) {
+  function isUnhyphenatedJsxName(name: string | qb.__String) {
     return !stringContains(name as string, '-');
   }
   function isJsxIntrinsicIdentifier(tagName: JsxTagNameExpression): boolean {
@@ -15672,7 +15639,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function checkJsxAttributes(node: JsxAttributes, checkMode: CheckMode | undefined) {
     return createJsxAttributesTypeFromAttributesProperty(node.parent, checkMode);
   }
-  function getJsxType(name: __String, location: Node | undefined) {
+  function getJsxType(name: qb.__String, location: Node | undefined) {
     const namespace = getJsxNamespaceAt(location);
     const exports = namespace && namespace.getExportsOfSymbol();
     const typeSymbol = exports && getSymbol(exports, name, SymbolFlags.Type);
@@ -15721,12 +15688,12 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return getGlobalSymbol(JsxNames.JSX, SymbolFlags.Namespace, undefined)!;
   }
-  function getNameFromJsxElementAttributesContainer(nameOfAttribPropContainer: __String, jsxNamespace: Symbol): __String | undefined {
+  function getNameFromJsxElementAttributesContainer(nameOfAttribPropContainer: qb.__String, jsxNamespace: Symbol): qb.__String | undefined {
     const jsxElementAttribPropInterfaceSym = jsxNamespace && getSymbol(jsxNamespace.exports!, nameOfAttribPropContainer, SymbolFlags.Type);
     const jsxElementAttribPropInterfaceType = jsxElementAttribPropInterfaceSym && getDeclaredTypeOfSymbol(jsxElementAttribPropInterfaceSym);
     const propertiesOfJsxElementAttribPropInterface = jsxElementAttribPropInterfaceType && getPropertiesOfType(jsxElementAttribPropInterfaceType);
     if (propertiesOfJsxElementAttribPropInterface) {
-      if (propertiesOfJsxElementAttribPropInterface.length === 0) return '' as __String;
+      if (propertiesOfJsxElementAttribPropInterface.length === 0) return '' as qb.__String;
       else if (propertiesOfJsxElementAttribPropInterface.length === 1) return propertiesOfJsxElementAttribPropInterface[0].escName;
       else if (propertiesOfJsxElementAttribPropInterface.length > 1) {
         error(jsxElementAttribPropInterfaceSym!.declarations[0], qd.The_global_type_JSX_0_may_not_have_more_than_one_property, syntax.get.unescUnderscores(nameOfAttribPropContainer));
@@ -15740,7 +15707,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function getJsxElementPropertiesName(jsxNamespace: Symbol) {
     return getNameFromJsxElementAttributesContainer(JsxNames.ElementAttributesPropertyNameContainer, jsxNamespace);
   }
-  function getJsxElementChildrenPropertyName(jsxNamespace: Symbol): __String | undefined {
+  function getJsxElementChildrenPropertyName(jsxNamespace: Symbol): qb.__String | undefined {
     return getNameFromJsxElementAttributesContainer(JsxNames.ElementChildrenAttributeNameContainer, jsxNamespace);
   }
   function getUninstantiatedJsxSignaturesOfType(elementType: Type, caller: JsxOpeningLikeElement): readonly Signature[] {
@@ -15846,7 +15813,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       checkJsxReturnAssignableToAppropriateBound(getJsxReferenceKind(jsxOpeningLikeNode), getReturnTypeOfSignature(sig), jsxOpeningLikeNode);
     }
   }
-  function isKnownProperty(targetType: Type, name: __String, isComparingJsxAttributes: boolean): boolean {
+  function isKnownProperty(targetType: Type, name: qb.__String, isComparingJsxAttributes: boolean): boolean {
     if (targetType.flags & TypeFlags.Object) {
       const resolved = resolveStructuredTypeMembers(targetType as ObjectType);
       if (
@@ -16022,7 +15989,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return qc.is.callOrNewExpression(node.parent) && node.parent.expression === node;
   }
-  function lookupSymbolForPrivateIdentifierDeclaration(propName: __String, location: Node): Symbol | undefined {
+  function lookupSymbolForPrivateIdentifierDeclaration(propName: qb.__String, location: Node): Symbol | undefined {
     for (let containingClass = qc.get.containingClass(location); !!containingClass; containingClass = qc.get.containingClass(containingClass)) {
       const { symbol } = containingClass;
       const name = getSymbolNameForPrivateIdentifier(symbol, propName);
@@ -16271,7 +16238,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (relatedInfo) addRelatedInfo(resultDiagnostic, relatedInfo);
     diagnostics.add(resultDiagnostic);
   }
-  function typeHasStaticProperty(propName: __String, containingType: Type): boolean {
+  function typeHasStaticProperty(propName: qb.__String, containingType: Type): boolean {
     const prop = containingType.symbol && getPropertyOfType(getTypeOfSymbol(containingType.symbol), propName);
     return prop !== undefined && prop.valueDeclaration && qc.has.syntacticModifier(prop.valueDeclaration, ModifierFlags.Static);
   }
@@ -16282,7 +16249,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const suggestion = getSuggestedSymbolForNonexistentProperty(name, containingType);
     return suggestion && suggestion.name;
   }
-  function getSuggestedSymbolForNonexistentSymbol(location: Node | undefined, outerName: __String, meaning: SymbolFlags): Symbol | undefined {
+  function getSuggestedSymbolForNonexistentSymbol(location: Node | undefined, outerName: qb.__String, meaning: SymbolFlags): Symbol | undefined {
     assert(outerName !== undefined, 'outername should always be defined');
     const result = resolveNameHelper(location, outerName, meaning, undefined, outerName, false, false, (symbols, name, meaning) => {
       Debug.assertEqual(outerName, name, 'name should equal outerName');
@@ -16291,7 +16258,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     });
     return result;
   }
-  function getSuggestionForNonexistentSymbol(location: Node | undefined, outerName: __String, meaning: SymbolFlags): string | undefined {
+  function getSuggestionForNonexistentSymbol(location: Node | undefined, outerName: qb.__String, meaning: SymbolFlags): string | undefined {
     const symbolResult = getSuggestedSymbolForNonexistentSymbol(location, outerName, meaning);
     return symbolResult && symbolResult.name;
   }
@@ -16346,7 +16313,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     (getCheckFlags(prop) & CheckFlags.Instantiated ? s.getLinks(prop).target : prop)!.isReferenced = SymbolFlags.All;
   }
-  function isValidPropertyAccess(node: PropertyAccessExpression | QualifiedName | ImportTypeNode, propertyName: __String): boolean {
+  function isValidPropertyAccess(node: PropertyAccessExpression | QualifiedName | ImportTypeNode, propertyName: qb.__String): boolean {
     switch (node.kind) {
       case Syntax.PropertyAccessExpression:
         return isValidPropertyAccessWithType(node, node.expression.kind === Syntax.SuperKeyword, propertyName, getWidenedType(checkExpression(node.expression)));
@@ -16359,7 +16326,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function isValidPropertyAccessForCompletions(node: PropertyAccessExpression | ImportTypeNode | QualifiedName, type: Type, property: Symbol): boolean {
     return isValidPropertyAccessWithType(node, node.kind === Syntax.PropertyAccessExpression && node.expression.kind === Syntax.SuperKeyword, property.escName, type);
   }
-  function isValidPropertyAccessWithType(node: PropertyAccessExpression | QualifiedName | ImportTypeNode, isSuper: boolean, propertyName: __String, type: Type): boolean {
+  function isValidPropertyAccessWithType(node: PropertyAccessExpression | QualifiedName | ImportTypeNode, isSuper: boolean, propertyName: qb.__String, type: Type): boolean {
     if (type === errorType || isTypeAny(type)) return true;
     const prop = getPropertyOfType(type, propertyName);
     if (prop) {
@@ -17574,7 +17541,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       [new qc.ParameterDeclaration(undefined, undefined, undefined, 'props', undefined, nodeBuilder.typeToTypeNode(result, node))],
       returnNode ? TypeReferenceNode.create(returnNode, undefined) : new qc.KeywordTypeNode(Syntax.AnyKeyword)
     );
-    const parameterSymbol = new QSymbol(SymbolFlags.FunctionScopedVariable, 'props' as __String);
+    const parameterSymbol = new QSymbol(SymbolFlags.FunctionScopedVariable, 'props' as qb.__String);
     parameterSymbol.type = result;
     return createSignature(declaration, undefined, undefined, [parameterSymbol], typeSymbol ? getDeclaredTypeOfSymbol(typeSymbol) : errorType, undefined, 1, SignatureFlags.None);
   }
@@ -17670,7 +17637,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       ((qc.is.kind(qc.FunctionDeclaration, decl) && getSymbolOfNode(decl)) ||
         (qc.is.kind(qc.BinaryExpression, decl.parent) && getSymbolOfNode(decl.parent.left)) ||
         (qc.is.kind(qc.VariableDeclaration, decl.parent) && getSymbolOfNode(decl.parent)));
-    const prototype = assignmentSymbol && assignmentSymbol.exports && assignmentSymbol.exports.get('prototype' as __String);
+    const prototype = assignmentSymbol && assignmentSymbol.exports && assignmentSymbol.exports.get('prototype' as qb.__String);
     const init = prototype && prototype.valueDeclaration && getAssignedJSPrototype(prototype.valueDeclaration);
     return init ? getSymbolOfNode(init) : undefined;
   }
@@ -17734,7 +17701,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (!qc.is.kind(qc.Identifier, left) || left.escapedText !== 'Symbol') return false;
     const globalESSymbol = getGlobalESSymbolConstructorSymbol(false);
     if (!globalESSymbol) return false;
-    return globalESSymbol === resolveName(left, 'Symbol' as __String, SymbolFlags.Value, undefined, undefined, false);
+    return globalESSymbol === resolveName(left, 'Symbol' as qb.__String, SymbolFlags.Value, undefined, undefined, false);
   }
   function checkImportCallExpression(node: ImportCall): Type {
     if (!checkGrammarArguments(node.arguments)) checkGrammarImportCallExpression(node);
@@ -17894,7 +17861,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (isTupleType(restType)) {
       const associatedNames = (<TupleType>(<TypeReference>restType).target).labeledElementDeclarations;
       const index = pos - paramCount;
-      return (associatedNames && getTupleElementLabel(associatedNames[index])) || ((restParameter.escName + '_' + index) as __String);
+      return (associatedNames && getTupleElementLabel(associatedNames[index])) || ((restParameter.escName + '_' + index) as qb.__String);
     }
     return restParameter.escName;
   }
@@ -18379,9 +18346,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (!qc.is.kind(qc.CallExpression, d)) return false;
     if (!isBindableObjectDefinePropertyCall(d)) return false;
     const objectLitType = checkExpressionCached(d.arguments[2]);
-    const valueType = getTypeOfPropertyOfType(objectLitType, 'value' as __String);
+    const valueType = getTypeOfPropertyOfType(objectLitType, 'value' as qb.__String);
     if (valueType) {
-      const writableProp = getPropertyOfType(objectLitType, 'writable' as __String);
+      const writableProp = getPropertyOfType(objectLitType, 'writable' as qb.__String);
       const writableType = writableProp && getTypeOfSymbol(writableProp);
       if (!writableType || writableType === falseType || writableType === regularFalseType) return true;
       if (writableProp && writableProp.valueDeclaration && qc.is.kind(qc.PropertyAssignment, writableProp.valueDeclaration)) {
@@ -18391,7 +18358,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
       return false;
     }
-    const setProp = getPropertyOfType(objectLitType, 'set' as __String);
+    const setProp = getPropertyOfType(objectLitType, 'set' as qb.__String);
     return !setProp;
   }
   function isAssignmentToReadonlyEntity(expr: Expression, symbol: Symbol, assignmentKind: AssignmentKind) {
@@ -19417,10 +19384,10 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return result;
   }
-  function hasTypeParameterByName(typeParameters: readonly TypeParameter[] | undefined, name: __String) {
+  function hasTypeParameterByName(typeParameters: readonly TypeParameter[] | undefined, name: qb.__String) {
     return some(typeParameters, (tp) => tp.symbol.escName === name);
   }
-  function getUniqueTypeParameterName(typeParameters: readonly TypeParameter[], baseName: __String) {
+  function getUniqueTypeParameterName(typeParameters: readonly TypeParameter[], baseName: qb.__String) {
     let len = (<string>baseName).length;
     while (len > 1 && (<string>baseName).charCodeAt(len - 1) >= Codes._0 && (<string>baseName).charCodeAt(len - 1) <= Codes._9) len--;
     const s = (<string>baseName).slice(0, len);
@@ -19796,7 +19763,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         }
       }
     }
-    function addName(names: EscapedMap<DeclarationMeaning>, location: Node, name: __String, meaning: DeclarationMeaning) {
+    function addName(names: EscapedMap<DeclarationMeaning>, location: Node, name: qb.__String, meaning: DeclarationMeaning) {
       const prev = names.get(name);
       if (prev) {
         if (prev & DeclarationMeaning.Method) {
@@ -20253,7 +20220,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const typeAsPromise = <PromiseOrAwaitableType>type;
     if (typeAsPromise.promisedTypeOfPromise) return typeAsPromise.promisedTypeOfPromise;
     if (isReferenceToType(type, getGlobalPromiseType(false))) return (typeAsPromise.promisedTypeOfPromise = getTypeArguments(<GenericType>type)[0]);
-    const thenFunction = getTypeOfPropertyOfType(type, 'then' as __String)!;
+    const thenFunction = getTypeOfPropertyOfType(type, 'then' as qb.__String)!;
     if (isTypeAny(thenFunction)) return;
     const thenSignatures = thenFunction ? getSignaturesOfType(thenFunction, SignatureKind.Call) : empty;
     if (thenSignatures.length === 0) {
@@ -20274,7 +20241,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return awaitedType || errorType;
   }
   function isThenableType(type: Type): boolean {
-    const thenFunction = getTypeOfPropertyOfType(type, 'then' as __String);
+    const thenFunction = getTypeOfPropertyOfType(type, 'then' as qb.__String);
     return !!thenFunction && getSignaturesOfType(getTypeWithFacts(thenFunction, TypeFacts.NEUndefinedOrNull), SignatureKind.Call).length > 0;
   }
   function getAwaitedType(type: Type, errorNode?: Node, diagnosticMessage?: qd.Message, arg0?: string | number): Type | undefined {
@@ -21408,7 +21375,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
   }
   function isIteratorResult(type: Type, kind: IterationTypeKind.Yield | IterationTypeKind.Return) {
-    const doneType = getTypeOfPropertyOfType(type, 'done' as __String) || falseType;
+    const doneType = getTypeOfPropertyOfType(type, 'done' as qb.__String) || falseType;
     return isTypeAssignableTo(kind === IterationTypeKind.Yield ? falseType : trueType, doneType);
   }
   function isYieldIteratorResult(type: Type) {
@@ -21430,14 +21397,14 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       return setCachedIterationTypes(type, 'iterationTypesOfIteratorResult', createIterationTypes(undefined));
     }
     const yieldIteratorResult = filterType(type, isYieldIteratorResult);
-    const yieldType = yieldIteratorResult !== neverType ? getTypeOfPropertyOfType(yieldIteratorResult, 'value' as __String) : undefined;
+    const yieldType = yieldIteratorResult !== neverType ? getTypeOfPropertyOfType(yieldIteratorResult, 'value' as qb.__String) : undefined;
     const returnIteratorResult = filterType(type, isReturnIteratorResult);
-    const returnType = returnIteratorResult !== neverType ? getTypeOfPropertyOfType(returnIteratorResult, 'value' as __String) : undefined;
+    const returnType = returnIteratorResult !== neverType ? getTypeOfPropertyOfType(returnIteratorResult, 'value' as qb.__String) : undefined;
     if (!yieldType && !returnType) return setCachedIterationTypes(type, 'iterationTypesOfIteratorResult', noIterationTypes);
     return setCachedIterationTypes(type, 'iterationTypesOfIteratorResult', createIterationTypes(yieldType, returnType || voidType, undefined));
   }
   function getIterationTypesOfMethod(type: Type, resolver: IterationTypesResolver, methodName: 'next' | 'return' | 'throw', errorNode: Node | undefined): IterationTypes | undefined {
-    const method = getPropertyOfType(type, methodName as __String);
+    const method = getPropertyOfType(type, methodName as qb.__String);
     if (!method && methodName !== 'next') return;
     const methodType =
       method && !(methodName === 'next' && method.flags & SymbolFlags.Optional)
@@ -22214,7 +22181,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           if (isConstantMemberAccess(ex)) {
             const type = getTypeOfExpression(ex.expression);
             if (type.symbol && type.symbol.flags & SymbolFlags.Enum) {
-              let name: __String;
+              let name: qb.__String;
               if (ex.kind === Syntax.PropertyAccessExpression) name = ex.name.escapedText;
               else {
                 name = syntax.get.escUnderscores(cast(ex.argumentExpression, isLiteralExpression).text);
@@ -22226,7 +22193,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
       return;
     }
-    function evaluateEnumMember(expr: Expression, enumSymbol: Symbol, name: __String) {
+    function evaluateEnumMember(expr: Expression, enumSymbol: Symbol, name: qb.__String) {
       const memberSymbol = enumSymbol.exports!.get(name);
       if (memberSymbol) {
         const declaration = memberSymbol.valueDeclaration;
@@ -22605,7 +22572,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const moduleSymbol = getSymbolOfNode(node);
     const links = s.getLinks(moduleSymbol);
     if (!links.exportsChecked) {
-      const exportEqualsSymbol = moduleSymbol.exports!.get('export=' as __String);
+      const exportEqualsSymbol = moduleSymbol.exports!.get('export=' as qb.__String);
       if (exportEqualsSymbol && hasExportedMembers(moduleSymbol)) {
         const declaration = exportEqualsSymbol.getDeclarationOfAliasSymbol() || exportEqualsSymbol.valueDeclaration;
         if (!isTopLevelInExternalModuleAugmentation(declaration) && !qc.is.inJSFile(declaration)) error(declaration, qd.An_export_assignment_cannot_be_used_in_a_module_with_other_exported_elements);
@@ -23342,7 +23309,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return getNamedMembers(propsByName);
   }
   function typeHasCallOrConstructSignatures(type: Type): boolean {
-    return qnr.typeHasCallOrConstructSignatures(type, checker);
+    return type.hasCallOrConstructSignatures(checker);
   }
   function isArgumentsLocalBinding(nodeIn: Identifier): boolean {
     if (!qc.is.generatedIdentifier(nodeIn)) {
@@ -23763,7 +23730,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     for (const file of host.getSourceFiles()) {
       if (file.redirectInfo) continue;
       if (!qc.is.externalOrCommonJsModule(file)) {
-        const fileGlobalThisSymbol = file.locals!.get('globalThis' as __String);
+        const fileGlobalThisSymbol = file.locals!.get('globalThis' as qb.__String);
         if (fileGlobalThisSymbol) {
           for (const declaration of fileGlobalThisSymbol.declarations) {
             diagnostics.add(createDiagnosticForNode(declaration, qd.Declaration_name_conflicts_with_built_in_global_identifier_0, 'globalThis'));
@@ -23791,24 +23758,24 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     globals.add(builtinGlobals, qd.Declaration_name_conflicts_with_built_in_global_identifier_0);
     s.getLinks(undefinedSymbol).type = undefinedWideningType;
-    s.getLinks(argumentsSymbol).type = getGlobalType('IArguments' as __String, 0, true);
+    s.getLinks(argumentsSymbol).type = getGlobalType('IArguments' as qb.__String, 0, true);
     s.getLinks(unknownSymbol).type = errorType;
     s.getLinks(globalThisSymbol).type = createObjectType(ObjectFlags.Anonymous, globalThisSymbol);
-    globalArrayType = getGlobalType('Array' as __String, 1, true);
-    globalObjectType = getGlobalType('Object' as __String, 0, true);
-    globalFunctionType = getGlobalType('Function' as __String, 0, true);
-    globalCallableFunctionType = (strictBindCallApply && getGlobalType('CallableFunction' as __String, 0, true)) || globalFunctionType;
-    globalNewableFunctionType = (strictBindCallApply && getGlobalType('NewableFunction' as __String, 0, true)) || globalFunctionType;
-    globalStringType = getGlobalType('String' as __String, 0, true);
-    globalNumberType = getGlobalType('Number' as __String, 0, true);
-    globalBooleanType = getGlobalType('Boolean' as __String, 0, true);
-    globalRegExpType = getGlobalType('RegExp' as __String, 0, true);
+    globalArrayType = getGlobalType('Array' as qb.__String, 1, true);
+    globalObjectType = getGlobalType('Object' as qb.__String, 0, true);
+    globalFunctionType = getGlobalType('Function' as qb.__String, 0, true);
+    globalCallableFunctionType = (strictBindCallApply && getGlobalType('CallableFunction' as qb.__String, 0, true)) || globalFunctionType;
+    globalNewableFunctionType = (strictBindCallApply && getGlobalType('NewableFunction' as qb.__String, 0, true)) || globalFunctionType;
+    globalStringType = getGlobalType('String' as qb.__String, 0, true);
+    globalNumberType = getGlobalType('Number' as qb.__String, 0, true);
+    globalBooleanType = getGlobalType('Boolean' as qb.__String, 0, true);
+    globalRegExpType = getGlobalType('RegExp' as qb.__String, 0, true);
     anyArrayType = createArrayType(anyType);
     autoArrayType = createArrayType(autoType);
     if (autoArrayType === emptyObjectType) autoArrayType = createAnonymousType(undefined, emptySymbols, empty, empty, undefined, undefined);
-    globalReadonlyArrayType = <GenericType>getGlobalTypeOrUndefined('ReadonlyArray' as __String, 1) || globalArrayType;
+    globalReadonlyArrayType = <GenericType>getGlobalTypeOrUndefined('ReadonlyArray' as qb.__String, 1) || globalArrayType;
     anyReadonlyArrayType = globalReadonlyArrayType ? createTypeFromGenericGlobalType(globalReadonlyArrayType, [anyType]) : anyArrayType;
-    globalThisType = <GenericType>getGlobalTypeOrUndefined('ThisType' as __String, 1);
+    globalThisType = <GenericType>getGlobalTypeOrUndefined('ThisType' as qb.__String, 1);
     if (augmentations) {
       for (const list of augmentations) {
         for (const augmentation of list) {
@@ -24870,7 +24837,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         if (sourcePropertiesFiltered) {
           return discriminateTypeByDiscriminableItems(
             <UnionType>target,
-            map(sourcePropertiesFiltered, (p) => [() => getTypeOfSymbol(p), p.escName] as [() => Type, __String]),
+            map(sourcePropertiesFiltered, (p) => [() => getTypeOfSymbol(p), p.escName] as [() => Type, qb.__String]),
             isRelatedTo,
             undefined,
             skipPartial
@@ -24882,15 +24849,15 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
 }
 namespace JsxNames {
-  export const JSX = 'JSX' as __String;
-  export const IntrinsicElements = 'IntrinsicElements' as __String;
-  export const ElementClass = 'ElementClass' as __String;
-  export const ElementAttributesPropertyNameContainer = 'ElementAttributesProperty' as __String;
-  export const ElementChildrenAttributeNameContainer = 'ElementChildrenAttribute' as __String;
-  export const Element = 'Element' as __String;
-  export const IntrinsicAttributes = 'IntrinsicAttributes' as __String;
-  export const IntrinsicClassAttributes = 'IntrinsicClassAttributes' as __String;
-  export const LibraryManagedAttributes = 'LibraryManagedAttributes' as __String;
+  export const JSX = 'JSX' as qb.__String;
+  export const IntrinsicElements = 'IntrinsicElements' as qb.__String;
+  export const ElementClass = 'ElementClass' as qb.__String;
+  export const ElementAttributesPropertyNameContainer = 'ElementAttributesProperty' as qb.__String;
+  export const ElementChildrenAttributeNameContainer = 'ElementChildrenAttribute' as qb.__String;
+  export const Element = 'Element' as qb.__String;
+  export const IntrinsicAttributes = 'IntrinsicAttributes' as qb.__String;
+  export const IntrinsicClassAttributes = 'IntrinsicClassAttributes' as qb.__String;
+  export const LibraryManagedAttributes = 'LibraryManagedAttributes' as qb.__String;
 }
 function getIterationTypesKeyFromIterationTypeKind(typeKind: IterationTypeKind) {
   switch (typeKind) {

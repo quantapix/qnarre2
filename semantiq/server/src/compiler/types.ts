@@ -2030,22 +2030,22 @@ export const enum SymbolFlags {
   LateBindingContainer = Class | Interface | TypeLiteral | ObjectLiteral | Function,
 }
 export interface Symbol {
-  flags: SymbolFlags;
+  assignmentDeclarationMembers?: qb.QMap<Declaration>;
+  constEnumOnlyModule?: boolean;
+  declarations?: Declaration[];
   escName: qb.__String;
-  id?: number;
-  mergeId?: number;
-  members?: SymbolTable;
-  parent?: Symbol;
   exports?: SymbolTable;
   exportSymbol?: Symbol;
+  flags: SymbolFlags;
   globalExports?: SymbolTable;
-  declarations?: Declaration[];
-  valueDeclaration?: Declaration;
+  id?: number;
   isAssigned?: boolean;
-  assignmentDeclarationMembers?: qb.QMap<Declaration>;
   isReferenced?: SymbolFlags;
   isReplaceableByMethod?: boolean;
-  constEnumOnlyModule?: boolean;
+  members?: SymbolTable;
+  mergeId?: number;
+  parent?: Symbol;
+  valueDeclaration?: Declaration;
 }
 export interface SymbolLinks {
   immediateTarget?: Symbol;
@@ -2305,17 +2305,17 @@ export interface TypeAliasDeclaration extends DeclarationStatement, DocContainer
   type: TypeNode;
 }
 export interface Type {
-  id: number;
-  checker: TypeChecker;
-  flags: TypeFlags;
-  symbol: Symbol;
-  pattern?: DestructuringPattern;
   aliasSymbol?: Symbol;
   aliasTypeArguments?: readonly Type[];
   aliasTypeArgumentsContainsMarker?: boolean;
+  checker: TypeChecker;
+  flags: TypeFlags;
+  id: number;
+  immediateBaseConstraint?: Type;
+  pattern?: DestructuringPattern;
   permissiveInstantiation?: Type;
   restrictiveInstantiation?: Type;
-  immediateBaseConstraint?: Type;
+  symbol?: Symbol;
   widened?: Type;
 }
 export interface TypeAcquisition {
@@ -2456,9 +2456,6 @@ export type TypeMapper =
   | { kind: TypeMapKind.Array; sources: readonly Type[]; targets: readonly Type[] | undefined }
   | { kind: TypeMapKind.Function; func: (t: Type) => Type }
   | { kind: TypeMapKind.Composite | TypeMapKind.Merged; mapper1: TypeMapper; mapper2: TypeMapper };
-export interface TypeNode extends Nobj {
-  _typeNodeBrand: any;
-}
 export interface TypeNode extends Nobj {
   _typeNodeBrand: any;
 }

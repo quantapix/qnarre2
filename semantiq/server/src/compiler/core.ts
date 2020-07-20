@@ -529,28 +529,28 @@ export function idText(n: qt.Identifier | qt.PrivateIdentifier): string {
   return qy.get.unescUnderscores(n.escapedText);
 }
 export abstract class Symbol implements qt.Symbol {
-  id?: number;
-  mergeId?: number;
-  parent?: Symbol;
-  members?: SymbolTable;
+  assignmentDeclarationMembers?: qb.QMap<Declaration>;
+  constEnumOnlyModule?: boolean;
+  declarations?: Declaration[];
+  docComment?: qt.SymbolDisplayPart[];
   exports?: SymbolTable;
   exportSymbol?: Symbol;
+  getComment?: qt.SymbolDisplayPart[];
   globalExports?: SymbolTable;
-  declarations?: Declaration[];
-  valueDeclaration?: Declaration;
+  id?: number;
   isAssigned?: boolean;
-  assignmentDeclarationMembers?: qb.QMap<Declaration>;
   isReferenced?: SymbolFlags;
   isReplaceableByMethod?: boolean;
-  constEnumOnlyModule?: boolean;
-  docComment?: qt.SymbolDisplayPart[];
-  getComment?: qt.SymbolDisplayPart[];
+  members?: SymbolTable;
+  mergeId?: number;
+  parent?: Symbol;
   setComment?: qt.SymbolDisplayPart[];
   tags?: qt.DocTagInfo[];
+  valueDeclaration?: Declaration;
   constructor(public flags: SymbolFlags, public escName: qb.__String) {}
   get name() {
     const n = this.valueDeclaration;
-    if (is.is.privateIdentifierPropertyDeclaration(n)) return idText(n.name);
+    if (is.privateIdentifierPropertyDeclaration(n)) return idText(n.name);
     return qy.get.unescUnderscores(this.escName);
   }
   abstract getId(): number;
@@ -728,62 +728,21 @@ export class SymbolTable<S extends qt.Symbol = Symbol> extends Map<qb.__String, 
   }
 }
 export class Type implements qt.Type {
-  id!: number;
-  symbol!: Symbol;
   aliasSymbol?: Symbol;
-  pattern?: qt.DestructuringPattern;
   aliasTypeArguments?: readonly Type[];
   aliasTypeArgumentsContainsMarker?: boolean;
+  id!: number;
+  immediateBaseConstraint?: Type;
+  objectFlags?: ObjectFlags;
+  pattern?: qt.DestructuringPattern;
   permissiveInstantiation?: Type;
   restrictiveInstantiation?: Type;
-  immediateBaseConstraint?: Type;
+  symbol?: Symbol;
   widened?: Type;
-  objectFlags?: ObjectFlags;
   constructor(public checker: qt.TypeChecker, public flags: TypeFlags) {}
-  getFlags(): TypeFlags {
-    return this.flags;
-  }
-  getSymbol(): Symbol | undefined {
-    return this.symbol;
-  }
-  getProperties(): Symbol[] {
-    return this.checker.getPropertiesOfType(this);
-  }
-  getProperty(propertyName: string): Symbol | undefined {
-    return this.checker.getPropertyOfType(this, propertyName);
-  }
-  getApparentProperties(): Symbol[] {
-    return this.checker.getAugmentedPropertiesOfType(this);
-  }
-  getCallSignatures(): readonly Signature[] {
-    return this.checker.getSignaturesOfType(this, qt.SignatureKind.Call);
-  }
-  getConstructSignatures(): readonly Signature[] {
-    return this.checker.getSignaturesOfType(this, qt.SignatureKind.Construct);
-  }
-  getStringIndexType(): Type | undefined {
-    return this.checker.getIndexTypeOfType(this, qt.IndexKind.String);
-  }
-  getNumberIndexType(): Type | undefined {
-    return this.checker.getIndexTypeOfType(this, qt.IndexKind.Number);
-  }
-  getBaseTypes(): BaseType[] | undefined {
-    return this.isClassOrInterface() ? this.checker.getBaseTypes(this) : undefined;
-  }
-  isNullableType() {
-    return this.checker.isNullableType(this);
-  }
-  getNonNullableType(): Type {
-    return this.checker.getNonNullableType(this);
-  }
-  getNonOptionalType(): Type {
-    return this.checker.getNonOptionalType(this);
-  }
-  getConstraint(): Type | undefined {
-    return this.checker.getBaseConstraintOfType(this);
-  }
-  getDefault(): Type | undefined {
-    return this.checker.getDefaultFromTypeParameter(this);
+  get typeArguments() {
+    if (this.getObjectFlags() & ObjectFlags.Reference) return this.checker.getTypeArguments((this as qt.Type) as qt.TypeReference);
+    return;
   }
   isUnion(): this is qt.UnionType {
     return !!(this.flags & TypeFlags.Union);
@@ -807,14 +766,64 @@ export class Type implements qt.Type {
     return !!(this.flags & TypeFlags.TypeParameter);
   }
   isClassOrInterface(): this is qt.InterfaceType {
-    return !!(getObjectFlags(this) & ObjectFlags.ClassOrInterface);
+    return !!(this.getObjectFlags() & ObjectFlags.ClassOrInterface);
   }
   isClass(): this is qt.InterfaceType {
-    return !!(getObjectFlags(this) & ObjectFlags.Class);
+    return !!(this.getObjectFlags() & ObjectFlags.Class);
   }
-  get typeArguments() {
-    if (getObjectFlags(this) & ObjectFlags.Reference) return this.checker.getTypeArguments((this as Type) as qt.TypeReference);
-    return;
+  isNullableType() {
+    return this.checker.isNullableType(this);
+  }
+  isAbstractConstructorType() {
+    return !!(this.getObjectFlags() & ObjectFlags.Anonymous) && !!this.symbol?.isAbstractConstructorSymbol();
+  }
+  getFlags() {
+    return this.flags;
+  }
+  getSymbol() {
+    return this.symbol;
+  }
+  getProperties(): qt.Symbol[] {
+    return this.checker.getPropertiesOfType(this);
+  }
+  getProperty(n: string): qt.Symbol | undefined {
+    return this.checker.getPropertyOfType(this, n);
+  }
+  getApparentProperties(): qt.Symbol[] {
+    return this.checker.getAugmentedPropertiesOfType(this);
+  }
+  getCallSignatures(): readonly qt.Signature[] {
+    return this.checker.getSignaturesOfType(this, qt.SignatureKind.Call);
+  }
+  getConstructSignatures(): readonly qt.Signature[] {
+    return this.checker.getSignaturesOfType(this, qt.SignatureKind.Construct);
+  }
+  getStringIndexType(): qt.Type | undefined {
+    return this.checker.getIndexTypeOfType(this, qt.IndexKind.String);
+  }
+  getNumberIndexType(): qt.Type | undefined {
+    return this.checker.getIndexTypeOfType(this, qt.IndexKind.Number);
+  }
+  getBaseTypes(): qt.BaseType[] | undefined {
+    return this.isClassOrInterface() ? this.checker.getBaseTypes(this) : undefined;
+  }
+  getNonNullableType(): qt.Type {
+    return this.checker.getNonNullableType(this);
+  }
+  getNonOptionalType(): qt.Type {
+    return this.checker.getNonOptionalType(this);
+  }
+  getConstraint(): qt.Type | undefined {
+    return this.checker.getBaseConstraintOfType(this);
+  }
+  getDefault(): qt.Type | undefined {
+    return this.checker.getDefaultFromTypeParameter(this);
+  }
+  getObjectFlags(): ObjectFlags {
+    return this.flags & TypeFlags.ObjectFlagsType ? (this as qt.ObjectType).objectFlags : 0;
+  }
+  hasCallOrConstructSignatures(checker: qt.TypeChecker) {
+    return checker.getSignaturesOfType(this, qt.SignatureKind.Call).length !== 0 || checker.getSignaturesOfType(this, qt.SignatureKind.Construct).length !== 0;
   }
 }
 export class Signature implements qt.Signature {
