@@ -1,4 +1,5 @@
 import * as qb from './base';
+import * as qc from './core3';
 import * as qt from './types';
 import { Node } from './types';
 import * as syntax from './syntax';
@@ -1578,7 +1579,7 @@ export function convertToObjectWorker(
     }
   }
   function isDoubleQuotedString(node: Node): boolean {
-    return qc.is.kind(StringLiteral, node) && isStringDoubleQuoted(node, sourceFile);
+    return qc.is.kind(qc.StringLiteral, node) && isStringDoubleQuoted(node, sourceFile);
   }
 }
 function getCompilerOptionValueTypeString(option: CommandLineOption) {

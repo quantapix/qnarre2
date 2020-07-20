@@ -296,10 +296,10 @@ export function transformDeclarations(context: TransformationContext) {
     function getFileReferenceForTypeName(typeName: string): FileReference | undefined {
       if (emittedImports) {
         for (const importStatement of emittedImports) {
-          if (qc.is.kind(ImportEqualsDeclaration, importStatement) && qp_qc.is.kind(ExternalModuleReference, importStatement.moduleReference)) {
+          if (qc.is.kind(qc.ImportEqualsDeclaration, importStatement) && qp_qc.is.kind(qc.ExternalModuleReference, importStatement.moduleReference)) {
             const expr = importStatement.moduleReference.expression;
             if (StringLiteral.like(expr) && expr.text === typeName) return;
-          } else if (qc.is.kind(ImportDeclaration, importStatement) && qc.is.kind(StringLiteral, importStatement.moduleSpecifier) && importStatement.moduleSpecifier.text === typeName) {
+          } else if (qc.is.kind(qc.ImportDeclaration, importStatement) && qc.is.kind(qc.StringLiteral, importStatement.moduleSpecifier) && importStatement.moduleSpecifier.text === typeName) {
             return;
           }
         }
@@ -337,7 +337,7 @@ export function transformDeclarations(context: TransformationContext) {
     }
   }
   function collectReferences(sourceFile: SourceFile | UnparsedSource, ret: QMap<SourceFile>) {
-    if (noResolve || (!qc.is.kind(UnparsedSource, sourceFile) && isSourceFileJS(sourceFile))) return ret;
+    if (noResolve || (!qc.is.kind(qc.UnparsedSource, sourceFile) && isSourceFileJS(sourceFile))) return ret;
     forEach(sourceFile.referencedFiles, (f) => {
       const elem = host.getSourceFileFromReference(sourceFile, f);
       if (elem) ret.set('' + getOriginalNodeId(elem), elem);
@@ -450,8 +450,8 @@ export function transformDeclarations(context: TransformationContext) {
     return false;
   }
   function getBindingNameVisible(elem: BindingElement | VariableDeclaration | OmittedExpression): boolean {
-    if (qc.is.kind(OmittedExpression, elem)) return false;
-    if (qc.is.kind(BindingPattern, elem.name)) return some(elem.name.elements, getBindingNameVisible);
+    if (qc.is.kind(qc.OmittedExpression, elem)) return false;
+    if (qc.is.kind(qc.BindingPattern, elem.name)) return some(elem.name.elements, getBindingNameVisible);
     return resolver.isDeclarationVisible(elem);
   }
   function updateParamsList(node: Node, params: Nodes<ParameterDeclaration>, modifierMask?: ModifierFlags) {
@@ -466,7 +466,7 @@ export function transformDeclarations(context: TransformationContext) {
       const thisParameter = getThisNode(ParameterDeclaration, input);
       if (thisParameter) newParams = [ensureParameter(thisParameter)];
     }
-    if (qc.is.kind(SetAccessorDeclaration, input)) {
+    if (qc.is.kind(qc.SetAccessorDeclaration, input)) {
       let newValueParameter: ParameterDeclaration | undefined;
       if (!isPrivate) {
         const valueParameter = getSetAccessorValueParameter(input);
@@ -485,14 +485,14 @@ export function transformDeclarations(context: TransformationContext) {
   }
   function isEnclosingDeclaration(node: Node) {
     return (
-      qc.is.kind(SourceFile, node) ||
-      qc.is.kind(TypeAliasDeclaration, node) ||
-      qc.is.kind(ModuleDeclaration, node) ||
-      qc.is.kind(ClassDeclaration, node) ||
-      qc.is.kind(InterfaceDeclaration, node) ||
+      qc.is.kind(qc.SourceFile, node) ||
+      qc.is.kind(qc.TypeAliasDeclaration, node) ||
+      qc.is.kind(qc.ModuleDeclaration, node) ||
+      qc.is.kind(qc.ClassDeclaration, node) ||
+      qc.is.kind(qc.InterfaceDeclaration, node) ||
       qc.is.functionLike(node) ||
-      qc.is.kind(IndexSignatureDeclaration, node) ||
-      qc.is.kind(MappedTypeNode, node)
+      qc.is.kind(qc.IndexSignatureDeclaration, node) ||
+      qc.is.kind(qc.MappedTypeNode, node)
     );
   }
   function checkEntityNameVisibility(entityName: EntityNameOrEntityNameExpression, enclosingDeclaration: Node) {
@@ -581,7 +581,7 @@ export function transformDeclarations(context: TransformationContext) {
       if (!qc.is.lateVisibilityPaintedStatement(i))
         return fail(`Late replaced statement was found which is not handled by the declaration transformer!: ${(ts as any).SyntaxKind ? (ts as any).SyntaxKind[(i as any).kind] : (i as any).kind}`);
       const priorNeedsDeclare = needsDeclare;
-      needsDeclare = i.parent && qc.is.kind(SourceFile, i.parent) && !(qp_isExternalModule(i.parent) && isBundledEmit);
+      needsDeclare = i.parent && qc.is.kind(qc.SourceFile, i.parent) && !(qp_isExternalModule(i.parent) && isBundledEmit);
       const result = transformTopLevelDeclaration(i);
       needsDeclare = priorNeedsDeclare;
       lateStatementReplacementMap.set('' + getOriginalNodeId(i), result);
@@ -595,7 +595,7 @@ export function transformDeclarations(context: TransformationContext) {
           lateStatementReplacementMap.delete(key);
           if (result) {
             if (isArray(result) ? some(result, needsScopeMarker) : needsScopeMarker(result)) needsScopeFixMarker = true;
-            if (qc.is.kind(SourceFile, statement.parent) && (isArray(result) ? some(result, qp_isExternalModuleIndicator) : qp_qc.is.externalModuleIndicator(result)))
+            if (qc.is.kind(qc.SourceFile, statement.parent) && (isArray(result) ? some(result, qp_isExternalModuleIndicator) : qp_qc.is.externalModuleIndicator(result)))
               resultHasExternalModuleIndicator = true;
           }
           return result;
@@ -611,7 +611,7 @@ export function transformDeclarations(context: TransformationContext) {
       if (hasDynamicName(input) && !resolver.isLateBound(qc.get.parseTreeOf(input) as Declaration)) return;
     }
     if (qc.is.functionLike(input) && resolver.isImplementationOfOverload(input)) return;
-    if (qc.is.kind(SemicolonClassElement, input)) return;
+    if (qc.is.kind(qc.SemicolonClassElement, input)) return;
     let previousEnclosingDeclaration: typeof enclosingDeclaration;
     if (isEnclosingDeclaration(input)) {
       previousEnclosingDeclaration = enclosingDeclaration;
@@ -621,14 +621,14 @@ export function transformDeclarations(context: TransformationContext) {
     const canProduceDiagnostic = canProduceDiagnostics(input);
     const oldWithinObjectLiteralType = suppressNewDiagnosticContexts;
     let shouldEnterSuppressNewDiagnosticsContextContext = (input.kind === Syntax.TypeLiteral || input.kind === Syntax.MappedType) && input.parent.kind !== Syntax.TypeAliasDeclaration;
-    if (qc.is.kind(MethodDeclaration, input) || qc.is.kind(MethodSignature, input)) {
+    if (qc.is.kind(qc.MethodDeclaration, input) || qc.is.kind(qc.MethodSignature, input)) {
       if (qc.has.effectiveModifier(input, ModifierFlags.Private)) {
         if (input.symbol && input.symbol.declarations && input.symbol.declarations[0] !== input) return;
         return cleanup(PropertyDeclaration.create(undefined, ensureModifiers(input), input.name, undefined, undefined, undefined));
       }
     }
     if (canProduceDiagnostic && !suppressNewDiagnosticContexts) getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(input as DeclarationDiagnosticProducing);
-    if (qc.is.kind(TypeQueryNode, input)) checkEntityNameVisibility(input.exprName, enclosingDeclaration);
+    if (qc.is.kind(qc.TypeQueryNode, input)) checkEntityNameVisibility(input.exprName, enclosingDeclaration);
     if (shouldEnterSuppressNewDiagnosticsContextContext) suppressNewDiagnosticContexts = true;
     if (isProcessedComponent(input)) {
       switch (input.kind) {
@@ -650,7 +650,7 @@ export function transformDeclarations(context: TransformationContext) {
           return cleanup(ctor);
         }
         case Syntax.MethodDeclaration: {
-          if (qc.is.kind(PrivateIdentifier, input.name)) return cleanup(undefined);
+          if (qc.is.kind(qc.PrivateIdentifier, input.name)) return cleanup(undefined);
           const sig = SignatureDeclaration.create(
             Syntax.MethodSignature,
             ensureTypeParams(input, input.typeParameters),
@@ -663,7 +663,7 @@ export function transformDeclarations(context: TransformationContext) {
           return cleanup(sig);
         }
         case Syntax.GetAccessor: {
-          if (qc.is.kind(PrivateIdentifier, input.name)) return cleanup(undefined);
+          if (qc.is.kind(qc.PrivateIdentifier, input.name)) return cleanup(undefined);
           const accessorType = getTypeAnnotationFromAllAccessorDeclarations(input, resolver.getAllAccessorDeclarations(input));
           return cleanup(
             input.update(
@@ -677,17 +677,17 @@ export function transformDeclarations(context: TransformationContext) {
           );
         }
         case Syntax.SetAccessor: {
-          if (qc.is.kind(PrivateIdentifier, input.name)) return cleanup(undefined);
+          if (qc.is.kind(qc.PrivateIdentifier, input.name)) return cleanup(undefined);
           return cleanup(input.update(undefined, ensureModifiers(input), input.name, updateAccessorParamsList(input, qc.has.effectiveModifier(input, ModifierFlags.Private)), undefined));
         }
         case Syntax.PropertyDeclaration:
-          if (qc.is.kind(PrivateIdentifier, input.name)) return cleanup(undefined);
+          if (qc.is.kind(qc.PrivateIdentifier, input.name)) return cleanup(undefined);
           return cleanup(input.update(undefined, ensureModifiers(input), input.name, input.questionToken, ensureType(input, input.type), ensureNoIniter(input)));
         case Syntax.PropertySignature:
-          if (qc.is.kind(PrivateIdentifier, input.name)) return cleanup(undefined);
+          if (qc.is.kind(qc.PrivateIdentifier, input.name)) return cleanup(undefined);
           return cleanup(input.update(ensureModifiers(input), input.name, input.questionToken, ensureType(input, input.type), ensureNoIniter(input)));
         case Syntax.MethodSignature: {
-          if (qc.is.kind(PrivateIdentifier, input.name)) return cleanup(undefined);
+          if (qc.is.kind(qc.PrivateIdentifier, input.name)) return cleanup(undefined);
           return cleanup(input.update(ensureTypeParams(input, input.typeParameters), updateParamsList(input, input.parameters), ensureType(input, input.type), input.name, input.questionToken));
         }
         case Syntax.CallSignature: {
@@ -699,7 +699,7 @@ export function transformDeclarations(context: TransformationContext) {
           );
         }
         case Syntax.VariableDeclaration: {
-          if (qc.is.kind(BindingPattern, input.name)) return recreateBindingPattern(input.name);
+          if (qc.is.kind(qc.BindingPattern, input.name)) return recreateBindingPattern(input.name);
           shouldEnterSuppressNewDiagnosticsContextContext = true;
           suppressNewDiagnosticContexts = true;
           return cleanup(input.update(input.name, ensureType(input, input.type), ensureNoIniter(input)));
@@ -746,7 +746,7 @@ export function transformDeclarations(context: TransformationContext) {
           Debug.assertNever(input, `Attempted to process unhandled node kind: ${(ts as any).SyntaxKind[(input as any).kind]}`);
       }
     }
-    if (qc.is.kind(TupleTypeNode, input) && syntax.get.lineAndCharOf(currentSourceFile, input.pos).line === syntax.get.lineAndCharOf(currentSourceFile, input.end).line)
+    if (qc.is.kind(qc.TupleTypeNode, input) && syntax.get.lineAndCharOf(currentSourceFile, input.pos).line === syntax.get.lineAndCharOf(currentSourceFile, input.end).line)
       setEmitFlags(input, EmitFlags.SingleLine);
     return cleanup(visitEachChild(input, visitDeclarationSubtree, context));
     function cleanup<T extends Node>(returnValue: T | undefined): T | undefined {
@@ -766,12 +766,12 @@ export function transformDeclarations(context: TransformationContext) {
     if (shouldStripInternal(input)) return;
     switch (input.kind) {
       case Syntax.ExportDeclaration: {
-        if (qc.is.kind(SourceFile, input.parent)) resultHasExternalModuleIndicator = true;
+        if (qc.is.kind(qc.SourceFile, input.parent)) resultHasExternalModuleIndicator = true;
         resultHasScopeMarker = true;
         return input.update(undefined, input.modifiers, input.exportClause, rewriteModuleSpecifier(input, input.moduleSpecifier), input.isTypeOnly);
       }
       case Syntax.ExportAssignment: {
-        if (qc.is.kind(SourceFile, input.parent)) resultHasExternalModuleIndicator = true;
+        if (qc.is.kind(qc.SourceFile, input.parent)) resultHasExternalModuleIndicator = true;
         resultHasScopeMarker = true;
         if (input.expression.kind === Syntax.Identifier) return input;
         else {
@@ -791,7 +791,7 @@ export function transformDeclarations(context: TransformationContext) {
     return input;
   }
   function stripExportModifiers(statement: Statement): Statement {
-    if (qc.is.kind(ImportEqualsDeclaration, statement) || qc.has.effectiveModifier(statement, ModifierFlags.Default)) return statement;
+    if (qc.is.kind(qc.ImportEqualsDeclaration, statement) || qc.has.effectiveModifier(statement, ModifierFlags.Default)) return statement;
     const clone = getMutableClone(statement);
     const modifiers = qc.create.modifiersFromFlags(qc.get.effectiveModifierFlags(statement) & (ModifierFlags.All ^ ModifierFlags.Export));
     clone.modifiers = modifiers.length ? new Nodes(modifiers) : undefined;
@@ -862,7 +862,7 @@ export function transformDeclarations(context: TransformationContext) {
           fakespace.locals = new SymbolTable(props);
           fakespace.symbol = props[0].parent!;
           const declarations = mapDefined(props, (p) => {
-            if (!qc.is.kind(PropertyAccessExpression, p.valueDeclaration)) return;
+            if (!qc.is.kind(qc.PropertyAccessExpression, p.valueDeclaration)) return;
             getSymbolAccessibilityDiagnostic = createGetSymbolAccessibilityDiagnosticForNode(p.valueDeclaration);
             const type = resolver.createTypeOfDeclaration(p.valueDeclaration, fakespace, declarationEmitNodeBuilderFlags, symbolTracker);
             getSymbolAccessibilityDiagnostic = oldDiag;
@@ -875,7 +875,7 @@ export function transformDeclarations(context: TransformationContext) {
           const cleanDeclaration = clean.update(undefined, modifiers, undefined, clean.name, clean.typeParameters, clean.parameters, clean.type, undefined);
           const namespaceDeclaration = namespaceDecl.update(undefined, modifiers, namespaceDecl.name, namespaceDecl.body);
           const exportDefaultDeclaration = new qc.ExportAssignment(undefined, false, namespaceDecl.name);
-          if (qc.is.kind(SourceFile, input.parent)) resultHasExternalModuleIndicator = true;
+          if (qc.is.kind(qc.SourceFile, input.parent)) resultHasExternalModuleIndicator = true;
           resultHasScopeMarker = true;
           return [cleanDeclaration, namespaceDeclaration, exportDefaultDeclaration];
         }
@@ -932,8 +932,8 @@ export function transformDeclarations(context: TransformationContext) {
               function walkBindingPattern(pattern: BindingPattern) {
                 let elems: PropertyDeclaration[] | undefined;
                 for (const elem of pattern.elements) {
-                  if (qc.is.kind(OmittedExpression, elem)) continue;
-                  if (qc.is.kind(BindingPattern, elem.name)) elems = concatenate(elems, walkBindingPattern(elem.name));
+                  if (qc.is.kind(qc.OmittedExpression, elem)) continue;
+                  if (qc.is.kind(qc.BindingPattern, elem.name)) elems = concatenate(elems, walkBindingPattern(elem.name));
                   elems = elems || [];
                   elems.push(PropertyDeclaration.create(undefined, ensureModifiers(param), elem.name as Identifier, undefined, ensureType(elem, undefined), undefined));
                 }
@@ -943,7 +943,7 @@ export function transformDeclarations(context: TransformationContext) {
           );
           getSymbolAccessibilityDiagnostic = oldDiag;
         }
-        const hasPrivateIdentifier = some(input.members, (member) => !!member.name && qc.is.kind(PrivateIdentifier, member.name));
+        const hasPrivateIdentifier = some(input.members, (member) => !!member.name && qc.is.kind(qc.PrivateIdentifier, member.name));
         const privateIdentifier = hasPrivateIdentifier ? [PropertyDeclaration.create(undefined, undefined, new PrivateIdentifier('#private'), undefined, undefined, undefined)] : undefined;
         const memberNodes = concatenate(concatenate(privateIdentifier, parameterProperties), Nodes.visit(input.members, visitDeclarationSubtree));
         const members = new Nodes(memberNodes);
@@ -1024,7 +1024,7 @@ export function transformDeclarations(context: TransformationContext) {
     if (e.kind === Syntax.OmittedExpression) return;
     if (e.name) {
       if (!getBindingNameVisible(e)) return;
-      if (qc.is.kind(BindingPattern, e.name)) return recreateBindingPattern(e.name);
+      if (qc.is.kind(qc.BindingPattern, e.name)) return recreateBindingPattern(e.name);
       return new qc.VariableDeclaration(e.name, ensureType(e, undefined), undefined);
     }
   }
@@ -1046,7 +1046,7 @@ export function transformDeclarations(context: TransformationContext) {
     return !!stripInternal && !!node && isInternalDeclaration(node, currentSourceFile);
   }
   function isNodeScopeMarker(node: Node) {
-    return qc.is.kind(ExportAssignment, node) || qc.is.kind(ExportDeclaration, node);
+    return qc.is.kind(qc.ExportAssignment, node) || qc.is.kind(qc.ExportDeclaration, node);
   }
   function hasScopeMarker(statements: readonly Statement[]) {
     return some(statements, isScopeMarker);

@@ -29,12 +29,12 @@ function isTypeDeclarationName(n: Node) {
 }
 export function canHaveExportModifier(n: Statement) {
   return (
-    qc.is.kind(EnumDeclaration, n) ||
-    qc.is.kind(VariableStatement, n) ||
-    qc.is.kind(FunctionDeclaration, n) ||
-    qc.is.kind(ClassDeclaration, n) ||
-    (qc.is.kind(ModuleDeclaration, n) && !qc.is.externalModuleAugmentation(n) && !isGlobalScopeAugmentation(n)) ||
-    qc.is.kind(InterfaceDeclaration, n) ||
+    qc.is.kind(qc.EnumDeclaration, n) ||
+    qc.is.kind(qc.VariableStatement, n) ||
+    qc.is.kind(qc.FunctionDeclaration, n) ||
+    qc.is.kind(qc.ClassDeclaration, n) ||
+    (qc.is.kind(qc.ModuleDeclaration, n) && !qc.is.externalModuleAugmentation(n) && !isGlobalScopeAugmentation(n)) ||
+    qc.is.kind(qc.InterfaceDeclaration, n) ||
     isTypeDeclaration(n)
   );
 }
@@ -595,7 +595,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     getExpandoSymbol(): Symbol | undefined {
       const v = this.valueDeclaration;
       if (!v || !qc.is.inJSFile(v) || this.flags & SymbolFlags.TypeAlias || getExpandoIniter(v, false)) return;
-      const i = qc.is.kind(VariableDeclaration, v) ? getDeclaredExpandoIniter(v) : getAssignedExpandoIniter(v);
+      const i = qc.is.kind(qc.VariableDeclaration, v) ? getDeclaredExpandoIniter(v) : getAssignedExpandoIniter(v);
       if (i) {
         const s = getSymbolOfNode(i);
         if (s) return mergeJSSymbols(s, this);
@@ -699,8 +699,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const candidates = mapDefined(this.declarations, (d) => {
         if (!qc.is.ambientModule(d) && d.parent && hasNonGlobalAugmentationExternalModuleSymbol(d.parent)) return getSymbolOfNode(d.parent);
         if (
-          qc.is.kind(ClassExpression, d) &&
-          qc.is.kind(BinaryExpression, d.parent) &&
+          qc.is.kind(qc.ClassExpression, d) &&
+          qc.is.kind(qc.BinaryExpression, d.parent) &&
           d.parent.operatorToken.kind === Syntax.EqualsToken &&
           qc.is.accessExpression(d.parent.left) &&
           qc.is.entityNameExpression(d.parent.left.expression)
@@ -814,7 +814,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
       if (this.flags & SymbolFlags.Enum) this.serializeEnum(symbolName, modifierFlags);
       if (this.flags & SymbolFlags.Class) {
-        if (this.flags & SymbolFlags.Property && qc.is.kind(BinaryExpression, this.valueDeclaration.parent) && qc.is.kind(ClassExpression, this.valueDeclaration.parent.right))
+        if (this.flags & SymbolFlags.Property && qc.is.kind(qc.BinaryExpression, this.valueDeclaration.parent) && qc.is.kind(qc.ClassExpression, this.valueDeclaration.parent.right))
           this.serializeAsAlias(this.getInternalSymbol(symbolName), modifierFlags);
         else {
           this.serializeAsClass(this.getInternalSymbol(symbolName), modifierFlags);
@@ -949,7 +949,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           map(
             filter(getPropertiesOfType(this.getTypeOfSymbol()), (p) => !!(p.flags & SymbolFlags.EnumMember)),
             (p) => {
-              const initializedValue = p.declarations && p.declarations[0] && qc.is.kind(EnumMember, p.declarations[0]) && getConstantValue(p.declarations[0] as EnumMember);
+              const initializedValue = p.declarations && p.declarations[0] && qc.is.kind(qc.EnumMember, p.declarations[0]) && getConstantValue(p.declarations[0] as EnumMember);
               return new qc.EnumMember(syntax.get.unescUnderscores(p.escName), initializedValue === undefined ? undefined : qc.asLiteral(initializedValue));
             }
           )
@@ -966,8 +966,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         else {
           const flags = !(this.flags & SymbolFlags.BlockScopedVariable) ? undefined : isConstVariable(symbol) ? NodeFlags.Const : NodeFlags.Let;
           const name = needsPostExportDefault || !(this.flags & SymbolFlags.Property) ? localName : getUnusedName(localName, symbol);
-          let textRange: Node | undefined = this.declarations && find(this.declarations, (d) => qc.is.kind(VariableDeclaration, d));
-          if (textRange && qc.is.kind(VariableDeclarationList, textRange.parent) && textRange.parent.declarations.length === 1) textRange = textRange.parent.parent;
+          let textRange: Node | undefined = this.declarations && find(this.declarations, (d) => qc.is.kind(qc.VariableDeclaration, d));
+          if (textRange && qc.is.kind(qc.VariableDeclarationList, textRange.parent) && textRange.parent.declarations.length === 1) textRange = textRange.parent.parent;
           const statement = setRange(
             new qc.VariableStatement(
               undefined,
@@ -1081,7 +1081,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         if (isExportAssignment) results.push(new qc.ExportAssignment(undefined, undefined, isExportEquals, symbolToExpression(target, context, SymbolFlags.All)));
         else {
           if (first === expr) serializeExportSpecifier(name, idText(first));
-          else if (qc.is.kind(ClassExpression, expr)) {
+          else if (qc.is.kind(qc.ClassExpression, expr)) {
             serializeExportSpecifier(name, getInternalSymbol(target, target.name));
           } else {
             const varName = getUnusedName(name, symbol);
@@ -1112,7 +1112,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
     }
     isConstructorDeclaredProperty() {
-      if (this.valueDeclaration && qc.is.kind(BinaryExpression, this.valueDeclaration)) {
+      if (this.valueDeclaration && qc.is.kind(qc.BinaryExpression, this.valueDeclaration)) {
         const ls = this.getLinks();
         if (ls.isConstructorDeclaredProperty === undefined) {
           ls.isConstructorDeclaredProperty =
@@ -1120,7 +1120,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
             every(
               this.declarations,
               (declaration) =>
-                qc.is.kind(BinaryExpression, declaration) &&
+                qc.is.kind(qc.BinaryExpression, declaration) &&
                 getAssignmentDeclarationKind(declaration) === AssignmentDeclarationKind.ThisProperty &&
                 (declaration.left.kind !== Syntax.ElementAccessExpression || StringLiteral.orNumericLiteralLike((<ElementAccessExpression>declaration.left).argumentExpression)) &&
                 !getAnnotatedTypeForAssignmentDeclaration(undefined, declaration, symbol, declaration)
@@ -1132,7 +1132,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     isAutoTypedProperty() {
       const v = this.valueDeclaration;
-      return v && qc.is.kind(PropertyDeclaration, v) && !qc.get.effectiveTypeAnnotationNode(v) && !v.initer && (noImplicitAny || qc.is.inJSFile(v));
+      return v && qc.is.kind(qc.PropertyDeclaration, v) && !qc.get.effectiveTypeAnnotationNode(v) && !v.initer && (noImplicitAny || qc.is.inJSFile(v));
     }
     getDeclaringConstructor() {
       const ds = this.declarations;
@@ -1162,7 +1162,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
       const declaration = symbol.valueDeclaration;
       if (isCatchClauseVariableDeclarationOrBindingElement(declaration)) return anyType;
-      if (qc.is.kind(SourceFile, declaration) && qc.is.jsonSourceFile(declaration)) {
+      if (qc.is.kind(qc.SourceFile, declaration) && qc.is.jsonSourceFile(declaration)) {
         if (!declaration.statements.length) return emptyObjectType;
         return getWidenedType(getWidenedLiteralType(checkExpression(declaration.statements[0].expression)));
       }
@@ -1173,46 +1173,46 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       let type: Type | undefined;
       if (declaration.kind === Syntax.ExportAssignment) type = widenTypeForVariableLikeDeclaration(checkExpressionCached((<ExportAssignment>declaration).expression), declaration);
       else if (
-        qc.is.kind(BinaryExpression, declaration) ||
+        qc.is.kind(qc.BinaryExpression, declaration) ||
         (qc.is.inJSFile(declaration) &&
-          (qc.is.kind(CallExpression, declaration) ||
-            ((qc.is.kind(PropertyAccessExpression, declaration) || qc.is.bindableStaticElementAccessExpression(declaration)) && qc.is.kind(BinaryExpression, declaration.parent))))
+          (qc.is.kind(qc.CallExpression, declaration) ||
+            ((qc.is.kind(qc.PropertyAccessExpression, declaration) || qc.is.bindableStaticElementAccessExpression(declaration)) && qc.is.kind(qc.BinaryExpression, declaration.parent))))
       ) {
         type = getWidenedTypeForAssignmentDeclaration(symbol);
       } else if (
         qc.isDoc.propertyLikeTag(declaration) ||
-        qc.is.kind(PropertyAccessExpression, declaration) ||
-        qc.is.kind(ElementAccessExpression, declaration) ||
-        qc.is.kind(Identifier, declaration) ||
+        qc.is.kind(qc.PropertyAccessExpression, declaration) ||
+        qc.is.kind(qc.ElementAccessExpression, declaration) ||
+        qc.is.kind(qc.Identifier, declaration) ||
         StringLiteral.like(declaration) ||
-        qc.is.kind(NumericLiteral, declaration) ||
-        qc.is.kind(ClassDeclaration, declaration) ||
-        qc.is.kind(FunctionDeclaration, declaration) ||
-        (qc.is.kind(MethodDeclaration, declaration) && !qc.is.objectLiteralMethod(declaration)) ||
-        qc.is.kind(MethodSignature, declaration) ||
-        qc.is.kind(SourceFile, declaration)
+        qc.is.kind(qc.NumericLiteral, declaration) ||
+        qc.is.kind(qc.ClassDeclaration, declaration) ||
+        qc.is.kind(qc.FunctionDeclaration, declaration) ||
+        (qc.is.kind(qc.MethodDeclaration, declaration) && !qc.is.objectLiteralMethod(declaration)) ||
+        qc.is.kind(qc.MethodSignature, declaration) ||
+        qc.is.kind(qc.SourceFile, declaration)
       ) {
         if (symbol.flags & (SymbolFlags.Function | SymbolFlags.Method | SymbolFlags.Class | SymbolFlags.Enum | SymbolFlags.ValueModule)) return this.getTypeOfFuncClassEnumModule();
-        type = qc.is.kind(BinaryExpression, declaration.parent) ? getWidenedTypeForAssignmentDeclaration(symbol) : tryGetTypeFromEffectiveTypeNode(declaration) || anyType;
-      } else if (qc.is.kind(PropertyAssignment, declaration)) {
+        type = qc.is.kind(qc.BinaryExpression, declaration.parent) ? getWidenedTypeForAssignmentDeclaration(symbol) : tryGetTypeFromEffectiveTypeNode(declaration) || anyType;
+      } else if (qc.is.kind(qc.PropertyAssignment, declaration)) {
         type = tryGetTypeFromEffectiveTypeNode(declaration) || checkPropertyAssignment(declaration);
-      } else if (qc.is.kind(JsxAttribute, declaration)) {
+      } else if (qc.is.kind(qc.JsxAttribute, declaration)) {
         type = tryGetTypeFromEffectiveTypeNode(declaration) || checkJsxAttribute(declaration);
-      } else if (qc.is.kind(ShorthandPropertyAssignment, declaration)) {
+      } else if (qc.is.kind(qc.ShorthandPropertyAssignment, declaration)) {
         type = tryGetTypeFromEffectiveTypeNode(declaration) || checkExpressionForMutableLocation(declaration.name, CheckMode.Normal);
       } else if (qc.is.objectLiteralMethod(declaration)) {
         type = tryGetTypeFromEffectiveTypeNode(declaration) || checkObjectLiteralMethod(declaration, CheckMode.Normal);
       } else if (
         qc.is.kind(qc.ParameterDeclaration, declaration) ||
-        qc.is.kind(PropertyDeclaration, declaration) ||
-        qc.is.kind(PropertySignature, declaration) ||
-        qc.is.kind(VariableDeclaration, declaration) ||
-        qc.is.kind(BindingElement, declaration)
+        qc.is.kind(qc.PropertyDeclaration, declaration) ||
+        qc.is.kind(qc.PropertySignature, declaration) ||
+        qc.is.kind(qc.VariableDeclaration, declaration) ||
+        qc.is.kind(qc.BindingElement, declaration)
       ) {
         type = getWidenedTypeForVariableLikeDeclaration(declaration, true);
-      } else if (qc.is.kind(EnumDeclaration, declaration)) {
+      } else if (qc.is.kind(qc.EnumDeclaration, declaration)) {
         type = this.getTypeOfFuncClassEnumModule();
-      } else if (qc.is.kind(EnumMember, declaration)) {
+      } else if (qc.is.kind(qc.EnumMember, declaration)) {
         type = this.getTypeOfEnumMember();
       } else if (qc.is.accessor(declaration)) {
         type = resolveTypeOfAccessors(symbol);
@@ -1291,7 +1291,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (symbol.flags & SymbolFlags.Module && isShorthandAmbientModuleSymbol(symbol)) return anyType;
       else if (declaration && (declaration.kind === Syntax.BinaryExpression || (qc.is.accessExpression(declaration) && declaration.parent.kind === Syntax.BinaryExpression)))
         return getWidenedTypeForAssignmentDeclaration(symbol);
-      else if (symbol.flags & SymbolFlags.ValueModule && declaration && qc.is.kind(SourceFile, declaration) && declaration.commonJsModuleIndicator) {
+      else if (symbol.flags & SymbolFlags.ValueModule && declaration && qc.is.kind(qc.SourceFile, declaration) && declaration.commonJsModuleIndicator) {
         const resolvedModule = resolveExternalModuleSymbol(symbol);
         if (resolvedModule !== symbol) {
           if (!pushTypeResolution(symbol, TypeSystemPropertyName.Type)) return errorType;
@@ -1619,7 +1619,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (this.flags & SymbolFlags.Method || this.getCheckFlags() & CheckFlags.SyntheticMethod) return true;
       if (qc.is.inJSFile(this.valueDeclaration)) {
         const p = this.valueDeclaration?.parent;
-        return p && qc.is.kind(BinaryExpression, p) && getAssignmentDeclarationKind(p) === AssignmentDeclarationKind.PrototypeProperty;
+        return p && qc.is.kind(qc.BinaryExpression, p) && getAssignmentDeclarationKind(p) === AssignmentDeclarationKind.PrototypeProperty;
       }
     }
     symbolHasNonMethodDeclaration() {
@@ -1714,8 +1714,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
             if (
               node.name &&
               subsequentName &&
-              ((qc.is.kind(PrivateIdentifier, node.name) && qc.is.kind(PrivateIdentifier, subsequentName) && node.name.escapedText === subsequentName.escapedText) ||
-                (qc.is.kind(ComputedPropertyName, node.name) && qc.is.kind(ComputedPropertyName, subsequentName)) ||
+              ((qc.is.kind(qc.PrivateIdentifier, node.name) && qc.is.kind(qc.PrivateIdentifier, subsequentName) && node.name.escapedText === subsequentName.escapedText) ||
+                (qc.is.kind(qc.ComputedPropertyName, node.name) && qc.is.kind(qc.ComputedPropertyName, subsequentName)) ||
                 (qc.is.propertyNameLiteral(node.name) && qc.is.propertyNameLiteral(subsequentName) && getEscapedTextOfIdentifierOrLiteral(node.name) === getEscapedTextOfIdentifierOrLiteral(subsequentName)))
             ) {
               const reportError =
@@ -1858,10 +1858,10 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       return target;
     }
     isSymbolOfDestructuredElementOfCatchBinding() {
-      return qc.is.kind(BindingElement, this.valueDeclaration) && walkUpBindingElementsAndPatterns(this.valueDeclaration).parent.kind === Syntax.CatchClause;
+      return qc.is.kind(qc.BindingElement, this.valueDeclaration) && walkUpBindingElementsAndPatterns(this.valueDeclaration).parent.kind === Syntax.CatchClause;
     }
     isSymbolOfDeclarationWithCollidingName() {
-      if (this.flags & SymbolFlags.BlockScoped && !qc.is.kind(SourceFile, this.valueDeclaration)) {
+      if (this.flags & SymbolFlags.BlockScoped && !qc.is.kind(qc.SourceFile, this.valueDeclaration)) {
         const ls = this.getLinks();
         if (ls.isDeclarationWithCollidingName === undefined) {
           const container = qc.get.enclosingBlockScopeContainer(this.valueDeclaration);
@@ -1989,8 +1989,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           const anyImportSyntax = getAnyImportSyntax(declaration);
           if (anyImportSyntax && !qc.has.syntacticModifier(anyImportSyntax, ModifierFlags.Export) && isDeclarationVisible(anyImportSyntax.parent)) return addVisibleAlias(declaration, anyImportSyntax);
           else if (
-            qc.is.kind(VariableDeclaration, declaration) &&
-            qc.is.kind(VariableStatement, declaration.parent.parent) &&
+            qc.is.kind(qc.VariableDeclaration, declaration) &&
+            qc.is.kind(qc.VariableStatement, declaration.parent.parent) &&
             !qc.has.syntacticModifier(declaration.parent.parent, ModifierFlags.Export) &&
             isDeclarationVisible(declaration.parent.parent.parent)
           ) {
@@ -2040,8 +2040,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         let d = firstDefined(this.declarations, (d) => (qc.get.nameOfDeclaration(d) ? d : undefined));
         const name = d && qc.get.nameOfDeclaration(d);
         if (d && name) {
-          if (qc.is.kind(CallExpression, d) && isBindableObjectDefinePropertyCall(d)) return this.name;
-          if (qc.is.kind(ComputedPropertyName, name) && !(this.getCheckFlags() & CheckFlags.Late)) {
+          if (qc.is.kind(qc.CallExpression, d) && isBindableObjectDefinePropertyCall(d)) return this.name;
+          if (qc.is.kind(qc.ComputedPropertyName, name) && !(this.getCheckFlags() & CheckFlags.Late)) {
             const nameType = this.getLinks().nameType;
             if (nameType && nameType.flags & TypeFlags.StringOrNumberLiteral) {
               const result = getNameOfSymbolFromNameType(this, c);
@@ -2784,7 +2784,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const sourceFiles = host.getSourceFiles();
       return sourceFiles.indexOf(declarationFile) <= sourceFiles.indexOf(useFile);
     }
-    if (declaration.pos <= usage.pos && !(qc.is.kind(PropertyDeclaration, declaration) && qc.is.thisProperty(usage.parent) && !declaration.initer && !declaration.exclamationToken)) {
+    if (declaration.pos <= usage.pos && !(qc.is.kind(qc.PropertyDeclaration, declaration) && qc.is.thisProperty(usage.parent) && !declaration.initer && !declaration.exclamationToken)) {
       if (declaration.kind === Syntax.BindingElement) {
         const errorBindingElement = qc.get.ancestor(usage, Syntax.BindingElement) as BindingElement;
         if (errorBindingElement)
@@ -2792,9 +2792,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         return isBlockScopedNameDeclaredBeforeUse(qc.get.ancestor(declaration, Syntax.VariableDeclaration) as Declaration, usage);
       } else if (declaration.kind === Syntax.VariableDeclaration) {
         return !isImmediatelyUsedInIniterOfBlockScopedVariable(declaration as VariableDeclaration, usage);
-      } else if (qc.is.kind(ClassDeclaration, declaration)) {
-        return !qc.findAncestor(usage, (n) => qc.is.kind(ComputedPropertyName, n) && n.parent.parent === declaration);
-      } else if (qc.is.kind(PropertyDeclaration, declaration)) {
+      } else if (qc.is.kind(qc.ClassDeclaration, declaration)) {
+        return !qc.findAncestor(usage, (n) => qc.is.kind(qc.ComputedPropertyName, n) && n.parent.parent === declaration);
+      } else if (qc.is.kind(qc.PropertyDeclaration, declaration)) {
         return !isPropertyImmediatelyReferencedWithinDeclaration(declaration, usage, false);
       } else if (qc.is.parameterPropertyDeclaration(declaration, declaration.parent)) {
         return !(
@@ -2814,7 +2814,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         compilerOptions.target === ScriptTarget.ESNext &&
         !!compilerOptions.useDefineForClassFields &&
         qc.get.containingClass(declaration) &&
-        (qc.is.kind(PropertyDeclaration, declaration) || qc.is.parameterPropertyDeclaration(declaration, declaration.parent))
+        (qc.is.kind(qc.PropertyDeclaration, declaration) || qc.is.parameterPropertyDeclaration(declaration, declaration.parent))
       ) {
         return !isPropertyImmediatelyReferencedWithinDeclaration(declaration, usage, true);
       }
@@ -2822,7 +2822,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return false;
     function usageInTypeDeclaration() {
-      return !!qc.findAncestor(usage, (node) => qc.is.kind(InterfaceDeclaration, node) || qc.is.kind(TypeAliasDeclaration, node));
+      return !!qc.findAncestor(usage, (node) => qc.is.kind(qc.InterfaceDeclaration, node) || qc.is.kind(qc.TypeAliasDeclaration, node));
     }
     function isImmediatelyUsedInIniterOfBlockScopedVariable(declaration: VariableDeclaration, usage: Node): boolean {
       switch (declaration.parent.parent.kind) {
@@ -2860,7 +2860,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
             return true;
           case Syntax.PropertyDeclaration:
             return stopAtAnyPropertyDeclaration &&
-              ((qc.is.kind(PropertyDeclaration, declaration) && node.parent === declaration.parent) ||
+              ((qc.is.kind(qc.PropertyDeclaration, declaration) && node.parent === declaration.parent) ||
                 (qc.is.parameterPropertyDeclaration(declaration, declaration.parent) && node.parent === declaration.parent.parent))
               ? 'quit'
               : true;
@@ -2914,7 +2914,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           return requiresScopeChangeWorker((node as PropertyDeclaration).name);
         default:
           if (qc.is.nullishCoalesce(node) || qc.is.optionalChain(node)) return false;
-          if (qc.is.kind(BindingElement, node) && node.dot3Token && qc.is.kind(ObjectBindingPattern, node.parent)) return false;
+          if (qc.is.kind(qc.BindingElement, node) && node.dot3Token && qc.is.kind(qc.ObjectBindingPattern, node.parent)) return false;
           if (qc.is.typeNode(node)) return false;
           return qc.forEach.child(node, requiresScopeChangeWorker) || false;
       }
@@ -2986,7 +2986,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           isInExternalModule = true;
         case Syntax.ModuleDeclaration:
           const moduleExports = getSymbolOfNode(location as SourceFile | ModuleDeclaration).exports || emptySymbols;
-          if (location.kind === Syntax.SourceFile || (qc.is.kind(ModuleDeclaration, location) && location.flags & NodeFlags.Ambient && !isGlobalScopeAugmentation(location))) {
+          if (location.kind === Syntax.SourceFile || (qc.is.kind(qc.ModuleDeclaration, location) && location.flags & NodeFlags.Ambient && !isGlobalScopeAugmentation(location))) {
             if ((result = moduleExports.get(InternalSymbol.Default))) {
               const localSymbol = getLocalSymbolForExportDefault(result);
               if (localSymbol && result.flags & meaning && localSymbol.escName === name) break loop;
@@ -3002,7 +3002,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
             }
           }
           if (name !== InternalSymbol.Default && (result = lookup(moduleExports, name, meaning & SymbolFlags.ModuleMember))) {
-            if (qc.is.kind(SourceFile, location) && location.commonJsModuleIndicator && !result.declarations.some(isDocTypeAlias)) result = undefined;
+            if (qc.is.kind(qc.SourceFile, location) && location.commonJsModuleIndicator && !result.declarations.some(isDocTypeAlias)) result = undefined;
             else {
               break loop;
             }
@@ -3096,13 +3096,13 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         case Syntax.Parameter:
           if (
             lastLocation &&
-            (lastLocation === (location as ParameterDeclaration).initer || (lastLocation === (location as ParameterDeclaration).name && qc.is.kind(BindingPattern, lastLocation)))
+            (lastLocation === (location as ParameterDeclaration).initer || (lastLocation === (location as ParameterDeclaration).name && qc.is.kind(qc.BindingPattern, lastLocation)))
           ) {
             if (!associatedDeclarationForContainingIniterOrBindingName) associatedDeclarationForContainingIniterOrBindingName = location as ParameterDeclaration;
           }
           break;
         case Syntax.BindingElement:
-          if (lastLocation && (lastLocation === (location as BindingElement).initer || (lastLocation === (location as BindingElement).name && qc.is.kind(BindingPattern, lastLocation)))) {
+          if (lastLocation && (lastLocation === (location as BindingElement).initer || (lastLocation === (location as BindingElement).name && qc.is.kind(qc.BindingPattern, lastLocation)))) {
             const root = qc.get.rootDeclaration(location);
             if (root.kind === Syntax.Parameter) {
               if (!associatedDeclarationForContainingIniterOrBindingName) associatedDeclarationForContainingIniterOrBindingName = location as BindingElement;
@@ -3167,7 +3167,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
       if (result && isInExternalModule && (meaning & SymbolFlags.Value) === SymbolFlags.Value && !(originalLocation!.flags & NodeFlags.Doc)) {
         const merged = getMergedSymbol(result);
-        if (length(merged.declarations) && every(merged.declarations, (d) => qc.is.kind(NamespaceExportDeclaration, d) || (qc.is.kind(SourceFile, d) && !!d.symbol.globalExports))) {
+        if (length(merged.declarations) && every(merged.declarations, (d) => qc.is.kind(qc.NamespaceExportDeclaration, d) || (qc.is.kind(qc.SourceFile, d) && !!d.symbol.globalExports))) {
           errorOrSuggestion(
             !compilerOptions.allowUmdGlobalAccess,
             errorLocation!,
@@ -3202,7 +3202,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function getIsDeferredContext(location: Node, lastLocation: Node | undefined): boolean {
     if (location.kind !== Syntax.ArrowFunction && location.kind !== Syntax.FunctionExpression) {
       return (
-        qc.is.kind(TypeQueryNode, location) ||
+        qc.is.kind(qc.TypeQueryNode, location) ||
         ((qc.is.functionLikeDeclaration(location) || (location.kind === Syntax.PropertyDeclaration && !qc.has.syntacticModifier(location, ModifierFlags.Static))) &&
           (!lastLocation || lastLocation !== (location as FunctionLike | PropertyDeclaration).name))
       );
@@ -3215,7 +3215,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return isString(nameArg) ? syntax.get.unescUnderscores(nameArg as __String) : declarationNameToString(nameArg as Identifier);
   }
   function checkAndReportErrorForMissingPrefix(errorLocation: Node, name: __String, nameArg: __String | Identifier): boolean {
-    if (!qc.is.kind(Identifier, errorLocation) || errorLocation.escapedText !== name || isTypeReferenceIdentifier(errorLocation) || isInTypeQuery(errorLocation)) return false;
+    if (!qc.is.kind(qc.Identifier, errorLocation) || errorLocation.escapedText !== name || isTypeReferenceIdentifier(errorLocation) || isInTypeQuery(errorLocation)) return false;
     const container = qc.get.thisContainer(errorLocation, false);
     let location = container;
     while (location) {
@@ -3264,7 +3264,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const symbol = resolveSymbol(resolveName(errorLocation, name, SymbolFlags.Type & ~namespaceMeaning, undefined, undefined, false));
       const parent = errorLocation.parent;
       if (symbol) {
-        if (qc.is.kind(QualifiedName, parent)) {
+        if (qc.is.kind(qc.QualifiedName, parent)) {
           assert(parent.left === errorLocation, 'Should only be resolving left side of qualified name as a namespace');
           const propName = parent.right.escapedText;
           const propType = getPropertyOfType(getDeclaredTypeOfSymbol(symbol), propName);
@@ -3400,9 +3400,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       node.kind === Syntax.ImportSpecifier ||
       node.kind === Syntax.ExportSpecifier ||
       (node.kind === Syntax.ExportAssignment && exportAssignmentIsAlias(<ExportAssignment>node)) ||
-      (qc.is.kind(BinaryExpression, node) && getAssignmentDeclarationKind(node) === AssignmentDeclarationKind.ModuleExports && exportAssignmentIsAlias(node)) ||
-      (qc.is.kind(PropertyAccessExpression, node) &&
-        qc.is.kind(BinaryExpression, node.parent) &&
+      (qc.is.kind(qc.BinaryExpression, node) && getAssignmentDeclarationKind(node) === AssignmentDeclarationKind.ModuleExports && exportAssignmentIsAlias(node)) ||
+      (qc.is.kind(qc.PropertyAccessExpression, node) &&
+        qc.is.kind(qc.BinaryExpression, node.parent) &&
         node.parent.left === node &&
         node.parent.operatorToken.kind === Syntax.EqualsToken &&
         isAliasableOrJsExpression(node.parent.right)) ||
@@ -3445,7 +3445,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return resolved;
   }
   function isSyntacticDefault(node: Node) {
-    return (qc.is.kind(ExportAssignment, node) && !node.isExportEquals) || qc.has.syntacticModifier(node, ModifierFlags.Default) || qc.is.kind(ExportSpecifier, node);
+    return (qc.is.kind(qc.ExportAssignment, node) && !node.isExportEquals) || qc.has.syntacticModifier(node, ModifierFlags.Default) || qc.is.kind(qc.ExportSpecifier, node);
   }
   function canHaveSyntheticDefault(file: SourceFile | undefined, moduleSymbol: Symbol, dontResolveAlias: boolean) {
     if (!allowSyntheticDefaultImports) return false;
@@ -3499,7 +3499,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (exportStar) {
         const defaultExport = find(
           exportStar.declarations,
-          (decl) => !!(qc.is.kind(ExportDeclaration, decl) && decl.moduleSpecifier && resolveExternalModuleName(decl, decl.moduleSpecifier)?.exports?.has(InternalSymbol.Default))
+          (decl) => !!(qc.is.kind(qc.ExportDeclaration, decl) && decl.moduleSpecifier && resolveExternalModuleName(decl, decl.moduleSpecifier)?.exports?.has(InternalSymbol.Default))
         );
         if (defaultExport) addRelatedInfo(diagnostic, createDiagnosticForNode(defaultExport, qd.export_Asterisk_does_not_re_export_a_default));
       }
@@ -3629,13 +3629,13 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return resolved;
   }
   function getTargetOfExportAssignment(node: ExportAssignment | BinaryExpression, dontResolveAlias: boolean): Symbol | undefined {
-    const expression = qc.is.kind(ExportAssignment, node) ? node.expression : node.right;
+    const expression = qc.is.kind(qc.ExportAssignment, node) ? node.expression : node.right;
     const resolved = getTargetOfAliasLikeExpression(expression, dontResolveAlias);
     markSymbolOfAliasDeclarationIfTypeOnly(node, undefined, resolved, false);
     return resolved;
   }
   function getTargetOfAliasLikeExpression(expression: Expression, dontResolveAlias: boolean) {
-    if (qc.is.kind(ClassExpression, expression)) return checkExpressionCached(expression).symbol;
+    if (qc.is.kind(qc.ClassExpression, expression)) return checkExpressionCached(expression).symbol;
     if (!qc.is.entityName(expression) && !qc.is.entityNameExpression(expression)) return;
     const aliasLike = resolveEntityName(expression, SymbolFlags.Value | SymbolFlags.Type | SymbolFlags.Namespace, true, dontResolveAlias);
     if (aliasLike) return aliasLike;
@@ -3647,7 +3647,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return getTargetOfAliasLikeExpression(expression, dontRecursivelyResolve);
   }
   function getTargetOfPropertyAccessExpression(node: PropertyAccessExpression, dontRecursivelyResolve: boolean): Symbol | undefined {
-    if (!(qc.is.kind(BinaryExpression, node.parent) && node.parent.left === node && node.parent.operatorToken.kind === Syntax.EqualsToken)) return;
+    if (!(qc.is.kind(qc.BinaryExpression, node.parent) && node.parent.left === node && node.parent.operatorToken.kind === Syntax.EqualsToken)) return;
     return getTargetOfAliasLikeExpression(node.parent.right, dontRecursivelyResolve);
   }
   function getTargetOfAliasDeclaration(node: Declaration, dontRecursivelyResolve = false): Symbol | undefined {
@@ -3732,7 +3732,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (qc.is.inJSFile(name)) {
         if (
           namespace.valueDeclaration &&
-          qc.is.kind(VariableDeclaration, namespace.valueDeclaration) &&
+          qc.is.kind(qc.VariableDeclaration, namespace.valueDeclaration) &&
           namespace.valueDeclaration.initer &&
           isCommonJsRequire(namespace.valueDeclaration.initer)
         ) {
@@ -3765,13 +3765,13 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const typeAlias = qc.findAncestor(node, (node) => (!(qc.isDoc.node(node) || node.flags & NodeFlags.Doc) ? 'quit' : qc.isDoc.typeAlias(node)));
     if (typeAlias) return;
     const host = qc.getDoc.host(node);
-    if (qc.is.kind(ExpressionStatement, host) && qc.is.kind(BinaryExpression, host.expression) && getAssignmentDeclarationKind(host.expression) === AssignmentDeclarationKind.PrototypeProperty) {
+    if (qc.is.kind(qc.ExpressionStatement, host) && qc.is.kind(qc.BinaryExpression, host.expression) && getAssignmentDeclarationKind(host.expression) === AssignmentDeclarationKind.PrototypeProperty) {
       const s = getSymbolOfNode(host.expression.left);
       if (s) return s.getDeclarationOfJSPrototypeContainer();
     }
     if (
-      (qc.is.objectLiteralMethod(host) || qc.is.kind(PropertyAssignment, host)) &&
-      qc.is.kind(BinaryExpression, host.parent.parent) &&
+      (qc.is.objectLiteralMethod(host) || qc.is.kind(qc.PropertyAssignment, host)) &&
+      qc.is.kind(qc.BinaryExpression, host.parent.parent) &&
       getAssignmentDeclarationKind(host.parent.parent) === AssignmentDeclarationKind.Prototype
     ) {
       const s = getSymbolOfNode(host.parent.parent.left);
@@ -3915,7 +3915,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
       if (compilerOptions.esModuleInterop) {
         const referenceParent = referencingLocation.parent;
-        if ((qc.is.kind(ImportDeclaration, referenceParent) && getNamespaceDeclarationNode(referenceParent)) || qc.is.importCall(referenceParent)) {
+        if ((qc.is.kind(qc.ImportDeclaration, referenceParent) && getNamespaceDeclarationNode(referenceParent)) || qc.is.importCall(referenceParent)) {
           const type = this.getTypeOfSymbol();
           let sigs = getSignaturesOfStructuredType(type, SignatureKind.Call);
           if (!sigs || !sigs.length) sigs = getSignaturesOfStructuredType(type, SignatureKind.Construct);
@@ -4188,8 +4188,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
       let containers = getContainersOfSymbol(symbol, enclosingDeclaration);
       const firstDecl: Node | false = !!length(symbol.declarations) && first(symbol.declarations);
-      if (!length(containers) && meaning & SymbolFlags.Value && firstDecl && qc.is.kind(ObjectLiteralExpression, firstDecl)) {
-        if (firstDecl.parent && qc.is.kind(VariableDeclaration, firstDecl.parent) && firstDecl === firstDecl.parent.initer) containers = [getSymbolOfNode(firstDecl.parent)];
+      if (!length(containers) && meaning & SymbolFlags.Value && firstDecl && qc.is.kind(qc.ObjectLiteralExpression, firstDecl)) {
+        if (firstDecl.parent && qc.is.kind(qc.VariableDeclaration, firstDecl.parent) && firstDecl === firstDecl.parent.initer) containers = [getSymbolOfNode(firstDecl.parent)];
       }
       const parentResult = isAnySymbolAccessible(
         containers,
@@ -4392,11 +4392,11 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         case Syntax.DocCallbackTag:
         case Syntax.DocTypedefTag:
         case Syntax.DocEnumTag:
-          return !!(node.parent && node.parent.parent && node.parent.parent.parent && qc.is.kind(SourceFile, node.parent.parent.parent));
+          return !!(node.parent && node.parent.parent && node.parent.parent.parent && qc.is.kind(qc.SourceFile, node.parent.parent.parent));
         case Syntax.BindingElement:
           return isDeclarationVisible(node.parent.parent);
         case Syntax.VariableDeclaration:
-          if (qc.is.kind(BindingPattern, (node as VariableDeclaration).name) && !((node as VariableDeclaration).name as BindingPattern).elements.length) return false;
+          if (qc.is.kind(qc.BindingPattern, (node as VariableDeclaration).name) && !((node as VariableDeclaration).name as BindingPattern).elements.length) return false;
         case Syntax.ModuleDeclaration:
         case Syntax.ClassDeclaration:
         case Syntax.InterfaceDeclaration:
@@ -4709,25 +4709,25 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     declaration: ParameterDeclaration | PropertyDeclaration | PropertySignature | VariableDeclaration | BindingElement,
     includeOptionality: boolean
   ): Type | undefined {
-    if (qc.is.kind(VariableDeclaration, declaration) && declaration.parent.parent.kind === Syntax.ForInStatement) {
+    if (qc.is.kind(qc.VariableDeclaration, declaration) && declaration.parent.parent.kind === Syntax.ForInStatement) {
       const indexType = getIndexType(getNonNullableTypeIfNeeded(checkExpression(declaration.parent.parent.expression)));
       return indexType.flags & (TypeFlags.TypeParameter | TypeFlags.Index) ? getExtractStringType(indexType) : stringType;
     }
-    if (qc.is.kind(VariableDeclaration, declaration) && declaration.parent.parent.kind === Syntax.ForOfStatement) {
+    if (qc.is.kind(qc.VariableDeclaration, declaration) && declaration.parent.parent.kind === Syntax.ForOfStatement) {
       const forOfStatement = declaration.parent.parent;
       return checkRightHandSideOfForOf(forOfStatement) || anyType;
     }
-    if (qc.is.kind(BindingPattern, declaration.parent)) return getTypeForBindingElement(<BindingElement>declaration);
+    if (qc.is.kind(qc.BindingPattern, declaration.parent)) return getTypeForBindingElement(<BindingElement>declaration);
     const isOptional =
       includeOptionality &&
       ((qc.is.kind(qc.ParameterDeclaration, declaration) && isDocOptionalParameter(declaration)) ||
-        (!qc.is.kind(BindingElement, declaration) && !qc.is.kind(VariableDeclaration, declaration) && !!declaration.questionToken));
+        (!qc.is.kind(qc.BindingElement, declaration) && !qc.is.kind(qc.VariableDeclaration, declaration) && !!declaration.questionToken));
     const declaredType = tryGetTypeFromEffectiveTypeNode(declaration);
     if (declaredType) return addOptionality(declaredType, isOptional);
     if (
       (noImplicitAny || qc.is.inJSFile(declaration)) &&
       declaration.kind === Syntax.VariableDeclaration &&
-      !qc.is.kind(BindingPattern, declaration.name) &&
+      !qc.is.kind(qc.BindingPattern, declaration.name) &&
       !(qc.get.combinedModifierFlags(declaration) & ModifierFlags.Export) &&
       !(declaration.flags & NodeFlags.Ambient)
     ) {
@@ -4762,7 +4762,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const type = widenTypeInferredFromIniter(declaration, checkDeclarationIniter(declaration));
       return addOptionality(type, isOptional);
     }
-    if (qc.is.kind(PropertyDeclaration, declaration) && (noImplicitAny || qc.is.inJSFile(declaration))) {
+    if (qc.is.kind(qc.PropertyDeclaration, declaration) && (noImplicitAny || qc.is.inJSFile(declaration))) {
       const constructor = findConstructorDeclaration(declaration.parent);
       const type = constructor
         ? getFlowTypeInConstructor(declaration.symbol, constructor)
@@ -4771,8 +4771,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         : undefined;
       return type && addOptionality(type, isOptional);
     }
-    if (qc.is.kind(JsxAttribute, declaration)) return trueType;
-    if (qc.is.kind(BindingPattern, declaration.name)) return getTypeFromBindingPattern(declaration.name, false, true);
+    if (qc.is.kind(qc.JsxAttribute, declaration)) return trueType;
+    if (qc.is.kind(qc.BindingPattern, declaration.name)) return getTypeFromBindingPattern(declaration.name, false, true);
     return;
   }
   function getFlowTypeInConstructor(symbol: Symbol, constructor: ConstructorDeclaration) {
@@ -4805,10 +4805,10 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       let types: Type[] | undefined;
       for (const declaration of symbol.declarations) {
         const expression =
-          qc.is.kind(BinaryExpression, declaration) || qc.is.kind(CallExpression, declaration)
+          qc.is.kind(qc.BinaryExpression, declaration) || qc.is.kind(qc.CallExpression, declaration)
             ? declaration
             : qc.is.accessExpression(declaration)
-            ? qc.is.kind(BinaryExpression, declaration.parent)
+            ? qc.is.kind(qc.BinaryExpression, declaration.parent)
               ? declaration.parent
               : declaration
             : undefined;
@@ -4820,10 +4820,10 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
             definedInMethod = true;
           }
         }
-        if (!qc.is.kind(CallExpression, expression)) jsdocType = getAnnotatedTypeForAssignmentDeclaration(jsdocType, expression, symbol, declaration);
+        if (!qc.is.kind(qc.CallExpression, expression)) jsdocType = getAnnotatedTypeForAssignmentDeclaration(jsdocType, expression, symbol, declaration);
         if (!jsdocType) {
           (types || (types = [])).push(
-            qc.is.kind(BinaryExpression, expression) || qc.is.kind(CallExpression, expression) ? getIniterTypeFromAssignmentDeclaration(symbol, resolvedSymbol, expression, kind) : neverType
+            qc.is.kind(qc.BinaryExpression, expression) || qc.is.kind(qc.CallExpression, expression) ? getIniterTypeFromAssignmentDeclaration(symbol, resolvedSymbol, expression, kind) : neverType
           );
         }
       }
@@ -4850,12 +4850,12 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return widened;
   }
   function getJSContainerObjectType(decl: Node, symbol: Symbol, init: Expression | undefined): Type | undefined {
-    if (!qc.is.inJSFile(decl) || !init || !qc.is.kind(ObjectLiteralExpression, init) || init.properties.length) return;
+    if (!qc.is.inJSFile(decl) || !init || !qc.is.kind(qc.ObjectLiteralExpression, init) || init.properties.length) return;
     const exports = new SymbolTable();
-    while (qc.is.kind(BinaryExpression, decl) || qc.is.kind(PropertyAccessExpression, decl)) {
+    while (qc.is.kind(qc.BinaryExpression, decl) || qc.is.kind(qc.PropertyAccessExpression, decl)) {
       const s = getSymbolOfNode(decl);
       if (s && hasEntries(s.exports)) exports.merge(s.exports);
-      decl = qc.is.kind(BinaryExpression, decl) ? decl.parent : decl.parent.parent;
+      decl = qc.is.kind(qc.BinaryExpression, decl) ? decl.parent : decl.parent.parent;
     }
     const s = getSymbolOfNode(decl);
     if (s && hasEntries(s.exports)) exports.merge(s.exports);
@@ -4879,7 +4879,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return declaredType;
   }
   function getIniterTypeFromAssignmentDeclaration(symbol: Symbol, resolvedSymbol: Symbol | undefined, expression: BinaryExpression | CallExpression, kind: AssignmentDeclarationKind) {
-    if (qc.is.kind(CallExpression, expression)) {
+    if (qc.is.kind(qc.CallExpression, expression)) {
       if (resolvedSymbol) return getTypeOfSymbol(resolvedSymbol);
       const objectLitType = checkExpressionCached((expression as BindableObjectDefinePropertyCall).arguments[2]);
       const valueType = getTypeOfPropertyOfType(objectLitType, 'value' as __String);
@@ -4937,7 +4937,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function containsSameNamedThisProperty(thisProperty: Expression, expression: Expression) {
     return (
-      qc.is.kind(PropertyAccessExpression, thisProperty) && thisProperty.expression.kind === Syntax.ThisKeyword && qc.forEach.childRecursively(expression, (n) => isMatchingReference(thisProperty, n))
+      qc.is.kind(qc.PropertyAccessExpression, thisProperty) && thisProperty.expression.kind === Syntax.ThisKeyword && qc.forEach.childRecursively(expression, (n) => isMatchingReference(thisProperty, n))
     );
   }
   function isDeclarationInConstructor(expression: Expression) {
@@ -4952,16 +4952,16 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     assert(types.length === declarations.length);
     return types.filter((_, i) => {
       const declaration = declarations[i];
-      const expression = qc.is.kind(BinaryExpression, declaration) ? declaration : qc.is.kind(BinaryExpression, declaration.parent) ? declaration.parent : undefined;
+      const expression = qc.is.kind(qc.BinaryExpression, declaration) ? declaration : qc.is.kind(qc.BinaryExpression, declaration.parent) ? declaration.parent : undefined;
       return expression && isDeclarationInConstructor(expression);
     });
   }
   function getTypeFromBindingElement(element: BindingElement, includePatternInType?: boolean, reportErrors?: boolean): Type {
     if (element.initer) {
-      const contextualType = qc.is.kind(BindingPattern, element.name) ? getTypeFromBindingPattern(element.name, true, false) : unknownType;
+      const contextualType = qc.is.kind(qc.BindingPattern, element.name) ? getTypeFromBindingPattern(element.name, true, false) : unknownType;
       return addOptionality(widenTypeInferredFromIniter(element, checkDeclarationIniter(element, contextualType)));
     }
-    if (qc.is.kind(BindingPattern, element.name)) return getTypeFromBindingPattern(element.name, includePatternInType, reportErrors);
+    if (qc.is.kind(qc.BindingPattern, element.name)) return getTypeFromBindingPattern(element.name, includePatternInType, reportErrors);
     if (reportErrors && !declarationBelongsToPrivateAmbientMember(element)) reportImplicitAny(element, anyType);
     return includePatternInType ? nonInferrableAnyType : anyType;
   }
@@ -5000,8 +5000,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const lastElement = lastOrUndefined(elements);
     const hasRestElement = !!(lastElement && lastElement.kind === Syntax.BindingElement && lastElement.dot3Token);
     if (elements.length === 0 || (elements.length === 1 && hasRestElement)) return createIterableType(anyType);
-    const elementTypes = map(elements, (e) => (qc.is.kind(OmittedExpression, e) ? anyType : getTypeFromBindingElement(e, includePatternInType, reportErrors)));
-    const minLength = findLastIndex(elements, (e) => !qc.is.kind(OmittedExpression, e) && !hasDefaultValue(e), elements.length - (hasRestElement ? 2 : 1)) + 1;
+    const elementTypes = map(elements, (e) => (qc.is.kind(qc.OmittedExpression, e) ? anyType : getTypeFromBindingElement(e, includePatternInType, reportErrors)));
+    const minLength = findLastIndex(elements, (e) => !qc.is.kind(qc.OmittedExpression, e) && !hasDefaultValue(e), elements.length - (hasRestElement ? 2 : 1)) + 1;
     let result = <TypeReference>createTupleType(elementTypes, minLength, hasRestElement);
     if (includePatternInType) {
       result = cloneTypeReference(result);
@@ -5021,7 +5021,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function widenTypeForVariableLikeDeclaration(type: Type | undefined, declaration: any, reportErrors?: boolean) {
     if (type) {
       if (reportErrors) reportErrorsFromWidening(declaration, type);
-      if (type.flags & TypeFlags.UniqueESSymbol && (qc.is.kind(BindingElement, declaration) || !declaration.type) && type.symbol !== getSymbolOfNode(declaration)) type = esSymbolType;
+      if (type.flags & TypeFlags.UniqueESSymbol && (qc.is.kind(qc.BindingElement, declaration) || !declaration.type) && type.symbol !== getSymbolOfNode(declaration)) type = esSymbolType;
       return getWidenedType(type);
     }
     type = qc.is.kind(qc.ParameterDeclaration, declaration) && declaration.dot3Token ? anyArrayType : anyType;
@@ -5089,7 +5089,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function getOuterTypeParameters(node: Node, includeThisTypes?: boolean): TypeParameter[] | undefined {
     while (true) {
       node = node.parent;
-      if (node && qc.is.kind(node, BinaryExpression)) {
+      if (node && qc.is.kind(qc.node, BinaryExpression)) {
         const assignmentKind = getAssignmentDeclarationKind(node);
         if (assignmentKind === AssignmentDeclarationKind.Prototype || assignmentKind === AssignmentDeclarationKind.PrototypeProperty) {
           const symbol = getSymbolOfNode(node.left);
@@ -5415,9 +5415,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return !!(type.flags & TypeFlags.StringOrNumberLiteralOrUnique);
   }
   function isLateBindableName(node: DeclarationName): node is LateBoundName {
-    if (!qc.is.kind(ComputedPropertyName, node) && !qc.is.kind(ElementAccessExpression, node)) return false;
-    const expr = qc.is.kind(ComputedPropertyName, node) ? node.expression : node.argumentExpression;
-    return qc.is.entityNameExpression(expr) && isTypeUsableAsPropertyName(qc.is.kind(ComputedPropertyName, node) ? checkComputedPropertyName(node) : checkExpressionCached(expr));
+    if (!qc.is.kind(qc.ComputedPropertyName, node) && !qc.is.kind(qc.ElementAccessExpression, node)) return false;
+    const expr = qc.is.kind(qc.ComputedPropertyName, node) ? node.expression : node.argumentExpression;
+    return qc.is.entityNameExpression(expr) && isTypeUsableAsPropertyName(qc.is.kind(qc.ComputedPropertyName, node) ? checkComputedPropertyName(node) : checkExpressionCached(expr));
   }
   function isLateBoundName(name: __String): boolean {
     return (name as string).charCodeAt(0) === Codes._ && (name as string).charCodeAt(1) === Codes._ && (name as string).charCodeAt(2) === Codes.at;
@@ -5459,8 +5459,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const ls = getNodeLinks(decl);
     if (!ls.resolvedSymbol) {
       ls.resolvedSymbol = decl.symbol;
-      const declName = qc.is.kind(BinaryExpression, decl) ? decl.left : decl.name;
-      const type = qc.is.kind(ElementAccessExpression, declName) ? checkExpressionCached(declName.argumentExpression) : checkComputedPropertyName(declName);
+      const declName = qc.is.kind(qc.BinaryExpression, decl) ? decl.left : decl.name;
+      const type = qc.is.kind(qc.ElementAccessExpression, declName) ? checkExpressionCached(declName.argumentExpression) : checkComputedPropertyName(declName);
       if (isTypeUsableAsPropertyName(type)) {
         const memberName = getPropertyNameFromType(type);
         const symbolFlags = decl.symbol.flags;
@@ -6347,7 +6347,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         typeParameter.default = targetDefault ? instantiateType(targetDefault, typeParameter.mapper) : noConstraintType;
       } else {
         typeParameter.default = resolvingDefaultType;
-        const defaultDeclaration = typeParameter.symbol && forEach(typeParameter.symbol.declarations, (decl) => qc.is.kind(TypeParameterDeclaration, decl) && decl.default);
+        const defaultDeclaration = typeParameter.symbol && forEach(typeParameter.symbol.declarations, (decl) => qc.is.kind(qc.TypeParameterDeclaration, decl) && decl.default);
         const defaultType = defaultDeclaration ? getTypeFromTypeNode(defaultDeclaration) : noConstraintType;
         if (typeParameter.default === resolvingDefaultType) typeParameter.default = defaultType;
       }
@@ -6362,7 +6362,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return getResolvedTypeParameterDefault(typeParameter) !== circularConstraintType;
   }
   function hasTypeParameterDefault(typeParameter: TypeParameter): boolean {
-    return !!(typeParameter.symbol && forEach(typeParameter.symbol.declarations, (decl) => qc.is.kind(TypeParameterDeclaration, decl) && decl.default));
+    return !!(typeParameter.symbol && forEach(typeParameter.symbol.declarations, (decl) => qc.is.kind(qc.TypeParameterDeclaration, decl) && decl.default));
   }
   function getApparentTypeOfMappedType(type: MappedType) {
     return type.resolvedApparentType || (type.resolvedApparentType = getResolvedApparentTypeOfMappedType(type));
@@ -6710,7 +6710,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         const param = declaration.parameters[i];
         let paramSymbol = param.symbol;
         const type = qc.is.kind(qc.DocParameterTag, param) ? param.typeExpression && param.typeExpression.type : param.type;
-        if (paramSymbol && !!(paramSymbol.flags & SymbolFlags.Property) && !qc.is.kind(BindingPattern, param.name)) {
+        if (paramSymbol && !!(paramSymbol.flags & SymbolFlags.Property) && !qc.is.kind(qc.BindingPattern, param.name)) {
           const resolvedSymbol = resolveName(param, paramSymbol.escName, SymbolFlags.Value, undefined, undefined, false);
           paramSymbol = resolvedSymbol!;
         }
@@ -6743,10 +6743,10 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return links.resolvedSignature;
   }
   function maybeAddJsSyntheticRestParameter(declaration: SignatureDeclaration | DocSignature, parameters: Symbol[]): boolean {
-    if (qc.is.kind(DocSignature, declaration) || !containsArgumentsReference(declaration)) return false;
+    if (qc.is.kind(qc.DocSignature, declaration) || !containsArgumentsReference(declaration)) return false;
     const lastParam = lastOrUndefined(declaration.parameters);
     const lastParamTags = lastParam ? qc.getDoc.parameterTags(lastParam) : qc.getDoc.tags(declaration).filter(isDocParameterTag);
-    const lastParamVariadicType = firstDefined(lastParamTags, (p) => (p.typeExpression && qc.is.kind(DocVariadicType, p.typeExpression.type) ? p.typeExpression.type : undefined));
+    const lastParamVariadicType = firstDefined(lastParamTags, (p) => (p.typeExpression && qc.is.kind(qc.DocVariadicType, p.typeExpression.type) ? p.typeExpression.type : undefined));
     const syntheticArgsSymbol = new QSymbol(SymbolFlags.Variable, 'args' as __String, CheckFlags.RestParameter);
     syntheticArgsSymbol.type = lastParamVariadicType ? createArrayType(getTypeFromTypeNode(lastParamVariadicType.type)) : anyArrayType;
     if (lastParamVariadicType) parameters.pop();
@@ -6826,7 +6826,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           const jsdocSignature = getSignatureOfTypeTag(signature.declaration!);
           if (jsdocSignature && signature !== jsdocSignature) jsdocPredicate = getTypePredicateOfSignature(jsdocSignature);
         }
-        signature.resolvedTypePredicate = type && qc.is.kind(TypePredicateNode, type) ? createTypePredicateFromTypePredicateNode(type, signature) : jsdocPredicate || noTypePredicate;
+        signature.resolvedTypePredicate = type && qc.is.kind(qc.TypePredicateNode, type) ? createTypePredicateFromTypePredicateNode(type, signature) : jsdocPredicate || noTypePredicate;
       }
       assert(!!signature.resolvedTypePredicate);
     }
@@ -7128,7 +7128,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const isJs = qc.is.inJSFile(node);
       const isJsImplicitAny = !noImplicitAny && isJs;
       if (!isJsImplicitAny && (numTypeArguments < minTypeArgumentCount || numTypeArguments > typeParameters.length)) {
-        const missingAugmentsTag = isJs && qc.is.kind(ExpressionWithTypeArguments, node) && !qc.is.kind(DocAugmentsTag, node.parent);
+        const missingAugmentsTag = isJs && qc.is.kind(qc.ExpressionWithTypeArguments, node) && !qc.is.kind(qc.DocAugmentsTag, node.parent);
         const diag =
           minTypeArgumentCount === typeParameters.length
             ? missingAugmentsTag
@@ -7222,12 +7222,12 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (symbol.valueDeclaration) {
         const decl = qc.get.rootDeclaration(symbol.valueDeclaration);
         let isRequireAlias = false;
-        if (qc.is.kind(VariableDeclaration, decl) && decl.initer) {
+        if (qc.is.kind(qc.VariableDeclaration, decl) && decl.initer) {
           let expr = decl.initer;
-          while (qc.is.kind(PropertyAccessExpression, expr)) {
+          while (qc.is.kind(qc.PropertyAccessExpression, expr)) {
             expr = expr.expression;
           }
-          isRequireAlias = qc.is.kind(CallExpression, expr) && isRequireCall(expr, true) && !!valueType.symbol;
+          isRequireAlias = qc.is.kind(qc.CallExpression, expr) && isRequireCall(expr, true) && !!valueType.symbol;
         }
         const isImportTypeWithQualifier = node.kind === Syntax.ImportType && (node as ImportTypeNode).qualifier;
         if (valueType.symbol && (isRequireAlias || isImportTypeWithQualifier)) typeType = getTypeReferenceType(node, valueType.symbol);
@@ -7280,7 +7280,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return true;
   }
   function getIntendedTypeFromDocTypeReference(node: TypeReferenceNode): Type | undefined {
-    if (qc.is.kind(Identifier, node.typeName)) {
+    if (qc.is.kind(qc.Identifier, node.typeName)) {
       const typeArgs = node.typeArguments;
       switch (node.typeName.escapedText) {
         case 'String':
@@ -7580,7 +7580,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return links.resolvedType;
   }
   function isReadonlyTypeOperator(node: Node) {
-    return qc.is.kind(TypeOperatorNode, node) && node.operator === Syntax.ReadonlyKeyword;
+    return qc.is.kind(qc.TypeOperatorNode, node) && node.operator === Syntax.ReadonlyKeyword;
   }
   function createTupleTypeOfArity(
     arity: number,
@@ -8021,10 +8021,10 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       : type.resolvedIndexType || (type.resolvedIndexType = createIndexType(type, false));
   }
   function getLiteralTypeFromPropertyName(name: PropertyName) {
-    if (qc.is.kind(PrivateIdentifier, name)) return neverType;
-    return qc.is.kind(Identifier, name)
+    if (qc.is.kind(qc.PrivateIdentifier, name)) return neverType;
+    return qc.is.kind(qc.Identifier, name)
       ? getLiteralType(syntax.get.unescUnderscores(name.escapedText))
-      : getRegularTypeOfLiteralType(qc.is.kind(ComputedPropertyName, name) ? checkComputedPropertyName(name) : checkExpression(name));
+      : getRegularTypeOfLiteralType(qc.is.kind(qc.ComputedPropertyName, name) ? checkComputedPropertyName(name) : checkExpression(name));
   }
   function getBigIntLiteralType(node: BigIntLiteral): LiteralType {
     return getLiteralType({
@@ -8155,7 +8155,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     accessFlags: AccessFlags
   ) {
     const accessExpression = accessNode && accessNode.kind === Syntax.ElementAccessExpression ? accessNode : undefined;
-    const propName = accessNode && qc.is.kind(PrivateIdentifier, accessNode) ? undefined : getPropertyNameFromIndex(indexType, accessNode);
+    const propName = accessNode && qc.is.kind(qc.PrivateIdentifier, accessNode) ? undefined : getPropertyNameFromIndex(indexType, accessNode);
     if (propName !== undefined) {
       const prop = getPropertyOfType(objectType, propName);
       if (prop) {
@@ -8525,7 +8525,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return links.resolvedType;
   }
   function getIdentifierChain(node: EntityName): Identifier[] {
-    if (qc.is.kind(Identifier, node)) return [node];
+    if (qc.is.kind(qc.Identifier, node)) return [node];
     return append(getIdentifierChain(node.left), node.right);
   }
   function getTypeFromImportTypeNode(node: ImportTypeNode): Type {
@@ -8594,7 +8594,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         let type = createObjectType(ObjectFlags.Anonymous, node.symbol);
         type.aliasSymbol = aliasSymbol;
         type.aliasTypeArguments = getTypeArgumentsForAliasSymbol(aliasSymbol);
-        if (qc.is.kind(DocTypeLiteral, node) && node.isArrayType) type = createArrayType(type);
+        if (qc.is.kind(qc.DocTypeLiteral, node) && node.isArrayType) type = createArrayType(type);
         links.resolvedType = type;
       }
     }
@@ -8602,7 +8602,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function getAliasSymbolForTypeNode(node: Node) {
     let host = node.parent;
-    while (qc.is.kind(ParenthesizedTypeNode, host) || (qc.is.kind(TypeOperatorNode, host) && host.operator === Syntax.ReadonlyKeyword)) {
+    while (qc.is.kind(qc.ParenthesizedTypeNode, host) || (qc.is.kind(qc.TypeOperatorNode, host) && host.operator === Syntax.ReadonlyKeyword)) {
       host = host.parent;
     }
     return qc.is.typeAlias(host) ? getSymbolOfNode(host) : undefined;
@@ -8808,14 +8808,14 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const container = qc.get.thisContainer(node, false);
     const parent = container && container.parent;
     if (parent && (qc.is.classLike(parent) || parent.kind === Syntax.InterfaceDeclaration)) {
-      if (!qc.has.syntacticModifier(container, ModifierFlags.Static) && (!qc.is.kind(ConstructorDeclaration, container) || qc.is.descendantOf(node, container.body)))
+      if (!qc.has.syntacticModifier(container, ModifierFlags.Static) && (!qc.is.kind(qc.ConstructorDeclaration, container) || qc.is.descendantOf(node, container.body)))
         return getDeclaredTypeOfClassOrInterface(getSymbolOfNode(parent as ClassLikeDeclaration | InterfaceDeclaration)).thisType!;
     }
-    if (parent && qc.is.kind(ObjectLiteralExpression, parent) && qc.is.kind(BinaryExpression, parent.parent) && getAssignmentDeclarationKind(parent.parent) === AssignmentDeclarationKind.Prototype) {
+    if (parent && qc.is.kind(qc.ObjectLiteralExpression, parent) && qc.is.kind(qc.BinaryExpression, parent.parent) && getAssignmentDeclarationKind(parent.parent) === AssignmentDeclarationKind.Prototype) {
       return getDeclaredTypeOfClassOrInterface(getSymbolOfNode(parent.parent.left)!.parent!).thisType!;
     }
     const host = node.flags & NodeFlags.Doc ? qc.get.hostSignatureFromDoc(node) : undefined;
-    if (host && qc.is.kind(qc.FunctionExpression, host) && qc.is.kind(BinaryExpression, host.parent) && getAssignmentDeclarationKind(host.parent) === AssignmentDeclarationKind.PrototypeProperty)
+    if (host && qc.is.kind(qc.FunctionExpression, host) && qc.is.kind(qc.BinaryExpression, host.parent) && getAssignmentDeclarationKind(host.parent) === AssignmentDeclarationKind.PrototypeProperty)
       return getDeclaredTypeOfClassOrInterface(getSymbolOfNode(host.parent.left)!.parent!).thisType!;
     if (isJSConstructor(container) && qc.is.descendantOf(node, container.body)) return getDeclaredTypeOfClassOrInterface(getSymbolOfNode(container)).thisType!;
     error(node, qd.A_this_type_is_available_only_in_a_non_static_member_of_a_class_or_interface);
@@ -9335,7 +9335,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       case Syntax.ParenthesizedExpression:
         return isContextSensitive((<ParenthesizedExpression>node).expression);
       case Syntax.JsxAttributes:
-        return some((<JsxAttributes>node).properties, isContextSensitive) || (qc.is.kind(JsxOpeningElement, node.parent) && some(node.parent.parent.children, isContextSensitive));
+        return some((<JsxAttributes>node).properties, isContextSensitive) || (qc.is.kind(qc.JsxOpeningElement, node.parent) && some(node.parent.parent.children, isContextSensitive));
       case Syntax.JsxAttribute: {
         const { initer } = node as JsxAttribute;
         return !!initer && isContextSensitive(initer);
@@ -9349,7 +9349,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function isContextSensitiveFunctionLikeDeclaration(node: FunctionLikeDeclaration): boolean {
     return (
-      (!qc.is.kind(FunctionDeclaration, node) || (qc.is.inJSFile(node) && !!getTypeForDeclarationFromDocComment(node))) &&
+      (!qc.is.kind(qc.FunctionDeclaration, node) || (qc.is.inJSFile(node) && !!getTypeForDeclarationFromDocComment(node))) &&
       (hasContextSensitiveParameters(node) || hasContextSensitiveReturnExpression(node))
     );
   }
@@ -9368,7 +9368,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function isContextSensitiveFunctionOrObjectLiteralMethod(func: Node): func is FunctionExpression | ArrowFunction | MethodDeclaration {
     return (
-      ((qc.is.inJSFile(func) && qc.is.kind(FunctionDeclaration, func)) || isFunctionExpressionOrArrowFunction(func) || qc.is.objectLiteralMethod(func)) && isContextSensitiveFunctionLikeDeclaration(func)
+      ((qc.is.inJSFile(func) && qc.is.kind(qc.FunctionDeclaration, func)) || isFunctionExpressionOrArrowFunction(func) || qc.is.objectLiteralMethod(func)) && isContextSensitiveFunctionLikeDeclaration(func)
     );
   }
   function getTypeWithoutSignatures(type: Type): Type {
@@ -9531,7 +9531,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     containingMessageChain: (() => DiagnosticMessageChain | undefined) | undefined,
     errorOutputContainer: { errors?: Diagnostic[]; skipLogging?: boolean } | undefined
   ): boolean {
-    if (qc.is.kind(Block, node.body)) return false;
+    if (qc.is.kind(qc.Block, node.body)) return false;
     if (some(node.parameters, qnr.hasType)) return false;
     const sourceSig = getSingleCallSignature(source);
     if (!sourceSig) return false;
@@ -9641,7 +9641,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function* generateJsxAttributes(node: JsxAttributes): ElaborationIterator {
     if (!length(node.properties)) return;
     for (const prop of node.properties) {
-      if (qc.is.kind(JsxSpreadAttribute, prop)) continue;
+      if (qc.is.kind(qc.JsxSpreadAttribute, prop)) continue;
       yield { errorNode: prop.name, innerExpression: prop.initer, nameType: getLiteralType(idText(prop.name)) };
     }
   }
@@ -9675,7 +9675,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return;
   }
   function getSemanticJsxChildren(children: Nodes<JsxChild>) {
-    return filter(children, (i) => !qc.is.kind(JsxText, i) || !i.onlyTriviaWhitespaces);
+    return filter(children, (i) => !qc.is.kind(qc.JsxText, i) || !i.onlyTriviaWhitespaces);
   }
   function elaborateJsxComponents(
     node: JsxAttributes,
@@ -9687,7 +9687,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   ) {
     let result = elaborateElementwise(generateJsxAttributes(node), source, target, relation, containingMessageChain, errorOutputContainer);
     let invalidTextDiagnostic: DiagnosticMessage | undefined;
-    if (qc.is.kind(JsxOpeningElement, node.parent) && qc.is.kind(JsxElement, node.parent.parent)) {
+    if (qc.is.kind(qc.JsxOpeningElement, node.parent) && qc.is.kind(qc.JsxElement, node.parent.parent)) {
       const containingElement = node.parent.parent;
       const childPropName = getJsxElementChildrenPropertyName(getJsxNamespaceAt(node));
       const childrenPropName = childPropName === undefined ? 'children' : syntax.get.unescUnderscores(childPropName);
@@ -9765,7 +9765,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     for (let i = 0; i < len; i++) {
       if (isTupleLikeType(target) && !getPropertyOfType(target, ('' + i) as __String)) continue;
       const elem = node.elements[i];
-      if (qc.is.kind(OmittedExpression, elem)) continue;
+      if (qc.is.kind(qc.OmittedExpression, elem)) continue;
       const nameType = getLiteralType(i);
       yield { errorNode: elem, innerExpression: elem, nameType };
     }
@@ -9794,7 +9794,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function* generateObjectLiteralElements(node: ObjectLiteralExpression): ElaborationIterator {
     if (!length(node.properties)) return;
     for (const prop of node.properties) {
-      if (qc.is.kind(SpreadAssignment, prop)) continue;
+      if (qc.is.kind(qc.SpreadAssignment, prop)) continue;
       const type = getLiteralTypeFromProperty(getSymbolOfNode(prop), TypeFlags.StringOrNumberLiteralOrUnique);
       if (!type || type.flags & TypeFlags.Never) continue;
       switch (prop.kind) {
@@ -10510,8 +10510,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
             if (reportErrors) {
               const errorTarget = filterType(reducedTarget, isExcessPropertyCheckTarget);
               if (!errorNode) return fail();
-              if (qc.is.kind(JsxAttributes, errorNode) || qc.isJsx.openingLikeElement(errorNode) || qc.isJsx.openingLikeElement(errorNode.parent)) {
-                if (prop.valueDeclaration && qc.is.kind(JsxAttribute, prop.valueDeclaration) && qc.get.sourceFileOf(errorNode) === qc.get.sourceFileOf(prop.valueDeclaration.name))
+              if (qc.is.kind(qc.JsxAttributes, errorNode) || qc.isJsx.openingLikeElement(errorNode) || qc.isJsx.openingLikeElement(errorNode.parent)) {
+                if (prop.valueDeclaration && qc.is.kind(qc.JsxAttribute, prop.valueDeclaration) && qc.get.sourceFileOf(errorNode) === qc.get.sourceFileOf(prop.valueDeclaration.name))
                   errorNode = prop.valueDeclaration.name;
                 reportError(qd.Property_0_does_not_exist_on_type_1, prop.symbolToString(), typeToString(errorTarget));
               } else {
@@ -10526,7 +10526,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
                   Debug.assertNode(propDeclaration, isObjectLiteralElementLike);
                   errorNode = propDeclaration;
                   const name = propDeclaration.name!;
-                  if (qc.is.kind(Identifier, name)) suggestion = getSuggestionForNonexistentProperty(name, errorTarget);
+                  if (qc.is.kind(qc.Identifier, name)) suggestion = getSuggestionForNonexistentProperty(name, errorTarget);
                 }
                 if (suggestion !== undefined) {
                   reportError(qd.Object_literal_may_only_specify_known_properties_but_0_does_not_exist_in_type_1_Did_you_mean_to_write_2, prop.symbolToString(), typeToString(errorTarget), suggestion);
@@ -11125,7 +11125,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (
         unmatchedProperty.valueDeclaration &&
         qc.is.namedDeclaration(unmatchedProperty.valueDeclaration) &&
-        qc.is.kind(PrivateIdentifier, unmatchedProperty.valueDeclaration.name) &&
+        qc.is.kind(qc.PrivateIdentifier, unmatchedProperty.valueDeclaration.name) &&
         source.symbol &&
         source.symbol.flags & SymbolFlags.Class
       ) {
@@ -12097,8 +12097,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       case Syntax.Parameter:
         const param = declaration as ParameterDeclaration;
         if (
-          qc.is.kind(Identifier, param.name) &&
-          (qc.is.kind(CallSignatureDeclaration, param.parent) || qc.is.kind(MethodSignature, param.parent) || qc.is.kind(qc.FunctionTypeNode, param.parent)) &&
+          qc.is.kind(qc.Identifier, param.name) &&
+          (qc.is.kind(qc.CallSignatureDeclaration, param.parent) || qc.is.kind(qc.MethodSignature, param.parent) || qc.is.kind(qc.FunctionTypeNode, param.parent)) &&
           param.parent.parameters.indexOf(param) > -1 &&
           (resolveName(param, param.name.escapedText, SymbolFlags.Type, undefined, param.name.escapedText, true) ||
             (param.name.originalKeywordKind && syntax.is.typeNode(param.name.originalKeywordKind)))
@@ -13412,8 +13412,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const root = getReferenceRoot(node);
     const parent = root.parent;
     const isLengthPushOrUnshift =
-      qc.is.kind(PropertyAccessExpression, parent) &&
-      (parent.name.escapedText === 'length' || (parent.parent.kind === Syntax.CallExpression && qc.is.kind(Identifier, parent.name) && isPushOrUnshiftIdentifier(parent.name)));
+      qc.is.kind(qc.PropertyAccessExpression, parent) &&
+      (parent.name.escapedText === 'length' || (parent.parent.kind === Syntax.CallExpression && qc.is.kind(qc.Identifier, parent.name) && isPushOrUnshiftIdentifier(parent.name)));
     const isElementAssignment =
       parent.kind === Syntax.ElementAccessExpression &&
       (<ElementAccessExpression>parent).expression === root &&
@@ -13436,7 +13436,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const declaration = symbol.valueDeclaration;
       if (declaration) {
         if (isDeclarationWithExplicitTypeAnnotation(declaration)) return this.getTypeOfSymbol();
-        if (qc.is.kind(VariableDeclaration, declaration) && declaration.parent.parent.kind === Syntax.ForOfStatement) {
+        if (qc.is.kind(qc.VariableDeclaration, declaration) && declaration.parent.parent.kind === Syntax.ForOfStatement) {
           const statement = declaration.parent.parent;
           const expressionType = getTypeOfDottedName(statement.expression, undefined);
           if (expressionType) {
@@ -13713,13 +13713,13 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
       if (containsMatchingReference(reference, node)) {
         if (!isReachableFlowNode(flow)) return unreachableNeverType;
-        if (qc.is.kind(VariableDeclaration, node) && (qc.is.inJSFile(node) || qc.is.varConst(node))) {
+        if (qc.is.kind(qc.VariableDeclaration, node) && (qc.is.inJSFile(node) || qc.is.varConst(node))) {
           const init = getDeclaredExpandoIniter(node);
           if (init && (init.kind === Syntax.FunctionExpression || init.kind === Syntax.ArrowFunction)) return getTypeAtFlowNode(flow.antecedent);
         }
         return declaredType;
       }
-      if (qc.is.kind(VariableDeclaration, node) && node.parent.parent.kind === Syntax.ForInStatement && isMatchingReference(reference, node.parent.parent.expression))
+      if (qc.is.kind(qc.VariableDeclaration, node) && node.parent.parent.kind === Syntax.ForInStatement && isMatchingReference(reference, node.parent.parent.expression))
         return getNonNullableTypeIfNeeded(getTypeFromFlowType(getTypeAtFlowNode(flow.antecedent)));
       return;
     }
@@ -14101,8 +14101,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     function isMatchingConstructorReference(expr: Expression) {
       return (
-        ((qc.is.kind(PropertyAccessExpression, expr) && idText(expr.name) === 'constructor') ||
-          (qc.is.kind(ElementAccessExpression, expr) && StringLiteral.like(expr.argumentExpression) && expr.argumentExpression.text === 'constructor')) &&
+        ((qc.is.kind(qc.PropertyAccessExpression, expr) && idText(expr.name) === 'constructor') ||
+          (qc.is.kind(qc.ElementAccessExpression, expr) && StringLiteral.like(expr.argumentExpression) && expr.argumentExpression.text === 'constructor')) &&
         isMatchingReference(reference, expr.expression)
       );
     }
@@ -14174,7 +14174,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       return type;
     }
     function narrowType(type: Type, expr: Expression, assumeTrue: boolean): Type {
-      if (qc.is.expressionOfOptionalChainRoot(expr) || (qc.is.kind(BinaryExpression, expr.parent) && expr.parent.operatorToken.kind === Syntax.Question2Token && expr.parent.left === expr))
+      if (qc.is.expressionOfOptionalChainRoot(expr) || (qc.is.kind(qc.BinaryExpression, expr.parent) && expr.parent.operatorToken.kind === Syntax.Question2Token && expr.parent.left === expr))
         return narrowTypeByOptionality(type, expr, assumeTrue);
       switch (expr.kind) {
         case Syntax.Identifier:
@@ -14270,7 +14270,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return type;
   }
   function isExportOrExportExpression(location: Node) {
-    return !!qc.findAncestor(location, (e) => e.parent && qc.is.kind(ExportAssignment, e.parent) && e.parent.expression === e && qc.is.entityNameExpression(e));
+    return !!qc.findAncestor(location, (e) => e.parent && qc.is.kind(qc.ExportAssignment, e.parent) && e.parent.expression === e && qc.is.entityNameExpression(e));
   }
   function markAliasReferenced(symbol: Symbol, location: Node) {
     if (symbol.isNonLocalAlias(SymbolFlags.Value) && !isInTypeQuery(location) && !this.getTypeOnlyAliasDeclaration()) {
@@ -14286,7 +14286,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       getNodeLinks(container).flags |= NodeCheckFlags.CaptureArguments;
       return this.getTypeOfSymbol();
     }
-    if (!(node.parent && qc.is.kind(PropertyAccessExpression, node.parent) && node.parent.expression === node)) markAliasReferenced(symbol, node);
+    if (!(node.parent && qc.is.kind(qc.PropertyAccessExpression, node.parent) && node.parent.expression === node)) markAliasReferenced(symbol, node);
     const localOrExportSymbol = getExportSymbolOfValueSymbolIfExported(symbol);
     let declaration: Declaration | undefined = localOrExportSymbol.valueDeclaration;
     if (localOrExportSymbol.flags & SymbolFlags.Class) {
@@ -14342,7 +14342,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const declarationContainer = getControlFlowContainer(declaration);
     let flowContainer = getControlFlowContainer(node);
     const isOuterVariable = flowContainer !== declarationContainer;
-    const isSpreadDestructuringAssignmentTarget = node.parent && node.parent.parent && qc.is.kind(SpreadAssignment, node.parent) && isDestructuringAssignmentTarget(node.parent.parent);
+    const isSpreadDestructuringAssignmentTarget = node.parent && node.parent.parent && qc.is.kind(qc.SpreadAssignment, node.parent) && isDestructuringAssignmentTarget(node.parent.parent);
     const isModuleExports = symbol.flags & SymbolFlags.ModuleExports;
     while (
       flowContainer !== declarationContainer &&
@@ -14357,7 +14357,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       isOuterVariable ||
       isSpreadDestructuringAssignmentTarget ||
       isModuleExports ||
-      qc.is.kind(BindingElement, declaration) ||
+      qc.is.kind(qc.BindingElement, declaration) ||
       (type !== autoType &&
         type !== autoArrayType &&
         (!strictNullChecks || (type.flags & (TypeFlags.AnyOrUnknown | TypeFlags.Void)) !== 0 || isInTypeQuery(node) || node.parent.kind === Syntax.ExportSpecifier)) ||
@@ -14471,7 +14471,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (type === globalThisType && capturedByArrowFunction) error(node, qd.The_containing_arrow_function_captures_the_global_value_of_this);
       else if (!type) {
         const diag = error(node, qd.this_implicitly_has_type_any_because_it_does_not_have_a_type_annotation);
-        if (!qc.is.kind(SourceFile, container)) {
+        if (!qc.is.kind(qc.SourceFile, container)) {
           const outsideThis = tryGetThisTypeAt(container);
           if (outsideThis && outsideThis !== globalThisType) addRelatedInfo(diag, createDiagnosticForNode(container, qd.An_outer_value_of_this_is_shadowed_by_this_container));
         }
@@ -14505,7 +14505,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const type = getTypeForThisExpressionFromDoc(container);
       if (type && type !== errorType) return getFlowTypeOfReference(node, type);
     }
-    if (qc.is.kind(SourceFile, container)) {
+    if (qc.is.kind(qc.SourceFile, container)) {
       if (container.commonJsModuleIndicator) {
         const fileSymbol = getSymbolOfNode(container);
         return fileSymbol && getTypeOfSymbol(fileSymbol);
@@ -14530,14 +14530,14 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function getClassNameFromPrototypeMethod(container: Node) {
     if (
       container.kind === Syntax.FunctionExpression &&
-      qc.is.kind(BinaryExpression, container.parent) &&
+      qc.is.kind(qc.BinaryExpression, container.parent) &&
       getAssignmentDeclarationKind(container.parent) === AssignmentDeclarationKind.PrototypeProperty
     ) {
       return ((container.parent.left as PropertyAccessExpression).expression as PropertyAccessExpression).expression;
     } else if (
       container.kind === Syntax.MethodDeclaration &&
       container.parent.kind === Syntax.ObjectLiteralExpression &&
-      qc.is.kind(BinaryExpression, container.parent.parent) &&
+      qc.is.kind(qc.BinaryExpression, container.parent.parent) &&
       getAssignmentDeclarationKind(container.parent.parent) === AssignmentDeclarationKind.Prototype
     ) {
       return (container.parent.parent.left as PropertyAccessExpression).expression;
@@ -14545,27 +14545,27 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       container.kind === Syntax.FunctionExpression &&
       container.parent.kind === Syntax.PropertyAssignment &&
       container.parent.parent.kind === Syntax.ObjectLiteralExpression &&
-      qc.is.kind(BinaryExpression, container.parent.parent.parent) &&
+      qc.is.kind(qc.BinaryExpression, container.parent.parent.parent) &&
       getAssignmentDeclarationKind(container.parent.parent.parent) === AssignmentDeclarationKind.Prototype
     ) {
       return (container.parent.parent.parent.left as PropertyAccessExpression).expression;
     } else if (
       container.kind === Syntax.FunctionExpression &&
-      qc.is.kind(PropertyAssignment, container.parent) &&
-      qc.is.kind(Identifier, container.parent.name) &&
+      qc.is.kind(qc.PropertyAssignment, container.parent) &&
+      qc.is.kind(qc.Identifier, container.parent.name) &&
       (container.parent.name.escapedText === 'value' || container.parent.name.escapedText === 'get' || container.parent.name.escapedText === 'set') &&
-      qc.is.kind(ObjectLiteralExpression, container.parent.parent) &&
-      qc.is.kind(CallExpression, container.parent.parent.parent) &&
+      qc.is.kind(qc.ObjectLiteralExpression, container.parent.parent) &&
+      qc.is.kind(qc.CallExpression, container.parent.parent.parent) &&
       container.parent.parent.parent.arguments[2] === container.parent.parent &&
       getAssignmentDeclarationKind(container.parent.parent.parent) === AssignmentDeclarationKind.ObjectDefinePrototypeProperty
     ) {
       return (container.parent.parent.parent.arguments[0] as PropertyAccessExpression).expression;
     } else if (
-      qc.is.kind(MethodDeclaration, container) &&
-      qc.is.kind(Identifier, container.name) &&
+      qc.is.kind(qc.MethodDeclaration, container) &&
+      qc.is.kind(qc.Identifier, container.name) &&
       (container.name.escapedText === 'value' || container.name.escapedText === 'get' || container.name.escapedText === 'set') &&
-      qc.is.kind(ObjectLiteralExpression, container.parent) &&
-      qc.is.kind(CallExpression, container.parent.parent) &&
+      qc.is.kind(qc.ObjectLiteralExpression, container.parent) &&
+      qc.is.kind(qc.CallExpression, container.parent.parent) &&
       container.parent.parent.arguments[2] === container.parent &&
       getAssignmentDeclarationKind(container.parent.parent) === AssignmentDeclarationKind.ObjectDefinePrototypeProperty
     ) {
@@ -14706,7 +14706,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         const target = (<BinaryExpression>parent).left;
         if (qc.is.accessExpression(target)) {
           const { expression } = target;
-          if (inJs && qc.is.kind(Identifier, expression)) {
+          if (inJs && qc.is.kind(qc.Identifier, expression)) {
             const sourceFile = qc.get.sourceFileOf(parent);
             if (sourceFile.commonJsModuleIndicator && getResolvedSymbol(expression) === sourceFile.symbol) return;
           }
@@ -14751,7 +14751,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const parent = declaration.parent.parent;
     const name = declaration.propertyName || declaration.name;
     const parentType = getContextualTypeForVariableLikeDeclaration(parent) || (parent.kind !== Syntax.BindingElement && parent.initer && checkDeclarationIniter(parent));
-    if (parentType && !qc.is.kind(BindingPattern, name) && !isComputedNonLiteralName(name)) {
+    if (parentType && !qc.is.kind(qc.BindingPattern, name) && !isComputedNonLiteralName(name)) {
       const nameType = getLiteralTypeFromPropertyName(name);
       if (isTypeUsableAsPropertyName(nameType)) {
         const text = getPropertyNameFromType(nameType);
@@ -14764,7 +14764,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (qc.is.withIniter(declaration) && node === declaration.initer) {
       const result = getContextualTypeForVariableLikeDeclaration(declaration);
       if (result) return result;
-      if (qc.is.kind(BindingPattern, declaration.name)) return getTypeFromBindingPattern(declaration.name, true, false);
+      if (qc.is.kind(qc.BindingPattern, declaration.name)) return getTypeFromBindingPattern(declaration.name, true, false);
     }
     return;
   }
@@ -14806,7 +14806,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     let inBindingIniter = false;
     while (node.parent && !qc.is.functionLike(node.parent)) {
       if (qc.is.kind(qc.ParameterDeclaration, node.parent) && (inBindingIniter || node.parent.initer === node)) return true;
-      if (qc.is.kind(BindingElement, node.parent) && node.parent.initer === node) inBindingIniter = true;
+      if (qc.is.kind(qc.BindingElement, node.parent) && node.parent.initer === node) inBindingIniter = true;
       node = node.parent;
     }
     return false;
@@ -14874,7 +14874,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           const lhs = cast(binaryExpression.left, isAccessExpression);
           const overallAnnotation = qc.get.effectiveTypeAnnotationNode(decl);
           if (overallAnnotation) return getTypeFromTypeNode(overallAnnotation);
-          else if (qc.is.kind(Identifier, lhs.expression)) {
+          else if (qc.is.kind(qc.Identifier, lhs.expression)) {
             const id = lhs.expression;
             const parentSymbol = resolveName(id, id.escapedText, SymbolFlags.Value, undefined, id.escapedText, true);
             if (parentSymbol) {
@@ -14992,10 +14992,10 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function getContextualTypeForJsxExpression(node: JsxExpression): Type | undefined {
     const exprParent = node.parent;
-    return qc.isJsx.attributeLike(exprParent) ? getContextualType(node) : qc.is.kind(JsxElement, exprParent) ? getContextualTypeForChildJsxExpression(exprParent, node) : undefined;
+    return qc.isJsx.attributeLike(exprParent) ? getContextualType(node) : qc.is.kind(qc.JsxElement, exprParent) ? getContextualTypeForChildJsxExpression(exprParent, node) : undefined;
   }
   function getContextualTypeForJsxAttribute(attribute: JsxAttribute | JsxSpreadAttribute): Type | undefined {
-    if (qc.is.kind(JsxAttribute, attribute)) {
+    if (qc.is.kind(qc.JsxAttribute, attribute)) {
       const attributesType = getApparentTypeOfContextualType(attribute.parent);
       if (!attributesType || isTypeAny(attributesType)) return;
       return getTypeOfPropertyOfContextualType(attributesType, attribute.name.escapedText);
@@ -15053,8 +15053,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (instantiatedType && !(contextFlags && contextFlags & ContextFlags.NoConstraints && instantiatedType.flags & TypeFlags.TypeVariable)) {
       const apparentType = mapType(instantiatedType, getApparentType, true);
       if (apparentType.flags & TypeFlags.Union) {
-        if (qc.is.kind(ObjectLiteralExpression, node)) return discriminateContextualTypeByObjectMembers(node, apparentType as UnionType);
-        else if (qc.is.kind(JsxAttributes, node)) return discriminateContextualTypeByJSXAttributes(node, apparentType as UnionType);
+        if (qc.is.kind(qc.ObjectLiteralExpression, node)) return discriminateContextualTypeByObjectMembers(node, apparentType as UnionType);
+        else if (qc.is.kind(qc.JsxAttributes, node)) return discriminateContextualTypeByJSXAttributes(node, apparentType as UnionType);
       }
       return apparentType;
     }
@@ -15142,7 +15142,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return ancestor && ancestor.inferenceContext!;
   }
   function getContextualJsxElementAttributesType(node: JsxOpeningLikeElement, contextFlags?: ContextFlags) {
-    if (qc.is.kind(JsxOpeningElement, node) && node.parent.contextualType && contextFlags !== ContextFlags.Completions) return node.parent.contextualType;
+    if (qc.is.kind(qc.JsxOpeningElement, node) && node.parent.contextualType && contextFlags !== ContextFlags.Completions) return node.parent.contextualType;
     return getContextualTypeForArgumentAtIndex(node, 0);
   }
   function getEffectiveFirstArgumentForJsxSignature(signature: Signature, node: JsxOpeningLikeElement) {
@@ -15413,7 +15413,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     let hasComputedStringProperty = false;
     let hasComputedNumberProperty = false;
     for (const elem of node.properties) {
-      if (elem.name && qc.is.kind(ComputedPropertyName, elem.name) && !qc.is.wellKnownSymbolSyntactically(elem.name)) checkComputedPropertyName(elem.name);
+      if (elem.name && qc.is.kind(qc.ComputedPropertyName, elem.name) && !qc.is.wellKnownSymbolSyntactically(elem.name)) checkComputedPropertyName(elem.name);
     }
     let offset = 0;
     for (let i = 0; i < node.properties.length; i++) {
@@ -15589,7 +15589,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const jsxChildrenPropertyName = getJsxElementChildrenPropertyName(getJsxNamespaceAt(openingLikeElement));
     for (const attributeDecl of attributes.properties) {
       const member = attributeDecl.symbol;
-      if (qc.is.kind(JsxAttribute, attributeDecl)) {
+      if (qc.is.kind(qc.JsxAttribute, attributeDecl)) {
         const exprType = checkJsxAttribute(attributeDecl, checkMode);
         objectFlags |= getObjectFlags(exprType) & ObjectFlags.PropagatingFlags;
         const attributeSymbol = new QSymbol(SymbolFlags.Property | SymbolFlags.Transient | member.flags, member.escName);
@@ -15683,7 +15683,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (!links.resolvedSymbol) {
       const intrinsicElementsType = getJsxType(JsxNames.IntrinsicElements, node);
       if (intrinsicElementsType !== errorType) {
-        if (!qc.is.kind(Identifier, node.tagName)) return fail();
+        if (!qc.is.kind(qc.Identifier, node.tagName)) return fail();
         const intrinsicProp = getPropertyOfType(intrinsicElementsType, node.tagName.escapedText);
         if (intrinsicProp) {
           links.jsxFlags |= JsxFlags.IntrinsicNamedElement;
@@ -15914,7 +15914,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         return false;
       }
     }
-    if (qc.is.kind(PropertyAccessExpression, node) && qc.is.kind(PrivateIdentifier, node.name)) {
+    if (qc.is.kind(qc.PropertyAccessExpression, node) && qc.is.kind(qc.PrivateIdentifier, node.name)) {
       if (!qc.get.containingClass(node)) {
         error(errorNode, qd.Private_identifiers_are_not_allowed_outside_class_bodies);
         return false;
@@ -16039,7 +16039,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (properties) {
       forEach(properties, (symbol: Symbol) => {
         const decl = symbol.valueDeclaration;
-        if (decl && qc.is.namedDeclaration(decl) && qc.is.kind(PrivateIdentifier, decl.name) && decl.name.escapedText === right.escapedText) {
+        if (decl && qc.is.namedDeclaration(decl) && qc.is.kind(qc.PrivateIdentifier, decl.name) && decl.name.escapedText === right.escapedText) {
           propertyOnType = symbol;
           return true;
         }
@@ -16081,10 +16081,10 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const parentSymbol = getNodeLinks(left).resolvedSymbol;
     const assignmentKind = qc.get.assignmentTargetKind(node);
     const apparentType = getApparentType(assignmentKind !== AssignmentKind.None || isMethodAccessForCall(node) ? getWidenedType(leftType) : leftType);
-    if (qc.is.kind(PrivateIdentifier, right)) checkExternalEmitHelpers(node, ExternalEmitHelpers.ClassPrivateFieldGet);
+    if (qc.is.kind(qc.PrivateIdentifier, right)) checkExternalEmitHelpers(node, ExternalEmitHelpers.ClassPrivateFieldGet);
     const isAnyLike = isTypeAny(apparentType) || apparentType === silentNeverType;
     let prop: Symbol | undefined;
-    if (qc.is.kind(PrivateIdentifier, right)) {
+    if (qc.is.kind(qc.PrivateIdentifier, right)) {
       const lexicallyScopedSymbol = lookupSymbolForPrivateIdentifierDeclaration(right.escapedText, right);
       if (isAnyLike) {
         if (lexicallyScopedSymbol) return apparentType;
@@ -16097,16 +16097,16 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (!prop && checkPrivateIdentifierPropertyAccess(leftType, right, lexicallyScopedSymbol)) return errorType;
     } else {
       if (isAnyLike) {
-        if (qc.is.kind(Identifier, left) && parentSymbol) markAliasReferenced(parentSymbol, node);
+        if (qc.is.kind(qc.Identifier, left) && parentSymbol) markAliasReferenced(parentSymbol, node);
         return apparentType;
       }
       prop = getPropertyOfType(apparentType, right.escapedText);
     }
-    if (qc.is.kind(Identifier, left) && parentSymbol && !(prop && isConstEnumOrConstEnumOnlyModule(prop))) markAliasReferenced(parentSymbol, node);
+    if (qc.is.kind(qc.Identifier, left) && parentSymbol && !(prop && isConstEnumOrConstEnumOnlyModule(prop))) markAliasReferenced(parentSymbol, node);
     let propType: Type;
     if (!prop) {
       const indexInfo =
-        !qc.is.kind(PrivateIdentifier, right) && (assignmentKind === AssignmentKind.None || !isGenericObjectType(leftType) || isThisTypeParameter(leftType))
+        !qc.is.kind(qc.PrivateIdentifier, right) && (assignmentKind === AssignmentKind.None || !isGenericObjectType(leftType) || isThisTypeParameter(leftType))
           ? getIndexInfoOfType(apparentType, IndexKind.String)
           : undefined;
       if (!(indexInfo && indexInfo.type)) {
@@ -16158,7 +16158,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       strictNullChecks &&
       prop &&
       prop.valueDeclaration &&
-      qc.is.kind(PropertyAccessExpression, prop.valueDeclaration) &&
+      qc.is.kind(qc.PropertyAccessExpression, prop.valueDeclaration) &&
       getAssignmentDeclarationPropertyAccessKind(prop.valueDeclaration) &&
       getControlFlowContainer(node) === getControlFlowContainer(prop.valueDeclaration)
     ) {
@@ -16236,7 +16236,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function reportNonexistentProperty(propNode: Identifier | PrivateIdentifier, containingType: Type) {
     let errorInfo: DiagnosticMessageChain | undefined;
     let relatedInfo: Diagnostic | undefined;
-    if (!qc.is.kind(PrivateIdentifier, propNode) && containingType.flags & TypeFlags.Union && !(containingType.flags & TypeFlags.Primitive)) {
+    if (!qc.is.kind(qc.PrivateIdentifier, propNode) && containingType.flags & TypeFlags.Union && !(containingType.flags & TypeFlags.Primitive)) {
       for (const subtype of (containingType as UnionType).types) {
         if (!getPropertyOfType(subtype, propNode.escapedText) && !getIndexInfoOfType(subtype, IndexKind.String)) {
           errorInfo = chainDiagnosticMessages(errorInfo, qd.Property_0_does_not_exist_on_type_1, declarationNameToString(propNode), typeToString(subtype));
@@ -16337,7 +16337,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const valueDeclaration = prop && prop.flags & SymbolFlags.ClassMember && prop.valueDeclaration;
     if (!valueDeclaration) return;
     const hasPrivateModifier = qc.has.effectiveModifier(valueDeclaration, ModifierFlags.Private);
-    const hasPrivateIdentifier = qc.is.namedDeclaration(prop.valueDeclaration) && qc.is.kind(PrivateIdentifier, prop.valueDeclaration.name);
+    const hasPrivateIdentifier = qc.is.namedDeclaration(prop.valueDeclaration) && qc.is.kind(qc.PrivateIdentifier, prop.valueDeclaration.name);
     if (!hasPrivateModifier && !hasPrivateIdentifier) return;
     if (nodeForCheckWriteOnly && qc.is.writeOnlyAccess(nodeForCheckWriteOnly) && !(prop.flags & SymbolFlags.SetAccessor)) return;
     if (isThisAccess) {
@@ -16363,7 +16363,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (type === errorType || isTypeAny(type)) return true;
     const prop = getPropertyOfType(type, propertyName);
     if (prop) {
-      if (qc.is.kind(PropertyAccessExpression, node) && prop.valueDeclaration?.qc.is.privateIdentifierPropertyDeclaration()) {
+      if (qc.is.kind(qc.PropertyAccessExpression, node) && prop.valueDeclaration?.qc.is.privateIdentifierPropertyDeclaration()) {
         const declClass = qc.get.containingClass(prop.valueDeclaration);
         return !qc.is.optionalChain(node) && !!qc.findAncestor(node, (parent) => parent === declClass);
       }
@@ -16375,7 +16375,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const initer = node.initer;
     if (initer.kind === Syntax.VariableDeclarationList) {
       const variable = (<VariableDeclarationList>initer).declarations[0];
-      if (variable && !qc.is.kind(BindingPattern, variable.name)) return getSymbolOfNode(variable);
+      if (variable && !qc.is.kind(qc.BindingPattern, variable.name)) return getSymbolOfNode(variable);
     } else if (initer.kind === Syntax.Identifier) {
       return getResolvedSymbol(<Identifier>initer);
     }
@@ -16448,7 +16448,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return true;
   }
   function callLikeExpressionMayHaveTypeArguments(node: CallLikeExpression): node is CallExpression | NewExpression | TaggedTemplateExpression | JsxOpeningElement {
-    return qc.is.callOrNewExpression(node) || qc.is.kind(TaggedTemplateExpression, node) || qc.isJsx.openingLikeElement(node);
+    return qc.is.callOrNewExpression(node) || qc.is.kind(qc.TaggedTemplateExpression, node) || qc.isJsx.openingLikeElement(node);
   }
   function resolveUntypedCall(node: CallLikeExpression): Signature {
     if (callLikeExpressionMayHaveTypeArguments(node)) forEach(node.typeArguments, checkSourceElement);
@@ -16717,7 +16717,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       checkTypeRelatedToAndOptionallyElaborate(attributesType, paramType, relation, reportErrors ? node.tagName : undefined, node.attributes, undefined, containingMessageChain, errorOutputContainer)
     );
     function checkTagNameDoesNotExpectTooManyArguments(): boolean {
-      const tagType = qc.is.kind(JsxOpeningElement, node) || (qc.is.kind(JsxSelfClosingElement, node) && !isJsxIntrinsicIdentifier(node.tagName)) ? checkExpression(node.tagName) : undefined;
+      const tagType = qc.is.kind(qc.JsxOpeningElement, node) || (qc.is.kind(qc.JsxSelfClosingElement, node) && !isJsxIntrinsicIdentifier(node.tagName)) ? checkExpression(node.tagName) : undefined;
       if (!tagType) return true;
       const tagCallSignatures = getSignaturesOfType(tagType, SignatureKind.Call);
       if (!length(tagCallSignatures)) return true;
@@ -16863,7 +16863,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       return args;
     }
     if (node.kind === Syntax.Decorator) return getEffectiveDecoratorArguments(node);
-    if (qc.isJsx.openingLikeElement(node)) return node.attributes.properties.length > 0 || (qc.is.kind(JsxOpeningElement, node) && node.parent.children.length > 0) ? [node.attributes] : empty;
+    if (qc.isJsx.openingLikeElement(node)) return node.attributes.properties.length > 0 || (qc.is.kind(qc.JsxOpeningElement, node) && node.parent.children.length > 0) ? [node.attributes] : empty;
     const args = node.arguments || empty;
     const length = args.length;
     if (length && isSpreadArgument(args[length - 1]) && getSpreadArgumentIndex(args) === length - 1) {
@@ -16926,7 +16926,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     let start: number;
     let length: number;
     const sourceFile = qc.get.sourceFileOf(node);
-    if (qc.is.kind(PropertyAccessExpression, node.expression)) {
+    if (qc.is.kind(qc.PropertyAccessExpression, node.expression)) {
       const nameSpan = getErrorSpanForNode(sourceFile, node.expression.name);
       start = nameSpan.start;
       length = doNotIncludeArguments ? nameSpan.length : node.end - start;
@@ -16945,7 +16945,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     arg2?: string | number,
     arg3?: string | number
   ): DiagnosticWithLocation {
-    if (qc.is.kind(CallExpression, node)) {
+    if (qc.is.kind(qc.CallExpression, node)) {
       const { sourceFile, start, length } = getDiagnosticSpanForCallNode(node);
       return createFileDiagnostic(sourceFile, start, length, message, arg0, arg1, arg2, arg3);
     }
@@ -16988,8 +16988,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (paramDecl) {
         related = createDiagnosticForNode(
           paramDecl,
-          qc.is.kind(BindingPattern, paramDecl.name) ? qd.An_argument_matching_this_binding_pattern_was_not_provided : qd.An_argument_for_0_was_not_provided,
-          !paramDecl.name ? argCount : !qc.is.kind(BindingPattern, paramDecl.name) ? idText(getFirstIdentifier(paramDecl.name)) : undefined
+          qc.is.kind(qc.BindingPattern, paramDecl.name) ? qd.An_argument_matching_this_binding_pattern_was_not_provided : qd.An_argument_for_0_was_not_provided,
+          !paramDecl.name ? argCount : !qc.is.kind(qc.BindingPattern, paramDecl.name) ? idText(getFirstIdentifier(paramDecl.name)) : undefined
         );
       }
     }
@@ -17474,7 +17474,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       errorInfo = chainDiagnosticMessages(errorInfo, isCall ? qd.Type_0_has_no_call_signatures : qd.Type_0_has_no_construct_signatures, typeToString(apparentType));
     }
     let headMessage = isCall ? qd.This_expression_is_not_callable : qd.This_expression_is_not_constructable;
-    if (qc.is.kind(CallExpression, errorTarget.parent) && errorTarget.parent.arguments.length === 0) {
+    if (qc.is.kind(qc.CallExpression, errorTarget.parent) && errorTarget.parent.arguments.length === 0) {
       const { resolvedSymbol } = getNodeLinks(errorTarget);
       if (resolvedSymbol && resolvedSymbol.flags & SymbolFlags.GetAccessor) headMessage = qd.This_expression_is_not_callable_because_it_is_a_get_accessor_Did_you_mean_to_use_it_without;
     }
@@ -17487,7 +17487,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const { messageChain, relatedMessage: relatedInfo } = invocationErrorDetails(errorTarget, apparentType, kind);
     const diagnostic = createDiagnosticForNodeFromMessageChain(errorTarget, messageChain);
     if (relatedInfo) addRelatedInfo(diagnostic, createDiagnosticForNode(errorTarget, relatedInfo));
-    if (qc.is.kind(CallExpression, errorTarget.parent)) {
+    if (qc.is.kind(qc.CallExpression, errorTarget.parent)) {
       const { start, length } = getDiagnosticSpanForCallNode(errorTarget.parent, true);
       diagnostic.start = start;
       diagnostic.length = length;
@@ -17635,9 +17635,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function isJSConstructor(node: Node | undefined): node is FunctionDeclaration | FunctionExpression {
     if (!node || !qc.is.inJSFile(node)) return false;
     const func =
-      qc.is.kind(FunctionDeclaration, node) || qc.is.kind(qc.FunctionExpression, node)
+      qc.is.kind(qc.FunctionDeclaration, node) || qc.is.kind(qc.FunctionExpression, node)
         ? node
-        : qc.is.kind(VariableDeclaration, node) && node.initer && qc.is.kind(qc.FunctionExpression, node.initer)
+        : qc.is.kind(qc.VariableDeclaration, node) && node.initer && qc.is.kind(qc.FunctionExpression, node.initer)
         ? node.initer
         : undefined;
     if (func) {
@@ -17667,9 +17667,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const assignmentSymbol =
       decl &&
       decl.parent &&
-      ((qc.is.kind(FunctionDeclaration, decl) && getSymbolOfNode(decl)) ||
-        (qc.is.kind(BinaryExpression, decl.parent) && getSymbolOfNode(decl.parent.left)) ||
-        (qc.is.kind(VariableDeclaration, decl.parent) && getSymbolOfNode(decl.parent)));
+      ((qc.is.kind(qc.FunctionDeclaration, decl) && getSymbolOfNode(decl)) ||
+        (qc.is.kind(qc.BinaryExpression, decl.parent) && getSymbolOfNode(decl.parent.left)) ||
+        (qc.is.kind(qc.VariableDeclaration, decl.parent) && getSymbolOfNode(decl.parent)));
     const prototype = assignmentSymbol && assignmentSymbol.exports && assignmentSymbol.exports.get('prototype' as __String);
     const init = prototype && prototype.valueDeclaration && getAssignedJSPrototype(prototype.valueDeclaration);
     return init ? getSymbolOfNode(init) : undefined;
@@ -17680,9 +17680,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     while (parent && parent.kind === Syntax.PropertyAccessExpression) {
       parent = parent.parent;
     }
-    if (parent && qc.is.kind(BinaryExpression, parent) && qc.is.prototypeAccess(parent.left) && parent.operatorToken.kind === Syntax.EqualsToken) {
+    if (parent && qc.is.kind(qc.BinaryExpression, parent) && qc.is.prototypeAccess(parent.left) && parent.operatorToken.kind === Syntax.EqualsToken) {
       const right = getIniterOfBinaryExpression(parent);
-      return qc.is.kind(ObjectLiteralExpression, right) && right;
+      return qc.is.kind(qc.ObjectLiteralExpression, right) && right;
     }
   }
   function checkCallExpression(node: CallExpression | NewExpression, checkMode?: CheckMode): Type {
@@ -17728,10 +17728,10 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return returnType;
   }
   function isSymbolOrSymbolForCall(node: Node) {
-    if (!qc.is.kind(CallExpression, node)) return false;
+    if (!qc.is.kind(qc.CallExpression, node)) return false;
     let left = node.expression;
-    if (qc.is.kind(PropertyAccessExpression, left) && left.name.escapedText === 'for') left = left.expression;
-    if (!qc.is.kind(Identifier, left) || left.escapedText !== 'Symbol') return false;
+    if (qc.is.kind(qc.PropertyAccessExpression, left) && left.name.escapedText === 'for') left = left.expression;
+    if (!qc.is.kind(qc.Identifier, left) || left.escapedText !== 'Symbol') return false;
     const globalESSymbol = getGlobalESSymbolConstructorSymbol(false);
     if (!globalESSymbol) return false;
     return globalESSymbol === resolveName(left, 'Symbol' as __String, SymbolFlags.Value, undefined, undefined, false);
@@ -17779,7 +17779,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function isCommonJsRequire(node: Node): boolean {
     if (!isRequireCall(node, true)) return false;
-    if (!qc.is.kind(Identifier, node.expression)) return fail();
+    if (!qc.is.kind(qc.Identifier, node.expression)) return fail();
     const resolvedRequire = resolveName(node.expression, node.expression.escapedText, SymbolFlags.Value, undefined, undefined, true)!;
     if (resolvedRequire === requireSymbol) return true;
     if (resolvedRequire.flags & SymbolFlags.Alias) return false;
@@ -17818,7 +17818,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       case Syntax.PropertyAccessExpression:
       case Syntax.ElementAccessExpression:
         const expr = (<PropertyAccessExpression | ElementAccessExpression>node).expression;
-        if (qc.is.kind(Identifier, expr)) {
+        if (qc.is.kind(qc.Identifier, expr)) {
           let symbol = getSymbolAtLocation(expr);
           if (symbol && symbol.flags & SymbolFlags.Alias) symbol = this.resolveAlias();
           return !!(symbol && symbol.flags & SymbolFlags.Enum && getEnumKind(symbol) === EnumKind.Literal);
@@ -17883,7 +17883,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return node.name.escapedText === 'meta' ? getGlobalImportMetaType() : errorType;
   }
   function getTupleElementLabel(d: ParameterDeclaration | NamedTupleMember) {
-    assert(qc.is.kind(Identifier, d.name));
+    assert(qc.is.kind(qc.Identifier, d.name));
     return d.name.escapedText;
   }
   function getParameterNameAtPosition(signature: Signature, pos: number) {
@@ -17899,7 +17899,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return restParameter.escName;
   }
   function isValidDeclarationForTupleLabel(d: Declaration): d is NamedTupleMember | (ParameterDeclaration & { name: Identifier }) {
-    return d.kind === Syntax.NamedTupleMember || (qc.is.kind(qc.ParameterDeclaration, d) && d.name && qc.is.kind(Identifier, d.name));
+    return d.kind === Syntax.NamedTupleMember || (qc.is.kind(qc.ParameterDeclaration, d) && d.name && qc.is.kind(qc.Identifier, d.name));
   }
   function getNameableDeclarationAtPosition(signature: Signature, pos: number) {
     const paramCount = signature.parameters.length - (signatureHasRestParameter(signature) ? 1 : 0);
@@ -18056,7 +18056,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function assignBindingElementTypes(pattern: BindingPattern) {
     for (const element of pattern.elements) {
-      if (!qc.is.kind(OmittedExpression, element)) {
+      if (!qc.is.kind(qc.OmittedExpression, element)) {
         if (element.name.kind === Syntax.Identifier) s.getLinks(getSymbolOfNode(element)).type = getTypeForBindingElement(element);
         else assignBindingElementTypes(element.name);
       }
@@ -18376,7 +18376,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return true;
   }
   function isReadonlyAssignmentDeclaration(d: Declaration) {
-    if (!qc.is.kind(CallExpression, d)) return false;
+    if (!qc.is.kind(qc.CallExpression, d)) return false;
     if (!isBindableObjectDefinePropertyCall(d)) return false;
     const objectLitType = checkExpressionCached(d.arguments[2]);
     const valueType = getTypeOfPropertyOfType(objectLitType, 'value' as __String);
@@ -18384,7 +18384,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const writableProp = getPropertyOfType(objectLitType, 'writable' as __String);
       const writableType = writableProp && getTypeOfSymbol(writableProp);
       if (!writableType || writableType === falseType || writableType === regularFalseType) return true;
-      if (writableProp && writableProp.valueDeclaration && qc.is.kind(PropertyAssignment, writableProp.valueDeclaration)) {
+      if (writableProp && writableProp.valueDeclaration && qc.is.kind(qc.PropertyAssignment, writableProp.valueDeclaration)) {
         const initer = writableProp.valueDeclaration.initer;
         const rawOriginalType = checkExpression(initer);
         if (rawOriginalType === falseType || rawOriginalType === regularFalseType) return true;
@@ -18401,7 +18401,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         const ctor = qc.get.containingFunction(expr);
         if (!(ctor && ctor.kind === Syntax.Constructor)) return true;
         if (symbol.valueDeclaration) {
-          const isAssignmentDeclaration = qc.is.kind(BinaryExpression, symbol.valueDeclaration);
+          const isAssignmentDeclaration = qc.is.kind(qc.BinaryExpression, symbol.valueDeclaration);
           const isLocalPropertyDeclaration = ctor.parent === symbol.valueDeclaration.parent;
           const isLocalParameterProperty = ctor === symbol.valueDeclaration.parent;
           const isLocalThisPropertyAssignment = isAssignmentDeclaration && symbol.parent?.valueDeclaration === ctor.parent;
@@ -18443,7 +18443,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       error(expr, qd.The_operand_of_a_delete_operator_must_be_a_property_reference);
       return booleanType;
     }
-    if (expr.kind === Syntax.PropertyAccessExpression && qc.is.kind(PrivateIdentifier, expr.name)) error(expr, qd.The_operand_of_a_delete_operator_cannot_be_a_private_identifier);
+    if (expr.kind === Syntax.PropertyAccessExpression && qc.is.kind(qc.PrivateIdentifier, expr.name)) error(expr, qd.The_operand_of_a_delete_operator_cannot_be_a_private_identifier);
     const links = getNodeLinks(expr);
     const symbol = getExportSymbolOfValueSymbolIfExported(links.resolvedSymbol);
     if (symbol) {
@@ -18466,7 +18466,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function isTopLevelAwait(node: AwaitExpression) {
     const container = qc.get.thisContainer(node, true);
-    return qc.is.kind(SourceFile, container);
+    return qc.is.kind(qc.SourceFile, container);
   }
   function checkAwaitExpression(node: AwaitExpression): Type {
     if (produceDiagnostics) {
@@ -18676,7 +18676,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         const nonRestNames: PropertyName[] = [];
         if (allProperties) {
           for (const otherProperty of allProperties) {
-            if (!qc.is.kind(SpreadAssignment, otherProperty)) nonRestNames.push(otherProperty.name);
+            if (!qc.is.kind(qc.SpreadAssignment, otherProperty)) nonRestNames.push(otherProperty.name);
           }
         }
         const type = getRestType(objectLiteralType, nonRestNames, objectLiteralType.symbol);
@@ -18871,7 +18871,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       workStacks.state[stackIndex] = nextState;
     }
     function maybeCheckExpression(node: Expression) {
-      if (qc.is.kind(node, BinaryExpression)) {
+      if (qc.is.kind(qc.node, BinaryExpression)) {
         stackIndex++;
         workStacks.expr[stackIndex] = node;
         workStacks.state[stackIndex] = CheckBinaryExpressionState.MaybeCheckLeft;
@@ -18884,9 +18884,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function checkGrammarNullishCoalesceWithLogicalExpression(node: BinaryExpression) {
     const { left, operatorToken, right } = node;
     if (operatorToken.kind === Syntax.Question2Token) {
-      if (qc.is.kind(BinaryExpression, left) && (left.operatorToken.kind === Syntax.Bar2Token || left.operatorToken.kind === Syntax.Ampersand2Token))
+      if (qc.is.kind(qc.BinaryExpression, left) && (left.operatorToken.kind === Syntax.Bar2Token || left.operatorToken.kind === Syntax.Ampersand2Token))
         grammarErrorOnNode(left, qd._0_and_1_operations_cannot_be_mixed_without_parentheses, Token.toString(left.operatorToken.kind), Token.toString(operatorToken.kind));
-      if (qc.is.kind(BinaryExpression, right) && (right.operatorToken.kind === Syntax.Bar2Token || right.operatorToken.kind === Syntax.Ampersand2Token))
+      if (qc.is.kind(qc.BinaryExpression, right) && (right.operatorToken.kind === Syntax.Bar2Token || right.operatorToken.kind === Syntax.Ampersand2Token))
         grammarErrorOnNode(right, qd._0_and_1_operations_cannot_be_mixed_without_parentheses, Token.toString(right.operatorToken.kind), Token.toString(operatorToken.kind));
     }
   }
@@ -19013,7 +19013,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       case Syntax.Question2Token:
         return getTypeFacts(leftType) & TypeFacts.EQUndefinedOrNull ? getUnionType([getNonNullableType(leftType), rightType], UnionReduction.Subtype) : leftType;
       case Syntax.EqualsToken:
-        const declKind = qc.is.kind(BinaryExpression, left.parent) ? getAssignmentDeclarationKind(left.parent) : AssignmentDeclarationKind.None;
+        const declKind = qc.is.kind(qc.BinaryExpression, left.parent) ? getAssignmentDeclarationKind(left.parent) : AssignmentDeclarationKind.None;
         checkAssignmentDeclaration(declKind, rightType);
         if (isAssignmentDeclaration(declKind)) {
           if (
@@ -19089,7 +19089,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
             qd.The_left_hand_side_of_an_assignment_expression_must_be_a_variable_or_a_property_access,
             qd.The_left_hand_side_of_an_assignment_expression_may_not_be_an_optional_property_access
           ) &&
-          (!qc.is.kind(Identifier, left) || syntax.get.unescUnderscores(left.escapedText) !== 'exports')
+          (!qc.is.kind(qc.Identifier, left) || syntax.get.unescUnderscores(left.escapedText) !== 'exports')
         ) {
           checkTypeAssignableToAndOptionallyElaborate(valueType, leftType, left, right);
         }
@@ -19106,7 +19106,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         case AssignmentDeclarationKind.ThisProperty:
           const symbol = getSymbolOfNode(left);
           const init = getAssignedExpandoIniter(right);
-          return init && qc.is.kind(ObjectLiteralExpression, init) && symbol && hasEntries(symbol.exports);
+          return init && qc.is.kind(qc.ObjectLiteralExpression, init) && symbol && hasEntries(symbol.exports);
         default:
           return false;
       }
@@ -19203,7 +19203,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return stringType;
   }
   function getContextNode(node: Expression): Node {
-    if (node.kind === Syntax.JsxAttributes && !qc.is.kind(JsxSelfClosingElement, node.parent)) return node.parent.parent;
+    if (node.kind === Syntax.JsxAttributes && !qc.is.kind(qc.JsxSelfClosingElement, node.parent)) return node.parent.parent;
     return node;
   }
   function checkExpressionWithContextualType(node: Expression, contextualType: Type, inferenceContext: InferenceContext | undefined, checkMode: CheckMode): Type {
@@ -19258,8 +19258,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     for (let i = arity; i < patternElements.length; i++) {
       const e = patternElements[i];
       if (i < patternElements.length - 1 || !(e.kind === Syntax.BindingElement && e.dot3Token)) {
-        elementTypes.push(!qc.is.kind(OmittedExpression, e) && hasDefaultValue(e) ? getTypeFromBindingElement(e, false, false) : anyType);
-        if (!qc.is.kind(OmittedExpression, e) && !hasDefaultValue(e)) reportImplicitAny(e, anyType);
+        elementTypes.push(!qc.is.kind(qc.OmittedExpression, e) && hasDefaultValue(e) ? getTypeFromBindingElement(e, false, false) : anyType);
+        if (!qc.is.kind(qc.OmittedExpression, e) && !hasDefaultValue(e)) reportImplicitAny(e, anyType);
       }
     }
     return createTupleType(elementTypes, type.target.minLength, false, type.target.readonly);
@@ -19307,15 +19307,15 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const parent = node.parent;
     return (
       (qc.is.assertionExpression(parent) && qc.is.constTypeReference(parent.type)) ||
-      ((qc.is.kind(ParenthesizedExpression, parent) || isArrayLiteralExpression(parent) || qc.is.kind(SpreadElement, parent)) && isConstContext(parent)) ||
-      ((qc.is.kind(PropertyAssignment, parent) || qc.is.kind(ShorthandPropertyAssignment, parent)) && isConstContext(parent.parent))
+      ((qc.is.kind(qc.ParenthesizedExpression, parent) || isArrayLiteralExpression(parent) || qc.is.kind(qc.SpreadElement, parent)) && isConstContext(parent)) ||
+      ((qc.is.kind(qc.PropertyAssignment, parent) || qc.is.kind(qc.ShorthandPropertyAssignment, parent)) && isConstContext(parent.parent))
     );
   }
   function checkExpressionForMutableLocation(node: Expression, checkMode: CheckMode | undefined, contextualType?: Type, forceTuple?: boolean): Type {
     const type = checkExpression(node, checkMode, forceTuple);
     return isConstContext(node)
       ? getRegularTypeOfLiteralType(type)
-      : qc.is.kind(TypeAssertion, node)
+      : qc.is.kind(qc.TypeAssertion, node)
       ? type
       : getWidenedLiteralLikeTypeForContextualType(type, instantiateContextualType(arguments.length === 2 ? getContextualType(node) : contextualType, node));
   }
@@ -19457,7 +19457,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function getQuickTypeOfExpression(node: Expression) {
     const expr = skipParentheses(node);
-    if (qc.is.kind(CallExpression, expr) && expr.expression.kind !== Syntax.SuperKeyword && !isRequireCall(expr, true) && !isSymbolOrSymbolForCall(expr)) {
+    if (qc.is.kind(qc.CallExpression, expr) && expr.expression.kind !== Syntax.SuperKeyword && !isRequireCall(expr, true) && !isSymbolOrSymbolForCall(expr)) {
       const type = qc.is.callChain(expr) ? getReturnTypeOfSingleNonGenericSignatureOfCallChain(expr) : getReturnTypeOfSingleNonGenericCallSignature(checkNonNullExpression(expr.expression));
       if (type) return type;
     } else if (qc.is.assertionExpression(expr) && !qc.is.constTypeReference(expr.type)) {
@@ -19638,18 +19638,18 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const func = qc.get.containingFunction(node)!;
     if (qc.has.syntacticModifier(node, ModifierFlags.ParameterPropertyModifier)) {
       if (!(func.kind === Syntax.Constructor && qc.is.present(func.body))) error(node, qd.A_parameter_property_is_only_allowed_in_a_constructor_implementation);
-      if (func.kind === Syntax.Constructor && qc.is.kind(Identifier, node.name) && node.name.escapedText === 'constructor')
+      if (func.kind === Syntax.Constructor && qc.is.kind(qc.Identifier, node.name) && node.name.escapedText === 'constructor')
         error(node.name, qd.constructor_cannot_be_used_as_a_parameter_property_name);
     }
-    if (node.questionToken && qc.is.kind(BindingPattern, node.name) && (func as FunctionLikeDeclaration).body)
+    if (node.questionToken && qc.is.kind(qc.BindingPattern, node.name) && (func as FunctionLikeDeclaration).body)
       error(node, qd.A_binding_pattern_parameter_cannot_be_optional_in_an_implementation_signature);
-    if (node.name && qc.is.kind(Identifier, node.name) && (node.name.escapedText === 'this' || node.name.escapedText === 'new')) {
+    if (node.name && qc.is.kind(qc.Identifier, node.name) && (node.name.escapedText === 'this' || node.name.escapedText === 'new')) {
       if (func.parameters.indexOf(node) !== 0) error(node, qd.A_0_parameter_must_be_the_first_parameter, node.name.escapedText as string);
       if (func.kind === Syntax.Constructor || func.kind === Syntax.ConstructSignature || func.kind === Syntax.ConstructorType) error(node, qd.A_constructor_cannot_have_a_this_parameter);
       if (func.kind === Syntax.ArrowFunction) error(node, qd.An_arrow_function_cannot_have_a_this_parameter);
       if (func.kind === Syntax.GetAccessor || func.kind === Syntax.SetAccessor) error(node, qd.get_and_set_accessors_cannot_declare_this_parameters);
     }
-    if (node.dot3Token && !qc.is.kind(BindingPattern, node.name) && !isTypeAssignableTo(getReducedType(getTypeOfSymbol(node.symbol)), anyReadonlyArrayType))
+    if (node.dot3Token && !qc.is.kind(qc.BindingPattern, node.name) && !isTypeAssignableTo(getReducedType(getTypeOfSymbol(node.symbol)), anyReadonlyArrayType))
       error(node, qd.A_rest_parameter_must_be_of_an_array_type);
   }
   function checkTypePredicate(node: TypePredicateNode): void {
@@ -19676,7 +19676,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       } else if (parameterName) {
         let hasReportedError = false;
         for (const { name } of parent.parameters) {
-          if (qc.is.kind(BindingPattern, name) && checkIfTypePredicateVariableIsDeclaredInBindingPattern(name, parameterName, typePredicate.parameterName)) {
+          if (qc.is.kind(qc.BindingPattern, name) && checkIfTypePredicateVariableIsDeclaredInBindingPattern(name, parameterName, typePredicate.parameterName)) {
             hasReportedError = true;
             break;
           }
@@ -19700,7 +19700,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function checkIfTypePredicateVariableIsDeclaredInBindingPattern(pattern: BindingPattern, predicateVariableNode: Node, predicateVariableName: string) {
     for (const element of pattern.elements) {
-      if (qc.is.kind(OmittedExpression, element)) continue;
+      if (qc.is.kind(qc.OmittedExpression, element)) continue;
       const name = element.name;
       if (name.kind === Syntax.Identifier && name.escapedText === predicateVariableName) {
         error(predicateVariableNode, qd.A_type_predicate_cannot_reference_element_0_in_a_binding_pattern, predicateVariableName);
@@ -19769,14 +19769,14 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     for (const member of node.members) {
       if (member.kind === Syntax.Constructor) {
         for (const param of (member as ConstructorDeclaration).parameters) {
-          if (qc.is.parameterPropertyDeclaration(param, member) && !qc.is.kind(BindingPattern, param.name))
+          if (qc.is.parameterPropertyDeclaration(param, member) && !qc.is.kind(qc.BindingPattern, param.name))
             addName(instanceNames, param.name, param.name.escapedText, DeclarationMeaning.GetOrSetAccessor);
         }
       } else {
         const isStatic = qc.has.syntacticModifier(member, ModifierFlags.Static);
         const name = member.name;
         if (!name) return;
-        const names = qc.is.kind(PrivateIdentifier, name) ? privateIdentifiers : isStatic ? staticNames : instanceNames;
+        const names = qc.is.kind(qc.PrivateIdentifier, name) ? privateIdentifiers : isStatic ? staticNames : instanceNames;
         const memberName = name && getPropertyNameForPropertyNameNode(name);
         if (memberName) {
           switch (member.kind) {
@@ -19890,19 +19890,19 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function checkPropertyDeclaration(node: PropertyDeclaration | PropertySignature) {
     if (!checkGrammarDecoratorsAndModifiers(node) && !checkGrammarProperty(node)) checkGrammarComputedPropertyName(node.name);
     checkVariableLikeDeclaration(node);
-    if (qc.is.kind(PrivateIdentifier, node.name) && languageVersion < ScriptTarget.ESNext) {
+    if (qc.is.kind(qc.PrivateIdentifier, node.name) && languageVersion < ScriptTarget.ESNext) {
       for (let lexicalScope = qc.get.enclosingBlockScopeContainer(node); !!lexicalScope; lexicalScope = qc.get.enclosingBlockScopeContainer(lexicalScope)) {
         getNodeLinks(lexicalScope).flags |= NodeCheckFlags.ContainsClassWithPrivateIdentifiers;
       }
     }
   }
   function checkPropertySignature(node: PropertySignature) {
-    if (qc.is.kind(PrivateIdentifier, node.name)) error(node, qd.Private_identifiers_are_not_allowed_outside_class_bodies);
+    if (qc.is.kind(qc.PrivateIdentifier, node.name)) error(node, qd.Private_identifiers_are_not_allowed_outside_class_bodies);
     return checkPropertyDeclaration(node);
   }
   function checkMethodDeclaration(node: MethodDeclaration | MethodSignature) {
     if (!checkGrammarMethod(node)) checkGrammarComputedPropertyName(node.name);
-    if (qc.is.kind(PrivateIdentifier, node.name)) error(node, qd.A_method_cannot_be_named_with_a_private_identifier);
+    if (qc.is.kind(qc.PrivateIdentifier, node.name)) error(node, qd.A_method_cannot_be_named_with_a_private_identifier);
     checkFunctionOrMethodDeclaration(node);
     if (qc.has.syntacticModifier(node, ModifierFlags.Abstract) && node.kind === Syntax.MethodDeclaration && node.body)
       error(node, qd.Method_0_cannot_have_an_implementation_because_it_is_marked_abstract, declarationNameToString(node.name));
@@ -19959,7 +19959,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         }
       }
       if (node.name.kind === Syntax.ComputedPropertyName) checkComputedPropertyName(node.name);
-      if (qc.is.kind(PrivateIdentifier, node.name)) error(node.name, qd.An_accessor_cannot_be_named_with_a_private_identifier);
+      if (qc.is.kind(qc.PrivateIdentifier, node.name)) error(node.name, qd.An_accessor_cannot_be_named_with_a_private_identifier);
       if (!hasNonBindableDynamicName(node)) {
         const otherKind = node.kind === Syntax.GetAccessor ? Syntax.SetAccessor : Syntax.GetAccessor;
         const otherAccessor = getDeclarationOfKind<AccessorDeclaration>(getSymbolOfNode(node), otherKind);
@@ -20159,7 +20159,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function getEffectiveDeclarationFlags(n: Declaration, flagsToCheck: ModifierFlags): ModifierFlags {
     let flags = qc.get.combinedModifierFlags(n);
     if (n.parent.kind !== Syntax.InterfaceDeclaration && n.parent.kind !== Syntax.ClassDeclaration && n.parent.kind !== Syntax.ClassExpression && n.flags & NodeFlags.Ambient) {
-      if (!(flags & ModifierFlags.Ambient) && !(qc.is.kind(ModuleBlock, n.parent) && qc.is.kind(ModuleDeclaration, n.parent.parent) && isGlobalScopeAugmentation(n.parent.parent)))
+      if (!(flags & ModifierFlags.Ambient) && !(qc.is.kind(qc.ModuleBlock, n.parent) && qc.is.kind(qc.ModuleDeclaration, n.parent.parent) && isGlobalScopeAugmentation(n.parent.parent)))
         flags |= ModifierFlags.Export;
       flags |= ModifierFlags.Ambient;
     }
@@ -20392,7 +20392,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const individualEntityName = getEntityNameForDecoratorMetadata(typeNode);
       if (!individualEntityName) return;
       if (commonEntityName) {
-        if (!qc.is.kind(Identifier, commonEntityName) || !qc.is.kind(Identifier, individualEntityName) || commonEntityName.escapedText !== individualEntityName.escapedText) return;
+        if (!qc.is.kind(qc.Identifier, commonEntityName) || !qc.is.kind(qc.Identifier, individualEntityName) || commonEntityName.escapedText !== individualEntityName.escapedText) return;
       } else {
         commonEntityName = individualEntityName;
       }
@@ -20480,9 +20480,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const decl = qc.get.hostSignatureFromDoc(node);
       if (decl) {
         const i = qc.getDoc.tags(decl).filter(isDocParameterTag).indexOf(node);
-        if (i > -1 && i < decl.parameters.length && qc.is.kind(BindingPattern, decl.parameters[i].name)) return;
+        if (i > -1 && i < decl.parameters.length && qc.is.kind(qc.BindingPattern, decl.parameters[i].name)) return;
         if (!containsArgumentsReference(decl)) {
-          if (qc.is.kind(QualifiedName, node.name))
+          if (qc.is.kind(qc.QualifiedName, node.name))
             error(node.name, qd.Qualified_name_0_is_not_allowed_without_a_leading_param_object_1, entityNameToString(node.name), entityNameToString(node.name.left));
           else {
             error(node.name, qd.Doc_param_tag_has_name_0_but_there_is_no_parameter_with_that_name, idText(node.name));
@@ -20506,11 +20506,11 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function checkDocImplementsTag(node: DocImplementsTag): void {
     const classLike = qc.get.effectiveDocHost(node);
-    if (!classLike || (!qc.is.kind(ClassDeclaration, classLike) && !qc.is.kind(ClassExpression, classLike))) error(classLike, qd.Doc_0_is_not_attached_to_a_class, idText(node.tagName));
+    if (!classLike || (!qc.is.kind(qc.ClassDeclaration, classLike) && !qc.is.kind(qc.ClassExpression, classLike))) error(classLike, qd.Doc_0_is_not_attached_to_a_class, idText(node.tagName));
   }
   function checkDocAugmentsTag(node: DocAugmentsTag): void {
     const classLike = qc.get.effectiveDocHost(node);
-    if (!classLike || (!qc.is.kind(ClassDeclaration, classLike) && !qc.is.kind(ClassExpression, classLike))) {
+    if (!classLike || (!qc.is.kind(qc.ClassDeclaration, classLike) && !qc.is.kind(qc.ClassExpression, classLike))) {
       error(classLike, qd.Doc_0_is_not_attached_to_a_class, idText(node.tagName));
       return;
     }
@@ -20637,7 +20637,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     addDiagnostic(declaration, UnusedKind.Local, createDiagnosticForNode(node, message, name));
   }
   function isIdentifierThatStartsWithUnderscore(node: Node) {
-    return qc.is.kind(Identifier, node) && idText(node).charCodeAt(0) === Codes._;
+    return qc.is.kind(qc.Identifier, node) && idText(node).charCodeAt(0) === Codes._;
   }
   function checkUnusedClassMembers(node: ClassDeclaration | ClassExpression, addDiagnostic: AddUnusedDiagnostic): void {
     for (const member of node.members) {
@@ -20650,7 +20650,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           const symbol = getSymbolOfNode(member);
           if (
             !symbol.isReferenced &&
-            (qc.has.effectiveModifier(member, ModifierFlags.Private) || (qc.is.namedDeclaration(member) && qc.is.kind(PrivateIdentifier, member.name))) &&
+            (qc.has.effectiveModifier(member, ModifierFlags.Private) || (qc.is.namedDeclaration(member) && qc.is.kind(qc.PrivateIdentifier, member.name))) &&
             !(member.flags & NodeFlags.Ambient)
           ) {
             addDiagnostic(member, UnusedKind.Local, createDiagnosticForNode(member.name!, qd._0_is_declared_but_its_value_is_never_read, symbol.symbolToString()));
@@ -20710,18 +20710,18 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return tryCast(qc.get.rootDeclaration(node), isParameter);
   }
   function isValidUnusedLocalDeclaration(declaration: Declaration): boolean {
-    if (qc.is.kind(BindingElement, declaration) && isIdentifierThatStartsWithUnderscore(declaration.name)) {
+    if (qc.is.kind(qc.BindingElement, declaration) && isIdentifierThatStartsWithUnderscore(declaration.name)) {
       return !!qc.findAncestor(declaration.parent, (ancestor) =>
-        qc.is.kind(ArrayBindingPattern, ancestor) || qc.is.kind(VariableDeclaration, ancestor) || qc.is.kind(VariableDeclarationList, ancestor)
+        qc.is.kind(qc.ArrayBindingPattern, ancestor) || qc.is.kind(qc.VariableDeclaration, ancestor) || qc.is.kind(qc.VariableDeclarationList, ancestor)
           ? false
-          : qc.is.kind(ForOfStatement, ancestor)
+          : qc.is.kind(qc.ForOfStatement, ancestor)
           ? true
           : 'quit'
       );
     }
     return (
       qc.is.ambientModule(declaration) ||
-      (((qc.is.kind(VariableDeclaration, declaration) && qc.is.forInOrOfStatement(declaration.parent.parent)) || isImportedDeclaration(declaration)) &&
+      (((qc.is.kind(qc.VariableDeclaration, declaration) && qc.is.forInOrOfStatement(declaration.parent.parent)) || isImportedDeclaration(declaration)) &&
         isIdentifierThatStartsWithUnderscore(declaration.name!))
     );
   }
@@ -20734,10 +20734,10 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       for (const declaration of local.declarations) {
         if (isValidUnusedLocalDeclaration(declaration)) continue;
         if (isImportedDeclaration(declaration)) addToGroup(unusedImports, importClauseFromImported(declaration), declaration, getNodeId);
-        else if (qc.is.kind(BindingElement, declaration) && qc.is.kind(ObjectBindingPattern, declaration.parent)) {
+        else if (qc.is.kind(qc.BindingElement, declaration) && qc.is.kind(qc.ObjectBindingPattern, declaration.parent)) {
           const lastElement = last(declaration.parent.elements);
           if (declaration === lastElement || !last(declaration.parent.elements).dot3Token) addToGroup(unusedDestructures, declaration.parent, declaration, getNodeId);
-        } else if (qc.is.kind(VariableDeclaration, declaration)) {
+        } else if (qc.is.kind(qc.VariableDeclaration, declaration)) {
           addToGroup(unusedVariables, declaration.parent, declaration, getNodeId);
         } else {
           const parameter = local.valueDeclaration && tryGetRootParameterDeclaration(local.valueDeclaration);
@@ -20885,7 +20885,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function checkCollisionWithRequireExportsInGeneratedCode(node: Node, name: Identifier) {
     if (moduleKind >= ModuleKind.ES2015 || compilerOptions.noEmit) return;
     if (!needCollisionCheckForIdentifier(node, name, 'require') && !needCollisionCheckForIdentifier(node, name, 'exports')) return;
-    if (qc.is.kind(ModuleDeclaration, node) && getModuleInstanceState(node) !== ModuleInstanceState.Instantiated) return;
+    if (qc.is.kind(qc.ModuleDeclaration, node) && getModuleInstanceState(node) !== ModuleInstanceState.Instantiated) return;
     const parent = getDeclarationContainer(node);
     if (parent.kind === Syntax.SourceFile && qc.is.externalOrCommonJsModule(<SourceFile>parent))
       error(name, qd.Duplicate_identifier_0_Compiler_reserves_name_1_in_top_level_scope_of_a_module, declarationNameToString(name), declarationNameToString(name));
@@ -20898,7 +20898,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (node.kind === Syntax.VariableDeclaration && !node.initer) return;
     const symbol = getSymbolOfNode(node);
     if (symbol.flags & SymbolFlags.FunctionScopedVariable) {
-      if (!qc.is.kind(Identifier, node.name)) return fail();
+      if (!qc.is.kind(qc.Identifier, node.name)) return fail();
       const localDeclarationSymbol = resolveName(node, node.name.escapedText, SymbolFlags.Variable, undefined, undefined, false);
       if (localDeclarationSymbol && localDeclarationSymbol !== symbol && localDeclarationSymbol.flags & SymbolFlags.BlockScopedVariable) {
         if (getDeclarationNodeFlagsFromSymbol(localDeclarationSymbol) & NodeFlags.BlockScoped) {
@@ -20923,7 +20923,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function checkVariableLikeDeclaration(node: ParameterDeclaration | PropertyDeclaration | PropertySignature | VariableDeclaration | BindingElement) {
     checkDecorators(node);
-    if (!qc.is.kind(BindingElement, node)) checkSourceElement(node.type);
+    if (!qc.is.kind(qc.BindingElement, node)) checkSourceElement(node.type);
     if (!node.name) return;
     if (node.name.kind === Syntax.ComputedPropertyName) {
       checkComputedPropertyName(node.name);
@@ -20935,7 +20935,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const parent = node.parent.parent;
       const parentType = getTypeForBindingElementParent(parent);
       const name = node.propertyName || node.name;
-      if (parentType && !qc.is.kind(BindingPattern, name)) {
+      if (parentType && !qc.is.kind(qc.BindingPattern, name)) {
         const exprType = getLiteralTypeFromPropertyName(name);
         if (isTypeUsableAsPropertyName(exprType)) {
           const nameText = getPropertyNameFromType(exprType);
@@ -20947,12 +20947,12 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         }
       }
     }
-    if (qc.is.kind(BindingPattern, node.name)) forEach(node.name.elements, checkSourceElement);
+    if (qc.is.kind(qc.BindingPattern, node.name)) forEach(node.name.elements, checkSourceElement);
     if (node.initer && qc.get.rootDeclaration(node).kind === Syntax.Parameter && qc.is.missing((qc.get.containingFunction(node) as FunctionLikeDeclaration).body)) {
       error(node, qd.A_parameter_initer_is_only_allowed_in_a_function_or_constructor_implementation);
       return;
     }
-    if (qc.is.kind(BindingPattern, node.name)) {
+    if (qc.is.kind(qc.BindingPattern, node.name)) {
       const needCheckIniter = node.initer && node.parent.parent.kind !== Syntax.ForInStatement;
       const needCheckWidenedType = node.name.elements.length === 0;
       if (needCheckIniter || needCheckWidenedType) {
@@ -20965,7 +20965,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           }
         }
         if (needCheckWidenedType) {
-          if (qc.is.kind(ArrayBindingPattern, node.name)) checkIteratedTypeOrElementType(IterationUse.Destructuring, widenedType, undefinedType, node);
+          if (qc.is.kind(qc.ArrayBindingPattern, node.name)) checkIteratedTypeOrElementType(IterationUse.Destructuring, widenedType, undefinedType, node);
           else if (strictNullChecks) {
             checkNonNullNonVoidType(widenedType, node);
           }
@@ -20979,7 +20979,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const initer = getEffectiveIniter(node);
       if (initer) {
         const isJSObjectLiteralIniter =
-          qc.is.inJSFile(node) && qc.is.kind(ObjectLiteralExpression, initer) && (initer.properties.length === 0 || qc.is.prototypeAccess(node.name)) && hasEntries(symbol.exports);
+          qc.is.inJSFile(node) && qc.is.kind(qc.ObjectLiteralExpression, initer) && (initer.properties.length === 0 || qc.is.prototypeAccess(node.name)) && hasEntries(symbol.exports);
         if (!isJSObjectLiteralIniter && node.parent.parent.kind !== Syntax.ForInStatement)
           checkTypeAssignableToAndOptionallyElaborate(checkExpressionCached(initer), type, node, initer, undefined);
       }
@@ -21044,7 +21044,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function checkTestingKnownTruthyCallableType(condExpr: Expression, body: Statement | Expression, type: Type) {
     if (!strictNullChecks) return;
-    const testedNode = qc.is.kind(Identifier, condExpr) ? condExpr : qc.is.kind(PropertyAccessExpression, condExpr) ? condExpr.name : undefined;
+    const testedNode = qc.is.kind(qc.Identifier, condExpr) ? condExpr : qc.is.kind(qc.PropertyAccessExpression, condExpr) ? condExpr.name : undefined;
     if (!testedNode) return;
     const possiblyFalsy = getFalsyFlags(type);
     if (possiblyFalsy) return;
@@ -21053,20 +21053,20 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const testedFunctionSymbol = getSymbolAtLocation(testedNode);
     if (!testedFunctionSymbol) return;
     const functionIsUsedInBody = qc.forEach.child(body, function check(childNode): boolean | undefined {
-      if (qc.is.kind(Identifier, childNode)) {
+      if (qc.is.kind(qc.Identifier, childNode)) {
         const childSymbol = getSymbolAtLocation(childNode);
         if (childSymbol && childSymbol === testedFunctionSymbol) {
-          if (qc.is.kind(Identifier, condExpr)) return true;
+          if (qc.is.kind(qc.Identifier, condExpr)) return true;
           let testedExpression = testedNode.parent;
           let childExpression = childNode.parent;
           while (testedExpression && childExpression) {
             if (
-              (qc.is.kind(Identifier, testedExpression) && qc.is.kind(Identifier, childExpression)) ||
+              (qc.is.kind(qc.Identifier, testedExpression) && qc.is.kind(qc.Identifier, childExpression)) ||
               (testedExpression.kind === Syntax.ThisKeyword && childExpression.kind === Syntax.ThisKeyword)
             ) {
               return getSymbolAtLocation(testedExpression) === getSymbolAtLocation(childExpression);
             }
-            if (qc.is.kind(PropertyAccessExpression, testedExpression) && qc.is.kind(PropertyAccessExpression, childExpression)) {
+            if (qc.is.kind(qc.PropertyAccessExpression, testedExpression) && qc.is.kind(qc.PropertyAccessExpression, childExpression)) {
               if (getSymbolAtLocation(testedExpression.name) !== getSymbolAtLocation(childExpression.name)) return false;
               childExpression = childExpression.expression;
               testedExpression = testedExpression.expression;
@@ -21141,7 +21141,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const rightType = getNonNullableTypeIfNeeded(checkExpression(node.expression));
     if (node.initer.kind === Syntax.VariableDeclarationList) {
       const variable = (<VariableDeclarationList>node.initer).declarations[0];
-      if (variable && qc.is.kind(BindingPattern, variable.name)) error(variable.name, qd.The_left_hand_side_of_a_for_in_statement_cannot_be_a_destructuring_pattern);
+      if (variable && qc.is.kind(qc.BindingPattern, variable.name)) error(variable.name, qd.The_left_hand_side_of_a_for_in_statement_cannot_be_a_destructuring_pattern);
       checkForInOrForOfVariableDeclaration(node);
     } else {
       const varExpr = node.initer;
@@ -21672,7 +21672,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (!indexType || isKnownSymbol(prop)) return;
       const propDeclaration = prop.valueDeclaration;
       const name = propDeclaration && qc.get.nameOfDeclaration(propDeclaration);
-      if (name && qc.is.kind(PrivateIdentifier, name)) return;
+      if (name && qc.is.kind(qc.PrivateIdentifier, name)) return;
       if (indexKind === IndexKind.Number && !(name ? isNumericName(name) : NumericLiteral.name(prop.escName))) return;
       let errorNode: Node | undefined;
       if (propDeclaration && name && (propDeclaration.kind === Syntax.BinaryExpression || name.kind === Syntax.ComputedPropertyName || prop.parent === containingType.symbol))
@@ -21923,9 +21923,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         const derivedPropertyFlags = derived.flags & SymbolFlags.PropertyOrAccessor;
         if (basePropertyFlags && derivedPropertyFlags) {
           if (
-            (baseDeclarationFlags & ModifierFlags.Abstract && !(base.valueDeclaration && qc.is.kind(PropertyDeclaration, base.valueDeclaration) && base.valueDeclaration.initer)) ||
+            (baseDeclarationFlags & ModifierFlags.Abstract && !(base.valueDeclaration && qc.is.kind(qc.PropertyDeclaration, base.valueDeclaration) && base.valueDeclaration.initer)) ||
             (base.valueDeclaration && base.valueDeclaration.parent.kind === Syntax.InterfaceDeclaration) ||
-            (derived.valueDeclaration && qc.is.kind(BinaryExpression, derived.valueDeclaration))
+            (derived.valueDeclaration && qc.is.kind(qc.BinaryExpression, derived.valueDeclaration))
           ) {
             continue;
           }
@@ -21950,7 +21950,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
               if (
                 (uninitialized as PropertyDeclaration).exclamationToken ||
                 !constructor ||
-                !qc.is.kind(Identifier, propName) ||
+                !qc.is.kind(qc.Identifier, propName) ||
                 !strictNullChecks ||
                 !isPropertyInitializedInConstructor(propName, type, constructor)
               ) {
@@ -22029,7 +22029,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (qc.get.effectiveModifierFlags(member) & ModifierFlags.Ambient) continue;
       if (isInstancePropertyWithoutIniter(member)) {
         const propName = (<PropertyDeclaration>member).name;
-        if (qc.is.kind(Identifier, propName) || qc.is.kind(PrivateIdentifier, propName)) {
+        if (qc.is.kind(qc.Identifier, propName) || qc.is.kind(qc.PrivateIdentifier, propName)) {
           const type = getTypeOfSymbol(getSymbolOfNode(member));
           if (!(type.flags & TypeFlags.AnyOrUnknown || getFalsyFlags(type) & TypeFlags.Undefined)) {
             if (!constructor || !isPropertyInitializedInConstructor(propName, type, constructor))
@@ -22263,7 +22263,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (enumSymbol.declarations.length > 1) {
         const enumIsConst = qc.is.enumConst(node);
         forEach(enumSymbol.declarations, (decl) => {
-          if (qc.is.kind(EnumDeclaration, decl) && qc.is.enumConst(decl) !== enumIsConst) error(qc.get.nameOfDeclaration(decl), qd.Enum_declarations_must_all_be_const_or_non_const);
+          if (qc.is.kind(qc.EnumDeclaration, decl) && qc.is.enumConst(decl) !== enumIsConst) error(qc.get.nameOfDeclaration(decl), qd.Enum_declarations_must_all_be_const_or_non_const);
         });
       }
       let seenEnumMissingInitialIniter = false;
@@ -22282,7 +22282,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
   }
   function checkEnumMember(node: EnumMember) {
-    if (qc.is.kind(PrivateIdentifier, node.name)) error(node, qd.An_enum_member_cannot_be_named_with_a_private_identifier);
+    if (qc.is.kind(qc.PrivateIdentifier, node.name)) error(node, qd.An_enum_member_cannot_be_named_with_a_private_identifier);
   }
   function inSameLexicalScope(node1: Node, node2: Node) {
     const container1 = qc.get.enclosingBlockScopeContainer(node1);
@@ -22304,7 +22304,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (!checkGrammarDecoratorsAndModifiers(node)) {
         if (!inAmbientContext && node.name.kind === Syntax.StringLiteral) grammarErrorOnNode(node.name, qd.Only_ambient_modules_can_use_quoted_names);
       }
-      if (qc.is.kind(Identifier, node.name)) {
+      if (qc.is.kind(qc.Identifier, node.name)) {
         checkCollisionWithRequireExportsInGeneratedCode(node, node.name);
         checkCollisionWithGlobalPromiseInGeneratedCode(node, node.name);
       }
@@ -22371,7 +22371,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       case Syntax.BindingElement:
       case Syntax.VariableDeclaration:
         const name = (<VariableDeclaration | BindingElement>node).name;
-        if (qc.is.kind(BindingPattern, name)) {
+        if (qc.is.kind(qc.BindingPattern, name)) {
           for (const el of name.elements) {
             checkModuleAugmentationElement(el, isGlobalAugmentation);
           }
@@ -22403,7 +22403,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         return node;
       case Syntax.PropertyAccessExpression:
         do {
-          if (qc.is.moduleExportsAccessExpression(node.expression) && !qc.is.kind(PrivateIdentifier, node.name)) return node.name;
+          if (qc.is.moduleExportsAccessExpression(node.expression) && !qc.is.kind(qc.PrivateIdentifier, node.name)) return node.name;
           node = node.expression;
         } while (node.kind !== Syntax.Identifier);
         return node;
@@ -22412,7 +22412,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function checkExternalImportOrExportDeclaration(node: ImportDeclaration | ImportEqualsDeclaration | ExportDeclaration): boolean {
     const moduleName = getExternalModuleName(node);
     if (!moduleName || qc.is.missing(moduleName)) return false;
-    if (!qc.is.kind(StringLiteral, moduleName)) {
+    if (!qc.is.kind(qc.StringLiteral, moduleName)) {
       error(moduleName, qd.String_literal_expected);
       return false;
     }
@@ -22500,7 +22500,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (!checkGrammarDecoratorsAndModifiers(node) && qc.has.effectiveModifiers(node)) grammarErrorOnFirstToken(node, qd.An_export_declaration_cannot_have_modifiers);
     checkGrammarExportDeclaration(node);
     if (!node.moduleSpecifier || checkExternalImportOrExportDeclaration(node)) {
-      if (node.exportClause && !qc.is.kind(NamespaceExport, node.exportClause)) {
+      if (node.exportClause && !qc.is.kind(qc.NamespaceExport, node.exportClause)) {
         forEach(node.exportClause.elements, checkExportSpecifier);
         const inAmbientExternalModule = node.parent.kind === Syntax.ModuleBlock && qc.is.ambientModule(node.parent.parent);
         const inAmbientNamespaceDeclaration = !inAmbientExternalModule && node.parent.kind === Syntax.ModuleBlock && !node.moduleSpecifier && node.flags & NodeFlags.Ambient;
@@ -22538,7 +22538,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function checkImportsForTypeOnlyConversion(sourceFile: SourceFile) {
     for (const statement of sourceFile.statements) {
       if (
-        qc.is.kind(ImportDeclaration, statement) &&
+        qc.is.kind(qc.ImportDeclaration, statement) &&
         statement.importClause &&
         !statement.importClause.isTypeOnly &&
         importClauseContainsReferencedImport(statement.importClause) &&
@@ -22816,7 +22816,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (last(parent.parent.parameters) !== parent) error(node, qd.A_rest_parameter_must_be_last_in_a_parameter_list);
       return;
     }
-    if (!qc.is.kind(DocTypeExpression, parent)) error(node, qd.Doc_may_only_appear_in_the_last_parameter_of_a_signature);
+    if (!qc.is.kind(qc.DocTypeExpression, parent)) error(node, qd.Doc_may_only_appear_in_the_last_parameter_of_a_signature);
     const paramTag = node.parent.parent;
     if (!qc.is.kind(qc.DocParameterTag, paramTag)) {
       error(node, qd.Doc_may_only_appear_in_the_last_parameter_of_a_signature);
@@ -22831,7 +22831,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const type = getTypeFromTypeNode(node.type);
     const { parent } = node;
     const paramTag = node.parent.parent;
-    if (qc.is.kind(DocTypeExpression, node.parent) && qc.is.kind(qc.DocParameterTag, paramTag)) {
+    if (qc.is.kind(qc.DocTypeExpression, node.parent) && qc.is.kind(qc.DocParameterTag, paramTag)) {
       const host = qc.get.hostSignatureFromDoc(paramTag);
       if (host) {
         const lastParamDeclaration = lastOrUndefined(host.parameters);
@@ -23044,7 +23044,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function isNodeUsedDuringClassInitialization(node: Node) {
     return !!qc.findAncestor(node, (element) => {
-      if ((qc.is.kind(ConstructorDeclaration, element) && qc.is.present(element.body)) || qc.is.kind(PropertyDeclaration, element)) return true;
+      if ((qc.is.kind(qc.ConstructorDeclaration, element) && qc.is.present(element.body)) || qc.is.kind(qc.PropertyDeclaration, element)) return true;
       else if (qc.is.classLike(element) || qc.is.functionLikeDeclaration(element)) return 'quit';
       return false;
     });
@@ -23079,7 +23079,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function isImportTypeQualifierPart(node: EntityName): ImportTypeNode | undefined {
     let parent = node.parent;
-    while (qc.is.kind(QualifiedName, parent)) {
+    while (qc.is.kind(qc.QualifiedName, parent)) {
       node = parent;
       parent = parent.parent;
     }
@@ -23089,7 +23089,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function getSymbolOfNameOrPropertyAccessExpression(name: EntityName | PrivateIdentifier | PropertyAccessExpression): Symbol | undefined {
     if (qc.is.declarationName(name)) return getSymbolOfNode(name.parent);
     if (qc.is.inJSFile(name) && name.parent.kind === Syntax.PropertyAccessExpression && name.parent === (name.parent.parent as BinaryExpression).left) {
-      if (!qc.is.kind(PrivateIdentifier, name)) {
+      if (!qc.is.kind(qc.PrivateIdentifier, name)) {
         const specialPropertyAssignmentSymbol = getSpecialPropertyAssignmentSymbolFromEntityName(name);
         if (specialPropertyAssignmentSymbol) return specialPropertyAssignmentSymbol;
       }
@@ -23097,12 +23097,12 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (name.parent.kind === Syntax.ExportAssignment && qc.is.entityNameExpression(name)) {
       const success = resolveEntityName(name, SymbolFlags.Value | SymbolFlags.Type | SymbolFlags.Namespace | SymbolFlags.Alias, true);
       if (success && success !== unknownSymbol) return success;
-    } else if (!qc.is.kind(PropertyAccessExpression, name) && !qc.is.kind(PrivateIdentifier, name) && isInRightSideOfImportOrExportAssignment(name)) {
+    } else if (!qc.is.kind(qc.PropertyAccessExpression, name) && !qc.is.kind(qc.PrivateIdentifier, name) && isInRightSideOfImportOrExportAssignment(name)) {
       const importEqualsDeclaration = qc.get.ancestor(name, Syntax.ImportEqualsDeclaration);
       assert(importEqualsDeclaration !== undefined);
       return getSymbolOfPartOfRightHandSideOfImportEquals(name, true);
     }
-    if (!qc.is.kind(PropertyAccessExpression, name) && !qc.is.kind(PrivateIdentifier, name)) {
+    if (!qc.is.kind(qc.PropertyAccessExpression, name) && !qc.is.kind(qc.PrivateIdentifier, name)) {
       const possibleImportNode = isImportTypeQualifierPart(name);
       if (possibleImportNode) {
         getTypeFromTypeNode(possibleImportNode);
@@ -23202,17 +23202,17 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           ((node.parent.kind === Syntax.ImportDeclaration || node.parent.kind === Syntax.ExportDeclaration) && (<ImportDeclaration>node.parent).moduleSpecifier === node) ||
           (qc.is.inJSFile(node) && isRequireCall(node.parent, false)) ||
           qc.is.importCall(node.parent) ||
-          (qc.is.kind(LiteralTypeNode, node.parent) && qc.is.literalImportTypeNode(node.parent.parent) && node.parent.parent.argument === node.parent)
+          (qc.is.kind(qc.LiteralTypeNode, node.parent) && qc.is.literalImportTypeNode(node.parent.parent) && node.parent.parent.argument === node.parent)
         ) {
           return resolveExternalModuleName(node, <LiteralExpression>node, ignoreErrors);
         }
-        if (qc.is.kind(CallExpression, parent) && isBindableObjectDefinePropertyCall(parent) && parent.arguments[1] === node) return getSymbolOfNode(parent);
+        if (qc.is.kind(qc.CallExpression, parent) && isBindableObjectDefinePropertyCall(parent) && parent.arguments[1] === node) return getSymbolOfNode(parent);
       case Syntax.NumericLiteral:
-        const objectType = qc.is.kind(ElementAccessExpression, parent)
+        const objectType = qc.is.kind(qc.ElementAccessExpression, parent)
           ? parent.argumentExpression === node
             ? getTypeOfExpression(parent.expression)
             : undefined
-          : qc.is.kind(LiteralTypeNode, parent) && qc.is.kind(IndexedAccessTypeNode, grandParent)
+          : qc.is.kind(qc.LiteralTypeNode, parent) && qc.is.kind(qc.IndexedAccessTypeNode, grandParent)
           ? getTypeFromTypeNode(grandParent.objectType)
           : undefined;
         return objectType && getPropertyOfType(objectType, syntax.get.escUnderscores((node as StringLiteral | NumericLiteral).text));
@@ -23224,7 +23224,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       case Syntax.ImportType:
         return qc.is.literalImportTypeNode(node) ? getSymbolAtLocation(node.argument.literal, ignoreErrors) : undefined;
       case Syntax.ExportKeyword:
-        return qc.is.kind(ExportAssignment, node.parent) ? Debug.checkDefined(node.parent.symbol) : undefined;
+        return qc.is.kind(qc.ExportAssignment, node.parent) ? Debug.checkDefined(node.parent.symbol) : undefined;
       default:
         return;
     }
@@ -23268,7 +23268,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (symbol) return this.getTypeOfSymbol();
       return errorType;
     }
-    if (qc.is.kind(BindingPattern, node)) return getTypeForVariableLikeDeclaration(node.parent, true) || errorType;
+    if (qc.is.kind(qc.BindingPattern, node)) return getTypeForVariableLikeDeclaration(node.parent, true) || errorType;
     if (isInRightSideOfImportOrExportAssignment(<Identifier>node)) {
       const symbol = getSymbolAtLocation(node);
       if (symbol) {
@@ -23432,7 +23432,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         return isAliasResolvedToValue(symbol) && !this.getTypeOnlyAliasDeclaration();
       case Syntax.ExportDeclaration:
         const exportClause = (<ExportDeclaration>node).exportClause;
-        return !!exportClause && (qc.is.kind(NamespaceExport, exportClause) || some(exportClause.elements, isValueAliasDeclaration));
+        return !!exportClause && (qc.is.kind(qc.NamespaceExport, exportClause) || some(exportClause.elements, isValueAliasDeclaration));
       case Syntax.ExportAssignment:
         return (<ExportAssignment>node).expression && (<ExportAssignment>node).expression.kind === Syntax.Identifier ? isAliasResolvedToValue(getSymbolOfNode(node) || unknownSymbol) : true;
     }
@@ -23457,7 +23457,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function isImplementationOfOverload(node: SignatureDeclaration) {
     if (qc.is.present((node as FunctionLikeDeclaration).body)) {
-      if (qc.is.kind(GetAccessorDeclaration, node) || qc.is.kind(SetAccessorDeclaration, node)) return false;
+      if (qc.is.kind(qc.GetAccessorDeclaration, node) || qc.is.kind(qc.SetAccessorDeclaration, node)) return false;
       const symbol = getSymbolOfNode(node);
       const signaturesOfSymbol = getSignaturesOfSymbol(symbol);
       return signaturesOfSymbol.length > 1 || (signaturesOfSymbol.length === 1 && signaturesOfSymbol[0].declaration !== node);
@@ -23481,7 +23481,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (!declaration) return false;
     const symbol = getSymbolOfNode(declaration);
     if (!symbol || !(symbol.flags & SymbolFlags.Function)) return false;
-    return !!forEachEntry(this.getExportsOfSymbol(), (p) => p.flags & SymbolFlags.Value && p.valueDeclaration && qc.is.kind(PropertyAccessExpression, p.valueDeclaration));
+    return !!forEachEntry(this.getExportsOfSymbol(), (p) => p.flags & SymbolFlags.Value && p.valueDeclaration && qc.is.kind(qc.PropertyAccessExpression, p.valueDeclaration));
   }
   function getPropertiesOfContainerFunction(node: Declaration): Symbol[] {
     const declaration = qc.get.parseTreeOf(node, isFunctionDeclaration);
@@ -23598,7 +23598,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return;
   }
   function isLiteralConstDeclaration(node: VariableDeclaration | PropertyDeclaration | PropertySignature | ParameterDeclaration): boolean {
-    if (isDeclarationReadonly(node) || (qc.is.kind(VariableDeclaration, node) && qc.is.varConst(node))) return isFreshLiteralType(getTypeOfSymbol(getSymbolOfNode(node)));
+    if (isDeclarationReadonly(node) || (qc.is.kind(qc.VariableDeclaration, node) && qc.is.varConst(node))) return isFreshLiteralType(getTypeOfSymbol(getSymbolOfNode(node)));
     return false;
   }
   function literalTypeToNode(type: FreshableType, enclosing: Node, tracker: SymbolTracker): Expression {
@@ -23698,7 +23698,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       isBindingCapturedByNode: (node, decl) => {
         const parseNode = qc.get.parseTreeOf(node);
         const parseDecl = qc.get.parseTreeOf(decl);
-        return !!parseNode && !!parseDecl && (qc.is.kind(VariableDeclaration, parseDecl) || qc.is.kind(BindingElement, parseDecl)) && isBindingCapturedByNode(parseNode, parseDecl);
+        return !!parseNode && !!parseDecl && (qc.is.kind(qc.VariableDeclaration, parseDecl) || qc.is.kind(qc.BindingElement, parseDecl)) && isBindingCapturedByNode(parseNode, parseDecl);
       },
       getDeclarationStatementsForSourceFile: (node, flags, tracker, bundled) => {
         const n = qc.get.parseTreeOf(node) as SourceFile;
@@ -24003,7 +24003,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         case Syntax.DeclareKeyword:
           if (flags & ModifierFlags.Ambient) return grammarErrorOnNode(modifier, qd._0_modifier_already_seen, 'declare');
           else if (flags & ModifierFlags.Async) return grammarErrorOnNode(modifier, qd._0_modifier_cannot_be_used_in_an_ambient_context, 'async');
-          else if (qc.is.classLike(node.parent) && !qc.is.kind(PropertyDeclaration, node)) return grammarErrorOnNode(modifier, qd._0_modifier_cannot_appear_on_a_class_element, 'declare');
+          else if (qc.is.classLike(node.parent) && !qc.is.kind(qc.PropertyDeclaration, node)) return grammarErrorOnNode(modifier, qd._0_modifier_cannot_appear_on_a_class_element, 'declare');
           else if (node.kind === Syntax.Parameter) return grammarErrorOnNode(modifier, qd._0_modifier_cannot_appear_on_a_parameter, 'declare');
           else if (node.parent.flags & NodeFlags.Ambient && node.parent.kind === Syntax.ModuleBlock)
             return grammarErrorOnNode(modifier, qd.A_declare_modifier_cannot_be_used_in_an_already_ambient_context);
@@ -24041,7 +24041,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       return false;
     } else if ((node.kind === Syntax.ImportDeclaration || node.kind === Syntax.ImportEqualsDeclaration) && flags & ModifierFlags.Ambient) {
       return grammarErrorOnNode(lastDeclare!, qd.A_0_modifier_cannot_be_used_with_an_import_declaration, 'declare');
-    } else if (node.kind === Syntax.Parameter && flags & ModifierFlags.ParameterPropertyModifier && qc.is.kind(BindingPattern, (<ParameterDeclaration>node).name)) {
+    } else if (node.kind === Syntax.Parameter && flags & ModifierFlags.ParameterPropertyModifier && qc.is.kind(qc.BindingPattern, (<ParameterDeclaration>node).name)) {
       return grammarErrorOnNode(node, qd.A_parameter_property_may_not_be_declared_using_a_binding_pattern);
     } else if (node.kind === Syntax.Parameter && flags & ModifierFlags.ParameterPropertyModifier && (<ParameterDeclaration>node).dot3Token) {
       return grammarErrorOnNode(node, qd.A_parameter_property_cannot_be_declared_using_a_rest_parameter);
@@ -24134,10 +24134,10 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
   }
   function getNonSimpleParameters(parameters: readonly ParameterDeclaration[]): readonly ParameterDeclaration[] {
-    return filter(parameters, (parameter) => !!parameter.initer || qc.is.kind(BindingPattern, parameter.name) || isRestParameter(parameter));
+    return filter(parameters, (parameter) => !!parameter.initer || qc.is.kind(qc.BindingPattern, parameter.name) || isRestParameter(parameter));
   }
   function checkGrammarForUseStrictSimpleParameterList(node: FunctionLikeDeclaration): boolean {
-    const useStrictDirective = node.body && qc.is.kind(Block, node.body) && findUseStrictPrologue(node.body.statements);
+    const useStrictDirective = node.body && qc.is.kind(qc.Block, node.body) && findUseStrictPrologue(node.body.statements);
     if (useStrictDirective) {
       const nonSimpleParameters = getNonSimpleParameters(node.parameters);
       if (length(nonSimpleParameters)) {
@@ -24168,7 +24168,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return checkGrammarClassDeclarationHeritageClauses(node) || checkGrammarTypeParameterList(node.typeParameters, file);
   }
   function checkGrammarArrowFunction(node: Node, file: SourceFile): boolean {
-    if (!qc.is.kind(ArrowFunction, node)) return false;
+    if (!qc.is.kind(qc.ArrowFunction, node)) return false;
     const { equalsGreaterThanToken } = node;
     const startLine = syntax.get.lineAndCharOf(file, equalsGreaterThanToken.pos).line;
     const endLine = syntax.get.lineAndCharOf(file, equalsGreaterThanToken.end).line;
@@ -24307,7 +24307,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (prop.kind === Syntax.SpreadAssignment) {
         if (inDestructuring) {
           const expression = skipParentheses(prop.expression);
-          if (isArrayLiteralExpression(expression) || qc.is.kind(ObjectLiteralExpression, expression)) return grammarErrorOnNode(prop.expression, qd.A_rest_element_cannot_contain_a_binding_pattern);
+          if (isArrayLiteralExpression(expression) || qc.is.kind(qc.ObjectLiteralExpression, expression)) return grammarErrorOnNode(prop.expression, qd.A_rest_element_cannot_contain_a_binding_pattern);
         }
         continue;
       }
@@ -24450,9 +24450,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (node.operator === Syntax.UniqueKeyword) {
       if (node.type.kind !== Syntax.SymbolKeyword) return grammarErrorOnNode(node.type, qd._0_expected, Token.toString(Syntax.SymbolKeyword));
       let parent = walkUpParenthesizedTypes(node.parent);
-      if (qc.is.inJSFile(parent) && qc.is.kind(DocTypeExpression, parent)) {
+      if (qc.is.inJSFile(parent) && qc.is.kind(qc.DocTypeExpression, parent)) {
         parent = parent.parent;
-        if (qc.is.kind(DocTypeTag, parent)) parent = parent.parent.parent;
+        if (qc.is.kind(qc.DocTypeTag, parent)) parent = parent.parent.parent;
       }
       switch (parent.kind) {
         case Syntax.VariableDeclaration:
@@ -24550,7 +24550,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function isSimpleLiteralEnumReference(expr: Expression) {
     if (
-      (qc.is.kind(PropertyAccessExpression, expr) || (qc.is.kind(ElementAccessExpression, expr) && StringLiteral.orNumberLiteralExpression(expr.argumentExpression))) &&
+      (qc.is.kind(qc.PropertyAccessExpression, expr) || (qc.is.kind(qc.ElementAccessExpression, expr) && StringLiteral.orNumberLiteralExpression(expr.argumentExpression))) &&
       qc.is.entityNameExpression(expr.expression)
     ) {
       return !!(checkExpressionCached(expr).flags & TypeFlags.EnumLiteral);
@@ -24567,7 +24567,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         initer.kind === Syntax.FalseKeyword ||
         BigIntLiteral.expression(initer)
       );
-      const isConstOrReadonly = isDeclarationReadonly(node) || (qc.is.kind(VariableDeclaration, node) && qc.is.varConst(node));
+      const isConstOrReadonly = isDeclarationReadonly(node) || (qc.is.kind(qc.VariableDeclaration, node) && qc.is.varConst(node));
       if (isConstOrReadonly && !node.type) {
         if (isInvalidIniter) return grammarErrorOnNode(initer, qd.A_const_initer_in_an_ambient_context_must_be_a_string_or_numeric_literal_or_literal_enum_reference);
       }
@@ -24580,7 +24580,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (node.parent.parent.kind !== Syntax.ForInStatement && node.parent.parent.kind !== Syntax.ForOfStatement) {
       if (node.flags & NodeFlags.Ambient) checkAmbientIniter(node);
       else if (!node.initer) {
-        if (qc.is.kind(BindingPattern, node.name) && !qc.is.kind(BindingPattern, node.parent)) return grammarErrorOnNode(node, qd.A_destructuring_declaration_must_have_an_initer);
+        if (qc.is.kind(qc.BindingPattern, node.name) && !qc.is.kind(qc.BindingPattern, node.parent)) return grammarErrorOnNode(node, qd.A_destructuring_declaration_must_have_an_initer);
         if (qc.is.varConst(node)) return grammarErrorOnNode(node, qd.const_declarations_must_be_initialized);
       }
     }
@@ -24605,7 +24605,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     } else {
       const elements = name.elements;
       for (const element of elements) {
-        if (!qc.is.kind(OmittedExpression, element)) return checkESModuleMarker(element.name);
+        if (!qc.is.kind(qc.OmittedExpression, element)) return checkESModuleMarker(element.name);
       }
     }
     return false;
@@ -24616,7 +24616,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     } else {
       const elements = name.elements;
       for (const element of elements) {
-        if (!qc.is.kind(OmittedExpression, element)) checkGrammarNameInLetOrConstDeclarations(element.name);
+        if (!qc.is.kind(qc.OmittedExpression, element)) checkGrammarNameInLetOrConstDeclarations(element.name);
       }
     }
     return false;
@@ -24703,7 +24703,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function checkGrammarProperty(node: PropertyDeclaration | PropertySignature) {
     if (qc.is.classLike(node.parent)) {
-      if (qc.is.kind(StringLiteral, node.name) && node.name.text === 'constructor') return grammarErrorOnNode(node.name, qd.Classes_may_not_have_a_field_named_constructor);
+      if (qc.is.kind(qc.StringLiteral, node.name) && node.name.text === 'constructor') return grammarErrorOnNode(node.name, qd.Classes_may_not_have_a_field_named_constructor);
       if (checkGrammarForInvalidDynamicName(node.name, qd.A_computed_property_name_in_a_class_property_declaration_must_refer_to_an_expression_whose_type_is_a_literal_type_or_a_unique_symbol_type)) {
         return true;
       }
@@ -24716,7 +24716,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     if (node.flags & NodeFlags.Ambient) checkAmbientIniter(node);
     if (
-      qc.is.kind(PropertyDeclaration, node) &&
+      qc.is.kind(qc.PropertyDeclaration, node) &&
       node.exclamationToken &&
       (!qc.is.classLike(node.parent) || !node.type || node.initer || node.flags & NodeFlags.Ambient || qc.has.syntacticModifier(node, ModifierFlags.Static | ModifierFlags.Abstract))
     ) {
@@ -24765,7 +24765,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function checkGrammarNumericLiteral(node: NumericLiteral): boolean {
     if (node.numericLiteralFlags & TokenFlags.Octal) {
       const diagnosticMessage = qd.Octal_literals_are_not_available_when_targeting_ECMAScript_5_and_higher_Use_the_syntax_0;
-      const withMinus = qc.is.kind(PrefixUnaryExpression, node.parent) && node.parent.operator === Syntax.MinusToken;
+      const withMinus = qc.is.kind(qc.PrefixUnaryExpression, node.parent) && node.parent.operator === Syntax.MinusToken;
       const literal = (withMinus ? '-' : '') + '0o' + node.text;
       return grammarErrorOnNode(withMinus ? node.parent : node, diagnosticMessage, literal);
     }
@@ -24779,7 +24779,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     addErrorOrSuggestion(false, createDiagnosticForNode(node, qd.Numeric_literals_with_absolute_values_equal_to_2_53_or_greater_are_too_large_to_be_represented_accurately_as_integers));
   }
   function checkGrammarBigIntLiteral(node: BigIntLiteral): boolean {
-    const literalType = qc.is.kind(LiteralTypeNode, node.parent) || (qc.is.kind(PrefixUnaryExpression, node.parent) && qc.is.kind(LiteralTypeNode, node.parent.parent));
+    const literalType = qc.is.kind(qc.LiteralTypeNode, node.parent) || (qc.is.kind(qc.PrefixUnaryExpression, node.parent) && qc.is.kind(qc.LiteralTypeNode, node.parent.parent));
     return false;
   }
   function grammarErrorAfterFirstToken(node: Node, message: DiagnosticMessage, arg0?: any, arg1?: any, arg2?: any): boolean {
@@ -24810,7 +24810,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const nodeArguments = node.arguments;
     if (nodeArguments.length !== 1) return grammarErrorOnNode(node, qd.Dynamic_import_must_have_one_specifier_as_an_argument);
     checkGrammarForDisallowedTrailingComma(nodeArguments);
-    if (qc.is.kind(SpreadElement, nodeArguments[0])) return grammarErrorOnNode(nodeArguments[0], qd.Specifier_of_dynamic_import_cannot_be_spread_element);
+    if (qc.is.kind(qc.SpreadElement, nodeArguments[0])) return grammarErrorOnNode(nodeArguments[0], qd.Specifier_of_dynamic_import_cannot_be_spread_element);
     return false;
   }
   function findMatchingTypeReferenceOrTypeAliasReference(source: Type, unionTarget: UnionOrIntersectionType) {

@@ -19,7 +19,7 @@ export interface ExternalModuleInfo {
 }
 function containsDefaultReference(node: NamedImportBindings | undefined) {
   if (!node) return false;
-  if (!qc.is.kind(NamedImports, node)) return false;
+  if (!qc.is.kind(qc.NamedImports, node)) return false;
   return some(node.elements, isNamedDefaultReference);
 }
 function isNamedDefaultReference(e: ImportSpecifier): boolean {
@@ -41,7 +41,7 @@ export function getImportNeedsImportStarHelper(node: ImportDeclaration): boolean
   if (!!getNamespaceDeclarationNode(node)) return true;
   const bindings = node.importClause && node.importClause.namedBindings;
   if (!bindings) return false;
-  if (!qc.is.kind(NamedImports, bindings)) return false;
+  if (!qc.is.kind(qc.NamedImports, bindings)) return false;
   let defaultRefCount = 0;
   for (const binding of bindings.elements) {
     if (isNamedDefaultReference(binding)) {
@@ -53,7 +53,7 @@ export function getImportNeedsImportStarHelper(node: ImportDeclaration): boolean
 export function getImportNeedsImportDefaultHelper(node: ImportDeclaration): boolean {
   return (
     !getImportNeedsImportStarHelper(node) &&
-    (isDefaultImport(node) || (!!node.importClause && qc.is.kind(NamedImports, node.importClause.namedBindings!) && containsDefaultReference(node.importClause.namedBindings)))
+    (isDefaultImport(node) || (!!node.importClause && qc.is.kind(qc.NamedImports, node.importClause.namedBindings!) && containsDefaultReference(node.importClause.namedBindings)))
   );
 }
 export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: EmitResolver, compilerOptions: CompilerOptions): ExternalModuleInfo {
@@ -169,9 +169,9 @@ export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: Emit
   };
 }
 function collectExportedVariableInfo(decl: VariableDeclaration | BindingElement, uniqueExports: Map<boolean>, exportedNames: Identifier[] | undefined) {
-  if (qc.is.kind(BindingPattern, decl.name)) {
+  if (qc.is.kind(qc.BindingPattern, decl.name)) {
     for (const element of decl.name.elements) {
-      if (!qc.is.kind(OmittedExpression, element)) {
+      if (!qc.is.kind(qc.OmittedExpression, element)) {
         exportedNames = collectExportedVariableInfo(element, uniqueExports, exportedNames);
       }
     }
@@ -194,10 +194,10 @@ function multiMapSparseArrayAdd<V>(map: V[][], key: number, value: V): V[] {
   return values;
 }
 export function isSimpleCopiableExpression(expression: Expression) {
-  return StringLiteral.like(expression) || expression.kind === Syntax.NumericLiteral || syntax.is.keyword(expression.kind) || qc.is.kind(Identifier, expression);
+  return StringLiteral.like(expression) || expression.kind === Syntax.NumericLiteral || syntax.is.keyword(expression.kind) || qc.is.kind(qc.Identifier, expression);
 }
 export function isSimpleInlineableExpression(expression: Expression) {
-  return (!qc.is.kind(Identifier, expression) && isSimpleCopiableExpression(expression)) || qc.is.wellKnownSymbolSyntactically(expression);
+  return (!qc.is.kind(qc.Identifier, expression) && isSimpleCopiableExpression(expression)) || qc.is.wellKnownSymbolSyntactically(expression);
 }
 export function isCompoundAssignment(kind: BinaryOperator): kind is CompoundAssignmentOperator {
   return kind >= Syntax.FirstCompoundAssignment && kind <= Syntax.LastCompoundAssignment;
@@ -235,7 +235,7 @@ export function addPrologueDirectivesAndInitialSuperCall(ctor: ConstructorDeclar
     const statements = ctor.body.statements;
     const index = addPrologue(result, statements, false, visitor);
     if (index === statements.length) return index;
-    const superIndex = findIndex(statements, (s) => qc.is.kind(ExpressionStatement, s) && qc.is.superCall(s.expression), index);
+    const superIndex = findIndex(statements, (s) => qc.is.kind(qc.ExpressionStatement, s) && qc.is.superCall(s.expression), index);
     if (superIndex > -1) {
       for (let i = index; i <= superIndex; i++) {
         result.push(visitNode(statements[i], visitor, isStatement));
@@ -261,7 +261,7 @@ export function getProperties(node: ClassExpression | ClassDeclaration, requireI
   return filter(node.members, (m) => isInitializedOrStaticProperty(m, requireIniter, isStatic)) as PropertyDeclaration[];
 }
 function isInitializedOrStaticProperty(member: ClassElement, requireIniter: boolean, isStatic: boolean) {
-  return qc.is.kind(PropertyDeclaration, member) && (!!member.initer || !requireIniter) && qc.has.staticModifier(member) === isStatic;
+  return qc.is.kind(qc.PropertyDeclaration, member) && (!!member.initer || !requireIniter) && qc.has.staticModifier(member) === isStatic;
 }
 export function isInitializedProperty(member: ClassElement): member is PropertyDeclaration & { initer: Expression } {
   return member.kind === Syntax.PropertyDeclaration && (<PropertyDeclaration>member).initer !== undefined;

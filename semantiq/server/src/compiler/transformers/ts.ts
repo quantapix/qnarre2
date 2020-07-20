@@ -105,7 +105,7 @@ export function transformTypeScript(context: TransformationContext) {
         } else {
           assert(node.kind === Syntax.ClassDeclaration || qc.has.syntacticModifier(node, ModifierFlags.Default));
         }
-        if (qc.is.kind(ClassDeclaration, node)) {
+        if (qc.is.kind(qc.ClassDeclaration, node)) {
           currentNameScope = node;
         }
         break;
@@ -427,7 +427,7 @@ export function transformTypeScript(context: TransformationContext) {
     const parametersWithPropertyAssignments = constructor && filter(constructor.parameters, (p) => qc.is.parameterPropertyDeclaration(p, constructor));
     if (parametersWithPropertyAssignments) {
       for (const parameter of parametersWithPropertyAssignments) {
-        if (qc.is.kind(Identifier, parameter.name)) {
+        if (qc.is.kind(qc.Identifier, parameter.name)) {
           members.push(aggregateTransformFlags(PropertyDeclaration.create(undefined, undefined, parameter.name, undefined, undefined, undefined)).setOriginal(parameter));
         }
       }
@@ -696,7 +696,7 @@ export function transformTypeScript(context: TransformationContext) {
       const numParameters = parameters.length;
       for (let i = 0; i < numParameters; i++) {
         const parameter = parameters[i];
-        if (i === 0 && qc.is.kind(Identifier, parameter.name) && parameter.name.escapedText === 'this') {
+        if (i === 0 && qc.is.kind(qc.Identifier, parameter.name) && parameter.name.escapedText === 'this') {
           continue;
         }
         if (parameter.dot3Token) {
@@ -811,9 +811,9 @@ export function transformTypeScript(context: TransformationContext) {
         continue;
       }
       const serializedIndividual = serializeTypeNode(typeNode);
-      if (qc.is.kind(Identifier, serializedIndividual) && serializedIndividual.escapedText === 'Object') return serializedIndividual;
+      if (qc.is.kind(qc.Identifier, serializedIndividual) && serializedIndividual.escapedText === 'Object') return serializedIndividual;
       else if (serializedUnion) {
-        if (!qc.is.kind(Identifier, serializedUnion) || !qc.is.kind(Identifier, serializedIndividual) || serializedUnion.escapedText !== serializedIndividual.escapedText)
+        if (!qc.is.kind(qc.Identifier, serializedUnion) || !qc.is.kind(qc.Identifier, serializedIndividual) || serializedUnion.escapedText !== serializedIndividual.escapedText)
           return new Identifier('Object');
       } else {
         serializedUnion = serializedIndividual;
@@ -825,7 +825,7 @@ export function transformTypeScript(context: TransformationContext) {
     const kind = resolver.getTypeReferenceSerializationKind(node.typeName, currentNameScope || currentLexicalScope);
     switch (kind) {
       case TypeReferenceSerializationKind.Unknown:
-        if (qc.findAncestor(node, (n) => n.parent && qc.is.kind(ConditionalTypeNode, n.parent) && (n.parent.trueType === n || n.parent.falseType === n))) return new Identifier('Object');
+        if (qc.findAncestor(node, (n) => n.parent && qc.is.kind(qc.ConditionalTypeNode, n.parent) && (n.parent.trueType === n || n.parent.falseType === n))) return new Identifier('Object');
         const serialized = serializeEntityNameAsExpressionFallback(node.typeName);
         const temp = createTempVariable(hoistVariableDeclaration);
         return new qc.ConditionalExpression(createTypeCheck(createAssignment(temp, serialized), 'function'), temp, new Identifier('Object'));
@@ -893,14 +893,14 @@ export function transformTypeScript(context: TransformationContext) {
   }
   function getExpressionForPropertyName(member: ClassElement | EnumMember, generateNameForComputedPropertyName: boolean): Expression {
     const name = member.name!;
-    if (qc.is.kind(PrivateIdentifier, name)) return new Identifier('');
-    if (qc.is.kind(ComputedPropertyName, name)) return generateNameForComputedPropertyName && !isSimpleInlineableExpression(name.expression) ? getGeneratedNameForNode(name) : name.expression;
-    if (qc.is.kind(Identifier, name)) return qc.asLiteral(idText(name));
+    if (qc.is.kind(qc.PrivateIdentifier, name)) return new Identifier('');
+    if (qc.is.kind(qc.ComputedPropertyName, name)) return generateNameForComputedPropertyName && !isSimpleInlineableExpression(name.expression) ? getGeneratedNameForNode(name) : name.expression;
+    if (qc.is.kind(qc.Identifier, name)) return qc.asLiteral(idText(name));
     return getSynthesizedClone(name);
   }
   function visitPropertyNameOfClassElement(member: ClassElement): PropertyName {
     const name = member.name!;
-    if (qc.is.kind(ComputedPropertyName, name) && ((!qc.has.staticModifier(member) && currentClassHasParameterProperties) || some(member.decorators))) {
+    if (qc.is.kind(qc.ComputedPropertyName, name) && ((!qc.has.staticModifier(member) && currentClassHasParameterProperties) || some(member.decorators))) {
       const expression = visitNode(name.expression, visitor, isExpression);
       const innerExpression = skipPartiallyEmittedExpressions(expression);
       if (!isSimpleInlineableExpression(innerExpression)) {
@@ -957,7 +957,7 @@ export function transformTypeScript(context: TransformationContext) {
   }
   function transformParameterWithPropertyAssignment(node: ParameterPropertyDeclaration) {
     const name = node.name;
-    if (!qc.is.kind(Identifier, name)) {
+    if (!qc.is.kind(qc.Identifier, name)) {
       return;
     }
     const propertyName = getMutableClone(name);
@@ -1096,7 +1096,7 @@ export function transformTypeScript(context: TransformationContext) {
   }
   function transformInitializedVariable(node: VariableDeclaration): Expression {
     const name = node.name;
-    if (qc.is.kind(BindingPattern, name)) return flattenDestructuringAssignment(node, visitor, context, FlattenLevel.All, false, createNamespaceExportExpression);
+    if (qc.is.kind(qc.BindingPattern, name)) return flattenDestructuringAssignment(node, visitor, context, FlattenLevel.All, false, createNamespaceExportExpression);
     return setRange(createAssignment(getNamespaceMemberNameWithSourceMapsAndWithoutComments(name), visitNode(node.initer, visitor, isExpression)), node);
   }
   function visitVariableDeclaration(node: VariableDeclaration) {
@@ -1394,7 +1394,7 @@ export function transformTypeScript(context: TransformationContext) {
     if (node.isTypeOnly) {
       return;
     }
-    if (!node.exportClause || qc.is.kind(NamespaceExport, node.exportClause)) return node;
+    if (!node.exportClause || qc.is.kind(qc.NamespaceExport, node.exportClause)) return node;
     if (!resolver.isValueAliasDeclaration(node)) {
       return;
     }
@@ -1409,7 +1409,7 @@ export function transformTypeScript(context: TransformationContext) {
     return node.update(visitNode(node.name, visitor, isIdentifier));
   }
   function visitNamedExportBindings(node: NamedExportBindings): VisitResult<NamedExportBindings> {
-    return qc.is.kind(NamespaceExport, node) ? visitNamespaceExports(node) : visitNamedExports(node);
+    return qc.is.kind(qc.NamespaceExport, node) ? visitNamespaceExports(node) : visitNamedExports(node);
   }
   function visitExportSpecifier(node: ExportSpecifier): VisitResult<ExportSpecifier> {
     return resolver.isValueAliasDeclaration(node) ? node : undefined;
@@ -1527,7 +1527,7 @@ export function transformTypeScript(context: TransformationContext) {
   function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void): void {
     const savedApplicableSubstitutions = applicableSubstitutions;
     const savedCurrentSourceFile = currentSourceFile;
-    if (qc.is.kind(SourceFile, node)) {
+    if (qc.is.kind(qc.SourceFile, node)) {
       currentSourceFile = node;
     }
     if (enabledSubstitutions & TypeScriptSubstitutionFlags.NamespaceExports && isTransformedModuleDeclaration(node)) {
@@ -1543,7 +1543,7 @@ export function transformTypeScript(context: TransformationContext) {
   function onSubstituteNode(hint: EmitHint, node: Node) {
     node = previousOnSubstituteNode(hint, node);
     if (hint === EmitHint.Expression) return substituteExpression(<Expression>node);
-    else if (qc.is.kind(ShorthandPropertyAssignment, node)) return substituteShorthandPropertyAssignment(node);
+    else if (qc.is.kind(qc.ShorthandPropertyAssignment, node)) return substituteShorthandPropertyAssignment(node);
     return node;
   }
   function substituteShorthandPropertyAssignment(node: ShorthandPropertyAssignment): ObjectLiteralElementLike {
@@ -1616,7 +1616,7 @@ export function transformTypeScript(context: TransformationContext) {
       const substitute = qc.asLiteral(constantValue);
       if (!compilerOptions.removeComments) {
         const originalNode = qc.get.originalOf(node, isAccessExpression);
-        const propertyName = qc.is.kind(PropertyAccessExpression, originalNode) ? declarationNameToString(originalNode.name) : qc.get.textOf(originalNode.argumentExpression);
+        const propertyName = qc.is.kind(qc.PropertyAccessExpression, originalNode) ? declarationNameToString(originalNode.name) : qc.get.textOf(originalNode.argumentExpression);
         addSyntheticTrailingComment(substitute, Syntax.MultiLineCommentTrivia, ` ${propertyName} `);
       }
       return substitute;
@@ -1627,7 +1627,7 @@ export function transformTypeScript(context: TransformationContext) {
     if (compilerOptions.isolatedModules) {
       return;
     }
-    return qc.is.kind(PropertyAccessExpression, node) || qc.is.kind(ElementAccessExpression, node) ? resolver.getConstantValue(node) : undefined;
+    return qc.is.kind(qc.PropertyAccessExpression, node) || qc.is.kind(qc.ElementAccessExpression, node) ? resolver.getConstantValue(node) : undefined;
   }
 }
 function createDecorateHelper(context: TransformationContext, decoratorExpressions: Expression[], target: Expression, memberName?: Expression, descriptor?: Expression, location?: TextRange) {

@@ -10,7 +10,7 @@ function isNamespaceMember(p: Symbol) {
 function existingTypeNodeIsNotReferenceOrIsReferenceWithCompatibleTypeArgumentCount(existing: TypeNode, type: Type) {
   return (
     !(getObjectFlags(type) & ObjectFlags.Reference) ||
-    !qc.is.kind(TypeReferenceNode, existing) ||
+    !qc.is.kind(qc.TypeReferenceNode, existing) ||
     length(existing.typeArguments) >= getMinTypeArgumentCount((type as TypeReference).target.typeParameters)
   );
 }
@@ -214,10 +214,10 @@ export class QContext {
     if (type.flags & TypeFlags.Substitution) return this.typeToTypeNodeHelper((<SubstitutionType>type).baseType);
     return fail('Should be unreachable.');
     function appendReferenceToType(root: TypeReferenceNode | ImportTypeNode, ref: TypeReferenceNode): TypeReferenceNode | ImportTypeNode {
-      if (qc.is.kind(ImportTypeNode, root)) {
+      if (qc.is.kind(qc.ImportTypeNode, root)) {
         const innerParams = root.typeArguments;
         if (root.qualifier) {
-          (qc.is.kind(Identifier, root.qualifier) ? root.qualifier : root.qualifier.right).typeArguments = innerParams;
+          (qc.is.kind(qc.Identifier, root.qualifier) ? root.qualifier : root.qualifier.right).typeArguments = innerParams;
         }
         root.typeArguments = ref.typeArguments;
         const ids = getAccessStack(ref);
@@ -227,7 +227,7 @@ export class QContext {
         return root;
       } else {
         const innerParams = root.typeArguments;
-        (qc.is.kind(Identifier, root.typeName) ? root.typeName : root.typeName.right).typeArguments = innerParams;
+        (qc.is.kind(qc.Identifier, root.typeName) ? root.typeName : root.typeName.right).typeArguments = innerParams;
         root.typeArguments = ref.typeArguments;
         const ids = getAccessStack(ref);
         for (const id of ids) {
@@ -239,7 +239,7 @@ export class QContext {
     function getAccessStack(ref: TypeReferenceNode): Identifier[] {
       let state = ref.typeName;
       const ids = [];
-      while (!qc.is.kind(Identifier, state)) {
+      while (!qc.is.kind(qc.Identifier, state)) {
         ids.unshift(state.right);
         state = state.left;
       }
@@ -401,7 +401,7 @@ export class QContext {
         getSymbolIfSameReference(getMembersOfSymbol(parent).get(symbol.escName)!, symbol)
       ) {
         const LHS = createAccessFromSymbolChain(chain, index - 1, stopper);
-        if (qc.is.kind(IndexedAccessTypeNode, LHS)) return new qc.IndexedAccessTypeNode(LHS, new qc.LiteralTypeNode(qc.asLiteral(symbolName)));
+        if (qc.is.kind(qc.IndexedAccessTypeNode, LHS)) return new qc.IndexedAccessTypeNode(LHS, new qc.LiteralTypeNode(qc.asLiteral(symbolName)));
         return new qc.IndexedAccessTypeNode(new qc.TypeReferenceNode(LHS, typeParameterNodes as readonly TypeNode[]), new qc.LiteralTypeNode(qc.asLiteral(symbolName)));
       }
       const identifier = setEmitFlags(new Identifier(symbolName, typeParameterNodes), EmitFlags.NoAsciiEscaping);
@@ -428,7 +428,7 @@ export class QContext {
       this.approximateLength += specifier.length + 10;
       if (!nonRootParts || qc.is.entityName(nonRootParts)) {
         if (nonRootParts) {
-          const lastId = qc.is.kind(Identifier, nonRootParts) ? nonRootParts : nonRootParts.right;
+          const lastId = qc.is.kind(qc.Identifier, nonRootParts) ? nonRootParts : nonRootParts.right;
           lastId.typeArguments = undefined;
         }
         return new qc.ImportTypeNode(lit, nonRootParts as EntityName, typeParameterNodes as readonly TypeNode[], isTypeOf);
@@ -439,9 +439,9 @@ export class QContext {
       }
     }
     const entityName = createAccessFromSymbolChain(chain, chain.length - 1, 0);
-    if (qc.is.kind(IndexedAccessTypeNode, entityName)) return entityName;
+    if (qc.is.kind(qc.IndexedAccessTypeNode, entityName)) return entityName;
     if (isTypeOf) return new qc.TypeQueryNode(entityName);
-    const lastId = qc.is.kind(Identifier, entityName) ? entityName : entityName.right;
+    const lastId = qc.is.kind(qc.Identifier, entityName) ? entityName : entityName.right;
     const lastTypeArgs = lastId.typeArguments;
     lastId.typeArguments = undefined;
     return new qc.TypeReferenceNode(entityName, lastTypeArgs as Nodes<TypeNode>);
@@ -566,9 +566,9 @@ export class QContext {
     if (this.tracker.trackSymbol && getCheckFlags(propertySymbol) & CheckFlags.Late) {
       const decl = first(propertySymbol.declarations);
       if (hasLateBindableName(decl)) {
-        if (qc.is.kind(BinaryExpression, decl)) {
+        if (qc.is.kind(qc.BinaryExpression, decl)) {
           const name = qc.get.nameOfDeclaration(decl);
-          if (name && qc.is.kind(ElementAccessExpression, name) && qc.is.propertyAccessEntityNameExpression(name.argumentExpression)) {
+          if (name && qc.is.kind(qc.ElementAccessExpression, name) && qc.is.propertyAccessEntityNameExpression(name.argumentExpression)) {
             this.trackComputedName(name.argumentExpression, saveEnclosingDeclaration);
           }
         } else {
@@ -744,7 +744,7 @@ export class QContext {
     const dot3Token = isRest ? new Token(Syntax.Dot3Token) : undefined;
     const cloneBindingName = (node: BindingName): BindingName => {
       const elideIniterAndSetEmitFlags = (node: Node): Node => {
-        if (this.tracker.trackSymbol && qc.is.kind(ComputedPropertyName, node) && isLateBindableName(node)) {
+        if (this.tracker.trackSymbol && qc.is.kind(qc.ComputedPropertyName, node) && isLateBindableName(node)) {
           this.trackComputedName(node.expression, this.enclosingDeclaration);
         }
         const visited = visitEachChild(node, elideIniterAndSetEmitFlags, nullTransformationContext, undefined, elideIniterAndSetEmitFlags)!;
@@ -776,12 +776,12 @@ export class QContext {
     if (name) this.tracker.trackSymbol(name, enclosingDeclaration, SymbolFlags.Value);
   }
   getTopmostIndexedAccessType(top: IndexedAccessTypeNode): IndexedAccessTypeNode {
-    if (qc.is.kind(IndexedAccessTypeNode, top.objectType)) return getTopmostIndexedAccessType(top.objectType);
+    if (qc.is.kind(qc.IndexedAccessTypeNode, top.objectType)) return getTopmostIndexedAccessType(top.objectType);
     return top;
   }
   isSingleQuotedStringNamed(d: Declaration) {
     const name = qc.get.nameOfDeclaration(d);
-    if (name && qc.is.kind(StringLiteral, name) && (name.singleQuote || (!isSynthesized(name) && startsWith(qc.get.textOf(name, false), "'")))) return true;
+    if (name && qc.is.kind(qc.StringLiteral, name) && (name.singleQuote || (!isSynthesized(name) && startsWith(qc.get.textOf(name, false), "'")))) return true;
     return false;
   }
   createPropertyNameNodeForIdentifierOrLiteral(name: string, singleQuote?: boolean) {
@@ -835,30 +835,30 @@ export class QContext {
     return transformed === existing ? getMutableClone(existing) : transformed;
   }
   visitExistingNodeTreeSymbols<T extends Node>(node: T): Node {
-    if (qc.is.kind(DocAllType, node) || node.kind === Syntax.DocNamepathType) return new qc.KeywordTypeNode(Syntax.AnyKeyword);
-    if (qc.is.kind(DocUnknownType, node)) return new qc.KeywordTypeNode(Syntax.UnknownKeyword);
-    if (qc.is.kind(DocNullableType, node)) return new qc.UnionTypeNode([visitNode(node.type, this.visitExistingNodeTreeSymbols), new qc.KeywordTypeNode(Syntax.NullKeyword)]);
-    if (qc.is.kind(DocOptionalType, node)) return new qc.UnionTypeNode([visitNode(node.type, this.visitExistingNodeTreeSymbols), new qc.KeywordTypeNode(Syntax.UndefinedKeyword)]);
-    if (qc.is.kind(DocNonNullableType, node)) return visitNode(node.type, this.visitExistingNodeTreeSymbols);
-    if (qc.is.kind(DocVariadicType, node)) return new ArrayTypeNode(visitNode((node as DocVariadicType).type, this.visitExistingNodeTreeSymbols));
-    if (qc.is.kind(DocTypeLiteral, node)) {
+    if (qc.is.kind(qc.DocAllType, node) || node.kind === Syntax.DocNamepathType) return new qc.KeywordTypeNode(Syntax.AnyKeyword);
+    if (qc.is.kind(qc.DocUnknownType, node)) return new qc.KeywordTypeNode(Syntax.UnknownKeyword);
+    if (qc.is.kind(qc.DocNullableType, node)) return new qc.UnionTypeNode([visitNode(node.type, this.visitExistingNodeTreeSymbols), new qc.KeywordTypeNode(Syntax.NullKeyword)]);
+    if (qc.is.kind(qc.DocOptionalType, node)) return new qc.UnionTypeNode([visitNode(node.type, this.visitExistingNodeTreeSymbols), new qc.KeywordTypeNode(Syntax.UndefinedKeyword)]);
+    if (qc.is.kind(qc.DocNonNullableType, node)) return visitNode(node.type, this.visitExistingNodeTreeSymbols);
+    if (qc.is.kind(qc.DocVariadicType, node)) return new ArrayTypeNode(visitNode((node as DocVariadicType).type, this.visitExistingNodeTreeSymbols));
+    if (qc.is.kind(qc.DocTypeLiteral, node)) {
       return new qc.TypeLiteralNode(
         map(node.docPropertyTags, (t) => {
-          const name = qc.is.kind(Identifier, t.name) ? t.name : t.name.right;
+          const name = qc.is.kind(qc.Identifier, t.name) ? t.name : t.name.right;
           const typeViaParent = getTypeOfPropertyOfType(getTypeFromTypeNode(node), name.escapedText);
           const overrideTypeNode = typeViaParent && t.typeExpression && getTypeFromTypeNode(t.typeExpression.type) !== typeViaParent ? this.typeToTypeNodeHelper(typeViaParent) : undefined;
           return new qc.PropertySignature(
             undefined,
             name,
-            t.typeExpression && qc.is.kind(DocOptionalType, t.typeExpression.type) ? new Token(Syntax.QuestionToken) : undefined,
+            t.typeExpression && qc.is.kind(qc.DocOptionalType, t.typeExpression.type) ? new Token(Syntax.QuestionToken) : undefined,
             overrideTypeNode || (t.typeExpression && visitNode(t.typeExpression.type, this.visitExistingNodeTreeSymbols)) || new qc.KeywordTypeNode(Syntax.AnyKeyword),
             undefined
           );
         })
       );
     }
-    if (qc.is.kind(TypeReferenceNode, node) && qc.is.kind(Identifier, node.typeName) && node.typeName.escapedText === '') return new qc.KeywordTypeNode(Syntax.AnyKeyword).setOriginal(node);
-    if ((qc.is.kind(ExpressionWithTypeArguments, node) || qc.is.kind(TypeReferenceNode, node)) && isDocIndexSignature(node)) {
+    if (qc.is.kind(qc.TypeReferenceNode, node) && qc.is.kind(qc.Identifier, node.typeName) && node.typeName.escapedText === '') return new qc.KeywordTypeNode(Syntax.AnyKeyword).setOriginal(node);
+    if ((qc.is.kind(qc.ExpressionWithTypeArguments, node) || qc.is.kind(qc.TypeReferenceNode, node)) && isDocIndexSignature(node)) {
       return new qc.TypeLiteralNode([
         new qc.IndexSignatureDeclaration(
           undefined,
@@ -870,14 +870,14 @@ export class QContext {
     }
     if (qc.is.kind(qc.DocFunctionType, node)) {
       const getEffectiveDotDotDotForParameter = (p: ParameterDeclaration) => {
-        return p.dot3Token || (p.type && qc.is.kind(DocVariadicType, p.type) ? new Token(Syntax.Dot3Token) : undefined);
+        return p.dot3Token || (p.type && qc.is.kind(qc.DocVariadicType, p.type) ? new Token(Syntax.Dot3Token) : undefined);
       };
       if (qc.isDoc.constructSignature(node)) {
         let newTypeNode: TypeNode | undefined;
         return ConstructorDeclaration.createTypeNode(
           Nodes.visit(node.typeParameters, this.visitExistingNodeTreeSymbols),
           mapDefined(node.parameters, (p, i) =>
-            p.name && qc.is.kind(Identifier, p.name) && p.name.escapedText === 'new'
+            p.name && qc.is.kind(qc.Identifier, p.name) && p.name.escapedText === 'new'
               ? ((newTypeNode = p.type), undefined)
               : new qc.ParameterDeclaration(
                   undefined,
@@ -912,7 +912,7 @@ export class QContext {
       }
     }
     if (
-      qc.is.kind(TypeReferenceNode, node) &&
+      qc.is.kind(qc.TypeReferenceNode, node) &&
       qc.is.inDoc(node) &&
       (getIntendedTypeFromDocTypeReference(node) || unknownSymbol === resolveTypeReferenceName(getTypeReferenceName(node), SymbolFlags.Type, true))
     ) {
@@ -957,7 +957,7 @@ export class QContext {
         qc.is.inJSFile(node) &&
         (qc.is.exportsIdentifier(leftmost) ||
           qc.is.moduleExportsAccessExpression(leftmost.parent) ||
-          (qc.is.kind(QualifiedName, leftmost.parent) && qc.is.moduleIdentifier(leftmost.parent.left) && qc.is.exportsIdentifier(leftmost.parent.right)))
+          (qc.is.kind(qc.QualifiedName, leftmost.parent) && qc.is.moduleIdentifier(leftmost.parent.left) && qc.is.exportsIdentifier(leftmost.parent.right)))
       ) {
         hadError = true;
         return node;
@@ -970,14 +970,14 @@ export class QContext {
           this.tracker?.trackSymbol?.(sym, this.enclosingDeclaration, SymbolFlags.All);
           includePrivateSymbol?.(sym);
         }
-        if (qc.is.kind(Identifier, node)) {
+        if (qc.is.kind(qc.Identifier, node)) {
           const name = sym.flags & SymbolFlags.TypeParameter ? this.typeParameterToName(getDeclaredTypeOfSymbol(sym)) : getMutableClone(node);
           name.symbol = sym;
           return setEmitFlags(name.node).setOriginal(EmitFlags.NoAsciiEscaping);
         }
       }
     }
-    if (file && qc.is.kind(TupleTypeNode, node) && syntax.get.lineAndCharOf(file, node.pos).line === syntax.get.lineAndCharOf(file, node.end).line) {
+    if (file && qc.is.kind(qc.TupleTypeNode, node) && syntax.get.lineAndCharOf(file, node.pos).line === syntax.get.lineAndCharOf(file, node.end).line) {
       setEmitFlags(node, EmitFlags.SingleLine);
     }
     return visitEachChild(node, this.visitExistingNodeTreeSymbols, nullTransformationContext);
@@ -1045,7 +1045,7 @@ export class QContext {
     for (const sig of signatures) {
       const decl = this.signatureToSignatureDeclarationHelper(sig, Syntax.FunctionDeclaration, includePrivateSymbol, bundled) as FunctionDeclaration;
       decl.name = new Identifier(localName);
-      addResult(setRange(decl, (sig.declaration && qc.is.kind(VariableDeclaration, sig.declaration.parent) && sig.declaration.parent.parent) || sig.declaration), modifierFlags);
+      addResult(setRange(decl, (sig.declaration && qc.is.kind(qc.VariableDeclaration, sig.declaration.parent) && sig.declaration.parent.parent) || sig.declaration), modifierFlags);
     }
     if (!(symbol.flags & (SymbolFlags.ValueModule | SymbolFlags.NamespaceModule) && !!symbol.exports && !!symbol.exports.size)) {
       const props = filter(getPropertiesOfType(type), isNamespaceMember);
@@ -1082,11 +1082,11 @@ export class QContext {
     const symbolProps = getNonInterhitedProperties(classType, baseTypes, getPropertiesOfType(classType));
     const publicSymbolProps = filter(symbolProps, (s) => {
       const valueDecl = s.valueDeclaration;
-      return valueDecl && !(qc.is.namedDeclaration(valueDecl) && qc.is.kind(PrivateIdentifier, valueDecl.name));
+      return valueDecl && !(qc.is.namedDeclaration(valueDecl) && qc.is.kind(qc.PrivateIdentifier, valueDecl.name));
     });
     const hasPrivateIdentifier = some(symbolProps, (s) => {
       const valueDecl = s.valueDeclaration;
-      return valueDecl && qc.is.namedDeclaration(valueDecl) && qc.is.kind(PrivateIdentifier, valueDecl.name);
+      return valueDecl && qc.is.namedDeclaration(valueDecl) && qc.is.kind(qc.PrivateIdentifier, valueDecl.name);
     });
     const privateProperties = hasPrivateIdentifier ? [new qc.PropertyDeclaration(undefined, undefined, new PrivateIdentifier('#private'), undefined, undefined, undefined)] : empty;
     const publicProperties = flatMap<Symbol, ClassElement>(publicSymbolProps, (p) => serializePropertySymbolForClass(p, false, baseTypes[0]));
@@ -1106,7 +1106,7 @@ export class QContext {
     addResult(
       setRange(
         new qc.ClassDeclaration(undefined, undefined, localName, typeParamDecls, heritageClauses, [...indexSignatures, ...staticMembers, ...constructors, ...publicProperties, ...privateProperties]),
-        symbol.declarations && filter(symbol.declarations, (d) => qc.is.kind(ClassDeclaration, d) || qc.is.kind(ClassExpression, d))[0]
+        symbol.declarations && filter(symbol.declarations, (d) => qc.is.kind(qc.ClassDeclaration, d) || qc.is.kind(qc.ClassExpression, d))[0]
       ),
       modifierFlags
     );
@@ -1574,17 +1574,17 @@ export class QContext {
         ns &&
         exportAssignment &&
         exportAssignment.isExportEquals &&
-        qc.is.kind(Identifier, exportAssignment.expression) &&
-        qc.is.kind(Identifier, ns.name) &&
+        qc.is.kind(qc.Identifier, exportAssignment.expression) &&
+        qc.is.kind(qc.Identifier, ns.name) &&
         idText(ns.name) === idText(exportAssignment.expression) &&
         ns.body &&
-        qc.is.kind(ModuleBlock, ns.body)
+        qc.is.kind(qc.ModuleBlock, ns.body)
       ) {
         const excessExports = filter(ss, (s) => !!(qc.get.effectiveModifierFlags(s) & ModifierFlags.Export));
         if (length(excessExports)) {
           const getNamesOfDeclaration = (s: Statement): Identifier[] => {
             const isIdentifierAndNotUndefined = (n?: Node): n is Identifier => n?.kind === Syntax.Identifier;
-            if (qc.is.kind(VariableStatement, s)) return filter(map(s.declarationList.declarations, getNameOfDeclaration), isIdentifierAndNotUndefined);
+            if (qc.is.kind(qc.VariableStatement, s)) return filter(map(s.declarationList.declarations, getNameOfDeclaration), isIdentifierAndNotUndefined);
             return filter([qc.get.nameOfDeclaration(s as DeclarationStatement)], isIdentifierAndNotUndefined);
           };
           ns.body.statements = new Nodes([
@@ -1613,14 +1613,14 @@ export class QContext {
       return ss;
     };
     const mergeExportDeclarations = (ss: Statement[]) => {
-      const exports = filter(ss, (d) => qc.is.kind(ExportDeclaration, d) && !d.moduleSpecifier && !!d.exportClause && qc.is.kind(NamedExports, d.exportClause)) as ExportDeclaration[];
+      const exports = filter(ss, (d) => qc.is.kind(qc.ExportDeclaration, d) && !d.moduleSpecifier && !!d.exportClause && qc.is.kind(qc.NamedExports, d.exportClause)) as ExportDeclaration[];
       if (length(exports) > 1) {
-        const nonExports = filter(ss, (d) => !qc.is.kind(ExportDeclaration, d) || !!d.moduleSpecifier || !d.exportClause);
+        const nonExports = filter(ss, (d) => !qc.is.kind(qc.ExportDeclaration, d) || !!d.moduleSpecifier || !d.exportClause);
         ss = [...nonExports, new qc.ExportDeclaration(undefined, undefined, new qc.NamedExports(flatMap(exports, (e) => cast(e.exportClause, isNamedExports).elements)), undefined)];
       }
-      const reexports = filter(ss, (d) => qc.is.kind(ExportDeclaration, d) && !!d.moduleSpecifier && !!d.exportClause && qc.is.kind(NamedExports, d.exportClause)) as ExportDeclaration[];
+      const reexports = filter(ss, (d) => qc.is.kind(qc.ExportDeclaration, d) && !!d.moduleSpecifier && !!d.exportClause && qc.is.kind(qc.NamedExports, d.exportClause)) as ExportDeclaration[];
       if (length(reexports) > 1) {
-        const gs = group(reexports, (decl) => (qc.is.kind(StringLiteral, decl.moduleSpecifier!) ? '>' + decl.moduleSpecifier.text : '>'));
+        const gs = group(reexports, (decl) => (qc.is.kind(qc.StringLiteral, decl.moduleSpecifier!) ? '>' + decl.moduleSpecifier.text : '>'));
         if (gs.length !== reexports.length) {
           for (const g of gs) {
             if (g.length > 1) {
@@ -1635,8 +1635,8 @@ export class QContext {
       return ss;
     };
     const inlineExportModifiers = (ss: Statement[]) => {
-      const exportDecl = find(ss, (d) => qc.is.kind(ExportDeclaration, d) && !d.moduleSpecifier && !!d.exportClause) as ExportDeclaration | undefined;
-      if (exportDecl && exportDecl.exportClause && qc.is.kind(NamedExports, exportDecl.exportClause)) {
+      const exportDecl = find(ss, (d) => qc.is.kind(qc.ExportDeclaration, d) && !d.moduleSpecifier && !!d.exportClause) as ExportDeclaration | undefined;
+      if (exportDecl && exportDecl.exportClause && qc.is.kind(qc.NamedExports, exportDecl.exportClause)) {
         const replacements = mapDefined(exportDecl.exportClause.elements, (e) => {
           if (!e.propertyName) {
             const associated = filter(ss, (s) => qc.is.withName(s, e.name));
@@ -1663,7 +1663,7 @@ export class QContext {
       ss = inlineExportModifiers(ss);
       if (
         enclosingDeclaration &&
-        ((qc.is.kind(SourceFile, enclosingDeclaration) && qc.is.externalOrCommonJsModule(enclosingDeclaration)) || qc.is.kind(ModuleDeclaration, enclosingDeclaration)) &&
+        ((qc.is.kind(qc.SourceFile, enclosingDeclaration) && qc.is.externalOrCommonJsModule(enclosingDeclaration)) || qc.is.kind(qc.ModuleDeclaration, enclosingDeclaration)) &&
         (!some(ss, qp_isExternalModuleIndicator) || (!hasScopeMarker(ss) && some(ss, needsScopeMarker)))
       ) {
         ss.push(createEmptyExports());
@@ -1674,7 +1674,7 @@ export class QContext {
     function addResult(n: Statement, flags: ModifierFlags) {
       let f: ModifierFlags = ModifierFlags.None;
       const isExportingScope = (n: Node) => {
-        return (qc.is.kind(SourceFile, n) && (qc.is.externalOrCommonJsModule(n) || qc.is.jsonSourceFile(n))) || (qc.is.ambientModule(n) && !isGlobalScopeAugmentation(n));
+        return (qc.is.kind(qc.SourceFile, n) && (qc.is.externalOrCommonJsModule(n) || qc.is.jsonSourceFile(n))) || (qc.is.ambientModule(n) && !isGlobalScopeAugmentation(n));
       };
       if (flags & ModifierFlags.Export && enclosingDeclaration && isExportingScope(enclosingDeclaration) && canHaveExportModifier(n)) {
         f |= ModifierFlags.Export;
@@ -1683,11 +1683,11 @@ export class QContext {
         addingDeclare &&
         !(f & ModifierFlags.Export) &&
         (!enclosingDeclaration || !(enclosingDeclaration.flags & NodeFlags.Ambient)) &&
-        (qc.is.kind(EnumDeclaration, n) || qc.is.kind(VariableStatement, n) || qc.is.kind(FunctionDeclaration, n) || qc.is.kind(ClassDeclaration, n) || qc.is.kind(ModuleDeclaration, n))
+        (qc.is.kind(qc.EnumDeclaration, n) || qc.is.kind(qc.VariableStatement, n) || qc.is.kind(qc.FunctionDeclaration, n) || qc.is.kind(qc.ClassDeclaration, n) || qc.is.kind(qc.ModuleDeclaration, n))
       ) {
         f |= ModifierFlags.Ambient;
       }
-      if (flags & ModifierFlags.Default && (qc.is.kind(ClassDeclaration, n) || qc.is.kind(InterfaceDeclaration, n) || qc.is.kind(FunctionDeclaration, n))) {
+      if (flags & ModifierFlags.Default && (qc.is.kind(qc.ClassDeclaration, n) || qc.is.kind(qc.InterfaceDeclaration, n) || qc.is.kind(qc.FunctionDeclaration, n))) {
         f |= ModifierFlags.Default;
       }
       if (f) {

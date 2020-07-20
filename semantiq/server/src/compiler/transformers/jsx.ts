@@ -71,7 +71,7 @@ export function transformJsx(context: TransformationContext) {
           isSpread ? map(attrs, transformJsxSpreadAttributeToExpression) : new qc.ObjectLiteralExpression(map(attrs, transformJsxAttributeToObjectLiteralElement))
         )
       );
-      if (qc.is.kind(JsxSpreadAttribute, attrs[0])) {
+      if (qc.is.kind(qc.JsxSpreadAttribute, attrs[0])) {
         segments.unshift(new qc.ObjectLiteralExpression());
       }
       objectProperties = singleOrUndefined(segments);
@@ -170,7 +170,7 @@ export function transformJsx(context: TransformationContext) {
     if (node.kind === Syntax.JsxElement) return getTagName(node.openingElement);
     else {
       const name = node.tagName;
-      if (qc.is.kind(Identifier, name) && isIntrinsicJsxName(name.escapedText)) return qc.asLiteral(idText(name));
+      if (qc.is.kind(qc.Identifier, name) && isIntrinsicJsxName(name.escapedText)) return qc.asLiteral(idText(name));
       return createExpressionFromEntityName(name);
     }
   }

@@ -79,7 +79,7 @@ export function transformES2017(context: TransformationContext) {
       case Syntax.ArrowFunction:
         return doWithContext(ContextFlags.NonTopLevel, visitArrowFunction, <ArrowFunction>node);
       case Syntax.PropertyAccessExpression:
-        if (capturedSuperProperties && qc.is.kind(PropertyAccessExpression, node) && node.expression.kind === Syntax.SuperKeyword) {
+        if (capturedSuperProperties && qc.is.kind(qc.PropertyAccessExpression, node) && node.expression.kind === Syntax.SuperKeyword) {
           capturedSuperProperties.set(node.name.escapedText, true);
         }
         return visitEachChild(node, visitor, context);
@@ -235,18 +235,18 @@ export function transformES2017(context: TransformationContext) {
     );
   }
   function recordDeclarationName({ name }: ParameterDeclaration | VariableDeclaration | BindingElement, names: EscapedMap<true>) {
-    if (qc.is.kind(Identifier, name)) {
+    if (qc.is.kind(qc.Identifier, name)) {
       names.set(name.escapedText, true);
     } else {
       for (const element of name.elements) {
-        if (!qc.is.kind(OmittedExpression, element)) {
+        if (!qc.is.kind(qc.OmittedExpression, element)) {
           recordDeclarationName(element, names);
         }
       }
     }
   }
   function isVariableDeclarationListWithCollidingName(node: ForIniter): node is VariableDeclarationList {
-    return !!node && qc.is.kind(VariableDeclarationList, node) && !(node.flags & NodeFlags.BlockScoped) && node.declarations.some(collidesWithParameterName);
+    return !!node && qc.is.kind(qc.VariableDeclarationList, node) && !(node.flags & NodeFlags.BlockScoped) && node.declarations.some(collidesWithParameterName);
   }
   function visitVariableDeclarationListWithCollidingNames(node: VariableDeclarationList, hasReceiver: boolean) {
     hoistVariableDeclarationList(node);
@@ -261,11 +261,11 @@ export function transformES2017(context: TransformationContext) {
     forEach(node.declarations, hoistVariable);
   }
   function hoistVariable({ name }: VariableDeclaration | BindingElement) {
-    if (qc.is.kind(Identifier, name)) {
+    if (qc.is.kind(qc.Identifier, name)) {
       hoistVariableDeclaration(name);
     } else {
       for (const element of name.elements) {
-        if (!qc.is.kind(OmittedExpression, element)) {
+        if (!qc.is.kind(qc.OmittedExpression, element)) {
           hoistVariable(element);
         }
       }
@@ -276,10 +276,10 @@ export function transformES2017(context: TransformationContext) {
     return visitNode(converted, visitor, isExpression);
   }
   function collidesWithParameterName({ name }: VariableDeclaration | BindingElement): boolean {
-    if (qc.is.kind(Identifier, name)) return enclosingFunctionParameterNames.has(name.escapedText);
+    if (qc.is.kind(qc.Identifier, name)) return enclosingFunctionParameterNames.has(name.escapedText);
     else {
       for (const element of name.elements) {
-        if (!qc.is.kind(OmittedExpression, element) && collidesWithParameterName(element)) return true;
+        if (!qc.is.kind(qc.OmittedExpression, element) && collidesWithParameterName(element)) return true;
       }
     }
     return false;
@@ -349,7 +349,7 @@ export function transformES2017(context: TransformationContext) {
     return result;
   }
   function transformAsyncFunctionBodyWorker(body: ConciseBody, start?: number) {
-    if (qc.is.kind(Block, body)) return body.update(Nodes.visit(body.statements, asyncBodyVisitor, isStatement, start));
+    if (qc.is.kind(qc.Block, body)) return body.update(Nodes.visit(body.statements, asyncBodyVisitor, isStatement, start));
     return convertToFunctionBody(visitNode(body, asyncBodyVisitor, isConciseBody));
   }
   function getPromiseConstructor(type: TypeNode | undefined) {
@@ -420,7 +420,7 @@ export function transformES2017(context: TransformationContext) {
   function substituteCallExpression(node: CallExpression): Expression {
     const expression = node.expression;
     if (qc.is.superProperty(expression)) {
-      const argumentExpression = qc.is.kind(PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
+      const argumentExpression = qc.is.kind(qc.PropertyAccessExpression, expression) ? substitutePropertyAccessExpression(expression) : substituteElementAccessExpression(expression);
       return new qs.CallExpression(new qc.PropertyAccessExpression(argumentExpression, 'call'), undefined, [new qc.ThisExpression(), ...node.arguments]);
     }
     return node;

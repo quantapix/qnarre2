@@ -2231,7 +2231,7 @@ function create() {
       n.name = this.rightSideOfDot(true, true);
       if (questionDotToken || parse.reparseOptionalChain(expression)) {
         n.flags |= NodeFlags.OptionalChain;
-        if (qc.is.kind(PrivateIdentifier, n.name)) this.errorAtRange(n.name, qd.msgs.An_optional_chain_cannot_contain_private_identifiers);
+        if (qc.is.kind(qc.PrivateIdentifier, n.name)) this.errorAtRange(n.name, qd.msgs.An_optional_chain_cannot_contain_private_identifiers);
       }
       return finishNode(n);
     }
@@ -3345,13 +3345,13 @@ function create() {
     }
     reparseOptionalChain(n: qc.Expression) {
       if (n.flags & NodeFlags.OptionalChain) return true;
-      if (qc.is.kind(NonNullExpression, n)) {
+      if (qc.is.kind(qc.NonNullExpression, n)) {
         let expr = n.expression;
-        while (qc.is.kind(NonNullExpression, expr) && !(expr.flags & NodeFlags.OptionalChain)) {
+        while (qc.is.kind(qc.NonNullExpression, expr) && !(expr.flags & NodeFlags.OptionalChain)) {
           expr = expr.expression;
         }
         if (expr.flags & NodeFlags.OptionalChain) {
-          while (qc.is.kind(NonNullExpression, n)) {
+          while (qc.is.kind(qc.NonNullExpression, n)) {
             n.flags |= NodeFlags.OptionalChain;
             n = n.expression;
           }
@@ -3430,7 +3430,7 @@ function create() {
     child(openingTag: JsxOpeningElement | JsxOpeningFragment, token: JsxTokenSyntax): JsxChild | undefined {
       switch (token) {
         case Syntax.EndOfFileToken:
-          if (qc.is.kind(JsxOpeningFragment, openingTag)) {
+          if (qc.is.kind(qc.JsxOpeningFragment, openingTag)) {
             parse.errorAtRange(openingTag, qd.msgs.JSX_fragment_has_no_corresponding_closing_tag);
           } else {
             const tag = openingTag.tagName;

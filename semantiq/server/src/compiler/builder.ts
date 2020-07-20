@@ -1,4 +1,5 @@
 import * as qb from './base';
+import * as qc from './core3';
 import * as qt from './types';
 import { Node } from './types';
 import * as syntax from './syntax';
@@ -1200,7 +1201,7 @@ export namespace BuilderState {
     if (sourceFile.moduleAugmentations.length) {
       const checker = program.getTypeChecker();
       for (const moduleName of sourceFile.moduleAugmentations) {
-        if (!qc.is.kind(StringLiteral, moduleName)) continue;
+        if (!qc.is.kind(qc.StringLiteral, moduleName)) continue;
         const symbol = checker.getSymbolAtLocation(moduleName);
         if (!symbol) continue;
         addReferenceFromAmbientModule(symbol);

@@ -101,7 +101,7 @@ function addValueAssignments(ps: Nodes<qc.ParameterDeclaration>, c: Transformati
   return ps;
 }
 function addValueAssignmentIfNeeded(p: qc.ParameterDeclaration, c: TransformationContext) {
-  return p.dot3Token ? p : qc.is.kind(BindingPattern, p.name) ? addForBindingPattern(p, c) : p.initer ? addForIniter(p, p.name, p.initer, c) : p;
+  return p.dot3Token ? p : qc.is.kind(qc.BindingPattern, p.name) ? addForBindingPattern(p, c) : p.initer ? addForIniter(p, p.name, p.initer, c) : p;
 }
 function addForBindingPattern(p: qc.ParameterDeclaration, c: TransformationContext) {
   c.addInitializationStatement(

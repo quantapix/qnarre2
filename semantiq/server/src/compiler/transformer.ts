@@ -1,3 +1,6 @@
+import * as qb from './base';
+import * as qc from './core3';
+
 export interface TransformationContext {
   getEmitResolver(): EmitResolver;
   getEmitHost(): EmitHost;
@@ -121,7 +124,7 @@ function getDeclarationTransformers(customTransformers?: CustomTransformers) {
 }
 
 function wrapCustomTransformer(transformer: CustomTransformer): Transformer<Bundle | SourceFile> {
-  return (node) => (qc.is.kind(Bundle, node) ? transformer.transformBundle(node) : transformer.transformSourceFile(node));
+  return (node) => (qc.is.kind(qc.Bundle, node) ? transformer.transformBundle(node) : transformer.transformSourceFile(node));
 }
 
 function wrapCustomTransformerFactory<T extends SourceFile | Bundle>(
@@ -239,7 +242,7 @@ export function transformNodes<T extends Node>(
   };
 
   function transformRoot(node: T) {
-    return node && (!qc.is.kind(SourceFile, node) || !node.isDeclarationFile) ? transformation(node) : node;
+    return node && (!qc.is.kind(qc.SourceFile, node) || !node.isDeclarationFile) ? transformation(node) : node;
   }
 
   function enableSubstitution(kind: Syntax) {

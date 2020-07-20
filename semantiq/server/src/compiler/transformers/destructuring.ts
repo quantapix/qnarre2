@@ -57,7 +57,7 @@ export function flattenDestructuringAssignment(
   };
   if (value) {
     value = visitNode(value, visitor, isExpression);
-    if ((qc.is.kind(Identifier, value) && bindingOrAssignmentElementAssignsToName(node, value.escapedText)) || bindingOrAssignmentElementContainsNonLiteralComputedName(node)) {
+    if ((qc.is.kind(qc.Identifier, value) && bindingOrAssignmentElementAssignsToName(node, value.escapedText)) || bindingOrAssignmentElementContainsNonLiteralComputedName(node)) {
       value = ensureIdentifier(flattenContext, value, false, location);
     } else if (needsValue) {
       value = ensureIdentifier(flattenContext, value, true, location);
@@ -87,7 +87,7 @@ export function flattenDestructuringAssignment(
 function bindingOrAssignmentElementAssignsToName(element: BindingOrAssignmentElement, escName: __String): boolean {
   const target = getTargetOfBindingOrAssignmentElement(element)!;
   if (qc.is.bindingOrAssignmentPattern(target)) return bindingOrAssignmentPatternAssignsToName(target, escName);
-  if (qc.is.kind(Identifier, target)) return target.escapedText === escName;
+  if (qc.is.kind(qc.Identifier, target)) return target.escapedText === escName;
   return false;
 }
 function bindingOrAssignmentPatternAssignsToName(pattern: BindingOrAssignmentPattern, escName: __String): boolean {
@@ -99,7 +99,7 @@ function bindingOrAssignmentPatternAssignsToName(pattern: BindingOrAssignmentPat
 }
 function bindingOrAssignmentElementContainsNonLiteralComputedName(element: BindingOrAssignmentElement): boolean {
   const propertyName = tryGetPropertyNameOfBindingOrAssignmentElement(element);
-  if (propertyName && qc.is.kind(ComputedPropertyName, propertyName) && !qc.is.literalExpression(propertyName.expression)) return true;
+  if (propertyName && qc.is.kind(qc.ComputedPropertyName, propertyName) && !qc.is.literalExpression(propertyName.expression)) return true;
   const target = getTargetOfBindingOrAssignmentElement(element);
   return !!target && qc.is.bindingOrAssignmentPattern(target) && bindingOrAssignmentPatternContainsNonLiteralComputedName(target);
 }
@@ -136,9 +136,9 @@ export function flattenDestructuringBinding(
     createArrayBindingOrAssignmentElement: makeBindingElement,
     visitor,
   };
-  if (qc.is.kind(VariableDeclaration, node)) {
+  if (qc.is.kind(qc.VariableDeclaration, node)) {
     let initer = getIniterOfBindingOrAssignmentElement(node);
-    if (initer && ((qc.is.kind(Identifier, initer) && bindingOrAssignmentElementAssignsToName(node, initer.escapedText)) || bindingOrAssignmentElementContainsNonLiteralComputedName(node))) {
+    if (initer && ((qc.is.kind(qc.Identifier, initer) && bindingOrAssignmentElementAssignsToName(node, initer.escapedText)) || bindingOrAssignmentElementContainsNonLiteralComputedName(node))) {
       initer = ensureIdentifier(flattenContext, initer, false, initer);
       node = node.update(node.name, node.type, initer);
     }
@@ -219,7 +219,7 @@ function flattenObjectBindingOrAssignmentPattern(
         flattenContext.level >= FlattenLevel.ObjectRest &&
         !(element.transformFlags & (TransformFlags.ContainsRestOrSpread | TransformFlags.ContainsObjectRestOrSpread)) &&
         !(getTargetOfBindingOrAssignmentElement(element)!.transformFlags & (TransformFlags.ContainsRestOrSpread | TransformFlags.ContainsObjectRestOrSpread)) &&
-        !qc.is.kind(ComputedPropertyName, propertyName)
+        !qc.is.kind(qc.ComputedPropertyName, propertyName)
       ) {
         bindingElements = append(bindingElements, visitNode(element, flattenContext.visitor));
       } else {
@@ -228,7 +228,7 @@ function flattenObjectBindingOrAssignmentPattern(
           bindingElements = undefined;
         }
         const rhsValue = createDestructuringPropertyAccess(flattenContext, value, propertyName);
-        if (qc.is.kind(ComputedPropertyName, propertyName)) {
+        if (qc.is.kind(qc.ComputedPropertyName, propertyName)) {
           computedTempVariables = append<Expression>(computedTempVariables, (rhsValue as ElementAccessExpression).argumentExpression);
         }
         flattenBindingOrAssignmentElement(flattenContext, element, rhsValue, element);
@@ -275,7 +275,7 @@ function flattenArrayBindingOrAssignmentPattern(flattenContext: FlattenContext, 
       } else {
         bindingElements = append(bindingElements, element);
       }
-    } else if (qc.is.kind(OmittedExpression, element)) {
+    } else if (qc.is.kind(qc.OmittedExpression, element)) {
       continue;
     } else if (!getRestIndicatorOfBindingOrAssignmentElement(element)) {
       const rhsValue = new qs.ElementAccessExpression(value, i);
@@ -299,7 +299,7 @@ function createDefaultValueCheck(flattenContext: FlattenContext, value: Expressi
   return new qc.ConditionalExpression(createTypeCheck(value, 'undefined'), defaultValue, value);
 }
 function createDestructuringPropertyAccess(flattenContext: FlattenContext, value: Expression, propertyName: PropertyName): LeftHandSideExpression {
-  if (qc.is.kind(ComputedPropertyName, propertyName)) {
+  if (qc.is.kind(qc.ComputedPropertyName, propertyName)) {
     const argumentExpression = ensureIdentifier(flattenContext, visitNode(propertyName.expression, flattenContext.visitor), propertyName);
     return new qs.ElementAccessExpression(value, argumentExpression);
   } else if (StringLiteral.orNumericLiteralLike(propertyName)) {
@@ -312,7 +312,7 @@ function createDestructuringPropertyAccess(flattenContext: FlattenContext, value
   }
 }
 function ensureIdentifier(flattenContext: FlattenContext, value: Expression, reuseIdentifierExpressions: boolean, location: TextRange) {
-  if (qc.is.kind(Identifier, value) && reuseIdentifierExpressions) return value;
+  if (qc.is.kind(qc.Identifier, value) && reuseIdentifierExpressions) return value;
   else {
     const temp = createTempVariable(undefined);
     if (flattenContext.hoistTempVariables) {
@@ -374,7 +374,7 @@ function createRestCall(
   for (let i = 0; i < elements.length - 1; i++) {
     const propertyName = getPropertyNameOfBindingOrAssignmentElement(elements[i]);
     if (propertyName) {
-      if (qc.is.kind(ComputedPropertyName, propertyName)) {
+      if (qc.is.kind(qc.ComputedPropertyName, propertyName)) {
         const temp = computedTempVariables[computedTempVariableOffset];
         computedTempVariableOffset++;
         propertyNames.push(new qc.ConditionalExpression(createTypeCheck(temp, 'symbol'), temp, createAdd(temp, qc.asLiteral(''))));

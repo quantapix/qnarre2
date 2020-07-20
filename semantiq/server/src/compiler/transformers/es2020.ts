@@ -36,7 +36,7 @@ export function transformES2020(context: TransformationContext) {
   function flattenChain(chain: OptionalChain) {
     Debug.assertNotNode(chain, isNonNullChain);
     const links: OptionalChain[] = [chain];
-    while (!chain.questionDotToken && !qc.is.kind(TaggedTemplateExpression, chain)) {
+    while (!chain.questionDotToken && !qc.is.kind(qc.TaggedTemplateExpression, chain)) {
       chain = cast(skipPartiallyEmittedExpressions(chain.expression), isOptionalChain);
       Debug.assertNotNode(chain, isNonNullChain);
       links.unshift(chain);
@@ -45,7 +45,7 @@ export function transformES2020(context: TransformationContext) {
   }
   function visitNonOptionalParenthesizedExpression(node: ParenthesizedExpression, captureThisArg: boolean, isDelete: boolean): Expression {
     const expression = visitNonOptionalExpression(node.expression, captureThisArg, isDelete);
-    if (qc.is.kind(SyntheticReferenceExpression, expression)) {
+    if (qc.is.kind(qc.SyntheticReferenceExpression, expression)) {
       // `(a.b)` -> { expression `((_a = a).b)`, thisArg: `_a` }
       // `(a[b])` -> { expression `((_a = a)[b])`, thisArg: `_a` }
       return new qs.SyntheticReferenceExpression(node.update(expression.expression), expression.thisArg);
@@ -95,8 +95,8 @@ export function transformES2020(context: TransformationContext) {
   function visitOptionalExpression(node: OptionalChain, captureThisArg: boolean, isDelete: boolean): Expression {
     const { expression, chain } = flattenChain(node);
     const left = visitNonOptionalExpression(expression, qc.is.callChain(chain[0]), false);
-    const leftThisArg = qc.is.kind(SyntheticReferenceExpression, left) ? left.thisArg : undefined;
-    let leftExpression = qc.is.kind(SyntheticReferenceExpression, left) ? left.expression : left;
+    const leftThisArg = qc.is.kind(qc.SyntheticReferenceExpression, left) ? left.thisArg : undefined;
+    let leftExpression = qc.is.kind(qc.SyntheticReferenceExpression, left) ? left.expression : left;
     let capturedLeft: Expression = leftExpression;
     if (shouldCaptureInTempVariable(leftExpression)) {
       capturedLeft = createTempVariable(hoistVariableDeclaration);
@@ -161,7 +161,7 @@ export function transformES2020(context: TransformationContext) {
     return new qc.ConditionalExpression(createNotNullCondition(left, right), right, visitNode(node.right, visitor, isExpression));
   }
   function shouldCaptureInTempVariable(expression: Expression): boolean {
-    return !qc.is.kind(Identifier, expression) && expression.kind !== Syntax.ThisKeyword && expression.kind !== Syntax.SuperKeyword;
+    return !qc.is.kind(qc.Identifier, expression) && expression.kind !== Syntax.ThisKeyword && expression.kind !== Syntax.SuperKeyword;
   }
   function visitDeleteExpression(n: DeleteExpression) {
     return qc.is.optionalChain(skipParentheses(n.expression)) ? visitNonOptionalExpression(n.expression, false, true).setOriginalNode(n) : n.update(visitNode(n.expression, visitor, isExpression));

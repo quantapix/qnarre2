@@ -39,18 +39,18 @@ export function transformES5(context: TransformationContext) {
   function onSubstituteNode(hint: EmitHint, node: Node) {
     if (node.id && noSubstitution && noSubstitution[node.id]) return previousOnSubstituteNode(hint, node);
     node = previousOnSubstituteNode(hint, node);
-    if (qc.is.kind(PropertyAccessExpression, node)) return substitutePropertyAccessExpression(node);
-    if (qc.is.kind(PropertyAssignment, node)) return substitutePropertyAssignment(node);
+    if (qc.is.kind(qc.PropertyAccessExpression, node)) return substitutePropertyAccessExpression(node);
+    if (qc.is.kind(qc.PropertyAssignment, node)) return substitutePropertyAssignment(node);
     return node;
   }
   function substitutePropertyAccessExpression(node: PropertyAccessExpression): Expression {
-    if (qc.is.kind(PrivateIdentifier, node.name)) return node;
+    if (qc.is.kind(qc.PrivateIdentifier, node.name)) return node;
     const literalName = trySubstituteReservedName(node.name);
     if (literalName) return setRange(new qs.ElementAccessExpression(node.expression, literalName), node);
     return node;
   }
   function substitutePropertyAssignment(node: PropertyAssignment): PropertyAssignment {
-    const literalName = qc.is.kind(Identifier, node.name) && trySubstituteReservedName(node.name);
+    const literalName = qc.is.kind(qc.Identifier, node.name) && trySubstituteReservedName(node.name);
     if (literalName) return node.update(literalName, node.initer);
     return node;
   }
