@@ -7,6 +7,58 @@ import * as qt from './types';
 import { Modifier, ModifierFlags, Syntax } from './syntax';
 import * as qy from './syntax';
 export * from './types';
+export interface ReadonlyNodeSet<TNode extends Node> {
+  has(node: TNode): boolean;
+  forEach(cb: (node: TNode) => void): void;
+  some(pred: (node: TNode) => boolean): boolean;
+}
+export class NodeSet<TNode extends Node> implements ReadonlyNodeSet<TNode> {
+  private map = new qb.QMap<TNode>();
+  add(node: TNode): void {
+    this.map.set(String(getNodeId(node)), node);
+  }
+  tryAdd(node: TNode): boolean {
+    if (this.has(node)) return false;
+    this.add(node);
+    return true;
+  }
+  has(node: TNode): boolean {
+    return this.map.has(String(getNodeId(node)));
+  }
+  forEach(cb: (node: TNode) => void): void {
+    this.map.forEach(cb);
+  }
+  some(pred: (node: TNode) => boolean): boolean {
+    return qu.forEachEntry(this.map, pred) || false;
+  }
+}
+export interface ReadonlyNodeMap<TNode extends Node, TValue> {
+  get(node: TNode): TValue | undefined;
+  has(node: TNode): boolean;
+}
+export class NodeMap<TNode extends Node, TValue> implements ReadonlyNodeMap<TNode, TValue> {
+  private map = new qb.QMap<{ node: TNode; value: TValue }>();
+  get(node: TNode): TValue | undefined {
+    const res = this.map.get(String(getNodeId(node)));
+    return res && res.value;
+  }
+  getOrUpdate(node: TNode, setValue: () => TValue): TValue {
+    const res = this.get(node);
+    if (res) return res;
+    const value = setValue();
+    this.set(node, value);
+    return value;
+  }
+  set(node: TNode, value: TValue): void {
+    this.map.set(String(getNodeId(node)), { node, value });
+  }
+  has(node: TNode): boolean {
+    return this.map.has(String(getNodeId(node)));
+  }
+  forEach(cb: (value: TValue, node: TNode) => void): void {
+    this.map.forEach(({ node, value }) => cb(value, node));
+  }
+}
 export class Nodes<T extends qt.Nobj = qt.Nobj> extends Array<T> implements qt.Nodes<T> {
   pos = -1;
   end = -1;
@@ -184,6 +236,9 @@ export abstract class Nobj extends qb.TextRange implements qt.Nobj {
     if (!c) return;
     return c.kind < Syntax.FirstNode ? c : c.getLastToken(s);
   }
+  indexOfNode(ns: readonly Node[]) {
+    return qb.binarySearch(ns, this, (n) => n.pos, qb.compareNumbers);
+  }
   visit<T>(cb: (n?: Node) => T | undefined): T | undefined {
     return cb(this);
   }
@@ -290,6 +345,13 @@ export abstract class TypeElement extends NamedDeclaration implements qt.TypeEle
   questionToken?: qt.QuestionToken;
   _typeElementBrand: any;
 }
+export const enum FunctionFlags {
+  Normal = 0,
+  Generator = 1 << 0,
+  Async = 1 << 1,
+  Invalid = 1 << 2,
+  AsyncGenerator = Async | Generator,
+}
 export abstract class SignatureDeclarationBase extends NamedDeclaration implements qt.SignatureDeclarationBase {
   name?: qt.PropertyName;
   typeParameters?: Nodes<qt.TypeParameterDeclaration>;
@@ -303,6 +365,28 @@ export abstract class SignatureDeclarationBase extends NamedDeclaration implemen
     this.type = t;
     this.typeArguments = Nodes.from(ta);
   }
+  getFunctionFlags(node: SignatureDeclaration | undefined) {
+    if (!node) return FunctionFlags.Invalid;
+    let flags = FunctionFlags.Normal;
+    switch (node.kind) {
+      case Syntax.FunctionDeclaration:
+      case Syntax.FunctionExpression:
+      case Syntax.MethodDeclaration:
+        if (node.asteriskToken) {
+          flags |= FunctionFlags.Generator;
+        }
+      case Syntax.ArrowFunction:
+        if (qc.has.syntacticModifier(node, ModifierFlags.Async)) {
+          flags |= FunctionFlags.Async;
+        }
+        break;
+    }
+    if (!(node as FunctionLikeDeclaration).body) {
+      flags |= FunctionFlags.Invalid;
+    }
+    return flags;
+  }
+
   /*
   update<T extends qt.SignatureDeclaration>(n: T, ts: Nodes<TypeParameterDeclaration> | undefined, ps: Nodes<ParameterDeclaration>, t?: qc.TypeNode): T {
     return this.typeParameters !== ts || this.parameters !== ps || this.type !== t ? (new create(this.kind, ts, ps, t) as T).updateFrom(this) : this;
@@ -361,6 +445,36 @@ export class Token<T extends Syntax> extends TokenOrIdentifier implements qt.Tok
 }
 export abstract class Statement extends Nobj implements qt.Statement {
   _statementBrand: any;
+  static insertStatementsAfterPrologue<T extends Statement>(to: T[], from: readonly T[] | undefined, isPrologueDirective: (node: Node) => boolean): T[] {
+    if (from === undefined || from.length === 0) return to;
+    let statementIndex = 0;
+    for (; statementIndex < to.length; ++statementIndex) {
+      if (!qc.is.prologueDirective(to[statementIndex])) break;
+    }
+    to.splice(statementIndex, 0, ...from);
+    return to;
+  }
+  static insertStatementAfterPrologue<T extends Statement>(to: T[], statement: T | undefined, isPrologueDirective: (node: Node) => boolean): T[] {
+    if (statement === undefined) return to;
+    let statementIndex = 0;
+    for (; statementIndex < to.length; ++statementIndex) {
+      if (!qc.is.prologueDirective(to[statementIndex])) break;
+    }
+    to.splice(statementIndex, 0, statement);
+    return to;
+  }
+  static insertStatementsAfterStandardPrologue<T extends Statement>(to: T[], from: readonly T[] | undefined): T[] {
+    return this.insertStatementsAfterPrologue(to, from, isPrologueDirective);
+  }
+  static insertStatementsAfterCustomPrologue<T extends Statement>(to: T[], from: readonly T[] | undefined): T[] {
+    return this.insertStatementsAfterPrologue(to, from, isAnyPrologueDirective);
+  }
+  static insertStatementAfterStandardPrologue<T extends Statement>(to: T[], statement: T | undefined): T[] {
+    return this.insertStatementAfterPrologue(to, statement, isPrologueDirective);
+  }
+  static insertStatementAfterCustomPrologue<T extends Statement>(to: T[], statement: T | undefined): T[] {
+    return this.insertStatementAfterPrologue(to, statement, isAnyPrologueDirective);
+  }
 }
 export abstract class IterationStatement extends Statement implements qt.IterationStatement {
   statement!: Statement;
@@ -436,7 +550,7 @@ export abstract class Symbol implements qt.Symbol {
   constructor(public flags: SymbolFlags, public escName: qb.__String) {}
   get name() {
     const n = this.valueDeclaration;
-    if (is.qc.is.privateIdentifierPropertyDeclaration(n)) return idText(n.name);
+    if (is.is.privateIdentifierPropertyDeclaration(n)) return idText(n.name);
     return qy.get.unescUnderscores(this.escName);
   }
   abstract getId(): number;
@@ -598,8 +712,8 @@ export class SymbolTable<S extends qt.Symbol = Symbol> extends Map<qb.__String, 
     });
   }
   combine(ss?: SymbolTable<S>): SymbolTable<S> | undefined {
-    if (!hasEntries(this)) return ss;
-    if (!hasEntries(ss)) return this;
+    if (!qb.hasEntries(this)) return ss;
+    if (!qb.hasEntries(ss)) return this;
     const t = new SymbolTable<S>();
     t.merge(this);
     t.merge(ss!);
@@ -771,14 +885,14 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
   nodeCount: number;
   identifierCount: number;
   symbolCount: number;
-  parseDiagnostics: DiagnosticWithLocation[];
-  bindDiagnostics: DiagnosticWithLocation[];
-  bindSuggestionDiagnostics?: DiagnosticWithLocation[];
-  docDiagnostics?: DiagnosticWithLocation[];
-  additionalSyntacticDiagnostics?: readonly DiagnosticWithLocation[];
+  parseDiagnostics: qd.DiagnosticWithLocation[];
+  bindDiagnostics: qd.DiagnosticWithLocation[];
+  bindSuggestionDiagnostics?: qd.DiagnosticWithLocation[];
+  docDiagnostics?: qd.DiagnosticWithLocation[];
+  additionalSyntacticDiagnostics?: readonly qd.DiagnosticWithLocation[];
   lineMap: readonly number[];
   classifiableNames?: qb.ReadonlyEscapedMap<true>;
-  commentDirectives?: CommentDirective[];
+  commentDirectives?: qt.CommentDirective[];
   resolvedModules?: qb.QMap<ResolvedModuleFull | undefined>;
   resolvedTypeReferenceDirectiveNames: qb.QMap<ResolvedTypeReferenceDirective | undefined>;
   imports: readonly StringLiteralLike[];
@@ -807,10 +921,10 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
   referencedFiles!: FileReference[];
   typeReferenceDirectives!: FileReference[];
   libReferenceDirectives!: FileReference[];
-  syntacticDiagnostics!: DiagnosticWithLocation[];
-  parseDiagnostics!: DiagnosticWithLocation[];
-  bindDiagnostics!: DiagnosticWithLocation[];
-  bindSuggestionDiagnostics?: DiagnosticWithLocation[];
+  syntacticDiagnostics!: qd.DiagnosticWithLocation[];
+  parseDiagnostics!: qd.DiagnosticWithLocation[];
+  bindDiagnostics!: qd.DiagnosticWithLocation[];
+  bindSuggestionDiagnostics?: qd.DiagnosticWithLocation[];
   isDeclarationFile!: boolean;
   isDefaultLib!: boolean;
   hasNoDefaultLib!: boolean;
@@ -843,10 +957,10 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
   redirectInfo?: RedirectInfo | undefined;
   renamedDependencies?: qb.QReadonlyMap<string> | undefined;
   jsGlobalAugmentations?: SymbolTable<Symbol> | undefined;
-  docDiagnostics?: DiagnosticWithLocation[] | undefined;
-  additionalSyntacticDiagnostics?: readonly DiagnosticWithLocation[] | undefined;
+  docDiagnostics?: qd.DiagnosticWithLocation[] | undefined;
+  additionalSyntacticDiagnostics?: readonly qd.DiagnosticWithLocation[] | undefined;
   classifiableNames?: qb.ReadonlyEscapedMap<true> | undefined;
-  commentDirectives?: CommentDirective[] | undefined;
+  commentDirectives?: qt.CommentDirective[] | undefined;
   patternAmbientModules?: PatternAmbientModule[] | undefined;
   exportedModulesFromDeclarationEmit?: ExportedModulesFromDeclarationEmit | undefined;
   id: number;
@@ -910,6 +1024,40 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
   getLastToken(s?: qy.SourceFileLike | undefined): Nobj | undefined {
     throw new Error('Method not implemented.');
   }
+  getLeadingCommentRangesOfNode(n: Node) {
+    return n.kind !== Syntax.JsxText ? qy.get.leadingCommentRanges(this.text, n.pos) : undefined;
+  }
+  isStringDoubleQuoted(s: qt.StringLiteralLike) {
+    return this.getSourceTextOfNodeFromSourceFile(s).charCodeAt(0) === qy.Codes.doubleQuote;
+  }
+  getResolvedExternalModuleName(host: ResolveModuleNameResolutionHost, file: SourceFile, referenceFile?: SourceFile): string {
+    return file.moduleName || getExternalModuleNameFromPath(host, file.fileName, referenceFile && referenceFile.fileName);
+  }
+  getSourceFilesToEmit(host: EmitHost, targetSourceFile?: SourceFile, forceDtsEmit?: boolean): readonly SourceFile[] {
+    const options = host.getCompilerOptions();
+    if (options.outFile || options.out) {
+      const moduleKind = getEmitModuleKind(options);
+      const moduleEmitEnabled = options.emitDeclarationOnly || moduleKind === ModuleKind.AMD || moduleKind === ModuleKind.System;
+      return qb.filter(host.getSourceFiles(), (sourceFile) => (moduleEmitEnabled || !qc.is.externalModule(sourceFile)) && sourceFileMayBeEmitted(sourceFile, host, forceDtsEmit));
+    } else {
+      const sourceFiles = targetSourceFile === undefined ? host.getSourceFiles() : [targetSourceFile];
+      return qb.filter(sourceFiles, (sourceFile) => sourceFileMayBeEmitted(sourceFile, host, forceDtsEmit));
+    }
+  }
+  sourceFileMayBeEmitted(sourceFile: SourceFile, host: SourceFileMayBeEmittedHost, forceDtsEmit?: boolean) {
+    const options = host.getCompilerOptions();
+    return (
+      !(options.noEmitForJsFiles && isSourceFileJS(sourceFile)) &&
+      !sourceFile.isDeclarationFile &&
+      !host.isSourceFileFromExternalLibrary(sourceFile) &&
+      !(qc.is.jsonSourceFile(sourceFile) && host.getResolvedProjectReferenceToRedirect(sourceFile.fileName)) &&
+      (forceDtsEmit || !host.isSourceOfProjectReferenceRedirect(sourceFile.fileName))
+    );
+  }
+  getLineOfLocalPosition(sourceFile: SourceFile, pos: number) {
+    const s = qy.get.lineStarts(sourceFile);
+    return Scanner.lineOf(s, pos);
+  }
   visit<T>(cb: (n: Nobj) => T | undefined): T | undefined {
     throw new Error('Method not implemented.');
   }
@@ -967,6 +1115,200 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
       this.namedDeclarations = this.computeNamedDeclarations();
     }
     return this.namedDeclarations;
+  }
+  getResolvedModule(sourceFile: SourceFile | undefined, moduleNameText: string): ResolvedModuleFull | undefined {
+    return sourceFile && sourceFile.resolvedModules && sourceFile.resolvedModules.get(moduleNameText);
+  }
+  setResolvedModule(sourceFile: SourceFile, moduleNameText: string, resolvedModule: ResolvedModuleFull): void {
+    if (!sourceFile.resolvedModules) {
+      sourceFile.resolvedModules = new qb.QMap<ResolvedModuleFull>();
+    }
+    sourceFile.resolvedModules.set(moduleNameText, resolvedModule);
+  }
+  setResolvedTypeReferenceDirective(sourceFile: SourceFile, typeReferenceDirectiveName: string, resolvedTypeReferenceDirective?: ResolvedTypeReferenceDirective): void {
+    if (!sourceFile.resolvedTypeReferenceDirectiveNames) {
+      sourceFile.resolvedTypeReferenceDirectiveNames = new qb.QMap<ResolvedTypeReferenceDirective | undefined>();
+    }
+    sourceFile.resolvedTypeReferenceDirectiveNames.set(typeReferenceDirectiveName, resolvedTypeReferenceDirective);
+  }
+  isFileLevelUniqueName(sourceFile: SourceFile, name: string, hasGlobalName?: PrintHandlers['hasGlobalName']): boolean {
+    return !(hasGlobalName && hasGlobalName(name)) && !sourceFile.identifiers.has(name);
+  }
+  getSourceTextOfNodeFromSourceFile(sourceFile: SourceFile, node: Node, includeTrivia = false): string {
+    return getTextOfNodeFromSourceText(sourceFile.text, node, includeTrivia);
+  }
+  isEffectiveExternalModule(node: SourceFile, compilerOptions: qt.CompilerOptions) {
+    return is.externalModule(node) || compilerOptions.isolatedModules || (getEmitModuleKind(compilerOptions) === ModuleKind.CommonJS && !!node.commonJsModuleIndicator);
+  }
+  isEffectiveStrictModeSourceFile(node: SourceFile, compilerOptions: qt.CompilerOptions) {
+    switch (node.scriptKind) {
+      case ScriptKind.JS:
+      case ScriptKind.TS:
+      case ScriptKind.JSX:
+      case ScriptKind.TSX:
+        break;
+      default:
+        return false;
+    }
+    if (node.isDeclarationFile) return false;
+    if (getStrictOptionValue(compilerOptions, 'alwaysStrict')) return true;
+    if (startsWithUseStrict(node.statements)) return true;
+    if (is.externalModule(node) || compilerOptions.isolatedModules) {
+      if (getEmitModuleKind(compilerOptions) >= ModuleKind.ES2015) return true;
+      return !compilerOptions.noImplicitUseStrict;
+    }
+    return false;
+  }
+  createDiagnosticForNodes(
+    sourceFile: SourceFile,
+    nodes: Nodes<Node>,
+    message: qd.Message,
+    arg0?: string | number,
+    arg1?: string | number,
+    arg2?: string | number,
+    arg3?: string | number
+  ): qd.DiagnosticWithLocation {
+    const start = qy.skipTrivia(sourceFile.text, nodes.pos);
+    return createFileDiagnostic(sourceFile, start, nodes.end - start, message, arg0, arg1, arg2, arg3);
+  }
+  createDiagnosticForNodeInSourceFile(
+    sourceFile: SourceFile,
+    node: Node,
+    message: qd.Message,
+    arg0?: string | number,
+    arg1?: string | number,
+    arg2?: string | number,
+    arg3?: string | number
+  ): qd.DiagnosticWithLocation {
+    const span = getErrorSpanForNode(sourceFile, node);
+    return createFileDiagnostic(sourceFile, span.start, span.length, message, arg0, arg1, arg2, arg3);
+  }
+  createDiagnosticForRange(sourceFile: SourceFile, range: qb.TextRange, message: qd.Message): qd.DiagnosticWithLocation {
+    return {
+      file: sourceFile,
+      start: range.pos,
+      length: range.end - range.pos,
+      code: message.code,
+      category: message.category,
+      messageText: message.message,
+    };
+  }
+  getSpanOfTokenAtPosition(s: SourceFile, pos: number): qb.TextSpan {
+    const scanner = qs_create(true, s.languageVariant);
+    scanner.setText(s.text, pos);
+    scanner.scan();
+    const start = scanner.getTokenPos();
+    return qb.TextSpan.from(start, scanner.getTextPos());
+  }
+  getErrorSpanForArrowFunction(sourceFile: SourceFile, node: ArrowFunction): qb.TextSpan {
+    const pos = qy.skipTrivia(sourceFile.text, node.pos);
+    if (node.body && node.body.kind === Syntax.Block) {
+      const { line: startLine } = sourceFile.lineAndCharOf(node.body.pos);
+      const { line: endLine } = sourceFile.lineAndCharOf(node.body.end);
+      if (startLine < endLine) return new qb.TextSpan(pos, getEndLinePosition(startLine, sourceFile) - pos + 1);
+    }
+    return qb.TextSpan.from(pos, node.end);
+  }
+  getErrorSpanForNode(sourceFile: SourceFile, node: Node): qb.TextSpan {
+    let errorNode: Node | undefined = node;
+    switch (node.kind) {
+      case Syntax.SourceFile:
+        const pos = qy.skipTrivia(sourceFile.text, 0, false);
+        if (pos === sourceFile.text.length) return new qb.TextSpan();
+        return getSpanOfTokenAtPosition(sourceFile, pos);
+      case Syntax.VariableDeclaration:
+      case Syntax.BindingElement:
+      case Syntax.ClassDeclaration:
+      case Syntax.ClassExpression:
+      case Syntax.InterfaceDeclaration:
+      case Syntax.ModuleDeclaration:
+      case Syntax.EnumDeclaration:
+      case Syntax.EnumMember:
+      case Syntax.FunctionDeclaration:
+      case Syntax.FunctionExpression:
+      case Syntax.MethodDeclaration:
+      case Syntax.GetAccessor:
+      case Syntax.SetAccessor:
+      case Syntax.TypeAliasDeclaration:
+      case Syntax.PropertyDeclaration:
+      case Syntax.PropertySignature:
+        errorNode = (<NamedDeclaration>node).name;
+        break;
+      case Syntax.ArrowFunction:
+        return getErrorSpanForArrowFunction(sourceFile, <ArrowFunction>node);
+      case Syntax.CaseClause:
+      case Syntax.DefaultClause:
+        const start = qy.skipTrivia(sourceFile.text, (<CaseOrDefaultClause>node).pos);
+        const end = (<CaseOrDefaultClause>node).statements.length > 0 ? (<CaseOrDefaultClause>node).statements[0].pos : (<CaseOrDefaultClause>node).end;
+        return qb.TextSpan.from(start, end);
+    }
+    if (errorNode === undefined) return getSpanOfTokenAtPosition(sourceFile, node.pos);
+    qb.assert(!is.kind(qc.Doc, errorNode));
+    const isMissing = is.missing(errorNode);
+    const pos = isMissing || is.kind(qc.JsxText, node) ? errorNode.pos : qy.skipTrivia(sourceFile.text, errorNode.pos);
+    if (isMissing) {
+      qb.assert(pos === errorNode.pos);
+      qb.assert(pos === errorNode.end);
+    } else {
+      qb.assert(pos >= errorNode.pos);
+      qb.assert(pos <= errorNode.end);
+    }
+    return qb.TextSpan.from(pos, errorNode.end);
+  }
+  isSourceFileJS(file: SourceFile) {
+    return is.inJSFile(file);
+  }
+  isSourceFileNotJS(file: SourceFile) {
+    return !is.inJSFile(file);
+  }
+  isSourceFileNotJson(file: SourceFile) {
+    return !is.jsonSourceFile(file);
+  }
+  getOriginalSourceFile(sourceFile: SourceFile) {
+    return qc.get.parseTreeOf(sourceFile, isSourceFile) || sourceFile;
+  }
+  createFileDiagnostic(file: SourceFile, start: number, length: number, message: qd.Message, ...args: (string | number | undefined)[]): qd.DiagnosticWithLocation;
+  createFileDiagnostic(file: SourceFile, start: number, length: number, message: qd.Message): qd.DiagnosticWithLocation {
+    Debug.assertGreaterThanOrEqual(start, 0);
+    Debug.assertGreaterThanOrEqual(length, 0);
+    if (file) {
+      Debug.assertLessThanOrEqual(start, file.text.length);
+      Debug.assertLessThanOrEqual(start + length, file.text.length);
+    }
+    let text = getLocaleSpecificMessage(message);
+    if (arguments.length > 4) {
+      text = formatStringFromArgs(text, arguments, 4);
+    }
+    return {
+      file,
+      start,
+      length,
+      messageText: text,
+      category: message.category,
+      code: message.code,
+      reportsUnnecessary: message.reportsUnnecessary,
+    };
+  }
+  createCommentDirectivesMap(sourceFile: SourceFile, commentDirectives: qt.CommentDirective[]): qt.CommentDirectivesMap {
+    const directivesByLine = new qb.QMap(commentDirectives.map((commentDirective) => [`${qy.get.lineAndCharOf(sourceFile, commentDirective.range.end).line}`, commentDirective]));
+    const usedLines = new qb.QMap<boolean>();
+    return { getUnusedExpectations, markUsed };
+    function getUnusedExpectations() {
+      return arrayFrom(directivesByLine.entries())
+        .filter(([line, directive]) => directive.type === qt.CommentDirectiveType.ExpectError && !usedLines.get(line))
+        .map(([_, directive]) => directive);
+    }
+    function markUsed(line: number) {
+      if (!directivesByLine.has(`${line}`)) return false;
+      usedLines.set(`${line}`, true);
+      return true;
+    }
+  }
+  isCheckJsEnabledForFile(sourceFile: SourceFile, compilerOptions: qt.CompilerOptions) {
+    return sourceFile.checkJsDirective ? sourceFile.checkJsDirective.enabled : compilerOptions.checkJs;
+  }
+  skipTypeChecking(sourceFile: SourceFile, options: qt.CompilerOptions, host: HostWithIsSourceOfProjectReferenceRedirect) {
+    return (options.skipLibCheck && sourceFile.isDeclarationFile) || (options.skipDefaultLibCheck && sourceFile.hasNoDefaultLib) || host.isSourceOfProjectReferenceRedirect(sourceFile.fileName);
   }
   qp_updateSourceNode(
     node: SourceFile,
@@ -1026,7 +1368,7 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
     return node;
   }
   private computeNamedDeclarations(): qb.QMap<Declaration[]> {
-    const r = new MultiMap<Declaration>();
+    const r = new qb.MultiMap<Declaration>();
     this.qc.forEach.child(visit);
     return r;
     function addDeclaration(declaration: Declaration) {
@@ -1117,6 +1459,28 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
           qc.forEach.child(node, visit);
       }
     }
+  }
+  static discoverProbableSymlinks(files: readonly SourceFile[], getCanonicalFileName: GetCanonicalFileName, cwd: string): QReadonlyMap<string> {
+    const result = new QMap<string>();
+    const symlinks = flatten<readonly [string, string]>(
+      mapDefined(
+        files,
+        (sf) =>
+          sf.resolvedModules &&
+          compact(
+            arrayFrom(
+              mapIterator(sf.resolvedModules.values(), (res) =>
+                res && res.originalPath && res.resolvedFileName !== res.originalPath ? ([res.resolvedFileName, res.originalPath] as const) : undefined
+              )
+            )
+          )
+      )
+    );
+    for (const [resolvedPath, originalPath] of symlinks) {
+      const [commonResolved, commonOriginal] = guessDirectorySymlink(resolvedPath, originalPath, cwd, getCanonicalFileName);
+      result.set(commonOriginal, commonResolved);
+    }
+    return result;
   }
 }
 export class SourceMapSource implements qt.SourceMapSource {
@@ -1304,6 +1668,9 @@ function getDocComment(ds?: readonly Declaration[], tc?: qt.TypeChecker): qt.Sym
     });
   }
   return c;
+}
+export function getLineOfLocalPositionFromLineMap(lineMap: readonly number[], pos: number) {
+  return Scanner.lineOf(lineMap, pos);
 }
 qb.addMixins(ClassLikeDeclarationBase, [DocContainer]);
 qb.addMixins(FunctionOrConstructorTypeNodeBase, [TypeNode]);

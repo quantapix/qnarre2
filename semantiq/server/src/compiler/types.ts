@@ -482,30 +482,6 @@ export interface DoStatement extends IterationStatement {
   expression: Expression;
 }
 export type DestructuringPattern = BindingPattern | ObjectLiteralExpression | ArrayLiteralExpression;
-export interface Diagnostic extends DiagnosticRelatedInformation {
-  reportsUnnecessary?: {};
-  source?: string;
-  relatedInformation?: DiagnosticRelatedInformation[];
-}
-export interface DiagnosticMessageChain {
-  messageText: string;
-  category: qd.Category;
-  code: number;
-  next?: DiagnosticMessageChain[];
-}
-export interface DiagnosticRelatedInformation {
-  category: qd.Category;
-  code: number;
-  file: SourceFile | undefined;
-  start: number | undefined;
-  length: number | undefined;
-  messageText: string | DiagnosticMessageChain;
-}
-export interface DiagnosticWithLocation extends Diagnostic {
-  file: SourceFile;
-  start: number;
-  length: number;
-}
 export interface DynamicNamedBinaryExpression extends BinaryExpression {
   left: ElementAccessExpression;
 }
@@ -1883,11 +1859,11 @@ export interface SourceFile extends Declaration {
   nodeCount: number;
   identifierCount: number;
   symbolCount: number;
-  parseDiagnostics: DiagnosticWithLocation[];
-  bindDiagnostics: DiagnosticWithLocation[];
-  bindSuggestionDiagnostics?: DiagnosticWithLocation[];
-  docDiagnostics?: DiagnosticWithLocation[];
-  additionalSyntacticDiagnostics?: readonly DiagnosticWithLocation[];
+  parseDiagnostics: qd.DiagnosticWithLocation[];
+  bindDiagnostics: qd.DiagnosticWithLocation[];
+  bindSuggestionDiagnostics?: qd.DiagnosticWithLocation[];
+  docDiagnostics?: qd.DiagnosticWithLocation[];
+  additionalSyntacticDiagnostics?: readonly qd.DiagnosticWithLocation[];
   lineMap: readonly number[];
   classifiableNames?: qb.ReadonlyEscapedMap<true>;
   commentDirectives?: CommentDirective[];
@@ -2843,8 +2819,8 @@ export interface TypeChecker {
   isSymbolAccessible(symbol: Symbol, enclosingDeclaration: Node | undefined, meaning: SymbolFlags, shouldComputeAliasToMarkVisible: boolean): SymbolAccessibilityResult;
   tryFindAmbientModuleWithoutAugmentations(moduleName: string): Symbol | undefined;
   getSymbolWalker(accept?: (symbol: Symbol) => boolean): SymbolWalker;
-  getDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): Diagnostic[];
-  getGlobalDiagnostics(): Diagnostic[];
+  getDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): qd.Diagnostic[];
+  getGlobalDiagnostics(): qd.Diagnostic[];
   getEmitResolver(sourceFile?: SourceFile, cancellationToken?: CancellationToken): EmitResolver;
   getNodeCount(): number;
   getIdentifierCount(): number;
@@ -2865,7 +2841,7 @@ export interface TypeChecker {
   resolveExternalModuleSymbol(symbol: Symbol): Symbol;
   tryGetThisTypeAt(node: Node, includeGlobalThis?: boolean): Type | undefined;
   getTypeArgumentConstraint(node: TypeNode): Type | undefined;
-  getSuggestionDiagnostics(file: SourceFile, cancellationToken?: CancellationToken): readonly DiagnosticWithLocation[];
+  getSuggestionDiagnostics(file: SourceFile, cancellationToken?: CancellationToken): readonly qd.DiagnosticWithLocation[];
   runWithCancellationToken<T>(token: CancellationToken, cb: (checker: TypeChecker) => T): T;
   getLocalTypeParametersOfClassOrInterfaceOrTypeAlias(symbol: Symbol): readonly TypeParameter[] | undefined;
   isDeclarationVisible(node: Declaration | AnyImportSyntax): boolean;
@@ -2949,15 +2925,15 @@ export interface Program extends ScriptReferenceHost {
     customTransformers?: CustomTransformers,
     forceDtsEmit?: boolean
   ): EmitResult;
-  getOptionsDiagnostics(cancellationToken?: CancellationToken): readonly Diagnostic[];
-  getGlobalDiagnostics(cancellationToken?: CancellationToken): readonly Diagnostic[];
-  getSyntacticDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly DiagnosticWithLocation[];
-  getSemanticDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
-  getDeclarationDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly DiagnosticWithLocation[];
-  getConfigFileParsingDiagnostics(): readonly Diagnostic[];
-  getSuggestionDiagnostics(sourceFile: SourceFile, cancellationToken?: CancellationToken): readonly DiagnosticWithLocation[];
-  getBindAndCheckDiagnostics(sourceFile: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
-  getProgramDiagnostics(sourceFile: SourceFile, cancellationToken?: CancellationToken): readonly Diagnostic[];
+  getOptionsDiagnostics(cancellationToken?: CancellationToken): readonly qd.Diagnostic[];
+  getGlobalDiagnostics(cancellationToken?: CancellationToken): readonly qd.Diagnostic[];
+  getSyntacticDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly qd.DiagnosticWithLocation[];
+  getSemanticDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly qd.Diagnostic[];
+  getDeclarationDiagnostics(sourceFile?: SourceFile, cancellationToken?: CancellationToken): readonly qd.DiagnosticWithLocation[];
+  getConfigFileParsingDiagnostics(): readonly qd.Diagnostic[];
+  getSuggestionDiagnostics(sourceFile: SourceFile, cancellationToken?: CancellationToken): readonly qd.DiagnosticWithLocation[];
+  getBindAndCheckDiagnostics(sourceFile: SourceFile, cancellationToken?: CancellationToken): readonly qd.Diagnostic[];
+  getProgramDiagnostics(sourceFile: SourceFile, cancellationToken?: CancellationToken): readonly qd.Diagnostic[];
   getTypeChecker(): TypeChecker;
   getCommonSourceDirectory(): string;
   getDiagnosticsProducingTypeChecker(): TypeChecker;
@@ -2969,7 +2945,7 @@ export interface Program extends ScriptReferenceHost {
   getTypeCount(): number;
   getInstantiationCount(): number;
   getRelationCacheSizes(): { assignable: number; identity: number; subtype: number; strictSubtype: number };
-  getFileProcessingDiagnostics(): DiagnosticCollection;
+  getFileProcessingDiagnostics(): qd.DiagnosticCollection;
   getResolvedTypeReferenceDirectives(): qb.QMap<ResolvedTypeReferenceDirective | undefined>;
   isSourceFileFromExternalLibrary(file: SourceFile): boolean;
   isSourceFileDefaultLibrary(file: SourceFile): boolean;
@@ -3043,7 +3019,7 @@ export enum ExitStatus {
 }
 export interface EmitResult {
   emitSkipped: boolean;
-  diagnostics: readonly Diagnostic[];
+  diagnostics: readonly qd.Diagnostic[];
   emittedFiles?: string[];
   sourceMaps?: SourceMapEmitResult[];
   exportedModulesFromDeclarationEmit?: ExportedModulesFromDeclarationEmit;
@@ -3472,7 +3448,7 @@ export interface ParsedCommandLine {
   projectReferences?: readonly ProjectReference[];
   watchOptions?: WatchOptions;
   raw?: any;
-  errors: Diagnostic[];
+  errors: qd.Diagnostic[];
   wildcardDirectories?: qb.MapLike<WatchDirectoryFlags>;
   compileOnSave?: boolean;
   configFileSpecs?: ConfigFileSpecs;
@@ -3501,7 +3477,7 @@ export interface CreateProgramOptions {
   projectReferences?: readonly ProjectReference[];
   host?: CompilerHost;
   oldProgram?: Program;
-  configFileParsingDiagnostics?: readonly Diagnostic[];
+  configFileParsingDiagnostics?: readonly qd.Diagnostic[];
 }
 export interface CommandLineOptionBase {
   name: string;
@@ -3557,7 +3533,7 @@ export interface CompilerHost extends ModuleResolutionHost {
   getSourceFile(fileName: string, languageVersion: ScriptTarget, onError?: (message: string) => void, shouldCreateNewSourceFile?: boolean): SourceFile | undefined;
   getSourceFileByPath?(fileName: string, path: Path, languageVersion: ScriptTarget, onError?: (message: string) => void, shouldCreateNewSourceFile?: boolean): SourceFile | undefined;
   getCancellationToken?(): CancellationToken;
-  qc.get.defaultLibFileName(options: CompilerOptions): string;
+  getDefaultLibFileName(options: CompilerOptions): string;
   getDefaultLibLocation?(): string;
   writeFile: WriteFileCallback;
   getCurrentDirectory(): string;
@@ -3745,14 +3721,6 @@ export interface SymbolTracker {
   trackExternalModuleSymbolOfImportTypeNode?(symbol: Symbol): void;
   reportNonlocalAugmentation?(containingFile: SourceFile, parentSymbol: Symbol, augmentingSymbol: Symbol): void;
 }
-export interface DiagnosticCollection {
-  add(diagnostic: Diagnostic): void;
-  lookup(diagnostic: Diagnostic): Diagnostic | undefined;
-  getGlobalDiagnostics(): Diagnostic[];
-  getDiagnostics(): Diagnostic[];
-  getDiagnostics(fileName: string): DiagnosticWithLocation[];
-  reattachFileDiagnostics(newFile: SourceFile): void;
-}
 export const enum ListFormat {
   None = 0,
   SingleLine = 0,
@@ -3912,7 +3880,7 @@ export interface UserPreferences {
 export type ErrorCallback = (m: qd.Message, length: number) => void;
 // prettier-ignore
 export type NodeWithPossibleHoistedDeclaration = | Block | VariableStatement | WithStatement | IfStatement | SwitchStatement | CaseBlock | CaseClause | DefaultClause | LabeledStatement | ForStatement | ForInStatement | ForOfStatement | DoStatement | WhileStatement | TryStatement | CatchClause;
-export type ValueSignatureDeclaration = FunctionDeclaration | MethodDeclaration | ConstructorDeclaration | AccessorDeclaration | FunctionExpress;
+export type ValueSignatureDeclaration = FunctionDeclaration | MethodDeclaration | ConstructorDeclaration | AccessorDeclaration | FunctionExpression;
 export interface ClassImplementingOrExtendingExpressionWithTypeArguments {
   readonly class: ClassLikeDeclaration;
   readonly isImplements: boolean;

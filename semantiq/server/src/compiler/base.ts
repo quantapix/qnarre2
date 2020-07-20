@@ -65,6 +65,7 @@ export class QMap<T> extends Map<string, T> {
     return r;
   }
 }
+export const emptyMap = new QMap<never>() as QReadonlyMap<never> & ReadonlyPragmaMap;
 export type QReadonlyMap<V> = ReadonlyMap<string, V>;
 export class MultiMap<T> extends QMap<T[]> {
   add(k: string, v: T) {
@@ -114,7 +115,14 @@ export const enum InternalSymbol {
 }
 export type __String = (string & { __escapedIdentifier: void }) | (void & { __escapedIdentifier: void }) | InternalSymbol;
 export type EscapedMap<T> = Map<__String, T>;
+export function createEscapedMap<T>(): EscapedMap<T> {
+  return new QMap<T>() as EscapedMap<T>;
+}
+export const emptyEscapedMap: ReadonlyEscapedMap<never> = emptyMap as ReadonlyEscapedMap<never>;
 export type ReadonlyEscapedMap<T> = ReadonlyMap<__String, T>;
+export function hasEntries(m: ReadonlyEscapedMap<any> | undefined): m is ReadonlyEscapedMap<any> {
+  return !!m?.size;
+}
 export interface EscapedMultiMap<T> extends EscapedMap<T[]> {
   add(key: __String, value: T): T[];
   remove(key: __String, value: T): void;
@@ -1788,4 +1796,410 @@ export namespace perf {
     etwModule = undefined;
   }
   export const perfLogger: PerfLogger = etwModule && etwModule.logEvent ? etwModule : nullLogger;
+}
+export function compareDataObjects(dst: any, src: any): boolean {
+  if (!dst || !src || Object.keys(dst).length !== Object.keys(src).length) return false;
+  for (const e in dst) {
+    if (typeof dst[e] === 'object') {
+      if (!compareDataObjects(dst[e], src[e])) return false;
+    } else if (typeof dst[e] !== 'function') {
+      if (dst[e] !== src[e]) return false;
+    }
+  }
+  return true;
+}
+export function clearMap<T>(map: { forEach: QMap<T>['forEach']; clear: QMap<T>['clear'] }, onDeleteValue: (valueInMap: T, key: string) => void) {
+  map.forEach(onDeleteValue);
+  map.clear();
+}
+export interface MutateMapSkippingNewValuesOptions<T, U> {
+  onDeleteValue(existingValue: T, key: string): void;
+  onExistingValue?(existingValue: T, valueInNewMap: U, key: string): void;
+}
+export function mutateMapSkippingNewValues<T, U>(map: QMap<T>, newMap: QReadonlyMap<U>, options: MutateMapSkippingNewValuesOptions<T, U>) {
+  const { onDeleteValue, onExistingValue } = options;
+  map.forEach((existingValue, key) => {
+    const valueInNewMap = newMap.get(key);
+    if (valueInNewMap === undefined) {
+      map.delete(key);
+      onDeleteValue(existingValue, key);
+    } else if (onExistingValue) {
+      onExistingValue(existingValue, valueInNewMap, key);
+    }
+  });
+}
+export interface MutateMapOptions<T, U> extends MutateMapSkippingNewValuesOptions<T, U> {
+  createNewValue(key: string, valueInNewMap: U): T;
+}
+export function mutateMap<T, U>(map: QMap<T>, newMap: QReadonlyMap<U>, options: MutateMapOptions<T, U>) {
+  mutateMapSkippingNewValues(map, newMap, options);
+  const { createNewValue } = options;
+  newMap.forEach((valueInNewMap, key) => {
+    if (!map.has(key)) {
+      map.set(key, createNewValue(key, valueInNewMap));
+    }
+  });
+}
+export function addToSeen(seen: QMap<true>, key: string | number): boolean;
+export function addToSeen<T>(seen: QMap<T>, key: string | number, value: T): boolean;
+export function addToSeen<T>(seen: QMap<T>, key: string | number, value: T = true as any): boolean {
+  key = String(key);
+  if (seen.has(key)) return false;
+  seen.set(key, value);
+  return true;
+}
+export function formatStringFromArgs(text: string, args: ArrayLike<string | number>, baseIndex = 0): string {
+  return text.replace(/{(\d+)}/g, (_match, index: string) => '' + qg.checkDefined(args[+index + baseIndex]));
+}
+export function isJsonEqual(a: unknown, b: unknown): boolean {
+  return a === b || (typeof a === 'object' && a !== null && typeof b === 'object' && b !== null && equalOwnProperties(a as MapLike<unknown>, b as MapLike<unknown>, isJsonEqual));
+}
+export function getOrUpdate<T>(map: QMap<T>, key: string, getDefault: () => T): T {
+  const got = map.get(key);
+  if (got === undefined) {
+    const value = getDefault();
+    map.set(key, value);
+    return value;
+  }
+  return got;
+}
+export function arrayIsHomogeneous<T>(array: readonly T[], comparer: EqComparer<T> = equateValues) {
+  if (array.length < 2) return true;
+  const first = array[0];
+  for (let i = 1, length = array.length; i < length; i++) {
+    const target = array[i];
+    if (!comparer(first, target)) return false;
+  }
+  return true;
+}
+export function matchPatternOrExact(patternStrings: readonly string[], candidate: string): string | Pattern | undefined {
+  const patterns: Pattern[] = [];
+  for (const patternString of patternStrings) {
+    if (!qy.hasAsterisks(patternString)) continue;
+    const pattern = tryParsePattern(patternString);
+    if (pattern) {
+      patterns.push(pattern);
+    } else if (patternString === candidate) {
+      return patternString;
+    }
+  }
+  return findBestPatternMatch(patterns, (_) => _, candidate);
+}
+export type Mutable<T extends object> = { -readonly [K in keyof T]: T[K] };
+export function sliceAfter<T>(arr: readonly T[], value: T): readonly T[] {
+  const index = arr.indexOf(value);
+  assert(index !== -1);
+  return arr.slice(index);
+}
+export function minAndMax<T>(arr: readonly T[], getValue: (value: T) => number): { readonly min: number; readonly max: number } {
+  assert(arr.length !== 0);
+  let min = getValue(arr[0]);
+  let max = min;
+  for (let i = 1; i < arr.length; i++) {
+    const value = getValue(arr[i]);
+    if (value < min) {
+      min = value;
+    } else if (value > max) {
+      max = value;
+    }
+  }
+  return { min, max };
+}
+export function tryParsePattern(pattern: string): Pattern | undefined {
+  assert(qy.hasAsterisks(pattern));
+  const indexOfStar = pattern.indexOf('*');
+  return indexOfStar === -1
+    ? undefined
+    : {
+        prefix: pattern.substr(0, indexOfStar),
+        suffix: pattern.substr(indexOfStar + 1),
+      };
+}
+export function getPropertyNameForKnownSymbolName(symbolName: string): __String {
+  return ('__@' + symbolName) as __String;
+}
+export function hasChangesInResolutions<T>(
+  names: readonly string[],
+  newResolutions: readonly T[],
+  oldResolutions: QReadonlyMap<T> | undefined,
+  comparer: (oldResolution: T, newResolution: T) => boolean
+): boolean {
+  assert(names.length === newResolutions.length);
+  for (let i = 0; i < names.length; i++) {
+    const newResolution = newResolutions[i];
+    const oldResolution = oldResolutions && oldResolutions.get(names[i]);
+    const changed = oldResolution ? !newResolution || !comparer(oldResolution, newResolution) : newResolution;
+    if (changed) return true;
+  }
+  return false;
+}
+export namespace semver {
+  const versionRegExp = /^(0|[1-9]\d*)(?:\.(0|[1-9]\d*)(?:\.(0|[1-9]\d*)(?:\-([a-z0-9-.]+))?(?:\+([a-z0-9-.]+))?)?)?$/i;
+  const prereleaseRegExp = /^(?:0|[1-9]\d*|[a-z-][a-z0-9-]*)(?:\.(?:0|[1-9]\d*|[a-z-][a-z0-9-]*))*$/i;
+  const buildRegExp = /^[a-z0-9-]+(?:\.[a-z0-9-]+)*$/i;
+  const numericIdentifierRegExp = /^(0|[1-9]\d*)$/;
+  export class Version {
+    static readonly zero = new Version(0, 0, 0);
+    readonly major: number;
+    readonly minor: number;
+    readonly patch: number;
+    readonly prerelease: readonly string[];
+    readonly build: readonly string[];
+    constructor(text: string);
+    constructor(major: number, minor?: number, patch?: number, prerelease?: string, build?: string);
+    constructor(major: number | string, minor = 0, patch = 0, prerelease = '', build = '') {
+      if (typeof major === 'string') {
+        const result = Debug.checkDefined(tryParseComponents(major), 'Invalid version');
+        ({ major, minor, patch, prerelease, build } = result);
+      }
+      assert(major >= 0, 'Invalid argument: major');
+      assert(minor >= 0, 'Invalid argument: minor');
+      assert(patch >= 0, 'Invalid argument: patch');
+      assert(!prerelease || prereleaseRegExp.test(prerelease), 'Invalid argument: prerelease');
+      assert(!build || buildRegExp.test(build), 'Invalid argument: build');
+      this.major = major;
+      this.minor = minor;
+      this.patch = patch;
+      this.prerelease = prerelease ? prerelease.split('.') : empty;
+      this.build = build ? build.split('.') : empty;
+    }
+    static tryParse(text: string) {
+      const result = tryParseComponents(text);
+      if (!result) return;
+      const { major, minor, patch, prerelease, build } = result;
+      return new Version(major, minor, patch, prerelease, build);
+    }
+    compareTo(other: Version | undefined) {
+      if (this === other) return Comparison.EqualTo;
+      if (other === undefined) return Comparison.GreaterThan;
+      return (
+        compareNumbers(this.major, other.major) || compareNumbers(this.minor, other.minor) || compareNumbers(this.patch, other.patch) || comparePrerelaseIdentifiers(this.prerelease, other.prerelease)
+      );
+    }
+    increment(field: 'major' | 'minor' | 'patch') {
+      switch (field) {
+        case 'major':
+          return new Version(this.major + 1, 0, 0);
+        case 'minor':
+          return new Version(this.major, this.minor + 1, 0);
+        case 'patch':
+          return new Version(this.major, this.minor, this.patch + 1);
+        default:
+          return Debug.assertNever(field);
+      }
+    }
+    toString() {
+      let result = `${this.major}.${this.minor}.${this.patch}`;
+      if (some(this.prerelease)) result += `-${this.prerelease.join('.')}`;
+      if (some(this.build)) result += `+${this.build.join('.')}`;
+      return result;
+    }
+  }
+  function tryParseComponents(text: string) {
+    const match = versionRegExp.exec(text);
+    if (!match) return;
+    const [, major, minor = '0', patch = '0', prerelease = '', build = ''] = match;
+    if (prerelease && !prereleaseRegExp.test(prerelease)) return;
+    if (build && !buildRegExp.test(build)) return;
+    return {
+      major: parseInt(major, 10),
+      minor: parseInt(minor, 10),
+      patch: parseInt(patch, 10),
+      prerelease,
+      build,
+    };
+  }
+  function comparePrerelaseIdentifiers(left: readonly string[], right: readonly string[]) {
+    if (left === right) return Comparison.EqualTo;
+    if (left.length === 0) return right.length === 0 ? Comparison.EqualTo : Comparison.GreaterThan;
+    if (right.length === 0) return Comparison.LessThan;
+    const length = Math.min(left.length, right.length);
+    for (let i = 0; i < length; i++) {
+      const leftIdentifier = left[i];
+      const rightIdentifier = right[i];
+      if (leftIdentifier === rightIdentifier) continue;
+      const leftIsNumeric = numericIdentifierRegExp.test(leftIdentifier);
+      const rightIsNumeric = numericIdentifierRegExp.test(rightIdentifier);
+      if (leftIsNumeric || rightIsNumeric) {
+        if (leftIsNumeric !== rightIsNumeric) return leftIsNumeric ? Comparison.LessThan : Comparison.GreaterThan;
+        const result = compareNumbers(+leftIdentifier, +rightIdentifier);
+        if (result) return result;
+      } else {
+        const result = compareCaseSensitive(leftIdentifier, rightIdentifier);
+        if (result) return result;
+      }
+    }
+    return compareNumbers(left.length, right.length);
+  }
+  export class VersionRange {
+    private _alternatives: readonly (readonly Comparator[])[];
+    constructor(spec: string) {
+      this._alternatives = spec ? Debug.checkDefined(parseRange(spec), 'Invalid range spec.') : empty;
+    }
+    static tryParse(text: string) {
+      const sets = parseRange(text);
+      if (sets) {
+        const range = new VersionRange('');
+        range._alternatives = sets;
+        return range;
+      }
+      return;
+    }
+    test(version: Version | string) {
+      if (typeof version === 'string') version = new Version(version);
+      return testDisjunction(version, this._alternatives);
+    }
+    toString() {
+      return formatDisjunction(this._alternatives);
+    }
+  }
+  interface Comparator {
+    readonly operator: '<' | '<=' | '>' | '>=' | '=';
+    readonly operand: Version;
+  }
+  const logicalOrRegExp = /\s*\|\|\s*/g;
+  const whitespaceRegExp = /\s+/g;
+  const partialRegExp = /^([xX*0]|[1-9]\d*)(?:\.([xX*0]|[1-9]\d*)(?:\.([xX*0]|[1-9]\d*)(?:-([a-z0-9-.]+))?(?:\+([a-z0-9-.]+))?)?)?$/i;
+  const hyphenRegExp = /^\s*([a-z0-9-+.*]+)\s+-\s+([a-z0-9-+.*]+)\s*$/i;
+  const rangeRegExp = /^\s*(~|\^|<|<=|>|>=|=)?\s*([a-z0-9-+.*]+)$/i;
+  function parseRange(text: string) {
+    const alternatives: Comparator[][] = [];
+    for (const range of text.trim().split(logicalOrRegExp)) {
+      if (!range) continue;
+      const comparators: Comparator[] = [];
+      const match = hyphenRegExp.exec(range);
+      if (match) {
+        if (!parseHyphen(match[1], match[2], comparators)) return;
+      } else {
+        for (const simple of range.split(whitespaceRegExp)) {
+          const match = rangeRegExp.exec(simple);
+          if (!match || !parseComparator(match[1], match[2], comparators)) return;
+        }
+      }
+      alternatives.push(comparators);
+    }
+    return alternatives;
+  }
+  function parsePartial(text: string) {
+    const match = partialRegExp.exec(text);
+    if (!match) return;
+    const [, major, minor = '*', patch = '*', prerelease, build] = match;
+    const version = new Version(
+      isWildcard(major) ? 0 : parseInt(major, 10),
+      isWildcard(major) || isWildcard(minor) ? 0 : parseInt(minor, 10),
+      isWildcard(major) || isWildcard(minor) || isWildcard(patch) ? 0 : parseInt(patch, 10),
+      prerelease,
+      build
+    );
+    return { version, major, minor, patch };
+  }
+  function parseHyphen(left: string, right: string, comparators: Comparator[]) {
+    const leftResult = parsePartial(left);
+    if (!leftResult) return false;
+    const rightResult = parsePartial(right);
+    if (!rightResult) return false;
+    if (!isWildcard(leftResult.major)) {
+      comparators.push(createComparator('>=', leftResult.version));
+    }
+    if (!isWildcard(rightResult.major)) {
+      comparators.push(
+        isWildcard(rightResult.minor)
+          ? createComparator('<', rightResult.version.increment('major'))
+          : isWildcard(rightResult.patch)
+          ? createComparator('<', rightResult.version.increment('minor'))
+          : createComparator('<=', rightResult.version)
+      );
+    }
+    return true;
+  }
+  function parseComparator(operator: string, text: string, comparators: Comparator[]) {
+    const result = parsePartial(text);
+    if (!result) return false;
+    const { version, major, minor, patch } = result;
+    if (!isWildcard(major)) {
+      switch (operator) {
+        case '~':
+          comparators.push(createComparator('>=', version));
+          comparators.push(createComparator('<', version.increment(isWildcard(minor) ? 'major' : 'minor')));
+          break;
+        case '^':
+          comparators.push(createComparator('>=', version));
+          comparators.push(createComparator('<', version.increment(version.major > 0 || isWildcard(minor) ? 'major' : version.minor > 0 || isWildcard(patch) ? 'minor' : 'patch')));
+          break;
+        case '<':
+        case '>=':
+          comparators.push(createComparator(operator, version));
+          break;
+        case '<=':
+        case '>':
+          comparators.push(
+            isWildcard(minor)
+              ? createComparator(operator === '<=' ? '<' : '>=', version.increment('major'))
+              : isWildcard(patch)
+              ? createComparator(operator === '<=' ? '<' : '>=', version.increment('minor'))
+              : createComparator(operator, version)
+          );
+          break;
+        case '=':
+        case undefined:
+          if (isWildcard(minor) || isWildcard(patch)) {
+            comparators.push(createComparator('>=', version));
+            comparators.push(createComparator('<', version.increment(isWildcard(minor) ? 'major' : 'minor')));
+          } else {
+            comparators.push(createComparator('=', version));
+          }
+          break;
+        default:
+          return false;
+      }
+    } else if (operator === '<' || operator === '>') {
+      comparators.push(createComparator('<', Version.zero));
+    }
+    return true;
+  }
+  function isWildcard(part: string) {
+    return part === '*' || part === 'x' || part === 'X';
+  }
+  function createComparator(operator: Comparator['operator'], operand: Version) {
+    return { operator, operand };
+  }
+  function testDisjunction(version: Version, alternatives: readonly (readonly Comparator[])[]) {
+    if (alternatives.length === 0) return true;
+    for (const alternative of alternatives) {
+      if (testAlternative(version, alternative)) return true;
+    }
+    return false;
+  }
+  function testAlternative(version: Version, comparators: readonly Comparator[]) {
+    for (const comparator of comparators) {
+      if (!testComparator(version, comparator.operator, comparator.operand)) return false;
+    }
+    return true;
+  }
+  function testComparator(version: Version, operator: Comparator['operator'], operand: Version) {
+    const cmp = version.compareTo(operand);
+    switch (operator) {
+      case '<':
+        return cmp < 0;
+      case '<=':
+        return cmp <= 0;
+      case '>':
+        return cmp > 0;
+      case '>=':
+        return cmp >= 0;
+      case '=':
+        return cmp === 0;
+      default:
+        return assertNever(operator);
+    }
+  }
+  function formatDisjunction(alternatives: readonly (readonly Comparator[])[]) {
+    return map(alternatives, formatAlternative).join(' || ') || '*';
+  }
+  function formatAlternative(comparators: readonly Comparator[]) {
+    return map(comparators, formatComparator).join(' ');
+  }
+  function formatComparator(comparator: Comparator) {
+    return `${comparator.operator}${comparator.operand}`;
+  }
 }

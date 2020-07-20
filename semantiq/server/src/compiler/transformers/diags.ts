@@ -8,7 +8,7 @@ import { Modifier, ModifierFlags, Syntax } from '../syntax';
 export type GetSymbolAccessibilityDiagnostic = (symbolAccessibilityResult: SymbolAccessibilityResult) => SymbolAccessibilityDiagnostic | undefined;
 export interface SymbolAccessibilityDiagnostic {
   errorNode: Node;
-  diagnosticMessage: DiagnosticMessage;
+  diagnosticMessage: qd.Message;
   typeName?: DeclarationName | QualifiedName;
 }
 export type DeclarationDiagnosticProducing =
@@ -59,7 +59,7 @@ export function createGetSymbolAccessibilityDiagnosticForNodeName(node: Declarat
   if (qc.is.kind(qc.MethodSignature, node) || qc.is.kind(qc.MethodDeclaration, node)) return getMethodNameVisibilityError;
   return createGetSymbolAccessibilityDiagnosticForNode(node);
   function getAccessorNameVisibilityError(symbolAccessibilityResult: SymbolAccessibilityResult) {
-    const diagnosticMessage = getAccessorNameVisibilityDiagnosticMessage(symbolAccessibilityResult);
+    const diagnosticMessage = getAccessorNameVisibilityqd.Message(symbolAccessibilityResult);
     return diagnosticMessage !== undefined
       ? {
           diagnosticMessage,
@@ -68,7 +68,7 @@ export function createGetSymbolAccessibilityDiagnosticForNodeName(node: Declarat
         }
       : undefined;
   }
-  function getAccessorNameVisibilityDiagnosticMessage(symbolAccessibilityResult: SymbolAccessibilityResult) {
+  function getAccessorNameVisibilityqd.Message(symbolAccessibilityResult: SymbolAccessibilityResult) {
     if (qc.has.syntacticModifier(node, ModifierFlags.Static)) {
       return symbolAccessibilityResult.errorModuleName
         ? symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed
@@ -88,7 +88,7 @@ export function createGetSymbolAccessibilityDiagnosticForNodeName(node: Declarat
     }
   }
   function getMethodNameVisibilityError(symbolAccessibilityResult: SymbolAccessibilityResult): SymbolAccessibilityDiagnostic | undefined {
-    const diagnosticMessage = getMethodNameVisibilityDiagnosticMessage(symbolAccessibilityResult);
+    const diagnosticMessage = getMethodNameVisibilityqd.Message(symbolAccessibilityResult);
     return diagnosticMessage !== undefined
       ? {
           diagnosticMessage,
@@ -97,7 +97,7 @@ export function createGetSymbolAccessibilityDiagnosticForNodeName(node: Declarat
         }
       : undefined;
   }
-  function getMethodNameVisibilityDiagnosticMessage(symbolAccessibilityResult: SymbolAccessibilityResult) {
+  function getMethodNameVisibilityqd.Message(symbolAccessibilityResult: SymbolAccessibilityResult) {
     if (qc.has.syntacticModifier(node, ModifierFlags.Static)) {
       return symbolAccessibilityResult.errorModuleName
         ? symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed
@@ -150,7 +150,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(
   if (qc.is.kind(qc.ImportEqualsDeclaration, node)) return getImportEntityNameVisibilityError;
   if (qc.is.kind(qc.TypeAliasDeclaration, node)) return getTypeAliasDeclarationVisibilityError;
   return Debug.assertNever(node, `Attempted to set a declaration diagnostic context for unhandled node kind: ${(ts as any).SyntaxKind[(node as any).kind]}`);
-  function getVariableDeclarationTypeVisibilityDiagnosticMessage(symbolAccessibilityResult: SymbolAccessibilityResult) {
+  function getVariableDeclarationTypeVisibilityqd.Message(symbolAccessibilityResult: SymbolAccessibilityResult) {
     if (node.kind === Syntax.VariableDeclaration || node.kind === Syntax.BindingElement) {
       return symbolAccessibilityResult.errorModuleName
         ? symbolAccessibilityResult.accessibility === SymbolAccessibility.CannotBeNamed
@@ -183,7 +183,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(
     }
   }
   function getVariableDeclarationTypeVisibilityError(symbolAccessibilityResult: SymbolAccessibilityResult): SymbolAccessibilityDiagnostic | undefined {
-    const diagnosticMessage = getVariableDeclarationTypeVisibilityDiagnosticMessage(symbolAccessibilityResult);
+    const diagnosticMessage = getVariableDeclarationTypeVisibilityqd.Message(symbolAccessibilityResult);
     return diagnosticMessage !== undefined
       ? {
           diagnosticMessage,
@@ -193,7 +193,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(
       : undefined;
   }
   function getAccessorDeclarationTypeVisibilityError(symbolAccessibilityResult: SymbolAccessibilityResult): SymbolAccessibilityDiagnostic {
-    let diagnosticMessage: DiagnosticMessage;
+    let diagnosticMessage: qd.Message;
     if (node.kind === Syntax.SetAccessor) {
       if (qc.has.syntacticModifier(node, ModifierFlags.Static)) {
         diagnosticMessage = symbolAccessibilityResult.errorModuleName
@@ -226,7 +226,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(
     };
   }
   function getReturnTypeVisibilityError(symbolAccessibilityResult: SymbolAccessibilityResult): SymbolAccessibilityDiagnostic {
-    let diagnosticMessage: DiagnosticMessage;
+    let diagnosticMessage: qd.Message;
     switch (node.kind) {
       case Syntax.ConstructSignature:
         diagnosticMessage = symbolAccessibilityResult.errorModuleName
@@ -279,7 +279,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(
     };
   }
   function getParameterDeclarationTypeVisibilityError(symbolAccessibilityResult: SymbolAccessibilityResult): SymbolAccessibilityDiagnostic | undefined {
-    const diagnosticMessage: DiagnosticMessage = getParameterDeclarationTypeVisibilityDiagnosticMessage(symbolAccessibilityResult);
+    const diagnosticMessage: qd.Message = getParameterDeclarationTypeVisibilityqd.Message(symbolAccessibilityResult);
     return diagnosticMessage !== undefined
       ? {
           diagnosticMessage,
@@ -288,7 +288,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(
         }
       : undefined;
   }
-  function getParameterDeclarationTypeVisibilityDiagnosticMessage(symbolAccessibilityResult: SymbolAccessibilityResult): DiagnosticMessage {
+  function getParameterDeclarationTypeVisibilityqd.Message(symbolAccessibilityResult: SymbolAccessibilityResult): qd.Message {
     switch (node.parent.kind) {
       case Syntax.Constructor:
         return symbolAccessibilityResult.errorModuleName
@@ -347,7 +347,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(
     }
   }
   function getTypeParameterConstraintVisibilityError(): SymbolAccessibilityDiagnostic {
-    let diagnosticMessage: DiagnosticMessage;
+    let diagnosticMessage: qd.Message;
     switch (node.parent.kind) {
       case Syntax.ClassDeclaration:
         diagnosticMessage = qd.Type_parameter_0_of_exported_class_has_or_is_using_private_name_1;
@@ -392,7 +392,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(
     };
   }
   function getHeritageClauseVisibilityError(): SymbolAccessibilityDiagnostic {
-    let diagnosticMessage: DiagnosticMessage;
+    let diagnosticMessage: qd.Message;
     if (node.parent.parent.kind === Syntax.ClassDeclaration) {
       diagnosticMessage =
         qc.is.kind(qc.HeritageClause, node.parent) && node.parent.token === Syntax.ImplementsKeyword

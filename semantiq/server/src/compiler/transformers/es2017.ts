@@ -130,7 +130,7 @@ export function transformES2017(context: TransformationContext) {
     return visitor(node);
   }
   function visitCatchClauseInAsyncBody(node: CatchClause) {
-    const catchClauseNames = createEscapedMap<true>();
+    const catchClauseNames = qb.createEscapedMap<true>();
     recordDeclarationName(node.variableDeclaration!, catchClauseNames);
     let catchClauseUnshadowedNames: EscapedMap<true> | undefined;
     catchClauseNames.forEach((_, escName) => {
@@ -294,14 +294,14 @@ export function transformES2017(context: TransformationContext) {
     const isArrowFunction = node.kind === Syntax.ArrowFunction;
     const hasLexicalArguments = (resolver.getNodeCheckFlags(node) & NodeCheckFlags.CaptureArguments) !== 0;
     const savedEnclosingFunctionParameterNames = enclosingFunctionParameterNames;
-    enclosingFunctionParameterNames = createEscapedMap<true>();
+    enclosingFunctionParameterNames = qb.createEscapedMap<true>();
     for (const parameter of node.parameters) {
       recordDeclarationName(parameter, enclosingFunctionParameterNames);
     }
     const savedCapturedSuperProperties = capturedSuperProperties;
     const savedHasSuperElementAccess = hasSuperElementAccess;
     if (!isArrowFunction) {
-      capturedSuperProperties = createEscapedMap<true>();
+      capturedSuperProperties = qb.createEscapedMap<true>();
       hasSuperElementAccess = false;
     }
     let result: ConciseBody;
@@ -315,7 +315,7 @@ export function transformES2017(context: TransformationContext) {
       const emitSuperHelpers = languageVersion >= ScriptTarget.ES2015 && resolver.getNodeCheckFlags(node) & (NodeCheckFlags.AsyncMethodWithSuperBinding | NodeCheckFlags.AsyncMethodWithSuper);
       if (emitSuperHelpers) {
         enableSubstitutionForAsyncMethodsWithSuper();
-        if (hasEntries(capturedSuperProperties)) {
+        if (qb.hasEntries(capturedSuperProperties)) {
           const variableStatement = createSuperAccessVariableStatement(resolver, node, capturedSuperProperties);
           substitutedSuperAccessors[getNodeId(variableStatement)] = true;
           insertStatementsAfterStandardPrologue(statements, [variableStatement]);

@@ -269,7 +269,7 @@ export function formatDiagnostics(diagnostics: readonly Diagnostic[], host: Form
   return output;
 }
 export function formatDiagnostic(diagnostic: Diagnostic, host: FormatDiagnosticsHost): string {
-  const errorMessage = `${diagnosticCategoryName(diagnostic)} TS${diagnostic.code}: ${flattenDiagnosticMessageText(diagnostic.messageText, host.getNewLine())}${host.getNewLine()}`;
+  const errorMessage = `${diagnosticCategoryName(diagnostic)} TS${diagnostic.code}: ${flattenqd.MessageText(diagnostic.messageText, host.getNewLine())}${host.getNewLine()}`;
   if (diagnostic.file) {
     const { line, character } = syntax.get.lineAndCharOf(diagnostic.file, diagnostic.start!);
     const fileName = diagnostic.file.fileName;
@@ -365,7 +365,7 @@ export function formatDiagnosticsWithColorAndContext(diagnostics: readonly Diagn
     }
     output += formatColorAndReset(diagnosticCategoryName(diagnostic), getCategoryFormat(diagnostic.category));
     output += formatColorAndReset(` TS${diagnostic.code}: `, ForegroundColorEscapeSequences.Grey);
-    output += flattenDiagnosticMessageText(diagnostic.messageText, host.getNewLine());
+    output += flattenqd.MessageText(diagnostic.messageText, host.getNewLine());
     if (diagnostic.file) {
       output += host.getNewLine();
       output += formatCodeSpan(diagnostic.file, diagnostic.start!, diagnostic.length!, '', getCategoryFormat(diagnostic.category), host);
@@ -378,7 +378,7 @@ export function formatDiagnosticsWithColorAndContext(diagnostics: readonly Diagn
             output += formatCodeSpan(file, start!, length!, indent, ForegroundColorEscapeSequences.Cyan, host);
           }
           output += host.getNewLine();
-          output += indent + flattenDiagnosticMessageText(messageText, host.getNewLine());
+          output += indent + flattenqd.MessageText(messageText, host.getNewLine());
         }
       }
     }
@@ -386,7 +386,7 @@ export function formatDiagnosticsWithColorAndContext(diagnostics: readonly Diagn
   }
   return output;
 }
-export function flattenDiagnosticMessageText(diag: string | DiagnosticMessageChain | undefined, newLine: string, indent = 0): string {
+export function flattenqd.MessageText(diag: string | qd.MessageChain | undefined, newLine: string, indent = 0): string {
   if (isString(diag)) return diag;
   if (diag === undefined) return '';
   let result = '';
@@ -400,7 +400,7 @@ export function flattenDiagnosticMessageText(diag: string | DiagnosticMessageCha
   indent++;
   if (diag.next) {
     for (const kid of diag.next) {
-      result += flattenDiagnosticMessageText(kid, newLine, indent);
+      result += flattenqd.MessageText(kid, newLine, indent);
     }
   }
   return result;
@@ -777,7 +777,7 @@ export function createProgram(
   function getClassifiableNames() {
     if (!classifiableNames) {
       getTypeChecker();
-      classifiableNames = createEscapedMap<true>();
+      classifiableNames = qb.createEscapedMap<true>();
       for (const sourceFile of files) {
         qu.copyEntries(sourceFile.classifiableNames!, classifiableNames);
       }
@@ -1414,11 +1414,11 @@ export function createProgram(
           }
         }
       }
-      function createDiagnosticForNodes(nodes: Nodes<Node>, message: DiagnosticMessage, arg0?: string | number, arg1?: string | number, arg2?: string | number): DiagnosticWithLocation {
+      function createDiagnosticForNodes(nodes: Nodes<Node>, message: qd.Message, arg0?: string | number, arg1?: string | number, arg2?: string | number): DiagnosticWithLocation {
         const start = nodes.pos;
         return createFileDiagnostic(sourceFile, start, nodes.end - start, message, arg0, arg1, arg2);
       }
-      function createDiagnosticForNode(node: Node, message: DiagnosticMessage, arg0?: string | number, arg1?: string | number, arg2?: string | number): DiagnosticWithLocation {
+      function createDiagnosticForNode(node: Node, message: qd.Message, arg0?: string | number, arg1?: string | number, arg2?: string | number): DiagnosticWithLocation {
         return createDiagnosticForNodeInSourceFile(sourceFile, node, message, arg0, arg1, arg2);
       }
     });
@@ -1570,7 +1570,7 @@ export function createProgram(
   function getSourceFileFromReferenceWorker(
     fileName: string,
     getSourceFile: (fileName: string) => SourceFile | undefined,
-    fail?: (diagnostic: DiagnosticMessage, ...argument: string[]) => void,
+    fail?: (diagnostic: qd.Message, ...argument: string[]) => void,
     refFile?: SourceFile
   ): SourceFile | undefined {
     if (hasExtension(fileName)) {
@@ -1981,7 +1981,7 @@ export function createProgram(
       }
     });
   }
-  function createRefFileDiagnostic(refFile: RefFile | undefined, message: DiagnosticMessage, ...args: any[]): Diagnostic {
+  function createRefFileDiagnostic(refFile: RefFile | undefined, message: qd.Message, ...args: any[]): Diagnostic {
     if (!refFile) return createCompilerDiagnostic(message, ...args);
     return createFileDiagnostic(refFile.file, refFile.pos, refFile.end - refFile.pos, message, ...args);
   }
@@ -2298,14 +2298,14 @@ export function createProgram(
       if (emitFileName) {
         const emitFilePath = toPath(emitFileName);
         if (filesByName.has(emitFilePath)) {
-          let chain: DiagnosticMessageChain | undefined;
+          let chain: qd.MessageChain | undefined;
           if (!options.configFilePath) {
-            chain = chainDiagnosticMessages(
+            chain = chainqd.Messages(
               undefined,
               qd.Adding_a_tsconfig_json_file_will_help_organize_projects_that_contain_both_TypeScript_and_JavaScript_files_Learn_more_at_https_Colon_Slash_Slashaka_ms_Slashtsconfig
             );
           }
-          chain = chainDiagnosticMessages(chain, qd.Cannot_write_file_0_because_it_would_overwrite_input_file, emitFileName);
+          chain = chainqd.Messages(chain, qd.Cannot_write_file_0_because_it_would_overwrite_input_file, emitFileName);
           blockEmittingOfFile(emitFileName, createCompilerDiagnosticFromMessageChain(chain));
         }
         const emitFileKey = !host.useCaseSensitiveFileNames() ? toFileNameLowerCase(emitFilePath) : emitFilePath;
@@ -2317,7 +2317,7 @@ export function createProgram(
       }
     }
   }
-  function createFileDiagnosticAtReference(refPathToReportErrorOn: qnr.RefFile, message: DiagnosticMessage, ...args: (string | number | undefined)[]) {
+  function createFileDiagnosticAtReference(refPathToReportErrorOn: qnr.RefFile, message: qd.Message, ...args: (string | number | undefined)[]) {
     const refFile = Debug.checkDefined(getSourceFileByPath(refPathToReportErrorOn.file));
     const { kind, index } = refPathToReportErrorOn;
     let pos: number, end: number;
@@ -2337,7 +2337,7 @@ export function createProgram(
     }
     return createFileDiagnostic(refFile, pos, end - pos, message, ...args);
   }
-  function addProgramDiagnosticAtRefPath(file: SourceFile, rootPaths: Map<true>, message: DiagnosticMessage, ...args: (string | number | undefined)[]) {
+  function addProgramDiagnosticAtRefPath(file: SourceFile, rootPaths: Map<true>, message: qd.Message, ...args: (string | number | undefined)[]) {
     const refPaths = refFileMap && refFileMap.get(file.path);
     const refPathToReportErrorOn = forEach(refPaths, (refPath) => (rootPaths.has(refPath.file) ? refPath : undefined)) || elementAt(refPaths, 0);
     programqd.add(refPathToReportErrorOn ? createFileDiagnosticAtReference(refPathToReportErrorOn, message, ...args) : createCompilerDiagnostic(message, ...args));
@@ -2374,7 +2374,7 @@ export function createProgram(
       }
     });
   }
-  function createDiagnosticForOptionPathKeyValue(key: string, valueIndex: number, message: DiagnosticMessage, arg0: string | number, arg1: string | number, arg2?: string | number) {
+  function createDiagnosticForOptionPathKeyValue(key: string, valueIndex: number, message: qd.Message, arg0: string | number, arg1: string | number, arg2?: string | number) {
     let needCompilerDiagnostic = true;
     const pathsSyntax = getOptionPathsSyntax();
     for (const pathProp of pathsSyntax) {
@@ -2392,7 +2392,7 @@ export function createProgram(
       programqd.add(createCompilerDiagnostic(message, arg0, arg1, arg2));
     }
   }
-  function createDiagnosticForOptionPaths(onKey: boolean, key: string, message: DiagnosticMessage, arg0: string | number) {
+  function createDiagnosticForOptionPaths(onKey: boolean, key: string, message: qd.Message, arg0: string | number) {
     let needCompilerDiagnostic = true;
     const pathsSyntax = getOptionPathsSyntax();
     for (const pathProp of pathsSyntax) {
@@ -2412,13 +2412,13 @@ export function createProgram(
   function getOptionPathsSyntax(): PropertyAssignment[] {
     return (getOptionsSyntaxByName('paths') as PropertyAssignment[]) || emptyArray;
   }
-  function createDiagnosticForOptionName(message: DiagnosticMessage, option1: string, option2?: string, option3?: string) {
+  function createDiagnosticForOptionName(message: qd.Message, option1: string, option2?: string, option3?: string) {
     createDiagnosticForOption(true, option1, option2, message, option1, option2, option3);
   }
-  function createOptionValueDiagnostic(option1: string, message: DiagnosticMessage, arg0: string) {
+  function createOptionValueDiagnostic(option1: string, message: qd.Message, arg0: string) {
     createDiagnosticForOption(undefined, message, arg0);
   }
-  function createDiagnosticForReference(sourceFile: JsonSourceFile | undefined, index: number, message: DiagnosticMessage, arg0?: string | number, arg1?: string | number) {
+  function createDiagnosticForReference(sourceFile: JsonSourceFile | undefined, index: number, message: qd.Message, arg0?: string | number, arg1?: string | number) {
     const referencesSyntax = firstDefined(getTsConfigPropArray(sourceFile || options.configFile, 'references'), (property) =>
       isArrayLiteralExpression(property.initer) ? property.initer : undefined
     );
@@ -2428,7 +2428,7 @@ export function createProgram(
       programqd.add(createCompilerDiagnostic(message, arg0, arg1));
     }
   }
-  function createDiagnosticForOption(onKey: boolean, option1: string, option2: string | undefined, message: DiagnosticMessage, arg0: string | number, arg1?: string | number, arg2?: string | number) {
+  function createDiagnosticForOption(onKey: boolean, option1: string, option2: string | undefined, message: qd.Message, arg0: string | number, arg1?: string | number, arg2?: string | number) {
     const compilerOptionsObjectLiteralSyntax = getCompilerOptionsObjectLiteralSyntax();
     const needCompilerDiagnostic =
       !compilerOptionsObjectLiteralSyntax || !createOptionDiagnosticInObjectLiteralSyntax(compilerOptionsObjectLiteralSyntax, onKey, option1, option2, message, arg0, arg1, arg2);
@@ -2456,7 +2456,7 @@ export function createProgram(
     onKey: boolean,
     key1: string,
     key2: string | undefined,
-    message: DiagnosticMessage,
+    message: qd.Message,
     arg0: string | number,
     arg1?: string | number,
     arg2?: string | number
@@ -2677,7 +2677,7 @@ export function resolveProjectReferencePath(hostOrRef: ResolveProjectReferencePa
   const passedInRef = ref ? ref : (hostOrRef as ProjectReference);
   return resolveConfigFileProjectName(passedInRef.path);
 }
-export function getResolutionDiagnostic(options: CompilerOptions, { extension }: ResolvedModuleFull): DiagnosticMessage | undefined {
+export function getResolutionDiagnostic(options: CompilerOptions, { extension }: ResolvedModuleFull): qd.Message | undefined {
   switch (extension) {
     case Extension.Ts:
     case Extension.Dts:

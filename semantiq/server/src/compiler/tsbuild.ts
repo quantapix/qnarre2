@@ -117,7 +117,7 @@ export interface SolutionBuilder<T extends BuilderProgram> {
 export function createBuilderStatusReporter(system: System, pretty?: boolean): DiagnosticReporter {
   return (diagnostic) => {
     let output = pretty ? `[${formatColorAndReset(getLocaleTimeString(system), ForegroundColorEscapeSequences.Grey)}] ` : `${getLocaleTimeString(system)} - `;
-    output += `${flattenDiagnosticMessageText(diagnostic.messageText, system.newLine)}${system.newLine + system.newLine}`;
+    output += `${flattenqd.MessageText(diagnostic.messageText, system.newLine)}${system.newLine + system.newLine}`;
     system.write(output);
   };
 }
@@ -1143,7 +1143,7 @@ function getUpToDateStatus(state: SolutionBuilderState, project: ParsedCommandLi
   state.projectStatus.set(resolvedPath, actual);
   return actual;
 }
-function updateOutputTimestampsWorker(state: SolutionBuilderState, proj: ParsedCommandLine, priorNewestUpdateTime: Date, verboseMessage: DiagnosticMessage, skipOutputs?: FileMap<string>) {
+function updateOutputTimestampsWorker(state: SolutionBuilderState, proj: ParsedCommandLine, priorNewestUpdateTime: Date, verboseMessage: qd.Message, skipOutputs?: FileMap<string>) {
   const { host } = state;
   const outputs = getAllProjectOutputs(proj, !host.useCaseSensitiveFileNames());
   if (!skipOutputs || outputs.length !== skipOutputs.size) {
@@ -1471,10 +1471,10 @@ function createSolutionBuilderWorker<T extends BuilderProgram>(
 function relName(state: SolutionBuilderState, path: string): string {
   return convertToRelativePath(path, state.currentDirectory, (f) => state.getCanonicalFileName(f));
 }
-function reportStatus(state: SolutionBuilderState, message: DiagnosticMessage, ...args: string[]) {
+function reportStatus(state: SolutionBuilderState, message: qd.Message, ...args: string[]) {
   state.host.reportSolutionBuilderStatus(createCompilerDiagnostic(message, ...args));
 }
-function reportWatchStatus(state: SolutionBuilderState, message: DiagnosticMessage, ...args: (string | number | undefined)[]) {
+function reportWatchStatus(state: SolutionBuilderState, message: qd.Message, ...args: (string | number | undefined)[]) {
   if (state.hostWithWatch.onWatchStatusChange) {
     state.hostWithWatch.onWatchStatusChange(createCompilerDiagnostic(message, ...args), state.host.getNewLine(), state.baseCompilerOptions);
   }
@@ -1512,7 +1512,7 @@ function reportErrorSummary(state: SolutionBuilderState, buildOrder: AnyBuildOrd
     if (canReportSummary) diagnostics.forEach((singleProjectErrors) => (totalErrors += getErrorCountForSummary(singleProjectErrors)));
   }
   if (state.watch) {
-    reportWatchStatus(state, getWatchErrorSummaryDiagnosticMessage(totalErrors), totalErrors);
+    reportWatchStatus(state, getWatchErrorSummaryqd.Message(totalErrors), totalErrors);
   } else if (state.host.reportErrorSummary) {
     state.host.reportErrorSummary(totalErrors);
   }

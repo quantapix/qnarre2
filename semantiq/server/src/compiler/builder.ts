@@ -157,10 +157,10 @@ export interface ReusableDiagnosticRelatedInformation {
   file: string | undefined;
   start: number | undefined;
   length: number | undefined;
-  messageText: string | ReusableDiagnosticMessageChain;
+  messageText: string | Reusableqd.MessageChain;
 }
 
-export type ReusableDiagnosticMessageChain = DiagnosticMessageChain;
+export type Reusableqd.MessageChain = qd.MessageChain;
 
 export interface ReusableBuilderProgramState extends ReusableBuilderState {
   semanticDiagnosticsPerFile?: ReadonlyMap<readonly ReusableDiagnostic[] | readonly Diagnostic[]> | undefined;

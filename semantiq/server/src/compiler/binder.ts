@@ -161,7 +161,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   const reportedUnreachableFlow: FlowNode = { flags: FlowFlags.Unreachable };
   let subtreeTransformFlags: TransformFlags = TransformFlags.None;
   let skipTransformFlagAggregation: boolean;
-  function createDiagnosticForNode(node: Node, message: DiagnosticMessage, arg0?: string | number, arg1?: string | number, arg2?: string | number): DiagnosticWithLocation {
+  function createDiagnosticForNode(node: Node, message: qd.Message, arg0?: string | number, arg1?: string | number, arg2?: string | number): DiagnosticWithLocation {
     return createDiagnosticForNodeInSourceFile(qc.get.sourceFileOf(node) || file, node, message, arg0, arg1, arg2);
   }
   function bindSourceFile(f: SourceFile, opts: CompilerOptions) {
@@ -169,7 +169,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     options = opts;
     languageVersion = getEmitScriptTarget(options);
     inStrictMode = bindInStrictMode(file, opts);
-    classifiableNames = createEscapedMap<true>();
+    classifiableNames = qb.createEscapedMap<true>();
     symbolCount = 0;
     skipTransformFlagAggregation = file.isDeclarationFile;
     Symbol = Node.Symbol;
@@ -1516,7 +1516,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       Accessor = 2,
     }
     if (inStrictMode && !qc.is.assignmentTarget(node)) {
-      const seen = createEscapedMap<ElementKind>();
+      const seen = qb.createEscapedMap<ElementKind>();
       for (const prop of node.properties) {
         if (prop.kind === Syntax.SpreadAssignment || prop.name.kind !== Syntax.Identifier) {
           continue;
@@ -1746,17 +1746,17 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       }
     }
   }
-  function errorOnFirstToken(node: Node, message: DiagnosticMessage, arg0?: any, arg1?: any, arg2?: any) {
+  function errorOnFirstToken(node: Node, message: qd.Message, arg0?: any, arg1?: any, arg2?: any) {
     const span = getSpanOfTokenAtPosition(file, node.pos);
     file.bindqd.push(createFileDiagnostic(file, span.start, span.length, message, arg0, arg1, arg2));
   }
-  function errorOrSuggestionOnNode(isError: boolean, node: Node, message: DiagnosticMessage): void {
+  function errorOrSuggestionOnNode(isError: boolean, node: Node, message: qd.Message): void {
     errorOrSuggestionOnRange(isError, node, node, message);
   }
-  function errorOrSuggestionOnRange(isError: boolean, startNode: Node, endNode: Node, message: DiagnosticMessage): void {
+  function errorOrSuggestionOnRange(isError: boolean, startNode: Node, endNode: Node, message: qd.Message): void {
     addErrorOrSuggestionDiagnostic(isError, { pos: startNode.getTokenPos(file), end: endNode.end }, message);
   }
-  function addErrorOrSuggestionDiagnostic(isError: boolean, range: TextRange, message: DiagnosticMessage): void {
+  function addErrorOrSuggestionDiagnostic(isError: boolean, range: TextRange, message: qd.Message): void {
     const diag = createFileDiagnostic(file, range.pos, range.end - range.pos, message);
     if (isError) {
       file.bindqd.push(diag);

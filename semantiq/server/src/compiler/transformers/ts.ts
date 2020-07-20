@@ -1223,7 +1223,7 @@ export function transformTypeScript(context: TransformationContext) {
   }
   function recordEmittedDeclarationInScope(node: FunctionDeclaration | ClassDeclaration | ModuleDeclaration | EnumDeclaration) {
     if (!currentScopeFirstDeclarationsOfName) {
-      currentScopeFirstDeclarationsOfName = createEscapedMap<Node>();
+      currentScopeFirstDeclarationsOfName = qb.createEscapedMap<Node>();
     }
     const name = declaredNameInScope(node);
     if (!currentScopeFirstDeclarationsOfName.has(name)) {

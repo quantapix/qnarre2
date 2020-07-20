@@ -519,7 +519,7 @@ export function transformES2018(context: TransformationContext) {
     appendObjectRestAssignmentsIfNeeded(statements, node);
     const savedCapturedSuperProperties = capturedSuperProperties;
     const savedHasSuperElementAccess = hasSuperElementAccess;
-    capturedSuperProperties = createEscapedMap<true>();
+    capturedSuperProperties = qb.createEscapedMap<true>();
     hasSuperElementAccess = false;
     const returnStatement = new qc.ReturnStatement(
       createAsyncGeneratorHelper(

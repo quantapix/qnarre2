@@ -434,7 +434,7 @@ function getRelativePathIfInDirectory(path: string, directoryPath: string, getCa
 function isPathRelativeToParent(path: string): boolean {
   return startsWith(path, '..');
 }
-export function trace(host: ModuleResolutionHost, message: DiagnosticMessage, ...args: any[]): void;
+export function trace(host: ModuleResolutionHost, message: qd.Message, ...args: any[]): void;
 export function trace(host: ModuleResolutionHost): void {
   host.trace!(formatMessage.apply(undefined, arguments));
 }

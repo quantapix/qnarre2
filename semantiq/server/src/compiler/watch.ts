@@ -432,7 +432,7 @@ export function createWatchProgram<T extends BuilderProgram>(
       }
     }
   }
-  function reportWatchDiagnostic(message: DiagnosticMessage) {
+  function reportWatchDiagnostic(message: qd.Message) {
     if (host.onWatchStatusChange) {
       host.onWatchStatusChange(createCompilerDiagnostic(message), newLine, compilerOptions || optionsToExtendForConfigFile);
     }
@@ -612,7 +612,7 @@ export function createWatchStatusReporter(system: System, pretty?: boolean): Wat
     ? (diagnostic, newLine, options) => {
         clearScreenIfNotWatchingForFileChanges(system, diagnostic, options);
         let output = `[${formatColorAndReset(getLocaleTimeString(system), ForegroundColorEscapeSequences.Grey)}] `;
-        output += `${flattenDiagnosticMessageText(diagnostic.messageText, system.newLine)}${newLine + newLine}`;
+        output += `${flattenqd.MessageText(diagnostic.messageText, system.newLine)}${newLine + newLine}`;
         system.write(output);
       }
     : (diagnostic, newLine, options) => {
@@ -621,7 +621,7 @@ export function createWatchStatusReporter(system: System, pretty?: boolean): Wat
           output += newLine;
         }
         output += `${getLocaleTimeString(system)} - `;
-        output += `${flattenDiagnosticMessageText(diagnostic.messageText, system.newLine)}${getPlainDiagnosticFollowingNewLines(diagnostic, newLine)}`;
+        output += `${flattenqd.MessageText(diagnostic.messageText, system.newLine)}${getPlainDiagnosticFollowingNewLines(diagnostic, newLine)}`;
         system.write(output);
       };
 }
@@ -641,13 +641,13 @@ export function parseConfigFileWithSystem(
 export function getErrorCountForSummary(diagnostics: readonly Diagnostic[]) {
   return countWhere(diagnostics, (diagnostic) => diagnostic.category === qd.Category.Error);
 }
-export function getWatchErrorSummaryDiagnosticMessage(errorCount: number) {
+export function getWatchErrorSummaryqd.Message(errorCount: number) {
   return errorCount === 1 ? qd.Found_1_error_Watching_for_file_changes : qd.Found_0_errors_Watching_for_file_changes;
 }
 export function getErrorSummaryText(errorCount: number, newLine: string) {
   if (errorCount === 0) return '';
   const d = createCompilerDiagnostic(errorCount === 1 ? qd.Found_1_error : qd.Found_0_errors, errorCount);
-  return `${newLine}${flattenDiagnosticMessageText(d.messageText, newLine)}${newLine}${newLine}`;
+  return `${newLine}${flattenqd.MessageText(d.messageText, newLine)}${newLine}${newLine}`;
 }
 export interface ProgramToEmitFilesAndReportErrors {
   getCurrentDirectory(): string;
@@ -867,7 +867,7 @@ function createWatchCompilerHost<T extends BuilderProgram = EmitAndSemanticDiagn
     const compilerOptions = builderProgram.getCompilerOptions();
     const newLine = getNewLineCharacter(compilerOptions, () => system.newLine);
     emitFilesAndReportErrors(builderProgram, reportDiagnostic, writeFileName, (errorCount) =>
-      result.onWatchStatusChange!(createCompilerDiagnostic(getWatchErrorSummaryDiagnosticMessage(errorCount), errorCount), newLine, compilerOptions, errorCount)
+      result.onWatchStatusChange!(createCompilerDiagnostic(getWatchErrorSummaryqd.Message(errorCount), errorCount), newLine, compilerOptions, errorCount)
     );
   };
   return result;

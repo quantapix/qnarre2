@@ -1,4 +1,6 @@
 // generated from './diagnosticInformationMap.generated.ts' by 'src/compiler'
+import * as qb from './base';
+import { SourceFile } from './types';
 export enum Category {
   Warning,
   Error,
@@ -7,6 +9,216 @@ export enum Category {
 }
 export class Message {
   constructor(public code: number, public cat: Category, public key: string, public msg: string, public reportsUnnecessary?: {}, public elided?: boolean) {}
+}
+export interface MessageChain {
+  messageText: string;
+  category: Category;
+  code: number;
+  next?: MessageChain[];
+}
+export interface DiagnosticRelatedInformation {
+  category: Category;
+  code: number;
+  file?: SourceFile;
+  start?: number;
+  length?: number;
+  messageText: string | MessageChain;
+}
+export interface Diagnostic extends DiagnosticRelatedInformation {
+  reportsUnnecessary?: {};
+  source?: string;
+  relatedInformation?: DiagnosticRelatedInformation[];
+}
+export interface DiagnosticWithLocation extends Diagnostic {
+  file: SourceFile;
+  start: number;
+  length: number;
+}
+export interface DiagnosticCollection {
+  add(diagnostic: Diagnostic): void;
+  lookup(diagnostic: Diagnostic): Diagnostic | undefined;
+  getGlobalDiagnostics(): Diagnostic[];
+  getDiagnostics(): Diagnostic[];
+  getDiagnostics(fileName: string): DiagnosticWithLocation[];
+  reattachFileDiagnostics(newFile: SourceFile): void;
+}
+export let localizedqd.Messages: qb.MapLike<string> | undefined;
+export function setLocalizedqd.Messages(messages: typeof localizedqd.Messages) {
+  localizedqd.Messages = messages;
+}
+export function getLocaleSpecificMessage(message: Message) {
+  return (localizedqd.Messages && localizedqd.Messages[message.key]) || message.msg;
+}
+export function formatMessage(_dummy: any, message: Message, ...args: (string | number | undefined)[]): string;
+export function formatMessage(_dummy: any, message: Message): string {
+  let text = getLocaleSpecificMessage(message);
+  if (arguments.length > 2) {
+    text = qb.formatStringFromArgs(text, arguments, 2);
+  }
+  return text;
+}
+export function createCompilerDiagnostic(message: Message, ...args: (string | number | undefined)[]): Diagnostic;
+export function createCompilerDiagnostic(message: Message): Diagnostic {
+  let text = getLocaleSpecificMessage(message);
+  if (arguments.length > 1) {
+    text = qb.formatStringFromArgs(text, arguments, 1);
+  }
+  return {
+    file: undefined,
+    start: undefined,
+    length: undefined,
+    messageText: text,
+    category: message.cat,
+    code: message.code,
+    reportsUnnecessary: message.reportsUnnecessary,
+  };
+}
+export function createCompilerDiagnosticFromMessageChain(chain: MessageChain): Diagnostic {
+  return {
+    file: undefined,
+    start: undefined,
+    length: undefined,
+    code: chain.code,
+    category: chain.category,
+    messageText: chain.next ? chain : chain.messageText,
+  };
+}
+export function chainqd.Messages(details: MessageChain | MessageChain[] | undefined, message: Message, ...args: (string | number | undefined)[]): MessageChain;
+export function chainqd.Messages(details: MessageChain | MessageChain[] | undefined, message: Message): MessageChain {
+  let text = getLocaleSpecificMessage(message);
+  if (arguments.length > 2) {
+    text = qb.formatStringFromArgs(text, arguments, 2);
+  }
+  return {
+    messageText: text,
+    category: message.cat,
+    code: message.code,
+    next: details === undefined || Array.isArray(details) ? details : [details],
+  };
+}
+export function concatenateMessageChains(headChain: MessageChain, tailChain: MessageChain): void {
+  let lastChain = headChain;
+  while (lastChain.next) {
+    lastChain = lastChain.next[0];
+  }
+  lastChain.next = [tailChain];
+}
+function getDiagnosticFilePath(diagnostic: Diagnostic): string | undefined {
+  return diagnostic.file ? diagnostic.file.path : undefined;
+}
+export function compareDiagnostics(d1: Diagnostic, d2: Diagnostic): qb.Comparison {
+  return compareDiagnosticsSkipRelatedInformation(d1, d2) || compareRelatedInformation(d1, d2) || qb.Comparison.EqualTo;
+}
+export function compareDiagnosticsSkipRelatedInformation(d1: Diagnostic, d2: Diagnostic): qb.Comparison {
+  return (
+    qb.compareCaseSensitive(getDiagnosticFilePath(d1), getDiagnosticFilePath(d2)) ||
+    qb.compareNumbers(d1.start, d2.start) ||
+    qb.compareNumbers(d1.length, d2.length) ||
+    qb.compareNumbers(d1.code, d2.code) ||
+    compareMessageText(d1.messageText, d2.messageText) ||
+    qb.Comparison.EqualTo
+  );
+}
+function compareRelatedInformation(d1: Diagnostic, d2: Diagnostic): qb.Comparison {
+  if (!d1.relatedInformation && !d2.relatedInformation) return qb.Comparison.EqualTo;
+  if (d1.relatedInformation && d2.relatedInformation) {
+    return (
+      qb.compareNumbers(d1.relatedInformation.length, d2.relatedInformation.length) ||
+      qb.forEach(d1.relatedInformation, (d1i, index) => {
+        const d2i = d2.relatedInformation![index];
+        return compareDiagnostics(d1i, d2i);
+      }) ||
+      qb.Comparison.EqualTo
+    );
+  }
+  return d1.relatedInformation ? qb.Comparison.LessThan : qb.Comparison.GreaterThan;
+}
+function compareMessageText(t1: string | MessageChain, t2: string | MessageChain): qb.Comparison {
+  if (typeof t1 === 'string' && typeof t2 === 'string') return qb.compareCaseSensitive(t1, t2);
+  if (typeof t1 === 'string') return qb.Comparison.LessThan;
+  if (typeof t2 === 'string') return qb.Comparison.GreaterThan;
+  let res = qb.compareCaseSensitive(t1.messageText, t2.messageText);
+  if (res) return res;
+  if (!t1.next && !t2.next) return qb.Comparison.EqualTo;
+  if (!t1.next) return qb.Comparison.LessThan;
+  if (!t2.next) return qb.Comparison.GreaterThan;
+  const len = Math.min(t1.next.length, t2.next.length);
+  for (let i = 0; i < len; i++) {
+    res = compareMessageText(t1.next[i], t2.next[i]);
+    if (res) return res;
+  }
+  if (t1.next.length < t2.next.length) return qb.Comparison.LessThan;
+  else if (t1.next.length > t2.next.length) return qb.Comparison.GreaterThan;
+  return qb.Comparison.EqualTo;
+}
+export function addRelatedInfo<T extends Diagnostic>(diagnostic: T, ...relatedInformation: DiagnosticRelatedInformation[]): T {
+  if (!relatedInformation.length) return diagnostic;
+  if (!diagnostic.relatedInformation) {
+    diagnostic.relatedInformation = [];
+  }
+  diagnostic.relatedInformation.push(...relatedInformation);
+  return diagnostic;
+}
+export function createDiagnosticCollection(): DiagnosticCollection {
+  let nonFileDiagnostics = ([] as Diagnostic[]) as qb.Sorteds<Diagnostic>;
+  const filesWithDiagnostics = ([] as string[]) as qb.Sorteds<string>;
+  const fileDiagnostics = new qb.QMap<qb.Sorteds<DiagnosticWithLocation>>();
+  let hasReadNonFileDiagnostics = false;
+  return {
+    add,
+    lookup,
+    getGlobalDiagnostics,
+    getDiagnostics,
+    reattachFileDiagnostics,
+  };
+  function reattachFileDiagnostics(newFile: SourceFile): void {
+    qb.forEach(fileDiagnostics.get(newFile.fileName), (diagnostic) => (diagnostic.file = newFile));
+  }
+  function lookup(diagnostic: Diagnostic): Diagnostic | undefined {
+    let diagnostics: qb.Sorteds<Diagnostic> | undefined;
+    if (diagnostic.file) {
+      diagnostics = fileDiagnostics.get(diagnostic.file.fileName);
+    } else {
+      diagnostics = nonFileDiagnostics;
+    }
+    if (!diagnostics) {
+      return;
+    }
+    const result = qb.binarySearch(diagnostics, diagnostic, qb.identity, compareDiagnosticsSkipRelatedInformation);
+    if (result >= 0) return diagnostics[result];
+    return;
+  }
+  function add(diagnostic: Diagnostic): void {
+    let diagnostics: qb.Sorteds<Diagnostic> | undefined;
+    if (diagnostic.file) {
+      diagnostics = fileDiagnostics.get(diagnostic.file.fileName);
+      if (!diagnostics) {
+        diagnostics = ([] as Diagnostic[]) as qb.Sorteds<DiagnosticWithLocation>;
+        fileDiagnostics.set(diagnostic.file.fileName, diagnostics as qb.Sorteds<DiagnosticWithLocation>);
+        qb.insertSorted(filesWithDiagnostics, diagnostic.file.fileName, qb.compareCaseSensitive);
+      }
+    } else {
+      if (hasReadNonFileDiagnostics) {
+        hasReadNonFileDiagnostics = false;
+        nonFileDiagnostics = nonFileDiagnostics.slice() as qb.Sorteds<Diagnostic>;
+      }
+      diagnostics = nonFileDiagnostics;
+    }
+    qb.insertSorted(diagnostics, diagnostic, compareDiagnostics);
+  }
+  function getGlobalDiagnostics(): Diagnostic[] {
+    hasReadNonFileDiagnostics = true;
+    return nonFileDiagnostics;
+  }
+  function getDiagnostics(fileName: string): DiagnosticWithLocation[];
+  function getDiagnostics(): Diagnostic[];
+  function getDiagnostics(fileName?: string): Diagnostic[] {
+    if (fileName) return fileDiagnostics.get(fileName) || [];
+    const fileDiags: Diagnostic[] = qb.flatMapToMutable(filesWithDiagnostics, (f) => fileDiagnostics.get(f));
+    if (!nonFileDiagnostics.length) return fileDiags;
+    fileDiags.unshift(...nonFileDiagnostics);
+    return fileDiags;
+  }
 }
 export const msgs = {
   Unterminated_string_literal: new Message(1002, Category.Error, 'Unterminated_string_literal_1002', 'Unterminated string literal.'),

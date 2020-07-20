@@ -535,7 +535,7 @@ export function transformClassFields(context: TransformationContext) {
     const weakMapName = createOptimisticUniqueName('_' + text.substring(1));
     weakMapName.autoGenerateFlags |= GeneratedIdentifierFlags.ReservedInNestedScopes;
     hoistVariableDeclaration(weakMapName);
-    (currentPrivateIdentifierEnvironment || (currentPrivateIdentifierEnvironment = createEscapedMap())).set(name.escapedText, {
+    (currentPrivateIdentifierEnvironment || (currentPrivateIdentifierEnvironment = qb.createEscapedMap())).set(name.escapedText, {
       placement: PrivateIdentifierPlacement.InstanceField,
       weakMapName,
     });

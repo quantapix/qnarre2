@@ -91,8 +91,64 @@ export const create = new (class {
   tokenRange(pos: number, k: Syntax): qb.TextRange {
     return new qb.TextRange(pos, pos + qy.toString(k)!.length);
   }
+  createMethodCall(object: Expression, methodName: string | Identifier, argumentsList: readonly Expression[]) {
+    return new qc.CallExpression(new qc.PropertyAccessExpression(object, asName(methodName)), undefined, argumentsList);
+  }
+  createGlobalMethodCall(globalObjectName: string, methodName: string, argumentsList: readonly Expression[]) {
+    return createMethodCall(new Identifier(globalObjectName), methodName, argumentsList);
+  }
+  createObjectDefinePropertyCall(target: Expression, propertyName: string | Expression, attributes: Expression) {
+    return createGlobalMethodCall('Object', 'defineProperty', [target, asExpression(propertyName), attributes]);
+  }
+  createPropertyDescriptor(attributes: PropertyDescriptorAttributes, singleLine?: boolean) {
+    const ps: PropertyAssignment[] = [];
+    tryAddPropertyAssignment(ps, 'enumerable', asExpression(attributes.enumerable));
+    tryAddPropertyAssignment(ps, 'configurable', asExpression(attributes.configurable));
+    let isData = tryAddPropertyAssignment(ps, 'writable', asExpression(attributes.writable));
+    isData = tryAddPropertyAssignment(ps, 'value', attributes.value) || isData;
+    let isAccessor = tryAddPropertyAssignment(ps, 'get', attributes.get);
+    isAccessor = tryAddPropertyAssignment(ps, 'set', attributes.set) || isAccessor;
+    assert(!(isData && isAccessor), 'A PropertyDescriptor may not be both an accessor descriptor and a data descriptor.');
+    return new qc.ObjectLiteralExpression(ps, !singleLine);
+  }
+  createDiagnosticForNode(node: Node, message: qd.Message, arg0?: string | number, arg1?: string | number, arg2?: string | number, arg3?: string | number): DiagnosticWithLocation {
+    const sourceFile = qc.get.sourceFileOf(node);
+    return createDiagnosticForNodeInSourceFile(sourceFile, node, message, arg0, arg1, arg2, arg3);
+  }
+  createDiagnosticForNodeFromMessageChain(node: Node, messageChain: qd.MessageChain, relatedInformation?: DiagnosticRelatedInformation[]): DiagnosticWithLocation {
+    const sourceFile = qc.get.sourceFileOf(node);
+    const span = getErrorSpanForNode(sourceFile, node);
+    return {
+      file: sourceFile,
+      start: span.start,
+      length: span.length,
+      code: messageChain.code,
+      category: messageChain.category,
+      messageText: messageChain.next ? messageChain : messageChain.messageText,
+      relatedInformation,
+    };
+  }
 })();
 export const is = new (class {
+  isRequireCall(callExpression: Node, requireStringLiteralLikeArgument: true): callExpression is RequireOrImportCall & { expression: Identifier; arguments: [StringLiteralLike] };
+  isRequireCall(callExpression: Node, requireStringLiteralLikeArgument: boolean): callExpression is CallExpression;
+  isRequireCall(callExpression: Node, requireStringLiteralLikeArgument: boolean): callExpression is CallExpression {
+    if (callExpression.kind !== Syntax.CallExpression) return false;
+    const { expression, arguments: args } = callExpression as CallExpression;
+    if (expression.kind !== Syntax.Identifier || (expression as Identifier).escapedText !== 'require') return false;
+    if (args.length !== 1) return false;
+    const arg = args[0];
+    return !requireStringLiteralLikeArgument || StringLiteral.like(arg);
+  }
+  isRequireVariableDeclaration(node: Node, requireStringLiteralLikeArgument: true): node is RequireVariableDeclaration;
+  isRequireVariableDeclaration(node: Node, requireStringLiteralLikeArgument: boolean): node is VariableDeclaration;
+  isRequireVariableDeclaration(node: Node, requireStringLiteralLikeArgument: boolean): node is VariableDeclaration {
+    return this.kind(qc.VariableDeclaration, node) && !!node.initer && isRequireCall(node.initer, requireStringLiteralLikeArgument);
+  }
+  isRequireVariableDeclarationStatement(node: Node, requireStringLiteralLikeArgument = true): node is VariableStatement {
+    return this.kind(qc.VariableStatement, node) && every(node.declarationList.declarations, (decl) => isRequireVariableDeclaration(decl, requireStringLiteralLikeArgument));
+  }
+
   kind<S extends Syntax, T extends { kind: S; also?: Syntax[] }>(t: T, n?: Node): n is NodeType<T['kind']> {
     if (n) return n.kind === t.kind || !!t.also?.includes(n.kind);
     return false;
@@ -1343,6 +1399,34 @@ export const isDoc = new (class {
   }
 })();
 export const get = new (class {
+  getAssignedExpandoIniter(node: Node | undefined): Expression | undefined {
+    if (node && node.parent && is.kind(qc.BinaryExpression, node.parent) && node.parent.operatorToken.kind === Syntax.EqualsToken) {
+      const isPrototypeAssignment = is.prototypeAccess(node.parent.left);
+      return getExpandoIniter(node.parent.right, isPrototypeAssignment) || getDefaultedExpandoIniter(node.parent.left, node.parent.right, isPrototypeAssignment);
+    }
+    if (node && qc.is.kind(qc.CallExpression, node) && isBindableObjectDefinePropertyCall(node)) {
+      const result = hasExpandoValueProperty(node.arguments[2], node.arguments[1].text === 'prototype');
+      if (result) return result;
+    }
+  }
+  getExpandoIniter(initer: Node, isPrototypeAssignment: boolean): Expression | undefined {
+    if (is.kind(qc.CallExpression, initer)) {
+      const e = skipParentheses(initer.expression);
+      return e.kind === Syntax.FunctionExpression || e.kind === Syntax.ArrowFunction ? initer : undefined;
+    }
+    if (initer.kind === Syntax.FunctionExpression || initer.kind === Syntax.ClassExpression || initer.kind === Syntax.ArrowFunction) return initer as Expression;
+    if (is.kind(qc.ObjectLiteralExpression, initer) && (initer.properties.length === 0 || isPrototypeAssignment)) return initer;
+    return;
+  }
+  getTextOfNodeFromSourceText(sourceText: string, node: Node, includeTrivia = false): string {
+    if (qc.is.missing(node)) return '';
+    let text = sourceText.substring(includeTrivia ? node.pos : qy.skipTrivia(sourceText, node.pos), node.end);
+    if (qc.is.docTypeExpressionOrChild(node)) {
+      text = text.replace(/(^|\r?\n|\r)\s*\*\s*/g, '$1');
+    }
+    return text;
+  }
+
   containingFunction(n: Node): qc.SignatureDeclaration | undefined {
     return findAncestor(n.parent, is.functionLike);
   }
@@ -1727,7 +1811,6 @@ export const get = new (class {
   }
   declarationOfExpando(n: Node): Node | undefined {
     if (!n.parent) return;
-
     let name: Expression | BindingName | undefined;
     let decl: Node | undefined;
     if (is.kind(qc.VariableDeclaration, node.parent) && node.parent.initer === node) {
@@ -2142,7 +2225,7 @@ export const fixme = new (class {
         return false;
       }
       try {
-        setLocalizedDiagnosticMessages(JSON.parse(fileContents!));
+        setLocalizedqd.Messages(JSON.parse(fileContents!));
       } catch {
         if (errors) errors.push(createCompilerDiagnostic(qd.Corrupted_locale_file_0, filePath));
         return false;
@@ -2553,6 +2636,16 @@ export const forEach = new (class {
     }
     return;
   }
+  forEachImportClauseDeclaration<T>(node: ImportClause, action: (declaration: ImportClause | NamespaceImport | ImportSpecifier) => T | undefined): T | undefined {
+    if (node.name) {
+      const result = action(node);
+      if (result) return result;
+    }
+    if (node.namedBindings) {
+      const result = qc.is.kind(qc.NamespaceImport, node.namedBindings) ? action(node.namedBindings) : forEach(node.namedBindings.elements, action);
+      if (result) return result;
+    }
+  }
 })();
 export abstract class Declaration extends qc.Declaration {
   isBlockOrCatchScoped() {
@@ -2777,6 +2870,79 @@ export abstract class Expression extends qc.Expression {
   }
   isCommaSequence(): this is (BinaryExpression & { operatorToken: Token<Syntax.CommaToken> }) | CommaListExpression {
     return (this.kind === Syntax.BinaryExpression && (<BinaryExpression>this).operatorToken.kind === Syntax.CommaToken) || this.kind === Syntax.CommaListExpression;
+  }
+  isSameEntityName(name: Expression, initer: Expression) {
+    if (qc.is.propertyNameLiteral(name) && qc.is.propertyNameLiteral(initer)) return getTextOfIdentifierOrLiteral(name) === getTextOfIdentifierOrLiteral(name);
+    if (
+      qc.is.kind(qc.Identifier, name) &&
+      qc.is.literalLikeAccess(initer) &&
+      (initer.expression.kind === Syntax.ThisKeyword ||
+        (qc.is.kind(qc.Identifier, initer.expression) && (initer.expression.escapedText === 'window' || initer.expression.escapedText === 'self' || initer.expression.escapedText === 'global')))
+    ) {
+      const nameOrArgument = getNameOrArgument(initer);
+      if (qc.is.kind(qc.PrivateIdentifier, nameOrArgument)) {
+        fail('Unexpected PrivateIdentifier in name expression with literal-like access.');
+      }
+      return isSameEntityName(name, nameOrArgument);
+    }
+    if (qc.is.literalLikeAccess(name) && qc.is.literalLikeAccess(initer))
+      return getElementOrPropertyAccessName(name) === getElementOrPropertyAccessName(initer) && isSameEntityName(name.expression, initer.expression);
+    return false;
+  }
+  getRightMostAssignedExpression(node: Expression) {
+    while (qc.is.assignmentExpression(node, true)) {
+      node = node.right;
+    }
+    return node;
+  }
+  getDefaultedExpandoIniter(name: Expression, initer: Expression, isPrototypeAssignment: boolean) {
+    const e =
+      qc.is.kind(qc.BinaryExpression, initer) &&
+      (initer.operatorToken.kind === Syntax.Bar2Token || initer.operatorToken.kind === Syntax.Question2Token) &&
+      getExpandoIniter(initer.right, isPrototypeAssignment);
+    if (e && isSameEntityName(name, (initer as BinaryExpression).left)) return e;
+    return;
+  }
+  isDefaultedExpandoIniter(node: BinaryExpression) {
+    const name = qc.is.kind(qc.VariableDeclaration, node.parent)
+      ? node.parent.name
+      : qc.is.kind(qc.BinaryExpression, node.parent) && node.parent.operatorToken.kind === Syntax.EqualsToken
+      ? node.parent.left
+      : undefined;
+    return name && getExpandoIniter(node.right, qc.is.prototypeAccess(name)) && qc.is.entityNameExpression(name) && isSameEntityName(name, node.left);
+  }
+  getExpressionAssociativity(expression: Expression) {
+    const operator = getOperator(expression);
+    const hasArguments = expression.kind === Syntax.NewExpression && (<NewExpression>expression).arguments !== undefined;
+    return qy.get.operatorAssociativity(expression.kind, operator, hasArguments);
+  }
+  getExpressionPrecedence(expression: Expression) {
+    const operator = getOperator(expression);
+    const hasArguments = expression.kind === Syntax.NewExpression && (<NewExpression>expression).arguments !== undefined;
+    return qy.get.operatorPrecedence(expression.kind, operator, hasArguments);
+  }
+  getOperator(expression: Expression): Syntax {
+    if (expression.kind === Syntax.BinaryExpression) return (<BinaryExpression>expression).operatorToken.kind;
+    else if (expression.kind === Syntax.PrefixUnaryExpression || expression.kind === Syntax.PostfixUnaryExpression) return (<PrefixUnaryExpression | PostfixUnaryExpression>expression).operator;
+    return expression.kind;
+  }
+  isDottedName(node: Expression): boolean {
+    return (
+      node.kind === Syntax.Identifier ||
+      node.kind === Syntax.ThisKeyword ||
+      node.kind === Syntax.SuperKeyword ||
+      (node.kind === Syntax.PropertyAccessExpression && isDottedName((<PropertyAccessExpression>node).expression)) ||
+      (node.kind === Syntax.ParenthesizedExpression && isDottedName((<ParenthesizedExpression>node).expression))
+    );
+  }
+  tryGetPropertyAccessOrIdentifierToString(expr: Expression): string | undefined {
+    if (is.kind(qc.PropertyAccessExpression, expr)) {
+      const baseStr = tryGetPropertyAccessOrIdentifierToString(expr.expression);
+      if (baseStr !== undefined) return baseStr + '.' + expr.name;
+    } else if (is.kind(qc.Identifier, expr)) {
+      return qy.get.unescUnderscores(expr.escapedText);
+    }
+    return;
   }
 }
 export abstract class Statement extends qc.Statement {

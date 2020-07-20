@@ -1,6 +1,8 @@
 import * as qb from './base';
+import * as qd from './diags';
+import * as qt from './types';
+import { Extension, Path, ScriptKind } from './types';
 import * as qy from './syntax';
-import { Path } from './types';
 import { dirSeparator } from './syntax';
 const backslashRegExp = /\\/g;
 export function isUrl(p: string) {
@@ -60,6 +62,9 @@ export function getBaseFileName(path: string, extensions?: string | readonly str
   const name = path.slice(Math.max(getRootLength(path), path.lastIndexOf(dirSeparator) + 1));
   const extension = extensions !== undefined && ignoreCase !== undefined ? getAnyExtensionFromPath(name, extensions, ignoreCase) : undefined;
   return extension ? name.slice(0, name.length - extension.length) : name;
+}
+export function makeIdentifierFromModuleName(s: string): string {
+  return getBaseFileName(s).replace(/^(\d)/, '_$1').replace(/\W/g, '_');
 }
 function getAnyExtensionFromPathWorker(path: string, extensions: string | readonly string[], stringEqComparer: (a: string, b: string) => boolean) {
   if (typeof extensions === 'string') return qy.get.extensionFrom(path, extensions, stringEqComparer) || '';
@@ -327,7 +332,7 @@ function stripLeadingDirectorySeparator(s: string): string | undefined {
   return qy.is.dirSeparator(s.charCodeAt(0)) ? s.slice(1) : undefined;
 }
 export function tryRemoveDirectoryPrefix(path: string, dirPath: string, getCanonicalFileName: qb.GetCanonicalFileName): string | undefined {
-  const withoutPrefix = tryRemovePrefix(path, dirPath, getCanonicalFileName);
+  const withoutPrefix = qb.tryRemovePrefix(path, dirPath, getCanonicalFileName);
   return withoutPrefix === undefined ? undefined : stripLeadingDirectorySeparator(withoutPrefix);
 }
 const wildcardCodes = [qy.Codes.asterisk, qy.Codes.question];
@@ -418,4 +423,297 @@ function getSubPatternFromSpec(
 }
 function replaceWildcardCharacter(match: string, singleAsteriskRegexFragment: string) {
   return match === '*' ? singleAsteriskRegexFragment : match === '?' ? '[^/]' : '\\' + match;
+}
+export interface ResolveModuleNameResolutionHost {
+  getCanonicalFileName(p: string): string;
+  getCommonSourceDirectory(): string;
+  getCurrentDirectory(): string;
+}
+export function getExternalModuleNameFromPath(host: ResolveModuleNameResolutionHost, fileName: string, referencePath?: string): string {
+  const getCanonicalFileName = (f: string) => host.getCanonicalFileName(f);
+  const dir = toPath(referencePath ? getDirectoryPath(referencePath) : host.getCommonSourceDirectory(), host.getCurrentDirectory(), getCanonicalFileName);
+  const filePath = getNormalizedAbsolutePath(fileName, host.getCurrentDirectory());
+  const relativePath = getRelativePathToDirectoryOrUrl(dir, filePath, dir, getCanonicalFileName, false);
+  const extensionless = removeFileExtension(relativePath);
+  return referencePath ? ensurePathIsNonModuleName(extensionless) : extensionless;
+}
+export function getSourceFilePathInNewDirWorker(fileName: string, newDirPath: string, currentDirectory: string, commonSourceDirectory: string, getCanonicalFileName: qb.GetCanonicalFileName): string {
+  let sourceFilePath = getNormalizedAbsolutePath(fileName, currentDirectory);
+  const isSourceFileInCommonSourceDirectory = getCanonicalFileName(sourceFilePath).indexOf(getCanonicalFileName(commonSourceDirectory)) === 0;
+  sourceFilePath = isSourceFileInCommonSourceDirectory ? sourceFilePath.substring(commonSourceDirectory.length) : sourceFilePath;
+  return combinePaths(newDirPath, sourceFilePath);
+}
+export function writeFile(
+  host: { writeFile: qt.WriteFileCallback },
+  diagnostics: qd.DiagnosticCollection,
+  fileName: string,
+  data: string,
+  writeByteOrderMark: boolean,
+  sourceFiles?: readonly qt.SourceFile[]
+) {
+  host.writeFile(
+    fileName,
+    data,
+    writeByteOrderMark,
+    (hostErrorMessage) => {
+      diagnostics.add(qd.createCompilerDiagnostic(qd.msgs.Could_not_write_file_0_Colon_1, fileName, hostErrorMessage));
+    },
+    sourceFiles
+  );
+}
+function ensureDirectoriesExist(directoryPath: string, createDirectory: (path: string) => void, directoryExists: (path: string) => boolean) {
+  if (directoryPath.length > getRootLength(directoryPath) && !directoryExists(directoryPath)) {
+    const parentDirectory = getDirectoryPath(directoryPath);
+    ensureDirectoriesExist(parentDirectory, createDirectory, directoryExists);
+    createDirectory(directoryPath);
+  }
+}
+export function writeFileEnsuringDirectories(
+  path: string,
+  data: string,
+  writeByteOrderMark: boolean,
+  writeFile: (path: string, data: string, writeByteOrderMark: boolean) => void,
+  createDirectory: (path: string) => void,
+  directoryExists: (path: string) => boolean
+) {
+  try {
+    writeFile(path, data, writeByteOrderMark);
+  } catch {
+    ensureDirectoriesExist(getDirectoryPath(normalizePath(path)), createDirectory, directoryExists);
+    writeFile(path, data, writeByteOrderMark);
+  }
+}
+const extensionsToRemove = [Extension.Dts, Extension.Ts, Extension.Js, Extension.Tsx, Extension.Jsx, Extension.Json];
+export function removeFileExtension(path: string): string {
+  for (const ext of extensionsToRemove) {
+    const extensionless = tryRemoveExtension(path, ext);
+    if (extensionless !== undefined) return extensionless;
+  }
+  return path;
+}
+export function tryRemoveExtension(path: string, extension: string): string | undefined {
+  return fileExtensionIs(path, extension) ? removeExtension(path, extension) : undefined;
+}
+export function removeExtension(path: string, extension: string): string {
+  return path.substring(0, path.length - extension.length);
+}
+export function changeExtension<T extends string | Path>(path: T, newExtension: string): T {
+  return <T>changeAnyExtension(path, newExtension, extensionsToRemove, false);
+}
+export interface FileSystemEntries {
+  readonly files: readonly string[];
+  readonly directories: readonly string[];
+}
+export interface FileMatcherPatterns {
+  includeFilePatterns: readonly string[] | undefined;
+  includeFilePattern: string | undefined;
+  includeDirectoryPattern: string | undefined;
+  excludePattern: string | undefined;
+  basePaths: readonly string[];
+}
+export function getFileMatcherPatterns(
+  path: string,
+  excludes: readonly string[] | undefined,
+  includes: readonly string[] | undefined,
+  useCaseSensitiveFileNames: boolean,
+  currentDirectory: string
+): FileMatcherPatterns {
+  path = normalizePath(path);
+  currentDirectory = normalizePath(currentDirectory);
+  const absolutePath = combinePaths(currentDirectory, path);
+  return {
+    includeFilePatterns: qb.map(getRegularExpressionsForWildcards(includes, absolutePath, 'files'), (pattern) => `^${pattern}$`),
+    includeFilePattern: getRegularExpressionForWildcard(includes, absolutePath, 'files'),
+    includeDirectoryPattern: getRegularExpressionForWildcard(includes, absolutePath, 'directories'),
+    excludePattern: getRegularExpressionForWildcard(excludes, absolutePath, 'exclude'),
+    basePaths: getBasePaths(path, includes, useCaseSensitiveFileNames),
+  };
+}
+export function getRegexFromPattern(pattern: string, useCaseSensitiveFileNames: boolean): RegExp {
+  return new RegExp(pattern, useCaseSensitiveFileNames ? '' : 'i');
+}
+export function matchFiles(
+  path: string,
+  extensions: readonly string[] | undefined,
+  excludes: readonly string[] | undefined,
+  includes: readonly string[] | undefined,
+  useCaseSensitiveFileNames: boolean,
+  currentDirectory: string,
+  depth: number | undefined,
+  getFileSystemEntries: (path: string) => FileSystemEntries,
+  realpath: (path: string) => string
+): string[] {
+  path = normalizePath(path);
+  currentDirectory = normalizePath(currentDirectory);
+  const patterns = getFileMatcherPatterns(path, excludes, includes, useCaseSensitiveFileNames, currentDirectory);
+  const includeFileRegexes = patterns.includeFilePatterns && patterns.includeFilePatterns.map((pattern) => getRegexFromPattern(pattern, useCaseSensitiveFileNames));
+  const includeDirectoryRegex = patterns.includeDirectoryPattern && getRegexFromPattern(patterns.includeDirectoryPattern, useCaseSensitiveFileNames);
+  const excludeRegex = patterns.excludePattern && getRegexFromPattern(patterns.excludePattern, useCaseSensitiveFileNames);
+  const results: string[][] = includeFileRegexes ? includeFileRegexes.map(() => []) : [[]];
+  const visited = new qb.QMap<true>();
+  const toCanonical = qb.createGetCanonicalFileName(useCaseSensitiveFileNames);
+  for (const basePath of patterns.basePaths) {
+    visitDirectory(basePath, combinePaths(currentDirectory, basePath), depth);
+  }
+  return qb.flatten(results);
+  function visitDirectory(path: string, absolutePath: string, depth: number | undefined) {
+    const canonicalPath = toCanonical(realpath(absolutePath));
+    if (visited.has(canonicalPath)) return;
+    visited.set(canonicalPath, true);
+    const { files, directories } = getFileSystemEntries(path);
+    for (const current of qb.sort<string>(files, qb.compareCaseSensitive)) {
+      const name = combinePaths(path, current);
+      const absoluteName = combinePaths(absolutePath, current);
+      if (extensions && !fileExtensionIsOneOf(name, extensions)) continue;
+      if (excludeRegex && excludeRegex.test(absoluteName)) continue;
+      if (!includeFileRegexes) {
+        results[0].push(name);
+      } else {
+        const includeIndex = qb.findIndex(includeFileRegexes, (re) => re.test(absoluteName));
+        if (includeIndex !== -1) {
+          results[includeIndex].push(name);
+        }
+      }
+    }
+    if (depth !== undefined) {
+      depth--;
+      if (depth === 0) {
+        return;
+      }
+    }
+    for (const current of qb.sort<string>(directories, qb.compareCaseSensitive)) {
+      const name = combinePaths(path, current);
+      const absoluteName = combinePaths(absolutePath, current);
+      if ((!includeDirectoryRegex || includeDirectoryRegex.test(absoluteName)) && (!excludeRegex || !excludeRegex.test(absoluteName))) {
+        visitDirectory(name, absoluteName, depth);
+      }
+    }
+  }
+}
+function getBasePaths(path: string, includes: readonly string[] | undefined, useCaseSensitiveFileNames: boolean): string[] {
+  const basePaths: string[] = [path];
+  if (includes) {
+    const includeBasePaths: string[] = [];
+    for (const include of includes) {
+      const absolute: string = isRootedDiskPath(include) ? include : normalizePath(combinePaths(path, include));
+      includeBasePaths.push(getIncludeBasePath(absolute));
+    }
+    includeBasePaths.sort(qb.getStringComparer(!useCaseSensitiveFileNames));
+    for (const includeBasePath of includeBasePaths) {
+      if (qb.every(basePaths, (basePath) => !containsPath(basePath, includeBasePath, path, !useCaseSensitiveFileNames))) {
+        basePaths.push(includeBasePath);
+      }
+    }
+  }
+  return basePaths;
+}
+function getIncludeBasePath(absolute: string): string {
+  const wildcardOffset = qb.indexOfAnyCharCode(absolute, wildcardCodes);
+  if (wildcardOffset < 0) return !hasExtension(absolute) ? absolute : removeTrailingDirectorySeparator(getDirectoryPath(absolute));
+  return absolute.substring(0, absolute.lastIndexOf(dirSeparator, wildcardOffset));
+}
+export function ensureScriptKind(fileName: string, scriptKind: ScriptKind | undefined): ScriptKind {
+  return scriptKind || getScriptKindFromFileName(fileName) || ScriptKind.TS;
+}
+export function getScriptKindFromFileName(fileName: string): ScriptKind {
+  const ext = fileName.substr(fileName.lastIndexOf('.'));
+  switch (ext.toLowerCase()) {
+    case Extension.Js:
+      return ScriptKind.JS;
+    case Extension.Jsx:
+      return ScriptKind.JSX;
+    case Extension.Ts:
+      return ScriptKind.TS;
+    case Extension.Tsx:
+      return ScriptKind.TSX;
+    case Extension.Json:
+      return ScriptKind.JSON;
+    default:
+      return ScriptKind.Unknown;
+  }
+}
+export const supportedTSExtensions: readonly Extension[] = [Extension.Ts, Extension.Tsx, Extension.Dts];
+export const supportedTSExtensionsWithJson: readonly Extension[] = [Extension.Ts, Extension.Tsx, Extension.Dts, Extension.Json];
+export const supportedTSExtensionsForExtractExtension: readonly Extension[] = [Extension.Dts, Extension.Ts, Extension.Tsx];
+export const supportedJSExtensions: readonly Extension[] = [Extension.Js, Extension.Jsx];
+export const supportedJSAndJsonExtensions: readonly Extension[] = [Extension.Js, Extension.Jsx, Extension.Json];
+const allSupportedExtensions: readonly Extension[] = [...supportedTSExtensions, ...supportedJSExtensions];
+const allSupportedExtensionsWithJson: readonly Extension[] = [...supportedTSExtensions, ...supportedJSExtensions, Extension.Json];
+export function getSupportedExtensions(options?: qt.CompilerOptions): readonly Extension[];
+export function getSupportedExtensions(options?: qt.CompilerOptions, extraFileExtensions?: readonly qt.FileExtensionInfo[]): readonly string[];
+export function getSupportedExtensions(options?: qt.CompilerOptions, extraFileExtensions?: readonly qt.FileExtensionInfo[]): readonly string[] {
+  const needJsExtensions = options && options.allowJs;
+  if (!extraFileExtensions || extraFileExtensions.length === 0) return needJsExtensions ? allSupportedExtensions : supportedTSExtensions;
+  const extensions = [
+    ...(needJsExtensions ? allSupportedExtensions : supportedTSExtensions),
+    ...qb.mapDefined(extraFileExtensions, (x) => (x.scriptKind === ScriptKind.Deferred || (needJsExtensions && isJSLike(x.scriptKind)) ? x.extension : undefined)),
+  ];
+  return qb.deduplicate<string>(extensions, qb.equateStringsCaseSensitive, qb.compareCaseSensitive);
+}
+export function getSuppoertedExtensionsWithJsonIfResolveJsonModule(options: qt.CompilerOptions | undefined, supportedExtensions: readonly string[]): readonly string[] {
+  if (!options || !options.resolveJsonModule) return supportedExtensions;
+  if (supportedExtensions === allSupportedExtensions) return allSupportedExtensionsWithJson;
+  if (supportedExtensions === supportedTSExtensions) return supportedTSExtensionsWithJson;
+  return [...supportedExtensions, Extension.Json];
+}
+function isJSLike(scriptKind: ScriptKind | undefined): boolean {
+  return scriptKind === ScriptKind.JS || scriptKind === ScriptKind.JSX;
+}
+export function hasJSFileExtension(fileName: string): boolean {
+  return qb.some(supportedJSExtensions, (extension) => fileExtensionIs(fileName, extension));
+}
+export function hasTSFileExtension(fileName: string): boolean {
+  return qb.some(supportedTSExtensions, (extension) => fileExtensionIs(fileName, extension));
+}
+export function isSupportedSourceFileName(fileName: string, compilerOptions?: qt.CompilerOptions, extraFileExtensions?: readonly qt.FileExtensionInfo[]) {
+  if (!fileName) return false;
+  const supportedExtensions = getSupportedExtensions(compilerOptions, extraFileExtensions);
+  for (const extension of getSuppoertedExtensionsWithJsonIfResolveJsonModule(compilerOptions, supportedExtensions)) {
+    if (fileExtensionIs(fileName, extension)) return true;
+  }
+  return false;
+}
+export const enum ExtensionPriority {
+  TypeScriptFiles = 0,
+  DeclarationAndJavaScriptFiles = 2,
+  Highest = TypeScriptFiles,
+  Lowest = DeclarationAndJavaScriptFiles,
+}
+export function getExtensionPriority(path: string, supportedExtensions: readonly string[]): ExtensionPriority {
+  for (let i = supportedExtensions.length - 1; i >= 0; i--) {
+    if (fileExtensionIs(path, supportedExtensions[i])) return adjustExtensionPriority(<ExtensionPriority>i, supportedExtensions);
+  }
+  return ExtensionPriority.Highest;
+}
+export function adjustExtensionPriority(extensionPriority: ExtensionPriority, supportedExtensions: readonly string[]): ExtensionPriority {
+  if (extensionPriority < ExtensionPriority.DeclarationAndJavaScriptFiles) return ExtensionPriority.TypeScriptFiles;
+  else if (extensionPriority < supportedExtensions.length) return ExtensionPriority.DeclarationAndJavaScriptFiles;
+  return supportedExtensions.length;
+}
+export function getNextLowestExtensionPriority(extensionPriority: ExtensionPriority, supportedExtensions: readonly string[]): ExtensionPriority {
+  if (extensionPriority < ExtensionPriority.DeclarationAndJavaScriptFiles) return ExtensionPriority.DeclarationAndJavaScriptFiles;
+  return supportedExtensions.length;
+}
+export function extensionIsTS(ext: Extension): boolean {
+  return ext === Extension.Ts || ext === Extension.Tsx || ext === Extension.Dts;
+}
+export function resolutionExtensionIsTSOrJson(ext: Extension) {
+  return extensionIsTS(ext) || ext === Extension.Json;
+}
+export function extensionFromPath(path: string): Extension {
+  const ext = tryGetExtensionFromPath(path);
+  return ext !== undefined ? ext : qb.fail(`File ${path} has unknown extension.`);
+}
+export function isAnySupportedFileExtension(path: string): boolean {
+  return tryGetExtensionFromPath(path) !== undefined;
+}
+export function tryGetExtensionFromPath(path: string): Extension | undefined {
+  return qb.find<Extension>(extensionsToRemove, (e) => fileExtensionIs(path, e));
+}
+export const emptyFileSystemEntries: FileSystemEntries = {
+  files: qb.empty,
+  directories: qb.empty,
+};
+export interface HostWithIsSourceOfProjectReferenceRedirect {
+  isSourceOfProjectReferenceRedirect(fileName: string): boolean;
 }

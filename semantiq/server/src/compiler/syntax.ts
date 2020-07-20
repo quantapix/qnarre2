@@ -1773,6 +1773,9 @@ export function escapeNonAsciiString(s: string, q?: Codes.doubleQuote | Codes.si
   s = escapeString(s, q);
   return nonAscii.test(s) ? s.replace(nonAscii, (c) => encodeUtf16EscapeSequence(c.charCodeAt(0))) : s;
 }
+export function getTextOfConstantValue(s: string | number) {
+  return qb.isString(s) ? '"' + escapeNonAsciiString(s) + '"' : '' + s;
+}
 const jsxEscMap = new qb.QMap({
   '"': '&quot;',
   "'": '&apos;',

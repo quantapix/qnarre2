@@ -1125,7 +1125,7 @@ function create() {
         r.libReferenceDirectives = emptyArray;
         r.amdDependencies = emptyArray;
         r.hasNoDefaultLib = false;
-        r.pragmas = emptyMap;
+        r.pragmas = qb.emptyMap;
         return r;
       }
       initializeState(t, languageVersion, syntaxCursor, scriptKind);

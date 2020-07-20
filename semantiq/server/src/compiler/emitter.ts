@@ -4159,3 +4159,344 @@ const enum TempFlags {
   CountMask = 0x0fffffff,
   _i = 0x10000000,
 }
+const stringWriter = createSingleLineStringWriter();
+function createSingleLineStringWriter(): EmitTextWriter {
+  let str = '';
+  const writeText: (text: string) => void = (text) => (str += text);
+  return {
+    getText: () => str,
+    write: writeText,
+    rawWrite: writeText,
+    writeKeyword: writeText,
+    writeOperator: writeText,
+    writePunctuation: writeText,
+    writeSpace: writeText,
+    writeStringLiteral: writeText,
+    writeLiteral: writeText,
+    writeParameter: writeText,
+    writeProperty: writeText,
+    writeSymbol: (s, _) => writeText(s),
+    writeTrailingSemicolon: writeText,
+    writeComment: writeText,
+    getTextPos: () => str.length,
+    getLine: () => 0,
+    getColumn: () => 0,
+    getIndent: () => 0,
+    isAtStartOfLine: () => false,
+    hasTrailingComment: () => false,
+    hasTrailingWhitespace: () => !!str.length && qy.is.whiteSpaceLike(str.charCodeAt(str.length - 1)),
+    writeLine: () => (str += ' '),
+    increaseIndent: noop,
+    decreaseIndent: noop,
+    clear: () => (str = ''),
+    trackSymbol: noop,
+    reportInaccessibleThisError: noop,
+    reportInaccessibleUniqueSymbolError: noop,
+    reportPrivateInBaseOfClassExpression: noop,
+  };
+}
+export function usingSingleLineStringWriter(action: (writer: EmitTextWriter) => void): string {
+  const oldString = stringWriter.getText();
+  try {
+    action(stringWriter);
+    return stringWriter.getText();
+  } finally {
+    stringWriter.clear();
+    stringWriter.writeKeyword(oldString);
+  }
+}
+export function createTextWriter(newLine: string): EmitTextWriter {
+  let output: string;
+  let indent: number;
+  let lineStart: boolean;
+  let lineCount: number;
+  let linePos: number;
+  let hasTrailingComment = false;
+  function updateLineCountAndPosFor(s: string) {
+    const s2 = qy.get.lineStarts(s);
+    if (s2.length > 1) {
+      lineCount = lineCount + s2.length - 1;
+      linePos = output.length - s.length + last(s2);
+      lineStart = linePos - output.length === 0;
+    } else {
+      lineStart = false;
+    }
+  }
+  function writeText(s: string) {
+    if (s && s.length) {
+      if (lineStart) {
+        s = getIndentString(indent) + s;
+        lineStart = false;
+      }
+      output += s;
+      updateLineCountAndPosFor(s);
+    }
+  }
+  function write(s: string) {
+    if (s) hasTrailingComment = false;
+    writeText(s);
+  }
+  function writeComment(s: string) {
+    if (s) hasTrailingComment = true;
+    writeText(s);
+  }
+  function reset(): void {
+    output = '';
+    indent = 0;
+    lineStart = true;
+    lineCount = 0;
+    linePos = 0;
+    hasTrailingComment = false;
+  }
+  function rawWrite(s: string) {
+    if (s !== undefined) {
+      output += s;
+      updateLineCountAndPosFor(s);
+      hasTrailingComment = false;
+    }
+  }
+  function writeLiteral(s: string) {
+    if (s && s.length) {
+      write(s);
+    }
+  }
+  function writeLine(force?: boolean) {
+    if (!lineStart || force) {
+      output += newLine;
+      lineCount++;
+      linePos = output.length;
+      lineStart = true;
+      hasTrailingComment = false;
+    }
+  }
+  function getTextPosWithWriteLine() {
+    return lineStart ? output.length : output.length + newLine.length;
+  }
+  reset();
+  return {
+    write,
+    rawWrite,
+    writeLiteral,
+    writeLine,
+    increaseIndent: () => {
+      indent++;
+    },
+    decreaseIndent: () => {
+      indent--;
+    },
+    getIndent: () => indent,
+    getTextPos: () => output.length,
+    getLine: () => lineCount,
+    getColumn: () => (lineStart ? indent * getIndentSize() : output.length - linePos),
+    getText: () => output,
+    isAtStartOfLine: () => lineStart,
+    hasTrailingComment: () => hasTrailingComment,
+    hasTrailingWhitespace: () => !!output.length && qy.is.whiteSpaceLike(output.charCodeAt(output.length - 1)),
+    clear: reset,
+    reportInaccessibleThisError: noop,
+    reportPrivateInBaseOfClassExpression: noop,
+    reportInaccessibleUniqueSymbolError: noop,
+    trackSymbol: noop,
+    writeKeyword: write,
+    writeOperator: write,
+    writeParameter: write,
+    writeProperty: write,
+    writePunctuation: write,
+    writeSpace: write,
+    writeStringLiteral: write,
+    writeSymbol: (s, _) => write(s),
+    writeTrailingSemicolon: write,
+    writeComment,
+    getTextPosWithWriteLine,
+  };
+}
+export function getTrailingSemicolonDeferringWriter(writer: EmitTextWriter): EmitTextWriter {
+  let pendingTrailingSemicolon = false;
+  function commitPendingTrailingSemicolon() {
+    if (pendingTrailingSemicolon) {
+      writer.writeTrailingSemicolon(';');
+      pendingTrailingSemicolon = false;
+    }
+  }
+  return {
+    ...writer,
+    writeTrailingSemicolon() {
+      pendingTrailingSemicolon = true;
+    },
+    writeLiteral(s) {
+      commitPendingTrailingSemicolon();
+      writer.writeLiteral(s);
+    },
+    writeStringLiteral(s) {
+      commitPendingTrailingSemicolon();
+      writer.writeStringLiteral(s);
+    },
+    writeSymbol(s, sym) {
+      commitPendingTrailingSemicolon();
+      writer.writeSymbol(s, sym);
+    },
+    writePunctuation(s) {
+      commitPendingTrailingSemicolon();
+      writer.writePunctuation(s);
+    },
+    writeKeyword(s) {
+      commitPendingTrailingSemicolon();
+      writer.writeKeyword(s);
+    },
+    writeOperator(s) {
+      commitPendingTrailingSemicolon();
+      writer.writeOperator(s);
+    },
+    writeParameter(s) {
+      commitPendingTrailingSemicolon();
+      writer.writeParameter(s);
+    },
+    writeSpace(s) {
+      commitPendingTrailingSemicolon();
+      writer.writeSpace(s);
+    },
+    writeProperty(s) {
+      commitPendingTrailingSemicolon();
+      writer.writeProperty(s);
+    },
+    writeComment(s) {
+      commitPendingTrailingSemicolon();
+      writer.writeComment(s);
+    },
+    writeLine() {
+      commitPendingTrailingSemicolon();
+      writer.writeLine();
+    },
+    increaseIndent() {
+      commitPendingTrailingSemicolon();
+      writer.increaseIndent();
+    },
+    decreaseIndent() {
+      commitPendingTrailingSemicolon();
+      writer.decreaseIndent();
+    },
+  };
+}
+export function emitComments(
+  text: string,
+  lineMap: readonly number[],
+  writer: EmitTextWriter,
+  comments: readonly CommentRange[] | undefined,
+  leadingSeparator: boolean,
+  trailingSeparator: boolean,
+  newLine: string,
+  writeComment: (text: string, lineMap: readonly number[], writer: EmitTextWriter, commentPos: number, commentEnd: number, newLine: string) => void
+) {
+  if (comments && comments.length > 0) {
+    if (leadingSeparator) {
+      writer.writeSpace(' ');
+    }
+    let emitInterveningSeparator = false;
+    for (const comment of comments) {
+      if (emitInterveningSeparator) {
+        writer.writeSpace(' ');
+        emitInterveningSeparator = false;
+      }
+      writeComment(text, lineMap, writer, comment.pos, comment.end, newLine);
+      if (comment.hasTrailingNewLine) {
+        writer.writeLine();
+      } else {
+        emitInterveningSeparator = true;
+      }
+    }
+    if (emitInterveningSeparator && trailingSeparator) {
+      writer.writeSpace(' ');
+    }
+  }
+}
+export function emitDetachedComments(
+  text: string,
+  lineMap: readonly number[],
+  writer: EmitTextWriter,
+  writeComment: (text: string, lineMap: readonly number[], writer: EmitTextWriter, commentPos: number, commentEnd: number, newLine: string) => void,
+  node: TextRange,
+  newLine: string,
+  removeComments: boolean
+) {
+  let leadingComments: CommentRange[] | undefined;
+  let currentDetachedCommentInfo: { nodePos: number; detachedCommentEndPos: number } | undefined;
+  if (removeComments) {
+    if (node.pos === 0) {
+      leadingComments = filter(qy.get.leadingCommentRanges(text, node.pos), isPinnedCommentLocal);
+    }
+  } else {
+    leadingComments = qy.get.leadingCommentRanges(text, node.pos);
+  }
+  if (leadingComments) {
+    const detachedComments: CommentRange[] = [];
+    let lastComment: CommentRange | undefined;
+    for (const comment of leadingComments) {
+      if (lastComment) {
+        const lastCommentLine = getLineOfLocalPositionFromLineMap(lineMap, lastComment.end);
+        const commentLine = getLineOfLocalPositionFromLineMap(lineMap, comment.pos);
+        if (commentLine >= lastCommentLine + 2) {
+          break;
+        }
+      }
+      detachedComments.push(comment);
+      lastComment = comment;
+    }
+    if (detachedComments.length) {
+      const lastCommentLine = getLineOfLocalPositionFromLineMap(lineMap, last(detachedComments).end);
+      const nodeLine = getLineOfLocalPositionFromLineMap(lineMap, qy.skipTrivia(text, node.pos));
+      if (nodeLine >= lastCommentLine + 2) {
+        emitNewLineBeforeLeadingComments(lineMap, writer, node, leadingComments);
+        emitComments(text, lineMap, writer, detachedComments, true, newLine, writeComment);
+        currentDetachedCommentInfo = { nodePos: node.pos, detachedCommentEndPos: last(detachedComments).end };
+      }
+    }
+  }
+  return currentDetachedCommentInfo;
+  function isPinnedCommentLocal(comment: CommentRange) {
+    return isPinnedComment(text, comment.pos);
+  }
+}
+export function writeCommentRange(text: string, lineMap: readonly number[], writer: EmitTextWriter, commentPos: number, commentEnd: number, newLine: string) {
+  if (text.charCodeAt(commentPos + 1) === Codes.asterisk) {
+    const firstCommentLineAndChar = qy.get.lineAndCharOf(lineMap, commentPos);
+    const lineCount = lineMap.length;
+    let firstCommentLineIndent: number | undefined;
+    for (let pos = commentPos, currentLine = firstCommentLineAndChar.line; pos < commentEnd; currentLine++) {
+      const nextLineStart = currentLine + 1 === lineCount ? text.length + 1 : lineMap[currentLine + 1];
+      if (pos !== commentPos) {
+        if (firstCommentLineIndent === undefined) {
+          firstCommentLineIndent = calculateIndent(text, lineMap[firstCommentLineAndChar.line], commentPos);
+        }
+        const currentWriterIndentSpacing = writer.getIndent() * getIndentSize();
+        const spacesToEmit = currentWriterIndentSpacing - firstCommentLineIndent + calculateIndent(text, pos, nextLineStart);
+        if (spacesToEmit > 0) {
+          let numberOfSingleSpacesToEmit = spacesToEmit % getIndentSize();
+          const indentSizeSpaceString = getIndentString((spacesToEmit - numberOfSingleSpacesToEmit) / getIndentSize());
+          writer.rawWrite(indentSizeSpaceString);
+          while (numberOfSingleSpacesToEmit) {
+            writer.rawWrite(' ');
+            numberOfSingleSpacesToEmit--;
+          }
+        } else {
+          writer.rawWrite('');
+        }
+      }
+      writeTrimmedCurrentLine(text, commentEnd, writer, newLine, pos, nextLineStart);
+      pos = nextLineStart;
+    }
+  } else {
+    writer.writeComment(text.substring(commentPos, commentEnd));
+  }
+}
+function writeTrimmedCurrentLine(text: string, commentEnd: number, writer: EmitTextWriter, newLine: string, pos: number, nextLineStart: number) {
+  const end = Math.min(commentEnd, nextLineStart - 1);
+  const currentLineText = text.substring(pos, end).replace(/^\s+|\s+$/g, '');
+  if (currentLineText) {
+    writer.writeComment(currentLineText);
+    if (end !== commentEnd) {
+      writer.writeLine();
+    }
+  } else {
+    writer.rawWrite(newLine);
+  }
+}

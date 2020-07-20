@@ -74,9 +74,9 @@ interface IterationTypesResolver {
   getGlobalIterableIteratorType: (reportErrors: boolean) => GenericType;
   getGlobalGeneratorType: (reportErrors: boolean) => GenericType;
   resolveIterationType: (type: Type, errorNode: Node | undefined) => Type | undefined;
-  mustHaveANextMethodDiagnostic: DiagnosticMessage;
-  mustBeAMethodDiagnostic: DiagnosticMessage;
-  mustHaveAValueDiagnostic: DiagnosticMessage;
+  mustHaveANextMethodDiagnostic: qd.Message;
+  mustBeAMethodDiagnostic: qd.Message;
+  mustHaveAValueDiagnostic: qd.Message;
 }
 const enum WideningKind {
   Normal,
@@ -548,7 +548,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         }
       }
     }
-    private addDuplicateErrors(t: Symbol, m: DiagnosticMessage, name: string) {
+    private addDuplicateErrors(t: Symbol, m: qd.Message, name: string) {
       forEach(t.declarations, (n) => {
         addDuplicateDeclarationError(n, m, name, this.declarations);
       });
@@ -2666,7 +2666,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     getDiagnostics(sourceFile, cancellationToken);
     return emitResolver;
   }
-  function lookupOrIssueError(location: Node | undefined, message: DiagnosticMessage, arg0?: string | number, arg1?: string | number, arg2?: string | number, arg3?: string | number): Diagnostic {
+  function lookupOrIssueError(location: Node | undefined, message: qd.Message, arg0?: string | number, arg1?: string | number, arg2?: string | number, arg3?: string | number): Diagnostic {
     const diagnostic = location ? createDiagnosticForNode(location, message, arg0, arg1, arg2, arg3) : createCompilerDiagnostic(message, arg0, arg1, arg2, arg3);
     const existing = diagnostics.lookup(diagnostic);
     if (existing) return existing;
@@ -2675,7 +2675,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       return diagnostic;
     }
   }
-  function error(location: Node | undefined, message: DiagnosticMessage, arg0?: string | number, arg1?: string | number, arg2?: string | number, arg3?: string | number): Diagnostic {
+  function error(location: Node | undefined, message: qd.Message, arg0?: string | number, arg1?: string | number, arg2?: string | number, arg3?: string | number): Diagnostic {
     const diagnostic = location ? createDiagnosticForNode(location, message, arg0, arg1, arg2, arg3) : createCompilerDiagnostic(message, arg0, arg1, arg2, arg3);
     diagnostics.add(diagnostic);
     return diagnostic;
@@ -2689,7 +2689,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function errorOrSuggestion(
     isError: boolean,
     location: Node,
-    message: DiagnosticMessage | DiagnosticMessageChain,
+    message: qd.Message | qd.MessageChain,
     arg0?: string | number,
     arg1?: string | number,
     arg2?: string | number,
@@ -2700,7 +2700,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function errorAndMaybeSuggestAwait(
     location: Node,
     maybeMissingAwait: boolean,
-    message: DiagnosticMessage,
+    message: qd.Message,
     arg0?: string | number | undefined,
     arg1?: string | number | undefined,
     arg2?: string | number | undefined,
@@ -2713,7 +2713,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return diagnostic;
   }
-  function addDuplicateDeclarationError(node: Declaration, message: DiagnosticMessage, symbolName: string, relatedNodes: readonly Declaration[] | undefined) {
+  function addDuplicateDeclarationError(node: Declaration, message: qd.Message, symbolName: string, relatedNodes: readonly Declaration[] | undefined) {
     const errorNode = (getExpandoIniter(node, false) ? getNameOfExpando(node) : qc.get.nameOfDeclaration(node)) || node;
     const err = lookupOrIssueError(errorNode, message, symbolName);
     for (const relatedNode of relatedNodes || empty) {
@@ -2924,11 +2924,11 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     location: Node | undefined,
     name: __String,
     meaning: SymbolFlags,
-    nameNotFoundMessage: DiagnosticMessage | undefined,
+    nameNotFoundMessage: qd.Message | undefined,
     nameArg: __String | Identifier | undefined,
     isUse: boolean,
     excludeGlobals = false,
-    suggestedNameNotFoundMessage?: DiagnosticMessage
+    suggestedNameNotFoundMessage?: qd.Message
   ): Symbol | undefined {
     return resolveNameHelper(location, name, meaning, nameNotFoundMessage, nameArg, isUse, excludeGlobals, getSymbol, suggestedNameNotFoundMessage);
   }
@@ -2936,12 +2936,12 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     location: Node | undefined,
     name: __String,
     meaning: SymbolFlags,
-    nameNotFoundMessage: DiagnosticMessage | undefined,
+    nameNotFoundMessage: qd.Message | undefined,
     nameArg: __String | Identifier | undefined,
     isUse: boolean,
     excludeGlobals: boolean,
     lookup: typeof getSymbol,
-    suggestedNameNotFoundMessage?: DiagnosticMessage
+    suggestedNameNotFoundMessage?: qd.Message
   ): Symbol | undefined {
     const originalLocation = location;
     let result: Symbol | undefined;
@@ -3786,12 +3786,12 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function resolveExternalModuleName(location: Node, moduleReferenceExpression: Expression, ignoreErrors?: boolean): Symbol | undefined {
     return resolveExternalModuleNameWorker(location, moduleReferenceExpression, ignoreErrors ? undefined : qd.Cannot_find_module_0_or_its_corresponding_type_declarations);
   }
-  function resolveExternalModuleNameWorker(location: Node, moduleReferenceExpression: Expression, moduleNotFoundError: DiagnosticMessage | undefined, isForAugmentation = false): Symbol | undefined {
+  function resolveExternalModuleNameWorker(location: Node, moduleReferenceExpression: Expression, moduleNotFoundError: qd.Message | undefined, isForAugmentation = false): Symbol | undefined {
     return StringLiteral.like(moduleReferenceExpression)
       ? resolveExternalModule(location, moduleReferenceExpression.text, moduleNotFoundError, moduleReferenceExpression, isForAugmentation)
       : undefined;
   }
-  function resolveExternalModule(location: Node, moduleReference: string, moduleNotFoundError: DiagnosticMessage | undefined, errorNode: Node, isForAugmentation = false): Symbol | undefined {
+  function resolveExternalModule(location: Node, moduleReference: string, moduleNotFoundError: qd.Message | undefined, errorNode: Node, isForAugmentation = false): Symbol | undefined {
     if (startsWith(moduleReference, '@types/')) {
       const diag = qd.Cannot_import_type_declaration_files_Consider_importing_0_instead_of_1;
       const withoutAtTypePrefix = removePrefix(moduleReference, '@types/');
@@ -3863,20 +3863,20 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const errorInfo =
       !isExternalModuleNameRelative(moduleReference) && packageId
         ? typesPackageExists(packageId.name)
-          ? chainDiagnosticMessages(
+          ? chainqd.Messages(
               undefined,
               qd.If_the_0_package_actually_exposes_this_module_consider_sending_a_pull_request_to_amend_https_Colon_Slash_Slashgithub_com_SlashDefinitelyTyped_SlashDefinitelyTyped_Slashtree_Slashmaster_Slashtypes_Slash_1,
               packageId.name,
               mangleScopedPackageName(packageId.name)
             )
-          : chainDiagnosticMessages(
+          : chainqd.Messages(
               undefined,
               qd.Try_npm_install_types_Slash_1_if_it_exists_or_add_a_new_declaration_d_ts_file_containing_declare_module_0,
               moduleReference,
               mangleScopedPackageName(packageId.name)
             )
         : undefined;
-    errorOrSuggestion(isError, errorNode, chainDiagnosticMessages(errorInfo, qd.Could_not_find_a_declaration_file_for_module_0_1_implicitly_has_an_any_type, moduleReference, resolvedFileName));
+    errorOrSuggestion(isError, errorNode, chainqd.Messages(errorInfo, qd.Could_not_find_a_declaration_file_for_module_0_1_implicitly_has_an_any_type, moduleReference, resolvedFileName));
   }
   function typesPackageExists(packageName: string): boolean {
     return getPackagesSet().has(getTypesPackageName(packageName));
@@ -4854,11 +4854,11 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const exports = new SymbolTable();
     while (qc.is.kind(qc.BinaryExpression, decl) || qc.is.kind(qc.PropertyAccessExpression, decl)) {
       const s = getSymbolOfNode(decl);
-      if (s && hasEntries(s.exports)) exports.merge(s.exports);
+      if (s && qb.hasEntries(s.exports)) exports.merge(s.exports);
       decl = qc.is.kind(qc.BinaryExpression, decl) ? decl.parent : decl.parent.parent;
     }
     const s = getSymbolOfNode(decl);
-    if (s && hasEntries(s.exports)) exports.merge(s.exports);
+    if (s && qb.hasEntries(s.exports)) exports.merge(s.exports);
     const type = createAnonymousType(symbol, exports, empty, empty, undefined, undefined);
     type.objectFlags |= ObjectFlags.JSLiteral;
     return type;
@@ -5260,7 +5260,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const reducedBaseType = getReducedType(baseType);
     if (!isValidBaseType(reducedBaseType)) {
       const elaboration = elaborateNeverIntersection(undefined, baseType);
-      const diagnostic = chainDiagnosticMessages(
+      const diagnostic = chainqd.Messages(
         elaboration,
         qd.Base_constructor_return_type_0_is_not_an_object_type_or_intersection_of_object_types_with_statically_known_members,
         typeToString(reducedBaseType)
@@ -6535,11 +6535,11 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function isConflictingPrivateProperty(prop: Symbol) {
     return !prop.valueDeclaration && !!(getCheckFlags(prop) & CheckFlags.ContainsPrivate);
   }
-  function elaborateNeverIntersection(errorInfo: DiagnosticMessageChain | undefined, type: Type) {
+  function elaborateNeverIntersection(errorInfo: qd.MessageChain | undefined, type: Type) {
     if (getObjectFlags(type) & ObjectFlags.IsNeverIntersection) {
       const neverProp = find(getPropertiesOfUnionOrIntersectionType(<IntersectionType>type), isDiscriminantWithNeverType);
       if (neverProp) {
-        return chainDiagnosticMessages(
+        return chainqd.Messages(
           errorInfo,
           qd.The_intersection_0_was_reduced_to_never_because_property_1_has_conflicting_types_in_some_constituents,
           typeToString(type, undefined, TypeFormatFlags.NoTypeReduction),
@@ -6548,7 +6548,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
       const privateProp = find(getPropertiesOfUnionOrIntersectionType(<IntersectionType>type), isConflictingPrivateProperty);
       if (privateProp) {
-        return chainDiagnosticMessages(
+        return chainqd.Messages(
           errorInfo,
           qd.The_intersection_0_was_reduced_to_never_because_property_1_exists_in_multiple_constituents_and_is_private_in_some,
           typeToString(type, undefined, TypeFormatFlags.NoTypeReduction),
@@ -7396,7 +7396,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function getGlobalTypeSymbol(name: __String, reportErrors: boolean): Symbol | undefined {
     return getGlobalSymbol(name, SymbolFlags.Type, reportErrors ? qd.Cannot_find_global_type_0 : undefined);
   }
-  function getGlobalSymbol(name: __String, meaning: SymbolFlags, diagnostic: DiagnosticMessage | undefined): Symbol | undefined {
+  function getGlobalSymbol(name: __String, meaning: SymbolFlags, diagnostic: qd.Message | undefined): Symbol | undefined {
     return resolveName(undefined, name, meaning, diagnostic, name, false);
   }
   function getGlobalType(name: __String, arity: 0, reportErrors: boolean): ObjectType;
@@ -8219,20 +8219,20 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
               if (suggestion !== undefined)
                 error(accessExpression, qd.Element_implicitly_has_an_any_type_because_type_0_has_no_index_signature_Did_you_mean_to_call_1, typeToString(objectType), suggestion);
               else {
-                let errorInfo: DiagnosticMessageChain | undefined;
+                let errorInfo: qd.MessageChain | undefined;
                 if (indexType.flags & TypeFlags.EnumLiteral)
-                  errorInfo = chainDiagnosticMessages(undefined, qd.Property_0_does_not_exist_on_type_1, '[' + typeToString(indexType) + ']', typeToString(objectType));
+                  errorInfo = chainqd.Messages(undefined, qd.Property_0_does_not_exist_on_type_1, '[' + typeToString(indexType) + ']', typeToString(objectType));
                 else if (indexType.flags & TypeFlags.UniqueESSymbol) {
                   const symbolName = getFullyQualifiedName((indexType as UniqueESSymbolType).symbol, accessExpression);
-                  errorInfo = chainDiagnosticMessages(undefined, qd.Property_0_does_not_exist_on_type_1, '[' + symbolName + ']', typeToString(objectType));
+                  errorInfo = chainqd.Messages(undefined, qd.Property_0_does_not_exist_on_type_1, '[' + symbolName + ']', typeToString(objectType));
                 } else if (indexType.flags & TypeFlags.StringLiteral) {
-                  errorInfo = chainDiagnosticMessages(undefined, qd.Property_0_does_not_exist_on_type_1, (indexType as StringLiteralType).value, typeToString(objectType));
+                  errorInfo = chainqd.Messages(undefined, qd.Property_0_does_not_exist_on_type_1, (indexType as StringLiteralType).value, typeToString(objectType));
                 } else if (indexType.flags & TypeFlags.NumberLiteral) {
-                  errorInfo = chainDiagnosticMessages(undefined, qd.Property_0_does_not_exist_on_type_1, (indexType as NumberLiteralType).value, typeToString(objectType));
+                  errorInfo = chainqd.Messages(undefined, qd.Property_0_does_not_exist_on_type_1, (indexType as NumberLiteralType).value, typeToString(objectType));
                 } else if (indexType.flags & (TypeFlags.Number | TypeFlags.String)) {
-                  errorInfo = chainDiagnosticMessages(undefined, qd.No_index_signature_with_a_parameter_of_type_0_was_found_on_type_1, typeToString(indexType), typeToString(objectType));
+                  errorInfo = chainqd.Messages(undefined, qd.No_index_signature_with_a_parameter_of_type_0_was_found_on_type_1, typeToString(indexType), typeToString(objectType));
                 }
-                errorInfo = chainDiagnosticMessages(
+                errorInfo = chainqd.Messages(
                   errorInfo,
                   qd.Element_implicitly_has_an_any_type_because_expression_of_type_0_can_t_be_used_to_index_type_1,
                   typeToString(fullIndexType),
@@ -8692,7 +8692,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       return getIntersectionType([left, right]);
     }
     const members = new SymbolTable();
-    const skippedPrivateMembers = createEscapedMap<boolean>();
+    const skippedPrivateMembers = qb.createEscapedMap<boolean>();
     let stringIndexInfo: IndexInfo | undefined;
     let numberIndexInfo: IndexInfo | undefined;
     if (left === emptyObjectType) {
@@ -9428,8 +9428,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     source: Type,
     target: Type,
     errorNode: Node | undefined,
-    headMessage?: DiagnosticMessage,
-    containingMessageChain?: () => DiagnosticMessageChain | undefined,
+    headMessage?: qd.Message,
+    containingMessageChain?: () => qd.MessageChain | undefined,
     errorOutputObject?: { errors?: Diagnostic[] }
   ): boolean {
     return checkTypeRelatedTo(source, target, assignableRelation, errorNode, headMessage, containingMessageChain, errorOutputObject);
@@ -9439,8 +9439,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     target: Type,
     errorNode: Node | undefined,
     expr: Expression | undefined,
-    headMessage?: DiagnosticMessage,
-    containingMessageChain?: () => DiagnosticMessageChain | undefined
+    headMessage?: qd.Message,
+    containingMessageChain?: () => qd.MessageChain | undefined
   ): boolean {
     return checkTypeRelatedToAndOptionallyElaborate(source, target, assignableRelation, errorNode, expr, headMessage, containingMessageChain, undefined);
   }
@@ -9450,8 +9450,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     relation: qb.QMap<RelationComparisonResult>,
     errorNode: Node | undefined,
     expr: Expression | undefined,
-    headMessage: DiagnosticMessage | undefined,
-    containingMessageChain: (() => DiagnosticMessageChain | undefined) | undefined,
+    headMessage: qd.Message | undefined,
+    containingMessageChain: (() => qd.MessageChain | undefined) | undefined,
     errorOutputContainer: { errors?: Diagnostic[]; skipLogging?: boolean } | undefined
   ): boolean {
     if (isTypeRelatedTo(source, target, relation)) return true;
@@ -9467,8 +9467,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     source: Type,
     target: Type,
     relation: qb.QMap<RelationComparisonResult>,
-    headMessage: DiagnosticMessage | undefined,
-    containingMessageChain: (() => DiagnosticMessageChain | undefined) | undefined,
+    headMessage: qd.Message | undefined,
+    containingMessageChain: (() => qd.MessageChain | undefined) | undefined,
     errorOutputContainer: { errors?: Diagnostic[]; skipLogging?: boolean } | undefined
   ): boolean {
     if (!node || isOrHasGenericConditional(target)) return false;
@@ -9501,8 +9501,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     source: Type,
     target: Type,
     relation: qb.QMap<RelationComparisonResult>,
-    headMessage: DiagnosticMessage | undefined,
-    containingMessageChain: (() => DiagnosticMessageChain | undefined) | undefined,
+    headMessage: qd.Message | undefined,
+    containingMessageChain: (() => qd.MessageChain | undefined) | undefined,
     errorOutputContainer: { errors?: Diagnostic[]; skipLogging?: boolean } | undefined
   ): boolean {
     const callSignatures = getSignaturesOfType(source, SignatureKind.Call);
@@ -9528,7 +9528,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     source: Type,
     target: Type,
     relation: qb.QMap<RelationComparisonResult>,
-    containingMessageChain: (() => DiagnosticMessageChain | undefined) | undefined,
+    containingMessageChain: (() => qd.MessageChain | undefined) | undefined,
     errorOutputContainer: { errors?: Diagnostic[]; skipLogging?: boolean } | undefined
   ): boolean {
     if (qc.is.kind(qc.Block, node.body)) return false;
@@ -9581,14 +9581,14 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     errorNode: Node;
     innerExpression: Expression | undefined;
     nameType: Type;
-    errorMessage?: DiagnosticMessage | undefined;
+    errorMessage?: qd.Message | undefined;
   }>;
   function elaborateElementwise(
     iterator: ElaborationIterator,
     source: Type,
     target: Type,
     relation: qb.QMap<RelationComparisonResult>,
-    containingMessageChain: (() => DiagnosticMessageChain | undefined) | undefined,
+    containingMessageChain: (() => qd.MessageChain | undefined) | undefined,
     errorOutputContainer: { errors?: Diagnostic[]; skipLogging?: boolean } | undefined
   ) {
     let reportedError = false;
@@ -9645,7 +9645,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       yield { errorNode: prop.name, innerExpression: prop.initer, nameType: getLiteralType(idText(prop.name)) };
     }
   }
-  function* generateJsxChildren(node: JsxElement, getInvalidTextDiagnostic: () => DiagnosticMessage): ElaborationIterator {
+  function* generateJsxChildren(node: JsxElement, getInvalidTextDiagnostic: () => qd.Message): ElaborationIterator {
     if (!length(node.children)) return;
     let memberOffset = 0;
     for (let i = 0; i < node.children.length; i++) {
@@ -9658,7 +9658,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
     }
   }
-  function getElaborationElementForJsxChild(child: JsxChild, nameType: LiteralType, getInvalidTextDiagnostic: () => DiagnosticMessage) {
+  function getElaborationElementForJsxChild(child: JsxChild, nameType: LiteralType, getInvalidTextDiagnostic: () => qd.Message) {
     switch (child.kind) {
       case Syntax.JsxExpression:
         return { errorNode: child, innerExpression: child.expression, nameType };
@@ -9682,11 +9682,11 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     source: Type,
     target: Type,
     relation: qb.QMap<RelationComparisonResult>,
-    containingMessageChain: (() => DiagnosticMessageChain | undefined) | undefined,
+    containingMessageChain: (() => qd.MessageChain | undefined) | undefined,
     errorOutputContainer: { errors?: Diagnostic[]; skipLogging?: boolean } | undefined
   ) {
     let result = elaborateElementwise(generateJsxAttributes(node), source, target, relation, containingMessageChain, errorOutputContainer);
-    let invalidTextDiagnostic: DiagnosticMessage | undefined;
+    let invalidTextDiagnostic: qd.Message | undefined;
     if (qc.is.kind(qc.JsxOpeningElement, node.parent) && qc.is.kind(qc.JsxElement, node.parent.parent)) {
       const containingElement = node.parent.parent;
       const childPropName = getJsxElementChildrenPropertyName(getJsxNamespaceAt(node));
@@ -9775,7 +9775,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     source: Type,
     target: Type,
     relation: qb.QMap<RelationComparisonResult>,
-    containingMessageChain: (() => DiagnosticMessageChain | undefined) | undefined,
+    containingMessageChain: (() => qd.MessageChain | undefined) | undefined,
     errorOutputContainer: { errors?: Diagnostic[]; skipLogging?: boolean } | undefined
   ) {
     if (target.flags & TypeFlags.Primitive) return false;
@@ -9822,19 +9822,19 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     source: Type,
     target: Type,
     relation: qb.QMap<RelationComparisonResult>,
-    containingMessageChain: (() => DiagnosticMessageChain | undefined) | undefined,
+    containingMessageChain: (() => qd.MessageChain | undefined) | undefined,
     errorOutputContainer: { errors?: Diagnostic[]; skipLogging?: boolean } | undefined
   ) {
     if (target.flags & TypeFlags.Primitive) return false;
     return elaborateElementwise(generateObjectLiteralElements(node), source, target, relation, containingMessageChain, errorOutputContainer);
   }
-  function checkTypeComparableTo(source: Type, target: Type, errorNode: Node, headMessage?: DiagnosticMessage, containingMessageChain?: () => DiagnosticMessageChain | undefined): boolean {
+  function checkTypeComparableTo(source: Type, target: Type, errorNode: Node, headMessage?: qd.Message, containingMessageChain?: () => qd.MessageChain | undefined): boolean {
     return checkTypeRelatedTo(source, target, comparableRelation, errorNode, headMessage, containingMessageChain);
   }
   function isSignatureAssignableTo(source: Signature, target: Signature, ignoreReturnTypes: boolean): boolean {
     return compareSignaturesRelated(source, target, ignoreReturnTypes ? SignatureCheckMode.IgnoreReturnTypes : 0, false, undefined, undefined, compareTypesAssignable, undefined) !== Ternary.False;
   }
-  type ErrorReporter = (message: DiagnosticMessage, arg0?: string, arg1?: string) => void;
+  type ErrorReporter = (message: qd.Message, arg0?: string, arg1?: string) => void;
   function isAnySignature(s: Signature) {
     return (
       !s.typeParameters &&
@@ -10134,11 +10134,11 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     target: Type,
     relation: qb.QMap<RelationComparisonResult>,
     errorNode: Node | undefined,
-    headMessage?: DiagnosticMessage,
-    containingMessageChain?: () => DiagnosticMessageChain | undefined,
+    headMessage?: qd.Message,
+    containingMessageChain?: () => qd.MessageChain | undefined,
     errorOutputContainer?: { errors?: Diagnostic[]; skipLogging?: boolean }
   ): boolean {
-    let errorInfo: DiagnosticMessageChain | undefined;
+    let errorInfo: qd.MessageChain | undefined;
     let relatedInfo: [DiagnosticRelatedInformation, ...DiagnosticRelatedInformation[]] | undefined;
     let maybeKeys: string[];
     let sourceStack: Type[];
@@ -10149,7 +10149,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     let overflow = false;
     let overrideNextErrorInfo = 0;
     let lastSkippedInfo: [Type, Type] | undefined;
-    let incompatibleStack: [DiagnosticMessage, (string | number)?, (string | number)?, (string | number)?, (string | number)?][] = [];
+    let incompatibleStack: [qd.Message, (string | number)?, (string | number)?, (string | number)?, (string | number)?][] = [];
     let inPropertyCheck = false;
     assert(relation !== identityRelation || !errorNode, 'no error reporting in identity checking');
     const result = isRelatedTo(source, target, !!errorNode, headMessage);
@@ -10161,7 +10161,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (containingMessageChain) {
         const chain = containingMessageChain();
         if (chain) {
-          concatenateDiagnosticMessageChains(chain, errorInfo);
+          concatenateqd.MessageChains(chain, errorInfo);
           errorInfo = chain;
         }
       }
@@ -10202,7 +10202,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         relatedInfo: !relatedInfo ? undefined : (relatedInfo.slice() as [DiagnosticRelatedInformation, ...DiagnosticRelatedInformation[]] | undefined),
       };
     }
-    function reportIncompatibleError(message: DiagnosticMessage, arg0?: string | number, arg1?: string | number, arg2?: string | number, arg3?: string | number) {
+    function reportIncompatibleError(message: qd.Message, arg0?: string | number, arg1?: string | number, arg2?: string | number, arg3?: string | number) {
       overrideNextErrorInfo++;
       lastSkippedInfo = undefined;
       incompatibleStack.push([message, arg0, arg1, arg2, arg3]);
@@ -10276,11 +10276,11 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
       if (info) reportRelationError(undefined, ...info);
     }
-    function reportError(message: DiagnosticMessage, arg0?: string | number, arg1?: string | number, arg2?: string | number, arg3?: string | number): void {
+    function reportError(message: qd.Message, arg0?: string | number, arg1?: string | number, arg2?: string | number, arg3?: string | number): void {
       assert(!!errorNode);
       if (incompatibleStack.length) reportIncompatibleStack();
       if (message.elidedInCompatabilityPyramid) return;
-      errorInfo = chainDiagnosticMessages(errorInfo, message, arg0, arg1, arg2, arg3);
+      errorInfo = chainqd.Messages(errorInfo, message, arg0, arg1, arg2, arg3);
     }
     function associateRelatedInfo(info: DiagnosticRelatedInformation) {
       assert(!!errorInfo);
@@ -10289,7 +10289,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         relatedInfo.push(info);
       }
     }
-    function reportRelationError(message: DiagnosticMessage | undefined, source: Type, target: Type) {
+    function reportRelationError(message: qd.Message | undefined, source: Type, target: Type) {
       if (incompatibleStack.length) reportIncompatibleStack();
       const [sourceType, targetType] = getTypeNamesForErrorDisplay(source, target);
       let generalizedSource = source;
@@ -10349,7 +10349,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (isTupleType(target)) return isArrayType(source);
       return true;
     }
-    function isRelatedTo(originalSource: Type, originalTarget: Type, reportErrors = false, headMessage?: DiagnosticMessage, intersectionState = IntersectionState.None): Ternary {
+    function isRelatedTo(originalSource: Type, originalTarget: Type, reportErrors = false, headMessage?: qd.Message, intersectionState = IntersectionState.None): Ternary {
       if (originalSource.flags & TypeFlags.Object && originalTarget.flags & TypeFlags.Primitive) {
         if (isSimpleTypeRelatedTo(originalSource, originalTarget, relation, reportErrors ? reportError : undefined)) return Ternary.True;
         reportErrorResults(originalSource, originalTarget, Ternary.False, !!(getObjectFlags(originalSource) & ObjectFlags.JsxAttributes));
@@ -10733,7 +10733,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         return Ternary.False;
       }
       let result: Ternary;
-      let originalErrorInfo: DiagnosticMessageChain | undefined;
+      let originalErrorInfo: qd.MessageChain | undefined;
       let varianceCheckFailed = false;
       const saveErrorInfo = captureErrorCalculationState();
       if (
@@ -10977,7 +10977,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         if (numCombinations > 25) return Ternary.False;
       }
       const sourceDiscriminantTypes: Type[][] = new Array<Type[]>(sourcePropertiesFiltered.length);
-      const excludedProperties = createEscapedMap<true>();
+      const excludedProperties = qb.createEscapedMap<true>();
       for (let i = 0; i < sourcePropertiesFiltered.length; i++) {
         const sourceProperty = sourcePropertiesFiltered[i];
         const sourcePropertyType = getTypeOfSymbol(sourceProperty);
@@ -12087,7 +12087,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function reportImplicitAny(declaration: Declaration, type: Type, wideningKind?: WideningKind) {
     const typeAsString = typeToString(getWidenedType(type));
     if (qc.is.inJSFile(declaration) && !isCheckJsEnabledForFile(qc.get.sourceFileOf(declaration), compilerOptions)) return;
-    let diagnostic: DiagnosticMessage;
+    let diagnostic: qd.Message;
     switch (declaration.kind) {
       case Syntax.BinaryExpression:
       case Syntax.PropertyDeclaration:
@@ -12871,7 +12871,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return result;
   }
-  function getCannotFindNameDiagnosticForName(node: Identifier): DiagnosticMessage {
+  function getCannotFindNameDiagnosticForName(node: Identifier): qd.Message {
     switch (node.escapedText) {
       case 'document':
       case 'console':
@@ -14431,7 +14431,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const baseConstructorType = getBaseConstructorTypeOfClass(classInstanceType);
     return baseConstructorType === nullWideningType;
   }
-  function checkThisBeforeSuper(node: Node, container: Node, diagnosticMessage: DiagnosticMessage) {
+  function checkThisBeforeSuper(node: Node, container: Node, diagnosticMessage: qd.Message) {
     const containingClassDecl = <ClassDeclaration>container.parent;
     const baseTypeNode = getClassExtendsHeritageElement(containingClassDecl);
     if (baseTypeNode && !classDeclarationExtendsNull(containingClassDecl)) {
@@ -15790,9 +15790,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const combined = getUnionType([sfcReturnConstraint, classConstraint]);
       checkTypeRelatedTo(elemInstanceType, combined, assignableRelation, openingLikeElement.tagName, qd.Its_element_type_0_is_not_a_valid_JSX_element, generateInitialErrorChain);
     }
-    function generateInitialErrorChain(): DiagnosticMessageChain {
+    function generateInitialErrorChain(): qd.MessageChain {
       const componentName = qc.get.textOf(openingLikeElement.tagName);
-      return chainDiagnosticMessages(undefined, qd._0_cannot_be_used_as_a_JSX_component, componentName);
+      return chainqd.Messages(undefined, qd._0_cannot_be_used_as_a_JSX_component, componentName);
     }
   }
   function getIntrinsicAttributesTypeFromJsxOpeningLikeElement(node: JsxOpeningLikeElement): Type {
@@ -16234,31 +16234,31 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return getIntersectionType(x);
   }
   function reportNonexistentProperty(propNode: Identifier | PrivateIdentifier, containingType: Type) {
-    let errorInfo: DiagnosticMessageChain | undefined;
+    let errorInfo: qd.MessageChain | undefined;
     let relatedInfo: Diagnostic | undefined;
     if (!qc.is.kind(qc.PrivateIdentifier, propNode) && containingType.flags & TypeFlags.Union && !(containingType.flags & TypeFlags.Primitive)) {
       for (const subtype of (containingType as UnionType).types) {
         if (!getPropertyOfType(subtype, propNode.escapedText) && !getIndexInfoOfType(subtype, IndexKind.String)) {
-          errorInfo = chainDiagnosticMessages(errorInfo, qd.Property_0_does_not_exist_on_type_1, declarationNameToString(propNode), typeToString(subtype));
+          errorInfo = chainqd.Messages(errorInfo, qd.Property_0_does_not_exist_on_type_1, declarationNameToString(propNode), typeToString(subtype));
           break;
         }
       }
     }
     if (typeHasStaticProperty(propNode.escapedText, containingType))
-      errorInfo = chainDiagnosticMessages(errorInfo, qd.Property_0_is_a_static_member_of_type_1, declarationNameToString(propNode), typeToString(containingType));
+      errorInfo = chainqd.Messages(errorInfo, qd.Property_0_is_a_static_member_of_type_1, declarationNameToString(propNode), typeToString(containingType));
     else {
       const promisedType = getPromisedTypeOfPromise(containingType);
       if (promisedType && getPropertyOfType(promisedType, propNode.escapedText)) {
-        errorInfo = chainDiagnosticMessages(errorInfo, qd.Property_0_does_not_exist_on_type_1, declarationNameToString(propNode), typeToString(containingType));
+        errorInfo = chainqd.Messages(errorInfo, qd.Property_0_does_not_exist_on_type_1, declarationNameToString(propNode), typeToString(containingType));
         relatedInfo = createDiagnosticForNode(propNode, qd.Did_you_forget_to_use_await);
       } else {
         const suggestion = getSuggestedSymbolForNonexistentProperty(propNode, containingType);
         if (suggestion !== undefined) {
           const suggestedName = suggestion.name;
-          errorInfo = chainDiagnosticMessages(errorInfo, qd.Property_0_does_not_exist_on_type_1_Did_you_mean_2, declarationNameToString(propNode), typeToString(containingType), suggestedName);
+          errorInfo = chainqd.Messages(errorInfo, qd.Property_0_does_not_exist_on_type_1_Did_you_mean_2, declarationNameToString(propNode), typeToString(containingType), suggestedName);
           relatedInfo = suggestion.valueDeclaration && createDiagnosticForNode(suggestion.valueDeclaration, qd._0_is_declared_here, suggestedName);
         } else {
-          errorInfo = chainDiagnosticMessages(
+          errorInfo = chainqd.Messages(
             elaborateNeverIntersection(errorInfo, containingType),
             qd.Property_0_does_not_exist_on_type_1,
             declarationNameToString(propNode),
@@ -16666,7 +16666,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       ? createTupleType(types, undefined, length(names) === length(types) ? names : undefined)
       : createTupleType(append(types.slice(0, spreadIndex), getUnionType(types.slice(spreadIndex))), spreadIndex, undefined);
   }
-  function checkTypeArguments(signature: Signature, typeArgumentNodes: readonly TypeNode[], reportErrors: boolean, headMessage?: DiagnosticMessage): Type[] | undefined {
+  function checkTypeArguments(signature: Signature, typeArgumentNodes: readonly TypeNode[], reportErrors: boolean, headMessage?: qd.Message): Type[] | undefined {
     const isJavascript = qc.is.inJSFile(signature.declaration);
     const typeParameters = signature.typeParameters!;
     const typeArgumentTypes = fillMissingTypeArguments(map(typeArgumentNodes, getTypeFromTypeNode), typeParameters, getMinTypeArgumentCount(typeParameters), isJavascript);
@@ -16675,7 +16675,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       assert(typeParameters[i] !== undefined, 'Should not call checkTypeArguments with too many type arguments');
       const constraint = getConstraintOfTypeParameter(typeParameters[i]);
       if (constraint) {
-        const errorInfo = reportErrors && headMessage ? () => chainDiagnosticMessages(undefined, qd.Type_0_does_not_satisfy_the_constraint_1) : undefined;
+        const errorInfo = reportErrors && headMessage ? () => chainqd.Messages(undefined, qd.Type_0_does_not_satisfy_the_constraint_1) : undefined;
         const typeArgumentHeadMessage = headMessage || qd.Type_0_does_not_satisfy_the_constraint_1;
         if (!mapper) mapper = createTypeMapper(typeParameters, typeArgumentTypes);
         const typeArgument = typeArgumentTypes[i];
@@ -16707,7 +16707,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     relation: qb.QMap<RelationComparisonResult>,
     checkMode: CheckMode,
     reportErrors: boolean,
-    containingMessageChain: (() => DiagnosticMessageChain | undefined) | undefined,
+    containingMessageChain: (() => qd.MessageChain | undefined) | undefined,
     errorOutputContainer: { errors?: Diagnostic[]; skipLogging?: boolean }
   ) {
     const paramType = getEffectiveFirstArgumentForJsxSignature(signature, node);
@@ -16772,7 +16772,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     relation: qb.QMap<RelationComparisonResult>,
     checkMode: CheckMode,
     reportErrors: boolean,
-    containingMessageChain: (() => DiagnosticMessageChain | undefined) | undefined
+    containingMessageChain: (() => qd.MessageChain | undefined) | undefined
   ): readonly Diagnostic[] | undefined {
     const errorOutputContainer: { errors?: Diagnostic[]; skipLogging?: boolean } = { errors: undefined, skipLogging: true };
     if (qc.isJsx.openingLikeElement(node)) {
@@ -16939,7 +16939,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function getDiagnosticForCallNode(
     node: CallLikeExpression,
-    message: DiagnosticMessage,
+    message: qd.Message,
     arg0?: string | number,
     arg1?: string | number,
     arg2?: string | number,
@@ -17050,7 +17050,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     candidatesOutArray: Signature[] | undefined,
     checkMode: CheckMode,
     callChainFlags: SignatureFlags,
-    fallbackError?: DiagnosticMessage
+    fallbackError?: qd.Message
   ): Signature {
     const isTaggedTemplate = node.kind === Syntax.TaggedTemplateExpression;
     const isDecorator = node.kind === Syntax.Decorator;
@@ -17082,10 +17082,10 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (candidatesForArgumentError) {
         if (candidatesForArgumentError.length === 1 || candidatesForArgumentError.length > 3) {
           const last = candidatesForArgumentError[candidatesForArgumentError.length - 1];
-          let chain: DiagnosticMessageChain | undefined;
+          let chain: qd.MessageChain | undefined;
           if (candidatesForArgumentError.length > 3) {
-            chain = chainDiagnosticMessages(chain, qd.The_last_overload_gave_the_following_error);
-            chain = chainDiagnosticMessages(chain, qd.No_overload_matches_this_call);
+            chain = chainqd.Messages(chain, qd.The_last_overload_gave_the_following_error);
+            chain = chainqd.Messages(chain, qd.No_overload_matches_this_call);
           }
           const diags = getSignatureApplicabilityError(node, args, last, assignableRelation, CheckMode.Normal, true, () => chain);
           if (diags) {
@@ -17103,7 +17103,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           let minIndex = 0;
           let i = 0;
           for (const c of candidatesForArgumentError) {
-            const chain = () => chainDiagnosticMessages(undefined, qd.Overload_0_of_1_2_gave_the_following_error, i + 1, candidates.length, signatureToString(c));
+            const chain = () => chainqd.Messages(undefined, qd.Overload_0_of_1_2_gave_the_following_error, i + 1, candidates.length, signatureToString(c));
             const diags = getSignatureApplicabilityError(node, args, c, assignableRelation, CheckMode.Normal, true, chain);
             if (diags) {
               if (diags.length <= min) {
@@ -17119,8 +17119,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           }
           const diags = max > 1 ? allDiagnostics[minIndex] : flatten(allDiagnostics);
           assert(diags.length > 0, 'No errors reported for 3 or fewer overload signatures');
-          const chain = chainDiagnosticMessages(
-            map(diags, (d) => (typeof d.messageText === 'string' ? (d as DiagnosticMessageChain) : d.messageText)),
+          const chain = chainqd.Messages(
+            map(diags, (d) => (typeof d.messageText === 'string' ? (d as qd.MessageChain) : d.messageText)),
             qd.No_overload_matches_this_call
           );
           const related = flatMap(diags, (d) => (d as Diagnostic).relatedInformation) as DiagnosticRelatedInformation[];
@@ -17439,8 +17439,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return true;
   }
-  function invocationErrorDetails(errorTarget: Node, apparentType: Type, kind: SignatureKind): { messageChain: DiagnosticMessageChain; relatedMessage: DiagnosticMessage | undefined } {
-    let errorInfo: DiagnosticMessageChain | undefined;
+  function invocationErrorDetails(errorTarget: Node, apparentType: Type, kind: SignatureKind): { messageChain: qd.MessageChain; relatedMessage: qd.Message | undefined } {
+    let errorInfo: qd.MessageChain | undefined;
     const isCall = kind === SignatureKind.Call;
     const awaitedType = getAwaitedType(apparentType);
     const maybeMissingAwait = awaitedType && getSignaturesOfType(awaitedType, kind).length > 0;
@@ -17454,15 +17454,15 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           if (errorInfo) break;
         } else {
           if (!errorInfo) {
-            errorInfo = chainDiagnosticMessages(errorInfo, isCall ? qd.Type_0_has_no_call_signatures : qd.Type_0_has_no_construct_signatures, typeToString(constituent));
-            errorInfo = chainDiagnosticMessages(errorInfo, isCall ? qd.Not_all_constituents_of_type_0_are_callable : qd.Not_all_constituents_of_type_0_are_constructable, typeToString(apparentType));
+            errorInfo = chainqd.Messages(errorInfo, isCall ? qd.Type_0_has_no_call_signatures : qd.Type_0_has_no_construct_signatures, typeToString(constituent));
+            errorInfo = chainqd.Messages(errorInfo, isCall ? qd.Not_all_constituents_of_type_0_are_callable : qd.Not_all_constituents_of_type_0_are_constructable, typeToString(apparentType));
           }
           if (hasSignatures) break;
         }
       }
-      if (!hasSignatures) errorInfo = chainDiagnosticMessages(undefined, isCall ? qd.No_constituent_of_type_0_is_callable : qd.No_constituent_of_type_0_is_constructable, typeToString(apparentType));
+      if (!hasSignatures) errorInfo = chainqd.Messages(undefined, isCall ? qd.No_constituent_of_type_0_is_callable : qd.No_constituent_of_type_0_is_constructable, typeToString(apparentType));
       if (!errorInfo) {
-        errorInfo = chainDiagnosticMessages(
+        errorInfo = chainqd.Messages(
           errorInfo,
           isCall
             ? qd.Each_member_of_the_union_type_0_has_signatures_but_none_of_those_signatures_are_compatible_with_each_other
@@ -17471,7 +17471,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         );
       }
     } else {
-      errorInfo = chainDiagnosticMessages(errorInfo, isCall ? qd.Type_0_has_no_call_signatures : qd.Type_0_has_no_construct_signatures, typeToString(apparentType));
+      errorInfo = chainqd.Messages(errorInfo, isCall ? qd.Type_0_has_no_call_signatures : qd.Type_0_has_no_construct_signatures, typeToString(apparentType));
     }
     let headMessage = isCall ? qd.This_expression_is_not_callable : qd.This_expression_is_not_constructable;
     if (qc.is.kind(qc.CallExpression, errorTarget.parent) && errorTarget.parent.arguments.length === 0) {
@@ -17479,7 +17479,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (resolvedSymbol && resolvedSymbol.flags & SymbolFlags.GetAccessor) headMessage = qd.This_expression_is_not_callable_because_it_is_a_get_accessor_Did_you_mean_to_use_it_without;
     }
     return {
-      messageChain: chainDiagnosticMessages(errorInfo, headMessage),
+      messageChain: chainqd.Messages(errorInfo, headMessage),
       relatedMessage: maybeMissingAwait ? qd.Did_you_forget_to_use_await : undefined,
     };
   }
@@ -17555,7 +17555,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const headMessage = getDiagnosticHeadMessageForDecoratorResolution(node);
     if (!callSignatures.length) {
       const errorDetails = invocationErrorDetails(node.expression, apparentType, SignatureKind.Call);
-      const messageChain = chainDiagnosticMessages(errorDetails.messageChain, headMessage);
+      const messageChain = chainqd.Messages(errorDetails.messageChain, headMessage);
       const diag = createDiagnosticForNodeFromMessageChain(node.expression, messageChain);
       if (errorDetails.relatedMessage) addRelatedInfo(diag, createDiagnosticForNode(node.expression, errorDetails.relatedMessage));
       diagnostics.add(diag);
@@ -17643,7 +17643,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (func) {
       if (qc.getDoc.classTag(node)) return true;
       const symbol = getSymbolOfNode(func);
-      return !!symbol && hasEntries(symbol.members);
+      return !!symbol && qb.hasEntries(symbol.members);
     }
     return false;
   }
@@ -17655,8 +17655,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         inferred.exports = inferred.exports || new SymbolTable();
         inferred.members = inferred.members || new SymbolTable();
         inferred.flags |= source.flags & SymbolFlags.Class;
-        if (hasEntries(source.exports)) inferred.exports.merge(source.exports);
-        if (hasEntries(source.members)) inferred.members.merge(source.members);
+        if (qb.hasEntries(source.exports)) inferred.exports.merge(source.exports);
+        if (qb.hasEntries(source.members)) inferred.members.merge(source.members);
         (links.inferredClassSymbol || (links.inferredClassSymbol = new qb.QMap<TransientSymbol>())).set('' + inferred.getId(), inferred);
         return inferred;
       }
@@ -17718,7 +17718,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const decl = qc.get.declarationOfExpando(node);
       if (decl) {
         const jsSymbol = getSymbolOfNode(decl);
-        if (jsSymbol && hasEntries(jsSymbol.exports)) {
+        if (jsSymbol && qb.hasEntries(jsSymbol.exports)) {
           const jsAssignmentType = createAnonymousType(jsSymbol, jsSymbol.exports, empty, empty, undefined, undefined);
           jsAssignmentType.objectFlags |= ObjectFlags.JSLiteral;
           return getIntersectionType([returnType, jsAssignmentType]);
@@ -18367,7 +18367,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
     }
   }
-  function checkArithmeticOperandType(operand: Node, type: Type, diagnostic: DiagnosticMessage, isAwaitValid = false): boolean {
+  function checkArithmeticOperandType(operand: Node, type: Type, diagnostic: qd.Message, isAwaitValid = false): boolean {
     if (!isTypeAssignableTo(type, numberOrBigIntType)) {
       const awaitedType = isAwaitValid && getAwaitedTypeOfPromise(type);
       errorAndMaybeSuggestAwait(operand, !!awaitedType && isTypeAssignableTo(awaitedType, numberOrBigIntType), diagnostic);
@@ -18424,7 +18424,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return false;
   }
-  function checkReferenceExpression(expr: Expression, invalidReferenceMessage: DiagnosticMessage, invalidOptionalChainMessage: DiagnosticMessage): boolean {
+  function checkReferenceExpression(expr: Expression, invalidReferenceMessage: qd.Message, invalidOptionalChainMessage: qd.Message): boolean {
     const node = skipOuterExpressions(expr, OuterExpressionKinds.Assertions | OuterExpressionKinds.Parentheses);
     if (node.kind !== Syntax.Identifier && !qc.is.accessExpression(node)) {
       error(expr, invalidReferenceMessage);
@@ -19106,7 +19106,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         case AssignmentDeclarationKind.ThisProperty:
           const symbol = getSymbolOfNode(left);
           const init = getAssignedExpandoIniter(right);
-          return init && qc.is.kind(qc.ObjectLiteralExpression, init) && symbol && hasEntries(symbol.exports);
+          return init && qc.is.kind(qc.ObjectLiteralExpression, init) && symbol && qb.hasEntries(symbol.exports);
         default:
           return false;
       }
@@ -19669,7 +19669,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         if (signatureHasRestParameter(signature) && typePredicate.parameterIndex === signature.parameters.length - 1) error(parameterName, qd.A_type_predicate_cannot_reference_a_rest_parameter);
         else {
           if (typePredicate.type) {
-            const leadingError = () => chainDiagnosticMessages(undefined, qd.A_type_predicate_s_type_must_be_assignable_to_its_parameter_s_type);
+            const leadingError = () => chainqd.Messages(undefined, qd.A_type_predicate_s_type_must_be_assignable_to_its_parameter_s_type);
             checkTypeAssignableTo(typePredicate.type, getTypeOfSymbol(signature.parameters[typePredicate.parameterIndex]), node.type, undefined, leadingError);
           }
         }
@@ -19763,9 +19763,9 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
   }
   function checkClassForDuplicateDeclarations(node: ClassLikeDeclaration) {
-    const instanceNames = createEscapedMap<DeclarationMeaning>();
-    const staticNames = createEscapedMap<DeclarationMeaning>();
-    const privateIdentifiers = createEscapedMap<DeclarationMeaning>();
+    const instanceNames = qb.createEscapedMap<DeclarationMeaning>();
+    const staticNames = qb.createEscapedMap<DeclarationMeaning>();
+    const privateIdentifiers = qb.createEscapedMap<DeclarationMeaning>();
     for (const member of node.members) {
       if (member.kind === Syntax.Constructor) {
         for (const param of (member as ConstructorDeclaration).parameters) {
@@ -19977,7 +19977,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     checkSourceElement(node.body);
   }
-  function checkAccessorDeclarationTypesIdentical(first: AccessorDeclaration, second: AccessorDeclaration, getAnnotatedType: (a: AccessorDeclaration) => Type | undefined, message: DiagnosticMessage) {
+  function checkAccessorDeclarationTypesIdentical(first: AccessorDeclaration, second: AccessorDeclaration, getAnnotatedType: (a: AccessorDeclaration) => Type | undefined, message: qd.Message) {
     const firstType = getAnnotatedType(first);
     const secondType = getAnnotatedType(second);
     if (firstType && secondType && !isTypeIdenticalTo(firstType, secondType)) error(first, message);
@@ -20244,7 +20244,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
     }
   }
-  function getAwaitedTypeOfPromise(type: Type, errorNode?: Node, diagnosticMessage?: DiagnosticMessage, arg0?: string | number): Type | undefined {
+  function getAwaitedTypeOfPromise(type: Type, errorNode?: Node, diagnosticMessage?: qd.Message, arg0?: string | number): Type | undefined {
     const promisedType = getPromisedTypeOfPromise(type, errorNode);
     return promisedType && getAwaitedType(promisedType, errorNode, diagnosticMessage, arg0);
   }
@@ -20269,7 +20269,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return (typeAsPromise.promisedTypeOfPromise = getUnionType(map(onfulfilledParameterSignatures, getTypeOfFirstParameterOfSignature), UnionReduction.Subtype));
   }
-  function checkAwaitedType(type: Type, errorNode: Node, diagnosticMessage: DiagnosticMessage, arg0?: string | number): Type {
+  function checkAwaitedType(type: Type, errorNode: Node, diagnosticMessage: qd.Message, arg0?: string | number): Type {
     const awaitedType = getAwaitedType(type, errorNode, diagnosticMessage, arg0);
     return awaitedType || errorType;
   }
@@ -20277,13 +20277,13 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const thenFunction = getTypeOfPropertyOfType(type, 'then' as __String);
     return !!thenFunction && getSignaturesOfType(getTypeWithFacts(thenFunction, TypeFacts.NEUndefinedOrNull), SignatureKind.Call).length > 0;
   }
-  function getAwaitedType(type: Type, errorNode?: Node, diagnosticMessage?: DiagnosticMessage, arg0?: string | number): Type | undefined {
+  function getAwaitedType(type: Type, errorNode?: Node, diagnosticMessage?: qd.Message, arg0?: string | number): Type | undefined {
     if (isTypeAny(type)) return type;
     const typeAsAwaitable = <PromiseOrAwaitableType>type;
     if (typeAsAwaitable.awaitedTypeOfType) return typeAsAwaitable.awaitedTypeOfType;
     return (typeAsAwaitable.awaitedTypeOfType = mapType(type, errorNode ? (constituentType) => getAwaitedTypeWorker(constituentType, errorNode, diagnosticMessage, arg0) : getAwaitedTypeWorker));
   }
-  function getAwaitedTypeWorker(type: Type, errorNode?: Node, diagnosticMessage?: DiagnosticMessage, arg0?: string | number): Type | undefined {
+  function getAwaitedTypeWorker(type: Type, errorNode?: Node, diagnosticMessage?: qd.Message, arg0?: string | number): Type | undefined {
     const typeAsAwaitable = <PromiseOrAwaitableType>type;
     if (typeAsAwaitable.awaitedTypeOfType) return typeAsAwaitable.awaitedTypeOfType;
     const promisedType = getPromisedTypeOfPromise(type);
@@ -20323,7 +20323,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (returnType.flags & TypeFlags.Any) return;
     let expectedReturnType: Type;
     const headMessage = getDiagnosticHeadMessageForDecoratorResolution(node);
-    let errorInfo: DiagnosticMessageChain | undefined;
+    let errorInfo: qd.MessageChain | undefined;
     switch (node.parent.kind) {
       case Syntax.ClassDeclaration:
         const classSymbol = getSymbolOfNode(node.parent);
@@ -20332,11 +20332,11 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         break;
       case Syntax.Parameter:
         expectedReturnType = voidType;
-        errorInfo = chainDiagnosticMessages(undefined, qd.The_return_type_of_a_parameter_decorator_function_must_be_either_void_or_any);
+        errorInfo = chainqd.Messages(undefined, qd.The_return_type_of_a_parameter_decorator_function_must_be_either_void_or_any);
         break;
       case Syntax.PropertyDeclaration:
         expectedReturnType = voidType;
-        errorInfo = chainDiagnosticMessages(undefined, qd.The_return_type_of_a_property_decorator_function_must_be_either_void_or_any);
+        errorInfo = chainqd.Messages(undefined, qd.The_return_type_of_a_property_decorator_function_must_be_either_void_or_any);
         break;
       case Syntax.MethodDeclaration:
       case Syntax.GetAccessor:
@@ -20979,7 +20979,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       const initer = getEffectiveIniter(node);
       if (initer) {
         const isJSObjectLiteralIniter =
-          qc.is.inJSFile(node) && qc.is.kind(qc.ObjectLiteralExpression, initer) && (initer.properties.length === 0 || qc.is.prototypeAccess(node.name)) && hasEntries(symbol.exports);
+          qc.is.inJSFile(node) && qc.is.kind(qc.ObjectLiteralExpression, initer) && (initer.properties.length === 0 || qc.is.prototypeAccess(node.name)) && qb.hasEntries(symbol.exports);
         if (!isJSObjectLiteralIniter && node.parent.parent.kind !== Syntax.ForInStatement)
           checkTypeAssignableToAndOptionallyElaborate(checkExpressionCached(initer), type, node, initer, undefined);
       }
@@ -21224,7 +21224,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (!isArrayLikeType(arrayType)) {
       if (errorNode && !reportedError) {
         const yieldType = getIterationTypeOfIterable(use, IterationTypeKind.Yield, inputType, undefined);
-        const [defaultDiagnostic, maybeMissingAwait]: [DiagnosticMessage, boolean] =
+        const [defaultDiagnostic, maybeMissingAwait]: [qd.Message, boolean] =
           !(use & IterationUse.AllowsStringInputFlag) || hasStringConstituent
             ? downlevelIteration
               ? [qd.Type_0_is_not_an_array_type_or_does_not_have_a_Symbol_iterator_method_that_returns_an_iterator, true]
@@ -21692,7 +21692,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
     }
   }
-  function checkTypeNameIsReserved(name: Identifier, message: DiagnosticMessage): void {
+  function checkTypeNameIsReserved(name: Identifier, message: qd.Message): void {
     switch (name.escapedText) {
       case 'any':
       case 'unknown':
@@ -21857,7 +21857,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       checkPropertyInitialization(node);
     }
   }
-  function issueMemberSpecificError(node: ClassLikeDeclaration, typeWithThis: Type, baseWithThis: Type, broadDiag: DiagnosticMessage) {
+  function issueMemberSpecificError(node: ClassLikeDeclaration, typeWithThis: Type, baseWithThis: Type, broadDiag: qd.Message) {
     let issuedMemberError = false;
     for (const member of node.members) {
       if (qc.has.staticModifier(member)) continue;
@@ -21867,7 +21867,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         const baseProp = getPropertyOfType(baseWithThis, declaredProp.escName);
         if (prop && baseProp) {
           const rootChain = () =>
-            chainDiagnosticMessages(
+            chainqd.Messages(
               undefined,
               qd.Property_0_in_type_1_is_not_assignable_to_the_same_property_in_base_type_2,
               declaredProp.symbolToString(),
@@ -21918,7 +21918,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       } else {
         const derivedDeclarationFlags = getDeclarationModifierFlagsFromSymbol(derived);
         if (baseDeclarationFlags & ModifierFlags.Private || derivedDeclarationFlags & ModifierFlags.Private) continue;
-        let errorMessage: DiagnosticMessage;
+        let errorMessage: qd.Message;
         const basePropertyFlags = base.flags & SymbolFlags.PropertyOrAccessor;
         const derivedPropertyFlags = derived.flags & SymbolFlags.PropertyOrAccessor;
         if (basePropertyFlags && derivedPropertyFlags) {
@@ -21977,7 +21977,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function getNonInterhitedProperties(type: InterfaceType, baseTypes: BaseType[], properties: Symbol[]) {
     if (!length(baseTypes)) return properties;
-    const seen = createEscapedMap<Symbol>();
+    const seen = qb.createEscapedMap<Symbol>();
     forEach(properties, (p) => {
       seen.set(p.escName, p);
     });
@@ -21997,7 +21997,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       prop: Symbol;
       containingType: Type;
     }
-    const seen = createEscapedMap<InheritanceInfoMap>();
+    const seen = qb.createEscapedMap<InheritanceInfoMap>();
     forEach(resolveDeclaredMembers(type).declaredProperties, (p) => {
       seen.set(p.escName, { prop: p, containingType: type });
     });
@@ -22013,8 +22013,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
             ok = false;
             const typeName1 = typeToString(existing.containingType);
             const typeName2 = typeToString(base);
-            let errorInfo = chainDiagnosticMessages(undefined, qd.Named_property_0_of_types_1_and_2_are_not_identical, prop.symbolToString(), typeName1, typeName2);
-            errorInfo = chainDiagnosticMessages(errorInfo, qd.Interface_0_cannot_simultaneously_extend_types_1_and_2, typeToString(type), typeName1, typeName2);
+            let errorInfo = chainqd.Messages(undefined, qd.Named_property_0_of_types_1_and_2_are_not_identical, prop.symbolToString(), typeName1, typeName2);
+            errorInfo = chainqd.Messages(errorInfo, qd.Interface_0_cannot_simultaneously_extend_types_1_and_2, typeToString(type), typeName1, typeName2);
             diagnostics.add(createDiagnosticForNodeFromMessageChain(typeNode, errorInfo));
           }
         }
@@ -22520,7 +22520,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     if (isTypeOnlyExportStar) grammarErrorOnNode(node, qd.Only_named_exports_may_use_export_type);
     return !isTypeOnlyExportStar;
   }
-  function checkGrammarModuleElementContext(node: Statement, errorMessage: DiagnosticMessage): boolean {
+  function checkGrammarModuleElementContext(node: Statement, errorMessage: qd.Message): boolean {
     const isInAppropriateContext = node.parent.kind === Syntax.SourceFile || node.parent.kind === Syntax.ModuleBlock || node.parent.kind === Syntax.ModuleDeclaration;
     if (!isInAppropriateContext) grammarErrorOnFirstToken(node, errorMessage);
     return !isInAppropriateContext;
@@ -24295,14 +24295,14 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (!node.body) return grammarErrorOnNode(node.asteriskToken, qd.An_overload_signature_cannot_be_declared_as_a_generator);
     }
   }
-  function checkGrammarForInvalidQuestionMark(questionToken: QuestionToken | undefined, message: DiagnosticMessage): boolean {
+  function checkGrammarForInvalidQuestionMark(questionToken: QuestionToken | undefined, message: qd.Message): boolean {
     return !!questionToken && grammarErrorOnNode(questionToken, message);
   }
-  function checkGrammarForInvalidExclamationToken(exclamationToken: ExclamationToken | undefined, message: DiagnosticMessage): boolean {
+  function checkGrammarForInvalidExclamationToken(exclamationToken: ExclamationToken | undefined, message: qd.Message): boolean {
     return !!exclamationToken && grammarErrorOnNode(exclamationToken, message);
   }
   function checkGrammarObjectLiteralExpression(node: ObjectLiteralExpression, inDestructuring: boolean) {
-    const seen = createEscapedMap<DeclarationMeaning>();
+    const seen = qb.createEscapedMap<DeclarationMeaning>();
     for (const prop of node.properties) {
       if (prop.kind === Syntax.SpreadAssignment) {
         if (inDestructuring) {
@@ -24361,7 +24361,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function checkGrammarJsxElement(node: JsxOpeningLikeElement) {
     checkGrammarTypeArguments(node, node.typeArguments);
-    const seen = createEscapedMap<boolean>();
+    const seen = qb.createEscapedMap<boolean>();
     for (const attr of node.attributes.properties) {
       if (attr.kind === Syntax.JsxSpreadAttribute) continue;
       const { name, initer } = attr;
@@ -24477,7 +24477,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         return grammarErrorOnFirstToken(node, qd.readonly_type_modifier_is_only_permitted_on_array_and_tuple_literal_types, Token.toString(Syntax.SymbolKeyword));
     }
   }
-  function checkGrammarForInvalidDynamicName(node: DeclarationName, message: DiagnosticMessage) {
+  function checkGrammarForInvalidDynamicName(node: DeclarationName, message: qd.Message) {
     if (isNonBindableDynamicName(node)) return grammarErrorOnNode(node, message);
   }
   function checkGrammarMethod(node: MethodDeclaration | MethodSignature) {
@@ -24664,7 +24664,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   function hasParseDiagnostics(sourceFile: SourceFile): boolean {
     return sourceFile.parseqd.length > 0;
   }
-  function grammarErrorOnFirstToken(node: Node, message: DiagnosticMessage, arg0?: any, arg1?: any, arg2?: any): boolean {
+  function grammarErrorOnFirstToken(node: Node, message: qd.Message, arg0?: any, arg1?: any, arg2?: any): boolean {
     const sourceFile = qc.get.sourceFileOf(node);
     if (!hasParseDiagnostics(sourceFile)) {
       const span = getSpanOfTokenAtPosition(sourceFile, node.pos);
@@ -24673,7 +24673,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return false;
   }
-  function grammarErrorAtPos(nodeForSourceFile: Node, start: number, length: number, message: DiagnosticMessage, arg0?: any, arg1?: any, arg2?: any): boolean {
+  function grammarErrorAtPos(nodeForSourceFile: Node, start: number, length: number, message: qd.Message, arg0?: any, arg1?: any, arg2?: any): boolean {
     const sourceFile = qc.get.sourceFileOf(nodeForSourceFile);
     if (!hasParseDiagnostics(sourceFile)) {
       diagnostics.add(createFileDiagnostic(sourceFile, start, length, message, arg0, arg1, arg2));
@@ -24681,7 +24681,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
     return false;
   }
-  function grammarErrorOnNode(node: Node, message: DiagnosticMessage, arg0?: any, arg1?: any, arg2?: any): boolean {
+  function grammarErrorOnNode(node: Node, message: qd.Message, arg0?: any, arg1?: any, arg2?: any): boolean {
     const sourceFile = qc.get.sourceFileOf(node);
     if (!hasParseDiagnostics(sourceFile)) {
       diagnostics.add(createDiagnosticForNode(node, message, arg0, arg1, arg2));
@@ -24782,7 +24782,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     const literalType = qc.is.kind(qc.LiteralTypeNode, node.parent) || (qc.is.kind(qc.PrefixUnaryExpression, node.parent) && qc.is.kind(qc.LiteralTypeNode, node.parent.parent));
     return false;
   }
-  function grammarErrorAfterFirstToken(node: Node, message: DiagnosticMessage, arg0?: any, arg1?: any, arg2?: any): boolean {
+  function grammarErrorAfterFirstToken(node: Node, message: qd.Message, arg0?: any, arg1?: any, arg2?: any): boolean {
     const sourceFile = qc.get.sourceFileOf(node);
     if (!hasParseDiagnostics(sourceFile)) {
       const span = getSpanOfTokenAtPosition(sourceFile, node.pos);

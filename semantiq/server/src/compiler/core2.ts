@@ -273,6 +273,58 @@ export class Block extends qc.Statement implements qc.Block {
     this.statements = new Nodes(ss);
     if (multiLine) this.multiLine = multiLine;
   }
+  forEachReturnStatement<T>(visitor: (stmt: ReturnStatement) => T): T | undefined {
+    function traverse(n: Node): T | undefined {
+      switch (n.kind) {
+        case Syntax.ReturnStatement:
+          return visitor(<ReturnStatement>n);
+        case Syntax.CaseBlock:
+        case Syntax.Block:
+        case Syntax.IfStatement:
+        case Syntax.DoStatement:
+        case Syntax.WhileStatement:
+        case Syntax.ForStatement:
+        case Syntax.ForInStatement:
+        case Syntax.ForOfStatement:
+        case Syntax.WithStatement:
+        case Syntax.SwitchStatement:
+        case Syntax.CaseClause:
+        case Syntax.DefaultClause:
+        case Syntax.LabeledStatement:
+        case Syntax.TryStatement:
+        case Syntax.CatchClause:
+          return qc.forEach.child(n, traverse);
+      }
+      return;
+    }
+    return traverse(this);
+  }
+  forEachYieldExpression(visitor: (expr: YieldExpression) => void): void {
+    function traverse(n: Node) {
+      switch (n.kind) {
+        case Syntax.YieldExpression:
+          visitor(<YieldExpression>n);
+          const operand = (<YieldExpression>n).expression;
+          if (operand) {
+            traverse(operand);
+          }
+          return;
+        case Syntax.EnumDeclaration:
+        case Syntax.InterfaceDeclaration:
+        case Syntax.ModuleDeclaration:
+        case Syntax.TypeAliasDeclaration:
+          return;
+        default:
+          if (is.functionLike(n)) {
+            if (n.name && n.name.kind === Syntax.ComputedPropertyName) {
+              traverse(n.name.expression);
+              return;
+            }
+          } else if (!is.partOfTypeNode(n)) qc.forEach.child(n, traverse);
+      }
+    }
+    return traverse(this);
+  }
   update(ss: readonly qc.Statement[]) {
     return this.statements !== ss ? new Block(ss, this.multiLine).updateFrom(this) : this;
   }
@@ -2128,6 +2180,15 @@ export class LabeledStatement extends qc.Statement implements qc.LabeledStatemen
     this.label = asName(l);
     this.statement = asEmbeddedStatement(s);
   }
+  static unwrapInnermostStatementOfLabel(node: LabeledStatement, beforeUnwrapLabelCallback?: (node: LabeledStatement) => void): Statement {
+    while (true) {
+      if (beforeUnwrapLabelCallback) {
+        beforeUnwrapLabelCallback(node);
+      }
+      if (node.statement.kind !== Syntax.LabeledStatement) return node.statement;
+      node = <LabeledStatement>node.statement;
+    }
+  }
   update(l: Identifier, s: qc.Statement) {
     return this.label !== l || this.statement !== s ? new LabeledStatement(l, s).updateFrom(this) : this;
   }
@@ -3260,6 +3321,12 @@ export class TypePredicateNode extends qc.TypeNode implements qc.TypePredicateNo
     this.assertsModifier = a;
     this.parameterName = asName(p);
     this.type = t;
+  }
+  isIdentifierTypePredicate(): this is qc.IdentifierTypePredicate {
+    return this.kind === qc.TypePredicateKind.Identifier;
+  }
+  isThisTypePredicate(): this is qc.ThisTypePredicate {
+    return this.kind === qc.TypePredicateKind.This;
   }
   update(p: Identifier | ThisTypeNode, t: qc.TypeNode) {
     return this.updateWithModifier(this.assertsModifier, p, t);
