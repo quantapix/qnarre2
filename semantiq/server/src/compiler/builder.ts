@@ -1426,7 +1426,7 @@ export namespace BuilderState {
     return some(sourceFile.moduleAugmentations, (augmentation) => isGlobalScopeAugmentation(augmentation.parent as ModuleDeclaration));
   }
   function isFileAffectingGlobalScope(sourceFile: SourceFile) {
-    return containsGlobalScopeAugmentation(sourceFile) || (!qp_isExternalModule(sourceFile) && !containsOnlyAmbientModules(sourceFile));
+    return containsGlobalScopeAugmentation(sourceFile) || (!qc.is.externalModule(sourceFile) && !containsOnlyAmbientModules(sourceFile));
   }
   export function getAllFilesExcludingDefaultLibraryFile(state: BuilderState, programOfThisState: Program, firstSourceFile: SourceFile | undefined): readonly SourceFile[] {
     if (state.allFilesExcludingDefaultLibraryFile) return state.allFilesExcludingDefaultLibraryFile;

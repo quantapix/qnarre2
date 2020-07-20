@@ -1,9 +1,9 @@
 import * as qb from './base';
 import { NodeFlags, Nodes, Token } from './core';
 import * as qc from './core';
-import { is } from './core3';
+import { is, get } from './core3';
 import * as qg from './debug';
-import { DocTag } from './types';
+import { Node, DocTag } from './types';
 import { Modifier, Syntax } from './syntax';
 import * as qy from './syntax';
 export * from './core';
@@ -350,7 +350,7 @@ export class CallBinding extends Nobj {
     } else if (callee.kind === Syntax.SuperKeyword) {
       thisArg = new ThisExpression();
       target = <PrimaryExpression>callee;
-    } else if (qc.get.emitFlags(callee) & qc.EmitFlags.HelperName) {
+    } else if (get.emitFlags(callee) & qc.EmitFlags.HelperName) {
       thisArg = VoidExpression.zero();
       target = parenthesize.forAccess(callee);
     } else {
@@ -1436,13 +1436,13 @@ export class Identifier extends qc.TokenOrIdentifier implements qc.Identifier {
     return qc.idText(this);
   }
   isInternalName() {
-    return (qc.get.emitFlags(this) & qc.EmitFlags.InternalName) !== 0;
+    return (get.emitFlags(this) & qc.EmitFlags.InternalName) !== 0;
   }
   isLocalName() {
-    return (qc.get.emitFlags(this) & qc.EmitFlags.LocalName) !== 0;
+    return (get.emitFlags(this) & qc.EmitFlags.LocalName) !== 0;
   }
   isExportName() {
-    return (qc.get.emitFlags(this) & qc.EmitFlags.ExportName) !== 0;
+    return (get.emitFlags(this) & qc.EmitFlags.ExportName) !== 0;
   }
   update(ts?: Nodes<qc.TypeNode | TypeParameterDeclaration>) {
     return this.typeArguments !== ts ? new Identifier(this.text, ts).updateFrom(this) : this;
@@ -1490,7 +1490,7 @@ export class Identifier extends qc.TokenOrIdentifier implements qc.Identifier {
     return id.originalKeywordKind === Syntax.ThisKeyword;
   }
   isDeclarationNameOfEnumOrNamespace(node: Identifier) {
-    const parseNode = qc.get.parseTreeOf(node);
+    const parseNode = get.parseTreeOf(node);
     if (parseNode) {
       switch (parseNode.parent.kind) {
         case Syntax.EnumDeclaration:
@@ -2052,7 +2052,7 @@ export class JsxOpeningFragment extends qc.Expression implements qc.JsxOpeningFr
   createReactNamespace(reactNamespace: string, parent: qc.JsxOpeningLikeElement | JsxOpeningFragment) {
     const r = new Identifier(reactNamespace || 'React');
     r.flags &= ~NodeFlags.Synthesized;
-    r.parent = qc.get.parseTreeOf(parent);
+    r.parent = get.parseTreeOf(parent);
     return r;
   }
   createJsxFactoryExpressionFromEntityName(jsxFactory: qc.EntityName, parent: qc.JsxOpeningLikeElement | JsxOpeningFragment): qc.Expression {
@@ -2727,7 +2727,7 @@ export class PropertyAccessExpression extends qc.MemberExpression implements qc.
   }
   update(e: qc.Expression, n: Identifier | PrivateIdentifier): PropertyAccessExpression {
     if (is.propertyAccessChain(this)) return this.update(e, this.questionDotToken, cast(n, isIdentifier));
-    return this.expression !== e || this.name !== n ? new PropertyAccessExpression(e, n).setEmitFlags(qc.get.emitFlags(this)).updateFrom(this) : this;
+    return this.expression !== e || this.name !== n ? new PropertyAccessExpression(e, n).setEmitFlags(get.emitFlags(this)).updateFrom(this) : this;
   }
   _declarationBrand: any;
 }
@@ -2742,7 +2742,7 @@ export class PropertyAccessChain extends PropertyAccessExpression implements qc.
   }
   update(e: qc.Expression, n: Identifier, q?: qc.QuestionDotToken) {
     qb.assert(!!(this.flags & NodeFlags.OptionalChain));
-    return this.expression !== e || this.questionDotToken !== q || this.name !== n ? new PropertyAccessChain(e, q, n).setEmitFlags(qc.get.emitFlags(this)).updateFrom(this) : this;
+    return this.expression !== e || this.questionDotToken !== q || this.name !== n ? new PropertyAccessChain(e, q, n).setEmitFlags(get.emitFlags(this)).updateFrom(this) : this;
   }
   _optionalChainBrand: any;
 }
@@ -2947,31 +2947,28 @@ SpreadAssignment.prototype.kind = SpreadAssignment.kind;
 qb.addMixins(SpreadAssignment, [qc.DocContainer]);
 export class StringLiteral extends qc.LiteralExpression implements qc.StringLiteral {
   static readonly kind = Syntax.StringLiteral;
-  textSourceNode?: Identifier | qc.StringLiteralLike | NumericLiteral;
+  textSourceNode?: qc.Identifier | qc.StringLiteralLike | qc.NumericLiteral;
   singleQuote?: boolean;
   constructor(t: string) {
     super(true);
     this.text = t;
   }
-  like(n: Node): n is qc.StringLiteralLike {
-    return this.kind === Syntax.StringLiteral || this.kind === Syntax.NoSubstitutionLiteral;
+  static like(n: Node): n is qc.StringLiteralLike {
+    return n.kind === Syntax.StringLiteral || n.kind === Syntax.NoSubstitutionLiteral;
   }
-  orNumericLiteralLike(n: Node): n is qc.StringLiteralLike | NumericLiteral {
-    return like(n) || is.kind(NumericLiteral, n);
+  static orNumericLiteralLike(n: Node): n is qc.StringLiteralLike | NumericLiteral {
+    return this.like(n) || n.kind === Syntax.NumericLiteral;
   }
-  orJsxExpressionKind(n: Node): n is StringLiteral | JsxExpression {
-    const k = this.kind;
+  static orJsxExpressionKind(n: Node): n is StringLiteral | JsxExpression {
+    const k = n.kind;
     return k === Syntax.StringLiteral || k === Syntax.JsxExpression;
   }
-  orNumberLiteralExpression(e: qc.Expression) {
-    return (
-      orNumericLiteralLike(e) ||
-      (e.kind === Syntax.PrefixUnaryExpression && (e as PrefixUnaryExpression).operator === Syntax.MinusToken && (e as PrefixUnaryExpression).operand.kind === Syntax.NumericLiteral)
-    );
+  static orNumberLiteralExpression(e: qc.Expression) {
+    return this.orNumericLiteralLike(e) || (is.kind(PrefixUnaryExpression, e) && e.operator === Syntax.MinusToken && e.operand.kind === Syntax.NumericLiteral);
   }
-  static fromNode(sourceNode: Exclude<PropertyNameLiteral, PrivateIdentifier>): StringLiteral {
-    const r = new StringLiteral(getTextOfIdentifierOrLiteral(sourceNode));
-    r.textSourceNode = sourceNode;
+  static fromNode(n: Exclude<qc.PropertyNameLiteral, PrivateIdentifier>): StringLiteral {
+    const r = new StringLiteral(getTextOfIdentifierOrLiteral(n));
+    r.textSourceNode = n;
     return r;
   }
   _declarationBrand: any;
@@ -3975,7 +3972,7 @@ export namespace parenthesize {
 }
 export namespace emit {
   export function disposeEmitNodes(sourceFile: SourceFile) {
-    sourceFile = qc.get.sourceFileOf(qc.get.parseTreeOf(sourceFile));
+    sourceFile = get.sourceFileOf(get.parseTreeOf(sourceFile));
     const emitNode = sourceFile && sourceFile.emitNode;
     const annotatedNodes = emitNode && emitNode.annotatedNodes;
     if (annotatedNodes) {
@@ -3988,7 +3985,7 @@ export namespace emit {
     if (!n.emitNode) {
       if (is.parseTreeNode(n)) {
         if (n.kind === Syntax.SourceFile) return (n.emitNode = { annotatedNodes: [n] } as qc.EmitNode);
-        const sourceFile = qc.get.sourceFileOf(qc.get.parseTreeOf(qc.get.sourceFileOf(n)));
+        const sourceFile = get.sourceFileOf(get.parseTreeOf(get.sourceFileOf(n)));
         getOrCreateEmitNode(sourceFile).annotatedNodes!.push(n);
       }
       n.emitNode = {} as qc.EmitNode;
@@ -4159,12 +4156,12 @@ export namespace emit {
     return destEmitNode;
   }
   export function getExternalHelpersModuleName(n: SourceFile) {
-    const parseNode = qc.get.originalOf(n, isSourceFile);
+    const parseNode = get.originalOf(n, isSourceFile);
     const emitNode = parseNode && parseNode.emitNode;
     return emitNode && emitNode.externalHelpersModuleName;
   }
   export function hasRecordedExternalHelpers(sourceFile: SourceFile) {
-    const parseNode = qc.get.originalOf(sourceFile, isSourceFile);
+    const parseNode = get.originalOf(sourceFile, isSourceFile);
     const emitNode = parseNode && parseNode.emitNode;
     return !!emitNode && (!!emitNode.externalHelpersModuleName || !!emitNode.externalHelpers);
   }
@@ -4222,7 +4219,7 @@ export namespace fixme {
                 isFileLevelUniqueName(sourceFile, name) ? new ImportSpecifier(undefined, new Identifier(name)) : new qc.ImportSpecifier(new Identifier(name), getUnscopedHelperName(name))
               )
             );
-            const parseNode = qc.get.originalOf(sourceFile, isSourceFile);
+            const parseNode = get.originalOf(sourceFile, isSourceFile);
             const emitNode = getOrCreateEmitNode(parseNode);
             emitNode.externalHelpers = true;
           }
@@ -4259,7 +4256,7 @@ export namespace fixme {
         }
       }
       if (create) {
-        const parseNode = qc.get.originalOf(node, isSourceFile);
+        const parseNode = get.originalOf(node, isSourceFile);
         const emitNode = getOrCreateEmitNode(parseNode);
         return emitNode.externalHelpersModuleName || (emitNode.externalHelpersModuleName = createUniqueName(externalHelpersModuleNameText));
       }

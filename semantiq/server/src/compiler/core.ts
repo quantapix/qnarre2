@@ -69,7 +69,7 @@ export abstract class Nobj extends qb.TextRange implements qt.Nobj {
     if (is.missing(this)) return this.pos;
     if (isDoc.node(this)) return qy.skipTrivia((s || get.sourceFileOf(this)).text, this.pos, false, true);
     if (doc && is.withDocNodes(this)) return this.doc![0].getTokenPos(s);
-    if (is.kind(SyntaxList, this) && this._children?.length) return this._children![0].getTokenPos(s, doc);
+    if (is.kind(qc.SyntaxList, this) && this._children?.length) return this._children![0].getTokenPos(s, doc);
     return qy.skipTrivia((s || get.sourceFileOf(this)).text, this.pos);
   }
   getStart(s?: qy.SourceFileLike, doc?: boolean) {
@@ -174,7 +174,7 @@ export abstract class Nobj extends qb.TextRange implements qt.Nobj {
     qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
     const cs = this.getChildren(s);
     if (!cs.length) return;
-    const c = qb.qb.find(cs, (c) => c.kind < Syntax.FirstDocNode || c.kind > Syntax.LastDocNode)!;
+    const c = qb.find(cs, (c) => c.kind < Syntax.FirstDocNode || c.kind > Syntax.LastDocNode)!;
     return c.kind < Syntax.FirstNode ? c : c.getFirstToken(s);
   }
   getLastToken(s?: qy.SourceFileLike): Nobj | undefined {
@@ -513,7 +513,7 @@ export abstract class Symbol implements qt.Symbol {
   }
   getNonAugmentationDeclaration() {
     const ds = this.declarations;
-    return ds && qb.find(ds, (d) => !is.externalModuleAugmentation(d) && !(is.kind(ModuleDeclaration, d) && isGlobalScopeAugmentation(d)));
+    return ds && qb.find(ds, (d) => !is.externalModuleAugmentation(d) && !(is.kind(qc.ModuleDeclaration, d) && isGlobalScopeAugmentation(d)));
   }
   setValueDeclaration(d: Declaration) {
     const v = this.valueDeclaration;
@@ -528,7 +528,7 @@ export abstract class Symbol implements qt.Symbol {
   isFunctionSymbol() {
     if (!this.valueDeclaration) return false;
     const v = this.valueDeclaration;
-    return v.kind === Syntax.FunctionDeclaration || (is.kind(VariableDeclaration, v) && v.initer && is.functionLike(v.initer));
+    return v.kind === Syntax.FunctionDeclaration || (is.kind(qc.VariableDeclaration, v) && v.initer && is.functionLike(v.initer));
   }
   getCheckFlags(): CheckFlags {
     return this.isTransientSymbol() ? this.checkFlags : 0;
@@ -565,7 +565,7 @@ export abstract class Symbol implements qt.Symbol {
     return ds && qb.find(ds, is.classLike);
   }
   isUMDExportSymbol() {
-    return this.declarations?.[0] && is.kind(NamespaceExportDeclaration, this.declarations[0]);
+    return this.declarations?.[0] && is.kind(qc.NamespaceExportDeclaration, this.declarations[0]);
   }
   isShorthandAmbientModuleSymbol() {
     return is.shorthandAmbientModule(this.valueDeclaration);
@@ -1041,7 +1041,7 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
     function getDeclarationName(declaration: Declaration) {
       const name = qc.get.nonAssignedNameOfDeclaration(declaration);
       return (
-        name && (isComputedPropertyName(name) && is.kind(PropertyAccessExpression, name.expression) ? name.expression.name.text : is.propertyName(name) ? getNameFromPropertyName(name) : undefined)
+        name && (isComputedPropertyName(name) && is.kind(qc.PropertyAccessExpression, name.expression) ? name.expression.name.text : is.propertyName(name) ? getNameFromPropertyName(name) : undefined)
       );
     }
     function visit(node: Node): void {
@@ -1083,7 +1083,7 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
         case Syntax.VariableDeclaration:
         case Syntax.BindingElement: {
           const decl = <VariableDeclaration>node;
-          if (is.kind(BindingPattern, decl.name)) {
+          if (is.kind(qc.BindingPattern, decl.name)) {
             qc.forEach.child(decl.name, visit);
             break;
           }
@@ -1097,7 +1097,7 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
         case Syntax.ExportDeclaration:
           const exportDeclaration = <ExportDeclaration>node;
           if (exportDeclaration.exportClause) {
-            if (is.kind(NamedExports, exportDeclaration.exportClause)) forEach(exportDeclaration.exportClause.elements, visit);
+            if (is.kind(qc.NamedExports, exportDeclaration.exportClause)) forEach(exportDeclaration.exportClause.elements, visit);
             else visit(exportDeclaration.exportClause.name);
           }
           break;

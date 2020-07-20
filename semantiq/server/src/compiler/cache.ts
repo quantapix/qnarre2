@@ -194,7 +194,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     const primaryResult = qnr.resolveModuleName(moduleName, containingFile, compilerOptions, host, moduleResolutionCache, redirectedReference);
     if (!resolutionHost.getGlobalCache) return primaryResult;
     const globalCache = resolutionHost.getGlobalCache();
-    if (globalCache !== undefined && !qp_isExternalModuleNameRelative(moduleName) && !(primaryResult.resolvedModule && extensionIsTS(primaryResult.resolvedModule.extension))) {
+    if (globalCache !== undefined && !isExternalModuleNameRelative(moduleName) && !(primaryResult.resolvedModule && extensionIsTS(primaryResult.resolvedModule.extension))) {
       const { resolvedModule, failedLookupLocations } = loadModuleFromGlobalCache(
         Debug.checkDefined(resolutionHost.globalCacheResolutionModuleName)(moduleName),
         resolutionHost.projectName,
@@ -256,7 +256,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
         (!seenNamesInFile.has(name) && unmatchedRedirects) ||
         !resolution ||
         resolution.isInvalidated ||
-        (hasInvalidatedNonRelativeUnresolvedImport && !qp_isExternalModuleNameRelative(name) && shouldRetryResolution(resolution))
+        (hasInvalidatedNonRelativeUnresolvedImport && !isExternalModuleNameRelative(name) && shouldRetryResolution(resolution))
       ) {
         const existingResolution = resolution;
         const resolutionInDirectory = perDirectoryResolution.get(name);
@@ -389,7 +389,7 @@ export function createResolutionCache(resolutionHost: ResolutionCacheHost, rootD
     } else {
       resolution.refCount = 1;
       assert(resolution.files === undefined);
-      if (qp_isExternalModuleNameRelative(name)) {
+      if (isExternalModuleNameRelative(name)) {
         watchFailedLookupLocationOfResolution(resolution);
       } else {
         nonRelativeExternalModuleResolutions.add(name, resolution);

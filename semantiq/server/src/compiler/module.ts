@@ -38,7 +38,7 @@ function getPreferences({ importModuleSpecifierPreference, importModuleSpecifier
 }
 function getPreferencesForUpdate(compilerOptions: CompilerOptions, oldImportSpecifier: string): Preferences {
   return {
-    relativePreference: qp_isExternalModuleNameRelative(oldImportSpecifier) ? RelativePreference.Relative : RelativePreference.NonRelative,
+    relativePreference: isExternalModuleNameRelative(oldImportSpecifier) ? RelativePreference.Relative : RelativePreference.NonRelative,
     ending: hasJSFileExtension(oldImportSpecifier)
       ? Ending.JsExtension
       : getEmitModuleResolutionKind(compilerOptions) !== ModuleResolutionKind.NodeJs || endsWith(oldImportSpecifier, 'index')
@@ -211,7 +211,7 @@ function getAllModulePaths(importingFileName: string, importedFileName: string, 
 function tryGetModuleNameFromAmbientModule(moduleSymbol: Symbol): string | undefined {
   const decl = find(
     moduleSymbol.declarations,
-    (d) => qc.is.nonGlobalAmbientModule(d) && (!qc.is.externalModuleAugmentation(d) || !qp_isExternalModuleNameRelative(getTextOfIdentifierOrLiteral(d.name)))
+    (d) => qc.is.nonGlobalAmbientModule(d) && (!qc.is.externalModuleAugmentation(d) || !isExternalModuleNameRelative(getTextOfIdentifierOrLiteral(d.name)))
   ) as (ModuleDeclaration & { name: StringLiteral }) | undefined;
   if (decl) return decl.name.text;
 }
@@ -749,7 +749,7 @@ export function resolveTypeReferenceDirective(
         trace(host, qd.Looking_up_in_node_modules_folder_initial_location_0, initialLocationForSecondaryLookup);
       }
       let result: Resolved | undefined;
-      if (!qp_isExternalModuleNameRelative(typeReferenceDirectiveName)) {
+      if (!isExternalModuleNameRelative(typeReferenceDirectiveName)) {
         const searchResult = loadModuleFromNearestNodeModulesDirectory(Extensions.DtsOnly, typeReferenceDirectiveName, initialLocationForSecondaryLookup, moduleResolutionState, undefined, undefined);
         result = searchResult && searchResult.value;
       } else {
@@ -860,7 +860,7 @@ export function createModuleResolutionCacheWithMaps(
     return getOrCreateCache<Map<ResolvedModuleWithFailedLookupLocations>>(directoryToModuleNameMap, redirectedReference, path, createMap);
   }
   function getOrCreateCacheForModuleName(nonRelativeModuleName: string, redirectedReference?: ResolvedProjectReference): PerModuleNameCache {
-    assert(!qp_isExternalModuleNameRelative(nonRelativeModuleName));
+    assert(!isExternalModuleNameRelative(nonRelativeModuleName));
     return getOrCreateCache(moduleNameToDirectoryMap, redirectedReference, nonRelativeModuleName, createPerModuleNameCache);
   }
   function getOrCreateCache<T>(cacheWithRedirects: CacheWithRedirects<T>, redirectedReference: ResolvedProjectReference | undefined, key: string, create: () => T): T {
@@ -973,7 +973,7 @@ export function resolveModuleName(
     perfLogger.logStopResolveModule(result && result.resolvedModule ? '' + result.resolvedModule.resolvedFileName : 'null');
     if (perFolderCache) {
       perFolderCache.set(moduleName, result);
-      if (!qp_isExternalModuleNameRelative(moduleName)) {
+      if (!isExternalModuleNameRelative(moduleName)) {
         cache!.getOrCreateCacheForModuleName(moduleName, redirectedReference).set(containingDirectory, result);
       }
     }
@@ -1001,7 +1001,7 @@ function tryLoadModuleUsingOptionalResolutionSettings(
 ): Resolved | undefined {
   const resolved = tryLoadModuleUsingPathsIfEligible(extensions, moduleName, loader, state);
   if (resolved) return resolved.value;
-  if (!qp_isExternalModuleNameRelative(moduleName)) return tryLoadModuleUsingBaseUrl(extensions, moduleName, loader, state);
+  if (!isExternalModuleNameRelative(moduleName)) return tryLoadModuleUsingBaseUrl(extensions, moduleName, loader, state);
   return tryLoadModuleUsingRootDirs(extensions, moduleName, containingDirectory, loader, state);
 }
 function tryLoadModuleUsingPathsIfEligible(extensions: Extensions, moduleName: string, loader: ResolutionKindSpecificLoader, state: ModuleResolutionState) {
@@ -1155,7 +1155,7 @@ function nodeModuleNameResolverWorker(
     const loader: ResolutionKindSpecificLoader = (extensions, candidate, onlyRecordFailures, state) => nodeLoadModuleByRelativeName(extensions, candidate, onlyRecordFailures, state, true);
     const resolved = tryLoadModuleUsingOptionalResolutionSettings(extensions, moduleName, containingDirectory, loader, state);
     if (resolved) return toSearchResult({ resolved, isExternalLibraryImport: pathContainsNodeModules(resolved.path) });
-    if (!qp_isExternalModuleNameRelative(moduleName)) {
+    if (!isExternalModuleNameRelative(moduleName)) {
       if (traceEnabled) {
         trace(host, qd.Loading_module_0_from_node_modules_folder_target_file_type_1, moduleName, Extensions[extensions]);
       }
@@ -1582,7 +1582,7 @@ export function classicNameResolver(
   function tryResolve(extensions: Extensions): SearchResult<Resolved> {
     const resolvedUsingSettings = tryLoadModuleUsingOptionalResolutionSettings(extensions, moduleName, containingDirectory, loadModuleFromFileNoPackageId, state);
     if (resolvedUsingSettings) return { value: resolvedUsingSettings };
-    if (!qp_isExternalModuleNameRelative(moduleName)) {
+    if (!isExternalModuleNameRelative(moduleName)) {
       const perModuleNameCache = cache && cache.getOrCreateCacheForModuleName(moduleName, redirectedReference);
       const resolved = forEachAncestorDirectory(containingDirectory, (directory) => {
         const resolutionFromCache = tryFindNonRelativeModuleNameInCache(perModuleNameCache, moduleName, directory, state);

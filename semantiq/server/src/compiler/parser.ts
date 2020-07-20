@@ -4506,9 +4506,6 @@ let parser: Parser;
 function getParser() {
   return parser || (parser = create());
 }
-export function qp_isExternalModule(s: SourceFile) {
-  return s.externalModuleIndicator !== undefined;
-}
 export function qp_createSource(fileName: string, t: string, lang: ScriptTarget, parents = false, script?: ScriptKind): SourceFile {
   performance.mark('beforeParse');
   let r: SourceFile;

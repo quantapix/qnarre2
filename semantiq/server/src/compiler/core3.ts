@@ -1,5 +1,5 @@
 import * as qb from './base';
-import { NodeFlags, NodeType, TokenFlags, TransformFlags } from './core2';
+import { NodeFlags, NodeType, TokenFlags } from './core2';
 import * as qc from './core2';
 import * as qg from './debug';
 import { Modifier, ModifierFlags, Syntax } from './syntax';
@@ -19,8 +19,8 @@ export namespace access {
     Write,
     ReadWrite,
   }
-  export function get(n: Node): Kind {
-    const p = n.parent as Node | undefined;
+  export function get(n?: Node): Kind {
+    const p = n?.parent as Node | undefined;
     if (!p) return Kind.Read;
     const writeOrReadWrite = (): Kind => {
       const skipParens = (n?: Node) => {
@@ -355,7 +355,7 @@ export const is = new (class {
   }
   validESSymbolDeclaration(n: Node): n is qc.VariableDeclaration | qc.PropertyDeclaration | qc.SignatureDeclaration {
     return this.kind(qc.VariableDeclaration, n)
-      ? this.varConst(n) && this.kind(qc.Identifier, n.name) && this.isVariableDeclarationInVariableStatement(n)
+      ? this.varConst(n) && this.kind(qc.Identifier, n.name) && this.variableDeclarationInVariableStatement(n)
       : this.kind(qc.PropertyDeclaration, n)
       ? has.effectiveReadonlyModifier(n) && has.staticModifier(n)
       : this.kind(qc.PropertySignature, n) && has.effectiveReadonlyModifier(n);
@@ -413,7 +413,7 @@ export const is = new (class {
   prologueDirective(n: Node): n is qc.PrologueDirective {
     return this.kind(qc.ExpressionStatement, n) && n.expression.kind === Syntax.StringLiteral;
   }
-  blockScope(n: Node, parent: Node) {
+  blockScope(n: Node, parent?: Node) {
     switch (n.kind) {
       case Syntax.ArrowFunction:
       case Syntax.CaseBlock:
@@ -491,7 +491,7 @@ export const is = new (class {
   anyImportOrReExport(n: Node): n is qc.AnyImportOrReExport {
     return this.anyImportSyntax(n) || this.kind(qc.ExportDeclaration, n);
   }
-  ambientModule(n: Node): n is qc.AmbientModuleDeclaration {
+  ambientModule(n?: Node): n is qc.AmbientModuleDeclaration {
     return this.kind(qc.ModuleDeclaration, n) && (n.name.kind === Syntax.StringLiteral || n.isGlobalScopeAugmentation());
   }
   moduleWithStringLiteralName(n: Node): n is qc.ModuleDeclaration {
@@ -509,15 +509,19 @@ export const is = new (class {
   blockScopedContainerTopLevel(n: Node) {
     return this.kind(qc.SourceFile, n) || this.kind(qc.ModuleDeclaration, n) || this.functionLike(n);
   }
+  externalModule(n?: Node) {
+    return this.kind(qc.SourceFile, n) && n.externalModuleIndicator !== undefined;
+  }
   externalModuleAugmentation(n: Node): n is qc.AmbientModuleDeclaration {
     return this.ambientModule(n) && this.moduleAugmentationExternal(n);
   }
   moduleAugmentationExternal(n: qc.AmbientModuleDeclaration) {
-    switch (n.parent.kind) {
+    const p = n.parent;
+    switch (p?.kind) {
       case Syntax.SourceFile:
-        return qp_isExternalModule(n.parent);
+        return this.externalModule(p);
       case Syntax.ModuleBlock:
-        return this.ambientModule(n.parent.parent) && this.kind(qc.SourceFile, n.parent.parent.parent) && !qp_isExternalModule(n.parent.parent.parent);
+        return this.ambientModule(p.parent) && this.kind(qc.SourceFile, p.parent.parent) && !this.externalModule(p.parent.parent);
     }
     return false;
   }
@@ -585,7 +589,7 @@ export const is = new (class {
   callChain(n: Node): n is qc.CallChain {
     return n.kind === Syntax.CallExpression && !!(n.flags & NodeFlags.OptionalChain);
   }
-  optionalChainRoot(n: Node): n is qc.OptionalChainRoot {
+  optionalChainRoot(n?: Node): n is qc.OptionalChainRoot {
     return this.optionalChain(n) && !this.kind(qc.NonNullExpression, n) && !!n.questionDotToken;
   }
   expressionOfOptionalChainRoot(n: Node): n is qc.Expression & { parent: qc.OptionalChainRoot } {
@@ -619,9 +623,9 @@ export const is = new (class {
     switch (n.kind) {
       case Syntax.ImportSpecifier:
       case Syntax.ExportSpecifier:
-        return n.parent?.parent?.isTypeOnly;
+        return !!n.parent?.parent?.isTypeOnly;
       case Syntax.NamespaceImport:
-        return n.parent?.isTypeOnly;
+        return !!n.parent?.isTypeOnly;
       case Syntax.ImportClause:
         return n.isTypeOnly;
       default:
@@ -641,8 +645,8 @@ export const is = new (class {
   modifier(n: Node): n is Modifier {
     return qy.is.modifier(n.kind);
   }
-  functionLike(n: Node): n is qc.SignatureDeclaration {
-    return qy.is.functionLike(n.kind);
+  functionLike(n?: Node): n is qc.SignatureDeclaration {
+    return qy.is.functionLike(n?.kind);
   }
   functionLikeDeclaration(n: Node): n is qc.FunctionLikeDeclaration {
     return qy.is.functionLikeDeclaration(n.kind);
@@ -787,8 +791,8 @@ export const is = new (class {
     const k = n.kind;
     return k === Syntax.Identifier || k === Syntax.PrivateIdentifier;
   }
-  optionalChain(n: Node): n is qc.PropertyAccessChain | qc.ElementAccessChain | qc.CallChain | qc.NonNullChain {
-    if (!!(n.flags & NodeFlags.OptionalChain)) {
+  optionalChain(n?: Node): n is qc.PropertyAccessChain | qc.ElementAccessChain | qc.CallChain | qc.NonNullChain {
+    if (n && !!(n.flags & NodeFlags.OptionalChain)) {
       switch (n.kind) {
         case Syntax.PropertyAccessExpression:
         case Syntax.ElementAccessExpression:
@@ -948,12 +952,23 @@ export const is = new (class {
       k === Syntax.NamespaceExport ||
       k === Syntax.ImportSpecifier ||
       k === Syntax.ExportSpecifier ||
-      (this.kind(qc.ExportAssignment, n) && exportAssignmentIsAlias(n)) ||
-      (this.kind(qc.BinaryExpression, n) && getAssignmentDeclarationKind(n) === qc.AssignmentDeclarationKind.ModuleExports && exportAssignmentIsAlias(n)) ||
-      (this.kind(qc.PropertyAccessExpression, n) && this.kind(qc.BinaryExpression, p) && p.left === n && p.operatorToken.kind === Syntax.EqualsToken && this.isAliasableExpression(p.right)) ||
+      (this.kind(qc.ExportAssignment, n) && this.exportAssignmentAlias(n)) ||
+      (this.kind(qc.BinaryExpression, n) && get.assignmentDeclarationKind(n) === qc.AssignmentDeclarationKind.ModuleExports && this.exportAssignmentAlias(n)) ||
+      (this.kind(qc.PropertyAccessExpression, n) && this.kind(qc.BinaryExpression, p) && p.left === n && p.operatorToken.kind === Syntax.EqualsToken && this.aliasableExpression(p.right)) ||
       k === Syntax.ShorthandPropertyAssignment ||
-      (this.kind(qc.PropertyAssignment, n) && this.isAliasableExpression(n.initer))
+      (this.kind(qc.PropertyAssignment, n) && this.aliasableExpression(n.initer))
     );
+  }
+  aliasableExpression(n: qc.Expression) {
+    return this.entityNameExpression(n) || n.kind === Syntax.ClassExpression;
+  }
+  exportAssignmentAlias(n: qc.ExportAssignment | qc.BinaryExpression) {
+    const e = get.exportAssignmentExpression(n);
+    return this.aliasableExpression(e);
+  }
+  restParameter(n: qc.ParameterDeclaration | qc.DocParameterTag) {
+    const t = this.kind(qc.DocParameterTag, n) ? n.typeExpression && n.typeExpression.type : n.type;
+    return (n as qc.ParameterDeclaration).dot3Token !== undefined || (!!t && t.kind === Syntax.DocVariadicType);
   }
   valueSignatureDeclaration(n: Node): n is qc.ValueSignatureDeclaration {
     const k = n.kind;
@@ -1008,7 +1023,7 @@ export const is = new (class {
           return 'quit';
       }
     }) as qc.HeritageClause | undefined;
-    return h?.token === Syntax.ImplementsKeyword || h?.parent.kind === Syntax.InterfaceDeclaration;
+    return h?.token === Syntax.ImplementsKeyword || h?.parent?.kind === Syntax.InterfaceDeclaration;
   }
   identifierTypeReference(n: Node): n is qc.TypeReferenceNode & { typeName: qc.Identifier } {
     return this.kind(qc.TypeReferenceNode, n) && n.typeName.kind === Syntax.Identifier;
@@ -1155,26 +1170,26 @@ export const is = new (class {
   jsonSourceFile(f: qc.SourceFile): f is qc.JsonSourceFile {
     return f.scriptKind === qc.ScriptKind.JSON;
   }
-  customPrologue(s: Statement) {
+  customPrologue(s: qc.Statement) {
     return !!(get.emitFlags(s) & EmitFlags.CustomPrologue);
   }
-  hoistedFunction(s: Statement) {
-    return this.customPrologue(s) && s.kind === Syntax.FunctionDeclaration;
+  hoistedFunction(n: qc.Statement) {
+    return this.customPrologue(n) && n.kind === Syntax.FunctionDeclaration;
   }
-  hoistedVariable(d: qc.VariableDeclaration) {
-    return this.kind(qc.Identifier, d.name) && !d.initer;
+  hoistedVariable(n: qc.VariableDeclaration) {
+    return this.kind(qc.Identifier, n.name) && !n.initer;
   }
-  hoistedVariableStatement(s: Statement) {
-    return this.customPrologue(s) && this.kind(qc.VariableStatement, s) && qb.every(s.declarationList.declarations, this.isHoistedVariable);
+  hoistedVariableStatement(n: qc.Statement) {
+    return this.customPrologue(n) && this.kind(qc.VariableStatement, n) && qb.every(n.declarationList.declarations, this.hoistedVariable);
   }
   anyPrologueDirective(n: Node) {
     return this.prologueDirective(n) || !!(get.emitFlags(n) & EmitFlags.CustomPrologue);
   }
-  externalModuleIndicator(s: qc.Statement) {
-    return this.anyImportOrReExport(s) || s.kind === Syntax.ExportAssignment || has.syntacticModifier(s, ModifierFlags.Export);
+  externalModuleIndicator(n: qc.Statement) {
+    return this.anyImportOrReExport(n) || n.kind === Syntax.ExportAssignment || has.syntacticModifier(n, ModifierFlags.Export);
   }
-  declarationBindingElement(e: qc.BindingOrAssignmentElement): e is qc.VariableDeclaration | qc.ParameterDeclaration | qc.BindingElement {
-    switch (e.kind) {
+  declarationBindingElement(n: qc.BindingOrAssignmentElement): n is qc.VariableDeclaration | qc.ParameterDeclaration | qc.BindingElement {
+    switch (n.kind) {
       case Syntax.BindingElement:
       case Syntax.Parameter:
       case Syntax.VariableDeclaration:
@@ -1182,19 +1197,19 @@ export const is = new (class {
     }
     return false;
   }
-  bindingOrAssignmentPattern(t: qc.BindingOrAssignmentElementTarget): t is qc.BindingOrAssignmentPattern {
-    return this.objectBindingOrAssignmentPattern(t) || this.arrayBindingOrAssignmentPattern(t);
+  bindingOrAssignmentPattern(n: qc.BindingOrAssignmentElementTarget): n is qc.BindingOrAssignmentPattern {
+    return this.objectBindingOrAssignmentPattern(n) || this.arrayBindingOrAssignmentPattern(n);
   }
-  objectBindingOrAssignmentPattern(t: qc.BindingOrAssignmentElementTarget): t is qc.ObjectBindingOrAssignmentPattern {
-    switch (t.kind) {
+  objectBindingOrAssignmentPattern(n: qc.BindingOrAssignmentElementTarget): n is qc.ObjectBindingOrAssignmentPattern {
+    switch (n.kind) {
       case Syntax.ObjectBindingPattern:
       case Syntax.ObjectLiteralExpression:
         return true;
     }
     return false;
   }
-  arrayBindingOrAssignmentPattern(t: qc.BindingOrAssignmentElementTarget): t is qc.ArrayBindingOrAssignmentPattern {
-    switch (t.kind) {
+  arrayBindingOrAssignmentPattern(n: qc.BindingOrAssignmentElementTarget): n is qc.ArrayBindingOrAssignmentPattern {
+    switch (n.kind) {
       case Syntax.ArrayBindingPattern:
       case Syntax.ArrayLiteralExpression:
         return true;
@@ -1209,9 +1224,13 @@ export const is = new (class {
     if (e.kind === Syntax.OmittedExpression) return true;
     return this.emptyBindingPattern(e.name);
   }
-  emptyBindingPattern(n: qc.BindingName): n is qc.BindingPattern {
-    if (this.kind(qc.BindingPattern, n)) return qb.every(n.elements, this.isEmptyBindingElement);
+  emptyBindingPattern(n: qc.BindingName): n is qt.BindingPattern {
+    if (this.kind(qc.BindingPattern, n)) return qb.every(n.elements, this.emptyBindingElement);
     return false;
+  }
+  variableDeclarationInVariableStatement(n: qc.VariableDeclaration) {
+    const p = n.parent;
+    return p?.kind === Syntax.VariableDeclarationList && p?.parent?.kind === Syntax.VariableStatement;
   }
 })();
 export const has = new (class {
@@ -1250,7 +1269,11 @@ export const has = new (class {
     return this.effectiveModifier(n, ModifierFlags.Readonly);
   }
   invalidEscape(t: qc.TemplateLiteral) {
-    return t && !!(is.kind(qc.NoSubstitutionLiteral, t) ? t.templateFlags : t.head.templateFlags || qb.some(t.templateSpans, (s) => !!s.literal.templateFlags));
+    return t && !!(is.kind(qc.NoSubstitutionLiteral, t) ? t.templateFlags : t.head.templateFlags || qb.some(t.templateSpans, (s) => !!t.literal.templateFlags));
+  }
+  restParameter(s: qc.SignatureDeclaration | qc.DocSignature) {
+    const last = qb.lastOrUndefined<qc.ParameterDeclaration | qc.DocParameterTag>(s.parameters);
+    return !!last && is.restParameter(last);
   }
 })();
 export const isJsx = new (class {
@@ -1334,7 +1357,7 @@ export const get = new (class {
     while (true) {
       n = n?.parent;
       if (!n) return qb.fail();
-      const p = n.parent;
+      const p = n.parent as Node | undefined;
       switch (n.kind) {
         case Syntax.ComputedPropertyName:
           if (is.classLike(p?.parent)) return n;
@@ -1699,19 +1722,17 @@ export const get = new (class {
       : qb.empty;
   }
   externalModuleImportEqualsDeclarationExpression(n: Node) {
-    assert(is.externalModuleImportEqualsDeclaration(node));
-    return (<ExternalModuleReference>(<ImportEqualsDeclaration>node).moduleReference).expression;
+    qb.assert(is.externalModuleImportEqualsDeclaration(n));
+    return n.moduleReference.expression;
   }
   declarationOfExpando(n: Node): Node | undefined {
-    if (!node.parent) {
-      return;
-    }
+    if (!n.parent) return;
+
     let name: Expression | BindingName | undefined;
     let decl: Node | undefined;
     if (is.kind(qc.VariableDeclaration, node.parent) && node.parent.initer === node) {
-      if (!is.inJSFile(node) && !is.varConst(node.parent)) {
-        return;
-      }
+      if (!is.inJSFile(node) && !is.varConst(node.parent)) return;
+
       name = node.parent.name;
       decl = node.parent;
     } else if (is.kind(node.parent, BinaryExpression)) {
@@ -1728,14 +1749,11 @@ export const get = new (class {
           name = parentNode.parent.left;
           decl = name;
         }
-        if (!name || !is.bindableStaticNameExpression(name) || !isSameEntityName(name, parentNode.left)) {
-          return;
-        }
+        if (!name || !is.bindableStaticNameExpression(name) || !isSameEntityName(name, parentNode.left)) return;
       }
     }
-    if (!name || !getExpandoIniter(node, is.prototypeAccess(name))) {
-      return;
-    }
+    if (!name || !getExpandoIniter(node, is.prototypeAccess(name))) return;
+
     return decl;
   }
   declarationIdentifier(n: Declaration | Expression): qc.Identifier | undefined {

@@ -302,7 +302,7 @@ export function transformTypeScript(context: TransformationContext) {
     }
   }
   function visitSourceFile(node: SourceFile) {
-    const alwaysStrict = getStrictOptionValue(compilerOptions, 'alwaysStrict') && !(qp_isExternalModule(node) && moduleKind >= ModuleKind.ES2015) && !qc.is.jsonSourceFile(node);
+    const alwaysStrict = getStrictOptionValue(compilerOptions, 'alwaysStrict') && !(qc.is.externalModule(node) && moduleKind >= ModuleKind.ES2015) && !qc.is.jsonSourceFile(node);
     return qp_updateSourceNode(node, visitLexicalEnvironment(node.statements, sourceElementVisitor, context, 0, alwaysStrict));
   }
   function shouldEmitDecorateCallForClass(node: ClassDeclaration) {
@@ -1218,7 +1218,7 @@ export function transformTypeScript(context: TransformationContext) {
   function hasNamespaceQualifiedExportName(node: Node) {
     return (
       isExportOfNamespace(node) ||
-      (qp_isExternalModuleExport(node) && moduleKind !== ModuleKind.ES2015 && moduleKind !== ModuleKind.ES2020 && moduleKind !== ModuleKind.ESNext && moduleKind !== ModuleKind.System)
+      (isExternalModuleExport(node) && moduleKind !== ModuleKind.ES2015 && moduleKind !== ModuleKind.ES2020 && moduleKind !== ModuleKind.ESNext && moduleKind !== ModuleKind.System)
     );
   }
   function recordEmittedDeclarationInScope(node: FunctionDeclaration | ClassDeclaration | ModuleDeclaration | EnumDeclaration) {
@@ -1415,7 +1415,7 @@ export function transformTypeScript(context: TransformationContext) {
     return resolver.isValueAliasDeclaration(node) ? node : undefined;
   }
   function shouldEmitImportEqualsDeclaration(node: ImportEqualsDeclaration) {
-    return resolver.isReferencedAliasDeclaration(node) || (!qp_isExternalModule(currentSourceFile) && resolver.isTopLevelValueImportEqualsWithEntityName(node));
+    return resolver.isReferencedAliasDeclaration(node) || (!qc.is.externalModule(currentSourceFile) && resolver.isTopLevelValueImportEqualsWithEntityName(node));
   }
   function visitImportEqualsDeclaration(node: ImportEqualsDeclaration): VisitResult<Statement> {
     if (qc.is.externalModuleImportEqualsDeclaration(node)) {
@@ -1446,14 +1446,14 @@ export function transformTypeScript(context: TransformationContext) {
   function isExportOfNamespace(node: Node) {
     return currentNamespace !== undefined && qc.has.syntacticModifier(node, ModifierFlags.Export);
   }
-  function qp_isExternalModuleExport(node: Node) {
+  function isExternalModuleExport(node: Node) {
     return currentNamespace === undefined && qc.has.syntacticModifier(node, ModifierFlags.Export);
   }
   function isNamedExternalModuleExport(node: Node) {
-    return qp_isExternalModuleExport(node) && !qc.has.syntacticModifier(node, ModifierFlags.Default);
+    return isExternalModuleExport(node) && !qc.has.syntacticModifier(node, ModifierFlags.Default);
   }
   function isDefaultExternalModuleExport(node: Node) {
-    return qp_isExternalModuleExport(node) && qc.has.syntacticModifier(node, ModifierFlags.Default);
+    return isExternalModuleExport(node) && qc.has.syntacticModifier(node, ModifierFlags.Default);
   }
   function expressionToStatement(expression: Expression) {
     return new qc.ExpressionStatement(expression);

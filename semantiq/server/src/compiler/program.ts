@@ -1487,11 +1487,11 @@ export function createProgram(
       return;
     }
     const isJavaScriptFile = isSourceFileJS(file);
-    const qp_isExternalModuleFile = qp_isExternalModule(file);
+    const isExternalModuleFile = qc.is.externalModule(file);
     let imports: StringLiteralLike[] | undefined;
     let moduleAugmentations: (StringLiteral | Identifier)[] | undefined;
     let ambientModules: string[] | undefined;
-    if (options.importHelpers && (options.isolatedModules || qp_isExternalModuleFile) && !file.isDeclarationFile) {
+    if (options.importHelpers && (options.isolatedModules || isExternalModuleFile) && !file.isDeclarationFile) {
       const externalHelpersModuleReference = qc.asLiteral(externalHelpersModuleNameText);
       const importDecl = new qc.ImportDeclaration(undefined, undefined, externalHelpersModuleReference);
       addEmitFlags(importDecl, EmitFlags.NeverApplyImportHelper);
@@ -1512,13 +1512,13 @@ export function createProgram(
     function collectModuleReferences(node: Statement, inAmbientModule: boolean): void {
       if (qc.is.anyImportOrReExport(node)) {
         const moduleNameExpr = getExternalModuleName(node);
-        if (moduleNameExpr && qc.is.kind(qc.StringLiteral, moduleNameExpr) && moduleNameExpr.text && (!inAmbientModule || !qp_isExternalModuleNameRelative(moduleNameExpr.text))) {
+        if (moduleNameExpr && qc.is.kind(qc.StringLiteral, moduleNameExpr) && moduleNameExpr.text && (!inAmbientModule || !isExternalModuleNameRelative(moduleNameExpr.text))) {
           imports = append(imports, moduleNameExpr);
         }
       } else if (qc.is.kind(qc.ModuleDeclaration, node)) {
         if (qc.is.ambientModule(node) && (inAmbientModule || qc.has.syntacticModifier(node, ModifierFlags.Ambient) || file.isDeclarationFile)) {
           const nameText = getTextOfIdentifierOrLiteral(node.name);
-          if (qp_isExternalModuleFile || (inAmbientModule && !qp_isExternalModuleNameRelative(nameText))) {
+          if (isExternalModuleFile || (inAmbientModule && !isExternalModuleNameRelative(nameText))) {
             (moduleAugmentations || (moduleAugmentations = [])).push(node.name);
           } else if (!inAmbientModule) {
             if (file.isDeclarationFile) {
@@ -2223,9 +2223,9 @@ export function createProgram(
     }
     const languageVersion = options.target || ScriptTarget.ES2020;
     const outFile = options.outFile || options.out;
-    const firstNonAmbientExternalModuleSourceFile = find(files, (f) => qp_isExternalModule(f) && !f.isDeclarationFile);
+    const firstNonAmbientExternalModuleSourceFile = find(files, (f) => qc.is.externalModule(f) && !f.isDeclarationFile);
     if (options.isolatedModules) {
-      const firstNonExternalModuleSourceFile = find(files, (f) => !qp_isExternalModule(f) && !isSourceFileJS(f) && !f.isDeclarationFile && f.scriptKind !== ScriptKind.JSON);
+      const firstNonExternalModuleSourceFile = find(files, (f) => !qc.is.externalModule(f) && !isSourceFileJS(f) && !f.isDeclarationFile && f.scriptKind !== ScriptKind.JSON);
       if (firstNonExternalModuleSourceFile) {
         const span = getErrorSpanForNode(firstNonExternalModuleSourceFile, firstNonExternalModuleSourceFile);
         programqd.add(createFileDiagnostic(firstNonExternalModuleSourceFile, span.start, span.length, qd.All_files_must_be_modules_when_the_isolatedModules_flag_is_provided));

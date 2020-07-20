@@ -65,13 +65,13 @@ export function transformModule(context: TransformationContext) {
     return aggregateTransformFlags(updated);
   }
   function shouldEmitUnderscoreUnderscoreESModule() {
-    if (!currentModuleInfo.exportEquals && qp_isExternalModule(currentSourceFile)) return true;
+    if (!currentModuleInfo.exportEquals && qc.is.externalModule(currentSourceFile)) return true;
     return false;
   }
   function transformCommonJSModule(node: SourceFile) {
     startLexicalEnvironment();
     const statements: Statement[] = [];
-    const ensureUseStrict = getStrictOptionValue(compilerOptions, 'alwaysStrict') || (!compilerOptions.noImplicitUseStrict && qp_isExternalModule(currentSourceFile));
+    const ensureUseStrict = getStrictOptionValue(compilerOptions, 'alwaysStrict') || (!compilerOptions.noImplicitUseStrict && qc.is.externalModule(currentSourceFile));
     const statementOffset = addPrologue(statements, node.statements, ensureUseStrict && !qc.is.jsonSourceFile(node), sourceElementVisitor);
     if (shouldEmitUnderscoreUnderscoreESModule()) {
       append(statements, createUnderscoreUnderscoreESModule());
@@ -1058,9 +1058,9 @@ export function transformECMAScriptModule(context: TransformationContext) {
   return chainBundle(transformSourceFile);
   function transformSourceFile(node: SourceFile) {
     if (node.isDeclarationFile) return node;
-    if (qp_isExternalModule(node) || compilerOptions.isolatedModules) {
+    if (qc.is.externalModule(node) || compilerOptions.isolatedModules) {
       const result = updateExternalModule(node);
-      if (!qp_isExternalModule(node) || some(result.statements, qp_isExternalModuleIndicator)) return result;
+      if (!qc.is.externalModule(node) || some(result.statements, isExternalModuleIndicator)) return result;
       return qp_updateSourceNode(result, setRange(new Nodes([...result.statements, createEmptyExports()]), result.statements));
     }
     return node;
@@ -1104,7 +1104,7 @@ export function transformECMAScriptModule(context: TransformationContext) {
   }
   function onEmitNode(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void): void {
     if (qc.is.kind(qc.SourceFile, node)) {
-      if ((qp_isExternalModule(node) || compilerOptions.isolatedModules) && compilerOptions.importHelpers) {
+      if ((qc.is.externalModule(node) || compilerOptions.isolatedModules) && compilerOptions.importHelpers) {
         helperNameSubstitutions = createMap<Identifier>();
       }
       previousOnEmitNode(hint, node, emitCallback);
@@ -1231,7 +1231,7 @@ export function transformSystemModule(context: TransformationContext) {
   function createSystemModuleBody(node: SourceFile, dependencyGroups: DependencyGroup[]) {
     const statements: Statement[] = [];
     startLexicalEnvironment();
-    const ensureUseStrict = getStrictOptionValue(compilerOptions, 'alwaysStrict') || (!compilerOptions.noImplicitUseStrict && qp_isExternalModule(currentSourceFile));
+    const ensureUseStrict = getStrictOptionValue(compilerOptions, 'alwaysStrict') || (!compilerOptions.noImplicitUseStrict && qc.is.externalModule(currentSourceFile));
     const statementOffset = addPrologue(statements, node.statements, ensureUseStrict, sourceElementVisitor);
     statements.push(
       new qc.VariableStatement(

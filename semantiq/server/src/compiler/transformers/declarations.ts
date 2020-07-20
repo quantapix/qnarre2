@@ -281,7 +281,7 @@ export function transformDeclarations(context: TransformationContext) {
       combinedStatements = setRange(new Nodes(transformAndReplaceLatePaintedStatements(statements)), node.statements);
       refs.forEach(referenceVisitor);
       emittedImports = filter(combinedStatements, isAnyImportSyntax);
-      if (qp_isExternalModule(node) && (!resultHasExternalModuleIndicator || (needsScopeFixMarker && !resultHasScopeMarker)))
+      if (qc.is.externalModule(node) && (!resultHasExternalModuleIndicator || (needsScopeFixMarker && !resultHasScopeMarker)))
         combinedStatements = setRange(new Nodes([...combinedStatements, createEmptyExports()]), combinedStatements);
     }
     const updated = qp_updateSourceNode(node, combinedStatements, true, references, getFileReferencesForUsedTypeReferences(), node.hasNoDefaultLib, getLibReferences());
@@ -581,7 +581,7 @@ export function transformDeclarations(context: TransformationContext) {
       if (!qc.is.lateVisibilityPaintedStatement(i))
         return fail(`Late replaced statement was found which is not handled by the declaration transformer!: ${(ts as any).SyntaxKind ? (ts as any).SyntaxKind[(i as any).kind] : (i as any).kind}`);
       const priorNeedsDeclare = needsDeclare;
-      needsDeclare = i.parent && qc.is.kind(qc.SourceFile, i.parent) && !(qp_isExternalModule(i.parent) && isBundledEmit);
+      needsDeclare = i.parent && qc.is.kind(qc.SourceFile, i.parent) && !(qc.is.externalModule(i.parent) && isBundledEmit);
       const result = transformTopLevelDeclaration(i);
       needsDeclare = priorNeedsDeclare;
       lateStatementReplacementMap.set('' + getOriginalNodeId(i), result);
@@ -595,7 +595,7 @@ export function transformDeclarations(context: TransformationContext) {
           lateStatementReplacementMap.delete(key);
           if (result) {
             if (isArray(result) ? some(result, needsScopeMarker) : needsScopeMarker(result)) needsScopeFixMarker = true;
-            if (qc.is.kind(qc.SourceFile, statement.parent) && (isArray(result) ? some(result, qp_isExternalModuleIndicator) : qp_qc.is.externalModuleIndicator(result)))
+            if (qc.is.kind(qc.SourceFile, statement.parent) && (isArray(result) ? some(result, isExternalModuleIndicator) : qp_qc.is.externalModuleIndicator(result)))
               resultHasExternalModuleIndicator = true;
           }
           return result;
@@ -1061,7 +1061,7 @@ export function transformDeclarations(context: TransformationContext) {
     let mask = ModifierFlags.All ^ (ModifierFlags.Public | ModifierFlags.Async);
     let additions = needsDeclare && !isAlwaysType(node) ? ModifierFlags.Ambient : ModifierFlags.None;
     const parentIsFile = node.parent.kind === Syntax.SourceFile;
-    if (!parentIsFile || (isBundledEmit && parentIsFile && qp_isExternalModule(node.parent as SourceFile))) {
+    if (!parentIsFile || (isBundledEmit && parentIsFile && qc.is.externalModule(node.parent as SourceFile))) {
       mask ^= ModifierFlags.Ambient;
       additions = ModifierFlags.None;
     }

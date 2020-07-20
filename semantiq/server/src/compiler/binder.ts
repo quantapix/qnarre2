@@ -1453,7 +1453,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       : declareSymbol(container.symbol.members!, container.symbol, node, symbolFlags, symbolExcludes);
   }
   function declareSourceFileMember(node: Declaration, symbolFlags: SymbolFlags, symbolExcludes: SymbolFlags) {
-    return qp_isExternalModule(file) ? declareModuleMember(node, symbolFlags, symbolExcludes) : declareSymbol(file.locals!, undefined, node, symbolFlags, symbolExcludes);
+    return qc.is.externalModule(file) ? declareModuleMember(node, symbolFlags, symbolExcludes) : declareSymbol(file.locals!, undefined, node, symbolFlags, symbolExcludes);
   }
   function hasExportDeclarations(node: ModuleDeclaration | SourceFile): boolean {
     const body = qc.is.kind(qc.SourceFile, node) ? node : tryCast(node.body, isModuleBlock);
@@ -2032,7 +2032,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   }
   function bindSourceFileIfExternalModule() {
     setExportContextFlag(file);
-    if (qp_isExternalModule(file)) {
+    if (qc.is.externalModule(file)) {
       bindSourceFileAsExternalModule();
     } else if (qc.is.jsonSourceFile(file)) {
       bindSourceFileAsExternalModule();
@@ -2048,7 +2048,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     if (!container.symbol || !container.symbol.exports) {
       bindAnonymousDeclaration(node, SymbolFlags.Alias, getDeclarationName(node)!);
     } else {
-      const flags = exportAssignmentIsAlias(node) ? SymbolFlags.Alias : SymbolFlags.Property;
+      const flags = qc.is.exportAssignmentAlias(node) ? SymbolFlags.Alias : SymbolFlags.Property;
       const symbol = declareSymbol(container.symbol.exports, container.symbol, node, flags, SymbolFlags.All);
       if (node.isExportEquals) {
         setValueDeclaration(symbol, node);
@@ -2061,7 +2061,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     }
     const diag = !qc.is.kind(qc.SourceFile, node.parent)
       ? qd.Global_module_exports_may_only_appear_at_top_level
-      : !qp_isExternalModule(node.parent)
+      : !qc.is.externalModule(node.parent)
       ? qd.Global_module_exports_may_only_appear_in_module_files
       : !node.parent.isDeclarationFile
       ? qd.Global_module_exports_may_only_appear_in_declaration_files
@@ -2134,7 +2134,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     if (qc.is.emptyObjectLiteral(assignedExpression) || (container === file && isExportsOrModuleExportsOrAlias(file, assignedExpression))) {
       return;
     }
-    const flags = exportAssignmentIsAlias(node) ? SymbolFlags.Alias : SymbolFlags.Property | SymbolFlags.ExportValue | SymbolFlags.ValueModule;
+    const flags = qc.is.exportAssignmentAlias(node) ? SymbolFlags.Alias : SymbolFlags.Property | SymbolFlags.ExportValue | SymbolFlags.ValueModule;
     const symbol = declareSymbol(file.symbol.exports!, file.symbol, node, flags | SymbolFlags.Assignment, SymbolFlags.None);
     setValueDeclaration(symbol, node);
   }

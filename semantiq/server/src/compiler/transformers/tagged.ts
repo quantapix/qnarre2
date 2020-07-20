@@ -36,7 +36,7 @@ export function processTaggedTemplateExpression(
     }
   }
   const helperCall = createTemplateObjectHelper(context, new ArrayLiteralExpression(cookedStrings), new ArrayLiteralExpression(rawStrings));
-  if (qp_isExternalModule(currentSourceFile)) {
+  if (qc.is.externalModule(currentSourceFile)) {
     const tempVar = createUniqueName('templateObject');
     recordTaggedTemplateString(tempVar);
     templateArguments[0] = createLogicalOr(tempVar, createAssignment(tempVar, helperCall));

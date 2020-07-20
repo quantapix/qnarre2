@@ -740,7 +740,7 @@ export class QContext {
       !(this.flags & NodeBuilderFlags.OmitParameterModifiers) && preserveModifierFlags && parameterDeclaration && parameterDeclaration.modifiers
         ? parameterDeclaration.modifiers.map(getSynthesizedClone)
         : undefined;
-    const isRest = (parameterDeclaration && isRestParameter(parameterDeclaration)) || getCheckFlags(parameterSymbol) & CheckFlags.RestParameter;
+    const isRest = (parameterDeclaration && qc.is.restParameter(parameterDeclaration)) || getCheckFlags(parameterSymbol) & CheckFlags.RestParameter;
     const dot3Token = isRest ? new Token(Syntax.Dot3Token) : undefined;
     const cloneBindingName = (node: BindingName): BindingName => {
       const elideIniterAndSetEmitFlags = (node: Node): Node => {
@@ -1664,7 +1664,7 @@ export class QContext {
       if (
         enclosingDeclaration &&
         ((qc.is.kind(qc.SourceFile, enclosingDeclaration) && qc.is.externalOrCommonJsModule(enclosingDeclaration)) || qc.is.kind(qc.ModuleDeclaration, enclosingDeclaration)) &&
-        (!some(ss, qp_isExternalModuleIndicator) || (!hasScopeMarker(ss) && some(ss, needsScopeMarker)))
+        (!some(ss, isExternalModuleIndicator) || (!hasScopeMarker(ss) && some(ss, needsScopeMarker)))
       ) {
         ss.push(createEmptyExports());
       }

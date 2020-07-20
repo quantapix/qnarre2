@@ -678,7 +678,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (ls.extendedContainers) return ls.extendedContainers;
       const otherFiles = host.getSourceFiles();
       for (const file of otherFiles) {
-        if (!qp_isExternalModule(file)) continue;
+        if (!qc.is.externalModule(file)) continue;
         const sym = getSymbolOfNode(file);
         const ref = this.getAliasForSymbolInContainer(sym);
         if (!ref) continue;
@@ -3399,8 +3399,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       node.kind === Syntax.NamespaceExport ||
       node.kind === Syntax.ImportSpecifier ||
       node.kind === Syntax.ExportSpecifier ||
-      (node.kind === Syntax.ExportAssignment && exportAssignmentIsAlias(<ExportAssignment>node)) ||
-      (qc.is.kind(qc.BinaryExpression, node) && getAssignmentDeclarationKind(node) === AssignmentDeclarationKind.ModuleExports && exportAssignmentIsAlias(node)) ||
+      (node.kind === Syntax.ExportAssignment && qc.is.exportAssignmentAlias(<ExportAssignment>node)) ||
+      (qc.is.kind(qc.BinaryExpression, node) && getAssignmentDeclarationKind(node) === AssignmentDeclarationKind.ModuleExports && qc.is.exportAssignmentAlias(node)) ||
       (qc.is.kind(qc.PropertyAccessExpression, node) &&
         qc.is.kind(qc.BinaryExpression, node.parent) &&
         node.parent.left === node &&
@@ -3411,7 +3411,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     );
   }
   function isAliasableOrJsExpression(e: Expression) {
-    return isAliasableExpression(e) || (qc.is.kind(qc.FunctionExpression, e) && isJSConstructor(e));
+    return qc.is.aliasableExpression(e) || (qc.is.kind(qc.FunctionExpression, e) && isJSConstructor(e));
   }
   function getTargetOfImportEqualsDeclaration(node: ImportEqualsDeclaration, dontResolveAlias: boolean): Symbol | undefined {
     if (node.moduleReference.kind === Syntax.ExternalModuleReference) {
@@ -3861,7 +3861,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function errorOnImplicitAnyModule(isError: boolean, errorNode: Node, { packageId, resolvedFileName }: ResolvedModuleFull, moduleReference: string): void {
     const errorInfo =
-      !qp_isExternalModuleNameRelative(moduleReference) && packageId
+      !isExternalModuleNameRelative(moduleReference) && packageId
         ? typesPackageExists(packageId.name)
           ? chainDiagnosticMessages(
               undefined,
@@ -4138,8 +4138,8 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           symbolFromSymbolTable.flags & SymbolFlags.Alias &&
           symbolFromSymbolTable.escName !== InternalSymbol.ExportEquals &&
           symbolFromSymbolTable.escName !== InternalSymbol.Default &&
-          !(isUMDExportSymbol(symbolFromSymbolTable) && enclosingDeclaration && qp_isExternalModule(qc.get.sourceFileOf(enclosingDeclaration))) &&
-          (!useOnlyExternalAliasing || some(symbolFromSymbolTable.declarations, qp_isExternalModuleImportEqualsDeclaration)) &&
+          !(isUMDExportSymbol(symbolFromSymbolTable) && enclosingDeclaration && qc.is.externalModule(qc.get.sourceFileOf(enclosingDeclaration))) &&
+          (!useOnlyExternalAliasing || some(symbolFromSymbolTable.declarations, qc.is.externalModuleImportEqualsDeclaration)) &&
           (ignoreQualification || !getDeclarationOfKind(symbolFromSymbolTable, Syntax.ExportSpecifier))
         ) {
           const resolvedImportedSymbol = symbolFromSymbolTable.resolveAlias();
@@ -6634,7 +6634,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     );
   }
   function tryFindAmbientModule(moduleName: string, withAugmentations: boolean) {
-    if (qp_isExternalModuleNameRelative(moduleName)) return;
+    if (isExternalModuleNameRelative(moduleName)) return;
     const symbol = getSymbol(globals, ('"' + moduleName + '"') as __String, SymbolFlags.ValueModule);
     return symbol && withAugmentations ? getMergedSymbol(symbol) : symbol;
   }
@@ -6737,7 +6737,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       }
       const classType = declaration.kind === Syntax.Constructor ? getDeclaredTypeOfClassOrInterface(getMergedSymbol((<ClassDeclaration>declaration.parent).symbol)) : undefined;
       const typeParameters = classType ? classType.localTypeParameters : getTypeParametersFromDeclaration(declaration);
-      if (hasRestParameter(declaration) || (qc.is.inJSFile(declaration) && maybeAddJsSyntheticRestParameter(declaration, parameters))) flags |= SignatureFlags.HasRestParameter;
+      if (qc.has.restParameter(declaration) || (qc.is.inJSFile(declaration) && maybeAddJsSyntheticRestParameter(declaration, parameters))) flags |= SignatureFlags.HasRestParameter;
       links.resolvedSignature = createSignature(declaration, typeParameters, thisParameter, parameters, undefined, undefined, minArgumentCount, flags);
     }
     return links.resolvedSignature;
@@ -20401,7 +20401,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
   }
   function getParameterTypeNodeForDecoratorCheck(node: ParameterDeclaration): TypeNode | undefined {
     const typeNode = qc.get.effectiveTypeAnnotationNode(node);
-    return isRestParameter(node) ? getRestParameterElementType(typeNode) : typeNode;
+    return qc.is.restParameter(node) ? getRestParameterElementType(typeNode) : typeNode;
   }
   function checkDecorators(node: Node): void {
     if (!node.decorators) return;
@@ -22337,7 +22337,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           }
         } else if (isGlobalSourceFile(node.parent)) {
           if (isGlobalAugmentation) error(node.name, qd.Augmentations_for_the_global_scope_can_only_be_directly_nested_in_external_modules_or_ambient_module_declarations);
-          else if (qp_isExternalModuleNameRelative(getTextOfIdentifierOrLiteral(node.name))) {
+          else if (isExternalModuleNameRelative(getTextOfIdentifierOrLiteral(node.name))) {
             error(node.name, qd.Ambient_module_declaration_cannot_specify_relative_module_name);
           }
         } else {
@@ -22421,7 +22421,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       error(moduleName, node.kind === Syntax.ExportDeclaration ? qd.Export_declarations_are_not_permitted_in_a_namespace : qd.Import_declarations_in_a_namespace_cannot_reference_a_module);
       return false;
     }
-    if (inAmbientExternalModule && qp_isExternalModuleNameRelative(moduleName.text)) {
+    if (inAmbientExternalModule && isExternalModuleNameRelative(moduleName.text)) {
       if (!isTopLevelInExternalModuleAugmentation(node)) {
         error(node, qd.Import_or_export_declaration_in_an_ambient_module_declaration_cannot_reference_module_through_relative_module_name);
         return false;
@@ -22836,7 +22836,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
       if (host) {
         const lastParamDeclaration = lastOrUndefined(host.parameters);
         const symbol = getParameterSymbolFromDoc(paramTag);
-        if (!lastParamDeclaration || (symbol && lastParamDeclaration.symbol === symbol && isRestParameter(lastParamDeclaration))) return createArrayType(type);
+        if (!lastParamDeclaration || (symbol && lastParamDeclaration.symbol === symbol && qc.is.restParameter(lastParamDeclaration))) return createArrayType(type);
       }
     }
     if (qc.is.kind(qc.ParameterDeclaration, parent) && qc.is.kind(qc.DocFunctionType, parent.parent)) return createArrayType(type);
@@ -22926,7 +22926,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
           if (!containsParseError(containingNode) && unusedIsError(kind, !!(containingNode.flags & NodeFlags.Ambient))) diagnostics.add(diag);
         });
       }
-      if (compilerOptions.importsNotUsedAsValues === ImportsNotUsedAsValues.Error && !node.isDeclarationFile && qp_isExternalModule(node)) checkImportsForTypeOnlyConversion(node);
+      if (compilerOptions.importsNotUsedAsValues === ImportsNotUsedAsValues.Error && !node.isDeclarationFile && qc.is.externalModule(node)) checkImportsForTypeOnlyConversion(node);
       if (qc.is.externalOrCommonJsModule(node)) checkExternalModuleExports(node);
       if (potentialThisCollisions.length) {
         forEach(potentialThisCollisions, checkIfThisIsCapturedInEnclosingScope);
@@ -23156,7 +23156,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     return;
   }
   function getSymbolAtLocation(node: Node, ignoreErrors?: boolean): Symbol | undefined {
-    if (node.kind === Syntax.SourceFile) return qp_isExternalModule(<SourceFile>node) ? getMergedSymbol(node.symbol) : undefined;
+    if (node.kind === Syntax.SourceFile) return qc.is.externalModule(<SourceFile>node) ? getMergedSymbol(node.symbol) : undefined;
     const { parent } = node;
     const grandParent = parent.parent;
     if (node.flags & NodeFlags.InWithStatement) return;
@@ -24134,7 +24134,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
     }
   }
   function getNonSimpleParameters(parameters: readonly ParameterDeclaration[]): readonly ParameterDeclaration[] {
-    return filter(parameters, (parameter) => !!parameter.initer || qc.is.kind(qc.BindingPattern, parameter.name) || isRestParameter(parameter));
+    return filter(parameters, (parameter) => !!parameter.initer || qc.is.kind(qc.BindingPattern, parameter.name) || qc.is.restParameter(parameter));
   }
   function checkGrammarForUseStrictSimpleParameterList(node: FunctionLikeDeclaration): boolean {
     const useStrictDirective = node.body && qc.is.kind(qc.Block, node.body) && findUseStrictPrologue(node.body.statements);
@@ -24458,7 +24458,7 @@ export function qc_create(host: TypeCheckerHost, produceDiagnostics: boolean): T
         case Syntax.VariableDeclaration:
           const decl = parent as VariableDeclaration;
           if (decl.name.kind !== Syntax.Identifier) return grammarErrorOnNode(node, qd.unique_symbol_types_may_not_be_used_on_a_variable_declaration_with_a_binding_name);
-          if (!isVariableDeclarationInVariableStatement(decl)) return grammarErrorOnNode(node, qd.unique_symbol_types_are_only_allowed_on_variables_in_a_variable_statement);
+          if (!qc.is.variableDeclarationInVariableStatement(decl)) return grammarErrorOnNode(node, qd.unique_symbol_types_are_only_allowed_on_variables_in_a_variable_statement);
           if (!(decl.parent.flags & NodeFlags.Const)) return grammarErrorOnNode((<VariableDeclaration>parent).name, qd.A_variable_whose_type_is_a_unique_symbol_type_must_be_const);
           break;
         case Syntax.PropertyDeclaration:

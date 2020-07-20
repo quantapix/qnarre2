@@ -206,7 +206,7 @@ export function makeIdentifierFromModuleName(moduleName: string): string {
   return getBaseFileName(moduleName).replace(/^(\d)/, '_$1').replace(/\W/g, '_');
 }
 export function isEffectiveExternalModule(node: SourceFile, compilerOptions: CompilerOptions) {
-  return qp_isExternalModule(node) || compilerOptions.isolatedModules || (getEmitModuleKind(compilerOptions) === ModuleKind.CommonJS && !!node.commonJsModuleIndicator);
+  return qc.is.externalModule(node) || compilerOptions.isolatedModules || (getEmitModuleKind(compilerOptions) === ModuleKind.CommonJS && !!node.commonJsModuleIndicator);
 }
 export function isEffectiveStrictModeSourceFile(node: SourceFile, compilerOptions: CompilerOptions) {
   switch (node.scriptKind) {
@@ -221,7 +221,7 @@ export function isEffectiveStrictModeSourceFile(node: SourceFile, compilerOption
   if (node.isDeclarationFile) return false;
   if (getStrictOptionValue(compilerOptions, 'alwaysStrict')) return true;
   if (startsWithUseStrict(node.statements)) return true;
-  if (qp_isExternalModule(node) || compilerOptions.isolatedModules) {
+  if (qc.is.externalModule(node) || compilerOptions.isolatedModules) {
     if (getEmitModuleKind(compilerOptions) >= ModuleKind.ES2015) return true;
     return !compilerOptions.noImplicitUseStrict;
   }
@@ -435,9 +435,6 @@ export function getRestParameterElementType(node: TypeNode | undefined) {
   else {
     return;
   }
-}
-export function isVariableDeclarationInVariableStatement(node: VariableDeclaration) {
-  return node.parent.kind === Syntax.VariableDeclarationList && node.parent.parent.kind === Syntax.VariableStatement;
 }
 export function unwrapInnermostStatementOfLabel(node: LabeledStatement, beforeUnwrapLabelCallback?: (node: LabeledStatement) => void): Statement {
   while (true) {
@@ -835,14 +832,6 @@ export function getTypeParameterFromDoc(node: TypeParameterDeclaration & { paren
   const { typeParameters } = node.parent.parent.parent as SignatureDeclaration | InterfaceDeclaration | ClassDeclaration;
   return typeParameters && find(typeParameters, (p) => p.name.escapedText === name);
 }
-export function hasRestParameter(s: SignatureDeclaration | DocSignature): boolean {
-  const last = lastOrUndefined<ParameterDeclaration | DocParameterTag>(s.parameters);
-  return !!last && isRestParameter(last);
-}
-export function isRestParameter(node: ParameterDeclaration | DocParameterTag): boolean {
-  const type = qc.is.kind(qc.DocParameterTag, node) ? node.typeExpression && node.typeExpression.type : node.type;
-  return (node as ParameterDeclaration).dot3Token !== undefined || (!!type && type.kind === Syntax.DocVariadicType);
-}
 export function getAliasDeclarationFromName(node: EntityName): Declaration | undefined {
   switch (node.parent.kind) {
     case Syntax.ImportClause:
@@ -858,13 +847,6 @@ export function getAliasDeclarationFromName(node: EntityName): Declaration | und
       } while (node.parent.kind === Syntax.QualifiedName);
       return getAliasDeclarationFromName(node);
   }
-}
-export function isAliasableExpression(e: Expression) {
-  return qc.is.entityNameExpression(e) || qc.is.kind(qc.ClassExpression, e);
-}
-export function exportAssignmentIsAlias(node: ExportAssignment | BinaryExpression): boolean {
-  const e = getExportAssignmentExpression(node);
-  return isAliasableExpression(e);
 }
 export function getExportAssignmentExpression(node: ExportAssignment | BinaryExpression): Expression {
   return qc.is.kind(qc.ExportAssignment, node) ? node.expression : node.right;
@@ -1290,7 +1272,7 @@ export function getSourceFilesToEmit(host: EmitHost, targetSourceFile?: SourceFi
   if (options.outFile || options.out) {
     const moduleKind = getEmitModuleKind(options);
     const moduleEmitEnabled = options.emitDeclarationOnly || moduleKind === ModuleKind.AMD || moduleKind === ModuleKind.System;
-    return filter(host.getSourceFiles(), (sourceFile) => (moduleEmitEnabled || !qp_isExternalModule(sourceFile)) && sourceFileMayBeEmitted(sourceFile, host, forceDtsEmit));
+    return filter(host.getSourceFiles(), (sourceFile) => (moduleEmitEnabled || !qc.is.externalModule(sourceFile)) && sourceFileMayBeEmitted(sourceFile, host, forceDtsEmit));
   } else {
     const sourceFiles = targetSourceFile === undefined ? host.getSourceFiles() : [targetSourceFile];
     return filter(sourceFiles, (sourceFile) => sourceFileMayBeEmitted(sourceFile, host, forceDtsEmit));
