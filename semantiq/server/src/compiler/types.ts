@@ -482,6 +482,153 @@ export interface DoStatement extends IterationStatement {
   expression: Expression;
 }
 export type DestructuringPattern = BindingPattern | ObjectLiteralExpression | ArrayLiteralExpression;
+export interface Doc extends Nobj {
+  kind: Syntax.DocComment;
+  parent?: HasDoc;
+  tags?: Nodes<DocTag>;
+  comment?: string;
+}
+export interface DocAllType extends DocType {
+  kind: Syntax.DocAllType;
+}
+export interface DocAugmentsTag extends DocTag {
+  kind: Syntax.DocAugmentsTag;
+  class: ExpressionWithTypeArguments & { expression: Identifier | PropertyAccessEntityNameExpression };
+}
+export interface DocAuthorTag extends DocTag {
+  kind: Syntax.DocAuthorTag;
+}
+export interface DocCallbackTag extends DocTag, NamedDeclaration {
+  parent?: Doc;
+  kind: Syntax.DocCallbackTag;
+  fullName?: DocNamespaceDeclaration | Identifier;
+  name?: Identifier;
+  typeExpression: DocSignature;
+}
+export interface DocClassTag extends DocTag {
+  kind: Syntax.DocClassTag;
+}
+export interface DocContainer {
+  doc?: Doc[];
+  docCache?: readonly DocTag[];
+}
+export interface DocEnumTag extends DocTag, Declaration {
+  parent?: Doc;
+  kind: Syntax.DocEnumTag;
+  typeExpression?: DocTypeExpression;
+}
+export interface DocFunctionType extends DocType, SignatureDeclarationBase {
+  kind: Syntax.DocFunctionType;
+}
+export interface DocImplementsTag extends DocTag {
+  kind: Syntax.DocImplementsTag;
+  class: ExpressionWithTypeArguments & { expression: Identifier | PropertyAccessEntityNameExpression };
+}
+export interface DocNamepathType extends DocType {
+  kind: Syntax.DocNamepathType;
+  type: TypeNode;
+}
+export type DocNamespaceBody = Identifier | DocNamespaceDeclaration;
+export interface DocNamespaceDeclaration extends ModuleDeclaration {
+  name: Identifier;
+  body?: DocNamespaceBody;
+}
+export interface DocNonNullableType extends DocType {
+  kind: Syntax.DocNonNullableType;
+  type: TypeNode;
+}
+export interface DocNullableType extends DocType {
+  kind: Syntax.DocNullableType;
+  type: TypeNode;
+}
+export interface DocOptionalType extends DocType {
+  kind: Syntax.DocOptionalType;
+  type: TypeNode;
+}
+export interface DocParameterTag extends DocPropertyLikeTag {
+  kind: Syntax.DocParameterTag;
+}
+export interface DocPrivateTag extends DocTag {
+  kind: Syntax.DocPrivateTag;
+}
+export interface DocPropertyLikeTag extends DocTag, Declaration {
+  parent?: Doc;
+  name: EntityName;
+  typeExpression?: DocTypeExpression;
+  isNameFirst: boolean;
+  isBracketed: boolean;
+}
+export interface DocPropertyTag extends DocPropertyLikeTag {
+  kind: Syntax.DocPropertyTag;
+}
+export interface DocProtectedTag extends DocTag {
+  kind: Syntax.DocProtectedTag;
+}
+export interface DocPublicTag extends DocTag {
+  kind: Syntax.DocPublicTag;
+}
+export interface DocReadonlyTag extends DocTag {
+  kind: Syntax.DocReadonlyTag;
+}
+export interface DocReturnTag extends DocTag {
+  kind: Syntax.DocReturnTag;
+  typeExpression?: DocTypeExpression;
+}
+export interface DocSignature extends DocType, Declaration {
+  kind: Syntax.DocSignature;
+  typeParameters?: readonly DocTemplateTag[];
+  parameters: readonly DocParameterTag[];
+  type?: DocReturnTag;
+}
+export interface DocTag extends Nobj {
+  parent?: Doc | DocTypeLiteral;
+  tagName: Identifier;
+  comment?: string;
+}
+export interface DocTagInfo {}
+export interface DocTemplateTag extends DocTag {
+  kind: Syntax.DocTemplateTag;
+  constraint?: DocTypeExpression;
+  typeParameters: Nodes<TypeParameterDeclaration>;
+}
+export interface DocThisTag extends DocTag {
+  kind: Syntax.DocThisTag;
+  typeExpression?: DocTypeExpression;
+}
+export interface DocType extends TypeNode {
+  _docTypeBrand: any;
+}
+export interface DocTypedefTag extends DocTag, NamedDeclaration {
+  parent?: Doc;
+  kind: Syntax.DocTypedefTag;
+  fullName?: DocNamespaceDeclaration | Identifier;
+  name?: Identifier;
+  typeExpression?: DocTypeExpression | DocTypeLiteral;
+}
+export interface DocTypeExpression extends TypeNode {
+  kind: Syntax.DocTypeExpression;
+  type: TypeNode;
+}
+export interface DocTypeLiteral extends DocType {
+  kind: Syntax.DocTypeLiteral;
+  docPropertyTags?: readonly DocPropertyLikeTag[];
+  isArrayType?: boolean;
+}
+export type DocTypeReferencingNode = DocVariadicType | DocOptionalType | DocNullableType | DocNonNullableType;
+export interface DocTypeTag extends DocTag {
+  kind: Syntax.DocTypeTag;
+  typeExpression: DocTypeExpression;
+}
+export interface DocUnknownTag extends DocTag {
+  kind: Syntax.DocTag;
+}
+export interface DocUnknownType extends DocType {
+  kind: Syntax.DocUnknownType;
+}
+export interface DocVariadicType extends DocType {
+  kind: Syntax.DocVariadicType;
+  type: TypeNode;
+}
 export interface DynamicNamedBinaryExpression extends BinaryExpression {
   left: ElementAccessExpression;
 }
@@ -622,12 +769,6 @@ export interface EnumMember extends NamedDeclaration, DocContainer {
 export interface EnumType extends Type {}
 export type EqualityOperator = Syntax.Equals2Token | Syntax.Equals3Token | Syntax.ExclamationEquals2Token | Syntax.ExclamationEqualsToken;
 export type EqualityOperatorOrHigher = RelationalOperatorOrHigher | EqualityOperator;
-export const enum ExpandingFlags {
-  None = 0,
-  Source = 1,
-  Target = 1 << 1,
-  Both = Source | Target,
-}
 export type ExponentiationOperator = Syntax.Asterisk2Token;
 export interface ExportAssignment extends DeclarationStatement {
   kind: Syntax.ExportAssignment;
@@ -1043,153 +1184,6 @@ export interface IterableOrIteratorType extends ObjectType, UnionType {
 }
 export interface IterationStatement extends Statement {
   statement: Statement;
-}
-export interface Doc extends Nobj {
-  kind: Syntax.DocComment;
-  parent?: HasDoc;
-  tags?: Nodes<DocTag>;
-  comment?: string;
-}
-export interface DocAllType extends DocType {
-  kind: Syntax.DocAllType;
-}
-export interface DocAugmentsTag extends DocTag {
-  kind: Syntax.DocAugmentsTag;
-  class: ExpressionWithTypeArguments & { expression: Identifier | PropertyAccessEntityNameExpression };
-}
-export interface DocAuthorTag extends DocTag {
-  kind: Syntax.DocAuthorTag;
-}
-export interface DocCallbackTag extends DocTag, NamedDeclaration {
-  parent?: Doc;
-  kind: Syntax.DocCallbackTag;
-  fullName?: DocNamespaceDeclaration | Identifier;
-  name?: Identifier;
-  typeExpression: DocSignature;
-}
-export interface DocClassTag extends DocTag {
-  kind: Syntax.DocClassTag;
-}
-export interface DocContainer {
-  doc?: Doc[];
-  docCache?: readonly DocTag[];
-}
-export interface DocEnumTag extends DocTag, Declaration {
-  parent?: Doc;
-  kind: Syntax.DocEnumTag;
-  typeExpression?: DocTypeExpression;
-}
-export interface DocFunctionType extends DocType, SignatureDeclarationBase {
-  kind: Syntax.DocFunctionType;
-}
-export interface DocImplementsTag extends DocTag {
-  kind: Syntax.DocImplementsTag;
-  class: ExpressionWithTypeArguments & { expression: Identifier | PropertyAccessEntityNameExpression };
-}
-export interface DocNamepathType extends DocType {
-  kind: Syntax.DocNamepathType;
-  type: TypeNode;
-}
-export type DocNamespaceBody = Identifier | DocNamespaceDeclaration;
-export interface DocNamespaceDeclaration extends ModuleDeclaration {
-  name: Identifier;
-  body?: DocNamespaceBody;
-}
-export interface DocNonNullableType extends DocType {
-  kind: Syntax.DocNonNullableType;
-  type: TypeNode;
-}
-export interface DocNullableType extends DocType {
-  kind: Syntax.DocNullableType;
-  type: TypeNode;
-}
-export interface DocOptionalType extends DocType {
-  kind: Syntax.DocOptionalType;
-  type: TypeNode;
-}
-export interface DocParameterTag extends DocPropertyLikeTag {
-  kind: Syntax.DocParameterTag;
-}
-export interface DocPrivateTag extends DocTag {
-  kind: Syntax.DocPrivateTag;
-}
-export interface DocPropertyLikeTag extends DocTag, Declaration {
-  parent?: Doc;
-  name: EntityName;
-  typeExpression?: DocTypeExpression;
-  isNameFirst: boolean;
-  isBracketed: boolean;
-}
-export interface DocPropertyTag extends DocPropertyLikeTag {
-  kind: Syntax.DocPropertyTag;
-}
-export interface DocProtectedTag extends DocTag {
-  kind: Syntax.DocProtectedTag;
-}
-export interface DocPublicTag extends DocTag {
-  kind: Syntax.DocPublicTag;
-}
-export interface DocReadonlyTag extends DocTag {
-  kind: Syntax.DocReadonlyTag;
-}
-export interface DocReturnTag extends DocTag {
-  kind: Syntax.DocReturnTag;
-  typeExpression?: DocTypeExpression;
-}
-export interface DocSignature extends DocType, Declaration {
-  kind: Syntax.DocSignature;
-  typeParameters?: readonly DocTemplateTag[];
-  parameters: readonly DocParameterTag[];
-  type?: DocReturnTag;
-}
-export interface DocTag extends Nobj {
-  parent?: Doc | DocTypeLiteral;
-  tagName: Identifier;
-  comment?: string;
-}
-export interface DocTagInfo {}
-export interface DocTemplateTag extends DocTag {
-  kind: Syntax.DocTemplateTag;
-  constraint?: DocTypeExpression;
-  typeParameters: Nodes<TypeParameterDeclaration>;
-}
-export interface DocThisTag extends DocTag {
-  kind: Syntax.DocThisTag;
-  typeExpression?: DocTypeExpression;
-}
-export interface DocType extends TypeNode {
-  _docTypeBrand: any;
-}
-export interface DocTypedefTag extends DocTag, NamedDeclaration {
-  parent?: Doc;
-  kind: Syntax.DocTypedefTag;
-  fullName?: DocNamespaceDeclaration | Identifier;
-  name?: Identifier;
-  typeExpression?: DocTypeExpression | DocTypeLiteral;
-}
-export interface DocTypeExpression extends TypeNode {
-  kind: Syntax.DocTypeExpression;
-  type: TypeNode;
-}
-export interface DocTypeLiteral extends DocType {
-  kind: Syntax.DocTypeLiteral;
-  docPropertyTags?: readonly DocPropertyLikeTag[];
-  isArrayType?: boolean;
-}
-export type DocTypeReferencingNode = DocVariadicType | DocOptionalType | DocNullableType | DocNonNullableType;
-export interface DocTypeTag extends DocTag {
-  kind: Syntax.DocTypeTag;
-  typeExpression: DocTypeExpression;
-}
-export interface DocUnknownTag extends DocTag {
-  kind: Syntax.DocTag;
-}
-export interface DocUnknownType extends DocType {
-  kind: Syntax.DocUnknownType;
-}
-export interface DocVariadicType extends DocType {
-  kind: Syntax.DocVariadicType;
-  type: TypeNode;
 }
 export interface JsxAttribute extends ObjectLiteralElement {
   kind: Syntax.JsxAttribute;
