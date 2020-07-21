@@ -1,9 +1,9 @@
 import * as qb from './base';
 import * as qc from './core3';
-import * as qt from './types';
 import { Node, NodeBuilderFlags, ObjectFlags, TypeFlags } from './types';
-import * as syntax from './syntax';
+import * as qt from './types';
 import { ModifierFlags, Syntax } from './syntax';
+import * as qy from './syntax';
 function isNamespaceMember(p: Symbol) {
   return !(p.flags & SymbolFlags.Prototype || p.escName === 'prototype' || (p.valueDeclaration?.parent && qc.is.classLike(p.valueDeclaration.parent)));
 }
@@ -152,7 +152,7 @@ export class QContext {
     }
     if (!inTypeAlias && type.aliasSymbol && (this.flags & NodeBuilderFlags.UseAliasDefinedOutsideCurrentScope || isTypeSymbolAccessible(type.aliasSymbol, this.enclosingDeclaration))) {
       const typeArgumentNodes = this.mapToTypeNodes(type.aliasTypeArguments);
-      if (syntax.is.reservedName(type.aliasSymbol.escName) && !(type.aliasSymbol.flags & SymbolFlags.Class)) return new qc.TypeReferenceNode(new Identifier(''), typeArgumentNodes);
+      if (qy.is.reservedName(type.aliasSymbol.escName) && !(type.aliasSymbol.flags & SymbolFlags.Class)) return new qc.TypeReferenceNode(new Identifier(''), typeArgumentNodes);
       return this.symbolToTypeNode(type.aliasSymbol, SymbolFlags.Type, typeArgumentNodes);
     }
     const objectFlags = getObjectFlags(type);
@@ -385,7 +385,7 @@ export class QContext {
           const exports = parent.getExportsOfSymbol();
           forEachEntry(exports, (ex, name) => {
             if (getSymbolIfSameReference(ex, symbol) && !isLateBoundName(name) && name !== InternalSymbol.ExportEquals) {
-              symbolName = syntax.get.unescUnderscores(name);
+              symbolName = qy.get.unescUnderscores(name);
               return true;
             }
           });
@@ -513,7 +513,7 @@ export class QContext {
       }
       let firstChar = symbolName.charCodeAt(0);
       if (isSingleOrDoubleQuote(firstChar) && some(symbol.declarations, hasNonGlobalAugmentationExternalModuleSymbol)) return qc.asLiteral(this.getSpecifierForModuleSymbol(symbol));
-      const canUsePropertyAccess = firstChar === Codes.hash ? symbolName.length > 1 && syntax.is.identifierStart(symbolName.charCodeAt(1)) : syntax.is.identifierStart(firstChar);
+      const canUsePropertyAccess = firstChar === Codes.hash ? symbolName.length > 1 && qy.is.identifierStart(symbolName.charCodeAt(1)) : qy.is.identifierStart(firstChar);
       if (index === 0 || canUsePropertyAccess) {
         const identifier = setEmitFlags(new Identifier(symbolName, typeParameterNodes), EmitFlags.NoAsciiEscaping);
         identifier.symbol = symbol;
@@ -543,7 +543,7 @@ export class QContext {
     const fromNameType = this.getPropertyNameNodeForSymbolFromNameType(s, singleQuote);
     if (fromNameType) return fromNameType;
     if (isKnownSymbol(s)) return new qc.ComputedPropertyName(new qc.PropertyAccessExpression(new Identifier('Symbol'), (s.escName as string).substr(3)));
-    const rawName = syntax.get.unescUnderscores(s.escName);
+    const rawName = qy.get.unescUnderscores(s.escName);
     return createPropertyNameNodeForIdentifierOrLiteral(rawName, singleQuote);
   }
   getPropertyNameNodeForSymbolFromNameType(s: Symbol, singleQuote?: boolean) {
@@ -551,7 +551,7 @@ export class QContext {
     if (nameType) {
       if (nameType.flags & TypeFlags.StringOrNumberLiteral) {
         const name = '' + (<StringLiteralType | NumberLiteralType>nameType).value;
-        if (!syntax.is.identifierText(name) && !NumericLiteral.name(name)) return qc.asLiteral(name, !!singleQuote);
+        if (!qy.is.identifierText(name) && !NumericLiteral.name(name)) return qc.asLiteral(name, !!singleQuote);
         if (NumericLiteral.name(name) && startsWith(name, '-')) return new qc.ComputedPropertyName(qc.asLiteral(+name));
         return createPropertyNameNodeForIdentifierOrLiteral(name);
       }
@@ -785,7 +785,7 @@ export class QContext {
     return false;
   }
   createPropertyNameNodeForIdentifierOrLiteral(name: string, singleQuote?: boolean) {
-    return syntax.is.identifierText(name) ? new Identifier(name) : qc.asLiteral(NumericLiteral.name(name) && +name >= 0 ? +name : name, !!singleQuote);
+    return qy.is.identifierText(name) ? new Identifier(name) : qc.asLiteral(NumericLiteral.name(name) && +name >= 0 ? +name : name, !!singleQuote);
   }
   cloneQContext(): QContext {
     const initial: QContext = { ...this };
@@ -977,7 +977,7 @@ export class QContext {
         }
       }
     }
-    if (file && qc.is.kind(qc.TupleTypeNode, node) && syntax.get.lineAndCharOf(file, node.pos).line === syntax.get.lineAndCharOf(file, node.end).line) {
+    if (file && qc.is.kind(qc.TupleTypeNode, node) && qy.get.lineAndCharOf(file, node.pos).line === qy.get.lineAndCharOf(file, node.end).line) {
       setEmitFlags(node, EmitFlags.SingleLine);
     }
     return visitEachChild(node, this.visitExistingNodeTreeSymbols, nullTransformationContext);
@@ -1135,7 +1135,7 @@ export class QContext {
     }
     if (localName === InternalSymbol.Default) localName = '_default';
     else if (localName === InternalSymbol.ExportEquals) localName = '_exports';
-    localName = syntax.is.identifierText(localName) && !syntax.is.stringANonContextualKeyword(localName) ? localName : '_' + localName.replace(/[^a-zA-Z0-9]/g, '_');
+    localName = qy.is.identifierText(localName) && !qy.is.stringANonContextualKeyword(localName) ? localName : '_' + localName.replace(/[^a-zA-Z0-9]/g, '_');
     return localName;
   }
   getUnusedName(input: string, symbol?: Symbol): string {
@@ -1227,7 +1227,7 @@ export class QContext {
           if (this.flags & NodeBuilderFlags.WriteClassExpressionAsTypeLiteral) {
             if (propertySymbol.flags & SymbolFlags.Prototype) continue;
             if (getDeclarationModifierFlagsFromSymbol(propertySymbol) & (ModifierFlags.Private | ModifierFlags.Protected) && this.tracker.reportPrivateInBaseOfClassExpression) {
-              this.tracker.reportPrivateInBaseOfClassExpression(syntax.get.unescUnderscores(propertySymbol.escName));
+              this.tracker.reportPrivateInBaseOfClassExpression(qy.get.unescUnderscores(propertySymbol.escName));
             }
           }
           if (this.checkTruncationLength() && i + 2 < properties.length - 1) {
@@ -1301,7 +1301,7 @@ export class QContext {
               const isOptional = isOptionalOrRest && !isRest;
               tupleConstituentNodes[i] = new qc.NamedTupleMember(
                 isRest ? new Token(Syntax.Dot3Token) : undefined,
-                new Identifier(syntax.get.unescUnderscores(getTupleElementLabel((type.target as TupleType).labeledElementDeclarations![i]))),
+                new Identifier(qy.get.unescUnderscores(getTupleElementLabel((type.target as TupleType).labeledElementDeclarations![i]))),
                 isOptional ? new Token(Syntax.QuestionToken) : undefined,
                 isRest ? new ArrayTypeNode(tupleConstituentNodes[i]) : tupleConstituentNodes[i]
               );
@@ -1557,7 +1557,7 @@ export class QContext {
       });
     }
     forEachEntry(symbolTable, (symbol, name) => {
-      const baseName = syntax.get.unescUnderscores(name);
+      const baseName = qy.get.unescUnderscores(name);
       void this.getInternalSymbol(baseName);
     });
     let addingDeclare = !bundled;
@@ -1745,7 +1745,7 @@ export class QContext {
         !(typeToSerialize.symbol && some(typeToSerialize.symbol.declarations, (d) => qc.get.sourceFileOf(d) !== ctxSrc)) &&
         !some(getPropertiesOfType(typeToSerialize), (p) => isLateBoundName(p.escName)) &&
         !some(getPropertiesOfType(typeToSerialize), (p) => some(p.declarations, (d) => qc.get.sourceFileOf(d) !== ctxSrc)) &&
-        every(getPropertiesOfType(typeToSerialize), (p) => syntax.is.identifierText(p.name) && !syntax.is.stringAndKeyword(p.name))
+        every(getPropertiesOfType(typeToSerialize), (p) => qy.is.identifierText(p.name) && !qy.is.stringAndKeyword(p.name))
       );
     }
     function serializePropertySymbolForInterface(p: Symbol, baseType: Type | undefined) {
