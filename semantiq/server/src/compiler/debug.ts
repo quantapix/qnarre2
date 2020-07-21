@@ -1,63 +1,6 @@
 import * as qb from './base';
-import { Node, Nodes } from './types';
+import { Node } from './types';
 export let isDebugging = false;
-let currentAssertionLevel = AssertionLevel.None;
-type AssertionKeys = MatchingKeys<typeof Debug, qb.AnyFunction>;
-const assertionCache: Partial<Record<AssertionKeys, { level: AssertionLevel; assertion: qb.AnyFunction }>> = {};
-export function getAssertionLevel() {
-  return currentAssertionLevel;
-}
-export function setAssertionLevel(level: AssertionLevel) {
-  const prevAssertionLevel = currentAssertionLevel;
-  currentAssertionLevel = level;
-  if (level > prevAssertionLevel) {
-    for (const key of getOwnKeys(assertionCache) as AssertionKeys[]) {
-      const cachedFunc = assertionCache[key];
-      if (cachedFunc !== undefined && Debug[key] !== cachedFunc.assertion && level >= cachedFunc.level) {
-        (Debug as any)[key] = cachedFunc;
-        assertionCache[key] = undefined;
-      }
-    }
-  }
-}
-export function shouldAssert(level: AssertionLevel): boolean {
-  return currentAssertionLevel >= level;
-}
-function shouldAssertFunction<K extends AssertionKeys>(level: AssertionLevel, name: K): boolean {
-  if (!shouldAssert(level)) {
-    assertionCache[name] = { level, assertion: Debug[name] };
-    (Debug as any)[name] = noop;
-    return false;
-  }
-  return true;
-}
-export function formatSymbol(symbol: Symbol): string {
-  return `{ name: ${syntax.get.unescUnderscores(symbol.escName)}; flags: ${formatSymbolFlags(symbol.flags)}; declarations: ${map(symbol.declarations, (node) => formatSyntax(node.kind))} }`;
-}
-export function formatSyntax(kind: Syntax | undefined): string {
-  return formatEnum(kind, (<any>ts).SyntaxKind, false);
-}
-export function formatNodeFlags(flags: NodeFlags | undefined): string {
-  return formatEnum(flags, (<any>ts).NodeFlags, true);
-}
-export function formatModifierFlags(flags: ModifierFlags | undefined): string {
-  return formatEnum(flags, (<any>ts).ModifierFlags, true);
-}
-export function formatTransformFlags(flags: TransformFlags | undefined): string {
-  return formatEnum(flags, (<any>ts).TransformFlags, true);
-}
-export function formatEmitFlags(flags: EmitFlags | undefined): string {
-  return formatEnum(flags, (<any>ts).EmitFlags, true);
-}
-export function formatSymbolFlags(flags: SymbolFlags | undefined): string {
-  return formatEnum(flags, (<any>ts).SymbolFlags, true);
-}
-export function formatTypeFlags(flags: TypeFlags | undefined): string {
-  return formatEnum(flags, (<any>ts).TypeFlags, true);
-}
-export function formatObjectFlags(flags: ObjectFlags | undefined): string {
-  return formatEnum(flags, (<any>ts).ObjectFlags, true);
-}
 let isDebugInfoEnabled = false;
 interface ExtendedDebugModule {
   init(_ts: typeof ts): void;

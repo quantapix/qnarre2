@@ -19,6 +19,9 @@ export function assert(cond: unknown, m?: string, info?: string | (() => string)
     fail(m, mark || assert);
   }
 }
+export function assertNever(_: never, msg = 'Illegal value:', mark?: AnyFunction): never {
+  return fail(`${msg}`, mark || assertNever);
+}
 export function assertEqual<T>(a: T, b: T, msg?: string, msg2?: string, mark?: AnyFunction) {
   if (a !== b) {
     const m = msg ? (msg2 ? `${msg} ${msg2}` : msg) : '';
@@ -51,10 +54,6 @@ export function assertEachIsDefined<T>(ts: readonly T[], msg?: string, mark?: An
 export function checkEachDefined<T, TS extends readonly T[]>(ts: TS, msg?: string, mark?: AnyFunction): TS {
   assertEachIsDefined(ts, msg, mark || checkEachDefined);
   return ts;
-}
-export function assertNever(x: never, msg = 'Illegal value:', mark?: AnyFunction): never {
-  const v = typeof x === 'object' && hasProperty(x, 'kind') && hasProperty(x, 'pos') && formatSyntaxKind ? 'SyntaxKind: ' + formatSyntax((x as Node).kind) : JSON.stringify(x);
-  return fail(`${msg} ${v}`, mark || assertNever);
 }
 export function getFunctionName(f: AnyFunction) {
   if (typeof f !== 'function') return '';
@@ -1906,7 +1905,7 @@ export function addToSeen<T>(seen: QMap<T>, key: string | number, value: T = tru
   return true;
 }
 export function formatStringFromArgs(text: string, args: ArrayLike<string | number>, baseIndex = 0): string {
-  return text.replace(/{(\d+)}/g, (_match, index: string) => '' + qg.checkDefined(args[+index + baseIndex]));
+  return text.replace(/{(\d+)}/g, (_match, index: string) => '' + checkDefined(args[+index + baseIndex]));
 }
 export function isJsonEqual(a: unknown, b: unknown): boolean {
   return a === b || (typeof a === 'object' && a !== null && typeof b === 'object' && b !== null && equalOwnProperties(a as MapLike<unknown>, b as MapLike<unknown>, isJsonEqual));
@@ -1920,60 +1919,54 @@ export function getOrUpdate<T>(map: QMap<T>, key: string, getDefault: () => T): 
   }
   return got;
 }
-export function arrayIsHomogeneous<T>(array: readonly T[], comparer: EqComparer<T> = equateValues) {
-  if (array.length < 2) return true;
-  const first = array[0];
-  for (let i = 1, length = array.length; i < length; i++) {
-    const target = array[i];
-    if (!comparer(first, target)) return false;
+export function arrayIsHomogeneous<T>(ts: readonly T[], c: EqComparer<T> = equateValues) {
+  if (ts.length < 2) return true;
+  const first = ts[0];
+  for (let i = 1, l = ts.length; i < l; i++) {
+    const t = ts[i];
+    if (!c(first, t)) return false;
   }
   return true;
 }
-export function matchPatternOrExact(patternStrings: readonly string[], candidate: string): string | Pattern | undefined {
-  const patterns: Pattern[] = [];
-  for (const patternString of patternStrings) {
-    if (!qy.hasAsterisks(patternString)) continue;
-    const pattern = tryParsePattern(patternString);
-    if (pattern) {
-      patterns.push(pattern);
-    } else if (patternString === candidate) {
-      return patternString;
-    }
+export function matchPatternOrExact(ss: readonly string[], candidate: string): string | Pattern | undefined {
+  const ps: Pattern[] = [];
+  for (const s of ss) {
+    if (!s.includes('*')) continue;
+    const pattern = tryParsePattern(s);
+    if (pattern) ps.push(pattern);
+    else if (s === candidate) return s;
   }
-  return findBestPatternMatch(patterns, (_) => _, candidate);
+  return findBestPatternMatch(ps, (_) => _, candidate);
 }
 export type Mutable<T extends object> = { -readonly [K in keyof T]: T[K] };
-export function sliceAfter<T>(arr: readonly T[], value: T): readonly T[] {
-  const index = arr.indexOf(value);
-  assert(index !== -1);
-  return arr.slice(index);
+export function sliceAfter<T>(ts: readonly T[], t: T): readonly T[] {
+  const i = ts.indexOf(t);
+  assert(i !== -1);
+  return ts.slice(i);
 }
-export function minAndMax<T>(arr: readonly T[], getValue: (value: T) => number): { readonly min: number; readonly max: number } {
-  assert(arr.length !== 0);
-  let min = getValue(arr[0]);
+export function minAndMax<T>(ts: readonly T[], getValue: (t: T) => number): { readonly min: number; readonly max: number } {
+  assert(ts.length !== 0);
+  let min = getValue(ts[0]);
   let max = min;
-  for (let i = 1; i < arr.length; i++) {
-    const value = getValue(arr[i]);
-    if (value < min) {
-      min = value;
-    } else if (value > max) {
-      max = value;
-    }
+  for (let i = 1; i < ts.length; i++) {
+    const t = getValue(ts[i]);
+    if (t < min) min = t;
+    else if (t > max) max = t;
   }
   return { min, max };
 }
-export function tryParsePattern(pattern: string): Pattern | undefined {
-  assert(qy.hasAsterisks(pattern));
-  const indexOfStar = pattern.indexOf('*');
-  return indexOfStar === -1
+export function tryParsePattern(s: string): Pattern | undefined {
+  assert(s.includes('*'));
+  const i = s.indexOf('*');
+  return i === -1
     ? undefined
     : {
-        prefix: pattern.substr(0, indexOfStar),
-        suffix: pattern.substr(indexOfStar + 1),
+        prefix: s.substr(0, i),
+        suffix: s.substr(i + 1),
       };
 }
-export function getPropertyNameForKnownSymbolName(symbolName: string): __String {
-  return ('__@' + symbolName) as __String;
+export function getPropertyNameForKnownSymbolName(s: string): __String {
+  return ('__@' + s) as __String;
 }
 export function hasChangesInResolutions<T>(
   names: readonly string[],
@@ -2006,7 +1999,7 @@ export namespace semver {
     constructor(major: number, minor?: number, patch?: number, prerelease?: string, build?: string);
     constructor(major: number | string, minor = 0, patch = 0, prerelease = '', build = '') {
       if (typeof major === 'string') {
-        const result = Debug.checkDefined(tryParseComponents(major), 'Invalid version');
+        const result = checkDefined(tryParseComponents(major), 'Invalid version');
         ({ major, minor, patch, prerelease, build } = result);
       }
       assert(major >= 0, 'Invalid argument: major');
@@ -2042,7 +2035,7 @@ export namespace semver {
         case 'patch':
           return new Version(this.major, this.minor, this.patch + 1);
         default:
-          return Debug.assertNever(field);
+          return assertNever(field);
       }
     }
     toString() {
@@ -2091,7 +2084,7 @@ export namespace semver {
   export class VersionRange {
     private _alternatives: readonly (readonly Comparator[])[];
     constructor(spec: string) {
-      this._alternatives = spec ? Debug.checkDefined(parseRange(spec), 'Invalid range spec.') : empty;
+      this._alternatives = spec ? checkDefined(parseRange(spec), 'Invalid range spec.') : empty;
     }
     static tryParse(text: string) {
       const sets = parseRange(text);

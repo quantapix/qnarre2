@@ -1686,22 +1686,88 @@ qb.addMixins(ClassLikeDeclarationBase, [DocContainer]);
 qb.addMixins(FunctionOrConstructorTypeNodeBase, [TypeNode]);
 qb.addMixins(ObjectLiteralExpressionBase, [Declaration]);
 qb.addMixins(LiteralExpression, [LiteralLikeNode]);
+let currentAssertionLevel = qb.AssertionLevel.None;
+type AssertionKeys = MatchingKeys<typeof Debug, qb.AnyFunction>;
+const assertionCache: Partial<Record<AssertionKeys, { level: qb.AssertionLevel; assertion: qb.AnyFunction }>> = {};
+export function getAssertionLevel() {
+  return currentAssertionLevel;
+}
+export function setAssertionLevel(l: qb.AssertionLevel) {
+  const prevAssertionLevel = currentAssertionLevel;
+  currentAssertionLevel = l;
+  if (l > prevAssertionLevel) {
+    for (const k of qb.getOwnKeys(assertionCache) as AssertionKeys[]) {
+      const f = assertionCache[k];
+      if (f !== undefined && Debug[k] !== f.assertion && l >= f.level) {
+        (Debug as any)[k] = f;
+        assertionCache[k] = undefined;
+      }
+    }
+  }
+}
+export function shouldAssert(l: qb.AssertionLevel): boolean {
+  return currentAssertionLevel >= l;
+}
+function shouldAssertFunction<K extends AssertionKeys>(l: qb.AssertionLevel, name: K): boolean {
+  if (!shouldAssert(l)) {
+    assertionCache[name] = { level: l, assertion: Debug[name] };
+    (Debug as any)[name] = qb.noop;
+    return false;
+  }
+  return true;
+}
+export function formatSymbol(s: Symbol): string {
+  return `{ name: ${qy.get.unescUnderscores(s.escName)}; flags: ${formatSymbolFlags(s.flags)}; declarations: ${qb.map(s.declarations, (n) => formatSyntax(n.kind))} }`;
+}
+export function formatSyntax(k?: Syntax): string {
+  return qb.formatEnum(k, (qt as any).SyntaxKind, false);
+}
+export function formatNodeFlags(f?: NodeFlags): string {
+  return qb.formatEnum(f, (qt as any).NodeFlags, true);
+}
+export function formatModifierFlags(f?: ModifierFlags): string {
+  return qb.formatEnum(f, (qt as any).ModifierFlags, true);
+}
+export function formatTransformFlags(f?: TransformFlags): string {
+  return qb.formatEnum(f, (qt as any).TransformFlags, true);
+}
+export function formatEmitFlags(f?: qt.EmitFlags): string {
+  return qb.formatEnum(f, (qt as any).EmitFlags, true);
+}
+export function formatSymbolFlags(f?: SymbolFlags): string {
+  return qb.formatEnum(f, (qt as any).SymbolFlags, true);
+}
+export function formatTypeFlags(f?: TypeFlags): string {
+  return qb.formatEnum(f, (qt as any).TypeFlags, true);
+}
+export function formatObjectFlags(f?: ObjectFlags): string {
+  return qb.formatEnum(f, (qt as any).ObjectFlags, true);
+}
 export function failBadSyntax(n: Node, msg?: string, mark?: qb.AnyFunction): never {
   return qb.fail(`${msg || 'Unexpected node.'}\r\nNode ${formatSyntax(n.kind)} was unexpected.`, mark || failBadSyntaxKind);
+}
+export function assertNever(x: never, msg = 'Illegal value:', mark?: qb.AnyFunction): never {
+  const v = typeof x === 'object' && qb.hasProperty(x, 'kind') && qb.hasProperty(x, 'pos') && formatSyntaxKind ? 'SyntaxKind: ' + formatSyntax((x as Node).kind) : JSON.stringify(x);
+  return qb.fail(`${msg} ${v}`, mark || assertNever);
 }
 export function assertEachNode<T extends Node, U extends T>(ns: Nodes<T>, test: (n: T) => n is U, msg?: string, mark?: qb.AnyFunction): asserts ns is Nodes<U>;
 export function assertEachNode<T extends Node, U extends T>(ns: readonly T[], test: (n: T) => n is U, msg?: string, mark?: qb.AnyFunction): asserts ns is readonly U[];
 export function assertEachNode(ns: readonly Node[], test: (n: Node) => boolean, msg?: string, mark?: qb.AnyFunction): void;
 export function assertEachNode(ns: readonly Node[], test: (n: Node) => boolean, msg?: string, mark?: qb.AnyFunction) {
   if (shouldAssertFunction(qb.AssertionLevel.Normal, 'assertEachNode')) {
-    qb.assert(test === undefined || qb.every(ns, test), msg || 'Unexpected node.', () => `Node array did not pass test '${getFunctionName(test)}'.`, mark || assertEachNode);
+    qb.assert(test === undefined || qb.every(ns, test), msg || 'Unexpected node.', () => `Node array did not pass test '${qb.getFunctionName(test)}'.`, mark || assertEachNode);
   }
 }
 export function assertNode<T extends Node, U extends T>(n: T | undefined, test: (n: T) => n is U, msg?: string, mark?: qb.AnyFunction): asserts n is U;
 export function assertNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qb.AnyFunction): void;
 export function assertNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qb.AnyFunction) {
   if (shouldAssertFunction(qb.AssertionLevel.Normal, 'assertNode')) {
-    qb.assert(n !== undefined && (test === undefined || test(n)), msg || 'Unexpected node.', () => `Node ${formatSyntax(n!.kind)} did not pass test '${getFunctionName(test!)}'.`, mark || assertNode);
+    qb.assert(
+      n !== undefined && (test === undefined || test(n)),
+      msg || 'Unexpected node.',
+      () => `Node ${formatSyntax(n!.kind)} did not pass test '${qb.getFunctionName(test!)}'.`,
+      mark || assertNode
+    );
   }
 }
 export function assertNotNode<T extends Node, U extends T>(n: T | undefined, test: (n: Node) => n is U, msg?: string, mark?: qb.AnyFunction): asserts n is Exclude<T, U>;
@@ -1711,7 +1777,7 @@ export function assertNotNode(n?: Node, test?: (n: Node) => boolean, msg?: strin
     qb.assert(
       n === undefined || test === undefined || !test(n),
       msg || 'Unexpected node.',
-      () => `Node ${formatSyntax(n!.kind)} should not have passed test '${getFunctionName(test!)}'.`,
+      () => `Node ${formatSyntax(n!.kind)} should not have passed test '${qb.getFunctionName(test!)}'.`,
       mark || assertNotNode
     );
   }
@@ -1724,7 +1790,7 @@ export function assertOptionalNode(n?: Node, test?: (n: Node) => boolean, msg?: 
     qb.assert(
       test === undefined || n === undefined || test(n),
       msg || 'Unexpected node.',
-      () => `Node ${formatSyntax(n!.kind)} did not pass test '${getFunctionName(test!)}'.`,
+      () => `Node ${formatSyntax(n!.kind)} did not pass test '${qb.getFunctionName(test!)}'.`,
       mark || assertOptionalNode
     );
   }
