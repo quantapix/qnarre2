@@ -42,12 +42,12 @@ export interface DiagnosticCollection {
   getDiagnostics(fileName: string): DiagnosticWithLocation[];
   reattachFileDiagnostics(newFile: SourceFile): void;
 }
-export let localizedqd.Messages: qb.MapLike<string> | undefined;
-export function setLocalizedqd.Messages(messages: typeof localizedqd.Messages) {
-  localizedqd.Messages = messages;
+export let localizedMessages: qb.MapLike<string> | undefined;
+export function setLocalizedMessages(messages: typeof localizedMessages) {
+  localizedMessages = messages;
 }
 export function getLocaleSpecificMessage(message: Message) {
-  return (localizedqd.Messages && localizedqd.Messages[message.key]) || message.msg;
+  return (localizedMessages && localizedMessages[message.key]) || message.msg;
 }
 export function formatMessage(_dummy: any, message: Message, ...args: (string | number | undefined)[]): string;
 export function formatMessage(_dummy: any, message: Message): string {
@@ -83,8 +83,8 @@ export function createCompilerDiagnosticFromMessageChain(chain: MessageChain): D
     messageText: chain.next ? chain : chain.messageText,
   };
 }
-export function chainqd.Messages(details: MessageChain | MessageChain[] | undefined, message: Message, ...args: (string | number | undefined)[]): MessageChain;
-export function chainqd.Messages(details: MessageChain | MessageChain[] | undefined, message: Message): MessageChain {
+export function chainMessages(details: MessageChain | MessageChain[] | undefined, message: Message, ...args: (string | number | undefined)[]): MessageChain;
+export function chainMessages(details: MessageChain | MessageChain[] | undefined, message: Message): MessageChain {
   let text = getLocaleSpecificMessage(message);
   if (arguments.length > 2) {
     text = qb.formatStringFromArgs(text, arguments, 2);

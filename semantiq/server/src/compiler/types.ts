@@ -622,6 +622,12 @@ export interface EnumMember extends NamedDeclaration, DocContainer {
 export interface EnumType extends Type {}
 export type EqualityOperator = Syntax.Equals2Token | Syntax.Equals3Token | Syntax.ExclamationEquals2Token | Syntax.ExclamationEqualsToken;
 export type EqualityOperatorOrHigher = RelationalOperatorOrHigher | EqualityOperator;
+export const enum ExpandingFlags {
+  None = 0,
+  Source = 1,
+  Target = 1 << 1,
+  Both = Source | Target,
+}
 export type ExponentiationOperator = Syntax.Asterisk2Token;
 export interface ExportAssignment extends DeclarationStatement {
   kind: Syntax.ExportAssignment;

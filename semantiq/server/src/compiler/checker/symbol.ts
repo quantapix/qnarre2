@@ -1,12 +1,12 @@
-import * as qb from './base';
-import { is, get, has } from './core3';
-import * as qc from './core3';
-import * as qd from './diags';
-import { Node } from './types';
-import * as qt from './types';
-import { ModifierFlags, Syntax } from './syntax';
-import * as qy from './syntax';
-class Symbol extends qc.Symbol implements TransientSymbol {
+import * as qb from '../base';
+import { is, get, has } from '../core3';
+import * as qc from '../core3';
+import * as qd from '../diags';
+import { Node } from '../types';
+import * as qt from '../types';
+import { ModifierFlags, Syntax } from '../syntax';
+import * as qy from '../syntax';
+export class Symbol extends qc.Symbol implements TransientSymbol {
   static nextId = 1;
   static count = 0;
   checkFlags: qt.CheckFlags;
@@ -170,7 +170,7 @@ class Symbol extends qc.Symbol implements TransientSymbol {
       if (!d) return qb.fail();
       if (is.internalModuleImportEqualsDeclaration(d)) {
         const t = this.resolveSymbol();
-        if (t === unknownSymbol || (t && t.flags & qt.SymbolFlags.Value)) checkExpressionCached(<Expression>d.moduleReference);
+        if (t === unknownSymbol || (t && t.flags & qt.SymbolFlags.Value)) check.expressionCached(<Expression>d.moduleReference);
       }
     }
   }
@@ -299,7 +299,7 @@ class Symbol extends qc.Symbol implements TransientSymbol {
         is.entityNameExpression(d.parent.left.expression)
       ) {
         if (is.moduleExportsAccessExpression(d.parent.left) || is.exportsIdentifier(d.parent.left.expression)) return getSymbolOfNode(get.sourceFileOf(d));
-        checkExpressionCached(d.parent.left.expression);
+        check.expressionCached(d.parent.left.expression);
         return getNodeLinks(d.parent.left.expression).resolvedSymbol;
       }
     });
@@ -749,14 +749,14 @@ class Symbol extends qc.Symbol implements TransientSymbol {
     if (isCatchClauseVariableDeclarationOrBindingElement(declaration)) return anyType;
     if (is.kind(qc.SourceFile, declaration) && is.jsonSourceFile(declaration)) {
       if (!declaration.statements.length) return emptyObjectType;
-      return getWidenedType(getWidenedLiteralType(checkExpression(declaration.statements[0].expression)));
+      return getWidenedType(getWidenedLiteralType(check.expression(declaration.statements[0].expression)));
     }
     if (!pushTypeResolution(symbol, TypeSystemPropertyName.Type)) {
       if (symbol.flags & qt.SymbolFlags.ValueModule && !(symbol.flags & qt.SymbolFlags.Assignment)) return this.getTypeOfFuncClassEnumModule();
       return reportCircularityError(symbol);
     }
     let type: Type | undefined;
-    if (declaration.kind === Syntax.ExportAssignment) type = widenTypeForVariableLikeDeclaration(checkExpressionCached((<ExportAssignment>declaration).expression), declaration);
+    if (declaration.kind === Syntax.ExportAssignment) type = widenTypeForVariableLikeDeclaration(check.expressionCached((<ExportAssignment>declaration).expression), declaration);
     else if (
       is.kind(qc.BinaryExpression, declaration) ||
       (is.inJSFile(declaration) &&
@@ -780,13 +780,13 @@ class Symbol extends qc.Symbol implements TransientSymbol {
       if (symbol.flags & (qt.SymbolFlags.Function | qt.SymbolFlags.Method | qt.SymbolFlags.Class | qt.SymbolFlags.Enum | qt.SymbolFlags.ValueModule)) return this.getTypeOfFuncClassEnumModule();
       type = is.kind(qc.BinaryExpression, declaration.parent) ? getWidenedTypeForAssignmentDeclaration(symbol) : tryGetTypeFromEffectiveTypeNode(declaration) || anyType;
     } else if (is.kind(qc.PropertyAssignment, declaration)) {
-      type = tryGetTypeFromEffectiveTypeNode(declaration) || checkPropertyAssignment(declaration);
+      type = tryGetTypeFromEffectiveTypeNode(declaration) || check.propertyAssignment(declaration);
     } else if (is.kind(qc.JsxAttribute, declaration)) {
-      type = tryGetTypeFromEffectiveTypeNode(declaration) || checkJsxAttribute(declaration);
+      type = tryGetTypeFromEffectiveTypeNode(declaration) || check.jsxAttribute(declaration);
     } else if (is.kind(qc.ShorthandPropertyAssignment, declaration)) {
-      type = tryGetTypeFromEffectiveTypeNode(declaration) || checkExpressionForMutableLocation(declaration.name, CheckMode.Normal);
+      type = tryGetTypeFromEffectiveTypeNode(declaration) || check.expressionForMutableLocation(declaration.name, CheckMode.Normal);
     } else if (is.objectLiteralMethod(declaration)) {
-      type = tryGetTypeFromEffectiveTypeNode(declaration) || checkObjectLiteralMethod(declaration, CheckMode.Normal);
+      type = tryGetTypeFromEffectiveTypeNode(declaration) || check.objectLiteralMethod(declaration, CheckMode.Normal);
     } else if (
       is.kind(qc.ParameterDeclaration, declaration) ||
       is.kind(qc.PropertyDeclaration, declaration) ||
@@ -1016,7 +1016,7 @@ class Symbol extends qc.Symbol implements TransientSymbol {
     const ls = this.getLinks();
     if (!ls.declaredType) {
       if (!pushTypeResolution(this, TypeSystemPropertyName.DeclaredType)) return errorType;
-      const d = Debug.checkDefined(find(this.declarations, isTypeAlias), 'Type alias symbol with no valid declaration found');
+      const d = Debug.check.defined(find(this.declarations, isTypeAlias), 'Type alias symbol with no valid declaration found');
       const typeNode = qc.isDoc.typeAlias(d) ? d.typeExpression : d.type;
       let type = typeNode ? getTypeFromTypeNode(typeNode) : errorType;
       if (popTypeResolution()) {
@@ -1377,8 +1377,8 @@ class Symbol extends qc.Symbol implements TransientSymbol {
       reportImplementationExpectedError(lastSeenNonAmbientDeclaration);
     }
     if (hasOverloads) {
-      checkFlagAgreementBetweenOverloads(declarations, bodyDeclaration, flagsToCheck, someNodeFlags, allNodeFlags);
-      checkQuestionTokenAgreementBetweenOverloads(declarations, bodyDeclaration, someHaveQuestionToken, allHaveQuestionToken);
+      check.flagAgreementBetweenOverloads(declarations, bodyDeclaration, flagsToCheck, someNodeFlags, allNodeFlags);
+      check.questionTokenAgreementBetweenOverloads(declarations, bodyDeclaration, someHaveQuestionToken, allHaveQuestionToken);
       if (bodyDeclaration) {
         const ss = this.getSignaturesOfSymbol();
         const bs = getSignatureFromDeclaration(bodyDeclaration);

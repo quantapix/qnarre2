@@ -1,9 +1,9 @@
-import * as qb from './base';
-import * as qc from './core3';
-import { Node, NodeBuilderFlags, ObjectFlags, TypeFlags } from './types';
-import * as qt from './types';
-import { ModifierFlags, Syntax } from './syntax';
-import * as qy from './syntax';
+import * as qb from '../base';
+import * as qc from '../core3';
+import { Node, NodeBuilderFlags, ObjectFlags, TypeFlags } from '../types';
+import * as qt from '../types';
+import { ModifierFlags, Syntax } from '../syntax';
+import * as qy from '../syntax';
 function isNamespaceMember(p: Symbol) {
   return !(p.flags & SymbolFlags.Prototype || p.escName === 'prototype' || (p.valueDeclaration?.parent && qc.is.classLike(p.valueDeclaration.parent)));
 }
