@@ -6,6 +6,12 @@ export function fail(m?: string, mark?: AnyFunction): never {
   Error.captureStackTrace(e, mark || fail);
   throw e;
 }
+export const enum AssertionLevel {
+  None = 0,
+  Normal = 1,
+  Aggressive = 2,
+  VeryAggressive = 3,
+}
 export function assert(cond: unknown, m?: string, info?: string | (() => string), mark?: AnyFunction): asserts cond {
   if (!cond) {
     m = m ? `False expression: ${m}` : 'False expression.';
@@ -30,6 +36,63 @@ export function assertGreaterThanOrEqual(a: number, b: number, mark?: AnyFunctio
 }
 export function assertIsDefined<T>(v: T, m?: string, mark?: AnyFunction): asserts v is NonNullable<T> {
   if (v === undefined || v === null) fail(m, mark || assertIsDefined);
+}
+export function checkDefined<T>(t?: T | null, msg?: string, mark?: AnyFunction): T {
+  assertIsDefined(t, msg, mark || checkDefined);
+  return t;
+}
+//export function assertEachIsDefined<T extends Node>(ns: Nodes<T>, msg?: string, mark?: AnyFunction): asserts value is Nodes<T>;
+export function assertEachIsDefined<T>(ts: readonly T[], msg?: string, mark?: AnyFunction): asserts ts is readonly NonNullable<T>[];
+export function assertEachIsDefined<T>(ts: readonly T[], msg?: string, mark?: AnyFunction) {
+  for (const t of ts) {
+    assertIsDefined(t, msg, mark || assertEachIsDefined);
+  }
+}
+export function checkEachDefined<T, TS extends readonly T[]>(ts: TS, msg?: string, mark?: AnyFunction): TS {
+  assertEachIsDefined(ts, msg, mark || checkEachDefined);
+  return ts;
+}
+export function assertNever(x: never, msg = 'Illegal value:', mark?: AnyFunction): never {
+  const v = typeof x === 'object' && hasProperty(x, 'kind') && hasProperty(x, 'pos') && formatSyntaxKind ? 'SyntaxKind: ' + formatSyntax((x as Node).kind) : JSON.stringify(x);
+  return fail(`${msg} ${v}`, mark || assertNever);
+}
+export function getFunctionName(f: AnyFunction) {
+  if (typeof f !== 'function') return '';
+  if (f.hasOwnProperty('name')) return (f as any).name;
+  else {
+    const t = Function.prototype.toString.call(f);
+    const m = /^function\s+([\w\$]+)\s*\(/.exec(t);
+    return m ? m[1] : '';
+  }
+}
+export function getEnumMembers(e: any) {
+  const ms: [number, string][] = [];
+  for (const k in e) {
+    const v = e[k];
+    if (typeof v === 'number') ms.push([v, k]);
+  }
+  return stableSort<[number, string]>(ms, (x, y) => compareNumbers(x[0], y[0]));
+}
+export function formatEnum(v = 0, e: any, isFlags?: boolean) {
+  const ms = getEnumMembers(e);
+  if (v === 0) return ms.length > 0 && ms[0][0] === 0 ? ms[0][1] : '0';
+  if (isFlags) {
+    let r = '';
+    let fs = v;
+    for (const [mv, mk] of ms) {
+      if (mv > v) break;
+      if (mv !== 0 && mv & v) {
+        r = `${r}${r ? '|' : ''}${mk}`;
+        fs &= ~mv;
+      }
+    }
+    if (fs === 0) return r;
+  } else {
+    for (const [mv, mk] of ms) {
+      if (mv === v) return mk;
+    }
+  }
+  return v.toString();
 }
 export function addMixins(t: any, ss: any[]) {
   ss.forEach((s: any) => {
@@ -1083,12 +1146,6 @@ export function compose<T>(a: (t: T) => T, b: (t: T) => T, c: (t: T) => T, d: (t
   } else {
     return (t) => t;
   }
-}
-export const enum AssertionLevel {
-  None = 0,
-  Normal = 1,
-  Aggressive = 2,
-  VeryAggressive = 3,
 }
 export function min<T>(a: T, b: T, c: Comparer<T>): T {
   return c(a, b) === Comparison.LessThan ? a : b;

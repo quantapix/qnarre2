@@ -290,6 +290,7 @@ export abstract class Nobj extends qb.TextRange implements qt.Nobj {
     return new qb.TextRange(this.getTokenPos(), this.end);
   }
 }
+
 export class SyntaxList extends Nobj implements qt.SyntaxList {
   static readonly kind = Syntax.SyntaxList;
   children!: Nobj[];
@@ -1171,35 +1172,35 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
   createDiagnosticForNodes(
     sourceFile: SourceFile,
     nodes: Nodes<Node>,
-    message: qd.Message,
+    msg: qd.Message,
     arg0?: string | number,
     arg1?: string | number,
     arg2?: string | number,
     arg3?: string | number
   ): qd.DiagnosticWithLocation {
     const start = qy.skipTrivia(sourceFile.text, nodes.pos);
-    return createFileDiagnostic(sourceFile, start, nodes.end - start, message, arg0, arg1, arg2, arg3);
+    return createFileDiagnostic(sourceFile, start, nodes.end - start, msg, arg0, arg1, arg2, arg3);
   }
   createDiagnosticForNodeInSourceFile(
     sourceFile: SourceFile,
     node: Node,
-    message: qd.Message,
+    msg: qd.Message,
     arg0?: string | number,
     arg1?: string | number,
     arg2?: string | number,
     arg3?: string | number
   ): qd.DiagnosticWithLocation {
     const span = getErrorSpanForNode(sourceFile, node);
-    return createFileDiagnostic(sourceFile, span.start, span.length, message, arg0, arg1, arg2, arg3);
+    return createFileDiagnostic(sourceFile, span.start, span.length, msg, arg0, arg1, arg2, arg3);
   }
-  createDiagnosticForRange(sourceFile: SourceFile, range: qb.TextRange, message: qd.Message): qd.DiagnosticWithLocation {
+  createDiagnosticForRange(sourceFile: SourceFile, range: qb.TextRange, msg: qd.Message): qd.DiagnosticWithLocation {
     return {
       file: sourceFile,
       start: range.pos,
       length: range.end - range.pos,
-      code: message.code,
-      category: message.category,
-      messageText: message.message,
+      code: msg.code,
+      category: msg.category,
+      messageText: msg.message,
     };
   }
   getSpanOfTokenAtPosition(s: SourceFile, pos: number): qb.TextSpan {
@@ -1276,15 +1277,15 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
   getOriginalSourceFile(sourceFile: SourceFile) {
     return qc.get.parseTreeOf(sourceFile, isSourceFile) || sourceFile;
   }
-  createFileDiagnostic(file: SourceFile, start: number, length: number, message: qd.Message, ...args: (string | number | undefined)[]): qd.DiagnosticWithLocation;
-  createFileDiagnostic(file: SourceFile, start: number, length: number, message: qd.Message): qd.DiagnosticWithLocation {
+  createFileDiagnostic(file: SourceFile, start: number, length: number, msg: qd.Message, ...args: (string | number | undefined)[]): qd.DiagnosticWithLocation;
+  createFileDiagnostic(file: SourceFile, start: number, length: number, msg: qd.Message): qd.DiagnosticWithLocation {
     Debug.assertGreaterThanOrEqual(start, 0);
     Debug.assertGreaterThanOrEqual(length, 0);
     if (file) {
       Debug.assertLessThanOrEqual(start, file.text.length);
       Debug.assertLessThanOrEqual(start + length, file.text.length);
     }
-    let text = getLocaleSpecificMessage(message);
+    let text = getLocaleSpecificMessage(msg);
     if (arguments.length > 4) {
       text = formatStringFromArgs(text, arguments, 4);
     }
@@ -1293,9 +1294,9 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
       start,
       length,
       messageText: text,
-      category: message.category,
-      code: message.code,
-      reportsUnnecessary: message.reportsUnnecessary,
+      category: msg.category,
+      code: msg.code,
+      reportsUnnecessary: msg.reportsUnnecessary,
     };
   }
   createCommentDirectivesMap(sourceFile: SourceFile, commentDirectives: qt.CommentDirective[]): qt.CommentDirectivesMap {
@@ -1685,3 +1686,60 @@ qb.addMixins(ClassLikeDeclarationBase, [DocContainer]);
 qb.addMixins(FunctionOrConstructorTypeNodeBase, [TypeNode]);
 qb.addMixins(ObjectLiteralExpressionBase, [Declaration]);
 qb.addMixins(LiteralExpression, [LiteralLikeNode]);
+export function failBadSyntax(n: Node, msg?: string, mark?: qb.AnyFunction): never {
+  return qb.fail(`${msg || 'Unexpected node.'}\r\nNode ${formatSyntax(n.kind)} was unexpected.`, mark || failBadSyntaxKind);
+}
+export function assertEachNode<T extends Node, U extends T>(ns: Nodes<T>, test: (n: T) => n is U, msg?: string, mark?: qb.AnyFunction): asserts ns is Nodes<U>;
+export function assertEachNode<T extends Node, U extends T>(ns: readonly T[], test: (n: T) => n is U, msg?: string, mark?: qb.AnyFunction): asserts ns is readonly U[];
+export function assertEachNode(ns: readonly Node[], test: (n: Node) => boolean, msg?: string, mark?: qb.AnyFunction): void;
+export function assertEachNode(ns: readonly Node[], test: (n: Node) => boolean, msg?: string, mark?: qb.AnyFunction) {
+  if (shouldAssertFunction(qb.AssertionLevel.Normal, 'assertEachNode')) {
+    qb.assert(test === undefined || qb.every(ns, test), msg || 'Unexpected node.', () => `Node array did not pass test '${getFunctionName(test)}'.`, mark || assertEachNode);
+  }
+}
+export function assertNode<T extends Node, U extends T>(n: T | undefined, test: (n: T) => n is U, msg?: string, mark?: qb.AnyFunction): asserts n is U;
+export function assertNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qb.AnyFunction): void;
+export function assertNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qb.AnyFunction) {
+  if (shouldAssertFunction(qb.AssertionLevel.Normal, 'assertNode')) {
+    qb.assert(n !== undefined && (test === undefined || test(n)), msg || 'Unexpected node.', () => `Node ${formatSyntax(n!.kind)} did not pass test '${getFunctionName(test!)}'.`, mark || assertNode);
+  }
+}
+export function assertNotNode<T extends Node, U extends T>(n: T | undefined, test: (n: Node) => n is U, msg?: string, mark?: qb.AnyFunction): asserts n is Exclude<T, U>;
+export function assertNotNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qb.AnyFunction): void;
+export function assertNotNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qb.AnyFunction) {
+  if (shouldAssertFunction(qb.AssertionLevel.Normal, 'assertNotNode')) {
+    qb.assert(
+      n === undefined || test === undefined || !test(n),
+      msg || 'Unexpected node.',
+      () => `Node ${formatSyntax(n!.kind)} should not have passed test '${getFunctionName(test!)}'.`,
+      mark || assertNotNode
+    );
+  }
+}
+export function assertOptionalNode<T extends Node, U extends T>(n: T, test: (n: T) => n is U, msg?: string, mark?: qb.AnyFunction): asserts n is U;
+export function assertOptionalNode<T extends Node, U extends T>(n: T | undefined, test: (n: T) => n is U, msg?: string, mark?: qb.AnyFunction): asserts n is U | undefined;
+export function assertOptionalNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qb.AnyFunction): void;
+export function assertOptionalNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qb.AnyFunction) {
+  if (shouldAssertFunction(qb.AssertionLevel.Normal, 'assertOptionalNode')) {
+    qb.assert(
+      test === undefined || n === undefined || test(n),
+      msg || 'Unexpected node.',
+      () => `Node ${formatSyntax(n!.kind)} did not pass test '${getFunctionName(test!)}'.`,
+      mark || assertOptionalNode
+    );
+  }
+}
+export function assertOptionalToken<T extends Node, K extends Syntax>(n: T, k: K, msg?: string, mark?: qb.AnyFunction): asserts n is Extract<T, { readonly kind: K }>;
+export function assertOptionalToken<T extends Node, K extends Syntax>(n: T | undefined, k: K, msg?: string, mark?: qb.AnyFunction): asserts n is Extract<T, { readonly kind: K }> | undefined;
+export function assertOptionalToken(n?: Node, k?: Syntax, msg?: string, mark?: qb.AnyFunction): void;
+export function assertOptionalToken(n?: Node, k?: Syntax, msg?: string, mark?: qb.AnyFunction) {
+  if (shouldAssertFunction(qb.AssertionLevel.Normal, 'assertOptionalToken')) {
+    qb.assert(k === undefined || n === undefined || n.kind === k, msg || 'Unexpected node.', () => `Node ${formatSyntax(n!.kind)} was not a '${formatSyntax(k)}' token.`, mark || assertOptionalToken);
+  }
+}
+export function assertMissingNode(n?: Node, msg?: string, mark?: qb.AnyFunction): asserts n is undefined;
+export function assertMissingNode(n?: Node, msg?: string, mark?: qb.AnyFunction) {
+  if (shouldAssertFunction(qb.AssertionLevel.Normal, 'assertMissingNode')) {
+    qb.assert(n === undefined, msg || 'Unexpected node.', () => `Node ${formatSyntax(n!.kind)} was unexpected'.`, mark || assertMissingNode);
+  }
+}

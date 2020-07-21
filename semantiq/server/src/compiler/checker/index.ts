@@ -6,7 +6,7 @@ import { Node, SymbolFlags,  TypeFlags } from './types';
 import * as qt from './types';
 import { ModifierFlags, Syntax } from '../syntax';
 import * as qy from '../syntax';
-import {check, checkGrammar} from './checks';
+import {check, checkGrammar} from './check';
 const ambientModuleSymbolRegex = /^".+"$/;
 const anon = '(anonymous)' as qb.__String & string;
 let nextMergeId = 1;

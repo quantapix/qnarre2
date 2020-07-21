@@ -1,9 +1,9 @@
 import * as qb from './base';
 import { Node, Nodes } from './types';
-let currentAssertionLevel = AssertionLevel.None;
 export let isDebugging = false;
-type AssertionKeys = MatchingKeys<typeof Debug, AnyFunction>;
-const assertionCache: Partial<Record<AssertionKeys, { level: AssertionLevel; assertion: AnyFunction }>> = {};
+let currentAssertionLevel = AssertionLevel.None;
+type AssertionKeys = MatchingKeys<typeof Debug, qb.AnyFunction>;
+const assertionCache: Partial<Record<AssertionKeys, { level: AssertionLevel; assertion: qb.AnyFunction }>> = {};
 export function getAssertionLevel() {
   return currentAssertionLevel;
 }
@@ -31,168 +31,8 @@ function shouldAssertFunction<K extends AssertionKeys>(level: AssertionLevel, na
   }
   return true;
 }
-export function failBadSyntax(node: Node, message?: string, stackCrawlMark?: AnyFunction): never {
-  return qb.fail(`${message || 'Unexpected node.'}\r\nNode ${formatSyntax(node.kind)} was unexpected.`, stackCrawlMark || failBadSyntaxKind);
-}
-export function assertEqual<T>(a: T, b: T, msg?: string, msg2?: string, stackCrawlMark?: AnyFunction): void {
-  if (a !== b) {
-    const message = msg ? (msg2 ? `${msg} ${msg2}` : msg) : '';
-    qb.fail(`Expected ${a} === ${b}. ${message}`, stackCrawlMark || assertEqual);
-  }
-}
-export function assertLessThan(a: number, b: number, msg?: string, stackCrawlMark?: AnyFunction): void {
-  if (a >= b) {
-    qb.fail(`Expected ${a} < ${b}. ${msg || ''}`, stackCrawlMark || assertLessThan);
-  }
-}
-export function assertLessThanOrEqual(a: number, b: number, stackCrawlMark?: AnyFunction): void {
-  if (a > b) {
-    qb.fail(`Expected ${a} <= ${b}`, stackCrawlMark || assertLessThanOrEqual);
-  }
-}
-export function assertGreaterThanOrEqual(a: number, b: number, stackCrawlMark?: AnyFunction): void {
-  if (a < b) {
-    qb.fail(`Expected ${a} >= ${b}`, stackCrawlMark || assertGreaterThanOrEqual);
-  }
-}
-export function assertIsDefined<T>(value: T, message?: string, stackCrawlMark?: AnyFunction): asserts value is NonNullable<T> {
-  if (value === undefined || value === null) {
-    qb.fail(message, stackCrawlMark || assertIsDefined);
-  }
-}
-export function checkDefined<T>(value: T | null | undefined, message?: string, stackCrawlMark?: AnyFunction): T {
-  assertIsDefined(value, message, stackCrawlMark || checkDefined);
-  return value;
-}
-export function assertEachIsDefined<T extends Node>(value: Nodes<T>, message?: string, stackCrawlMark?: AnyFunction): asserts value is Nodes<T>;
-export function assertEachIsDefined<T>(value: readonly T[], message?: string, stackCrawlMark?: AnyFunction): asserts value is readonly NonNullable<T>[];
-export function assertEachIsDefined<T>(value: readonly T[], message?: string, stackCrawlMark?: AnyFunction) {
-  for (const v of value) {
-    assertIsDefined(v, message, stackCrawlMark || assertEachIsDefined);
-  }
-}
-export function checkEachDefined<T, A extends readonly T[]>(value: A, message?: string, stackCrawlMark?: AnyFunction): A {
-  assertEachIsDefined(value, message, stackCrawlMark || checkEachDefined);
-  return value;
-}
-export function assertNever(member: never, message = 'Illegal value:', stackCrawlMark?: AnyFunction): never {
-  const detail =
-    typeof member === 'object' && hasProperty(member, 'kind') && hasProperty(member, 'pos') && formatSyntaxKind ? 'SyntaxKind: ' + formatSyntax((member as Node).kind) : JSON.stringify(member);
-  return qb.fail(`${message} ${detail}`, stackCrawlMark || assertNever);
-}
-export function assertEachNode<T extends Node, U extends T>(nodes: Nodes<T>, test: (node: T) => node is U, message?: string, stackCrawlMark?: AnyFunction): asserts nodes is Nodes<U>;
-export function assertEachNode<T extends Node, U extends T>(nodes: readonly T[], test: (node: T) => node is U, message?: string, stackCrawlMark?: AnyFunction): asserts nodes is readonly U[];
-export function assertEachNode(nodes: readonly Node[], test: (node: Node) => boolean, message?: string, stackCrawlMark?: AnyFunction): void;
-export function assertEachNode(nodes: readonly Node[], test: (node: Node) => boolean, message?: string, stackCrawlMark?: AnyFunction) {
-  if (shouldAssertFunction(AssertionLevel.Normal, 'assertEachNode')) {
-    qb.assert(test === undefined || every(nodes, test), message || 'Unexpected node.', () => `Node array did not pass test '${getFunctionName(test)}'.`, stackCrawlMark || assertEachNode);
-  }
-}
-export function assertNode<T extends Node, U extends T>(node: T | undefined, test: (node: T) => node is U, message?: string, stackCrawlMark?: AnyFunction): asserts node is U;
-export function assertNode(node: Node | undefined, test: ((node: Node) => boolean) | undefined, message?: string, stackCrawlMark?: AnyFunction): void;
-export function assertNode(node: Node | undefined, test: ((node: Node) => boolean) | undefined, message?: string, stackCrawlMark?: AnyFunction) {
-  if (shouldAssertFunction(AssertionLevel.Normal, 'assertNode')) {
-    qb.assert(
-      node !== undefined && (test === undefined || test(node)),
-      message || 'Unexpected node.',
-      () => `Node ${formatSyntax(node!.kind)} did not pass test '${getFunctionName(test!)}'.`,
-      stackCrawlMark || assertNode
-    );
-  }
-}
-export function assertNotNode<T extends Node, U extends T>(node: T | undefined, test: (node: Node) => node is U, message?: string, stackCrawlMark?: AnyFunction): asserts node is Exclude<T, U>;
-export function assertNotNode(node: Node | undefined, test: ((node: Node) => boolean) | undefined, message?: string, stackCrawlMark?: AnyFunction): void;
-export function assertNotNode(node: Node | undefined, test: ((node: Node) => boolean) | undefined, message?: string, stackCrawlMark?: AnyFunction) {
-  if (shouldAssertFunction(AssertionLevel.Normal, 'assertNotNode')) {
-    qb.assert(
-      node === undefined || test === undefined || !test(node),
-      message || 'Unexpected node.',
-      () => `Node ${formatSyntax(node!.kind)} should not have passed test '${getFunctionName(test!)}'.`,
-      stackCrawlMark || assertNotNode
-    );
-  }
-}
-export function assertOptionalNode<T extends Node, U extends T>(node: T, test: (node: T) => node is U, message?: string, stackCrawlMark?: AnyFunction): asserts node is U;
-export function assertOptionalNode<T extends Node, U extends T>(node: T | undefined, test: (node: T) => node is U, message?: string, stackCrawlMark?: AnyFunction): asserts node is U | undefined;
-export function assertOptionalNode(node: Node | undefined, test: ((node: Node) => boolean) | undefined, message?: string, stackCrawlMark?: AnyFunction): void;
-export function assertOptionalNode(node: Node | undefined, test: ((node: Node) => boolean) | undefined, message?: string, stackCrawlMark?: AnyFunction) {
-  if (shouldAssertFunction(AssertionLevel.Normal, 'assertOptionalNode')) {
-    qb.assert(
-      test === undefined || node === undefined || test(node),
-      message || 'Unexpected node.',
-      () => `Node ${formatSyntax(node!.kind)} did not pass test '${getFunctionName(test!)}'.`,
-      stackCrawlMark || assertOptionalNode
-    );
-  }
-}
-export function assertOptionalToken<T extends Node, K extends Syntax>(node: T, kind: K, message?: string, stackCrawlMark?: AnyFunction): asserts node is Extract<T, { readonly kind: K }>;
-export function assertOptionalToken<T extends Node, K extends Syntax>(
-  node: T | undefined,
-  kind: K,
-  message?: string,
-  stackCrawlMark?: AnyFunction
-): asserts node is Extract<T, { readonly kind: K }> | undefined;
-export function assertOptionalToken(node: Node | undefined, kind: Syntax | undefined, message?: string, stackCrawlMark?: AnyFunction): void;
-export function assertOptionalToken(node: Node | undefined, kind: Syntax | undefined, message?: string, stackCrawlMark?: AnyFunction) {
-  if (shouldAssertFunction(AssertionLevel.Normal, 'assertOptionalToken')) {
-    qb.assert(
-      kind === undefined || node === undefined || node.kind === kind,
-      message || 'Unexpected node.',
-      () => `Node ${formatSyntax(node!.kind)} was not a '${formatSyntax(kind)}' token.`,
-      stackCrawlMark || assertOptionalToken
-    );
-  }
-}
-export function assertMissingNode(node: Node | undefined, message?: string, stackCrawlMark?: AnyFunction): asserts node is undefined;
-export function assertMissingNode(node: Node | undefined, message?: string, stackCrawlMark?: AnyFunction) {
-  if (shouldAssertFunction(AssertionLevel.Normal, 'assertMissingNode')) {
-    qb.assert(node === undefined, message || 'Unexpected node.', () => `Node ${formatSyntax(node!.kind)} was unexpected'.`, stackCrawlMark || assertMissingNode);
-  }
-}
-export function getFunctionName(func: AnyFunction) {
-  if (typeof func !== 'function') return '';
-  if (func.hasOwnProperty('name')) return (<any>func).name;
-  else {
-    const text = Function.prototype.toString.call(func);
-    const match = /^function\s+([\w\$]+)\s*\(/.exec(text);
-    return match ? match[1] : '';
-  }
-}
 export function formatSymbol(symbol: Symbol): string {
   return `{ name: ${syntax.get.unescUnderscores(symbol.escName)}; flags: ${formatSymbolFlags(symbol.flags)}; declarations: ${map(symbol.declarations, (node) => formatSyntax(node.kind))} }`;
-}
-export function formatEnum(value = 0, enumObject: any, isFlags?: boolean) {
-  const members = getEnumMembers(enumObject);
-  if (value === 0) return members.length > 0 && members[0][0] === 0 ? members[0][1] : '0';
-  if (isFlags) {
-    let result = '';
-    let remainingFlags = value;
-    for (const [enumValue, enumName] of members) {
-      if (enumValue > value) {
-        break;
-      }
-      if (enumValue !== 0 && enumValue & value) {
-        result = `${result}${result ? '|' : ''}${enumName}`;
-        remainingFlags &= ~enumValue;
-      }
-    }
-    if (remainingFlags === 0) return result;
-  } else {
-    for (const [enumValue, enumName] of members) {
-      if (enumValue === value) return enumName;
-    }
-  }
-  return value.toString();
-}
-function getEnumMembers(enumObject: any) {
-  const result: [number, string][] = [];
-  for (const name in enumObject) {
-    const value = enumObject[name];
-    if (typeof value === 'number') {
-      result.push([value, name]);
-    }
-  }
-  return stableSort<[number, string]>(result, (x, y) => compareNumbers(x[0], y[0]));
 }
 export function formatSyntax(kind: Syntax | undefined): string {
   return formatEnum(kind, (<any>ts).SyntaxKind, false);
