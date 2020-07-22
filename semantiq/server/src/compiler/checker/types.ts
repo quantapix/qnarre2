@@ -1,9 +1,21 @@
 import * as qb from '../base';
 import * as qd from '../diags';
-import { SourceFileLike, Syntax } from '../syntax';
-import * as qy from '../syntax';
 import * as qt from '../types';
+import { Get } from './get';
+import { Is, Has } from './pred';
+import { Create, Instantiate, Resolve } from './create';
+import { Check, CheckGrammar } from './check';
 export * from '../types';
+export interface Tctx {
+  is: Is;
+  has: Has;
+  get: Get;
+  create: Create;
+  instantiate: Instantiate;
+  resolve: Resolve;
+  check: Check;
+  checkGrammar: CheckGrammar;
+}
 export const enum IterationUse {
   AllowsSyncIterablesFlag = 1 << 0,
   AllowsAsyncIterablesFlag = 1 << 1,
