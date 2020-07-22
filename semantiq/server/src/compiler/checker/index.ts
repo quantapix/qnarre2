@@ -6156,7 +6156,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     return !stringContains(name as string, '-');
   }
   function isJsxIntrinsicIdentifier(tagName: JsxTagNameExpression): boolean {
-    return tagName.kind === Syntax.Identifier && isIntrinsicJsxName(tagName.escapedText);
+    return tagName.kind === Syntax.Identifier && qy.is.intrinsicJsxName(tagName.escapedText);
   }
   function createJsxAttributesTypeFromAttributesProperty(openingLikeElement: JsxOpeningLikeElement, checkMode: CheckMode | undefined) {
     const attributes = openingLikeElement.attributes;

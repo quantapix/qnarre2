@@ -1,6 +1,7 @@
 import * as qb from './base';
 import { NodeFlags, NodeType, TokenFlags } from './core2';
 import * as qc from './core2';
+import * as qd from './diags';
 import * as qg from './debug';
 import { Modifier, ModifierFlags, Syntax } from './syntax';
 import * as qy from './syntax';
@@ -3292,12 +3293,11 @@ export function tryGetClassExtendingExpressionWithTypeArguments(n: Node): qc.Cla
   const c = tryGetClassImplementingOrExtendingExpressionWithTypeArguments(n);
   return c && !c.isImplements ? c.class : undefined;
 }
-export function walkUpBindingElementsAndPatterns(e: qc.BindingElement): qc.VariableDeclaration | ParameterDeclaration {
-  let n = e.parent;
-  while (is.kind(qc.BindingElement, n.parent)) {
-    n = n.parent.parent;
+function walkUp(n?: Node, k: Syntax) {
+  while (n?.kind === k) {
+    n = n.parent as Node | undefined;
   }
-  return n.parent;
+  return n;
 }
 export function walkUpParenthesizedTypes(n?: Node) {
   return walkUp(n, Syntax.ParenthesizedType);
@@ -3305,11 +3305,12 @@ export function walkUpParenthesizedTypes(n?: Node) {
 export function walkUpParenthesizedExpressions(n?: Node) {
   return walkUp(n, Syntax.ParenthesizedExpression);
 }
-function walkUp(n?: Node, k: Syntax) {
-  while (n?.kind === k) {
-    n = n.parent as Node | undefined;
+export function walkUpBindingElementsAndPatterns(e: qc.BindingElement): qc.VariableDeclaration | ParameterDeclaration {
+  let n = e.parent;
+  while (is.kind(qc.BindingElement, n.parent)) {
+    n = n.parent.parent;
   }
-  return n;
+  return n.parent;
 }
 const templateSub = /\$\{/g;
 function escapeTemplateSubstitution(s: string) {

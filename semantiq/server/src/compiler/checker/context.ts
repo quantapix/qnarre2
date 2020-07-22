@@ -4,9 +4,6 @@ import { Node, NodeBuilderFlags, ObjectFlags, TypeFlags } from '../types';
 import * as qt from '../types';
 import { ModifierFlags, Syntax } from '../syntax';
 import * as qy from '../syntax';
-function isNamespaceMember(p: Symbol) {
-  return !(p.flags & SymbolFlags.Prototype || p.escName === 'prototype' || (p.valueDeclaration?.parent && qc.is.classLike(p.valueDeclaration.parent)));
-}
 function existingTypeNodeIsNotReferenceOrIsReferenceWithCompatibleTypeArgumentCount(existing: TypeNode, type: Type) {
   return (
     !(getObjectFlags(type) & ObjectFlags.Reference) ||
@@ -512,7 +509,7 @@ export class QContext {
         this.flags ^= NodeBuilderFlags.InInitialEntityName;
       }
       let firstChar = symbolName.charCodeAt(0);
-      if (isSingleOrDoubleQuote(firstChar) && some(symbol.declarations, hasNonGlobalAugmentationExternalModuleSymbol)) return qc.asLiteral(this.getSpecifierForModuleSymbol(symbol));
+      if (qy.is.singleOrDoubleQuote(firstChar) && some(symbol.declarations, hasNonGlobalAugmentationExternalModuleSymbol)) return qc.asLiteral(this.getSpecifierForModuleSymbol(symbol));
       const canUsePropertyAccess = firstChar === Codes.hash ? symbolName.length > 1 && qy.is.identifierStart(symbolName.charCodeAt(1)) : qy.is.identifierStart(firstChar);
       if (index === 0 || canUsePropertyAccess) {
         const identifier = setEmitFlags(new Identifier(symbolName, typeParameterNodes), EmitFlags.NoAsciiEscaping);
@@ -524,7 +521,7 @@ export class QContext {
           firstChar = symbolName.charCodeAt(0);
         }
         let expression: Expression | undefined;
-        if (isSingleOrDoubleQuote(firstChar)) {
+        if (qy.is.singleOrDoubleQuote(firstChar)) {
           expression = qc.asLiteral(symbolName.substring(1, symbolName.length - 1).replace(/\\./g, (s) => s.substring(1)));
           (expression as StringLiteral).singleQuote = firstChar === Codes.singleQuote;
         } else if ('' + +symbolName === symbolName) {
@@ -1131,7 +1128,7 @@ export class QContext {
       this.flags |= NodeBuilderFlags.InInitialEntityName;
       const nameCandidate = symbol.getNameOfSymbolAsWritten(this);
       this.flags = flags;
-      localName = nameCandidate.length > 0 && isSingleOrDoubleQuote(nameCandidate.charCodeAt(0)) ? stripQuotes(nameCandidate) : nameCandidate;
+      localName = nameCandidate.length > 0 && qy.is.singleOrDoubleQuote(nameCandidate.charCodeAt(0)) ? stripQuotes(nameCandidate) : nameCandidate;
     }
     if (localName === InternalSymbol.Default) localName = '_default';
     else if (localName === InternalSymbol.ExportEquals) localName = '_exports';

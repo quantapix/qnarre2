@@ -3912,7 +3912,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     }
   }
   function shouldWriteComment(text: string, pos: number) {
-    if (printerOptions.onlyPrintDocStyle) return qy.is.docLike(text, pos) || isPinnedComment(text, pos);
+    if (printerOptions.onlyPrintDocStyle) return qy.is.docLike(text, pos) || qy.is.pinnedComment(text, pos);
     return true;
   }
   function emitLeadingComment(commentPos: number, commentEnd: number, kind: Syntax, hasTrailingNewLine: boolean, rangePos: number) {
@@ -4012,7 +4012,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     emitPos(commentEnd);
   }
   function isTripleSlashComment(commentPos: number, commentEnd: number) {
-    return isRecognizedTripleSlashComment(currentSourceFile!.text, commentPos, commentEnd);
+    return qy.is.recognizedTripleSlashComment(currentSourceFile!.text, commentPos, commentEnd);
   }
   function getParsedSourceMap(node: UnparsedSource) {
     if (node.parsedSourceMap === undefined && node.sourceMapText !== undefined) {
@@ -4422,7 +4422,7 @@ export function emitDetachedComments(
   let currentDetachedCommentInfo: { nodePos: number; detachedCommentEndPos: number } | undefined;
   if (removeComments) {
     if (node.pos === 0) {
-      leadingComments = filter(qy.get.leadingCommentRanges(text, node.pos), isPinnedCommentLocal);
+      leadingComments = filter(qy.get.leadingCommentRanges(text, node.pos), qy.is.pinnedCommentLocal);
     }
   } else {
     leadingComments = qy.get.leadingCommentRanges(text, node.pos);
@@ -4452,8 +4452,8 @@ export function emitDetachedComments(
     }
   }
   return currentDetachedCommentInfo;
-  function isPinnedCommentLocal(comment: CommentRange) {
-    return isPinnedComment(text, comment.pos);
+  function qy.is.pinnedCommentLocal(comment: CommentRange) {
+    return qy.is.pinnedComment(text, comment.pos);
   }
 }
 export function writeCommentRange(text: string, lineMap: readonly number[], writer: EmitTextWriter, commentPos: number, commentEnd: number, newLine: string) {

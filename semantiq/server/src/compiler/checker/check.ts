@@ -8,7 +8,7 @@ import * as qt from './types';
 import { ModifierFlags, Syntax } from '../syntax';
 import * as qy from '../syntax';
 import { Symbol } from './symbol';
-export function newCheck(state: qt.CheckerState) {
+export function newCheck(qx: qt.CheckerState) {
   return new (class {
     andReportErrorForMissingPrefix(errorLocation: Node, name: qb.__String, nameArg: qb.__String | qc.Identifier): boolean {
       if (!is.kind(qc.Identifier, errorLocation) || errorLocation.escapedText !== name || isTypeReferenceIdentifier(errorLocation) || isInTypeQuery(errorLocation)) return false;
@@ -20,13 +20,13 @@ export function newCheck(state: qt.CheckerState) {
           if (!classSymbol) break;
           const constructorType = getTypeOfSymbol(classSymbol);
           if (getPropertyOfType(constructorType, name)) {
-            state.error(errorLocation, qd.msgs.Cannot_find_name_0_Did_you_mean_the_static_member_1_0, diagnosticName(nameArg), classSymbol.symbolToString());
+            qx.error(errorLocation, qd.msgs.Cannot_find_name_0_Did_you_mean_the_static_member_1_0, diagnosticName(nameArg), classSymbol.symbolToString());
             return true;
           }
           if (location === container && !has.syntacticModifier(location, ModifierFlags.Static)) {
             const instanceType = (<InterfaceType>getDeclaredTypeOfSymbol(classSymbol)).thisType!;
             if (getPropertyOfType(instanceType, name)) {
-              state.error(errorLocation, qd.msgs.Cannot_find_name_0_Did_you_mean_the_instance_member_this_0, diagnosticName(nameArg));
+              qx.error(errorLocation, qd.msgs.Cannot_find_name_0_Did_you_mean_the_instance_member_this_0, diagnosticName(nameArg));
               return true;
             }
           }
@@ -5960,7 +5960,7 @@ export function newCheck(state: qt.CheckerState) {
   })();
 }
 export interface Check extends ReturnType<typeof newCheck> {}
-export function newCheckGrammar(state: qt.CheckerState) {
+export function newCheckGrammar(qx: qt.CheckerState) {
   return new (class {
     exportDeclaration(n: qc.ExportDeclaration): boolean {
       const isTypeOnlyExportStar = n.isTypeOnly && n.exportClause?.kind !== Syntax.NamedExports;

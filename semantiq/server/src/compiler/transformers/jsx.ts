@@ -170,7 +170,7 @@ export function transformJsx(context: TransformationContext) {
     if (node.kind === Syntax.JsxElement) return getTagName(node.openingElement);
     else {
       const name = node.tagName;
-      if (qc.is.kind(qc.Identifier, name) && isIntrinsicJsxName(name.escapedText)) return qc.asLiteral(idText(name));
+      if (qc.is.kind(qc.Identifier, name) && qy.is.intrinsicJsxName(name.escapedText)) return qc.asLiteral(idText(name));
       return createExpressionFromEntityName(name);
     }
   }

@@ -3836,7 +3836,7 @@ export namespace parenthesize {
   function getLiteralKindOfBinaryPlusOperand(e: qc.Expression): Syntax {
     e = skipPartiallyEmittedExpressions(e);
     if (qy.is.literal(e.kind)) return e.kind;
-    if (e.is(BinaryExpression) && e.operatorToken.kind === Syntax.PlusToken) {
+    if (is.kind(BinaryExpression, e) && e.operatorToken.kind === Syntax.PlusToken) {
       const e2 = e as BinaryPlusExpression;
       if (e2.cachedLiteralKind) return e2.cachedLiteralKind;
       const leftKind = getLiteralKindOfBinaryPlusOperand(e.left);
@@ -4033,7 +4033,7 @@ export namespace parenthesize {
     return forAccess(e);
   }
   export function conciseBody(b: qc.ConciseBody): qc.ConciseBody {
-    if (!b.is(Block) && (isCommaSequence(b) || getLeftmostExpression(b, false).kind === Syntax.ObjectLiteralExpression)) return new ParenthesizedExpression(b).setRange(b);
+    if (!is.kind(Block, b) && (isCommaSequence(b) || getLeftmostExpression(b, false).kind === Syntax.ObjectLiteralExpression)) return new ParenthesizedExpression(b).setRange(b);
     return b;
   }
 }
@@ -4207,7 +4207,7 @@ export namespace emit {
     if (y.priority === undefined) return Comparison.LessThan;
     return compareNumbers(x.priority, y.priority);
   }
-  function mergeEmitNode(sourceEmitNode: qc.EmitNode, destEmitNode: qc.EmitNode | undefined) {
+  export function mergeEmitNode(sourceEmitNode: qc.EmitNode, destEmitNode: qc.EmitNode | undefined) {
     const { flags, leadingComments, trailingComments, commentRange, sourceMapRange, tokenSourceMapRanges, constantValue, helpers, startsOnNewLine } = sourceEmitNode;
     if (!destEmitNode) destEmitNode = {} as qc.EmitNode;
     // We are using `.slice()` here in case `destEmitNode.leadingComments` is pushed to later.
@@ -4367,9 +4367,6 @@ export function asToken<T extends Syntax>(t: T | qc.Token<T>): qc.Token<T> {
 export function asName<T extends Identifier | qc.BindingName | qc.PropertyName | qc.EntityName | ThisTypeNode | undefined>(n: string | T): T | Identifier {
   return qb.isString(n) ? new Identifier(n) : n;
 }
-export function pseudoBigIntToString({ negative, base10Value }: PseudoBigInt) {
-  return (negative && base10Value !== '0' ? '-' : '') + base10Value;
-}
 export function asLiteral(v: string | StringLiteral | NoSubstitutionLiteral | NumericLiteral | Identifier, singleQuote: boolean): StringLiteral;
 export function asLiteral(v: string | number, singleQuote: boolean): StringLiteral | NumericLiteral;
 export function asLiteral(v: string | StringLiteral | NoSubstitutionLiteral | NumericLiteral | Identifier): StringLiteral;
@@ -4394,6 +4391,9 @@ export function asEmbeddedStatement<T extends Nobj>(s: T): T | EmptyStatement;
 export function asEmbeddedStatement<T extends Nobj>(s?: T): T | EmptyStatement | undefined;
 export function asEmbeddedStatement<T extends Nobj>(s?: T): T | EmptyStatement | undefined {
   return s && is.kind(NotEmittedStatement, s) ? new EmptyStatement().setOriginal(s).setRange(s) : s;
+}
+export function pseudoBigIntToString({ negative, base10Value }: PseudoBigInt) {
+  return (negative && base10Value !== '0' ? '-' : '') + base10Value;
 }
 export function skipParentheses(n: qc.Expression): qc.Expression;
 export function skipParentheses(n: Node): Node;

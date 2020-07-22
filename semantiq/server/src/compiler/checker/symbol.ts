@@ -1648,6 +1648,9 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     const n = getNameOfSymbolFromNameType(this, c);
     return n !== undefined ? n : this.name;
   }
+  isNamespaceMember() {
+    return !(this.flags & SymbolFlags.Prototype || this.escName === 'prototype' || (this.valueDeclaration?.parent && qc.is.classLike(this.valueDeclaration.parent)));
+  }
 }
 class SymbolTable extends SymbolTable<Symbol> {
   getSymbol(symbols: SymbolTable, name: qb.__String, meaning: qt.SymbolFlags): Symbol | undefined {

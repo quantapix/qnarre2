@@ -290,7 +290,6 @@ export abstract class Nobj extends qb.TextRange implements qt.Nobj {
     return new qb.TextRange(this.getTokenPos(), this.end);
   }
 }
-
 export class SyntaxList extends Nobj implements qt.SyntaxList {
   static readonly kind = Syntax.SyntaxList;
   children!: Nobj[];
@@ -525,9 +524,6 @@ export abstract class DocContainer implements qt.DocContainer {
     this.doc = qb.append(this.doc, d);
     return this;
   }
-}
-export function idText(n: qt.Identifier | qt.PrivateIdentifier): string {
-  return qy.get.unescUnderscores(n.escapedText);
 }
 export abstract class Symbol implements qt.Symbol {
   assignmentDeclarationMembers?: qb.QMap<Declaration>;
@@ -1500,6 +1496,9 @@ export class SourceMapSource implements qt.SourceMapSource {
     return getLineAndCharacterOfPosition(this, pos);
   }
 }
+export function idText(n: qt.Identifier | qt.PrivateIdentifier): string {
+  return qy.get.unescUnderscores(n.escapedText);
+}
 export function getExcludedSymbolFlags(flags: SymbolFlags): SymbolFlags {
   let result: SymbolFlags = 0;
   if (flags & SymbolFlags.BlockScopedVariable) result |= SymbolFlags.BlockScopedVariableExcludes;
@@ -1687,7 +1686,7 @@ qb.addMixins(FunctionOrConstructorTypeNodeBase, [TypeNode]);
 qb.addMixins(ObjectLiteralExpressionBase, [Declaration]);
 qb.addMixins(LiteralExpression, [LiteralLikeNode]);
 let currentAssertionLevel = qb.AssertionLevel.None;
-type AssertionKeys = MatchingKeys<typeof Debug, qb.AnyFunction>;
+type AssertionKeys = qt.MatchingKeys<typeof Debug, qb.AnyFunction>;
 const assertionCache: Partial<Record<AssertionKeys, { level: qb.AssertionLevel; assertion: qb.AnyFunction }>> = {};
 export function getAssertionLevel() {
   return currentAssertionLevel;

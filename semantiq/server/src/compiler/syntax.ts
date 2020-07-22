@@ -1089,20 +1089,20 @@ export const is = new (class {
       k === Syntax.DocVariadicType
     );
   }
-  isRecognizedTripleSlashComment(s: string, pos: number, end: number) {
+  recognizedTripleSlashComment(s: string, pos: number, end: number) {
     if (s.charCodeAt(pos + 1) === Codes.slash && pos + 2 < end && s.charCodeAt(pos + 2) === Codes.slash) {
       const ss = s.substring(pos, end);
       return ss.match(slash3Ref) || ss.match(slash3AMDRef) || ss.match(slash3TypeRef) || ss.match(defaultLibRef) ? true : false;
     }
     return false;
   }
-  isPinnedComment(s: string, start: number) {
+  pinnedComment(s: string, start: number) {
     return s.charCodeAt(start + 1) === Codes.asterisk && s.charCodeAt(start + 2) === Codes.exclamation;
   }
-  isSingleOrDoubleQuote(c: number) {
+  singleOrDoubleQuote(c: number) {
     return c === Codes.singleQuote || c === Codes.doubleQuote;
   }
-  isIntrinsicJsxName(s: qb.__String | string) {
+  intrinsicJsxName(s: qb.__String | string) {
     const c = (s as string).charCodeAt(0);
     return (c >= Codes.a && c <= Codes.z) || qb.stringContains(s as string, '-');
   }
@@ -1413,6 +1413,88 @@ export function toString(t: Syntax) {
 export function fromString(s: string) {
   return strToTok.get(s);
 }
+export function stripQuotes(s: string) {
+  const l = s.length;
+  const isQuoteOrBacktick = (c: number) => {
+    return c === Codes.singleQuote || c === Codes.doubleQuote || c === Codes.backtick;
+  };
+  if (l >= 2 && s.charCodeAt(0) === s.charCodeAt(l - 1) && isQuoteOrBacktick(s.charCodeAt(0))) return s.substring(1, l - 1);
+  return s;
+}
+export function hasAsterisks(s: string) {
+  let has = false;
+  for (let i = 0; i < s.length; i++) {
+    if (s.charCodeAt(i) === Codes.asterisk) {
+      if (!has) has = true;
+      return false;
+    }
+  }
+  return true;
+}
+export function parsePseudoBigInt(s: string) {
+  let log2: number;
+  switch (s.charCodeAt(1)) {
+    case Codes.b:
+    case Codes.B:
+      log2 = 1;
+      break;
+    case Codes.o:
+    case Codes.O:
+      log2 = 3;
+      break;
+    case Codes.x:
+    case Codes.X:
+      log2 = 4;
+      break;
+    default:
+      const i = s.length - 1;
+      let nonZeroStart = 0;
+      while (s.charCodeAt(nonZeroStart) === Codes._0) {
+        nonZeroStart++;
+      }
+      return s.slice(nonZeroStart, i) || '0';
+  }
+  const startIndex = 2,
+    endIndex = s.length - 1;
+  const bitsNeeded = (endIndex - startIndex) * log2;
+  const segments = new Uint16Array((bitsNeeded >>> 4) + (bitsNeeded & 15 ? 1 : 0));
+  for (let i = endIndex - 1, bitOffset = 0; i >= startIndex; i--, bitOffset += log2) {
+    const segment = bitOffset >>> 4;
+    const digitChar = s.charCodeAt(i);
+    const digit = digitChar <= Codes._9 ? digitChar - Codes._0 : 10 + digitChar - (digitChar <= Codes.F ? Codes.A : Codes.a);
+    const shiftedDigit = digit << (bitOffset & 15);
+    segments[segment] |= shiftedDigit;
+    const residual = shiftedDigit >>> 16;
+    if (residual) segments[segment + 1] |= residual;
+  }
+  let base10Value = '';
+  let firstNonzeroSegment = segments.length - 1;
+  let segmentsRemaining = true;
+  while (segmentsRemaining) {
+    let mod10 = 0;
+    segmentsRemaining = false;
+    for (let segment = firstNonzeroSegment; segment >= 0; segment--) {
+      const newSegment = (mod10 << 16) | segments[segment];
+      const segmentValue = (newSegment / 10) | 0;
+      segments[segment] = segmentValue;
+      mod10 = newSegment - segmentValue * 10;
+      if (segmentValue && !segmentsRemaining) {
+        firstNonzeroSegment = segment;
+        segmentsRemaining = true;
+      }
+    }
+    base10Value = mod10 + base10Value;
+  }
+  return base10Value;
+}
+export function calculateIndent(s: string, pos: number, end: number) {
+  let i = 0;
+  for (; pos < end && is.whiteSpaceSingleLine(s.charCodeAt(pos)); pos++) {
+    if (s.charCodeAt(pos) === Codes.tab) i += qb.getIndentSize() - (i % qb.getIndentSize());
+    else i++;
+  }
+  return i;
+}
 export function markerTrivia(s: string, pos: number, e?: (m: qd.Message, pos?: number, len?: number) => void) {
   if (e) e(qd.msgs.Merge_conflict_marker_encountered, pos, markerLength);
   const c = s.charCodeAt(pos);
@@ -1626,16 +1708,6 @@ export function reduceEachTrailingCommentRange<T, U>(
 ) {
   return iterateCommentRanges(true, text, pos, true, cb, state, initial);
 }
-export function hasAsterisks(s: string) {
-  let has = false;
-  for (let i = 0; i < s.length; i++) {
-    if (s.charCodeAt(i) === Codes.asterisk) {
-      if (!has) has = true;
-      return false;
-    }
-  }
-  return true;
-}
 export interface SourceFileLike {
   readonly text: string;
   lineMap?: readonly number[];
@@ -1793,78 +1865,6 @@ const jsxSingleQuote = /[\'\u0000-\u001f\u2028\u2029\u0085]/g;
 export function escapeJsxAttributeString(s: string, q?: Codes.doubleQuote | Codes.singleQuote) {
   const esc = q === Codes.singleQuote ? jsxSingleQuote : jsxDoubleQuote;
   return s.replace(esc, getJsxAttributeStringReplacement);
-}
-export function stripQuotes(s: string) {
-  const l = s.length;
-  const isQuoteOrBacktick = (c: number) => {
-    return c === Codes.singleQuote || c === Codes.doubleQuote || c === Codes.backtick;
-  };
-  if (l >= 2 && s.charCodeAt(0) === s.charCodeAt(l - 1) && isQuoteOrBacktick(s.charCodeAt(0))) return s.substring(1, l - 1);
-  return s;
-}
-export function calculateIndent(s: string, pos: number, end: number) {
-  let i = 0;
-  for (; pos < end && is.whiteSpaceSingleLine(s.charCodeAt(pos)); pos++) {
-    if (s.charCodeAt(pos) === Codes.tab) i += qb.getIndentSize() - (i % qb.getIndentSize());
-    else i++;
-  }
-  return i;
-}
-export function parsePseudoBigInt(s: string) {
-  let log2: number;
-  switch (s.charCodeAt(1)) {
-    case Codes.b:
-    case Codes.B:
-      log2 = 1;
-      break;
-    case Codes.o:
-    case Codes.O:
-      log2 = 3;
-      break;
-    case Codes.x:
-    case Codes.X:
-      log2 = 4;
-      break;
-    default:
-      const i = s.length - 1;
-      let nonZeroStart = 0;
-      while (s.charCodeAt(nonZeroStart) === Codes._0) {
-        nonZeroStart++;
-      }
-      return s.slice(nonZeroStart, i) || '0';
-  }
-  const startIndex = 2,
-    endIndex = s.length - 1;
-  const bitsNeeded = (endIndex - startIndex) * log2;
-  const segments = new Uint16Array((bitsNeeded >>> 4) + (bitsNeeded & 15 ? 1 : 0));
-  for (let i = endIndex - 1, bitOffset = 0; i >= startIndex; i--, bitOffset += log2) {
-    const segment = bitOffset >>> 4;
-    const digitChar = s.charCodeAt(i);
-    const digit = digitChar <= Codes._9 ? digitChar - Codes._0 : 10 + digitChar - (digitChar <= Codes.F ? Codes.A : Codes.a);
-    const shiftedDigit = digit << (bitOffset & 15);
-    segments[segment] |= shiftedDigit;
-    const residual = shiftedDigit >>> 16;
-    if (residual) segments[segment + 1] |= residual;
-  }
-  let base10Value = '';
-  let firstNonzeroSegment = segments.length - 1;
-  let segmentsRemaining = true;
-  while (segmentsRemaining) {
-    let mod10 = 0;
-    segmentsRemaining = false;
-    for (let segment = firstNonzeroSegment; segment >= 0; segment--) {
-      const newSegment = (mod10 << 16) | segments[segment];
-      const segmentValue = (newSegment / 10) | 0;
-      segments[segment] = segmentValue;
-      mod10 = newSegment - segmentValue * 10;
-      if (segmentValue && !segmentsRemaining) {
-        firstNonzeroSegment = segment;
-        segmentsRemaining = true;
-      }
-    }
-    base10Value = mod10 + base10Value;
-  }
-  return base10Value;
 }
 function getExpandedCodes(s: string): number[] {
   const r: number[] = [];
