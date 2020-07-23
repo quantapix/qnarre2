@@ -1,9 +1,9 @@
 import * as qb from '../base';
-import * as qc from '../core3';
-import * as qd from '../diags';
+import * as qc from '../core';
+import * as qd from '../diagnostic';
 import * as qg from '../debug';
-import { ExpandingFlags, Node, ObjectFlags, SymbolFlags, TypeFlags, VarianceFlags } from './types';
-import * as qt from './types';
+import { ExpandingFlags, Node, ObjectFlags, SymbolFlags, TypeFlags, VarianceFlags } from './type';
+import * as qt from './type';
 import { ModifierFlags, Syntax } from '../syntax';
 import * as qy from '../syntax';
 import { Symbol } from './symbol';
@@ -278,7 +278,7 @@ export function newCheck(qx: qt.Tctx) {
           lastSkippedInfo,
           incompatibleStack: incompatibleStack.slice(),
           overrideNextErrorInfo,
-          relatedInfo: !relatedInfo ? undefined : (relatedInfo.slice() as [DiagnosticRelatedInformation, ...DiagnosticRelatedInformation[]] | undefined),
+          relatedInfo: !relatedInfo ? undefined : (relatedInfo.slice() as [qd.DiagnosticRelatedInformation, ...qd.DiagnosticRelatedInformation[]] | undefined),
         };
       }
       function reportIncompatibleError(message: qd.Message, arg0?: string | number, arg1?: string | number, arg2?: string | number, arg3?: string | number) {

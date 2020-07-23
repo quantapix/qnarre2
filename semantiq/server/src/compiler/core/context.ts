@@ -1,13 +1,13 @@
-import * as qb from './base';
-import { NodeFlags, NodeType, TokenFlags } from './core2';
-import * as qc from './core2';
-import * as qd from './diags';
-import * as qg from './debug';
-import { Modifier, ModifierFlags, Syntax } from './syntax';
-import * as qy from './syntax';
-import { EmitFlags, Node, Nodes } from './types';
-import * as qt from './types';
-export * from './core2';
+import * as qb from '../base';
+import { NodeFlags, NodeType, TokenFlags } from '../core';
+import * as qc from '../core';
+import * as qd from '../diagnostic';
+import * as qg from '../debug';
+import { Modifier, ModifierFlags, Syntax } from '../syntax';
+import * as qy from '../syntax';
+import { EmitFlags, Node, Nodes } from '../type';
+import * as qt from '../type';
+export * from './core';
 const MAX_SMI_X86 = 0x3fff_ffff;
 export const enum AssignmentKind {
   None,
@@ -116,7 +116,7 @@ export const create = new (class {
     const sourceFile = qc.get.sourceFileOf(n);
     return createDiagnosticForNodeInSourceFile(sourceFile, n, message, arg0, arg1, arg2, arg3);
   }
-  createDiagnosticForNodeFromMessageChain(n: Node, messageChain: qd.MessageChain, relatedInformation?: DiagnosticRelatedInformation[]): DiagnosticWithLocation {
+  createDiagnosticForNodeFromMessageChain(n: Node, messageChain: qd.MessageChain, relatedInformation?: qd.DiagnosticRelatedInformation[]): DiagnosticWithLocation {
     const sourceFile = qc.get.sourceFileOf(n);
     const span = getErrorSpanForNode(sourceFile, n);
     return {

@@ -1,5 +1,5 @@
 import * as qb from './base';
-import * as qd from './diags';
+import * as qd from './diagnostic';
 import { SourceFileLike, Syntax } from './syntax';
 import * as qy from './syntax';
 export type AssertsToken = Token<Syntax.AssertsKeyword>;

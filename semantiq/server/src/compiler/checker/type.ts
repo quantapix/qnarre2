@@ -1,11 +1,11 @@
 import * as qb from '../base';
-import * as qd from '../diags';
-import * as qt from '../types';
+import * as qd from '../diagnostic';
+import * as qt from '../type';
 import { Get } from './get';
-import { Is, Has } from './pred';
+import { Is, Has } from './predicate';
 import { Create, Instantiate, Resolve } from './create';
 import { Check, CheckGrammar } from './check';
-export * from '../types';
+export * from '../type';
 export interface Tctx {
   is: Is;
   has: Has;
