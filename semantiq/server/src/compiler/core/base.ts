@@ -1,19 +1,19 @@
-import * as qb from './base';
-import { is, isDoc, get, has } from './core3';
-import * as qd from './diags';
-import { Node } from './types';
-import { CheckFlags, NodeFlags, ObjectFlags, SignatureFlags, SymbolFlags, TransformFlags, TypeFlags } from './types';
-import * as qt from './types';
-import { Modifier, ModifierFlags, Syntax } from './syntax';
-import * as qy from './syntax';
-export * from './types';
+import * as qd from '../diagnostic';
+import { Node } from '../type';
+import { CheckFlags, NodeFlags, ObjectFlags, SignatureFlags, SymbolFlags, TransformFlags, TypeFlags } from '../type';
+import * as qt from '../type';
+import * as qu from '../base';
+import { ModifierFlags, Syntax } from '../syntax';
+import * as qy from '../syntax';
+import { is, isDoc, get, has } from './context';
+export * from '../type';
 export interface ReadonlyNodeSet<TNode extends Node> {
   has(node: TNode): boolean;
   forEach(cb: (node: TNode) => void): void;
   some(pred: (node: TNode) => boolean): boolean;
 }
 export class NodeSet<TNode extends Node> implements ReadonlyNodeSet<TNode> {
-  private map = new qb.QMap<TNode>();
+  private map = new qu.QMap<TNode>();
   add(node: TNode): void {
     this.map.set(String(getNodeId(node)), node);
   }
@@ -37,7 +37,7 @@ export interface ReadonlyNodeMap<TNode extends Node, TValue> {
   has(node: TNode): boolean;
 }
 export class NodeMap<TNode extends Node, TValue> implements ReadonlyNodeMap<TNode, TValue> {
-  private map = new qb.QMap<{ node: TNode; value: TValue }>();
+  private map = new qu.QMap<{ node: TNode; value: TValue }>();
   get(node: TNode): TValue | undefined {
     const res = this.map.get(String(getNodeId(node)));
     return res && res.value;
@@ -73,11 +73,11 @@ export class Nodes<T extends qt.Nobj = qt.Nobj> extends Array<T> implements qt.N
     return ts ? new Nodes(ts) : undefined;
   }
   constructor(ts?: readonly T[], trailingComma?: boolean) {
-    super(...(!ts || ts === qb.empty ? [] : ts));
+    super(...(!ts || ts === qu.empty ? [] : ts));
     if (trailingComma) this.trailingComma = trailingComma;
   }
   getRange() {
-    return new qb.TextRange(this.pos - 1, this.end + 1);
+    return new qu.TextRange(this.pos - 1, this.end + 1);
   }
   visit<V>(cb: (n?: Node) => V | undefined, cbs?: (ns: qt.Nodes) => V | undefined): V | undefined {
     if (cbs) return cbs(this);
@@ -89,7 +89,7 @@ export class Nodes<T extends qt.Nobj = qt.Nobj> extends Array<T> implements qt.N
   }
 }
 export type MutableNodes<T extends qt.Nobj> = Nodes<T> & T[];
-export abstract class Nobj extends qb.TextRange implements qt.Nobj {
+export abstract class Nobj extends qu.TextRange implements qt.Nobj {
   id?: number;
   kind!: any;
   flags = NodeFlags.None;
@@ -125,35 +125,35 @@ export abstract class Nobj extends qb.TextRange implements qt.Nobj {
     return qy.skipTrivia((s || get.sourceFileOf(this)).text, this.pos);
   }
   getStart(s?: qy.SourceFileLike, doc?: boolean) {
-    qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
+    qu.assert(!qu.isSynthesized(this.pos) && !qu.isSynthesized(this.end));
     return this.getTokenPos(s, doc);
   }
   getFullStart() {
-    qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
+    qu.assert(!qu.isSynthesized(this.pos) && !qu.isSynthesized(this.end));
     return this.pos;
   }
   getEnd() {
-    qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
+    qu.assert(!qu.isSynthesized(this.pos) && !qu.isSynthesized(this.end));
     return this.end;
   }
   getWidth(s?: SourceFile) {
-    qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
+    qu.assert(!qu.isSynthesized(this.pos) && !qu.isSynthesized(this.end));
     return this.getEnd() - this.getStart(s);
   }
   fullWidth() {
-    qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
+    qu.assert(!qu.isSynthesized(this.pos) && !qu.isSynthesized(this.end));
     return this.end - this.pos;
   }
   getLeadingTriviaWidth(s?: SourceFile) {
-    qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
+    qu.assert(!qu.isSynthesized(this.pos) && !qu.isSynthesized(this.end));
     return this.getStart(s) - this.pos;
   }
   getFullText(s?: SourceFile) {
-    qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
+    qu.assert(!qu.isSynthesized(this.pos) && !qu.isSynthesized(this.end));
     return (s || this.getSourceFile()).text.substring(this.pos, this.end);
   }
   getText(s?: SourceFile) {
-    qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
+    qu.assert(!qu.isSynthesized(this.pos) && !qu.isSynthesized(this.end));
     if (!s) s = this.getSourceFile();
     return s.text.substring(this.getStart(s), this.getEnd());
   }
@@ -164,15 +164,15 @@ export abstract class Nobj extends qb.TextRange implements qt.Nobj {
     return this.getChildren(s)[i];
   }
   getChildren(s?: qy.SourceFileLike) {
-    qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
+    qu.assert(!qu.isSynthesized(this.pos) && !qu.isSynthesized(this.end));
     const scanner = qs_getRaw();
-    const addSynthetics = (ns: qb.Push<Nobj>, pos: number, end: number) => {
+    const addSynthetics = (ns: qu.Push<Nobj>, pos: number, end: number) => {
       scanner.setTextPos(pos);
       while (pos < end) {
         const t = scanner.scan();
         const p = scanner.getTextPos();
         if (p <= end) {
-          if (t === Syntax.Identifier) qb.fail(`Did not expect ${Debug.formatSyntax(this.kind)} to have an Identifier in its trivia`);
+          if (t === Syntax.Identifier) qu.fail(`Did not expect ${Debug.formatSyntax(this.kind)} to have an Identifier in its trivia`);
           ns.push(Node.create(t, pos, p, this));
         }
         pos = p;
@@ -212,7 +212,7 @@ export abstract class Nobj extends qb.TextRange implements qt.Nobj {
           cs.push(createSyntaxList(ns));
           p = ns.end;
         };
-        qb.forEach((this as qt.DocContainer).doc, processNode);
+        qu.forEach((this as qt.DocContainer).doc, processNode);
         p = this.pos;
         qc.forEach.child(this, processNode, processNodes);
         addSynthetics(cs, p, this.end);
@@ -223,21 +223,21 @@ export abstract class Nobj extends qb.TextRange implements qt.Nobj {
     return this._children || (this._children = createChildren());
   }
   getFirstToken(s?: qy.SourceFileLike): Nobj | undefined {
-    qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
+    qu.assert(!qu.isSynthesized(this.pos) && !qu.isSynthesized(this.end));
     const cs = this.getChildren(s);
     if (!cs.length) return;
-    const c = qb.find(cs, (c) => c.kind < Syntax.FirstDocNode || c.kind > Syntax.LastDocNode)!;
+    const c = qu.find(cs, (c) => c.kind < Syntax.FirstDocNode || c.kind > Syntax.LastDocNode)!;
     return c.kind < Syntax.FirstNode ? c : c.getFirstToken(s);
   }
   getLastToken(s?: qy.SourceFileLike): Nobj | undefined {
-    qb.assert(!qb.isSynthesized(this.pos) && !qb.isSynthesized(this.end));
+    qu.assert(!qu.isSynthesized(this.pos) && !qu.isSynthesized(this.end));
     const cs = this.getChildren(s);
-    const c = qb.lastOrUndefined(cs);
+    const c = qu.lastOrUndefined(cs);
     if (!c) return;
     return c.kind < Syntax.FirstNode ? c : c.getLastToken(s);
   }
   indexOfNode(ns: readonly Node[]) {
-    return qb.binarySearch(ns, this, (n) => n.pos, qb.compareNumbers);
+    return qu.binarySearch(ns, this, (n) => n.pos, qu.compareNumbers);
   }
   visit<T>(cb: (n?: Node) => T | undefined): T | undefined {
     return cb(this);
@@ -280,14 +280,14 @@ export abstract class Nobj extends qb.TextRange implements qt.Nobj {
     aggregate(this);
     return this;
   }
-  movePastDecorators(): qb.TextRange {
+  movePastDecorators(): qu.TextRange {
     return this.decorators && this.decorators.length > 0 ? this.movePos(this.decorators.end) : this;
   }
-  movePastModifiers(): qb.TextRange {
+  movePastModifiers(): qu.TextRange {
     return this.modifiers && this.modifiers.length > 0 ? this.movePos(this.modifiers.end) : this.movePastDecorators();
   }
   getRange() {
-    return new qb.TextRange(this.getTokenPos(), this.end);
+    return new qu.TextRange(this.getTokenPos(), this.end);
   }
 }
 export class SyntaxList extends Nobj implements qt.SyntaxList {
@@ -435,7 +435,7 @@ export abstract class ObjectLiteralExpressionBase<T extends qt.ObjectLiteralElem
 }
 export abstract class TokenOrIdentifier extends Nobj {
   getChildren(): Nobj[] {
-    return this.kind === Syntax.EndOfFileToken ? this.doc || qb.empty : qb.empty;
+    return this.kind === Syntax.EndOfFileToken ? this.doc || qu.empty : qu.empty;
   }
 }
 export class Token<T extends Syntax> extends TokenOrIdentifier implements qt.Token<T> {
@@ -492,8 +492,8 @@ export abstract class TemplateLiteralLikeNode extends LiteralLikeNode implements
     if (raw === undefined || t === raw) this.rawText = raw;
     else {
       const r = qs_process(k, raw);
-      if (typeof r === 'object') return qb.fail('Invalid raw text');
-      qb.assert(t === r, "Expected 'text' to be the normalized version of 'rawText'");
+      if (typeof r === 'object') return qu.fail('Invalid raw text');
+      qu.assert(t === r, "Expected 'text' to be the normalized version of 'rawText'");
       this.rawText = raw;
     }
   }
@@ -521,12 +521,12 @@ export abstract class DocContainer implements qt.DocContainer {
   doc?: Doc[];
   docCache?: readonly DocTag[];
   append(d: Doc) {
-    this.doc = qb.append(this.doc, d);
+    this.doc = qu.append(this.doc, d);
     return this;
   }
 }
 export abstract class Symbol implements qt.Symbol {
-  assignmentDeclarationMembers?: qb.QMap<Declaration>;
+  assignmentDeclarationMembers?: qu.QMap<Declaration>;
   constEnumOnlyModule?: boolean;
   declarations?: Declaration[];
   docComment?: qt.SymbolDisplayPart[];
@@ -544,7 +544,7 @@ export abstract class Symbol implements qt.Symbol {
   setComment?: qt.SymbolDisplayPart[];
   tags?: qt.DocTagInfo[];
   valueDeclaration?: Declaration;
-  constructor(public flags: SymbolFlags, public escName: qb.__String) {}
+  constructor(public flags: SymbolFlags, public escName: qu.__String) {}
   get name() {
     const n = this.valueDeclaration;
     if (is.privateIdentifierPropertyDeclaration(n)) return idText(n.name);
@@ -565,7 +565,7 @@ export abstract class Symbol implements qt.Symbol {
   }
   getDocComment(tc?: qt.TypeChecker): qt.SymbolDisplayPart[] {
     if (!this.docComment) {
-      this.docComment = qb.empty;
+      this.docComment = qu.empty;
       if (!this.declarations && (this as qt.TransientSymbol).target && ((this as qt.TransientSymbol).target as qt.TransientSymbol).tupleLabelDeclaration) {
         const labelDecl = ((this as qt.TransientSymbol).target as qt.TransientSymbol).tupleLabelDeclaration!;
         this.docComment = getDocComment([labelDecl], tc);
@@ -577,14 +577,14 @@ export abstract class Symbol implements qt.Symbol {
     switch (ctx?.kind) {
       case Syntax.GetAccessor:
         if (!this.getComment) {
-          this.getComment = qb.empty;
-          this.getComment = getDocComment(qb.filter(this.declarations, is.getAccessor), tc);
+          this.getComment = qu.empty;
+          this.getComment = getDocComment(qu.filter(this.declarations, is.getAccessor), tc);
         }
         return this.getComment!;
       case Syntax.SetAccessor:
         if (!this.setComment) {
-          this.setComment = qb.empty;
-          this.setComment = getDocComment(qb.filter(this.declarations, isSetAccessor), tc);
+          this.setComment = qu.empty;
+          this.setComment = getDocComment(qu.filter(this.declarations, isSetAccessor), tc);
         }
         return this.setComment!;
       default:
@@ -595,20 +595,20 @@ export abstract class Symbol implements qt.Symbol {
     if (!this.tags) this.tags = Doc.getDocTagsFromDeclarations(this.declarations);
     return this.tags!;
   }
-  getPropertyNameForUniqueESSymbol(): qb.__String {
-    return `__@${this.getId()}@${this.escName}` as qb.__String;
+  getPropertyNameForUniqueESSymbol(): qu.__String {
+    return `__@${this.getId()}@${this.escName}` as qu.__String;
   }
-  getSymbolNameForPrivateIdentifier(description: qb.__String): qb.__String {
-    return `__#${this.getId()}@${description}` as qb.__String;
+  getSymbolNameForPrivateIdentifier(description: qu.__String): qu.__String {
+    return `__#${this.getId()}@${description}` as qu.__String;
   }
   isKnownSymbol() {
-    return qb.startsWith(this.escName as string, '__@');
+    return qu.startsWith(this.escName as string, '__@');
   }
   getLocalSymbolForExportDefault() {
     return this.isExportDefaultSymbol() ? this.declarations![0].localSymbol : undefined;
   }
   isExportDefaultSymbol() {
-    return qb.length(this.declarations) > 0 && has.syntacticModifier(this.declarations![0], ModifierFlags.Default);
+    return qu.length(this.declarations) > 0 && has.syntacticModifier(this.declarations![0], ModifierFlags.Default);
   }
   getDeclarationOfKind<T extends Declaration>(k: T['kind']): T | undefined {
     const ds = this.declarations;
@@ -624,7 +624,7 @@ export abstract class Symbol implements qt.Symbol {
   }
   getNonAugmentationDeclaration() {
     const ds = this.declarations;
-    return ds && qb.find(ds, (d) => !is.externalModuleAugmentation(d) && !(is.kind(qc.ModuleDeclaration, d) && isGlobalScopeAugmentation(d)));
+    return ds && qu.find(ds, (d) => !is.externalModuleAugmentation(d) && !(is.kind(qc.ModuleDeclaration, d) && isGlobalScopeAugmentation(d)));
   }
   setValueDeclaration(d: Declaration) {
     const v = this.valueDeclaration;
@@ -673,7 +673,7 @@ export abstract class Symbol implements qt.Symbol {
   }
   getClassLikeDeclarationOfSymbol(): qt.ClassLikeDeclaration | undefined {
     const ds = this.declarations;
-    return ds && qb.find(ds, is.classLike);
+    return ds && qu.find(ds, is.classLike);
   }
   isUMDExportSymbol() {
     return this.declarations?.[0] && is.kind(qc.NamespaceExportDeclaration, this.declarations[0]);
@@ -683,7 +683,7 @@ export abstract class Symbol implements qt.Symbol {
   }
   abstract merge(t: Symbol, unidirectional?: boolean): Symbol;
 }
-export class SymbolTable<S extends qt.Symbol = Symbol> extends Map<qb.__String, S> implements qb.EscapedMap<S>, qt.SymbolTable<S> {
+export class SymbolTable<S extends qt.Symbol = Symbol> extends Map<qu.__String, S> implements qu.EscapedMap<S>, qt.SymbolTable<S> {
   constructor(ss?: readonly S[]) {
     super();
     if (ss) {
@@ -695,7 +695,7 @@ export class SymbolTable<S extends qt.Symbol = Symbol> extends Map<qb.__String, 
   add(ss: SymbolTable<S>, m: qd.Message) {
     ss.forEach((s, id) => {
       const t = this.get(id);
-      if (t) qb.forEach(t.declarations, addDeclarationDiagnostic(qy.get.unescUnderscores(id), m));
+      if (t) qu.forEach(t.declarations, addDeclarationDiagnostic(qy.get.unescUnderscores(id), m));
       else this.set(id, s);
     });
     function addDeclarationDiagnostic(id: string, m: qd.Message) {
@@ -709,8 +709,8 @@ export class SymbolTable<S extends qt.Symbol = Symbol> extends Map<qb.__String, 
     });
   }
   combine(ss?: SymbolTable<S>): SymbolTable<S> | undefined {
-    if (!qb.hasEntries(this)) return ss;
-    if (!qb.hasEntries(ss)) return this;
+    if (!qu.hasEntries(this)) return ss;
+    if (!qu.hasEntries(ss)) return this;
     const t = new SymbolTable<S>();
     t.merge(this);
     t.merge(ss!);
@@ -838,7 +838,7 @@ export class Signature implements qt.Signature {
   canonicalSignatureCache?: Signature;
   optionalCallSignatureCache?: { inner?: Signature; outer?: Signature };
   isolatedSignatureType?: qt.ObjectType;
-  instantiations?: qb.QMap<Signature>;
+  instantiations?: qu.QMap<Signature>;
   minTypeArgumentCount!: number;
   docComment?: qt.SymbolDisplayPart[];
   docTags?: qt.DocTagInfo[];
@@ -880,14 +880,14 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
   libReferenceDirectives: readonly FileReference[];
   languageVariant: LanguageVariant;
   isDeclarationFile: boolean;
-  renamedDependencies?: qb.QReadonlyMap<string>;
+  renamedDependencies?: qu.QReadonlyMap<string>;
   hasNoDefaultLib: boolean;
   languageVersion: ScriptTarget;
   scriptKind: ScriptKind;
   externalModuleIndicator?: Nobj;
   commonJsModuleIndicator?: Nobj;
   jsGlobalAugmentations?: SymbolTable;
-  identifiers: qb.QMap<string>;
+  identifiers: qu.QMap<string>;
   nodeCount: number;
   identifierCount: number;
   symbolCount: number;
@@ -897,10 +897,10 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
   docDiagnostics?: qd.DiagnosticWithLocation[];
   additionalSyntacticDiagnostics?: readonly qd.DiagnosticWithLocation[];
   lineMap: readonly number[];
-  classifiableNames?: qb.ReadonlyEscapedMap<true>;
+  classifiableNames?: qu.ReadonlyEscapedMap<true>;
   commentDirectives?: qt.CommentDirective[];
-  resolvedModules?: qb.QMap<ResolvedModuleFull | undefined>;
-  resolvedTypeReferenceDirectiveNames: qb.QMap<ResolvedTypeReferenceDirective | undefined>;
+  resolvedModules?: qu.QMap<ResolvedModuleFull | undefined>;
+  resolvedTypeReferenceDirectiveNames: qu.QMap<ResolvedTypeReferenceDirective | undefined>;
   imports: readonly StringLiteralLike[];
   moduleAugmentations: readonly (StringLiteral | Identifier)[];
   patternAmbientModules?: PatternAmbientModule[];
@@ -908,7 +908,7 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
   checkJsDirective?: CheckJsDirective;
   version: string;
   pragmas: ReadonlyPragmaMap;
-  localJsxNamespace?: qb.__String;
+  localJsxNamespace?: qu.__String;
   localJsxFactory?: EntityName;
   exportedModulesFromDeclarationEmit?: ExportedModulesFromDeclarationEmit;
   kind: Syntax.SourceFile = Syntax.SourceFile;
@@ -943,29 +943,29 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
   scriptKind!: ScriptKind;
   languageVersion!: ScriptTarget;
   languageVariant!: LanguageVariant;
-  identifiers!: qb.QMap<string>;
-  nameTable: qb.EscapedMap<number> | undefined;
-  resolvedModules: qb.QMap<ResolvedModuleFull> | undefined;
-  resolvedTypeReferenceDirectiveNames!: qb.QMap<ResolvedTypeReferenceDirective>;
+  identifiers!: qu.QMap<string>;
+  nameTable: qu.EscapedMap<number> | undefined;
+  resolvedModules: qu.QMap<ResolvedModuleFull> | undefined;
+  resolvedTypeReferenceDirectiveNames!: qu.QMap<ResolvedTypeReferenceDirective>;
   imports!: readonly StringLiteralLike[];
   moduleAugmentations!: StringLiteral[];
-  private namedDeclarations: qb.QMap<Declaration[]> | undefined;
+  private namedDeclarations: qu.QMap<Declaration[]> | undefined;
   ambientModuleNames!: string[];
   checkJsDirective: CheckJsDirective | undefined;
-  errorExpectations: qb.TextRange[] | undefined;
+  errorExpectations: qu.TextRange[] | undefined;
   possiblyContainDynamicImport?: boolean;
   pragmas!: PragmaMap;
   localJsxFactory: EntityName | undefined;
-  localJsxNamespace: qb.__String | undefined;
+  localJsxNamespace: qu.__String | undefined;
   constructor(kind: Syntax, pos: number, end: number) {
     super(kind, pos, end);
   }
   redirectInfo?: RedirectInfo | undefined;
-  renamedDependencies?: qb.QReadonlyMap<string> | undefined;
+  renamedDependencies?: qu.QReadonlyMap<string> | undefined;
   jsGlobalAugmentations?: SymbolTable<Symbol> | undefined;
   docDiagnostics?: qd.DiagnosticWithLocation[] | undefined;
   additionalSyntacticDiagnostics?: readonly qd.DiagnosticWithLocation[] | undefined;
-  classifiableNames?: qb.ReadonlyEscapedMap<true> | undefined;
+  classifiableNames?: qu.ReadonlyEscapedMap<true> | undefined;
   commentDirectives?: qt.CommentDirective[] | undefined;
   patternAmbientModules?: PatternAmbientModule[] | undefined;
   exportedModulesFromDeclarationEmit?: ExportedModulesFromDeclarationEmit | undefined;
@@ -1044,10 +1044,10 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
     if (options.outFile || options.out) {
       const moduleKind = getEmitModuleKind(options);
       const moduleEmitEnabled = options.emitDeclarationOnly || moduleKind === ModuleKind.AMD || moduleKind === ModuleKind.System;
-      return qb.filter(host.getSourceFiles(), (sourceFile) => (moduleEmitEnabled || !qc.is.externalModule(sourceFile)) && sourceFileMayBeEmitted(sourceFile, host, forceDtsEmit));
+      return qu.filter(host.getSourceFiles(), (sourceFile) => (moduleEmitEnabled || !qc.is.externalModule(sourceFile)) && sourceFileMayBeEmitted(sourceFile, host, forceDtsEmit));
     } else {
       const sourceFiles = targetSourceFile === undefined ? host.getSourceFiles() : [targetSourceFile];
-      return qb.filter(sourceFiles, (sourceFile) => sourceFileMayBeEmitted(sourceFile, host, forceDtsEmit));
+      return qu.filter(sourceFiles, (sourceFile) => sourceFileMayBeEmitted(sourceFile, host, forceDtsEmit));
     }
   }
   sourceFileMayBeEmitted(sourceFile: SourceFile, host: SourceFileMayBeEmittedHost, forceDtsEmit?: boolean) {
@@ -1082,16 +1082,16 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
   containsInclusive(p: number): boolean {
     throw new Error('Method not implemented.');
   }
-  setRange(r?: qb.Range | undefined): this {
+  setRange(r?: qu.Range | undefined): this {
     throw new Error('Method not implemented.');
   }
-  movePos(p: number): qb.TextRange {
+  movePos(p: number): qu.TextRange {
     throw new Error('Method not implemented.');
   }
-  moveEnd(e: number): qb.TextRange {
+  moveEnd(e: number): qu.TextRange {
     throw new Error('Method not implemented.');
   }
-  update(t: string, c: qb.TextChange): SourceFile {
+  update(t: string, c: qu.TextChange): SourceFile {
     return qp_updateSource(this, t, c);
   }
   getLineAndCharacterOfPosition(pos: number): qy.LineAndChar {
@@ -1116,7 +1116,7 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
     const fullText = this.getFullText();
     return fullText[lastCharPos] === '\n' && fullText[lastCharPos - 1] === '\r' ? lastCharPos - 1 : lastCharPos;
   }
-  getNamedDeclarations(): qb.QMap<Declaration[]> {
+  getNamedDeclarations(): qu.QMap<Declaration[]> {
     if (!this.namedDeclarations) {
       this.namedDeclarations = this.computeNamedDeclarations();
     }
@@ -1127,13 +1127,13 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
   }
   setResolvedModule(sourceFile: SourceFile, moduleNameText: string, resolvedModule: ResolvedModuleFull): void {
     if (!sourceFile.resolvedModules) {
-      sourceFile.resolvedModules = new qb.QMap<ResolvedModuleFull>();
+      sourceFile.resolvedModules = new qu.QMap<ResolvedModuleFull>();
     }
     sourceFile.resolvedModules.set(moduleNameText, resolvedModule);
   }
   setResolvedTypeReferenceDirective(sourceFile: SourceFile, typeReferenceDirectiveName: string, resolvedTypeReferenceDirective?: ResolvedTypeReferenceDirective): void {
     if (!sourceFile.resolvedTypeReferenceDirectiveNames) {
-      sourceFile.resolvedTypeReferenceDirectiveNames = new qb.QMap<ResolvedTypeReferenceDirective | undefined>();
+      sourceFile.resolvedTypeReferenceDirectiveNames = new qu.QMap<ResolvedTypeReferenceDirective | undefined>();
     }
     sourceFile.resolvedTypeReferenceDirectiveNames.set(typeReferenceDirectiveName, resolvedTypeReferenceDirective);
   }
@@ -1189,7 +1189,7 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
     const span = getErrorSpanForNode(sourceFile, node);
     return createFileDiagnostic(sourceFile, span.start, span.length, msg, arg0, arg1, arg2, arg3);
   }
-  createDiagnosticForRange(sourceFile: SourceFile, range: qb.TextRange, msg: qd.Message): qd.DiagnosticWithLocation {
+  createDiagnosticForRange(sourceFile: SourceFile, range: qu.TextRange, msg: qd.Message): qd.DiagnosticWithLocation {
     return {
       file: sourceFile,
       start: range.pos,
@@ -1199,28 +1199,28 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
       messageText: msg.message,
     };
   }
-  getSpanOfTokenAtPosition(s: SourceFile, pos: number): qb.TextSpan {
+  getSpanOfTokenAtPosition(s: SourceFile, pos: number): qu.TextSpan {
     const scanner = qs_create(true, s.languageVariant);
     scanner.setText(s.text, pos);
     scanner.scan();
     const start = scanner.getTokenPos();
-    return qb.TextSpan.from(start, scanner.getTextPos());
+    return qu.TextSpan.from(start, scanner.getTextPos());
   }
-  getErrorSpanForArrowFunction(sourceFile: SourceFile, node: ArrowFunction): qb.TextSpan {
+  getErrorSpanForArrowFunction(sourceFile: SourceFile, node: ArrowFunction): qu.TextSpan {
     const pos = qy.skipTrivia(sourceFile.text, node.pos);
     if (node.body && node.body.kind === Syntax.Block) {
       const { line: startLine } = sourceFile.lineAndCharOf(node.body.pos);
       const { line: endLine } = sourceFile.lineAndCharOf(node.body.end);
-      if (startLine < endLine) return new qb.TextSpan(pos, getEndLinePosition(startLine, sourceFile) - pos + 1);
+      if (startLine < endLine) return new qu.TextSpan(pos, getEndLinePosition(startLine, sourceFile) - pos + 1);
     }
-    return qb.TextSpan.from(pos, node.end);
+    return qu.TextSpan.from(pos, node.end);
   }
-  getErrorSpanForNode(sourceFile: SourceFile, node: Node): qb.TextSpan {
+  getErrorSpanForNode(sourceFile: SourceFile, node: Node): qu.TextSpan {
     let errorNode: Node | undefined = node;
     switch (node.kind) {
       case Syntax.SourceFile:
         const pos = qy.skipTrivia(sourceFile.text, 0, false);
-        if (pos === sourceFile.text.length) return new qb.TextSpan();
+        if (pos === sourceFile.text.length) return new qu.TextSpan();
         return getSpanOfTokenAtPosition(sourceFile, pos);
       case Syntax.VariableDeclaration:
       case Syntax.BindingElement:
@@ -1246,20 +1246,20 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
       case Syntax.DefaultClause:
         const start = qy.skipTrivia(sourceFile.text, (<CaseOrDefaultClause>node).pos);
         const end = (<CaseOrDefaultClause>node).statements.length > 0 ? (<CaseOrDefaultClause>node).statements[0].pos : (<CaseOrDefaultClause>node).end;
-        return qb.TextSpan.from(start, end);
+        return qu.TextSpan.from(start, end);
     }
     if (errorNode === undefined) return getSpanOfTokenAtPosition(sourceFile, node.pos);
-    qb.assert(!is.kind(qc.Doc, errorNode));
+    qu.assert(!is.kind(qc.Doc, errorNode));
     const isMissing = is.missing(errorNode);
     const pos = isMissing || is.kind(qc.JsxText, node) ? errorNode.pos : qy.skipTrivia(sourceFile.text, errorNode.pos);
     if (isMissing) {
-      qb.assert(pos === errorNode.pos);
-      qb.assert(pos === errorNode.end);
+      qu.assert(pos === errorNode.pos);
+      qu.assert(pos === errorNode.end);
     } else {
-      qb.assert(pos >= errorNode.pos);
-      qb.assert(pos <= errorNode.end);
+      qu.assert(pos >= errorNode.pos);
+      qu.assert(pos <= errorNode.end);
     }
-    return qb.TextSpan.from(pos, errorNode.end);
+    return qu.TextSpan.from(pos, errorNode.end);
   }
   isSourceFileJS(file: SourceFile) {
     return is.inJSFile(file);
@@ -1296,8 +1296,8 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
     };
   }
   createCommentDirectivesMap(sourceFile: SourceFile, commentDirectives: qt.CommentDirective[]): qt.CommentDirectivesMap {
-    const directivesByLine = new qb.QMap(commentDirectives.map((commentDirective) => [`${qy.get.lineAndCharOf(sourceFile, commentDirective.range.end).line}`, commentDirective]));
-    const usedLines = new qb.QMap<boolean>();
+    const directivesByLine = new qu.QMap(commentDirectives.map((commentDirective) => [`${qy.get.lineAndCharOf(sourceFile, commentDirective.range.end).line}`, commentDirective]));
+    const usedLines = new qu.QMap<boolean>();
     return { getUnusedExpectations, markUsed };
     function getUnusedExpectations() {
       return arrayFrom(directivesByLine.entries())
@@ -1373,8 +1373,8 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
     }
     return node;
   }
-  private computeNamedDeclarations(): qb.QMap<Declaration[]> {
-    const r = new qb.MultiMap<Declaration>();
+  private computeNamedDeclarations(): qu.QMap<Declaration[]> {
+    const r = new qu.MultiMap<Declaration>();
     this.qc.forEach.child(visit);
     return r;
     function addDeclaration(declaration: Declaration) {
@@ -1402,7 +1402,7 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
           const declarationName = getDeclarationName(functionDeclaration);
           if (declarationName) {
             const declarations = getDeclarations(declarationName);
-            const lastDeclaration = qb.lastOrUndefined(declarations);
+            const lastDeclaration = qu.lastOrUndefined(declarations);
             if (lastDeclaration && functionDeclaration.parent === lastDeclaration.parent && functionDeclaration.symbol === lastDeclaration.symbol) {
               if (functionDeclaration.body && !(<FunctionLikeDeclaration>lastDeclaration).body) declarations[declarations.length - 1] = functionDeclaration;
             } else declarations.push(functionDeclaration);
@@ -1520,11 +1520,11 @@ export function getExcludedSymbolFlags(flags: SymbolFlags): SymbolFlags {
   return result;
 }
 export function cloneMap(m: SymbolTable): SymbolTable;
-export function cloneMap<T>(m: qb.QReadonlyMap<T>): qb.QMap<T>;
-export function cloneMap<T>(m: qb.ReadonlyEscapedMap<T>): qb.EscapedMap<T>;
-export function cloneMap<T>(m: qb.QReadonlyMap<T> | qb.ReadonlyEscapedMap<T> | SymbolTable): qb.QMap<T> | qb.EscapedMap<T> | SymbolTable {
-  const c = new qb.QMap<T>();
-  copyEntries(m as qb.QMap<T>, c);
+export function cloneMap<T>(m: qu.QReadonlyMap<T>): qu.QMap<T>;
+export function cloneMap<T>(m: qu.ReadonlyEscapedMap<T>): qu.EscapedMap<T>;
+export function cloneMap<T>(m: qu.QReadonlyMap<T> | qu.ReadonlyEscapedMap<T> | SymbolTable): qu.QMap<T> | qu.EscapedMap<T> | SymbolTable {
+  const c = new qu.QMap<T>();
+  copyEntries(m as qu.QMap<T>, c);
   return c;
 }
 export function createGetSymbolWalker(
@@ -1660,10 +1660,10 @@ export function createGetSymbolWalker(
   }
 }
 function getDocComment(ds?: readonly Declaration[], tc?: qt.TypeChecker): qt.SymbolDisplayPart[] {
-  if (!ds) return qb.empty;
+  if (!ds) return qu.empty;
   let c = Doc.getDocCommentsFromDeclarations(ds);
   const findInherited = (d: Declaration, pName: string): readonly qt.SymbolDisplayPart[] | undefined => {
-    return qb.firstDefined(d.parent ? qc.get.allSuperTypeNodes(d.parent) : qb.empty, (n) => {
+    return qu.firstDefined(d.parent ? qc.get.allSuperTypeNodes(d.parent) : qu.empty, (n) => {
       const superType = tc?.getTypeAtLocation(n);
       const baseProperty = superType && tc?.getPropertyOfType(superType, pName);
       const inheritedDocs = baseProperty && baseProperty.getDocComment(tc);
@@ -1681,21 +1681,21 @@ function getDocComment(ds?: readonly Declaration[], tc?: qt.TypeChecker): qt.Sym
 export function getLineOfLocalPositionFromLineMap(lineMap: readonly number[], pos: number) {
   return Scanner.lineOf(lineMap, pos);
 }
-qb.addMixins(ClassLikeDeclarationBase, [DocContainer]);
-qb.addMixins(FunctionOrConstructorTypeNodeBase, [TypeNode]);
-qb.addMixins(ObjectLiteralExpressionBase, [Declaration]);
-qb.addMixins(LiteralExpression, [LiteralLikeNode]);
-let currentAssertionLevel = qb.AssertionLevel.None;
-type AssertionKeys = qt.MatchingKeys<typeof Debug, qb.AnyFunction>;
-const assertionCache: Partial<Record<AssertionKeys, { level: qb.AssertionLevel; assertion: qb.AnyFunction }>> = {};
+qu.addMixins(ClassLikeDeclarationBase, [DocContainer]);
+qu.addMixins(FunctionOrConstructorTypeNodeBase, [TypeNode]);
+qu.addMixins(ObjectLiteralExpressionBase, [Declaration]);
+qu.addMixins(LiteralExpression, [LiteralLikeNode]);
+let currentAssertionLevel = qu.AssertionLevel.None;
+type AssertionKeys = qt.MatchingKeys<typeof Debug, qu.AnyFunction>;
+const assertionCache: Partial<Record<AssertionKeys, { level: qu.AssertionLevel; assertion: qu.AnyFunction }>> = {};
 export function getAssertionLevel() {
   return currentAssertionLevel;
 }
-export function setAssertionLevel(l: qb.AssertionLevel) {
+export function setAssertionLevel(l: qu.AssertionLevel) {
   const prevAssertionLevel = currentAssertionLevel;
   currentAssertionLevel = l;
   if (l > prevAssertionLevel) {
-    for (const k of qb.getOwnKeys(assertionCache) as AssertionKeys[]) {
+    for (const k of qu.getOwnKeys(assertionCache) as AssertionKeys[]) {
       const f = assertionCache[k];
       if (f !== undefined && Debug[k] !== f.assertion && l >= f.level) {
         (Debug as any)[k] = f;
@@ -1704,107 +1704,107 @@ export function setAssertionLevel(l: qb.AssertionLevel) {
     }
   }
 }
-export function shouldAssert(l: qb.AssertionLevel): boolean {
+export function shouldAssert(l: qu.AssertionLevel): boolean {
   return currentAssertionLevel >= l;
 }
-function shouldAssertFunction<K extends AssertionKeys>(l: qb.AssertionLevel, name: K): boolean {
+function shouldAssertFunction<K extends AssertionKeys>(l: qu.AssertionLevel, name: K): boolean {
   if (!shouldAssert(l)) {
     assertionCache[name] = { level: l, assertion: Debug[name] };
-    (Debug as any)[name] = qb.noop;
+    (Debug as any)[name] = qu.noop;
     return false;
   }
   return true;
 }
 export function formatSymbol(s: Symbol): string {
-  return `{ name: ${qy.get.unescUnderscores(s.escName)}; flags: ${formatSymbolFlags(s.flags)}; declarations: ${qb.map(s.declarations, (n) => formatSyntax(n.kind))} }`;
+  return `{ name: ${qy.get.unescUnderscores(s.escName)}; flags: ${formatSymbolFlags(s.flags)}; declarations: ${qu.map(s.declarations, (n) => formatSyntax(n.kind))} }`;
 }
 export function formatSyntax(k?: Syntax): string {
-  return qb.formatEnum(k, (qt as any).SyntaxKind, false);
+  return qu.formatEnum(k, (qt as any).SyntaxKind, false);
 }
 export function formatNodeFlags(f?: NodeFlags): string {
-  return qb.formatEnum(f, (qt as any).NodeFlags, true);
+  return qu.formatEnum(f, (qt as any).NodeFlags, true);
 }
 export function formatModifierFlags(f?: ModifierFlags): string {
-  return qb.formatEnum(f, (qt as any).ModifierFlags, true);
+  return qu.formatEnum(f, (qt as any).ModifierFlags, true);
 }
 export function formatTransformFlags(f?: TransformFlags): string {
-  return qb.formatEnum(f, (qt as any).TransformFlags, true);
+  return qu.formatEnum(f, (qt as any).TransformFlags, true);
 }
 export function formatEmitFlags(f?: qt.EmitFlags): string {
-  return qb.formatEnum(f, (qt as any).EmitFlags, true);
+  return qu.formatEnum(f, (qt as any).EmitFlags, true);
 }
 export function formatSymbolFlags(f?: SymbolFlags): string {
-  return qb.formatEnum(f, (qt as any).SymbolFlags, true);
+  return qu.formatEnum(f, (qt as any).SymbolFlags, true);
 }
 export function formatTypeFlags(f?: TypeFlags): string {
-  return qb.formatEnum(f, (qt as any).TypeFlags, true);
+  return qu.formatEnum(f, (qt as any).TypeFlags, true);
 }
 export function formatObjectFlags(f?: ObjectFlags): string {
-  return qb.formatEnum(f, (qt as any).ObjectFlags, true);
+  return qu.formatEnum(f, (qt as any).ObjectFlags, true);
 }
-export function failBadSyntax(n: Node, msg?: string, mark?: qb.AnyFunction): never {
-  return qb.fail(`${msg || 'Unexpected node.'}\r\nNode ${formatSyntax(n.kind)} was unexpected.`, mark || failBadSyntaxKind);
+export function failBadSyntax(n: Node, msg?: string, mark?: qu.AnyFunction): never {
+  return qu.fail(`${msg || 'Unexpected node.'}\r\nNode ${formatSyntax(n.kind)} was unexpected.`, mark || failBadSyntaxKind);
 }
-export function assertNever(x: never, msg = 'Illegal value:', mark?: qb.AnyFunction): never {
-  const v = typeof x === 'object' && qb.hasProperty(x, 'kind') && qb.hasProperty(x, 'pos') && formatSyntaxKind ? 'SyntaxKind: ' + formatSyntax((x as Node).kind) : JSON.stringify(x);
-  return qb.fail(`${msg} ${v}`, mark || assertNever);
+export function assertNever(x: never, msg = 'Illegal value:', mark?: qu.AnyFunction): never {
+  const v = typeof x === 'object' && qu.hasProperty(x, 'kind') && qu.hasProperty(x, 'pos') && formatSyntaxKind ? 'SyntaxKind: ' + formatSyntax((x as Node).kind) : JSON.stringify(x);
+  return qu.fail(`${msg} ${v}`, mark || assertNever);
 }
-export function assertEachNode<T extends Node, U extends T>(ns: Nodes<T>, test: (n: T) => n is U, msg?: string, mark?: qb.AnyFunction): asserts ns is Nodes<U>;
-export function assertEachNode<T extends Node, U extends T>(ns: readonly T[], test: (n: T) => n is U, msg?: string, mark?: qb.AnyFunction): asserts ns is readonly U[];
-export function assertEachNode(ns: readonly Node[], test: (n: Node) => boolean, msg?: string, mark?: qb.AnyFunction): void;
-export function assertEachNode(ns: readonly Node[], test: (n: Node) => boolean, msg?: string, mark?: qb.AnyFunction) {
-  if (shouldAssertFunction(qb.AssertionLevel.Normal, 'assertEachNode')) {
-    qb.assert(test === undefined || qb.every(ns, test), msg || 'Unexpected node.', () => `Node array did not pass test '${qb.getFunctionName(test)}'.`, mark || assertEachNode);
+export function assertEachNode<T extends Node, U extends T>(ns: Nodes<T>, test: (n: T) => n is U, msg?: string, mark?: qu.AnyFunction): asserts ns is Nodes<U>;
+export function assertEachNode<T extends Node, U extends T>(ns: readonly T[], test: (n: T) => n is U, msg?: string, mark?: qu.AnyFunction): asserts ns is readonly U[];
+export function assertEachNode(ns: readonly Node[], test: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction): void;
+export function assertEachNode(ns: readonly Node[], test: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction) {
+  if (shouldAssertFunction(qu.AssertionLevel.Normal, 'assertEachNode')) {
+    qu.assert(test === undefined || qu.every(ns, test), msg || 'Unexpected node.', () => `Node array did not pass test '${qu.getFunctionName(test)}'.`, mark || assertEachNode);
   }
 }
-export function assertNode<T extends Node, U extends T>(n: T | undefined, test: (n: T) => n is U, msg?: string, mark?: qb.AnyFunction): asserts n is U;
-export function assertNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qb.AnyFunction): void;
-export function assertNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qb.AnyFunction) {
-  if (shouldAssertFunction(qb.AssertionLevel.Normal, 'assertNode')) {
-    qb.assert(
+export function assertNode<T extends Node, U extends T>(n: T | undefined, test: (n: T) => n is U, msg?: string, mark?: qu.AnyFunction): asserts n is U;
+export function assertNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction): void;
+export function assertNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction) {
+  if (shouldAssertFunction(qu.AssertionLevel.Normal, 'assertNode')) {
+    qu.assert(
       n !== undefined && (test === undefined || test(n)),
       msg || 'Unexpected node.',
-      () => `Node ${formatSyntax(n!.kind)} did not pass test '${qb.getFunctionName(test!)}'.`,
+      () => `Node ${formatSyntax(n!.kind)} did not pass test '${qu.getFunctionName(test!)}'.`,
       mark || assertNode
     );
   }
 }
-export function assertNotNode<T extends Node, U extends T>(n: T | undefined, test: (n: Node) => n is U, msg?: string, mark?: qb.AnyFunction): asserts n is Exclude<T, U>;
-export function assertNotNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qb.AnyFunction): void;
-export function assertNotNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qb.AnyFunction) {
-  if (shouldAssertFunction(qb.AssertionLevel.Normal, 'assertNotNode')) {
-    qb.assert(
+export function assertNotNode<T extends Node, U extends T>(n: T | undefined, test: (n: Node) => n is U, msg?: string, mark?: qu.AnyFunction): asserts n is Exclude<T, U>;
+export function assertNotNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction): void;
+export function assertNotNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction) {
+  if (shouldAssertFunction(qu.AssertionLevel.Normal, 'assertNotNode')) {
+    qu.assert(
       n === undefined || test === undefined || !test(n),
       msg || 'Unexpected node.',
-      () => `Node ${formatSyntax(n!.kind)} should not have passed test '${qb.getFunctionName(test!)}'.`,
+      () => `Node ${formatSyntax(n!.kind)} should not have passed test '${qu.getFunctionName(test!)}'.`,
       mark || assertNotNode
     );
   }
 }
-export function assertOptionalNode<T extends Node, U extends T>(n: T, test: (n: T) => n is U, msg?: string, mark?: qb.AnyFunction): asserts n is U;
-export function assertOptionalNode<T extends Node, U extends T>(n: T | undefined, test: (n: T) => n is U, msg?: string, mark?: qb.AnyFunction): asserts n is U | undefined;
-export function assertOptionalNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qb.AnyFunction): void;
-export function assertOptionalNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qb.AnyFunction) {
-  if (shouldAssertFunction(qb.AssertionLevel.Normal, 'assertOptionalNode')) {
-    qb.assert(
+export function assertOptionalNode<T extends Node, U extends T>(n: T, test: (n: T) => n is U, msg?: string, mark?: qu.AnyFunction): asserts n is U;
+export function assertOptionalNode<T extends Node, U extends T>(n: T | undefined, test: (n: T) => n is U, msg?: string, mark?: qu.AnyFunction): asserts n is U | undefined;
+export function assertOptionalNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction): void;
+export function assertOptionalNode(n?: Node, test?: (n: Node) => boolean, msg?: string, mark?: qu.AnyFunction) {
+  if (shouldAssertFunction(qu.AssertionLevel.Normal, 'assertOptionalNode')) {
+    qu.assert(
       test === undefined || n === undefined || test(n),
       msg || 'Unexpected node.',
-      () => `Node ${formatSyntax(n!.kind)} did not pass test '${qb.getFunctionName(test!)}'.`,
+      () => `Node ${formatSyntax(n!.kind)} did not pass test '${qu.getFunctionName(test!)}'.`,
       mark || assertOptionalNode
     );
   }
 }
-export function assertOptionalToken<T extends Node, K extends Syntax>(n: T, k: K, msg?: string, mark?: qb.AnyFunction): asserts n is Extract<T, { readonly kind: K }>;
-export function assertOptionalToken<T extends Node, K extends Syntax>(n: T | undefined, k: K, msg?: string, mark?: qb.AnyFunction): asserts n is Extract<T, { readonly kind: K }> | undefined;
-export function assertOptionalToken(n?: Node, k?: Syntax, msg?: string, mark?: qb.AnyFunction): void;
-export function assertOptionalToken(n?: Node, k?: Syntax, msg?: string, mark?: qb.AnyFunction) {
-  if (shouldAssertFunction(qb.AssertionLevel.Normal, 'assertOptionalToken')) {
-    qb.assert(k === undefined || n === undefined || n.kind === k, msg || 'Unexpected node.', () => `Node ${formatSyntax(n!.kind)} was not a '${formatSyntax(k)}' token.`, mark || assertOptionalToken);
+export function assertOptionalToken<T extends Node, K extends Syntax>(n: T, k: K, msg?: string, mark?: qu.AnyFunction): asserts n is Extract<T, { readonly kind: K }>;
+export function assertOptionalToken<T extends Node, K extends Syntax>(n: T | undefined, k: K, msg?: string, mark?: qu.AnyFunction): asserts n is Extract<T, { readonly kind: K }> | undefined;
+export function assertOptionalToken(n?: Node, k?: Syntax, msg?: string, mark?: qu.AnyFunction): void;
+export function assertOptionalToken(n?: Node, k?: Syntax, msg?: string, mark?: qu.AnyFunction) {
+  if (shouldAssertFunction(qu.AssertionLevel.Normal, 'assertOptionalToken')) {
+    qu.assert(k === undefined || n === undefined || n.kind === k, msg || 'Unexpected node.', () => `Node ${formatSyntax(n!.kind)} was not a '${formatSyntax(k)}' token.`, mark || assertOptionalToken);
   }
 }
-export function assertMissingNode(n?: Node, msg?: string, mark?: qb.AnyFunction): asserts n is undefined;
-export function assertMissingNode(n?: Node, msg?: string, mark?: qb.AnyFunction) {
-  if (shouldAssertFunction(qb.AssertionLevel.Normal, 'assertMissingNode')) {
-    qb.assert(n === undefined, msg || 'Unexpected node.', () => `Node ${formatSyntax(n!.kind)} was unexpected'.`, mark || assertMissingNode);
+export function assertMissingNode(n?: Node, msg?: string, mark?: qu.AnyFunction): asserts n is undefined;
+export function assertMissingNode(n?: Node, msg?: string, mark?: qu.AnyFunction) {
+  if (shouldAssertFunction(qu.AssertionLevel.Normal, 'assertMissingNode')) {
+    qu.assert(n === undefined, msg || 'Unexpected node.', () => `Node ${formatSyntax(n!.kind)} was unexpected'.`, mark || assertMissingNode);
   }
 }

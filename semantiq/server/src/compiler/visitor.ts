@@ -1,7 +1,7 @@
 import * as qb from './base';
 import { Node, Nodes, Token } from './core';
 import * as qc from './core3';
-import * as qt from './types';
+import * as qt from './type';
 import * as qy from './syntax';
 import { Modifier, Syntax } from './syntax';
 export type Visitor = (n: Node) => VisitResult<Node>;

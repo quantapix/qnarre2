@@ -1,12 +1,12 @@
-import * as qb from './base';
-import { NodeFlags, Nodes, Token } from './core';
-import * as qc from './core';
-import { is, get } from './core3';
-import * as qg from './debug';
-import { Node, DocTag } from './types';
-import { Modifier, Syntax } from './syntax';
-import * as qy from './syntax';
-export * from './core';
+import { Nodes, Token } from './base';
+import * as qc from './base';
+import { is, get } from './context';
+import * as qg from '../debug';
+import { DocTag, Node, NodeFlags } from '../type';
+import * as qu from '../base';
+import { Modifier, Syntax } from '../syntax';
+import * as qy from '../syntax';
+export * from './base';
 export type NodeType<S extends Syntax> = S extends keyof SynMap ? SynMap[S] : never;
 export class Nobj extends qc.Nobj {
   is<S extends Syntax, T extends { kind: S; also?: Syntax[] }>(t: T): this is NodeType<T['kind']> {
@@ -145,7 +145,7 @@ export class ArrowFunction extends qc.FunctionLikeDeclarationBase implements qc.
   _expressionBrand: any;
 }
 ArrowFunction.prototype.kind = ArrowFunction.kind;
-qb.addMixins(ArrowFunction, [qc.Expression, qc.DocContainer]);
+qu.addMixins(ArrowFunction, [qc.Expression, qc.DocContainer]);
 export class AsExpression extends qc.Expression implements qc.AsExpression {
   static readonly kind = Syntax.AsExpression;
   expression: qc.Expression;
@@ -240,7 +240,7 @@ export class BinaryExpression extends qc.Expression implements qc.BinaryExpressi
   _declarationBrand: any;
 }
 BinaryExpression.prototype.kind = BinaryExpression.kind;
-qb.addMixins(BinaryExpression, [qc.Declaration]);
+qu.addMixins(BinaryExpression, [qc.Declaration]);
 export class BindingElement extends qc.NamedDeclaration implements qc.BindingElement {
   static readonly kind = Syntax.BindingElement;
   parent?: qc.BindingPattern;
@@ -358,12 +358,12 @@ export class Bundle extends Nobj implements qc.Bundle {
   syntheticTypeReferences?: readonly qc.FileReference[];
   syntheticLibReferences?: readonly qc.FileReference[];
   hasNoDefaultLib?: boolean;
-  constructor(ss: readonly qc.SourceFile[], ps: readonly (UnparsedSource | InputFiles)[] = qb.empty) {
+  constructor(ss: readonly qc.SourceFile[], ps: readonly (UnparsedSource | InputFiles)[] = qu.empty) {
     super();
     this.prepends = ps;
     this.sourceFiles = ss;
   }
-  update(ss: readonly qc.SourceFile[], ps: readonly (UnparsedSource | InputFiles)[] = qb.empty) {
+  update(ss: readonly qc.SourceFile[], ps: readonly (UnparsedSource | InputFiles)[] = qu.empty) {
     if (this.sourceFiles !== ss || this.prepends !== ps) return new Bundle(ss, ps);
     return this;
   }
@@ -477,7 +477,7 @@ export class CallExpression extends qc.LeftHandSideExpression implements qc.Call
   _declarationBrand: any;
 }
 CallExpression.prototype.kind = CallExpression.kind;
-qb.addMixins(CallExpression, [qc.Declaration]);
+qu.addMixins(CallExpression, [qc.Declaration]);
 export class CallChain extends CallExpression implements qc.CallChain {
   _optionalChainBrand: any;
   constructor(e: qc.Expression, q?: qc.QuestionDotToken, ts?: readonly qc.TypeNode[], es?: readonly qc.Expression[]) {
@@ -486,7 +486,7 @@ export class CallChain extends CallExpression implements qc.CallChain {
     this.questionDotToken = q;
   }
   update(e: qc.Expression, ts: readonly qc.TypeNode[] | undefined, es: readonly qc.Expression[], q?: qc.QuestionDotToken) {
-    qb.assert(!!(this.flags & NodeFlags.OptionalChain));
+    qu.assert(!!(this.flags & NodeFlags.OptionalChain));
     return this.expression !== e || this.questionDotToken !== q || this.typeArguments !== ts || this.arguments !== es ? new CallChain(e, q, ts, es).updateFrom(this) : this;
   }
 }
@@ -540,7 +540,7 @@ export class CatchClause extends Nobj implements qc.CatchClause {
   block: Block;
   constructor(v: string | VariableDeclaration | undefined, b: Block) {
     super(true);
-    this.variableDeclaration = qb.isString(v) ? new VariableDeclaration(v) : v;
+    this.variableDeclaration = qu.isString(v) ? new VariableDeclaration(v) : v;
     this.block = b;
   }
   update(v: VariableDeclaration | undefined, b: Block) {
@@ -580,7 +580,7 @@ export class ClassDeclaration extends qc.ClassLikeDeclarationBase implements qc.
   _statementBrand: any;
 }
 ClassDeclaration.prototype.kind = ClassDeclaration.kind;
-qb.addMixins(ClassDeclaration, [qc.DeclarationStatement]);
+qu.addMixins(ClassDeclaration, [qc.DeclarationStatement]);
 export class ClassExpression extends qc.ClassLikeDeclarationBase implements qc.ClassExpression {
   static readonly kind = Syntax.ClassExpression;
   docCache?: readonly qc.DocTag[];
@@ -615,20 +615,20 @@ export class ClassExpression extends qc.ClassLikeDeclarationBase implements qc.C
   _expressionBrand: any;
 }
 ClassExpression.prototype.kind = ClassExpression.kind;
-qb.addMixins(ClassExpression, [qc.PrimaryExpression]);
+qu.addMixins(ClassExpression, [qc.PrimaryExpression]);
 export class CommaListExpression extends qc.Expression implements qc.CommaListExpression {
   static readonly kind: Syntax.CommaListExpression;
   elements: Nodes<qc.Expression>;
   constructor(es: readonly qc.Expression[]) {
     super(true);
     const flatten = (e: qc.Expression): qc.Expression | readonly qc.Expression[] => {
-      if (qb.isSynthesized(e) && !is.parseTreeNode(e) && !e.original && !e.emitNode && !e.id) {
+      if (qu.isSynthesized(e) && !is.parseTreeNode(e) && !e.original && !e.emitNode && !e.id) {
         if (e.kind === Syntax.CommaListExpression) return (<CommaListExpression>e).elements;
         if (e.is(BinaryExpression) && e.operatorToken.kind === Syntax.CommaToken) return [e.left, e.right];
       }
       return e;
     };
-    this.elements = new Nodes(qb.sameFlatMap(es, flatten));
+    this.elements = new Nodes(qu.sameFlatMap(es, flatten));
   }
   update(es: readonly qc.Expression[]) {
     return this.elements !== es ? new CommaListExpression(es).updateFrom(this) : this;
@@ -703,7 +703,7 @@ export class ConstructorDeclaration extends qc.FunctionLikeDeclarationBase imple
   _classElementBrand: any;
 }
 ConstructorDeclaration.prototype.kind = ConstructorDeclaration.kind;
-qb.addMixins(ConstructorDeclaration, [qc.ClassElement, qc.DocContainer]);
+qu.addMixins(ConstructorDeclaration, [qc.ClassElement, qc.DocContainer]);
 export class ConstructorTypeNode extends qc.FunctionOrConstructorTypeNodeBase implements qc.ConstructorTypeNode {
   static readonly kind = Syntax.ConstructorType;
   docCache?: readonly qc.DocTag[];
@@ -729,7 +729,7 @@ export class ConstructSignatureDeclaration extends qc.SignatureDeclarationBase i
   _typeElementBrand: any;
 }
 ConstructSignatureDeclaration.prototype.kind = ConstructSignatureDeclaration.kind;
-qb.addMixins(ConstructSignatureDeclaration, [qc.TypeElement]);
+qu.addMixins(ConstructSignatureDeclaration, [qc.TypeElement]);
 export class ContinueStatement extends qc.Statement implements qc.ContinueStatement {
   static readonly kind = Syntax.ContinueStatement;
   label?: Identifier;
@@ -835,7 +835,7 @@ export class DocCallbackTag extends qc.DocTag implements qc.DocCallbackTag {
   _declarationBrand: any;
 }
 DocCallbackTag.prototype.kind = DocCallbackTag.kind;
-qb.addMixins(DocCallbackTag, [qc.NamedDeclaration]);
+qu.addMixins(DocCallbackTag, [qc.NamedDeclaration]);
 export class DocClassTag extends qc.DocTag implements qc.DocClassTag {
   static readonly kind = Syntax.DocClassTag;
   constructor(c?: string) {
@@ -854,7 +854,7 @@ export class DocEnumTag extends qc.DocTag implements qc.DocEnumTag {
   _declarationBrand: any;
 }
 DocEnumTag.prototype.kind = DocEnumTag.kind;
-qb.addMixins(DocEnumTag, [qc.Declaration]);
+qu.addMixins(DocEnumTag, [qc.Declaration]);
 export class DocFunctionType extends qc.SignatureDeclarationBase implements qc.DocFunctionType {
   docCache?: readonly qc.DocTag[];
   static readonly kind = Syntax.DocFunctionType;
@@ -862,7 +862,7 @@ export class DocFunctionType extends qc.SignatureDeclarationBase implements qc.D
   _typeNodeBrand: any;
 }
 DocFunctionType.prototype.kind = DocFunctionType.kind;
-qb.addMixins(DocFunctionType, [qc.DocType]);
+qu.addMixins(DocFunctionType, [qc.DocType]);
 export class DocImplementsTag extends qc.DocTag implements qc.DocImplementsTag {
   static readonly kind = Syntax.DocImplementsTag;
   class: ExpressionWithTypeArguments & { expression: Identifier | qc.PropertyAccessEntityNameExpression };
@@ -902,7 +902,7 @@ export class DocPropertyLikeTag extends qc.DocTag implements qc.DocPropertyLikeT
   }
   _declarationBrand: any;
 }
-qb.addMixins(DocPropertyLikeTag, [qc.Declaration]);
+qu.addMixins(DocPropertyLikeTag, [qc.Declaration]);
 export class DocParameterTag extends DocPropertyLikeTag implements qc.DocParameterTag {
   static readonly kind = Syntax.DocParameterTag;
   constructor(e: DocTypeExpression | undefined, n: qc.EntityName, isNameFirst: boolean, isBracketed: boolean, c?: string) {
@@ -968,7 +968,7 @@ export class DocSignature extends qc.DocType implements qc.DocSignature {
   _declarationBrand: any;
 }
 DocSignature.prototype.kind = DocSignature.kind;
-qb.addMixins(DocSignature, [qc.Declaration]);
+qu.addMixins(DocSignature, [qc.Declaration]);
 export class DocTemplateTag extends qc.DocTag implements qc.DocTemplateTag {
   static readonly kind = Syntax.DocTemplateTag;
   constraint?: DocTypeExpression;
@@ -1004,7 +1004,7 @@ export class DocTypedefTag extends qc.DocTag implements qc.DocTypedefTag {
   _declarationBrand: any;
 }
 DocTypedefTag.prototype.kind = DocTypedefTag.kind;
-qb.addMixins(DocTypedefTag, [qc.NamedDeclaration]);
+qu.addMixins(DocTypedefTag, [qc.NamedDeclaration]);
 export class DocTypeExpression extends qc.TypeNode implements qc.DocTypeExpression {
   static readonly kind = Syntax.DocTypeExpression;
   type: qc.TypeNode;
@@ -1101,7 +1101,7 @@ export class ElementAccessChain extends ElementAccessExpression implements qc.El
     this.questionDotToken = q;
   }
   update(e: qc.Expression, a: qc.Expression, q?: qc.QuestionDotToken) {
-    qb.assert(!!(this.flags & NodeFlags.OptionalChain));
+    qu.assert(!!(this.flags & NodeFlags.OptionalChain));
     return this.expression !== e || this.questionDotToken !== q || this.argumentExpression !== a ? new ElementAccessChain(e, q, a).updateFrom(this) : this;
   }
 }
@@ -1137,7 +1137,7 @@ export class EnumDeclaration extends qc.DeclarationStatement implements qc.EnumD
   _statementBrand: any;
 }
 EnumDeclaration.prototype.kind = EnumDeclaration.kind;
-qb.addMixins(EnumDeclaration, [qc.DocContainer]);
+qu.addMixins(EnumDeclaration, [qc.DocContainer]);
 export class EnumMember extends qc.NamedDeclaration implements qc.EnumMember {
   static readonly kind = Syntax.EnumMember;
   parent?: EnumDeclaration;
@@ -1153,7 +1153,7 @@ export class EnumMember extends qc.NamedDeclaration implements qc.EnumMember {
   }
 }
 EnumMember.prototype.kind = EnumMember.kind;
-qb.addMixins(EnumMember, [qc.DocContainer]);
+qu.addMixins(EnumMember, [qc.DocContainer]);
 export class ExportAssignment extends qc.DeclarationStatement implements qc.ExportAssignment {
   static readonly kind = Syntax.ExportAssignment;
   parent?: qc.SourceFile;
@@ -1203,7 +1203,7 @@ export class ExportDeclaration extends qc.DeclarationStatement implements qc.Exp
   _statementBrand: any;
 }
 ExportDeclaration.prototype.kind = ExportDeclaration.kind;
-qb.addMixins(ExportDeclaration, [qc.DocContainer]);
+qu.addMixins(ExportDeclaration, [qc.DocContainer]);
 export class ExportSpecifier extends qc.NamedDeclaration implements qc.ExportSpecifier {
   static readonly kind = Syntax.ExportSpecifier;
   parent?: NamedExports;
@@ -1231,7 +1231,7 @@ export class ExpressionStatement extends qc.Statement implements qc.ExpressionSt
   }
 }
 ExpressionStatement.prototype.kind = ExpressionStatement.kind;
-qb.addMixins(ExpressionStatement, [qc.DocContainer]);
+qu.addMixins(ExpressionStatement, [qc.DocContainer]);
 export class ExpressionWithTypeArguments extends qc.NodeWithTypeArguments implements qc.ExpressionWithTypeArguments {
   static readonly kind = Syntax.ExpressionWithTypeArguments;
   parent?: HeritageClause | DocAugmentsTag | DocImplementsTag;
@@ -1351,7 +1351,7 @@ export class FunctionDeclaration extends qc.FunctionLikeDeclarationBase implemen
       : this;
   }
   toExpression() {
-    if (!this.body) return qb.fail();
+    if (!this.body) return qu.fail();
     const e = new FunctionExpression(this.modifiers, this.asteriskToken, this.name, this.typeParameters, this.parameters, this.type, this.body);
     e.setOriginal(this);
     e.setRange(this);
@@ -1362,7 +1362,7 @@ export class FunctionDeclaration extends qc.FunctionLikeDeclarationBase implemen
   _statementBrand: any;
 }
 FunctionDeclaration.prototype.kind = FunctionDeclaration.kind;
-qb.addMixins(FunctionDeclaration, [qc.DeclarationStatement]);
+qu.addMixins(FunctionDeclaration, [qc.DeclarationStatement]);
 export class FunctionExpression extends qc.FunctionLikeDeclarationBase implements qc.FunctionExpression {
   static readonly kind = Syntax.FunctionExpression;
   name?: Identifier;
@@ -1403,7 +1403,7 @@ export class FunctionExpression extends qc.FunctionLikeDeclarationBase implement
   _expressionBrand: any;
 }
 FunctionExpression.prototype.kind = FunctionExpression.kind;
-qb.addMixins(FunctionExpression, [qc.PrimaryExpression, qc.DocContainer]);
+qu.addMixins(FunctionExpression, [qc.PrimaryExpression, qc.DocContainer]);
 export class FunctionTypeNode extends qc.FunctionOrConstructorTypeNodeBase implements qc.FunctionTypeNode {
   static readonly kind = Syntax.FunctionType;
   docCache?: readonly qc.DocTag[];
@@ -1447,7 +1447,7 @@ export class GetAccessorDeclaration extends qc.FunctionLikeDeclarationBase imple
   _objectLiteralBrand: any;
 }
 GetAccessorDeclaration.prototype.kind = GetAccessorDeclaration.kind;
-qb.addMixins(GetAccessorDeclaration, [qc.ClassElement, qc.ObjectLiteralElement, qc.DocContainer]);
+qu.addMixins(GetAccessorDeclaration, [qc.ClassElement, qc.ObjectLiteralElement, qc.DocContainer]);
 export class HeritageClause extends Nobj implements qc.HeritageClause {
   static readonly kind = Syntax.HeritageClause;
   parent?: InterfaceDeclaration | qc.ClassLikeDeclaration;
@@ -1466,7 +1466,7 @@ HeritageClause.prototype.kind = HeritageClause.kind;
 let nextAutoGenerateId = 0;
 export class Identifier extends qc.TokenOrIdentifier implements qc.Identifier {
   static readonly kind = Syntax.Identifier;
-  escapedText!: qb.__String;
+  escapedText!: qu.__String;
   autoGenerateFlags = qc.GeneratedIdentifierFlags.None;
   typeArguments?: Nodes<qc.TypeNode | qc.TypeParameterDeclaration>;
   flowNode = undefined;
@@ -1602,7 +1602,7 @@ export class Identifier extends qc.TokenOrIdentifier implements qc.Identifier {
     return n;
   }
   static getNamespaceMemberName(ns: Identifier, i: Identifier, comments?: boolean, sourceMaps?: boolean): PropertyAccessExpression {
-    const n = new PropertyAccessExpression(ns, qb.isSynthesized(i) ? i : getSynthesizedClone(i));
+    const n = new PropertyAccessExpression(ns, qu.isSynthesized(i) ? i : getSynthesizedClone(i));
     n.setRange(i);
     let f: qc.EmitFlags = 0;
     if (!sourceMaps) f |= qc.EmitFlags.NoSourceMap;
@@ -1629,7 +1629,7 @@ export class Identifier extends qc.TokenOrIdentifier implements qc.Identifier {
   _declarationBrand: any;
 }
 Identifier.prototype.kind = Identifier.kind;
-qb.addMixins(Identifier, [qc.Declaration, qc.PrimaryExpression]);
+qu.addMixins(Identifier, [qc.Declaration, qc.PrimaryExpression]);
 export class GeneratedIdentifier extends Identifier implements qc.GeneratedIdentifier {}
 export class IfStatement extends qc.Statement implements qc.IfStatement {
   static readonly kind = Syntax.IfStatement;
@@ -1763,7 +1763,7 @@ export class IndexSignatureDeclaration extends qc.SignatureDeclarationBase imple
   _typeElementBrand: any;
 }
 IndexSignatureDeclaration.prototype.kind = IndexSignatureDeclaration.kind;
-qb.addMixins(IndexSignatureDeclaration, [qc.ClassElement, qc.TypeElement]);
+qu.addMixins(IndexSignatureDeclaration, [qc.ClassElement, qc.TypeElement]);
 export class InferTypeNode extends qc.TypeNode implements qc.InferTypeNode {
   static readonly kind = Syntax.InferType;
   typeParameter: TypeParameterDeclaration;
@@ -1833,8 +1833,8 @@ export class InputFiles extends Nobj implements qc.InputFiles {
     oldFileOfCurrentEmit?: boolean
   ) {
     super();
-    if (!qb.isString(javascriptTextOrReadFileText)) {
-      const cache = new qb.QMap<string | false>();
+    if (!qu.isString(javascriptTextOrReadFileText)) {
+      const cache = new qu.QMap<string | false>();
       const textGetter = (path: string | undefined) => {
         if (path === undefined) return;
         let v = cache.get(path);
@@ -1942,7 +1942,7 @@ export class InterfaceDeclaration extends qc.DeclarationStatement implements qc.
   _statementBrand: any;
 }
 InterfaceDeclaration.prototype.kind = InterfaceDeclaration.kind;
-qb.addMixins(InterfaceDeclaration, [qc.DocContainer]);
+qu.addMixins(InterfaceDeclaration, [qc.DocContainer]);
 export class IntersectionTypeNode extends UnionOrIntersectionTypeNode implements qc.IntersectionTypeNode {
   static readonly kind = Syntax.IntersectionType;
   types: Nodes<qc.TypeNode>;
@@ -2010,7 +2010,7 @@ export class JsxElement extends qc.PrimaryExpression implements qc.JsxElement {
     props: qc.Expression,
     children: readonly qc.Expression[],
     parentElement: qc.JsxOpeningLikeElement,
-    location: qb.TextRange
+    location: qu.TextRange
   ): qc.LeftHandSideExpression {
     const argumentsList = [tagName];
     if (props) argumentsList.push(props);
@@ -2061,7 +2061,7 @@ export class JsxFragment extends qc.PrimaryExpression implements qc.JsxFragment 
     reactNamespace: string,
     children: readonly qc.Expression[],
     parentElement: JsxOpeningFragment,
-    location: qb.TextRange
+    location: qu.TextRange
   ): qc.LeftHandSideExpression {
     const tagName = new qc.PropertyAccessExpression(createReactNamespace(reactNamespace, parentElement), 'Fragment');
     const argumentsList = [<qc.Expression>tagName];
@@ -2194,7 +2194,7 @@ export class LabeledStatement extends qc.Statement implements qc.LabeledStatemen
   }
 }
 LabeledStatement.prototype.kind = LabeledStatement.kind;
-qb.addMixins(LabeledStatement, [qc.DocContainer]);
+qu.addMixins(LabeledStatement, [qc.DocContainer]);
 export class LiteralTypeNode extends qc.TypeNode implements qc.LiteralTypeNode {
   static readonly kind = Syntax.LiteralType;
   literal: qc.BooleanLiteral | qc.LiteralExpression | PrefixUnaryExpression;
@@ -2226,7 +2226,7 @@ export class MappedTypeNode extends qc.TypeNode implements qc.MappedTypeNode {
   _declarationBrand: any;
 }
 MappedTypeNode.prototype.kind = MappedTypeNode.kind;
-qb.addMixins(MappedTypeNode, [qc.Declaration]);
+qu.addMixins(MappedTypeNode, [qc.Declaration]);
 export class MergeDeclarationMarker extends qc.Statement implements qc.MergeDeclarationMarker {
   static readonly kind: Syntax.MergeDeclarationMarker;
   constructor(o: Node) {
@@ -2301,7 +2301,7 @@ export class MethodDeclaration extends qc.FunctionLikeDeclarationBase implements
   _objectLiteralBrand: any;
 }
 MethodDeclaration.prototype.kind = MethodDeclaration.kind;
-qb.addMixins(MethodDeclaration, [qc.ClassElement, qc.ObjectLiteralElement, qc.DocContainer]);
+qu.addMixins(MethodDeclaration, [qc.ClassElement, qc.ObjectLiteralElement, qc.DocContainer]);
 export class MethodSignature extends qc.SignatureDeclarationBase implements qc.MethodSignature {
   static readonly kind = Syntax.MethodSignature;
   parent?: qc.ObjectTypeDeclaration;
@@ -2319,7 +2319,7 @@ export class MethodSignature extends qc.SignatureDeclarationBase implements qc.M
   _typeElementBrand: any;
 }
 MethodSignature.prototype.kind = MethodSignature.kind;
-qb.addMixins(MethodSignature, [qc.TypeElement]);
+qu.addMixins(MethodSignature, [qc.TypeElement]);
 export class MissingDeclaration extends qc.DeclarationStatement implements qc.MissingDeclaration {
   static readonly kind = Syntax.MissingDeclaration;
   name?: Identifier;
@@ -2362,7 +2362,7 @@ export class ModuleDeclaration extends qc.DeclarationStatement implements qc.Mod
   _statementBrand: any;
 }
 ModuleDeclaration.prototype.kind = ModuleDeclaration.kind;
-qb.addMixins(ModuleDeclaration, [qc.DocContainer]);
+qu.addMixins(ModuleDeclaration, [qc.DocContainer]);
 export class DocNamespaceDeclaration extends ModuleDeclaration {
   name!: Identifier;
   body?: qc.DocNamespaceBody;
@@ -2413,7 +2413,7 @@ export class NamedTupleMember extends qc.TypeNode implements qc.NamedTupleMember
   _declarationBrand: any;
 }
 NamedTupleMember.prototype.kind = NamedTupleMember.kind;
-qb.addMixins(NamedTupleMember, [qc.Declaration, qc.DocContainer]);
+qu.addMixins(NamedTupleMember, [qc.Declaration, qc.DocContainer]);
 export class NamespaceExport extends qc.NamedDeclaration implements qc.NamespaceExport {
   static readonly kind = Syntax.NamespaceExport;
   parent?: ExportDeclaration;
@@ -2470,7 +2470,7 @@ export class NewExpression extends qc.PrimaryExpression implements qc.NewExpress
   _declarationBrand: any;
 }
 NewExpression.prototype.kind = NewExpression.kind;
-qb.addMixins(NewExpression, [qc.Declaration]);
+qu.addMixins(NewExpression, [qc.Declaration]);
 export class NonNullExpression extends qc.LeftHandSideExpression implements qc.NonNullExpression {
   static readonly kind = Syntax.NonNullExpression;
   expression: qc.Expression;
@@ -2490,7 +2490,7 @@ export class NonNullChain extends NonNullExpression implements qc.NonNullChain {
     this.flags |= NodeFlags.OptionalChain;
   }
   update(e: qc.Expression) {
-    qb.assert(!!(this.flags & NodeFlags.OptionalChain));
+    qu.assert(!!(this.flags & NodeFlags.OptionalChain));
     return this.expression !== e ? new NonNullChain(e).updateFrom(this) : this;
   }
   _optionalChainBrand: any;
@@ -2512,7 +2512,7 @@ export class NoSubstitutionLiteral extends qc.TemplateLiteralLikeNode implements
   _declarationBrand: any;
 }
 NoSubstitutionLiteral.prototype.kind = NoSubstitutionLiteral.kind;
-qb.addMixins(NoSubstitutionLiteral, [qc.LiteralExpression, qc.Declaration]);
+qu.addMixins(NoSubstitutionLiteral, [qc.LiteralExpression, qc.Declaration]);
 export class NotEmittedStatement extends qc.Statement implements qc.NotEmittedStatement {
   static readonly kind = Syntax.NotEmittedStatement;
   constructor(o: Node) {
@@ -2530,7 +2530,7 @@ export class NumericLiteral extends qc.LiteralExpression implements qc.NumericLi
     this.text = t;
     this.numericLiteralFlags = fs;
   }
-  name(n: string | qb.__String) {
+  name(n: string | qu.__String) {
     return (+n).toString() === n;
   }
   _declarationBrand: any;
@@ -2544,7 +2544,7 @@ export class NullLiteral extends qc.PrimaryExpression implements qc.NullLiteral 
 }
 NullLiteral.prototype.kind = NullLiteral.kind;
 NumericLiteral.prototype.kind = NumericLiteral.kind;
-qb.addMixins(NumericLiteral, [qc.Declaration]);
+qu.addMixins(NumericLiteral, [qc.Declaration]);
 export class ObjectBindingPattern extends Nobj implements qc.ObjectBindingPattern {
   static readonly kind = Syntax.ObjectBindingPattern;
   parent?: VariableDeclaration | ParameterDeclaration | BindingElement;
@@ -2635,11 +2635,11 @@ export namespace OuterExpression {
   export function isIgnorableParen(n: qc.Expression) {
     return (
       n.kind === Syntax.ParenthesizedExpression &&
-      qb.isSynthesized(n) &&
-      qb.isSynthesized(getSourceMapRange(n)) &&
-      qb.isSynthesized(getCommentRange(n)) &&
-      !qb.some(getSyntheticLeadingComments(n)) &&
-      !qb.some(getSyntheticTrailingComments(n))
+      qu.isSynthesized(n) &&
+      qu.isSynthesized(getSourceMapRange(n)) &&
+      qu.isSynthesized(getCommentRange(n)) &&
+      !qu.some(getSyntheticLeadingComments(n)) &&
+      !qu.some(getSyntheticTrailingComments(n))
     );
   }
   export function recreateOuterExpressions(o: qc.Expression | undefined, i: qc.Expression, ks = qc.OuterExpressionKinds.All): qc.Expression {
@@ -2688,7 +2688,7 @@ export class ParameterDeclaration extends qc.NamedDeclaration implements qc.Para
   }
 }
 ParameterDeclaration.prototype.kind = ParameterDeclaration.kind;
-qb.addMixins(ParameterDeclaration, [qc.DocContainer]);
+qu.addMixins(ParameterDeclaration, [qc.DocContainer]);
 export class ParenthesizedExpression extends qc.PrimaryExpression implements qc.ParenthesizedExpression {
   static readonly kind = Syntax.ParenthesizedExpression;
   expression: qc.Expression;
@@ -2700,7 +2700,7 @@ export class ParenthesizedExpression extends qc.PrimaryExpression implements qc.
     return this.expression !== e ? new ParenthesizedExpression(e).updateFrom(this) : this;
   }
 }
-qb.addMixins(ParenthesizedExpression, [qc.DocContainer]);
+qu.addMixins(ParenthesizedExpression, [qc.DocContainer]);
 ParenthesizedExpression.prototype.kind = ParenthesizedExpression.kind;
 export class ParenthesizedTypeNode extends qc.TypeNode implements qc.ParenthesizedTypeNode {
   static readonly kind = Syntax.ParenthesizedType;
@@ -2764,10 +2764,10 @@ export class PrefixUnaryExpression extends qc.UpdateExpression implements qc.Pre
 PrefixUnaryExpression.prototype.kind = PrefixUnaryExpression.kind;
 export class PrivateIdentifier extends qc.TokenOrIdentifier implements qc.PrivateIdentifier {
   static readonly kind = Syntax.PrivateIdentifier;
-  escapedText!: qb.__String;
+  escapedText!: qu.__String;
   constructor(t: string) {
     super(true, PrivateIdentifier.kind);
-    if (t[0] !== '#') qb.fail('First character of private identifier must be #: ' + t);
+    if (t[0] !== '#') qu.fail('First character of private identifier must be #: ' + t);
     this.escapedText = qy.get.escUnderscores(t);
   }
   get text(): string {
@@ -2793,7 +2793,7 @@ export class PropertyAccessExpression extends qc.MemberExpression implements qc.
   _declarationBrand: any;
 }
 PropertyAccessExpression.prototype.kind = PropertyAccessExpression.kind;
-qb.addMixins(PropertyAccessExpression, [qc.NamedDeclaration]);
+qu.addMixins(PropertyAccessExpression, [qc.NamedDeclaration]);
 export class PropertyAccessChain extends PropertyAccessExpression implements qc.PropertyAccessChain {
   name!: Identifier;
   constructor(e: qc.Expression, q: qc.QuestionDotToken | undefined, n: string | Identifier) {
@@ -2802,7 +2802,7 @@ export class PropertyAccessChain extends PropertyAccessExpression implements qc.
     this.questionDotToken = q;
   }
   update(e: qc.Expression, n: Identifier, q?: qc.QuestionDotToken) {
-    qb.assert(!!(this.flags & NodeFlags.OptionalChain));
+    qu.assert(!!(this.flags & NodeFlags.OptionalChain));
     return this.expression !== e || this.questionDotToken !== q || this.name !== n ? new PropertyAccessChain(e, q, n).setEmitFlags(get.emitFlags(this)).updateFrom(this) : this;
   }
   _optionalChainBrand: any;
@@ -2823,7 +2823,7 @@ export class PropertyAssignment extends qc.ObjectLiteralElement implements qc.Pr
   }
 }
 PropertyAssignment.prototype.kind = PropertyAssignment.kind;
-qb.addMixins(PropertyAssignment, [qc.DocContainer]);
+qu.addMixins(PropertyAssignment, [qc.DocContainer]);
 export class PropertyDeclaration extends qc.ClassElement implements qc.PropertyDeclaration {
   static readonly kind = Syntax.PropertyDeclaration;
   parent?: qc.ClassLikeDeclaration;
@@ -2863,7 +2863,7 @@ export class PropertyDeclaration extends qc.ClassElement implements qc.PropertyD
   }
 }
 PropertyDeclaration.prototype.kind = PropertyDeclaration.kind;
-qb.addMixins(PropertyDeclaration, [qc.DocContainer]);
+qu.addMixins(PropertyDeclaration, [qc.DocContainer]);
 export class PropertySignature extends qc.TypeElement implements qc.PropertySignature {
   static readonly kind = Syntax.PropertySignature;
   name: qc.PropertyName;
@@ -2883,7 +2883,7 @@ export class PropertySignature extends qc.TypeElement implements qc.PropertySign
   }
 }
 PropertySignature.prototype.kind = PropertySignature.kind;
-qb.addMixins(PropertySignature, [qc.DocContainer]);
+qu.addMixins(PropertySignature, [qc.DocContainer]);
 export class QualifiedName extends Nobj implements qc.QualifiedName {
   static readonly kind = Syntax.QualifiedName;
   left: qc.EntityName;
@@ -2959,7 +2959,7 @@ export class SetAccessorDeclaration extends qc.FunctionLikeDeclarationBase imple
   _objectLiteralBrand: any;
 }
 SetAccessorDeclaration.prototype.kind = SetAccessorDeclaration.kind;
-qb.addMixins(SetAccessorDeclaration, [qc.ClassElement, qc.ObjectLiteralElement, qc.DocContainer]);
+qu.addMixins(SetAccessorDeclaration, [qc.ClassElement, qc.ObjectLiteralElement, qc.DocContainer]);
 export class ShorthandPropertyAssignment extends qc.ObjectLiteralElement implements qc.ShorthandPropertyAssignment {
   static readonly kind = Syntax.ShorthandPropertyAssignment;
   parent?: ObjectLiteralExpression;
@@ -2978,7 +2978,7 @@ export class ShorthandPropertyAssignment extends qc.ObjectLiteralElement impleme
   }
 }
 ShorthandPropertyAssignment.prototype.kind = ShorthandPropertyAssignment.kind;
-qb.addMixins(ShorthandPropertyAssignment, [qc.DocContainer]);
+qu.addMixins(ShorthandPropertyAssignment, [qc.DocContainer]);
 export class SpreadElement extends qc.Expression implements qc.SpreadElement {
   static readonly kind = Syntax.SpreadElement;
   parent?: ArrayLiteralExpression | CallExpression | NewExpression;
@@ -3005,7 +3005,7 @@ export class SpreadAssignment extends qc.ObjectLiteralElement implements qc.Spre
   }
 }
 SpreadAssignment.prototype.kind = SpreadAssignment.kind;
-qb.addMixins(SpreadAssignment, [qc.DocContainer]);
+qu.addMixins(SpreadAssignment, [qc.DocContainer]);
 export class StringLiteral extends qc.LiteralExpression implements qc.StringLiteral {
   static readonly kind = Syntax.StringLiteral;
   textSourceNode?: qc.Identifier | qc.StringLiteralLike | qc.NumericLiteral;
@@ -3035,7 +3035,7 @@ export class StringLiteral extends qc.LiteralExpression implements qc.StringLite
   _declarationBrand: any;
 }
 StringLiteral.prototype.kind = StringLiteral.kind;
-qb.addMixins(StringLiteral, [qc.Declaration]);
+qu.addMixins(StringLiteral, [qc.Declaration]);
 export class SuperExpression extends qc.PrimaryExpression implements qc.SuperExpression {
   static readonly kind = Syntax.SuperKeyword;
   constructor() {
@@ -3167,7 +3167,7 @@ export class ThisExpression extends qc.PrimaryExpression implements qc.ThisExpre
   _typeNodeBrand: any;
 }
 ThisExpression.prototype.kind = ThisExpression.kind;
-qb.addMixins(ThisExpression, [KeywordTypeNode]);
+qu.addMixins(ThisExpression, [KeywordTypeNode]);
 export class ThisTypeNode extends qc.TypeNode implements qc.ThisTypeNode {
   static readonly kind = Syntax.ThisType;
   constructor() {
@@ -3235,7 +3235,7 @@ export class TypeAliasDeclaration extends qc.DeclarationStatement implements qc.
   _statementBrand: any;
 }
 TypeAliasDeclaration.prototype.kind = TypeAliasDeclaration.kind;
-qb.addMixins(TypeAliasDeclaration, [qc.DocContainer]);
+qu.addMixins(TypeAliasDeclaration, [qc.DocContainer]);
 export class TypeAssertion extends qc.UnaryExpression implements qc.TypeAssertion {
   static readonly kind = Syntax.TypeAssertionExpression;
   type: qc.TypeNode;
@@ -3263,7 +3263,7 @@ export class TypeLiteralNode extends qc.TypeNode implements qc.TypeLiteralNode {
   _declarationBrand: any;
 }
 TypeLiteralNode.prototype.kind = TypeLiteralNode.kind;
-qb.addMixins(TypeLiteralNode, [qc.Declaration]);
+qu.addMixins(TypeLiteralNode, [qc.Declaration]);
 export class TypeOfExpression extends qc.UnaryExpression implements qc.TypeOfExpression {
   static readonly kind = Syntax.TypeOfExpression;
   expression: qc.UnaryExpression;
@@ -3393,7 +3393,7 @@ export namespace UnparsedNode {
       case BundleFileSectionKind.Reference:
       case BundleFileSectionKind.Type:
       case BundleFileSectionKind.Lib:
-        return qb.fail(`BundleFileSectionKind: ${kind} not yet mapped to SyntaxKind`);
+        return qu.fail(`BundleFileSectionKind: ${kind} not yet mapped to SyntaxKind`);
       default:
         return qg.assertNever(kind);
     }
@@ -3439,7 +3439,7 @@ export class UnparsedSource extends Nobj implements qc.UnparsedSource {
     let stripInternal: boolean | undefined;
     let bundleFileInfo: BundleFileInfo | undefined;
     if (!isString(textOrInputFiles)) {
-      qb.assert(mapPathOrType === 'js' || mapPathOrType === 'dts');
+      qu.assert(mapPathOrType === 'js' || mapPathOrType === 'dts');
       r.fileName = (mapPathOrType === 'js' ? textOrInputFiles.javascriptPath : textOrInputFiles.declarationPath) || '';
       r.sourceMapPath = mapPathOrType === 'js' ? textOrInputFiles.javascriptMapPath : textOrInputFiles.declarationMapPath;
       Object.defineProperties(r, {
@@ -3456,7 +3456,7 @@ export class UnparsedSource extends Nobj implements qc.UnparsedSource {
       });
       if (textOrInputFiles.buildInfo && textOrInputFiles.buildInfo.bundle) {
         r.oldFileOfCurrentEmit = textOrInputFiles.oldFileOfCurrentEmit;
-        qb.assert(mapTextOrStripInternal === undefined || typeof mapTextOrStripInternal === 'boolean');
+        qu.assert(mapTextOrStripInternal === undefined || typeof mapTextOrStripInternal === 'boolean');
         stripInternal = mapTextOrStripInternal;
         bundleFileInfo = mapPathOrType === 'js' ? textOrInputFiles.buildInfo.bundle.js : textOrInputFiles.buildInfo.bundle.dts;
         if (r.oldFileOfCurrentEmit) {
@@ -3470,7 +3470,7 @@ export class UnparsedSource extends Nobj implements qc.UnparsedSource {
       r.sourceMapPath = mapPathOrType;
       r.sourceMapText = mapTextOrStripInternal as string;
     }
-    qb.assert(!r.oldFileOfCurrentEmit);
+    qu.assert(!r.oldFileOfCurrentEmit);
     parseUnparsedSourceFile(r, bundleFileInfo, stripInternal);
     return r;
   }
@@ -3565,7 +3565,7 @@ export class UnparsedSource extends Nobj implements qc.UnparsedSource {
     this.texts = texts || [<UnparsedTextLike>createUnparsedNode({ kind: BundleFileSectionKind.Text, pos: 0, end: this.text.length }, this)];
   }
   parseOldFileOfCurrentEmit(this: UnparsedSource, bundleFileInfo: BundleFileInfo) {
-    qb.assert(!!this.oldFileOfCurrentEmit);
+    qu.assert(!!this.oldFileOfCurrentEmit);
     let texts: UnparsedTextLike[] | undefined;
     let syntheticReferences: UnparsedSyntheticReference[] | undefined;
     for (const section of bundleFileInfo.sections) {
@@ -3648,14 +3648,14 @@ export class VariableStatement extends qc.Statement implements qc.VariableStatem
     super(true);
     this.decorators = undefined;
     this.modifiers = Nodes.from(ms);
-    this.declarationList = qb.isArray(ds) ? new VariableDeclarationList(ds) : ds;
+    this.declarationList = qu.isArray(ds) ? new VariableDeclarationList(ds) : ds;
   }
   update(ms: readonly Modifier[] | undefined, ds: VariableDeclarationList) {
     return this.modifiers !== ms || this.declarationList !== ds ? new VariableStatement(ms, ds).updateFrom(this) : this;
   }
 }
 VariableStatement.prototype.kind = VariableStatement.kind;
-qb.addMixins(VariableStatement, [qc.DocContainer]);
+qu.addMixins(VariableStatement, [qc.DocContainer]);
 export class VoidExpression extends qc.UnaryExpression implements qc.VoidExpression {
   static readonly kind = Syntax.VoidExpression;
   expression: qc.UnaryExpression;
@@ -4000,7 +4000,7 @@ export namespace parenthesize {
     return new Nodes(sameMap(ns, elementTypeMember));
   }
   export function typeParameters(ns?: readonly qc.TypeNode[]) {
-    if (qb.some(ns)) {
+    if (qu.some(ns)) {
       const ps: qc.TypeNode[] = [];
       for (let i = 0; i < ns.length; ++i) {
         const p = ns[i];
@@ -4106,7 +4106,7 @@ export namespace emit {
     const emitNode = n.emitNode;
     return (emitNode && emitNode.commentRange) || n;
   }
-  export function setCommentRange<T extends Nobj>(n: T, range: qb.TextRange) {
+  export function setCommentRange<T extends Nobj>(n: T, range: qu.TextRange) {
     getOrCreateEmitNode(n).commentRange = range;
     return n;
   }
@@ -4165,7 +4165,7 @@ export namespace emit {
     return n;
   }
   export function addEmitHelpers<T extends Nobj>(n: T, helpers: EmitHelper[] | undefined): T {
-    if (qb.some(helpers)) {
+    if (qu.some(helpers)) {
       const emitNode = getOrCreateEmitNode(n);
       for (const helper of helpers) {
         emitNode.helpers = appendIfUnique(emitNode.helpers, helper);
@@ -4216,7 +4216,7 @@ export namespace emit {
     if (flags) destEmitNode.flags = flags;
     if (commentRange) destEmitNode.commentRange = commentRange;
     if (sourceMapRange) destEmitNode.sourceMapRange = sourceMapRange;
-    if (tokenSourceMapRanges) destEmitNode.tokenSourceMapRanges = qb.TextRange.merge(tokenSourceMapRanges, destEmitNode.tokenSourceMapRanges!);
+    if (tokenSourceMapRanges) destEmitNode.tokenSourceMapRanges = qu.TextRange.merge(tokenSourceMapRanges, destEmitNode.tokenSourceMapRanges!);
     if (constantValue !== undefined) destEmitNode.constantValue = constantValue;
     if (helpers) destEmitNode.helpers = addRange(destEmitNode.helpers, helpers);
     if (startsOnNewLine !== undefined) destEmitNode.startsOnNewLine = startsOnNewLine;
@@ -4275,14 +4275,14 @@ export namespace fixme {
             if (!helper.scoped) {
               const importName = (helper as UnscopedEmitHelper).importName;
               if (importName) {
-                qb.pushIfUnique(helperNames, importName);
+                qu.pushIfUnique(helperNames, importName);
               }
             }
           }
-          if (qb.some(helperNames)) {
+          if (qu.some(helperNames)) {
             helperNames.sort(compareCaseSensitive);
             namedBindings = new NamedImports(
-              qb.map(helperNames, (name) =>
+              qu.map(helperNames, (name) =>
                 isFileLevelUniqueName(sourceFile, name) ? new ImportSpecifier(undefined, new Identifier(name)) : new qc.ImportSpecifier(new Identifier(name), getUnscopedHelperName(name))
               )
             );
@@ -4365,7 +4365,7 @@ export function asToken<T extends Syntax>(t: T | qc.Token<T>): qc.Token<T> {
   return typeof t === 'number' ? new qc.Token(t) : t;
 }
 export function asName<T extends Identifier | qc.BindingName | qc.PropertyName | qc.EntityName | ThisTypeNode | undefined>(n: string | T): T | Identifier {
-  return qb.isString(n) ? new Identifier(n) : n;
+  return qu.isString(n) ? new Identifier(n) : n;
 }
 export function asLiteral(v: string | StringLiteral | NoSubstitutionLiteral | NumericLiteral | Identifier, singleQuote: boolean): StringLiteral;
 export function asLiteral(v: string | number, singleQuote: boolean): StringLiteral | NumericLiteral;
@@ -4377,7 +4377,7 @@ export function asLiteral(v: string | number | qc.PseudoBigInt | boolean | Strin
   if (typeof v === 'number') return new NumericLiteral(v + '');
   if (typeof v === 'object' && 'base10Value' in v) return new BigIntLiteral(pseudoBigIntToString(v) + 'n');
   if (typeof v === 'boolean') return v ? new BooleanLiteral(true) : new BooleanLiteral(false);
-  if (qb.isString(v)) {
+  if (qu.isString(v)) {
     const r = new StringLiteral(v);
     if (singleQuote) r.singleQuote = true;
     return r;

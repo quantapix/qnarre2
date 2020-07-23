@@ -1,13 +1,12 @@
-import * as qb from '../base';
-import { NodeFlags, NodeType, TokenFlags } from '../core';
-import * as qc from '../core';
+import { NodeType } from './tree';
+import * as qc from './tree';
 import * as qd from '../diagnostic';
 import * as qg from '../debug';
+import { EmitFlags, Node, NodeFlags, Nodes, TokenFlags } from '../type';
+import * as qt from '../type';
+import * as qu from '../base';
 import { Modifier, ModifierFlags, Syntax } from '../syntax';
 import * as qy from '../syntax';
-import { EmitFlags, Node, Nodes } from '../type';
-import * as qt from '../type';
-export * from './core';
 const MAX_SMI_X86 = 0x3fff_ffff;
 export const enum AssignmentKind {
   None,
@@ -66,7 +65,7 @@ export namespace access {
       case Kind.ReadWrite:
         return Kind.ReadWrite;
       default:
-        return qb.fail();
+        return qu.fail();
     }
   }
 }
@@ -89,8 +88,8 @@ export const create = new (class {
     if (f & ModifierFlags.Async) r.push(this.modifier(Syntax.AsyncKeyword));
     return r;
   }
-  tokenRange(pos: number, k: Syntax): qb.TextRange {
-    return new qb.TextRange(pos, pos + qy.toString(k)!.length);
+  tokenRange(pos: number, k: Syntax): qu.TextRange {
+    return new qu.TextRange(pos, pos + qy.toString(k)!.length);
   }
   createMethodCall(object: Expression, methodName: string | Identifier, argumentsList: readonly Expression[]) {
     return new qc.CallExpression(new qc.PropertyAccessExpression(object, asName(methodName)), undefined, argumentsList);
@@ -147,7 +146,7 @@ export const is = new (class {
     return this.kind(qc.VariableDeclaration, n) && !!n.initer && this.isRequireCall(n.initer, requireStringLiteralLikeArgument);
   }
   isRequireVariableDeclarationStatement(n: Node, requireStringLiteralLikeArgument = true): n is qc.VariableStatement {
-    return this.kind(qc.VariableStatement, n) && qb.every(n.declarationList.declarations, (d) => this.isRequireVariableDeclaration(d, requireStringLiteralLikeArgument));
+    return this.kind(qc.VariableStatement, n) && qu.every(n.declarationList.declarations, (d) => this.isRequireVariableDeclaration(d, requireStringLiteralLikeArgument));
   }
   isTypeDeclaration(
     n: Node
@@ -377,7 +376,7 @@ export const is = new (class {
         if (this.kind(qc.QualifiedName, p) && p.right === n) n = p;
         else if (this.kind(qc.PropertyAccessExpression, p) && p.name === n) n = p;
         const k = n.kind;
-        qb.assert(k === Syntax.Identifier || k === Syntax.QualifiedName || k === Syntax.PropertyAccessExpression);
+        qu.assert(k === Syntax.Identifier || k === Syntax.QualifiedName || k === Syntax.PropertyAccessExpression);
       case Syntax.PropertyAccessExpression:
       case Syntax.QualifiedName:
       case Syntax.ThisKeyword: {
@@ -414,7 +413,7 @@ export const is = new (class {
             return n === p.type;
           case Syntax.CallExpression:
           case Syntax.NewExpression:
-            return qb.contains(p.typeArguments, n);
+            return qu.contains(p.typeArguments, n);
           case Syntax.TaggedTemplateExpression:
             return false;
         }
@@ -629,7 +628,7 @@ export const is = new (class {
   }
   withName(n: Node, name: qc.Identifier) {
     if (this.namedDeclaration(n) && this.kind(qc.Identifier, n.name) && idText(n.name as qc.Identifier) === idText(name)) return true;
-    if (this.kind(qc.VariableStatement, n) && qb.some(n.declarationList.declarations, (d) => this.withName(d, name))) return true;
+    if (this.kind(qc.VariableStatement, n) && qu.some(n.declarationList.declarations, (d) => this.withName(d, name))) return true;
     return false;
   }
   withDocNodes(n: Node): n is qc.HasDoc {
@@ -1258,7 +1257,7 @@ export const is = new (class {
     return this.kind(qc.Identifier, n.name) && !n.initer;
   }
   hoistedVariableStatement(n: qc.Statement) {
-    return this.customPrologue(n) && this.kind(qc.VariableStatement, n) && qb.every(n.declarationList.declarations, this.hoistedVariable);
+    return this.customPrologue(n) && this.kind(qc.VariableStatement, n) && qu.every(n.declarationList.declarations, this.hoistedVariable);
   }
   anyPrologueDirective(n: Node) {
     return this.prologueDirective(n) || !!(get.emitFlags(n) & EmitFlags.CustomPrologue);
@@ -1303,7 +1302,7 @@ export const is = new (class {
     return this.emptyBindingPattern(e.name);
   }
   emptyBindingPattern(n: qc.BindingName): n is qt.BindingPattern {
-    if (this.kind(qc.BindingPattern, n)) return qb.every(n.elements, this.emptyBindingElement);
+    if (this.kind(qc.BindingPattern, n)) return qu.every(n.elements, this.emptyBindingElement);
     return false;
   }
   variableDeclarationInVariableStatement(n: qc.VariableDeclaration) {
@@ -1347,10 +1346,10 @@ export const has = new (class {
     return this.effectiveModifier(n, ModifierFlags.Readonly);
   }
   invalidEscape(t: qc.TemplateLiteral) {
-    return t && !!(is.kind(qc.NoSubstitutionLiteral, t) ? t.templateFlags : t.head.templateFlags || qb.some(t.templateSpans, (s) => !!t.literal.templateFlags));
+    return t && !!(is.kind(qc.NoSubstitutionLiteral, t) ? t.templateFlags : t.head.templateFlags || qu.some(t.templateSpans, (s) => !!t.literal.templateFlags));
   }
   restParameter(s: qc.SignatureDeclaration | qc.DocSignature) {
-    const last = qb.lastOrUndefined<qc.ParameterDeclaration | qc.DocParameterTag>(s.parameters);
+    const last = qu.lastOrUndefined<qc.ParameterDeclaration | qc.DocParameterTag>(s.parameters);
     return !!last && is.restParameter(last);
   }
 })();
@@ -1387,7 +1386,7 @@ export const isJsx = new (class {
 })();
 export const isDoc = new (class {
   constructSignature(n: Node) {
-    const p = is.kind(qc.DocFunctionType, n) ? qb.firstOrUndefined(n.parameters) : undefined;
+    const p = is.kind(qc.DocFunctionType, n) ? qu.firstOrUndefined(n.parameters) : undefined;
     const i = tryCast(p && p.name, is.identifier);
     return !!i && i.escapedText === 'new';
   }
@@ -1459,10 +1458,10 @@ export const get = new (class {
     return findAncestor(n.parent, is.classLike);
   }
   thisContainer(n: Node | undefined, arrowFunctions: boolean): Node {
-    qb.assert(n?.kind !== Syntax.SourceFile);
+    qu.assert(n?.kind !== Syntax.SourceFile);
     while (true) {
       n = n?.parent;
-      if (!n) return qb.fail();
+      if (!n) return qu.fail();
       const p = n.parent as Node | undefined;
       switch (n.kind) {
         case Syntax.ComputedPropertyName:
@@ -1555,7 +1554,7 @@ export const get = new (class {
     return (e && e.flags) || 0;
   }
   literalText(n: qc.LiteralLikeNode, sourceFile: qc.SourceFile, neverAsciiEscape: boolean | undefined, jsxAttributeEscape: boolean) {
-    if (!qb.isSynthesized(n) && n.parent && !((is.kind(qc.NumericLiteral, n) && n.numericLiteralFlags & TokenFlags.ContainsSeparator) || is.kind(qc.BigIntLiteral, n)))
+    if (!qu.isSynthesized(n) && n.parent && !((is.kind(qc.NumericLiteral, n) && n.numericLiteralFlags & TokenFlags.ContainsSeparator) || is.kind(qc.BigIntLiteral, n)))
       return getSourceTextOfNodeFromSourceFile(sourceFile, n);
     switch (n.kind) {
       case Syntax.StringLiteral: {
@@ -1586,7 +1585,7 @@ export const get = new (class {
       case Syntax.RegexLiteral:
         return n.text;
     }
-    return qb.fail(`Literal kind '${n.kind}' not accounted for.`);
+    return qu.fail(`Literal kind '${n.kind}' not accounted for.`);
   }
   sourceFileOf(n: Node): qc.SourceFile;
   sourceFileOf(n: Node | undefined): qc.SourceFile | undefined;
@@ -1804,7 +1803,7 @@ export const get = new (class {
     return;
   }
   singleVariableOfVariableStatement(n: Node): qc.VariableDeclaration | undefined {
-    return is.kind(qc.VariableStatement, n) ? qb.firstOrUndefined(n.declarationList.declarations) : undefined;
+    return is.kind(qc.VariableStatement, n) ? qu.firstOrUndefined(n.declarationList.declarations) : undefined;
   }
   nestedModuleDeclaration(n?: Node): Node | undefined {
     return is.kind(qc.ModuleDeclaration, n) && n.body && n.body.kind === Syntax.ModuleDeclaration ? n.body : undefined;
@@ -1818,13 +1817,13 @@ export const get = new (class {
   }
   allSuperTypeNodes(n: Node): readonly qc.TypeNode[] {
     return is.kind(qc.InterfaceDeclaration, n)
-      ? getInterfaceBaseTypeNodes(n) || qb.empty
+      ? getInterfaceBaseTypeNodes(n) || qu.empty
       : is.classLike(n)
-      ? concatenate(singleElementArray(getEffectiveBaseTypeNode(n)), getEffectiveImplementsTypeNodes(n)) || qb.empty
-      : qb.empty;
+      ? concatenate(singleElementArray(getEffectiveBaseTypeNode(n)), getEffectiveImplementsTypeNodes(n)) || qu.empty
+      : qu.empty;
   }
   externalModuleImportEqualsDeclarationExpression(n: Node) {
-    qb.assert(is.externalModuleImportEqualsDeclaration(n));
+    qu.assert(is.externalModuleImportEqualsDeclaration(n));
     return n.moduleReference.expression;
   }
   declarationOfExpando(n: Node): Node | undefined {
@@ -1907,10 +1906,10 @@ export const get = new (class {
     return this.nonAssignedNameOfDeclaration(declaration) || (is.kind(qc.FunctionExpression, declaration) || is.kind(ClassExpression, declaration) ? get.assignedName(declaration) : undefined);
   }
   effectiveTypeParameterDeclarations(n: qc.DeclarationWithTypeParameters): readonly qc.TypeParameterDeclaration[] {
-    if (is.kind(DocSignature, n)) return qb.empty;
+    if (is.kind(DocSignature, n)) return qu.empty;
     if (isDoc.typeAlias(n)) {
-      qb.assert(is.kind(qc.DocComment, n.parent));
-      return qb.flatMap(n.parent.tags, (tag) => (is.kind(qc.DocTemplateTag, tag) ? tag.typeParameters : undefined));
+      qu.assert(is.kind(qc.DocComment, n.parent));
+      return qu.flatMap(n.parent.tags, (tag) => (is.kind(qc.DocTemplateTag, tag) ? tag.typeParameters : undefined));
     }
     if (n.typeParameters) return n.typeParameters;
     if (is.inJSFile(n)) {
@@ -1919,7 +1918,7 @@ export const get = new (class {
       const typeTag = getDoc.type(n);
       if (typeTag && is.kind(qc.FunctionTypeNode, typeTag) && typeTag.typeParameters) return typeTag.typeParameters;
     }
-    return qb.empty;
+    return qu.empty;
   }
   effectiveConstraintOfTypeParameter(n: qc.TypeParameterDeclaration): qc.TypeNode | undefined {
     return n.constraint ? n.constraint : is.kind(qc.DocTemplateTag, n.parent) && n === n.parent.typeParameters[0] ? n.parent.constraint : undefined;
@@ -1949,7 +1948,7 @@ export const get = new (class {
     if (is.missing(n) || !n.decorators) return n.getTokenPos(s);
     return qy.skipTrivia((s || this.sourceFileOf(n)).text, n.decorators.end);
   }
-  textOfPropertyName(n: qc.PropertyName | qc.NoSubstitutionLiteral): qb.__String {
+  textOfPropertyName(n: qc.PropertyName | qc.NoSubstitutionLiteral): qu.__String {
     switch (n.kind) {
       case Syntax.Identifier:
       case Syntax.PrivateIdentifier:
@@ -2019,7 +2018,7 @@ export const getDoc = new (class {
   }
   type(n: Node): qc.TypeNode | undefined {
     let tag: qt.DocTypeTag | qt.DocParameterTag | undefined = this.firstTag(n, isDocTypeTag);
-    if (!tag && is.kind(qc.ParameterDeclaration, n)) tag = qb.find(this.parameterTags(n), (tag) => !!tag.typeExpression);
+    if (!tag && is.kind(qc.ParameterDeclaration, n)) tag = qu.find(this.parameterTags(n), (tag) => !!tag.typeExpression);
     return tag && tag.typeExpression && tag.typeExpression.type;
   }
   returnType(n: Node): qc.TypeNode | undefined {
@@ -2029,7 +2028,7 @@ export const getDoc = new (class {
     if (typeTag && typeTag.typeExpression) {
       const type = typeTag.typeExpression.type;
       if (is.kind(qc.TypeLiteralNode, type)) {
-        const sig = qb.find(type.members, CallSignatureDeclaration.kind);
+        const sig = qu.find(type.members, CallSignatureDeclaration.kind);
         return sig && sig.type;
       }
       if (is.kind(qc.FunctionTypeNode, type) || is.kind(qc.DocFunctionType, type)) return type.type;
@@ -2040,8 +2039,8 @@ export const getDoc = new (class {
     let tags = (n as qt.DocContainer).docCache;
     if (tags === undefined || noCache) {
       const comments = this.commentsAndTags(n, noCache);
-      qb.assert(comments.length < 2 || comments[0] !== comments[1]);
-      tags = qb.flatMap(comments, (j) => (is.kind(Doc, j) ? j.tags : j));
+      qu.assert(comments.length < 2 || comments[0] !== comments[1]);
+      tags = qu.flatMap(comments, (j) => (is.kind(Doc, j) ? j.tags : j));
       if (!noCache) (n as qt.DocContainer).docCache = tags;
     }
     return tags;
@@ -2053,7 +2052,7 @@ export const getDoc = new (class {
     return this.tagsWorker(n, true);
   }
   firstTag<T extends qt.DocTag>(n: Node, cb: (t: qt.DocTag) => t is T, noCache?: boolean): T | undefined {
-    return qb.find(this.tagsWorker(n, noCache), cb);
+    return qu.find(this.tagsWorker(n, noCache), cb);
   }
   allTags<T extends qt.DocTag>(n: Node, cb: (t: qt.DocTag) => t is T): readonly T[] {
     return this.tags(n).filter(cb);
@@ -2070,12 +2069,12 @@ export const getDoc = new (class {
           .filter((tag): tag is qt.DocParameterTag => is.kind(qc.DocParameterTag, tag) && is.kind(qc.Identifier, tag.name) && tag.name.escapedText === name);
       } else {
         const i = param.parent.parameters.indexOf(param);
-        qb.assert(i > -1, "Parameters should always be in their parents' parameter list");
+        qu.assert(i > -1, "Parameters should always be in their parents' parameter list");
         const paramTags = this.tagsWorker(param.parent, noCache).filter(isDocParameterTag);
         if (i < paramTags.length) return [paramTags[i]];
       }
     }
-    return qb.empty;
+    return qu.empty;
   }
   parameterTags(param: qc.ParameterDeclaration): readonly qt.DocParameterTag[] {
     return this.parameterTagsWorker(param, false);
@@ -2109,22 +2108,22 @@ export const getDoc = new (class {
   commentsAndTags(host: Node, noCache?: boolean): readonly (qc.Doc | qt.DocTag)[] {
     let r: (qc.Doc | qt.DocTag)[] | undefined;
     if (is.variableLike(host) && is.withIniter(host) && is.withDocNodes(host.initer!)) {
-      r = qb.append(r, qb.last((host.initer as qc.HasDoc).doc!));
+      r = qu.append(r, qu.last((host.initer as qc.HasDoc).doc!));
     }
     let n: Node | undefined = host;
     while (n && n.parent) {
-      if (is.withDocNodes(n)) r = qb.append(r, qb.last(n.doc!));
+      if (is.withDocNodes(n)) r = qu.append(r, qu.last(n.doc!));
       if (is.kind(qc.ParameterDeclaration, n)) {
-        r = qb.addRange(r, (noCache ? this.parameterTagsNoCache : this.parameterTags)(n));
+        r = qu.addRange(r, (noCache ? this.parameterTagsNoCache : this.parameterTags)(n));
         break;
       }
       if (is.kind(qc.TypeParameterDeclaration, n)) {
-        r = qb.addRange(r, (noCache ? this.typeParameterTagsNoCache : this.typeParameterTags)(n));
+        r = qu.addRange(r, (noCache ? this.typeParameterTagsNoCache : this.typeParameterTags)(n));
         break;
       }
       n = this.nextCommentLocation(n);
     }
-    return r || qb.empty;
+    return r || qu.empty;
   }
   nextCommentLocation(n: Node) {
     const p = n.parent;
@@ -2153,7 +2152,7 @@ export const getDoc = new (class {
     return qg.checkDefined(findAncestor(n.parent, isDoc)).parent;
   }
   typeParameterDeclarations(n: qc.DeclarationWithTypeParameters): readonly qc.TypeParameterDeclaration[] {
-    return qb.flatMap(this.tags(n), (tag) => (isNonTypeAliasTemplate(tag) ? tag.typeParameters : undefined));
+    return qu.flatMap(this.tags(n), (tag) => (isNonTypeAliasTemplate(tag) ? tag.typeParameters : undefined));
   }
   modifierFlagsNoCache(n: Node): ModifierFlags {
     let flags = ModifierFlags.None;
@@ -2197,7 +2196,7 @@ export const fixme = new (class {
     return indentation === MAX_SMI_X86 ? undefined : indentation;
   }
   hasScopeMarker(ss: readonly qc.Statement[]) {
-    return qb.some(ss, is.scopeMarker);
+    return qu.some(ss, is.scopeMarker);
   }
   needsScopeMarker(s: qc.Statement) {
     return !is.anyImportOrReExport(s) && !is.kind(qc.ExportAssignment, s) && !has.syntacticModifier(s, ModifierFlags.Export) && !is.ambientModule(s);
@@ -2213,7 +2212,7 @@ export const fixme = new (class {
       fileExists(fileName: string): boolean;
       readFile(fileName: string): string | undefined;
     },
-    errors?: qb.Push<Diagnostic>
+    errors?: qu.Push<Diagnostic>
   ) {
     const matchResult = /^([a-z]+)([_\-]([a-z]+))?$/.exec(locale.toLowerCase());
     if (!matchResult) {
@@ -2228,7 +2227,7 @@ export const fixme = new (class {
       trySetLanguageAndTerritory(language, undefined, errors);
     }
     setUILocale(locale);
-    function trySetLanguageAndTerritory(language: string, territory: string | undefined, errors?: qb.Push<Diagnostic>) {
+    function trySetLanguageAndTerritory(language: string, territory: string | undefined, errors?: qu.Push<Diagnostic>) {
       const compilerFilePath = normalizePath(sys.getExecutingFilePath());
       const containingDirectoryPath = getDirectoryPath(compilerFilePath);
       let filePath = combinePaths(containingDirectoryPath, language);
@@ -2592,9 +2591,9 @@ export const forEach = new (class {
         const n3 = n as qt.DocReturnTag | qt.DocTypeTag | qt.DocThisTag | qt.DocEnumTag;
         return n3.tagName.visit(cb) || n3.typeExpression?.visit(cb);
       case Syntax.DocSignature:
-        return qb.forEach(n.typeParameters, cb) || qb.forEach(n.parameters, cb) || n.type?.visit(cb);
+        return qu.forEach(n.typeParameters, cb) || qu.forEach(n.parameters, cb) || n.type?.visit(cb);
       case Syntax.DocTypeLiteral:
-        return qb.forEach(n.docPropertyTags, cb);
+        return qu.forEach(n.docPropertyTags, cb);
       case Syntax.DocTag:
       case Syntax.DocClassTag:
       case Syntax.DocPublicTag:
@@ -2619,7 +2618,7 @@ export const forEach = new (class {
     };
     const visitAll = (parent: Node, cs: readonly (Node | Nodes)[]) => {
       for (const c of cs) {
-        if (qb.isArray(c)) {
+        if (qu.isArray(c)) {
           if (cbs) {
             const r = cbs(c, parent);
             if (r) {
@@ -2968,7 +2967,7 @@ export abstract class Statement extends qc.Statement {
     return addCustomPrologue(target, source, offset, visitor);
   }
   addStandardPrologue(target: Statement[], source: readonly Statement[], ensureUseStrict?: boolean): number {
-    qb.assert(target.length === 0, 'Prologue directives should be at the first statement in the target statements array');
+    qu.assert(target.length === 0, 'Prologue directives should be at the first statement in the target statements array');
     let foundUseStrict = false;
     let statementOffset = 0;
     const numStatements = source.length;
@@ -3003,7 +3002,7 @@ export abstract class Statement extends qc.Statement {
     const numStatements = source.length;
     while (statementOffset !== undefined && statementOffset < numStatements) {
       const statement = source[statementOffset];
-      if (get.emitFlags(statement) & EmitFlags.CustomPrologue && filter(statement)) qb.append(target, visitor ? visitNode(statement, visitor, isStatement) : statement);
+      if (get.emitFlags(statement) & EmitFlags.CustomPrologue && filter(statement)) qu.append(target, visitor ? visitNode(statement, visitor, isStatement) : statement);
       else break;
       statementOffset++;
     }
@@ -3018,7 +3017,7 @@ export abstract class Statement extends qc.Statement {
     return;
   }
   startsWithUseStrict(statements: readonly Statement[]) {
-    const firstStatement = qb.firstOrUndefined(statements);
+    const firstStatement = qu.firstOrUndefined(statements);
     return firstStatement !== undefined && is.prologueDirective(firstStatement) && isUseStrictPrologue(firstStatement);
   }
   createForOfBindingStatement(n: ForIniter, boundValue: Expression): Statement {
@@ -3168,7 +3167,7 @@ export namespace BindingOrAssignmentElement {
   }
   export function getPropertyNameOfBindingOrAssignmentElement(e: qc.BindingOrAssignmentElement): Exclude<qc.PropertyName, PrivateIdentifier> | undefined {
     const propertyName = tryGetPropertyNameOfBindingOrAssignmentElement(e);
-    qb.assert(!!propertyName || is.kind(SpreadAssignment, e));
+    qu.assert(!!propertyName || is.kind(SpreadAssignment, e));
     return propertyName;
   }
   export function tryGetPropertyNameOfBindingOrAssignmentElement(e: qc.BindingOrAssignmentElement): Exclude<qc.PropertyName, PrivateIdentifier> | undefined {
@@ -3258,12 +3257,12 @@ export namespace BindingOrAssignmentPattern {
     }
   }
   export function convertToObjectAssignmentPattern(n: qc.ObjectBindingOrAssignmentPattern) {
-    if (is.kind(ObjectBindingPattern, n)) return new ObjectLiteralExpression(qb.map(n.elements, convertToObjectAssignmentElement)).setOriginal(n).setRange(n);
+    if (is.kind(ObjectBindingPattern, n)) return new ObjectLiteralExpression(qu.map(n.elements, convertToObjectAssignmentElement)).setOriginal(n).setRange(n);
     qg.assertNode(n, isObjectLiteralExpression);
     return n;
   }
   export function convertToArrayAssignmentPattern(n: qc.ArrayBindingOrAssignmentPattern) {
-    if (is.kind(ArrayBindingPattern, n)) return new ArrayLiteralExpression(qb.map(n.elements, convertToArrayAssignmentElement)).setOriginal(n).setRange(n);
+    if (is.kind(ArrayBindingPattern, n)) return new ArrayLiteralExpression(qu.map(n.elements, convertToArrayAssignmentElement)).setOriginal(n).setRange(n);
     qg.assertNode(n, isArrayLiteralExpression);
     return n;
   }

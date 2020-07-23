@@ -1,7 +1,7 @@
 import * as qb from './base';
-import * as qd from './diags';
-import * as qt from './types';
-import { Extension, Path, ScriptKind } from './types';
+import * as qd from './diagnostic';
+import * as qt from './type';
+import { Extension, Path, ScriptKind } from './type';
 import * as qy from './syntax';
 import { dirSeparator } from './syntax';
 const backslashRegExp = /\\/g;
