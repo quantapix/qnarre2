@@ -3,7 +3,7 @@ import * as qc from './base';
 import { is, get } from './context';
 import * as qg from '../debug';
 import { DocTag, Node, NodeFlags } from '../type';
-import * as qu from '../base';
+import * as qu from '../util';
 import { Modifier, Syntax } from '../syntax';
 import * as qy from '../syntax';
 export * from './base';

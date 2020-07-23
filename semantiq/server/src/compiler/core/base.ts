@@ -2,10 +2,10 @@ import * as qd from '../diagnostic';
 import { Node } from '../type';
 import { CheckFlags, NodeFlags, ObjectFlags, SignatureFlags, SymbolFlags, TransformFlags, TypeFlags } from '../type';
 import * as qt from '../type';
-import * as qu from '../base';
+import * as qu from '../util';
 import { ModifierFlags, Syntax } from '../syntax';
 import * as qy from '../syntax';
-import { is, isDoc, get, has } from './context';
+import { is, isDoc, get, has } from './index';
 export * from '../type';
 export interface ReadonlyNodeSet<TNode extends Node> {
   has(node: TNode): boolean;

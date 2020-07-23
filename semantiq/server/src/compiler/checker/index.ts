@@ -6,7 +6,7 @@ import * as qt from './type';
 import * as qu from '../util';
 import { ModifierFlags, Syntax } from '../syntax';
 import * as qy from '../syntax';
-import { check, checkGrammar } from './check';
+import { Check, CheckGrammar } from './check';
 
 const ambientModuleSymbolRegex = /^".+"$/;
 const anon = '(anonymous)' as qu.__String & string;
