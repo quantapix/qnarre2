@@ -1,6 +1,6 @@
-import * as qb from './base';
-import * as qd from './diags';
-import { Token } from './types';
+import * as qd from './diagnostic';
+import { Token } from './type';
+import * as qu from './util';
 export const enum Codes {
   nullCharacter = 0,
   maxAsciiCharacter = 0x7f,
@@ -542,7 +542,7 @@ const altDirSeparator = '\\';
 const urlSchemeSeparator = '://';
 const markerLength = '<<<<<<<'.length;
 const shebangRegex = /^#!.*/;
-const keywords: qb.MapLike<KeywordSyntax> = {
+const keywords: qu.MapLike<KeywordSyntax> = {
   abstract: Syntax.AbstractKeyword,
   any: Syntax.AnyKeyword,
   as: Syntax.AsKeyword,
@@ -620,8 +620,8 @@ const keywords: qb.MapLike<KeywordSyntax> = {
   await: Syntax.AwaitKeyword,
   of: Syntax.OfKeyword,
 };
-export const strToKey = new qb.QMap(keywords);
-const strToTok = new qb.QMap<Syntax>({
+export const strToKey = new qu.QMap(keywords);
+const strToTok = new qu.QMap<Syntax>({
   ...keywords,
   '{': Syntax.OpenBraceToken,
   '}': Syntax.CloseBraceToken,
@@ -687,7 +687,7 @@ export interface LineAndChar {
   char: number;
 }
 export namespace Range {
-  export interface Comment extends qb.Range {
+  export interface Comment extends qu.Range {
     hasTrailingNewLine?: boolean;
     kind: CommentKind;
   }
@@ -739,7 +739,7 @@ export const is = new (class {
   volumeChar(c: number) {
     return (c >= Codes.a && c <= Codes.z) || (c >= Codes.A && c <= Codes.Z);
   }
-  reservedName(x: qb.__String) {
+  reservedName(x: qu.__String) {
     const n = x as string;
     return n.charCodeAt(0) === Codes._ && n.charCodeAt(1) === Codes._ && n.charCodeAt(2) !== Codes._ && n.charCodeAt(2) !== Codes.at && n.charCodeAt(2) !== Codes.hash;
   }
@@ -810,7 +810,7 @@ export const is = new (class {
     }
   }
   markerTrivia(s: string, pos: number) {
-    qb.assert(pos >= 0);
+    qu.assert(pos >= 0);
     if (pos === 0 || this.lineBreak(s.charCodeAt(pos - 1))) {
       const c = s.charCodeAt(pos);
       if (pos + markerLength < s.length) {
@@ -823,7 +823,7 @@ export const is = new (class {
     return false;
   }
   shebangTrivia(s: string, pos: number) {
-    qb.assert(pos === 0);
+    qu.assert(pos === 0);
     return shebangRegex.test(s);
   }
   trivia(k: Syntax): k is TriviaKind {
@@ -1102,19 +1102,19 @@ export const is = new (class {
   singleOrDoubleQuote(c: number) {
     return c === Codes.singleQuote || c === Codes.doubleQuote;
   }
-  intrinsicJsxName(s: qb.__String | string) {
+  intrinsicJsxName(s: qu.__String | string) {
     const c = (s as string).charCodeAt(0);
-    return (c >= Codes.a && c <= Codes.z) || qb.stringContains(s as string, '-');
+    return (c >= Codes.a && c <= Codes.z) || qu.stringContains(s as string, '-');
   }
 })();
 export const get = new (class {
   charSize(c: number) {
     return c >= 0x10000 ? 2 : 1;
   }
-  escUnderscores(s: string): qb.__String {
-    return (s.length >= 2 && s.charCodeAt(0) === Codes._ && s.charCodeAt(1) === Codes._ ? '_' + s : s) as qb.__String;
+  escUnderscores(s: string): qu.__String {
+    return (s.length >= 2 && s.charCodeAt(0) === Codes._ && s.charCodeAt(1) === Codes._ ? '_' + s : s) as qu.__String;
   }
-  unescUnderscores(x: qb.__String): string {
+  unescUnderscores(x: qu.__String): string {
     const s = x as string;
     return s.length >= 3 && s.charCodeAt(0) === Codes._ && s.charCodeAt(1) === Codes._ && s.charCodeAt(2) === Codes._ ? s.substr(1) : s;
   }
@@ -1162,7 +1162,7 @@ export const get = new (class {
     return 0;
   }
   extensionFrom(path: string, ext: string, eq: (a: string, b: string) => boolean): string | undefined {
-    if (!qb.startsWith(ext, '.')) ext = '.' + ext;
+    if (!qu.startsWith(ext, '.')) ext = '.' + ext;
     if (path.length >= ext.length && path.charCodeAt(path.length - ext.length) === Codes.dot) {
       const e = path.slice(path.length - ext.length);
       if (eq(e, ext)) return e;
@@ -1195,10 +1195,10 @@ export const get = new (class {
     return ss;
   }
   lineOf(starts: readonly number[], pos: number, lowerBound?: number): number {
-    let l = qb.binarySearch(starts, pos, qb.identity, qb.compareNumbers, lowerBound);
+    let l = qu.binarySearch(starts, pos, qu.identity, qu.compareNumbers, lowerBound);
     if (l < 0) {
       l = ~l - 1;
-      qb.assert(l !== -1, 'position before beginning of file');
+      qu.assert(l !== -1, 'position before beginning of file');
     }
     return l;
   }
@@ -1210,13 +1210,13 @@ export const get = new (class {
     if (line < 0 || line >= starts.length) {
       if (edits) line = line < 0 ? 0 : line >= starts.length ? starts.length - 1 : line;
       else {
-        qb.fail(`Bad line number. Line: ${line}, starts.length: ${starts.length} , line map is correct? ${debug !== undefined ? qb.arraysEqual(starts, this.lineStarts(debug)) : 'unknown'}`);
+        qu.fail(`Bad line number. Line: ${line}, starts.length: ${starts.length} , line map is correct? ${debug !== undefined ? qu.arraysEqual(starts, this.lineStarts(debug)) : 'unknown'}`);
       }
     }
     const p = starts[line] + char;
     if (edits) return p > starts[line + 1] ? starts[line + 1] : typeof debug === 'string' && p > debug.length ? debug.length : p;
-    if (line < starts.length - 1) qb.assert(p < starts[line + 1]);
-    else if (debug !== undefined) qb.assert(p <= debug.length);
+    if (line < starts.length - 1) qu.assert(p < starts[line + 1]);
+    else if (debug !== undefined) qu.assert(p <= debug.length);
     return p;
   }
   shebang(s: string): string | undefined {
@@ -1490,7 +1490,7 @@ export function parsePseudoBigInt(s: string) {
 export function calculateIndent(s: string, pos: number, end: number) {
   let i = 0;
   for (; pos < end && is.whiteSpaceSingleLine(s.charCodeAt(pos)); pos++) {
-    if (s.charCodeAt(pos) === Codes.tab) i += qb.getIndentSize() - (i % qb.getIndentSize());
+    if (s.charCodeAt(pos) === Codes.tab) i += qu.getIndentSize() - (i % qu.getIndentSize());
     else i++;
   }
   return i;
@@ -1504,7 +1504,7 @@ export function markerTrivia(s: string, pos: number, e?: (m: qd.Message, pos?: n
       pos++;
     }
   } else {
-    qb.assert(c === Codes.bar || c === Codes.equals);
+    qu.assert(c === Codes.bar || c === Codes.equals);
     while (pos < l) {
       const c2 = s.charCodeAt(pos);
       if ((c2 === Codes.equals || c2 === Codes.greaterThan) && c2 !== c && is.markerTrivia(s, pos)) break;
@@ -1518,7 +1518,7 @@ export function shebangTrivia(s: string, pos: number) {
   return pos + (m ? m[0].length : 0);
 }
 export function skipTrivia(s: string, pos: number, stopAfterLineBreak = false, stopAtComments = false) {
-  if (qb.isSynthesized(pos)) return pos;
+  if (qu.isSynthesized(pos)) return pos;
   while (true) {
     const c = s.charCodeAt(pos);
     switch (c) {
@@ -1728,11 +1728,11 @@ export class SourceFile implements SourceFileLike {
     return get.posOf(this.lineStarts(), line, char, this.text, edits);
   }
   linesBetween(p1: number, p2: number): number;
-  linesBetween(r1: qb.Range, r2: qb.Range, comments: boolean): number;
-  linesBetween(x1: qb.Range | number, x2: qb.Range | number, comments = false) {
+  linesBetween(r1: qu.Range, r2: qu.Range, comments: boolean): number;
+  linesBetween(x1: qu.Range | number, x2: qu.Range | number, comments = false) {
     if (typeof x1 === 'number') {
       if (x1 === x2) return 0;
-      qb.assert(typeof x2 === 'number');
+      qu.assert(typeof x2 === 'number');
       const ss = this.lineStarts();
       const min = Math.min(x1, x2);
       const isNegative = min === x2;
@@ -1741,10 +1741,10 @@ export class SourceFile implements SourceFileLike {
       const upper = get.lineOf(ss, max, lower);
       return isNegative ? lower - upper : upper - lower;
     }
-    const s = this.startPos(x2 as qb.Range, comments);
+    const s = this.startPos(x2 as qu.Range, comments);
     return this.linesBetween(x1.end, s);
   }
-  linesBetweenEnds(r1: qb.Range, r2: qb.Range) {
+  linesBetweenEnds(r1: qu.Range, r2: qu.Range) {
     return this.linesBetween(r1.end, r2.end);
   }
   linesToPrevNonWhitespace(pos: number, stop: number, comments = false) {
@@ -1756,8 +1756,8 @@ export class SourceFile implements SourceFileLike {
     const s = skipTrivia(this.text, pos, false, comments);
     return this.linesBetween(pos, Math.min(stop, s));
   }
-  startPos(r: qb.Range, comments = false) {
-    return qb.isSynthesized(r.pos) ? -1 : skipTrivia(this.text, r.pos, false, comments);
+  startPos(r: qu.Range, comments = false) {
+    return qu.isSynthesized(r.pos) ? -1 : skipTrivia(this.text, r.pos, false, comments);
   }
   prevNonWhitespacePos(pos: number, stop = 0) {
     while (pos-- > stop) {
@@ -1768,44 +1768,44 @@ export class SourceFile implements SourceFileLike {
   onSameLine(p1: number, p2: number) {
     return this.linesBetween(p1, p2) === 0;
   }
-  onSingleLine(r: qb.Range) {
+  onSingleLine(r: qu.Range) {
     return this.onSameLine(r.pos, r.end);
   }
-  multiLine(r: qb.Range) {
+  multiLine(r: qu.Range) {
     return !this.onSameLine(r.pos, r.end);
   }
-  startsOnSameLine(r1: qb.Range, r2: qb.Range) {
+  startsOnSameLine(r1: qu.Range, r2: qu.Range) {
     return this.onSameLine(this.startPos(r1), this.startPos(r2));
   }
-  endsOnSameLine(r1: qb.Range, r2: qb.Range) {
+  endsOnSameLine(r1: qu.Range, r2: qu.Range) {
     return this.onSameLine(r1.end, r2.end);
   }
-  startOnSameLineAsEnd(r1: qb.Range, r2: qb.Range) {
+  startOnSameLineAsEnd(r1: qu.Range, r2: qu.Range) {
     return this.onSameLine(this.startPos(r1), r2.end);
   }
-  endOnSameLineAsStart(r1: qb.Range, r2: qb.Range) {
+  endOnSameLineAsStart(r1: qu.Range, r2: qu.Range) {
     return this.onSameLine(r1.end, this.startPos(r2));
   }
   getStartPositionOfLine(line: number) {
-    qb.assert(line >= 0);
+    qu.assert(line >= 0);
     return get.lineStarts(this.text)[line];
   }
   getEndLinePosition(line: number) {
-    qb.assert(line >= 0);
+    qu.assert(line >= 0);
     const lineStarts = get.lineStarts(this.text);
     const lineIndex = line;
     const sourceText = this.text;
     if (lineIndex + 1 === lineStarts.length) return sourceText.length - 1;
     const start = lineStarts[lineIndex];
     let pos = lineStarts[lineIndex + 1] - 1;
-    qb.assert(is.lineBreak(sourceText.charCodeAt(pos)));
+    qu.assert(is.lineBreak(sourceText.charCodeAt(pos)));
     while (start <= pos && is.lineBreak(sourceText.charCodeAt(pos))) {
       pos--;
     }
     return pos;
   }
 }
-const escMap = new qb.QMap({
+const escMap = new qu.QMap({
   '\t': '\\t',
   '\v': '\\v',
   '\f': '\\f',
@@ -1846,9 +1846,9 @@ export function escapeNonAsciiString(s: string, q?: Codes.doubleQuote | Codes.si
   return nonAscii.test(s) ? s.replace(nonAscii, (c) => encodeUtf16EscapeSequence(c.charCodeAt(0))) : s;
 }
 export function getTextOfConstantValue(s: string | number) {
-  return qb.isString(s) ? '"' + escapeNonAsciiString(s) + '"' : '' + s;
+  return qu.isString(s) ? '"' + escapeNonAsciiString(s) + '"' : '' + s;
 }
-const jsxEscMap = new qb.QMap({
+const jsxEscMap = new qu.QMap({
   '"': '&quot;',
   "'": '&apos;',
 });
@@ -1885,7 +1885,7 @@ function getExpandedCodes(s: string): number[] {
       r.push(((c >> 12) & 0b00111111) | 0b10000000);
       r.push(((c >> 6) & 0b00111111) | 0b10000000);
       r.push((c & 0b00111111) | 0b10000000);
-    } else qb.assert(false, 'Unexpected code point');
+    } else qu.assert(false, 'Unexpected code point');
   }
   return r;
 }

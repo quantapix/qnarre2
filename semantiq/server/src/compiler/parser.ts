@@ -1,10 +1,10 @@
-import * as qb from './base';
-import * as qc from './core3';
-import * as qd from './diags';
-import { Nobj, Nodes, Token } from './core3';
-import { Node, NodeFlags, TokenFlags } from './types';
-import * as qy from './syntax';
+import { Nobj, Nodes, Token } from './core';
+import * as qc from './core';
+import * as qd from './diagnostic';
+import { Node, NodeFlags, TokenFlags } from './type';
+import * as qu from './util';
 import { DocSyntax, JsxTokenSyntax, LanguageVariant, Modifier, Syntax } from './syntax';
+import * as qy from './syntax';
 interface Parser {
   parseSource(fileName: string, t: string, languageVersion: ScriptTarget, syntaxCursor?: IncrementalParser.SyntaxCursor, setParentNodes?: boolean, scriptKind?: ScriptKind): SourceFile;
   parseJsonText(fileName: string, text: string, lang?: ScriptTarget, syntaxCursor?: IncrementalParser.SyntaxCursor, setParentNodes?: boolean): JsonSourceFile;
@@ -69,14 +69,14 @@ interface MissingList<T extends Node> extends Nodes<T> {
 function create() {
   const scanner = qs_create(true);
   let currentToken: Syntax;
-  let identifiers: qb.QMap<string>;
-  let privateIdentifiers: qb.QMap<string>;
+  let identifiers: qu.QMap<string>;
+  let privateIdentifiers: qu.QMap<string>;
   const withDisallowInDecoratorContext = NodeFlags.DisallowInContext | NodeFlags.DecoratorContext;
   let source: SourceFile;
   let diags: DiagnosticWithLocation[];
   let syntaxCursor: IncrementalParser.SyntaxCursor | undefined;
   let sourceText: string;
-  let notParenthesizedArrow: qb.QMap<true> | undefined;
+  let notParenthesizedArrow: qu.QMap<true> | undefined;
   let parseErrorBeforeNextFinishedNode = false;
   const tok = () => currentToken;
   const getNodePos = () => scanner.getStartPos();
@@ -609,7 +609,7 @@ function create() {
       if (report) parse.errorAtPosition(scanner.getStartPos(), 0, m!, arg0);
       else if (m) parse.errorAtToken(m, arg0);
       const r = this.node(k);
-      if (k === Syntax.Identifier) (r as qc.Identifier).escapedText = '' as qb.__String;
+      if (k === Syntax.Identifier) (r as qc.Identifier).escapedText = '' as qu.__String;
       else if (qy.is.literal(k) || qy.is.templateLiteral(k)) (r as qc.LiteralLikeNode).text = '';
       return finishNode(r);
     }
@@ -951,7 +951,7 @@ function create() {
           return tok() === Syntax.OpenBracketToken || tok() === Syntax.Dot3Token || is.literalPropertyName();
         case Context.HeritageClauseElement:
           const isHeritageClauseObjectLiteral = () => {
-            qb.assert(tok() === Syntax.OpenBraceToken);
+            qu.assert(tok() === Syntax.OpenBraceToken);
             if (next.tok() === Syntax.CloseBraceToken) {
               const t = next.tok();
               return t === Syntax.CommaToken || t === Syntax.OpenBraceToken || t === Syntax.ExtendsKeyword || t === Syntax.ImplementsKeyword;
@@ -995,7 +995,7 @@ function create() {
         case Context.JsxChildren:
           return true;
       }
-      return qb.fail("Non-exhaustive case in 'isListElement'.");
+      return qu.fail("Non-exhaustive case in 'isListElement'.");
     }
     private isListTerminator(c: Context) {
       if (tok() === Syntax.EndOfFileToken) return true;
@@ -1125,7 +1125,7 @@ function create() {
         r.libReferenceDirectives = emptyArray;
         r.amdDependencies = emptyArray;
         r.hasNoDefaultLib = false;
-        r.pragmas = qb.emptyMap;
+        r.pragmas = qu.emptyMap;
         return r;
       }
       initializeState(t, languageVersion, syntaxCursor, scriptKind);
@@ -1140,7 +1140,7 @@ function create() {
       };
       processPragmasIntoFields((source as {}) as PragmaContext, reportPragmaDiagnostic);
       source.statements = ctx.parseList(Context.SourceElements, parse.statement);
-      qb.assert(tok() === Syntax.EndOfFileToken);
+      qu.assert(tok() === Syntax.EndOfFileToken);
       source.endOfFileToken = addDocComment(parse.tokenNode());
       const getImportMetaIfNecessary = () => {
         const isImportMeta = (n: Node): boolean => {
@@ -1329,11 +1329,11 @@ function create() {
       const templateHead = (): qc.TemplateHead => {
         if (tagged) reScanHeadOrNoSubstTemplate();
         const n2 = this.literalLikeNode(tok());
-        qb.assert(n2.kind === Syntax.TemplateHead, 'Template head has wrong token kind');
+        qu.assert(n2.kind === Syntax.TemplateHead, 'Template head has wrong token kind');
         return n2 as qc.TemplateHead;
       };
       n.head = templateHead();
-      qb.assert(n.head.kind === Syntax.TemplateHead, 'Template head has wrong token kind');
+      qu.assert(n.head.kind === Syntax.TemplateHead, 'Template head has wrong token kind');
       const ss = [];
       const p = getNodePos();
       do {
@@ -1350,7 +1350,7 @@ function create() {
         reScanTemplateToken(tagged);
         const middleOrTail = (): qc.TemplateMiddle | qc.TemplateTail => {
           const n2 = this.literalLikeNode(tok());
-          qb.assert(n2.kind === Syntax.TemplateMiddle || n2.kind === Syntax.TemplateTail, 'Template fragment has wrong token kind');
+          qu.assert(n2.kind === Syntax.TemplateMiddle || n2.kind === Syntax.TemplateTail, 'Template fragment has wrong token kind');
           return n2 as qc.TemplateMiddle | qc.TemplateTail;
         };
         l = middleOrTail();
@@ -1909,7 +1909,7 @@ function create() {
                 }
                 return Tristate.False;
               } else {
-                qb.assert(first === Syntax.LessThanToken);
+                qu.assert(first === Syntax.LessThanToken);
                 if (!is.identifier()) return Tristate.False;
                 if (source.languageVariant === LanguageVariant.JSX) {
                   const isArrowFunctionInJsx = lookAhead(() => {
@@ -1984,7 +1984,7 @@ function create() {
       return finishNode(n);
     }
     simpleArrowFunctionExpression(identifier: qc.Identifier, asyncModifier?: Nodes<Modifier> | undefined): qc.ArrowFunction {
-      qb.assert(tok() === Syntax.EqualsGreaterThanToken, 'this.simpleArrowFunctionExpression should only have been called if we had a =>');
+      qu.assert(tok() === Syntax.EqualsGreaterThanToken, 'this.simpleArrowFunctionExpression should only have been called if we had a =>');
       let n: qc.ArrowFunction;
       if (asyncModifier) {
         n = create.node(Syntax.ArrowFunction, asyncModifier.pos);
@@ -2002,7 +2002,7 @@ function create() {
       const p = scanner.getTokenPos();
       if (notParenthesizedArrow && notParenthesizedArrow.has(p.toString())) return;
       const result = this.parenthesizedArrowFunctionExpressionHead(false);
-      if (!result) (notParenthesizedArrow || (notParenthesizedArrow = new qb.QMap())).set(p.toString(), true);
+      if (!result) (notParenthesizedArrow || (notParenthesizedArrow = new qu.QMap())).set(p.toString(), true);
       return result;
     }
     parenthesizedArrowFunctionExpressionHead(allowAmbiguity: boolean): qc.ArrowFunction | undefined {
@@ -2165,7 +2165,7 @@ function create() {
         return parseJsx.elementOrSelfClosingElementOrFragment(true);
       }
       const expression = this.leftHandSideExpressionOrHigher();
-      qb.assert(qc.is.leftHandSideExpression(expression));
+      qu.assert(qc.is.leftHandSideExpression(expression));
       if ((tok() === Syntax.Plus2Token || tok() === Syntax.Minus2Token) && !scanner.hasPrecedingLineBreak()) {
         const n = create.node(Syntax.PostfixUnaryExpression, expression.pos);
         n.operand = expression;
@@ -2496,7 +2496,7 @@ function create() {
         expression = this.memberExpressionRest(expression, false);
         typeArguments = tryParse(this.typeArgumentsInExpression);
         if (is.templateStartOfTaggedTemplate()) {
-          qb.assert(!!typeArguments, "Expected a type argument list; all plain tagged template starts should be consumed in 'this.memberExpressionRest'");
+          qu.assert(!!typeArguments, "Expected a type argument list; all plain tagged template starts should be consumed in 'this.memberExpressionRest'");
           expression = this.taggedTemplateRest(expression, undefined, typeArguments);
           typeArguments = undefined;
         }
@@ -2911,7 +2911,7 @@ function create() {
           n.flags |= NodeFlags.Const;
           break;
         default:
-          qb.fail();
+          qu.fail();
       }
       next.tok();
       if (tok() === Syntax.OfKeyword && lookAhead(can.followContextualOfKeyword)) {
@@ -3063,7 +3063,7 @@ function create() {
         n.name = create.missingNode<qc.Identifier>(Syntax.Identifier, true, qd.msgs.Declaration_expected);
         return this.propertyDeclaration(<PropertyDeclaration>n);
       }
-      return qb.fail('Should not have attempted to parse class member declaration.');
+      return qu.fail('Should not have attempted to parse class member declaration.');
     }
     classExpression(): qc.ClassExpression {
       return <ClassExpression>this.classDeclarationOrExpression(create.nodeWithDoc(Syntax.Unknown), Syntax.ClassExpression);
@@ -3093,7 +3093,7 @@ function create() {
     }
     heritageClause(): qc.HeritageClause {
       const t = tok();
-      qb.assert(t === Syntax.ExtendsKeyword || t === Syntax.ImplementsKeyword);
+      qu.assert(t === Syntax.ExtendsKeyword || t === Syntax.ImplementsKeyword);
       const n = create.node(Syntax.HeritageClause);
       n.token = t;
       next.tok();
@@ -3402,7 +3402,7 @@ function create() {
         n.closingFragment = this.closingFragment(inExpressionContext);
         r = finishNode(n);
       } else {
-        qb.assert(opening.kind === Syntax.JsxSelfClosingElement);
+        qu.assert(opening.kind === Syntax.JsxSelfClosingElement);
         r = opening;
       }
       if (inExpressionContext && tok() === Syntax.LessThanToken) {
@@ -3585,9 +3585,9 @@ function create() {
       const content = sourceText;
       const end = length === undefined ? content.length : start + length;
       length = end - start;
-      qb.assert(start >= 0);
-      qb.assert(start <= end);
-      qb.assert(end <= content.length);
+      qu.assert(start >= 0);
+      qu.assert(start <= end);
+      qu.assert(end <= content.length);
       if (!qy.is.docLike(content, start)) return;
       return scanner.scanRange(start + 3, length - 5, () => {
         let state = State.SawAsterisk;
@@ -3778,7 +3778,7 @@ function create() {
       return docTypeExpression ? { docTypeExpression, diagnostics } : undefined;
     }
     tag(margin: number) {
-      qb.assert(tok() === Syntax.AtToken);
+      qu.assert(tok() === Syntax.AtToken);
       const start = scanner.getTokenPos();
       next.tokDoc();
       const tagName = this.identifierName(undefined);
@@ -4219,7 +4219,7 @@ function create() {
       }
     }
     tryChildTag(target: PropertyLike, indent: number): DocTypeTag | DocPropertyTag | DocParameterTag | false {
-      qb.assert(tok() === Syntax.AtToken);
+      qu.assert(tok() === Syntax.AtToken);
       const start = scanner.getStartPos();
       next.tokDoc();
       const tagName = this.identifierName();
@@ -4294,8 +4294,8 @@ function create() {
     syntaxCursor = _syntaxCursor;
     diags = [];
     ctx.init();
-    identifiers = new qb.QMap<string>();
-    privateIdentifiers = new qb.QMap<string>();
+    identifiers = new qu.QMap<string>();
+    privateIdentifiers = new qu.QMap<string>();
     create.identifierCount = 0;
     create.nodeCount = 0;
     switch (scriptKind) {
@@ -4410,7 +4410,7 @@ function create() {
     const saveParseErrorBeforeNextFinishedNode = parseErrorBeforeNextFinishedNode;
     const saveContextFlags = flags.value;
     const r = isLookAhead ? scanner.lookAhead(cb) : scanner.tryScan(cb);
-    qb.assert(saveContextFlags === flags.value);
+    qu.assert(saveContextFlags === flags.value);
     if (!r || isLookAhead) {
       currentToken = saveToken;
       diags.length = saveParseDiagnosticsLength;
@@ -4440,7 +4440,7 @@ function create() {
     return (currentToken = scanner.reScanHeadOrNoSubstTemplate());
   }
   function addDocComment<T extends HasDoc>(n: T): T {
-    qb.assert(!n.doc);
+    qu.assert(!n.doc);
     const doc = mapDefined(qc.getDoc.commentRanges(n, source.text), (comment) => parseDoc.comment(n, comment.pos, comment.end - comment.pos));
     if (doc.length) n.doc = doc;
     return n;
@@ -4517,7 +4517,7 @@ export function qp_createSource(fileName: string, t: string, lang: ScriptTarget,
   performance.measure('Parse', 'beforeParse', 'afterParse');
   return r;
 }
-export function qp_updateSource(s: SourceFile, newText: string, r: qb.TextChange, aggressive = false): SourceFile {
+export function qp_updateSource(s: SourceFile, newText: string, r: qu.TextChange, aggressive = false): SourceFile {
   const s2 = IncrementalParser.updateSource(s, newText, r, aggressive);
   s2.flags |= s.flags & NodeFlags.PermanentlySetIncrementalFlags;
   return s2;
@@ -4529,21 +4529,21 @@ export function qp_parseJsonText(fileName: string, t: string): JsonSourceFile {
   return getParser().parseJsonText(fileName, t);
 }
 namespace IncrementalParser {
-  export function updateSource(source: SourceFile, newText: string, textChangeRange: qb.TextChange, aggressiveChecks: boolean): SourceFile {
+  export function updateSource(source: SourceFile, newText: string, textChangeRange: qu.TextChange, aggressiveChecks: boolean): SourceFile {
     aggressiveChecks = aggressiveChecks || Debug.shouldAssert(AssertionLevel.Aggressive);
     checkChangeRange(source, newText, textChangeRange, aggressiveChecks);
     if (textChangeRangeIsUnchanged(textChangeRange)) return source;
     if (source.statements.length === 0) return Parser.parseSourceFile(source.fileName, newText, source.languageVersion, undefined, true, source.scriptKind);
     const incrementalSourceFile = <IncrementalNode>(<Node>source);
-    qb.assert(!incrementalSourceFile.hasBeenIncrementallyParsed);
+    qu.assert(!incrementalSourceFile.hasBeenIncrementallyParsed);
     incrementalSourceFile.hasBeenIncrementallyParsed = true;
     const oldText = source.text;
     const syntaxCursor = createSyntaxCursor(source);
     const changeRange = extendToAffectedRange(source, textChangeRange);
     checkChangeRange(source, newText, changeRange, aggressiveChecks);
-    qb.assert(changeRange.span.start <= textChangeRange.span.start);
-    qb.assert(textSpanEnd(changeRange.span) === textSpanEnd(textChangeRange.span));
-    qb.assert(textSpanEnd(textChangeRangeNewSpan(changeRange)) === textSpanEnd(textChangeRangeNewSpan(textChangeRange)));
+    qu.assert(changeRange.span.start <= textChangeRange.span.start);
+    qu.assert(textSpanEnd(changeRange.span) === textSpanEnd(textChangeRange.span));
+    qu.assert(textSpanEnd(textChangeRangeNewSpan(changeRange)) === textSpanEnd(textChangeRangeNewSpan(textChangeRange)));
     const delta = textChangeRangeNewSpan(changeRange).length - changeRange.span.length;
     updateTokenPositionsAndMarkElements(
       incrementalSourceFile,
@@ -4584,7 +4584,7 @@ namespace IncrementalParser {
         };
         commentDirectives = append(commentDirectives, updatedDirective);
         if (aggressiveChecks) {
-          qb.assert(oldText.substring(range.pos, range.end) === newText.substring(updatedDirective.range.pos, updatedDirective.range.end));
+          qu.assert(oldText.substring(range.pos, range.end) === newText.substring(updatedDirective.range.pos, updatedDirective.range.end));
         }
       }
     }
@@ -4619,7 +4619,7 @@ namespace IncrementalParser {
       if (n._children) n._children = undefined;
       n.pos += delta;
       n.end += delta;
-      if (aggressiveChecks && shouldCheck(n)) qb.assert(text === newText.substring(n.pos, n.end));
+      if (aggressiveChecks && shouldCheck(n)) qu.assert(text === newText.substring(n.pos, n.end));
       qc.forEach.child(n, visitNode, visitArray);
       if (qc.is.withDocNodes(n)) {
         for (const docComment of n.doc!) {
@@ -4638,17 +4638,17 @@ namespace IncrementalParser {
     }
   }
   function adjustIntersectingElement(element: IncrementalElement, changeStart: number, changeRangeOldEnd: number, changeRangeNewEnd: number, delta: number) {
-    qb.assert(element.end >= changeStart, 'Adjusting an element that was entirely before the change range');
-    qb.assert(element.pos <= changeRangeOldEnd, 'Adjusting an element that was entirely after the change range');
-    qb.assert(element.pos <= element.end);
+    qu.assert(element.end >= changeStart, 'Adjusting an element that was entirely before the change range');
+    qu.assert(element.pos <= changeRangeOldEnd, 'Adjusting an element that was entirely after the change range');
+    qu.assert(element.pos <= element.end);
     element.pos = Math.min(element.pos, changeRangeNewEnd);
     if (element.end >= changeRangeOldEnd) {
       element.end += delta;
     } else element.end = Math.min(element.end, changeRangeNewEnd);
-    qb.assert(element.pos <= element.end);
+    qu.assert(element.pos <= element.end);
     if (element.parent) {
-      qb.assert(element.pos >= element.parent.pos);
-      qb.assert(element.end <= element.parent.end);
+      qu.assert(element.pos >= element.parent.pos);
+      qu.assert(element.end <= element.parent.end);
     }
   }
   function updateTokenPositionsAndMarkElements(
@@ -4664,7 +4664,7 @@ namespace IncrementalParser {
     visitNode(source);
     return;
     function visitNode(child: IncrementalNode) {
-      qb.assert(child.pos <= child.end);
+      qu.assert(child.pos <= child.end);
       if (child.pos > changeRangeOldEnd) {
         moveElementEntirelyPastChangeRange(child, false, delta, oldText, newText, aggressiveChecks);
         return;
@@ -4683,10 +4683,10 @@ namespace IncrementalParser {
         checkNodePositions(child, aggressiveChecks);
         return;
       }
-      qb.assert(fullEnd < changeStart);
+      qu.assert(fullEnd < changeStart);
     }
     function visitArray(array: IncrementalNodes) {
-      qb.assert(array.pos <= array.end);
+      qu.assert(array.pos <= array.end);
       if (array.pos > changeRangeOldEnd) {
         moveElementEntirelyPastChangeRange(array, true, delta, oldText, newText, aggressiveChecks);
         return;
@@ -4701,14 +4701,14 @@ namespace IncrementalParser {
         }
         return;
       }
-      qb.assert(fullEnd < changeStart);
+      qu.assert(fullEnd < changeStart);
     }
   }
   function checkNodePositions(n: Node, aggressive: boolean) {
     if (aggressive) {
       let pos = n.pos;
       const visitNode = (c: Node) => {
-        qb.assert(c.pos >= pos);
+        qu.assert(c.pos >= pos);
         pos = c.end;
       };
       if (qc.is.withDocNodes(n)) {
@@ -4717,21 +4717,21 @@ namespace IncrementalParser {
         }
       }
       qc.forEach.child(n, visitNode);
-      qb.assert(pos <= n.end);
+      qu.assert(pos <= n.end);
     }
   }
-  function extendToAffectedRange(source: SourceFile, changeRange: qb.TextChange): qb.TextChange {
+  function extendToAffectedRange(source: SourceFile, changeRange: qu.TextChange): qu.TextChange {
     const maxLookahead = 1;
     let start = changeRange.span.start;
     for (let i = 0; start > 0 && i <= maxLookahead; i++) {
       const nearestNode = findNearestNodeStartingBeforeOrAtPosition(source, start);
-      qb.assert(nearestNode.pos <= start);
+      qu.assert(nearestNode.pos <= start);
       const position = nearestNode.pos;
       start = Math.max(0, position - 1);
     }
     const finalSpan = TextSpan.from(start, textSpanEnd(changeRange.span));
     const finalLength = changeRange.newLength + (changeRange.span.start - start);
-    return createqb.TextChange(finalSpan, finalLength);
+    return createqu.TextChange(finalSpan, finalLength);
   }
   function findNearestNodeStartingBeforeOrAtPosition(source: SourceFile, position: number): Node {
     let bestResult: Node = source;
@@ -4759,27 +4759,27 @@ namespace IncrementalParser {
           qc.forEach.child(child, visit);
           return true;
         } else {
-          qb.assert(child.end <= position);
+          qu.assert(child.end <= position);
           lastNodeEntirelyBeforePosition = child;
         }
       } else {
-        qb.assert(child.pos > position);
+        qu.assert(child.pos > position);
         return true;
       }
       return;
     }
   }
-  function checkChangeRange(source: SourceFile, newText: string, textChangeRange: qb.TextChange, aggressiveChecks: boolean) {
+  function checkChangeRange(source: SourceFile, newText: string, textChangeRange: qu.TextChange, aggressiveChecks: boolean) {
     const oldText = source.text;
     if (textChangeRange) {
-      qb.assert(oldText.length - textChangeRange.span.length + textChangeRange.newLength === newText.length);
+      qu.assert(oldText.length - textChangeRange.span.length + textChangeRange.newLength === newText.length);
       if (aggressiveChecks || Debug.shouldAssert(AssertionLevel.VeryAggressive)) {
         const oldTextPrefix = oldText.substr(0, textChangeRange.span.start);
         const newTextPrefix = newText.substr(0, textChangeRange.span.start);
-        qb.assert(oldTextPrefix === newTextPrefix);
+        qu.assert(oldTextPrefix === newTextPrefix);
         const oldTextSuffix = oldText.substring(textSpanEnd(textChangeRange.span), oldText.length);
         const newTextSuffix = newText.substring(textSpanEnd(textChangeRangeNewSpan(textChangeRange)), newText.length);
-        qb.assert(oldTextSuffix === newTextSuffix);
+        qu.assert(oldTextSuffix === newTextSuffix);
       }
     }
   }
@@ -4801,7 +4801,7 @@ namespace IncrementalParser {
   function createSyntaxCursor(source: SourceFile): SyntaxCursor {
     let currentArray: Nodes<Node> = source.statements;
     let currentArrayIndex = 0;
-    qb.assert(currentArrayIndex < currentArray.length);
+    qu.assert(currentArrayIndex < currentArray.length);
     let current = currentArray[currentArrayIndex];
     let lastQueriedPosition = InvalidPosition.Value;
     return {
@@ -4814,7 +4814,7 @@ namespace IncrementalParser {
           if (!current || current.pos !== position) findHighestListElementThatStartsAtPosition(position);
         }
         lastQueriedPosition = position;
-        qb.assert(!current || current.pos === position);
+        qu.assert(!current || current.pos === position);
         return <IncrementalNode>current;
       },
     };
@@ -4875,7 +4875,7 @@ export function processCommentPragmas(ctx: PragmaContext, sourceText: string): v
     const comment = sourceText.substring(r.pos, r.end);
     extractPragmas(ps, r, comment);
   }
-  ctx.pragmas = new qb.QMap() as PragmaMap;
+  ctx.pragmas = new qu.QMap() as PragmaMap;
   for (const p of ps) {
     if (ctx.pragmas.has(p.name)) {
       const v = ctx.pragmas.get(p.name);
@@ -4943,11 +4943,11 @@ export function processPragmasIntoFields(c: PragmaContext, reporter: PragmaDiagn
       case 'jsx':
         return;
       default:
-        qb.fail('Unhandled pragma kind');
+        qu.fail('Unhandled pragma kind');
     }
   });
 }
-const namedArgRegExCache = new qb.QMap<RegExp>();
+const namedArgRegExCache = new qu.QMap<RegExp>();
 const tripleSlashXMLCommentStartRegEx = /^\/\/\/\s*<(\S+)\s.*?\/>/im;
 const singleLinePragmaRegEx = /^\/\/\/?\s*@(\S+)\s*(.*)\s*$/im;
 const multiLinePragmaRegEx = /\s*@(\S+)\s*(.*)\s*$/gim;
@@ -4998,7 +4998,7 @@ function extractPragmas(pragmas: PragmaPseudoMapEntry[], range: CommentRange, te
       for (let i = 0; i < p.args.length; i++) {
         const a = p.args[i];
         if (!args[i] && !a.optional) return 'fail';
-        if (a.captureSpan) return qb.fail('Capture spans not yet implemented for non-xml pragmas');
+        if (a.captureSpan) return qu.fail('Capture spans not yet implemented for non-xml pragmas');
         m[a.name] = args[i];
       }
       return m;

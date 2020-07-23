@@ -1,9 +1,9 @@
-import * as qb from './base';
-import * as qt from './types';
-import * as qc from './core3';
-import { Node } from './types';
-import * as syntax from './syntax';
+import * as qc from './core';
+import { Node } from './type';
+import * as qt from './type';
+import * as qu from './util';
 import { ModifierFlags, Syntax } from './syntax';
+import * as qy from './syntax';
 export function findConfigFile(searchPath: string, fileExists: (fileName: string) => boolean, configName = 'tsconfig.json'): string | undefined {
   return forEachAncestorDirectory(searchPath, (ancestor) => {
     const fileName = combinePaths(ancestor, configName);
@@ -271,7 +271,7 @@ export function formatDiagnostics(diagnostics: readonly Diagnostic[], host: Form
 export function formatDiagnostic(diagnostic: Diagnostic, host: FormatDiagnosticsHost): string {
   const errorMessage = `${diagnosticCategoryName(diagnostic)} TS${diagnostic.code}: ${flattenqd.MessageText(diagnostic.messageText, host.getNewLine())}${host.getNewLine()}`;
   if (diagnostic.file) {
-    const { line, character } = syntax.get.lineAndCharOf(diagnostic.file, diagnostic.start!);
+    const { line, character } = qy.get.lineAndCharOf(diagnostic.file, diagnostic.start!);
     const fileName = diagnostic.file.fileName;
     const relativeFileName = convertToRelativePath(fileName, host.getCurrentDirectory(), (fileName) => host.getCanonicalFileName(fileName));
     return `${relativeFileName}(${line + 1},${character + 1}): ` + errorMessage;
@@ -307,9 +307,9 @@ export function formatColorAndReset(text: string, formatStyle: string) {
   return formatStyle + text + resetEscapeSequence;
 }
 function formatCodeSpan(file: SourceFile, start: number, length: number, indent: string, squiggleColor: ForegroundColorEscapeSequences, host: FormatDiagnosticsHost) {
-  const { line: firstLine, character: firstLineChar } = syntax.get.lineAndCharOf(file, start);
-  const { line: lastLine, character: lastLineChar } = syntax.get.lineAndCharOf(file, start + length);
-  const lastLineInFile = syntax.get.lineAndCharOf(file, file.text.length).line;
+  const { line: firstLine, character: firstLineChar } = qy.get.lineAndCharOf(file, start);
+  const { line: lastLine, character: lastLineChar } = qy.get.lineAndCharOf(file, start + length);
+  const lastLineInFile = qy.get.lineAndCharOf(file, file.text.length).line;
   const hasMoreThanFiveLines = lastLine - firstLine >= 4;
   let gutterWidth = (lastLine + 1 + '').length;
   if (hasMoreThanFiveLines) {
@@ -322,8 +322,8 @@ function formatCodeSpan(file: SourceFile, start: number, length: number, indent:
       context += indent + formatColorAndReset(padLeft(ellipsis, gutterWidth), gutterStyleSequence) + gutterSeparator + host.getNewLine();
       i = lastLine - 1;
     }
-    const lineStart = syntax.get.posOf(file, i, 0);
-    const lineEnd = i < lastLineInFile ? syntax.get.posOf(file, i + 1, 0) : file.text.length;
+    const lineStart = qy.get.posOf(file, i, 0);
+    const lineEnd = i < lastLineInFile ? qy.get.posOf(file, i + 1, 0) : file.text.length;
     let lineContent = file.text.slice(lineStart, lineEnd);
     lineContent = lineContent.replace(/\s+$/g, '');
     lineContent = lineContent.replace('\t', ' ');
@@ -345,7 +345,7 @@ function formatCodeSpan(file: SourceFile, start: number, length: number, indent:
   return context;
 }
 export function formatLocation(file: SourceFile, start: number, host: FormatDiagnosticsHost, color = formatColorAndReset) {
-  const { line: firstLine, character: firstLineChar } = syntax.get.lineAndCharOf(file, start);
+  const { line: firstLine, character: firstLineChar } = qy.get.lineAndCharOf(file, start);
   const relativeFileName = host ? convertToRelativePath(file.fileName, host.getCurrentDirectory(), (fileName) => host.getCanonicalFileName(fileName)) : file.fileName;
   let output = '';
   output += color(relativeFileName, ForegroundColorEscapeSequences.Cyan);
@@ -548,7 +548,7 @@ export function createProgram(
       host.resolveModuleNames!(Debug.checkEachDefined(moduleNames), containingFile, reusedNames, redirectedReference, options).map((resolved) => {
         if (!resolved || (resolved as ResolvedModuleFull).extension !== undefined) return resolved as ResolvedModuleFull;
         const withExtension = clone(resolved) as ResolvedModuleFull;
-        withExtension.extension = syntax.get.extensionFromPath(resolved.resolvedFileName);
+        withExtension.extension = qy.get.extensionFromPath(resolved.resolvedFileName);
         return withExtension;
       });
   } else {
@@ -777,7 +777,7 @@ export function createProgram(
   function getClassifiableNames() {
     if (!classifiableNames) {
       getTypeChecker();
-      classifiableNames = qb.createEscapedMap<true>();
+      classifiableNames = qu.createEscapedMap<true>();
       for (const sourceFile of files) {
         qu.copyEntries(sourceFile.classifiableNames!, classifiableNames);
       }
@@ -1241,8 +1241,8 @@ export function createProgram(
   function markPrecedingCommentDirectiveLine(diagnostic: Diagnostic, directives: CommentDirectivesMap) {
     const { file, start } = diagnostic;
     if (!file) return -1;
-    const s = syntax.get.lineStarts(file);
-    let line = syntax.get.lineAndCharOf(s, start!).line - 1;
+    const s = qy.get.lineStarts(file);
+    let line = qy.get.lineAndCharOf(s, start!).line - 1;
     while (line >= 0) {
       if (directives.markUsed(line)) return line;
       const lineText = file.text.slice(s[line], s[line + 1]).trim();
@@ -2020,7 +2020,7 @@ export function createProgram(
           modulesWithElidedImports.set(file.path, true);
         } else if (shouldAddFile) {
           const path = toPath(resolvedFileName);
-          const pos = syntax.skipTrivia(file.text, file.imports[i].pos);
+          const pos = qy.skipTrivia(file.text, file.imports[i].pos);
           findSourceFile(
             resolvedFileName,
             path,
@@ -2281,7 +2281,7 @@ export function createProgram(
       if (!qp_parseIsolatedEntityName(options.jsxFactory, languageVersion)) {
         createOptionValueDiagnostic('jsxFactory', qd.Invalid_value_for_jsxFactory_0_is_not_a_valid_identifier_or_qualified_name, options.jsxFactory);
       }
-    } else if (options.reactNamespace && !syntax.is.identifierText(options.reactNamespace)) {
+    } else if (options.reactNamespace && !qy.is.identifierText(options.reactNamespace)) {
       createOptionValueDiagnostic('reactNamespace', qd.Invalid_value_for_reactNamespace_0_is_not_a_valid_identifier, options.reactNamespace);
     }
     if (!options.noEmit && !options.suppressOutputPathCheck) {
@@ -2323,7 +2323,7 @@ export function createProgram(
     let pos: number, end: number;
     switch (kind) {
       case RefFileKind.Import:
-        pos = syntax.skipTrivia(refFile.text, refFile.imports[index].pos);
+        pos = qy.skipTrivia(refFile.text, refFile.imports[index].pos);
         end = refFile.imports[index].end;
         break;
       case RefFileKind.ReferenceFile:

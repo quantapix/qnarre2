@@ -1,5 +1,5 @@
-import * as qb from './base';
-import { Node } from './types';
+import { Node } from './type';
+import * as qu from './util';
 export let isDebugging = false;
 let isDebugInfoEnabled = false;
 interface ExtendedDebugModule {

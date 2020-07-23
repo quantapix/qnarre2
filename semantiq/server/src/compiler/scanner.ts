@@ -1,10 +1,10 @@
-import * as qb from './base';
-import * as qd from './diags';
+import * as qd from './diagnostic';
 import * as qg from './debug';
-import * as qt from './types';
-import { TokenFlags } from './types';
-import * as qy from './syntax';
+import { TokenFlags } from './type';
+import * as qt from './type';
+import * as qu from './util';
 import { Codes, DocSyntax, JsxTokenSyntax, KeywordSyntax, LanguageVariant, Syntax } from './syntax';
+import * as qy from './syntax';
 export interface Scanner {
   setLanguageVariant(l: LanguageVariant): void;
   setOnError(cb?: qt.ErrorCallback): void;
@@ -123,7 +123,7 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
     setTextPos(start ?? 0);
   }
   function setTextPos(p: number) {
-    qb.assert(p >= 0);
+    qu.assert(p >= 0);
     pos = p;
     startPos = p;
     tokPos = p;
@@ -560,12 +560,12 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
     return token;
   }
   function reScanQuestionToken(): Syntax {
-    qb.assert(token === Syntax.Question2Token, "'reScanQuestionToken' should only be called on a '??'");
+    qu.assert(token === Syntax.Question2Token, "'reScanQuestionToken' should only be called on a '??'");
     pos = tokPos + 1;
     return (token = Syntax.QuestionToken);
   }
   function reScanTemplateToken(tagged: boolean): Syntax {
-    qb.assert(token === Syntax.CloseBraceToken, "'reScanTemplateToken' should only be called on a '}'");
+    qu.assert(token === Syntax.CloseBraceToken, "'reScanTemplateToken' should only be called on a '}'");
     pos = tokPos;
     return (token = scanTemplateAndSetTokenValue(tagged));
   }
@@ -1030,14 +1030,14 @@ export function qs_create(skipTrivia = false, lang = LanguageVariant.TS, onError
       }
       pos++;
     }
-    qb.assert(r !== undefined);
+    qu.assert(r !== undefined);
     tokValue = v;
     return r;
   }
   function appendIfDirective(ds: qt.CommentDirective[] | undefined, t: string, re: RegExp, line: number) {
     const d = directiveFrom(t, re);
     if (d === undefined) return ds;
-    return qb.append(ds, { range: { pos: line, end: pos }, type: d });
+    return qu.append(ds, { range: { pos: line, end: pos }, type: d });
   }
   function directiveFrom(t: string, re: RegExp) {
     const m = re.exec(t);

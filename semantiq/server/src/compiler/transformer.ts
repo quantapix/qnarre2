@@ -1,6 +1,5 @@
-import * as qb from './base';
-import * as qc from './core3';
-
+import * as qc from './core';
+import * as qu from './util';
 export interface TransformationContext {
   getEmitResolver(): EmitResolver;
   getEmitHost(): EmitHost;
@@ -24,31 +23,29 @@ export interface TransformationContext {
   onEmitNode: (hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void) => void;
   addDiagnostic(diag: DiagnosticWithLocation): void;
 }
-
 export const nullTransformationContext: TransformationContext = {
-  enableEmitNotification: qb.noop,
-  enableSubstitution: qb.noop,
+  enableEmitNotification: qu.noop,
+  enableSubstitution: qu.noop,
   endLexicalEnvironment: () => undefined,
   getCompilerOptions: () => ({}),
-  getEmitHost: qb.notImplemented,
-  getEmitResolver: qb.notImplemented,
-  setLexicalEnvironmentFlags: qb.noop,
+  getEmitHost: qu.notImplemented,
+  getEmitResolver: qu.notImplemented,
+  setLexicalEnvironmentFlags: qu.noop,
   getLexicalEnvironmentFlags: () => 0,
-  hoistFunctionDeclaration: qb.noop,
-  hoistVariableDeclaration: qb.noop,
-  addInitializationStatement: qb.noop,
-  isEmitNotificationEnabled: qb.notImplemented,
-  isSubstitutionEnabled: qb.notImplemented,
-  onEmitNode: qb.noop,
-  onSubstituteNode: qb.notImplemented,
-  readEmitHelpers: qb.notImplemented,
-  requestEmitHelper: qb.noop,
-  resumeLexicalEnvironment: qb.noop,
-  startLexicalEnvironment: qb.noop,
-  suspendLexicalEnvironment: qb.noop,
-  addDiagnostic: qb.noop,
+  hoistFunctionDeclaration: qu.noop,
+  hoistVariableDeclaration: qu.noop,
+  addInitializationStatement: qu.noop,
+  isEmitNotificationEnabled: qu.notImplemented,
+  isSubstitutionEnabled: qu.notImplemented,
+  onEmitNode: qu.noop,
+  onSubstituteNode: qu.notImplemented,
+  readEmitHelpers: qu.notImplemented,
+  requestEmitHelper: qu.noop,
+  resumeLexicalEnvironment: qu.noop,
+  startLexicalEnvironment: qu.noop,
+  suspendLexicalEnvironment: qu.noop,
+  addDiagnostic: qu.noop,
 };
-
 export interface TransformationResult<T extends Node> {
   transformed: T[];
   diagnostics?: DiagnosticWithLocation[];
@@ -60,7 +57,6 @@ export interface TransformationResult<T extends Node> {
 export type Transformer<T extends Node> = (node: T) => T;
 export interface TransformationContext {}
 export type TransformerFactory<T extends Node> = (c: TransformationContext) => Transformer<T>;
-
 function getModuleTransformer(moduleKind: ModuleKind): TransformerFactory<SourceFile | Bundle> {
   switch (moduleKind) {
     case ModuleKind.ESNext:
@@ -73,60 +69,48 @@ function getModuleTransformer(moduleKind: ModuleKind): TransformerFactory<Source
       return transformModule;
   }
 }
-
 const enum TransformationState {
   Uninitialized,
   Initialized,
   Completed,
   Disposed,
 }
-
 const enum SyntaxKindFeatureFlags {
   Substitution = 1 << 0,
   EmitNotifications = 1 << 1,
 }
-
 export const noTransformers: EmitTransformers = { scriptTransformers: emptyArray, declarationTransformers: emptyArray };
-
 export function getTransformers(compilerOptions: CompilerOptions, customTransformers?: CustomTransformers, emitOnlyDtsFiles?: boolean): EmitTransformers {
   return {
     scriptTransformers: getScriptTransformers(compilerOptions, customTransformers, emitOnlyDtsFiles),
     declarationTransformers: getDeclarationTransformers(customTransformers),
   };
 }
-
 function getScriptTransformers(compilerOptions: CompilerOptions, customTransformers?: CustomTransformers, emitOnlyDtsFiles?: boolean) {
   if (emitOnlyDtsFiles) return emptyArray;
   const jsx = compilerOptions.jsx;
   const languageVersion = getEmitScriptTarget(compilerOptions);
   const moduleKind = getEmitModuleKind(compilerOptions);
   const transformers: TransformerFactory<SourceFile | Bundle>[] = [];
-  qb.addRange(transformers, customTransformers && qb.map(customTransformers.before, wrapScriptTransformerFactory));
+  qu.addRange(transformers, customTransformers && qu.map(customTransformers.before, wrapScriptTransformerFactory));
   transformers.push(transformTypeScript);
   transformers.push(transformClassFields);
   if (jsx === JsxEmit.React) transformers.push(transformJsx);
-
   if (languageVersion < ScriptTarget.ESNext) transformers.push(transformESNext);
-
   if (languageVersion < ScriptTarget.ES2020) transformers.push(transformES2020);
-
   transformers.push(getModuleTransformer(moduleKind));
-
-  qb.addRange(transformers, customTransformers && qb.map(customTransformers.after, wrapScriptTransformerFactory));
+  qu.addRange(transformers, customTransformers && qu.map(customTransformers.after, wrapScriptTransformerFactory));
   return transformers;
 }
-
 function getDeclarationTransformers(customTransformers?: CustomTransformers) {
   const transformers: TransformerFactory<SourceFile | Bundle>[] = [];
   transformers.push(transformDeclarations);
-  qb.addRange(transformers, customTransformers && qb.map(customTransformers.afterDeclarations, wrapDeclarationTransformerFactory));
+  qu.addRange(transformers, customTransformers && qu.map(customTransformers.afterDeclarations, wrapDeclarationTransformerFactory));
   return transformers;
 }
-
 function wrapCustomTransformer(transformer: CustomTransformer): Transformer<Bundle | SourceFile> {
   return (node) => (qc.is.kind(qc.Bundle, node) ? transformer.transformBundle(node) : transformer.transformSourceFile(node));
 }
-
 function wrapCustomTransformerFactory<T extends SourceFile | Bundle>(
   transformer: TransformerFactory<T> | CustomTransformerFactory,
   handleDefault: (node: Transformer<T>) => Transformer<Bundle | SourceFile>
@@ -136,23 +120,18 @@ function wrapCustomTransformerFactory<T extends SourceFile | Bundle>(
     return typeof customTransformer === 'function' ? handleDefault(customTransformer) : wrapCustomTransformer(customTransformer);
   };
 }
-
 function wrapScriptTransformerFactory(transformer: TransformerFactory<SourceFile> | CustomTransformerFactory): TransformerFactory<Bundle | SourceFile> {
   return wrapCustomTransformerFactory(transformer, chainBundle);
 }
-
 function wrapDeclarationTransformerFactory(transformer: TransformerFactory<Bundle | SourceFile> | CustomTransformerFactory): TransformerFactory<Bundle | SourceFile> {
   return wrapCustomTransformerFactory(transformer, identity);
 }
-
 export function noEmitSubstitution(_hint: EmitHint, node: Node) {
   return node;
 }
-
 export function noEmitNotification(hint: EmitHint, node: Node, callback: (hint: EmitHint, node: Node) => void) {
   callback(hint, node);
 }
-
 export function transformNodes<T extends Node>(
   resolver: EmitResolver | undefined,
   host: EmitHost | undefined,
@@ -200,16 +179,16 @@ export function transformNodes<T extends Node>(
       return onSubstituteNode;
     },
     set onSubstituteNode(value) {
-      qb.assert(state < TransformationState.Initialized, 'Cannot modify transformation hooks after initialization has completed.');
-      qb.assert(value !== undefined, "Value must not be 'undefined'");
+      qu.assert(state < TransformationState.Initialized, 'Cannot modify transformation hooks after initialization has completed.');
+      qu.assert(value !== undefined, "Value must not be 'undefined'");
       onSubstituteNode = value;
     },
     get onEmitNode() {
       return onEmitNode;
     },
     set onEmitNode(value) {
-      qb.assert(state < TransformationState.Initialized, 'Cannot modify transformation hooks after initialization has completed.');
-      qb.assert(value !== undefined, "Value must not be 'undefined'");
+      qu.assert(state < TransformationState.Initialized, 'Cannot modify transformation hooks after initialization has completed.');
+      qu.assert(value !== undefined, "Value must not be 'undefined'");
       onEmitNode = value;
     },
     addDiagnostic(diag) {
@@ -228,7 +207,7 @@ export function transformNodes<T extends Node>(
     return node;
   };
   state = TransformationState.Initialized;
-  const transformed = qb.map(nodes, allowDtsFiles ? transformation : transformRoot);
+  const transformed = qu.map(nodes, allowDtsFiles ? transformation : transformRoot);
   state = TransformationState.Completed;
   performance.mark('afterTransform');
   performance.measure('transformTime', 'beforeTransform', 'afterTransform');
@@ -240,72 +219,60 @@ export function transformNodes<T extends Node>(
     dispose,
     diagnostics,
   };
-
   function transformRoot(node: T) {
     return node && (!qc.is.kind(qc.SourceFile, node) || !node.isDeclarationFile) ? transformation(node) : node;
   }
-
   function enableSubstitution(kind: Syntax) {
-    qb.assert(state < TransformationState.Completed, 'Cannot modify the transformation context after transformation has completed.');
+    qu.assert(state < TransformationState.Completed, 'Cannot modify the transformation context after transformation has completed.');
     enabledSyntaxKindFeatures[kind] |= SyntaxKindFeatureFlags.Substitution;
   }
-
   function isSubstitutionEnabled(node: Node) {
     return (enabledSyntaxKindFeatures[node.kind] & SyntaxKindFeatureFlags.Substitution) !== 0 && (qc.get.emitFlags(node) & EmitFlags.NoSubstitution) === 0;
   }
-
   function substituteNode(hint: EmitHint, node: Node) {
-    qb.assert(state < TransformationState.Disposed, 'Cannot substitute a node after the result is disposed.');
+    qu.assert(state < TransformationState.Disposed, 'Cannot substitute a node after the result is disposed.');
     return (node && isSubstitutionEnabled(node) && onSubstituteNode(hint, node)) || node;
   }
-
   function enableEmitNotification(kind: Syntax) {
-    qb.assert(state < TransformationState.Completed, 'Cannot modify the transformation context after transformation has completed.');
+    qu.assert(state < TransformationState.Completed, 'Cannot modify the transformation context after transformation has completed.');
     enabledSyntaxKindFeatures[kind] |= SyntaxKindFeatureFlags.EmitNotifications;
   }
-
   function isEmitNotificationEnabled(node: Node) {
     return (enabledSyntaxKindFeatures[node.kind] & SyntaxKindFeatureFlags.EmitNotifications) !== 0 || (qc.get.emitFlags(node) & EmitFlags.AdviseOnEmitNode) !== 0;
   }
-
   function emitNodeWithNotification(hint: EmitHint, node: Node, emitCallback: (hint: EmitHint, node: Node) => void) {
-    qb.assert(state < TransformationState.Disposed, 'Cannot invoke TransformationResult callbacks after the result is disposed.');
+    qu.assert(state < TransformationState.Disposed, 'Cannot invoke TransformationResult callbacks after the result is disposed.');
     if (node) {
       if (isEmitNotificationEnabled(node)) onEmitNode(hint, node, emitCallback);
       else emitCallback(hint, node);
     }
   }
-
   function hoistVariableDeclaration(name: Identifier): void {
-    qb.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
-    qb.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
+    qu.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
+    qu.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
     const decl = setEmitFlags(new qc.VariableDeclaration(name), EmitFlags.NoNestedSourceMaps);
     if (!lexicalEnvironmentVariableDeclarations) lexicalEnvironmentVariableDeclarations = [decl];
     else lexicalEnvironmentVariableDeclarations.push(decl);
-
     if (lexicalEnvironmentFlags & LexicalEnvironmentFlags.InParameters) lexicalEnvironmentFlags |= LexicalEnvironmentFlags.VariablesHoistedInParameters;
   }
-
   function hoistFunctionDeclaration(func: FunctionDeclaration): void {
-    qb.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
-    qb.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
+    qu.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
+    qu.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
     setEmitFlags(func, EmitFlags.CustomPrologue);
     if (!lexicalEnvironmentFunctionDeclarations) lexicalEnvironmentFunctionDeclarations = [func];
     else lexicalEnvironmentFunctionDeclarations.push(func);
   }
-
   function addInitializationStatement(node: Statement): void {
-    qb.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
-    qb.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
+    qu.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
+    qu.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
     setEmitFlags(node, EmitFlags.CustomPrologue);
     if (!lexicalEnvironmentStatements) lexicalEnvironmentStatements = [node];
     else lexicalEnvironmentStatements.push(node);
   }
-
   function startLexicalEnvironment(): void {
-    qb.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
-    qb.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
-    qb.assert(!lexicalEnvironmentSuspended, 'Lexical environment is suspended.');
+    qu.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
+    qu.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
+    qu.assert(!lexicalEnvironmentSuspended, 'Lexical environment is suspended.');
     lexicalEnvironmentVariableDeclarationsStack[lexicalEnvironmentStackOffset] = lexicalEnvironmentVariableDeclarations;
     lexicalEnvironmentFunctionDeclarationsStack[lexicalEnvironmentStackOffset] = lexicalEnvironmentFunctionDeclarations;
     lexicalEnvironmentStatementsStack[lexicalEnvironmentStackOffset] = lexicalEnvironmentStatements;
@@ -316,25 +283,22 @@ export function transformNodes<T extends Node>(
     lexicalEnvironmentStatements = undefined!;
     lexicalEnvironmentFlags = LexicalEnvironmentFlags.None;
   }
-
   function suspendLexicalEnvironment(): void {
-    qb.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
-    qb.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
-    qb.assert(!lexicalEnvironmentSuspended, 'Lexical environment is already suspended.');
+    qu.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
+    qu.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
+    qu.assert(!lexicalEnvironmentSuspended, 'Lexical environment is already suspended.');
     lexicalEnvironmentSuspended = true;
   }
-
   function resumeLexicalEnvironment(): void {
-    qb.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
-    qb.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
-    qb.assert(lexicalEnvironmentSuspended, 'Lexical environment is not suspended.');
+    qu.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
+    qu.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
+    qu.assert(lexicalEnvironmentSuspended, 'Lexical environment is not suspended.');
     lexicalEnvironmentSuspended = false;
   }
-
   function endLexicalEnvironment(): Statement[] | undefined {
-    qb.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
-    qb.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
-    qb.assert(!lexicalEnvironmentSuspended, 'Lexical environment is suspended.');
+    qu.assert(state > TransformationState.Uninitialized, 'Cannot modify the lexical environment during initialization.');
+    qu.assert(state < TransformationState.Completed, 'Cannot modify the lexical environment after transformation has completed.');
+    qu.assert(!lexicalEnvironmentSuspended, 'Lexical environment is suspended.');
     let statements: Statement[] | undefined;
     if (lexicalEnvironmentVariableDeclarations || lexicalEnvironmentFunctionDeclarations || lexicalEnvironmentStatements) {
       if (lexicalEnvironmentFunctionDeclarations) statements = [...lexicalEnvironmentFunctionDeclarations];
@@ -362,35 +326,30 @@ export function transformNodes<T extends Node>(
     }
     return statements;
   }
-
   function setLexicalEnvironmentFlags(flags: LexicalEnvironmentFlags, value: boolean): void {
     lexicalEnvironmentFlags = value ? lexicalEnvironmentFlags | flags : lexicalEnvironmentFlags & ~flags;
   }
-
   function getLexicalEnvironmentFlags(): LexicalEnvironmentFlags {
     return lexicalEnvironmentFlags;
   }
-
   function requestEmitHelper(helper: EmitHelper): void {
-    qb.assert(state > TransformationState.Uninitialized, 'Cannot modify the transformation context during initialization.');
-    qb.assert(state < TransformationState.Completed, 'Cannot modify the transformation context after transformation has completed.');
-    qb.assert(!helper.scoped, 'Cannot request a scoped emit helper.');
+    qu.assert(state > TransformationState.Uninitialized, 'Cannot modify the transformation context during initialization.');
+    qu.assert(state < TransformationState.Completed, 'Cannot modify the transformation context after transformation has completed.');
+    qu.assert(!helper.scoped, 'Cannot request a scoped emit helper.');
     if (helper.dependencies) {
       for (const h of helper.dependencies) {
         requestEmitHelper(h);
       }
     }
-    emitHelpers = qb.append(emitHelpers, helper);
+    emitHelpers = qu.append(emitHelpers, helper);
   }
-
   function readEmitHelpers(): EmitHelper[] | undefined {
-    qb.assert(state > TransformationState.Uninitialized, 'Cannot modify the transformation context during initialization.');
-    qb.assert(state < TransformationState.Completed, 'Cannot modify the transformation context after transformation has completed.');
+    qu.assert(state > TransformationState.Uninitialized, 'Cannot modify the transformation context during initialization.');
+    qu.assert(state < TransformationState.Completed, 'Cannot modify the transformation context after transformation has completed.');
     const helpers = emitHelpers;
     emitHelpers = undefined;
     return helpers;
   }
-
   function dispose() {
     if (state < TransformationState.Disposed) {
       for (const node of nodes) {

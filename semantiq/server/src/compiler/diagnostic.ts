@@ -1,6 +1,6 @@
 // generated from './diagnosticInformationMap.generated.ts' by 'src/compiler'
-import * as qb from './base';
 import { SourceFile } from './type';
+import * as qu from './util';
 export enum Category {
   Warning,
   Error,
@@ -42,7 +42,7 @@ export interface DiagnosticCollection {
   getDiagnostics(fileName: string): DiagnosticWithLocation[];
   reattachFileDiagnostics(newFile: SourceFile): void;
 }
-export let localizedMessages: qb.MapLike<string> | undefined;
+export let localizedMessages: qu.MapLike<string> | undefined;
 export function setLocalizedMessages(ms: typeof localizedMessages) {
   localizedMessages = ms;
 }
@@ -52,13 +52,13 @@ export function getLocaleSpecificMessage(m: Message) {
 export function formatMessage(_: any, m: Message, ...args: (string | number | undefined)[]): string;
 export function formatMessage(_: any, m: Message): string {
   let t = getLocaleSpecificMessage(m);
-  if (arguments.length > 2) t = qb.formatStringFromArgs(t, arguments, 2);
+  if (arguments.length > 2) t = qu.formatStringFromArgs(t, arguments, 2);
   return t;
 }
 export function createCompilerDiagnostic(m: Message, ...args: (string | number | undefined)[]): Diagnostic;
 export function createCompilerDiagnostic(m: Message): Diagnostic {
   let t = getLocaleSpecificMessage(m);
-  if (arguments.length > 1) t = qb.formatStringFromArgs(t, arguments, 1);
+  if (arguments.length > 1) t = qu.formatStringFromArgs(t, arguments, 1);
   return { file: undefined, start: undefined, length: undefined, text: t, cat: m.cat, code: m.code, reportsUnnecessary: m.reportsUnnecessary };
 }
 export function createCompilerDiagnosticFromMessageChain(c: MessageChain): Diagnostic {
@@ -67,7 +67,7 @@ export function createCompilerDiagnosticFromMessageChain(c: MessageChain): Diagn
 export function chainMessages(c: MessageChain | MessageChain[] | undefined, m: Message, ...args: (string | number | undefined)[]): MessageChain;
 export function chainMessages(c: MessageChain | MessageChain[] | undefined, m: Message): MessageChain {
   let t = getLocaleSpecificMessage(m);
-  if (arguments.length > 2) t = qb.formatStringFromArgs(t, arguments, 2);
+  if (arguments.length > 2) t = qu.formatStringFromArgs(t, arguments, 2);
   return { text: t, cat: m.cat, code: m.code, next: c === undefined || Array.isArray(c) ? c : [c] };
 }
 export function concatenateMessageChains(head: MessageChain, tail: MessageChain) {
@@ -80,50 +80,50 @@ export function concatenateMessageChains(head: MessageChain, tail: MessageChain)
 function getDiagnosticFilePath(d: Diagnostic): string | undefined {
   return d.file ? d.file.path : undefined;
 }
-export function compareDiagnostics(d1: Diagnostic, d2: Diagnostic): qb.Comparison {
-  return compareDiagnosticsSkipRelatedInformation(d1, d2) || compareRelatedInformation(d1, d2) || qb.Comparison.EqualTo;
+export function compareDiagnostics(d1: Diagnostic, d2: Diagnostic): qu.Comparison {
+  return compareDiagnosticsSkipRelatedInformation(d1, d2) || compareRelatedInformation(d1, d2) || qu.Comparison.EqualTo;
 }
-export function compareDiagnosticsSkipRelatedInformation(d1: Diagnostic, d2: Diagnostic): qb.Comparison {
+export function compareDiagnosticsSkipRelatedInformation(d1: Diagnostic, d2: Diagnostic): qu.Comparison {
   return (
-    qb.compareCaseSensitive(getDiagnosticFilePath(d1), getDiagnosticFilePath(d2)) ||
-    qb.compareNumbers(d1.start, d2.start) ||
-    qb.compareNumbers(d1.length, d2.length) ||
-    qb.compareNumbers(d1.code, d2.code) ||
+    qu.compareCaseSensitive(getDiagnosticFilePath(d1), getDiagnosticFilePath(d2)) ||
+    qu.compareNumbers(d1.start, d2.start) ||
+    qu.compareNumbers(d1.length, d2.length) ||
+    qu.compareNumbers(d1.code, d2.code) ||
     compareMessageText(d1.text, d2.text) ||
-    qb.Comparison.EqualTo
+    qu.Comparison.EqualTo
   );
 }
-function compareRelatedInformation(d1: Diagnostic, d2: Diagnostic): qb.Comparison {
-  if (!d1.relatedInformation && !d2.relatedInformation) return qb.Comparison.EqualTo;
+function compareRelatedInformation(d1: Diagnostic, d2: Diagnostic): qu.Comparison {
+  if (!d1.relatedInformation && !d2.relatedInformation) return qu.Comparison.EqualTo;
   if (d1.relatedInformation && d2.relatedInformation) {
     return (
-      qb.compareNumbers(d1.relatedInformation.length, d2.relatedInformation.length) ||
-      qb.forEach(d1.relatedInformation, (d1i, index) => {
+      qu.compareNumbers(d1.relatedInformation.length, d2.relatedInformation.length) ||
+      qu.forEach(d1.relatedInformation, (d1i, index) => {
         const d2i = d2.relatedInformation![index];
         return compareDiagnostics(d1i, d2i);
       }) ||
-      qb.Comparison.EqualTo
+      qu.Comparison.EqualTo
     );
   }
-  return d1.relatedInformation ? qb.Comparison.LessThan : qb.Comparison.GreaterThan;
+  return d1.relatedInformation ? qu.Comparison.LessThan : qu.Comparison.GreaterThan;
 }
-function compareMessageText(t1: string | MessageChain, t2: string | MessageChain): qb.Comparison {
-  if (typeof t1 === 'string' && typeof t2 === 'string') return qb.compareCaseSensitive(t1, t2);
-  if (typeof t1 === 'string') return qb.Comparison.LessThan;
-  if (typeof t2 === 'string') return qb.Comparison.GreaterThan;
-  let res = qb.compareCaseSensitive(t1.text, t2.text);
+function compareMessageText(t1: string | MessageChain, t2: string | MessageChain): qu.Comparison {
+  if (typeof t1 === 'string' && typeof t2 === 'string') return qu.compareCaseSensitive(t1, t2);
+  if (typeof t1 === 'string') return qu.Comparison.LessThan;
+  if (typeof t2 === 'string') return qu.Comparison.GreaterThan;
+  let res = qu.compareCaseSensitive(t1.text, t2.text);
   if (res) return res;
-  if (!t1.next && !t2.next) return qb.Comparison.EqualTo;
-  if (!t1.next) return qb.Comparison.LessThan;
-  if (!t2.next) return qb.Comparison.GreaterThan;
+  if (!t1.next && !t2.next) return qu.Comparison.EqualTo;
+  if (!t1.next) return qu.Comparison.LessThan;
+  if (!t2.next) return qu.Comparison.GreaterThan;
   const len = Math.min(t1.next.length, t2.next.length);
   for (let i = 0; i < len; i++) {
     res = compareMessageText(t1.next[i], t2.next[i]);
     if (res) return res;
   }
-  if (t1.next.length < t2.next.length) return qb.Comparison.LessThan;
-  else if (t1.next.length > t2.next.length) return qb.Comparison.GreaterThan;
-  return qb.Comparison.EqualTo;
+  if (t1.next.length < t2.next.length) return qu.Comparison.LessThan;
+  else if (t1.next.length > t2.next.length) return qu.Comparison.GreaterThan;
+  return qu.Comparison.EqualTo;
 }
 export function addRelatedInfo<T extends Diagnostic>(d: T, ...i: DiagnosticRelatedInformation[]): T {
   if (!i.length) return d;
@@ -134,9 +134,9 @@ export function addRelatedInfo<T extends Diagnostic>(d: T, ...i: DiagnosticRelat
   return d;
 }
 export function createDiagnosticCollection(): DiagnosticCollection {
-  let nonFileDiagnostics = ([] as Diagnostic[]) as qb.Sorteds<Diagnostic>;
-  const filesWithDiagnostics = ([] as string[]) as qb.Sorteds<string>;
-  const fileDiagnostics = new qb.QMap<qb.Sorteds<DiagnosticWithLocation>>();
+  let nonFileDiagnostics = ([] as Diagnostic[]) as qu.Sorteds<Diagnostic>;
+  const filesWithDiagnostics = ([] as string[]) as qu.Sorteds<string>;
+  const fileDiagnostics = new qu.QMap<qu.Sorteds<DiagnosticWithLocation>>();
   let hasReadNonFileDiagnostics = false;
   return {
     add,
@@ -146,34 +146,34 @@ export function createDiagnosticCollection(): DiagnosticCollection {
     reattachFileDiagnostics,
   };
   function reattachFileDiagnostics(s: SourceFile) {
-    qb.forEach(fileDiagnostics.get(s.fileName), (d) => (d.file = s));
+    qu.forEach(fileDiagnostics.get(s.fileName), (d) => (d.file = s));
   }
   function lookup(d: Diagnostic): Diagnostic | undefined {
-    let ds: qb.Sorteds<Diagnostic> | undefined;
+    let ds: qu.Sorteds<Diagnostic> | undefined;
     if (d.file) ds = fileDiagnostics.get(d.file.fileName);
     else ds = nonFileDiagnostics;
     if (!ds) return;
-    const r = qb.binarySearch(ds, d, qb.identity, compareDiagnosticsSkipRelatedInformation);
+    const r = qu.binarySearch(ds, d, qu.identity, compareDiagnosticsSkipRelatedInformation);
     if (r >= 0) return ds[r];
     return;
   }
   function add(d: Diagnostic): void {
-    let ds: qb.Sorteds<Diagnostic> | undefined;
+    let ds: qu.Sorteds<Diagnostic> | undefined;
     if (d.file) {
       ds = fileDiagnostics.get(d.file.fileName);
       if (!ds) {
-        ds = ([] as Diagnostic[]) as qb.Sorteds<DiagnosticWithLocation>;
-        fileDiagnostics.set(d.file.fileName, ds as qb.Sorteds<DiagnosticWithLocation>);
-        qb.insertSorted(filesWithDiagnostics, d.file.fileName, qb.compareCaseSensitive);
+        ds = ([] as Diagnostic[]) as qu.Sorteds<DiagnosticWithLocation>;
+        fileDiagnostics.set(d.file.fileName, ds as qu.Sorteds<DiagnosticWithLocation>);
+        qu.insertSorted(filesWithDiagnostics, d.file.fileName, qu.compareCaseSensitive);
       }
     } else {
       if (hasReadNonFileDiagnostics) {
         hasReadNonFileDiagnostics = false;
-        nonFileDiagnostics = nonFileDiagnostics.slice() as qb.Sorteds<Diagnostic>;
+        nonFileDiagnostics = nonFileDiagnostics.slice() as qu.Sorteds<Diagnostic>;
       }
       ds = nonFileDiagnostics;
     }
-    qb.insertSorted(ds, d, compareDiagnostics);
+    qu.insertSorted(ds, d, compareDiagnostics);
   }
   function getGlobalDiagnostics(): Diagnostic[] {
     hasReadNonFileDiagnostics = true;
@@ -183,7 +183,7 @@ export function createDiagnosticCollection(): DiagnosticCollection {
   function getDiagnostics(): Diagnostic[];
   function getDiagnostics(fileName?: string): Diagnostic[] {
     if (fileName) return fileDiagnostics.get(fileName) || [];
-    const fileDiags: Diagnostic[] = qb.flatMapToMutable(filesWithDiagnostics, (f) => fileDiagnostics.get(f));
+    const fileDiags: Diagnostic[] = qu.flatMapToMutable(filesWithDiagnostics, (f) => fileDiagnostics.get(f));
     if (!nonFileDiagnostics.length) return fileDiags;
     fileDiags.unshift(...nonFileDiagnostics);
     return fileDiags;

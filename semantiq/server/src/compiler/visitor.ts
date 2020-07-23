@@ -1,12 +1,12 @@
-import * as qb from './base';
 import { Node, Nodes, Token } from './core';
-import * as qc from './core3';
+import * as qc from './core';
+import * as qu from './util';
 import * as qt from './type';
 import * as qy from './syntax';
 import { Modifier, Syntax } from './syntax';
 export type Visitor = (n: Node) => VisitResult<Node>;
 export type VisitResult<T extends Node> = T | T[] | undefined;
-const isTypeNodeOrTypeParameterDeclaration = qb.or(isTypeNode, isTypeParameterDeclaration);
+const isTypeNodeOrTypeParameterDeclaration = qu.or(isTypeNode, isTypeParameterDeclaration);
 export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: (n: Node) => boolean, lift?: (ns: Nodes<Node>) => T): T;
 export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: (n: Node) => boolean, lift?: (ns: Nodes<Node>) => T): T | undefined;
 export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: (n: Node) => boolean, lift?: (ns: Nodes<Node>) => T): T | undefined {
@@ -16,7 +16,7 @@ export function visitNode<T extends Node>(n?: T, cb?: Visitor, test?: (n: Node) 
   if (r === n) return n;
   let n2: Node | undefined;
   if (!r) return;
-  if (qb.isArray(r)) n2 = (lift || extractSingleNode)(r);
+  if (qu.isArray(r)) n2 = (lift || extractSingleNode)(r);
   else n2 = r;
   qc.assertNode(n2, test);
   aggregateTransformFlags(n2!);
@@ -41,7 +41,7 @@ export function visitNodes<T extends Node>(ns?: Nodes<T>, cb?: Visitor, test?: (
         setRange(updated, ns);
       }
       if (r) {
-        if (qb.isArray(r)) {
+        if (qu.isArray(r)) {
           for (const n2 of r) {
             qc.assertNode(n2, test);
             aggregateTransformFlags(n2);
@@ -147,7 +147,7 @@ export function visitFunctionBody(n: ConciseBody | undefined, cb: Visitor, c: Tr
   c.resumeLexicalEnvironment();
   const updated = visitNode(n, cb, isConciseBody);
   const declarations = c.endLexicalEnvironment();
-  if (qb.some(declarations)) {
+  if (qu.some(declarations)) {
     const block = convertToFunctionBody(updated);
     const ss = mergeLexicalEnvironment(block.statements, declarations);
     return block.update(ss);
@@ -570,8 +570,8 @@ export function visitEachChild(node: Node | undefined, cb: Visitor, c: Transform
   }
 }
 function extractSingleNode(ns: readonly Node[]): Node | undefined {
-  qb.assert(ns.length <= 1, 'Too many nodes written to output.');
-  return qb.singleOrUndefined(ns);
+  qu.assert(ns.length <= 1, 'Too many nodes written to output.');
+  return qu.singleOrUndefined(ns);
 }
 function reduceNode<T>(node: Node | undefined, f: (memo: T, node: Node) => T, initial: T) {
   return node ? f(initial, node) : initial;
@@ -990,7 +990,7 @@ export function mergeLexicalEnvironment(ss: Statement[] | Nodes<Statement>, decl
   const rf = findSpanEnd(declarations, isHoistedFunction, rs);
   const rv = findSpanEnd(declarations, isHoistedVariableStatement, rf);
   const rc = findSpanEnd(declarations, isCustomPrologue, rv);
-  qb.assert(rc === declarations.length, 'Expected declarations to be valid standard or custom prologues');
+  qu.assert(rc === declarations.length, 'Expected declarations to be valid standard or custom prologues');
   const left = isNodes(ss) ? ss.slice() : ss;
   if (rc > rv) left.splice(lv, 0, ...declarations.slice(rv, rc));
   if (rv > rf) left.splice(lf, 0, ...declarations.slice(rf, rv));
@@ -1015,6 +1015,6 @@ export function mergeLexicalEnvironment(ss: Statement[] | Nodes<Statement>, decl
   return ss;
 }
 export function liftToBlock(ns: readonly Node[]): Statement {
-  qb.assert(every(ns, isStatement), 'Cannot lift nodes to a Block.');
-  return (qb.singleOrUndefined(ns) as Statement) || new Block(<Nodes<Statement>>ns);
+  qu.assert(every(ns, isStatement), 'Cannot lift nodes to a Block.');
+  return (qu.singleOrUndefined(ns) as Statement) || new Block(<Nodes<Statement>>ns);
 }

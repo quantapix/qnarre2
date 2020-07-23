@@ -1,10 +1,10 @@
-import * as qb from './base';
-import * as qc from './core3';
-import * as qd from './diags';
-import * as qt from './types';
-import { Node } from './types';
-import * as qy from './syntax';
+import * as qc from './core';
+import * as qd from './diagnostic';
+import { Node } from './type';
+import * as qt from './type';
+import * as qu from './util';
 import { Syntax } from './syntax';
+import * as qy from './syntax';
 export const compileOnSaveCommandLineOption: qt.CommandLineOption = { name: 'compileOnSave', type: 'boolean' };
 const libEntries: [string, string][] = [
   ['es5', 'lib.es5.d.ts'],
@@ -1004,8 +1004,8 @@ export const typeAcquisitionDeclarations: qt.CommandLineOption[] = [
   },
 ];
 export interface OptionsNameMap {
-  optionsNameMap: qb.QMap<CommandLineOption>;
-  shortOptionNames: qb.QMap<string>;
+  optionsNameMap: qu.QMap<CommandLineOption>;
+  shortOptionNames: qu.QMap<string>;
 }
 export function createOptionNameMap(optionDeclarations: readonly qt.CommandLineOption[]): OptionsNameMap {
   const optionsNameMap = createMap<CommandLineOption>();
@@ -1295,7 +1295,7 @@ export function getParsedCommandLineOfConfigFile(
   configFileName: string,
   optionsToExtend: qt.CompilerOptions,
   host: ParseConfigFileHost,
-  extendedConfigCache?: qb.QMap<ExtendedConfigCacheEntry>,
+  extendedConfigCache?: qu.QMap<ExtendedConfigCacheEntry>,
   watchOptionsToExtend?: WatchOptions,
   extraFileExtensions?: readonly FileExtensionInfo[]
 ): ParsedCommandLine | undefined {
@@ -1364,15 +1364,15 @@ const watchOptionsDidYouMeanDiagnostics: ParseCommandLineWorkerDiagnostics = {
   unknownDidYouMeanDiagnostic: qd.Unknown_watch_option_0_Did_you_mean_1,
   optionTypeMismatchDiagnostic: qd.Watch_option_0_requires_a_value_of_type_1,
 };
-let commandLineCompilerOptionsMapCache: qb.QMap<CommandLineOption>;
+let commandLineCompilerOptionsMapCache: qu.QMap<CommandLineOption>;
 function getCommandLineCompilerOptionsMap() {
   return commandLineCompilerOptionsMapCache || (commandLineCompilerOptionsMapCache = commandLineOptionsToMap(optionDeclarations));
 }
-let commandLineWatchOptionsMapCache: qb.QMap<CommandLineOption>;
+let commandLineWatchOptionsMapCache: qu.QMap<CommandLineOption>;
 function getCommandLineWatchOptionsMap() {
   return commandLineWatchOptionsMapCache || (commandLineWatchOptionsMapCache = commandLineOptionsToMap(optionsForWatch));
 }
-let commandLineTypeAcquisitionMapCache: qb.QMap<CommandLineOption>;
+let commandLineTypeAcquisitionMapCache: qu.QMap<CommandLineOption>;
 function getCommandLineTypeAcquisitionMap() {
   return commandLineTypeAcquisitionMapCache || (commandLineTypeAcquisitionMapCache = commandLineOptionsToMap(typeAcquisitionDeclarations));
 }
@@ -1466,12 +1466,12 @@ export function convertToObjectWorker(
 ): any {
   if (!sourceFile.statements.length) return returnValue ? {} : undefined;
   return convertPropertyValueToJson(sourceFile.statements[0].expression, knownRootOptions);
-  function isRootOptionMap(knownOptions: qb.QMap<CommandLineOption> | undefined) {
+  function isRootOptionMap(knownOptions: qu.QMap<CommandLineOption> | undefined) {
     return knownRootOptions && (knownRootOptions as TsConfigOnlyOption).elementOptions === knownOptions;
   }
   function convertObjectLiteralExpressionToJson(
     node: ObjectLiteralExpression,
-    knownOptions: qb.QMap<CommandLineOption> | undefined,
+    knownOptions: qu.QMap<CommandLineOption> | undefined,
     extraKeyDiagnostics: DidYouMeanOptionsDiagnostics | undefined,
     parentOption: string | undefined
   ): any {
@@ -1656,7 +1656,7 @@ export function convertToTSConfig(configParseResult: ParsedCommandLine, configFi
   };
   return config;
 }
-function optionMapToObject(optionMap: qb.QMap<CompilerOptionsValue>): object {
+function optionMapToObject(optionMap: qu.QMap<CompilerOptionsValue>): object {
   return {
     ...arrayFrom(optionMap.entries()).reduce((prev, cur) => ({ ...prev, [cur[0]]: cur[1] }), {}),
   };
@@ -1673,7 +1673,7 @@ function matchesSpecs(path: string, includeSpecs: readonly string[] | undefined,
   if (excludeRe) return (path) => excludeRe.test(path);
   return (_) => true;
 }
-function getCustomTypeMapOfCommandLineOption(optionDefinition: qt.CommandLineOption): qb.QMap<string | number> | undefined {
+function getCustomTypeMapOfCommandLineOption(optionDefinition: qt.CommandLineOption): qu.QMap<string | number> | undefined {
   if (optionDefinition.type === 'string' || optionDefinition.type === 'number' || optionDefinition.type === 'boolean' || optionDefinition.type === 'object') {
     return;
   } else if (optionDefinition.type === 'list') {
@@ -1682,13 +1682,13 @@ function getCustomTypeMapOfCommandLineOption(optionDefinition: qt.CommandLineOpt
     return (<CommandLineOptionOfCustomType>optionDefinition).type;
   }
 }
-function getNameOfCompilerOptionValue(value: qt.CompilerOptionsValue, customTypeMap: qb.QMap<string | number>): string | undefined {
+function getNameOfCompilerOptionValue(value: qt.CompilerOptionsValue, customTypeMap: qu.QMap<string | number>): string | undefined {
   return qu.forEachEntry(customTypeMap, (mapValue, key) => {
     if (mapValue === value) return key;
     return;
   });
 }
-function serializeCompilerOptions(options: qt.CompilerOptions, pathOptions?: { configFilePath: string; useCaseSensitiveFileNames: boolean }): qb.QMap<CompilerOptionsValue> {
+function serializeCompilerOptions(options: qt.CompilerOptions, pathOptions?: { configFilePath: string; useCaseSensitiveFileNames: boolean }): qu.QMap<CompilerOptionsValue> {
   return serializeOptionBaseObject(options, getOptionsNameMap(), pathOptions);
 }
 function serializeWatchOptions(options: WatchOptions) {
@@ -1698,7 +1698,7 @@ function serializeOptionBaseObject(
   options: OptionsBase,
   { optionsNameMap }: OptionsNameMap,
   pathOptions?: { configFilePath: string; useCaseSensitiveFileNames: boolean }
-): qb.QMap<CompilerOptionsValue> {
+): qu.QMap<CompilerOptionsValue> {
   const result = createMap<CompilerOptionsValue>();
   const getCanonicalFileName = pathOptions && createGetCanonicalFileName(pathOptions.useCaseSensitiveFileNames);
   for (const name in options) {
@@ -1845,7 +1845,7 @@ export function parseJsonConfigFileContent(
   configFileName?: string,
   resolutionStack?: Path[],
   extraFileExtensions?: readonly FileExtensionInfo[],
-  extendedConfigCache?: qb.QMap<ExtendedConfigCacheEntry>,
+  extendedConfigCache?: qu.QMap<ExtendedConfigCacheEntry>,
   existingWatchOptions?: WatchOptions
 ): ParsedCommandLine {
   return parseJsonConfigFileContentWorker(json, undefined, host, basePath, existingOptions, existingWatchOptions, configFileName, resolutionStack, extraFileExtensions, extendedConfigCache);
@@ -1858,7 +1858,7 @@ export function parseJsonSourceFileConfigFileContent(
   configFileName?: string,
   resolutionStack?: Path[],
   extraFileExtensions?: readonly FileExtensionInfo[],
-  extendedConfigCache?: qb.QMap<ExtendedConfigCacheEntry>,
+  extendedConfigCache?: qu.QMap<ExtendedConfigCacheEntry>,
   existingWatchOptions?: WatchOptions
 ): ParsedCommandLine {
   return parseJsonConfigFileContentWorker(undefined, sourceFile, host, basePath, existingOptions, existingWatchOptions, configFileName, resolutionStack, extraFileExtensions, extendedConfigCache);
@@ -1884,7 +1884,7 @@ function parseJsonConfigFileContentWorker(
   configFileName?: string,
   resolutionStack: Path[] = [],
   extraFileExtensions: readonly FileExtensionInfo[] = [],
-  extendedConfigCache?: qb.QMap<ExtendedConfigCacheEntry>
+  extendedConfigCache?: qu.QMap<ExtendedConfigCacheEntry>
 ): ParsedCommandLine {
   assert((json === undefined && sourceFile !== undefined) || (json !== undefined && sourceFile === undefined));
   const errors: Diagnostic[] = [];
@@ -1958,7 +1958,7 @@ function parseConfig(
   configFileName: string | undefined,
   resolutionStack: string[],
   errors: Push<Diagnostic>,
-  extendedConfigCache?: qb.QMap<ExtendedConfigCacheEntry>
+  extendedConfigCache?: qu.QMap<ExtendedConfigCacheEntry>
 ): ParsedTsconfig {
   basePath = normalizeSlashes(basePath);
   const resolvedPath = getNormalizedAbsolutePath(configFileName || '', basePath);
@@ -2097,7 +2097,7 @@ function getExtendedConfig(
   basePath: string,
   resolutionStack: string[],
   errors: Push<Diagnostic>,
-  extendedConfigCache?: qb.QMap<ExtendedConfigCacheEntry>
+  extendedConfigCache?: qu.QMap<ExtendedConfigCacheEntry>
 ): ParsedTsconfig | undefined {
   const path = host.useCaseSensitiveFileNames ? extendedConfigPath : toFileNameLowerCase(extendedConfigPath);
   let value: ExtendedConfigCacheEntry | undefined;
@@ -2181,7 +2181,7 @@ function convertWatchOptionsFromJsonWorker(jsonOptions: any, basePath: string, e
   return convertOptionsFromJson(getCommandLineWatchOptionsMap(), jsonOptions, basePath, undefined, watchOptionsDidYouMeanDiagnostics, errors);
 }
 function convertOptionsFromJson(
-  optionsNameMap: qb.QMap<CommandLineOption>,
+  optionsNameMap: qu.QMap<CommandLineOption>,
   jsonOptions: any,
   basePath: string,
   defaultOptions: undefined,
@@ -2189,7 +2189,7 @@ function convertOptionsFromJson(
   errors: Push<Diagnostic>
 ): WatchOptions | undefined;
 function convertOptionsFromJson(
-  optionsNameMap: qb.QMap<CommandLineOption>,
+  optionsNameMap: qu.QMap<CommandLineOption>,
   jsonOptions: any,
   basePath: string,
   defaultOptions: qt.CompilerOptions | TypeAcquisition,
@@ -2197,7 +2197,7 @@ function convertOptionsFromJson(
   errors: Push<Diagnostic>
 ): qt.CompilerOptions | TypeAcquisition;
 function convertOptionsFromJson(
-  optionsNameMap: qb.QMap<CommandLineOption>,
+  optionsNameMap: qu.QMap<CommandLineOption>,
   jsonOptions: any,
   basePath: string,
   defaultOptions: qt.CompilerOptions | TypeAcquisition | WatchOptions | undefined,
@@ -2421,7 +2421,7 @@ function getWildcardDirectoryFromSpec(spec: string, useCaseSensitiveFileNames: b
   if (isImplicitGlob(spec)) return { key: spec, flags: WatchDirectoryFlags.Recursive };
   return;
 }
-function hasFileWithHigherPriorityExtension(file: string, literalFiles: qb.QMap<string>, wildcardFiles: qb.QMap<string>, extensions: readonly string[], keyMapper: (value: string) => string) {
+function hasFileWithHigherPriorityExtension(file: string, literalFiles: qu.QMap<string>, wildcardFiles: qu.QMap<string>, extensions: readonly string[], keyMapper: (value: string) => string) {
   const extensionPriority = getExtensionPriority(file, extensions);
   const adjustedExtensionPriority = adjustExtensionPriority(extensionPriority, extensions);
   for (let i = ExtensionPriority.Highest; i < adjustedExtensionPriority; i++) {
@@ -2431,7 +2431,7 @@ function hasFileWithHigherPriorityExtension(file: string, literalFiles: qb.QMap<
   }
   return false;
 }
-function removeWildcardFilesWithLowerPriorityExtension(file: string, wildcardFiles: qb.QMap<string>, extensions: readonly string[], keyMapper: (value: string) => string) {
+function removeWildcardFilesWithLowerPriorityExtension(file: string, wildcardFiles: qu.QMap<string>, extensions: readonly string[], keyMapper: (value: string) => string) {
   const extensionPriority = getExtensionPriority(file, extensions);
   const nextExtensionPriority = getNextLowestExtensionPriority(extensionPriority, extensions);
   for (let i = nextExtensionPriority; i < extensions.length; i++) {

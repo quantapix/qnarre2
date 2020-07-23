@@ -1,7 +1,7 @@
-import * as qb from '../base';
-import * as qc from '../core3';
-import { Node, NodeBuilderFlags, ObjectFlags, TypeFlags } from '../types';
-import * as qt from '../types';
+import * as qc from '../core';
+import { Node, NodeBuilderFlags, ObjectFlags, TypeFlags } from '../type';
+import * as qt from '../type';
+import * as qu from '../util';
 import { ModifierFlags, Syntax } from '../syntax';
 import * as qy from '../syntax';
 function existingTypeNodeIsNotReferenceOrIsReferenceWithCompatibleTypeArgumentCount(existing: TypeNode, type: Type) {
@@ -16,16 +16,16 @@ export class QContext {
   flags: NodeBuilderFlags;
   tracker: SymbolTracker;
   encounteredError: boolean;
-  visitedTypes?: qb.QMap<true>;
-  symbolDepth?: qb.QMap<number>;
+  visitedTypes?: qu.QMap<true>;
+  symbolDepth?: qu.QMap<number>;
   inferTypeParameters?: TypeParameter[];
   approximateLength: number;
   truncating?: boolean;
-  typeParameterSymbolList?: qb.QMap<true>;
-  typeParameterNames?: qb.QMap<Identifier>;
-  typeParameterNamesByText?: qb.QMap<true>;
-  usedSymbolNames?: qb.QMap<true>;
-  remappedSymbolNames?: qb.QMap<string>;
+  typeParameterSymbolList?: qu.QMap<true>;
+  typeParameterNames?: qu.QMap<Identifier>;
+  typeParameterNamesByText?: qu.QMap<true>;
+  usedSymbolNames?: qu.QMap<true>;
+  remappedSymbolNames?: qu.QMap<string>;
   checkTruncationLength(): boolean {
     if (this.truncating) return this.truncating;
     return (this.truncating = this.approximateLength > (this.flags & NodeBuilderFlags.NoTruncation ? noTruncationMaximumTruncationLength : defaultMaximumTruncationLength));
@@ -1368,8 +1368,8 @@ export class QContext {
         : type.symbol
         ? (isConstructorObject ? '+' : '') + type.symbol.getId()
         : undefined;
-    if (!this.visitedTypes) this.visitedTypes = new qb.QMap<true>();
-    if (id && !this.symbolDepth) this.symbolDepth = new qb.QMap<number>();
+    if (!this.visitedTypes) this.visitedTypes = new qu.QMap<true>();
+    if (id && !this.symbolDepth) this.symbolDepth = new qu.QMap<number>();
     let depth: number | undefined;
     if (id) {
       depth = this.symbolDepth!.get(id) || 0;
@@ -1528,8 +1528,8 @@ export class QContext {
     );
     const enclosingDeclaration = this.enclosingDeclaration!;
     let results: Statement[] = [];
-    const visitedSymbols: qb.QMap<true> = new QMap();
-    let deferredPrivates: qb.QMap<Symbol> | undefined;
+    const visitedSymbols: qu.QMap<true> = new QMap();
+    let deferredPrivates: qu.QMap<Symbol> | undefined;
     const oldcontext = context;
     context = {
       ...oldcontext,

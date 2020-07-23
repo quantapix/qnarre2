@@ -1,10 +1,10 @@
-import * as qb from './base';
 import * as qc from './core';
 import * as qd from './diagnostic';
-import * as qt from './type';
 import { Node } from './type';
-import * as qy from './syntax';
+import * as qt from './type';
+import * as qu from './util';
 import { ModifierFlags, Syntax } from './syntax';
+import * as qy from './syntax';
 export const enum ModuleInstanceState {
   NonInstantiated = 0,
   Instantiated = 1,
@@ -12,7 +12,7 @@ export const enum ModuleInstanceState {
 }
 interface ActiveLabel {
   next: ActiveLabel | undefined;
-  name: qb.__String;
+  name: qu.__String;
   breakTarget: FlowLabel;
   continueTarget: FlowLabel | undefined;
   referenced: boolean;
@@ -156,7 +156,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   let emitFlags: NodeFlags;
   let inStrictMode: boolean;
   let symbolCount = 0;
-  let Symbol: new (flags: SymbolFlags, name: qb.__String) => Symbol;
+  let Symbol: new (flags: SymbolFlags, name: qu.__String) => Symbol;
   let classifiableNames: EscapedMap<true>;
   const unreachableFlow: FlowNode = { flags: FlowFlags.Unreachable };
   const reportedUnreachableFlow: FlowNode = { flags: FlowFlags.Unreachable };
@@ -170,7 +170,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     options = opts;
     languageVersion = getEmitScriptTarget(options);
     inStrictMode = bindInStrictMode(file, opts);
-    classifiableNames = qb.createEscapedMap<true>();
+    classifiableNames = qu.createEscapedMap<true>();
     symbolCount = 0;
     skipTransformFlagAggregation = file.isDeclarationFile;
     Symbol = Node.Symbol;
@@ -209,7 +209,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     if (getStrictOptionValue(opts, 'alwaysStrict') && !file.isDeclarationFile) return true;
     else return !!file.externalModuleIndicator;
   }
-  function newSymbol(flags: SymbolFlags, name: qb.__String): Symbol {
+  function newSymbol(flags: SymbolFlags, name: qu.__String): Symbol {
     symbolCount++;
     return new Symbol(flags, name);
   }
@@ -230,18 +230,18 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       setValueDeclaration(symbol, node);
     }
   }
-  function getDeclarationName(node: Declaration): qb.__String | undefined {
+  function getDeclarationName(node: Declaration): qu.__String | undefined {
     if (node.kind === Syntax.ExportAssignment) return (<ExportAssignment>node).isExportEquals ? InternalSymbol.ExportEquals : InternalSymbol.Default;
     const name = qc.get.nameOfDeclaration(node);
     if (name) {
       if (qc.is.ambientModule(node)) {
         const moduleName = getTextOfIdentifierOrLiteral(name as Identifier | StringLiteral);
-        return (isGlobalScopeAugmentation(<ModuleDeclaration>node) ? '__global' : `"${moduleName}"`) as qb.__String;
+        return (isGlobalScopeAugmentation(<ModuleDeclaration>node) ? '__global' : `"${moduleName}"`) as qu.__String;
       }
       if (name.kind === Syntax.ComputedPropertyName) {
         const nameExpression = name.expression;
         if (StringLiteral.orNumericLiteralLike(nameExpression)) return qy.get.escUnderscores(nameExpression.text);
-        if (qc.is.signedNumericLiteral(nameExpression)) return (Token.toString(nameExpression.operator) + nameExpression.operand.text) as qb.__String;
+        if (qc.is.signedNumericLiteral(nameExpression)) return (Token.toString(nameExpression.operator) + nameExpression.operand.text) as qu.__String;
         assert(qc.is.wellKnownSymbolSyntactically(nameExpression));
         return getPropertyNameForKnownSymbolName(idText((<PropertyAccessExpression>nameExpression).name));
       }
@@ -286,7 +286,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
         );
         const functionType = <DocFunctionType>node.parent;
         const index = functionType.parameters.indexOf(node as ParameterDeclaration);
-        return ('arg' + index) as qb.__String;
+        return ('arg' + index) as qu.__String;
     }
   }
   function getDisplayName(node: Declaration): string {
@@ -887,7 +887,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     }
     currentFlow = unreachableFlow;
   }
-  function findActiveLabel(name: qb.__String) {
+  function findActiveLabel(name: qu.__String) {
     for (let label = activeLabelList; label; label = label.next) {
       if (label.name === name) return label;
     }
@@ -1517,7 +1517,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       Accessor = 2,
     }
     if (inStrictMode && !qc.is.assignmentTarget(node)) {
-      const seen = qb.createEscapedMap<ElementKind>();
+      const seen = qu.createEscapedMap<ElementKind>();
       for (const prop of node.properties) {
         if (prop.kind === Syntax.SpreadAssignment || prop.name.kind !== Syntax.Identifier) {
           continue;
@@ -1544,7 +1544,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   function bindJsxAttribute(node: JsxAttribute, symbolFlags: SymbolFlags, symbolExcludes: SymbolFlags) {
     return declareSymbolAndAddToSymbolTable(node, symbolFlags, symbolExcludes);
   }
-  function bindAnonymousDeclaration(node: Declaration, symbolFlags: SymbolFlags, name: qb.__String) {
+  function bindAnonymousDeclaration(node: Declaration, symbolFlags: SymbolFlags, name: qu.__String) {
     const symbol = newSymbol(symbolFlags, name);
     if (symbolFlags & (SymbolFlags.EnumMember | SymbolFlags.ClassMember)) {
       symbol.parent = container.symbol;
@@ -1851,7 +1851,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
         if (isSpecialPropertyDeclaration(expr)) {
           bindSpecialPropertyDeclaration(expr);
         }
-        if (qc.is.inJSFile(expr) && file.commonJsModuleIndicator && qc.is.moduleExportsAccessExpression(expr) && !lookupSymbolForNameWorker(blockScopeContainer, 'module' as qb.__String)) {
+        if (qc.is.inJSFile(expr) && file.commonJsModuleIndicator && qc.is.moduleExportsAccessExpression(expr) && !lookupSymbolForNameWorker(blockScopeContainer, 'module' as qu.__String)) {
           declareSymbol(file.locals!, undefined, expr.expression, SymbolFlags.FunctionScopedVariable | SymbolFlags.ModuleExports, SymbolFlags.FunctionScopedVariableExcludes);
         }
         break;
@@ -2043,7 +2043,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     }
   }
   function bindSourceFileAsExternalModule() {
-    bindAnonymousDeclaration(file, SymbolFlags.ValueModule, `"${removeFileExtension(file.fileName)}"` as qb.__String);
+    bindAnonymousDeclaration(file, SymbolFlags.ValueModule, `"${removeFileExtension(file.fileName)}"` as qu.__String);
   }
   function bindExportAssignment(node: ExportAssignment) {
     if (!container.symbol || !container.symbol.exports) {
@@ -2403,7 +2403,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       }
     }
     const { symbol } = node;
-    const prototypeSymbol = new QSymbol(SymbolFlags.Property | SymbolFlags.Prototype, 'prototype' as qb.__String);
+    const prototypeSymbol = new QSymbol(SymbolFlags.Property | SymbolFlags.Prototype, 'prototype' as qu.__String);
     const symbolExport = symbol.exports!.get(prototypeSymbol.escName);
     if (symbolExport) {
       if (node.name) {
@@ -2441,7 +2441,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       checkStrictModeEvalOrArguments(node, node.name);
     }
     if (qc.is.kind(qc.BindingPattern, node.name)) {
-      bindAnonymousDeclaration(node, SymbolFlags.FunctionScopedVariable, ('__' + (node as ParameterDeclaration).parent.parameters.indexOf(node as ParameterDeclaration)) as qb.__String);
+      bindAnonymousDeclaration(node, SymbolFlags.FunctionScopedVariable, ('__' + (node as ParameterDeclaration).parent.parameters.indexOf(node as ParameterDeclaration)) as qu.__String);
     } else {
       declareSymbolAndAddToSymbolTable(node, SymbolFlags.FunctionScopedVariable, SymbolFlags.ParameterExcludes);
     }
@@ -2597,7 +2597,7 @@ export function isExportsOrModuleExportsOrAlias(sourceFile: SourceFile, node: Ex
   }
   return false;
 }
-function lookupSymbolForNameWorker(container: Node, name: qb.__String): Symbol | undefined {
+function lookupSymbolForNameWorker(container: Node, name: qu.__String): Symbol | undefined {
   const local = container.locals && container.locals.get(name);
   if (local) return local.exportSymbol || local;
   if (qc.is.kind(qc.SourceFile, container) && container.jsGlobalAugmentations && container.jsGlobalAugmentations.has(name)) return container.jsGlobalAugmentations.get(name);

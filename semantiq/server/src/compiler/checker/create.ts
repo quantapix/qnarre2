@@ -1,9 +1,9 @@
-import * as qb from '../base';
-import * as qc from '../core3';
-import * as qd from '../diags';
+import * as qc from '../core';
+import * as qd from '../diagnostic';
 import * as qg from '../debug';
-import { ExpandingFlags, Node, NodeFlags, ObjectFlags, SymbolFlags, TypeFlags, VarianceFlags } from './types';
-import * as qt from './types';
+import { ExpandingFlags, Node, NodeFlags, ObjectFlags, SymbolFlags, TypeFlags, VarianceFlags } from './type';
+import * as qt from './type';
+import * as qu from '../util';
 import { ModifierFlags, Syntax } from '../syntax';
 import * as qy from '../syntax';
 import { Symbol } from './symbol';
@@ -97,9 +97,9 @@ export function newCreate(qx: qt.Tctx) {
       result.flags |= callChainFlags;
       return result;
     }
-    unionOrIntersectionProperty(containingType: UnionOrIntersectionType, name: qb.__String): Symbol | undefined {
+    unionOrIntersectionProperty(containingType: UnionOrIntersectionType, name: qu.__String): Symbol | undefined {
       let singleProp: Symbol | undefined;
-      let propSet: qb.QMap<Symbol> | undefined;
+      let propSet: qu.QMap<Symbol> | undefined;
       let indexTypes: Type[] | undefined;
       const isUnion = containingType.flags & qt.TypeFlags.Union;
       let optionalFlag = isUnion ? qt.SymbolFlags.None : qt.SymbolFlags.Optional;
@@ -116,7 +116,7 @@ export function newCreate(qx: qt.Tctx) {
             if (!singleProp) singleProp = prop;
             else if (prop !== singleProp) {
               if (!propSet) {
-                propSet = new qb.QMap<Symbol>();
+                propSet = new qu.QMap<Symbol>();
                 propSet.set('' + singleProp.getId(), singleProp);
               }
               const id = '' + prop.getId();
@@ -269,7 +269,7 @@ export function newCreate(qx: qt.Tctx) {
         for (let i = 0; i < arity; i++) {
           const typeParameter = (typeParameters[i] = this.typeParameter());
           if (i < maxLength) {
-            const property = new Symbol(SymbolFlags.Property | (i >= minLength ? qt.SymbolFlags.Optional : 0), ('' + i) as qb.__String, readonly ? qt.CheckFlags.Readonly : 0);
+            const property = new Symbol(SymbolFlags.Property | (i >= minLength ? qt.SymbolFlags.Optional : 0), ('' + i) as qu.__String, readonly ? qt.CheckFlags.Readonly : 0);
             property.tupleLabelDeclaration = namedMemberDeclarations?.[i];
             property.type = typeParameter;
             properties.push(property);
@@ -278,14 +278,14 @@ export function newCreate(qx: qt.Tctx) {
       }
       const literalTypes = [];
       for (let i = minLength; i <= maxLength; i++) literalTypes.push(getLiteralType(i));
-      const lengthSymbol = new Symbol(SymbolFlags.Property, 'length' as qb.__String);
+      const lengthSymbol = new Symbol(SymbolFlags.Property, 'length' as qu.__String);
       lengthSymbol.type = hasRestElement ? numberType : getUnionType(literalTypes);
       properties.push(lengthSymbol);
       const type = <TupleType & InterfaceTypeWithDeclaredMembers>this.objectType(ObjectFlags.Tuple | ObjectFlags.Reference);
       type.typeParameters = typeParameters;
       type.outerTypeParameters = undefined;
       type.localTypeParameters = typeParameters;
-      type.instantiations = new qb.QMap<TypeReference>();
+      type.instantiations = new qu.QMap<TypeReference>();
       type.instantiations.set(getTypeListId(type.typeParameters), <GenericType>type);
       type.target = <GenericType>type;
       type.resolvedTypeArguments = type.typeParameters;
@@ -361,7 +361,7 @@ export function newCreate(qx: qt.Tctx) {
       if (nameType) symbol.nameType = nameType;
       return symbol;
     }
-    wideningContext(parent: WideningContext | undefined, propertyName: qb.__String | undefined, siblings: Type[] | undefined): WideningContext {
+    wideningContext(parent: WideningContext | undefined, propertyName: qu.__String | undefined, siblings: Type[] | undefined): WideningContext {
       return { parent, propertyName, siblings, resolvedProperties: undefined };
     }
     inferenceContext(typeParameters: readonly TypeParameter[], signature: Signature | undefined, flags: InferenceFlags, compareTypes?: TypeComparer): InferenceContext {
@@ -564,7 +564,7 @@ export function newCreate(qx: qt.Tctx) {
         [new qc.ParameterDeclaration(undefined, undefined, undefined, 'props', undefined, nodeBuilder.typeToTypeNode(result, node))],
         returnNode ? TypeReferenceNode.create(returnNode, undefined) : new qc.KeywordTypeNode(Syntax.AnyKeyword)
       );
-      const parameterSymbol = new Symbol(SymbolFlags.FunctionScopedVariable, 'props' as qb.__String);
+      const parameterSymbol = new Symbol(SymbolFlags.FunctionScopedVariable, 'props' as qu.__String);
       parameterSymbol.type = result;
       return this.signature(declaration, undefined, undefined, [parameterSymbol], typeSymbol ? getDeclaredTypeOfSymbol(typeSymbol) : errorType, undefined, 1, SignatureFlags.None);
     }
@@ -674,9 +674,9 @@ export function newCreate(qx: qt.Tctx) {
     }
     resolver(): EmitResolver {
       const resolvedTypeReferenceDirectives = host.getResolvedTypeReferenceDirectives();
-      let fileToDirective: qb.QMap<string>;
+      let fileToDirective: qu.QMap<string>;
       if (resolvedTypeReferenceDirectives) {
-        fileToDirective = new qb.QMap<string>();
+        fileToDirective = new qu.QMap<string>();
         resolvedTypeReferenceDirectives.forEach((resolvedDirective, key) => {
           if (!resolvedDirective || !resolvedDirective.resolvedFileName) return;
           const file = host.getSourceFile(resolvedDirective.resolvedFileName);
@@ -1114,10 +1114,10 @@ export function newResolve(qx: qt.Tctx) {
   const r = (qx.resolve = new (class {
     name(
       location: Node | undefined,
-      name: qb.__String,
+      name: qu.__String,
       meaning: qt.SymbolFlags,
       nameNotFoundMessage: qd.Message | undefined,
-      nameArg: qb.__String | qc.Identifier | undefined,
+      nameArg: qu.__String | qc.Identifier | undefined,
       isUse: boolean,
       excludeGlobals = false,
       suggestedNameNotFoundMessage?: qd.Message
@@ -1126,10 +1126,10 @@ export function newResolve(qx: qt.Tctx) {
     }
     nameHelper(
       location: Node | undefined,
-      name: qb.__String,
+      name: qu.__String,
       meaning: qt.SymbolFlags,
       nameNotFoundMessage: qd.Message | undefined,
-      nameArg: qb.__String | qc.Identifier | undefined,
+      nameArg: qu.__String | qc.Identifier | undefined,
       isUse: boolean,
       excludeGlobals: boolean,
       lookup: typeof getSymbol,
@@ -1394,7 +1394,7 @@ export function newResolve(qx: qt.Tctx) {
       }
       return result;
     }
-    exportByName(moduleSymbol: Symbol, name: qb.__String, sourceNode: TypeOnlyCompatibleAliasDeclaration | undefined, dontResolveAlias: boolean) {
+    exportByName(moduleSymbol: Symbol, name: qu.__String, sourceNode: TypeOnlyCompatibleAliasDeclaration | undefined, dontResolveAlias: boolean) {
       const exportValue = moduleSymbol.exports!.get(InternalSymbol.ExportEquals);
       if (exportValue) return getPropertyOfType(getTypeOfSymbol(exportValue), name);
       const exportSymbol = moduleSymbol.exports!.get(name);
@@ -1968,7 +1968,7 @@ export function newResolve(qx: qt.Tctx) {
                 diagnostics.add(d);
               }
             } else {
-              qb.fail('No error for last overload signature');
+              qu.fail('No error for last overload signature');
             }
           } else {
             const allDiagnostics: (readonly qd.DiagnosticRelatedInformation[])[] = [];
@@ -1987,7 +1987,7 @@ export function newResolve(qx: qt.Tctx) {
                 max = Math.max(max, diags.length);
                 allqd.msgs.push(diags);
               } else {
-                qb.fail('No error for 3 or fewer overload signatures');
+                qu.fail('No error for 3 or fewer overload signatures');
               }
               i++;
             }
@@ -2020,7 +2020,7 @@ export function newResolve(qx: qt.Tctx) {
         }
       }
       return getCandidateForOverloadFailure(node, candidates, args, !!candidatesOutArray);
-      function chooseOverload(candidates: Signature[], relation: qb.QMap<RelationComparisonResult>, signatureHelpTrailingComma = false) {
+      function chooseOverload(candidates: Signature[], relation: qu.QMap<RelationComparisonResult>, signatureHelpTrailingComma = false) {
         candidatesForArgumentError = undefined;
         candidateForArgumentArityError = undefined;
         candidateForTypeArgumentError = undefined;

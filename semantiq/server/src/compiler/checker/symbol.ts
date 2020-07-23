@@ -1,16 +1,16 @@
-import * as qb from '../base';
-import { is, get, has } from '../core3';
-import * as qc from '../core3';
-import * as qd from '../diags';
-import { Node } from '../types';
-import * as qt from '../types';
+import { is, get, has } from '../core';
+import * as qc from '../core';
+import * as qd from '../diagnostic';
+import { Node } from '../type';
+import * as qt from '../type';
+import * as qu from '../util';
 import { ModifierFlags, Syntax } from '../syntax';
 import * as qy from '../syntax';
 export class Symbol extends qc.Symbol implements TransientSymbol {
   static nextId = 1;
   static count = 0;
   checkFlags: qt.CheckFlags;
-  constructor(f: qt.SymbolFlags, name: qb.__String, c?: qt.CheckFlags) {
+  constructor(f: qt.SymbolFlags, name: qu.__String, c?: qt.CheckFlags) {
     super(f | qt.SymbolFlags.Transient, name);
     Symbol.count++;
     this.checkFlags = c || 0;
@@ -80,7 +80,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
         const filesDuplicates = getOrUpdate<DuplicateInfoForFiles>(amalgamatedDuplicates, `${firstFile.path}|${secondFile.path}`, () => ({
           firstFile,
           secondFile,
-          conflictingSymbols: new qb.QMap(),
+          conflictingSymbols: new qu.QMap(),
         }));
         const conflictingSymbolInfo = getOrUpdate<DuplicateInfoForSymbol>(filesDuplicates.conflictingSymbols, symbolName, () => ({
           isBlockScoped: isEitherBlockScoped,
@@ -121,12 +121,12 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     return symbolLinks[i] || (symbolLinks[i] = new (<any>SymbolLinks)());
   }
   resolveAlias() {
-    qb.assert((this.flags & qt.SymbolFlags.Alias) !== 0);
+    qu.assert((this.flags & qt.SymbolFlags.Alias) !== 0);
     const ls = this.getLinks();
     if (!ls.target) {
       ls.target = resolvingSymbol;
       const n = this.getDeclarationOfAliasSymbol();
-      if (!n) return qb.fail();
+      if (!n) return qu.fail();
       const t = getTargetOfAliasDeclaration(n);
       if (ls.target === resolvingSymbol) ls.target = t || unknownSymbol;
       else error(n, qd.msgs.Circular_definition_of_import_alias_0, this.symbolToString());
@@ -167,7 +167,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     if (!ls.referenced) {
       ls.referenced = true;
       const d = this.getDeclarationOfAliasSymbol();
-      if (!d) return qb.fail();
+      if (!d) return qu.fail();
       if (is.internalModuleImportEqualsDeclaration(d)) {
         const t = this.resolveSymbol();
         if (t === unknownSymbol || (t && t.flags & qt.SymbolFlags.Value)) check.expressionCached(<Expression>d.moduleReference);
@@ -215,7 +215,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       const exportStars = s.exports.get(InternalSymbol.ExportStar);
       if (exportStars) {
         const nestedSymbols = new SymbolTable();
-        const lookupTable = new qb.QMap<ExportCollisionTracker>() as ExportCollisionTrackerTable;
+        const lookupTable = new qu.QMap<ExportCollisionTracker>() as ExportCollisionTrackerTable;
         for (const node of exportStars.declarations) {
           const resolvedModule = resolveExternalModuleName(node, (node as ExportDeclaration).moduleSpecifier!);
           const exportedSymbols = visit(resolvedModule);
@@ -264,7 +264,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
         results = append(results, resolvedModule);
       }
       if (length(results)) {
-        (ls.extendedContainersByFile || (ls.extendedContainersByFile = new qb.QMap())).set(id, results!);
+        (ls.extendedContainersByFile || (ls.extendedContainersByFile = new qu.QMap())).set(id, results!);
         return results!;
       }
     }
@@ -575,7 +575,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
   }
   serializeAsAlias(localName: string, modifierFlags: ModifierFlags) {
     const node = this.getDeclarationOfAliasSymbol();
-    if (!node) return qb.fail();
+    if (!node) return qu.fail();
     const target = getMergedSymbol(getTargetOfAliasDeclaration(node, true));
     if (!target) return;
     let verbatimTargetName = qy.get.unescUnderscores(target.escName);
@@ -742,7 +742,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     if (symbol.flags & qt.SymbolFlags.ModuleExports) {
       const fileSymbol = getSymbolOfNode(get.sourceFileOf(symbol.valueDeclaration));
       const members = new SymbolTable();
-      members.set('exports' as qb.__String, fileSymbol);
+      members.set('exports' as qu.__String, fileSymbol);
       return createAnonymousType(symbol, members, empty, empty, undefined, undefined);
     }
     const declaration = symbol.valueDeclaration;
@@ -801,7 +801,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       type = this.getTypeOfEnumMember();
     } else if (is.accessor(declaration)) {
       type = resolveTypeOfAccessors(symbol);
-    } else return qb.fail('Unhandled declaration kind! ' + Debug.formatSyntax(declaration.kind) + ' for ' + Debug.formatSymbol(symbol));
+    } else return qu.fail('Unhandled declaration kind! ' + Debug.formatSyntax(declaration.kind) + ' for ' + Debug.formatSymbol(symbol));
     if (!popTypeResolution()) {
       if (symbol.flags & qt.SymbolFlags.ValueModule && !(symbol.flags & qt.SymbolFlags.Assignment)) return this.getTypeOfFuncClassEnumModule();
       return reportCircularityError(symbol);
@@ -844,7 +844,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       if (!isPrivateWithinAmbient(setter))
         errorOrSuggestion(noImplicitAny, setter, qd.Property_0_implicitly_has_type_any_because_its_set_accessor_lacks_a_parameter_type_annotation, this.symbolToString());
     } else {
-      qb.assert(!!getter, 'there must exist a getter as we are current checking either setter or getter in this function');
+      qu.assert(!!getter, 'there must exist a getter as we are current checking either setter or getter in this function');
       if (!isPrivateWithinAmbient(getter))
         errorOrSuggestion(noImplicitAny, getter, qd.Property_0_implicitly_has_type_any_because_its_get_accessor_lacks_a_return_type_annotation, this.symbolToString());
     }
@@ -950,7 +950,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
   }
   getOuterTypeParametersOfClassOrInterface(): TypeParameter[] | undefined {
     const d = this.flags & qt.SymbolFlags.Class ? this.valueDeclaration : this.getDeclarationOfKind(Syntax.InterfaceDeclaration)!;
-    qb.assert(!!d, 'Class was missing valueDeclaration -OR- non-class had no interface declarations');
+    qu.assert(!!d, 'Class was missing valueDeclaration -OR- non-class had no interface declarations');
     return getOuterTypeParameters(d);
   }
   getLocalTypeParametersOfClassOrInterfaceOrTypeAlias(): TypeParameter[] | undefined {
@@ -1001,7 +1001,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
         type.typeParameters = concatenate(outerTypeParameters, localTypeParameters);
         type.outerTypeParameters = outerTypeParameters;
         type.localTypeParameters = localTypeParameters;
-        (<GenericType>type).instantiations = new qb.QMap<TypeReference>();
+        (<GenericType>type).instantiations = new qu.QMap<TypeReference>();
         (<GenericType>type).instantiations.set(getTypeListId(type.typeParameters), <GenericType>type);
         (<GenericType>type).target = <GenericType>type;
         (<GenericType>type).resolvedTypeArguments = type.typeParameters;
@@ -1023,7 +1023,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
         const ps = this.getLocalTypeParametersOfClassOrInterfaceOrTypeAlias();
         if (ps) {
           ls.typeParameters = ps;
-          ls.instantiations = new qb.QMap<Type>();
+          ls.instantiations = new qu.QMap<Type>();
           ls.instantiations.set(getTypeListId(ps), type);
         }
       } else {
@@ -1164,7 +1164,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
   createUniqueESSymbolType() {
     const type = <UniqueESSymbolType>createType(TypeFlags.UniqueESSymbol);
     type.symbol = this;
-    type.escName = `__@${this.escName}@${this.getId()}` as qb.__String;
+    type.escName = `__@${this.escName}@${this.getId()}` as qu.__String;
     return type;
   }
   getAliasVariances() {
@@ -1191,11 +1191,11 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     return !!(this.getCheckFlags() & qt.CheckFlags.Mapped && !(this as MappedType).type && findResolutionCycleStartIndex(this, TypeSystemPropertyName.Type) >= 0);
   }
   getImmediateAliasedSymbol(): Symbol | undefined {
-    qb.assert((this.flags & qt.SymbolFlags.Alias) !== 0, 'Should only get Alias here.');
+    qu.assert((this.flags & qt.SymbolFlags.Alias) !== 0, 'Should only get Alias here.');
     const ls = this.getLinks();
     if (!ls.immediateTarget) {
       const node = this.getDeclarationOfAliasSymbol();
-      if (!node) return qb.fail();
+      if (!node) return qu.fail();
       ls.immediateTarget = getTargetOfAliasDeclaration(node, true);
     }
     return ls.immediateTarget;
@@ -1504,7 +1504,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     }
     return false;
   }
-  checkSymbolUsageInExpressionContext(name: qb.__String, useSite: Node) {
+  checkSymbolUsageInExpressionContext(name: qu.__String, useSite: Node) {
     if (!is.validTypeOnlyAliasUseSite(useSite)) {
       const typeOnlyDeclaration = this.getTypeOnlyAliasDeclaration();
       if (typeOnlyDeclaration) {
@@ -1535,7 +1535,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     }
     return;
   }
-  getPropertyOfVariable(name: qb.__String): Symbol | undefined {
+  getPropertyOfVariable(name: qu.__String): Symbol | undefined {
     if (this.flags & qt.SymbolFlags.Variable) {
       const typeAnnotation = (<VariableDeclaration>this.valueDeclaration).type;
       if (typeAnnotation) return getPropertyOfType(getTypeFromTypeNode(typeAnnotation), name)?.resolveSymbol();
@@ -1653,11 +1653,11 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
   }
 }
 class SymbolTable extends SymbolTable<Symbol> {
-  getSymbol(symbols: SymbolTable, name: qb.__String, meaning: qt.SymbolFlags): Symbol | undefined {
+  getSymbol(symbols: SymbolTable, name: qu.__String, meaning: qt.SymbolFlags): Symbol | undefined {
     if (meaning) {
       const symbol = getMergedSymbol(symbols.get(name));
       if (symbol) {
-        qb.assert((this.getCheckFlags() & qt.CheckFlags.Instantiated) === 0, 'Should never get an instantiated symbol here.');
+        qu.assert((this.getCheckFlags() & qt.CheckFlags.Instantiated) === 0, 'Should never get an instantiated symbol here.');
         if (symbol.flags & meaning) return symbol;
         if (symbol.flags & qt.SymbolFlags.Alias) {
           const target = this.resolveAlias();
@@ -1668,7 +1668,7 @@ class SymbolTable extends SymbolTable<Symbol> {
   }
   visitSymbolTable(symbolTable: SymbolTable, suppressNewPrivateContext?: boolean, propertyAsAlias?: boolean) {
     const oldDeferredPrivates = deferredPrivates;
-    if (!suppressNewPrivateContext) deferredPrivates = new qb.QMap();
+    if (!suppressNewPrivateContext) deferredPrivates = new qu.QMap();
     symbolTable.forEach((s: Symbol) => {
       serializeSymbol(symbol, false, !!propertyAsAlias);
     });

@@ -1,6 +1,6 @@
-import * as qb from '../base';
 import * as qd from '../diagnostic';
 import * as qt from '../type';
+import * as qu from '../util';
 import { Get } from './get';
 import { Is, Has } from './predicate';
 import { Create, Instantiate, Resolve } from './create';
@@ -47,7 +47,7 @@ export interface IterationTypesResolver {
   getGlobalIterableType: (reportErrors: boolean) => qt.GenericType;
   getGlobalIterableIteratorType: (reportErrors: boolean) => qt.GenericType;
   getGlobalGeneratorType: (reportErrors: boolean) => qt.GenericType;
-  resolveIterationType: (type: qt.Type, errorNode: Node | undefined) => qt.Type | undefined;
+  resolveIterationType: (type: qt.Type, errorNode: qt.Node | undefined) => qt.Type | undefined;
   mustHaveANextMethodDiagnostic: qd.Message;
   mustBeAMethodDiagnostic: qd.Message;
   mustHaveAValueDiagnostic: qd.Message;
@@ -229,7 +229,7 @@ export const enum TypeFacts {
   EmptyObjectStrictFacts = All & ~(EQUndefined | EQNull | EQUndefinedOrNull),
   EmptyObjectFacts = All,
 }
-export const typeofEQFacts: qb.QReadonlyMap<TypeFacts> = new qb.QMap({
+export const typeofEQFacts: qu.QReadonlyMap<TypeFacts> = new qu.QMap({
   string: TypeFacts.TypeofEQString,
   number: TypeFacts.TypeofEQNumber,
   bigint: TypeFacts.TypeofEQBigInt,
@@ -239,7 +239,7 @@ export const typeofEQFacts: qb.QReadonlyMap<TypeFacts> = new qb.QMap({
   object: TypeFacts.TypeofEQObject,
   function: TypeFacts.TypeofEQFunction,
 });
-export const typeofNEFacts: qb.QReadonlyMap<TypeFacts> = new qb.QMap({
+export const typeofNEFacts: qu.QReadonlyMap<TypeFacts> = new qu.QMap({
   string: TypeFacts.TypeofNEString,
   number: TypeFacts.TypeofNENumber,
   bigint: TypeFacts.TypeofNEBigInt,
@@ -302,7 +302,7 @@ export const enum UnusedKind {
   Local,
   Parameter,
 }
-export type AddUnusedDiagnostic = (containingNode: Node, type: UnusedKind, diagnostic: qd.DiagnosticWithLocation) => void;
+export type AddUnusedDiagnostic = (containingNode: qt.Node, type: UnusedKind, diagnostic: qd.DiagnosticWithLocation) => void;
 export const enum DeclarationMeaning {
   GetAccessor = 1,
   SetAccessor = 2,

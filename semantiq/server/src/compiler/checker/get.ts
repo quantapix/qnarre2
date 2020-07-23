@@ -1,9 +1,9 @@
-import * as qb from '../base';
-import * as qc from '../core3';
-import * as qd from '../diags';
+import * as qc from '../core';
+import * as qd from '../diagnostic';
 import * as qg from '../debug';
-import { ExpandingFlags, Node, ObjectFlags, SymbolFlags, TypeFlags, VarianceFlags } from './types';
-import * as qt from './types';
+import { ExpandingFlags, Node, ObjectFlags, SymbolFlags, TypeFlags, VarianceFlags } from './type';
+import * as qt from './type';
+import * as qu from '../util';
 import { ModifierFlags, Syntax } from '../syntax';
 import * as qy from '../syntax';
 import { Symbol } from './symbol';
@@ -16,7 +16,7 @@ export function newGet(qx: qt.Tctx) {
       apparentArgumentCount = undefined;
       return res;
     }
-    jsxNamespace(location: Node | undefined): qb.__String {
+    jsxNamespace(location: Node | undefined): qu.__String {
       if (location) {
         const file = qx.get.sourceFileOf(location);
         if (file) {
@@ -31,7 +31,7 @@ export function newGet(qx: qt.Tctx) {
         }
       }
       if (!_jsxNamespace) {
-        _jsxNamespace = 'React' as qb.__String;
+        _jsxNamespace = 'React' as qu.__String;
         if (compilerOptions.jsxFactory) {
           _jsxFactoryEntity = qp_parseIsolatedEntityName(compilerOptions.jsxFactory, languageVersion);
           visitNode(_jsxFactoryEntity, markAsSynthetic);
@@ -52,13 +52,13 @@ export function newGet(qx: qt.Tctx) {
       this.diagnostics(sourceFile, cancellationToken);
       return emitResolver;
     }
-    symbolsOfParameterPropertyDeclaration(parameter: ParameterDeclaration, parameterName: qb.__String): [Symbol, Symbol] {
+    symbolsOfParameterPropertyDeclaration(parameter: ParameterDeclaration, parameterName: qu.__String): [Symbol, Symbol] {
       const constructorDeclaration = parameter.parent;
       const classDeclaration = parameter.parent.parent;
       const parameterSymbol = getSymbol(constructorDeclaration.locals!, parameterName, qt.SymbolFlags.Value);
       const propertySymbol = getSymbol(getMembersOfSymbol(classDeclaration.symbol), parameterName, qt.SymbolFlags.Value);
       if (parameterSymbol && propertySymbol) return [parameterSymbol, propertySymbol];
-      return qb.fail('There should exist two symbols, one as property declaration and one as parameter declaration');
+      return qu.fail('There should exist two symbols, one as property declaration and one as parameter declaration');
     }
     isDeferredContext(location: Node, lastLocation: Node | undefined): boolean {
       if (location.kind !== Syntax.ArrowFunction && location.kind !== Syntax.FunctionExpression) {
@@ -116,7 +116,7 @@ export function newGet(qx: qt.Tctx) {
         else {
           exportDefaultSymbol = resolveExportByName(moduleSymbol, InternalSymbol.Default, node, dontResolveAlias);
         }
-        const file = qb.find(moduleSymbol.declarations, isSourceFile);
+        const file = qu.find(moduleSymbol.declarations, isSourceFile);
         const hasSyntheticDefault = canHaveSyntheticDefault(file, moduleSymbol, dontResolveAlias);
         if (!exportDefaultSymbol && !hasSyntheticDefault) {
           if (hasExportAssignmentSymbol(moduleSymbol)) {
@@ -170,7 +170,7 @@ export function newGet(qx: qt.Tctx) {
           symbolFromVariable = symbolFromVariable.resolveSymbol(dontResolveAlias);
           let symbolFromModule = getExportOfModule(targetSymbol, specifier, dontResolveAlias);
           if (symbolFromModule === undefined && name.escapedText === InternalSymbol.Default) {
-            const file = qb.find(moduleSymbol.declarations, isSourceFile);
+            const file = qu.find(moduleSymbol.declarations, isSourceFile);
             if (canHaveSyntheticDefault(file, moduleSymbol, dontResolveAlias))
               symbolFromModule = resolveExternalModuleSymbol(moduleSymbol, dontResolveAlias) || moduleSymbol.resolveSymbol(dontResolveAlias);
           }
@@ -262,7 +262,7 @@ export function newGet(qx: qt.Tctx) {
         case Syntax.PropertyAccessExpression:
           return getTargetOfPropertyAccessExpression(node as PropertyAccessExpression, dontRecursivelyResolve);
         default:
-          return qb.fail();
+          return qu.fail();
       }
     }
     symbolOfPartOfRightHandSideOfImportEquals(entityName: EntityName, dontResolveAlias?: boolean): Symbol | undefined {
@@ -350,7 +350,7 @@ export function newGet(qx: qt.Tctx) {
       enclosingDeclaration: Node | undefined,
       meaning: qt.SymbolFlags,
       useOnlyExternalAliasing: boolean,
-      visitedSymbolTablesMap: qb.QMap<SymbolTable[]> = new qb.QMap()
+      visitedSymbolTablesMap: qu.QMap<SymbolTable[]> = new qu.QMap()
     ): Symbol[] | undefined {
       if (!(symbol && !isPropertyOrMethodDeclarationSymbol(symbol))) return;
       const id = '' + symbol.getId();
@@ -451,11 +451,11 @@ export function newGet(qx: qt.Tctx) {
           )
         : classType;
     }
-    typeOfPropertyOfType(type: Type, name: qb.__String): Type | undefined {
+    typeOfPropertyOfType(type: Type, name: qu.__String): Type | undefined {
       const prop = getPropertyOfType(type, name);
       return prop ? getTypeOfSymbol(prop) : undefined;
     }
-    typeOfPropertyOrIndexSignature(type: Type, name: qb.__String): Type {
+    typeOfPropertyOrIndexSignature(type: Type, name: qu.__String): Type {
       return getTypeOfPropertyOfType(type, name) || (NumericLiteral.name(name) && getIndexTypeOfType(type, IndexKind.Number)) || getIndexTypeOfType(type, IndexKind.String) || unknownType;
     }
     typeForBindingElementParent(node: BindingElementGrandparent) {
@@ -732,11 +732,11 @@ export function newGet(qx: qt.Tctx) {
       const exports = new SymbolTable();
       while (qx.is.kind(qc.BinaryExpression, decl) || qx.is.kind(qc.PropertyAccessExpression, decl)) {
         const s = getSymbolOfNode(decl);
-        if (s && qb.hasEntries(s.exports)) exports.merge(s.exports);
+        if (s && qu.hasEntries(s.exports)) exports.merge(s.exports);
         decl = qx.is.kind(qc.BinaryExpression, decl) ? decl.parent : decl.parent.parent;
       }
       const s = getSymbolOfNode(decl);
-      if (s && qb.hasEntries(s.exports)) exports.merge(s.exports);
+      if (s && qu.hasEntries(s.exports)) exports.merge(s.exports);
       const type = createAnonymousType(symbol, exports, empty, empty, undefined, undefined);
       type.objectFlags |= ObjectFlags.JSLiteral;
       return type;
@@ -760,14 +760,14 @@ export function newGet(qx: qt.Tctx) {
       if (qx.is.kind(qc.CallExpression, expression)) {
         if (resolvedSymbol) return getTypeOfSymbol(resolvedSymbol);
         const objectLitType = check.expressionCached((expression as BindableObjectDefinePropertyCall).arguments[2]);
-        const valueType = getTypeOfPropertyOfType(objectLitType, 'value' as qb.__String);
+        const valueType = getTypeOfPropertyOfType(objectLitType, 'value' as qu.__String);
         if (valueType) return valueType;
-        const getFunc = getTypeOfPropertyOfType(objectLitType, 'get' as qb.__String);
+        const getFunc = getTypeOfPropertyOfType(objectLitType, 'get' as qu.__String);
         if (getFunc) {
           const getSig = getSingleCallSignature(getFunc);
           if (getSig) return getReturnTypeOfSignature(getSig);
         }
-        const setFunc = getTypeOfPropertyOfType(objectLitType, 'set' as qb.__String);
+        const setFunc = getTypeOfPropertyOfType(objectLitType, 'set' as qu.__String);
         if (setFunc) {
           const setSig = getSingleCallSignature(setFunc);
           if (setSig) return getTypeOfFirstParameterOfSignature(setSig);
@@ -1039,7 +1039,7 @@ export function newGet(qx: qt.Tctx) {
           if (type.symbol.flags & qt.SymbolFlags.Class) resolveBaseTypesOfClass(type);
           if (type.symbol.flags & qt.SymbolFlags.Interface) resolveBaseTypesOfInterface(type);
         } else {
-          qb.fail('type must be class or interface');
+          qu.fail('type must be class or interface');
         }
       }
       return type.resolvedBaseTypes;
@@ -1047,10 +1047,10 @@ export function newGet(qx: qt.Tctx) {
     baseTypeOfEnumLiteralType(type: Type) {
       return type.flags & qt.TypeFlags.EnumLiteral && !(type.flags & qt.TypeFlags.Union) ? getDeclaredTypeOfSymbol(getParentOfSymbol(type.symbol)!) : type;
     }
-    propertyNameFromType(type: StringLiteralType | NumberLiteralType | UniqueESSymbolType): qb.__String {
+    propertyNameFromType(type: StringLiteralType | NumberLiteralType | UniqueESSymbolType): qu.__String {
       if (type.flags & qt.TypeFlags.UniqueESSymbol) return (<UniqueESSymbolType>type).escName;
       if (type.flags & (TypeFlags.StringLiteral | qt.TypeFlags.NumberLiteral)) return qy.get.escUnderscores('' + (<StringLiteralType | NumberLiteralType>type).value);
-      return qb.fail();
+      return qu.fail();
     }
     resolvedMembersOrExportsOfSymbol(symbol: Symbol, resolutionKind: MembersOrExportsResolutionKind): EscapedMap<Symbol> {
       const ls = symbol.getLinks();
@@ -1289,7 +1289,7 @@ export function newGet(qx: qt.Tctx) {
       if (type.flags & qt.TypeFlags.Object) return resolveStructuredTypeMembers(<ObjectType>type).properties;
       return empty;
     }
-    propertyOfObjectType(type: Type, name: qb.__String): Symbol | undefined {
+    propertyOfObjectType(type: Type, name: qu.__String): Symbol | undefined {
       if (type.flags & qt.TypeFlags.Object) {
         const resolved = resolveStructuredTypeMembers(<ObjectType>type);
         const symbol = resolved.members.get(name);
@@ -1548,7 +1548,7 @@ export function newGet(qx: qt.Tctx) {
     reducedApparentType(type: Type): Type {
       return getReducedType(getApparentType(getReducedType(type)));
     }
-    unionOrIntersectionProperty(type: UnionOrIntersectionType, name: qb.__String): Symbol | undefined {
+    unionOrIntersectionProperty(type: UnionOrIntersectionType, name: qu.__String): Symbol | undefined {
       const properties = type.propertyCache || (type.propertyCache = new SymbolTable());
       let property = properties.get(name);
       if (!property) {
@@ -1557,7 +1557,7 @@ export function newGet(qx: qt.Tctx) {
       }
       return property;
     }
-    propertyOfUnionOrIntersectionType(type: UnionOrIntersectionType, name: qb.__String): Symbol | undefined {
+    propertyOfUnionOrIntersectionType(type: UnionOrIntersectionType, name: qu.__String): Symbol | undefined {
       const property = getUnionOrIntersectionProperty(type, name);
       return property && !(getCheckFlags(property) & qt.CheckFlags.ReadPartial) ? property : undefined;
     }
@@ -1580,7 +1580,7 @@ export function newGet(qx: qt.Tctx) {
       if (reduced.flags & qt.TypeFlags.Union) (<UnionType>reduced).resolvedReducedType = reduced;
       return reduced;
     }
-    propertyOfType(type: Type, name: qb.__String): Symbol | undefined {
+    propertyOfType(type: Type, name: qu.__String): Symbol | undefined {
       type = getReducedApparentType(type);
       if (type.flags & qt.TypeFlags.Object) {
         const resolved = resolveStructuredTypeMembers(<ObjectType>type);
@@ -1816,7 +1816,7 @@ export function newGet(qx: qt.Tctx) {
       return instantiatedSignature;
     }
     signatureInstantiationWithoutFillingInTypeArguments(signature: Signature, typeArguments: readonly Type[] | undefined): Signature {
-      const instantiations = signature.instantiations || (signature.instantiations = new qb.QMap<Signature>());
+      const instantiations = signature.instantiations || (signature.instantiations = new qu.QMap<Signature>());
       const id = getTypeListId(typeArguments);
       let instantiation = instantiations.get(id);
       if (!instantiation) instantiations.set(id, (instantiation = createSignatureInstantiation(signature, typeArguments)));
@@ -2206,90 +2206,90 @@ export function newGet(qx: qt.Tctx) {
       }
       return <ObjectType>type;
     }
-    globalValueSymbol(name: qb.__String, reportErrors: boolean): Symbol | undefined {
+    globalValueSymbol(name: qu.__String, reportErrors: boolean): Symbol | undefined {
       return getGlobalSymbol(name, qt.SymbolFlags.Value, reportErrors ? qd.msgs.Cannot_find_global_value_0 : undefined);
     }
-    globalTypeSymbol(name: qb.__String, reportErrors: boolean): Symbol | undefined {
+    globalTypeSymbol(name: qu.__String, reportErrors: boolean): Symbol | undefined {
       return getGlobalSymbol(name, qt.SymbolFlags.Type, reportErrors ? qd.msgs.Cannot_find_global_type_0 : undefined);
     }
-    globalSymbol(name: qb.__String, meaning: qt.SymbolFlags, diagnostic: qd.Message | undefined): Symbol | undefined {
+    globalSymbol(name: qu.__String, meaning: qt.SymbolFlags, diagnostic: qd.Message | undefined): Symbol | undefined {
       return resolveName(undefined, name, meaning, diagnostic, name, false);
     }
-    globalType(name: qb.__String, arity: 0, reportErrors: boolean): ObjectType;
-    globalType(name: qb.__String, arity: number, reportErrors: boolean): GenericType;
-    globalType(name: qb.__String, arity: number, reportErrors: boolean): ObjectType | undefined {
+    globalType(name: qu.__String, arity: 0, reportErrors: boolean): ObjectType;
+    globalType(name: qu.__String, arity: number, reportErrors: boolean): GenericType;
+    globalType(name: qu.__String, arity: number, reportErrors: boolean): ObjectType | undefined {
       const symbol = getGlobalTypeSymbol(name, reportErrors);
       return symbol || reportErrors ? getTypeOfGlobalSymbol(symbol, arity) : undefined;
     }
     globalTypedPropertyDescriptorType() {
-      return deferredGlobalTypedPropertyDescriptorType || (deferredGlobalTypedPropertyDescriptorType = getGlobalType('TypedPropertyDescriptor' as qb.__String, 1, true)) || emptyGenericType;
+      return deferredGlobalTypedPropertyDescriptorType || (deferredGlobalTypedPropertyDescriptorType = getGlobalType('TypedPropertyDescriptor' as qu.__String, 1, true)) || emptyGenericType;
     }
     globalTemplateStringsArrayType() {
-      return deferredGlobalTemplateStringsArrayType || (deferredGlobalTemplateStringsArrayType = getGlobalType('TemplateStringsArray' as qb.__String, 0, true)) || emptyObjectType;
+      return deferredGlobalTemplateStringsArrayType || (deferredGlobalTemplateStringsArrayType = getGlobalType('TemplateStringsArray' as qu.__String, 0, true)) || emptyObjectType;
     }
     globalImportMetaType() {
-      return deferredGlobalImportMetaType || (deferredGlobalImportMetaType = getGlobalType('ImportMeta' as qb.__String, 0, true)) || emptyObjectType;
+      return deferredGlobalImportMetaType || (deferredGlobalImportMetaType = getGlobalType('ImportMeta' as qu.__String, 0, true)) || emptyObjectType;
     }
     globalESSymbolConstructorSymbol(reportErrors: boolean) {
-      return deferredGlobalESSymbolConstructorSymbol || (deferredGlobalESSymbolConstructorSymbol = getGlobalValueSymbol('Symbol' as qb.__String, reportErrors));
+      return deferredGlobalESSymbolConstructorSymbol || (deferredGlobalESSymbolConstructorSymbol = getGlobalValueSymbol('Symbol' as qu.__String, reportErrors));
     }
     globalESSymbolType(reportErrors: boolean) {
-      return deferredGlobalESSymbolType || (deferredGlobalESSymbolType = getGlobalType('Symbol' as qb.__String, 0, reportErrors)) || emptyObjectType;
+      return deferredGlobalESSymbolType || (deferredGlobalESSymbolType = getGlobalType('Symbol' as qu.__String, 0, reportErrors)) || emptyObjectType;
     }
     globalPromiseType(reportErrors: boolean) {
-      return deferredGlobalPromiseType || (deferredGlobalPromiseType = getGlobalType('Promise' as qb.__String, 1, reportErrors)) || emptyGenericType;
+      return deferredGlobalPromiseType || (deferredGlobalPromiseType = getGlobalType('Promise' as qu.__String, 1, reportErrors)) || emptyGenericType;
     }
     globalPromiseLikeType(reportErrors: boolean) {
-      return deferredGlobalPromiseLikeType || (deferredGlobalPromiseLikeType = getGlobalType('PromiseLike' as qb.__String, 1, reportErrors)) || emptyGenericType;
+      return deferredGlobalPromiseLikeType || (deferredGlobalPromiseLikeType = getGlobalType('PromiseLike' as qu.__String, 1, reportErrors)) || emptyGenericType;
     }
     globalPromiseConstructorSymbol(reportErrors: boolean): Symbol | undefined {
-      return deferredGlobalPromiseConstructorSymbol || (deferredGlobalPromiseConstructorSymbol = getGlobalValueSymbol('Promise' as qb.__String, reportErrors));
+      return deferredGlobalPromiseConstructorSymbol || (deferredGlobalPromiseConstructorSymbol = getGlobalValueSymbol('Promise' as qu.__String, reportErrors));
     }
     globalPromiseConstructorLikeType(reportErrors: boolean) {
-      return deferredGlobalPromiseConstructorLikeType || (deferredGlobalPromiseConstructorLikeType = getGlobalType('PromiseConstructorLike' as qb.__String, 0, reportErrors)) || emptyObjectType;
+      return deferredGlobalPromiseConstructorLikeType || (deferredGlobalPromiseConstructorLikeType = getGlobalType('PromiseConstructorLike' as qu.__String, 0, reportErrors)) || emptyObjectType;
     }
     globalAsyncIterableType(reportErrors: boolean) {
-      return deferredGlobalAsyncIterableType || (deferredGlobalAsyncIterableType = getGlobalType('AsyncIterable' as qb.__String, 1, reportErrors)) || emptyGenericType;
+      return deferredGlobalAsyncIterableType || (deferredGlobalAsyncIterableType = getGlobalType('AsyncIterable' as qu.__String, 1, reportErrors)) || emptyGenericType;
     }
     globalAsyncIteratorType(reportErrors: boolean) {
-      return deferredGlobalAsyncIteratorType || (deferredGlobalAsyncIteratorType = getGlobalType('AsyncIterator' as qb.__String, 3, reportErrors)) || emptyGenericType;
+      return deferredGlobalAsyncIteratorType || (deferredGlobalAsyncIteratorType = getGlobalType('AsyncIterator' as qu.__String, 3, reportErrors)) || emptyGenericType;
     }
     globalAsyncIterableIteratorType(reportErrors: boolean) {
-      return deferredGlobalAsyncIterableIteratorType || (deferredGlobalAsyncIterableIteratorType = getGlobalType('AsyncIterableIterator' as qb.__String, 1, reportErrors)) || emptyGenericType;
+      return deferredGlobalAsyncIterableIteratorType || (deferredGlobalAsyncIterableIteratorType = getGlobalType('AsyncIterableIterator' as qu.__String, 1, reportErrors)) || emptyGenericType;
     }
     globalAsyncGeneratorType(reportErrors: boolean) {
-      return deferredGlobalAsyncGeneratorType || (deferredGlobalAsyncGeneratorType = getGlobalType('AsyncGenerator' as qb.__String, 3, reportErrors)) || emptyGenericType;
+      return deferredGlobalAsyncGeneratorType || (deferredGlobalAsyncGeneratorType = getGlobalType('AsyncGenerator' as qu.__String, 3, reportErrors)) || emptyGenericType;
     }
     globalIterableType(reportErrors: boolean) {
-      return deferredGlobalIterableType || (deferredGlobalIterableType = getGlobalType('Iterable' as qb.__String, 1, reportErrors)) || emptyGenericType;
+      return deferredGlobalIterableType || (deferredGlobalIterableType = getGlobalType('Iterable' as qu.__String, 1, reportErrors)) || emptyGenericType;
     }
     globalIteratorType(reportErrors: boolean) {
-      return deferredGlobalIteratorType || (deferredGlobalIteratorType = getGlobalType('Iterator' as qb.__String, 3, reportErrors)) || emptyGenericType;
+      return deferredGlobalIteratorType || (deferredGlobalIteratorType = getGlobalType('Iterator' as qu.__String, 3, reportErrors)) || emptyGenericType;
     }
     globalIterableIteratorType(reportErrors: boolean) {
-      return deferredGlobalIterableIteratorType || (deferredGlobalIterableIteratorType = getGlobalType('IterableIterator' as qb.__String, 1, reportErrors)) || emptyGenericType;
+      return deferredGlobalIterableIteratorType || (deferredGlobalIterableIteratorType = getGlobalType('IterableIterator' as qu.__String, 1, reportErrors)) || emptyGenericType;
     }
     globalGeneratorType(reportErrors: boolean) {
-      return deferredGlobalGeneratorType || (deferredGlobalGeneratorType = getGlobalType('Generator' as qb.__String, 3, reportErrors)) || emptyGenericType;
+      return deferredGlobalGeneratorType || (deferredGlobalGeneratorType = getGlobalType('Generator' as qu.__String, 3, reportErrors)) || emptyGenericType;
     }
     globalIteratorYieldResultType(reportErrors: boolean) {
-      return deferredGlobalIteratorYieldResultType || (deferredGlobalIteratorYieldResultType = getGlobalType('IteratorYieldResult' as qb.__String, 1, reportErrors)) || emptyGenericType;
+      return deferredGlobalIteratorYieldResultType || (deferredGlobalIteratorYieldResultType = getGlobalType('IteratorYieldResult' as qu.__String, 1, reportErrors)) || emptyGenericType;
     }
     globalIteratorReturnResultType(reportErrors: boolean) {
-      return deferredGlobalIteratorReturnResultType || (deferredGlobalIteratorReturnResultType = getGlobalType('IteratorReturnResult' as qb.__String, 1, reportErrors)) || emptyGenericType;
+      return deferredGlobalIteratorReturnResultType || (deferredGlobalIteratorReturnResultType = getGlobalType('IteratorReturnResult' as qu.__String, 1, reportErrors)) || emptyGenericType;
     }
-    globalTypeOrUndefined(name: qb.__String, arity = 0): ObjectType | undefined {
+    globalTypeOrUndefined(name: qu.__String, arity = 0): ObjectType | undefined {
       const symbol = getGlobalSymbol(name, qt.SymbolFlags.Type, undefined);
       return symbol && <GenericType>getTypeOfGlobalSymbol(symbol, arity);
     }
     globalExtractSymbol(): Symbol {
-      return deferredGlobalExtractSymbol || (deferredGlobalExtractSymbol = getGlobalSymbol('Extract' as qb.__String, qt.SymbolFlags.TypeAlias, qd.msgs.Cannot_find_global_type_0)!);
+      return deferredGlobalExtractSymbol || (deferredGlobalExtractSymbol = getGlobalSymbol('Extract' as qu.__String, qt.SymbolFlags.TypeAlias, qd.msgs.Cannot_find_global_type_0)!);
     }
     globalOmitSymbol(): Symbol {
-      return deferredGlobalOmitSymbol || (deferredGlobalOmitSymbol = getGlobalSymbol('Omit' as qb.__String, qt.SymbolFlags.TypeAlias, qd.msgs.Cannot_find_global_type_0)!);
+      return deferredGlobalOmitSymbol || (deferredGlobalOmitSymbol = getGlobalSymbol('Omit' as qu.__String, qt.SymbolFlags.TypeAlias, qd.msgs.Cannot_find_global_type_0)!);
     }
     globalBigIntType(reportErrors: boolean) {
-      return deferredGlobalBigIntType || (deferredGlobalBigIntType = getGlobalType('BigInt' as qb.__String, 0, reportErrors)) || emptyObjectType;
+      return deferredGlobalBigIntType || (deferredGlobalBigIntType = getGlobalType('BigInt' as qu.__String, 0, reportErrors)) || emptyObjectType;
     }
     arrayOrTupleTargetType(node: ArrayTypeNode | TupleTypeNode): GenericType {
       const readonly = isReadonlyTypeOperator(node.parent);
@@ -2403,7 +2403,7 @@ export function newGet(qx: qt.Tctx) {
       return links.resolvedType;
     }
     intersectionType(types: readonly Type[], aliasSymbol?: Symbol, aliasTypeArguments?: readonly Type[]): Type {
-      const typeMembershipMap: qb.QMap<Type> = new qb.QMap();
+      const typeMembershipMap: qu.QMap<Type> = new qu.QMap();
       const includes = addTypesToIntersection(typeMembershipMap, 0, types);
       const typeSet: Type[] = arrayFrom(typeMembershipMap.values());
       if (
@@ -2917,7 +2917,7 @@ export function newGet(qx: qt.Tctx) {
         };
         links.resolvedType = getConditionalType(root, undefined);
         if (outerTypeParameters) {
-          root.instantiations = new qb.QMap<Type>();
+          root.instantiations = new qu.QMap<Type>();
           root.instantiations.set(getTypeListId(outerTypeParameters), links.resolvedType);
         }
       }
@@ -3036,7 +3036,7 @@ export function newGet(qx: qt.Tctx) {
         return getIntersectionType([left, right]);
       }
       const members = new SymbolTable();
-      const skippedPrivateMembers = qb.createEscapedMap<boolean>();
+      const skippedPrivateMembers = qu.createEscapedMap<boolean>();
       let stringIndexInfo: IndexInfo | undefined;
       let numberIndexInfo: IndexInfo | undefined;
       if (left === emptyObjectType) {
@@ -3316,7 +3316,7 @@ export function newGet(qx: qt.Tctx) {
             : typeParameters;
         links.outerTypeParameters = typeParameters;
         if (typeParameters.length) {
-          links.instantiations = new qb.QMap<Type>();
+          links.instantiations = new qu.QMap<Type>();
           links.instantiations.set(getTypeListId(typeParameters), target);
         }
       }
@@ -3508,7 +3508,7 @@ export function newGet(qx: qt.Tctx) {
       }
       return result;
     }
-    relationKey(source: Type, target: Type, intersectionState: IntersectionState, relation: qb.QMap<RelationComparisonResult>) {
+    relationKey(source: Type, target: Type, intersectionState: IntersectionState, relation: qu.QMap<RelationComparisonResult>) {
       if (relation === identityRelation && source.id > target.id) {
         const temp = source;
         source = target;
@@ -3551,7 +3551,7 @@ export function newGet(qx: qt.Tctx) {
       return isArrayType(type) ? getTypeArguments(type as TypeReference)[0] : undefined;
     }
     tupleElementType(type: Type, index: number) {
-      const propType = getTypeOfPropertyOfType(type, ('' + index) as qb.__String);
+      const propType = getTypeOfPropertyOfType(type, ('' + index) as qu.__String);
       if (propType) return propType;
       if (everyType(type, isTupleType)) return mapType(type, (t) => getRestTypeOfTupleType(<TupleTypeReference>t) || undefinedType);
       return;
@@ -3676,7 +3676,7 @@ export function newGet(qx: qt.Tctx) {
       return type.flags & qt.TypeFlags.Undefined ? type : getUnionType([type, undefinedType]);
     }
     globalNonNullableTypeInstantiation(type: Type) {
-      if (!deferredGlobalNonNullableTypeAlias) deferredGlobalNonNullableTypeAlias = getGlobalSymbol('NonNullable' as qb.__String, qt.SymbolFlags.TypeAlias, undefined) || unknownSymbol;
+      if (!deferredGlobalNonNullableTypeAlias) deferredGlobalNonNullableTypeAlias = getGlobalSymbol('NonNullable' as qu.__String, qt.SymbolFlags.TypeAlias, undefined) || unknownSymbol;
       if (deferredGlobalNonNullableTypeAlias !== unknownSymbol) return getTypeAliasInstantiation(deferredGlobalNonNullableTypeAlias, [type]);
       return getTypeWithFacts(type, TypeFacts.NEUndefinedOrNull);
     }
@@ -3717,7 +3717,7 @@ export function newGet(qx: qt.Tctx) {
     }
     propertiesOfContext(context: WideningContext): Symbol[] {
       if (!context.resolvedProperties) {
-        const names = new qb.QMap<Symbol>() as EscapedMap<Symbol>;
+        const names = new qu.QMap<Symbol>() as EscapedMap<Symbol>;
         for (const t of getSiblingsOfContext(context)) {
           if (isObjectLiteralType(t) && !(getObjectFlags(t) & ObjectFlags.ContainsSpread)) {
             for (const prop of getPropertiesOfType(t)) {
@@ -3954,7 +3954,7 @@ export function newGet(qx: qt.Tctx) {
       }
       return;
     }
-    accessedPropertyName(access: AccessExpression): qb.__String | undefined {
+    accessedPropertyName(access: AccessExpression): qu.__String | undefined {
       return access.kind === Syntax.PropertyAccessExpression
         ? access.name.escapedText
         : StringLiteral.orNumericLiteralLike(access.argumentExpression)
@@ -4510,7 +4510,7 @@ export function newGet(qx: qt.Tctx) {
       }
       function getTypeAtFlowLoopLabel(flow: FlowLabel): FlowType {
         const id = getFlowNodeId(flow);
-        const cache = flowLoopCaches[id] || (flowLoopCaches[id] = new qb.QMap<Type>());
+        const cache = flowLoopCaches[id] || (flowLoopCaches[id] = new qu.QMap<Type>());
         const key = getOrSetCacheKey();
         if (!key) return declaredType;
         const cached = cache.get(key);
@@ -4571,7 +4571,7 @@ export function newGet(qx: qt.Tctx) {
         if (isMatchingReferenceDiscriminant(expr, type)) return narrowTypeByDiscriminant(type, <AccessExpression>expr, (t) => getTypeWithFacts(t, assumeTrue ? TypeFacts.Truthy : TypeFacts.Falsy));
         return type;
       }
-      function isTypePresencePossible(type: Type, propName: qb.__String, assumeTrue: boolean) {
+      function isTypePresencePossible(type: Type, propName: qu.__String, assumeTrue: boolean) {
         if (getIndexInfoOfType(type, IndexKind.String)) return true;
         const prop = getPropertyOfType(type, propName);
         if (prop) return prop.flags & qt.SymbolFlags.Optional ? true : assumeTrue;
@@ -4775,7 +4775,7 @@ export function newGet(qx: qt.Tctx) {
         if (assumeTrue ? operator !== Syntax.Equals2Token && operator !== Syntax.Equals3Token : operator !== Syntax.ExclamationEqualsToken && operator !== Syntax.ExclamationEquals2Token) return type;
         const identifierType = getTypeOfExpression(identifier);
         if (!isFunctionType(identifierType) && !isConstructorType(identifierType)) return type;
-        const prototypeProperty = getPropertyOfType(identifierType, 'prototype' as qb.__String);
+        const prototypeProperty = getPropertyOfType(identifierType, 'prototype' as qu.__String);
         if (!prototypeProperty) return type;
         const prototypeType = getTypeOfSymbol(prototypeProperty);
         const candidate = !isTypeAny(prototypeType) ? prototypeType : undefined;
@@ -4797,7 +4797,7 @@ export function newGet(qx: qt.Tctx) {
         const rightType = getTypeOfExpression(expr.right);
         if (!isTypeDerivedFrom(rightType, globalFunctionType)) return type;
         let targetType: Type | undefined;
-        const prototypeProperty = getPropertyOfType(rightType, 'prototype' as qb.__String);
+        const prototypeProperty = getPropertyOfType(rightType, 'prototype' as qu.__String);
         if (prototypeProperty) {
           const prototypePropertyType = getTypeOfSymbol(prototypeProperty);
           if (!isTypeAny(prototypePropertyType)) targetType = prototypePropertyType;
@@ -5204,12 +5204,12 @@ export function newGet(qx: qt.Tctx) {
         case AssignmentDeclarationKind.ObjectDefinePropertyValue:
         case AssignmentDeclarationKind.ObjectDefinePropertyExports:
         case AssignmentDeclarationKind.ObjectDefinePrototypeProperty:
-          return qb.fail('Does not apply');
+          return qu.fail('Does not apply');
         default:
           return Debug.assertNever(kind);
       }
     }
-    typeOfPropertyOfContextualType(type: Type, name: qb.__String) {
+    typeOfPropertyOfContextualType(type: Type, name: qu.__String) {
       return mapType(
         type,
         (t) => {
@@ -5256,7 +5256,7 @@ export function newGet(qx: qt.Tctx) {
     contextualTypeForElementExpression(arrayContextualType: Type | undefined, index: number): Type | undefined {
       return (
         arrayContextualType &&
-        (getTypeOfPropertyOfContextualType(arrayContextualType, ('' + index) as qb.__String) ||
+        (getTypeOfPropertyOfContextualType(arrayContextualType, ('' + index) as qu.__String) ||
           getIteratedTypeOrElementType(IterationUse.Element, arrayContextualType, undefinedType, undefined, false))
       );
     }
@@ -5384,7 +5384,7 @@ export function newGet(qx: qt.Tctx) {
       if (intrinsicAttribs !== errorType) propsType = intersectTypes(intrinsicAttribs, propsType);
       return propsType;
     }
-    jsxPropsTypeForSignatureFromMember(sig: Signature, forcedLookupLocation: qb.__String) {
+    jsxPropsTypeForSignatureFromMember(sig: Signature, forcedLookupLocation: qu.__String) {
       if (sig.unionSignatures) {
         const results: Type[] = [];
         for (const signature of sig.unionSignatures) {
@@ -5507,7 +5507,7 @@ export function newGet(qx: qt.Tctx) {
       const unionType = propTypes.length ? getUnionType(propTypes, UnionReduction.Subtype) : undefinedType;
       return createIndexInfo(unionType, isConstContext(node));
     }
-    jsxType(name: qb.__String, location: Node | undefined) {
+    jsxType(name: qu.__String, location: Node | undefined) {
       const namespace = getJsxNamespaceAt(location);
       const exports = namespace && namespace.getExportsOfSymbol();
       const typeSymbol = exports && getSymbol(exports, name, qt.SymbolFlags.Type);
@@ -5518,7 +5518,7 @@ export function newGet(qx: qt.Tctx) {
       if (!links.resolvedSymbol) {
         const intrinsicElementsType = getJsxType(JsxNames.IntrinsicElements, node);
         if (intrinsicElementsType !== errorType) {
-          if (!qx.is.kind(qc.Identifier, node.tagName)) return qb.fail();
+          if (!qx.is.kind(qc.Identifier, node.tagName)) return qu.fail();
           const intrinsicProp = getPropertyOfType(intrinsicElementsType, node.tagName.escapedText);
           if (intrinsicProp) {
             links.jsxFlags |= JsxFlags.IntrinsicNamedElement;
@@ -5556,12 +5556,12 @@ export function newGet(qx: qt.Tctx) {
       }
       return getGlobalSymbol(JsxNames.JSX, qt.SymbolFlags.Namespace, undefined)!;
     }
-    nameFromJsxElementAttributesContainer(nameOfAttribPropContainer: qb.__String, jsxNamespace: Symbol): qb.__String | undefined {
+    nameFromJsxElementAttributesContainer(nameOfAttribPropContainer: qu.__String, jsxNamespace: Symbol): qu.__String | undefined {
       const jsxElementAttribPropInterfaceSym = jsxNamespace && getSymbol(jsxNamespace.exports!, nameOfAttribPropContainer, qt.SymbolFlags.Type);
       const jsxElementAttribPropInterfaceType = jsxElementAttribPropInterfaceSym && getDeclaredTypeOfSymbol(jsxElementAttribPropInterfaceSym);
       const propertiesOfJsxElementAttribPropInterface = jsxElementAttribPropInterfaceType && getPropertiesOfType(jsxElementAttribPropInterfaceType);
       if (propertiesOfJsxElementAttribPropInterface) {
-        if (propertiesOfJsxElementAttribPropInterface.length === 0) return '' as qb.__String;
+        if (propertiesOfJsxElementAttribPropInterface.length === 0) return '' as qu.__String;
         else if (propertiesOfJsxElementAttribPropInterface.length === 1) return propertiesOfJsxElementAttribPropInterface[0].escName;
         else if (propertiesOfJsxElementAttribPropInterface.length > 1) {
           error(jsxElementAttribPropInterfaceSym!.declarations[0], qd.msgs.The_global_type_JSX_0_may_not_have_more_than_one_property, qy.get.unescUnderscores(nameOfAttribPropContainer));
@@ -5575,7 +5575,7 @@ export function newGet(qx: qt.Tctx) {
     jsxElementPropertiesName(jsxNamespace: Symbol) {
       return getNameFromJsxElementAttributesContainer(JsxNames.ElementAttributesPropertyNameContainer, jsxNamespace);
     }
-    jsxElementChildrenPropertyName(jsxNamespace: Symbol): qb.__String | undefined {
+    jsxElementChildrenPropertyName(jsxNamespace: Symbol): qu.__String | undefined {
       return getNameFromJsxElementAttributesContainer(JsxNames.ElementChildrenAttributeNameContainer, jsxNamespace);
     }
     uninstantiatedJsxSignaturesOfType(elementType: Type, caller: JsxOpeningLikeElement): readonly Signature[] {
@@ -5695,7 +5695,7 @@ export function newGet(qx: qt.Tctx) {
       const suggestion = getSuggestedSymbolForNonexistentProperty(name, containingType);
       return suggestion && suggestion.name;
     }
-    suggestedSymbolForNonexistentSymbol(location: Node | undefined, outerName: qb.__String, meaning: qt.SymbolFlags): Symbol | undefined {
+    suggestedSymbolForNonexistentSymbol(location: Node | undefined, outerName: qu.__String, meaning: qt.SymbolFlags): Symbol | undefined {
       assert(outerName !== undefined, 'outername should always be defined');
       const result = resolveNameHelper(location, outerName, meaning, undefined, outerName, false, false, (symbols, name, meaning) => {
         Debug.assertEqual(outerName, name, 'name should equal outerName');
@@ -5704,7 +5704,7 @@ export function newGet(qx: qt.Tctx) {
       });
       return result;
     }
-    suggestionForNonexistentSymbol(location: Node | undefined, outerName: qb.__String, meaning: qt.SymbolFlags): string | undefined {
+    suggestionForNonexistentSymbol(location: Node | undefined, outerName: qu.__String, meaning: qt.SymbolFlags): string | undefined {
       const symbolResult = getSuggestedSymbolForNonexistentSymbol(location, outerName, meaning);
       return symbolResult && symbolResult.name;
     }
@@ -5819,7 +5819,7 @@ export function newGet(qx: qt.Tctx) {
       node: CallLikeExpression,
       args: readonly Expression[],
       signature: Signature,
-      relation: qb.QMap<RelationComparisonResult>,
+      relation: qu.QMap<RelationComparisonResult>,
       checkMode: CheckMode,
       reportErrors: boolean,
       containingMessageChain: (() => qd.MessageChain | undefined) | undefined
@@ -5945,7 +5945,7 @@ export function newGet(qx: qt.Tctx) {
             createSyntheticExpression(expr, hasPropDesc ? createTypedPropertyDescriptorType(getTypeOfNode(parent)) : anyType),
           ];
       }
-      return qb.fail();
+      return qu.fail();
     }
     decoratorArgumentCount(node: Decorator, signature: Signature) {
       switch (node.parent.kind) {
@@ -5961,7 +5961,7 @@ export function newGet(qx: qt.Tctx) {
         case Syntax.Parameter:
           return 3;
         default:
-          return qb.fail();
+          return qu.fail();
       }
     }
     diagnosticSpanForCallNode(node: CallExpression, doNotIncludeArguments?: boolean) {
@@ -6128,7 +6128,7 @@ export function newGet(qx: qt.Tctx) {
         case Syntax.SetAccessor:
           return qd.msgs.Unable_to_resolve_signature_of_method_decorator_when_called_as_an_expression;
         default:
-          return qb.fail();
+          return qu.fail();
       }
     }
     resolvedSignature(node: CallLikeExpression, candidatesOutArray?: Signature[] | undefined, checkMode?: CheckMode): Signature {
@@ -6147,7 +6147,7 @@ export function newGet(qx: qt.Tctx) {
         ((qx.is.kind(qc.FunctionDeclaration, decl) && getSymbolOfNode(decl)) ||
           (qx.is.kind(qc.BinaryExpression, decl.parent) && getSymbolOfNode(decl.parent.left)) ||
           (qx.is.kind(qc.VariableDeclaration, decl.parent) && getSymbolOfNode(decl.parent)));
-      const prototype = assignmentSymbol && assignmentSymbol.exports && assignmentSymbol.exports.get('prototype' as qb.__String);
+      const prototype = assignmentSymbol && assignmentSymbol.exports && assignmentSymbol.exports.get('prototype' as qu.__String);
       const init = prototype && prototype.valueDeclaration && getAssignedJSPrototype(prototype.valueDeclaration);
       return init ? getSymbolOfNode(init) : undefined;
     }
@@ -6166,7 +6166,7 @@ export function newGet(qx: qt.Tctx) {
       if (allowSyntheticDefaultImports && type && type !== errorType) {
         const synthType = type as SyntheticDefaultModuleType;
         if (!synthType.syntheticType) {
-          const file = qb.find(originalSymbol.declarations, isSourceFile);
+          const file = qu.find(originalSymbol.declarations, isSourceFile);
           const hasSyntheticDefault = canHaveSyntheticDefault(file, originalSymbol, false);
           if (hasSyntheticDefault) {
             const memberTable = new SymbolTable();
@@ -6198,7 +6198,7 @@ export function newGet(qx: qt.Tctx) {
       if (isTupleType(restType)) {
         const associatedNames = (<TupleType>(<TypeReference>restType).target).labeledElementDeclarations;
         const index = pos - paramCount;
-        return (associatedNames && getTupleElementLabel(associatedNames[index])) || ((restParameter.escName + '_' + index) as qb.__String);
+        return (associatedNames && getTupleElementLabel(associatedNames[index])) || ((restParameter.escName + '_' + index) as qu.__String);
       }
       return restParameter.escName;
     }
@@ -6412,7 +6412,7 @@ export function newGet(qx: qt.Tctx) {
       }
       return result;
     }
-    uniqueTypeParameterName(typeParameters: readonly TypeParameter[], baseName: qb.__String) {
+    uniqueTypeParameterName(typeParameters: readonly TypeParameter[], baseName: qu.__String) {
       let len = (<string>baseName).length;
       while (len > 1 && (<string>baseName).charCodeAt(len - 1) >= Codes._0 && (<string>baseName).charCodeAt(len - 1) <= Codes._9) len--;
       const s = (<string>baseName).slice(0, len);
@@ -6525,7 +6525,7 @@ export function newGet(qx: qt.Tctx) {
       const typeAsPromise = <PromiseOrAwaitableType>type;
       if (typeAsPromise.promisedTypeOfPromise) return typeAsPromise.promisedTypeOfPromise;
       if (isReferenceToType(type, getGlobalPromiseType(false))) return (typeAsPromise.promisedTypeOfPromise = getTypeArguments(<GenericType>type)[0]);
-      const thenFunction = getTypeOfPropertyOfType(type, 'then' as qb.__String)!;
+      const thenFunction = getTypeOfPropertyOfType(type, 'then' as qu.__String)!;
       if (isTypeAny(thenFunction)) return;
       const thenSignatures = thenFunction ? getSignaturesOfType(thenFunction, SignatureKind.Call) : empty;
       if (thenSignatures.length === 0) {
@@ -6564,7 +6564,7 @@ export function newGet(qx: qt.Tctx) {
       }
       if (isThenableType(type)) {
         if (errorNode) {
-          if (!diagnosticMessage) return qb.fail();
+          if (!diagnosticMessage) return qu.fail();
           error(errorNode, diagnosticMessage, arg0);
         }
         return;
@@ -6825,14 +6825,14 @@ export function newGet(qx: qt.Tctx) {
         return setCachedIterationTypes(type, 'iterationTypesOfIteratorResult', createIterationTypes(undefined));
       }
       const yieldIteratorResult = filterType(type, isYieldIteratorResult);
-      const yieldType = yieldIteratorResult !== neverType ? getTypeOfPropertyOfType(yieldIteratorResult, 'value' as qb.__String) : undefined;
+      const yieldType = yieldIteratorResult !== neverType ? getTypeOfPropertyOfType(yieldIteratorResult, 'value' as qu.__String) : undefined;
       const returnIteratorResult = filterType(type, isReturnIteratorResult);
-      const returnType = returnIteratorResult !== neverType ? getTypeOfPropertyOfType(returnIteratorResult, 'value' as qb.__String) : undefined;
+      const returnType = returnIteratorResult !== neverType ? getTypeOfPropertyOfType(returnIteratorResult, 'value' as qu.__String) : undefined;
       if (!yieldType && !returnType) return setCachedIterationTypes(type, 'iterationTypesOfIteratorResult', noIterationTypes);
       return setCachedIterationTypes(type, 'iterationTypesOfIteratorResult', createIterationTypes(yieldType, returnType || voidType, undefined));
     }
     iterationTypesOfMethod(type: Type, resolver: IterationTypesResolver, methodName: 'next' | 'return' | 'throw', errorNode: Node | undefined): IterationTypes | undefined {
-      const method = getPropertyOfType(type, methodName as qb.__String);
+      const method = getPropertyOfType(type, methodName as qu.__String);
       if (!method && methodName !== 'next') return;
       const methodType =
         method && !(methodName === 'next' && method.flags & qt.SymbolFlags.Optional)
@@ -6900,7 +6900,7 @@ export function newGet(qx: qt.Tctx) {
     }
     nonInterhitedProperties(type: InterfaceType, baseTypes: BaseType[], properties: Symbol[]) {
       if (!length(baseTypes)) return properties;
-      const seen = qb.createEscapedMap<Symbol>();
+      const seen = qu.createEscapedMap<Symbol>();
       forEach(properties, (p) => {
         seen.set(p.escName, p);
       });
@@ -7282,7 +7282,7 @@ export function newGet(qx: qt.Tctx) {
           const nameType = check.computedPropertyName(name);
           return isTypeAssignableToKind(nameType, qt.TypeFlags.ESSymbolLike) ? nameType : stringType;
         default:
-          return qb.fail('Unsupported property name.');
+          return qu.fail('Unsupported property name.');
       }
     }
     augmentedPropertiesOfType(type: Type): Symbol[] {
@@ -7467,7 +7467,7 @@ export function newGet(qx: qt.Tctx) {
         case ExternalEmitHelpers.CreateBinding:
           return '__createBinding';
         default:
-          return qb.fail('Unrecognized helper');
+          return qu.fail('Unrecognized helper');
       }
     }
     nonSimpleParameters(parameters: readonly ParameterDeclaration[]): readonly ParameterDeclaration[] {

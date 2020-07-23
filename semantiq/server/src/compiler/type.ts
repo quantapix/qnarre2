@@ -1,5 +1,5 @@
-import * as qb from './base';
 import * as qd from './diagnostic';
+import * as qu from './util';
 import { SourceFileLike, Syntax } from './syntax';
 import * as qy from './syntax';
 export type AssertsToken = Token<Syntax.AssertsKeyword>;
@@ -265,7 +265,7 @@ export interface BundleFileReference extends BundleFileSectionBase {
   data: string;
 }
 export type BundleFileSection = BundleFilePrologue | BundleFileEmitHelpers | BundleFileHasNoDefaultLib | BundleFileReference | BundleFilePrepend | BundleFileTextLike;
-export interface BundleFileSectionBase extends qb.Range {
+export interface BundleFileSectionBase extends qu.Range {
   kind: BundleFileSectionKind;
   data?: string;
 }
@@ -298,7 +298,7 @@ export interface CallExpression extends LeftHandSideExpression, Declaration {
   arguments: Nodes<Expression>;
 }
 export type CallLikeExpression = CallExpression | NewExpression | TaggedTemplateExpression | Decorator | JsxOpeningLikeElement;
-export interface CheckJsDirective extends qb.Range {
+export interface CheckJsDirective extends qu.Range {
   enabled: boolean;
 }
 export interface CallSignatureDeclaration extends SignatureDeclarationBase, TypeElement {
@@ -372,14 +372,14 @@ export interface CommaListExpression extends Expression {
   elements: Nodes<Expression>;
 }
 export interface CommentDirective {
-  range: qb.Range;
+  range: qu.Range;
   type: CommentDirectiveType;
 }
 export const enum CommentDirectiveType {
   ExpectError,
   Ignore,
 }
-export interface CommentRange extends qb.Range {
+export interface CommentRange extends qu.Range {
   hasTrailingNewLine?: boolean;
   kind: qy.CommentKind;
 }
@@ -408,7 +408,7 @@ export interface ConditionalRoot {
   isDistributive: boolean;
   inferTypeParameters?: TypeParameter[];
   outerTypeParameters?: TypeParameter[];
-  instantiations?: qb.QMap<Type>;
+  instantiations?: qu.QMap<Type>;
   aliasSymbol?: Symbol;
   aliasTypeArguments?: Type[];
 }
@@ -652,7 +652,7 @@ export interface EmitNode {
   flags: EmitFlags;
   leadingComments?: SynthesizedComment[];
   trailingComments?: SynthesizedComment[];
-  commentRange?: qb.Range;
+  commentRange?: qu.Range;
   sourceMapRange?: SourceMapRange;
   tokenSourceMapRanges?: (SourceMapRange | undefined)[];
   constantValue?: string | number;
@@ -820,7 +820,7 @@ export interface EvolvingArrayType extends ObjectType {
   elementType: Type;
   finalArrayType?: Type;
 }
-export interface FileReference extends qb.Range {
+export interface FileReference extends qu.Range {
   fileName: string;
 }
 export interface FlowArrayMutation extends FlowNobj {
@@ -905,7 +905,7 @@ export interface FreshableIntrinsicType extends IntrinsicType {
 export type FreshableType = LiteralType | FreshableIntrinsicType;
 export interface UniqueESSymbolType extends Type {
   symbol: Symbol;
-  escName: qb.__String;
+  escName: qu.__String;
 }
 export interface FreshObjectLiteralType extends ResolvedType {
   regularType: ResolvedType;
@@ -954,7 +954,7 @@ export const enum GeneratedIdentifierFlags {
   FileLevel = 1 << 5,
 }
 export interface GenericType extends InterfaceType, TypeReference {
-  instantiations: qb.QMap<TypeReference>;
+  instantiations: qu.QMap<TypeReference>;
   variances?: VarianceFlags[];
 }
 export interface GetAccessorDeclaration extends FunctionLikeDeclarationBase, ClassElement, ObjectLiteralElement, DocContainer {
@@ -978,7 +978,7 @@ export interface HeritageClause extends Nobj {
 }
 export interface Identifier extends PrimaryExpression, Declaration {
   kind: Syntax.Identifier;
-  escapedText: qb.__String;
+  escapedText: qu.__String;
   originalKeywordKind?: Syntax;
   autoGenerateFlags?: GeneratedIdentifierFlags;
   autoGenerateId?: number;
@@ -1025,7 +1025,7 @@ export interface ImportEqualsDeclaration extends DeclarationStatement, DocContai
 }
 export interface ImportMetaProperty extends MetaProperty {
   keywordToken: Syntax.ImportKeyword;
-  name: Identifier & { escapedText: qb.__String & 'meta' };
+  name: Identifier & { escapedText: qu.__String & 'meta' };
 }
 export type ImportOrExportSpecifier = ImportSpecifier | ExportSpecifier;
 export interface ImportSpecifier extends NamedDeclaration {
@@ -1410,7 +1410,7 @@ export interface NewExpression extends PrimaryExpression, Declaration {
   typeArguments?: Nodes<TypeNode>;
   arguments?: Nodes<Expression>;
 }
-export interface Nobj extends qb.Range {
+export interface Nobj extends qu.Range {
   id?: number;
   kind: Syntax;
   flags: NodeFlags;
@@ -1467,7 +1467,7 @@ export const enum NodeFlags {
   TypeExcludesFlags = YieldContext | AwaitContext,
   PermanentlySetIncrementalFlags = PossiblyContainsDynamicImport | PossiblyContainsImportMeta,
 }
-export interface Nodes<T extends Nobj = Nobj> extends ReadonlyArray<T>, qb.Range {
+export interface Nodes<T extends Nobj = Nobj> extends ReadonlyArray<T>, qu.Range {
   trailingComma?: boolean;
   transformFlags: TransformFlags;
   visit<V>(cb: (n?: Node) => V | undefined, cbs?: (ns: Nodes) => V | undefined): V | undefined;
@@ -1614,7 +1614,7 @@ export interface PartiallyEmittedExpression extends LeftHandSideExpression {
 }
 export type Path = string & { __pathBrand: any };
 export interface PatternAmbientModule {
-  pattern: qb.Pattern;
+  pattern: qu.Pattern;
   symbol: Symbol;
 }
 export interface PostfixUnaryExpression extends UpdateExpression {
@@ -1634,7 +1634,7 @@ export interface PrimaryExpression extends MemberExpression {
 }
 export interface PrivateIdentifier extends Nobj {
   kind: Syntax.PrivateIdentifier;
-  escapedText: qb.__String;
+  escapedText: qu.__String;
 }
 export interface PrivateIdentifierPropertyAccessExpression extends PropertyAccessExpression {
   name: PrivateIdentifier;
@@ -1694,7 +1694,7 @@ export interface QualifiedName extends Nobj {
   jsdocDotPos?: number;
 }
 export namespace Range {
-  export interface SourceMap extends qb.Range {
+  export interface SourceMap extends qu.Range {
     source?: SourceMapSource;
   }
 }
@@ -1805,7 +1805,7 @@ export interface Signature {
   canonicalSignatureCache?: Signature;
   optionalCallSignatureCache?: { inner?: Signature; outer?: Signature };
   isolatedSignatureType?: ObjectType;
-  instantiations?: qb.QMap<Signature>;
+  instantiations?: qu.QMap<Signature>;
 }
 export const enum SignatureFlags {
   None = 0,
@@ -1848,14 +1848,14 @@ export interface SourceFile extends Declaration {
   libReferenceDirectives: readonly FileReference[];
   languageVariant: qy.LanguageVariant;
   isDeclarationFile: boolean;
-  renamedDependencies?: qb.QReadonlyMap<string>;
+  renamedDependencies?: qu.QReadonlyMap<string>;
   hasNoDefaultLib: boolean;
   languageVersion: ScriptTarget;
   scriptKind: ScriptKind;
   externalModuleIndicator?: Node;
   commonJsModuleIndicator?: Node;
   jsGlobalAugmentations?: SymbolTable;
-  identifiers: qb.QMap<string>;
+  identifiers: qu.QMap<string>;
   nodeCount: number;
   identifierCount: number;
   symbolCount: number;
@@ -1865,10 +1865,10 @@ export interface SourceFile extends Declaration {
   docDiagnostics?: qd.DiagnosticWithLocation[];
   additionalSyntacticDiagnostics?: readonly qd.DiagnosticWithLocation[];
   lineMap: readonly number[];
-  classifiableNames?: qb.ReadonlyEscapedMap<true>;
+  classifiableNames?: qu.ReadonlyEscapedMap<true>;
   commentDirectives?: CommentDirective[];
-  resolvedModules?: qb.QMap<ResolvedModuleFull | undefined>;
-  resolvedTypeReferenceDirectiveNames: qb.QMap<ResolvedTypeReferenceDirective | undefined>;
+  resolvedModules?: qu.QMap<ResolvedModuleFull | undefined>;
+  resolvedTypeReferenceDirectiveNames: qu.QMap<ResolvedTypeReferenceDirective | undefined>;
   imports: readonly StringLiteralLike[];
   moduleAugmentations: readonly (StringLiteral | Identifier)[];
   patternAmbientModules?: PatternAmbientModule[];
@@ -1876,7 +1876,7 @@ export interface SourceFile extends Declaration {
   checkJsDirective?: CheckJsDirective;
   version: string;
   pragmas: ReadonlyPragmaMap;
-  localJsxNamespace?: qb.__String;
+  localJsxNamespace?: qu.__String;
   localJsxFactory?: EntityName;
   exportedModulesFromDeclarationEmit?: ExportedModulesFromDeclarationEmit;
 }
@@ -1889,13 +1889,13 @@ export interface SourceFilePrologueInfo {
   text: string;
   directives: SourceFilePrologueDirective[];
 }
-export interface SourceFilePrologueDirective extends qb.Range {
+export interface SourceFilePrologueDirective extends qu.Range {
   expression: SourceFilePrologueDirectiveExpression;
 }
-export interface SourceFilePrologueDirectiveExpression extends qb.Range {
+export interface SourceFilePrologueDirectiveExpression extends qu.Range {
   text: string;
 }
-export interface SourceMapRange extends qb.Range {
+export interface SourceMapRange extends qu.Range {
   source?: SourceMapSource;
 }
 export interface SourceMapSource {
@@ -2030,10 +2030,10 @@ export const enum SymbolFlags {
   LateBindingContainer = Class | Interface | TypeLiteral | ObjectLiteral | Function,
 }
 export interface Symbol {
-  assignmentDeclarationMembers?: qb.QMap<Declaration>;
+  assignmentDeclarationMembers?: qu.QMap<Declaration>;
   constEnumOnlyModule?: boolean;
   declarations?: Declaration[];
-  escName: qb.__String;
+  escName: qu.__String;
   exports?: SymbolTable;
   exportSymbol?: Symbol;
   flags: SymbolFlags;
@@ -2056,8 +2056,8 @@ export interface SymbolLinks {
   declaredType?: Type;
   typeParameters?: TypeParameter[];
   outerTypeParameters?: TypeParameter[];
-  instantiations?: qb.QMap<Type>;
-  inferredClassSymbol?: qb.QMap<TransientSymbol>;
+  instantiations?: qu.QMap<Type>;
+  inferredClassSymbol?: qu.QMap<TransientSymbol>;
   mapper?: TypeMapper;
   referenced?: boolean;
   constEnumReferenced?: boolean;
@@ -2076,9 +2076,9 @@ export interface SymbolLinks {
   enumKind?: EnumKind;
   originatingImport?: ImportDeclaration | ImportCall;
   lateSymbol?: Symbol;
-  specifierCache?: qb.QMap<string>;
+  specifierCache?: qu.QMap<string>;
   extendedContainers?: Symbol[];
-  extendedContainersByFile?: qb.QMap<Symbol[]>;
+  extendedContainersByFile?: qu.QMap<Symbol[]>;
   variances?: VarianceFlags[];
   deferralConstituents?: Type[];
   deferralParent?: Type;
@@ -2088,7 +2088,7 @@ export interface SymbolLinks {
   tupleLabelDeclaration?: NamedTupleMember | ParameterDeclaration;
 }
 export interface SymbolDisplayPart {}
-export interface SymbolTable<S extends Symbol = Symbol> extends Map<qb.__String, S>, qb.EscapedMap<S> {}
+export interface SymbolTable<S extends Symbol = Symbol> extends Map<qu.__String, S>, qu.EscapedMap<S> {}
 export interface SyntaxList extends Nobj {
   children: Node[];
 }
@@ -2847,7 +2847,7 @@ export interface TypeCheckerHost extends ModuleSpecifierResolutionHost {
   getCompilerOptions(): CompilerOptions;
   getSourceFiles(): readonly SourceFile[];
   getSourceFile(fileName: string): SourceFile | undefined;
-  getResolvedTypeReferenceDirectives(): qb.QReadonlyMap<ResolvedTypeReferenceDirective | undefined>;
+  getResolvedTypeReferenceDirectives(): qu.QReadonlyMap<ResolvedTypeReferenceDirective | undefined>;
   getProjectReferenceRedirect(fileName: string): string | undefined;
   isSourceOfProjectReferenceRedirect(fileName: string): boolean;
   readonly redirectTargetsMap: RedirectTargetsMap;
@@ -2911,8 +2911,8 @@ export interface Program extends ScriptReferenceHost {
   getRootFileNames(): readonly string[];
   getSourceFiles(): readonly SourceFile[];
   getMissingFilePaths(): readonly Path[];
-  getRefFileMap(): qb.MultiMap<RefFile> | undefined;
-  getFilesByNameMap(): qb.QMap<SourceFile | false | undefined>;
+  getRefFileMap(): qu.MultiMap<RefFile> | undefined;
+  getFilesByNameMap(): qu.QMap<SourceFile | false | undefined>;
   emit(targetSourceFile?: SourceFile, writeFile?: WriteFileCallback, cancellationToken?: CancellationToken, emitOnlyDtsFiles?: boolean, customTransformers?: CustomTransformers): EmitResult;
   emit(
     targetSourceFile?: SourceFile,
@@ -2935,7 +2935,7 @@ export interface Program extends ScriptReferenceHost {
   getCommonSourceDirectory(): string;
   getDiagnosticsProducingTypeChecker(): TypeChecker;
   dropDiagnosticsProducingTypeChecker(): void;
-  getClassifiableNames(): qb.EscapedMap<true>;
+  getClassifiableNames(): qu.EscapedMap<true>;
   getNodeCount(): number;
   getIdentifierCount(): number;
   getSymbolCount(): number;
@@ -2943,14 +2943,14 @@ export interface Program extends ScriptReferenceHost {
   getInstantiationCount(): number;
   getRelationCacheSizes(): { assignable: number; identity: number; subtype: number; strictSubtype: number };
   getFileProcessingDiagnostics(): qd.DiagnosticCollection;
-  getResolvedTypeReferenceDirectives(): qb.QMap<ResolvedTypeReferenceDirective | undefined>;
+  getResolvedTypeReferenceDirectives(): qu.QMap<ResolvedTypeReferenceDirective | undefined>;
   isSourceFileFromExternalLibrary(file: SourceFile): boolean;
   isSourceFileDefaultLibrary(file: SourceFile): boolean;
   structureIsReused?: StructureIsReused;
   getSourceFileFromReference(referencingFile: SourceFile | UnparsedSource, ref: FileReference): SourceFile | undefined;
   getLibFileFromReference(ref: FileReference): SourceFile | undefined;
-  sourceFileToPackageName: qb.QMap<string>;
-  redirectTargetsMap: qb.MultiMap<string>;
+  sourceFileToPackageName: qu.QMap<string>;
+  redirectTargetsMap: qu.MultiMap<string>;
   isEmittedFile(file: string): boolean;
   getResolvedModuleWithFailedLookupLocationsFromCache(moduleName: string, containingFile: string): ResolvedModuleWithFailedLookupLocations | undefined;
   getProjectReferences(): readonly ProjectReference[] | undefined;
@@ -2962,11 +2962,11 @@ export interface Program extends ScriptReferenceHost {
   isSourceOfProjectReferenceRedirect(fileName: string): boolean;
   getProgramBuildInfo?(): ProgramBuildInfo | undefined;
   emitBuildInfo(writeFile?: WriteFileCallback, cancellationToken?: CancellationToken): EmitResult;
-  getProbableSymlinks(): qb.QReadonlyMap<string>;
+  getProbableSymlinks(): qu.QReadonlyMap<string>;
   fileExists(fileName: string): boolean;
 }
 export interface Program extends TypeCheckerHost, ModuleSpecifierResolutionHost {}
-export type RedirectTargetsMap = qb.QReadonlyMap<readonly string[]>;
+export type RedirectTargetsMap = qu.QReadonlyMap<readonly string[]>;
 export interface ResolvedProjectReference {
   commandLine: ParsedCommandLine;
   sourceFile: SourceFile;
@@ -3226,10 +3226,10 @@ export interface NodeLinks {
   switchTypes?: Type[]; // Cached array of switch case expression types
   jsxNamespace?: Symbol | false; // Resolved jsx namespace symbol for this node
   contextFreeType?: Type; // Cached context-free type used by the first pass of inference; used when a function's return is partially contextually sensitive
-  deferredNodes?: qb.QMap<Node>; // Set of nodes whose checking has been deferred
+  deferredNodes?: qu.QMap<Node>; // Set of nodes whose checking has been deferred
   capturedBlockScopeBindings?: Symbol[]; // Block-scoped bindings captured beneath this part of an IterationStatement
   outerTypeParameters?: TypeParameter[]; // Outer type parameters of anonymous object type
-  instantiations?: qb.QMap<Type>; // Instantiations of generic type alias (undefined if non-generic)
+  instantiations?: qu.QMap<Type>; // Instantiations of generic type alias (undefined if non-generic)
   isExhaustive?: boolean; // Is node an exhaustive switch statement
   skipDirectInference?: true; // Flag set by the API `getContextualType` call on a node when `Completions` is passed to force the checker to skip making inferences to a node's type
   declarationRequiresScopeChange?: boolean; // Set by `useOuterVariableScopeInParameter` in checker when downlevel emit would change the name resolution scope inside of a parameter.
@@ -3241,7 +3241,7 @@ export const enum JsxReferenceKind {
 }
 export interface WideningContext {
   parent?: WideningContext;
-  propertyName?: qb.__String;
+  propertyName?: qu.__String;
   siblings?: Type[];
   resolvedProperties?: Symbol[];
 }
@@ -3297,7 +3297,7 @@ export enum PollingWatchKind {
   PriorityInterval,
   DynamicPriority,
 }
-export type CompilerOptionsValue = string | number | boolean | (string | number)[] | string[] | qb.MapLike<string[]> | PluginImport[] | ProjectReference[] | null | undefined;
+export type CompilerOptionsValue = string | number | boolean | (string | number)[] | string[] | qu.MapLike<string[]> | PluginImport[] | ProjectReference[] | null | undefined;
 export interface CompilerOptions {
   all?: boolean;
   allowJs?: boolean;
@@ -3366,7 +3366,7 @@ export interface CompilerOptions {
   out?: string;
   outDir?: string;
   outFile?: string;
-  paths?: qb.MapLike<string[]>;
+  paths?: qu.MapLike<string[]>;
   plugins?: PluginImport[];
   preserveConstEnums?: boolean;
   preserveSymlinks?: boolean;
@@ -3446,7 +3446,7 @@ export interface ParsedCommandLine {
   watchOptions?: WatchOptions;
   raw?: any;
   errors: qd.Diagnostic[];
-  wildcardDirectories?: qb.MapLike<WatchDirectoryFlags>;
+  wildcardDirectories?: qu.MapLike<WatchDirectoryFlags>;
   compileOnSave?: boolean;
   configFileSpecs?: ConfigFileSpecs;
 }
@@ -3460,11 +3460,11 @@ export interface ConfigFileSpecs {
   excludeSpecs?: readonly string[];
   validatedIncludeSpecs?: readonly string[];
   validatedExcludeSpecs?: readonly string[];
-  wildcardDirectories: qb.MapLike<WatchDirectoryFlags>;
+  wildcardDirectories: qu.MapLike<WatchDirectoryFlags>;
 }
 export interface ExpandResult {
   fileNames: string[];
-  wildcardDirectories: qb.MapLike<WatchDirectoryFlags>;
+  wildcardDirectories: qu.MapLike<WatchDirectoryFlags>;
   spec: ConfigFileSpecs;
 }
 export type RequireResult<T = {}> = { module: T; modulePath?: string; error: undefined } | { module: undefined; modulePath?: undefined; error: { stack?: string; message?: string } };
@@ -3478,7 +3478,7 @@ export interface CreateProgramOptions {
 }
 export interface CommandLineOptionBase {
   name: string;
-  type: 'string' | 'number' | 'boolean' | 'object' | 'list' | qb.QMap<number | string>;
+  type: 'string' | 'number' | 'boolean' | 'object' | 'list' | qu.QMap<number | string>;
   isFilePath?: boolean;
   shortName?: string;
   description?: qd.Message;
@@ -3499,7 +3499,7 @@ export interface CommandLineOptionOfPrimitiveType extends CommandLineOptionBase 
   type: 'string' | 'number' | 'boolean';
 }
 export interface CommandLineOptionOfCustomType extends CommandLineOptionBase {
-  type: qb.QMap<number | string>;
+  type: qu.QMap<number | string>;
 }
 export interface DidYouMeanOptionsDiagnostics {
   optionDeclarations: CommandLineOption[];
@@ -3508,7 +3508,7 @@ export interface DidYouMeanOptionsDiagnostics {
 }
 export interface TsConfigOnlyOption extends CommandLineOptionBase {
   type: 'object';
-  elementOptions?: qb.QMap<CommandLineOption>;
+  elementOptions?: qu.QMap<CommandLineOption>;
   extraKeyDiagnostics?: DidYouMeanOptionsDiagnostics;
 }
 export interface CommandLineOptionOfListType extends CommandLineOptionBase {
@@ -3559,7 +3559,7 @@ export interface CompilerHost extends ModuleResolutionHost {
   getParsedCommandLine?(fileName: string): ParsedCommandLine | undefined;
   useSourceOfProjectReferenceRedirect?(): boolean;
   createDirectory?(directory: string): void;
-  getSymlinks?(): qb.QReadonlyMap<string>;
+  getSymlinks?(): qu.QReadonlyMap<string>;
 }
 export type SourceOfProjectReferenceRedirect = string | true;
 export interface ResolvedProjectReferenceCallbacks {
@@ -3700,7 +3700,7 @@ export interface ModuleSpecifierResolutionHost {
   fileExists(path: string): boolean;
   getCurrentDirectory(): string;
   readFile?(path: string): string | undefined;
-  getProbableSymlinks?(files: readonly SourceFile[]): qb.QReadonlyMap<string>;
+  getProbableSymlinks?(files: readonly SourceFile[]): qu.QReadonlyMap<string>;
   getGlobalTypingsCacheLocation?(): string | undefined;
   getSourceFiles(): readonly SourceFile[];
   readonly redirectTargetsMap: RedirectTargetsMap;
@@ -3851,10 +3851,10 @@ type PragmaArgumentType<KPrag extends keyof ConcretePragmaSpecs> = ConcretePragm
 type ConcretePragmaSpecs = typeof commentPragmas;
 export type PragmaPseudoMap = { [K in keyof ConcretePragmaSpecs]: { arguments: PragmaArgumentType<K>; range: CommentRange } };
 export type PragmaPseudoMapEntry = { [K in keyof PragmaPseudoMap]: { name: K; args: PragmaPseudoMap[K] } }[keyof PragmaPseudoMap];
-export interface ReadonlyPragmaMap extends qb.QReadonlyMap<PragmaPseudoMap[keyof PragmaPseudoMap] | PragmaPseudoMap[keyof PragmaPseudoMap][]> {
+export interface ReadonlyPragmaMap extends qu.QReadonlyMap<PragmaPseudoMap[keyof PragmaPseudoMap] | PragmaPseudoMap[keyof PragmaPseudoMap][]> {
   get<K extends keyof PragmaPseudoMap>(k: K): PragmaPseudoMap[K] | PragmaPseudoMap[K][];
 }
-export interface PragmaMap extends qb.QMap<PragmaPseudoMap[keyof PragmaPseudoMap] | PragmaPseudoMap[keyof PragmaPseudoMap][]>, ReadonlyPragmaMap {
+export interface PragmaMap extends qu.QMap<PragmaPseudoMap[keyof PragmaPseudoMap] | PragmaPseudoMap[keyof PragmaPseudoMap][]>, ReadonlyPragmaMap {
   set<K extends keyof PragmaPseudoMap>(k: K, v: PragmaPseudoMap[K] | PragmaPseudoMap[K][]): this;
   get<K extends keyof PragmaPseudoMap>(k: K): PragmaPseudoMap[K] | PragmaPseudoMap[K][];
   forEach(action: <K extends keyof PragmaPseudoMap>(v: PragmaPseudoMap[K] | PragmaPseudoMap[K][], k: K) => void): void;

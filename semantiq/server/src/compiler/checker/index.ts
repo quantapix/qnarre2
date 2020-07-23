@@ -1,18 +1,18 @@
-import * as qb from '../base';
-import { is, get, has } from '../core3';
-import * as qc from '../core3';
-import * as qd from '../diags';
-import { Node, SymbolFlags, TypeFlags } from './types';
-import * as qt from './types';
+import { is, get, has } from '../core';
+import * as qc from '../core';
+import * as qd from '../diagnostic';
+import { Node, SymbolFlags, TypeFlags } from './type';
+import * as qt from './type';
+import * as qu from '../util';
 import { ModifierFlags, Syntax } from '../syntax';
 import * as qy from '../syntax';
 import { check, checkGrammar } from './check';
 
 const ambientModuleSymbolRegex = /^".+"$/;
-const anon = '(anonymous)' as qb.__String & string;
+const anon = '(anonymous)' as qu.__String & string;
 let nextMergeId = 1;
 let nextFlowId = 1;
-export const isNotOverloadAndNotAccessor = qb.and(qc.is.notOverload, qc.is.notAccessor);
+export const isNotOverloadAndNotAccessor = qu.and(qc.is.notOverload, qc.is.notAccessor);
 
 function SymbolLinks(this: SymbolLinks) {}
 function NodeLinks(this: NodeLinks) {
@@ -23,8 +23,8 @@ export function isInstantiatedModule(node: ModuleDeclaration, preserveConstEnums
   return moduleState === ModuleInstanceState.Instantiated || (preserveConstEnums && moduleState === ModuleInstanceState.ConstEnumOnly);
 }
 export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): qt.TypeChecker {
-  const getPackagesSet: () => qb.QMap<true> = qb.memoize(() => {
-    const set = new qb.QMap<true>();
+  const getPackagesSet: () => qu.QMap<true> = qu.memoize(() => {
+    const set = new qu.QMap<true>();
     host.getSourceFiles().forEach((sf) => {
       if (!sf.resolvedModules) return;
       forEachEntry(sf.resolvedModules, (r) => {
@@ -85,14 +85,14 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     }
   }
   const globals = new SymbolTable();
-  const undefinedSymbol = new Symbol(SymbolFlags.Property, 'undefined' as qb.__String);
+  const undefinedSymbol = new Symbol(SymbolFlags.Property, 'undefined' as qu.__String);
   undefinedSymbol.declarations = [];
-  const globalThisSymbol = new Symbol(SymbolFlags.Module, 'globalThis' as qb.__String, qt.CheckFlags.Readonly);
+  const globalThisSymbol = new Symbol(SymbolFlags.Module, 'globalThis' as qu.__String, qt.CheckFlags.Readonly);
   globalThisSymbol.exports = globals;
   globalThisSymbol.declarations = [];
   globals.set(globalThisSymbol.escName, globalThisSymbol);
-  const argumentsSymbol = new Symbol(SymbolFlags.Property, 'arguments' as qb.__String);
-  const requireSymbol = new Symbol(SymbolFlags.Property, 'require' as qb.__String);
+  const argumentsSymbol = new Symbol(SymbolFlags.Property, 'arguments' as qu.__String);
+  const requireSymbol = new Symbol(SymbolFlags.Property, 'require' as qu.__String);
   let apparentArgumentCount: number | undefined;
   const checker: TypeChecker = {
     getNodeCount: () => sum(host.getSourceFiles(), 'nodeCount'),
@@ -118,7 +118,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     },
     getSymbolsOfParameterPropertyDeclaration: (parameterIn, parameterName) => {
       const parameter = get.parseTreeOf(parameterIn, isParameter);
-      if (parameter === undefined) return qb.fail('Cannot get symbols of a synthetic parameter that cannot be resolved to a parse-tree node.');
+      if (parameter === undefined) return qu.fail('Cannot get symbols of a synthetic parameter that cannot be resolved to a parse-tree node.');
       return getSymbolsOfParameterPropertyDeclaration(parameter, qy.get.escUnderscores(parameterName));
     },
     getDeclaredTypeOfSymbol,
@@ -389,15 +389,15 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     getLocalTypeParametersOfClassOrInterfaceOrTypeAlias,
     isDeclarationVisible,
   };
-  const tupleTypes = new qb.QMap<GenericType>();
-  const unionTypes = new qb.QMap<UnionType>();
-  const intersectionTypes = new qb.QMap<Type>();
-  const literalTypes = new qb.QMap<LiteralType>();
-  const indexedAccessTypes = new qb.QMap<IndexedAccessType>();
-  const substitutionTypes = new qb.QMap<SubstitutionType>();
+  const tupleTypes = new qu.QMap<GenericType>();
+  const unionTypes = new qu.QMap<UnionType>();
+  const intersectionTypes = new qu.QMap<Type>();
+  const literalTypes = new qu.QMap<LiteralType>();
+  const indexedAccessTypes = new qu.QMap<IndexedAccessType>();
+  const substitutionTypes = new qu.QMap<SubstitutionType>();
   const evolvingArrayTypes: EvolvingArrayType[] = [];
-  const undefinedProperties = new qb.QMap<Symbol>() as EscapedMap<Symbol>;
-  const unknownSymbol = new Symbol(SymbolFlags.Property, 'unknown' as qb.__String);
+  const undefinedProperties = new qu.QMap<Symbol>() as EscapedMap<Symbol>;
+  const unknownSymbol = new Symbol(SymbolFlags.Property, 'unknown' as qu.__String);
   const resolvingSymbol = new Symbol(0, InternalSymbol.Resolving);
   const anyType = createIntrinsicType(TypeFlags.Any, 'any');
   const autoType = createIntrinsicType(TypeFlags.Any, 'any');
@@ -449,7 +449,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   emptyTypeLiteralSymbol.members = new SymbolTable();
   const emptyTypeLiteralType = createAnonymousType(emptyTypeLiteralSymbol, emptySymbols, empty, empty, undefined, undefined);
   const emptyGenericType = <GenericType>(<ObjectType>createAnonymousType(undefined, emptySymbols, empty, empty, undefined, undefined));
-  emptyGenericType.instantiations = new qb.QMap<TypeReference>();
+  emptyGenericType.instantiations = new qu.QMap<TypeReference>();
   const anyFunctionType = createAnonymousType(undefined, emptySymbols, empty, empty, undefined, undefined);
   anyFunctionType.objectFlags |= ObjectFlags.NonInferrableType;
   const noConstraintType = createAnonymousType(undefined, emptySymbols, empty, empty, undefined, undefined);
@@ -465,16 +465,16 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   const resolvingSignature = createSignature(undefined, undefined, undefined, empty, anyType, undefined, 0, SignatureFlags.None);
   const silentNeverSignature = createSignature(undefined, undefined, undefined, empty, silentNeverType, undefined, 0, SignatureFlags.None);
   const enumNumberIndexInfo = createIndexInfo(stringType, true);
-  const iterationTypesCache = new qb.QMap<IterationTypes>();
+  const iterationTypesCache = new qu.QMap<IterationTypes>();
   const noIterationTypes: IterationTypes = {
     get yieldType(): Type {
-      return qb.fail('Not supported');
+      return qu.fail('Not supported');
     },
     get returnType(): Type {
-      return qb.fail('Not supported');
+      return qu.fail('Not supported');
     },
     get nextType(): Type {
-      return qb.fail('Not supported');
+      return qu.fail('Not supported');
     },
   };
   const anyIterationTypes = createIterationTypes(anyType, anyType, anyType);
@@ -514,14 +514,14 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   interface DuplicateInfoForFiles {
     readonly firstFile: SourceFile;
     readonly secondFile: SourceFile;
-    readonly conflictingSymbols: qb.QMap<DuplicateInfoForSymbol>;
+    readonly conflictingSymbols: qu.QMap<DuplicateInfoForSymbol>;
   }
-  let amalgamatedDuplicates: qb.QMap<DuplicateInfoForFiles> | undefined;
-  const reverseMappedCache = new qb.QMap<Type | undefined>();
+  let amalgamatedDuplicates: qu.QMap<DuplicateInfoForFiles> | undefined;
+  const reverseMappedCache = new qu.QMap<Type | undefined>();
   let inInferTypeForHomomorphicMappedType = false;
   let ambientModulesCache: Symbol[] | undefined;
   let patternAmbientModules: PatternAmbientModule[];
-  let patternAmbientModuleAugmentations: qb.QMap<Symbol> | undefined;
+  let patternAmbientModuleAugmentations: qu.QMap<Symbol> | undefined;
   let globalObjectType: ObjectType;
   let globalFunctionType: ObjectType;
   let globalCallableFunctionType: ObjectType;
@@ -559,7 +559,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   let deferredGlobalExtractSymbol: Symbol;
   let deferredGlobalOmitSymbol: Symbol;
   let deferredGlobalBigIntType: ObjectType;
-  const allPotentiallyUnusedIdentifiers = new qb.QMap<PotentiallyUnusedIdentifier[]>();
+  const allPotentiallyUnusedIdentifiers = new qu.QMap<PotentiallyUnusedIdentifier[]>();
   let flowLoopStart = 0;
   let flowLoopCount = 0;
   let sharedFlowCount = 0;
@@ -579,7 +579,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   const mergedSymbols: Symbol[] = [];
   const symbolLinks: SymbolLinks[] = [];
   const nodeLinks: NodeLinks[] = [];
-  const flowLoopCaches: qb.QMap<Type>[] = [];
+  const flowLoopCaches: qu.QMap<Type>[] = [];
   const flowLoopNodes: FlowNode[] = [];
   const flowLoopKeys: string[] = [];
   const flowLoopTypes: Type[][] = [];
@@ -593,7 +593,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   const awaitedTypeStack: number[] = [];
   const diagnostics = createDiagnosticCollection();
   const suggestionDiagnostics = createDiagnosticCollection();
-  const typeofTypesByName: qb.QReadonlyMap<Type> = new qb.QMap<Type>({
+  const typeofTypesByName: qu.QReadonlyMap<Type> = new qu.QMap<Type>({
     string: stringType,
     number: numberType,
     bigint: bigintType,
@@ -602,15 +602,15 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     undefined: undefinedType,
   });
   const typeofType = createTypeofType();
-  let _jsxNamespace: qb.__String;
+  let _jsxNamespace: qu.__String;
   let _jsxFactoryEntity: EntityName | undefined;
   let outofbandVarianceMarkerHandler: ((onlyUnreliable: boolean) => void) | undefined;
-  const subtypeRelation = new qb.QMap<RelationComparisonResult>();
-  const strictSubtypeRelation = new qb.QMap<RelationComparisonResult>();
-  const assignableRelation = new qb.QMap<RelationComparisonResult>();
-  const comparableRelation = new qb.QMap<RelationComparisonResult>();
-  const identityRelation = new qb.QMap<RelationComparisonResult>();
-  const enumRelation = new qb.QMap<RelationComparisonResult>();
+  const subtypeRelation = new qu.QMap<RelationComparisonResult>();
+  const strictSubtypeRelation = new qu.QMap<RelationComparisonResult>();
+  const assignableRelation = new qu.QMap<RelationComparisonResult>();
+  const comparableRelation = new qu.QMap<RelationComparisonResult>();
+  const identityRelation = new qu.QMap<RelationComparisonResult>();
+  const enumRelation = new qu.QMap<RelationComparisonResult>();
   const builtinGlobals = new SymbolTable();
   builtinGlobals.set(undefinedSymbol.escName, undefinedSymbol);
   initializeTypeChecker();
@@ -694,7 +694,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       if (mainModule.flags & qt.SymbolFlags.Namespace) {
         if (some(patternAmbientModules, (module) => mainModule === module.symbol)) {
           const merged = mainModule.merge(moduleAugmentation.symbol, true);
-          if (!patternAmbientModuleAugmentations) patternAmbientModuleAugmentations = new qb.QMap();
+          if (!patternAmbientModuleAugmentations) patternAmbientModuleAugmentations = new qu.QMap();
           patternAmbientModuleAugmentations.set((moduleName as StringLiteral).text, merged);
         } else {
           if (mainModule.exports?.get(InternalSymbol.ExportStar) && moduleAugmentation.symbol.exports?.size) {
@@ -748,8 +748,8 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       }
     }
   }
-  function diagnosticName(nameArg: qb.__String | qc.Identifier | qc.PrivateIdentifier) {
-    return isString(nameArg) ? qy.get.unescUnderscores(nameArg as qb.__String) : declarationNameToString(nameArg as Identifier);
+  function diagnosticName(nameArg: qu.__String | qc.Identifier | qc.PrivateIdentifier) {
+    return isString(nameArg) ? qy.get.unescUnderscores(nameArg as qu.__String) : declarationNameToString(nameArg as Identifier);
   }
   function canHaveSyntheticDefault(file: SourceFile | undefined, moduleSymbol: Symbol, dontResolveAlias: boolean) {
     if (!allowSyntheticDefaultImports) return false;
@@ -878,11 +878,11 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   function typesPackageExists(packageName: string): boolean {
     return getPackagesSet().has(getTypesPackageName(packageName));
   }
-  function tryGetMemberInModuleExports(memberName: qb.__String, moduleSymbol: Symbol): Symbol | undefined {
+  function tryGetMemberInModuleExports(memberName: qu.__String, moduleSymbol: Symbol): Symbol | undefined {
     const symbolTable = getExportsOfModule(moduleSymbol);
     if (symbolTable) return symbolTable.get(memberName);
   }
-  function tryGetMemberInModuleExportsAndProperties(memberName: qb.__String, moduleSymbol: Symbol): Symbol | undefined {
+  function tryGetMemberInModuleExportsAndProperties(memberName: qu.__String, moduleSymbol: Symbol): Symbol | undefined {
     const symbol = tryGetMemberInModuleExports(memberName, moduleSymbol);
     if (symbol) return symbol;
     const exportEquals = resolveExternalModuleSymbol(moduleSymbol);
@@ -990,7 +990,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   ): string {
     const noTruncation = compilerOptions.noErrorTruncation || flags & TypeFormatFlags.NoTruncation;
     const typeNode = nodeBuilder.typeToTypeNode(type, enclosingDeclaration, toNodeBuilderFlags(flags) | NodeBuilderFlags.IgnoreErrors | (noTruncation ? NodeBuilderFlags.NoTruncation : 0), writer);
-    if (typeNode === undefined) return qb.fail('should always get typenode');
+    if (typeNode === undefined) return qu.fail('should always get typenode');
     const options = { removeComments: true };
     const printer = createPrinter(options);
     const sourceFile = enclosingDeclaration && get.sourceFileOf(enclosingDeclaration);
@@ -1061,9 +1061,9 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       exportSymbol = getTargetOfExportSpecifier(<ExportSpecifier>node.parent, qt.SymbolFlags.Value | qt.SymbolFlags.Type | qt.SymbolFlags.Namespace | qt.SymbolFlags.Alias);
     }
     let result: Node[] | undefined;
-    let visited: qb.QMap<true> | undefined;
+    let visited: qu.QMap<true> | undefined;
     if (exportSymbol) {
-      visited = new qb.QMap();
+      visited = new qu.QMap();
       visited.set('' + exportSymbol.getId(), true);
       buildVisibleNodeList(exportSymbol.declarations);
     }
@@ -1253,12 +1253,12 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       const leftName = i >= leftCount ? undefined : getParameterNameAtPosition(left, i);
       const rightName = i >= rightCount ? undefined : getParameterNameAtPosition(right, i);
       const paramName = leftName === rightName ? leftName : !leftName ? rightName : !rightName ? leftName : undefined;
-      const paramSymbol = new Symbol(SymbolFlags.FunctionScopedVariable | (isOptional && !isRestParam ? qt.SymbolFlags.Optional : 0), paramName || (`arg${i}` as qb.__String));
+      const paramSymbol = new Symbol(SymbolFlags.FunctionScopedVariable | (isOptional && !isRestParam ? qt.SymbolFlags.Optional : 0), paramName || (`arg${i}` as qu.__String));
       paramSymbol.type = isRestParam ? createArrayType(unionParamType) : unionParamType;
       params[i] = paramSymbol;
     }
     if (needsExtraRestElement) {
-      const restParamSymbol = new Symbol(SymbolFlags.FunctionScopedVariable, 'args' as qb.__String);
+      const restParamSymbol = new Symbol(SymbolFlags.FunctionScopedVariable, 'args' as qu.__String);
       restParamSymbol.type = createArrayType(getTypeAtPosition(shorter, longestCount));
       params[longestCount] = restParamSymbol;
     }
@@ -1350,7 +1350,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   }
   function tryFindAmbientModule(moduleName: string, withAugmentations: boolean) {
     if (isExternalModuleNameRelative(moduleName)) return;
-    const symbol = getSymbol(globals, ('"' + moduleName + '"') as qb.__String, qt.SymbolFlags.ValueModule);
+    const symbol = getSymbol(globals, ('"' + moduleName + '"') as qu.__String, qt.SymbolFlags.ValueModule);
     return symbol && withAugmentations ? getMergedSymbol(symbol) : symbol;
   }
   function fillMissingTypeArguments(typeArguments: readonly Type[], typeParameters: readonly TypeParameter[] | undefined, minTypeArgumentCount: number, isJavaScriptImplicitAny: boolean): Type[];
@@ -1385,7 +1385,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     const lastParam = lastOrUndefined(declaration.parameters);
     const lastParamTags = lastParam ? qc.getDoc.parameterTags(lastParam) : qc.getDoc.tags(declaration).filter(isDocParameterTag);
     const lastParamVariadicType = firstDefined(lastParamTags, (p) => (p.typeExpression && is.kind(qc.DocVariadicType, p.typeExpression.type) ? p.typeExpression.type : undefined));
-    const syntheticArgsSymbol = new Symbol(SymbolFlags.Variable, 'args' as qb.__String, qt.CheckFlags.RestParameter);
+    const syntheticArgsSymbol = new Symbol(SymbolFlags.Variable, 'args' as qu.__String, qt.CheckFlags.RestParameter);
     syntheticArgsSymbol.type = lastParamVariadicType ? createArrayType(getTypeFromTypeNode(lastParamVariadicType.type)) : anyArrayType;
     if (lastParamVariadicType) parameters.pop();
     parameters.push(syntheticArgsSymbol);
@@ -1532,7 +1532,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   function typePredicateKindsMatch(a: TypePredicate, b: TypePredicate): boolean {
     return a.kind === b.kind && a.parameterIndex === b.parameterIndex;
   }
-  function addTypeToIntersection(typeSet: qb.QMap<Type>, includes: qt.TypeFlags, type: Type) {
+  function addTypeToIntersection(typeSet: qu.QMap<Type>, includes: qt.TypeFlags, type: Type) {
     const flags = type.flags;
     if (flags & qt.TypeFlags.Intersection) return addTypesToIntersection(typeSet, includes, (<IntersectionType>type).types);
     if (isEmptyAnonymousObjectType(type)) {
@@ -1551,7 +1551,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     }
     return includes;
   }
-  function addTypesToIntersection(typeSet: qb.QMap<Type>, includes: qt.TypeFlags, types: readonly Type[]) {
+  function addTypesToIntersection(typeSet: qu.QMap<Type>, includes: qt.TypeFlags, types: readonly Type[]) {
     for (const type of types) {
       includes = addTypeToIntersection(typeSet, includes, getRegularTypeOfLiteralType(type));
     }
@@ -1713,7 +1713,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     node: Expression | undefined,
     source: Type,
     target: Type,
-    relation: qb.QMap<RelationComparisonResult>,
+    relation: qu.QMap<RelationComparisonResult>,
     headMessage: qd.Message | undefined,
     containingMessageChain: (() => qd.MessageChain | undefined) | undefined,
     errorOutputContainer: { errors?: qd.Diagnostic[]; skipLogging?: boolean } | undefined
@@ -1747,7 +1747,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     node: Expression,
     source: Type,
     target: Type,
-    relation: qb.QMap<RelationComparisonResult>,
+    relation: qu.QMap<RelationComparisonResult>,
     headMessage: qd.Message | undefined,
     containingMessageChain: (() => qd.MessageChain | undefined) | undefined,
     errorOutputContainer: { errors?: qd.Diagnostic[]; skipLogging?: boolean } | undefined
@@ -1777,7 +1777,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     node: ArrowFunction,
     source: Type,
     target: Type,
-    relation: qb.QMap<RelationComparisonResult>,
+    relation: qu.QMap<RelationComparisonResult>,
     containingMessageChain: (() => qd.MessageChain | undefined) | undefined,
     errorOutputContainer: { errors?: qd.Diagnostic[]; skipLogging?: boolean } | undefined
   ): boolean {
@@ -1801,7 +1801,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         }
         if (
           (getFunctionFlags(node) & FunctionFlags.Async) === 0 &&
-          !getTypeOfPropertyOfType(sourceReturn, 'then' as qb.__String) &&
+          !getTypeOfPropertyOfType(sourceReturn, 'then' as qu.__String) &&
           check.typeRelatedTo(createPromiseType(sourceReturn), targetReturn, relation, undefined)
         ) {
           addRelatedInfo(resultObj.errors[resultObj.errors.length - 1], createDiagnosticForNode(node, qd.msgs.Did_you_mean_to_mark_this_function_as_async));
@@ -1821,7 +1821,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     iterator: ElaborationIterator,
     source: Type,
     target: Type,
-    relation: qb.QMap<RelationComparisonResult>,
+    relation: qu.QMap<RelationComparisonResult>,
     containingMessageChain: (() => qd.MessageChain | undefined) | undefined,
     errorOutputContainer: { errors?: qd.Diagnostic[]; skipLogging?: boolean } | undefined
   ) {
@@ -1897,7 +1897,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     node: JsxAttributes,
     source: Type,
     target: Type,
-    relation: qb.QMap<RelationComparisonResult>,
+    relation: qu.QMap<RelationComparisonResult>,
     containingMessageChain: (() => qd.MessageChain | undefined) | undefined,
     errorOutputContainer: { errors?: qd.Diagnostic[]; skipLogging?: boolean } | undefined
   ) {
@@ -1979,7 +1979,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     const len = length(node.elements);
     if (!len) return;
     for (let i = 0; i < len; i++) {
-      if (isTupleLikeType(target) && !getPropertyOfType(target, ('' + i) as qb.__String)) continue;
+      if (isTupleLikeType(target) && !getPropertyOfType(target, ('' + i) as qu.__String)) continue;
       const elem = node.elements[i];
       if (is.kind(qc.OmittedExpression, elem)) continue;
       const nameType = getLiteralType(i);
@@ -1990,7 +1990,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     node: ArrayLiteralExpression,
     source: Type,
     target: Type,
-    relation: qb.QMap<RelationComparisonResult>,
+    relation: qu.QMap<RelationComparisonResult>,
     containingMessageChain: (() => qd.MessageChain | undefined) | undefined,
     errorOutputContainer: { errors?: qd.Diagnostic[]; skipLogging?: boolean } | undefined
   ) {
@@ -2037,7 +2037,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     node: ObjectLiteralExpression,
     source: Type,
     target: Type,
-    relation: qb.QMap<RelationComparisonResult>,
+    relation: qu.QMap<RelationComparisonResult>,
     containingMessageChain: (() => qd.MessageChain | undefined) | undefined,
     errorOutputContainer: { errors?: qd.Diagnostic[]; skipLogging?: boolean } | undefined
   ) {
@@ -2189,21 +2189,21 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   }
   function discriminateTypeByDiscriminableItems(
     target: UnionType,
-    discriminators: [() => Type, qb.__String][],
+    discriminators: [() => Type, qu.__String][],
     related: (source: Type, target: Type) => boolean | Ternary,
     defaultValue?: undefined,
     skipPartial?: boolean
   ): Type | undefined;
   function discriminateTypeByDiscriminableItems(
     target: UnionType,
-    discriminators: [() => Type, qb.__String][],
+    discriminators: [() => Type, qu.__String][],
     related: (source: Type, target: Type) => boolean | Ternary,
     defaultValue: Type,
     skipPartial?: boolean
   ): Type;
   function discriminateTypeByDiscriminableItems(
     target: UnionType,
-    discriminators: [() => Type, qb.__String][],
+    discriminators: [() => Type, qu.__String][],
     related: (source: Type, target: Type) => boolean | Ternary,
     defaultValue?: Type,
     skipPartial?: boolean
@@ -2565,7 +2565,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   }
   function inferTypes(inferences: InferenceInfo[], originalSource: Type, originalTarget: Type, priority: InferencePriority = 0, contravariant = false) {
     let symbolOrTypeStack: (Symbol | Type)[];
-    let visited: qb.QMap<number>;
+    let visited: qu.QMap<number>;
     let bivariant = false;
     let propagationType: Type;
     let inferencePriority = InferencePriority.MaxValue;
@@ -2734,7 +2734,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         inferencePriority = Math.min(inferencePriority, status);
         return;
       }
-      (visited || (visited = new qb.QMap<number>())).set(key, InferencePriority.Circularity);
+      (visited || (visited = new qu.QMap<number>())).set(key, InferencePriority.Circularity);
       const saveInferencePriority = inferencePriority;
       inferencePriority = InferencePriority.MaxValue;
       action(source, target);
@@ -3180,7 +3180,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       contextualType,
       map(
         filter(node.properties, (p) => !!p.symbol && p.kind === Syntax.PropertyAssignment && isPossiblyDiscriminantValue(p.initer) && isDiscriminantProperty(contextualType, p.symbol.escName)),
-        (prop) => [() => check.expression((prop as PropertyAssignment).initer), prop.symbol.escName] as [() => Type, qb.__String]
+        (prop) => [() => check.expression((prop as PropertyAssignment).initer), prop.symbol.escName] as [() => Type, qu.__String]
       ),
       isTypeAssignableTo,
       contextualType
@@ -3194,7 +3194,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
           node.properties,
           (p) => !!p.symbol && p.kind === Syntax.JsxAttribute && isDiscriminantProperty(contextualType, p.symbol.escName) && (!p.initer || isPossiblyDiscriminantValue(p.initer))
         ),
-        (prop) => [!(prop as JsxAttribute).initer ? () => trueType : () => check.expression((prop as JsxAttribute).initer!), prop.symbol.escName] as [() => Type, qb.__String]
+        (prop) => [!(prop as JsxAttribute).initer ? () => trueType : () => check.expression((prop as JsxAttribute).initer!), prop.symbol.escName] as [() => Type, qu.__String]
       ),
       isTypeAssignableTo,
       contextualType
@@ -3213,7 +3213,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         : qd.msgs.Cannot_invoke_an_object_which_is_possibly_null
     );
   }
-  function lookupSymbolForPrivateIdentifierDeclaration(propName: qb.__String, location: Node): Symbol | undefined {
+  function lookupSymbolForPrivateIdentifierDeclaration(propName: qu.__String, location: Node): Symbol | undefined {
     for (let containingClass = get.containingClass(location); !!containingClass; containingClass = get.containingClass(containingClass)) {
       const { symbol } = containingClass;
       const name = getSymbolNameForPrivateIdentifier(symbol, propName);
@@ -3259,7 +3259,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     if (relatedInfo) addRelatedInfo(resultDiagnostic, relatedInfo);
     diagnostics.add(resultDiagnostic);
   }
-  function typeHasStaticProperty(propName: qb.__String, containingType: Type): boolean {
+  function typeHasStaticProperty(propName: qu.__String, containingType: Type): boolean {
     const prop = containingType.symbol && getPropertyOfType(getTypeOfSymbol(containingType.symbol), propName);
     return prop !== undefined && prop.valueDeclaration && has.syntacticModifier(prop.valueDeclaration, ModifierFlags.Static);
   }
@@ -3487,9 +3487,9 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         inferred.exports = inferred.exports || new SymbolTable();
         inferred.members = inferred.members || new SymbolTable();
         inferred.flags |= source.flags & qt.SymbolFlags.Class;
-        if (qb.hasEntries(source.exports)) inferred.exports.merge(source.exports);
-        if (qb.hasEntries(source.members)) inferred.members.merge(source.members);
-        (links.inferredClassSymbol || (links.inferredClassSymbol = new qb.QMap<TransientSymbol>())).set('' + inferred.getId(), inferred);
+        if (qu.hasEntries(source.exports)) inferred.exports.merge(source.exports);
+        if (qu.hasEntries(source.members)) inferred.members.merge(source.members);
+        (links.inferredClassSymbol || (links.inferredClassSymbol = new qu.QMap<TransientSymbol>())).set('' + inferred.getId(), inferred);
         return inferred;
       }
       return links.inferredClassSymbol.get('' + target.getId());
@@ -3748,7 +3748,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     const message = isTypeDeclaration(declaration) ? qd.msgs._0_is_declared_but_never_used : qd.msgs._0_is_declared_but_its_value_is_never_read;
     addDiagnostic(declaration, UnusedKind.Local, createDiagnosticForNode(node, message, name));
   }
-  function addToGroup<K, V>(map: qb.QMap<string, [K, V[]]>, key: K, value: V, getKey: (key: K) => number | string): void {
+  function addToGroup<K, V>(map: qu.QMap<string, [K, V[]]>, key: K, value: V, getKey: (key: K) => number | string): void {
     const keyString = String(getKey(key));
     const group = map.get(keyString);
     if (group) group[1].push(value);
@@ -3981,7 +3981,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
           if (isConstantMemberAccess(ex)) {
             const type = getTypeOfExpression(ex.expression);
             if (type.symbol && type.symbol.flags & qt.SymbolFlags.Enum) {
-              let name: qb.__String;
+              let name: qu.__String;
               if (ex.kind === Syntax.PropertyAccessExpression) name = ex.name.escapedText;
               else {
                 name = qy.get.escUnderscores(cast(ex.argumentExpression, isLiteralExpression).text);
@@ -3993,7 +3993,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       }
       return;
     }
-    function evaluateEnumMember(expr: Expression, enumSymbol: Symbol, name: qb.__String) {
+    function evaluateEnumMember(expr: Expression, enumSymbol: Symbol, name: qu.__String) {
       const memberSymbol = enumSymbol.exports!.get(name);
       if (memberSymbol) {
         const declaration = memberSymbol.valueDeclaration;
@@ -4087,12 +4087,12 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     for (const file of host.getSourceFiles()) {
       bindSourceFile(file, compilerOptions);
     }
-    amalgamatedDuplicates = new qb.QMap();
+    amalgamatedDuplicates = new qu.QMap();
     let augmentations: (readonly (StringLiteral | Identifier)[])[] | undefined;
     for (const file of host.getSourceFiles()) {
       if (file.redirectInfo) continue;
       if (!is.externalOrCommonJsModule(file)) {
-        const fileGlobalThisSymbol = file.locals!.get('globalThis' as qb.__String);
+        const fileGlobalThisSymbol = file.locals!.get('globalThis' as qu.__String);
         if (fileGlobalThisSymbol) {
           for (const declaration of fileGlobalThisSymbol.declarations) {
             diagnostics.add(createDiagnosticForNode(declaration, qd.msgs.Declaration_name_conflicts_with_built_in_global_identifier_0, 'globalThis'));
@@ -4120,24 +4120,24 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     }
     globals.add(builtinGlobals, qd.msgs.Declaration_name_conflicts_with_built_in_global_identifier_0);
     s.getLinks(undefinedSymbol).type = undefinedWideningType;
-    s.getLinks(argumentsSymbol).type = getGlobalType('IArguments' as qb.__String, 0, true);
+    s.getLinks(argumentsSymbol).type = getGlobalType('IArguments' as qu.__String, 0, true);
     s.getLinks(unknownSymbol).type = errorType;
     s.getLinks(globalThisSymbol).type = createObjectType(ObjectFlags.Anonymous, globalThisSymbol);
-    globalArrayType = getGlobalType('Array' as qb.__String, 1, true);
-    globalObjectType = getGlobalType('Object' as qb.__String, 0, true);
-    globalFunctionType = getGlobalType('Function' as qb.__String, 0, true);
-    globalCallableFunctionType = (strictBindCallApply && getGlobalType('CallableFunction' as qb.__String, 0, true)) || globalFunctionType;
-    globalNewableFunctionType = (strictBindCallApply && getGlobalType('NewableFunction' as qb.__String, 0, true)) || globalFunctionType;
-    globalStringType = getGlobalType('String' as qb.__String, 0, true);
-    globalNumberType = getGlobalType('Number' as qb.__String, 0, true);
-    globalBooleanType = getGlobalType('Boolean' as qb.__String, 0, true);
-    globalRegExpType = getGlobalType('RegExp' as qb.__String, 0, true);
+    globalArrayType = getGlobalType('Array' as qu.__String, 1, true);
+    globalObjectType = getGlobalType('Object' as qu.__String, 0, true);
+    globalFunctionType = getGlobalType('Function' as qu.__String, 0, true);
+    globalCallableFunctionType = (strictBindCallApply && getGlobalType('CallableFunction' as qu.__String, 0, true)) || globalFunctionType;
+    globalNewableFunctionType = (strictBindCallApply && getGlobalType('NewableFunction' as qu.__String, 0, true)) || globalFunctionType;
+    globalStringType = getGlobalType('String' as qu.__String, 0, true);
+    globalNumberType = getGlobalType('Number' as qu.__String, 0, true);
+    globalBooleanType = getGlobalType('Boolean' as qu.__String, 0, true);
+    globalRegExpType = getGlobalType('RegExp' as qu.__String, 0, true);
     anyArrayType = createArrayType(anyType);
     autoArrayType = createArrayType(autoType);
     if (autoArrayType === emptyObjectType) autoArrayType = createAnonymousType(undefined, emptySymbols, empty, empty, undefined, undefined);
-    globalReadonlyArrayType = <GenericType>getGlobalTypeOrUndefined('ReadonlyArray' as qb.__String, 1) || globalArrayType;
+    globalReadonlyArrayType = <GenericType>getGlobalTypeOrUndefined('ReadonlyArray' as qu.__String, 1) || globalArrayType;
     anyReadonlyArrayType = globalReadonlyArrayType ? createTypeFromGenericGlobalType(globalReadonlyArrayType, [anyType]) : anyArrayType;
-    globalThisType = <GenericType>getGlobalTypeOrUndefined('ThisType' as qb.__String, 1);
+    globalThisType = <GenericType>getGlobalTypeOrUndefined('ThisType' as qu.__String, 1);
     if (augmentations) {
       for (const list of augmentations) {
         for (const augmentation of list) {
@@ -4211,7 +4211,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
           case Syntax.EnumDeclaration:
             return nodeHasAnyModifiersExcept(node, Syntax.ConstKeyword);
           default:
-            qb.fail();
+            qu.fail();
             return false;
         }
     }
@@ -4328,7 +4328,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         if (sourcePropertiesFiltered) {
           return discriminateTypeByDiscriminableItems(
             <UnionType>target,
-            map(sourcePropertiesFiltered, (p) => [() => getTypeOfSymbol(p), p.escName] as [() => Type, qb.__String]),
+            map(sourcePropertiesFiltered, (p) => [() => getTypeOfSymbol(p), p.escName] as [() => Type, qu.__String]),
             isRelatedTo,
             undefined,
             skipPartial
@@ -4340,15 +4340,15 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   }
 }
 namespace JsxNames {
-  export const JSX = 'JSX' as qb.__String;
-  export const IntrinsicElements = 'IntrinsicElements' as qb.__String;
-  export const ElementClass = 'ElementClass' as qb.__String;
-  export const ElementAttributesPropertyNameContainer = 'ElementAttributesProperty' as qb.__String;
-  export const ElementChildrenAttributeNameContainer = 'ElementChildrenAttribute' as qb.__String;
-  export const Element = 'Element' as qb.__String;
-  export const IntrinsicAttributes = 'IntrinsicAttributes' as qb.__String;
-  export const IntrinsicClassAttributes = 'IntrinsicClassAttributes' as qb.__String;
-  export const LibraryManagedAttributes = 'LibraryManagedAttributes' as qb.__String;
+  export const JSX = 'JSX' as qu.__String;
+  export const IntrinsicElements = 'IntrinsicElements' as qu.__String;
+  export const ElementClass = 'ElementClass' as qu.__String;
+  export const ElementAttributesPropertyNameContainer = 'ElementAttributesProperty' as qu.__String;
+  export const ElementChildrenAttributeNameContainer = 'ElementChildrenAttribute' as qu.__String;
+  export const Element = 'Element' as qu.__String;
+  export const IntrinsicAttributes = 'IntrinsicAttributes' as qu.__String;
+  export const IntrinsicClassAttributes = 'IntrinsicClassAttributes' as qu.__String;
+  export const LibraryManagedAttributes = 'LibraryManagedAttributes' as qu.__String;
 }
 function getIterationTypesKeyFromIterationTypeKind(typeKind: IterationTypeKind) {
   switch (typeKind) {

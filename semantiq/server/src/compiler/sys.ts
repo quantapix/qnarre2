@@ -1,8 +1,8 @@
-import * as qb from './base';
-import * as qt from './types';
-import { Node } from './types';
-import * as syntax from './syntax';
+import * as qu from './util';
+import { Node } from './type';
+import * as qt from './type';
 import { Syntax } from './syntax';
+import * as qy from './syntax';
 declare function setTimeout(handler: (...args: any[]) => void, timeout: number): any;
 declare function clearTimeout(handle: any): void;
 export function generateDjb2Hash(data: string): string {

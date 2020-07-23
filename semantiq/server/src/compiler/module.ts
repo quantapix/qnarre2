@@ -1,8 +1,8 @@
-import * as qb from './base';
-import * as qt from './types';
-import { Node } from './types';
-import * as syntax from './syntax';
+import { Node } from './type';
+import * as qt from './type';
+import * as qu from './util';
 import { Syntax } from './syntax';
+import * as qy from './syntax';
 const enum RelativePreference {
   Relative,
   NonRelative,
@@ -116,7 +116,7 @@ function getLocalModuleSpecifier(moduleFileName: string, { getCanonicalFileName,
   const fromPaths = paths && tryGetModuleNameFromPaths(removeFileExtension(relativeToBaseUrl), importRelativeToBaseUrl, paths);
   const nonRelative = fromPaths === undefined ? importRelativeToBaseUrl : fromPaths;
   if (relativePreference === RelativePreference.NonRelative) return nonRelative;
-  if (relativePreference !== RelativePreference.Auto) Debug.assertNever(relativePreference);
+  if (relativePreference !== RelativePreference.Auto) qu.assertNever(relativePreference);
   return isPathRelativeToParent(nonRelative) || countPathComponents(relativePath) < countPathComponents(nonRelative) ? relativePath : nonRelative;
 }
 export function countPathComponents(path: string): number {
@@ -406,11 +406,11 @@ function removeExtensionAndIndexPostFix(fileName: string, ending: Ending, option
     case Ending.JsExtension:
       return noExtension + getJSExtensionForFile(fileName, options);
     default:
-      return Debug.assertNever(ending);
+      return qu.assertNever(ending);
   }
 }
 function getJSExtensionForFile(fileName: string, options: CompilerOptions): Extension {
-  const ext = syntax.get.extensionFromPath(fileName);
+  const ext = qy.get.extensionFromPath(fileName);
   switch (ext) {
     case Extension.Ts:
     case Extension.Dts:
@@ -424,7 +424,7 @@ function getJSExtensionForFile(fileName: string, options: CompilerOptions): Exte
     case Extension.TsBuildInfo:
       return fail(`Extension ${Extension.TsBuildInfo} is unsupported:: FileName:: ${fileName}`);
     default:
-      return Debug.assertNever(ext);
+      return qu.assertNever(ext);
   }
 }
 function getRelativePathIfInDirectory(path: string, directoryPath: string, getCanonicalFileName: GetCanonicalFileName): string | undefined {
@@ -1349,7 +1349,7 @@ function loadNodeModuleFromDirectoryWorker(
         packageFile = readPackageJsonTSConfigField(jsonContent, candidate, state);
         break;
       default:
-        return Debug.assertNever(extensions);
+        return qu.assertNever(extensions);
     }
   }
   const loader: ResolutionKindSpecificLoader = (extensions, candidate, onlyRecordFailures, state) => {

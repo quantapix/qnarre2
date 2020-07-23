@@ -1,7 +1,7 @@
-import * as qb from './base';
 import { QContext } from './context';
-import { NodeFlags, TransformFlags } from './types';
-import * as qt from './types';
+import { NodeFlags, TransformFlags } from './type';
+import * as qt from './type';
+import * as qu from './util';
 import { Modifier, ModifierFlags, Syntax } from './syntax';
 import * as qy from './syntax';
 export interface SourceMapGeneratorOptions {
@@ -91,11 +91,11 @@ export function createSourceMapGenerator(host: EmitHost, file: string, sourceRoo
     );
   }
   function addMapping(generatedLine: number, generatedCharacter: number, sourceIndex?: number, sourceLine?: number, sourceCharacter?: number, nameIndex?: number) {
-    qb.assert(generatedLine >= pendingGeneratedLine, 'generatedLine cannot backtrack');
-    qb.assert(generatedCharacter >= 0, 'generatedCharacter cannot be negative');
-    qb.assert(sourceIndex === undefined || sourceIndex >= 0, 'sourceIndex cannot be negative');
-    qb.assert(sourceLine === undefined || sourceLine >= 0, 'sourceLine cannot be negative');
-    qb.assert(sourceCharacter === undefined || sourceCharacter >= 0, 'sourceCharacter cannot be negative');
+    qu.assert(generatedLine >= pendingGeneratedLine, 'generatedLine cannot backtrack');
+    qu.assert(generatedCharacter >= 0, 'generatedCharacter cannot be negative');
+    qu.assert(sourceIndex === undefined || sourceIndex >= 0, 'sourceIndex cannot be negative');
+    qu.assert(sourceLine === undefined || sourceLine >= 0, 'sourceLine cannot be negative');
+    qu.assert(sourceCharacter === undefined || sourceCharacter >= 0, 'sourceCharacter cannot be negative');
     enter();
     if (isNewGeneratedPosition(generatedLine, generatedCharacter) || isBacktrackingSourcePosition(sourceIndex, sourceLine, sourceCharacter)) {
       commitPendingMapping();
@@ -118,8 +118,8 @@ export function createSourceMapGenerator(host: EmitHost, file: string, sourceRoo
     exit();
   }
   function appendSourceMap(generatedLine: number, generatedCharacter: number, map: RawSourceMap, sourceMapPath: string, start?: LineAndChar, end?: LineAndChar) {
-    qb.assert(generatedLine >= pendingGeneratedLine, 'generatedLine cannot backtrack');
-    qb.assert(generatedCharacter >= 0, 'generatedCharacter cannot be negative');
+    qu.assert(generatedLine >= pendingGeneratedLine, 'generatedLine cannot backtrack');
+    qu.assert(generatedCharacter >= 0, 'generatedCharacter cannot be negative');
     enter();
     const sourceIndexToNewSourceIndexMap: number[] = [];
     let nameIndexToNewNameIndexMap: number[] | undefined;
@@ -479,7 +479,7 @@ function sameMappedPosition(left: MappedPosition, right: MappedPosition) {
   return left.generatedPosition === right.generatedPosition && left.sourceIndex === right.sourceIndex && left.sourcePosition === right.sourcePosition;
 }
 function compareSourcePositions(left: SourceMappedPosition, right: SourceMappedPosition) {
-  qb.assert(left.sourceIndex === right.sourceIndex);
+  qu.assert(left.sourceIndex === right.sourceIndex);
   return compareNumbers(left.sourcePosition, right.sourcePosition);
 }
 function compareGeneratedPositions(left: MappedPosition, right: MappedPosition) {

@@ -1,9 +1,9 @@
-import * as qb from '../base';
-import * as qc from '../core3';
-import * as qd from '../diags';
+import * as qc from '../core';
+import * as qd from '../diagnostic';
 import * as qg from '../debug';
-import { ExpandingFlags, Node, NodeFlags, ObjectFlags, SymbolFlags, TypeFlags, VarianceFlags } from './types';
-import * as qt from './types';
+import { ExpandingFlags, Node, NodeFlags, ObjectFlags, SymbolFlags, TypeFlags, VarianceFlags } from './type';
+import * as qt from './type';
+import * as qu from '../util';
 import { ModifierFlags, Syntax } from '../syntax';
 import * as qy from '../syntax';
 import { Symbol } from './symbol';
@@ -121,10 +121,10 @@ export function newIs(qx: qt.Tctx) {
         return ancestorChangingReferenceScope === undefined;
       }
     }
-    primitiveTypeName(name: qb.__String) {
+    primitiveTypeName(name: qu.__String) {
       return name === 'any' || name === 'string' || name === 'number' || name === 'boolean' || name === 'never' || name === 'unknown';
     }
-    es2015OrLaterConstructorName(n: qb.__String) {
+    es2015OrLaterConstructorName(n: qu.__String) {
       switch (n) {
         case 'Promise':
         case 'Symbol':
@@ -477,7 +477,7 @@ export function newIs(qx: qt.Tctx) {
       const expr = this.kind(qc.ComputedPropertyName, node) ? node.expression : node.argumentExpression;
       return this.entityNameExpression(expr) && isTypeUsableAsPropertyName(this.kind(qc.ComputedPropertyName, node) ? check.computedPropertyName(node) : check.expressionCached(expr));
     }
-    lateBoundName(name: qb.__String): boolean {
+    lateBoundName(name: qu.__String): boolean {
       return (name as string).charCodeAt(0) === Codes._ && (name as string).charCodeAt(1) === Codes._ && (name as string).charCodeAt(2) === Codes.at;
     }
     nonBindableDynamicName(node: DeclarationName) {
@@ -843,7 +843,7 @@ export function newIs(qx: qt.Tctx) {
       enumRelation.set(id, RelationComparisonResult.Succeeded);
       return true;
     }
-    simpleTypeRelatedTo(source: Type, target: Type, relation: qb.QMap<RelationComparisonResult>, errorReporter?: ErrorReporter) {
+    simpleTypeRelatedTo(source: Type, target: Type, relation: qu.QMap<RelationComparisonResult>, errorReporter?: ErrorReporter) {
       const s = source.flags;
       const t = target.flags;
       if (t & qt.TypeFlags.AnyOrUnknown || s & qt.TypeFlags.Never || source === wildcardType) return true;
@@ -890,7 +890,7 @@ export function newIs(qx: qt.Tctx) {
       }
       return false;
     }
-    typeRelatedTo(source: Type, target: Type, relation: qb.QMap<RelationComparisonResult>) {
+    typeRelatedTo(source: Type, target: Type, relation: qu.QMap<RelationComparisonResult>) {
       if (isFreshLiteralType(source)) source = (<FreshableType>source).regularType;
       if (isFreshLiteralType(target)) target = (<FreshableType>target).regularType;
       if (source === target) return true;
@@ -1005,7 +1005,7 @@ export function newIs(qx: qt.Tctx) {
       return elementType === undefinedWideningType || elementType === implicitNeverType;
     }
     tupleLikeType(type: Type): boolean {
-      return isTupleType(type) || !!getPropertyOfType(type, '0' as qb.__String);
+      return isTupleType(type) || !!getPropertyOfType(type, '0' as qu.__String);
     }
     arrayOrTupleLikeType(type: Type): boolean {
       return isArrayLikeType(type) || isTupleLikeType(type);
@@ -1113,7 +1113,7 @@ export function newIs(qx: qt.Tctx) {
       }
       return false;
     }
-    discriminantProperty(type: Type | undefined, name: qb.__String) {
+    discriminantProperty(type: Type | undefined, name: qu.__String) {
       if (type && type.flags & qt.TypeFlags.Union) {
         const prop = getUnionOrIntersectionProperty(<UnionType>type, name);
         if (prop && getCheckFlags(prop) & qt.CheckFlags.SyntheticProperty) {
@@ -1131,7 +1131,7 @@ export function newIs(qx: qt.Tctx) {
     }
     functionObjectType(type: ObjectType): boolean {
       const resolved = resolveStructuredTypeMembers(type);
-      return !!(resolved.callSignatures.length || resolved.constructSignatures.length || (resolved.members.get('bind' as qb.__String) && isTypeSubtypeOf(type, globalFunctionType)));
+      return !!(resolved.callSignatures.length || resolved.constructSignatures.length || (resolved.members.get('bind' as qu.__String) && isTypeSubtypeOf(type, globalFunctionType)));
     }
     destructuringAssignmentTarget(parent: Node) {
       return (
@@ -1378,7 +1378,7 @@ export function newIs(qx: qt.Tctx) {
     numericComputedName(name: ComputedPropertyName): boolean {
       return isTypeAssignableToKind(check.computedPropertyName(name), qt.TypeFlags.NumberLike);
     }
-    infinityOrNaNString(name: string | qb.__String): boolean {
+    infinityOrNaNString(name: string | qu.__String): boolean {
       return name === 'Infinity' || name === '-Infinity' || name === 'NaN';
     }
     validSpreadType(type: Type): boolean {
@@ -1392,13 +1392,13 @@ export function newIs(qx: qt.Tctx) {
         (type.flags & qt.TypeFlags.UnionOrIntersection && every((<UnionOrIntersectionType>type).types, isValidSpreadType))
       );
     }
-    unhyphenatedJsxName(name: string | qb.__String) {
+    unhyphenatedJsxName(name: string | qu.__String) {
       return !stringContains(name as string, '-');
     }
     jsxIntrinsicIdentifier(tagName: JsxTagNameExpression): boolean {
       return tagName.kind === Syntax.Identifier && qy.this.intrinsicJsxName(tagName.escapedText);
     }
-    knownProperty(targetType: Type, name: qb.__String, isComparingJsxAttributes: boolean): boolean {
+    knownProperty(targetType: Type, name: qu.__String, isComparingJsxAttributes: boolean): boolean {
       if (targetType.flags & qt.TypeFlags.Object) {
         const resolved = resolveStructuredTypeMembers(targetType as ObjectType);
         if (
@@ -1471,7 +1471,7 @@ export function newIs(qx: qt.Tctx) {
         if (superProperty && superProperty.valueDeclaration) return true;
       }
     }
-    validPropertyAccess(node: PropertyAccessExpression | QualifiedName | ImportTypeNode, propertyName: qb.__String): boolean {
+    validPropertyAccess(node: PropertyAccessExpression | QualifiedName | ImportTypeNode, propertyName: qu.__String): boolean {
       switch (node.kind) {
         case Syntax.PropertyAccessExpression:
           return isValidPropertyAccessWithType(node, node.expression.kind === Syntax.SuperKeyword, propertyName, getWidenedType(check.expression(node.expression)));
@@ -1484,7 +1484,7 @@ export function newIs(qx: qt.Tctx) {
     validPropertyAccessForCompletions(node: PropertyAccessExpression | ImportTypeNode | QualifiedName, type: Type, property: Symbol): boolean {
       return isValidPropertyAccessWithType(node, node.kind === Syntax.PropertyAccessExpression && node.expression.kind === Syntax.SuperKeyword, property.escName, type);
     }
-    validPropertyAccessWithType(node: PropertyAccessExpression | QualifiedName | ImportTypeNode, isSuper: boolean, propertyName: qb.__String, type: Type): boolean {
+    validPropertyAccessWithType(node: PropertyAccessExpression | QualifiedName | ImportTypeNode, isSuper: boolean, propertyName: qu.__String, type: Type): boolean {
       if (type === errorType || isTypeAny(type)) return true;
       const prop = getPropertyOfType(type, propertyName);
       if (prop) {
@@ -1568,7 +1568,7 @@ export function newIs(qx: qt.Tctx) {
       if (func) {
         if (qc.getDoc.classTag(node)) return true;
         const symbol = getSymbolOfNode(func);
-        return !!symbol && qb.hasEntries(symbol.members);
+        return !!symbol && qu.hasEntries(symbol.members);
       }
       return false;
     }
@@ -1579,11 +1579,11 @@ export function newIs(qx: qt.Tctx) {
       if (!this.kind(qc.Identifier, left) || left.escapedText !== 'Symbol') return false;
       const globalESSymbol = getGlobalESSymbolConstructorSymbol(false);
       if (!globalESSymbol) return false;
-      return globalESSymbol === resolveName(left, 'Symbol' as qb.__String, qt.SymbolFlags.Value, undefined, undefined, false);
+      return globalESSymbol === resolveName(left, 'Symbol' as qu.__String, qt.SymbolFlags.Value, undefined, undefined, false);
     }
     commonJsRequire(node: Node): boolean {
       if (!isRequireCall(node, true)) return false;
-      if (!this.kind(qc.Identifier, node.expression)) return qb.fail();
+      if (!this.kind(qc.Identifier, node.expression)) return qu.fail();
       const resolvedRequire = resolveName(node.expression, node.expression.escapedText, qt.SymbolFlags.Value, undefined, undefined, true)!;
       if (resolvedRequire === requireSymbol) return true;
       if (resolvedRequire.flags & qt.SymbolFlags.Alias) return false;
@@ -1634,9 +1634,9 @@ export function newIs(qx: qt.Tctx) {
       if (!this.kind(qc.CallExpression, d)) return false;
       if (!isBindableObjectDefinePropertyCall(d)) return false;
       const objectLitType = check.expressionCached(d.arguments[2]);
-      const valueType = getTypeOfPropertyOfType(objectLitType, 'value' as qb.__String);
+      const valueType = getTypeOfPropertyOfType(objectLitType, 'value' as qu.__String);
       if (valueType) {
-        const writableProp = getPropertyOfType(objectLitType, 'writable' as qb.__String);
+        const writableProp = getPropertyOfType(objectLitType, 'writable' as qu.__String);
         const writableType = writableProp && getTypeOfSymbol(writableProp);
         if (!writableType || writableType === falseType || writableType === regularFalseType) return true;
         if (writableProp && writableProp.valueDeclaration && this.kind(qc.PropertyAssignment, writableProp.valueDeclaration)) {
@@ -1646,7 +1646,7 @@ export function newIs(qx: qt.Tctx) {
         }
         return false;
       }
-      const setProp = getPropertyOfType(objectLitType, 'set' as qb.__String);
+      const setProp = getPropertyOfType(objectLitType, 'set' as qu.__String);
       return !setProp;
     }
     assignmentToReadonlyEntity(expr: Expression, symbol: Symbol, assignmentKind: AssignmentKind) {
@@ -1794,7 +1794,7 @@ export function newIs(qx: qt.Tctx) {
       return (qx.has.effectiveModifier(node, ModifierFlags.Private) || node.this.privateIdentifierPropertyDeclaration()) && !!(node.flags & NodeFlags.Ambient);
     }
     thenableType(type: Type): boolean {
-      const thenFunction = getTypeOfPropertyOfType(type, 'then' as qb.__String);
+      const thenFunction = getTypeOfPropertyOfType(type, 'then' as qu.__String);
       return !!thenFunction && getSignaturesOfType(getTypeWithFacts(thenFunction, TypeFacts.NEUndefinedOrNull), SignatureKind.Call).length > 0;
     }
     identifierThatStartsWithUnderscore(node: Node) {
@@ -1823,7 +1823,7 @@ export function newIs(qx: qt.Tctx) {
       return node.kind === Syntax.ImportClause || node.kind === Syntax.ImportSpecifier || node.kind === Syntax.NamespaceImport;
     }
     iteratorResult(type: Type, kind: IterationTypeKind.Yield | IterationTypeKind.Return) {
-      const doneType = getTypeOfPropertyOfType(type, 'done' as qb.__String) || falseType;
+      const doneType = getTypeOfPropertyOfType(type, 'done' as qu.__String) || falseType;
       return isTypeAssignableTo(kind === IterationTypeKind.Yield ? falseType : trueType, doneType);
     }
     yieldIteratorResult(type: Type) {
@@ -2159,7 +2159,7 @@ export function newHas(qx: qt.Tctx) {
       }
       return false;
     }
-    typeParameterByName(typeParameters: readonly TypeParameter[] | undefined, name: qb.__String) {
+    typeParameterByName(typeParameters: readonly TypeParameter[] | undefined, name: qu.__String) {
       return some(typeParameters, (tp) => tp.symbol.escName === name);
     }
     exportedMembers(moduleSymbol: Symbol) {
