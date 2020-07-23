@@ -898,6 +898,13 @@ export interface ForStatement extends IterationStatement {
   condition?: Expression;
   incrementor?: Expression;
 }
+export interface Frame {
+  create: any;
+  each: any;
+  get: any;
+  has: any;
+  is: any;
+}
 export interface FreshableIntrinsicType extends IntrinsicType {
   freshType: IntrinsicType;
   regularType: IntrinsicType;

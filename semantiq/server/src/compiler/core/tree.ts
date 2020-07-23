@@ -1,11 +1,11 @@
 import { Nodes, Token } from './base';
 import * as qc from './base';
-import { is, get } from './context';
 import * as qg from '../debug';
 import { DocTag, Node, NodeFlags } from '../type';
 import * as qu from '../util';
 import { Modifier, Syntax } from '../syntax';
 import * as qy from '../syntax';
+import { qf } from './index';
 export * from './base';
 export type NodeType<S extends Syntax> = S extends keyof SynMap ? SynMap[S] : never;
 export class Nobj extends qc.Nobj {
@@ -315,12 +315,12 @@ export class Block extends qc.Statement implements qc.Block {
         case Syntax.TypeAliasDeclaration:
           return;
         default:
-          if (is.functionLike(n)) {
+          if (qf.is.functionLike(n)) {
             if (n.name && n.name.kind === Syntax.ComputedPropertyName) {
               traverse(n.name.expression);
               return;
             }
-          } else if (!is.partOfTypeNode(n)) qc.forEach.child(n, traverse);
+          } else if (!qf.is.partOfTypeNode(n)) qc.forEach.child(n, traverse);
       }
     }
     return traverse(this);
@@ -396,13 +396,13 @@ export class CallBinding extends Nobj {
     const callee = skipOuterExpressions(e, qc.OuterExpressionKinds.All);
     let thisArg: qc.Expression;
     let target: qc.LeftHandSideExpression;
-    if (is.superProperty(callee)) {
+    if (qf.is.superProperty(callee)) {
       thisArg = new ThisExpression();
       target = callee;
     } else if (callee.kind === Syntax.SuperKeyword) {
       thisArg = new ThisExpression();
       target = <PrimaryExpression>callee;
-    } else if (get.emitFlags(callee) & qc.EmitFlags.HelperName) {
+    } else if (qf.get.emitFlags(callee) & qc.EmitFlags.HelperName) {
       thisArg = VoidExpression.zero();
       target = parenthesize.forAccess(callee);
     } else {
@@ -461,7 +461,7 @@ export class CallExpression extends qc.LeftHandSideExpression implements qc.Call
     this.arguments = parenthesize.listElements(new Nodes(es));
   }
   update(e: qc.Expression, ts: readonly qc.TypeNode[] | undefined, es: readonly qc.Expression[]): CallExpression {
-    if (is.optionalChain(this)) return this.update(e, this.questionDotToken, ts, es);
+    if (qf.is.optionalChain(this)) return this.update(e, this.questionDotToken, ts, es);
     return this.expression !== e || this.typeArguments !== ts || this.arguments !== es ? new CallExpression(e, ts, es).updateFrom(this) : this;
   }
   static immediateFunctionExpression(ss: readonly qc.Statement[]): CallExpression;
@@ -622,7 +622,7 @@ export class CommaListExpression extends qc.Expression implements qc.CommaListEx
   constructor(es: readonly qc.Expression[]) {
     super(true);
     const flatten = (e: qc.Expression): qc.Expression | readonly qc.Expression[] => {
-      if (qu.isSynthesized(e) && !is.parseTreeNode(e) && !e.original && !e.emitNode && !e.id) {
+      if (qu.isSynthesized(e) && !qf.is.parseTreeNode(e) && !e.original && !e.emitNode && !e.id) {
         if (e.kind === Syntax.CommaListExpression) return (<CommaListExpression>e).elements;
         if (e.is(BinaryExpression) && e.operatorToken.kind === Syntax.CommaToken) return [e.left, e.right];
       }
@@ -1088,7 +1088,7 @@ export class ElementAccessExpression extends qc.MemberExpression implements qc.E
     this.argumentExpression = asExpression(i);
   }
   update(e: qc.Expression, a: qc.Expression): ElementAccessExpression {
-    if (is.optionalChain(this)) return this.update(e, a, this.questionDotToken);
+    if (qf.is.optionalChain(this)) return this.update(e, a, this.questionDotToken);
     return this.expression !== e || this.argumentExpression !== a ? new ElementAccessExpression(e, a).updateFrom(this) : this;
   }
 }
@@ -1488,13 +1488,13 @@ export class Identifier extends qc.TokenOrIdentifier implements qc.Identifier {
     return qc.idText(this);
   }
   isInternalName() {
-    return (get.emitFlags(this) & qc.EmitFlags.InternalName) !== 0;
+    return (qf.get.emitFlags(this) & qc.EmitFlags.InternalName) !== 0;
   }
   isLocalName() {
-    return (get.emitFlags(this) & qc.EmitFlags.LocalName) !== 0;
+    return (qf.get.emitFlags(this) & qc.EmitFlags.LocalName) !== 0;
   }
   isExportName() {
-    return (get.emitFlags(this) & qc.EmitFlags.ExportName) !== 0;
+    return (qf.get.emitFlags(this) & qc.EmitFlags.ExportName) !== 0;
   }
   update(ts?: Nodes<qc.TypeNode | TypeParameterDeclaration>) {
     return this.typeArguments !== ts ? new Identifier(this.text, ts).updateFrom(this) : this;
@@ -1530,7 +1530,7 @@ export class Identifier extends qc.TokenOrIdentifier implements qc.Identifier {
     return false;
   }
   isIdentifierANonContextualKeyword({ originalKeywordKind }: Identifier): boolean {
-    return !!originalKeywordKind && !syntax.is.contextualKeyword(originalKeywordKind);
+    return !!originalKeywordKind && !qy.is.contextualKeyword(originalKeywordKind);
   }
   isPushOrUnshiftIdentifier(node: Identifier) {
     return node.escapedText === 'push' || node.escapedText === 'unshift';
@@ -1542,7 +1542,7 @@ export class Identifier extends qc.TokenOrIdentifier implements qc.Identifier {
     return id.originalKeywordKind === Syntax.ThisKeyword;
   }
   isDeclarationNameOfEnumOrNamespace(node: Identifier) {
-    const parseNode = get.parseTreeOf(node);
+    const parseNode = qf.get.parseTreeOf(node);
     if (parseNode) {
       switch (parseNode.parent.kind) {
         case Syntax.EnumDeclaration:
@@ -1594,7 +1594,7 @@ export class Identifier extends qc.TokenOrIdentifier implements qc.Identifier {
   static getGeneratedNameForNode(o?: Node): Identifier;
   static getGeneratedNameForNode(o: Node | undefined, f: qc.GeneratedIdentifierFlags): Identifier;
   static getGeneratedNameForNode(o?: Node, f?: qc.GeneratedIdentifierFlags): Identifier {
-    const n = new Identifier(o && is.kind(Identifier, o) ? qc.idText(o) : '');
+    const n = new Identifier(o && qf.is.kind(Identifier, o) ? qc.idText(o) : '');
     n.autoGenerateFlags = qc.GeneratedIdentifierFlags.Node | f!;
     n.autoGenerateId = nextAutoGenerateId;
     n.original = o;
@@ -1614,7 +1614,7 @@ export class Identifier extends qc.TokenOrIdentifier implements qc.Identifier {
     const d2 = getNamespaceDeclarationNode(d);
     if (d2 && !isDefaultImport(d)) {
       const n = d2.name;
-      return is.generatedIdentifier(n) ? n : new Identifier(getSourceTextOfNodeFromSourceFile(sourceFile, n) || qc.idText(n));
+      return qf.is.generatedIdentifier(n) ? n : new Identifier(getSourceTextOfNodeFromSourceFile(sourceFile, n) || qc.idText(n));
     }
     if (d.kind === Syntax.ImportDeclaration && d.importClause) return getGeneratedNameForNode(d);
     if (d.kind === Syntax.ExportDeclaration && d.moduleSpecifier) return getGeneratedNameForNode(d);
@@ -2104,11 +2104,11 @@ export class JsxOpeningFragment extends qc.Expression implements qc.JsxOpeningFr
   createReactNamespace(reactNamespace: string, parent: qc.JsxOpeningLikeElement | JsxOpeningFragment) {
     const r = new Identifier(reactNamespace || 'React');
     r.flags &= ~NodeFlags.Synthesized;
-    r.parent = get.parseTreeOf(parent);
+    r.parent = qf.get.parseTreeOf(parent);
     return r;
   }
   createJsxFactoryExpressionFromEntityName(jsxFactory: qc.EntityName, parent: qc.JsxOpeningLikeElement | JsxOpeningFragment): qc.Expression {
-    if (is.kind(QualifiedName, jsxFactory)) {
+    if (qf.is.kind(QualifiedName, jsxFactory)) {
       const left = createJsxFactoryExpressionFromEntityName(jsxFactory.left, parent);
       const right = new Identifier(qc.idText(jsxFactory.right));
       right.escapedText = jsxFactory.right.escapedText;
@@ -2479,7 +2479,7 @@ export class NonNullExpression extends qc.LeftHandSideExpression implements qc.N
     this.expression = parenthesize.forAccess(e);
   }
   update(e: qc.Expression) {
-    if (is.nonNullChain(this)) return this.update(e);
+    if (qf.is.nonNullChain(this)) return this.update(e);
     return this.expression !== e ? new NonNullExpression(e).updateFrom(this) : this;
   }
 }
@@ -2787,8 +2787,8 @@ export class PropertyAccessExpression extends qc.MemberExpression implements qc.
     this.setEmitFlags(qc.EmitFlags.NoIndentation);
   }
   update(e: qc.Expression, n: Identifier | PrivateIdentifier): PropertyAccessExpression {
-    if (is.propertyAccessChain(this)) return this.update(e, this.questionDotToken, cast(n, isIdentifier));
-    return this.expression !== e || this.name !== n ? new PropertyAccessExpression(e, n).setEmitFlags(get.emitFlags(this)).updateFrom(this) : this;
+    if (qf.is.propertyAccessChain(this)) return this.update(e, this.questionDotToken, cast(n, isIdentifier));
+    return this.expression !== e || this.name !== n ? new PropertyAccessExpression(e, n).setEmitFlags(qf.get.emitFlags(this)).updateFrom(this) : this;
   }
   _declarationBrand: any;
 }
@@ -2803,7 +2803,7 @@ export class PropertyAccessChain extends PropertyAccessExpression implements qc.
   }
   update(e: qc.Expression, n: Identifier, q?: qc.QuestionDotToken) {
     qu.assert(!!(this.flags & NodeFlags.OptionalChain));
-    return this.expression !== e || this.questionDotToken !== q || this.name !== n ? new PropertyAccessChain(e, q, n).setEmitFlags(get.emitFlags(this)).updateFrom(this) : this;
+    return this.expression !== e || this.questionDotToken !== q || this.name !== n ? new PropertyAccessChain(e, q, n).setEmitFlags(qf.get.emitFlags(this)).updateFrom(this) : this;
   }
   _optionalChainBrand: any;
 }
@@ -3025,7 +3025,7 @@ export class StringLiteral extends qc.LiteralExpression implements qc.StringLite
     return k === Syntax.StringLiteral || k === Syntax.JsxExpression;
   }
   static orNumberLiteralExpression(e: qc.Expression) {
-    return this.orNumericLiteralLike(e) || (is.kind(PrefixUnaryExpression, e) && e.operator === Syntax.MinusToken && e.operand.kind === Syntax.NumericLiteral);
+    return this.orNumericLiteralLike(e) || (qf.is.kind(PrefixUnaryExpression, e) && e.operator === Syntax.MinusToken && e.operand.kind === Syntax.NumericLiteral);
   }
   static fromNode(n: Exclude<qc.PropertyNameLiteral, PrivateIdentifier>): StringLiteral {
     const r = new StringLiteral(getTextOfIdentifierOrLiteral(n));
@@ -3836,7 +3836,7 @@ export namespace parenthesize {
   function getLiteralKindOfBinaryPlusOperand(e: qc.Expression): Syntax {
     e = skipPartiallyEmittedExpressions(e);
     if (qy.is.literal(e.kind)) return e.kind;
-    if (is.kind(BinaryExpression, e) && e.operatorToken.kind === Syntax.PlusToken) {
+    if (qf.is.kind(BinaryExpression, e) && e.operatorToken.kind === Syntax.PlusToken) {
       const e2 = e as BinaryPlusExpression;
       if (e2.cachedLiteralKind) return e2.cachedLiteralKind;
       const leftKind = getLiteralKindOfBinaryPlusOperand(e.left);
@@ -3885,7 +3885,7 @@ export namespace parenthesize {
             //  (a**b)**x  -> (a**b)**x
             return binaryOperatorAssociativity === Associativity.Right;
           } else {
-            if (is.kind(emittedOperand, BinaryExpression) && emittedOperand.operatorToken.kind === binaryOperator) {
+            if (qf.is.kind(emittedOperand, BinaryExpression) && emittedOperand.operatorToken.kind === binaryOperator) {
               // No need to parenthesize the right operand when the binary operator and
               // operand are the same and one of the following:
               //  x*(a*b)     => x*a*b
@@ -3933,14 +3933,14 @@ export namespace parenthesize {
   }
   export function forAccess(e: qc.Expression): qc.LeftHandSideExpression {
     const e2 = skipPartiallyEmittedExpressions(e);
-    if (is.leftHandSideExpression(e2) && (e2.kind !== Syntax.NewExpression || (<NewExpression>e2).arguments)) return <qc.LeftHandSideExpression>e;
+    if (qf.is.leftHandSideExpression(e2) && (e2.kind !== Syntax.NewExpression || (<NewExpression>e2).arguments)) return <qc.LeftHandSideExpression>e;
     return new ParenthesizedExpression(e).setRange(e);
   }
   export function postfixOperand(e: qc.Expression) {
-    return is.leftHandSideExpression(e) ? e : new ParenthesizedExpression(e).setRange(e);
+    return qf.is.leftHandSideExpression(e) ? e : new ParenthesizedExpression(e).setRange(e);
   }
   export function prefixOperand(e: qc.Expression) {
-    return is.unaryExpression(e) ? e : new ParenthesizedExpression(e).setRange(e);
+    return qf.is.unaryExpression(e) ? e : new ParenthesizedExpression(e).setRange(e);
   }
   export function listElements(es: Nodes<qc.Expression>) {
     let r: qc.Expression[] | undefined;
@@ -3961,7 +3961,7 @@ export namespace parenthesize {
   }
   export function expressionForExpressionStatement(expression: qc.Expression) {
     const emittedExpression = skipPartiallyEmittedExpressions(expression);
-    if (is.kind(CallExpression, emittedExpression)) {
+    if (qf.is.kind(CallExpression, emittedExpression)) {
       const callee = emittedExpression.expression;
       const kind = skipPartiallyEmittedExpressions(callee).kind;
       if (kind === Syntax.FunctionExpression || kind === Syntax.ArrowFunction) {
@@ -4004,7 +4004,7 @@ export namespace parenthesize {
       const ps: qc.TypeNode[] = [];
       for (let i = 0; i < ns.length; ++i) {
         const p = ns[i];
-        ps.push(i === 0 && is.functionOrConstructorTypeNode(p) && p.typeParameters ? new ParenthesizedTypeNode(p) : p);
+        ps.push(i === 0 && qf.is.functionOrConstructorTypeNode(p) && p.typeParameters ? new ParenthesizedTypeNode(p) : p);
       }
       return new Nodes(ps);
     }
@@ -4033,13 +4033,13 @@ export namespace parenthesize {
     return forAccess(e);
   }
   export function conciseBody(b: qc.ConciseBody): qc.ConciseBody {
-    if (!is.kind(Block, b) && (isCommaSequence(b) || getLeftmostExpression(b, false).kind === Syntax.ObjectLiteralExpression)) return new ParenthesizedExpression(b).setRange(b);
+    if (!qf.is.kind(Block, b) && (isCommaSequence(b) || getLeftmostExpression(b, false).kind === Syntax.ObjectLiteralExpression)) return new ParenthesizedExpression(b).setRange(b);
     return b;
   }
 }
 export namespace emit {
   export function disposeEmitNodes(sourceFile: SourceFile) {
-    sourceFile = get.sourceFileOf(get.parseTreeOf(sourceFile));
+    sourceFile = qf.get.sourceFileOf(qf.get.parseTreeOf(sourceFile));
     const emitNode = sourceFile && sourceFile.emitNode;
     const annotatedNodes = emitNode && emitNode.annotatedNodes;
     if (annotatedNodes) {
@@ -4050,9 +4050,9 @@ export namespace emit {
   }
   export function getOrCreateEmitNode(n: Node): qc.EmitNode {
     if (!n.emitNode) {
-      if (is.parseTreeNode(n)) {
+      if (qf.is.parseTreeNode(n)) {
         if (n.kind === Syntax.SourceFile) return (n.emitNode = { annotatedNodes: [n] } as qc.EmitNode);
-        const sourceFile = get.sourceFileOf(get.parseTreeOf(get.sourceFileOf(n)));
+        const sourceFile = qf.get.sourceFileOf(qf.get.parseTreeOf(qf.get.sourceFileOf(n)));
         getOrCreateEmitNode(sourceFile).annotatedNodes!.push(n);
       }
       n.emitNode = {} as qc.EmitNode;
@@ -4223,12 +4223,12 @@ export namespace emit {
     return destEmitNode;
   }
   export function getExternalHelpersModuleName(n: SourceFile) {
-    const parseNode = get.originalOf(n, isSourceFile);
+    const parseNode = qf.get.originalOf(n, isSourceFile);
     const emitNode = parseNode && parseNode.emitNode;
     return emitNode && emitNode.externalHelpersModuleName;
   }
   export function hasRecordedExternalHelpers(sourceFile: SourceFile) {
-    const parseNode = get.originalOf(sourceFile, isSourceFile);
+    const parseNode = qf.get.originalOf(sourceFile, isSourceFile);
     const emitNode = parseNode && parseNode.emitNode;
     return !!emitNode && (!!emitNode.externalHelpersModuleName || !!emitNode.externalHelpers);
   }
@@ -4245,7 +4245,7 @@ export namespace fixme {
     return expressions.length > 10 ? new CommaListExpression(expressions) : reduceLeft(expressions, createComma)!;
   }
   export function convertToFunctionBody(node: qc.ConciseBody, multiLine?: boolean): Block {
-    return is.kind(Block, node) ? node : new Block([new qc.ReturnStatement(node).setRange(node)], multiLine).setRange(node);
+    return qf.is.kind(Block, node) ? node : new Block([new qc.ReturnStatement(node).setRange(node)], multiLine).setRange(node);
   }
   export function ensureUseStrict(statements: Nodes<qc.Statement>): Nodes<qc.Statement> {
     const foundUseStrict = findUseStrictPrologue(statements);
@@ -4286,7 +4286,7 @@ export namespace fixme {
                 isFileLevelUniqueName(sourceFile, name) ? new ImportSpecifier(undefined, new Identifier(name)) : new qc.ImportSpecifier(new Identifier(name), getUnscopedHelperName(name))
               )
             );
-            const parseNode = get.originalOf(sourceFile, isSourceFile);
+            const parseNode = qf.get.originalOf(sourceFile, isSourceFile);
             const emitNode = getOrCreateEmitNode(parseNode);
             emitNode.externalHelpers = true;
           }
@@ -4323,7 +4323,7 @@ export namespace fixme {
         }
       }
       if (create) {
-        const parseNode = get.originalOf(node, isSourceFile);
+        const parseNode = qf.get.originalOf(node, isSourceFile);
         const emitNode = getOrCreateEmitNode(parseNode);
         return emitNode.externalHelpersModuleName || (emitNode.externalHelpersModuleName = createUniqueName(externalHelpersModuleNameText));
       }
@@ -4390,7 +4390,7 @@ export function asExpression<T extends qc.Expression | undefined>(e: string | nu
 export function asEmbeddedStatement<T extends Nobj>(s: T): T | EmptyStatement;
 export function asEmbeddedStatement<T extends Nobj>(s?: T): T | EmptyStatement | undefined;
 export function asEmbeddedStatement<T extends Nobj>(s?: T): T | EmptyStatement | undefined {
-  return s && is.kind(NotEmittedStatement, s) ? new EmptyStatement().setOriginal(s).setRange(s) : s;
+  return s && qf.is.kind(NotEmittedStatement, s) ? new EmptyStatement().setOriginal(s).setRange(s) : s;
 }
 export function pseudoBigIntToString({ negative, base10Value }: PseudoBigInt) {
   return (negative && base10Value !== '0' ? '-' : '') + base10Value;
