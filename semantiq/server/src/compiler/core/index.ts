@@ -10,9 +10,9 @@ import * as qy from '../syntax';
 export * from './tree';
 export function newCreate(f: qt.Frame) {
   interface Frame extends qt.Frame {
-    is: Nis;
-    has: Nhas;
     get: Nget;
+    has: Nhas;
+    is: Nis;
   }
   const qf = f as Frame;
   const r = (qf.create = new (class {
@@ -457,8 +457,8 @@ export function newEach(f: qt.Frame) {
 export interface Neach extends ReturnType<typeof newEach> {}
 export function newGet(f: qt.Frame) {
   interface Frame extends qt.Frame {
-    is: Nis;
     has: Nhas;
+    is: Nis;
   }
   const qf = f as Frame;
   const r = (qf.get = new (class {
@@ -1215,8 +1215,8 @@ export function newGet(f: qt.Frame) {
 export interface Nget extends ReturnType<typeof newGet> {}
 export function newHas(f: qt.Frame) {
   interface Frame extends qt.Frame {
-    is: Nis;
     get: Nget;
+    is: Nis;
   }
   const qf = f as Frame;
   const r = (qf.has = new (class {
@@ -1267,8 +1267,8 @@ export function newHas(f: qt.Frame) {
 export interface Nhas extends ReturnType<typeof newHas> {}
 export function newIs(f: qt.Frame) {
   interface Frame extends qt.Frame {
-    has: Nhas;
     get: Nget;
+    has: Nhas;
   }
   const qf = f as Frame;
   const r = (qf.is = new (class {
@@ -2645,7 +2645,14 @@ export const fixme = new (class {
     return getDoc.tags(n).some((tag) => tag.tagName.text === 'inheritDoc');
   }
 })();
-export const qf = {} as qt.Frame;
+export interface Nframe extends qt.Frame {
+  create: Ncreate;
+  each: Neach;
+  get: Nget;
+  has: Nhas;
+  is: Nis;
+}
+export const qf = {} as Nframe;
 newCreate(qf);
 newEach(qf);
 newIs(qf);

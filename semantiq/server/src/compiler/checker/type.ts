@@ -1,20 +1,11 @@
 import * as qd from '../diagnostic';
 import * as qt from '../type';
 import * as qu from '../util';
-import { Get } from './get';
-import { Is, Has } from './predicate';
-import { Create, Instantiate, Resolve } from './create';
-import { Check, CheckGrammar } from './check';
 export * from '../type';
-export interface Tctx {
-  is: Is;
-  has: Has;
-  get: Get;
-  create: Create;
-  instantiate: Instantiate;
-  resolve: Resolve;
-  check: Check;
-  checkGrammar: CheckGrammar;
+export interface Frame extends qt.Frame {
+  check: any;
+  instantiate: any;
+  resolve: any;
 }
 export const enum IterationUse {
   AllowsSyncIterablesFlag = 1 << 0,

@@ -1,4 +1,3 @@
-import { is, get, has } from '../core';
 import * as qc from '../core';
 import * as qd from '../diagnostic';
 import { Node, SymbolFlags, TypeFlags } from './type';
@@ -6,7 +5,27 @@ import * as qt from './type';
 import * as qu from '../util';
 import { ModifierFlags, Syntax } from '../syntax';
 import * as qy from '../syntax';
-import { Check, CheckGrammar } from './check';
+import { newGet, Nget } from './get';
+import { Nis, Nhas } from './predicate';
+import { newCreate, Ncreate, Ninstantiate, Nresolve } from './create';
+import { Ncheck } from './check';
+
+export interface Tframe extends qt.Frame {
+  create: Ncreate;
+  each: qc.Neach;
+  get: Nget;
+  has: Nhas;
+  is: Nis;
+  check: Ncheck;
+  instantiate: Ninstantiate;
+  resolve: Nresolve;
+}
+export const qf = {} as Tframe;
+newCreate(qf);
+newEach(qf);
+newIs(qf);
+newHas(qf);
+newGet(qf);
 
 const ambientModuleSymbolRegex = /^".+"$/;
 const anon = '(anonymous)' as qu.__String & string;
