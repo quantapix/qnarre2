@@ -77,6 +77,10 @@ export function concatenateMessageChains(head: MessageChain, tail: MessageChain)
   }
   c.next = [tail];
 }
+export function diagnosticCategoryName(d: { cat: Category }, lower = true) {
+  const n = Category[d.cat];
+  return lower ? n.toLowerCase() : n;
+}
 function getDiagnosticFilePath(d: Diagnostic): string | undefined {
   return d.file ? d.file.path : undefined;
 }
