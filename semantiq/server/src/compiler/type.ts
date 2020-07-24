@@ -1443,7 +1443,7 @@ export interface Nobj extends qu.Range {
   kind: Syntax;
   flags: qt.NodeFlags;
   transformFlags: qt.TransformFlags;
-  modifierFlagsCache: qy.ModifierFlags;
+  modifierFlagsCache: qt.ModifierFlags;
   decorators?: Nodes<Decorator>;
   modifiers?: Modifiers;
   parent?: Node;

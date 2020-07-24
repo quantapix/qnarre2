@@ -3974,13 +3974,13 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
       if (hasDetachedComments(pos)) {
         forEachLeadingCommentWithoutDetachedComments(cb);
       } else {
-        qy.forEachLeadingCommentRange(currentSourceFile.text, pos, cb, pos);
+        qy.each.leadingCommentRange(currentSourceFile.text, pos, cb, pos);
       }
     }
   }
   function forEachTrailingCommentToEmit(end: number, cb: (commentPos: number, commentEnd: number, kind: Syntax, hasTrailingNewLine: boolean) => void) {
     if (currentSourceFile && (containerEnd === -1 || (end !== containerEnd && end !== declarationListContainerEnd))) {
-      qy.forEachTrailingCommentRange(currentSourceFile.text, end, cb);
+      qy.each.trailingCommentRange(currentSourceFile.text, end, cb);
     }
   }
   function hasDetachedComments(pos: number) {
@@ -3993,7 +3993,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     } else {
       detachedCommentsInfo = undefined;
     }
-    qy.forEachLeadingCommentRange(currentSourceFile!.text, pos, cb, pos);
+    qy.each.leadingCommentRange(currentSourceFile!.text, pos, cb, pos);
   }
   function emitDetachedCommentsAndUpdateCommentsInfo(range: TextRange) {
     const currentDetachedCommentInfo = emitDetachedComments(currentSourceFile!.text, getCurrentLineMap(), writer, emitComment, range, newLine, commentsDisabled);

@@ -10,6 +10,10 @@ export const enum AssignmentDeclarationKind {
   ObjectDefinePropertyExports,
   ObjectDefinePrototypeProperty,
 }
+export const enum Associativity {
+  Left,
+  Right,
+}
 export const enum BundleFileSectionKind {
   Prologue = 'prologue',
   EmitHelpers = 'emitHelpers',
@@ -289,6 +293,28 @@ export const enum ListFormat {
   Parameters = CommaDelimited | SpaceBetweenSiblings | SingleLine | Parenthesis,
   IndexSignatureParameters = CommaDelimited | SpaceBetweenSiblings | SingleLine | Indented | SquareBrackets,
   DocComment = MultiLine | AsteriskDelimited,
+}
+export const enum ModifierFlags {
+  None = 0,
+  Export = 1 << 0,
+  Ambient = 1 << 1,
+  Public = 1 << 2,
+  Private = 1 << 3,
+  Protected = 1 << 4,
+  Static = 1 << 5,
+  Readonly = 1 << 6,
+  Abstract = 1 << 7,
+  Async = 1 << 8,
+  Default = 1 << 9,
+  Const = 1 << 11,
+  HasComputedDocModifiers = 1 << 12,
+  HasComputedFlags = 1 << 29,
+  AccessibilityModifier = Public | Private | Protected,
+  ParameterPropertyModifier = AccessibilityModifier | Readonly,
+  NonPublicAccessibilityModifier = Private | Protected,
+  TypeScriptModifier = Ambient | Public | Private | Protected | Readonly | Abstract | Const,
+  ExportDefault = Export | Default,
+  All = Export | Ambient | Public | Private | Protected | Static | Readonly | Abstract | Async | Default | Const,
 }
 export const enum NewLineKind {
   CarriageReturnLineFeed = 0,
