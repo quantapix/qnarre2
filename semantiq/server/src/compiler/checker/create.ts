@@ -16,7 +16,8 @@ interface Frame extends qt.Frame {
 }
 export function newCreate(f: qt.Frame) {
   const qf = f as Frame;
-  return (qf.create = new (class {
+  interface Tcreate extends ReturnType<typeof qc.newCreate> {}
+  class Tcreate {
     intrinsicType(kind: qt.TypeFlags, intrinsicName: string, objectFlags: ObjectFlags = 0): IntrinsicType {
       const type = <IntrinsicType>this.type(kind);
       type.intrinsicName = intrinsicName;
@@ -823,7 +824,8 @@ export function newCreate(f: qt.Frame) {
     makeCompositeTypeMapper(kind: TypeMapKind.Composite | TypeMapKind.Merged, mapper1: TypeMapper, mapper2: TypeMapper): TypeMapper {
       return { kind, mapper1, mapper2 };
     }
-  })());
+  }
+  return (qf.create = new Tcreate());
 }
 export interface Tcreate extends ReturnType<typeof newCreate> {}
 export function newInstantiate(f: qt.Frame) {
