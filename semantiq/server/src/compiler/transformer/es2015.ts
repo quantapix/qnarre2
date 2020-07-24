@@ -389,7 +389,7 @@ export function transformES2015(context: TransformationContext) {
     if (node.name) {
       enableSubstitutionsForBlockScopedBindings();
     }
-    const extendsClauseElement = getClassExtendsHeritageElement(node);
+    const extendsClauseElement = qf.get.classExtendsHeritageElement(node);
     const classFunction = new qc.FunctionExpression(
       undefined,
       undefined,
@@ -439,7 +439,7 @@ export function transformES2015(context: TransformationContext) {
     const savedConvertedLoopState = convertedLoopState;
     convertedLoopState = undefined;
     const ancestorFacts = enterSubtree(HierarchyFacts.ConstructorExcludes, HierarchyFacts.ConstructorIncludes);
-    const constructor = getFirstConstructorWithBody(node);
+    const constructor = qf.get.firstConstructorWithBody(node);
     const hasSynthesizedSuper = hasSynthesizedDefaultSuperCall(constructor, extendsClauseElement !== undefined);
     const constructorFunction = new qc.FunctionDeclaration(
       undefined,
@@ -742,7 +742,7 @@ export function transformES2015(context: TransformationContext) {
           break;
         case Syntax.GetAccessor:
         case Syntax.SetAccessor:
-          const accessors = getAllAccessorDeclarations(node.members, <AccessorDeclaration>member);
+          const accessors = qf.get.allAccessorDeclarations(node.members, <AccessorDeclaration>member);
           if (member === accessors.firstAccessor) {
             statements.push(transformAccessorsToStatement(getClassMemberPrefix(node, member), accessors, node));
           }
@@ -1753,7 +1753,7 @@ function addObjectLiteralMembers(expressions: qc.Expression[], node: ObjectLiter
     switch (property.kind) {
       case Syntax.GetAccessor:
       case Syntax.SetAccessor:
-        const accessors = getAllAccessorDeclarations(node.properties, property);
+        const accessors = qf.get.allAccessorDeclarations(node.properties, property);
         if (property === accessors.firstAccessor) {
           expressions.push(transformAccessorsToExpression(receiver, accessors, node, !!node.multiLine));
         }

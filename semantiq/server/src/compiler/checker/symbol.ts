@@ -181,13 +181,13 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
   getDeclarationOfJSPrototypeContainer() {
     const v = this.parent!.valueDeclaration;
     if (!v) return;
-    const i = isAssignmentDeclaration(v) ? getAssignedExpandoIniter(v) : is.withOnlyExpressionIniter(v) ? getDeclaredExpandoIniter(v) : undefined;
+    const i = isAssignmentDeclaration(v) ? getAssignedExpandoIniter(v) : is.withOnlyExpressionIniter(v) ? qf.get.declaredExpandoIniter(v) : undefined;
     return i || v;
   }
   getExpandoSymbol(): Symbol | undefined {
     const v = this.valueDeclaration;
     if (!v || !is.inJSFile(v) || this.flags & qt.SymbolFlags.TypeAlias || getExpandoIniter(v, false)) return;
-    const i = is.kind(qc.VariableDeclaration, v) ? getDeclaredExpandoIniter(v) : getAssignedExpandoIniter(v);
+    const i = is.kind(qc.VariableDeclaration, v) ? qf.get.declaredExpandoIniter(v) : getAssignedExpandoIniter(v);
     if (i) {
       const s = getSymbolOfNode(i);
       if (s) return mergeJSSymbols(s, this);
@@ -656,8 +656,8 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     const target = aliasDecl && getTargetOfAliasDeclaration(aliasDecl, true);
     if (target && length(target.declarations) && some(target.declarations, (d) => get.sourceFileOf(d) === get.sourceFileOf(enclosingDeclaration))) {
       const expr = isExportAssignment
-        ? getExportAssignmentExpression(aliasDecl as ExportAssignment | BinaryExpression)
-        : getPropertyAssignmentAliasLikeExpression(aliasDecl as ShorthandPropertyAssignment | PropertyAssignment | PropertyAccessExpression);
+        ? qf.get.exportAssignmentExpression(aliasDecl as ExportAssignment | BinaryExpression)
+        : qf.get.propertyAssignmentAliasLikeExpression(aliasDecl as ShorthandPropertyAssignment | PropertyAssignment | PropertyAccessExpression);
       const first = is.entityNameExpression(expr) ? getFirstNonModuleExportsIdentifier(expr) : undefined;
       const referenced = first && resolveEntityName(first, qt.SymbolFlags.All, true, true, enclosingDeclaration);
       if (referenced || target) includePrivateSymbol(referenced || target);
@@ -706,7 +706,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
             this.declarations,
             (declaration) =>
               is.kind(qc.BinaryExpression, declaration) &&
-              getAssignmentDeclarationKind(declaration) === AssignmentDeclarationKind.ThisProperty &&
+              qf.get.assignmentDeclarationKind(declaration) === AssignmentDeclarationKind.ThisProperty &&
               (declaration.left.kind !== Syntax.ElementAccessExpression || StringLiteral.orNumericLiteralLike((<ElementAccessExpression>declaration.left).argumentExpression)) &&
               !getAnnotatedTypeForAssignmentDeclaration(undefined, declaration, symbol, declaration)
           );
@@ -972,7 +972,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       for (const d of ds) {
         if (d.kind === Syntax.InterfaceDeclaration) {
           if (d.flags & NodeFlags.ContainsThis) return false;
-          const ns = getInterfaceBaseTypeNodes(<InterfaceDeclaration>d);
+          const ns = qf.get.interfaceBaseTypeNodes(<InterfaceDeclaration>d);
           if (ns) {
             for (const n of ns) {
               if (is.entityNameExpression(n.expression)) {
@@ -1204,7 +1204,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     if (this.flags & qt.SymbolFlags.Method || this.getCheckFlags() & qt.CheckFlags.SyntheticMethod) return true;
     if (is.inJSFile(this.valueDeclaration)) {
       const p = this.valueDeclaration?.parent;
-      return p && is.kind(qc.BinaryExpression, p) && getAssignmentDeclarationKind(p) === AssignmentDeclarationKind.PrototypeProperty;
+      return p && is.kind(qc.BinaryExpression, p) && qf.get.assignmentDeclarationKind(p) === AssignmentDeclarationKind.PrototypeProperty;
     }
   }
   symbolHasNonMethodDeclaration() {
@@ -1288,7 +1288,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
     function reportImplementationExpectedError(node: SignatureDeclaration): void {
       if (node.name && is.missing(node.name)) return;
       let seen = false;
-      const subsequentNode = qc.forEach.child(node.parent, (c) => {
+      const subsequentNode = qf.each.child(node.parent, (c) => {
         if (seen) return c;
         seen = c === node;
       });
@@ -1301,7 +1301,9 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
             subsequentName &&
             ((is.kind(qc.PrivateIdentifier, node.name) && is.kind(qc.PrivateIdentifier, subsequentName) && node.name.escapedText === subsequentName.escapedText) ||
               (is.kind(qc.ComputedPropertyName, node.name) && is.kind(qc.ComputedPropertyName, subsequentName)) ||
-              (is.propertyNameLiteral(node.name) && is.propertyNameLiteral(subsequentName) && getEscapedTextOfIdentifierOrLiteral(node.name) === getEscapedTextOfIdentifierOrLiteral(subsequentName)))
+              (is.propertyNameLiteral(node.name) &&
+                is.propertyNameLiteral(subsequentName) &&
+                qf.get.escapedTextOfIdentifierOrLiteral(node.name) === qf.get.escapedTextOfIdentifierOrLiteral(subsequentName)))
           ) {
             const reportError =
               (node.kind === Syntax.MethodDeclaration || node.kind === Syntax.MethodSignature) &&

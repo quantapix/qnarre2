@@ -195,7 +195,7 @@ export function newIs(f: qt.Frame) {
         node.kind === Syntax.ImportSpecifier ||
         node.kind === Syntax.ExportSpecifier ||
         (node.kind === Syntax.ExportAssignment && this.exportAssignmentAlias(<ExportAssignment>node)) ||
-        (this.kind(qc.BinaryExpression, node) && getAssignmentDeclarationKind(node) === AssignmentDeclarationKind.ModuleExports && this.exportAssignmentAlias(node)) ||
+        (this.kind(qc.BinaryExpression, node) && qf.get.assignmentDeclarationKind(node) === AssignmentDeclarationKind.ModuleExports && this.exportAssignmentAlias(node)) ||
         (this.kind(qc.PropertyAccessExpression, node) &&
           this.kind(qc.BinaryExpression, node.parent) &&
           node.parent.left === node &&
@@ -296,7 +296,7 @@ export function newIs(f: qt.Frame) {
       } else {
         meaning = qt.SymbolFlags.Type;
       }
-      const firstIdentifier = getFirstIdentifier(entityName);
+      const firstIdentifier = qf.get.firstIdentifier(entityName);
       const symbol = resolveName(enclosingDeclaration, firstIdentifier.escapedText, meaning, undefined, undefined, false);
       return (
         (symbol && hasVisibleDeclarations(symbol, true)) || {
@@ -506,7 +506,7 @@ export function newIs(f: qt.Frame) {
       return typeNode ? isThislessType(typeNode) : !this.withIniter(node);
     }
     thislessFunctionLikeDeclaration(node: FunctionLikeDeclaration): boolean {
-      const returnType = getEffectiveReturnTypeNode(node);
+      const returnType = qf.get.effectiveReturnTypeNode(node);
       const typeParameters = qf.get.effectiveTypeParameterDeclarations(node);
       return (
         (node.kind === Syntax.Constructor || (!!returnType && isThislessType(returnType))) && node.parameters.every(isThislessVariableLikeDeclaration) && typeParameters.every(isThislessTypeParameter)
@@ -718,9 +718,9 @@ export function newIs(f: qt.Frame) {
       if (tp.symbol && tp.symbol.declarations && tp.symbol.declarations.length === 1) {
         const container = tp.symbol.declarations[0].parent;
         for (let n = node; n !== container; n = n.parent) {
-          if (!n || n.kind === Syntax.Block || (n.kind === Syntax.ConditionalType && qc.forEach.child((<ConditionalTypeNode>n).extendsType, containsReference))) return true;
+          if (!n || n.kind === Syntax.Block || (n.kind === Syntax.ConditionalType && qf.each.child((<ConditionalTypeNode>n).extendsType, containsReference))) return true;
         }
-        return !!qc.forEach.child(node, containsReference);
+        return !!qf.each.child(node, containsReference);
       }
       return true;
       function containsReference(node: Node): boolean {
@@ -732,7 +732,7 @@ export function newIs(f: qt.Frame) {
           case Syntax.TypeQuery:
             return true;
         }
-        return !!qc.forEach.child(node, containsReference);
+        return !!qf.each.child(node, containsReference);
       }
     }
     contextSensitive(node: Expression | MethodDeclaration | ObjectLiteralElementLike | JsxAttributeLike | JsxChild): boolean {
@@ -1997,7 +1997,7 @@ export function newIs(f: qt.Frame) {
         )
           return true;
       }
-      if (checkChildren) return !!qc.forEach.child(node, (node) => isReferencedAliasDeclaration(node, checkChildren));
+      if (checkChildren) return !!qf.each.child(node, (node) => isReferencedAliasDeclaration(node, checkChildren));
       return false;
     }
     implementationOfOverload(node: SignatureDeclaration) {
@@ -2104,7 +2104,7 @@ export function newHas(f: qt.Frame) {
       return false;
     }
     contextSensitiveReturnExpression(node: FunctionLikeDeclaration) {
-      return !node.typeParameters && !getEffectiveReturnTypeNode(node) && !!node.body && node.body.kind !== Syntax.Block && isContextSensitive(node.body);
+      return !node.typeParameters && !qf.get.effectiveReturnTypeNode(node) && !!node.body && node.body.kind !== Syntax.Block && isContextSensitive(node.body);
     }
     commonProperties(source: Type, target: Type, isComparingJsxAttributes: boolean) {
       for (const prop of getPropertiesOfType(source)) {
@@ -2227,7 +2227,7 @@ export function newHas(f: qt.Frame) {
       return (
         qf.is.kind(qc.PropertyAccessExpression, thisProperty) &&
         thisProperty.expression.kind === Syntax.ThisKeyword &&
-        qc.forEach.childRecursively(expression, (n) => isMatchingReference(thisProperty, n))
+        qf.each.childRecursively(expression, (n) => isMatchingReference(thisProperty, n))
       );
     }
     argumentsReference(declaration: SignatureDeclaration): boolean {
@@ -2250,7 +2250,7 @@ export function newHas(f: qt.Frame) {
           case Syntax.SetAccessor:
             return (<NamedDeclaration>node).name!.kind === Syntax.ComputedPropertyName && traverse((<NamedDeclaration>node).name!);
           default:
-            return !nodeStartsNewLexicalEnvironment(node) && !qf.is.partOfTypeNode(node) && !!qc.forEach.child(node, traverse);
+            return !nodeStartsNewLexicalEnvironment(node) && !qf.is.partOfTypeNode(node) && !!qf.each.child(node, traverse);
         }
       }
     }

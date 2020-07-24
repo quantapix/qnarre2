@@ -1147,7 +1147,7 @@ function create() {
           return qc.is.kind(qc.MetaProperty, n) && n.keywordToken === Syntax.ImportKeyword && n.name.escapedText === 'meta';
         };
         const walkTreeForExternalModuleIndicators = (n: Node): Node | undefined => {
-          return isImportMeta(n) ? n : qc.forEach.child(n, walkTreeForExternalModuleIndicators);
+          return isImportMeta(n) ? n : qf.each.child(n, walkTreeForExternalModuleIndicators);
         };
         return source.flags & NodeFlags.PossiblyContainsImportMeta ? walkTreeForExternalModuleIndicators(source) : undefined;
       };
@@ -4451,11 +4451,11 @@ function create() {
       if (qc.is.withDocNodes(c)) {
         for (const d of c.doc!) {
           bindParentToChild(d, c);
-          qc.forEach.childRecursively(d, bindParentToChild);
+          qf.each.childRecursively(d, bindParentToChild);
         }
       }
     };
-    qc.forEach.childRecursively(root, bindParentToChild);
+    qf.each.childRecursively(root, bindParentToChild);
   }
   function comment(parent: HasDoc, start: number, length: number): Doc | undefined {
     const saveToken = currentToken;
@@ -4620,7 +4620,7 @@ namespace IncrementalParser {
       n.pos += delta;
       n.end += delta;
       if (aggressiveChecks && shouldCheck(n)) qu.assert(text === newText.substring(n.pos, n.end));
-      qc.forEach.child(n, visitNode, visitArray);
+      qf.each.child(n, visitNode, visitArray);
       if (qc.is.withDocNodes(n)) {
         for (const docComment of n.doc!) {
           visitNode(<IncrementalNode>(<Node>docComment));
@@ -4674,7 +4674,7 @@ namespace IncrementalParser {
         child.intersectsChange = true;
         child._children = undefined;
         adjustIntersectingElement(child, changeStart, changeRangeOldEnd, changeRangeNewEnd, delta);
-        qc.forEach.child(child, visitNode, visitArray);
+        qf.each.child(child, visitNode, visitArray);
         if (qc.is.withDocNodes(child)) {
           for (const docComment of child.doc!) {
             visitNode(<IncrementalNode>(<Node>docComment));
@@ -4716,7 +4716,7 @@ namespace IncrementalParser {
           visitNode(docComment);
         }
       }
-      qc.forEach.child(n, visitNode);
+      qf.each.child(n, visitNode);
       qu.assert(pos <= n.end);
     }
   }
@@ -4736,7 +4736,7 @@ namespace IncrementalParser {
   function findNearestNodeStartingBeforeOrAtPosition(source: SourceFile, position: number): Node {
     let bestResult: Node = source;
     let lastNodeEntirelyBeforePosition: Node | undefined;
-    qc.forEach.child(source, visit);
+    qf.each.child(source, visit);
     if (lastNodeEntirelyBeforePosition) {
       const lastChildOfLastEntireNodeBeforePosition = getLastDescendant(lastNodeEntirelyBeforePosition);
       if (lastChildOfLastEntireNodeBeforePosition.pos > bestResult.pos) {
@@ -4756,7 +4756,7 @@ namespace IncrementalParser {
       if (child.pos <= position) {
         if (child.pos >= bestResult.pos) bestResult = child;
         if (position < child.end) {
-          qc.forEach.child(child, visit);
+          qf.each.child(child, visit);
           return true;
         } else {
           qu.assert(child.end <= position);
@@ -4822,11 +4822,11 @@ namespace IncrementalParser {
       currentArray = undefined!;
       currentArrayIndex = InvalidPosition.Value;
       current = undefined!;
-      qc.forEach.child(source, visitNode, visitArray);
+      qf.each.child(source, visitNode, visitArray);
       return;
       function visitNode(n: Node) {
         if (position >= n.pos && position < n.end) {
-          qc.forEach.child(n, visitNode, visitArray);
+          qf.each.child(n, visitNode, visitArray);
           return true;
         }
         return false;
@@ -4843,7 +4843,7 @@ namespace IncrementalParser {
                 return true;
               } else {
                 if (child.pos < position && position < child.end) {
-                  qc.forEach.child(child, visitNode, visitArray);
+                  qf.each.child(child, visitNode, visitArray);
                   return true;
                 }
               }

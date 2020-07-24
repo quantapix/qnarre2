@@ -211,7 +211,7 @@ function getAllModulePaths(importingFileName: string, importedFileName: string, 
 function tryGetModuleNameFromAmbientModule(moduleSymbol: Symbol): string | undefined {
   const decl = find(
     moduleSymbol.declarations,
-    (d) => qc.is.nonGlobalAmbientModule(d) && (!qc.is.externalModuleAugmentation(d) || !isExternalModuleNameRelative(getTextOfIdentifierOrLiteral(d.name)))
+    (d) => qc.is.nonGlobalAmbientModule(d) && (!qc.is.externalModuleAugmentation(d) || !isExternalModuleNameRelative(qf.get.textOfIdentifierOrLiteral(d.name)))
   ) as (ModuleDeclaration & { name: StringLiteral }) | undefined;
   if (decl) return decl.name.text;
 }

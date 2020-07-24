@@ -1608,7 +1608,7 @@ export function newCheck(f: qt.Frame) {
     }
     thisBeforeSuper(n: Node, container: Node, diagnosticMessage: qd.Message) {
       const containingClassDecl = <ClassDeclaration>container.parent;
-      const baseTypeNode = getClassExtendsHeritageElement(containingClassDecl);
+      const baseTypeNode = qf.get.classExtendsHeritageElement(containingClassDecl);
       if (baseTypeNode && !classDeclarationExtendsNull(containingClassDecl)) {
         if (n.flowNode && !isPostSuperFlowNode(n.flowNode, false)) error(n, diagnosticMessage);
       }
@@ -1695,7 +1695,7 @@ export function newCheck(f: qt.Frame) {
       if (needToCaptureLexicalThis) captureLexicalThis(n.parent, container);
       if (container.parent.kind === Syntax.ObjectLiteralExpression) return anyType;
       const classLikeDeclaration = <ClassLikeDeclaration>container.parent;
-      if (!getClassExtendsHeritageElement(classLikeDeclaration)) {
+      if (!qf.get.classExtendsHeritageElement(classLikeDeclaration)) {
         error(n, qd.super_can_only_be_referenced_in_a_derived_class);
         return errorType;
       }
@@ -2072,7 +2072,7 @@ export function newCheck(f: qt.Frame) {
       if (flags & ModifierFlags.Abstract && qf.is.thisProperty(n) && symbolHasNonMethodDeclaration(prop)) {
         const declaringClassDeclaration = getClassLikeDeclarationOfSymbol(getParentOfSymbol(prop)!);
         if (declaringClassDeclaration && isNodeUsedDuringClassInitialization(n)) {
-          error(errorNode, qd.msgs.Abstract_property_0_in_class_1_cannot_be_accessed_in_the_constructor, prop.symbolToString(), getTextOfIdentifierOrLiteral(declaringClassDeclaration.name!));
+          error(errorNode, qd.msgs.Abstract_property_0_in_class_1_cannot_be_accessed_in_the_constructor, prop.symbolToString(), qf.get.textOfIdentifierOrLiteral(declaringClassDeclaration.name!));
           return false;
         }
       }
@@ -2576,25 +2576,25 @@ export function newCheck(f: qt.Frame) {
       if (type && maybeTypeOfKind(type, TypeFlags.Any | TypeFlags.Void)) return;
       if (func.kind === Syntax.MethodSignature || qf.is.missing(func.body) || func.body!.kind !== Syntax.Block || !functionHasImplicitReturn(func)) return;
       const hasExplicitReturn = func.flags & NodeFlags.HasExplicitReturn;
-      if (type && type.flags & TypeFlags.Never) error(getEffectiveReturnTypeNode(func), qd.msgs.A_function_returning_never_cannot_have_a_reachable_end_point);
+      if (type && type.flags & TypeFlags.Never) error(qf.get.effectiveReturnTypeNode(func), qd.msgs.A_function_returning_never_cannot_have_a_reachable_end_point);
       else if (type && !hasExplicitReturn) {
-        error(getEffectiveReturnTypeNode(func), qd.msgs.A_function_whose_declared_type_is_neither_void_nor_any_must_return_a_value);
+        error(qf.get.effectiveReturnTypeNode(func), qd.msgs.A_function_whose_declared_type_is_neither_void_nor_any_must_return_a_value);
       } else if (type && strictNullChecks && !isTypeAssignableTo(undefinedType, type)) {
-        error(getEffectiveReturnTypeNode(func) || func, qd.msgs.Function_lacks_ending_return_statement_and_return_type_does_not_include_undefined);
+        error(qf.get.effectiveReturnTypeNode(func) || func, qd.msgs.Function_lacks_ending_return_statement_and_return_type_does_not_include_undefined);
       } else if (compilerOptions.noImplicitReturns) {
         if (!type) {
           if (!hasExplicitReturn) return;
           const inferredReturnType = getReturnTypeOfSignature(getSignatureFromDeclaration(func));
           if (isUnwrappedReturnTypeVoidOrAny(func, inferredReturnType)) return;
         }
-        error(getEffectiveReturnTypeNode(func) || func, qd.msgs.Not_all_code_paths_return_a_value);
+        error(qf.get.effectiveReturnTypeNode(func) || func, qd.msgs.Not_all_code_paths_return_a_value);
       }
     }
     functionExpressionOrObjectLiteralMethod(n: qc.FunctionExpression | ArrowFunction | MethodDeclaration, checkMode?: CheckMode): qc.Type {
       qu.assert(n.kind !== Syntax.MethodDeclaration || qf.is.objectLiteralMethod(n));
       this.nodeDeferred(n);
       if (checkMode && checkMode & CheckMode.SkipContextSensitive && isContextSensitive(n)) {
-        if (!getEffectiveReturnTypeNode(n) && !hasContextSensitiveParameters(n)) {
+        if (!qf.get.effectiveReturnTypeNode(n) && !hasContextSensitiveParameters(n)) {
           const contextualSignature = getContextualSignature(n);
           if (contextualSignature && couldContainTypeVariables(getReturnTypeOfSignature(contextualSignature))) {
             const links = getNodeLinks(n);
@@ -2619,7 +2619,7 @@ export function newCheck(f: qt.Frame) {
       const returnType = getReturnTypeFromAnnotation(n);
       this.allCodePathsInNonVoidFunctionReturnOrThrow(n, returnType);
       if (n.body) {
-        if (!getEffectiveReturnTypeNode(n)) getReturnTypeOfSignature(getSignatureFromDeclaration(n));
+        if (!qf.get.effectiveReturnTypeNode(n)) getReturnTypeOfSignature(getSignatureFromDeclaration(n));
         if (n.body.kind === Syntax.Block) this.sourceElement(n.body);
         else {
           const exprType = this.expression(n.body);
@@ -3127,7 +3127,7 @@ export function newCheck(f: qt.Frame) {
         case Syntax.Question2Token:
           return getTypeFacts(leftType) & TypeFacts.EQUndefinedOrNull ? getUnionType([getNonNullableType(leftType), rightType], UnionReduction.Subtype) : leftType;
         case Syntax.EqualsToken:
-          const declKind = qf.is.kind(qc.BinaryExpression, left.parent) ? getAssignmentDeclarationKind(left.parent) : AssignmentDeclarationKind.None;
+          const declKind = qf.is.kind(qc.BinaryExpression, left.parent) ? qf.get.assignmentDeclarationKind(left.parent) : AssignmentDeclarationKind.None;
           this.assignmentDeclaration(declKind, rightType);
           if (isAssignmentDeclaration(declKind)) {
             if (
@@ -3335,7 +3335,7 @@ export function newCheck(f: qt.Frame) {
       return links.resolvedType;
     }
     declarationIniter(declaration: HasExpressionIniter, contextualType?: qc.Type | undefined) {
-      const initer = getEffectiveIniter(declaration)!;
+      const initer = qf.get.effectiveIniter(declaration)!;
       const type = getQuickTypeOfExpression(initer) || (contextualType ? this.expressionWithContextualType(initer, contextualType, undefined, CheckMode.Normal) : this.expressionCached(initer));
       return qf.is.kind(qc.ParameterDeclaration, declaration) &&
         declaration.name.kind === Syntax.ArrayBindingPattern &&
@@ -3603,7 +3603,7 @@ export function newCheck(f: qt.Frame) {
       if (n.type) this.sourceElement(n.type);
       if (produceDiagnostics) {
         this.collisionWithArgumentsInGeneratedCode(n);
-        const returnTypeNode = getEffectiveReturnTypeNode(n);
+        const returnTypeNode = qf.get.effectiveReturnTypeNode(n);
         if (noImplicitAny && !returnTypeNode) {
           switch (n.kind) {
             case Syntax.ConstructSignature:
@@ -3648,7 +3648,7 @@ export function newCheck(f: qt.Frame) {
           const name = member.name;
           if (!name) return;
           const names = qf.is.kind(qc.PrivateIdentifier, name) ? privateIdentifiers : isStatic ? staticNames : instanceNames;
-          const memberName = name && getPropertyNameForPropertyNameNode(name);
+          const memberName = name && qf.get.propertyNameForPropertyNameNode(name);
           if (memberName) {
             switch (member.kind) {
               case Syntax.GetAccessor:
@@ -3687,7 +3687,7 @@ export function newCheck(f: qt.Frame) {
         const memberNameNode = member.name;
         const isStatic = qf.has.syntacticModifier(member, ModifierFlags.Static);
         if (isStatic && memberNameNode) {
-          const memberName = getPropertyNameForPropertyNameNode(memberNameNode);
+          const memberName = qf.get.propertyNameForPropertyNameNode(memberNameNode);
           switch (memberName) {
             case 'name':
             case 'length':
@@ -3792,7 +3792,7 @@ export function newCheck(f: qt.Frame) {
         return x.kind === Syntax.PropertyDeclaration && !qf.has.syntacticModifier(x, ModifierFlags.Static) && !!(<PropertyDeclaration>x).initer;
       }
       const containingClassDecl = <ClassDeclaration>n.parent;
-      if (getClassExtendsHeritageElement(containingClassDecl)) {
+      if (qf.get.classExtendsHeritageElement(containingClassDecl)) {
         captureLexicalThis(n.parent, containingClassDecl);
         const classExtendsNull = classDeclarationExtendsNull(containingClassDecl);
         const superCall = findFirstSuperCall(n.body!);
@@ -3983,7 +3983,7 @@ export function newCheck(f: qt.Frame) {
       this.sourceElement(n.type);
     }
     conditionalType(n: qc.ConditionalTypeNode) {
-      qc.forEach.child(n, checkSourceElement);
+      qf.each.child(n, checkSourceElement);
     }
     inferType(n: qc.InferTypeNode) {
       if (!qc.findAncestor(n, (x) => x.parent && x.parent.kind === Syntax.ConditionalType && (<ConditionalTypeNode>x.parent).extendsType === x))
@@ -4150,7 +4150,7 @@ export function newCheck(f: qt.Frame) {
         this.externalEmitHelpers(firstDecorator, ExternalEmitHelpers.Metadata);
         switch (n.kind) {
           case Syntax.ClassDeclaration:
-            const constructor = getFirstConstructorWithBody(<ClassDeclaration>n);
+            const constructor = qf.get.firstConstructorWithBody(<ClassDeclaration>n);
             if (constructor) {
               for (const parameter of constructor.parameters) {
                 markDecoratorMedataDataTypeNodeAsReferenced(getParameterTypeNodeForDecoratorCheck(parameter));
@@ -4167,7 +4167,7 @@ export function newCheck(f: qt.Frame) {
             for (const parameter of (<FunctionLikeDeclaration>n).parameters) {
               markDecoratorMedataDataTypeNodeAsReferenced(getParameterTypeNodeForDecoratorCheck(parameter));
             }
-            markDecoratorMedataDataTypeNodeAsReferenced(getEffectiveReturnTypeNode(<FunctionLikeDeclaration>n));
+            markDecoratorMedataDataTypeNodeAsReferenced(qf.get.effectiveReturnTypeNode(<FunctionLikeDeclaration>n));
             break;
           case Syntax.PropertyDeclaration:
             markDecoratorMedataDataTypeNodeAsReferenced(qf.get.effectiveTypeAnnotationNode(<ParameterDeclaration>n));
@@ -4207,7 +4207,7 @@ export function newCheck(f: qt.Frame) {
     }
     docParameterTag(n: qc.DocParameterTag) {
       this.sourceElement(n.typeExpression);
-      if (!getParameterSymbolFromDoc(n)) {
+      if (!qf.get.parameterSymbolFromDoc(n)) {
         const decl = qf.get.hostSignatureFromDoc(n);
         if (decl) {
           const i = qc.getDoc.tags(decl).filter(isDocParameterTag).indexOf(n);
@@ -4249,7 +4249,7 @@ export function newCheck(f: qt.Frame) {
       qu.assert(augmentsTags.length > 0);
       if (augmentsTags.length > 1) error(augmentsTags[1], qd.msgs.Class_declarations_cannot_have_more_than_one_augments_or_extends_tag);
       const name = getIdentifierFromEntityNameExpression(n.class.expression);
-      const extend = getClassExtendsHeritageElement(classLike);
+      const extend = qf.get.classExtendsHeritageElement(classLike);
       if (extend) {
         const className = getIdentifierFromEntityNameExpression(extend.expression);
         if (className && name.escapedText !== className.escapedText) error(name, qd.msgs.Doc_0_1_does_not_match_the_extends_2_clause, idText(n.tagName), idText(name), idText(className));
@@ -4272,7 +4272,7 @@ export function newCheck(f: qt.Frame) {
       const body = n.kind === Syntax.MethodSignature ? undefined : n.body;
       this.sourceElement(body);
       this.allCodePathsInNonVoidFunctionReturnOrThrow(n, getReturnTypeFromAnnotation(n));
-      if (produceDiagnostics && !getEffectiveReturnTypeNode(n)) {
+      if (produceDiagnostics && !qf.get.effectiveReturnTypeNode(n)) {
         if (qf.is.missing(body) && !isPrivateWithinAmbient(n)) reportImplicitAny(n, anyType);
         if (functionFlags & FunctionFlags.Generator && qf.is.present(body)) getReturnTypeOfSignature(getSignatureFromDeclaration(n));
       }
@@ -4597,7 +4597,7 @@ export function newCheck(f: qt.Frame) {
       const symbol = getSymbolOfNode(n);
       const type = convertAutoToAny(this.getTypeOfSymbol());
       if (n === symbol.valueDeclaration) {
-        const initer = getEffectiveIniter(n);
+        const initer = qf.get.effectiveIniter(n);
         if (initer) {
           const isJSObjectLiteralIniter =
             qf.is.inJSFile(n) && qf.is.kind(qc.ObjectLiteralExpression, initer) && (initer.properties.length === 0 || qf.is.prototypeAccess(n.name)) && qu.hasEntries(symbol.exports);
@@ -4656,7 +4656,7 @@ export function newCheck(f: qt.Frame) {
       if (callSignatures.length === 0) return;
       const testedFunctionSymbol = getSymbolAtLocation(testedNode);
       if (!testedFunctionSymbol) return;
-      const functionIsUsedInBody = qc.forEach.child(body, function check(childNode): boolean | undefined {
+      const functionIsUsedInBody = qf.each.child(body, function check(childNode): boolean | undefined {
         if (qf.is.kind(qc.Identifier, childNode)) {
           const childSymbol = getSymbolAtLocation(childNode);
           if (childSymbol && childSymbol === testedFunctionSymbol) {
@@ -4679,7 +4679,7 @@ export function newCheck(f: qt.Frame) {
             }
           }
         }
-        return qc.forEach.child(childNode, check);
+        return qf.each.child(childNode, check);
       });
       if (!functionIsUsedInBody) error(condExpr, qd.msgs.This_condition_will_always_return_true_since_the_function_is_always_defined_Did_you_mean_to_call_it_instead);
     }
@@ -5009,7 +5009,7 @@ export function newCheck(f: qt.Frame) {
             }
           }
         }
-        qc.forEach.child(n, visit);
+        qf.each.child(n, visit);
       }
     }
     classExpression(n: qc.ClassExpression): qc.Type {
@@ -5045,10 +5045,10 @@ export function newCheck(f: qt.Frame) {
       this.typeParameterListsIdentical(symbol);
       this.classForDuplicateDeclarations(n);
       if (!(n.flags & NodeFlags.Ambient)) this.classForStaticPropertyNameConflicts(n);
-      const baseTypeNode = getEffectiveBaseTypeNode(n);
+      const baseTypeNode = qf.get.effectiveBaseTypeNode(n);
       if (baseTypeNode) {
         forEach(baseTypeNode.typeArguments, checkSourceElement);
-        const extendsNode = getClassExtendsHeritageElement(n);
+        const extendsNode = qf.get.classExtendsHeritageElement(n);
         if (extendsNode && extendsNode !== baseTypeNode) this.expression(extendsNode.expression);
         const baseTypes = getBaseTypes(type);
         if (baseTypes.length && produceDiagnostics) {
@@ -5078,7 +5078,7 @@ export function newCheck(f: qt.Frame) {
           this.kindsOfPropertyMemberOverrides(type, baseType);
         }
       }
-      const implementedTypeNodes = getEffectiveImplementsTypeNodes(n);
+      const implementedTypeNodes = qf.get.effectiveImplementsTypeNodes(n);
       if (implementedTypeNodes) {
         for (const typeRefNode of implementedTypeNodes) {
           if (!qf.is.entityNameExpression(typeRefNode.expression)) error(typeRefNode.expression, qd.msgs.A_class_can_only_implement_an_identifier_Slashqualified_name_with_optional_type_arguments);
@@ -5278,7 +5278,7 @@ export function newCheck(f: qt.Frame) {
         }
         this.objectTypeForDuplicateDeclarations(n);
       }
-      forEach(getInterfaceBaseTypeNodes(n), (heritageElement) => {
+      forEach(qf.get.interfaceBaseTypeNodes(n), (heritageElement) => {
         if (!qf.is.entityNameExpression(heritageElement.expression))
           error(heritageElement.expression, qd.msgs.An_interface_can_only_extend_an_identifier_Slashqualified_name_with_optional_type_arguments);
         this.typeReferenceNode(heritageElement);
@@ -5379,7 +5379,7 @@ export function newCheck(f: qt.Frame) {
             }
           } else if (isGlobalSourceFile(n.parent)) {
             if (isGlobalAugmentation) error(n.name, qd.msgs.Augmentations_for_the_global_scope_can_only_be_directly_nested_in_external_modules_or_ambient_module_declarations);
-            else if (isExternalModuleNameRelative(getTextOfIdentifierOrLiteral(n.name))) {
+            else if (isExternalModuleNameRelative(qf.get.textOfIdentifierOrLiteral(n.name))) {
               error(n.name, qd.msgs.Ambient_module_declaration_cannot_specify_relative_module_name);
             }
           } else {
@@ -5435,7 +5435,7 @@ export function newCheck(f: qt.Frame) {
       }
     }
     externalImportOrExportDeclaration(n: qc.ImportDeclaration | ImportEqualsDeclaration | ExportDeclaration): boolean {
-      const moduleName = getExternalModuleName(n);
+      const moduleName = qf.get.externalModuleName(n);
       if (!moduleName || qf.is.missing(moduleName)) return false;
       if (!qf.is.kind(qc.StringLiteral, moduleName)) {
         error(moduleName, qd.msgs.String_literal_expected);
@@ -5504,7 +5504,7 @@ export function newCheck(f: qt.Frame) {
           const target = getSymbolOfNode(n).resolveAlias();
           if (target !== unknownSymbol) {
             if (target.flags & qt.SymbolFlags.Value) {
-              const moduleName = getFirstIdentifier(n.moduleReference);
+              const moduleName = qf.get.firstIdentifier(n.moduleReference);
               if (!(resolveEntityName(moduleName, qt.SymbolFlags.Value | qt.SymbolFlags.Namespace)!.flags & qt.SymbolFlags.Namespace))
                 error(moduleName, qd.msgs.Module_0_is_hidden_by_a_local_declaration_with_the_same_name, declarationNameToString(moduleName));
             }
@@ -5732,7 +5732,7 @@ export function newCheck(f: qt.Frame) {
         case Syntax.DocUnknownType:
         case Syntax.DocTypeLiteral:
           this.docTypeIsInJsFile(n);
-          qc.forEach.child(n, checkSourceElement);
+          qf.each.child(n, checkSourceElement);
           return;
         case Syntax.DocVariadicType:
           this.docVariadicType(n as DocVariadicType);
@@ -5826,7 +5826,7 @@ export function newCheck(f: qt.Frame) {
         error(n, qd.msgs.Doc_may_only_appear_in_the_last_parameter_of_a_signature);
         return;
       }
-      const param = getParameterSymbolFromDoc(paramTag);
+      const param = qf.get.parameterSymbolFromDoc(paramTag);
       if (!param) return;
       const host = qf.get.hostSignatureFromDoc(paramTag);
       if (!host || last(host.parameters).symbol !== param) error(n, qd.msgs.A_rest_parameter_must_be_last_in_a_parameter_list);
@@ -5995,7 +5995,7 @@ export function newCheck(f: qt.Frame) {
             return grammarErrorOnFirstToken(n, qd.msgs.A_decorator_can_only_decorate_a_method_implementation_not_an_overload);
           return grammarErrorOnFirstToken(n, qd.msgs.Decorators_are_not_valid_here);
         } else if (n.kind === Syntax.GetAccessor || n.kind === Syntax.SetAccessor) {
-          const accessors = getAllAccessorDeclarations((<ClassDeclaration>n.parent).members, <AccessorDeclaration>n);
+          const accessors = qf.get.allAccessorDeclarations((<ClassDeclaration>n.parent).members, <AccessorDeclaration>n);
           if (accessors.firstAccessor.decorators && n === accessors.secondAccessor)
             return grammarErrorOnFirstToken(n, qd.msgs.Decorators_cannot_be_applied_to_multiple_get_Slashset_accessors_of_the_same_name);
         }
@@ -6365,7 +6365,7 @@ export function newCheck(f: qt.Frame) {
               throw qg.assertNever(prop, 'Unexpected syntax kind:' + (<Node>prop).kind);
           }
           if (!inDestructuring) {
-            const effectiveName = getPropertyNameForPropertyNameNode(name);
+            const effectiveName = qf.get.propertyNameForPropertyNameNode(name);
             if (effectiveName === undefined) continue;
             const existingKind = seen.get(effectiveName);
             if (!existingKind) seen.set(effectiveName, currentKind);
@@ -6455,7 +6455,7 @@ export function newCheck(f: qt.Frame) {
           return grammarErrorOnNode(accessor.name, accessor.kind === Syntax.GetAccessor ? qd.msgs.A_get_accessor_cannot_have_parameters : qd.msgs.A_set_accessor_must_have_exactly_one_parameter);
         if (accessor.kind === Syntax.SetAccessor) {
           if (accessor.type) return grammarErrorOnNode(accessor.name, qd.msgs.A_set_accessor_cannot_have_a_return_type_annotation);
-          const parameter = qg.check.defined(getSetAccessorValueParameter(accessor), 'Return value does not match parameter count assertion.');
+          const parameter = qg.check.defined(qf.get.setAccessorValueParameter(accessor), 'Return value does not match parameter count assertion.');
           if (parameter.dot3Token) return grammarErrorOnNode(parameter.dot3Token, qd.msgs.A_set_accessor_cannot_have_rest_parameter);
           if (parameter.questionToken) return grammarErrorOnNode(parameter.questionToken, qd.msgs.A_set_accessor_cannot_have_an_optional_parameter);
           if (parameter.initer) return grammarErrorOnNode(accessor.name, qd.msgs.A_set_accessor_parameter_cannot_have_an_initer);
@@ -6632,7 +6632,7 @@ export function newCheck(f: qt.Frame) {
         }
       }
       constructorTypeAnnotation(n: qc.ConstructorDeclaration) {
-        const type = getEffectiveReturnTypeNode(n);
+        const type = qf.get.effectiveReturnTypeNode(n);
         if (type) return grammarErrorOnNode(type, qd.msgs.Type_annotation_cannot_appear_on_a_constructor_declaration);
       }
       property(n: qc.PropertyDeclaration | PropertySignature) {

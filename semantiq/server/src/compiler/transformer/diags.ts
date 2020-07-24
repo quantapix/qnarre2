@@ -146,7 +146,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(
     return getParameterDeclarationTypeVisibilityError;
   }
   if (qc.is.kind(qc.TypeParameterDeclaration, node)) return getTypeParameterConstraintVisibilityError;
-  if (qc.is.kind(qc.ExpressionWithTypeArguments, node)) return getHeritageClauseVisibilityError;
+  if (qc.is.kind(qc.ExpressionWithTypeArguments, node)) return qf.get.heritageClauseVisibilityError;
   if (qc.is.kind(qc.ImportEqualsDeclaration, node)) return getImportEntityNameVisibilityError;
   if (qc.is.kind(qc.TypeAliasDeclaration, node)) return getTypeAliasDeclarationVisibilityError;
   return Debug.assertNever(node, `Attempted to set a declaration diagnostic context for unhandled node kind: ${(ts as any).SyntaxKind[(node as any).kind]}`);
@@ -391,7 +391,7 @@ export function createGetSymbolAccessibilityDiagnosticForNode(
       typeName: (node as NamedDeclaration).name,
     };
   }
-  function getHeritageClauseVisibilityError(): SymbolAccessibilityDiagnostic {
+  function qf.get.heritageClauseVisibilityError(): SymbolAccessibilityDiagnostic {
     let diagnosticMessage: qd.Message;
     if (node.parent.parent.kind === Syntax.ClassDeclaration) {
       diagnosticMessage =

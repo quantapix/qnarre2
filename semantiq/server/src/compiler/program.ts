@@ -1255,7 +1255,7 @@ export function createProgram(
     return runWithCancellationToken(() => {
       const diagnostics: DiagnosticWithLocation[] = [];
       walk(sourceFile, sourceFile);
-      qc.forEach.childRecursively(sourceFile, walk, walkArray);
+      qf.each.childRecursively(sourceFile, walk, walkArray);
       return diagnostics;
       function walk(node: Node, parent: Node) {
         switch (parent.kind) {
@@ -1511,13 +1511,13 @@ export function createProgram(
     return;
     function collectModuleReferences(node: Statement, inAmbientModule: boolean): void {
       if (qc.is.anyImportOrReExport(node)) {
-        const moduleNameExpr = getExternalModuleName(node);
+        const moduleNameExpr = qf.get.externalModuleName(node);
         if (moduleNameExpr && qc.is.kind(qc.StringLiteral, moduleNameExpr) && moduleNameExpr.text && (!inAmbientModule || !isExternalModuleNameRelative(moduleNameExpr.text))) {
           imports = append(imports, moduleNameExpr);
         }
       } else if (qc.is.kind(qc.ModuleDeclaration, node)) {
         if (qc.is.ambientModule(node) && (inAmbientModule || qc.has.syntacticModifier(node, ModifierFlags.Ambient) || file.isDeclarationFile)) {
-          const nameText = getTextOfIdentifierOrLiteral(node.name);
+          const nameText = qf.get.textOfIdentifierOrLiteral(node.name);
           if (isExternalModuleFile || (inAmbientModule && !isExternalModuleNameRelative(nameText))) {
             (moduleAugmentations || (moduleAugmentations = [])).push(node.name);
           } else if (!inAmbientModule) {
@@ -1553,7 +1553,7 @@ export function createProgram(
         if (child.pos <= position && (position < child.end || (position === child.end && child.kind === Syntax.EndOfFileToken))) return child;
       };
       while (true) {
-        const child = (isJavaScriptFile && qc.is.withDocNodes(current) && forEach(current.doc, getContainingChild)) || qc.forEach.child(current, getContainingChild);
+        const child = (isJavaScriptFile && qc.is.withDocNodes(current) && forEach(current.doc, getContainingChild)) || qf.each.child(current, getContainingChild);
         if (!child) return current;
         current = child;
       }
@@ -2227,7 +2227,7 @@ export function createProgram(
     if (options.isolatedModules) {
       const firstNonExternalModuleSourceFile = find(files, (f) => !qc.is.externalModule(f) && !isSourceFileJS(f) && !f.isDeclarationFile && f.scriptKind !== ScriptKind.JSON);
       if (firstNonExternalModuleSourceFile) {
-        const span = getErrorSpanForNode(firstNonExternalModuleSourceFile, firstNonExternalModuleSourceFile);
+        const span = qf.get.errorSpanForNode(firstNonExternalModuleSourceFile, firstNonExternalModuleSourceFile);
         programqd.add(qf.create.fileDiagnostic(firstNonExternalModuleSourceFile, span.start, span.length, qd.All_files_must_be_modules_when_the_isolatedModules_flag_is_provided));
       }
     }
@@ -2235,7 +2235,7 @@ export function createProgram(
       if (options.module && !(options.module === ModuleKind.AMD || options.module === ModuleKind.System)) {
         createDiagnosticForOptionName(qd.Only_amd_and_system_modules_are_supported_alongside_0, options.out ? 'out' : 'outFile', 'module');
       } else if (options.module === undefined && firstNonAmbientExternalModuleSourceFile) {
-        const span = getErrorSpanForNode(firstNonAmbientExternalModuleSourceFile, firstNonAmbientExternalModuleSourceFile.externalModuleIndicator!);
+        const span = qf.get.errorSpanForNode(firstNonAmbientExternalModuleSourceFile, firstNonAmbientExternalModuleSourceFile.externalModuleIndicator!);
         programqd.add(
           qf.create.fileDiagnostic(
             firstNonAmbientExternalModuleSourceFile,

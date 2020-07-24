@@ -290,7 +290,7 @@ export function transformClassFields(context: TransformationContext) {
   }
   function visitClassDeclaration(node: ClassDeclaration) {
     if (!forEach(node.members, doesClassElementNeedTransform)) return visitEachChild(node, visitor, context);
-    const extendsClauseElement = getEffectiveBaseTypeNode(node);
+    const extendsClauseElement = qf.get.effectiveBaseTypeNode(node);
     const isDerivedClass = !!(extendsClauseElement && skipOuterExpressions(extendsClauseElement.expression).kind !== Syntax.NullKeyword);
     const statements: Statement[] = [
       node.update(undefined, node.modifiers, node.name, undefined, Nodes.visit(node.heritageClauses, visitor, isHeritageClause), transformClassMembers(node, isDerivedClass)),
@@ -308,7 +308,7 @@ export function transformClassFields(context: TransformationContext) {
     if (!forEach(node.members, doesClassElementNeedTransform)) return visitEachChild(node, visitor, context);
     const isDecoratedClassDeclaration = qc.is.kind(qc.ClassDeclaration, qc.get.originalOf(node));
     const staticProperties = getProperties(node, true);
-    const extendsClauseElement = getEffectiveBaseTypeNode(node);
+    const extendsClauseElement = qf.get.effectiveBaseTypeNode(node);
     const isDerivedClass = !!(extendsClauseElement && skipOuterExpressions(extendsClauseElement.expression).kind !== Syntax.NullKeyword);
     const classExpression = node.update(node.modifiers, node.name, undefined, Nodes.visit(node.heritageClauses, visitor, isHeritageClause), transformClassMembers(node, isDerivedClass));
     if (some(staticProperties) || some(pendingExpressions)) {
@@ -359,7 +359,7 @@ export function transformClassFields(context: TransformationContext) {
     return isInitializedProperty(member) || (shouldTransformPrivateFields && member.qc.is.privateIdentifierPropertyDeclaration());
   }
   function transformConstructor(node: ClassDeclaration | ClassExpression, isDerivedClass: boolean) {
-    const constructor = visitNode(getFirstConstructorWithBody(node), visitor, ConstructorDeclaration.kind);
+    const constructor = visitNode(qf.get.firstConstructorWithBody(node), visitor, ConstructorDeclaration.kind);
     const properties = node.members.filter(isPropertyDeclarationThatRequiresConstructorStatement);
     if (!some(properties)) return constructor;
     const parameters = visitParameterList(constructor ? constructor.parameters : undefined, visitor, context);

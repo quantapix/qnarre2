@@ -214,7 +214,7 @@ export function transformModule(context: TransformationContext) {
       }
     }
     for (const importNode of currentModuleInfo.externalImports) {
-      const externalModuleName = getExternalModuleNameLiteral(importNode, currentSourceFile, host, resolver, compilerOptions);
+      const externalModuleName = qf.get.externalModuleNameLiteral(importNode, currentSourceFile, host, resolver, compilerOptions);
       const importAliasName = getLocalNameForExternalImport(importNode, currentSourceFile);
       if (externalModuleName) {
         if (includeNonAmdDependencies && importAliasName) {
@@ -229,7 +229,7 @@ export function transformModule(context: TransformationContext) {
     return { aliasedModuleNames, unaliasedModuleNames, importAliasNames };
   }
   function getAMDImportExpressionForImport(node: ImportDeclaration | ExportDeclaration | ImportEqualsDeclaration) {
-    if (qc.is.kind(qc.ImportEqualsDeclaration, node) || qc.is.kind(qc.ExportDeclaration, node) || !getExternalModuleNameLiteral(node, currentSourceFile, host, resolver, compilerOptions)) {
+    if (qc.is.kind(qc.ImportEqualsDeclaration, node) || qc.is.kind(qc.ExportDeclaration, node) || !qf.get.externalModuleNameLiteral(node, currentSourceFile, host, resolver, compilerOptions)) {
       return;
     }
     const name = getLocalNameForExternalImport(node, currentSourceFile)!;
@@ -444,7 +444,7 @@ export function transformModule(context: TransformationContext) {
   }
   function visitImportDeclaration(node: ImportDeclaration): VisitResult<Statement> {
     let statements: Statement[] | undefined;
-    const namespaceDeclaration = getNamespaceDeclarationNode(node);
+    const namespaceDeclaration = qf.get.namespaceDeclarationNode(node);
     if (moduleKind !== ModuleKind.AMD) {
       if (!node.importClause) return setRange(new qc.ExpressionStatement(createRequireCall(node)), node).setOriginal(node);
       else {
@@ -486,7 +486,7 @@ export function transformModule(context: TransformationContext) {
     return singleOrMany(statements);
   }
   function createRequireCall(importNode: ImportDeclaration | ImportEqualsDeclaration | ExportDeclaration) {
-    const moduleName = getExternalModuleNameLiteral(importNode, currentSourceFile, host, resolver, compilerOptions);
+    const moduleName = qf.get.externalModuleNameLiteral(importNode, currentSourceFile, host, resolver, compilerOptions);
     const args: Expression[] = [];
     if (moduleName) {
       args.push(moduleName);
@@ -1211,7 +1211,7 @@ export function transformSystemModule(context: TransformationContext) {
     const groupIndices = createMap<number>();
     const dependencyGroups: DependencyGroup[] = [];
     for (const externalImport of externalImports) {
-      const externalModuleName = getExternalModuleNameLiteral(externalImport, currentSourceFile, host, resolver, compilerOptions);
+      const externalModuleName = qf.get.externalModuleNameLiteral(externalImport, currentSourceFile, host, resolver, compilerOptions);
       if (externalModuleName) {
         const text = externalModuleName.text;
         const groupIndex = groupIndices.get(text);
@@ -1632,7 +1632,7 @@ export function transformSystemModule(context: TransformationContext) {
     if (qc.has.syntacticModifier(decl, ModifierFlags.Export)) {
       const exportName = qc.has.syntacticModifier(decl, ModifierFlags.Default) ? qc.asLiteral('default') : decl.name!;
       statements = appendExportStatement(statements, exportName, getLocalName(decl));
-      excludeName = getTextOfIdentifierOrLiteral(exportName);
+      excludeName = qf.get.textOfIdentifierOrLiteral(exportName);
     }
     if (decl.name) {
       statements = appendExportsOfDeclaration(statements, decl, excludeName);

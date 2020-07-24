@@ -669,7 +669,7 @@ export class QContext {
     }
   }
   indexInfoToIndexSignatureDeclarationHelper(indexInfo: IndexInfo, kind: IndexKind): IndexSignatureDeclaration {
-    const name = getNameFromIndexInfo(indexInfo) || 'x';
+    const name = qf.get.nameFromIndexInfo(indexInfo) || 'x';
     const indexerTypeNode = new qc.KeywordTypeNode(kind === IndexKind.String ? Syntax.StringKeyword : Syntax.NumberKeyword);
     const indexingParameter = new qc.ParameterDeclaration(undefined, undefined, undefined, name, undefined, indexerTypeNode, undefined);
     const typeNode = this.typeToTypeNodeHelper(indexInfo.type || anyType);
@@ -769,7 +769,7 @@ export class QContext {
   }
   trackComputedName(accessExpression: EntityNameOrEntityNameExpression, enclosingDeclaration: Node | undefined) {
     if (!this.tracker.trackSymbol) return;
-    const firstIdentifier = getFirstIdentifier(accessExpression);
+    const firstIdentifier = qf.get.firstIdentifier(accessExpression);
     const name = resolveName(firstIdentifier, firstIdentifier.escapedText, SymbolFlags.Value | SymbolFlags.ExportValue, undefined, undefined, true);
     if (name) this.tracker.trackSymbol(name, enclosingDeclaration, SymbolFlags.Value);
   }
@@ -811,7 +811,7 @@ export class QContext {
   }
   serializeReturnTypeForSignature(type: Type, signature: Signature, includePrivateSymbol?: (s: Symbol) => void, bundled?: boolean) {
     if (type !== errorType && this.enclosingDeclaration) {
-      const annotation = signature.declaration && getEffectiveReturnTypeNode(signature.declaration);
+      const annotation = signature.declaration && qf.get.effectiveReturnTypeNode(signature.declaration);
       if (
         !!qc.findAncestor(annotation, (n) => n === this.enclosingDeclaration) &&
         annotation &&
@@ -950,7 +950,7 @@ export class QContext {
       );
     }
     if (qf.is.entityName(node) || qf.is.entityNameExpression(node)) {
-      const leftmost = getFirstIdentifier(node);
+      const leftmost = qf.get.firstIdentifier(node);
       if (
         qf.is.inJSFile(node) &&
         (qf.is.exportsIdentifier(leftmost) ||

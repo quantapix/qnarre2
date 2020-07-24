@@ -469,9 +469,9 @@ export function transformDeclarations(context: TransformationContext) {
     if (qc.is.kind(qc.SetAccessorDeclaration, input)) {
       let newValueParameter: ParameterDeclaration | undefined;
       if (!isPrivate) {
-        const valueParameter = getSetAccessorValueParameter(input);
+        const valueParameter = qf.get.setAccessorValueParameter(input);
         if (valueParameter) {
-          const accessorType = getTypeAnnotationFromAllAccessorDeclarations(input, resolver.getAllAccessorDeclarations(input));
+          const accessorType = getTypeAnnotationFromAllAccessorDeclarations(input, resolver.qf.get.allAccessorDeclarations(input));
           newValueParameter = ensureParameter(valueParameter, undefined, accessorType);
         }
       }
@@ -512,7 +512,7 @@ export function transformDeclarations(context: TransformationContext) {
     resultHasExternalModuleIndicator = resultHasExternalModuleIndicator || (parent.kind !== Syntax.ModuleDeclaration && parent.kind !== Syntax.ImportType);
     if (StringLiteral.like(input)) {
       if (isBundledEmit) {
-        const newName = getExternalModuleNameFromDeclaration(context.getEmitHost(), resolver, parent);
+        const newName = qf.get.externalModuleNameFromDeclaration(context.getEmitHost(), resolver, parent);
         if (newName) return qc.asLiteral(newName);
       } else {
         const symbol = resolver.getSymbolOfExternalModuleSpecifier(input);
@@ -664,7 +664,7 @@ export function transformDeclarations(context: TransformationContext) {
         }
         case Syntax.GetAccessor: {
           if (qc.is.kind(qc.PrivateIdentifier, input.name)) return cleanup(undefined);
-          const accessorType = getTypeAnnotationFromAllAccessorDeclarations(input, resolver.getAllAccessorDeclarations(input));
+          const accessorType = getTypeAnnotationFromAllAccessorDeclarations(input, resolver.qf.get.allAccessorDeclarations(input));
           return cleanup(
             input.update(
               undefined,
@@ -918,7 +918,7 @@ export function transformDeclarations(context: TransformationContext) {
       case Syntax.ClassDeclaration: {
         const modifiers = new Nodes(ensureModifiers(input));
         const typeParameters = ensureTypeParams(input, input.typeParameters);
-        const ctor = getFirstConstructorWithBody(input);
+        const ctor = qf.get.firstConstructorWithBody(input);
         let parameterProperties: readonly PropertyDeclaration[] | undefined;
         if (ctor) {
           const oldDiag = getSymbolAccessibilityDiagnostic;
@@ -947,7 +947,7 @@ export function transformDeclarations(context: TransformationContext) {
         const privateIdentifier = hasPrivateIdentifier ? [PropertyDeclaration.create(undefined, undefined, new PrivateIdentifier('#private'), undefined, undefined, undefined)] : undefined;
         const memberNodes = concatenate(concatenate(privateIdentifier, parameterProperties), Nodes.visit(input.members, visitDeclarationSubtree));
         const members = new Nodes(memberNodes);
-        const extendsClause = getEffectiveBaseTypeNode(input);
+        const extendsClause = qf.get.effectiveBaseTypeNode(input);
         if (extendsClause && !qc.is.entityNameExpression(extendsClause.expression) && extendsClause.expression.kind !== Syntax.NullKeyword) {
           const oldId = input.name ? syntax.get.unescUnderscores(input.name.escapedText) : 'default';
           const newId = createOptimisticUniqueName(`${oldId}_base`);

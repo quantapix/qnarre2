@@ -314,7 +314,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
       getResolvedSymbol,
       getIndexTypeOfStructuredType,
       getConstraintOfTypeParameter,
-      getFirstIdentifier,
+      qf.get.firstIdentifier,
       getTypeArguments
     ),
     getAmbientModules,
@@ -1099,7 +1099,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
         }
         if (qf.is.internalModuleImportEqualsDeclaration(declaration)) {
           const internalModuleReference = <Identifier | QualifiedName>declaration.moduleReference;
-          const firstIdentifier = getFirstIdentifier(internalModuleReference);
+          const firstIdentifier = qf.get.firstIdentifier(internalModuleReference);
           const importSymbol = resolveName(declaration, firstIdentifier.escapedText, qt.SymbolFlags.Value | qt.SymbolFlags.Type | qt.SymbolFlags.Namespace, undefined, undefined, false);
           const id = importSymbol && '' + importSymbol.getId();
           if (importSymbol && !visited!.has(id!)) {
@@ -3164,7 +3164,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   }
   function tryGetThisTypeAt(node: Node, includeGlobalThis = true, container = qf.get.thisContainer(node, false)): Type | undefined {
     const isInJS = qf.is.inJSFile(node);
-    if (qf.is.functionLike(container) && (!isInParameterIniterBeforeContainingFunction(node) || getThisNodeKind(ParameterDeclaration, container))) {
+    if (qf.is.functionLike(container) && (!isInParameterIniterBeforeContainingFunction(node) || qf.get.thisNodeKind(ParameterDeclaration, container))) {
       const className = getClassNameFromPrototypeMethod(container);
       if (isInJS && className) {
         const classSymbol = check.expression(className).symbol;
@@ -3733,7 +3733,7 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
   }
   function markEntityNameOrEntityExpressionAsReference(typeName: EntityNameOrEntityNameExpression | undefined) {
     if (!typeName) return;
-    const rootName = getFirstIdentifier(typeName);
+    const rootName = qf.get.firstIdentifier(typeName);
     const meaning = (typeName.kind === Syntax.Identifier ? qt.SymbolFlags.Type : qt.SymbolFlags.Namespace) | qt.SymbolFlags.Alias;
     const rootSymbol = resolveName(rootName, rootName.escapedText, meaning, undefined, undefined, true);
     if (rootSymbol && rootSymbol.flags & qt.SymbolFlags.Alias && symbolIsValue(rootSymbol) && !isConstEnumOrConstEnumOnlyModule(rootSymbol.resolveAlias()) && !rootSymbol.getTypeOnlyAliasDeclaration())
@@ -4040,12 +4040,12 @@ export function create(host: qt.TypeCheckerHost, produceDiagnostics: boolean): q
     return container1 === container2;
   }
   function importClauseContainsReferencedImport(importClause: ImportClause) {
-    return forEachImportClauseDeclaration(importClause, (declaration) => {
+    return qf.each.importClause(importClause, (declaration) => {
       return !!getSymbolOfNode(declaration).isReferenced;
     });
   }
   function importClauseContainsConstEnumUsedAsValue(importClause: ImportClause) {
-    return forEachImportClauseDeclaration(importClause, (declaration) => {
+    return qf.each.importClause(importClause, (declaration) => {
       return !!s.getLinks(getSymbolOfNode(declaration)).constEnumReferenced;
     });
   }

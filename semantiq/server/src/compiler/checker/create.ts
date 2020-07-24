@@ -743,7 +743,7 @@ export function newCreate(f: qt.Frame) {
           return !!(symbol && this.getCheckFlags() & qt.CheckFlags.Late);
         },
         getJsxFactoryEntity,
-        getAllAccessorDeclarations(accessor: AccessorDeclaration): AllAccessorDeclarations {
+        qf.get.allAccessorDeclarations(accessor: AccessorDeclaration): AllAccessorDeclarations {
           accessor = qf.get.parseTreeOf(accessor, GetAccessorDeclaration.orSetKind)!;
           const otherKind = accessor.kind === Syntax.SetAccessor ? Syntax.GetAccessor : Syntax.SetAccessor;
           const otherAccessor = getDeclarationOfKind<AccessorDeclaration>(getSymbolOfNode(accessor), otherKind);
@@ -1417,7 +1417,7 @@ export function newResolve(f: qt.Frame) {
       const namespaceMeaning = qt.SymbolFlags.Namespace | (qf.is.inJSFile(name) ? meaning & qt.SymbolFlags.Value : 0);
       let symbol: Symbol | undefined;
       if (name.kind === Syntax.Identifier) {
-        const message = meaning === namespaceMeaning || isSynthesized(name) ? qd.msgs.Cannot_find_namespace_0 : getCannotFindNameDiagnosticForName(getFirstIdentifier(name));
+        const message = meaning === namespaceMeaning || isSynthesized(name) ? qd.msgs.Cannot_find_namespace_0 : getCannotFindNameDiagnosticForName(qf.get.firstIdentifier(name));
         const symbolFromJSPrototype = qf.is.inJSFile(name) && !isSynthesized(name) ? this.entityNameFromAssignmentDeclaration(name, meaning) : undefined;
         symbol = getMergedSymbol(this.name(location || name, name.escapedText, meaning, ignoreErrors || symbolFromJSPrototype ? undefined : message, name, true));
         if (!symbol) return getMergedSymbol(symbolFromJSPrototype);
@@ -1450,7 +1450,7 @@ export function newResolve(f: qt.Frame) {
       } else throw Debug.assertNever(name, 'Unknown entity name kind.');
       assert((this.getCheckFlags() & qt.CheckFlags.Instantiated) === 0, 'Should never get an instantiated symbol here.');
       if (!isSynthesized(name) && qf.is.entityName(name) && (symbol.flags & qt.SymbolFlags.Alias || name.parent.kind === Syntax.ExportAssignment))
-        markSymbolOfAliasDeclarationIfTypeOnly(getAliasDeclarationFromName(name), symbol, undefined, true);
+        markSymbolOfAliasDeclarationIfTypeOnly(qf.get.aliasDeclarationFromName(name), symbol, undefined, true);
       return symbol.flags & meaning || dontResolveAlias ? symbol : symbol.resolve.alias();
     }
     entityNameFromAssignmentDeclaration(name: Identifier, meaning: qt.SymbolFlags) {
@@ -1555,7 +1555,7 @@ export function newResolve(f: qt.Frame) {
         }
         if (compilerOptions.esModuleInterop) {
           const referenceParent = referencingLocation.parent;
-          if ((qf.is.kind(qc.ImportDeclaration, referenceParent) && getNamespaceDeclarationNode(referenceParent)) || qf.is.importCall(referenceParent)) {
+          if ((qf.is.kind(qc.ImportDeclaration, referenceParent) && qf.get.namespaceDeclarationNode(referenceParent)) || qf.is.importCall(referenceParent)) {
             const type = this.getTypeOfSymbol();
             let sigs = getSignaturesOfStructuredType(type, SignatureKind.Call);
             if (!sigs || !sigs.length) sigs = getSignaturesOfStructuredType(type, SignatureKind.Construct);
@@ -1620,8 +1620,8 @@ export function newResolve(f: qt.Frame) {
     baseTypesOfInterface(type: InterfaceType): void {
       type.resolvedBaseTypes = type.resolvedBaseTypes || empty;
       for (const declaration of type.symbol.declarations) {
-        if (declaration.kind === Syntax.InterfaceDeclaration && getInterfaceBaseTypeNodes(<InterfaceDeclaration>declaration)) {
-          for (const node of getInterfaceBaseTypeNodes(<InterfaceDeclaration>declaration)!) {
+        if (declaration.kind === Syntax.InterfaceDeclaration && qf.get.interfaceBaseTypeNodes(<InterfaceDeclaration>declaration)) {
+          for (const node of qf.get.interfaceBaseTypeNodes(<InterfaceDeclaration>declaration)!) {
             const baseType = getReducedType(getTypeFromTypeNode(node));
             if (baseType !== errorType) {
               if (isValidBaseType(baseType)) {
@@ -2104,7 +2104,7 @@ export function newResolve(f: qt.Frame) {
           return anySignature;
         }
         if (superType !== errorType) {
-          const baseTypeNode = getEffectiveBaseTypeNode(qf.get.containingClass(node)!);
+          const baseTypeNode = qf.get.effectiveBaseTypeNode(qf.get.containingClass(node)!);
           if (baseTypeNode) {
             const baseConstructors = getInstantiatedConstructorsForTypeArguments(superType, baseTypeNode.typeArguments, baseTypeNode);
             return this.call(node, baseConstructors, candidatesOutArray, checkMode, SignatureFlags.None);

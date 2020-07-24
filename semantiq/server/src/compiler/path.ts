@@ -429,7 +429,7 @@ export interface ResolveModuleNameResolutionHost {
   getCommonSourceDirectory(): string;
   getCurrentDirectory(): string;
 }
-export function getExternalModuleNameFromPath(host: ResolveModuleNameResolutionHost, fileName: string, referencePath?: string): string {
+export function qf.get.externalModuleNameFromPath(host: ResolveModuleNameResolutionHost, fileName: string, referencePath?: string): string {
   const getCanonicalFileName = (f: string) => host.getCanonicalFileName(f);
   const dir = toPath(referencePath ? getDirectoryPath(referencePath) : host.getCommonSourceDirectory(), host.getCurrentDirectory(), getCanonicalFileName);
   const filePath = getNormalizedAbsolutePath(fileName, host.getCurrentDirectory());

@@ -307,7 +307,7 @@ export function transformTypeScript(context: TransformationContext) {
   }
   function shouldEmitDecorateCallForClass(node: ClassDeclaration) {
     if (node.decorators && node.decorators.length > 0) return true;
-    const constructor = getFirstConstructorWithBody(node);
+    const constructor = qf.get.firstConstructorWithBody(node);
     if (constructor) return forEach(constructor.parameters, shouldEmitDecorateCallForParameter);
     return false;
   }
@@ -317,7 +317,7 @@ export function transformTypeScript(context: TransformationContext) {
   function getClassFacts(node: ClassDeclaration, staticProperties: readonly PropertyDeclaration[]) {
     let facts = ClassFacts.None;
     if (some(staticProperties)) facts |= ClassFacts.HasStaticInitializedProperties;
-    const extendsClauseElement = getEffectiveBaseTypeNode(node);
+    const extendsClauseElement = qf.get.effectiveBaseTypeNode(node);
     if (extendsClauseElement && skipOuterExpressions(extendsClauseElement.expression).kind !== Syntax.NullKeyword) facts |= ClassFacts.IsDerivedClass;
     if (shouldEmitDecorateCallForClass(node)) facts |= ClassFacts.HasConstructorDecorators;
     if (childIsDecorated(node)) facts |= ClassFacts.HasMemberDecorators;
@@ -423,7 +423,7 @@ export function transformTypeScript(context: TransformationContext) {
   }
   function transformClassMembers(node: ClassDeclaration | ClassExpression) {
     const members: ClassElement[] = [];
-    const constructor = getFirstConstructorWithBody(node);
+    const constructor = qf.get.firstConstructorWithBody(node);
     const parametersWithPropertyAssignments = constructor && filter(constructor.parameters, (p) => qc.is.parameterPropertyDeclaration(p, constructor));
     if (parametersWithPropertyAssignments) {
       for (const parameter of parametersWithPropertyAssignments) {
@@ -472,7 +472,7 @@ export function transformTypeScript(context: TransformationContext) {
   }
   function getAllDecoratorsOfConstructor(node: ClassExpression | ClassDeclaration): AllDecorators | undefined {
     const decorators = node.decorators;
-    const parameters = getDecoratorsOfParameters(getFirstConstructorWithBody(node));
+    const parameters = getDecoratorsOfParameters(qf.get.firstConstructorWithBody(node));
     if (!decorators && !parameters) {
       return;
     }
@@ -498,7 +498,7 @@ export function transformTypeScript(context: TransformationContext) {
     if (!accessor.body) {
       return;
     }
-    const { firstAccessor, secondAccessor, setAccessor } = getAllAccessorDeclarations(node.members, accessor);
+    const { firstAccessor, secondAccessor, setAccessor } = qf.get.allAccessorDeclarations(node.members, accessor);
     const firstAccessorWithDecorators = firstAccessor.decorators ? firstAccessor : secondAccessor && secondAccessor.decorators ? secondAccessor : undefined;
     if (!firstAccessorWithDecorators || accessor !== firstAccessorWithDecorators) {
       return;
@@ -658,7 +658,7 @@ export function transformTypeScript(context: TransformationContext) {
     switch (node.kind) {
       case Syntax.ClassDeclaration:
       case Syntax.ClassExpression:
-        return getFirstConstructorWithBody(<ClassLikeDeclaration>node) !== undefined;
+        return qf.get.firstConstructorWithBody(<ClassLikeDeclaration>node) !== undefined;
       case Syntax.MethodDeclaration:
       case Syntax.GetAccessor:
       case Syntax.SetAccessor:
@@ -669,8 +669,8 @@ export function transformTypeScript(context: TransformationContext) {
   type SerializedEntityNameAsExpression = Identifier | BinaryExpression | PropertyAccessExpression;
   type SerializedTypeNode = SerializedEntityNameAsExpression | VoidExpression | ConditionalExpression;
   function getAccessorTypeNode(node: AccessorDeclaration) {
-    const accessors = resolver.getAllAccessorDeclarations(node);
-    return (accessors.setAccessor && getSetAccessorTypeAnnotationNode(accessors.setAccessor)) || (accessors.getAccessor && getEffectiveReturnTypeNode(accessors.getAccessor));
+    const accessors = resolver.qf.get.allAccessorDeclarations(node);
+    return (accessors.setAccessor && qf.get.setAccessorTypeAnnotationNode(accessors.setAccessor)) || (accessors.getAccessor && qf.get.effectiveReturnTypeNode(accessors.getAccessor));
   }
   function serializeTypeOfNode(node: Node): SerializedTypeNode {
     switch (node.kind) {
@@ -689,7 +689,7 @@ export function transformTypeScript(context: TransformationContext) {
     }
   }
   function serializeParameterTypesOfNode(node: Node, container: ClassLikeDeclaration): ArrayLiteralExpression {
-    const valueDeclaration = qc.is.classLike(node) ? getFirstConstructorWithBody(node) : qc.is.functionLike(node) && qc.is.present((node as FunctionLikeDeclaration).body) ? node : undefined;
+    const valueDeclaration = qc.is.classLike(node) ? qf.get.firstConstructorWithBody(node) : qc.is.functionLike(node) && qc.is.present((node as FunctionLikeDeclaration).body) ? node : undefined;
     const expressions: SerializedTypeNode[] = [];
     if (valueDeclaration) {
       const parameters = getParametersOfDecoratedDeclaration(valueDeclaration, container);
@@ -710,7 +710,7 @@ export function transformTypeScript(context: TransformationContext) {
   }
   function getParametersOfDecoratedDeclaration(node: SignatureDeclaration, container: ClassLikeDeclaration) {
     if (container && node.kind === Syntax.GetAccessor) {
-      const { setAccessor } = getAllAccessorDeclarations(container.members, <AccessorDeclaration>node);
+      const { setAccessor } = qf.get.allAccessorDeclarations(container.members, <AccessorDeclaration>node);
       if (setAccessor) return setAccessor.parameters;
     }
     return node.parameters;

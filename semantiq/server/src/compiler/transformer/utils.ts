@@ -35,10 +35,10 @@ export function chainBundle(transformSourceFile: (x: SourceFile) => SourceFile):
   }
 }
 export function getExportNeedsImportStarHelper(node: ExportDeclaration): boolean {
-  return !!getNamespaceDeclarationNode(node);
+  return !!qf.get.namespaceDeclarationNode(node);
 }
 export function getImportNeedsImportStarHelper(node: ImportDeclaration): boolean {
-  if (!!getNamespaceDeclarationNode(node)) return true;
+  if (!!qf.get.namespaceDeclarationNode(node)) return true;
   const bindings = node.importClause && node.importClause.namedBindings;
   if (!bindings) return false;
   if (!qc.is.kind(qc.NamedImports, bindings)) return false;

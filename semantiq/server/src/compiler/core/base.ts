@@ -1034,10 +1034,10 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
     return n.kind !== Syntax.JsxText ? qy.get.leadingCommentRanges(this.text, n.pos) : undefined;
   }
   isStringDoubleQuoted(s: qt.StringLiteralLike) {
-    return this.getSourceTextOfNodeFromSourceFile(s).charCodeAt(0) === qy.Codes.doubleQuote;
+    return this.qf.get.sourceTextOfNodeFromSourceFile(s).charCodeAt(0) === qy.Codes.doubleQuote;
   }
   getResolvedExternalModuleName(host: ResolveModuleNameResolutionHost, file: SourceFile, referenceFile?: SourceFile): string {
-    return file.moduleName || getExternalModuleNameFromPath(host, file.fileName, referenceFile && referenceFile.fileName);
+    return file.moduleName || qf.get.externalModuleNameFromPath(host, file.fileName, referenceFile && referenceFile.fileName);
   }
   getSourceFilesToEmit(host: EmitHost, targetSourceFile?: SourceFile, forceDtsEmit?: boolean): readonly SourceFile[] {
     const options = host.getCompilerOptions();
@@ -1332,7 +1332,7 @@ export class SourceFile extends Declaration implements qy.SourceFile, qt.SourceF
           }
           break;
         case Syntax.BinaryExpression:
-          if (getAssignmentDeclarationKind(node as BinaryExpression) !== AssignmentDeclarationKind.None) addDeclaration(node as BinaryExpression);
+          if (qf.get.assignmentDeclarationKind(node as BinaryExpression) !== AssignmentDeclarationKind.None) addDeclaration(node as BinaryExpression);
         default:
           qf.each.child(node, visit);
       }
@@ -1409,7 +1409,7 @@ export function createGetSymbolWalker(
   getResolvedSymbol: (node: Node) => Symbol,
   getIndexTypeOfStructuredType: (t: Type, kind: qt.IndexKind) => Type | undefined,
   getConstraintOfTypeParameter: (typeParameter: TypeParameter) => Type | undefined,
-  getFirstIdentifier: (node: EntityNameOrEntityNameExpression) => Identifier,
+  qf.get.firstIdentifier: (node: EntityNameOrEntityNameExpression) => Identifier,
   getTypeArguments: (t: TypeReference) => readonly Type[]
 ) {
   return getSymbolWalker;
@@ -1523,7 +1523,7 @@ export function createGetSymbolWalker(
       forEach(s.declarations, (d) => {
         if ((d as any).type && (d as any).type.kind === Syntax.TypeQuery) {
           const query = (d as any).type as TypeQueryNode;
-          const entity = getResolvedSymbol(getFirstIdentifier(query.exprName));
+          const entity = getResolvedSymbol(qf.get.firstIdentifier(query.exprName));
           visitSymbol(entity);
         }
       });
@@ -1767,7 +1767,7 @@ export function hostUsesCaseSensitiveFileNames(host: { useCaseSensitiveFileNames
 export function hostGetCanonicalFileName(host: { useCaseSensitiveFileNames?(): boolean }): GetCanonicalFileName {
   return createGetCanonicalFileName(hostUsesCaseSensitiveFileNames(host));
 }
-export function getExternalModuleNameFromDeclaration(
+export function qf.get.externalModuleNameFromDeclaration(
   host: ResolveModuleNameResolutionHost,
   resolver: EmitResolver,
   declaration: ImportEqualsDeclaration | ImportDeclaration | ExportDeclaration | ModuleDeclaration | ImportTypeNode

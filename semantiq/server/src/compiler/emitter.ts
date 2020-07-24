@@ -373,7 +373,7 @@ export function emitFiles(
       resolver.collectLinkedAliases(node.propertyName || node.name, true);
       return;
     }
-    qc.forEach.child(node, collectLinkedAliases);
+    qf.each.child(node, collectLinkedAliases);
   }
   function printSourceFileOrBundle(jsFilePath: string, sourceMapFilePath: string | undefined, sourceFileOrBundle: SourceFile | Bundle, printer: Printer, mapOptions: SourceMapOptions) {
     const bundle = sourceFileOrBundle.kind === Syntax.Bundle ? sourceFileOrBundle : undefined;
@@ -508,7 +508,7 @@ export const notImplementedResolver: EmitResolver = {
   getTypeReferenceDirectivesForSymbol: notImplemented,
   isLiteralConstDeclaration: notImplemented,
   getJsxFactoryEntity: notImplemented,
-  getAllAccessorDeclarations: notImplemented,
+  qf.get.allAccessorDeclarations: notImplemented,
   getSymbolOfExternalModuleSpecifier: notImplemented,
   isBindingCapturedByNode: notImplemented,
   getDeclarationStatementsForSourceFile: notImplemented,
@@ -3493,7 +3493,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     } else if (qc.is.literalExpression(node) && (isSynthesized(node) || !node.parent)) {
       return node.text;
     }
-    return getSourceTextOfNodeFromSourceFile(currentSourceFile!, node, includeTrivia);
+    return qf.get.sourceTextOfNodeFromSourceFile(currentSourceFile!, node, includeTrivia);
   }
   function getLiteralTextOfNode(node: LiteralLikeNode, neverAsciiEscape: boolean | undefined, jsxAttributeEscape: boolean): string {
     if (node.kind === Syntax.StringLiteral && (<StringLiteral>node).textSourceNode) {
@@ -3726,7 +3726,7 @@ export function createPrinter(printerOptions: PrinterOptions = {}, handlers: Pri
     return isUniqueLocalName(name, node) ? name : makeUniqueName(name);
   }
   function generateNameForImportOrExportDeclaration(node: ImportDeclaration | ExportDeclaration) {
-    const expr = getExternalModuleName(node)!;
+    const expr = qf.get.externalModuleName(node)!;
     const baseName = qc.is.kind(qc.StringLiteral, expr) ? makeIdentifierFromModuleName(expr.text) : 'module';
     return makeUniqueName(baseName);
   }

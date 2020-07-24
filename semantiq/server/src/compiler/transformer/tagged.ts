@@ -51,7 +51,7 @@ function createTemplateCooked(template: TemplateHead | TemplateMiddle | Template
 function getRawLiteral(node: TemplateLiteralLikeNode, currentSourceFile: SourceFile) {
   let text = node.rawText;
   if (text === undefined) {
-    text = getSourceTextOfNodeFromSourceFile(currentSourceFile, node);
+    text = qf.get.sourceTextOfNodeFromSourceFile(currentSourceFile, node);
     const isLast = node.kind === Syntax.NoSubstitutionLiteral || node.kind === Syntax.TemplateTail;
     text = text.substring(1, text.length - (isLast ? 1 : 2));
   }

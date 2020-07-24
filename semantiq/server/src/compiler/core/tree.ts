@@ -293,7 +293,7 @@ export class Block extends qc.Statement implements qc.Block {
         case Syntax.LabeledStatement:
         case Syntax.TryStatement:
         case Syntax.CatchClause:
-          return qc.forEach.child(n, traverse);
+          return qf.each.child(n, traverse);
       }
       return;
     }
@@ -320,7 +320,7 @@ export class Block extends qc.Statement implements qc.Block {
               traverse(n.name.expression);
               return;
             }
-          } else if (!qf.is.partOfTypeNode(n)) qc.forEach.child(n, traverse);
+          } else if (!qf.is.partOfTypeNode(n)) qf.each.child(n, traverse);
       }
     }
     return traverse(this);
@@ -1611,10 +1611,10 @@ export class Identifier extends qc.TokenOrIdentifier implements qc.Identifier {
     return n;
   }
   static getLocalNameForExternalImport(d: ImportDeclaration | ExportDeclaration | ImportEqualsDeclaration, sourceFile: SourceFile): Identifier | undefined {
-    const d2 = getNamespaceDeclarationNode(d);
+    const d2 = qf.get.namespaceDeclarationNode(d);
     if (d2 && !isDefaultImport(d)) {
       const n = d2.name;
-      return qf.is.generatedIdentifier(n) ? n : new Identifier(getSourceTextOfNodeFromSourceFile(sourceFile, n) || qc.idText(n));
+      return qf.is.generatedIdentifier(n) ? n : new Identifier(qf.get.sourceTextOfNodeFromSourceFile(sourceFile, n) || qc.idText(n));
     }
     if (d.kind === Syntax.ImportDeclaration && d.importClause) return getGeneratedNameForNode(d);
     if (d.kind === Syntax.ExportDeclaration && d.moduleSpecifier) return getGeneratedNameForNode(d);
@@ -3028,7 +3028,7 @@ export class StringLiteral extends qc.LiteralExpression implements qc.StringLite
     return this.orNumericLiteralLike(e) || (qf.is.kind(PrefixUnaryExpression, e) && e.operator === Syntax.MinusToken && e.operand.kind === Syntax.NumericLiteral);
   }
   static fromNode(n: Exclude<qc.PropertyNameLiteral, PrivateIdentifier>): StringLiteral {
-    const r = new StringLiteral(getTextOfIdentifierOrLiteral(n));
+    const r = new StringLiteral(qf.get.textOfIdentifierOrLiteral(n));
     r.textSourceNode = n;
     return r;
   }
@@ -4330,14 +4330,14 @@ export namespace fixme {
     }
     return;
   }
-  export function getExternalModuleNameLiteral(
+  export function qf.get.externalModuleNameLiteral(
     importNode: ImportDeclaration | ExportDeclaration | ImportEqualsDeclaration,
     sourceFile: SourceFile,
     host: EmitHost,
     resolver: EmitResolver,
     compilerOptions: CompilerOptions
   ) {
-    const moduleName = getExternalModuleName(importNode)!;
+    const moduleName = qf.get.externalModuleName(importNode)!;
     if (moduleName.kind === Syntax.StringLiteral) {
       function tryRenameExternalModule(moduleName: LiteralExpression, sourceFile: SourceFile) {
         const rename = sourceFile.renamedDependencies && sourceFile.renamedDependencies.get(moduleName.text);
@@ -4357,7 +4357,7 @@ export namespace fixme {
       return;
     }
     if (file.moduleName) return asLiteral(file.moduleName);
-    if (!file.isDeclarationFile && (options.out || options.outFile)) return asLiteral(getExternalModuleNameFromPath(host, file.fileName));
+    if (!file.isDeclarationFile && (options.out || options.outFile)) return asLiteral(qf.get.externalModuleNameFromPath(host, file.fileName));
     return;
   }
 }
