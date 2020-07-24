@@ -101,7 +101,7 @@ export function transformDeclarations(context: TransformationContext) {
       if (errorInfo) {
         if (errorInfo.typeName) {
           context.addDiagnostic(
-            createDiagnosticForNode(
+            qf.create.diagnosticForNode(
               symbolAccessibilityResult.errorNode || errorInfo.errorNode,
               errorInfo.diagnosticMessage,
               qc.get.textOf(errorInfo.typeName),
@@ -111,7 +111,7 @@ export function transformDeclarations(context: TransformationContext) {
           );
         } else {
           context.addDiagnostic(
-            createDiagnosticForNode(
+            qf.create.diagnosticForNode(
               symbolAccessibilityResult.errorNode || errorInfo.errorNode,
               errorInfo.diagnosticMessage,
               symbolAccessibilityResult.errorSymbolName,
@@ -131,26 +131,26 @@ export function transformDeclarations(context: TransformationContext) {
     recordTypeReferenceDirectivesIfNecessary(resolver.getTypeReferenceDirectivesForSymbol(symbol, meaning));
   }
   function reportPrivateInBaseOfClassExpression(propertyName: string) {
-    if (errorNameNode) context.addDiagnostic(createDiagnosticForNode(errorNameNode, qd.Property_0_of_exported_class_expression_may_not_be_private_or_protected, propertyName));
+    if (errorNameNode) context.addDiagnostic(qf.create.diagnosticForNode(errorNameNode, qd.Property_0_of_exported_class_expression_may_not_be_private_or_protected, propertyName));
   }
   function reportInaccessibleUniqueSymbolError() {
     if (errorNameNode) {
       context.addDiagnostic(
-        createDiagnosticForNode(errorNameNode, qd.The_inferred_type_of_0_references_an_inaccessible_1_type_A_type_annotation_is_necessary, declarationNameToString(errorNameNode), 'unique symbol')
+        qf.create.diagnosticForNode(errorNameNode, qd.The_inferred_type_of_0_references_an_inaccessible_1_type_A_type_annotation_is_necessary, declarationNameToString(errorNameNode), 'unique symbol')
       );
     }
   }
   function reportInaccessibleThisError() {
     if (errorNameNode) {
       context.addDiagnostic(
-        createDiagnosticForNode(errorNameNode, qd.The_inferred_type_of_0_references_an_inaccessible_1_type_A_type_annotation_is_necessary, declarationNameToString(errorNameNode), 'this')
+        qf.create.diagnosticForNode(errorNameNode, qd.The_inferred_type_of_0_references_an_inaccessible_1_type_A_type_annotation_is_necessary, declarationNameToString(errorNameNode), 'this')
       );
     }
   }
   function reportLikelyUnsafeImportRequiredError(specifier: string) {
     if (errorNameNode) {
       context.addDiagnostic(
-        createDiagnosticForNode(
+        qf.create.diagnosticForNode(
           errorNameNode,
           qd.The_inferred_type_of_0_cannot_be_named_without_a_reference_to_1_This_is_likely_not_portable_A_type_annotation_is_necessary,
           declarationNameToString(errorNameNode),
@@ -165,8 +165,8 @@ export function transformDeclarations(context: TransformationContext) {
     for (const augmentations of augmentingDeclarations) {
       context.addDiagnostic(
         addRelatedInfo(
-          createDiagnosticForNode(augmentations, qd.Declaration_augments_declaration_in_another_file_This_cannot_be_serialized),
-          createDiagnosticForNode(primaryDeclaration, qd.This_is_the_declaration_being_augmented_Consider_moving_the_augmenting_declaration_into_the_same_file)
+          qf.create.diagnosticForNode(augmentations, qd.Declaration_augments_declaration_in_another_file_This_cannot_be_serialized),
+          qf.create.diagnosticForNode(primaryDeclaration, qd.This_is_the_declaration_being_augmented_Consider_moving_the_augmenting_declaration_into_the_same_file)
         )
       );
     }

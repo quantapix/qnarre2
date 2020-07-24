@@ -1,10 +1,10 @@
 import * as qc from '../core';
 import * as qd from '../diagnostic';
 import * as qg from '../debug';
-import { ExpandingFlags, Node, NodeFlags, ObjectFlags, SymbolFlags, TypeFlags, VarianceFlags } from './type';
+import { ExpandingFlags, ModifierFlags, Node, NodeFlags, ObjectFlags, SymbolFlags, TypeFlags, VarianceFlags } from './type';
 import * as qt from './type';
 import * as qu from '../util';
-import { ModifierFlags, Syntax } from '../syntax';
+import { Syntax } from '../syntax';
 import * as qy from '../syntax';
 import { Symbol } from './symbol';
 import { Tget } from './get';
@@ -16,6 +16,45 @@ export function newIs(f: qt.Frame) {
   const qf = f as Frame;
   interface Tis extends ReturnType<typeof qc.newIs> {}
   class Tis {
+    isDocIndexSignature(node: TypeReferenceNode | ExpressionWithTypeArguments) {
+      return (
+        this.kind(qc.TypeReferenceNode, node) &&
+        this.kind(qc.Identifier, node.typeName) &&
+        node.typeName.escapedText === 'Object' &&
+        node.typeArguments &&
+        node.typeArguments.length === 2 &&
+        (node.typeArguments[0].kind === Syntax.StringKeyword || node.typeArguments[0].kind === Syntax.NumberKeyword)
+      );
+    }
+    nodeCanBeDecorated(node: ClassDeclaration): true;
+    nodeCanBeDecorated(node: ClassElement, parent: Node): boolean;
+    nodeCanBeDecorated(node: Node, parent: Node, grandparent: Node): boolean;
+    nodeCanBeDecorated(node: Node, parent?: Node, grandparent?: Node): boolean {
+      if (this.namedDeclaration(node) && this.kind(qc.PrivateIdentifier, node.name)) return false;
+      switch (node.kind) {
+        case Syntax.ClassDeclaration:
+          return true;
+        case Syntax.PropertyDeclaration:
+          return parent!.kind === Syntax.ClassDeclaration;
+        case Syntax.GetAccessor:
+        case Syntax.SetAccessor:
+        case Syntax.MethodDeclaration:
+          return (<FunctionLikeDeclaration>node).body !== undefined && parent!.kind === Syntax.ClassDeclaration;
+        case Syntax.Parameter:
+          return (
+            (<FunctionLikeDeclaration>parent).body !== undefined &&
+            (parent!.kind === Syntax.Constructor || parent!.kind === Syntax.MethodDeclaration || parent!.kind === Syntax.SetAccessor) &&
+            grandparent!.kind === Syntax.ClassDeclaration
+          );
+      }
+      return false;
+    }
+    nodeIsDecorated(node: ClassDeclaration): boolean;
+    nodeIsDecorated(node: ClassElement, parent: Node): boolean;
+    nodeIsDecorated(node: Node, parent: Node, grandparent: Node): boolean;
+    nodeIsDecorated(node: Node, parent?: Node, grandparent?: Node): boolean {
+      return node.decorators !== undefined && nodeCanBeDecorated(node, parent!, grandparent!);
+    }
     blockScopedNameDeclaredBeforeUse(declaration: Declaration, usage: Node): boolean {
       const declarationFile = qf.get.sourceFileOf(declaration);
       const useFile = qf.get.sourceFileOf(usage);

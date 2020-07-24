@@ -43,19 +43,19 @@ export function enableDebugInfo() {
   Object.defineProperties(Node.Symbol.prototype, {
     __debugFlags: {
       get(this: Symbol) {
-        return formatSymbolFlags(this.flags);
+        return qc.format.symbolFlags(this.flags);
       },
     },
   });
   Object.defineProperties(Node.Type.prototype, {
     __debugFlags: {
       get(this: Type) {
-        return formatTypeFlags(this.flags);
+        return qc.format.typeFlags(this.flags);
       },
     },
     __debugObjectFlags: {
       get(this: Type) {
-        return this.flags & TypeFlags.Object ? formatObjectFlags((<ObjectType>this).objectFlags) : '';
+        return this.flags & TypeFlags.Object ? qc.format.objectFlags((<ObjectType>this).objectFlags) : '';
       },
     },
     __debugTypeToString: {
@@ -70,22 +70,22 @@ export function enableDebugInfo() {
       Object.defineProperties(ctor.prototype, {
         __debugKind: {
           get(this: Node) {
-            return formatSyntax(this.kind);
+            return qc.format.syntax(this.kind);
           },
         },
         __debugNodeFlags: {
           get(this: Node) {
-            return formatNodeFlags(this.flags);
+            return qc.format.nodeFlags(this.flags);
           },
         },
         __debugModifierFlags: {
           get(this: Node) {
-            return formatModifierFlags(qc.get.effectiveModifierFlagsNoCache(this));
+            return qc.format.modifierFlags(qc.get.effectiveModifierFlagsNoCache(this));
           },
         },
         __debugTransformFlags: {
           get(this: Node) {
-            return formatTransformFlags(this.transformFlags);
+            return qc.format.transformFlags(this.transformFlags);
           },
         },
         __debugIsParseTreeNode: {
@@ -95,7 +95,7 @@ export function enableDebugInfo() {
         },
         __debugEmitFlags: {
           get(this: Node) {
-            return formatEmitFlags(qc.get.emitFlags(this));
+            return qc.format.emitFlags(qc.get.emitFlags(this));
           },
         },
         __debugGetText: {

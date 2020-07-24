@@ -162,8 +162,8 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   const reportedUnreachableFlow: FlowNode = { flags: FlowFlags.Unreachable };
   let subtreeTransformFlags: TransformFlags = TransformFlags.None;
   let skipTransformFlagAggregation: boolean;
-  function createDiagnosticForNode(node: Node, message: qd.Message, arg0?: string | number, arg1?: string | number, arg2?: string | number): DiagnosticWithLocation {
-    return createDiagnosticForNodeInSourceFile(qc.get.sourceFileOf(node) || file, node, message, arg0, arg1, arg2);
+  function qf.create.diagnosticForNode(node: Node, message: qd.Message, arg0?: string | number, arg1?: string | number, arg2?: string | number): DiagnosticWithLocation {
+    return qf.create.diagnosticForNodeInSourceFile(qc.get.sourceFileOf(node) || file, node, message, arg0, arg1, arg2);
   }
   function bindSourceFile(f: SourceFile, opts: CompilerOptions) {
     file = f;
@@ -343,18 +343,18 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
             qc.has.syntacticModifier(node, ModifierFlags.Export) &&
             symbol.flags & (SymbolFlags.Alias | SymbolFlags.Type | SymbolFlags.Namespace)
           ) {
-            relatedInformation.push(createDiagnosticForNode(node, qd.Did_you_mean_0, `export type { ${qy.get.unescUnderscores(node.name.escapedText)} }`));
+            relatedInformation.push(qf.create.diagnosticForNode(node, qd.Did_you_mean_0, `export type { ${qy.get.unescUnderscores(node.name.escapedText)} }`));
           }
           const declarationName = qc.get.nameOfDeclaration(node) || node;
           forEach(symbol.declarations, (declaration, index) => {
             const decl = qc.get.nameOfDeclaration(declaration) || declaration;
-            const diag = createDiagnosticForNode(decl, message, messageNeedsName ? getDisplayName(declaration) : undefined);
-            file.bindqd.push(multipleDefaultExports ? addRelatedInfo(diag, createDiagnosticForNode(declarationName, index === 0 ? qd.Another_export_default_is_here : qd.and_here)) : diag);
+            const diag = qf.create.diagnosticForNode(decl, message, messageNeedsName ? getDisplayName(declaration) : undefined);
+            file.bindqd.push(multipleDefaultExports ? addRelatedInfo(diag, qf.create.diagnosticForNode(declarationName, index === 0 ? qd.Another_export_default_is_here : qd.and_here)) : diag);
             if (multipleDefaultExports) {
-              relatedInformation.push(createDiagnosticForNode(decl, qd.The_first_export_default_is_here));
+              relatedInformation.push(qf.create.diagnosticForNode(decl, qd.The_first_export_default_is_here));
             }
           });
-          const diag = createDiagnosticForNode(declarationName, message, messageNeedsName ? getDisplayName(node) : undefined);
+          const diag = qf.create.diagnosticForNode(declarationName, message, messageNeedsName ? getDisplayName(node) : undefined);
           file.bindqd.push(addRelatedInfo(diag, ...relatedInformation));
           symbol = newSymbol(SymbolFlags.None, name);
         }
@@ -1532,7 +1532,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
         }
         if (currentKind === ElementKind.Property && existingKind === ElementKind.Property) {
           const span = getErrorSpanForNode(file, identifier);
-          file.bindqd.push(createFileDiagnostic(file, span.start, span.length, qd.An_object_literal_cannot_have_multiple_properties_with_the_same_name_in_strict_mode));
+          file.bindqd.push(qf.create.fileDiagnostic(file, span.start, span.length, qd.An_object_literal_cannot_have_multiple_properties_with_the_same_name_in_strict_mode));
         }
       }
     }
@@ -1651,7 +1651,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       !(node.flags & NodeFlags.Doc)
     ) {
       if (!file.parseqd.length) {
-        file.bindqd.push(createDiagnosticForNode(node, getStrictModeIdentifierMessage(node), declarationNameToString(node)));
+        file.bindqd.push(qf.create.diagnosticForNode(node, getStrictModeIdentifierMessage(node), declarationNameToString(node)));
       }
     }
   }
@@ -1663,7 +1663,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   function checkPrivateIdentifier(node: PrivateIdentifier) {
     if (node.escapedText === '#constructor') {
       if (!file.parseqd.length) {
-        file.bindqd.push(createDiagnosticForNode(node, qd.constructor_is_a_reserved_word, declarationNameToString(node)));
+        file.bindqd.push(qf.create.diagnosticForNode(node, qd.constructor_is_a_reserved_word, declarationNameToString(node)));
       }
     }
   }
@@ -1680,7 +1680,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   function checkStrictModeDeleteExpression(node: DeleteExpression) {
     if (inStrictMode && node.expression.kind === Syntax.Identifier) {
       const span = getErrorSpanForNode(file, node.expression);
-      file.bindqd.push(createFileDiagnostic(file, span.start, span.length, qd.delete_cannot_be_called_on_an_identifier_in_strict_mode));
+      file.bindqd.push(qf.create.fileDiagnostic(file, span.start, span.length, qd.delete_cannot_be_called_on_an_identifier_in_strict_mode));
     }
   }
   function isEvalOrArgumentsIdentifier(node: Node): boolean {
@@ -1691,7 +1691,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       const identifier = <Identifier>name;
       if (isEvalOrArgumentsIdentifier(identifier)) {
         const span = getErrorSpanForNode(file, name);
-        file.bindqd.push(createFileDiagnostic(file, span.start, span.length, getStrictModeEvalOrArgumentsMessage(contextNode), idText(identifier)));
+        file.bindqd.push(qf.create.fileDiagnostic(file, span.start, span.length, getStrictModeEvalOrArgumentsMessage(contextNode), idText(identifier)));
       }
     }
   }
@@ -1714,13 +1714,13 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     if (languageVersion < ScriptTarget.ES2015) {
       if (blockScopeContainer.kind !== Syntax.SourceFile && blockScopeContainer.kind !== Syntax.ModuleDeclaration && !qc.is.functionLike(blockScopeContainer)) {
         const errorSpan = getErrorSpanForNode(file, node);
-        file.bindqd.push(createFileDiagnostic(file, errorSpan.start, errorSpan.length, getStrictModeBlockScopeFunctionDeclarationMessage(node)));
+        file.bindqd.push(qf.create.fileDiagnostic(file, errorSpan.start, errorSpan.length, getStrictModeBlockScopeFunctionDeclarationMessage(node)));
       }
     }
   }
   function checkStrictModeNumericLiteral(node: NumericLiteral) {
     if (inStrictMode && node.numericLiteralFlags & TokenFlags.Octal) {
-      file.bindqd.push(createDiagnosticForNode(node, qd.Octal_literals_are_not_allowed_in_strict_mode));
+      file.bindqd.push(qf.create.diagnosticForNode(node, qd.Octal_literals_are_not_allowed_in_strict_mode));
     }
   }
   function checkStrictModePostfixUnaryExpression(node: PostfixUnaryExpression) {
@@ -1749,7 +1749,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   }
   function errorOnFirstToken(node: Node, message: qd.Message, arg0?: any, arg1?: any, arg2?: any) {
     const span = getSpanOfTokenAtPosition(file, node.pos);
-    file.bindqd.push(createFileDiagnostic(file, span.start, span.length, message, arg0, arg1, arg2));
+    file.bindqd.push(qf.create.fileDiagnostic(file, span.start, span.length, message, arg0, arg1, arg2));
   }
   function errorOrSuggestionOnNode(isError: boolean, node: Node, message: qd.Message): void {
     errorOrSuggestionOnRange(isError, node, node, message);
@@ -1758,7 +1758,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
     addErrorOrSuggestionDiagnostic(isError, { pos: startNode.getTokenPos(file), end: endNode.end }, message);
   }
   function addErrorOrSuggestionDiagnostic(isError: boolean, range: TextRange, message: qd.Message): void {
-    const diag = createFileDiagnostic(file, range.pos, range.end - range.pos, message);
+    const diag = qf.create.fileDiagnostic(file, range.pos, range.end - range.pos, message);
     if (isError) {
       file.bindqd.push(diag);
     } else {
@@ -2058,7 +2058,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
   }
   function bindNamespaceExportDeclaration(node: NamespaceExportDeclaration) {
     if (node.modifiers && node.modifiers.length) {
-      file.bindqd.push(createDiagnosticForNode(node, qd.Modifiers_cannot_appear_here));
+      file.bindqd.push(qf.create.diagnosticForNode(node, qd.Modifiers_cannot_appear_here));
     }
     const diag = !qc.is.kind(qc.SourceFile, node.parent)
       ? qd.Global_module_exports_may_only_appear_at_top_level
@@ -2068,7 +2068,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       ? qd.Global_module_exports_may_only_appear_in_declaration_files
       : undefined;
     if (diag) {
-      file.bindqd.push(createDiagnosticForNode(node, diag));
+      file.bindqd.push(qf.create.diagnosticForNode(node, diag));
     } else {
       file.symbol.globalExports = file.symbol.globalExports || new SymbolTable();
       declareSymbol(file.symbol.globalExports, file.symbol, node, SymbolFlags.Alias, SymbolFlags.AliasExcludes);
@@ -2409,7 +2409,7 @@ function createBinder(): (file: SourceFile, options: CompilerOptions) => void {
       if (node.name) {
         node.name.parent = node;
       }
-      file.bindqd.push(createDiagnosticForNode(symbolExport.declarations[0], qd.Duplicate_identifier_0, prototypeSymbol.name));
+      file.bindqd.push(qf.create.diagnosticForNode(symbolExport.declarations[0], qd.Duplicate_identifier_0, prototypeSymbol.name));
     }
     symbol.exports!.set(prototypeSymbol.escName, prototypeSymbol);
     prototypeSymbol.parent = symbol;

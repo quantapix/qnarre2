@@ -466,8 +466,8 @@ export function transformClassFields(context: TransformationContext) {
         : qc.is.kind(qc.Identifier, propertyName)
         ? new qc.StringLiteral(syntax.get.unescUnderscores(propertyName.escapedText))
         : propertyName;
-      const descriptor = createPropertyDescriptor({ value: initer, configurable: true, writable: true, enumerable: true });
-      return createObjectDefinePropertyCall(receiver, name, descriptor);
+      const descriptor = qf.create.propertyDescriptor({ value: initer, configurable: true, writable: true, enumerable: true });
+      return qf.create.objectDefinePropertyCall(receiver, name, descriptor);
     }
   }
   function enableSubstitutionForClassAliases() {

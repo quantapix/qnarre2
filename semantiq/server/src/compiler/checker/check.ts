@@ -147,7 +147,7 @@ export function newCheck(f: qt.Frame) {
           qu.assert(!!(result.flags & qt.SymbolFlags.ConstEnum));
           if (compilerOptions.preserveConstEnums) diagnosticMessage = error(errorLocation, qd.msgs.Enum_0_used_before_its_declaration, declarationName);
         }
-        if (diagnosticMessage) addRelatedInfo(diagnosticMessage, createDiagnosticForNode(declaration, qd.msgs._0_is_declared_here, declarationName));
+        if (diagnosticMessage) addRelatedInfo(diagnosticMessage, qf.create.diagnosticForNode(declaration, qd.msgs._0_is_declared_here, declarationName));
       }
     }
     andReportErrorForResolvingImportAliasToTypeOnlySymbol(n: qc.ImportEqualsDeclaration, resolved: Symbol | undefined) {
@@ -159,7 +159,7 @@ export function newCheck(f: qt.Frame) {
           : qd.msgs.An_import_alias_cannot_reference_a_declaration_that_was_imported_using_import_type;
         const relatedMessage = isExport ? qd.msgs._0_was_exported_here : qd.msgs._0_was_imported_here;
         const name = qy.qf.get.unescUnderscores(typeOnlyDeclaration.name!.escapedText);
-        addRelatedInfo(error(n.moduleReference, message), createDiagnosticForNode(typeOnlyDeclaration, relatedMessage, name));
+        addRelatedInfo(error(n.moduleReference, message), qf.create.diagnosticForNode(typeOnlyDeclaration, relatedMessage, name));
       }
     }
     noTypeArguments(n: NodeWithTypeArguments, symbol?: Symbol) {
@@ -257,7 +257,7 @@ export function newCheck(f: qt.Frame) {
           if (links.originatingImport && !qf.is.importCall(links.originatingImport)) {
             const helpfulRetry = this.typeRelatedTo(getTypeOfSymbol(links.target!), target, relation, undefined);
             if (helpfulRetry) {
-              const diag = createDiagnosticForNode(
+              const diag = qf.create.diagnosticForNode(
                 links.originatingImport,
                 qd.msgs
                   .Type_originates_at_this_import_A_namespace_style_import_cannot_be_called_or_constructed_and_will_cause_a_failure_at_runtime_Consider_using_a_default_import_or_import_require_here_instead
@@ -266,7 +266,7 @@ export function newCheck(f: qt.Frame) {
             }
           }
         }
-        const diag = createDiagnosticForNodeFromMessageChain(errorNode!, errorInfo, relatedInformation);
+        const diag = qf.create.diagnosticForNodeFromMessageChain(errorNode!, errorInfo, relatedInformation);
         if (relatedInfo) addRelatedInfo(diag, ...relatedInfo);
         if (errorOutputContainer) (errorOutputContainer.errors || (errorOutputContainer.errors = [])).push(diag);
         if (!errorOutputContainer || !errorOutputContainer.skipLogging) diagnostics.add(diag);
@@ -1259,7 +1259,7 @@ export function newCheck(f: qt.Frame) {
         if (props.length === 1) {
           const propName = unmatchedProperty.symbolToString();
           reportError(qd.msgs.Property_0_is_missing_in_type_1_but_required_in_type_2, propName, ...getTypeNamesForErrorDisplay(source, target));
-          if (length(unmatchedProperty.declarations)) associateRelatedInfo(createDiagnosticForNode(unmatchedProperty.declarations[0], qd.msgs._0_is_declared_here, propName));
+          if (length(unmatchedProperty.declarations)) associateRelatedInfo(qf.create.diagnosticForNode(unmatchedProperty.declarations[0], qd.msgs._0_is_declared_here, propName));
           if (shouldSkipElaboration && errorInfo) overrideNextErrorInfo++;
         } else if (tryElaborateArrayLikeErrors(source, target, false)) {
           if (props.length > 5) {
@@ -1648,7 +1648,7 @@ export function newCheck(f: qt.Frame) {
           const diag = error(n, qd.this_implicitly_has_type_any_because_it_does_not_have_a_type_annotation);
           if (!qf.is.kind(qc.SourceFile, container)) {
             const outsideThis = tryGetThisTypeAt(container);
-            if (outsideThis && outsideThis !== globalThisType) addRelatedInfo(diag, createDiagnosticForNode(container, qd.msgs.An_outer_value_of_this_is_shadowed_by_this_container));
+            if (outsideThis && outsideThis !== globalThisType) addRelatedInfo(diag, qf.create.diagnosticForNode(container, qd.msgs.An_outer_value_of_this_is_shadowed_by_this_container));
           }
         }
       }
@@ -2042,7 +2042,7 @@ export function newCheck(f: qt.Frame) {
         const rightType = getTypeOfSymbol(right);
         if (left && !maybeTypeOfKind(rightType, TypeFlags.Nullable) && !(maybeTypeOfKind(rightType, TypeFlags.AnyOrUnknown) && right.flags & qt.SymbolFlags.Optional)) {
           const diagnostic = error(left.valueDeclaration, qd.msgs._0_is_specified_more_than_once_so_this_usage_will_be_overwritten, qy.qf.get.unescUnderscores(left.escName));
-          addRelatedInfo(diagnostic, createDiagnosticForNode(spread, qd.msgs.This_spread_always_overwrites_this_property));
+          addRelatedInfo(diagnostic, qf.create.diagnosticForNode(spread, qd.msgs.This_spread_always_overwrites_this_property));
         }
       }
     }
@@ -2181,8 +2181,8 @@ export function newCheck(f: qt.Frame) {
             );
             addRelatedInfo(
               diagnostic,
-              createDiagnosticForNode(lexicalValueDecl, qd.msgs.The_shadowing_declaration_of_0_is_defined_here, diagName),
-              createDiagnosticForNode(typeValueDecl, qd.msgs.The_declaration_of_0_that_you_probably_intended_to_use_is_defined_here, diagName)
+              qf.create.diagnosticForNode(lexicalValueDecl, qd.msgs.The_shadowing_declaration_of_0_is_defined_here, diagName),
+              qf.create.diagnosticForNode(typeValueDecl, qd.msgs.The_declaration_of_0_that_you_probably_intended_to_use_is_defined_here, diagName)
             );
             return true;
           }
@@ -2272,7 +2272,7 @@ export function newCheck(f: qt.Frame) {
       ) {
         diagnosticMessage = error(right, qd.msgs.Class_0_used_before_its_declaration, declarationName);
       }
-      if (diagnosticMessage) addRelatedInfo(diagnosticMessage, createDiagnosticForNode(valueDeclaration, qd.msgs._0_is_declared_here, declarationName));
+      if (diagnosticMessage) addRelatedInfo(diagnosticMessage, qf.create.diagnosticForNode(valueDeclaration, qd.msgs._0_is_declared_here, declarationName));
     }
     indexedAccess(n: qc.ElementAccessExpression): qc.Type {
       return n.flags & NodeFlags.OptionalChain ? this.elementAccessChain(n as ElementAccessChain) : this.elementAccessExpression(n, this.nonNullExpression(n.expression));
@@ -2392,7 +2392,7 @@ export function newCheck(f: qt.Frame) {
         }
         if (absoluteMinArgCount <= maxParamCount) return true;
         if (reportErrors) {
-          const diag = createDiagnosticForNode(
+          const diag = qf.create.diagnosticForNode(
             n.tagName,
             qd.msgs.Tag_0_expects_at_least_1_arguments_but_the_JSX_factory_2_provides_at_most_3,
             entityNameToString(n.tagName),
@@ -2401,7 +2401,7 @@ export function newCheck(f: qt.Frame) {
             maxParamCount
           );
           const tagNameDeclaration = getSymbolAtLocation(n.tagName)?.valueDeclaration;
-          if (tagNameDeclaration) addRelatedInfo(diag, createDiagnosticForNode(tagNameDeclaration, qd.msgs._0_is_declared_here, entityNameToString(n.tagName)));
+          if (tagNameDeclaration) addRelatedInfo(diag, qf.create.diagnosticForNode(tagNameDeclaration, qd.msgs._0_is_declared_here, entityNameToString(n.tagName)));
           if (errorOutputContainer && errorOutputContainer.skipLogging) (errorOutputContainer.errors || (errorOutputContainer.errors = [])).push(diag);
           if (!errorOutputContainer.skipLogging) diagnostics.add(diag);
         }
@@ -2692,7 +2692,7 @@ export function newCheck(f: qt.Frame) {
               let span: TextSpan | undefined;
               if (!isEffectiveExternalModule(sourceFile, compilerOptions)) {
                 if (!span) span = getSpanOfTokenAtPosition(sourceFile, n.pos);
-                const diagnostic = createFileDiagnostic(
+                const diagnostic = qf.create.fileDiagnostic(
                   sourceFile,
                   span.start,
                   span.length,
@@ -2702,7 +2702,7 @@ export function newCheck(f: qt.Frame) {
               }
               if (moduleKind !== ModuleKind.ESNext && moduleKind !== ModuleKind.System) {
                 span = getSpanOfTokenAtPosition(sourceFile, n.pos);
-                const diagnostic = createFileDiagnostic(
+                const diagnostic = qf.create.fileDiagnostic(
                   sourceFile,
                   span.start,
                   span.length,
@@ -2715,10 +2715,10 @@ export function newCheck(f: qt.Frame) {
             const sourceFile = qf.get.sourceFileOf(n);
             if (!hasParseDiagnostics(sourceFile)) {
               const span = getSpanOfTokenAtPosition(sourceFile, n.pos);
-              const diagnostic = createFileDiagnostic(sourceFile, span.start, span.length, qd.await_expressions_are_only_allowed_within_async_functions_and_at_the_top_levels_of_modules);
+              const diagnostic = qf.create.fileDiagnostic(sourceFile, span.start, span.length, qd.await_expressions_are_only_allowed_within_async_functions_and_at_the_top_levels_of_modules);
               const func = qf.get.containingFunction(n);
               if (func && func.kind !== Syntax.Constructor && (getFunctionFlags(func) & FunctionFlags.Async) === 0) {
-                const relatedInfo = createDiagnosticForNode(func, qd.msgs.Did_you_mean_to_mark_this_function_as_async);
+                const relatedInfo = qf.create.diagnosticForNode(func, qd.msgs.Did_you_mean_to_mark_this_function_as_async);
                 addRelatedInfo(diagnostic, relatedInfo);
               }
               diagnostics.add(diagnostic);
@@ -2730,7 +2730,7 @@ export function newCheck(f: qt.Frame) {
       const operandType = this.expression(n.expression);
       const awaitedType = this.awaitedType(operandType, n, qd.msgs.Type_of_await_operand_must_either_be_a_valid_promise_or_must_not_contain_a_callable_then_member);
       if (awaitedType === operandType && awaitedType !== errorType && !(operandType.flags & TypeFlags.AnyOrUnknown))
-        addErrorOrSuggestion(false, createDiagnosticForNode(n, qd.await_has_no_effect_on_the_type_of_this_expression));
+        addErrorOrSuggestion(false, qf.create.diagnosticForNode(n, qd.await_has_no_effect_on_the_type_of_this_expression));
       return awaitedType;
     }
     prefixUnaryExpression(n: qc.PrefixUnaryExpression): qc.Type {
@@ -4340,13 +4340,13 @@ export function newCheck(f: qt.Frame) {
               (qf.has.effectiveModifier(member, ModifierFlags.Private) || (qf.is.namedDeclaration(member) && qf.is.kind(qc.PrivateIdentifier, member.name))) &&
               !(member.flags & NodeFlags.Ambient)
             ) {
-              addDiagnostic(member, UnusedKind.Local, createDiagnosticForNode(member.name!, qd.msgs._0_is_declared_but_its_value_is_never_read, symbol.symbolToString()));
+              addDiagnostic(member, UnusedKind.Local, qf.create.diagnosticForNode(member.name!, qd.msgs._0_is_declared_but_its_value_is_never_read, symbol.symbolToString()));
             }
             break;
           case Syntax.Constructor:
             for (const parameter of (<ConstructorDeclaration>member).parameters) {
               if (!parameter.symbol.isReferenced && qf.has.syntacticModifier(parameter, ModifierFlags.Private))
-                addDiagnostic(parameter, UnusedKind.Local, createDiagnosticForNode(parameter.name, qd.msgs.Property_0_is_declared_but_its_value_is_never_read, parameter.symbol.name));
+                addDiagnostic(parameter, UnusedKind.Local, qf.create.diagnosticForNode(parameter.name, qd.msgs.Property_0_is_declared_but_its_value_is_never_read, parameter.symbol.name));
             }
             break;
           case Syntax.IndexSignature:
@@ -4359,7 +4359,7 @@ export function newCheck(f: qt.Frame) {
     }
     unusedInferTypeParameter(n: qc.InferTypeNode, addDiagnostic: AddUnusedDiagnostic): void {
       const { typeParameter } = n;
-      if (isTypeParameterUnused(typeParameter)) addDiagnostic(n, UnusedKind.Parameter, createDiagnosticForNode(n, qd.msgs._0_is_declared_but_its_value_is_never_read, idText(typeParameter.name)));
+      if (isTypeParameterUnused(typeParameter)) addDiagnostic(n, UnusedKind.Parameter, qf.create.diagnosticForNode(n, qd.msgs._0_is_declared_but_its_value_is_never_read, idText(typeParameter.name)));
     }
     unusedTypeParameters(n: qc.ClassLikeDeclaration | SignatureDeclaration | InterfaceDeclaration | TypeAliasDeclaration, addDiagnostic: AddUnusedDiagnostic): void {
       if (last(getSymbolOfNode(n).declarations) !== n) return;
@@ -4375,10 +4375,10 @@ export function newCheck(f: qt.Frame) {
             const only = parent.typeParameters!.length === 1;
             const message = only ? qd.msgs._0_is_declared_but_its_value_is_never_read : qd.msgs.All_type_parameters_are_unused;
             const arg0 = only ? name : undefined;
-            addDiagnostic(typeParameter, UnusedKind.Parameter, createFileDiagnostic(qf.get.sourceFileOf(parent), range.pos, range.end - range.pos, message, arg0));
+            addDiagnostic(typeParameter, UnusedKind.Parameter, qf.create.fileDiagnostic(qf.get.sourceFileOf(parent), range.pos, range.end - range.pos, message, arg0));
           }
         } else {
-          addDiagnostic(typeParameter, UnusedKind.Parameter, createDiagnosticForNode(typeParameter, qd.msgs._0_is_declared_but_its_value_is_never_read, name));
+          addDiagnostic(typeParameter, UnusedKind.Parameter, qf.create.diagnosticForNode(typeParameter, qd.msgs._0_is_declared_but_its_value_is_never_read, name));
         }
       }
     }
@@ -4402,7 +4402,7 @@ export function newCheck(f: qt.Frame) {
             const name = local.valueDeclaration && qf.get.nameOfDeclaration(local.valueDeclaration);
             if (parameter && name) {
               if (!qf.is.parameterPropertyDeclaration(parameter, parameter.parent) && !parameterIsThqy.qf.is.keyword(parameter) && !isIdentifierThatStartsWithUnderscore(name))
-                addDiagnostic(parameter, UnusedKind.Parameter, createDiagnosticForNode(name, qd.msgs._0_is_declared_but_its_value_is_never_read, local.name));
+                addDiagnostic(parameter, UnusedKind.Parameter, qf.create.diagnosticForNode(name, qd.msgs._0_is_declared_but_its_value_is_never_read, local.name));
             } else {
               errorUnusedLocal(declaration, local.name, addDiagnostic);
             }
@@ -4418,8 +4418,8 @@ export function newCheck(f: qt.Frame) {
             importDecl,
             UnusedKind.Local,
             unuseds.length === 1
-              ? createDiagnosticForNode(importDecl, qd.msgs._0_is_declared_but_its_value_is_never_read, idText(first(unuseds).name!))
-              : createDiagnosticForNode(importDecl, qd.msgs.All_imports_in_import_declaration_are_unused)
+              ? qf.create.diagnosticForNode(importDecl, qd.msgs._0_is_declared_but_its_value_is_never_read, idText(first(unuseds).name!))
+              : qf.create.diagnosticForNode(importDecl, qd.msgs.All_imports_in_import_declaration_are_unused)
           );
         } else {
           for (const unused of unuseds) errorUnusedLocal(unused, idText(unused.name!), addDiagnostic);
@@ -4435,13 +4435,13 @@ export function newCheck(f: qt.Frame) {
               bindingPattern,
               kind,
               bindingElements.length === 1
-                ? createDiagnosticForNode(bindingPattern, qd.msgs._0_is_declared_but_its_value_is_never_read, bindingNameText(first(bindingElements).name))
-                : createDiagnosticForNode(bindingPattern, qd.msgs.All_destructured_elements_are_unused)
+                ? qf.create.diagnosticForNode(bindingPattern, qd.msgs._0_is_declared_but_its_value_is_never_read, bindingNameText(first(bindingElements).name))
+                : qf.create.diagnosticForNode(bindingPattern, qd.msgs.All_destructured_elements_are_unused)
             );
           }
         } else {
           for (const e of bindingElements) {
-            addDiagnostic(e, kind, createDiagnosticForNode(e, qd.msgs._0_is_declared_but_its_value_is_never_read, bindingNameText(e.name)));
+            addDiagnostic(e, kind, qf.create.diagnosticForNode(e, qd.msgs._0_is_declared_but_its_value_is_never_read, bindingNameText(e.name)));
           }
         }
       });
@@ -4451,12 +4451,12 @@ export function newCheck(f: qt.Frame) {
             declarationList,
             UnusedKind.Local,
             declarations.length === 1
-              ? createDiagnosticForNode(first(declarations).name, qd.msgs._0_is_declared_but_its_value_is_never_read, bindingNameText(first(declarations).name))
-              : createDiagnosticForNode(declarationList.parent.kind === Syntax.VariableStatement ? declarationList.parent : declarationList, qd.msgs.All_variables_are_unused)
+              ? qf.create.diagnosticForNode(first(declarations).name, qd.msgs._0_is_declared_but_its_value_is_never_read, bindingNameText(first(declarations).name))
+              : qf.create.diagnosticForNode(declarationList.parent.kind === Syntax.VariableStatement ? declarationList.parent : declarationList, qd.msgs.All_variables_are_unused)
           );
         } else {
           for (const decl of declarations) {
-            addDiagnostic(decl, UnusedKind.Local, createDiagnosticForNode(decl, qd.msgs._0_is_declared_but_its_value_is_never_read, bindingNameText(decl.name)));
+            addDiagnostic(decl, UnusedKind.Local, qf.create.diagnosticForNode(decl, qd.msgs._0_is_declared_but_its_value_is_never_read, bindingNameText(decl.name)));
           }
         }
       });
@@ -5233,7 +5233,7 @@ export function newCheck(f: qt.Frame) {
               const typeName2 = typeToString(base);
               let errorInfo = chainqd.Messages(undefined, qd.msgs.Named_property_0_of_types_1_and_2_are_not_identical, prop.symbolToString(), typeName1, typeName2);
               errorInfo = chainqd.Messages(errorInfo, qd.msgs.Interface_0_cannot_simultaneously_extend_types_1_and_2, typeToString(type), typeName1, typeName2);
-              diagnostics.add(createDiagnosticForNodeFromMessageChain(typeNode, errorInfo));
+              diagnostics.add(qf.create.diagnosticForNodeFromMessageChain(typeNode, errorInfo));
             }
           }
         }
@@ -5623,7 +5623,7 @@ export function newCheck(f: qt.Frame) {
             if (flags & qt.SymbolFlags.TypeAlias && exportedDeclarationsCount <= 2) return;
             if (exportedDeclarationsCount > 1) {
               for (const declaration of declarations) {
-                if (isNotOverload(declaration)) diagnostics.add(createDiagnosticForNode(declaration, qd.msgs.Cannot_redeclare_exported_variable_0, qy.qf.get.unescUnderscores(id)));
+                if (isNotOverload(declaration)) diagnostics.add(qf.create.diagnosticForNode(declaration, qd.msgs.Cannot_redeclare_exported_variable_0, qy.qf.get.unescUnderscores(id)));
               }
             }
           });
@@ -5972,7 +5972,7 @@ export function newCheck(f: qt.Frame) {
       if (n.numericLiteralFlags & TokenFlags.Scientific || n.text.length <= 15 || n.text.indexOf('.') !== -1) return;
       const apparentValue = +qf.get.textOf(n);
       if (apparentValue <= 2 ** 53 - 1 && apparentValue + 1 > apparentValue) return;
-      addErrorOrSuggestion(false, createDiagnosticForNode(n, qd.msgs.Numeric_literals_with_absolute_values_equal_to_2_53_or_greater_are_too_large_to_be_represented_accurately_as_integers));
+      addErrorOrSuggestion(false, qf.create.diagnosticForNode(n, qd.msgs.Numeric_literals_with_absolute_values_equal_to_2_53_or_greater_are_too_large_to_be_represented_accurately_as_integers));
     }
     grammar = new (class {
       exportDeclaration(n: qc.ExportDeclaration): boolean {
@@ -6163,10 +6163,10 @@ export function newCheck(f: qt.Frame) {
           const nonSimpleParameters = getNonSimpleParameters(n.parameters);
           if (length(nonSimpleParameters)) {
             forEach(nonSimpleParameters, (parameter) => {
-              addRelatedInfo(error(parameter, qd.msgs.This_parameter_is_not_allowed_with_use_strict_directive), createDiagnosticForNode(useStrictDirective, qd.use_strict_directive_used_here));
+              addRelatedInfo(error(parameter, qd.msgs.This_parameter_is_not_allowed_with_use_strict_directive), qf.create.diagnosticForNode(useStrictDirective, qd.use_strict_directive_used_here));
             });
             const diagnostics = nonSimpleParameters.map((parameter, index) =>
-              index === 0 ? createDiagnosticForNode(parameter, qd.msgs.Non_simple_parameter_declared_here) : createDiagnosticForNode(parameter, qd.and_here)
+              index === 0 ? qf.create.diagnosticForNode(parameter, qd.msgs.Non_simple_parameter_declared_here) : qf.create.diagnosticForNode(parameter, qd.and_here)
             ) as [qd.msgs.DiagnosticWithLocation, ...qd.msgs.DiagnosticWithLocation[]];
             addRelatedInfo(error(useStrictDirective, qd.use_strict_directive_cannot_be_used_with_non_simple_parameter_list), ...diagnostics);
             return true;
@@ -6401,11 +6401,11 @@ export function newCheck(f: qt.Frame) {
           if ((forInOrOfStatement.flags & NodeFlags.AwaitContext) === NodeFlags.None) {
             const sourceFile = qf.get.sourceFileOf(forInOrOfStatement);
             if (!hasParseDiagnostics(sourceFile)) {
-              const diagnostic = createDiagnosticForNode(forInOrOfStatement.awaitModifier, qd.msgs.A_for_await_of_statement_is_only_allowed_within_an_async_function_or_async_generator);
+              const diagnostic = qf.create.diagnosticForNode(forInOrOfStatement.awaitModifier, qd.msgs.A_for_await_of_statement_is_only_allowed_within_an_async_function_or_async_generator);
               const func = qf.get.containingFunction(forInOrOfStatement);
               if (func && func.kind !== Syntax.Constructor) {
                 qu.assert((getFunctionFlags(func) & FunctionFlags.Async) === 0, 'Enclosing function should never be an async function.');
-                const relatedInfo = createDiagnosticForNode(func, qd.msgs.Did_you_mean_to_mark_this_function_as_async);
+                const relatedInfo = qf.create.diagnosticForNode(func, qd.msgs.Did_you_mean_to_mark_this_function_as_async);
                 addRelatedInfo(diagnostic, relatedInfo);
               }
               diagnostics.add(diagnostic);

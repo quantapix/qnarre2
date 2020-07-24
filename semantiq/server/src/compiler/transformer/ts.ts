@@ -1684,3 +1684,22 @@ export const paramHelper: UnscopedEmitHelper = {
                 return function (target, key) { decorator(target, key, paramIndex); }
             };`,
 };
+export function nodeOrChildIsDecorated(node: ClassDeclaration): boolean;
+export function nodeOrChildIsDecorated(node: ClassElement, parent: Node): boolean;
+export function nodeOrChildIsDecorated(node: Node, parent: Node, grandparent: Node): boolean;
+export function nodeOrChildIsDecorated(node: Node, parent?: Node, grandparent?: Node): boolean {
+  return nodeIsDecorated(node, parent!, grandparent!) || childIsDecorated(node, parent!);
+}
+export function childIsDecorated(node: ClassDeclaration): boolean;
+export function childIsDecorated(node: Node, parent: Node): boolean;
+export function childIsDecorated(node: Node, parent?: Node): boolean {
+  switch (node.kind) {
+    case Syntax.ClassDeclaration:
+      return some((<ClassDeclaration>node).members, (m) => nodeOrChildIsDecorated(m, node, parent!));
+    case Syntax.MethodDeclaration:
+    case Syntax.SetAccessor:
+      return some((<FunctionLikeDeclaration>node).parameters, (p) => nodeIsDecorated(p, node, parent!));
+    default:
+      return false;
+  }
+}

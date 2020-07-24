@@ -225,7 +225,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
           if (id === 'export=' || !(exportsWithDuplicate && exportsWithDuplicate.length) || symbols.has(id)) return;
           for (const node of exportsWithDuplicate) {
             diagnostics.add(
-              createDiagnosticForNode(
+              qf.create.diagnosticForNode(
                 node,
                 qd.Module_0_has_already_exported_a_member_named_1_Consider_explicitly_re_exporting_to_resolve_the_ambiguity,
                 lookupTable.get(id)!.specifierText,
@@ -801,7 +801,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
       type = this.getTypeOfEnumMember();
     } else if (is.accessor(declaration)) {
       type = resolveTypeOfAccessors(symbol);
-    } else return qu.fail('Unhandled declaration kind! ' + Debug.formatSyntax(declaration.kind) + ' for ' + Debug.formatSymbol(symbol));
+    } else return qu.fail('Unhandled declaration kind! ' + Debug.qc.format.syntax(declaration.kind) + ' for ' + Debug.qc.format.symbol(symbol));
     if (!popTypeResolution()) {
       if (symbol.flags & qt.SymbolFlags.ValueModule && !(symbol.flags & qt.SymbolFlags.Assignment)) return this.getTypeOfFuncClassEnumModule();
       return reportCircularityError(symbol);
@@ -1386,7 +1386,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
           if (!isImplementationCompatibleWithOverload(bs, s)) {
             addRelatedInfo(
               error(s.declaration, qd.This_overload_signature_is_not_compatible_with_its_implementation_signature),
-              createDiagnosticForNode(bodyDeclaration, qd.The_implementation_signature_is_declared_here)
+              qf.create.diagnosticForNode(bodyDeclaration, qd.The_implementation_signature_is_declared_here)
             );
             break;
           }
@@ -1512,7 +1512,7 @@ export class Symbol extends qc.Symbol implements TransientSymbol {
         const message = isExport ? qd._0_cannot_be_used_as_a_value_because_it_was_exported_using_export_type : qd._0_cannot_be_used_as_a_value_because_it_was_imported_using_import_type;
         const relatedMessage = isExport ? qd._0_was_exported_here : qd._0_was_imported_here;
         const unescName = qy.get.unescUnderscores(name);
-        addRelatedInfo(error(useSite, message, unescName), createDiagnosticForNode(typeOnlyDeclaration, relatedMessage, unescName));
+        addRelatedInfo(error(useSite, message, unescName), qf.create.diagnosticForNode(typeOnlyDeclaration, relatedMessage, unescName));
       }
     }
   }
